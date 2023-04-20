@@ -57,6 +57,17 @@ def test_success_input(session, inline):
             <p>Another element</p>
         </body>""")
 
+    
+    
+    
+    session.execute_async_script(
+        """
+        const resolve = arguments[0];
+        window.requestAnimationFrame(function() {
+            window.requestAnimationFrame(resolve);
+        });
+        """
+    )
     response = get_active_element(session)
     element = assert_success(response)
     assert_is_active_element(session, element)
@@ -71,6 +82,17 @@ def test_success_input_non_interactable(session, inline):
             <p>Another element</p>
         </body>""")
 
+    
+    
+    
+    session.execute_async_script(
+        """
+        const resolve = arguments[0];
+        window.requestAnimationFrame(function() {
+            window.requestAnimationFrame(resolve);
+        });
+        """
+    )
     response = get_active_element(session)
     element = assert_success(response)
     assert_is_active_element(session, element)
