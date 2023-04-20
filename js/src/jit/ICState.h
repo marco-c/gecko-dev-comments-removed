@@ -45,11 +45,6 @@ class ICState {
   bool usedByTranspiler_ : 1;
 
   
-  
-  
-  bool hasFoldedStub_ : 1;
-
-  
   uint8_t numOptimizedStubs_;
 
   
@@ -97,7 +92,9 @@ class ICState {
     return true;
   }
 
-  [[nodiscard]] MOZ_ALWAYS_INLINE bool shouldTransition() {
+  
+  
+  [[nodiscard]] MOZ_ALWAYS_INLINE bool maybeTransition() {
     
     
     
@@ -106,15 +103,6 @@ class ICState {
     }
     if (numOptimizedStubs_ < MaxOptimizedStubs &&
         numFailures_ < maxFailures()) {
-      return false;
-    }
-    return true;
-  }
-
-  
-  
-  [[nodiscard]] MOZ_ALWAYS_INLINE bool maybeTransition() {
-    if (!shouldTransition()) {
       return false;
     }
     if (numFailures_ == maxFailures() || mode() == Mode::Megamorphic) {
@@ -135,7 +123,6 @@ class ICState {
 #endif
     trialInliningState_ = uint32_t(TrialInliningState::Initial);
     usedByTranspiler_ = false;
-    hasFoldedStub_ = false;
     numOptimizedStubs_ = 0;
     numFailures_ = 0;
   }
@@ -167,10 +154,6 @@ class ICState {
   void clearUsedByTranspiler() { usedByTranspiler_ = false; }
   void setUsedByTranspiler() { usedByTranspiler_ = true; }
   bool usedByTranspiler() const { return usedByTranspiler_; }
-
-  void clearHasFoldedStub() { hasFoldedStub_ = false; }
-  void setHasFoldedStub() { hasFoldedStub_ = true; }
-  bool hasFoldedStub() const { return hasFoldedStub_; }
 
   TrialInliningState trialInliningState() const {
     return TrialInliningState(trialInliningState_);
