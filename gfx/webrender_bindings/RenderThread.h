@@ -166,14 +166,6 @@ class RenderThread final {
   RendererOGL* GetRenderer(wr::WindowId aWindowId);
 
   
-
-  
-  
-  
-  void PostHandleFrameOneDoc(wr::WindowId aWindowId, bool aRender,
-                             bool aTrackedFrame);
-
-  
   void SetClearColor(wr::WindowId aWindowId, wr::ColorF aColor);
 
   
@@ -185,6 +177,9 @@ class RenderThread final {
 
   
   void PostEvent(wr::WindowId aWindowId, UniquePtr<RendererEvent> aEvent);
+
+  
+  void SetFramePublishId(wr::WindowId aWindowId, FramePublishId aPublishId);
 
   
   void UpdateAndRender(wr::WindowId aWindowId, const VsyncId& aStartId,
@@ -239,6 +234,13 @@ class RenderThread final {
   
   void DecPendingFrameBuildCount(wr::WindowId aWindowId);
   void DecPendingFrameCount(wr::WindowId aWindowId);
+
+  
+  void WrNotifierEvent_WakeUp(WrWindowId aWindowId, bool aCompositeNeeded);
+  void WrNotifierEvent_NewFrameReady(WrWindowId aWindowId,
+                                     bool aCompositeNeeded,
+                                     FramePublishId aPublishId);
+  void WrNotifierEvent_ExternalEvent(WrWindowId aWindowId, size_t aRawEvent);
 
   
   WebRenderThreadPool& ThreadPool() { return mThreadPool; }
@@ -306,17 +308,85 @@ class RenderThread final {
     NotifyForUse,
     NotifyNotUsed,
   };
+  class WrNotifierEvent {
+   public:
+    enum class Tag {
+      WakeUp,
+      NewFrameReady,
+      ExternalEvent,
+    };
+    const Tag mTag;
+
+   private:
+    WrNotifierEvent(const Tag aTag, const bool aCompositeNeeded)
+        : mTag(aTag), mCompositeNeeded(aCompositeNeeded) {
+      MOZ_ASSERT(mTag == Tag::WakeUp);
+    }
+    WrNotifierEvent(const Tag aTag, bool aCompositeNeeded,
+                    FramePublishId aPublishId)
+        : mTag(aTag),
+          mCompositeNeeded(aCompositeNeeded),
+          mPublishId(aPublishId) {
+      MOZ_ASSERT(mTag == Tag::NewFrameReady);
+    }
+    WrNotifierEvent(const Tag aTag, UniquePtr<RendererEvent> aRendererEvent)
+        : mTag(aTag), mRendererEvent(std::move(aRendererEvent)) {
+      MOZ_ASSERT(mTag == Tag::ExternalEvent);
+    }
+
+    const bool mCompositeNeeded = false;
+    UniquePtr<RendererEvent> mRendererEvent;
+    const FramePublishId mPublishId = FramePublishId::INVALID;
+
+   public:
+    static WrNotifierEvent WakeUp(const bool aCompositeNeeded) {
+      return WrNotifierEvent(Tag::WakeUp, aCompositeNeeded);
+    }
+
+    static WrNotifierEvent NewFrameReady(const bool aCompositeNeeded,
+                                         const FramePublishId aPublishId) {
+      return WrNotifierEvent(Tag::NewFrameReady, aCompositeNeeded, aPublishId);
+    }
+
+    static WrNotifierEvent ExternalEvent(
+        UniquePtr<RendererEvent> aRendererEvent) {
+      return WrNotifierEvent(Tag::ExternalEvent, std::move(aRendererEvent));
+    }
+
+    bool CompositeNeeded() {
+      if (mTag == Tag::WakeUp || mTag == Tag::NewFrameReady) {
+        return mCompositeNeeded;
+      }
+      MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+      return false;
+    }
+    FramePublishId PublishId() {
+      if (mTag == Tag::NewFrameReady) {
+        return mPublishId;
+      }
+      MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+      return FramePublishId::INVALID;
+    }
+    UniquePtr<RendererEvent> ExternalEvent() {
+      if (mTag == Tag::ExternalEvent) {
+        return std::move(mRendererEvent);
+      }
+      MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+      return nullptr;
+    }
+  };
 
   explicit RenderThread(RefPtr<nsIThread> aThread);
 
   void HandleFrameOneDocInner(wr::WindowId aWindowId, bool aRender,
-                              bool aTrackedFrame);
+                              bool aTrackedFrame,
+                              Maybe<FramePublishId> aPublishId);
 
   void DeferredRenderTextureHostDestroy();
   void ShutDownTask();
   void InitDeviceTask();
   void HandleFrameOneDoc(wr::WindowId aWindowId, bool aRender,
-                         bool aTrackedFrame);
+                         bool aTrackedFrame, Maybe<FramePublishId> aPublishId);
   void RunEvent(wr::WindowId aWindowId, UniquePtr<RendererEvent> aEvent);
   void PostRunnable(already_AddRefed<nsIRunnable> aRunnable);
 
@@ -329,6 +399,19 @@ class RenderThread final {
   void CreateSingletonGL(nsACString& aError);
 
   void DestroyExternalImages(const std::vector<wr::ExternalImageId>&& aIds);
+
+  struct WindowInfo;
+
+  void PostWrNotifierEvents(WrWindowId aWindowId);
+  void PostWrNotifierEvents(WrWindowId aWindowId, WindowInfo* aInfo);
+  void HandleWrNotifierEvents(WrWindowId aWindowId);
+  void WrNotifierEvent_HandleWakeUp(wr::WindowId aWindowId,
+                                    bool aCompositeNeeded);
+  void WrNotifierEvent_HandleNewFrameReady(wr::WindowId aWindowId,
+                                           bool aCompositeNeeded,
+                                           FramePublishId aPublishId);
+  void WrNotifierEvent_HandleExternalEvent(
+      wr::WindowId aWindowId, UniquePtr<RendererEvent> aRendererEvent);
 
   ~RenderThread();
 
@@ -361,9 +444,14 @@ class RenderThread final {
     std::queue<PendingFrameInfo> mPendingFrames;
     uint8_t mPendingFrameBuild = 0;
     bool mIsDestroyed = false;
+    RefPtr<nsIRunnable> mWrNotifierEventsRunnable;
+    std::queue<WrNotifierEvent> mPendingWrNotifierEvents;
   };
 
   DataMutex<std::unordered_map<uint64_t, UniquePtr<WindowInfo>>> mWindowInfos;
+
+  std::unordered_map<uint64_t, UniquePtr<std::queue<WrNotifierEvent>>>
+      mWrNotifierEventsQueues;
 
   struct ExternalImageIdHashFn {
     std::size_t operator()(const wr::ExternalImageId& aId) const {
