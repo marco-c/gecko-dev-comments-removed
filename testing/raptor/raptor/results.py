@@ -15,7 +15,7 @@ from io import open
 
 import six
 from logger.logger import RaptorLogger
-from output import RaptorOutput, BrowsertimeOutput
+from output import BrowsertimeOutput, RaptorOutput
 
 LOG = RaptorLogger(component="perftest-results-handler")
 KNOWN_TEST_MODIFIERS = [
@@ -631,11 +631,12 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                     
                     if (
                         self.app
-                        and (
-                            "chrome" in self.app.lower()
-                            or "chromium" in self.app.lower()
+                        and self.app.lower() in ["chrome", "chromium", "safari"]
+                        and bt
+                        in (
+                            "fnbpaint",
+                            "dcf",
                         )
-                        and bt in ("fnbpaint", "dcf")
                     ):
                         continue
 
