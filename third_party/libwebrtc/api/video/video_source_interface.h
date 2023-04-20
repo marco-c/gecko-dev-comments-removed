@@ -85,7 +85,7 @@ struct RTC_EXPORT VideoSinkWants {
   absl::optional<FrameSize> requested_resolution;
 
   
-  bool is_active = false;
+  bool is_active = true;
 
   
   

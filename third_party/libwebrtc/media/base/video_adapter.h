@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 
+#include <string>
 #include <utility>
 
 #include "absl/types/optional.h"
@@ -137,18 +138,34 @@ class RTC_EXPORT VideoAdapter {
   
   
   
-  absl::optional<std::pair<int, int>> target_landscape_aspect_ratio_
-      RTC_GUARDED_BY(mutex_);
-  absl::optional<int> max_landscape_pixel_count_ RTC_GUARDED_BY(mutex_);
-  absl::optional<std::pair<int, int>> target_portrait_aspect_ratio_
-      RTC_GUARDED_BY(mutex_);
-  absl::optional<int> max_portrait_pixel_count_ RTC_GUARDED_BY(mutex_);
-  absl::optional<int> max_fps_ RTC_GUARDED_BY(mutex_);
+  struct OutputFormatRequest {
+    absl::optional<std::pair<int, int>> target_landscape_aspect_ratio;
+    absl::optional<int> max_landscape_pixel_count;
+    absl::optional<std::pair<int, int>> target_portrait_aspect_ratio;
+    absl::optional<int> max_portrait_pixel_count;
+    absl::optional<int> max_fps;
+
+    
+    std::string ToString() const;
+  };
+
+  OutputFormatRequest output_format_request_ RTC_GUARDED_BY(mutex_);
   int resolution_request_target_pixel_count_ RTC_GUARDED_BY(mutex_);
   int resolution_request_max_pixel_count_ RTC_GUARDED_BY(mutex_);
   int max_framerate_request_ RTC_GUARDED_BY(mutex_);
   float scale_resolution_by_ RTC_GUARDED_BY(mutex_);
   bool scale_ RTC_GUARDED_BY(mutex_);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  absl::optional<OutputFormatRequest> stashed_output_format_request_
+      RTC_GUARDED_BY(mutex_);
 
   webrtc::FramerateController framerate_controller_ RTC_GUARDED_BY(mutex_);
 

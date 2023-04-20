@@ -125,7 +125,28 @@ void VideoBroadcaster::UpdateWants() {
   wants.rotation_applied = false;
   wants.resolution_alignment = 1;
   wants.aggregates.emplace(VideoSinkWants::Aggregates());
+  wants.is_active = false;
+
+  
+  
+  
+  
+  
+  
+  
+  bool ignore_inactive_encoders_old_api = false;
   for (auto& sink : sink_pairs()) {
+    if (sink.wants.is_active && sink.wants.requested_resolution.has_value()) {
+      ignore_inactive_encoders_old_api = true;
+      break;
+    }
+  }
+
+  for (auto& sink : sink_pairs()) {
+    if (!sink.wants.is_active &&
+        (sink.wants.requested_resolution || ignore_inactive_encoders_old_api)) {
+      continue;
+    }
     
     if (sink.wants.rotation_applied) {
       wants.rotation_applied = true;
