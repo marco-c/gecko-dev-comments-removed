@@ -34,11 +34,6 @@ known_errors = [
     },
     {
         
-        "message": "No settings file exists, new profile?",
-        "filename": "SearchSettings",
-    },
-    {
-        
         
         "message": "key_browserToolbox",
     },
