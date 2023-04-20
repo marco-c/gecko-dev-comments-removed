@@ -65,9 +65,13 @@ add_task(async function testUserId() {
 
 add_task(async function testDistribution() {
   
+  
   is(
     ClientEnvironment.distribution,
-    "default",
+    AppConstants.platform === "win" &&
+      Services.sysinfo.getProperty("hasWinPackageId")
+      ? "mozilla-MSIX"
+      : "default",
     "distribution has a default value"
   );
 
