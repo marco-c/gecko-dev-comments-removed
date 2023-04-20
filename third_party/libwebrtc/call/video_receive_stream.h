@@ -305,10 +305,6 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
   virtual ~VideoReceiveStreamInterface() {}
 };
 
-
-
-using VideoReceiveStream [[deprecated]] = VideoReceiveStreamInterface;
-
 }  
 
 #endif  
