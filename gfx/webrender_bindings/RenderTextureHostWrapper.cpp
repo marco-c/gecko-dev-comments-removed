@@ -57,7 +57,7 @@ void RenderTextureHostWrapper::EnsureRemoteTexture() const {
   }
 
   auto externalImageId =
-      layers::RemoteTextureMap::Get()->GetExternalImageIdOfRemoteTextureSync(
+      layers::RemoteTextureMap::Get()->GetExternalImageIdOfRemoteTexture(
           *mTextureId, *mOwnerId, *mForPid);
   if (externalImageId.isNothing()) {
     

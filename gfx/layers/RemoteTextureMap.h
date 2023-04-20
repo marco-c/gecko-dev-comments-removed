@@ -42,6 +42,21 @@ class RemoteTextureHostWrapper;
 class TextureData;
 class TextureHost;
 
+struct RemoteTextureInfo {
+  RemoteTextureInfo(const RemoteTextureId aTextureId,
+                    const RemoteTextureOwnerId aOwnerId,
+                    const base::ProcessId aForPid)
+      : mTextureId(aTextureId), mOwnerId(aOwnerId), mForPid(aForPid) {}
+
+  const RemoteTextureId mTextureId;
+  const RemoteTextureOwnerId mOwnerId;
+  const base::ProcessId mForPid;
+};
+
+struct RemoteTextureInfoList {
+  std::queue<RemoteTextureInfo> mList;
+};
+
 
 
 
@@ -129,8 +144,7 @@ class RemoteTextureMap {
       RemoteTextureHostWrapper* aTextureHostWrapper);
 
   
-  
-  wr::MaybeExternalImageId GetExternalImageIdOfRemoteTextureSync(
+  wr::MaybeExternalImageId GetExternalImageIdOfRemoteTexture(
       const RemoteTextureId aTextureId, const RemoteTextureOwnerId aOwnerId,
       const base::ProcessId aForPid);
 
@@ -153,6 +167,9 @@ class RemoteTextureMap {
   void UnregisterRemoteTexturePushListener(const RemoteTextureOwnerId aOwnerId,
                                            const base::ProcessId aForPid,
                                            CompositableHost* aListener);
+
+  bool CheckRemoteTextureReady(const RemoteTextureInfo& aInfo,
+                               std::function<void(void)>&& aCallback);
 
   UniquePtr<TextureData> GetRecycledBufferTextureData(
       const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid,
@@ -184,6 +201,15 @@ class RemoteTextureMap {
     std::shared_ptr<gl::SharedSurface> mSharedSurface;
   };
 
+  struct RenderingReadyCallbackHolder {
+    RenderingReadyCallbackHolder(const RemoteTextureId aTextureId,
+                                 std::function<void(void)>&& aCallback);
+
+    const RemoteTextureId mTextureId;
+    
+    std::function<void(void)> mCallback;
+  };
+
   struct TextureOwner {
     bool mIsSyncMode = true;
     
@@ -191,8 +217,13 @@ class RemoteTextureMap {
     std::deque<UniquePtr<TextureDataHolder>> mWaitingTextureDataHolders;
     
     std::deque<UniquePtr<TextureDataHolder>> mUsingTextureDataHolders;
+    
+    std::deque<UniquePtr<RenderingReadyCallbackHolder>>
+        mRenderingReadyCallbackHolders;
+
     RemoteTextureId mLatestTextureId = {0};
     CompositableTextureHostRef mLatestTextureHost;
+    CompositableTextureHostRef mLatestRenderedTextureHost;
     std::stack<UniquePtr<TextureData>> mRecycledTextures;
     std::queue<std::shared_ptr<gl::SharedSurface>> mRecycledSharedSurfaces;
   };
@@ -212,6 +243,14 @@ class RemoteTextureMap {
   void UpdateTexture(const MonitorAutoLock& aProofOfLock,
                      RemoteTextureMap::TextureOwner* aOwner,
                      const RemoteTextureId aTextureId);
+
+  std::vector<std::function<void(void)>> GetRenderingReadyCallbacks(
+      const MonitorAutoLock& aProofOfLock,
+      RemoteTextureMap::TextureOwner* aOwner, const RemoteTextureId aTextureId);
+
+  std::vector<std::function<void(void)>> GetAllRenderingReadyCallbacks(
+      const MonitorAutoLock& aProofOfLock,
+      RemoteTextureMap::TextureOwner* aOwner);
 
   void KeepTextureDataAliveForTextureHostIfNecessary(
       const MonitorAutoLock& aProofOfLock,
