@@ -785,10 +785,16 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 return True
             
             if "fenix" in try_name:
+                
+                if "-fis" in try_name:
+                    return False
                 if "-power" in try_name:
                     return True
             
             if "geckoview" in try_name:
+                
+                if "-fis" in try_name:
+                    return False
                 
                 cpu_n_memory_task = "-cpu" in try_name and "-memory" in try_name
                 power_task = "-power" in try_name
