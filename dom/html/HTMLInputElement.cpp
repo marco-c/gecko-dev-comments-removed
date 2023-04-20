@@ -1471,12 +1471,17 @@ uint32_t HTMLInputElement::Width() {
 
 bool HTMLInputElement::SanitizesOnValueGetter() const {
   
-  return mType == FormControlType::InputNumber || IsDateTimeInputType(mType);
+  return mType == FormControlType::InputEmail ||
+         mType == FormControlType::InputNumber || IsDateTimeInputType(mType);
 }
 
 void HTMLInputElement::GetValue(nsAString& aValue, CallerType aCallerType) {
   GetValueInternal(aValue, aCallerType);
 
+  
+  
+  
+  
   if (SanitizesOnValueGetter()) {
     SanitizeValue(aValue, ForValueGetter::Yes);
   }
@@ -4589,7 +4594,23 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue,
     case FormControlType::InputPassword: {
       aValue.StripCRLF();
     } break;
-    case FormControlType::InputEmail:
+    case FormControlType::InputEmail: {
+      aValue.StripCRLF();
+      aValue = nsContentUtils::TrimWhitespace<nsContentUtils::IsHTMLWhitespace>(
+          aValue);
+
+      if (Multiple() && !aValue.IsEmpty()) {
+        nsAutoString oldValue(aValue);
+        HTMLSplitOnSpacesTokenizer tokenizer(oldValue, ',');
+        aValue.Truncate(0);
+        aValue.Append(tokenizer.nextToken());
+        while (tokenizer.hasMoreTokens() ||
+               tokenizer.separatorAfterCurrentToken()) {
+          aValue.Append(',');
+          aValue.Append(tokenizer.nextToken());
+        }
+      }
+    } break;
     case FormControlType::InputUrl: {
       aValue.StripCRLF();
 
