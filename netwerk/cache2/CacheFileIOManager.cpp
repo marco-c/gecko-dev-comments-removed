@@ -1373,6 +1373,12 @@ nsresult CacheFileIOManager::OnProfile() {
 
 
 nsresult CacheFileIOManager::OnDelayedStartupFinished() {
+  
+  
+  
+  if (!CacheObserver::ClearCacheOnShutdown()) {
+    return NS_OK;
+  }
   if (!StaticPrefs::network_cache_shutdown_purge_in_background_task()) {
     return NS_OK;
   }
