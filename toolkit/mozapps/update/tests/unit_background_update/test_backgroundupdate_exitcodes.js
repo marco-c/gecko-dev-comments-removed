@@ -8,8 +8,8 @@
 
 
 
-const { EXIT_CODE } = ChromeUtils.import(
-  "resource://gre/modules/BackgroundUpdate.jsm"
+const { EXIT_CODE } = ChromeUtils.importESModule(
+  "resource://gre/modules/BackgroundUpdate.sys.mjs"
 ).BackgroundUpdate;
 
 setupProfileService();

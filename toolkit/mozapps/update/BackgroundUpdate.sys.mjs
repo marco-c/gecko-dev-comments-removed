@@ -1,25 +1,16 @@
+/* -*- js-indent-level: 2; indent-tabs-mode: nil -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["BackgroundUpdate"];
-
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-const { EXIT_CODE } = ChromeUtils.import(
-  "resource://gre/modules/BackgroundTasksManager.jsm"
-);
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { EXIT_CODE } from "resource://gre/modules/BackgroundTasksManager.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  BackgroundTasksUtils: "resource://gre/modules/BackgroundTasksUtils.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   JSONFile: "resource://gre/modules/JSONFile.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
@@ -28,7 +19,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
   ASRouterTargeting: "resource://activity-stream/lib/ASRouterTargeting.jsm",
-  BackgroundTasksUtils: "resource://gre/modules/BackgroundTasksUtils.jsm",
   TaskScheduler: "resource://gre/modules/TaskScheduler.jsm",
 });
 
@@ -37,8 +27,8 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
     "resource://gre/modules/Console.sys.mjs"
   );
   let consoleOptions = {
-    
-    
+    // tip: set maxLogLevel to "debug" and use log.debug() to create detailed
+    // messages during development. See LOG_LEVELS in Console.sys.mjs for details.
     maxLogLevel: "error",
     maxLogLevelPref: "app.update.background.loglevel",
     prefix: "BackgroundUpdate",
@@ -60,36 +50,36 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIApplicationUpdateService"
 );
 
-
-
-
-
-
+// We may want to change the definition of the task over time. When we do this,
+// we need to remove and re-register the task. We will make sure this happens
+// by storing the installed version number of the task to a pref and comparing
+// that version number to the current version. If they aren't equal, we know
+// that we have to re-register the task.
 const TASK_DEF_CURRENT_VERSION = 3;
 const TASK_INSTALLED_VERSION_PREF =
   "app.update.background.lastInstalledTaskVersion";
 
-var BackgroundUpdate = {
+export var BackgroundUpdate = {
   _initialized: false,
 
   get taskId() {
     let taskId = "backgroundupdate";
     if (AppConstants.platform == "win") {
-      
-      
-      
+      // In the future, we might lift this to TaskScheduler Win impl, so that
+      // all tasks associated with this installation look consistent in the
+      // Windows Task Scheduler UI.
       taskId = `${AppConstants.MOZ_APP_DISPLAYNAME_DO_NOT_USE} Background Update`;
     }
     return taskId;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Whether this installation has an App and a GRE omnijar.
+   *
+   * Installations without an omnijar are generally developer builds and should not be updated.
+   *
+   * @returns {boolean} - true if this installation has an App and a GRE omnijar.
+   */
   async _hasOmnijar() {
     const appOmniJar = lazy.FileUtils.getFile("XCurProcD", [
       AppConstants.OMNIJAR_NAME,
@@ -106,23 +96,23 @@ var BackgroundUpdate = {
   },
 
   _force() {
-    
+    // We want to allow developers and testers to monkey with the system.
     return Services.prefs.getBoolPref("app.update.background.force", false);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Check eligibility criteria determining if this installation should be updated using the
+   * background updater.
+   *
+   * These reasons should not factor in transient reasons, for example if there are currently multiple
+   * Firefox instances running.
+   *
+   * Both the browser proper and the backgroundupdate background task invoke this function, so avoid
+   * using profile specifics here.  Profile specifics that the background task specifically sources
+   * from the default profile are available here.
+   *
+   * @returns [string] - descriptions of failed criteria; empty if all criteria were met.
+   */
   async _reasonsToNotUpdateInstallation() {
     let SLUG = "_reasonsToNotUpdateInstallation";
     let reasons = [];
@@ -150,10 +140,10 @@ var BackgroundUpdate = {
       reasons.push(this.REASON.NO_MOZ_BACKGROUNDTASKS);
     }
 
-    
-    
-    
-    
+    // The methods exposed by the update service named like `canX` answer the
+    // question "can I do action X RIGHT NOW", where-as we want the variants
+    // named like `canUsuallyX` to answer the question "can I usually do X, now
+    // and in the future".
     let updateService = Cc["@mozilla.org/updates/update-service;1"].getService(
       Ci.nsIApplicationUpdateService
     );
@@ -178,9 +168,9 @@ var BackgroundUpdate = {
 
     if (AppConstants.platform == "win") {
       if (!updateService.canUsuallyUseBits) {
-        
-        
-        
+        // There's no technical reason to require BITS, but the experience
+        // without BITS will be worse because the background tasks will run
+        // while downloading, consuming valuable resources.
         reasons.push(this.REASON.WINDOWS_CANNOT_USUALLY_USE_BITS);
       }
     }
@@ -199,15 +189,15 @@ var BackgroundUpdate = {
     return reasons;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Check if this particular profile should schedule tasks to update this installation using the
+   * background updater.
+   *
+   * Only the browser proper should invoke this function, not background tasks, so this is the place
+   * to use profile specifics.
+   *
+   * @returns [string] - descriptions of failed criteria; empty if all criteria were met.
+   */
   async _reasonsToNotScheduleUpdates() {
     let SLUG = "_reasonsToNotScheduleUpdates";
     let reasons = [];
@@ -223,8 +213,8 @@ var BackgroundUpdate = {
       );
     }
 
-    
-    
+    // No default profile happens under xpcshell but also when running local
+    // builds.  It's unexpected in the wild so we track it separately.
     if (!lazy.BackgroundTasksUtils.hasDefaultProfile()) {
       reasons.push(this.REASON.NO_DEFAULT_PROFILE_EXISTS);
     }
@@ -270,23 +260,23 @@ var BackgroundUpdate = {
     return reasons;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Register a background update task.
+   *
+   * @param {string} [taskId]
+   *        The task identifier; defaults to the platform-specific background update task ID.
+   * @return {object} non-null if the background task was registered.
+   */
   async _registerBackgroundUpdateTask(taskId = this.taskId) {
     let binary = Services.dirsvc.get("XREExeF", Ci.nsIFile);
     let args = [
       "--MOZ_LOG",
-      
+      // Note: `maxsize:1` means 1Mb total size, trimmed to 512kb on overflow.
       "sync,prependheader,timestamp,append,maxsize:1,Dump:5",
       "--MOZ_LOG_FILE",
-      
-      
-      
+      // The full path might hit command line length limits, but also makes it
+      // much easier to find the relevant log file when starting from the
+      // Windows Task Scheduler UI.
       lazy.FileUtils.getFile("UpdRootD", ["backgroundupdate.moz_log"]).path,
       "--backgroundtask",
       "backgroundupdate",
@@ -298,14 +288,14 @@ var BackgroundUpdate = {
       "backgroundupdate-task-description"
     );
 
-    
-    
+    // Let the task run for a maximum of 20 minutes before the task scheduler
+    // stops it.
     let executionTimeoutSec = 20 * 60;
 
     let result = await lazy.TaskScheduler.registerTask(
       taskId,
       binary.path,
-      
+      // Keep this default in sync with the preference in firefox.js.
       Services.prefs.getIntPref("app.update.background.interval", 60 * 60 * 7),
       {
         workingDirectory,
@@ -323,22 +313,22 @@ var BackgroundUpdate = {
     return result;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Background Update is controlled by the per-installation pref
+   * "app.update.background.enabled". When Background Update was still in the
+   * experimental phase, the default value of this pref may have been changed.
+   * Now that the feature has been rolled out, we need to make sure that the
+   * desired default value is restored.
+   */
   async ensureExperimentToRolloutTransitionPerformed() {
     if (!lazy.UpdateUtils.PER_INSTALLATION_PREFS_SUPPORTED) {
       return;
     }
     const transitionPerformedPref = "app.update.background.rolledout";
     if (Services.prefs.getBoolPref(transitionPerformedPref, false)) {
-      
-      
-      
+      // writeUpdateConfigSetting serializes access to the config file. Because
+      // of this, we can safely return here without worrying about another call
+      // to this function that might still be in progress.
       return;
     }
     Services.prefs.setBoolPref(transitionPerformedPref, true);
@@ -352,9 +342,9 @@ var BackgroundUpdate = {
       { setDefaultOnly: true }
     );
 
-    
-    
-    
+    // To be thorough, remove any traces of the pref that used to control the
+    // default value that we just set. We don't want any users to have the
+    // impression that that pref is still useful.
     Services.prefs.clearUserPref("app.update.background.scheduling.enabled");
   },
 
@@ -380,11 +370,11 @@ var BackgroundUpdate = {
     return this.maybeScheduleBackgroundUpdateTask();
   },
 
-  
-
-
-
-
+  /**
+   * Maybe schedule (or unschedule) background tasks using OS-level task scheduling mechanisms.
+   *
+   * @return {boolean} true if a task is now scheduled, false otherwise.
+   */
   async maybeScheduleBackgroundUpdateTask() {
     let SLUG = "maybeScheduleBackgroundUpdateTask";
 
@@ -394,7 +384,7 @@ var BackgroundUpdate = {
       `${SLUG}: checking eligibility before scheduling background update task`
     );
 
-    
+    // datetime with an empty parameter records 'now'
     Glean.backgroundUpdate.timeLastUpdateScheduled.set();
 
     let previousEnabled;
@@ -415,14 +405,14 @@ var BackgroundUpdate = {
       Services.obs.addObserver(this, "auto-update-config-change");
       Services.obs.addObserver(this, "background-update-config-change");
 
-      
+      // Witness when our own prefs change.
       Services.prefs.addObserver("app.update.background.force", this);
       Services.prefs.addObserver("app.update.background.interval", this);
 
-      
+      // Witness when the langpack updating feature is changed.
       Services.prefs.addObserver("app.update.langpack.enabled", this);
 
-      
+      // Witness when langpacks come and go.
       const onAddonEvent = async addon => {
         if (addon.type != "locale") {
           return;
@@ -430,7 +420,7 @@ var BackgroundUpdate = {
         lazy.log.debug(
           `${SLUG}: langpacks may have changed; invoking maybeScheduleBackgroundUpdateTask`
         );
-        
+        // No need to await this promise.
         this.maybeScheduleBackgroundUpdateTask();
       };
       const addonsListener = {
@@ -458,7 +448,7 @@ var BackgroundUpdate = {
     let enabled = !reasons.length;
 
     if (this._force()) {
-      
+      // We want to allow developers and testers to monkey with the system.
       lazy.log.debug(
         `${SLUG}: app.update.background.force=true, ignoring reasons: ${JSON.stringify(
           reasons
@@ -480,7 +470,7 @@ var BackgroundUpdate = {
     };
 
     try {
-      
+      // Interacting with `TaskScheduler.jsm` can throw, so we'll catch.
       if (!enabled) {
         lazy.log.info(
           `${SLUG}: not scheduling background update: '${JSON.stringify(
@@ -523,33 +513,33 @@ var BackgroundUpdate = {
           lazy.log.error(`${SLUG}: Error removing old task: ${e}`);
         }
         try {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
+          // When the update directory was moved, we migrated the old contents
+          // to the new location. This can potentially happen in a background
+          // task. However, we also need to re-register the background task
+          // with the task scheduler in order to update the MOZ_LOG_FILE value
+          // to point to the new location. If the task runs before Firefox has
+          // a chance to re-register the task, the log file may be recreated in
+          // the old location. In practice, this would be unusual, because
+          // MOZ_LOG_FILE will not create the parent directories necessary to
+          // put a log file in the specified location. But just to be safe,
+          // we'll do some cleanup when we re-register the task to make sure
+          // that no log file is hanging around in the old location.
           let oldUpdateDir = lazy.FileUtils.getDir("OldUpdRootD", [], false);
           let oldLog = oldUpdateDir.clone();
           oldLog.append("backgroundupdate.moz_log");
 
           if (oldLog.exists()) {
             oldLog.remove(false);
-            
-            
-            
-            
-            
-            
+            // We may have created some directories in order to put this log
+            // file in this location. Clean them up if they are empty.
+            // (If we pass false for the recurse parameter, directories with
+            // contents will not be removed)
+            //
+            // Potentially removes "C:\ProgramData\Mozilla\updates\<hash>"
             oldUpdateDir.remove(false);
-            
+            // Potentially removes "C:\ProgramData\Mozilla\updates"
             oldUpdateDir.parent.remove(false);
-            
+            // Potentially removes "C:\ProgramData\Mozilla"
             oldUpdateDir.parent.parent.remove(false);
           }
         } catch (ex) {
@@ -581,27 +571,27 @@ var BackgroundUpdate = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Record parts of the update environment for our custom Glean ping.
+   *
+   * This is just like the Telemetry Environment, but pared down to what we're
+   * likely to use in background update-specific analyses.
+   *
+   * Right now this is only for use in the background update task, but after Bug
+   * 1703313 (migrating AUS telemetry to be Glean-aware) we might use it more
+   * generally.
+   */
   async recordUpdateEnvironment() {
     try {
       Glean.update.serviceEnabled.set(
         Services.prefs.getBoolPref("app.update.service.enabled", false)
       );
     } catch (e) {
-      
+      // It's fine if some or all of these are missing.
     }
 
-    
-    
+    // In the background update task, this should always be enabled, but let's
+    // find out if there's an error in the system.
     Glean.update.autoDownload.set(
       await lazy.UpdateUtils.getAppUpdateAutoEnabled()
     );
@@ -628,13 +618,13 @@ var BackgroundUpdate = {
     Glean.update.canUsuallyUseBits.set(lazy.UpdateService.canUsuallyUseBits);
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Schedule periodic snapshotting of the Firefox Messaging System
+   * targeting configuration.
+   *
+   * The background update task will target messages based on the
+   * latest snapshot of the default profile's targeting configuration.
+   */
   async scheduleFirefoxMessagingSystemTargetingSnapshotting() {
     let SLUG = "scheduleFirefoxMessagingSystemTargetingSnapshotting";
     let path = PathUtils.join(PathUtils.profileDir, "targeting.snapshot.json");
@@ -642,9 +632,9 @@ var BackgroundUpdate = {
     let snapshot = new lazy.JSONFile({
       beforeSave: async () => {
         if (Services.startup.shuttingDown) {
-          
-          
-          
+          // Collecting targeting information can be slow and cause shutdown
+          // crashes.  Just write what we have in that case.  During shutdown,
+          // the regular log apparatus is not available, so use `dump`.
           if (lazy.log.shouldLog("debug")) {
             dump(
               `${SLUG}: shutting down, so not updating Firefox Messaging System targeting information from beforeSave\n`
@@ -657,17 +647,17 @@ var BackgroundUpdate = {
           `${SLUG}: preparing to write Firefox Messaging System targeting information to ${path}`
         );
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // Merge latest data into existing data.  This data may be partial, due
+        // to runtime errors and abbreviated collections, especially when
+        // shutting down.  We accept the risk of incomplete or even internally
+        // inconsistent data: it's generally better to have stale data (and
+        // potentially target a user as they appeared in the past) than to block
+        // shutdown for more accurate results.  An alternate approach would be
+        // to restrict the targeting data collected, but it's hard to
+        // distinguish expensive collection operations and the system loses
+        // flexibility when restrictions of this type are added.
         let latestData = await lazy.ASRouterTargeting.getEnvironmentSnapshot();
-        
+        // We expect to always have data, but: belt-and-braces.
         if (snapshot?.data?.environment) {
           Object.assign(snapshot.data.environment, latestData.environment);
         } else {
@@ -677,26 +667,26 @@ var BackgroundUpdate = {
       path,
     });
 
-    
-    
+    // We don't `load`, since we don't care about reading existing (now stale)
+    // data.
     snapshot.data = await lazy.ASRouterTargeting.getEnvironmentSnapshot();
 
-    
+    // Persist.
     snapshot.saveSoon();
 
-    
-    
+    // Continue persisting periodically.  `JSONFile.sys.mjs` will also persist one
+    // last time before shutdown.
     this._targetingSnapshottingTimer = Cc[
       "@mozilla.org/timer;1"
     ].createInstance(Ci.nsITimer);
 
-    
+    // Hold a reference to prevent GC.
     this._targetingSnapshottingTimer.initWithCallback(
       () => {
         if (Services.startup.shuttingDown) {
-          
-          
-          
+          // Collecting targeting information can be slow and cause shutdown
+          // crashes, so if we're shutting down, don't try to collect.  During
+          // shutdown, the regular log apparatus is not available, so use `dump`.
           if (lazy.log.shouldLog("debug")) {
             dump(
               `${SLUG}: shutting down, so not updating Firefox Messaging System targeting information from timer\n`
@@ -707,8 +697,8 @@ var BackgroundUpdate = {
 
         snapshot.saveSoon();
       },
-      
-      
+      // By default, snapshot Firefox Messaging System targeting for use by the
+      // background update task every 30 minutes.
       Services.prefs.getIntPref(
         "app.update.background.messaging.targeting.snapshot.intervalSec",
         1800
@@ -717,16 +707,16 @@ var BackgroundUpdate = {
     );
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Reads the snapshotted Firefox Messaging System targeting out of a profile.
+   * Collects background update specific telemetry.  Never throws.
+   *
+   * If no `lock` is given, the default profile is locked and the preferences
+   * read from it.  If `lock` is given, read from the given lock's directory.
+   *
+   * @param {nsIProfileLock} [lock] optional lock to use
+   * @returns {object} possibly empty targeting snapshot.
+   */
   async readFirefoxMessagingSystemTargetingSnapshot(lock = null) {
     let SLUG = "readFirefoxMessagingSystemTargetingSnapshot";
 
@@ -753,8 +743,8 @@ var BackgroundUpdate = {
       }
       if (defaultProfileTargetingSnapshot?.environment?.currentDate) {
         Glean.backgroundUpdate.targetingEnvCurrentDate.set(
-          
-          
+          // Glean date times are provided in nanoseconds, `getTime()` yields
+          // milliseconds (after the Unix epoch).
           new Date(
             defaultProfileTargetingSnapshot.environment.currentDate
           ).getTime() * 1000
@@ -762,8 +752,8 @@ var BackgroundUpdate = {
       }
       if (defaultProfileTargetingSnapshot?.environment?.profileAgeCreated) {
         Glean.backgroundUpdate.targetingEnvProfileAge.set(
-          
-          
+          // Glean date times are provided in nanoseconds, `profileAgeCreated`
+          // is in milliseconds (after the Unix epoch).
           defaultProfileTargetingSnapshot.environment.profileAgeCreated * 1000
         );
       }
@@ -782,27 +772,27 @@ var BackgroundUpdate = {
     return defaultProfileTargetingSnapshot;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Local helper function to record all reasons why the background updater is
+   * not used with Glean. This function will only track the first 20 reasons.
+   * It is also fault tolerant and will only display debug messages if the
+   * metric cannot be recorded for any reason.
+   *
+   * @param {array of strings} [reasons]
+   *        a list of BackgroundUpdate.REASON values (=> string)
+   */
   async _recordGleanMetrics(reasons) {
-    
+    // Record Glean metrics with all the reasons why the update was impossible.
     for (const [key, value] of Object.entries(this.REASON)) {
       if (reasons.includes(value)) {
         try {
-          
-          
+          // `testGetValue` throws `NS_ERROR_LOSS_OF_SIGNIFICANT_DATA` in case
+          // of `InvalidOverflow` and other outstanding errors.
           Glean.backgroundUpdate.reasonsToNotUpdate.testGetValue();
           Glean.backgroundUpdate.reasonsToNotUpdate.add(key);
         } catch (e) {
-          
-          
+          // Debug print an error message and break the loop to avoid Glean
+          // messages on the console would otherwise be caused by the add().
           lazy.log.debug("Error recording reasonsToNotUpdate");
           console.log("Error recording reasonsToNotUpdate");
           break;
@@ -831,19 +821,19 @@ BackgroundUpdate.REASON = {
   WINDOWS_CANNOT_USUALLY_USE_BITS: "on Windows but cannot usually use BITS",
 };
 
-
-
-
-
-
-
-
+/**
+ * Specific exit codes for `--backgroundtask backgroundupdate`.
+ *
+ * These help distinguish common failure cases.  In particular, they distinguish
+ * "default profile does not exist" from "default profile cannot be locked" from
+ * more general errors reading from the default profile.
+ */
 BackgroundUpdate.EXIT_CODE = {
   ...EXIT_CODE,
-  
+  // We clone the other exit codes simply so we can use one object for all the codes.
   DEFAULT_PROFILE_DOES_NOT_EXIST: 11,
   DEFAULT_PROFILE_CANNOT_BE_LOCKED: 12,
   DEFAULT_PROFILE_CANNOT_BE_READ: 13,
-  
+  // Another instance is running.
   OTHER_INSTANCE: 21,
 };
