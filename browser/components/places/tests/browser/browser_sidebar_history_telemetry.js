@@ -1,0 +1,192 @@
+
+
+
+
+"use strict";
+
+const { TelemetryTestUtils } = ChromeUtils.import(
+  "resource://testing-common/TelemetryTestUtils.jsm"
+);
+const firstNodeIndex = 0;
+
+function mockPromptService(response) {
+  let promptService = {
+    
+    _response: response,
+    QueryInterface: ChromeUtils.generateQI(["nsIPromptService"]),
+    confirmEx: () => promptService._response,
+  };
+
+  Services.prompt = promptService;
+
+  return promptService;
+}
+
+add_setup(async function() {
+  
+  let pages = [
+    "https://sidebar.mozilla.org/a",
+    "https://sidebar.mozilla.org/b",
+    "https://sidebar.mozilla.org/c",
+    "https://www.mozilla.org/d",
+  ];
+
+  
+  let time = Date.now();
+  let places = [];
+  for (let i = 0; i < pages.length; i++) {
+    places.push({
+      uri: NetUtil.newURI(pages[i]),
+      visitDate: (time - i) * 1000,
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    });
+  }
+  await PlacesTestUtils.addVisits(places);
+
+  registerCleanupFunction(async () => {
+    await PlacesUtils.history.clear();
+  });
+});
+
+add_task(async function test_click_multiple_history_entries() {
+  await withSidebarTree("history", async tree => {
+    tree.ownerDocument.getElementById("byday").doCommand();
+
+    
+    tree.selectNode(tree.view.nodeForTreeIndex(firstNodeIndex));
+    is(
+      tree.selectedNode.title,
+      "Today",
+      "The Today history sidebar button is selected"
+    );
+
+    
+    
+    
+    mockPromptService(1);
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.tabs.maxOpenBeforeWarn", 4]],
+    });
+
+    
+    synthesizeClickOnSelectedTreeCell(tree, { button: 1 });
+
+    TelemetryTestUtils.assertScalarUnset(
+      TelemetryTestUtils.getProcessScalars("parent", true, true),
+      "sidebar.link"
+    );
+
+    
+    
+    mockPromptService(0);
+    synthesizeClickOnSelectedTreeCell(tree, { button: 1 });
+
+    TelemetryTestUtils.assertKeyedScalar(
+      TelemetryTestUtils.getProcessScalars("parent", true, true),
+      "sidebar.link",
+      "history",
+      4
+    );
+  });
+
+  
+  let { prompt } = Services;
+  Services.prompt = prompt;
+  await SpecialPowers.popPrefEnv();
+
+  while (gBrowser.tabs.length > 1) {
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  }
+});
+
+add_task(async function test_search_and_filter() {
+  let cumulativeSearchesHistogram = Services.telemetry.getHistogramById(
+    "PLACES_SEARCHBAR_CUMULATIVE_SEARCHES"
+  );
+  cumulativeSearchesHistogram.clear();
+  let cumulativeFilterCountHistogram = Services.telemetry.getHistogramById(
+    "PLACES_SEARCHBAR_CUMULATIVE_FILTER_COUNT"
+  );
+  cumulativeFilterCountHistogram.clear();
+
+  await withSidebarTree("history", async tree => {
+    
+    tree.ownerDocument.getElementById("bylastvisited").doCommand();
+    info("Search filter was changed to bylastvisited");
+
+    
+    let searchBox = tree.ownerDocument.getElementById("search-box");
+    searchBox.value = "sidebar.mozilla";
+    searchBox.doCommand();
+    info("Tree was searched with sting sidebar.mozilla");
+
+    searchBox.value = "";
+    searchBox.doCommand();
+    info("Search was reset");
+
+    
+    searchBox.value = "sidebar.mozilla";
+    searchBox.doCommand();
+    info("Second search was performed");
+
+    
+    tree.selectNode(tree.view.nodeForTreeIndex(firstNodeIndex));
+    synthesizeClickOnSelectedTreeCell(tree, { button: 1 });
+    info("First link was selected and then clicked on");
+
+    TelemetryTestUtils.assertKeyedScalar(
+      TelemetryTestUtils.getProcessScalars("parent", true, true),
+      "sidebar.link",
+      "history",
+      1
+    );
+  });
+
+  TelemetryTestUtils.assertHistogram(cumulativeSearchesHistogram, 2, 1);
+  info("Cumulative search telemetry looks right");
+
+  TelemetryTestUtils.assertHistogram(cumulativeFilterCountHistogram, 1, 1);
+  info("Cumulative search filter telemetry looks right");
+
+  cumulativeSearchesHistogram.clear();
+  cumulativeFilterCountHistogram.clear();
+
+  await withSidebarTree("history", async tree => {
+    
+    tree.ownerDocument.getElementById("byday").doCommand();
+    info("First search filter applied");
+
+    
+    tree.ownerDocument.getElementById("bylastvisited").doCommand();
+    info("Second search filter applied");
+
+    
+    tree.ownerDocument.getElementById("byday").doCommand();
+    info("Third search filter applied");
+
+    
+    let searchBox = tree.ownerDocument.getElementById("search-box");
+    searchBox.value = "sidebar.mozilla";
+    searchBox.doCommand();
+
+    
+    tree.selectNode(tree.view.nodeForTreeIndex(firstNodeIndex));
+    synthesizeClickOnSelectedTreeCell(tree, { button: 1 });
+
+    TelemetryTestUtils.assertKeyedScalar(
+      TelemetryTestUtils.getProcessScalars("parent", true, true),
+      "sidebar.link",
+      "history",
+      1
+    );
+  });
+
+  TelemetryTestUtils.assertHistogram(cumulativeSearchesHistogram, 1, 1);
+  TelemetryTestUtils.assertHistogram(cumulativeFilterCountHistogram, 3, 1);
+
+  cumulativeSearchesHistogram.clear();
+  cumulativeFilterCountHistogram.clear();
+  while (gBrowser.tabs.length > 1) {
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  }
+});
