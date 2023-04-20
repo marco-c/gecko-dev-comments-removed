@@ -167,6 +167,8 @@ class TCPSocket final : public DOMEventTargetHelper,
   
   void CalculateBufferedAmount();
   
+  void ActivateTLSHelper();
+  
   void ActivateTLS();
   
   nsresult MaybeReportErrorAndCloseIfOpen(nsresult status);
