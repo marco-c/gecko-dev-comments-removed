@@ -1048,8 +1048,9 @@ class InactivePropertyHelper {
 
 
   hasVerticalWritingMode(node) {
-    const writingMode = computedStyle(node).writingMode;
-    return writingMode.includes("vertical") || writingMode.includes("sideways");
+    
+    
+    return computedStyle(node).writingMode !== "horizontal-tb";
   }
 
   
