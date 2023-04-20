@@ -38,6 +38,19 @@ export function getSourceActor(state, sourceActorId) {
 
 
 
+export function isSourceActorWithSourceMap(state, sourceActorId) {
+  return state.sourceActors.mutableSourceActorsWithSourceMap.has(sourceActorId);
+}
+
+
+
+
+
+
+
+
+
+
 export function getSourceActorsForThread(state, threadActorIDs) {
   if (!Array.isArray(threadActorIDs)) {
     threadActorIDs = [threadActorIDs];

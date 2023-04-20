@@ -21,6 +21,13 @@ function initialSourceActorsState() {
     
     
     mutableBreakableLines: new Map(),
+
+    
+    
+    
+    
+    
+    mutableSourceActorsWithSourceMap: new Set(),
   };
 }
 
@@ -31,6 +38,12 @@ export default function update(state = initialSourceActorsState(), action) {
     case "INSERT_SOURCE_ACTORS": {
       for (const sourceActor of action.sourceActors) {
         state.mutableSourceActors.set(sourceActor.id, sourceActor);
+
+        
+        
+        if (sourceActor.sourceMapURL) {
+          state.mutableSourceActorsWithSourceMap.add(sourceActor.id);
+        }
       }
       return {
         ...state,
@@ -46,6 +59,8 @@ export default function update(state = initialSourceActorsState(), action) {
       for (const sourceActor of state.mutableSourceActors.values()) {
         if (sourceActor.thread == action.threadActorID) {
           state.mutableSourceActors.delete(sourceActor.id);
+          state.mutableBreakableLines.delete(sourceActor.id);
+          state.mutableSourceActorsWithSourceMap.delete(sourceActor.id);
         }
       }
       return {
@@ -57,32 +72,15 @@ export default function update(state = initialSourceActorsState(), action) {
       return updateBreakableLines(state, action);
 
     case "CLEAR_SOURCE_ACTOR_MAP_URL":
-      return clearSourceActorMapURL(state, action.sourceActorId);
+      if (state.mutableSourceActorsWithSourceMap.delete(action.sourceActorId)) {
+        return {
+          ...state,
+        };
+      }
+      return state;
   }
 
   return state;
-}
-
-function clearSourceActorMapURL(state, sourceActorId) {
-  const existingSourceActor = state.mutableSourceActors.get(sourceActorId);
-  if (!existingSourceActor) {
-    return state;
-  }
-
-  
-  
-  
-  
-  
-  
-  state.mutableSourceActors.set(sourceActorId, {
-    ...existingSourceActor,
-    sourceMapURL: "",
-  });
-
-  return {
-    ...state,
-  };
 }
 
 function updateBreakableLines(state, action) {

@@ -88,9 +88,8 @@ add_task(async () => {
   
   
   await waitFor(
-    () =>
-      dbg.selectors.getSourceActorsForSource(source1.id)[0].sourceMapURL === "",
-    "Wait for the selector source to clear its sourceMapURL"
+    () => !dbg.selectors.isSourceWithMap(source1.id),
+    "Wait for the selector to report the source to be source-map less"
   );
 
   assertPrettyPrintButton(dbg, L10N.getStr("sourceTabs.prettyPrint"), false);
