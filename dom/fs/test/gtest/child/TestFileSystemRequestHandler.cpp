@@ -282,13 +282,7 @@ TEST_F(TestFileSystemRequestHandler, isGetWritableBlockedAfterShutdown) {
       mManager, mEntry,  false, GetSimplePromise(), error);
 
   ASSERT_TRUE(error.Failed());
-  
-  
-#if 0
   ASSERT_TRUE(error.ErrorCodeIs(NS_ERROR_ILLEGAL_DURING_SHUTDOWN));
-#else
-  ASSERT_TRUE(error.ErrorCodeIs(NS_ERROR_NOT_IMPLEMENTED));
-#endif
 }
 
 TEST_F(TestFileSystemRequestHandler, isGetEntriesSuccessful) {
