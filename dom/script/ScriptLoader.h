@@ -701,7 +701,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-  void CancelScriptLoadRequests();
+  void CancelAndClearScriptLoadRequests();
 
   Document* mDocument;  
   nsCOMArray<nsIScriptLoaderObserver> mObservers;
