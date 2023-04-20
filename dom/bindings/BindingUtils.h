@@ -465,7 +465,13 @@ class ProtoAndIfaceCache {
   class ArrayCache
       : public Array<JS::Heap<JSObject*>, kProtoAndIfaceCacheCount> {
    public:
-    bool HasEntryInSlot(size_t i) { return (*this)[i]; }
+    bool HasEntryInSlot(size_t i) {
+      
+      
+      
+      
+      return bool((*this)[i]);
+    }
 
     JS::Heap<JSObject*>& EntrySlotOrCreate(size_t i) { return (*this)[i]; }
 
@@ -500,7 +506,11 @@ class ProtoAndIfaceCache {
       if (!p) {
         return false;
       }
-      return (*p)[leafIndex];
+      
+      
+      
+      
+      return bool((*p)[leafIndex]);
     }
 
     JS::Heap<JSObject*>& EntrySlotOrCreate(size_t i) {
