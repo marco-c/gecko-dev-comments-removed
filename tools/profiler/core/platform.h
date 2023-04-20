@@ -44,6 +44,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
 #include "nsString.h"
+#include "shared-libraries.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -144,7 +145,8 @@ class ProfilingLog {
 
 extern mozilla::Atomic<int, mozilla::MemoryOrdering::Relaxed> gSkipSampling;
 
-void AppendSharedLibraries(mozilla::JSONWriter& aWriter);
+void AppendSharedLibraries(mozilla::JSONWriter& aWriter,
+                           const SharedLibraryInfo& aInfo);
 
 
 uint32_t ParseFeaturesFromStringArray(const char** aFeatures,
