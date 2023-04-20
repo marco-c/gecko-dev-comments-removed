@@ -7,10 +7,10 @@
 #ifndef mozilla_dom_QueueWithSizes_h
 #define mozilla_dom_QueueWithSizes_h
 
+#include <cmath>
 #include "js/TypeDecls.h"
 #include "js/Value.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/UniquePtr.h"
 #include "nsTArray.h"
 
@@ -42,7 +42,7 @@ using QueueWithSizes = AutoCleanLinkedList<ValueWithSize>;
 inline bool IsNonNegativeNumber(double v) {
   
   
-  if (mozilla::IsNaN(v)) {
+  if (std::isnan(v)) {
     return false;
   }
 
@@ -57,21 +57,26 @@ inline void EnqueueValueWithSize(QueueContainingClass aContainer,
                                  ErrorResult& aRv) {
   
   
+  
+  
   if (!IsNonNegativeNumber(aSize)) {
     aRv.ThrowRangeError("invalid size");
     return;
   }
 
   
-  if (mozilla::IsInfinite(aSize)) {
+  if (std::isinf(aSize)) {
     aRv.ThrowRangeError("Infinite queue size");
     return;
   }
 
   
   
+  
+  
   ValueWithSize* valueWithSize = new ValueWithSize(aValue, aSize);
   aContainer->Queue().insertBack(valueWithSize);
+  
   
   aContainer->SetQueueTotalSize(aContainer->QueueTotalSize() + aSize);
 }
