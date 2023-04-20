@@ -211,6 +211,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoMoveOneLineHandler final {
       : mPointToInsert(aPointToInsert),
         mMoveToEndOfContainer(MoveToEndOfContainer::No) {
     MOZ_ASSERT(mPointToInsert.IsSetAndValid());
+    MOZ_ASSERT(mPointToInsert.IsInContentNode());
   }
   
 
@@ -299,9 +300,11 @@ class MOZ_STACK_CLASS HTMLEditor::AutoMoveOneLineHandler final {
 
 
 
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
   SplitToMakeTheLineIsolated(
-      HTMLEditor& aHTMLEditor, const Element& aEditingHost,
+      HTMLEditor& aHTMLEditor, const nsIContent& aNewContainer,
+      const Element& aEditingHost,
       nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents) const;
 
   

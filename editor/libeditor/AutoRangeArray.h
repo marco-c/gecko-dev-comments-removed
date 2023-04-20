@@ -426,9 +426,12 @@ class MOZ_STACK_CLASS AutoRangeArray final {
 
 
 
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
-  SplitTextNodesAtEndBoundariesAndParentInlineElementsAtBoundaries(
-      HTMLEditor& aHTMLEditor);
+  SplitTextAtEndBoundariesAndInlineAncestorsAtBothBoundaries(
+      HTMLEditor& aHTMLEditor, const dom::Element& aEditingHost,
+      const nsIContent* aAncestorLimiter = nullptr);
 
   
 

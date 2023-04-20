@@ -513,6 +513,8 @@ Result<EditActionResult, nsresult> WhiteSpaceVisibilityKeeper::
       
       
       pointToMoveFirstLineContent = atLeftBlockChild;
+      MOZ_ASSERT(pointToMoveFirstLineContent.GetContainer() ==
+                 &aLeftBlockElement);
     } else {
       if (NS_WARN_IF(!aLeftContentInBlock.IsInComposedDoc())) {
         return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
@@ -527,6 +529,9 @@ Result<EditActionResult, nsresult> WhiteSpaceVisibilityKeeper::
       
       
       pointToMoveFirstLineContent.SetAfter(&aLeftContentInBlock);
+      if (NS_WARN_IF(!pointToMoveFirstLineContent.IsInContentNode())) {
+        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+      }
     }
 
     MOZ_ASSERT(pointToMoveFirstLineContent.IsSetAndValid());
@@ -572,22 +577,23 @@ Result<EditActionResult, nsresult> WhiteSpaceVisibilityKeeper::
             break;
           }
         }
+        if (NS_WARN_IF(!pointToMoveFirstLineContent.IsInContentNode())) {
+          return Err(NS_ERROR_FAILURE);
+        }
       } else if (unwrappedSplitNodeResult.Handled()) {
         
         
         if (nsIContent* nextContentAtSplitPoint =
                 unwrappedSplitNodeResult.GetNextContent()) {
           pointToMoveFirstLineContent.Set(nextContentAtSplitPoint);
-          if (MOZ_UNLIKELY(!pointToMoveFirstLineContent.IsSet())) {
-            NS_WARNING("Next node of split point was orphaned");
-            return Err(NS_ERROR_NULL_POINTER);
+          if (NS_WARN_IF(!pointToMoveFirstLineContent.IsInContentNode())) {
+            return Err(NS_ERROR_FAILURE);
           }
         } else {
           pointToMoveFirstLineContent =
               unwrappedSplitNodeResult.AtSplitPoint<EditorDOMPoint>();
-          if (MOZ_UNLIKELY(!pointToMoveFirstLineContent.IsSet())) {
-            NS_WARNING("Split node was orphaned");
-            return Err(NS_ERROR_NULL_POINTER);
+          if (NS_WARN_IF(!pointToMoveFirstLineContent.IsInContentNode())) {
+            return Err(NS_ERROR_FAILURE);
           }
         }
       }
