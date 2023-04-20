@@ -4293,18 +4293,36 @@ void nsWindow::OnLeaveNotifyEvent(GdkEventCrossing* aEvent) {
 
 Maybe<GdkWindowEdge> nsWindow::CheckResizerEdge(
     const LayoutDeviceIntPoint& aPoint) {
-  
-  if (!mIsPIPWindow) {
+  const bool canResize = [&] {
+    
+    if (mSizeMode != nsSizeMode_Normal) {
+      return false;
+    }
+    if (mIsPIPWindow) {
+      
+      
+      return true;
+    }
+    if (mDrawInTitlebar) {
+      
+      
+      
+      return !mIsTiled;
+    }
+    
+    
+    return false;
+  }();
+
+  if (!canResize) {
     return {};
   }
 
   
-  if (mSizeMode != nsSizeMode_Normal) {
-    return {};
-  }
+  
+  
+  const int resizerSize = (mIsPIPWindow ? 15 : 1) * GdkCeiledScaleFactor();
 
-#define RESIZER_SIZE 15
-  const int resizerSize = RESIZER_SIZE * GdkCeiledScaleFactor();
   const int topDist = aPoint.y;
   const int leftDist = aPoint.x;
   const int rightDist = mBounds.width - aPoint.x;
@@ -4318,6 +4336,10 @@ Maybe<GdkWindowEdge> nsWindow::CheckResizerEdge(
       return Some(GDK_WINDOW_EDGE_NORTH_WEST);
     }
     return Some(GDK_WINDOW_EDGE_NORTH);
+  }
+
+  if (!mIsPIPWindow) {
+    return {};
   }
 
   if (bottomDist <= resizerSize) {
