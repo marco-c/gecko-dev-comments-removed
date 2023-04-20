@@ -322,13 +322,7 @@ class PeerConnectionImpl final
   void SetId(const nsAString& id) { mName = NS_ConvertUTF16toUTF8(id).get(); }
 
   
-  bool PrivacyRequested() const {
-    return mPrivacyRequested.isSome() && *mPrivacyRequested;
-  }
-
-  bool PrivacyNeeded() const {
-    return mPrivacyRequested.isSome() && *mPrivacyRequested;
-  }
+  bool PrivacyRequested() const { return mPrivacyRequested.valueOr(false); }
 
   NS_IMETHODIMP GetFingerprint(char** fingerprint);
   void GetFingerprint(nsAString& fingerprint) {
