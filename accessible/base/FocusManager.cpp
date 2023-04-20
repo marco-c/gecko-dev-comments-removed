@@ -28,7 +28,6 @@ FocusManager::FocusManager() {}
 FocusManager::~FocusManager() {}
 
 LocalAccessible* FocusManager::FocusedLocalAccessible() const {
-  MOZ_ASSERT(NS_IsMainThread());
   if (mActiveItem) {
     if (mActiveItem->IsDefunct()) {
       MOZ_ASSERT_UNREACHABLE("Stored active item is unbound from document");
@@ -50,23 +49,9 @@ LocalAccessible* FocusManager::FocusedLocalAccessible() const {
 }
 
 Accessible* FocusManager::FocusedAccessible() const {
-#if defined(ANDROID)
-  
-  
-  
-  
-  if (NS_IsMainThread()) {
-    if (Accessible* focusedAcc = FocusedLocalAccessible()) {
-      return focusedAcc;
-    }
-  } else {
-    nsAccessibilityService::GetAndroidMonitor().AssertCurrentThreadOwns();
-  }
-#else
   if (Accessible* focusedAcc = FocusedLocalAccessible()) {
     return focusedAcc;
   }
-#endif  
 
   if (!XRE_IsParentProcess()) {
     
@@ -90,6 +75,28 @@ Accessible* FocusManager::FocusedAccessible() const {
   DocAccessibleParent* focusedDoc =
       DocAccessibleParent::GetFrom(focusedContext);
   return focusedDoc ? focusedDoc->GetFocusedAcc() : nullptr;
+}
+
+bool FocusManager::IsFocused(const LocalAccessible* aAccessible) const {
+  if (mActiveItem) return mActiveItem == aAccessible;
+
+  nsINode* focusedNode = FocusedDOMNode();
+  if (focusedNode) {
+    
+    
+    
+    
+    
+    
+    if (focusedNode->OwnerDoc() == aAccessible->GetNode()->OwnerDoc()) {
+      DocAccessible* doc =
+          GetAccService()->GetDocAccessible(focusedNode->OwnerDoc());
+      return aAccessible ==
+             (doc ? doc->GetAccessibleEvenIfNotInMapOrContainer(focusedNode)
+                  : nullptr);
+    }
+  }
+  return false;
 }
 
 bool FocusManager::IsFocusWithin(const Accessible* aContainer) const {
