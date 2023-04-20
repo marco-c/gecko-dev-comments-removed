@@ -603,7 +603,6 @@ class QuotaManager final : public BackgroundThreadObject {
 
   EnumeratedArray<Client::Type, Client::TYPE_MAX, nsCString> mShutdownSteps;
   LazyInitializedOnce<const TimeStamp> mShutdownStartedAt;
-  Atomic<bool> mShutdownStarted;
 
   
   nsCString mQuotaManagerShutdownSteps;

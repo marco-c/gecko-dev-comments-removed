@@ -3283,7 +3283,7 @@ void QuotaManager::SafeMaybeRecordQuotaClientShutdownStep(
 void QuotaManager::RecordQuotaManagerShutdownStep(
     const nsACString& aStepDescription) {
   
-  MOZ_ASSERT(mShutdownStarted);
+  MOZ_ASSERT(IsShuttingDown());
 
   RecordShutdownStep(Nothing{}, aStepDescription);
 }
@@ -3338,17 +3338,11 @@ void QuotaManager::Shutdown() {
   
 
   auto flagShutdownStarted = [this]() {
-    
+    mShutdownStartedAt.init(TimeStamp::NowLoRes());
+
     
     
     gShutdown = true;
-
-    
-    
-    
-
-    mShutdownStartedAt.init(TimeStamp::NowLoRes());
-    mShutdownStarted = true;
   };
 
   nsCOMPtr<nsITimer> crashBrowserTimer;
