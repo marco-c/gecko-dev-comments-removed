@@ -27,6 +27,20 @@ add_setup(function setup() {
 
 
 async function testProvenance(iniFileContents, testFn, telemetryTestFn) {
+  
+  
+  
+  let scalarToExtraKeyMap = {
+    "attribution.provenance.data_exists": "data_exists",
+    "attribution.provenance.file_system": "file_system",
+    "attribution.provenance.ads_exists": "ads_exists",
+    "attribution.provenance.security_zone": "security_zone",
+    "attribution.provenance.referrer_url_exists": "refer_url_exist",
+    "attribution.provenance.referrer_url_is_mozilla": "refer_url_moz",
+    "attribution.provenance.host_url_exists": "host_url_exist",
+    "attribution.provenance.host_url_is_mozilla": "host_url_moz",
+  };
+
   if (iniFileContents == null) {
     AttributionIOUtils.readUTF8 = async path => {
       throw new Error("test error: simulating provenance file read error");
@@ -40,13 +54,15 @@ async function testProvenance(iniFileContents, testFn, telemetryTestFn) {
   }
   if (telemetryTestFn) {
     Services.telemetry.clearScalars();
-    await ProvenanceData.submitProvenanceTelemetry();
+    let extras = await ProvenanceData.submitProvenanceTelemetry();
     let scalars = Services.telemetry.getSnapshotForScalars(
       "new-profile",
       false 
     ).parent;
     let checkScalar = (scalarName, expectedValue) => {
       TelemetryTestUtils.assertScalar(scalars, scalarName, expectedValue);
+      let extraKey = scalarToExtraKeyMap[scalarName];
+      Assert.equal(extras[extraKey], expectedValue.toString());
     };
     telemetryTestFn(checkScalar);
   }
