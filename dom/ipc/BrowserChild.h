@@ -835,18 +835,6 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   
   
-  
-  
-  
-  
-  
-  bool mPendingDocShellIsActive : 1;
-  bool mPendingDocShellReceivedMessage : 1;
-  bool mPendingRenderLayers : 1;
-  bool mPendingRenderLayersReceivedMessage : 1;
-
-  
-  
   Maybe<mozilla::layers::CompositorOptions> mCompositorOptions;
 
   friend class ContentChild;
@@ -889,10 +877,6 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 #if defined(ACCESSIBILITY)
   PDocAccessibleChild* mTopLevelDocAccessibleChild;
 #endif
-  layers::LayersObserverEpoch mPendingLayersObserverEpoch;
-  
-  
-  uint32_t mPendingDocShellBlockers;
   int32_t mCancelContentJSEpoch;
 
   Maybe<LayoutDeviceToLayoutDeviceMatrix4x4> mChildToParentConversionMatrix;
