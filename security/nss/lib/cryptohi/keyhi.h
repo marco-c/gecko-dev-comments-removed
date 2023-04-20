@@ -55,6 +55,11 @@ extern unsigned SECKEY_PublicKeyStrengthInBits(const SECKEYPublicKey *pubk);
 
 
 
+extern unsigned SECKEY_PrivateKeyStrengthInBits(const SECKEYPrivateKey *privk);
+
+
+
+
 extern unsigned SECKEY_SignatureLen(const SECKEYPublicKey *pubk);
 
 

@@ -49,9 +49,29 @@ def main():
         
         
         
-        for w in ['array-bounds', 'unevaluated-expression',
-                  'parentheses-equality']:
+        for w in ['array-bounds',
+                  'unevaluated-expression',
+                  'parentheses-equality',
+                  'tautological-type-limit-compare',
+                  'sign-compare',
+                  'comma',
+                  'implicit-fallthrough'
+                  ]:
             set_warning(w, 'no-')
+        for w in ['tautological-constant-in-range-compare',
+                  'bitfield-enum-conversion',
+                  'empty-body',
+                  'format-type-confusion',
+                  'ignored-qualifiers',
+                  'pointer-arith',
+                  'type-limits',
+                  'unreachable-code',
+                  'unreachable-code-return',
+                  'duplicated-cond',
+                  'logical-op',
+                  'implicit-function-declaration'
+                  ]:
+            set_warning(w,'')
         print('-Qunused-arguments')
 
     set_warning('shadow')

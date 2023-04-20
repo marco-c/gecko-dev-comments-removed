@@ -458,7 +458,6 @@ sec_PKCS7Decrypt(sec_PKCS7CipherObject *obj, unsigned char *output,
 
 
 
-        PORT_Assert((padsize == 0) || (pcount % padsize) == 0);
         if ((padsize != 0) && (pcount % padsize) != 0) {
             PORT_Assert(final);
             PORT_SetError(SEC_ERROR_BAD_DATA);
