@@ -55,8 +55,6 @@ class NetworkEventWatcher {
     this.networkEvents = new Map();
 
     this.watcherActor = watcherActor;
-    this.pool = new Pool(watcherActor.conn, "network-events");
-    this.watcherActor.manage(this.pool);
     this.onNetworkEventAvailable = onAvailable;
     this.onNetworkEventUpdated = onUpdated;
     
@@ -72,10 +70,27 @@ class NetworkEventWatcher {
   
 
 
+
+
   clear() {
     this.networkEvents.clear();
     this.listener.clear();
-    this.pool.destroy();
+    if (this._pool) {
+      this._pool.destroy();
+      this._pool = null;
+    }
+  }
+
+  
+
+
+  get pool() {
+    if (this._pool) {
+      return this._pool;
+    }
+    this._pool = new Pool(this.watcherActor.conn, "network-events");
+    this.watcherActor.manage(this._pool);
+    return this._pool;
   }
 
   
