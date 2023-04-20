@@ -39,26 +39,45 @@ static INLINE int16x8x2_t vpx_vtrnq_s64_to_s16(int32x4_t a0, int32x4_t a1) {
 
 static INLINE int32x4x2_t vpx_vtrnq_s64_to_s32(int32x4_t a0, int32x4_t a1) {
   int32x4x2_t b0;
+#if defined(__aarch64__)
+  b0.val[0] = vreinterpretq_s32_s64(
+      vtrn1q_s64(vreinterpretq_s64_s32(a0), vreinterpretq_s64_s32(a1)));
+  b0.val[1] = vreinterpretq_s32_s64(
+      vtrn2q_s64(vreinterpretq_s64_s32(a0), vreinterpretq_s64_s32(a1)));
+#else
   b0.val[0] = vcombine_s32(vget_low_s32(a0), vget_low_s32(a1));
   b0.val[1] = vcombine_s32(vget_high_s32(a0), vget_high_s32(a1));
+#endif
   return b0;
 }
 
 static INLINE int64x2x2_t vpx_vtrnq_s64(int32x4_t a0, int32x4_t a1) {
   int64x2x2_t b0;
+#if defined(__aarch64__)
+  b0.val[0] = vtrn1q_s64(vreinterpretq_s64_s32(a0), vreinterpretq_s64_s32(a1));
+  b0.val[1] = vtrn2q_s64(vreinterpretq_s64_s32(a0), vreinterpretq_s64_s32(a1));
+#else
   b0.val[0] = vcombine_s64(vreinterpret_s64_s32(vget_low_s32(a0)),
                            vreinterpret_s64_s32(vget_low_s32(a1)));
   b0.val[1] = vcombine_s64(vreinterpret_s64_s32(vget_high_s32(a0)),
                            vreinterpret_s64_s32(vget_high_s32(a1)));
+#endif
   return b0;
 }
 
 static INLINE uint8x16x2_t vpx_vtrnq_u64_to_u8(uint32x4_t a0, uint32x4_t a1) {
   uint8x16x2_t b0;
+#if defined(__aarch64__)
+  b0.val[0] = vreinterpretq_u8_u64(
+      vtrn1q_u64(vreinterpretq_u64_u32(a0), vreinterpretq_u64_u32(a1)));
+  b0.val[1] = vreinterpretq_u8_u64(
+      vtrn2q_u64(vreinterpretq_u64_u32(a0), vreinterpretq_u64_u32(a1)));
+#else
   b0.val[0] = vcombine_u8(vreinterpret_u8_u32(vget_low_u32(a0)),
                           vreinterpret_u8_u32(vget_low_u32(a1)));
   b0.val[1] = vcombine_u8(vreinterpret_u8_u32(vget_high_u32(a0)),
                           vreinterpret_u8_u32(vget_high_u32(a1)));
+#endif
   return b0;
 }
 
@@ -155,17 +174,13 @@ static INLINE void transpose_s16_4x4q(int16x8_t *a0, int16x8_t *a1) {
   
   
 
-  const int32x4_t c0 =
-      vcombine_s32(vget_low_s32(b0.val[0]), vget_low_s32(b0.val[1]));
-  const int32x4_t c1 =
-      vcombine_s32(vget_high_s32(b0.val[0]), vget_high_s32(b0.val[1]));
+  const int16x8x2_t c0 = vpx_vtrnq_s64_to_s16(b0.val[0], b0.val[1]);
 
   
   
   
 
-  const int16x8x2_t d0 =
-      vtrnq_s16(vreinterpretq_s16_s32(c0), vreinterpretq_s16_s32(c1));
+  const int16x8x2_t d0 = vtrnq_s16(c0.val[0], c0.val[1]);
 
   *a0 = d0.val[0];
   *a1 = d0.val[1];
@@ -186,17 +201,13 @@ static INLINE void transpose_u16_4x4q(uint16x8_t *a0, uint16x8_t *a1) {
   
   
 
-  const uint32x4_t c0 =
-      vcombine_u32(vget_low_u32(b0.val[0]), vget_low_u32(b0.val[1]));
-  const uint32x4_t c1 =
-      vcombine_u32(vget_high_u32(b0.val[0]), vget_high_u32(b0.val[1]));
+  const uint16x8x2_t c0 = vpx_vtrnq_u64_to_u16(b0.val[0], b0.val[1]);
 
   
   
   
 
-  const uint16x8x2_t d0 =
-      vtrnq_u16(vreinterpretq_u16_u32(c0), vreinterpretq_u16_u32(c1));
+  const uint16x8x2_t d0 = vtrnq_u16(c0.val[0], c0.val[1]);
 
   *a0 = d0.val[0];
   *a1 = d0.val[1];
@@ -309,34 +320,11 @@ static INLINE void transpose_s16_4x8(const int16x4_t a0, const int16x4_t a1,
   
   
   
-  
-  
-  
-  
 
-  const int16x4x2_t b0 = vtrn_s16(a0, a1);
-  const int16x4x2_t b1 = vtrn_s16(a2, a3);
-  const int16x4x2_t b2 = vtrn_s16(a4, a5);
-  const int16x4x2_t b3 = vtrn_s16(a6, a7);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  const int32x2x2_t c0 = vtrn_s32(vreinterpret_s32_s16(b0.val[0]),
-                                  vreinterpret_s32_s16(b1.val[0]));
-  const int32x2x2_t c1 = vtrn_s32(vreinterpret_s32_s16(b0.val[1]),
-                                  vreinterpret_s32_s16(b1.val[1]));
-  const int32x2x2_t c2 = vtrn_s32(vreinterpret_s32_s16(b2.val[0]),
-                                  vreinterpret_s32_s16(b3.val[0]));
-  const int32x2x2_t c3 = vtrn_s32(vreinterpret_s32_s16(b2.val[1]),
-                                  vreinterpret_s32_s16(b3.val[1]));
+  const int16x8_t b0 = vcombine_s16(a0, a4);
+  const int16x8_t b1 = vcombine_s16(a1, a5);
+  const int16x8_t b2 = vcombine_s16(a2, a6);
+  const int16x8_t b3 = vcombine_s16(a3, a7);
 
   
   
@@ -344,14 +332,24 @@ static INLINE void transpose_s16_4x8(const int16x4_t a0, const int16x4_t a1,
   
   
 
-  *o0 = vcombine_s16(vreinterpret_s16_s32(c0.val[0]),
-                     vreinterpret_s16_s32(c2.val[0]));
-  *o1 = vcombine_s16(vreinterpret_s16_s32(c1.val[0]),
-                     vreinterpret_s16_s32(c3.val[0]));
-  *o2 = vcombine_s16(vreinterpret_s16_s32(c0.val[1]),
-                     vreinterpret_s16_s32(c2.val[1]));
-  *o3 = vcombine_s16(vreinterpret_s16_s32(c1.val[1]),
-                     vreinterpret_s16_s32(c3.val[1]));
+  const int16x8x2_t c0 = vtrnq_s16(b0, b1);
+  const int16x8x2_t c1 = vtrnq_s16(b2, b3);
+
+  
+  
+  
+  
+  
+
+  const int32x4x2_t d0 = vtrnq_s32(vreinterpretq_s32_s16(c0.val[0]),
+                                   vreinterpretq_s32_s16(c1.val[0]));
+  const int32x4x2_t d1 = vtrnq_s32(vreinterpretq_s32_s16(c0.val[1]),
+                                   vreinterpretq_s32_s16(c1.val[1]));
+
+  *o0 = vreinterpretq_s16_s32(d0.val[0]);
+  *o1 = vreinterpretq_s16_s32(d1.val[0]);
+  *o2 = vreinterpretq_s16_s32(d0.val[1]);
+  *o3 = vreinterpretq_s16_s32(d1.val[1]);
 }
 
 static INLINE void transpose_s32_4x8(int32x4_t *const a0, int32x4_t *const a1,

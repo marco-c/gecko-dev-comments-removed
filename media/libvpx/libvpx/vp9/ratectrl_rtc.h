@@ -30,6 +30,7 @@ namespace libvpx {
 struct VP9RateControlRtcConfig : public VpxRateControlRtcConfig {
  public:
   VP9RateControlRtcConfig() {
+    ss_number_layers = 1;
     vp9_zero(max_quantizers);
     vp9_zero(min_quantizers);
     vp9_zero(scaling_factor_den);
@@ -44,8 +45,6 @@ struct VP9RateControlRtcConfig : public VpxRateControlRtcConfig {
 
   
   int ss_number_layers;
-  
-  int ts_number_layers;
   int max_quantizers[VPX_MAX_LAYERS];
   int min_quantizers[VPX_MAX_LAYERS];
   int scaling_factor_num[VPX_SS_MAX_LAYERS];
@@ -85,25 +84,25 @@ struct VP9SegmentationData {
 
 
 
-
 class VP9RateControlRTC {
  public:
   static std::unique_ptr<VP9RateControlRTC> Create(
       const VP9RateControlRtcConfig &cfg);
   ~VP9RateControlRTC();
 
-  void UpdateRateControl(const VP9RateControlRtcConfig &rc_cfg);
+  bool UpdateRateControl(const VP9RateControlRtcConfig &rc_cfg);
   
   int GetQP() const;
   int GetLoopfilterLevel() const;
   bool GetSegmentationData(VP9SegmentationData *segmentation_data) const;
   void ComputeQP(const VP9FrameParamsQpRTC &frame_params);
   
-  void PostEncodeUpdate(uint64_t encoded_frame_size);
+  void PostEncodeUpdate(uint64_t encoded_frame_size,
+                        const VP9FrameParamsQpRTC &frame_params);
 
  private:
   VP9RateControlRTC() {}
-  void InitRateControl(const VP9RateControlRtcConfig &cfg);
+  bool InitRateControl(const VP9RateControlRtcConfig &cfg);
   struct VP9_COMP *cpi_;
 };
 

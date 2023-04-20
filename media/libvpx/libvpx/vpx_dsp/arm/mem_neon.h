@@ -102,6 +102,16 @@ static INLINE void store_s16q_to_tran_low(tran_low_t *buf, const int16x8_t a) {
 #endif
 }
 
+#if CONFIG_VP9_HIGHBITDEPTH
+static INLINE void store_s32q_to_tran_low(tran_low_t *buf, const int32x4_t a) {
+  vst1q_s32(buf, a);
+}
+
+static INLINE int32x4_t load_tran_low_to_s32q(const tran_low_t *buf) {
+  return vld1q_s32(buf);
+}
+#endif
+
 
 
 
@@ -110,6 +120,34 @@ static INLINE void store_s16q_to_tran_low(tran_low_t *buf, const int16x8_t a) {
 
 static INLINE void uint32_to_mem(uint8_t *buf, uint32_t a) {
   memcpy(buf, &a, 4);
+}
+
+
+static INLINE uint8x8_t load_unaligned_u8_4x1(const uint8_t *buf) {
+  uint32_t a;
+  uint32x2_t a_u32;
+  memcpy(&a, buf, 4);
+  a_u32 = vdup_n_u32(0);
+  a_u32 = vset_lane_u32(a, a_u32, 0);
+  return vreinterpret_u8_u32(a_u32);
+}
+
+
+
+static INLINE uint8x8_t load_replicate_u8_4x1(const uint8_t *buf) {
+  uint32_t a;
+  memcpy(&a, buf, 4);
+  return vreinterpret_u8_u32(vdup_n_u32(a));
+}
+
+
+static INLINE void store_u8_4x1(uint8_t *buf, uint8x8_t a) {
+  vst1_lane_u32((uint32_t *)buf, vreinterpret_u32_u8(a), 0);
+}
+
+
+static INLINE void store_u8_4x1_high(uint8_t *buf, uint8x8_t a) {
+  vst1_lane_u32((uint32_t *)buf, vreinterpret_u32_u8(a), 1);
 }
 
 
@@ -124,6 +162,15 @@ static INLINE uint8x8_t load_unaligned_u8(const uint8_t *buf,
   memcpy(&a, buf, 4);
   a_u32 = vset_lane_u32(a, a_u32, 1);
   return vreinterpret_u8_u32(a_u32);
+}
+
+
+static INLINE uint16x4_t load_unaligned_u16(const uint16_t *buf) {
+  uint64_t a;
+  uint64x1_t a_u64 = vdup_n_u64(0);
+  memcpy(&a, buf, 8);
+  a_u64 = vset_lane_u64(a, a_u64, 0);
+  return vreinterpret_u16_u64(a_u64);
 }
 
 
@@ -370,6 +417,27 @@ static INLINE void store_u8_16x8(uint8_t *s, const ptrdiff_t p,
   vst1q_u8(s, s6);
   s += p;
   vst1q_u8(s, s7);
+}
+
+static INLINE void load_u16_8x8(const uint16_t *s, const ptrdiff_t p,
+                                uint16x8_t *s0, uint16x8_t *s1, uint16x8_t *s2,
+                                uint16x8_t *s3, uint16x8_t *s4, uint16x8_t *s5,
+                                uint16x8_t *s6, uint16x8_t *s7) {
+  *s0 = vld1q_u16(s);
+  s += p;
+  *s1 = vld1q_u16(s);
+  s += p;
+  *s2 = vld1q_u16(s);
+  s += p;
+  *s3 = vld1q_u16(s);
+  s += p;
+  *s4 = vld1q_u16(s);
+  s += p;
+  *s5 = vld1q_u16(s);
+  s += p;
+  *s6 = vld1q_u16(s);
+  s += p;
+  *s7 = vld1q_u16(s);
 }
 
 #endif  

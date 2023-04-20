@@ -14,6 +14,8 @@
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
 #include "vpx_dsp/arm/mem_neon.h"
+#include "vp9/common/vp9_scan.h"
+#include "vp9/encoder/vp9_block.h"
 
 static INLINE void calculate_dqcoeff_and_store(const int16x8_t qcoeff,
                                                const int16x8_t dequant,
@@ -213,23 +215,21 @@ quantize_b_32x32_neon(const tran_low_t *coeff_ptr, tran_low_t *qcoeff_ptr,
 
 
 
-void vpx_quantize_b_32x32_neon(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
-                               const int16_t *zbin_ptr,
-                               const int16_t *round_ptr,
-                               const int16_t *quant_ptr,
-                               const int16_t *quant_shift_ptr,
+void vpx_quantize_b_32x32_neon(const tran_low_t *coeff_ptr,
+                               const struct macroblock_plane *const mb_plane,
                                tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
                                const int16_t *dequant_ptr, uint16_t *eob_ptr,
-                               const int16_t *scan, const int16_t *iscan) {
+                               const struct ScanOrder *const scan_order) {
   const int16x8_t neg_one = vdupq_n_s16(-1);
   uint16x8_t eob_max;
   int i;
+  const int16_t *iscan = scan_order->iscan;
 
   
-  int16x8_t zbin = vrshrq_n_s16(vld1q_s16(zbin_ptr), 1);
-  int16x8_t round = vrshrq_n_s16(vld1q_s16(round_ptr), 1);
-  int16x8_t quant = vld1q_s16(quant_ptr);
-  int16x8_t quant_shift = vld1q_s16(quant_shift_ptr);
+  int16x8_t zbin = vrshrq_n_s16(vld1q_s16(mb_plane->zbin), 1);
+  int16x8_t round = vrshrq_n_s16(vld1q_s16(mb_plane->round), 1);
+  int16x8_t quant = vld1q_s16(mb_plane->quant);
+  int16x8_t quant_shift = vld1q_s16(mb_plane->quant_shift);
   int16x8_t dequant = vld1q_s16(dequant_ptr);
 
   
@@ -287,8 +287,4 @@ void vpx_quantize_b_32x32_neon(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
     vst1_lane_u16(eob_ptr, eob_max_2, 0);
   }
 #endif  
-  
-  
-  (void)n_coeffs;
-  (void)scan;
 }

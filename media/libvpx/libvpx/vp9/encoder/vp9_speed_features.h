@@ -246,6 +246,24 @@ typedef enum {
   USE_8_TAPS_SHARP,
 } SUBPEL_SEARCH_TYPE;
 
+typedef enum {
+  
+  DISABLE_TRELLIS_OPT,
+  
+  ENABLE_TRELLIS_OPT,
+  
+  
+  ENABLE_TRELLIS_OPT_TX_RD_SRC_VAR,
+  
+  
+  ENABLE_TRELLIS_OPT_TX_RD_RESIDUAL_MSE,
+} ENABLE_TRELLIS_OPT_METHOD;
+
+typedef struct TRELLIS_OPT_CONTROL {
+  ENABLE_TRELLIS_OPT_METHOD method;
+  double thresh;
+} TRELLIS_OPT_CONTROL;
+
 typedef struct SPEED_FEATURES {
   MV_SPEED_FEATURES mv;
 
@@ -292,8 +310,8 @@ typedef struct SPEED_FEATURES {
   int coeff_prob_appx_step;
 
   
-  int allow_quant_coeff_opt;
-  double quant_opt_thresh;
+  
+  TRELLIS_OPT_CONTROL trellis_opt_tx_rd;
 
   
   
@@ -400,7 +418,15 @@ typedef struct SPEED_FEATURES {
   int adaptive_mode_search;
 
   
+  
+  
+  
+  
   int cb_pred_filter_search;
+
+  
+  
+  int early_term_interp_search_plane_rd;
 
   int cb_partition_search;
 
