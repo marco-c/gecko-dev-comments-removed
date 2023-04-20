@@ -715,13 +715,9 @@ this.DateTimeBoxWidget = class {
       }
       default: {
         
-        const regex = new RegExp("Digit\\d");
-        const isDigit = regex.test(aEvent.code);
-
         if (
-          isDigit ||
-          (aEvent.key == 0 &&
-            !(aEvent.ctrlKey || aEvent.altKey || aEvent.metaKey))
+          aEvent.key.length === 1 &&
+          !(aEvent.ctrlKey || aEvent.altKey || aEvent.metaKey)
         ) {
           this.handleKeydown(aEvent);
           aEvent.preventDefault();
