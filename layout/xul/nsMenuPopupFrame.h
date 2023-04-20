@@ -201,6 +201,9 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   bool ShouldCreateWidgetUpfront() const;
 
   
+  bool ShouldExpandToInflowParentOrAnchor() const;
+
+  
   
   bool IsNoAutoHide() const;
 
@@ -218,16 +221,13 @@ class nsMenuPopupFrame final : public nsBoxFrame,
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void LayoutPopup(nsBoxLayoutState& aState, nsIFrame* aParentMenu,
-                   bool aSizedToPopup);
+  void LayoutPopup(nsBoxLayoutState& aState);
 
   
   
   
   
-  
-  nsresult SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove,
-                            bool aSizedToPopup);
+  nsresult SetPopupPosition(bool aIsMove);
 
   
   
@@ -254,7 +254,7 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   bool IsMouseTransparent() const;
 
   
-  bool IsMenuList();
+  bool IsMenuList() const;
 
   bool IsDragSource() const { return mIsDragSource; }
   void SetIsDragSource(bool aIsDragSource) { mIsDragSource = aIsDragSource; }
@@ -573,10 +573,6 @@ class nsMenuPopupFrame final : public nsBoxFrame,
 
   
   
-  bool mSizedToPopup = false;
-
-  
-  
   
   nscoord mAlignmentOffset;
 
@@ -596,21 +592,17 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   FlipType mFlip;  
 
   struct ReflowCallbackData {
-    ReflowCallbackData()
-        : mPosted(false), mAnchor(nullptr), mIsOpenChanged(false) {}
-    void MarkPosted(nsIFrame* aAnchor, bool aIsOpenChanged) {
+    ReflowCallbackData() = default;
+    void MarkPosted(bool aIsOpenChanged) {
       mPosted = true;
-      mAnchor = aAnchor;
       mIsOpenChanged = aIsOpenChanged;
     }
     void Clear() {
       mPosted = false;
-      mAnchor = nullptr;
       mIsOpenChanged = false;
     }
-    bool mPosted;
-    nsIFrame* mAnchor;
-    bool mIsOpenChanged;
+    bool mPosted = false;
+    bool mIsOpenChanged = false;
   };
   ReflowCallbackData mReflowCallbackData;
 
