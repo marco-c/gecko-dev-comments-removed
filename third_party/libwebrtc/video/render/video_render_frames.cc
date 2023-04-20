@@ -8,7 +8,7 @@
 
 
 
-#include "common_video/video_render_frames.h"
+#include "video/render/video_render_frames.h"
 
 #include <type_traits>
 #include <utility>

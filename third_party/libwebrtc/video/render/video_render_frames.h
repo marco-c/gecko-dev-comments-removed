@@ -8,8 +8,8 @@
 
 
 
-#ifndef COMMON_VIDEO_VIDEO_RENDER_FRAMES_H_
-#define COMMON_VIDEO_VIDEO_RENDER_FRAMES_H_
+#ifndef VIDEO_RENDER_VIDEO_RENDER_FRAMES_H_
+#define VIDEO_RENDER_VIDEO_RENDER_FRAMES_H_
 
 #include <stddef.h>
 #include <stdint.h>
