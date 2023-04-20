@@ -34,6 +34,8 @@ const HOST_PREF = "identity.fxaccounts.auth.uri";
 const SIGNIN = "/account/login";
 const SIGNUP = "/account/create";
 
+const DEVICES_FILTER_DAYS = 21;
+
 var FxAccountsClient = function(host = Services.prefs.getCharPref(HOST_PREF)) {
   this.host = host;
 
@@ -723,10 +725,11 @@ FxAccountsClient.prototype = {
 
 
 
-  async getDeviceList(sessionTokenHex) {
-    let path = "/account/devices";
-    let creds = await deriveHawkCredentials(sessionTokenHex, "sessionToken");
 
+  async getDeviceList(sessionTokenHex) {
+    let timestamp = Date.now() - 1000 * 60 * 60 * 24 * DEVICES_FILTER_DAYS;
+    let path = `/account/devices?filterIdleDevicesTimestamp=${timestamp}`;
+    let creds = await deriveHawkCredentials(sessionTokenHex, "sessionToken");
     return this._request(path, "GET", creds, {});
   },
 
