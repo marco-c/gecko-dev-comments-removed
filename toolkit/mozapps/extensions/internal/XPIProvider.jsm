@@ -2175,7 +2175,18 @@ var XPIProvider = {
   
   _closing: false,
 
+  
+  
+  
   startupPromises: [],
+
+  
+  
+  
+  
+  
+  
+  enabledAddonsStartupPromises: [],
 
   databaseReady: Promise.all([dbReadyPromise, providerReadyPromise]),
 
@@ -2568,7 +2579,9 @@ var XPIProvider = {
             ) {
               reason = BOOTSTRAP_REASONS.ADDON_ENABLE;
             }
-            BootstrapScope.get(addon).startup(reason);
+            this.enabledAddonsStartupPromises.push(
+              BootstrapScope.get(addon).startup(reason)
+            );
           } catch (e) {
             logger.error(
               "Failed to load bootstrap addon " +
@@ -2594,6 +2607,13 @@ var XPIProvider = {
       lazy.AsyncShutdown.quitApplicationGranted.addBlocker(
         "XPIProvider shutdown",
         async () => {
+          
+          
+          await Promise.allSettled([
+            ...this.startupPromises,
+            ...this.enabledAddonsStartupPromises,
+          ]);
+
           XPIProvider._closing = true;
 
           await XPIProvider.cleanupTemporaryAddons();
