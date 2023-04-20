@@ -27,17 +27,18 @@ namespace webrtc {
 std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawWindowCapturer(
     const DesktopCaptureOptions& options) {
 #if defined(WEBRTC_USE_PIPEWIRE)
-  if (options.allow_pipewire() && DesktopCapturer::IsRunningUnderWayland()) {
+  if (options.allow_pipewire() && BaseCapturerPipeWire::IsSupported()) {
     return std::make_unique<BaseCapturerPipeWire>(options,
                                                   CaptureType::kWindow);
   }
 #endif  
 
 #if defined(WEBRTC_USE_X11)
-  return WindowCapturerX11::CreateRawWindowCapturer(options);
-#else
-  return nullptr;
+  if (!DesktopCapturer::IsRunningUnderWayland())
+    return WindowCapturerX11::CreateRawWindowCapturer(options);
 #endif  
+
+  return nullptr;
 }
 
 }  

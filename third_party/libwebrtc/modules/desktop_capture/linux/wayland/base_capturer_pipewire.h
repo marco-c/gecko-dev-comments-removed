@@ -27,6 +27,12 @@ class BaseCapturerPipeWire : public DesktopCapturer,
                              public DelegatedSourceListController,
                              public ScreenCastPortal::PortalNotifier {
  public:
+  
+  
+  
+  
+  static bool IsSupported();
+
   BaseCapturerPipeWire(const DesktopCaptureOptions& options, CaptureType type);
   BaseCapturerPipeWire(
       const DesktopCaptureOptions& options,

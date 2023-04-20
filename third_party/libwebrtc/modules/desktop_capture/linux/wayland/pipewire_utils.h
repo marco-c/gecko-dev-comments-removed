@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef MODULES_DESKTOP_CAPTURE_LINUX_WAYLAND_PIPEWIRE_UTILS_H_
+#define MODULES_DESKTOP_CAPTURE_LINUX_WAYLAND_PIPEWIRE_UTILS_H_
+
+namespace webrtc {
+
+
+
+
+bool InitializePipeWire();
+
+}  
+
+#endif  
