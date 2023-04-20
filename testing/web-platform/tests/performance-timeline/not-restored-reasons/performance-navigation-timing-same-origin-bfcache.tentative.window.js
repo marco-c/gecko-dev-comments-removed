@@ -38,9 +38,9 @@ promise_test(async t => {
       rc1,
        false,
        rc1_url,
-       '',
-       '',
-       '',
+       null,
+       null,
+       null,
       [],
       [{
         'blocked': true,
