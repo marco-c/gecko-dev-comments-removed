@@ -9,6 +9,7 @@
 #include "mozilla/RefPtr.h"
 #include "nsUTF8Utils.h"
 #include "nsIURL.h"
+#include "nsIWebTransportStream.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/Promise.h"
@@ -17,7 +18,6 @@
 #include "mozilla/dom/ReadableStreamDefaultController.h"
 #include "mozilla/dom/WebTransportDatagramDuplexStream.h"
 #include "mozilla/dom/WebTransportError.h"
-#include "mozilla/dom/WebTransportStreams.h"
 #include "mozilla/dom/WebTransportLog.h"
 #include "mozilla/dom/WritableStream.h"
 #include "mozilla/ipc/BackgroundChild.h"
@@ -26,11 +26,36 @@
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(WebTransport, mGlobal,
-                                      mIncomingUnidirectionalStreams,
-                                      mIncomingBidirectionalStreams,
-                                      mSendStreams, mReceiveStreams, mDatagrams,
-                                      mReady, mClosed)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(WebTransport)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WebTransport)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mGlobal)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIncomingUnidirectionalStreams)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIncomingBidirectionalStreams)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIncomingUnidirectionalAlgorithm)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIncomingBidirectionalAlgorithm)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSendStreams)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReceiveStreams)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDatagrams)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReady)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mClosed)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
+
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WebTransport)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mGlobal)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mIncomingUnidirectionalStreams)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mIncomingBidirectionalStreams)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mIncomingUnidirectionalAlgorithm)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mIncomingBidirectionalAlgorithm)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSendStreams)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mReceiveStreams)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDatagrams)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mReady)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mClosed)
+  if (tmp->mChild) {
+    tmp->mChild->Shutdown(false);
+    tmp->mChild = nullptr;
+  }
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(WebTransport)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(WebTransport)
@@ -64,16 +89,28 @@ WebTransport::~WebTransport() {
 void WebTransport::NewBidirectionalStream(
     const RefPtr<mozilla::ipc::DataPipeReceiver>& aIncoming,
     const RefPtr<mozilla::ipc::DataPipeSender>& aOutgoing) {
+  LOG_VERBOSE(("NewUnidirectionalStream()"));
   
 }
 
 void WebTransport::NewUnidirectionalStream(
     const RefPtr<mozilla::ipc::DataPipeReceiver>& aStream) {
+  LOG_VERBOSE(("NewUnidirectionalStream()"));
   
   
   
   
   
+
+  mUnidirectionalStreams.Push(aStream);
+  
+  
+  
+  if (mIncomingUnidirectionalAlgorithm) {
+    RefPtr<WebTransportIncomingStreamsAlgorithms> callback =
+        mIncomingUnidirectionalAlgorithm;
+    callback->NotifyIncomingStream();
+  }
 }
 
 
@@ -92,6 +129,7 @@ already_AddRefed<WebTransport> WebTransport::Constructor(
     const GlobalObject& aGlobal, const nsAString& aURL,
     const WebTransportOptions& aOptions, ErrorResult& aError) {
   LOG(("Creating WebTransport for %s", NS_ConvertUTF16toUTF8(aURL).get()));
+  
 
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
   RefPtr<WebTransport> result = new WebTransport(global);
@@ -100,6 +138,7 @@ already_AddRefed<WebTransport> WebTransport::Constructor(
     return nullptr;
   }
 
+  
   return result.forget();
 }
 
@@ -215,18 +254,14 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   
   
   const nsCOMPtr<nsIGlobalObject> global(mGlobal);
-  
-  mIncomingBidirectionalPromise = Promise::Create(mGlobal, aError);
-  if (NS_WARN_IF(aError.Failed())) {
-    return;
-  }
+
+  mIncomingBidirectionalAlgorithm = new WebTransportIncomingStreamsAlgorithms(
+      WebTransportIncomingStreamsAlgorithms::StreamType::Bidirectional, this);
 
   RefPtr<WebTransportIncomingStreamsAlgorithms> algorithm =
-      new WebTransportIncomingStreamsAlgorithms(mIncomingBidirectionalPromise,
-                                                false, this);
-
+      mIncomingBidirectionalAlgorithm;
   mIncomingBidirectionalStreams = ReadableStream::CreateNative(
-      cx, global, *algorithm, Some(0.0), nullptr, aError);  
+      cx, global, *algorithm, Some(0.0), nullptr, aError);
   if (aError.Failed()) {
     return;
   }
@@ -236,15 +271,10 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   
   
 
-  
-  mIncomingUnidirectionalPromise = Promise::Create(mGlobal, aError);
-  if (NS_WARN_IF(aError.Failed())) {
-    return;
-  }
+  mIncomingUnidirectionalAlgorithm = new WebTransportIncomingStreamsAlgorithms(
+      WebTransportIncomingStreamsAlgorithms::StreamType::Unidirectional, this);
 
-  algorithm = new WebTransportIncomingStreamsAlgorithms(
-      mIncomingUnidirectionalPromise, true, this);
-
+  algorithm = mIncomingUnidirectionalAlgorithm;
   mIncomingUnidirectionalStreams = ReadableStream::CreateNative(
       cx, global, *algorithm, Some(0.0), nullptr, aError);
   if (aError.Failed()) {
@@ -274,13 +304,14 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
                nsresult rv = aResult.IsReject()
                                  ? NS_ERROR_FAILURE
                                  : Get<0>(aResult.ResolveValue());
+               LOG(("isreject: %d nsresult 0x%x", aResult.IsReject(),
+                    (uint32_t)rv));
                if (NS_FAILED(rv)) {
                  self->RejectWaitingConnection(rv);
                } else {
                  
                  
 
-                 
                  self->ResolveWaitingConnection(
                      static_cast<WebTransportReliabilityMode>(
                          Get<1>(aResult.ResolveValue())),
@@ -293,28 +324,46 @@ void WebTransport::ResolveWaitingConnection(
     WebTransportReliabilityMode aReliability, WebTransportChild* aChild) {
   LOG(("Resolved Connection %p, reliability = %u", this,
        (unsigned)aReliability));
-
-  MOZ_ASSERT(mState == WebTransportState::CONNECTING);
+  
+  
+  
+  if (mState != WebTransportState::CONNECTING) {
+    
+    
+    return;
+  }
   mChild = aChild;
+  
   mState = WebTransportState::CONNECTED;
+  
+  
   mReliability = aReliability;
 
-  mReady->MaybeResolve(true);
+  
+  mReady->MaybeResolveWithUndefined();
 }
 
 void WebTransport::RejectWaitingConnection(nsresult aRv) {
-  LOG(("Reject Connection %p", this));
-  MOZ_ASSERT(mState == WebTransportState::CONNECTING);
-  mState = WebTransportState::FAILED;
-  LOG(("Rejected connection %x", (uint32_t)aRv));
+  LOG(("Rejected connection %p %x", this, (uint32_t)aRv));
+  
+  
 
   
   
   
-  mReady->MaybeReject(aRv);
   
-  mIncomingBidirectionalPromise->MaybeResolveWithUndefined();
-  mIncomingUnidirectionalPromise->MaybeResolveWithUndefined();
+  if (mState == WebTransportState::CLOSED ||
+      mState == WebTransportState::FAILED) {
+    return;
+  }
+
+  
+  
+  RefPtr<WebTransportError> error = new WebTransportError(
+      "WebTransport session rejected"_ns, WebTransportErrorSource::Session);
+  
+  ErrorResult errorresult;
+  Cleanup(error, nullptr, errorresult);
 
   
   
@@ -374,7 +423,6 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions,
       mState == WebTransportState::FAILED) {
     return;
   }
-  MOZ_ASSERT(mChild);
   
   if (mState == WebTransportState::CONNECTING) {
     
@@ -385,9 +433,11 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions,
     
     Cleanup(error, nullptr, aRv);
     
+    MOZ_ASSERT(!mChild);
     return;
   }
   LOG(("Sending Close"));
+  MOZ_ASSERT(mChild);
   
   
   
@@ -418,6 +468,7 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions,
                             DOMException_Binding::ABORT_ERR);
   Cleanup(error, &aOptions, aRv);
 
+  
   
   
   
@@ -470,9 +521,9 @@ void WebTransport::Cleanup(WebTransportError* aError,
   
   
   
-  nsTArray<RefPtr<WritableStream>> sendStreams;
+  nsTArray<RefPtr<WebTransportSendStream>> sendStreams;
   sendStreams.SwapElements(mSendStreams);
-  nsTArray<RefPtr<ReadableStream>> receiveStreams;
+  nsTArray<RefPtr<WebTransportReceiveStream>> receiveStreams;
   receiveStreams.SwapElements(mReceiveStreams);
 
   
@@ -527,8 +578,8 @@ void WebTransport::Cleanup(WebTransportError* aError,
     mIncomingUnidirectionalStreams->ErrorNative(cx, errorValue, IgnoreErrors());
   }
   
-  mIncomingUnidirectionalPromise->MaybeResolveWithUndefined();
-  mIncomingBidirectionalPromise->MaybeResolveWithUndefined();
+  mIncomingBidirectionalAlgorithm = nullptr;
+  mIncomingUnidirectionalAlgorithm = nullptr;
 }
 
 }  
