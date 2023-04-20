@@ -13,8 +13,7 @@
 
 #include <stdint.h>
 
-#include <functional>
-
+#include "absl/functional/any_invocable.h"
 #include "absl/types/optional.h"
 #include "api/units/timestamp.h"
 #include "video/frame_decode_timing.h"
@@ -25,7 +24,8 @@ class FrameDecodeScheduler {
  public:
   
   using FrameReleaseCallback =
-      std::function<void(uint32_t rtp_timestamp, Timestamp render_time)>;
+      absl::AnyInvocable<void(uint32_t rtp_timestamp,
+                              Timestamp render_time) &&>;
 
   virtual ~FrameDecodeScheduler() = default;
 
@@ -33,6 +33,7 @@ class FrameDecodeScheduler {
   
   virtual absl::optional<uint32_t> ScheduledRtpTimestamp() = 0;
 
+  
   
   
   virtual void ScheduleFrame(uint32_t rtp,

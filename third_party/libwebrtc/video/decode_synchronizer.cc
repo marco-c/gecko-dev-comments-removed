@@ -38,7 +38,7 @@ void DecodeSynchronizer::ScheduledFrame::RunFrameReleaseCallback() && {
   
   
   auto sf = std::move(*this);
-  sf.callback_(sf.rtp_timestamp_, sf.schedule_.render_time);
+  std::move(sf.callback_)(sf.rtp_timestamp_, sf.schedule_.render_time);
 }
 
 Timestamp DecodeSynchronizer::ScheduledFrame::LatestDecodeTime() const {
