@@ -2030,6 +2030,11 @@ class Document : public nsINode,
 
   
 
+
+  static void ClearPendingFullscreenRequests(Document* aDocument);
+
+  
+
   void ClearOrientationPendingPromise();
   bool SetOrientationPendingPromise(Promise* aPromise);
   Promise* GetOrientationPendingPromise() const {
