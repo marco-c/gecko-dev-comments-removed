@@ -109,9 +109,43 @@ function ReloadPromise(frame) {
 }
 
 
+function SetDocumentCookieFromFrame(frame, cookie) {
+  return PostMessageAndAwaitReply(
+    { command: "write document.cookie", cookie }, frame.contentWindow);
+}
+
+
 function GetJSCookiesFromFrame(frame) {
   return PostMessageAndAwaitReply(
       { command: "document.cookie" }, frame.contentWindow);
+}
+
+async function DeleteCookieInFrame(frame, name, params) {
+  await SetDocumentCookieFromFrame(frame, `${name}=0; expires=${new Date(0).toUTCString()}; ${params};`);
+  assert_false(cookieStringHasCookie(name, '0', await GetJSCookiesFromFrame(frame)), `Verify that cookie '${name}' has been deleted.`);
+}
+
+
+
+
+
+
+async function CanFrameWriteCookies(frame) {
+  const cookie_suffix = "Secure;SameSite=None;Path=/";
+  await DeleteCookieInFrame(frame, "cookie", cookie_suffix);
+  await DeleteCookieInFrame(frame, "foo", cookie_suffix);
+
+  await SetDocumentCookieFromFrame(frame, `cookie=monster;${cookie_suffix}`);
+  await SetDocumentCookieFromFrame(frame, `foo=bar;${cookie_suffix}`);
+
+  const cookies = await GetJSCookiesFromFrame(frame);
+  const can_write = cookieStringHasCookie("cookie", "monster", cookies) &&
+      cookieStringHasCookie("foo", "bar", cookies);
+
+  await DeleteCookieInFrame(frame, "cookie", cookie_suffix);
+  await DeleteCookieInFrame(frame, "foo", cookie_suffix);
+
+  return can_write;
 }
 
 
@@ -153,6 +187,10 @@ function FrameInitiatedReload(frame) {
   frame.contentWindow.postMessage({ command: "reload" }, "*");
   return reload;
 }
+
+
+
+
 
 
 async function MaybeSetStorageAccess(origin, embedding_origin, value) {
