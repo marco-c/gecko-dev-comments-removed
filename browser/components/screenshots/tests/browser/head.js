@@ -26,7 +26,7 @@ const gScreenshotUISelectors = {
   panelButtons: "#screenshotsPagePanel",
   fullPageButton: "button.full-page",
   visiblePageButton: "button.visible-page",
-  copyButton: "button.highlight-button-copy",
+  copyButton: "button.#copy",
 };
 
 
@@ -271,7 +271,10 @@ class ScreenshotsHelper {
   }
 
   clickDownloadButton() {
-    mouse.click(this.endX - 60, this.endY + 30);
+    
+    
+    
+    mouse.click(this.endX - 70, this.endY + 36);
   }
 
   clickCopyButton(overrideX = null, overrideY = null) {
@@ -279,9 +282,9 @@ class ScreenshotsHelper {
     
     
     if (overrideX && overrideY) {
-      mouse.click(overrideX - 166, overrideY + 30);
+      mouse.click(overrideX - 183, overrideY + 36);
     } else {
-      mouse.click(this.endX - 166, this.endY + 30);
+      mouse.click(this.endX - 183, this.endY + 36);
     }
   }
 
@@ -289,7 +292,7 @@ class ScreenshotsHelper {
     
     
     
-    mouse.click(this.endX - 230, this.endY + 30);
+    mouse.click(this.endX - 259, this.endY + 36);
   }
 
   async clickTestPageElement() {
