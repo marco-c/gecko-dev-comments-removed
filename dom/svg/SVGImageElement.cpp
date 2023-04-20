@@ -254,8 +254,11 @@ SVGImageElement::IsAttributeMapped(const nsAtom* name) const {
 
 
 
-void SVGImageElement::GetGeometryBounds(Rect* aBounds,
-                                        const Matrix& aToBoundsSpace) {
+
+
+bool SVGImageElement::GetGeometryBounds(
+    Rect* aBounds, const StrokeOptions& aStrokeOptions,
+    const Matrix& aToBoundsSpace, const Matrix* aToNonScalingStrokeSpace) {
   Rect rect;
 
   DebugOnly<bool> ok =
@@ -270,6 +273,16 @@ void SVGImageElement::GetGeometryBounds(Rect* aBounds,
   }
 
   *aBounds = aToBoundsSpace.TransformBounds(rect);
+  return true;
+}
+
+already_AddRefed<Path> SVGImageElement::BuildPath(PathBuilder* aBuilder) {
+  
+  
+  
+  MOZ_ASSERT_UNREACHABLE(
+      "There is no reason to call BuildPath for SVGImageElement");
+  return nullptr;
 }
 
 

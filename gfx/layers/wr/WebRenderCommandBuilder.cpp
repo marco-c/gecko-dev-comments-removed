@@ -12,7 +12,6 @@
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/SVGGeometryFrame.h"
-#include "mozilla/SVGImageFrame.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"
@@ -1130,26 +1129,6 @@ static ItemActivity HasActiveChildren(
   return activity;
 }
 
-static ItemActivity AssessBounds(
-    const mozilla::layers::StackingContextHelper& aSc, const nsRect& aBounds) {
-  
-  
-  
-  
-  
-  
-  constexpr float largeish = 512;
-
-  float width = aBounds.width * aSc.GetInheritedScale().xScale;
-  float height = aBounds.height * aSc.GetInheritedScale().yScale;
-
-  if (width > largeish || height > largeish) {
-    return ItemActivity::Should;
-  }
-
-  return ItemActivity::Could;
-}
-
 
 
 
@@ -1200,28 +1179,29 @@ static ItemActivity IsItemProbablyActive(
     }
     case DisplayItemType::TYPE_SVG_GEOMETRY: {
       auto* svgItem = static_cast<DisplaySVGGeometry*>(aItem);
-      if (StaticPrefs::gfx_webrender_svg_shapes() && aUniformlyScaled &&
-          svgItem->ShouldBeActive(aBuilder, aResources, aSc, aManager,
-                                  aDisplayListBuilder)) {
-        if (aHasActivePrecedingSibling) {
-          return ItemActivity::Should;
-        }
-        bool snap = false;
-        return AssessBounds(aSc, aItem->GetBounds(aDisplayListBuilder, &snap));
-      }
-
-      return ItemActivity::No;
-    }
-    case DisplayItemType::TYPE_SVG_IMAGE: {
-      auto* svgItem = static_cast<DisplaySVGImage*>(aItem);
       if (StaticPrefs::gfx_webrender_svg_images() && aUniformlyScaled &&
           svgItem->ShouldBeActive(aBuilder, aResources, aSc, aManager,
                                   aDisplayListBuilder)) {
-        if (aHasActivePrecedingSibling) {
+        bool snap = false;
+        auto bounds = aItem->GetBounds(aDisplayListBuilder, &snap);
+
+        
+        
+        
+        
+        
+        
+        const int32_t largeish = 512;
+
+        float width = bounds.width * aSc.GetInheritedScale().xScale;
+        float height = bounds.height * aSc.GetInheritedScale().yScale;
+
+        if (aHasActivePrecedingSibling || width > largeish ||
+            height > largeish) {
           return ItemActivity::Should;
         }
-        bool snap = false;
-        return AssessBounds(aSc, aItem->GetBounds(aDisplayListBuilder, &snap));
+
+        return ItemActivity::Could;
       }
 
       return ItemActivity::No;
