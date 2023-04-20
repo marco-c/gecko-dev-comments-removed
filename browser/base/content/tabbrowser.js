@@ -1596,6 +1596,8 @@
       }
     },
 
+    _dataURLRegEx: /^data:[^,]+;base64,/i,
+
     setTabTitle(aTab) {
       var browser = this.getBrowserForTab(aTab);
       var title = browser.contentTitle;
@@ -1615,6 +1617,7 @@
         delete aTab._labelIsInitialTitle;
       }
 
+      let isURL = false;
       let isContentTitle = !!title;
       if (!title) {
         
@@ -1628,16 +1631,8 @@
         }
 
         if (title && !isBlankPageURL(title)) {
-          
-          
-          
-          
-          
-          
-          
-          if (title.length > 500 && title.match(/^data:[^,]+;base64,/)) {
-            title = title.substring(0, 500) + "\u2026";
-          } else {
+          isURL = true;
+          if (title.length <= 500 || !this._dataURLRegEx.test(title)) {
             
             try {
               let characterSet = browser.characterSet;
@@ -1655,12 +1650,23 @@
         }
       }
 
-      return this._setTabLabel(aTab, title, { isContentTitle });
+      return this._setTabLabel(aTab, title, { isContentTitle, isURL });
     },
 
-    _setTabLabel(aTab, aLabel, { beforeTabOpen, isContentTitle } = {}) {
+    _setTabLabel(aTab, aLabel, { beforeTabOpen, isContentTitle, isURL } = {}) {
       if (!aLabel || aLabel.includes("about:reader?")) {
         return false;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      if (isURL && aLabel.length > 500 && this._dataURLRegEx.test(aLabel)) {
+        aLabel = aLabel.substring(0, 500) + "\u2026";
       }
 
       aTab._fullLabel = aLabel;
@@ -2636,7 +2642,10 @@
           t.setAttribute("label", this.tabContainer.emptyTabTitle);
         } else {
           
-          this.setInitialTabTitle(t, aURI, { beforeTabOpen: true });
+          this.setInitialTabTitle(t, aURI, {
+            beforeTabOpen: true,
+            isURL: true,
+          });
         }
       }
 
