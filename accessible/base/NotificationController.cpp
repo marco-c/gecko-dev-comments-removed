@@ -629,9 +629,12 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
 
   
   
+  
+  
+  nsPresContext* pc = mPresShell->GetPresContext();
   if (mObservingState == eRefreshProcessing ||
       mObservingState == eRefreshProcessingForUpdate ||
-      mPresShell->IsReflowInterrupted()) {
+      mPresShell->IsReflowInterrupted() || !pc || !pc->GetRootPresContext()) {
     return;
   }
 
