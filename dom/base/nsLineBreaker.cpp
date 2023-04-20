@@ -68,9 +68,7 @@ static void SetupCapitalization(const char16_t* aWord, uint32_t aLength,
       case GeneralCategory::Line_Separator:
       case GeneralCategory::Paragraph_Separator:
       case GeneralCategory::Dash_Punctuation:
-      case GeneralCategory::Other_Punctuation:
       case GeneralCategory::Initial_Punctuation:
-      case GeneralCategory::Final_Punctuation:
         
 
 
@@ -80,6 +78,19 @@ static void SetupCapitalization(const char16_t* aWord, uint32_t aLength,
 
 
         capitalizeNextChar = true;
+        break;
+      case GeneralCategory::Final_Punctuation:
+        
+
+        if (ch != 0x2019) {
+          capitalizeNextChar = true;
+        }
+        break;
+      case GeneralCategory::Other_Punctuation:
+        
+        if (ch != '\'') {
+          capitalizeNextChar = true;
+        }
         break;
       default:
         break;
