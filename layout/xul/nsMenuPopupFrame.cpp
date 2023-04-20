@@ -1425,23 +1425,24 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
       
       return result;
     }
-    
-    
-    if (mAnchorType == MenuPopupAnchorType_Rect) {
-      result.mAnchorRect = mScreenRect;
-    } else {
+
+    result.mAnchorRect = result.mUntransformedAnchorRect = [&] {
+      
+      
+      if (mAnchorType == MenuPopupAnchorType_Rect) {
+        return mScreenRect;
+      }
       
       
       
       
       nsIFrame* anchorFrame = GetAnchorFrame();
       if (!anchorFrame) {
-        result.mAnchorRect = result.mUntransformedAnchorRect = rootScreenRect;
-      } else {
-        result.mAnchorRect = result.mUntransformedAnchorRect =
-            ComputeAnchorRect(rootPc, anchorFrame);
+        return rootScreenRect;
       }
-    }
+      return ComputeAnchorRect(rootPc, anchorFrame);
+    }();
+
     
     
     
