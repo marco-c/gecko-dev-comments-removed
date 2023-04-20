@@ -36,28 +36,5 @@ interface nsIU2FTokenManager : nsISupports
 
 
 
-
-    void pinCallback(in ACString aPin);
-
-    
-
-
-
-
-
-
-
-
-
-
-    void resumeWithSelectedSignResult(in uint64_t aTransactionID,
-                           in uint64_t idx);
-
-    
-
-
-
-
-
     void cancel(in uint64_t aTransactionID);
 };

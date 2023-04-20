@@ -4,10 +4,10 @@
 
 
 
-#ifndef mozilla_dom_U2FSoftTokenManager_h
-#define mozilla_dom_U2FSoftTokenManager_h
+#ifndef mozilla_dom_U2FSoftTokenTransport_h
+#define mozilla_dom_U2FSoftTokenTransport_h
 
-#include "mozilla/dom/U2FTokenTransport.h"
+#include "nsIWebAuthnController.h"
 #include "ScopedNSSTypes.h"
 
 
@@ -17,19 +17,15 @@
 
 namespace mozilla::dom {
 
-class U2FSoftTokenManager final : public U2FTokenTransport {
+class U2FSoftTokenTransport final : public nsIWebAuthnTransport {
  public:
-  explicit U2FSoftTokenManager(uint32_t aCounter);
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIWEBAUTHNTRANSPORT
 
-  RefPtr<U2FRegisterPromise> Register(const WebAuthnMakeCredentialInfo& aInfo,
-                                      bool aForceNoneAttestation) override;
-
-  RefPtr<U2FSignPromise> Sign(const WebAuthnGetAssertionInfo& aInfo) override;
-
-  void Cancel() override;
+  explicit U2FSoftTokenTransport(uint32_t aCounter);
 
  private:
-  ~U2FSoftTokenManager() = default;
+  ~U2FSoftTokenTransport() = default;
   nsresult Init();
 
   nsresult IsRegistered(const nsTArray<uint8_t>& aKeyHandle,
@@ -37,7 +33,7 @@ class U2FSoftTokenManager final : public U2FTokenTransport {
 
   bool FindRegisteredKeyHandle(
       const nsTArray<nsTArray<uint8_t>>& aAppIds,
-      const nsTArray<WebAuthnScopedCredential>& aCredentials,
+      const nsTArray<nsTArray<uint8_t>>& aCredentialIds,
        nsTArray<uint8_t>& aKeyHandle,
        nsTArray<uint8_t>& aAppId);
 
@@ -48,6 +44,8 @@ class U2FSoftTokenManager final : public U2FTokenTransport {
 
   nsresult GetOrCreateWrappingKey(const mozilla::UniquePK11SlotInfo& aSlot);
   uint32_t mCounter;
+
+  nsCOMPtr<nsIWebAuthnController> mController;
 };
 
 }  

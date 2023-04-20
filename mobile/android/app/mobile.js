@@ -608,6 +608,3 @@ pref("extensions.systemAddon.update.enabled", true);
 
 pref("browser.tabs.remote.separatePrivilegedContentProcess", false);
 pref("browser.tabs.remote.enforceRemoteTypeRestrictions", false);
-
-
-pref("security.webauth.webauthn_enable_android_fido2", true);
