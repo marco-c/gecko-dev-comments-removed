@@ -13,6 +13,10 @@
 
 #define NSID_LENGTH 39
 
+#ifndef XPCOM_GLUE_AVOID_NSPR
+class nsIDToCString;
+#endif
+
 
 
 
@@ -72,8 +76,7 @@ struct nsID {
 
 
 
-
-  char* ToString() const;
+  nsIDToCString ToString() const;
 
   
 
