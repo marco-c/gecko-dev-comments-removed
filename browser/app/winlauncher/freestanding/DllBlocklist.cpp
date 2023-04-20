@@ -415,12 +415,11 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
   nt::GetLeafName(&leafOnStack, sectionFileName);
 
   bool isDependent = false;
-  auto resultView = gSharedSection.GetView();
+  Kernel32ExportsSolver* k32Exports = gSharedSection.GetKernel32Exports();
   
   
-  if (resultView.isOk() && !ModuleLoadFrame::ExistsTopFrame()) {
-    isDependent =
-        IsDependentModule(leafOnStack, resultView.inspect()->mK32Exports);
+  if (k32Exports && !ModuleLoadFrame::ExistsTopFrame()) {
+    isDependent = IsDependentModule(leafOnStack, *k32Exports);
   }
 
   BlockAction blockAction;
@@ -434,15 +433,12 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
     
     
     mozilla::nt::PEHeaders headers(*aBaseAddress);
-    blockAction =
-        RedirectToNoOpEntryPoint(headers, resultView.inspect()->mK32Exports)
-            ? BlockAction::NoOpEntryPoint
-            : BlockAction::Allow;
+    blockAction = RedirectToNoOpEntryPoint(headers, *k32Exports)
+                      ? BlockAction::NoOpEntryPoint
+                      : BlockAction::Allow;
   } else {
     
-    blockAction = DetermineBlockAction(
-        leafOnStack, *aBaseAddress,
-        resultView.isOk() ? &resultView.inspect()->mK32Exports : nullptr);
+    blockAction = DetermineBlockAction(leafOnStack, *aBaseAddress, k32Exports);
   }
 
   ModuleLoadInfo::Status loadStatus = ModuleLoadInfo::Status::Blocked;
