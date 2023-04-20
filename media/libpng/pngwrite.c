@@ -498,6 +498,16 @@ png_convert_from_time_t(png_timep ptime, time_t ttime)
    png_debug(1, "in png_convert_from_time_t");
 
    tbuf = gmtime(&ttime);
+   if (tbuf == NULL)
+   {
+      
+
+
+
+      memset(ptime, 0, sizeof(*ptime));
+      return;
+   }
+
    png_convert_from_struct_tm(ptime, tbuf);
 }
 #endif

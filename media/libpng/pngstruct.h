@@ -334,17 +334,7 @@ struct png_struct_def
    size_t current_buffer_size;       
    int process_mode;                 
    int cur_palette;                  
-
 #endif 
-
-#if defined(__TURBOC__) && !defined(_Windows) && !defined(__FLAT__)
-
-   png_bytepp offset_table_ptr;
-   png_bytep offset_table;
-   png_uint_16 offset_table_number;
-   png_uint_16 offset_table_count;
-   png_uint_16 offset_table_count_free;
-#endif
 
 #ifdef PNG_READ_QUANTIZE_SUPPORTED
    png_bytep palette_lookup; 

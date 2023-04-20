@@ -11,8 +11,6 @@
 
 
 
-
-
 #define _POSIX_SOURCE 1
 
 #include "../pngpriv.h"
@@ -33,21 +31,26 @@
 
 
 
+#include <signal.h> 
+
 #ifndef PNG_ARM_NEON_FILE
-#  ifdef __linux__
-#     define PNG_ARM_NEON_FILE "linux.c"
+#  if defined(__aarch64__) || defined(_M_ARM64)
+     
+#    error "PNG_ARM_NEON_CHECK_SUPPORTED must not be defined on ARM64"
+#  elif defined(__ARM_NEON__) || defined(__ARM_NEON)
+     
+#    error "PNG_ARM_NEON_CHECK_SUPPORTED must not be defined on this CPU arch"
+#  elif defined(__linux__)
+#    define PNG_ARM_NEON_FILE "linux.c"
+#  else
+#    error "No support for run-time ARM Neon checking; use compile-time options"
 #  endif
 #endif
 
-#ifdef PNG_ARM_NEON_FILE
-
-#include <signal.h> 
 static int png_have_neon(png_structp png_ptr);
-#include PNG_ARM_NEON_FILE
-
-#else  
-#  error "PNG_ARM_NEON_FILE undefined: no support for run-time ARM NEON checks"
-#endif 
+#ifdef PNG_ARM_NEON_FILE
+#  include PNG_ARM_NEON_FILE
+#endif
 #endif 
 
 #ifndef PNG_ALIGNED_MEMORY_SUPPORTED

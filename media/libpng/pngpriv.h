@@ -174,7 +174,7 @@
 #     else 
          
 
-#        if !defined(__aarch64__)
+#        if !defined(__aarch64__) && !defined(_M_ARM64)
             
 #          define PNG_ARM_NEON_IMPLEMENTATION 2
 #        endif 
@@ -185,6 +185,8 @@
       
 #     define PNG_ARM_NEON_IMPLEMENTATION 1
 #  endif
+#else 
+#     define PNG_ARM_NEON_IMPLEMENTATION 0
 #endif 
 
 #ifndef PNG_MIPS_MSA_OPT
@@ -263,11 +265,15 @@
 #  ifndef PNG_MIPS_MSA_IMPLEMENTATION
 #     define PNG_MIPS_MSA_IMPLEMENTATION 1
 #  endif
+#else
+#  define PNG_MIPS_MSA_IMPLEMENTATION 0
 #endif 
 
 #if PNG_POWERPC_VSX_OPT > 0
 #  define PNG_FILTER_OPTIMIZATIONS png_init_filter_functions_vsx
 #  define PNG_POWERPC_VSX_IMPLEMENTATION 1
+#else
+#  define PNG_POWERPC_VSX_IMPLEMENTATION 0
 #endif
 
 
@@ -492,16 +498,7 @@
    static_cast<type>(static_cast<const void*>(value))
 #else
 #  define png_voidcast(type, value) (value)
-#  ifdef _WIN64
-#     ifdef __GNUC__
-         typedef unsigned long long png_ptruint;
-#     else
-         typedef unsigned __int64 png_ptruint;
-#     endif
-#  else
-      typedef unsigned long png_ptruint;
-#  endif
-#  define png_constcast(type, value) ((type)(png_ptruint)(const void*)(value))
+#  define png_constcast(type, value) ((type)(void*)(const void*)(value))
 #  define png_aligncast(type, value) ((void*)(value))
 #  define png_aligncastconst(type, value) ((const void*)(value))
 #endif 
@@ -543,9 +540,8 @@
 #  include <alloc.h>
 #endif
 
-#if defined(WIN32) || defined(_Windows) || defined(_WINDOWS) || \
-    defined(_WIN32) || defined(__WIN32__)
-#  include <windows.h>  
+#if defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#  include <windows.h>
 #endif
 #endif 
 
@@ -556,22 +552,18 @@
 
 
 #ifndef PNG_ABORT
-#  ifdef _WINDOWS_
-#    define PNG_ABORT() ExitProcess(0)
-#  else
-#    define PNG_ABORT() abort()
-#  endif
+#  define PNG_ABORT() abort()
 #endif
 
 
-#define PNG_ALIGN_NONE   0 /* do not use data alignment */
-#define PNG_ALIGN_ALWAYS 1 /* assume unaligned accesses are OK */
+#define PNG_ALIGN_NONE      0 /* do not use data alignment */
+#define PNG_ALIGN_ALWAYS    1 /* assume unaligned accesses are OK */
 #ifdef offsetof
-#  define PNG_ALIGN_OFFSET 2 /* use offsetof to determine alignment */
+#  define PNG_ALIGN_OFFSET  2 /* use offsetof to determine alignment */
 #else
 #  define PNG_ALIGN_OFFSET -1 /* prevent the use of this */
 #endif
-#define PNG_ALIGN_SIZE   3 /* use sizeof to determine alignment */
+#define PNG_ALIGN_SIZE      3 /* use sizeof to determine alignment */
 
 #ifndef PNG_ALIGN_TYPE
    
@@ -588,23 +580,22 @@
 
 
 
-#  define png_alignof(type) (sizeof (type))
+#  define png_alignof(type) (sizeof(type))
 #else
 #  if PNG_ALIGN_TYPE == PNG_ALIGN_OFFSET
-#     define png_alignof(type) offsetof(struct{char c; type t;}, t)
+#    define png_alignof(type) offsetof(struct{char c; type t;}, t)
 #  else
-#     if PNG_ALIGN_TYPE == PNG_ALIGN_ALWAYS
-#        define png_alignof(type) (1)
-#     endif
-      
+#    if PNG_ALIGN_TYPE == PNG_ALIGN_ALWAYS
+#      define png_alignof(type) 1
+#    endif
+     
 #  endif
 #endif
 
 
 #ifdef png_alignof
-#  define png_isaligned(ptr, type)\
-   (((type)((const char*)ptr-(const char*)0) & \
-   (type)(png_alignof(type)-1)) == 0)
+#  define png_isaligned(ptr, type) \
+   (((type)(size_t)((const void*)(ptr)) & (type)(png_alignof(type)-1)) == 0)
 #else
 #  define png_isaligned(ptr, type) 0
 #endif
@@ -2012,7 +2003,7 @@ PNG_INTERNAL_FUNCTION(void,png_ascii_from_fixed,(png_const_structrp png_ptr,
 
 
 PNG_INTERNAL_FUNCTION(int,png_check_fp_number,(png_const_charp string,
-   size_t size, int *statep, png_size_tp whereami),PNG_EMPTY);
+   size_t size, int *statep, size_t *whereami),PNG_EMPTY);
 
 
 
@@ -2206,4 +2197,4 @@ PNG_INTERNAL_FUNCTION(int,
 #endif
 
 #endif 
-#endif
+#endif 
