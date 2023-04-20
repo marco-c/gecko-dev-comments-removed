@@ -10,6 +10,10 @@
 
 loadTestSubscript("head_unified_extensions.js");
 
+const { ExtensionCommon } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionCommon.jsm"
+);
+
 const NUM_EXTENSIONS = 5;
 const OVERFLOW_WINDOW_WIDTH_PX = 450;
 const DEFAULT_WIDGET_IDS = [
@@ -89,7 +93,9 @@ function getVisibleMenuItems(popup) {
 
 
 
-async function withWindowOverflowed(win, taskFn) {
+
+
+async function withWindowOverflowed(win, taskFn, afterUnderflowFn) {
   const doc = win.document;
   doc.documentElement.removeAttribute("persist");
   const navbar = doc.getElementById(CustomizableUI.AREA_NAVBAR);
@@ -277,7 +283,13 @@ async function withWindowOverflowed(win, taskFn) {
         .hasAttribute("overflowedItem");
     });
 
-    await Promise.all(extensions.map(extension => extension.unload()));
+    try {
+      if (afterUnderflowFn) {
+        await afterUnderflowFn();
+      }
+    } finally {
+      await Promise.all(extensions.map(extension => extension.unload()));
+    }
   }
 }
 
@@ -394,6 +406,7 @@ async function verifyExtensionWidget(win, widget, unifiedExtensionsEnabled) {
 
 add_task(async function test_overflowable_toolbar() {
   let win = await promiseEnableUnifiedExtensions();
+  let movedNode;
 
   await withWindowOverflowed(
     win,
@@ -423,6 +436,33 @@ add_task(async function test_overflowable_toolbar() {
         );
         await verifyExtensionWidget(win, child, true);
       }
+
+      let extensionWidgetID = `${ExtensionCommon.makeWidgetId(
+        extensionIDs.at(-1)
+      )}-browser-action`;
+      movedNode = CustomizableUI.getWidget(extensionWidgetID).forWindow(win)
+        .node;
+      Assert.equal(movedNode.getAttribute("cui-areatype"), "toolbar");
+
+      CustomizableUI.addWidgetToArea(
+        extensionWidgetID,
+        CustomizableUI.AREA_ADDONS
+      );
+
+      Assert.equal(
+        movedNode.getAttribute("cui-areatype"),
+        "panel",
+        "The moved browser action button should have the right cui-areatype set."
+      );
+    },
+    async () => {
+      
+      Assert.equal(
+        movedNode.parentElement.id,
+        CustomizableUI.AREA_ADDONS,
+        "The browser action should still be in the addons panel"
+      );
+      CustomizableUI.addWidgetToArea(movedNode.id, CustomizableUI.AREA_NAVBAR);
     }
   );
 

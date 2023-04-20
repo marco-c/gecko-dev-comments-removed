@@ -5623,9 +5623,12 @@ class OverflowableToolbar {
 
 
 
+
   getContainerFor(aNode) {
     if (aNode.getAttribute("overflowedItem") == "true") {
-      return this.#defaultList;
+      return CustomizableUI.isWebExtensionWidget(aNode.id)
+        ? this.#webExtList
+        : this.#defaultList;
     }
     return this.#target;
   }
@@ -6007,6 +6010,17 @@ class OverflowableToolbar {
 
 
 
+
+
+
+  #isOverflowList(aNode) {
+    return aNode && (aNode == this.#defaultList || aNode == this.#webExtList);
+  }
+
+  
+
+
+
   
 
 
@@ -6075,30 +6089,25 @@ class OverflowableToolbar {
     
     
     
-    if (
-      !this.#enabled ||
-      (aContainer != this.#target && aContainer != this.#defaultList)
-    ) {
+    if (!this.#enabled || !this.#isOverflowList(aContainer)) {
       return;
     }
     
     
     
-    if (aNode.parentNode == this.#defaultList) {
-      let updatedMinSize;
-      if (aNode.previousElementSibling) {
-        updatedMinSize = this.#overflowedInfo.get(
-          aNode.previousElementSibling.id
-        );
-      } else {
-        
-        updatedMinSize = 1;
-      }
-      let nextItem = aNode.nextElementSibling;
-      while (nextItem) {
-        this.#overflowedInfo.set(nextItem.id, updatedMinSize);
-        nextItem = nextItem.nextElementSibling;
-      }
+    let updatedMinSize;
+    if (aNode.previousElementSibling) {
+      updatedMinSize = this.#overflowedInfo.get(
+        aNode.previousElementSibling.id
+      );
+    } else {
+      
+      updatedMinSize = 1;
+    }
+    let nextItem = aNode.nextElementSibling;
+    while (nextItem) {
+      this.#overflowedInfo.set(nextItem.id, updatedMinSize);
+      nextItem = nextItem.nextElementSibling;
     }
   }
 
@@ -6109,12 +6118,12 @@ class OverflowableToolbar {
     
     if (
       !this.#enabled ||
-      (aContainer != this.#target && aContainer != this.#defaultList)
+      (aContainer != this.#target && !this.#isOverflowList(aContainer))
     ) {
       return;
     }
 
-    let nowOverflowed = aNode.parentNode == this.#defaultList;
+    let nowOverflowed = this.#isOverflowList(aNode.parentNode);
     let wasOverflowed = this.#overflowedInfo.has(aNode.id);
 
     
