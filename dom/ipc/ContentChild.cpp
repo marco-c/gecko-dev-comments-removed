@@ -1120,7 +1120,7 @@ nsresult ContentChild::ProvideWindowCommon(
 
   
   PopupIPCTabContext ipcContext;
-  ipcContext.openerChild() = aTabOpener;
+  ipcContext.opener() = aTabOpener;
   if (NS_WARN_IF(!SendConstructPopupBrowser(
           std::move(parentEp), std::move(windowParentEp), tabId, ipcContext,
           windowInit, aChromeFlags))) {

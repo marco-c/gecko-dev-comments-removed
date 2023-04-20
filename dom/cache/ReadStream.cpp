@@ -524,7 +524,7 @@ already_AddRefed<ReadStream> ReadStream::Create(
   
   
   
-  if (!aReadStream.controlChild() && !aReadStream.controlParent()) {
+  if (!aReadStream.control()) {
     return nullptr;
   }
 
@@ -535,13 +535,13 @@ already_AddRefed<ReadStream> ReadStream::Create(
   
   
   StreamControl* control;
-  if (aReadStream.controlChild()) {
+  if (aReadStream.control().IsChild()) {
     auto actor =
-        static_cast<CacheStreamControlChild*>(aReadStream.controlChild());
+        static_cast<CacheStreamControlChild*>(aReadStream.control().AsChild());
     control = actor;
   } else {
-    auto actor =
-        static_cast<CacheStreamControlParent*>(aReadStream.controlParent());
+    auto actor = static_cast<CacheStreamControlParent*>(
+        aReadStream.control().AsParent());
     control = actor;
   }
   MOZ_DIAGNOSTIC_ASSERT(control);

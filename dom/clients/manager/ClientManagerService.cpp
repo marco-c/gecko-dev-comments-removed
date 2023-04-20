@@ -440,7 +440,7 @@ RefPtr<ClientOpPromise> ClientManagerService::Navigate(
   
   
   
-  args.targetParent() = source;
+  args.target() = source;
 
   RefPtr<ClientOpPromise::Private> promise =
       new ClientOpPromise::Private(__func__);
