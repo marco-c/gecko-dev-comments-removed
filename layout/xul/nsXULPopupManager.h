@@ -172,6 +172,8 @@ enum class HidePopupOption : uint8_t {
   Async,
   
   IsRollup,
+  
+  DisableAnimations,
 };
 
 using HidePopupOptions = mozilla::EnumSet<HidePopupOption>;

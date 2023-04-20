@@ -17,6 +17,7 @@ class nsIWidget;
 class nsIRollupListener {
  public:
   enum class FlushViews : bool { No, Yes };
+  enum class AllowAnimations : bool { No, Yes };
   struct RollupOptions {
     
     
@@ -26,6 +27,8 @@ class nsIRollupListener {
     
     
     const mozilla::LayoutDeviceIntPoint* mPoint = nullptr;
+    
+    AllowAnimations mAllowAnimations = AllowAnimations::Yes;
   };
 
   

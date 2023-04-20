@@ -431,10 +431,14 @@ bool nsXULPopupManager::RollupInternal(RollupKind aKind,
   RefPtr<nsViewManager> viewManager =
       presContext->PresShell()->GetViewManager();
 
-  HidePopup(item->Content(),
-            {HidePopupOption::HideChain, HidePopupOption::DeselectMenu,
-             HidePopupOption::IsRollup},
-            lastPopup);
+  HidePopupOptions options{HidePopupOption::HideChain,
+                           HidePopupOption::DeselectMenu,
+                           HidePopupOption::IsRollup};
+  if (aOptions.mAllowAnimations == AllowAnimations::No) {
+    options += HidePopupOption::DisableAnimations;
+  }
+
+  HidePopup(item->Content(), options, lastPopup);
 
   if (aOptions.mFlush == FlushViews::Yes) {
     
@@ -1688,12 +1692,17 @@ void nsXULPopupManager::FirePopupHidingEvent(nsIContent* aPopup,
 
   const bool shouldAnimate = [&] {
     if (!LookAndFeel::GetInt(LookAndFeel::IntID::PanelAnimations)) {
+      
       return false;
     }
-    
-    
-    
+    if (aOptions.contains(HidePopupOption::DisableAnimations)) {
+      
+      return false;
+    }
     if (aNextPopup) {
+      
+      
+      
       return false;
     }
     nsAutoString animate;

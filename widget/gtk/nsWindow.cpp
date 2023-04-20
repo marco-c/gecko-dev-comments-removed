@@ -7451,6 +7451,13 @@ bool nsWindow::CheckForRollup(gdouble aMouseX, gdouble aMouseY, bool aIsWheel,
     }
   }
 
+  if (mSizeMode == nsSizeMode_Minimized) {
+    
+    
+    
+    options.mAllowAnimations = nsIRollupListener::AllowAnimations::No;
+  }
+
   if (rollupListener->Rollup(options)) {
     retVal = true;
   }
