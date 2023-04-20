@@ -1283,48 +1283,6 @@ loader.lazyRequireGetter(
   "resource://devtools/shared/commands/resource/legacy-listeners/root-node.js"
 );
 
-
-
-loader.lazyRequireGetter(
-  LegacyListeners,
-  ResourceCommand.TYPES.WEBSOCKET,
-  "resource://devtools/shared/commands/resource/legacy-listeners/websocket.js"
-);
-
-
-
-loader.lazyRequireGetter(
-  LegacyListeners,
-  ResourceCommand.TYPES.COOKIE,
-  "resource://devtools/shared/commands/resource/legacy-listeners/cookie.js"
-);
-loader.lazyRequireGetter(
-  LegacyListeners,
-  ResourceCommand.TYPES.CACHE_STORAGE,
-  "resource://devtools/shared/commands/resource/legacy-listeners/cache-storage.js"
-);
-loader.lazyRequireGetter(
-  LegacyListeners,
-  ResourceCommand.TYPES.LOCAL_STORAGE,
-  "resource://devtools/shared/commands/resource/legacy-listeners/local-storage.js"
-);
-loader.lazyRequireGetter(
-  LegacyListeners,
-  ResourceCommand.TYPES.SESSION_STORAGE,
-  "resource://devtools/shared/commands/resource/legacy-listeners/session-storage.js"
-);
-loader.lazyRequireGetter(
-  LegacyListeners,
-  ResourceCommand.TYPES.EXTENSION_STORAGE,
-  "resource://devtools/shared/commands/resource/legacy-listeners/extension-storage.js"
-);
-loader.lazyRequireGetter(
-  LegacyListeners,
-  ResourceCommand.TYPES.INDEXED_DB,
-  "resource://devtools/shared/commands/resource/legacy-listeners/indexed-db.js"
-);
-
-
 loader.lazyRequireGetter(
   LegacyListeners,
   ResourceCommand.TYPES.SOURCE,
@@ -1336,12 +1294,6 @@ loader.lazyRequireGetter(
   "resource://devtools/shared/commands/resource/legacy-listeners/thread-states.js"
 );
 
-
-loader.lazyRequireGetter(
-  LegacyListeners,
-  ResourceCommand.TYPES.SERVER_SENT_EVENT,
-  "resource://devtools/shared/commands/resource/legacy-listeners/server-sent-events.js"
-);
 loader.lazyRequireGetter(
   LegacyListeners,
   ResourceCommand.TYPES.REFLOW,

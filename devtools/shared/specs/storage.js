@@ -305,49 +305,4 @@ types.addDictType("storeUpdateObject", {
   added: "nullable:json",
 });
 
-
-types.addDictType(
-  "storelist",
-  Object.keys(childSpecs).reduce((obj, type) => {
-    obj[type] = type;
-    return obj;
-  }, {})
-);
-
 exports.childSpecs = childSpecs;
-
-
-
-exports.storageSpec = protocol.generateActorSpec({
-  typeName: "storage",
-
-  
-
-
-
-
-
-
-
-  events: {
-    "stores-update": {
-      type: "storesUpdate",
-      data: Arg(0, "storeUpdateObject"),
-    },
-    "stores-cleared": {
-      type: "storesCleared",
-      data: Arg(0, "json"),
-    },
-    "stores-reloaded": {
-      type: "storesReloaded",
-      data: Arg(0, "json"),
-    },
-  },
-
-  methods: {
-    listStores: {
-      request: {},
-      response: RetVal("storelist"),
-    },
-  },
-});

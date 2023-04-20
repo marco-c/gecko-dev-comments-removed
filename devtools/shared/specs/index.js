@@ -98,13 +98,6 @@ const Types = (exports.__TypesForTests = [
     spec: "devtools/shared/specs/environment",
     front: null,
   },
-  
-  
-  {
-    types: ["eventSource"],
-    spec: "devtools/shared/specs/eventsource",
-    front: "devtools/client/fronts/eventsource",
-  },
   {
     types: ["frame"],
     spec: "devtools/shared/specs/frame",
@@ -235,9 +228,6 @@ const Types = (exports.__TypesForTests = [
       "extensionStorage",
       "indexedDB",
       "sessionStorage",
-      
-      
-      "storage",
     ],
     spec: "devtools/shared/specs/storage",
     front: "devtools/client/fronts/storage",
@@ -332,13 +322,6 @@ const Types = (exports.__TypesForTests = [
     types: ["console"],
     spec: "devtools/shared/specs/webconsole",
     front: "devtools/client/fronts/webconsole",
-  },
-  
-  
-  {
-    types: ["webSocket"],
-    spec: "devtools/shared/specs/websocket",
-    front: "devtools/client/fronts/websocket",
   },
   {
     types: ["pushSubscription"],

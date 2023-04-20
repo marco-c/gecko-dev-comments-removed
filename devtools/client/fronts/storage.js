@@ -8,10 +8,7 @@ const {
   FrontClassWithSpec,
   registerFront,
 } = require("resource://devtools/shared/protocol.js");
-const {
-  childSpecs,
-  storageSpec,
-} = require("resource://devtools/shared/specs/storage.js");
+const { childSpecs } = require("resource://devtools/shared/specs/storage.js");
 
 for (const childSpec of Object.values(childSpecs)) {
   class ChildStorageFront extends FrontClassWithSpec(childSpec) {
@@ -56,30 +53,3 @@ for (const childSpec of Object.values(childSpecs)) {
   }
   registerFront(ChildStorageFront);
 }
-
-
-
-class StorageFront extends FrontClassWithSpec(storageSpec) {
-  constructor(client, targetFront, parentFront) {
-    super(client, targetFront, parentFront);
-
-    
-    this.formAttributeName = "storageActor";
-  }
-
-  
-  
-  
-  
-  
-  listStores() {
-    if (this.stores) {
-      return this.stores;
-    }
-    this.stores = super.listStores();
-    return this.stores;
-  }
-}
-
-exports.StorageFront = StorageFront;
-registerFront(StorageFront);

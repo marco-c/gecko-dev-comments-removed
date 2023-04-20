@@ -12,15 +12,7 @@ const {
 const styleSheetsSpec = generateActorSpec({
   typeName: "stylesheets",
 
-  events: {
-    
-    
-    
-    
-    "stylesheet-added": {
-      type: "stylesheetAdded",
-    },
-  },
+  events: {},
 
   methods: {
     getTraits: {
