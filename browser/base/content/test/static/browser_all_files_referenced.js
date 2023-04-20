@@ -290,10 +290,6 @@ var whitelist = [
 
   
   { file: "resource://gre/modules/LangPackMatcher.sys.mjs" },
-
-  
-  
-  { file: "chrome://global/content/elements/moz-support-link.mjs" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
