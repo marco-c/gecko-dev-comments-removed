@@ -286,7 +286,7 @@ void TurnServer::HandleStunMessage(TurnServerConnection* conn,
     
     
     if (IsStunRequestType(msg.type()) &&
-        msg.GetByteString(STUN_ATTR_USERNAME)->GetString() !=
+        msg.GetByteString(STUN_ATTR_USERNAME)->string_view() !=
             allocation->username()) {
       SendErrorResponse(conn, &msg, STUN_ERROR_WRONG_CREDENTIALS,
                         STUN_ERROR_REASON_WRONG_CREDENTIALS);
@@ -307,8 +307,9 @@ bool TurnServer::GetKey(const StunMessage* msg, std::string* key) {
     return false;
   }
 
-  std::string username = username_attr->GetString();
-  return (auth_hook_ != NULL && auth_hook_->GetKey(username, realm_, key));
+  return (auth_hook_ != NULL &&
+          auth_hook_->GetKey(std::string(username_attr->string_view()), realm_,
+                             key));
 }
 
 bool TurnServer::CheckAuthorization(TurnServerConnection* conn,
@@ -342,7 +343,7 @@ bool TurnServer::CheckAuthorization(TurnServerConnection* conn,
   }
 
   
-  if (!ValidateNonce(nonce_attr->GetString())) {
+  if (!ValidateNonce(nonce_attr->string_view())) {
     SendErrorResponseWithRealmAndNonce(conn, msg, STUN_ERROR_STALE_NONCE,
                                        STUN_ERROR_REASON_STALE_NONCE);
     return false;
@@ -359,14 +360,14 @@ bool TurnServer::CheckAuthorization(TurnServerConnection* conn,
   
   TurnServerAllocation* allocation = FindAllocation(conn);
   if (enable_otu_nonce_ && allocation &&
-      allocation->last_nonce() == nonce_attr->GetString()) {
+      allocation->last_nonce() == nonce_attr->string_view()) {
     SendErrorResponseWithRealmAndNonce(conn, msg, STUN_ERROR_STALE_NONCE,
                                        STUN_ERROR_REASON_STALE_NONCE);
     return false;
   }
 
   if (allocation) {
-    allocation->set_last_nonce(nonce_attr->GetString());
+    allocation->set_last_nonce(nonce_attr->string_view());
   }
   
   return true;
@@ -425,7 +426,7 @@ std::string TurnServer::GenerateNonce(int64_t now) const {
   return nonce;
 }
 
-bool TurnServer::ValidateNonce(const std::string& nonce) const {
+bool TurnServer::ValidateNonce(absl::string_view nonce) const {
   
   if (nonce.size() != kNonceSize) {
     return false;
@@ -662,7 +663,7 @@ void TurnServerAllocation::HandleAllocateRequest(const TurnMessage* msg) {
   const StunByteStringAttribute* username_attr =
       msg->GetByteString(STUN_ATTR_USERNAME);
   RTC_DCHECK(username_attr != NULL);
-  username_ = username_attr->GetString();
+  username_ = std::string(username_attr->string_view());
 
   
   int lifetime_secs = ComputeLifetime(*msg);

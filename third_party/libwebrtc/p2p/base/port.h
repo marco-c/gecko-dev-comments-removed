@@ -62,7 +62,9 @@ extern const char TCPTYPE_ACTIVE_STR[];
 extern const char TCPTYPE_PASSIVE_STR[];
 extern const char TCPTYPE_SIMOPEN_STR[];
 
-enum IcePriorityValue {
+
+
+enum IcePriorityValue : uint8_t {
   ICE_TYPE_PREFERENCE_RELAY_TLS = 0,
   ICE_TYPE_PREFERENCE_RELAY_TCP = 1,
   ICE_TYPE_PREFERENCE_RELAY_UDP = 2,
@@ -346,8 +348,7 @@ class Port : public PortInterface,
   bool ParseStunUsername(const StunMessage* stun_msg,
                          std::string* local_username,
                          std::string* remote_username) const;
-  void CreateStunUsername(const std::string& remote_username,
-                          std::string* stun_username_attr_str) const;
+  std::string CreateStunUsername(const std::string& remote_username) const;
 
   bool MaybeIceRoleConflict(const rtc::SocketAddress& addr,
                             IceMessage* stun_msg,
