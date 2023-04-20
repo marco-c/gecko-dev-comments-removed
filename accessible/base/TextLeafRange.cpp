@@ -602,6 +602,15 @@ bool TextLeafPoint::operator<=(const TextLeafPoint& aPoint) const {
   return *this == aPoint || *this < aPoint;
 }
 
+bool TextLeafPoint::IsDocEdge(nsDirection aDirection) const {
+  if (aDirection == eDirPrevious) {
+    return mOffset == 0 && !PrevLeaf(mAcc);
+  }
+
+  return mOffset == static_cast<int32_t>(nsAccUtils::TextLength(mAcc)) &&
+         !NextLeaf(mAcc);
+}
+
 bool TextLeafPoint::IsEmptyLastLine() const {
   if (mAcc->IsHTMLBr() && mOffset == 1) {
     return true;
@@ -1103,8 +1112,8 @@ TextLeafPoint TextLeafPoint::FindWordEnd(nsDirection aDirection,
       return *this;  
     }
     prevIsSpace = prev.IsSpace();
-    if ((aFlags & BoundaryFlags::eIncludeOrigin) && origIsSpace &&
-        !prevIsSpace) {
+    if ((aFlags & BoundaryFlags::eIncludeOrigin) &&
+        (origIsSpace || IsDocEdge(eDirNext)) && !prevIsSpace) {
       
       
       return *this;
@@ -1129,8 +1138,15 @@ TextLeafPoint TextLeafPoint::FindWordEnd(nsDirection aDirection,
     }
   }
   if (aDirection == eDirNext) {
+    BoundaryFlags flags = aFlags;
+    if (IsDocEdge(eDirPrevious)) {
+      
+      
+      
+      flags &= ~BoundaryFlags::eIncludeOrigin;
+    }
     boundary = boundary.FindBoundary(nsIAccessibleText::BOUNDARY_WORD_START,
-                                     eDirNext, aFlags);
+                                     eDirNext, flags);
   }
   
   
@@ -1152,6 +1168,11 @@ TextLeafPoint TextLeafPoint::FindWordEnd(nsDirection aDirection,
 
 TextLeafPoint TextLeafPoint::FindParagraphSameAcc(nsDirection aDirection,
                                                   bool aIncludeOrigin) const {
+  if (aIncludeOrigin && IsDocEdge(eDirPrevious)) {
+    
+    return *this;
+  }
+
   if (mAcc->IsTextLeaf() &&
       
       
