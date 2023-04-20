@@ -55,6 +55,7 @@
 #include "mozilla/AspectRatio.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Baseline.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RelativeTo.h"
@@ -129,6 +130,7 @@ struct CharacterDataChangeInfo;
 
 namespace mozilla {
 
+enum class PeekOffsetOption : uint8_t;
 enum class PseudoStyleType : uint8_t;
 enum class TableSelectionMode : uint32_t;
 
@@ -3882,12 +3884,9 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-  SelectablePeekReport GetFrameFromDirection(nsDirection aDirection,
-                                             bool aVisual, bool aJumpLines,
-                                             bool aScrollViewStop,
-                                             bool aForceEditableRegion);
-
+  SelectablePeekReport GetFrameFromDirection(
+      nsDirection aDirection,
+      const mozilla::EnumSet<mozilla::PeekOffsetOption>& aOptions);
   SelectablePeekReport GetFrameFromDirection(
       const mozilla::PeekOffsetStruct& aPos);
 

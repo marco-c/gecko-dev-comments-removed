@@ -101,6 +101,10 @@ enum class PeekOffsetOption : uint8_t {
   
   
   ForceEditableRegion,
+
+  
+  
+  AllowContentInDifferentNativeAnonymousSubtreeRoot,
 };
 
 using PeekOffsetOptions = EnumSet<PeekOffsetOption>;
