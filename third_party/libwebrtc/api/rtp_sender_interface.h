@@ -43,8 +43,7 @@ class RTC_EXPORT RtpSenderInterface : public rtc::RefCountInterface {
   
   
   
-  
-  virtual rtc::scoped_refptr<DtlsTransportInterface> dtls_transport() const;
+  virtual rtc::scoped_refptr<DtlsTransportInterface> dtls_transport() const = 0;
 
   
   
@@ -67,13 +66,13 @@ class RTC_EXPORT RtpSenderInterface : public rtc::RefCountInterface {
   
   
   
-  virtual void SetStreams(const std::vector<std::string>& stream_ids) {}
+  virtual void SetStreams(const std::vector<std::string>& stream_ids) = 0;
 
   
   
   
   
-  virtual std::vector<RtpEncodingParameters> init_send_encodings() const;
+  virtual std::vector<RtpEncodingParameters> init_send_encodings() const = 0;
 
   virtual RtpParameters GetParameters() const = 0;
   
@@ -89,20 +88,21 @@ class RTC_EXPORT RtpSenderInterface : public rtc::RefCountInterface {
   
   
   virtual void SetFrameEncryptor(
-      rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor);
+      rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) = 0;
 
   
   
-  virtual rtc::scoped_refptr<FrameEncryptorInterface> GetFrameEncryptor() const;
+  virtual rtc::scoped_refptr<FrameEncryptorInterface> GetFrameEncryptor()
+      const = 0;
 
   virtual void SetEncoderToPacketizerFrameTransformer(
-      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer);
+      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) = 0;
 
   
   
   virtual void SetEncoderSelector(
       std::unique_ptr<VideoEncoderFactory::EncoderSelectorInterface>
-          encoder_selector) {}
+          encoder_selector) = 0;
 
  protected:
   ~RtpSenderInterface() override = default;
