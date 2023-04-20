@@ -23,7 +23,6 @@
 namespace mozilla::dom {
 
 class Promise;
-class ReadableStreamGenericReader;
 class ReadableStreamDefaultReader;
 class ReadableStreamGenericReader;
 struct ReadableStreamGetReaderOptions;
@@ -129,6 +128,15 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
                                         ErrorResult& aRv);
 
   
+  
+  
+  
+
+  
+  already_AddRefed<mozilla::dom::ReadableStreamDefaultReader> GetReader(
+      ErrorResult& aRv);
+
+  
 
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
@@ -136,6 +144,7 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
                        JS::Handle<JSObject*> aGivenProto) override;
 
   
+
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static already_AddRefed<ReadableStream>
   Constructor(const GlobalObject& aGlobal,

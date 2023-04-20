@@ -417,4 +417,14 @@ void SetUpReadableStreamDefaultReader(ReadableStreamDefaultReader* aReader,
   aReader->ReadRequests().clear();
 }
 
+
+
+
+
+void ReadableStreamDefaultReader::ReadChunk(JSContext* aCx,
+                                            ReadRequest& aRequest,
+                                            ErrorResult& aRv) {
+  ReadableStreamDefaultReaderRead(aCx, this, &aRequest, aRv);
+}
+
 }  

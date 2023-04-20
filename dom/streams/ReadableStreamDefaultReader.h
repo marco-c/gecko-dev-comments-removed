@@ -69,8 +69,24 @@ class ReadableStreamDefaultReader final : public ReadableStreamGenericReader,
     return nullptr;
   }
 
+  
+  
+
+  
+  
+  
+  
+
+  
+  MOZ_CAN_RUN_SCRIPT void ReadChunk(JSContext* aCx, ReadRequest& aRequest,
+                                    ErrorResult& aRv);
+
+  
+
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
+
+  
 
   static already_AddRefed<ReadableStreamDefaultReader> Constructor(
       const GlobalObject& aGlobal, ReadableStream& stream, ErrorResult& aRv);

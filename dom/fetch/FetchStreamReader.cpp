@@ -173,14 +173,15 @@ void FetchStreamReader::CloseAndRelease(JSContext* aCx, nsresult aStatus) {
   mBuffer.Clear();
 }
 
+
 void FetchStreamReader::StartConsuming(JSContext* aCx, ReadableStream* aStream,
                                        ReadableStreamDefaultReader** aReader,
                                        ErrorResult& aRv) {
   MOZ_DIAGNOSTIC_ASSERT(!mReader);
   MOZ_DIAGNOSTIC_ASSERT(aStream);
 
-  RefPtr<ReadableStreamDefaultReader> reader =
-      AcquireReadableStreamDefaultReader(aStream, aRv);
+  
+  RefPtr<ReadableStreamDefaultReader> reader = aStream->GetReader(aRv);
   if (aRv.Failed()) {
     CloseAndRelease(aCx, NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
@@ -259,9 +260,10 @@ FetchStreamReader::OnOutputStreamReady(nsIAsyncOutputStream* aStream) {
   
   
   
+  
   RefPtr<ReadRequest> readRequest = new FetchReadRequest(this);
-  ReadableStreamDefaultReaderRead(aes.cx(), MOZ_KnownLive(mReader), readRequest,
-                                  rv);
+  RefPtr<ReadableStreamDefaultReader> reader = mReader;
+  reader->ReadChunk(aes.cx(), *readRequest, rv);
 
   if (NS_WARN_IF(rv.Failed())) {
     

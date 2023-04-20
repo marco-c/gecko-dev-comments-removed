@@ -59,6 +59,9 @@ namespace mozilla::dom {
 
 namespace {
 
+
+
+
 void AbortStream(JSContext* aCx, ReadableStream* aReadableStream,
                  ErrorResult& aRv, JS::Handle<JS::Value> aReasonDetails) {
   if (aReadableStream->State() != ReadableStream::ReaderState::Readable) {
@@ -74,7 +77,7 @@ void AbortStream(JSContext* aCx, ReadableStream* aReadableStream,
     }
   }
 
-  ReadableStreamError(aCx, aReadableStream, value, aRv);
+  aReadableStream->ErrorNative(aCx, value, aRv);
 }
 
 }  
@@ -1519,8 +1522,7 @@ template <class Derived>
 void FetchBody<Derived>::LockStream(JSContext* aCx, ReadableStream* aStream,
                                     ErrorResult& aRv) {
   
-  RefPtr<ReadableStreamDefaultReader> reader =
-      AcquireReadableStreamDefaultReader(aStream, aRv);
+  RefPtr<ReadableStreamDefaultReader> reader = aStream->GetReader(aRv);
   if (aRv.Failed()) {
     return;
   }

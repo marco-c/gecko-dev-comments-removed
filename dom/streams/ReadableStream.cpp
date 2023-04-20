@@ -451,9 +451,8 @@ void ReadableStream::GetReader(const ReadableStreamGetReaderOptions& aOptions,
   
   
   if (!aOptions.mMode.WasPassed()) {
-    RefPtr<ReadableStream> thisRefPtr = this;
     RefPtr<ReadableStreamDefaultReader> defaultReader =
-        AcquireReadableStreamDefaultReader(thisRefPtr, aRv);
+        AcquireReadableStreamDefaultReader(this, aRv);
     if (aRv.Failed()) {
       return;
     }
@@ -465,9 +464,8 @@ void ReadableStream::GetReader(const ReadableStreamGetReaderOptions& aOptions,
   MOZ_ASSERT(aOptions.mMode.Value() == ReadableStreamReaderMode::Byob);
 
   
-  RefPtr<ReadableStream> thisRefPtr = this;
   RefPtr<ReadableStreamBYOBReader> byobReader =
-      AcquireReadableStreamBYOBReader(thisRefPtr, aRv);
+      AcquireReadableStreamBYOBReader(this, aRv);
   if (aRv.Failed()) {
     return;
   }
@@ -1179,6 +1177,15 @@ void ReadableStream::EnqueueNative(JSContext* aCx, JS::Handle<JS::Value> aChunk,
   
   
   ReadableByteStreamControllerEnqueue(aCx, controller, chunk, aRv);
+}
+
+
+
+
+
+already_AddRefed<mozilla::dom::ReadableStreamDefaultReader>
+ReadableStream::GetReader(ErrorResult& aRv) {
+  return AcquireReadableStreamDefaultReader(this, aRv);
 }
 
 }  
