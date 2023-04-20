@@ -1135,11 +1135,6 @@ ProduceMediaStreamTrackStatsFromVideoReceiverInfo(
   
   video_track_stats->frames_decoded = video_receiver_info.frames_decoded;
   video_track_stats->frames_dropped = video_receiver_info.frames_dropped;
-  video_track_stats->total_frames_duration =
-      static_cast<double>(video_receiver_info.total_frames_duration_ms) /
-      rtc::kNumMillisecsPerSec;
-  video_track_stats->sum_squared_frame_durations =
-      video_receiver_info.sum_squared_frame_durations;
 
   
   
