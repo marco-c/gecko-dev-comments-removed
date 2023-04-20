@@ -51,6 +51,8 @@ extensions = [
 
 
 
+
+
 js_source_path = [
     "../browser/components/extensions",
     "../browser/components/migration",
