@@ -43,6 +43,7 @@ constexpr int kClippedLevelStep = 15;
 constexpr float kClippedRatioThreshold = 0.1f;
 constexpr int kClippedWaitFrames = 300;
 constexpr float kHighSpeechProbability = 0.7f;
+constexpr float kLowSpeechProbability = 0.1f;
 constexpr float kSpeechLevel = -25.0f;
 constexpr float kSpeechProbabilityThreshold = 0.5f;
 constexpr float kSpeechRatioThreshold = 0.8f;
@@ -65,7 +66,6 @@ std::unique_ptr<InputVolumeController> CreateInputVolumeController(
     bool enable_clipping_predictor = false,
     int update_input_volume_wait_frames = 0) {
   InputVolumeControllerConfig config{
-      .enabled = true,
       .clipped_level_min = kClippedMin,
       .clipped_level_step = clipped_level_step,
       .clipped_ratio_threshold = clipped_ratio_threshold,
@@ -180,7 +180,7 @@ void WriteAudioBufferSamples(float samples_value,
 
 void CallPreProcessAndProcess(int num_calls,
                               const AudioBuffer& audio_buffer,
-                              absl::optional<float> speech_probability,
+                              float speech_probability,
                               absl::optional<float> speech_level,
                               InputVolumeController& manager) {
   for (int n = 0; n < num_calls; ++n) {
@@ -221,7 +221,7 @@ class SpeechSamplesReader {
   
   void Feed(int num_frames,
             int gain_db,
-            absl::optional<float> speech_probability,
+            float speech_probability,
             absl::optional<float> speech_level,
             InputVolumeController& agc) {
     float gain = std::pow(10.0f, gain_db / 20.0f);  
@@ -253,13 +253,24 @@ class SpeechSamplesReader {
   const std::streamsize buffer_num_bytes_;
 };
 
+
+
+float UpdateRecommendedInputVolume(MonoInputVolumeController& controller,
+                                   int applied_input_volume,
+                                   float speech_probability,
+                                   const absl::optional<float> rms_error_dbfs) {
+  controller.set_stream_analog_level(applied_input_volume);
+  EXPECT_EQ(controller.recommended_analog_level(), applied_input_volume);
+  controller.Process(rms_error_dbfs, speech_probability);
+  return controller.recommended_analog_level();
+}
+
 }  
 
 
 
 constexpr InputVolumeControllerConfig GetInputVolumeControllerTestConfig() {
   InputVolumeControllerConfig config{
-      .enabled = true,
       .clipped_level_min = kClippedMin,
       .clipped_level_step = kClippedLevelStep,
       .clipped_ratio_threshold = kClippedRatioThreshold,
@@ -271,12 +282,6 @@ constexpr InputVolumeControllerConfig GetInputVolumeControllerTestConfig() {
       .speech_probability_threshold = 0.5f,
       .speech_ratio_threshold = 1.0f,
   };
-  return config;
-}
-
-constexpr InputVolumeControllerConfig GetDisabledInputVolumeControllerConfig() {
-  InputVolumeControllerConfig config = GetInputVolumeControllerTestConfig();
-  config.enabled = false;
   return config;
 }
 
@@ -307,7 +312,7 @@ class InputVolumeControllerTestHelper {
   
   
   int CallAgcSequence(int applied_input_volume,
-                      absl::optional<float> speech_probability,
+                      float speech_probability,
                       absl::optional<float> speech_level) {
     manager.set_stream_analog_level(applied_input_volume);
     manager.AnalyzePreProcess(audio_buffer);
@@ -320,7 +325,7 @@ class InputVolumeControllerTestHelper {
   
   
   void CallProcess(int num_calls,
-                   absl::optional<float> speech_probability,
+                   float speech_probability,
                    absl::optional<float> speech_level) {
     for (int i = 0; i < num_calls; ++i) {
       manager.Process(speech_probability, speech_level);
@@ -388,7 +393,9 @@ class InputVolumeControllerParametrizedTest
     return std::get<0>(GetParam()).value_or(kMinMicLevel);
   }
 
+  
   bool RmsErrorHasValue() const { return std::get<1>(GetParam()); }
+
   absl::optional<float> GetValueOrEmpty(float value) const {
     return RmsErrorHasValue() ? absl::optional<float>(value) : absl::nullopt;
   }
@@ -403,199 +410,109 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Combine(testing::Values(absl::nullopt, 12, 20),
                        testing::Values(true)));
 
-
-
-
-
-
-TEST_P(InputVolumeControllerParametrizedTest,
-       DisabledAnalogAgcDoesNotAdaptDownwards) {
-  InputVolumeController manager_no_analog_agc(
-      kNumChannels, GetDisabledInputVolumeControllerConfig());
-  manager_no_analog_agc.Initialize();
-  InputVolumeController manager_with_analog_agc(
-      kNumChannels, GetInputVolumeControllerTestConfig());
-  manager_with_analog_agc.Initialize();
-
-  AudioBuffer audio_buffer(kSampleRateHz, kNumChannels, kSampleRateHz,
-                           kNumChannels, kSampleRateHz, kNumChannels);
-
-  constexpr int kInputVolume = 250;
-  static_assert(kInputVolume > kInitialInputVolume, "Increase `kInputVolume`.");
-  manager_no_analog_agc.set_stream_analog_level(kInputVolume);
-  manager_with_analog_agc.set_stream_analog_level(kInputVolume);
-
-  
-  
-  
-  
-  WriteAudioBufferSamples(0.0f, 0.0f,
-                          audio_buffer);
-  manager_no_analog_agc.AnalyzePreProcess(audio_buffer);
-  manager_with_analog_agc.AnalyzePreProcess(audio_buffer);
-  manager_no_analog_agc.Process(GetValueOrEmpty(kHighSpeechProbability),
-                                GetValueOrEmpty(-18.0f));
-  manager_with_analog_agc.Process(GetValueOrEmpty(kHighSpeechProbability),
-                                  GetValueOrEmpty(-18.0f));
-
-  
-  WriteAudioBufferSamples(0.0f, 0.2f,
-                          audio_buffer);
-  manager_no_analog_agc.AnalyzePreProcess(audio_buffer);
-  manager_with_analog_agc.AnalyzePreProcess(audio_buffer);
-  manager_no_analog_agc.Process(GetValueOrEmpty(kHighSpeechProbability),
-                                GetValueOrEmpty(-10.0f));
-  manager_with_analog_agc.Process(GetValueOrEmpty(kHighSpeechProbability),
-                                  GetValueOrEmpty(-10.0f));
-
-  
-  
-  EXPECT_EQ(manager_no_analog_agc.recommended_analog_level(), kInputVolume);
-  ASSERT_LT(manager_with_analog_agc.recommended_analog_level(), kInputVolume);
-}
-
-
-
-
-
-
-TEST_P(InputVolumeControllerParametrizedTest,
-       DisabledAnalogAgcDoesNotAdaptUpwards) {
-  InputVolumeController manager_no_analog_agc(
-      kNumChannels, GetDisabledInputVolumeControllerConfig());
-  manager_no_analog_agc.Initialize();
-  InputVolumeController manager_with_analog_agc(
-      kNumChannels, GetInputVolumeControllerTestConfig());
-  manager_with_analog_agc.Initialize();
-
-  constexpr int kInputVolume = kInitialInputVolume;
-  manager_no_analog_agc.set_stream_analog_level(kInputVolume);
-  manager_with_analog_agc.set_stream_analog_level(kInputVolume);
-
-  
-  
-  constexpr int kNumFrames = 125;
-  constexpr int kGainDb = -20;
-  SpeechSamplesReader reader;
-  reader.Feed(kNumFrames, kGainDb, GetValueOrEmpty(kHighSpeechProbability),
-              GetValueOrEmpty(-42.0f), manager_no_analog_agc);
-  reader.Feed(kNumFrames, kGainDb, GetValueOrEmpty(kHighSpeechProbability),
-              GetValueOrEmpty(-42.0f), manager_with_analog_agc);
-
-  
-  
-  EXPECT_EQ(manager_no_analog_agc.recommended_analog_level(), kInputVolume);
-  ASSERT_GT(manager_with_analog_agc.recommended_analog_level(), kInputVolume);
-}
-
 TEST_P(InputVolumeControllerParametrizedTest,
        StartupMinVolumeConfigurationIsRespected) {
   InputVolumeControllerTestHelper helper;
 
-  helper.CallAgcSequence(kInitialInputVolume,
-                         GetValueOrEmpty(kHighSpeechProbability),
+  helper.CallAgcSequence(kInitialInputVolume, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   EXPECT_EQ(kInitialInputVolume, helper.manager.recommended_analog_level());
 }
 
 TEST_P(InputVolumeControllerParametrizedTest, MicVolumeResponseToRmsError) {
-  const auto speech_probability = GetValueOrEmpty(kHighSpeechProbability);
-
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(kInitialInputVolume, speech_probability,
+  helper.CallAgcSequence(kInitialInputVolume, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-23.0f));
 
   
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-28.0f));
 
   
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-29.0f));
   EXPECT_EQ(128, helper.manager.recommended_analog_level());
 
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-38.0f));
   EXPECT_EQ(156, helper.manager.recommended_analog_level());
 
   
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-23.0f));
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-18.0f));
 
   
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-17.0f));
   EXPECT_EQ(155, helper.manager.recommended_analog_level());
 
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-17.0f));
   EXPECT_EQ(151, helper.manager.recommended_analog_level());
 
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-9.0f));
   EXPECT_EQ(119, helper.manager.recommended_analog_level());
 }
 
 TEST_P(InputVolumeControllerParametrizedTest, MicVolumeIsLimited) {
-  const auto speech_probability = GetValueOrEmpty(kHighSpeechProbability);
-
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(kInitialInputVolume, speech_probability,
+  helper.CallAgcSequence(kInitialInputVolume, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-48.0f));
   EXPECT_EQ(183, helper.manager.recommended_analog_level());
 
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-48.0f));
   EXPECT_EQ(243, helper.manager.recommended_analog_level());
 
   
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-48.0f));
   EXPECT_EQ(255, helper.manager.recommended_analog_level());
 
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-17.0f));
   EXPECT_EQ(254, helper.manager.recommended_analog_level());
 
   
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(22.0f));
   EXPECT_EQ(194, helper.manager.recommended_analog_level());
 
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(22.0f));
   EXPECT_EQ(137, helper.manager.recommended_analog_level());
 
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(22.0f));
   EXPECT_EQ(88, helper.manager.recommended_analog_level());
 
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(22.0f));
   EXPECT_EQ(54, helper.manager.recommended_analog_level());
 
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(22.0f));
   EXPECT_EQ(33, helper.manager.recommended_analog_level());
 
   
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(22.0f));
   EXPECT_EQ(std::max(18, GetMinMicLevel()),
             helper.manager.recommended_analog_level());
 
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(22.0f));
   EXPECT_EQ(std::max(12, GetMinMicLevel()),
             helper.manager.recommended_analog_level());
@@ -603,20 +520,17 @@ TEST_P(InputVolumeControllerParametrizedTest, MicVolumeIsLimited) {
 
 TEST_P(InputVolumeControllerParametrizedTest, NoActionWhileMuted) {
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(kInitialInputVolume,
-                         GetValueOrEmpty(kHighSpeechProbability),
+  helper.CallAgcSequence(kInitialInputVolume, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   helper.manager.HandleCaptureOutputUsedChange(false);
-  helper.manager.Process(GetValueOrEmpty(kHighSpeechProbability),
-                         GetValueOrEmpty(kSpeechLevel));
+  helper.manager.Process(kHighSpeechProbability, GetValueOrEmpty(kSpeechLevel));
 }
 
 TEST_P(InputVolumeControllerParametrizedTest,
        UnmutingChecksVolumeWithoutRaising) {
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(kInitialInputVolume,
-                         GetValueOrEmpty(kHighSpeechProbability),
+  helper.CallAgcSequence(kInitialInputVolume, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   helper.manager.HandleCaptureOutputUsedChange(false);
@@ -626,15 +540,14 @@ TEST_P(InputVolumeControllerParametrizedTest,
   helper.manager.set_stream_analog_level(kInputVolume);
 
   
-  helper.CallProcess(1, GetValueOrEmpty(kHighSpeechProbability),
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(kSpeechLevel));
   EXPECT_EQ(127, helper.manager.recommended_analog_level());
 }
 
 TEST_P(InputVolumeControllerParametrizedTest, UnmutingRaisesTooLowVolume) {
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(kInitialInputVolume,
-                         GetValueOrEmpty(kHighSpeechProbability),
+  helper.CallAgcSequence(kInitialInputVolume, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   helper.manager.HandleCaptureOutputUsedChange(false);
@@ -643,67 +556,63 @@ TEST_P(InputVolumeControllerParametrizedTest, UnmutingRaisesTooLowVolume) {
   constexpr int kInputVolume = 11;
   helper.manager.set_stream_analog_level(kInputVolume);
 
-  helper.CallProcess(1, GetValueOrEmpty(kHighSpeechProbability),
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(kSpeechLevel));
   EXPECT_EQ(GetMinMicLevel(), helper.manager.recommended_analog_level());
 }
 
 TEST_P(InputVolumeControllerParametrizedTest,
        ManualLevelChangeResultsInNoSetMicCall) {
-  const auto speech_probability = GetValueOrEmpty(kHighSpeechProbability);
-
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(kInitialInputVolume, speech_probability,
+  helper.CallAgcSequence(kInitialInputVolume, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   
   
   ASSERT_NE(helper.manager.recommended_analog_level(), 154);
   helper.manager.set_stream_analog_level(154);
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-29.0f));
   EXPECT_EQ(154, helper.manager.recommended_analog_level());
 
   
   helper.manager.set_stream_analog_level(100);
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-17.0f));
   EXPECT_EQ(100, helper.manager.recommended_analog_level());
 
   
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-17.0f));
   EXPECT_EQ(99, helper.manager.recommended_analog_level());
 }
 
 TEST_P(InputVolumeControllerParametrizedTest,
        RecoveryAfterManualLevelChangeFromMax) {
-  const auto speech_probability = GetValueOrEmpty(kHighSpeechProbability);
-
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(kInitialInputVolume, speech_probability,
+  helper.CallAgcSequence(kInitialInputVolume, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   
   
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-48.0f));
   EXPECT_EQ(183, helper.manager.recommended_analog_level());
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-48.0f));
   EXPECT_EQ(243, helper.manager.recommended_analog_level());
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-48.0f));
   EXPECT_EQ(255, helper.manager.recommended_analog_level());
 
   
   helper.manager.set_stream_analog_level(50);
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-17.0f));
   EXPECT_EQ(50, helper.manager.recommended_analog_level());
 
   
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-38.0f));
 
   EXPECT_EQ(65, helper.manager.recommended_analog_level());
@@ -718,29 +627,27 @@ TEST_P(InputVolumeControllerParametrizedTest,
     GTEST_SKIP() << "Skipped. Min mic level overridden.";
   }
 
-  const auto speech_probability = GetValueOrEmpty(kHighSpeechProbability);
-
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(kInitialInputVolume, speech_probability,
+  helper.CallAgcSequence(kInitialInputVolume, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   
   
   helper.manager.set_stream_analog_level(1);
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-17.0f));
   EXPECT_EQ(1, helper.manager.recommended_analog_level());
 
   
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-29.0f));
   EXPECT_EQ(1, helper.manager.recommended_analog_level());
 
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-48.0f));
   EXPECT_EQ(10, helper.manager.recommended_analog_level());
 
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-38.0f));
   EXPECT_EQ(16, helper.manager.recommended_analog_level());
 }
@@ -754,24 +661,21 @@ TEST_P(InputVolumeControllerParametrizedTest,
     GTEST_SKIP() << "Skipped. Min mic level not overridden.";
   }
 
-  const auto speech_probability = GetValueOrEmpty(kHighSpeechProbability);
-
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(kInitialInputVolume, speech_probability,
+  helper.CallAgcSequence(kInitialInputVolume, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   
   
   helper.manager.set_stream_analog_level(1);
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-17.0f));
   EXPECT_EQ(GetMinMicLevel(), helper.manager.recommended_analog_level());
 }
 
 TEST_P(InputVolumeControllerParametrizedTest, NoClippingHasNoImpact) {
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(kInitialInputVolume,
-                         GetValueOrEmpty(kHighSpeechProbability),
+  helper.CallAgcSequence(kInitialInputVolume, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   helper.CallPreProc(100, 0);
@@ -781,8 +685,7 @@ TEST_P(InputVolumeControllerParametrizedTest, NoClippingHasNoImpact) {
 TEST_P(InputVolumeControllerParametrizedTest,
        ClippingUnderThresholdHasNoImpact) {
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(kInitialInputVolume,
-                         GetValueOrEmpty(kHighSpeechProbability),
+  helper.CallAgcSequence(kInitialInputVolume, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   helper.CallPreProc(1, 0.099);
@@ -791,8 +694,7 @@ TEST_P(InputVolumeControllerParametrizedTest,
 
 TEST_P(InputVolumeControllerParametrizedTest, ClippingLowersVolume) {
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(255,
-                         GetValueOrEmpty(kHighSpeechProbability),
+  helper.CallAgcSequence(255, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   helper.CallPreProc(1, 0.2);
@@ -802,8 +704,7 @@ TEST_P(InputVolumeControllerParametrizedTest, ClippingLowersVolume) {
 TEST_P(InputVolumeControllerParametrizedTest,
        WaitingPeriodBetweenClippingChecks) {
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(255,
-                         GetValueOrEmpty(kHighSpeechProbability),
+  helper.CallAgcSequence(255, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   helper.CallPreProc(1, kAboveClippedThreshold);
@@ -819,8 +720,7 @@ TEST_P(InputVolumeControllerParametrizedTest,
 
 TEST_P(InputVolumeControllerParametrizedTest, ClippingLoweringIsLimited) {
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(180,
-                         GetValueOrEmpty(kHighSpeechProbability),
+  helper.CallAgcSequence(180, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   helper.CallPreProc(1, kAboveClippedThreshold);
@@ -833,44 +733,38 @@ TEST_P(InputVolumeControllerParametrizedTest, ClippingLoweringIsLimited) {
 
 TEST_P(InputVolumeControllerParametrizedTest,
        ClippingMaxIsRespectedWhenEqualToLevel) {
-  const auto speech_probability = GetValueOrEmpty(kHighSpeechProbability);
-
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(255, speech_probability,
+  helper.CallAgcSequence(255, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   helper.CallPreProc(1, kAboveClippedThreshold);
   EXPECT_EQ(240, helper.manager.recommended_analog_level());
 
-  helper.CallProcess(10, speech_probability,
+  helper.CallProcess(10, kHighSpeechProbability,
                      GetValueOrEmpty(-48.0f));
   EXPECT_EQ(240, helper.manager.recommended_analog_level());
 }
 
 TEST_P(InputVolumeControllerParametrizedTest,
        ClippingMaxIsRespectedWhenHigherThanLevel) {
-  const auto speech_probability = GetValueOrEmpty(kHighSpeechProbability);
-
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(200, speech_probability,
+  helper.CallAgcSequence(200, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   helper.CallPreProc(1, kAboveClippedThreshold);
   EXPECT_EQ(185, helper.manager.recommended_analog_level());
 
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-58.0f));
   EXPECT_EQ(240, helper.manager.recommended_analog_level());
-  helper.CallProcess(10, speech_probability,
+  helper.CallProcess(10, kHighSpeechProbability,
                      GetValueOrEmpty(-58.0f));
   EXPECT_EQ(240, helper.manager.recommended_analog_level());
 }
 
 TEST_P(InputVolumeControllerParametrizedTest, UserCanRaiseVolumeAfterClipping) {
-  const auto speech_probability = GetValueOrEmpty(kHighSpeechProbability);
-
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(225, speech_probability,
+  helper.CallAgcSequence(225, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   helper.CallPreProc(1, kAboveClippedThreshold);
@@ -878,20 +772,20 @@ TEST_P(InputVolumeControllerParametrizedTest, UserCanRaiseVolumeAfterClipping) {
 
   
   helper.manager.set_stream_analog_level(250);
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-32.0f));
   EXPECT_EQ(250, helper.manager.recommended_analog_level());
 
   
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-8.0f));
   EXPECT_EQ(210, helper.manager.recommended_analog_level());
   
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-58.0f));
   EXPECT_EQ(250, helper.manager.recommended_analog_level());
   
-  helper.CallProcess(1, speech_probability,
+  helper.CallProcess(1, kHighSpeechProbability,
                      GetValueOrEmpty(-48.0f));
   EXPECT_EQ(250, helper.manager.recommended_analog_level());
 }
@@ -899,8 +793,7 @@ TEST_P(InputVolumeControllerParametrizedTest, UserCanRaiseVolumeAfterClipping) {
 TEST_P(InputVolumeControllerParametrizedTest,
        ClippingDoesNotPullLowVolumeBackUp) {
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(80,
-                         GetValueOrEmpty(kHighSpeechProbability),
+  helper.CallAgcSequence(80, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   int initial_volume = helper.manager.recommended_analog_level();
@@ -910,20 +803,18 @@ TEST_P(InputVolumeControllerParametrizedTest,
 
 TEST_P(InputVolumeControllerParametrizedTest, TakesNoActionOnZeroMicVolume) {
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(kInitialInputVolume,
-                         GetValueOrEmpty(kHighSpeechProbability),
+  helper.CallAgcSequence(kInitialInputVolume, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   helper.manager.set_stream_analog_level(0);
-  helper.CallProcess(10, GetValueOrEmpty(kHighSpeechProbability),
+  helper.CallProcess(10, kHighSpeechProbability,
                      GetValueOrEmpty(-48.0f));
   EXPECT_EQ(0, helper.manager.recommended_analog_level());
 }
 
 TEST_P(InputVolumeControllerParametrizedTest, ClippingDetectionLowersVolume) {
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(255,
-                         GetValueOrEmpty(kHighSpeechProbability),
+  helper.CallAgcSequence(255, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   EXPECT_EQ(255, helper.manager.recommended_analog_level());
@@ -936,8 +827,7 @@ TEST_P(InputVolumeControllerParametrizedTest, ClippingDetectionLowersVolume) {
 TEST_P(InputVolumeControllerParametrizedTest,
        DisabledClippingPredictorDoesNotLowerVolume) {
   InputVolumeControllerTestHelper helper;
-  helper.CallAgcSequence(255,
-                         GetValueOrEmpty(kHighSpeechProbability),
+  helper.CallAgcSequence(255, kHighSpeechProbability,
                          GetValueOrEmpty(kSpeechLevel));
 
   EXPECT_FALSE(helper.manager.clipping_predictor_enabled());
@@ -1023,11 +913,11 @@ TEST(InputVolumeControllerTest,
     return manager;
   };
   std::unique_ptr<InputVolumeController> manager = factory();
-  std::unique_ptr<InputVolumeController> manager_with_rms;
+  std::unique_ptr<InputVolumeController> manager_with_override;
   {
     test::ScopedFieldTrials field_trial(
         GetAgcMinMicLevelExperimentFieldTrialEnabled(kMinMicLevelOverride));
-    manager_with_rms = factory();
+    manager_with_override = factory();
   }
 
   
@@ -1038,23 +928,25 @@ TEST(InputVolumeControllerTest,
 
   
   
+  
   CallPreProcessAndProcess(400, audio_buffer,
-                           absl::nullopt,
-                           absl::nullopt, *manager);
+                           kLowSpeechProbability, -42.0f,
+                           *manager);
   CallPreProcessAndProcess(400, audio_buffer,
-                           absl::nullopt,
-                           absl::nullopt, *manager_with_rms);
+                           kLowSpeechProbability, -42.0f,
+                           *manager_with_override);
 
   
   ASSERT_GT(manager->recommended_analog_level(), 0);
 
   
   
-  EXPECT_GT(manager_with_rms->recommended_analog_level(),
+  EXPECT_GT(manager_with_override->recommended_analog_level(),
             manager->recommended_analog_level());
   
   
-  EXPECT_EQ(manager_with_rms->recommended_analog_level(), kMinMicLevelOverride);
+  EXPECT_EQ(manager_with_override->recommended_analog_level(),
+            kMinMicLevelOverride);
 }
 
 
@@ -1078,11 +970,11 @@ TEST(InputVolumeControllerTest,
     return manager;
   };
   std::unique_ptr<InputVolumeController> manager = factory();
-  std::unique_ptr<InputVolumeController> manager_with_rms;
+  std::unique_ptr<InputVolumeController> manager_with_override;
   {
     test::ScopedFieldTrials field_trial(
         GetAgcMinMicLevelExperimentFieldTrialEnabled(kMinMicLevelOverride));
-    manager_with_rms = factory();
+    manager_with_override = factory();
   }
 
   
@@ -1094,24 +986,23 @@ TEST(InputVolumeControllerTest,
   
   
   CallPreProcessAndProcess(
-      400, audio_buffer,
-      0.7f,
+      400, audio_buffer, kHighSpeechProbability,
       -18.0f, *manager);
   CallPreProcessAndProcess(
-      400, audio_buffer,
-      0.7f,
-      -18.0f, *manager_with_rms);
+      400, audio_buffer, kHighSpeechProbability,
+      -18.0f, *manager_with_override);
 
   
   ASSERT_GT(manager->recommended_analog_level(), 0);
 
   
   
-  EXPECT_GT(manager_with_rms->recommended_analog_level(),
+  EXPECT_GT(manager_with_override->recommended_analog_level(),
             manager->recommended_analog_level());
   
   
-  EXPECT_EQ(manager_with_rms->recommended_analog_level(), kMinMicLevelOverride);
+  EXPECT_EQ(manager_with_override->recommended_analog_level(),
+            kMinMicLevelOverride);
 }
 
 
@@ -1126,7 +1017,6 @@ TEST(InputVolumeControllerTest,
     
     
     InputVolumeControllerConfig config = kDefaultInputVolumeControllerConfig;
-    config.enabled = true;
     config.clipped_level_step = 64;
     config.clipped_ratio_threshold = kClippedRatioThreshold;
     config.clipped_wait_frames = kClippedWaitFrames;
@@ -1137,7 +1027,7 @@ TEST(InputVolumeControllerTest,
     return controller;
   };
   std::unique_ptr<InputVolumeController> manager = factory();
-  std::unique_ptr<InputVolumeController> manager_with_rms;
+  std::unique_ptr<InputVolumeController> manager_with_override;
   {
     constexpr int kMinMicLevelOverride = 20;
     static_assert(kDefaultInputVolumeControllerConfig.clipped_level_min >=
@@ -1145,7 +1035,7 @@ TEST(InputVolumeControllerTest,
                   "Use a lower override value.");
     test::ScopedFieldTrials field_trial(
         GetAgcMinMicLevelExperimentFieldTrialEnabled(kMinMicLevelOverride));
-    manager_with_rms = factory();
+    manager_with_override = factory();
   }
 
   
@@ -1156,12 +1046,13 @@ TEST(InputVolumeControllerTest,
 
   
   
+  
   CallPreProcessAndProcess(400, audio_buffer,
-                           absl::nullopt,
-                           absl::nullopt, *manager);
+                           kLowSpeechProbability, -18,
+                           *manager);
   CallPreProcessAndProcess(400, audio_buffer,
-                           absl::nullopt,
-                           absl::nullopt, *manager_with_rms);
+                           kLowSpeechProbability, -18,
+                           *manager_with_override);
 
   
   ASSERT_GT(manager->recommended_analog_level(), 0);
@@ -1171,8 +1062,8 @@ TEST(InputVolumeControllerTest,
   
   
   EXPECT_EQ(manager->recommended_analog_level(),
-            manager_with_rms->recommended_analog_level());
-  EXPECT_EQ(manager_with_rms->recommended_analog_level(),
+            manager_with_override->recommended_analog_level());
+  EXPECT_EQ(manager_with_override->recommended_analog_level(),
             kDefaultInputVolumeControllerConfig.clipped_level_min);
 }
 
@@ -1191,7 +1082,6 @@ TEST(InputVolumeControllerTest,
     
     
     InputVolumeControllerConfig config = kDefaultInputVolumeControllerConfig;
-    config.enabled = true;
     config.clipped_level_step = 64;
     config.clipped_ratio_threshold = kClippedRatioThreshold;
     config.clipped_wait_frames = kClippedWaitFrames;
@@ -1202,7 +1092,7 @@ TEST(InputVolumeControllerTest,
     return controller;
   };
   std::unique_ptr<InputVolumeController> manager = factory();
-  std::unique_ptr<InputVolumeController> manager_with_rms;
+  std::unique_ptr<InputVolumeController> manager_with_override;
   {
     constexpr int kMinMicLevelOverride = 20;
     static_assert(kDefaultInputVolumeControllerConfig.clipped_level_min >=
@@ -1210,7 +1100,7 @@ TEST(InputVolumeControllerTest,
                   "Use a lower override value.");
     test::ScopedFieldTrials field_trial(
         GetAgcMinMicLevelExperimentFieldTrialEnabled(kMinMicLevelOverride));
-    manager_with_rms = factory();
+    manager_with_override = factory();
   }
 
   
@@ -1226,7 +1116,7 @@ TEST(InputVolumeControllerTest,
   CallPreProcessAndProcess(
       400, audio_buffer,
       0.7f,
-      -18.0f, *manager_with_rms);
+      -18.0f, *manager_with_override);
 
   
   ASSERT_GT(manager->recommended_analog_level(), 0);
@@ -1236,8 +1126,8 @@ TEST(InputVolumeControllerTest,
   
   
   EXPECT_EQ(manager->recommended_analog_level(),
-            manager_with_rms->recommended_analog_level());
-  EXPECT_EQ(manager_with_rms->recommended_analog_level(),
+            manager_with_override->recommended_analog_level());
+  EXPECT_EQ(manager_with_override->recommended_analog_level(),
             kDefaultInputVolumeControllerConfig.clipped_level_min);
 }
 
@@ -1319,8 +1209,7 @@ TEST_P(InputVolumeControllerParametrizedTest,
   EXPECT_FALSE(manager.clipping_predictor_enabled());
   EXPECT_FALSE(manager.use_clipping_predictor_step());
   EXPECT_EQ(manager.recommended_analog_level(), 255);
-  manager.Process(GetValueOrEmpty(kHighSpeechProbability),
-                  GetValueOrEmpty(kSpeechLevel));
+  manager.Process(kHighSpeechProbability, GetValueOrEmpty(kSpeechLevel));
   CallPreProcessAudioBuffer(10, 0.99f, manager);
   EXPECT_EQ(manager.recommended_analog_level(), 255);
   CallPreProcessAudioBuffer(300, 0.99f, manager);
@@ -1357,9 +1246,9 @@ TEST_P(InputVolumeControllerParametrizedTest,
   manager_with_prediction.set_stream_analog_level(kInitialLevel);
   manager_without_prediction.set_stream_analog_level(kInitialLevel);
 
-  manager_with_prediction.Process(GetValueOrEmpty(kHighSpeechProbability),
+  manager_with_prediction.Process(kHighSpeechProbability,
                                   GetValueOrEmpty(kSpeechLevel));
-  manager_without_prediction.Process(GetValueOrEmpty(kHighSpeechProbability),
+  manager_without_prediction.Process(kHighSpeechProbability,
                                      GetValueOrEmpty(kSpeechLevel));
 
   EXPECT_TRUE(manager_with_prediction.clipping_predictor_enabled());
@@ -1454,7 +1343,8 @@ TEST_P(InputVolumeControllerParametrizedTest, EmptyRmsErrorHasNoEffect) {
   constexpr int kNumFrames = 125;
   constexpr int kGainDb = -20;
   SpeechSamplesReader reader;
-  reader.Feed(kNumFrames, kGainDb, absl::nullopt, absl::nullopt, manager);
+  reader.Feed(kNumFrames, kGainDb, kLowSpeechProbability, absl::nullopt,
+              manager);
 
   
   ASSERT_EQ(manager.recommended_analog_level(), kInputVolume);
@@ -1608,6 +1498,418 @@ TEST(InputVolumeControllerTest, SpeechProbabilityThresholdIsEffective) {
 
   ASSERT_GT(controller_1->recommended_analog_level(), kInputVolume);
   ASSERT_EQ(controller_2->recommended_analog_level(), kInputVolume);
+}
+
+TEST(MonoInputVolumeControllerTest, CheckHandleClippingLowersVolume) {
+  constexpr int kInitialInputVolume = 100;
+  constexpr int kInputVolumeStep = 29;
+  MonoInputVolumeController mono_controller(
+      70,
+      32,
+      3, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  mono_controller.Initialize();
+
+  UpdateRecommendedInputVolume(mono_controller, kInitialInputVolume,
+                               kLowSpeechProbability,
+                                -10.0f);
+
+  mono_controller.HandleClipping(kInputVolumeStep);
+
+  EXPECT_EQ(mono_controller.recommended_analog_level(),
+            kInitialInputVolume - kInputVolumeStep);
+}
+
+TEST(MonoInputVolumeControllerTest,
+     CheckProcessNegativeRmsErrorDecreasesInputVolume) {
+  constexpr int kInitialInputVolume = 100;
+  MonoInputVolumeController mono_controller(
+      64,
+      32,
+      3, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  mono_controller.Initialize();
+
+  int volume = UpdateRecommendedInputVolume(
+      mono_controller, kInitialInputVolume, kHighSpeechProbability, -10.0f);
+  volume = UpdateRecommendedInputVolume(mono_controller, volume,
+                                        kHighSpeechProbability, -10.0f);
+  volume = UpdateRecommendedInputVolume(mono_controller, volume,
+                                        kHighSpeechProbability, -10.0f);
+
+  EXPECT_LT(volume, kInitialInputVolume);
+}
+
+TEST(MonoInputVolumeControllerTest,
+     CheckProcessPositiveRmsErrorIncreasesInputVolume) {
+  constexpr int kInitialInputVolume = 100;
+  MonoInputVolumeController mono_controller(
+      64,
+      32,
+      3, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  mono_controller.Initialize();
+
+  int volume = UpdateRecommendedInputVolume(
+      mono_controller, kInitialInputVolume, kHighSpeechProbability, 10.0f);
+  volume = UpdateRecommendedInputVolume(mono_controller, volume,
+                                        kHighSpeechProbability, 10.0f);
+  volume = UpdateRecommendedInputVolume(mono_controller, volume,
+                                        kHighSpeechProbability, 10.0f);
+
+  EXPECT_GT(volume, kInitialInputVolume);
+}
+
+TEST(MonoInputVolumeControllerTest,
+     CheckProcessNegativeRmsErrorDecreasesInputVolumeWithLimit) {
+  constexpr int kInitialInputVolume = 100;
+  MonoInputVolumeController mono_controller_1(
+      64,
+      32,
+      2, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  MonoInputVolumeController mono_controller_2(
+      64,
+      32,
+      2, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  MonoInputVolumeController mono_controller_3(
+      64,
+      32,
+      2,
+      0.7,
+      0.8);
+  mono_controller_1.Initialize();
+  mono_controller_2.Initialize();
+  mono_controller_3.Initialize();
+
+  
+  
+  int volume_1 = UpdateRecommendedInputVolume(
+      mono_controller_1, kInitialInputVolume, kHighSpeechProbability, -14.0f);
+  volume_1 = UpdateRecommendedInputVolume(mono_controller_1, volume_1,
+                                          kHighSpeechProbability, -14.0f);
+  
+  
+  int volume_2 = UpdateRecommendedInputVolume(
+      mono_controller_2, kInitialInputVolume, kHighSpeechProbability, -15.0f);
+  int volume_3 = UpdateRecommendedInputVolume(
+      mono_controller_3, kInitialInputVolume, kHighSpeechProbability, -30.0f);
+  volume_2 = UpdateRecommendedInputVolume(mono_controller_2, volume_2,
+                                          kHighSpeechProbability, -15.0f);
+  volume_3 = UpdateRecommendedInputVolume(mono_controller_3, volume_3,
+                                          kHighSpeechProbability, -30.0f);
+
+  EXPECT_LT(volume_1, kInitialInputVolume);
+  EXPECT_LT(volume_2, volume_1);
+  EXPECT_EQ(volume_2, volume_3);
+}
+
+TEST(MonoInputVolumeControllerTest,
+     CheckProcessPositiveRmsErrorIncreasesInputVolumeWithLimit) {
+  constexpr int kInitialInputVolume = 100;
+  MonoInputVolumeController mono_controller_1(
+      64,
+      32,
+      2, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  MonoInputVolumeController mono_controller_2(
+      64,
+      32,
+      2, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  MonoInputVolumeController mono_controller_3(
+      64,
+      32,
+      2, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  mono_controller_1.Initialize();
+  mono_controller_2.Initialize();
+  mono_controller_3.Initialize();
+
+  
+  
+  int volume_1 = UpdateRecommendedInputVolume(
+      mono_controller_1, kInitialInputVolume, kHighSpeechProbability, 14.0f);
+  volume_1 = UpdateRecommendedInputVolume(mono_controller_1, volume_1,
+                                          kHighSpeechProbability, 14.0f);
+  
+  
+  int volume_2 = UpdateRecommendedInputVolume(
+      mono_controller_2, kInitialInputVolume, kHighSpeechProbability, 15.0f);
+  int volume_3 = UpdateRecommendedInputVolume(
+      mono_controller_3, kInitialInputVolume, kHighSpeechProbability, 30.0f);
+  volume_2 = UpdateRecommendedInputVolume(mono_controller_2, volume_2,
+                                          kHighSpeechProbability, 15.0f);
+  volume_3 = UpdateRecommendedInputVolume(mono_controller_3, volume_3,
+                                          kHighSpeechProbability, 30.0f);
+
+  EXPECT_GT(volume_1, kInitialInputVolume);
+  EXPECT_GT(volume_2, volume_1);
+  EXPECT_EQ(volume_2, volume_3);
+}
+
+TEST(MonoInputVolumeControllerTest,
+     CheckProcessRmsErrorDecreasesInputVolumeRepeatedly) {
+  constexpr int kInitialInputVolume = 100;
+  MonoInputVolumeController mono_controller(
+      64,
+      32,
+      2, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  mono_controller.Initialize();
+
+  int volume_before = UpdateRecommendedInputVolume(
+      mono_controller, kInitialInputVolume, kHighSpeechProbability, -10.0f);
+  volume_before = UpdateRecommendedInputVolume(mono_controller, volume_before,
+                                               kHighSpeechProbability, -10.0f);
+
+  EXPECT_LT(volume_before, kInitialInputVolume);
+
+  int volume_after = UpdateRecommendedInputVolume(
+      mono_controller, volume_before, kHighSpeechProbability, -10.0f);
+  volume_after = UpdateRecommendedInputVolume(mono_controller, volume_after,
+                                              kHighSpeechProbability, -10.0f);
+
+  EXPECT_LT(volume_after, volume_before);
+}
+
+TEST(MonoInputVolumeControllerTest,
+     CheckProcessPositiveRmsErrorIncreasesInputVolumeRepeatedly) {
+  constexpr int kInitialInputVolume = 100;
+  MonoInputVolumeController mono_controller(
+      64,
+      32,
+      2, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  mono_controller.Initialize();
+
+  int volume_before = UpdateRecommendedInputVolume(
+      mono_controller, kInitialInputVolume, kHighSpeechProbability, 10.0f);
+  volume_before = UpdateRecommendedInputVolume(mono_controller, volume_before,
+                                               kHighSpeechProbability, 10.0f);
+
+  EXPECT_GT(volume_before, kInitialInputVolume);
+
+  int volume_after = UpdateRecommendedInputVolume(
+      mono_controller, volume_before, kHighSpeechProbability, 10.0f);
+  volume_after = UpdateRecommendedInputVolume(mono_controller, volume_after,
+                                              kHighSpeechProbability, 10.0f);
+
+  EXPECT_GT(volume_after, volume_before);
+}
+
+TEST(MonoInputVolumeControllerTest, CheckClippedLevelMinIsEffective) {
+  constexpr int kInitialInputVolume = 100;
+  constexpr int kClippedLevelMin = 70;
+  MonoInputVolumeController mono_controller_1(
+      kClippedLevelMin,
+      84,
+      2, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  MonoInputVolumeController mono_controller_2(
+      kClippedLevelMin,
+      84,
+      2, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  mono_controller_1.Initialize();
+  mono_controller_2.Initialize();
+
+  
+  EXPECT_EQ(UpdateRecommendedInputVolume(mono_controller_1, kInitialInputVolume,
+                                         kLowSpeechProbability, -10.0f),
+            kInitialInputVolume);
+  EXPECT_EQ(UpdateRecommendedInputVolume(mono_controller_2, kInitialInputVolume,
+                                         kLowSpeechProbability, -10.0f),
+            kInitialInputVolume);
+
+  mono_controller_1.HandleClipping(29);
+  mono_controller_2.HandleClipping(31);
+
+  EXPECT_EQ(mono_controller_2.recommended_analog_level(), kClippedLevelMin);
+  EXPECT_LT(mono_controller_2.recommended_analog_level(),
+            mono_controller_1.recommended_analog_level());
+}
+
+TEST(MonoInputVolumeControllerTest, CheckMinMicLevelIsEffective) {
+  constexpr int kInitialInputVolume = 100;
+  constexpr int kMinMicLevel = 64;
+  MonoInputVolumeController mono_controller_1(
+      64, kMinMicLevel,
+      2, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  MonoInputVolumeController mono_controller_2(
+      64, kMinMicLevel,
+      2, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  mono_controller_1.Initialize();
+  mono_controller_2.Initialize();
+
+  int volume_1 = UpdateRecommendedInputVolume(
+      mono_controller_1, kInitialInputVolume, kHighSpeechProbability, -10.0f);
+  int volume_2 = UpdateRecommendedInputVolume(
+      mono_controller_2, kInitialInputVolume, kHighSpeechProbability, -10.0f);
+
+  EXPECT_EQ(volume_1, kInitialInputVolume);
+  EXPECT_EQ(volume_2, kInitialInputVolume);
+
+  volume_1 = UpdateRecommendedInputVolume(mono_controller_1, volume_1,
+                                          kHighSpeechProbability, -10.0f);
+  volume_2 = UpdateRecommendedInputVolume(mono_controller_2, volume_2,
+                                          kHighSpeechProbability, -30.0f);
+
+  EXPECT_LT(volume_1, kInitialInputVolume);
+  EXPECT_LT(volume_2, volume_1);
+  EXPECT_EQ(volume_2, kMinMicLevel);
+}
+
+TEST(MonoInputVolumeControllerTest,
+     CheckUpdateInputVolumeWaitFramesIsEffective) {
+  constexpr int kInitialInputVolume = 100;
+  MonoInputVolumeController mono_controller_1(
+      64,
+      84,
+      1, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  MonoInputVolumeController mono_controller_2(
+      64,
+      84,
+      3, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  mono_controller_1.Initialize();
+  mono_controller_2.Initialize();
+
+  int volume_1 = UpdateRecommendedInputVolume(
+      mono_controller_1, kInitialInputVolume, kHighSpeechProbability, -10.0f);
+  int volume_2 = UpdateRecommendedInputVolume(
+      mono_controller_2, kInitialInputVolume, kHighSpeechProbability, -10.0f);
+
+  EXPECT_EQ(volume_1, kInitialInputVolume);
+  EXPECT_EQ(volume_2, kInitialInputVolume);
+
+  volume_1 = UpdateRecommendedInputVolume(mono_controller_1, volume_1,
+                                          kHighSpeechProbability, -10.0f);
+  volume_2 = UpdateRecommendedInputVolume(mono_controller_2, volume_2,
+                                          kHighSpeechProbability, -10.0f);
+
+  EXPECT_LT(volume_1, kInitialInputVolume);
+  EXPECT_EQ(volume_2, kInitialInputVolume);
+
+  volume_2 = UpdateRecommendedInputVolume(mono_controller_2, volume_2,
+                                          kHighSpeechProbability, -10.0f);
+
+  EXPECT_LT(volume_2, kInitialInputVolume);
+}
+
+TEST(MonoInputVolumeControllerTest,
+     CheckSpeechProbabilityThresholdIsEffective) {
+  constexpr int kInitialInputVolume = 100;
+  constexpr float kSpeechProbabilityThreshold = 0.8f;
+  MonoInputVolumeController mono_controller_1(
+      64,
+      84,
+      2, kSpeechProbabilityThreshold,
+      kSpeechRatioThreshold);
+  MonoInputVolumeController mono_controller_2(
+      64,
+      84,
+      2, kSpeechProbabilityThreshold,
+      kSpeechRatioThreshold);
+  mono_controller_1.Initialize();
+  mono_controller_2.Initialize();
+
+  int volume_1 =
+      UpdateRecommendedInputVolume(mono_controller_1, kInitialInputVolume,
+                                   kSpeechProbabilityThreshold, -10.0f);
+  int volume_2 =
+      UpdateRecommendedInputVolume(mono_controller_2, kInitialInputVolume,
+                                   kSpeechProbabilityThreshold, -10.0f);
+
+  EXPECT_EQ(volume_1, kInitialInputVolume);
+  EXPECT_EQ(volume_2, kInitialInputVolume);
+
+  volume_1 = UpdateRecommendedInputVolume(
+      mono_controller_1, volume_1, kSpeechProbabilityThreshold - 0.1f, -10.0f);
+  volume_2 = UpdateRecommendedInputVolume(mono_controller_2, volume_2,
+                                          kSpeechProbabilityThreshold, -10.0f);
+
+  EXPECT_EQ(volume_1, kInitialInputVolume);
+  EXPECT_LT(volume_2, volume_1);
+}
+
+TEST(MonoInputVolumeControllerTest, CheckSpeechRatioThresholdIsEffective) {
+  constexpr int kInitialInputVolume = 100;
+  MonoInputVolumeController mono_controller_1(
+      64,
+      84,
+      4, kHighSpeechProbability,
+      0.75f);
+  MonoInputVolumeController mono_controller_2(
+      64,
+      84,
+      4, kHighSpeechProbability,
+      0.75f);
+  mono_controller_1.Initialize();
+  mono_controller_2.Initialize();
+
+  int volume_1 = UpdateRecommendedInputVolume(
+      mono_controller_1, kInitialInputVolume, kHighSpeechProbability, -10.0f);
+  int volume_2 = UpdateRecommendedInputVolume(
+      mono_controller_2, kInitialInputVolume, kHighSpeechProbability, -10.0f);
+
+  volume_1 = UpdateRecommendedInputVolume(mono_controller_1, volume_1,
+                                          kHighSpeechProbability, -10.0f);
+  volume_2 = UpdateRecommendedInputVolume(mono_controller_2, volume_2,
+                                          kHighSpeechProbability, -10.0f);
+
+  volume_1 = UpdateRecommendedInputVolume(mono_controller_1, volume_1,
+                                          kLowSpeechProbability, -10.0f);
+  volume_2 = UpdateRecommendedInputVolume(mono_controller_2, volume_2,
+                                          kLowSpeechProbability, -10.0f);
+
+  EXPECT_EQ(volume_1, kInitialInputVolume);
+  EXPECT_EQ(volume_2, kInitialInputVolume);
+
+  volume_1 = UpdateRecommendedInputVolume(mono_controller_1, volume_1,
+                                          kLowSpeechProbability, -10.0f);
+  volume_2 = UpdateRecommendedInputVolume(mono_controller_2, volume_2,
+                                          kHighSpeechProbability, -10.0f);
+
+  EXPECT_EQ(volume_1, kInitialInputVolume);
+  EXPECT_LT(volume_2, volume_1);
+}
+
+TEST(MonoInputVolumeControllerTest,
+     CheckProcessEmptyRmsErrorDoesNotLowerVolume) {
+  constexpr int kInitialInputVolume = 100;
+  MonoInputVolumeController mono_controller_1(
+      64,
+      84,
+      2, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  MonoInputVolumeController mono_controller_2(
+      64,
+      84,
+      2, kHighSpeechProbability,
+      kSpeechRatioThreshold);
+  mono_controller_1.Initialize();
+  mono_controller_2.Initialize();
+
+  int volume_1 = UpdateRecommendedInputVolume(
+      mono_controller_1, kInitialInputVolume, kHighSpeechProbability, -10.0f);
+  int volume_2 = UpdateRecommendedInputVolume(
+      mono_controller_2, kInitialInputVolume, kHighSpeechProbability, -10.0f);
+
+  EXPECT_EQ(volume_1, kInitialInputVolume);
+  EXPECT_EQ(volume_2, kInitialInputVolume);
+
+  volume_1 = UpdateRecommendedInputVolume(
+      mono_controller_1, volume_1, kHighSpeechProbability, absl::nullopt);
+  volume_2 = UpdateRecommendedInputVolume(mono_controller_2, volume_2,
+                                          kHighSpeechProbability, -10.0f);
+
+  EXPECT_EQ(volume_1, kInitialInputVolume);
+  EXPECT_LT(volume_2, volume_1);
 }
 
 }  

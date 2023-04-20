@@ -35,7 +35,6 @@ class InputVolumeController final {
  public:
   
   struct Config {
-    bool enabled = false;
     
     int clipped_level_min = 70;
     
@@ -98,7 +97,7 @@ class InputVolumeController final {
   
   
   
-  void Process(absl::optional<float> speech_probability,
+  void Process(float speech_probability,
                absl::optional<float> speech_level_dbfs);
 
   
@@ -141,8 +140,6 @@ class InputVolumeController final {
                            ClippingParametersVerified);
 
   void AggregateChannelLevels();
-
-  const bool analog_controller_enabled_;
 
   const int num_capture_channels_;
 
@@ -213,8 +210,7 @@ class MonoInputVolumeController {
   
   
   
-  void Process(absl::optional<int> rms_error_dbfs,
-               absl::optional<float> speech_probability);
+  void Process(absl::optional<int> rms_error_dbfs, float speech_probability);
 
   
   int recommended_analog_level() const { return recommended_input_volume_; }
