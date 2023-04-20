@@ -6577,18 +6577,14 @@ Element* HTMLEditor::ComputeEditingHostInternal(
     
     
     
-    if (!document->GetBodyElement()) {
-      return nullptr;
-    }
-    if (nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+    if (document->GetBodyElement() &&
+        nsContentUtils::ContentIsFlattenedTreeDescendantOf(
             aCandidiateEditingHost, document->GetBodyElement())) {
       return const_cast<Element*>(aCandidiateEditingHost);
     }
     
     
-    return HTMLEditUtils::IsSimplyEditableNode(*document->GetBodyElement())
-               ? document->GetBodyElement()
-               : nullptr;
+    return document->GetBodyElement();
   };
 
   if (IsInDesignMode()) {
