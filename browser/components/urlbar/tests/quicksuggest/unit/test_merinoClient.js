@@ -16,13 +16,24 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 
+
+
+
+const TEST_TIMEOUT_MS = 30000;
+
+
 const EXPECTED_MERINO_SUGGESTIONS = [];
 
 const { SEARCH_PARAMS } = MerinoClient;
 
 let gClient;
 
-add_task(async function init() {
+add_setup(async function init() {
+  UrlbarPrefs.set("merino.timeoutMs", TEST_TIMEOUT_MS);
+  registerCleanupFunction(() => {
+    UrlbarPrefs.clear("merino.timeoutMs");
+  });
+
   gClient = new MerinoClient();
   await MerinoTestUtils.server.start();
 
@@ -187,14 +198,21 @@ add_task(async function httpError() {
 
 
 add_task(async function clientTimeout() {
-  await doClientTimeoutTest();
+  await doClientTimeoutTest({
+    prefTimeoutMs: 200,
+    responseDelayMs: 400,
+  });
 });
 
 
 
 add_task(async function clientTimeoutFollowedByHTTPError() {
   MerinoTestUtils.server.response = { status: 500 };
-  await doClientTimeoutTest({ expectedResponseStatus: 500 });
+  await doClientTimeoutTest({
+    prefTimeoutMs: 200,
+    responseDelayMs: 400,
+    expectedResponseStatus: 500,
+  });
 });
 
 
@@ -211,26 +229,27 @@ add_task(async function timeoutPassedToFetch() {
   
   
 
-  UrlbarPrefs.set("merino.timeoutMs", 30000);
-
   await doClientTimeoutTest({
-    responseDelay: 400,
+    prefTimeoutMs: 30000,
+    responseDelayMs: 400,
     fetchArgs: { query: "search", timeoutMs: 1 },
   });
-
-  UrlbarPrefs.clear("merino.timeoutMs");
 });
 
 async function doClientTimeoutTest({
-  responseDelay = 2 * UrlbarPrefs.get("merino.timeoutMs"),
+  prefTimeoutMs,
+  responseDelayMs,
   fetchArgs = { query: "search" },
   expectedResponseStatus = 200,
 } = {}) {
   let histograms = MerinoTestUtils.getAndClearHistograms();
 
+  let originalPrefTimeoutMs = UrlbarPrefs.get("merino.timeoutMs");
+  UrlbarPrefs.set("merino.timeoutMs", prefTimeoutMs);
+
   
   
-  MerinoTestUtils.server.response.delay = responseDelay;
+  MerinoTestUtils.server.response.delay = responseDelayMs;
 
   let responsePromise = gClient.waitForNextResponse();
   await fetchAndCheckSuggestions({ args: fetchArgs, expected: [] });
@@ -283,6 +302,7 @@ async function doClientTimeoutTest({
   });
 
   MerinoTestUtils.server.reset();
+  UrlbarPrefs.set("merino.timeoutMs", originalPrefTimeoutMs);
 }
 
 
@@ -295,7 +315,7 @@ add_task(async function newFetchAbortsPrevious() {
   
   
   MerinoTestUtils.server.response.delay =
-    10000 * UrlbarPrefs.get("merino.timeoutMs");
+    100 * UrlbarPrefs.get("merino.timeoutMs");
 
   
   await fetchAndCheckSuggestions({ expected: [] });
