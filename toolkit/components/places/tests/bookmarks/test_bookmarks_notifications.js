@@ -1029,6 +1029,11 @@ add_task(async function reorder_notification() {
 
   
   sorted.sort(() => 0.5 - Math.random());
+  
+  
+  if (sorted[0].url == bookmarks[0].url) {
+    sorted.push(sorted.shift());
+  }
 
   const observer = expectPlacesObserverNotifications(["bookmark-moved"]);
   await PlacesUtils.bookmarks.reorder(
