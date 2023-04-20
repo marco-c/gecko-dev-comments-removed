@@ -221,7 +221,7 @@ type LanguageTranslationModelFilesAligned = {
 
 
 
-interface EnginePayload {
+interface TranslationsEnginePayload {
   bergamotWasmArrayBuffer: ArrayBuffer,
   languageModelFiles: LanguageModelFiles[]
 }
