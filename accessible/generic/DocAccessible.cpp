@@ -492,10 +492,25 @@ void DocAccessible::Shutdown() {
   for (auto iter = mAccessibleCache.Iter(); !iter.Done(); iter.Next()) {
     LocalAccessible* accessible = iter.Data();
     MOZ_ASSERT(accessible);
-    if (accessible && !accessible->IsDefunct()) {
+    if (accessible) {
       
-      accessible->mParent = nullptr;
-      accessible->Shutdown();
+      
+      
+      
+      
+      if (FocusMgr()->WasLastFocused(accessible)) {
+        FocusMgr()->ActiveItemChanged(nullptr);
+#ifdef A11Y_LOG
+        if (logging::IsEnabled(logging::eFocus)) {
+          logging::ActiveItemChangeCausedBy("doc shutdown", accessible);
+        }
+#endif
+      }
+      if (!accessible->IsDefunct()) {
+        
+        accessible->mParent = nullptr;
+        accessible->Shutdown();
+      }
     }
     iter.Remove();
   }
