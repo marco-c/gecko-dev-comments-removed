@@ -178,7 +178,7 @@ class ClientWrapper {
 
   
   getPerformancePanelUrl() {
-    return "chrome://devtools/content/performance-new/index.xhtml";
+    return "chrome://devtools/content/performance-new/panel/index.xhtml";
   }
 
   
