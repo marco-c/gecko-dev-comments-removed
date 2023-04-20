@@ -67,8 +67,6 @@ user_pref("media.navigator.enabled", true);
 user_pref("media.navigator.permission.disabled", true);
 user_pref("media.peerconnection.enabled", true);
 
-user_pref("network.http.speculative-parallel-limit", 0);
-
 
 
 
