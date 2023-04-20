@@ -130,6 +130,18 @@ def validate_test_ini(test_details):
         
         test_details["alert_on"] = sorted(set(valid_alerts))
 
+    
+    
+    if test_details.get("repository", None) is not None:
+        if test_details.get("repository_revision", None) is None:
+            LOG.error(
+                "`repository_revision` is required when a `repository` is defined."
+            )
+            valid_settings = False
+        elif test_details.get("type") not in ("benchmark"):
+            LOG.error("`repository` is only available for benchmark test types.")
+            valid_settings = False
+
     return valid_settings
 
 
