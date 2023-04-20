@@ -1919,11 +1919,9 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadStyleLink(
         return Err(rv);
       }
     } else {
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
       
       
       data->mIntentionallyDropped = true;
-#endif
     }
 
     
@@ -2063,9 +2061,7 @@ nsresult Loader::LoadChildSheet(StyleSheet& aParentSheet,
     
     
     
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
     data->mIntentionallyDropped = true;
-#endif
     return NS_OK;
   }
 
@@ -2160,9 +2156,7 @@ Result<RefPtr<StyleSheet>, nsresult> Loader::InternalLoadNonDocumentSheet(
     } else {
       
       
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
       data->mIntentionallyDropped = true;
-#endif
     }
     return sheet;
   }

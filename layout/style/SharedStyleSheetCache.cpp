@@ -110,10 +110,8 @@ void SharedStyleSheetCache::LoadCompletedInternal(
   
   auto* data = &aData;
   do {
-    MOZ_DIAGNOSTIC_ASSERT(!data->mSheetCompleteCalled);
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    MOZ_RELEASE_ASSERT(!data->mSheetCompleteCalled);
     data->mSheetCompleteCalled = true;
-#endif
 
     if (!data->mSheetAlreadyComplete) {
       
