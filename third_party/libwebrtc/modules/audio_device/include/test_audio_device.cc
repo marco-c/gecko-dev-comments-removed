@@ -144,14 +144,8 @@ class TestAudioDeviceModuleImpl
 
   
   
-  bool WaitForPlayoutEnd(int timeout_ms = rtc::Event::kForever) override {
-    return done_rendering_.Wait(timeout_ms);
-  }
-
-  
-  
-  bool WaitForRecordingEnd(int timeout_ms = rtc::Event::kForever) override {
-    return done_capturing_.Wait(timeout_ms);
+  bool WaitForRecordingEnd() override {
+    return done_capturing_.Wait(rtc::Event::kForever);
   }
 
  private:

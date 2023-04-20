@@ -108,13 +108,13 @@ class DataChannelObserverImpl : public webrtc::DataChannelObserver {
       low_buffered_threshold_event_.Reset();
   }
 
-  bool WaitForOpenState(int duration_ms) {
+  bool WaitForOpenState() {
     return dc_->state() == webrtc::DataChannelInterface::DataState::kOpen ||
-           open_event_.Wait(duration_ms);
+           open_event_.Wait(rtc::Event::kForever);
   }
-  bool WaitForClosedState(int duration_ms) {
+  bool WaitForClosedState() {
     return dc_->state() == webrtc::DataChannelInterface::DataState::kClosed ||
-           closed_event_.Wait(duration_ms);
+           closed_event_.Wait(rtc::Event::kForever);
   }
 
   
@@ -125,18 +125,18 @@ class DataChannelObserverImpl : public webrtc::DataChannelObserver {
       bytes_received_event_.Set();
   }
   
-  bool WaitForBytesReceivedThreshold(int duration_ms) {
+  bool WaitForBytesReceivedThreshold() {
     return (bytes_received_threshold_ &&
             bytes_received_ >= bytes_received_threshold_) ||
-           bytes_received_event_.Wait(duration_ms);
+           bytes_received_event_.Wait(rtc::Event::kForever);
   }
 
-  bool WaitForLowbufferedThreshold(int duration_ms) {
-    return low_buffered_threshold_event_.Wait(duration_ms);
+  bool WaitForLowbufferedThreshold() {
+    return low_buffered_threshold_event_.Wait(rtc::Event::kForever);
   }
   std::string SetupMessage() { return setup_message_; }
-  bool WaitForSetupMessage(int duration_ms) {
-    return setup_message_event_.Wait(duration_ms);
+  bool WaitForSetupMessage() {
+    return setup_message_event_.Wait(rtc::Event::kForever);
   }
 
  private:
@@ -182,7 +182,7 @@ int RunServer() {
           
           
           
-          data_channel_observer->WaitForSetupMessage(rtc::Event::kForever);
+          data_channel_observer->WaitForSetupMessage();
           auto parameters =
               SetupMessage::FromString(data_channel_observer->SetupMessage());
 
@@ -204,8 +204,7 @@ int RunServer() {
             if (!data_channel->Send(data_buffer)) {
               
               
-              data_channel_observer->WaitForLowbufferedThreshold(
-                  rtc::Event::kForever);
+              data_channel_observer->WaitForLowbufferedThreshold();
               continue;
             }
             remaining_data -= buffer.size();
@@ -217,7 +216,7 @@ int RunServer() {
 
           
           
-          data_channel_observer->WaitForClosedState(rtc::Event::kForever);
+          data_channel_observer->WaitForClosedState();
 
           auto end_time = webrtc::Clock::GetRealTimeClock()->CurrentTime();
           auto duration_ms = (end_time - begin_time).ms<size_t>();
@@ -280,7 +279,7 @@ int RunClient() {
 
     
     
-    observer.WaitForOpenState(rtc::Event::kForever);
+    observer.WaitForOpenState();
     SetupMessage setup_message = {
         .packet_size = packet_size,
         .transfer_size = transfer_size,
@@ -291,7 +290,7 @@ int RunClient() {
     }
 
     
-    observer.WaitForBytesReceivedThreshold(rtc::Event::kForever);
+    observer.WaitForBytesReceivedThreshold();
 
     
     

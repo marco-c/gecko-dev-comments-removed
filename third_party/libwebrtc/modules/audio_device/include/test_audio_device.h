@@ -23,7 +23,6 @@
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/event.h"
 
 namespace webrtc {
 
@@ -143,10 +142,7 @@ class TestAudioDeviceModule : public AudioDeviceModule {
 
   
   
-  virtual bool WaitForPlayoutEnd(int timeout_ms = rtc::Event::kForever) = 0;
-  
-  
-  virtual bool WaitForRecordingEnd(int timeout_ms = rtc::Event::kForever) = 0;
+  virtual bool WaitForRecordingEnd() = 0;
 };
 
 }  
