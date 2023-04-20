@@ -436,6 +436,42 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+  bool EnableCompatibleJoinSplitNodeDirection(bool aEnable) {
+    if (!CanChangeJoinSplitNodeDirection()) {
+      return false;
+    }
+    mUseGeckoTraditionalJoinSplitBehavior = !aEnable;
+    return true;
+  }
+
+  
+
+
+
+  [[nodiscard]] bool IsCompatibleJoinSplitNodeDirectionEnabled() const {
+    return !mUseGeckoTraditionalJoinSplitBehavior;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] bool CanChangeJoinSplitNodeDirection() const {
+    return !mMaybeHasJoinSplitTransactions;
+  }
+
+  
+
+
+
   MOZ_CAN_RUN_SCRIPT already_AddRefed<Element>
   GetAbsolutelyPositionedSelectionContainer() const;
 
@@ -4428,6 +4464,10 @@ class HTMLEditor final : public EditorBase,
   bool mOldLinkHandlingEnabled = false;
 
   bool mHasBeforeInputBeenCanceled = false;
+
+  
+  
+  bool mMaybeHasJoinSplitTransactions = false;
 
   ParagraphSeparator mDefaultParagraphSeparator;
 

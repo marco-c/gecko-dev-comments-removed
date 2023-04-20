@@ -3,21 +3,25 @@
 
 
 
-#include "mozilla/EditorCommands.h"
+#include "EditorCommands.h"
 
-#include "mozilla/EditorBase.h"               
-#include "mozilla/HTMLEditor.h"               
+#include "EditorBase.h"  
+#include "HTMLEditor.h"  
+
+#include "mozilla/BasePrincipal.h"  
+#include "mozilla/StaticPrefs_editor.h"
 #include "mozilla/dom/Element.h"              
 #include "mozilla/dom/Document.h"             
 #include "mozilla/dom/HTMLInputElement.h"     
 #include "mozilla/dom/HTMLTextAreaElement.h"  
-#include "nsCommandParams.h"                  
-#include "nsIEditingSession.h"                
-#include "nsIPrincipal.h"                     
-#include "nsISupportsImpl.h"                  
-#include "nsISupportsUtils.h"                 
-#include "nsIURI.h"                           
-#include "nsPresContext.h"                    
+
+#include "nsCommandParams.h"    
+#include "nsIEditingSession.h"  
+#include "nsIPrincipal.h"       
+#include "nsISupportsImpl.h"    
+#include "nsISupportsUtils.h"   
+#include "nsIURI.h"             
+#include "nsPresContext.h"      
 
 
 #define STATE_ENABLED "state_enabled"
@@ -43,11 +47,16 @@ StaticRefPtr<SetDocumentStateCommand> SetDocumentStateCommand::sInstance;
 
 bool SetDocumentStateCommand::IsCommandEnabled(Command aCommand,
                                                EditorBase* aEditorBase) const {
-  if (aCommand == Command::SetDocumentReadOnly) {
-    return !!aEditorBase;
+  switch (aCommand) {
+    case Command::SetDocumentReadOnly:
+      return !!aEditorBase;
+    case Command::EnableCompatibleJoinSplitNodeDirection:
+      return aEditorBase && aEditorBase->IsHTMLEditor() &&
+             aEditorBase->AsHTMLEditor()->CanChangeJoinSplitNodeDirection();
+    default:
+      
+      return aEditorBase && aEditorBase->IsHTMLEditor();
   }
-  
-  return aEditorBase && aEditorBase->IsHTMLEditor();
 }
 
 nsresult SetDocumentStateCommand::DoCommand(Command aCommand,
@@ -160,6 +169,17 @@ nsresult SetDocumentStateCommand::DoCommandParam(
           ->EnableAbsolutePositionEditor(aBoolParam.value());
       return NS_OK;
     }
+    case Command::EnableCompatibleJoinSplitNodeDirection:
+      MOZ_ASSERT_IF(
+          StaticPrefs::
+                  editor_join_split_direction_compatible_with_the_other_browsers() &&
+              aPrincipal && !aPrincipal->IsSystemPrincipal(),
+          aBoolParam.value());
+      return MOZ_KnownLive(aEditorBase.AsHTMLEditor())
+                     ->EnableCompatibleJoinSplitNodeDirection(
+                         aBoolParam.value())
+                 ? NS_OK
+                 : NS_SUCCESS_DOM_NO_OPERATION;
     default:
       return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -344,6 +364,14 @@ nsresult SetDocumentStateCommand::GetCommandStateParams(
       }
       return aParams.SetBool(STATE_ALL,
                              htmlEditor->IsAbsolutePositionEditorEnabled());
+    }
+    case Command::EnableCompatibleJoinSplitNodeDirection: {
+      HTMLEditor* htmlEditor = aEditorBase->GetAsHTMLEditor();
+      if (NS_WARN_IF(!htmlEditor)) {
+        return NS_ERROR_INVALID_ARG;
+      }
+      return aParams.SetBool(
+          STATE_ALL, htmlEditor->IsCompatibleJoinSplitNodeDirectionEnabled());
     }
     default:
       return NS_ERROR_NOT_IMPLEMENTED;
