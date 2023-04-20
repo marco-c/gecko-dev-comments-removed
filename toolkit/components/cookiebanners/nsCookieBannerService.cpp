@@ -379,7 +379,8 @@ nsCookieBannerService::GetCookiesForURI(
 
 NS_IMETHODIMP
 nsCookieBannerService::GetClickRulesForDomain(
-    const nsACString& aDomain, nsTArray<RefPtr<nsIClickRule>>& aRules) {
+    const nsACString& aDomain, const bool aIsTopLevel,
+    nsTArray<RefPtr<nsIClickRule>>& aRules) {
   aRules.Clear();
 
   
@@ -398,7 +399,22 @@ nsCookieBannerService::GetClickRulesForDomain(
     rv = bannerRule->GetClickRule(getter_AddRefs(clickRule));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    if (clickRule) {
+    if (!clickRule) {
+      return NS_OK;
+    }
+
+    
+    
+    nsIClickRule::RunContext runContext;
+    rv = clickRule->GetRunContext(&runContext);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    bool runContextMatchesRule =
+        (runContext == nsIClickRule::RUN_ALL) ||
+        (runContext == nsIClickRule::RUN_TOP && aIsTopLevel) ||
+        (runContext == nsIClickRule::RUN_CHILD && !aIsTopLevel);
+
+    if (runContextMatchesRule) {
       aRules.AppendElement(clickRule);
     }
 

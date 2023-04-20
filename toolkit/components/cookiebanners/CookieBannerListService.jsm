@@ -277,6 +277,22 @@ class CookieBannerListService {
     }
   }
 
+  
+
+
+
+
+  #runContextStrToNative(runContextStr) {
+    let strToNative = {
+      top: Ci.nsIClickRule.RUN_TOP,
+      child: Ci.nsIClickRule.RUN_CHILD,
+      all: Ci.nsIClickRule.RUN_ALL,
+    };
+
+    
+    return strToNative[runContextStr] ?? Ci.nsIClickRule.RUN_TOP;
+  }
+
   #importClickRule(rule, click) {
     
     
@@ -287,6 +303,7 @@ class CookieBannerListService {
     rule.addClickRule(
       click.presence,
       click.skipPresenceVisibilityCheck,
+      this.#runContextStrToNative(click.runContext),
       click.hide,
       click.optOut,
       click.optIn
