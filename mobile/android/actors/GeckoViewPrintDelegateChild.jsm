@@ -1,0 +1,11 @@
+
+
+
+
+const { GeckoViewActorChild } = ChromeUtils.importESModule(
+  "resource://gre/modules/GeckoViewActorChild.sys.mjs"
+);
+
+const EXPORTED_SYMBOLS = ["GeckoViewPrintDelegateChild"];
+
+class GeckoViewPrintDelegateChild extends GeckoViewActorChild {}

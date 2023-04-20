@@ -91,6 +91,11 @@ pref("browser.formfill.debug", false);
 pref("extensions.formautofill.loglevel", "Warn");
 
 
+#ifdef NIGHTLY_BUILD
+pref("dom.enable_window_print", true);
+#endif
+
+
 
 pref("pdfjs.handleOctetStream", true);
 pref("browser.download.open_pdf_attachments_inline", true);
