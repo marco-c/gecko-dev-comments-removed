@@ -40,6 +40,7 @@ class VCMDecoderDataBase {
   void RegisterReceiveCodec(uint8_t payload_type,
                             const VideoDecoder::Settings& settings);
   bool DeregisterReceiveCodec(uint8_t payload_type);
+  void DeregisterReceiveCodecs();
 
   
   
