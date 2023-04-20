@@ -86,6 +86,63 @@ add_task(async function check_fluent_ids() {
 
 
 add_task(async function import_suggestion_wizard() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const USING_LEGACY_WIZARD = !Services.prefs.getBoolPref(
+    "browser.migrate.content-modal.enabled",
+    false
+  );
+
+  
+  
+  
+  
+  
+  
+  let waitForWizard = async () => {
+    if (USING_LEGACY_WIZARD) {
+      return BrowserTestUtils.waitForCondition(
+        () => Services.wm.getMostRecentWindow("Browser:MigrationWizard"),
+        "Wait for migration wizard to open"
+      );
+    }
+
+    let wizardReady = BrowserTestUtils.waitForEvent(
+      window,
+      "MigrationWizard:Ready"
+    );
+    let wizardTab = await BrowserTestUtils.waitForNewTab(gBrowser, url => {
+      return url.startsWith("about:preferences");
+    });
+    await wizardReady;
+
+    return wizardTab;
+  };
+
+  
+  
+  
+  
+  
+  
+  let closeWizard = wizardWindowOrTab => {
+    if (USING_LEGACY_WIZARD) {
+      return BrowserTestUtils.closeWindow(wizardWindowOrTab);
+    }
+
+    return BrowserTestUtils.removeTab(wizardWindowOrTab);
+  };
+
   let wizard;
 
   await BrowserTestUtils.withNewTab(
@@ -112,7 +169,7 @@ add_task(async function import_suggestion_wizard() {
       gTestMigrator.profiles.length = 2;
 
       info("Clicking on importable suggestion");
-      const wizardPromise = BrowserTestUtils.waitForMigrationWizard(window);
+      const wizardPromise = waitForWizard();
 
       
       executeSoon(() => EventUtils.synthesizeMouseAtCenter(importableItem, {}));
@@ -132,7 +189,7 @@ add_task(async function import_suggestion_wizard() {
   
   
   
-  await BrowserTestUtils.closeMigrationWizard(wizard);
+  await closeWizard(wizard);
 });
 
 add_task(async function import_suggestion_learn_more() {

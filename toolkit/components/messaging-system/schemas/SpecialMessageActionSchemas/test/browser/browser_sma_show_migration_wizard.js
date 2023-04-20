@@ -3,6 +3,65 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
+
+
+const USING_LEGACY_WIZARD = !Services.prefs.getBoolPref(
+  "browser.migrate.content-modal.enabled",
+  false
+);
+
+
+
+
+
+
+
+
+
+async function waitForWizard() {
+  if (USING_LEGACY_WIZARD) {
+    return BrowserTestUtils.waitForCondition(
+      () => Services.wm.getMostRecentWindow("Browser:MigrationWizard"),
+      "Wait for migration wizard to open"
+    );
+  }
+
+  let wizardReady = BrowserTestUtils.waitForEvent(
+    window,
+    "MigrationWizard:Ready"
+  );
+  let wizardTab = await BrowserTestUtils.waitForNewTab(gBrowser, url => {
+    return url.startsWith("about:preferences");
+  });
+  await wizardReady;
+
+  return wizardTab;
+}
+
+
+
+
+
+
+
+
+
+function closeWizard(wizardWindowOrTab) {
+  if (USING_LEGACY_WIZARD) {
+    return BrowserTestUtils.closeWindow(wizardWindowOrTab);
+  }
+
+  return BrowserTestUtils.removeTab(wizardWindowOrTab);
+}
+
 add_setup(async () => {
   
   
@@ -15,17 +74,17 @@ add_setup(async () => {
 });
 
 add_task(async function test_SHOW_MIGRATION_WIZARD() {
-  let wizardOpened = BrowserTestUtils.waitForMigrationWizard(window);
+  let wizardOpened = waitForWizard();
 
   SMATestUtils.executeAndValidateAction({ type: "SHOW_MIGRATION_WIZARD" });
 
   let wizard = await wizardOpened;
   ok(wizard, "Migration wizard opened");
-  await BrowserTestUtils.closeMigrationWizard(wizard);
+  closeWizard(wizard);
 });
 
 add_task(async function test_SHOW_MIGRATION_WIZARD_WITH_SOURCE() {
-  let wizardOpened = BrowserTestUtils.waitForMigrationWizard(window);
+  let wizardOpened = waitForWizard();
 
   SMATestUtils.executeAndValidateAction({
     type: "SHOW_MIGRATION_WIZARD",
@@ -34,5 +93,5 @@ add_task(async function test_SHOW_MIGRATION_WIZARD_WITH_SOURCE() {
 
   let wizard = await wizardOpened;
   ok(wizard, "Migrator window opened when source param specified");
-  await BrowserTestUtils.closeMigrationWizard(wizard);
+  closeWizard(wizard);
 });
