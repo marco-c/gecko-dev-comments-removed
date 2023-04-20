@@ -896,6 +896,13 @@ add_task(async function test_updateEnabledRuleset_id_validation() {
 });
 
 add_task(async function test_getAvailableStaticRulesCountAndLimits() {
+  
+  
+  
+  
+  
+  Services.prefs.setBoolPref("extensions.background.idle.enabled", false);
+
   const dnrStore = ExtensionDNRStore._getStoreForTesting();
   const { GUARANTEED_MINIMUM_STATIC_RULES } = ExtensionDNR.limits;
   equal(
@@ -1098,6 +1105,8 @@ add_task(async function test_getAvailableStaticRulesCountAndLimits() {
   );
 
   await extension.unload();
+
+  Services.prefs.clearUserPref("extensions.background.idle.enabled");
 });
 
 add_task(async function test_static_rulesets_limits() {
