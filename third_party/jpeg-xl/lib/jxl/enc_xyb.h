@@ -31,9 +31,16 @@ void Image3FToXYB(const Image3F& in, const ColorEncoding& color_encoding,
                   float intensity_target, ThreadPool* pool,
                   Image3F* JXL_RESTRICT xyb, const JxlCmsInterface& cms);
 
+void LinearRGBRowToXYB(float* JXL_RESTRICT row0, float* JXL_RESTRICT row1,
+                       float* JXL_RESTRICT row2,
+                       const float* JXL_RESTRICT premul_absorb, size_t xsize);
+
+void ComputePremulAbsorb(float intensity_target, float* premul_absorb);
+
 
 
 void ScaleXYB(Image3F* opsin);
+void ScaleXYBRow(float* row0, float* row1, float* row2, size_t xsize);
 
 
 

@@ -3,7 +3,7 @@
 
 
 
-#include "lib/jxl/gaborish.h"
+#include "lib/jxl/enc_gaborish.h"
 
 #include <hwy/base.h>
 

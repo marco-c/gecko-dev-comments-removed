@@ -150,6 +150,31 @@
 
 
 
+
+
+
+
+
+
+#if defined(__has_cpp_attribute) && __has_cpp_attribute(assume)
+#define HWY_ASSUME(expr) [[assume(expr)]]
+#elif HWY_COMPILER_MSVC || HWY_COMPILER_ICC
+#define HWY_ASSUME(expr) __assume(expr)
+
+#elif HWY_COMPILER_CLANG && HWY_HAS_BUILTIN(__builtin_assume)
+#define HWY_ASSUME(expr) __builtin_assume(expr)
+
+
+#elif HWY_COMPILER_GCC_ACTUAL >= 405
+#define HWY_ASSUME(expr) \
+  ((expr) ? static_cast<void>(0) : __builtin_unreachable())
+#else
+#define HWY_ASSUME(expr) static_cast<void>(0)
+#endif
+
+
+
+
 #if HWY_ARCH_X86
 #define HWY_FENCE std::atomic_thread_fence(std::memory_order_acq_rel)
 #else
@@ -396,10 +421,11 @@ HWY_API constexpr bool IsSame() {
   hwy::EnableIf<sizeof(T) == (bytes)>* = nullptr
 #define HWY_IF_NOT_LANE_SIZE(T, bytes) \
   hwy::EnableIf<sizeof(T) != (bytes)>* = nullptr
-#define HWY_IF_LANE_SIZE_LT(T, bytes) \
-  hwy::EnableIf<sizeof(T) < (bytes)>* = nullptr
-#define HWY_IF_LANE_SIZE_GE(T, bytes) \
-  hwy::EnableIf<sizeof(T) >= (bytes)>* = nullptr
+
+
+
+#define HWY_IF_LANE_SIZE_ONE_OF(T, bit_array) \
+  hwy::EnableIf<((size_t{1} << sizeof(T)) & (bit_array)) != 0>* = nullptr
 
 #define HWY_IF_LANES_PER_BLOCK(T, N, LANES) \
   hwy::EnableIf<HWY_MIN(sizeof(T) * N, 16) / sizeof(T) == (LANES)>* = nullptr
@@ -874,6 +900,20 @@ template <typename TI>
   return x == TI{1}
              ? 0
              : static_cast<size_t>(FloorLog2(static_cast<TI>(x - 1)) + 1);
+}
+
+template <typename T>
+HWY_INLINE constexpr T AddWithWraparound(hwy::FloatTag , T t, size_t n) {
+  return t + static_cast<T>(n);
+}
+
+template <typename T>
+HWY_INLINE constexpr T AddWithWraparound(hwy::NonFloatTag , T t,
+                                         size_t n) {
+  using TU = MakeUnsigned<T>;
+  return static_cast<T>(
+      static_cast<TU>(static_cast<TU>(t) + static_cast<TU>(n)) &
+      hwy::LimitsMax<TU>());
 }
 
 #if HWY_COMPILER_MSVC && HWY_ARCH_X86_64

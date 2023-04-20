@@ -18,6 +18,10 @@
 namespace {
 
 
+
+
+#if JXL_ENABLE_ASSERT
+
 bool Abort() {
 #if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER) || \
     defined(THREAD_SANITIZER)
@@ -34,9 +38,6 @@ bool Abort() {
   __builtin_trap();
 #endif
 }
-
-
-#if JXL_ENABLE_ASSERT
 #define JXL_ASSERT(condition) \
   do {                        \
     if (!(condition)) {       \

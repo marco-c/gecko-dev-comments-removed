@@ -165,7 +165,7 @@ void MyOutputMessage(j_common_ptr cinfo) {
 Status DecodeImageJPG(const Span<const uint8_t> bytes,
                       const ColorHints& color_hints,
                       const SizeConstraints& constraints,
-                      size_t output_bit_depth, PackedPixelFile* ppf) {
+                      PackedPixelFile* ppf) {
   
   if (!IsJPG(bytes)) return false;
 
@@ -175,15 +175,8 @@ Status DecodeImageJPG(const Span<const uint8_t> bytes,
   
   std::unique_ptr<JSAMPLE[]> row;
 
-  if (output_bit_depth == 0 || output_bit_depth > 16) {
-    return JXL_FAILURE("Invalid output bitdepth");
-  }
-
   const auto try_catch_block = [&]() -> bool {
-    jpeg_decompress_struct cinfo;
-    
-    
-    msan::UnpoisonMemory(&cinfo, sizeof(cinfo));
+    jpeg_decompress_struct cinfo = {};
     
     
     jpeg_error_mgr jerr;
@@ -256,18 +249,8 @@ Status DecodeImageJPG(const Span<const uint8_t> bytes,
     ppf->info.num_color_channels = nbcomp;
     ppf->info.orientation = JXL_ORIENT_IDENTITY;
 
-    
-    
-    
-    cinfo.quantize_colors = FALSE;
-    cinfo.desired_number_of_colors = 1 << output_bit_depth;
     jpeg_start_decompress(&cinfo);
     JXL_ASSERT(cinfo.output_components == nbcomp);
-    if (cinfo.desired_number_of_colors == 0) {
-      
-      
-      ppf->info.bits_per_sample = output_bit_depth;
-    }
     JxlDataType data_type =
         ppf->info.bits_per_sample <= 8 ? JXL_TYPE_UINT8 : JXL_TYPE_UINT16;
 

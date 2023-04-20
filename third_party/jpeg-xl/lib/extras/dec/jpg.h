@@ -25,8 +25,7 @@ namespace extras {
 
 
 Status DecodeImageJPG(Span<const uint8_t> bytes, const ColorHints& color_hints,
-                      const SizeConstraints& constraints,
-                      size_t output_bit_depth, PackedPixelFile* ppf);
+                      const SizeConstraints& constraints, PackedPixelFile* ppf);
 
 }  
 }  

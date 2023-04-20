@@ -87,6 +87,16 @@ void jpegli_abort_decompress(j_decompress_ptr cinfo);
 
 void jpegli_destroy_decompress(j_decompress_ptr cinfo);
 
+
+
+
+
+
+
+
+void jpegli_set_output_format(j_decompress_ptr cinfo, JpegliDataType data_type,
+                              JpegliEndianness endianness);
+
 #if defined(__cplusplus) || defined(c_plusplus)
 }  
 #endif
