@@ -596,9 +596,8 @@ static JSString* GetBuiltinTagSlow(JSContext* cx, HandleObject obj) {
 }
 
 static MOZ_ALWAYS_INLINE JSString* GetBuiltinTagFast(JSObject* obj,
-                                                     const JSClass* clasp,
                                                      JSContext* cx) {
-  MOZ_ASSERT(clasp == obj->getClass());
+  const JSClass* clasp = obj->getClass();
   MOZ_ASSERT(!clasp->isProxyObject());
 
   
@@ -727,8 +726,7 @@ bool js::obj_toString(JSContext* cx, unsigned argc, Value* vp) {
 
   
   RootedString builtinTag(cx);
-  const JSClass* clasp = obj->getClass();
-  if (MOZ_UNLIKELY(clasp->isProxyObject())) {
+  if (MOZ_UNLIKELY(obj->is<ProxyObject>())) {
     builtinTag = GetBuiltinTagSlow(cx, obj);
     if (!builtinTag) {
       return false;
@@ -745,7 +743,7 @@ bool js::obj_toString(JSContext* cx, unsigned argc, Value* vp) {
   
   if (!tag.isString()) {
     if (!builtinTag) {
-      builtinTag = GetBuiltinTagFast(obj, clasp, cx);
+      builtinTag = GetBuiltinTagFast(obj, cx);
 #ifdef DEBUG
       
       JSString* builtinTagSlow = GetBuiltinTagSlow(cx, obj);
@@ -783,7 +781,7 @@ JSString* js::ObjectClassToString(JSContext* cx, JSObject* obj) {
                                         cx->wellKnownSymbols().toStringTag)) {
     return nullptr;
   }
-  return GetBuiltinTagFast(obj, obj->getClass(), cx);
+  return GetBuiltinTagFast(obj, cx);
 }
 
 static bool obj_setPrototypeOf(JSContext* cx, unsigned argc, Value* vp) {
