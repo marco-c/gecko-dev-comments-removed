@@ -67,8 +67,6 @@ class JitterEstimator {
   static constexpr TimeDelta OPERATING_SYSTEM_JITTER = TimeDelta::Millis(10);
 
  private:
-  double var_noise_;  
-
   
   
   
@@ -86,6 +84,7 @@ class JitterEstimator {
   
   void PostProcessEstimate();
 
+  
   Frequency GetFrameRate() const;
 
   
@@ -95,15 +94,15 @@ class JitterEstimator {
   
   
   double avg_frame_size_bytes_;  
-  double var_frame_size_;  
+  double var_frame_size_bytes2_;  
   
   
   
   double max_frame_size_bytes_;
   
   
-  double frame_size_sum_bytes_;
-  uint32_t frame_size_count_;
+  double startup_frame_size_sum_bytes_;
+  size_t startup_frame_size_count_;
 
   absl::optional<Timestamp> last_update_time_;
   
@@ -111,17 +110,19 @@ class JitterEstimator {
   
   absl::optional<DataSize> prev_frame_size_;
   
-  double avg_noise_;
-  uint32_t alpha_count_;
+  double avg_noise_ms_;
+  
+  double var_noise_ms2_;
+  size_t alpha_count_;
   
   TimeDelta filter_jitter_estimate_ = TimeDelta::Zero();
 
-  uint32_t startup_count_;
+  size_t startup_count_;
   
   Timestamp latest_nack_ = Timestamp::Zero();
   
   
-  uint32_t nack_count_;
+  size_t nack_count_;
   RttFilter rtt_filter_;
 
   
