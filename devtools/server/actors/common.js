@@ -4,6 +4,8 @@
 
 "use strict";
 
+class SourceLocation {
+  
 
 
 
@@ -13,34 +15,32 @@
 
 
 
+  constructor(actor, line, column) {
+    this._connection = actor ? actor.conn : null;
+    this._actorID = actor ? actor.actorID : undefined;
+    this._line = line;
+    this._column = column;
+  }
 
-function SourceLocation(actor, line, column) {
-  this._connection = actor ? actor.conn : null;
-  this._actorID = actor ? actor.actorID : undefined;
-  this._line = line;
-  this._column = column;
-}
-
-SourceLocation.prototype = {
   get sourceActor() {
     return this._connection ? this._connection.getActor(this._actorID) : null;
-  },
+  }
 
   get url() {
     return this.sourceActor.url;
-  },
+  }
 
   get line() {
     return this._line;
-  },
+  }
 
   get column() {
     return this._column;
-  },
+  }
 
   get sourceUrl() {
     return this.sourceActor.url;
-  },
+  }
 
   equals(other) {
     return (
@@ -50,7 +50,7 @@ SourceLocation.prototype = {
         other.column === undefined ||
         this.column === other.column)
     );
-  },
+  }
 
   toJSON() {
     return {
@@ -58,8 +58,8 @@ SourceLocation.prototype = {
       line: this.line,
       column: this.column,
     };
-  },
-};
+  }
+}
 
 exports.SourceLocation = SourceLocation;
 

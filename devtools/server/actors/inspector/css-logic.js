@@ -47,44 +47,42 @@ const COMPAREMODE = {
   INTEGER: "int",
 };
 
-function CssLogic() {
-  this._propertyInfos = {};
-}
-
-exports.CssLogic = CssLogic;
-
-CssLogic.prototype = {
-  
-  viewedElement: null,
-  viewedDocument: null,
+class CssLogic {
+  constructor() {
+    this._propertyInfos = {};
+  }
 
   
-  _sheets: null,
+  viewedElement = null;
+  viewedDocument = null;
 
   
-  _sheetsCached: false,
+  _sheets = null;
 
   
-  _ruleCount: 0,
+  _sheetsCached = false;
 
   
-  _computedStyle: null,
+  _ruleCount = 0;
 
   
-  _sourceFilter: FILTER.USER,
+  _computedStyle = null;
+
+  
+  _sourceFilter = FILTER.USER;
 
   
   
-  _passId: 0,
+  _passId = 0;
 
   
-  _matchId: 0,
+  _matchId = 0;
 
-  _matchedRules: null,
-  _matchedSelectors: null,
+  _matchedRules = null;
+  _matchedSelectors = null;
 
   
-  _keyframesRules: null,
+  _keyframesRules = null;
 
   
 
@@ -98,7 +96,7 @@ CssLogic.prototype = {
     this._matchedRules = null;
     this._matchedSelectors = null;
     this._keyframesRules = [];
-  },
+  }
 
   
 
@@ -136,7 +134,7 @@ CssLogic.prototype = {
     this._matchedRules = null;
     this._matchedSelectors = null;
     this._computedStyle = CssLogic.getComputedStyle(this.viewedElement);
-  },
+  }
 
   
 
@@ -145,7 +143,7 @@ CssLogic.prototype = {
 
   get computedStyle() {
     return this._computedStyle;
-  },
+  }
 
   
 
@@ -153,7 +151,7 @@ CssLogic.prototype = {
 
   get sourceFilter() {
     return this._sourceFilter;
-  },
+  }
 
   
 
@@ -190,7 +188,7 @@ CssLogic.prototype = {
         this._propertyInfos[property].needRefilter = true;
       }
     }
-  },
+  }
 
   
 
@@ -213,7 +211,7 @@ CssLogic.prototype = {
     }
 
     return info;
-  },
+  }
 
   
 
@@ -231,7 +229,7 @@ CssLogic.prototype = {
     Array.prototype.forEach.call(styleSheets, this._cacheSheet, this);
 
     this._sheetsCached = true;
-  },
+  }
 
   
 
@@ -270,7 +268,7 @@ CssLogic.prototype = {
         }
       }
     }
-  },
+  }
 
   
 
@@ -290,7 +288,7 @@ CssLogic.prototype = {
     }, this);
 
     return sheets;
-  },
+  }
 
   
 
@@ -302,7 +300,7 @@ CssLogic.prototype = {
       this._cacheSheets();
     }
     return this._keyframesRules;
-  },
+  }
 
   
 
@@ -352,7 +350,7 @@ CssLogic.prototype = {
     }
 
     return sheet;
-  },
+  }
 
   
 
@@ -379,7 +377,7 @@ CssLogic.prototype = {
         }
       }
     }
-  },
+  }
 
   
 
@@ -400,7 +398,7 @@ CssLogic.prototype = {
     }
 
     return this._ruleCount;
-  },
+  }
 
   
 
@@ -456,7 +454,7 @@ CssLogic.prototype = {
 
       rule._passId = this._passId;
     }
-  },
+  }
 
   
 
@@ -483,7 +481,7 @@ CssLogic.prototype = {
     );
 
     return false;
-  },
+  }
 
   
 
@@ -522,7 +520,7 @@ CssLogic.prototype = {
     }, this);
 
     return result;
-  },
+  }
 
   
 
@@ -601,7 +599,7 @@ CssLogic.prototype = {
       (element = element.parentNode) &&
       element.nodeType === nodeConstants.ELEMENT_NODE
     );
-  },
+  }
 
   
 
@@ -616,8 +614,8 @@ CssLogic.prototype = {
       !mediaText ||
       this.viewedDocument.defaultView.matchMedia(mediaText).matches
     );
-  },
-};
+  }
+}
 
 
 
@@ -730,40 +728,40 @@ CssLogic.href = function(sheet) {
 
 CssLogic.hasVisitedState = hasVisitedState;
 
-
-
-
-
-
-
-
-
-
-
-function CssSheet(cssLogic, domSheet, index) {
-  this._cssLogic = cssLogic;
-  this.domSheet = domSheet;
-  this.index = this.authorSheet ? index : -100 * index;
-
+class CssSheet {
   
-  this._href = null;
-  
-  this._shortSource = null;
 
-  
-  this._sheetAllowed = null;
 
-  
-  this._rules = {};
 
-  this._ruleCount = -1;
-}
 
-CssSheet.prototype = {
-  _passId: null,
-  _agentSheet: null,
-  _authorSheet: null,
-  _userSheet: null,
+
+
+
+
+
+  constructor(cssLogic, domSheet, index) {
+    this._cssLogic = cssLogic;
+    this.domSheet = domSheet;
+    this.index = this.authorSheet ? index : -100 * index;
+
+    
+    this._href = null;
+    
+    this._shortSource = null;
+
+    
+    this._sheetAllowed = null;
+
+    
+    this._rules = {};
+
+    this._ruleCount = -1;
+  }
+
+  _passId = null;
+  _agentSheet = null;
+  _authorSheet = null;
+  _userSheet = null;
 
   
 
@@ -775,7 +773,7 @@ CssSheet.prototype = {
       this._agentSheet = isAgentStylesheet(this.domSheet);
     }
     return this._agentSheet;
-  },
+  }
 
   
 
@@ -787,7 +785,7 @@ CssSheet.prototype = {
       this._authorSheet = isAuthorStylesheet(this.domSheet);
     }
     return this._authorSheet;
-  },
+  }
 
   
 
@@ -800,7 +798,7 @@ CssSheet.prototype = {
       this._userSheet = isUserStylesheet(this.domSheet);
     }
     return this._userSheet;
-  },
+  }
 
   
 
@@ -808,7 +806,7 @@ CssSheet.prototype = {
 
   get disabled() {
     return this.domSheet.disabled;
-  },
+  }
 
   
 
@@ -822,7 +820,7 @@ CssSheet.prototype = {
 
     this._href = CssLogic.href(this.domSheet);
     return this._href;
-  },
+  }
 
   
 
@@ -836,7 +834,7 @@ CssSheet.prototype = {
 
     this._shortSource = shortSource(this.domSheet);
     return this._shortSource;
-  },
+  }
 
   
 
@@ -860,7 +858,7 @@ CssSheet.prototype = {
     }
 
     return this._sheetAllowed;
-  },
+  }
 
   
 
@@ -873,7 +871,7 @@ CssSheet.prototype = {
     } catch (e) {
       return 0;
     }
-  },
+  }
 
   
 
@@ -889,7 +887,7 @@ CssSheet.prototype = {
     } catch (e) {
       return [];
     }
-  },
+  }
 
   
 
@@ -926,68 +924,68 @@ CssSheet.prototype = {
     }
 
     return rule;
-  },
+  }
 
   toString() {
     return "CssSheet[" + this.shortSource + "]";
-  },
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function CssRule(cssSheet, domRule, element) {
-  this._cssSheet = cssSheet;
-  this.domRule = domRule;
-
-  const parentRule = domRule.parentRule;
-  if (parentRule && parentRule.type == CSSRule.MEDIA_RULE) {
-    this.mediaText = parentRule.media.mediaText;
-  }
-
-  if (this._cssSheet) {
-    
-    this._selectors = null;
-    this.line = InspectorUtils.getRelativeRuleLine(this.domRule);
-    this.column = InspectorUtils.getRuleColumn(this.domRule);
-    this.source = this._cssSheet.shortSource + ":" + this.line;
-    if (this.mediaText) {
-      this.source += " @media " + this.mediaText;
-    }
-    this.href = this._cssSheet.href;
-    this.authorRule = this._cssSheet.authorSheet;
-    this.userRule = this._cssSheet.userSheet;
-    this.agentRule = this._cssSheet.agentSheet;
-  } else if (element) {
-    this._selectors = [new CssSelector(this, "@element.style", 0)];
-    this.line = -1;
-    this.source = l10n("rule.sourceElement");
-    this.href = "#";
-    this.authorRule = true;
-    this.userRule = false;
-    this.agentRule = false;
-    this.sourceElement = element;
   }
 }
 
-CssRule.prototype = {
-  _passId: null,
+class CssRule {
+  
 
-  mediaText: "",
+
+
+
+
+
+
+
+
+
+
+
+  constructor(cssSheet, domRule, element) {
+    this._cssSheet = cssSheet;
+    this.domRule = domRule;
+
+    const parentRule = domRule.parentRule;
+    if (parentRule && parentRule.type == CSSRule.MEDIA_RULE) {
+      this.mediaText = parentRule.media.mediaText;
+    }
+
+    if (this._cssSheet) {
+      
+      this._selectors = null;
+      this.line = InspectorUtils.getRelativeRuleLine(this.domRule);
+      this.column = InspectorUtils.getRuleColumn(this.domRule);
+      this.source = this._cssSheet.shortSource + ":" + this.line;
+      if (this.mediaText) {
+        this.source += " @media " + this.mediaText;
+      }
+      this.href = this._cssSheet.href;
+      this.authorRule = this._cssSheet.authorSheet;
+      this.userRule = this._cssSheet.userSheet;
+      this.agentRule = this._cssSheet.agentSheet;
+    } else if (element) {
+      this._selectors = [new CssSelector(this, "@element.style", 0)];
+      this.line = -1;
+      this.source = l10n("rule.sourceElement");
+      this.href = "#";
+      this.authorRule = true;
+      this.userRule = false;
+      this.agentRule = false;
+      this.sourceElement = element;
+    }
+  }
+
+  _passId = null;
+
+  mediaText = "";
 
   get isMediaRule() {
     return !!this.mediaText;
-  },
+  }
 
   
 
@@ -997,7 +995,7 @@ CssRule.prototype = {
 
   get sheetAllowed() {
     return this._cssSheet ? this._cssSheet.sheetAllowed : true;
-  },
+  }
 
   
 
@@ -1007,7 +1005,7 @@ CssRule.prototype = {
 
   get sheetIndex() {
     return this._cssSheet ? this._cssSheet.index : 0;
-  },
+  }
 
   
 
@@ -1018,7 +1016,7 @@ CssRule.prototype = {
 
   getPropertyValue(property) {
     return this.domRule.style.getPropertyValue(property);
-  },
+  }
 
   
 
@@ -1029,7 +1027,7 @@ CssRule.prototype = {
 
   getPropertyPriority(property) {
     return this.domRule.style.getPropertyPriority(property);
-  },
+  }
 
   
 
@@ -1056,34 +1054,32 @@ CssRule.prototype = {
     }
 
     return this._selectors;
-  },
+  }
 
   toString() {
     return "[CssRule " + this.domRule.selectorText + "]";
-  },
-};
-
-
-
-
-
-
-
-
-
-
-function CssSelector(cssRule, selector, index) {
-  this.cssRule = cssRule;
-  this.text = selector;
-  this.inlineStyle = this.text == "@element.style";
-  this._specificity = null;
-  this.selectorIndex = index;
+  }
 }
 
-exports.CssSelector = CssSelector;
+class CssSelector {
+  
 
-CssSelector.prototype = {
-  _matchId: null,
+
+
+
+
+
+
+
+  constructor(cssRule, selector, index) {
+    this.cssRule = cssRule;
+    this.text = selector;
+    this.inlineStyle = this.text == "@element.style";
+    this._specificity = null;
+    this.selectorIndex = index;
+  }
+
+  _matchId = null;
 
   
 
@@ -1093,7 +1089,7 @@ CssSelector.prototype = {
 
   get source() {
     return this.cssRule.source;
-  },
+  }
 
   
 
@@ -1104,7 +1100,7 @@ CssSelector.prototype = {
 
   get sourceElement() {
     return this.cssRule.sourceElement;
-  },
+  }
 
   
 
@@ -1114,7 +1110,7 @@ CssSelector.prototype = {
 
   get href() {
     return this.cssRule.href;
-  },
+  }
 
   
 
@@ -1123,7 +1119,7 @@ CssSelector.prototype = {
 
   get agentRule() {
     return this.cssRule.agentRule;
-  },
+  }
 
   
 
@@ -1132,7 +1128,7 @@ CssSelector.prototype = {
 
   get authorRule() {
     return this.cssRule.authorRule;
-  },
+  }
 
   
 
@@ -1142,7 +1138,7 @@ CssSelector.prototype = {
 
   get userRule() {
     return this.cssRule.userRule;
-  },
+  }
 
   
 
@@ -1152,7 +1148,7 @@ CssSelector.prototype = {
 
   get sheetAllowed() {
     return this.cssRule.sheetAllowed;
-  },
+  }
 
   
 
@@ -1162,7 +1158,7 @@ CssSelector.prototype = {
 
   get sheetIndex() {
     return this.cssRule.sheetIndex;
-  },
+  }
 
   
 
@@ -1172,7 +1168,7 @@ CssSelector.prototype = {
 
   get ruleLine() {
     return this.cssRule.line;
-  },
+  }
 
   
 
@@ -1182,7 +1178,7 @@ CssSelector.prototype = {
 
   get ruleColumn() {
     return this.cssRule.column;
-  },
+  }
 
   
 
@@ -1209,39 +1205,39 @@ CssSelector.prototype = {
     }
 
     return this._specificity;
-  },
+  }
 
   toString() {
     return this.text;
-  },
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function CssPropertyInfo(cssLogic, property) {
-  this._cssLogic = cssLogic;
-  this.property = property;
-  this._value = "";
-
-  
-  
-  
-  
-  this._matchedSelectors = null;
+  }
 }
 
-CssPropertyInfo.prototype = {
+class CssPropertyInfo {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(cssLogic, property) {
+    this._cssLogic = cssLogic;
+    this.property = property;
+    this._value = "";
+
+    
+    
+    
+    
+    this._matchedSelectors = null;
+  }
+
   
 
 
@@ -1261,7 +1257,7 @@ CssPropertyInfo.prototype = {
       }
     }
     return this._value;
-  },
+  }
 
   
 
@@ -1279,7 +1275,7 @@ CssPropertyInfo.prototype = {
     }
 
     return this._matchedSelectors;
-  },
+  }
 
   
 
@@ -1306,7 +1302,7 @@ CssPropertyInfo.prototype = {
     ) {
       this._matchedSelectors[0].status = STATUS.BEST;
     }
-  },
+  }
 
   
 
@@ -1333,7 +1329,7 @@ CssPropertyInfo.prototype = {
       );
       this._matchedSelectors.push(selectorInfo);
     }
-  },
+  }
 
   
 
@@ -1355,41 +1351,42 @@ CssPropertyInfo.prototype = {
     }
 
     this.needRefilter = false;
-  },
+  }
 
   toString() {
     return "CssPropertyInfo[" + this.property + "]";
-  },
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function CssSelectorInfo(selector, property, value, status, distance) {
-  this.selector = selector;
-  this.property = property;
-  this.status = status;
-  this.distance = distance;
-  this.value = value;
-  const priority = this.selector.cssRule.getPropertyPriority(this.property);
-  this.important = priority === "important";
+  }
 }
 
-CssSelectorInfo.prototype = {
+class CssSelectorInfo {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(selector, property, value, status, distance) {
+    this.selector = selector;
+    this.property = property;
+    this.status = status;
+    this.distance = distance;
+    this.value = value;
+    const priority = this.selector.cssRule.getPropertyPriority(this.property);
+    this.important = priority === "important";
+  }
+
   
 
 
@@ -1398,7 +1395,7 @@ CssSelectorInfo.prototype = {
 
   get source() {
     return this.selector.source;
-  },
+  }
 
   
 
@@ -1409,7 +1406,7 @@ CssSelectorInfo.prototype = {
 
   get sourceElement() {
     return this.selector.sourceElement;
-  },
+  }
 
   
 
@@ -1419,7 +1416,7 @@ CssSelectorInfo.prototype = {
 
   get href() {
     return this.selector.href;
-  },
+  }
 
   
 
@@ -1429,7 +1426,7 @@ CssSelectorInfo.prototype = {
 
   get inlineStyle() {
     return this.selector.inlineStyle;
-  },
+  }
 
   
 
@@ -1439,7 +1436,7 @@ CssSelectorInfo.prototype = {
 
   get specificity() {
     return this.selector.specificity;
-  },
+  }
 
   
 
@@ -1449,7 +1446,7 @@ CssSelectorInfo.prototype = {
 
   get sheetIndex() {
     return this.selector.sheetIndex;
-  },
+  }
 
   
 
@@ -1459,7 +1456,7 @@ CssSelectorInfo.prototype = {
 
   get sheetAllowed() {
     return this.selector.sheetAllowed;
-  },
+  }
 
   
 
@@ -1469,7 +1466,7 @@ CssSelectorInfo.prototype = {
 
   get ruleLine() {
     return this.selector.ruleLine;
-  },
+  }
 
   
 
@@ -1479,7 +1476,7 @@ CssSelectorInfo.prototype = {
 
   get ruleColumn() {
     return this.selector.ruleColumn;
-  },
+  }
 
   
 
@@ -1489,7 +1486,7 @@ CssSelectorInfo.prototype = {
 
   get agentRule() {
     return this.selector.agentRule;
-  },
+  }
 
   
 
@@ -1499,7 +1496,7 @@ CssSelectorInfo.prototype = {
 
   get authorRule() {
     return this.selector.authorRule;
-  },
+  }
 
   
 
@@ -1510,7 +1507,7 @@ CssSelectorInfo.prototype = {
 
   get userRule() {
     return this.selector.userRule;
-  },
+  }
 
   
 
@@ -1617,7 +1614,7 @@ CssSelectorInfo.prototype = {
 
     
     return 0;
-  },
+  }
 
   compare(that, propertyName, type) {
     switch (type) {
@@ -1639,9 +1636,12 @@ CssSelectorInfo.prototype = {
         break;
     }
     return 0;
-  },
+  }
 
   toString() {
     return this.selector + " -> " + this.value;
-  },
-};
+  }
+}
+
+exports.CssLogic = CssLogic;
+exports.CssSelector = CssSelector;

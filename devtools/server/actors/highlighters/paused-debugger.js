@@ -29,23 +29,23 @@ loader.lazyRequireGetter(
 
 
 
-function PausedDebuggerOverlay(highlighterEnv, options = {}) {
-  this.env = highlighterEnv;
-  this.resume = options.resume;
-  this.stepOver = options.stepOver;
+class PausedDebuggerOverlay {
+  constructor(highlighterEnv, options = {}) {
+    this.env = highlighterEnv;
+    this.resume = options.resume;
+    this.stepOver = options.stepOver;
 
-  this.lastTarget = null;
+    this.lastTarget = null;
 
-  this.markup = new CanvasFrameAnonymousContentHelper(
-    highlighterEnv,
-    this._buildMarkup.bind(this),
-    { waitForDocumentToLoad: false }
-  );
-  this.isReady = this.markup.initialize();
-}
+    this.markup = new CanvasFrameAnonymousContentHelper(
+      highlighterEnv,
+      this._buildMarkup.bind(this),
+      { waitForDocumentToLoad: false }
+    );
+    this.isReady = this.markup.initialize();
+  }
 
-PausedDebuggerOverlay.prototype = {
-  ID_CLASS_PREFIX: "paused-dbg-",
+  ID_CLASS_PREFIX = "paused-dbg-";
 
   _buildMarkup() {
     const prefix = this.ID_CLASS_PREFIX;
@@ -133,14 +133,14 @@ PausedDebuggerOverlay.prototype = {
     });
 
     return container;
-  },
+  }
 
   destroy() {
     this.hide();
     this.markup.destroy();
     this.env = null;
     this.lastTarget = null;
-  },
+  }
 
   onClick(target) {
     const { id } = target;
@@ -153,7 +153,7 @@ PausedDebuggerOverlay.prototype = {
     } else if (id.includes("paused-dbg-resume-button")) {
       this.resume();
     }
-  },
+  }
 
   onMouseMove(target) {
     
@@ -185,7 +185,7 @@ PausedDebuggerOverlay.prototype = {
       
       this.lastTarget.classList.remove("hover");
     }
-  },
+  }
 
   handleEvent(e) {
     switch (e.type) {
@@ -204,11 +204,11 @@ PausedDebuggerOverlay.prototype = {
         this.onMouseMove(e.target);
         break;
     }
-  },
+  }
 
   getElement(id) {
     return this.markup.getElement(this.ID_CLASS_PREFIX + id);
-  },
+  }
 
   show(reason) {
     if (this.env.isXUL || !reason) {
@@ -240,7 +240,7 @@ PausedDebuggerOverlay.prototype = {
     
     this.env.window.document.setSuppressedEventListener(this);
     return true;
-  },
+  }
 
   hide() {
     if (this.env.isXUL) {
@@ -255,6 +255,6 @@ PausedDebuggerOverlay.prototype = {
     
     this.getElement("step-button-wrapper").classList.remove("hover");
     this.getElement("resume-button-wrapper").classList.remove("hover");
-  },
-};
+  }
+}
 exports.PausedDebuggerOverlay = PausedDebuggerOverlay;

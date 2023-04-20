@@ -19,40 +19,40 @@ loader.lazyRequireGetter(
 
 
 
-
-
-
-
-
-
-
-
-
-function WalkerIndex(walker) {
-  this.walker = walker;
-  this.clearIndex = this.clearIndex.bind(this);
-
+class WalkerIndex {
   
-  this.walker.on("any-mutation", this.clearIndex);
-}
 
-WalkerIndex.prototype = {
+
+
+
+
+
+
+
+  constructor(walker) {
+    this.walker = walker;
+    this.clearIndex = this.clearIndex.bind(this);
+
+    
+    this.walker.on("any-mutation", this.clearIndex);
+  }
+
   
 
 
   destroy() {
     this.walker.off("any-mutation", this.clearIndex);
-  },
+  }
 
   clearIndex() {
     if (!this.currentlyIndexing) {
       this._data = null;
     }
-  },
+  }
 
   get doc() {
     return this.walker.rootDoc;
-  },
+  }
 
   
 
@@ -71,7 +71,7 @@ WalkerIndex.prototype = {
     }
 
     return this._data;
-  },
+  }
 
   _addToIndex(type, node, value) {
     
@@ -85,7 +85,7 @@ WalkerIndex.prototype = {
       type,
       node,
     });
-  },
+  }
 
   index() {
     
@@ -131,11 +131,13 @@ WalkerIndex.prototype = {
     }
 
     this.currentlyIndexing = false;
-  },
-};
+  }
+}
 
 exports.WalkerIndex = WalkerIndex;
 
+class WalkerSearch {
+  
 
 
 
@@ -152,17 +154,15 @@ exports.WalkerIndex = WalkerIndex;
 
 
 
+  constructor(walker) {
+    this.walker = walker;
+    this.index = new WalkerIndex(this.walker);
+  }
 
-function WalkerSearch(walker) {
-  this.walker = walker;
-  this.index = new WalkerIndex(this.walker);
-}
-
-WalkerSearch.prototype = {
   destroy() {
     this.index.destroy();
     this.walker = null;
-  },
+  }
 
   _addResult(node, type, results) {
     if (!results.has(node)) {
@@ -183,7 +183,7 @@ WalkerSearch.prototype = {
     if (!isKnown) {
       matches.push({ type });
     }
-  },
+  }
 
   _searchIndex(query, options, results) {
     for (const [matched, res] of this.index.data) {
@@ -200,7 +200,7 @@ WalkerSearch.prototype = {
           this._addResult(node, type, results);
         });
     }
-  },
+  }
 
   _searchSelectors(query, options, results) {
     
@@ -214,7 +214,7 @@ WalkerSearch.prototype = {
     for (const node of nodes) {
       this._addResult(node, "selector", results);
     }
-  },
+  }
 
   _searchXPath(query, options, results) {
     if (!options.types.includes("xpath")) {
@@ -229,7 +229,7 @@ WalkerSearch.prototype = {
         this._addResult(node, "xpath", results);
       }
     }
-  },
+  }
 
   
 
@@ -301,8 +301,8 @@ WalkerSearch.prototype = {
     });
 
     return resultList;
-  },
-};
+  }
+}
 
 WalkerSearch.SEARCH_METHOD_CONTAINS = (query, candidate) => {
   return query && candidate.toLowerCase().includes(query.toLowerCase());

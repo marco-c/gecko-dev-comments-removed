@@ -69,23 +69,23 @@ function areQuadsDifferent(oldQuads, newQuads) {
 
 
 
-function AutoRefreshHighlighter(highlighterEnv) {
-  EventEmitter.decorate(this);
+class AutoRefreshHighlighter extends EventEmitter {
+  constructor(highlighterEnv) {
+    super();
 
-  this.highlighterEnv = highlighterEnv;
+    this.highlighterEnv = highlighterEnv;
 
-  this.currentNode = null;
-  this.currentQuads = {};
+    this.currentNode = null;
+    this.currentQuads = {};
 
-  this._winDimensions = getWindowDimensions(this.win);
-  this._scroll = { x: this.win.pageXOffset, y: this.win.pageYOffset };
+    this._winDimensions = getWindowDimensions(this.win);
+    this._scroll = { x: this.win.pageXOffset, y: this.win.pageYOffset };
 
-  this.update = this.update.bind(this);
-}
+    this.update = this.update.bind(this);
+  }
 
-AutoRefreshHighlighter.prototype = {
-  _ignoreZoom: false,
-  _ignoreScroll: false,
+  _ignoreZoom = false;
+  _ignoreScroll = false;
 
   
 
@@ -95,12 +95,12 @@ AutoRefreshHighlighter.prototype = {
       return null;
     }
     return this.highlighterEnv.window;
-  },
+  }
 
   
   get contentWindow() {
     return this.win;
-  },
+  }
 
   
 
@@ -128,7 +128,7 @@ AutoRefreshHighlighter.prototype = {
       this.emit("shown");
     }
     return shown;
-  },
+  }
 
   
 
@@ -145,7 +145,7 @@ AutoRefreshHighlighter.prototype = {
     this.options = null;
 
     this.emit("hidden");
-  },
+  }
 
   
 
@@ -156,7 +156,7 @@ AutoRefreshHighlighter.prototype = {
 
   _isNodeValid(node) {
     return isNodeValid(node);
-  },
+  }
 
   
 
@@ -180,7 +180,7 @@ AutoRefreshHighlighter.prototype = {
     }
 
     return true;
-  },
+  }
 
   
 
@@ -196,7 +196,7 @@ AutoRefreshHighlighter.prototype = {
         { ignoreScroll: this._ignoreScroll, ignoreZoom: this._ignoreZoom }
       );
     }
-  },
+  }
 
   
 
@@ -208,7 +208,7 @@ AutoRefreshHighlighter.prototype = {
     this._updateAdjustedQuads();
 
     return areQuadsDifferent(oldQuads, this.currentQuads);
-  },
+  }
 
   
 
@@ -227,7 +227,7 @@ AutoRefreshHighlighter.prototype = {
     this._scroll = { x: pageXOffset, y: pageYOffset };
 
     return hasChanged;
-  },
+  }
 
   
 
@@ -242,7 +242,7 @@ AutoRefreshHighlighter.prototype = {
 
     this._winDimensions = { width, height };
     return haveChanged;
-  },
+  }
 
   
 
@@ -263,14 +263,14 @@ AutoRefreshHighlighter.prototype = {
 
     this._update();
     this.emit("updated");
-  },
+  }
 
   _show() {
     
     
     
     throw new Error("Custom highlighter class had to implement _show method");
-  },
+  }
 
   _update() {
     
@@ -278,40 +278,40 @@ AutoRefreshHighlighter.prototype = {
     
     
     throw new Error("Custom highlighter class had to implement _update method");
-  },
+  }
 
   _scrollUpdate() {
     
     
     
     
-  },
+  }
 
   _hide() {
     
     
     throw new Error("Custom highlighter class had to implement _hide method");
-  },
+  }
 
   _startRefreshLoop() {
     const win = this.currentNode.ownerGlobal;
     this.rafID = win.requestAnimationFrame(this._startRefreshLoop.bind(this));
     this.rafWin = win;
     this.update();
-  },
+  }
 
   _stopRefreshLoop() {
     if (this.rafID && !Cu.isDeadWrapper(this.rafWin)) {
       this.rafWin.cancelAnimationFrame(this.rafID);
     }
     this.rafID = this.rafWin = null;
-  },
+  }
 
   destroy() {
     this.hide();
 
     this.highlighterEnv = null;
     this.currentNode = null;
-  },
-};
+  }
+}
 exports.AutoRefreshHighlighter = AutoRefreshHighlighter;

@@ -10,14 +10,7 @@ const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 
 
 
-class TrackChangeEmitter {
-  
-
-
-  constructor() {
-    EventEmitter.decorate(this);
-  }
-
+class TrackChangeEmitter extends EventEmitter {
   trackChange(change) {
     this.emit("track-change", change);
   }

@@ -200,48 +200,7 @@ exports.setIgnoreLayoutChanges = function(ignore, syncReflowNode) {
   gIgnoreLayoutChanges = ignore;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function LayoutChangesObserver(targetActor) {
-  this.targetActor = targetActor;
-
-  this._startEventLoop = this._startEventLoop.bind(this);
-  this._onReflow = this._onReflow.bind(this);
-  this._onResize = this._onResize.bind(this);
-
-  
-  
-  
-  this.reflowObserver = new ReflowObserver(this.targetActor, this._onReflow);
-  this.resizeObserver = new WindowResizeObserver(
-    this.targetActor,
-    this._onResize
-  );
-
-  EventEmitter.decorate(this);
-}
-
-exports.LayoutChangesObserver = LayoutChangesObserver;
-
-LayoutChangesObserver.prototype = {
+class LayoutChangesObserver extends EventEmitter {
   
 
 
@@ -249,7 +208,46 @@ LayoutChangesObserver.prototype = {
 
 
 
-  EVENT_BATCHING_DELAY: 300,
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(targetActor) {
+    super();
+
+    this.targetActor = targetActor;
+
+    this._startEventLoop = this._startEventLoop.bind(this);
+    this._onReflow = this._onReflow.bind(this);
+    this._onResize = this._onResize.bind(this);
+
+    
+    
+    
+    this.reflowObserver = new ReflowObserver(this.targetActor, this._onReflow);
+    this.resizeObserver = new WindowResizeObserver(
+      this.targetActor,
+      this._onResize
+    );
+  }
+
+  
+
+
+
+
+
+
+  EVENT_BATCHING_DELAY = 300;
 
   
 
@@ -265,7 +263,7 @@ LayoutChangesObserver.prototype = {
     this.hasResized = false;
 
     this.targetActor = null;
-  },
+  }
 
   start() {
     if (this.isObserving) {
@@ -280,7 +278,7 @@ LayoutChangesObserver.prototype = {
 
     this.reflowObserver.start();
     this.resizeObserver.start();
-  },
+  }
 
   stop() {
     if (!this.isObserving) {
@@ -295,7 +293,7 @@ LayoutChangesObserver.prototype = {
 
     this.reflowObserver.stop();
     this.resizeObserver.stop();
-  },
+  }
 
   
 
@@ -325,19 +323,19 @@ LayoutChangesObserver.prototype = {
       this._startEventLoop,
       this.EVENT_BATCHING_DELAY
     );
-  },
+  }
 
   _stopEventLoop() {
     this._clearTimeout(this.eventLoopTimer);
-  },
+  }
 
   
   _setTimeout(cb, ms) {
     return setTimeout(cb, ms);
-  },
+  }
   _clearTimeout(t) {
     return clearTimeout(t);
-  },
+  }
 
   
 
@@ -359,7 +357,7 @@ LayoutChangesObserver.prototype = {
       end,
       isInterruptible,
     });
-  },
+  }
 
   
 
@@ -372,8 +370,9 @@ LayoutChangesObserver.prototype = {
     }
 
     this.hasResized = true;
-  },
-};
+  }
+}
+exports.LayoutChangesObserver = LayoutChangesObserver;
 
 
 

@@ -11,29 +11,29 @@ const {
 
 
 
-function BreakpointActorMap(threadActor) {
-  this._threadActor = threadActor;
-  this._actors = {};
-}
+class BreakpointActorMap {
+  constructor(threadActor) {
+    this._threadActor = threadActor;
+    this._actors = {};
+  }
 
-BreakpointActorMap.prototype = {
   
   
   _locationKey(location) {
     const { sourceUrl, sourceId, line, column } = location;
     return `${sourceUrl}:${sourceId}:${line}:${column}`;
-  },
+  }
 
   
 
 
   findActors() {
     return Object.values(this._actors);
-  },
+  }
 
   listKeys() {
     return Object.keys(this._actors);
-  },
+  }
 
   
 
@@ -51,12 +51,12 @@ BreakpointActorMap.prototype = {
       this._actors[key] = new BreakpointActor(this._threadActor, location);
     }
     return this._actors[key];
-  },
+  }
 
   get(location) {
     const key = this._locationKey(location);
     return this._actors[key];
-  },
+  }
 
   
 
@@ -68,7 +68,7 @@ BreakpointActorMap.prototype = {
   deleteActor(location) {
     const key = this._locationKey(location);
     delete this._actors[key];
-  },
-};
+  }
+}
 
 exports.BreakpointActorMap = BreakpointActorMap;

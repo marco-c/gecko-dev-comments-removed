@@ -34,17 +34,17 @@ exports.setBreakpointAtEntryPoints = setBreakpointAtEntryPoints;
 
 
 
-function BreakpointActor(threadActor, location) {
-  
-  
-  this.scripts = new Map();
+class BreakpointActor {
+  constructor(threadActor, location) {
+    
+    
+    this.scripts = new Map();
 
-  this.threadActor = threadActor;
-  this.location = location;
-  this.options = null;
-}
+    this.threadActor = threadActor;
+    this.location = location;
+    this.options = null;
+  }
 
-BreakpointActor.prototype = {
   setOptions(options) {
     const oldOptions = this.options;
     this.options = options;
@@ -52,16 +52,16 @@ BreakpointActor.prototype = {
     for (const [script, offsets] of this.scripts) {
       this._newOffsetsOrOptions(script, offsets, oldOptions);
     }
-  },
+  }
 
   destroy() {
     this.removeScripts();
     this.options = null;
-  },
+  }
 
   hasScript(script) {
     return this.scripts.has(script);
-  },
+  }
 
   
 
@@ -75,7 +75,7 @@ BreakpointActor.prototype = {
   addScript(script, offsets) {
     this.scripts.set(script, offsets.concat(this.scripts.get(offsets) || []));
     this._newOffsetsOrOptions(script, offsets, null);
-  },
+  }
 
   
 
@@ -85,7 +85,7 @@ BreakpointActor.prototype = {
       script.clearBreakpoint(this);
     }
     this.scripts.clear();
-  },
+  }
 
   
 
@@ -101,7 +101,7 @@ BreakpointActor.prototype = {
     for (const offset of offsets) {
       script.setBreakpoint(offset, this);
     }
-  },
+  }
 
   
 
@@ -134,7 +134,7 @@ BreakpointActor.prototype = {
     }
     
     return { result: undefined };
-  },
+  }
 
   
 
@@ -202,7 +202,7 @@ BreakpointActor.prototype = {
     }
 
     return this.threadActor._pauseAndRespond(frame, reason);
-  },
+  }
 
   delete() {
     
@@ -210,7 +210,7 @@ BreakpointActor.prototype = {
     
     this.removeScripts();
     this.destroy();
-  },
-};
+  }
+}
 
 exports.BreakpointActor = BreakpointActor;

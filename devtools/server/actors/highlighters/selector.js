@@ -19,12 +19,12 @@ const MAX_HIGHLIGHTED_ELEMENTS = 100;
 
 
 
-function SelectorHighlighter(highlighterEnv) {
-  this.highlighterEnv = highlighterEnv;
-  this._highlighters = [];
-}
+class SelectorHighlighter {
+  constructor(highlighterEnv) {
+    this.highlighterEnv = highlighterEnv;
+    this._highlighters = [];
+  }
 
-SelectorHighlighter.prototype = {
   
 
 
@@ -61,7 +61,7 @@ SelectorHighlighter.prototype = {
 
     await Promise.all(promises);
     return true;
-  },
+  }
 
   
 
@@ -80,18 +80,18 @@ SelectorHighlighter.prototype = {
 
     highlighter.show(node, options);
     this._highlighters.push(highlighter);
-  },
+  }
 
   hide() {
     for (const highlighter of this._highlighters) {
       highlighter.destroy();
     }
     this._highlighters = [];
-  },
+  }
 
   destroy() {
     this.hide();
     this.highlighterEnv = null;
-  },
-};
+  }
+}
 exports.SelectorHighlighter = SelectorHighlighter;

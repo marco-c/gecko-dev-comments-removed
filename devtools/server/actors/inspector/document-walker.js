@@ -27,6 +27,8 @@ loader.lazyRequireGetter(
 const SKIP_TO_PARENT = "SKIP_TO_PARENT";
 const SKIP_TO_SIBLING = "SKIP_TO_SIBLING";
 
+class DocumentWalker {
+  
 
 
 
@@ -48,45 +50,43 @@ const SKIP_TO_SIBLING = "SKIP_TO_SIBLING";
 
 
 
+  constructor(
+    node,
+    rootWin,
+    {
+      whatToShow = nodeFilterConstants.SHOW_ALL,
+      filter = standardTreeWalkerFilter,
+      skipTo = SKIP_TO_PARENT,
+      showAnonymousContent = true,
+    } = {}
+  ) {
+    if (Cu.isDeadWrapper(rootWin) || !rootWin.location) {
+      throw new Error("Got an invalid root window in DocumentWalker");
+    }
 
-function DocumentWalker(
-  node,
-  rootWin,
-  {
-    whatToShow = nodeFilterConstants.SHOW_ALL,
-    filter = standardTreeWalkerFilter,
-    skipTo = SKIP_TO_PARENT,
-    showAnonymousContent = true,
-  } = {}
-) {
-  if (Cu.isDeadWrapper(rootWin) || !rootWin.location) {
-    throw new Error("Got an invalid root window in DocumentWalker");
+    this.walker = Cc[
+      "@mozilla.org/inspector/deep-tree-walker;1"
+    ].createInstance(Ci.inIDeepTreeWalker);
+    this.walker.showAnonymousContent = showAnonymousContent;
+    this.walker.showSubDocuments = true;
+    this.walker.showDocumentsAsNodes = true;
+    this.walker.init(rootWin.document, whatToShow);
+    this.filter = filter;
+
+    
+    
+    this.walker.currentNode = this.getStartingNode(node, skipTo);
   }
 
-  this.walker = Cc["@mozilla.org/inspector/deep-tree-walker;1"].createInstance(
-    Ci.inIDeepTreeWalker
-  );
-  this.walker.showAnonymousContent = showAnonymousContent;
-  this.walker.showSubDocuments = true;
-  this.walker.showDocumentsAsNodes = true;
-  this.walker.init(rootWin.document, whatToShow);
-  this.filter = filter;
-
-  
-  
-  this.walker.currentNode = this.getStartingNode(node, skipTo);
-}
-
-DocumentWalker.prototype = {
   get whatToShow() {
     return this.walker.whatToShow;
-  },
+  }
   get currentNode() {
     return this.walker.currentNode;
-  },
+  }
   set currentNode(val) {
     this.walker.currentNode = val;
-  },
+  }
 
   parentNode() {
     if (isShadowRoot(this.currentNode)) {
@@ -101,7 +101,7 @@ DocumentWalker.prototype = {
       return this.currentNode;
     }
     return this.walker.parentNode();
-  },
+  }
 
   nextNode() {
     const node = this.walker.currentNode;
@@ -115,7 +115,7 @@ DocumentWalker.prototype = {
     }
 
     return nextNode;
-  },
+  }
 
   firstChild() {
     const node = this.walker.currentNode;
@@ -129,7 +129,7 @@ DocumentWalker.prototype = {
     }
 
     return firstChild;
-  },
+  }
 
   lastChild() {
     const node = this.walker.currentNode;
@@ -143,7 +143,7 @@ DocumentWalker.prototype = {
     }
 
     return lastChild;
-  },
+  }
 
   previousSibling() {
     let node = this.walker.previousSibling();
@@ -151,7 +151,7 @@ DocumentWalker.prototype = {
       node = this.walker.previousSibling();
     }
     return node;
-  },
+  }
 
   nextSibling() {
     let node = this.walker.nextSibling();
@@ -159,7 +159,7 @@ DocumentWalker.prototype = {
       node = this.walker.nextSibling();
     }
     return node;
-  },
+  }
 
   getStartingNode(node, skipTo) {
     
@@ -175,7 +175,7 @@ DocumentWalker.prototype = {
     }
 
     return node || startingNode;
-  },
+  }
 
   
 
@@ -209,12 +209,12 @@ DocumentWalker.prototype = {
     }
 
     return null;
-  },
+  }
 
   isSkippedNode(node) {
     return this.filter(node) === nodeFilterConstants.FILTER_SKIP;
-  },
-};
+  }
+}
 
 exports.DocumentWalker = DocumentWalker;
 exports.SKIP_TO_PARENT = SKIP_TO_PARENT;
