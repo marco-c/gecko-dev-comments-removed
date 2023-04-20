@@ -21,20 +21,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   AddonRepository: "resource://gre/modules/addons/AddonRepository.jsm",
+  AWScreenUtils: "resource://activity-stream/lib/AWScreenUtils.jsm",
 });
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "usesFirefoxSync",
-  "services.sync.username"
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "mobileDevices",
-  "services.sync.clients.devices.mobile",
-  0
-);
 
 
 const MR_ABOUT_WELCOME_DEFAULT = {
@@ -218,6 +206,7 @@ const MR_ABOUT_WELCOME_DEFAULT = {
     },
     {
       id: "AW_MOBILE_DOWNLOAD",
+      targeting: "isFxASignedIn && sync.mobileDevices > 0",
       content: {
         position: "split",
         split_narrow_bkg_position: "-160px",
@@ -390,15 +379,6 @@ function getLocalizedUA(ua) {
 }
 
 
-function removeScreens(check, screens) {
-  for (let i = 0; i < screens?.length; i++) {
-    if (check(screens[i])) {
-      screens.splice(i--, 1);
-    }
-  }
-}
-
-
 function evaluateWelcomeScreenButtonLabel(removeDefault) {
   return removeDefault
     ? "mr2022-onboarding-get-started-primary-button-label"
@@ -430,23 +410,12 @@ function prepareMobileDownload(screens) {
   }
 }
 
-function prepareMRContent(content) {
-  
-  const { screens } = content;
-
-  
-  
-  if (lazy.usesFirefoxSync && lazy.mobileDevices > 0) {
-    removeScreens(screen => screen.id === "AW_MOBILE_DOWNLOAD", screens);
-  } else {
-    prepareMobileDownload(screens);
-  }
-
-  return content;
-}
-
 async function prepareContentForReact(content) {
   const { screens } = content;
+
+  
+  
+  await lazy.AWScreenUtils.evaluateTargetingAndRemoveScreens(screens);
 
   if (content?.template === "return_to_amo") {
     return content;
@@ -454,9 +423,8 @@ async function prepareContentForReact(content) {
 
   
   if (AppConstants.isPlatformAndVersionAtMost("win", "6.1")) {
-    removeScreens(
-      screen => ["theme"].includes(screen.content?.tiles?.type),
-      screens
+    await lazy.AWScreenUtils.removeScreens(screens, screen =>
+      ["theme"].includes(screen.content?.tiles?.type)
     );
   }
 
@@ -521,7 +489,9 @@ async function prepareContentForReact(content) {
     }
   }
   if (removeDefault) {
-    removeScreens(screen => screen.id?.startsWith("AW_SET_DEFAULT"), screens);
+    await lazy.AWScreenUtils.removeScreens(screens, screen =>
+      screen.id?.startsWith("AW_SET_DEFAULT")
+    );
   }
 
   
@@ -561,10 +531,14 @@ async function prepareContentForReact(content) {
   }
 
   if (shouldRemoveLanguageMismatchScreen) {
-    removeScreens(screen => screen.id === "AW_LANGUAGE_MISMATCH", screens);
+    await lazy.AWScreenUtils.removeScreens(
+      screens,
+      screen => screen.id === "AW_LANGUAGE_MISMATCH"
+    );
   }
 
-  return prepareMRContent(content);
+  prepareMobileDownload(content.screens);
+  return content;
 }
 
 const AboutWelcomeDefaults = {
