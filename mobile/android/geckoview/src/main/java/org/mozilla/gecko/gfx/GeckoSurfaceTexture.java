@@ -12,7 +12,6 @@ import android.util.LongSparseArray;
 import androidx.annotation.RequiresApi;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.JNIObject;
 
@@ -235,12 +234,6 @@ import org.mozilla.gecko.mozglue.JNIObject;
   public static GeckoSurfaceTexture acquire(final boolean singleBufferMode, final long handle) {
     if (singleBufferMode && !isSingleBufferSupported()) {
       throw new IllegalArgumentException("single buffer mode not supported on API version < 19");
-    }
-
-    
-    
-    if (GeckoAppShell.isIsolatedProcess() && Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-      return null;
     }
 
     synchronized (sSurfaceTextures) {
