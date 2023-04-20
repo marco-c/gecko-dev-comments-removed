@@ -67,6 +67,8 @@ class EarlyHintPreloader final : public nsIStreamListener,
   
   nsresult CancelChannel(nsresult aStatus);
 
+  void OnParentReady(nsIParentChannel* aParent, uint64_t aChannelId);
+
  private:
   explicit EarlyHintPreloader(nsIURI* aURI);
   ~EarlyHintPreloader() = default;
