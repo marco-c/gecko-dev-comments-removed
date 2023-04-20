@@ -1609,6 +1609,69 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
   }
 
   
+  
+  const bool isCSSEditable = aStyleToRemove.IsCSSEditable(aElement);
+  auto isStyleSpecifiedOrError = [&]() -> Result<bool, nsresult> {
+    if (!isCSSEditable) {
+      return false;
+    }
+    MOZ_ASSERT(!aStyleToRemove.IsStyleToClearAllInlineStyles());
+    Result<bool, nsresult> elementHasSpecifiedCSSEquivalentStylesOrError =
+        CSSEditUtils::HaveSpecifiedCSSEquivalentStyles(*this, aElement,
+                                                       aStyleToRemove);
+    NS_WARNING_ASSERTION(
+        elementHasSpecifiedCSSEquivalentStylesOrError.isOk(),
+        "CSSEditUtils::HaveSpecifiedCSSEquivalentStyles() failed");
+    return elementHasSpecifiedCSSEquivalentStylesOrError;
+  }();
+  if (MOZ_UNLIKELY(isStyleSpecifiedOrError.isErr())) {
+    return isStyleSpecifiedOrError.propagateErr();
+  }
+  bool styleSpecified = isStyleSpecifiedOrError.unwrap();
+  if (nsStyledElement* styledElement = nsStyledElement::FromNode(&aElement)) {
+    if (styleSpecified) {
+      
+      nsresult rv = CSSEditUtils::RemoveCSSEquivalentToStyle(
+          WithTransaction::Yes, *this, MOZ_KnownLive(*styledElement),
+          aStyleToRemove, nullptr);
+      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+        return Err(NS_ERROR_EDITOR_DESTROYED);
+      }
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "CSSEditUtils::RemoveCSSEquivalentToStyle() failed, but ignored");
+    }
+
+    
+    
+    
+    
+    
+    
+    if (aStyleToRemove.IsStyleConflictingWithVerticalAlign()) {
+      nsAutoString value;
+      nsresult rv = CSSEditUtils::GetSpecifiedProperty(
+          aElement, *nsGkAtoms::vertical_align, value);
+      if (NS_FAILED(rv)) {
+        NS_WARNING("CSSEditUtils::GetSpecifiedProperty() failed");
+        return Err(rv);
+      }
+      if (!value.IsEmpty()) {
+        
+        nsresult rv = CSSEditUtils::RemoveCSSPropertyWithTransaction(
+            *this, MOZ_KnownLive(*styledElement), *nsGkAtoms::vertical_align,
+            value);
+        if (NS_FAILED(rv)) {
+          NS_WARNING("CSSEditUtils::RemoveCSSPropertyWithTransaction() failed");
+          return Err(rv);
+        }
+        styleSpecified = true;
+      }
+    }
+  }
+
+  
+  
   auto ShouldRemoveHTMLStyle = [&]() {
     if (!aStyleToRemove.IsStyleToClearAllInlineStyles()) {
       return aStyleToRemove.IsRepresentedBy(aElement);
@@ -1706,84 +1769,14 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
 
   
   
-  
-  if (aStyleToRemove.IsCSSEditable(aElement)) {
-    Result<bool, nsresult> elementHasSpecifiedCSSEquivalentStylesOrError =
-        CSSEditUtils::HaveSpecifiedCSSEquivalentStyles(*this, aElement,
-                                                       aStyleToRemove);
-    if (MOZ_UNLIKELY(elementHasSpecifiedCSSEquivalentStylesOrError.isErr())) {
-      NS_WARNING("CSSEditUtils::HaveSpecifiedCSSEquivalentStyles() failed");
-      return elementHasSpecifiedCSSEquivalentStylesOrError.propagateErr();
-    }
-    if (elementHasSpecifiedCSSEquivalentStylesOrError.unwrap()) {
-      if (nsStyledElement* styledElement =
-              nsStyledElement::FromNode(&aElement)) {
-        
-        
-        
-        nsresult rv = CSSEditUtils::RemoveCSSEquivalentToStyle(
-            WithTransaction::Yes, *this, MOZ_KnownLive(*styledElement),
-            aStyleToRemove, nullptr);
-        if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-          return Err(NS_ERROR_EDITOR_DESTROYED);
-        }
-        NS_WARNING_ASSERTION(
-            NS_SUCCEEDED(rv),
-            "CSSEditUtils::RemoveCSSEquivalentToStyle() failed, but ignored");
-      }
-      
-      
-      if (aElement.IsAnyOfHTMLElements(nsGkAtoms::span, nsGkAtoms::font) &&
-          !HTMLEditor::HasStyleOrIdOrClassAttribute(aElement)) {
-        Result<EditorDOMPoint, nsresult> unwrapSpanOrFontElementResult =
-            RemoveContainerWithTransaction(aElement);
-        if (MOZ_UNLIKELY(unwrapSpanOrFontElementResult.isErr() &&
-                         unwrapSpanOrFontElementResult.inspectErr() ==
-                             NS_ERROR_EDITOR_DESTROYED)) {
-          NS_WARNING("HTMLEditor::RemoveContainerWithTransaction() failed");
-          return Err(NS_ERROR_EDITOR_DESTROYED);
-        }
-        NS_WARNING_ASSERTION(
-            unwrapSpanOrFontElementResult.isOk(),
-            "HTMLEditor::RemoveContainerWithTransaction() failed, but ignored");
-        if (MOZ_LIKELY(unwrapSpanOrFontElementResult.isOk()) &&
-            unwrapSpanOrFontElementResult.inspect().IsSet()) {
-          pointToPutCaret = unwrapSpanOrFontElementResult.unwrap();
-        }
-      }
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  if (aStyleToRemove.IsStyleConflictingWithVerticalAlign()) {
-    nsAutoString value;
-    nsresult rv = CSSEditUtils::GetSpecifiedProperty(
-        aElement, *nsGkAtoms::vertical_align, value);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("CSSEditUtils::GetSpecifiedProperty() failed");
-      return Err(rv);
-    }
-    if (!value.IsEmpty()) {
-      if (nsStyledElement* styledElement =
-              nsStyledElement::FromNode(&aElement)) {
-        Result<EditorDOMPoint, nsresult> result =
-            CSSEditUtils::RemoveCSSInlineStyleWithTransaction(
-                *this, MOZ_KnownLive(*styledElement), nsGkAtoms::vertical_align,
-                value);
-        if (MOZ_UNLIKELY(result.isErr())) {
-          NS_WARNING("CSSEditUtils::RemoveCSSPropertyWithTransaction() failed");
-          return result.propagateErr();
-        }
-        if (result.inspect().IsSet()) {
-          pointToPutCaret = result.unwrap();
-        }
-      }
-    }
+  if (styleSpecified &&
+      aElement.IsAnyOfHTMLElements(nsGkAtoms::span, nsGkAtoms::font) &&
+      !HTMLEditUtils::ElementHasAttribute(aElement)) {
+    Result<EditorDOMPoint, nsresult> unwrapSpanElement =
+        RemoveContainerWithTransaction(aElement);
+    NS_WARNING_ASSERTION(unwrapSpanElement.isOk(),
+                         "HTMLEditor::RemoveContainerWithTransaction() failed");
+    return unwrapSpanElement;
   }
 
   if (aStyleToRemove.mHTMLProperty != nsGkAtoms::font ||
