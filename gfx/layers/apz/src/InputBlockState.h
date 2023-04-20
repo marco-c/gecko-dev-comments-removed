@@ -172,12 +172,6 @@ class CancelableBlockState : public InputBlockState {
 
 
 
-  virtual bool HasReceivedAllContentNotifications() const;
-
-  
-
-
-
   virtual bool IsReadyForHandling() const;
 
   
@@ -317,7 +311,6 @@ class PanGestureBlockState : public CancelableBlockState {
                        const PanGestureInput& aEvent);
 
   bool SetContentResponse(bool aPreventDefault) override;
-  bool HasReceivedAllContentNotifications() const override;
   bool IsReadyForHandling() const override;
   bool MustStayActive() override;
   const char* Type() override;
@@ -370,7 +363,6 @@ class PinchGestureBlockState : public CancelableBlockState {
                          TargetConfirmationFlags aFlags);
 
   bool SetContentResponse(bool aPreventDefault) override;
-  bool HasReceivedAllContentNotifications() const override;
   bool IsReadyForHandling() const override;
   bool MustStayActive() override;
   const char* Type() override;
@@ -439,12 +431,6 @@ class TouchBlockState : public CancelableBlockState {
 
 
   void CopyPropertiesFrom(const TouchBlockState& aOther);
-
-  
-
-
-
-  bool HasReceivedAllContentNotifications() const override;
 
   
 
