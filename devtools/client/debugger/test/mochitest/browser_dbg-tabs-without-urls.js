@@ -15,28 +15,32 @@ add_task(async function() {
   );
 
   await selectSource(dbg, "simple1.js");
-  await selectSource(dbg, "simple2.js");
-
-  is(countTabs(dbg), 2);
+  is(countTabs(dbg), 1, "Only the `simple.js` source tab exists");
 
   invokeInTab("doEval");
   await waitForPaused(dbg);
-  await resume(dbg);
-  is(countTabs(dbg), 3);
 
-  invokeInTab("doEval");
-  await waitForPaused(dbg);
+  is(countTabs(dbg), 2, "The new eval tab is now added");
+
+  info("Assert that the eval source the tab source name correctly");
+  ok(
+    /source\d+/g.test(getTabContent(dbg, 0)),
+    "The tab name pattern is correct"
+  );
+
   await resume(dbg);
-  is(countTabs(dbg), 4);
 
   
   await reload(dbg, "simple1.js", "simple2.js");
-  is(countTabs(dbg), 2);
-
-  
-  
-  
-  
-  await selectSource(dbg, "simple1.js");
-  await selectSource(dbg, "simple2.js");
+  is(countTabs(dbg), 1, "The eval source tab is no longer available");
 });
+
+
+
+
+
+
+function getTabContent(dbg, index) {
+  const tabs = findElement(dbg, "sourceTabs").children;
+  return tabs[index]?.innerText || "";
+}
