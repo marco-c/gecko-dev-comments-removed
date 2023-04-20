@@ -3376,7 +3376,7 @@ var AddonManagerInternal = {
       
       
       function checkInstallUri(uri) {
-        if (!Services.policies.allowedInstallSource(uri)) {
+        if (Services.policies && !Services.policies.allowedInstallSource(uri)) {
           
           return {
             success: false,
