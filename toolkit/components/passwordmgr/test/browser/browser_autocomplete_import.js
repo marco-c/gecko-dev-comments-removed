@@ -22,28 +22,8 @@ const gTestMigrator = {
     ),
 };
 
-add_task(async function check_fluent_ids() {
-  await document.l10n.ready;
-  MozXULElement.insertFTLIfNeeded("toolkit/main-window/autocomplete.ftl");
 
-  const host = "testhost.com";
-  for (const browser of ChromeMigrationUtils.CONTEXTUAL_LOGIN_IMPORT_BROWSERS) {
-    const id = `autocomplete-import-logins-${browser}`;
-    const message = await document.l10n.formatValue(id, { host });
-    Assert.ok(
-      message.includes(`data-l10n-name="line1"`),
-      `${id} included line1`
-    );
-    Assert.ok(
-      message.includes(`data-l10n-name="line2"`),
-      `${id} included line2`
-    );
-    Assert.ok(message.includes(host), `${id} replaced host`);
-  }
-});
-
-
-add_task(async function test_initialize() {
+add_setup(async function setup() {
   const debounce = sinon
     .stub(LoginManagerParent, "SUGGEST_IMPORT_DEBOUNCE_MS")
     .value(0);
@@ -77,8 +57,92 @@ add_task(async function test_initialize() {
   });
 });
 
+add_task(async function check_fluent_ids() {
+  await document.l10n.ready;
+  MozXULElement.insertFTLIfNeeded("toolkit/main-window/autocomplete.ftl");
+
+  const host = "testhost.com";
+  for (const browser of ChromeMigrationUtils.CONTEXTUAL_LOGIN_IMPORT_BROWSERS) {
+    const id = `autocomplete-import-logins-${browser}`;
+    const message = await document.l10n.formatValue(id, { host });
+    Assert.ok(
+      message.includes(`data-l10n-name="line1"`),
+      `${id} included line1`
+    );
+    Assert.ok(
+      message.includes(`data-l10n-name="line2"`),
+      `${id} included line2`
+    );
+    Assert.ok(message.includes(host), `${id} replaced host`);
+  }
+});
+
+
+
+
+
+
+
 add_task(async function import_suggestion_wizard() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const USING_LEGACY_WIZARD = !Services.prefs.getBoolPref(
+    "browser.migrate.content-modal.enabled",
+    false
+  );
+
+  
+  
+  
+  
+  
+  
+  let waitForWizard = async () => {
+    if (USING_LEGACY_WIZARD) {
+      return BrowserTestUtils.waitForCondition(
+        () => Services.wm.getMostRecentWindow("Browser:MigrationWizard"),
+        "Wait for migration wizard to open"
+      );
+    }
+
+    let wizardReady = BrowserTestUtils.waitForEvent(
+      window,
+      "MigrationWizard:Ready"
+    );
+    let wizardTab = await BrowserTestUtils.waitForNewTab(gBrowser, url => {
+      return url.startsWith("about:preferences");
+    });
+    await wizardReady;
+
+    return wizardTab;
+  };
+
+  
+  
+  
+  
+  
+  
+  let closeWizard = wizardWindowOrTab => {
+    if (USING_LEGACY_WIZARD) {
+      return BrowserTestUtils.closeWindow(wizardWindowOrTab);
+    }
+
+    return BrowserTestUtils.removeTab(wizardWindowOrTab);
+  };
+
   let wizard;
+
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -103,10 +167,7 @@ add_task(async function import_suggestion_wizard() {
       gTestMigrator.profiles.length = 2;
 
       info("Clicking on importable suggestion");
-      const wizardPromise = BrowserTestUtils.waitForCondition(
-        () => Services.wm.getMostRecentWindow("Browser:MigrationWizard"),
-        "Wait for migration wizard to open"
-      );
+      const wizardPromise = waitForWizard();
 
       
       executeSoon(() => EventUtils.synthesizeMouseAtCenter(importableItem, {}));
@@ -126,7 +187,7 @@ add_task(async function import_suggestion_wizard() {
   
   
   
-  await BrowserTestUtils.closeWindow(wizard);
+  await closeWizard(wizard);
 });
 
 add_task(async function import_suggestion_learn_more() {
