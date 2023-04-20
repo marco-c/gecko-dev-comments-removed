@@ -2270,6 +2270,7 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
   openArgs.navigationStartTimeStamp() = navigationStartTimeStamp;
   openArgs.earlyHintPreloaderId() = mEarlyHintPreloaderId;
 
+  openArgs.classicScriptHintCharset() = mClassicScriptHintCharset;
   
   
   
