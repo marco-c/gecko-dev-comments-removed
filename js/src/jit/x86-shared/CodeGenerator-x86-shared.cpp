@@ -13,6 +13,7 @@
 #include "jit/InlineScriptTree.h"
 #include "jit/JitRuntime.h"
 #include "jit/RangeAnalysis.h"
+#include "jit/ReciprocalMulConstants.h"
 #include "js/ScalarType.h"  
 #include "util/DifferentialTesting.h"
 
@@ -1046,7 +1047,7 @@ void CodeGenerator::visitUDivOrModConstant(LUDivOrModConstant* ins) {
   
   MOZ_ASSERT((d & (d - 1)) != 0);
 
-  ReciprocalMulConstants rmc = computeDivisionConstants(d,  32);
+  auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(d);
 
   
   masm.movl(Imm32(rmc.multiplier), eax);
@@ -1211,8 +1212,7 @@ void CodeGenerator::visitDivOrModConstantI(LDivOrModConstantI* ins) {
 
   
   
-  ReciprocalMulConstants rmc =
-      computeDivisionConstants(Abs(d),  31);
+  auto rmc = ReciprocalMulConstants::computeSignedDivisionConstants(Abs(d));
 
   
   masm.movl(Imm32(rmc.multiplier), eax);
