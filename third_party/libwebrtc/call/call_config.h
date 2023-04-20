@@ -78,6 +78,9 @@ struct CallConfig {
       rtp_transport_controller_send_factory = nullptr;
 
   Metronome* metronome = nullptr;
+
+  
+  absl::optional<TimeDelta> pacer_burst_interval;
 };
 
 }  
