@@ -8,13 +8,15 @@
 
 #include <dlfcn.h>
 
-#include "base/message_loop.h"  
-#include "base/task.h"          
+#include "base/message_loop.h"    
+#include "base/task.h"            
+#include "mozilla/gfx/Logging.h"  
 #include "mozilla/StaticMutex.h"
 #include "mozilla/Array.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/Sprintf.h"
 #include "WidgetUtilsGtk.h"
 
 namespace mozilla::widget {
@@ -290,15 +292,17 @@ bool nsWaylandDisplay::Matches(wl_display* aDisplay) {
   return mThreadId == PR_GetCurrentThread() && aDisplay == mDisplay;
 }
 
-static void WlCrashHandler(const char* format, va_list args) {
-  MOZ_CRASH_UNSAFE(g_strdup_vprintf(format, args));
+static void WlLogHandler(const char* format, va_list args) {
+  char error[1000];
+  VsprintfLiteral(error, format, args);
+  gfxCriticalNote << "Wayland protocol error: " << error;
 }
 
 nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
     : mThreadId(PR_GetCurrentThread()), mDisplay(aDisplay) {
   
   
-  wl_log_set_handler_client(WlCrashHandler);
+  wl_log_set_handler_client(WlLogHandler);
 
   wl_registry* registry = wl_display_get_registry(mDisplay);
   wl_registry_add_listener(registry, &registry_listener, this);
