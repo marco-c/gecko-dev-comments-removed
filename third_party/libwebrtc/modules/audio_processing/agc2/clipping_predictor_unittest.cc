@@ -8,7 +8,7 @@
 
 
 
-#include "modules/audio_processing/agc/clipping_predictor.h"
+#include "modules/audio_processing/agc2/clipping_predictor.h"
 
 #include <cstdint>
 #include <limits>

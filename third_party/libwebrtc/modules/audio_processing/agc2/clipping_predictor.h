@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_AGC_CLIPPING_PREDICTOR_H_
-#define MODULES_AUDIO_PROCESSING_AGC_CLIPPING_PREDICTOR_H_
+#ifndef MODULES_AUDIO_PROCESSING_AGC2_CLIPPING_PREDICTOR_H_
+#define MODULES_AUDIO_PROCESSING_AGC2_CLIPPING_PREDICTOR_H_
 
 #include <memory>
 #include <vector>
@@ -46,7 +46,6 @@ class ClippingPredictor {
       int default_step,
       int min_mic_level,
       int max_mic_level) const = 0;
-
 };
 
 

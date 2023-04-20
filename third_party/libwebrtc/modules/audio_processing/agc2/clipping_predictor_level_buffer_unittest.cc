@@ -8,7 +8,7 @@
 
 
 
-#include "modules/audio_processing/agc/clipping_predictor_level_buffer.h"
+#include "modules/audio_processing/agc2/clipping_predictor_level_buffer.h"
 
 #include <algorithm>
 
