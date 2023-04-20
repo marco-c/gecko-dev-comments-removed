@@ -20,34 +20,38 @@ async function createFileInHome() {
 
 
 async function createTempFile() {
+  
+  
+  let isOptWin = isWin() && !SpecialPowers.isDebugBuild;
+
   let browser = gBrowser.selectedBrowser;
   let path = fileInTempDir().path;
   let fileCreated = await SpecialPowers.spawn(browser, [path], createFile);
-  if (isMac()) {
-    ok(!fileCreated.ok, "creating a file in content temp is not permitted");
+  if (isMac() || isOptWin) {
+    ok(!fileCreated.ok, "creating a file in temp is not permitted");
   } else {
-    ok(!!fileCreated.ok, "creating a file in content temp is permitted");
+    ok(!!fileCreated.ok, "creating a file in temp is permitted");
   }
   
   let fileDeleted = await SpecialPowers.spawn(browser, [path], deleteFile);
-  if (isMac()) {
+  if (isMac() || isOptWin) {
     
     
     
-    ok(!fileDeleted.ok, "deleting a file in content temp is not permitted");
+    ok(!fileDeleted.ok, "deleting a file in temp is not permitted");
+  } else {
+    ok(!!fileDeleted.ok, "deleting a file in temp is permitted");
+  }
 
+  
+  if (isMac()) {
     let path = fileInTempDir().path;
     let symlinkCreated = await SpecialPowers.spawn(
       browser,
       [path],
       createSymlink
     );
-    ok(
-      !symlinkCreated.ok,
-      "created a symlink in content temp is not permitted"
-    );
-  } else {
-    ok(!!fileDeleted.ok, "deleting a file in content temp is permitted");
+    ok(!symlinkCreated.ok, "created a symlink in temp is not permitted");
   }
 }
 

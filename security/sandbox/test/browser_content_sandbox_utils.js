@@ -297,12 +297,12 @@ function fileInHomeDir() {
 
 
 function fileInTempDir() {
-  let contentTempKey = "ContentTmpD";
+  let contentTempKey = "TmpD";
 
   
   let ctmp = Services.dirsvc.get(contentTempKey, Ci.nsIFile);
-  Assert.ok(ctmp.exists(), "Content temp dir exists");
-  Assert.ok(ctmp.isDirectory(), "Content temp dir is a directory");
+  Assert.ok(ctmp.exists(), "Temp dir exists");
+  Assert.ok(ctmp.isDirectory(), "Temp dir is a directory");
 
   
   let tempFile = ctmp.clone();
