@@ -54,6 +54,26 @@ add_task(async function() {
 
   let tabStripRect = gBrowser.tabContainer.arrowScrollbox.getBoundingClientRect();
 
+  let firefoxViewRect = document
+    .getElementById("firefox-view-button")
+    .getBoundingClientRect();
+
+  function isInTabStrip(r) {
+    return (
+      r.y1 >= tabStripRect.top &&
+      r.y2 <= tabStripRect.bottom &&
+      r.x1 >= tabStripRect.left &&
+      r.x2 <= tabStripRect.right &&
+      
+      
+      
+      
+      r.w <=
+        (gBrowser.tabs.length - 1) *
+          Math.ceil(tabStripRect.width / gBrowser.tabs.length)
+    );
+  }
+
   await withPerfObserver(
     async function() {
       let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
@@ -66,25 +86,20 @@ add_task(async function() {
       expectedReflows: EXPECTED_REFLOWS,
       frames: {
         filter: rects =>
-          rects.filter(
-            r =>
-              !(
-                
-                (
-                  r.y1 >= tabStripRect.top &&
-                  r.y2 <= tabStripRect.bottom &&
-                  r.x1 >= tabStripRect.left &&
-                  r.x2 <= tabStripRect.right &&
-                  
-                  
-                  
-                  
-                  r.w <=
-                    (gBrowser.tabs.length - 1) *
-                      Math.ceil(tabStripRect.width / gBrowser.tabs.length)
-                )
-              )
-          ),
+          rects.filter(r => {
+            if (isInTabStrip(r)) {
+              return false;
+            }
+            
+            if (
+              r.w == 16 &&
+              r.h == 16 &&
+              rectInBoundingClientRect(r, firefoxViewRect)
+            ) {
+              return false;
+            }
+            return true;
+          }),
       },
     }
   );
