@@ -135,6 +135,8 @@ class EarlyHintPreloader final : public nsIStreamListener,
   nsTArray<StreamListenerFunction> mStreamListenerFunctions;
 
   
+  bool mOnStartRequestCalled = false;
+  
   bool mSuspended = false;
   nsCOMPtr<nsIParentChannel> mParent;
   
