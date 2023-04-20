@@ -57,6 +57,8 @@ enum class GamepadId : uint32_t {
   
   kMicrosoftProductXboxAdaptiveWireless = 0x045e0b0c,
   
+  kMicrosoftProductXboxSeriesXWireless = 0x045e0b13,
+  
   kNintendoProduct2006 = 0x057e2006,
   
   kNintendoProduct2007 = 0x057e2007,
