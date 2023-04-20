@@ -787,6 +787,11 @@ void Animation::Persist() {
   }
 }
 
+DocGroup* Animation::GetDocGroup() {
+  Document* doc = GetRenderedDocument();
+  return doc ? doc->GetDocGroup() : nullptr;
+}
+
 
 void Animation::CommitStyles(ErrorResult& aRv) {
   if (!mEffect) {
