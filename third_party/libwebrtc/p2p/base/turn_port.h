@@ -175,23 +175,6 @@ class TurnPort : public Port {
   rtc::AsyncPacketSocket* socket() const { return socket_; }
   StunRequestManager& request_manager() { return request_manager_; }
 
-  
-  
-  
-  sigslot::
-      signal3<TurnPort*, const rtc::SocketAddress&, const rtc::SocketAddress&>
-          SignalResolvedServerAddress;
-
-  
-  
-  
-  sigslot::signal1<TurnPort*> SignalTurnPortClosed;
-
-  
-  sigslot::signal2<TurnPort*, int> SignalTurnRefreshResult;
-  sigslot::signal3<TurnPort*, const rtc::SocketAddress&, int>
-      SignalCreatePermissionResult;
-
   bool HasRequests() { return !request_manager_.empty(); }
   void set_credentials(const RelayCredentials& credentials) {
     credentials_ = credentials;
@@ -203,6 +186,16 @@ class TurnPort : public Port {
   void HandleConnectionDestroyed(Connection* conn) override;
 
   void CloseForTest() { Close(); }
+
+  
+  class CallbacksForTest {
+   public:
+    virtual ~CallbacksForTest() {}
+    virtual void OnTurnCreatePermissionResult(int code) = 0;
+    virtual void OnTurnRefreshResult(int code) = 0;
+    virtual void OnTurnPortClosed() = 0;
+  };
+  void SetCallbacksForTest(CallbacksForTest* callbacks);
 
  protected:
   TurnPort(webrtc::TaskQueueBase* thread,
@@ -370,6 +363,8 @@ class TurnPort : public Port {
   std::string turn_logging_id_;
 
   webrtc::ScopedTaskSafety task_safety_;
+
+  CallbacksForTest* callbacks_for_test_ = nullptr;
 
   friend class TurnEntry;
   friend class TurnAllocateRequest;
