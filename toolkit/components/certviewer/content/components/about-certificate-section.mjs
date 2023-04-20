@@ -1,11 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* eslint-env mozilla/remote-page */
 
-
-
-
-
-import { InfoGroupContainer } from "./info-group-container.js";
-import { CertificateTabsSection } from "./certificate-tabs-section.js";
+import { InfoGroupContainer } from "./info-group-container.mjs";
+import { CertificateTabsSection } from "./certificate-tabs-section.mjs";
 
 const TYPE_CA = 1;
 const TYPE_USER = 2;
@@ -84,9 +84,9 @@ export class AboutCertificateSection extends HTMLElement {
     this.addClassForPadding();
   }
 
-  
-  
-  
+  // Adds class selector for items that need padding,
+  // as nth-child/parent-based selectors aren't supported
+  // due to the encapsulation of custom-element CSS.
   addClassForPadding() {
     let embeddedScts = this.shadowRoot.querySelector(".embedded-scts");
     if (!embeddedScts) {

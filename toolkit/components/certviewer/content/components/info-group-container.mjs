@@ -1,9 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-import { InfoGroup } from "./info-group.js";
-import { AboutCertificateItems } from "./about-certificate-items.js";
+import { InfoGroup } from "./info-group.mjs";
+import { AboutCertificateItems } from "./about-certificate-items.mjs";
 
 export class InfoGroupContainer extends HTMLElement {
   constructor(isAboutCertificate = false) {
@@ -30,8 +30,8 @@ export class InfoGroupContainer extends HTMLElement {
     this.infoGroupsContainers[i].setAttribute("role", "tabpanel");
     this.infoGroupsContainers[i].setAttribute("tabindex", 0);
     this.infoGroupsContainers[i].setAttribute("aria-labelledby", "tab" + i);
-    
-    
+    // Hiding all the certificzte contents except for the first tab that is
+    // selected and shown by default
     if (i !== 0) {
       this.infoGroupsContainers[i].hidden = true;
     }

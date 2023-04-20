@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-import { normalizeToKebabCase } from "./utils.js";
+import { normalizeToKebabCase } from "./utils.mjs";
 
 export class ListItem extends HTMLElement {
   constructor(item) {
@@ -37,8 +37,8 @@ export class ListItem extends HTMLElement {
 
   handleExport() {
     let exportButton = this.shadowRoot.querySelector(".export");
-    
-    
+    // Wrap the Base64 string into lines of 64 characters,
+    // with CRLF line breaks (as specified in RFC 1421).
     let wrapped = this.item.derb64.replace(/(\S{64}(?!$))/g, "$1\r\n");
     let download =
       "-----BEGIN CERTIFICATE-----\r\n" +

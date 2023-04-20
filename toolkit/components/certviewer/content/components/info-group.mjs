@@ -1,10 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-import { InfoItem } from "./info-item.js";
-import { updateSelectedItem } from "../certviewer.js";
-import { normalizeToKebabCase } from "./utils.js";
+import { InfoItem } from "./info-item.mjs";
+import { updateSelectedItem } from "../certviewer.mjs";
+import { normalizeToKebabCase } from "./utils.mjs";
 
 export class InfoGroup extends HTMLElement {
   constructor(item, final) {
@@ -30,8 +30,8 @@ export class InfoGroup extends HTMLElement {
       "certificate-viewer-" + this.item.sectionId
     );
 
-    
-    
+    // Adds a class with the section title's name, to make
+    // it easier to find when highlighting errors.
     this.classList.add(this.item.sectionId);
     for (let i = 0; i < this.item.sectionItems.length; i++) {
       this.shadowRoot.append(new InfoItem(this.item.sectionItems[i]));
