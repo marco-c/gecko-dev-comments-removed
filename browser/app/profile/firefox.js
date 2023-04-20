@@ -412,11 +412,6 @@ pref("browser.urlbar.weather.featureGate", false);
 
 
 
-
-pref("browser.urlbar.weather.zeroPrefix", true);
-
-
-
 pref("browser.urlbar.suggest.weather", true);
 
 
