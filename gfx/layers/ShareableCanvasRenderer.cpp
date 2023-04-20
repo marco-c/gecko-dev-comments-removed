@@ -197,7 +197,7 @@ void ShareableCanvasRenderer::UpdateCompositableClient() {
       if (!mData.mIsAlphaPremult) {
         flags |= TextureFlags::NON_PREMULTIPLIED;
       }
-      EnsurePipeline();
+      EnsurePipeline( true);
       forwarder->UseRemoteTexture(mCanvasClient, textureDesc.textureId(),
                                   textureDesc.ownerId(), mData.mSize, flags);
 
@@ -205,7 +205,7 @@ void ShareableCanvasRenderer::UpdateCompositableClient() {
       return;
     }
 
-    EnsurePipeline();
+    EnsurePipeline( false);
 
     
     auto tc = fnGetExistingTc(desc);

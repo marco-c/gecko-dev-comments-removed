@@ -8,9 +8,12 @@
 #define MOZILLA_GFX_RemoteTextureHostWrapper_H
 
 #include "mozilla/layers/TextureHost.h"
-#include "mozilla/Monitor.h"
+#include "mozilla/Mutex.h"
 
 namespace mozilla::layers {
+
+
+
 
 
 
@@ -91,19 +94,13 @@ class RemoteTextureHostWrapper : public TextureHost {
   virtual ~RemoteTextureHostWrapper();
 
   
-  TextureHost* GetRemoteTextureHostForDisplayList(
-      const MonitorAutoLock& aProofOfLock);
+  TextureHost* GetRemoteTextureHost(const MutexAutoLock& aProofOfLock);
   
-  void SetRemoteTextureHostForDisplayList(const MonitorAutoLock& aProofOfLock,
-                                          TextureHost* aTextureHost);
+  void SetRemoteTextureHost(const MutexAutoLock& aProofOfLock,
+                            TextureHost* aTextureHost);
 
   
-  
-  
-  
-  
-  
-  CompositableTextureHostRef mRemoteTextureForDisplayList;
+  CompositableTextureHostRef mRemoteTextureHost;
 
   friend class RemoteTextureMap;
 };

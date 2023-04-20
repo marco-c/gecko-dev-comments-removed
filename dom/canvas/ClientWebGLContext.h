@@ -298,9 +298,6 @@ class WebGLFramebufferJS final : public nsWrapperCache, public webgl::ObjectJS {
   
   Maybe<layers::RemoteTextureId> mLastRemoteTextureId;
   Maybe<layers::RemoteTextureOwnerId> mRemoteTextureOwnerId;
-  
-  
-  bool mNeedsRemoteTextureSync = true;
 
  public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(WebGLFramebufferJS)
@@ -750,9 +747,6 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   
   mutable Maybe<layers::RemoteTextureId> mLastRemoteTextureId;
   mutable Maybe<layers::RemoteTextureOwnerId> mRemoteTextureOwnerId;
-  
-  
-  bool mNeedsRemoteTextureSync = true;
 
   
 

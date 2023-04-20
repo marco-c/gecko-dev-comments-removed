@@ -472,10 +472,8 @@ Maybe<layers::SurfaceDescriptor> ClientWebGLContext::GetFrontBuffer(
   
   const auto& ownerId = fb ? fb->mRemoteTextureOwnerId : mRemoteTextureOwnerId;
   const auto& textureId = fb ? fb->mLastRemoteTextureId : mLastRemoteTextureId;
-  auto& needsSync = fb ? fb->mNeedsRemoteTextureSync : mNeedsRemoteTextureSync;
   if (ownerId && textureId) {
-    if (gfx::gfxVars::WebglOopAsyncPresentForceSync() || needsSync) {
-      needsSync = false;
+    if (StaticPrefs::webgl_out_of_process_async_present_force_sync()) {
       
       
       (void)child->SendGetFrontBuffer(fb ? fb->mId : 0, vr, &ret);
@@ -527,7 +525,6 @@ bool ClientWebGLContext::UpdateWebRenderCanvasData(
 
   MOZ_ASSERT(renderer);
   mResetLayer = false;
-  mNeedsRemoteTextureSync = true;
 
   return true;
 }
