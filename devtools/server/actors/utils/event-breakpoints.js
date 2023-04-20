@@ -4,7 +4,16 @@
 
 "use strict";
 
-function generalEvent(groupID, eventType) {
+
+
+
+
+
+
+
+
+
+function generalEvent(groupID, eventType, condition) {
   return {
     id: `event.${groupID}.${eventType}`,
     type: "event",
@@ -12,6 +21,7 @@ function generalEvent(groupID, eventType) {
     message: `DOM '${eventType}' event`,
     eventType,
     filter: "general",
+    condition,
   };
 }
 function nodeEvent(groupID, eventType) {
@@ -121,6 +131,8 @@ const AVAILABLE_BREAKPOINTS = [
     items: [
       generalEvent("control", "resize"),
       generalEvent("control", "scroll"),
+      
+      generalEvent("control", "scrollend", win => "onscrollend" in win),
       generalEvent("control", "zoom"),
       generalEvent("control", "focus"),
       generalEvent("control", "focusin"),
@@ -463,15 +475,24 @@ function eventsRequireNotifications(ids) {
 }
 
 exports.getAvailableEventBreakpoints = getAvailableEventBreakpoints;
-function getAvailableEventBreakpoints() {
+
+
+
+
+
+
+
+function getAvailableEventBreakpoints(window) {
   const available = [];
   for (const { name, items } of AVAILABLE_BREAKPOINTS) {
     available.push({
       name,
-      events: items.map(item => ({
-        id: item.id,
-        name: item.name,
-      })),
+      events: items
+        .filter(item => !item.condition || item.condition(window))
+        .map(item => ({
+          id: item.id,
+          name: item.name,
+        })),
     });
   }
   return available;
