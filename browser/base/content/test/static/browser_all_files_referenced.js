@@ -211,10 +211,6 @@ var whitelist = [
   
   { file: "resource://pdf.js/web/debugger.js" },
   { file: "resource://pdf.js/web/debugger.css" },
-  
-  { file: "resource://pdf.js/web/viewer-geckoview.css" },
-  { file: "resource://pdf.js/web/viewer-geckoview.html" },
-  { file: "resource://pdf.js/web/viewer-geckoview.js" },
 
   
   { file: "resource://app/modules/translation/BingTranslator.jsm" },
