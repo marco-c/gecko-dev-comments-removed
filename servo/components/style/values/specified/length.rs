@@ -258,7 +258,7 @@ impl FontRelativeLength {
                 
                 
                 
-                let reference_size = if context.builder.is_root_element || context.in_media_or_container_query() {
+                let reference_size = if context.builder.is_root_element || context.in_media_query {
                     reference_font_size
                 } else {
                     context.device().root_font_size()
