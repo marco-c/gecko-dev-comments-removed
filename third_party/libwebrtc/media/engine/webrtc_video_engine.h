@@ -330,6 +330,15 @@ class WebRtcVideoChannel : public VideoMediaChannel,
 
   
   
+  
+  static void ExtractCodecInformation(
+      rtc::ArrayView<const VideoCodecSettings> recv_codecs,
+      std::map<int, int>& rtx_associated_payload_types,
+      std::set<int>& raw_payload_types,
+      std::vector<webrtc::VideoReceiveStreamInterface::Decoder>& decoders);
+
+  
+  
   void SetReceiverReportSsrc(uint32_t ssrc) RTC_RUN_ON(&thread_checker_);
 
   
@@ -511,13 +520,13 @@ class WebRtcVideoChannel : public VideoMediaChannel,
     void SetFlexFecPayload(int payload_type);
 
     void RecreateReceiveStream();
+    void CreateReceiveStream();
+    void StartReceiveStream();
 
     
     
     
-    bool ConfigureCodecs(const std::vector<VideoCodecSettings>& recv_codecs);
-
-    std::string GetCodecNameFromPayloadType(int payload_type);
+    bool ReconfigureCodecs(const std::vector<VideoCodecSettings>& recv_codecs);
 
     WebRtcVideoChannel* const channel_;
     webrtc::Call* const call_;
