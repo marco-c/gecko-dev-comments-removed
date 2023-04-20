@@ -54,6 +54,10 @@ add_task(async function() {
   testInputRelatedElementsAreVisibile(webConsole);
   await testObjectInspectorPropertiesAreSet(objInspector);
 
+  
+  
+  
+  await waitForSourceMapWorker(browserConsole);
   await closeConsole(browserTab);
   await safeCloseBrowserConsole();
 
@@ -68,6 +72,10 @@ add_task(async function() {
   await testObjectInspectorPropertiesAreSet(objInspector);
 
   info("Close webconsole and browser console");
+  
+  
+  
+  await waitForSourceMapWorker(browserConsole);
   await closeConsole(browserTab);
   await safeCloseBrowserConsole();
 });
@@ -158,4 +166,41 @@ async function testObjectInspectorPropertiesAreSet(objInspector) {
 
   is(name, "browser_console_hide_jsterm_test", "name is set correctly");
   is(value, "true", "value is set correctly");
+}
+
+const seenWorkerTargets = new Set();
+function waitForSourceMapWorker(hud) {
+  const { targetCommand } = hud.commands;
+  
+  
+  
+  const isFissionEnabledForBrowserConsole = Services.prefs.getBoolPref(
+    "devtools.browsertoolbox.fission",
+    false
+  );
+  if (!isFissionEnabledForBrowserConsole) {
+    return Promise.resolve();
+  }
+
+  return new Promise(resolve => {
+    const onAvailable = ({ targetFront }) => {
+      if (
+        targetFront.url.endsWith(
+          "devtools/client/shared/source-map-loader/worker.js"
+        ) &&
+        !seenWorkerTargets.has(targetFront)
+      ) {
+        seenWorkerTargets.add(targetFront);
+        targetCommand.unwatchTargets({
+          types: [targetCommand.TYPES.WORKER],
+          onAvailable,
+        });
+        resolve();
+      }
+    };
+    targetCommand.watchTargets({
+      types: [targetCommand.TYPES.WORKER],
+      onAvailable,
+    });
+  });
 }

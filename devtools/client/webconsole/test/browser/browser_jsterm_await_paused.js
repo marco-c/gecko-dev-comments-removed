@@ -35,7 +35,6 @@ add_task(async function() {
   const awaitExpression = `await new Promise(res => {
     const result = ["res", ...inPausedExpression];
     setTimeout(() => res(result), 1000);
-    console.log("awaitExpression executed");
   })`;
 
   const onAwaitResultMessage = waitForMessageByType(
@@ -51,8 +50,7 @@ add_task(async function() {
   await executeAndWaitForResultMessage(hud, `"smoke"`, `"smoke"`);
 
   
-  
-  await waitForMessageByType(hud, "awaitExpression executed", ".console-api");
+  await waitForTick();
 
   
   await resume(dbg);

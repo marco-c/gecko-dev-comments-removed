@@ -2,6 +2,7 @@
 
 
 
+import {} from "../../../workers/parser";
 import { locColumn } from "./locColumn";
 import { loadRangeMetadata, findMatchingRange } from "./rangeMetadata";
 
@@ -28,12 +29,10 @@ export async function buildMappedScopes(
   content,
   frame,
   scopes,
-  { client, parserWorker, sourceMaps }
+  { client, parser, sourceMaps }
 ) {
-  const originalAstScopes = await parserWorker.getScopes(frame.location);
-  const generatedAstScopes = await parserWorker.getScopes(
-    frame.generatedLocation
-  );
+  const originalAstScopes = await parser.getScopes(frame.location);
+  const generatedAstScopes = await parser.getScopes(frame.generatedLocation);
 
   if (!originalAstScopes || !generatedAstScopes) {
     return null;

@@ -4,40 +4,38 @@
 
 "use strict";
 
-class WorkerDispatcher {
-  #msgId = 1;
-  #worker = null;
+function WorkerDispatcher() {
+  this.msgId = 1;
+  this.worker = null;
   
-  #pendingCalls = new Map();
-  #url = "";
+  this.pendingCalls = new Map();
+  this._onMessage = this._onMessage.bind(this);
+}
 
-  constructor(url) {
-    this.#url = url;
-  }
-
-  start() {
+WorkerDispatcher.prototype = {
+  start(url) {
     
     if (typeof ChromeWorker == "function") {
-      this.#worker = new ChromeWorker(this.#url);
+      this.worker = new ChromeWorker(url);
     } else {
-      this.#worker = new Worker(this.#url);
+      this.worker = new Worker(url);
     }
-    this.#worker.onerror = err => {
-      console.error(`Error in worker ${this.#url}`, err.message);
+    this.worker.onerror = err => {
+      console.error(`Error in worker ${url}`, err.message);
     };
-    this.#worker.addEventListener("message", this.#onMessage);
-  }
+    this.worker.addEventListener("message", this._onMessage);
+  },
 
   stop() {
-    if (!this.#worker) {
+    if (!this.worker) {
       return;
     }
 
-    this.#worker.removeEventListener("message", this.#onMessage);
-    this.#worker.terminate();
-    this.#worker = null;
-    this.#pendingCalls.clear();
-  }
+    this.worker.removeEventListener("message", this._onMessage);
+    this.worker.terminate();
+    this.worker = null;
+    this.pendingCalls.clear();
+  },
 
   task(method, { queue = false } = {}) {
     const calls = [];
@@ -59,35 +57,35 @@ class WorkerDispatcher {
       const items = calls.slice();
       calls.length = 0;
 
-      if (!this.#worker) {
-        this.start();
+      if (!this.worker) {
+        return;
       }
 
-      const id = this.#msgId++;
-      this.#worker.postMessage({
+      const id = this.msgId++;
+      this.worker.postMessage({
         id,
         method,
         calls: items.map(item => item.args),
       });
 
-      this.#pendingCalls.set(id, items);
+      this.pendingCalls.set(id, items);
     };
 
     return (...args) => push(args);
-  }
+  },
 
   invoke(method, ...args) {
     return this.task(method)(...args);
-  }
+  },
 
-  #onMessage = ({ data: result }) => {
-    const items = this.#pendingCalls.get(result.id);
-    this.#pendingCalls.delete(result.id);
+  _onMessage({ data: result }) {
+    const items = this.pendingCalls.get(result.id);
+    this.pendingCalls.delete(result.id);
     if (!items) {
       return;
     }
 
-    if (!this.#worker) {
+    if (!this.worker) {
       return;
     }
 
@@ -102,8 +100,8 @@ class WorkerDispatcher {
         resolve(resultData.response);
       }
     });
-  };
-}
+  },
+};
 
 function workerHandler(publicInterface) {
   return function(msg) {
@@ -132,8 +130,8 @@ function workerHandler(publicInterface) {
 
 function asErrorMessage(error) {
   if (typeof error === "object" && error && "message" in error) {
-    // Error can't be sent via postMessage, so be sure to convert to
-    // string.
+    
+    
     return {
       error: true,
       message: error.message,
@@ -148,7 +146,7 @@ function asErrorMessage(error) {
   };
 }
 
-// Might be loaded within a worker thread where `module` isn't available.
+
 if (typeof module !== "undefined") {
   module.exports = {
     WorkerDispatcher,
