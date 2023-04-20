@@ -383,14 +383,14 @@ class FrameBuffer3Proxy : public FrameBufferProxy {
         }));
   }
 
-  void OnTimeout() {
+  void OnTimeout(TimeDelta delay) {
     RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
     
     if (!decoder_ready_for_new_frame_) {
       timeout_tracker_.Stop();
       return;
     }
-    receiver_->OnDecodableFrameTimeout(MaxWait());
+    receiver_->OnDecodableFrameTimeout(delay);
     
     timeout_tracker_.Stop();
     decoder_ready_for_new_frame_ = false;
