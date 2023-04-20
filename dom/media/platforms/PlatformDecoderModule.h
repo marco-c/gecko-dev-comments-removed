@@ -523,6 +523,11 @@ class MediaDataDecoder : public DecoderDoctorLifeLogger<MediaDataDecoder> {
   
   virtual nsCString GetDescriptionName() const = 0;
 
+  virtual nsCString GetProcessName() const {
+    return nsCString(XRE_GetProcessTypeString());
+  };
+  virtual nsCString GetCodecName() const = 0;
+
   
   
   

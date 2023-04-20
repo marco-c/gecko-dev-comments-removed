@@ -31,6 +31,7 @@ class AOMDecoder : public MediaDataDecoder,
   nsCString GetDescriptionName() const override {
     return "av1 libaom video decoder"_ns;
   }
+  nsCString GetCodecName() const override { return "av1"_ns; }
 
   
   
