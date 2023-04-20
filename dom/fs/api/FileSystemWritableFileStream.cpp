@@ -117,9 +117,16 @@ FileSystemWritableFileStream::FileSystemWritableFileStream(
   auto rawFD = aFileDescriptor.ClonePlatformHandle();
   mFileDesc = PR_ImportFile(PROsfd(rawFD.release()));
 
-  mozilla::HoldJSObjects(this);
-
   LOG(("Created WritableFileStream %p for fd %p", this, mFileDesc));
+
+  
+  
+  
+  
+  
+  mActor->SetStream(this);
+
+  mozilla::HoldJSObjects(this);
 }
 
 FileSystemWritableFileStream::~FileSystemWritableFileStream() {

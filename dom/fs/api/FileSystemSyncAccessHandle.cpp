@@ -98,11 +98,30 @@ FileSystemSyncAccessHandle::FileSystemSyncAccessHandle(
       mMetadata(aMetadata),
       mClosed(false) {
   LOG(("Created SyncAccessHandle %p for stream %p", this, mStream.get()));
+
+  
+  
+  
+  
+  
+  mActor->SetAccessHandle(this);
 }
 
 FileSystemSyncAccessHandle::~FileSystemSyncAccessHandle() {
   MOZ_ASSERT(!mActor);
   MOZ_ASSERT(mClosed);
+}
+
+
+Result<RefPtr<FileSystemSyncAccessHandle>, nsresult>
+FileSystemSyncAccessHandle::Create(
+    nsIGlobalObject* aGlobal, RefPtr<FileSystemManager>& aManager,
+    RefPtr<FileSystemAccessHandleChild> aActor,
+    nsCOMPtr<nsIRandomAccessStream> aStream,
+    const fs::FileSystemEntryMetadata& aMetadata) {
+  RefPtr<FileSystemSyncAccessHandle> result = new FileSystemSyncAccessHandle(
+      aGlobal, aManager, std::move(aActor), std::move(aStream), aMetadata);
+  return result;
 }
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(FileSystemSyncAccessHandle)
