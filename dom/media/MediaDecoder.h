@@ -322,6 +322,11 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   bool IsVideoDecodingSuspended() const;
 
   
+  bool ShouldResistFingerprinting() const {
+    return mShouldResistFingerprinting;
+  }
+
+  
 
 
 
@@ -586,6 +591,9 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   
   bool mHasSuspendTaint;
+
+  
+  const bool mShouldResistFingerprinting;
 
   MediaDecoderOwner::NextFrameStatus mNextFrameStatus =
       MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE;

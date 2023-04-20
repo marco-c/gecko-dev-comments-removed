@@ -280,10 +280,6 @@ class AudioStream final {
   
   int64_t GetPositionInFrames();
 
-  static uint32_t GetPreferredRate() {
-    return CubebUtils::PreferredSampleRate();
-  }
-
   uint32_t GetOutChannels() const { return mOutChannels; }
 
   

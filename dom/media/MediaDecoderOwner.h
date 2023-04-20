@@ -184,6 +184,9 @@ class MediaDecoderOwner {
   virtual bool IsActuallyInvisible() const = 0;
 
   
+  virtual bool ShouldResistFingerprinting() const = 0;
+
+  
 
 
 

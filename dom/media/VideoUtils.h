@@ -153,7 +153,8 @@ uint32_t DecideAudioPlaybackChannels(const AudioInfo& info);
 
 
 
-uint32_t DecideAudioPlaybackSampleRate(const AudioInfo& info);
+uint32_t DecideAudioPlaybackSampleRate(const AudioInfo& info,
+                                       bool aShouldResistFingerprinting);
 
 bool IsDefaultPlaybackDeviceMono();
 

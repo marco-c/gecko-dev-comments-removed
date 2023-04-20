@@ -185,7 +185,8 @@ uint32_t DecideAudioPlaybackChannels(const AudioInfo& info) {
   return info.mChannels;
 }
 
-uint32_t DecideAudioPlaybackSampleRate(const AudioInfo& aInfo) {
+uint32_t DecideAudioPlaybackSampleRate(const AudioInfo& aInfo,
+                                       bool aShouldResistFingerprinting) {
   bool resampling = StaticPrefs::media_resampling_enabled();
 
   uint32_t rate = 0;
@@ -198,7 +199,7 @@ uint32_t DecideAudioPlaybackSampleRate(const AudioInfo& aInfo) {
     rate = aInfo.mRate;
   } else {
     
-    rate = AudioStream::GetPreferredRate();
+    rate = CubebUtils::PreferredSampleRate(aShouldResistFingerprinting);
     if (rate > 384000) {
       
       rate = 48000;

@@ -48,7 +48,7 @@ bool SandboxEnabled();
 uint32_t MaxNumberOfChannels();
 
 
-uint32_t PreferredSampleRate();
+uint32_t PreferredSampleRate(bool aShouldResistFingerprinting);
 
 
 
