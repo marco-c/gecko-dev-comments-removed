@@ -1142,9 +1142,10 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
 
   
   mWriter->Start();
-  if (!profiler_stream_json_for_this_process(*mWriter, aSinceTime,
-                                              false,
-                                             service.get())) {
+  auto rv = profiler_stream_json_for_this_process(*mWriter, aSinceTime,
+                                                   false,
+                                                  service.get());
+  if (rv.isErr()) {
     
     
     
