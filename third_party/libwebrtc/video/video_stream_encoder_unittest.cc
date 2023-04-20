@@ -9108,6 +9108,11 @@ TEST(VideoStreamEncoderSimpleTest, CreateDestroy) {
       VideoStreamEncoder::BitrateAllocationCallbackType::
           kVideoBitrateAllocation,
       field_trials);
+
+  
+  
+  
+  encoder->Stop();
 }
 
 TEST(VideoStreamEncoderFrameCadenceTest, ActivatesFrameCadenceOnContentType) {
