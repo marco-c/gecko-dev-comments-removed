@@ -26,20 +26,6 @@ MetricsLogger* GetGlobalMetricsLogger();
 bool ExportPerfMetric(MetricsLogger& logger,
                       std::vector<std::unique_ptr<MetricsExporter>> exporters);
 
-
-
-MetricsLoggerAndExporter* GetGlobalMetricsLoggerAndExporter();
-
-
-
-void SetupGlobalMetricsLoggerAndExporter(
-    std::vector<std::unique_ptr<MetricsExporter>> exporters);
-
-
-
-
-void ExportAndDestroyGlobalMetricsLoggerAndExporter();
-
 }  
 }  
 
