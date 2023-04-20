@@ -1884,12 +1884,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "postMessage", insecureContext: true },
   
-  {
-    name: "print",
-    insecureContext: true,
-    android: false,
-    nightlyAndroid: true,
-  },
+  { name: "print", insecureContext: true },
   
   { name: "prompt", insecureContext: true },
   
