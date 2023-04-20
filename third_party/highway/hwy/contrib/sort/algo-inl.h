@@ -20,8 +20,9 @@
 #include <stdint.h>
 #include <string.h>  
 
-#include <algorithm>
-#include <cmath>  
+#include <algorithm>   
+#include <functional>  
+#include <thread>      
 #include <vector>
 
 #include "hwy/base.h"

@@ -18,8 +18,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <algorithm>
+#include <algorithm>  
 #include <limits>
+#include <cmath>  
 
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "tests/float_test.cc"

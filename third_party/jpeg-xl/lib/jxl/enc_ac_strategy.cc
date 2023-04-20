@@ -339,6 +339,36 @@ bool MultiBlockTransformCrossesVerticalBoundary(
   return false;
 }
 
+static const float kChromaErrorWeight[AcStrategy::kNumValidStrategies] = {
+    0.95f,  
+    1.0f,   
+    0.5f,   
+    1.0f,   
+    2.0f,   
+    2.0f,   
+    1.4f,   
+    1.4f,   
+    2.0f,   
+    2.0f,   
+    2.0f,   
+    2.0f,   
+    2.0f,   
+    2.0f,   
+    1.7f,   
+    1.7f,   
+    1.7f,   
+    1.7f,   
+    2.0f,   
+    2.0f,   
+    2.0f,   
+    2.0f,   
+    2.0f,   
+    2.0f,   
+    2.0f,   
+    2.0f,   
+    2.0f,   
+};
+
 float EstimateEntropy(const AcStrategy& acs, size_t x, size_t y,
                       const ACSConfig& config,
                       const float* JXL_RESTRICT cmap_factors, float* block,
@@ -355,6 +385,8 @@ float EstimateEntropy(const AcStrategy& acs, size_t x, size_t y,
   HWY_FULL(float) df;
 
   const size_t num_blocks = acs.covered_blocks_x() * acs.covered_blocks_y();
+  
+  float cmul[3] = {kChromaErrorWeight[acs.RawStrategy()], 1.0f, 1.0f};
   float quant_norm8 = 0;
   float masking = 0;
   if (num_blocks == 1) {
@@ -437,7 +469,7 @@ float EstimateEntropy(const AcStrategy& acs, size_t x, size_t y,
     }
     entropy_v = MulAdd(nzeros_v, cost1, entropy_v);
 
-    entropy += GetLane(SumOfLanes(df, entropy_v));
+    entropy += cmul[c] * GetLane(SumOfLanes(df, entropy_v));
     size_t num_nzeros = GetLane(SumOfLanes(df, nzeros_v));
     
     
@@ -478,23 +510,23 @@ uint8_t FindBest8x8Transform(size_t x, size_t y, int encoding_speed_tier,
           AcStrategy::Type::DCT4X4,
           5,
           4.0f,
-          1.0179946967008329f,
+          0.7f,
       },
       {
           AcStrategy::Type::DCT2X2,
-          4,
-          4.0f,
-          0.76721119707580943f,
+          5,
+          0.0f,
+          0.66f,
       },
       {
           AcStrategy::Type::DCT4X8,
-          5,
+          4,
           0.0f,
           0.700754622182473063f,
       },
       {
           AcStrategy::Type::DCT8X4,
-          5,
+          4,
           0.0f,
           0.700754622182473063f,
       },
@@ -805,7 +837,7 @@ void ProcessRectACS(PassesEncoderState* JXL_RESTRICT enc_state,
   
   
   static const float k8x8mul1 = -0.55;
-  static const float k8x8mul2 = 1.0735757687292623f;
+  static const float k8x8mul2 = 1.0;
   static const float k8x8base = 1.4;
   const float mul8x8 = k8x8mul2 + k8x8mul1 / (butteraugli_target + k8x8base);
   for (size_t iy = 0; iy < rect.ysize(); iy++) {
@@ -830,27 +862,27 @@ void ProcessRectACS(PassesEncoderState* JXL_RESTRICT enc_state,
     float entropy_mul;
   };
   static const float k8X16mul1 = -0.55;
-  static const float k8X16mul2 = 0.9019587899705066;
+  static const float k8X16mul2 = 0.867;
   static const float k8X16base = 1.6;
   const float entropy_mul16X8 =
       k8X16mul2 + k8X16mul1 / (butteraugli_target + k8X16base);
   
 
   static const float k16X16mul1 = -0.35;
-  static const float k16X16mul2 = 0.82;
+  static const float k16X16mul2 = 0.80;
   static const float k16X16base = 2.0;
   const float entropy_mul16X16 =
       k16X16mul2 + k16X16mul1 / (butteraugli_target + k16X16base);
   
 
   static const float k32X16mul1 = -0.1;
-  static const float k32X16mul2 = 0.84;
+  static const float k32X16mul2 = 0.86;
   static const float k32X16base = 2.5;
   const float entropy_mul16X32 =
       k32X16mul2 + k32X16mul1 / (butteraugli_target + k32X16base);
 
-  const float entropy_mul32X32 = 0.9;
-  const float entropy_mul64X64 = 1.43f;
+  const float entropy_mul32X32 = 0.94;
+  const float entropy_mul64X64 = 1.52f;
   
   
   
@@ -871,8 +903,8 @@ void ProcessRectACS(PassesEncoderState* JXL_RESTRICT enc_state,
       
       
       
-      {AcStrategy::Type::DCT64X32, 6, 1, 3, 1.26f},
-      {AcStrategy::Type::DCT32X64, 6, 1, 3, 1.26f},
+      {AcStrategy::Type::DCT64X32, 6, 1, 3, 1.29f},
+      {AcStrategy::Type::DCT32X64, 6, 1, 3, 1.29f},
       
   };
   

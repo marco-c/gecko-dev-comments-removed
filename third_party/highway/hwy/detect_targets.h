@@ -175,7 +175,8 @@
 
 
 #if !defined(HWY_BROKEN_EMU128)  
-#if HWY_ARCH_ARM_V7 && HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1140
+#if (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1203) || \
+    defined(HWY_NO_LIBCXX)
 #define HWY_BROKEN_EMU128 1
 #else
 #define HWY_BROKEN_EMU128 0
@@ -215,29 +216,44 @@
 #define HWY_BASELINE_PPC8 0
 #endif
 
-#if HWY_ARCH_ARM && defined(__ARM_FEATURE_SVE2)
-#define HWY_BASELINE_SVE2 HWY_SVE2
-#else
 #define HWY_BASELINE_SVE2 0
-#endif
-
-#if HWY_ARCH_ARM && defined(__ARM_FEATURE_SVE)
-
-
-
-
-
-#define HWY_BASELINE_SVE HWY_SVE
-#else
 #define HWY_BASELINE_SVE 0
-#endif
-
-
-#if HWY_ARCH_ARM && (defined(__ARM_NEON__) || defined(__ARM_NEON))
-#define HWY_BASELINE_NEON HWY_NEON
-#else
 #define HWY_BASELINE_NEON 0
+
+#if HWY_ARCH_ARM
+
+#if defined(__ARM_FEATURE_SVE2)
+#undef HWY_BASELINE_SVE2  // was 0, will be re-defined
+
+
+#if defined(__ARM_FEATURE_SVE_BITS) && __ARM_FEATURE_SVE_BITS == 128
+#define HWY_BASELINE_SVE2 HWY_SVE2_128
+
+
+
+
+#else
+#define HWY_BASELINE_SVE2 HWY_SVE2
+#endif  
+#endif  
+
+#if defined(__ARM_FEATURE_SVE)
+#undef HWY_BASELINE_SVE  // was 0, will be re-defined
+
+#if defined(__ARM_FEATURE_SVE_BITS) && __ARM_FEATURE_SVE_BITS == 256
+#define HWY_BASELINE_SVE HWY_SVE_256
+#else
+#define HWY_BASELINE_SVE HWY_SVE
+#endif  
+#endif  
+
+
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+#undef HWY_BASELINE_NEON
+#define HWY_BASELINE_NEON HWY_NEON
 #endif
+
+#endif  
 
 
 #if HWY_COMPILER_MSVC
@@ -373,8 +389,11 @@
 
 
 
+#if HWY_ARCH_X86
+#define HWY_HAVE_RUNTIME_DISPATCH 1
 
-#if HWY_ARCH_X86 || (HWY_ARCH_ARM && HWY_COMPILER_GCC_ACTUAL && HWY_OS_LINUX)
+
+#elif HWY_ARCH_ARM && HWY_COMPILER_GCC_ACTUAL && HWY_OS_LINUX
 #define HWY_HAVE_RUNTIME_DISPATCH 1
 #else
 #define HWY_HAVE_RUNTIME_DISPATCH 0
@@ -389,15 +408,15 @@
 #define HWY_ATTAINABLE_AVX3_DL 0
 #endif
 
-#if HWY_ARCH_ARM_A64 && \
-    ((HWY_ENABLED_BASELINE & HWY_SVE) || HWY_HAVE_RUNTIME_DISPATCH)
+#if HWY_ARCH_ARM_A64 && (HWY_HAVE_RUNTIME_DISPATCH || \
+                         (HWY_ENABLED_BASELINE & (HWY_SVE | HWY_SVE_256)))
 #define HWY_ATTAINABLE_SVE HWY_ENABLED(HWY_SVE | HWY_SVE_256)
 #else
 #define HWY_ATTAINABLE_SVE 0
 #endif
 
-#if HWY_ARCH_ARM_A64 && \
-    ((HWY_ENABLED_BASELINE & HWY_SVE2) || HWY_HAVE_RUNTIME_DISPATCH)
+#if HWY_ARCH_ARM_A64 && (HWY_HAVE_RUNTIME_DISPATCH || \
+                         (HWY_ENABLED_BASELINE & (HWY_SVE2 | HWY_SVE2_128)))
 #define HWY_ATTAINABLE_SVE2 HWY_ENABLED(HWY_SVE2 | HWY_SVE2_128)
 #else
 #define HWY_ATTAINABLE_SVE2 0

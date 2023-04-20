@@ -32,6 +32,7 @@
 #include <numeric>  
 #include <random>
 #include <string>
+#include <utility>  
 #include <vector>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -150,7 +151,7 @@ inline Ticks Start() {
       
       : "rdx", "memory", "cc");
 #elif HWY_ARCH_RVV
-  asm volatile("rdcycle %0" : "=r"(t));
+  asm volatile("rdtime %0" : "=r"(t));
 #elif defined(_WIN32) || defined(_WIN64)
   LARGE_INTEGER counter;
   (void)QueryPerformanceCounter(&counter);

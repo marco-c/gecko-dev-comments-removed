@@ -30,17 +30,14 @@ TEST(ExternalImageTest, InvalidSize) {
   EXPECT_FALSE(ConvertFromExternal(
       Span<const uint8_t>(buf, 10), 10, 100,
       ColorEncoding::SRGB(),
-      false, 16, format, nullptr,
-      &ib));
+      16, format, nullptr, &ib));
   EXPECT_FALSE(ConvertFromExternal(
       Span<const uint8_t>(buf, sizeof(buf) - 1), 10, 100,
       ColorEncoding::SRGB(),
-      false, 16, format, nullptr,
-      &ib));
+      16, format, nullptr, &ib));
   EXPECT_TRUE(
       ConvertFromExternal(Span<const uint8_t>(buf, sizeof(buf)), 10,
                           100, ColorEncoding::SRGB(),
-                          false,
                           16, format, nullptr, &ib));
 }
 #endif
@@ -60,9 +57,23 @@ TEST(ExternalImageTest, AlphaMissing) {
   EXPECT_TRUE(ConvertFromExternal(Span<const uint8_t>(buf, sizeof(buf)), xsize,
                                   ysize,
                                   ColorEncoding::SRGB(),
-                                  false,
                                   8, format, nullptr, &ib));
   EXPECT_FALSE(ib.HasAlpha());
+}
+
+TEST(ExternalImageTest, AlphaPremultiplied) {
+  ImageMetadata im;
+  im.SetAlphaBits(8, true);
+
+  ImageBundle ib(&im);
+  const size_t xsize = 10;
+  const size_t ysize = 20;
+  const size_t size = xsize * ysize * 8;
+  const uint8_t buf[size] = {};
+
+  JxlPixelFormat format = {4, JXL_TYPE_UINT16, JXL_BIG_ENDIAN, 0};
+  EXPECT_TRUE(BufferToImageBundle(format, xsize, ysize, buf, size, nullptr,
+                                  ColorEncoding::SRGB(), &ib));
 }
 
 }  

@@ -28,7 +28,6 @@ void BM_EncExternalImage_ConvertImageRGBA(benchmark::State& state) {
           Span<const uint8_t>(interleaved.data(), interleaved.size()), xsize,
           ysize,
           ColorEncoding::SRGB(),
-          false,
           8, format,
           nullptr, &ib));
     }

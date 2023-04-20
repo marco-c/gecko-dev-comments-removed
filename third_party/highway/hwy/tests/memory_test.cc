@@ -23,6 +23,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <algorithm>  
+
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "tests/memory_test.cc"
 #include "hwy/cache_control.h"

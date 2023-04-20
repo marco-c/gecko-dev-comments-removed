@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <cmath>  
 #include <string>
 
 #include "hwy/aligned_allocator.h"

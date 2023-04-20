@@ -27,8 +27,9 @@ namespace jxl {
 namespace extras {
 namespace HWY_NAMESPACE {
 
-void ComputeDCTCoefficients(const Image3F& opsin, const ImageF& qf,
-                            const FrameDimensions& frame_dim, const float* qm,
+void ComputeDCTCoefficients(const Image3F& opsin, const bool xyb,
+                            const ImageF& qf, const FrameDimensions& frame_dim,
+                            const float* qm,
                             std::vector<jpeg::JPEGComponent>* components) {
   int max_samp_factor = 1;
   for (const auto& c : *components) {
@@ -75,7 +76,11 @@ void ComputeDCTCoefficients(const Image3F& opsin, const ImageF& qf,
             block[ix * 8 + iy] = cc;
           }
         }
-        block[0] = std::round((2040 * dct[0] - 1024) * qmc[0]);
+        if (xyb) {
+          
+          
+          block[0] = std::round((2040 * dct[0] - 1024) * qmc[0]);
+        }
       }
     }
   }
@@ -95,12 +100,7 @@ HWY_EXPORT(ComputeDCTCoefficients);
 
 namespace {
 
-std::vector<uint8_t> CreateXybICCAppMarker() {
-  ColorEncoding c_xyb;
-  c_xyb.SetColorSpace(ColorSpace::kXYB);
-  c_xyb.rendering_intent = RenderingIntent::kPerceptual;
-  JXL_CHECK(c_xyb.CreateICC());
-  const auto& icc = c_xyb.ICC();
+std::vector<uint8_t> CreateICCAppMarker(const PaddedBytes& icc) {
   std::vector<uint8_t> icc_marker(17 + icc.size());
   
   
@@ -116,7 +116,15 @@ std::vector<uint8_t> CreateXybICCAppMarker() {
   return icc_marker;
 }
 
-static constexpr float kBaseQuantMatrix[] = {
+std::vector<uint8_t> CreateXybICCAppMarker() {
+  ColorEncoding c_xyb;
+  c_xyb.SetColorSpace(ColorSpace::kXYB);
+  c_xyb.rendering_intent = RenderingIntent::kPerceptual;
+  JXL_CHECK(c_xyb.CreateICC());
+  return CreateICCAppMarker(c_xyb.ICC());
+}
+
+static constexpr float kBaseQuantMatrixXYB[] = {
     
     0.010745695802f,
     0.014724285860f,
@@ -314,9 +322,45 @@ static constexpr float kBaseQuantMatrix[] = {
     0.047241950370f,
 };
 
-void AddJpegQuantMatrices(const ImageF& qf, float dc_quant, float global_scale,
+
+static constexpr float kBaseQuantMatrixYCbCr[] = {
+    
+    1, 1, 1, 1, 1, 1, 1, 2,  
+    1, 1, 1, 1, 1, 1, 1, 2,  
+    1, 1, 1, 1, 1, 1, 2, 3,  
+    1, 1, 1, 1, 1, 1, 2, 3,  
+    1, 1, 1, 1, 1, 2, 3, 4,  
+    1, 1, 1, 1, 2, 2, 3, 5,  
+    1, 1, 2, 2, 3, 3, 5, 6,  
+    2, 2, 3, 3, 4, 5, 6, 8,  
+
+    
+    2, 2, 2, 2, 3, 4, 6, 9,        
+    2, 2, 2, 3, 3, 4, 5, 8,        
+    2, 2, 2, 3, 4, 6, 9, 14,       
+    2, 3, 3, 4, 5, 7, 11, 16,      
+    3, 3, 4, 5, 7, 9, 13, 19,      
+    4, 4, 6, 7, 9, 12, 17, 24,     
+    6, 5, 9, 11, 13, 17, 23, 31,   
+    9, 8, 14, 16, 19, 24, 31, 42,  
+
+    
+    2, 2, 2, 2, 3, 4, 6, 9,        
+    2, 2, 2, 3, 3, 4, 5, 8,        
+    2, 2, 2, 3, 4, 6, 9, 14,       
+    2, 3, 3, 4, 5, 7, 11, 16,      
+    3, 3, 4, 5, 7, 9, 13, 19,      
+    4, 4, 6, 7, 9, 12, 17, 24,     
+    6, 5, 9, 11, 13, 17, 23, 31,   
+    9, 8, 14, 16, 19, 24, 31, 42,  
+};
+
+void AddJpegQuantMatrices(const ImageF& qf, bool xyb, float dc_quant,
+                          float global_scale,
                           std::vector<jpeg::JPEGQuantTable>* quant_tables,
                           float* qm) {
+  const float* const base_quant_matrix =
+      xyb ? kBaseQuantMatrixXYB : kBaseQuantMatrixYCbCr;
   
   
   float qfmin, qfmax;
@@ -324,10 +368,10 @@ void AddJpegQuantMatrices(const ImageF& qf, float dc_quant, float global_scale,
   const float dc_scale = global_scale / dc_quant;
   const float ac_scale = global_scale / qfmax;
   for (size_t c = 0, ix = 0; c < 3; c++) {
-    qm[ix] = dc_scale * kBaseQuantMatrix[ix];
+    qm[ix] = dc_scale * base_quant_matrix[ix];
     ix++;
     for (size_t j = 1; j < kDCTBlockSize; j++, ix++) {
-      qm[ix] = ac_scale * kBaseQuantMatrix[ix];
+      qm[ix] = ac_scale * base_quant_matrix[ix];
     }
   }
 
@@ -514,26 +558,37 @@ void SetJpegHuffmanCode(const JpegClusteredHistograms& clusters,
 }
 
 void FillJPEGData(const Image3F& opsin, const ImageF& qf, float dc_quant,
-                  float global_scale, const bool subsample_blue,
-                  const FrameDimensions& frame_dim, jpeg::JPEGData* out) {
+                  float global_scale, const bool xyb, const bool subsample_blue,
+                  const PaddedBytes& icc, const FrameDimensions& frame_dim,
+                  jpeg::JPEGData* out) {
   *out = jpeg::JPEGData();
   
   out->marker_order.push_back(0xe2);
-  out->app_data.push_back(CreateXybICCAppMarker());
+  if (xyb) {
+    out->app_data.push_back(CreateXybICCAppMarker());
+  } else {
+    out->app_data.push_back(CreateICCAppMarker(icc));
+  }
 
   
   out->marker_order.emplace_back(0xdb);
   float qm[3 * kDCTBlockSize];
-  AddJpegQuantMatrices(qf, dc_quant, global_scale, &out->quant, qm);
+  AddJpegQuantMatrices(qf, xyb, dc_quant, global_scale, &out->quant, qm);
 
   
   out->marker_order.emplace_back(0xc2);
   out->components.resize(3);
   out->height = frame_dim.ysize;
   out->width = frame_dim.xsize;
-  out->components[0].id = 'R';
-  out->components[1].id = 'G';
-  out->components[2].id = 'B';
+  if (xyb) {
+    out->components[0].id = 'R';
+    out->components[1].id = 'G';
+    out->components[2].id = 'B';
+  } else {
+    out->components[0].id = 1;
+    out->components[1].id = 2;
+    out->components[2].id = 3;
+  }
   size_t max_samp_factor = subsample_blue ? 2 : 1;
   for (size_t c = 0; c < 3; ++c) {
     const size_t factor = (subsample_blue && c == 2) ? 2 : 1;
@@ -546,7 +601,7 @@ void FillJPEGData(const Image3F& opsin, const ImageF& qf, float dc_quant,
     out->components[c].quant_idx = c;
   }
   HWY_DYNAMIC_DISPATCH(ComputeDCTCoefficients)
-  (opsin, qf, frame_dim, qm, &out->components);
+  (opsin, xyb, qf, frame_dim, qm, &out->components);
 
   
   out->marker_order.emplace_back(0xc4);
@@ -635,9 +690,9 @@ size_t JpegSize(const jpeg::JPEGData& jpeg_data) {
 
 }  
 
-Status EncodeJpeg(const ImageBundle& input, size_t target_size, float distance,
+Status EncodeJpeg(const ImageBundle& input, const JpegSettings& jpeg_settings,
                   ThreadPool* pool, std::vector<uint8_t>* compressed) {
-  const bool subsample_blue = true;
+  const bool subsample_blue = jpeg_settings.xyb;
   const size_t max_shift = subsample_blue ? 1 : 0;
   FrameDimensions frame_dim;
   frame_dim.Set(input.xsize(), input.ysize(), 1, max_shift, max_shift, false,
@@ -651,17 +706,35 @@ Status EncodeJpeg(const ImageBundle& input, size_t target_size, float distance,
 
   
   ImageF mask;
-  ImageF qf = InitialQuantField(distance, opsin, frame_dim, pool, 1.0, &mask);
-  ScaleXYB(&opsin);
+  ImageF qf = InitialQuantField(jpeg_settings.distance, opsin, frame_dim, pool,
+                                1.0, &mask);
+  if (jpeg_settings.xyb) {
+    ScaleXYB(&opsin);
+  } else {
+    opsin.ShrinkTo(input.xsize(), input.ysize());
+    JXL_RETURN_IF_ERROR(RgbToYcbcr(
+        input.color().Plane(0), input.color().Plane(1), input.color().Plane(2),
+        &opsin.Plane(0), &opsin.Plane(1), &opsin.Plane(2), pool));
+    PadImageToBlockMultipleInPlace(&opsin, 8 << max_shift);
+  }
 
   
   jpeg::JPEGData jpeg_data;
   float global_scale = 0.66f;
-  float dc_quant = InitialQuantDC(distance);
-  FillJPEGData(opsin, qf, dc_quant, global_scale, subsample_blue, frame_dim,
-               &jpeg_data);
+  if (!jpeg_settings.xyb) {
+    global_scale /= 500;
+    if (input.metadata()->color_encoding.tf.IsPQ()) {
+      global_scale *= .4f;
+    } else if (input.metadata()->color_encoding.tf.IsHLG()) {
+      global_scale *= .5f;
+    }
+  }
+  float dc_quant = InitialQuantDC(jpeg_settings.distance);
+  FillJPEGData(opsin, qf, dc_quant, global_scale, jpeg_settings.xyb,
+               subsample_blue, input.metadata()->color_encoding.ICC(),
+               frame_dim, &jpeg_data);
 
-  if (target_size != 0) {
+  if (jpeg_settings.target_size != 0) {
     
     
     size_t prev_size = 0;
@@ -670,7 +743,7 @@ Status EncodeJpeg(const ImageBundle& input, size_t target_size, float distance,
     size_t iter = 0;
     for (;;) {
       size_t size = JpegSize(jpeg_data);
-      float error = size * 1.0f / target_size - 1.0f;
+      float error = size * 1.0f / jpeg_settings.target_size - 1.0f;
       if (std::abs(error) < std::abs(best_error)) {
         best_error = error;
         best_global_scale = global_scale;
@@ -679,13 +752,15 @@ Status EncodeJpeg(const ImageBundle& input, size_t target_size, float distance,
         break;
       }
       global_scale *= 1.0f + error;
-      FillJPEGData(opsin, qf, dc_quant, global_scale, subsample_blue, frame_dim,
-                   &jpeg_data);
+      FillJPEGData(opsin, qf, dc_quant, global_scale, jpeg_settings.xyb,
+                   subsample_blue, input.metadata()->color_encoding.ICC(),
+                   frame_dim, &jpeg_data);
       prev_size = size;
       ++iter;
     }
     if (best_global_scale != global_scale) {
-      FillJPEGData(opsin, qf, dc_quant, best_global_scale, subsample_blue,
+      FillJPEGData(opsin, qf, dc_quant, best_global_scale, jpeg_settings.xyb,
+                   subsample_blue, input.metadata()->color_encoding.ICC(),
                    frame_dim, &jpeg_data);
     }
   }

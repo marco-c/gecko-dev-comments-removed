@@ -43,7 +43,6 @@
 #endif  
 
 #elif HWY_ARCH_ARM && HWY_OS_LINUX
-#include <asm/hwcap.h>
 #include <sys/auxv.h>
 #endif  
 

@@ -125,6 +125,9 @@ struct KeyAny128 {
 
 struct Key128 : public KeyAny128 {
   
+  static constexpr bool IsKV() { return false; }
+
+  
   using KeyType = hwy::uint128_t;
 
   std::string KeyString() const { return "U128"; }
@@ -134,7 +137,20 @@ struct Key128 : public KeyAny128 {
     return Eq128(d, a, b);
   }
 
-  HWY_INLINE bool Equal1(const LaneType* a, const LaneType* b) {
+  template <class D>
+  HWY_INLINE Mask<D> NotEqualKeys(D d, Vec<D> a, Vec<D> b) const {
+    return Ne128(d, a, b);
+  }
+
+  
+  template <class D>
+  HWY_INLINE bool NoKeyDifference(D , Vec<D> diff) const {
+    
+    const RebindToUnsigned<D> du;
+    return AllTrue(du, Eq(BitCast(du, diff), Zero(du)));
+  }
+
+  HWY_INLINE bool Equal1(const LaneType* a, const LaneType* b) const {
     return a[0] == b[0] && a[1] == b[1];
   }
 };
@@ -187,8 +203,12 @@ struct OrderAscending128 : public Key128 {
 
   template <class D>
   HWY_INLINE Vec<D> PrevValue(D d, Vec<D> v) const {
-    const Vec<D> k1 = OddEven(Zero(d), Set(d, 1));
-    return Sub(v, k1);
+    const Vec<D> k0 = Zero(d);
+    const Vec<D> k1 = OddEven(k0, Set(d, uint64_t{1}));
+    const Mask<D> borrow = Eq(v, k0);  
+    
+    const Vec<D> adjust = ShiftLeftLanes<1>(IfThenElseZero(borrow, k1));
+    return Sub(Sub(v, k1), adjust);
   }
 };
 
@@ -233,13 +253,21 @@ struct OrderDescending128 : public Key128 {
 
   template <class D>
   HWY_INLINE Vec<D> PrevValue(D d, Vec<D> v) const {
-    const Vec<D> k1 = OddEven(Zero(d), Set(d, 1));
-    return Add(v, k1);
+    const Vec<D> k1 = OddEven(Zero(d), Set(d, uint64_t{1}));
+    const Vec<D> added = Add(v, k1);
+    const Mask<D> overflowed = Lt(added, v);  
+    
+    const Vec<D> adjust = ShiftLeftLanes<1>(IfThenElseZero(overflowed, k1));
+    return Add(added, adjust);
   }
 };
 
 
 struct KeyValue128 : public KeyAny128 {
+  
+  
+  static constexpr bool IsKV() { return true; }
+
   
   using KeyType = K64V64;
 
@@ -250,7 +278,22 @@ struct KeyValue128 : public KeyAny128 {
     return Eq128Upper(d, a, b);
   }
 
-  HWY_INLINE bool Equal1(const LaneType* a, const LaneType* b) {
+  template <class D>
+  HWY_INLINE Mask<D> NotEqualKeys(D d, Vec<D> a, Vec<D> b) const {
+    return Ne128Upper(d, a, b);
+  }
+
+  
+  template <class D>
+  HWY_INLINE bool NoKeyDifference(D , Vec<D> diff) const {
+    
+    const RebindToUnsigned<D> du;
+    const Vec<decltype(du)> zero = Zero(du);
+    const Vec<decltype(du)> keys = OddEven(diff, zero);  
+    return AllTrue(du, Eq(BitCast(du, keys), zero));
+  }
+
+  HWY_INLINE bool Equal1(const LaneType* a, const LaneType* b) const {
     return a[1] == b[1];
   }
 };
@@ -296,7 +339,7 @@ struct OrderAscendingKV128 : public KeyValue128 {
 
   template <class D>
   HWY_INLINE Vec<D> PrevValue(D d, Vec<D> v) const {
-    const Vec<D> k1 = OddEven(Zero(d), Set(d, 1));
+    const Vec<D> k1 = OddEven(Set(d, uint64_t{1}), Zero(d));
     return Sub(v, k1);
   }
 };
@@ -342,7 +385,7 @@ struct OrderDescendingKV128 : public KeyValue128 {
 
   template <class D>
   HWY_INLINE Vec<D> PrevValue(D d, Vec<D> v) const {
-    const Vec<D> k1 = OddEven(Zero(d), Set(d, 1));
+    const Vec<D> k1 = OddEven(Set(d, uint64_t{1}), Zero(d));
     return Add(v, k1);
   }
 };

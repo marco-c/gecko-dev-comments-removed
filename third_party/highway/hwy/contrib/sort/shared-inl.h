@@ -65,13 +65,14 @@ struct SortConstants {
   
   
   
-  static constexpr HWY_INLINE size_t LanesPerChunk(size_t sizeof_t, size_t N) {
-    return HWY_MAX(64 / sizeof_t, N);
+  
+  static constexpr HWY_INLINE size_t LanesPerChunk(size_t sizeof_t) {
+    return 64 / sizeof_t;
   }
 
   static constexpr HWY_INLINE size_t PivotBufNum(size_t sizeof_t, size_t N) {
     
-    return (3 + 1) * LanesPerChunk(sizeof_t, N) + 2 * N;
+    return (3 + 1) * LanesPerChunk(sizeof_t) + 2 * N;
   }
 
   template <typename T>

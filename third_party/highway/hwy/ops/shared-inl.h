@@ -15,7 +15,17 @@
 
 
 
-#include <cmath>
+
+
+#if defined(HIGHWAY_HWY_OPS_SHARED_TOGGLE) == \
+    defined(HWY_TARGET_TOGGLE)
+#ifdef HIGHWAY_HWY_OPS_SHARED_TOGGLE
+#undef HIGHWAY_HWY_OPS_SHARED_TOGGLE
+#else
+#define HIGHWAY_HWY_OPS_SHARED_TOGGLE
+#endif
+
+#include <math.h>
 
 #include "hwy/base.h"
 
@@ -219,6 +229,9 @@ template <class D>
 using Twice = typename D::Twice;
 
 template <typename T>
+using Full16 = Simd<T, 2 / sizeof(T), 0>;
+
+template <typename T>
 using Full32 = Simd<T, 4 / sizeof(T), 0>;
 
 template <typename T>
@@ -309,3 +322,5 @@ using VecArg = V;
 }  
 }  
 HWY_AFTER_NAMESPACE();
+
+#endif  

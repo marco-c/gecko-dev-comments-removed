@@ -99,12 +99,11 @@ ImageF* ImageBundle::alpha() {
   return &extra_channels_[ec];
 }
 
-void ImageBundle::SetAlpha(ImageF&& alpha, bool alpha_is_premultiplied) {
+void ImageBundle::SetAlpha(ImageF&& alpha) {
   const ExtraChannelInfo* eci = metadata_->Find(ExtraChannel::kAlpha);
   
   JXL_CHECK(eci != nullptr);
   JXL_CHECK(alpha.xsize() != 0 && alpha.ysize() != 0);
-  JXL_CHECK(eci->alpha_associated == alpha_is_premultiplied);
   if (extra_channels_.size() < metadata_->extra_channel_info.size()) {
     
     extra_channels_.insert(

@@ -17,6 +17,7 @@
 HWY_BEFORE_NAMESPACE();
 namespace jxl {
 namespace HWY_NAMESPACE {
+namespace {
 
 
 using hwy::HWY_NAMESPACE::IfThenZeroElse;
@@ -170,6 +171,7 @@ std::unique_ptr<RenderPipelineStage> GetFromLinearStage(
   }
 }
 
+}  
 
 }  
 }  

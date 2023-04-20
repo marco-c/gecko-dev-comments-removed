@@ -17,6 +17,8 @@
 #include <stdint.h>
 #include <string.h>  
 
+#include <algorithm>  
+
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "tests/combine_test.cc"
 #include "hwy/foreach_target.h"  

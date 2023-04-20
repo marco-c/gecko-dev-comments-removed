@@ -444,6 +444,11 @@ JXL_EXPORT JxlEncoderError JxlEncoderGetError(JxlEncoder* enc);
 
 
 
+
+
+
+
+
 JXL_EXPORT JxlEncoderStatus JxlEncoderProcessOutput(JxlEncoder* enc,
                                                     uint8_t** next_out,
                                                     size_t* avail_out);

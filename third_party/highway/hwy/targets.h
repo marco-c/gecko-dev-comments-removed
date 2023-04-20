@@ -16,7 +16,11 @@
 #ifndef HIGHWAY_HWY_TARGETS_H_
 #define HIGHWAY_HWY_TARGETS_H_
 
+
+
+#ifndef HWY_NO_LIBCXX
 #include <vector>
+#endif
 
 
 
@@ -25,7 +29,7 @@
 #include "hwy/detect_targets.h"
 #include "hwy/highway_export.h"
 
-#if !HWY_ARCH_RVV
+#if !HWY_ARCH_RVV && !defined(HWY_NO_LIBCXX)
 #include <atomic>
 #endif
 
@@ -61,6 +65,8 @@ HWY_DLLEXPORT void DisableTargets(int64_t disabled_targets);
 
 HWY_DLLEXPORT void SetSupportedTargetsForTest(int64_t targets);
 
+#ifndef HWY_NO_LIBCXX
+
 
 
 
@@ -73,6 +79,8 @@ HWY_INLINE std::vector<int64_t> SupportedAndGeneratedTargets() {
   }
   return ret;
 }
+
+#endif  
 
 static inline HWY_MAYBE_UNUSED const char* TargetName(int64_t target) {
   switch (target) {
@@ -297,7 +305,7 @@ struct ChosenTarget {
 
  private:
   
-#if HWY_ARCH_RVV
+#if HWY_ARCH_RVV || defined(HWY_NO_LIBCXX)
   int64_t LoadMask() const { return mask_; }
   void StoreMask(int64_t mask) { mask_ = mask; }
 
