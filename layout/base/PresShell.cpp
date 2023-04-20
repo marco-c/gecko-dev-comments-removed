@@ -3517,10 +3517,12 @@ static void ScrollToShowRect(nsIScrollableFrame* aFrameAsScrollable,
   }
 
   ScrollMode scrollMode = ScrollMode::Instant;
-  bool autoBehaviorIsSmooth = aFrameAsScrollable->IsSmoothScroll();
-  bool smoothScroll =
-      (aScrollFlags & ScrollFlags::ScrollSmooth) ||
-      ((aScrollFlags & ScrollFlags::ScrollSmoothAuto) && autoBehaviorIsSmooth);
+  
+  
+  
+  bool smoothScroll = aFrameAsScrollable->IsSmoothScroll(
+      (aScrollFlags & ScrollFlags::ScrollSmooth) ? ScrollBehavior::Smooth
+                                                 : ScrollBehavior::Auto);
   if (smoothScroll) {
     scrollMode = ScrollMode::SmoothMsd;
   }
