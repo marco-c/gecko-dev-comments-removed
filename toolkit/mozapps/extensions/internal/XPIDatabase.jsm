@@ -355,6 +355,14 @@ class AddonInternal {
     return lazy.XPIInternal.maybeResolveURI(Services.io.newURI(this.rootURI));
   }
 
+  get isBuiltinColorwayTheme() {
+    return (
+      this.type === "theme" &&
+      this.location.isBuiltin &&
+      this.id.endsWith("-colorway@mozilla.org")
+    );
+  }
+
   
 
 
@@ -826,6 +834,19 @@ class AddonInternal {
       let isSystem = this.location.isSystem || this.location.isBuiltin;
       
       if (!isSystem && !this.location.isLinkedAddon(this.id)) {
+        permissions |= lazy.AddonManager.PERM_CAN_UPGRADE;
+      }
+      
+      
+      
+      
+      
+      if (
+        this.isBuiltinColorwayTheme &&
+        lazy.BuiltInThemes?.themeIsExpired?.(this.id) &&
+        (lazy.BuiltInThemes?.isActiveTheme?.(this.id) ||
+          lazy.BuiltInThemes?.isRetainedExpiredTheme?.(this.id))
+      ) {
         permissions |= lazy.AddonManager.PERM_CAN_UPGRADE;
       }
     }
@@ -1463,6 +1484,7 @@ function defineAddonWrapperProperty(name, getter) {
   "sitePermissions",
   "siteOrigin",
   "isCorrectlySigned",
+  "isBuiltinColorwayTheme",
 ].forEach(function(aProp) {
   defineAddonWrapperProperty(aProp, function() {
     let addon = addonFor(this);
