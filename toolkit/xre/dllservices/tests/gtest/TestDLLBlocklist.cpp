@@ -350,6 +350,10 @@ DWORD __stdcall LoadSingleNotificationModules(LPVOID aThreadParameter) {
 
 
 
+#if !defined(MOZ_ASAN) && !defined(_M_ARM64)
+
+
+
 TEST(TestDllBlocklist, SingleNotification)
 {
   
@@ -410,3 +414,5 @@ TEST(TestDllBlocklist, SingleNotification)
   EXPECT_EQ(obs->NonMainThreadNotificationsCount(),
             kSingleNotificationDll1Loads + kSingleNotificationDll2Loads);
 }
+
+#endif  
