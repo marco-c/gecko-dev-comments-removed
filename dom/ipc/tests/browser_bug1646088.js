@@ -25,11 +25,12 @@ add_task(async function() {
     
     
     
+    
+    
+    
     info("Beginning process switch into file URI process");
     let browserLoaded = BrowserTestUtils.browserLoaded(browser);
-    await SpecialPowers.spawn(browser, [uriString], uri => {
-      content.location = uri;
-    });
+    BrowserTestUtils.loadURI(browser, uriString);
     await prepareToChangeCalled.promise;
 
     

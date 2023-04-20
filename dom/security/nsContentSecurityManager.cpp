@@ -4,6 +4,7 @@
 
 
 
+#include "nsAboutProtocolUtils.h"
 #include "nsArray.h"
 #include "nsContentSecurityManager.h"
 #include "nsContentSecurityUtils.h"
@@ -22,6 +23,7 @@
 #include "nsCORSListenerProxy.h"
 #include "nsIParentChannel.h"
 #include "nsIRedirectHistoryEntry.h"
+#include "nsIXULRuntime.h"
 #include "nsNetUtil.h"
 #include "nsReadableUtils.h"
 #include "nsSandboxFlags.h"
@@ -1427,6 +1429,114 @@ static nsresult CheckAllowExtensionProtocolScriptLoad(nsIChannel* aChannel) {
 
 
 
+static nsresult CheckAllowLoadByTriggeringRemoteType(nsIChannel* aChannel) {
+  MOZ_ASSERT(aChannel);
+
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+
+  
+  
+  
+  ExtContentPolicy contentPolicyType = loadInfo->GetExternalContentPolicyType();
+  if (contentPolicyType != ExtContentPolicy::TYPE_DOCUMENT &&
+      contentPolicyType != ExtContentPolicy::TYPE_SUBDOCUMENT &&
+      contentPolicyType != ExtContentPolicy::TYPE_OBJECT) {
+    return NS_OK;
+  }
+
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread(),
+                        "Unexpected off-the-main-thread call to "
+                        "CheckAllowLoadByTriggeringRemoteType");
+
+  
+  
+  if (!mozilla::SessionHistoryInParent()) {
+    return NS_OK;
+  }
+
+  nsAutoCString triggeringRemoteType;
+  nsresult rv = loadInfo->GetTriggeringRemoteType(triggeringRemoteType);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  if (!StringBeginsWith(triggeringRemoteType, WEB_REMOTE_TYPE)) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIURI> finalURI;
+  rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(finalURI));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+  nsCOMPtr<nsIURI> innermostURI = NS_GetInnermostURI(finalURI);
+  if (innermostURI->SchemeIs("about")) {
+    nsCOMPtr<nsIAboutModule> aboutModule;
+    rv = NS_GetAboutModule(innermostURI, getter_AddRefs(aboutModule));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    uint32_t aboutModuleFlags = 0;
+    rv = aboutModule->GetURIFlags(innermostURI, &aboutModuleFlags);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (!(aboutModuleFlags & nsIAboutModule::MAKE_LINKABLE) &&
+        !(aboutModuleFlags & nsIAboutModule::URI_CAN_LOAD_IN_CHILD) &&
+        !(aboutModuleFlags & nsIAboutModule::URI_MUST_LOAD_IN_CHILD)) {
+      NS_WARNING(nsPrintfCString("Blocking load of about URI (%s) which cannot "
+                                 "be linked to in web content process",
+                                 finalURI->GetSpecOrDefault().get())
+                     .get());
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+      if (NS_SUCCEEDED(
+              loadInfo->TriggeringPrincipal()->CheckMayLoad(finalURI, true))) {
+        nsAutoCString aboutModuleName;
+        MOZ_ALWAYS_SUCCEEDS(
+            NS_GetAboutModuleName(innermostURI, aboutModuleName));
+        MOZ_CRASH_UNSAFE_PRINTF(
+            "Blocking load of about uri by content process which may have "
+            "otherwise succeeded [aboutModule=%s, isSystemPrincipal=%d]",
+            aboutModuleName.get(),
+            loadInfo->TriggeringPrincipal()->IsSystemPrincipal());
+      }
+#endif
+      return NS_ERROR_CONTENT_BLOCKED;
+    }
+    return NS_OK;
+  }
+
+  
+  
+  
+  bool localFile = false;
+  rv = NS_URIChainHasFlags(finalURI, nsIProtocolHandler::URI_IS_LOCAL_FILE,
+                           &localFile);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (localFile) {
+    NS_WARNING(
+        nsPrintfCString(
+            "Blocking document load of file URI (%s) from web content process",
+            innermostURI->GetSpecOrDefault().get())
+            .get());
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    if (NS_SUCCEEDED(
+            loadInfo->TriggeringPrincipal()->CheckMayLoad(finalURI, true))) {
+      MOZ_CRASH_UNSAFE_PRINTF(
+          "Blocking document load of file URI by content process which may "
+          "have otherwise succeeded [isSystemPrincipal=%d]",
+          loadInfo->TriggeringPrincipal()->IsSystemPrincipal());
+    }
+#endif
+    return NS_ERROR_CONTENT_BLOCKED;
+  }
+
+  return NS_OK;
+}
+
+
+
+
 
 
 
@@ -1462,6 +1572,9 @@ nsresult nsContentSecurityManager::doContentSecurityCheck(
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = CheckChannelHasProtocolSecurityFlag(aChannel);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = CheckAllowLoadByTriggeringRemoteType(aChannel);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
