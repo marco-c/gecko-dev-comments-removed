@@ -136,8 +136,11 @@ class BodyStreamUnderlyingSourceAlgorithms final
 
   void ReleaseObjects() override {
     RefPtr<BodyStreamHolder> holder = mUnderlyingSource.forget();
-    RefPtr<BodyStream> bodyStream = holder->GetBodyStream();
-    bodyStream->CloseInputAndReleaseObjects();
+    
+    
+    if (RefPtr<BodyStream> bodyStream = holder->GetBodyStream()) {
+      bodyStream->CloseInputAndReleaseObjects();
+    }
   }
 
   BodyStreamHolder* GetBodyStreamHolder() override { return mUnderlyingSource; }

@@ -370,6 +370,10 @@ void BodyStream::ErrorPropagation(JSContext* aCx,
   ReleaseObjects(aProofOfLock);
 }
 
+
+
+
+
 void BodyStream::EnqueueChunkWithSizeIntoStream(JSContext* aCx,
                                                 ReadableStream* aStream,
                                                 uint64_t aAvailableData,
@@ -406,13 +410,9 @@ void BodyStream::EnqueueChunkWithSizeIntoStream(JSContext* aCx,
   }
 
   MOZ_ASSERT(aStream->Controller()->IsByte());
-  RefPtr<ReadableByteStreamController> byteStreamController =
-      aStream->Controller()->AsByte();
-
-  ReadableByteStreamControllerEnqueue(aCx, byteStreamController, chunk, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
+  JS::Rooted<JS::Value> chunkValue(aCx);
+  chunkValue.setObject(*chunk);
+  aStream->EnqueueNative(aCx, chunkValue, aRv);
 }
 
 
@@ -549,7 +549,7 @@ void BodyStream::CloseAndReleaseObjects(
 
   if (aStream->State() == ReadableStream::ReaderState::Readable) {
     IgnoredErrorResult rv;
-    ReadableStreamClose(aCx, aStream, rv);
+    aStream->CloseNative(aCx, rv);
     NS_WARNING_ASSERTION(!rv.Failed(), "Failed to Close Stream");
   }
 }

@@ -55,6 +55,12 @@ class UnderlyingSourceAlgorithmsBase : public nsISupports {
   
   virtual BodyStreamHolder* GetBodyStreamHolder() { return nullptr; }
 
+  
+  
+  
+  
+  virtual bool IsNative() { return true; }
+
  protected:
   virtual ~UnderlyingSourceAlgorithmsBase() = default;
 };
@@ -99,6 +105,8 @@ class UnderlyingSourceAlgorithms final : public UnderlyingSourceAlgorithmsBase {
   MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> CancelCallback(
       JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
       ErrorResult& aRv) override;
+
+  bool IsNative() override { return false; }
 
  protected:
   ~UnderlyingSourceAlgorithms() override { mozilla::DropJSObjects(this); };

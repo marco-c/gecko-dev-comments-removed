@@ -103,7 +103,21 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
       JSContext* aCx, nsIGlobalObject* aGlobal, MessagePort& aPort,
       JS::MutableHandle<JSObject*> aReturnObject);
 
- public:
+  
+
+  
+  
+  
+  
+
+  MOZ_CAN_RUN_SCRIPT void CloseNative(JSContext* aCx, ErrorResult& aRv);
+
+  MOZ_CAN_RUN_SCRIPT void EnqueueNative(JSContext* aCx,
+                                        JS::Handle<JS::Value> aChunk,
+                                        ErrorResult& aRv);
+
+  
+
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
   JSObject* WrapObject(JSContext* aCx,
