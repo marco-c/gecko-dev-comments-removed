@@ -2477,7 +2477,9 @@ bool RangeAnalysis::addRangeAssertions() {
       
       
       
-      if (ins->isIsNoIter()) {
+      
+      if (ins->isIsNoIter() || ins->isIteratorHasIndices()) {
+        MOZ_ASSERT(ins->hasOneUse());
         continue;
       }
 
