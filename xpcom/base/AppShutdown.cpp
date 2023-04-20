@@ -366,22 +366,24 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
   
   sCurrentShutdownPhase = aPhase;
 
-  
-  
-  
-  
-  
-  
-
 #ifndef ANDROID
   if (sTerminator) {
     sTerminator->AdvancePhase(aPhase);
   }
 #endif
 
+  AppShutdown::MaybeFastShutdown(aPhase);
+
+  
+  
+  
+  
   mozilla::KillClearOnShutdown(aPhase);
 
-  AppShutdown::MaybeFastShutdown(aPhase);
+  
+  if (thread) {
+    NS_ProcessPendingEvents(thread);
+  }
 
   if (doNotify) {
     const char* aTopic = AppShutdown::GetObserverKey(aPhase);
