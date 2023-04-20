@@ -11,6 +11,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Encoding.h"
+#include "mozilla/UniquePtr.h"
 #include "nsDebug.h"
 #include "nsReadableUtils.h"
 #include "nsUTF8Utils.h"  
@@ -189,11 +190,13 @@ nsresult nsScanner::Append(const nsAString& aBuffer) {
 nsresult nsScanner::Append(const char* aBuffer, uint32_t aLen) {
   nsresult res = NS_OK;
   if (mUnicodeDecoder) {
-    CheckedInt<size_t> needed = mUnicodeDecoder->MaxUTF16BufferLength(aLen);
+    mozilla::CheckedInt<size_t> needed =
+        mUnicodeDecoder->MaxUTF16BufferLength(aLen);
     if (!needed.isValid()) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
-    CheckedInt<uint32_t> allocLen(1);  
+    mozilla::CheckedInt<uint32_t> allocLen(
+        1);  
     allocLen += needed.value();
     if (!allocLen.isValid()) {
       return NS_ERROR_OUT_OF_MEMORY;
@@ -209,12 +212,13 @@ nsresult nsScanner::Append(const char* aBuffer, uint32_t aLen) {
     
     std::tie(result, read, written) =
         mUnicodeDecoder->DecodeToUTF16WithoutReplacement(
-            AsBytes(Span(aBuffer, aLen)), Span(unichars, needed.value()),
+            AsBytes(mozilla::Span(aBuffer, aLen)),
+            mozilla::Span(unichars, needed.value()),
             false);  
     MOZ_ASSERT(result != kOutputFull);
     MOZ_ASSERT(read <= aLen);
     MOZ_ASSERT(written <= needed.value());
-    if (result != kInputEmpty) {
+    if (result != mozilla::kInputEmpty) {
       
       
       
@@ -279,7 +283,7 @@ void nsScanner::SetPosition(nsScannerIterator& aPosition, bool aTerminate) {
 
 void nsScanner::AppendToBuffer(nsScannerString::Buffer* aBuf) {
   if (!mSlidingBuffer) {
-    mSlidingBuffer = MakeUnique<nsScannerString>(aBuf);
+    mSlidingBuffer = mozilla::MakeUnique<nsScannerString>(aBuf);
     mSlidingBuffer->BeginReading(mCurrentPosition);
     mMarkPosition = mCurrentPosition;
   } else {
