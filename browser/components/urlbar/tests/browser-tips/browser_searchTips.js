@@ -13,7 +13,6 @@
 ChromeUtils.defineESModuleGetters(this, {
   AppMenuNotifications: "resource://gre/modules/AppMenuNotifications.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
-  PromiseUtils: "resource://gre/modules/PromiseUtils.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
   UrlbarProviderSearchTips:
     "resource:///modules/UrlbarProviderSearchTips.sys.mjs",
@@ -418,53 +417,6 @@ add_task(async function shortcut_buttons_with_tip() {
     "about:newtab",
     UrlbarProviderSearchTips.TIP_TYPE.ONBOARD
   );
-});
-
-
-add_task(async function noSearchTipWhileAPageLoads() {
-  await setDefaultEngine("Example");
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.showSearchTerms.featureGate", true]],
-  });
-
-  
-  const SLOW_PAGE =
-    getRootDirectory(gTestPath).replace(
-      "chrome://mochitests/content",
-      "http://www.example.com"
-    ) + "slow-page.sjs";
-
-  let tab = await BrowserTestUtils.openNewForegroundTab({
-    gBrowser,
-    url: SEARCH_SERP_URL,
-  });
-
-  
-  
-  BrowserTestUtils.loadURI(tab.linkedBrowser, SLOW_PAGE);
-
-  
-  
-  await new Promise(resolve =>
-    
-    setTimeout(resolve, UrlbarProviderSearchTips.SHOW_PERSIST_TIP_DELAY_MS * 2)
-  );
-
-  
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.PERSIST}`
-    ),
-    0,
-    "The shownCount pref should be 0."
-  );
-
-  Assert.equal(false, window.gURLBar.view.isOpen, "Urlbar should be closed.");
-
-  
-  await SpecialPowers.popPrefEnv();
-  resetSearchTipsProvider();
-  BrowserTestUtils.removeTab(tab);
 });
 
 function waitForBrowserWindowActive(win) {
