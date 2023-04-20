@@ -14,10 +14,10 @@ import sys
 
 sys.path.pop(0)
 
-import mozunit
 import unittest
-from xpidl import xpidl
-from xpidl import header
+
+import mozunit
+from xpidl import header, xpidl
 
 
 class TestParser(unittest.TestCase):

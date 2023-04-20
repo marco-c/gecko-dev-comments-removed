@@ -2,10 +2,11 @@
 
 
 
-from io import StringIO
-from incremental_dafsa import Dafsa, Node
-import mozunit
 import unittest
+from io import StringIO
+
+import mozunit
+from incremental_dafsa import Dafsa, Node
 
 
 def _node_to_string(node: Node, prefix, buffer, cache):

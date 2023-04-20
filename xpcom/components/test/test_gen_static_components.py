@@ -2,10 +2,11 @@
 
 
 
-import mozunit
 import os
 import sys
 import unittest
+
+import mozunit
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import gen_static_components

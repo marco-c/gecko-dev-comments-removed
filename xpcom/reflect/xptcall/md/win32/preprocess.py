@@ -5,10 +5,10 @@
 
 
 import errno
-import sys
 import os
 import shlex
 import subprocess
+import sys
 import tempfile
 
 import buildconfig

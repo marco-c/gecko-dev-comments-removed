@@ -6,9 +6,10 @@
 
 
 import json
-from perfecthash import PerfectHash
 from collections import OrderedDict
+
 import buildconfig
+from perfecthash import PerfectHash
 
 
 PHFSIZE = 512
@@ -628,8 +629,8 @@ def link_and_write(files, outfile, outheader):
 
 
 def main():
-    from argparse import ArgumentParser
     import sys
+    from argparse import ArgumentParser
 
     parser = ArgumentParser()
     parser.add_argument("outfile", help="Output C++ file to generate")

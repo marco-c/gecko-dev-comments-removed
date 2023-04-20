@@ -1,5 +1,6 @@
 
 from __future__ import absolute_import
+
 from collections import OrderedDict
 
 
@@ -1379,8 +1380,9 @@ use super::nsresult;
 def gen_jinja(output, input_filename):
     
     
-    from jinja2 import Environment, FileSystemLoader, StrictUndefined
     import os
+
+    from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
     
     
