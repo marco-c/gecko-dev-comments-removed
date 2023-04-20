@@ -20,196 +20,334 @@ const MERINO_SUGGESTION = {
   is_top_pick: true,
 };
 
-const suggestion_type = "nonsponsored";
+const suggestion_type = "navigational";
 const index = 1;
 const position = index + 1;
 
 add_setup(async function() {
-  
-  
-  
-  
-  
-  let config = QuickSuggestTestUtils.DEFAULT_CONFIG;
-  delete config.best_match;
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      
+      ["browser.urlbar.bestMatch.enabled", true],
+      
+      
+      ["browser.urlbar.suggest.engines", false],
+    ],
+  });
 
   await setUpTelemetryTest({
-    config,
     merinoSuggestions: [MERINO_SUGGESTION],
   });
 });
 
 
-add_task(async function navigational() {
-  let match_type = "firefox-suggest";
-  await doTelemetryTest({
-    index,
+add_task(async function notMatched_clickHeuristic() {
+  await doTest({
+    suggestion: null,
+    shouldBeShown: false,
+    pickRowIndex: 0,
+    scalars: {
+      [TELEMETRY_SCALARS.IMPRESSION_NAV_NOTMATCHED]: "search_engine",
+      [TELEMETRY_SCALARS.CLICK_NAV_NOTMATCHED]: "search_engine",
+    },
+    events: [],
+  });
+});
+
+
+add_task(async function notMatched_clickOther() {
+  await PlacesTestUtils.addVisits("http://mochi.test:8888/example");
+  await doTest({
+    suggestion: null,
+    shouldBeShown: false,
+    pickRowIndex: 1,
+    scalars: {
+      [TELEMETRY_SCALARS.IMPRESSION_NAV_NOTMATCHED]: "search_engine",
+    },
+    events: [],
+  });
+});
+
+
+add_task(async function shown_clickHeuristic() {
+  await doTest({
     suggestion: MERINO_SUGGESTION,
-    
-    impressionOnly: {
-      scalars: {
-        [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED]: position,
-      },
-      event: {
+    shouldBeShown: true,
+    pickRowIndex: 0,
+    scalars: {
+      [TELEMETRY_SCALARS.IMPRESSION_NAV_SHOWN]: "search_engine",
+      [TELEMETRY_SCALARS.CLICK_NAV_SHOWN_HEURISTIC]: "search_engine",
+    },
+    events: [
+      {
         category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
         method: "engagement",
         object: "impression_only",
         extra: {
           suggestion_type,
-          match_type,
+          match_type: "best-match",
           position: position.toString(),
+          source: "merino",
         },
       },
-      ping: null,
-    },
-    selectables: {
-      
-      "urlbarView-row-inner": {
-        scalars: {
-          [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED]: position,
-          [TELEMETRY_SCALARS.CLICK_NONSPONSORED]: position,
-        },
-        event: {
-          category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
-          method: "engagement",
-          object: "click",
-          extra: {
-            suggestion_type,
-            match_type,
-            position: position.toString(),
-          },
-        },
-        pings: [],
-      },
-      
-      "urlbarView-button-block": {
-        scalars: {
-          [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED]: position,
-          [TELEMETRY_SCALARS.BLOCK_NONSPONSORED]: position,
-        },
-        event: {
-          category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
-          method: "engagement",
-          object: "block",
-          extra: {
-            suggestion_type,
-            match_type,
-            position: position.toString(),
-          },
-        },
-        pings: [],
-      },
-      
-      "urlbarView-button-help": {
-        scalars: {
-          [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED]: position,
-          [TELEMETRY_SCALARS.HELP_NONSPONSORED]: position,
-        },
-        event: {
-          category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
-          method: "engagement",
-          object: "help",
-          extra: {
-            suggestion_type,
-            match_type,
-            position: position.toString(),
-          },
-        },
-        pings: [],
-      },
-    },
+    ],
   });
 });
 
 
-add_task(async function navigationalBestMatch() {
-  let match_type = "best-match";
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.bestMatch.enabled", true]],
-  });
-  await doTelemetryTest({
-    index,
+add_task(async function shown_clickNavSuggestion() {
+  await doTest({
     suggestion: MERINO_SUGGESTION,
-    
-    impressionOnly: {
-      scalars: {
-        [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED]: position,
-        [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED_BEST_MATCH]: position,
+    shouldBeShown: true,
+    pickRowIndex: index,
+    scalars: {
+      [TELEMETRY_SCALARS.IMPRESSION_NAV_SHOWN]: "search_engine",
+      [TELEMETRY_SCALARS.CLICK_NAV_SHOWN_NAV]: "search_engine",
+      "urlbar.picked.navigational": "1",
+    },
+    events: [
+      {
+        category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
+        method: "engagement",
+        object: "click",
+        extra: {
+          suggestion_type,
+          match_type: "best-match",
+          position: position.toString(),
+          source: "merino",
+        },
       },
-      event: {
+    ],
+  });
+});
+
+
+
+add_task(async function shown_clickOther() {
+  await PlacesTestUtils.addVisits("http://mochi.test:8888/example");
+  await doTest({
+    suggestion: MERINO_SUGGESTION,
+    shouldBeShown: true,
+    pickRowIndex: 2,
+    scalars: {
+      [TELEMETRY_SCALARS.IMPRESSION_NAV_SHOWN]: "search_engine",
+    },
+    events: [
+      {
         category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
         method: "engagement",
         object: "impression_only",
         extra: {
           suggestion_type,
-          match_type,
+          match_type: "best-match",
           position: position.toString(),
+          source: "merino",
         },
       },
-      ping: null,
+    ],
+  });
+});
+
+
+add_task(async function duped_clickHeuristic() {
+  
+  for (let i = 0; i < 5; i++) {
+    await PlacesTestUtils.addVisits("https://example.com/");
+  }
+
+  
+  let suggestion = {
+    ...MERINO_SUGGESTION,
+    url: "https://example.com/",
+  };
+
+  await doTest({
+    suggestion,
+    shouldBeShown: false,
+    pickRowIndex: 0,
+    scalars: {
+      [TELEMETRY_SCALARS.IMPRESSION_NAV_SUPERCEDED]: "autofill_origin",
+      [TELEMETRY_SCALARS.CLICK_NAV_SUPERCEDED]: "autofill_origin",
     },
-    selectables: {
+    events: [],
+  });
+});
+
+
+add_task(async function duped_clickOther() {
+  
+  for (let i = 0; i < 5; i++) {
+    await PlacesTestUtils.addVisits("https://example.com/");
+  }
+
+  
+  let suggestion = {
+    ...MERINO_SUGGESTION,
+    url: "https://example.com/",
+  };
+
+  
+  await PlacesTestUtils.addVisits("https://example.com/some-other-url");
+
+  await doTest({
+    suggestion,
+    shouldBeShown: false,
+    pickRowIndex: 1,
+    scalars: {
+      [TELEMETRY_SCALARS.IMPRESSION_NAV_SUPERCEDED]: "autofill_origin",
+    },
+    events: [],
+  });
+});
+
+
+
+add_task(async function recordNavigationalSuggestionTelemetry_false() {
+  await doTest({
+    valueOverrides: {
+      recordNavigationalSuggestionTelemetry: false,
+    },
+    suggestion: MERINO_SUGGESTION,
+    shouldBeShown: true,
+    pickRowIndex: index,
+    scalars: {},
+    events: [
       
-      "urlbarView-row-inner": {
-        scalars: {
-          [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED]: position,
-          [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED_BEST_MATCH]: position,
-          [TELEMETRY_SCALARS.CLICK_NONSPONSORED]: position,
-          [TELEMETRY_SCALARS.CLICK_NONSPONSORED_BEST_MATCH]: position,
-        },
-        event: {
-          category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
-          method: "engagement",
-          object: "click",
-          extra: {
-            suggestion_type,
-            match_type,
-            position: position.toString(),
-          },
-        },
-        pings: [],
-      },
       
-      "urlbarView-button-block": {
-        scalars: {
-          [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED]: position,
-          [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED_BEST_MATCH]: position,
-          [TELEMETRY_SCALARS.BLOCK_NONSPONSORED]: position,
-          [TELEMETRY_SCALARS.BLOCK_NONSPONSORED_BEST_MATCH]: position,
+      {
+        category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
+        method: "engagement",
+        object: "click",
+        extra: {
+          suggestion_type,
+          match_type: "best-match",
+          position: position.toString(),
+          source: "merino",
         },
-        event: {
-          category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
-          method: "engagement",
-          object: "block",
-          extra: {
-            suggestion_type,
-            match_type,
-            position: position.toString(),
-          },
-        },
-        pings: [],
       },
+    ],
+  });
+});
+
+
+
+add_task(async function recordNavigationalSuggestionTelemetry_undefined() {
+  await doTest({
+    valueOverrides: {},
+    suggestion: MERINO_SUGGESTION,
+    shouldBeShown: true,
+    pickRowIndex: index,
+    scalars: {},
+    events: [
       
-      "urlbarView-button-help": {
-        scalars: {
-          [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED]: position,
-          [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED_BEST_MATCH]: position,
-          [TELEMETRY_SCALARS.HELP_NONSPONSORED]: position,
-          [TELEMETRY_SCALARS.HELP_NONSPONSORED_BEST_MATCH]: position,
+      
+      {
+        category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
+        method: "engagement",
+        object: "click",
+        extra: {
+          suggestion_type,
+          match_type: "best-match",
+          position: position.toString(),
+          source: "merino",
         },
-        event: {
-          category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
-          method: "engagement",
-          object: "help",
-          extra: {
-            suggestion_type,
-            match_type,
-            position: position.toString(),
-          },
-        },
-        pings: [],
       },
+    ],
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function doTest({
+  suggestion,
+  shouldBeShown,
+  pickRowIndex,
+  scalars,
+  events,
+  valueOverrides = {
+    recordNavigationalSuggestionTelemetry: true,
+  },
+}) {
+  MerinoTestUtils.server.response.body.suggestions = suggestion
+    ? [suggestion]
+    : [];
+
+  Services.telemetry.clearEvents();
+  let { spy, spyCleanup } = QuickSuggestTestUtils.createTelemetryPingSpy();
+
+  await QuickSuggestTestUtils.withExperiment({
+    valueOverrides,
+    callback: async () => {
+      await BrowserTestUtils.withNewTab("about:blank", async () => {
+        gURLBar.focus();
+        await UrlbarTestUtils.promiseAutocompleteResultPopup({
+          window,
+          value: "example",
+          fireInputEvent: true,
+        });
+
+        if (shouldBeShown) {
+          await QuickSuggestTestUtils.assertIsQuickSuggest({
+            window,
+            index,
+            url: suggestion.url,
+            isBestMatch: true,
+            isSponsored: false,
+          });
+        } else {
+          await QuickSuggestTestUtils.assertNoQuickSuggestResults(window);
+        }
+
+        let loadPromise = BrowserTestUtils.browserLoaded(
+          gBrowser.selectedBrowser
+        );
+        if (pickRowIndex > 0) {
+          info("Arrowing down to row index " + pickRowIndex);
+          EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: pickRowIndex });
+        }
+        info("Pressing Enter and waiting for page load");
+        EventUtils.synthesizeKey("KEY_Enter");
+        await loadPromise;
+      });
     },
   });
-  await SpecialPowers.popPrefEnv();
-});
+
+  info("Checking scalars");
+  QuickSuggestTestUtils.assertScalars(scalars);
+
+  info("Checking events");
+  QuickSuggestTestUtils.assertEvents(events);
+
+  info("Checking pings");
+  QuickSuggestTestUtils.assertPings(spy, []);
+
+  await spyCleanup();
+  await PlacesUtils.history.clear();
+  MerinoTestUtils.server.response.body.suggestions = [MERINO_SUGGESTION];
+}
