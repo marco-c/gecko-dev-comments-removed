@@ -27,6 +27,14 @@ class HTMLPreview extends Component {
     this.iframe = iframe;
     iframe.setAttribute("type", "content");
     iframe.setAttribute("remote", "true");
+
+    
+    
+    
+    iframe.addEventListener("dragstart", e => e.preventDefault(), {
+      capture: true,
+    });
+
     
     
     
