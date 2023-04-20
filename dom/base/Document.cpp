@@ -14923,7 +14923,7 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
       PopoverVisibilityState::Hidden);
 
   
-  
+  popoverHTMLEl->HandleFocusAfterHidingPopover(aFocusPreviousElement);
 }
 
 nsTArray<Element*> Document::AutoPopoverList() const {

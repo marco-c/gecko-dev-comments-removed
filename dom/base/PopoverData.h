@@ -38,9 +38,20 @@ class PopoverData {
     mVisibilityState = aVisibilityState;
   }
 
+  nsWeakPtr GetPreviouslyFocusedElement() const {
+    return mPreviouslyFocusedElement;
+  }
+  void SetPreviouslyFocusedElement(nsWeakPtr aPreviouslyFocusedElement) {
+    mPreviouslyFocusedElement = aPreviouslyFocusedElement;
+  }
+
  private:
   PopoverVisibilityState mVisibilityState = PopoverVisibilityState::Hidden;
   PopoverState mState = PopoverState::None;
+  
+  
+  
+  nsWeakPtr mPreviouslyFocusedElement = nullptr;
 };
 }  
 

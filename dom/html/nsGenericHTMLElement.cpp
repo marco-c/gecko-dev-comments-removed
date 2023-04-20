@@ -3225,12 +3225,29 @@ void nsGenericHTMLElement::ShowPopover(ErrorResult& aRv) {
     return;
   }
   
+
+  const bool shouldRestoreFocus = !OwnerDoc()->GetTopmostAutoPopover();
+  
+  
+  nsWeakPtr originallyFocusedElement;
+  if (Document* doc = GetComposedDoc()) {
+    if (nsIContent* unretargetedFocus = doc->GetUnretargetedFocusedContent()) {
+      originallyFocusedElement =
+          do_GetWeakReference(unretargetedFocus->AsElement());
+    }
+  }
+
   
 
   PopoverPseudoStateUpdate(true, true);
   GetPopoverData()->SetPopoverVisibilityState(PopoverVisibilityState::Showing);
 
   
+  FocusPopover();
+  if (shouldRestoreFocus && GetPopoverState() != PopoverState::None) {
+    GetPopoverData()->SetPreviouslyFocusedElement(originallyFocusedElement);
+  }
+
   
 }
 
@@ -3249,6 +3266,25 @@ void nsGenericHTMLElement::HidePopoverInternal(bool aFocusPreviousElement,
                                                bool aFireEvents,
                                                ErrorResult& aRv) {
   OwnerDoc()->HidePopover(*this, aFocusPreviousElement, aFireEvents, aRv);
+}
+
+void nsGenericHTMLElement::HandleFocusAfterHidingPopover(
+    bool aFocusPreviousElement) {
+  auto* data = GetPopoverData();
+  MOZ_ASSERT(data, "Should have popover data");
+
+  RefPtr<Element> control =
+      do_QueryReferent(data->GetPreviouslyFocusedElement().get());
+  data->SetPreviouslyFocusedElement(nullptr);
+
+  if (!control || !aFocusPreviousElement) {
+    return;
+  }
+
+  
+  FocusOptions options;
+  options.mPreventScroll = true;
+  control->Focus(options, CallerType::NonSystem, IgnoreErrors());
 }
 
 
