@@ -42,8 +42,10 @@ bool operator==(const InternalStatsKey& a, const InternalStatsKey& b);
 
 
 struct FrameStats {
-  explicit FrameStats(Timestamp captured_time) : captured_time(captured_time) {}
+  FrameStats(uint16_t frame_id, Timestamp captured_time)
+      : frame_id(frame_id), captured_time(captured_time) {}
 
+  uint16_t frame_id;
   
   Timestamp captured_time;
   Timestamp pre_encode_time = Timestamp::MinusInfinity();

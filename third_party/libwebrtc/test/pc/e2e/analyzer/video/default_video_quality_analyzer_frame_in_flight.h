@@ -141,6 +141,9 @@ class FrameInFlight {
   
   std::set<size_t> expected_receivers_;
   absl::optional<VideoFrame> frame_;
+  
+  
+  uint16_t frame_id_ = VideoFrame::kNotSetId;
 
   
   Timestamp captured_time_;
