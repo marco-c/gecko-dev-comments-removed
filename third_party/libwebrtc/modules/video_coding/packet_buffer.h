@@ -120,6 +120,8 @@ class PacketBuffer {
   absl::optional<uint16_t> newest_inserted_seq_num_;
   std::set<uint16_t, DescendingSeqNumComp<uint16_t>> missing_packets_;
 
+  std::set<uint16_t, DescendingSeqNumComp<uint16_t>> received_padding_;
+
   
   
   bool sps_pps_idr_is_h264_keyframe_;
