@@ -356,9 +356,10 @@ void SVGImageFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
       opacity = StyleEffects()->mOpacity;
     }
 
-    if (opacity != 1.0f ||
-        StyleEffects()->mMixBlendMode != StyleBlend::Normal) {
-      aContext.PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, opacity);
+    gfxGroupForBlendAutoSaveRestore autoGroupForBlend(&aContext);
+    if (opacity != 1.0f || StyleEffects()->HasMixBlendMode()) {
+      autoGroupForBlend.PushGroupForBlendBack(gfxContentType::COLOR_ALPHA,
+                                              opacity);
     }
 
     nscoord appUnitsPerDevPx = PresContext()->AppUnitsPerDevPixel();
@@ -429,10 +430,6 @@ void SVGImageFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
           aDirtyRect ? &dirtyRect : nullptr, SVGImageContext(), flags);
     }
 
-    if (opacity != 1.0f ||
-        StyleEffects()->mMixBlendMode != StyleBlend::Normal) {
-      aContext.PopGroupAndBlend();
-    }
     
   }
 }
@@ -447,7 +444,7 @@ void SVGImageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     if (!IsVisibleForPainting()) {
       return;
     }
-    if (StyleEffects()->mOpacity == 0.0f) {
+    if (StyleEffects()->IsTransparent()) {
       return;
     }
     aBuilder->BuildCompositorHitTestInfoIfNeeded(this,
@@ -478,7 +475,7 @@ bool SVGImageFrame::CreateWebRenderCommands(
     
     return false;
   }
-  if (StyleEffects()->mMixBlendMode != StyleBlend::Normal) {
+  if (StyleEffects()->HasMixBlendMode()) {
     
     return false;
   }
