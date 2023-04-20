@@ -19,6 +19,16 @@ class BigBuffer {
  public:
   static constexpr size_t kShmemThreshold = 64 * 1024;
 
+  static BigBuffer TryAlloc(const size_t aSize) {
+    auto ret = BigBuffer{};
+    auto data = TryAllocBuffer(aSize);
+    if (data) {
+      ret.mSize = aSize;
+      ret.mData = std::move(data.ref());
+    }
+    return ret;
+  }
+
   
   BigBuffer() : mSize(0), mData(NoData()) {}
 
@@ -90,7 +100,16 @@ class BigBuffer {
   static Storage NoData() { return AsVariant(UniqueFreePtr<uint8_t[]>{}); }
 
   
-  static Storage AllocBuffer(size_t aSize);
+  static Maybe<Storage> TryAllocBuffer(size_t aSize);
+
+  
+  static Storage AllocBuffer(size_t aSize) {
+    auto ret = TryAllocBuffer(aSize);
+    if (!ret) {
+      NS_ABORT_OOM(aSize);
+    }
+    return std::move(ret.ref());
+  }
 
   size_t mSize;
   Storage mData;
