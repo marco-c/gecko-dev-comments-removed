@@ -1717,19 +1717,6 @@ void ContentParent::Init() {
   Unused << SendInitNextGenLocalStorageEnabled(NextGenLocalStorageEnabled());
 }
 
-bool ContentParent::CheckTabDestroyWillCauseShutdown(
-    uint32_t aExpectedBrowserCount) {
-  return (ManagedPBrowserParent().Count() == aExpectedBrowserCount &&
-          !ShouldKeepProcessAlive());
-}
-
-void ContentParent::NotifyTabWillDestroy() {
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed) ||
-      CheckTabDestroyWillCauseShutdown(mNumDestroyingTabs + 1)) {
-    NotifyImpendingShutdown();
-  }
-}
-
 void ContentParent::MaybeBeginShutDown(uint32_t aExpectedBrowserCount,
                                        bool aSendShutDown) {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
@@ -1737,11 +1724,8 @@ void ContentParent::MaybeBeginShutDown(uint32_t aExpectedBrowserCount,
            ManagedPBrowserParent().Count(), aExpectedBrowserCount));
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  
-  
-  if (!CheckTabDestroyWillCauseShutdown(aExpectedBrowserCount) ||
-      TryToRecycle()) {
+  if (ManagedPBrowserParent().Count() != aExpectedBrowserCount ||
+      ShouldKeepProcessAlive() || TryToRecycle()) {
     return;
   }
 
@@ -2334,11 +2318,6 @@ bool ContentParent::ShouldKeepProcessAlive() {
 
   
   if (IsDead()) {
-    return false;
-  }
-
-  
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
     return false;
   }
 
