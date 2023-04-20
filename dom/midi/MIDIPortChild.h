@@ -40,6 +40,8 @@ class MIDIPortChild final : public PMIDIPortChild, public MIDIPortInterface {
 
   void Teardown();
 
+  void DetachOwner() { mDOMPort = nullptr; }
+
  private:
   ~MIDIPortChild() = default;
   

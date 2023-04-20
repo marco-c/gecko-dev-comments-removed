@@ -12,6 +12,7 @@
 #include "mozilla/Observer.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/MIDIAccess.h"
+#include "mozilla/dom/MIDIPortChild.h"
 #include "mozilla/dom/MIDIPortInterface.h"
 
 struct JSContext;
@@ -77,7 +78,29 @@ class MIDIPort : public DOMEventTargetHelper,
 
  protected:
   
-  RefPtr<MIDIPortChild> mPort;
+  
+  class PortHolder {
+   public:
+    void Init(already_AddRefed<MIDIPortChild> aArg) {
+      MOZ_ASSERT(!mInner);
+      mInner = aArg;
+    }
+    void Clear() {
+      if (mInner) {
+        mInner->DetachOwner();
+        mInner = nullptr;
+      }
+    }
+    ~PortHolder() { Clear(); }
+    MIDIPortChild* Get() const { return mInner; }
+
+   private:
+    RefPtr<MIDIPortChild> mInner;
+  };
+
+  
+  PortHolder mPortHolder;
+  MIDIPortChild* Port() const { return mPortHolder.Get(); }
 
  private:
   void KeepAliveOnStatechange();
