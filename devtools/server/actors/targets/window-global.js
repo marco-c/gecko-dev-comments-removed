@@ -1222,16 +1222,21 @@ const windowGlobalTargetPrototype = {
 
 
   async ensureCSSErrorReportingEnabled() {
-    const promises = [];
-    for (const docShell of this.docShells) {
+    const promises = this.docShells.map(async docShell => {
       if (docShell.cssErrorReportingEnabled) {
-        continue;
+        
+        return;
       }
+
       try {
         docShell.cssErrorReportingEnabled = true;
       } catch (e) {
-        continue;
+        return;
       }
+
+      
+      
+
       
       docShell.QueryInterface(Ci.nsIWebNavigation);
       
@@ -1244,16 +1249,19 @@ const windowGlobalTargetPrototype = {
         if (InspectorUtils.hasRulesModifiedByCSSOM(sheet)) {
           continue;
         }
-        
-        const onStyleSheetParsed = getStyleSheetText(sheet)
-          .then(text => {
-            InspectorUtils.parseStyleSheet(sheet, text,  false);
-          })
-          .catch(e => console.error("Error while parsing stylesheet"));
-        promises.push(onStyleSheetParsed);
+
+        try {
+          
+          const text = await getStyleSheetText(sheet);
+          InspectorUtils.parseStyleSheet(sheet, text,  false);
+        } catch (e) {
+          console.error("Error while parsing stylesheet");
+        }
       }
-    }
+    });
+
     await Promise.all(promises);
+
     return {};
   },
 
