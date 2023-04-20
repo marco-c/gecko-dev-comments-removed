@@ -16,7 +16,7 @@
 
 
 promise_test(async test => {
-  const iframe_B = newAnonymousIframe(origin);
+  const iframe_B = newIframeCredentialless(origin);
   const iframe_C = newIframe(origin);
 
   
@@ -66,5 +66,5 @@ promise_test(async test => {
   assert_equals(await receive(queue_B), "");      
   assert_equals(await receive(queue_C), "");      
   assert_equals(await receive(queue_C), value_E); 
-}, "Local storage is correctly partitioned with regards to anonymous iframe " +
+}, "Local storage is correctly partitioned with regards to credentialless iframe " +
    "in initial empty documents.");

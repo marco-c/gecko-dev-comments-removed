@@ -11,15 +11,16 @@ setup(() => {
 })
 
 
+
 promise_test(async test => {
   const origin = get_host_info().HTTPS_ORIGIN;
   const msg_queue = token();
 
   
-  const frame_anonymous = newAnonymousIframe(origin);
+  const iframe_credentialless = newIframeCredentialless(origin);
 
   
-  send(frame_anonymous, `
+  send(iframe_credentialless, `
     const importScript = ${importScript};
     await importScript("/common/utils.js");
     await importScript("/html/cross-origin-embedder-policy/credentialless" +
@@ -32,8 +33,8 @@ promise_test(async test => {
 
   
   send(frame_fenced, `
-    send("${msg_queue}", window.anonymouslyFramed);
+    send("${msg_queue}", window.credentialless);
   `);
   assert_equals(await receive(msg_queue), "false",
-    "Check window.anonymouslyFramed in FencedFrame");
-}, 'FencedFrame within an AnonymousIframe is not anonymous')
+    "Check window.credentialless in FencedFrame");
+}, 'FencedFrame within a credentialless iframe is not credentialless')

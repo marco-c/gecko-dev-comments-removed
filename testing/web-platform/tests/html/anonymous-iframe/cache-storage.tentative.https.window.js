@@ -34,26 +34,26 @@ promise_test(async test => {
   const key_2 = token();
 
   
-  const iframe_anonymous = newAnonymousIframe(origin);
+  const iframe_credentialless = newIframeCredentialless(origin);
   const iframe_normal = newIframe(origin);
   const response_queue_1 = token();
   const response_queue_2 = token();
 
   
-  send(iframe_anonymous , store_script(key_1, "value_1", response_queue_1));
+  send(iframe_credentialless , store_script(key_1, "value_1", response_queue_1));
   send(iframe_normal, store_script(key_2, "value_2", response_queue_2));
   assert_equals(await receive(response_queue_1), "stored");
   assert_equals(await receive(response_queue_2), "stored");
 
   
   
-  send(iframe_anonymous , load_script(key_2, response_queue_1));
+  send(iframe_credentialless , load_script(key_2, response_queue_1));
   send(iframe_normal, load_script(key_1, response_queue_2));
   assert_equals(await receive(response_queue_1), "not found");
   assert_equals(await receive(response_queue_2), "not found");
 
   
-  send(iframe_anonymous , load_script(key_1, response_queue_1));
+  send(iframe_credentialless , load_script(key_1, response_queue_1));
   send(iframe_normal, load_script(key_2, response_queue_2));
   assert_equals(await receive(response_queue_1), "value_1");
   assert_equals(await receive(response_queue_2), "value_2");

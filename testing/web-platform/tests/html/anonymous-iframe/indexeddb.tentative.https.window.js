@@ -53,8 +53,8 @@ promise_test(async test => {
   
   const origin = get_host_info().HTTPS_REMOTE_ORIGIN;
   const iframes = [
-    newAnonymousIframe(origin),
-    newAnonymousIframe(origin),
+    newIframeCredentialless(origin),
+    newIframeCredentialless(origin),
     newIframe(origin),
     newIframe(origin),
   ];

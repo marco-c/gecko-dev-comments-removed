@@ -41,7 +41,7 @@ const embeddingTest = (description, {
     
     await send(parent_token, `
       const iframe = document.createElement("iframe");
-      iframe.anonymous = true;
+      iframe.credentialless = true;
       iframe.src = "${child_url}";
       document.body.appendChild(iframe);
     `);
@@ -63,8 +63,8 @@ const embeddingTest = (description, {
     
     
     step_timeout(() => send(reply_token, "block"), expectation == EXPECT_BLOCK
-      ? 2000
-      : 6000
+      ? 1500
+      : 3500
     );
 
     assert_equals(await receive(reply_token), expectation);

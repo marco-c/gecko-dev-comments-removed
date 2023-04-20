@@ -13,17 +13,17 @@ promise_test(async t => {
   
   
   let iframes = await Promise.all([
-    { name: "normal", anonymous: false},
-    { name: "normal_control", anonymous: false},
-    { name: "anonymous", anonymous: true},
-    { name: "anonymous_control", anonymous: true},
-  ].map(async ({name, anonymous}) => {
+    { name: "normal", credentialless: false},
+    { name: "normal_control", credentialless: false},
+    { name: "credentialless", credentialless: true},
+    { name: "credentialless_control", credentialless: true},
+  ].map(async ({name, credentialless}) => {
 
     let iframe = await new Promise(resolve => {
       let iframe = document.createElement('iframe');
       iframe.onload = () => resolve(iframe);
       iframe.src = '/common/blank.html';
-      if (anonymous) iframe.anonymous = true;
+      if (credentialless) iframe.credentialless = true;
       document.body.append(iframe);
     });
 
@@ -58,28 +58,28 @@ promise_test(async t => {
   
   assert_true(!!msgs[0]["normal"]);
   assert_true(!!msgs[0]["normal_control"]);
-  assert_false(!!msgs[0]["anonymous"]);
-  assert_false(!!msgs[0]["anonymous_control"]);
+  assert_false(!!msgs[0]["credentialless"]);
+  assert_false(!!msgs[0]["credentialless_control"]);
 
   
   
   assert_true(!!msgs[1]["normal"]);
   assert_true(!!msgs[1]["normal_control"]);
-  assert_false(!!msgs[1]["anonymous"]);
-  assert_false(!!msgs[1]["anonymous_control"]);
+  assert_false(!!msgs[1]["credentialless"]);
+  assert_false(!!msgs[1]["credentialless_control"]);
 
   
   
   assert_false(!!msgs[2]["normal"]);
   assert_false(!!msgs[2]["normal_control"]);
-  assert_true(!!msgs[2]["anonymous"]);
-  assert_true(!!msgs[2]["anonymous_control"]);
+  assert_true(!!msgs[2]["credentialless"]);
+  assert_true(!!msgs[2]["credentialless_control"]);
 
   
   
   assert_false(!!msgs[3]["normal"]);
   assert_false(!!msgs[3]["normal_control"]);
-  assert_true(!!msgs[3]["anonymous"]);
-  assert_true(!!msgs[3]["anonymous_control"]);
+  assert_true(!!msgs[3]["credentialless"]);
+  assert_true(!!msgs[3]["credentialless_control"]);
 
-}, "Anonymous iframes get partitioned service workers.");
+}, "credentialless iframes get partitioned service workers.");

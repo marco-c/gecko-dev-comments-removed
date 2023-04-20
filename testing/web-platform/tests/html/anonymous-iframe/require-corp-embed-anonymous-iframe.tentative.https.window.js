@@ -25,7 +25,7 @@ promise_test(async t => {
 
   
   const child = document.createElement("iframe");
-  child.anonymous = true;
+  child.credentialless = true;
   t.add_cleanup(() => child.remove());
 
   child.src = "/html/cross-origin-embedder-policy/resources/" +
@@ -33,7 +33,7 @@ promise_test(async t => {
   document.body.append(child);
 
   assert_true(await iframe_allowed(child),
-              "The anonymous iframe should be allowed.");
+              "The credentialless iframe should be allowed.");
 
   
   
@@ -45,5 +45,5 @@ promise_test(async t => {
   child.contentDocument.body.append(grandchild);
 
   assert_true(await iframe_allowed(grandchild),
-             "The child of the anonymous iframe should be allowed.");
-}, 'Loading an anonymous iframe with COEP: require-corp is allowed.');
+             "The child of the credentialless iframe should be allowed.");
+}, 'Loading a credentialless iframe with COEP: require-corp is allowed.');

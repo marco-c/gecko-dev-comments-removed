@@ -31,27 +31,27 @@ promise_test(async test => {
   const key_2 = token();
 
   
-  const iframe_anonymous_1 = newAnonymousIframe(origin);
-  const iframe_anonymous_2 = newAnonymousIframe(origin);
+  const iframe_credentialless_1 = newIframeCredentialless(origin);
+  const iframe_credentialless_2 = newIframeCredentialless(origin);
   const iframe_normal_1 = newIframe(origin);
   const iframe_normal_2 = newIframe(origin);
 
   
   await Promise.all([
-    store(iframe_anonymous_1, key_1, "value_1"),
+    store(iframe_credentialless_1, key_1, "value_1"),
     store(iframe_normal_1, key_2, "value_2"),
   ]);
 
   
   await Promise.all([
-    load(iframe_anonymous_1, key_1, "value_1"),
-    load(iframe_anonymous_2, key_1, "value_1"),
-    load(iframe_anonymous_1, key_2, "not found"),
-    load(iframe_anonymous_2, key_2, "not found"),
+    load(iframe_credentialless_1, key_1, "value_1"),
+    load(iframe_credentialless_2, key_1, "value_1"),
+    load(iframe_credentialless_1, key_2, "not found"),
+    load(iframe_credentialless_2, key_2, "not found"),
 
     load(iframe_normal_1, key_1, "not found"),
     load(iframe_normal_2, key_1, "not found"),
     load(iframe_normal_1, key_2, "value_2"),
     load(iframe_normal_2, key_2, "value_2"),
   ]);
-}, "Session storage is correctly partitioned with regards to anonymous iframe");
+}, "Session storage is correctly partitioned with regards to credentialless iframe");

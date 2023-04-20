@@ -26,7 +26,7 @@ promise_test(async test => {
   const msg_queue = token();
 
   
-  const anonymous_iframe_1 = newAnonymousIframe(cross_origin);
+  const iframe_credentialless_1 = newIframeCredentialless(cross_origin);
   const fenced_frame = newFencedFrame(cross_origin);
   send(fenced_frame, `
     const importScript = ${importScript};
@@ -36,22 +36,22 @@ promise_test(async test => {
     await importScript("/html/anonymous-iframe/resources/common.js");
     const support_loading_mode_fenced_frame =
       "|header(Supports-Loading-Mode,fenced-frame)";
-    const anonymous_iframe_2 =
-      newAnonymousIframe("${cross_origin}", support_loading_mode_fenced_frame);
-    send("${msg_queue}", anonymous_iframe_2);
+    const iframe_credentialless_2 = newIframeCredentialless("${cross_origin}",
+      support_loading_mode_fenced_frame);
+    send("${msg_queue}", iframe_credentialless_2);
   `);
-  const anonymous_iframe_2 = await receive(msg_queue);
+  const iframe_credentialless_2 = await receive(msg_queue);
 
   
   
   const bc_key = token();
-  send(anonymous_iframe_1, `
+  send(iframe_credentialless_1, `
     const bc = new BroadcastChannel("${bc_key}");
     bc.onmessage = event => send("${msg_queue}", event.data);
     send("${msg_queue}", "BroadcastChannel registered");
   `);
   assert_equals(await receive(msg_queue), "BroadcastChannel registered");
-  await send(anonymous_iframe_2, `
+  await send(iframe_credentialless_2, `
     const bc = new BroadcastChannel("${bc_key}");
     bc.postMessage("Can communicate");
   `);

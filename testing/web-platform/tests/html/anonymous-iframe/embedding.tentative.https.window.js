@@ -13,31 +13,38 @@
 
 
 
+
+
+
+
+
+
+
 const {REMOTE_ORIGIN} = get_host_info();
 
 
 subsetTest(embeddingTest,
-  "Parent embeds same-origin anonymous iframe", {
+  "Parent embeds same-origin credentialless iframe", {
   expectation: EXPECT_LOAD,
 });
 
 
 subsetTest(embeddingTest,
-  "Parent embeds cross-origin anonymous iframe", {
+  "Parent embeds cross-origin credentialless iframe", {
   child_origin: REMOTE_ORIGIN,
   expectation: EXPECT_LOAD,
 });
 
 
 subsetTest(embeddingTest,
-  "COEP:require-corp parent embeds same-origin anonymous iframe", {
+  "COEP:require-corp parent embeds same-origin credentialless iframe", {
   parent_headers: coep_require_corp,
   expectation: EXPECT_LOAD,
 });
 
 
 subsetTest(embeddingTest,
-  "COEP:require-corp parent embeds cross-origin anonymous iframe", {
+  "COEP:require-corp parent embeds cross-origin credentialless iframe", {
   parent_headers: coep_require_corp,
   child_origin: REMOTE_ORIGIN,
   expectation: EXPECT_LOAD,
@@ -45,14 +52,14 @@ subsetTest(embeddingTest,
 
 
 subsetTest(embeddingTest,
-  "COEP:credentialless parent embeds same-origin anonymous iframe", {
+  "COEP:credentialless parent embeds same-origin credentialless iframe", {
   parent_headers: coep_credentialless,
   expectation: EXPECT_LOAD,
 });
 
 
 subsetTest(embeddingTest,
-  "COEP:credentialless parent embeds cross-origin anonymous iframe", {
+  "COEP:credentialless parent embeds cross-origin credentialless iframe", {
   parent_headers: coep_credentialless,
   child_origin: REMOTE_ORIGIN,
   expectation: EXPECT_LOAD,
@@ -61,7 +68,7 @@ subsetTest(embeddingTest,
 
 
 subsetTest(embeddingTest,
-  "COOP:same-origin + COEP:require-corp embeds same-origin anonymous iframe", {
+  "COOP:same-origin + COEP:require-corp embeds same-origin credentialless iframe", {
   parent_headers: coop_same_origin + coep_require_corp,
   expectation: EXPECT_LOAD,
 });
@@ -69,7 +76,7 @@ subsetTest(embeddingTest,
 
 
 subsetTest(embeddingTest,
-  "COOP:same-origin + COEP:require-corp embeds cross-origin anonymous iframe", {
+  "COOP:same-origin + COEP:require-corp embeds cross-origin credentialless iframe", {
   parent_headers: coop_same_origin + coep_require_corp,
   child_origin: REMOTE_ORIGIN,
   expectation: EXPECT_LOAD,
@@ -78,7 +85,7 @@ subsetTest(embeddingTest,
 
 
 subsetTest(embeddingTest,
-  "COOP:same-origin + COEP:credentialless embeds same-origin anonymous iframe", {
+  "COOP:same-origin + COEP:credentialless embeds same-origin credentialless iframe", {
   parent_headers: coop_same_origin + coep_credentialless,
   expectation: EXPECT_LOAD,
 });
@@ -86,7 +93,7 @@ subsetTest(embeddingTest,
 
 
 subsetTest(embeddingTest,
-  "COOP:same-origin + COEP:credentialless embeds cross-origin anonymous iframe", {
+  "COOP:same-origin + COEP:credentialless embeds cross-origin credentialless iframe", {
   parent_headers: coop_same_origin + coep_credentialless,
   child_origin: REMOTE_ORIGIN,
   expectation: EXPECT_LOAD,
@@ -94,14 +101,14 @@ subsetTest(embeddingTest,
 
 
 subsetTest(embeddingTest,
-  "Parents embeds a CSP:frame-ancestore anonymous iframe", {
+  "Parents embeds a CSP:frame-ancestore credentialless iframe", {
   child_headers: "|headers(Content-Security-Policy,frame-ancestors 'none')",
   expectation: EXPECT_BLOCK,
 });
 
 
 subsetTest(embeddingTest,
-  "Cross-Origin-Isolated parent embeds same-origin COEP anonymous iframe", {
+  "Cross-Origin-Isolated parent embeds same-origin COEP credentialless iframe", {
   parent_headers: coop_same_origin + coep_require_corp,
   child_headers: coop_same_origin + coep_require_corp,
   expectation: EXPECT_LOAD,
@@ -109,7 +116,7 @@ subsetTest(embeddingTest,
 
 
 subsetTest(embeddingTest,
-  "Cross-Origin-Isolated parent embeds cross-origin COEP anonymous iframe", {
+  "Cross-Origin-Isolated parent embeds cross-origin COEP credentialless iframe", {
   parent_headers: coop_same_origin + coep_require_corp,
   child_headers: coop_same_origin + coep_require_corp,
   child_origin: REMOTE_ORIGIN,
