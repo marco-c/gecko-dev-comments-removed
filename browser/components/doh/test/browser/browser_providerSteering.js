@@ -48,12 +48,16 @@ add_task(async function testProviderSteering() {
         
         
         
-        return gDNSService.currentTrrURI == expectedURI;
+        return Services.dns.currentTrrURI == expectedURI;
       }
     );
     simulateNetworkChange();
     await trrURIChanged;
-    is(gDNSService.currentTrrURI, expectedURI, `TRR URI set to ${expectedURI}`);
+    is(
+      Services.dns.currentTrrURI,
+      expectedURI,
+      `TRR URI set to ${expectedURI}`
+    );
     await checkHeuristicsTelemetry(
       heuristicsDecision,
       "netchange",
