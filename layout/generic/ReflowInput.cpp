@@ -1108,8 +1108,7 @@ nsIFrame* ReflowInput::GetHypotheticalBoxContainer(nsIFrame* aFrame,
     
     aCBIStartEdge = 0;
     aCBSize = aFrame->GetLogicalSize(wm);
-    if (!aCBSize.IsAllZero() ||
-        (!IsXULCollapsedXULFrame(aFrame->GetParent()))) {
+    if (!aCBSize.IsAllZero() || !IsXULCollapsedXULFrame(aFrame->GetParent())) {
       
       
       LogicalMargin borderPadding = aFrame->GetLogicalUsedBorderAndPadding(wm);
