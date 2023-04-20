@@ -3191,11 +3191,6 @@ class nsIFrame : public nsQueryFrame {
 
   bool IsContentDisabled() const;
 
-  
-
-
-  bool IsContentVisibilityPropertyApplicable() const;
-
   enum class IncludeContentVisibility {
     Auto,
     Hidden,
