@@ -81,7 +81,10 @@ async function updateTopSites(condition, searchShortcuts = false) {
 
 
 
-async function setUpTelemetryTest({ suggestions }) {
+
+
+
+async function setUpTelemetryTest({ suggestions, config = undefined }) {
   await SpecialPowers.pushPrefEnv({
     set: [
       
@@ -107,7 +110,7 @@ async function setUpTelemetryTest({ suggestions }) {
   
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
 
-  await QuickSuggestTestUtils.ensureQuickSuggestInit(suggestions);
+  await QuickSuggestTestUtils.ensureQuickSuggestInit(suggestions, config);
 }
 
 
