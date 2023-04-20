@@ -1307,7 +1307,7 @@ MediaConduitErrorCode WebrtcVideoConduit::SendVideoFrame(
     
     auto videoStreamFactory = mVideoStreamFactory.Lock();
     auto& videoStreamFactoryRef = videoStreamFactory.ref();
-    if (videoStreamFactoryRef->ShouldDropFrame(aFrame.timestamp_us())) {
+    if (videoStreamFactoryRef->ShouldDropFrame(aFrame)) {
       return kMediaConduitNoError;
     }
   }
