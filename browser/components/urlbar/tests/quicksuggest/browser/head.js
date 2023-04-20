@@ -21,17 +21,19 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 XPCOMUtils.defineLazyGetter(this, "QuickSuggestTestUtils", () => {
-  const { QuickSuggestTestUtils: Utils } = ChromeUtils.importESModule(
+  const { QuickSuggestTestUtils: module } = ChromeUtils.importESModule(
     "resource://testing-common/QuickSuggestTestUtils.sys.mjs"
   );
-  return new Utils(this);
+  module.init(this);
+  return module;
 });
 
 XPCOMUtils.defineLazyGetter(this, "MerinoTestUtils", () => {
-  const { MerinoTestUtils: Utils } = ChromeUtils.importESModule(
+  const { MerinoTestUtils: module } = ChromeUtils.importESModule(
     "resource://testing-common/MerinoTestUtils.sys.mjs"
   );
-  return new Utils(this);
+  module.init(this);
+  return module;
 });
 
 registerCleanupFunction(async () => {
@@ -84,7 +86,17 @@ async function updateTopSites(condition, searchShortcuts = false) {
 
 
 
-async function setUpTelemetryTest({ suggestions, config = undefined }) {
+
+
+
+
+
+
+async function setUpTelemetryTest({
+  remoteSettingsResults = null,
+  merinoSuggestions = null,
+  config = QuickSuggestTestUtils.DEFAULT_CONFIG,
+}) {
   await SpecialPowers.pushPrefEnv({
     set: [
       
@@ -110,7 +122,11 @@ async function setUpTelemetryTest({ suggestions, config = undefined }) {
   
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
 
-  await QuickSuggestTestUtils.ensureQuickSuggestInit(suggestions, config);
+  await QuickSuggestTestUtils.ensureQuickSuggestInit({
+    remoteSettingsResults,
+    merinoSuggestions,
+    config,
+  });
 }
 
 
@@ -166,7 +182,11 @@ async function doTelemetryTest({
   showSuggestion = () =>
     UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
-      value: suggestion.keywords[0],
+      
+      
+      
+      
+      value: suggestion.keywords?.[0] || "test",
       fireInputEvent: true,
     }),
 }) {
