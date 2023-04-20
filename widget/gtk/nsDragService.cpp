@@ -87,6 +87,19 @@ extern mozilla::LazyLogModule gWidgetDragLog;
 #endif
 
 
+class MOZ_STACK_CLASS AutoSuspendNativeEvents {
+ public:
+  AutoSuspendNativeEvents() {
+    mAppShell = do_GetService(NS_APPSHELL_CID);
+    mAppShell->SuspendNative();
+  }
+  ~AutoSuspendNativeEvents() { mAppShell->ResumeNative(); }
+
+ private:
+  nsCOMPtr<nsIAppShell> mAppShell;
+};
+
+
 
 static guint sMotionEventTimerID;
 
@@ -1672,15 +1685,6 @@ nsresult nsDragService::CreateTempFile(nsITransferable* aItem,
     return rv;
   }
 
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIAppShell> appShell = do_GetService(NS_APPSHELL_CID);
-  appShell->SuspendNative();
-  auto resumeEvents = MakeScopeExit([&] { appShell->ResumeNative(); });
-
   char buffer[8192];
   uint32_t readCount = 0;
   uint32_t writeCount = 0;
@@ -1806,6 +1810,11 @@ void nsDragService::SourceDataGetUriList(GdkDragContext* aContext,
 
   LOGDRAGSERVICE("nsDragService::SourceDataGetUriLists() len %d external %d",
                  aDragItems, isExternalDrop);
+
+  
+  
+  
+  AutoSuspendNativeEvents suspend;
 
   nsAutoCString uriList;
   for (uint32_t i = 0; i < aDragItems; i++) {
