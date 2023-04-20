@@ -25,7 +25,6 @@ const TEST_IMAGE =
 add_task(async function() {
   
   await pushPref("security.allow_parent_unrestricted_js_loads", true);
-  await pushPref("devtools.browserconsole.contentMessages", true);
   await pushPref("devtools.browserconsole.enableNetworkMonitoring", true);
   await pushPref("devtools.browsertoolbox.scope", "everything");
 

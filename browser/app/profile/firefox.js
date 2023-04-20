@@ -2624,9 +2624,6 @@ pref("devtools.webconsole.input.editorOnboarding", true);
 pref("devtools.webconsole.groupWarningMessages", true);
 
 
-pref("devtools.browserconsole.contentMessages", false);
-
-
 pref("devtools.browserconsole.enableNetworkMonitoring", false);
 
 

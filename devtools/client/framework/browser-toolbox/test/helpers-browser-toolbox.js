@@ -33,12 +33,7 @@ const {
 
 
 
-
-
-async function initBrowserToolboxTask({
-  enableContentMessages,
-  existingProcessClose,
-} = {}) {
+async function initBrowserToolboxTask({ existingProcessClose } = {}) {
   if (AppConstants.ASAN) {
     ok(
       false,
@@ -100,14 +95,6 @@ async function initBrowserToolboxTask({
   const consoleFront = await target.getFront("console");
 
   ok(true, "Connected");
-
-  if (enableContentMessages) {
-    const preferenceFront = await client.mainRoot.getFront("preference");
-    await preferenceFront.setBoolPref(
-      "devtools.browserconsole.contentMessages",
-      true
-    );
-  }
 
   await importFunctions({
     info: msg => dump(msg + "\n"),

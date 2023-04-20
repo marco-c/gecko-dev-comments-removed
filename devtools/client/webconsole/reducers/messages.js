@@ -732,7 +732,6 @@ function messages(
     case constants.FILTER_TEXT_SET:
     case constants.FILTERS_CLEAR:
     case constants.DEFAULT_FILTERS_RESET:
-    case constants.SHOW_CONTENT_MESSAGES_TOGGLE:
       return setVisibleMessages({
         messagesState: state,
         filtersState,
@@ -1131,21 +1130,6 @@ function getMessageVisibility(
     hasMatchedAncestor = false,
   }
 ) {
-  
-  
-  if (
-    !uiState.showContentMessages &&
-    
-    message.chromeContext !== true &&
-    message.type !== MESSAGE_TYPE.COMMAND &&
-    message.type !== MESSAGE_TYPE.RESULT
-  ) {
-    return {
-      visible: false,
-      cause: "contentMessage",
-    };
-  }
-
   const warningGroupMessageId = getParentWarningGroupMessageId(message);
   const parentWarningGroupMessage = messagesState.mutableMessagesById.get(
     warningGroupMessageId

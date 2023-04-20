@@ -10,7 +10,6 @@ const TEST_URI =
   "test/browser/test-console.html";
 
 add_task(async function() {
-  await pushPref("devtools.browserconsole.contentMessages", true);
   await pushPref("devtools.browsertoolbox.scope", "everything");
   
   await pushPref("devtools.browserconsole.filter.net", true);

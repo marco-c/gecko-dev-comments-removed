@@ -22,7 +22,6 @@ add_task(async function() {
   
   await pushPref("devtools.webconsole.sidebarToggle", true);
   
-  await pushPref("devtools.browserconsole.contentMessages", true);
   await pushPref("devtools.browsertoolbox.scope", "everything");
 
   await addTab(TEST_URI);
