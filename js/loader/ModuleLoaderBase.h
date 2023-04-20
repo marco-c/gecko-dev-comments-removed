@@ -204,6 +204,8 @@ class ModuleLoaderBase : public nsISupports {
   
   void Shutdown();
 
+  virtual nsIURI* GetBaseURI() const { return mLoader->GetBaseURI(); };
+
   using LoadedScript = JS::loader::LoadedScript;
   using ScriptFetchOptions = JS::loader::ScriptFetchOptions;
   using ScriptLoadRequest = JS::loader::ScriptLoadRequest;
