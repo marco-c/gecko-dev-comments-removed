@@ -38,20 +38,32 @@ namespace webrtc {
 
 
 
+
+
+
+
+
+
+
+
 class TrackMediaInfoMap {
  public:
-  TrackMediaInfoMap(
-      std::unique_ptr<cricket::VoiceMediaInfo> voice_media_info,
-      std::unique_ptr<cricket::VideoMediaInfo> video_media_info,
+  TrackMediaInfoMap();
+
+  void Initialize(
+      absl::optional<cricket::VoiceMediaInfo> voice_media_info,
+      absl::optional<cricket::VideoMediaInfo> video_media_info,
       const std::vector<rtc::scoped_refptr<RtpSenderInternal>>& rtp_senders,
       const std::vector<rtc::scoped_refptr<RtpReceiverInternal>>&
           rtp_receivers);
 
-  const cricket::VoiceMediaInfo* voice_media_info() const {
-    return voice_media_info_.get();
+  const absl::optional<cricket::VoiceMediaInfo>& voice_media_info() const {
+    RTC_DCHECK(is_initialized_);
+    return voice_media_info_;
   }
-  const cricket::VideoMediaInfo* video_media_info() const {
-    return video_media_info_.get();
+  const absl::optional<cricket::VideoMediaInfo>& video_media_info() const {
+    RTC_DCHECK(is_initialized_);
+    return video_media_info_;
   }
 
   const std::vector<cricket::VoiceSenderInfo*>* GetVoiceSenderInfos(
@@ -87,10 +99,9 @@ class TrackMediaInfoMap {
       const MediaStreamTrackInterface* track) const;
 
  private:
-  absl::optional<std::string> voice_mid_;
-  absl::optional<std::string> video_mid_;
-  std::unique_ptr<cricket::VoiceMediaInfo> voice_media_info_;
-  std::unique_ptr<cricket::VideoMediaInfo> video_media_info_;
+  bool is_initialized_ = false;
+  absl::optional<cricket::VoiceMediaInfo> voice_media_info_;
+  absl::optional<cricket::VideoMediaInfo> video_media_info_;
   
   
   std::map<const AudioTrackInterface*, std::vector<cricket::VoiceSenderInfo*>>
