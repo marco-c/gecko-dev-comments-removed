@@ -35,9 +35,8 @@ typedef struct {
 } SharpYuvColorSpace;
 
 
-SHARPYUV_EXTERN void SharpYuvComputeConversionMatrix(
-    const SharpYuvColorSpace* yuv_color_space,
-    SharpYuvConversionMatrix* matrix);
+void SharpYuvComputeConversionMatrix(const SharpYuvColorSpace* yuv_color_space,
+                                     SharpYuvConversionMatrix* matrix);
 
 
 typedef enum {
@@ -50,7 +49,7 @@ typedef enum {
 } SharpYuvMatrixType;
 
 
-SHARPYUV_EXTERN const SharpYuvConversionMatrix* SharpYuvGetConversionMatrix(
+const SharpYuvConversionMatrix* SharpYuvGetConversionMatrix(
     SharpYuvMatrixType matrix_type);
 
 #ifdef __cplusplus

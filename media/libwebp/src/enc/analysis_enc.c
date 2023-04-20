@@ -391,14 +391,12 @@ static int DoSegmentsJob(void* arg1, void* arg2) {
   return ok;
 }
 
-#ifdef WEBP_USE_THREAD
 static void MergeJobs(const SegmentJob* const src, SegmentJob* const dst) {
   int i;
   for (i = 0; i <= MAX_ALPHA; ++i) dst->alphas[i] += src->alphas[i];
   dst->alpha += src->alpha;
   dst->uv_alpha += src->uv_alpha;
 }
-#endif
 
 
 static void InitSegmentJob(VP8Encoder* const enc, SegmentJob* const job,
@@ -427,10 +425,10 @@ int VP8EncAnalyze(VP8Encoder* const enc) {
       (enc->method_ <= 1);  
   if (do_segments) {
     const int last_row = enc->mb_h_;
-    const int total_mb = last_row * enc->mb_w_;
-#ifdef WEBP_USE_THREAD
     
     const int split_row = (9 * last_row + 15) >> 4;
+    const int total_mb = last_row * enc->mb_w_;
+#ifdef WEBP_USE_THREAD
     const int kMinSplitRow = 2;  
     const int do_mt = (enc->thread_level_ > 0) && (split_row >= kMinSplitRow);
 #else
@@ -440,7 +438,6 @@ int VP8EncAnalyze(VP8Encoder* const enc) {
         WebPGetWorkerInterface();
     SegmentJob main_job;
     if (do_mt) {
-#ifdef WEBP_USE_THREAD
       SegmentJob side_job;
       
       
@@ -458,7 +455,6 @@ int VP8EncAnalyze(VP8Encoder* const enc) {
       }
       worker_interface->End(&side_job.worker);
       if (ok) MergeJobs(&side_job, &main_job);  
-#endif  
     } else {
       
       InitSegmentJob(enc, &main_job, 0, last_row);

@@ -142,7 +142,7 @@ static int BuildHuffmanTable(HuffmanCode* const root_table, int root_bits,
 
   {
     int step;              
-    uint32_t low = 0xffffffffu;        
+    uint32_t low = -1;     
     uint32_t mask = total_size - 1;    
     uint32_t key = 0;      
     int num_nodes = 1;     

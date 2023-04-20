@@ -179,7 +179,7 @@ static VP8StatusCode ParseOptionalChunks(const uint8_t** const data,
       return VP8_STATUS_BITSTREAM_ERROR;          
     }
     
-    disk_chunk_size = (CHUNK_HEADER_SIZE + chunk_size + 1) & ~1u;
+    disk_chunk_size = (CHUNK_HEADER_SIZE + chunk_size + 1) & ~1;
     total_size += disk_chunk_size;
 
     

@@ -12,31 +12,15 @@
 #ifndef WEBP_SHARPYUV_SHARPYUV_H_
 #define WEBP_SHARPYUV_SHARPYUV_H_
 
+#include <inttypes.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifndef SHARPYUV_EXTERN
-#ifdef WEBP_EXTERN
-#define SHARPYUV_EXTERN WEBP_EXTERN
-#else
-
-
-#if defined(__GNUC__) && __GNUC__ >= 4
-#define SHARPYUV_EXTERN extern __attribute__((visibility("default")))
-#else
-#if defined(_MSC_VER) && defined(WEBP_DLL)
-#define SHARPYUV_EXTERN __declspec(dllexport)
-#else
-#define SHARPYUV_EXTERN extern
-#endif 
-#endif 
-#endif 
-#endif 
-
 
 #define SHARPYUV_VERSION_MAJOR 0
-#define SHARPYUV_VERSION_MINOR 2
+#define SHARPYUV_VERSION_MINOR 1
 #define SHARPYUV_VERSION_PATCH 0
 
 
@@ -45,10 +29,6 @@ extern "C" {
 #define SHARPYUV_VERSION                                                \
   SHARPYUV_MAKE_VERSION(SHARPYUV_VERSION_MAJOR, SHARPYUV_VERSION_MINOR, \
                         SHARPYUV_VERSION_PATCH)
-
-
-
-SHARPYUV_EXTERN int SharpYuvGetVersion(void);
 
 
 
@@ -85,13 +65,11 @@ typedef struct {
 
 
 
-SHARPYUV_EXTERN int SharpYuvConvert(const void* r_ptr, const void* g_ptr,
-                                    const void* b_ptr, int rgb_step,
-                                    int rgb_stride, int rgb_bit_depth,
-                                    void* y_ptr, int y_stride, void* u_ptr,
-                                    int u_stride, void* v_ptr, int v_stride,
-                                    int yuv_bit_depth, int width, int height,
-                                    const SharpYuvConversionMatrix* yuv_matrix);
+int SharpYuvConvert(const void* r_ptr, const void* g_ptr, const void* b_ptr,
+                    int rgb_step, int rgb_stride, int rgb_bit_depth,
+                    void* y_ptr, int y_stride, void* u_ptr, int u_stride,
+                    void* v_ptr, int v_stride, int yuv_bit_depth, int width,
+                    int height, const SharpYuvConversionMatrix* yuv_matrix);
 
 
 
