@@ -12,7 +12,7 @@ use cssparser::{Color as CSSParserColor, RGBA};
 use std::fmt;
 use style_traits::{CssWriter, ToCss};
 
-pub use crate::values::specified::color::{ColorScheme, PrintColorAdjust};
+pub use crate::values::specified::color::{ColorScheme, PrintColorAdjust, ForcedColorAdjust};
 
 
 pub type ColorPropertyValue = RGBA;

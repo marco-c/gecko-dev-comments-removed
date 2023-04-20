@@ -1054,3 +1054,25 @@ pub enum PrintColorAdjust {
     
     Exact,
 }
+
+
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToCss,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(u8)]
+pub enum ForcedColorAdjust {
+    
+    Auto,
+    
+    None,
+}
