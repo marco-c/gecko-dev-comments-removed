@@ -108,11 +108,11 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     
     uint64_t packets_discarded = 0;
     
-    webrtc::TimeDelta total_decode_time = webrtc::TimeDelta::Millis(0);
+    TimeDelta total_decode_time = TimeDelta::Zero();
     
-    webrtc::TimeDelta total_processing_delay = webrtc::TimeDelta::Millis(0);
+    TimeDelta total_processing_delay = TimeDelta::Zero();
     
-    webrtc::TimeDelta total_assembly_time = webrtc::TimeDelta::Millis(0);
+    TimeDelta total_assembly_time = TimeDelta::Zero();
     uint32_t frames_assembled_from_multiple_packets = 0;
     
     

@@ -40,7 +40,7 @@ TEST(SimulatedNetworkTest, CodelDoesNothingAtCapacity) {
       packet_size / link_capacity + TimeDelta::Millis(1);
 
   
-  Timestamp start_time = Timestamp::Millis(0);
+  Timestamp start_time = Timestamp::Zero();
   Timestamp current_time = start_time;
   Timestamp next_packet_time = start_time;
   uint64_t next_id = 0;
@@ -94,7 +94,7 @@ TEST(SimulatedNetworkTest, CodelLimitsDelayAndDropsPacketsOnOverload) {
   const DataSize packet_size = overload_rate * link_capacity * packet_inverval;
   
   
-  Timestamp start_time = Timestamp::Millis(0);
+  Timestamp start_time = Timestamp::Zero();
   Timestamp current_time = start_time;
   Timestamp next_packet_time = start_time;
   Timestamp last_check = start_time;

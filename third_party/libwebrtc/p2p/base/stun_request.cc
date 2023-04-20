@@ -74,7 +74,7 @@ void StunRequestManager::FlushForTest(int msg_type) {
       
       
       request->ResetTasksForTest();
-      request->Send(webrtc::TimeDelta::Millis(0));
+      request->Send(webrtc::TimeDelta::Zero());
     }
   }
 }

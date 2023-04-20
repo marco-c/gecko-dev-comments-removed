@@ -150,10 +150,10 @@ TEST(ReceiverTimingTest, UseLowLatencyRenderer) {
   timing.set_max_playout_delay(TimeDelta::Millis(20));
   EXPECT_FALSE(timing.RenderParameters().use_low_latency_rendering);
   
-  timing.set_min_playout_delay(TimeDelta::Millis(0));
+  timing.set_min_playout_delay(TimeDelta::Zero());
   EXPECT_TRUE(timing.RenderParameters().use_low_latency_rendering);
   
-  timing.set_max_playout_delay(TimeDelta::Millis(0));
+  timing.set_max_playout_delay(TimeDelta::Zero());
   EXPECT_TRUE(timing.RenderParameters().use_low_latency_rendering);
   
   timing.set_max_playout_delay(TimeDelta::Millis(500));
