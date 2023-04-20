@@ -23,10 +23,13 @@ def before_iterations(kw):
     architecture = "arm64-v8a"
 
     if product == PROD_FOCUS:
-        if download_date >= datetime(2022, 12, 15):
+        if download_date >= datetime(2023, 2, 17):
+            pass
+        elif download_date >= datetime(2022, 12, 15):
             product += "-v3"
         elif download_date >= datetime(2021, 11, 5):
             product += "-v2"
+
     
     
     
