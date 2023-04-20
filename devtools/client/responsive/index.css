@@ -1,13 +1,13 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* TODO: May break up into component local CSS.  Pending future discussions by
+ * React component group on how to best handle CSS. */
 
-
-
-
-
-
-
-
-
+/**
+ * CSS Variables specific to the responsive design mode
+ */
 
 :root {
   --toolbar-row-height: 28px;
@@ -78,18 +78,18 @@ input:-moz-focusring {
   height: 100%;
 }
 
-
-
-
+/**
+ * Common styles for shared components
+ */
 
 .devtools-separator {
   height: 100%;
   margin: 0 1px;
 }
 
-
-
-
+/**
+ * Toolbar
+ */
 
 #toolbar {
   background-color: var(--theme-tab-toolbar-background);
@@ -188,8 +188,8 @@ input:-moz-focusring {
 }
 
 @media (max-width: 520px) {
-  
-
+  /* When room becomes scarce, no need to constrain the selectors with a minmax like we
+     do in larger viewports, here they can occupy 1fr */
   #toolbar.user-agent #toolbar-center-controls {
     grid-template-columns:
       [device-selector]
@@ -214,20 +214,20 @@ input:-moz-focusring {
       max-content;
   }
 
-  
+  /* Drop the user agent label to the next line if there isn't enough space */
   #user-agent-label {
     grid-column: 1 / -1;
     grid-row: 2;
     margin-inline-start: 9px;
   }
 
-  
+  /* Since the UA is hidden, no need for a separator after it */
   #user-agent-label + .devtools-separator {
     display: none;
   }
 
-  
-
+  /* When the UA label is here and it's on a second line, draw a separator between the
+     2 lines*/
   #toolbar.user-agent {
     background-image: linear-gradient(to bottom,
       transparent var(--toolbar-row-height),
@@ -261,7 +261,7 @@ input:-moz-focusring {
   background-image: url("chrome://devtools/skin/images/close.svg");
 }
 
-
+/* Briefly animate screenshot button when clicked */
 #screenshot-button:disabled {
   opacity: 1 !important;
 }
@@ -290,14 +290,14 @@ input:-moz-focusring {
   fill: var(--theme-icon-dimmed-color);
 }
 
-
+/* Override the style defined in tooltips.css */
 .tooltip-container[type="doorhanger"] .menuitem > .command.iconic.device-selector-item > .label::before {
   fill: var(--theme-icon-dimmed-color);
 }
 
-
-
-
+/**
+ * Viewport Dimension Input
+ */
 
 .viewport-dimension {
   display: flex;
@@ -316,9 +316,9 @@ input:-moz-focusring {
   padding: 0 0.2em;
 }
 
-
-
-
+/**
+ * Device Modal
+ */
 
 @keyframes fade-in-and-up {
   0% {
@@ -364,7 +364,7 @@ input:-moz-focusring {
   overflow: hidden;
 }
 
-
+/* Handles the opening/closing of the modal */
 #device-modal-wrapper.opened .device-modal {
   animation: fade-in-and-up 0.3s ease forwards;
 }
@@ -392,7 +392,7 @@ input:-moz-focusring {
   padding: 10px 32px 50px 32px;
 }
 
-
+/* On screens that are >750px*/
 @media (min-width: 750px) {
   #device-form {
     grid-template-areas: "name size dpr"
@@ -416,7 +416,7 @@ input:-moz-focusring {
   }
 }
 
-
+/* On screens that are between 450px and 749px */
 @media (min-width: 450px) and (max-width: 749px) {
   #device-form {
     grid-template-areas: "name size"
@@ -435,7 +435,7 @@ input:-moz-focusring {
   }
 }
 
-
+/* On screens that are <450px */
 @media (max-width: 449px) {
   #device-form {
     grid-template-areas: "name"
@@ -581,16 +581,16 @@ input:-moz-focusring {
   background-image: url("chrome://devtools/skin/images/close.svg");
 }
 
-
-
-
+/**
+ * Device Form
+ */
 
 #device-form {
   display: grid;
   width: 100%;
   background-color: var(--theme-toolbar-background);
   min-height: 150px;
-  padding: 15px 0 10px 20px;
+  padding: 15px 20px 10px;
   border-bottom: 1px solid var(--theme-splitter-color);
   overflow: auto;
   z-index: 1;
@@ -724,7 +724,7 @@ input:-moz-focusring {
   font-size: 13px;
 }
 
-
+/* Device Types */
 
 .device-type-phones {
   grid-area: phone;
