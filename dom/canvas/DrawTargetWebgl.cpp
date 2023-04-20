@@ -1675,33 +1675,23 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
 
   const Matrix& currentTransform = GetTransform();
 
-  if (aOptions.mCompositionOp == CompositionOp::OP_SOURCE &&
-      ((aClipped && HasClipMask()) ||
-       !IsAlignedRect(aTransformed, currentTransform, aRect)) &&
-      aPattern.GetType() == PatternType::SURFACE) {
+  if (aOptions.mCompositionOp == CompositionOp::OP_SOURCE && aTransformed &&
+      aClipped &&
+      (HasClipMask() || !currentTransform.PreservesAxisAlignedRectangles() ||
+       !currentTransform.TransformBounds(aRect).Contains(Rect(mClipRect)) ||
+       (aPattern.GetType() == PatternType::SURFACE &&
+        !IsAlignedRect(aTransformed, currentTransform, aRect)))) {
     
-    
-    
-    
-    auto surfacePattern = static_cast<const SurfacePattern&>(aPattern);
-    CompositionOp op = CompositionOp::OP_OVER;
-    if (!surfacePattern.mSurface ||
-        !IsOpaque(surfacePattern.mSurface->GetFormat()) ||
-        aOptions.mAlpha != 1.0f) {
-      op = CompositionOp::OP_ADD;
-      if (DrawRectAccel(aRect, ColorPattern(DeviceColor(0, 0, 0, 0)),
-                        DrawOptions(1.0f, CompositionOp::OP_SOURCE,
-                                    aOptions.mAntialiasMode),
-                        Nothing(), nullptr, aTransformed, aClipped, aAccelOnly,
-                        aForceUpdate, aStrokeOptions, aVertexRange)) {
-        return false;
-      }
-    }
-    return DrawRectAccel(
-        aRect, aPattern,
-        DrawOptions(aOptions.mAlpha, op, aOptions.mAntialiasMode), aMaskColor,
-        aHandle, aTransformed, aClipped, aAccelOnly, aForceUpdate,
-        aStrokeOptions, aVertexRange);
+    return DrawRectAccel(Rect(mClipRect), ColorPattern(DeviceColor(0, 0, 0, 0)),
+                         DrawOptions(1.0f, CompositionOp::OP_SOURCE,
+                                     aOptions.mAntialiasMode),
+                         Nothing(), nullptr, false, aClipped, aAccelOnly) &&
+           DrawRectAccel(aRect, aPattern,
+                         DrawOptions(aOptions.mAlpha, CompositionOp::OP_ADD,
+                                     aOptions.mAntialiasMode),
+                         aMaskColor, aHandle, aTransformed, aClipped,
+                         aAccelOnly, aForceUpdate, aStrokeOptions,
+                         aVertexRange);
   }
 
   
