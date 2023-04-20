@@ -47,6 +47,9 @@ static constexpr int64_t kMaxVbaThrottleTimeMs = 500;
 
 constexpr TimeDelta kEncoderTimeOut = TimeDelta::Seconds(2);
 
+constexpr double kVideoHysteresis = 1.2;
+constexpr double kScreenshareHysteresis = 1.35;
+
 
 
 
@@ -95,8 +98,9 @@ int CalculateMaxPadBitrateBps(const std::vector<VideoStream>& streams,
       
       
       const double hysteresis_factor =
-          RateControlSettings::ParseFromFieldTrials()
-              .GetSimulcastHysteresisFactor(content_type);
+          content_type == VideoEncoderConfig::ContentType::kScreen
+              ? kScreenshareHysteresis
+              : kVideoHysteresis;
       if (is_svc) {
         
         
