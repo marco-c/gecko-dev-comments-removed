@@ -151,9 +151,10 @@ class JitActivation : public Activation {
   
   
   
-  RematerializedFrame* getRematerializedFrame(JSContext* cx,
-                                              const JSJitFrameIter& iter,
-                                              size_t inlineDepth = 0);
+  RematerializedFrame* getRematerializedFrame(
+      JSContext* cx, const JSJitFrameIter& iter, size_t inlineDepth = 0,
+      MaybeReadFallback::FallbackConsequence consequence =
+          MaybeReadFallback::Fallback_Invalidate);
 
   
   
