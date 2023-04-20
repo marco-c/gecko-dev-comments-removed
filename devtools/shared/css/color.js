@@ -138,8 +138,14 @@ CssColor.prototype = {
     return this.getRGBATuple().a !== 1;
   },
 
+  
+
+
   get valid() {
-    return InspectorUtils.isValidCSSColor(this.authored);
+    
+    
+    
+    return InspectorUtils.colorToRGBA(this.authored) !== null;
   },
 
   
@@ -359,6 +365,9 @@ CssColor.prototype = {
   },
 
   
+
+
+
 
 
 
