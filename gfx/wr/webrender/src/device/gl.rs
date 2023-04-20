@@ -1797,7 +1797,8 @@ impl Device {
         
         
         
-        let prefers_clear_scissor = !renderer_name.starts_with("Mali");
+        
+        let prefers_clear_scissor = !cfg!(target_os = "android") || is_software_webrender;
 
         let mut supports_render_target_invalidate = true;
 
