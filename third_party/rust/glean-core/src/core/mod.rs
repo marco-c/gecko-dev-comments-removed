@@ -12,7 +12,7 @@ use crate::event_database::EventDatabase;
 use crate::internal_metrics::{AdditionalMetrics, CoreMetrics, DatabaseMetrics};
 use crate::internal_pings::InternalPings;
 use crate::metrics::{
-    self, ExperimentMetric, Metric, MetricType, MetricsDisabledConfig, PingType, RecordedExperiment,
+    self, ExperimentMetric, Metric, MetricType, MetricsEnabledConfig, PingType, RecordedExperiment,
 };
 use crate::ping::PingMaker;
 use crate::storage::{StorageManager, INTERNAL_STORAGE};
@@ -153,7 +153,7 @@ pub struct Glean {
     pub(crate) app_build: String,
     pub(crate) schedule_metrics_pings: bool,
     pub(crate) remote_settings_epoch: AtomicU8,
-    pub(crate) remote_settings_metrics_config: Arc<Mutex<MetricsDisabledConfig>>,
+    pub(crate) remote_settings_metrics_config: Arc<Mutex<MetricsEnabledConfig>>,
 }
 
 impl Glean {
@@ -207,7 +207,7 @@ impl Glean {
             
             schedule_metrics_pings: false,
             remote_settings_epoch: AtomicU8::new(0),
-            remote_settings_metrics_config: Arc::new(Mutex::new(MetricsDisabledConfig::new())),
+            remote_settings_metrics_config: Arc::new(Mutex::new(MetricsEnabledConfig::new())),
         };
 
         
@@ -527,6 +527,7 @@ impl Glean {
     }
 
     
+    #[track_caller] 
     pub fn storage(&self) -> &Database {
         self.data_store.as_ref().expect("No database found")
     }
@@ -708,7 +709,7 @@ impl Glean {
     
     
     
-    pub fn set_metrics_disabled_config(&self, cfg: MetricsDisabledConfig) {
+    pub fn set_metrics_enabled_config(&self, cfg: MetricsEnabledConfig) {
         
         
         let mut lock = self.remote_settings_metrics_config.lock().unwrap();

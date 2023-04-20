@@ -14,23 +14,27 @@ use serde::{Deserialize, Serialize};
 
 
 
+
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct MetricsDisabledConfig {
+pub struct MetricsEnabledConfig {
+    
+    
+    
     
     
     
     #[serde(flatten)]
-    pub metrics_disabled: HashMap<String, bool>,
+    pub metrics_enabled: HashMap<String, bool>,
 }
 
-impl MetricsDisabledConfig {
+impl MetricsEnabledConfig {
     
     pub fn new() -> Self {
         Default::default()
     }
 }
 
-impl TryFrom<String> for MetricsDisabledConfig {
+impl TryFrom<String> for MetricsEnabledConfig {
     type Error = crate::ErrorKind;
 
     fn try_from(json: String) -> Result<Self, Self::Error> {

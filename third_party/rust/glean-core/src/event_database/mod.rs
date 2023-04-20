@@ -258,16 +258,21 @@ impl EventDatabase {
     
     
     
+    
+    
+    
+    
+    
     pub fn record(
         &self,
         glean: &Glean,
         meta: &CommonMetricDataInternal,
         timestamp: u64,
         extra: Option<HashMap<String, String>>,
-    ) {
+    ) -> bool {
         
         if !glean.is_upload_enabled() {
-            return;
+            return false;
         }
 
         let mut submit_max_capacity_event_ping = false;
@@ -303,6 +308,9 @@ impl EventDatabase {
         }
         if submit_max_capacity_event_ping {
             glean.submit_ping_by_name("events", Some("max_capacity"));
+            true
+        } else {
+            false
         }
     }
 

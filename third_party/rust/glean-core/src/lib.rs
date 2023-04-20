@@ -28,7 +28,7 @@ use crossbeam_channel::unbounded;
 use once_cell::sync::{Lazy, OnceCell};
 use uuid::Uuid;
 
-use metrics::MetricsDisabledConfig;
+use metrics::MetricsEnabledConfig;
 
 mod common_metric_data;
 mod core;
@@ -170,6 +170,7 @@ static STATE: OnceCell<Mutex<State>> = OnceCell::new();
 
 
 
+#[track_caller] 
 fn global_state() -> &'static Mutex<State> {
     STATE.get().unwrap()
 }
@@ -775,10 +776,11 @@ pub fn glean_test_get_experiment_data(experiment_id: String) -> Option<RecordedE
 
 
 
-pub fn glean_set_metrics_disabled_config(json: String) {
-    match MetricsDisabledConfig::try_from(json) {
+
+pub fn glean_set_metrics_enabled_config(json: String) {
+    match MetricsEnabledConfig::try_from(json) {
         Ok(cfg) => launch_with_glean(|glean| {
-            glean.set_metrics_disabled_config(cfg);
+            glean.set_metrics_enabled_config(cfg);
         }),
         Err(e) => {
             log::error!("Error setting metrics feature config: {:?}", e);

@@ -68,7 +68,15 @@ impl EventMetric {
     
     pub fn record_with_time(&self, timestamp: u64, extra: HashMap<String, String>) {
         let metric = self.clone();
-        crate::launch_with_glean(move |glean| metric.record_sync(glean, timestamp, extra));
+        crate::launch_with_glean(move |glean| {
+            let sent = metric.record_sync(glean, timestamp, extra);
+            if sent {
+                let state = crate::global_state().lock().unwrap();
+                if let Err(e) = state.callbacks.trigger_upload() {
+                    log::error!("Triggering upload failed. Error: {}", e);
+                }
+            }
+        });
     }
 
     
@@ -104,20 +112,30 @@ impl EventMetric {
     }
 
     
+    
+    
+    
+    
+    
     #[doc(hidden)]
-    pub fn record_sync(&self, glean: &Glean, timestamp: u64, extra: HashMap<String, String>) {
+    pub fn record_sync(
+        &self,
+        glean: &Glean,
+        timestamp: u64,
+        extra: HashMap<String, String>,
+    ) -> bool {
         if !self.should_record(glean) {
-            return;
+            return false;
         }
 
         let extra_strings = match self.validate_extra(glean, extra) {
             Ok(extra) => extra,
-            Err(()) => return,
+            Err(()) => return false,
         };
 
         glean
             .event_storage()
-            .record(glean, &self.meta, timestamp, extra_strings);
+            .record(glean, &self.meta, timestamp, extra_strings)
     }
 
     

@@ -112,9 +112,14 @@ impl MemoryDistributionMetric {
             sample = MAX_BYTES;
         }
 
-        glean
-            .storage()
-            .record_with(glean, &self.meta, |old_value| match old_value {
+        
+        
+        
+        
+        
+        
+        if let Some(storage) = glean.storage_opt() {
+            storage.record_with(glean, &self.meta, |old_value| match old_value {
                 Some(Metric::MemoryDistribution(mut hist)) => {
                     hist.accumulate(sample);
                     Metric::MemoryDistribution(hist)
@@ -125,6 +130,12 @@ impl MemoryDistributionMetric {
                     Metric::MemoryDistribution(hist)
                 }
             });
+        } else {
+            log::warn!(
+                "Couldn't get storage. Can't record memory distribution '{}'.",
+                self.meta.base_identifier()
+            );
+        }
     }
 
     

@@ -852,15 +852,15 @@ fn test_set_metrics_disabled() {
     );
 
     
-    let mut metrics_disabled_config = json!(
+    let mut metrics_enabled_config = json!(
         {
-            "category.string_metric": true,
-            "category.labeled_string_metric": true,
+            "category.string_metric": false,
+            "category.labeled_string_metric": false,
         }
     )
     .to_string();
-    glean.set_metrics_disabled_config(
-        MetricsDisabledConfig::try_from(metrics_disabled_config).unwrap(),
+    glean.set_metrics_enabled_config(
+        MetricsEnabledConfig::try_from(metrics_enabled_config).unwrap(),
     );
 
     
@@ -883,9 +883,9 @@ fn test_set_metrics_disabled() {
     );
 
     
-    metrics_disabled_config = json!({}).to_string();
-    glean.set_metrics_disabled_config(
-        MetricsDisabledConfig::try_from(metrics_disabled_config).unwrap(),
+    metrics_enabled_config = json!({}).to_string();
+    glean.set_metrics_enabled_config(
+        MetricsEnabledConfig::try_from(metrics_enabled_config).unwrap(),
     );
 
     
@@ -917,14 +917,14 @@ fn test_remote_settings_epoch() {
     assert_eq!(0u8, current_epoch, "Current epoch must start at 0");
 
     
-    let metrics_disabled_config = json!(
+    let metrics_enabled_config = json!(
         {
-            "category.string_metric": true
+            "category.string_metric": false
         }
     )
     .to_string();
-    glean.set_metrics_disabled_config(
-        MetricsDisabledConfig::try_from(metrics_disabled_config).unwrap(),
+    glean.set_metrics_enabled_config(
+        MetricsEnabledConfig::try_from(metrics_enabled_config).unwrap(),
     );
 
     
@@ -951,14 +951,14 @@ fn test_remote_settings_epoch_updates_in_metric() {
     );
 
     
-    let metrics_disabled_config = json!(
+    let metrics_enabled_config = json!(
         {
-            "category.string_metric": true
+            "category.string_metric": false
         }
     )
     .to_string();
-    glean.set_metrics_disabled_config(
-        MetricsDisabledConfig::try_from(metrics_disabled_config).unwrap(),
+    glean.set_metrics_enabled_config(
+        MetricsEnabledConfig::try_from(metrics_enabled_config).unwrap(),
     );
 
     

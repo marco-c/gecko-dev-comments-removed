@@ -21,7 +21,7 @@ mod experiment;
 pub(crate) mod labeled;
 mod memory_distribution;
 mod memory_unit;
-mod metrics_disabled_config;
+mod metrics_enabled_config;
 mod numerator;
 mod ping;
 mod quantity;
@@ -69,7 +69,7 @@ pub use self::uuid::UuidMetric;
 pub use crate::histogram::HistogramType;
 pub use recorded_experiment::RecordedExperiment;
 
-pub use self::metrics_disabled_config::MetricsDisabledConfig;
+pub use self::metrics_enabled_config::MetricsEnabledConfig;
 
 
 
@@ -195,11 +195,11 @@ pub trait MetricType {
         }
         
         
-        let metrics_disabled = &glean
+        let metrics_enabled = &glean
             .remote_settings_metrics_config
             .lock()
             .unwrap()
-            .metrics_disabled;
+            .metrics_enabled;
         
         let current_disabled = {
             let base_id = self.meta().base_identifier();
@@ -207,8 +207,11 @@ pub trait MetricType {
                 .split_once('/')
                 .map(|split| split.0)
                 .unwrap_or(&base_id);
-            if let Some(is_disabled) = metrics_disabled.get(identifier) {
-                u8::from(*is_disabled)
+            
+            
+            
+            if let Some(is_enabled) = metrics_enabled.get(identifier) {
+                u8::from(!*is_enabled)
             } else {
                 u8::from(self.meta().inner.disabled)
             }

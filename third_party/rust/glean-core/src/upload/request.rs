@@ -18,7 +18,7 @@ use crate::system;
 pub type HeaderMap = HashMap<String, String>;
 
 
-fn create_date_header_value(current_time: DateTime<Utc>) -> String {
+pub(crate) fn create_date_header_value(current_time: DateTime<Utc>) -> String {
     
     
     
@@ -68,7 +68,6 @@ impl Builder {
     
     pub fn new(language_binding_name: &str, body_max_size: usize) -> Self {
         let mut headers = HashMap::new();
-        headers.insert("Date".to_string(), create_date_header_value(Utc::now()));
         headers.insert(
             "X-Telemetry-Agent".to_string(),
             create_x_telemetry_agent_header_value(
@@ -265,10 +264,12 @@ mod test {
         assert_eq!(request.path, "/random/path/doesnt/matter");
 
         
-        assert!(request.headers.contains_key("Date"));
         assert!(request.headers.contains_key("X-Telemetry-Agent"));
         assert!(request.headers.contains_key("Content-Type"));
         assert!(request.headers.contains_key("Content-Length"));
+
+        
+        
     }
 
     #[test]
