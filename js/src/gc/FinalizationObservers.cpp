@@ -185,6 +185,10 @@ void FinalizationObservers::traceRoots(JSTracer* trc) {
 }
 
 void FinalizationObservers::traceWeakEdges(JSTracer* trc) {
+  
+  
+  AutoTouchingGrayThings atgt;
+
   traceWeakWeakRefEdges(trc);
   traceWeakFinalizationRegistryEdges(trc);
 }
