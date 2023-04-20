@@ -1,26 +1,21 @@
 
 
 
-var fullscreenChangeEnters = 0;
-
-addLoadEvent(function() {
-  info(`Resetting fullscreen enter count.`);
-  fullscreenChangeEnters = 0;
-});
-
-
-
-
-function setFullscreenChangeEnters(enters) {
-  info(`Setting fullscreen enter count to ${enters}.`);
-  fullscreenChangeEnters = enters;
-}
-
-
-
 function inFullscreenMode(win) {
-  return win.document.fullscreenElement;
+  return (
+    win.innerWidth == win.screen.width && win.innerHeight == win.screen.height
+  );
 }
+
+
+
+
+function inNormalMode(win) {
+  return (
+    win.innerWidth == win.normalSize.w && win.innerHeight == win.normalSize.h
+  );
+}
+
 
 
 
@@ -33,15 +28,23 @@ function inFullscreenMode(win) {
 function addFullscreenChangeContinuation(type, callback, inDoc) {
   var doc = inDoc || document;
   var topWin = doc.defaultView.top;
+  
+  if (!topWin.normalSize) {
+    topWin.normalSize = {
+      w: window.innerWidth,
+      h: window.innerHeight,
+    };
+  }
   function checkCondition() {
     if (type == "enter") {
-      fullscreenChangeEnters++;
       return inFullscreenMode(topWin);
     } else if (type == "exit") {
-      fullscreenChangeEnters--;
-      return fullscreenChangeEnters
-        ? inFullscreenMode(topWin)
-        : !inFullscreenMode(topWin);
+      
+      
+      
+      
+      
+      return topWin.document.fullscreenElement || inNormalMode(topWin);
     }
     throw new Error("'type' must be either 'enter', or 'exit'.");
   }
@@ -52,20 +55,36 @@ function addFullscreenChangeContinuation(type, callback, inDoc) {
   }
   function onFullscreenChange(event) {
     doc.removeEventListener("fullscreenchange", onFullscreenChange);
-    ok(checkCondition(), `Should ${type} fullscreen.`);
-    invokeCallback(event);
+    if (checkCondition()) {
+      invokeCallback(event);
+      return;
+    }
+    function onResize() {
+      if (checkCondition()) {
+        topWin.removeEventListener("resize", onResize);
+        invokeCallback(event);
+      }
+    }
+    topWin.addEventListener("resize", onResize);
   }
   doc.addEventListener("fullscreenchange", onFullscreenChange);
 }
 
 
 function addFullscreenErrorContinuation(callback, inDoc) {
-  let doc = inDoc || document;
-  let listener = function(event) {
-    doc.removeEventListener("fullscreenerror", listener);
-    requestAnimationFrame(() => setTimeout(() => callback(event), 0), 0);
-  };
-  doc.addEventListener("fullscreenerror", listener);
+  return new Promise(resolve => {
+    let doc = inDoc || document;
+    let listener = function(event) {
+      doc.removeEventListener("fullscreenerror", listener);
+      setTimeout(function() {
+        if (callback) {
+          callback(event);
+        }
+        resolve();
+      }, 0);
+    };
+    doc.addEventListener("fullscreenerror", listener);
+  });
 }
 
 
