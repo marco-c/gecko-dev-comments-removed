@@ -1,6 +1,6 @@
-
+<!-- Intentionally in quirks mode. -->
 <html><head>
-
+<!-- baseline -->
 <style>
 body, html { margin: 0; padding: 0; overflow: hidden }
 div {
@@ -32,7 +32,7 @@ p + p { left: 22px }
  { background-color: lime }
 </style>
 
-
+<!-- @import rules -->
 <style>
 @import url("ccd.sjs?IA1iq");
 @import url("ccd.sjs?IA2iq");
@@ -60,7 +60,7 @@ p + p { left: 22px }
 @import url("http://example.org/tests/layout/style/test/redirect.sjs?http://mochi.test:8888/tests/layout/style/test/ccd.sjs?JD3iq");
 </style>
 
-
+<!-- link directives -->
 <link rel="stylesheet" href="ccd.sjs?IA1lq">
 <link rel="stylesheet" href="ccd.sjs?IA2lq">
 <link rel="stylesheet" href="ccd.sjs?IA3lq">
@@ -121,4 +121,9 @@ p + p { left: 22px }
 <div><p id="JD1i"></p><p id="JD1l"></p></div>
 <div><p id="JD2i"></p><p id="JD2l"></p></div>
 <div><p id="JD3i"></p><p id="JD3l"></p></div>
+<script>
+  window.onload = function() {
+    window.parent.quirksLoaded()
+  }
+</script>
 </body></html>

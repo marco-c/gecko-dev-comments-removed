@@ -1,6 +1,6 @@
 <!doctype html>
 <html><head>
-
+<!-- baseline -->
 <style>
 body, html { margin: 0; padding: 0; overflow: hidden }
 div {
@@ -31,7 +31,7 @@ p + p { left: 22px }
  { background-color: lime }
 </style>
 
-
+<!-- @import rules -->
 <style>
 @import url("ccd.sjs?IA1is");
 @import url("ccd.sjs?IA2is");
@@ -59,7 +59,7 @@ p + p { left: 22px }
 @import url("http://example.org/tests/layout/style/test/redirect.sjs?http://mochi.test:8888/tests/layout/style/test/ccd.sjs?JD3is");
 </style>
 
-
+<!-- link directives -->
 <link rel="stylesheet" href="ccd.sjs?IA1ls">
 <link rel="stylesheet" href="ccd.sjs?IA2ls">
 <link rel="stylesheet" href="ccd.sjs?IA3ls">
@@ -120,4 +120,9 @@ p + p { left: 22px }
 <div><p id="JD1i"></p><p id="JD1l"></p></div>
 <div><p id="JD2i"></p><p id="JD2l"></p></div>
 <div><p id="JD3i"></p><p id="JD3l"></p></div>
+<script>
+  window.onload = function() {
+    window.parent.standardsLoaded();
+  }
+</script>
 </body></html>
