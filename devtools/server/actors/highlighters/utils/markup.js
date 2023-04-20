@@ -9,7 +9,6 @@ const {
   getWindowDimensions,
   getViewportDimensions,
   loadSheet,
-  removeSheet,
 } = require("resource://devtools/shared/layout/utils.js");
 const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 const InspectorUtils = require("InspectorUtils");
@@ -47,25 +46,7 @@ exports.removePseudoClassLock = (...args) =>
 const SVG_NS = "http://www.w3.org/2000/svg";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-
-
-
-
-const XUL_HIGHLIGHTER_STYLES_SHEET = `data:text/css;charset=utf-8,
-:root > iframe.devtools-highlighter-renderer {
-  border: none;
-  pointer-events: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 2;
-  color-scheme: light;
-}`;
-
-const STYLESHEET_URI =
-  "resource://devtools/server/actors/" + "highlighters.css";
+const STYLESHEET_URI = "resource://devtools/server/actors/highlighters.css";
 
 const _tokens = Symbol("classList/tokens");
 
@@ -233,20 +214,6 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
   destroy() {
     this._remove();
-    if (this._iframe) {
-      
-      
-      const numberOfHighlighters =
-        parseInt(this._iframe.dataset.numberOfHighlighters, 10) - 1;
-      this._iframe.dataset.numberOfHighlighters = numberOfHighlighters;
-      
-      
-      if (numberOfHighlighters === 0) {
-        this._iframe.remove();
-        removeSheet(this.highlighterEnv.window, XUL_HIGHLIGHTER_STYLES_SHEET);
-      }
-      this._iframe = null;
-    }
 
     this.highlighterEnv.off("window-ready", this._onWindowReady);
     this.highlighterEnv = this.nodeBuilder = this._content = null;
@@ -267,67 +234,11 @@ CanvasFrameAnonymousContentHelper.prototype = {
       return;
     }
 
-    const window = this.highlighterEnv.window;
-    const isXULWindow = isXUL(window);
-    const isChromeWindow = window.isChromeWindow;
-
-    if (isXULWindow || isChromeWindow) {
-      
-      
-      
-      
-      
-      
-
-      const { documentElement } = window.document;
-      if (!this._iframe) {
-        this._iframe = documentElement.querySelector(
-          ":scope > .devtools-highlighter-renderer"
-        );
-        if (this._iframe) {
-          
-          
-          const numberOfHighlighters =
-            parseInt(this._iframe.dataset.numberOfHighlighters, 10) + 1;
-          this._iframe.dataset.numberOfHighlighters = numberOfHighlighters;
-        }
-      }
-
-      if (!this._iframe) {
-        this._iframe = window.document.createElement("iframe");
-        
-        
-        
-        this._iframe.srcdoc =
-          "<!doctype html><meta name=color-scheme content=light>";
-        this._iframe.classList.add("devtools-highlighter-renderer");
-        
-        
-        this._iframe.dataset.numberOfHighlighters = 1;
-        documentElement.append(this._iframe);
-        loadSheet(window, XUL_HIGHLIGHTER_STYLES_SHEET);
-      }
-
-      if (this.waitForDocumentToLoad) {
-        await waitForContentLoaded(this._iframe);
-      }
-      if (!this.highlighterEnv) {
-        
-        return;
-      }
-
-      
-      
-      this.anonymousContentDocument = this._iframe.contentDocument;
-      this.anonymousContentWindow = this._iframe.contentWindow;
-      this.pageListenerTarget = this._iframe.contentWindow;
-    } else {
-      
-      
-      this.anonymousContentDocument = this.highlighterEnv.document;
-      this.anonymousContentWindow = this.highlighterEnv.window;
-      this.pageListenerTarget = this.highlighterEnv.pageListenerTarget;
-    }
+    
+    
+    this.anonymousContentDocument = this.highlighterEnv.document;
+    this.anonymousContentWindow = this.highlighterEnv.window;
+    this.pageListenerTarget = this.highlighterEnv.pageListenerTarget;
 
     
     
@@ -399,15 +310,6 @@ CanvasFrameAnonymousContentHelper.prototype = {
     if (isTopLevel) {
       this._removeAllListeners();
       this.elements.clear();
-      if (this._iframe) {
-        
-        
-        
-        this._iframe.remove();
-        removeSheet(this.highlighterEnv.window, XUL_HIGHLIGHTER_STYLES_SHEET);
-        this._iframe = null;
-      }
-
       this._insert();
     }
   },
