@@ -356,6 +356,10 @@ function presentationAttributeIsSupported(element, attribute, value, property) {
   svg.append(e);
   let propertyValueBefore = getComputedStyle(e).getPropertyValue(property);
   e.setAttribute(attribute, value);
+  
+  
+  const otherAttribute = attribute === 'stroke' ? 'fill' : 'stroke';
+  e.setAttribute(otherAttribute, 'red');
   let propertyValueAfter = getComputedStyle(e).getPropertyValue(property);
   e.remove();
   return propertyValueBefore != propertyValueAfter;
