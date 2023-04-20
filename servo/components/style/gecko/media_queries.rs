@@ -200,18 +200,6 @@ impl Device {
     }
 
     
-    pub fn scrollbar_inline_size(&self) -> Length {
-        let pc = match self.pres_context() {
-            Some(pc) => pc,
-            
-            None => return Length::new(0.0),
-        };
-        Length::new(unsafe {
-            bindings::Gecko_GetScrollbarInlineSize(pc)
-        })
-    }
-
-    
     pub fn query_font_metrics(
         &self,
         vertical: bool,
@@ -553,11 +541,8 @@ impl Device {
     }
 
     
-    
-    
-    
     #[inline]
     pub fn is_chrome_document(&self) -> bool {
-        self.document().mDocURISchemeIsChrome()
+        self.pref_sheet_prefs().mIsChrome
     }
 }

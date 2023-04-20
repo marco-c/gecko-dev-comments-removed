@@ -278,7 +278,6 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mFontFeatureValuesDirty(true),
       mFontPaletteValuesDirty(true),
       mIsVisual(false),
-      mInRDMPane(false),
       mHasWarnedAboutTooLargeDashedOrDottedRadius(false),
       mQuirkSheetAdded(false),
       mHadNonBlankPaint(false),
@@ -859,8 +858,6 @@ void nsPresContext::AttachPresShell(mozilla::PresShell* aPresShell) {
   
   GetUserPreferences();
 
-  EnsureTheme();
-
   nsIURI* docURI = doc->GetDocumentURI();
 
   if (IsDynamic() && docURI) {
@@ -935,8 +932,6 @@ void nsPresContext::RecomputeBrowsingContextDependentData() {
     }
     return browsingContext->GetEmbedderColorSchemes().mPreferred;
   }());
-
-  SetInRDMPane(top->GetInRDMPane());
 
   if (doc == mDocument) {
     
@@ -1291,14 +1286,6 @@ void nsPresContext::UpdateEffectiveTextZoom() {
       MediaFeatureChangePropagation::JustThisDocument);
 }
 
-void nsPresContext::SetInRDMPane(bool aInRDMPane) {
-  if (mInRDMPane == aInRDMPane) {
-    return;
-  }
-  mInRDMPane = aInRDMPane;
-  RecomputeTheme();
-}
-
 float nsPresContext::GetDeviceFullZoom() {
   return mDeviceContext->GetFullZoom();
 }
@@ -1642,7 +1629,8 @@ void nsPresContext::RecordInteractionTime(InteractionType aType,
 nsITheme* nsPresContext::EnsureTheme() {
   MOZ_ASSERT(!mTheme);
   if (Document()->ShouldAvoidNativeTheme()) {
-    if (mInRDMPane) {
+    BrowsingContext* bc = Document()->GetBrowsingContext();
+    if (bc && bc->Top()->InRDMPane()) {
       mTheme = do_GetRDMThemeDoNotUseDirectly();
     } else {
       mTheme = do_GetBasicNativeThemeDoNotUseDirectly();
@@ -1665,19 +1653,15 @@ void nsPresContext::RecomputeTheme() {
   }
   
   
-  
-  RebuildAllStyleData(nsChangeHint_ReconstructFrame,
-                      RestyleHint::RecascadeSubtree());
-  
-  
-  
-  MediaFeatureValuesChanged({MediaFeatureChangeReason::SystemMetricsChange},
-                            MediaFeatureChangePropagation::JustThisDocument);
+  RebuildAllStyleData(nsChangeHint_ReconstructFrame, RestyleHint{0});
 }
 
 bool nsPresContext::UseOverlayScrollbars() const {
-  return LookAndFeel::GetInt(LookAndFeel::IntID::UseOverlayScrollbars) ||
-         mInRDMPane;
+  if (LookAndFeel::GetInt(LookAndFeel::IntID::UseOverlayScrollbars)) {
+    return true;
+  }
+  BrowsingContext* bc = Document()->GetBrowsingContext();
+  return bc && bc->Top()->InRDMPane();
 }
 
 void nsPresContext::ThemeChanged(widget::ThemeChangeKind aKind) {
