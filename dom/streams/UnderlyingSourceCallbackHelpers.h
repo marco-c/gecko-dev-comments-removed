@@ -212,8 +212,7 @@ class InputToReadableStreamAlgorithms final
 
   InputToReadableStreamAlgorithms(JSContext* aCx, nsIAsyncInputStream* aInput,
                                   ReadableStream* aStream)
-      : mState(eInitializing),
-        mOwningEventTarget(GetCurrentSerialEventTarget()),
+      : mOwningEventTarget(GetCurrentSerialEventTarget()),
         mInput(new InputStreamHolder(aCx, this, aInput)),
         mStream(aStream) {}
 
@@ -247,18 +246,7 @@ class InputToReadableStreamAlgorithms final
 
   
 
-  enum State {
-    
-    eInitializing,
-
-    
-    eInitialized,
-
-    
-    eClosed,
-  };
-
-  State mState;
+  bool IsClosed() { return !mInput; }
 
   nsCOMPtr<nsIEventTarget> mOwningEventTarget;
 
