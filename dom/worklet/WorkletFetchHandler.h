@@ -30,7 +30,7 @@ class WorkletFetchHandler final : public nsISupports {
   
   nsresult StartFetch(JSContext* aCx, nsIURI* aURI, nsIURI* aReferrer);
 
-  void ExecutionFailed(nsresult aRv);
+  void ExecutionFailed();
 
   void ExecutionSucceeded();
 
