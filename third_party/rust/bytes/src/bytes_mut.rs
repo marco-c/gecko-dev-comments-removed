@@ -1,5 +1,5 @@
 use core::iter::{FromIterator, Iterator};
-use core::mem::{self, ManuallyDrop};
+use core::mem::{self, ManuallyDrop, MaybeUninit};
 use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull};
 use core::{cmp, fmt, hash, isize, slice, usize};
@@ -705,6 +705,15 @@ impl BytesMut {
                     new_cap = cmp::max(double, new_cap);
 
                     
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    debug_assert!(off + len <= v.capacity());
+                    v.set_len(off + len);
                     v.reserve(new_cap - v.len());
 
                     
@@ -757,11 +766,11 @@ impl BytesMut {
         self.reserve(cnt);
 
         unsafe {
-            let dst = self.uninit_slice();
+            let dst = self.spare_capacity_mut();
             
             debug_assert!(dst.len() >= cnt);
 
-            ptr::copy_nonoverlapping(extend.as_ptr(), dst.as_mut_ptr(), cnt);
+            ptr::copy_nonoverlapping(extend.as_ptr(), dst.as_mut_ptr().cast(), cnt);
         }
 
         unsafe {
@@ -983,13 +992,42 @@ impl BytesMut {
         self.data = invalid_ptr((pos << VEC_POS_OFFSET) | (prev & NOT_VEC_POS_MASK));
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    fn uninit_slice(&mut self) -> &mut UninitSlice {
+    pub fn spare_capacity_mut(&mut self) -> &mut [MaybeUninit<u8>] {
         unsafe {
             let ptr = self.ptr.as_ptr().add(self.len);
             let len = self.cap - self.len;
 
-            UninitSlice::from_raw_parts_mut(ptr, len)
+            slice::from_raw_parts_mut(ptr.cast(), len)
         }
     }
 }
@@ -1063,7 +1101,7 @@ unsafe impl BufMut for BytesMut {
         if self.capacity() == self.len() {
             self.reserve(64);
         }
-        self.uninit_slice()
+        UninitSlice::from_slice(self.spare_capacity_mut())
     }
 
     
@@ -1088,7 +1126,7 @@ unsafe impl BufMut for BytesMut {
     fn put_bytes(&mut self, val: u8, cnt: usize) {
         self.reserve(cnt);
         unsafe {
-            let dst = self.uninit_slice();
+            let dst = self.spare_capacity_mut();
             
             debug_assert!(dst.len() >= cnt);
 

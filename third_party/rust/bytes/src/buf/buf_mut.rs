@@ -404,6 +404,32 @@ pub unsafe trait BufMut {
     
     
     
+    
+    
+    
+    
+    fn put_u16_ne(&mut self, n: u16) {
+        self.put_slice(&n.to_ne_bytes())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn put_i16(&mut self, n: i16) {
         self.put_slice(&n.to_be_bytes())
     }
@@ -428,6 +454,32 @@ pub unsafe trait BufMut {
     
     fn put_i16_le(&mut self, n: i16) {
         self.put_slice(&n.to_le_bytes())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn put_i16_ne(&mut self, n: i16) {
+        self.put_slice(&n.to_ne_bytes())
     }
 
     
@@ -492,6 +544,32 @@ pub unsafe trait BufMut {
     
     
     
+    
+    
+    
+    
+    fn put_u32_ne(&mut self, n: u32) {
+        self.put_slice(&n.to_ne_bytes())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn put_i32(&mut self, n: i32) {
         self.put_slice(&n.to_be_bytes())
     }
@@ -516,6 +594,32 @@ pub unsafe trait BufMut {
     
     fn put_i32_le(&mut self, n: i32) {
         self.put_slice(&n.to_le_bytes())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn put_i32_ne(&mut self, n: i32) {
+        self.put_slice(&n.to_ne_bytes())
     }
 
     
@@ -580,6 +684,32 @@ pub unsafe trait BufMut {
     
     
     
+    
+    
+    
+    
+    fn put_u64_ne(&mut self, n: u64) {
+        self.put_slice(&n.to_ne_bytes())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn put_i64(&mut self, n: i64) {
         self.put_slice(&n.to_be_bytes())
     }
@@ -604,6 +734,32 @@ pub unsafe trait BufMut {
     
     fn put_i64_le(&mut self, n: i64) {
         self.put_slice(&n.to_le_bytes())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn put_i64_ne(&mut self, n: i64) {
+        self.put_slice(&n.to_ne_bytes())
     }
 
     
@@ -668,6 +824,32 @@ pub unsafe trait BufMut {
     
     
     
+    
+    
+    
+    
+    fn put_u128_ne(&mut self, n: u128) {
+        self.put_slice(&n.to_ne_bytes())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn put_i128(&mut self, n: i128) {
         self.put_slice(&n.to_be_bytes())
     }
@@ -692,6 +874,32 @@ pub unsafe trait BufMut {
     
     fn put_i128_le(&mut self, n: i128) {
         self.put_slice(&n.to_le_bytes())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn put_i128_ne(&mut self, n: i128) {
+        self.put_slice(&n.to_ne_bytes())
     }
 
     
@@ -756,6 +964,36 @@ pub unsafe trait BufMut {
     
     
     
+    
+    
+    
+    
+    fn put_uint_ne(&mut self, n: u64, nbytes: usize) {
+        if cfg!(target_endian = "big") {
+            self.put_uint(n, nbytes)
+        } else {
+            self.put_uint_le(n, nbytes)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn put_int(&mut self, n: i64, nbytes: usize) {
         self.put_slice(&n.to_be_bytes()[mem::size_of_val(&n) - nbytes..]);
     }
@@ -780,6 +1018,36 @@ pub unsafe trait BufMut {
     
     fn put_int_le(&mut self, n: i64, nbytes: usize) {
         self.put_slice(&n.to_le_bytes()[0..nbytes]);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn put_int_ne(&mut self, n: i64, nbytes: usize) {
+        if cfg!(target_endian = "big") {
+            self.put_int(n, nbytes)
+        } else {
+            self.put_int_le(n, nbytes)
+        }
     }
 
     
@@ -847,6 +1115,33 @@ pub unsafe trait BufMut {
     
     
     
+    
+    
+    
+    
+    fn put_f32_ne(&mut self, n: f32) {
+        self.put_u32_ne(n.to_bits());
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn put_f64(&mut self, n: f64) {
         self.put_u64(n.to_bits());
     }
@@ -872,6 +1167,33 @@ pub unsafe trait BufMut {
     
     fn put_f64_le(&mut self, n: f64) {
         self.put_u64_le(n.to_bits());
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn put_f64_ne(&mut self, n: f64) {
+        self.put_u64_ne(n.to_bits());
     }
 
     
@@ -986,12 +1308,20 @@ macro_rules! deref_forward_bufmut {
             (**self).put_u16_le(n)
         }
 
+        fn put_u16_ne(&mut self, n: u16) {
+            (**self).put_u16_ne(n)
+        }
+
         fn put_i16(&mut self, n: i16) {
             (**self).put_i16(n)
         }
 
         fn put_i16_le(&mut self, n: i16) {
             (**self).put_i16_le(n)
+        }
+
+        fn put_i16_ne(&mut self, n: i16) {
+            (**self).put_i16_ne(n)
         }
 
         fn put_u32(&mut self, n: u32) {
@@ -1002,12 +1332,20 @@ macro_rules! deref_forward_bufmut {
             (**self).put_u32_le(n)
         }
 
+        fn put_u32_ne(&mut self, n: u32) {
+            (**self).put_u32_ne(n)
+        }
+
         fn put_i32(&mut self, n: i32) {
             (**self).put_i32(n)
         }
 
         fn put_i32_le(&mut self, n: i32) {
             (**self).put_i32_le(n)
+        }
+
+        fn put_i32_ne(&mut self, n: i32) {
+            (**self).put_i32_ne(n)
         }
 
         fn put_u64(&mut self, n: u64) {
@@ -1018,12 +1356,20 @@ macro_rules! deref_forward_bufmut {
             (**self).put_u64_le(n)
         }
 
+        fn put_u64_ne(&mut self, n: u64) {
+            (**self).put_u64_ne(n)
+        }
+
         fn put_i64(&mut self, n: i64) {
             (**self).put_i64(n)
         }
 
         fn put_i64_le(&mut self, n: i64) {
             (**self).put_i64_le(n)
+        }
+
+        fn put_i64_ne(&mut self, n: i64) {
+            (**self).put_i64_ne(n)
         }
     };
 }

@@ -370,6 +370,29 @@ pub trait Buf {
     
     
     
+    
+    
+    
+    fn get_u16_ne(&mut self) -> u16 {
+        buf_get_impl!(self, u16::from_ne_bytes);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn get_i16(&mut self) -> i16 {
         buf_get_impl!(self, i16::from_be_bytes);
     }
@@ -392,6 +415,29 @@ pub trait Buf {
     
     fn get_i16_le(&mut self) -> i16 {
         buf_get_impl!(self, i16::from_le_bytes);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_i16_ne(&mut self) -> i16 {
+        buf_get_impl!(self, i16::from_ne_bytes);
     }
 
     
@@ -450,6 +496,29 @@ pub trait Buf {
     
     
     
+    
+    
+    
+    fn get_u32_ne(&mut self) -> u32 {
+        buf_get_impl!(self, u32::from_ne_bytes);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn get_i32(&mut self) -> i32 {
         buf_get_impl!(self, i32::from_be_bytes);
     }
@@ -472,6 +541,29 @@ pub trait Buf {
     
     fn get_i32_le(&mut self) -> i32 {
         buf_get_impl!(self, i32::from_le_bytes);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_i32_ne(&mut self) -> i32 {
+        buf_get_impl!(self, i32::from_ne_bytes);
     }
 
     
@@ -530,6 +622,29 @@ pub trait Buf {
     
     
     
+    
+    
+    
+    fn get_u64_ne(&mut self) -> u64 {
+        buf_get_impl!(self, u64::from_ne_bytes);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn get_i64(&mut self) -> i64 {
         buf_get_impl!(self, i64::from_be_bytes);
     }
@@ -552,6 +667,29 @@ pub trait Buf {
     
     fn get_i64_le(&mut self) -> i64 {
         buf_get_impl!(self, i64::from_le_bytes);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_i64_ne(&mut self) -> i64 {
+        buf_get_impl!(self, i64::from_ne_bytes);
     }
 
     
@@ -610,6 +748,29 @@ pub trait Buf {
     
     
     
+    
+    
+    
+    fn get_u128_ne(&mut self) -> u128 {
+        buf_get_impl!(self, u128::from_ne_bytes);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn get_i128(&mut self) -> i128 {
         buf_get_impl!(self, i128::from_be_bytes);
     }
@@ -632,6 +793,29 @@ pub trait Buf {
     
     fn get_i128_le(&mut self) -> i128 {
         buf_get_impl!(self, i128::from_le_bytes);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_i128_ne(&mut self) -> i128 {
+        buf_get_impl!(self, i128::from_ne_bytes);
     }
 
     
@@ -690,6 +874,33 @@ pub trait Buf {
     
     
     
+    
+    
+    
+    fn get_uint_ne(&mut self, nbytes: usize) -> u64 {
+        if cfg!(target_endian = "big") {
+            self.get_uint(nbytes)
+        } else {
+            self.get_uint_le(nbytes)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn get_int(&mut self, nbytes: usize) -> i64 {
         buf_get_impl!(be => self, i64, nbytes);
     }
@@ -712,6 +923,33 @@ pub trait Buf {
     
     fn get_int_le(&mut self, nbytes: usize) -> i64 {
         buf_get_impl!(le => self, i64, nbytes);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_int_ne(&mut self, nbytes: usize) -> i64 {
+        if cfg!(target_endian = "big") {
+            self.get_int(nbytes)
+        } else {
+            self.get_int_le(nbytes)
+        }
     }
 
     
@@ -773,6 +1011,30 @@ pub trait Buf {
     
     
     
+    
+    
+    
+    fn get_f32_ne(&mut self) -> f32 {
+        f32::from_bits(Self::get_u32_ne(self))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn get_f64(&mut self) -> f64 {
         f64::from_bits(Self::get_u64(self))
     }
@@ -796,6 +1058,30 @@ pub trait Buf {
     
     fn get_f64_le(&mut self) -> f64 {
         f64::from_bits(Self::get_u64_le(self))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_f64_ne(&mut self) -> f64 {
+        f64::from_bits(Self::get_u64_ne(self))
     }
 
     
@@ -948,12 +1234,20 @@ macro_rules! deref_forward_buf {
             (**self).get_u16_le()
         }
 
+        fn get_u16_ne(&mut self) -> u16 {
+            (**self).get_u16_ne()
+        }
+
         fn get_i16(&mut self) -> i16 {
             (**self).get_i16()
         }
 
         fn get_i16_le(&mut self) -> i16 {
             (**self).get_i16_le()
+        }
+
+        fn get_i16_ne(&mut self) -> i16 {
+            (**self).get_i16_ne()
         }
 
         fn get_u32(&mut self) -> u32 {
@@ -964,12 +1258,20 @@ macro_rules! deref_forward_buf {
             (**self).get_u32_le()
         }
 
+        fn get_u32_ne(&mut self) -> u32 {
+            (**self).get_u32_ne()
+        }
+
         fn get_i32(&mut self) -> i32 {
             (**self).get_i32()
         }
 
         fn get_i32_le(&mut self) -> i32 {
             (**self).get_i32_le()
+        }
+
+        fn get_i32_ne(&mut self) -> i32 {
+            (**self).get_i32_ne()
         }
 
         fn get_u64(&mut self) -> u64 {
@@ -980,12 +1282,20 @@ macro_rules! deref_forward_buf {
             (**self).get_u64_le()
         }
 
+        fn get_u64_ne(&mut self) -> u64 {
+            (**self).get_u64_ne()
+        }
+
         fn get_i64(&mut self) -> i64 {
             (**self).get_i64()
         }
 
         fn get_i64_le(&mut self) -> i64 {
             (**self).get_i64_le()
+        }
+
+        fn get_i64_ne(&mut self) -> i64 {
+            (**self).get_i64_ne()
         }
 
         fn get_uint(&mut self, nbytes: usize) -> u64 {
@@ -996,12 +1306,20 @@ macro_rules! deref_forward_buf {
             (**self).get_uint_le(nbytes)
         }
 
+        fn get_uint_ne(&mut self, nbytes: usize) -> u64 {
+            (**self).get_uint_ne(nbytes)
+        }
+
         fn get_int(&mut self, nbytes: usize) -> i64 {
             (**self).get_int(nbytes)
         }
 
         fn get_int_le(&mut self, nbytes: usize) -> i64 {
             (**self).get_int_le(nbytes)
+        }
+
+        fn get_int_ne(&mut self, nbytes: usize) -> i64 {
+            (**self).get_int_ne(nbytes)
         }
 
         fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {
