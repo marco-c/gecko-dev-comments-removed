@@ -2641,7 +2641,9 @@ class SubModuleProperty extends Entry {
     this.permissions = permissions;
   }
 
-  get targetType() {
+  getDescriptor(path, context) {
+    let obj = Cu.createObjectIn(context.cloneScope);
+
     let ns = this.root.getNamespace(this.namespaceName);
     let type = ns.get(this.reference);
     if (!type && this.reference.includes(".")) {
@@ -2649,15 +2651,6 @@ class SubModuleProperty extends Entry {
       ns = this.root.getNamespace(namespaceName);
       type = ns.get(ref);
     }
-    return type;
-  }
-
-  getDescriptor(path, context) {
-    let obj = Cu.createObjectIn(context.cloneScope);
-
-    let ns = this.root.getNamespace(this.namespaceName);
-    let type = this.targetType;
-
     
     if (!context.matchManifestVersion(type)) {
       return;
@@ -3879,75 +3872,16 @@ Schemas = {
 
 
 
-  checkWebIDLRequestParameters(extContext, apiRequest) {
-    const getSchemaForProperty = (schemaObj, propName, schemaPath) => {
-      if (schemaObj instanceof Namespace) {
-        return schemaObj?.get(propName);
-      } else if (schemaObj instanceof SubModuleProperty) {
-        for (const fun of schemaObj.targetType.functions) {
-          if (fun.name === propName) {
-            return fun;
-          }
-        }
 
-        for (const fun of schemaObj.targetType.events) {
-          if (fun.name === propName) {
-            return fun;
-          }
-        }
-      } else if (schemaObj instanceof Event) {
-        return schemaObj;
-      }
 
-      const schemaPathType = schemaObj?.constructor.name;
-      throw new Error(
-        `API Schema for "${propName}" not found in ${schemaPath} (${schemaPath} type is ${schemaPathType})`
-      );
-    };
-    const { requestType, apiNamespace, apiName } = apiRequest;
-
-    let [ns, ...rest] = (["addListener", "removeListener"].includes(requestType)
-      ? `${apiNamespace}.${apiName}.${requestType}`
-      : `${apiNamespace}.${apiName}`
-    ).split(".");
-    let apiSchema = this.getNamespace(ns);
-
-    
-    
-    
-    let schemaPath = [ns];
-
-    while (rest.length) {
-      
-      if (!apiSchema) {
-        throw new Error(`API Schema not found for ${schemaPath.join(".")}`);
-      }
-
-      let [propName, ...newRest] = rest;
-      rest = newRest;
-
-      apiSchema = getSchemaForProperty(
-        apiSchema,
-        propName,
-        schemaPath.join(".")
-      );
-      schemaPath.push(propName);
-    }
-
+  checkParameters(extContext, apiNamespace, apiName, args) {
+    const apiSchema = this.getNamespace(apiNamespace)?.get(apiName);
     if (!apiSchema) {
-      throw new Error(`API Schema not found for ${schemaPath.join(".")}`);
-    }
-
-    if (!apiSchema.checkParameters) {
-      throw new Error(
-        `Unexpected API Schema type for ${schemaPath.join(
-          "."
-        )} (${schemaPath.join(".")} type is ${apiSchema.constructor.name})`
-      );
+      throw new Error(`API Schema not found for ${apiNamespace}.${apiName}`);
     }
 
     return apiSchema.checkParameters(
-      apiRequest.args,
+      args,
       this.paramsValidationContexts.get(extContext)
     );
   },

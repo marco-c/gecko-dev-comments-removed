@@ -508,11 +508,14 @@ var ExtensionAPIRequestHandler = {
       return request.args;
     }
 
+    const { apiNamespace, apiName, args } = request;
     
     
-    return lazy.Schemas.checkWebIDLRequestParameters(
+    return lazy.Schemas.checkParameters(
       context.childManager,
-      request
+      apiNamespace,
+      apiName,
+      args
     );
   },
 };
