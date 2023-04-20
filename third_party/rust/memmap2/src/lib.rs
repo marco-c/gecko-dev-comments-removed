@@ -800,6 +800,30 @@ impl MmapRaw {
     pub fn flush_async_range(&self, offset: usize, len: usize) -> Result<()> {
         self.inner.flush_async(offset, len)
     }
+
+    
+    
+    
+    #[cfg(unix)]
+    pub fn advise(&self, advice: Advice) -> Result<()> {
+        self.inner.advise(advice)
+    }
+
+    
+    
+    
+    #[cfg(unix)]
+    pub fn lock(&mut self) -> Result<()> {
+        self.inner.lock()
+    }
+
+    
+    
+    
+    #[cfg(unix)]
+    pub fn unlock(&mut self) -> Result<()> {
+        self.inner.unlock()
+    }
 }
 
 impl fmt::Debug for MmapRaw {
@@ -1010,6 +1034,12 @@ impl MmapMut {
     
     
     
+    
+    
+    
+    
+    
+    
     pub fn make_exec(mut self) -> Result<Mmap> {
         self.inner.make_exec()?;
         Ok(Mmap { inner: self.inner })
@@ -1088,7 +1118,7 @@ mod test {
 
     #[cfg(unix)]
     use crate::advice::Advice;
-    use std::fs::{self, OpenOptions};
+    use std::fs::OpenOptions;
     use std::io::{Read, Write};
     #[cfg(unix)]
     use std::os::unix::io::AsRawFd;
@@ -1622,7 +1652,7 @@ mod test {
     
     #[cfg(target_os = "linux")]
     fn is_locked() -> bool {
-        let status = &fs::read_to_string("/proc/self/status")
+        let status = &std::fs::read_to_string("/proc/self/status")
             .expect("/proc/self/status should be available");
         for line in status.lines() {
             if line.starts_with("VmLck:") {
