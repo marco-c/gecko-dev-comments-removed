@@ -329,8 +329,7 @@ FormAutofillUtils = {
 
 
 
-
-  getAddressLabel(address, addressFields = null) {
+  getAddressLabel(address) {
     
     
     
@@ -349,10 +348,6 @@ FormAutofillUtils = {
 
     address = { ...address };
     let parts = [];
-    if (addressFields) {
-      let requiredFields = addressFields.trim().split(/\s+/);
-      fieldOrder = fieldOrder.filter(name => requiredFields.includes(name));
-    }
     if (address["street-address"]) {
       address["-moz-street-address-one-line"] = this.toOneLineAddress(
         address["street-address"]
@@ -362,9 +357,6 @@ FormAutofillUtils = {
       let string = address[fieldName];
       if (string) {
         parts.push(string);
-      }
-      if (parts.length == 2 && !addressFields) {
-        break;
       }
     }
     return parts.join(", ");
