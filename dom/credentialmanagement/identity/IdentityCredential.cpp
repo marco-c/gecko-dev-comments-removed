@@ -182,7 +182,20 @@ IdentityCredential::DiscoverFromExternalSourceInMainProcess(
             }
           });
 
-  return result.forget();
+  return result->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [browsingContext](
+          const IdentityCredential::GetIPCIdentityCredentialPromise::
+              ResolveOrRejectValue&& value) {
+        if (value.IsReject()) {
+          
+          
+          
+          IdentityCredential::CloseUserInterface(browsingContext);
+        }
+        return IdentityCredential::GetIPCIdentityCredentialPromise::
+            CreateAndResolveOrReject(value, __func__);
+      });
 }
 
 
