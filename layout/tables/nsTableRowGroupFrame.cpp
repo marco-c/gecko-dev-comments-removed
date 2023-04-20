@@ -378,7 +378,6 @@ void nsTableRowGroupFrame::ReflowChildren(
       nsRect oldKidInkOverflow = kidFrame->InkOverflowRect();
 
       ReflowOutput desiredSize(aReflowInput.reflowInput);
-      desiredSize.ClearSize();
 
       
       
