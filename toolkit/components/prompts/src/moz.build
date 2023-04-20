@@ -5,8 +5,8 @@
 
 
 EXTRA_JS_MODULES += [
-    "CommonDialog.jsm",
-    "Prompter.jsm",
+    "CommonDialog.sys.mjs",
+    "Prompter.sys.mjs",
     "PromptUtils.sys.mjs",
 ]
 
