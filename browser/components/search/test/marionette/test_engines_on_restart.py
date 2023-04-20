@@ -4,6 +4,7 @@
 
 
 from __future__ import absolute_import
+
 import textwrap
 
 from marionette_harness.marionette_test import MarionetteTestCase
