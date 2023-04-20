@@ -41,6 +41,7 @@ interface nsIProxyInfo;
 interface nsISecurityConsoleMessage;
 interface nsISocketTransport;
 interface nsIURI;
+interface WebTransportSessionEventListener;
 
 
 
@@ -499,4 +500,10 @@ interface nsIHttpChannelInternal : nsISupports
 
 
     [must_use] readonly attribute boolean isProxyUsed;
+
+     
+
+
+    [must_use] void setWebTransportSessionEventListener(
+        in WebTransportSessionEventListener aListener);
 };

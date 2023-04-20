@@ -102,6 +102,8 @@ class HttpChannelChild final : public PHttpChannelChild,
   
   NS_IMETHOD GetIsAuthChannel(bool* aIsAuthChannel) override;
   NS_IMETHOD SetEarlyHintObserver(nsIEarlyHintObserver* aObserver) override;
+  NS_IMETHOD SetWebTransportSessionEventListener(
+      WebTransportSessionEventListener* aListener) override;
   
   NS_IMETHOD SetPriority(int32_t value) override;
   
