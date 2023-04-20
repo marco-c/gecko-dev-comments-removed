@@ -1378,7 +1378,7 @@ static FrameTextTraversal CanTextCrossFrameBoundary(nsIFrame* aFrame) {
     if (continuesTextRun) {
       result.mFrameToScan = aFrame->PrincipalChildList().FirstChild();
       result.mOverflowFrameToScan =
-          aFrame->GetChildList(kOverflowList).FirstChild();
+          aFrame->GetChildList(FrameChildListID::Overflow).FirstChild();
       NS_WARNING_ASSERTION(
           !result.mOverflowFrameToScan,
           "Scanning overflow inline frames is something we should avoid");
@@ -9282,7 +9282,7 @@ static void RemoveEmptyInFlows(nsTextFrame* aFrame,
   } else {
     
     
-    parent->RemoveFrame(kNoReflowPrincipalList, aFrame);
+    parent->RemoveFrame(FrameChildListID::NoReflowPrincipal, aFrame);
   }
 }
 
@@ -9326,7 +9326,7 @@ void nsTextFrame::SetLength(int32_t aLength, nsLineLayout* aLineLayout,
           PresShell()->FrameConstructor()->CreateContinuingFrame(this,
                                                                  GetParent());
       nsTextFrame* next = static_cast<nsTextFrame*>(newFrame);
-      GetParent()->InsertFrames(kNoReflowPrincipalList, this,
+      GetParent()->InsertFrames(FrameChildListID::NoReflowPrincipal, this,
                                 aLineLayout->GetLine(),
                                 nsFrameList(next, next));
       f = next;

@@ -32,6 +32,7 @@ class nsPresContext;
 
 
 
+
 class nsAbsoluteContainingBlock {
   using ReflowInput = mozilla::ReflowInput;
 
@@ -41,8 +42,8 @@ class nsAbsoluteContainingBlock {
       : mChildListID(aChildListID)
 #endif
   {
-    MOZ_ASSERT(mChildListID == mozilla::kAbsoluteList ||
-                   mChildListID == mozilla::kFixedList,
+    MOZ_ASSERT(mChildListID == mozilla::FrameChildListID::Absolute ||
+                   mChildListID == mozilla::FrameChildListID::Fixed,
                "should either represent position:fixed or absolute content");
   }
 
@@ -170,7 +171,8 @@ class nsAbsoluteContainingBlock {
   nsFrameList mAbsoluteFrames;  
 
 #ifdef DEBUG
-  mozilla::FrameChildListID const mChildListID;  
+  mozilla::FrameChildListID const
+      mChildListID;  
 #endif
 };
 

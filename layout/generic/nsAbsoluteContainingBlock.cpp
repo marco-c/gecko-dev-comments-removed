@@ -161,7 +161,7 @@ void nsAbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
   
   
   if (aDelegatingFrame->IsPageContentFrame()) {
-    MOZ_ASSERT(mChildListID == kFixedList);
+    MOZ_ASSERT(mChildListID == FrameChildListID::Fixed);
     aOverflowAreas = nullptr;
   }
 

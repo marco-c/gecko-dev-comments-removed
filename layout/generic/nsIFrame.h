@@ -1740,7 +1740,7 @@ class nsIFrame : public nsQueryFrame {
 
   virtual const nsFrameList& GetChildList(ChildListID aListID) const;
   const nsFrameList& PrincipalChildList() const {
-    return GetChildList(mozilla::kPrincipalList);
+    return GetChildList(mozilla::FrameChildListID::Principal);
   }
 
   
@@ -4476,7 +4476,7 @@ class nsIFrame : public nsQueryFrame {
   
   
   virtual mozilla::FrameChildListID GetAbsoluteListID() const {
-    return mozilla::kAbsoluteList;
+    return mozilla::FrameChildListID::Absolute;
   }
 
   

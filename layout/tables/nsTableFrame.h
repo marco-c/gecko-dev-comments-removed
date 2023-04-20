@@ -125,6 +125,7 @@ enum nsTableColType {
 
 
 
+
 class nsTableFrame : public nsContainerFrame {
   typedef mozilla::image::ImgDrawResult ImgDrawResult;
   typedef mozilla::WritingMode WritingMode;
