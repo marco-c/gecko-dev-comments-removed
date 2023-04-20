@@ -9147,11 +9147,8 @@ nsresult HTMLEditor::ReapplyCachedStyles() {
     }
     if (!isAny) {
       
-      
-      
       nsresult rv = GetInlinePropertyBase(
-          MOZ_KnownLive(styleCacheBeforeEdit.TagRef()),
-          MOZ_KnownLive(styleCacheBeforeEdit.GetAttribute()),
+          styleCacheBeforeEdit.ToInlineStyle(),
           &styleCacheBeforeEdit.AttributeValueOrCSSValueRef(), &isFirst, &isAny,
           &isAll, &currentValue);
       if (NS_FAILED(rv)) {

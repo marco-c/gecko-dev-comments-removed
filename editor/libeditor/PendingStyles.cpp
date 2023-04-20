@@ -36,6 +36,14 @@ using namespace dom;
 
 
 
+EditorInlineStyle PendingStyleCache::ToInlineStyle() const {
+  return EditorInlineStyle(mTag, mAttribute);
+}
+
+
+
+
+
 NS_IMPL_CYCLE_COLLECTION_CLASS(PendingStyles)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(PendingStyles)
