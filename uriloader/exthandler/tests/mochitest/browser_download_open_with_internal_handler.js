@@ -46,7 +46,7 @@ async function waitForPdfJS(browser, url) {
     null,
     true
   );
-  BrowserTestUtils.loadURI(browser, url);
+  BrowserTestUtils.loadURIString(browser, url);
   return loadPromise;
 }
 
@@ -179,7 +179,7 @@ add_task(async function test_check_open_with_internal_handler() {
 
     let subdialogPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
     
-    BrowserTestUtils.loadURI(newTab.linkedBrowser, TEST_PATH + file);
+    BrowserTestUtils.loadURIString(newTab.linkedBrowser, TEST_PATH + file);
     let subDialogWindow = await subdialogPromise;
     let subDoc = subDialogWindow.document;
 
