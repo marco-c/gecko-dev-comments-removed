@@ -471,7 +471,11 @@ class MessageChannel : HasResultCodes {
 
   
   
+  
   void SendMessageToLink(UniquePtr<Message> aMsg) MOZ_REQUIRES(*mMonitor);
+
+  
+  void FlushLazySendMessages() MOZ_REQUIRES(*mMonitor);
 
   bool WasTransactionCanceled(int transaction);
   bool ShouldDeferMessage(const Message& aMsg) MOZ_REQUIRES(*mMonitor);
@@ -582,6 +586,29 @@ class MessageChannel : HasResultCodes {
     MessageChannel* MOZ_NON_OWNING_REF mChannel;
   };
 
+  class FlushLazySendMessagesRunnable final : public CancelableRunnable {
+   public:
+    explicit FlushLazySendMessagesRunnable(MessageChannel* aChannel);
+
+    NS_DECL_ISUPPORTS_INHERITED
+
+    NS_IMETHOD Run() override;
+    nsresult Cancel() override;
+
+    void PushMessage(UniquePtr<Message> aMsg);
+    nsTArray<UniquePtr<Message>> TakeMessages();
+
+   private:
+    ~FlushLazySendMessagesRunnable() = default;
+
+    
+    MessageChannel* MOZ_NON_OWNING_REF mChannel;
+
+    
+    
+    nsTArray<UniquePtr<Message>> mQueue;
+  };
+
   typedef LinkedList<RefPtr<MessageTask>> MessageQueue;
   typedef std::map<size_t, UniquePtr<UntypedCallbackHolder>> CallbackMap;
   typedef IPC::Message::msgid_t msgid_t;
@@ -622,6 +649,10 @@ class MessageChannel : HasResultCodes {
 
   
   RefPtr<WorkerTargetShutdownTask> mShutdownTask MOZ_GUARDED_BY(*mMonitor);
+
+  
+  RefPtr<FlushLazySendMessagesRunnable> mFlushLazySendTask
+      MOZ_GUARDED_BY(*mMonitor);
 
   
   
