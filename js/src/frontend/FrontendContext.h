@@ -18,6 +18,7 @@
 #include "js/Vector.h"          
 #include "vm/ErrorReporting.h"  
 #include "vm/MallocProvider.h"  
+#include "vm/SharedScriptDataTableHolder.h"  
 
 struct JSContext;
 
@@ -67,6 +68,8 @@ class FrontendContext {
   frontend::NameCollectionPool* nameCollectionPool_;
   bool ownNameCollectionPool_;
 
+  js::SharedScriptDataTableHolder* scriptDataTableHolder_;
+
  protected:
   
   
@@ -78,7 +81,8 @@ class FrontendContext {
   FrontendContext()
       : alloc_(this),
         nameCollectionPool_(nullptr),
-        ownNameCollectionPool_(false) {}
+        ownNameCollectionPool_(false),
+        scriptDataTableHolder_(&js::globalSharedScriptDataTableHolder) {}
   ~FrontendContext();
 
   bool allocateOwnedPool();
@@ -90,8 +94,19 @@ class FrontendContext {
     return *nameCollectionPool_;
   }
 
+  js::SharedScriptDataTableHolder* scriptDataTableHolder() {
+    MOZ_ASSERT(scriptDataTableHolder_);
+    return scriptDataTableHolder_;
+  }
+
   FrontendAllocator* getAllocator() { return &alloc_; }
 
+  
+  
+  
+  
+  
+  
   void setCurrentJSContext(JSContext* cx);
 
   

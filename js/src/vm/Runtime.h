@@ -51,7 +51,7 @@
 #include "vm/GeckoProfiler.h"
 #include "vm/JSScript.h"
 #include "vm/OffThreadPromiseRuntimeState.h"  
-#include "vm/SharedStencil.h"  
+#include "vm/SharedScriptDataTableHolder.h"   
 #include "vm/Stack.h"
 #include "wasm/WasmTypeDecls.h"
 
@@ -594,44 +594,7 @@ struct JSRuntime {
     return debuggerList_.ref();
   }
 
- private:
-  
-
-
-
-
-
-
-  js::Mutex scriptDataLock MOZ_UNANNOTATED;
-#ifdef DEBUG
-  bool activeThreadHasScriptDataAccess;
-#endif
-
-  
-  
-  
-  mozilla::Atomic<size_t, mozilla::SequentiallyConsistent> numParseTasks;
-
-  friend class js::AutoLockScriptData;
-
  public:
-  bool hasParseTasks() const { return numParseTasks > 0; }
-
-  void addParseTaskRef() { numParseTasks++; }
-  void decParseTaskRef() { numParseTasks--; }
-
-#ifdef DEBUG
-  void assertCurrentThreadHasScriptDataAccess() const {
-    if (!hasParseTasks()) {
-      MOZ_ASSERT(js::CurrentThreadCanAccessRuntime(this) &&
-                 activeThreadHasScriptDataAccess);
-      return;
-    }
-
-    scriptDataLock.assertOwnedByCurrentThread();
-  }
-#endif
-
   JS::HeapState heapState() const { return gc.heapState(); }
 
   
@@ -872,17 +835,13 @@ struct JSRuntime {
   void traceSharedIntlData(JSTracer* trc);
 #endif
 
-  
-  
-  
  private:
-  js::ScriptDataLockData<js::SharedImmutableScriptDataTable> scriptDataTable_;
+  js::SharedScriptDataTableHolder scriptDataTableHolder_;
 
  public:
-  js::SharedImmutableScriptDataTable& scriptDataTable(
-      const js::AutoLockScriptData& lock) {
-    return scriptDataTable_.ref();
-  }
+  
+  
+  js::SharedScriptDataTableHolder& scriptDataTableHolder();
 
  private:
   static mozilla::Atomic<size_t> liveRuntimesCount;

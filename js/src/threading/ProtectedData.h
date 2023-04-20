@@ -280,7 +280,7 @@ using MainThreadOrParseOrIonCompileData = ProtectedDataNoCheckArgs<
     CheckMainThread<AllowedHelperThread::ParseTaskOrIonCompile>, T>;
 
 
-enum class GlobalLock { GCLock, ScriptDataLock, HelperThreadLock };
+enum class GlobalLock { GCLock, HelperThreadLock };
 
 template <GlobalLock Lock, AllowedHelperThread Helper>
 class CheckGlobalLock {
@@ -294,11 +294,6 @@ class CheckGlobalLock {
 template <typename T>
 using GCLockData = ProtectedDataNoCheckArgs<
     CheckGlobalLock<GlobalLock::GCLock, AllowedHelperThread::None>, T>;
-
-
-template <typename T>
-using ScriptDataLockData = ProtectedDataNoCheckArgs<
-    CheckGlobalLock<GlobalLock::ScriptDataLock, AllowedHelperThread::None>, T>;
 
 
 template <typename T>
