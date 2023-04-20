@@ -41,7 +41,8 @@ class IdentityCredentialStorageService final
 
  private:
   IdentityCredentialStorageService()
-      : mMonitor("mozilla::IdentityCredentialStorageService::mMonitor"){};
+      : mMonitor("mozilla::IdentityCredentialStorageService::mMonitor"),
+        mPendingWrites(0){};
   ~IdentityCredentialStorageService() = default;
 
   
@@ -68,6 +69,27 @@ class IdentityCredentialStorageService final
 
   
   
+  nsresult GetMemoryDatabaseConnection();
+  nsresult GetDiskDatabaseConnection();
+  static nsresult GetDatabaseConnectionInternal(
+      mozIStorageConnection** aDatabase, nsIFile* aFile);
+
+  
+  
+  static nsresult EnsureTable(mozIStorageConnection* aDatabase);
+
+  
+  
+  nsresult LoadMemoryTableFromDisk();
+
+  
+  
+  
+  void IncrementPendingWrites();
+  void DecrementPendingWrites();
+
+  
+  
   RefPtr<mozIStorageConnection> mDiskDatabaseConnection;  
   RefPtr<mozIStorageConnection>
       mMemoryDatabaseConnection;  
@@ -90,6 +112,7 @@ class IdentityCredentialStorageService final
   FlippedOnce<false> mInitialized MOZ_GUARDED_BY(mMonitor);
   FlippedOnce<false> mErrored MOZ_GUARDED_BY(mMonitor);
   FlippedOnce<false> mFinalized MOZ_GUARDED_BY(mMonitor);
+  uint32_t mPendingWrites MOZ_GUARDED_BY(mMonitor);
 };
 
 }  
