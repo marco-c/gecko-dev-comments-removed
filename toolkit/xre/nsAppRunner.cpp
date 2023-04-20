@@ -254,10 +254,6 @@
 #  include "nsIStringBundle.h"
 #endif
 
-#ifdef USE_GLX_TEST
-#  include "mozilla/GUniquePtr.h"
-#endif
-
 extern uint32_t gRestartMode;
 extern void InstallSignalHandlers(const char* ProgramName);
 
@@ -3624,40 +3620,7 @@ static DWORD WINAPI InitDwriteBG(LPVOID lpdwThreadParam) {
 #endif
 
 #ifdef USE_GLX_TEST
-namespace mozilla::widget {
-
-extern int glxtest_pipe;
-
-extern pid_t glxtest_pid;
-}  
-
-void fire_glxtest_process() {
-  nsAutoCString glxTestBinary;
-  if (!gAppData->xreDirectory) {
-    return;
-  }
-  gAppData->xreDirectory->GetNativePath(glxTestBinary);
-  glxTestBinary.Append("/");
-  glxTestBinary.Append("glxtest");
-
-  char* argv[] = {strdup(glxTestBinary.get()),
-                  IsWaylandEnabled() ? strdup("-w") : nullptr, nullptr};
-  auto freeArgv = mozilla::MakeScopeExit([&] {
-    for (auto& arg : argv) {
-      free(arg);
-    }
-  });
-
-  GUniquePtr<GError> err;
-  g_spawn_async_with_pipes(
-      nullptr, argv, nullptr,
-      GSpawnFlags(G_SPAWN_CLOEXEC_PIPES | G_SPAWN_DO_NOT_REAP_CHILD), nullptr,
-      nullptr, &mozilla::widget::glxtest_pid, nullptr,
-      &mozilla::widget::glxtest_pipe, nullptr, getter_Transfers(err));
-  if (err) {
-    Output(true, "Failed to probe graphics hardware! %s\n", err->message);
-  }
-}
+bool fire_glxtest_process();
 #endif
 
 #include "GeckoProfiler.h"
@@ -3985,6 +3948,17 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
 #endif
 
   mozilla::startup::IncreaseDescriptorLimits();
+
+#ifdef USE_GLX_TEST
+  
+  
+  
+  
+  
+  
+  
+  fire_glxtest_process();
+#endif
 
   SetupErrorHandling(gArgv[0]);
 
@@ -5146,10 +5120,6 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 
   
   mozilla::glean_pings::Pageload.Submit("startup"_ns);
-
-#ifdef USE_GLX_TEST
-  fire_glxtest_process();
-#endif
 
   return 0;
 }
