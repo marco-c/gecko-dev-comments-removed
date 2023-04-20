@@ -19,10 +19,6 @@ const {
   style: { ELEMENT_STYLE },
 } = require("resource://devtools/shared/constants.js");
 
-const {
-  hasStyleSheetWatcherSupportForTarget,
-} = require("resource://devtools/server/actors/utils/stylesheets-manager.js");
-
 loader.lazyRequireGetter(
   this,
   "StyleRuleActor",
@@ -66,7 +62,6 @@ loader.lazyGetter(this, "FONT_VARIATIONS_ENABLED", () => {
   return Services.prefs.getBoolPref("layout.css.font-variations.enabled");
 });
 
-const XHTML_NS = "http://www.w3.org/1999/xhtml";
 const NORMAL_FONT_WEIGHT = 400;
 const BOLD_FONT_WEIGHT = 700;
 
@@ -115,17 +110,9 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     this._watchedSheets = new Set();
 
     this.styleSheetsManager = this.inspector.targetActor.getStyleSheetManager();
-    this.hasStyleSheetWatcherSupport = hasStyleSheetWatcherSupportForTarget(
-      this.inspector.targetActor
-    );
 
-    if (this.hasStyleSheetWatcherSupport) {
-      this._onStylesheetUpdated = this._onStylesheetUpdated.bind(this);
-      this.styleSheetsManager.on(
-        "stylesheet-updated",
-        this._onStylesheetUpdated
-      );
-    }
+    this._onStylesheetUpdated = this._onStylesheetUpdated.bind(this);
+    this.styleSheetsManager.on("stylesheet-updated", this._onStylesheetUpdated);
   },
 
   destroy() {
@@ -223,27 +210,6 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
   updateStyleRef(oldItem, item, actor) {
     this.refMap.delete(oldItem);
     this.refMap.set(item, actor);
-  },
-
-  
-
-
-
-
-
-
-  _sheetRef(sheet) {
-    if (this.hasStyleSheetWatcherSupport) {
-      
-      
-      console.warn(
-        "This function should not be called when server-side stylesheet watcher is enabled"
-      );
-    }
-
-    const targetActor = this.inspector.targetActor;
-    const actor = targetActor.createStyleSheetActor(sheet);
-    return actor;
   },
 
   
@@ -963,30 +929,6 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
         }
       }
     }
-
-    
-    
-    if (this.hasStyleSheetWatcherSupport) {
-      return;
-    }
-
-    for (const rule of ruleSet) {
-      if (rule.rawRule.parentStyleSheet) {
-        const parent = this._sheetRef(rule.rawRule.parentStyleSheet);
-        if (!sheetSet.has(parent)) {
-          sheetSet.add(parent);
-        }
-      }
-    }
-
-    for (const sheet of sheetSet) {
-      if (sheet.rawSheet.parentStyleSheet) {
-        const parent = this._sheetRef(sheet.rawSheet.parentStyleSheet);
-        if (!sheetSet.has(parent)) {
-          sheetSet.add(parent);
-        }
-      }
-    }
   },
 
   
@@ -1108,33 +1050,10 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
         styleActor._parentSheet
       );
       if (resId === resourceId) {
-        styleActor._onStyleApplied(kind);
+        styleActor.onStyleApplied(kind);
       }
     }
     this._styleApplied(kind);
-  },
-
-  
-
-
-
-
-
-
-
-  getStyleElement(document) {
-    if (
-      !this.styleElements.has(document) ||
-      !this.styleElements.get(document).isConnected
-    ) {
-      const style = document.createElementNS(XHTML_NS, "style");
-      style.setAttribute("type", "text/css");
-      style.setDevtoolsAsTriggeringPrincipal();
-      document.documentElement.appendChild(style);
-      this.styleElements.set(document, style);
-    }
-
-    return this.styleElements.get(document);
   },
 
   
@@ -1160,20 +1079,15 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
   async addNewRule(node, pseudoClasses) {
     let sheet = null;
-    if (this.hasStyleSheetWatcherSupport) {
-      const doc = node.rawNode.ownerDocument;
-      if (
-        this.styleElements.has(doc) &&
-        this.styleElements.get(doc).ownerNode?.isConnected
-      ) {
-        sheet = this.styleElements.get(doc);
-      } else {
-        sheet = await this.styleSheetsManager.addStyleSheet(doc);
-        this.styleElements.set(doc, sheet);
-      }
+    const doc = node.rawNode.ownerDocument;
+    if (
+      this.styleElements.has(doc) &&
+      this.styleElements.get(doc).ownerNode?.isConnected
+    ) {
+      sheet = this.styleElements.get(doc);
     } else {
-      const style = this.getStyleElement(node.rawNode.ownerDocument);
-      sheet = style.sheet;
+      sheet = await this.styleSheetsManager.addStyleSheet(doc);
+      this.styleElements.set(doc, sheet);
     }
 
     const cssRules = sheet.cssRules;
@@ -1195,19 +1109,10 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
     const index = sheet.insertRule(selector + " {}", cssRules.length);
 
-    if (this.hasStyleSheetWatcherSupport) {
-      const resourceId = this.styleSheetsManager.getStyleSheetResourceId(sheet);
-      let authoredText = await this.styleSheetsManager.getText(resourceId);
-      authoredText += "\n" + selector + " {\n" + "}";
-      await this.styleSheetsManager.setStyleSheetText(resourceId, authoredText);
-    } else {
-      
-      
-      const sheetActor = this._sheetRef(sheet);
-      let { str: authoredText } = await sheetActor.getText();
-      authoredText += "\n" + selector + " {\n" + "}";
-      await sheetActor.update(authoredText, false);
-    }
+    const resourceId = this.styleSheetsManager.getStyleSheetResourceId(sheet);
+    let authoredText = await this.styleSheetsManager.getText(resourceId);
+    authoredText += "\n" + selector + " {\n" + "}";
+    await this.styleSheetsManager.setStyleSheetText(resourceId, authoredText);
 
     const cssRule = sheet.cssRules.item(index);
     const ruleActor = this._styleRef(cssRule);

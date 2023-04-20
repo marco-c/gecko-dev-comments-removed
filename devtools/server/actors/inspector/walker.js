@@ -98,12 +98,6 @@ loader.lazyRequireGetter(
   "resource://devtools/server/actors/utils/walker-search.js",
   true
 );
-loader.lazyRequireGetter(
-  this,
-  "hasStyleSheetWatcherSupportForTarget",
-  "resource://devtools/server/actors/utils/stylesheets-manager.js",
-  true
-);
 
 
 const lazy = {};
@@ -2670,19 +2664,10 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
-
   getStyleSheetOwnerNode(resourceId) {
-    if (hasStyleSheetWatcherSupportForTarget(this.targetActor)) {
-      const manager = this.targetActor.getStyleSheetManager();
-      const ownerNode = manager.getOwnerNode(resourceId);
-      return this.attachElement(ownerNode);
-    }
-
-    
-    
-    
-    const actorBasedNode = this.getNodeFromActor(resourceId, ["ownerNode"]);
-    return actorBasedNode;
+    const manager = this.targetActor.getStyleSheetManager();
+    const ownerNode = manager.getOwnerNode(resourceId);
+    return this.attachElement(ownerNode);
   },
 
   

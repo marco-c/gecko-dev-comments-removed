@@ -19,12 +19,6 @@ loader.lazyRequireGetter(
   "resource://devtools/server/actors/style-sheet.js",
   true
 );
-loader.lazyRequireGetter(
-  this,
-  "hasStyleSheetWatcherSupportForTarget",
-  "resource://devtools/server/actors/utils/stylesheets-manager.js",
-  true
-);
 
 
 
@@ -298,48 +292,12 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
   async addStyleSheet(text, fileName = null) {
-    if (this._hasStyleSheetWatcherSupport()) {
-      const styleSheetsManager = this._getStyleSheetsManager();
-      await styleSheetsManager.addStyleSheet(this.document, text, fileName);
-      return;
-    }
-
-    
-    
-    
-    const parent = this.document.documentElement;
-    const style = this.document.createElementNS(
-      "http://www.w3.org/1999/xhtml",
-      "style"
-    );
-    style.setAttribute("type", "text/css");
-
-    if (text) {
-      style.appendChild(this.document.createTextNode(text));
-    }
-    parent.appendChild(style);
-
-    
-    
-    
-    
-    
-    if (!this._addingStyleSheetInfo) {
-      this._addingStyleSheetInfo = new WeakMap();
-    }
-    this._addingStyleSheetInfo.set(style.sheet, { isNew: true, fileName });
-
-    const actor = this.parentActor.createStyleSheetActor(style.sheet);
-    
-    return actor;
+    const styleSheetsManager = this._getStyleSheetsManager();
+    await styleSheetsManager.addStyleSheet(this.document, text, fileName);
   },
 
   _getStyleSheetActor(resourceId) {
     return this.parentActor._targetScopedActorPool.getActorByID(resourceId);
-  },
-
-  _hasStyleSheetWatcherSupport() {
-    return hasStyleSheetWatcherSupportForTarget(this.parentActor);
   },
 
   _getStyleSheetsManager() {
@@ -347,47 +305,23 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
   },
 
   toggleDisabled(resourceId) {
-    if (this._hasStyleSheetWatcherSupport()) {
-      const styleSheetsManager = this._getStyleSheetsManager();
-      return styleSheetsManager.toggleDisabled(resourceId);
-    }
-
-    
-    
-    
-    const actor = this._getStyleSheetActor(resourceId);
-    return actor.toggleDisabled();
+    const styleSheetsManager = this._getStyleSheetsManager();
+    return styleSheetsManager.toggleDisabled(resourceId);
   },
 
   async getText(resourceId) {
-    if (this._hasStyleSheetWatcherSupport()) {
-      const styleSheetsManager = this._getStyleSheetsManager();
-      const text = await styleSheetsManager.getText(resourceId);
-      return new LongStringActor(this.conn, text || "");
-    }
-
-    
-    
-    
-    const actor = this._getStyleSheetActor(resourceId);
-    return actor.getText();
+    const styleSheetsManager = this._getStyleSheetsManager();
+    const text = await styleSheetsManager.getText(resourceId);
+    return new LongStringActor(this.conn, text || "");
   },
 
   update(resourceId, text, transition, cause = "") {
-    if (this._hasStyleSheetWatcherSupport()) {
-      const styleSheetsManager = this._getStyleSheetsManager();
-      return styleSheetsManager.setStyleSheetText(resourceId, text, {
-        transition,
-        kind: UPDATE_GENERAL,
-        cause,
-      });
-    }
-
-    
-    
-    
-    const actor = this._getStyleSheetActor(resourceId);
-    return actor.update(text, transition, UPDATE_GENERAL, cause);
+    const styleSheetsManager = this._getStyleSheetsManager();
+    return styleSheetsManager.setStyleSheetText(resourceId, text, {
+      transition,
+      kind: UPDATE_GENERAL,
+      cause,
+    });
   },
 });
 
