@@ -5838,20 +5838,6 @@ exports.prettyFast = prettyFast;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 var acorn = __webpack_require__(1103);
 
 var sourceMap = __webpack_require__(632);
@@ -5865,7 +5851,7 @@ var SourceNode = sourceMap.SourceNode;
 
 
 
-var PRE_ARRAY_LITERAL_TOKENS = {
+const PRE_ARRAY_LITERAL_TOKENS = {
   typeof: true,
   void: true,
   delete: true,
@@ -5937,7 +5923,7 @@ function isArrayLiteral(token, lastToken) {
 
 
 
-var PREVENT_ASI_AFTER_TOKENS = {
+const PREVENT_ASI_AFTER_TOKENS = {
   
   "*": true,
   "/": true,
@@ -5988,7 +5974,7 @@ var PREVENT_ASI_AFTER_TOKENS = {
 }; 
 
 
-var PREVENT_ASI_BEFORE_TOKENS = {
+const PREVENT_ASI_BEFORE_TOKENS = {
   
   "*": true,
   "/": true,
@@ -6041,7 +6027,7 @@ var PREVENT_ASI_BEFORE_TOKENS = {
 
 
 function isIdentifierLike(token) {
-  var ttl = token.type.label;
+  const ttl = token.type.label;
   return ttl == "name" || ttl == "num" || ttl == "privateId" || !!token.type.keyword;
 }
 
@@ -6099,8 +6085,8 @@ function isLineDelimiter(token, stack) {
     return true;
   }
 
-  var ttl = token.type.label;
-  var top = stack[stack.length - 1];
+  const ttl = token.type.label;
+  const top = stack.at(-1);
   return ttl == ";" && top != "(" || ttl == "{" || ttl == "," && top != "(" || ttl == ":" && (top == "case" || top == "default");
 }
 
@@ -6138,72 +6124,9 @@ function appendNewline(token, write, stack) {
 
 
 
-
 function needsSpaceAfter(token, lastToken) {
-  if (lastToken) {
-    if (lastToken.type.isLoop) {
-      return true;
-    }
-
-    if (lastToken.type.isAssign) {
-      return true;
-    }
-
-    if (lastToken.type.binop != null) {
-      return true;
-    }
-
-    var ltt = lastToken.type.label;
-
-    if (ltt == "?") {
-      return true;
-    }
-
-    if (ltt == ":") {
-      return true;
-    }
-
-    if (ltt == ",") {
-      return true;
-    }
-
-    if (ltt == ";") {
-      return true;
-    }
-
-    if (ltt == "${") {
-      return true;
-    }
-
-    if (ltt == "num" && token.type.label == ".") {
-      return true;
-    }
-
-    var ltk = lastToken.type.keyword;
-    var ttl = token.type.label;
-
-    if (ltk != null && ttl != ".") {
-      if (ltk == "break" || ltk == "continue" || ltk == "return") {
-        return token.type.label != ";";
-      }
-
-      if (ltk != "debugger" && ltk != "null" && ltk != "true" && ltk != "false" && ltk != "this" && ltk != "default") {
-        return true;
-      }
-    }
-
-    if (ltt == ")" && token.type.label != ")" && token.type.label != "]" && token.type.label != ";" && token.type.label != "," && token.type.label != ".") {
-      return true;
-    }
-
-    if (isIdentifierLike(token) && isIdentifierLike(lastToken)) {
-      
-      return true;
-    }
-
-    if (token.type.label == "{" && lastToken.type.label == "name") {
-      return true;
-    }
+  if (lastToken && needsSpaceBetweenTokens(token, lastToken)) {
+    return true;
   }
 
   if (token.type.isAssign) {
@@ -6219,6 +6142,114 @@ function needsSpaceAfter(token, lastToken) {
   }
 
   return false;
+}
+
+function needsSpaceBeforeLastToken(lastToken) {
+  if (lastToken.type.isLoop) {
+    return true;
+  }
+
+  if (lastToken.type.isAssign) {
+    return true;
+  }
+
+  if (lastToken.type.binop != null) {
+    return true;
+  }
+
+  const lastTokenTypeLabel = lastToken.type.label;
+
+  if (lastTokenTypeLabel == "?") {
+    return true;
+  }
+
+  if (lastTokenTypeLabel == ":") {
+    return true;
+  }
+
+  if (lastTokenTypeLabel == ",") {
+    return true;
+  }
+
+  if (lastTokenTypeLabel == ";") {
+    return true;
+  }
+
+  if (lastTokenTypeLabel == "${") {
+    return true;
+  }
+
+  return false;
+}
+
+function isBreakContinueOrReturnStatement(lastTokenKeyword) {
+  return lastTokenKeyword == "break" || lastTokenKeyword == "continue" || lastTokenKeyword == "return";
+}
+
+function needsSpaceBeforeLastTokenKeywordAfterNotDot(lastTokenKeyword) {
+  return lastTokenKeyword != "debugger" && lastTokenKeyword != "null" && lastTokenKeyword != "true" && lastTokenKeyword != "false" && lastTokenKeyword != "this" && lastTokenKeyword != "default";
+}
+
+function needsSpaceBeforeClosingParen(tokenTypeLabel) {
+  return tokenTypeLabel != ")" && tokenTypeLabel != "]" && tokenTypeLabel != ";" && tokenTypeLabel != "," && tokenTypeLabel != ".";
+}
+
+
+
+
+
+
+
+
+
+
+
+function needsSpaceBetweenTokens(token, lastToken) {
+  if (needsSpaceBeforeLastToken(lastToken)) {
+    return true;
+  }
+
+  const ltt = lastToken.type.label;
+
+  if (ltt == "num" && token.type.label == ".") {
+    return true;
+  }
+
+  const ltk = lastToken.type.keyword;
+  const ttl = token.type.label;
+
+  if (ltk != null && ttl != ".") {
+    if (isBreakContinueOrReturnStatement(ltk)) {
+      return ttl != ";";
+    }
+
+    if (needsSpaceBeforeLastTokenKeywordAfterNotDot(ltk)) {
+      return true;
+    }
+  }
+
+  if (ltt == ")" && needsSpaceBeforeClosingParen(ttl)) {
+    return true;
+  }
+
+  if (isIdentifierLike(token) && isIdentifierLike(lastToken)) {
+    
+    return true;
+  }
+
+  if (token.type.label == "{" && lastToken.type.label == "name") {
+    return true;
+  }
+
+  return false;
+}
+
+function needsSpaceBeforeClosingCurlyBracket(tokenTypeKeyword) {
+  return tokenTypeKeyword == "else" || tokenTypeKeyword == "catch" || tokenTypeKeyword == "finally";
+}
+
+function needsLineBreakBeforeClosingCurlyBracket(tokenTypeLabel) {
+  return tokenTypeLabel != "(" && tokenTypeLabel != ";" && tokenTypeLabel != "," && tokenTypeLabel != ")" && tokenTypeLabel != "." && tokenTypeLabel != "template" && tokenTypeLabel != "`";
 }
 
 
@@ -6247,29 +6278,28 @@ function needsSpaceAfter(token, lastToken) {
 
 
 function prependWhiteSpace(token, lastToken, addedNewline, addedSpace, write, options, indentLevel, stack) {
-  var ttk = token.type.keyword;
-  var ttl = token.type.label;
-  var newlineAdded = addedNewline;
-  var spaceAdded = addedSpace;
-  var ltt = lastToken ? lastToken.type.label : null; 
+  var _lastToken$type;
+
+  const ttk = token.type.keyword;
+  const ttl = token.type.label;
+  let newlineAdded = addedNewline;
+  let spaceAdded = addedSpace;
+  const ltt = lastToken === null || lastToken === void 0 ? void 0 : (_lastToken$type = lastToken.type) === null || _lastToken$type === void 0 ? void 0 : _lastToken$type.label; 
   
   
   
 
   if (lastToken && ltt == "}") {
-    if (ttk == "while" && stack[stack.length - 1] == "do") {
+    if (ttk == "while" && stack.at(-1) == "do" || needsSpaceBeforeClosingCurlyBracket(ttk)) {
       write(" ", lastToken.loc.start.line, lastToken.loc.start.column);
       spaceAdded = true;
-    } else if (ttk == "else" || ttk == "catch" || ttk == "finally") {
-      write(" ", lastToken.loc.start.line, lastToken.loc.start.column);
-      spaceAdded = true;
-    } else if (ttl != "(" && ttl != ";" && ttl != "," && ttl != ")" && ttl != "." && ttl != "template" && ttl != "`") {
+    } else if (needsLineBreakBeforeClosingCurlyBracket(ttl)) {
       write("\n", lastToken.loc.start.line, lastToken.loc.start.column);
       newlineAdded = true;
     }
   }
 
-  if (ttl == ":" && stack[stack.length - 1] == "?" || ttl == "}" && stack[stack.length - 1] == "${") {
+  if (ttl == ":" && stack.at(-1) == "?" || ttl == "}" && stack.at(-1) == "${") {
     write(" ", lastToken.loc.start.line, lastToken.loc.start.column);
     spaceAdded = true;
   }
@@ -6319,7 +6349,7 @@ function prependWhiteSpace(token, lastToken, addedNewline, addedSpace, write, op
 
 
 function repeat(str, n) {
-  var result = "";
+  let result = "";
 
   while (n > 0) {
     if (n & 1) {
@@ -6338,8 +6368,8 @@ function repeat(str, n) {
 
 
 
-var sanitize = function () {
-  var escapeCharacters = {
+const sanitize = function () {
+  const escapeCharacters = {
     
     "\\": "\\\\",
     
@@ -6360,11 +6390,10 @@ var sanitize = function () {
     "\u2029": "\\u2029",
     
     "'": "\\'"
-  };
-  var regExpString = "(" + Object.keys(escapeCharacters).map(function (c) {
-    return escapeCharacters[c];
-  }).join("|") + ")";
-  var escapeCharactersRegExp = new RegExp(regExpString, "g");
+  }; 
+
+  const regExpString = "(" + Object.values(escapeCharacters).join("|") + ")";
+  const escapeCharactersRegExp = new RegExp(regExpString, "g");
   return function (str) {
     return str.replace(escapeCharactersRegExp, function (_, c) {
       return escapeCharacters[c];
@@ -6383,7 +6412,7 @@ var sanitize = function () {
 
 function addToken(token, write) {
   if (token.type.label == "string") {
-    write("'" + sanitize(token.value) + "'", token.loc.start.line, token.loc.start.column);
+    write(`'${sanitize(token.value)}'`, token.loc.start.line, token.loc.start.column);
   } else if (token.type.label == "regexp") {
     write(String(token.value.value), token.loc.start.line, token.loc.start.column);
   } else {
@@ -6408,8 +6437,8 @@ function addToken(token, write) {
 
 
 function belongsOnStack(token) {
-  var ttl = token.type.label;
-  var ttk = token.type.keyword;
+  const ttl = token.type.label;
+  const ttk = token.type.keyword;
   return ttl == "{" || ttl == "(" || ttl == "[" || ttl == "?" || ttl == "${" || ttk == "do" || ttk == "switch" || ttk == "case" || ttk == "default";
 }
 
@@ -6418,9 +6447,9 @@ function belongsOnStack(token) {
 
 
 function shouldStackPop(token, stack) {
-  var ttl = token.type.label;
-  var ttk = token.type.keyword;
-  var top = stack[stack.length - 1];
+  const ttl = token.type.label;
+  const ttk = token.type.keyword;
+  const top = stack.at(-1);
   return ttl == "]" || ttl == ")" || ttl == "}" || ttl == ":" && (top == "case" || top == "default" || top == "?") || ttk == "while" && top == "do";
 }
 
@@ -6430,7 +6459,8 @@ function shouldStackPop(token, stack) {
 
 
 function decrementsIndent(tokenType, stack) {
-  return tokenType == "}" && stack[stack.length - 1] != "${" || tokenType == "]" && stack[stack.length - 1] == "[\n";
+  const top = stack.at(-1);
+  return tokenType == "}" && top != "${" || tokenType == "]" && top == "[\n";
 }
 
 
@@ -6467,14 +6497,14 @@ function incrementsIndent(token) {
 
 
 function addComment(write, indentLevel, options, block, text, line, column, nextToken) {
-  var indentString = repeat(options.indent, indentLevel);
-  var needNewline = true;
+  const indentString = repeat(options.indent, indentLevel);
+  let needNewline = true;
   write(indentString, line, column);
 
   if (block) {
     write("/*"); 
 
-    write(text.split(new RegExp("/\n" + indentString + "/", "g")).join("\n" + indentString), null, null, true);
+    write(text.split(new RegExp(`/\n${indentString}/`, "g")).join(`\n${indentString}`), null, null, true);
     write("*/");
     needNewline = !(nextToken && nextToken.loc.start.line == line);
   } else {
@@ -6510,9 +6540,9 @@ function addComment(write, indentLevel, options, block, text, line, column, next
 
 function prettyFast(input, options) {
   
-  var indentLevel = 0; 
+  let indentLevel = 0; 
 
-  var result = new SourceNode();
+  const result = new SourceNode();
   
 
 
@@ -6533,11 +6563,11 @@ function prettyFast(input, options) {
 
 
 
-  var write = function () {
-    var buffer = [];
-    var bufferLine = -1;
-    var bufferColumn = -1;
-    return function write(str, line, column, ignoreNewline) {
+  const write = function () {
+    const buffer = [];
+    let bufferLine = -1;
+    let bufferColumn = -1;
+    return function innerWrite(str, line, column, ignoreNewline) {
       if (line != null && bufferLine === -1) {
         bufferLine = line;
       }
@@ -6549,9 +6579,9 @@ function prettyFast(input, options) {
       buffer.push(str);
 
       if (str == "\n" && !ignoreNewline) {
-        var lineStr = "";
+        let lineStr = "";
 
-        for (var i = 0, len = buffer.length; i < len; i++) {
+        for (let i = 0, len = buffer.length; i < len; i++) {
           lineStr += buffer[i];
         }
 
@@ -6564,19 +6594,17 @@ function prettyFast(input, options) {
   }(); 
 
 
-  var addedNewline = false; 
+  let addedNewline = false; 
 
-  var addedSpace = false; 
-
-  var token; 
+  let addedSpace = false; 
   
 
-  var ttl; 
+  let ttl; 
   
 
-  var ttk; 
+  let ttk; 
 
-  var lastToken; 
+  let lastToken; 
   
   
   
@@ -6598,7 +6626,7 @@ function prettyFast(input, options) {
   
   
 
-  var stack = []; 
+  const stack = []; 
   
   
   
@@ -6610,44 +6638,20 @@ function prettyFast(input, options) {
   
   
 
-  var tokenQueue = [];
-  var tokens = acorn.tokenizer(input, {
-    locations: true,
-    sourceFile: options.url,
-    ecmaVersion: options.ecmaVersion || "latest",
+  const tokenQueue = getTokens(input, options);
 
-    onComment(block, text, start, end, startLoc, endLoc) {
-      tokenQueue.push({
-        type: {},
-        comment: true,
-        block,
-        text,
-        loc: {
-          start: startLoc,
-          end: endLoc
-        }
-      });
-    }
+  for (let i = 0; i < tokenQueue.length; i++) {
+    var _lastToken2, _lastToken2$type;
 
-  });
-
-  for (;;) {
-    token = tokens.getToken();
-    tokenQueue.push(token);
-
-    if (token.type.label == "eof") {
-      break;
-    }
-  }
-
-  for (var i = 0; i < tokenQueue.length; i++) {
-    token = tokenQueue[i];
-    var nextToken = tokenQueue[i + 1];
+    const token = tokenQueue[i];
+    const nextToken = tokenQueue[i + 1];
 
     if (token.comment) {
-      var commentIndentLevel = indentLevel;
+      var _lastToken, _lastToken$loc, _lastToken$loc$end;
 
-      if (lastToken && lastToken.loc.end.line == token.loc.start.line) {
+      let commentIndentLevel = indentLevel;
+
+      if (((_lastToken = lastToken) === null || _lastToken === void 0 ? void 0 : (_lastToken$loc = _lastToken.loc) === null || _lastToken$loc === void 0 ? void 0 : (_lastToken$loc$end = _lastToken$loc.end) === null || _lastToken$loc$end === void 0 ? void 0 : _lastToken$loc$end.line) == token.loc.start.line) {
         commentIndentLevel = 0;
         write(" ");
       }
@@ -6659,7 +6663,7 @@ function prettyFast(input, options) {
 
     ttk = token.type.keyword;
 
-    if (ttk && lastToken && lastToken.type.label == ".") {
+    if (ttk && ((_lastToken2 = lastToken) === null || _lastToken2 === void 0 ? void 0 : (_lastToken2$type = _lastToken2.type) === null || _lastToken2$type === void 0 ? void 0 : _lastToken2$type.label) == ".") {
       token.type = acorn.tokTypes.name;
     }
 
@@ -6686,7 +6690,7 @@ function prettyFast(input, options) {
     if (decrementsIndent(ttl, stack)) {
       indentLevel--;
 
-      if (ttl == "}" && stack.length > 1 && stack[stack.length - 2] == "switch") {
+      if (ttl == "}" && stack.at(-2) == "switch") {
         indentLevel--;
       }
     }
@@ -6703,7 +6707,7 @@ function prettyFast(input, options) {
     if (shouldStackPop(token, stack)) {
       stack.pop();
 
-      if (ttl == "}" && stack.length && stack[stack.length - 1] == "switch") {
+      if (ttl == "}" && stack.at(-1) == "switch") {
         stack.pop();
       }
     }
@@ -6739,6 +6743,52 @@ function prettyFast(input, options) {
   return result.toStringWithSourceMap({
     file: options.url
   });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getTokens(input, options) {
+  const tokens = [];
+  const res = acorn.tokenizer(input, {
+    locations: true,
+    sourceFile: options.url,
+    ecmaVersion: options.ecmaVersion || "latest",
+
+    onComment(block, text, start, end, startLoc, endLoc) {
+      tokens.push({
+        type: {},
+        comment: true,
+        block,
+        text,
+        loc: {
+          start: startLoc,
+          end: endLoc
+        }
+      });
+    }
+
+  });
+
+  for (;;) {
+    const token = res.getToken();
+    tokens.push(token);
+
+    if (token.type.label == "eof") {
+      break;
+    }
+  }
+
+  return tokens;
 }
 
  }),
