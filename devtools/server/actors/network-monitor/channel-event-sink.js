@@ -44,7 +44,7 @@ ChannelEventSink.prototype = {
         collector.onChannelRedirect(oldChannel, newChannel, flags);
       } catch (ex) {
         console.error(
-          "StackTraceCollector.onChannelRedirect threw an exception",
+          "ChannelEventSink collector's 'onChannelRedirect' threw an exception",
           ex
         );
       }
