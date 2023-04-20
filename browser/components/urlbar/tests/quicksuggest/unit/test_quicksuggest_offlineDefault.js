@@ -91,7 +91,7 @@ async function doTest({ locale, home, expectedOfflineDefault }) {
 
   
   Region._setHomeRegion(home, false);
-  await QuickSuggestTestUtils.withLocales([locale], async () => {
+  await withLocales([locale], async () => {
     await UrlbarPrefs.updateFirefoxSuggestScenario();
     for (let { name, get, expectedOfflineValue, expectedOtherValue } of PREFS) {
       let expectedValue = expectedOfflineDefault
@@ -124,4 +124,33 @@ async function doTest({ locale, home, expectedOfflineDefault }) {
       Services.prefs.getDefaultBranch(name)[set]("", originalDefault);
     }
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+async function withLocales(locales, callback) {
+  let available = Services.locale.availableLocales;
+  let requested = Services.locale.requestedLocales;
+
+  Services.locale.availableLocales = locales;
+  Services.locale.requestedLocales = locales.slice(0, 1);
+  Assert.equal(
+    Services.locale.appLocaleAsBCP47,
+    locales[0],
+    "App locale is now " + locales[0]
+  );
+
+  await callback();
+
+  Services.locale.availableLocales = available;
+  Services.locale.requestedLocales = requested;
 }
