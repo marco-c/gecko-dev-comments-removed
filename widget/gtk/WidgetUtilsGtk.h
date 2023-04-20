@@ -66,6 +66,7 @@ bool ShouldUsePortal(PortalKind);
 
 const nsCString& GetDesktopEnvironmentIdentifier();
 bool IsGnomeDesktopEnvironment();
+bool IsKdeDesktopEnvironment();
 
 
 nsTArray<nsCString> ParseTextURIList(const nsACString& data);
