@@ -38,7 +38,7 @@
 #if defined(__MINGW32__)  
 
 
-#define MOZ_MINGW_DCOMP_H_INCOMPLETE
+#  define MOZ_MINGW_DCOMP_H_INCOMPLETE
 struct IDCompositionColorMatrixEffect : public IDCompositionFilterEffect {};
 struct IDCompositionTableTransferEffect : public IDCompositionFilterEffect {};
 #endif  
