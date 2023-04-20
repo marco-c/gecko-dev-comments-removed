@@ -1565,12 +1565,14 @@ nsresult nsLocalFile::GetDiskInfo(StatInfoFunc&& aStatInfoFunc,
 
   if (!FillStatCache()) {
     
+    *aResult = tentativeResult;
     return NS_OK;
   }
 
-  nsCString deviceName;
+  nsAutoCString deviceName;
   if (!GetDeviceName(major(mCachedStat.st_dev), minor(mCachedStat.st_dev),
                      deviceName)) {
+    *aResult = tentativeResult;
     return NS_OK;
   }
 
