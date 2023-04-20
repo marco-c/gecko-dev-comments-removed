@@ -2395,27 +2395,18 @@ already_AddRefed<ComputedStyle> nsIFrame::ComputeSelectionStyle(
       aSelectionStatus != nsISelectionController::SELECTION_DISABLED) {
     return nullptr;
   }
+  
+  
+  
+  if (PresContext()->ForcingColors()) {
+    return nullptr;
+  }
   Element* element = FindElementAncestorForMozSelection(GetContent());
   if (!element) {
     return nullptr;
   }
-  RefPtr<ComputedStyle> pseudoStyle =
-      PresContext()->StyleSet()->ProbePseudoElementStyle(
-          *element, PseudoStyleType::selection, Style());
-  if (!pseudoStyle) {
-    return nullptr;
-  }
-  
-  
-  
-  
-  
-  if (PresContext()->ForcingColors() &&
-      pseudoStyle->StyleText()->mForcedColorAdjust !=
-          StyleForcedColorAdjust::None) {
-    return nullptr;
-  }
-  return do_AddRef(pseudoStyle);
+  return PresContext()->StyleSet()->ProbePseudoElementStyle(
+      *element, PseudoStyleType::selection, Style());
 }
 
 already_AddRefed<ComputedStyle> nsIFrame::ComputeHighlightSelectionStyle(
