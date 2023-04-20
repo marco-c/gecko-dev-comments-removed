@@ -49,6 +49,14 @@ ResultCode GetComplexLineBreaksProxy(const wchar_t* aText, uint32_t aLength,
       chunkEnd = textIterEnd;
     }
 
+    
+    
+    
+    
+    
+    
+    uint8_t chunk_start_reset = *breakBeforeIter;
+
     uint32_t len = chunkEnd - textIter;
     
     CountedBuffer textBuf(const_cast<wchar_t*>(textIter),
@@ -66,23 +74,33 @@ ResultCode GetComplexLineBreaksProxy(const wchar_t* aText, uint32_t aLength,
       return SBOX_ERROR_GENERIC;
     }
 
+    *breakBeforeIter = chunk_start_reset;
+
     if (chunkEnd == textIterEnd) {
       break;
     }
 
     
     
+    
+    
     uint8_t* processedToEnd = breakBeforeIter + len;
     breakBeforeIter = processedToEnd - kBreakSearchRange;
     while (!*breakBeforeIter) {
       if (++breakBeforeIter == processedToEnd) {
+        
+        
+        
+        breakBeforeIter = processedToEnd - kBreakSearchRange;
+        
+        if (IS_LOW_SURROGATE(
+                *(aText + (breakBeforeIter - aBreakBefore)))) {
+          ++breakBeforeIter;
+        }
         break;
       }
     }
   } while (true);
-
-  
-  aBreakBefore[0] = false;
 
   return SBOX_ALL_OK;
 }
