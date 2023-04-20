@@ -10,9 +10,6 @@
 
 #include "modules/video_coding/timing/frame_delay_delta_kalman_filter.h"
 
-#include "api/units/data_size.h"
-#include "api/units/frequency.h"
-#include "api/units/time_delta.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -64,9 +61,9 @@ TEST(FrameDelayDeltaKalmanFilterTest,
 
   
   double var_noise = -0.1;
-  filter.PredictAndUpdate(TimeDelta::Millis(3),
+  filter.PredictAndUpdate(3,
                           200.0,
-                          DataSize::Bytes(2000), var_noise);
+                          2000, var_noise);
 
   
   EXPECT_EQ(filter.GetFrameDelayVariationEstimateTotal(
@@ -75,9 +72,9 @@ TEST(FrameDelayDeltaKalmanFilterTest,
 
   
   var_noise = 0.1;
-  filter.PredictAndUpdate(TimeDelta::Millis(3),
+  filter.PredictAndUpdate(3,
                           200.0,
-                          DataSize::Bytes(2000), var_noise);
+                          2000, var_noise);
 
   
   EXPECT_GT(filter.GetFrameDelayVariationEstimateTotal(
@@ -92,9 +89,9 @@ TEST(FrameDelayDeltaKalmanFilterTest,
   
   int framerate_fps = 30;
   
-  TimeDelta frame_delay_variation = TimeDelta::Millis(3);
+  double frame_delay_variation_ms = 3;
   
-  DataSize max_frame_size = DataSize::Bytes(2000);
+  double max_frame_size_bytes = 2000;
   
   double frame_size_variation_bytes = 200;
   double var_noise = 0.1;
@@ -103,15 +100,15 @@ TEST(FrameDelayDeltaKalmanFilterTest,
   for (int i = 0; i < test_duration_s * framerate_fps; ++i) {
     
     double sign = (i % 2 == 0) ? 1.0 : -1.0;
-    filter.PredictAndUpdate(sign * frame_delay_variation,
-                            sign * frame_size_variation_bytes, max_frame_size,
-                            var_noise);
+    filter.PredictAndUpdate(sign * frame_delay_variation_ms,
+                            sign * frame_size_variation_bytes,
+                            max_frame_size_bytes, var_noise);
   }
 
   
   EXPECT_NEAR(
       filter.GetFrameDelayVariationEstimateTotal(frame_size_variation_bytes),
-      frame_delay_variation.ms(), 0.1);
+      frame_delay_variation_ms, 0.1);
 }
 
 }  

@@ -92,12 +92,17 @@ class JitterEstimator {
   
   FrameDelayDeltaKalmanFilter kalman_filter_;
 
-  static constexpr DataSize kDefaultAvgAndMaxFrameSize = DataSize::Bytes(500);
-  DataSize avg_frame_size_ = kDefaultAvgAndMaxFrameSize;  
+  
+  
+  double avg_frame_size_bytes_;  
   double var_frame_size_;  
   
-  DataSize max_frame_size_ = kDefaultAvgAndMaxFrameSize;
-  DataSize frame_size_sum_ = DataSize::Zero();
+  
+  
+  double max_frame_size_bytes_;
+  
+  
+  double frame_size_sum_bytes_;
   uint32_t frame_size_count_;
 
   absl::optional<Timestamp> last_update_time_;

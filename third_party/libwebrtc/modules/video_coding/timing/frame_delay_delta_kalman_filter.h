@@ -72,9 +72,13 @@ class FrameDelayDeltaKalmanFilter {
   
   
   
-  void PredictAndUpdate(TimeDelta frame_delay_variation,
+  
+  
+  
+  
+  void PredictAndUpdate(double frame_delay_variation_ms,
                         double frame_size_variation_bytes,
-                        DataSize max_frame_size,
+                        double max_frame_size_bytes,
                         double var_noise);
 
   
