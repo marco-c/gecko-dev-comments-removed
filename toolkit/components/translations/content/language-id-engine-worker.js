@@ -3,11 +3,12 @@
 
 
 
-if (this.Components) {
-  throw new Error(
-    "The language-id-worker should only be loaded in a worker, not in chrome-privileged code."
-  );
-}
+"use strict";
+
+
+self.addEventListener("unhandledrejection", event => {
+  throw event.reason;
+});
 
 
 importScripts(

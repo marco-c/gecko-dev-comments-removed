@@ -3,6 +3,7 @@
 
 
 
+"use strict";
 
 
 
@@ -19,6 +20,11 @@ function log(...args) {
     console.log("Translations:", ...args);
   }
 }
+
+
+self.addEventListener("unhandledrejection", event => {
+  throw event.reason;
+});
 
 
 
