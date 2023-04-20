@@ -33,8 +33,7 @@ const rtc::SocketAddress client_addr("1.2.3.4", 1234);
 
 class StunServerTest : public ::testing::Test {
  public:
-  StunServerTest() : ss_(new rtc::VirtualSocketServer()), network_(ss_.get()) {}
-  virtual void SetUp() {
+  StunServerTest() : ss_(new rtc::VirtualSocketServer()), network_(ss_.get()) {
     server_.reset(
         new StunServer(rtc::AsyncUDPSocket::Create(ss_.get(), server_addr)));
     client_.reset(new rtc::TestClient(
@@ -42,6 +41,8 @@ class StunServerTest : public ::testing::Test {
 
     network_.Start();
   }
+  ~StunServerTest() override { network_.Stop(); }
+
   void Send(const StunMessage& msg) {
     rtc::ByteBufferWriter buf;
     msg.Write(&buf);
@@ -70,10 +71,6 @@ class StunServerTest : public ::testing::Test {
   std::unique_ptr<StunServer> server_;
   std::unique_ptr<rtc::TestClient> client_;
 };
-
-
-
-#if !defined(THREAD_SANITIZER)
 
 TEST_F(StunServerTest, TestGood) {
   
@@ -134,8 +131,6 @@ TEST_F(StunServerTest, TestNoXorMappedAddr) {
 
   delete msg;
 }
-
-#endif  
 
 TEST_F(StunServerTest, TestBad) {
   const char* bad =
