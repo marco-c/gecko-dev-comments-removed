@@ -431,7 +431,9 @@ var ExtensionsUI = {
         persistent: true,
         eventCallback,
         removeOnDismissal: true,
-        position: "bottomright topright",
+        popupOptions: {
+          position: "bottomright topright",
+        },
       };
       
       
