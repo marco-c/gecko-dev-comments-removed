@@ -5,13 +5,17 @@
 
 
 
+const { CommonUtils } = ChromeUtils.importESModule(
+  "chrome://mochitests/content/browser/accessible/tests/browser/Common.sys.mjs"
+);
+
 const SUGGEST_ALL_PREF = "browser.search.suggest.enabled";
 const SUGGEST_URLBAR_PREF = "browser.urlbar.suggest.searches";
 const TEST_ENGINE_BASENAME = "searchSuggestionEngine.xml";
 
-async function getResultText(element, expectedValue, description = "") {
-  await initAccessibilityService();
+let accService;
 
+async function getResultText(element, expectedValue, description = "") {
   await BrowserTestUtils.waitForCondition(
     () => {
       let accessible = accService.getAccessibleFor(element);
@@ -22,36 +26,61 @@ async function getResultText(element, expectedValue, description = "") {
   );
 }
 
-let accService;
+
+
+
+
+
+
+
+
+
 async function initAccessibilityService() {
-  if (accService) {
-    return;
-  }
+  const [a11yInitObserver, a11yInit] = initAccService();
+  await a11yInitObserver;
   accService = Cc["@mozilla.org/accessibilityService;1"].getService(
     Ci.nsIAccessibilityService
   );
-  if (Services.appinfo.accessibilityEnabled) {
-    return;
-  }
+  await a11yInit;
 
-  async function promiseInitOrShutdown(init = true) {
-    await new Promise(resolve => {
-      let observe = (subject, topic, data) => {
-        Services.obs.removeObserver(observe, "a11y-init-or-shutdown");
-        
-        if (data === (init ? "1" : "0")) {
-          resolve();
-        }
-      };
-      Services.obs.addObserver(observe, "a11y-init-or-shutdown");
-    });
-  }
-  await promiseInitOrShutdown(true);
   registerCleanupFunction(async () => {
+    const [a11yShutdownObserver, a11yShutdownPromise] = shutdownAccService();
+    await a11yShutdownObserver;
     accService = null;
-    await promiseInitOrShutdown(false);
+    forceGC();
+    await a11yShutdownPromise;
   });
 }
+
+
+function initAccService() {
+  return [
+    CommonUtils.addAccServiceInitializedObserver(),
+    CommonUtils.observeAccServiceInitialized(),
+  ];
+}
+
+
+function shutdownAccService() {
+  return [
+    CommonUtils.addAccServiceShutdownObserver(),
+    CommonUtils.observeAccServiceShutdown(),
+  ];
+}
+
+
+function forceGC() {
+  SpecialPowers.gc();
+  SpecialPowers.forceShrinkingGC();
+  SpecialPowers.forceCC();
+  SpecialPowers.gc();
+  SpecialPowers.forceShrinkingGC();
+  SpecialPowers.forceCC();
+}
+
+add_setup(async function() {
+  await initAccessibilityService();
+});
 
 add_task(async function switchToTab() {
   let tab = BrowserTestUtils.addTab(gBrowser, "about:robots");
@@ -77,7 +106,7 @@ add_task(async function switchToTab() {
   
   
   await getResultText(
-    element,
+    element._content,
     "Firefox Suggest about:robots — Switch to Tab",
     "Result a11y text is correct"
   );
@@ -129,30 +158,28 @@ add_task(async function searchSuggestions() {
         window,
         i
       );
-      let selected = element.hasAttribute("selected");
-      if (!selected) {
-        
-        element.toggleAttribute("selected", true);
-      }
+
+      
+      gURLBar.view.selectedRowIndex = i;
+
       if (result.searchParams.inPrivateWindow) {
         await getResultText(
-          element,
+          element._content,
           searchTerm + " — Search in a Private Window",
-          "Check result label"
+          "Check result label for search in private window"
         );
       } else {
         let suggestion = expectedSearches.shift();
         await getResultText(
-          element,
+          element._content,
           suggestion +
             " — Search with browser_searchSuggestionEngine searchSuggestionEngine.xml",
-          "Check result label"
+          "Check result label for non-private search"
         );
-      }
-      if (!selected) {
-        element.toggleAttribute("selected", false);
       }
     }
   }
   Assert.ok(!expectedSearches.length);
+
+  await UrlbarTestUtils.promisePopupClose(window);
 });
