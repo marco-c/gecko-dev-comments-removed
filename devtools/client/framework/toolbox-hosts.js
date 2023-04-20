@@ -436,7 +436,7 @@ function focusTab(tab) {
 function createDevToolsFrame(doc, className) {
   const frame = doc.createXULElement("browser");
   frame.setAttribute("type", "content");
-  frame.setAttribute("flex", "1"); 
+  frame.style.flex = "1 auto"; 
   frame.className = className;
 
   const inXULDocument = doc.documentElement.namespaceURI === XUL_NS;
