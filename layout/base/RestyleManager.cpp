@@ -3505,7 +3505,7 @@ void RestyleManager::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
   } else if (aElement->IsInShadowTree() && aAttribute == nsGkAtoms::part) {
     
     
-    restyleHint |= RestyleHint::RESTYLE_SELF;
+    restyleHint |= RestyleHint::RESTYLE_SELF | RestyleHint::RESTYLE_PSEUDOS;
   }
 
   if (nsIFrame* primaryFrame = aElement->GetPrimaryFrame()) {

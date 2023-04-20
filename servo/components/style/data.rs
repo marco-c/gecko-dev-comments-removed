@@ -4,6 +4,7 @@
 
 
 
+use crate::computed_value_flags::ComputedValueFlags;
 use crate::context::{SharedStyleContext, StackLimitChecker};
 use crate::dom::TElement;
 use crate::invalidation::element::invalidator::InvalidationResult;
@@ -193,8 +194,6 @@ impl ElementStyles {
 
     
     pub fn viewport_unit_usage(&self) -> ViewportUnitUsage {
-        use crate::computed_value_flags::ComputedValueFlags;
-
         fn usage_from_flags(flags: ComputedValueFlags) -> ViewportUnitUsage {
             if flags.intersects(ComputedValueFlags::USES_VIEWPORT_UNITS_ON_CONTAINER_QUERIES) {
                 return ViewportUnitUsage::FromQuery;
@@ -366,52 +365,88 @@ impl ElementData {
 
     
     
-    pub fn restyle_kind(&self, shared_context: &SharedStyleContext) -> RestyleKind {
+    pub fn restyle_kind(&self, shared_context: &SharedStyleContext) -> Option<RestyleKind> {
         if shared_context.traversal_flags.for_animation_only() {
             return self.restyle_kind_for_animation(shared_context);
         }
 
-        if !self.has_styles() {
-            return RestyleKind::MatchAndCascade;
+        let style = match self.styles.primary {
+            Some(ref s) => s,
+            None => return Some(RestyleKind::MatchAndCascade),
+        };
+
+        let hint = self.hint;
+        if hint.is_empty() {
+            return None;
         }
 
-        if self.hint.match_self() {
-            return RestyleKind::MatchAndCascade;
+        let needs_to_match_self = hint.intersects(RestyleHint::RESTYLE_SELF) ||
+            (hint.intersects(RestyleHint::RESTYLE_SELF_IF_PSEUDO) && style.is_pseudo_style());
+        if needs_to_match_self {
+            return Some(RestyleKind::MatchAndCascade);
         }
 
-        if self.hint.has_replacements() {
+        if hint.has_replacements() {
             debug_assert!(
-                !self.hint.has_animation_hint(),
+                !hint.has_animation_hint(),
                 "Animation only restyle hint should have already processed"
             );
-            return RestyleKind::CascadeWithReplacements(self.hint & RestyleHint::replacements());
+            return Some(RestyleKind::CascadeWithReplacements(
+                hint & RestyleHint::replacements(),
+            ));
         }
 
-        debug_assert!(
-            self.hint.has_recascade_self(),
-            "We definitely need to do something: {:?}!",
-            self.hint
-        );
-        return RestyleKind::CascadeOnly;
+        let needs_to_recascade_self = hint.intersects(RestyleHint::RECASCADE_SELF) ||
+            (hint.intersects(RestyleHint::RECASCADE_SELF_IF_INHERIT_RESET_STYLE) &&
+                style.flags.contains(ComputedValueFlags::INHERITS_RESET_STYLE));
+        if needs_to_recascade_self {
+            return Some(RestyleKind::CascadeOnly);
+        }
+
+        None
     }
 
     
-    fn restyle_kind_for_animation(&self, shared_context: &SharedStyleContext) -> RestyleKind {
+    fn restyle_kind_for_animation(
+        &self,
+        shared_context: &SharedStyleContext,
+    ) -> Option<RestyleKind> {
         debug_assert!(shared_context.traversal_flags.for_animation_only());
         debug_assert!(
             self.has_styles(),
-            "Unstyled element shouldn't be traversed during \
-             animation-only traversal"
+            "animation traversal doesn't care about unstyled elements"
         );
 
         
         
         
-        if self.hint.has_animation_hint() {
-            return RestyleKind::CascadeWithReplacements(self.hint & RestyleHint::for_animations());
+        
+        
+        
+        
+        
+        let hint = self.hint;
+        if self.styles.is_display_none() && hint.intersects(RestyleHint::RESTYLE_SELF) {
+            return None;
         }
 
-        return RestyleKind::CascadeOnly;
+        let style = self.styles.primary();
+        
+        
+        
+        if hint.has_animation_hint() {
+            return Some(RestyleKind::CascadeWithReplacements(
+                hint & RestyleHint::for_animations(),
+            ));
+        }
+
+        let needs_to_recascade_self = hint.intersects(RestyleHint::RECASCADE_SELF) ||
+            (hint.intersects(RestyleHint::RECASCADE_SELF_IF_INHERIT_RESET_STYLE) &&
+                style.flags.contains(ComputedValueFlags::INHERITS_RESET_STYLE));
+        if needs_to_recascade_self {
+            return Some(RestyleKind::CascadeOnly);
+        }
+        return None;
     }
 
     
@@ -482,7 +517,13 @@ impl ElementData {
         ) {
             return false;
         }
-        if !self.styles.primary().get_box().clone_container_type().is_normal() {
+        if !self
+            .styles
+            .primary()
+            .get_box()
+            .clone_container_type()
+            .is_normal()
+        {
             return false;
         }
         true

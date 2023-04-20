@@ -75,13 +75,6 @@ pub enum ChildRestyleRequirement {
     MustMatchDescendants = 4,
 }
 
-impl ChildRestyleRequirement {
-    
-    pub fn can_skip_cascade(&self) -> bool {
-        matches!(*self, ChildRestyleRequirement::CanSkipCascade)
-    }
-}
-
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum CascadeVisitedMode {
