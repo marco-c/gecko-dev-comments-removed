@@ -222,7 +222,7 @@ class UsingStmt(Node):
         attributes={},
     ):
         Node.__init__(self, loc)
-        assert not isinstance(cxxTypeSpec, str)
+        assert isinstance(cxxTypeSpec, QualifiedId)
         assert cxxHeader is None or isinstance(cxxHeader, str)
         assert kind is None or kind == "class" or kind == "struct"
         self.type = cxxTypeSpec
@@ -403,6 +403,7 @@ class Param(Node):
 class TypeSpec(Node):
     def __init__(self, loc, spec):
         Node.__init__(self, loc)
+        assert isinstance(spec, str)
         self.spec = spec  
         self.array = False  
         self.maybe = False  
@@ -410,10 +411,10 @@ class TypeSpec(Node):
         self.uniqueptr = False  
 
     def basename(self):
-        return self.spec.baseid
+        return self.spec
 
     def __str__(self):
-        return str(self.spec)
+        return self.spec
 
 
 class Attribute(Node):
@@ -447,9 +448,9 @@ class QualifiedId:
         self.baseid = id
 
     def __str__(self):
-        if 0 == len(self.quals):
-            return self.baseid
-        return "::".join(self.quals) + "::" + self.baseid
+        
+        
+        return "::" + "::".join(self.quals + [self.baseid])
 
 
 
