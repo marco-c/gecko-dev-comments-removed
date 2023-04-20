@@ -12,6 +12,7 @@ let AVAILABLE_PIP_OVERRIDES;
   
   
   const TOGGLE_POLICIES = browser.pictureInPictureChild.getPolicies();
+  const KEYBOARD_CONTROLS = browser.pictureInPictureChild.getKeyboardControls();
 
   AVAILABLE_PIP_OVERRIDES = {
     
@@ -178,9 +179,21 @@ let AVAILABLE_PIP_OVERRIDES;
     },
 
     twitch: {
-      "https://*.twitch.tv/*": { policy: TOGGLE_POLICIES.ONE_QUARTER },
-      "https://*.twitch.tech/*": { policy: TOGGLE_POLICIES.ONE_QUARTER },
-      "https://*.twitch.a2z.com/*": { policy: TOGGLE_POLICIES.ONE_QUARTER },
+      "https://*.twitch.tv/*": {
+        videoWrapperScriptPath: "video-wrappers/twitch.js",
+        policy: TOGGLE_POLICIES.ONE_QUARTER,
+        disabledKeyboardControls: KEYBOARD_CONTROLS.LIVE_SEEK,
+      },
+      "https://*.twitch.tech/*": {
+        videoWrapperScriptPath: "video-wrappers/twitch.js",
+        policy: TOGGLE_POLICIES.ONE_QUARTER,
+        disabledKeyboardControls: KEYBOARD_CONTROLS.LIVE_SEEK,
+      },
+      "https://*.twitch.a2z.com/*": {
+        videoWrapperScriptPath: "video-wrappers/twitch.js",
+        policy: TOGGLE_POLICIES.ONE_QUARTER,
+        disabledKeyboardControls: KEYBOARD_CONTROLS.LIVE_SEEK,
+      },
     },
 
     udemy: {
