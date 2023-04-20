@@ -328,6 +328,10 @@ async function testInstallMethod(installFn, telemetryBase) {
     ],
   });
 
+  if (telemetryBase !== undefined) {
+    hookExtensionsTelemetry();
+  }
+
   let testURI = makeURI("https://example.com/");
   PermissionTestUtils.add(testURI, "install", Services.perms.ALLOW_ACTION);
   registerCleanupFunction(() => PermissionTestUtils.remove(testURI, "install"));
@@ -430,6 +434,16 @@ async function testInstallMethod(installFn, telemetryBase) {
   
   
   await runOnce(PERMS_XPI, false);
+
+  if (telemetryBase !== undefined) {
+    
+    
+    expectTelemetry([
+      `${telemetryBase}Rejected`,
+      `${telemetryBase}Rejected`,
+      `${telemetryBase}Accepted`,
+    ]);
+  }
 
   await SpecialPowers.popPrefEnv();
 }
@@ -657,3 +671,26 @@ add_setup(async function head_setup() {
     }
   });
 });
+
+let collectedTelemetry = [];
+function hookExtensionsTelemetry() {
+  let originalHistogram = ExtensionsUI.histogram;
+  ExtensionsUI.histogram = {
+    add(value) {
+      collectedTelemetry.push(value);
+    },
+  };
+  registerCleanupFunction(() => {
+    is(
+      collectedTelemetry.length,
+      0,
+      "No unexamined telemetry after test is finished"
+    );
+    ExtensionsUI.histogram = originalHistogram;
+  });
+}
+
+function expectTelemetry(values) {
+  Assert.deepEqual(values, collectedTelemetry);
+  collectedTelemetry = [];
+}

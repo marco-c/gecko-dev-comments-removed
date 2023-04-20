@@ -7,7 +7,6 @@ const { AddonTestUtils } = ChromeUtils.import(
 );
 
 AddonTestUtils.initMochitest(this);
-AddonTestUtils.hookAMTelemetryEvents();
 
 const ID = "update2@tests.mozilla.org";
 const ID_ICON = "update_icon2@tests.mozilla.org";
@@ -56,6 +55,9 @@ add_setup(async function() {
     await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
   });
 });
+
+hookExtensionsTelemetry();
+AddonTestUtils.hookAMTelemetryEvents();
 
 
 async function backgroundUpdateTest(url, id, checkIconFn) {
@@ -194,6 +196,9 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
   BrowserTestUtils.removeTab(tab);
 
   is(getBadgeStatus(), "", "Addon alert badge should be gone");
+
+  
+  expectTelemetry(["updateRejected", "updateAccepted"]);
 
   await addon.uninstall();
   await SpecialPowers.popPrefEnv();
