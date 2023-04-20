@@ -1,0 +1,20 @@
+
+
+
+
+
+
+namespace mozilla {
+
+namespace ipc {
+
+enum class ResponseRejectReason;
+
+}  
+
+namespace dom::fs {
+
+void IPCRejectReporter(mozilla::ipc::ResponseRejectReason aReason);
+
+}  
+}  
