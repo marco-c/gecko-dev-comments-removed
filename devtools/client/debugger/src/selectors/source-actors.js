@@ -2,8 +2,6 @@
 
 
 
-import { asSettled } from "../utils/async-value";
-
 
 
 
@@ -74,7 +72,7 @@ export function getSourceActorsForThread(state, threadActorIDs) {
 
 
 export function getSourceActorBreakableLines(state, sourceActorId) {
-  return asSettled(state.sourceActors.mutableBreakableLines.get(sourceActorId));
+  return state.sourceActors.mutableBreakableLines.get(sourceActorId);
 }
 
 
@@ -105,11 +103,11 @@ export function getBreakableLinesForSourceActors(
     const breakableLines = state.sourceActors.mutableBreakableLines.get(
       sourceActorId
     );
-    if (breakableLines && breakableLines.state == "fulfilled") {
+    if (breakableLines) {
       if (isHTML) {
-        allBreakableLines.push(...breakableLines.value);
+        allBreakableLines.push(...breakableLines);
       } else {
-        return breakableLines.value;
+        return breakableLines;
       }
     }
   }

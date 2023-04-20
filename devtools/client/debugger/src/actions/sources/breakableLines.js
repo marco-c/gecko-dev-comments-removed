@@ -3,9 +3,12 @@
 
 
 import { isOriginalId } from "devtools/client/shared/source-map-loader/index";
-import { getSourceActorsForSource, getBreakableLines } from "../../selectors";
+import {
+  getSourceActorsForSource,
+  getBreakableLines,
+  getSourceActorBreakableLines,
+} from "../../selectors";
 import { setBreakpointPositions } from "../breakpoints/breakpointPositions";
-import { loadSourceActorBreakableLines } from "../source-actors";
 
 function calculateBreakableLines(positions) {
   const lines = [];
@@ -41,12 +44,28 @@ export function setBreakableLines(cx, sourceId) {
         breakableLines,
       });
     } else {
-      const actors = getSourceActorsForSource(getState(), sourceId);
+      const sourceActors = getSourceActorsForSource(getState(), sourceId);
 
+      
       await Promise.all(
-        actors.map(({ id }) =>
-          dispatch(loadSourceActorBreakableLines({ sourceActorId: id, cx }))
-        )
+        sourceActors.map(async sourceActor => {
+          
+          breakableLines = getSourceActorBreakableLines(
+            getState(),
+            sourceActor.id
+          );
+          if (breakableLines) {
+            return;
+          }
+          breakableLines = await client.getSourceActorBreakableLines(
+            sourceActor
+          );
+          await dispatch({
+            type: "SET_SOURCE_ACTOR_BREAKABLE_LINES",
+            sourceActorId: sourceActor.id,
+            breakableLines,
+          });
+        })
       );
     }
   };
