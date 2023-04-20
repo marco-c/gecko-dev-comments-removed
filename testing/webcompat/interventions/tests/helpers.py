@@ -2,9 +2,9 @@
 
 
 
-import pytest
 import time
 
+import pytest
 from selenium.common.exceptions import NoAlertPresentException, NoSuchElementException
 from selenium.webdriver.common.by import By
 
