@@ -140,8 +140,6 @@ document.addEventListener('click', e=>{
     content.document.body.click();
   });
   await waitForPaused(dbg);
-  
-  
-  
+  await assertPausedAtSourceAndLine(dbg, prettyNewFunctionSource.id, 4);
   await resume(dbg);
 });
