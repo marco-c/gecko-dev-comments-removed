@@ -92,9 +92,6 @@ class StunRequest : public rtc::MessageHandler {
   ~StunRequest() override;
 
   
-  void Construct();
-
-  
   StunRequestManager* manager() { return &manager_; }
 
   
@@ -116,6 +113,11 @@ class StunRequest : public rtc::MessageHandler {
 
  protected:
   friend class StunRequestManager;
+
+  
+  
+  
+  void Construct();
 
   
   

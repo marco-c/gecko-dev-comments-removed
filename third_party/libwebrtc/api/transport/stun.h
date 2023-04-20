@@ -31,7 +31,8 @@
 namespace cricket {
 
 
-enum StunMessageType {
+enum StunMessageType : uint16_t {
+  STUN_INVALID_MESSAGE_TYPE = 0x0000,
   STUN_BINDING_REQUEST = 0x0001,
   STUN_BINDING_INDICATION = 0x0011,
   STUN_BINDING_RESPONSE = 0x0101,
@@ -144,7 +145,16 @@ class StunXorAddressAttribute;
 
 class StunMessage {
  public:
+  
+  
   StunMessage();
+
+  
+  
+  explicit StunMessage(uint16_t type);
+
+  StunMessage(uint16_t type, absl::string_view transaction_id);
+
   virtual ~StunMessage();
 
   
@@ -169,7 +179,12 @@ class StunMessage {
   bool IsLegacy() const;
 
   void SetType(int type) { type_ = static_cast<uint16_t>(type); }
-  bool SetTransactionID(const std::string& str);
+  [[deprecated]] bool SetTransactionID(absl::string_view transaction_id) {
+    if (!IsValidTransactionId(transaction_id))
+      return false;
+    SetTransactionIdForTesting(transaction_id);
+    return true;
+  }
 
   
   
@@ -234,6 +249,9 @@ class StunMessage {
   static bool ValidateFingerprint(const char* data, size_t size);
 
   
+  static std::string GenerateTransactionId();
+
+  
   bool AddFingerprint();
 
   
@@ -249,7 +267,10 @@ class StunMessage {
 
   
   
-  void SetStunMagicCookie(uint32_t val);
+  [[deprecated]] void SetStunMagicCookie(uint32_t val);
+
+  
+  void SetTransactionIdForTesting(absl::string_view transaction_id);
 
   
   std::unique_ptr<StunMessage> Clone() const;
@@ -292,7 +313,7 @@ class StunMessage {
  private:
   StunAttribute* CreateAttribute(int type, size_t length) ;
   const StunAttribute* GetAttribute(int type) const;
-  static bool IsValidTransactionId(const std::string& transaction_id);
+  static bool IsValidTransactionId(absl::string_view transaction_id);
   bool AddMessageIntegrityOfType(int mi_attr_type,
                                  size_t mi_attr_size,
                                  const char* key,
@@ -303,11 +324,11 @@ class StunMessage {
                                              size_t size,
                                              const std::string& password);
 
-  uint16_t type_;
-  uint16_t length_;
+  uint16_t type_ = STUN_INVALID_MESSAGE_TYPE;
+  uint16_t length_ = 0;
   std::string transaction_id_;
-  uint32_t reduced_transaction_id_;
-  uint32_t stun_magic_cookie_;
+  uint32_t reduced_transaction_id_ = 0;
+  uint32_t stun_magic_cookie_ = kStunMagicCookie;
   
   std::string buffer_;
   IntegrityStatus integrity_ = IntegrityStatus::kNotSet;
@@ -635,13 +656,16 @@ enum RelayAttributeType {
 
 
 class RelayMessage : public StunMessage {
+ public:
+  using StunMessage::StunMessage;
+
  protected:
   StunAttributeValueType GetAttributeValueType(int type) const override;
   StunMessage* CreateNew() const override;
 };
 
 
-enum TurnMessageType {
+enum TurnMessageType : uint16_t {
   STUN_ALLOCATE_REQUEST = 0x0003,
   STUN_ALLOCATE_RESPONSE = 0x0103,
   STUN_ALLOCATE_ERROR_RESPONSE = 0x0113,
@@ -689,6 +713,9 @@ extern const char STUN_ERROR_REASON_ALLOCATION_MISMATCH[];
 extern const char STUN_ERROR_REASON_WRONG_CREDENTIALS[];
 extern const char STUN_ERROR_REASON_UNSUPPORTED_PROTOCOL[];
 class TurnMessage : public StunMessage {
+ public:
+  using StunMessage::StunMessage;
+
  protected:
   StunAttributeValueType GetAttributeValueType(int type) const override;
   StunMessage* CreateNew() const override;
@@ -747,6 +774,9 @@ extern const char STUN_ERROR_REASON_ROLE_CONFLICT[];
 
 
 class IceMessage : public StunMessage {
+ public:
+  using StunMessage::StunMessage;
+
  protected:
   StunAttributeValueType GetAttributeValueType(int type) const override;
   StunMessage* CreateNew() const override;

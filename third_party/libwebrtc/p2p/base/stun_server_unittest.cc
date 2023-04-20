@@ -76,11 +76,9 @@ class StunServerTest : public ::testing::Test {
 #if !defined(THREAD_SANITIZER)
 
 TEST_F(StunServerTest, TestGood) {
-  StunMessage req;
   
   std::string transaction_id = "0123456789abcdef";
-  req.SetType(STUN_BINDING_REQUEST);
-  req.SetTransactionID(transaction_id);
+  StunMessage req(STUN_BINDING_REQUEST, transaction_id);
   Send(req);
 
   StunMessage* msg = Receive();
@@ -98,12 +96,10 @@ TEST_F(StunServerTest, TestGood) {
 }
 
 TEST_F(StunServerTest, TestGoodXorMappedAddr) {
-  StunMessage req;
   
   
   std::string transaction_id = "0123456789ab";
-  req.SetType(STUN_BINDING_REQUEST);
-  req.SetTransactionID(transaction_id);
+  StunMessage req(STUN_BINDING_REQUEST, transaction_id);
   Send(req);
 
   StunMessage* msg = Receive();
@@ -122,11 +118,9 @@ TEST_F(StunServerTest, TestGoodXorMappedAddr) {
 
 
 TEST_F(StunServerTest, TestNoXorMappedAddr) {
-  StunMessage req;
   
   std::string transaction_id = "0123456789abcdef";
-  req.SetType(STUN_BINDING_REQUEST);
-  req.SetTransactionID(transaction_id);
+  StunMessage req(STUN_BINDING_REQUEST, transaction_id);
   Send(req);
 
   StunMessage* msg = Receive();
