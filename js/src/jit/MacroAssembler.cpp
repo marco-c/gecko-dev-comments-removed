@@ -2587,15 +2587,13 @@ void MacroAssembler::emitMegamorphicCachedSetSlot(
   branch32(Assembler::NotEqual, scratch1, scratch2, &cacheMiss);
 
   
-  loadPtr(Address(obj, JSObject::offsetOfShape()), scratch2);
-  load32(Address(scratch2, Shape::offsetOfImmutableFlags()), scratch2);
-  and32(Imm32(NativeShape::fixedSlotsMask()), scratch2);
-  rshift32(Imm32(NativeShape::fixedSlotsShift()), scratch2);
+  load32(
+      Address(scratch3, MegamorphicSetPropCache::Entry::offsetOfSlotOffset()),
+      scratch2);
 
   
-  load16ZeroExtend(
-      Address(scratch3, MegamorphicSetPropCache::Entry::offsetOfSlot()),
-      scratch1);
+  move32(scratch2, scratch1);
+  rshift32(Imm32(TaggedSlotOffset::OffsetShift), scratch1);
 
   
   loadPtr(
@@ -2603,22 +2601,18 @@ void MacroAssembler::emitMegamorphicCachedSetSlot(
       scratch3);
 
   
-  branch32(Assembler::AboveOrEqual, scratch1, scratch2, &dynamicSlot);
-
-  static_assert(sizeof(HeapSlot) == 8);
   
 
-  computeEffectiveAddress(BaseValueIndex(obj, scratch1, sizeof(NativeObject)),
-                          scratch1);
+  
+  branchTest32(Assembler::Zero, scratch2,
+               Imm32(TaggedSlotOffset::IsFixedSlotFlag), &dynamicSlot);
+  addPtr(obj, scratch1);
   branchTestPtr(Assembler::Zero, scratch3, scratch3, &doSet);
   jump(&doAdd);
 
   bind(&dynamicSlot);
-  
-  sub32(scratch2, scratch1);
-  
-  loadPtr(Address(obj, NativeObject::offsetOfSlots()), scratch2);
-  computeEffectiveAddress(BaseValueIndex(scratch2, scratch1, 0), scratch1);
+  addPtr(Address(obj, NativeObject::offsetOfSlots()), scratch1);
+
   branchTestPtr(Assembler::Zero, scratch3, scratch3, &doSet);
 
   Address slotAddr(scratch1, 0);
