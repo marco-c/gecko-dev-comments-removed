@@ -843,52 +843,13 @@ nsresult nsBoxFrame::AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
 
 void nsBoxFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                   const nsDisplayListSet& aLists) {
-  bool forceLayer = false;
-
-  if (GetContent()->IsXULElement()) {
-    
-    if (GetContent()->AsElement()->HasAttr(kNameSpaceID_None,
-                                           nsGkAtoms::layer)) {
-      forceLayer = true;
-    }
-  }
-
   nsDisplayListCollection tempLists(aBuilder);
-  const nsDisplayListSet& destination = (forceLayer) ? tempLists : aLists;
+  DisplayBorderBackgroundOutline(aBuilder, aLists);
 
-  DisplayBorderBackgroundOutline(aBuilder, destination);
-
-  Maybe<nsDisplayListBuilder::AutoContainerASRTracker> contASRTracker;
-  if (forceLayer) {
-    contASRTracker.emplace(aBuilder);
-  }
-
-  BuildDisplayListForChildren(aBuilder, destination);
+  BuildDisplayListForChildren(aBuilder, aLists);
 
   
-  DisplaySelectionOverlay(aBuilder, destination.Content());
-
-  if (forceLayer) {
-    
-    
-    
-    
-    nsDisplayList masterList(aBuilder);
-    masterList.AppendToTop(tempLists.BorderBackground());
-    masterList.AppendToTop(tempLists.BlockBorderBackgrounds());
-    masterList.AppendToTop(tempLists.Floats());
-    masterList.AppendToTop(tempLists.Content());
-    masterList.AppendToTop(tempLists.PositionedDescendants());
-    masterList.AppendToTop(tempLists.Outlines());
-    const ActiveScrolledRoot* ownLayerASR = contASRTracker->GetContainerASR();
-    DisplayListClipState::AutoSaveRestore ownLayerClipState(aBuilder);
-
-    
-    aLists.Content()->AppendNewToTopWithIndex<nsDisplayOwnLayer>(
-        aBuilder, this,  nsDisplayOwnLayer::OwnLayerForBoxFrame,
-        &masterList, ownLayerASR, mozilla::nsDisplayOwnLayerFlags::None,
-        mozilla::layers::ScrollbarData{}, true, true);
-  }
+  DisplaySelectionOverlay(aBuilder, aLists.Content());
 }
 
 void nsBoxFrame::BuildDisplayListForChildren(nsDisplayListBuilder* aBuilder,
