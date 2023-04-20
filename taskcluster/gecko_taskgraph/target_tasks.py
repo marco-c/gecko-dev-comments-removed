@@ -244,6 +244,8 @@ def accept_raptor_android_build(platform):
         return False
     if "p2" in platform and "aarch64" in platform:
         return False
+    if "p5" in platform and "aarch64" in platform:
+        return False
     if "g5" in platform:
         return False
     if "a51" in platform:
@@ -772,7 +774,9 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
         
         elif accept_raptor_android_build(platform):
             
-            if "chrome-m" in try_name and ("-a51" in platform or "-p2" in platform):
+            if "chrome-m" in try_name and (
+                "-a51" in platform or "-p2" in platform or "-p5" in platform
+            ):
                 return False
             
             if "fennec" in try_name:
