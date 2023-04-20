@@ -387,40 +387,15 @@ Timestamp TransportFeedback::BaseTime() const {
          int64_t{base_time_ticks_} * kBaseTimeTick;
 }
 
-int64_t TransportFeedback::GetBaseTimeUs() const {
+TimeDelta TransportFeedback::GetBaseDelta(Timestamp prev_timestamp) const {
+  TimeDelta delta = BaseTime() - prev_timestamp;
   
-  
-  
-  int64_t base_time_us = BaseTime().us() % kTimeWrapPeriod.us();
-  if (base_time_us >= kTimeWrapPeriod.us() / 2) {
-    return base_time_us - kTimeWrapPeriod.us();
-  } else {
-    return base_time_us;
-  }
-}
-
-namespace {
-TimeDelta CompensateForWrapAround(TimeDelta delta) {
   if ((delta - kTimeWrapPeriod).Abs() < delta.Abs()) {
     delta -= kTimeWrapPeriod;  
   } else if ((delta + kTimeWrapPeriod).Abs() < delta.Abs()) {
     delta += kTimeWrapPeriod;  
   }
   return delta;
-}
-}  
-
-int64_t TransportFeedback::GetBaseDeltaUs(int64_t prev_timestamp_us) const {
-  int64_t delta_us = GetBaseTimeUs() - prev_timestamp_us;
-  return CompensateForWrapAround(TimeDelta::Micros(delta_us)).us();
-}
-
-TimeDelta TransportFeedback::GetBaseDelta(TimeDelta prev_timestamp) const {
-  return CompensateForWrapAround(GetBaseTime() - prev_timestamp);
-}
-
-TimeDelta TransportFeedback::GetBaseDelta(Timestamp prev_timestamp) const {
-  return CompensateForWrapAround(BaseTime() - prev_timestamp);
 }
 
 

@@ -1476,9 +1476,9 @@ TEST_F(RtcpTransceiverImplTest, ParsesTransportFeedback) {
       }));
 
   rtcp::TransportFeedback tb;
-  tb.SetBase(321, 15);
-  tb.AddReceivedPacket(321, 15);
-  tb.AddReceivedPacket(322, 17);
+  tb.SetBase(321, Timestamp::Micros(15));
+  tb.AddReceivedPacket(321, Timestamp::Micros(15));
+  tb.AddReceivedPacket(322, Timestamp::Micros(17));
   rtcp_transceiver.ReceivePacket(tb.Build(), receive_time);
 }
 

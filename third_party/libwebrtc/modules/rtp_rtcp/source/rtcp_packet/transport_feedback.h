@@ -23,8 +23,6 @@ namespace webrtc {
 namespace rtcp {
 class CommonHeader;
 
-
-
 class TransportFeedback : public Rtpfb {
  public:
   class ReceivedPacket {
@@ -40,8 +38,6 @@ class TransportFeedback : public Rtpfb {
 
     uint16_t sequence_number() const { return sequence_number_; }
     int16_t delta_ticks() const { return delta_ticks_; }
-    
-    int32_t delta_us() const { return delta().us(); }
     TimeDelta delta() const { return delta_ticks_ * kDeltaTick; }
     bool received() const { return received_; }
 
@@ -53,8 +49,6 @@ class TransportFeedback : public Rtpfb {
   
   static constexpr uint8_t kFeedbackMessageType = 15;
   
-  
-  static constexpr int kDeltaScaleFactor = 250;
   static constexpr TimeDelta kDeltaTick = TimeDelta::Micros(250);
   
   static constexpr size_t kMaxReportedPackets = 0xffff;
@@ -70,20 +64,11 @@ class TransportFeedback : public Rtpfb {
 
   ~TransportFeedback() override;
 
-  
-  void SetBase(uint16_t base_sequence,      
-               int64_t ref_timestamp_us) {  
-    SetBase(base_sequence, Timestamp::Micros(ref_timestamp_us));
-  }
   void SetBase(uint16_t base_sequence,    
                Timestamp ref_timestamp);  
 
   void SetFeedbackSequenceNumber(uint8_t feedback_sequence);
   
-  
-  bool AddReceivedPacket(uint16_t sequence_number, int64_t timestamp_us) {
-    return AddReceivedPacket(sequence_number, Timestamp::Micros(timestamp_us));
-  }
   bool AddReceivedPacket(uint16_t sequence_number, Timestamp timestamp);
   const std::vector<ReceivedPacket>& GetReceivedPackets() const;
   const std::vector<ReceivedPacket>& GetAllPackets() const;
@@ -94,17 +79,9 @@ class TransportFeedback : public Rtpfb {
   size_t GetPacketStatusCount() const { return num_seq_no_; }
 
   
-  
-  int64_t GetBaseTimeUs() const;
-  
-  TimeDelta GetBaseTime() const { return BaseTime() - Timestamp::Zero(); }
   Timestamp BaseTime() const;
 
   
-  
-  int64_t GetBaseDeltaUs(int64_t prev_timestamp_us) const;
-  
-  TimeDelta GetBaseDelta(TimeDelta prev_timestamp) const;
   TimeDelta GetBaseDelta(Timestamp prev_timestamp) const;
 
   
