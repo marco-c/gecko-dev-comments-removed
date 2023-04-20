@@ -31,11 +31,8 @@ const {
 } = require("resource://devtools/client/aboutdebugging/src/constants.js");
 
 const {
-  getCurrentRuntimeDetails,
+  getCurrentClient,
 } = require("resource://devtools/client/aboutdebugging/src/modules/runtimes-state-helper.js");
-const {
-  RUNTIMES,
-} = require("resource://devtools/client/aboutdebugging/src/constants.js");
 
 
 
@@ -46,7 +43,7 @@ class TemporaryExtensionAdditionalActions extends PureComponent {
       dispatch: PropTypes.func.isRequired,
       target: Types.debugTarget.isRequired,
       
-      runtimeDetails: Types.runtimeDetails.isRequired,
+      supportsAddonsUninstall: PropTypes.bool.isRequired,
     };
   }
 
@@ -145,10 +142,7 @@ class TemporaryExtensionAdditionalActions extends PureComponent {
   }
 
   renderRemoveButton() {
-    
-    
-    
-    if (this.props.runtimeDetails.info.type !== RUNTIMES.THIS_FIREFOX) {
+    if (!this.props.supportsAddonsUninstall) {
       return null;
     }
 
@@ -199,8 +193,11 @@ class TemporaryExtensionAdditionalActions extends PureComponent {
 }
 
 const mapStateToProps = state => {
+  const clientWrapper = getCurrentClient(state.runtimes);
+
   return {
-    runtimeDetails: getCurrentRuntimeDetails(state.runtimes),
+    supportsAddonsUninstall:
+      clientWrapper.traits.supportsAddonsUninstall === true,
   };
 };
 

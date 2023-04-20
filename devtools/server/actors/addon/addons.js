@@ -65,6 +65,14 @@ class AddonsActor extends Actor {
     
     return { id: addon.id, actor: false };
   }
+
+  async uninstallAddon(addonId) {
+    const addon = await AddonManager.getAddonByID(addonId);
+
+    if (addon) {
+      await addon.uninstall();
+    }
+  }
 }
 
 exports.AddonsActor = AddonsActor;

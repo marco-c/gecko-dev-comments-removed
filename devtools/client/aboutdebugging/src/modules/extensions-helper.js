@@ -6,11 +6,6 @@
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "AddonManager",
-  "resource://gre/modules/AddonManager.jsm"
-);
 ChromeUtils.defineESModuleGetters(lazy, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
 });
@@ -18,15 +13,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 const {
   PREFERENCES,
 } = require("resource://devtools/client/aboutdebugging/src/constants.js");
-
-
-
-
-
-exports.uninstallAddon = async function(addonID) {
-  const addon = await lazy.AddonManager.getAddonByID(addonID);
-  return addon && addon.uninstall();
-};
 
 exports.parseFileUri = function(url) {
   
