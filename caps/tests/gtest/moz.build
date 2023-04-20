@@ -5,6 +5,7 @@
 
 
 UNIFIED_SOURCES += [
+    "TestBackgroundThreadPrincipal.cpp",
     "TestNullPrincipalPrecursor.cpp",
     "TestOriginAttributes.cpp",
     "TestPrincipalAttributes.cpp",
