@@ -19,22 +19,32 @@
 namespace webrtc {
 
 
-#if defined(WEBRTC_USE_H264)
 struct OpenH264EncoderTemplateAdapter {
   static std::vector<SdpVideoFormat> SupportedFormats() {
+#if defined(WEBRTC_USE_H264)
     return SupportedH264Codecs(true);
+#else
+    return {};
+#endif
   }
 
   static std::unique_ptr<VideoEncoder> CreateEncoder(
       const SdpVideoFormat& format) {
+#if defined(WEBRTC_USE_H264)
     return H264Encoder::Create(cricket::VideoCodec(format));
+#else
+    return nullptr;
+#endif
   }
 
   static bool IsScalabilityModeSupported(ScalabilityMode scalability_mode) {
+#if defined(WEBRTC_USE_H264)
     return H264Encoder::SupportsScalabilityMode(scalability_mode);
+#else
+    return false;
+#endif
   }
 };
-#endif  
 }  
 
 #endif  

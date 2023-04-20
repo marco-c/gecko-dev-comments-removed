@@ -19,18 +19,26 @@
 namespace webrtc {
 
 
-#if defined(WEBRTC_USE_H264)
 struct OpenH264DecoderTemplateAdapter {
   static std::vector<SdpVideoFormat> SupportedFormats() {
+#if defined(WEBRTC_USE_H264)
+
     return SupportedH264DecoderCodecs();
+#else
+    return {};
+#endif
   }
 
   static std::unique_ptr<VideoDecoder> CreateDecoder(
       const SdpVideoFormat& format) {
+#if defined(WEBRTC_USE_H264)
+
     return H264Decoder::Create();
+#else
+    return nullptr;
+#endif
   }
 };
-#endif  
 }  
 
 #endif  
