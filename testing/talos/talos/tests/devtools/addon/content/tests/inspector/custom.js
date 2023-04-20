@@ -83,10 +83,10 @@ async function openToolboxWithInspectNode(domReference, tab) {
   const test = runTest(`custom.inspector.open.DAMP`);
 
   
-  const onToolboxCreated = gDevTools.once("toolbox-created");
+  const onToolboxReady = gDevTools.once("toolbox-ready");
 
   await gDevTools.inspectNode(tab, domReference);
-  const toolbox = await onToolboxCreated;
+  const toolbox = await onToolboxReady;
   test.done();
 
   
