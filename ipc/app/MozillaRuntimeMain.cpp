@@ -83,7 +83,13 @@ int main(int argc, char* argv[]) {
 
 #ifdef HAS_DLL_BLOCKLIST
     uint32_t initFlags = eDllBlocklistInitFlagIsChildProcess;
-    SetDllBlocklistProcessTypeFlags(initFlags, GetGeckoProcessType());
+    
+    
+    if (GetGeckoProcessType() == GeckoProcessType_Utility) {
+      initFlags |= eDllBlocklistInitFlagIsUtilityProcess;
+    } else if (GetGeckoProcessType() == GeckoProcessType_Socket) {
+      initFlags |= eDllBlocklistInitFlagIsSocketProcess;
+    }
     DllBlocklist_Initialize(initFlags);
 #endif
 
