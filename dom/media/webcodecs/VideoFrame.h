@@ -241,6 +241,7 @@ class VideoFrame final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsIGlobalObject> mParent;
 
   
+  
   Maybe<const Resource> mResource;  
 
   
