@@ -63,6 +63,7 @@
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoTraversalStatistics.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/TimelineManager.h"
 #include "mozilla/RWLock.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
@@ -508,6 +509,18 @@ bool Gecko_StyleAnimationsEquals(const nsStyleAutoArray<StyleAnimation>* aA,
   return *aA == *aB;
 }
 
+bool Gecko_StyleScrollTimelinesEquals(
+    const nsStyleAutoArray<StyleScrollTimeline>* aA,
+    const nsStyleAutoArray<StyleScrollTimeline>* aB) {
+  return *aA == *aB;
+}
+
+bool Gecko_StyleViewTimelinesEquals(
+    const nsStyleAutoArray<StyleViewTimeline>* aA,
+    const nsStyleAutoArray<StyleViewTimeline>* aB) {
+  return *aA == *aB;
+}
+
 void Gecko_CopyAnimationNames(nsStyleAutoArray<StyleAnimation>* aDest,
                               const nsStyleAutoArray<StyleAnimation>* aSrc) {
   size_t srcLength = aSrc->Length();
@@ -545,6 +558,16 @@ void Gecko_UpdateAnimations(const Element* aElement,
       AnimationUtils::GetElementPseudoPair(aElement);
 
   
+  
+  if (aTasks & UpdateAnimationsTasks::ScrollTimelines) {
+    presContext->TimelineManager()->UpdateTimelines(
+        const_cast<Element*>(element), pseudoType, aComputedData,
+        TimelineManager::ProgressTimelineType::Scroll);
+  }
+
+  if (aTasks & UpdateAnimationsTasks::ViewTimelines) {
+    
+  }
 
   if (aTasks & UpdateAnimationsTasks::CSSAnimations) {
     presContext->AnimationManager()->UpdateAnimations(

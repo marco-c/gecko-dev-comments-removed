@@ -9,10 +9,12 @@
 #include "nsTransitionManager.h"
 
 #include "mozilla/AnimationEventDispatcher.h"
+#include "mozilla/AnimationUtils.h"
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/ElementAnimationData.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ServoStyleSet.h"
+#include "mozilla/TimelineCollection.h"
 #include "mozilla/dom/AnimationEffect.h"
 #include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/KeyframeEffect.h"
@@ -213,8 +215,9 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
   
   
   
-  for (Element* curr = aTarget.mElement; curr;
-       curr = curr->GetParentElement()) {
+  for (Element* curr = AnimationUtils::GetElementForRestyle(
+           aTarget.mElement, aTarget.mPseudoType);
+       curr; curr = curr->GetParentElement()) {
     
     
     
@@ -223,21 +226,12 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
     for (Element* e = curr; e; e = e->GetPreviousElementSibling()) {
       
       
-
-      const ComputedStyle* style = Servo_Element_GetMaybeOutOfDateStyle(e);
-      
-      if (!style) {
-        continue;
-      }
-
-      const nsStyleUIReset* ui = style->StyleUIReset();
-      
-      
-      
-      for (uint32_t i = 0; i < ui->mScrollTimelineNameCount; ++i) {
-        const auto& timeline = ui->mScrollTimelines[i];
-        if (timeline.GetName() == aName) {
-          return ScrollTimeline::MakeNamed(aDocument, e, timeline);
+      const auto [element, pseudoType] =
+          AnimationUtils::GetElementPseudoPair(e);
+      if (auto* collection =
+              TimelineCollection<ScrollTimeline>::Get(element, pseudoType)) {
+        if (RefPtr<ScrollTimeline> timeline = collection->Lookup(aName)) {
+          return timeline.forget();
         }
       }
 

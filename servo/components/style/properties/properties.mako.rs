@@ -2955,6 +2955,18 @@ pub mod style_structs {
 
             
             
+            pub fn specifies_scroll_timelines(&self) -> bool {
+                self.scroll_timeline_name_iter().any(|name| !name.is_none())
+            }
+
+            
+            
+            pub fn specifies_view_timelines(&self) -> bool {
+                self.view_timeline_name_iter().any(|name| !name.is_none())
+            }
+
+            
+            
             #[cfg(feature = "servo")]
             pub fn animations_equals(&self, other: &Self) -> bool {
                 self.animation_name_iter().eq(other.animation_name_iter()) &&
