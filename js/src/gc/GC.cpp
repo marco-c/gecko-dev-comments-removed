@@ -1319,6 +1319,13 @@ void GCRuntime::updateHelperThreadCount() {
 
   
   
+  
+  
+  
+  static constexpr size_t SpareThreadsDuringParallelMarking = 2;
+
+  
+  
   if (rt->parentRuntime) {
     helperThreadCount = rt->parentRuntime->gc.helperThreadCount;
     return;
@@ -1331,8 +1338,10 @@ void GCRuntime::updateHelperThreadCount() {
 
   
   
+  
   size_t targetCount =
-      std::max(helperThreadCount.ref(), markingThreadCount.ref());
+      std::max(helperThreadCount.ref(),
+               markingThreadCount.ref() + SpareThreadsDuringParallelMarking);
 
   
   
@@ -1342,9 +1351,12 @@ void GCRuntime::updateHelperThreadCount() {
   
   
   size_t availableThreadCount = GetHelperThreadCount();
+  MOZ_ASSERT(availableThreadCount != 0);
   targetCount = std::min(targetCount, availableThreadCount);
   helperThreadCount = std::min(helperThreadCount.ref(), availableThreadCount);
-  markingThreadCount = std::min(markingThreadCount.ref(), availableThreadCount);
+  markingThreadCount =
+      std::min(markingThreadCount.ref(),
+               availableThreadCount - SpareThreadsDuringParallelMarking);
 
   
   HelperThreadState().setGCParallelThreadCount(targetCount, lock);

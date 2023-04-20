@@ -22,6 +22,10 @@ bool ParallelMarker::mark(SliceBudget& sliceBudget) {
   {
     AutoLockHelperThreadState lock;
     MOZ_ASSERT(workerCount() <= HelperThreadState().maxGCParallelThreads(lock));
+
+    
+    
+    
   }
 #endif
 
