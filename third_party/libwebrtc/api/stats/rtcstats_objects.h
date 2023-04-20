@@ -357,12 +357,13 @@ class RTC_EXPORT RTCMediaStreamTrackStats final : public RTCStats {
   RTCNonStandardStatsMember<double> total_interruption_duration;
   
   
+  RTCNonStandardStatsMember<double> total_frames_duration;
+  RTCNonStandardStatsMember<double> sum_squared_frame_durations;
+  
   RTCNonStandardStatsMember<uint32_t> freeze_count;
   RTCNonStandardStatsMember<uint32_t> pause_count;
   RTCNonStandardStatsMember<double> total_freezes_duration;
   RTCNonStandardStatsMember<double> total_pauses_duration;
-  RTCNonStandardStatsMember<double> total_frames_duration;
-  RTCNonStandardStatsMember<double> sum_squared_frame_durations;
 };
 
 
@@ -485,6 +486,10 @@ class RTC_EXPORT RTCInboundRTPStreamStats final
   RTCNonStandardStatsMember<uint32_t> frames_assembled_from_multiple_packets;
   RTCStatsMember<double> total_inter_frame_delay;
   RTCStatsMember<double> total_squared_inter_frame_delay;
+  RTCStatsMember<uint32_t> pause_count;
+  RTCStatsMember<double> total_pauses_duration;
+  RTCStatsMember<uint32_t> freeze_count;
+  RTCStatsMember<double> total_freezes_duration;
   
   RTCStatsMember<std::string> content_type;
   
