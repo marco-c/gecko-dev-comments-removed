@@ -70,46 +70,12 @@ class RTC_EXPORT StreamInterface {
   
   
 
-  
-  
-  
-  
-  [[deprecated("Use ArrayView version")]] virtual StreamResult
-  Read(void* buffer, size_t buffer_len, size_t* read, int* error) {
-    RTC_CHECK_NOTREACHED();
-  }
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  
-  
-  
-  
-  
   virtual StreamResult Read(rtc::ArrayView<uint8_t> buffer,
                             size_t& read,
-                            int& error) {
-    return Read(buffer.data(), buffer.size(), &read, &error);
-  }
-#pragma clang diagnostic pop
-
-  
-  
-  
-  
-  [[deprecated("Use ArrayView version")]] virtual StreamResult
-  Write(const void* data, size_t data_len, size_t* written, int* error) {
-    RTC_CHECK_NOTREACHED();
-  }
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+                            int& error) = 0;
   virtual StreamResult Write(rtc::ArrayView<const uint8_t> data,
                              size_t& written,
-                             int& error) {
-    return Write(data.data(), data.size(), &written, &error);
-  }
-#pragma clang diagnostic pop
+                             int& error) = 0;
 
   
   

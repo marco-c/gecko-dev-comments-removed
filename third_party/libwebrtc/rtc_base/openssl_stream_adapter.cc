@@ -561,21 +561,6 @@ void OpenSSLStreamAdapter::SetInitialRetransmissionTimeout(int timeout_ms) {
 
 
 
-
-
-StreamResult OpenSSLStreamAdapter::Write(const void* data,
-                                         size_t data_len,
-                                         size_t* written,
-                                         int* error) {
-  
-  
-  size_t dummy_written;
-  int dummy_error;
-  return Write(
-      rtc::MakeArrayView(reinterpret_cast<const uint8_t*>(data), data_len),
-      written ? *written : dummy_written, error ? *error : dummy_error);
-}
-
 StreamResult OpenSSLStreamAdapter::Write(rtc::ArrayView<const uint8_t> data,
                                          size_t& written,
                                          int& error) {
@@ -635,19 +620,6 @@ StreamResult OpenSSLStreamAdapter::Write(rtc::ArrayView<const uint8_t> data,
       return SR_ERROR;
   }
   
-}
-
-
-StreamResult OpenSSLStreamAdapter::Read(void* data,
-                                        size_t data_len,
-                                        size_t* read,
-                                        int* error) {
-  
-  
-  size_t dummy_read;
-  int dummy_error;
-  return Read(rtc::MakeArrayView(reinterpret_cast<uint8_t*>(data), data_len),
-              read ? *read : dummy_read, error ? *error : dummy_error);
 }
 
 StreamResult OpenSSLStreamAdapter::Read(rtc::ArrayView<uint8_t> data,
