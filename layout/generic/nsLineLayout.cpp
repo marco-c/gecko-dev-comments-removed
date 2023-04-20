@@ -3157,34 +3157,34 @@ void nsLineLayout::TextAlignLine(nsLineBox* aLine, bool aIsLastLine) {
     ExpandInlineRubyBoxes(mRootSpan);
   }
 
-  if (mPresContext->BidiEnabled() &&
-      (!mPresContext->IsVisualMode() || lineWM.IsBidiRTL())) {
-    PerFrameData* startFrame = psd->mFirstFrame;
-    MOZ_ASSERT(startFrame, "empty line?");
-    if (startFrame->mIsMarker) {
-      
-      startFrame = startFrame->mNext;
-      MOZ_ASSERT(startFrame, "no frame after ::marker?");
-      MOZ_ASSERT(!startFrame->mIsMarker, "multiple ::markers?");
-    }
+  PerFrameData* startFrame = psd->mFirstFrame;
+  MOZ_ASSERT(startFrame, "empty line?");
+  if (startFrame->mIsMarker) {
+    
+    startFrame = startFrame->mNext;
+    MOZ_ASSERT(startFrame, "no frame after ::marker?");
+    MOZ_ASSERT(!startFrame->mIsMarker, "multiple ::markers?");
+  }
+
+  const bool bidi = mPresContext->BidiEnabled() &&
+                    (!mPresContext->IsVisualMode() || lineWM.IsBidiRTL());
+  if (bidi) {
     nsBidiPresUtils::ReorderFrames(startFrame->mFrame, aLine->GetChildCount(),
                                    lineWM, mContainerSize,
                                    psd->mIStart + mTextIndent + dx);
-    if (dx) {
-      if (startFrame->mFrame->IsLineFrame()) {
-        
-        
-        
-        startFrame->mBounds.IStart(lineWM) += dx;
-        startFrame->mFrame->SetRect(lineWM, startFrame->mBounds,
-                                    ContainerSizeForSpan(psd));
+  }
+
+  if (dx) {
+    
+    
+    
+    const bool needToAdjustFrames = !bidi || startFrame->mFrame->IsLineFrame();
+    MOZ_ASSERT_IF(startFrame->mFrame->IsLineFrame(), !startFrame->mNext);
+    if (needToAdjustFrames) {
+      for (PerFrameData* pfd = startFrame; pfd; pfd = pfd->mNext) {
+        pfd->mBounds.IStart(lineWM) += dx;
+        pfd->mFrame->SetRect(lineWM, pfd->mBounds, ContainerSizeForSpan(psd));
       }
-      aLine->IndentBy(dx, ContainerSize());
-    }
-  } else if (dx) {
-    for (PerFrameData* pfd = psd->mFirstFrame; pfd; pfd = pfd->mNext) {
-      pfd->mBounds.IStart(lineWM) += dx;
-      pfd->mFrame->SetRect(lineWM, pfd->mBounds, ContainerSizeForSpan(psd));
     }
     aLine->IndentBy(dx, ContainerSize());
   }
