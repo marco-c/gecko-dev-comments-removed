@@ -1731,9 +1731,14 @@ impl Device {
         
         
         
-        let is_mali_g = renderer_name.starts_with("Mali-G");
-        let is_mali_t = renderer_name.starts_with("Mali-T");
-        let supports_render_target_partial_update = !is_mali_g && !is_mali_t;
+        
+        let supports_render_target_partial_update = !(renderer_name.starts_with("Mali-T")
+            || renderer_name == "Mali-G31"
+            || renderer_name == "Mali-G51"
+            || renderer_name == "Mali-G71"
+            || renderer_name == "Mali-G52"
+            || renderer_name == "Mali-G72"
+            || renderer_name == "Mali-G76");
 
         let supports_shader_storage_object = match gl.get_type() {
             
@@ -1777,7 +1782,7 @@ impl Device {
         if is_software_webrender {
             
             requires_batched_texture_uploads = Some(false);
-        } else if is_mali_g {
+        } else if renderer_name.starts_with("Mali-G") {
             
             
             requires_batched_texture_uploads = Some(true);
@@ -1786,7 +1791,7 @@ impl Device {
         
         
         
-        let supports_alpha_target_clears = !is_mali_t;
+        let supports_alpha_target_clears = !renderer_name.starts_with("Mali-T");
 
         
         
