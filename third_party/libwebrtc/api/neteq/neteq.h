@@ -314,12 +314,6 @@ class NetEq {
 
   
   
-  
-  
-  virtual std::vector<uint32_t> LastDecodedTimestamps() const = 0;
-
-  
-  
   virtual int SyncBufferSizeMs() const = 0;
 };
 
