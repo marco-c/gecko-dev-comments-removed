@@ -1,0 +1,10 @@
+
+
+test(() => {
+    const preloads = [{
+        "url": "empty.json?" + Date.now(),
+        "as_attr": "fetch",
+        "crossorigin_attr": "",
+    }];
+    navigateToTestWithEarlyHints("resources/preload-fetch.html", preloads);
+});
