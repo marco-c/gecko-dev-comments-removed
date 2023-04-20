@@ -6635,6 +6635,28 @@
             
             
             this.mBrowser.urlbarChangeTracker.startedLoad();
+
+            
+            
+            
+            
+            
+            if (
+              this.mBrowser.browsingContext.sessionHistory?.count === 0 &&
+              BrowserUIUtils.checkEmptyPageOrigin(
+                this.mBrowser,
+                originalLocation
+              )
+            ) {
+              gBrowser.setInitialTabTitle(this.mTab, originalLocation.spec, {
+                isURL: true,
+              });
+
+              this.mBrowser._initialURI = originalLocation;
+              if (this.mTab.selected && !gBrowser.userTypedValue) {
+                gURLBar.setURI();
+              }
+            }
           }
           delete this.mBrowser.initialPageLoadedFromUserAction;
           
