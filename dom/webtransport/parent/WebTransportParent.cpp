@@ -557,20 +557,12 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
 
   Unused << aExpirationTime;
 
-  MOZ_ASSERT(!mOutgoingDatagramResolver);
   mOutgoingDatagramResolver = std::move(aResolver);
   
   
   
   
-  
-  
-  
-  
-  static uint64_t sDatagramId = 1;
-  LOG_VERBOSE(("Sending datagram %" PRIu64 ", length %zu", sDatagramId,
-               aData.Length()));
-  Unused << mWebTransport->SendDatagram(aData, sDatagramId++);
+  Unused << mWebTransport->SendDatagram(aData, 0);
 
   return IPC_OK();
 }
@@ -580,7 +572,7 @@ NS_IMETHODIMP WebTransportParent::OnDatagramReceived(
   
   MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
 
-  LOG(("WebTransportParent received datagram length = %zu", aData.Length()));
+  LOG(("WebTransportParent received datagram"));
 
   TimeStamp ts = TimeStamp::Now();
   Unused << SendIncomingDatagram(aData, ts);
@@ -601,19 +593,16 @@ WebTransportParent::OnOutgoingDatagramOutCome(
   MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
   
   nsresult result = NS_ERROR_FAILURE;
-  Unused << result;
   Unused << aId;
 
   if (aOutCome == WebTransportSessionEventListener::DatagramOutcome::SENT) {
     result = NS_OK;
-    LOG(("Sent datagram id= %" PRIu64, aId));
-  } else {
-    LOG(("Didn't send datagram id= %" PRIu64, aId));
   }
 
-  
   MOZ_ASSERT(mOutgoingDatagramResolver);
   mOutgoingDatagramResolver(result);
+
+  
   mOutgoingDatagramResolver = nullptr;
 
   return NS_OK;

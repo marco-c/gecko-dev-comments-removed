@@ -53,10 +53,7 @@ WebTransportIncomingStreamsAlgorithms::PullCallbackImpl(
   RefPtr<WebTransportIncomingStreamsAlgorithms> self(this);
   
   
-  auto length = (mUnidirectional == StreamType::Unidirectional)
-                    ? mTransport->mUnidirectionalStreams.Length()
-                    : mTransport->mBidirectionalStreams.Length();
-  if (length == 0) {
+  if (mTransport->mUnidirectionalStreams.Length() == 0) {
     
     
     

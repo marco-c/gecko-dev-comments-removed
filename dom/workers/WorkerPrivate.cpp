@@ -4209,7 +4209,6 @@ void WorkerPrivate::RunShutdownTasks() {
   for (auto& task : shutdownTasks) {
     task->TargetShutdown();
   }
-  mWorkerHybridEventTarget->ForgetWorkerPrivate(this);
 }
 
 void WorkerPrivate::CancelAllTimeouts() {
@@ -4788,6 +4787,26 @@ bool WorkerPrivate::NotifyInternal(WorkerStatus aStatus) {
         } else {
           data->mScope->NoteShuttingDown();
         }
+      }
+    }
+
+    
+    
+    if (aStatus == Killing) {
+      
+      
+      
+      
+      
+      {
+        MutexAutoUnlock unlock(mMutex);
+        mWorkerHybridEventTarget->ForgetWorkerPrivate(this);
+      }
+
+      
+      
+      if (mStatus >= aStatus) {
+        return true;
       }
     }
 

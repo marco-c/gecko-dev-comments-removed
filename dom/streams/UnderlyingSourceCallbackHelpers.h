@@ -27,7 +27,6 @@ enum class nsresult : uint32_t;
 
 namespace mozilla::dom {
 
-class StrongWorkerRef;
 class BodyStreamHolder;
 class ReadableStreamController;
 class ReadableStream;
@@ -146,7 +145,7 @@ class UnderlyingSourceAlgorithmsWrapper
       JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
       ErrorResult& aRv) final;
 
-  MOZ_CAN_RUN_SCRIPT virtual already_AddRefed<Promise> PullCallbackImpl(
+  virtual already_AddRefed<Promise> PullCallbackImpl(
       JSContext* aCx, ReadableStreamController& aController, ErrorResult& aRv) {
     
     return nullptr;
@@ -160,48 +159,6 @@ class UnderlyingSourceAlgorithmsWrapper
   }
 };
 
-class InputToReadableStreamAlgorithms;
-
-
-
-
-
-
-
-class InputStreamHolder final : public nsIInputStreamCallback {
- public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIINPUTSTREAMCALLBACK
-
-  InputStreamHolder(JSContext* aCx, InputToReadableStreamAlgorithms* aCallback,
-                    nsIAsyncInputStream* aInput);
-
-  
-  void Shutdown();
-
-  
-  nsresult AsyncWait(uint32_t aFlags, uint32_t aRequestedCount,
-                     nsIEventTarget* aEventTarget);
-  nsresult Available(uint64_t* aSize) { return mInput->Available(aSize); }
-  nsresult Read(char* aBuffer, uint32_t aLength, uint32_t* aWritten) {
-    return mInput->Read(aBuffer, aLength, aWritten);
-  }
-  nsresult CloseWithStatus(nsresult aStatus) {
-    return mInput->CloseWithStatus(aStatus);
-  }
-
- private:
-  ~InputStreamHolder();
-
-  
-  
-  InputToReadableStreamAlgorithms* mCallback;
-  
-  RefPtr<StrongWorkerRef> mAsyncWaitWorkerRef;
-  RefPtr<StrongWorkerRef> mWorkerRef;
-  nsCOMPtr<nsIAsyncInputStream> mInput;
-};
-
 class InputToReadableStreamAlgorithms final
     : public UnderlyingSourceAlgorithmsWrapper,
       public nsIInputStreamCallback {
@@ -210,11 +167,11 @@ class InputToReadableStreamAlgorithms final
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InputToReadableStreamAlgorithms,
                                            UnderlyingSourceAlgorithmsWrapper)
 
-  InputToReadableStreamAlgorithms(JSContext* aCx, nsIAsyncInputStream* aInput,
+  InputToReadableStreamAlgorithms(nsIAsyncInputStream* aInput,
                                   ReadableStream* aStream)
       : mState(eInitializing),
         mOwningEventTarget(GetCurrentSerialEventTarget()),
-        mInput(new InputStreamHolder(aCx, this, aInput)),
+        mInput(aInput),
         mStream(aStream) {}
 
   
@@ -226,11 +183,7 @@ class InputToReadableStreamAlgorithms final
   void ReleaseObjects() override;
 
  private:
-  ~InputToReadableStreamAlgorithms() {
-    if (mInput) {
-      mInput->Shutdown();
-    }
-  }
+  ~InputToReadableStreamAlgorithms() override = default;
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void CloseAndReleaseObjects(
       JSContext* aCx, ReadableStream* aStream);
@@ -274,7 +227,7 @@ class InputToReadableStreamAlgorithms final
 
   nsCOMPtr<nsIEventTarget> mOwningEventTarget;
 
-  RefPtr<InputStreamHolder> mInput;
+  nsCOMPtr<nsIAsyncInputStream> mInput;
   RefPtr<ReadableStream> mStream;
 };
 
