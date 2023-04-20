@@ -10,37 +10,44 @@
 
 
 
-
-
 const ridExtensions = [
   "urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id",
   "urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id",
 ];
 
-function ridToMid(sdpString) {
-  const sections = SDPUtils.splitSections(sdpString);
+function ridToMid(description, rids) {
+  const sections = SDPUtils.splitSections(description.sdp);
   const dtls = SDPUtils.getDtlsParameters(sections[1], sections[0]);
   const ice = SDPUtils.getIceParameters(sections[1], sections[0]);
   const rtpParameters = SDPUtils.parseRtpParameters(sections[1]);
-  const setupValue = sdpString.match(/a=setup:(.*)/)[1];
+  const setupValue = description.sdp.match(/a=setup:(.*)/)[1];
   const directionValue =
-    sdpString.match(/a=sendrecv|a=sendonly|a=recvonly|a=inactive/) ||
+    description.sdp.match(/a=sendrecv|a=sendonly|a=recvonly|a=inactive/) ||
     "a=sendrecv";
+  const mline = SDPUtils.parseMLine(sections[1]);
 
   
   rtpParameters.headerExtensions = rtpParameters.headerExtensions.filter(
-    ext => {
-      return ext.uri != "urn:ietf:params:rtp-hdrext:sdes:mid";
-    }
+    ext => ext.uri != "urn:ietf:params:rtp-hdrext:sdes:mid"
   );
 
-  rtpParameters.headerExtensions.forEach(ext => {
+  for (const ext of rtpParameters.headerExtensions) {
     if (ext.uri == "urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id") {
       ext.uri = "urn:ietf:params:rtp-hdrext:sdes:mid";
     }
-  });
+  }
 
-  let rids = Array.from(sdpString.matchAll(/a=rid:(.*) send/g)).map(r => r[1]);
+  
+  
+  rtpParameters.codecs = rtpParameters.codecs.filter(
+    c => c.name.toUpperCase() !== "RTX"
+  );
+
+  if (!rids) {
+    rids = Array.from(description.sdp.matchAll(/a=rid:(.*) send/g)).map(
+      r => r[1]
+    );
+  }
 
   let sdp =
     SDPUtils.writeSessionBoilerplate() +
@@ -50,10 +57,10 @@ function ridToMid(sdpString) {
     rids.join(" ") +
     "\r\n";
   const baseRtpDescription = SDPUtils.writeRtpDescription(
-    "video",
+    mline.kind,
     rtpParameters
   );
-  rids.forEach(rid => {
+  for (const rid of rids) {
     sdp +=
       baseRtpDescription +
       "a=mid:" +
@@ -65,37 +72,41 @@ function ridToMid(sdpString) {
       rid +
       "\r\n";
     sdp += directionValue + "\r\n";
-  });
-
+  }
   return sdp;
 }
 
-function midToRid(sdpString) {
-  const sections = SDPUtils.splitSections(sdpString);
+function midToRid(description, localDescription, rids) {
+  const sections = SDPUtils.splitSections(description.sdp);
   const dtls = SDPUtils.getDtlsParameters(sections[1], sections[0]);
   const ice = SDPUtils.getIceParameters(sections[1], sections[0]);
   const rtpParameters = SDPUtils.parseRtpParameters(sections[1]);
-  const setupValue = sdpString.match(/a=setup:(.*)/)[1];
+  const setupValue = description.sdp.match(/a=setup:(.*)/)[1];
   const directionValue =
-    sdpString.match(/a=sendrecv|a=sendonly|a=recvonly|a=inactive/) ||
+    description.sdp.match(/a=sendrecv|a=sendonly|a=recvonly|a=inactive/) ||
     "a=sendrecv";
+  const mline = SDPUtils.parseMLine(sections[1]);
 
   
   rtpParameters.headerExtensions = rtpParameters.headerExtensions.filter(
-    ext => {
-      return !ridExtensions.includes(ext.uri);
-    }
+    ext => !ridExtensions.includes(ext.uri)
   );
 
-  rtpParameters.headerExtensions.forEach(ext => {
+  for (const ext of rtpParameters.headerExtensions) {
     if (ext.uri == "urn:ietf:params:rtp-hdrext:sdes:mid") {
       ext.uri = "urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id";
     }
-  });
+  }
 
-  let mids = [];
-  for (let i = 1; i < sections.length; i++) {
-    mids.push(SDPUtils.getMid(sections[i]));
+  const localMid = localDescription
+    ? SDPUtils.getMid(SDPUtils.splitSections(localDescription.sdp)[1])
+    : "0";
+
+  if (!rids) {
+    rids = [];
+    for (let i = 1; i < sections.length; i++) {
+      rids.push(SDPUtils.getMid(sections[i]));
+    }
   }
 
   let sdp =
@@ -103,20 +114,101 @@ function midToRid(sdpString) {
     SDPUtils.writeDtlsParameters(dtls, setupValue) +
     SDPUtils.writeIceParameters(ice) +
     "a=group:BUNDLE " +
-    mids[0] +
+    localMid +
     "\r\n";
-  sdp += SDPUtils.writeRtpDescription("video", rtpParameters);
+  sdp += SDPUtils.writeRtpDescription(mline.kind, rtpParameters);
   
   
-  sdp += "a=mid:" + mids[0] + "\r\n";
+  sdp += "a=mid:" + localMid + "\r\n";
   sdp += directionValue + "\r\n";
 
-  mids.forEach(mid => {
-    sdp += "a=rid:" + mid + " recv\r\n";
-  });
-  sdp += "a=simulcast:recv " + mids.join(";") + "\r\n";
+  for (const rid of rids) {
+    const stringrid = String(rid); 
+    const choices = stringrid.split(",");
+    choices.forEach(choice => {
+      sdp += "a=rid:" + choice + " recv\r\n";
+    });
+  }
+  if (rids.length) {
+    sdp += "a=simulcast:recv " + rids.join(";") + "\r\n";
+  }
 
   return sdp;
+}
+
+async function doOfferToSendSimulcast(offerer, answerer) {
+  await offerer.setLocalDescription();
+
+  
+  
+  let mids = [];
+  if (answerer.localDescription) {
+    
+    
+    
+    mids = [...answerer.localDescription.sdp.matchAll(/a=mid:(.*)/g)].map(
+      e => e[1]
+    );
+  } else {
+    
+    const simulcastAttr = offerer.localDescription.sdp.match(
+      /a=simulcast:send (.*)/
+    );
+    if (simulcastAttr) {
+      mids = simulcastAttr[1].split(";");
+    }
+  }
+
+  const nonSimulcastOffer = ridToMid(offerer.localDescription, mids);
+  await answerer.setRemoteDescription({
+    type: "offer",
+    sdp: nonSimulcastOffer,
+  });
+}
+
+async function doAnswerToRecvSimulcast(offerer, answerer, rids) {
+  await answerer.setLocalDescription();
+  const simulcastAnswer = midToRid(
+    answerer.localDescription,
+    offerer.localDescription,
+    rids
+  );
+  await offerer.setRemoteDescription({ type: "answer", sdp: simulcastAnswer });
+}
+
+async function doOfferToRecvSimulcast(offerer, answerer, rids) {
+  await offerer.setLocalDescription();
+  const simulcastOffer = midToRid(
+    offerer.localDescription,
+    answerer.localDescription,
+    rids
+  );
+  await answerer.setRemoteDescription({ type: "offer", sdp: simulcastOffer });
+}
+
+async function doAnswerToSendSimulcast(offerer, answerer) {
+  await answerer.setLocalDescription();
+
+  
+  const mids = [...offerer.localDescription.sdp.matchAll(/a=mid:(.*)/g)].map(
+    e => e[1]
+  );
+
+  const nonSimulcastAnswer = ridToMid(answerer.localDescription, mids);
+  await offerer.setRemoteDescription({
+    type: "answer",
+    sdp: nonSimulcastAnswer,
+  });
+}
+
+async function doOfferToSendSimulcastAndAnswer(offerer, answerer, rids) {
+  await doOfferToSendSimulcast(offerer, answerer);
+  await doAnswerToRecvSimulcast(offerer, answerer, rids);
+}
+
+async function doOfferToRecvSimulcastAndAnswer(offerer, answerer, rids) {
+  await doOfferToRecvSimulcast(offerer, answerer, rids);
+  await doAnswerToSendSimulcast(offerer, answerer);
 }
 
 
