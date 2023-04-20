@@ -337,18 +337,17 @@ static bool str_unescape(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
+  bool unescapeFailed = false;
   if (str->hasLatin1Chars()) {
     AutoCheckCannotGC nogc;
-    if (!Unescape(sb, str->latin1Range(nogc))) {
-      sb.failure();
-      return false;
-    }
+    unescapeFailed = !Unescape(sb, str->latin1Range(nogc));
   } else {
     AutoCheckCannotGC nogc;
-    if (!Unescape(sb, str->twoByteRange(nogc))) {
-      sb.failure();
-      return false;
-    }
+    unescapeFailed = !Unescape(sb, str->twoByteRange(nogc));
+  }
+  if (unescapeFailed) {
+    sb.failure();
+    return false;
   }
 
   
@@ -3070,6 +3069,74 @@ JSString* js::str_replace_string_raw(JSContext* cx, HandleString string,
   return BuildFlatReplacement(cx, string, repl, match, patternLength);
 }
 
+template <typename StrChar, typename RepChar>
+static bool ReplaceAllInternal(const AutoCheckCannotGC& nogc,
+                               JSLinearString* string,
+                               JSLinearString* searchString,
+                               JSLinearString* replaceString,
+                               const int32_t startPosition,
+                               JSStringBuilder& result) {
+  
+  const size_t stringLength = string->length();
+  const size_t searchLength = searchString->length();
+  const size_t replaceLength = replaceString->length();
+
+  MOZ_ASSERT(stringLength > 0);
+  MOZ_ASSERT(searchLength > 0);
+  MOZ_ASSERT(stringLength >= searchLength);
+
+  
+  uint32_t endOfLastMatch = 0;
+
+  const StrChar* strChars = string->chars<StrChar>(nogc);
+  const RepChar* repChars = replaceString->chars<RepChar>(nogc);
+
+  uint32_t dollarIndex = FindDollarIndex(repChars, replaceLength);
+
+  
+  
+  if (replaceLength >= searchLength) {
+    if (!result.reserve(stringLength)) {
+      return false;
+    }
+  }
+
+  int32_t position = startPosition;
+  do {
+    
+    
+    if (!result.append(strChars + endOfLastMatch, position - endOfLastMatch)) {
+      return false;
+    }
+
+    
+    
+    if (dollarIndex != UINT32_MAX) {
+      size_t matchLimit = position + searchLength;
+      if (!AppendDollarReplacement(result, dollarIndex, position, matchLimit,
+                                   string, repChars, replaceLength)) {
+        return false;
+      }
+    } else {
+      if (!result.append(repChars, replaceLength)) {
+        return false;
+      }
+    }
+
+    
+    endOfLastMatch = position + searchLength;
+
+    
+    
+    position = StringMatch(string, searchString, endOfLastMatch);
+  } while (position >= 0);
+
+  
+  
+  return result.append(strChars + endOfLastMatch,
+                       stringLength - endOfLastMatch);
+}
+
 
 
 
@@ -3080,13 +3147,6 @@ static JSString* ReplaceAll(JSContext* cx, JSLinearString* string,
                             JSLinearString* searchString,
                             JSLinearString* replaceString) {
   
-  const size_t stringLength = string->length();
-  const size_t searchLength = searchString->length();
-  const size_t replaceLength = replaceString->length();
-
-  MOZ_ASSERT(stringLength > 0);
-  MOZ_ASSERT(searchLength > 0);
-  MOZ_ASSERT(stringLength >= searchLength);
 
   
 
@@ -3104,9 +3164,6 @@ static JSString* ReplaceAll(JSContext* cx, JSLinearString* string,
   
 
   
-  uint32_t endOfLastMatch = 0;
-
-  
   JSStringBuilder result(cx);
   if constexpr (std::is_same_v<StrChar, char16_t> ||
                 std::is_same_v<RepChar, char16_t>) {
@@ -3116,62 +3173,15 @@ static JSString* ReplaceAll(JSContext* cx, JSLinearString* string,
     }
   }
 
+  bool internalFailure = false;
   {
     AutoCheckCannotGC nogc;
-    const StrChar* strChars = string->chars<StrChar>(nogc);
-    const RepChar* repChars = replaceString->chars<RepChar>(nogc);
-
-    uint32_t dollarIndex = FindDollarIndex(repChars, replaceLength);
-
-    
-    
-    if (replaceLength >= searchLength) {
-      if (!result.reserve(stringLength)) {
-        result.failure();
-        return nullptr;
-      }
-    }
-
-    do {
-      
-      
-      if (!result.append(strChars + endOfLastMatch,
-                         position - endOfLastMatch)) {
-        result.failure();
-        return nullptr;
-      }
-
-      
-      
-      if (dollarIndex != UINT32_MAX) {
-        size_t matchLimit = position + searchLength;
-        if (!AppendDollarReplacement(result, dollarIndex, position, matchLimit,
-                                     string, repChars, replaceLength)) {
-          result.failure();
-          return nullptr;
-        }
-      } else {
-        if (!result.append(repChars, replaceLength)) {
-          result.failure();
-          return nullptr;
-        }
-      }
-
-      
-      endOfLastMatch = position + searchLength;
-
-      
-      
-      position = StringMatch(string, searchString, endOfLastMatch);
-    } while (position >= 0);
-
-    
-    
-    if (!result.append(strChars + endOfLastMatch,
-                       stringLength - endOfLastMatch)) {
-      result.failure();
-      return nullptr;
-    }
+    internalFailure = !ReplaceAllInternal<StrChar, RepChar>(
+        nogc, string, searchString, replaceString, position, result);
+  }
+  if (internalFailure) {
+    result.failure();
+    return nullptr;
   }
 
   
@@ -3184,6 +3194,67 @@ static JSString* ReplaceAll(JSContext* cx, JSLinearString* string,
   return resultString;
 }
 
+template <typename StrChar, typename RepChar>
+static bool ReplaceAllInterleaveInternal(const AutoCheckCannotGC& nogc,
+                                         JSContext* cx, JSLinearString* string,
+                                         JSLinearString* replaceString,
+                                         JSStringBuilder& result) {
+  
+  const size_t stringLength = string->length();
+  const size_t replaceLength = replaceString->length();
+
+  const StrChar* strChars = string->chars<StrChar>(nogc);
+  const RepChar* repChars = replaceString->chars<RepChar>(nogc);
+
+  uint32_t dollarIndex = FindDollarIndex(repChars, replaceLength);
+
+  if (dollarIndex != UINT32_MAX) {
+    if (!result.reserve(stringLength)) {
+      return false;
+    }
+  } else {
+    
+    CheckedInt<uint32_t> strLength(stringLength);
+    CheckedInt<uint32_t> repLength(replaceLength);
+    CheckedInt<uint32_t> length = strLength + (strLength + 1) * repLength;
+    if (!length.isValid()) {
+      ReportAllocationOverflow(cx);
+      return false;
+    }
+
+    if (!result.reserve(length.value())) {
+      return false;
+    }
+  }
+
+  auto appendReplacement = [&](size_t match) {
+    if (dollarIndex != UINT32_MAX) {
+      return AppendDollarReplacement(result, dollarIndex, match, match, string,
+                                     repChars, replaceLength);
+    }
+    return result.append(repChars, replaceLength);
+  };
+
+  for (size_t index = 0; index < stringLength; index++) {
+    
+    
+    if (!appendReplacement(index)) {
+      return false;
+    }
+
+    
+    if (!result.append(strChars[index])) {
+      return false;
+    }
+  }
+
+  
+  
+  return appendReplacement(stringLength);
+
+  
+}
+
 
 
 
@@ -3194,8 +3265,6 @@ template <typename StrChar, typename RepChar>
 static JSString* ReplaceAllInterleave(JSContext* cx, JSLinearString* string,
                                       JSLinearString* replaceString) {
   
-  const size_t stringLength = string->length();
-  const size_t replaceLength = replaceString->length();
 
   
 
@@ -3211,67 +3280,15 @@ static JSString* ReplaceAllInterleave(JSContext* cx, JSLinearString* string,
     }
   }
 
+  bool internalFailure = false;
   {
     AutoCheckCannotGC nogc;
-    const StrChar* strChars = string->chars<StrChar>(nogc);
-    const RepChar* repChars = replaceString->chars<RepChar>(nogc);
-
-    uint32_t dollarIndex = FindDollarIndex(repChars, replaceLength);
-
-    if (dollarIndex != UINT32_MAX) {
-      if (!result.reserve(stringLength)) {
-        result.failure();
-        return nullptr;
-      }
-    } else {
-      
-      CheckedInt<uint32_t> strLength(stringLength);
-      CheckedInt<uint32_t> repLength(replaceLength);
-      CheckedInt<uint32_t> length = strLength + (strLength + 1) * repLength;
-      if (!length.isValid()) {
-        ReportAllocationOverflow(cx);
-        result.failure();
-        return nullptr;
-      }
-
-      if (!result.reserve(length.value())) {
-        result.failure();
-        return nullptr;
-      }
-    }
-
-    auto appendReplacement = [&](size_t match) {
-      if (dollarIndex != UINT32_MAX) {
-        return AppendDollarReplacement(result, dollarIndex, match, match,
-                                       string, repChars, replaceLength);
-      }
-      result.failure();
-      return result.append(repChars, replaceLength);
-    };
-
-    for (size_t index = 0; index < stringLength; index++) {
-      
-      
-      if (!appendReplacement(index)) {
-        result.failure();
-        return nullptr;
-      }
-
-      
-      if (!result.append(strChars[index])) {
-        result.failure();
-        return nullptr;
-      }
-    }
-
-    
-    
-    if (!appendReplacement(stringLength)) {
-      result.failure();
-      return nullptr;
-    }
-
-    
+    internalFailure = !ReplaceAllInterleaveInternal<StrChar, RepChar>(
+        nogc, cx, string, replaceString, result);
+  }
+  if (internalFailure) {
+    result.failure();
+    return nullptr;
   }
 
   
