@@ -5851,48 +5851,7 @@ var SourceNode = sourceMap.SourceNode;
 
 
 
-const PRE_ARRAY_LITERAL_TOKENS = {
-  typeof: true,
-  void: true,
-  delete: true,
-  case: true,
-  do: true,
-  "=": true,
-  in: true,
-  "{": true,
-  "*": true,
-  "/": true,
-  "%": true,
-  else: true,
-  ";": true,
-  "++": true,
-  "--": true,
-  "+": true,
-  "-": true,
-  "~": true,
-  "!": true,
-  ":": true,
-  "?": true,
-  ">>": true,
-  ">>>": true,
-  "<<": true,
-  "||": true,
-  "&&": true,
-  "<": true,
-  ">": true,
-  "<=": true,
-  ">=": true,
-  instanceof: true,
-  "&": true,
-  "^": true,
-  "|": true,
-  "==": true,
-  "!=": true,
-  "===": true,
-  "!==": true,
-  ",": true,
-  "}": true
-};
+const PRE_ARRAY_LITERAL_TOKENS = new Set(["typeof", "void", "delete", "case", "do", "=", "in", "{", "*", "/", "%", "else", ";", "++", "--", "+", "-", "~", "!", ":", "?", ">>", ">>>", "<<", "||", "&&", "<", ">", "<=", ">=", "instanceof", "&", "^", "|", "==", "!=", "===", "!==", ",", "}"]);
 
 
 
@@ -5918,102 +5877,20 @@ function isArrayLiteral(token, lastToken) {
     return true;
   }
 
-  return !!PRE_ARRAY_LITERAL_TOKENS[lastToken.type.keyword || lastToken.type.label];
+  return PRE_ARRAY_LITERAL_TOKENS.has(lastToken.type.keyword || lastToken.type.label);
 } 
 
 
 
-const PREVENT_ASI_AFTER_TOKENS = {
-  
-  "*": true,
-  "/": true,
-  "%": true,
-  "+": true,
-  "-": true,
-  "<<": true,
-  ">>": true,
-  ">>>": true,
-  "<": true,
-  ">": true,
-  "<=": true,
-  ">=": true,
-  instanceof: true,
-  in: true,
-  "==": true,
-  "!=": true,
-  "===": true,
-  "!==": true,
-  "&": true,
-  "^": true,
-  "|": true,
-  "&&": true,
-  "||": true,
-  ",": true,
-  ".": true,
-  "=": true,
-  "*=": true,
-  "/=": true,
-  "%=": true,
-  "+=": true,
-  "-=": true,
-  "<<=": true,
-  ">>=": true,
-  ">>>=": true,
-  "&=": true,
-  "^=": true,
-  "|=": true,
-  
-  delete: true,
-  void: true,
-  typeof: true,
-  "~": true,
-  "!": true,
-  new: true,
-  
-  "(": true
-}; 
+const PREVENT_ASI_AFTER_TOKENS = new Set([
+"*", "/", "%", "+", "-", "<<", ">>", ">>>", "<", ">", "<=", ">=", "instanceof", "in", "==", "!=", "===", "!==", "&", "^", "|", "&&", "||", ",", ".", "=", "*=", "/=", "%=", "+=", "-=", "<<=", ">>=", ">>>=", "&=", "^=", "|=", 
+"delete", "void", "typeof", "~", "!", "new", 
+"("]); 
 
 
-const PREVENT_ASI_BEFORE_TOKENS = {
-  
-  "*": true,
-  "/": true,
-  "%": true,
-  "<<": true,
-  ">>": true,
-  ">>>": true,
-  "<": true,
-  ">": true,
-  "<=": true,
-  ">=": true,
-  instanceof: true,
-  in: true,
-  "==": true,
-  "!=": true,
-  "===": true,
-  "!==": true,
-  "&": true,
-  "^": true,
-  "|": true,
-  "&&": true,
-  "||": true,
-  ",": true,
-  ".": true,
-  "=": true,
-  "*=": true,
-  "/=": true,
-  "%=": true,
-  "+=": true,
-  "-=": true,
-  "<<=": true,
-  ">>=": true,
-  ">>>=": true,
-  "&=": true,
-  "^=": true,
-  "|=": true,
-  
-  "(": true
-};
+const PREVENT_ASI_BEFORE_TOKENS = new Set([
+"*", "/", "%", "<<", ">>", ">>>", "<", ">", "<=", ">=", "instanceof", "in", "==", "!=", "===", "!==", "&", "^", "|", "&&", "||", ",", ".", "=", "*=", "/=", "%=", "+=", "-=", "<<=", ">>=", ">>>=", "&=", "^=", "|=", 
+"("]);
 
 
 
@@ -6057,11 +5934,11 @@ function isASI(token, lastToken) {
     return true;
   }
 
-  if (PREVENT_ASI_AFTER_TOKENS[lastToken.type.label || lastToken.type.keyword]) {
+  if (PREVENT_ASI_AFTER_TOKENS.has(lastToken.type.label || lastToken.type.keyword)) {
     return false;
   }
 
-  if (PREVENT_ASI_BEFORE_TOKENS[token.type.label || token.type.keyword]) {
+  if (PREVENT_ASI_BEFORE_TOKENS.has(token.type.label || token.type.keyword)) {
     return false;
   }
 
@@ -6326,41 +6203,14 @@ function prependWhiteSpace(token, lastToken, addedNewline, addedSpace, write, op
 
   if (newlineAdded) {
     if (ttk == "case" || ttk == "default") {
-      write(repeat(options.indent, indentLevel - 1), token.loc.start.line, token.loc.start.column);
+      write(options.indent.repeat(indentLevel - 1), token.loc.start.line, token.loc.start.column);
     } else {
-      write(repeat(options.indent, indentLevel), token.loc.start.line, token.loc.start.column);
+      write(options.indent.repeat(indentLevel), token.loc.start.line, token.loc.start.column);
     }
   } else if (!spaceAdded && needsSpaceAfter(token, lastToken)) {
     write(" ", lastToken.loc.start.line, lastToken.loc.start.column);
     spaceAdded = true;
   }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function repeat(str, n) {
-  let result = "";
-
-  while (n > 0) {
-    if (n & 1) {
-      result += str;
-    }
-
-    n >>= 1;
-    str += str;
-  }
-
-  return result;
 }
 
 
@@ -6497,7 +6347,7 @@ function incrementsIndent(token) {
 
 
 function addComment(write, indentLevel, options, block, text, line, column, nextToken) {
-  const indentString = repeat(options.indent, indentLevel);
+  const indentString = options.indent.repeat(indentLevel);
   let needNewline = true;
   write(indentString, line, column);
 
