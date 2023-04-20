@@ -1,18 +1,10 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["PluginParent", "PluginManager"];
-
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -25,7 +17,7 @@ XPCOMUtils.defineLazyGetter(lazy, "gNavigatorBundle", function() {
   return Services.strings.createBundle(url);
 });
 
-const PluginManager = {
+export const PluginManager = {
   gmpCrashes: new Map(),
 
   observe(subject, topic, data) {
@@ -55,12 +47,12 @@ const PluginManager = {
       this.gmpCrashes.set(pluginID, { pluginDumpID, pluginID, pluginName });
     }
 
-    
-    
-    
-    
-    
-    
+    // Only the parent process gets the gmp-plugin-crash observer
+    // notification, so we need to inform any content processes that
+    // the GMP has crashed. This then fires PluginCrashed events in
+    // all the relevant windows, which will trigger child actors being
+    // created, which will contact us again, when we'll use the
+    // gmpCrashes collection to respond.
     if (Services.ppmm) {
       Services.ppmm.broadcastAsyncMessage("gmp-plugin-crash", {
         pluginName,
@@ -69,17 +61,17 @@ const PluginManager = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Submit a crash report for a crashed plugin.
+   *
+   * @param pluginCrashID
+   *        An object with a pluginID.
+   * @param keyVals
+   *        An object whose key-value pairs will be merged
+   *        with the ".extra" file submitted with the report.
+   *        The properties of htis object will override properties
+   *        of the same name in the .extra file.
+   */
   submitCrashReport(pluginCrashID, keyVals = {}) {
     let report = this.getCrashReport(pluginCrashID);
     if (!report) {
@@ -108,7 +100,7 @@ const PluginManager = {
   },
 };
 
-class PluginParent extends JSWindowActorParent {
+export class PluginParent extends JSWindowActorParent {
   receiveMessage(msg) {
     let browser = this.manager.rootFrameLoader.ownerElement;
     switch (msg.name) {
@@ -127,17 +119,17 @@ class PluginParent extends JSWindowActorParent {
     return null;
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Shows a plugin-crashed notification bar for a browser that has had a
+   * GMP plugin crash.
+   *
+   * @param browser
+   *        The browser to show the notification for.
+   * @param pluginCrashID
+   *        The unique-per-process identifier for GMP.
+   */
   showPluginCrashedNotification(browser, pluginCrashID) {
-    
+    // If there's already an existing notification bar, don't do anything.
     let notificationBox = browser.getTabBrowser().getNotificationBox(browser);
     let notification = notificationBox.getNotificationWithValue(
       "plugin-crashed"
@@ -148,7 +140,7 @@ class PluginParent extends JSWindowActorParent {
       return;
     }
 
-    
+    // Configure the notification bar
     let priority = notificationBox.PRIORITY_WARNING_MEDIUM;
     let iconURL = "chrome://global/skin/icons/plugin.svg";
     let reloadLabel = lazy.gNavigatorBundle.GetStringFromName(
@@ -202,7 +194,7 @@ class PluginParent extends JSWindowActorParent {
       buttons
     );
 
-    
+    // Add the "learn more" link.
     let link = notification.ownerDocument.createXULElement("label", {
       is: "text-link",
     });
@@ -213,8 +205,8 @@ class PluginParent extends JSWindowActorParent {
     let crashurl = Services.urlFormatter.formatURLPref("app.support.baseURL");
     crashurl += "plugin-crashed-notificationbar";
     link.href = crashurl;
-    
-    
+    // Append a blank text node to make sure we don't put
+    // the link right next to the end of the message text.
     notification.messageText.appendChild(new Text(" "));
     notification.messageText.appendChild(link);
   }
