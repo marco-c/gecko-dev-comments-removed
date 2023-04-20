@@ -5270,7 +5270,7 @@ nscoord nsLayoutUtils::ComputeBSizeDependentValue(
   
   
   
-  MOZ_ASSERT(
+  NS_ASSERTION(
       NS_UNCONSTRAINEDSIZE != aContainingBlockBSize || !aCoord.HasPercent(),
       "unexpected containing block block-size");
 
