@@ -12,6 +12,7 @@
 #include "ImageTypes.h"
 #include "imgIContainer.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsColor.h"
@@ -324,6 +325,45 @@ class gfxUtils {
                                       const nsAString& aOutputOptions,
                                       BinaryOrData aBinaryOrData, FILE* aFile,
                                       nsACString* aString = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static nsresult EncodeSourceSurfaceAsStream(SourceSurface* aSurface,
+                                              const ImageType aImageType,
+                                              const nsAString& aOutputOptions,
+                                              nsIInputStream** aOutStream);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static mozilla::Maybe<nsTArray<uint8_t>> EncodeSourceSurfaceAsBytes(
+      SourceSurface* aSurface, const ImageType aImageType,
+      const nsAString& aOutputOptions);
 
   
 
