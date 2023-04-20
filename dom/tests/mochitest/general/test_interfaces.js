@@ -255,6 +255,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CompositionEvent", insecureContext: true },
   
+  { name: "CompressionStream", insecureContext: true },
+  
   { name: "ConstantSourceNode", insecureContext: true },
   
   {
@@ -332,6 +334,8 @@ let interfaceNamesInGlobalScope = [
   { name: "CustomElementRegistry", insecureContext: true },
   
   { name: "CustomEvent", insecureContext: true },
+  
+  { name: "DecompressionStream", insecureContext: true },
   
   { name: "DataTransfer", insecureContext: true },
   
