@@ -11,6 +11,7 @@
 #include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/HTMLMediaElementBinding.h"
+#include "mozilla/dom/NavigatorBinding.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/Logging.h"
@@ -192,7 +193,8 @@ static bool IsGVAutoplayRequestAllowed(nsPIDOMWindowInner* aWindow,
   return status == GVAutoplayRequestStatus::eALLOWED;
 }
 
-static bool IsGVAutoplayRequestAllowed(const HTMLMediaElement& aElement) {
+static bool IsGVAutoplayRequestAllowed(const HTMLMediaElement& aElement,
+                                       RType aType) {
   
   
   
@@ -204,17 +206,16 @@ static bool IsGVAutoplayRequestAllowed(const HTMLMediaElement& aElement) {
   if (!window) {
     return false;
   }
-
-  const RType type =
-      IsMediaElementInaudible(aElement) ? RType::eINAUDIBLE : RType::eAUDIBLE;
-  return IsGVAutoplayRequestAllowed(window, type);
+  return IsGVAutoplayRequestAllowed(window, aType);
 }
 #endif
 
 static bool IsAllowedToPlayInternal(const HTMLMediaElement& aElement) {
 #if defined(MOZ_WIDGET_ANDROID)
   if (StaticPrefs::media_geckoview_autoplay_request()) {
-    return IsGVAutoplayRequestAllowed(aElement);
+    return IsGVAutoplayRequestAllowed(
+        aElement, IsMediaElementInaudible(aElement) ? RType::eINAUDIBLE
+                                                    : RType::eAUDIBLE);
   }
 #endif
   bool isInaudible = IsMediaElementInaudible(aElement);
@@ -357,6 +358,98 @@ uint32_t AutoplayPolicy::GetSiteAutoplayPermission(nsIPrincipal* aPrincipal) {
 bool AutoplayPolicyTelemetryUtils::WouldBeAllowedToPlayIfAutoplayDisabled(
     const AudioContext& aContext) {
   return IsAudioContextAllowedToPlay(aContext);
+}
+
+
+dom::AutoplayPolicy AutoplayPolicy::GetAutoplayPolicy(
+    const dom::HTMLMediaElement& aElement) {
+  
+  
+  
+  
+  
+  
+  
+  const uint32_t sitePermission =
+      SiteAutoplayPerm(aElement.OwnerDoc()->GetInnerWindow());
+  const uint32_t globalPermission = DefaultAutoplayBehaviour();
+  const bool isAllowedToPlayByBlockingModel =
+      IsAllowedToPlayByBlockingModel(aElement);
+
+  AUTOPLAY_LOG(
+      "IsAllowedToPlay(element), sitePermission=%d, globalPermission=%d, "
+      "isAllowedToPlayByBlockingModel=%d",
+      sitePermission, globalPermission, isAllowedToPlayByBlockingModel);
+
+#if defined(MOZ_WIDGET_ANDROID)
+  if (StaticPrefs::media_geckoview_autoplay_request()) {
+    if (IsGVAutoplayRequestAllowed(aElement, RType::eAUDIBLE)) {
+      return dom::AutoplayPolicy::Allowed;
+    } else if (IsGVAutoplayRequestAllowed(aElement, RType::eINAUDIBLE)) {
+      return isAllowedToPlayByBlockingModel
+                 ? dom::AutoplayPolicy::Allowed
+                 : dom::AutoplayPolicy::Allowed_muted;
+    } else {
+      return isAllowedToPlayByBlockingModel ? dom::AutoplayPolicy::Allowed
+                                            : dom::AutoplayPolicy::Disallowed;
+    }
+  }
+#endif
+
+  
+  
+  
+  
+  
+  if (sitePermission == nsIPermissionManager::ALLOW_ACTION ||
+      (globalPermission == nsIAutoplay::ALLOWED &&
+       (sitePermission != nsIPermissionManager::DENY_ACTION &&
+        sitePermission != nsIAutoplay::BLOCKED_ALL)) ||
+      isAllowedToPlayByBlockingModel) {
+    return dom::AutoplayPolicy::Allowed;
+  }
+
+  
+  
+  
+  
+  
+  if (sitePermission == nsIPermissionManager::DENY_ACTION ||
+      (globalPermission == nsIAutoplay::BLOCKED &&
+       sitePermission != nsIAutoplay::BLOCKED_ALL)) {
+    return dom::AutoplayPolicy::Allowed_muted;
+  }
+
+  return dom::AutoplayPolicy::Disallowed;
+}
+
+
+dom::AutoplayPolicy AutoplayPolicy::GetAutoplayPolicy(
+    const dom::AudioContext& aContext) {
+  if (AutoplayPolicy::IsAllowedToPlay(aContext)) {
+    return dom::AutoplayPolicy::Allowed;
+  }
+  return dom::AutoplayPolicy::Disallowed;
+}
+
+
+dom::AutoplayPolicy AutoplayPolicy::GetAutoplayPolicy(
+    const dom::AutoplayPolicyMediaType& aType, const dom::Document& aDoc) {
+  dom::DocumentAutoplayPolicy policy = AutoplayPolicy::IsAllowedToPlay(aDoc);
+  
+  if (aType == dom::AutoplayPolicyMediaType::Audiocontext) {
+    return policy == dom::DocumentAutoplayPolicy::Allowed
+               ? dom::AutoplayPolicy::Allowed
+               : dom::AutoplayPolicy::Disallowed;
+  }
+  MOZ_ASSERT(aType == dom::AutoplayPolicyMediaType::Mediaelement);
+  if (policy == dom::DocumentAutoplayPolicy::Allowed) {
+    return dom::AutoplayPolicy::Allowed;
+  }
+  if (policy == dom::DocumentAutoplayPolicy::Allowed_muted) {
+    return dom::AutoplayPolicy::Allowed_muted;
+  }
+  return dom::AutoplayPolicy::Disallowed;
 }
 
 }  

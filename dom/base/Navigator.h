@@ -11,6 +11,7 @@
 #include "mozilla/dom/AddonManagerBinding.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Fetch.h"
+#include "mozilla/dom/NavigatorBinding.h"
 #include "mozilla/dom/Nullable.h"
 #include "nsWrapperCache.h"
 #include "nsHashKeys.h"
@@ -43,6 +44,8 @@ class DOMRequest;
 class CredentialsContainer;
 class Clipboard;
 class LockManager;
+class HTMLMediaElement;
+class AudioContext;
 }  
 namespace webgpu {
 class Instance;
@@ -243,6 +246,12 @@ class Navigator final : public nsISupports, public nsWrapperCache {
       const Sequence<MediaKeySystemConfiguration>& aConfig, ErrorResult& aRv);
 
   bool HasCreatedMediaSession() const;
+
+  
+  
+  AutoplayPolicy GetAutoplayPolicy(AutoplayPolicyMediaType aType);
+  AutoplayPolicy GetAutoplayPolicy(HTMLMediaElement& aElement);
+  AutoplayPolicy GetAutoplayPolicy(AudioContext& aContext);
 
  private:
   void ValidateShareData(const ShareData& aData, ErrorResult& aRv);

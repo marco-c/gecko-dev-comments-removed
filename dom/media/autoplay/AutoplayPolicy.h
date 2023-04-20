@@ -16,6 +16,8 @@ namespace mozilla::dom {
 class HTMLMediaElement;
 class AudioContext;
 class Document;
+enum class AutoplayPolicy : uint8_t;
+enum class AutoplayPolicyMediaType : uint8_t;
 enum class DocumentAutoplayPolicy : uint8_t;
 
 }  
@@ -48,6 +50,18 @@ class AutoplayPolicy {
   
   
   static uint32_t GetSiteAutoplayPermission(nsIPrincipal* aPrincipal);
+
+  
+  
+  
+  static dom::AutoplayPolicy GetAutoplayPolicy(
+      const dom::HTMLMediaElement& aElement);
+
+  static dom::AutoplayPolicy GetAutoplayPolicy(
+      const dom::AudioContext& aContext);
+
+  static dom::AutoplayPolicy GetAutoplayPolicy(
+      const dom::AutoplayPolicyMediaType& aType, const dom::Document& aDoc);
 };
 
 
