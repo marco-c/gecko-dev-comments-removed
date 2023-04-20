@@ -77,6 +77,7 @@ const links = {
     "America/St_Vincent": "America/St_Vincent",
     "America/Thunder_Bay": "America/Thunder_Bay",
     "America/Tortola": "America/Tortola",
+    "America/Yellowknife": "America/Yellowknife",
     "Antarctica/DumontDUrville": "Antarctica/DumontDUrville",
     "Antarctica/McMurdo": "Antarctica/McMurdo",
     "Antarctica/Syowa": "Antarctica/Syowa",
