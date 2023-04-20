@@ -231,7 +231,8 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   }
   BufferPointer<BaselineFrame>& blFrame() { return blFrame_.ref(); }
 
-  void setNextCallee(JSFunction* nextCallee);
+  void setNextCallee(JSFunction* nextCallee,
+                     TrialInliningState trialInliningState);
   JSFunction* nextCallee() const { return nextCallee_; }
 
   jsbytecode* pc() const { return pc_; }
@@ -480,12 +481,21 @@ bool BaselineStackBuilder::initFrame() {
   return true;
 }
 
-void BaselineStackBuilder::setNextCallee(JSFunction* nextCallee) {
+void BaselineStackBuilder::setNextCallee(
+    JSFunction* nextCallee, TrialInliningState trialInliningState) {
   nextCallee_ = nextCallee;
 
-  
-  const uint32_t pcOff = script_->pcToOffset(pc_);
-  icScript_ = icScript_->findInlinedChild(pcOff);
+  if (trialInliningState == TrialInliningState::Inlined) {
+    
+    const uint32_t pcOff = script_->pcToOffset(pc_);
+    icScript_ = icScript_->findInlinedChild(pcOff);
+  } else {
+    
+    
+    
+    
+    icScript_ = nextCallee->nonLazyScript()->jitScript()->icScript();
+  }
 }
 
 bool BaselineStackBuilder::done() {
@@ -1002,7 +1012,10 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   if (!writePtr(CalleeToToken(calleeFun, pushedNewTarget), "CalleeToken")) {
     return false;
   }
-  setNextCallee(calleeFun);
+  const ICEntry& icScriptEntry = icScript_->icEntryFromPCOffset(pcOff);
+  ICFallbackStub* icScriptFallback =
+      icScript_->fallbackStubForICEntry(&icScriptEntry);
+  setNextCallee(calleeFun, icScriptFallback->trialInliningState());
 
   
   size_t baselineStubFrameDescr =
@@ -1893,6 +1906,20 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       
       action = BailoutAction::InvalidateIfFrequent;
       saveFailedICHash = true;
+      break;
+
+    case BailoutKind::MonomorphicInlinedStubFolding:
+      action = BailoutAction::InvalidateIfFrequent;
+      saveFailedICHash = true;
+      if (innerScript != outerScript) {
+        
+        
+        
+        
+        
+        cx->lastStubFoldingBailoutChild_ = innerScript;
+        cx->lastStubFoldingBailoutParent_ = outerScript;
+      }
       break;
 
     case BailoutKind::SpeculativePhi:
