@@ -1129,6 +1129,26 @@ static ItemActivity HasActiveChildren(
   return activity;
 }
 
+static ItemActivity AssessBounds(const StackingContextHelper& aSc,
+                                 const nsRect& aBounds) {
+  
+  
+  
+  
+  
+  
+  constexpr float largeish = 512;
+
+  float width = aBounds.width * aSc.GetInheritedScale().xScale;
+  float height = aBounds.height * aSc.GetInheritedScale().yScale;
+
+  if (width > largeish || height > largeish) {
+    return ItemActivity::Should;
+  }
+
+  return ItemActivity::Could;
+}
+
 
 
 
@@ -1182,26 +1202,11 @@ static ItemActivity IsItemProbablyActive(
       if (StaticPrefs::gfx_webrender_svg_images() && aUniformlyScaled &&
           svgItem->ShouldBeActive(aBuilder, aResources, aSc, aManager,
                                   aDisplayListBuilder)) {
-        bool snap = false;
-        auto bounds = aItem->GetBounds(aDisplayListBuilder, &snap);
-
-        
-        
-        
-        
-        
-        
-        const int32_t largeish = 512;
-
-        float width = bounds.width * aSc.GetInheritedScale().xScale;
-        float height = bounds.height * aSc.GetInheritedScale().yScale;
-
-        if (aHasActivePrecedingSibling || width > largeish ||
-            height > largeish) {
+        if (aHasActivePrecedingSibling) {
           return ItemActivity::Should;
         }
-
-        return ItemActivity::Could;
+        bool snap = false;
+        return AssessBounds(aSc, aItem->GetBounds(aDisplayListBuilder, &snap));
       }
 
       return ItemActivity::No;
