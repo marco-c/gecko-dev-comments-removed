@@ -1,0 +1,100 @@
+
+
+
+
+
+#ifndef nsMenuBarListener_h
+#define nsMenuBarListener_h
+
+#include "mozilla/Attributes.h"
+#include "mozilla/EventForwards.h"
+#include "nsIContent.h"
+#include "nsIDOMEventListener.h"
+
+
+#ifdef KeyPress
+#  undef KeyPress
+#endif
+
+class nsMenuFrame;
+class nsMenuBarFrame;
+
+namespace mozilla {
+namespace dom {
+class EventTarget;
+class KeyboardEvent;
+class XULMenuParentElement;
+class XULButtonElement;
+}  
+}  
+
+
+
+
+class nsMenuBarListener final : public nsIDOMEventListener {
+ public:
+  explicit nsMenuBarListener(nsMenuBarFrame* aMenuBarFrame,
+                             nsIContent* aMenuBarContent);
+
+  NS_DECL_ISUPPORTS
+
+  
+
+
+  NS_DECL_NSIDOMEVENTLISTENER
+
+  
+
+
+  void OnDestroyMenuBarFrame();
+
+ protected:
+  virtual ~nsMenuBarListener();
+
+  bool IsMenuOpen() const;
+
+  MOZ_CAN_RUN_SCRIPT nsresult KeyUp(mozilla::dom::Event* aMouseEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult KeyDown(mozilla::dom::Event* aMouseEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult KeyPress(mozilla::dom::Event* aMouseEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult Blur(mozilla::dom::Event* aEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult OnWindowDeactivated(mozilla::dom::Event* aEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult MouseDown(mozilla::dom::Event* aMouseEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult Fullscreen(mozilla::dom::Event* aEvent);
+
+  
+
+
+
+
+  mozilla::dom::XULButtonElement* GetMenuForKeyEvent(
+      mozilla::dom::KeyboardEvent& aKeyEvent);
+
+  
+
+
+
+  void ReserveKeyIfNeeded(mozilla::dom::Event* aKeyEvent);
+
+  
+  
+  MOZ_CAN_RUN_SCRIPT void ToggleMenuActiveState();
+
+  bool Destroyed() const { return !mMenuBarFrame; }
+
+  
+  nsMenuBarFrame* mMenuBarFrame;
+  mozilla::dom::XULMenuParentElement* mContent;
+  
+  
+  
+  
+  mozilla::dom::EventTarget* mEventTarget;
+  
+  mozilla::dom::EventTarget* mTopWindowEventTarget;
+  
+  bool mAccessKeyDown;
+  
+  bool mAccessKeyDownCanceled;
+};
+
+#endif  
