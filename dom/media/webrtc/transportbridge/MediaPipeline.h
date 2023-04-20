@@ -49,6 +49,14 @@ class MediaStreamTrack;
 struct RTCRTPContributingSourceStats;
 }  
 
+struct MediaPipelineReceiveControlInterface {
+  virtual AbstractCanonical<bool>* CanonicalReceiving() = 0;
+};
+
+struct MediaPipelineTransmitControlInterface {
+  virtual AbstractCanonical<bool>* CanonicalTransmitting() = 0;
+};
+
 
 
 
@@ -88,9 +96,6 @@ class MediaPipeline : public sigslot::has_slots<> {
                 DirectionType aDirection, RefPtr<AbstractThread> aCallThread,
                 RefPtr<nsISerialEventTarget> aStsThread,
                 RefPtr<MediaSessionConduit> aConduit);
-
-  void Start();
-  void Stop();
 
   void SetLevel(size_t aLevel) { mLevel = aLevel; }
 
@@ -198,7 +203,7 @@ class MediaPipeline : public sigslot::has_slots<> {
  protected:
   
   
-  Watchable<bool> mActive;
+  Mirror<bool> mActive;
   Atomic<size_t> mLevel;
   std::string mTransportId;
   const RefPtr<MediaTransportHandler> mTransportHandler;
@@ -257,6 +262,8 @@ class MediaPipelineTransmit
                         RefPtr<AbstractThread> aCallThread,
                         RefPtr<nsISerialEventTarget> aStsThread, bool aIsVideo,
                         RefPtr<MediaSessionConduit> aConduit);
+
+  void InitControl(MediaPipelineTransmitControlInterface* aControl);
 
   void Shutdown() override;
 
@@ -348,6 +355,8 @@ class MediaPipelineReceive : public MediaPipeline {
                        RefPtr<AbstractThread> aCallThread,
                        RefPtr<nsISerialEventTarget> aStsThread,
                        RefPtr<MediaSessionConduit> aConduit);
+
+  void InitControl(MediaPipelineReceiveControlInterface* aControl);
 
   
   
