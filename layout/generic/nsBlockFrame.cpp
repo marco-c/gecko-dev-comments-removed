@@ -5026,7 +5026,6 @@ bool nsBlockFrame::IsLastLine(BlockReflowState& aState, LineIterator aLine) {
   }
 
   
-  
   nsBlockFrame* nextInFlow = (nsBlockFrame*)GetNextInFlow();
   while (nullptr != nextInFlow) {
     for (const auto& line : nextInFlow->Lines()) {
