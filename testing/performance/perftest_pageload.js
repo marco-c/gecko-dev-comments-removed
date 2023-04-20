@@ -19,7 +19,7 @@ async function tearDown(context) {
   context.log.info("tearDown example!");
 }
 
-module.exports = {   
+module.exports = {
   setUp,
   tearDown,
   test,
