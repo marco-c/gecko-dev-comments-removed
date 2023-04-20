@@ -3,6 +3,7 @@
 
 
 #include "nsAsyncStreamCopier.h"
+#include "nsComponentManagerUtils.h"
 #include "nsIOService.h"
 #include "nsIEventTarget.h"
 #include "nsStreamUtils.h"

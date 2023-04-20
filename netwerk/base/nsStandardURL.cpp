@@ -16,6 +16,7 @@
 #include "nsIIDNService.h"
 #include "mozilla/Logging.h"
 #include "nsIURLParser.h"
+#include "nsPrintfCString.h"
 #include "nsNetCID.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ipc/URIUtils.h"
@@ -35,7 +36,7 @@
 
 
 
-static LazyLogModule gStandardURLLog("nsStandardURL");
+static mozilla::LazyLogModule gStandardURLLog("nsStandardURL");
 
 
 #undef LOG
@@ -49,7 +50,6 @@ namespace mozilla {
 namespace net {
 
 static NS_DEFINE_CID(kThisImplCID, NS_THIS_STANDARDURL_IMPL_CID);
-static NS_DEFINE_CID(kStandardURLCID, NS_STANDARDURL_CID);
 
 
 
