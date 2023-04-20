@@ -27,8 +27,6 @@
 
 
 
-
-
 const statsValidatorTable = {
   'codec': validateCodecStats,
   'inbound-rtp': validateInboundRtpStreamStats,
@@ -39,9 +37,6 @@ const statsValidatorTable = {
   'csrc': validateContributingSourceStats,
   'peer-connection': validatePeerConnectionStats,
   'data-channel': validateDataChannelStats,
-  'transceiver': validateTransceiverStats,
-  'sender': validateSenderStats,
-  'receiver': validateReceiverStats,
   'transport': validateTransportStats,
   'candidate-pair': validateIceCandidatePairStats,
   'local-candidate': validateIceCandidateStats,
@@ -320,12 +315,10 @@ function validateReceivedRtpStreamStats(statsReport, stats) {
 
 
 
-
 function validateInboundRtpStreamStats(statsReport, stats) {
   validateReceivedRtpStreamStats(statsReport, stats);
-  validateOptionalIdField(statsReport, stats, 'trackId', 'track');
-  validateIdField(statsReport, stats, 'receiverId', 'receiver');
-  validateIdField(statsReport, stats, 'remoteId', 'remote-outbound-rtp');
+  assert_string_field(stats, 'trackIdentifier');
+  validateOptionalIdField(statsReport, stats, 'remoteId', 'remote-outbound-rtp');
   assert_unsigned_int_field(stats, 'framesDecoded');
   assert_optional_unsigned_int_field(stats, 'keyFramesDecoded');
   assert_optional_unsigned_int_field(stats, 'frameWidth');
@@ -481,17 +474,11 @@ function validateSentRtpStreamStats(statsReport, stats) {
 
 
 
-
-
-
-
-
 function validateOutboundRtpStreamStats(statsReport, stats) {
   validateSentRtpStreamStats(statsReport, stats)
 
   validateOptionalIdField(statsReport, stats, 'mediaSourceId', 'media-source');
-  validateIdField(statsReport, stats, 'senderId', 'sender');
-  validateIdField(statsReport, stats, 'remoteId', 'remote-inbound-rtp');
+  validateOptionalIdField(statsReport, stats, 'remoteId', 'remote-inbound-rtp');
 
   assert_optional_string_field(stats, 'rid');
 
@@ -561,8 +548,6 @@ function validateOutboundRtpStreamStats(statsReport, stats) {
   assert_optional_string_field(stats, 'encoderImplementation');
   assert_optional_boolean_field(stats, 'powerEfficientEncoder');
   assert_optional_string_field(stats, 'scalabilityMode');
-  
-  validateOptionalIdField(statsReport, stats, 'trackId', 'track');
 }
 
 
@@ -680,94 +665,6 @@ function validatePeerConnectionStats(statsReport, stats) {
   assert_optional_unsigned_int_field(stats, 'dataChannelsRequested');
   assert_optional_unsigned_int_field(stats, 'dataChannelsAccepted');
 }
-
-
-
-
-
-
-
-
-
-function validateTransceiverStats(statsReport, stats) {
-  validateRtcStats(statsReport, stats);
-  validateOptionalIdField(statsReport, stats, 'senderId', 'sender');
-  validateOptionalIdField(statsReport, stats, 'receiverId', 'sender');
-  assert_optional_string_field(stats, 'mid');
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function validateMediaHandlerStats(statsReport, stats) {
-  validateRtcStats(statsReport, stats);
-  assert_string_field(stats, 'trackIdentifier');
-  assert_optional_boolean_field(stats, 'remoteSource');
-  assert_optional_boolean_field(stats, 'ended');
-  assert_optional_string_field(stats, 'kind');
-  assert_enum_field(stats, 'priority', ['very-low', 'low', 'medium', 'high']);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function validateSenderStats(statsReport, stats) {
-  validateMediaHandlerStats(statsReport, stats);
-  validateOptionalIdField(statsReport, stats, 'mediaSourceId', 'media-source');
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function validateReceiverStats(statsReport, stats) {
-  validateMediaHandlerStats(statsReport, stats);
-}
-
 
 
 
