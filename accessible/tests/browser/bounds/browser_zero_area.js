@@ -79,3 +79,23 @@ addAccessibleTask(
     
   }
 );
+
+
+
+
+
+addAccessibleTask(
+  `
+<aside style="height: 0; display: flex; align-items: flex-end;">
+  <div id="inner0">testing</div>
+</aside>
+<aside style="height: 1; display: flex; align-items: flex-end;">
+  <div id="inner1">testing</div>
+</aside>
+  `,
+  async function(browser, docAcc) {
+    await testBoundsWithContent(docAcc, "inner0", browser);
+    await testBoundsWithContent(docAcc, "inner1", browser);
+  },
+  { chrome: true, topLevel: true, remoteIframe: true }
+);

@@ -639,6 +639,17 @@ nsRect LocalAccessible::ParentRelativeBounds() {
       nsLayoutUtils::TransformRect(frame, boundingFrame, result);
     }
 
+    if (boundingFrame->GetRect().IsEmpty()) {
+      
+      
+      
+      
+      nsRect boundingOverflow = boundingFrame->InkOverflowRectRelativeToSelf();
+      if (boundingOverflow.x < 0 || boundingOverflow.y < 0) {
+        result.MoveBy(-boundingOverflow.x, -boundingOverflow.y);
+      }
+    }
+
     if (nsIScrollableFrame* sf =
             mParent == mDoc
                 ? mDoc->PresShellPtr()->GetRootScrollFrameAsScrollable()
