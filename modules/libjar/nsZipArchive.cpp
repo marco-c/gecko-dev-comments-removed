@@ -775,10 +775,14 @@ uint32_t nsZipArchive::GetDataOffset(nsZipItem* aItem) {
   MOZ_DIAGNOSTIC_ASSERT(len <= UINT32_MAX, "mLen > 2GB");
   const uint8_t* data = mFd->mFileData;
   offset = aItem->LocalOffset();
-  if (len < ZIPLOCAL_SIZE || offset > len - ZIPLOCAL_SIZE) return 0;
+  if (len < ZIPLOCAL_SIZE || offset > len - ZIPLOCAL_SIZE) {
+    return 0;
+  }
   
-  MOZ_DIAGNOSTIC_ASSERT(offset <= mFd->mLen - 4,
-                        "Corrupt local offset in JAR file");
+  if (offset > mFd->mLen) {
+    NS_WARNING("Corrupt local offset in JAR file");
+    return 0;
+  }
 
   
   
@@ -791,7 +795,10 @@ uint32_t nsZipArchive::GetDataOffset(nsZipItem* aItem) {
   offset += ZIPLOCAL_SIZE + xtoint(Local->filename_len) +
             xtoint(Local->extrafield_len);
   
-  MOZ_DIAGNOSTIC_ASSERT(offset <= mFd->mLen, "Corrupt data offset in JAR file");
+  if (offset > mFd->mLen) {
+    NS_WARNING("Corrupt data offset in JAR file");
+    return 0;
+  }
 
   MMAP_FAULT_HANDLER_CATCH(0)
   
