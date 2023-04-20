@@ -1021,10 +1021,7 @@ class ResourceCommand {
 
 
   _shouldRunLegacyListenerEvenWithWatcherSupport(resourceType) {
-    return (
-      resourceType == ResourceCommand.TYPES.SOURCE ||
-      resourceType == ResourceCommand.TYPES.THREAD_STATE
-    );
+    return WORKER_RESOURCE_TYPES.includes(resourceType);
   }
 
   async _forwardExistingResources(resourceTypes, onAvailable) {
@@ -1060,10 +1057,7 @@ class ResourceCommand {
     
     if (
       targetFront.targetType.endsWith("worker") &&
-      [
-        ResourceCommand.TYPES.NETWORK_EVENT,
-        ResourceCommand.TYPES.NETWORK_EVENT_STACKTRACE,
-      ].includes(resourceType)
+      !WORKER_RESOURCE_TYPES.includes(resourceType)
     ) {
       return;
     }
@@ -1224,6 +1218,16 @@ ResourceCommand.ALL_TYPES = ResourceCommand.prototype.ALL_TYPES = Object.values(
   ResourceCommand.TYPES
 );
 module.exports = ResourceCommand;
+
+
+
+
+const WORKER_RESOURCE_TYPES = [
+  ResourceCommand.TYPES.CONSOLE_MESSAGE,
+  ResourceCommand.TYPES.ERROR_MESSAGE,
+  ResourceCommand.TYPES.SOURCE,
+  ResourceCommand.TYPES.THREAD_STATE,
+];
 
 
 
