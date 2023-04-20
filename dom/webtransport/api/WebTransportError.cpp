@@ -8,29 +8,16 @@
 
 namespace mozilla::dom {
 
-JSObject* WebTransportError::WrapObject(JSContext* aCx,
-                                        JS::Handle<JSObject*> aGivenProto) {
-  return WebTransportError_Binding::Wrap(aCx, this, aGivenProto);
-}
-
 
 already_AddRefed<WebTransportError> WebTransportError::Constructor(
     const GlobalObject& aGlobal, const WebTransportErrorInit& aInit) {
-  
-
-  
   nsCString message(""_ns);
   if (aInit.mMessage.WasPassed()) {
     CopyUTF16toUTF8(aInit.mMessage.Value(), message);
   }
-
-  
-  
   RefPtr<WebTransportError> error(new WebTransportError(message));
-
-  
   if (aInit.mStreamErrorCode.WasPassed()) {
-    error->mStreamErrorCode = Nullable(aInit.mStreamErrorCode.Value());
+    error->mStreamErrorCode = aInit.mStreamErrorCode.Value();
   }
   return error.forget();
 }
