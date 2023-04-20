@@ -53,6 +53,9 @@ struct ProbeControllerConfig {
   
   
   FieldTrialParameter<double> network_state_estimate_fast_rampup_rate;
+  
+  
+  FieldTrialParameter<double> network_state_estimate_drop_down_rate;
   FieldTrialParameter<double> network_state_probe_scale;
   
   
@@ -68,8 +71,9 @@ struct ProbeControllerConfig {
   FieldTrialParameter<int> min_probe_packets_sent;
   
   FieldTrialParameter<TimeDelta> min_probe_duration;
-
-  FieldTrialParameter<bool> probe_if_bwe_limited_due_to_loss;
+  
+  
+  FieldTrialParameter<bool> limit_probe_target_rate_to_loss_bwe;
 };
 
 
