@@ -15,8 +15,8 @@
 #include "HTMLEditUtils.h"
 #include "PendingStyles.h"
 #include "SelectionState.h"
-#include "WSRunObject.h"
 
+#include "ErrorList.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ContentIterator.h"
 #include "mozilla/EditorForwards.h"
@@ -28,29 +28,29 @@
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
-
 #include "nsAString.h"
-#include "nsAtom.h"
 #include "nsAttrName.h"
+#include "nsCOMPtr.h"
 #include "nsCaseTreatment.h"
 #include "nsComponentManagerUtils.h"
 #include "nsDebug.h"
 #include "nsError.h"
 #include "nsGkAtoms.h"
+#include "nsAtom.h"
 #include "nsIContent.h"
+#include "nsNameSpaceManager.h"
 #include "nsINode.h"
 #include "nsIPrincipal.h"
 #include "nsISupportsImpl.h"
 #include "nsLiteralString.h"
-#include "nsNameSpaceManager.h"
 #include "nsRange.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
 #include "nsStyledElement.h"
 #include "nsTArray.h"
-#include "nsTextNode.h"
 #include "nsUnicharUtils.h"
+#include "nscore.h"
 
 namespace mozilla {
 
@@ -65,15 +65,6 @@ template nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
     const AutoTArray<EditorInlineStyleAndValue, 1>& aStylesToSet);
 template nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
     const AutoTArray<EditorInlineStyleAndValue, 32>& aStylesToSet);
-
-template nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
-    AutoRangeArray& aRanges,
-    const AutoTArray<EditorInlineStyleAndValue, 1>& aStylesToSet,
-    const Element& aEditingHost);
-template nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
-    AutoRangeArray& aRanges,
-    const AutoTArray<EditorInlineStyleAndValue, 32>& aStylesToSet,
-    const Element& aEditingHost);
 
 nsresult HTMLEditor::SetInlinePropertyAsAction(nsStaticAtom& aProperty,
                                                nsStaticAtom* aAttribute,
@@ -238,12 +229,6 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
     }
   }
 
-  RefPtr<Element> const editingHost =
-      ComputeEditingHost(LimitInBodyElement::No);
-  if (NS_WARN_IF(!editingHost)) {
-    return NS_ERROR_FAILURE;
-  }
-
   AutoPlaceholderBatch treatAsOneTransaction(
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
   IgnoredErrorResult ignoredError;
@@ -262,44 +247,23 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
   AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
   AutoRangeArray selectionRanges(SelectionRef());
-  nsresult rv = SetInlinePropertiesAroundRanges(selectionRanges, aStylesToSet,
-                                                *editingHost);
-  if (NS_FAILED(rv)) {
-    NS_WARNING("HTMLEditor::SetInlinePropertiesAroundRanges() failed");
-    return rv;
-  }
-  MOZ_ASSERT(!selectionRanges.HasSavedRanges());
-  rv = selectionRanges.ApplyTo(SelectionRef());
-  if (NS_WARN_IF(Destroyed())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AutoRangeArray::ApplyTo() failed");
-  return rv;
-}
-
-template <size_t N>
-nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
-    AutoRangeArray& aRanges,
-    const AutoTArray<EditorInlineStyleAndValue, N>& aStylesToSet,
-    const Element& aEditingHost) {
   for (const EditorInlineStyleAndValue& styleToSet : aStylesToSet) {
     if (!StaticPrefs::
-            editor_inline_style_range_compatible_with_the_other_browsers() &&
-        !aRanges.IsCollapsed()) {
-      MOZ_ALWAYS_TRUE(aRanges.SaveAndTrackRanges(*this));
+            editor_inline_style_range_compatible_with_the_other_browsers()) {
+      MOZ_ALWAYS_TRUE(selectionRanges.SaveAndTrackRanges(*this));
     }
     AutoInlineStyleSetter inlineStyleSetter(styleToSet);
-    for (OwningNonNull<nsRange>& domRange : aRanges.Ranges()) {
+    for (OwningNonNull<nsRange>& selectionRange : selectionRanges.Ranges()) {
       inlineStyleSetter.Reset();
       const EditorDOMRange range = [&]() {
-        if (aRanges.HasSavedRanges()) {
+        if (selectionRanges.HasSavedRanges()) {
           return EditorDOMRange(
               GetExtendedRangeWrappingEntirelySelectedElements(
-                  EditorRawDOMRange(domRange)));
+                  EditorRawDOMRange(selectionRange)));
         }
         Result<EditorRawDOMRange, nsresult> rangeOrError =
             inlineStyleSetter.ExtendOrShrinkRangeToApplyTheStyle(
-                *this, EditorDOMRange(domRange), aEditingHost);
+                *this, EditorDOMRange(selectionRange));
         if (MOZ_UNLIKELY(rangeOrError.isErr())) {
           NS_WARNING(
               "HTMLEditor::ExtendOrShrinkRangeToApplyTheStyle() failed, but "
@@ -313,41 +277,10 @@ nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
       }
 
       
-      if (range.Collapsed()) {
-        Result<RefPtr<Text>, nsresult> emptyTextNodeOrError =
-            AutoInlineStyleSetter::GetEmptyTextNodeToApplyNewStyle(
-                *this, range.StartRef(), aEditingHost);
-        if (MOZ_UNLIKELY(emptyTextNodeOrError.isErr())) {
-          NS_WARNING(
-              "AutoInlineStyleSetter::GetEmptyTextNodeToApplyNewStyle() "
-              "failed");
-          return emptyTextNodeOrError.unwrapErr();
-        }
-        if (MOZ_UNLIKELY(!emptyTextNodeOrError.inspect())) {
-          continue;  
-        }
-        RefPtr<Text> emptyTextNode = emptyTextNodeOrError.unwrap();
-        Result<CaretPoint, nsresult> caretPointOrError =
-            inlineStyleSetter
-                .ApplyStyleToNodeOrChildrenAndRemoveNestedSameStyle(
-                    *this, *emptyTextNode);
-        if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-          NS_WARNING(
-              "AutoInlineStyleSetter::"
-              "ApplyStyleToNodeOrChildrenAndRemoveNestedSameStyle() failed");
-          return caretPointOrError.unwrapErr();
-        }
-        DebugOnly<nsresult> rvIgnored = domRange->CollapseTo(emptyTextNode, 0);
-        NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                             "nsRange::CollapseTo() failed, but ignored");
-        continue;
-      }
-
-      
       AutoTrackDOMRange trackRange(RangeUpdaterRef(),
                                    const_cast<EditorDOMRange*>(&range));
       auto UpdateSelectionRange = [&]() MOZ_CAN_RUN_SCRIPT {
-        if (aRanges.HasSavedRanges()) {
+        if (selectionRanges.HasSavedRanges()) {
           return;
         }
         
@@ -370,7 +303,7 @@ nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
                         EditorRawDOMPoint>(
                         *inlineStyleSetter.LastHandledPointRef()
                              .ContainerAs<nsIContent>());
-          nsresult rv = domRange->SetStartAndEnd(
+          nsresult rv = selectionRange->SetStartAndEnd(
               startPoint.ToRawRangeBoundary(), endPoint.ToRawRangeBoundary());
           if (NS_SUCCEEDED(rv)) {
             trackRange.StopTracking();
@@ -379,8 +312,8 @@ nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
         }
         
         trackRange.FlushAndStopTracking();
-        domRange->SetStartAndEnd(range.StartRef().ToRawRangeBoundary(),
-                                 range.EndRef().ToRawRangeBoundary());
+        selectionRange->SetStartAndEnd(range.StartRef().ToRawRangeBoundary(),
+                                       range.EndRef().ToRawRangeBoundary());
       };
 
       
@@ -497,74 +430,18 @@ nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
       }
       UpdateSelectionRange();
     }
-    if (aRanges.HasSavedRanges()) {
-      aRanges.RestoreFromSavedRanges();
+    if (selectionRanges.HasSavedRanges()) {
+      selectionRanges.RestoreFromSavedRanges();
     }
-  }
-  return NS_OK;
-}
-
-
-Result<RefPtr<Text>, nsresult>
-HTMLEditor::AutoInlineStyleSetter::GetEmptyTextNodeToApplyNewStyle(
-    HTMLEditor& aHTMLEditor, const EditorDOMPoint& aCandidatePointToInsert,
-    const Element& aEditingHost) {
-  auto pointToInsertNewText =
-      HTMLEditUtils::GetBetterCaretPositionToInsertText<EditorDOMPoint>(
-          aCandidatePointToInsert, aEditingHost);
-  if (MOZ_UNLIKELY(!pointToInsertNewText.IsSet())) {
-    return RefPtr<Text>();  
-  }
-  auto pointToInsertNewStyleOrError =
-      [&]() MOZ_CAN_RUN_SCRIPT -> Result<EditorDOMPoint, nsresult> {
-    if (!pointToInsertNewText.IsInTextNode()) {
-      return pointToInsertNewText;
-    }
-    if (!pointToInsertNewText.ContainerAs<Text>()->TextDataLength()) {
-      return pointToInsertNewText;  
-    }
-    if (pointToInsertNewText.IsStartOfContainer()) {
-      return pointToInsertNewText.ParentPoint();
-    }
-    if (pointToInsertNewText.IsEndOfContainer()) {
-      return EditorDOMPoint::After(*pointToInsertNewText.ContainerAs<Text>());
-    }
-    Result<SplitNodeResult, nsresult> splitTextNodeResult =
-        aHTMLEditor.SplitNodeWithTransaction(pointToInsertNewText);
-    if (MOZ_UNLIKELY(splitTextNodeResult.isErr())) {
-      NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
-      return splitTextNodeResult.propagateErr();
-    }
-    SplitNodeResult unwrappedSplitTextNodeResult = splitTextNodeResult.unwrap();
-    unwrappedSplitTextNodeResult.IgnoreCaretPointSuggestion();
-    return unwrappedSplitTextNodeResult.AtSplitPoint<EditorDOMPoint>();
-  }();
-  if (MOZ_UNLIKELY(pointToInsertNewStyleOrError.isErr())) {
-    return pointToInsertNewStyleOrError.propagateErr();
   }
 
-  
-  
-  if (pointToInsertNewStyleOrError.inspect().IsInTextNode()) {
-    return RefPtr<Text>(
-        pointToInsertNewStyleOrError.inspect().ContainerAs<Text>());
+  MOZ_ASSERT(!selectionRanges.HasSavedRanges());
+  nsresult rv = selectionRanges.ApplyTo(SelectionRef());
+  if (NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
   }
-
-  
-  RefPtr<Text> newEmptyTextNode = aHTMLEditor.CreateTextNode(u""_ns);
-  if (MOZ_UNLIKELY(!newEmptyTextNode)) {
-    NS_WARNING("EditorBase::CreateTextNode() failed");
-    return Err(NS_ERROR_FAILURE);
-  }
-  Result<CreateTextResult, nsresult> insertNewTextNodeResult =
-      aHTMLEditor.InsertNodeWithTransaction<Text>(
-          *newEmptyTextNode, pointToInsertNewStyleOrError.inspect());
-  if (MOZ_UNLIKELY(insertNewTextNodeResult.isErr())) {
-    NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
-    return insertNewTextNodeResult.propagateErr();
-  }
-  insertNewTextNodeResult.inspect().IgnoreCaretPointSuggestion();
-  return newEmptyTextNode;
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AutoRangeArray::ApplyTo() failed");
+  return rv;
 }
 
 Result<bool, nsresult>
@@ -1769,8 +1646,7 @@ EditorRawDOMRange HTMLEditor::AutoInlineStyleSetter::
 
 Result<EditorRawDOMRange, nsresult>
 HTMLEditor::AutoInlineStyleSetter::ExtendOrShrinkRangeToApplyTheStyle(
-    const HTMLEditor& aHTMLEditor, const EditorDOMRange& aRange,
-    const Element& aEditingHost) const {
+    const HTMLEditor& aHTMLEditor, const EditorDOMRange& aRange) const {
   if (NS_WARN_IF(!aRange.IsPositioned())) {
     return Err(NS_ERROR_FAILURE);
   }
@@ -1778,70 +1654,43 @@ HTMLEditor::AutoInlineStyleSetter::ExtendOrShrinkRangeToApplyTheStyle(
   
   
   
-  nsINode* commonAncestor = aRange.GetClosestCommonInclusiveAncestor();
+  nsINode* const commonAncestor = aRange.GetClosestCommonInclusiveAncestor();
   if (NS_WARN_IF(!commonAncestor)) {
     return Err(NS_ERROR_FAILURE);
   }
 
   
   
-  EditorDOMRange range(aRange);
-  if (range.EndRef().IsInContentNode()) {
-    WSScanResult nextContentData =
-        WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(&aEditingHost,
-                                                         range.EndRef());
-    if (nextContentData.ReachedInvisibleBRElement() &&
-        nextContentData.BRElementPtr()->GetParentElement() &&
-        HTMLEditUtils::IsInlineElement(
-            *nextContentData.BRElementPtr()->GetParentElement())) {
-      range.SetEnd(EditorDOMPoint::After(*nextContentData.BRElementPtr()));
-      MOZ_ASSERT(range.EndRef().IsSet());
-    }
+  
+  
+  ContentSubtreeIterator iter;
+  if (NS_FAILED(iter.Init(aRange.StartRef().ToRawRangeBoundary(),
+                          aRange.EndRef().ToRawRangeBoundary()))) {
+    NS_WARNING("ContentSubtreeIterator::Init() failed");
+    return Err(NS_ERROR_FAILURE);
   }
+  nsIContent* const firstContentEntirelyInRange =
+      nsIContent::FromNodeOrNull(iter.GetCurrentNode());
+  nsIContent* const lastContentEntirelyInRange = [&]() {
+    iter.Last();
+    return nsIContent::FromNodeOrNull(iter.GetCurrentNode());
+  }();
+
+  
+  EditorRawDOMPoint startPoint = GetShrunkenRangeStart(
+      aHTMLEditor, aRange, *commonAncestor, firstContentEntirelyInRange);
+  MOZ_ASSERT(startPoint.IsSet());
+  EditorRawDOMPoint endPoint = GetShrunkenRangeEnd(
+      aHTMLEditor, aRange, *commonAncestor, lastContentEntirelyInRange);
+  MOZ_ASSERT(endPoint.IsSet());
 
   
   
-  if (range.Collapsed() && range.StartRef().GetContainer()->Length()) {
-    return EditorRawDOMRange(range);
-  }
-
   
   
-  
-  
-  EditorRawDOMPoint startPoint, endPoint;
-  if (range.Collapsed()) {
-    startPoint = endPoint = range.StartRef().To<EditorRawDOMPoint>();
-  } else {
-    ContentSubtreeIterator iter;
-    if (NS_FAILED(iter.Init(range.StartRef().ToRawRangeBoundary(),
-                            range.EndRef().ToRawRangeBoundary()))) {
-      NS_WARNING("ContentSubtreeIterator::Init() failed");
-      return Err(NS_ERROR_FAILURE);
-    }
-    nsIContent* const firstContentEntirelyInRange =
-        nsIContent::FromNodeOrNull(iter.GetCurrentNode());
-    nsIContent* const lastContentEntirelyInRange = [&]() {
-      iter.Last();
-      return nsIContent::FromNodeOrNull(iter.GetCurrentNode());
-    }();
-
-    
-    startPoint = GetShrunkenRangeStart(aHTMLEditor, range, *commonAncestor,
-                                       firstContentEntirelyInRange);
-    MOZ_ASSERT(startPoint.IsSet());
-    endPoint = GetShrunkenRangeEnd(aHTMLEditor, range, *commonAncestor,
-                                   lastContentEntirelyInRange);
-    MOZ_ASSERT(endPoint.IsSet());
-
-    
-    
-    
-    
-    if (MOZ_UNLIKELY(!startPoint.EqualsOrIsBefore(endPoint))) {
-      startPoint = range.StartRef().To<EditorRawDOMPoint>();
-      endPoint = range.EndRef().To<EditorRawDOMPoint>();
-    }
+  if (MOZ_UNLIKELY(!startPoint.EqualsOrIsBefore(endPoint))) {
+    startPoint = aRange.StartRef().To<EditorRawDOMPoint>();
+    endPoint = aRange.EndRef().To<EditorRawDOMPoint>();
   }
 
   

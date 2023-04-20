@@ -2005,14 +2005,6 @@ class HTMLEditUtils final {
 
 
 
-  template <typename EditorDOMPointType, typename EditorDOMPointTypeInput>
-  static EditorDOMPointType GetBetterCaretPositionToInsertText(
-      const EditorDOMPointTypeInput& aPoint, const Element& aEditingHost);
-
-  
-
-
-
 
 
 
