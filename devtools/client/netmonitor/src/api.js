@@ -20,9 +20,6 @@ const {
 } = require("resource://devtools/client/netmonitor/src/constants.js");
 const Actions = require("resource://devtools/client/netmonitor/src/actions/index.js");
 
-
-const Telemetry = require("resource://devtools/client/shared/telemetry.js");
-
 const {
   getDisplayedRequestById,
   getSortedRequests,
@@ -42,17 +39,10 @@ function NetMonitorAPI() {
   this.connector = new Connector();
 
   
-  this.telemetry = new Telemetry();
-
-  
-  this.store = configureStore(this.connector, this.telemetry);
-
-  
   this._requestFinishedListeners = new Set();
 
   
   this.onPayloadReady = this.onPayloadReady.bind(this);
-  this.actions = bindActionCreators(Actions, this.store.dispatch);
 }
 
 NetMonitorAPI.prototype = {
@@ -63,6 +53,10 @@ NetMonitorAPI.prototype = {
     }
 
     this.toolbox = toolbox;
+
+    
+    this.store = configureStore(this.connector, this.toolbox.telemetry);
+    this.actions = bindActionCreators(Actions, this.store.dispatch);
 
     
     this.on(EVENTS.PAYLOAD_READY, this.onPayloadReady);

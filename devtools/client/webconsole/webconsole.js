@@ -75,7 +75,9 @@ class WebConsole {
     this.hudId = "hud_" + ++gHudId;
     this.browserWindow = DevToolsUtils.getTopWindow(this.chromeWindow);
     this.isBrowserConsole = isBrowserConsole;
-    this.telemetry = new Telemetry();
+
+    
+    this.telemetry = toolbox?.telemetry || new Telemetry();
 
     const element = this.browserWindow.document.documentElement;
     if (element.getAttribute("windowtype") != gDevTools.chromeWindowType) {
