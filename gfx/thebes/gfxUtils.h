@@ -424,6 +424,7 @@ namespace mozilla {
 
 
 
+
 template <typename T>
 class ElementOrArray {
   union {
@@ -434,6 +435,13 @@ class ElementOrArray {
     Element,
     Array,
   } mTag;
+
+  
+  friend class gfxTextRun;
+  nsTArray<T>& Array() {
+    MOZ_DIAGNOSTIC_ASSERT(mTag == Tag::Array);
+    return mArray;
+  }
 
  public:
   
@@ -499,6 +507,55 @@ class ElementOrArray {
     return mTag == Tag::Element ? false : mArray.IsEmpty();
   }
 
+  void TruncateLength(uint32_t aLength = 0) {
+    MOZ_DIAGNOSTIC_ASSERT(aLength <= Length());
+    switch (mTag) {
+      case Tag::Element:
+        if (aLength == 0) {
+          
+          mElement.~T();
+          mTag = Tag::Array;
+          new (&mArray) nsTArray<T>();
+        }
+        break;
+      case Tag::Array:
+        mArray.TruncateLength(aLength);
+        break;
+    }
+  }
+
+  void Clear() {
+    switch (mTag) {
+      case Tag::Element:
+        mElement.~T();
+        mTag = Tag::Array;
+        new (&mArray) nsTArray<T>();
+        break;
+      case Tag::Array:
+        mArray.Clear();
+        break;
+    }
+  }
+
+  
+  
+  void ConvertToElement() {
+    MOZ_DIAGNOSTIC_ASSERT(mTag == Tag::Array && mArray.Length() == 1);
+    T temp = std::move(mArray[0]);
+    mArray.~nsTArray();
+    mTag = Tag::Element;
+    new (&mElement) T(std::move(temp));
+  }
+
+  const T& operator[](uint32_t aIndex) const {
+    MOZ_DIAGNOSTIC_ASSERT(aIndex < Length());
+    return mTag == Tag::Element ? mElement : mArray[aIndex];
+  }
+  T& operator[](uint32_t aIndex) {
+    MOZ_DIAGNOSTIC_ASSERT(aIndex < Length());
+    return mTag == Tag::Element ? mElement : mArray[aIndex];
+  }
+
   
   const T* begin() const {
     return mTag == Tag::Array ? mArray.IsEmpty() ? nullptr : &*mArray.begin()
@@ -514,6 +571,11 @@ class ElementOrArray {
   }
   T* end() {
     return mTag == Tag::Array ? begin() + mArray.Length() : &mElement + 1;
+  }
+
+  size_t ShallowSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) {
+    return mTag == Tag::Array ? mArray.ShallowSizeOfExcludingThis(aMallocSizeOf)
+                              : 0;
   }
 };
 
