@@ -5,12 +5,8 @@
 
 
 #include "WindowsLocationProvider.h"
-#include "WindowsLocationParent.h"
-#include "WindowsUtilsParent.h"
 #include "GeolocationPosition.h"
 #include "nsComponentManagerUtils.h"
-#include "mozilla/ipc/UtilityProcessManager.h"
-#include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "prtime.h"
 #include "MLSFallback.h"
 #include "mozilla/Attributes.h"
@@ -25,21 +21,13 @@ LazyLogModule gWindowsLocationProviderLog("WindowsLocationProvider");
 #define LOG(...) \
   MOZ_LOG(gWindowsLocationProviderLog, LogLevel::Debug, (__VA_ARGS__))
 
-class MLSUpdate : public nsIGeolocationUpdate {
- public:
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIGEOLOCATIONUPDATE
-  explicit MLSUpdate(nsIGeolocationUpdate* aCallback) : mCallback(aCallback) {}
+NS_IMPL_ISUPPORTS(WindowsLocationProvider::MLSUpdate, nsIGeolocationUpdate);
 
- private:
-  nsCOMPtr<nsIGeolocationUpdate> mCallback;
-  virtual ~MLSUpdate() {}
-};
-
-NS_IMPL_ISUPPORTS(MLSUpdate, nsIGeolocationUpdate);
+WindowsLocationProvider::MLSUpdate::MLSUpdate(nsIGeolocationUpdate* aCallback)
+    : mCallback(aCallback) {}
 
 NS_IMETHODIMP
-MLSUpdate::Update(nsIDOMGeoPosition* aPosition) {
+WindowsLocationProvider::MLSUpdate::Update(nsIDOMGeoPosition* aPosition) {
   if (!mCallback) {
     return NS_ERROR_FAILURE;
   }
@@ -53,7 +41,7 @@ MLSUpdate::Update(nsIDOMGeoPosition* aPosition) {
   return mCallback->Update(aPosition);
 }
 NS_IMETHODIMP
-MLSUpdate::NotifyError(uint16_t aError) {
+WindowsLocationProvider::MLSUpdate::NotifyError(uint16_t aError) {
   if (!mCallback) {
     return NS_ERROR_FAILURE;
   }
@@ -61,236 +49,203 @@ MLSUpdate::NotifyError(uint16_t aError) {
   return callback->NotifyError(aError);
 }
 
+class LocationEvent final : public ILocationEvents {
+ public:
+  LocationEvent(nsIGeolocationUpdate* aCallback,
+                WindowsLocationProvider* aProvider)
+      : mCallback(aCallback), mProvider(aProvider), mCount(0) {}
+
+  
+  STDMETHODIMP_(ULONG) AddRef() override;
+  STDMETHODIMP_(ULONG) Release() override;
+  STDMETHODIMP QueryInterface(REFIID iid, void** ppv) override;
+
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  STDMETHODIMP OnStatusChanged(REFIID aReportType,
+                               LOCATION_REPORT_STATUS aStatus) override;
+  STDMETHODIMP OnLocationChanged(REFIID aReportType,
+                                 ILocationReport* aReport) override;
+
+ private:
+  nsCOMPtr<nsIGeolocationUpdate> mCallback;
+  RefPtr<WindowsLocationProvider> mProvider;
+  ULONG mCount;
+};
+
+STDMETHODIMP_(ULONG)
+LocationEvent::AddRef() { return InterlockedIncrement(&mCount); }
+
+STDMETHODIMP_(ULONG)
+LocationEvent::Release() {
+  ULONG count = InterlockedDecrement(&mCount);
+  if (!count) {
+    delete this;
+    return 0;
+  }
+  return count;
+}
+
+STDMETHODIMP
+LocationEvent::QueryInterface(REFIID iid, void** ppv) {
+  if (iid == IID_IUnknown) {
+    *ppv = static_cast<IUnknown*>(this);
+  } else if (iid == IID_ILocationEvents) {
+    *ppv = static_cast<ILocationEvents*>(this);
+  } else {
+    return E_NOINTERFACE;
+  }
+  AddRef();
+  return S_OK;
+}
+
+STDMETHODIMP
+LocationEvent::OnStatusChanged(REFIID aReportType,
+                               LOCATION_REPORT_STATUS aStatus) {
+  if (aReportType != IID_ILatLongReport) {
+    return S_OK;
+  }
+
+  
+  
+  if (aStatus == REPORT_RUNNING) {
+    
+    mProvider->CancelMLSProvider();
+    return S_OK;
+  }
+
+  
+  
+  if (NS_SUCCEEDED(mProvider->CreateAndWatchMLSProvider(mCallback))) {
+    return S_OK;
+  }
+
+  
+  
+  uint16_t err;
+  switch (aStatus) {
+    case REPORT_ACCESS_DENIED:
+      err = GeolocationPositionError_Binding::PERMISSION_DENIED;
+      break;
+    case REPORT_NOT_SUPPORTED:
+    case REPORT_ERROR:
+      err = GeolocationPositionError_Binding::POSITION_UNAVAILABLE;
+      break;
+    default:
+      return S_OK;
+  }
+  nsCOMPtr<nsIGeolocationUpdate> callback(mCallback);
+  callback->NotifyError(err);
+  return S_OK;
+}
+
+STDMETHODIMP
+LocationEvent::OnLocationChanged(REFIID aReportType, ILocationReport* aReport) {
+  if (aReportType != IID_ILatLongReport) {
+    return S_OK;
+  }
+
+  RefPtr<ILatLongReport> latLongReport;
+  if (FAILED(aReport->QueryInterface(IID_ILatLongReport,
+                                     getter_AddRefs(latLongReport)))) {
+    return E_FAIL;
+  }
+
+  DOUBLE latitude = 0.0;
+  latLongReport->GetLatitude(&latitude);
+
+  DOUBLE longitude = 0.0;
+  latLongReport->GetLongitude(&longitude);
+
+  DOUBLE alt = UnspecifiedNaN<double>();
+  latLongReport->GetAltitude(&alt);
+
+  DOUBLE herror = 0.0;
+  latLongReport->GetErrorRadius(&herror);
+
+  DOUBLE verror = UnspecifiedNaN<double>();
+  latLongReport->GetAltitudeError(&verror);
+
+  double heading = UnspecifiedNaN<double>();
+  double speed = UnspecifiedNaN<double>();
+
+  
+  
+  RefPtr<nsGeoPosition> position =
+      new nsGeoPosition(latitude, longitude, alt, herror, verror, heading,
+                        speed, PR_Now() / PR_USEC_PER_MSEC);
+  mCallback->Update(position);
+
+  Telemetry::Accumulate(Telemetry::GEOLOCATION_WIN8_SOURCE_IS_MLS, false);
+
+  return S_OK;
+}
+
 NS_IMPL_ISUPPORTS(WindowsLocationProvider, nsIGeolocationProvider)
 
 WindowsLocationProvider::WindowsLocationProvider() {
-  LOG("WindowsLocationProvider::WindowsLocationProvider(%p)", this);
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MaybeCreateLocationActor();
+  LOG("WindowsLocationProvider::WindowsLocationProvider(%p)\n", this);
 }
 
 WindowsLocationProvider::~WindowsLocationProvider() {
-  LOG("WindowsLocationProvider::~WindowsLocationProvider(%p,%p,%p)", this,
-      mActor.get(), mActorPromise.get());
-  Send__delete__();
-  ReleaseUtilityProcess();
-  CancelMLSProvider();
-}
-
-void WindowsLocationProvider::MaybeCreateLocationActor() {
-  LOG("WindowsLocationProvider::MaybeCreateLocationActor(%p)", this);
-  if (mActor || mActorPromise) {
-    return;
-  }
-
-  auto utilityProc = mozilla::ipc::UtilityProcessManager::GetSingleton();
-  MOZ_ASSERT(utilityProc);
-
-  
-  
-  RefPtr<WindowsLocationProvider> self = this;
-  auto wuPromise = utilityProc->GetWindowsUtilsPromise();
-  mActorPromise = wuPromise->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [self](RefPtr<WindowsUtilsParent> wup) {
-        self->mActorPromise = nullptr;
-        auto actor = MakeRefPtr<WindowsLocationParent>(self);
-        if (!wup->SendPWindowsLocationConstructor(actor)) {
-          LOG("WindowsLocationProvider(%p) SendPWindowsLocationConstructor "
-              "failed",
-              self.get());
-          actor->DetachFromLocationProvider();
-          self->mActor = nullptr;
-          return WindowsLocationPromise::CreateAndReject(false, __func__);
-        }
-        LOG("WindowsLocationProvider connected to actor (%p,%p,%p)", self.get(),
-            self->mActor.get(), self->mActorPromise.get());
-        self->mActor = actor;
-        return WindowsLocationPromise::CreateAndResolve(self->mActor, __func__);
-      },
-
-      [self](nsresult aError) {
-        LOG("WindowsLocationProvider failed to connect to actor (%p,%p,%p)",
-            self.get(), self->mActor.get(), self->mActorPromise.get());
-        self->mActorPromise = nullptr;
-        return WindowsLocationPromise::CreateAndReject(false, __func__);
-      });
-
-  if (mActor) {
-    
-    
-    mActorPromise = nullptr;
-  }
-}
-
-void WindowsLocationProvider::ReleaseUtilityProcess() {
-  LOG("WindowsLocationProvider::ReleaseUtilityProcess(%p)", this);
-  auto utilityProc = mozilla::ipc::UtilityProcessManager::GetSingleton();
-  if (utilityProc) {
-    utilityProc->ReleaseWindowsUtils();
-  }
-}
-
-template <typename Fn>
-bool WindowsLocationProvider::WhenActorIsReady(Fn&& fn) {
-  if (mActor) {
-    return fn(mActor);
-  }
-
-  if (mActorPromise) {
-    mActorPromise->Then(
-        GetCurrentSerialEventTarget(), __func__,
-        [fn](const RefPtr<WindowsLocationParent>& actor) {
-          Unused << fn(actor.get());
-          return actor;
-        },
-        [](bool) { return false; });
-    return true;
-  }
-
-  
-  return false;
-}
-
-bool WindowsLocationProvider::SendStartup() {
-  LOG("WindowsLocationProvider::SendStartup(%p)", this);
-  MaybeCreateLocationActor();
-  return WhenActorIsReady(
-      [](WindowsLocationParent* actor) { return actor->SendStartup(); });
-}
-
-bool WindowsLocationProvider::SendRegisterForReport(
-    nsIGeolocationUpdate* aCallback) {
-  LOG("WindowsLocationProvider::SendRegisterForReport(%p)", this);
-  RefPtr<WindowsLocationProvider> self = this;
-  RefPtr<nsIGeolocationUpdate> cb = aCallback;
-  return WhenActorIsReady([self, cb](WindowsLocationParent* actor) {
-    MOZ_ASSERT(!self->mCallback);
-    if (actor->SendRegisterForReport()) {
-      self->mCallback = cb;
-      return true;
-    }
-    return false;
-  });
-}
-
-bool WindowsLocationProvider::SendUnregisterForReport() {
-  LOG("WindowsLocationProvider::SendUnregisterForReport(%p)", this);
-  RefPtr<WindowsLocationProvider> self = this;
-  return WhenActorIsReady([self](WindowsLocationParent* actor) {
-    self->mCallback = nullptr;
-    if (actor->SendUnregisterForReport()) {
-      return true;
-    }
-    return false;
-  });
-}
-
-bool WindowsLocationProvider::SendSetHighAccuracy(bool aEnable) {
-  LOG("WindowsLocationProvider::SendSetHighAccuracy(%p)", this);
-  return WhenActorIsReady([aEnable](WindowsLocationParent* actor) {
-    return actor->SendSetHighAccuracy(aEnable);
-  });
-}
-
-bool WindowsLocationProvider::Send__delete__() {
-  LOG("WindowsLocationProvider::Send__delete__(%p)", this);
-  return WhenActorIsReady([self = RefPtr{this}](WindowsLocationParent*) {
-    if (WindowsLocationParent::Send__delete__(self->mActor)) {
-      if (self->mActor) {
-        self->mActor->DetachFromLocationProvider();
-        self->mActor = nullptr;
-      }
-      return true;
-    }
-    return false;
-  });
-}
-
-void WindowsLocationProvider::RecvUpdate(
-    RefPtr<nsIDOMGeoPosition> aGeoPosition) {
-  LOG("WindowsLocationProvider::RecvUpdate(%p)", this);
-  if (!mCallback) {
-    return;
-  }
-
-  mCallback->Update(aGeoPosition.get());
-
-  Telemetry::Accumulate(Telemetry::GEOLOCATION_WIN8_SOURCE_IS_MLS, false);
-}
-
-void WindowsLocationProvider::RecvFailed(uint16_t err) {
-  LOG("WindowsLocationProvider::RecvFailed(%p)", this);
-  
-  if (mMLSProvider || !mCallback) {
-    return;
-  }
-
-  if (NS_SUCCEEDED(CreateAndWatchMLSProvider(mCallback))) {
-    return;
-  }
-
-  
-  
-  
-  RefPtr<WindowsLocationProvider> self = this;
-  nsCOMPtr<nsIGeolocationUpdate> callback = mCallback;
-  callback->NotifyError(err);
-}
-
-void WindowsLocationProvider::ActorStopped() {
-  
-  
-  ReleaseUtilityProcess();
-
-  if (mWatching) {
-    
-    
-    mWatching = false;
-    RecvFailed(GeolocationPositionError_Binding::POSITION_UNAVAILABLE);
-    return;
-  }
-
-  MOZ_ASSERT(!mActorPromise);
-  if (mActor) {
-    mActor->DetachFromLocationProvider();
-    mActor = nullptr;
-  }
+  LOG("WindowsLocationProvider::~WindowsLocationProvider(%p, %p)\n", this,
+      mLocation.get());
 }
 
 NS_IMETHODIMP
 WindowsLocationProvider::Startup() {
-  LOG("WindowsLocationProvider::Startup(%p, %p, %p)", this, mActor.get(),
-      mActorPromise.get());
-  
-  SendStartup();
+  LOG("WindowsLocationProvider::Startup(%p, %p)\n", this, mLocation.get());
+  if (mLocation) {
+    return NS_OK;
+  }
+
+  RefPtr<ILocation> location;
+  if (FAILED(::CoCreateInstance(CLSID_Location, nullptr, CLSCTX_INPROC_SERVER,
+                                IID_ILocation, getter_AddRefs(location)))) {
+    
+    return NS_OK;
+  }
+
+  IID reportTypes[] = {IID_ILatLongReport};
+  if (FAILED(location->RequestPermissions(nullptr, reportTypes, 1, FALSE))) {
+    
+    return NS_OK;
+  }
+
+  mLocation = location;
   return NS_OK;
 }
 
 NS_IMETHODIMP
 WindowsLocationProvider::Watch(nsIGeolocationUpdate* aCallback) {
-  LOG("WindowsLocationProvider::Watch(%p, %p, %p, %p, %d)", this, mActor.get(),
-      mActorPromise.get(), aCallback, mWatching);
-  if (mWatching) {
-    return NS_OK;
-  }
-
-  if (SendRegisterForReport(aCallback)) {
-    mWatching = true;
-    return NS_OK;
+  LOG("WindowsLocationProvider::Watch(%p, %p, %d)\n", this, mLocation.get(),
+      mWatching);
+  if (mLocation) {
+    if (mWatching) {
+      return NS_OK;
+    }
+    RefPtr<LocationEvent> event = new LocationEvent(aCallback, this);
+    if (SUCCEEDED(mLocation->RegisterForReport(event, IID_ILatLongReport, 0))) {
+      mWatching = true;
+      return NS_OK;
+    }
   }
 
   
+  LOG(" > MLS fallback\n");
+  mLocation = nullptr;
+
   return CreateAndWatchMLSProvider(aCallback);
 }
 
 NS_IMETHODIMP
 WindowsLocationProvider::Shutdown() {
-  LOG("WindowsLocationProvider::Shutdown(%p, %p, %p)", this, mActor.get(),
-      mActorPromise.get());
-
-  if (mWatching) {
-    SendUnregisterForReport();
+  LOG("WindowsLocationProvider::Shutdown(%p, %p)\n", this, mLocation.get());
+  if (mLocation) {
+    if (mWatching) {
+      mLocation->UnregisterForReport(IID_ILatLongReport);
+    }
+    mLocation = nullptr;
     mWatching = false;
   }
 
@@ -300,29 +255,26 @@ WindowsLocationProvider::Shutdown() {
 
 NS_IMETHODIMP
 WindowsLocationProvider::SetHighAccuracy(bool enable) {
-  LOG("WindowsLocationProvider::SetHighAccuracy(%p, %p, %p, %s)", this,
-      mActor.get(), mActorPromise.get(), enable ? "true" : "false");
-  if (mMLSProvider) {
+  if (!mLocation) {
     
     return NS_OK;
   }
 
-  if (!SendSetHighAccuracy(enable)) {
+  LOCATION_DESIRED_ACCURACY desiredAccuracy;
+  if (enable) {
+    desiredAccuracy = LOCATION_DESIRED_ACCURACY_HIGH;
+  } else {
+    desiredAccuracy = LOCATION_DESIRED_ACCURACY_DEFAULT;
+  }
+  if (FAILED(
+          mLocation->SetDesiredAccuracy(IID_ILatLongReport, desiredAccuracy))) {
     return NS_ERROR_FAILURE;
   }
-
-  
-  
-  
   return NS_OK;
 }
 
 nsresult WindowsLocationProvider::CreateAndWatchMLSProvider(
     nsIGeolocationUpdate* aCallback) {
-  LOG("WindowsLocationProvider::CreateAndWatchMLSProvider"
-      "(%p, %p, %p, %p, %p)",
-      this, mMLSProvider.get(), mActor.get(), mActorPromise.get(), aCallback);
-
   if (mMLSProvider) {
     return NS_OK;
   }
@@ -332,11 +284,6 @@ nsresult WindowsLocationProvider::CreateAndWatchMLSProvider(
 }
 
 void WindowsLocationProvider::CancelMLSProvider() {
-  LOG("WindowsLocationProvider::CancelMLSProvider"
-      "(%p, %p, %p, %p, %p)",
-      this, mMLSProvider.get(), mActor.get(), mActorPromise.get(),
-      mCallback.get());
-
   if (!mMLSProvider) {
     return;
   }
