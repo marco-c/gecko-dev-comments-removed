@@ -9,6 +9,7 @@
 #include "nsUTF8Utils.h"
 #include "nsIURL.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PWebTransport.h"
 #include "mozilla/dom/ReadableStream.h"
@@ -362,45 +363,66 @@ already_AddRefed<Promise> WebTransport::Closed() {
   return promise.forget();
 }
 
-void WebTransport::Close(const WebTransportCloseInfo& aOptions) {
+void WebTransport::Close(const WebTransportCloseInfo& aOptions,
+                         ErrorResult& aRv) {
   LOG(("Close() called"));
-  if (mState == WebTransportState::CONNECTED ||
-      mState == WebTransportState::CONNECTING) {
-    MOZ_ASSERT(mChild);
-    LOG(("Sending Close"));
-    
-    
-    
-    
-    
-
-    if (aOptions.mReason.Length() > 1024u) {
-      
-      
-      
-      
-      
-      
-      mChild->SendClose(
-          aOptions.mCloseCode,
-          Substring(aOptions.mReason, 0,
-                    RewindToPriorUTF8Codepoint(aOptions.mReason.get(), 1024u)));
-    } else {
-      mChild->SendClose(aOptions.mCloseCode, aOptions.mReason);
-    }
-    mState = WebTransportState::CLOSED;
-
-    
-    mIncomingBidirectionalPromise->MaybeResolveWithUndefined();   
-    mIncomingUnidirectionalPromise->MaybeResolveWithUndefined();  
-
-    
-    
-    
-    
-    mChild->Shutdown();
-    mChild = nullptr;
+  
+  
+  
+  if (mState == WebTransportState::CLOSED ||
+      mState == WebTransportState::FAILED) {
+    return;
   }
+  MOZ_ASSERT(mChild);
+  
+  if (mState == WebTransportState::CONNECTING) {
+    
+    
+    RefPtr<WebTransportError> error = new WebTransportError(
+        "close() called on WebTransport while connecting"_ns,
+        WebTransportErrorSource::Session);
+    
+    Cleanup(error, nullptr, aRv);
+    
+    return;
+  }
+  LOG(("Sending Close"));
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aOptions.mReason.Length() > 1024u) {
+    
+    
+    
+    
+    
+    
+    mChild->SendClose(
+        aOptions.mCloseCode,
+        Substring(aOptions.mReason, 0,
+                  RewindToPriorUTF8Codepoint(aOptions.mReason.get(), 1024u)));
+  } else {
+    mChild->SendClose(aOptions.mCloseCode, aOptions.mReason);
+  }
+
+  
+  
+  RefPtr<WebTransportError> error =
+      new WebTransportError("close()"_ns, WebTransportErrorSource::Session,
+                            DOMException_Binding::ABORT_ERR);
+  Cleanup(error, &aOptions, aRv);
+
+  
+  
+  
+  
+  mChild->Shutdown();
+  mChild = nullptr;
 }
 
 already_AddRefed<WebTransportDatagramDuplexStream> WebTransport::Datagrams() {
@@ -470,7 +492,6 @@ void WebTransport::Cleanup(WebTransportError* aError,
     return;
   }
 
-  
   for (const auto& stream : sendStreams) {
     RefPtr<WritableStreamDefaultController> controller = stream->Controller();
     WritableStreamDefaultControllerErrorIfNeeded(cx, controller, errorValue,
@@ -516,8 +537,8 @@ void WebTransport::Cleanup(WebTransportError* aError,
                                          IgnoreErrors());
   }
   
-  mIncomingUnidirectionalPromise->MaybeReject(errorValue);
-  mIncomingBidirectionalPromise->MaybeReject(errorValue);
+  mIncomingUnidirectionalPromise->MaybeResolveWithUndefined();
+  mIncomingBidirectionalPromise->MaybeResolveWithUndefined();
 }
 
 }  
