@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_extensions_{{ webidl_name  }}_h
-#define mozilla_extensions_{{ webidl_name }}_h
+#ifndef mozilla_extensions_ExtensionDns_h
+#define mozilla_extensions_ExtensionDns_h
 
 #include "js/TypeDecls.h"
 #include "mozilla/Attributes.h"
@@ -24,11 +24,11 @@ namespace mozilla::extensions {
 
 class ExtensionEventManager;
 
-class {{ webidl_name }} final : public nsISupports,
-                                public nsWrapperCache,
-                                public ExtensionAPINamespace {
+class ExtensionDns final : public nsISupports,
+                           public nsWrapperCache,
+                           public ExtensionAPINamespace {
  public:
-  {{ webidl_name }}(nsIGlobalObject* aGlobal, ExtensionBrowser* aExtensionBrowser);
+  ExtensionDns(nsIGlobalObject* aGlobal, ExtensionBrowser* aExtensionBrowser);
 
   
   nsIGlobalObject* GetGlobalObject() const override { return mGlobal; }
@@ -37,7 +37,7 @@ class {{ webidl_name }} final : public nsISupports,
     return mExtensionBrowser;
   }
 
-  nsString GetAPINamespace() const override { return u"{{ api_namespace }}"_ns; }
+  nsString GetAPINamespace() const override { return u"dns"_ns; }
 
   
   JSObject* WrapObject(JSContext* aCx,
@@ -48,22 +48,14 @@ class {{ webidl_name }} final : public nsISupports,
 
   nsIGlobalObject* GetParentObject() const;
 
-  
-  
-
-  
-  
-
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS({{ webidl_name }})
+  NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(ExtensionDns)
 
  private:
-  ~{{ webidl_name }}() = default;
+  ~ExtensionDns() = default;
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
   RefPtr<ExtensionBrowser> mExtensionBrowser;
-  
-  
 };
 
 }  
