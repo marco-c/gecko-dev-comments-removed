@@ -472,7 +472,9 @@ bool nsFrameMessageManager::GetParamsForMessage(JSContext* aCx,
   
   
   nsAutoString json;
-  NS_ENSURE_TRUE(nsContentUtils::StringifyJSON(aCx, v, json), false);
+  NS_ENSURE_TRUE(
+      nsContentUtils::StringifyJSON(aCx, v, json, UndefinedIsNullStringLiteral),
+      false);
   NS_ENSURE_TRUE(!json.IsEmpty(), false);
 
   JS::Rooted<JS::Value> val(aCx, JS::NullValue());

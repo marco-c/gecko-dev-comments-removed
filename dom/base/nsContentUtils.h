@@ -243,7 +243,11 @@ struct EventNameMapping {
 
 namespace mozilla {
 enum class PreventDefaultResult : uint8_t { No, ByContent, ByChrome };
+
+namespace dom {
+enum JSONBehavior { UndefinedIsNullStringLiteral, UndefinedIsVoidString };
 }
+}  
 
 class nsContentUtils {
   friend class nsAutoScriptBlockerSuppressNodeRemoved;
@@ -256,6 +260,7 @@ class nsContentUtils {
   using EventMessage = mozilla::EventMessage;
   using TimeDuration = mozilla::TimeDuration;
   using Trusted = mozilla::Trusted;
+  using JSONBehavior = mozilla::dom::JSONBehavior;
 
  public:
   static nsresult Init();
@@ -3263,8 +3268,14 @@ class nsContentUtils {
 
 
 
+
+
+
+
+
+
   static bool StringifyJSON(JSContext* aCx, JS::Handle<JS::Value> aValue,
-                            nsAString& aOutStr);
+                            nsAString& aOutStr, JSONBehavior aBehavior);
 
   
 
