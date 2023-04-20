@@ -345,7 +345,7 @@
     _instantiateFeatureCalloutTour(location, panelId) {
       this._featureCalloutPanelId = panelId;
       const { FeatureCallout } = ChromeUtils.importESModule(
-        "chrome://browser/content/featureCallout.mjs"
+        "chrome://browser/content/FeatureCallout.sys.mjs"
       );
       
       
