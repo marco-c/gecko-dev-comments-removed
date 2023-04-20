@@ -77,9 +77,6 @@ enum class FrameType {
 
 enum ReadFrameArgsBehavior {
   
-  ReadFrame_Formals,
-
-  
   ReadFrame_Overflown,
 
   
@@ -240,10 +237,6 @@ class JSJitFrameIter {
     unsigned nactual = numActualArgs();
     unsigned start, end;
     switch (behavior) {
-      case ReadFrame_Formals:
-        start = 0;
-        end = callee()->nargs();
-        break;
       case ReadFrame_Overflown:
         start = callee()->nargs();
         end = nactual;
@@ -690,7 +683,7 @@ class InlineFrameIterator {
                                 fallback);
       }
 
-      if (behavior != ReadFrame_Formals) {
+      if (nactual > nformal) {
         if (more()) {
           
           
