@@ -1306,17 +1306,6 @@ impl NinePatchDescriptor {
         let rect = LayoutRect::from_size(size);
 
         
-        let origin = LayoutPoint::new(
-            rect.min.x - self.outset.left,
-            rect.min.y - self.outset.top,
-        );
-        let size = LayoutSize::new(
-            rect.width() + self.outset.left + self.outset.right,
-            rect.height() + self.outset.top + self.outset.bottom,
-        );
-        let rect = LayoutRect::from_origin_and_size(origin, size);
-
-        
         let px0 = 0.0;
         let px1 = self.slice.left as f32 / self.width as f32;
         let px2 = (self.width as f32 - self.slice.right as f32) / self.width as f32;
