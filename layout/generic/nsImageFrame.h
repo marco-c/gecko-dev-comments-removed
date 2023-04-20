@@ -321,13 +321,7 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   nsRect PredictedDestRect(const nsRect& aFrameContentBox);
 
  private:
-  
-  inline void SpecToURI(const nsAString& aSpec, nsIURI** aURI);
-
-  inline void GetLoadGroup(nsPresContext* aPresContext,
-                           nsILoadGroup** aLoadGroup);
   nscoord GetContinuationOffset() const;
-  void GetDocumentCharacterSet(nsACString& aCharset) const;
   bool ShouldDisplaySelection();
 
   
@@ -414,18 +408,6 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   bool mReflowCallbackPosted = false;
   bool mForceSyncDecoding = false;
   bool mIsInObjectOrEmbed = false;
-
-  
-
-  
-  
-  
-
-  
-  
-  nsresult LoadIcons(nsPresContext* aPresContext);
-  nsresult LoadIcon(const nsAString& aSpec, nsPresContext* aPresContext,
-                    imgRequestProxy** aRequest);
 
  public:
   friend class mozilla::nsDisplayImage;
