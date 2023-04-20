@@ -36,6 +36,7 @@ namespace mozilla::dom {
 
 class ScriptLoadContext;
 class WorkerLoadContext;
+class WorkletLoadContext;
 
 }  
 
@@ -313,6 +314,8 @@ class ScriptLoadRequest
   mozilla::loader::ComponentLoadContext* GetComponentLoadContext();
 
   mozilla::dom::WorkerLoadContext* GetWorkerLoadContext();
+
+  mozilla::dom::WorkletLoadContext* GetWorkletLoadContext();
 
   const ScriptKind mKind;  
                            
