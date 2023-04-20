@@ -58,6 +58,17 @@ function waitForCompositorCommit() {
     });
   });
 }
+
+
+
+
+
+async function waitForCompositorReady() {
+  const animation =
+      document.body.animate({ opacity: [ 1, 1 ] }, {duration: 1 });
+  return animation.finished;
+}
+
 function waitForNextFrame() {
   const startTime = performance.now();
   return new Promise(resolve => {
@@ -70,7 +81,6 @@ function waitForNextFrame() {
     });
   });
 }
-
 
 
 
