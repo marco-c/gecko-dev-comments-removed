@@ -175,8 +175,8 @@ void AecDumpBasedSimulator::PrepareProcessStreamCall(
   }
 
   
-  RTC_CHECK(msg.has_level());
-  aec_dump_mic_level_ = msg.level();
+  RTC_CHECK(msg.has_applied_input_volume());
+  aec_dump_mic_level_ = msg.applied_input_volume();
 }
 
 void AecDumpBasedSimulator::VerifyProcessStreamBitExactness(
