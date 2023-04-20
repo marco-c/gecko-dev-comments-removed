@@ -57,27 +57,48 @@ async function getAndExpireCookiesForRedirectTest(location) {
 
 
 
-function httpCookieTest(cookie, expectedValue, name, defaultPath = true) {
-  return promise_test(async (t) => {
-    
-    await getAndExpireCookiesForDefaultPathTest();
-    await test_driver.delete_all_cookies();
-    t.add_cleanup(test_driver.delete_all_cookies);
 
-    let encodedCookie = encodeURIComponent(JSON.stringify(cookie));
-    await fetch(`/cookies/resources/cookie.py?set=${encodedCookie}`);
-    let cookies = document.cookie;
-    if (defaultPath) {
+
+
+function httpCookieTest(cookie, expectedValue, name, defaultPath = true,
+                        allowFetchFailure = false) {
+  return promise_test((t) => {
+    var skipAssertions = false;
+    return new Promise(async (resolve, reject) => {
       
-      
-      
-      cookies = await getAndExpireCookiesForDefaultPathTest();
-    }
-    if (Boolean(expectedValue)) {
-      assert_equals(cookies, expectedValue, 'The cookie was set as expected.');
-    } else {
-      assert_equals(cookies, expectedValue, 'The cookie was rejected.');
-    }
+      await getAndExpireCookiesForDefaultPathTest();
+      await test_driver.delete_all_cookies();
+      t.add_cleanup(test_driver.delete_all_cookies);
+
+      let encodedCookie = encodeURIComponent(JSON.stringify(cookie));
+      try {
+        await fetch(`/cookies/resources/cookie.py?set=${encodedCookie}`);
+      } catch {
+        if (allowFetchFailure) {
+          skipAssertions = true;
+          resolve();
+        } else {
+          reject('Failed to fetch /cookies/resources/cookie.py');
+        }
+      }
+      let cookies = document.cookie;
+      if (defaultPath) {
+        
+        
+        
+        cookies = await getAndExpireCookiesForDefaultPathTest();
+      }
+      resolve(cookies);
+    }).then((cookies) => {
+      if (skipAssertions) {
+        return;
+      }
+      if (Boolean(expectedValue)) {
+        assert_equals(cookies, expectedValue, 'The cookie was set as expected.');
+      } else {
+        assert_equals(cookies, expectedValue, 'The cookie was rejected.');
+      }
+    });
   }, name);
 }
 
