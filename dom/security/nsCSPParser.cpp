@@ -1097,13 +1097,19 @@ void nsCSPParser::directive() {
       logWarningErrorToConsole(nsIScriptError::warningFlag,
                                "strictDynamicButNoHashOrNonce", params);
     }
-  } else if (mHasHashOrNonce && mUnsafeInlineKeywordSrc &&
-             (cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE) ||
-              cspDir->equals(
-                  nsIContentSecurityPolicy::SCRIPT_SRC_ELEM_DIRECTIVE) ||
-              cspDir->equals(
-                  nsIContentSecurityPolicy::SCRIPT_SRC_ATTR_DIRECTIVE) ||
-              cspDir->equals(nsIContentSecurityPolicy::STYLE_SRC_DIRECTIVE))) {
+  }
+
+  
+  
+  
+  if (mHasHashOrNonce && mUnsafeInlineKeywordSrc &&
+      (cspDir->isDefaultDirective() ||
+       cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE) ||
+       cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_ELEM_DIRECTIVE) ||
+       cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_ATTR_DIRECTIVE) ||
+       cspDir->equals(nsIContentSecurityPolicy::STYLE_SRC_DIRECTIVE) ||
+       cspDir->equals(nsIContentSecurityPolicy::STYLE_SRC_ELEM_DIRECTIVE) ||
+       cspDir->equals(nsIContentSecurityPolicy::STYLE_SRC_ATTR_DIRECTIVE))) {
     mUnsafeInlineKeywordSrc->invalidate();
 
     

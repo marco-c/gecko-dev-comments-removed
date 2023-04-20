@@ -1465,16 +1465,6 @@ bool nsCSPPolicy::allows(CSPDirective aDirective, enum CSPKeyword aKeyword,
 
   
   
-  
-  if (aKeyword == CSP_NONCE || aKeyword == CSP_HASH) {
-    if (!defaultDir) {
-      return true;
-    }
-    return false;
-  }
-
-  
-  
   if (defaultDir) {
     return defaultDir->allows(aKeyword, aHashOrNonce, aParserCreated);
   }
