@@ -446,11 +446,10 @@ var DownloadsPanel = {
       
       
       if (
-        DownloadsView.canChangeSelectedItem &&
-        (richListBox.selectedItem === richListBox.lastElementChild ||
-          document
-            .getElementById("downloadsFooter")
-            .contains(document.activeElement))
+        richListBox.selectedItem === richListBox.lastElementChild ||
+        document
+          .getElementById("downloadsFooter")
+          .contains(document.activeElement)
       ) {
         richListBox.selectedIndex = -1;
         DownloadsFooter.focus();
@@ -514,11 +513,7 @@ var DownloadsPanel = {
       return;
     }
 
-    if (
-      document.activeElement &&
-      (this.panel.contains(document.activeElement) ||
-        this.panel.shadowRoot.contains(document.activeElement))
-    ) {
+    if (document.activeElement && this.panel.contains(document.activeElement)) {
       return;
     }
     let focusOptions = {};
@@ -526,9 +521,7 @@ var DownloadsPanel = {
       focusOptions.focusVisible = false;
     }
     if (DownloadsView.richListBox.itemCount > 0) {
-      if (DownloadsView.canChangeSelectedItem) {
-        DownloadsView.richListBox.selectedIndex = 0;
-      }
+      DownloadsView.richListBox.selectedIndex = 0;
       DownloadsView.richListBox.focus(focusOptions);
     } else {
       DownloadsFooter.focus(focusOptions);
@@ -970,15 +963,6 @@ var DownloadsView = {
   
 
 
-  get canChangeSelectedItem() {
-    
-    
-    return !this.contextMenuOpen && !this.subViewOpen;
-  },
-
-  
-
-
   onDownloadMouseOver(aEvent) {
     let item = aEvent.target.closest("richlistitem,richlistbox");
     if (item.localName != "richlistitem") {
@@ -994,7 +978,7 @@ var DownloadsView = {
       aEvent.target.closest(".downloadMainArea")
     );
 
-    if (this.canChangeSelectedItem) {
+    if (!this.contextMenuOpen && !this.subViewOpen) {
       this.richListBox.selectedItem = item;
     }
   },
@@ -1011,19 +995,21 @@ var DownloadsView = {
 
     
     
-    if (this.canChangeSelectedItem && !item.contains(aEvent.relatedTarget)) {
+    if (
+      !this.contextMenuOpen &&
+      !this.subViewOpen &&
+      !item.contains(aEvent.relatedTarget)
+    ) {
       this.richListBox.selectedIndex = -1;
     }
   },
 
   onDownloadContextMenu(aEvent) {
-    let element = aEvent.originalTarget.closest("richlistitem");
+    let element = this.richListBox.selectedItem;
     if (!element) {
       return;
     }
-    
-    
-    this.richListBox.selectedItem = element;
+
     DownloadsViewController.updateCommands();
 
     DownloadsViewUI.updateContextMenuForElement(this.contextMenu, element);
