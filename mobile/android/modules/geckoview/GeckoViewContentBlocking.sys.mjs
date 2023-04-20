@@ -1,16 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { GeckoViewModule } from "resource://gre/modules/GeckoViewModule.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewContentBlocking"];
-
-const { GeckoViewModule } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewModule.sys.mjs"
-);
-
-class GeckoViewContentBlocking extends GeckoViewModule {
+export class GeckoViewContentBlocking extends GeckoViewModule {
   onEnable() {
     const flags = Ci.nsIWebProgress.NOTIFY_CONTENT_BLOCKING;
     this.progressFilter = Cc[
@@ -32,7 +26,7 @@ class GeckoViewContentBlocking extends GeckoViewModule {
     this.unregisterListener(["ContentBlocking:RequestLog"]);
   }
 
-  
+  // Bundle event handler.
   onEvent(aEvent, aData, aCallback) {
     debug`onEvent: event=${aEvent}, data=${aData}`;
 
@@ -45,8 +39,8 @@ class GeckoViewContentBlocking extends GeckoViewModule {
           break;
         }
 
-        
-        
+        // Get the top-level browsingContext. The ContentBlockingLog is located
+        // in its current window global.
         bc = bc.top;
 
         const topWindowGlobal = bc.currentWindowGlobal;

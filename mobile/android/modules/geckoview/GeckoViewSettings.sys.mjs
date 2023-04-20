@@ -1,18 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewSettings"];
-
-const { GeckoViewModule } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewModule.sys.mjs"
-);
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { GeckoViewModule } from "resource://gre/modules/GeckoViewModule.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -33,23 +24,24 @@ XPCOMUtils.defineLazyGetter(lazy, "VR_USER_AGENT", function() {
   return lazy.MOBILE_USER_AGENT.replace(/Mobile/, "Mobile VR");
 });
 
-
+// This needs to match GeckoSessionSettings.java
 const USER_AGENT_MODE_MOBILE = 0;
 const USER_AGENT_MODE_DESKTOP = 1;
 const USER_AGENT_MODE_VR = 2;
 
-
+// This needs to match GeckoSessionSettings.java
 const DISPLAY_MODE_BROWSER = 0;
 const DISPLAY_MODE_MINIMAL_UI = 1;
 const DISPLAY_MODE_STANDALONE = 2;
 const DISPLAY_MODE_FULLSCREEN = 3;
 
-
+// This needs to match GeckoSessionSettings.java
+// eslint-disable-next-line no-unused-vars
 const VIEWPORT_MODE_MOBILE = 0;
 const VIEWPORT_MODE_DESKTOP = 1;
 
-
-class GeckoViewSettings extends GeckoViewModule {
+// Handles GeckoSession settings.
+export class GeckoViewSettings extends GeckoViewModule {
   onInit() {
     debug`onInit`;
     this._userAgentMode = USER_AGENT_MODE_MOBILE;
@@ -83,8 +75,8 @@ class GeckoViewSettings extends GeckoViewModule {
     this.viewportMode = settings.viewportMode;
     this.useTrackingProtection = !!settings.useTrackingProtection;
 
-    
-    
+    // When the page is loading from the main process (e.g. from an extension
+    // page) we won't be able to query the actor here.
     this.getActor("GeckoViewSettings")?.sendAsyncMessage(
       "SettingsUpdate",
       settings

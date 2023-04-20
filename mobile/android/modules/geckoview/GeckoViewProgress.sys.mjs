@@ -1,17 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewProgress"];
-
-const { GeckoViewModule } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewModule.sys.mjs"
-);
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { GeckoViewModule } from "resource://gre/modules/GeckoViewModule.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -38,31 +30,31 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 });
 
 var IdentityHandler = {
-  
-  
+  // The definitions below should be kept in sync with those in GeckoView.ProgressListener.SecurityInformation
+  // No trusted identity information. No site identity icon is shown.
   IDENTITY_MODE_UNKNOWN: 0,
 
-  
+  // Domain-Validation SSL CA-signed domain verification (DV).
   IDENTITY_MODE_IDENTIFIED: 1,
 
-  
+  // Extended-Validation SSL CA-signed identity information (EV). A more rigorous validation process.
   IDENTITY_MODE_VERIFIED: 2,
 
-  
-  
+  // The following mixed content modes are only used if "security.mixed_content.block_active_content"
+  // is enabled. Our Java frontend coalesces them into one indicator.
 
-  
+  // No mixed content information. No mixed content icon is shown.
   MIXED_MODE_UNKNOWN: 0,
 
-  
+  // Blocked active mixed content.
   MIXED_MODE_CONTENT_BLOCKED: 1,
 
-  
+  // Loaded active mixed content.
   MIXED_MODE_CONTENT_LOADED: 2,
 
-  
-
-
+  /**
+   * Determines the identity mode corresponding to the icon we show in the urlbar.
+   */
   getIdentityMode: function getIdentityMode(aState) {
     if (aState & Ci.nsIWebProgressListener.STATE_IDENTITY_EV_TOPLEVEL) {
       return this.IDENTITY_MODE_VERIFIED;
@@ -90,7 +82,7 @@ var IdentityHandler = {
   },
 
   getMixedActiveMode: function getActiveDisplayMode(aState) {
-    
+    // Only show an indicator for loaded mixed content if the pref to block it is enabled
     if (
       aState & Ci.nsIWebProgressListener.STATE_LOADED_MIXED_ACTIVE_CONTENT &&
       !Services.prefs.getBoolPref("security.mixed_content.block_active_content")
@@ -105,10 +97,10 @@ var IdentityHandler = {
     return this.MIXED_MODE_UNKNOWN;
   },
 
-  
-
-
-
+  /**
+   * Determine the identity of the page being displayed by examining its SSL cert
+   * (if available). Return the data needed to update the UI.
+   */
   checkIdentity: function checkIdentity(aState, aBrowser) {
     const identityMode = this.getIdentityMode(aState);
     const mixedDisplay = this.getMixedDisplayMode(aState);
@@ -125,8 +117,8 @@ var IdentityHandler = {
       result.origin = aBrowser.contentPrincipal.originNoSuffix;
     }
 
-    
-    
+    // Don't show identity data for pages with an unknown identity or if any
+    // mixed content is loaded (mixed display content is loaded by default).
     if (
       identityMode === this.IDENTITY_MODE_UNKNOWN ||
       aState & Ci.nsIWebProgressListener.STATE_IS_BROKEN ||
@@ -162,8 +154,8 @@ var IdentityHandler = {
         {}
       );
 
-      
-      
+      // If an override exists, the connection is being allowed but should not
+      // be considered secure.
       result.secure = !result.securityException;
     } catch (e) {}
 
@@ -209,8 +201,8 @@ class ProgressTracker extends Tracker {
     debug`ProgressTracker start ${aUri}`;
 
     if (this._eventReceived) {
-      
-      this.stop( false);
+      // A request was already in process, let's cancel it
+      this.stop(/* isSuccess */ false);
     }
 
     this._eventReceived = new Set();
@@ -241,7 +233,7 @@ class ProgressTracker extends Tracker {
     debug`ProgressTracker stop`;
 
     if (!this._eventReceived) {
-      
+      // No request in progress
       return;
     }
 
@@ -308,7 +300,7 @@ class ProgressTracker extends Tracker {
                              flags=${aFlags}`;
 
     if (aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE) {
-      this.stop( false);
+      this.stop(/* isSuccess */ false);
     } else {
       this.changeLocation(aLocationURI.displaySpec);
     }
@@ -316,7 +308,7 @@ class ProgressTracker extends Tracker {
 
   handleEvent(aEvent) {
     if (!this._eventReceived || this._eventReceived.has(aEvent.name)) {
-      
+      // Either we're not tracking or we have received this event already
       return;
     }
 
@@ -434,7 +426,7 @@ class StateTracker extends Tracker {
 
   stop(aIsSuccess) {
     if (!this._inProgress) {
-      
+      // No request in progress
       return;
     }
 
@@ -489,7 +481,7 @@ class SecurityTracker extends Tracker {
   onSecurityChange(aWebProgress, aRequest, aState) {
     debug`onSecurityChange`;
 
-    
+    // Don't need to do anything if the data we use to update the UI hasn't changed
     if (this._state === aState && !this._hostChanged) {
       return;
     }
@@ -506,7 +498,7 @@ class SecurityTracker extends Tracker {
   }
 }
 
-class GeckoViewProgress extends GeckoViewModule {
+export class GeckoViewProgress extends GeckoViewModule {
   onEnable() {
     debug`onEnable`;
 
@@ -546,8 +538,8 @@ class GeckoViewProgress extends GeckoViewModule {
     debug`receiveMessage: ${aMsg.name}`;
 
     switch (aMsg.name) {
-      case "DOMContentLoaded": 
-      case "MozAfterPaint": 
+      case "DOMContentLoaded": // fall-through
+      case "MozAfterPaint": // fall-through
       case "pageshow": {
         this._progressTracker?.handleEvent(aMsg);
         break;
@@ -566,10 +558,10 @@ class GeckoViewProgress extends GeckoViewModule {
   }
 
   onStateChange(...args) {
-    
-    
-    
-    
+    // GeckoView never gets PageStart or PageStop for about:blank because we
+    // set nodefaultsrc to true unconditionally so we can assume here that
+    // we're starting a page load for a non-blank page (or a consumer-initiated
+    // about:blank load).
     this._initialAboutBlank = false;
 
     this._progressTracker.onStateChange(...args);
@@ -577,7 +569,7 @@ class GeckoViewProgress extends GeckoViewModule {
   }
 
   onSecurityChange(...args) {
-    
+    // We don't report messages about the initial about:blank
     if (this._initialAboutBlank) {
       return;
     }
@@ -590,11 +582,11 @@ class GeckoViewProgress extends GeckoViewModule {
     this._progressTracker.onLocationChange(...args);
   }
 
-  
-  
-  
-  
-  
+  // The initial about:blank load events are unreliable because docShell starts
+  // up concurrently with loading geckoview.js so we're never guaranteed to get
+  // the events.
+  // What we do instead is ignore all initial about:blank events and fire them
+  // manually once the child process has booted up.
   _fireInitialLoad() {
     this.eventDispatcher.sendRequest({
       type: "GeckoView:PageStart",
@@ -613,7 +605,7 @@ class GeckoViewProgress extends GeckoViewModule {
     });
   }
 
-  
+  // nsIObserver event handler
   observe(aSubject, aTopic, aData) {
     debug`observe: topic=${aTopic}`;
 
@@ -624,8 +616,8 @@ class GeckoViewProgress extends GeckoViewModule {
           return;
         }
 
-        this._progressTracker?.stop( false);
-        this._stateTracker?.stop( false);
+        this._progressTracker?.stop(/* isSuccess */ false);
+        this._stateTracker?.stop(/* isSuccess */ false);
       }
     }
   }

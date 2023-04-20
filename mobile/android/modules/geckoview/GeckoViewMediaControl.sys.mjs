@@ -1,16 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { GeckoViewModule } from "resource://gre/modules/GeckoViewModule.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewMediaControl"];
-
-const { GeckoViewModule } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewModule.sys.mjs"
-);
-
-class GeckoViewMediaControl extends GeckoViewModule {
+export class GeckoViewMediaControl extends GeckoViewModule {
   onInit() {
     debug`onInit`;
   }
@@ -106,7 +100,7 @@ class GeckoViewMediaControl extends GeckoViewModule {
     }
   }
 
-  
+  // eslint-disable-next-line complexity
   handleEvent(aEvent) {
     debug`handleEvent: ${aEvent.type}`;
 
@@ -169,8 +163,8 @@ class GeckoViewMediaControl extends GeckoViewModule {
 
     debug`handleSupportedKeysChanged ${supported}`;
 
-    
-    
+    // Mapping it to a key-value store for compatibility with the JNI
+    // implementation for now.
     const features = new Map();
     supported.forEach(key => {
       features[key] = true;

@@ -1,47 +1,41 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { GeckoViewModule } from "resource://gre/modules/GeckoViewModule.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewProcessHangMonitor"];
-
-const { GeckoViewModule } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewModule.sys.mjs"
-);
-
-class GeckoViewProcessHangMonitor extends GeckoViewModule {
+export class GeckoViewProcessHangMonitor extends GeckoViewModule {
   constructor(aModuleInfo) {
     super(aModuleInfo);
 
-    
-
-
-
+    /**
+     * Collection of hang reports that haven't expired or been dismissed
+     * by the user. These are nsIHangReports.
+     */
     this._activeReports = new Set();
 
-    
-
-
-
-
+    /**
+     * Collection of hang reports that have been suppressed for a short
+     * period of time. Keys are nsIHangReports. Values are timeouts for
+     * when the wait time expires.
+     */
     this._pausedReports = new Map();
 
-    
-
-
+    /**
+     * Simple index used for report identification
+     */
     this._nextIndex = 0;
 
-    
-
-
-
+    /**
+     * Map of report IDs to report objects.
+     * Keys are numbers. Values are nsIHangReports.
+     */
     this._reportIndex = new Map();
 
-    
-
-
-
+    /**
+     * Map of report objects to report IDs.
+     * Keys are nsIHangReports. Values are numbers.
+     */
     this._reportLookupIndex = new Map();
   }
 
@@ -70,7 +64,7 @@ class GeckoViewProcessHangMonitor extends GeckoViewModule {
     this.unregisterListener();
   }
 
-  
+  // Bundle event handler.
   onEvent(aEvent, aData, aCallback) {
     debug`onEvent: event=${aEvent}, data=${aData}`;
 
@@ -89,7 +83,7 @@ class GeckoViewProcessHangMonitor extends GeckoViewModule {
     }
   }
 
-  
+  // nsIObserver event handler
   observe(aSubject, aTopic, aData) {
     debug`observe(aTopic=${aTopic})`;
     aSubject.QueryInterface(Ci.nsIHangReport);
@@ -109,10 +103,10 @@ class GeckoViewProcessHangMonitor extends GeckoViewModule {
     }
   }
 
-  
-
-
-
+  /**
+   * This timeout is the wait period applied after a user selects "Wait" in
+   * an existing notification.
+   */
   get WAIT_EXPIRATION_TIME() {
     try {
       return Services.prefs.getIntPref("browser.hangNotification.waitPeriod");
@@ -121,28 +115,28 @@ class GeckoViewProcessHangMonitor extends GeckoViewModule {
     }
   }
 
-  
-
-
-
+  /**
+   * Terminate whatever is causing this report, be it an add-on or page script.
+   * This is done without updating any report notifications.
+   */
   stopHang(report) {
     report.terminateScript();
   }
 
-  
-
-
+  /**
+   *
+   */
   pauseHang(report) {
     this._activeReports.delete(report);
 
-    
+    // Create a new timeout with notify callback
     const timer = this.window.setTimeout(() => {
       for (const [stashedReport, otherTimer] of this._pausedReports) {
         if (otherTimer === timer) {
           this._pausedReports.delete(stashedReport);
 
-          
-          
+          // We're still hung, so move the report back to the active
+          // list.
           this._activeReports.add(report);
           break;
         }
@@ -152,9 +146,9 @@ class GeckoViewProcessHangMonitor extends GeckoViewModule {
     this._pausedReports.set(report, timer);
   }
 
-  
-
-
+  /**
+   * construct an information bundle
+   */
   notifyReport(report) {
     this.eventDispatcher.sendRequest({
       type: "GeckoView:HangReport",
@@ -163,23 +157,23 @@ class GeckoViewProcessHangMonitor extends GeckoViewModule {
     });
   }
 
-  
-
-
+  /**
+   * Handle a potentially new hang report.
+   */
   reportHang(report) {
-    
+    // if we aren't enabled then default to stopping the script
     if (!this.enabled) {
       this.stopHang(report);
       return;
     }
 
-    
+    // if we have already notified, remind
     if (this._activeReports.has(report)) {
       this.notifyReport(report);
       return;
     }
 
-    
+    // If this hang was already reported and paused by the user then ignore it.
     if (this._pausedReports.has(report)) {
       return;
     }
@@ -189,7 +183,7 @@ class GeckoViewProcessHangMonitor extends GeckoViewModule {
     this._reportIndex.set(index, report);
     this._activeReports.add(report);
 
-    
+    // Actually notify the new report
     this.notifyReport(report);
   }
 

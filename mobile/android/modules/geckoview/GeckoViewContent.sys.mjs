@@ -1,16 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { GeckoViewModule } from "resource://gre/modules/GeckoViewModule.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewContent"];
-
-const { GeckoViewModule } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewModule.sys.mjs"
-);
-
-class GeckoViewContent extends GeckoViewModule {
+export class GeckoViewContent extends GeckoViewModule {
   onInit() {
     this.registerListener([
       "GeckoViewContent:ExitFullScreen",
@@ -35,20 +29,20 @@ class GeckoViewContent extends GeckoViewModule {
     this.window.addEventListener(
       "MozDOMFullscreen:Entered",
       this,
-       true,
-       false
+      /* capture */ true,
+      /* untrusted */ false
     );
     this.window.addEventListener(
       "MozDOMFullscreen:Exited",
       this,
-       true,
-       false
+      /* capture */ true,
+      /* untrusted */ false
     );
     this.window.addEventListener(
       "framefocusrequested",
       this,
-       true,
-       false
+      /* capture */ true,
+      /* untrusted */ false
     );
 
     this.window.addEventListener("DOMWindowClose", this);
@@ -66,17 +60,17 @@ class GeckoViewContent extends GeckoViewModule {
     this.window.removeEventListener(
       "MozDOMFullscreen:Entered",
       this,
-       true
+      /* capture */ true
     );
     this.window.removeEventListener(
       "MozDOMFullscreen:Exited",
       this,
-       true
+      /* capture */ true
     );
     this.window.removeEventListener(
       "framefocusrequested",
       this,
-       true
+      /* capture */ true
     );
 
     this.window.removeEventListener("DOMWindowClose", this);
@@ -100,9 +94,9 @@ class GeckoViewContent extends GeckoViewModule {
     );
   }
 
-  
-  
-  
+  // Goes up the browsingContext chain and sends the message every time
+  // we cross the process boundary so that every process in the chain is
+  // notified.
   sendToAllChildren(aEvent, aData) {
     let { browsingContext } = this.actor;
 
@@ -125,7 +119,7 @@ class GeckoViewContent extends GeckoViewModule {
     }
   }
 
-  
+  // Bundle event handler.
   onEvent(aEvent, aData, aCallback) {
     debug`onEvent: event=${aEvent}, data=${aData}`;
 
@@ -155,11 +149,11 @@ class GeckoViewContent extends GeckoViewModule {
         this.sendToAllChildren(aEvent, aData);
         break;
       case "GeckoView:ScrollBy":
-        
+        // Unclear if that actually works with oop iframes?
         this.sendToAllChildren(aEvent, aData);
         break;
       case "GeckoView:ScrollTo":
-        
+        // Unclear if that actually works with oop iframes?
         this.sendToAllChildren(aEvent, aData);
         break;
       case "GeckoView:UpdateInitData":
@@ -200,7 +194,7 @@ class GeckoViewContent extends GeckoViewModule {
     }
   }
 
-  
+  // DOM event handler
   handleEvent(aEvent) {
     debug`handleEvent: ${aEvent.type}`;
 
@@ -219,7 +213,7 @@ class GeckoViewContent extends GeckoViewModule {
         break;
       case "MozDOMFullscreen:Entered":
         if (this.browser == aEvent.target) {
-          
+          // Remote browser; dispatch to content process.
           this.sendToAllChildren("GeckoView:DOMFullscreenEntered");
         }
         break;
@@ -233,9 +227,9 @@ class GeckoViewContent extends GeckoViewModule {
         });
         break;
       case "DOMWindowClose":
-        
-        
-        
+        // We need this because we want to allow the app
+        // to close the window itself. If we don't preventDefault()
+        // here Gecko will close it immediately.
         aEvent.preventDefault();
 
         this.eventDispatcher.sendRequest({
@@ -263,7 +257,7 @@ class GeckoViewContent extends GeckoViewModule {
     }
   }
 
-  
+  // nsIObserver event handler
   observe(aSubject, aTopic, aData) {
     debug`observe: ${aTopic}`;
     this._contentCrashed = false;
@@ -350,7 +344,7 @@ class GeckoViewContent extends GeckoViewModule {
 
       onFindResult(aOptions) {
         if (!aCallback || aOptions.searchString !== aData.searchString) {
-          
+          // Result from a previous search.
           return;
         }
 
@@ -377,7 +371,7 @@ class GeckoViewContent extends GeckoViewModule {
           this.response.total = 0;
         }
 
-        
+        // Only send response if we have a count.
         if (!this.response.found || this.response.current !== 0) {
           debug`onFindResult: ${this.response}`;
           aCallback.onSuccess(this.response);
@@ -387,7 +381,7 @@ class GeckoViewContent extends GeckoViewModule {
 
       onMatchesCountResult(aResult) {
         if (!aCallback || finder.searchString !== aData.searchString) {
-          
+          // Result from a previous search.
           return;
         }
 
@@ -396,8 +390,8 @@ class GeckoViewContent extends GeckoViewModule {
           total: aResult.total,
         });
 
-        
-        
+        // Only send response if we have a result. `found` and `wrapped` are
+        // both false only when we haven't received a result yet.
         if (this.response.found || this.response.wrapped) {
           debug`onMatchesCountResult: ${this.response}`;
           aCallback.onSuccess(this.response);
@@ -419,7 +413,7 @@ class GeckoViewContent extends GeckoViewModule {
       this._matchDisplayOptions && !!this._matchDisplayOptions.drawOutline;
 
     if (!aData.searchString || aData.searchString === finder.searchString) {
-      
+      // Search again.
       aData.searchString = finder.searchString;
       finder.findAgain(
         aData.searchString,
