@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=483573
+-->
 <head>
   <title>HTML5 audio/video tests</title>
   <link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css" />
@@ -42,6 +42,12 @@
       });
       // Wait for this to be reflected in the a11y tree.
       await bufferA11yShown;
+
+      // Give Fluent time to update the value of the scrubber asynchronously.
+      let scrubber = document.getElementById("audio")
+                             .openOrClosedShadowRoot.getElementById("scrubber");
+      await SimpleTest.promiseWaitForCondition(() =>
+        scrubber.getAttribute("aria-valuetext") == "0:00 / 0:02");
 
       doTest();
     }
