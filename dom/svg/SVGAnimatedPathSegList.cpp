@@ -25,7 +25,6 @@ nsresult SVGAnimatedPathSegList::SetBaseValueString(const nsAString& aValue) {
   
   
   
-
   nsresult rv = newBaseValue.SetValueFromString(aValue);
 
   
@@ -56,20 +55,7 @@ nsresult SVGAnimatedPathSegList::SetBaseValueString(const nsAString& aValue) {
   
   
 
-  nsresult rv2 = mBaseVal.CopyFrom(newBaseValue);
-  if (NS_FAILED(rv2)) {
-    if (StaticPrefs::dom_svg_pathSeg_enabled()) {
-      
-      
-      if (baseValWrapper) {
-        baseValWrapper->InternalListWillChangeTo(mBaseVal);
-      }
-      if (animValWrapper) {
-        animValWrapper->InternalListWillChangeTo(mBaseVal);
-      }
-    }
-    return rv2;
-  }
+  mBaseVal.SwapWith(newBaseValue);
   return rv;
 }
 
@@ -177,7 +163,7 @@ SMILValue SVGAnimatedPathSegList::SMILAnimatedPathSegList::GetBaseValue()
   SMILValue val;
 
   SMILValue tmp(SVGPathSegListSMILType::Singleton());
-  SVGPathDataAndInfo* list = static_cast<SVGPathDataAndInfo*>(tmp.mU.mPtr);
+  auto* list = static_cast<SVGPathDataAndInfo*>(tmp.mU.mPtr);
   nsresult rv = list->CopyFrom(mVal->mBaseVal);
   if (NS_SUCCEEDED(rv)) {
     list->SetElement(mElement);

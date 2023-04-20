@@ -213,6 +213,7 @@ class SVGPathData {
 
 
   nsresult CopyFrom(const SVGPathData& rhs);
+  void SwapWith(SVGPathData& aRhs) { mData.SwapElements(aRhs.mData); }
 
   float& operator[](uint32_t aIndex) { return mData[aIndex]; }
 
