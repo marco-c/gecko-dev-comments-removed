@@ -408,9 +408,6 @@ void MonoAgc::UpdateGain(int rms_error_db) {
   SetLevel(LevelFromGainError(residual_gain, level_, min_mic_level_));
   if (old_level != level_) {
     
-    RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.AgcSetLevel", level_, 1,
-                                kMaxMicLevel, 50);
-    
     agc_->Reset();
   }
 }
@@ -627,6 +624,7 @@ void AgcManagerDirect::Process(const AudioBuffer& audio_buffer,
                                absl::optional<float> speech_probability,
                                absl::optional<float> speech_level_dbfs) {
   AggregateChannelLevels();
+  const int volume_after_clipping_handling = recommended_input_volume_;
 
   if (!capture_output_used_) {
     return;
@@ -649,6 +647,13 @@ void AgcManagerDirect::Process(const AudioBuffer& audio_buffer,
   }
 
   AggregateChannelLevels();
+  if (volume_after_clipping_handling != recommended_input_volume_) {
+    
+    
+    RTC_HISTOGRAM_COUNTS_LINEAR(
+        "WebRTC.Audio.Apm.RecommendedInputVolume.OnChangeToMatchTarget",
+        recommended_input_volume_, 1, kMaxMicLevel, 50);
+  }
 }
 
 absl::optional<int> AgcManagerDirect::GetDigitalComressionGain() {

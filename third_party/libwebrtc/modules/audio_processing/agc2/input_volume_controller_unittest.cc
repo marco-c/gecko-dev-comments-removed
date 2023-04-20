@@ -18,6 +18,7 @@
 
 #include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/strings/string_builder.h"
+#include "system_wrappers/include/metrics.h"
 #include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -59,9 +60,9 @@ constexpr InputVolumeControllerConfig kDefaultInputVolumeControllerConfig{};
 constexpr ClippingPredictorConfig kDefaultClippingPredictorConfig{};
 
 std::unique_ptr<InputVolumeController> CreateInputVolumeController(
-    int clipped_level_step,
-    float clipped_ratio_threshold,
-    int clipped_wait_frames,
+    int clipped_level_step = kClippedLevelStep,
+    float clipped_ratio_threshold = kClippedRatioThreshold,
+    int clipped_wait_frames = kClippedWaitFrames,
     bool enable_clipping_predictor = false,
     int update_input_volume_wait_frames = 0) {
   InputVolumeControllerConfig config{
@@ -194,6 +195,7 @@ class SpeechSamplesReader {
   
   
   void Feed(int num_frames,
+            int applied_input_volume,
             int gain_db,
             float speech_probability,
             absl::optional<float> speech_level_dbfs,
@@ -214,9 +216,10 @@ class SpeechSamplesReader {
                        return rtc::SafeClamp(static_cast<float>(v) * gain,
                                              kMinSample, kMaxSample);
                      });
-
+      controller.set_stream_analog_level(applied_input_volume);
       controller.AnalyzePreProcess(audio_buffer_);
       controller.Process(speech_probability, speech_level_dbfs);
+      applied_input_volume = controller.recommended_analog_level();
     }
   }
 
@@ -1250,19 +1253,16 @@ TEST_P(InputVolumeControllerParametrizedTest, EmptyRmsErrorHasNoEffect) {
                                    GetInputVolumeControllerTestConfig());
   controller.Initialize();
 
-  constexpr int kInputVolume = kInitialInputVolume;
-  controller.set_stream_analog_level(kInputVolume);
-
   
   
   constexpr int kNumFrames = 125;
   constexpr int kGainDb = -20;
   SpeechSamplesReader reader;
-  reader.Feed(kNumFrames, kGainDb, kLowSpeechProbability, absl::nullopt,
-              controller);
+  reader.Feed(kNumFrames, kInitialInputVolume, kGainDb, kLowSpeechProbability,
+              absl::nullopt, controller);
 
   
-  ASSERT_EQ(controller.recommended_analog_level(), kInputVolume);
+  ASSERT_EQ(controller.recommended_analog_level(), kInitialInputVolume);
 }
 
 
@@ -1281,23 +1281,26 @@ TEST(InputVolumeControllerTest, UpdateInputVolumeWaitFramesIsEffective) {
                                   100);
   controller_wait_0->Initialize();
   controller_wait_100->Initialize();
-  controller_wait_0->set_stream_analog_level(kInputVolume);
-  controller_wait_100->set_stream_analog_level(kInputVolume);
 
   SpeechSamplesReader reader_1;
   SpeechSamplesReader reader_2;
-  reader_1.Feed(99, 0, kHighSpeechProbability,
+  reader_1.Feed(99, kInputVolume, 0,
+                kHighSpeechProbability,
                 -42.0f, *controller_wait_0);
-  reader_2.Feed(99, 0, kHighSpeechProbability,
+  reader_2.Feed(99, kInputVolume, 0,
+                kHighSpeechProbability,
                 -42.0f, *controller_wait_100);
 
   
   ASSERT_GT(controller_wait_0->recommended_analog_level(), kInputVolume);
   ASSERT_EQ(controller_wait_100->recommended_analog_level(), kInputVolume);
 
-  reader_1.Feed(1, 0, kHighSpeechProbability,
+  reader_1.Feed(1, controller_wait_0->recommended_analog_level(),
+                0, kHighSpeechProbability,
                 -42.0f, *controller_wait_0);
-  reader_2.Feed(1, 0, kHighSpeechProbability,
+  reader_2.Feed(1,
+                controller_wait_100->recommended_analog_level(), 0,
+                kHighSpeechProbability,
                 -42.0f, *controller_wait_100);
 
   
@@ -1321,38 +1324,36 @@ TEST(InputVolumeControllerTest, SpeechRatioThresholdIsEffective) {
                                   10);
   controller_1->Initialize();
   controller_2->Initialize();
-  controller_1->set_stream_analog_level(kInputVolume);
-  controller_2->set_stream_analog_level(kInputVolume);
 
   SpeechSamplesReader reader_1;
   SpeechSamplesReader reader_2;
 
-  reader_1.Feed(1, 0,
+  reader_1.Feed(1, kInputVolume, 0,
                 0.7f, -42.0f,
                 *controller_1);
-  reader_2.Feed(1, 0,
+  reader_2.Feed(1, kInputVolume, 0,
                 0.4f, -42.0f,
                 *controller_2);
 
   ASSERT_EQ(controller_1->recommended_analog_level(), kInputVolume);
   ASSERT_EQ(controller_2->recommended_analog_level(), kInputVolume);
 
-  reader_1.Feed(2, 0,
-                0.4f, -42.0f,
-                *controller_1);
-  reader_2.Feed(2, 0,
-                0.4f, -42.0f,
-                *controller_2);
+  reader_1.Feed(
+      2, controller_1->recommended_analog_level(), 0,
+      0.4f, -42.0f, *controller_1);
+  reader_2.Feed(
+      2, controller_2->recommended_analog_level(), 0,
+      0.4f, -42.0f, *controller_2);
 
   ASSERT_EQ(controller_1->recommended_analog_level(), kInputVolume);
   ASSERT_EQ(controller_2->recommended_analog_level(), kInputVolume);
 
-  reader_1.Feed(7, 0,
-                0.7f, -42.0f,
-                *controller_1);
-  reader_2.Feed(7, 0,
-                0.7f, -42.0f,
-                *controller_2);
+  reader_1.Feed(
+      7, controller_1->recommended_analog_level(), 0,
+      0.7f, -42.0f, *controller_1);
+  reader_2.Feed(
+      7, controller_2->recommended_analog_level(), 0,
+      0.7f, -42.0f, *controller_2);
 
   ASSERT_GT(controller_1->recommended_analog_level(), kInputVolume);
   ASSERT_EQ(controller_2->recommended_analog_level(), kInputVolume);
@@ -1374,8 +1375,6 @@ TEST(InputVolumeControllerTest, SpeechProbabilityThresholdIsEffective) {
                                   10);
   controller_1->Initialize();
   controller_2->Initialize();
-  controller_1->set_stream_analog_level(kInputVolume);
-  controller_2->set_stream_analog_level(kInputVolume);
 
   SpeechSamplesReader reader_1;
   SpeechSamplesReader reader_2;
@@ -1384,35 +1383,93 @@ TEST(InputVolumeControllerTest, SpeechProbabilityThresholdIsEffective) {
   
   
   
-  reader_1.Feed(1, 0,
+  reader_1.Feed(1, kInputVolume, 0,
                 0.5f, -42.0f,
                 *controller_1);
-  reader_2.Feed(1, 0,
+  reader_2.Feed(1, kInputVolume, 0,
                 0.49f, -42.0f,
                 *controller_2);
 
   ASSERT_EQ(controller_1->recommended_analog_level(), kInputVolume);
   ASSERT_EQ(controller_2->recommended_analog_level(), kInputVolume);
 
-  reader_1.Feed(2, 0,
+  reader_1.Feed(2, controller_1->recommended_analog_level(),
+                0,
                 0.49f, -42.0f,
                 *controller_1);
-  reader_2.Feed(2, 0,
+  reader_2.Feed(2, controller_2->recommended_analog_level(),
+                0,
                 0.49f, -42.0f,
                 *controller_2);
 
   ASSERT_EQ(controller_1->recommended_analog_level(), kInputVolume);
   ASSERT_EQ(controller_2->recommended_analog_level(), kInputVolume);
 
-  reader_1.Feed(7, 0,
-                0.5f, -42.0f,
-                *controller_1);
-  reader_2.Feed(7, 0,
-                0.5f, -42.0f,
-                *controller_2);
+  reader_1.Feed(
+      7, controller_1->recommended_analog_level(), 0,
+      0.5f, -42.0f, *controller_1);
+  reader_2.Feed(
+      7, controller_2->recommended_analog_level(), 0,
+      0.5f, -42.0f, *controller_2);
 
   ASSERT_GT(controller_1->recommended_analog_level(), kInputVolume);
   ASSERT_EQ(controller_2->recommended_analog_level(), kInputVolume);
+}
+
+TEST(InputVolumeControllerTest,
+     DoNotLogRecommendedInputVolumeOnChangeToMatchTarget) {
+  SpeechSamplesReader reader;
+  auto controller = CreateInputVolumeController();
+  controller->Initialize();
+  
+  
+  
+  constexpr int kStartupVolume = 255;
+  reader.Feed(14, kStartupVolume, 50,
+              kHighSpeechProbability,
+              -20.0f, *controller);
+  ASSERT_LT(controller->recommended_analog_level(), kStartupVolume);
+  EXPECT_METRIC_THAT(
+      metrics::Samples(
+          "WebRTC.Audio.Apm.RecommendedInputVolume.OnChangeToMatchTarget"),
+      ::testing::IsEmpty());
+}
+
+TEST(InputVolumeControllerTest,
+     LogRecommendedInputVolumeOnUpwardChangeToMatchTarget) {
+  SpeechSamplesReader reader;
+  auto controller = CreateInputVolumeController();
+  controller->Initialize();
+  constexpr int kStartupVolume = 100;
+  
+  
+  reader.Feed(14, kStartupVolume, -6,
+              kHighSpeechProbability,
+              -50.0f, *controller);
+  ASSERT_GT(controller->recommended_analog_level(), kStartupVolume);
+  EXPECT_METRIC_THAT(
+      metrics::Samples(
+          "WebRTC.Audio.Apm.RecommendedInputVolume.OnChangeToMatchTarget"),
+      ::testing::Not(::testing::IsEmpty()));
+}
+
+TEST(InputVolumeControllerTest,
+     LogRecommendedInputVolumeOnDownwardChangeToMatchTarget) {
+  SpeechSamplesReader reader;
+  auto controller = CreateInputVolumeController();
+  controller->Initialize();
+  constexpr int kStartupVolume = 100;
+  controller->set_stream_analog_level(kStartupVolume);
+  
+  
+  reader.Feed(14, kStartupVolume, -6,
+              kHighSpeechProbability,
+              -5.0f, *controller);
+  ASSERT_LT(controller->recommended_analog_level(), kStartupVolume);
+  EXPECT_METRIC_THAT(
+      metrics::Samples(
+          "WebRTC.Audio.Apm.RecommendedInputVolume.OnChangeToMatchTarget"),
+      ::testing::Not(::testing::IsEmpty()));
 }
 
 TEST(MonoInputVolumeControllerTest, CheckHandleClippingLowersVolume) {
