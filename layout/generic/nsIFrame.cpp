@@ -1369,7 +1369,6 @@ void nsIFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   if (oldBorderImage != newBorderImage) {
     
     if (oldBorderImage && HasImageRequest()) {
-      RemoveProperty(CachedBorderImageDataProperty());
       loader->DisassociateRequestFromFrame(oldBorderImage, this);
     }
     if (newBorderImage) {

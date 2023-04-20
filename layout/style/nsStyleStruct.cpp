@@ -1452,29 +1452,6 @@ bool StyleGradient::IsOpaque() const {
   return GradientItemsAreOpaque(AsConic().items.AsSpan());
 }
 
-
-
-
-void CachedBorderImageData::PurgeCachedImages() {
-  MOZ_ASSERT(!ServoStyleSet::IsInServoTraversal());
-  MOZ_ASSERT(NS_IsMainThread());
-  mSubImages.Clear();
-}
-
-void CachedBorderImageData::PurgeCacheForViewportChange(
-    const Maybe<nsSize>& aSize, const bool aHasIntrinsicRatio) {
-  
-  
-  
-  
-  
-  
-  if (aSize != mCachedSVGViewportSize && !aHasIntrinsicRatio) {
-    PurgeCachedImages();
-    SetCachedSVGViewportSize(aSize);
-  }
-}
-
 static int32_t ConvertToPixelCoord(const StyleNumberOrPercentage& aCoord,
                                    int32_t aPercentScale) {
   double pixelValue;
