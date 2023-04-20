@@ -1987,7 +1987,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColumn {
   mozilla::StyleColumnFill mColumnFill = mozilla::StyleColumnFill::Balance;
   mozilla::StyleColumnSpan mColumnSpan = mozilla::StyleColumnSpan::None;
 
-  nscoord GetColumnRuleWidth() const { return mActualColumnRuleWidth; }
+  nscoord GetComputedColumnRuleWidth() const {
+    return (IsVisibleBorderStyle(mColumnRuleStyle) ? mColumnRuleWidth : 0);
+  }
 
   bool IsColumnContainerStyle() const {
     return mColumnCount != kColumnCountAuto || !mColumnWidth.IsAuto();
@@ -1998,16 +2000,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColumn {
   }
 
  protected:
-  
-  
-  
-  
-  
-  nscoord mColumnRuleWidth;
-  
-  
-  
-  nscoord mActualColumnRuleWidth;
+  nscoord mColumnRuleWidth;  
   nscoord mTwipsPerPixel;
 };
 
