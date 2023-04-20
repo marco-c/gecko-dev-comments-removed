@@ -2,8 +2,8 @@
 
 
 
-const { EnableDelayHelper } = ChromeUtils.import(
-  "resource://gre/modules/SharedPromptUtils.jsm"
+const { EnableDelayHelper } = ChromeUtils.importESModule(
+  "resource://gre/modules/PromptUtils.sys.mjs"
 );
 
 let dialog = {

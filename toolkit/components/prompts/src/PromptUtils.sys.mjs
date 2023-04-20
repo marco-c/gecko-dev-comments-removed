@@ -1,18 +1,16 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-var EXPORTED_SYMBOLS = ["PromptUtils", "EnableDelayHelper"];
-
-var PromptUtils = {
-  
-  
-  
-  
-  
-  
-  
-  
+export var PromptUtils = {
+  // Fire a dialog open/close event. Used by tabbrowser to focus the
+  // tab which is triggering a prompt.
+  // For remote dialogs, we pass in a different DOM window and a separate
+  // target. If the caller doesn't pass in the target, then we'll simply use
+  // the passed-in DOM window.
+  // The detail may contain information about the principal on which the
+  // prompt is triggered, as well as whether or not this is a tabprompt
+  // (ie tabmodal alert/prompt/confirm and friends)
   fireDialogEvent(domWin, eventName, maybeTarget, detail) {
     let target = maybeTarget || domWin;
     let eventOptions = { cancelable: true, bubbles: true };
@@ -38,29 +36,33 @@ var PromptUtils = {
   },
 
   propBagToObject(propBag, obj) {
-    
-    
-    
-    
+    // Here we iterate over the object's original properties, not the bag
+    // (ie, the prompt can't return more/different properties than were
+    // passed in). This just helps ensure that the caller provides default
+    // values, lest the prompt forget to set them.
     for (let propName in obj) {
       obj[propName] = propBag.getProperty(propName);
     }
   },
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-var EnableDelayHelper = function({ enableDialog, disableDialog, focusTarget }) {
+/**
+ * This helper handles the enabling/disabling of dialogs that might
+ * be subject to fast-clicking attacks. It handles the initial delayed
+ * enabling of the dialog, as well as disabling it on blur and reapplying
+ * the delay when the dialog regains focus.
+ *
+ * @param enableDialog   A custom function to be called when the dialog
+ *                       is to be enabled.
+ * @param diableDialog   A custom function to be called when the dialog
+ *                       is to be disabled.
+ * @param focusTarget    The window used to watch focus/blur events.
+ */
+export var EnableDelayHelper = function({
+  enableDialog,
+  disableDialog,
+  focusTarget,
+}) {
   this.enableDialog = makeSafe(enableDialog);
   this.disableDialog = makeSafe(disableDialog);
   this.focusTarget = focusTarget;
@@ -69,7 +71,7 @@ var EnableDelayHelper = function({ enableDialog, disableDialog, focusTarget }) {
 
   this.focusTarget.addEventListener("blur", this);
   this.focusTarget.addEventListener("focus", this);
-  
+  // While the user key-repeats, we want to renew the timer until keyup:
   this.focusTarget.addEventListener("keyup", this, true);
   this.focusTarget.addEventListener("keydown", this, true);
   this.focusTarget.document.addEventListener("unload", this);
@@ -93,14 +95,14 @@ EnableDelayHelper.prototype = {
 
     switch (event.type) {
       case "keyup":
-        
-        
+        // As soon as any key goes up, we can stop treating keypresses
+        // as indicative of key-repeating that should prolong the timer.
         this.focusTarget.removeEventListener("keyup", this, true);
         this.focusTarget.removeEventListener("keydown", this, true);
         break;
 
       case "keydown":
-        
+        // Renew timer for repeating keydowns:
         if (this._focusTimer) {
           this._focusTimer.cancel();
           this._focusTimer = null;
@@ -125,8 +127,8 @@ EnableDelayHelper.prototype = {
 
   onBlur() {
     this.disableDialog();
-    
-    
+    // If we blur while waiting to enable the buttons, just cancel the
+    // timer to ensure the delay doesn't fire while not focused.
     if (this._focusTimer) {
       this._focusTimer.cancel();
       this._focusTimer = null;
@@ -175,8 +177,8 @@ EnableDelayHelper.prototype = {
 
 function makeSafe(fn) {
   return function() {
-    
-    
+    // The dialog could be gone by now (if the user closed it),
+    // which makes it likely that the given fn might throw.
     try {
       fn();
     } catch (e) {}
