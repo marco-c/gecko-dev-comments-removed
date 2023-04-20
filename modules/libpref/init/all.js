@@ -910,7 +910,7 @@ pref("privacy.resistFingerprinting.exemptedDomains", "*.example.invalid");
 
 
 
-pref("privacy.fingerprintingProtection.overrides", "");
+pref("privacy.resistFingerprintingLite.overrides", "");
 
 
 
