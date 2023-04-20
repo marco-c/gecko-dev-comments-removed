@@ -219,7 +219,6 @@ add_task(async function getTabIdForChannelWrapper_only_called_when_needed() {
   let extension = ExtensionTestUtils.loadExtension({
     background,
     useAddonManager: "temporary", 
-    allowInsecureRequests: true,
     manifest: {
       manifest_version: 3,
       host_permissions: ["*://from/*"],
