@@ -1849,7 +1849,8 @@ CanvasRenderingContext2D::GetInputStream(const char* aMimeType,
 }
 
 already_AddRefed<mozilla::gfx::SourceSurface>
-CanvasRenderingContext2D::GetSurfaceSnapshot(gfxAlphaType* aOutAlphaType) {
+CanvasRenderingContext2D::GetOptimizedSnapshot(DrawTarget* aTarget,
+                                               gfxAlphaType* aOutAlphaType) {
   if (aOutAlphaType) {
     *aOutAlphaType = (mOpaque ? gfxAlphaType::Opaque : gfxAlphaType::Premult);
   }
@@ -1867,7 +1868,7 @@ CanvasRenderingContext2D::GetSurfaceSnapshot(gfxAlphaType* aOutAlphaType) {
   
   
   
-  RefPtr<SourceSurface> snapshot = mBufferProvider->BorrowSnapshot();
+  RefPtr<SourceSurface> snapshot = mBufferProvider->BorrowSnapshot(aTarget);
   RefPtr<SourceSurface> retSurface = snapshot;
   mBufferProvider->ReturnSnapshot(snapshot.forget());
   return retSurface.forget();

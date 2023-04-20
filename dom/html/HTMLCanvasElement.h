@@ -42,6 +42,7 @@ class SharedSurfaceTextureClient;
 class WebRenderCanvasData;
 }  
 namespace gfx {
+class DrawTarget;
 class SourceSurface;
 class VRLayerChild;
 }  
@@ -214,8 +215,14 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
   bool GetIsOpaque();
   virtual bool GetOpaqueAttr() override;
 
+  
+
+
+
+
   virtual already_AddRefed<gfx::SourceSurface> GetSurfaceSnapshot(
-      gfxAlphaType* aOutAlphaType = nullptr);
+      gfxAlphaType* aOutAlphaType = nullptr,
+      gfx::DrawTarget* aTarget = nullptr);
 
   
 

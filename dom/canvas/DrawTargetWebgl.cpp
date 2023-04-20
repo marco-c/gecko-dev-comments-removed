@@ -873,6 +873,19 @@ already_AddRefed<SourceSurface> DrawTargetWebgl::Snapshot() {
 
 
 
+
+already_AddRefed<SourceSurface> DrawTargetWebgl::GetOptimizedSnapshot(
+    DrawTarget* aTarget) {
+  if (aTarget && aTarget->GetBackendType() == BackendType::WEBGL &&
+      static_cast<DrawTargetWebgl*>(aTarget)->mSharedContext ==
+          mSharedContext) {
+    return Snapshot();
+  }
+  return GetDataSnapshot();
+}
+
+
+
 bool DrawTargetWebgl::SharedContext::ReadInto(uint8_t* aDstData,
                                               int32_t aDstStride,
                                               SurfaceFormat aFormat,

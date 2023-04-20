@@ -49,6 +49,7 @@ class PersistentBufferProvider;
 class WebRenderCanvasData;
 }  
 namespace gfx {
+class DrawTarget;
 class SourceSurface;
 }  
 }  
@@ -125,6 +126,15 @@ class nsICanvasRenderingContextInternal : public nsISupports,
   
   virtual already_AddRefed<mozilla::gfx::SourceSurface> GetSurfaceSnapshot(
       gfxAlphaType* out_alphaType = nullptr) = 0;
+
+  
+  
+  
+  virtual already_AddRefed<mozilla::gfx::SourceSurface> GetOptimizedSnapshot(
+      mozilla::gfx::DrawTarget* aTarget,
+      gfxAlphaType* out_alphaType = nullptr) {
+    return GetSurfaceSnapshot(out_alphaType);
+  }
 
   virtual RefPtr<mozilla::gfx::SourceSurface> GetFrontBufferSnapshot(bool) {
     return GetSurfaceSnapshot();
