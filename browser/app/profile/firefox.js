@@ -2186,6 +2186,8 @@ pref("browser.migrate.content-modal.enabled", false);
 
 pref("browser.migrate.content-modal.import-all.enabled", false);
 
+pref("browser.migrate.content-modal.about-welcome-behavior", "default");
+
 
 pref("browser.migrate.history.maxAgeInDays", 180);
 
