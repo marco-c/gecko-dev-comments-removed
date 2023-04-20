@@ -25,7 +25,14 @@
 
           
           
-          await navigator.usb.getDevices();
+          try {
+            await navigator.usb.getDevices();
+          } catch (e) {
+            
+            
+            console.error(`getDevices() throws error: ${e.name}: ${e.message}`);
+          }
+
           messageChannel.port1.postMessage({ type: 'Complete' });
         }
       };
