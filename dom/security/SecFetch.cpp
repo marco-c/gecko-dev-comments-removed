@@ -379,11 +379,6 @@ void mozilla::dom::SecFetch::AddSecFetchUser(nsIHttpChannel* aHTTPChannel) {
 }
 
 void mozilla::dom::SecFetch::AddSecFetchHeader(nsIHttpChannel* aHTTPChannel) {
-  
-  if (!StaticPrefs::dom_security_secFetch_enabled()) {
-    return;
-  }
-
   nsCOMPtr<nsIURI> uri;
   nsresult rv = aHTTPChannel->GetURI(getter_AddRefs(uri));
   if (NS_WARN_IF(NS_FAILED(rv))) {
