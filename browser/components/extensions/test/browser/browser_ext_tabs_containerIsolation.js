@@ -2,8 +2,8 @@
 
 
 "use strict";
-const { XPCShellContentUtils } = ChromeUtils.import(
-  "resource://testing-common/XPCShellContentUtils.jsm"
+const { XPCShellContentUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/XPCShellContentUtils.sys.mjs"
 );
 XPCShellContentUtils.initMochitest(this);
 const server = XPCShellContentUtils.createHttpServer({

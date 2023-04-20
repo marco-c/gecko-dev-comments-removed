@@ -4,11 +4,9 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "ContentTaskUtils",
-  "resource://testing-common/ContentTaskUtils.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  ContentTaskUtils: "resource://testing-common/ContentTaskUtils.sys.mjs",
+});
 
 
 

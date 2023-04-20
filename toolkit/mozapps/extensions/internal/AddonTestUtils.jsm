@@ -30,15 +30,19 @@ const { EventEmitter } = ChromeUtils.importESModule(
 
 const lazy = {};
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  FileTestUtils: "resource://testing-common/FileTestUtils.sys.mjs",
+  MockRegistrar: "resource://testing-common/MockRegistrar.sys.mjs",
+  XPCShellContentUtils:
+    "resource://testing-common/XPCShellContentUtils.sys.mjs",
+  getAppInfo: "resource://testing-common/AppInfo.sys.mjs",
+  updateAppInfo: "resource://testing-common/AppInfo.sys.mjs",
+});
+
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   ExtensionTestCommon: "resource://testing-common/ExtensionTestCommon.jsm",
-  getAppInfo: "resource://testing-common/AppInfo.jsm",
   Management: "resource://gre/modules/Extension.jsm",
   ExtensionAddonObserver: "resource://gre/modules/Extension.jsm",
-  FileTestUtils: "resource://testing-common/FileTestUtils.jsm",
-  MockRegistrar: "resource://testing-common/MockRegistrar.jsm",
-  updateAppInfo: "resource://testing-common/AppInfo.jsm",
-  XPCShellContentUtils: "resource://testing-common/XPCShellContentUtils.jsm",
 });
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {

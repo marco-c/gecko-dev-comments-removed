@@ -2,8 +2,8 @@
 
 "use strict";
 
-const { TestUtils } = ChromeUtils.import(
-  "resource://testing-common/TestUtils.jsm"
+const { TestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TestUtils.sys.mjs"
 );
 
 Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);

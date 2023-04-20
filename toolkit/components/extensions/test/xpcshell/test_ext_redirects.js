@@ -1,11 +1,9 @@
 "use strict";
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "TestUtils",
-  "resource://testing-common/TestUtils.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
+});
 
 const server = createHttpServer();
 const gServerUrl = `http://localhost:${server.identity.primaryPort}`;

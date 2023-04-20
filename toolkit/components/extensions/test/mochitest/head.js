@@ -5,8 +5,8 @@
 var { AppConstants } = SpecialPowers.ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
-var { AppTestDelegate } = SpecialPowers.ChromeUtils.import(
-  "resource://specialpowers/AppTestDelegate.jsm"
+var { AppTestDelegate } = SpecialPowers.ChromeUtils.importESModule(
+  "resource://specialpowers/AppTestDelegate.sys.mjs"
 );
 
 let remote = SpecialPowers.getBoolPref("extensions.webextensions.remote");
