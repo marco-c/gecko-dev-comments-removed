@@ -94,26 +94,15 @@ using namespace js;
 
 
 
+#if defined(JS_CODEGEN_ARM64) && defined(ANDROID)
+
+static const int32_t MaximumLiveMappedBuffers = 75;
+#elif defined(MOZ_TSAN) || defined(MOZ_ASAN)
 
 
-
-
-
-
-
-
-
-
-
-
-static const uint64_t GiB = 1024 * 1024 * 1024;
-
-
-
-#if defined(MOZ_TSAN) || defined(MOZ_ASAN)
-static const uint64_t WasmMemAsanOverhead = 2;
+static const int32_t MaximumLiveMappedBuffers = 500;
 #else
-static const uint64_t WasmMemAsanOverhead = 1;
+static const int32_t MaximumLiveMappedBuffers = 1000;
 #endif
 
 
@@ -121,42 +110,21 @@ static const uint64_t WasmMemAsanOverhead = 1;
 
 
 #if defined(JS_CODEGEN_ARM64) && defined(ANDROID)
-
-static const uint64_t WasmReservedBytesMax =
-    75 * wasm::HugeMappedSize / WasmMemAsanOverhead;
-static const uint64_t WasmReservedBytesStartTriggering =
-    15 * wasm::HugeMappedSize;
-static const uint64_t WasmReservedBytesStartSyncFullGC =
-    WasmReservedBytesMax - 15 * wasm::HugeMappedSize;
-static const uint64_t WasmReservedBytesPerTrigger = 15 * wasm::HugeMappedSize;
-
-#elif defined(JS_64BIT)
-
-static const uint64_t WasmReservedBytesMax =
-    1000 * wasm::HugeMappedSize / WasmMemAsanOverhead;
-static const uint64_t WasmReservedBytesStartTriggering =
-    100 * wasm::HugeMappedSize;
-static const uint64_t WasmReservedBytesStartSyncFullGC =
-    WasmReservedBytesMax - 100 * wasm::HugeMappedSize;
-static const uint64_t WasmReservedBytesPerTrigger = 100 * wasm::HugeMappedSize;
-
-#else  
-
-static const uint64_t WasmReservedBytesMax =
-    (4 * GiB) / 2 / WasmMemAsanOverhead;
-static const uint64_t WasmReservedBytesStartTriggering = (4 * GiB) / 8;
-static const uint64_t WasmReservedBytesStartSyncFullGC =
-    WasmReservedBytesMax - (4 * GiB) / 8;
-static const uint64_t WasmReservedBytesPerTrigger = (4 * GiB) / 8;
-
+static const int32_t StartTriggeringAtLiveBufferCount = 15;
+static const int32_t StartSyncFullGCAtLiveBufferCount =
+    MaximumLiveMappedBuffers - 15;
+static const int32_t AllocatedBuffersPerTrigger = 15;
+#else
+static const int32_t StartTriggeringAtLiveBufferCount = 100;
+static const int32_t StartSyncFullGCAtLiveBufferCount =
+    MaximumLiveMappedBuffers - 100;
+static const int32_t AllocatedBuffersPerTrigger = 100;
 #endif
 
+static Atomic<int32_t, mozilla::ReleaseAcquire> liveBufferCount(0);
+static Atomic<int32_t, mozilla::ReleaseAcquire> allocatedSinceLastTrigger(0);
 
-static Atomic<uint64_t, mozilla::ReleaseAcquire> wasmReservedBytes(0);
-
-static Atomic<uint64_t, mozilla::ReleaseAcquire> wasmReservedBytesSinceLast(0);
-
-uint64_t js::WasmReservedBytes() { return wasmReservedBytes; }
+int32_t js::LiveMappedBufferCount() { return liveBufferCount; }
 
 [[nodiscard]] static bool CheckArrayBufferTooLarge(JSContext* cx,
                                                    uint64_t nbytes) {
@@ -176,17 +144,22 @@ void* js::MapBufferMemory(wasm::IndexType t, size_t mappedSize,
   MOZ_ASSERT(initialCommittedSize % gc::SystemPageSize() == 0);
   MOZ_ASSERT(initialCommittedSize <= mappedSize);
 
-  auto failed = mozilla::MakeScopeExit(
-      [&] { wasmReservedBytes -= uint64_t(mappedSize); });
-  wasmReservedBytes += uint64_t(mappedSize);
+  auto decrement = mozilla::MakeScopeExit([&] { liveBufferCount--; });
+  
+  
+  if (wasm::IsHugeMemoryEnabled(t)) {
+    liveBufferCount++;
+  } else {
+    decrement.release();
+  }
 
   
   
-  if (wasmReservedBytes >= WasmReservedBytesMax) {
+  if (liveBufferCount >= MaximumLiveMappedBuffers) {
     if (OnLargeAllocationFailure) {
       OnLargeAllocationFailure();
     }
-    if (wasmReservedBytes >= WasmReservedBytesMax) {
+    if (liveBufferCount >= MaximumLiveMappedBuffers) {
       return nullptr;
     }
   }
@@ -231,7 +204,7 @@ void* js::MapBufferMemory(wasm::IndexType t, size_t mappedSize,
       mappedSize - initialCommittedSize);
 #endif
 
-  failed.release();
+  decrement.release();
   return data;
 }
 
@@ -305,9 +278,14 @@ void js::UnmapBufferMemory(wasm::IndexType t, void* base, size_t mappedSize) {
                                                 mappedSize);
 #endif
 
-  
-  
-  wasmReservedBytes -= uint64_t(mappedSize);
+  if (wasm::IsHugeMemoryEnabled(t)) {
+    
+    
+    
+    
+    
+    --liveBufferCount;
+  }
 }
 
 
@@ -818,19 +796,19 @@ static bool CreateSpecificWasmBuffer(
   maybeSharedObject.set(object);
 
   
-  if (wasmReservedBytes > WasmReservedBytesStartSyncFullGC) {
+  if (liveBufferCount > StartSyncFullGCAtLiveBufferCount) {
     JS::PrepareForFullGC(cx);
     JS::NonIncrementalGC(cx, JS::GCOptions::Normal,
                          JS::GCReason::TOO_MUCH_WASM_MEMORY);
-    wasmReservedBytesSinceLast = 0;
-  } else if (wasmReservedBytes > WasmReservedBytesStartTriggering) {
-    wasmReservedBytesSinceLast += uint64_t(buffer->mappedSize());
-    if (wasmReservedBytesSinceLast > WasmReservedBytesPerTrigger) {
+    allocatedSinceLastTrigger = 0;
+  } else if (liveBufferCount > StartTriggeringAtLiveBufferCount) {
+    allocatedSinceLastTrigger++;
+    if (allocatedSinceLastTrigger > AllocatedBuffersPerTrigger) {
       (void)cx->runtime()->gc.triggerGC(JS::GCReason::TOO_MUCH_WASM_MEMORY);
-      wasmReservedBytesSinceLast = 0;
+      allocatedSinceLastTrigger = 0;
     }
   } else {
-    wasmReservedBytesSinceLast = 0;
+    allocatedSinceLastTrigger = 0;
   }
 
   
