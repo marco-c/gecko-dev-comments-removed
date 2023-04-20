@@ -593,15 +593,6 @@
       return this.selectedBrowser.userTypedValue;
     },
 
-    _invalidateCachedTabs() {
-      this.tabContainer._allTabs = null;
-      this.tabContainer._visibleTabs = null;
-    },
-
-    _invalidateCachedVisibleTabs() {
-      this.tabContainer._visibleTabs = null;
-    },
-
     _setFindbarData() {
       
       let { sharedData } = Services.ppmm;
@@ -3016,7 +3007,7 @@
             tab._tPos = this._numPinnedTabs;
             this.tabContainer.insertBefore(tab, this.tabs[this._numPinnedTabs]);
             tab.setAttribute("pinned", "true");
-            this._invalidateCachedTabs();
+            this.tabContainer._invalidateCachedTabs();
             
             this._fireTabOpen(tab, {});
             this._notifyPinnedStatus(tab);
@@ -3032,7 +3023,7 @@
 
           tabsFragment.appendChild(tab);
           if (tabWasReused) {
-            this._invalidateCachedTabs();
+            this.tabContainer._invalidateCachedTabs();
           }
         }
 
@@ -3051,7 +3042,7 @@
         }
       }
 
-      this._invalidateCachedTabs();
+      this.tabContainer._invalidateCachedTabs();
       if (shouldUpdateForPinnedTabs) {
         this._updateTabBarForPinnedTabs();
       }
@@ -3281,7 +3272,7 @@
       }
 
       let tabAfter = this.tabs[index] || null;
-      this._invalidateCachedTabs();
+      this.tabContainer._invalidateCachedTabs();
       
       
       tab.initialize();
@@ -3957,7 +3948,7 @@
 
       aTab.closing = true;
       this._removingTabs.add(aTab);
-      this._invalidateCachedTabs();
+      this.tabContainer._invalidateCachedTabs();
 
       
       aTab._mouseleave();
@@ -4102,7 +4093,7 @@
 
       
       aTab.remove();
-      this._invalidateCachedTabs();
+      this.tabContainer._invalidateCachedTabs();
 
       
       if (aTab.hidden) {
@@ -4642,7 +4633,7 @@
         return;
       }
       aTab.removeAttribute("hidden");
-      this._invalidateCachedVisibleTabs();
+      this.tabContainer._invalidateCachedVisibleTabs();
 
       this.tabContainer._updateCloseButtons();
       this.tabContainer._updateHiddenTabsStatus();
@@ -4667,7 +4658,7 @@
         return;
       }
       aTab.setAttribute("hidden", "true");
-      this._invalidateCachedVisibleTabs();
+      this.tabContainer._invalidateCachedVisibleTabs();
 
       this.tabContainer._updateCloseButtons();
       this.tabContainer._updateHiddenTabsStatus();
@@ -4864,7 +4855,7 @@
       aIndex = aIndex < aTab._tPos ? aIndex : aIndex + 1;
 
       let neighbor = this.tabs[aIndex] || null;
-      this._invalidateCachedTabs();
+      this.tabContainer._invalidateCachedTabs();
       this.tabContainer.insertBefore(aTab, neighbor);
       this._updateTabsAfterInsert();
 
