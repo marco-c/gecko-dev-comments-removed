@@ -2089,14 +2089,8 @@ var gBrowserInit = {
     let shouldRemoveFocusedAttribute = true;
 
     this._callWithURIToLoad(uriToLoad => {
-      
-      
-      const aboutWelcomeSkipUrlBarFocus =
-        uriToLoad == "about:welcome" &&
-        NimbusFeatures.aboutwelcome.getVariable("skipFocus");
-
       if (
-        (isBlankPageURL(uriToLoad) && !aboutWelcomeSkipUrlBarFocus) ||
+        isBlankPageURL(uriToLoad) ||
         uriToLoad == "about:privatebrowsing" ||
         this.getTabToAdopt()?.isEmpty
       ) {
