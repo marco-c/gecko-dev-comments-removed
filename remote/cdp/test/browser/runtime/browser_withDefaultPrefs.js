@@ -1,0 +1,9 @@
+
+
+
+"use strict";
+
+add_task(async function enableRuntime_noHangAfterNavigation({ client }) {
+  await loadURL(PAGE_URL);
+  await enableRuntime(client);
+});
