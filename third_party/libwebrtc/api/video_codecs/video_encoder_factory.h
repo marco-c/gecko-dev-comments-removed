@@ -35,6 +35,9 @@ class VideoEncoderFactory {
 
   
   
+  
+  
+  
   class EncoderSelectorInterface {
    public:
     virtual ~EncoderSelectorInterface() {}
@@ -96,6 +99,22 @@ class VideoEncoderFactory {
   virtual std::unique_ptr<VideoEncoder> CreateVideoEncoder(
       const SdpVideoFormat& format) = 0;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   virtual std::unique_ptr<EncoderSelectorInterface> GetEncoderSelector() const {
     return nullptr;
   }

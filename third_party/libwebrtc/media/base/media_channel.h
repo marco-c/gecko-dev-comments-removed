@@ -34,6 +34,7 @@
 #include "api/video/video_source_interface.h"
 #include "api/video/video_timing.h"
 #include "api/video_codecs/video_encoder_config.h"
+#include "api/video_codecs/video_encoder_factory.h"
 #include "call/video_receive_stream.h"
 #include "common_video/include/quality_limitation_reason.h"
 #include "media/base/codec.h"
@@ -243,6 +244,13 @@ class MediaChannel {
 
   
   virtual void SetVideoCodecSwitchingEnabled(bool enabled);
+
+  
+  
+  virtual void SetEncoderSelector(
+      uint32_t ssrc,
+      webrtc::VideoEncoderFactory::EncoderSelectorInterface* encoder_selector) {
+  }
 
   
   bool SendPacket(rtc::CopyOnWriteBuffer* packet,

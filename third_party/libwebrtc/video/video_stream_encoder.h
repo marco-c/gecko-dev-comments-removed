@@ -81,7 +81,9 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
       std::unique_ptr<webrtc::TaskQueueBase, webrtc::TaskQueueDeleter>
           encoder_queue,
       BitrateAllocationCallbackType allocation_cb_type,
-      const FieldTrialsView& field_trials);
+      const FieldTrialsView& field_trials,
+      webrtc::VideoEncoderFactory::EncoderSelectorInterface* encoder_selector =
+          nullptr);
   ~VideoStreamEncoder() override;
 
   VideoStreamEncoder(const VideoStreamEncoder&) = delete;
@@ -262,8 +264,14 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   const BitrateAllocationCallbackType allocation_cb_type_;
   const RateControlSettings rate_control_settings_;
 
+  webrtc::VideoEncoderFactory::EncoderSelectorInterface* const
+      encoder_selector_from_constructor_;
   std::unique_ptr<VideoEncoderFactory::EncoderSelectorInterface> const
-      encoder_selector_;
+      encoder_selector_from_factory_;
+  
+  
+  VideoEncoderFactory::EncoderSelectorInterface* const encoder_selector_;
+
   VideoStreamEncoderObserver* const encoder_stats_observer_;
   
   

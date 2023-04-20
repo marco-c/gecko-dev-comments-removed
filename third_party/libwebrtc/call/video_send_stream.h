@@ -191,6 +191,11 @@ class VideoSendStream {
     rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor;
 
     
+    
+    
+    VideoEncoderFactory::EncoderSelectorInterface* encoder_selector = nullptr;
+
+    
     CryptoOptions crypto_options;
 
     rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer;
