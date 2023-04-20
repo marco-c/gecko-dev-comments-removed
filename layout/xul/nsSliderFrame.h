@@ -219,6 +219,8 @@ class nsSliderFrame final : public nsBoxFrame {
   
   Maybe<uint64_t> mAPZDragInitiated;
 
+  nscoord mThumbMinLength;
+
   static bool gMiddlePref;
   static int32_t gSnapMultiplier;
 };  

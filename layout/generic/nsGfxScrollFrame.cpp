@@ -6898,6 +6898,8 @@ bool ScrollFrameHelper::ReflowFinished() {
       scrollPos = GetVisualViewportOffset();
     }
 
+    
+    
     AutoWeakFrame weakFrame(mOuter);
     if (vScroll) {
       const double kScrollMultiplier =
