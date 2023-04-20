@@ -32,6 +32,7 @@ import org.mozilla.gecko.util.GeckoBundle;
 public class WebExtensionController {
   private static final String LOGTAG = "WebExtension";
 
+  private AddonManagerDelegate mAddonManagerDelegate;
   private DebuggerDelegate mDebuggerDelegate;
   private PromptDelegate mPromptDelegate;
   private final WebExtension.Listener<WebExtension.TabDelegate> mListener;
@@ -326,6 +327,17 @@ public class WebExtensionController {
   }
 
   
+  public interface AddonManagerDelegate {
+    
+
+
+
+
+    @UiThread
+    default void onDisabled(final @NonNull WebExtension extension) {}
+  }
+
+  
 
 
 
@@ -380,6 +392,26 @@ public class WebExtensionController {
     }
 
     mDebuggerDelegate = delegate;
+  }
+
+  
+
+
+
+
+
+
+  @UiThread
+  public void setAddonManagerDelegate(final @Nullable AddonManagerDelegate delegate) {
+    if (delegate == null && mAddonManagerDelegate != null) {
+      EventDispatcher.getInstance()
+          .unregisterUiThreadListener(mInternals, "GeckoView:WebExtension:OnDisabled");
+    } else if (delegate != null && mAddonManagerDelegate == null) {
+      EventDispatcher.getInstance()
+          .registerUiThreadListener(mInternals, "GeckoView:WebExtension:OnDisabled");
+    }
+
+    mAddonManagerDelegate = delegate;
   }
 
   private static class InstallCanceller implements GeckoResult.CancellationDelegate {
@@ -730,6 +762,9 @@ public class WebExtensionController {
         mDebuggerDelegate.onExtensionListUpdated();
       }
       return;
+    } else if ("GeckoView:WebExtension:OnDisabled".equals(event)) {
+      onDisabled(bundle);
+      return;
     }
 
     extensionFromBundle(bundle)
@@ -913,6 +948,17 @@ public class WebExtensionController {
               response.putBoolean("allow", AllowOrDeny.ALLOW.equals(allowOrDeny));
               return response;
             }));
+  }
+
+  private void onDisabled(final GeckoBundle bundle) {
+    if (mAddonManagerDelegate == null) {
+      Log.e(LOGTAG, "no AddonManager delegate registered");
+      return;
+    }
+
+    final GeckoBundle extensionBundle = bundle.getBundle("extension");
+    final WebExtension extension = new WebExtension(mDelegateControllerProvider, extensionBundle);
+    mAddonManagerDelegate.onDisabled(extension);
   }
 
   @SuppressLint("WrongThread") 
