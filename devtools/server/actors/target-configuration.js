@@ -49,6 +49,8 @@ const SUPPORTED_OPTIONS = {
   serviceWorkersTestingEnabled: true,
   
   touchEventsOverride: true,
+  
+  useSimpleHighlightersForReducedMotion: true,
 };
 
 

@@ -75,6 +75,12 @@ class AutoRefreshHighlighter extends EventEmitter {
 
     this.highlighterEnv = highlighterEnv;
 
+    this._updateSimpleHighlighters = this._updateSimpleHighlighters.bind(this);
+    this.highlighterEnv.on(
+      "use-simple-highlighters-updated",
+      this._updateSimpleHighlighters
+    );
+
     this.currentNode = null;
     this.currentQuads = {};
 
@@ -100,6 +106,10 @@ class AutoRefreshHighlighter extends EventEmitter {
   
   get contentWindow() {
     return this.win;
+  }
+
+  get supportsSimpleHighlighters() {
+    return false;
   }
 
   
@@ -307,9 +317,33 @@ class AutoRefreshHighlighter extends EventEmitter {
     this.rafID = this.rafWin = null;
   }
 
+  _updateSimpleHighlighters() {
+    if (!this.supportsSimpleHighlighters) {
+      return;
+    }
+
+    const root = this.getElement("root");
+    if (!root) {
+      
+      
+      return;
+    }
+
+    
+    
+    root.classList.toggle(
+      "use-simple-highlighters",
+      this.highlighterEnv.useSimpleHighlightersForReducedMotion
+    );
+  }
+
   destroy() {
     this.hide();
 
+    this.highlighterEnv.off(
+      "use-simple-highlighters-updated",
+      this._updateSimpleHighlighters
+    );
     this.highlighterEnv = null;
     this.currentNode = null;
   }
