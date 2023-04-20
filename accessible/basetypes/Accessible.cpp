@@ -9,6 +9,7 @@
 #include "nsAccUtils.h"
 #include "Relation.h"
 #include "States.h"
+#include "mozilla/a11y/FocusManager.h"
 #include "mozilla/a11y/HyperTextAccessibleBase.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/Components.h"
@@ -491,6 +492,10 @@ nsAtom* Accessible::LandmarkRole() const {
 }
 
 void Accessible::ApplyImplicitState(uint64_t& aState) const {
+  if (FocusMgr()->IsFocused(this)) {
+    aState |= states::FOCUSED;
+  }
+
   
   
   
