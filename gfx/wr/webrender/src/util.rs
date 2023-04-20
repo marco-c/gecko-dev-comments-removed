@@ -126,12 +126,13 @@ impl<T> VecHelper<T> for Vec<T> {
 
 
 
+#[repr(C)]
 #[derive(Debug, Clone, Copy, MallocSizeOf, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ScaleOffset {
-    pub scale: default::Vector2D<f32>,
-    pub offset: default::Vector2D<f32>,
+    pub scale: euclid::Vector2D<f32, euclid::UnknownUnit>,
+    pub offset: euclid::Vector2D<f32, euclid::UnknownUnit>,
 }
 
 impl ScaleOffset {
