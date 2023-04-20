@@ -266,6 +266,7 @@ class PeerConnectionE2EQualityTestFixture {
     
     
     
+    
     explicit VideoDumpOptions(
         absl::string_view output_directory,
         int sampling_modulo = kDefaultSamplingModulo,
@@ -300,18 +301,22 @@ class PeerConnectionE2EQualityTestFixture {
     static std::unique_ptr<test::VideoFrameWriter> Y4mVideoFrameWriterFactory(
         absl::string_view file_name_prefix,
         const VideoResolution& resolution);
-    std::string GetInputDumpFileName(absl::string_view stream_label) const;
+    std::string GetInputDumpFileName(absl::string_view stream_label,
+                                     const VideoResolution& resolution) const;
     
     
     absl::optional<std::string> GetInputFrameIdsDumpFileName(
-        absl::string_view stream_label) const;
+        absl::string_view stream_label,
+        const VideoResolution& resolution) const;
     std::string GetOutputDumpFileName(absl::string_view stream_label,
-                                      absl::string_view receiver) const;
+                                      absl::string_view receiver,
+                                      const VideoResolution& resolution) const;
     
     
     absl::optional<std::string> GetOutputFrameIdsDumpFileName(
         absl::string_view stream_label,
-        absl::string_view receiver) const;
+        absl::string_view receiver,
+        const VideoResolution& resolution) const;
 
     std::string output_directory_;
     int sampling_modulo_ = 1;
