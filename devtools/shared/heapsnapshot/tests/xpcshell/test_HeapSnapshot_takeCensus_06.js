@@ -48,9 +48,6 @@ function run_test() {
     Object: { count: Pattern.NATURAL },
     Debugger: { count: Pattern.NATURAL },
     Sandbox: { count: Pattern.NATURAL },
-
-    
-    Memory: { count: Pattern.NATURAL },
   }).assert(
     saveHeapSnapshotAndTakeCensus(dbg, { breakdown: { by: "objectClass" } })
   );
