@@ -680,8 +680,12 @@ bool RtpPacket::RemoveExtension(ExtensionType type) {
   }
 
   
-  memcpy(new_packet.AllocatePayload(payload_size()), payload().data(),
-         payload_size());
+  if (payload_size() > 0) {
+    memcpy(new_packet.AllocatePayload(payload_size()), payload().data(),
+           payload_size());
+  } else {
+    new_packet.SetPayloadSize(0);
+  }
 
   
   new_packet.SetPadding(padding_size());

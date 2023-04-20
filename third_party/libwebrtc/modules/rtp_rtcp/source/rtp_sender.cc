@@ -702,7 +702,9 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
 
   
   auto payload = packet.payload();
-  memcpy(rtx_payload + kRtxHeaderSize, payload.data(), payload.size());
+  if (!payload.empty()) {
+    memcpy(rtx_payload + kRtxHeaderSize, payload.data(), payload.size());
+  }
 
   
   rtx_packet->set_additional_data(packet.additional_data());
