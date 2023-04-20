@@ -179,14 +179,13 @@ class ModuleLoaderBase : public nsISupports {
 
   
   
-  nsCOMPtr<nsISerialEventTarget> mEventTarget;
-
-  
-  
   
   bool mImportMapsAllowed = true;
 
  protected:
+  
+  
+  nsCOMPtr<nsISerialEventTarget> mEventTarget;
   RefPtr<ScriptLoaderInterface> mLoader;
 
   mozilla::UniquePtr<ImportMap> mImportMap;
