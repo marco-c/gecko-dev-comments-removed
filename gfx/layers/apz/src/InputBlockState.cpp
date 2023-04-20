@@ -493,7 +493,9 @@ PanGestureBlockState::PanGestureBlockState(
     TargetConfirmationFlags aFlags, const PanGestureInput& aInitialEvent)
     : CancelableBlockState(aTargetApzc, aFlags),
       mInterrupted(false),
-      mWaitingForContentResponse(false) {
+      mWaitingForContentResponse(false),
+      mWaitingForBrowserGestureResponse(false),
+      mStartedBrowserGesture(false) {
   if (aFlags.mTargetConfirmed) {
     
     
@@ -557,7 +559,19 @@ bool PanGestureBlockState::IsReadyForHandling() const {
   if (!CancelableBlockState::IsReadyForHandling()) {
     return false;
   }
-  return !mWaitingForContentResponse || IsContentResponseTimerExpired();
+  return !mWaitingForBrowserGestureResponse &&
+         (!mWaitingForContentResponse || IsContentResponseTimerExpired());
+}
+
+bool PanGestureBlockState::ShouldDropEvents() const {
+  return CancelableBlockState::ShouldDropEvents() || mStartedBrowserGesture;
+}
+
+bool PanGestureBlockState::TimeoutContentResponse() {
+  
+  
+  mWaitingForBrowserGestureResponse = false;
+  return CancelableBlockState::TimeoutContentResponse();
 }
 
 bool PanGestureBlockState::AllowScrollHandoff() const { return false; }
@@ -565,6 +579,17 @@ bool PanGestureBlockState::AllowScrollHandoff() const { return false; }
 void PanGestureBlockState::SetNeedsToWaitForContentResponse(
     bool aWaitForContentResponse) {
   mWaitingForContentResponse = aWaitForContentResponse;
+}
+
+void PanGestureBlockState::SetNeedsToWaitForBrowserGestureResponse(
+    bool aWaitForBrowserGestureResponse) {
+  mWaitingForBrowserGestureResponse = aWaitForBrowserGestureResponse;
+}
+
+void PanGestureBlockState::SetBrowserGestureResponse(
+    BrowserGestureResponse aResponse) {
+  mWaitingForBrowserGestureResponse = false;
+  mStartedBrowserGesture = bool(aResponse);
 }
 
 PinchGestureBlockState::PinchGestureBlockState(

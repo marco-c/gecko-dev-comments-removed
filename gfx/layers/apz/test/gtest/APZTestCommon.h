@@ -247,6 +247,25 @@ class TestAPZCTreeManager : public APZCTreeManager {
 
   void CancelAnimation() { EXPECT_TRUE(false); }
 
+  APZEventResult ReceiveInputEvent(
+      InputData& aEvent,
+      InputBlockCallback&& aCallback = InputBlockCallback()) override {
+    APZEventResult result =
+        APZCTreeManager::ReceiveInputEvent(aEvent, std::move(aCallback));
+    if (aEvent.mInputType == PANGESTURE_INPUT &&
+        
+        
+        
+        
+        
+        aEvent.AsPanGestureInput().mHandledByAPZ &&
+        aEvent.AsPanGestureInput().AllowsSwipe()) {
+      SetBrowserGestureResponse(result.mInputBlockId,
+                                BrowserGestureResponse::NotConsumed);
+    }
+    return result;
+  }
+
  protected:
   AsyncPanZoomController* NewAPZCInstance(
       LayersId aLayersId, GeckoContentController* aController) override;
@@ -275,9 +294,16 @@ class TestAsyncPanZoomController : public AsyncPanZoomController {
     
     
     
-    return GetInputQueue()->ReceiveInputEvent(
+    APZEventResult result = GetInputQueue()->ReceiveInputEvent(
         this, TargetConfirmationFlags{!mWaitForMainThread}, aEvent,
         aTouchBehaviors);
+
+    if (aEvent.mInputType == PANGESTURE_INPUT &&
+        aEvent.AsPanGestureInput().AllowsSwipe()) {
+      GetInputQueue()->SetBrowserGestureResponse(
+          result.mInputBlockId, BrowserGestureResponse::NotConsumed);
+    }
+    return result;
   }
 
   void ContentReceivedInputBlock(uint64_t aInputBlockId, bool aPreventDefault) {
