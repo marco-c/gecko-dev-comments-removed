@@ -68,6 +68,9 @@ class RegExp final : public AllStatic {
   static bool CanGenerateBytecode();
 
   
+  V8_EXPORT_PRIVATE static bool VerifyFlags(RegExpFlags flags);
+
+  
   
   template <class CharT>
   static bool VerifySyntax(Zone* zone, uintptr_t stack_limit,

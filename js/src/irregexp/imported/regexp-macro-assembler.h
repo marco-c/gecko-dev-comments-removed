@@ -113,8 +113,8 @@ class RegExpMacroAssembler {
   
   
   
-  virtual bool CheckSpecialCharacterClass(StandardCharacterSet type,
-                                          Label* on_no_match) {
+  virtual bool CheckSpecialClassRanges(StandardCharacterSet type,
+                                       Label* on_no_match) {
     return false;
   }
 

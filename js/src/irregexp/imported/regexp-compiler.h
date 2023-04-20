@@ -50,7 +50,7 @@ constexpr int kPatternTooShortForBoyerMoore = 2;
 inline bool NeedsUnicodeCaseEquivalents(RegExpFlags flags) {
   
   
-  return IsUnicode(flags) && IsIgnoreCase(flags);
+  return IsEitherUnicode(flags) && IsIgnoreCase(flags);
 }
 
 

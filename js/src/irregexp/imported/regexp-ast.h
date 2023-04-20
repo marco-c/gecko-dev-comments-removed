@@ -5,6 +5,9 @@
 #ifndef V8_REGEXP_REGEXP_AST_H_
 #define V8_REGEXP_REGEXP_AST_H_
 
+#ifdef V8_INTL_SUPPORT
+#include "unicode/uniset.h"
+#endif  
 #include "irregexp/RegExpShim.h"
 
 namespace v8 {
@@ -14,7 +17,9 @@ namespace internal {
   VISIT(Disjunction)                      \
   VISIT(Alternative)                      \
   VISIT(Assertion)                        \
-  VISIT(CharacterClass)                   \
+  VISIT(ClassRanges)                      \
+  VISIT(ClassSetOperand)                  \
+  VISIT(ClassSetExpression)               \
   VISIT(Atom)                             \
   VISIT(Quantifier)                       \
   VISIT(Capture)                          \
@@ -113,29 +118,55 @@ class CharacterRange {
       StandardCharacterSet standard_character_set,
       ZoneList<CharacterRange>* ranges, bool add_unicode_case_equivalents,
       Zone* zone);
+  
+  
+  
   V8_EXPORT_PRIVATE static void AddCaseEquivalents(
       Isolate* isolate, Zone* zone, ZoneList<CharacterRange>* ranges,
       bool is_one_byte);
+  
+  
+  
+  static void AddUnicodeCaseEquivalents(ZoneList<CharacterRange>* ranges,
+                                        Zone* zone);
+
+#ifdef V8_INTL_SUPPORT
+  
+  
+  static void UnicodeSimpleCloseOver(icu::UnicodeSet& set);
+#endif  
 
   bool Contains(base::uc32 i) const { return from_ <= i && i <= to_; }
   base::uc32 from() const { return from_; }
   base::uc32 to() const { return to_; }
   bool IsEverything(base::uc32 max) const { return from_ == 0 && to_ >= max; }
   bool IsSingleton() const { return from_ == to_; }
+
   
   
-  V8_EXPORT_PRIVATE static bool IsCanonical(ZoneList<CharacterRange>* ranges);
+  V8_EXPORT_PRIVATE static bool IsCanonical(
+      const ZoneList<CharacterRange>* ranges);
   
   
   
   
   static void Canonicalize(ZoneList<CharacterRange>* ranges);
   
-  static void Negate(ZoneList<CharacterRange>* src,
+  static void Negate(const ZoneList<CharacterRange>* src,
                      ZoneList<CharacterRange>* dst, Zone* zone);
-
+  
+  static void Intersect(const ZoneList<CharacterRange>* lhs,
+                        const ZoneList<CharacterRange>* rhs,
+                        ZoneList<CharacterRange>* dst, Zone* zone);
+  
+  static void Subtract(const ZoneList<CharacterRange>* src,
+                       const ZoneList<CharacterRange>* to_remove,
+                       ZoneList<CharacterRange>* dst, Zone* zone);
   
   static void ClampToOneByte(ZoneList<CharacterRange>* ranges);
+  
+  static bool Equals(const ZoneList<CharacterRange>* lhs,
+                     const ZoneList<CharacterRange>* rhs);
 
  private:
   CharacterRange(base::uc32 from, base::uc32 to) : from_(from), to_(to) {}
@@ -145,6 +176,13 @@ class CharacterRange {
   base::uc32 from_ = 0;
   base::uc32 to_ = 0;
 };
+
+inline bool operator==(const CharacterRange& lhs, const CharacterRange& rhs) {
+  return lhs.from() == rhs.from() && lhs.to() == rhs.to();
+}
+inline bool operator!=(const CharacterRange& lhs, const CharacterRange& rhs) {
+  return !operator==(lhs, rhs);
+}
 
 #define DECL_BOILERPLATE(Name)                                         \
   void* Accept(RegExpVisitor* visitor, void* data) override;           \
@@ -267,7 +305,7 @@ class CharacterSet final {
   base::Optional<StandardCharacterSet> standard_set_type_;
 };
 
-class RegExpCharacterClass final : public RegExpTree {
+class RegExpClassRanges final : public RegExpTree {
  public:
   
   
@@ -277,22 +315,21 @@ class RegExpCharacterClass final : public RegExpTree {
     NEGATED = 1 << 0,
     CONTAINS_SPLIT_SURROGATE = 1 << 1,
   };
-  using CharacterClassFlags = base::Flags<Flag>;
+  using ClassRangesFlags = base::Flags<Flag>;
 
-  RegExpCharacterClass(
-      Zone* zone, ZoneList<CharacterRange>* ranges,
-      CharacterClassFlags character_class_flags = CharacterClassFlags())
-      : set_(ranges), character_class_flags_(character_class_flags) {
+  RegExpClassRanges(Zone* zone, ZoneList<CharacterRange>* ranges,
+                    ClassRangesFlags class_ranges_flags = ClassRangesFlags())
+      : set_(ranges), class_ranges_flags_(class_ranges_flags) {
     
     if (ranges->is_empty()) {
       ranges->Add(CharacterRange::Everything(), zone);
-      character_class_flags_ ^= NEGATED;
+      class_ranges_flags_ ^= NEGATED;
     }
   }
-  explicit RegExpCharacterClass(StandardCharacterSet standard_set_type)
-      : set_(standard_set_type), character_class_flags_() {}
+  explicit RegExpClassRanges(StandardCharacterSet standard_set_type)
+      : set_(standard_set_type), class_ranges_flags_() {}
 
-  DECL_BOILERPLATE(CharacterClass);
+  DECL_BOILERPLATE(ClassRanges);
 
   bool IsTextElement() override { return true; }
   int min_match() override { return 1; }
@@ -315,14 +352,111 @@ class RegExpCharacterClass final : public RegExpTree {
   CharacterSet character_set() const { return set_; }
   ZoneList<CharacterRange>* ranges(Zone* zone) { return set_.ranges(zone); }
 
-  bool is_negated() const { return (character_class_flags_ & NEGATED) != 0; }
+  bool is_negated() const { return (class_ranges_flags_ & NEGATED) != 0; }
   bool contains_split_surrogate() const {
-    return (character_class_flags_ & CONTAINS_SPLIT_SURROGATE) != 0;
+    return (class_ranges_flags_ & CONTAINS_SPLIT_SURROGATE) != 0;
   }
 
  private:
   CharacterSet set_;
-  CharacterClassFlags character_class_flags_;
+  ClassRangesFlags class_ranges_flags_;
+};
+
+struct CharacterClassStringLess {
+  bool operator()(const base::Vector<const base::uc32>& lhs,
+                  const base::Vector<const base::uc32>& rhs) const {
+    
+    
+    if (lhs.length() != rhs.length()) {
+      return lhs.length() > rhs.length();
+    }
+    for (int i = 0; i < lhs.length(); i++) {
+      if (lhs[i] != rhs[i]) {
+        return lhs[i] < rhs[i];
+      }
+    }
+    return false;
+  }
+};
+
+
+
+
+
+
+
+
+using CharacterClassStrings = ZoneMap<base::Vector<const base::uc32>,
+                                      RegExpTree*, CharacterClassStringLess>;
+
+
+
+
+class RegExpClassSetOperand final : public RegExpTree {
+ public:
+  RegExpClassSetOperand(ZoneList<CharacterRange>* ranges,
+                        CharacterClassStrings* strings);
+
+  DECL_BOILERPLATE(ClassSetOperand);
+
+  bool IsTextElement() override { return true; }
+  int min_match() override { return min_match_; }
+  int max_match() override { return max_match_; }
+
+  void Union(RegExpClassSetOperand* other, Zone* zone);
+  void Intersect(RegExpClassSetOperand* other,
+                 ZoneList<CharacterRange>* temp_ranges, Zone* zone);
+  void Subtract(RegExpClassSetOperand* other,
+                ZoneList<CharacterRange>* temp_ranges, Zone* zone);
+
+  bool has_strings() const { return !strings_->empty(); }
+  ZoneList<CharacterRange>* ranges() { return ranges_; }
+  CharacterClassStrings* strings() { return strings_; }
+
+ private:
+  ZoneList<CharacterRange>* ranges_;
+  CharacterClassStrings* strings_;
+  int min_match_;
+  int max_match_;
+};
+
+class RegExpClassSetExpression final : public RegExpTree {
+ public:
+  enum class OperationType { kUnion, kIntersection, kSubtraction };
+
+  RegExpClassSetExpression(OperationType op, bool is_negated,
+                           bool may_contain_strings,
+                           ZoneList<RegExpTree*>* operands);
+
+  DECL_BOILERPLATE(ClassSetExpression);
+
+  bool IsTextElement() override { return true; }
+  int min_match() override { return 0; }
+  int max_match() override { return max_match_; }
+
+  OperationType operation() const { return operation_; }
+  bool is_negated() const { return is_negated_; }
+  bool may_contain_strings() const { return may_contain_strings_; }
+  const ZoneList<RegExpTree*>* operands() const { return operands_; }
+  ZoneList<RegExpTree*>* operands() { return operands_; }
+
+ private:
+  
+  
+  
+  
+  
+  
+  
+  
+  static RegExpClassSetOperand* ComputeExpression(
+      RegExpTree* root, ZoneList<CharacterRange>* temp_ranges, Zone* zone);
+
+  const OperationType operation_;
+  const bool is_negated_;
+  const bool may_contain_strings_;
+  ZoneList<RegExpTree*>* operands_ = nullptr;
+  int max_match_;
 };
 
 class RegExpAtom final : public RegExpTree {
@@ -345,10 +479,10 @@ class RegExpAtom final : public RegExpTree {
 
 class TextElement final {
  public:
-  enum TextType { ATOM, CHAR_CLASS };
+  enum TextType { ATOM, CLASS_RANGES };
 
   static TextElement Atom(RegExpAtom* atom);
-  static TextElement CharClass(RegExpCharacterClass* char_class);
+  static TextElement ClassRanges(RegExpClassRanges* class_ranges);
 
   int cp_offset() const { return cp_offset_; }
   void set_cp_offset(int cp_offset) { cp_offset_ = cp_offset; }
@@ -363,9 +497,9 @@ class TextElement final {
     return reinterpret_cast<RegExpAtom*>(tree());
   }
 
-  RegExpCharacterClass* char_class() const {
-    DCHECK(text_type() == CHAR_CLASS);
-    return reinterpret_cast<RegExpCharacterClass*>(tree());
+  RegExpClassRanges* class_ranges() const {
+    DCHECK(text_type() == CLASS_RANGES);
+    return reinterpret_cast<RegExpClassRanges*>(tree());
   }
 
  private:
