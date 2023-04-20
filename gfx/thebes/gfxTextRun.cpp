@@ -2520,65 +2520,51 @@ gfxFloat gfxFontGroup::GetHyphenWidth(
   return mHyphenWidth;
 }
 
+template <typename T>
 already_AddRefed<gfxTextRun> gfxFontGroup::MakeTextRun(
+    const T* aString, uint32_t aLength, const Parameters* aParams,
+    gfx::ShapedTextFlags aFlags, nsTextFrameUtils::Flags aFlags2,
+    gfxMissingFontRecorder* aMFR) {
+  if (aLength == 0) {
+    return MakeEmptyTextRun(aParams, aFlags, aFlags2);
+  }
+  if (aLength == 1 && aString[0] == ' ') {
+    return MakeSpaceTextRun(aParams, aFlags, aFlags2);
+  }
+
+  if (sizeof(T) == 1) {
+    aFlags |= ShapedTextFlags::TEXT_IS_8BIT;
+  }
+
+  if (MOZ_UNLIKELY(GetStyle()->AdjustedSizeMustBeZero())) {
+    
+    
+    
+    return MakeBlankTextRun(aString, aLength, aParams, aFlags, aFlags2);
+  }
+
+  RefPtr<gfxTextRun> textRun =
+      gfxTextRun::Create(aParams, aLength, this, aFlags, aFlags2);
+  if (!textRun) {
+    return nullptr;
+  }
+
+  InitTextRun(aParams->mDrawTarget, textRun.get(), aString, aLength, aMFR);
+
+  textRun->FetchGlyphExtents(aParams->mDrawTarget);
+
+  return textRun.forget();
+}
+
+
+template already_AddRefed<gfxTextRun> gfxFontGroup::MakeTextRun(
     const uint8_t* aString, uint32_t aLength, const Parameters* aParams,
     gfx::ShapedTextFlags aFlags, nsTextFrameUtils::Flags aFlags2,
-    gfxMissingFontRecorder* aMFR) {
-  if (aLength == 0) {
-    return MakeEmptyTextRun(aParams, aFlags, aFlags2);
-  }
-  if (aLength == 1 && aString[0] == ' ') {
-    return MakeSpaceTextRun(aParams, aFlags, aFlags2);
-  }
-
-  aFlags |= ShapedTextFlags::TEXT_IS_8BIT;
-
-  if (MOZ_UNLIKELY(GetStyle()->AdjustedSizeMustBeZero())) {
-    
-    
-    
-    return MakeBlankTextRun(aString, aLength, aParams, aFlags, aFlags2);
-  }
-
-  RefPtr<gfxTextRun> textRun =
-      gfxTextRun::Create(aParams, aLength, this, aFlags, aFlags2);
-  if (!textRun) {
-    return nullptr;
-  }
-
-  InitTextRun(aParams->mDrawTarget, textRun.get(), aString, aLength, aMFR);
-
-  textRun->FetchGlyphExtents(aParams->mDrawTarget);
-
-  return textRun.forget();
-}
-
-already_AddRefed<gfxTextRun> gfxFontGroup::MakeTextRun(
+    gfxMissingFontRecorder* aMFR);
+template already_AddRefed<gfxTextRun> gfxFontGroup::MakeTextRun(
     const char16_t* aString, uint32_t aLength, const Parameters* aParams,
     gfx::ShapedTextFlags aFlags, nsTextFrameUtils::Flags aFlags2,
-    gfxMissingFontRecorder* aMFR) {
-  if (aLength == 0) {
-    return MakeEmptyTextRun(aParams, aFlags, aFlags2);
-  }
-  if (aLength == 1 && aString[0] == ' ') {
-    return MakeSpaceTextRun(aParams, aFlags, aFlags2);
-  }
-  if (MOZ_UNLIKELY(GetStyle()->AdjustedSizeMustBeZero())) {
-    return MakeBlankTextRun(aString, aLength, aParams, aFlags, aFlags2);
-  }
-
-  RefPtr<gfxTextRun> textRun =
-      gfxTextRun::Create(aParams, aLength, this, aFlags, aFlags2);
-  if (!textRun) {
-    return nullptr;
-  }
-
-  InitTextRun(aParams->mDrawTarget, textRun.get(), aString, aLength, aMFR);
-
-  textRun->FetchGlyphExtents(aParams->mDrawTarget);
-
-  return textRun.forget();
-}
+    gfxMissingFontRecorder* aMFR);
 
 template <typename T>
 void gfxFontGroup::InitTextRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
@@ -2978,7 +2964,7 @@ gfxTextRun* gfxFontGroup::GetEllipsisTextRun(
   Parameters params = {refDT,   nullptr, nullptr,
                        nullptr, 0,       aAppUnitsPerDevPixel};
   mCachedEllipsisTextRun =
-      MakeTextRun(ellipsis.get(), ellipsis.Length(), &params, aFlags,
+      MakeTextRun(ellipsis.BeginReading(), ellipsis.Length(), &params, aFlags,
                   nsTextFrameUtils::Flags(), nullptr);
   if (!mCachedEllipsisTextRun) {
     return nullptr;
