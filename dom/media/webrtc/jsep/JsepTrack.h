@@ -108,6 +108,7 @@ class JsepTrack {
   void ClearStreamIds() { mStreamIds.clear(); }
 
   void RecvTrackSetRemote(const Sdp& aSdp, const SdpMediaSection& aMsection);
+  void RecvTrackSetLocal(const SdpMediaSection& aMsection);
 
   
   
@@ -131,6 +132,7 @@ class JsepTrack {
       mSsrcToRtxSsrc = rhs.mSsrcToRtxSsrc;
       mActive = rhs.mActive;
       mRemoteSetSendBit = rhs.mRemoteSetSendBit;
+      mReceptive = rhs.mReceptive;
       mMaxEncodings = rhs.mMaxEncodings;
       mRtxIsAllowed = rhs.mRtxIsAllowed;
 
@@ -180,6 +182,7 @@ class JsepTrack {
   void SetActive(bool active) { mActive = active; }
 
   bool GetRemoteSetSendBit() const { return mRemoteSetSendBit; }
+  bool GetReceptive() const { return mReceptive; }
 
   virtual void PopulateCodecs(
       const std::vector<UniquePtr<JsepCodecDescription>>& prototype);
@@ -282,6 +285,13 @@ class JsepTrack {
   std::map<uint32_t, uint32_t> mSsrcToRtxSsrc;
   bool mActive;
   bool mRemoteSetSendBit;
+  
+  
+  
+  
+  
+  
+  bool mReceptive = false;
   size_t mMaxEncodings = 3;
   bool mInHaveRemote = false;
 

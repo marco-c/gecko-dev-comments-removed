@@ -164,7 +164,9 @@ class RTCRtpReceiver : public nsISupports,
   std::vector<std::string> mStreamIds;
   bool mRemoteSetSendBit = false;
   Watchable<bool> mReceiveTrackMute{true, "RTCRtpReceiver::mReceiveTrackMute"};
-  Watchable<bool> mBlockUnmuteEvents{false, "RTCRtpReceiver::mBlockUnmuteEve~"};
+  
+  
+  bool mReceptive = false;
 
   MediaEventListener mRtcpByeListener;
   MediaEventListener mRtcpTimeoutListener;

@@ -132,6 +132,9 @@ void JsepTrack::RecvTrackSetRemote(const Sdp& aSdp,
   SdpHelper helper(&error);
 
   mRemoteSetSendBit = aMsection.IsSending();
+  if (!mRemoteSetSendBit) {
+    mReceptive = false;
+  }
 
   if (aMsection.IsSending()) {
     (void)helper.GetIdsFromMsid(aSdp, aMsection, &mStreamIds);
@@ -172,6 +175,14 @@ void JsepTrack::RecvTrackSetRemote(const Sdp& aSdp,
       }
     }
   }
+}
+
+void JsepTrack::RecvTrackSetLocal(const SdpMediaSection& aMsection) {
+  MOZ_ASSERT(mDirection == sdp::kRecv);
+
+  
+  
+  mReceptive = aMsection.IsReceiving();
 }
 
 void JsepTrack::SendTrackSetRemote(SsrcGenerator& aSsrcGenerator,
