@@ -129,6 +129,9 @@ class Linter(visitor.Visitor):
                     "Missing references: "
                     + ", ".join([f"${m}" for m in missing_references]),
                 )
+
+        
+        
         self.state["comment"] = ""
         self.state["variables"] = []
 
@@ -138,6 +141,10 @@ class Linter(visitor.Visitor):
         self.last_message_id = None
 
         super().generic_visit(node)
+
+        
+        self.state["comment"] = ""
+        self.state["variables"] = []
 
     def visit_MessageReference(self, node):
         
