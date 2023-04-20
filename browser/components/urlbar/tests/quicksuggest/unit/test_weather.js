@@ -20,7 +20,12 @@ add_task(async function init() {
   UrlbarPrefs.set("quicksuggest.enabled", true);
 
   await MerinoTestUtils.initWeather();
-  QuickSuggest.weather._test_cameOnlineDelayMs = 100;
+
+  
+  
+  
+  
+  QuickSuggest.weather._test_fetchDelayAfterComingOnlineMs = 53;
 });
 
 
@@ -1104,46 +1109,16 @@ async function doWakeTest({
   dateNowStub.returns(nowOnWake);
   QuickSuggest.weather.observe(null, "wake_notification", "");
 
-  if (shouldFetchOnWake) {
-    
-    
-    
-    Assert.equal(
-      QuickSuggest.weather._test_pendingFetchCount,
-      1,
-      "After wake, fetch should have started"
-    );
-    Assert.equal(
-      QuickSuggest.weather._test_lastFetchTimeMs,
-      nowOnWake,
-      "After wake, last fetch time should be updated"
-    );
-    Assert.equal(
-      QuickSuggest.weather._test_fetchTimerMs,
-      QuickSuggest.weather._test_fetchIntervalMs,
-      "After wake, timer period should be the full fetch interval"
-    );
-  } else {
-    
-    
-    
-    Assert.equal(
-      QuickSuggest.weather._test_pendingFetchCount,
-      0,
-      "After wake, next fetch should not have started"
-    );
-    Assert.equal(
-      QuickSuggest.weather._test_lastFetchTimeMs,
-      nowOnStart,
-      "After wake, last fetch time should be unchanged"
-    );
-    Assert.equal(
-      QuickSuggest.weather._test_fetchTimerMs,
-      fetchTimerMsOnWake,
-      "After wake, timer period should be the remaining interval"
-    );
-  }
-
+  Assert.equal(
+    QuickSuggest.weather._test_pendingFetchCount,
+    0,
+    "After wake, next fetch should not have immediately started"
+  );
+  Assert.equal(
+    QuickSuggest.weather._test_lastFetchTimeMs,
+    nowOnStart,
+    "After wake, last fetch time should be unchanged"
+  );
   Assert.notEqual(
     QuickSuggest.weather._test_fetchTimer,
     0,
@@ -1154,6 +1129,20 @@ async function doWakeTest({
     timer,
     "After wake, a new timer should have been created"
   );
+
+  if (shouldFetchOnWake) {
+    Assert.equal(
+      QuickSuggest.weather._test_fetchTimerMs,
+      QuickSuggest.weather._test_fetchDelayAfterComingOnlineMs,
+      "After wake, timer period should be fetchDelayAfterComingOnlineMs"
+    );
+  } else {
+    Assert.equal(
+      QuickSuggest.weather._test_fetchTimerMs,
+      fetchTimerMsOnWake,
+      "After wake, timer period should be the remaining interval"
+    );
+  }
 
   
   
@@ -1341,8 +1330,8 @@ async function doOnlineTestWithNullSuggestion({
     );
     Assert.equal(
       QuickSuggest.weather._test_fetchTimerMs,
-      QuickSuggest.weather._test_cameOnlineDelayMs,
-      "Timer ms should be cameOnlineDelayMs"
+      QuickSuggest.weather._test_fetchDelayAfterComingOnlineMs,
+      "Timer ms should be fetchDelayAfterComingOnlineMs"
     );
 
     timer = QuickSuggest.weather._test_fetchTimer;
@@ -1378,21 +1367,61 @@ async function doOnlineTestWithNullSuggestion({
 
 
 add_task(async function manyOnlineNotifications() {
+  await doManyNotificationsTest([
+    ["network:link-status-changed", "changed"],
+    ["network:link-status-changed", "up"],
+    ["network:offline-status-changed", "online"],
+  ]);
+});
+
+
+
+add_task(async function wakeAndOnlineNotifications() {
+  await doManyNotificationsTest([
+    ["wake_notification", ""],
+    ["network:link-status-changed", "changed"],
+    ["network:link-status-changed", "up"],
+    ["network:offline-status-changed", "online"],
+  ]);
+});
+
+async function doManyNotificationsTest(notifications) {
   
-  MerinoTestUtils.server.reset();
+  
+  let nowOnStart = 100;
+  let sandbox = sinon.createSandbox();
+  let dateNowStub = sandbox.stub(
+    Cu.getGlobalForObject(QuickSuggest.weather).Date,
+    "now"
+  );
+  dateNowStub.returns(nowOnStart);
+
+  
+  
+  info("Starting first fetch period");
+  await QuickSuggest.weather._test_fetch();
+  Assert.equal(
+    QuickSuggest.weather._test_lastFetchTimeMs,
+    nowOnStart,
+    "Last fetch time should be updated after fetch"
+  );
+
+  
+  let nowOnWake = nowOnStart + 100 * QuickSuggest.weather._test_fetchIntervalMs;
+  dateNowStub.returns(nowOnWake);
 
   
   QuickSuggest.weather._test_setSuggestionToNull();
   Assert.ok(!QuickSuggest.weather.suggestion, "Suggestion should be null");
 
-  info("Sending notifications");
-  QuickSuggest.weather.observe(null, "network:link-status-changed", "changed");
-  QuickSuggest.weather.observe(null, "network:link-status-changed", "up");
-  QuickSuggest.weather.observe(
-    null,
-    "network:offline-status-changed",
-    "online"
-  );
+  
+  MerinoTestUtils.server.reset();
+
+  
+  for (let [topic, data] of notifications) {
+    info("Sending notification: " + JSON.stringify({ topic, data }));
+    QuickSuggest.weather.observe(null, topic, data);
+  }
 
   info("Waiting for fetch after notifications");
   await QuickSuggest.weather.waitForFetches();
@@ -1418,7 +1447,9 @@ add_task(async function manyOnlineNotifications() {
     1,
     "Merino should have received only one request"
   );
-});
+
+  dateNowStub.restore();
+}
 
 function assertEnabled({ message, hasSuggestion, pendingFetchCount }) {
   info("Asserting feature is enabled");
