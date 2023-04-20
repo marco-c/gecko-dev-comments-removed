@@ -283,13 +283,30 @@ size_t InterceptorFunction::sNumInstances = 0;
 
 constexpr uint8_t InterceptorFunction::sInterceptorTemplate[];
 
+#ifdef _M_X64
+
+
+
 class RedirectionResolver : public interceptor::WindowsDllPatcherBase<
                                 interceptor::VMSharingPolicyShared> {
  public:
   uintptr_t ResolveRedirectedAddressForTest(FARPROC aFunc) {
+    bool isWin8 = IsWin8OrLater() && (!IsWin8Point1OrLater());
+
+    bool isDuplicateHandle = (reinterpret_cast<void*>(aFunc) ==
+                              reinterpret_cast<void*>(&::DuplicateHandle));
+
+    
+    
+    if (isWin8 && isDuplicateHandle) {
+      return reinterpret_cast<uintptr_t>(aFunc);
+    }
+
     return ResolveRedirectedAddress(aFunc).GetAddress();
   }
 };
+
+#endif  
 
 
 template <typename OrigFuncT, size_t N, typename PredicateT, typename... Args>
