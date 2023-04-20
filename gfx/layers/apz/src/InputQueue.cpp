@@ -454,12 +454,16 @@ APZEventResult InputQueue::ReceivePanGestureInput(
     mActivePanGestureBlock = block;
 
     CancelAnimationsForNewBlock(block);
-    MaybeRequestContentResponse(aTarget, block);
+    const bool waitingForContentResponse =
+        MaybeRequestContentResponse(aTarget, block);
 
     if (event.AllowsSwipe() && !CanScrollTargetHorizontally(event, block)) {
       
       
       block->SetNeedsToWaitForBrowserGestureResponse(true);
+      if (!waitingForContentResponse) {
+        ScheduleMainThreadTimeout(aTarget, block);
+      }
       if (aFlags.mTargetConfirmed) {
         
         
