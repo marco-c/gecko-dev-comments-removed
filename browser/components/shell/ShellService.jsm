@@ -347,7 +347,7 @@ let ShellServiceInternal = {
       
       
       this.setAsDefaultUserChoice().catch(err => {
-        Cu.reportError(err);
+        console.error(err);
         this.shellService.setDefaultBrowser(claimAllTypes, forAllUsers);
       });
       return;
@@ -373,7 +373,7 @@ let ShellServiceInternal = {
       ShellService.setDefaultBrowser(claimAllTypes, false);
     } catch (ex) {
       setAsDefaultError = true;
-      Cu.reportError(ex);
+      console.error(ex);
     }
     
     
@@ -463,7 +463,7 @@ let ShellServiceInternal = {
           this.macDockSupport.ensureAppIsPinnedToDock();
         }
       } catch (ex) {
-        Cu.reportError(ex);
+        console.error(ex);
       }
     }
   },

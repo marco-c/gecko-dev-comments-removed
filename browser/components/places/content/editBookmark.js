@@ -340,7 +340,7 @@ var gEditItemOverlay = {
     }
 
     if (showOrCollapse("keywordRow", isBookmark, "keyword")) {
-      await this._initKeywordField().catch(Cu.reportError);
+      await this._initKeywordField().catch(console.error);
       
       
       if (instance != this._instance || this._paneInfo == null) {
@@ -353,7 +353,7 @@ var gEditItemOverlay = {
     if (showOrCollapse("tagsRow", isURI || bulkTagging, "tags")) {
       this._initTagsField();
     } else if (!this._element("tagsSelectorRow").hidden) {
-      this.toggleTagsSelector().catch(Cu.reportError);
+      this.toggleTagsSelector().catch(console.error);
     }
 
     
@@ -361,7 +361,7 @@ var gEditItemOverlay = {
     
     
     if (showOrCollapse("folderRow", isItem, "folderPicker")) {
-      await this._initFolderMenuList(parentGuid).catch(Cu.reportError);
+      await this._initFolderMenuList(parentGuid).catch(console.error);
       if (instance != this._instance || this._paneInfo == null) {
         return;
       }
@@ -580,7 +580,7 @@ var gEditItemOverlay = {
       
       var tagsSelectorRow = this._element("tagsSelectorRow");
       if (!tagsSelectorRow.hidden) {
-        this.toggleTagsSelector().catch(Cu.reportError);
+        this.toggleTagsSelector().catch(console.error);
       }
     }
 
@@ -1026,7 +1026,7 @@ var gEditItemOverlay = {
       title,
       index: await ip.getIndex(),
     }).transact();
-    this.transactionPromises.push(promise.catch(Cu.reportError));
+    this.transactionPromises.push(promise.catch(console.error));
     let guid = await promise;
 
     this._folderTree.focus();

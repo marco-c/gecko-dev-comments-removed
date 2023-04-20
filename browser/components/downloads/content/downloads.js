@@ -609,7 +609,7 @@ var DownloadsPanel = {
     
     
     for (let viewItem of DownloadsView._visibleViewItems.values()) {
-      viewItem.download.refresh().catch(Cu.reportError);
+      viewItem.download.refresh().catch(console.error);
     }
 
     DownloadsCommon.log("Opening downloads panel popup.");
@@ -1152,7 +1152,7 @@ class DownloadsViewItem extends DownloadsViewUI.DownloadElementShell {
 
   downloadsCmd_unblockAndOpen() {
     DownloadsPanel.hidePanel();
-    this.unblockAndOpenDownload().catch(Cu.reportError);
+    this.unblockAndOpenDownload().catch(console.error);
   }
   downloadsCmd_unblockAndSave() {
     DownloadsPanel.hidePanel();
@@ -1216,7 +1216,7 @@ class DownloadsViewItem extends DownloadsViewUI.DownloadElementShell {
     
     
     for (let viewItem of DownloadsView._visibleViewItems.values()) {
-      viewItem.download.refresh().catch(Cu.reportError);
+      viewItem.download.refresh().catch(console.error);
     }
     
     

@@ -559,7 +559,7 @@ var gHomePane = {
 
     
     if (tabs.length) {
-      HomePage.set(tabs.map(getTabURI).join("|")).catch(Cu.reportError);
+      HomePage.set(tabs.map(getTabURI).join("|")).catch(console.error);
     }
   },
 
@@ -569,7 +569,7 @@ var gHomePane = {
     }
     if (rv.urls && rv.names) {
       
-      HomePage.set(rv.urls.join("|")).catch(Cu.reportError);
+      HomePage.set(rv.urls.join("|")).catch(console.error);
     }
   },
 
@@ -599,7 +599,7 @@ var gHomePane = {
 
   onCustomHomePageChange(event) {
     const value = event.target.value || HomePage.getDefault();
-    HomePage.set(value).catch(Cu.reportError);
+    HomePage.set(value).catch(console.error);
   },
 
   

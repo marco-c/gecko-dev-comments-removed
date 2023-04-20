@@ -178,7 +178,7 @@ HistoryDownloadElementShell.prototype = {
     if (!this._targetFileChecked) {
       this.download
         .refresh()
-        .catch(Cu.reportError)
+        .catch(console.error)
         .then(() => {
           
           this._targetFileChecked = true;
@@ -732,7 +732,7 @@ DownloadsPlacesView.prototype = {
         .removeVisitsByFilter({
           transition: PlacesUtils.history.TRANSITIONS.DOWNLOAD,
         })
-        .catch(Cu.reportError);
+        .catch(console.error);
     }
     
     
