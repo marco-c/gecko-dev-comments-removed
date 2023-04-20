@@ -287,10 +287,7 @@ function nodeHasEntries(item) {
     className === "Storage" ||
     className === "URLSearchParams" ||
     className === "Headers" ||
-    
-    
-    
-    (className === "FormData" && Array.isArray(value.preview?.entries)) ||
+    className === "FormData" ||
     
     
     
