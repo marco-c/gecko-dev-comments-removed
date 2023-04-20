@@ -28,7 +28,6 @@ def query(session, name):
     { "descriptor": "geolocation", "state": "granted" },
     { "descriptor": [ { "name": "geolocation" } ], "state": "granted" },
     [ { "descriptor": { "name": "geolocation" }, "state": "granted" } ],
-    { "descriptor": { "name": "geolocation" }, "state": "granted", "oneRealm": 23 }
 ])
 @pytest.mark.capabilities({"acceptInsecureCerts": True})
 def test_invalid_parameters(session, url, parameters):
@@ -54,16 +53,10 @@ def test_non_secure_context(session, url, state):
     assert_error(response, "invalid argument")
 
 @pytest.mark.parametrize("state", ["granted", "denied", "prompt"])
-@pytest.mark.parametrize("realmSetting", [
-    { "oneRealm": True },
-    { "oneRealm": False },
-    {}
-])
 @pytest.mark.capabilities({"acceptInsecureCerts": True})
-def test_set_to_state(session, url, state, realmSetting):
+def test_set_to_state(session, url, state):
     session.url = url("/common/blank.html", protocol="https")
     parameters = { "descriptor": { "name": "geolocation" }, "state": state }
-    parameters.update(realmSetting)
     response = session.transport.send(
         "POST", "/session/{session_id}/permissions".format(**vars(session)),
         parameters
@@ -88,55 +81,3 @@ def test_set_to_state(session, url, state, realmSetting):
     assert isinstance(result, dict)
     assert result.get("status") == "success"
     assert result.get("value") == state
-
-
-
-
-
-
-@pytest.mark.parametrize("state", ["granted", "denied", "prompt"])
-@pytest.mark.parametrize("realmSetting", [
-    { "oneRealm": False },
-    {}
-])
-@pytest.mark.capabilities({"acceptInsecureCerts": True})
-def test_set_to_state_cross_realm(session, url, state, realmSetting):
-    session.url = url("/common/blank.html", protocol="https")
-    original_window = session.window_handle
-    session.window_handle = session.new_window()
-    session.url = url("/common/blank.html", protocol="https")
-    parameters = { "descriptor": { "name": "geolocation" }, "state": state }
-    parameters.update(realmSetting)
-
-    response = session.transport.send(
-        "POST", "/session/{session_id}/permissions".format(**vars(session)),
-        parameters
-    )
-
-    try:
-        assert_success(response)
-    except AssertionError:
-        
-        
-        
-        assert_error(response, "invalid argument")
-        return
-
-    assert response.body.get("value") == None
-
-    session.window_handle = original_window
-
-    response = query(session, "geolocation")
-
-    assert_success(response)
-    result = response.body.get("value")
-
-    assert isinstance(result, dict)
-    assert result.get("status") == "success"
-    assert result.get("value") == state
-
-
-
-
-
-

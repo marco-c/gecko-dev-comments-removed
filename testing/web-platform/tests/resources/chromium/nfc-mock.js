@@ -410,7 +410,7 @@ self.WebNFCTest = (() => {
         throw new Error('Call reset() before initialize().');
 
       
-      await test_driver.set_permission({ name: 'nfc' }, 'granted', false);
+      await test_driver.set_permission({ name: 'nfc' }, 'granted');
 
       if (testInternal.mockNFC == null) {
         testInternal.mockNFC = new MockNFC();
