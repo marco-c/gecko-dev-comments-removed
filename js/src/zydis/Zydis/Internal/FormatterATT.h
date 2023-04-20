@@ -116,7 +116,6 @@ static const ZydisFormatter FORMATTER_ATT =
      ZYDIS_LETTER_CASE_DEFAULT,
      ZYDIS_LETTER_CASE_DEFAULT,
      ZYAN_TRUE,
-     ZYAN_FALSE,
     
     {
         
@@ -139,7 +138,7 @@ static const ZydisFormatter FORMATTER_ATT =
             
             {
                  &FORMATTER_ATT.number_format[
-                                     ZYDIS_NUMERIC_BASE_HEX][0].string_data,
+                                    ZYDIS_NUMERIC_BASE_HEX][0].string_data,
                  ZYAN_DEFINE_STRING_VIEW("0x"),
                  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
             },

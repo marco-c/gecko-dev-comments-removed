@@ -45,9 +45,7 @@
 #include "zydis/Zycore/Types.h"
 #include "zydis/Zycore/Format.h"
 #include "zydis/Zydis/ShortString.h"
-#include "zydis/Zycore/Defines.h"
-#include "zydis/Zycore/Status.h"
-#include "zydis/Zycore/Vector.h"
+#include "zydis/Zydis/Status.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -404,11 +402,8 @@ ZYAN_INLINE ZyanStatus ZydisStringAppendDecS(ZyanString* string, ZyanI64 value,
 
 
 
-
-
 ZyanStatus ZydisStringAppendHexU(ZyanString* string, ZyanU64 value, ZyanU8 padding_length,
-    ZyanBool force_leading_number, ZyanBool uppercase, const ZyanStringView* prefix,
-    const ZyanStringView* suffix);
+    ZyanBool uppercase, const ZyanStringView* prefix, const ZyanStringView* suffix);
 
 
 
@@ -433,8 +428,8 @@ ZyanStatus ZydisStringAppendHexU(ZyanString* string, ZyanU64 value, ZyanU8 paddi
 
 
 ZYAN_INLINE ZyanStatus ZydisStringAppendHexS(ZyanString* string, ZyanI64 value,
-    ZyanU8 padding_length, ZyanBool force_leading_number, ZyanBool uppercase, ZyanBool force_sign,
-    const ZyanStringView* prefix, const ZyanStringView* suffix)
+    ZyanU8 padding_length, ZyanBool uppercase, ZyanBool force_sign, const ZyanStringView* prefix,
+    const ZyanStringView* suffix)
 {
     static const ZydisShortString str_add = ZYDIS_MAKE_SHORTSTRING("+");
     static const ZydisShortString str_sub = ZYDIS_MAKE_SHORTSTRING("-");
@@ -446,8 +441,8 @@ ZYAN_INLINE ZyanStatus ZydisStringAppendHexS(ZyanString* string, ZyanI64 value,
         {
             ZYAN_CHECK(ZydisStringAppend(string, prefix));
         }
-        return ZydisStringAppendHexU(string, ZyanAbsI64(value), padding_length,
-            force_leading_number, uppercase, (const ZyanStringView*)ZYAN_NULL, suffix);
+        return ZydisStringAppendHexU(string, ZyanAbsI64(value), padding_length, uppercase,
+            (const ZyanStringView*)ZYAN_NULL, suffix);
     }
 
     if (force_sign)
@@ -455,8 +450,7 @@ ZYAN_INLINE ZyanStatus ZydisStringAppendHexS(ZyanString* string, ZyanI64 value,
         ZYAN_ASSERT(value >= 0);
         ZYAN_CHECK(ZydisStringAppendShort(string, &str_add));
     }
-    return ZydisStringAppendHexU(string, value, padding_length, force_leading_number, uppercase,
-        prefix, suffix);
+    return ZydisStringAppendHexU(string, value, padding_length, uppercase, prefix, suffix);
 }
 
 

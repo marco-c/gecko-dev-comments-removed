@@ -115,7 +115,6 @@ static const ZydisFormatter FORMATTER_INTEL =
      ZYDIS_LETTER_CASE_DEFAULT,
      ZYDIS_LETTER_CASE_DEFAULT,
      ZYAN_TRUE,
-     ZYAN_FALSE,
     
     {
         
@@ -138,7 +137,7 @@ static const ZydisFormatter FORMATTER_INTEL =
             
             {
                  &FORMATTER_INTEL.number_format[
-                                       ZYDIS_NUMERIC_BASE_HEX][0].string_data,
+                                      ZYDIS_NUMERIC_BASE_HEX][0].string_data,
                  ZYAN_DEFINE_STRING_VIEW("0x"),
                  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
             },
@@ -204,7 +203,6 @@ static const ZydisFormatter FORMATTER_INTEL_MASM =
      ZYDIS_LETTER_CASE_DEFAULT,
      ZYDIS_LETTER_CASE_DEFAULT,
      ZYAN_TRUE,
-     ZYAN_TRUE,
     
     {
         
@@ -233,7 +231,7 @@ static const ZydisFormatter FORMATTER_INTEL_MASM =
             
             {
                  &FORMATTER_INTEL_MASM.number_format[
-                                       ZYDIS_NUMERIC_BASE_HEX][1].string_data,
+                                      ZYDIS_NUMERIC_BASE_HEX][1].string_data,
                  ZYAN_DEFINE_STRING_VIEW("h"),
                  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
             }

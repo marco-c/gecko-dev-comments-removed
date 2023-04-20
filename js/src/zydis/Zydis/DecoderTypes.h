@@ -89,15 +89,11 @@ typedef enum ZydisMemoryOperandType_
 
 
     ZYDIS_MEMOP_TYPE_MIB,
-    
-
-
-    ZYDIS_MEMOP_TYPE_VSIB,
 
     
 
 
-    ZYDIS_MEMOP_TYPE_MAX_VALUE = ZYDIS_MEMOP_TYPE_VSIB,
+    ZYDIS_MEMOP_TYPE_MAX_VALUE = ZYDIS_MEMOP_TYPE_MIB,
     
 
 
@@ -111,97 +107,16 @@ typedef enum ZydisMemoryOperandType_
 
 
 
-typedef struct ZydisDecodedOperandReg_
-{
-    
-
-
-    ZydisRegister value;
-} ZydisDecodedOperandReg;
-
-
-
-
-typedef struct ZydisDecodedOperandMem_
-{
-    
-
-
-    ZydisMemoryOperandType type;
-    
-
-
-    ZydisRegister segment;
-    
-
-
-    ZydisRegister base;
-    
-
-
-    ZydisRegister index;
-    
-
-
-    ZyanU8 scale;
-    
-
-
-    struct ZydisDecodedOperandMemDisp_
-    {
-        
-
-
-        ZyanBool has_displacement;
-        
-
-
-        ZyanI64 value;
-    } disp;
-} ZydisDecodedOperandMem;
-
-
-
-
-typedef struct ZydisDecodedOperandPtr_
-{
-    ZyanU16 segment;
-    ZyanU32 offset;
-} ZydisDecodedOperandPtr;
-
-
-
-
-typedef struct ZydisDecodedOperandImm_
-{
-    
-
-
-    ZyanBool is_signed;
-    
-
-
-
-    ZyanBool is_relative;
-    
-
-
-    union ZydisDecodedOperandImmValue_
-    {
-        ZyanU64 u;
-        ZyanI64 s;
-    } value;
-} ZydisDecodedOperandImm;
-
-
-
-
 typedef struct ZydisDecodedOperand_
 {
     
 
 
     ZyanU8 id;
+    
+
+
+    ZydisOperandType type;
     
 
 
@@ -237,19 +152,85 @@ typedef struct ZydisDecodedOperand_
     
 
 
-    ZydisOperandType type;
+    struct ZydisDecodedOperandReg_
+    {
+        
+
+
+        ZydisRegister value;
+        
+    } reg;
     
 
 
-
-
-    union
+    struct ZydisDecodedOperandMem_
     {
-        ZydisDecodedOperandReg reg;
-        ZydisDecodedOperandMem mem;
-        ZydisDecodedOperandPtr ptr;
-        ZydisDecodedOperandImm imm;
-    };
+        
+
+
+        ZydisMemoryOperandType type;
+        
+
+
+        ZydisRegister segment;
+        
+
+
+        ZydisRegister base;
+        
+
+
+        ZydisRegister index;
+        
+
+
+        ZyanU8 scale;
+        
+
+
+        struct ZydisDecodedOperandMemDisp_
+        {
+            
+
+
+            ZyanBool has_displacement;
+            
+
+
+            ZyanI64 value;
+        } disp;
+    } mem;
+    
+
+
+    struct ZydisDecodedOperandPtr_
+    {
+        ZyanU16 segment;
+        ZyanU32 offset;
+    } ptr;
+    
+
+
+    struct ZydisDecodedOperandImm_
+    {
+        
+
+
+        ZyanBool is_signed;
+        
+
+
+
+        ZyanBool is_relative;
+        
+
+
+        union ZydisDecodedOperandImmValue_
+        {
+            ZyanU64 u;
+            ZyanI64 s;
+        } value;
+    } imm;
 } ZydisDecodedOperand;
 
 
@@ -265,115 +246,215 @@ typedef struct ZydisDecodedOperand_
 
 
 
-typedef ZyanU32 ZydisAccessedFlagsMask;
+typedef ZyanU64 ZydisInstructionAttributes;
 
 
 
 
+#define ZYDIS_ATTRIB_HAS_MODRM                  0x0000000000000001 // (1 <<  0)
 
 
 
+#define ZYDIS_ATTRIB_HAS_SIB                    0x0000000000000002 // (1 <<  1)
 
 
 
+#define ZYDIS_ATTRIB_HAS_REX                    0x0000000000000004 // (1 <<  2)
 
 
 
-#define ZYDIS_CPUFLAG_CF    (1ul <<  0)
+#define ZYDIS_ATTRIB_HAS_XOP                    0x0000000000000008 // (1 <<  3)
 
 
 
-#define ZYDIS_CPUFLAG_PF    (1ul <<  2)
+#define ZYDIS_ATTRIB_HAS_VEX                    0x0000000000000010 // (1 <<  4)
 
 
 
-#define ZYDIS_CPUFLAG_AF    (1ul <<  4)
+#define ZYDIS_ATTRIB_HAS_EVEX                   0x0000000000000020 // (1 <<  5)
 
 
 
-#define ZYDIS_CPUFLAG_ZF    (1ul <<  6)
+#define ZYDIS_ATTRIB_HAS_MVEX                   0x0000000000000040 // (1 <<  6)
 
 
 
-#define ZYDIS_CPUFLAG_SF    (1ul <<  7)
+#define ZYDIS_ATTRIB_IS_RELATIVE                0x0000000000000080 // (1 <<  7)
 
 
 
-#define ZYDIS_CPUFLAG_TF    (1ul <<  8)
 
 
+#define ZYDIS_ATTRIB_IS_PRIVILEGED              0x0000000000000100 // (1 <<  8)
 
-#define ZYDIS_CPUFLAG_IF    (1ul <<  9)
 
 
 
-#define ZYDIS_CPUFLAG_DF    (1ul << 10)
+#define ZYDIS_ATTRIB_CPUFLAG_ACCESS             0x0000001000000000 // (1 << 36) // TODO: rebase
 
 
 
-#define ZYDIS_CPUFLAG_OF    (1ul << 11)
 
+#define ZYDIS_ATTRIB_CPU_STATE_CR               0x0000002000000000 // (1 << 37) // TODO: rebase
 
 
-#define ZYDIS_CPUFLAG_IOPL  (1ul << 12)
 
+#define ZYDIS_ATTRIB_CPU_STATE_CW               0x0000004000000000 // (1 << 38) // TODO: rebase
 
 
-#define ZYDIS_CPUFLAG_NT    (1ul << 14)
 
+#define ZYDIS_ATTRIB_FPU_STATE_CR               0x0000008000000000 // (1 << 39) // TODO: rebase
 
 
-#define ZYDIS_CPUFLAG_RF    (1ul << 16)
 
+#define ZYDIS_ATTRIB_FPU_STATE_CW               0x0000010000000000 // (1 << 40) // TODO: rebase
 
 
-#define ZYDIS_CPUFLAG_VM    (1ul << 17)
 
+#define ZYDIS_ATTRIB_XMM_STATE_CR               0x0000020000000000 // (1 << 41) // TODO: rebase
 
 
-#define ZYDIS_CPUFLAG_AC    (1ul << 18)
 
+#define ZYDIS_ATTRIB_XMM_STATE_CW               0x0000040000000000 // (1 << 42) // TODO: rebase
 
 
-#define ZYDIS_CPUFLAG_VIF   (1ul << 19)
 
 
+#define ZYDIS_ATTRIB_ACCEPTS_LOCK               0x0000000000000200 // (1 <<  9)
 
-#define ZYDIS_CPUFLAG_VIP   (1ul << 20)
 
 
+#define ZYDIS_ATTRIB_ACCEPTS_REP                0x0000000000000400 // (1 << 10)
 
-#define ZYDIS_CPUFLAG_ID    (1ul << 21)
 
 
+#define ZYDIS_ATTRIB_ACCEPTS_REPE               0x0000000000000800 // (1 << 11)
 
 
 
+#define ZYDIS_ATTRIB_ACCEPTS_REPZ               0x0000000000000800 // (1 << 11)
 
 
 
+#define ZYDIS_ATTRIB_ACCEPTS_REPNE              0x0000000000001000 // (1 << 12)
 
 
 
+#define ZYDIS_ATTRIB_ACCEPTS_REPNZ              0x0000000000001000 // (1 << 12)
 
 
 
+#define ZYDIS_ATTRIB_ACCEPTS_BND                0x0000000000002000 // (1 << 13)
 
 
 
-#define ZYDIS_FPUFLAG_C0    (1ul <<  0)
+#define ZYDIS_ATTRIB_ACCEPTS_XACQUIRE           0x0000000000004000 // (1 << 14)
 
 
 
-#define ZYDIS_FPUFLAG_C1    (1ul <<  1)
+#define ZYDIS_ATTRIB_ACCEPTS_XRELEASE           0x0000000000008000 // (1 << 15)
+
+
+
+
+#define ZYDIS_ATTRIB_ACCEPTS_HLE_WITHOUT_LOCK   0x0000000000010000 // (1 << 16)
+
+
+
+#define ZYDIS_ATTRIB_ACCEPTS_BRANCH_HINTS       0x0000000000020000 // (1 << 17)
+
+
+
+
+#define ZYDIS_ATTRIB_ACCEPTS_SEGMENT            0x0000000000040000 // (1 << 18)
+
+
+
+#define ZYDIS_ATTRIB_HAS_LOCK                   0x0000000000080000 // (1 << 19)
+
+
+
+#define ZYDIS_ATTRIB_HAS_REP                    0x0000000000100000 // (1 << 20)
+
+
+
+#define ZYDIS_ATTRIB_HAS_REPE                   0x0000000000200000 // (1 << 21)
+
+
+
+#define ZYDIS_ATTRIB_HAS_REPZ                   0x0000000000200000 // (1 << 21)
+
+
+
+#define ZYDIS_ATTRIB_HAS_REPNE                  0x0000000000400000 // (1 << 22)
+
+
+
+#define ZYDIS_ATTRIB_HAS_REPNZ                  0x0000000000400000 // (1 << 22)
+
+
+
+#define ZYDIS_ATTRIB_HAS_BND                    0x0000000000800000 // (1 << 23)
+
+
+
+#define ZYDIS_ATTRIB_HAS_XACQUIRE               0x0000000001000000 // (1 << 24)
+
+
+
+#define ZYDIS_ATTRIB_HAS_XRELEASE               0x0000000002000000 // (1 << 25)
+
+
+
+#define ZYDIS_ATTRIB_HAS_BRANCH_NOT_TAKEN       0x0000000004000000 // (1 << 26)
+
+
+
+#define ZYDIS_ATTRIB_HAS_BRANCH_TAKEN           0x0000000008000000 // (1 << 27)
+
+
+
+#define ZYDIS_ATTRIB_HAS_SEGMENT                0x00000003F0000000
+
+
+
+#define ZYDIS_ATTRIB_HAS_SEGMENT_CS             0x0000000010000000 // (1 << 28)
+
+
+
+#define ZYDIS_ATTRIB_HAS_SEGMENT_SS             0x0000000020000000 // (1 << 29)
+
+
+
+#define ZYDIS_ATTRIB_HAS_SEGMENT_DS             0x0000000040000000 // (1 << 30)
+
+
+
+#define ZYDIS_ATTRIB_HAS_SEGMENT_ES             0x0000000080000000 // (1 << 31)
+
+
+
+#define ZYDIS_ATTRIB_HAS_SEGMENT_FS             0x0000000100000000 // (1 << 32)
+
+
+
+#define ZYDIS_ATTRIB_HAS_SEGMENT_GS             0x0000000200000000 // (1 << 33)
+
+
+
+#define ZYDIS_ATTRIB_HAS_OPERANDSIZE            0x0000000400000000 // (1 << 34) // TODO: rename
+
+
+
+#define ZYDIS_ATTRIB_HAS_ADDRESSSIZE            0x0000000800000000 // (1 << 35) // TODO: rename
+
+
+
+#define ZYDIS_ATTRIB_ACCEPTS_NOTRACK            0x0000080000000000 // (1 << 43) // TODO: rebase
  
 
 
-#define ZYDIS_FPUFLAG_C2    (1ul <<  2)
-
-
-
-#define ZYDIS_FPUFLAG_C3    (1ul <<  3)
+#define ZYDIS_ATTRIB_HAS_NOTRACK                0x0000100000000000 // (1 << 44) // TODO: rebase
 
 
 
@@ -382,29 +463,191 @@ typedef ZyanU32 ZydisAccessedFlagsMask;
 
 
 
-typedef struct ZydisAccessedFlags_
+typedef ZyanU32 ZydisCPUFlags;
+
+
+
+
+typedef ZyanU8 ZydisCPUFlag;
+
+
+
+
+#define ZYDIS_CPUFLAG_CF     0
+
+
+
+#define ZYDIS_CPUFLAG_PF     2
+
+
+
+#define ZYDIS_CPUFLAG_AF     4
+
+
+
+#define ZYDIS_CPUFLAG_ZF     6
+
+
+
+#define ZYDIS_CPUFLAG_SF     7
+
+
+
+#define ZYDIS_CPUFLAG_TF     8
+
+
+
+#define ZYDIS_CPUFLAG_IF     9
+
+
+
+#define ZYDIS_CPUFLAG_DF    10
+
+
+
+#define ZYDIS_CPUFLAG_OF    11
+
+
+
+#define ZYDIS_CPUFLAG_IOPL  12
+
+
+
+#define ZYDIS_CPUFLAG_NT    14
+
+
+
+#define ZYDIS_CPUFLAG_RF    16
+
+
+
+#define ZYDIS_CPUFLAG_VM    17
+
+
+
+#define ZYDIS_CPUFLAG_AC    18
+
+
+
+#define ZYDIS_CPUFLAG_VIF   19
+
+
+
+#define ZYDIS_CPUFLAG_VIP   20
+
+
+
+#define ZYDIS_CPUFLAG_ID    21
+
+
+
+
+
+
+
+
+
+
+#define ZYDIS_CPUFLAG_C0    22
+
+
+
+
+
+
+
+#define ZYDIS_CPUFLAG_C1    23
+
+
+
+
+
+
+
+#define ZYDIS_CPUFLAG_C2    24
+
+
+
+
+
+
+
+#define ZYDIS_CPUFLAG_C3    25
+
+
+
+
+#define ZYDIS_CPUFLAG_MAX_VALUE     ZYDIS_CPUFLAG_C3
+
+ 
+
+ 
+
+
+typedef ZyanU8 ZydisFPUFlags;
+
+
+
+
+#define ZYDIS_FPUFLAG_C0    0x00 // (1 << 0)
+
+
+
+#define ZYDIS_FPUFLAG_C1    0x01 // (1 << 1)
+ 
+
+
+#define ZYDIS_FPUFLAG_C2    0x02 // (1 << 2)
+
+
+
+#define ZYDIS_FPUFLAG_C3    0x04 // (1 << 3)
+
+
+
+
+
+
+typedef enum ZydisCPUFlagAction_
 {
     
 
 
-    ZydisAccessedFlagsMask tested;
+    ZYDIS_CPUFLAG_ACTION_NONE,
     
 
 
-    ZydisAccessedFlagsMask modified;
+    ZYDIS_CPUFLAG_ACTION_TESTED,
     
 
 
-    ZydisAccessedFlagsMask set_0;
+    ZYDIS_CPUFLAG_ACTION_TESTED_MODIFIED,
     
 
 
-    ZydisAccessedFlagsMask set_1;
+    ZYDIS_CPUFLAG_ACTION_MODIFIED,
     
 
 
-    ZydisAccessedFlagsMask undefined;
-} ZydisAccessedFlags;
+    ZYDIS_CPUFLAG_ACTION_SET_0,
+    
+
+
+    ZYDIS_CPUFLAG_ACTION_SET_1,
+    
+
+
+    ZYDIS_CPUFLAG_ACTION_UNDEFINED,
+
+    
+
+
+    ZYDIS_CPUFLAG_ACTION_MAX_VALUE = ZYDIS_CPUFLAG_ACTION_UNDEFINED,
+    
+
+
+    ZYDIS_CPUFLAG_ACTION_REQUIRED_BITS = ZYAN_BITS_TO_REPRESENT(ZYDIS_CPUFLAG_ACTION_MAX_VALUE)
+} ZydisCPUFlagAction;
 
 
 
@@ -722,518 +965,6 @@ typedef enum ZydisPrefixType_
 
 
 
-typedef struct ZydisDecodedInstructionRawRex_
-{
-    
-
-
-    ZyanU8 W;
-    
-
-
-    ZyanU8 R;
-    
-
-
-    ZyanU8 X;
-    
-
-
-    ZyanU8 B;
-    
-
-
-
-
-
-
-
-
-
-
-    ZyanU8 offset;
-} ZydisDecodedInstructionRawRex;
-
-
-
-
-typedef struct ZydisDecodedInstructionRawXop_
-{
-    
-
-
-    ZyanU8 R;
-    
-
-
-    ZyanU8 X;
-    
-
-
-    ZyanU8 B;
-    
-
-
-    ZyanU8 m_mmmm;
-    
-
-
-    ZyanU8 W;
-    
-
-
-
-    ZyanU8 vvvv;
-    
-
-
-    ZyanU8 L;
-    
-
-
-    ZyanU8 pp;
-    
-
-
-
-    ZyanU8 offset;
-} ZydisDecodedInstructionRawXop;
-
-
-
-
-typedef struct ZydisDecodedInstructionRawVex_
-{
-    
-
-
-    ZyanU8 R;
-    
-
-
-    ZyanU8 X;
-    
-
-
-    ZyanU8 B;
-    
-
-
-    ZyanU8 m_mmmm;
-    
-
-
-    ZyanU8 W;
-    
-
-
-
-    ZyanU8 vvvv;
-    
-
-
-    ZyanU8 L;
-    
-
-
-    ZyanU8 pp;
-    
-
-
-
-    ZyanU8 offset;
-    
-
-
-    ZyanU8 size;
-} ZydisDecodedInstructionRawVex;
-
-
-
-
-typedef struct ZydisDecodedInstructionRawEvex
-{
-    
-
-
-    ZyanU8 R;
-    
-
-
-    ZyanU8 X;
-    
-
-
-    ZyanU8 B;
-    
-
-
-    ZyanU8 R2;
-    
-
-
-    ZyanU8 mmm;
-    
-
-
-    ZyanU8 W;
-    
-
-
-
-    ZyanU8 vvvv;
-    
-
-
-    ZyanU8 pp;
-    
-
-
-    ZyanU8 z;
-    
-
-
-    ZyanU8 L2;
-    
-
-
-    ZyanU8 L;
-    
-
-
-    ZyanU8 b;
-    
-
-
-    ZyanU8 V2;
-    
-
-
-    ZyanU8 aaa;
-    
-
-
-
-    ZyanU8 offset;
-} ZydisDecodedInstructionRawEvex;
-
-
-
-
-typedef struct ZydisDecodedInstructionRawMvex_
-{
-    
-
-
-    ZyanU8 R;
-    
-
-
-    ZyanU8 X;
-    
-
-
-    ZyanU8 B;
-    
-
-
-    ZyanU8 R2;
-    
-
-
-    ZyanU8 mmmm;
-    
-
-
-    ZyanU8 W;
-    
-
-
-
-    ZyanU8 vvvv;
-    
-
-
-    ZyanU8 pp;
-    
-
-
-    ZyanU8 E;
-    
-
-
-    ZyanU8 SSS;
-    
-
-
-    ZyanU8 V2;
-    
-
-
-    ZyanU8 kkk;
-    
-
-
-
-    ZyanU8 offset;
-} ZydisDecodedInstructionRawMvex;
-
-
-
-
-typedef struct ZydisDecodedInstructionAvx_
-{
-    
-
-
-    ZyanU16 vector_length;
-    
-
-
-    struct ZydisDecodedInstructionAvxMask_
-    {
-        
-
-
-        ZydisMaskMode mode;
-        
-
-
-        ZydisRegister reg;
-    } mask;
-    
-
-
-    struct ZydisDecodedInstructionAvxBroadcast_
-    {
-        
-
-
-
-
-
-        ZyanBool is_static;
-        
-
-
-        ZydisBroadcastMode mode;
-    } broadcast;
-    
-
-
-    struct ZydisDecodedInstructionAvxRounding_
-    {
-        
-
-
-        ZydisRoundingMode mode;
-    } rounding;
-    
-
-
-    struct ZydisDecodedInstructionAvxSwizzle_
-    {
-        
-
-
-        ZydisSwizzleMode mode;
-    } swizzle;
-    
-
-
-    struct ZydisDecodedInstructionAvxConversion_
-    {
-        
-
-
-        ZydisConversionMode mode;
-    } conversion;
-    
-
-
-
-    ZyanBool has_sae;
-    
-
-
-    ZyanBool has_eviction_hint;
-    
-} ZydisDecodedInstructionAvx;
-
-
-
-
-typedef struct ZydisDecodedInstructionMeta_
-{
-    
-
-
-    ZydisInstructionCategory category;
-    
-
-
-    ZydisISASet isa_set;
-    
-
-
-    ZydisISAExt isa_ext;
-    
-
-
-    ZydisBranchType branch_type;
-    
-
-
-    ZydisExceptionClass exception_class;
-} ZydisDecodedInstructionMeta;
-
-
-
-
-
-typedef struct ZydisDecodedInstructionRaw_
-{
-    
-
-
-    ZyanU8 prefix_count;
-    
-
-
-    struct ZydisDecodedInstructionRawPrefixes_
-    {
-        
-
-
-        ZydisPrefixType type;
-        
-
-
-        ZyanU8 value;
-    } prefixes[ZYDIS_MAX_INSTRUCTION_LENGTH];
-
-    
-
-
-
-
-
-    ZydisInstructionEncoding encoding2;
-    
-
-
-    union
-    {
-        ZydisDecodedInstructionRawRex rex;
-        ZydisDecodedInstructionRawXop xop;
-        ZydisDecodedInstructionRawVex vex;
-        ZydisDecodedInstructionRawEvex evex;
-        ZydisDecodedInstructionRawMvex mvex;
-    };
-
-    
-
-
-    struct ZydisDecodedInstructionModRm_
-    {
-        
-
-
-        ZyanU8 mod;
-        
-
-
-        ZyanU8 reg;
-        
-
-
-        ZyanU8 rm;
-        
-
-
-
-        ZyanU8 offset;
-    } modrm;
-    
-
-
-    struct ZydisDecodedInstructionRawSib_
-    {
-        
-
-
-        ZyanU8 scale;
-        
-
-
-        ZyanU8 index;
-        
-
-
-        ZyanU8 base;
-        
-
-
-
-        ZyanU8 offset;
-    } sib;
-    
-
-
-    struct ZydisDecodedInstructionRawDisp_
-    {
-        
-
-
-        ZyanI64 value;
-        
-
-
-        ZyanU8 size;
-        
-        
-
-
-
-        ZyanU8 offset;
-    } disp;
-    
-
-
-    struct ZydisDecodedInstructionRawImm_
-    {
-        
-
-
-        ZyanBool is_signed;
-        
-
-
-
-        ZyanBool is_relative;
-        
-
-
-        union ZydisDecodedInstructionRawImmValue_
-        {
-            ZyanU64 u;
-            ZyanI64 s;
-        } value;
-        
-
-
-        ZyanU8 size;
-        
-
-
-
-        ZyanU8 offset;
-    } imm[2];
-} ZydisDecodedInstructionRaw;
-
-
-
-
 typedef struct ZydisDecodedInstruction_
 {
     
@@ -1275,10 +1006,6 @@ typedef struct ZydisDecodedInstruction_
     
 
 
-
-
-
-
     ZyanU8 operand_count;
     
 
@@ -1286,7 +1013,8 @@ typedef struct ZydisDecodedInstruction_
 
 
 
-    ZyanU8 operand_count_visible;
+
+    ZydisDecodedOperand operands[ZYDIS_MAX_OPERAND_COUNT];
     
 
 
@@ -1297,144 +1025,528 @@ typedef struct ZydisDecodedInstruction_
 
 
 
-    const ZydisAccessedFlags* cpu_flags;
+
+    struct ZydisDecodedInstructionAccessedFlags_
+    {
+        
+
+
+
+
+
+        ZydisCPUFlagAction action;
+    } accessed_flags[ZYDIS_CPUFLAG_MAX_VALUE + 1];
     
 
 
 
 
-    const ZydisAccessedFlags* fpu_flags;
-    
 
 
-    ZydisDecodedInstructionAvx avx;
-    
 
-
-    ZydisDecodedInstructionMeta meta;
+    ZydisCPUFlags cpu_flags_read;
     
 
 
 
-    ZydisDecodedInstructionRaw raw;
+
+
+
+
+    ZydisCPUFlags cpu_flags_written;
+    
+
+
+    ZydisFPUFlags fpu_flags_read;
+    
+
+
+    ZydisFPUFlags fpu_flags_written;
+    
+
+
+    struct ZydisDecodedInstructionAvx_
+    {
+        
+
+
+        ZyanU16 vector_length;
+        
+
+
+        struct ZydisDecodedInstructionAvxMask_
+        {
+            
+
+
+            ZydisMaskMode mode;
+            
+
+
+            ZydisRegister reg;
+        } mask;
+        
+
+
+        struct ZydisDecodedInstructionAvxBroadcast_
+        {
+            
+
+
+
+
+
+            ZyanBool is_static;
+            
+
+
+            ZydisBroadcastMode mode;
+        } broadcast;
+        
+
+
+        struct ZydisDecodedInstructionAvxRounding_
+        {
+            
+
+
+            ZydisRoundingMode mode;
+        } rounding;
+        
+
+
+        struct ZydisDecodedInstructionAvxSwizzle_
+        {
+            
+
+
+            ZydisSwizzleMode mode;
+        } swizzle;
+        
+
+
+        struct ZydisDecodedInstructionAvxConversion_
+        {
+            
+
+
+            ZydisConversionMode mode;
+        } conversion;
+        
+
+
+
+        ZyanBool has_sae;
+        
+
+
+        ZyanBool has_eviction_hint;
+        
+    } avx;
+    
+
+
+    struct ZydisDecodedInstructionMeta_
+    {
+        
+
+
+        ZydisInstructionCategory category;
+        
+
+
+        ZydisISASet isa_set;
+        
+
+
+        ZydisISAExt isa_ext;
+        
+
+
+        ZydisBranchType branch_type;
+        
+
+
+        ZydisExceptionClass exception_class;
+    } meta;
+    
+
+
+
+    struct ZydisDecodedInstructionRaw_
+    {
+        
+
+
+        ZyanU8 prefix_count;
+        
+
+
+        struct ZydisDecodedInstructionRawPrefixes_
+        {
+            
+
+
+            ZydisPrefixType type;
+            
+
+
+            ZyanU8 value;
+        } prefixes[ZYDIS_MAX_INSTRUCTION_LENGTH];
+        
+
+
+        struct ZydisDecodedInstructionRawRex_
+        {
+            
+
+
+            ZyanU8 W;
+            
+
+
+            ZyanU8 R;
+            
+
+
+            ZyanU8 X;
+            
+
+
+            ZyanU8 B;
+            
+
+
+
+
+
+
+
+
+
+
+            ZyanU8 offset;
+        } rex;
+        
+
+
+        struct ZydisDecodedInstructionRawXop_
+        {
+            
+
+
+            ZyanU8 R;
+            
+
+
+            ZyanU8 X;
+            
+
+
+            ZyanU8 B;
+            
+
+
+            ZyanU8 m_mmmm;
+            
+
+
+            ZyanU8 W;
+            
+
+
+
+            ZyanU8 vvvv;
+            
+
+
+            ZyanU8 L;
+            
+
+
+            ZyanU8 pp;
+            
+
+
+
+            ZyanU8 offset;
+        } xop;
+        
+
+
+        struct ZydisDecodedInstructionRawVex_
+        {
+            
+
+
+            ZyanU8 R;
+            
+
+
+            ZyanU8 X;
+            
+
+
+            ZyanU8 B;
+            
+
+
+            ZyanU8 m_mmmm;
+            
+
+
+            ZyanU8 W;
+            
+
+
+
+            ZyanU8 vvvv;
+            
+
+
+            ZyanU8 L;
+            
+
+
+            ZyanU8 pp;
+            
+
+
+
+            ZyanU8 offset;
+            
+
+
+            ZyanU8 size;
+        } vex;
+        
+
+
+        struct ZydisDecodedInstructionRawEvex_
+        {
+            
+
+
+            ZyanU8 R;
+            
+
+
+            ZyanU8 X;
+            
+
+
+            ZyanU8 B;
+            
+
+
+            ZyanU8 R2;
+            
+
+
+            ZyanU8 mmm;
+            
+
+
+            ZyanU8 W;
+            
+
+
+
+            ZyanU8 vvvv;
+            
+
+
+            ZyanU8 pp;
+            
+
+
+            ZyanU8 z;
+            
+
+
+            ZyanU8 L2;
+            
+
+
+            ZyanU8 L;
+            
+
+
+            ZyanU8 b;
+            
+
+
+            ZyanU8 V2;
+            
+
+
+            ZyanU8 aaa;
+            
+
+
+
+            ZyanU8 offset;
+        } evex;
+        
+
+
+        struct ZydisDecodedInstructionRawMvex_
+        {
+            
+
+
+            ZyanU8 R;
+            
+
+
+            ZyanU8 X;
+            
+
+
+            ZyanU8 B;
+            
+
+
+            ZyanU8 R2;
+            
+
+
+            ZyanU8 mmmm;
+            
+
+
+            ZyanU8 W;
+            
+
+
+
+            ZyanU8 vvvv;
+            
+
+
+            ZyanU8 pp;
+            
+
+
+            ZyanU8 E;
+            
+
+
+            ZyanU8 SSS;
+            
+
+
+            ZyanU8 V2;
+            
+
+
+            ZyanU8 kkk;
+            
+
+
+
+            ZyanU8 offset;
+        } mvex;
+        
+
+
+        struct ZydisDecodedInstructionModRm_
+        {
+            
+
+
+            ZyanU8 mod;
+            
+
+
+            ZyanU8 reg;
+            
+
+
+            ZyanU8 rm;
+            
+
+
+
+            ZyanU8 offset;
+        } modrm;
+        
+
+
+        struct ZydisDecodedInstructionRawSib_
+        {
+            
+
+
+            ZyanU8 scale;
+            
+
+
+            ZyanU8 index;
+            
+
+
+            ZyanU8 base;
+            
+
+
+
+            ZyanU8 offset;
+        } sib;
+        
+
+
+        struct ZydisDecodedInstructionRawDisp_
+        {
+            
+
+
+            ZyanI64 value;
+            
+
+
+            ZyanU8 size;
+            
+            
+
+
+
+            ZyanU8 offset;
+        } disp;
+        
+
+
+        struct ZydisDecodedInstructionRawImm_
+        {
+            
+
+
+            ZyanBool is_signed;
+            
+
+
+
+            ZyanBool is_relative;
+            
+
+
+            union ZydisDecodedInstructionRawImmValue_
+            {
+                ZyanU64 u;
+                ZyanI64 s;
+            } value;
+            
+
+
+            ZyanU8 size;
+            
+
+
+
+            ZyanU8 offset;
+        } imm[2];
+    } raw;
 } ZydisDecodedInstruction;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef struct ZydisDecoderContext_
-{
-    
-
-
-    const void* definition;
-    
-
-
-
-
-    ZyanU8 eosz_index;
-    
-
-
-
-
-    ZyanU8 easz_index;
-    
-
-
-    struct
-    {
-        ZyanU8 W;
-        ZyanU8 R;
-        ZyanU8 X;
-        ZyanU8 B;
-        ZyanU8 L;
-        ZyanU8 LL;
-        ZyanU8 R2;
-        ZyanU8 V2;
-        ZyanU8 vvvv;
-        ZyanU8 mask;
-    } vector_unified;
-    
-
-
-    struct
-    {
-        
-
-
-        ZyanBool is_mod_reg;
-        
-
-
-        ZyanU8 id_reg;
-        
-
-
-
-
-        ZyanU8 id_rm;
-        
-
-
-        ZyanU8 id_ndsndd;
-        
-
-
-
-
-        ZyanU8 id_base;
-        
-
-
-
-
-
-        ZyanU8 id_index;
-    } reg_info;
-    
-
-
-    struct
-    {
-        
-
-
-        ZyanU8 tuple_type;
-        
-
-
-        ZyanU8 element_size;
-    } evex;
-    
-
-
-    struct
-    {
-        
-
-
-        ZyanU8 functionality;
-    } mvex;
-    
-
-
-    ZyanU8 cd8_scale; 
-} ZydisDecoderContext;
 
 
 

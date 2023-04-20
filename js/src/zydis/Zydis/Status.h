@@ -152,14 +152,6 @@ extern "C" {
 
 
 
-#define ZYDIS_STATUS_IMPOSSIBLE_INSTRUCTION \
-    ZYAN_MAKE_STATUS(1u, ZYAN_MODULE_ZYDIS, 0x0Cu)
-
-
-
-
-
-
 #ifdef __cplusplus
 }
 #endif

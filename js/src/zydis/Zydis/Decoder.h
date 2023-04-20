@@ -166,7 +166,7 @@ typedef struct ZydisDecoder_
     
 
 
-    ZydisStackWidth stack_width;
+    ZydisAddressWidth address_width;
     
 
 
@@ -195,7 +195,7 @@ typedef struct ZydisDecoder_
 
 
 ZYDIS_EXPORT ZyanStatus ZydisDecoderInit(ZydisDecoder* decoder, ZydisMachineMode machine_mode,
-    ZydisStackWidth stack_width);
+    ZydisAddressWidth address_width);
 
 
 
@@ -223,74 +223,8 @@ ZYDIS_EXPORT ZyanStatus ZydisDecoderEnableMode(ZydisDecoder* decoder, ZydisDecod
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ZYDIS_EXPORT ZyanStatus ZydisDecoderDecodeFull(const ZydisDecoder* decoder,
-    const void* buffer, ZyanUSize length, ZydisDecodedInstruction* instruction,
-    ZydisDecodedOperand operands[ZYDIS_MAX_OPERAND_COUNT]);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ZYDIS_EXPORT ZyanStatus ZydisDecoderDecodeInstruction(const ZydisDecoder* decoder,
-    ZydisDecoderContext* context, const void* buffer, ZyanUSize length,
-    ZydisDecodedInstruction* instruction);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ZYDIS_EXPORT ZyanStatus ZydisDecoderDecodeOperands(const ZydisDecoder* decoder,
-    const ZydisDecoderContext* context, const ZydisDecodedInstruction* instruction,
-    ZydisDecodedOperand* operands, ZyanU8 operand_count);
+ZYDIS_EXPORT ZyanStatus ZydisDecoderDecodeBuffer(const ZydisDecoder* decoder,
+    const void* buffer, ZyanUSize length, ZydisDecodedInstruction* instruction);
 
 
 
