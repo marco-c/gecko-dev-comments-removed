@@ -251,6 +251,7 @@ class SearchConfigTest {
 
 
 
+
   _localeIncludes(locales, locale) {
     if ("matches" in locales && locales.matches.includes(locale)) {
       return true;
