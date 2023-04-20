@@ -20,6 +20,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
+#include "rtc_base/trace_event.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -297,6 +298,9 @@ int32_t AudioDeviceBuffer::DeliverRecordedData() {
 }
 
 int32_t AudioDeviceBuffer::RequestPlayoutData(size_t samples_per_channel) {
+  TRACE_EVENT1("webrtc", "AudioDeviceBuffer::RequestPlayoutData",
+               "samples_per_channel", samples_per_channel);
+
   
   
   
