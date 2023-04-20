@@ -1,6 +1,5 @@
 use std::{
     cell::UnsafeCell,
-    hint,
     panic::{RefUnwindSafe, UnwindSafe},
     sync::atomic::{AtomicU8, Ordering},
 };
@@ -59,7 +58,7 @@ impl<T> OnceCell<T> {
             
             
             
-            let f = unsafe { crate::take_unchecked(&mut f) };
+            let f = unsafe { crate::unwrap_unchecked(f.take()) };
             match f() {
                 Ok(value) => unsafe {
                     
@@ -101,15 +100,8 @@ impl<T> OnceCell<T> {
     
     pub(crate) unsafe fn get_unchecked(&self) -> &T {
         debug_assert!(self.is_initialized());
-        let slot: &Option<T> = &*self.value.get();
-        match slot {
-            Some(value) => value,
-            
-            None => {
-                debug_assert!(false);
-                hint::unreachable_unchecked()
-            }
-        }
+        let slot = &*self.value.get();
+        crate::unwrap_unchecked(slot.as_ref())
     }
 
     

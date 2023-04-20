@@ -332,13 +332,15 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-#[cfg(feature = "std")]
-#[cfg(feature = "parking_lot")]
+#[cfg(all(feature = "critical-section", not(feature = "std")))]
+#[path = "imp_cs.rs"]
+mod imp;
+
+#[cfg(all(feature = "std", feature = "parking_lot"))]
 #[path = "imp_pl.rs"]
 mod imp;
 
-#[cfg(feature = "std")]
-#[cfg(not(feature = "parking_lot"))]
+#[cfg(all(feature = "std", not(feature = "parking_lot")))]
 #[path = "imp_std.rs"]
 mod imp;
 
@@ -346,12 +348,12 @@ mod imp;
 pub mod unsync {
     use core::{
         cell::{Cell, UnsafeCell},
-        fmt, hint, mem,
+        fmt, mem,
         ops::{Deref, DerefMut},
+        panic::{RefUnwindSafe, UnwindSafe},
     };
 
-    #[cfg(feature = "std")]
-    use std::panic::{RefUnwindSafe, UnwindSafe};
+    use super::unwrap_unchecked;
 
     
     
@@ -382,9 +384,7 @@ pub mod unsync {
     
     
     
-    #[cfg(feature = "std")]
     impl<T: RefUnwindSafe + UnwindSafe> RefUnwindSafe for OnceCell<T> {}
-    #[cfg(feature = "std")]
     impl<T: UnwindSafe> UnwindSafe for OnceCell<T> {}
 
     impl<T> Default for OnceCell<T> {
@@ -446,6 +446,7 @@ pub mod unsync {
         
         
         
+        #[inline]
         pub fn get(&self) -> Option<&T> {
             
             unsafe { &*self.inner.get() }.as_ref()
@@ -467,6 +468,7 @@ pub mod unsync {
         
         
         
+        #[inline]
         pub fn get_mut(&mut self) -> Option<&mut T> {
             
             unsafe { &mut *self.inner.get() }.as_mut()
@@ -514,16 +516,14 @@ pub mod unsync {
             if let Some(old) = self.get() {
                 return Err((old, value));
             }
+
             let slot = unsafe { &mut *self.inner.get() };
             
             
             
             
             *slot = Some(value);
-            Ok(match &*slot {
-                Some(value) => value,
-                None => unsafe { hint::unreachable_unchecked() },
-            })
+            Ok(unsafe { unwrap_unchecked(slot.as_ref()) })
         }
 
         
@@ -596,7 +596,7 @@ pub mod unsync {
             
             
             assert!(self.set(val).is_ok(), "reentrant init");
-            Ok(self.get().unwrap())
+            Ok(unsafe { unwrap_unchecked(self.get()) })
         }
 
         
@@ -680,7 +680,6 @@ pub mod unsync {
         init: Cell<Option<F>>,
     }
 
-    #[cfg(feature = "std")]
     impl<T, F: RefUnwindSafe> RefUnwindSafe for Lazy<T, F> where OnceCell<T>: RefUnwindSafe {}
 
     impl<T: fmt::Debug, F> fmt::Debug for Lazy<T, F> {
@@ -755,8 +754,44 @@ pub mod unsync {
         
         
         
+        
+        pub fn force_mut(this: &mut Lazy<T, F>) -> &mut T {
+            Self::force(this);
+            Self::get_mut(this).unwrap_or_else(|| unreachable!())
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         pub fn get(this: &Lazy<T, F>) -> Option<&T> {
             this.cell.get()
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pub fn get_mut(this: &mut Lazy<T, F>) -> Option<&mut T> {
+            this.cell.get_mut()
         }
     }
 
@@ -783,16 +818,16 @@ pub mod unsync {
 }
 
 
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "critical-section"))]
 pub mod sync {
-    use std::{
+    use core::{
         cell::Cell,
         fmt, mem,
         ops::{Deref, DerefMut},
         panic::RefUnwindSafe,
     };
 
-    use crate::{imp::OnceCell as Imp, take_unchecked};
+    use super::{imp::OnceCell as Imp, unwrap_unchecked};
 
     
     
@@ -913,6 +948,7 @@ pub mod sync {
         
         
         
+        #[cfg(feature = "std")]
         pub fn wait(&self) -> &T {
             if !self.0.is_initialized() {
                 self.0.wait()
@@ -938,6 +974,7 @@ pub mod sync {
         
         
         
+        #[inline]
         pub fn get_mut(&mut self) -> Option<&mut T> {
             self.0.get_mut()
         }
@@ -949,6 +986,7 @@ pub mod sync {
         
         
         
+        #[inline]
         pub unsafe fn get_unchecked(&self) -> &T {
             self.0.get_unchecked()
         }
@@ -1000,7 +1038,7 @@ pub mod sync {
         
         pub fn try_insert(&self, value: T) -> Result<&T, (&T, T)> {
             let mut value = Some(value);
-            let res = self.get_or_init(|| unsafe { take_unchecked(&mut value) });
+            let res = self.get_or_init(|| unsafe { unwrap_unchecked(value.take()) });
             match value {
                 None => Ok(res),
                 Some(value) => Err((res, value)),
@@ -1078,6 +1116,7 @@ pub mod sync {
             if let Some(value) = self.get() {
                 return Ok(value);
             }
+
             self.0.initialize(f)?;
 
             
@@ -1133,6 +1172,7 @@ pub mod sync {
         
         
         
+        #[inline]
         pub fn into_inner(self) -> Option<T> {
             self.0.into_inner()
         }
@@ -1189,7 +1229,6 @@ pub mod sync {
     unsafe impl<T, F: Send> Sync for Lazy<T, F> where OnceCell<T>: Sync {}
     
 
-    #[cfg(feature = "std")]
     impl<T, F: RefUnwindSafe> RefUnwindSafe for Lazy<T, F> where OnceCell<T>: RefUnwindSafe {}
 
     impl<T, F> Lazy<T, F> {
@@ -1244,9 +1283,43 @@ pub mod sync {
         
         
         
+        pub fn force_mut(this: &mut Lazy<T, F>) -> &mut T {
+            Self::force(this);
+            Self::get_mut(this).unwrap_or_else(|| unreachable!())
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         pub fn get(this: &Lazy<T, F>) -> Option<&T> {
             this.cell.get()
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pub fn get_mut(this: &mut Lazy<T, F>) -> Option<&mut T> {
+            this.cell.get_mut()
         }
     }
 
@@ -1292,13 +1365,14 @@ pub mod sync {
 #[cfg(feature = "race")]
 pub mod race;
 
-#[cfg(feature = "std")]
-unsafe fn take_unchecked<T>(val: &mut Option<T>) -> T {
-    match val.take() {
-        Some(it) => it,
+
+#[inline]
+unsafe fn unwrap_unchecked<T>(val: Option<T>) -> T {
+    match val {
+        Some(value) => value,
         None => {
             debug_assert!(false);
-            std::hint::unreachable_unchecked()
+            core::hint::unreachable_unchecked()
         }
     }
 }
