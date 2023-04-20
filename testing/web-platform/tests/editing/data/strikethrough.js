@@ -165,9 +165,13 @@ var browserTests = [
     "{<table><tbody><tr><td><strike>foo</strike></td><td><strike>bar</strike></td><td><strike>baz</strike></td></tr></tbody></table>}",
     [true,true],
     {"stylewithcss":[false,true,"",false,false,""],"strikethrough":[false,false,"",false,true,""]}],
+
+
+
+
 ["foo<u>[bar]</u>baz",
     [["stylewithcss","true"],["strikethrough",""]],
-    "foo<span style=\"text-decoration:line-through\"><u>[bar]</u></span>baz",
+    "foo<span style=\"text-decoration:underline line-through\">[bar]</span>baz",
     [true,true],
     {"stylewithcss":[false,false,"",false,true,""],"strikethrough":[false,false,"",false,true,""]}],
 ["foo<u>[bar]</u>baz",
@@ -175,9 +179,11 @@ var browserTests = [
     "foo<strike><u>[bar]</u></strike>baz",
     [true,true],
     {"stylewithcss":[false,true,"",false,false,""],"strikethrough":[false,false,"",false,true,""]}],
+
+
 ["foo<span style=\"text-decoration: underline\">[bar]</span>baz",
     [["stylewithcss","true"],["strikethrough",""]],
-    "foo<span style=\"text-decoration:line-through\"><span style=\"text-decoration:underline\">[bar]</span></span>baz",
+    "foo<span style=\"text-decoration:underline line-through\">[bar]</span>baz",
     [true,true],
     {"stylewithcss":[false,false,"",false,true,""],"strikethrough":[false,false,"",false,true,""]}],
 ["foo<span style=\"text-decoration: underline\">[bar]</span>baz",
@@ -367,9 +373,12 @@ var browserTests = [
     "<strike>foo</strike>[b<i>ar]<strike>ba</strike></i><strike>z</strike>",
     [true,true],
     {"stylewithcss":[false,true,"",false,false,""],"strikethrough":[false,true,"",false,false,""]}],
+
+
+
 ["foo<ins>[bar]</ins>baz",
     [["stylewithcss","true"],["strikethrough",""]],
-    "foo<span style=\"text-decoration:line-through\"><ins>[bar]</ins></span>baz",
+    "foo<ins style=\"text-decoration:underline line-through\">[bar]</ins>baz",
     [true,true],
     {"stylewithcss":[false,false,"",false,true,""],"strikethrough":[false,false,"",false,true,""]}],
 ["foo<ins>[bar]</ins>baz",
@@ -533,9 +542,13 @@ var browserTests = [
     "foo<s style=\"text-decoration:overline\">b</s><span style=\"text-decoration-line:overline\"><strike>a</strike></span><s style=\"text-decoration:overline\">r</s>baz",
     [true,true],
     {"stylewithcss":[false,true,"",false,false,""],"strikethrough":[false,false,"",false,true,""]}],
+
+
+
+
 ["foo<u style=\"text-decoration: overline\">[bar]</u>baz",
     [["stylewithcss","true"],["strikethrough",""]],
-    "foo<span style=\"text-decoration:line-through\"><u style=\"text-decoration:overline\">[bar]</u></span>baz",
+    "foo<span style=\"text-decoration:overline line-through\">[bar]</span>baz",
     [true,true],
     {"stylewithcss":[false,false,"",false,true,""],"strikethrough":[false,false,"",false,true,""]}],
 ["foo<u style=\"text-decoration: overline\">[bar]</u>baz",
@@ -708,5 +721,46 @@ var browserTests = [
     [["stylewithcss","false"],["strikethrough",""]],
     "<s>fo</s>[o<del>b]ar</del>",
     [true,true],
-    {"stylewithcss":[false,true,"",false,false,""],"strikethrough":[false,true,"",true,false,""]}]
+    {"stylewithcss":[false,true,"",false,false,""],"strikethrough":[false,true,"",true,false,""]}],
+
+
+
+["abc<span style=\"text-decoration:line-through overline underline\">[def]</span>ghi",
+    [["stylewithcss","true"],["strikethrough",""]],
+    ["abc<span style=\"text-decoration:underline overline\">[def]</span>ghi",
+     "abc<span style=\"text-decoration-line:underline overline\">[def]</span>ghi"],
+    [true,true],
+    {}],
+
+
+
+
+
+
+
+
+["abc<span style=\"text-decoration:blink overline underline\">[def]</span>ghi",
+    [["stylewithcss","true"],["strikethrough",""]],
+    ["abc<span style=\"text-decoration:underline overline line-through\">[def]</span>ghi",
+     "abc<span style=\"text-decoration-line:underline overline line-through\">[def]</span>ghi"],
+    [true,true],
+    {}],
+["abc<span style=\"text-decoration:underline blue dotted\">[def]</span>ghi",
+    [["stylewithcss","true"],["strikethrough",""]],
+    ["abc<span style=\"text-decoration:underline line-through\">[def]</span>ghi",
+     "abc<span style=\"text-decoration-line:underline line-through\">[def]</span>ghi"],
+    [true,true],
+    {}],
+["abc<span style=\"text-decoration:blink line-through underline overline\">[def]</span>ghi",
+    [["stylewithcss","true"],["strikethrough",""]],
+    ["abc<span style=\"text-decoration:underline overline\">[def]</span>ghi",
+     "abc<span style=\"text-decoration-line:underline overline\">[def]</span>ghi"],
+    [true,true],
+    {}],
+["abc<span style=\"text-decoration:underline line-through blue dotted\">[def]</span>ghi",
+    [["stylewithcss","true"],["strikethrough",""]],
+    ["abc<span style=\"text-decoration:underline\">[def]</span>ghi",
+     "abc<span style=\"text-decoration-line:underline\">[def]</span>ghi"],
+    [true,true],
+    {}],
 ]

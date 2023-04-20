@@ -52,6 +52,9 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInlineStyleSetter final
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult> ApplyStyle(
       HTMLEditor& aHTMLEditor, nsIContent& aContent) const;
 
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
+  ApplyCSSTextDecoration(HTMLEditor& aHTMLEditor, nsIContent& aContent) const;
+
   
 
 

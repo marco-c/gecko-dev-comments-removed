@@ -83,27 +83,18 @@ class ChangeStyleTransaction final : public EditTransactionBase {
 
 
 
-
-
-
-  void AddValueToMultivalueProperty(nsACString& aValues,
-                                    const nsACString& aNewValue);
-
-  
-
-
-
-
-
-  bool AcceptsMoreThanOneValue(nsAtom& aCSSProperty);
+  void BuildTextDecorationValueToSet(const nsACString& aCurrentValues,
+                                     const nsACString& aAddingValues,
+                                     nsACString& aOutValues);
+  void BuildTextDecorationValueToRemove(const nsACString& aCurrentValues,
+                                        const nsACString& aRemovingValues,
+                                        nsACString& aOutValues);
 
   
 
 
-
-
-  void RemoveValueFromListOfValues(nsACString& aValues,
-                                   const nsACString& aRemoveValue);
+  void BuildTextDecorationValue(bool aUnderline, bool aOverline,
+                                bool aLineThrough, nsACString& aOutValues);
 
   
 
