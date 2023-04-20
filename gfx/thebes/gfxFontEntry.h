@@ -127,6 +127,8 @@ struct gfxFontFeatureInfo {
   uint32_t mLangSys;
 };
 
+class gfxFontEntryCallbacks;
+
 class gfxFontEntry {
  public:
   typedef mozilla::gfx::DrawTarget DrawTarget;
@@ -701,13 +703,7 @@ class gfxFontEntry {
   
   nsrefcnt mGrFaceRefCnt = 0;
 
-  static tainted_opaque_gr<const void*> GrGetTable(
-      rlbox_sandbox_gr& sandbox, tainted_opaque_gr<const void*> aAppFaceHandle,
-      tainted_opaque_gr<unsigned int> aName,
-      tainted_opaque_gr<unsigned int*> aLen);
-  static void GrReleaseTable(rlbox_sandbox_gr& sandbox,
-                             tainted_opaque_gr<const void*> aAppFaceHandle,
-                             tainted_opaque_gr<const void*> aTableBuffer);
+  friend class gfxFontEntryCallbacks;
 
   
   

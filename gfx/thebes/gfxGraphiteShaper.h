@@ -39,7 +39,7 @@ class gfxGraphiteShaper : public gfxFontShaper {
   
   
   
-  friend class gfxFontEntry;
+  friend class gfxFontEntryCallbacks;
   static tainted_opaque_gr<float> GrGetAdvance(
       rlbox_sandbox_gr& sandbox, tainted_opaque_gr<const void*> appFontHandle,
       tainted_opaque_gr<uint16_t> glyphid);
