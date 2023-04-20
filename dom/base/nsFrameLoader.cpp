@@ -2819,6 +2819,12 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
 
 bool nsFrameLoader::TryRemoteBrowser() {
   
+  
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    return false;
+  }
+
+  
   if (TryRemoteBrowserInternal()) {
     return true;
   }
