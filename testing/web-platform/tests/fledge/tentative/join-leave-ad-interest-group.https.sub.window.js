@@ -512,9 +512,10 @@ promise_test(async test => {
   
   
   await joinInterestGroup(test, uuid);
-  let url = await runBasicFledgeAuction(test, uuid);
-  assert_true('string' === typeof url,
-              'Wrong value type returned from auction: ' + typeof url);
+  let config = await runBasicFledgeAuction(test, uuid);
+  assert_true(config instanceof FencedFrameConfig,
+              'Wrong value type returned from auction: ' +
+              config.constructor.name);
 
   
   
@@ -528,9 +529,10 @@ promise_test(async test => {
 
   
   await joinInterestGroup(test, uuid);
-  let url = await runBasicFledgeAuction(test, uuid);
-  assert_true('string' === typeof url,
-              'Wrong value type returned from auction: ' + typeof url);
+  let config = await runBasicFledgeAuction(test, uuid);
+  assert_true(config instanceof FencedFrameConfig,
+              'Wrong value type returned from auction: ' +
+              config.constructor.name);
 
   
   await leaveInterestGroup();
