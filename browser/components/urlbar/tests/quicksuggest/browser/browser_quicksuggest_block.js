@@ -105,7 +105,7 @@ add_combo_task(async function basic_keyboard({ result, isBestMatch }) {
     block: () => {
       
       
-      EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: 2 });
+      EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
       EventUtils.synthesizeKey("KEY_Enter");
     },
   });
@@ -268,7 +268,7 @@ add_task(async function blockMultiple() {
       });
 
       
-      EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: 2 });
+      EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
       EventUtils.synthesizeKey("KEY_Enter");
       Assert.ok(
         await QuickSuggest.blockedSuggestions.has(url),

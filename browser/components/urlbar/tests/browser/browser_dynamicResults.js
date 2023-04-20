@@ -335,7 +335,7 @@ add_task(async function selection() {
         `.urlbarView-dynamic-${DYNAMIC_TYPE_NAME}-${name}`
       );
       Assert.ok(element, "Sanity check element");
-      EventUtils.synthesizeKey("KEY_ArrowDown");
+      EventUtils.synthesizeKey("KEY_Tab");
       Assert.equal(
         UrlbarTestUtils.getSelectedElement(window),
         element,
@@ -350,7 +350,7 @@ add_task(async function selection() {
     }
 
     
-    EventUtils.synthesizeKey("KEY_ArrowDown");
+    EventUtils.synthesizeKey("KEY_Tab");
     Assert.equal(
       UrlbarTestUtils.getSelectedRowIndex(window),
       2,
@@ -368,7 +368,7 @@ add_task(async function selection() {
         `.urlbarView-dynamic-${DYNAMIC_TYPE_NAME}-${name}`
       );
       Assert.ok(element, "Sanity check element");
-      EventUtils.synthesizeKey("KEY_ArrowUp");
+      EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
       Assert.equal(
         UrlbarTestUtils.getSelectedElement(window),
         element,
@@ -383,7 +383,7 @@ add_task(async function selection() {
     }
 
     
-    EventUtils.synthesizeKey("KEY_ArrowUp");
+    EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
     Assert.equal(
       UrlbarTestUtils.getSelectedRowIndex(window),
       0,
@@ -428,7 +428,7 @@ add_task(async function pick() {
         `.urlbarView-dynamic-${DYNAMIC_TYPE_NAME}-${selectable}`
       );
       Assert.ok(element, "Sanity check element");
-      EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: i + 1 });
+      EventUtils.synthesizeKey("KEY_Tab", { repeat: i + 1 });
       Assert.equal(
         UrlbarTestUtils.getSelectedElement(window),
         element,
@@ -489,7 +489,7 @@ add_task(async function shouldNavigate() {
       `.urlbarView-dynamic-${DYNAMIC_TYPE_NAME}-selectable`
     );
     Assert.ok(element, "Sanity check element");
-    EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: 1 });
+    EventUtils.synthesizeKey("KEY_Tab", { repeat: 1 });
     Assert.equal(
       UrlbarTestUtils.getSelectedElement(window),
       element,
