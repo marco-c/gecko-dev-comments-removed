@@ -62,7 +62,6 @@ class ModuleLoaderBase;
 
 
 
-
 enum class RTPCallerType : uint8_t {
   Normal = 0,
   SystemPrincipal = (1 << 0),
