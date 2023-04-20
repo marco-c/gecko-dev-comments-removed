@@ -965,7 +965,7 @@ WhiteSpaceVisibilityKeeper::InsertBRElement(
 }
 
 
-Result<EditorDOMPoint, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
+Result<InsertTextResult, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
     HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
     const EditorDOMRange& aRangeToBeReplaced) {
   
@@ -978,7 +978,7 @@ Result<EditorDOMPoint, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
 
   if (aStringToInsert.IsEmpty()) {
     MOZ_ASSERT(aRangeToBeReplaced.Collapsed());
-    return EditorDOMPoint(aRangeToBeReplaced.StartRef());
+    return InsertTextResult();
   }
 
   RefPtr<Element> editingHost = aHTMLEditor.ComputeEditingHost();
@@ -1318,20 +1318,10 @@ Result<EditorDOMPoint, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
   Result<InsertTextResult, nsresult> insertTextResult =
       aHTMLEditor.InsertTextWithTransaction(document, theString, pointToInsert);
   if (MOZ_UNLIKELY(insertTextResult.isErr())) {
-    if (MOZ_UNLIKELY(insertTextResult.inspectErr() ==
-                     NS_ERROR_EDITOR_DESTROYED)) {
-      NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
-      return Err(NS_ERROR_EDITOR_DESTROYED);
-    }
-    NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed, but ignored");
-    
-    return pointToInsert;
+    NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
+    return insertTextResult.propagateErr();
   }
-  insertTextResult.inspect().IgnoreCaretPointSuggestion();
-  return insertTextResult.inspect().Handled() ? insertTextResult.inspect()
-                                                    .EndOfInsertedTextRef()
-                                                    .To<EditorDOMPoint>()
-                                              : pointToInsert;
+  return insertTextResult;
 }
 
 

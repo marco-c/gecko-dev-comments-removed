@@ -1484,12 +1484,8 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
-
-
-
-
   template <typename EditorDOMPointType>
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<EditorDOMPoint, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<InsertTextResult, nsresult>
   InsertText(HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
              const EditorDOMPointType& aPointToInsert) {
     return WhiteSpaceVisibilityKeeper::ReplaceText(
@@ -1504,11 +1500,7 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<EditorDOMPoint, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<InsertTextResult, nsresult>
   ReplaceText(HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
               const EditorDOMRange& aRangeToBeReplaced);
 
