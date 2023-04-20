@@ -381,10 +381,8 @@ function createRuleset(coeffs, biases) {
       () => new Map()
     );
 
-    return setDefault(
-      selectorToDescendants, 
-      selector,
-      () => Array.from(element.querySelectorAll(selector))
+    return setDefault(selectorToDescendants, selector, () =>
+      Array.from(element.querySelectorAll(selector))
     );
   }
   function clearCache() {

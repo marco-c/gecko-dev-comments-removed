@@ -1,5 +1,3 @@
-
-
 function runTest(obj) {
   add_task(async _ => {
     info("Test: " + obj.testName);

@@ -1013,7 +1013,6 @@ let testCases = [
   
 ];
 
-
 function checkEquals(a, b, message, expectedFail) {
   if (!expectedFail) {
     Assert.equal(a, b, message);
