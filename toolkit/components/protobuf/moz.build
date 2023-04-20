@@ -106,8 +106,8 @@ SOURCES += [
     'src/google/protobuf/stubs/int128.cc', 
     'src/google/protobuf/stubs/status.cc', 
     
-    'src/google/protobuf/stubs/stringprintf.cc', 
-    'src/google/protobuf/stubs/time.cc',  
+    
+    
     'src/google/protobuf/wire_format_lite.cc', 
 ]
 
