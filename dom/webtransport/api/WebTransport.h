@@ -30,7 +30,8 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
 
   bool Init(const GlobalObject& aGlobal, const nsAString& aUrl,
             const WebTransportOptions& aOptions, ErrorResult& aError);
-  void ResolveWaitingConnection(WebTransportChild* aChild);
+  void ResolveWaitingConnection(WebTransportReliabilityMode aReliability,
+                                WebTransportChild* aChild);
   void RejectWaitingConnection(nsresult aRv);
   bool ParseURL(const nsAString& aURL) const;
 
@@ -64,6 +65,10 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   ~WebTransport() {
     
     
+    MOZ_ASSERT(mSendStreams.IsEmpty());
+    MOZ_ASSERT(mReceiveStreams.IsEmpty());
+    
+    
     if (mChild) {
       mChild->Shutdown();
     }
@@ -73,10 +78,23 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   RefPtr<WebTransportChild> mChild;
 
   
+  
+  
+  
+  
+  
+  
+  nsTArray<RefPtr<WritableStream>> mSendStreams;
+  nsTArray<RefPtr<ReadableStream>> mReceiveStreams;
+
+  WebTransportState mState;
+  RefPtr<Promise> mReady;
+  WebTransportReliabilityMode mReliability;
+  
   RefPtr<ReadableStream> mIncomingUnidirectionalStreams;
   RefPtr<ReadableStream> mIncomingBidirectionalStreams;
-  RefPtr<Promise> mReady;
-  WebTransportState mState;
+  RefPtr<WebTransportDatagramDuplexStream> mDatagrams;
+  RefPtr<Promise> mClosed;
 };
 
 }  
