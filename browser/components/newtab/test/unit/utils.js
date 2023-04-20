@@ -69,51 +69,132 @@ export class GlobalOverrider {
 
 
 
+export const FAKE_GLOBAL_PREFS = new Map();
+
+
+
+
+
+
+
+
+
 
 
 export class FakensIPrefBranch {
+  PREF_INVALID = "invalid";
+  PREF_INT = "integer";
+  PREF_BOOL = "boolean";
+  PREF_STRING = "string";
+
   constructor(args) {
     if (args) {
       if ("initHook" in args) {
         args.initHook.call(this);
       }
       if (args.defaultBranch) {
-        this.prefs = {};
+        this.prefs = new Map();
+      } else {
+        this.prefs = FAKE_GLOBAL_PREFS;
       }
+    } else {
+      this.prefs = FAKE_GLOBAL_PREFS;
     }
     this._prefBranch = {};
-    this.observers = {};
+    this.observers = new Map();
   }
-  addObserver(prefName, callback) {
-    this.observers[prefName] = callback;
+  addObserver(prefix, callback) {
+    this.observers.set(prefix, callback);
   }
-  removeObserver(prefName, callback) {
-    if (prefName in this.observers) {
-      delete this.observers[prefName];
-    }
+  removeObserver(prefix, callback) {
+    this.observers.delete(prefix, callback);
   }
-  observeBranch(listener) {}
-  ignoreBranch(listener) {}
-  setStringPref(prefName) {}
-
+  setStringPref(prefName, value) {
+    this.set(prefName, value);
+  }
   getStringPref(prefName) {
     return this.get(prefName);
+  }
+  setBoolPref(prefName, value) {
+    this.set(prefName, value);
   }
   getBoolPref(prefName) {
     return this.get(prefName);
   }
-  get(prefName) {
-    return this.prefs[prefName];
+  setIntPref(prefName, value) {
+    this.set(prefName, value);
   }
-  setBoolPref(prefName, value) {
-    this.prefs[prefName] = value;
+  getIntPref(prefName) {
+    return this.get(prefName);
+  }
+  setCharPref(prefName, value) {
+    this.set(prefName, value);
+  }
+  getCharPref(prefName) {
+    return this.get(prefName);
+  }
+  clearUserPref(prefName) {
+    this.prefs.delete(prefName);
+  }
+  get(prefName) {
+    return this.prefs.get(prefName);
+  }
+  getPrefType(prefName) {
+    let value = this.prefs.get(prefName);
+    switch (typeof value) {
+      case "number":
+        return this.PREF_INT;
 
-    if (prefName in this.observers) {
-      this.observers[prefName]("", "", prefName);
+      case "boolean":
+        return this.PREF_BOOL;
+
+      case "string":
+        return this.PREF_STRING;
+
+      default:
+        return this.PREF_INVALID;
     }
   }
+  set(prefName, value) {
+    this.prefs.set(prefName, value);
+
+    
+    
+    let observerPrefixes = [...this.observers.keys()].filter(prefix =>
+      prefName.startsWith(prefix)
+    );
+    for (let observerPrefix of observerPrefixes) {
+      this.observers.get(observerPrefix)("", "", prefName);
+    }
+  }
+  getChildList(prefix) {
+    return [...this.prefs.keys()].filter(prefName =>
+      prefName.startsWith(prefix)
+    );
+  }
+  prefHasUserValue(prefName) {
+    return this.prefs.has(prefName);
+  }
+  prefIsLocked(prefName) {
+    return false;
+  }
 }
-FakensIPrefBranch.prototype.prefs = {};
+
+
+
+
+
+export class FakensIPrefService extends FakensIPrefBranch {
+  getBranch() {}
+  getDefaultBranch(prefix) {
+    return {
+      setBoolPref() {},
+      setIntPref() {},
+      setStringPref() {},
+      clearUserPref() {},
+    };
+  }
+}
 
 
 
@@ -126,11 +207,15 @@ export class FakePrefs extends FakensIPrefBranch {
   ignore(prefName, callback) {
     super.removeObserver(prefName, callback);
   }
+  observeBranch(listener) {}
+  ignoreBranch(listener) {}
   set(prefName, value) {
-    this.prefs[prefName] = value;
+    this.prefs.set(prefName, value);
 
-    if (prefName in this.observers) {
-      this.observers[prefName](value);
+    
+    
+    if (this.observers.has(prefName)) {
+      this.observers.get(prefName)(value);
     }
   }
 }
