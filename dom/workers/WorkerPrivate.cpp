@@ -946,40 +946,33 @@ class WorkerPrivate::EventTarget final : public nsISerialEventTarget {
   mozilla::Mutex mMutex;
   WorkerPrivate* mWorkerPrivate MOZ_GUARDED_BY(mMutex);
   nsIEventTarget* mWeakNestedEventTarget;
-  nsCOMPtr<nsIEventTarget> mNestedEventTarget MOZ_GUARDED_BY(mMutex);
-  bool mDisabled MOZ_GUARDED_BY(mMutex);
-  bool mShutdown MOZ_GUARDED_BY(mMutex);
+  nsCOMPtr<nsIEventTarget> mNestedEventTarget;
 
  public:
+  explicit EventTarget(WorkerPrivate* aWorkerPrivate)
+      : mMutex("WorkerPrivate::EventTarget::mMutex"),
+        mWorkerPrivate(aWorkerPrivate),
+        mWeakNestedEventTarget(nullptr) {
+    MOZ_ASSERT(aWorkerPrivate);
+  }
+
   EventTarget(WorkerPrivate* aWorkerPrivate, nsIEventTarget* aNestedEventTarget)
       : mMutex("WorkerPrivate::EventTarget::mMutex"),
         mWorkerPrivate(aWorkerPrivate),
         mWeakNestedEventTarget(aNestedEventTarget),
-        mNestedEventTarget(aNestedEventTarget),
-        mDisabled(false),
-        mShutdown(false) {
+        mNestedEventTarget(aNestedEventTarget) {
     MOZ_ASSERT(aWorkerPrivate);
     MOZ_ASSERT(aNestedEventTarget);
   }
 
   void Disable() {
-    {
-      MutexAutoLock lock(mMutex);
-
-      
-      mDisabled = true;
-    }
-  }
-
-  void Shutdown() {
     nsCOMPtr<nsIEventTarget> nestedEventTarget;
     {
       MutexAutoLock lock(mMutex);
 
+      
       mWorkerPrivate = nullptr;
       mNestedEventTarget.swap(nestedEventTarget);
-      MOZ_ASSERT(mDisabled);
-      mShutdown = true;
     }
   }
 
@@ -4128,11 +4121,11 @@ already_AddRefed<nsISerialEventTarget> WorkerPrivate::CreateNewSyncLoop(
     queue = static_cast<ThreadEventQueue*>(mThread->EventQueue());
   }
 
-  nsCOMPtr<nsISerialEventTarget> nestedEventTarget = queue->PushEventQueue();
-  MOZ_ASSERT(nestedEventTarget);
+  nsCOMPtr<nsISerialEventTarget> realEventTarget = queue->PushEventQueue();
+  MOZ_ASSERT(realEventTarget);
 
   RefPtr<EventTarget> workerEventTarget =
-      new EventTarget(this, nestedEventTarget);
+      new EventTarget(this, realEventTarget);
 
   {
     
@@ -4180,66 +4173,61 @@ nsresult WorkerPrivate::RunCurrentSyncLoop() {
   loopInfo->mHasRun = true;
 #endif
 
-  {
-    SerialEventTargetGuard serialEventTargetGuard(loopInfo->mEventTarget);
+  while (!loopInfo->mCompleted) {
+    bool normalRunnablesPending = false;
 
-    while (!loopInfo->mCompleted) {
-      bool normalRunnablesPending = false;
+    
+    if (!NS_HasPendingEvents(thread)) {
+      SetGCTimerMode(IdleTimer);
+    }
 
-      
-      if (!NS_HasPendingEvents(thread)) {
-        SetGCTimerMode(IdleTimer);
-      }
+    
+    {
+      MutexAutoLock lock(mMutex);
 
-      
-      {
-        MutexAutoLock lock(mMutex);
+      for (;;) {
+        while (mControlQueue.IsEmpty() && !normalRunnablesPending &&
+               !(normalRunnablesPending = NS_HasPendingEvents(thread))) {
+          WaitForWorkerEvents();
+        }
 
-        for (;;) {
-          while (mControlQueue.IsEmpty() && !normalRunnablesPending &&
-                 !(normalRunnablesPending = NS_HasPendingEvents(thread))) {
-            WaitForWorkerEvents();
-          }
-
-          auto result = ProcessAllControlRunnablesLocked();
-          if (result != ProcessAllControlRunnablesResult::Nothing) {
-            
-            
-            normalRunnablesPending =
-                result == ProcessAllControlRunnablesResult::MayContinue &&
-                NS_HasPendingEvents(thread);
-
-            
-            
-            
-            if (loopInfo->mCompleted) {
-              break;
-            }
-          }
+        auto result = ProcessAllControlRunnablesLocked();
+        if (result != ProcessAllControlRunnablesResult::Nothing) {
+          
+          
+          normalRunnablesPending =
+              result == ProcessAllControlRunnablesResult::MayContinue &&
+              NS_HasPendingEvents(thread);
 
           
-          MOZ_ASSERT(!loopInfo->mCompleted);
-
-          if (normalRunnablesPending) {
+          
+          
+          if (loopInfo->mCompleted) {
             break;
           }
         }
-      }
-
-      if (normalRunnablesPending) {
-        
-        SetGCTimerMode(PeriodicTimer);
-
-        MOZ_ALWAYS_TRUE(NS_ProcessNextEvent(thread, false));
 
         
-        
-        if (GetCurrentEventLoopGlobal()) {
-          
-          
-          MOZ_ASSERT(JS::CurrentGlobalOrNull(cx));
-          JS_MaybeGC(cx);
+        MOZ_ASSERT(!loopInfo->mCompleted);
+
+        if (normalRunnablesPending) {
+          break;
         }
+      }
+    }
+
+    if (normalRunnablesPending) {
+      
+      SetGCTimerMode(PeriodicTimer);
+
+      MOZ_ALWAYS_TRUE(NS_ProcessNextEvent(thread, false));
+
+      
+      if (GetCurrentEventLoopGlobal()) {
+        
+        
+        MOZ_ASSERT(JS::CurrentGlobalOrNull(cx));
+        JS_MaybeGC(cx);
       }
     }
   }
@@ -4258,9 +4246,6 @@ nsresult WorkerPrivate::DestroySyncLoop(uint32_t aLoopIndex) {
 
   
   const auto& loopInfo = mSyncLoopStack[aLoopIndex];
-
-  loopInfo->mEventTarget->Shutdown();
-
   nsIEventTarget* nestedEventTarget =
       loopInfo->mEventTarget->GetWeakNestedEventTarget();
   MOZ_ASSERT(nestedEventTarget);
@@ -5365,13 +5350,6 @@ void WorkerPrivate::ResetWorkerPrivateInWorkerThread() {
   mThread.swap(doomedThread);
 }
 
-SerialEventTargetGuard WorkerPrivate::GetSerialEventTargetGuard() {
-  MutexAutoLock lock(mMutex);
-
-  MOZ_ASSERT(mThread);
-  return SerialEventTargetGuard(mThread);
-}
-
 void WorkerPrivate::BeginCTypesCall() {
   AssertIsOnWorkerThread();
   auto data = mWorkerThreadAccessible.Access();
@@ -5791,15 +5769,12 @@ WorkerPrivate::EventTarget::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
 
   MutexAutoLock lock(mMutex);
 
-  if (mDisabled) {
+  if (!mWorkerPrivate) {
     NS_WARNING(
         "A runnable was posted to a worker that is already shutting "
         "down!");
     return NS_ERROR_UNEXPECTED;
   }
-
-  MOZ_ASSERT(mWorkerPrivate);
-  MOZ_ASSERT(mNestedEventTarget);
 
   if (event) {
     workerRunnable = mWorkerPrivate->MaybeWrapAsWorkerRunnable(event.forget());
@@ -5841,14 +5816,12 @@ WorkerPrivate::EventTarget::IsOnCurrentThread(bool* aIsOnCurrentThread) {
 
   MutexAutoLock lock(mMutex);
 
-  if (mShutdown) {
+  if (!mWorkerPrivate) {
     NS_WARNING("A worker's event target was used after the worker has !");
     return NS_ERROR_UNEXPECTED;
   }
 
-  MOZ_ASSERT(mNestedEventTarget);
-
-  *aIsOnCurrentThread = mNestedEventTarget->IsOnCurrentThread();
+  *aIsOnCurrentThread = mWorkerPrivate->IsOnCurrentThread();
   return NS_OK;
 }
 
@@ -5858,14 +5831,12 @@ WorkerPrivate::EventTarget::IsOnCurrentThreadInfallible() {
 
   MutexAutoLock lock(mMutex);
 
-  if (mShutdown) {
+  if (!mWorkerPrivate) {
     NS_WARNING("A worker's event target was used after the worker has !");
     return false;
   }
 
-  MOZ_ASSERT(mNestedEventTarget);
-
-  return mNestedEventTarget->IsOnCurrentThread();
+  return mWorkerPrivate->IsOnCurrentThread();
 }
 
 WorkerPrivate::AutoPushEventLoopGlobal::AutoPushEventLoopGlobal(
