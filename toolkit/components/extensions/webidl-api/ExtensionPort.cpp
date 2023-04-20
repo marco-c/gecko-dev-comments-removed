@@ -4,6 +4,7 @@
 
 
 #include "ExtensionPort.h"
+#include "ExtensionBrowser.h"
 #include "ExtensionEventManager.h"
 
 #include "mozilla/dom/BindingUtils.h"  

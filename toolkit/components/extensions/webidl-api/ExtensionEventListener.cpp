@@ -4,9 +4,12 @@
 
 
 #include "ExtensionEventListener.h"
+#include "ExtensionAPIRequestForwarder.h"
 #include "ExtensionPort.h"
 
+#include "mozilla/dom/ClonedErrorHolder.h"
 #include "mozilla/dom/FunctionBinding.h"
+#include "mozilla/dom/Promise.h"
 #include "nsThreadManager.h"  
 
 namespace mozilla {

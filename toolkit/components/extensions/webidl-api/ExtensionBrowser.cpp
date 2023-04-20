@@ -5,6 +5,7 @@
 
 
 #include "ExtensionBrowser.h"
+#include "ExtensionAPIRequestForwarder.h"
 
 #include "mozilla/dom/ExtensionBrowserBinding.h"
 #include "mozilla/dom/ExtensionPortBinding.h"  
