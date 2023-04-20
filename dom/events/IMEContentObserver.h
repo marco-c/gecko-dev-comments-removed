@@ -85,6 +85,20 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
+  MOZ_CAN_RUN_SCRIPT nsresult MaybeHandleSelectionEvent(
+      nsPresContext* aPresContext, WidgetSelectionEvent* aEvent);
+
+  
+
+
+
+
+
+
+
+
+
+
 
   MOZ_CAN_RUN_SCRIPT void Init(nsIWidget& aWidget, nsPresContext& aPresContext,
                                dom::Element* aElement, EditorBase& aEditorBase);

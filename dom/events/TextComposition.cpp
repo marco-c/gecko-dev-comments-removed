@@ -511,9 +511,16 @@ void TextComposition::HandleSelectionEvent(
     return;
   }
 
-  ContentEventHandler handler(aPresContext);
   AutoRestore<bool> saveHandlingSelectionEvent(sHandlingSelectionEvent);
   sHandlingSelectionEvent = true;
+
+  if (RefPtr<IMEContentObserver> contentObserver =
+          IMEStateManager::GetActiveContentObserver()) {
+    contentObserver->MaybeHandleSelectionEvent(aPresContext, aSelectionEvent);
+    return;
+  }
+
+  ContentEventHandler handler(aPresContext);
   
   
   

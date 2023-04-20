@@ -2601,12 +2601,23 @@ function synthesizeQueryCaretRect(aOffset, aWindow) {
 
 
 
-function synthesizeSelectionSet(aOffset, aLength, aReverse, aWindow) {
-  var utils = _getDOMWindowUtils(aWindow);
+async function synthesizeSelectionSet(
+  aOffset,
+  aLength,
+  aReverse,
+  aWindow = window
+) {
+  const utils = _getDOMWindowUtils(aWindow);
   if (!utils) {
     return false;
   }
-  var flags = aReverse ? SELECTION_SET_FLAG_REVERSE : 0;
+  
+  
+  
+  await new Promise(resolve =>
+    aWindow.requestAnimationFrame(() => aWindow.requestAnimationFrame(resolve))
+  );
+  const flags = aReverse ? SELECTION_SET_FLAG_REVERSE : 0;
   return utils.sendSelectionSetEvent(aOffset, aLength, flags);
 }
 
