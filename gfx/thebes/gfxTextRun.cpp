@@ -3125,7 +3125,8 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
     
     
     if (aNextCh == kVariationSelector16 ||
-        (aNextCh >= kEmojiSkinToneFirst && aNextCh <= kEmojiSkinToneLast)) {
+        (aNextCh >= kEmojiSkinToneFirst && aNextCh <= kEmojiSkinToneLast) ||
+        gfxFontUtils::IsEmojiFlagAndTag(aCh, aNextCh)) {
       
       
       presentation = eFontPresentation::EmojiExplicit;
@@ -3774,6 +3775,10 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
       if (fe->HasCharacter(aCh)) {
         prefFont = fe->FindOrMakeFont(&mStyle);
         if (!prefFont) {
+          continue;
+        }
+        if (aPresentation == eFontPresentation::EmojiExplicit &&
+            !prefFont->HasColorGlyphFor(aCh, aNextCh)) {
           continue;
         }
       }

@@ -2538,6 +2538,21 @@ bool gfxFont::HasColorGlyphFor(uint32_t aCh, uint32_t aNextCh) {
   if (!gid) {
     return false;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (gfxFontUtils::IsEmojiFlagAndTag(aCh, aNextCh)) {
+    if (!shaper->GetNominalGlyph(aNextCh)) {
+      return false;
+    }
+  }
+
   
   if (fe->TryGetColorGlyphs() &&
       (COLRFonts::GetGlyphPaintGraph(fe->GetCOLR(), gid) ||
