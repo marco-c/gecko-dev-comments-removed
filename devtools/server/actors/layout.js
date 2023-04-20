@@ -54,10 +54,6 @@ loader.lazyRequireGetter(
   "resource://devtools/shared/dom-node-constants.js"
 );
 
-const SUBGRID_ENABLED = Services.prefs.getBoolPref(
-  "layout.css.grid-template-subgrid-value.enabled"
-);
-
 
 
 
@@ -345,11 +341,9 @@ const GridActor = ActorClassWithSpec(gridSpec, {
       form.containerNodeActorID = this.walker.getNode(this.containerEl).actorID;
     }
 
-    if (SUBGRID_ENABLED) {
-      form.isSubgrid =
-        gridTemplateRows.startsWith("subgrid") ||
-        gridTemplateColumns.startsWith("subgrid");
-    }
+    form.isSubgrid =
+      gridTemplateRows.startsWith("subgrid") ||
+      gridTemplateColumns.startsWith("subgrid");
 
     return form;
   },
