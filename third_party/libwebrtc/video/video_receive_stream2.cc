@@ -68,7 +68,7 @@ constexpr TimeDelta kMaxBaseMinimumDelay = TimeDelta::Seconds(10);
 
 
 
-constexpr int kDefaultMaximumPreStreamDecoders = 1;
+constexpr int kDefaultMaximumPreStreamDecoders = 0;
 
 
 

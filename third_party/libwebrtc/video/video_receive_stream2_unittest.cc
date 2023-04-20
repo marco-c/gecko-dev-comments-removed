@@ -486,18 +486,14 @@ TEST_P(VideoReceiveStream2Test, LazyDecoderCreation) {
   rtppacket.SetTimestamp(0);
 
   
-  
   EXPECT_CALL(mock_h264_decoder_factory_, CreateVideoDecoder(_)).Times(0);
-  EXPECT_CALL(
-      mock_h264_decoder_factory_,
-      CreateVideoDecoder(Field(&SdpVideoFormat::name, testing::Eq("H265"))));
   video_receive_stream_->Start();
-  
   time_controller_.AdvanceTime(TimeDelta::Zero());
 
   EXPECT_TRUE(
       testing::Mock::VerifyAndClearExpectations(&mock_h264_decoder_factory_));
-
+  
+  
   EXPECT_CALL(
       mock_h264_decoder_factory_,
       CreateVideoDecoder(Field(&SdpVideoFormat::name, testing::Eq("H264"))));
