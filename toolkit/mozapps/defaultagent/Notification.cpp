@@ -335,7 +335,7 @@ class ToastHandler : public WinToastLib::IWinToastHandler {
     
     
     
-    LaunchModernSettingsDialogDefaultApps();
+    SetDefaultBrowserFromNotification(mAumiStr.c_str());
 
     FinishHandler(activitiesPerformed);
   }
