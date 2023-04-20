@@ -1132,14 +1132,6 @@ bool RTCRtpSender::SeamlessTrackSwitch(
   
   
 
-  
-  
-  bool sending = mTransceiver->IsSending();
-  if (sending && !aWithTrack) {
-    
-    Stop();
-  }
-
   mPipeline->SetTrack(aWithTrack);
 
   MaybeUpdateConduit();
