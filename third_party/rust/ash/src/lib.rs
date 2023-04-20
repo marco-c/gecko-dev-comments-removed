@@ -34,6 +34,12 @@
 
 
 
+
+
+
+
+
+
 pub use crate::device::Device;
 pub use crate::entry::Entry;
 #[cfg(feature = "loaded")]
@@ -64,6 +70,107 @@ impl<'r, T> RawPtr<T> for Option<&'r T> {
             _ => ::std::ptr::null(),
         }
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[macro_export]
+macro_rules! match_out_struct {
+    (match $p:ident { $($bind:ident @ $ty:path => $body:block $(,)?)+ $(_ => $any:block $(,)?)? }) => {
+        match std::ptr::addr_of!((*$p).s_type).read() {
+            $(<$ty as $crate::vk::TaggedStructure>::STRUCTURE_TYPE => {
+                let $bind = $p
+                    .cast::<$ty>()
+                    .as_mut()
+                    .unwrap();
+                $body
+            }),+
+            _ => { $($any)? }
+        }
+    };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[macro_export]
+macro_rules! match_in_struct {
+    (match $p:ident { $($bind:ident @ $ty:path => $body:block $(,)?)+ $(_ => $any:block $(,)?)? }) => {
+        match std::ptr::addr_of!((*$p).s_type).read() {
+            $(<$ty as $crate::vk::TaggedStructure>::STRUCTURE_TYPE => {
+                let $bind = $p
+                    .cast::<$ty>()
+                    .as_ref()
+                    .unwrap();
+                $body
+            }),+
+            _ => { $($any)? }
+        }
+    };
 }
 
 #[cfg(test)]

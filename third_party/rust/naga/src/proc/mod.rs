@@ -389,7 +389,6 @@ impl crate::Constant {
     
     
     pub(crate) fn to_array_length(&self) -> Option<u32> {
-        use std::convert::TryInto;
         match self.inner {
             crate::ConstantInner::Scalar { value, width: _ } => match value {
                 crate::ScalarValue::Uint(value) => value.try_into().ok(),

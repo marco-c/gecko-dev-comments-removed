@@ -14,6 +14,7 @@
 
 
 
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![allow(
     
     unknown_lints,
@@ -41,11 +42,21 @@
 #![warn(
     trivial_casts,
     trivial_numeric_casts,
+    unsafe_op_in_unsafe_fn,
     unused_extern_crates,
     unused_qualifications,
     
     clippy::pattern_type_mismatch,
 )]
+
+#[cfg(not(any(
+    feature = "dx11",
+    feature = "dx12",
+    feature = "gles",
+    feature = "metal",
+    feature = "vulkan"
+)))]
+compile_error!("No back ends enabled in `wgpu-hal`. Enable at least one backend feature.");
 
 #[cfg(all(feature = "metal", not(any(target_os = "macos", target_os = "ios"))))]
 compile_error!("Metal API enabled on non-Apple OS. If your project is not using resolver=\"2\" in Cargo.toml, it should.");
@@ -106,7 +117,10 @@ pub type Label<'a> = Option<&'a str>;
 pub type MemoryRange = Range<wgt::BufferAddress>;
 pub type FenceValue = u64;
 
-#[derive(Clone, Debug, Eq, PartialEq, Error)]
+
+pub type DropGuard = Box<dyn std::any::Any + Send + Sync>;
+
+#[derive(Clone, Debug, PartialEq, Eq, Error)]
 pub enum DeviceError {
     #[error("out of memory")]
     OutOfMemory,
@@ -578,15 +592,20 @@ bitflags!(
         /// Format can be used as depth-stencil and input attachment.
         const DEPTH_STENCIL_ATTACHMENT = 1 << 8;
 
-        /// Format can be multisampled.
-        const MULTISAMPLE = 1 << 9;
+        /// Format can be multisampled by x2.
+        const MULTISAMPLE_X2   = 1 << 9;
+        /// Format can be multisampled by x4.
+        const MULTISAMPLE_X4   = 1 << 10;
+        /// Format can be multisampled by x8.
+        const MULTISAMPLE_X8   = 1 << 11;
+
         /// Format can be used for render pass resolve targets.
-        const MULTISAMPLE_RESOLVE = 1 << 10;
+        const MULTISAMPLE_RESOLVE = 1 << 12;
 
         /// Format can be copied from.
-        const COPY_SRC = 1 << 11;
+        const COPY_SRC = 1 << 13;
         /// Format can be copied to.
-        const COPY_DST = 1 << 12;
+        const COPY_DST = 1 << 14;
     }
 );
 
@@ -875,8 +894,27 @@ pub struct PipelineLayoutDescriptor<'a, A: Api> {
 
 #[derive(Debug)]
 pub struct BufferBinding<'a, A: Api> {
+    
     pub buffer: &'a A::Buffer,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub offset: wgt::BufferAddress,
+
+    
+    
+    
+    
+    
     pub size: Option<wgt::BufferSize>,
 }
 

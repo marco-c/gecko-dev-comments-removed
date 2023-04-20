@@ -19,6 +19,7 @@ impl Maintenance4 {
     }
 
     
+    #[inline]
     pub unsafe fn get_device_buffer_memory_requirements(
         &self,
         create_info: &vk::DeviceBufferMemoryRequirementsKHR,
@@ -28,6 +29,7 @@ impl Maintenance4 {
     }
 
     
+    #[inline]
     pub unsafe fn get_device_image_memory_requirements(
         &self,
         create_info: &vk::DeviceImageMemoryRequirementsKHR,
@@ -37,6 +39,7 @@ impl Maintenance4 {
     }
 
     
+    #[inline]
     pub unsafe fn get_device_image_sparse_memory_requirements_len(
         &self,
         create_info: &vk::DeviceImageMemoryRequirementsKHR,
@@ -55,6 +58,7 @@ impl Maintenance4 {
     
     
     
+    #[inline]
     pub unsafe fn get_device_image_sparse_memory_requirements(
         &self,
         create_info: &vk::DeviceImageMemoryRequirementsKHR,
@@ -70,14 +74,17 @@ impl Maintenance4 {
         assert_eq!(count as usize, out.len());
     }
 
+    #[inline]
     pub const fn name() -> &'static CStr {
         vk::KhrMaintenance4Fn::name()
     }
 
+    #[inline]
     pub fn fp(&self) -> &vk::KhrMaintenance4Fn {
         &self.fp
     }
 
+    #[inline]
     pub fn device(&self) -> vk::Device {
         self.handle
     }

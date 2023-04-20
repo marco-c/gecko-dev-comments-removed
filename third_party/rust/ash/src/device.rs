@@ -33,6 +33,7 @@ impl Device {
         }
     }
 
+    #[inline]
     pub fn handle(&self) -> vk::Device {
         self.handle
     }
@@ -41,11 +42,13 @@ impl Device {
 
 #[allow(non_camel_case_types)]
 impl Device {
+    #[inline]
     pub fn fp_v1_3(&self) -> &vk::DeviceFnV1_3 {
         &self.device_fn_1_3
     }
 
     
+    #[inline]
     pub unsafe fn create_private_data_slot(
         &self,
         create_info: &vk::PrivateDataSlotCreateInfo,
@@ -62,6 +65,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_private_data_slot(
         &self,
         private_data_slot: vk::PrivateDataSlot,
@@ -75,6 +79,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn set_private_data<T: vk::Handle>(
         &self,
         object: T,
@@ -92,6 +97,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_private_data<T: vk::Handle>(
         &self,
         object: T,
@@ -109,6 +115,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_pipeline_barrier2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -118,6 +125,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_reset_event2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -128,6 +136,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_event2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -138,6 +147,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_wait_events2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -154,6 +164,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_write_timestamp2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -165,6 +176,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn queue_submit2(
         &self,
         queue: vk::Queue,
@@ -176,6 +188,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_copy_buffer2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -184,6 +197,7 @@ impl Device {
         (self.device_fn_1_3.cmd_copy_buffer2)(command_buffer, copy_buffer_info)
     }
     
+    #[inline]
     pub unsafe fn cmd_copy_image2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -192,6 +206,7 @@ impl Device {
         (self.device_fn_1_3.cmd_copy_image2)(command_buffer, copy_image_info)
     }
     
+    #[inline]
     pub unsafe fn cmd_copy_buffer_to_image2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -200,6 +215,7 @@ impl Device {
         (self.device_fn_1_3.cmd_copy_buffer_to_image2)(command_buffer, copy_buffer_to_image_info)
     }
     
+    #[inline]
     pub unsafe fn cmd_copy_image_to_buffer2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -208,6 +224,7 @@ impl Device {
         (self.device_fn_1_3.cmd_copy_image_to_buffer2)(command_buffer, copy_image_to_buffer_info)
     }
     
+    #[inline]
     pub unsafe fn cmd_blit_image2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -216,6 +233,7 @@ impl Device {
         (self.device_fn_1_3.cmd_blit_image2)(command_buffer, blit_image_info)
     }
     
+    #[inline]
     pub unsafe fn cmd_resolve_image2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -225,6 +243,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_begin_rendering(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -234,11 +253,13 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_end_rendering(&self, command_buffer: vk::CommandBuffer) {
         (self.device_fn_1_3.cmd_end_rendering)(command_buffer)
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_cull_mode(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -248,6 +269,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_front_face(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -257,6 +279,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_primitive_topology(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -266,6 +289,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_viewport_with_count(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -279,6 +303,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_scissor_with_count(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -292,6 +317,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_bind_vertex_buffers2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -326,6 +352,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_depth_test_enable(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -335,6 +362,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_depth_write_enable(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -344,6 +372,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_depth_compare_op(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -353,6 +382,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_depth_bounds_test_enable(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -365,6 +395,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_stencil_test_enable(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -374,6 +405,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_stencil_op(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -394,6 +426,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_rasterizer_discard_enable(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -406,6 +439,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_depth_bias_enable(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -415,6 +449,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_primitive_restart_enable(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -427,6 +462,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_device_buffer_memory_requirements(
         &self,
         create_info: &vk::DeviceBufferMemoryRequirements,
@@ -436,6 +472,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_device_image_memory_requirements(
         &self,
         create_info: &vk::DeviceImageMemoryRequirements,
@@ -445,6 +482,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_device_image_sparse_memory_requirements_len(
         &self,
         create_info: &vk::DeviceImageMemoryRequirements,
@@ -465,6 +503,7 @@ impl Device {
     
     
     
+    #[inline]
     pub unsafe fn get_device_image_sparse_memory_requirements(
         &self,
         create_info: &vk::DeviceImageMemoryRequirements,
@@ -486,11 +525,13 @@ impl Device {
 
 #[allow(non_camel_case_types)]
 impl Device {
+    #[inline]
     pub fn fp_v1_2(&self) -> &vk::DeviceFnV1_2 {
         &self.device_fn_1_2
     }
 
     
+    #[inline]
     pub unsafe fn cmd_draw_indirect_count(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -513,6 +554,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_draw_indexed_indirect_count(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -535,6 +577,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_render_pass2(
         &self,
         create_info: &vk::RenderPassCreateInfo2,
@@ -551,6 +594,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_begin_render_pass2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -565,6 +609,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_next_subpass2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -579,6 +624,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_end_render_pass2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -588,6 +634,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn reset_query_pool(
         &self,
         query_pool: vk::QueryPool,
@@ -598,6 +645,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_semaphore_counter_value(&self, semaphore: vk::Semaphore) -> VkResult<u64> {
         let mut value = 0;
         (self.device_fn_1_2.get_semaphore_counter_value)(self.handle(), semaphore, &mut value)
@@ -605,6 +653,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn wait_semaphores(
         &self,
         wait_info: &vk::SemaphoreWaitInfo,
@@ -614,11 +663,13 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn signal_semaphore(&self, signal_info: &vk::SemaphoreSignalInfo) -> VkResult<()> {
         (self.device_fn_1_2.signal_semaphore)(self.handle(), signal_info).result()
     }
 
     
+    #[inline]
     pub unsafe fn get_buffer_device_address(
         &self,
         info: &vk::BufferDeviceAddressInfo,
@@ -627,6 +678,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_buffer_opaque_capture_address(
         &self,
         info: &vk::BufferDeviceAddressInfo,
@@ -635,6 +687,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_device_memory_opaque_capture_address(
         &self,
         info: &vk::DeviceMemoryOpaqueCaptureAddressInfo,
@@ -646,11 +699,13 @@ impl Device {
 
 #[allow(non_camel_case_types)]
 impl Device {
+    #[inline]
     pub fn fp_v1_1(&self) -> &vk::DeviceFnV1_1 {
         &self.device_fn_1_1
     }
 
     
+    #[inline]
     pub unsafe fn bind_buffer_memory2(
         &self,
         bind_infos: &[vk::BindBufferMemoryInfo],
@@ -664,6 +719,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn bind_image_memory2(
         &self,
         bind_infos: &[vk::BindImageMemoryInfo],
@@ -677,6 +733,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_device_group_peer_memory_features(
         &self,
         heap_index: u32,
@@ -695,11 +752,13 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_device_mask(&self, command_buffer: vk::CommandBuffer, device_mask: u32) {
         (self.device_fn_1_1.cmd_set_device_mask)(command_buffer, device_mask);
     }
 
     
+    #[inline]
     pub unsafe fn cmd_dispatch_base(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -722,6 +781,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_image_memory_requirements2(
         &self,
         info: &vk::ImageMemoryRequirementsInfo2,
@@ -731,6 +791,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_buffer_memory_requirements2(
         &self,
         info: &vk::BufferMemoryRequirementsInfo2,
@@ -740,6 +801,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_image_sparse_memory_requirements2_len(
         &self,
         info: &vk::ImageSparseMemoryRequirementsInfo2,
@@ -758,6 +820,7 @@ impl Device {
     
     
     
+    #[inline]
     pub unsafe fn get_image_sparse_memory_requirements2(
         &self,
         info: &vk::ImageSparseMemoryRequirementsInfo2,
@@ -774,6 +837,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn trim_command_pool(
         &self,
         command_pool: vk::CommandPool,
@@ -783,6 +847,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_sampler_ycbcr_conversion(
         &self,
         create_info: &vk::SamplerYcbcrConversionCreateInfo,
@@ -799,6 +864,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_sampler_ycbcr_conversion(
         &self,
         ycbcr_conversion: vk::SamplerYcbcrConversion,
@@ -812,6 +878,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_descriptor_update_template(
         &self,
         create_info: &vk::DescriptorUpdateTemplateCreateInfo,
@@ -828,6 +895,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_descriptor_update_template(
         &self,
         descriptor_update_template: vk::DescriptorUpdateTemplate,
@@ -841,6 +909,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn update_descriptor_set_with_template(
         &self,
         descriptor_set: vk::DescriptorSet,
@@ -856,6 +925,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_descriptor_set_layout_support(
         &self,
         create_info: &vk::DescriptorSetLayoutCreateInfo,
@@ -868,16 +938,19 @@ impl Device {
 
 #[allow(non_camel_case_types)]
 impl Device {
+    #[inline]
     pub fn fp_v1_0(&self) -> &vk::DeviceFnV1_0 {
         &self.device_fn_1_0
     }
 
     
+    #[inline]
     pub unsafe fn destroy_device(&self, allocation_callbacks: Option<&vk::AllocationCallbacks>) {
         (self.device_fn_1_0.destroy_device)(self.handle(), allocation_callbacks.as_raw_ptr());
     }
 
     
+    #[inline]
     pub unsafe fn destroy_sampler(
         &self,
         sampler: vk::Sampler,
@@ -891,6 +964,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn free_memory(
         &self,
         memory: vk::DeviceMemory,
@@ -900,6 +974,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn free_command_buffers(
         &self,
         command_pool: vk::CommandPool,
@@ -914,6 +989,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_event(
         &self,
         create_info: &vk::EventCreateInfo,
@@ -932,6 +1008,7 @@ impl Device {
     
     
     
+    #[inline]
     pub unsafe fn get_event_status(&self, event: vk::Event) -> VkResult<bool> {
         let err_code = (self.device_fn_1_0.get_event_status)(self.handle(), event);
         match err_code {
@@ -942,15 +1019,18 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn set_event(&self, event: vk::Event) -> VkResult<()> {
         (self.device_fn_1_0.set_event)(self.handle(), event).result()
     }
 
     
+    #[inline]
     pub unsafe fn reset_event(&self, event: vk::Event) -> VkResult<()> {
         (self.device_fn_1_0.reset_event)(self.handle(), event).result()
     }
     
+    #[inline]
     pub unsafe fn cmd_set_event(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -960,6 +1040,7 @@ impl Device {
         (self.device_fn_1_0.cmd_set_event)(command_buffer, event, stage_mask);
     }
     
+    #[inline]
     pub unsafe fn cmd_reset_event(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -970,6 +1051,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_wait_events(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -996,6 +1078,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_fence(
         &self,
         fence: vk::Fence,
@@ -1005,6 +1088,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_event(
         &self,
         event: vk::Event,
@@ -1014,6 +1098,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_image(
         &self,
         image: vk::Image,
@@ -1023,6 +1108,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_command_pool(
         &self,
         pool: vk::CommandPool,
@@ -1036,6 +1122,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_image_view(
         &self,
         image_view: vk::ImageView,
@@ -1049,6 +1136,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_render_pass(
         &self,
         renderpass: vk::RenderPass,
@@ -1062,6 +1150,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_framebuffer(
         &self,
         framebuffer: vk::Framebuffer,
@@ -1075,6 +1164,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_pipeline_layout(
         &self,
         pipeline_layout: vk::PipelineLayout,
@@ -1088,6 +1178,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_pipeline_cache(
         &self,
         pipeline_cache: vk::PipelineCache,
@@ -1101,6 +1192,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_buffer(
         &self,
         buffer: vk::Buffer,
@@ -1114,6 +1206,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_shader_module(
         &self,
         shader: vk::ShaderModule,
@@ -1127,6 +1220,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_pipeline(
         &self,
         pipeline: vk::Pipeline,
@@ -1140,6 +1234,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_semaphore(
         &self,
         semaphore: vk::Semaphore,
@@ -1153,6 +1248,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_descriptor_pool(
         &self,
         pool: vk::DescriptorPool,
@@ -1166,6 +1262,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_query_pool(
         &self,
         pool: vk::QueryPool,
@@ -1179,6 +1276,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_descriptor_set_layout(
         &self,
         layout: vk::DescriptorSetLayout,
@@ -1192,6 +1290,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn free_descriptor_sets(
         &self,
         pool: vk::DescriptorPool,
@@ -1207,6 +1306,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn update_descriptor_sets(
         &self,
         descriptor_writes: &[vk::WriteDescriptorSet],
@@ -1222,6 +1322,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_sampler(
         &self,
         create_info: &vk::SamplerCreateInfo,
@@ -1238,6 +1339,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_blit_image(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1261,6 +1363,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_resolve_image(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1282,6 +1385,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_fill_buffer(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1294,6 +1398,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_update_buffer(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1311,6 +1416,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_copy_buffer(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1328,6 +1434,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_copy_image_to_buffer(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1347,6 +1454,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_copy_buffer_to_image(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1366,6 +1474,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_copy_image(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1387,22 +1496,25 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn allocate_descriptor_sets(
         &self,
         create_info: &vk::DescriptorSetAllocateInfo,
     ) -> VkResult<Vec<vk::DescriptorSet>> {
         let mut desc_set = Vec::with_capacity(create_info.descriptor_set_count as usize);
-        let err_code = (self.device_fn_1_0.allocate_descriptor_sets)(
+        (self.device_fn_1_0.allocate_descriptor_sets)(
             self.handle(),
             create_info,
             desc_set.as_mut_ptr(),
-        );
+        )
+        .result()?;
 
         desc_set.set_len(create_info.descriptor_set_count as usize);
-        err_code.result_with_success(desc_set)
+        Ok(desc_set)
     }
 
     
+    #[inline]
     pub unsafe fn create_descriptor_set_layout(
         &self,
         create_info: &vk::DescriptorSetLayoutCreateInfo,
@@ -1419,11 +1531,13 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn device_wait_idle(&self) -> VkResult<()> {
         (self.device_fn_1_0.device_wait_idle)(self.handle()).result()
     }
 
     
+    #[inline]
     pub unsafe fn create_descriptor_pool(
         &self,
         create_info: &vk::DescriptorPoolCreateInfo,
@@ -1440,6 +1554,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn reset_descriptor_pool(
         &self,
         pool: vk::DescriptorPool,
@@ -1449,6 +1564,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn reset_command_pool(
         &self,
         command_pool: vk::CommandPool,
@@ -1458,6 +1574,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn reset_command_buffer(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1467,12 +1584,14 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn reset_fences(&self, fences: &[vk::Fence]) -> VkResult<()> {
         (self.device_fn_1_0.reset_fences)(self.handle(), fences.len() as u32, fences.as_ptr())
             .result()
     }
 
     
+    #[inline]
     pub unsafe fn cmd_bind_index_buffer(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1484,6 +1603,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_clear_color_image(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1503,6 +1623,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_clear_depth_stencil_image(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1522,6 +1643,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_clear_attachments(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1538,6 +1660,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_draw_indexed(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1558,6 +1681,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_draw_indexed_indirect(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1576,6 +1700,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_execute_commands(
         &self,
         primary_command_buffer: vk::CommandBuffer,
@@ -1589,6 +1714,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_bind_descriptor_sets(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1611,6 +1737,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_copy_query_pool_results(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1635,6 +1762,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_push_constants(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1654,6 +1782,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_begin_render_pass(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1664,6 +1793,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_next_subpass(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1673,6 +1803,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_bind_pipeline(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1683,6 +1814,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_scissor(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1698,11 +1830,13 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_line_width(&self, command_buffer: vk::CommandBuffer, line_width: f32) {
         (self.device_fn_1_0.cmd_set_line_width)(command_buffer, line_width);
     }
 
     
+    #[inline]
     pub unsafe fn cmd_bind_vertex_buffers(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1721,11 +1855,13 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_end_render_pass(&self, command_buffer: vk::CommandBuffer) {
         (self.device_fn_1_0.cmd_end_render_pass)(command_buffer);
     }
 
     
+    #[inline]
     pub unsafe fn cmd_draw(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1744,6 +1880,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_draw_indirect(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1756,6 +1893,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_dispatch(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1772,6 +1910,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_dispatch_indirect(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1782,6 +1921,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_viewport(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1797,6 +1937,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_depth_bias(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1813,6 +1954,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_blend_constants(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1822,6 +1964,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_depth_bounds(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1836,6 +1979,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_stencil_compare_mask(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1846,6 +1990,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_stencil_write_mask(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1856,6 +2001,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_set_stencil_reference(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1866,6 +2012,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_query_pool_results<T>(
         &self,
         query_pool: vk::QueryPool,
@@ -1886,7 +2033,7 @@ impl Device {
             first_query,
             query_count,
             data_size,
-            data.as_mut_ptr() as *mut _,
+            data.as_mut_ptr().cast(),
             mem::size_of::<T>() as _,
             flags,
         )
@@ -1894,6 +2041,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_begin_query(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1905,6 +2053,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_end_query(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1915,6 +2064,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_reset_query_pool(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1926,6 +2076,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_write_timestamp(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -1937,6 +2088,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_semaphore(
         &self,
         create_info: &vk::SemaphoreCreateInfo,
@@ -1953,6 +2105,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_graphics_pipelines(
         &self,
         pipeline_cache: vk::PipelineCache,
@@ -1976,6 +2129,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_compute_pipelines(
         &self,
         pipeline_cache: vk::PipelineCache,
@@ -1999,6 +2153,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_buffer(
         &self,
         create_info: &vk::BufferCreateInfo,
@@ -2015,6 +2170,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_pipeline_layout(
         &self,
         create_info: &vk::PipelineLayoutCreateInfo,
@@ -2031,6 +2187,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_pipeline_cache(
         &self,
         create_info: &vk::PipelineCacheCreateInfo,
@@ -2047,6 +2204,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_pipeline_cache_data(
         &self,
         pipeline_cache: vk::PipelineCache,
@@ -2062,6 +2220,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn merge_pipeline_caches(
         &self,
         dst_cache: vk::PipelineCache,
@@ -2077,6 +2236,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn map_memory(
         &self,
         memory: vk::DeviceMemory,
@@ -2090,11 +2250,13 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn unmap_memory(&self, memory: vk::DeviceMemory) {
         (self.device_fn_1_0.unmap_memory)(self.handle(), memory);
     }
 
     
+    #[inline]
     pub unsafe fn invalidate_mapped_memory_ranges(
         &self,
         ranges: &[vk::MappedMemoryRange],
@@ -2108,6 +2270,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn flush_mapped_memory_ranges(
         &self,
         ranges: &[vk::MappedMemoryRange],
@@ -2121,6 +2284,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_framebuffer(
         &self,
         create_info: &vk::FramebufferCreateInfo,
@@ -2137,6 +2301,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_device_queue(&self, queue_family_index: u32, queue_index: u32) -> vk::Queue {
         let mut queue = mem::zeroed();
         (self.device_fn_1_0.get_device_queue)(
@@ -2149,6 +2314,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_pipeline_barrier(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -2174,6 +2340,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_render_pass(
         &self,
         create_info: &vk::RenderPassCreateInfo,
@@ -2190,6 +2357,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn begin_command_buffer(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -2199,11 +2367,13 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn end_command_buffer(&self, command_buffer: vk::CommandBuffer) -> VkResult<()> {
         (self.device_fn_1_0.end_command_buffer)(command_buffer).result()
     }
 
     
+    #[inline]
     pub unsafe fn wait_for_fences(
         &self,
         fences: &[vk::Fence],
@@ -2221,6 +2391,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_fence_status(&self, fence: vk::Fence) -> VkResult<bool> {
         let err_code = (self.device_fn_1_0.get_fence_status)(self.handle(), fence);
         match err_code {
@@ -2231,11 +2402,13 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn queue_wait_idle(&self, queue: vk::Queue) -> VkResult<()> {
         (self.device_fn_1_0.queue_wait_idle)(queue).result()
     }
 
     
+    #[inline]
     pub unsafe fn queue_submit(
         &self,
         queue: vk::Queue,
@@ -2247,6 +2420,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn queue_bind_sparse(
         &self,
         queue: vk::Queue,
@@ -2263,6 +2437,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_buffer_view(
         &self,
         create_info: &vk::BufferViewCreateInfo,
@@ -2279,6 +2454,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn destroy_buffer_view(
         &self,
         buffer_view: vk::BufferView,
@@ -2292,6 +2468,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_image_view(
         &self,
         create_info: &vk::ImageViewCreateInfo,
@@ -2308,21 +2485,24 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn allocate_command_buffers(
         &self,
         create_info: &vk::CommandBufferAllocateInfo,
     ) -> VkResult<Vec<vk::CommandBuffer>> {
         let mut buffers = Vec::with_capacity(create_info.command_buffer_count as usize);
-        let err_code = (self.device_fn_1_0.allocate_command_buffers)(
+        (self.device_fn_1_0.allocate_command_buffers)(
             self.handle(),
             create_info,
             buffers.as_mut_ptr(),
-        );
+        )
+        .result()?;
         buffers.set_len(create_info.command_buffer_count as usize);
-        err_code.result_with_success(buffers)
+        Ok(buffers)
     }
 
     
+    #[inline]
     pub unsafe fn create_command_pool(
         &self,
         create_info: &vk::CommandPoolCreateInfo,
@@ -2339,6 +2519,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_query_pool(
         &self,
         create_info: &vk::QueryPoolCreateInfo,
@@ -2355,6 +2536,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_image(
         &self,
         create_info: &vk::ImageCreateInfo,
@@ -2371,6 +2553,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_image_subresource_layout(
         &self,
         image: vk::Image,
@@ -2387,6 +2570,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_image_memory_requirements(&self, image: vk::Image) -> vk::MemoryRequirements {
         let mut mem_req = mem::zeroed();
         (self.device_fn_1_0.get_image_memory_requirements)(self.handle(), image, &mut mem_req);
@@ -2394,6 +2578,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_buffer_memory_requirements(
         &self,
         buffer: vk::Buffer,
@@ -2404,6 +2589,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn allocate_memory(
         &self,
         create_info: &vk::MemoryAllocateInfo,
@@ -2420,6 +2606,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_shader_module(
         &self,
         create_info: &vk::ShaderModuleCreateInfo,
@@ -2436,6 +2623,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn create_fence(
         &self,
         create_info: &vk::FenceCreateInfo,
@@ -2452,6 +2640,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn bind_buffer_memory(
         &self,
         buffer: vk::Buffer,
@@ -2463,6 +2652,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn bind_image_memory(
         &self,
         image: vk::Image,
@@ -2473,6 +2663,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_render_area_granularity(&self, render_pass: vk::RenderPass) -> vk::Extent2D {
         let mut granularity = mem::zeroed();
         (self.device_fn_1_0.get_render_area_granularity)(
@@ -2484,6 +2675,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_device_memory_commitment(&self, memory: vk::DeviceMemory) -> vk::DeviceSize {
         let mut committed_memory_in_bytes = 0;
         (self.device_fn_1_0.get_device_memory_commitment)(
@@ -2495,6 +2687,7 @@ impl Device {
     }
 
     
+    #[inline]
     pub unsafe fn get_image_sparse_memory_requirements(
         &self,
         image: vk::Image,

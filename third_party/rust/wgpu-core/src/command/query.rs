@@ -181,6 +181,7 @@ impl<A: HalApi> QuerySet<A> {
         reset_state: Option<&mut QueryResetMap<A>>,
     ) -> Result<&A::QuerySet, QueryUseError> {
         
+        
         if let Some(reset) = reset_state {
             let used = reset.use_query_set(query_set_id, self, query_index);
             if used {

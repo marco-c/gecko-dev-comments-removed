@@ -20,6 +20,7 @@ impl FullScreenExclusive {
     }
 
     
+    #[inline]
     pub unsafe fn acquire_full_screen_exclusive_mode(
         &self,
         swapchain: vk::SwapchainKHR,
@@ -28,6 +29,7 @@ impl FullScreenExclusive {
     }
 
     
+    #[inline]
     pub unsafe fn get_physical_device_surface_present_modes2(
         &self,
         physical_device: vk::PhysicalDevice,
@@ -44,6 +46,7 @@ impl FullScreenExclusive {
     }
 
     
+    #[inline]
     pub unsafe fn release_full_screen_exclusive_mode(
         &self,
         swapchain: vk::SwapchainKHR,
@@ -52,6 +55,7 @@ impl FullScreenExclusive {
     }
 
     
+    #[inline]
     pub unsafe fn get_device_group_surface_present_modes2(
         &self,
         surface_info: &vk::PhysicalDeviceSurfaceInfo2KHR,
@@ -65,14 +69,17 @@ impl FullScreenExclusive {
         .result_with_success(present_modes)
     }
 
+    #[inline]
     pub const fn name() -> &'static CStr {
         vk::ExtFullScreenExclusiveFn::name()
     }
 
+    #[inline]
     pub fn fp(&self) -> &vk::ExtFullScreenExclusiveFn {
         &self.fp
     }
 
+    #[inline]
     pub fn device(&self) -> vk::Device {
         self.handle
     }

@@ -17,6 +17,7 @@ impl DynamicRendering {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_begin_rendering(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -26,14 +27,17 @@ impl DynamicRendering {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_end_rendering(&self, command_buffer: vk::CommandBuffer) {
         (self.fp.cmd_end_rendering_khr)(command_buffer)
     }
 
+    #[inline]
     pub const fn name() -> &'static CStr {
         vk::KhrDynamicRenderingFn::name()
     }
 
+    #[inline]
     pub fn fp(&self) -> &vk::KhrDynamicRenderingFn {
         &self.fp
     }

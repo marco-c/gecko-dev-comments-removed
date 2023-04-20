@@ -88,19 +88,18 @@ impl crate::Instance<Api> for Instance {
             #[cfg(target_os = "ios")]
             raw_window_handle::RawWindowHandle::UiKit(handle) => {
                 let _ = &self.managed_metal_layer_delegate;
-                Ok(Surface::from_view(handle.ui_view, None))
+                Ok(unsafe { Surface::from_view(handle.ui_view, None) })
             }
             #[cfg(target_os = "macos")]
-            raw_window_handle::RawWindowHandle::AppKit(handle) => Ok(Surface::from_view(
-                handle.ns_view,
-                Some(&self.managed_metal_layer_delegate),
-            )),
+            raw_window_handle::RawWindowHandle::AppKit(handle) => Ok(unsafe {
+                Surface::from_view(handle.ns_view, Some(&self.managed_metal_layer_delegate))
+            }),
             _ => Err(crate::InstanceError),
         }
     }
 
     unsafe fn destroy_surface(&self, surface: Surface) {
-        surface.dispose();
+        unsafe { surface.dispose() };
     }
 
     unsafe fn enumerate_adapters(&self) -> Vec<crate::ExposedAdapter<Api>> {
@@ -219,7 +218,7 @@ struct PrivateCapabilities {
     max_varying_components: u32,
     max_threads_per_group: u32,
     max_total_threadgroup_memory: u32,
-    sample_count_mask: u8,
+    sample_count_mask: crate::TextureFormatCapabilities,
     supports_debug_markers: bool,
     supports_binary_archives: bool,
     supports_capture_manager: bool,
@@ -231,6 +230,7 @@ struct PrivateCapabilities {
     supports_mutability: bool,
     supports_depth_clip_control: bool,
     supports_preserve_invariance: bool,
+    supports_shader_primitive_index: bool,
     has_unified_memory: Option<bool>,
 }
 
@@ -584,7 +584,17 @@ struct BufferResource {
     ptr: BufferPtr,
     offset: wgt::BufferAddress,
     dynamic_index: Option<u32>,
+
+    
+    
+    
+    
+    
+    
+    
+    
     binding_size: Option<wgt::BufferSize>,
+
     binding_location: u32,
 }
 
@@ -607,7 +617,15 @@ pub struct ShaderModule {
 #[derive(Debug, Default)]
 struct PipelineStageInfo {
     push_constants: Option<PushConstantsInfo>,
+
+    
+    
+    
     sizes_slot: Option<naga::back::msl::Slot>,
+
+    
+    
+    
     sized_bindings: Vec<naga::ResourceBinding>,
 }
 
@@ -714,7 +732,28 @@ struct CommandState {
     index: Option<IndexState>,
     raw_wg_size: mtl::MTLSize,
     stage_infos: MultiStageData<PipelineStageInfo>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     storage_buffer_length_map: fxhash::FxHashMap<naga::ResourceBinding, wgt::BufferSize>,
+
     work_group_memory_sizes: Vec<u32>,
     push_constants: Vec<u32>,
 }

@@ -6,8 +6,10 @@ use std::ops::Range;
 #[derive(Debug, Clone)]
 pub(crate) struct TextureInitRange {
     pub(crate) mip_range: Range<u32>,
-    pub(crate) layer_range: Range<u32>, 
+    
+    pub(crate) layer_range: Range<u32>,
 }
+
 
 
 

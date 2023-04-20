@@ -64,6 +64,8 @@ pub enum LoadOp {
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum StoreOp {
     
+    
+    
     Discard = 0,
     
     Store = 1,
@@ -77,11 +79,16 @@ pub enum StoreOp {
 pub struct PassChannel<V> {
     
     
+    
+    
+    
     pub load_op: LoadOp,
     
     pub store_op: StoreOp,
     
+    
     pub clear_value: V,
+    
     
     
     pub read_only: bool,
@@ -236,16 +243,17 @@ impl RenderPass {
 
 impl fmt::Debug for RenderPass {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "RenderPass {{ encoder_id: {:?}, color_targets: {:?}, depth_stencil_target: {:?}, data: {:?} commands, {:?} dynamic offsets, and {:?} push constant u32s }}",
-            self.parent_id,
-            self.color_targets,
-            self.depth_stencil_target,
-            self.base.commands.len(),
-            self.base.dynamic_offsets.len(),
-            self.base.push_constant_data.len(),
-        )
+        f.debug_struct("RenderPass")
+            .field("encoder_id", &self.parent_id)
+            .field("color_targets", &self.color_targets)
+            .field("depth_stencil_target", &self.depth_stencil_target)
+            .field("command count", &self.base.commands.len())
+            .field("dynamic offset count", &self.base.dynamic_offsets.len())
+            .field(
+                "push constant u32 count",
+                &self.base.push_constant_data.len(),
+            )
+            .finish()
     }
 }
 
@@ -595,7 +603,8 @@ type AttachmentDataVec<T> = ArrayVec<T, MAX_TOTAL_ATTACHMENTS>;
 struct RenderPassInfo<'a, A: HalApi> {
     context: RenderPassContext,
     usage_scope: UsageScope<A>,
-    render_attachments: AttachmentDataVec<RenderAttachment<'a>>, 
+    
+    render_attachments: AttachmentDataVec<RenderAttachment<'a>>,
     is_depth_read_only: bool,
     is_stencil_read_only: bool,
     extent: wgt::Extent3d,
@@ -633,6 +642,7 @@ impl<'a, A: HalApi> RenderPassInfo<'a, A> {
             );
         }
         if channel.store_op == StoreOp::Discard {
+            
             
             
             texture_memory_actions.discard(TextureSurfaceDiscard {
@@ -722,9 +732,6 @@ impl<'a, A: HalApi> RenderPassInfo<'a, A> {
                     expected: sample_count,
                 });
             }
-            if sample_count != 1 && sample_count != 4 {
-                return Err(RenderPassErrorInner::InvalidSampleCount(sample_count));
-            }
             attachment_type_name = type_name;
             Ok(())
         };
@@ -773,7 +780,19 @@ impl<'a, A: HalApi> RenderPassInfo<'a, A> {
                 
                 
                 
-
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 
                 
                 
@@ -793,6 +812,10 @@ impl<'a, A: HalApi> RenderPassInfo<'a, A> {
                     );
                 }
 
+                
+                
+                
+                
                 
                 
                 
@@ -1029,6 +1052,11 @@ impl<'a, A: HalApi> RenderPassInfo<'a, A> {
         
         
         
+        
+        
+        
+        
+        
         if let Some((aspect, view)) = self.divergent_discarded_depth_stencil_aspect {
             let (depth_ops, stencil_ops) = if aspect == wgt::TextureAspect::DepthOnly {
                 (
@@ -1210,7 +1238,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
                             .ok_or(RenderCommandError::InvalidBindGroup(bind_group_id))
                             .map_pass_err(scope)?;
                         bind_group
-                            .validate_dynamic_bindings(&temp_offsets, &cmd_buf.limits)
+                            .validate_dynamic_bindings(index, &temp_offsets, &cmd_buf.limits)
                             .map_pass_err(scope)?;
 
                         
@@ -1630,6 +1658,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
                         };
                         state.is_ready(indexed).map_pass_err(scope)?;
 
+                        
                         
                         let last_index = first_index + index_count;
                         let index_limit = state.index.limit;
@@ -2084,13 +2113,15 @@ pub mod render_ffi {
         offsets: *const DynamicOffset,
         offset_length: usize,
     ) {
-        let redundant = pass.current_bind_groups.set_and_check_redundant(
-            bind_group_id,
-            index,
-            &mut pass.base.dynamic_offsets,
-            offsets,
-            offset_length,
-        );
+        let redundant = unsafe {
+            pass.current_bind_groups.set_and_check_redundant(
+                bind_group_id,
+                index,
+                &mut pass.base.dynamic_offsets,
+                offsets,
+                offset_length,
+            )
+        };
 
         if redundant {
             return;
@@ -2210,7 +2241,7 @@ pub mod render_ffi {
             0,
             "Push constant size must be aligned to 4 bytes."
         );
-        let data_slice = slice::from_raw_parts(data, size_bytes as usize);
+        let data_slice = unsafe { slice::from_raw_parts(data, size_bytes as usize) };
         let value_offset = pass.base.push_constant_data.len().try_into().expect(
             "Ran out of push constant space. Don't set 4gb of push constants per RenderPass.",
         );
@@ -2373,7 +2404,7 @@ pub mod render_ffi {
         label: RawString,
         color: u32,
     ) {
-        let bytes = ffi::CStr::from_ptr(label).to_bytes();
+        let bytes = unsafe { ffi::CStr::from_ptr(label) }.to_bytes();
         pass.base.string_data.extend_from_slice(bytes);
 
         pass.base.commands.push(RenderCommand::PushDebugGroup {
@@ -2397,7 +2428,7 @@ pub mod render_ffi {
         label: RawString,
         color: u32,
     ) {
-        let bytes = ffi::CStr::from_ptr(label).to_bytes();
+        let bytes = unsafe { ffi::CStr::from_ptr(label) }.to_bytes();
         pass.base.string_data.extend_from_slice(bytes);
 
         pass.base.commands.push(RenderCommand::InsertDebugMarker {
@@ -2449,7 +2480,9 @@ pub mod render_ffi {
         render_bundle_ids: *const id::RenderBundleId,
         render_bundle_ids_length: usize,
     ) {
-        for &bundle_id in slice::from_raw_parts(render_bundle_ids, render_bundle_ids_length) {
+        for &bundle_id in
+            unsafe { slice::from_raw_parts(render_bundle_ids, render_bundle_ids_length) }
+        {
             pass.base
                 .commands
                 .push(RenderCommand::ExecuteBundle(bundle_id));

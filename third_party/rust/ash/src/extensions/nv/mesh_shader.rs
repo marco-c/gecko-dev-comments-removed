@@ -17,6 +17,7 @@ impl MeshShader {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_draw_mesh_tasks(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -27,6 +28,7 @@ impl MeshShader {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_draw_mesh_tasks_indirect(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -45,6 +47,7 @@ impl MeshShader {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_draw_mesh_tasks_indirect_count(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -66,10 +69,12 @@ impl MeshShader {
         );
     }
 
+    #[inline]
     pub const fn name() -> &'static CStr {
         vk::NvMeshShaderFn::name()
     }
 
+    #[inline]
     pub fn fp(&self) -> &vk::NvMeshShaderFn {
         &self.fp
     }

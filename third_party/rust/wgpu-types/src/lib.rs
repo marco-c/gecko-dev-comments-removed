@@ -2,15 +2,59 @@
 
 
 
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![allow(
     
     clippy::match_like_matches_macro,
 )]
-#![warn(missing_docs)]
+#![warn(missing_docs, unsafe_op_in_unsafe_fn)]
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+use std::hash::{Hash, Hasher};
 use std::{num::NonZeroU32, ops::Range};
+
+
+
+
+
+
+
+macro_rules! impl_bitflags {
+    ($name:ident) => {
+        #[cfg(feature = "trace")]
+        impl serde::Serialize for $name {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: serde::Serializer,
+            {
+                self.bits().serialize(serializer)
+            }
+        }
+
+        #[cfg(feature = "replay")]
+        impl<'de> serde::Deserialize<'de> for $name {
+            fn deserialize<D>(deserializer: D) -> Result<$name, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                let value = <_ as serde::Deserialize<'de>>::deserialize(deserializer)?;
+                // Note: newer version of bitflags replaced from_bits_unchecked with
+                // from_bits_retain which is not marked as unsafe (same implementation).
+                Ok(unsafe { $name::from_bits_unchecked(value) })
+            }
+        }
+
+        impl $name {
+            /// Returns true if the bitflags contains bits that are not part of
+            /// the bitflags definition.
+            pub fn contains_invalid_bits(&self) -> bool {
+                let all = Self::all().bits();
+                (self.bits() | all) != all
+            }
+        }
+    };
+}
 
 
 pub type BufferAddress = u64;
@@ -70,21 +114,16 @@ pub enum Backend {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum PowerPreference {
     
+    #[default]
     LowPower = 0,
     
     HighPerformance = 1,
-}
-
-impl Default for PowerPreference {
-    fn default() -> Self {
-        Self::LowPower
-    }
 }
 
 bitflags::bitflags! {
@@ -118,8 +157,7 @@ bitflags::bitflags! {
     }
 }
 
-#[cfg(feature = "bitflags_serde_shim")]
-bitflags_serde_shim::impl_serde_for_bitflags!(Backends);
+impl_bitflags!(Backends);
 
 impl From<Backend> for Backends {
     fn from(backend: Backend) -> Self {
@@ -191,15 +229,6 @@ bitflags::bitflags! {
         ///
         /// This is a web and native feature.
         const DEPTH_CLIP_CONTROL = 1 << 0;
-        /// Allows for explicit creation of textures of format [`TextureFormat::Depth24PlusStencil8`]
-        ///
-        /// Supported platforms:
-        /// - Vulkan (some)
-        /// - DX12
-        /// - Metal (Macs with amd GPUs)
-        ///
-        /// This is a web and native feature.
-        const DEPTH24PLUS_STENCIL8 = 1 << 1;
         /// Allows for explicit creation of textures of format [`TextureFormat::Depth32FloatStencil8`]
         ///
         /// Supported platforms:
@@ -320,7 +349,9 @@ bitflags::bitflags! {
         /// the consequences.
         ///
         /// Supported platforms:
-        /// - All
+        /// - Vulkan
+        /// - DX12
+        /// - Metal
         ///
         /// This is a native only feature.
         const MAPPABLE_PRIMARY_BUFFERS = 1 << 16;
@@ -590,6 +621,7 @@ bitflags::bitflags! {
         ///
         /// Supported platforms:
         /// - Vulkan
+        /// - OpenGL (web only)
         ///
         /// This is a native only feature.
         const MULTIVIEW = 1 << 37;
@@ -629,7 +661,7 @@ bitflags::bitflags! {
         ///
         /// This is a native-only feature.
         const TEXTURE_COMPRESSION_ASTC_HDR = 1 << 40;
-        /// Allows for timestamp queries inside renderpasses. Metal does not allow this
+        /// Allows for timestamp queries inside render passes. Metal does not allow this
         /// on Apple GPUs.
         ///
         /// Implies [`Features::TIMESTAMP_QUERIES`] is supported.
@@ -642,8 +674,7 @@ bitflags::bitflags! {
     }
 }
 
-#[cfg(feature = "bitflags_serde_shim")]
-bitflags_serde_shim::impl_serde_for_bitflags!(Features);
+impl_bitflags!(Features);
 
 impl Features {
     
@@ -711,6 +742,8 @@ pub struct Limits {
     pub max_texture_array_layers: u32,
     
     pub max_bind_groups: u32,
+    
+    pub max_bindings_per_bind_group: u32,
     
     pub max_dynamic_uniform_buffers_per_pipeline_layout: u32,
     
@@ -793,6 +826,7 @@ impl Default for Limits {
             max_texture_dimension_3d: 2048,
             max_texture_array_layers: 256,
             max_bind_groups: 4,
+            max_bindings_per_bind_group: 640,
             max_dynamic_uniform_buffers_per_pipeline_layout: 8,
             max_dynamic_storage_buffers_per_pipeline_layout: 4,
             max_sampled_textures_per_shader_stage: 16,
@@ -815,7 +849,7 @@ impl Default for Limits {
             max_compute_workgroup_size_y: 256,
             max_compute_workgroup_size_z: 64,
             max_compute_workgroups_per_dimension: 65535,
-            max_buffer_size: 1 << 30,
+            max_buffer_size: 1 << 28,
         }
     }
 }
@@ -829,6 +863,7 @@ impl Limits {
             max_texture_dimension_3d: 256,
             max_texture_array_layers: 256,
             max_bind_groups: 4,
+            max_bindings_per_bind_group: 640,
             max_dynamic_uniform_buffers_per_pipeline_layout: 8,
             max_dynamic_storage_buffers_per_pipeline_layout: 4,
             max_sampled_textures_per_shader_stage: 16,
@@ -1061,7 +1096,7 @@ bitflags::bitflags! {
 
         /// Supports samplers with anisotropic filtering. Note this isn't actually required by
         /// WebGPU, the implementation is allowed to completely ignore aniso clamp. This flag is
-        /// here for native backends so they can comunicate to the user of aniso is enabled.
+        /// here for native backends so they can communicate to the user of aniso is enabled.
         ///
         /// All backends and all devices support anisotropic filtering.
         const ANISOTROPIC_FILTERING = 1 << 10;
@@ -1085,11 +1120,17 @@ bitflags::bitflags! {
         ///
         /// WebGL doesn't support this.
         const BUFFER_BINDINGS_NOT_16_BYTE_ALIGNED = 1 << 15;
+
+        /// Supports buffers to combine [`BufferUsages::INDEX`] with usages other than [`BufferUsages::COPY_DST`] and [`BufferUsages::COPY_SRC`].
+        /// Furthermore, in absence of this feature it is not allowed to copy index buffers from/to buffers with a set of usage flags containing
+         /// [`BufferUsages::VERTEX`]/[`BufferUsages::UNIFORM`]/[`BufferUsages::STORAGE`] or [`BufferUsages::INDIRECT`].
+        ///
+        /// WebGL doesn't support this.
+        const UNRESTRICTED_INDEX_BUFFER = 1 << 16;
     }
 }
 
-#[cfg(feature = "bitflags_serde_shim")]
-bitflags_serde_shim::impl_serde_for_bitflags!(DownlevelFlags);
+impl_bitflags!(DownlevelFlags);
 
 impl DownlevelFlags {
     
@@ -1211,15 +1252,14 @@ bitflags::bitflags! {
     }
 }
 
-#[cfg(feature = "bitflags_serde_shim")]
-bitflags_serde_shim::impl_serde_for_bitflags!(ShaderStages);
+impl_bitflags!(ShaderStages);
 
 
 
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum TextureViewDimension {
@@ -1228,6 +1268,7 @@ pub enum TextureViewDimension {
     D1,
     
     #[cfg_attr(feature = "serde", serde(rename = "2d"))]
+    #[default]
     D2,
     
     #[cfg_attr(feature = "serde", serde(rename = "2d-array"))]
@@ -1241,12 +1282,6 @@ pub enum TextureViewDimension {
     
     #[cfg_attr(feature = "serde", serde(rename = "3d"))]
     D3,
-}
-
-impl Default for TextureViewDimension {
-    fn default() -> Self {
-        Self::D2
-    }
 }
 
 impl TextureViewDimension {
@@ -1307,12 +1342,13 @@ pub enum BlendFactor {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum BlendOperation {
     
+    #[default]
     Add = 0,
     
     Subtract = 1,
@@ -1322,12 +1358,6 @@ pub enum BlendOperation {
     Min = 3,
     
     Max = 4,
-}
-
-impl Default for BlendOperation {
-    fn default() -> Self {
-        Self::Add
-    }
 }
 
 
@@ -1464,7 +1494,7 @@ impl From<TextureFormat> for ColorTargetState {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
@@ -1482,17 +1512,12 @@ pub enum PrimitiveTopology {
     
     
     
+    #[default]
     TriangleList = 3,
     
     
     
     TriangleStrip = 4,
-}
-
-impl Default for PrimitiveTopology {
-    fn default() -> Self {
-        PrimitiveTopology::TriangleList
-    }
 }
 
 impl PrimitiveTopology {
@@ -1510,7 +1535,7 @@ impl PrimitiveTopology {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
@@ -1518,17 +1543,12 @@ pub enum FrontFace {
     
     
     
+    #[default]
     Ccw = 0,
     
     
     
     Cw = 1,
-}
-
-impl Default for FrontFace {
-    fn default() -> Self {
-        Self::Ccw
-    }
 }
 
 
@@ -1550,23 +1570,18 @@ pub enum Face {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum PolygonMode {
     
+    #[default]
     Fill = 0,
     
     Line = 1,
     
     Point = 2,
-}
-
-impl Default for PolygonMode {
-    fn default() -> Self {
-        Self::Fill
-    }
 }
 
 
@@ -1652,24 +1667,44 @@ bitflags::bitflags! {
         /// If not present, the texture can't be sampled with a filtering sampler.
         /// This may overwrite TextureSampleType::Float.filterable
         const FILTERABLE = 1 << 0;
-        /// Allows [`TextureDescriptor::sample_count`] greater than `1`.
-        const MULTISAMPLE = 1 << 1;
+        /// Allows [`TextureDescriptor::sample_count`] to be `2`.
+        const MULTISAMPLE_X2 = 1 << 1;
+          /// Allows [`TextureDescriptor::sample_count`] to be `4`.
+        const MULTISAMPLE_X4 = 1 << 2 ;
+          /// Allows [`TextureDescriptor::sample_count`] to be `8`.
+        const MULTISAMPLE_X8 = 1 << 3 ;
         /// Allows a texture of this format to back a view passed as `resolve_target`
         /// to a render pass for an automatic driver-implemented resolve.
-        const MULTISAMPLE_RESOLVE = 1 << 2;
+        const MULTISAMPLE_RESOLVE = 1 << 4;
         /// When used as a STORAGE texture, then a texture with this format can be bound with
         /// [`StorageTextureAccess::ReadOnly`] or [`StorageTextureAccess::ReadWrite`].
-        const STORAGE_READ_WRITE = 1 << 3;
+        const STORAGE_READ_WRITE = 1 << 5;
         /// When used as a STORAGE texture, then a texture with this format can be written to with atomics.
         // TODO: No access flag exposed as of writing
-        const STORAGE_ATOMICS = 1 << 4;
+        const STORAGE_ATOMICS = 1 << 6;
         /// If not present, the texture can't be blended into the render target.
-        const BLENDABLE = 1 << 5;
+        const BLENDABLE = 1 << 7;
     }
 }
 
-#[cfg(feature = "bitflags_serde_shim")]
-bitflags_serde_shim::impl_serde_for_bitflags!(TextureFormatFeatureFlags);
+impl TextureFormatFeatureFlags {
+    
+    
+    
+    pub fn sample_count_supported(&self, count: u32) -> bool {
+        use TextureFormatFeatureFlags as tfsc;
+
+        match count {
+            1 => true,
+            2 => self.contains(tfsc::MULTISAMPLE_X2),
+            4 => self.contains(tfsc::MULTISAMPLE_X4),
+            8 => self.contains(tfsc::MULTISAMPLE_X8),
+            _ => false,
+        }
+    }
+}
+
+impl_bitflags!(TextureFormatFeatureFlags);
 
 
 
@@ -2314,7 +2349,6 @@ impl TextureFormat {
         let astc_hdr = Features::TEXTURE_COMPRESSION_ASTC_HDR;
         let norm16bit = Features::TEXTURE_FORMAT_16BIT_NORM;
         let d32_s8 = Features::DEPTH32FLOAT_STENCIL8;
-        let d24_s8 = Features::DEPTH24PLUS_STENCIL8;
 
         
         let uint = TextureSampleType::Uint;
@@ -2332,9 +2366,9 @@ impl TextureFormat {
 
         
         let noaa = TextureFormatFeatureFlags::empty();
-        let msaa = TextureFormatFeatureFlags::MULTISAMPLE;
-        let msaa_resolve =
-            TextureFormatFeatureFlags::MULTISAMPLE | TextureFormatFeatureFlags::MULTISAMPLE_RESOLVE;
+        let msaa = TextureFormatFeatureFlags::MULTISAMPLE_X4;
+        let msaa_resolve = TextureFormatFeatureFlags::MULTISAMPLE_X4
+            | TextureFormatFeatureFlags::MULTISAMPLE_RESOLVE;
 
         
         let basic =
@@ -2399,7 +2433,7 @@ impl TextureFormat {
             
             Self::Depth16Unorm =>        (   native,   depth,    linear,         msaa, (1, 1),  2, attachment, 1),
             Self::Depth24Plus =>         (   native,   depth,    linear,         msaa, (1, 1),  4, attachment, 1),
-            Self::Depth24PlusStencil8 => (   d24_s8,   depth,    linear,         msaa, (1, 1),  4, attachment, 2),
+            Self::Depth24PlusStencil8 => (   native,   depth,    linear,         msaa, (1, 1),  4, attachment, 2),
             Self::Depth32Float =>        (   native,   depth,    linear,         msaa, (1, 1),  4, attachment, 1),
             Self::Depth32FloatStencil8 =>(   d32_s8,   depth,    linear,         msaa, (1, 1),  4, attachment, 2),
             
@@ -3088,8 +3122,7 @@ bitflags::bitflags! {
     }
 }
 
-#[cfg(feature = "bitflags_serde_shim")]
-bitflags_serde_shim::impl_serde_for_bitflags!(ColorWrites);
+impl_bitflags!(ColorWrites);
 
 impl Default for ColorWrites {
     fn default() -> Self {
@@ -3178,7 +3211,7 @@ impl StencilState {
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct DepthBiasState {
@@ -3197,12 +3230,30 @@ impl DepthBiasState {
     }
 }
 
+impl Hash for DepthBiasState {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.constant.hash(state);
+        self.slope_scale.to_bits().hash(state);
+        self.clamp.to_bits().hash(state);
+    }
+}
+
+impl PartialEq for DepthBiasState {
+    fn eq(&self, other: &Self) -> bool {
+        (self.constant == other.constant)
+            && (self.slope_scale.to_bits() == other.slope_scale.to_bits())
+            && (self.clamp.to_bits() == other.clamp.to_bits())
+    }
+}
+
+impl Eq for DepthBiasState {}
+
 
 
 
 
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct DepthStencilState {
@@ -3250,20 +3301,15 @@ impl DepthStencilState {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum IndexFormat {
     
     Uint16 = 0,
     
+    #[default]
     Uint32 = 1,
-}
-
-impl Default for IndexFormat {
-    fn default() -> Self {
-        Self::Uint32
-    }
 }
 
 
@@ -3271,12 +3317,13 @@ impl Default for IndexFormat {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum StencilOperation {
     
+    #[default]
     Keep = 0,
     
     Zero = 1,
@@ -3295,12 +3342,6 @@ pub enum StencilOperation {
     IncrementWrap = 6,
     
     DecrementWrap = 7,
-}
-
-impl Default for StencilOperation {
-    fn default() -> Self {
-        Self::Keep
-    }
 }
 
 
@@ -3449,21 +3490,16 @@ impl CompareFunction {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum VertexStepMode {
     
+    #[default]
     Vertex = 0,
     
     Instance = 1,
-}
-
-impl Default for VertexStepMode {
-    fn default() -> Self {
-        VertexStepMode::Vertex
-    }
 }
 
 
@@ -3644,8 +3680,7 @@ bitflags::bitflags! {
     }
 }
 
-#[cfg(feature = "bitflags_serde_shim")]
-bitflags_serde_shim::impl_serde_for_bitflags!(BufferUsages);
+impl_bitflags!(BufferUsages);
 
 
 
@@ -3713,7 +3748,7 @@ impl<T> Default for CommandEncoderDescriptor<Option<T>> {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum PresentMode {
@@ -3739,6 +3774,7 @@ pub enum PresentMode {
     
     
     
+    #[default]
     Fifo = 2,
     
     
@@ -3782,12 +3818,6 @@ pub enum PresentMode {
     Mailbox = 5,
 }
 
-impl Default for PresentMode {
-    fn default() -> Self {
-        Self::Fifo
-    }
-}
-
 
 
 #[repr(C)]
@@ -3820,6 +3850,12 @@ pub enum CompositeAlphaMode {
     Inherit = 4,
 }
 
+impl Default for CompositeAlphaMode {
+    fn default() -> Self {
+        Self::Auto
+    }
+}
+
 bitflags::bitflags! {
     /// Different ways that you can use a texture.
     ///
@@ -3840,13 +3876,39 @@ bitflags::bitflags! {
         const TEXTURE_BINDING = 1 << 2;
         /// Allows a texture to be a [`BindingType::StorageTexture`] in a bind group.
         const STORAGE_BINDING = 1 << 3;
-        /// Allows a texture to be an output attachment of a renderpass.
+        /// Allows a texture to be an output attachment of a render pass.
         const RENDER_ATTACHMENT = 1 << 4;
     }
 }
 
-#[cfg(feature = "bitflags_serde_shim")]
-bitflags_serde_shim::impl_serde_for_bitflags!(TextureUsages);
+impl_bitflags!(TextureUsages);
+
+
+#[derive(Debug)]
+pub struct SurfaceCapabilities {
+    
+    
+    
+    pub formats: Vec<TextureFormat>,
+    
+    
+    
+    pub present_modes: Vec<PresentMode>,
+    
+    
+    
+    pub alpha_modes: Vec<CompositeAlphaMode>,
+}
+
+impl Default for SurfaceCapabilities {
+    fn default() -> Self {
+        Self {
+            formats: Vec::new(),
+            present_modes: Vec::new(),
+            alpha_modes: vec![CompositeAlphaMode::Opaque],
+        }
+    }
+}
 
 
 
@@ -4283,12 +4345,13 @@ impl<L> TextureDescriptor<L> {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum TextureAspect {
     
+    #[default]
     All,
     
     StencilOnly,
@@ -4296,18 +4359,12 @@ pub enum TextureAspect {
     DepthOnly,
 }
 
-impl Default for TextureAspect {
-    fn default() -> Self {
-        Self::All
-    }
-}
-
 
 
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
@@ -4316,6 +4373,7 @@ pub enum AddressMode {
     
     
     
+    #[default]
     ClampToEdge = 0,
     
     
@@ -4335,18 +4393,12 @@ pub enum AddressMode {
     ClampToBorder = 3,
 }
 
-impl Default for AddressMode {
-    fn default() -> Self {
-        Self::ClampToEdge
-    }
-}
-
 
 
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
@@ -4354,17 +4406,12 @@ pub enum FilterMode {
     
     
     
+    #[default]
     Nearest = 0,
     
     
     
     Linear = 1,
-}
-
-impl Default for FilterMode {
-    fn default() -> Self {
-        Self::Nearest
-    }
 }
 
 
@@ -4502,7 +4549,7 @@ pub struct ImageDataLayout {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum BufferBindingType {
@@ -4526,6 +4573,7 @@ pub enum BufferBindingType {
     
     
     
+    #[default]
     Uniform,
     
     
@@ -4561,12 +4609,6 @@ pub enum BufferBindingType {
         
         read_only: bool,
     },
-}
-
-impl Default for BufferBindingType {
-    fn default() -> Self {
-        Self::Uniform
-    }
 }
 
 
@@ -5065,8 +5107,7 @@ bitflags::bitflags! {
     }
 }
 
-#[cfg(feature = "bitflags_serde_shim")]
-bitflags_serde_shim::impl_serde_for_bitflags!(PipelineStatisticsTypes);
+impl_bitflags!(PipelineStatisticsTypes);
 
 
 #[repr(C)]

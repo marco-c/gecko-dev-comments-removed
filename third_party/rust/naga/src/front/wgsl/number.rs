@@ -24,12 +24,9 @@ impl Number {
     
     fn abstract_to_concrete(self) -> Result<Number, NumberError> {
         match self {
-            Number::AbstractInt(num) => {
-                use std::convert::TryFrom;
-                i32::try_from(num)
-                    .map(Number::I32)
-                    .map_err(|_| NumberError::NotRepresentable)
-            }
+            Number::AbstractInt(num) => i32::try_from(num)
+                .map(Number::I32)
+                .map_err(|_| NumberError::NotRepresentable),
             Number::AbstractFloat(num) => {
                 let num = num as f32;
                 if num.is_finite() {
@@ -94,9 +91,9 @@ fn parse(input: &str) -> (Result<Number, NumberError>, &str) {
     
     
     macro_rules! consume {
-        ($bytes:ident, $($($pattern:pat)|*),*) => {
+        ($bytes:ident, $($pattern:pat),*) => {
             match $bytes {
-                &[$($($pattern)|*),*, ref rest @ ..] => { $bytes = rest; true },
+                &[$($pattern),*, ref rest @ ..] => { $bytes = rest; true },
                 _ => false,
             }
         };
@@ -106,9 +103,9 @@ fn parse(input: &str) -> (Result<Number, NumberError>, &str) {
     
     
     macro_rules! consume_map {
-        ($bytes:ident, [$($($pattern:pat)|* => $to:expr),*]) => {
+        ($bytes:ident, [$($pattern:pat_param => $to:expr),*]) => {
             match $bytes {
-                $( &[$($pattern)|*, ref rest @ ..] => { $bytes = rest; Some($to) }, )*
+                $( &[$pattern, ref rest @ ..] => { $bytes = rest; Some($to) }, )*
                 _ => None,
             }
         };

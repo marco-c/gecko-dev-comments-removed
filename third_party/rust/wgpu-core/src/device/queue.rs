@@ -62,6 +62,9 @@ impl SubmittedWorkDoneClosure {
     
     
     
+    
+    
+    
     pub unsafe fn from_c(inner: SubmittedWorkDoneClosureC) -> Self {
         Self {
             inner: SubmittedWorkDoneClosureInner::C { inner },
@@ -113,10 +116,13 @@ pub(super) struct EncoderInFlight<A: hal::Api> {
 
 impl<A: hal::Api> EncoderInFlight<A> {
     pub(super) unsafe fn land(mut self) -> A::CommandEncoder {
-        self.raw.reset_all(self.cmd_buffers.into_iter());
+        unsafe { self.raw.reset_all(self.cmd_buffers.into_iter()) };
         self.raw
     }
 }
+
+
+
 
 
 
@@ -270,9 +276,9 @@ fn prepare_staging_buffer<A: HalApi>(
 impl<A: hal::Api> StagingBuffer<A> {
     unsafe fn flush(&self, device: &A::Device) -> Result<(), DeviceError> {
         if !self.is_coherent {
-            device.flush_mapped_ranges(&self.raw, iter::once(0..self.size));
+            unsafe { device.flush_mapped_ranges(&self.raw, iter::once(0..self.size)) };
         }
-        device.unmap_buffer(&self.raw)?;
+        unsafe { device.unmap_buffer(&self.raw)? };
         Ok(())
     }
 }
@@ -541,6 +547,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
         device.pending_writes.dst_buffers.insert(buffer_id);
 
         
+        
         {
             drop(buffer_guard);
             let mut buffer_guard = hub.buffers.write(device_token).0;
@@ -588,9 +595,23 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
         }
 
         let (mut texture_guard, _) = hub.textures.write(&mut token); 
+        let dst = texture_guard.get_mut(destination.texture).unwrap();
+
         let (selector, dst_base, texture_format) =
-            extract_texture_selector(destination, size, &*texture_guard)?;
+            extract_texture_selector(destination, size, dst)?;
         let format_desc = texture_format.describe();
+
+        if !dst.desc.usage.contains(wgt::TextureUsages::COPY_DST) {
+            return Err(
+                TransferError::MissingCopyDstUsageFlag(None, Some(destination.texture)).into(),
+            );
+        }
+
+        
+        
+        let (hal_copy_size, array_layer_count) =
+            validate_texture_copy_range(destination, &dst.desc, CopySide::Destination, size)?;
+
         
         
         let (_, _source_bytes_per_array_layer) = validate_linear_texture_data(
@@ -614,6 +635,8 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
             Some(rows_per_image) => rows_per_image.get(),
             None => {
                 
+                
+                
                 size.height
             }
         };
@@ -631,7 +654,6 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
             (size.depth_or_array_layers - 1) * block_rows_per_image + height_blocks;
         let stage_size = stage_bytes_per_row as u64 * block_rows_in_copy as u64;
 
-        let dst = texture_guard.get_mut(destination.texture).unwrap();
         if !dst.desc.usage.contains(wgt::TextureUsages::COPY_DST) {
             return Err(
                 TransferError::MissingCopyDstUsageFlag(None, Some(destination.texture)).into(),
@@ -643,9 +665,12 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
 
         
         
-
+        
+        
+        
         let init_layer_range = if dst.desc.dimension == wgt::TextureDimension::D3 {
-            0..1 
+            
+            0..1
         } else {
             destination.origin.z..destination.origin.z + size.depth_or_array_layers
         };
@@ -678,18 +703,17 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
             }
         }
 
-        let (dst, transition) = trackers
+        let dst = texture_guard.get(destination.texture).unwrap();
+        let transition = trackers
             .textures
             .set_single(
-                &*texture_guard,
+                dst,
                 destination.texture,
                 selector,
                 hal::TextureUses::COPY_DST,
             )
             .ok_or(TransferError::InvalidTexture(destination.texture))?;
 
-        let (hal_copy_size, array_layer_count) =
-            validate_texture_copy_range(destination, &dst.desc, CopySide::Destination, size)?;
         dst.life_guard.use_at(device.active_submission_index + 1);
 
         let dst_raw = dst
@@ -830,6 +854,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
 
                     
                     for &cmb_id in command_buffer_ids {
+                        
                         
                         used_surface_textures.set_size(texture_guard.len());
 
@@ -1039,7 +1064,9 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
                     
                     
                     
-
+                    
+                    
+                    
                     let (_, mut token) = hub.buffers.read(&mut token); 
                     let (mut texture_guard, _) = hub.textures.write(&mut token);
 

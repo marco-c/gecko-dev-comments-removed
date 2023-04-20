@@ -20,12 +20,14 @@ impl ExternalMemoryFd {
     }
 
     
+    #[inline]
     pub unsafe fn get_memory_fd(&self, create_info: &vk::MemoryGetFdInfoKHR) -> VkResult<i32> {
         let mut fd = -1;
         (self.fp.get_memory_fd_khr)(self.handle, create_info, &mut fd).result_with_success(fd)
     }
 
     
+    #[inline]
     pub unsafe fn get_memory_fd_properties(
         &self,
         handle_type: vk::ExternalMemoryHandleTypeFlags,
@@ -41,14 +43,17 @@ impl ExternalMemoryFd {
         .result_with_success(memory_fd_properties)
     }
 
+    #[inline]
     pub const fn name() -> &'static CStr {
         vk::KhrExternalMemoryFdFn::name()
     }
 
+    #[inline]
     pub fn fp(&self) -> &vk::KhrExternalMemoryFdFn {
         &self.fp
     }
 
+    #[inline]
     pub fn device(&self) -> vk::Device {
         self.handle
     }

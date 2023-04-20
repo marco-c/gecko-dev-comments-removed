@@ -19,6 +19,7 @@ impl GetPhysicalDeviceProperties2 {
     }
 
     
+    #[inline]
     pub unsafe fn get_physical_device_features2(
         &self,
         physical_device: vk::PhysicalDevice,
@@ -28,6 +29,7 @@ impl GetPhysicalDeviceProperties2 {
     }
 
     
+    #[inline]
     pub unsafe fn get_physical_device_format_properties2(
         &self,
         physical_device: vk::PhysicalDevice,
@@ -42,6 +44,7 @@ impl GetPhysicalDeviceProperties2 {
     }
 
     
+    #[inline]
     pub unsafe fn get_physical_device_image_format_properties2(
         &self,
         physical_device: vk::PhysicalDevice,
@@ -57,6 +60,7 @@ impl GetPhysicalDeviceProperties2 {
     }
 
     
+    #[inline]
     pub unsafe fn get_physical_device_memory_properties2(
         &self,
         physical_device: vk::PhysicalDevice,
@@ -66,6 +70,7 @@ impl GetPhysicalDeviceProperties2 {
     }
 
     
+    #[inline]
     pub unsafe fn get_physical_device_properties2(
         &self,
         physical_device: vk::PhysicalDevice,
@@ -75,6 +80,7 @@ impl GetPhysicalDeviceProperties2 {
     }
 
     
+    #[inline]
     pub unsafe fn get_physical_device_queue_family_properties2_len(
         &self,
         physical_device: vk::PhysicalDevice,
@@ -92,6 +98,7 @@ impl GetPhysicalDeviceProperties2 {
     
     
     
+    #[inline]
     pub unsafe fn get_physical_device_queue_family_properties2(
         &self,
         physical_device: vk::PhysicalDevice,
@@ -107,6 +114,7 @@ impl GetPhysicalDeviceProperties2 {
     }
 
     
+    #[inline]
     pub unsafe fn get_physical_device_sparse_image_format_properties2_len(
         &self,
         physical_device: vk::PhysicalDevice,
@@ -128,6 +136,7 @@ impl GetPhysicalDeviceProperties2 {
     
     
     
+    #[inline]
     pub unsafe fn get_physical_device_sparse_image_format_properties2(
         &self,
         physical_device: vk::PhysicalDevice,
@@ -146,10 +155,12 @@ impl GetPhysicalDeviceProperties2 {
         assert_eq!(count as usize, out.len());
     }
 
+    #[inline]
     pub const fn name() -> &'static CStr {
         vk::KhrGetPhysicalDeviceProperties2Fn::name()
     }
 
+    #[inline]
     pub fn fp(&self) -> &vk::KhrGetPhysicalDeviceProperties2Fn {
         &self.fp
     }

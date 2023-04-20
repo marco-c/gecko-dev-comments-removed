@@ -29,11 +29,7 @@ impl Packed24_8 {
     }
 }
 
-
-
-use vk::ColorComponentFlags;
-
-impl ColorComponentFlags {
+impl vk::ColorComponentFlags {
     
     pub const RGBA: Self = Self(Self::R.0 | Self::G.0 | Self::B.0 | Self::A.0);
 }
@@ -55,4 +51,11 @@ impl From<vk::Extent2D> for vk::Rect2D {
             extent,
         }
     }
+}
+
+
+
+
+pub unsafe trait TaggedStructure {
+    const STRUCTURE_TYPE: vk::StructureType;
 }

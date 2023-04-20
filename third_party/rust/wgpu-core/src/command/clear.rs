@@ -272,10 +272,16 @@ pub(crate) fn clear_texture<A: HalApi>(
     
     
     
+    
+    
+    
+    
+    
+    
+    
     let dst_barrier = texture_tracker
-        .set_single(storage, dst_texture_id.0, selector, clear_usage)
+        .set_single(dst_texture, dst_texture_id.0, selector, clear_usage)
         .unwrap()
-        .1
         .map(|pending| pending.into_hal(dst_texture));
     unsafe {
         encoder.transition_textures(dst_barrier.into_iter());
@@ -332,8 +338,13 @@ fn clear_texture_via_buffer_copies<A: hal::Api>(
         
         let max_rows_per_copy = max_rows_per_copy / format_desc.block_dimensions.1 as u32
             * format_desc.block_dimensions.1 as u32;
-        assert!(max_rows_per_copy > 0, "Zero buffer size is too small to fill a single row of a texture with format {:?} and desc {:?}",
-                texture_desc.format, texture_desc.size);
+        assert!(
+            max_rows_per_copy > 0,
+            "Zero buffer size is too small to fill a single row \
+                 of a texture with format {:?} and desc {:?}",
+            texture_desc.format,
+            texture_desc.size
+        );
 
         let z_range = 0..(if texture_desc.dimension == wgt::TextureDimension::D3 {
             mip_size.depth_or_array_layers
@@ -344,6 +355,7 @@ fn clear_texture_via_buffer_copies<A: hal::Api>(
         for array_layer in range.layer_range.clone() {
             
             for z in z_range.clone() {
+                
                 
                 let mut num_rows_left = mip_size.height;
                 while num_rows_left > 0 {
@@ -400,6 +412,7 @@ fn clear_texture_via_render_passes<A: hal::Api>(
     for mip_level in range.mip_range {
         let extent = extent_base.mip_level_size(mip_level, is_3d_texture);
         let layer_or_depth_range = if dst_texture.desc.dimension == wgt::TextureDimension::D3 {
+            
             
             0..extent.depth_or_array_layers
         } else {

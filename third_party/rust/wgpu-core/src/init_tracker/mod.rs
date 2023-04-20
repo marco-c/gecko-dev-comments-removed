@@ -13,6 +13,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use smallvec::SmallVec;
 use std::{fmt, iter, ops::Range};
 
@@ -28,10 +46,13 @@ pub(crate) use texture::{
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum MemoryInitKind {
     
+    
     ImplicitlyInitialized,
+    
     
     NeedsInitializedMemory,
 }
+
 
 
 type UninitializedRangeVec<Idx> = SmallVec<[Range<Idx>; 1]>;
@@ -136,6 +157,8 @@ where
     
     
     
+    
+    
     pub(crate) fn check(&self, query_range: Range<Idx>) -> Option<Range<Idx>> {
         let index = self
             .uninitialized_ranges
@@ -148,6 +171,7 @@ where
                     match self.uninitialized_ranges.get(index + 1) {
                         Some(next_range) => {
                             if next_range.start < query_range.end {
+                                
                                 
                                 Some(start..query_range.end)
                             } else {
@@ -248,9 +272,12 @@ mod test {
         assert_eq!(tracker.check(3..8), Some(5..8)); 
         assert_eq!(tracker.check(3..17), Some(5..17)); 
 
-        assert_eq!(tracker.check(8..22), Some(8..22)); 
-        assert_eq!(tracker.check(17..22), Some(17..20)); 
-        assert_eq!(tracker.check(20..25), None); 
+        
+        assert_eq!(tracker.check(8..22), Some(8..22));
+        
+        assert_eq!(tracker.check(17..22), Some(17..20));
+        
+        assert_eq!(tracker.check(20..25), None);
     }
 
     #[test]

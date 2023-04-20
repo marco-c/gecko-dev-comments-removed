@@ -28,7 +28,9 @@ pub(crate) type SurfacesInDiscardState = Vec<TextureSurfaceDiscard>;
 #[derive(Default)]
 pub(crate) struct CommandBufferTextureMemoryActions {
     
+    
     init_actions: Vec<TextureInitTrackerAction>,
+    
     
     
     discards: Vec<TextureSurfaceDiscard>,
@@ -59,12 +61,15 @@ impl CommandBufferTextureMemoryActions {
         
         
         
+        
+        
         self.init_actions
             .extend(match texture_guard.get(action.id) {
                 Ok(texture) => texture.initialization_status.check_action(action),
                 Err(_) => return immediately_necessary_clears, 
             });
 
+        
         
         
         let init_actions = &mut self.init_actions;
@@ -79,6 +84,8 @@ impl CommandBufferTextureMemoryActions {
                 if let MemoryInitKind::NeedsInitializedMemory = action.kind {
                     immediately_necessary_clears.push(discarded_surface.clone());
 
+                    
+                    
                     
                     init_actions.push(TextureInitTrackerAction {
                         id: discarded_surface.texture,
@@ -100,6 +107,7 @@ impl CommandBufferTextureMemoryActions {
     }
 
     
+    
     pub(crate) fn register_implicit_init<A: hal::Api>(
         &mut self,
         id: id::Valid<TextureId>,
@@ -117,6 +125,8 @@ impl CommandBufferTextureMemoryActions {
         assert!(must_be_empty.is_empty());
     }
 }
+
+
 
 
 
@@ -149,11 +159,13 @@ pub(crate) fn fixup_discarded_surfaces<
 
 impl<A: HalApi> BakedCommands<A> {
     
+    
     pub(crate) fn initialize_buffer_memory(
         &mut self,
         device_tracker: &mut Tracker<A>,
         buffer_guard: &mut Storage<Buffer<A>, id::BufferId>,
     ) -> Result<(), DestroyedBufferError> {
+        
         
         
         let mut uninitialized_ranges_per_buffer = FastHashMap::default();
@@ -194,13 +206,17 @@ impl<A: HalApi> BakedCommands<A> {
             
             ranges.sort_by_key(|r| r.start);
             for i in (1..ranges.len()).rev() {
-                assert!(ranges[i - 1].end <= ranges[i].start); 
+                
+                assert!(ranges[i - 1].end <= ranges[i].start);
                 if ranges[i].start == ranges[i - 1].end {
                     ranges[i - 1].end = ranges[i].end;
                     ranges.swap_remove(i); 
                 }
             }
 
+            
+            
+            
             
             
             let transition = device_tracker
@@ -223,8 +239,20 @@ impl<A: HalApi> BakedCommands<A> {
             }
 
             for range in ranges.iter() {
-                assert!(range.start % wgt::COPY_BUFFER_ALIGNMENT == 0, "Buffer {:?} has an uninitialized range with a start not aligned to 4 (start was {})", raw_buf, range.start);
-                assert!(range.end % wgt::COPY_BUFFER_ALIGNMENT == 0, "Buffer {:?} has an uninitialized range with an end not aligned to 4 (end was {})", raw_buf, range.end);
+                assert!(
+                    range.start % wgt::COPY_BUFFER_ALIGNMENT == 0,
+                    "Buffer {:?} has an uninitialized range with a start \
+                         not aligned to 4 (start was {})",
+                    raw_buf,
+                    range.start
+                );
+                assert!(
+                    range.end % wgt::COPY_BUFFER_ALIGNMENT == 0,
+                    "Buffer {:?} has an uninitialized range with an end \
+                         not aligned to 4 (end was {})",
+                    raw_buf,
+                    range.end
+                );
 
                 unsafe {
                     self.encoder.clear_buffer(raw_buf, range.clone());
@@ -234,6 +262,8 @@ impl<A: HalApi> BakedCommands<A> {
         Ok(())
     }
 
+    
+    
     
     
     pub(crate) fn initialize_texture_memory(
@@ -290,6 +320,8 @@ impl<A: HalApi> BakedCommands<A> {
             }
         }
 
+        
+        
         
         for surface_discard in self.texture_memory_actions.discards.iter() {
             let texture = texture_guard

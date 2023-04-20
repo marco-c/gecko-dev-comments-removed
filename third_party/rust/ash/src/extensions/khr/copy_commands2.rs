@@ -18,6 +18,7 @@ impl CopyCommands2 {
     }
 
     
+    #[inline]
     pub unsafe fn cmd_copy_buffer2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -26,6 +27,7 @@ impl CopyCommands2 {
         (self.fp.cmd_copy_buffer2_khr)(command_buffer, copy_buffer_info)
     }
     
+    #[inline]
     pub unsafe fn cmd_copy_image2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -34,6 +36,7 @@ impl CopyCommands2 {
         (self.fp.cmd_copy_image2_khr)(command_buffer, copy_image_info)
     }
     
+    #[inline]
     pub unsafe fn cmd_copy_buffer_to_image2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -42,6 +45,7 @@ impl CopyCommands2 {
         (self.fp.cmd_copy_buffer_to_image2_khr)(command_buffer, copy_buffer_to_image_info)
     }
     
+    #[inline]
     pub unsafe fn cmd_copy_image_to_buffer2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -50,6 +54,7 @@ impl CopyCommands2 {
         (self.fp.cmd_copy_image_to_buffer2_khr)(command_buffer, copy_image_to_buffer_info)
     }
     
+    #[inline]
     pub unsafe fn cmd_blit_image2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -58,6 +63,7 @@ impl CopyCommands2 {
         (self.fp.cmd_blit_image2_khr)(command_buffer, blit_image_info)
     }
     
+    #[inline]
     pub unsafe fn cmd_resolve_image2(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -66,10 +72,12 @@ impl CopyCommands2 {
         (self.fp.cmd_resolve_image2_khr)(command_buffer, resolve_image_info)
     }
 
+    #[inline]
     pub const fn name() -> &'static CStr {
         vk::KhrCopyCommands2Fn::name()
     }
 
+    #[inline]
     pub fn fp(&self) -> &vk::KhrCopyCommands2Fn {
         &self.fp
     }

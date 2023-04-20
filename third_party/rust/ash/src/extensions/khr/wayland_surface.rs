@@ -21,6 +21,7 @@ impl WaylandSurface {
     }
 
     
+    #[inline]
     pub unsafe fn create_wayland_surface(
         &self,
         create_info: &vk::WaylandSurfaceCreateInfoKHR,
@@ -37,6 +38,7 @@ impl WaylandSurface {
     }
 
     
+    #[inline]
     pub unsafe fn get_physical_device_wayland_presentation_support(
         &self,
         physical_device: vk::PhysicalDevice,
@@ -52,14 +54,17 @@ impl WaylandSurface {
         b > 0
     }
 
+    #[inline]
     pub const fn name() -> &'static CStr {
         vk::KhrWaylandSurfaceFn::name()
     }
 
+    #[inline]
     pub fn fp(&self) -> &vk::KhrWaylandSurfaceFn {
         &self.fp
     }
 
+    #[inline]
     pub fn instance(&self) -> vk::Instance {
         self.handle
     }

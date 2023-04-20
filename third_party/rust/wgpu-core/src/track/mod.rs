@@ -89,7 +89,12 @@
 
 
 
+
+
+
+
 mod buffer;
+mod metadata;
 mod range;
 mod stateless;
 mod texture;
@@ -97,14 +102,14 @@ mod texture;
 use crate::{
     binding_model, command, conv, hub,
     id::{self, TypedId},
-    pipeline, resource, Epoch, LifeGuard, RefCount,
+    pipeline, resource,
 };
 
-use bit_vec::BitVec;
-use std::{borrow::Cow, fmt, marker::PhantomData, mem, num::NonZeroU32, ops};
+use std::{fmt, num::NonZeroU32, ops};
 use thiserror::Error;
 
 pub(crate) use buffer::{BufferBindGroupState, BufferTracker, BufferUsageScope};
+use metadata::{ResourceMetadata, ResourceMetadataProvider};
 pub(crate) use stateless::{StatelessBindGroupSate, StatelessTracker};
 pub(crate) use texture::{
     TextureBindGroupState, TextureSelector, TextureTracker, TextureUsageScope,
@@ -199,43 +204,6 @@ fn skip_barrier<T: ResourceUses>(old_state: T, new_state: T) -> bool {
     
     
     old_state == new_state && old_state.all_ordered()
-}
-
-
-fn resize_bitvec<B: bit_vec::BitBlock>(vec: &mut BitVec<B>, size: usize) {
-    let owned_size_to_grow = size.checked_sub(vec.len());
-    if let Some(delta) = owned_size_to_grow {
-        if delta != 0 {
-            vec.grow(delta, false);
-        }
-    } else {
-        vec.truncate(size);
-    }
-}
-
-
-
-
-fn iterate_bitvec_indices(ownership: &BitVec<usize>) -> impl Iterator<Item = usize> + '_ {
-    const BITS_PER_BLOCK: usize = mem::size_of::<usize>() * 8;
-
-    let size = ownership.len();
-
-    ownership
-        .blocks()
-        .enumerate()
-        .filter(|&(_, word)| word != 0)
-        .flat_map(move |(word_index, mut word)| {
-            let bit_start = word_index * BITS_PER_BLOCK;
-            let bit_end = (bit_start + BITS_PER_BLOCK).min(size);
-
-            (bit_start..bit_end).filter(move |_| {
-                let active = word & 0b1 != 0;
-                word >>= 1;
-
-                active
-            })
-        })
 }
 
 #[derive(Clone, Debug, Error, Eq, PartialEq)]
@@ -342,142 +310,6 @@ impl<T: ResourceUses> fmt::Display for InvalidUse<T> {
 
 
 
-#[derive(Debug)]
-pub(crate) struct ResourceMetadata<A: hub::HalApi> {
-    owned: BitVec<usize>,
-    ref_counts: Vec<Option<RefCount>>,
-    epochs: Vec<Epoch>,
-
-    _phantom: PhantomData<A>,
-}
-impl<A: hub::HalApi> ResourceMetadata<A> {
-    pub fn new() -> Self {
-        Self {
-            owned: BitVec::default(),
-            ref_counts: Vec::new(),
-            epochs: Vec::new(),
-
-            _phantom: PhantomData,
-        }
-    }
-
-    pub fn set_size(&mut self, size: usize) {
-        self.ref_counts.resize(size, None);
-        self.epochs.resize(size, u32::MAX);
-
-        resize_bitvec(&mut self.owned, size);
-    }
-
-    
-    
-    
-    
-    #[cfg_attr(not(feature = "strict_asserts"), allow(unused_variables))]
-    fn tracker_assert_in_bounds(&self, index: usize) {
-        strict_assert!(index < self.owned.len());
-        strict_assert!(index < self.ref_counts.len());
-        strict_assert!(index < self.epochs.len());
-
-        strict_assert!(if self.owned.get(index).unwrap() {
-            self.ref_counts[index].is_some()
-        } else {
-            true
-        });
-    }
-
-    
-    
-    
-    fn is_empty(&self) -> bool {
-        !self.owned.any()
-    }
-
-    
-    fn used<Id: TypedId>(&self) -> impl Iterator<Item = id::Valid<Id>> + '_ {
-        if !self.owned.is_empty() {
-            self.tracker_assert_in_bounds(self.owned.len() - 1)
-        };
-        iterate_bitvec_indices(&self.owned).map(move |index| {
-            let epoch = unsafe { *self.epochs.get_unchecked(index) };
-            id::Valid(Id::zip(index as u32, epoch, A::VARIANT))
-        })
-    }
-
-    
-    unsafe fn reset(&mut self, index: usize) {
-        *self.ref_counts.get_unchecked_mut(index) = None;
-        *self.epochs.get_unchecked_mut(index) = u32::MAX;
-        self.owned.set(index, false);
-    }
-}
-
-
-
-
-
-enum ResourceMetadataProvider<'a, A: hub::HalApi> {
-    
-    Direct {
-        epoch: Epoch,
-        ref_count: Cow<'a, RefCount>,
-    },
-    
-    Indirect { metadata: &'a ResourceMetadata<A> },
-    
-    Resource { epoch: Epoch },
-}
-impl<A: hub::HalApi> ResourceMetadataProvider<'_, A> {
-    
-    
-    
-    
-    
-    
-    #[inline(always)]
-    unsafe fn get_own(self, life_guard: Option<&LifeGuard>, index: usize) -> (Epoch, RefCount) {
-        match self {
-            ResourceMetadataProvider::Direct { epoch, ref_count } => {
-                (epoch, ref_count.into_owned())
-            }
-            ResourceMetadataProvider::Indirect { metadata } => {
-                metadata.tracker_assert_in_bounds(index);
-                (
-                    *metadata.epochs.get_unchecked(index),
-                    metadata
-                        .ref_counts
-                        .get_unchecked(index)
-                        .clone()
-                        .unwrap_unchecked(),
-                )
-            }
-            ResourceMetadataProvider::Resource { epoch } => {
-                strict_assert!(life_guard.is_some());
-                (epoch, life_guard.unwrap_unchecked().add_ref())
-            }
-        }
-    }
-    
-    
-    
-    
-    
-    #[inline(always)]
-    unsafe fn get_epoch(self, index: usize) -> Epoch {
-        match self {
-            ResourceMetadataProvider::Direct { epoch, .. }
-            | ResourceMetadataProvider::Resource { epoch, .. } => epoch,
-            ResourceMetadataProvider::Indirect { metadata } => {
-                metadata.tracker_assert_in_bounds(index);
-                *metadata.epochs.get_unchecked(index)
-            }
-        }
-    }
-}
-
-
-
-
-
 
 pub(crate) struct BindGroupStates<A: hub::HalApi> {
     pub buffers: BufferBindGroupState<A>,
@@ -560,9 +392,11 @@ impl<A: hub::HalApi> RenderBundleScope<A> {
         textures: &hub::Storage<resource::Texture<A>, id::TextureId>,
         bind_group: &BindGroupStates<A>,
     ) -> Result<(), UsageConflict> {
-        self.buffers.merge_bind_group(&bind_group.buffers)?;
-        self.textures
-            .merge_bind_group(textures, &bind_group.textures)?;
+        unsafe { self.buffers.merge_bind_group(&bind_group.buffers)? };
+        unsafe {
+            self.textures
+                .merge_bind_group(textures, &bind_group.textures)?
+        };
 
         Ok(())
     }
@@ -607,9 +441,11 @@ impl<A: hub::HalApi> UsageScope<A> {
         textures: &hub::Storage<resource::Texture<A>, id::TextureId>,
         bind_group: &BindGroupStates<A>,
     ) -> Result<(), UsageConflict> {
-        self.buffers.merge_bind_group(&bind_group.buffers)?;
-        self.textures
-            .merge_bind_group(textures, &bind_group.textures)?;
+        unsafe {
+            self.buffers.merge_bind_group(&bind_group.buffers)?;
+            self.textures
+                .merge_bind_group(textures, &bind_group.textures)?;
+        }
 
         Ok(())
     }
@@ -736,13 +572,19 @@ impl<A: hub::HalApi> Tracker<A> {
         scope: &mut UsageScope<A>,
         bind_group: &BindGroupStates<A>,
     ) {
-        self.buffers
-            .set_and_remove_from_usage_scope_sparse(&mut scope.buffers, bind_group.buffers.used());
-        self.textures.set_and_remove_from_usage_scope_sparse(
-            textures,
-            &mut scope.textures,
-            &bind_group.textures,
-        );
+        unsafe {
+            self.buffers.set_and_remove_from_usage_scope_sparse(
+                &mut scope.buffers,
+                bind_group.buffers.used(),
+            )
+        };
+        unsafe {
+            self.textures.set_and_remove_from_usage_scope_sparse(
+                textures,
+                &mut scope.textures,
+                &bind_group.textures,
+            )
+        };
     }
 
     

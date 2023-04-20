@@ -13,6 +13,7 @@ pub(crate) type BufferInitTracker = InitTracker<wgt::BufferAddress>;
 
 impl BufferInitTracker {
     
+    
     pub(crate) fn check_action(
         &self,
         action: &BufferInitTrackerAction,
@@ -20,6 +21,7 @@ impl BufferInitTracker {
         self.create_action(action.id, action.range.clone(), action.kind)
     }
 
+    
     
     pub(crate) fn create_action(
         &self,

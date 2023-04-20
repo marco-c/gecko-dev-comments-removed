@@ -18,6 +18,7 @@ impl GetSurfaceCapabilities2 {
     }
 
     
+    #[inline]
     pub unsafe fn get_physical_device_surface_capabilities2(
         &self,
         physical_device: vk::PhysicalDevice,
@@ -33,6 +34,7 @@ impl GetSurfaceCapabilities2 {
     }
 
     
+    #[inline]
     pub unsafe fn get_physical_device_surface_formats2_len(
         &self,
         physical_device: vk::PhysicalDevice,
@@ -52,6 +54,7 @@ impl GetSurfaceCapabilities2 {
     
     
     
+    #[inline]
     pub unsafe fn get_physical_device_surface_formats2(
         &self,
         physical_device: vk::PhysicalDevice,
@@ -69,10 +72,12 @@ impl GetSurfaceCapabilities2 {
         err_code.result()
     }
 
+    #[inline]
     pub const fn name() -> &'static CStr {
         vk::KhrGetSurfaceCapabilities2Fn::name()
     }
 
+    #[inline]
     pub fn fp(&self) -> &vk::KhrGetSurfaceCapabilities2Fn {
         &self.fp
     }

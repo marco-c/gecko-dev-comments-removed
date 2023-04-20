@@ -400,8 +400,10 @@ impl<W: fmt::Write> super::Writer<'_, W> {
                     crate::TypeInner::Vector { width, .. } => Parent::Array {
                         stride: width as u32,
                     },
-                    crate::TypeInner::Matrix { columns, width, .. } => Parent::Array {
-                        stride: Alignment::from(columns) * width as u32,
+                    crate::TypeInner::Matrix { rows, width, .. } => Parent::Array {
+                        
+                        
+                        stride: Alignment::from(rows) * width as u32,
                     },
                     _ => unreachable!(),
                 },

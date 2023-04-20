@@ -3,6 +3,7 @@
 
 
 
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![allow(
     
     clippy::bool_assert_comparison,
@@ -27,6 +28,7 @@
 #![warn(
     trivial_casts,
     trivial_numeric_casts,
+    unsafe_op_in_unsafe_fn,
     unused_extern_crates,
     unused_qualifications,
     
@@ -286,31 +288,101 @@ platform supports.";
 
 
 
+
+
+
+
+
+
+
+macro_rules! define_backend_caller {
+    { $public:ident, $private:ident if $feature:literal } => {
+        #[cfg(feature = $feature )]
+        #[macro_export]
+        macro_rules! $private {
+            ( $call:expr ) => ( $call )
+        }
+
+        #[cfg(not(feature = $feature ))]
+        #[macro_export]
+        macro_rules! $private {
+            ( $call:expr ) => (
+                panic!("Identifier refers to disabled backend feature {:?}", $feature)
+            )
+        }
+
+        // See note about rust-lang#52234 above.
+        #[doc(hidden)] pub use $private as $public;
+    }
+}
+
+
+
+
+
+
+
+define_backend_caller! { gfx_if_vulkan, gfx_if_vulkan_hidden if "vulkan" }
+define_backend_caller! { gfx_if_metal, gfx_if_metal_hidden if "metal" }
+define_backend_caller! { gfx_if_dx12, gfx_if_dx12_hidden if "dx12" }
+define_backend_caller! { gfx_if_dx11, gfx_if_dx11_hidden if "dx11" }
+define_backend_caller! { gfx_if_gles, gfx_if_gles_hidden if "gles" }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[macro_export]
 macro_rules! gfx_select {
     ($id:expr => $global:ident.$method:ident( $($param:expr),* )) => {
-        // Note: For some reason the cfg aliases defined in build.rs don't succesfully apply in this
-        // macro so we must specify their equivalents manually
         match $id.backend() {
-            #[cfg(any(
-                all(not(target_arch = "wasm32"), not(target_os = "ios"), not(target_os = "macos")),
-                feature = "vulkan-portability"
-            ))]
-            wgt::Backend::Vulkan => $global.$method::<$crate::api::Vulkan>( $($param),* ),
-            #[cfg(all(not(target_arch = "wasm32"), any(target_os = "ios", target_os = "macos")))]
-            wgt::Backend::Metal => $global.$method::<$crate::api::Metal>( $($param),* ),
-            #[cfg(all(not(target_arch = "wasm32"), windows))]
-            wgt::Backend::Dx12 => $global.$method::<$crate::api::Dx12>( $($param),* ),
-            #[cfg(all(not(target_arch = "wasm32"), windows))]
-            wgt::Backend::Dx11 => $global.$method::<$crate::api::Dx11>( $($param),* ),
-            #[cfg(any(
-                all(unix, not(target_os = "macos"), not(target_os = "ios")),
-                feature = "angle",
-                target_arch = "wasm32"
-            ))]
-            wgt::Backend::Gl => $global.$method::<$crate::api::Gles>( $($param),+ ),
+            wgt::Backend::Vulkan => $crate::gfx_if_vulkan!($global.$method::<$crate::api::Vulkan>( $($param),* )),
+            wgt::Backend::Metal => $crate::gfx_if_metal!($global.$method::<$crate::api::Metal>( $($param),* )),
+            wgt::Backend::Dx12 => $crate::gfx_if_dx12!($global.$method::<$crate::api::Dx12>( $($param),* )),
+            wgt::Backend::Dx11 => $crate::gfx_if_dx11!($global.$method::<$crate::api::Dx11>( $($param),* )),
+            wgt::Backend::Gl => $crate::gfx_if_gles!($global.$method::<$crate::api::Gles>( $($param),+ )),
             other => panic!("Unexpected backend {:?}", other),
-
         }
     };
 }
