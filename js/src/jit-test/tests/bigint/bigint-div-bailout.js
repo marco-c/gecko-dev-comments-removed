@@ -1,4 +1,4 @@
-setJitCompilerOption("ion.warmup.trigger", 20);
+
 
 function testBailout() {
   function f(v, r) {

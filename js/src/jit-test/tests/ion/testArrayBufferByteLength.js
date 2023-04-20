@@ -1,6 +1,6 @@
-var ArrayBufferByteLength = getSelfHostedValue("ArrayBufferByteLength");
 
-setJitCompilerOption("ion.warmup.trigger", 50);
+
+var ArrayBufferByteLength = getSelfHostedValue("ArrayBufferByteLength");
 
 function testBasic() {
   var arr = [1, 2, 3];

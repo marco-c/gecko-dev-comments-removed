@@ -3,7 +3,6 @@
 
 
 
-setJitCompilerOption("ion.warmup.trigger", 30);
 gcPreserveCode();
 
 function f (n) {
