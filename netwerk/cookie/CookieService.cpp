@@ -789,7 +789,7 @@ CookieService::GetSessionCookies(nsTArray<RefPtr<nsICookie>>& aCookies) {
   mPersistentStorage->EnsureInitialized();
 
   
-  mPersistentStorage->GetCookies(aCookies);
+  mPersistentStorage->GetSessionCookies(aCookies);
 
   return NS_OK;
 }
