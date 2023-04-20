@@ -8,6 +8,25 @@ const { UrlbarTestUtils } = ChromeUtils.importESModule(
 
 const keyword = "VeryUniqueKeywordThatDoesNeverMatchAnyTestUrl";
 
+
+function getCallerLines() {
+  const lines = Array.from(
+    new Error().stack.split("\n").slice(1),
+    line => /browser_ext_omnibox.js:(\d+):\d+$/.exec(line)?.[1]
+  );
+  return "Caller lines: " + lines.filter(lineno => lineno != null).join(", ");
+}
+
+add_setup(async () => {
+  
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.extension.omnibox.timeout", 500]],
+  });
+});
+
 add_task(async function() {
   
   
@@ -80,9 +99,14 @@ add_task(async function() {
     },
   });
 
-  async function expectEvent(event, expected = {}) {
+  async function expectEvent(event, expected) {
+    info(`Waiting for event: ${event} (${getCallerLines()})`);
     let actual = await extension.awaitMessage(event);
-    if (expected.text) {
+    if (!expected) {
+      ok(true, `Expected "${event} to have fired."`);
+      return;
+    }
+    if (expected.text != undefined) {
       is(
         actual.text,
         expected.text,
@@ -98,8 +122,21 @@ add_task(async function() {
     }
   }
 
-  async function waitForResult(index, searchString) {
+  async function waitForResult(index) {
+    info(`waitForResult (${getCallerLines()})`);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
+
     
     await new Promise(resolve =>
       window.requestIdleCallback(resolve, { timeout: 1000 })
