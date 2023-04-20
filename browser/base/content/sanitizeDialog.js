@@ -160,10 +160,10 @@ var gSanitizePromptDialog = {
   
 
 
-
   _getItemPrefs() {
     return Preferences.getAll().filter(
-      p => p.id !== "privacy.sanitize.timeSpan"
+      p =>
+        p.id !== "privacy.sanitize.timeSpan" && p.id !== "privacy.cpd.downloads"
     );
   },
 
@@ -172,6 +172,8 @@ var gSanitizePromptDialog = {
 
 
   onReadGeneric() {
+    
+    
     
     
     var found = this._getItemPrefs().some(
