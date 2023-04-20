@@ -77,7 +77,6 @@ add_setup(async function() {
       ],
       
       ["browser.urlbar.maxHistoricalSearchSuggestions", 0],
-      ["browser.search.serpEventTelemetry.enabled", true],
     ],
   });
   
@@ -135,15 +134,6 @@ async function track_ad_click(
     }
   );
 
-  assertImpressionEvents([
-    {
-      provider: "example",
-      tagged: "true",
-      partner_code: "ff",
-      source: expectedScalarSource,
-    },
-  ]);
-
   let pageLoadPromise = BrowserTestUtils.waitForLocationChange(gBrowser);
   await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
     content.document.getElementById("ad1").click();
@@ -162,18 +152,7 @@ async function track_ad_click(
     }
   );
 
-  assertImpressionEvents([
-    {
-      provider: "example",
-      tagged: "true",
-      partner_code: "ff",
-      source: expectedScalarSource,
-    },
-  ]);
-
   await cleanupFn();
-
-  Services.fog.testResetFOG();
 }
 
 add_task(async function test_source_urlbar() {
