@@ -143,10 +143,23 @@ NativeNtBlockSet_Write(CrashReporter::AnnotationWriter& aWriter) {
 }
 
 enum class BlockAction {
+  
   Allow,
+  
+  
+  
+  
+  
   SubstituteLSP,
+  
+  
   Error,
+  
   Deny,
+  
+  
+  
+  
   NoOpEntryPoint,
 };
 
@@ -241,12 +254,9 @@ static BOOL WINAPI NoOp_DllMain(HINSTANCE, DWORD, LPVOID) { return TRUE; }
 
 
 
-static bool IsDependentModule(
+static bool IsInjectedDependentModule(
     const UNICODE_STRING& aModuleLeafName,
     mozilla::freestanding::Kernel32ExportsSolver& aK32Exports) {
-  
-  
-#if defined(EARLY_BETA_OR_EARLIER)
   mozilla::nt::PEHeaders exeHeaders(aK32Exports.mGetModuleHandleW(nullptr));
   if (!exeHeaders || !exeHeaders.IsImportDirectoryTampered()) {
     
@@ -269,9 +279,6 @@ static bool IsDependentModule(
                            &aModuleLeafName, &depModuleLeafName, TRUE) == 0);
       });
   return isDependent;
-#else
-  return false;
-#endif
 }
 
 
@@ -409,7 +416,7 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
   UNICODE_STRING leafOnStack;
   nt::GetLeafName(&leafOnStack, sectionFileName);
 
-  bool isDependent = false;
+  bool isInjectedDependent = false;
   const UNICODE_STRING k32Name = MOZ_LITERAL_UNICODE_STRING(L"kernel32.dll");
   Kernel32ExportsSolver* k32Exports = nullptr;
   BlockAction blockAction;
@@ -423,22 +430,51 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
     
     
     if (k32Exports && !ModuleLoadFrame::ExistsTopFrame()) {
-      isDependent = IsDependentModule(leafOnStack, *k32Exports);
+      
+      
+      
+      
+      
+      isInjectedDependent = IsInjectedDependentModule(leafOnStack, *k32Exports);
     }
 
-    if (isDependent) {
+    if (isInjectedDependent) {
       
       
       
       
       Unused << gSharedSection.AddDependentModule(sectionFileName);
 
+      bool attemptToBlockViaRedirect;
+#if defined(NIGHTLY_BUILD)
       
       
-      mozilla::nt::PEHeaders headers(*aBaseAddress);
-      blockAction = RedirectToNoOpEntryPoint(headers, *k32Exports)
-                        ? BlockAction::NoOpEntryPoint
-                        : BlockAction::Allow;
+      attemptToBlockViaRedirect = true;
+      
+      
+      
+      blockAction = BlockAction::NoOpEntryPoint;
+#else
+      
+      blockAction =
+          DetermineBlockAction(leafOnStack, *aBaseAddress, k32Exports);
+      
+      
+      
+      
+      
+      
+      attemptToBlockViaRedirect =
+          blockAction == BlockAction::Deny || blockAction == BlockAction::Error;
+#endif
+      if (attemptToBlockViaRedirect) {
+        
+        
+        mozilla::nt::PEHeaders headers(*aBaseAddress);
+        blockAction = RedirectToNoOpEntryPoint(headers, *k32Exports)
+                          ? BlockAction::NoOpEntryPoint
+                          : BlockAction::Allow;
+      }
     } else {
       
       blockAction =
@@ -476,7 +512,7 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
   if (nt::RtlGetProcessHeap()) {
     ModuleLoadFrame::NotifySectionMap(
         nt::AllocatedUnicodeString(sectionFileName), *aBaseAddress, stubStatus,
-        loadStatus, isDependent);
+        loadStatus, isInjectedDependent);
   }
 
   if (loadStatus == ModuleLoadInfo::Status::Loaded ||
