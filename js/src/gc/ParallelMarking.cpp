@@ -319,23 +319,24 @@ void ParallelMarker::decActiveTasks(ParallelMarkTask* task,
 }
 
 void ParallelMarker::donateWorkFrom(GCMarker* src) {
-  ParallelMarkTask* waitingTask;
-
-  {
-    AutoLockGC lock(gc);
-
-    
-    if (waitingTaskCount == 0) {
-      return;
-    }
-
-    
-    waitingTask = waitingTasks.ref().popFront();
-    waitingTaskCount--;
-
-    
-    MOZ_ASSERT(waitingTask->isWaiting);
+  if (!gc->tryLockGC()) {
+    return;
   }
+
+  
+  if (waitingTaskCount == 0) {
+    gc->unlockGC();
+    return;
+  }
+
+  
+  ParallelMarkTask* waitingTask = waitingTasks.ref().popFront();
+  waitingTaskCount--;
+
+  
+  MOZ_ASSERT(waitingTask->isWaiting);
+
+  gc->unlockGC();
 
   
   GCMarker::moveWork(waitingTask->marker, src);
