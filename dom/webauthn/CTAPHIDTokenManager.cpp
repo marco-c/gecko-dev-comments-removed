@@ -5,7 +5,6 @@
 
 
 #include "WebAuthnCoseIdentifiers.h"
-#include "WebAuthnEnumStrings.h"
 #include "mozilla/dom/CTAPHIDTokenManager.h"
 #include "mozilla/dom/U2FHIDTokenManager.h"
 #include "mozilla/dom/WebAuthnUtil.h"
@@ -142,16 +141,17 @@ RefPtr<U2FRegisterPromise> CTAPHIDTokenManager::Register(
     const auto& extra = aInfo.Extra().ref();
     const WebAuthnAuthenticatorSelection& sel = extra.AuthenticatorSelection();
 
+    UserVerificationRequirement userVerificationRequirement =
+        sel.userVerificationRequirement();
+
     bool requireUserVerification =
-        sel.userVerificationRequirement().EqualsLiteral(
-            MOZ_WEBAUTHN_USER_VERIFICATION_REQUIREMENT_REQUIRED);
+        userVerificationRequirement == UserVerificationRequirement::Required;
 
     bool requirePlatformAttachment = false;
     if (sel.authenticatorAttachment().isSome()) {
-      const nsString& authenticatorAttachment =
+      const AuthenticatorAttachment authenticatorAttachment =
           sel.authenticatorAttachment().value();
-      if (authenticatorAttachment.EqualsLiteral(
-              MOZ_WEBAUTHN_AUTHENTICATOR_ATTACHMENT_PLATFORM)) {
+      if (authenticatorAttachment == AuthenticatorAttachment::Platform) {
         requirePlatformAttachment = true;
       }
     }
@@ -272,9 +272,11 @@ RefPtr<U2FSignPromise> CTAPHIDTokenManager::Sign(
   if (aInfo.Extra().isSome()) {
     const auto& extra = aInfo.Extra().ref();
 
+    UserVerificationRequirement userVerificationReq =
+        extra.userVerificationRequirement();
+
     
-    if (extra.userVerificationRequirement().EqualsLiteral(
-            MOZ_WEBAUTHN_USER_VERIFICATION_REQUIREMENT_REQUIRED)) {
+    if (userVerificationReq == UserVerificationRequirement::Required) {
       signFlags |= U2F_FLAG_REQUIRE_USER_VERIFICATION;
     }
 
