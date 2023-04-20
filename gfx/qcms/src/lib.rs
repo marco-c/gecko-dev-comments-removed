@@ -11,11 +11,10 @@
 #![cfg_attr(
     feature = "neon",
     feature(arm_target_feature, raw_ref_op)
-
 )]
 
 
-#[repr(C)]
+#[repr(u32)]
 #[derive(Clone, Copy, Debug)]
 pub enum Intent {
     AbsoluteColorimetric = 3,

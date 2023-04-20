@@ -498,8 +498,7 @@ enum class YUVRangedColorSpace : uint8_t {
 
 
 enum class ColorSpace2 : uint8_t {
-  Display,
-  UNKNOWN = Display,  
+  UNKNOWN,  
   SRGB,
   DISPLAY_P3,
   BT601_525,  
@@ -507,7 +506,7 @@ enum class ColorSpace2 : uint8_t {
   BT601_625 =
       BT709,  
   BT2020,
-  _First = Display,
+  _First = UNKNOWN,
   _Last = BT2020,
 };
 
