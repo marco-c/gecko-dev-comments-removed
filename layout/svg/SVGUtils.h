@@ -588,11 +588,6 @@ class SVGUtils final {
 
   static gfxMatrix GetCSSPxToDevPxMatrix(const nsIFrame* aNonSVGFrame);
 
-  static bool IsInSVGTextSubtree(const nsIFrame* aFrame) {
-    
-    return aFrame->HasAnyStateBits(NS_FRAME_IS_SVG_TEXT);
-  }
-
   
 
 

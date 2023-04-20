@@ -88,7 +88,7 @@ bool ComputedStyle::IsFixedPosContainingBlock(
     const nsIFrame* aContextFrame) const {
   
   
-  if (mozilla::SVGUtils::IsInSVGTextSubtree(aContextFrame)) {
+  if (aContextFrame->IsInSVGTextSubtree()) {
     return false;
   }
   if (IsFixedPosContainingBlockForNonSVGTextFrames()) {
@@ -114,7 +114,7 @@ bool ComputedStyle::IsAbsPosContainingBlock(
   
   
   return StyleDisplay()->IsPositionedStyle() &&
-         !mozilla::SVGUtils::IsInSVGTextSubtree(aContextFrame);
+         !aContextFrame->IsInSVGTextSubtree();
 }
 
 }  

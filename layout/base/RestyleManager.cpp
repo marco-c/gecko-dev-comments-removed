@@ -991,7 +991,7 @@ static bool ContainingBlockChangeAffectsDescendants(
         nsIFrame* outOfFlow = nsPlaceholderFrame::GetRealFrameForPlaceholder(f);
         
         
-        NS_ASSERTION(!SVGUtils::IsInSVGTextSubtree(outOfFlow),
+        NS_ASSERTION(!outOfFlow->IsInSVGTextSubtree(),
                      "SVG text frames can't be out of flow");
         
         

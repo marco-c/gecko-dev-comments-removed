@@ -14,7 +14,6 @@
 #include "LayoutLogging.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/SVGUtils.h"
 #include "mozilla/WritingModes.h"
 #include "nsBlockFrame.h"
 #include "nsCSSAnonBoxes.h"
@@ -2494,7 +2493,7 @@ void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
         widgetPadding, presContext->AppUnitsPerDevPixel());
     SetComputedLogicalPadding(wm, LogicalMargin(wm, padding));
     needPaddingProp = false;
-  } else if (SVGUtils::IsInSVGTextSubtree(mFrame)) {
+  } else if (mFrame->IsInSVGTextSubtree()) {
     SetComputedLogicalPadding(wm, LogicalMargin(wm));
     needPaddingProp = false;
   } else if (aPadding) {  
@@ -2548,7 +2547,7 @@ void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
     border = LogicalMargin(
         wm, LayoutDevicePixel::ToAppUnits(widgetBorder,
                                           presContext->AppUnitsPerDevPixel()));
-  } else if (SVGUtils::IsInSVGTextSubtree(mFrame)) {
+  } else if (mFrame->IsInSVGTextSubtree()) {
     
   } else if (aBorder) {  
     border = *aBorder;
@@ -2835,7 +2834,7 @@ bool SizeComputationInput::ComputeMargin(WritingMode aCBWM,
                                          nscoord aPercentBasis,
                                          LayoutFrameType aFrameType) {
   
-  if (SVGUtils::IsInSVGTextSubtree(mFrame)) {
+  if (mFrame->IsInSVGTextSubtree()) {
     return false;
   }
 

@@ -4516,6 +4516,13 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+  bool IsInSVGTextSubtree() const {
+    return HasAnyStateBits(NS_FRAME_IS_SVG_TEXT);
+  }
+
+  
+
+
 
 
   bool FrameMaintainsOverflow() const {
