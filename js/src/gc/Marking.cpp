@@ -107,37 +107,6 @@ using mozilla::PodCopy;
 
 
 
-#if defined(DEBUG)
-template <typename T>
-static inline bool IsThingPoisoned(T* thing) {
-  const uint8_t poisonBytes[] = {
-      JS_FRESH_NURSERY_PATTERN,      JS_SWEPT_NURSERY_PATTERN,
-      JS_ALLOCATED_NURSERY_PATTERN,  JS_FRESH_TENURED_PATTERN,
-      JS_MOVED_TENURED_PATTERN,      JS_SWEPT_TENURED_PATTERN,
-      JS_ALLOCATED_TENURED_PATTERN,  JS_FREED_HEAP_PTR_PATTERN,
-      JS_FREED_CHUNK_PATTERN,        JS_FREED_ARENA_PATTERN,
-      JS_SWEPT_TI_PATTERN,           JS_SWEPT_CODE_PATTERN,
-      JS_RESET_VALUE_PATTERN,        JS_POISONED_JSSCRIPT_DATA_PATTERN,
-      JS_OOB_PARSE_NODE_PATTERN,     JS_LIFO_UNDEFINED_PATTERN,
-      JS_LIFO_UNINITIALIZED_PATTERN,
-  };
-  uint32_t* p =
-      reinterpret_cast<uint32_t*>(reinterpret_cast<FreeSpan*>(thing) + 1);
-  
-  
-  if ((*p & 1) == 0) {
-    return false;
-  }
-  for (const uint8_t pb : poisonBytes) {
-    const uint32_t pw = pb | (pb << 8) | (pb << 16) | (pb << 24);
-    if (*p == pw) {
-      return true;
-    }
-  }
-  return false;
-}
-#endif
-
 template <typename T>
 static inline bool IsOwnedByOtherRuntime(JSRuntime* rt, T thing) {
   bool other = thing->runtimeFromAnyThread() != rt;
@@ -146,6 +115,13 @@ static inline bool IsOwnedByOtherRuntime(JSRuntime* rt, T thing) {
 }
 
 #ifdef DEBUG
+
+static inline bool IsInFreeList(TenuredCell* cell) {
+  Arena* arena = cell->arena();
+  uintptr_t addr = reinterpret_cast<uintptr_t>(cell);
+  MOZ_ASSERT(Arena::isAligned(addr, arena->getThingSize()));
+  return arena->inFreeList(addr);
+}
 
 template <typename T>
 void js::CheckTracedThing(JSTracer* trc, T* thing) {
@@ -206,16 +182,7 @@ void js::CheckTracedThing(JSTracer* trc, T* thing) {
 
 
 
-
-
-
-
-
-  MOZ_ASSERT_IF(rt->heapState() != JS::HeapState::Idle &&
-                    !zone->isGCSweeping() && !zone->isGCFinished() &&
-                    !zone->isGCCompacting(),
-                !IsThingPoisoned(thing) ||
-                    !InFreeList(thing->asTenured().arena(), thing));
+  MOZ_ASSERT_IF(zone->isGCMarking(), !IsInFreeList(&thing->asTenured()));
 }
 
 template <typename T>
