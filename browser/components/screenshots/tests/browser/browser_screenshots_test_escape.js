@@ -11,35 +11,15 @@ add_task(async function test_fullpageScreenshot() {
     },
     async browser => {
       let helper = new ScreenshotsHelper(browser);
-      let contentInfo = await helper.getContentDimensions();
-      ok(contentInfo, "Got dimensions back from the content");
 
       
       helper.triggerUIFromToolbar();
 
-      let panel = gBrowser.selectedBrowser.ownerDocument.querySelector(
-        "#screenshotsPagePanel"
-      );
-      await BrowserTestUtils.waitForMutationCondition(
-        panel,
-        { attributes: true },
-        () => {
-          return BrowserTestUtils.is_visible(panel);
-        }
-      );
-      ok(BrowserTestUtils.is_visible(panel), "Panel buttons are visible");
+      await helper.waitForOverlay();
 
-      EventUtils.synthesizeKey("KEY_Escape");
+      BrowserTestUtils.synthesizeKey("KEY_Escape", {}, browser);
 
-      await BrowserTestUtils.waitForMutationCondition(
-        panel,
-        { attributes: true },
-        () => {
-          return BrowserTestUtils.is_hidden(panel);
-        }
-      );
-
-      ok(BrowserTestUtils.is_hidden(panel), "Panel buttons are hidden");
+      await helper.waitForOverlayClosed();
     }
   );
 });
