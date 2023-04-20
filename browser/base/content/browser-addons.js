@@ -1330,15 +1330,15 @@ var gUnifiedExtensions = {
         return false;
       }
 
-      const extension = WebExtensionPolicy.getByID(addon.id)?.extension;
+      const policy = WebExtensionPolicy.getByID(addon.id);
       
       
       
-      if (!extension?.canAccessWindow(window)) {
+      if (!policy?.canAccessWindow(window)) {
         return false;
       }
 
-      return all || !extension?.hasBrowserActionUI;
+      return all || !policy.extension.hasBrowserActionUI;
     });
     addons.sort((a1, a2) => a1.name.localeCompare(a2.name));
 
