@@ -77,10 +77,7 @@ var GeckoViewRemoteDebugger = {
     
     
 
-    const env = Cc["@mozilla.org/process/environment;1"].getService(
-      Ci.nsIEnvironment
-    );
-    let packageName = env.get("MOZ_ANDROID_PACKAGE_NAME");
+    let packageName = Services.env.get("MOZ_ANDROID_PACKAGE_NAME");
     if (packageName) {
       packageName = packageName + "/";
     } else {
