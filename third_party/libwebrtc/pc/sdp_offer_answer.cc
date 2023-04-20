@@ -41,7 +41,6 @@
 #include "p2p/base/transport_description_factory.h"
 #include "p2p/base/transport_info.h"
 #include "pc/channel_interface.h"
-#include "pc/channel_manager.h"
 #include "pc/dtls_transport.h"
 #include "pc/media_stream.h"
 #include "pc/media_stream_proxy.h"
@@ -1248,10 +1247,6 @@ void SdpOfferAnswerHandler::Initialize(
 }
 
 
-
-cricket::ChannelManager* SdpOfferAnswerHandler::channel_manager() const {
-  return context_->channel_manager();
-}
 
 cricket::MediaEngineInterface* SdpOfferAnswerHandler::media_engine() const {
   RTC_DCHECK(context_);

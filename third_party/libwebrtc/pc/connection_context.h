@@ -70,7 +70,6 @@ class ConnectionContext final
     return sctp_factory_.get();
   }
 
-  cricket::ChannelManager* channel_manager() const;
   cricket::MediaEngineInterface* media_engine() const {
     return media_engine_.get();
   }
@@ -128,9 +127,6 @@ class ConnectionContext final
   
   std::unique_ptr<FieldTrialsView> const trials_;
 
-  
-  
-  std::unique_ptr<cricket::ChannelManager> channel_manager_;
   const std::unique_ptr<cricket::MediaEngineInterface> media_engine_;
 
   

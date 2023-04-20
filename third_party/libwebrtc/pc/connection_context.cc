@@ -16,7 +16,6 @@
 #include "api/transport/field_trial_based_config.h"
 #include "media/base/media_engine.h"
 #include "media/sctp/sctp_transport_factory.h"
-#include "pc/channel_manager.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/internal/default_socket_server.h"
 #include "rtc_base/socket_server.h"
@@ -146,11 +145,6 @@ ConnectionContext::ConnectionContext(
       std::make_unique<rtc::BasicPacketSocketFactory>(socket_factory);
 
   
-  channel_manager_ = cricket::ChannelManager::Create(
-      media_engine_.get(), &ssrc_generator_,
-      true, worker_thread(), network_thread());
-
-  
   
   
   
@@ -158,11 +152,16 @@ ConnectionContext::ConnectionContext(
   signaling_thread_->SetDispatchWarningMs(100);
   worker_thread_->SetDispatchWarningMs(30);
   network_thread_->SetDispatchWarningMs(10);
+
+  if (media_engine_) {
+    
+    
+    worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] { media_engine_->Init(); });
+  }
 }
 
 ConnectionContext::~ConnectionContext() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
-  channel_manager_.reset(nullptr);
   worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
     RTC_DCHECK_RUN_ON(worker_thread());
     
@@ -180,10 +179,6 @@ ConnectionContext::~ConnectionContext() {
 
   if (wraps_current_thread_)
     rtc::ThreadManager::Instance()->UnwrapCurrentThread();
-}
-
-cricket::ChannelManager* ConnectionContext::channel_manager() const {
-  return channel_manager_.get();
 }
 
 }  

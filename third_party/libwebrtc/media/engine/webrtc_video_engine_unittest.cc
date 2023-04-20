@@ -1389,6 +1389,8 @@ TEST_F(WebRtcVideoEngineTest, SetVideoRtxEnabled) {
   std::vector<VideoCodec> send_codecs;
   std::vector<VideoCodec> recv_codecs;
 
+  webrtc::test::ScopedKeyValueConfig field_trials;
+
   
   send_codecs = engine_.send_codecs(false);
   EXPECT_FALSE(HasAnyRtxCodec(send_codecs));
