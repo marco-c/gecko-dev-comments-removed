@@ -4,7 +4,7 @@
 
 
 
-use super::{AbsoluteColor, ColorComponents, ColorSpace};
+use super::{AbsoluteColor, ColorComponents, ColorFlags, ColorSpace};
 use crate::parser::{Parse, ParserContext};
 use cssparser::Parser;
 use std::fmt::{self, Write};
@@ -136,24 +136,6 @@ impl ToCss for ColorInterpolationMethod {
 }
 
 
-
-
-
-trait ModelledColor: Clone + Copy {
-    
-    
-    
-    
-    fn lerp(
-        left_bg: &Self,
-        left_weight: f32,
-        right_bg: &Self,
-        right_weight: f32,
-        hue_interpolation: HueInterpolationMethod,
-    ) -> Self;
-}
-
-
 pub fn mix(
     interpolation: ColorInterpolationMethod,
     left_color: &AbsoluteColor,
@@ -187,6 +169,38 @@ pub fn mix(
     )
 }
 
+
+#[derive(Clone, Copy)]
+#[repr(u8)]
+enum ComponentMixOutcome {
+    
+    Mix,
+    
+    UseLeft,
+    
+    UseRight,
+    
+    None,
+}
+
+impl ComponentMixOutcome {
+    fn from_colors(
+        left: &AbsoluteColor,
+        right: &AbsoluteColor,
+        flags_to_check: ColorFlags,
+    ) -> Self {
+        match (
+            left.flags.contains(flags_to_check),
+            right.flags.contains(flags_to_check),
+        ) {
+            (true, true) => Self::None,
+            (true, false) => Self::UseRight,
+            (false, true) => Self::UseLeft,
+            (false, false) => Self::Mix,
+        }
+    }
+}
+
 fn mix_in(
     color_space: ColorSpace,
     left_color: &AbsoluteColor,
@@ -196,6 +210,13 @@ fn mix_in(
     hue_interpolation: HueInterpolationMethod,
     alpha_multiplier: f32,
 ) -> AbsoluteColor {
+    let outcomes = [
+        ComponentMixOutcome::from_colors(left_color, right_color, ColorFlags::C1_IS_NONE),
+        ComponentMixOutcome::from_colors(left_color, right_color, ColorFlags::C2_IS_NONE),
+        ComponentMixOutcome::from_colors(left_color, right_color, ColorFlags::C3_IS_NONE),
+        ComponentMixOutcome::from_colors(left_color, right_color, ColorFlags::ALPHA_IS_NONE),
+    ];
+
     
     let left = left_color.to_color_space(color_space);
     let left = left.raw_components();
@@ -203,13 +224,14 @@ fn mix_in(
     let right = right_color.to_color_space(color_space);
     let right = right.raw_components();
 
-    let result = interpolate_premultiplied(
+    let (result, result_flags) = interpolate_premultiplied(
         &left,
         left_weight,
         &right,
         right_weight,
         color_space.hue_index(),
         hue_interpolation,
+        &outcomes,
     );
 
     let alpha = if alpha_multiplier != 1.0 {
@@ -225,11 +247,19 @@ fn mix_in(
     
     let alpha = (alpha * 1000.0).round() / 1000.0;
 
-    AbsoluteColor::new(
+    let mut result = AbsoluteColor::new(
         color_space,
         ColorComponents(result[0], result[1], result[2]),
         alpha,
-    )
+    );
+
+    result.flags = result_flags;
+    
+    if !left_color.is_legacy_color() || !right_color.is_legacy_color() {
+        result.flags.insert(ColorFlags::AS_COLOR_FUNCTION);
+    }
+
+    result
 }
 
 fn interpolate_premultiplied_component(
@@ -239,9 +269,8 @@ fn interpolate_premultiplied_component(
     right: f32,
     right_weight: f32,
     right_alpha: f32,
-    inverse_of_result_alpha: f32,
 ) -> f32 {
-    (left * left_weight * left_alpha + right * right_weight * right_alpha) * inverse_of_result_alpha
+    left * left_weight * left_alpha + right * right_weight * right_alpha
 }
 
 
@@ -323,6 +352,63 @@ fn interpolate_hue(
     left * left_weight + right * right_weight
 }
 
+struct InterpolatedAlpha {
+    
+    left: f32,
+    
+    right: f32,
+    
+    interpolated: f32,
+    
+    is_none: bool,
+}
+
+fn interpolate_alpha(
+    left: f32,
+    left_weight: f32,
+    right: f32,
+    right_weight: f32,
+    outcome: ComponentMixOutcome,
+) -> InterpolatedAlpha {
+    
+    let mut result = match outcome {
+        ComponentMixOutcome::Mix => {
+            let interpolated = left * left_weight + right * right_weight;
+            InterpolatedAlpha {
+                left,
+                right,
+                interpolated,
+                is_none: false,
+            }
+        },
+        ComponentMixOutcome::UseLeft => InterpolatedAlpha {
+            left,
+            right: left,
+            interpolated: left,
+            is_none: false,
+        },
+        ComponentMixOutcome::UseRight => InterpolatedAlpha {
+            left: right,
+            right,
+            interpolated: right,
+            is_none: false,
+        },
+        ComponentMixOutcome::None => InterpolatedAlpha {
+            left: 1.0,
+            right: 1.0,
+            interpolated: 0.0,
+            is_none: true,
+        },
+    };
+
+    
+    result.left = result.left.clamp(0.0, 1.0);
+    result.right = result.right.clamp(0.0, 1.0);
+    result.interpolated = result.interpolated.clamp(0.0, 1.0);
+
+    result
+}
+
 fn interpolate_premultiplied(
     left: &[f32; 4],
     left_weight: f32,
@@ -330,39 +416,60 @@ fn interpolate_premultiplied(
     right_weight: f32,
     hue_index: Option<usize>,
     hue_interpolation: HueInterpolationMethod,
-) -> [f32; 4] {
-    let left_alpha = left[3];
-    let right_alpha = right[3];
-    let result_alpha = (left_alpha * left_weight + right_alpha * right_weight).min(1.);
+    outcomes: &[ComponentMixOutcome; 4],
+) -> ([f32; 4], ColorFlags) {
+    let alpha = interpolate_alpha(left[3], left_weight, right[3], right_weight, outcomes[3]);
+    let mut flags = if alpha.is_none {
+        ColorFlags::ALPHA_IS_NONE
+    } else {
+        ColorFlags::empty()
+    };
+
     let mut result = [0.; 4];
-    if result_alpha <= 0. {
-        return result;
-    }
 
-    let inverse_of_result_alpha = 1. / result_alpha;
     for i in 0..3 {
-        let is_hue = hue_index == Some(i);
-        result[i] = if is_hue {
-            interpolate_hue(
-                left[i],
-                left_weight,
-                right[i],
-                right_weight,
-                hue_interpolation,
-            )
-        } else {
-            interpolate_premultiplied_component(
-                left[i],
-                left_weight,
-                left_alpha,
-                right[i],
-                right_weight,
-                right_alpha,
-                inverse_of_result_alpha,
-            )
-        };
-    }
-    result[3] = result_alpha;
+        match outcomes[i] {
+            ComponentMixOutcome::Mix => {
+                let is_hue = hue_index == Some(i);
+                result[i] = if is_hue {
+                    normalize_hue(interpolate_hue(
+                        left[i],
+                        left_weight,
+                        right[i],
+                        right_weight,
+                        hue_interpolation,
+                    ))
+                } else {
+                    let interpolated = interpolate_premultiplied_component(
+                        left[i],
+                        left_weight,
+                        alpha.left,
+                        right[i],
+                        right_weight,
+                        alpha.right,
+                    );
 
-    result
+                    if alpha.interpolated == 0.0 {
+                        interpolated
+                    } else {
+                        interpolated / alpha.interpolated
+                    }
+                };
+            },
+            ComponentMixOutcome::UseLeft => result[i] = left[i],
+            ComponentMixOutcome::UseRight => result[i] = right[i],
+            ComponentMixOutcome::None => {
+                result[i] = 0.0;
+                match i {
+                    0 => flags.insert(ColorFlags::C1_IS_NONE),
+                    1 => flags.insert(ColorFlags::C2_IS_NONE),
+                    2 => flags.insert(ColorFlags::C3_IS_NONE),
+                    _ => unreachable!(),
+                }
+            },
+        }
+    }
+    result[3] = alpha.interpolated;
+
+    (result, flags)
 }
