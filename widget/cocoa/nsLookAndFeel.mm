@@ -484,13 +484,13 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
     case IntID::UseAccessibilityTheme:
       aResult = NSWorkspace.sharedWorkspace.accessibilityDisplayShouldIncreaseContrast;
       break;
-    case IntID::VideoDynamicRange:
-#ifdef EARLY_BETA_OR_EARLIER
-      aResult = nsCocoaFeatures::OnCatalinaOrLater();
-#else
-      aResult = nsCocoaFeatures::OnBigSurOrLater();
-#endif
+    case IntID::VideoDynamicRange: {
+      
+      gfxPlatform* platform = gfxPlatform::GetPlatform();
+      MOZ_ASSERT(platform);
+      aResult = platform->SupportsHDR();
       break;
+    }
     case IntID::PanelAnimations:
       aResult = 1;
       break;
