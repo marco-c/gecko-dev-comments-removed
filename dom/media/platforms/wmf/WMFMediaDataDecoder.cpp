@@ -150,8 +150,7 @@ WMFMediaDataDecoder::ProcessOutput(DecodedData& aResults) {
   RefPtr<MediaData> output;
   HRESULT hr = S_OK;
   while (SUCCEEDED(hr = mMFTManager->Output(mLastStreamOffset, output))) {
-    MOZ_ASSERT_IF(output && output->mType == MediaData::Type::VIDEO_DATA,
-                  output.get());
+    MOZ_ASSERT(output.get(), "Upon success, we must receive an output");
     if (ShouldGuardAgaintIncorrectFirstSample(output)) {
       LOG("Discarding sample with time %" PRId64
           " because of ShouldGuardAgaintIncorrectFirstSample check",
@@ -162,12 +161,7 @@ WMFMediaDataDecoder::ProcessOutput(DecodedData& aResults) {
       
       mInputTimesSet.clear();
     }
-    
-    
-    
-    if (output) {
-      aResults.AppendElement(std::move(output));
-    }
+    aResults.AppendElement(std::move(output));
     if (mDrainStatus == DrainStatus::DRAINING) {
       break;
     }
