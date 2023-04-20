@@ -758,7 +758,9 @@ void DtlsTransport::MaybeStartDtls() {
       set_dtls_state(webrtc::DtlsTransportState::kFailed);
       return;
     }
-    RTC_LOG(LS_INFO) << ToString() << ": DtlsTransport: Started DTLS handshake";
+    RTC_LOG(LS_INFO) << ToString()
+                     << ": DtlsTransport: Started DTLS handshake active="
+                     << IsDtlsActive();
     set_dtls_state(webrtc::DtlsTransportState::kConnecting);
     
     
