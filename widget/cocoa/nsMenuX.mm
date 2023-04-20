@@ -787,9 +787,6 @@ GeckoNSMenu* nsMenuX::CreateMenuWithGeckoString(nsString& aMenuTitle) {
   myMenu.autoenablesItems = NO;
 
   
-  myMenu.allowsContextMenuPlugIns = NO;
-
-  
   
   
   
