@@ -86,7 +86,13 @@ void BlankDetectorDesktopCapturerWrapper::OnCaptureResult(
     return;
   }
 
-  RTC_DCHECK(frame);
+  if (!frame) {
+    
+    
+    callback_->OnCaptureResult(Result::ERROR_TEMPORARY,
+                               std::unique_ptr<DesktopFrame>());
+    return;
+  }
 
   
   
