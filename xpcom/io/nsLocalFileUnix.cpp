@@ -1551,28 +1551,25 @@ nsresult nsLocalFile::GetDiskInfo(StatInfoFunc&& aStatInfoFunc,
     return NS_ERROR_FAILURE;
   }
 
-  CheckedInt64 checkedResult;
-
-  checkedResult = std::forward<StatInfoFunc>(aStatInfoFunc)(fs_buf);
-  if (!checkedResult.isValid()) {
+  CheckedInt64 statfsResult = std::forward<StatInfoFunc>(aStatInfoFunc)(fs_buf);
+  if (!statfsResult.isValid()) {
     return NS_ERROR_CANNOT_CONVERT_DATA;
   }
 
   
-  int64_t tentativeResult = checkedResult.value();
+  *aResult = statfsResult.value();
 
 #  if defined(USE_LINUX_QUOTACTL)
 
   if (!FillStatCache()) {
     
-    *aResult = tentativeResult;
     return NS_OK;
   }
 
   nsAutoCString deviceName;
   if (!GetDeviceName(major(mCachedStat.st_dev), minor(mCachedStat.st_dev),
                      deviceName)) {
-    *aResult = tentativeResult;
+    
     return NS_OK;
   }
 
@@ -1583,26 +1580,25 @@ nsresult nsLocalFile::GetDiskInfo(StatInfoFunc&& aStatInfoFunc,
       && dq.dqb_valid & QIF_BLIMITS
 #    endif
       && dq.dqb_bhardlimit) {
-    checkedResult = std::forward<QuotaInfoFunc>(aQuotaInfoFunc)(dq);
-    if (!checkedResult.isValid()) {
-      return NS_ERROR_CANNOT_CONVERT_DATA;
+    CheckedInt64 quotaResult = std::forward<QuotaInfoFunc>(aQuotaInfoFunc)(dq);
+    if (!quotaResult.isValid()) {
+      
+      return NS_OK;
     }
 
-    if (checkedResult.value() < tentativeResult) {
-      tentativeResult = checkedResult.value();
+    if (quotaResult.value() < *aResult) {
+      *aResult = quotaResult.value();
     }
   }
-#  endif
+#  endif  
 
 #  ifdef DEBUG_DISK_SPACE
-  printf("DiskInfo: %lu bytes\n", tentativeResult);
+  printf("DiskInfo: %lu bytes\n", *aResult);
 #  endif
-
-  *aResult = tentativeResult;
 
   return NS_OK;
 
-#else
+#else  
   
 
 
@@ -1616,7 +1612,7 @@ nsresult nsLocalFile::GetDiskInfo(StatInfoFunc&& aStatInfoFunc,
 #  endif
   return NS_ERROR_NOT_IMPLEMENTED;
 
-#endif 
+#endif  
 }
 
 NS_IMETHODIMP
