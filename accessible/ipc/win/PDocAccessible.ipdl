@@ -99,10 +99,7 @@ parent:
   
 
 
-
-
-
-  async Cache(CacheUpdateType aUpdateType, CacheData[] aData, bool aDispatchShowEvent);
+  async Cache(CacheUpdateType aUpdateType, CacheData[] aData);
 
   
 
