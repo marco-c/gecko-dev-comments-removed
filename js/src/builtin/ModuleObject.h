@@ -250,7 +250,7 @@ class ModuleNamespaceObject : public ProxyObject {
 
 
 
-enum class ModuleStatus : int32_t {
+enum class ModuleStatus : int8_t {
   Unlinked,
   Linking,
   Linked,
@@ -280,14 +280,10 @@ enum class ModuleStatus : int32_t {
 
 
 
-
-
-
-constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_TRUE = 0;
-
-
-
 constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_INIT = 1;
+
+
+constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_CLEARED = 0;
 
 class ModuleObject : public NativeObject {
  public:
