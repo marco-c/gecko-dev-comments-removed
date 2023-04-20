@@ -19,6 +19,7 @@
 #include "mozilla/dom/IOUtilsBinding.h"
 #include "mozilla/dom/TypedArray.h"
 #include "nsIAsyncShutdown.h"
+#include "nsIFile.h"
 #include "nsISerialEventTarget.h"
 #include "nsPrintfCString.h"
 #include "nsProxyRelease.h"
@@ -129,10 +130,27 @@ class IOUtils final {
                                         const CopyOptions& aOptions,
                                         ErrorResult& aError);
 
+  static already_AddRefed<Promise> SetAccessTime(
+      GlobalObject& aGlobal, const nsAString& aPath,
+      const Optional<int64_t>& aAccess, ErrorResult& aError);
+
   static already_AddRefed<Promise> SetModificationTime(
       GlobalObject& aGlobal, const nsAString& aPath,
       const Optional<int64_t>& aModification, ErrorResult& aError);
 
+ private:
+  using SetTimeFn = decltype(&nsIFile::SetLastAccessedTime);
+
+  static_assert(
+      std::is_same_v<SetTimeFn, decltype(&nsIFile::SetLastModifiedTime)>);
+
+  static already_AddRefed<Promise> SetTime(GlobalObject& aGlobal,
+                                           const nsAString& aPath,
+                                           const Optional<int64_t>& aNewTime,
+                                           SetTimeFn aSetTimeFn,
+                                           ErrorResult& aError);
+
+ public:
   static already_AddRefed<Promise> GetChildren(
       GlobalObject& aGlobal, const nsAString& aPath,
       const GetChildrenOptions& aOptions, ErrorResult& aError);
@@ -433,8 +451,12 @@ class IOUtils final {
 
 
 
-  static Result<int64_t, IOError> SetModificationTimeSync(
-      nsIFile* aFile, const Maybe<int64_t>& aNewModTime);
+
+
+
+  static Result<int64_t, IOError> SetTimeSync(nsIFile* aFile,
+                                              SetTimeFn aSetTimeFn,
+                                              int64_t aNewTime);
 
   
 
@@ -673,8 +695,9 @@ struct IOUtils::InternalFileInfo {
   nsString mPath;
   FileType mType = FileType::Other;
   uint64_t mSize = 0;
-  uint64_t mLastModified = 0;
-  Maybe<uint64_t> mCreationTime;
+  Maybe<PRTime> mCreationTime;  
+  PRTime mLastAccessed = 0;     
+  PRTime mLastModified = 0;     
   uint32_t mPermissions = 0;
 };
 
