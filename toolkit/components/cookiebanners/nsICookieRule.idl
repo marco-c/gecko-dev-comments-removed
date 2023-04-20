@@ -34,5 +34,13 @@ interface nsICookieRule : nsISupports {
 
 
     readonly attribute AUTF8String unsetValue;
+
+    
+
+
+
+
+    [noscript]
+    nsICookieRule copyForDomain(in ACString aDomain);
 };
 

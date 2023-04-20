@@ -19,12 +19,23 @@ interface nsICookieBannerRule : nsISupports {
     attribute ACString id;
 
     
-    attribute ACString domain;
+    
+    attribute Array<ACString> domains;
 
     
     readonly attribute Array<nsICookieRule> cookiesOptOut;
     
     readonly attribute Array<nsICookieRule> cookiesOptIn;
+
+    
+
+
+
+
+
+
+    [noscript]
+    Array<nsICookieRule> getCookies(in boolean aIsOptOut, [optional] in ACString aDomain);
 
     
 

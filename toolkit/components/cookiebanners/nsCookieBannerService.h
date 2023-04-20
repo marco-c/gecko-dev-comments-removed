@@ -63,8 +63,19 @@ class nsCookieBannerService final : public nsIObserver,
                             nsICookieBannerRule** aRule,
                             bool aReportTelemetry = false);
 
+  
+
+
+
+
+
+
+
+
+
+
   nsresult GetRuleForURI(nsIURI* aURI, bool aIsTopLevel,
-                         nsICookieBannerRule** aRule,
+                         nsICookieBannerRule** aRule, nsACString& aDomain,
                          bool aReportTelemetry = false);
 
   void DailyReportTelemetry();
