@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::Uuid;
 
 impl Uuid {
     
@@ -24,33 +24,36 @@ impl Uuid {
     
     
     
+    
+    
+    
+    
+    
+    
     pub fn new_v4() -> Uuid {
-        let mut bytes = [0u8; 16];
-        getrandom::getrandom(&mut bytes).unwrap_or_else(|err| {
-            
-            panic!("could not retreive random bytes for uuid: {}", err)
-        });
-
-        crate::Builder::from_bytes(bytes)
-            .set_variant(Variant::RFC4122)
-            .set_version(Version::Random)
-            .build()
+        crate::Builder::from_random_bytes(crate::rng::bytes()).into_uuid()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use super::*;
+    use crate::{Variant, Version};
+
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::*;
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn test_new() {
         let uuid = Uuid::new_v4();
 
         assert_eq!(uuid.get_version(), Some(Version::Random));
-        assert_eq!(uuid.get_variant(), Some(Variant::RFC4122));
+        assert_eq!(uuid.get_variant(), Variant::RFC4122);
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn test_get_version() {
         let uuid = Uuid::new_v4();
 

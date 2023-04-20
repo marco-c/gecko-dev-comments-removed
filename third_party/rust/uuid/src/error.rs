@@ -1,50 +1,164 @@
 use crate::std::fmt;
-use crate::{builder, parser};
+
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct Error(pub(crate) ErrorKind);
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub(crate) enum ErrorKind {
+    
+    
+    
+    Char { character: char, index: usize },
+    
+    
+    
+    SimpleLength { len: usize },
+    
+    ByteLength { len: usize },
+    
+    
+    
+    GroupCount { count: usize },
+    
+    
+    
+    GroupLength {
+        group: usize,
+        len: usize,
+        index: usize,
+    },
+    
+    InvalidUTF8,
+    
+    Other,
+}
+
+
+
+
 
 
 
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Error(Inner);
+pub struct InvalidUuid<'a>(pub(crate) &'a [u8]);
 
+impl<'a> InvalidUuid<'a> {
+    
+    pub fn into_err(self) -> Error {
+        
+        let input_str = match std::str::from_utf8(self.0) {
+            Ok(s) => s,
+            Err(_) => return Error(ErrorKind::InvalidUTF8),
+        };
 
+        let (uuid_str, offset, simple) = match input_str.as_bytes() {
+            [b'{', s @ .., b'}'] => (s, 1, false),
+            [b'u', b'r', b'n', b':', b'u', b'u', b'i', b'd', b':', s @ ..] => {
+                (s, "urn:uuid:".len(), false)
+            }
+            s => (s, 0, true),
+        };
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-enum Inner {
-    
-    
-    
-    
-    
-    
-    Build(builder::Error),
+        let mut hyphen_count = 0;
+        let mut group_bounds = [0; 4];
 
-    
-    
-    
-    
-    
-    
-    Parser(parser::Error),
-}
+        
+        
+        let uuid_str = unsafe { std::str::from_utf8_unchecked(uuid_str) };
 
-impl From<builder::Error> for Error {
-    fn from(err: builder::Error) -> Self {
-        Error(Inner::Build(err))
+        for (index, character) in uuid_str.char_indices() {
+            let byte = character as u8;
+            if character as u32 - byte as u32 > 0 {
+                
+                return Error(ErrorKind::Char {
+                    character,
+                    index: index + offset + 1,
+                });
+            } else if byte == b'-' {
+                
+                if hyphen_count < 4 {
+                    group_bounds[hyphen_count] = index;
+                }
+                hyphen_count += 1;
+            } else if !matches!(byte, b'0'..=b'9' | b'a'..=b'f' | b'A'..=b'F') {
+                
+                return Error(ErrorKind::Char {
+                    character: byte as char,
+                    index: index + offset + 1,
+                });
+            }
+        }
+
+        if hyphen_count == 0 && simple {
+            
+            
+            
+            Error(ErrorKind::SimpleLength {
+                len: input_str.len(),
+            })
+        } else if hyphen_count != 4 {
+            
+            
+            Error(ErrorKind::GroupCount {
+                count: hyphen_count + 1,
+            })
+        } else {
+            
+            const BLOCK_STARTS: [usize; 5] = [0, 9, 14, 19, 24];
+            for i in 0..4 {
+                if group_bounds[i] != BLOCK_STARTS[i + 1] - 1 {
+                    return Error(ErrorKind::GroupLength {
+                        group: i,
+                        len: group_bounds[i] - BLOCK_STARTS[i],
+                        index: offset + BLOCK_STARTS[i] + 1,
+                    });
+                }
+            }
+
+            
+            Error(ErrorKind::GroupLength {
+                group: 4,
+                len: input_str.len() - BLOCK_STARTS[4],
+                index: offset + BLOCK_STARTS[4] + 1,
+            })
+        }
     }
 }
 
-impl From<parser::Error> for Error {
-    fn from(err: parser::Error) -> Self {
-        Error(Inner::Parser(err))
-    }
-}
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.0 {
-            Inner::Build(ref err) => fmt::Display::fmt(&err, f),
-            Inner::Parser(ref err) => fmt::Display::fmt(&err, f),
+            ErrorKind::Char {
+                character, index, ..
+            } => {
+                write!(f, "invalid character: expected an optional prefix of `urn:uuid:` followed by [0-9a-zA-Z], found `{}` at {}", character, index)
+            }
+            ErrorKind::SimpleLength { len } => {
+                write!(
+                    f,
+                    "invalid length: expected length 32 for simple format, found {}",
+                    len
+                )
+            }
+            ErrorKind::ByteLength { len } => {
+                write!(f, "invalid length: expected 16 bytes, found {}", len)
+            }
+            ErrorKind::GroupCount { count } => {
+                write!(f, "invalid group count: expected 5, found {}", count)
+            }
+            ErrorKind::GroupLength { group, len, .. } => {
+                let expected = [8, 4, 4, 4, 12][group];
+                write!(
+                    f,
+                    "invalid group length in group {}: expected {}, found {}",
+                    group, expected, len
+                )
+            }
+            ErrorKind::InvalidUTF8 => write!(f, "non-UTF8 input"),
+            ErrorKind::Other => write!(f, "failed to parse a UUID"),
         }
     }
 }
@@ -54,26 +168,5 @@ mod std_support {
     use super::*;
     use crate::std::error;
 
-    impl error::Error for Error {
-        fn source(&self) -> Option<&(dyn error::Error + 'static)> {
-            match self.0 {
-                Inner::Build(ref err) => Some(err),
-                Inner::Parser(ref err) => Some(err),
-            }
-        }
-    }
-}
-
-#[cfg(test)]
-mod test_util {
-    use super::*;
-
-    impl Error {
-        pub(crate) fn expect_parser(self) -> parser::Error {
-            match self.0 {
-                Inner::Parser(err) => err,
-                _ => panic!("expected a `parser::Error` variant"),
-            }
-        }
-    }
+    impl error::Error for Error {}
 }

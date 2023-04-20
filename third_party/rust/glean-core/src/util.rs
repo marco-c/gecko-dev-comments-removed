@@ -4,9 +4,9 @@
 
 use chrono::{DateTime, FixedOffset, Local};
 
+use crate::common_metric_data::CommonMetricDataInternal;
 use crate::error_recording::{record_error, ErrorType};
 use crate::metrics::TimeUnit;
-use crate::CommonMetricData;
 use crate::Glean;
 
 
@@ -136,7 +136,7 @@ pub(crate) fn truncate_string_at_boundary<S: Into<String>>(value: S, length: usi
 
 pub(crate) fn truncate_string_at_boundary_with_error<S: Into<String>>(
     glean: &Glean,
-    meta: &CommonMetricData,
+    meta: &CommonMetricDataInternal,
     value: S,
     length: usize,
 ) -> String {

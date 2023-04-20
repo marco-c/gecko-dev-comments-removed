@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::{Arc, Mutex};
 
 use chrono::{DateTime, FixedOffset};
 use once_cell::sync::OnceCell;
@@ -10,7 +11,9 @@ use crate::debug::DebugOptions;
 use crate::event_database::EventDatabase;
 use crate::internal_metrics::{AdditionalMetrics, CoreMetrics, DatabaseMetrics};
 use crate::internal_pings::InternalPings;
-use crate::metrics::{self, ExperimentMetric, Metric, MetricType, PingType, RecordedExperiment};
+use crate::metrics::{
+    self, ExperimentMetric, Metric, MetricType, MetricsDisabledConfig, PingType, RecordedExperiment,
+};
 use crate::ping::PingMaker;
 use crate::storage::{StorageManager, INTERNAL_STORAGE};
 use crate::upload::{PingUploadManager, PingUploadTask, UploadResult, UploadTaskAction};
@@ -129,6 +132,7 @@ where
 
 
 
+
 #[derive(Debug)]
 pub struct Glean {
     upload_enabled: bool,
@@ -148,6 +152,8 @@ pub struct Glean {
     debug: DebugOptions,
     pub(crate) app_build: String,
     pub(crate) schedule_metrics_pings: bool,
+    pub(crate) remote_settings_epoch: AtomicU8,
+    pub(crate) remote_settings_metrics_config: Arc<Mutex<MetricsDisabledConfig>>,
 }
 
 impl Glean {
@@ -200,6 +206,8 @@ impl Glean {
             app_build: cfg.app_build.to_string(),
             
             schedule_metrics_pings: false,
+            remote_settings_epoch: AtomicU8::new(0),
+            remote_settings_metrics_config: Arc::new(Mutex::new(MetricsDisabledConfig::new())),
         };
 
         
@@ -284,6 +292,7 @@ impl Glean {
             delay_ping_lifetime_io: false,
             app_build: "Unknown".into(),
             use_core_mps: false,
+            trim_data_to_registered_pings: false,
         };
 
         let mut glean = Self::new(cfg).unwrap();
@@ -322,7 +331,6 @@ impl Glean {
             .is_none()
         {
             self.core_metrics.first_run_date.set_sync(self, None);
-            self.core_metrics.first_run_hour.set_sync(self, None);
             
             
             
@@ -357,8 +365,14 @@ impl Glean {
     
     
     
-    pub fn on_ready_to_submit_pings(&self) -> bool {
-        self.event_data_store.flush_pending_events_on_startup(self)
+    
+    
+    
+    
+    
+    pub fn on_ready_to_submit_pings(&self, trim_data_to_registered_pings: bool) -> bool {
+        self.event_data_store
+            .flush_pending_events_on_startup(self, trim_data_to_registered_pings)
     }
 
     
@@ -454,8 +468,6 @@ impl Glean {
             .first_run_date
             .get_value(self, "glean_client_info");
 
-        let existing_first_run_hour = self.core_metrics.first_run_hour.get_value(self, "metrics");
-
         
         let ping_maker = PingMaker::new();
         if let Err(err) = ping_maker.clear_pending_pings(self.get_data_path()) {
@@ -498,13 +510,6 @@ impl Glean {
                 self.core_metrics
                     .first_run_date
                     .set_sync_chrono(self, existing_first_run_date);
-            }
-
-            
-            if let Some(existing_first_run_hour) = existing_first_run_hour {
-                self.core_metrics
-                    .first_run_hour
-                    .set_sync_chrono(self, existing_first_run_hour);
             }
 
             self.upload_enabled = false;
@@ -702,6 +707,22 @@ impl Glean {
     
     
     
+    
+    pub fn set_metrics_disabled_config(&self, cfg: MetricsDisabledConfig) {
+        
+        
+        let mut lock = self.remote_settings_metrics_config.lock().unwrap();
+        *lock = cfg;
+
+        
+        self.remote_settings_epoch.fetch_add(1, Ordering::SeqCst);
+    }
+
+    
+    
+    
+    
+    
     pub fn persist_ping_lifetime_data(&self) -> Result<()> {
         if let Some(data) = self.data_store.as_ref() {
             return data.persist_ping_lifetime_data();
@@ -839,7 +860,7 @@ impl Glean {
             self.storage(),
             INTERNAL_STORAGE,
             &dirty_bit_metric.meta().identifier(self),
-            dirty_bit_metric.meta().lifetime,
+            dirty_bit_metric.meta().inner.lifetime,
         ) {
             Some(Metric::Boolean(b)) => b,
             _ => false,
