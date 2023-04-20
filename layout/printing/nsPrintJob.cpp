@@ -1287,21 +1287,6 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
 
   MOZ_TRY(aPO->mViewManager->Init(printData->mPrintDC));
 
-  aPO->mPresShell =
-      aPO->mDocument->CreatePresShell(aPO->mPresContext, aPO->mViewManager);
-  if (!aPO->mPresShell) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  if (mPrintSettings->GetPrintSelectionOnly()) {
-    
-    
-    
-    MOZ_TRY(DeleteNonSelectedNodes(*aPO->mDocument));
-  }
-
   bool doReturn = false;
   bool documentIsTopLevel = false;
   nsSize adjSize;
@@ -1311,12 +1296,6 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
   if (NS_FAILED(rv) || doReturn) {
     return rv;
   }
-
-  PR_PL(("In DV::ReflowPrintObject PO: %p pS: %p (%9s) Setting w,h to %d,%d\n",
-         aPO.get(), aPO->mPresShell.get(), LoggableTypeOfPO(aPO.get()),
-         adjSize.width, adjSize.height));
-
-  aPO->mPresShell->BeginObservingDocument();
 
   
   
@@ -1342,12 +1321,40 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
       adjSize = nsSize(bounds.width * p2a, bounds.height * p2a);
     }
   }
-  aPO->mPresContext->SetVisibleArea(nsRect(nsPoint(), adjSize));
   aPO->mPresContext->SetIsRootPaginatedDocument(documentIsTopLevel);
+  aPO->mPresContext->SetVisibleArea(nsRect(nsPoint(), adjSize));
   aPO->mPresContext->SetPageScale(aPO->mZoomRatio);
   
   float printDPI = float(AppUnitsPerCSSInch()) / float(p2a);
   aPO->mPresContext->SetPrintPreviewScale(mScreenDPI / printDPI);
+
+  
+  
+  
+  
+  
+  aPO->mPresShell =
+      aPO->mDocument->CreatePresShell(aPO->mPresContext, aPO->mViewManager);
+  if (!aPO->mPresShell) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  if (mPrintSettings->GetPrintSelectionOnly()) {
+    
+    
+    
+    MOZ_TRY(DeleteNonSelectedNodes(*aPO->mDocument));
+  }
+
+  aPO->mPresShell->BeginObservingDocument();
+
+  PR_PL(
+      ("In DV::ReflowPrintObject PO: %p pS: %p (%9s) Setting page size w,h to "
+       "%d,%d\n",
+       aPO.get(), aPO->mPresShell.get(), LoggableTypeOfPO(aPO.get()),
+       pageSize.width, pageSize.height));
 
   if (mIsCreatingPrintPreview && documentIsTopLevel) {
     mDocViewerPrint->SetPrintPreviewPresentation(
