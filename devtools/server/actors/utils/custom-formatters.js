@@ -14,6 +14,14 @@ loader.lazyRequireGetter(
 const _invalidCustomFormatterHooks = new WeakSet();
 
 
+class FormatterError extends Error {
+  constructor(message, script) {
+    super(message);
+    this.script = script;
+  }
+}
+
+
 
 
 
@@ -29,141 +37,169 @@ const _invalidCustomFormatterHooks = new WeakSet();
 function customFormatterHeader(rawValue) {
   const globalWrapper = Cu.getGlobalForObject(rawValue);
   const global = globalWrapper?.wrappedJSObject;
-  if (global && Array.isArray(global.devtoolsFormatters)) {
-    
-    
-    const dbg = makeSideeffectFreeDebugger();
-    const dbgGlobal = dbg.makeGlobalObjectReference(global);
 
-    for (const [index, formatter] of global.devtoolsFormatters.entries()) {
+  
+  if (!global || !Array.isArray(global.devtoolsFormatters)) {
+    return null;
+  }
+
+  
+  
+  const dbg = makeSideeffectFreeDebugger();
+
+  try {
+    const dbgGlobal = dbg.makeGlobalObjectReference(global);
+    const debuggeeValue = dbgGlobal.makeDebuggeeValue(rawValue);
+
+    for (const [
+      customFormatterIndex,
+      formatter,
+    ] of global.devtoolsFormatters.entries()) {
       
       
       if (_invalidCustomFormatterHooks.has(formatter)) {
         continue;
       }
 
-      const headerType = typeof formatter?.header;
-      if (headerType !== "function") {
-        _invalidCustomFormatterHooks.add(formatter);
-        logCustomFormatterError(
-          globalWrapper,
-          `devtoolsFormatters[${index}].header should be a function, got ${headerType}`
-        );
-        continue;
-      }
-
       
       try {
-        const formatterHeaderDbgValue = dbgGlobal.makeDebuggeeValue(
-          formatter.header
-        );
-        const debuggeeValue = dbgGlobal.makeDebuggeeValue(rawValue);
-        const header = formatterHeaderDbgValue.call(dbgGlobal, debuggeeValue);
-        let errorMsg = "";
-        if (header?.return?.class === "Array") {
-          const rawHeader = header.return.unsafeDereference();
-          if (rawHeader.length === 0) {
-            _invalidCustomFormatterHooks.add(formatter);
-            logCustomFormatterError(
-              globalWrapper,
-              `devtoolsFormatters[${index}].header returned an empty array`,
-              formatterHeaderDbgValue?.script
-            );
-            continue;
-          }
-          let hasBody = false;
-          const hasBodyType = typeof formatter?.hasBody;
-          if (hasBodyType === "function") {
-            const formatterHasBodyDbgValue = dbgGlobal.makeDebuggeeValue(
-              formatter.hasBody
-            );
-            hasBody = formatterHasBodyDbgValue.call(dbgGlobal, debuggeeValue);
-
-            if (hasBody == null) {
-              _invalidCustomFormatterHooks.add(formatter);
-
-              logCustomFormatterError(
-                globalWrapper,
-                `devtoolsFormatters[${index}].hasBody was not run because it has side effects`,
-                formatterHasBodyDbgValue?.script
-              );
-
-              continue;
-            } else if ("throw" in hasBody) {
-              _invalidCustomFormatterHooks.add(formatter);
-
-              logCustomFormatterError(
-                globalWrapper,
-                `devtoolsFormatters[${index}].hasBody threw: ${
-                  hasBody.throw.getProperty("message")?.return
-                }`,
-                formatterHasBodyDbgValue?.script
-              );
-
-              continue;
-            }
-          } else if (hasBodyType !== "undefined") {
-            _invalidCustomFormatterHooks.add(formatter);
-            logCustomFormatterError(
-              globalWrapper,
-              `devtoolsFormatters[${index}].hasBody should be a function, got ${hasBodyType}`
-            );
-            continue;
-          }
-
-          return {
-            useCustomFormatter: true,
-            customFormatterIndex: index,
-            
-            
-            
-            header: global.structuredClone(rawHeader),
-            hasBody: !!hasBody?.return,
-          };
-        }
-
-        
-        if (header?.return === null) {
-          continue;
-        }
-
-        _invalidCustomFormatterHooks.add(formatter);
-        if (header == null) {
-          errorMsg = `devtoolsFormatters[${index}].header was not run because it has side effects`;
-        } else if ("return" in header) {
-          let type = typeof header.return;
-          if (type === "object") {
-            type = header.return?.class;
-          }
-          errorMsg = `devtoolsFormatters[${index}].header should return an array, got ${type}`;
-        } else if ("throw" in header) {
-          errorMsg = `devtoolsFormatters[${index}].header threw: ${
-            header.throw.getProperty("message")?.return
-          }`;
-        }
-
-        logCustomFormatterError(
+        const rv = processFormatterForHeader({
+          customFormatterIndex,
+          debuggeeValue,
+          formatter,
+          dbgGlobal,
           globalWrapper,
-          errorMsg,
-          formatterHeaderDbgValue?.script
-        );
+          global,
+        });
+        
+        if (rv) {
+          return rv;
+        }
       } catch (e) {
+        _invalidCustomFormatterHooks.add(formatter);
         logCustomFormatterError(
           globalWrapper,
-          `devtoolsFormatters[${index}] couldn't be run: ${e.message}`
+          e instanceof FormatterError
+            ? `devtoolsFormatters[${customFormatterIndex}].${e.message}`
+            : `devtoolsFormatters[${customFormatterIndex}] couldn't be run: ${e.message}`,
+          
+          e.script
         );
-      } finally {
-        
-        
-        
-        dbg.removeAllDebuggees();
       }
     }
+  } finally {
+    
+    
+    
+    dbg.removeAllDebuggees();
   }
 
   return null;
 }
 exports.customFormatterHeader = customFormatterHeader;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function processFormatterForHeader({
+  customFormatterIndex,
+  formatter,
+  debuggeeValue,
+  dbgGlobal,
+  global,
+}) {
+  const headerType = typeof formatter?.header;
+  if (headerType !== "function") {
+    throw new FormatterError(`header should be a function, got ${headerType}`);
+  }
+
+  
+  const formatterHeaderDbgValue = dbgGlobal.makeDebuggeeValue(formatter.header);
+  const header = formatterHeaderDbgValue.call(dbgGlobal, debuggeeValue);
+
+  
+  if (header?.return === null) {
+    return null;
+  }
+
+  
+  if (header?.return?.class !== "Array") {
+    let errorMsg = "";
+    if (header == null) {
+      errorMsg = `header was not run because it has side effects`;
+    } else if ("return" in header) {
+      let type = typeof header.return;
+      if (type === "object") {
+        type = header.return?.class;
+      }
+      errorMsg = `header should return an array, got ${type}`;
+    } else if ("throw" in header) {
+      errorMsg = `header threw: ${header.throw.getProperty("message")?.return}`;
+    }
+
+    throw new FormatterError(errorMsg, formatterHeaderDbgValue?.script);
+  }
+
+  const rawHeader = header.return.unsafeDereference();
+  if (rawHeader.length === 0) {
+    throw new FormatterError(
+      `header returned an empty array`,
+      formatterHeaderDbgValue?.script
+    );
+  }
+
+  let hasBody = false;
+  const hasBodyType = typeof formatter?.hasBody;
+  if (hasBodyType === "function") {
+    const formatterHasBodyDbgValue = dbgGlobal.makeDebuggeeValue(
+      formatter.hasBody
+    );
+    hasBody = formatterHasBodyDbgValue.call(dbgGlobal, debuggeeValue);
+
+    if (hasBody == null) {
+      throw new FormatterError(
+        `hasBody was not run because it has side effects`,
+        formatterHasBodyDbgValue?.script
+      );
+    } else if ("throw" in hasBody) {
+      throw new FormatterError(
+        `hasBody threw: ${hasBody.throw.getProperty("message")?.return}`,
+        formatterHasBodyDbgValue?.script
+      );
+    }
+  } else if (hasBodyType !== "undefined") {
+    throw new FormatterError(
+      `hasBody should be a function, got ${hasBodyType}`
+    );
+  }
+
+  return {
+    useCustomFormatter: true,
+    customFormatterIndex,
+    
+    
+    
+    header: global.structuredClone(rawHeader),
+    hasBody: !!hasBody?.return,
+  };
+}
 
 
 
