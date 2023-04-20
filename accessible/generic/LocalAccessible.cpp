@@ -3820,6 +3820,12 @@ nsAtom* LocalAccessible::TagName() const {
 
 already_AddRefed<nsAtom> LocalAccessible::DisplayStyle() const {
   if (dom::Element* elm = Elm()) {
+    if (elm->IsHTMLElement(nsGkAtoms::area)) {
+      
+      
+      
+      return nullptr;
+    }
     StyleInfo info(elm);
     return info.Display();
   }
