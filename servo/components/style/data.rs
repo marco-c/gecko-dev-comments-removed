@@ -476,10 +476,16 @@ impl ElementData {
     
     
     pub fn safe_for_cousin_sharing(&self) -> bool {
-        !self.flags.intersects(
+        if self.flags.intersects(
             ElementDataFlags::TRAVERSED_WITHOUT_STYLING |
                 ElementDataFlags::PRIMARY_STYLE_REUSED_VIA_RULE_NODE,
-        )
+        ) {
+            return false;
+        }
+        if !self.styles.primary().get_box().clone_container_type().is_normal() {
+            return false;
+        }
+        true
     }
 
     
