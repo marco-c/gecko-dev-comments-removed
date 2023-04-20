@@ -316,9 +316,11 @@ async function testClickResultTelemetry(expected, resetFOG = true) {
   } finally {
     
     testMetricState(true);
-  }
 
-  if (resetFOG) {
-    Services.fog.testResetFOG();
+    
+    
+    if (resetFOG) {
+      Services.fog.testResetFOG();
+    }
   }
 }
