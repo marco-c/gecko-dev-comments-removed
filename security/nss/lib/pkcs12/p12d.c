@@ -337,19 +337,27 @@ sec_pkcs12_decoder_safe_bag_update(void *arg, const char *data,
     SEC_PKCS12DecoderContext *p12dcx;
     SECStatus rv;
 
-    
-
-
-
-    if (!safeContentsCtx || !safeContentsCtx->p12dcx ||
-        safeContentsCtx->p12dcx->error || safeContentsCtx->skipCurrentSafeBag) {
+    if (!safeContentsCtx || !safeContentsCtx->p12dcx || !safeContentsCtx->currentSafeBagA1Dcx) {
         return;
     }
     p12dcx = safeContentsCtx->p12dcx;
 
+    
+    if (p12dcx->error || safeContentsCtx->skipCurrentSafeBag) {
+        goto loser;
+    }
+
     rv = SEC_ASN1DecoderUpdate(safeContentsCtx->currentSafeBagA1Dcx, data, len);
     if (rv != SECSuccess) {
         p12dcx->errorValue = PORT_GetError();
+        p12dcx->error = PR_TRUE;
+        goto loser;
+    }
+
+    
+
+
+    if (safeContentsCtx->skipCurrentSafeBag) {
         goto loser;
     }
 
@@ -361,7 +369,6 @@ loser:
 
 
 
-    p12dcx->error = PR_TRUE;
     SEC_ASN1DecoderFinish(safeContentsCtx->currentSafeBagA1Dcx);
     safeContentsCtx->currentSafeBagA1Dcx = NULL;
     return;
