@@ -175,6 +175,12 @@ class IMEHandler final {
   static void AppendInputScopeFromType(const nsAString& aInputType,
                                        nsTArray<InputScope>& aScopes);
 
+  
+
+
+
+  static nsWindow* GetFocusedWindow() { return sFocusedWindow; }
+
  private:
   static nsWindow* sFocusedWindow;
   static InputContextAction::Cause sLastContextActionCause;
