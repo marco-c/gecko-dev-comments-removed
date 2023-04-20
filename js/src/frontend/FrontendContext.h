@@ -226,6 +226,14 @@ class ManualReportFrontendContext : public FrontendContext {
   }
 };
 
+
+
+extern FrontendContext* NewFrontendContext();
+
+
+
+extern void DestroyFrontendContext(FrontendContext* fc);
+
 }  
 
 #endif 
