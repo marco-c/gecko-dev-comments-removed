@@ -854,11 +854,6 @@ impl RenderBackend {
                     Some(txn.frame_stats)
                 };
 
-                
-                
-                let last_sampled_scroll_offsets =
-                    doc.spatial_tree.get_last_sampled_scroll_offsets();
-
                 if let Some(updates) = txn.spatial_tree_updates.take() {
                     doc.spatial_tree.apply_updates(updates);
                 }
@@ -878,15 +873,6 @@ impl RenderBackend {
                 if let Some(updates) = txn.interner_updates.take() {
                     doc.data_stores.apply_updates(updates, &mut doc.profile);
                 }
-
-                
-                
-                
-                
-                
-                
-                doc.spatial_tree
-                    .apply_last_sampled_scroll_offsets(last_sampled_scroll_offsets);
 
                 
                 
