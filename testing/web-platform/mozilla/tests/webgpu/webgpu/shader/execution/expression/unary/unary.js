@@ -1,6 +1,0 @@
-
-
- 
-export function unary(op) {
-  return value => `${op}(${value})`;
-}
