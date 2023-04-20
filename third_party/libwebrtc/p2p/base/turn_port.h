@@ -368,8 +368,6 @@ class TurnPort : public Port {
   
   webrtc::TurnCustomizer* turn_customizer_ = nullptr;
 
-  const webrtc::FieldTrialsView* field_trials_;
-
   
   
   
