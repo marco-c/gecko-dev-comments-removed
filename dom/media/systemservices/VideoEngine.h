@@ -50,7 +50,7 @@ struct CaptureDeviceInfo {
 
 class VideoEngine {
  private:
-  virtual ~VideoEngine() = default;
+  virtual ~VideoEngine();
 
   
   

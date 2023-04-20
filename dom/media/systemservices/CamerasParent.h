@@ -13,7 +13,6 @@
 #include "mozilla/camera/PCamerasParent.h"
 #include "mozilla/ipc/Shmem.h"
 #include "mozilla/ShmemPool.h"
-#include "mozilla/StaticMutex.h"
 #include "api/video/video_sink_interface.h"
 #include "modules/video_capture/video_capture.h"
 #include "modules/video_capture/video_capture_defines.h"
@@ -53,7 +52,8 @@ class CamerasParent final : public PCamerasParent,
                             private webrtc::VideoInputFeedBack {
   using ShutdownMozPromise = media::ShutdownBlockingTicket::ShutdownMozPromise;
 
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CamerasParent)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_EVENT_TARGET(
+      CamerasParent, mPBackgroundEventTarget)
 
  public:
   friend DeliverFrameRunnable;
@@ -95,7 +95,7 @@ class CamerasParent final : public PCamerasParent,
   bool IsShuttingDown() {
     
     MOZ_ASSERT(mPBackgroundEventTarget->IsOnCurrentThread());
-    return !mChildIsAlive || mDestroyed || !mWebRTCAlive;
+    return mDestroyed;
   };
   ShmemBuffer GetBuffer(size_t aSize);
 
@@ -118,34 +118,22 @@ class CamerasParent final : public PCamerasParent,
   void OnDeviceChange() override;
 
   VideoEngine* EnsureInitialized(int aEngine);
+
+  
+  
   void CloseEngines();
 
   void OnShutdown();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  static StaticRefPtr<VideoEngine> sEngines[CaptureEngine::MaxEngine];
-  
-  static int32_t sNumOfOpenCamerasParentEngines;
-  static int32_t sNumOfCamerasParents;
-  static StaticMutex sMutex;
-  static Monitor* sThreadMonitor;
-  
-  static StaticRefPtr<nsIThread> sVideoCaptureThread;
-
   nsTArray<CallbackHelper*> mCallbacks;
-  nsCOMPtr<nsISerialEventTarget> mVideoCaptureThread;
   
   
   const UniquePtr<media::ShutdownBlockingTicket> mShutdownBlocker;
   
   MozPromiseRequestHolder<ShutdownMozPromise> mShutdownRequest;
+
+  
+  const nsCOMPtr<nsISerialEventTarget> mVideoCaptureThread;
 
   
   ShmemPool mShmemPool;
@@ -154,16 +142,11 @@ class CamerasParent final : public PCamerasParent,
   const nsCOMPtr<nsISerialEventTarget> mPBackgroundEventTarget;
 
   
-  bool mChildIsAlive;
   bool mDestroyed;
-  
-  
-  Atomic<bool> mWebRTCAlive;
+
   std::map<nsCString, std::map<uint32_t, webrtc::VideoCaptureCapability>>
       mAllCandidateCapabilities;
 };
-
-PCamerasParent* CreateCamerasParent();
 
 }  
 
