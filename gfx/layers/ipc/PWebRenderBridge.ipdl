@@ -94,15 +94,38 @@ parent:
   
   
   async SetConfirmedTargetAPZC(uint64_t aInputBlockId, ScrollableLayerGuid[] aTargets);
+
+  
+
+  
   
   sync SetTestSampleTime(TimeStamp sampleTime);
+  
   sync LeaveTestMode();
+
+  
   sync GetAnimationValue(uint64_t aCompositorAnimationsId) returns (OMTAValue value);
+
+  
+  
+  
   sync SetAsyncScrollOffset(ViewID scrollId, float x, float y);
+
+  
+  
+  
   sync SetAsyncZoom(ViewID scrollId, float zoom);
+
+  
   async FlushApzRepaints();
+
+  
+  
   sync GetAPZTestData() returns (APZTestData data);
+
+  
   sync GetFrameUniformity() returns (FrameUniformityData data);
+
 
   async Shutdown();
   sync ShutdownSync();
