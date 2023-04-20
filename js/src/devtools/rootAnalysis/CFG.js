@@ -57,13 +57,18 @@ var Visitor = class {
 
     
     
-    
-    extend_path(edge, body, ppoint, successor_value) { return true; }
+    visit(body, ppoint, info) {
+        const visited = this.visited_bodies.get(body);
+        const existing = visited.get(ppoint);
+        const action = this.next_action(existing, info);
+        const merged = this.merge_info(existing, info);
+        visited.set(ppoint, merged);
+        return [action, merged];
+    }
 
     
     
 
-    
     
     
     
@@ -78,30 +83,7 @@ var Visitor = class {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    visit(body, ppoint, info) {
-        const visited_value_table = this.visited_bodies.get(body);
-        const existing_value_if_visited = visited_value_table.get(ppoint);
-        const action = this.next_action(existing_value_if_visited, info);
-        const merged = this.merge_info(existing_value_if_visited, info);
-        visited_value_table.set(ppoint, merged);
-        return [action, merged];
-    }
+    extend_path(edge, body, ppoint, successor_path) { return true; }
 };
 
 function findMatchingBlock(bodies, blockId) {
@@ -137,44 +119,26 @@ function findMatchingBlock(bodies, blockId) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function BFS_upwards(start_body, start_ppoint, bodies, visitor,
-                     initial_successor_value = {},
-                     entrypoint_fallback_value=null)
+                     initial_successor_info={},
+                     result_if_reached_root=null)
 {
-    let entrypoint_value = entrypoint_fallback_value;
-
-    const work = [[start_body, start_ppoint, null, initial_successor_value]];
+    const work = [[start_body, start_ppoint, null, initial_successor_info]];
     if (TRACING) {
         printErr(`BFS start at ${blockIdentifier(start_body)}:${start_ppoint}`);
     }
 
+    let reached_root = false;
     while (work.length > 0) {
-        const [body, ppoint, edgeToAdd, successor_value] = work.shift();
+        const [body, ppoint, edgeToAdd, successor_path] = work.shift();
         if (TRACING) {
-            const s = edgeToAdd ? " : " + str(edgeToAdd) : "";
-            printErr(`prepending edge from ${ppoint} to state '${successor_value}'${s}`);
+            printErr(`prepending edge from ${ppoint} to state '${successor_path}'`);
         }
-        let value = visitor.extend_path(edgeToAdd, body, ppoint, successor_value);
+        let path = visitor.extend_path(edgeToAdd, body, ppoint, successor_path);
 
-        const [action,  merged_value] = visitor.visit(body, ppoint, value);
+        const [action,  merged_path] = visitor.visit(body, ppoint, path);
         if (action === "done") {
-            return merged_value;
+            return merged_path;
         }
         if (action === "prune") {
             
@@ -182,7 +146,7 @@ function BFS_upwards(start_body, start_ppoint, bodies, visitor,
             continue;
         }
         assert(action == "continue");
-        value = merged_value;
+        path = merged_path;
 
         const predecessors = getPredecessors(body);
         for (const edge of (predecessors[ppoint] || [])) {
@@ -190,12 +154,13 @@ function BFS_upwards(start_body, start_ppoint, bodies, visitor,
                 
                 const loopBody = findMatchingBlock(bodies, edge.BlockId);
                 const loopEnd = loopBody.Index[1];
-                work.push([loopBody, loopEnd, null, value]);
+                work.push([loopBody, loopEnd, null, path]);
                 
                 
                 
+            } else {
+                work.push([body, edge.Index[0], edge, path]);
             }
-            work.push([body, edge.Index[0], edge, value]);
         }
 
         
@@ -203,17 +168,17 @@ function BFS_upwards(start_body, start_ppoint, bodies, visitor,
             
             for (const parent of (body.BlockPPoint || [])) {
                 const parentBody = findMatchingBlock(bodies, parent.BlockId);
-                work.push([parentBody, parent.Index, null, value]);
+                work.push([parentBody, parent.Index, null, path]);
             }
 
             
             
-            work.push([body, body.Index[1], null, value]);
+            work.push([body, body.Index[1], null, path]);
         }
 
         
         if (body === start_body && ppoint == body.Index[0]) {
-            entrypoint_value = value;
+            reached_root = true;
         }
     }
 
@@ -222,7 +187,7 @@ function BFS_upwards(start_body, start_ppoint, bodies, visitor,
     
     
     
-    return entrypoint_value;
+    return reached_root ? result_if_reached_root : null;
 }
 
 
@@ -703,45 +668,6 @@ function edgeStartsValueLiveRange(edge, variable)
 
 
 
-
-
-
-
-function matchEdgeCall(edge, matcher) {
-    if (edge.Kind != "Call") {
-        return false;
-    }
-
-    const callee = edge.Exp[0];
-
-    if (edge.Type.Kind == 'Function' &&
-        edge.Exp[0].Kind == 'Var' &&
-        edge.Exp[0].Variable.Kind == 'Func') {
-        const calleeName = edge.Exp[0].Variable.Name;
-        const args = edge.PEdgeCallArguments;
-        const argExprs = args ? args.Exp : [];
-        const lhs = edge.Exp[1]; 
-        return matcher(calleeName, argExprs, lhs);
-    }
-
-    return false;
-}
-
-function edgeMarksVariableGCSafe(edge, variable) {
-    return matchEdgeCall(edge, (calleeName, argExprs, _lhs) => {
-        
-        return (calleeName[1] == 'MarkVariableAsGCSafe' &&
-            calleeName[0].includes("JS::detail::MarkVariableAsGCSafe") &&
-            argExprs.length == 1 &&
-            expressionIsVariable(argExprs[0], variable));
-    });
-}
-
-
-
-
-
-
 function parseTypeName(typeName) {
     const m = typeName.match(/^(((?:\w|::)+::)?(\w+))\b(\<)?/);
     if (!m) {
@@ -786,20 +712,30 @@ function edgeEndsValueLiveRange(edge, variable, body)
     if (edge.Kind != "Call")
         return false;
 
-    if (edgeMarksVariableGCSafe(edge, variable)) {
+    var callee = edge.Exp[0];
+
+    if (edge.Type.Kind == 'Function' &&
+        edge.Exp[0].Kind == 'Var' &&
+        edge.Exp[0].Variable.Kind == 'Func' &&
+        edge.Exp[0].Variable.Name[1] == 'MarkVariableAsGCSafe' &&
+        edge.Exp[0].Variable.Name[0].includes("JS::detail::MarkVariableAsGCSafe") &&
+        expressionIsVariable(edge.PEdgeCallArguments.Exp[0], variable))
+    {
         
         return true;
     }
 
     const decl = lookupVariable(body, variable);
 
-    if (matchEdgeCall(edge, (calleeName, argExprs, lhs) => {
-        return calleeName[1] == 'move' && calleeName[0].includes('std::move(') &&
-            expressionIsDeclaredVariable(argExprs[0], decl) &&
-            lhs &&
-            lhs.Kind == 'Var' &&
-            lhs.Variable.Kind == 'Temp';
-    })) {
+    if (edge.Type.Kind == 'Function' &&
+        edge.Exp[0].Kind == 'Var' &&
+        edge.Exp[0].Variable.Kind == 'Func' &&
+        edge.Exp[0].Variable.Name[1] == 'move' &&
+        edge.Exp[0].Variable.Name[0].includes('std::move(') &&
+        expressionIsDeclaredVariable(edge.PEdgeCallArguments.Exp[0], decl) &&
+        edge.Exp[1].Kind == 'Var' &&
+        edge.Exp[1].Variable.Kind == 'Temp')
+    {
         
         
         
@@ -835,8 +771,6 @@ function edgeEndsValueLiveRange(edge, variable, body)
         if (basicBlockEatsVariable(lhs, body, edge.Index[1]))
           return true;
     }
-
-    const callee = edge.Exp[0];
 
     if (edge.Type.Kind == 'Function' &&
         edge.Type.TypeFunctionCSU &&
@@ -974,58 +908,22 @@ function basicBlockEatsVariable(variable, body, startpoint)
     return false;
 }
 
-var PROP_REFCNT          = 1 << 0;
-var PROP_SHARED_PTR_DTOR = 1 << 1;
+var PROP_REFCNT = 1 << 0;
 
 function getCalleeProperties(calleeName) {
     let props = 0;
 
     if (isRefcountedDtor(calleeName)) {
-        props |= PROP_REFCNT;
-    }
-    if (calleeName.includes("~shared_ptr()")) {
-        props |= PROP_SHARED_PTR_DTOR;
+        props = props | PROP_REFCNT;
     }
     return props;
 }
 
-
-function mangle(name) {
-    return name.length + name;
-}
-
-var TriviallyDestructibleTypes = new Set([
-    
-    
-    "void", "wchar_t", "bool", "char", "short", "int", "long", "float", "double",
-    "__int64", "__int128", "__float128", "char32_t", "char16_t", "char8_t",
-    
-    
-    
-    "_IO_FILE"
-]);
-function synthesizeDestructorName(className) {
-    if (className.includes("<") || className.includes(" ") || className.includes("{")) {
-        return;
-    }
-    if (TriviallyDestructibleTypes.has(className)) {
-        return;
-    }
-    const parts = className.split("::");
-    const mangled_dtor = "_ZN" + parts.map(p => mangle(p)).join("") + "D2Ev";
-    const pretty_dtor = `void ${className}::~${parts.at(-1)}()`;
-    
-    
-    
-    return mangled_dtor + "$" + pretty_dtor;
-}
-
 function getCallEdgeProperties(body, edge, calleeName, functionBodies) {
     let attrs = 0;
-    let extraCalls = [];
 
     if (edge.Kind !== "Call") {
-        return { attrs, extraCalls };
+        return { attrs };
     }
 
     const props = getCalleeProperties(calleeName);
@@ -1040,35 +938,8 @@ function getCallEdgeProperties(body, edge, calleeName, functionBodies) {
         }
     }
 
-    if (props & PROP_SHARED_PTR_DTOR) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        const m = calleeName.match(/shared_ptr<(.*?)>::~shared_ptr()(?: \[with T = ([\w:]+))?/);
-        assert(m);
-        let className = m[1] == "T" ? m[2] : m[1];
-        
-        className = className.replace("const ", "");
-        className = className.replace("volatile ", "");
-        const dtor = synthesizeDestructorName(className);
-        if (dtor) {
-            attrs |= ATTR_REPLACED;
-            extraCalls.push({
-                attrs: ATTR_SYNTHETIC,
-                name: synthesizeDestructorName(className),
-            });
-        }
-    }
-
     if ((props & PROP_REFCNT) == 0) {
-        return { attrs, extraCalls };
+        return { attrs };
     }
 
     let callee = edge.Exp[0];
@@ -1079,7 +950,7 @@ function getCallEdgeProperties(body, edge, calleeName, functionBodies) {
     const instance = edge.PEdgeCallInstance.Exp;
     if (instance.Kind !== "Var") {
         
-        return { attrs, extraCalls };
+        return { attrs };
     }
 
     
@@ -1101,7 +972,7 @@ function getCallEdgeProperties(body, edge, calleeName, functionBodies) {
         merge_info(seen, current) { return current; }
 
         
-        extend_path(edge, body, ppoint, successor_value) {
+        extend_path(edge, body, ppoint, successor_path) {
             if (!edge) {
                 
                 return "continue";
@@ -1130,12 +1001,12 @@ function getCallEdgeProperties(body, edge, calleeName, functionBodies) {
     
     const edgeIsNonReleasingDtor = !BFS_upwards(
         body, edge.Index[0], functionBodies, visitor, "start",
-        false 
+        true 
     );
     if (edgeIsNonReleasingDtor) {
         attrs |= ATTR_GC_SUPPRESSED | ATTR_NONRELEASING;
     }
-    return { attrs, extraCalls };
+    return { attrs };
 }
 
 

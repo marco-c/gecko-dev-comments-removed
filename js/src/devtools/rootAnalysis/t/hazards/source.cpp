@@ -71,8 +71,6 @@ void GC() {
 
 extern void usecell(Cell*);
 
-extern bool flipcoin();
-
 void suppressedFunction() {
   GC();  
 }
@@ -414,14 +412,10 @@ void safevals() {
     use(safe18);
   }
   {
-    
-    
-    
-    
-    Cell* safe19;
-    GC();
-    extern void initCellPtr(Cell**);
-    initCellPtr(&safe19);
+    Cell* unsafe19 = &cell;
+    void (*f)() = GC;
+    f();
+    use(unsafe19);
   }
 }
 
@@ -531,18 +525,6 @@ Cell* refptr_test9() {
     v9.assign_with_AddRef(&somefloat);
   }
   return ref_safe9;
-}
-
-Cell* refptr_test10() {
-  static Cell cell;
-  RefPtr<float> v10;
-  Cell* ref_unsafe10 = &cell;
-  
-  v10.assign_with_AddRef(&somefloat);
-  while (flipcoin()) {
-    v10.forget();
-  }
-  return ref_unsafe10;
 }
 
 std::pair<bool, AutoCheckCannotGC> pair_returning_function() {
