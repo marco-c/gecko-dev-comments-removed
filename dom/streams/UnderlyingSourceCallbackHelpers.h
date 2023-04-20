@@ -10,6 +10,7 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/UnderlyingSourceBinding.h"
+#include "nsIAsyncInputStream.h"
 #include "nsISupports.h"
 #include "nsISupportsImpl.h"
 
@@ -22,10 +23,13 @@
 
 
 
+enum class nsresult : uint32_t;
+
 namespace mozilla::dom {
 
 class BodyStreamHolder;
 class ReadableStreamController;
+class ReadableStream;
 
 class UnderlyingSourceAlgorithmsBase : public nsISupports {
  public:
@@ -153,6 +157,78 @@ class UnderlyingSourceAlgorithmsWrapper
     
     return nullptr;
   }
+};
+
+class InputToReadableStreamAlgorithms final
+    : public UnderlyingSourceAlgorithmsWrapper,
+      public nsIInputStreamCallback {
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_NSIINPUTSTREAMCALLBACK
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InputToReadableStreamAlgorithms,
+                                           UnderlyingSourceAlgorithmsWrapper)
+
+  InputToReadableStreamAlgorithms(nsIAsyncInputStream* aInput,
+                                  ReadableStream* aStream)
+      : mState(eInitializing),
+        mOwningEventTarget(GetCurrentSerialEventTarget()),
+        mInput(aInput),
+        mStream(aStream) {}
+
+  
+
+  already_AddRefed<Promise> PullCallbackImpl(
+      JSContext* aCx, ReadableStreamController& aController,
+      ErrorResult& aRv) override;
+
+  void ReleaseObjects() override;
+
+ private:
+  ~InputToReadableStreamAlgorithms() override = default;
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void CloseAndReleaseObjects(
+      JSContext* aCx, ReadableStream* aStream);
+
+  void WriteIntoReadRequestBuffer(JSContext* aCx, ReadableStream* aStream,
+                                  JS::Handle<JSObject*> aBuffer,
+                                  uint32_t aLength, uint32_t* aByteWritten);
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void EnqueueChunkWithSizeIntoStream(
+      JSContext* aCx, ReadableStream* aStream, uint64_t aAvailableData,
+      ErrorResult& aRv);
+  void ErrorPropagation(JSContext* aCx, ReadableStream* aStream,
+                        nsresult aError);
+
+  
+
+  enum State {
+    
+    eInitializing,
+
+    
+    
+    eWaiting,
+
+    
+    eReading,
+
+    
+    eWriting,
+
+    
+    
+    
+    eChecking,
+
+    
+    eClosed,
+  };
+
+  State mState;
+
+  nsCOMPtr<nsIEventTarget> mOwningEventTarget;
+
+  nsCOMPtr<nsIAsyncInputStream> mInput;
+  RefPtr<ReadableStream> mStream;
 };
 
 }  
