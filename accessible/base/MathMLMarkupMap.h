@@ -81,6 +81,13 @@ MARKUPMAP(
 MARKUPMAP(
     mtd_,
     [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* {
+      
+      
+      
+      if (!aContext->IsHTMLTableRow() || !aElement->GetPrimaryFrame() ||
+          aElement->GetPrimaryFrame()->AccessibleType() != eHTMLTableCellType) {
+        return new ARIAGridCellAccessible(aElement, aContext->Document());
+      }
       return new HTMLTableCellAccessible(aElement, aContext->Document());
     },
     roles::MATHML_CELL)
