@@ -108,7 +108,7 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     
     uint64_t packets_discarded = 0;
     
-    uint64_t total_decode_time_ms = 0;
+    webrtc::TimeDelta total_decode_time = webrtc::TimeDelta::Millis(0);
     
     webrtc::TimeDelta total_processing_delay = webrtc::TimeDelta::Millis(0);
     
