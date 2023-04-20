@@ -397,17 +397,14 @@ HRESULT WgcCaptureSession::OnItemClosed(WGC::IGraphicsCaptureItem* sender,
 
   RTC_LOG(LS_INFO) << "Capture target has been closed.";
   item_closed_ = true;
-  is_capture_started_ = false;
 
   RemoveEventHandlers();
 
-  mapped_texture_ = nullptr;
-  session_ = nullptr;
-  frame_pool_ = nullptr;
-  direct3d_device_ = nullptr;
-  item_ = nullptr;
-  d3d11_device_ = nullptr;
-
+  
+  
+  
+  
+  
   return S_OK;
 }
 
