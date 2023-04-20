@@ -157,6 +157,14 @@ function processBody(functionName, body, functionBodies)
             
             
             
+            
+            if (attrs & ATTR_SYNTHETIC) {
+                assertFunctionExists(callee.name);
+            }
+
+            
+            
+            
             let prologue = attrs ? `/${attrs} ` : "";
             prologue += functionId(functionName) + " ";
             if (callee.kind == 'direct') {
@@ -272,6 +280,11 @@ if (options.function) {
     minStream = maxStream = index;
 }
 
+function assertFunctionExists(name) {
+    var data = xdb.read_entry(name);
+    assert(data.contents != 0, `synthetic function '${name}' not found!`);
+}
+
 function process(functionName, functionBodies)
 {
     for (var body of functionBodies)
@@ -283,8 +296,12 @@ function process(functionName, functionBodies)
         }
     }
 
-    for (var body of functionBodies)
+    if (options.function) {
+        debugger;
+    }
+    for (var body of functionBodies) {
         processBody(functionName, body, functionBodies);
+    }
 
     
     
