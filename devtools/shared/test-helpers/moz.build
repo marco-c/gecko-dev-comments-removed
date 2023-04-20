@@ -5,6 +5,7 @@
 
 
 DevToolsModules(
+    "thread-helpers.sys.mjs",
     "tracked-objects.sys.mjs",
 )
 
