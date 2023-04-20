@@ -37,3 +37,7 @@ SOURCES += [
 
 
 AllowCompilerWarnings()
+
+
+if CONFIG['CC_TYPE'] in ('clang', 'clang-cl'):
+    CFLAGS += ["-Wno-deprecated-non-prototype"]
