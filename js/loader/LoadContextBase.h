@@ -31,17 +31,6 @@ class ScriptLoadRequest;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 enum class ContextKind { Window, Component, Worker };
 
 class LoadContextBase : public nsISupports {
@@ -52,9 +41,12 @@ class LoadContextBase : public nsISupports {
   virtual ~LoadContextBase() = default;
 
  public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS(LoadContextBase)
+
   explicit LoadContextBase(ContextKind kind);
 
-  virtual void SetRequest(JS::loader::ScriptLoadRequest* aRequest);
+  void SetRequest(JS::loader::ScriptLoadRequest* aRequest);
 
   
   virtual void GetProfilerLabel(nsACString& aOutString);
@@ -70,32 +62,6 @@ class LoadContextBase : public nsISupports {
   mozilla::dom::WorkerLoadContext* AsWorkerContext();
 
   RefPtr<JS::loader::ScriptLoadRequest> mRequest;
-};
-
-
-
-class LoadContextCCBase : public LoadContextBase {
- public:
-  explicit LoadContextCCBase(ContextKind kind);
-
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(LoadContextCCBase)
-
- protected:
-  virtual ~LoadContextCCBase() = default;
-};
-
-
-
-
-class LoadContextNoCCBase : public LoadContextBase {
- public:
-  explicit LoadContextNoCCBase(ContextKind kind);
-
-  NS_DECL_THREADSAFE_ISUPPORTS
-
- protected:
-  virtual ~LoadContextNoCCBase() = default;
 };
 
 }  
