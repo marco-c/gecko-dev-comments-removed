@@ -856,8 +856,35 @@ function deleteExpression(dbg, input) {
 
 
 async function reload(dbg, ...sources) {
+  await reloadBrowser();
+  return waitForSources(dbg, ...sources);
+}
+
+
+
+
+
+
+
+async function reloadWhenPausedBeforePageLoaded(dbg, ...sources) {
   
-  await reloadBrowser({ waitForLoad: false });
+  
+  const { resourceCommand } = dbg.commands;
+  const {
+    onResource: onTopLevelDomLoading,
+  } = await resourceCommand.waitForNextResource(
+    resourceCommand.TYPES.DOCUMENT_EVENT,
+    {
+      ignoreExistingResources: true,
+      predicate: resource =>
+        resource.targetFront.isTopLevel && resource.name === "dom-loading",
+    }
+  );
+
+  gBrowser.reloadTab(gBrowser.selectedTab);
+
+  info("Wait for DOCUMENT_EVENT dom-loading after reload");
+  await onTopLevelDomLoading;
   return waitForSources(dbg, ...sources);
 }
 

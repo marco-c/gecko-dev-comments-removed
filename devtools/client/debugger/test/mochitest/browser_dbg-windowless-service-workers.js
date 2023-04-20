@@ -44,7 +44,7 @@ add_task(async function() {
   await checkWorkerThreads(dbg, 1);
 
   
-  await reload(dbg);
+  const onReloaded = reload(dbg);
 
   await waitForSource(dbg, "service-worker.sjs");
   const workerSource = findSource(dbg, "service-worker.sjs");
@@ -55,6 +55,9 @@ add_task(async function() {
 
   await resume(dbg);
   await dbg.actions.removeAllBreakpoints(getContext(dbg));
+
+  info("Wait for reload to complete after resume");
+  await onReloaded;
 
   invokeInTab("unregisterWorker");
 
