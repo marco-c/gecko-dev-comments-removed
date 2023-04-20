@@ -211,7 +211,7 @@
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
     html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-    html_root_url = "https://docs.rs/uuid/1.2.2"
+    html_root_url = "https://docs.rs/uuid/1.3.0"
 )]
 
 #[cfg(any(feature = "std", test))]
@@ -1219,8 +1219,8 @@ mod tests {
         check!(buf, "{:X}", u, 36, |c| c.is_uppercase()
             || c.is_digit(10)
             || c == '-');
-        check!(buf, "{:#x}", u, 32, |c| c.is_lowercase() || c.is_digit(10));
-        check!(buf, "{:#X}", u, 32, |c| c.is_uppercase() || c.is_digit(10));
+        check!(buf, "{:#x}", u, 36, |c| c.is_lowercase() || c.is_digit(10) || c == '-');
+        check!(buf, "{:#X}", u, 36, |c| c.is_uppercase() || c.is_digit(10) || c == '-');
 
         check!(buf, "{:X}", u.hyphenated(), 36, |c| c.is_uppercase()
             || c.is_digit(10)
