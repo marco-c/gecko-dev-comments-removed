@@ -75,7 +75,7 @@ class MOZ_STACK_CLASS ParallelMarker {
 };
 
 
-class MOZ_STACK_CLASS ParallelMarkTask
+class alignas(TypicalCacheLineSize) ParallelMarkTask
     : public GCParallelTask,
       public mozilla::DoublyLinkedListElement<ParallelMarkTask> {
  public:
