@@ -2230,8 +2230,7 @@ void WebRenderBridgeParent::CompositeToTarget(VsyncId aId,
     return;
   }
 
-  if (mSkippedComposite ||
-      wr::RenderThread::Get()->TooManyPendingFrames(mApi->GetId())) {
+  if (wr::RenderThread::Get()->TooManyPendingFrames(mApi->GetId())) {
     
     mSkippedComposite = true;
     mSkippedCompositeReasons = mSkippedCompositeReasons | aReasons;

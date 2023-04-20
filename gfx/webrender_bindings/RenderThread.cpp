@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "base/task.h"
 #include "GeckoProfiler.h"
@@ -39,8 +39,8 @@
 #  include "mozilla/widget/WinCompositorWindowThread.h"
 #  include "mozilla/gfx/DeviceManagerDx.h"
 #  include "mozilla/webrender/DCLayerTree.h"
-
-
+// #  include "nsWindowsHelpers.h"
+// #  include <d3d11.h>
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
@@ -65,7 +65,7 @@ MOZ_DEFINE_MALLOC_SIZE_OF(WebRenderRendererMallocSizeOf)
 namespace mozilla::wr {
 
 LazyLogModule gRenderThreadLog("RenderThread");
-
+// Should be called only on RenderThread, since LazyLogModule is not thread safe
 #define LOG(...) MOZ_LOG(gRenderThreadLog, LogLevel::Debug, (__VA_ARGS__))
 
 static StaticRefPtr<RenderThread> sRenderThread;
@@ -87,17 +87,17 @@ RenderThread::RenderThread(RefPtr<nsIThread> aThread)
 
 RenderThread::~RenderThread() { MOZ_ASSERT(mRenderTexturesDeferred.empty()); }
 
-
+// static
 RenderThread* RenderThread::Get() { return sRenderThread; }
 
-
+// static
 void RenderThread::Start(uint32_t aNamespace) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!sRenderThread);
 
 #ifdef DEBUG
-  
-  
+  // Check to ensure nobody will try to ever start us more than once during
+  // the process' lifetime (in particular after ShutDown).
   MOZ_ASSERT(!sRenderThreadEverStarted);
   sRenderThreadEverStarted = true;
 #endif
@@ -108,14 +108,14 @@ void RenderThread::Start(uint32_t aNamespace) {
       NS_NewRunnableFunction("Renderer::BackgroundHanSetup", []() {
         sBackgroundHangMonitor = new mozilla::BackgroundHangMonitor(
             "Render",
-            
-
-
-
+            /* Timeout values are powers-of-two to enable us get better
+               data. 128ms is chosen for transient hangs because 8Hz should
+               be the minimally acceptable goal for Render
+               responsiveness (normal goal is 60Hz). */
             128,
-            
-
-
+            /* 2048ms is chosen for permanent hangs because it's longer than
+             * most Render hangs seen in the wild, but is short enough
+             * to not miss getting native hang stacks. */
             2048);
         nsCOMPtr<nsIThread> thread = NS_GetCurrentThread();
         nsThread* nsthread = static_cast<nsThread*>(thread.get());
@@ -139,7 +139,7 @@ void RenderThread::Start(uint32_t aNamespace) {
   sRenderThread->PostRunnable(runnable.forget());
 }
 
-
+// static
 void RenderThread::ShutDown() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(sRenderThread);
@@ -153,8 +153,8 @@ void RenderThread::ShutDown() {
       RefPtr<RenderThread>(sRenderThread.get()), &RenderThread::ShutDownTask);
   sRenderThread->PostRunnable(runnable.forget());
 
-  
-  
+  // This will empty the thread queue and thus run the above runnable while
+  // spinning the MT event loop.
   nsCOMPtr<nsIThread> oldThread = sRenderThread->GetRenderThread();
   oldThread->Shutdown();
 
@@ -167,9 +167,9 @@ void RenderThread::ShutDown() {
   }
 #endif
 
-  
-  
-  
+  // We null this out only after we finished shutdown to give everbody the
+  // chance to check for sRenderThread->mHasShutdown. Hopefully everybody
+  // checks this before using us!
   sRenderThread = nullptr;
 }
 
@@ -180,7 +180,7 @@ void RenderThread::ShutDownTask() {
   LOG("RenderThread::ShutDownTask()");
 
   {
-    
+    // Clear RenderTextureHosts
     MutexAutoLock lock(mRenderTextureMapLock);
     mRenderTexturesDeferred.clear();
     mRenderTextures.clear();
@@ -188,12 +188,12 @@ void RenderThread::ShutDownTask() {
     mRenderTextureOps.clear();
   }
 
-  
+  // Let go of our handle to the (internally ref-counted) thread pool.
   mThreadPool.Release();
   mThreadPoolLP.Release();
 
-  
-  
+  // Releasing on the render thread will allow us to avoid dispatching to remove
+  // remaining textures from the texture map.
   layers::SharedSurfacesParent::ShutdownRenderThread();
 
 #ifdef XP_WIN
@@ -205,12 +205,12 @@ void RenderThread::ShutDownTask() {
   ClearSharedSurfacePool();
 }
 
-
+// static
 bool RenderThread::IsInRenderThread() {
   return sRenderThread && sRenderThread->mThread == NS_GetCurrentThread();
 }
 
-
+// static
 already_AddRefed<nsIThread> RenderThread::GetRenderThread() {
   nsCOMPtr<nsIThread> thread;
   if (sRenderThread) {
@@ -228,8 +228,8 @@ void RenderThread::DoAccumulateMemoryReport(
     r.second->AccumulateMemoryReport(&aReport);
   }
 
-  
-  
+  // Note memory used by the shader cache, which is shared across all WR
+  // instances.
   MOZ_ASSERT(aReport.shader_cache == 0);
   if (mProgramCache) {
     aReport.shader_cache = wr_program_cache_report_memory(
@@ -248,17 +248,17 @@ void RenderThread::DoAccumulateMemoryReport(
   aPromise->Resolve(aReport, __func__);
 }
 
-
+// static
 RefPtr<MemoryReportPromise> RenderThread::AccumulateMemoryReport(
     MemoryReport aInitial) {
   RefPtr<MemoryReportPromise::Private> p =
       new MemoryReportPromise::Private(__func__);
   MOZ_ASSERT(!IsInRenderThread());
   if (!Get()) {
-    
-    
-    
-    
+    // This happens when the GPU process fails to start and we fall back to the
+    // basic compositor in the parent process. We could assert against this if
+    // we made the webrender detection code in gfxPlatform.cpp smarter. See bug
+    // 1494430 comment 12.
     NS_WARNING("No render thread, returning empty memory report");
     p->Resolve(aInitial, __func__);
     return p;
@@ -388,6 +388,13 @@ void RenderThread::HandleFrameOneDoc(wr::WindowId aWindowId, bool aRender) {
     return;
   }
 
+  HandleFrameOneDocInner(aWindowId, aRender);
+
+  DecPendingFrameCount(aWindowId);
+}
+
+void RenderThread::HandleFrameOneDocInner(wr::WindowId aWindowId,
+                                          bool aRender) {
   if (IsDestroyed(aWindowId)) {
     return;
   }
@@ -398,7 +405,7 @@ void RenderThread::HandleFrameOneDoc(wr::WindowId aWindowId, bool aRender) {
 
   bool render = false;
   PendingFrameInfo frame;
-  {  
+  {  // scope lock
     auto windows = mWindowInfos.Lock();
     auto it = windows->find(AsUint64(aWindowId));
     if (it == windows->end()) {
@@ -414,34 +421,23 @@ void RenderThread::HandleFrameOneDoc(wr::WindowId aWindowId, bool aRender) {
     frame = frameInfo;
   }
 
-  
-  
+  // Sadly this doesn't include the lock, since we don't have the frame there
+  // yet.
   glean::wr::time_to_render_start.AccumulateRawDuration(TimeStamp::Now() -
                                                         frame.mStartTime);
 
-  
-  
+  // It is for ensuring that PrepareForUse() is called before
+  // RenderTextureHost::Lock().
   HandleRenderTextureOps();
 
   UpdateAndRender(aWindowId, frame.mStartId, frame.mStartTime, render,
-                   Nothing(),
-                   Nothing(),
-                   Nothing());
+                  /* aReadbackSize */ Nothing(),
+                  /* aReadbackFormat */ Nothing(),
+                  /* aReadbackBuffer */ Nothing());
 
-  {  
-    auto windows = mWindowInfos.Lock();
-    auto it = windows->find(AsUint64(aWindowId));
-    if (it == windows->end()) {
-      MOZ_ASSERT(false);
-      return;
-    }
-    WindowInfo* info = it->second;
-    info->mPendingFrames.pop();
-  }
-
-  
-  
-  
+  // The start time is from WebRenderBridgeParent::CompositeToTarget. From that
+  // point until now (when the frame is finally pushed to the screen) is
+  // equivalent to the COMPOSITE_TIME metric in the non-WR codepath.
   TimeDuration compositeDuration = TimeStamp::Now() - frame.mStartTime;
   mozilla::Telemetry::Accumulate(mozilla::Telemetry::COMPOSITE_TIME,
                                  uint32_t(compositeDuration.ToMilliseconds()));
@@ -511,9 +507,9 @@ static void NotifyDidRender(layers::CompositorBridgeParent* aBridge,
                             TimeStamp aEnd, bool aRender,
                             RendererStats aStats) {
   if (aRender && aBridge->GetWrBridge()) {
-    
-    
-    
+    // We call this here to mimic the behavior in LayerManagerComposite, as to
+    // not change what Talos measures. That is, we do not record an empty frame
+    // as a frame.
     aBridge->GetWrBridge()->RecordFrame();
   }
 
@@ -532,8 +528,8 @@ static void NotifyDidRender(layers::CompositorBridgeParent* aBridge,
 }
 
 static void NotifyDidStartRender(layers::CompositorBridgeParent* aBridge) {
-  
-  
+  // Starting a render will change mIsRendering, and potentially
+  // change whether we can allow the bridge to intiate another frame.
   if (aBridge->GetWrBridge()) {
     aBridge->GetWrBridge()->CompositeIfNeeded();
   }
@@ -582,8 +578,8 @@ void RenderThread::UpdateAndRender(
   } else {
     renderer->Update();
   }
-  
-  renderer->CheckGraphicsResetStatus("PostUpdate",  false);
+  // Check graphics reset status even when rendering is skipped.
+  renderer->CheckGraphicsResetStatus("PostUpdate", /* aForce */ false);
 
   TimeStamp end = TimeStamp::Now();
   RefPtr<const WebRenderPipelineInfo> info = renderer->GetLastPipelineInfo();
@@ -598,19 +594,19 @@ void RenderThread::UpdateAndRender(
   if (latestFrameId.IsValid()) {
     fenceFd = renderer->GetAndResetReleaseFence();
 
-    
-    
-    
-    
-    
+    // Wait for GPU after posting NotifyDidRender, since the wait is not
+    // necessary for the NotifyDidRender.
+    // The wait is necessary for Textures recycling of AsyncImagePipelineManager
+    // and for avoiding GPU queue is filled with too much tasks.
+    // WaitForGPU's implementation is different for each platform.
     auto timerId = glean::wr::gpu_wait_time.Start();
     renderer->WaitForGPU();
     glean::wr::gpu_wait_time.StopAndAccumulate(std::move(timerId));
   } else {
-    
-    
-    
-    
+    // Update frame id for NotifyPipelinesUpdated() when rendering does not
+    // happen, either because rendering was not requested or the frame was
+    // canceled. Rendering can sometimes be canceled if UpdateAndRender is
+    // called when the window is not yet ready (not mapped or 0 size).
     latestFrameId = renderer->UpdateFrameId();
   }
 
@@ -618,11 +614,11 @@ void RenderThread::UpdateAndRender(
 
   RefPtr<layers::AsyncImagePipelineManager> pipelineMgr =
       renderer->GetCompositorBridge()->GetAsyncImagePipelineManager();
-  
-  
-  
-  
-  
+  // pipelineMgr should always be non-null here because it is only nulled out
+  // after the WebRenderAPI instance for the CompositorBridgeParent is
+  // destroyed, and that destruction blocks until the renderer thread has
+  // removed the relevant renderer. And after that happens we should never reach
+  // this code at all; it would bail out at the mRenderers.find check above.
   MOZ_ASSERT(pipelineMgr);
   pipelineMgr->NotifyPipelinesUpdated(info, latestFrameId, lastCompletedFrameId,
                                       std::move(fenceFd));
@@ -671,8 +667,8 @@ bool RenderThread::Resume(wr::WindowId aWindowId) {
 bool RenderThread::TooManyPendingFrames(wr::WindowId aWindowId) {
   const int64_t maxFrameCount = 1;
 
-  
-  
+  // Too many pending frames if pending frames exit more than maxFrameCount
+  // or if RenderBackend is still processing a frame.
 
   auto windows = mWindowInfos.Lock();
   auto it = windows->find(AsUint64(aWindowId));
@@ -685,7 +681,7 @@ bool RenderThread::TooManyPendingFrames(wr::WindowId aWindowId) {
   if (info->PendingCount() > maxFrameCount) {
     return true;
   }
-  
+  // If there is no ongoing frame build, we accept a new frame.
   return info->mPendingFrameBuild > 0;
 }
 
@@ -735,6 +731,17 @@ void RenderThread::DecPendingFrameBuildCount(wr::WindowId aWindowId) {
   info->mPendingFrameBuild--;
 }
 
+void RenderThread::DecPendingFrameCount(wr::WindowId aWindowId) {
+  auto windows = mWindowInfos.Lock();
+  auto it = windows->find(AsUint64(aWindowId));
+  if (it == windows->end()) {
+    MOZ_ASSERT(false);
+    return;
+  }
+  WindowInfo* info = it->second;
+  info->mPendingFrames.pop();
+}
+
 void RenderThread::RegisterExternalImage(
     const wr::ExternalImageId& aExternalImageId,
     already_AddRefed<RenderTextureHost> aTexture) {
@@ -769,13 +776,13 @@ void RenderThread::UnregisterExternalImage(
   }
 
   if (!IsInRenderThread()) {
-    
-    
-    
-    
-    
-    
-    
+    // The RenderTextureHost should be released in render thread. So, post the
+    // deletion task here.
+    // The shmem and raw buffer are owned by compositor ipc channel. It's
+    // possible that RenderTextureHost is still exist after the shmem/raw buffer
+    // deletion. Then the buffer in RenderTextureHost becomes invalid. It's fine
+    // for this situation. Gecko will only release the buffer if WR doesn't need
+    // it. So, no one will access the invalid buffer in RenderTextureHost.
     RefPtr<RenderTextureHost> texture = it->second;
     mRenderTextures.erase(it);
     mRenderTexturesDeferred.emplace_back(std::move(texture));
@@ -815,7 +822,7 @@ void RenderThread::AddRenderTextureOp(
   mRenderTextureOps.emplace_back(aOp, std::move(texture));
 
   if (mRenderTextureOpsRunnable) {
-    
+    // Runnable was already triggered
     return;
   }
 
@@ -889,7 +896,7 @@ void RenderThread::InitDeviceTask() {
   LOG("RenderThread::InitDeviceTask()");
 
   if (gfx::gfxVars::UseSoftwareWebRender()) {
-    
+    // Ensure we don't instantiate any shared GL context when SW-WR is used.
     return;
   }
 
@@ -898,8 +905,8 @@ void RenderThread::InitDeviceTask() {
   if (gfx::gfxVars::UseWebRenderProgramBinaryDisk()) {
     mProgramCache = MakeUnique<WebRenderProgramCache>(ThreadPool().Raw());
   }
-  
-  
+  // Query the shared GL context to force the
+  // lazy initialization to happen now.
   SingletonGL();
 }
 
@@ -932,7 +939,7 @@ static DeviceResetReason GLenumToResetReason(GLenum aReason) {
 void RenderThread::HandleDeviceReset(const char* aWhere, GLenum aReason) {
   MOZ_ASSERT(IsInRenderThread());
 
-  
+  // This happens only on simulate device reset.
   if (aReason == LOCAL_GL_NO_ERROR) {
     if (!mHandlingDeviceReset) {
       mHandlingDeviceReset = true;
@@ -943,16 +950,16 @@ void RenderThread::HandleDeviceReset(const char* aWhere, GLenum aReason) {
         entry.second->ClearCachedResources();
       }
 
-      
-      
-      
+      // All RenderCompositors will be destroyed by the GPUProcessManager in
+      // either OnRemoteProcessDeviceReset via the GPUChild, or
+      // OnInProcessDeviceReset here directly.
       if (XRE_IsGPUProcess()) {
         gfx::GPUParent::GetSingleton()->NotifyDeviceReset();
       } else {
         NS_DispatchToMainThread(NS_NewRunnableFunction(
             "gfx::GPUProcessManager::OnInProcessDeviceReset", []() -> void {
               gfx::GPUProcessManager::Get()->OnInProcessDeviceReset(
-                   false);
+                  /* aTrackThreshold */ false);
             }));
       }
     }
@@ -966,7 +973,7 @@ void RenderThread::HandleDeviceReset(const char* aWhere, GLenum aReason) {
   mHandlingDeviceReset = true;
 
 #ifndef XP_WIN
-  
+  // On Windows, see DeviceManagerDx::MaybeResetAndReacquireDevices.
   gfx::GPUProcessManager::RecordDeviceReset(GLenumToResetReason(aReason));
 #endif
 
@@ -978,17 +985,17 @@ void RenderThread::HandleDeviceReset(const char* aWhere, GLenum aReason) {
     }
   }
 
-  
-  
-  
-  
+  // All RenderCompositors will be destroyed by the GPUProcessManager in
+  // either OnRemoteProcessDeviceReset via the GPUChild, or
+  // OnInProcessDeviceReset here directly.
+  // On Windows, device will be re-created before sessions re-creation.
   gfxCriticalNote << "GFX: RenderThread detected a device reset in " << aWhere;
   if (XRE_IsGPUProcess()) {
     gfx::GPUParent::GetSingleton()->NotifyDeviceReset();
   } else {
 #ifndef XP_WIN
-    
-    
+    // FIXME(aosmond): Do we need to do this on Windows? nsWindow::OnPaint
+    // seems to do its own detection for the parent process.
     bool guilty = aReason == LOCAL_GL_GUILTY_CONTEXT_RESET_ARB;
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "gfx::GPUProcessManager::OnInProcessDeviceReset", [guilty]() -> void {
@@ -1008,9 +1015,9 @@ void RenderThread::SimulateDeviceReset() {
     PostRunnable(NewRunnableMethod("RenderThread::SimulateDeviceReset", this,
                                    &RenderThread::SimulateDeviceReset));
   } else {
-    
-    
-    
+    // When this function is called GPUProcessManager::SimulateDeviceReset()
+    // already triggers destroying all CompositorSessions before re-creating
+    // them.
     HandleDeviceReset("SimulateDeviceReset", LOCAL_GL_NO_ERROR);
   }
 }
@@ -1041,8 +1048,8 @@ void RenderThread::HandleWebRenderError(WebRenderError aError) {
     }
   }
   mHandlingWebRenderError = true;
-  
-  
+  // WebRender is going to be disabled by
+  // GPUProcessManager::NotifyWebRenderError()
 }
 
 bool RenderThread::IsHandlingWebRenderError() {
@@ -1084,7 +1091,7 @@ gl::GLContext* RenderThread::SingletonGLForCompositorOGL() {
   MOZ_RELEASE_ASSERT(gfx::gfxVars::UseSoftwareWebRender());
 
   if (mSingletonGLIsForHardwareWebRender) {
-    
+    // Clear singleton GL, since GLContext is for hardware WebRender.
     ClearSingletonGL();
   }
   return SingletonGL();
@@ -1141,7 +1148,7 @@ static void GLAPIENTRY DebugMessageCallback(GLenum aSource, GLenum aType,
   if (StaticPrefs::gfx_webrender_gl_debug_message_critical_note_AtStartup() &&
       aSeverity == LOCAL_GL_DEBUG_SEVERITY_HIGH) {
     auto message = std::string(aMessage, aLength);
-    
+    // When content lost happned, error messages are flooded by its message.
     if (message != kContextLost) {
       gfxCriticalNote << message;
     } else {
@@ -1155,7 +1162,7 @@ static void GLAPIENTRY DebugMessageCallback(GLenum aSource, GLenum aType,
   }
 }
 
-
+// static
 void RenderThread::MaybeEnableGLDebugMessage(gl::GLContext* aGLContext) {
   if (!aGLContext) {
     return;
@@ -1217,7 +1224,7 @@ WebRenderProgramCache::~WebRenderProgramCache() {
   wr_program_cache_delete(mProgramCache);
 }
 
-}  
+}  // namespace mozilla::wr
 
 #ifdef XP_WIN
 static already_AddRefed<gl::GLContext> CreateGLContextANGLE(
@@ -1255,8 +1262,8 @@ static already_AddRefed<gl::GLContext> CreateGLContextANGLE(
     flags |= gl::CreateContextFlags::PROVOKING_VERTEX_DONT_CARE;
   }
 
-  
-  
+  // Create GLContext with dummy EGLSurface, the EGLSurface is not used.
+  // Instread we override it with EGLSurface of SwapChain's back buffer.
 
   const auto dummySize = mozilla::gfx::IntSize(16, 16);
   auto gl = gl::GLContextEGL::CreateEGLPBufferOffscreenContext(
@@ -1280,15 +1287,15 @@ static already_AddRefed<gl::GLContext> CreateGLContextANGLE(
 
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WAYLAND) || defined(MOZ_X11)
 static already_AddRefed<gl::GLContext> CreateGLContextEGL() {
-  
+  // Create GLContext with dummy EGLSurface.
   bool forHardwareWebRender = true;
-  
+  // SW-WR uses CompositorOGL in native compositor.
   if (gfx::gfxVars::UseSoftwareWebRender()) {
     forHardwareWebRender = false;
   }
   RefPtr<gl::GLContext> gl =
       gl::GLContextProviderEGL::CreateForCompositorWidget(
-          nullptr, forHardwareWebRender,  true);
+          nullptr, forHardwareWebRender, /* aForceAccelerated */ true);
   if (!gl || !gl->MakeCurrent()) {
     gfxCriticalNote << "Failed GL context creation for hardware WebRender: "
                     << forHardwareWebRender;
@@ -1344,13 +1351,13 @@ void wr_notifier_wake_up(mozilla::wr::WrWindowId aWindowId,
 void wr_notifier_new_frame_ready(mozilla::wr::WrWindowId aWindowId) {
   mozilla::wr::RenderThread::Get()->DecPendingFrameBuildCount(aWindowId);
   mozilla::wr::RenderThread::Get()->HandleFrameOneDoc(aWindowId,
-                                                       true);
+                                                      /* aRender */ true);
 }
 
 void wr_notifier_nop_frame_done(mozilla::wr::WrWindowId aWindowId) {
   mozilla::wr::RenderThread::Get()->DecPendingFrameBuildCount(aWindowId);
   mozilla::wr::RenderThread::Get()->HandleFrameOneDoc(aWindowId,
-                                                       false);
+                                                      /* aRender */ false);
 }
 
 void wr_notifier_external_event(mozilla::wr::WrWindowId aWindowId,
@@ -1394,4 +1401,4 @@ void wr_finished_scene_build(mozilla::wr::WrWindowId aWindowId,
       "NotifyDidSceneBuild", &NotifyDidSceneBuild, aWindowId, info));
 }
 
-}  
+}  // extern C
