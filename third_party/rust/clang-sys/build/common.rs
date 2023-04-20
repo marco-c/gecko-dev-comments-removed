@@ -91,9 +91,19 @@ impl Drop for CommandErrorPrinter {
     }
 }
 
+#[cfg(test)]
+pub static RUN_COMMAND_MOCK: std::sync::Mutex<
+    Option<Box<dyn Fn(&str, &str, &[&str]) -> Option<String> + Send + Sync + 'static>>,
+> = std::sync::Mutex::new(None);
+
 
 
 fn run_command(name: &str, path: &str, arguments: &[&str]) -> Option<String> {
+    #[cfg(test)]
+    if let Some(command) = &*RUN_COMMAND_MOCK.lock().unwrap() {
+        return command(name, path, arguments);
+    }
+
     let output = match Command::new(path).args(arguments).output() {
         Ok(output) => output,
         Err(error) => {
@@ -130,52 +140,62 @@ pub fn run_xcode_select(arguments: &[&str]) -> Option<String> {
 
 
 
+
+
+
+
+
+
+
 const DIRECTORIES_HAIKU: &[&str] = &[
-    "/boot/system/lib",
-    "/boot/system/develop/lib",
-    "/boot/system/non-packaged/lib",
-    "/boot/system/non-packaged/develop/lib",
-    "/boot/home/config/non-packaged/lib",
     "/boot/home/config/non-packaged/develop/lib",
+    "/boot/home/config/non-packaged/lib",
+    "/boot/system/non-packaged/develop/lib",
+    "/boot/system/non-packaged/lib",
+    "/boot/system/develop/lib",
+    "/boot/system/lib",
 ];
 
 
 const DIRECTORIES_LINUX: &[&str] = &[
-    "/usr/lib*",
-    "/usr/lib*/*",
-    "/usr/lib*/*/*",
-    "/usr/local/lib*",
-    "/usr/local/lib*/*",
-    "/usr/local/lib*/*/*",
     "/usr/local/llvm*/lib*",
+    "/usr/local/lib*/*/*",
+    "/usr/local/lib*/*",
+    "/usr/local/lib*",
+    "/usr/lib*/*/*",
+    "/usr/lib*/*",
+    "/usr/lib*",
 ];
 
 
 const DIRECTORIES_MACOS: &[&str] = &[
-    "/usr/local/opt/llvm*/lib",
-    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib",
-    "/Library/Developer/CommandLineTools/usr/lib",
     "/usr/local/opt/llvm*/lib/llvm*/lib",
+    "/Library/Developer/CommandLineTools/usr/lib",
+    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib",
+    "/usr/local/opt/llvm*/lib",
 ];
 
 
-const DIRECTORIES_WINDOWS: &[&str] = &[
-    "C:\\LLVM\\lib",
-    "C:\\Program Files*\\LLVM\\lib",
-    "C:\\MSYS*\\MinGW*\\lib",
-    
-    
-    "C:\\Program Files*\\Microsoft Visual Studio\\*\\BuildTools\\VC\\Tools\\Llvm\\**\\bin",
+
+
+
+const DIRECTORIES_WINDOWS: &[(&str, bool)] = &[
     
     
     
-    "C:\\Users\\*\\scoop\\apps\\llvm\\current\\bin",
+    ("C:\\Users\\*\\scoop\\apps\\llvm\\current\\lib", true),
+    ("C:\\MSYS*\\MinGW*\\lib", false),
+    ("C:\\Program Files*\\LLVM\\lib", true),
+    ("C:\\LLVM\\lib", true),
+    
+    
+    ("C:\\Program Files*\\Microsoft Visual Studio\\*\\BuildTools\\VC\\Tools\\Llvm\\**\\lib", true),
 ];
 
 
 const DIRECTORIES_ILLUMOS: &[&str] = &[
-    "/opt/ooce/clang-*/lib",
     "/opt/ooce/llvm-*/lib",
+    "/opt/ooce/clang-*/lib",
 ];
 
 
@@ -233,7 +253,7 @@ fn search_directories(directory: &Path, filenames: &[String]) -> Vec<(PathBuf, S
     
     
     
-    if cfg!(target_os = "windows") && directory.ends_with("lib") {
+    if target_os!("windows") && directory.ends_with("lib") {
         let sibling = directory.parent().unwrap().join("bin");
         results.extend(search_directory(&sibling, filenames).into_iter());
     }
@@ -273,7 +293,7 @@ pub fn search_libclang_directories(filenames: &[String], variable: &str) -> Vec<
 
     
     
-    if cfg!(target_os = "macos") {
+    if target_os!("macos") {
         if let Some(output) = run_xcode_select(&["--print-path"]) {
             let directory = Path::new(output.lines().next().unwrap()).to_path_buf();
             let directory = directory.join("Toolchains/XcodeDefault.xctoolchain/usr/lib");
@@ -289,25 +309,41 @@ pub fn search_libclang_directories(filenames: &[String], variable: &str) -> Vec<
     }
 
     
-    let directories = if cfg!(target_os = "haiku") {
-        DIRECTORIES_HAIKU
-    } else if cfg!(any(target_os = "linux", target_os = "freebsd")) {
-        DIRECTORIES_LINUX
-    } else if cfg!(target_os = "macos") {
-        DIRECTORIES_MACOS
-    } else if cfg!(target_os = "windows") {
+    let directories: Vec<&str> = if target_os!("haiku") {
+        DIRECTORIES_HAIKU.into()
+    } else if target_os!("linux") || target_os!("freebsd") {
+        DIRECTORIES_LINUX.into()
+    } else if target_os!("macos") {
+        DIRECTORIES_MACOS.into()
+    } else if target_os!("windows") {
+        let msvc = target_env!("msvc");
         DIRECTORIES_WINDOWS
-    } else if cfg!(target_os = "illumos") {
-        DIRECTORIES_ILLUMOS
+            .iter()
+            .filter(|d| d.1 || !msvc)
+            .map(|d| d.0)
+            .collect()
+    } else if target_os!("illumos") {
+        DIRECTORIES_ILLUMOS.into()
     } else {
-        &[]
+        vec![]
+    };
+
+    
+    
+    let directories = if test!() {
+        directories
+            .iter()
+            .map(|d| d.strip_prefix('/').or_else(|| d.strip_prefix("C:\\")).unwrap_or(d))
+            .collect::<Vec<_>>()
+    } else {
+        directories.into()
     };
 
     
     let mut options = MatchOptions::new();
     options.case_sensitive = false;
     options.require_literal_separator = true;
-    for directory in directories.iter().rev() {
+    for directory in directories.iter() {
         if let Ok(directories) = glob::glob_with(directory, options) {
             for directory in directories.filter_map(Result::ok).filter(|p| p.is_dir()) {
                 found.extend(search_directories(&directory, filenames));

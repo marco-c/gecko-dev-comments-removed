@@ -50,26 +50,26 @@ fn parse_pe_header(path: &Path) -> io::Result<u16> {
 
 
 fn validate_library(path: &Path) -> Result<(), String> {
-    if cfg!(any(target_os = "linux", target_os = "freebsd")) {
+    if target_os!("linux") || target_os!("freebsd") {
         let class = parse_elf_header(path).map_err(|e| e.to_string())?;
 
-        if cfg!(target_pointer_width = "32") && class != 1 {
+        if target_pointer_width!("32") && class != 1 {
             return Err("invalid ELF class (64-bit)".into());
         }
 
-        if cfg!(target_pointer_width = "64") && class != 2 {
+        if target_pointer_width!("64") && class != 2 {
             return Err("invalid ELF class (32-bit)".into());
         }
 
         Ok(())
-    } else if cfg!(target_os = "windows") {
+    } else if target_os!("windows") {
         let magic = parse_pe_header(path).map_err(|e| e.to_string())?;
 
-        if cfg!(target_pointer_width = "32") && magic != 267 {
+        if target_pointer_width!("32") && magic != 267 {
             return Err("invalid DLL (64-bit)".into());
         }
 
-        if cfg!(target_pointer_width = "64") && magic != 523 {
+        if target_pointer_width!("64") && magic != 523 {
             return Err("invalid DLL (32-bit)".into());
         }
 
@@ -105,7 +105,7 @@ fn search_libclang_directories(runtime: bool) -> Result<Vec<(PathBuf, String, Ve
         env::consts::DLL_SUFFIX
     )];
 
-    if cfg!(target_os = "linux") {
+    if target_os!("linux") {
         
         
         files.push("libclang-*.so".into());
@@ -121,19 +121,14 @@ fn search_libclang_directories(runtime: bool) -> Result<Vec<(PathBuf, String, Ve
         }
     }
 
-    if cfg!(any(
-        target_os = "freebsd",
-        target_os = "haiku",
-        target_os = "netbsd",
-        target_os = "openbsd",
-    )) {
+    if target_os!("freebsd") || target_os!("haiku") || target_os!("netbsd") || target_os!("openbsd") {
         
         
         
         files.push("libclang.so.*".into());
     }
 
-    if cfg!(target_os = "windows") {
+    if target_os!("windows") {
         
         
         files.push("libclang.dll".into());
