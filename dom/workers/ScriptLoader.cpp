@@ -1010,6 +1010,9 @@ nsresult ScriptLoaderRunnable::Run() {
   AssertIsOnMainThread();
 
   
+  nsContentUtils::EnsureAndLoadStringBundle(nsContentUtils::eDOM_PROPERTIES);
+
+  
   
   
   
