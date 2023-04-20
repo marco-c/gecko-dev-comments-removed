@@ -270,6 +270,22 @@ class IMContextWrapper final : public TextEventDispatcherListener {
     
 
 
+
+    const GdkEventKey* GetCorrespondingKeyPressEvent(
+        const GdkEventKey* aEvent) const {
+      MOZ_ASSERT(aEvent->type == GDK_KEY_RELEASE);
+      for (const GUniquePtr<GdkEventKey>& pendingKeyEvent : mEvents) {
+        if (pendingKeyEvent->type == GDK_KEY_PRESS &&
+            aEvent->hardware_keycode == pendingKeyEvent->hardware_keycode) {
+          return pendingKeyEvent.get();
+        }
+      }
+      return nullptr;
+    }
+
+    
+
+
     GdkEventKey* GetFirstEvent() const {
       if (mEvents.IsEmpty()) {
         return nullptr;
