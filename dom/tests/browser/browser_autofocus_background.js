@@ -25,13 +25,6 @@ add_task(async function() {
     backgroundTab.linkedBrowser,
     [],
     async function() {
-      
-      
-      
-      
-      await new Promise(r => {
-        content.requestAnimationFrame(r);
-      });
       return content.document.activeElement.tagName;
     }
   );

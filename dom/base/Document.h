@@ -1927,8 +1927,6 @@ class Document : public nsINode,
   
   Element* TopLayerPop(FunctionRef<bool(Element*)> aPredicate);
 
-  MOZ_CAN_RUN_SCRIPT bool TryAutoFocusCandidate(Element& aElement);
-
  public:
   
   
@@ -3105,14 +3103,10 @@ class Document : public nsINode,
 
   nsISupports* GetCurrentContentSink();
 
-  void ElementWithAutoFocusInserted(Element* aAutoFocusCandidate);
-  MOZ_CAN_RUN_SCRIPT void FlushAutoFocusCandidates();
-  void ScheduleFlushAutoFocusCandidates();
-  bool HasAutoFocusCandidates() const {
-    return !mAutoFocusCandidates.IsEmpty();
-  }
-
+  void SetAutoFocusElement(Element* aAutoFocusElement);
+  void TriggerAutoFocus();
   void SetAutoFocusFired();
+  bool IsAutoFocusFired();
 
   void SetScrollToRef(nsIURI* aDocumentURI);
   MOZ_CAN_RUN_SCRIPT void ScrollToRef();
@@ -3955,8 +3949,6 @@ class Document : public nsINode,
   void DoCacheAllKnownLangPrefs();
   void RecomputeLanguageFromCharset();
   bool GetSHEntryHasUserInteraction();
-
-  void AppendAutoFocusCandidateToTopDocument(Element* aAutoFocusCandidate);
 
  public:
   void SetMayNeedFontPrefsUpdate() { mMayNeedFontPrefsUpdate = true; }
@@ -5147,11 +5139,7 @@ class Document : public nsINode,
   
   TimeStamp mLoadingTimeStamp;
 
-  
-  
-  
-  
-  nsTObserverArray<nsWeakPtr> mAutoFocusCandidates;
+  nsWeakPtr mAutoFocusElement;
 
   nsCString mScrollToRef;
 
