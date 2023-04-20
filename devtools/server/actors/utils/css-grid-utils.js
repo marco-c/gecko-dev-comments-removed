@@ -19,20 +19,6 @@ function getStringifiableFragments(fragments = []) {
   return fragments.map(getStringifiableFragment);
 }
 
-
-
-
-
-
-
-
-
-
-
-function stringifyGridFragments(fragments) {
-  return JSON.stringify(getStringifiableFragments(fragments));
-}
-
 function getStringifiableFragment(fragment) {
   return {
     areas: getStringifiableAreas(fragment.areas),
@@ -72,4 +58,3 @@ function getStringifiableTrack({ breadth, start, state, type }) {
 }
 
 exports.getStringifiableFragments = getStringifiableFragments;
-exports.stringifyGridFragments = stringifyGridFragments;

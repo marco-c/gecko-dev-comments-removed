@@ -33,9 +33,6 @@ const {
   getWindowDimensions,
   setIgnoreLayoutChanges,
 } = require("resource://devtools/shared/layout/utils.js");
-const {
-  stringifyGridFragments,
-} = require("resource://devtools/server/actors/utils/css-grid-utils.js");
 loader.lazyGetter(this, "HighlightersBundle", () => {
   return new Localization(["devtools/shared/highlighters.ftl"], true);
 });
@@ -628,14 +625,22 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
 
 
+
+
+
+
+
+
+
+
   _hasMoved() {
     const hasMoved = AutoRefreshHighlighter.prototype._hasMoved.call(this);
 
-    const oldGridData = stringifyGridFragments(this.gridData);
+    const oldFirstGridFragment = this.gridData?.[0];
     this.gridData = this.currentNode.getGridFragments();
-    const newGridData = stringifyGridFragments(this.gridData);
+    const newFirstGridFragment = this.gridData[0];
 
-    return hasMoved || oldGridData !== newGridData;
+    return hasMoved || oldFirstGridFragment !== newFirstGridFragment;
   }
 
   
