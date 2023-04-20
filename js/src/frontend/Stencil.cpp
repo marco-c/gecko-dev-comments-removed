@@ -1808,7 +1808,7 @@ static bool CreateLazyScript(JSContext* cx,
 
 static JSFunction* CreateFunctionFast(JSContext* cx,
                                       CompilationAtomCache& atomCache,
-                                      Handle<Shape*> shape,
+                                      Handle<SharedShape*> shape,
                                       const ScriptStencil& script,
                                       const ScriptStencilExtra& scriptExtra) {
   MOZ_ASSERT(
@@ -1958,16 +1958,16 @@ static bool InstantiateFunctions(JSContext* cx, ErrorContext* ec,
   
   
   
-  Rooted<Shape*> functionShape(cx,
-                               GlobalObject::getFunctionShapeWithDefaultProto(
-                                   cx,  false));
+  Rooted<SharedShape*> functionShape(
+      cx, GlobalObject::getFunctionShapeWithDefaultProto(
+              cx,  false));
   if (!functionShape) {
     return false;
   }
 
-  Rooted<Shape*> extendedShape(cx,
-                               GlobalObject::getFunctionShapeWithDefaultProto(
-                                   cx,  true));
+  Rooted<SharedShape*> extendedShape(
+      cx, GlobalObject::getFunctionShapeWithDefaultProto(
+              cx,  true));
   if (!extendedShape) {
     return false;
   }
@@ -1988,9 +1988,9 @@ static bool InstantiateFunctions(JSContext* cx, ErrorContext* ec,
 
     JSFunction* fun;
     if (useFastPath) {
-      Handle<Shape*> shape = scriptStencil.functionFlags.isExtended()
-                                 ? extendedShape
-                                 : functionShape;
+      Handle<SharedShape*> shape = scriptStencil.functionFlags.isExtended()
+                                       ? extendedShape
+                                       : functionShape;
       fun =
           CreateFunctionFast(cx, atomCache, shape, scriptStencil, scriptExtra);
     } else {
