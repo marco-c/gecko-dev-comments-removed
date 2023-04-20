@@ -1258,16 +1258,21 @@ var gUnifiedExtensions = {
     lazy.ExtensionPermissions.addListener(this.permListener);
 
     gNavToolbox.addEventListener("customizationstarting", this);
+    CustomizableUI.addListener(this);
 
     this._initialized = true;
   },
 
   uninit() {
-    if (this.permListener) {
-      lazy.ExtensionPermissions.removeListener(this.permListener);
-      this.permListener = null;
+    if (!this._initialized) {
+      return;
     }
+
+    lazy.ExtensionPermissions.removeListener(this.permListener);
+    this.permListener = null;
+
     gNavToolbox.removeEventListener("customizationstarting", this);
+    CustomizableUI.removeListener(this);
   },
 
   onLocationChange(browser, webProgress, _request, _uri, flags) {
@@ -1629,5 +1634,74 @@ var gUnifiedExtensions = {
     CustomizableUI.addWidgetToArea(widgetId, newArea, newPosition);
 
     this.updateAttention();
+  },
+
+  onWidgetAdded(aWidgetId, aArea, aPosition) {
+    
+    
+    
+    
+    if (CustomizableUI.getWidget(aWidgetId)?.forWindow(window)?.overflowed) {
+      return;
+    }
+
+    const inPanel =
+      CustomizableUI.getAreaType(aArea) !== CustomizableUI.TYPE_TOOLBAR;
+
+    this._updateWidgetClassName(aWidgetId, inPanel);
+  },
+
+  onWidgetOverflow(aNode, aContainer) {
+    
+    
+    if (window !== aNode.ownerGlobal) {
+      return;
+    }
+
+    this._updateWidgetClassName(aNode.getAttribute("widget-id"), true);
+  },
+
+  onWidgetUnderflow(aNode, aContainer) {
+    
+    
+    if (window !== aNode.ownerGlobal) {
+      return;
+    }
+
+    this._updateWidgetClassName(aNode.getAttribute("widget-id"), false);
+  },
+
+  onAreaNodeRegistered(aArea, aContainer) {
+    
+    
+    if (window !== aContainer.ownerGlobal) {
+      return;
+    }
+
+    const inPanel =
+      CustomizableUI.getAreaType(aArea) !== CustomizableUI.TYPE_TOOLBAR;
+
+    for (const widgetId of CustomizableUI.getWidgetIdsInArea(aArea)) {
+      this._updateWidgetClassName(widgetId, inPanel);
+    }
+  },
+
+  
+  
+  
+  
+  
+  _updateWidgetClassName(aWidgetId, inPanel) {
+    if (!CustomizableUI.isWebExtensionWidget(aWidgetId)) {
+      return;
+    }
+
+    const actionButton = CustomizableUI.getWidget(aWidgetId)
+      ?.forWindow(window)
+      ?.node?.querySelector(".unified-extensions-item-action-button");
+    if (actionButton) {
+      actionButton.classList.toggle("subviewbutton", inPanel);
+      actionButton.classList.toggle("toolbarbutton-1", !inPanel);
+    }
   },
 };
