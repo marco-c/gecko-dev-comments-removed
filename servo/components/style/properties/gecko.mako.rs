@@ -103,6 +103,15 @@ impl ComputedValues {
         ).to_outer(None)
     }
 
+    
+    pub fn to_arc(&self) -> Arc<Self> {
+        
+        
+        
+        
+        unsafe { Arc::from_raw_addrefed(self) }
+    }
+
     #[inline]
     pub fn is_pseudo_style(&self) -> bool {
         self.0.mPseudoType != PseudoStyleType::NotPseudo
