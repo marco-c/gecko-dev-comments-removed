@@ -1090,6 +1090,12 @@ bool nsLookAndFeel::PerThemeData::GetFont(FontID aID, nsString& aFontName,
     case FontID::MessageBox:    
     case FontID::SmallCaption:  
     case FontID::StatusBar:     
+    case FontID::MozWindow:     
+    case FontID::MozDocument:   
+    case FontID::MozWorkspace:  
+    case FontID::MozDesktop:    
+    case FontID::MozInfo:       
+    case FontID::MozDialog:     
     default:
       aFontName = mDefaultFontName;
       aFontStyle = mDefaultFontStyle;

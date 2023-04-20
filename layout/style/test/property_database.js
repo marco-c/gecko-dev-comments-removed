@@ -5545,6 +5545,17 @@ var gCSSProperties = {
       "small-caption",
       "status-bar",
       
+      "-moz-window",
+      "-moz-document",
+      "-moz-desktop",
+      "-moz-info",
+      "-moz-dialog",
+      "-moz-button",
+      "-moz-pull-down-menu",
+      "-moz-list",
+      "-moz-field",
+      "-moz-workspace",
+      
       "condensed bold italic small-caps 24px/calc(2px) Times New Roman, serif",
       "condensed bold italic small-caps 24px/calc(50%) Times New Roman, serif",
       "condensed bold italic small-caps 24px/calc(3*25px) Times New Roman, serif",
