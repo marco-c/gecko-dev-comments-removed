@@ -13,10 +13,12 @@
 
 #include <stddef.h>
 
+#include <array>
 #include <deque>
 #include <list>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
@@ -80,6 +82,9 @@ class PrioritizedPacketQueue {
   
   void SetPauseState(bool paused, Timestamp now);
 
+  
+  void RemovePacketsForSsrc(uint32_t ssrc);
+
  private:
   static constexpr int kNumPriorityLevels = 4;
 
@@ -107,17 +112,26 @@ class PrioritizedPacketQueue {
     
     bool EnqueuePacket(QueuedPacket packet, int priority_level);
 
-    QueuedPacket DequePacket(int priority_level);
+    QueuedPacket DequeuePacket(int priority_level);
 
     bool HasPacketsAtPrio(int priority_level) const;
     bool IsEmpty() const;
     Timestamp LeadingPacketEnqueueTime(int priority_level) const;
     Timestamp LastEnqueueTime() const;
 
+    std::array<std::deque<QueuedPacket>, kNumPriorityLevels> DequeueAll();
+
    private:
     std::deque<QueuedPacket> packets_[kNumPriorityLevels];
     Timestamp last_enqueue_time_;
   };
+
+  
+  void DequeuePacketInternal(QueuedPacket& packet);
+
+  
+  
+  void MaybeUpdateTopPrioLevel();
 
   
   TimeDelta queue_time_sum_;

@@ -28,6 +28,11 @@ class RtpPacketSender {
   
   virtual void EnqueuePackets(
       std::vector<std::unique_ptr<RtpPacketToSend>> packets) = 0;
+
+  
+  
+  
+  virtual void RemovePacketsForSsrc(uint32_t ssrc) {}
 };
 
 }  

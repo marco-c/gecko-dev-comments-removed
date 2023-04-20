@@ -166,6 +166,9 @@ class PacingController {
   
   void SetCircuitBreakerThreshold(int num_iterations);
 
+  
+  void RemovePacketsForSsrc(uint32_t ssrc);
+
  private:
   TimeDelta UpdateTimeAndGetElapsed(Timestamp now);
   bool ShouldSendKeepalive(Timestamp now) const;
