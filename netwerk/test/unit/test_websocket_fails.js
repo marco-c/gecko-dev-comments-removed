@@ -34,6 +34,10 @@ async function test_tls_fail_on_direct_ws_server_handshake() {
   
   let wss = new NodeWebSocketServer();
   await wss.start();
+  registerCleanupFunction(async () => {
+    await wss.stop();
+  });
+
   Assert.notEqual(wss.port(), null);
 
   let chan = makeWebSocketChan();
@@ -50,8 +54,6 @@ async function test_tls_fail_on_direct_ws_server_handshake() {
     
     Assert.equal(status, 0x804b0057); 
   }
-
-  await wss.stop();
 }
 
 
@@ -64,6 +66,12 @@ async function test_tls_fail_on_proxy_handshake() {
 
   let wss = new NodeWebSocketServer();
   await wss.start();
+
+  registerCleanupFunction(async () => {
+    await wss.stop();
+    await proxy.stop();
+  });
+
   Assert.notEqual(wss.port(), null);
 
   let chan = makeWebSocketChan();
@@ -79,7 +87,6 @@ async function test_tls_fail_on_proxy_handshake() {
   }
 
   await proxy.stop();
-  await wss.stop();
 }
 
 
@@ -146,9 +153,8 @@ async function test_proxy_doesnt_respond() {
   );
   pps.registerFilter(filter, 10);
 
-  registerCleanupFunction(() => {
-    proxy.stop();
-    proxy.unregisterFilter();
+  registerCleanupFunction(async () => {
+    await proxy.stop();
     Services.prefs.clearUserPref("network.websocket.timeout.open");
   });
 
@@ -179,10 +185,6 @@ async function test_proxy_doesnt_respond() {
   let { status } = await conn.finished();
   info("stats: " + status);
   Assert.equal(status, 0x804b0057); 
-
-  await proxy.stop();
-  await wss.stop();
-  Services.prefs.clearUserPref("network.websocket.timeout.open");
 }
 
 add_task(test_tls_fail_on_direct_ws_server_handshake);
