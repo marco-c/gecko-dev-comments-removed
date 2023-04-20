@@ -9415,12 +9415,14 @@ static nsRect ComputeSVGReferenceRect(nsIFrame* aFrame,
       break;
     }
     case StyleGeometryBox::ViewBox: {
-      nsIContent* content = aFrame->GetContent();
-      SVGElement* element = static_cast<SVGElement*>(content);
-      SVGViewportElement* svgElement = element->GetCtx();
-      MOZ_ASSERT(svgElement);
+      SVGViewportElement* viewportElement =
+          SVGElement::FromNode(aFrame->GetContent())->GetCtx();
+      if (!viewportElement) {
+        
+        break;
+      }
 
-      if (svgElement && svgElement->HasViewBox()) {
+      if (viewportElement->HasViewBox()) {
         
         
         
@@ -9428,7 +9430,7 @@ static nsRect ComputeSVGReferenceRect(nsIFrame* aFrame,
         
         
         const SVGViewBox& value =
-            svgElement->GetAnimatedViewBox()->GetAnimValue();
+            viewportElement->GetAnimatedViewBox()->GetAnimValue();
         r = nsRect(nsPresContext::CSSPixelsToAppUnits(value.x),
                    nsPresContext::CSSPixelsToAppUnits(value.y),
                    nsPresContext::CSSPixelsToAppUnits(value.width),
@@ -9436,7 +9438,7 @@ static nsRect ComputeSVGReferenceRect(nsIFrame* aFrame,
       } else {
         
         
-        svgFloatSize viewportSize = svgElement->GetViewportSize();
+        svgFloatSize viewportSize = viewportElement->GetViewportSize();
         r = nsRect(0, 0, nsPresContext::CSSPixelsToAppUnits(viewportSize.width),
                    nsPresContext::CSSPixelsToAppUnits(viewportSize.height));
       }
