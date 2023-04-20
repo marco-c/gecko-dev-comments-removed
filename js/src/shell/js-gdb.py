@@ -7,11 +7,11 @@
 
 
 
-import gdb
 import os
 import re
-
 from os.path import abspath, dirname
+
+import gdb
 
 devel_objdir = abspath(os.path.join(dirname(__file__), "..", ".."))
 m = re.search(r"[\w ]+: (.*)", gdb.execute("show dir", False, True))

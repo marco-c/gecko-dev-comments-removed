@@ -1,19 +1,19 @@
 
 
 
-from __future__ import print_function, unicode_literals, division
+from __future__ import division, print_function, unicode_literals
 
 import os
 import posixpath
 import sys
 import tempfile
-
 from datetime import timedelta
-from mozdevice import ADBDevice, ADBError, ADBTimeoutError, ADBProcessError
 
-from .results import TestOutput, escape_cmdline
+from mozdevice import ADBDevice, ADBError, ADBProcessError, ADBTimeoutError
+
 from .adaptor import xdr_annotate
 from .remote import init_device
+from .results import TestOutput, escape_cmdline
 
 TESTS_LIB_DIR = os.path.dirname(os.path.abspath(__file__))
 JS_DIR = os.path.dirname(os.path.dirname(TESTS_LIB_DIR))

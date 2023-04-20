@@ -5,8 +5,8 @@
 
 
 import mozilla.prettyprinters
-from mozilla.prettyprinters import ptr_pretty_printer
 from mozilla.CellHeader import get_header_ptr
+from mozilla.prettyprinters import ptr_pretty_printer
 
 
 mozilla.prettyprinters.clear_module_printers(__name__)

@@ -13,21 +13,15 @@ import os
 import sys
 import textwrap
 
-from mach.base import FailedCommandError, MachError
-from mach.decorators import (
-    CommandArgument,
-    Command,
-    SubCommand,
-)
-from mach.registrar import Registrar
-
-from mozbuild.mozconfig import MozconfigLoader
-
 
 
 
 import mozbuild.artifact_commands  
 import mozbuild.build_commands  
+from mach.base import FailedCommandError, MachError
+from mach.decorators import Command, CommandArgument, SubCommand
+from mach.registrar import Registrar
+from mozbuild.mozconfig import MozconfigLoader
 
 
 

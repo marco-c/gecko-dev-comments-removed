@@ -1,18 +1,18 @@
 
 
 
-from __future__ import print_function, unicode_literals, division
+from __future__ import division, print_function, unicode_literals
 
 import subprocess
 import sys
-
 from datetime import datetime, timedelta
 from threading import Thread
-from six.moves.queue import Queue, Empty
 
+from six.moves.queue import Empty, Queue
+
+from .adaptor import xdr_annotate
 from .progressbar import ProgressBar
 from .results import NullTestOutput, TestOutput, escape_cmdline
-from .adaptor import xdr_annotate
 
 
 class EndMarker:

@@ -1,11 +1,11 @@
 
 
 
+import contextlib
+import os
 import shutil
 import subprocess
-import contextlib
 import tempfile
-import os
 import unittest
 
 testDir = os.path.dirname(os.path.relpath(__file__))

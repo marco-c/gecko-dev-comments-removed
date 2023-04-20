@@ -8,21 +8,21 @@ print("Loading JavaScript value pretty-printers; see js/src/gdb/README.")
 print("If they cause trouble, type: disable pretty-printer .* SpiderMonkey")
 
 import gdb.printing
-import mozilla.prettyprinters
+import mozilla.ExecutableAllocator
 
 
 
 import mozilla.GCCellPtr
-import mozilla.ExecutableAllocator
 import mozilla.Interpreter
 import mozilla.IonGraph
 import mozilla.JSObject
+import mozilla.jsop
 import mozilla.JSString
 import mozilla.JSSymbol
-import mozilla.Root
-import mozilla.PropertyKey
-import mozilla.jsop
 import mozilla.jsval
+import mozilla.prettyprinters
+import mozilla.PropertyKey
+import mozilla.Root
 import mozilla.unwind
 
 

@@ -7,8 +7,8 @@ try:
     
     from tempfile import TemporaryDirectory
 except ImportError:
-    import tempfile
     import shutil
+    import tempfile
     from contextlib import contextmanager
 
     @contextmanager
