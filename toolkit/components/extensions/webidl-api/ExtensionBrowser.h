@@ -27,6 +27,7 @@ class ExtensionAlarms;
 class ExtensionDns;
 class ExtensionMockAPI;
 class ExtensionPort;
+class ExtensionProxy;
 class ExtensionRuntime;
 class ExtensionScripting;
 class ExtensionTest;
@@ -109,6 +110,7 @@ class ExtensionBrowser final : public nsISupports, public nsWrapperCache {
   ExtensionAlarms* GetExtensionAlarms();
   ExtensionDns* GetExtensionDns();
   ExtensionMockAPI* GetExtensionMockAPI();
+  ExtensionProxy* GetExtensionProxy();
   ExtensionRuntime* GetExtensionRuntime();
   ExtensionScripting* GetExtensionScripting();
   ExtensionTest* GetExtensionTest();
@@ -122,15 +124,25 @@ class ExtensionBrowser final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsIGlobalObject> mGlobal;
   JS::Heap<JS::Value> mLastError;
   bool mCheckedLastError;
-  RefPtr<ExtensionAlarms> mExtensionAlarms;
-  RefPtr<ExtensionDns> mExtensionDns;
-  RefPtr<ExtensionMockAPI> mExtensionMockAPI;
-  RefPtr<ExtensionRuntime> mExtensionRuntime;
-  RefPtr<ExtensionScripting> mExtensionScripting;
-  RefPtr<ExtensionTest> mExtensionTest;
   nsTHashMap<nsStringHashKey, WeakPtr<ExtensionPort>> mPortsLookup;
   
   ExtensionEventWakeupMap mExpectedEventWakeupMap;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<ExtensionAlarms> mExtensionAlarms;
+  RefPtr<ExtensionDns> mExtensionDns;
+  RefPtr<ExtensionMockAPI> mExtensionMockAPI;
+  RefPtr<ExtensionProxy> mExtensionProxy;
+  RefPtr<ExtensionRuntime> mExtensionRuntime;
+  RefPtr<ExtensionScripting> mExtensionScripting;
+  RefPtr<ExtensionTest> mExtensionTest;
 };
 
 }  
