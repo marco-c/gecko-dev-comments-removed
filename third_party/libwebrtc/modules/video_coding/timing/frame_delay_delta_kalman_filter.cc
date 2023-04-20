@@ -16,7 +16,8 @@
 namespace webrtc {
 
 namespace {
-constexpr double kThetaLow = 0.000001;
+
+constexpr double kMaxBandwidth = 0.000001;  
 }
 
 FrameDelayDeltaKalmanFilter::FrameDelayDeltaKalmanFilter() {
@@ -45,72 +46,79 @@ void FrameDelayDeltaKalmanFilter::PredictAndUpdate(
   
   
   
+
+  
+  
+  
   estimate_cov_[0][0] += process_noise_cov_diag_[0];
   estimate_cov_[1][1] += process_noise_cov_diag_[1];
 
   
   
   
-  double Mh[2];
-  double hMh_sigma;
-  double kalmanGain[2];
-  double measureRes;
-  double t00, t01;
+  double innovation =
+      frame_delay_variation.ms() -
+      GetFrameDelayVariationEstimateTotal(frame_size_variation_bytes);
 
   
-  
-  
-  
-  
-  Mh[0] =
+  double estim_cov_times_obs[2];
+  estim_cov_times_obs[0] =
       estimate_cov_[0][0] * frame_size_variation_bytes + estimate_cov_[0][1];
-  Mh[1] =
+  estim_cov_times_obs[1] =
       estimate_cov_[1][0] * frame_size_variation_bytes + estimate_cov_[1][1];
   
   
   if (max_frame_size < DataSize::Bytes(1)) {
     return;
   }
-  double sigma = (300.0 * exp(-fabs(frame_size_variation_bytes) /
-                              (1e0 * max_frame_size.bytes())) +
-                  1) *
-                 sqrt(var_noise);
-  if (sigma < 1.0) {
-    sigma = 1.0;
+  double observation_noise_stddev =
+      (300.0 * exp(-fabs(frame_size_variation_bytes) /
+                   (1e0 * max_frame_size.bytes())) +
+       1) *
+      sqrt(var_noise);
+  if (observation_noise_stddev < 1.0) {
+    observation_noise_stddev = 1.0;
   }
   
   
-  hMh_sigma = frame_size_variation_bytes * Mh[0] + Mh[1] + sigma;
-  if ((hMh_sigma < 1e-9 && hMh_sigma >= 0) ||
-      (hMh_sigma > -1e-9 && hMh_sigma <= 0)) {
+  double innovation_var = frame_size_variation_bytes * estim_cov_times_obs[0] +
+                          estim_cov_times_obs[1] + observation_noise_stddev;
+  if ((innovation_var < 1e-9 && innovation_var >= 0) ||
+      (innovation_var > -1e-9 && innovation_var <= 0)) {
     RTC_DCHECK_NOTREACHED();
     return;
   }
-  kalmanGain[0] = Mh[0] / hMh_sigma;
-  kalmanGain[1] = Mh[1] / hMh_sigma;
 
   
   
-  measureRes = frame_delay_variation.ms() -
-               (frame_size_variation_bytes * estimate_[0] + estimate_[1]);
-  estimate_[0] += kalmanGain[0] * measureRes;
-  estimate_[1] += kalmanGain[1] * measureRes;
+  double kalman_gain[2];
+  kalman_gain[0] = estim_cov_times_obs[0] / innovation_var;
+  kalman_gain[1] = estim_cov_times_obs[1] / innovation_var;
 
-  if (estimate_[0] < kThetaLow) {
-    estimate_[0] = kThetaLow;
+  
+  
+  
+  estimate_[0] += kalman_gain[0] * innovation;
+  estimate_[1] += kalman_gain[1] * innovation;
+
+  
+  if (estimate_[0] < kMaxBandwidth) {
+    estimate_[0] = kMaxBandwidth;
   }
 
   
-  t00 = estimate_cov_[0][0];
-  t01 = estimate_cov_[0][1];
-  estimate_cov_[0][0] = (1 - kalmanGain[0] * frame_size_variation_bytes) * t00 -
-                        kalmanGain[0] * estimate_cov_[1][0];
-  estimate_cov_[0][1] = (1 - kalmanGain[0] * frame_size_variation_bytes) * t01 -
-                        kalmanGain[0] * estimate_cov_[1][1];
-  estimate_cov_[1][0] = estimate_cov_[1][0] * (1 - kalmanGain[1]) -
-                        kalmanGain[1] * frame_size_variation_bytes * t00;
-  estimate_cov_[1][1] = estimate_cov_[1][1] * (1 - kalmanGain[1]) -
-                        kalmanGain[1] * frame_size_variation_bytes * t01;
+  double t00 = estimate_cov_[0][0];
+  double t01 = estimate_cov_[0][1];
+  estimate_cov_[0][0] =
+      (1 - kalman_gain[0] * frame_size_variation_bytes) * t00 -
+      kalman_gain[0] * estimate_cov_[1][0];
+  estimate_cov_[0][1] =
+      (1 - kalman_gain[0] * frame_size_variation_bytes) * t01 -
+      kalman_gain[0] * estimate_cov_[1][1];
+  estimate_cov_[1][0] = estimate_cov_[1][0] * (1 - kalman_gain[1]) -
+                        kalman_gain[1] * frame_size_variation_bytes * t00;
+  estimate_cov_[1][1] = estimate_cov_[1][1] * (1 - kalman_gain[1]) -
+                        kalman_gain[1] * frame_size_variation_bytes * t01;
 
   
   RTC_DCHECK(estimate_cov_[0][0] + estimate_cov_[1][1] >= 0 &&
