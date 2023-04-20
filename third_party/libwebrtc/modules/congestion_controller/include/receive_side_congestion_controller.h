@@ -47,11 +47,6 @@ class ReceiveSideCongestionController : public CallStatsObserver {
                                 const RTPHeader& header);
 
   void SetSendPeriodicFeedback(bool send_periodic_feedback);
-  
-  [[deprecated]] virtual RemoteBitrateEstimator* GetRemoteBitrateEstimator(
-      bool send_side_bwe);
-  [[deprecated]] virtual const RemoteBitrateEstimator*
-  GetRemoteBitrateEstimator(bool send_side_bwe) const;
 
   
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
@@ -122,6 +117,7 @@ class ReceiveSideCongestionController : public CallStatsObserver {
     int min_bitrate_bps_;
   };
 
+  Clock& clock_;
   const FieldTrialBasedConfig field_trial_config_;
   RembThrottler remb_throttler_;
   WrappingBitrateEstimator remote_bitrate_estimator_;
