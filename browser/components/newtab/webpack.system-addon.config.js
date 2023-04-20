@@ -4,7 +4,7 @@
 
 const path = require("path");
 const webpack = require("webpack");
-const { ResourceUriPlugin } = require("./resourceUriPlugin");
+const { ResourceUriPlugin } = require("./tools/resourceUriPlugin");
 
 const absolute = relPath => path.join(__dirname, relPath);
 
@@ -21,7 +21,10 @@ module.exports = (env = {}) => ({
   
   devtool: env.development ? "inline-source-map" : false,
   plugins: [
-    new ResourceUriPlugin(),
+    
+    
+    
+    new ResourceUriPlugin({ resourcePathRegEx }),
     new webpack.BannerPlugin(
       `THIS FILE IS AUTO-GENERATED: ${path.basename(__filename)}`
     ),
