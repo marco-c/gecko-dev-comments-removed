@@ -859,7 +859,7 @@ already_AddRefed<ContentParent> ContentParent::MinTabSelect(
 
     
     
-    if (!p->IsSignaledImpendingShutdown()) {
+    if (!p->IsShuttingDown()) {
       uint32_t tabCount = cpm->GetBrowserParentCountByProcessId(p->ChildID());
       if (tabCount < min) {
         candidate = p;
@@ -931,7 +931,7 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
       RefPtr<ContentParent> retval = aContentParents[index];
       
       
-      if (!retval->IsSignaledImpendingShutdown()) {
+      if (!retval->IsShuttingDown()) {
         if (profiler_thread_is_being_profiled_for_markers()) {
           nsPrintfCString marker("Reused process %u",
                                  (unsigned int)retval->ChildID());
