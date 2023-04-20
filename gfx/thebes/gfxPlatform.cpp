@@ -2838,8 +2838,8 @@ void gfxPlatform::InitWebRenderConfig() {
   
   gfxVars::SetUseGLSwizzle(
       IsFeatureSupported(nsIGfxInfo::FEATURE_GL_SWIZZLE, true));
-  gfxVars::SetUseWebRenderScissoredCacheClears(IsFeatureSupported(
-      nsIGfxInfo::FEATURE_WEBRENDER_SCISSORED_CACHE_CLEARS, true));
+  gfxVars::SetUseWebRenderScissoredCacheClears(gfx::gfxConfig::IsEnabled(
+      gfx::Feature::WEBRENDER_SCISSORED_CACHE_CLEARS));
 
   
   
