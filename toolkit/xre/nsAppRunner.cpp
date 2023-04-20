@@ -902,89 +902,15 @@ static const char kPrefFissionAutostart[] = "fission.autostart";
 
 
 
-
-
-
-static const char kPrefFissionExperimentEnrollmentStatus[] =
-    "fission.experiment.enrollmentStatus";
-
-
-
-
-
-
-static const char kPrefFissionExperimentStartupEnrollmentStatus[] =
-    "fission.experiment.startupEnrollmentStatus";
-
-
-
-
-
-
 static const char kPrefFissionAutostartSession[] = "fission.autostart.session";
 
-static nsIXULRuntime::ExperimentStatus gFissionExperimentStatus =
-    nsIXULRuntime::eExperimentStatusUnenrolled;
+
+
+
+
 static bool gFissionAutostart = false;
 static bool gFissionAutostartInitialized = false;
 static nsIXULRuntime::FissionDecisionStatus gFissionDecisionStatus;
-
-namespace mozilla {
-
-bool FissionExperimentEnrolled() {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  return gFissionExperimentStatus == nsIXULRuntime::eExperimentStatusControl ||
-         gFissionExperimentStatus ==
-             nsIXULRuntime::eExperimentStatusTreatment ||
-         gFissionExperimentStatus == nsIXULRuntime::eExperimentStatusRollout;
-}
-
-}  
-
-static void FissionExperimentDisqualify() {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  
-  
-  Preferences::SetUint(kPrefFissionExperimentEnrollmentStatus,
-                       nsIXULRuntime::eExperimentStatusDisqualified);
-}
-
-static void OnFissionEnrollmentStatusChanged(const char* aPref, void* aData) {
-  Preferences::SetUint(
-      kPrefFissionExperimentStartupEnrollmentStatus,
-      Preferences::GetUint(kPrefFissionExperimentEnrollmentStatus,
-                           nsIXULRuntime::eExperimentStatusUnenrolled));
-}
-
-namespace {
-
-
-
-class FissionEnrollmentStatusShutdownObserver final : public nsIObserver {
- public:
-  NS_DECL_ISUPPORTS
-
-  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
-                     const char16_t* aData) override {
-    MOZ_ASSERT(!strcmp("profile-before-change", aTopic));
-    OnFissionEnrollmentStatusChanged(kPrefFissionExperimentEnrollmentStatus,
-                                     nullptr);
-    return NS_OK;
-  }
-
- private:
-  ~FissionEnrollmentStatusShutdownObserver() = default;
-};
-NS_IMPL_ISUPPORTS(FissionEnrollmentStatusShutdownObserver, nsIObserver)
-}  
-
-static void OnFissionAutostartChanged(const char* aPref, void* aData) {
-  MOZ_ASSERT(FissionExperimentEnrolled());
-  if (Preferences::HasUserValue(kPrefFissionAutostart)) {
-    FissionExperimentDisqualify();
-  }
-}
-
 static void EnsureFissionAutostartInitialized() {
   if (gFissionAutostartInitialized) {
     return;
@@ -996,48 +922,6 @@ static void EnsureFissionAutostartInitialized() {
     gFissionAutostart = Preferences::GetBool(kPrefFissionAutostartSession,
                                              false, PrefValueKind::Default);
     return;
-  }
-
-  
-  
-  
-  
-  uint32_t experimentRaw =
-      Preferences::GetUint(kPrefFissionExperimentStartupEnrollmentStatus,
-                           nsIXULRuntime::eExperimentStatusUnenrolled);
-  gFissionExperimentStatus =
-      experimentRaw < nsIXULRuntime::eExperimentStatusCount
-          ? nsIXULRuntime::ExperimentStatus(experimentRaw)
-          : nsIXULRuntime::eExperimentStatusDisqualified;
-
-  
-  
-  Preferences::RegisterCallback(&OnFissionEnrollmentStatusChanged,
-                                kPrefFissionExperimentEnrollmentStatus);
-  if (nsCOMPtr<nsIObserverService> observerService =
-          mozilla::services::GetObserverService()) {
-    nsCOMPtr<nsIObserver> shutdownObserver =
-        new FissionEnrollmentStatusShutdownObserver();
-    observerService->AddObserver(shutdownObserver, "profile-before-change",
-                                 false);
-  }
-
-  
-  
-  if (Preferences::HasUserValue(kPrefFissionAutostart) &&
-      FissionExperimentEnrolled()) {
-    FissionExperimentDisqualify();
-    gFissionExperimentStatus = nsIXULRuntime::eExperimentStatusDisqualified;
-  }
-
-  
-  
-  if (FissionExperimentEnrolled()) {
-    bool isTreatment =
-        gFissionExperimentStatus == nsIXULRuntime::eExperimentStatusTreatment ||
-        gFissionExperimentStatus == nsIXULRuntime::eExperimentStatusRollout;
-    Preferences::SetBool(kPrefFissionAutostart, isTreatment,
-                         PrefValueKind::Default);
   }
 
   if (!BrowserTabsRemoteAutostart()) {
@@ -1057,15 +941,7 @@ static void EnsureFissionAutostartInitialized() {
     
     
     gFissionAutostart = Preferences::GetBool(kPrefFissionAutostart, false);
-    if (gFissionExperimentStatus == nsIXULRuntime::eExperimentStatusControl) {
-      gFissionDecisionStatus = nsIXULRuntime::eFissionExperimentControl;
-    } else if (gFissionExperimentStatus ==
-               nsIXULRuntime::eExperimentStatusTreatment) {
-      gFissionDecisionStatus = nsIXULRuntime::eFissionExperimentTreatment;
-    } else if (gFissionExperimentStatus ==
-               nsIXULRuntime::eExperimentStatusRollout) {
-      gFissionDecisionStatus = nsIXULRuntime::eFissionEnabledByRollout;
-    } else if (Preferences::HasUserValue(kPrefFissionAutostart)) {
+    if (Preferences::HasUserValue(kPrefFissionAutostart)) {
       gFissionDecisionStatus = gFissionAutostart
                                    ? nsIXULRuntime::eFissionEnabledByUserPref
                                    : nsIXULRuntime::eFissionDisabledByUserPref;
@@ -1086,13 +962,6 @@ static void EnsureFissionAutostartInitialized() {
   Preferences::SetBool(kPrefFissionAutostartSession, gFissionAutostart,
                        PrefValueKind::Default);
   Preferences::Lock(kPrefFissionAutostartSession);
-
-  
-  
-  if (FissionExperimentEnrolled()) {
-    Preferences::RegisterCallback(&OnFissionAutostartChanged,
-                                  kPrefFissionAutostart);
-  }
 }
 
 namespace mozilla {
@@ -1449,17 +1318,6 @@ nsXULAppInfo::GetWin32kSessionStatus(
 
   EnsureWin32kInitialized();
   *aResult = gWin32kStatus;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsXULAppInfo::GetFissionExperimentStatus(ExperimentStatus* aResult) {
-  if (!XRE_IsParentProcess()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  EnsureFissionAutostartInitialized();
-  *aResult = gFissionExperimentStatus;
   return NS_OK;
 }
 
