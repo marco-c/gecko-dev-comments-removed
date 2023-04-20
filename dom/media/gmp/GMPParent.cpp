@@ -563,7 +563,7 @@ nsCOMPtr<nsISerialEventTarget> GMPParent::GMPEventTarget() {
   
   nsCOMPtr<nsIThread> gmpThread;
   mps->GetThread(getter_AddRefs(gmpThread));
-  return gmpThread ? gmpThread->SerialEventTarget() : nullptr;
+  return gmpThread;
 }
 
 
