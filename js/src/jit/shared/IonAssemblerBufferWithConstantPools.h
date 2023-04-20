@@ -790,8 +790,8 @@ struct AssemblerBufferWithConstantPools
  public:
   
   
-  BufferOffset nextInstrOffset() {
-    if (!hasSpaceForInsts( 1,  0)) {
+  BufferOffset nextInstrOffset(int numInsts = 1) {
+    if (!hasSpaceForInsts(numInsts,  0)) {
       JitSpew(JitSpew_Pools,
               "nextInstrOffset @ %d caused a constant pool spill",
               this->nextOffset().getOffset());
