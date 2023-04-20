@@ -1225,16 +1225,6 @@ var gUnifiedExtensions = {
       
       this._button.hidden = false;
 
-      
-      
-      document
-        .getElementById("unified-extensions-context-menu")
-        .querySelectorAll("[data-lazy-l10n-id]")
-        .forEach(el => {
-          el.setAttribute("data-l10n-id", el.getAttribute("data-lazy-l10n-id"));
-          el.removeAttribute("data-lazy-l10n-id");
-        });
-
       document
         .getElementById("nav-bar")
         .setAttribute("unifiedextensionsbuttonshown", true);
@@ -1429,6 +1419,7 @@ var gUnifiedExtensions = {
   _panel: null,
   get panel() {
     
+    
     if (!this._panel) {
       let template = document.getElementById(
         "unified-extensions-panel-template"
@@ -1443,6 +1434,16 @@ var gUnifiedExtensions = {
         CustomizableUI.AREA_ADDONS
       );
       CustomizableUI.addPanelCloseListeners(this._panel);
+
+      
+      
+      document
+        .getElementById("unified-extensions-context-menu")
+        .querySelectorAll("[data-lazy-l10n-id]")
+        .forEach(el => {
+          el.setAttribute("data-l10n-id", el.getAttribute("data-lazy-l10n-id"));
+          el.removeAttribute("data-lazy-l10n-id");
+        });
     }
     return this._panel;
   },
