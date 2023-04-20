@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 .search-container {
   position: absolute;
@@ -11,10 +11,9 @@
   display: flex;
   flex-direction: column;
   z-index: 20;
-  background-color: var(--theme-body-background);
   overflow-y: hidden;
 
-  
+  /* Using the same colors as the Netmonitor's --table-selection-background-hover */
   --search-result-background-hover: rgba(209, 232, 255, 0.8);
 }
 
@@ -135,14 +134,14 @@
 .project-text-search .managed-tree .tree {
   height: 100%;
   display: grid;
-  
+  /* Align the second column to the search input's text value */
   grid-template-columns: minmax(40px, auto) 1fr;
   overflow-x: hidden;
   padding-top: 4px;
 }
 
-
-
+/* Fake padding-bottom using a pseudo-element because Gecko doesn't render the
+   padding-bottom in a scroll container */
 .project-text-search .tree::after {
   content: "";
   display: block;
@@ -153,7 +152,7 @@
   display: contents;
 }
 
-
+/* Focus values */
 
 .project-text-search .file-result.focused,
 .project-text-search .result.focused .line-value,
