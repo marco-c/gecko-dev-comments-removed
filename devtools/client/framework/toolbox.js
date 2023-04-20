@@ -1379,9 +1379,7 @@ Toolbox.prototype = {
       return this._sourceMapService;
     }
     
-    const service = this.browserRequire(
-      "devtools/client/shared/source-map-loader/index"
-    );
+    const service = require("devtools/client/shared/source-map-loader/index");
 
     
     this._sourceMapService = new Proxy(service, {
