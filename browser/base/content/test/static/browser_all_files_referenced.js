@@ -280,12 +280,6 @@ var whitelist = [
     platforms: ["linux", "macosx"],
   },
   
-  {
-    file:
-      "resource://gre/localization/en-US/toolkit/about/aboutWindowsMessages.ftl",
-    platforms: ["linux", "macosx"],
-  },
-  
   
   
   { file: "chrome://browser/content/screenshots/copied-notification.svg" },
