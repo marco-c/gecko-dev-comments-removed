@@ -54,7 +54,7 @@ function init() {
   
   
   if (setLogButton.disabled || setModulesButton.disabled) {
-    $("#buttons-disabled").hidden = false;
+    document.querySelector("#buttons-disabled").hidden = false;
     startLoggingButton.disabled = true;
     stopLoggingButton.disabled = true;
   }
