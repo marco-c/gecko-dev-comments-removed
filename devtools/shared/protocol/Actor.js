@@ -4,7 +4,6 @@
 
 "use strict";
 
-const { extend } = require("resource://devtools/shared/extend.js");
 var { Pool } = require("resource://devtools/shared/protocol/Pool.js");
 
 
@@ -28,40 +27,18 @@ exports.actorSpecs = actorSpecs;
 
 class Actor extends Pool {
   constructor(conn, spec) {
-    super();
+    super(conn);
 
-    
-    if (spec) {
-      this.typeName = spec.typeName;
-      this.requestTypes = generateRequestTypes(spec);
-      this._actorSpec = spec;
-    }
-    this.initialize(conn);
-  }
-
-  
-  
-  initialize(conn) {
-    
-    
-    
-    if (conn) {
-      this.conn = conn;
-    }
+    this.typeName = spec.typeName;
 
     
     this.actorID = null;
 
-    
-    
-    
-    if (!this._actorSpec) {
-      this._actorSpec = actorSpecs.get(Object.getPrototypeOf(this));
-    }
+    this.requestTypes = generateRequestTypes(spec);
 
     
-    if (this._actorSpec && this._actorSpec.events) {
-      for (const [name, request] of this._actorSpec.events.entries()) {
+    if (spec.events) {
+      for (const [name, request] of spec.events.entries()) {
         this.on(name, (...args) => {
           this._sendEvent(name, request, ...args);
         });
@@ -278,44 +255,3 @@ var generateRequestTypes = function(actorSpec) {
   return requestTypes;
 };
 exports.generateRequestTypes = generateRequestTypes;
-
-var generateRequestHandlers = function(actorSpec, actorProto) {
-  actorProto.typeName = actorSpec.typeName;
-
-  
-  actorProto.requestTypes = generateRequestTypes(actorSpec);
-
-  return actorProto;
-};
-
-
-
-
-
-
-
-
-
-
-
-var ActorClassWithSpec = function(actorSpec, actorProto) {
-  if (!actorSpec.typeName) {
-    throw Error("Actor specification must have a typeName member.");
-  }
-
-  
-  const cls = function() {
-    const instance = Object.create(cls.prototype);
-    instance.initialize.apply(instance, arguments);
-    return instance;
-  };
-  cls.prototype = extend(
-    Actor.prototype,
-    generateRequestHandlers(actorSpec, actorProto)
-  );
-
-  actorSpecs.set(cls.prototype, actorSpec);
-
-  return cls;
-};
-exports.ActorClassWithSpec = ActorClassWithSpec;
