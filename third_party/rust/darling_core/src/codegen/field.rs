@@ -1,15 +1,15 @@
 use std::borrow::Cow;
 
 use proc_macro2::TokenStream;
-use quote::{ToTokens, TokenStreamExt};
-use syn::{Ident, Path, Type};
+use quote::{quote, quote_spanned, ToTokens, TokenStreamExt};
+use syn::{spanned::Spanned, Ident, Path, Type};
 
 use crate::codegen::{DefaultExpression, PostfixTransform};
 use crate::usage::{self, IdentRefSet, IdentSet, UsesTypeParams};
 
 
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct Field<'a> {
     
     
@@ -106,7 +106,11 @@ impl<'a> ToTokens for MatchArm<'a> {
             
             
             
-            let extractor = quote!(#with_path(__inner)#post_transform.map_err(|e| e.with_span(&__inner).at(#location)));
+            
+            
+            
+            
+            let extractor = quote_spanned!(with_path.span()=>#with_path(__inner)#post_transform.map_err(|e| e.with_span(&__inner).at(#location)));
 
             tokens.append_all(if field.multiple {
                 quote!(
@@ -143,7 +147,7 @@ impl<'a> ToTokens for Initializer<'a> {
         let ident = field.ident;
         tokens.append_all(if field.multiple {
             if let Some(ref expr) = field.default_expression {
-                quote!(#ident: if !#ident.is_empty() {
+                quote_spanned!(expr.span()=> #ident: if !#ident.is_empty() {
                     #ident
                 } else {
                     #expr
@@ -152,9 +156,10 @@ impl<'a> ToTokens for Initializer<'a> {
                 quote!(#ident: #ident)
             }
         } else if let Some(ref expr) = field.default_expression {
-            quote!(#ident: match #ident.1 {
-                ::darling::export::Some(__val) => __val,
-                ::darling::export::None => #expr,
+            quote_spanned!(expr.span()=> #ident: if let Some(__val) = #ident.1 {
+                __val
+            } else {
+                #expr
             })
         } else {
             quote!(#ident: #ident.1.expect("Uninitialized fields without defaults were already checked"))
@@ -172,9 +177,14 @@ impl<'a> ToTokens for CheckMissing<'a> {
             let ty = self.0.ty;
             let name_in_attr = &self.0.name_in_attr;
 
+            
+            
+            let from_none_call =
+                quote_spanned!(ty.span()=> <#ty as ::darling::FromMeta>::from_none());
+
             tokens.append_all(quote! {
                 if !#ident.0 {
-                    match <#ty as ::darling::FromMeta>::from_none() {
+                    match #from_none_call {
                         ::darling::export::Some(__type_fallback) => {
                             #ident.1 = ::darling::export::Some(__type_fallback);
                         }

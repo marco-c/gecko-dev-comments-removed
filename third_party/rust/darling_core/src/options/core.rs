@@ -66,9 +66,13 @@ impl Core {
     fn as_codegen_default(&self) -> Option<codegen::DefaultExpression<'_>> {
         self.default.as_ref().map(|expr| match *expr {
             DefaultExpression::Explicit(ref path) => codegen::DefaultExpression::Explicit(path),
-            DefaultExpression::Inherit | DefaultExpression::Trait => {
-                codegen::DefaultExpression::Trait
+            DefaultExpression::Inherit => {
+                
+                
+                
+                panic!("DefaultExpression::Inherit is not valid at container level")
             }
+            DefaultExpression::Trait { span } => codegen::DefaultExpression::Trait { span },
         })
     }
 }

@@ -1,3 +1,4 @@
+use syn::spanned::Spanned;
 use syn::{Field, Ident, Meta};
 
 use crate::options::{Core, DefaultExpression, ForwardAttrs, ParseAttribute, ParseData};
@@ -50,7 +51,11 @@ impl ParseAttribute for OuterFrom {
         } else if path.is_ident("from_ident") {
             
             
-            self.container.default = Some(DefaultExpression::Trait);
+            self.container.default = Some(DefaultExpression::Trait {
+                
+                
+                span: path.span(),
+            });
             self.from_ident = true;
         } else {
             return self.container.parse_nested(mi);

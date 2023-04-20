@@ -1,10 +1,13 @@
 use std::borrow::Cow;
 
+use syn::{parse_quote_spanned, spanned::Spanned};
+
 use crate::codegen;
 use crate::options::{Core, DefaultExpression, ParseAttribute};
+use crate::util::SpannedValue;
 use crate::{Error, FromMeta, Result};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct InputField {
     pub ident: syn::Ident,
     pub attr_name: Option<String>,
@@ -14,7 +17,7 @@ pub struct InputField {
 
     
     
-    pub skip: Option<bool>,
+    pub skip: Option<SpannedValue<bool>>,
     pub post_transform: Option<codegen::PostfixTransform>,
     pub multiple: Option<bool>,
 }
@@ -31,10 +34,14 @@ impl InputField {
             ty: &self.ty,
             default_expression: self.as_codegen_default(),
             with_path: self.with.as_ref().map_or_else(
-                || Cow::Owned(parse_quote!(::darling::FromMeta::from_meta)),
+                || {
+                    Cow::Owned(
+                        parse_quote_spanned!(self.ty.span()=> ::darling::FromMeta::from_meta),
+                    )
+                },
                 Cow::Borrowed,
             ),
-            skip: self.skip.unwrap_or_default(),
+            skip: *self.skip.unwrap_or_default(),
             post_transform: self.post_transform.as_ref(),
             multiple: self.multiple.unwrap_or_default(),
         }
@@ -46,7 +53,7 @@ impl InputField {
         self.default.as_ref().map(|expr| match *expr {
             DefaultExpression::Explicit(ref path) => codegen::DefaultExpression::Explicit(path),
             DefaultExpression::Inherit => codegen::DefaultExpression::Inherit(&self.ident),
-            DefaultExpression::Trait => codegen::DefaultExpression::Trait,
+            DefaultExpression::Trait { span } => codegen::DefaultExpression::Trait { span },
         })
     }
 
@@ -91,11 +98,7 @@ impl InputField {
         
         
         
-        self.default = match (
-            self.skip.unwrap_or_default(),
-            self.default.is_some(),
-            parent.default.is_some(),
-        ) {
+        self.default = match (&self.skip, self.default.is_some(), parent.default.is_some()) {
             
             (_, true, _) => self.default,
 
@@ -105,10 +108,12 @@ impl InputField {
 
             
             
-            (true, false, false) => Some(DefaultExpression::Trait),
+            
+            
+            (Some(v), false, false) if **v => Some(DefaultExpression::Trait { span: v.span() }),
 
             
-            (false, false, false) => None,
+            (_, false, false) => None,
         };
 
         self

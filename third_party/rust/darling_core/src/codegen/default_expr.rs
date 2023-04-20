@@ -1,18 +1,20 @@
-use proc_macro2::TokenStream;
-use quote::{ToTokens, TokenStreamExt};
-use syn::{Ident, Path};
+use proc_macro2::{Span, TokenStream};
+use quote::{quote, quote_spanned, ToTokens, TokenStreamExt};
+use syn::{spanned::Spanned, Ident, Path};
 
 
 const DEFAULT_STRUCT_NAME: &str = "__default";
 
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum DefaultExpression<'a> {
     
     
     Inherit(&'a Ident),
     Explicit(&'a Path),
-    Trait,
+    Trait {
+        span: Span,
+    },
 }
 
 impl<'a> DefaultExpression<'a> {
@@ -28,8 +30,13 @@ impl<'a> ToTokens for DefaultExpression<'a> {
                 let dsn = Ident::new(DEFAULT_STRUCT_NAME, ::proc_macro2::Span::call_site());
                 quote!(#dsn.#ident)
             }
-            DefaultExpression::Explicit(path) => quote!(#path()),
-            DefaultExpression::Trait => quote!(::darling::export::Default::default()),
+            DefaultExpression::Explicit(path) => {
+                
+                quote_spanned!(path.span()=>#path())
+            }
+            DefaultExpression::Trait { span } => {
+                quote_spanned!(span=> ::darling::export::Default::default())
+            }
         });
     }
 }
