@@ -276,6 +276,12 @@ impl Match {
     }
 
     
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    
     
     
     

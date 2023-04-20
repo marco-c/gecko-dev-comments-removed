@@ -340,7 +340,7 @@ pub trait Automaton {
                     
                     debug_assert!(
                         last_match.is_some() || self.anchored(),
-                        "failure state should only be seen after match"
+                        "dead state should only be seen after match"
                     );
                     return last_match;
                 }
@@ -455,7 +455,7 @@ pub trait Automaton {
                     
                     debug_assert!(
                         last_match.is_some() || self.anchored(),
-                        "failure state should only be seen after match"
+                        "dead state should only be seen after match"
                     );
                     return last_match;
                 }

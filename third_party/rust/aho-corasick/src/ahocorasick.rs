@@ -1219,7 +1219,6 @@ pub struct FindOverlappingIter<'a, 'b, S: StateID> {
     prestate: PrefilterState,
     haystack: &'b [u8],
     pos: usize,
-    last_match_end: usize,
     state_id: S,
     match_index: usize,
 }
@@ -1239,7 +1238,6 @@ impl<'a, 'b, S: StateID> FindOverlappingIter<'a, 'b, S> {
             prestate,
             haystack,
             pos: 0,
-            last_match_end: 0,
             state_id: ac.imp.start_state(),
             match_index: 0,
         }
@@ -1357,7 +1355,7 @@ struct StreamChunkIter<'a, R, S: StateID> {
 #[derive(Debug)]
 enum StreamChunk<'r> {
     
-    NonMatch { bytes: &'r [u8], start: usize },
+    NonMatch { bytes: &'r [u8] },
     
     Match { bytes: &'r [u8], mat: Match },
 }
@@ -1390,7 +1388,7 @@ impl<'a, R: io::Read, S: StateID> StreamChunkIter<'a, R, S> {
         }
     }
 
-    fn next<'r>(&'r mut self) -> Option<io::Result<StreamChunk<'r>>> {
+    fn next(&mut self) -> Option<io::Result<StreamChunk>> {
         loop {
             if let Some(mut mat) = self.pending_match.take() {
                 let bytes = &self.buf.buffer()[mat.start()..mat.end()];
@@ -1401,9 +1399,8 @@ impl<'a, R: io::Read, S: StateID> StreamChunkIter<'a, R, S> {
             if self.search_pos >= self.buf.len() {
                 if let Some(end) = self.unreported() {
                     let bytes = &self.buf.buffer()[self.report_pos..end];
-                    let start = self.absolute_pos + self.report_pos;
                     self.report_pos = end;
-                    return Some(Ok(StreamChunk::NonMatch { bytes, start }));
+                    return Some(Ok(StreamChunk::NonMatch { bytes }));
                 }
                 if self.buf.len() >= self.buf.min_buffer_len() {
                     
@@ -1426,10 +1423,9 @@ impl<'a, R: io::Read, S: StateID> StreamChunkIter<'a, R, S> {
                         
                         if self.report_pos < self.buf.len() {
                             let bytes = &self.buf.buffer()[self.report_pos..];
-                            let start = self.absolute_pos + self.report_pos;
                             self.report_pos = self.buf.len();
 
-                            let chunk = StreamChunk::NonMatch { bytes, start };
+                            let chunk = StreamChunk::NonMatch { bytes };
                             return Some(Ok(chunk));
                         } else {
                             
@@ -1469,10 +1465,9 @@ impl<'a, R: io::Read, S: StateID> StreamChunkIter<'a, R, S> {
                     if self.report_pos < mat.start() {
                         let bytes =
                             &self.buf.buffer()[self.report_pos..mat.start()];
-                        let start = self.absolute_pos + self.report_pos;
                         self.report_pos = mat.start();
 
-                        let chunk = StreamChunk::NonMatch { bytes, start };
+                        let chunk = StreamChunk::NonMatch { bytes };
                         return Some(Ok(chunk));
                     }
                 }
@@ -1792,6 +1787,9 @@ impl AhoCorasickBuilder {
         self
     }
 
+    
+    
+    
     
     
     

@@ -313,17 +313,6 @@ impl<S: StateID> State<S> {
         !self.matches.is_empty()
     }
 
-    fn get_longest_match_len(&self) -> Option<usize> {
-        
-        
-        
-        
-        
-        
-        
-        self.matches.get(0).map(|&(_, len)| len)
-    }
-
     fn next_state(&self, input: u8) -> S {
         self.trans.next_state(input)
     }
@@ -649,11 +638,7 @@ impl<'a, S: StateID> Compiler<'a, S> {
         self.add_start_state_loop();
         self.add_dead_state_loop();
         if !self.builder.anchored {
-            if self.match_kind().is_leftmost() {
-                self.fill_failure_transitions_leftmost();
-            } else {
-                self.fill_failure_transitions_standard();
-            }
+            self.fill_failure_transitions();
         }
         self.close_start_state_loop();
         self.nfa.byte_classes = self.byte_classes.build();
@@ -839,20 +824,55 @@ impl<'a, S: StateID> Compiler<'a, S> {
     
     
     
-    fn fill_failure_transitions_standard(&mut self) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn fill_failure_transitions(&mut self) {
+        let kind = self.match_kind();
         
         
         
         
         let mut queue = VecDeque::new();
         let mut seen = self.queued_set();
-        for b in AllBytesIter::new() {
-            let next = self.nfa.start().next_state(b);
-            if next != self.nfa.start_id {
-                if !seen.contains(next) {
-                    queue.push_back(next);
-                    seen.insert(next);
-                }
+        let mut it = self.nfa.iter_transitions_mut(self.nfa.start_id);
+        while let Some((_, next)) = it.next() {
+            
+            
+            if next == it.nfa().start_id || seen.contains(next) {
+                continue;
+            }
+            queue.push_back(next);
+            seen.insert(next);
+            
+            
+            
+            
+            
+            
+            
+            
+            if kind.is_leftmost() && it.nfa().state(next).is_match() {
+                it.nfa().state_mut(next).fail = dead_id();
             }
         }
         while let Some(id) = queue.pop_front() {
@@ -870,6 +890,31 @@ impl<'a, S: StateID> Compiler<'a, S> {
                 queue.push_back(next);
                 seen.insert(next);
 
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if kind.is_leftmost() && it.nfa().state(next).is_match() {
+                    it.nfa().state_mut(next).fail = dead_id();
+                    continue;
+                }
                 let mut fail = it.nfa().state(id).fail;
                 while it.nfa().state(fail).next_state(b) == fail_id() {
                     fail = it.nfa().state(fail).fail;
@@ -887,217 +932,9 @@ impl<'a, S: StateID> Compiler<'a, S> {
             
             
             
-            it.nfa().copy_empty_matches(id);
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn fill_failure_transitions_leftmost(&mut self) {
-        
-        
-        
-        
-        
-        
-        #[derive(Clone, Copy, Debug)]
-        struct QueuedState<S> {
-            
-            id: S,
-            
-            
-            
-            
-            match_at_depth: Option<usize>,
-        }
-
-        impl<S: StateID> QueuedState<S> {
-            
-            
-            fn start(nfa: &NFA<S>) -> QueuedState<S> {
-                let match_at_depth =
-                    if nfa.start().is_match() { Some(0) } else { None };
-                QueuedState { id: nfa.start_id, match_at_depth }
+            if !kind.is_leftmost() {
+                it.nfa().copy_empty_matches(id);
             }
-
-            
-            
-            fn next_queued_state(
-                &self,
-                nfa: &NFA<S>,
-                id: S,
-            ) -> QueuedState<S> {
-                let match_at_depth = self.next_match_at_depth(nfa, id);
-                QueuedState { id, match_at_depth }
-            }
-
-            
-            
-            
-            fn next_match_at_depth(
-                &self,
-                nfa: &NFA<S>,
-                next: S,
-            ) -> Option<usize> {
-                
-                
-                
-                
-                match self.match_at_depth {
-                    Some(x) => return Some(x),
-                    None if nfa.state(next).is_match() => {}
-                    None => return None,
-                }
-                let depth = nfa.state(next).depth
-                    - nfa.state(next).get_longest_match_len().unwrap()
-                    + 1;
-                Some(depth)
-            }
-        }
-
-        
-        
-        
-        
-        let mut queue: VecDeque<QueuedState<S>> = VecDeque::new();
-        let mut seen = self.queued_set();
-        let start = QueuedState::start(&self.nfa);
-        for b in AllBytesIter::new() {
-            let next_id = self.nfa.start().next_state(b);
-            if next_id != start.id {
-                let next = start.next_queued_state(&self.nfa, next_id);
-                if !seen.contains(next.id) {
-                    queue.push_back(next);
-                    seen.insert(next.id);
-                }
-                
-                
-                
-                
-                
-                
-                
-                
-                if self.nfa.state(next_id).is_match() {
-                    self.nfa.state_mut(next_id).fail = dead_id();
-                }
-            }
-        }
-        while let Some(item) = queue.pop_front() {
-            let mut any_trans = false;
-            let mut it = self.nfa.iter_transitions_mut(item.id);
-            while let Some((b, next_id)) = it.next() {
-                any_trans = true;
-
-                
-                let next = item.next_queued_state(it.nfa(), next_id);
-                if seen.contains(next.id) {
-                    
-                    
-                    
-                    
-                    
-                    
-                    continue;
-                }
-                queue.push_back(next);
-                seen.insert(next.id);
-
-                
-                let mut fail = it.nfa().state(item.id).fail;
-                while it.nfa().state(fail).next_state(b) == fail_id() {
-                    fail = it.nfa().state(fail).fail;
-                }
-                fail = it.nfa().state(fail).next_state(b);
-
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                if let Some(match_depth) = next.match_at_depth {
-                    let fail_depth = it.nfa().state(fail).depth;
-                    let next_depth = it.nfa().state(next.id).depth;
-                    if next_depth - match_depth + 1 > fail_depth {
-                        it.nfa().state_mut(next.id).fail = dead_id();
-                        continue;
-                    }
-                    assert_ne!(
-                        start.id,
-                        it.nfa().state(next.id).fail,
-                        "states that are match states or follow match \
-                         states should never have a failure transition \
-                         back to the start state in leftmost searching",
-                    );
-                }
-                it.nfa().state_mut(next.id).fail = fail;
-                it.nfa().copy_matches(fail, next.id);
-            }
-            
-            
-            
-            if !any_trans && it.nfa().state(item.id).is_match() {
-                it.nfa().state_mut(item.id).fail = dead_id();
-            }
-            
-            
-            
         }
     }
 
@@ -1176,7 +1013,7 @@ impl<'a, S: StateID> Compiler<'a, S> {
     fn calculate_size(&mut self) {
         let mut size = 0;
         for state in &self.nfa.states {
-            size += state.heap_bytes();
+            size += size_of::<State<S>>() + state.heap_bytes();
         }
         self.nfa.heap_bytes = size;
     }
