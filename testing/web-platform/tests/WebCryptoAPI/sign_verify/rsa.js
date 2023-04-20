@@ -155,11 +155,17 @@ function run_test() {
 
     
     testVectors.forEach(function(vector) {
+        
+        const isDeterministic = !("saltLength" in vector.algorithm) || vector.algorithm.saltLength == 0;
         var promise = importVectorKeys(vector, ["verify"], ["sign"])
         .then(function(vectors) {
             promise_test(function(test) {
                 return subtle.sign(vector.algorithm, vector.privateKey, vector.plaintext)
                 .then(function(signature) {
+                    if (isDeterministic) {
+                        
+                        assert_true(equalBuffers(signature, vector.signature), "Signing did not give the expected output");
+                    }
                     
                     return subtle.verify(vector.algorithm, vector.publicKey, signature, vector.plaintext)
                     .then(function(is_verified) {
@@ -173,10 +179,10 @@ function run_test() {
                     
                     return subtle.sign(vector.algorithm, vector.privateKey, vector.plaintext)
                     .then(function(signature) {
-                        if ("saltLength" in vector.algorithm && vector.algorithm.saltLength > 0) {
-                            assert_false(equalBuffers(priorSignature, signature), "Two signings with a salt give different signatures")
-                        } else {
+                        if (isDeterministic) {
                             assert_true(equalBuffers(priorSignature, signature), "Two signings with empty salt give same signature")
+                        } else {
+                            assert_false(equalBuffers(priorSignature, signature), "Two signings with a salt give different signatures")
                         }
                     }, function(err) {
                         assert_unreached("second time verify error for test " + vector.name + ": '" + err.message + "'");
