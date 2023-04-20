@@ -3563,7 +3563,16 @@ void Element::GetGridFragments(nsTArray<RefPtr<Grid>>& aResult) {
   
   
   while (frame) {
-    aResult.AppendElement(new Grid(this, frame));
+    
+    
+    
+    Grid* gridFragment = frame->GetGridFragmentInfo();
+    if (!gridFragment) {
+      
+      
+      gridFragment = new Grid(this, frame);
+    }
+    aResult.AppendElement(gridFragment);
     frame = static_cast<nsGridContainerFrame*>(frame->GetNextInFlow());
   }
 }
