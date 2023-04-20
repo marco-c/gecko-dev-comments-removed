@@ -633,9 +633,15 @@ let interfaceNamesInGlobalScope = [
   
   { name: "IDBFactory", insecureContext: true },
   
+  { name: "IDBFileHandle", insecureContext: true, disabled: true },
+  
+  { name: "IDBFileRequest", insecureContext: true, disabled: true },
+  
   { name: "IDBIndex", insecureContext: true },
   
   { name: "IDBKeyRange", insecureContext: true },
+  
+  { name: "IDBMutableFile", insecureContext: true, disabled: true },
   
   { name: "IDBObjectStore", insecureContext: true },
   
