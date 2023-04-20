@@ -313,7 +313,8 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
   float delay = aStyle.GetTransitionDelay(transitionIdx).ToMilliseconds();
 
   
-  float duration = std::max(aStyle.GetTransitionDuration(transitionIdx).ToMilliseconds(), 0.0f);
+  float duration = std::max(
+      aStyle.GetTransitionDuration(transitionIdx).ToMilliseconds(), 0.0f);
 
   
   
