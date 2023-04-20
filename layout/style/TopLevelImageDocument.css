@@ -15,7 +15,9 @@
 
 
     color: #eee;
-    background-image: url("chrome://global/skin/media/imagedoc-darknoise.png");
+    
+
+    background: url("chrome://global/skin/media/imagedoc-darknoise.png") fixed;
   }
 
   img.transparent {
