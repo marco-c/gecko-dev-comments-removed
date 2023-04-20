@@ -94,11 +94,10 @@ void WebTransportParent::Create(
   
   
   
-  nsCOMPtr<nsISerialEventTarget> sts =
-      do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &rv);
+  mSocketThread = do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &rv);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
-  InvokeAsync(sts, __func__,
+  InvokeAsync(mSocketThread, __func__,
               [parentEndpoint = std::move(aParentEndpoint), runnable = r,
                resolver = std::move(aResolver), p = RefPtr{this}]() mutable {
                 p->mResolver = resolver;
@@ -111,6 +110,7 @@ void WebTransportParent::Create(
                 
                 
                 NS_DispatchToMainThread(runnable, NS_DISPATCH_NORMAL);
+
                 return CreateWebTransportPromise::CreateAndResolve(
                     WebTransportReliabilityMode::Supports_unreliable, __func__);
               })
@@ -193,8 +193,6 @@ WebTransportParent::OnSessionReady(uint64_t aSessionId) {
 NS_IMETHODIMP
 WebTransportParent::OnSessionClosed(const uint32_t aErrorCode,
                                     const nsACString& aReason) {
-  LOG(("webtransport %p session creation failed code= %u, reason= %s", this,
-       aErrorCode, PromiseFlatCString(aReason).get()));
   nsresult rv = NS_OK;
 
   MOZ_ASSERT(mOwningEventTarget);
@@ -205,6 +203,8 @@ WebTransportParent::OnSessionClosed(const uint32_t aErrorCode,
   
   
   if (mResolver) {
+    LOG(("webtransport %p session creation failed code= %u, reason= %s", this,
+         aErrorCode, PromiseFlatCString(aReason).get()));
     
     rv = NS_ERROR_FAILURE;
     mOwningEventTarget->Dispatch(NS_NewRunnableFunction(
@@ -222,9 +222,15 @@ WebTransportParent::OnSessionClosed(const uint32_t aErrorCode,
     
     
     
-    
-    Unused << SendRemoteClosed( true, aErrorCode, aReason);
-    
+    LOG(("webtransport %p session remote closed code= %u, reason= %s", this,
+         aErrorCode, PromiseFlatCString(aReason).get()));
+    mSocketThread->Dispatch(NS_NewRunnableFunction(
+        __func__,
+        [self = RefPtr{this}, aErrorCode, reason = nsCString{aReason}]() {
+          
+          Unused << self->SendRemoteClosed( true, aErrorCode, reason);
+          
+        }));
   }
 
   return NS_OK;
@@ -274,9 +280,7 @@ WebTransportParent::OnIncomingUnidirectionalStreamAvailable(
 
   LOG(("%p Sending UnidirectionalStream pipe to content", this));
   
-  if (!SendIncomingUnidirectionalStream(receiver)) {
-    return NS_ERROR_FAILURE;
-  }
+  Unused << SendIncomingUnidirectionalStream(receiver);
 
   return NS_OK;
 }
