@@ -27,7 +27,6 @@ U_CDECL_BEGIN
 
 
 
-
 typedef struct UCPMap UCPMap;
 
 

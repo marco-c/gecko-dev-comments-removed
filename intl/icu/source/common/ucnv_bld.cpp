@@ -200,7 +200,7 @@ static icu::UMutex cnvCacheMutex;
 
 static const char **gAvailableConverters = NULL;
 static uint16_t gAvailableConverterCount = 0;
-static icu::UInitOnce gAvailableConvertersInitOnce = U_INITONCE_INITIALIZER;
+static icu::UInitOnce gAvailableConvertersInitOnce {};
 
 #if !U_CHARSET_IS_UTF8
 
@@ -254,7 +254,7 @@ static UBool U_CALLCONV ucnv_cleanup(void) {
 #if !U_CHARSET_IS_UTF8
     gDefaultConverterName = NULL;
     gDefaultConverterNameBuffer[0] = 0;
-    gDefaultConverterContainsOption = FALSE;
+    gDefaultConverterContainsOption = false;
     gDefaultAlgorithmicSharedData = NULL;
 #endif
 
@@ -318,7 +318,7 @@ ucnv_data_unFlattenClone(UConverterLoadArgs *pArgs, UDataMemory *pData, UErrorCo
 
     data->staticData = source;
 
-    data->sharedDataCached = FALSE;
+    data->sharedDataCached = false;
 
     
     data->dataMemory = (void*)pData; 
@@ -462,7 +462,7 @@ ucnv_shareConverterData(UConverterSharedData * data)
 
 
     
-    data->sharedDataCached = TRUE;
+    data->sharedDataCached = true;
 
     uhash_put(SHARED_DATA_HASHTABLE,
             (void*) data->staticData->name, 
@@ -515,8 +515,8 @@ ucnv_deleteSharedConverterData(UConverterSharedData * deadSharedData)
     UTRACE_DATA2(UTRACE_OPEN_CLOSE, "unload converter %s shared data %p", deadSharedData->staticData->name, deadSharedData);
 
     if (deadSharedData->referenceCounter > 0) {
-        UTRACE_EXIT_VALUE((int32_t)FALSE);
-        return FALSE;
+        UTRACE_EXIT_VALUE((int32_t)false);
+        return false;
     }
 
     if (deadSharedData->impl->unload != NULL) {
@@ -531,8 +531,8 @@ ucnv_deleteSharedConverterData(UConverterSharedData * deadSharedData)
 
     uprv_free(deadSharedData);
 
-    UTRACE_EXIT_VALUE((int32_t)TRUE);
-    return TRUE;
+    UTRACE_EXIT_VALUE((int32_t)true);
+    return true;
 }
 
 
@@ -589,7 +589,7 @@ ucnv_unload(UConverterSharedData *sharedData) {
             sharedData->referenceCounter--;
         }
 
-        if((sharedData->referenceCounter <= 0)&&(sharedData->sharedDataCached == FALSE)) {
+        if((sharedData->referenceCounter <= 0)&&(sharedData->sharedDataCached == false)) {
             ucnv_deleteSharedConverterData(sharedData);
         }
     }
@@ -717,8 +717,8 @@ ucnv_loadSharedData(const char *converterName,
     UConverterLoadArgs stackArgs;
     UConverterSharedData *mySharedConverterData = NULL;
     UErrorCode internalErrorCode = U_ZERO_ERROR;
-    UBool mayContainOption = TRUE;
-    UBool checkForAlgorithmic = TRUE;
+    UBool mayContainOption = true;
+    UBool checkForAlgorithmic = true;
 
     if (U_FAILURE (*err)) {
         return NULL;
@@ -762,7 +762,7 @@ ucnv_loadSharedData(const char *converterName,
             return NULL;
         }
         mySharedConverterData = (UConverterSharedData *)gDefaultAlgorithmicSharedData;
-        checkForAlgorithmic = FALSE;
+        checkForAlgorithmic = false;
         mayContainOption = gDefaultConverterContainsOption;
         
 #endif
@@ -866,7 +866,7 @@ ucnv_canCreateConverter(const char *converterName, UErrorCode *err) {
     if(U_SUCCESS(*err)) {
         UTRACE_DATA1(UTRACE_OPEN_CLOSE, "test if can open converter %s", converterName);
 
-        stackArgs.onlyTestIsLoadable=TRUE;
+        stackArgs.onlyTestIsLoadable=true;
         mySharedConverterData = ucnv_loadSharedData(converterName, &stackPieces, &stackArgs, err);
         ucnv_createConverterFromSharedData(
             &myUConverter, mySharedConverterData,
@@ -989,9 +989,9 @@ ucnv_createConverterFromSharedData(UConverter *myUConverter,
             ucnv_unloadSharedDataIfReady(mySharedConverterData);
             return NULL;
         }
-        isCopyLocal = FALSE;
+        isCopyLocal = false;
     } else {
-        isCopyLocal = TRUE;
+        isCopyLocal = true;
     }
 
     
@@ -1083,7 +1083,7 @@ ucnv_flushCache ()
                 UCNV_DEBUG_LOG("del",mySharedData->staticData->name,mySharedData);
 
                 uhash_removeElement(SHARED_DATA_HASHTABLE, e);
-                mySharedData->sharedDataCached = FALSE;
+                mySharedData->sharedDataCached = false;
                 ucnv_deleteSharedConverterData (mySharedData);
             } else {
                 ++remaining;
@@ -1342,7 +1342,7 @@ ucnv_swap(const UDataSwapper *ds,
     _MBCSHeader *outMBCSHeader;
     _MBCSHeader mbcsHeader;
     uint32_t mbcsHeaderLength;
-    UBool noFromU=FALSE;
+    UBool noFromU=false;
 
     uint8_t outputType;
 

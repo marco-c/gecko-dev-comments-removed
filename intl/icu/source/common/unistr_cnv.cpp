@@ -225,13 +225,13 @@ UnicodeString::extract(char *dest, int32_t destCapacity,
     
     UBool isDefaultConverter;
     if(cnv==0) {
-        isDefaultConverter=TRUE;
+        isDefaultConverter=true;
         cnv=u_getDefaultConverter(&errorCode);
         if(U_FAILURE(errorCode)) {
             return 0;
         }
     } else {
-        isDefaultConverter=FALSE;
+        isDefaultConverter=false;
         ucnv_resetFromUnicode(cnv);
     }
 
@@ -275,7 +275,7 @@ UnicodeString::doExtract(int32_t start, int32_t length,
     }
 
     
-    ucnv_fromUnicode(cnv, &dest, destLimit, &src, srcLimit, 0, TRUE, &errorCode);
+    ucnv_fromUnicode(cnv, &dest, destLimit, &src, srcLimit, 0, true, &errorCode);
     length=(int32_t)(dest-originalDest);
 
     
@@ -286,7 +286,7 @@ UnicodeString::doExtract(int32_t start, int32_t length,
         do {
             dest=buffer;
             errorCode=U_ZERO_ERROR;
-            ucnv_fromUnicode(cnv, &dest, destLimit, &src, srcLimit, 0, TRUE, &errorCode);
+            ucnv_fromUnicode(cnv, &dest, destLimit, &src, srcLimit, 0, true, &errorCode);
             length+=(int32_t)(dest-buffer);
         } while(errorCode==U_BUFFER_OVERFLOW_ERROR);
     }
@@ -322,7 +322,7 @@ UnicodeString::doCodepageCreate(const char *codepageData,
         converter = u_getDefaultConverter(&status);
     } else if(*codepage == 0) {
         
-        if(cloneArrayIfNeeded(dataLength, dataLength, FALSE)) {
+        if(cloneArrayIfNeeded(dataLength, dataLength, false)) {
             u_charsToUChars(codepageData, getArrayStart(), dataLength);
             setLength(dataLength);
         } else {
@@ -379,7 +379,7 @@ UnicodeString::doCodepageCreate(const char *codepageData,
     }
 
     
-    UBool doCopyArray = FALSE;
+    UBool doCopyArray = false;
     for(;;) {
         if(!cloneArrayIfNeeded(arraySize, arraySize, doCopyArray)) {
             setToBogus();
@@ -390,7 +390,7 @@ UnicodeString::doCodepageCreate(const char *codepageData,
         array = getArrayStart();
         myTarget = array + length();
         ucnv_toUnicode(converter, &myTarget,  array + getCapacity(),
-            &mySource, mySourceEnd, 0, TRUE, &status);
+            &mySource, mySourceEnd, 0, true, &status);
 
         
         setLength((int32_t)(myTarget - array));
@@ -401,7 +401,7 @@ UnicodeString::doCodepageCreate(const char *codepageData,
             status = U_ZERO_ERROR;
 
             
-            doCopyArray = TRUE;
+            doCopyArray = true;
 
             
             

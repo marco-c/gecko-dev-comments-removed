@@ -106,10 +106,10 @@ static UDataMemory *udata_findCachedData(const char *path, UErrorCode &err);
 
 static UDataMemory *gCommonICUDataArray[10] = { NULL };   
 
-static u_atomic_int32_t gHaveTriedToLoadCommonData = ATOMIC_INT32_T_INITIALIZER(0);  
+static u_atomic_int32_t gHaveTriedToLoadCommonData {0};  
 
 static UHashtable  *gCommonDataCache = NULL;  
-static icu::UInitOnce gCommonDataCacheInitOnce = U_INITONCE_INITIALIZER;
+static icu::UInitOnce gCommonDataCacheInitOnce {};
 
 #if !defined(ICU_DATA_DIR_WINDOWS)
 static UDataFileAccess  gDataFileAccess = UDATA_DEFAULT_ACCESS;  
@@ -136,25 +136,25 @@ udata_cleanup(void)
     }
     gHaveTriedToLoadCommonData = 0;
 
-    return TRUE;                   
+    return true;                   
 }
 
 static UBool U_CALLCONV
 findCommonICUDataByName(const char *inBasename, UErrorCode &err)
 {
-    UBool found = FALSE;
+    UBool found = false;
     int32_t i;
 
     UDataMemory  *pData = udata_findCachedData(inBasename, err);
     if (U_FAILURE(err) || pData == NULL)
-        return FALSE;
+        return false;
 
     {
         Mutex lock;
         for (i = 0; i < UPRV_LENGTHOF(gCommonICUDataArray); ++i) {
             if ((gCommonICUDataArray[i] != NULL) && (gCommonICUDataArray[i]->pHeader == pData->pHeader)) {
                 
-                found = TRUE;
+                found = true;
                 break;
             }
         }
@@ -174,9 +174,9 @@ setCommonICUData(UDataMemory *pData,
 {
     UDataMemory  *newCommonData = UDataMemory_createNewInstance(pErr);
     int32_t i;
-    UBool didUpdate = FALSE;
+    UBool didUpdate = false;
     if (U_FAILURE(*pErr)) {
-        return FALSE;
+        return false;
     }
 
     
@@ -188,7 +188,7 @@ setCommonICUData(UDataMemory *pData,
     for (i = 0; i < UPRV_LENGTHOF(gCommonICUDataArray); ++i) {
         if (gCommonICUDataArray[i] == NULL) {
             gCommonICUDataArray[i] = newCommonData;
-            didUpdate = TRUE;
+            didUpdate = true;
             break;
         } else if (gCommonICUDataArray[i]->pHeader == pData->pHeader) {
             
@@ -216,7 +216,7 @@ setCommonICUDataPointer(const void *pData, UBool , UErrorCode *pErrorCode) {
     UDataMemory_init(&tData);
     UDataMemory_setData(&tData, pData);
     udata_checkCommonData(&tData, pErrorCode);
-    return setCommonICUData(&tData, FALSE, pErrorCode);
+    return setCommonICUData(&tData, false, pErrorCode);
 }
 
 #endif
@@ -501,7 +501,7 @@ UDataPathIterator::UDataPathIterator(const char *inPath, const char *pkg,
             suffix.data(),
             itemPath.data(),
             nextPath,
-            checkLastFour?"TRUE":"false");
+            checkLastFour?"true":"false");
 #endif
 }
 
@@ -568,7 +568,7 @@ const char *UDataPathIterator::next(UErrorCode *pErrorCode)
         
         pathBasename = findBasename(pathBuffer.data());
 
-        if(checkLastFour == TRUE && 
+        if(checkLastFour && 
            (pathLen>=4) &&
            uprv_strncmp(pathBuffer.data() +(pathLen-4), suffix.data(), 4)==0 && 
            uprv_strncmp(findBasename(pathBuffer.data()), basename, basenameLen)==0  && 
@@ -719,7 +719,7 @@ openCommonData(const char *path,
 
 #if !defined(ICU_DATA_DIR_WINDOWS)
 
-        setCommonICUDataPointer(&U_ICUDATA_ENTRY_POINT, FALSE, pErrorCode);
+        setCommonICUDataPointer(&U_ICUDATA_ENTRY_POINT, false, pErrorCode);
         {
             Mutex lock;
             return gCommonICUDataArray[commonDataIndex];
@@ -761,9 +761,9 @@ openCommonData(const char *path,
 
 
 
-    UDataPathIterator iter(u_getDataDirectory(), inBasename, path, ".dat", TRUE, pErrorCode);
+    UDataPathIterator iter(u_getDataDirectory(), inBasename, path, ".dat", true, pErrorCode);
 
-    while ((UDataMemory_isLoaded(&tData)==FALSE) && (pathBuffer = iter.next(pErrorCode)) != NULL)
+    while ((UDataMemory_isLoaded(&tData)==false) && (pathBuffer = iter.next(pErrorCode)) != NULL)
     {
 #ifdef UDATA_DEBUG
         fprintf(stderr, "ocd: trying path %s - ", pathBuffer);
@@ -822,7 +822,7 @@ static UBool extendICUData(UErrorCode *pErr)
 {
     UDataMemory   *pData;
     UDataMemory   copyPData;
-    UBool         didUpdate = FALSE;
+    UBool         didUpdate = false;
 
     
 
@@ -859,7 +859,7 @@ static UBool extendICUData(UErrorCode *pErr)
 
           didUpdate = 
               setCommonICUData(&copyPData,
-                       FALSE,             
+                       false,             
                        pErr);             
         }
 
@@ -906,7 +906,7 @@ udata_setCommonData(const void *data, UErrorCode *pErrorCode) {
 
     
     
-    setCommonICUData(&dataMemory, TRUE, pErrorCode);
+    setCommonICUData(&dataMemory, true, pErrorCode);
 }
 
 
@@ -999,7 +999,7 @@ static UDataMemory *doLoadFromIndividualFiles(const char *pkgName,
 
     
     
-    UDataPathIterator iter(dataPath, pkgName, path, tocEntryPathSuffix, FALSE, pErrorCode);
+    UDataPathIterator iter(dataPath, pkgName, path, tocEntryPathSuffix, false, pErrorCode);
 
     while ((pathBuffer = iter.next(pErrorCode)) != NULL)
     {
@@ -1055,7 +1055,7 @@ static UDataMemory *doLoadFromCommonData(UBool isICUData, const char * ,
     const DataHeader   *pHeader;
     UDataMemory        *pCommonData;
     int32_t            commonDataIndex;
-    UBool              checkedExtendedICUData = FALSE;
+    UBool              checkedExtendedICUData = false;
     
 
 
@@ -1104,7 +1104,7 @@ static UDataMemory *doLoadFromCommonData(UBool isICUData, const char * ,
         } else if (pCommonData != NULL) {
             ++commonDataIndex;  
         } else if ((!checkedExtendedICUData) && extendICUData(subErrorCode)) {
-            checkedExtendedICUData = TRUE;
+            checkedExtendedICUData = true;
             
         } else {
             return NULL;
@@ -1169,7 +1169,7 @@ doOpenChoice(const char *path, const char *type, const char *name,
     UErrorCode          subErrorCode=U_ZERO_ERROR;
     const char         *treeChar;
 
-    UBool               isICUData = FALSE;
+    UBool               isICUData = false;
 
 
     FileTracer::traceOpen(path, type, name);
@@ -1182,7 +1182,7 @@ doOpenChoice(const char *path, const char *type, const char *name,
                      uprv_strlen(U_ICUDATA_NAME U_TREE_SEPARATOR_STRING)) ||  
        !uprv_strncmp(path, U_ICUDATA_ALIAS U_TREE_SEPARATOR_STRING, 
                      uprv_strlen(U_ICUDATA_ALIAS U_TREE_SEPARATOR_STRING))) {
-      isICUData = TRUE;
+      isICUData = true;
     }
 
 #if (U_FILE_SEP_CHAR != U_FILE_ALT_SEP_CHAR)  

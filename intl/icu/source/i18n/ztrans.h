@@ -20,16 +20,12 @@
 
 #include "unicode/uobject.h"
 
-#ifndef UCNV_H
-
 
 
 
 
 struct ZTrans;
 typedef struct ZTrans ZTrans;
-
-#endif
 
 
 

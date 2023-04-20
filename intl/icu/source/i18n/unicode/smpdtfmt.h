@@ -1226,7 +1226,7 @@ private:
 
     void initializeBooleanAttributes(void);
 
-    SimpleDateFormat(); 
+    SimpleDateFormat() = delete; 
 
     
 
@@ -1358,6 +1358,22 @@ private:
     int32_t matchString(const UnicodeString& text, int32_t start, UCalendarDateFields field,
                         const UnicodeString* stringArray, int32_t stringArrayCount,
                         const UnicodeString* monthPattern, Calendar& cal) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    int32_t matchAlphaMonthStrings(const UnicodeString& text, int32_t start,
+                        const UnicodeString* wideStringArray, const UnicodeString* shortStringArray,
+                        int32_t stringArrayCount, Calendar& cal) const;
 
     
 

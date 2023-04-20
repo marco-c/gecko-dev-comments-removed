@@ -569,8 +569,6 @@ class U_I18N_API LocalizedNumberRangeFormatter
 
     LocalizedNumberRangeFormatter(impl::RangeMacroProps &&macros, const Locale &locale);
 
-    void clear();
-
     
     friend class NumberRangeFormatterSettings<UnlocalizedNumberRangeFormatter>;
     friend class NumberRangeFormatterSettings<LocalizedNumberRangeFormatter>;
@@ -650,16 +648,14 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
 
     UNumberRangeIdentityResult getIdentityResult(UErrorCode& status) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
 
     FormattedNumberRange()
         : fData(nullptr), fErrorCode(U_INVALID_STATE_ERROR) {}
-#endif
 
-
+    
 
 
     FormattedNumberRange(const FormattedNumberRange&) = delete;
@@ -704,8 +700,6 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
 
     explicit FormattedNumberRange(UErrorCode errorCode)
         : fData(nullptr), fErrorCode(errorCode) {}
-
-    void getAllFieldPositionsImpl(FieldPositionIteratorHandler& fpih, UErrorCode& status) const;
 
     void getDecimalNumbers(ByteSink& sink1, ByteSink& sink2, UErrorCode& status) const;
 

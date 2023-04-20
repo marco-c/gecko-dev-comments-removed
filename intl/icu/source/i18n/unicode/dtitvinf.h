@@ -343,7 +343,7 @@ private:
     
 
 
-    struct DateIntervalSink;
+    struct U_HIDDEN DateIntervalSink;
 
     
 

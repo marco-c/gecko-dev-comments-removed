@@ -334,7 +334,7 @@ utrie_swapAnyVersion(const UDataSwapper *ds,
                      const void *inData, int32_t length, void *outData,
                      UErrorCode *pErrorCode) {
     if(U_FAILURE(*pErrorCode)) { return 0; }
-    switch(getVersion(inData, length, TRUE)) {
+    switch(getVersion(inData, length, true)) {
     case 1:
         return utrie_swap(ds, inData, length, outData, pErrorCode);
     case 2:

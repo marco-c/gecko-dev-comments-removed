@@ -134,8 +134,8 @@ private:
 
     UBool                 fSawBOF;
 
-    RBBISetBuilder(const RBBISetBuilder &other); 
-    RBBISetBuilder &operator=(const RBBISetBuilder &other); 
+    RBBISetBuilder(const RBBISetBuilder &other) = delete; 
+    RBBISetBuilder &operator=(const RBBISetBuilder &other) = delete; 
 };
 
 

@@ -551,7 +551,7 @@ ubidi_getRuns(UBiDi *pBiDi, UErrorCode*) {
 
 
     if (pBiDi->runCount>=0) {
-        return TRUE;
+        return true;
     }
 
     if(pBiDi->direction!=UBIDI_MIXED) {
@@ -608,7 +608,7 @@ ubidi_getRuns(UBiDi *pBiDi, UErrorCode*) {
             if(getRunsMemory(pBiDi, runCount)) {
                 runs=pBiDi->runsMemory;
             } else {
-                return FALSE;
+                return false;
             }
 
             
@@ -703,7 +703,7 @@ ubidi_getRuns(UBiDi *pBiDi, UErrorCode*) {
         }
     }
 
-    return TRUE;
+    return true;
 }
 
 static UBool
@@ -714,7 +714,7 @@ prepareReorder(const UBiDiLevel *levels, int32_t length,
     UBiDiLevel level, minLevel, maxLevel;
 
     if(levels==NULL || length<=0) {
-        return FALSE;
+        return false;
     }
 
     
@@ -723,7 +723,7 @@ prepareReorder(const UBiDiLevel *levels, int32_t length,
     for(start=length; start>0;) {
         level=levels[--start];
         if(level>UBIDI_MAX_EXPLICIT_LEVEL+1) {
-            return FALSE;
+            return false;
         }
         if(level<minLevel) {
             minLevel=level;
@@ -741,7 +741,7 @@ prepareReorder(const UBiDiLevel *levels, int32_t length,
         indexMap[start]=start;
     }
 
-    return TRUE;
+    return true;
 }
 
 

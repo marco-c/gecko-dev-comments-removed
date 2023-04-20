@@ -171,10 +171,10 @@ UnicodeString& StringMatcher::toPattern(UnicodeString& result,
         UChar keyChar = pattern.charAt(i);
         const UnicodeMatcher* m = data->lookupMatcher(keyChar);
         if (m == 0) {
-            ICU_Utility::appendToRule(result, keyChar, FALSE, escapeUnprintable, quoteBuf);
+            ICU_Utility::appendToRule(result, keyChar, false, escapeUnprintable, quoteBuf);
         } else {
             ICU_Utility::appendToRule(result, m->toPattern(str, escapeUnprintable),
-                         TRUE, escapeUnprintable, quoteBuf);
+                         true, escapeUnprintable, quoteBuf);
         }
     }
     if (segmentNumber > 0) {
@@ -182,7 +182,7 @@ UnicodeString& StringMatcher::toPattern(UnicodeString& result,
     }
     
     ICU_Utility::appendToRule(result, -1,
-                              TRUE, escapeUnprintable, quoteBuf);
+                              true, escapeUnprintable, quoteBuf);
     return result;
 }
 
@@ -191,7 +191,7 @@ UnicodeString& StringMatcher::toPattern(UnicodeString& result,
 
 UBool StringMatcher::matchesIndexValue(uint8_t v) const {
     if (pattern.length() == 0) {
-        return TRUE;
+        return true;
     }
     UChar32 c = pattern.char32At(0);
     const UnicodeMatcher *m = data->lookupMatcher(c);

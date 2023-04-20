@@ -25,7 +25,6 @@ U_CDECL_BEGIN
 
 
 
-
 #ifndef U_IN_DOXYGEN
 
 typedef union UCPTrieData {

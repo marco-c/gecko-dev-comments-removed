@@ -111,18 +111,18 @@ _HZReset(UConverter *cnv, UConverterResetChoice choice){
         cnv->toUnicodeStatus = 0;
         cnv->mode=0;
         if(cnv->extraInfo != NULL){
-            ((UConverterDataHZ*)cnv->extraInfo)->isStateDBCS = FALSE;
-            ((UConverterDataHZ*)cnv->extraInfo)->isEmptySegment = FALSE;
+            ((UConverterDataHZ*)cnv->extraInfo)->isStateDBCS = false;
+            ((UConverterDataHZ*)cnv->extraInfo)->isEmptySegment = false;
         }
     }
     if(choice!=UCNV_RESET_TO_UNICODE) {
         cnv->fromUnicodeStatus= 0;
         cnv->fromUChar32=0x0000; 
         if(cnv->extraInfo != NULL){
-            ((UConverterDataHZ*)cnv->extraInfo)->isEscapeAppended = FALSE;
+            ((UConverterDataHZ*)cnv->extraInfo)->isEscapeAppended = false;
             ((UConverterDataHZ*)cnv->extraInfo)->targetIndex = 0;
             ((UConverterDataHZ*)cnv->extraInfo)->sourceIndex = 0;
-            ((UConverterDataHZ*)cnv->extraInfo)->isTargetUCharDBCS = FALSE;
+            ((UConverterDataHZ*)cnv->extraInfo)->isTargetUCharDBCS = false;
         }
     }
 }
@@ -189,13 +189,13 @@ UConverter_toUnicode_HZ_OFFSETS_LOGIC(UConverterToUnicodeArgs *args,
                         args->offsets[myTarget - args->target]=(int32_t)(mySource - args->source - 2);
                     }
                     *(myTarget++)=(UChar)mySourceChar;
-                    myData->isEmptySegment = FALSE;
+                    myData->isEmptySegment = false;
                     continue;
                 case UCNV_OPEN_BRACE:
                 case UCNV_CLOSE_BRACE:
                     myData->isStateDBCS = (mySourceChar == UCNV_OPEN_BRACE);
                     if (myData->isEmptySegment) {
-                        myData->isEmptySegment = FALSE; 
+                        myData->isEmptySegment = false; 
                         *err = U_ILLEGAL_ESCAPE_SEQUENCE;
                         args->converter->toUCallbackReason = UCNV_IRREGULAR;
                         args->converter->toUBytes[0] = UCNV_TILDE;
@@ -205,7 +205,7 @@ UConverter_toUnicode_HZ_OFFSETS_LOGIC(UConverterToUnicodeArgs *args,
                         args->source = mySource;
                         return;
                     }
-                    myData->isEmptySegment = TRUE;
+                    myData->isEmptySegment = true;
                     continue;
                 default:
                      
@@ -217,7 +217,7 @@ UConverter_toUnicode_HZ_OFFSETS_LOGIC(UConverterToUnicodeArgs *args,
 
 
 
-                    myData->isEmptySegment = FALSE; 
+                    myData->isEmptySegment = false; 
                     *err = U_ILLEGAL_ESCAPE_SEQUENCE;
                     args->converter->toUBytes[0] = UCNV_TILDE;
                     if( myData->isStateDBCS ?
@@ -244,7 +244,7 @@ UConverter_toUnicode_HZ_OFFSETS_LOGIC(UConverterToUnicodeArgs *args,
                     } else {
                         
                         args->converter->toUnicodeStatus = (uint32_t) (mySourceChar | 0x100);
-                        myData->isEmptySegment = FALSE; 
+                        myData->isEmptySegment = false; 
                     }
                     continue;
                 }
@@ -289,10 +289,10 @@ UConverter_toUnicode_HZ_OFFSETS_LOGIC(UConverterToUnicodeArgs *args,
                     continue;
                 } else if(mySourceChar <= 0x7f) {
                     targetUniChar = (UChar)mySourceChar;  
-                    myData->isEmptySegment = FALSE; 
+                    myData->isEmptySegment = false; 
                 } else {
                     targetUniChar = 0xffff;
-                    myData->isEmptySegment = FALSE; 
+                    myData->isEmptySegment = false; 
                 }
             }
             if(targetUniChar < 0xfffe){
@@ -396,13 +396,13 @@ UConverter_fromUnicode_HZ_OFFSETS_LOGIC (UConverterFromUnicodeArgs * args,
                         len =ESC_LEN;
                         escSeq = SB_ESCAPE;
                         CONCAT_ESCAPE_MACRO(args, myTargetIndex, targetLength, escSeq,err,len,mySourceIndex);
-                        myConverterData->isEscapeAppended = TRUE;
+                        myConverterData->isEscapeAppended = true;
                     }
                     else{ 
                         len =ESC_LEN;
                         escSeq = DB_ESCAPE;
                         CONCAT_ESCAPE_MACRO(args, myTargetIndex, targetLength, escSeq,err,len,mySourceIndex);
-                        myConverterData->isEscapeAppended = TRUE;
+                        myConverterData->isEscapeAppended = true;
                         
                     }
                 }
@@ -507,7 +507,7 @@ _HZ_WriteSub(UConverterFromUnicodeArgs *args, int32_t offsetIndex, UErrorCode *e
     if( convData->isTargetUCharDBCS){
         *p++= UCNV_TILDE;
         *p++= UCNV_CLOSE_BRACE;
-        convData->isTargetUCharDBCS=FALSE;
+        convData->isTargetUCharDBCS=false;
     }
     *p++= (char)cnv->subChars[0];
 
@@ -550,7 +550,7 @@ _HZ_SafeClone(const UConverter *cnv,
 
     uprv_memcpy(&localClone->mydata, cnv->extraInfo, sizeof(UConverterDataHZ));
     localClone->cnv.extraInfo = &localClone->mydata;
-    localClone->cnv.isExtraLocal = TRUE;
+    localClone->cnv.isExtraLocal = true;
 
     
     size = (int32_t)sizeof(UConverter);
@@ -611,8 +611,8 @@ static const UConverterStaticData _HZStaticData={
          4,
         { 0x1a, 0, 0, 0 },
         1,
-        FALSE, 
-        FALSE,
+        false, 
+        false,
         0,
         0,
         { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }, 

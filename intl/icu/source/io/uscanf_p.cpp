@@ -125,12 +125,12 @@ u_scanf_parse_spec (const UChar     *fmt,
     info->fWidth        = -1;
     info->fSpec         = 0x0000;
     info->fPadChar      = 0x0020;
-    info->fSkipArg      = FALSE;
-    info->fIsLongDouble = FALSE;
-    info->fIsShort      = FALSE;
-    info->fIsLong       = FALSE;
-    info->fIsLongLong   = FALSE;
-    info->fIsString     = TRUE;
+    info->fSkipArg      = false;
+    info->fIsLongDouble = false;
+    info->fIsShort      = false;
+    info->fIsLong       = false;
+    info->fIsLongLong   = false;
+    info->fIsString     = true;
 
 
     
@@ -168,7 +168,7 @@ u_scanf_parse_spec (const UChar     *fmt,
 
             
         case FLAG_ASTERISK:
-            info->fSkipArg = TRUE;
+            info->fSkipArg = true;
             break;
 
             
@@ -203,23 +203,23 @@ u_scanf_parse_spec (const UChar     *fmt,
 
             
         case MOD_H:
-            info->fIsShort = TRUE;
+            info->fIsShort = true;
             break;
 
             
         case MOD_LOWERL:
             if(*s == MOD_LOWERL) {
-                info->fIsLongLong = TRUE;
+                info->fIsLongLong = true;
                 
                 s++;
             }
             else
-                info->fIsLong = TRUE;
+                info->fIsLong = true;
             break;
 
             
         case MOD_L:
-            info->fIsLongDouble = TRUE;
+            info->fIsLongDouble = true;
             break;
         }
     }
@@ -323,7 +323,7 @@ u_scanf_skip_leading_ws(UFILE   *input,
     UBool isNotEOF;
 
     
-    while( ((isNotEOF = ufile_getch(input, &c)) == TRUE) && (c == pad || u_isWhitespace(c)) )
+    while( ((isNotEOF = ufile_getch(input, &c))==(UBool)true) && (c == pad || u_isWhitespace(c)) )
     {
         count++;
     }
@@ -357,7 +357,7 @@ u_scanf_skip_leading_positive_sign(UFILE   *input,
 
         if (U_SUCCESS(localStatus)) {
             
-            while( ((isNotEOF = ufile_getch(input, &c)) == TRUE) && (count < symbolLen && c == plusSymbol[count]) )
+            while( ((isNotEOF = ufile_getch(input, &c))==(UBool)true) && (count < symbolLen && c == plusSymbol[count]) )
             {
                 count++;
             }
@@ -851,7 +851,7 @@ u_scanf_string_handler(UFILE        *input,
     int32_t     count;
     int32_t     skipped = 0;
     UChar       c;
-    UBool       isNotEOF = FALSE;
+    UBool       isNotEOF = false;
 
     
     if (info->fIsString) {
@@ -868,7 +868,7 @@ u_scanf_string_handler(UFILE        *input,
         return -1;
 
     while( (info->fWidth == -1 || count < info->fWidth) 
-        && ((isNotEOF = ufile_getch(input, &c)) == TRUE)
+        && ((isNotEOF = ufile_getch(input, &c))==(UBool)true)
         && (!info->fIsString || (c != info->fPadChar && !u_isWhitespace(c))))
     {
 
@@ -885,7 +885,7 @@ u_scanf_string_handler(UFILE        *input,
 
             
             ucnv_fromUnicode(conv, &alias, limit, &source, source + 1,
-                NULL, TRUE, &status);
+                NULL, true, &status);
 
             if(U_FAILURE(status)) {
                 
@@ -928,7 +928,7 @@ u_scanf_char_handler(UFILE          *input,
     if (info->fWidth < 0) {
         info->fWidth = 1;
     }
-    info->fIsString = FALSE;
+    info->fIsString = false;
     return u_scanf_string_handler(input, info, args, fmt, fmtConsumed, argConverted);
 }
 
@@ -948,7 +948,7 @@ u_scanf_ustring_handler(UFILE       *input,
     int32_t count;
     int32_t skipped = 0;
     UChar   c;
-    UBool   isNotEOF = FALSE;
+    UBool   isNotEOF = false;
 
     
     if (info->fIsString) {
@@ -959,7 +959,7 @@ u_scanf_ustring_handler(UFILE       *input,
     count = 0;
 
     while( (info->fWidth == -1 || count < info->fWidth)
-        && ((isNotEOF = ufile_getch(input, &c)) == TRUE)
+        && ((isNotEOF = ufile_getch(input, &c))==(UBool)true)
         && (!info->fIsString || (c != info->fPadChar && !u_isWhitespace(c))))
     {
 
@@ -1000,7 +1000,7 @@ u_scanf_uchar_handler(UFILE         *input,
     if (info->fWidth < 0) {
         info->fWidth = 1;
     }
-    info->fIsString = FALSE;
+    info->fIsString = false;
     return u_scanf_ustring_handler(input, info, args, fmt, fmtConsumed, argConverted);
 }
 
@@ -1239,8 +1239,8 @@ u_scanf_scanset_handler(UFILE       *input,
     int32_t     chLeft = INT32_MAX;
     UChar32     c;
     UChar       *alias = (UChar*) (args[0].ptrValue);
-    UBool       isNotEOF = FALSE;
-    UBool       readCharacter = FALSE;
+    UBool       isNotEOF = false;
+    UBool       readCharacter = false;
 
     
     scanset = uset_open(0, -1);
@@ -1262,11 +1262,11 @@ u_scanf_scanset_handler(UFILE       *input,
 
         
         while(chLeft > 0) {
-            if ( ((isNotEOF = ufile_getch32(input, &c)) == TRUE) && uset_contains(scanset, c) ) {
-                readCharacter = TRUE;
+            if ( ((isNotEOF = ufile_getch32(input, &c))==(UBool)true) && uset_contains(scanset, c) ) {
+                readCharacter = true;
                 if (!info->fSkipArg) {
                     int32_t idx = 0;
-                    UBool isError = FALSE;
+                    UBool isError = false;
 
                     U16_APPEND(alias, idx, chLeft, c, isError);
                     if (isError) {

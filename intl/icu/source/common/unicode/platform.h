@@ -168,7 +168,7 @@
 #   define U_PLATFORM U_PF_LINUX
 #elif defined(__APPLE__) && defined(__MACH__)
 #   include <TargetConditionals.h>
-#   if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE  
+#   if (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE) && (defined(TARGET_OS_MACCATALYST) && !TARGET_OS_MACCATALYST)   
 #       define U_PLATFORM U_PF_IPHONE
 #   else
 #       define U_PLATFORM U_PF_DARWIN
@@ -845,6 +845,21 @@ namespace std {
 #   define U_IMPORT __declspec(dllimport)
 #else
 #   define U_IMPORT 
+#endif
+
+
+
+
+
+
+
+
+#ifdef U_HIDDEN
+    
+#elif defined(__GNUC__)
+#   define U_HIDDEN __attribute__((visibility("hidden")))
+#else
+#   define U_HIDDEN 
 #endif
 
 

@@ -114,7 +114,7 @@ inline void _debugOut(const char* msg, TransliterationRule* rule,
     UnicodeString buf(msg, "");
     if (rule) {
         UnicodeString r;
-        rule->toRule(r, TRUE);
+        rule->toRule(r, true);
         buf.append((UChar)32).append(r);
     }
     buf.append(UnicodeString(" => ", ""));
@@ -145,14 +145,14 @@ static void maskingError(const icu::TransliterationRule& rule1,
     parseError.line = parseError.offset = -1;
     
     
-    rule1.toRule(r, FALSE);
+    rule1.toRule(r, false);
     len = uprv_min(r.length(), U_PARSE_CONTEXT_LEN-1);
     r.extract(0, len, parseError.preContext);
     parseError.preContext[len] = 0;   
     
     
     r.truncate(0);
-    rule2.toRule(r, FALSE);
+    rule2.toRule(r, false);
     len = uprv_min(r.length(), U_PARSE_CONTEXT_LEN-1);
     r.extract(0, len, parseError.postContext);
     parseError.postContext[len] = 0;   
@@ -407,10 +407,10 @@ UBool TransliterationRuleSet::transliterate(Replaceable& text,
         switch (m) {
         case U_MATCH:
             _debugOut("match", rules[i], text, pos);
-            return TRUE;
+            return true;
         case U_PARTIAL_MATCH:
             _debugOut("partial match", rules[i], text, pos);
-            return FALSE;
+            return false;
         default: 
             break;
         }
@@ -418,7 +418,7 @@ UBool TransliterationRuleSet::transliterate(Replaceable& text,
     
     pos.start += U16_LENGTH(text.char32At(pos.start));
     _debugOut("no match", NULL, text, pos);
-    return TRUE;
+    return true;
 }
 
 

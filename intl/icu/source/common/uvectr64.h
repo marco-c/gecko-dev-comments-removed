@@ -176,10 +176,10 @@ private:
     void _init(int32_t initialCapacity, UErrorCode &status);
 
     
-    UVector64(const UVector64&);
+    UVector64(const UVector64&) = delete;
 
     
-    UVector64& operator=(const UVector64&);
+    UVector64& operator=(const UVector64&) = delete;
 
 
     

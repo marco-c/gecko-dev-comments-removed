@@ -886,7 +886,7 @@ private:
     Format**            formatAliases; 
     int32_t             formatAliasesCapacity;
 
-    MessageFormat(); 
+    MessageFormat() = delete; 
 
      
 
@@ -1010,8 +1010,6 @@ private:
     UBool argNameMatches(int32_t partIndex, const UnicodeString& argName, int32_t argNumber);
 
     void cacheExplicitFormats(UErrorCode& status);
-
-    int32_t skipLeadingSpaces(UnicodeString& style);
 
     Format* createAppropriateFormat(UnicodeString& type,
                                     UnicodeString& style,

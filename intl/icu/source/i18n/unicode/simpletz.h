@@ -800,7 +800,7 @@ private:
         DOW_LE_DOM_MODE
     };
 
-    SimpleTimeZone(); 
+    SimpleTimeZone() = delete; 
 
     
 

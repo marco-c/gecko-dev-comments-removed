@@ -1401,7 +1401,7 @@ static const UConverterStaticData _Bocu1StaticData={
     UCNV_IBM, UCNV_BOCU1,
     1, 4, 
     { 0x1a, 0, 0, 0 }, 1, 
-    FALSE, FALSE,
+    false, false,
     0,
     0,
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } 

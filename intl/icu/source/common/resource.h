@@ -286,8 +286,8 @@ public:
                      UErrorCode &errorCode) = 0;
 
 private:
-    ResourceSink(const ResourceSink &);  
-    ResourceSink &operator=(const ResourceSink &);  
+    ResourceSink(const ResourceSink &) = delete;  
+    ResourceSink &operator=(const ResourceSink &) = delete;  
 };
 
 U_NAMESPACE_END

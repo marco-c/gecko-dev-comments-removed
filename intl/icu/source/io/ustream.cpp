@@ -53,7 +53,7 @@ operator<<(STD_OSTREAM& stream, const UnicodeString& str)
             do {
                 errorCode = U_ZERO_ERROR;
                 s = buffer;
-                ucnv_fromUnicode(converter, &s, sLimit, &us, uLimit, 0, FALSE, &errorCode);
+                ucnv_fromUnicode(converter, &s, sLimit, &us, uLimit, 0, false, &errorCode);
                 *s = 0;
 
                 
@@ -92,8 +92,8 @@ operator>>(STD_ISTREAM& stream, UnicodeString& str)
         const char *s, *sLimit;
         char ch;
         UChar ch32;
-        UBool initialWhitespace = TRUE;
-        UBool continueReading = TRUE;
+        UBool initialWhitespace = true;
+        UBool continueReading = true;
 
         
         while (continueReading) {
@@ -103,7 +103,7 @@ operator>>(STD_ISTREAM& stream, UnicodeString& str)
                 if (!initialWhitespace) {
                     stream.clear(stream.eofbit);
                 }
-                continueReading = FALSE;
+                continueReading = false;
             }
             sLimit = &ch + (int)continueReading;
             us = uBuffer;
@@ -146,7 +146,7 @@ operator>>(STD_ISTREAM& stream, UnicodeString& str)
 
 
                             str.truncate(0);
-                            initialWhitespace = FALSE;
+                            initialWhitespace = false;
                         }
                         str.append(ch32);
                     }

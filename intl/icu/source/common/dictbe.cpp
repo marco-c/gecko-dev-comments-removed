@@ -165,9 +165,9 @@ UBool
 PossibleWord::backUp( UText *text ) {
     if (current > 0) {
         utext_setNativeIndex(text, offset + cuLengths[--current]);
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 
@@ -1146,7 +1146,7 @@ CjkBreakEngine::divideUpDictionaryRange( UText *inText,
 
         
         
-        inString.setTo(FALSE,
+        inString.setTo(false,
                        inText->chunkContents + rangeStart - inText->chunkNativeStart,
                        rangeEnd - rangeStart);
     } else {

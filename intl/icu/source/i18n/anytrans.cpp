@@ -137,7 +137,7 @@ UBool ScriptRunIterator::next() {
 
     
     if (start == textLimit) {
-        return FALSE;
+        return false;
     }
 
     
@@ -169,7 +169,7 @@ UBool ScriptRunIterator::next() {
 
     
     
-    return TRUE;
+    return true;
 }
 
 void ScriptRunIterator::adjustLimit(int32_t delta) {
@@ -358,7 +358,7 @@ static UScriptCode scriptNameToCode(const UnicodeString& name) {
 void AnyTransliterator::registerIDs() {
 
     UErrorCode ec = U_ZERO_ERROR;
-    Hashtable seen(TRUE, ec);
+    Hashtable seen(true, ec);
 
     int32_t sourceCount = Transliterator::_countAvailableSources();
     for (int32_t s=0; s<sourceCount; ++s) {
@@ -389,7 +389,7 @@ void AnyTransliterator::registerIDs() {
                 Transliterator::_getAvailableVariant(v, source, target, variant);
 
                 UnicodeString id;
-                TransliteratorIDParser::STVtoID(UnicodeString(TRUE, ANY, 3), target, variant, id);
+                TransliteratorIDParser::STVtoID(UnicodeString(true, ANY, 3), target, variant, id);
                 ec = U_ZERO_ERROR;
                 AnyTransliterator* tl = new AnyTransliterator(id, target, variant,
                                                              targetScript, ec);
@@ -397,7 +397,7 @@ void AnyTransliterator::registerIDs() {
                     delete tl;
                 } else {
                     Transliterator::_registerInstance(tl);
-                    Transliterator::_registerSpecialInverse(target, UnicodeString(TRUE, NULL_ID, 4), FALSE);
+                    Transliterator::_registerSpecialInverse(target, UnicodeString(true, NULL_ID, 4), false);
                 }
             }
         }
