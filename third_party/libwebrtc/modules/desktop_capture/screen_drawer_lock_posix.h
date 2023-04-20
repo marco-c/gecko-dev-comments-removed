@@ -13,6 +13,7 @@
 
 #include <semaphore.h>
 
+#include "absl/strings/string_view.h"
 #include "modules/desktop_capture/screen_drawer.h"
 
 namespace webrtc {
@@ -27,7 +28,7 @@ class ScreenDrawerLockPosix final : public ScreenDrawerLock {
   
   
   
-  static void Unlink(const char* name);
+  static void Unlink(absl::string_view name);
 
  private:
   sem_t* semaphore_;
