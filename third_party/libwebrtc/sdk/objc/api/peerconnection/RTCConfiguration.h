@@ -100,11 +100,6 @@ RTC_OBJC_EXPORT
 
 
 
-@property(nonatomic, assign) BOOL disableIPV6;
-
-
-
-
 
 
 

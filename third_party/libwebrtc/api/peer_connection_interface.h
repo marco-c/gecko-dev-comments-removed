@@ -428,7 +428,6 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
 
     
     
-    
     bool disable_ipv6 = false;
 
     
