@@ -6,7 +6,7 @@
 
 #include "nsISupports.idl"
 
-interface mozIStorageAsyncConnection;
+interface mozIStorageConnection;
 
 
 
@@ -31,15 +31,7 @@ interface mozIStorageVacuumParticipant : nsISupports {
   
 
 
-
-
-
-  readonly attribute boolean useIncrementalVacuum;
-
-  
-
-
-  readonly attribute mozIStorageAsyncConnection databaseConnection;
+  readonly attribute mozIStorageConnection databaseConnection;
 
   
 

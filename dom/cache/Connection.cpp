@@ -50,12 +50,6 @@ Connection::Close() {
 
 
 NS_IMETHODIMP
-Connection::AsyncVacuum(mozIStorageCompletionCallback*, bool, int32_t) {
-  
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
 Connection::AsyncClose(mozIStorageCompletionCallback*) {
   
   return NS_ERROR_NOT_IMPLEMENTED;
