@@ -13,6 +13,9 @@ add_task(async function() {
   await pushPref("devtools.custom-formatters", true);
   await pushPref("devtools.custom-formatters.enabled", true);
 
+  
+  await pushPref("javascript.options.property_error_message_fix", true);
+
   const hud = await openNewTabAndConsole(TEST_URI);
 
   
