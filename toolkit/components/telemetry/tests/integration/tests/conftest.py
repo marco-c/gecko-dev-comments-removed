@@ -2,14 +2,14 @@
 
 
 import contextlib
-import mozinstall
 import os
-import pytest
 import re
 import sys
 import textwrap
 import time
 
+import mozinstall
+import pytest
 from marionette_driver import By, keys
 from marionette_driver.addons import Addons
 from marionette_driver.errors import MarionetteException

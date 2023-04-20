@@ -2,10 +2,11 @@
 
 
 
-import mozunit
+import sys
 from os import path
 from pathlib import Path
-import sys
+
+import mozunit
 
 
 FOG_ROOT_PATH = path.abspath(

@@ -2,12 +2,13 @@
 
 
 
-import yaml
-import mozunit
+import os
 import sys
 import unittest
-import os
 from os import path
+
+import mozunit
+import yaml
 
 TELEMETRY_ROOT_PATH = path.abspath(
     path.join(path.dirname(__file__), path.pardir, path.pardir)
@@ -16,8 +17,8 @@ sys.path.append(TELEMETRY_ROOT_PATH)
 
 
 sys.path.append(path.join(TELEMETRY_ROOT_PATH, "build_scripts"))
-from mozparsers.shared_telemetry_utils import ParserError
 from mozparsers import parse_scalars
+from mozparsers.shared_telemetry_utils import ParserError
 
 
 def load_scalar(scalar):

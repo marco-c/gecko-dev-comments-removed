@@ -3,9 +3,9 @@
 
 
 import sys
+from pathlib import Path
 
 from glean_parser import lint
-from pathlib import Path
 
 
 def main(output, *filenames):

@@ -2,12 +2,13 @@
 
 
 
+import atexit
 import io
 import re
-import yaml
-import atexit
-from . import shared_telemetry_utils as utils
 
+import yaml
+
+from . import shared_telemetry_utils as utils
 from .shared_telemetry_utils import ParserError
 
 atexit.register(ParserError.exit_func)

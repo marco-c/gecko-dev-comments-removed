@@ -3,11 +3,10 @@
 
 
 import sys
+from textwrap import dedent
 
 import mozpack.path as mozpath
 import mozunit
-
-from textwrap import dedent
 
 
 OUR_DIR = mozpath.abspath(mozpath.dirname(__file__))
@@ -18,10 +17,10 @@ import helpers
 helpers.setup()
 
 from GenerateWebIDLBindings import (
+    WEBEXT_STUBS_MAPPING,
     APIFunction,
     Schemas,
     WebIDLHelpers,
-    WEBEXT_STUBS_MAPPING,
 )
 
 original_stub_mapping_config = WEBEXT_STUBS_MAPPING.copy()

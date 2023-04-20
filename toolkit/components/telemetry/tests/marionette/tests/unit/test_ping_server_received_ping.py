@@ -3,7 +3,6 @@
 
 
 import requests
-
 from telemetry_harness.testcase import TelemetryTestCase
 
 

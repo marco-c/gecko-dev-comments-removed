@@ -2,21 +2,21 @@
 
 
 
-from marionette_driver import Wait
-from marionette_driver.addons import Addons
-
 import os
 import sys
+
+from marionette_driver import Wait
+from marionette_driver.addons import Addons
 
 
 sys.path.append(os.path.dirname(__file__))
 
 from service_worker_testutils import (
-    MarionetteServiceWorkerTestCase,
-    EXT_ID,
     EXT_DIR_PATH,
+    EXT_ID,
     PREF_BG_SW_ENABLED,
     PREF_PERSIST_TEMP_ADDONS,
+    MarionetteServiceWorkerTestCase,
 )
 
 

@@ -3,8 +3,8 @@
 
 
 import argparse
-import sys
 import os
+import sys
 
 
 try:
@@ -26,9 +26,9 @@ module_dir = os.path.dirname(__file__)
 sys.path.append(module_dir)
 
 from GenerateWebIDLBindings import (
+    APIEntry,
     load_and_parse_JSONSchema,
     set_logging_level,
-    APIEntry,
 )
 
 

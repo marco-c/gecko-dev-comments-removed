@@ -2,7 +2,6 @@
 
 
 import mozunit
-
 from telemetry_harness.ping_filters import MAIN_SHUTDOWN_PING
 
 

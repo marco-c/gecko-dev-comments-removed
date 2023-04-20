@@ -6,10 +6,11 @@
 
 
 from __future__ import print_function
-from mozparsers.shared_telemetry_utils import ParserError, load_yaml_file
 
-import sys
 import collections
+import sys
+
+from mozparsers.shared_telemetry_utils import ParserError, load_yaml_file
 
 
 banner = """/* This file is auto-generated from Telemetry build scripts,

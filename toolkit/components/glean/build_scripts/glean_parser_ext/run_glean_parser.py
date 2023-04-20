@@ -4,19 +4,19 @@
 
 
 
-import cpp
-import jog
-import js
 import os
-import rust
 import sys
+from pathlib import Path
 
+import cpp
 import jinja2
-
-from util import generate_metric_ids
+import jog
+import rust
 from glean_parser import lint, parser, translate, util
 from mozbuild.util import FileAvoidWrite
-from pathlib import Path
+from util import generate_metric_ids
+
+import js
 
 
 class ParserError(Exception):

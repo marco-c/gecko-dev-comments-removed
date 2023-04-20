@@ -2,8 +2,8 @@
 
 
 
-from telemetry_harness.testcase import TelemetryTestCase
 from telemetry_harness.ping_filters import MAIN_SHUTDOWN_PING
+from telemetry_harness.testcase import TelemetryTestCase
 
 
 class TestMainTabScalars(TelemetryTestCase):

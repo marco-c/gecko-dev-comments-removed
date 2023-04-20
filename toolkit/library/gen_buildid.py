@@ -9,10 +9,11 @@
 
 
 
-from mozbuild.preprocessor import Preprocessor
-from io import StringIO
-import buildconfig
 import os
+from io import StringIO
+
+import buildconfig
+from mozbuild.preprocessor import Preprocessor
 
 
 def main(output, input_file):

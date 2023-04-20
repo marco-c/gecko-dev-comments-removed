@@ -2,10 +2,11 @@
 
 
 
+import atexit
 import io
 import re
+
 import yaml
-import atexit
 
 from .shared_telemetry_utils import ParserError
 

@@ -8,11 +8,12 @@
 
 
 from __future__ import print_function
-from mozparsers.shared_telemetry_utils import ParserError
-from mozparsers import parse_scalars
 
 import sys
+
 import buildconfig
+from mozparsers import parse_scalars
+from mozparsers.shared_telemetry_utils import ParserError
 
 banner = """/* This file is auto-generated, see gen_scalar_enum.py.  */
 """

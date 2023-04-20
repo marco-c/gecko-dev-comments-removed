@@ -5,7 +5,6 @@
 """ GDB Python customization auto-loader for libxul """
 
 import re
-
 from os.path import abspath, dirname, exists
 
 

@@ -2,10 +2,11 @@
 
 
 
-import mozunit
 import sys
 import unittest
 from os import path
+
+import mozunit
 from test_histogramtools_non_strict import load_histogram
 
 TELEMETRY_ROOT_PATH = path.abspath(
@@ -15,8 +16,8 @@ sys.path.append(TELEMETRY_ROOT_PATH)
 
 
 sys.path.append(path.join(TELEMETRY_ROOT_PATH, "build_scripts"))
-from mozparsers.shared_telemetry_utils import ParserError
 from mozparsers import parse_histograms
+from mozparsers.shared_telemetry_utils import ParserError
 
 
 class TestParser(unittest.TestCase):
