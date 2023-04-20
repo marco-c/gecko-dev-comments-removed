@@ -3637,9 +3637,9 @@ bool ParseRtpmapAttribute(absl::string_view line,
     AudioContentDescription* audio_desc = media_desc->as_audio();
     for (const cricket::AudioCodec& existing_codec : audio_desc->codecs()) {
       
+      
       if (!existing_codec.name.empty() && payload_type == existing_codec.id &&
-          (!absl::EqualsIgnoreCase(encoding_name, existing_codec.name) ||
-           channels != existing_codec.channels)) {
+          (!absl::EqualsIgnoreCase(encoding_name, existing_codec.name))) {
         rtc::StringBuilder description;
         description
             << "Duplicate "
