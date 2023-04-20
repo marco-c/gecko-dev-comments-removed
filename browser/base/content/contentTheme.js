@@ -162,20 +162,19 @@
 
 
     handleEvent(event) {
-      
-      const element = document.body ? document.body : document.documentElement;
+      const root = document.documentElement;
 
       if (event.type == "LightweightTheme:Set") {
         let { data } = event.detail;
         if (!data) {
           data = {};
         }
-        this._setProperties(element, data);
+        this._setProperties(root, data);
       } else if (event.type == "change") {
         
         
-        if (!element.hasAttribute("lwt-newtab")) {
-          element.toggleAttribute("lwt-newtab-brighttext", event.matches);
+        if (!root.hasAttribute("lwt-newtab")) {
+          root.toggleAttribute("lwt-newtab-brighttext", event.matches);
         }
       }
     },
