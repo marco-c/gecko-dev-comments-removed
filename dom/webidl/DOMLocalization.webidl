@@ -49,25 +49,25 @@ interface DOMLocalization : Localization {
 
 
 
-  [Throws] undefined connectRoot(Node aElement);
+  undefined connectRoot(Node aElement);
 
   
 
 
 
-  [Throws] undefined disconnectRoot(Node aElement);
+  undefined disconnectRoot(Node aElement);
 
   
 
 
 
-  [Throws] undefined pauseObserving();
+  undefined pauseObserving();
 
   
 
 
 
-  [Throws] undefined resumeObserving();
+  undefined resumeObserving();
 
   
 
