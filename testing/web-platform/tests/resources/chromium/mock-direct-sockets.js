@@ -38,6 +38,15 @@ self.DirectSocketsServiceTest = (() => {
         result: -11
       });
     }
+
+    openTCPServerSocket(
+      options,
+      receiver) {
+      return Promise.resolve({
+        
+        result: -11
+      });
+    }
   }
 
   let testInternal = {
