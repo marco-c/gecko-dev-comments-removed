@@ -33,14 +33,17 @@ static_assert(false, "This file should not be built, see Bug 1797161.");
 #include <string.h>
 
 #include <algorithm>
+#include <functional>
 #include <memory>
 #include <queue>
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "api/task_queue/queued_task.h"
 #include "api/task_queue/task_queue_base.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
@@ -52,7 +55,6 @@ static_assert(false, "This file should not be built, see Bug 1797161.");
 
 namespace webrtc {
 namespace {
-#define WM_RUN_TASK WM_USER + 1
 #define WM_QUEUE_DELAYED_TASK WM_USER + 2
 
 void CALLBACK InitializeQueueThread(ULONG_PTR param) {
@@ -74,10 +76,10 @@ rtc::ThreadPriority TaskQueuePriorityToThreadPriority(
   }
 }
 
-int64_t GetTick() {
+Timestamp CurrentTime() {
   static const UINT kPeriod = 1;
   bool high_res = (timeBeginPeriod(kPeriod) == TIMERR_NOERROR);
-  int64_t ret = rtc::TimeMillis();
+  Timestamp ret = Timestamp::Micros(rtc::TimeMicros());
   if (high_res)
     timeEndPeriod(kPeriod);
   return ret;
@@ -87,8 +89,8 @@ class DelayedTaskInfo {
  public:
   
   DelayedTaskInfo() {}
-  DelayedTaskInfo(uint32_t milliseconds, std::unique_ptr<QueuedTask> task)
-      : due_time_(GetTick() + milliseconds), task_(std::move(task)) {}
+  DelayedTaskInfo(TimeDelta delay, absl::AnyInvocable<void() &&> task)
+      : due_time_(CurrentTime() + delay), task_(std::move(task)) {}
   DelayedTaskInfo(DelayedTaskInfo&&) = default;
 
   
@@ -101,14 +103,14 @@ class DelayedTaskInfo {
 
   
   void Run() const {
-    RTC_DCHECK(due_time_);
-    task_->Run() ? task_.reset() : static_cast<void>(task_.release());
+    RTC_DCHECK(task_);
+    std::move(task_)();
   }
 
-  int64_t due_time() const { return due_time_; }
+  Timestamp due_time() const { return due_time_; }
 
  private:
-  int64_t due_time_ = 0;  
+  Timestamp due_time_ = Timestamp::Zero();
 
   
   
@@ -117,7 +119,7 @@ class DelayedTaskInfo {
   
   
   
-  mutable std::unique_ptr<QueuedTask> task_;
+  mutable absl::AnyInvocable<void() &&> task_;
 };
 
 class MultimediaTimer {
@@ -167,10 +169,11 @@ class TaskQueueWin : public TaskQueueBase {
   ~TaskQueueWin() override = default;
 
   void Delete() override;
-  void PostTask(std::unique_ptr<QueuedTask> task) override;
-  void PostDelayedTask(std::unique_ptr<QueuedTask> task,
-                       uint32_t milliseconds) override;
-
+  void PostTask(absl::AnyInvocable<void() &&> task) override;
+  void PostDelayedTask(absl::AnyInvocable<void() &&> task,
+                       TimeDelta delay) override;
+  void PostDelayedHighPrecisionTask(absl::AnyInvocable<void() &&> task,
+                                    TimeDelta delay) override;
   void RunPendingTasks();
 
  private:
@@ -180,25 +183,18 @@ class TaskQueueWin : public TaskQueueBase {
   void ScheduleNextTimer();
   void CancelTimers();
 
-  
-  
-  
-  
-  
-  template <typename T>
-  struct greater {
-    bool operator()(const T& l, const T& r) { return l > r; }
-  };
-
   MultimediaTimer timer_;
+  
+  
+  
   std::priority_queue<DelayedTaskInfo,
                       std::vector<DelayedTaskInfo>,
-                      greater<DelayedTaskInfo>>
+                      std::greater<DelayedTaskInfo>>
       timer_tasks_;
   UINT_PTR timer_id_ = 0;
   rtc::PlatformThread thread_;
   Mutex pending_lock_;
-  std::queue<std::unique_ptr<QueuedTask>> pending_
+  std::queue<absl::AnyInvocable<void() &&>> pending_
       RTC_GUARDED_BY(pending_lock_);
   HANDLE in_queue_;
 };
@@ -230,24 +226,20 @@ void TaskQueueWin::Delete() {
   delete this;
 }
 
-void TaskQueueWin::PostTask(std::unique_ptr<QueuedTask> task) {
+void TaskQueueWin::PostTask(absl::AnyInvocable<void() &&> task) {
   MutexLock lock(&pending_lock_);
   pending_.push(std::move(task));
   ::SetEvent(in_queue_);
 }
 
-void TaskQueueWin::PostDelayedTask(std::unique_ptr<QueuedTask> task,
-                                   uint32_t milliseconds) {
-  if (!milliseconds) {
+void TaskQueueWin::PostDelayedTask(absl::AnyInvocable<void() &&> task,
+                                   TimeDelta delay) {
+  if (delay <= TimeDelta::Zero()) {
     PostTask(std::move(task));
     return;
   }
 
-  
-  
-  
-  
-  auto* task_info = new DelayedTaskInfo(milliseconds, std::move(task));
+  auto* task_info = new DelayedTaskInfo(delay, std::move(task));
   RTC_CHECK(thread_.GetHandle() != absl::nullopt);
   if (!::PostThreadMessage(GetThreadId(*thread_.GetHandle()),
                            WM_QUEUE_DELAYED_TASK, 0,
@@ -256,9 +248,15 @@ void TaskQueueWin::PostDelayedTask(std::unique_ptr<QueuedTask> task,
   }
 }
 
+void TaskQueueWin::PostDelayedHighPrecisionTask(
+    absl::AnyInvocable<void() &&> task,
+    TimeDelta delay) {
+  PostDelayedTask(std::move(task), delay);
+}
+
 void TaskQueueWin::RunPendingTasks() {
   while (true) {
-    std::unique_ptr<QueuedTask> task;
+    absl::AnyInvocable<void() &&> task;
     {
       MutexLock lock(&pending_lock_);
       if (pending_.empty())
@@ -267,8 +265,7 @@ void TaskQueueWin::RunPendingTasks() {
       pending_.pop();
     }
 
-    if (!task->Run())
-      task.release();
+    std::move(task)();
   }
 }
 
@@ -309,26 +306,19 @@ bool TaskQueueWin::ProcessQueuedMessages() {
   
   
   
-  static const int kMaxTaskProcessingTimeMs = 500;
-  auto start = GetTick();
+  static constexpr TimeDelta kMaxTaskProcessingTime = TimeDelta::Millis(500);
+  Timestamp start = CurrentTime();
   while (::PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE) &&
          msg.message != WM_QUIT) {
     if (!msg.hwnd) {
       switch (msg.message) {
-        
-        case WM_RUN_TASK: {
-          QueuedTask* task = reinterpret_cast<QueuedTask*>(msg.lParam);
-          if (task->Run())
-            delete task;
-          break;
-        }
         case WM_QUEUE_DELAYED_TASK: {
           std::unique_ptr<DelayedTaskInfo> info(
               reinterpret_cast<DelayedTaskInfo*>(msg.lParam));
           bool need_to_schedule_timers =
               timer_tasks_.empty() ||
               timer_tasks_.top().due_time() > info->due_time();
-          timer_tasks_.emplace(std::move(*info.get()));
+          timer_tasks_.push(std::move(*info));
           if (need_to_schedule_timers) {
             CancelTimers();
             ScheduleNextTimer();
@@ -352,7 +342,7 @@ bool TaskQueueWin::ProcessQueuedMessages() {
       ::DispatchMessage(&msg);
     }
 
-    if (GetTick() > start + kMaxTaskProcessingTimeMs)
+    if (CurrentTime() > start + kMaxTaskProcessingTime)
       break;
   }
   return msg.message != WM_QUIT;
@@ -360,7 +350,7 @@ bool TaskQueueWin::ProcessQueuedMessages() {
 
 void TaskQueueWin::RunDueTasks() {
   RTC_DCHECK(!timer_tasks_.empty());
-  auto now = GetTick();
+  Timestamp now = CurrentTime();
   do {
     const auto& top = timer_tasks_.top();
     if (top.due_time() > now)
@@ -376,8 +366,9 @@ void TaskQueueWin::ScheduleNextTimer() {
     return;
 
   const auto& next_task = timer_tasks_.top();
-  int64_t delay_ms = std::max(0ll, next_task.due_time() - GetTick());
-  uint32_t milliseconds = rtc::dchecked_cast<uint32_t>(delay_ms);
+  TimeDelta delay =
+      std::max(TimeDelta::Zero(), next_task.due_time() - CurrentTime());
+  uint32_t milliseconds = delay.RoundUpTo(TimeDelta::Millis(1)).ms<uint32_t>();
   if (!timer_.StartOneShotTimer(milliseconds))
     timer_id_ = ::SetTimer(nullptr, 0, milliseconds, nullptr);
 }
