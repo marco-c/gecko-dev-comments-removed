@@ -7,6 +7,7 @@
 
 
 
+#![allow(warnings)]
 #![allow(clippy::from_over_into)] 
 
 
