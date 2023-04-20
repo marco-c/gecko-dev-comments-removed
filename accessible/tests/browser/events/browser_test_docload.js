@@ -94,11 +94,13 @@ async function runTests(browser, accDoc) {
   await onLoadEvents;
 
   onLoadEvents = waitForEvents([
+    
     [EVENT_DOCUMENT_LOAD_COMPLETE, urlChecker("http://www.wronguri.wronguri/")],
     [EVENT_STATE_CHANGE, busyChecker(false)],
     [EVENT_REORDER, getAccessible(browser)],
   ]);
 
+  
   BrowserTestUtils.loadURI(browser, "http://www.wronguri.wronguri/");
 
   await onLoadEvents;

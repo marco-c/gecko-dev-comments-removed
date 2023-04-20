@@ -219,6 +219,7 @@ add_task(async () => {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
+      
       url: "http://example.com",
     },
     async browser => {

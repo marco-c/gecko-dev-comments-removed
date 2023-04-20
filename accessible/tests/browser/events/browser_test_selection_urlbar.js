@@ -22,6 +22,7 @@ async function runTests() {
   let bookmark = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
     title: "addons",
+    
     url: Services.io.newURI("http://www.addons.mozilla.org/"),
   });
 

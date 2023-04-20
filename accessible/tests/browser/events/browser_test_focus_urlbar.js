@@ -90,9 +90,13 @@ async function runTests() {
   });
 
   await PlacesTestUtils.addVisits([
+    
     "http://example1.com/blah",
+    
     "http://example2.com/blah",
+    
     "http://example1.com/",
+    
     "http://example2.com/",
   ]);
 
@@ -325,17 +329,20 @@ async function runTipTests() {
     new UrlbarResult(
       UrlbarUtils.RESULT_TYPE.URL,
       UrlbarUtils.RESULT_SOURCE.HISTORY,
+      
       { url: "http://mozilla.org/a" }
     ),
     new UrlbarResult(
       UrlbarUtils.RESULT_TYPE.TIP,
       UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       {
+        
         helpUrl: "http://example.com/",
         type: "test",
         titleL10n: { id: "urlbar-search-tips-confirm" },
         buttons: [
           {
+            
             url: "http://example.com/",
             l10n: { id: "urlbar-search-tips-confirm" },
           },
@@ -345,11 +352,13 @@ async function runTipTests() {
     new UrlbarResult(
       UrlbarUtils.RESULT_TYPE.URL,
       UrlbarUtils.RESULT_SOURCE.HISTORY,
+      
       { url: "http://mozilla.org/b" }
     ),
     new UrlbarResult(
       UrlbarUtils.RESULT_TYPE.URL,
       UrlbarUtils.RESULT_SOURCE.HISTORY,
+      
       { url: "http://mozilla.org/c" }
     ),
   ];

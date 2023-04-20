@@ -1016,6 +1016,7 @@ addAccessibleTask(
 
     let stateChanged = waitForEvent(EVENT_STATE_CHANGE, "href");
 
+    
     await PlacesTestUtils.addVisits(["http://www.example.com/"]);
 
     await stateChanged;
