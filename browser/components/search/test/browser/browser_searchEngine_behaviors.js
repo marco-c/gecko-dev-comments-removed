@@ -1,9 +1,9 @@
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-
-
-
-
-
+/*
+ * Test search plugin URLs
+ */
 
 "use strict";
 
@@ -35,12 +35,14 @@ const SEARCH_ENGINE_DETAILS = [
   },
   {
     alias: "d",
-    baseURL: "https://duckduckgo.com/?{code}q=foo",
+    baseURL: `https://duckduckgo.com/?{code}t=${
+      AppConstants.IS_ESR ? "ftsa" : "ffab"
+    }&q=foo`,
     codes: {
-      context: "t=ffcm&",
-      keyword: "t=ffab&",
-      newTab: "t=ffnt&",
-      submission: "t=ffsb&",
+      context: "",
+      keyword: "",
+      newTab: "",
+      submission: "",
     },
     name: "DuckDuckGo",
   },
@@ -56,19 +58,19 @@ const SEARCH_ENGINE_DETAILS = [
     },
     name: "eBay",
   },
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // {
+  // TODO: Google is tested in browser_google_behaviors.js - we can't test it here
+  // yet because of bug 1315953.
+  //   alias: "g",
+  //   baseURL: "https://www.google.com/search?q=foo&ie=utf-8&oe=utf-8",
+  //   codes: {
+  //     context: "",
+  //     keyword: "",
+  //     newTab: "",
+  //     submission: "",
+  //   },
+  //   name: "Google",
+  // },
 ];
 
 function promiseContentSearchReady(browser) {
@@ -123,7 +125,7 @@ async function testSearchEngine(engineDetails) {
 
   let base = engineDetails.baseURL;
 
-  
+  // Test search URLs (including purposes).
   let url = engine.getSubmission("foo").uri.spec;
   Assert.equal(
     url,
@@ -137,8 +139,8 @@ async function testSearchEngine(engineDetails) {
       name: "context menu search",
       searchURL: base.replace("{code}", engineDetails.codes.context),
       run() {
-        
-        
+        // Simulate a contextmenu search
+        // FIXME: This is a bit "low-level"...
         BrowserSearch._loadSearch(
           "foo",
           false,
