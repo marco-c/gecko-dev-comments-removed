@@ -172,7 +172,8 @@ def build_docs(
             "failed to generate documentation:\n"
             "%s: sphinx return code %d" % (path, status)
         )
-    print("\nGenerated documentation:\n%s" % savedir)
+    else:
+        print("\nGenerated documentation:\n%s" % savedir)
 
     if enable_fatal_warnings:
         fatal_warnings = _check_sphinx_warnings(warnings)
@@ -266,8 +267,6 @@ def _run_sphinx(docdir, savedir, config=None, fmt="html", jobs=None, verbose=Non
     import sphinx.cmd.build
 
     config = config or manager().conf_py_path
-    
-    
     
     
     
