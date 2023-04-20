@@ -660,7 +660,10 @@ class JS::Realm : public JS::shadow::Realm {
   void setIsDebuggee();
   void unsetIsDebuggee();
 
-  DebuggerVector& getDebuggers() { return debuggers_; };
+  DebuggerVector& getDebuggers(const JS::AutoRequireNoGC& nogc) {
+    return debuggers_;
+  };
+  bool hasDebuggers() const { return !debuggers_.empty(); }
 
   
   
