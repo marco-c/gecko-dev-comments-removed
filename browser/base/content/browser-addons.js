@@ -1474,7 +1474,15 @@ var gUnifiedExtensions = {
         
         
         if (!this.hasExtensionsInPanel()) {
-          await BrowserOpenAddonsMgr("addons://discover/");
+          let viewID;
+          if (
+            Services.prefs.getBoolPref("extensions.getAddons.showPane", true)
+          ) {
+            viewID = "addons://discover/";
+          } else {
+            viewID = "addons://list/extension";
+          }
+          await BrowserOpenAddonsMgr(viewID);
           return;
         }
       }
