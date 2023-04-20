@@ -171,43 +171,6 @@ enum class SendPacketStatus {
 };
 
 
-
-struct Metrics {
-  
-
-  
-  size_t tx_packets_count = 0;
-
-  
-  size_t tx_messages_count = 0;
-
-  
-  
-  absl::optional<size_t> cwnd_bytes = absl::nullopt;
-
-  
-  absl::optional<int> srtt_ms = absl::nullopt;
-
-  
-  
-  
-  
-  size_t unack_data_count = 0;
-
-  
-
-  
-  size_t rx_packets_count = 0;
-
-  
-  size_t rx_messages_count = 0;
-
-  
-  
-  absl::optional<uint32_t> peer_rwnd_bytes = absl::nullopt;
-};
-
-
 enum class SctpImplementation {
   
   kUnknown,
@@ -231,6 +194,48 @@ inline constexpr absl::string_view ToString(SctpImplementation implementation) {
       return "other";
   }
 }
+
+
+
+struct Metrics {
+  
+
+  
+  size_t tx_packets_count = 0;
+
+  
+  size_t tx_messages_count = 0;
+
+  
+  
+  size_t cwnd_bytes = 0;
+
+  
+  int srtt_ms = 0;
+
+  
+  
+  
+  
+  size_t unack_data_count = 0;
+
+  
+
+  
+  size_t rx_packets_count = 0;
+
+  
+  size_t rx_messages_count = 0;
+
+  
+  
+  uint32_t peer_rwnd_bytes = 0;
+
+  
+  
+  
+  SctpImplementation peer_implementation = SctpImplementation::kUnknown;
+};
 
 
 
@@ -468,7 +473,8 @@ class DcSctpSocketInterface {
                                              size_t bytes) = 0;
 
   
-  virtual Metrics GetMetrics() const = 0;
+  
+  virtual absl::optional<Metrics> GetMetrics() const = 0;
 
   
   
@@ -491,7 +497,10 @@ class DcSctpSocketInterface {
   
   
   
-  virtual SctpImplementation peer_implementation() const = 0;
+  ABSL_DEPRECATED("See Metrics::peer_implementation instead")
+  virtual SctpImplementation peer_implementation() const {
+    return SctpImplementation::kUnknown;
+  }
 };
 }  
 
