@@ -312,8 +312,6 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         
         canSetRuleText: this.canSetRuleText,
-        
-        hasGetQueryContainerForNode: true,
       },
     };
 
