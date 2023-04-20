@@ -2892,4 +2892,11 @@ var browserTests = [
     "<ol>\n<li>{}<br></li></ol>"],
    [true],
    {}],
+
+
+["{<ul><li>abc<span>def</span>ghi</li><li>jkl<span>opq</span>rst</li></ul>}",
+   [["delete",""]],
+   "<ul><li>{}<br></li></ul>",
+   [true],
+   {}],
 ]

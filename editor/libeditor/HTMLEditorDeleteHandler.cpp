@@ -3372,6 +3372,14 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteNonCollapsedRanges(
     }
     if (NS_WARN_IF(aRangesToDelete.FirstRangeRef()->Collapsed())) {
       
+      
+      
+      nsresult rv = aHTMLEditor.CollapseSelectionTo(
+          aRangesToDelete.GetFirstRangeStartPoint<EditorRawDOMPoint>());
+      if (NS_FAILED(rv)) {
+        NS_WARNING("EditorBase::CollapseSelectionTo() failed");
+        return Err(rv);
+      }
       return EditActionResult::HandledResult();
     }
     MOZ_ASSERT(aRangesToDelete.IsFirstRangeEditable(aEditingHost));
