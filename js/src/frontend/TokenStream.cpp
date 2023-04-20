@@ -356,9 +356,9 @@ TaggedParserAtomIndex TokenStreamAnyChars::reservedWordToPropertyName(
   return TaggedParserAtomIndex::null();
 }
 
-SourceCoords::SourceCoords(JSContext* cx, uint32_t initialLineNumber,
+SourceCoords::SourceCoords(ErrorContext* ec, uint32_t initialLineNumber,
                            uint32_t initialOffset)
-    : lineStartOffsets_(cx), initialLineNum_(initialLineNumber), lastIndex_(0) {
+    : lineStartOffsets_(ec), initialLineNum_(initialLineNumber), lastIndex_(0) {
   
   
   
@@ -499,8 +499,8 @@ TokenStreamAnyChars::TokenStreamAnyChars(JSContext* cx, ErrorContext* ec,
       options_(options),
       strictModeGetter_(smg),
       filename_(options.filename()),
-      longLineColumnInfo_(cx),
-      srcCoords(cx, options.lineno, options.scriptSourceOffset),
+      longLineColumnInfo_(ec),
+      srcCoords(ec, options.lineno, options.scriptSourceOffset),
       lineno(options.lineno),
       mutedErrors(options.mutedErrors()) {
   
@@ -810,7 +810,7 @@ uint32_t TokenStreamAnyChars::computePartialColumn(
     if (!ptr) {
       
       
-      if (!longLineColumnInfo_.add(ptr, line, Vector<ChunkInfo>(cx))) {
+      if (!longLineColumnInfo_.add(ptr, line, Vector<ChunkInfo>(ec))) {
         
         ec->recoverFromOutOfMemory();
         return ColumnFromPartial(start, 0, UnitsType::PossiblyMultiUnit);
@@ -1674,7 +1674,7 @@ bool TokenStreamCharsBase<Unit>::addLineOfContext(ErrorMetadata* err,
     return true;
   }
 
-  CharBuffer lineOfContext(cx);
+  CharBuffer lineOfContext(ec);
 
   const Unit* encodedWindow = sourceUnits.codeUnitPtrAt(encodedWindowStart);
   if (!FillCharBufferFromSourceNormalizingAsciiLineBreaks(
