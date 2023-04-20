@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "api/field_trials_view.h"
 #include "api/frame_transformer_interface.h"
@@ -258,12 +259,12 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   
   
   
-  virtual void SetRid(const std::string& rid) = 0;
+  virtual void SetRid(absl::string_view rid) = 0;
 
   
   
   
-  virtual void SetMid(const std::string& mid) = 0;
+  virtual void SetMid(absl::string_view mid) = 0;
 
   
   
@@ -376,7 +377,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
 
   
   
-  virtual int32_t SetCNAME(const char* cname) = 0;
+  virtual int32_t SetCNAME(absl::string_view cname) = 0;
 
   
   
