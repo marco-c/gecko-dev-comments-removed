@@ -3050,8 +3050,9 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
                                          FloatRegister temp, Label* fail) {
   ARMFPRegister src32(src, 32);
   ARMRegister dest32(dest, 32);
+  ARMRegister dest64(dest, 64);
 
-  Label negative, done;
+  Label negative, saturated, done;
 
   
   
@@ -3067,22 +3068,18 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
     
     
     
-    Fcvtas(dest32, src32);
+    Fcvtas(dest64, src32);
+
     
-    branch32(Assembler::Equal, dest, Imm32(INT_MAX), fail);
+    Cbnz(dest64, &saturated);
 
     
     
-    branch32(Assembler::NotEqual, dest, Imm32(0), &done);
-    {
-      
-      
-      Fmov(dest32, src32);
-      Lsr(dest32, dest32, 30);
-      Cbnz(dest32, fail);
-    }
+    Fmov(dest32, src32);
+    Lsr(dest32, dest32, 30);
+    Cbnz(dest32, fail);
 
-    jump(&done);
+    B(&done);
   }
 
   
@@ -3103,10 +3100,17 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
     
     
     
-    Fcvtms(dest32, temp);
-    
-    branch32(Assembler::Equal, dest, Imm32(INT_MIN), fail);
+    Fcvtms(dest64, temp);
   }
+
+  bind(&saturated);
+
+  
+  Cmp(dest64, Operand(dest64, vixl::SXTW));
+  B(NotEqual, fail);
+
+  
+  Uxtw(dest64, dest64);
 
   bind(&done);
 }
@@ -3117,7 +3121,7 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
   ARMRegister dest64(dest, 64);
   ARMRegister dest32(dest, 32);
 
-  Label negative, done;
+  Label negative, saturated, done;
 
   
   
@@ -3133,22 +3137,18 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
     
     
     
-    Fcvtas(dest32, src64);
+    Fcvtas(dest64, src64);
+
     
-    branch32(Assembler::Equal, dest, Imm32(INT_MAX), fail);
+    Cbnz(dest64, &saturated);
 
     
     
-    branch32(Assembler::NotEqual, dest, Imm32(0), &done);
-    {
-      
-      
-      Fmov(dest64, src64);
-      Lsr(dest64, dest64, 62);
-      Cbnz(dest64, fail);
-    }
+    Fmov(dest64, src64);
+    Lsr(dest64, dest64, 62);
+    Cbnz(dest64, fail);
 
-    jump(&done);
+    B(&done);
   }
 
   
@@ -3169,10 +3169,17 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
     
     
     
-    Fcvtms(dest32, temp);
-    
-    branch32(Assembler::Equal, dest, Imm32(INT_MIN), fail);
+    Fcvtms(dest64, temp);
   }
+
+  bind(&saturated);
+
+  
+  Cmp(dest64, Operand(dest64, vixl::SXTW));
+  B(NotEqual, fail);
+
+  
+  Uxtw(dest64, dest64);
 
   bind(&done);
 }
