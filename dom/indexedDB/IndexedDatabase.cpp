@@ -8,7 +8,6 @@
 #include "IndexedDatabaseInlines.h"
 
 #include "IDBDatabase.h"
-#include "IDBMutableFile.h"
 
 #include "mozilla/dom/FileBlobImpl.h"
 #include "mozilla/dom/StructuredCloneTags.h"
@@ -333,16 +332,7 @@ class ValueDeserializationHelper<StructuredCloneFileChild>
     MOZ_ASSERT(aCx);
     MOZ_ASSERT(aFile.Type() == StructuredCloneFileBase::eMutableFile);
 
-    
-    
-    
-    if (!aFile.HasMutableFile() || !NS_IsMainThread()) {
-      return false;
-    }
-
-    aFile.MutableMutableFile().SetLazyData(aData.name, aData.type);
-
-    return WrapAsJSObject(aCx, aFile.MutableMutableFile(), aResult);
+    return false;
   }
 
   static RefPtr<Blob> GetBlob(JSContext* aCx, IDBDatabase* aDatabase,
