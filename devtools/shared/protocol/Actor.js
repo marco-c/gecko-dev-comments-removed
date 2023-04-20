@@ -25,7 +25,21 @@ exports.actorSpecs = actorSpecs;
 
 
 
+
 class Actor extends Pool {
+  constructor(conn, spec) {
+    super();
+
+    
+    if (spec) {
+      this.typeName = spec.typeName;
+      this.requestTypes = generateRequestTypes(spec);
+      this._actorSpec = spec;
+    }
+    this.initialize(conn);
+  }
+
+  
   
   initialize(conn) {
     
@@ -38,7 +52,13 @@ class Actor extends Pool {
     
     this.actorID = null;
 
-    this._actorSpec = actorSpecs.get(Object.getPrototypeOf(this));
+    
+    
+    
+    if (!this._actorSpec) {
+      this._actorSpec = actorSpecs.get(Object.getPrototypeOf(this));
+    }
+
     
     if (this._actorSpec && this._actorSpec.events) {
       for (const [name, request] of this._actorSpec.events.entries()) {
@@ -162,11 +182,20 @@ exports.Actor = Actor;
 
 
 
-var generateRequestHandlers = function(actorSpec, actorProto) {
-  actorProto.typeName = actorSpec.typeName;
 
+
+
+
+
+
+
+
+
+
+
+var generateRequestTypes = function(actorSpec) {
   
-  actorProto.requestTypes = Object.create(null);
+  const requestTypes = Object.create(null);
   actorSpec.methods.forEach(spec => {
     const handler = function(packet, conn) {
       try {
@@ -181,7 +210,7 @@ var generateRequestHandlers = function(actorSpec, actorProto) {
 
         if (!this[spec.name]) {
           throw new Error(
-            `Spec for '${actorProto.typeName}' specifies a '${spec.name}'` +
+            `Spec for '${actorSpec.typeName}' specifies a '${spec.name}'` +
               ` method that isn't implemented by the actor`
           );
         }
@@ -213,7 +242,7 @@ var generateRequestHandlers = function(actorSpec, actorProto) {
             try {
               this.destroy();
             } catch (e) {
-              this.writeError(e, actorProto.typeName, spec.name);
+              this.writeError(e, actorSpec.typeName, spec.name);
               return;
             }
           }
@@ -231,22 +260,33 @@ var generateRequestHandlers = function(actorSpec, actorProto) {
           return p
             .then(() => ret)
             .then(sendReturn)
-            .catch(e => this.writeError(e, actorProto.typeName, spec.name));
+            .catch(e => this.writeError(e, actorSpec.typeName, spec.name));
         });
       } catch (e) {
         this._queueResponse(p => {
           return p.then(() =>
-            this.writeError(e, actorProto.typeName, spec.name)
+            this.writeError(e, actorSpec.typeName, spec.name)
           );
         });
       }
     };
 
-    actorProto.requestTypes[spec.request.type] = handler;
+    requestTypes[spec.request.type] = handler;
   });
+
+  return requestTypes;
+};
+exports.generateRequestTypes = generateRequestTypes;
+
+var generateRequestHandlers = function(actorSpec, actorProto) {
+  actorProto.typeName = actorSpec.typeName;
+
+  
+  actorProto.requestTypes = generateRequestTypes(actorSpec);
 
   return actorProto;
 };
+
 
 
 

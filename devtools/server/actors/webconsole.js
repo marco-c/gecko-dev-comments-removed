@@ -6,10 +6,7 @@
 
 "use strict";
 
-const {
-  ActorClassWithSpec,
-  Actor,
-} = require("resource://devtools/shared/protocol.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
 const {
   webconsoleSpec,
 } = require("resource://devtools/shared/specs/webconsole.js");
@@ -141,10 +138,10 @@ function isObject(value) {
 
 
 
-const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
-  initialize(connection, parentActor) {
-    Actor.prototype.initialize.call(this, connection);
-    this.conn = connection;
+class WebConsoleActor extends Actor {
+  constructor(connection, parentActor) {
+    super(connection, webconsoleSpec);
+
     this.parentActor = parentActor;
 
     this.dbg = this.parentActor.dbg;
@@ -175,20 +172,21 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
         "last-pb-context-exited"
       );
     }
-  },
-  
-
-
-
-
-  dbg: null,
+  }
 
   
 
 
 
 
-  _gripDepth: null,
+  dbg = null;
+
+  
+
+
+
+
+  _gripDepth = null;
 
   
 
@@ -196,13 +194,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
 
-  _listeners: null,
-
-  
-
-
-
-  conn: null,
+  _listeners = null;
 
   
 
@@ -215,7 +207,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       return this._getWindowForBrowserConsole();
     }
     return this.parentActor.window || this.parentActor.workerGlobal;
-  },
+  }
 
   
 
@@ -252,7 +244,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     }
 
     return window;
-  },
+  }
 
   
 
@@ -271,7 +263,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     } else {
       this._lastChromeWindow = null;
     }
-  },
+  }
 
   
 
@@ -279,7 +271,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
 
-  _hadChromeWindow: false,
+  _hadChromeWindow = false;
 
   
 
@@ -287,13 +279,13 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
 
-  _lastChromeWindow: null,
+  _lastChromeWindow = null;
 
   
-  _evalGlobal: null,
+  _evalGlobal = null;
   get evalGlobal() {
     return this._evalGlobal || this.global;
-  },
+  }
 
   set evalGlobal(global) {
     this._evalGlobal = global;
@@ -302,7 +294,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       EventEmitter.on(this.parentActor, "will-navigate", this._onWillNavigate);
       this._progressListenerActive = true;
     }
-  },
+  }
 
   
 
@@ -312,49 +304,49 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
 
-  _progressListenerActive: false,
+  _progressListenerActive = false;
 
   
 
 
 
-  consoleServiceListener: null,
+  consoleServiceListener = null;
 
   
 
 
-  consoleAPIListener: null,
+  consoleAPIListener = null;
 
   
 
 
-  consoleFileActivityListener: null,
+  consoleFileActivityListener = null;
 
   
 
 
-  consoleReflowListener: null,
+  consoleReflowListener = null;
 
   
 
 
 
 
-  _webConsoleCommandsCache: null,
+  _webConsoleCommandsCache = null;
 
   grip() {
     return { actor: this.actorID };
-  },
+  }
 
-  _findProtoChain: ThreadActor.prototype._findProtoChain,
-  _removeFromProtoChain: ThreadActor.prototype._removeFromProtoChain,
+  _findProtoChain = ThreadActor.prototype._findProtoChain;
+  _removeFromProtoChain = ThreadActor.prototype._removeFromProtoChain;
 
   
 
 
   destroy() {
     this.stopListeners();
-    Actor.prototype.destroy.call(this);
+    super.destroy();
 
     EventEmitter.off(
       this.parentActor,
@@ -374,7 +366,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     this._evalGlobal = null;
     this.dbg = null;
     this.conn = null;
-  },
+  }
 
   
 
@@ -401,7 +393,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     environment.actor = actor;
 
     return actor;
-  },
+  }
 
   
 
@@ -411,7 +403,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
   createValueGrip(value) {
     return createValueGrip(value, this, this.objectGrip);
-  },
+  }
 
   
 
@@ -437,7 +429,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     }
     const dbgGlobal = this.dbg.makeGlobalObjectReference(this.global);
     return dbgGlobal.makeDebuggeeValue(value);
-  },
+  }
 
   
 
@@ -464,7 +456,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     );
     pool.manage(actor);
     return actor.form();
-  },
+  }
 
   
 
@@ -480,7 +472,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     const actor = new LongStringActor(this.conn, string);
     pool.manage(actor);
     return actor.form();
-  },
+  }
 
   
 
@@ -497,7 +489,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       return this.longStringGrip(string, this);
     }
     return string;
-  },
+  }
 
   
 
@@ -507,7 +499,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
   getLastConsoleInputEvaluation() {
     return this._lastConsoleInputEvaluation;
-  },
+  }
 
   
 
@@ -524,7 +516,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     }
 
     return dbgObj;
-  },
+  }
 
   
 
@@ -541,7 +533,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       objectActor: this.createValueGrip(dbgObj),
       inspectFromAnnotation,
     });
-  },
+  }
 
   
 
@@ -668,7 +660,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     return {
       startedListeners,
     };
-  },
+  }
 
   
 
@@ -736,7 +728,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     stoppedListeners.forEach(this._listeners.delete, this._listeners);
 
     return { stoppedListeners };
-  },
+  }
 
   
 
@@ -840,7 +832,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     return {
       messages,
     };
-  },
+  }
 
   
 
@@ -895,7 +887,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       }
     });
     return { resultID };
-  },
+  }
 
   
 
@@ -949,7 +941,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     }
 
     return response;
-  },
+  }
 
   
 
@@ -1007,7 +999,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
         }
       });
     });
-  },
+  }
 
   
   prepareEvaluationResult(evalInfo, input, eager, mapped) {
@@ -1193,7 +1185,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       helperResult,
       notes: errorNotes,
     };
-  },
+  }
 
   
 
@@ -1336,7 +1328,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       matchProp,
       isElementAccess: isElementAccess === true,
     };
-  },
+  }
 
   
 
@@ -1372,7 +1364,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
         Services.console.resetWindow(id)
       );
     }
-  },
+  }
 
   
 
@@ -1434,7 +1426,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       Object.defineProperty(helpers.sandbox, name, desc);
     }
     return helpers;
-  },
+  }
 
   _getWebConsoleCommandsCache() {
     if (!this._webConsoleCommandsCache) {
@@ -1447,7 +1439,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       );
     }
     return this._webConsoleCommandsCache;
-  },
+  }
 
   
 
@@ -1469,14 +1461,14 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
         timeStamp: message.microSecondTimeStamp / 1000,
       });
     }
-  },
+  }
 
   getActorIdForInternalSourceId(id) {
     const actor = this.parentActor.sourcesManager.getSourceActorByInternalSourceId(
       id
     );
     return actor ? actor.actorID : null;
-  },
+  }
 
   
 
@@ -1507,7 +1499,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       s = s.parent || s.asyncParent;
     }
     return stack;
-  },
+  }
 
   
 
@@ -1597,7 +1589,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     }
 
     return result;
-  },
+  }
 
   
 
@@ -1614,7 +1606,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       message: this.prepareConsoleMessageForRemote(message),
       ...extraProperties,
     });
-  },
+  }
 
   
 
@@ -1637,7 +1629,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       time,
       hasNativeConsoleAPI,
     });
-  },
+  }
 
   
 
@@ -1651,7 +1643,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     this.emit("fileActivity", {
       uri: fileURI,
     });
-  },
+  }
 
   
 
@@ -1732,7 +1724,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     }
 
     return result;
-  },
+  }
 
   
 
@@ -1803,7 +1795,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     });
 
     return ownProperties;
-  },
+  }
 
   
 
@@ -1819,7 +1811,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     if (topic === "last-pb-context-exited") {
       this.emit("lastPrivateContextExited");
     }
-  },
+  }
 
   
 
@@ -1831,7 +1823,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       EventEmitter.off(this.parentActor, "will-navigate", this._onWillNavigate);
       this._progressListenerActive = false;
     }
-  },
+  }
 
   
 
@@ -1851,7 +1843,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
     
     this._lastChromeWindow = null;
-  },
-});
+  }
+}
 
 exports.WebConsoleActor = WebConsoleActor;
