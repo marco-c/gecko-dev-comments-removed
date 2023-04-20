@@ -25,6 +25,12 @@ impl Default for MacroParsingBehavior {
 
 
 pub trait ParseCallbacks: fmt::Debug {
+    #[cfg(feature = "cli")]
+    #[doc(hidden)]
+    fn cli_args(&self) -> Vec<String> {
+        vec![]
+    }
+
     
     fn will_parse_macro(&self, _name: &str) -> MacroParsingBehavior {
         MacroParsingBehavior::Default
@@ -32,7 +38,10 @@ pub trait ParseCallbacks: fmt::Debug {
 
     
     
-    fn generated_name_override(&self, _function_name: &str) -> Option<String> {
+    fn generated_name_override(
+        &self,
+        _item_info: ItemInfo<'_>,
+    ) -> Option<String> {
         None
     }
 
@@ -117,8 +126,40 @@ pub trait ParseCallbacks: fmt::Debug {
 
 
 
+#[derive(Debug)]
 #[non_exhaustive]
 pub struct DeriveInfo<'a> {
     
     pub name: &'a str,
+    
+    pub kind: TypeKind,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+
+pub enum TypeKind {
+    
+    Struct,
+    
+    Enum,
+    
+    Union,
+}
+
+
+#[non_exhaustive]
+pub struct ItemInfo<'a> {
+    
+    pub name: &'a str,
+    
+    pub kind: ItemKind,
+}
+
+
+#[non_exhaustive]
+pub enum ItemKind {
+    
+    Function,
+    
+    Var,
 }

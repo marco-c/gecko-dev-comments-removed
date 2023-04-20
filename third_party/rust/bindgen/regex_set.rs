@@ -17,6 +17,13 @@ pub struct RegexSet {
 
 impl RegexSet {
     
+    pub fn new() -> RegexSet {
+        RegexSet {
+            ..Default::default()
+        }
+    }
+
+    
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
     }

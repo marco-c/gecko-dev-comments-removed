@@ -14,7 +14,7 @@ use super::template::{
 };
 use super::traversal::{EdgeKind, Trace, Tracer};
 use crate::clang::{self, Cursor};
-use crate::parse::{ClangItemParser, ParseError, ParseResult};
+use crate::parse::{ParseError, ParseResult};
 use std::borrow::Cow;
 use std::io;
 
@@ -93,6 +93,11 @@ impl Type {
     
     pub fn is_block_pointer(&self) -> bool {
         matches!(self.kind, TypeKind::BlockPointer(..))
+    }
+
+    
+    pub fn is_int(&self) -> bool {
+        matches!(self.kind, TypeKind::Int(_))
     }
 
     

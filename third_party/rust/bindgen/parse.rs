@@ -1,8 +1,7 @@
 
 
 use crate::clang;
-use crate::ir::context::{BindgenContext, ItemId, TypeId};
-use crate::ir::ty::TypeKind;
+use crate::ir::context::{BindgenContext, ItemId};
 
 
 
@@ -38,65 +37,4 @@ pub trait ClangSubItemParser: Sized {
         cursor: clang::Cursor,
         context: &mut BindgenContext,
     ) -> Result<ParseResult<Self>, ParseError>;
-}
-
-
-pub trait ClangItemParser: Sized {
-    
-    fn parse(
-        cursor: clang::Cursor,
-        parent: Option<ItemId>,
-        context: &mut BindgenContext,
-    ) -> Result<ItemId, ParseError>;
-
-    
-    fn from_ty(
-        ty: &clang::Type,
-        location: clang::Cursor,
-        parent: Option<ItemId>,
-        ctx: &mut BindgenContext,
-    ) -> Result<TypeId, ParseError>;
-
-    
-    
-    fn from_ty_with_id(
-        id: ItemId,
-        ty: &clang::Type,
-        location: clang::Cursor,
-        parent: Option<ItemId>,
-        ctx: &mut BindgenContext,
-    ) -> Result<TypeId, ParseError>;
-
-    
-    
-    fn from_ty_or_ref(
-        ty: clang::Type,
-        location: clang::Cursor,
-        parent_id: Option<ItemId>,
-        context: &mut BindgenContext,
-    ) -> TypeId;
-
-    
-    
-    fn from_ty_or_ref_with_id(
-        potential_id: ItemId,
-        ty: clang::Type,
-        location: clang::Cursor,
-        parent_id: Option<ItemId>,
-        context: &mut BindgenContext,
-    ) -> TypeId;
-
-    
-    fn type_param(
-        with_id: Option<ItemId>,
-        location: clang::Cursor,
-        ctx: &mut BindgenContext,
-    ) -> Option<TypeId>;
-
-    
-    fn builtin_type(
-        kind: TypeKind,
-        is_const: bool,
-        context: &mut BindgenContext,
-    ) -> TypeId;
 }
