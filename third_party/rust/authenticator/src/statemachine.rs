@@ -349,33 +349,30 @@ impl StateMachineCtap2 {
             .ok()?;
 
         
-        loop {
-            match rx.recv() {
-                Ok(DeviceCommand::Blink) => match dev.block_and_blink() {
-                    BlinkResult::DeviceSelected => {
-                        
-                        
-                        selector
-                            .send(DeviceSelectorEvent::SelectedToken(dev.id()))
-                            .ok()?;
-                        break;
-                    }
-                    BlinkResult::Cancelled => {
-                        info!("Device {:?} was not selected", dev.id());
-                        return None;
-                    }
-                },
-                Ok(DeviceCommand::Removed) => {
-                    info!("Device {:?} was removed", dev.id());
+        match rx.recv() {
+            Ok(DeviceCommand::Blink) => match dev.block_and_blink() {
+                BlinkResult::DeviceSelected => {
+                    
+                    
+                    selector
+                        .send(DeviceSelectorEvent::SelectedToken(dev.id()))
+                        .ok()?;
+                }
+                BlinkResult::Cancelled => {
+                    info!("Device {:?} was not selected", dev.id());
                     return None;
                 }
-                Ok(DeviceCommand::Continue) => {
-                    break;
-                }
-                Err(_) => {
-                    warn!("Error when trying to receive messages from DeviceSelector! Exiting.");
-                    return None;
-                }
+            },
+            Ok(DeviceCommand::Removed) => {
+                info!("Device {:?} was removed", dev.id());
+                return None;
+            }
+            Ok(DeviceCommand::Continue) => {
+                
+            }
+            Err(_) => {
+                warn!("Error when trying to receive messages from DeviceSelector! Exiting.");
+                return None;
             }
         }
         Some(dev)
@@ -397,7 +394,7 @@ impl StateMachineCtap2 {
                 
                 error!("Callback dropped the channel, so we forward the error to the results-callback: {:?}", error);
                 callback.call(Err(AuthenticatorError::PinError(error)));
-                return Err(());
+                Err(())
             }
         }
     }
@@ -529,7 +526,6 @@ impl StateMachineCtap2 {
                         callback.call(Ok(RegisterResult::CTAP1(data, dev.get_device_info())))
                     }
 
-                    Err(HIDError::DeviceNotSupported) | Err(HIDError::UnsupportedCommand) => {}
                     Err(HIDError::Command(CommandError::StatusCode(
                         StatusCode::ChannelBusy,
                         _,
@@ -639,11 +635,6 @@ impl StateMachineCtap2 {
                     Ok(GetAssertionResult::CTAP2(assertion, client_data)) => {
                         callback.call(Ok(SignResult::CTAP2(assertion, client_data)))
                     }
-                    
-                    
-                    
-                    
-                    Err(HIDError::DeviceNotSupported) | Err(HIDError::UnsupportedCommand) => {}
                     Err(HIDError::Command(CommandError::StatusCode(
                         StatusCode::ChannelBusy,
                         _,

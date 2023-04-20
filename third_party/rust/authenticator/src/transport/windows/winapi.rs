@@ -157,12 +157,7 @@ impl<'a> Iterator for DeviceInfoSetIter<'a> {
             return None; 
         }
 
-        let detail = DeviceInterfaceDetailData::new(required_size as usize);
-        if detail.is_none() {
-            return None; 
-        }
-
-        let detail = detail.unwrap();
+        let detail = DeviceInterfaceDetailData::new(required_size as usize)?;
         let rv = unsafe {
             SetupDiGetDeviceInterfaceDetailW(
                 self.set.get(),

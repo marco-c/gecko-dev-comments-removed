@@ -12,13 +12,13 @@ pub type DeviceBuildParameters = <Device as HIDDevice>::BuildParameters;
 
 trait DeviceSelectorEventMarker {}
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BlinkResult {
     DeviceSelected,
     Cancelled,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeviceCommand {
     Blink,
     Continue,
@@ -44,6 +44,10 @@ pub struct DeviceSelector {
 }
 
 impl DeviceSelector {
+    
+    
+    
+    #![allow(clippy::mutable_key_type)]
     pub fn run(status: Sender<crate::StatusUpdate>) -> Self {
         let (selector_send, selector_rec) = channel();
         
@@ -244,7 +248,7 @@ pub mod tests {
             },
             ..Default::default()
         };
-        dev.set_authenticator_info(info.clone());
+        dev.set_authenticator_info(info);
     }
 
     fn send_i_am_token(dev: &Device, selector: &DeviceSelector) {
@@ -333,6 +337,27 @@ pub mod tests {
             DeviceCommand::Continue
         );
         recv_status(&devices[2], &status_rx, ExpectedUpdate::DeviceSelected);
+    }
+
+    
+    #[test]
+    fn test_device_selector_stop() {
+        let device = Device::new("device selector 1").unwrap();
+
+        let (status_tx, _) = channel();
+        let mut selector = DeviceSelector::run(status_tx);
+
+        
+        selector
+            .clone_sender()
+            .send(DeviceSelectorEvent::DevicesAdded(vec![device.id()]))
+            .unwrap();
+
+        selector
+            .clone_sender()
+            .send(DeviceSelectorEvent::NotAToken(device.id()))
+            .unwrap();
+        selector.stop();
     }
 
     #[test]

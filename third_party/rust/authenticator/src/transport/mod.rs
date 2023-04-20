@@ -75,7 +75,7 @@ pub enum Nonce {
 
 
 pub trait FidoDevice: HIDDevice {
-    fn send_msg<'msg, Out, Req: Request<Out>>(&mut self, msg: &'msg Req) -> Result<Out, HIDError> {
+    fn send_msg<Out, Req: Request<Out>>(&mut self, msg: &Req) -> Result<Out, HIDError> {
         if !self.initialized() {
             return Err(HIDError::DeviceNotInitialized);
         }
@@ -87,10 +87,7 @@ pub trait FidoDevice: HIDDevice {
         }
     }
 
-    fn send_cbor<'msg, Req: RequestCtap2>(
-        &mut self,
-        msg: &'msg Req,
-    ) -> Result<Req::Output, HIDError> {
+    fn send_cbor<Req: RequestCtap2>(&mut self, msg: &Req) -> Result<Req::Output, HIDError> {
         debug!("sending {:?} to {:?}", msg, self);
 
         let mut data = msg.wire_format(self)?;
@@ -115,12 +112,9 @@ pub trait FidoDevice: HIDDevice {
         }
     }
 
-    fn send_ctap1<'msg, Req: RequestCtap1>(
-        &mut self,
-        msg: &'msg Req,
-    ) -> Result<Req::Output, HIDError> {
+    fn send_ctap1<Req: RequestCtap1>(&mut self, msg: &Req) -> Result<Req::Output, HIDError> {
         debug!("sending {:?} to {:?}", msg, self);
-        let data = msg.ctap1_format(self)?;
+        let (data, add_info) = msg.ctap1_format(self)?;
 
         loop {
             let (cmd, mut data) = self.sendrecv(HIDCmd::Msg, &data)?;
@@ -139,7 +133,7 @@ pub trait FidoDevice: HIDDevice {
                 
                 let status = ApduErrorStatus::from([status[0], status[1]]);
 
-                match msg.handle_response_ctap1(status, &data) {
+                match msg.handle_response_ctap1(status, &data, &add_info) {
                     Ok(out) => return Ok(out),
                     Err(Retryable::Retry) => {
                         
@@ -156,7 +150,7 @@ pub trait FidoDevice: HIDDevice {
 
     
     fn init(&mut self, nonce: Nonce) -> Result<(), HIDError> {
-        let resp = <Self as HIDDevice>::initialize(self, nonce)?;
+        <Self as HIDDevice>::initialize(self, nonce)?;
         
         
         if self.supports_ctap2() {
@@ -171,17 +165,16 @@ pub trait FidoDevice: HIDDevice {
             
             self.send_ctap1(&command)?;
         }
-        Ok(resp)
+        Ok(())
     }
 
     fn block_and_blink(&mut self) -> BlinkResult {
-        let resp;
         let supports_select_cmd = self
             .get_authenticator_info()
             .map_or(false, |i| i.versions.contains(&String::from("FIDO_2_1")));
-        if supports_select_cmd {
+        let resp = if supports_select_cmd {
             let msg = Selection {};
-            resp = self.send_cbor(&msg);
+            self.send_cbor(&msg)
         } else {
             
             
@@ -197,8 +190,9 @@ pub trait FidoDevice: HIDDevice {
             msg.set_pin_auth(Some(PinAuth::empty_pin_auth()), None);
             info!("Trying to blink: {:?}", &msg);
             
-            resp = self.send_msg(&msg).map(|_| ());
-        }
+            self.send_msg(&msg).map(|_| ())
+        };
+
         match resp {
             
             

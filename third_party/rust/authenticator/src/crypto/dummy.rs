@@ -6,7 +6,7 @@ use serde::Serialize;
 
 pub type Result<T> = std::result::Result<T, BackendError>;
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub enum BackendError {}
 
 pub(crate) fn serialize_key(_curve: ECDSACurve, key: &[u8]) -> Result<(ByteBuf, ByteBuf)> {
