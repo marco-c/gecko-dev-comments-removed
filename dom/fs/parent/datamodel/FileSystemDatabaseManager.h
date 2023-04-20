@@ -47,6 +47,13 @@ class FileSystemDatabaseManager {
 
 
 
+  virtual nsresult UpdateUsage(const EntryId& aEntry) = 0;
+
+  
+
+
+
+
 
 
   virtual Result<EntryId, QMResult> GetOrCreateDirectory(
