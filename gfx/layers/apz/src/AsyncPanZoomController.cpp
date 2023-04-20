@@ -1542,12 +1542,6 @@ nsEventStatus AsyncPanZoomController::OnScaleBegin(
 
   
   
-  if (!ZoomConstraintsAllowZoom()) {
-    StartTouch(aEvent.mLocalFocusPoint, aEvent.mTimeStamp);
-  }
-
-  
-  
   
   
   if (!StaticPrefs::apz_allow_zooming()) {
@@ -1596,7 +1590,7 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
   
   
   
-  if (!allowZoom) {
+  if (mPinchLocked) {
     mX.UpdateWithTouchAtDevicePoint(aEvent.mLocalFocusPoint.x,
                                     aEvent.mTimeStamp);
     mY.UpdateWithTouchAtDevicePoint(aEvent.mLocalFocusPoint.y,
@@ -1796,7 +1790,7 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(
 
   if (aEvent.mType == PinchGestureInput::PINCHGESTURE_FINGERLIFTED) {
     
-    if (ZoomConstraintsAllowZoom()) {
+    if (!mPinchLocked) {
       mPanDirRestricted = false;
       mLastTouch.mPosition = mStartTouch =
           ToExternalPoint(aEvent.mScreenOffset, aEvent.mFocusPoint);
