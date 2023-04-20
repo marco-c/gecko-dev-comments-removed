@@ -2895,14 +2895,6 @@ var gPrivacyPane = {
 
   initAddonRecommendationsCheckbox() {
     
-    const url =
-      Services.urlFormatter.formatURLPref("app.support.baseURL") +
-      "personalized-addons";
-    document
-      .getElementById("addonRecommendationLearnMore")
-      .setAttribute("href", url);
-
-    
     dataCollectionCheckboxHandler({
       checkbox: document.getElementById("addonRecommendationEnabled"),
       pref: PREF_ADDON_RECOMMENDATIONS_ENABLED,
