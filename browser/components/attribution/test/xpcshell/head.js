@@ -3,8 +3,8 @@
 
 "use strict";
 
-const { AttributionCode } = ChromeUtils.importESModule(
-  "resource:///modules/AttributionCode.sys.mjs"
+const { AttributionCode } = ChromeUtils.import(
+  "resource:///modules/AttributionCode.jsm"
 );
 
 let validAttrCodes = [
@@ -115,8 +115,8 @@ async function setupStubs() {
 
   if (AppConstants.platform == "macosx") {
     
-    const { MacAttribution } = ChromeUtils.importESModule(
-      "resource:///modules/MacAttribution.sys.mjs"
+    const { MacAttribution } = ChromeUtils.import(
+      "resource:///modules/MacAttribution.jsm"
     );
     sinon
       .stub(MacAttribution, "applicationPath")
