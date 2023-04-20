@@ -7712,6 +7712,43 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathFunction(
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachNumber() {
+  
+  if (argc_ != 1 || !args_[0].isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  double num;
+  if (!StringToNumber(cx_, args_[0].toString(), &num)) {
+    cx_->recoverFromOutOfMemory();
+    return AttachDecision::NoAction;
+  }
+
+  
+  initializeInputOperand();
+
+  
+  emitNativeCalleeGuard();
+
+  
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  StringOperandId strId = writer.guardToString(argId);
+
+  
+  int32_t unused;
+  if (mozilla::NumberIsInt32(num, &unused)) {
+    Int32OperandId resultId = writer.guardStringToInt32(strId);
+    writer.loadInt32Result(resultId);
+  } else {
+    NumberOperandId resultId = writer.guardStringToNumber(strId);
+    writer.loadDoubleResult(resultId);
+  }
+  writer.returnFromIC();
+
+  trackAttached("Number");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachNumberParseInt() {
   
   if (argc_ < 1 || argc_ > 2) {
@@ -10226,6 +10263,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachGetNextMapSetEntryForIterator( true);
 
     
+    case InlinableNative::Number:
+      return tryAttachNumber();
     case InlinableNative::NumberParseInt:
       return tryAttachNumberParseInt();
     case InlinableNative::NumberToString:
