@@ -100,6 +100,11 @@ void EarlyHintsService::Cancel() {
   }
 }
 
+void EarlyHintsService::RegisterLinksAndGetConnectArgs(
+    nsTArray<EarlyHintConnectArgs>& aOutLinks) {
+  mOngoingEarlyHints->RegisterLinksAndGetConnectArgs(aOutLinks);
+}
+
 void EarlyHintsService::CollectTelemetry(Maybe<uint32_t> aResponseStatus) {
   
   
