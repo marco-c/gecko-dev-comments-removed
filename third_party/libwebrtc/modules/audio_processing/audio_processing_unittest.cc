@@ -50,6 +50,7 @@
 #include "test/testsupport/file_utils.h"
 
 RTC_PUSH_IGNORING_WUNDEF()
+#include "modules/audio_processing/debug.pb.h"
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_processing/test/unittest.pb.h"
 #else
@@ -333,6 +334,72 @@ std::string GetReferenceFilename() {
   }
   return test::ResourcePath("audio_processing/output_data_float", "pb");
 #endif
+}
+
+
+
+
+constexpr bool kDumpWhenExpectMessageEqFails = false;
+
+
+
+TEST(ApmUnitTests, CheckDebugConstants) {
+  ASSERT_FALSE(kDumpWhenExpectMessageEqFails);
+}
+
+
+
+void ExpectStreamFieldsEq(const audioproc::Stream& actual,
+                          const audioproc::Stream& expected) {
+  EXPECT_EQ(actual.input_data(), expected.input_data());
+  EXPECT_EQ(actual.output_data(), expected.output_data());
+  EXPECT_EQ(actual.delay(), expected.delay());
+  EXPECT_EQ(actual.drift(), expected.drift());
+  EXPECT_EQ(actual.level(), expected.level());
+  EXPECT_EQ(actual.keypress(), expected.keypress());
+}
+
+
+
+void ExpectEventFieldsEq(const audioproc::Event& actual,
+                         const audioproc::Event& expected) {
+  EXPECT_EQ(actual.type(), expected.type());
+  if (actual.type() != expected.type()) {
+    return;
+  }
+  switch (actual.type()) {
+    case audioproc::Event::STREAM:
+      ExpectStreamFieldsEq(actual.stream(), expected.stream());
+      break;
+    default:
+      
+      break;
+  }
+}
+
+
+
+
+
+bool ExpectMessageEq(rtc::ArrayView<const uint8_t> actual,
+                     rtc::ArrayView<const uint8_t> expected) {
+  EXPECT_EQ(actual.size(), expected.size());
+  if (actual.size() != expected.size()) {
+    return false;
+  }
+  if (memcmp(actual.data(), expected.data(), actual.size()) == 0) {
+    
+    return true;
+  }
+  if (kDumpWhenExpectMessageEqFails) {
+    
+    
+    audioproc::Event event_actual, event_expected;
+    RTC_DCHECK(event_actual.ParseFromArray(actual.data(), actual.size()));
+    RTC_DCHECK(event_expected.ParseFromArray(expected.data(), expected.size()));
+    ExpectEventFieldsEq(event_actual, event_expected);
+  }
+  return false;
 }
 
 class ApmTest : public ::testing::Test {
@@ -1525,8 +1592,13 @@ void ApmTest::VerifyDebugDumpTest(Format format) {
     bytes_read_limited += limited_size;
     EXPECT_EQ(ref_size, out_size);
     EXPECT_GE(ref_size, limited_size);
-    EXPECT_EQ(0, memcmp(ref_bytes.get(), out_bytes.get(), ref_size));
-    EXPECT_EQ(0, memcmp(ref_bytes.get(), limited_bytes.get(), limited_size));
+    EXPECT_TRUE(ExpectMessageEq({out_bytes.get(), out_size},
+                                {ref_bytes.get(), ref_size}));
+    if (limited_size > 0) {
+      EXPECT_TRUE(
+          ExpectMessageEq({limited_bytes.get(), limited_size},
+                          {ref_bytes.get(), ref_size}));
+    }
     ref_size = ReadMessageBytesFromFile(ref_file, &ref_bytes);
     out_size = ReadMessageBytesFromFile(out_file, &out_bytes);
     limited_size = ReadMessageBytesFromFile(limited_file, &limited_bytes);
