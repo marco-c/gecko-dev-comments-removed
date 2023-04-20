@@ -70,21 +70,29 @@ macro_rules! system_font_methods {
 )]
 #[allow(missing_docs)]
 pub enum SystemFont {
+    
     Caption,
+    
     Icon,
+    
     Menu,
+    
     MessageBox,
+    
     SmallCaption,
+    
     StatusBar,
-    MozWindow,
-    MozDocument,
-    MozWorkspace,
-    MozDesktop,
-    MozInfo,
-    MozDialog,
-    MozButton,
+    
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozPullDownMenu,
+    
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    MozButton,
+    
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozList,
+    
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozField,
     #[css(skip)]
     End, 
