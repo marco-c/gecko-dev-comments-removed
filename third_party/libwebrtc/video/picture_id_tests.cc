@@ -135,11 +135,15 @@ class PictureIdObserver : public test::RtpRtcpObserver {
     
     int diff = ForwardDiff<uint16_t, kPictureIdWraparound>(last.picture_id,
                                                            current.picture_id);
-    if (diff > 1) {
+    EXPECT_LE(diff - 1, max_expected_picture_id_gap_);
+    if (diff > 2) {
+      
+      
+      
+      
       
       
       EXPECT_EQ(VideoFrameType::kVideoFrameKey, current.frame_type);
-      EXPECT_LE(diff - 1, max_expected_picture_id_gap_);
     }
   }
 
