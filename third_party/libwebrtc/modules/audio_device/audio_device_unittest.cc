@@ -80,15 +80,15 @@ namespace {
 
 static constexpr size_t kNumCallbacks = 10;
 
-static constexpr size_t kTestTimeOutInMilliseconds = 10 * 1000;
+static constexpr TimeDelta kTestTimeOut = TimeDelta::Seconds(10);
 
 static constexpr size_t kNumCallbacksPerSecond = 100;
 
-static constexpr size_t kFullDuplexTimeInSec = 5;
+static constexpr TimeDelta kFullDuplexTime = TimeDelta::Seconds(5);
 
 
 
-static constexpr size_t kMeasureLatencyTimeInSec = 10;
+static constexpr TimeDelta kMeasureLatencyTime = TimeDelta::Seconds(10);
 
 static constexpr size_t kImpulseFrequencyInHz = 1;
 
@@ -974,7 +974,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartStopPlayoutWithInternalRestart) {
       .Times(AtLeast(kNumCallbacks));
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   StartPlayout();
-  event()->Wait(kTestTimeOutInMilliseconds);
+  event()->Wait(kTestTimeOut);
   EXPECT_TRUE(audio_device()->Playing());
   
   
@@ -997,7 +997,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartStopPlayoutWithInternalRestart) {
   mock.ResetCallbackCounters();
   EXPECT_CALL(mock, NeedMorePlayData(_, _, _, _, NotNull(), _, _, _))
       .Times(AtLeast(kNumCallbacks));
-  event()->Wait(kTestTimeOutInMilliseconds);
+  event()->Wait(kTestTimeOut);
   EXPECT_TRUE(audio_device()->Playing());
   
   StopPlayout();
@@ -1020,7 +1020,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartStopRecordingWithInternalRestart) {
       .Times(AtLeast(kNumCallbacks));
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   StartRecording();
-  event()->Wait(kTestTimeOutInMilliseconds);
+  event()->Wait(kTestTimeOut);
   EXPECT_TRUE(audio_device()->Recording());
   
   
@@ -1044,7 +1044,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartStopRecordingWithInternalRestart) {
   EXPECT_CALL(mock, RecordedDataIsAvailable(NotNull(), _, _, _, _, Ge(0u), 0, _,
                                             false, _))
       .Times(AtLeast(kNumCallbacks));
-  event()->Wait(kTestTimeOutInMilliseconds);
+  event()->Wait(kTestTimeOut);
   EXPECT_TRUE(audio_device()->Recording());
   
   StopRecording();
@@ -1065,7 +1065,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartPlayoutVerifyCallbacks) {
       .Times(AtLeast(kNumCallbacks));
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   StartPlayout();
-  event()->Wait(kTestTimeOutInMilliseconds);
+  event()->Wait(kTestTimeOut);
   StopPlayout();
   PreTearDown();
 }
@@ -1098,7 +1098,7 @@ TEST_P(MAYBE_AudioDeviceTest, MAYBE_StartRecordingVerifyCallbacks) {
       .Times(AtLeast(kNumCallbacks));
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   StartRecording();
-  event()->Wait(kTestTimeOutInMilliseconds);
+  event()->Wait(kTestTimeOut);
   StopRecording();
   PreTearDown();
 }
@@ -1117,7 +1117,7 @@ TEST_P(MAYBE_AudioDeviceTest, MAYBE_StartPlayoutAndRecordingVerifyCallbacks) {
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   StartPlayout();
   StartRecording();
-  event()->Wait(kTestTimeOutInMilliseconds);
+  event()->Wait(kTestTimeOut);
   StopRecording();
   StopPlayout();
   PreTearDown();
@@ -1140,7 +1140,7 @@ TEST_P(MAYBE_AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
   NiceMock<MockAudioTransport> mock(TransportType::kPlayAndRecord);
   FifoAudioStream audio_stream;
   mock.HandleCallbacks(event(), &audio_stream,
-                       kFullDuplexTimeInSec * kNumCallbacksPerSecond);
+                       kFullDuplexTime.seconds() * kNumCallbacksPerSecond);
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   
   
@@ -1151,8 +1151,7 @@ TEST_P(MAYBE_AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
   EXPECT_EQ(0, audio_device()->SetSpeakerVolume(0));
   StartPlayout();
   StartRecording();
-  event()->Wait(static_cast<int>(
-      std::max(kTestTimeOutInMilliseconds, 1000 * kFullDuplexTimeInSec)));
+  event()->Wait(std::max(kTestTimeOut, kFullDuplexTime));
   StopRecording();
   StopPlayout();
   PreTearDown();
@@ -1204,14 +1203,13 @@ TEST_P(MAYBE_AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
   NiceMock<MockAudioTransport> mock(TransportType::kPlayAndRecord);
   LatencyAudioStream audio_stream;
   mock.HandleCallbacks(event(), &audio_stream,
-                       kMeasureLatencyTimeInSec * kNumCallbacksPerSecond);
+                       kMeasureLatencyTime.seconds() * kNumCallbacksPerSecond);
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   EXPECT_EQ(0, audio_device()->SetStereoPlayout(true));
   EXPECT_EQ(0, audio_device()->SetStereoRecording(true));
   StartPlayout();
   StartRecording();
-  event()->Wait(static_cast<int>(
-      std::max(kTestTimeOutInMilliseconds, 1000 * kMeasureLatencyTimeInSec)));
+  event()->Wait(std::max(kTestTimeOut, kMeasureLatencyTime));
   StopRecording();
   StopPlayout();
   
@@ -1219,7 +1217,7 @@ TEST_P(MAYBE_AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
   
   EXPECT_GE(audio_stream.num_latency_values(),
             static_cast<size_t>(
-                kImpulseFrequencyInHz * kMeasureLatencyTimeInSec - 2));
+                kImpulseFrequencyInHz * kMeasureLatencyTime.seconds() - 2));
   
   audio_stream.PrintResults();
 }

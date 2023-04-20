@@ -1357,7 +1357,7 @@ int32_t AudioDeviceMac::StopRecording() {
       _recording = false;
       _doStop = true;     
       mutex_.Unlock();    
-      if (!_stopEvent.Wait(2000)) {
+      if (!_stopEvent.Wait(TimeDelta::Seconds(2))) {
         MutexLock lockScoped(&mutex_);
         RTC_LOG(LS_WARNING) << "Timed out stopping the shared IOProc."
                                "We may have failed to detect a device removal.";
@@ -1467,7 +1467,7 @@ int32_t AudioDeviceMac::StopPlayout() {
     _playing = false;
     _doStop = true;     
     mutex_.Unlock();    
-    if (!_stopEvent.Wait(2000)) {
+    if (!_stopEvent.Wait(TimeDelta::Seconds(2))) {
       MutexLock lockScoped(&mutex_);
       RTC_LOG(LS_WARNING) << "Timed out stopping the render IOProc."
                              "We may have failed to detect a device removal.";

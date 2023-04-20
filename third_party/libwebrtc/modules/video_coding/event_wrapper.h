@@ -38,6 +38,7 @@ class EventWrapper {
   
   
   
+  
   virtual EventTypeWrapper Wait(int max_time_ms) = 0;
 };
 

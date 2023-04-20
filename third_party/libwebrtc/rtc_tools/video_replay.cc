@@ -382,7 +382,7 @@ class RtpReplayer final {
         CreateRtpReader(rtp_dump_path);
 
     
-    sync_event.Wait(10000);
+    sync_event.Wait(TimeDelta::Seconds(10));
 
     if (stream_state == nullptr || rtp_reader == nullptr) {
       return;
@@ -402,7 +402,7 @@ class RtpReplayer final {
       call.reset();
       sync_event.Set();
     });
-    sync_event.Wait(10000);
+    sync_event.Wait(TimeDelta::Seconds(10));
   }
 
  private:
@@ -612,7 +612,7 @@ class RtpReplayer final {
                                                   -1);
         event.Set();
       });
-      event.Wait(10000);
+      event.Wait(TimeDelta::Seconds(10));
       switch (result) {
         case PacketReceiver::DELIVERY_OK:
           break;

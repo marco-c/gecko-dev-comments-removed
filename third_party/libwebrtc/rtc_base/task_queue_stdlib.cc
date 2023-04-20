@@ -62,6 +62,7 @@ class TaskQueueStdlib final : public TaskQueueBase {
   using OrderId = uint64_t;
 
   struct DelayedEntryTimeout {
+    
     int64_t next_fire_at_us{};
     OrderId order{};
 
@@ -74,13 +75,7 @@ class TaskQueueStdlib final : public TaskQueueBase {
   struct NextTask {
     bool final_task = false;
     absl::AnyInvocable<void() &&> run_task;
-    
-    
-    
-    
-    
-    
-    absl::optional<int64_t> sleep_time_ms;
+    TimeDelta sleep_time = rtc::Event::kForever;
   };
 
   static rtc::PlatformThread InitializeThread(TaskQueueStdlib* me,
@@ -224,8 +219,8 @@ TaskQueueStdlib::NextTask TaskQueueStdlib::GetNextTask() {
       return result;
     }
 
-    result.sleep_time_ms =
-        DivideRoundUp(delay_info.next_fire_at_us - tick_us, 1'000);
+    result.sleep_time = TimeDelta::Millis(
+        DivideRoundUp(delay_info.next_fire_at_us - tick_us, 1'000));
   }
 
   if (pending_queue_.size() > 0) {
@@ -252,15 +247,7 @@ void TaskQueueStdlib::ProcessTasks() {
       continue;
     }
 
-    
-    
-    
-    
-    
-    if (task.sleep_time_ms.has_value())
-      flag_notify_.Wait(task.sleep_time_ms.value());
-    else
-      flag_notify_.Wait(rtc::Event::kForever);
+    flag_notify_.Wait(task.sleep_time);
   }
 }
 

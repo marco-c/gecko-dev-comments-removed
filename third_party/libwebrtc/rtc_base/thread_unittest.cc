@@ -1111,7 +1111,7 @@ TEST(ThreadPostDelayedTaskTest, InvokesInDelayOrder) {
   first.Set();
   
   clock.AdvanceTime(TimeDelta::Millis(11));
-  EXPECT_TRUE(fourth.Wait(0));
+  EXPECT_TRUE(fourth.Wait(TimeDelta::Zero()));
 }
 
 TEST(ThreadPostDelayedTaskTest, IsCurrentTaskQueue) {

@@ -246,7 +246,8 @@ TEST(OperationsChainTest, AsynchronousOperation) {
       operation_tracker_proxy.PostAsynchronousOperation(
           &unblock_async_operation_event);
   
-  EXPECT_FALSE(async_operation_completed_event->Wait(0));
+  EXPECT_FALSE(
+      async_operation_completed_event->Wait(webrtc::TimeDelta::Zero()));
   
   unblock_async_operation_event.Set();
   async_operation_completed_event->Wait(Event::kForever);
@@ -264,13 +265,13 @@ TEST(OperationsChainTest,
       operation_tracker.BindSynchronousOperation(&event0));
   
   
-  EXPECT_TRUE(event0.Wait(0));
+  EXPECT_TRUE(event0.Wait(webrtc::TimeDelta::Zero()));
   
   
   Event event1;
   operations_chain->ChainOperation(
       operation_tracker.BindSynchronousOperation(&event1));
-  EXPECT_TRUE(event1.Wait(0));
+  EXPECT_TRUE(event1.Wait(webrtc::TimeDelta::Zero()));
 }
 
 TEST(OperationsChainTest, AsynchronousOperationBlocksSynchronousOperation) {
@@ -290,7 +291,7 @@ TEST(OperationsChainTest, AsynchronousOperationBlocksSynchronousOperation) {
   sync_operation_completed_event->Wait(Event::kForever);
   
   
-  EXPECT_TRUE(async_operation_completed_event->Wait(0));
+  EXPECT_TRUE(async_operation_completed_event->Wait(webrtc::TimeDelta::Zero()));
 }
 
 TEST(OperationsChainTest, OperationsAreExecutedInOrder) {

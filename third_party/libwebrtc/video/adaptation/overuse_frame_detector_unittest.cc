@@ -454,7 +454,7 @@ TEST_F(OveruseFrameDetectorTest, RunOnTqNormalUsage) {
                                     kDelayUs2);
   });
 
-  EXPECT_TRUE(event.Wait(10000));
+  EXPECT_TRUE(event.Wait(TimeDelta::Seconds(10)));
 }
 
 
@@ -936,7 +936,7 @@ TEST_F(OveruseFrameDetectorTest2, RunOnTqNormalUsage) {
                                     kDelayUs2);
   });
 
-  EXPECT_TRUE(event.Wait(10000));
+  EXPECT_TRUE(event.Wait(TimeDelta::Seconds(10)));
 }
 
 

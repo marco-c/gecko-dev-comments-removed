@@ -18,7 +18,9 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "api/units/time_delta.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/event.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/physical_socket_server.h"
@@ -620,7 +622,8 @@ bool VirtualSocketServer::Wait(int cmsWait, bool process_io) {
   
   
   
-  wakeup_.Wait(cmsWait);
+  wakeup_.Wait(cmsWait == kForever ? Event::kForever
+                                   : webrtc::TimeDelta::Millis(cmsWait));
   return true;
 }
 

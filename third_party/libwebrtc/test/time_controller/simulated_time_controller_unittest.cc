@@ -137,7 +137,7 @@ TEST(SimulatedTimeControllerTest, ThreadYeildsOnSynchronousCall) {
     
     
 
-    yield_event.Wait(0);
+    yield_event.Wait(TimeDelta::Zero());
   });
   
   

@@ -143,9 +143,8 @@ class TestAudioDeviceModuleImpl
   }
 
   
-  
-  bool WaitForRecordingEnd() override {
-    return done_capturing_.Wait(rtc::Event::kForever);
+  void WaitForRecordingEnd() override {
+    done_capturing_.Wait(rtc::Event::kForever);
   }
 
  private:

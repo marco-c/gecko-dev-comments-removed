@@ -141,8 +141,7 @@ class TestAudioDeviceModule : public AudioDeviceModule {
   bool Recording() const override = 0;
 
   
-  
-  virtual bool WaitForRecordingEnd() = 0;
+  virtual void WaitForRecordingEnd() = 0;
 };
 
 }  

@@ -165,7 +165,7 @@ TEST_P(SimulatedRealTimeControllerConformanceTest,
     execution_order.Executed(2);
     event.Set();
   });
-  EXPECT_TRUE(event.Wait(100));
+  EXPECT_TRUE(event.Wait(TimeDelta::Millis(100)));
   time_controller->AdvanceTime(TimeDelta::Millis(100));
   EXPECT_THAT(execution_order.order(), ElementsAreArray({1, 2}));
   
