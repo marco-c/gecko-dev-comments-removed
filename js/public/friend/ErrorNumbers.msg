@@ -800,3 +800,6 @@ MSG_DEF(JSMSG_SHADOW_REALM_IMPORTVALUE_FAILED,    0, JSEXN_TYPEERR, "import valu
 MSG_DEF(JSMSG_SHADOW_REALM_VALUE_NOT_EXPORTED,    0, JSEXN_TYPEERR, "value not exported")
 
 
+MSG_DEF(JSMSG_DECORATOR_INVALID_RETURN_TYPE, 0, JSEXN_TYPEERR, "Invalid value returned from decorator: decorators can only return undefined or a callable")
+
+
