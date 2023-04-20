@@ -22,22 +22,6 @@ namespace dom {
 
 
 
-struct NotReallyMovableButLetsPretendItIsRTCStatsCollection
-    : public RTCStatsCollection {
-  NotReallyMovableButLetsPretendItIsRTCStatsCollection() = default;
-  explicit NotReallyMovableButLetsPretendItIsRTCStatsCollection(
-      RTCStatsCollection&& aStats) {
-    RTCStatsCollection::operator=(aStats);
-  }
-  explicit NotReallyMovableButLetsPretendItIsRTCStatsCollection(
-      const RTCStatsCollection& aStats) {
-    RTCStatsCollection::operator=(aStats);
-  }
-};
-
-
-
-
 
 template <typename Collection, typename Function>
 static auto ForAllPublicRTCStatsCollectionMembers(Collection& aStats,
@@ -93,21 +77,6 @@ struct ParamTraits<mozilla::dom::RTCIceCandidateType>
           mozilla::dom::RTCIceCandidateType,
           mozilla::dom::RTCIceCandidateType::Host,
           mozilla::dom::RTCIceCandidateType::EndGuard_> {};
-
-template <>
-struct ParamTraits<
-    mozilla::dom::NotReallyMovableButLetsPretendItIsRTCStatsCollection> {
-  typedef mozilla::dom::NotReallyMovableButLetsPretendItIsRTCStatsCollection
-      paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter,
-               static_cast<const mozilla::dom::RTCStatsCollection&>(aParam));
-  }
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader,
-                     static_cast<mozilla::dom::RTCStatsCollection*>(aResult));
-  }
-};
 
 template <>
 struct ParamTraits<mozilla::dom::RTCBundlePolicy>
