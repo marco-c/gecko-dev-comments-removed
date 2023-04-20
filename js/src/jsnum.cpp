@@ -481,6 +481,8 @@ static bool num_parseFloat(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
 template <typename CharT>
 static bool ParseIntImpl(JSContext* cx, const CharT* chars, size_t length,
                          bool stripPrefix, int32_t radix, double* res) {
@@ -522,6 +524,54 @@ static bool ParseIntImpl(JSContext* cx, const CharT* chars, size_t length,
   }
   return true;
 }
+
+
+
+bool js::NumberParseInt(JSContext* cx, HandleString str, int32_t radix,
+                        MutableHandleValue result) {
+  
+  bool stripPrefix = true;
+
+  
+  if (radix != 0) {
+    if (radix < 2 || radix > 36) {
+      result.setNaN();
+      return true;
+    }
+
+    if (radix != 16) {
+      stripPrefix = false;
+    }
+  } else {
+    radix = 10;
+  }
+  MOZ_ASSERT(2 <= radix && radix <= 36);
+
+  JSLinearString* linear = str->ensureLinear(cx);
+  if (!linear) {
+    return false;
+  }
+
+  
+  AutoCheckCannotGC nogc;
+  size_t length = linear->length();
+  double number;
+  if (linear->hasLatin1Chars()) {
+    if (!ParseIntImpl(cx, linear->latin1Chars(nogc), length, stripPrefix, radix,
+                      &number)) {
+      return false;
+    }
+  } else {
+    if (!ParseIntImpl(cx, linear->twoByteChars(nogc), length, stripPrefix,
+                      radix, &number)) {
+      return false;
+    }
+  }
+
+  result.setNumber(number);
+  return true;
+}
+
 
 
 static bool num_parseInt(JSContext* cx, unsigned argc, Value* vp) {
@@ -581,52 +631,17 @@ static bool num_parseInt(JSContext* cx, unsigned argc, Value* vp) {
   if (!inputString) {
     return false;
   }
-  args[0].setString(inputString);
 
   
-  bool stripPrefix = true;
-  int32_t radix;
-  if (!args.hasDefined(1)) {
-    radix = 10;
-  } else {
+  int32_t radix = 0;
+  if (args.hasDefined(1)) {
     if (!ToInt32(cx, args[1], &radix)) {
       return false;
     }
-    if (radix == 0) {
-      radix = 10;
-    } else {
-      if (radix < 2 || radix > 36) {
-        args.rval().setNaN();
-        return true;
-      }
-      if (radix != 16) {
-        stripPrefix = false;
-      }
-    }
   }
 
-  JSLinearString* linear = inputString->ensureLinear(cx);
-  if (!linear) {
-    return false;
-  }
-
-  AutoCheckCannotGC nogc;
-  size_t length = inputString->length();
-  double number;
-  if (linear->hasLatin1Chars()) {
-    if (!ParseIntImpl(cx, linear->latin1Chars(nogc), length, stripPrefix, radix,
-                      &number)) {
-      return false;
-    }
-  } else {
-    if (!ParseIntImpl(cx, linear->twoByteChars(nogc), length, stripPrefix,
-                      radix, &number)) {
-      return false;
-    }
-  }
-
-  args.rval().setNumber(number);
-  return true;
+  
+  return NumberParseInt(cx, inputString, radix, args.rval());
 }
 
 static const JSFunctionSpec number_functions[] = {
