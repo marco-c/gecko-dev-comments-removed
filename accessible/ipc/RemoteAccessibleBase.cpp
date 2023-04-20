@@ -476,7 +476,8 @@ void RemoteAccessibleBase<Derived>::ApplyCrossDocOffset(nsRect& aBounds) const {
 }
 
 template <class Derived>
-bool RemoteAccessibleBase<Derived>::ApplyTransform(nsRect& aBounds) const {
+bool RemoteAccessibleBase<Derived>::ApplyTransform(
+    nsRect& aCumulativeBounds, const nsRect& aParentRelativeBounds) const {
   
   Maybe<const UniquePtr<gfx::Matrix4x4>&> maybeTransform =
       mCachedFields->GetAttribute<UniquePtr<gfx::Matrix4x4>>(
@@ -489,41 +490,17 @@ bool RemoteAccessibleBase<Derived>::ApplyTransform(nsRect& aBounds) const {
   
   
   
-  bool isIframe = false;
-  if (IsRemote() && IsOuterDoc()) {
-    Accessible* firstChild = FirstChild();
-    if (firstChild && firstChild->IsRemote() && firstChild->IsDoc()) {
-      const RemoteAccessible* firstChildRemote = firstChild->AsRemote();
-      if (!firstChildRemote->AsDoc()->IsTopLevel()) {
-        isIframe = true;
-      }
-    }
-  }
-
-  if (isIframe) {
-    
-    
-    
-    if (Maybe<nsRect> maybeBounds = RetrieveCachedBounds()) {
-      aBounds.MoveBy(-maybeBounds.value().TopLeft());
-    }
-  } else {
-    
-    
-    
-    
-    
-    aBounds.MoveTo(0, 0);
-  }
+  
+  aCumulativeBounds.MoveBy(-aParentRelativeBounds.TopLeft());
 
   auto mtxInPixels = gfx::Matrix4x4Typed<CSSPixel, CSSPixel>::FromUnknownMatrix(
       *(*maybeTransform));
 
   
   
-  auto boundsInPixels = CSSRect::FromAppUnits(aBounds);
+  auto boundsInPixels = CSSRect::FromAppUnits(aCumulativeBounds);
   boundsInPixels = mtxInPixels.TransformBounds(boundsInPixels);
-  aBounds = CSSRect::ToAppUnits(boundsInPixels);
+  aCumulativeBounds = CSSRect::ToAppUnits(boundsInPixels);
 
   return true;
 }
@@ -581,7 +558,7 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
 
     ApplyCrossDocOffset(bounds);
 
-    Unused << ApplyTransform(bounds);
+    Unused << ApplyTransform(bounds, *maybeBounds);
 
     LayoutDeviceIntRect devPxBounds;
     const Accessible* acc = Parent();
@@ -626,7 +603,7 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
         
         
         bounds.MoveBy(remoteBounds.X(), remoteBounds.Y());
-        Unused << remoteAcc->ApplyTransform(bounds);
+        Unused << remoteAcc->ApplyTransform(bounds, remoteBounds);
       }
       acc = acc->Parent();
     }
