@@ -2,6 +2,9 @@
 
 
 
+
+requestLongerTimeout(2);
+
 Services.prefs.setBoolPref("network.early-hints.enabled", true);
 
 const { request_count_checking } = ChromeUtils.importESModule(
