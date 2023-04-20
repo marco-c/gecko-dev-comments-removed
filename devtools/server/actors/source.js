@@ -117,7 +117,6 @@ class SourceActor extends Actor {
     this._url = undefined;
     this._source = source;
     this.__isInlineSource = undefined;
-    this._startLineColumnDisplacement = null;
   }
 
   get _isInlineSource() {
@@ -295,8 +294,8 @@ class SourceActor extends Actor {
     return true;
   }
 
-  async getBreakableLines() {
-    const positions = await this._getBreakpointPositions();
+  getBreakableLines() {
+    const positions = this._getBreakpointPositions();
     const lines = new Set();
     for (const position of positions) {
       if (!lines.has(position.line)) {
@@ -305,106 +304,6 @@ class SourceActor extends Actor {
     }
 
     return Array.from(lines);
-  }
-
-  
-  
-  
-  
-  _getStartLineColumnDisplacement() {
-    if (this._startLineColumnDisplacement) {
-      return this._startLineColumnDisplacement;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const fileContents = this.sourcesManager.urlContents(
-      this.url,
-       true,
-       this._isInlineSource
-    );
-    if (fileContents.then) {
-      return fileContents.then(contents =>
-        this._setStartLineColumnDisplacement(contents)
-      );
-    }
-    return this._setStartLineColumnDisplacement(fileContents);
-  }
-
-  _setStartLineColumnDisplacement(fileContents) {
-    const d = this._calculateStartLineColumnDisplacement(fileContents);
-    this._startLineColumnDisplacement = d;
-    return d;
-  }
-
-  _calculateStartLineColumnDisplacement(fileContents) {
-    const startLine = this._source.startLine;
-
-    const lineBreak = /\r\n?|\n|\u2028|\u2029/;
-    const fileStartLine =
-      fileContents.content.split(lineBreak)[startLine - 1] || "";
-
-    const sourceContents = this._source.text;
-
-    if (lineBreak.test(sourceContents)) {
-      
-      const firstLine = sourceContents.split(lineBreak)[0];
-      if (firstLine.length && fileStartLine.endsWith(firstLine)) {
-        const column = fileStartLine.length - firstLine.length;
-        return { startLine, column };
-      }
-      return {};
-    }
-
-    
-    
-    
-    
-    const column = fileStartLine.indexOf(sourceContents);
-    if (column != -1) {
-      return { startLine, column };
-    }
-    return {};
-  }
-
-  
-  
-  
-  _adjustInlineScriptLocation(location, upward) {
-    if (!this._isInlineSource) {
-      return location;
-    }
-
-    const info = this._getStartLineColumnDisplacement();
-    if (info.then) {
-      return info.then(i =>
-        this._adjustInlineScriptLocationFromDisplacement(i, location, upward)
-      );
-    }
-    return this._adjustInlineScriptLocationFromDisplacement(
-      info,
-      location,
-      upward
-    );
-  }
-
-  _adjustInlineScriptLocationFromDisplacement(info, location, upward) {
-    const { line, column } = location;
-    if (this._startLineColumnDisplacement.startLine == line) {
-      let displacement = this._startLineColumnDisplacement.column;
-      if (!upward) {
-        displacement = -displacement;
-      }
-      return { line, column: column + displacement };
-    }
-    return location;
   }
 
   
@@ -540,7 +439,7 @@ class SourceActor extends Actor {
     }
   }
 
-  async _getBreakpointPositions(query) {
+  _getBreakpointPositions(query) {
     const scripts = this._findDebuggeeScripts(
       query,
        true
@@ -548,7 +447,7 @@ class SourceActor extends Actor {
 
     const positions = [];
     for (const script of scripts) {
-      await this._addScriptBreakpointPositions(query, script, positions);
+      this._addScriptBreakpointPositions(query, script, positions);
     }
 
     return (
@@ -561,7 +460,7 @@ class SourceActor extends Actor {
     );
   }
 
-  async _addScriptBreakpointPositions(query, script, positions) {
+  _addScriptBreakpointPositions(query, script, positions) {
     const {
       start: { line: startLine = 0, column: startColumn = 0 } = {},
       end: { line: endLine = Infinity, column: endColumn = Infinity } = {},
@@ -578,22 +477,15 @@ class SourceActor extends Actor {
         continue;
       }
 
-      
-      
-      const position = await this._adjustInlineScriptLocation(
-        {
-          line: lineNumber,
-          column: columnNumber,
-        },
-         true
-      );
-
-      positions.push(position);
+      positions.push({
+        line: lineNumber,
+        column: columnNumber,
+      });
     }
   }
 
-  async getBreakpointPositionsCompressed(query) {
-    const items = await this._getBreakpointPositions(query);
+  getBreakpointPositionsCompressed(query) {
+    const items = this._getBreakpointPositions(query);
     const compressed = {};
     for (const { line, column } of items) {
       if (!compressed[line]) {
@@ -703,7 +595,7 @@ class SourceActor extends Actor {
 
 
   async applyBreakpoint(actor) {
-    let { line, column } = actor.location;
+    const { line, column } = actor.location;
 
     
     const entryPoints = [];
@@ -741,20 +633,6 @@ class SourceActor extends Actor {
         }
       }
     } else {
-      
-      
-      
-      
-      let adjusted = this._adjustInlineScriptLocation(
-        { line, column },
-         false
-      );
-      if (adjusted.then) {
-        adjusted = await adjusted;
-      }
-      line = adjusted.line;
-      column = adjusted.column;
-
       
       
       const query = { start: { line, column }, end: { line, column } };
