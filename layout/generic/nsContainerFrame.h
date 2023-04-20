@@ -188,17 +188,6 @@ class nsContainerFrame : public nsSplittableFrame {
       ReflowChildFlags aFlags = ReflowChildFlags::Default);
 
   
-  
-  
-  
-  enum {
-    SET_ASYNC = 0x01,
-  };
-  static void SyncWindowProperties(nsPresContext* aPresContext,
-                                   nsIFrame* aFrame, nsView* aView,
-                                   gfxContext* aRC, uint32_t aFlags);
-
-  
 
 
 

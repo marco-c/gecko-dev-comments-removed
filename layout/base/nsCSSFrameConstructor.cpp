@@ -2636,13 +2636,11 @@ nsIFrame* nsCSSFrameConstructor::ConstructRootFrame() {
   viewportFrame->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
 
   
-  nsView* rootView = mPresShell->GetViewManager()->GetRootView();
-  viewportFrame->SetView(rootView);
-
-  viewportFrame->SyncFrameViewProperties(rootView);
-  nsContainerFrame::SyncWindowProperties(mPresShell->GetPresContext(),
-                                         viewportFrame, rootView, nullptr,
-                                         nsContainerFrame::SET_ASYNC);
+  if (nsView* rootView = mPresShell->GetViewManager()->GetRootView()) {
+    viewportFrame->SetView(rootView);
+    viewportFrame->SyncFrameViewProperties(rootView);
+    rootView->SetNeedsWindowPropertiesSync();
+  }
 
   
   viewportFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
