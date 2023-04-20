@@ -11,7 +11,6 @@
 
 
 
-
 #[cfg(feature = "strict_asserts")]
 #[macro_export]
 macro_rules! strict_assert {
@@ -19,7 +18,6 @@ macro_rules! strict_assert {
         assert!( $( $arg )* )
     }
 }
-
 
 #[cfg(feature = "strict_asserts")]
 #[macro_export]
@@ -29,7 +27,6 @@ macro_rules! strict_assert_eq {
     }
 }
 
-
 #[cfg(feature = "strict_asserts")]
 #[macro_export]
 macro_rules! strict_assert_ne {
@@ -37,7 +34,6 @@ macro_rules! strict_assert_ne {
         assert_ne!( $( $arg )* )
     }
 }
-
 
 #[cfg(not(feature = "strict_asserts"))]
 #[macro_export]
@@ -47,7 +43,6 @@ macro_rules! strict_assert {
     };
 }
 
-
 #[cfg(not(feature = "strict_asserts"))]
 #[macro_export]
 macro_rules! strict_assert_eq {
@@ -56,37 +51,10 @@ macro_rules! strict_assert_eq {
     };
 }
 
-
 #[cfg(not(feature = "strict_asserts"))]
 #[macro_export]
 macro_rules! strict_assert_ne {
     ( $( $arg:tt )* ) => {
         debug_assert_ne!( $( $arg )* )
     };
-}
-
-
-pub trait StrictAssertUnwrapExt<T> {
-    
-    
-    
-    
-    
-    unsafe fn strict_unwrap_unchecked(self) -> T;
-}
-
-impl<T> StrictAssertUnwrapExt<T> for Option<T> {
-    unsafe fn strict_unwrap_unchecked(self) -> T {
-        strict_assert!(self.is_some(), "Called strict_unwrap_unchecked on None");
-        
-        unsafe { self.unwrap_unchecked() }
-    }
-}
-
-impl<T, E> StrictAssertUnwrapExt<T> for Result<T, E> {
-    unsafe fn strict_unwrap_unchecked(self) -> T {
-        strict_assert!(self.is_ok(), "Called strict_unwrap_unchecked on Err");
-        
-        unsafe { self.unwrap_unchecked() }
-    }
 }

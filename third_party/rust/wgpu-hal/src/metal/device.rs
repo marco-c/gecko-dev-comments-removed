@@ -358,13 +358,12 @@ impl crate::Device<super::Api> for super::Device {
             conv::map_texture_view_dimension(desc.dimension)
         };
 
-        let format_equal = raw_format == texture.raw_format;
-        let type_equal = raw_type == texture.raw_type;
-        let range_full_resource = desc
-            .range
-            .is_full_resource(texture.mip_levels, texture.array_layers);
-
-        let raw = if format_equal && type_equal && range_full_resource {
+        
+        
+        let raw = if raw_format == texture.raw_format
+            && raw_type == texture.raw_type
+            && desc.range == wgt::ImageSubresourceRange::default()
+        {
             
             
             texture.raw.to_owned()
