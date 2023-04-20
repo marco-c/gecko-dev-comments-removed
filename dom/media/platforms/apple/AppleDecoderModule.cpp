@@ -117,10 +117,6 @@ media::DecodeSupportSet AppleDecoderModule::Supports(
         CanCreateHWDecoder(media::MediaCodec::VP9)) {
       return media::DecodeSupport::HardwareDecode;
     }
-    if (trackInfo.mMimeType == "video/avc" &&
-        CanCreateHWDecoder(media::MediaCodec::H264)) {
-      return media::DecodeSupport::HardwareDecode;
-    }
     return media::DecodeSupport::SoftwareDecode;
   }
   return media::DecodeSupport::Unsupported;
@@ -172,6 +168,7 @@ bool AppleDecoderModule::CanCreateHWDecoder(media::MediaCodec aCodec) {
   bool checkSupport = false;
 
   
+  
   if (__builtin_available(macOS 10.13, *)) {
     if (!VTIsHardwareDecodeSupported) {
       return false;
@@ -182,29 +179,22 @@ bool AppleDecoderModule::CanCreateHWDecoder(media::MediaCodec aCodec) {
         VPXDecoder::GetVPCCBox(info.mExtraData, VPXDecoder::VPXStreamInfo());
         checkSupport = VTIsHardwareDecodeSupported(kCMVideoCodecType_VP9);
         break;
-      case media::MediaCodec::H264:
-        info.mMimeType = "video/avc";
-        checkSupport = VTIsHardwareDecodeSupported(kCMVideoCodecType_H264);
-        break;
       default:
+        
+        checkSupport = false;
         break;
     }
-  } else if (aCodec == media::MediaCodec::H264) {
-    
-    
-    
-    info.mMimeType = "video/avc";
-    checkSupport = true;
   }
   
   if (checkSupport) {
     RefPtr<AppleVTDecoder> decoder =
         new AppleVTDecoder(info, nullptr, {}, nullptr, Nothing());
     MediaResult rv = decoder->InitializeSession();
+    
+    
+    
     decoder->Shutdown();
-
-    nsAutoCString failureReason;
-    return (NS_SUCCEEDED(rv) && decoder->IsHardwareAccelerated(failureReason));
+    return NS_SUCCEEDED(rv);
   }
   return false;
 }
