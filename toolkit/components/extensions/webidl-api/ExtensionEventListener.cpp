@@ -7,7 +7,6 @@
 #include "ExtensionPort.h"
 
 #include "mozilla/dom/FunctionBinding.h"
-#include "nsJSPrincipals.h"   
 #include "nsThreadManager.h"  
 
 namespace mozilla {
@@ -652,18 +651,7 @@ void ExtensionListenerCallPromiseResultHandler::WorkerRunCallback(
     JS::Rooted<JS::Value> jsvalue(cx);
     IgnoredErrorResult rv;
 
-    {
-      
-      
-      
-      
-      Maybe<nsJSPrincipals::AutoSetActiveWorkerPrincipal> set;
-      if (workerRef) {
-        set.emplace(workerRef->Private()->GetPrincipal());
-      }
-
-      resHolder->Read(global, cx, &jsvalue, rv);
-    }
+    resHolder->Read(global, cx, &jsvalue, rv);
 
     if (NS_WARN_IF(rv.Failed())) {
       promiseResult->MaybeReject(rv.StealNSResult());

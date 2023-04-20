@@ -42,17 +42,6 @@ class nsJSPrincipals : public nsIPrincipal, public JSPrincipals {
   static bool WritePrincipalInfo(JSStructuredCloneWriter* aWriter,
                                  const mozilla::ipc::PrincipalInfo& aInfo);
 
-  
-  
-  
-  
-  
-  
-  struct MOZ_RAII AutoSetActiveWorkerPrincipal {
-    explicit AutoSetActiveWorkerPrincipal(nsIPrincipal* aPrincipal);
-    ~AutoSetActiveWorkerPrincipal();
-  };
-
   bool write(JSContext* aCx, JSStructuredCloneWriter* aWriter) final;
 
   bool isSystemOrAddonPrincipal() final;

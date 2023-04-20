@@ -130,11 +130,6 @@ enum StructuredCloneTags : uint32_t {
   
   
 
-  
-  
-  
-  SCTAG_DOM_WORKER_PRINCIPAL,
-
   SCTAG_DOM_IMAGEBITMAP,
   SCTAG_DOM_MAP_MESSAGEPORT,
   SCTAG_DOM_FORMDATA,
