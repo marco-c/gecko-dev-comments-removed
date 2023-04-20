@@ -596,9 +596,15 @@ void gfxWindowsPlatform::UpdateSupportsHDR() {
       case DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020:
       case DXGI_COLOR_SPACE_YCBCR_STUDIO_GHLG_TOPLEFT_P2020:
       case DXGI_COLOR_SPACE_YCBCR_FULL_GHLG_TOPLEFT_P2020:
+#ifndef __MINGW32__
+      
+      
+      
+      
       case DXGI_COLOR_SPACE_RGB_STUDIO_G24_NONE_P2020:
       case DXGI_COLOR_SPACE_YCBCR_STUDIO_G24_LEFT_P2020:
       case DXGI_COLOR_SPACE_YCBCR_STUDIO_G24_TOPLEFT_P2020:
+#endif
         mSupportsHDR = true;
         return;
       default:
