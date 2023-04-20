@@ -7,6 +7,7 @@
 #ifndef mozilla_TaskController_h
 #define mozilla_TaskController_h
 
+#include "MainThreadUtils.h"
 #include "mozilla/CondVar.h"
 #include "mozilla/IdlePeriodState.h"
 #include "mozilla/RefPtr.h"
@@ -278,21 +279,18 @@ class IdleTaskManager : public TaskManager {
 
 class TaskController {
  public:
-  TaskController()
-      : mGraphMutex("TaskController::mGraphMutex"),
-        mThreadPoolCV(mGraphMutex, "TaskController::mThreadPoolCV"),
-        mMainThreadCV(mGraphMutex, "TaskController::mMainThreadCV"),
-        mRunOutOfMTTasksCounter(0) {}
+  TaskController();
 
   static TaskController* Get();
 
-  static bool Initialize();
+  static void Initialize();
 
   void SetThreadObserver(nsIThreadObserver* aObserver) {
     MutexAutoLock lock(mGraphMutex);
     mObserver = aObserver;
   }
   void SetConditionVariable(CondVar* aExternalCondVar) {
+    MutexAutoLock lock(mGraphMutex);
     mExternalCondVar = aExternalCondVar;
   }
 
@@ -338,15 +336,16 @@ class TaskController {
   uint64_t PendingMainthreadTaskCountIncludingSuspended();
 
   
-  bool MTTaskRunnableProcessedTask() { return mMTTaskRunnableProcessedTask; }
+  bool MTTaskRunnableProcessedTask() {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mMTTaskRunnableProcessedTask;
+  }
 
   static int32_t GetPoolThreadCount();
   static size_t GetThreadStackSize();
 
  private:
   friend void ThreadFuncPoolThread(void* aIndex);
-
-  bool InitializeInternal();
 
   void InitializeThreadPool();
 
@@ -384,13 +383,17 @@ class TaskController {
   
   Mutex mPoolInitializationMutex =
       Mutex("TaskController::mPoolInitializationMutex");
+  
+  
+  
+  
+  std::vector<PoolThread> mPoolThreads;
 
   CondVar mThreadPoolCV;
   CondVar mMainThreadCV;
 
   
 
-  std::vector<PoolThread> mPoolThreads;
   std::stack<RefPtr<Task>> mCurrentTasksMT;
 
   
@@ -406,6 +409,7 @@ class TaskController {
   bool mShuttingDown = false;
 
   
+  
   bool mMTTaskRunnableProcessedTask = false;
 
   
@@ -419,6 +423,7 @@ class TaskController {
   RefPtr<nsIRunnable> mMTBlockingProcessingRunnable;
 
   
+  
   nsIThreadObserver* mObserver = nullptr;
   
   CondVar* mExternalCondVar = nullptr;
@@ -428,6 +433,8 @@ class TaskController {
   
   std::atomic<uint64_t> mRunOutOfMTTasksCounter;
 
+  
+  
   
   
   PerformanceCounterState* mPerformanceCounterState = nullptr;
