@@ -1621,11 +1621,12 @@ void Loader::NotifyObservers(SheetLoadData& aData, nsresult aStatus) {
   if (!aData.mTitle.IsEmpty() && NS_SUCCEEDED(aStatus)) {
     nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
         "Loader::NotifyObservers - Create PageStyle actor",
-         [doc = RefPtr{mDocument}] {
+        [doc = RefPtr{mDocument}] {
           
           
           
-          nsCOMPtr<nsISupports> pageStyleActor = do_QueryActor("PageStyle", doc);
+          nsCOMPtr<nsISupports> pageStyleActor =
+              do_QueryActor("PageStyle", doc);
           Unused << pageStyleActor;
         }));
   }
