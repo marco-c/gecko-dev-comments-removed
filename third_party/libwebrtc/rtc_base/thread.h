@@ -269,14 +269,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   virtual bool IsProcessingMessagesForTesting();
 
   
-  
-  
-  
-  virtual bool Get(Message* pmsg,
-                   int cmsWait = kForever,
-                   bool process_io = true);
-  virtual bool Peek(Message* pmsg, int cmsWait = 0);
-  
   virtual void Post(const Location& posted_from,
                     MessageHandler* phandler,
                     uint32_t id = 0,
@@ -295,7 +287,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   virtual void Clear(MessageHandler* phandler,
                      uint32_t id = MQID_ANY,
                      MessageList* removed = nullptr);
-  virtual void Dispatch(Message* pmsg);
 
   
   virtual int GetDelay();
@@ -303,7 +294,7 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   bool empty() const { return size() == 0u; }
   size_t size() const {
     CritScope cs(&crit_);
-    return messages_.size() + delayed_messages_.size() + (fPeekKeep_ ? 1u : 0u);
+    return messages_.size() + delayed_messages_.size();
   }
 
   
@@ -524,6 +515,21 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
 
   
   
+  virtual bool Peek(Message* pmsg, int cms_wait) {
+    RTC_DCHECK_NOTREACHED();
+    return false;
+  }
+  
+  
+  
+  
+  virtual bool Get(Message* pmsg,
+                   int cmsWait = kForever,
+                   bool process_io = true);
+  virtual void Dispatch(Message* pmsg);
+
+  
+  
   bool SetAllowBlockingCalls(bool allow);
 
 #if defined(WEBRTC_WIN)
@@ -552,8 +558,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   
   void ClearCurrentTaskQueue();
 
-  bool fPeekKeep_;
-  Message msgPeek_;
   MessageList messages_ RTC_GUARDED_BY(crit_);
   PriorityQueue delayed_messages_ RTC_GUARDED_BY(crit_);
   uint32_t delayed_next_num_ RTC_GUARDED_BY(crit_);
