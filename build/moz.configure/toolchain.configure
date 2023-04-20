@@ -1399,14 +1399,20 @@ def compiler(
 
         if host_or_target.os == "Android":
             
-            if info.type == "clang" and info.version < "13.0":
+            
+            if info.type == "clang" and info.version < "8.0":
                 raise FatalCheckError(
-                    "Only clang/llvm 13.0 or newer is supported for %s (found version %s)."
+                    "Only clang/llvm 8.0 or newer is supported for %s (found version %s)."
                     % (host_or_target.alias, info.version)
                 )
 
         if info.flags:
             raise FatalCheckError("Unknown compiler or compiler not supported.")
+
+        
+        
+        if host_or_target.os == "Android":
+            flags.append("--rtlib=libgcc")
 
         return namespace(
             wrapper=wrapper,
