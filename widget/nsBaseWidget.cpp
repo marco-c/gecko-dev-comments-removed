@@ -2317,7 +2317,8 @@ WidgetWheelEvent nsBaseWidget::MayStartSwipeForAPZ(
         
         TrackScrollEventAsSwipe(aPanInput, swipeInfo.allowedDirections,
                                 aApzResult.mInputBlockId);
-      } else {
+      } else if (!aApzResult.GetHandledResult() ||
+                 !aApzResult.GetHandledResult()->IsHandledByRoot()) {
         
         
         
