@@ -2897,8 +2897,9 @@ void AppWindow::SizeModeChanged(nsSizeMode aSizeMode) {
   if (ourWindow) {
     
     
-    if (aSizeMode != nsSizeMode_Fullscreen &&
-        aSizeMode != nsSizeMode_Minimized) {
+    if (aSizeMode == nsSizeMode_Fullscreen) {
+      ourWindow->SetFullScreen(true);
+    } else if (aSizeMode != nsSizeMode_Minimized) {
       if (ourWindow->GetFullScreen()) {
         
         
