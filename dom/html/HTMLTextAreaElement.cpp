@@ -38,6 +38,7 @@
 #include "nsReadableUtils.h"
 #include "nsStyleConsts.h"
 #include "nsTextControlFrame.h"
+#include "nsThreadUtils.h"
 #include "nsXULControllers.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(TextArea)
@@ -849,8 +850,15 @@ void HTMLTextAreaElement::ContentChanged(nsIContent* aContent) {
       nsContentUtils::IsInSameAnonymousTree(this, aContent)) {
     
     
-    nsCOMPtr<nsIMutationObserver> kungFuDeathGrip(this);
-    Reset();
+    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+        "ResetHTMLTextAreaElementIfValueHasNotChangedYet",
+        [self = RefPtr{this}]() {
+          
+          
+          if (!self->mValueChanged) {
+            self->Reset();
+          }
+        }));
   }
 }
 
