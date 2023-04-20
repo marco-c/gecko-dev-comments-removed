@@ -358,8 +358,7 @@ OptionsPanel.prototype = {
           visibilityswitch: pref,
 
           
-          isToolSupported: toolbox =>
-            toolbox.commands.descriptorFront.isLocalTab,
+          isToolSupported: toolbox => toolbox.target.isLocalTab,
         })
       );
     }
@@ -545,7 +544,7 @@ OptionsPanel.prototype = {
       });
     }
 
-    if (this.target.isTabDescriptor) {
+    if (!this.target.chrome) {
       const isJavascriptEnabled = await this.commands.targetConfigurationCommand.isJavascriptEnabled();
       this.disableJSNode.checked = !isJavascriptEnabled;
       this.disableJSNode.addEventListener("click", this._disableJSClicked);

@@ -574,7 +574,7 @@ class MarkupContextMenu {
     const type = popupNode.dataset.type;
     if (type === "uri" || type === "cssresource" || type === "jsresource") {
       
-      if (type === "uri" && !this.toolbox.isBrowserToolbox) {
+      if (type === "uri" && !this.target.chrome) {
         linkFollow.visible = true;
         linkFollow.label = INSPECTOR_L10N.getStr(
           "inspector.menu.openUrlInNewTab.label"

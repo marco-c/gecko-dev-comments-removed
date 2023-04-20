@@ -50,6 +50,8 @@ function TargetMixin(parentClass) {
       
       this.commands = null;
 
+      this._forceChrome = false;
+
       this.destroy = this.destroy.bind(this);
 
       this.threadFront = null;
@@ -116,6 +118,42 @@ function TargetMixin(parentClass) {
 
     get isTargetFront() {
       return true;
+    }
+
+    
+
+
+
+
+
+
+    get descriptorFront() {
+      if (this.isDestroyed()) {
+        throw new Error("Descriptor already destroyed for target: " + this);
+      }
+
+      if (this.isWorkerTarget) {
+        return this;
+      }
+
+      if (this._descriptorFront) {
+        return this._descriptorFront;
+      }
+
+      if (this.parentFront.typeName.endsWith("Descriptor")) {
+        return this.parentFront;
+      }
+      throw new Error("Missing descriptor for target: " + this);
+    }
+
+    
+
+
+
+
+
+    setDescriptor(descriptorFront) {
+      this._descriptorFront = descriptorFront;
     }
 
     get targetType() {
@@ -234,6 +272,29 @@ function TargetMixin(parentClass) {
       return this.client.traits[traitName];
     }
 
+    get isLocalTab() {
+      
+      
+      if (this.isWorkerTarget) {
+        return false;
+      }
+      return !!this.descriptorFront?.isLocalTab;
+    }
+
+    get localTab() {
+      
+      
+      if (this.isWorkerTarget) {
+        return null;
+      }
+      return this.descriptorFront?.localTab || null;
+    }
+
+    
+    get root() {
+      return this.client.mainRoot.rootForm;
+    }
+
     
     
     async getFront(typeName) {
@@ -279,12 +340,29 @@ function TargetMixin(parentClass) {
     
     
     
+    
+    get chrome() {
+      return (
+        this.isAddon ||
+        this.isContentProcess ||
+        this.isParentProcess ||
+        this._forceChrome
+      );
+    }
+
+    forceChrome() {
+      this._forceChrome = true;
+    }
+
+    
+    
+    
     get isBrowsingContext() {
       return this.typeName === "windowGlobalTarget";
     }
 
     get name() {
-      if (this.isWebExtension || this.isContentProcess) {
+      if (this.isAddon || this.isContentProcess) {
         return this.targetForm.name;
       }
       return this.title;
@@ -298,10 +376,22 @@ function TargetMixin(parentClass) {
       return this._url;
     }
 
+    get isAddon() {
+      return this.isLegacyAddon || this.isWebExtension;
+    }
+
     get isWorkerTarget() {
       
       return (
         this.typeName === "workerTarget" || this.typeName === "workerDescriptor"
+      );
+    }
+
+    get isLegacyAddon() {
+      return !!(
+        this.targetForm &&
+        this.targetForm.actor &&
+        this.targetForm.actor.match(/conn\d+\.addon(Target)?\d+/)
       );
     }
 
@@ -334,6 +424,10 @@ function TargetMixin(parentClass) {
         this.targetForm.actor &&
         this.targetForm.actor.match(/conn\d+\.parentProcessTarget\d+/)
       );
+    }
+
+    get isMultiProcess() {
+      return !this.window;
     }
 
     getExtensionPathName(url) {
