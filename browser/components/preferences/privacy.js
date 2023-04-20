@@ -2056,7 +2056,7 @@ var gPrivacyPane = {
     let onNimbus = () => this._updateFirefoxSuggestSection();
     NimbusFeatures.urlbar.onUpdate(onNimbus);
     window.addEventListener("unload", () => {
-      NimbusFeatures.urlbar.off(onNimbus);
+      NimbusFeatures.urlbar.offUpdate(onNimbus);
     });
 
     
@@ -2855,7 +2855,7 @@ var gPrivacyPane = {
       updatePrivacySegmentationSectionVisibilityState
     );
     window.addEventListener("unload", () => {
-      NimbusFeatures.majorRelease2022.off(
+      NimbusFeatures.majorRelease2022.offUpdate(
         updatePrivacySegmentationSectionVisibilityState
       );
     });

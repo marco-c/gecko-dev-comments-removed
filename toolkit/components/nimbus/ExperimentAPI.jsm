@@ -214,37 +214,6 @@ const ExperimentAPI = {
 
 
 
-
-
-
-
-
-
-  on(eventName, options, callback) {
-    if (!options) {
-      throw new Error("Please include an experiment slug or featureId");
-    }
-    let fullEventName = `${eventName}:${options.slug || options.featureId}`;
-
-    if (this._store._isReady) {
-      let experiment = this.getExperiment(options);
-      
-      if (experiment) {
-        
-        
-        
-        callback(fullEventName, experiment);
-      }
-    }
-
-    this._store.on(fullEventName, callback);
-  },
-
-  
-
-
-
-
   off(eventName, callback) {
     this._store.off(eventName, callback);
   },
@@ -494,7 +463,7 @@ class _ExperimentFeature {
     ExperimentAPI._store._onFeatureUpdate(this.featureId, callback);
   }
 
-  off(callback) {
+  offUpdate(callback) {
     ExperimentAPI._store._offFeatureUpdate(this.featureId, callback);
   }
 
