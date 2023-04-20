@@ -472,9 +472,7 @@ WindowGlobalParent* DocumentLoadListener::GetParentWindowContext() const {
 }
 
 bool CheckRecursiveLoad(CanonicalBrowsingContext* aLoadingContext,
-                        nsDocShellLoadState* aLoadState,
-                        DocumentLoadListener* aDLL, bool aIsDocumentLoad,
-                        LoadInfo* aLoadInfo) {
+                        nsDocShellLoadState* aLoadState, bool aIsDocumentLoad) {
   
   
   
@@ -613,8 +611,7 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
 
   
   if (aLoadState->OriginalFrameSrc() || !mIsDocumentLoad) {
-    if (!CheckRecursiveLoad(loadingContext, aLoadState, this, mIsDocumentLoad,
-                            aLoadInfo)) {
+    if (!CheckRecursiveLoad(loadingContext, aLoadState, mIsDocumentLoad)) {
       *aRv = NS_ERROR_RECURSIVE_DOCUMENT_LOAD;
       mParentChannelListener = nullptr;
       return nullptr;
