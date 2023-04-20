@@ -250,6 +250,12 @@ impl CSSPixelLength {
 
     
     #[inline]
+    pub fn finite(self) -> Self {
+        Self::new(crate::values::normalize(self.0).min(f32::MAX).max(f32::MIN))
+    }
+
+    
+    #[inline]
     pub fn scale_by(self, scale: CSSFloat) -> Self {
         CSSPixelLength(self.0 * scale)
     }
