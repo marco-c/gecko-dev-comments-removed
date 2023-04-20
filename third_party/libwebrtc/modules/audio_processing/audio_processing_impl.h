@@ -199,6 +199,11 @@ class AudioProcessingImpl : public AudioProcessing {
 
   const bool use_denormal_disabler_;
 
+  
+  
+  
+  const bool disallow_transient_supporessor_usage_;
+
   const TransientSuppressor::VadMode transient_suppressor_vad_mode_;
 
   SwapQueue<RuntimeSetting> capture_runtime_settings_;

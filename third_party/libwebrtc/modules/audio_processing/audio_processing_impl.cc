@@ -396,48 +396,62 @@ GetInputVolumeControllerConfigOverride() {
 
 
 
-const AudioProcessing::Config AdjustConfig(
+
+AudioProcessing::Config AdjustConfig(
     const AudioProcessing::Config& config,
+    bool disallow_transient_supporessor_usage,
     const absl::optional<InputVolumeController::Config>&
         input_volume_controller_config_override) {
-  const bool analog_agc_enabled =
+  AudioProcessing::Config adjusted_config = config;
+
+  
+  if (disallow_transient_supporessor_usage) {
+    adjusted_config.transient_suppression.enabled = false;
+  }
+
+  
+  
+  
+  const bool agc1_analog_enabled =
       config.gain_controller1.enabled &&
       (config.gain_controller1.mode ==
            AudioProcessing::Config::GainController1::kAdaptiveAnalog ||
        config.gain_controller1.analog_gain_controller.enabled);
-
-  
-  
-  if (!analog_agc_enabled ||
-      !input_volume_controller_config_override.has_value()) {
-    return config;
+  if (agc1_analog_enabled &&
+      input_volume_controller_config_override.has_value()) {
+    
+    const bool hybrid_agc_config_detected =
+        config.gain_controller1.enabled &&
+        config.gain_controller1.analog_gain_controller.enabled &&
+        !config.gain_controller1.analog_gain_controller
+             .enable_digital_adaptive &&
+        config.gain_controller2.enabled &&
+        config.gain_controller2.adaptive_digital.enabled;
+    const bool full_agc1_config_detected =
+        config.gain_controller1.enabled &&
+        config.gain_controller1.analog_gain_controller.enabled &&
+        config.gain_controller1.analog_gain_controller
+            .enable_digital_adaptive &&
+        !config.gain_controller2.enabled;
+    const bool one_and_only_one_input_volume_controller =
+        hybrid_agc_config_detected != full_agc1_config_detected;
+    if (!one_and_only_one_input_volume_controller ||
+        config.gain_controller2.input_volume_controller.enabled) {
+      RTC_LOG(LS_ERROR) << "Cannot adjust AGC config (precondition failed)";
+      if (!one_and_only_one_input_volume_controller)
+        RTC_LOG(LS_ERROR)
+            << "One and only one input volume controller must be enabled.";
+      if (config.gain_controller2.input_volume_controller.enabled)
+        RTC_LOG(LS_ERROR)
+            << "The AGC2 input volume controller must be disabled.";
+    } else {
+      adjusted_config.gain_controller1.enabled = false;
+      adjusted_config.gain_controller1.analog_gain_controller.enabled = false;
+      adjusted_config.gain_controller2.enabled = true;
+      adjusted_config.gain_controller2.adaptive_digital.enabled = true;
+      adjusted_config.gain_controller2.input_volume_controller.enabled = true;
+    }
   }
-
-  const bool hybrid_agc_config_detected =
-      config.gain_controller1.enabled &&
-      config.gain_controller1.analog_gain_controller.enabled &&
-      !config.gain_controller1.analog_gain_controller.enable_digital_adaptive &&
-      config.gain_controller2.enabled &&
-      config.gain_controller2.adaptive_digital.enabled;
-
-  const bool full_agc1_config_detected =
-      config.gain_controller1.enabled &&
-      config.gain_controller1.analog_gain_controller.enabled &&
-      config.gain_controller1.analog_gain_controller.enable_digital_adaptive &&
-      !config.gain_controller2.enabled;
-
-  if (hybrid_agc_config_detected == full_agc1_config_detected ||
-      config.gain_controller2.input_volume_controller.enabled) {
-    RTC_LOG(LS_ERROR) << "Unexpected AGC config: Config not adjusted.";
-    return config;
-  }
-
-  AudioProcessing::Config adjusted_config = config;
-  adjusted_config.gain_controller1.enabled = false;
-  adjusted_config.gain_controller1.analog_gain_controller.enabled = false;
-  adjusted_config.gain_controller2.enabled = true;
-  adjusted_config.gain_controller2.adaptive_digital.enabled = true;
-  adjusted_config.gain_controller2.input_volume_controller.enabled = true;
 
   return adjusted_config;
 }
@@ -583,13 +597,17 @@ AudioProcessingImpl::AudioProcessingImpl(
           GetInputVolumeControllerConfigOverride()),
       use_denormal_disabler_(
           !field_trial::IsEnabled("WebRTC-ApmDenormalDisablerKillSwitch")),
+      disallow_transient_supporessor_usage_(
+          field_trial::IsEnabled("WebRTC-ApmTransientSuppressorKillSwitch")),
       transient_suppressor_vad_mode_(GetTransientSuppressorVadMode()),
       capture_runtime_settings_(RuntimeSettingQueueSize()),
       render_runtime_settings_(RuntimeSettingQueueSize()),
       capture_runtime_settings_enqueuer_(&capture_runtime_settings_),
       render_runtime_settings_enqueuer_(&render_runtime_settings_),
       echo_control_factory_(std::move(echo_control_factory)),
-      config_(AdjustConfig(config, input_volume_controller_config_override_)),
+      config_(AdjustConfig(config,
+                           disallow_transient_supporessor_usage_,
+                           input_volume_controller_config_override_)),
       submodule_states_(!!capture_post_processor,
                         !!render_pre_processor,
                         !!capture_analyzer),
@@ -824,11 +842,9 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
   MutexLock lock_render(&mutex_render_);
   MutexLock lock_capture(&mutex_capture_);
 
-  
-  
   const auto adjusted_config =
-      AdjustConfig(config, input_volume_controller_config_override_);
-
+      AdjustConfig(config, disallow_transient_supporessor_usage_,
+                   input_volume_controller_config_override_);
   RTC_LOG(LS_INFO) << "AudioProcessing::ApplyConfig: "
                    << adjusted_config.ToString();
 
