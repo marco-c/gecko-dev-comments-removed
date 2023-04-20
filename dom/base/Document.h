@@ -3861,7 +3861,14 @@ class Document : public nsINode,
 
 
 
-  DocumentL10n* GetL10n();
+  DocumentL10n* GetL10n() const { return mDocumentL10n.get(); }
+
+  
+
+
+
+
+  bool HasPendingL10nMutations() const;
 
   
 
