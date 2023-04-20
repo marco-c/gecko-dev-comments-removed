@@ -83,11 +83,6 @@ var connect = async function() {
   
   
   Services.prefs.setBoolPref(
-    "devtools.browsertoolbox.fission",
-    Services.env.get("MOZ_BROWSER_TOOLBOX_FISSION_PREF") === "1"
-  );
-  
-  Services.prefs.setBoolPref(
     "devtools.webconsole.input.context",
     Services.env.get("MOZ_BROWSER_TOOLBOX_INPUT_CONTEXT") === "1"
   );

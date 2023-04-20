@@ -89,14 +89,7 @@ function configureStore(webConsoleUI, options = {}) {
       persistLogs: getBoolPref(PREFS.UI.PERSIST),
       
       
-      
-      
-      showContentMessages:
-        (webConsoleUI.isBrowserConsole ||
-          webConsoleUI.isBrowserToolboxConsole) &&
-        !webConsoleUI.fissionSupport
-          ? getBoolPref(PREFS.UI.CONTENT_MESSAGES)
-          : true,
+      showContentMessages: true,
       editor: getBoolPref(PREFS.UI.EDITOR),
       editorWidth: getIntPref(PREFS.UI.EDITOR_WIDTH),
       showEditorOnboarding: getBoolPref(PREFS.UI.EDITOR_ONBOARDING),

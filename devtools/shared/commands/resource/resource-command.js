@@ -6,8 +6,6 @@
 
 const { throttle } = require("resource://devtools/shared/throttle.js");
 
-const BROWSERTOOLBOX_FISSION_ENABLED = "devtools.browsertoolbox.fission";
-
 let gLastResourceId = 0;
 
 function cacheKey(resourceType, resourceId) {
@@ -937,16 +935,6 @@ class ResourceCommand {
 
 
   hasResourceCommandSupport(resourceType) {
-    
-    
-    
-    if (
-      this.targetCommand.descriptorFront.isBrowserProcessDescriptor &&
-      !Services.prefs.getBoolPref(BROWSERTOOLBOX_FISSION_ENABLED, false)
-    ) {
-      return false;
-    }
-
     return this.watcherFront?.traits?.resources?.[resourceType];
   }
 

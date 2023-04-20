@@ -6,7 +6,6 @@
 
 const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 
-const BROWSERTOOLBOX_FISSION_ENABLED = "devtools.browsertoolbox.fission";
 const BROWSERTOOLBOX_SCOPE_PREF = "devtools.browsertoolbox.scope";
 
 const BROWSERTOOLBOX_SCOPE_EVERYTHING = "everything";
@@ -134,12 +133,6 @@ class TargetCommand extends EventEmitter {
 
 
   _updateBrowserToolboxScope() {
-    const fissionBrowserToolboxEnabled = Services.prefs.getBoolPref(
-      BROWSERTOOLBOX_FISSION_ENABLED
-    );
-    if (!fissionBrowserToolboxEnabled) {
-      return;
-    }
     const browserToolboxScope = Services.prefs.getCharPref(
       BROWSERTOOLBOX_SCOPE_PREF
     );
@@ -429,16 +422,6 @@ class TargetCommand extends EventEmitter {
 
 
   hasTargetWatcherSupport(targetTypeOrTrait) {
-    
-    
-    
-    if (
-      this.descriptorFront.isBrowserProcessDescriptor &&
-      !Services.prefs.getBoolPref(BROWSERTOOLBOX_FISSION_ENABLED, false)
-    ) {
-      return false;
-    }
-
     if (targetTypeOrTrait) {
       
       
@@ -569,16 +552,10 @@ class TargetCommand extends EventEmitter {
     ) {
       types = [TargetCommand.TYPES.FRAME];
     } else if (this.descriptorFront.isBrowserProcessDescriptor) {
-      const fissionBrowserToolboxEnabled = Services.prefs.getBoolPref(
-        BROWSERTOOLBOX_FISSION_ENABLED
-      );
       const browserToolboxScope = Services.prefs.getCharPref(
         BROWSERTOOLBOX_SCOPE_PREF
       );
-      if (
-        fissionBrowserToolboxEnabled &&
-        browserToolboxScope == BROWSERTOOLBOX_SCOPE_EVERYTHING
-      ) {
+      if (browserToolboxScope == BROWSERTOOLBOX_SCOPE_EVERYTHING) {
         types = TargetCommand.ALL_TYPES;
       }
     }

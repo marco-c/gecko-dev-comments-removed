@@ -529,12 +529,10 @@ class ToolboxToolbar extends Component {
       : null;
 
     
-    const chromeDebugToolbar =
-      toolbox.commands.targetCommand.descriptorFront
-        .isBrowserProcessDescriptor &&
-      Services.prefs.getBoolPref("devtools.browsertoolbox.fission", false)
-        ? ChromeDebugToolbar()
-        : null;
+    const chromeDebugToolbar = toolbox.commands.targetCommand.descriptorFront
+      .isBrowserProcessDescriptor
+      ? ChromeDebugToolbar()
+      : null;
 
     return LocalizationProvider(
       { bundles: fluentBundles },

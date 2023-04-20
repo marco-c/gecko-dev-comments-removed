@@ -16,10 +16,6 @@ const {
   simulatorSpec,
 } = require("resource://devtools/shared/specs/accessibility.js");
 const events = require("resource://devtools/shared/event-emitter.js");
-const BROWSER_TOOLBOX_FISSION_ENABLED = Services.prefs.getBoolPref(
-  "devtools.browsertoolbox.fission",
-  false
-);
 
 class AccessibleFront extends FrontClassWithSpec(accessibleSpec) {
   constructor(client, targetFront, parentFront) {
@@ -43,10 +39,6 @@ class AccessibleFront extends FrontClassWithSpec(accessibleSpec) {
   }
 
   get useChildTargetToFetchChildren() {
-    if (!BROWSER_TOOLBOX_FISSION_ENABLED && this.targetFront.isParentProcess) {
-      return false;
-    }
-
     return this._form.useChildTargetToFetchChildren;
   }
 
@@ -310,15 +302,8 @@ class AccessibleWalkerFront extends FrontClassWithSpec(accessibleWalkerSpec) {
 
 
 
-
-
   async getAncestry(accessible) {
     const ancestry = await super.getAncestry(accessible);
-
-    if (!BROWSER_TOOLBOX_FISSION_ENABLED && this.targetFront.isParentProcess) {
-      
-      return ancestry;
-    }
 
     const parentTarget = await this.targetFront.getParentTarget();
     if (!parentTarget) {
