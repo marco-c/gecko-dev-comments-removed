@@ -829,6 +829,13 @@ class FastDivisor {
 
     
     MOZ_ASSERT(m);
+
+    
+#ifdef MOZ_DEBUG
+    for (unsigned num = 0; num < max; num += div) {
+      MOZ_ASSERT(num / div == divide(num));
+    }
+#endif
   }
 
   
