@@ -47,55 +47,27 @@ VideoReceiver2::~VideoReceiver2() {
 int32_t VideoReceiver2::RegisterReceiveCallback(
     VCMReceiveCallback* receiveCallback) {
   RTC_DCHECK_RUN_ON(&construction_sequence_checker_);
-  RTC_DCHECK(!IsDecoderThreadRunning());
   
   
   decodedFrameCallback_.SetUserReceiveCallback(receiveCallback);
   return VCM_OK;
 }
 
-
-
-
-
-
 void VideoReceiver2::RegisterExternalDecoder(VideoDecoder* externalDecoder,
                                              uint8_t payloadType) {
-  if (IsDecoderThreadRunning()) {
-    RTC_DCHECK_RUN_ON(&decoder_sequence_checker_);
-    
-    RTC_DCHECK(externalDecoder != nullptr);
-  } else {
-    RTC_DCHECK_RUN_ON(&construction_sequence_checker_);
-  }
+  RTC_DCHECK_RUN_ON(&decoder_sequence_checker_);
+  RTC_DCHECK(decodedFrameCallback_.UserReceiveCallback());
 
   if (externalDecoder == nullptr) {
     codecDataBase_.DeregisterExternalDecoder(payloadType);
-    return;
+  } else {
+    codecDataBase_.RegisterExternalDecoder(payloadType, externalDecoder);
   }
-  codecDataBase_.RegisterExternalDecoder(payloadType, externalDecoder);
 }
 
 bool VideoReceiver2::IsExternalDecoderRegistered(uint8_t payloadType) const {
   RTC_DCHECK_RUN_ON(&decoder_sequence_checker_);
   return codecDataBase_.IsExternalDecoderRegistered(payloadType);
-}
-
-void VideoReceiver2::DecoderThreadStarting() {
-  RTC_DCHECK_RUN_ON(&construction_sequence_checker_);
-  RTC_DCHECK(!IsDecoderThreadRunning());
-#if RTC_DCHECK_IS_ON
-  decoder_thread_is_running_ = true;
-#endif
-}
-
-void VideoReceiver2::DecoderThreadStopped() {
-  RTC_DCHECK_RUN_ON(&construction_sequence_checker_);
-  RTC_DCHECK(IsDecoderThreadRunning());
-#if RTC_DCHECK_IS_ON
-  decoder_thread_is_running_ = false;
-  decoder_sequence_checker_.Detach();
-#endif
 }
 
 
@@ -112,20 +84,12 @@ int32_t VideoReceiver2::Decode(const VCMEncodedFrame* frame) {
 }
 
 
+
 void VideoReceiver2::RegisterReceiveCodec(
     uint8_t payload_type,
     const VideoDecoder::Settings& settings) {
   RTC_DCHECK_RUN_ON(&construction_sequence_checker_);
-  RTC_DCHECK(!IsDecoderThreadRunning());
   codecDataBase_.RegisterReceiveCodec(payload_type, settings);
-}
-
-bool VideoReceiver2::IsDecoderThreadRunning() {
-#if RTC_DCHECK_IS_ON
-  return decoder_thread_is_running_;
-#else
-  return true;
-#endif
 }
 
 }  

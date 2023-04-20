@@ -387,7 +387,6 @@ void VideoReceiveStream2::Start() {
   call_stats_->RegisterStatsObserver(this);
 
   
-  video_receiver_.DecoderThreadStarting();
   stats_proxy_.DecoderThreadStarting();
   decode_queue_.PostTask([this] {
     RTC_DCHECK_RUN_ON(&decode_queue_);
@@ -434,20 +433,19 @@ void VideoReceiveStream2::Stop() {
     rtc::Event done;
     decode_queue_.PostTask([this, &done] {
       RTC_DCHECK_RUN_ON(&decode_queue_);
+      
+      
+      
       decoder_stopped_ = true;
+      for (const Decoder& decoder : config_.decoders) {
+        video_receiver_.RegisterExternalDecoder(nullptr, decoder.payload_type);
+      }
       done.Set();
     });
     done.Wait(rtc::Event::kForever);
 
     decoder_running_ = false;
-    video_receiver_.DecoderThreadStopped();
     stats_proxy_.DecoderThreadStopped();
-    
-    
-    
-    
-    for (const Decoder& decoder : config_.decoders)
-      video_receiver_.RegisterExternalDecoder(nullptr, decoder.payload_type);
 
     UpdateHistograms();
   }

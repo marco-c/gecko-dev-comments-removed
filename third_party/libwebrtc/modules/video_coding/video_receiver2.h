@@ -44,20 +44,7 @@ class VideoReceiver2 {
 
   int32_t Decode(const webrtc::VCMEncodedFrame* frame);
 
-  
-  
-  
-  void DecoderThreadStarting();
-  void DecoderThreadStopped();
-
  private:
-  
-  
-  
-  
-  
-  bool IsDecoderThreadRunning();
-
   SequenceChecker construction_sequence_checker_;
   SequenceChecker decoder_sequence_checker_;
   Clock* const clock_;
@@ -68,10 +55,6 @@ class VideoReceiver2 {
   
   
   VCMDecoderDataBase codecDataBase_;
-
-#if RTC_DCHECK_IS_ON
-  bool decoder_thread_is_running_ = false;
-#endif
 };
 
 }  
