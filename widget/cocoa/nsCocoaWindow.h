@@ -263,8 +263,6 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
   virtual void SuppressAnimation(bool aSuppress) override;
   virtual void HideWindowChrome(bool aShouldHide) override;
 
-  void WillEnterFullScreen(bool aFullScreen);
-  void EnteredFullScreen(bool aFullScreen, bool aNativeMode = true);
   virtual bool PrepareForFullscreenTransition(nsISupports** aData) override;
   virtual void PerformFullscreenTransition(FullscreenTransitionStage aStage, uint16_t aDuration,
                                            nsISupports* aData, nsIRunnable* aCallback) override;
@@ -364,6 +362,26 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
                             const ScrollableLayerGuid& aGuid) override;
   void StopAsyncAutoscroll(const ScrollableLayerGuid& aGuid) override;
 
+  
+  
+  void CocoaWindowWillEnterFullscreen(bool aFullscreen);
+  void CocoaWindowWillResize();
+  void CocoaWindowDidResize();
+  void CocoaSendToplevelActivateEvents();
+  void CocoaSendToplevelDeactivateEvents();
+
+  void HandleNativeFullscreenTransition(bool aFullscreen);
+  void HandleNativeFullscreenTransitionFailure(bool aFullscreen);
+
+  bool IsInFullscreenTransition() const {
+    return mFullscreenTransition.mState != FullscreenTransitionState::None;
+  }
+
+  bool IsInNativeFullscreenTransition() const {
+    return mFullscreenTransition.mState != FullscreenTransitionState::None &&
+           mFullscreenTransition.mType == FullscreenTransitionType::Native;
+  }
+
  protected:
   virtual ~nsCocoaWindow();
 
@@ -407,8 +425,63 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
                          
   nsSizeMode mSizeMode;
   bool mInFullScreenMode;
-  bool mInFullScreenTransition;  
-                                 
+
+  enum class FullscreenTransitionType {
+    Emulated = 0,  
+                   
+                   
+    Native,        
+                   
+                   
+                   
+                   
+  };
+
+  enum class FullscreenTransitionState {
+    None = 0,        
+                     
+    ToFullscreen,    
+    ExitFullscreen,  
+  };
+
+  struct FullscreenTransition {
+    FullscreenTransitionType mType = FullscreenTransitionType::Native;
+    FullscreenTransitionState mState = FullscreenTransitionState::None;
+    bool mResized = false;
+    bool mRevertOnCompletion = false;
+    bool mHideOnCompletion = false;
+
+    void Reset() {
+      mState = FullscreenTransitionState::None;
+      mResized = false;
+      mRevertOnCompletion = false;
+      mHideOnCompletion = false;
+    }
+
+    void StartEmulated(FullscreenTransitionState aToState) {
+      Reset();
+      mType = FullscreenTransitionType::Emulated;
+      mState = aToState;
+    }
+
+    void EndEmulated() { Reset(); }
+  } mFullscreenTransition;
+
+  
+  
+  void StartNativeFullscreenTransition(FullscreenTransitionState aToState) {
+    mFullscreenTransition.Reset();
+    mFullscreenTransition.mType = FullscreenTransitionType::Native;
+    mFullscreenTransition.mState = aToState;
+    mIgnoreOcclusionCount++;
+  }
+
+  
+  void EndNativeFullscreenTransition() {
+    mFullscreenTransition.Reset();
+    MOZ_ASSERT(mIgnoreOcclusionCount > 0);
+    mIgnoreOcclusionCount--;
+  }
 
   
   

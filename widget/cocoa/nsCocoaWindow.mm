@@ -138,7 +138,6 @@ nsCocoaWindow::nsCocoaWindow()
       mSheetNeedsShow(false),
       mSizeMode(nsSizeMode_Normal),
       mInFullScreenMode(false),
-      mInFullScreenTransition(false),
       mIgnoreOcclusionCount(0),
       mModal(false),
       mFakeModal(false),
@@ -796,6 +795,15 @@ void nsCocoaWindow::Show(bool bState) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mWindow) return;
+
+  
+  
+  
+  
+  if (IsInNativeFullscreenTransition()) {
+    mFullscreenTransition.mHideOnCompletion = !bState;
+    return;
+  }
 
   if (!mSheetNeedsShow) {
     
@@ -1633,18 +1641,17 @@ static bool AlwaysUsesNativeFullScreen() {
   [mFullscreenTransitionAnimation startAnimation];
 }
 
-void nsCocoaWindow::WillEnterFullScreen(bool aFullScreen) {
-  if (mWidgetListener) {
-    mWidgetListener->FullscreenWillChange(aFullScreen);
+void nsCocoaWindow::CocoaWindowWillEnterFullscreen(bool aFullscreen) {
+  if (!IsInNativeFullscreenTransition()) {
+    FullscreenTransitionState requestedState = aFullscreen
+                                                   ? FullscreenTransitionState::ToFullscreen
+                                                   : FullscreenTransitionState::ExitFullscreen;
+    StartNativeFullscreenTransition(requestedState);
   }
-  
-  
-  UpdateFullscreenState(aFullScreen, true);
-}
 
-void nsCocoaWindow::EnteredFullScreen(bool aFullScreen, bool aNativeMode) {
-  mInFullScreenTransition = false;
-  UpdateFullscreenState(aFullScreen, aNativeMode);
+  if (mWidgetListener) {
+    mWidgetListener->FullscreenWillChange(aFullscreen);
+  }
 }
 
 void nsCocoaWindow::UpdateFullscreenState(bool aFullScreen, bool aNativeMode) {
@@ -1703,14 +1710,23 @@ nsresult nsCocoaWindow::DoMakeFullScreen(bool aFullScreen, bool aUseSystemTransi
     return NS_OK;
   }
 
+  FullscreenTransitionState requestedState = aFullScreen
+                                                 ? FullscreenTransitionState::ToFullscreen
+                                                 : FullscreenTransitionState::ExitFullscreen;
+
+  
+  if (IsInFullscreenTransition()) {
+    
+    mFullscreenTransition.mRevertOnCompletion = (requestedState != mFullscreenTransition.mState);
+    return NS_OK;
+  }
+
   
   
   
   if (mInFullScreenMode == aFullScreen) {
     return NS_OK;
   }
-
-  mInFullScreenTransition = true;
 
   if (ShouldToggleNativeFullscreen(aFullScreen, aUseSystemTransition)) {
     MOZ_ASSERT(mInNativeFullScreenMode != aFullScreen,
@@ -1720,6 +1736,11 @@ nsresult nsCocoaWindow::DoMakeFullScreen(bool aFullScreen, bool aUseSystemTransi
     
     [mWindow toggleFullScreen:nil];
   } else {
+    
+    
+    
+    mFullscreenTransition.StartEmulated(requestedState);
+
     if (mWidgetListener) {
       mWidgetListener->FullscreenWillChange(aFullScreen);
     }
@@ -1730,7 +1751,21 @@ nsresult nsCocoaWindow::DoMakeFullScreen(bool aFullScreen, bool aUseSystemTransi
     nsCocoaUtils::HideOSChromeOnScreen(aFullScreen);
     nsBaseWidget::InfallibleMakeFullScreen(aFullScreen);
     NSEnableScreenUpdates();
-    EnteredFullScreen(aFullScreen,  false);
+    UpdateFullscreenState(aFullScreen,  false);
+
+    bool hide = mFullscreenTransition.mHideOnCompletion;
+    bool revert = mFullscreenTransition.mRevertOnCompletion;
+
+    mFullscreenTransition.EndEmulated();
+
+    if (hide) {
+      Show(false);
+    }
+
+    if (revert) {
+      MOZ_ALWAYS_SUCCEEDS(NS_DispatchToCurrentThread(NewRunnableMethod<bool, bool>(
+          "RevertingFullscreen", this, &nsCocoaWindow::DoMakeFullScreen, !aFullScreen, false)));
+    }
   }
 
   return NS_OK;
@@ -2091,11 +2126,7 @@ void nsCocoaWindow::DispatchSizeModeEvent() {
   }
 
   nsSizeMode newMode = GetWindowSizeMode(mWindow, mInFullScreenMode);
-
-  
-  
-  
-  if (mInFullScreenTransition || mSizeMode == newMode) {
+  if (mSizeMode == newMode) {
     return;
   }
 
@@ -2693,9 +2724,57 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
 }
 
 - (NSSize)windowWillResize:(NSWindow*)sender toSize:(NSSize)proposedFrameSize {
-  RollUpPopups();
-
+  if (mGeckoWindow) {
+    mGeckoWindow->CocoaWindowWillResize();
+  }
   return proposedFrameSize;
+}
+
+void nsCocoaWindow::CocoaSendToplevelActivateEvents() {
+  if (mWidgetListener) {
+    mWidgetListener->WindowActivated();
+  }
+}
+
+void nsCocoaWindow::CocoaSendToplevelDeactivateEvents() {
+  if (mWidgetListener) {
+    mWidgetListener->WindowDeactivated();
+  }
+}
+
+void nsCocoaWindow::CocoaWindowWillResize() { RollUpPopups(); }
+
+void nsCocoaWindow::CocoaWindowDidResize() {
+  if (IsInNativeFullscreenTransition()) {
+    
+    if (mFullscreenTransition.mResized) {
+      return;
+    }
+    mFullscreenTransition.mResized = true;
+
+    ReportSizeEvent();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool toFullscreen = (mFullscreenTransition.mState == FullscreenTransitionState::ToFullscreen);
+    HandleNativeFullscreenTransition(toFullscreen);
+    return;
+  }
+
+  
+  DispatchSizeModeEvent();
+  ReportSizeEvent();
 }
 
 - (void)windowDidResize:(NSNotification*)aNotification {
@@ -2704,9 +2783,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
 
   if (!mGeckoWindow) return;
 
-  
-  mGeckoWindow->DispatchSizeModeEvent();
-  mGeckoWindow->ReportSizeEvent();
+  mGeckoWindow->CocoaWindowDidResize();
 }
 
 - (void)windowDidChangeScreen:(NSNotification*)aNotification {
@@ -2739,12 +2816,45 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
   mGeckoWindow->ReportMoveEvent();
 }
 
+void nsCocoaWindow::HandleNativeFullscreenTransition(bool aFullscreen) {
+  bool hide = mFullscreenTransition.mHideOnCompletion;
+  bool revert = mFullscreenTransition.mRevertOnCompletion;
+
+  if ((mInFullScreenMode != aFullscreen) && IsInNativeFullscreenTransition()) {
+    
+    
+    
+    UpdateFullscreenState(aFullscreen, true);
+    return;
+  }
+
+  EndNativeFullscreenTransition();
+
+  if (hide) {
+    Show(false);
+  }
+
+  if (revert) {
+    MOZ_ALWAYS_SUCCEEDS(NS_DispatchToCurrentThread(NewRunnableMethod<bool, bool>(
+        "RevertingFullscreen", this, &nsCocoaWindow::DoMakeFullScreen, !aFullscreen, true)));
+  }
+}
+
+void nsCocoaWindow::HandleNativeFullscreenTransitionFailure(bool aFullscreen) {
+  if (IsInNativeFullscreenTransition()) {
+    EndNativeFullscreenTransition();
+  } else {
+    mFullscreenTransition.Reset();
+  }
+  UpdateFullscreenState(!aFullscreen, true);
+}
+
 - (void)windowWillEnterFullScreen:(NSNotification*)notification {
   if (!mGeckoWindow) {
     return;
   }
 
-  mGeckoWindow->WillEnterFullScreen(true);
+  mGeckoWindow->CocoaWindowWillEnterFullscreen(true);
 }
 
 
@@ -2755,7 +2865,14 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
     return;
   }
 
-  mGeckoWindow->EnteredFullScreen(true);
+  
+  
+  
+  if (!mGeckoWindow->IsInNativeFullscreenTransition()) {
+    return;
+  }
+
+  mGeckoWindow->HandleNativeFullscreenTransition(true);
 
   
   
@@ -2785,8 +2902,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
   if (!mGeckoWindow) {
     return;
   }
-
-  mGeckoWindow->WillEnterFullScreen(false);
+  mGeckoWindow->CocoaWindowWillEnterFullscreen(false);
 }
 
 - (void)windowDidExitFullScreen:(NSNotification*)notification {
@@ -2794,23 +2910,28 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
     return;
   }
 
-  mGeckoWindow->EnteredFullScreen(false);
+  
+  
+  
+  if (!mGeckoWindow->IsInNativeFullscreenTransition()) {
+    return;
+  }
+
+  mGeckoWindow->HandleNativeFullscreenTransition(false);
 }
 
 - (void)windowDidFailToEnterFullScreen:(NSWindow*)window {
   if (!mGeckoWindow) {
     return;
   }
-
-  mGeckoWindow->EnteredFullScreen(false);
+  mGeckoWindow->HandleNativeFullscreenTransitionFailure(true);
 }
 
 - (void)windowDidFailToExitFullScreen:(NSWindow*)window {
   if (!mGeckoWindow) {
     return;
   }
-
-  mGeckoWindow->EnteredFullScreen(true);
+  mGeckoWindow->HandleNativeFullscreenTransitionFailure(false);
 }
 
 - (void)windowDidBecomeMain:(NSNotification*)aNotification {
@@ -2985,20 +3106,15 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
 
 - (void)sendToplevelActivateEvents {
   if (!mToplevelActiveState && mGeckoWindow) {
-    nsIWidgetListener* listener = mGeckoWindow->GetWidgetListener();
-    if (listener) {
-      listener->WindowActivated();
-    }
+    mGeckoWindow->CocoaSendToplevelActivateEvents();
+
     mToplevelActiveState = true;
   }
 }
 
 - (void)sendToplevelDeactivateEvents {
   if (mToplevelActiveState && mGeckoWindow) {
-    nsIWidgetListener* listener = mGeckoWindow->GetWidgetListener();
-    if (listener) {
-      listener->WindowDeactivated();
-    }
+    mGeckoWindow->CocoaSendToplevelDeactivateEvents();
     mToplevelActiveState = false;
   }
 }
