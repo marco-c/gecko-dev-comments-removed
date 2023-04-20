@@ -47,7 +47,7 @@
 
 #if defined(FUZZING)
 #  include "FuzzyLayer.h"
-#  include "FuzzySecurityInfo.h"
+#  include "FuzzySocketControl.h"
 #  include "mozilla/StaticPrefs_fuzzing.h"
 #endif
 
@@ -1174,17 +1174,11 @@ nsresult nsSocketTransport::BuildSocket(PRFileDesc*& fd, bool& proxyTransparent,
     bool isSSL = mTypes[i].EqualsLiteral("ssl");
     if (isSSL || mTypes[i].EqualsLiteral("starttls")) {
       
-      nsCOMPtr<nsIInterfaceRequestor> callbacks;
       {
         MutexAutoLock lock(mLock);
         mTLSSocketControl = tlsSocketControl;
-        callbacks = mCallbacks;
         SOCKET_LOG(("  [tlsSocketControl=%p callbacks=%p]\n",
                     mTLSSocketControl.get(), mCallbacks.get()));
-      }
-      
-      if (tlsSocketControl) {
-        tlsSocketControl->SetNotificationCallbacks(callbacks);
       }
       
       usingSSL = isSSL;
@@ -1335,7 +1329,7 @@ nsresult nsSocketTransport::InitiateSocket() {
     SOCKET_LOG(("Successfully attached fuzzing IOLayer.\n"));
 
     if (usingSSL) {
-      mTLSSocketControl = new FuzzySecurityInfo();
+      mTLSSocketControl = new FuzzySocketControl();
     }
   }
 #endif
@@ -2236,13 +2230,6 @@ void nsSocketTransport::OnSocketDetached(PRFileDesc* fd) {
   
   
   
-  if (mTLSSocketControl) {
-    mTLSSocketControl->SetNotificationCallbacks(nullptr);
-  }
-
-  
-  
-  
 
   
   
@@ -2420,22 +2407,10 @@ nsSocketTransport::SetSecurityCallbacks(nsIInterfaceRequestor* callbacks) {
   NS_NewNotificationCallbacksAggregation(callbacks, nullptr,
                                          GetCurrentEventTarget(),
                                          getter_AddRefs(threadsafeCallbacks));
-
-  nsCOMPtr<nsITLSSocketControl> tlsSocketControl;
-  {
-    MutexAutoLock lock(mLock);
-    mCallbacks = threadsafeCallbacks;
-    SOCKET_LOG(("Reset callbacks for tlsSocketInfo=%p callbacks=%p\n",
-                mTLSSocketControl.get(), mCallbacks.get()));
-
-    tlsSocketControl = mTLSSocketControl;
-  }
-
-  
-  if (tlsSocketControl) {
-    tlsSocketControl->SetNotificationCallbacks(threadsafeCallbacks);
-  }
-
+  MutexAutoLock lock(mLock);
+  mCallbacks = threadsafeCallbacks;
+  SOCKET_LOG(("Reset callbacks for tlsSocketInfo=%p callbacks=%p\n",
+              mTLSSocketControl.get(), mCallbacks.get()));
   return NS_OK;
 }
 
