@@ -72,7 +72,7 @@ extern crate log;
 
 extern crate env_logger;
 
-use log::{Level, LevelFilter, Log, Metadata, Record};
+use log::{Level, Log, Metadata, Record};
 #[cfg(target_os = "android")]
 use log_ffi::LogPriority;
 use std::ffi::{CStr, CString};
@@ -137,7 +137,7 @@ impl Log for AndroidLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
         let config = self.config();
         
-        metadata.level() <= config.log_level.unwrap_or_else(log::max_level)
+        Some(metadata.level()) >= config.log_level
     }
 
     fn log(&self, record: &Record) {
@@ -214,7 +214,7 @@ impl AndroidLogger {
 
 #[derive(Default)]
 pub struct Config {
-    log_level: Option<LevelFilter>,
+    log_level: Option<Level>,
     filter: Option<env_logger::filter::Filter>,
     tag: Option<CString>,
     custom_format: Option<FormatFn>,
@@ -223,20 +223,9 @@ pub struct Config {
 impl Config {
     
     
-    #[deprecated(note = "use `.with_max_level()` instead")]
-    pub fn with_min_level(self, level: Level) -> Self {
-        self.with_max_level(level.to_level_filter())
-    }
-
     
     
-    
-    
-    
-    
-    
-    
-    pub fn with_max_level(mut self, level: LevelFilter) -> Self {
+    pub fn with_min_level(mut self, level: Level) -> Self {
         self.log_level = Some(level);
         self
     }
@@ -460,7 +449,7 @@ pub fn init_once(config: Config) {
     if let Err(err) = log::set_logger(logger) {
         debug!("android_logger: log::set_logger failed: {}", err);
     } else if let Some(level) = log_level {
-        log::set_max_level(level);
+        log::set_max_level(level.to_level_filter());
     }
 }
 
@@ -480,10 +469,10 @@ mod tests {
     fn check_config_values() {
         
         let config = Config::default()
-            .with_max_level(LevelFilter::Trace)
+            .with_min_level(Level::Trace)
             .with_tag("my_app");
 
-        assert_eq!(config.log_level, Some(LevelFilter::Trace));
+        assert_eq!(config.log_level, Some(Level::Trace));
         assert_eq!(config.tag, Some(CString::new("my_app").unwrap()));
     }
 
@@ -491,7 +480,7 @@ mod tests {
     fn log_calls_formatter() {
         static FORMAT_FN_WAS_CALLED: AtomicBool = AtomicBool::new(false);
         let config = Config::default()
-            .with_max_level(LevelFilter::Info)
+            .with_min_level(Level::Info)
             .format(|_, _| {
                 FORMAT_FN_WAS_CALLED.store(true, Ordering::SeqCst);
                 Ok(())
@@ -504,12 +493,10 @@ mod tests {
     }
 
     #[test]
-    fn logger_enabled_threshold() {
-        let logger = AndroidLogger::new(Config::default().with_max_level(LevelFilter::Info));
+    fn logger_always_enabled() {
+        let logger = AndroidLogger::new(Config::default());
 
-        assert!(logger.enabled(&log::MetadataBuilder::new().level(Level::Warn).build()));
-        assert!(logger.enabled(&log::MetadataBuilder::new().level(Level::Info).build()));
-        assert!(!logger.enabled(&log::MetadataBuilder::new().level(Level::Debug).build()));
+        assert!(logger.enabled(&log::MetadataBuilder::new().build()));
     }
 
     

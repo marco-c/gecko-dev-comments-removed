@@ -54,7 +54,7 @@ fn serializer_should_correctly_serialize_timing_distribution() {
     
     
     {
-        let (glean, _t) = new_glean(Some(tempdir));
+        let (glean, _) = new_glean(Some(tempdir));
         let snapshot = StorageManager
             .snapshot_as_json(glean.storage(), "store1", true)
             .unwrap();

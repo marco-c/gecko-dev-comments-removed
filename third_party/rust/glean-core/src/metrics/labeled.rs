@@ -13,7 +13,7 @@ use crate::Glean;
 
 const MAX_LABELS: usize = 16;
 const OTHER_LABEL: &str = "__other__";
-const MAX_LABEL_LENGTH: usize = 71;
+const MAX_LABEL_LENGTH: usize = 61;
 
 
 pub type LabeledCounter = LabeledMetric<CounterMetric>;
@@ -23,6 +23,66 @@ pub type LabeledBoolean = LabeledMetric<BooleanMetric>;
 
 
 pub type LabeledString = LabeledMetric<StringMetric>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn matches_label_regex(value: &str) -> bool {
+    let mut iter = value.chars();
+
+    loop {
+        
+        match iter.next() {
+            Some('_') | Some('a'..='z') => (),
+            _ => return false,
+        };
+
+        
+        let mut count = 0;
+        loop {
+            match iter.next() {
+                
+                None => return true,
+                
+                Some('_') | Some('-') | Some('a'..='z') | Some('0'..='9') => (),
+                
+                Some('.') => break,
+                
+                _ => return false,
+            }
+            count += 1;
+            
+            
+            if count == 29 {
+                return false;
+            }
+        }
+    }
+}
 
 
 
@@ -278,8 +338,8 @@ pub fn validate_dynamic_label(
         );
         record_error(glean, meta, ErrorType::InvalidLabel, msg, None);
         true
-    } else if label.chars().any(|c| !c.is_ascii() || c.is_ascii_control()) {
-        let msg = format!("label must be printable ascii, got '{}'", label);
+    } else if !matches_label_regex(label) {
+        let msg = format!("label must be snake_case, got '{}'", label);
         record_error(glean, meta, ErrorType::InvalidLabel, msg, None);
         true
     } else {
