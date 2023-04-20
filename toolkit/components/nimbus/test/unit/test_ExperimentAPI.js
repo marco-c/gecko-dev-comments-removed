@@ -513,7 +513,7 @@ add_task(async function test_getActiveBranch() {
 
 add_task(async function test_getActiveBranch_safe() {
   const sandbox = sinon.createSandbox();
-  sandbox.stub(ExperimentAPI._store, "getAllActive").throws();
+  sandbox.stub(ExperimentAPI._store, "getAllActiveExperiments").throws();
 
   try {
     Assert.equal(
@@ -544,7 +544,7 @@ add_task(async function test_getActiveBranch_storeFailure() {
   
   const stub = sandbox.stub(store, "emit");
   
-  sandbox.stub(store, "getAllActive").throws();
+  sandbox.stub(store, "getAllActiveExperiments").throws();
   try {
     ExperimentAPI.getActiveBranch({ featureId: "green" });
   } catch (e) {
