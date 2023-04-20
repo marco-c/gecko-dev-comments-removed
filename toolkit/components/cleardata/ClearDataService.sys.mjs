@@ -1,25 +1,16 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   Downloads: "resource://gre/modules/Downloads.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
-});
-
-XPCOMUtils.defineLazyModuleGetters(lazy, {
-  ServiceWorkerCleanUp: "resource://gre/modules/ServiceWorkerCleanUp.jsm",
+  ServiceWorkerCleanUp: "resource://gre/modules/ServiceWorkerCleanUp.sys.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -35,20 +26,20 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsITrackingDBService"
 );
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Test if host, OriginAttributes or principal belong to a baseDomain. Also
+ * considers partitioned storage by inspecting OriginAttributes partitionKey.
+ * @param options
+ * @param {string} [options.host] - Optional host to compare to base domain.
+ * @param {object} [options.originAttributes] - Optional origin attributes to
+ * inspect for aBaseDomain. If omitted, partitionKey will not be matched.
+ * @param {nsIPrincipal} [options.principal] - Optional principal to compare to
+ * base domain.
+ * @param {string} aBaseDomain - Domain to check for. Must be a valid, non-empty
+ * baseDomain string.
+ * @returns {boolean} Whether the host, originAttributes or principal matches
+ * the base domain.
+ */
 function hasBaseDomain(
   { host = null, originAttributes = null, principal = null },
   aBaseDomain
@@ -85,27 +76,27 @@ function hasBaseDomain(
   });
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Here is a list of methods cleaners may implement. These methods must return a
+// Promise object.
+// * deleteAll() - this method _must_ exist. When called, it deletes all the
+//                 data owned by the cleaner.
+// * deleteByPrincipal() -  this method _must_ exist.
+// * deleteByBaseDomain() - this method _must_ exist.
+// * deleteByHost() - this method is implemented only if the cleaner knows
+//                    how to delete data by host + originAttributes pattern. If
+//                    not implemented, deleteAll() will be used as fallback.
+// * deleteByRange() - this method is implemented only if the cleaner knows how
+//                    to delete data by time range. It receives 2 time range
+//                    parameters: aFrom/aTo. If not implemented, deleteAll() is
+//                    used as fallback.
+// * deleteByLocalFiles() - this method removes data held for local files and
+//                          other hostless origins. If not implemented,
+//                          **no fallback is used**, as for a number of
+//                          cleaners, no such data will ever exist and
+//                          therefore clearing it does not make sense.
+// * deleteByOriginAttributes() - this method is implemented only if the cleaner
+//                                knows how to delete data by originAttributes
+//                                pattern.
 
 const CookieCleaner = {
   deleteByLocalFiles(aOriginAttributes) {
@@ -129,9 +120,9 @@ const CookieCleaner = {
   },
 
   deleteByPrincipal(aPrincipal) {
-    
-    
-    
+    // Fall back to clearing by host and OA pattern. This will over-clear, since
+    // any properties that are not explicitly set in aPrincipal.originAttributes
+    // will be wildcard matched.
     return this.deleteByHost(aPrincipal.host, aPrincipal.originAttributes);
   },
 
@@ -209,7 +200,7 @@ const CertCleaner = {
 
 const NetworkCacheCleaner = {
   async deleteByHost(aHost, aOriginAttributes) {
-    
+    // Delete data from both HTTP and HTTPS sites.
     let httpURI = Services.io.newURI("http://" + aHost);
     let httpsURI = Services.io.newURI("https://" + aHost);
     let httpPrincipal = Services.scriptSecurityManager.createContentPrincipal(
@@ -253,7 +244,7 @@ const NetworkCacheCleaner = {
 
 const CSSCacheCleaner = {
   async deleteByHost(aHost, aOriginAttributes) {
-    
+    // Delete data from both HTTP and HTTPS sites.
     let httpURI = Services.io.newURI("http://" + aHost);
     let httpsURI = Services.io.newURI("https://" + aHost);
     let httpPrincipal = Services.scriptSecurityManager.createContentPrincipal(
@@ -288,7 +279,7 @@ const ImageCacheCleaner = {
       .getService(Ci.imgITools)
       .getImgCacheForDocument(null);
 
-    
+    // Delete data from both HTTP and HTTPS sites.
     let httpURI = Services.io.newURI("http://" + aHost);
     let httpsURI = Services.io.newURI("https://" + aHost);
     let httpPrincipal = Services.scriptSecurityManager.createContentPrincipal(
@@ -323,7 +314,7 @@ const ImageCacheCleaner = {
       let imageCache = Cc["@mozilla.org/image/tools;1"]
         .getService(Ci.imgITools)
         .getImgCacheForDocument(null);
-      imageCache.clearCache(false); 
+      imageCache.clearCache(false); // true=chrome, false=content
       aResolve();
     });
   },
@@ -361,7 +352,7 @@ const DownloadsCleaner = {
   },
 
   async deleteByHost(aHost, aOriginAttributes) {
-    
+    // Clearing by host also clears associated subdomains.
     return this._deleteInternal({
       hostOrBaseDomain: aHost,
       originAttributes: aOriginAttributes,
@@ -377,7 +368,7 @@ const DownloadsCleaner = {
   },
 
   deleteByRange(aFrom, aTo) {
-    
+    // Convert microseconds back to milliseconds for date comparisons.
     let rangeBeginMs = aFrom / 1000;
     let rangeEndMs = aTo / 1000;
 
@@ -399,14 +390,14 @@ const DownloadsCleaner = {
 
 const PasswordsCleaner = {
   deleteByHost(aHost, aOriginAttributes) {
-    
+    // Clearing by host also clears associated subdomains.
     return this._deleteInternal(aLogin =>
       Services.eTLD.hasRootDomain(aLogin.hostname, aHost)
     );
   },
 
   deleteByPrincipal(aPrincipal) {
-    
+    // Login origins don't contain any origin attributes.
     return this._deleteInternal(
       aLogin => aLogin.origin == aPrincipal.originNoSuffix
     );
@@ -431,8 +422,8 @@ const PasswordsCleaner = {
         }
       }
     } catch (ex) {
-      
-      
+      // XXXehsan: is there a better way to do this rather than this
+      // hacky comparison?
       if (
         !ex.message.includes("User canceled Master Password entry") &&
         ex.result != Cr.NS_ERROR_NOT_IMPLEMENTED
@@ -451,8 +442,8 @@ const MediaDevicesCleaner = {
     mediaMgr.sanitizeDeviceIds(aFrom);
   },
 
-  
-  
+  // TODO: We should call the MediaManager to clear by principal, rather than
+  // over-clearing for user requests or bailing out for programmatic calls.
   async deleteByPrincipal(aPrincipal, aIsUserRequest) {
     if (!aIsUserRequest) {
       return;
@@ -460,7 +451,7 @@ const MediaDevicesCleaner = {
     await this.deleteAll();
   },
 
-  
+  // TODO: Same as above, but for base domain.
   async deleteByBaseDomain(aBaseDomain, aIsUserRequest) {
     if (!aIsUserRequest) {
       return;
@@ -477,25 +468,25 @@ const MediaDevicesCleaner = {
 };
 
 const QuotaCleaner = {
-  
-
-
-
-
-
-
+  /**
+   * Clear quota storage for matching principals.
+   * @param {function} filterFn - Filter function which is passed a principal.
+   * Return true to clear storage for given principal or false to skip it.
+   * @returns {Promise} - Resolves once all matching items have been cleared.
+   * Rejects on error.
+   */
   async _qmsClearStoragesForPrincipalsMatching(filterFn) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // Clearing quota storage by first getting all entry origins and then
+    // iterating over them is not ideal, since we can not ensure an entirely
+    // consistent clearing state. Between fetching the origins and clearing
+    // them, additional entries could be added. This means we could end up with
+    // stray entries after the clearing operation. To fix this we would need to
+    // move the clearing code to the QuotaManager itself which could either
+    // prevent new writes while clearing or clean up any additional entries
+    // which get written during the clearing operation.
+    // Performance is also not ideal, since we iterate over storage multiple
+    // times for this two step process.
+    // See Bug 1719195.
     let origins = await new Promise((resolve, reject) => {
       Services.qms.listOrigins().callback = request => {
         if (request.resultCode != Cr.NS_OK) {
@@ -507,11 +498,11 @@ const QuotaCleaner = {
     });
 
     let clearPromises = origins
-      
+      // Parse origins into principals.
       .map(Services.scriptSecurityManager.createContentPrincipalFromOrigin)
-      
+      // Filter out principals that don't match the filterFn.
       .filter(filterFn)
-      
+      // Clear quota storage by principal and collect the promises.
       .map(
         principal =>
           new Promise((resolve, reject) => {
@@ -531,27 +522,27 @@ const QuotaCleaner = {
   },
 
   deleteByPrincipal(aPrincipal) {
-    
-    
-    
+    // localStorage: The legacy LocalStorage implementation that will
+    // eventually be removed depends on this observer notification to clear by
+    // principal.
     Services.obs.notifyObservers(
       null,
       "extension:purge-localStorage",
       aPrincipal.host
     );
 
-    
+    // Clear sessionStorage
     Services.sessionStorage.clearStoragesForOrigin(aPrincipal);
 
-    
+    // ServiceWorkers: they must be removed before cleaning QuotaManager.
     return lazy.ServiceWorkerCleanUp.removeFromPrincipal(aPrincipal)
       .then(
-        _ =>  false,
-        _ =>  true
+        _ => /* exceptionThrown = */ false,
+        _ => /* exceptionThrown = */ true
       )
       .then(exceptionThrown => {
-        
-        
+        // QuotaManager: In the event of a failure, we call reject to propagate
+        // the error upwards.
         return new Promise((aResolve, aReject) => {
           let req = Services.qms.clearStoragesForPrincipal(aPrincipal);
           req.callback = () => {
@@ -566,37 +557,37 @@ const QuotaCleaner = {
   },
 
   async deleteByBaseDomain(aBaseDomain) {
-    
-    
-    
+    // localStorage: The legacy LocalStorage implementation that will
+    // eventually be removed depends on this observer notification to clear by
+    // host.  Some other subsystems like Reporting headers depend on this too.
     Services.obs.notifyObservers(
       null,
       "extension:purge-localStorage",
       aBaseDomain
     );
 
-    
+    // Clear sessionStorage
     Services.obs.notifyObservers(
       null,
       "browser:purge-sessionStorage",
       aBaseDomain
     );
 
-    
-    
-    
-    
-    
-    
+    // Clear third-party storage partitioned under aBaseDomain.
+    // This notification is forwarded via the StorageObserver and consumed only
+    // by the SessionStorageManager and (legacy) LocalStorageManager.
+    // There is a similar (legacy) notification "clear-origin-attributes-data"
+    // which additionally clears data across various other storages unrelated to
+    // the QuotaCleaner.
     Services.obs.notifyObservers(
       null,
       "dom-storage:clear-origin-attributes-data",
       JSON.stringify({ partitionKeyPattern: { baseDomain: aBaseDomain } })
     );
 
-    
-    
-    
+    // ServiceWorkers must be removed before cleaning QuotaManager. We store
+    // potential errors so we can re-throw later, once all operations have
+    // completed.
     let swCleanupError;
     try {
       await lazy.ServiceWorkerCleanUp.removeFromBaseDomain(aBaseDomain);
@@ -608,26 +599,26 @@ const QuotaCleaner = {
       hasBaseDomain({ principal }, aBaseDomain)
     );
 
-    
+    // Re-throw any service worker cleanup errors.
     if (swCleanupError) {
       throw swCleanupError;
     }
   },
 
   async deleteByHost(aHost, aOriginAttributes) {
-    
-    
+    // XXX: The aOriginAttributes is expected to always be empty({}). Maybe have
+    // a debug assertion here to ensure that?
 
-    
-    
-    
+    // localStorage: The legacy LocalStorage implementation that will
+    // eventually be removed depends on this observer notification to clear by
+    // host.  Some other subsystems like Reporting headers depend on this too.
     Services.obs.notifyObservers(null, "extension:purge-localStorage", aHost);
 
-    
+    // Clear sessionStorage
     Services.obs.notifyObservers(null, "browser:purge-sessionStorage", aHost);
 
-    
-    
+    // ServiceWorkers must be removed before cleaning QuotaManager. We store any
+    // errors so we can re-throw later once all operations have completed.
     let swCleanupError;
     try {
       await lazy.ServiceWorkerCleanUp.removeFromHost(aHost);
@@ -637,16 +628,16 @@ const QuotaCleaner = {
 
     await this._qmsClearStoragesForPrincipalsMatching(principal => {
       try {
-        
-        
+        // deleteByHost has the semantics that "foo.example.com" should be
+        // wiped if we are provided an aHost of "example.com".
         return Services.eTLD.hasRootDomain(principal.host, aHost);
       } catch (e) {
-        
+        // There is no host for the given principal.
         return false;
       }
     });
 
-    
+    // Re-throw any service worker cleanup errors.
     if (swCleanupError) {
       throw swCleanupError;
     }
@@ -676,20 +667,20 @@ const QuotaCleaner = {
   },
 
   deleteByOriginAttributes(aOriginAttributesString) {
-    
-    
-    
+    // The legacy LocalStorage implementation that will eventually be removed.
+    // And it should've been cleared while notifying observers with
+    // clear-origin-attributes-data.
 
     return lazy.ServiceWorkerCleanUp.removeFromOriginAttributes(
       aOriginAttributesString
     )
       .then(
-        _ =>  false,
-        _ =>  true
+        _ => /* exceptionThrown = */ false,
+        _ => /* exceptionThrown = */ true
       )
       .then(exceptionThrown => {
-        
-        
+        // QuotaManager: In the event of a failure, we call reject to propagate
+        // the error upwards.
         return new Promise((aResolve, aReject) => {
           let req = Services.qms.clearStoragesForOriginAttributesPattern(
             aOriginAttributesString
@@ -706,14 +697,14 @@ const QuotaCleaner = {
   },
 
   async deleteAll() {
-    
+    // localStorage
     Services.obs.notifyObservers(null, "extension:purge-localStorage");
 
-    
+    // sessionStorage
     Services.obs.notifyObservers(null, "browser:purge-sessionStorage");
 
-    
-    
+    // ServiceWorkers must be removed before cleaning QuotaManager. We store any
+    // errors so we can re-throw later once all operations have completed.
     let swCleanupError;
     try {
       await lazy.ServiceWorkerCleanUp.removeAll();
@@ -728,7 +719,7 @@ const QuotaCleaner = {
         principal.schemeIs("file")
     );
 
-    
+    // Re-throw any service worker cleanup errors.
     if (swCleanupError) {
       throw swCleanupError;
     }
@@ -737,16 +728,16 @@ const QuotaCleaner = {
 
 const PredictorNetworkCleaner = {
   async deleteAll() {
-    
-    
+    // Predictive network data - like cache, no way to clear this per
+    // domain, so just trash it all
     let np = Cc["@mozilla.org/network/predictor;1"].getService(
       Ci.nsINetworkPredictor
     );
     np.reset();
   },
 
-  
-  
+  // TODO: We should call the NetworkPredictor to clear by principal, rather
+  // than over-clearing for user requests or bailing out for programmatic calls.
   async deleteByPrincipal(aPrincipal, aIsUserRequest) {
     if (!aIsUserRequest) {
       return;
@@ -754,7 +745,7 @@ const PredictorNetworkCleaner = {
     await this.deleteAll();
   },
 
-  
+  // TODO: Same as above, but for base domain.
   async deleteByBaseDomain(aBaseDomain, aIsUserRequest) {
     if (!aIsUserRequest) {
       return;
@@ -764,11 +755,11 @@ const PredictorNetworkCleaner = {
 };
 
 const PushNotificationsCleaner = {
-  
-
-
-
-
+  /**
+   * Clear entries for aDomain including subdomains of aDomain.
+   * @param {string} aDomain - Domain to clear data for.
+   * @returns {Promise} a promise which resolves once data has been cleared.
+   */
   _deleteByRootDomain(aDomain) {
     if (!Services.prefs.getBoolPref("dom.push.enabled", false)) {
       return Promise.resolve();
@@ -778,7 +769,7 @@ const PushNotificationsCleaner = {
       let push = Cc["@mozilla.org/push/Service;1"].getService(
         Ci.nsIPushService
       );
-      
+      // ClearForDomain also clears subdomains.
       push.clearForDomain(aDomain, aStatus => {
         if (!Components.isSuccessCode(aStatus)) {
           aReject();
@@ -790,14 +781,14 @@ const PushNotificationsCleaner = {
   },
 
   deleteByHost(aHost, aOriginAttributes) {
-    
-    
+    // Will also clear entries for subdomains of aHost. Data is cleared across
+    // all origin attributes.
     return this._deleteByRootDomain(aHost);
   },
 
   deleteByPrincipal(aPrincipal) {
-    
-    
+    // Will also clear entries for subdomains of the principal host. Data is
+    // cleared across all origin attributes.
     return this._deleteByRootDomain(aPrincipal.host);
   },
 
@@ -826,20 +817,20 @@ const PushNotificationsCleaner = {
 };
 
 const StorageAccessCleaner = {
-  
+  // This is a special function to implement deleteUserInteractionForClearingHistory.
   async deleteExceptPrincipals(aPrincipalsWithStorage, aFrom) {
-    
-    
-    
-    
-    
+    // We compare by base domain in order to simulate the behavior
+    // from purging, Consider a scenario where the user is logged
+    // into sub.example.com but the cookies are on example.com. In this
+    // case, we will remove the user interaction for sub.example.com
+    // because its principal does not match the one with storage.
     let baseDomainsWithStorage = new Set();
     for (let principal of aPrincipalsWithStorage) {
       baseDomainsWithStorage.add(principal.baseDomain);
     }
     for (let perm of Services.perms.getAllByTypeSince(
       "storageAccessAPI",
-      
+      // The permission manager uses milliseconds instead of microseconds
       aFrom / 1000
     )) {
       if (!baseDomainsWithStorage.has(perm.principal.baseDomain)) {
@@ -866,7 +857,7 @@ const StorageAccessCleaner = {
   },
 
   async deleteByHost(aHost, aOriginAttributes) {
-    
+    // Clearing by host also clears associated subdomains.
     this._deleteInternal(({ principal }) => {
       let toBeRemoved = false;
       try {
@@ -930,7 +921,7 @@ const HistoryCleaner = {
 
 const SessionHistoryCleaner = {
   async deleteByHost(aHost, aOriginAttributes) {
-    
+    // Session storage and history also clear subdomains of aHost.
     Services.obs.notifyObservers(null, "browser:purge-sessionStorage", aHost);
     Services.obs.notifyObservers(
       null,
@@ -961,7 +952,7 @@ const SessionHistoryCleaner = {
 };
 
 const AuthTokensCleaner = {
-  
+  // TODO: Bug 1726742
   async deleteByPrincipal(aPrincipal, aIsUserRequest) {
     if (!aIsUserRequest) {
       return;
@@ -969,7 +960,7 @@ const AuthTokensCleaner = {
     await this.deleteAll();
   },
 
-  
+  // TODO: Bug 1726742
   async deleteByBaseDomain(aBaseDomain, aIsUserRequest) {
     if (!aIsUserRequest) {
       return;
@@ -986,7 +977,7 @@ const AuthTokensCleaner = {
 };
 
 const AuthCacheCleaner = {
-  
+  // TODO: Bug 1726743
   async deleteByPrincipal(aPrincipal, aIsUserRequest) {
     if (!aIsUserRequest) {
       return;
@@ -994,7 +985,7 @@ const AuthCacheCleaner = {
     await this.deleteAll();
   },
 
-  
+  // TODO: Bug 1726743
   async deleteByBaseDomain(aBaseDomain, aIsUserRequest) {
     if (!aIsUserRequest) {
       return;
@@ -1011,15 +1002,15 @@ const AuthCacheCleaner = {
 };
 
 const PermissionsCleaner = {
-  
-
-
-
-
-
-
-
-
+  /**
+   * Delete permissions by either base domain or host.
+   * Clearing by host also clears associated subdomains.
+   * For example, clearing "example.com" will also clear permissions for
+   * "test.example.com" and "another.test.example.com".
+   * @param options
+   * @param {string} options.baseDomain - Base domain to delete permissions for.
+   * @param {string} options.host - Host to delete permissions for.
+   */
   async _deleteInternal({ baseDomain, host }) {
     for (let perm of Services.perms.all) {
       let toBeRemoved;
@@ -1053,7 +1044,7 @@ const PermissionsCleaner = {
       try {
         Services.perms.removePermission(perm);
       } catch (ex) {
-        
+        // Ignore entry
       }
     }
   },
@@ -1085,7 +1076,7 @@ const PermissionsCleaner = {
 
 const PreferencesCleaner = {
   deleteByHost(aHost, aOriginAttributes) {
-    
+    // Also clears subdomains of aHost.
     return new Promise((aResolve, aReject) => {
       let cps2 = Cc["@mozilla.org/content-pref/service;1"].getService(
         Ci.nsIContentPrefService2
@@ -1147,16 +1138,16 @@ const ClientAuthRememberCleaner = {
     cars
       .getDecisions()
       .filter(({ asciiHost, entryKey }) => {
-        
-        
+        // Get the origin attributes which are in the third component of the
+        // entryKey. ',' is used as the delimiter.
         let originSuffixEncoded = entryKey.split(",")[2];
         let originAttributes;
 
         if (originSuffixEncoded) {
           try {
-            
-            
-            
+            // Decoding the suffix or parsing the origin attributes can fail. In
+            // this case we won't match the partitionKey, but we can still match
+            // the asciiHost.
             let originSuffix = decodeURIComponent(originSuffixEncoded);
             originAttributes = ChromeUtils.CreateOriginAttributesFromOriginSuffix(
               originSuffix
@@ -1190,12 +1181,12 @@ const HSTSCleaner = {
     let sss = Cc["@mozilla.org/ssservice;1"].getService(
       Ci.nsISiteSecurityService
     );
-    
-    
+    // Remove HSTS information for subdomains by enumerating
+    // the information in the site security service.
     for (let entry of sss.enumerate()) {
       let hostname = entry.hostname;
       if (Services.eTLD.hasRootDomain(hostname, aHost)) {
-        
+        // This uri is used as a key to reset the state.
         let uri = Services.io.newURI("https://" + hostname);
         sss.resetState(uri, entry.originAttributes);
       }
@@ -1211,22 +1202,22 @@ const HSTSCleaner = {
       Ci.nsISiteSecurityService
     );
 
-    
-    
+    // Remove HSTS information by enumerating entries of the site security
+    // service.
     Array.from(sss.enumerate())
       .filter(({ hostname, originAttributes }) =>
         hasBaseDomain({ host: hostname, originAttributes }, aDomain)
       )
       .forEach(({ hostname, originAttributes }) => {
-        
+        // This uri is used as a key to reset the state.
         let uri = Services.io.newURI("https://" + hostname);
         sss.resetState(uri, originAttributes);
       });
   },
 
   async deleteAll() {
-    
-    
+    // Clear site security settings - no support for ranges in this
+    // interface either, so we clearAll().
     let sss = Cc["@mozilla.org/ssservice;1"].getService(
       Ci.nsISiteSecurityService
     );
@@ -1254,14 +1245,14 @@ const EMECleaner = {
   },
 
   deleteAll() {
-    
+    // Not implemented.
     return Promise.resolve();
   },
 };
 
 const ReportsCleaner = {
   deleteByHost(aHost, aOriginAttributes) {
-    
+    // Also clears subdomains of aHost.
     return new Promise(aResolve => {
       Services.obs.notifyObservers(null, "reporting:purge-host", aHost);
       aResolve();
@@ -1308,10 +1299,10 @@ const ContentBlockingCleaner = {
   },
 };
 
-
-
-
-
+/**
+ * The about:home startup cache, if it exists, might contain information
+ * about where the user has been, or what they've downloaded.
+ */
 const AboutHomeStartupCacheCleaner = {
   async deleteByPrincipal(aPrincipal, aIsUserRequest) {
     if (!aIsUserRequest) {
@@ -1328,8 +1319,8 @@ const AboutHomeStartupCacheCleaner = {
   },
 
   deleteAll() {
-    
-    
+    // This cleaner only makes sense on Firefox desktop, which is the only
+    // application that uses the about:home startup cache.
     if (!AppConstants.MOZ_BUILD_APP == "browser") {
       return Promise.resolve();
     }
@@ -1363,8 +1354,8 @@ const AboutHomeStartupCacheCleaner = {
 };
 
 const PreflightCacheCleaner = {
-  
-  
+  // TODO: Bug 1727141: We should call the cache to clear by principal, rather
+  // than over-clearing for user requests or bailing out for programmatic calls.
   async deleteByPrincipal(aPrincipal, aIsUserRequest) {
     if (!aIsUserRequest) {
       return;
@@ -1372,7 +1363,7 @@ const PreflightCacheCleaner = {
     await this.deleteAll();
   },
 
-  
+  // TODO: Bug 1727141 (see deleteByPrincipal).
   async deleteByBaseDomain(aBaseDomain, aIsUserRequest) {
     if (!aIsUserRequest) {
       return;
@@ -1387,7 +1378,7 @@ const PreflightCacheCleaner = {
   },
 };
 
-
+// Here the map of Flags-Cleaners.
 const FLAGS_MAP = [
   {
     flag: Ci.nsIClearDataService.CLEAR_CERT_EXCEPTIONS,
@@ -1498,7 +1489,7 @@ const FLAGS_MAP = [
   },
 ];
 
-function ClearDataService() {
+export function ClearDataService() {
   this._initialize();
 }
 
@@ -1507,10 +1498,10 @@ ClearDataService.prototype = Object.freeze({
   QueryInterface: ChromeUtils.generateQI(["nsIClearDataService"]),
 
   _initialize() {
-    
+    // Let's start all the service we need to cleanup data.
 
-    
-    
+    // This is mainly needed for GeckoView that doesn't start QMS on startup
+    // time.
     if (!Services.qms) {
       Cu.reportError("Failed initializiation of QuotaManagerService.");
     }
@@ -1522,10 +1513,10 @@ ClearDataService.prototype = Object.freeze({
     }
 
     return this._deleteInternal(aFlags, aCallback, aCleaner => {
-      
-      
+      // Some of the 'Cleaners' do not support clearing data for
+      // local files. Ignore those.
       if (aCleaner.deleteByLocalFiles) {
-        
+        // A generic originAttributes dictionary.
         return aCleaner.deleteByLocalFiles({});
       }
       return Promise.resolve();
@@ -1538,17 +1529,17 @@ ClearDataService.prototype = Object.freeze({
     }
 
     return this._deleteInternal(aFlags, aCallback, aCleaner => {
-      
-      
+      // Some of the 'Cleaners' do not support to delete by principal. Let's
+      // use deleteAll() as fallback.
       if (aCleaner.deleteByHost) {
-        
+        // A generic originAttributes dictionary.
         return aCleaner.deleteByHost(aHost, {});
       }
-      
+      // The user wants to delete data. Let's remove as much as we can.
       if (aIsUserRequest) {
         return aCleaner.deleteAll();
       }
-      
+      // We don't want to delete more than what is strictly required.
       return Promise.resolve();
     });
   },
@@ -1557,7 +1548,7 @@ ClearDataService.prototype = Object.freeze({
     if (!aDomainOrHost || !aCallback) {
       return Cr.NS_ERROR_INVALID_ARG;
     }
-    
+    // We may throw here if aDomainOrHost can't be converted to a base domain.
     let baseDomain = Services.eTLD.getBaseDomainFromHost(aDomainOrHost);
 
     return this._deleteInternal(aFlags, aCallback, aCleaner =>
@@ -1581,16 +1572,16 @@ ClearDataService.prototype = Object.freeze({
     }
 
     return this._deleteInternal(aFlags, aCallback, aCleaner => {
-      
-      
+      // Some of the 'Cleaners' do not support to delete by range. Let's use
+      // deleteAll() as fallback.
       if (aCleaner.deleteByRange) {
         return aCleaner.deleteByRange(aFrom, aTo);
       }
-      
+      // The user wants to delete data. Let's remove as much as we can.
       if (aIsUserRequest) {
         return aCleaner.deleteAll();
       }
-      
+      // We don't want to delete more than what is strictly required.
       return Promise.resolve();
     });
   },
@@ -1611,7 +1602,7 @@ ClearDataService.prototype = Object.freeze({
     }
 
     let patternString = JSON.stringify(aPattern);
-    
+    // XXXtt remove clear-origin-attributes-data entirely
     Services.obs.notifyObservers(
       null,
       "clear-origin-attributes-data",
@@ -1631,7 +1622,7 @@ ClearDataService.prototype = Object.freeze({
           return aCleaner.deleteByOriginAttributes(patternString);
         }
 
-        
+        // We don't want to delete more than what is strictly required.
         return Promise.resolve();
       }
     );
@@ -1655,10 +1646,10 @@ ClearDataService.prototype = Object.freeze({
     return Cr.NS_OK;
   },
 
-  
-  
-  
-  
+  // This internal method uses aFlags against FLAGS_MAP in order to retrieve a
+  // list of 'Cleaners'. For each of them, the aHelper callback retrieves a
+  // promise object. All these promise objects are resolved before calling
+  // onDataDeleted.
   _deleteInternal(aFlags, aCallback, aHelper) {
     let resultFlags = 0;
     let promises = FLAGS_MAP.filter(c => aFlags & c.flag).map(c => {
@@ -1670,7 +1661,7 @@ ClearDataService.prototype = Object.freeze({
           });
         })
       );
-      
+      // Let's collect the failure in resultFlags.
     });
     Promise.all(promises).then(() => {
       aCallback.onDataDeleted(resultFlags);
@@ -1678,5 +1669,3 @@ ClearDataService.prototype = Object.freeze({
     return Cr.NS_OK;
   },
 });
-
-var EXPORTED_SYMBOLS = ["ClearDataService"];

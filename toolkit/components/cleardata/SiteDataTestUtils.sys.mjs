@@ -1,17 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["SiteDataTestUtils"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { BrowserTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/BrowserTestUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { BrowserTestUtils } from "resource://testing-common/BrowserTestUtils.sys.mjs";
 
 const lazy = {};
 
@@ -22,21 +14,21 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIServiceWorkerManager"
 );
 
-
-
-
-
-
-
-
-var SiteDataTestUtils = {
-  
-
-
-
-
-
-
+/**
+ * This module assists with tasks around testing functionality that shows
+ * or clears site data.
+ *
+ * Please note that you will have to clean up changes made manually, for
+ * example using SiteDataTestUtils.clear().
+ */
+export var SiteDataTestUtils = {
+  /**
+   * Makes an origin have persistent data storage.
+   *
+   * @param {String} origin - the origin of the site to give persistent storage
+   *
+   * @returns a Promise that resolves when storage was persisted
+   */
   persist(origin, value = Services.perms.ALLOW_ACTION) {
     return new Promise(resolve => {
       let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
@@ -47,14 +39,14 @@ var SiteDataTestUtils = {
     });
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Adds a new blob entry to a dummy indexedDB database for the specified origin.
+   *
+   * @param {String} origin - the origin of the site to add test data for
+   * @param {Number} size [optional] - the size of the entry in bytes
+   *
+   * @returns a Promise that resolves when the data was added successfully.
+   */
   addToIndexedDB(origin, size = 1024) {
     return new Promise(resolve => {
       let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
@@ -77,19 +69,19 @@ var SiteDataTestUtils = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Adds a new cookie for the specified origin or host + path + oa, with the
+   * specified contents. The cookie will be valid for one day.
+   * @param {object} options
+   * @param {String} [options.origin] - Origin of the site to add test data for.
+   * If set, overrides host, path and originAttributes args.
+   * @param {String} [options.host] - Host of the site to add test data for.
+   * @param {String} [options.path] - Path to set cookie for.
+   * @param {Object} [options.originAttributes] - Object of origin attributes to
+   * set cookie for.
+   * @param {String} [options.name] - Cookie name
+   * @param {String} [options.value] - Cookie value
+   */
   addToCookies({
     origin,
     host,
@@ -124,13 +116,13 @@ var SiteDataTestUtils = {
     );
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Adds a new localStorage entry for the specified origin, with the specified contents.
+   *
+   * @param {String} origin - the origin of the site to add test data for
+   * @param {String} [key] - the localStorage key
+   * @param {String} [value] - the localStorage value
+   */
   addToLocalStorage(origin, key = "foo", value = "bar") {
     let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
       origin
@@ -144,15 +136,15 @@ var SiteDataTestUtils = {
     storage.setItem(key, value);
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Checks whether the given origin is storing data in localStorage
+   *
+   * @param {String} origin - the origin of the site to check
+   * @param {{key: String, value: String}[]} [testEntries] - An array of entries
+   * to test for.
+   *
+   * @returns {Boolean} whether the origin has localStorage data
+   */
   hasLocalStorage(origin, testEntries) {
     let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
       origin
@@ -175,23 +167,23 @@ var SiteDataTestUtils = {
     );
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Adds a new serviceworker with the specified path. Note that this
+   * method will open a new tab at the domain of the SW path to that effect.
+   *
+   * @param {String} path - the path to the service worker to add.
+   *
+   * @returns a Promise that resolves when the service worker was registered
+   */
   addServiceWorker(path) {
     let uri = Services.io.newURI(path);
-    
+    // Register a dummy ServiceWorker.
     return BrowserTestUtils.withNewTab(uri.prePath, async function(browser) {
       return browser.ownerGlobal.SpecialPowers.spawn(
         browser,
         [{ path }],
         async ({ path: p }) => {
-          
+          // eslint-disable-next-line no-undef
           let r = await content.navigator.serviceWorker.register(p);
           return new Promise(resolve => {
             let worker = r.installing || r.waiting || r.active;
@@ -217,7 +209,7 @@ var SiteDataTestUtils = {
 
     let cookies;
     if (testPBMCookies) {
-      
+      // This needs to be updated when adding support for multiple PBM contexts.
       let originAttributes = { privateBrowsingId: 1 };
       cookies = Services.cookies.getCookiesWithOriginAttributes(
         JSON.stringify(originAttributes)
@@ -235,20 +227,20 @@ var SiteDataTestUtils = {
       );
     };
 
-    
+    // Return on first cookie found for principal.
     if (!testEntries) {
       return cookies.some(filterFn);
     }
 
-    
+    // Collect all cookies that match the principal
     cookies = cookies.filter(filterFn);
 
     if (cookies.length < testEntries.length) {
       return false;
     }
 
-    
-    
+    // This code isn't very efficient. It should only be used for testing
+    // a small amount of cookies.
     return testEntries.every(({ key, value }) =>
       cookies.some(cookie => cookie.name == key && cookie.value == value)
     );
@@ -312,13 +304,13 @@ var SiteDataTestUtils = {
     });
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Checks whether the specified origin has registered ServiceWorkers.
+   *
+   * @param {String} origin - the origin of the site to check
+   *
+   * @returns {Boolean} whether or not the site has ServiceWorkers.
+   */
   hasServiceWorkers(origin) {
     let serviceWorkers = lazy.swm.getAllRegistrations();
     for (let i = 0; i < serviceWorkers.length; i++) {
@@ -333,14 +325,14 @@ var SiteDataTestUtils = {
     return false;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Waits for a ServiceWorker to be registered.
+   *
+   * @param {String} the url of the ServiceWorker to wait for
+   *
+   * @returns a Promise that resolves when a ServiceWorker at the
+   *          specified location has been registered.
+   */
   promiseServiceWorkerRegistered(url) {
     if (!(url instanceof Ci.nsIURI)) {
       url = Services.io.newURI(url);
@@ -360,14 +352,14 @@ var SiteDataTestUtils = {
     });
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Waits for a ServiceWorker to be unregistered.
+   *
+   * @param {String} the url of the ServiceWorker to wait for
+   *
+   * @returns a Promise that resolves when a ServiceWorker at the
+   *          specified location has been unregistered.
+   */
   promiseServiceWorkerUnregistered(url) {
     if (!(url instanceof Ci.nsIURI)) {
       url = Services.io.newURI(url);
@@ -387,12 +379,12 @@ var SiteDataTestUtils = {
     });
   },
 
-  
-
-
-
-
-
+  /**
+   * Gets the current quota usage for the specified origin.
+   *
+   * @returns a Promise that resolves to an integer with the total
+   *          amount of disk usage by a given origin.
+   */
   getQuotaUsage(origin) {
     return new Promise(resolve => {
       let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
@@ -404,9 +396,9 @@ var SiteDataTestUtils = {
     });
   },
 
-  
-
-
+  /**
+   * Cleans up all site data.
+   */
   clear() {
     return new Promise(resolve => {
       Services.clearData.deleteData(
