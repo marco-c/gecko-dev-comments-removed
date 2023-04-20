@@ -265,23 +265,15 @@ extern JS_PUBLIC_API bool ThrowOnModuleEvaluationFailure(
 
 
 
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API JSObject* GetRequestedModules(
-    JSContext* cx, Handle<JSObject*> moduleRecord);
+extern JS_PUBLIC_API uint32_t
+GetRequestedModulesCount(JSContext* cx, Handle<JSObject*> moduleRecord);
 
 extern JS_PUBLIC_API JSString* GetRequestedModuleSpecifier(
-    JSContext* cx, Handle<Value> requestedModuleObject);
+    JSContext* cx, Handle<JSObject*> moduleRecord, uint32_t index);
 
 extern JS_PUBLIC_API void GetRequestedModuleSourcePos(
-    JSContext* cx, Handle<Value> requestedModuleObject, uint32_t* lineNumber,
-    uint32_t* columnNumber);
+    JSContext* cx, Handle<JSObject*> moduleRecord, uint32_t index,
+    uint32_t* lineNumber, uint32_t* columnNumber);
 
 
 
