@@ -10608,12 +10608,10 @@ bool nsContentUtils::
   return false;
 }
 
+static nsGlobalWindowInner* GetInnerWindowForGlobal(nsIGlobalObject* aGlobal) {
+  NS_ENSURE_TRUE(aGlobal, nullptr);
 
-nsGlobalWindowInner* nsContentUtils::CallerInnerWindow() {
-  nsIGlobalObject* global = GetIncumbentGlobal();
-  NS_ENSURE_TRUE(global, nullptr);
-
-  if (auto* window = global->AsInnerWindow()) {
+  if (auto* window = aGlobal->AsInnerWindow()) {
     return nsGlobalWindowInner::Cast(window);
   }
 
@@ -10623,7 +10621,7 @@ nsGlobalWindowInner* nsContentUtils::CallerInnerWindow() {
   
   
   
-  JS::Rooted<JSObject*> scope(RootingCx(), global->GetGlobalJSObject());
+  JS::Rooted<JSObject*> scope(RootingCx(), aGlobal->GetGlobalJSObject());
   NS_ENSURE_TRUE(scope, nullptr);
 
   if (xpc::IsSandbox(scope)) {
@@ -10637,7 +10635,17 @@ nsGlobalWindowInner* nsContentUtils::CallerInnerWindow() {
 
   
   
-  return nsGlobalWindowInner::Cast(global->AsInnerWindow());
+  return nsGlobalWindowInner::Cast(aGlobal->AsInnerWindow());
+}
+
+
+nsGlobalWindowInner* nsContentUtils::IncumbentInnerWindow() {
+  return GetInnerWindowForGlobal(GetIncumbentGlobal());
+}
+
+
+nsGlobalWindowInner* nsContentUtils::EntryInnerWindow() {
+  return GetInnerWindowForGlobal(GetEntryGlobal());
 }
 
 

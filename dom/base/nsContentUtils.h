@@ -3276,7 +3276,21 @@ class nsContentUtils {
   static bool HighPriorityEventPendingForTopLevelDocumentBeforeContentfulPaint(
       Document* aDocument);
 
-  static nsGlobalWindowInner* CallerInnerWindow();
+  
+
+
+
+
+
+  static nsGlobalWindowInner* IncumbentInnerWindow();
+
+  
+
+
+
+
+
+  static nsGlobalWindowInner* EntryInnerWindow();
 
   
 

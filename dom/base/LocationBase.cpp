@@ -141,7 +141,7 @@ void LocationBase::SetURI(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal,
 
   
   nsCOMPtr<nsPIDOMWindowInner> sourceWindow =
-      nsContentUtils::CallerInnerWindow();
+      nsContentUtils::IncumbentInnerWindow();
   if (sourceWindow) {
     WindowContext* context = sourceWindow->GetWindowContext();
     loadState->SetSourceBrowsingContext(sourceWindow->GetBrowsingContext());
