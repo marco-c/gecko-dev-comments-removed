@@ -9,6 +9,7 @@
 #include <atomic>
 #include "MediaEngineSource.h"
 #include "MediaUtils.h"
+#include "PerformanceRecorder.h"
 #include "VideoFrameUtils.h"
 
 #include "mozilla/AppShutdown.h"
@@ -145,9 +146,13 @@ class DeliverFrameRunnable : public mozilla::Runnable {
     
     
     
+    PerformanceRecorder<CopyVideoStage> rec(
+        "CamerasParent::VideoFrameToAltBuffer"_ns, aFrame.width(),
+        aFrame.height());
     mAlternateBuffer.reset(new unsigned char[aProperties.bufferSize()]);
     VideoFrameUtils::CopyVideoFrameBuffers(mAlternateBuffer.get(),
                                            aProperties.bufferSize(), aFrame);
+    rec.Record();
   }
 
   DeliverFrameRunnable(CamerasParent* aParent, CaptureEngine aEngine,
@@ -263,8 +268,11 @@ int CamerasParent::DeliverFrameOverIPC(CaptureEngine capEng, uint32_t aStreamId,
       return 0;
     }
 
+    PerformanceRecorder<CopyVideoStage> rec(
+        "CamerasParent::AltBufferToShmem"_ns, aProps.width(), aProps.height());
     
     memcpy(shMemBuff.GetBytes(), altbuffer, aProps.bufferSize());
+    rec.Record();
 
     if (!SendDeliverFrame(capEng, aStreamId, std::move(shMemBuff.Get()),
                           aProps)) {
@@ -301,8 +309,12 @@ void CallbackHelper::OnFrame(const webrtc::VideoFrame& aVideoFrame) {
     
   } else {
     
+    PerformanceRecorder<CopyVideoStage> rec(
+        "CamerasParent::VideoFrameToShmem"_ns, aVideoFrame.width(),
+        aVideoFrame.height());
     VideoFrameUtils::CopyVideoFrameBuffers(
         shMemBuffer.GetBytes(), properties.bufferSize(), aVideoFrame);
+    rec.Record();
     runnable = new DeliverFrameRunnable(mParent, mCapEngine, mStreamId,
                                         std::move(shMemBuffer), properties);
   }
