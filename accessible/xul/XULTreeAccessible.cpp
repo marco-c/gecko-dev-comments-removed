@@ -407,25 +407,7 @@ bool XULTreeAccessible::AreItemsOperable() const {
   return true;
 }
 
-LocalAccessible* XULTreeAccessible::ContainerWidget() const {
-  if (IsAutoCompletePopup() && mContent->GetParent()) {
-    
-    
-    
-    
-    nsCOMPtr<nsIDOMXULMenuListElement> menuListElm =
-        mContent->GetParent()->AsElement()->AsXULMenuList();
-    if (menuListElm) {
-      RefPtr<mozilla::dom::Element> inputElm;
-      menuListElm->GetInputField(getter_AddRefs(inputElm));
-      if (inputElm) {
-        LocalAccessible* input = mDoc->GetAccessible(inputElm);
-        return input ? input->ContainerWidget() : nullptr;
-      }
-    }
-  }
-  return nullptr;
-}
+LocalAccessible* XULTreeAccessible::ContainerWidget() const { return nullptr; }
 
 
 

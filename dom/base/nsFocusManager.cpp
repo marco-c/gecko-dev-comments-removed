@@ -348,21 +348,6 @@ Element* nsFocusManager::GetFocusedDescendant(
 }
 
 
-Element* nsFocusManager::GetRedirectedFocus(nsIContent* aContent) {
-  if (aContent->IsXULElement()) {
-    nsCOMPtr<nsIDOMXULMenuListElement> menulist =
-        aContent->AsElement()->AsXULMenuList();
-    if (menulist) {
-      RefPtr<Element> inputField;
-      menulist->GetInputField(getter_AddRefs(inputField));
-      return inputField;
-    }
-  }
-
-  return nullptr;
-}
-
-
 InputContextAction::Cause nsFocusManager::GetFocusMoveActionCause(
     uint32_t aFlags) {
   if (aFlags & nsIFocusManager::FLAG_BYTOUCH) {
@@ -2097,12 +2082,6 @@ Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
   
   mEventHandlingNeedsFlush = false;
   doc->FlushPendingNotifications(FlushType::EnsurePresShellInitAndFrames);
-
-  
-  
-  if (RefPtr<Element> redirectedFocus = GetRedirectedFocus(aElement)) {
-    return FlushAndCheckIfFocusable(redirectedFocus, aFlags);
-  }
 
   PresShell* presShell = doc->GetPresShell();
   if (!presShell) {
@@ -4432,13 +4411,8 @@ nsresult nsFocusManager::GetNextTabbableContent(
             
             
             
-            
-            
-            
-            
             else if (currentContent == aRootContent ||
-                     (currentContent != startContent &&
-                      (aForward || !GetRedirectedFocus(currentContent)))) {
+                     currentContent != startContent) {
               NS_ADDREF(*aResultContent = currentContent);
               return NS_OK;
             }

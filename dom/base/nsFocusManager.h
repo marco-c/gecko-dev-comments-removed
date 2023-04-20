@@ -271,18 +271,6 @@ class nsFocusManager final : public nsIFocusManager,
   
 
 
-
-
-
-
-
-
-
-  static mozilla::dom::Element* GetRedirectedFocus(nsIContent* aContent);
-
-  
-
-
   static InputContextAction::Cause GetFocusMoveActionCause(uint32_t aFlags);
 
   
