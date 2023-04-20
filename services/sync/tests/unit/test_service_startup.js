@@ -1,6 +1,10 @@
 
 
 
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
+
 Svc.Prefs.set("registerEngines", "Tab,Bookmarks,Form,History");
 
 add_task(async function run_test() {
@@ -30,12 +34,18 @@ add_task(async function run_test() {
 
   _("Engines are registered.");
   let engines = Service.engineManager.getAll();
-  Assert.ok(
-    Utils.deepEquals(
+  if (AppConstants.MOZ_APP_NAME == "thunderbird") {
+    
+    Assert.deepEqual(
+      engines.map(engine => engine.name),
+      []
+    );
+  } else {
+    Assert.deepEqual(
       engines.map(engine => engine.name),
       ["tabs", "bookmarks", "forms", "history"]
-    )
-  );
+    );
+  }
 
   
   Svc.Prefs.resetBranch("");
