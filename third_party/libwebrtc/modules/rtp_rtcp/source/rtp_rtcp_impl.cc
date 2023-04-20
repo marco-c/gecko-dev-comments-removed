@@ -323,15 +323,8 @@ bool ModuleRtpRtcpImpl::Sending() const {
   return rtcp_sender_.Sending();
 }
 
-
-
-
 void ModuleRtpRtcpImpl::SetSendingMediaStatus(const bool sending) {
-  if (rtp_sender_) {
-    rtp_sender_->packet_generator.SetSendingMediaStatus(sending);
-  } else {
-    RTC_DCHECK(!sending);
-  }
+  rtp_sender_->packet_generator.SetSendingMediaStatus(sending);
 }
 
 bool ModuleRtpRtcpImpl::SendingMedia() const {
