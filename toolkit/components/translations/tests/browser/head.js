@@ -33,20 +33,10 @@ const { TranslationsParent } = ChromeUtils.importESModule(
 
 
 
-
-
-
-
-
-
-
-
 async function openAboutTranslations({
   dataForContent,
   disabled,
   runInPage,
-  detectedLanguageConfidence,
-  detectedLanguageLabel,
   languagePairs,
   prefs,
 }) {
@@ -80,13 +70,7 @@ async function openAboutTranslations({
 
   
   if (languagePairs) {
-    TranslationsParent.mockLanguagePairs(languagePairs);
-  }
-  if (detectedLanguageLabel && detectedLanguageConfidence) {
-    TranslationsParent.mockLanguageIdentification(
-      detectedLanguageLabel,
-      detectedLanguageConfidence
-    );
+    TranslationsParent.mock(languagePairs);
   }
 
   
@@ -100,10 +84,7 @@ async function openAboutTranslations({
   );
 
   if (languagePairs) {
-    TranslationsParent.mockLanguagePairs(null);
-  }
-  if (detectedLanguageLabel && detectedLanguageConfidence) {
-    TranslationsParent.mockLanguageIdentification(null, null);
+    TranslationsParent.mock(null);
   }
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
@@ -274,7 +255,7 @@ async function loadTestPage({ runInPage, languagePairs, page }) {
 
   
   if (languagePairs) {
-    TranslationsParent.mockLanguagePairs(languagePairs);
+    TranslationsParent.mock(languagePairs);
   }
 
   BrowserTestUtils.loadURIString(tab.linkedBrowser, page);
@@ -287,7 +268,7 @@ async function loadTestPage({ runInPage, languagePairs, page }) {
   );
 
   if (languagePairs) {
-    TranslationsParent.mockLanguagePairs(null);
+    TranslationsParent.mock(null);
   }
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();

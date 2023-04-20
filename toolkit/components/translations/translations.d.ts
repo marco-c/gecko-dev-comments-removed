@@ -229,24 +229,4 @@ interface TranslationsEnginePayload {
 
 
 
-
-
-interface LanguageIdEnginePayload {
-  wasmBuffer: ArrayBuffer,
-  modelBuffer: ArrayBuffer,
-}
-
-
-
-
-
-
-interface LanguageIdEngineMockedPayload {
-  confidence: number,
-  languageLabel: string,
-}
-
-
-
-
 export type NodeVisibility = "in-viewport" | "out-of-viewport" | "hidden";
