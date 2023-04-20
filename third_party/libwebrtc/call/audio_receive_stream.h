@@ -211,11 +211,6 @@ class AudioReceiveStreamInterface : public MediaReceiveStreamInterface {
   virtual ~AudioReceiveStreamInterface() {}
 };
 
-
-
-using AudioReceiveStream [[deprecated("Use AudioReceiveStreamInterface")]] =
-    AudioReceiveStreamInterface;
-
 }  
 
 #endif  
