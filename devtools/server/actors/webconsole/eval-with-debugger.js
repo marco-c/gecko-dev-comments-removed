@@ -185,10 +185,7 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
   
   
   if (!frame && result && "throw" in result) {
-    forceLexicalInitForVariableDeclarationsInThrowingExpression(
-      dbgGlobal,
-      string
-    );
+    parseErrorOutput(dbgGlobal, string);
   }
 
   const { helperResult } = helpers;
@@ -259,23 +256,7 @@ function getEvalResult(
   return result;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-function forceLexicalInitForVariableDeclarationsInThrowingExpression(
-  dbgGlobal,
-  string
-) {
+function parseErrorOutput(dbgGlobal, string) {
   
   
   if (isWorker) {
@@ -288,63 +269,57 @@ function forceLexicalInitForVariableDeclarationsInThrowingExpression(
   
   try {
     ast = lazy.Reflect.parse(string);
+  } catch (ex) {
+    return;
+  }
+  for (const line of ast.body) {
+    
+    
+    if (!(line.kind == "let" || line.kind == "const")) {
+      continue;
+    }
 
-    for (const line of ast.body) {
-      
-      
-      if (!(line.kind == "let" || line.kind == "const")) {
-        continue;
-      }
-
-      const identifiers = [];
-      for (const decl of line.declarations) {
-        switch (decl.id.type) {
-          case "Identifier":
-            
-            identifiers.push(decl.id.name);
-            break;
-          case "ArrayPattern":
-            
-            
-            for (const e of decl.id.elements) {
-              if (e.type == "Identifier") {
-                identifiers.push(e.name);
-              } else if (e.type == "AssignmentExpression") {
-                identifiers.push(e.left.name);
-              }
+    const identifiers = [];
+    for (const decl of line.declarations) {
+      switch (decl.id.type) {
+        case "Identifier":
+          
+          identifiers.push(decl.id.name);
+          break;
+        case "ArrayPattern":
+          
+          
+          for (const e of decl.id.elements) {
+            if (e.type == "Identifier") {
+              identifiers.push(e.name);
+            } else if (e.type == "AssignmentExpression") {
+              identifiers.push(e.left.name);
             }
-            break;
-          case "ObjectPattern":
+          }
+          break;
+        case "ObjectPattern":
+          
+          
+          
+          for (const prop of decl.id.properties) {
             
-            
-            
-            for (const prop of decl.id.properties) {
-              
-              if (prop.key?.type == "Identifier") {
-                identifiers.push(prop.key.name);
-              }
-              
-              if (prop.value?.type == "Identifier") {
-                identifiers.push(prop.value.name);
-              } else if (prop.value?.type == "AssignmentExpression") {
-                identifiers.push(prop.value.left.name);
-              } else if (prop.type === "SpreadExpression") {
-                identifiers.push(prop.expression.name);
-              }
+            if (prop.key.type == "Identifier") {
+              identifiers.push(prop.key.name);
             }
-            break;
-        }
-      }
-
-      for (const name of identifiers) {
-        dbgGlobal.forceLexicalInitializationByName(name);
+            
+            if (prop.value.type == "Identifier") {
+              identifiers.push(prop.value.name);
+            } else if (prop.value.type == "AssignmentExpression") {
+              identifiers.push(prop.value.left.name);
+            }
+          }
+          break;
       }
     }
-  } catch (ex) {
-    console.error(
-      "Error in forceLexicalInitForVariableDeclarationsInThrowingExpression:",
-      ex
-    );
+
+    for (const name of identifiers) {
+      dbgGlobal.forceLexicalInitializationByName(name);
+    }
   }
 }
 
