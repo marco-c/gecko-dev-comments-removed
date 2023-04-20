@@ -670,23 +670,28 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
   }
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool wakeUpTimerThread =
+      mWaiting &&
+      (mTimers.Length() == 0 || aTimer->mTimeout < mTimers[0].Timeout() ||
+       aTimer->mDelay.IsZero());
+
+  
   if (!AddTimerInternal(aTimer)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  
-  
-  RemoveLeadingCanceledTimersInternal();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mWaiting && (mTimers[0].Value() == aTimer || aTimer->mDelay.IsZero())) {
+  if (wakeUpTimerThread) {
     mNotified = true;
     mMonitor.Notify();
   }
