@@ -39,11 +39,24 @@ static double WSSDistance(const Face* aFace, const gfxFontStyle& aStyle) {
          weightDist * kWeightFactor;
 }
 
-void* Pointer::ToPtr(FontList* aFontList) const {
+void* Pointer::ToPtr(FontList* aFontList) const MOZ_NO_THREAD_SAFETY_ANALYSIS {
   if (IsNull()) {
     return nullptr;
   }
+
+  
+  
+  
+  bool isMainThread = NS_IsMainThread();
+  if (!isMainThread) {
+    gfxPlatformFontList::PlatformFontList()->Lock();
+  }
+
+  
+  
+  void* result = nullptr;
   uint32_t block = Block();
+
   
   
   
@@ -51,7 +64,7 @@ void* Pointer::ToPtr(FontList* aFontList) const {
   if (block >= blocks.Length()) {
     if (XRE_IsParentProcess()) {
       
-      return nullptr;
+      goto cleanup;
     }
     
     
@@ -61,8 +74,8 @@ void* Pointer::ToPtr(FontList* aFontList) const {
     
     
     
-    if (!NS_IsMainThread() || !aFontList->UpdateShmBlocks()) {
-      return nullptr;
+    if (!isMainThread || !aFontList->UpdateShmBlocks()) {
+      goto cleanup;
     }
     MOZ_ASSERT(block < blocks.Length(), "failure in UpdateShmBlocks?");
     
@@ -72,10 +85,17 @@ void* Pointer::ToPtr(FontList* aFontList) const {
     
     
     if (block >= blocks.Length()) {
-      return nullptr;
+      goto cleanup;
     }
   }
-  return static_cast<char*>(blocks[block]->Memory()) + Offset();
+  result = static_cast<char*>(blocks[block]->Memory()) + Offset();
+
+cleanup:
+  if (!isMainThread) {
+    gfxPlatformFontList::PlatformFontList()->Unlock();
+  }
+
+  return result;
 }
 
 void String::Assign(const nsACString& aString, FontList* aList) {
