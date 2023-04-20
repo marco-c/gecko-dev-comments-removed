@@ -54,8 +54,10 @@
 
 
 class nsContainerFrame;
+class nsMenuFrame;
 class nsMenuPopupFrame;
 class nsMenuBarFrame;
+class nsMenuParent;
 class nsIDocShellTreeItem;
 class nsPIDOMWindowOuter;
 class nsRefreshDriver;
@@ -66,7 +68,6 @@ namespace dom {
 class Event;
 class KeyboardEvent;
 class UIEvent;
-class XULButtonElement;
 }  
 }  
 
@@ -306,7 +307,8 @@ class nsXULPopupPositionedEvent : public mozilla::Runnable {
  public:
   explicit nsXULPopupPositionedEvent(nsIContent* aPopup)
       : mozilla::Runnable("nsXULPopupPositionedEvent"), mPopup(aPopup) {
-    MOZ_ASSERT(aPopup);
+    NS_ASSERTION(
+        aPopup, "null popup supplied to nsXULPopupPositionedEvent constructor");
   }
 
   NS_IMETHOD Run() override;
@@ -316,7 +318,7 @@ class nsXULPopupPositionedEvent : public mozilla::Runnable {
   static bool DispatchIfNeeded(nsIContent* aPopup);
 
  private:
-  const nsCOMPtr<nsIContent> mPopup;
+  nsCOMPtr<nsIContent> mPopup;
 };
 
 
@@ -387,7 +389,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   void OnNativeSubMenuWillOpen(mozilla::dom::Element* aPopupElement) override;
   void OnNativeSubMenuDidOpen(mozilla::dom::Element* aPopupElement) override;
   void OnNativeSubMenuClosed(mozilla::dom::Element* aPopupElement) override;
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void OnNativeMenuWillActivateItem(
+  void OnNativeMenuWillActivateItem(
       mozilla::dom::Element* aMenuItemElement) override;
 
   static nsXULPopupManager* sInstance;
@@ -402,8 +404,49 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
   
   
+  
+  
+  
+  static nsContainerFrame* ImmediateParentFrame(nsContainerFrame* aFrame);
+
+  
+  
   void AdjustPopupsOnWindowChange(nsPIDOMWindowOuter* aWindow);
   void AdjustPopupsOnWindowChange(mozilla::PresShell* aPresShell);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static nsMenuFrame* GetPreviousMenuItem(nsContainerFrame* aParent,
+                                          nsMenuFrame* aStart, bool aIsPopup,
+                                          bool aWrap);
+  static nsMenuFrame* GetNextMenuItem(nsContainerFrame* aParent,
+                                      nsMenuFrame* aStart, bool aIsPopup,
+                                      bool aWrap);
+
+  
+  
+  
+  static bool IsValidMenuItem(nsIContent* aContent, bool aOnPopup);
 
   
   
@@ -416,12 +459,12 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
   struct MayShowMenuResult {
     const bool mIsNative = false;
-    mozilla::dom::XULButtonElement* const mMenuButton = nullptr;
+    nsMenuFrame* const mMenuFrame = nullptr;
     nsMenuPopupFrame* const mMenuPopupFrame = nullptr;
 
     explicit operator bool() const {
-      MOZ_ASSERT(!!mMenuButton == !!mMenuPopupFrame);
-      return mIsNative || mMenuButton;
+      MOZ_ASSERT(!!mMenuFrame == !!mMenuPopupFrame);
+      return mIsNative || mMenuFrame;
     }
   };
 
@@ -522,13 +565,12 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  void HidePopupAfterDelay(nsMenuPopupFrame* aPopup, int32_t aDelay);
+  void HidePopupAfterDelay(nsMenuPopupFrame* aPopup);
 
   
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void HidePopupsInDocShell(nsIDocShellTreeItem* aDocShellToHide);
 
   
@@ -551,8 +593,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  MOZ_CAN_RUN_SCRIPT void ExecuteMenu(nsIContent* aMenu,
-                                      nsXULMenuCommandEvent* aEvent);
+  void ExecuteMenu(nsIContent* aMenu, nsXULMenuCommandEvent* aEvent);
 
   
 
@@ -570,14 +611,14 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
 
 
-
-
-  nsIFrame* GetTopPopup(nsPopupType aType);
+  bool IsPopupOpenForMenuParent(nsMenuParent* aMenuParent);
 
   
 
 
-  nsIContent* GetTopActiveMenuItemContent();
+
+
+  nsIFrame* GetTopPopup(nsPopupType aType);
 
   
 
@@ -624,7 +665,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  MOZ_CAN_RUN_SCRIPT void PopupDestroyed(nsMenuPopupFrame* aFrame);
+  void PopupDestroyed(nsMenuPopupFrame* aFrame);
 
   
 
@@ -656,29 +697,29 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  void CancelMenuTimer(nsMenuPopupFrame*);
+  void CancelMenuTimer(nsMenuParent* aMenuParent);
 
   
 
 
 
 
-  MOZ_CAN_RUN_SCRIPT bool HandleShortcutNavigation(
-      mozilla::dom::KeyboardEvent& aKeyEvent, nsMenuPopupFrame* aFrame);
+  bool HandleShortcutNavigation(mozilla::dom::KeyboardEvent* aKeyEvent,
+                                nsMenuPopupFrame* aFrame);
 
   
 
 
 
-  MOZ_CAN_RUN_SCRIPT bool HandleKeyboardNavigation(uint32_t aKeyCode);
+  bool HandleKeyboardNavigation(uint32_t aKeyCode);
 
   
 
 
 
 
-  MOZ_CAN_RUN_SCRIPT bool HandleKeyboardNavigationInPopup(
-      nsMenuPopupFrame* aFrame, nsNavigationDirection aDir) {
+  bool HandleKeyboardNavigationInPopup(nsMenuPopupFrame* aFrame,
+                                       nsNavigationDirection aDir) {
     return HandleKeyboardNavigationInPopup(nullptr, aFrame, aDir);
   }
 
@@ -686,9 +727,8 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  MOZ_CAN_RUN_SCRIPT bool HandleKeyboardEventWithKeyCode(
-      mozilla::dom::KeyboardEvent* aKeyEvent,
-      nsMenuChainItem* aTopVisibleMenuItem);
+  bool HandleKeyboardEventWithKeyCode(mozilla::dom::KeyboardEvent* aKeyEvent,
+                                      nsMenuChainItem* aTopVisibleMenuItem);
 
   
   nsresult UpdateIgnoreKeys(bool aIgnoreKeys);
@@ -699,9 +739,9 @@ class nsXULPopupManager final : public nsIDOMEventListener,
     return mPendingPopup->mEvent.get();
   }
 
-  MOZ_CAN_RUN_SCRIPT nsresult KeyUp(mozilla::dom::KeyboardEvent* aKeyEvent);
-  MOZ_CAN_RUN_SCRIPT nsresult KeyDown(mozilla::dom::KeyboardEvent* aKeyEvent);
-  MOZ_CAN_RUN_SCRIPT nsresult KeyPress(mozilla::dom::KeyboardEvent* aKeyEvent);
+  nsresult KeyUp(mozilla::dom::KeyboardEvent* aKeyEvent);
+  nsresult KeyDown(mozilla::dom::KeyboardEvent* aKeyEvent);
+  nsresult KeyPress(mozilla::dom::KeyboardEvent* aKeyEvent);
 
  protected:
   nsXULPopupManager();
@@ -720,19 +760,16 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
   
   
-  MOZ_CAN_RUN_SCRIPT void HidePopupsInList(
-      const nsTArray<nsMenuPopupFrame*>& aFrames);
+  void HidePopupsInList(const nsTArray<nsMenuPopupFrame*>& aFrames);
 
   
   
   
-  MOZ_CAN_RUN_SCRIPT void HideOpenMenusBeforeExecutingMenu(CloseMenuMode aMode);
+  void HideOpenMenusBeforeExecutingMenu(CloseMenuMode aMode);
 
   
-  MOZ_CAN_RUN_SCRIPT void ShowPopupCallback(nsIContent* aPopup,
-                                            nsMenuPopupFrame* aPopupFrame,
-                                            bool aIsContextMenu,
-                                            bool aSelectFirstItem);
+  void ShowPopupCallback(nsIContent* aPopup, nsMenuPopupFrame* aPopupFrame,
+                         bool aIsContextMenu, bool aSelectFirstItem);
   MOZ_CAN_RUN_SCRIPT void HidePopupCallback(
       nsIContent* aPopup, nsMenuPopupFrame* aPopupFrame, nsIContent* aNextPopup,
       nsIContent* aLastPopup, nsPopupType aPopupType, bool aDeselectMenu);
@@ -779,7 +816,6 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
 
 
-  MOZ_CAN_RUN_SCRIPT
   bool HandleKeyboardNavigationInPopup(nsMenuChainItem* aItem,
                                        nsNavigationDirection aDir) {
     return HandleKeyboardNavigationInPopup(aItem, aItem->Frame(), aDir);
@@ -793,9 +829,9 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  MOZ_CAN_RUN_SCRIPT bool HandleKeyboardNavigationInPopup(
-      nsMenuChainItem* aItem, nsMenuPopupFrame* aFrame,
-      nsNavigationDirection aDir);
+  bool HandleKeyboardNavigationInPopup(nsMenuChainItem* aItem,
+                                       nsMenuPopupFrame* aFrame,
+                                       nsNavigationDirection aDir);
 
  protected:
   already_AddRefed<nsINode> GetLastTriggerNode(
@@ -853,7 +889,9 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
   
   nsCOMPtr<nsITimer> mCloseTimer;
-  nsMenuPopupFrame* mTimerMenu = nullptr;
+
+  
+  nsMenuPopupFrame* mTimerMenu;
 
   
   const PendingPopup* mPendingPopup;

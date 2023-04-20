@@ -7,9 +7,6 @@
 
 
 {
-  const { AppConstants } = ChromeUtils.importESModule(
-    "resource://gre/modules/AppConstants.sys.mjs"
-  );
   const MozXULMenuElement = MozElements.MozElementMixin(XULMenuElement);
   const MenuBaseControl = MozElements.BaseControlMixin(MozXULMenuElement);
 
@@ -41,35 +38,20 @@
       this.addEventListener(
         "keypress",
         event => {
-          if (
-            event.defaultPrevented ||
-            event.altKey ||
-            event.ctrlKey ||
-            event.metaKey
-          ) {
+          if (event.altKey || event.ctrlKey || event.metaKey) {
             return;
           }
 
           if (
-            AppConstants.platform === "macosx" &&
-            !this.open &&
+            !event.defaultPrevented &&
             (event.keyCode == KeyEvent.DOM_VK_UP ||
-              event.keyCode == KeyEvent.DOM_VK_DOWN)
-          ) {
-            
-            
-            return;
-          }
-
-          if (
-            event.keyCode == KeyEvent.DOM_VK_UP ||
-            event.keyCode == KeyEvent.DOM_VK_DOWN ||
-            event.keyCode == KeyEvent.DOM_VK_PAGE_UP ||
-            event.keyCode == KeyEvent.DOM_VK_PAGE_DOWN ||
-            event.keyCode == KeyEvent.DOM_VK_HOME ||
-            event.keyCode == KeyEvent.DOM_VK_END ||
-            event.keyCode == KeyEvent.DOM_VK_BACK_SPACE ||
-            event.charCode > 0
+              event.keyCode == KeyEvent.DOM_VK_DOWN ||
+              event.keyCode == KeyEvent.DOM_VK_PAGE_UP ||
+              event.keyCode == KeyEvent.DOM_VK_PAGE_DOWN ||
+              event.keyCode == KeyEvent.DOM_VK_HOME ||
+              event.keyCode == KeyEvent.DOM_VK_END ||
+              event.keyCode == KeyEvent.DOM_VK_BACK_SPACE ||
+              event.charCode > 0)
           ) {
             
             this.activeChild = this.mSelectedInternal;

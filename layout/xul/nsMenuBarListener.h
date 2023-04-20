@@ -23,8 +23,6 @@ namespace mozilla {
 namespace dom {
 class EventTarget;
 class KeyboardEvent;
-class XULMenuParentElement;
-class XULButtonElement;
 }  
 }  
 
@@ -58,33 +56,31 @@ class nsMenuBarListener final : public nsIDOMEventListener {
 
 
 
-  static bool IsAccessKeyPressed(mozilla::dom::KeyboardEvent&);
+  static bool IsAccessKeyPressed(mozilla::dom::KeyboardEvent* aEvent);
 
  protected:
   virtual ~nsMenuBarListener();
 
-  bool IsMenuOpen() const;
-
-  MOZ_CAN_RUN_SCRIPT nsresult KeyUp(mozilla::dom::Event* aMouseEvent);
-  MOZ_CAN_RUN_SCRIPT nsresult KeyDown(mozilla::dom::Event* aMouseEvent);
-  MOZ_CAN_RUN_SCRIPT nsresult KeyPress(mozilla::dom::Event* aMouseEvent);
-  MOZ_CAN_RUN_SCRIPT nsresult Blur(mozilla::dom::Event* aEvent);
-  MOZ_CAN_RUN_SCRIPT nsresult OnWindowDeactivated(mozilla::dom::Event* aEvent);
-  MOZ_CAN_RUN_SCRIPT nsresult MouseDown(mozilla::dom::Event* aMouseEvent);
-  MOZ_CAN_RUN_SCRIPT nsresult Fullscreen(mozilla::dom::Event* aEvent);
+  nsresult KeyUp(mozilla::dom::Event* aMouseEvent);
+  nsresult KeyDown(mozilla::dom::Event* aMouseEvent);
+  nsresult KeyPress(mozilla::dom::Event* aMouseEvent);
+  nsresult Blur(mozilla::dom::Event* aEvent);
+  nsresult OnWindowDeactivated(mozilla::dom::Event* aEvent);
+  nsresult MouseDown(mozilla::dom::Event* aMouseEvent);
+  nsresult Fullscreen(mozilla::dom::Event* aEvent);
 
   static void InitAccessKey();
 
   static mozilla::Modifiers GetModifiersForAccessKey(
-      mozilla::dom::KeyboardEvent& event);
+      mozilla::dom::KeyboardEvent* event);
 
   
 
 
 
 
-  mozilla::dom::XULButtonElement* GetMenuForKeyEvent(
-      mozilla::dom::KeyboardEvent& aKeyEvent);
+  nsMenuFrame* GetMenuForKeyEvent(mozilla::dom::KeyboardEvent* aKeyEvent,
+                                  bool aPeek);
 
   
 
@@ -94,13 +90,12 @@ class nsMenuBarListener final : public nsIDOMEventListener {
 
   
   
-  MOZ_CAN_RUN_SCRIPT void ToggleMenuActiveState();
+  void ToggleMenuActiveState();
 
   bool Destroyed() const { return !mMenuBarFrame; }
 
   
   nsMenuBarFrame* mMenuBarFrame;
-  mozilla::dom::XULMenuParentElement* mContent;
   
   
   

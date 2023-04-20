@@ -681,18 +681,25 @@ nsIScrollableFrame* Element::GetScrollFrame(nsIFrame** aFrame,
       return nullptr;
     }
 
-    if (nsIScrollableFrame* scrollFrame = frame->GetScrollTargetFrame()) {
-      MOZ_ASSERT(!OwnerDoc()->IsScrollingElement(this),
-                 "How can we have a scrollframe if we're the "
-                 "scrollingElement for our document?");
-      return scrollFrame;
+    
+    
+    LayoutFrameType type = frame->Type();
+    if (type != LayoutFrameType::Menu &&
+        type != LayoutFrameType::ComboboxControl) {
+      nsIScrollableFrame* scrollFrame = frame->GetScrollTargetFrame();
+      if (scrollFrame) {
+        MOZ_ASSERT(!OwnerDoc()->IsScrollingElement(this),
+                   "How can we have a scrollframe if we're the "
+                   "scrollingElement for our document?");
+        return scrollFrame;
+      }
     }
   }
 
   Document* doc = OwnerDoc();
   
   
-  bool isScrollingElement = doc->IsScrollingElement(this);
+  bool isScrollingElement = OwnerDoc()->IsScrollingElement(this);
   
   
   if (aFrame) {

@@ -201,9 +201,7 @@ void FocusManager::ActiveItemChanged(LocalAccessible* aItem,
 #endif
 
   
-  if (aItem && aItem == mActiveItem) {
-    return;
-  }
+  if (aItem && aItem == mActiveItem) return;
 
   mActiveItem = nullptr;
 

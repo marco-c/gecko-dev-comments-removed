@@ -1132,11 +1132,15 @@ bool Theme::DoDrawWidgetBackground(PaintBackendData& aPaintData,
   const DocumentState docState = pc->Document()->GetDocumentState();
   ElementState elementState = GetContentState(aFrame, aAppearance);
   if (aAppearance == StyleAppearance::MozMenulistArrowButton) {
-    
-    
+    bool isHTML = IsHTMLContent(aFrame);
     nsIFrame* parentFrame = aFrame->GetParent();
-    aFrame = parentFrame;
-    elementState = GetContentState(parentFrame, aAppearance);
+    bool isMenulist = !isHTML && parentFrame->IsMenuFrame();
+    
+    
+    if (isHTML || isMenulist) {
+      aFrame = parentFrame;
+      elementState = GetContentState(parentFrame, aAppearance);
+    }
   }
 
   
