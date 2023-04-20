@@ -22,11 +22,11 @@ Step 4:
 """
 
 
-from typing import List  
-
 import pathlib
 import sys
 import xml.etree.ElementTree
+
+from typing import List  
 
 
 

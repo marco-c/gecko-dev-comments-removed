@@ -2,6 +2,7 @@
 
 
 from __future__ import absolute_import
+
 import argparse
 import codecs
 import locale
@@ -10,8 +11,9 @@ import re
 import subprocess
 import sys
 import tempfile
-import yaml
+
 import buildconfig
+import yaml
 
 
 def shell_main():
