@@ -87,6 +87,7 @@ class FrameInFlight {
                       VideoFrameType frame_type,
                       DataSize encoded_image_size,
                       uint32_t target_encode_bitrate,
+                      int qp,
                       StreamCodecInfo used_encoder);
 
   bool HasEncodedTime() const { return encoded_time_.IsFinite(); }
@@ -152,6 +153,7 @@ class FrameInFlight {
   VideoFrameType frame_type_ = VideoFrameType::kEmptyFrame;
   DataSize encoded_image_size_ = DataSize::Bytes(0);
   uint32_t target_encode_bitrate_ = 0;
+  std::vector<int> qp_values_;
   
   absl::optional<StreamCodecInfo> used_encoder_ = absl::nullopt;
   
