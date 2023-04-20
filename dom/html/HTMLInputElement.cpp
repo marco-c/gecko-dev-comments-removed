@@ -3728,8 +3728,10 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 #ifdef ACCESSIBILITY
       
       if (mType == FormControlType::InputCheckbox) {
-        FireEventForAccessibility(this, eFormCheckboxStateChange);
-      } else {
+        if (nsContentUtils::MayHaveFormCheckboxStateChangeListeners()) {
+          FireEventForAccessibility(this, eFormCheckboxStateChange);
+        }
+      } else if (nsContentUtils::MayHaveFormRadioStateChangeListeners()) {
         FireEventForAccessibility(this, eFormRadioStateChange);
         
         nsCOMPtr<nsIContent> content = do_QueryInterface(aVisitor.mItemData);

@@ -472,6 +472,12 @@ void EventListenerManager::AddEventListenerInternal(
           window->SetHasTransitionEventListeners();
         }
         break;
+      case eFormCheckboxStateChange:
+        nsContentUtils::SetMayHaveFormCheckboxStateChangeListeners();
+        break;
+      case eFormRadioStateChange:
+        nsContentUtils::SetMayHaveFormRadioStateChangeListeners();
+        break;
       default:
         
         
