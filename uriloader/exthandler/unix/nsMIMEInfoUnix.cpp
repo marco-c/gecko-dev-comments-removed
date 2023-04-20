@@ -22,7 +22,9 @@ nsMIMEInfoUnix::GetHasDefaultHandler(bool* _retval) {
   
   
   
-  if (mDefaultApplication) return nsMIMEInfoImpl::GetHasDefaultHandler(_retval);
+  if (GetDefaultApplication()) {
+    return nsMIMEInfoImpl::GetHasDefaultHandler(_retval);
+  }
 
   *_retval = false;
 
@@ -50,7 +52,9 @@ nsresult nsMIMEInfoUnix::LaunchDefaultWithFile(nsIFile* aFile) {
   
   
   
-  if (mDefaultApplication) return nsMIMEInfoImpl::LaunchDefaultWithFile(aFile);
+  if (GetDefaultApplication()) {
+    return nsMIMEInfoImpl::LaunchDefaultWithFile(aFile);
+  }
 
   nsAutoCString nativePath;
   aFile->GetNativePath(nativePath);

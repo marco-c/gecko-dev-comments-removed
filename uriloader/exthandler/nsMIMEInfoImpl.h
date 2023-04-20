@@ -157,8 +157,9 @@ class nsMIMEInfoBase : public nsIMIMEInfo {
   HandlerClass mClass;
   nsCOMPtr<nsIHandlerApp> mPreferredApplication;
   nsCOMPtr<nsIMutableArray> mPossibleApplications;
-  nsHandlerInfoAction
-      mPreferredAction;  
+  nsHandlerInfoAction mPreferredAction =
+      nsIMIMEInfo::saveToDisk;  
+                                
   nsString mPreferredAppDescription;
   nsString mDefaultAppDescription;
   bool mAlwaysAskBeforeHandling;
@@ -210,6 +211,10 @@ class nsMIMEInfoImpl : public nsMIMEInfoBase {
 
   virtual nsresult LoadUriInternal(nsIURI* aURI) override = 0;
 
+  
+  nsIFile* GetDefaultApplication() { return mDefaultApplication; }
+
+ private:
   nsCOMPtr<nsIFile>
       mDefaultApplication;  
 };
