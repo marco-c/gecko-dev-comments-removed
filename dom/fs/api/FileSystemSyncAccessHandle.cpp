@@ -110,7 +110,7 @@ FileSystemSyncAccessHandle::FileSystemSyncAccessHandle(
 
 FileSystemSyncAccessHandle::~FileSystemSyncAccessHandle() {
   MOZ_ASSERT(!mActor);
-  MOZ_ASSERT(mState == State::Closed);
+  MOZ_ASSERT(IsClosed());
 }
 
 
@@ -137,7 +137,9 @@ FileSystemSyncAccessHandle::Create(
   RefPtr<StrongWorkerRef> workerRef = StrongWorkerRef::Create(
       workerPrivate, "FileSystemSyncAccessHandle", [result]() {
         if (result->IsOpen()) {
-          result->CloseInternal();
+          
+          
+          Unused << result->BeginClose();
         }
       });
   QM_TRY(MOZ_TO_RESULT(workerRef));
@@ -165,7 +167,9 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FileSystemSyncAccessHandle)
   
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
   if (tmp->IsOpen()) {
-    tmp->CloseInternal();
+    
+    
+    Unused << tmp->BeginClose();
   }
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(FileSystemSyncAccessHandle)
@@ -200,7 +204,13 @@ bool FileSystemSyncAccessHandle::IsOpen() const {
   return mState == State::Open;
 }
 
-void FileSystemSyncAccessHandle::CloseInternal() {
+bool FileSystemSyncAccessHandle::IsClosed() const {
+  MOZ_ASSERT(mState != State::Initial);
+
+  return mState == State::Closed;
+}
+
+RefPtr<BoolPromise> FileSystemSyncAccessHandle::BeginClose() {
   MOZ_ASSERT(IsOpen());
 
   LOG(("%p: Closing", mStream.get()));
@@ -215,6 +225,8 @@ void FileSystemSyncAccessHandle::CloseInternal() {
   }
 
   mWorkerRef = nullptr;
+
+  return BoolPromise::CreateAndResolve(true, __func__);
 }
 
 
@@ -295,9 +307,31 @@ void FileSystemSyncAccessHandle::Flush(ErrorResult& aError) {
 }
 
 void FileSystemSyncAccessHandle::Close() {
-  if (IsOpen()) {
-    CloseInternal();
+  if (!IsOpen()) {
+    return;
   }
+
+  
+  
+  
+  
+  RefPtr<StrongWorkerRef> workerRef = mWorkerRef;
+
+  AutoSyncLoopHolder syncLoop(workerRef->Private(), Killing);
+
+  nsCOMPtr<nsISerialEventTarget> syncLoopTarget =
+      syncLoop.GetSerialEventTarget();
+  MOZ_ASSERT(syncLoopTarget);
+
+  InvokeAsync(syncLoopTarget, __func__, [self = RefPtr(this)]() {
+    return self->BeginClose();
+  })->Then(syncLoopTarget, __func__, [&workerRef, &syncLoopTarget]() {
+    workerRef->Private()->AssertIsOnWorkerThread();
+
+    workerRef->Private()->StopSyncLoop(syncLoopTarget, NS_OK);
+  });
+
+  MOZ_ALWAYS_SUCCEEDS(syncLoop.Run());
 }
 
 uint64_t FileSystemSyncAccessHandle::ReadOrWrite(
