@@ -1121,9 +1121,29 @@ let cookieBannerHandling = new (class {
     );
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
-      "_uiDisabled",
+      "_uiEnabled",
       "cookiebanners.ui.desktop.enabled",
       false
+    );
+    XPCOMUtils.defineLazyGetter(this, "_cookieBannerSection", () =>
+      document.getElementById("protections-popup-cookie-banner-section")
+    );
+    XPCOMUtils.defineLazyGetter(this, "_cookieBannerSectionSeparator", () =>
+      document.getElementById(
+        "protections-popup-cookie-banner-section-separator"
+      )
+    );
+    XPCOMUtils.defineLazyGetter(this, "_cookieBannerSwitch", () =>
+      document.getElementById("protections-popup-cookie-banner-switch")
+    );
+    XPCOMUtils.defineLazyGetter(this, "_cookieBannerSubview", () =>
+      document.getElementById("protections-popup-cookieBannerView")
+    );
+    XPCOMUtils.defineLazyGetter(this, "_cookieBannerEnableSite", () =>
+      document.getElementById("cookieBannerView-enable-site")
+    );
+    XPCOMUtils.defineLazyGetter(this, "_cookieBannerDisableSite", () =>
+      document.getElementById("cookieBannerView-disable-site")
     );
   }
 
@@ -1186,129 +1206,74 @@ let cookieBannerHandling = new (class {
 
   
 
-  #cookieBannerSectionEl;
-  get #cookieBannerSection() {
-    if (this.#cookieBannerSectionEl) {
-      return this.#cookieBannerSectionEl;
+
+
+
+
+
+
+  get #uiState() {
+    if (this.#hasException) {
+      return "site-disabled";
+    } else if (this.isSiteSupported) {
+      return "detected";
     }
-    return (this.#cookieBannerSectionEl = document.getElementById(
-      "protections-popup-cookie-banner-section"
-    ));
+    return "undetected";
   }
 
-  #cookieBannerSectionSeparatorEl;
-  get #cookieBannerSectionSeparator() {
-    if (this.#cookieBannerSectionSeparatorEl) {
-      return this.#cookieBannerSectionSeparatorEl;
-    }
-    return (this.#cookieBannerSectionSeparatorEl = document.getElementById(
-      "protections-popup-cookie-banner-section-separator"
-    ));
-  }
-
-  #cookieBannerSwitchEl;
-  get #cookieBannerSwitch() {
-    if (this.#cookieBannerSwitchEl) {
-      return this.#cookieBannerSwitchEl;
-    }
-    return (this.#cookieBannerSwitchEl = document.getElementById(
-      "protections-popup-cookie-banner-switch"
-    ));
-  }
-
-  #cookieBannerSubviewEl;
-  get #cookieBannerSubview() {
-    if (this.#cookieBannerSubviewEl) {
-      return this.#cookieBannerSubviewEl;
-    }
-    return (this.#cookieBannerSubviewEl = document.getElementById(
-      "protections-popup-cookieBannerView"
-    ));
-  }
-
-  /*
-   * Initialize or update the cookie banner handling section state. To be called
-   * initially or whenever the panel opens for a new site.
-   *
-   */
   updateSection() {
     let showSection = this.#shouldShowSection();
+    let state = this.#uiState;
 
     for (let el of [
-      this.#cookieBannerSection,
-      this.#cookieBannerSectionSeparator,
+      this._cookieBannerSection,
+      this._cookieBannerSectionSeparator,
     ]) {
-      el.toggleAttribute("uiDisabled", !showSection);
+      el.hidden = !showSection;
     }
 
-    // Reflect ternary CBH state in two boolean DOM attributes.
-    this.#cookieBannerSection.toggleAttribute(
-      "hasException",
-      this.#hasException
-    );
-    this.#cookieBannerSection.toggleAttribute("enabled", this.isSiteSupported);
+    this._cookieBannerSection.dataset.state = state;
 
-    // On unsupported sites, disable button styling and click behavior.
-    // Note: to be replaced with a "please support site" subview in bug 1801971.
-    this.#cookieBannerSection.toggleAttribute(
-      "disabled",
-      !this.isSiteSupported
-    );
-    if (this.isSiteSupported) {
-      this.#cookieBannerSection.removeAttribute("disabled");
-      this.#cookieBannerSwitch.classList.add("subviewbutton-nav");
-      this.#cookieBannerSwitch.removeAttribute("disabled");
+    
+    
+    if (state == "undetected") {
+      this._cookieBannerSection.setAttribute("disabled", true);
+      this._cookieBannerSwitch.classList.remove("subviewbutton-nav");
+      this._cookieBannerSwitch.setAttribute("disabled", true);
     } else {
-      this.#cookieBannerSection.setAttribute("disabled", true);
-      this.#cookieBannerSwitch.classList.remove("subviewbutton-nav");
-      this.#cookieBannerSwitch.setAttribute("disabled", true);
+      this._cookieBannerSection.removeAttribute("disabled");
+      this._cookieBannerSwitch.classList.add("subviewbutton-nav");
+      this._cookieBannerSwitch.removeAttribute("disabled");
     }
   }
 
   #shouldShowSection() {
-    // UI is globally disabled by pref.
-    if (!this._uiDisabled) {
-      return false;
-    }
-    // Don't show UI for detect-only mode.
-    if (this._serviceDetectOnly) {
+    
+    
+    if (!this._uiEnabled || this._serviceDetectOnly) {
       return false;
     }
 
-    let mode;
-
+    
+    
     if (this.#isPrivateBrowsing) {
-      mode = this._serviceModePrefPrivateBrowsing;
-    } else {
-      mode = this._serviceModePref;
+      return (
+        this._serviceModePrefPrivateBrowsing !=
+        Ci.nsICookieBannerService.MODE_DISABLED
+      );
     }
-
-    // Only show the section if the feature is enabled for the normal or PBM
-    // window.
-    return mode != Ci.nsICookieBannerService.MODE_DISABLED;
+    return this._serviceModePref != Ci.nsICookieBannerService.MODE_DISABLED;
   }
 
-  /*
-   * Updates the cookie banner handling subview just before it's shown.
-   *
-   * Note that this subview can only be shown if we have cookie banner rules
-   * for a given site, so in this function, we assume the site is supported,
-   * and only check if the user has manually created an exception for the
-   * current base domain.
-   */
-  updateSubView() {
-    this.#cookieBannerSubview.toggleAttribute(
-      "hasException",
-      this.#hasException
-    );
+  
 
-    let siteDescription = this.#cookieBannerSubview.querySelectorAll(
-      "description#cookieBannerView-disable-site, description#cookieBannerView-enable-site"
-    );
-    let host = this.#currentBaseDomain;
-    siteDescription.forEach(d =>
-      d.setAttribute("data-l10n-args", JSON.stringify({ host }))
-    );
+
+  updateSubView() {
+    this._cookieBannerSubview.dataset.state = this.#uiState;
+
+    let baseDomain = JSON.stringify({ host: this.#currentBaseDomain });
+    this._cookieBannerEnableSite.setAttribute("data-l10n-args", baseDomain);
+    this._cookieBannerDisableSite.setAttribute("data-l10n-args", baseDomain);
   }
 
   async #disableCookieBannerHandling() {
@@ -1333,7 +1298,7 @@ let cookieBannerHandling = new (class {
   }
 
   async onCookieBannerToggleCommand() {
-    let hasException = this.#cookieBannerSection.toggleAttribute(
+    let hasException = this._cookieBannerSection.toggleAttribute(
       "hasException"
     );
     if (hasException) {
@@ -1348,9 +1313,9 @@ let cookieBannerHandling = new (class {
   }
 })();
 
-/**
- * Utility object to handle manipulations of the protections indicators in the UI
- */
+
+
+
 var gProtectionsHandler = {
   PREF_REPORT_BREAKAGE_URL: "browser.contentblocking.reportBreakage.url",
   PREF_CB_CATEGORY: "browser.contentblocking.category",
