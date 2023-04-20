@@ -760,10 +760,8 @@ BlockReflowState::PlaceFloatResult BlockReflowState::FlowAndPlaceFloat(
   }
 
   
-  if (!HasFloatPushedDown() && aAvailableISizeInCurrentLine &&
+  if (aAvailableISizeInCurrentLine &&
       floatMarginISize > *aAvailableISizeInCurrentLine) {
-    
-    
     
     
     return PlaceFloatResult::ShouldPlaceBelowCurrentLine;
