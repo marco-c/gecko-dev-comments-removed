@@ -3,13 +3,21 @@
 
 
 
-use alloc::boxed::Box;
-use core::cell::UnsafeCell;
-use core::fmt;
-use core::mem::MaybeUninit;
-use core::sync::atomic::{self, AtomicUsize, Ordering};
+
+
+
+
+
+use std::cell::UnsafeCell;
+use std::fmt;
+use std::marker::PhantomData;
+use std::mem;
+use std::ptr;
+use std::sync::atomic::{self, AtomicUsize, Ordering};
 
 use crossbeam_utils::{Backoff, CachePadded};
+
+use err::{PopError, PushError};
 
 
 struct Slot<T> {
@@ -20,10 +28,8 @@ struct Slot<T> {
     stamp: AtomicUsize,
 
     
-    value: UnsafeCell<MaybeUninit<T>>,
+    value: UnsafeCell<T>,
 }
-
-
 
 
 
@@ -64,13 +70,16 @@ pub struct ArrayQueue<T> {
     tail: CachePadded<AtomicUsize>,
 
     
-    buffer: Box<[Slot<T>]>,
+    buffer: *mut Slot<T>,
 
     
     cap: usize,
 
     
     one_lap: usize,
+
+    
+    _marker: PhantomData<T>,
 }
 
 unsafe impl<T: Send> Sync for ArrayQueue<T> {}
@@ -99,16 +108,21 @@ impl<T> ArrayQueue<T> {
         let tail = 0;
 
         
+        let buffer = {
+            let mut v = Vec::<Slot<T>>::with_capacity(cap);
+            let ptr = v.as_mut_ptr();
+            mem::forget(v);
+            ptr
+        };
+
         
-        let buffer: Box<[Slot<T>]> = (0..cap)
-            .map(|i| {
+        for i in 0..cap {
+            unsafe {
                 
-                Slot {
-                    stamp: AtomicUsize::new(i),
-                    value: UnsafeCell::new(MaybeUninit::uninit()),
-                }
-            })
-            .collect();
+                let slot = buffer.add(i);
+                ptr::write(&mut (*slot).stamp, AtomicUsize::new(i));
+            }
+        }
 
         
         let one_lap = (cap + 1).next_power_of_two();
@@ -119,13 +133,25 @@ impl<T> ArrayQueue<T> {
             one_lap,
             head: CachePadded::new(AtomicUsize::new(head)),
             tail: CachePadded::new(AtomicUsize::new(tail)),
+            _marker: PhantomData,
         }
     }
 
-    fn push_or_else<F>(&self, mut value: T, f: F) -> Result<(), T>
-    where
-        F: Fn(T, usize, usize, &Slot<T>) -> Result<T, T>,
-    {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn push(&self, value: T) -> Result<(), PushError<T>> {
         let backoff = Backoff::new();
         let mut tail = self.tail.load(Ordering::Relaxed);
 
@@ -134,35 +160,30 @@ impl<T> ArrayQueue<T> {
             let index = tail & (self.one_lap - 1);
             let lap = tail & !(self.one_lap - 1);
 
-            let new_tail = if index + 1 < self.cap {
-                
-                
-                tail + 1
-            } else {
-                
-                
-                lap.wrapping_add(self.one_lap)
-            };
-
             
-            debug_assert!(index < self.buffer.len());
-            let slot = unsafe { self.buffer.get_unchecked(index) };
+            let slot = unsafe { &*self.buffer.add(index) };
             let stamp = slot.stamp.load(Ordering::Acquire);
 
             
             if tail == stamp {
+                let new_tail = if index + 1 < self.cap {
+                    
+                    
+                    tail + 1
+                } else {
+                    
+                    
+                    lap.wrapping_add(self.one_lap)
+                };
+
                 
-                match self.tail.compare_exchange_weak(
-                    tail,
-                    new_tail,
-                    Ordering::SeqCst,
-                    Ordering::Relaxed,
-                ) {
+                match self
+                    .tail
+                    .compare_exchange_weak(tail, new_tail, Ordering::SeqCst, Ordering::Relaxed)
+                {
                     Ok(_) => {
                         
-                        unsafe {
-                            slot.value.get().write(MaybeUninit::new(value));
-                        }
+                        unsafe { slot.value.get().write(value); }
                         slot.stamp.store(tail + 1, Ordering::Release);
                         return Ok(());
                     }
@@ -173,7 +194,14 @@ impl<T> ArrayQueue<T> {
                 }
             } else if stamp.wrapping_add(self.one_lap) == tail + 1 {
                 atomic::fence(Ordering::SeqCst);
-                value = f(value, tail, new_tail, slot)?;
+                let head = self.head.load(Ordering::Relaxed);
+
+                
+                if head.wrapping_add(self.one_lap) == tail {
+                    
+                    return Err(PushError(value));
+                }
+
                 backoff.spin();
                 tail = self.tail.load(Ordering::Relaxed);
             } else {
@@ -198,81 +226,8 @@ impl<T> ArrayQueue<T> {
     
     
     
-    pub fn push(&self, value: T) -> Result<(), T> {
-        self.push_or_else(value, |v, tail, _, _| {
-            let head = self.head.load(Ordering::Relaxed);
-
-            
-            if head.wrapping_add(self.one_lap) == tail {
-                
-                Err(v)
-            } else {
-                Ok(v)
-            }
-        })
-    }
-
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn force_push(&self, value: T) -> Option<T> {
-        self.push_or_else(value, |v, tail, new_tail, slot| {
-            let head = tail.wrapping_sub(self.one_lap);
-            let new_head = new_tail.wrapping_sub(self.one_lap);
-
-            
-            if self
-                .head
-                .compare_exchange_weak(head, new_head, Ordering::SeqCst, Ordering::Relaxed)
-                .is_ok()
-            {
-                
-                self.tail.store(new_tail, Ordering::SeqCst);
-
-                
-                let old = unsafe { slot.value.get().replace(MaybeUninit::new(v)).assume_init() };
-
-                
-                slot.stamp.store(tail + 1, Ordering::Release);
-
-                Err(old)
-            } else {
-                Ok(v)
-            }
-        })
-        .err()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn pop(&self) -> Option<T> {
+    pub fn pop(&self) -> Result<T, PopError> {
         let backoff = Backoff::new();
         let mut head = self.head.load(Ordering::Relaxed);
 
@@ -282,8 +237,7 @@ impl<T> ArrayQueue<T> {
             let lap = head & !(self.one_lap - 1);
 
             
-            debug_assert!(index < self.buffer.len());
-            let slot = unsafe { self.buffer.get_unchecked(index) };
+            let slot = unsafe { &*self.buffer.add(index) };
             let stamp = slot.stamp.load(Ordering::Acquire);
 
             
@@ -299,18 +253,15 @@ impl<T> ArrayQueue<T> {
                 };
 
                 
-                match self.head.compare_exchange_weak(
-                    head,
-                    new,
-                    Ordering::SeqCst,
-                    Ordering::Relaxed,
-                ) {
+                match self
+                    .head
+                    .compare_exchange_weak(head, new, Ordering::SeqCst, Ordering::Relaxed)
+                {
                     Ok(_) => {
                         
-                        let msg = unsafe { slot.value.get().read().assume_init() };
-                        slot.stamp
-                            .store(head.wrapping_add(self.one_lap), Ordering::Release);
-                        return Some(msg);
+                        let msg = unsafe { slot.value.get().read() };
+                        slot.stamp.store(head.wrapping_add(self.one_lap), Ordering::Release);
+                        return Ok(msg);
                     }
                     Err(h) => {
                         head = h;
@@ -323,7 +274,7 @@ impl<T> ArrayQueue<T> {
 
                 
                 if tail == head {
-                    return None;
+                    return Err(PopError);
                 }
 
                 backoff.spin();
@@ -444,24 +395,10 @@ impl<T> ArrayQueue<T> {
 impl<T> Drop for ArrayQueue<T> {
     fn drop(&mut self) {
         
-        let head = *self.head.get_mut();
-        let tail = *self.tail.get_mut();
-
-        let hix = head & (self.one_lap - 1);
-        let tix = tail & (self.one_lap - 1);
-
-        let len = if hix < tix {
-            tix - hix
-        } else if hix > tix {
-            self.cap - hix + tix
-        } else if tail == head {
-            0
-        } else {
-            self.cap
-        };
+        let hix = self.head.load(Ordering::Relaxed) & (self.one_lap - 1);
 
         
-        for i in 0..len {
+        for i in 0..self.len() {
             
             let index = if hix + i < self.cap {
                 hix + i
@@ -470,67 +407,19 @@ impl<T> Drop for ArrayQueue<T> {
             };
 
             unsafe {
-                debug_assert!(index < self.buffer.len());
-                let slot = self.buffer.get_unchecked_mut(index);
-                let value = &mut *slot.value.get();
-                value.as_mut_ptr().drop_in_place();
+                self.buffer.add(index).drop_in_place();
             }
+        }
+
+        
+        unsafe {
+            Vec::from_raw_parts(self.buffer, 0, self.cap);
         }
     }
 }
 
 impl<T> fmt::Debug for ArrayQueue<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.pad("ArrayQueue { .. }")
-    }
-}
-
-impl<T> IntoIterator for ArrayQueue<T> {
-    type Item = T;
-
-    type IntoIter = IntoIter<T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        IntoIter { value: self }
-    }
-}
-
-#[derive(Debug)]
-pub struct IntoIter<T> {
-    value: ArrayQueue<T>,
-}
-
-impl<T> Iterator for IntoIter<T> {
-    type Item = T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let value = &mut self.value;
-        let head = *value.head.get_mut();
-        if value.head.get_mut() != value.tail.get_mut() {
-            let index = head & (value.one_lap - 1);
-            let lap = head & !(value.one_lap - 1);
-            
-            
-            
-            
-            let val = unsafe {
-                debug_assert!(index < value.buffer.len());
-                let slot = value.buffer.get_unchecked_mut(index);
-                slot.value.get().read().assume_init()
-            };
-            let new = if index + 1 < value.cap {
-                
-                
-                head + 1
-            } else {
-                
-                
-                lap.wrapping_add(value.one_lap)
-            };
-            *value.head.get_mut() = new;
-            Option::Some(val)
-        } else {
-            Option::None
-        }
     }
 }

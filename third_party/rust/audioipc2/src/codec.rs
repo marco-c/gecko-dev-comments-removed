@@ -5,11 +5,6 @@
 
 
 
-
-
-
-#![allow(clippy::uninlined_format_args)]
-
 use bincode::{self, Options};
 use byteorder::{ByteOrder, LittleEndian};
 use bytes::{Buf, BufMut, BytesMut};
