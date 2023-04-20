@@ -11,6 +11,9 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   Region: "resource://gre/modules/Region.sys.mjs",
 });
+XPCOMUtils.defineLazyModuleGetters(lazy, {
+  FxAccounts: "resource://gre/modules/FxAccounts.jsm",
+});
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -393,7 +396,7 @@ export var BrowserUtils = {
   PromoType: {
     DEFAULT: 0, 
     VPN: 1,
-    RALLY: 2,
+    RELAY: 2,
     FOCUS: 3,
     PIN: 4,
   },
@@ -416,28 +419,17 @@ export var BrowserUtils = {
   shouldShowPromo(promoType) {
     switch (promoType) {
       case this.PromoType.VPN:
-        return this._shouldShowPromoInternal(promoType);
-      case this.PromoType.RALLY:
-        return this._shouldShowRallyPromo();
       case this.PromoType.FOCUS:
-        return this._shouldShowPromoInternal(promoType);
       case this.PromoType.PIN:
-        return this._shouldShowPromoInternal(promoType);
+      case this.PromoType.RELAY:
+        break;
       default:
         throw new Error("Unknown promo type: ", promoType);
     }
-  },
 
-  
-
-
-  shouldShowVPNPromo() {
-    return this._shouldShowPromoInternal(this.PromoType.VPN);
-  },
-
-  _shouldShowPromoInternal(promoType) {
     const info = PromoInfo[promoType];
-    const promoEnabled = Services.prefs.getBoolPref(info.enabledPref, true);
+    const promoEnabled =
+      !info.enabledPref || Services.prefs.getBoolPref(info.enabledPref, true);
 
     const homeRegion = lazy.Region.home || "";
     const currentRegion = lazy.Region.current || "";
@@ -459,6 +451,9 @@ export var BrowserUtils = {
       !Services.policies ||
       Services.policies.status !== Services.policies.ACTIVE;
 
+    
+    const passedExtraCheck = !info.extraCheck || info.extraCheck();
+
     return (
       promoEnabled &&
       !avoidAdsRegions?.has(homeRegion.toLowerCase()) &&
@@ -466,17 +461,16 @@ export var BrowserUtils = {
       !info.illegalRegions.includes(homeRegion.toLowerCase()) &&
       !info.illegalRegions.includes(currentRegion.toLowerCase()) &&
       inSupportedRegion &&
-      noActivePolicy
+      noActivePolicy &&
+      passedExtraCheck
     );
   },
 
-  shouldShowRallyPromo() {
-    const homeRegion = lazy.Region.home || "";
-    const currentRegion = lazy.Region.current || "";
-    const region = currentRegion || homeRegion;
-    const language = Services.locale.appLocaleAsBCP47;
+  
 
-    return language.startsWith("en-") && region.toLowerCase() == "us";
+
+  shouldShowVPNPromo() {
+    return this.shouldShowPromo(this.PromoType.VPN);
   },
 
   
@@ -522,6 +516,14 @@ let PromoInfo = {
     enabledPref: "browser.promo.pin.enabled",
     lazyStringSetPrefs: {},
     illegalRegions: [],
+  },
+  [BrowserUtils.PromoType.RELAY]: {
+    lazyStringSetPrefs: {},
+    illegalRegions: [],
+    
+    
+    
+    extraCheck: () => lazy.FxAccounts.config.isProductionConfig(),
   },
 };
 
