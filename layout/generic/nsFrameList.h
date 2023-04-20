@@ -27,7 +27,6 @@ class nsPresContext;
 
 namespace mozilla {
 class PresShell;
-namespace layout {
 class FrameChildList;
 enum FrameChildListID {
   
@@ -61,7 +60,6 @@ struct PostFrameDestroyData {
     mAnonymousContent.AppendElement(aContent);
   }
 };
-}  
 }  
 
 
@@ -145,9 +143,8 @@ class nsFrameList {
 
 
 
-  void DestroyFramesFrom(
-      nsIFrame* aDestructRoot,
-      mozilla::layout::PostFrameDestroyData& aPostDestroyData);
+  void DestroyFramesFrom(nsIFrame* aDestructRoot,
+                         mozilla::PostFrameDestroyData& aPostDestroyData);
 
   void Clear() { mFirstChild = mLastChild = nullptr; }
 
@@ -331,9 +328,8 @@ class nsFrameList {
 
 
 
-  inline void AppendIfNonempty(
-      nsTArray<mozilla::layout::FrameChildList>* aLists,
-      mozilla::layout::FrameChildListID aListID) const {
+  inline void AppendIfNonempty(nsTArray<mozilla::FrameChildList>* aLists,
+                               mozilla::FrameChildListID aListID) const {
     if (NotEmpty()) {
       aLists->EmplaceBack(*this, aListID);
     }
@@ -464,7 +460,6 @@ class nsFrameList {
 };
 
 namespace mozilla {
-namespace layout {
 
 #ifdef DEBUG_FRAME_DUMP
 extern const char* ChildListName(FrameChildListID aListID);
@@ -479,8 +474,6 @@ class FrameChildList {
   nsFrameList mList;
   FrameChildListID mID;
 };
-
-}  
 
 
 

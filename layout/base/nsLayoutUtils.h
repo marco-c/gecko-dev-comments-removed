@@ -247,8 +247,7 @@ class nsLayoutUtils {
 
 
 
-  static mozilla::layout::FrameChildListID GetChildListNameFor(
-      nsIFrame* aChildFrame);
+  static mozilla::FrameChildListID GetChildListNameFor(nsIFrame* aChildFrame);
 
   
 
@@ -2470,8 +2469,7 @@ class nsLayoutUtils {
 
   static void UnionChildOverflow(
       nsIFrame* aFrame, mozilla::OverflowAreas& aOverflowAreas,
-      mozilla::layout::FrameChildListIDs aSkipChildLists =
-          mozilla::layout::FrameChildListIDs());
+      mozilla::FrameChildListIDs aSkipChildLists = {});
 
   
 
