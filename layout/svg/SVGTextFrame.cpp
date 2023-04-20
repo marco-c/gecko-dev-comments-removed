@@ -4708,14 +4708,15 @@ void SVGTextFrame::DoTextPathLayout() {
         }
         partialAdvances.AppendElement(partialAdvance);
       }
+      if (skippedEndOfTextPath) {
+        break;
+      }
 
-      if (!skippedEndOfTextPath) {
-        
-        MOZ_ASSERT(j <= it.TextElementCharIndex());
-        while (j < it.TextElementCharIndex()) {
-          partialAdvances.AppendElement(partialAdvance);
-          ++j;
-        }
+      
+      MOZ_ASSERT(j <= it.TextElementCharIndex());
+      while (j < it.TextElementCharIndex()) {
+        partialAdvances.AppendElement(partialAdvance);
+        ++j;
       }
 
       gfxFloat halfAdvance =
