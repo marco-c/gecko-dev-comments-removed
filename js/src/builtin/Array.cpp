@@ -28,7 +28,6 @@
 #include "js/Conversions.h"
 #include "js/experimental/JitInfo.h"  
 #include "js/friend/ErrorMessages.h"  
-#include "js/friend/StackLimits.h"    
 #include "js/PropertySpec.h"
 #include "util/Poison.h"
 #include "util/StringBuffer.h"
@@ -1144,11 +1143,6 @@ JSString* js::ArrayToSource(JSContext* cx, HandleObject obj) {
 }
 
 static bool array_toSource(JSContext* cx, unsigned argc, Value* vp) {
-  AutoCheckRecursionLimit recursion(cx);
-  if (!recursion.check(cx)) {
-    return false;
-  }
-
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Array.prototype", "toSource");
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -1277,11 +1271,6 @@ static bool ArrayJoinKernel(JSContext* cx, SeparatorOp sepOp, HandleObject obj,
 
 
 bool js::array_join(JSContext* cx, unsigned argc, Value* vp) {
-  AutoCheckRecursionLimit recursion(cx);
-  if (!recursion.check(cx)) {
-    return false;
-  }
-
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Array.prototype", "join");
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -1421,11 +1410,6 @@ bool js::array_join(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool array_toLocaleString(JSContext* cx, unsigned argc, Value* vp) {
-  AutoCheckRecursionLimit recursion(cx);
-  if (!recursion.check(cx)) {
-    return false;
-  }
-
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Array.prototype",
                                         "toLocaleString");
 
