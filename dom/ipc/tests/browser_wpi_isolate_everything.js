@@ -1,5 +1,4 @@
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/dom/ipc/tests/browser_wpi_base.js",
   this

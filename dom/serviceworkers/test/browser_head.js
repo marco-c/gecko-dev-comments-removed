@@ -16,7 +16,6 @@
 
 
 
-
 const DIR_PATH = getRootDirectory(gTestPath)
   .replace("chrome://mochitests/content/", "")
   .slice(0, -1);

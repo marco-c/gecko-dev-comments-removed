@@ -2,7 +2,6 @@ const PAGE_NON_ELIGIBLE_MEDIA =
   "https://example.com/browser/dom/media/mediacontrol/tests/browser/file_non_eligible_media.html";
 
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/toolkit/components/pictureinpicture/tests/head.js",
   this
