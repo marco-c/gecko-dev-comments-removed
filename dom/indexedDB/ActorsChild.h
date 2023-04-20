@@ -20,7 +20,6 @@
 #include "mozilla/dom/indexedDB/PBackgroundIDBTransactionChild.h"
 #include "mozilla/dom/indexedDB/PBackgroundIDBVersionChangeTransactionChild.h"
 #include "mozilla/dom/indexedDB/PBackgroundIndexedDBUtilsChild.h"
-#include "mozilla/dom/PBackgroundFileHandleChild.h"
 #include "mozilla/dom/PBackgroundMutableFileChild.h"
 #include "mozilla/InitializedOnce.h"
 #include "mozilla/UniquePtr.h"
@@ -42,7 +41,6 @@ namespace dom {
 class IDBCursor;
 class IDBDatabase;
 class IDBFactory;
-class IDBFileHandle;
 class IDBFileRequest;
 class IDBMutableFile;
 class IDBOpenDBRequest;
@@ -454,12 +452,6 @@ class BackgroundMutableFileChild final : public PBackgroundMutableFileChild {
  public:
   
   void ActorDestroy(ActorDestroyReason aWhy) override;
-
-  PBackgroundFileHandleChild* AllocPBackgroundFileHandleChild(
-      const FileMode& aMode);
-
-  bool DeallocPBackgroundFileHandleChild(
-      PBackgroundFileHandleChild* aActor) const;
 };
 
 class BackgroundRequestChild final : public BackgroundRequestChildBase,
@@ -657,49 +649,6 @@ class BackgroundCursorChild final : public BackgroundCursorChildBase {
                     const Key& aCurrentObjectStoreKey) = delete;
 
   bool SendDeleteMe() = delete;
-};
-
-class BackgroundFileHandleChild : public PBackgroundFileHandleChild {
-  friend class BackgroundMutableFileChild;
-  friend IDBMutableFile;
-
-  
-  
-  
-  RefPtr<IDBFileHandle> mTemporaryStrongFileHandle;
-
-  
-  
-  IDBFileHandle* mFileHandle;
-
- public:
-  void AssertIsOnOwningThread() const
-#ifdef DEBUG
-      ;
-#else
-  {
-  }
-#endif
-
-  void SendDeleteMeInternal();
-
-  bool SendDeleteMe() = delete;
-
- private:
-  
-  explicit BackgroundFileHandleChild(IDBFileHandle* aFileHandle);
-
-  ~BackgroundFileHandleChild();
-
-  void NoteActorDestroyed();
-
-  void NoteComplete();
-
- public:
-  
-  void ActorDestroy(ActorDestroyReason aWhy) override;
-
-  mozilla::ipc::IPCResult RecvComplete(bool aAborted);
 };
 
 class BackgroundUtilsChild final : public PBackgroundIndexedDBUtilsChild {
