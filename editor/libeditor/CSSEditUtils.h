@@ -198,33 +198,17 @@ class CSSEditUtils final {
 
 
 
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<bool, nsresult>
-  IsComputedCSSEquivalentToHTMLInlineStyleSet(const HTMLEditor& aHTMLEditor,
-                                              nsIContent& aContent,
-                                              nsAtom* aHTMLProperty,
-                                              nsAtom* aAttribute,
-                                              nsAString& aValue) {
-    MOZ_ASSERT(aHTMLProperty || aAttribute);
-    return IsCSSEquivalentToHTMLInlineStyleSetInternal(
-        aHTMLEditor, aContent, aHTMLProperty, aAttribute, aValue,
-        StyleType::Computed);
-  }
+  IsComputedCSSEquivalentTo(const HTMLEditor& aHTMLEditor, nsIContent& aContent,
+                            const EditorInlineStyle& aStyle,
+                            nsAString& aInOutValue);
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT_BOUNDARY static Result<bool, nsresult>
-  IsSpecifiedCSSEquivalentToHTMLInlineStyleSet(const HTMLEditor& aHTMLEditor,
-                                               nsIContent& aContent,
-                                               nsAtom* aHTMLProperty,
-                                               nsAtom* aAttribute,
-                                               nsAString& aValue) {
-    MOZ_ASSERT(aHTMLProperty || aAttribute);
-    return IsCSSEquivalentToHTMLInlineStyleSetInternal(
-        aHTMLEditor, aContent, aHTMLProperty, aAttribute, aValue,
-        StyleType::Specified);
-  }
+  IsSpecifiedCSSEquivalentTo(const HTMLEditor& aHTMLEditor,
+                             nsIContent& aContent,
+                             const EditorInlineStyle& aStyle,
+                             nsAString& aInOutValue);
 
   
-
 
 
 
@@ -425,12 +409,9 @@ class CSSEditUtils final {
                                                nsAString& aValue,
                                                StyleType aStyleType);
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<bool, nsresult>
-  IsCSSEquivalentToHTMLInlineStyleSetInternal(const HTMLEditor& aHTMLEditor,
-                                              nsIContent& aContent,
-                                              nsAtom* aHTMLProperty,
-                                              nsAtom* aAttribute,
-                                              nsAString& aValue,
-                                              StyleType aStyleType);
+  IsCSSEquivalentTo(const HTMLEditor& aHTMLEditor, nsIContent& aContent,
+                    const EditorInlineStyle& aStyle, nsAString& aInOutValue,
+                    StyleType aStyleType);
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<bool, nsresult>
   HaveCSSEquivalentStylesInternal(const HTMLEditor& aHTMLEditor,
                                   nsIContent& aContent, nsAtom* aHTMLProperty,
