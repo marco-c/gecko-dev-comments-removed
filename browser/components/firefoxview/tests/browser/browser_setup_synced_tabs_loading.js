@@ -132,7 +132,7 @@ add_task(async function test_tab_sync_loading() {
 
 add_task(async function test_tab_no_sync() {
   
-  const recentTabsData = structuredClone(syncedTabsData1[0].tabs);
+  const recentTabsData = [];
   const sandbox = setupMocks(recentTabsData);
   
   
