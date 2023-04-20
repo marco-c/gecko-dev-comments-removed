@@ -550,7 +550,7 @@ class PlacesViewBase {
 
   
   
-  observeHistoryDetails = false;
+  skipHistoryDetailsNotifications = true;
   nodeHistoryDetailsChanged() {}
   nodeTagsChanged() {}
   nodeDateAddedChanged() {}
