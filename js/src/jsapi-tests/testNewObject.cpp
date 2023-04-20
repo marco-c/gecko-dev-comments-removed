@@ -10,6 +10,7 @@
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
 #include "jsapi-tests/tests.h"
+#include "vm/PlainObject.h"  
 
 #include "vm/NativeObject-inl.h"
 
@@ -163,11 +164,13 @@ static const JSClass Base_class = {
 
 BEGIN_TEST(testNewObject_Subclassing) {
   JSObject* proto =
-      JS_InitClass(cx, global, &Base_class, nullptr, "Base", Base_constructor,
-                   0, nullptr, nullptr, nullptr, nullptr);
+      JS_InitClass(cx, global, nullptr, nullptr, "Base", Base_constructor, 0,
+                   nullptr, nullptr, nullptr, nullptr);
   if (!proto) {
     return false;
   }
+
+  CHECK_EQUAL(JS::GetClass(proto), &PlainObject::class_);
 
   
   JS::RootedValue expectedError(cx);
