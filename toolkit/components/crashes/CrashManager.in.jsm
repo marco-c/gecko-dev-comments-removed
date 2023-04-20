@@ -727,6 +727,15 @@ CrashManager.prototype = Object.freeze({
     GleanPings.crash.submit(reason);
   },
 
+  
+
+
+
+
+
+
+
+
   _sendCrashPing(reason, crashId, type, date, metadata = {}) {
     
     
@@ -741,11 +750,18 @@ CrashManager.prototype = Object.freeze({
       reportMeta,
       "MinidumpSha256Hash"
     );
+    
+    
+    let onlyGlean = getAndRemoveField(reportMeta, "CrashPingUUID");
 
     
     reportMeta = this._filterAnnotations(reportMeta);
 
     this._submitGleanCrashPing(reason, type, date, reportMeta);
+
+    if (onlyGlean) {
+      return;
+    }
 
     this._pingPromise = lazy.TelemetryController.submitExternalPing(
       "crash",
@@ -792,18 +808,13 @@ CrashManager.prototype = Object.freeze({
           metadata
         );
 
-        if (!("CrashPingUUID" in metadata)) {
-          
-          
-          
-          this._sendCrashPing(
-            "event_found",
-            crashID,
-            this.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT],
-            date,
-            metadata
-          );
-        }
+        this._sendCrashPing(
+          "event_found",
+          crashID,
+          this.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT],
+          date,
+          metadata
+        );
 
         break;
 
