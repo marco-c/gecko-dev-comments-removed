@@ -43,7 +43,7 @@ function log(...args) {
 }
 
 
-addEventListener("message", initialize);
+addEventListener("message", handleInitializationMessage);
 
 
 
@@ -56,7 +56,7 @@ addEventListener("message", initialize);
 
 
 
-async function initialize({ data }) {
+async function handleInitializationMessage({ data }) {
   if (data.type !== "initialize") {
     throw new Error(
       "The LanguageIdEngine worker received a message before it was initialized."
@@ -64,59 +64,138 @@ async function initialize({ data }) {
   }
 
   try {
-    const { modelBuffer, wasmBuffer, isLoggingEnabled } = data;
-
-    if (!modelBuffer) {
-      throw new Error('Worker initialization missing "modelBuffer"');
-    }
-    if (!wasmBuffer) {
-      throw new Error('Worker initialization missing "wasmBuffer"');
-    }
+    const { isLoggingEnabled } = data;
     if (isLoggingEnabled) {
       
       _isLoggingEnabled = true;
     }
-
-    let promise = new Promise((resolve, reject) => {
-      const initialModule = {
-        onAbort() {
-          reject(new Error("Error loading the fastText Wasm Module"));
-        },
-        onRuntimeInitialized() {
-          addOnPostRun(() => {
-            const ft = new FastText(initialModule);
-            const model = ft.loadModelBinary(modelBuffer);
-            resolve(model);
-          });
-        },
-        wasmBinary: wasmBuffer,
-      };
-      loadFastText(initialModule);
-    });
-
-    let model = await promise;
-    new LanguageIdWorker(model);
+    const languageIdEngine = await initializeLanguageIdEngine(data);
+    handleMessages(languageIdEngine);
     postMessage({ type: "initialization-success" });
   } catch (error) {
     console.error(error);
     postMessage({ type: "initialization-error", error: error?.message });
   }
 
-  removeEventListener("message", initialize);
+  removeEventListener("message", handleInitializationMessage);
 }
 
 
 
 
 
-class LanguageIdWorker {
+
+
+
+function initializeFastTextModel(modelBuffer, wasmBuffer) {
+  return new Promise((resolve, reject) => {
+    const initialModule = {
+      onAbort() {
+        reject(new Error("Error loading the fastText Wasm Module"));
+      },
+      onRuntimeInitialized() {
+        addOnPostRun(() => {
+          const ft = new FastText(initialModule);
+          const model = ft.loadModelBinary(modelBuffer);
+          resolve(model);
+        });
+      },
+      wasmBinary: wasmBuffer,
+    };
+    loadFastText(initialModule);
+  });
+}
+
+
+
+
+
+
+
+
+
+async function initializeLanguageIdEngine(data) {
+  const { modelBuffer, wasmBuffer } = data;
+  if (!modelBuffer) {
+    throw new Error('LanguageIdEngine initialization missing "modelBuffer"');
+  }
+  if (!wasmBuffer) {
+    throw new Error('LanguageIdEngine initialization missing "wasmBuffer"');
+  }
+  const model = await initializeFastTextModel(modelBuffer, wasmBuffer);
+  return new LanguageIdEngine(model);
+}
+
+
+
+
+
+
+function handleMessages(languageIdEngine) {
+  
+
+
+
+
+
+
+
+  addEventListener("message", ({ data }) => {
+    try {
+      if (data.type === "initialize") {
+        throw new Error(
+          "The language-identification engine must not be re-initialized."
+        );
+      }
+      switch (data.type) {
+        case "language-id-request": {
+          const { message, messageId } = data;
+          try {
+            const [
+              confidence,
+              languageLabel,
+            ] = languageIdEngine.identifyLanguage(message);
+            postMessage({
+              type: "language-id-response",
+              languageLabel,
+              confidence,
+              messageId,
+            });
+          } catch (error) {
+            console.error(error);
+            postMessage({
+              type: "language-id-error",
+              messageId,
+            });
+          }
+          break;
+        }
+        default: {
+          console.warn("Unknown message type:", data.type);
+        }
+      }
+    } catch (error) {
+      
+      console.error(error);
+    }
+  });
+}
+
+
+
+
+
+
+
+class LanguageIdEngine {
+  
+  #model;
+
   
 
 
   constructor(model) {
-    
-    this.model = model;
-    addEventListener("message", this.onMessage.bind(this));
+    this.#model = model;
   }
 
   
@@ -144,43 +223,21 @@ class LanguageIdWorker {
 
 
 
-  onMessage({ data }) {
-    if (data.type === "initialize") {
-      throw new Error("The Language Id engine must not be re-initialized.");
+
+
+
+  identifyLanguage(message) {
+    const mostLikelyLanguageData = this.#model
+      .predict(message.trim(), LANGUAGE_COUNT, CONFIDENCE_THRESHOLD)
+      .get(0);
+
+    
+    
+    if (!mostLikelyLanguageData) {
+      throw new Error("Unable to identify a language");
     }
-    switch (data.type) {
-      case "language-id-request": {
-        const { message, messageId } = data;
-        try {
-          let mostLikelyLanguage = this.model
-            .predict(message.trim(), LANGUAGE_COUNT, CONFIDENCE_THRESHOLD)
-            .get(0);
 
-          
-          
-          if (!mostLikelyLanguage) {
-            throw new Error("Unable to identify a language");
-          }
-
-          const [confidence, languageLabel] = mostLikelyLanguage;
-
-          postMessage({
-            type: "language-id-response",
-            languageLabel: this.#formatLanguageLabel(languageLabel),
-            confidence,
-            messageId,
-          });
-        } catch (error) {
-          console.error(error);
-          postMessage({
-            type: "language-id-error",
-            messageId,
-          });
-        }
-        break;
-      }
-      default:
-        console.warn("Unknown message type:", data.type);
-    }
+    const [confidence, languageLabel] = mostLikelyLanguageData;
+    return [confidence, this.#formatLanguageLabel(languageLabel)];
   }
 }
