@@ -31,59 +31,21 @@ class CallbackThreadRegistry final {
     
   }
 
+  CallbackThreadRegistry(const CallbackThreadRegistry&) = delete;
+  CallbackThreadRegistry& operator=(const CallbackThreadRegistry&) = delete;
+  CallbackThreadRegistry(CallbackThreadRegistry&&) = delete;
+  CallbackThreadRegistry& operator=(CallbackThreadRegistry&&) = delete;
+
   
   
   static CallbackThreadRegistry* Get();
 
   
   
-  void Register(ProfilerThreadId aThreadId, const char* aName) {
-    if (!aThreadId.IsSpecified()) {
-      
-      return;
-    }
-
-    auto threadIds = mThreadIds.Lock();
-    for (uint32_t i = 0; i < threadIds->Length(); i++) {
-      if ((*threadIds)[i].mId == aThreadId) {
-        (*threadIds)[i].mUserCount++;
-        return;
-      }
-    }
-    ThreadUserCount tuc;
-    tuc.mId = aThreadId;
-    tuc.mUserCount = 1;
-    threadIds->AppendElement(tuc);
-    PROFILER_REGISTER_THREAD(aName);
-  }
+  void Register(ProfilerThreadId aThreadId, const char* aName);
 
   
-  void Unregister(ProfilerThreadId aThreadId) {
-    if (!aThreadId.IsSpecified()) {
-      
-      return;
-    }
-
-    auto threadIds = mThreadIds.Lock();
-    for (uint32_t i = 0; i < threadIds->Length(); i++) {
-      if ((*threadIds)[i].mId == aThreadId) {
-        MOZ_ASSERT((*threadIds)[i].mUserCount > 0);
-        (*threadIds)[i].mUserCount--;
-
-        if ((*threadIds)[i].mUserCount == 0) {
-          PROFILER_UNREGISTER_THREAD();
-          threadIds->RemoveElementAt(i);
-        }
-        return;
-      }
-    }
-    MOZ_ASSERT(false);
-  }
-
-  CallbackThreadRegistry(const CallbackThreadRegistry&) = delete;
-  CallbackThreadRegistry& operator=(const CallbackThreadRegistry&) = delete;
-  CallbackThreadRegistry(CallbackThreadRegistry&&) = delete;
-  CallbackThreadRegistry& operator=(CallbackThreadRegistry&&) = delete;
+  void Unregister(ProfilerThreadId aThreadId);
 
  private:
   struct ThreadUserCount {
