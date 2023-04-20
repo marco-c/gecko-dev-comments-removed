@@ -1517,6 +1517,8 @@ static inline StallSpecs GetStallSpecs() {
 
 [[nodiscard]] void* MozVirtualAlloc(LPVOID lpAddress, SIZE_T dwSize,
                                     DWORD flAllocationType, DWORD flProtect) {
+  DWORD const lastError = ::GetLastError();
+
   constexpr auto IsOOMError = [] {
     switch (::GetLastError()) {
       
@@ -1553,7 +1555,7 @@ static inline StallSpecs GetStallSpecs() {
       
       
       if (IsOOMError()) {
-        ::SetLastError(0);
+        ::SetLastError(lastError);
       }
       return ptr;
     }
