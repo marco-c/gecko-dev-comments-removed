@@ -323,15 +323,7 @@ function parseErrorOutput(dbgGlobal, string) {
   }
 }
 
-
-
-
-
-
-
-
-
-function makeSideeffectFreeDebugger(skipCheckingEffectfulOffsets) {
+function makeSideeffectFreeDebugger() {
   
   
   
@@ -349,47 +341,45 @@ function makeSideeffectFreeDebugger(skipCheckingEffectfulOffsets) {
   const dbg = new Debugger();
   dbg.addAllGlobalsAsDebuggees();
 
-  if (!skipCheckingEffectfulOffsets) {
-    const timeoutDuration = 100;
-    const endTime = Date.now() + timeoutDuration;
-    let count = 0;
-    function shouldCancel() {
-      
-      
-      
-      return ++count % 100 === 0 && Date.now() > endTime;
-    }
+  const timeoutDuration = 100;
+  const endTime = Date.now() + timeoutDuration;
+  let count = 0;
+  function shouldCancel() {
+    
+    
+    
+    return ++count % 100 === 0 && Date.now() > endTime;
+  }
 
-    const executedScripts = new Set();
-    const handler = {
-      hit: () => null,
-    };
-    dbg.onEnterFrame = frame => {
+  const executedScripts = new Set();
+  const handler = {
+    hit: () => null,
+  };
+  dbg.onEnterFrame = frame => {
+    if (shouldCancel()) {
+      return null;
+    }
+    frame.onStep = () => {
       if (shouldCancel()) {
         return null;
       }
-      frame.onStep = () => {
-        if (shouldCancel()) {
-          return null;
-        }
-        return undefined;
-      };
-
-      const script = frame.script;
-
-      if (executedScripts.has(script)) {
-        return undefined;
-      }
-      executedScripts.add(script);
-
-      const offsets = script.getEffectfulOffsets();
-      for (const offset of offsets) {
-        script.setBreakpoint(offset, handler);
-      }
-
       return undefined;
     };
-  }
+
+    const script = frame.script;
+
+    if (executedScripts.has(script)) {
+      return undefined;
+    }
+    executedScripts.add(script);
+
+    const offsets = script.getEffectfulOffsets();
+    for (const offset of offsets) {
+      script.setBreakpoint(offset, handler);
+    }
+
+    return undefined;
+  };
 
   
   
