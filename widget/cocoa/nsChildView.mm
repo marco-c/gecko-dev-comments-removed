@@ -4460,7 +4460,8 @@ static CFTypeRefPtr<CFURLRef> GetPasteLocation(NSPasteboard* aPasteboard) {
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
 
   
-  if (![types containsObject:[UTIHelper stringFromPboardType:NSPasteboardTypeString]] &&
+  if (![types containsObject:[UTIHelper stringFromPboardType:NSStringPboardType]] &&
+      ![types containsObject:[UTIHelper stringFromPboardType:NSPasteboardTypeString]] &&
       ![types containsObject:[UTIHelper stringFromPboardType:NSPasteboardTypeHTML]]) {
     return NO;
   }
