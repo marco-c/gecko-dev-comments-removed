@@ -443,14 +443,6 @@ class LogMessage {
 #if defined(WEBRTC_ANDROID)
   LogMessage(const char* file, int line, LoggingSeverity sev, const char* tag);
 #endif
-  
-  
-  
-  ABSL_DEPRECATED("Use RTC_LOG macros instead of accessing this class directly")
-  LogMessage(const char* file,
-             int line,
-             LoggingSeverity sev,
-             absl::string_view tag);
   ~LogMessage();
 
   LogMessage(const LogMessage&) = delete;
@@ -509,7 +501,7 @@ class LogMessage {
     return IsNoop(S);
   }
 #else
-
+  
   LogMessage(const char* file, int line, LoggingSeverity sev) {}
   LogMessage(const char* file,
              int line,

@@ -191,17 +191,6 @@ LogMessage::LogMessage(const char* file,
 }
 #endif
 
-
-
-
-LogMessage::LogMessage(const char* file,
-                       int line,
-                       LoggingSeverity sev,
-                       absl::string_view tag)
-    : LogMessage(file, line, sev) {
-  print_stream_ << tag << ": ";
-}
-
 LogMessage::~LogMessage() {
   FinishPrintStream();
 
