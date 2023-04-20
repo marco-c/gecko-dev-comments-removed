@@ -1235,9 +1235,18 @@ this.VideoControlsImplWidget = class {
         this.log("durationMs is " + durationMs + "ms.\n");
 
         
-        this.scrubber.max = durationMs;
-        this.scrubber.value = currentTimeMs;
-        this.updateScrubberProgress();
+        if (
+          Math.abs(
+            currentTimeMs / durationMs - this.scrubber.value / this.scrubber.max
+          ) *
+            this.reflowedDimensions.scrubberWidth *
+            this.window.devicePixelRatio >
+          0.5
+        ) {
+          this.scrubber.max = durationMs;
+          this.scrubber.value = currentTimeMs;
+          this.updateScrubberProgress();
+        }
 
         
         
@@ -1249,10 +1258,19 @@ this.VideoControlsImplWidget = class {
         
         let position = this.formatTime(currentTimeMs);
         let duration = durationIsInfinite ? "" : this.formatTime(durationMs);
-        this._updatePositionLabels(position, duration);
+        if (
+          this.positionString != position ||
+          this.durationString != duration
+        ) {
+          
+          this._updatePositionLabels(position, duration);
+        }
       },
 
       _updatePositionLabels(position, duration) {
+        this.positionString = position;
+        this.durationString = duration;
+
         this.l10n.setAttributes(
           this.positionDurationBox,
           "videocontrols-position-and-duration-labels",
@@ -1323,8 +1341,13 @@ this.VideoControlsImplWidget = class {
         if (index >= 0) {
           endTime = Math.round(buffered.end(index) * 1000);
         }
-        this.bufferBar.max = duration;
-        this.bufferBar.value = endTime;
+        if (this.duration == duration && this.buffered == endTime) {
+          
+          return;
+        }
+
+        this.bufferBar.max = this.duration = duration;
+        this.bufferBar.value = this.buffered = endTime;
         
         
         
@@ -2311,12 +2334,17 @@ this.VideoControlsImplWidget = class {
         
         
         videocontrolsWidth: 0,
+
+        
+        
+        scrubberWidth: 0,
       },
 
       updateReflowedDimensions() {
         this.reflowedDimensions.videoHeight = this.video.clientHeight;
         this.reflowedDimensions.videoWidth = this.video.clientWidth;
         this.reflowedDimensions.videocontrolsWidth = this.videocontrols.clientWidth;
+        this.reflowedDimensions.scrubberWidth = this.scrubber.clientWidth;
       },
 
       
