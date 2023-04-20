@@ -16,3 +16,43 @@ const do_backgroundtask = BackgroundTasksTestUtils.do_backgroundtask.bind(
 const setupProfileService = BackgroundTasksTestUtils.setupProfileService.bind(
   BackgroundTasksTestUtils
 );
+
+
+
+
+
+
+
+
+
+
+
+async function checkGleanPing() {
+  let retval = ["EMPTY"];
+  let ping_submitted = false;
+
+  const { maybeSubmitBackgroundUpdatePing } = ChromeUtils.import(
+    "resource://gre/modules/backgroundtasks/BackgroundTask_backgroundupdate.jsm"
+  );
+  const { BackgroundUpdate } = ChromeUtils.import(
+    "resource://gre/modules/BackgroundUpdate.jsm"
+  );
+
+  GleanPings.backgroundUpdate.testBeforeNextSubmit(_ => {
+    ping_submitted = true;
+    retval = Glean.backgroundUpdate.reasonsToNotUpdate.testGetValue().map(v => {
+      return BackgroundUpdate.REASON[v];
+    });
+    Assert.ok(Array.isArray(retval));
+    return retval;
+  });
+  await maybeSubmitBackgroundUpdatePing();
+  Assert.ok(ping_submitted, "Glean ping successfully submitted");
+
+  
+  
+  
+  Glean.backgroundUpdate.reasonsToNotUpdate.set([]);
+
+  return retval;
+}

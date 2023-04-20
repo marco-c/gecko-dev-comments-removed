@@ -194,6 +194,8 @@ var BackgroundUpdate = {
       reasons.push(this.REASON.MANUAL_UPDATE_ONLY);
     }
 
+    this._recordGleanMetrics(reasons);
+
     return reasons;
   },
 
@@ -262,6 +264,8 @@ var BackgroundUpdate = {
     if (!serviceRegKeyExists) {
       reasons.push(this.REASON.SERVICE_REGISTRY_KEY_MISSING);
     }
+
+    this._recordGleanMetrics(reasons);
 
     return reasons;
   },
@@ -389,6 +393,9 @@ var BackgroundUpdate = {
     lazy.log.info(
       `${SLUG}: checking eligibility before scheduling background update task`
     );
+
+    
+    Glean.backgroundUpdate.timeLastUpdateScheduled.set();
 
     let previousEnabled;
     let successfullyReadPrevious;
@@ -773,6 +780,35 @@ var BackgroundUpdate = {
     }
 
     return defaultProfileTargetingSnapshot;
+  },
+
+  
+
+
+
+
+
+
+
+
+  async _recordGleanMetrics(reasons) {
+    
+    for (const [key, value] of Object.entries(this.REASON)) {
+      if (reasons.includes(value)) {
+        try {
+          
+          
+          Glean.backgroundUpdate.reasonsToNotUpdate.testGetValue();
+          Glean.backgroundUpdate.reasonsToNotUpdate.add(key);
+        } catch (e) {
+          
+          
+          lazy.log.debug("Error recording reasonsToNotUpdate");
+          console.log("Error recording reasonsToNotUpdate");
+          break;
+        }
+      }
+    }
   },
 };
 
