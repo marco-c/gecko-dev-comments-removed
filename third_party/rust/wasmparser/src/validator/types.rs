@@ -141,6 +141,14 @@ pub struct TypeId {
     pub(crate) type_size: usize,
     
     pub(crate) index: usize,
+    
+    
+    
+    
+    
+    pub(crate) type_index: Option<usize>,
+    
+    pub(crate) is_core: bool,
 }
 
 

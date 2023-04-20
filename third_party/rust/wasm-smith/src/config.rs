@@ -449,6 +449,25 @@ pub trait Config: 'static + std::fmt::Debug {
     fn threads_enabled(&self) -> bool {
         false
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn disallow_traps(&self) -> bool {
+        false
+    }
 }
 
 
@@ -476,6 +495,7 @@ pub struct SwarmConfig {
     pub available_imports: Option<Vec<u8>>,
     pub bulk_memory_enabled: bool,
     pub canonicalize_nans: bool,
+    pub disallow_traps: bool,
     pub exceptions_enabled: bool,
     pub export_everything: bool,
     pub max_aliases: usize,
@@ -597,6 +617,7 @@ impl<'a> Arbitrary<'a> for SwarmConfig {
             available_imports: None,
             threads_enabled: false,
             export_everything: false,
+            disallow_traps: false,
         })
     }
 }
@@ -794,5 +815,9 @@ impl Config for SwarmConfig {
 
     fn table_max_size_required(&self) -> bool {
         self.table_max_size_required
+    }
+
+    fn disallow_traps(&self) -> bool {
+        self.disallow_traps
     }
 }

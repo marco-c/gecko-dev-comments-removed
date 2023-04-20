@@ -393,45 +393,12 @@ impl<'a, 'b> ExprResolver<'a, 'b> {
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         if bt.ty.index.is_some() {
-            let (ty, _) = self.resolver.resolve_type_use(&mut bt.ty)?;
-            let n = match ty {
-                Index::Num(n, _) => *n,
-                Index::Id(_) => panic!("expected `Num`"),
-            };
-            let ty = match self.resolver.type_info.get(n as usize) {
-                Some(TypeInfo::Func { params, results }) => (params, results),
-                _ => return Ok(()),
-            };
-            if ty.0.len() == 0 && ty.1.len() <= 1 {
-                let mut inline = FunctionType::default();
-                inline.results = ty.1.clone();
-                bt.ty.inline = Some(inline);
-                bt.ty.index = None;
-            }
-        }
-
-        
-        
-        if let Some(inline) = &mut bt.ty.inline {
+            self.resolver.resolve_type_use(&mut bt.ty)?;
+        } else if let Some(inline) = &mut bt.ty.inline {
             inline.resolve(self.resolver)?;
         }
+
         Ok(())
     }
 
@@ -620,8 +587,7 @@ impl<'a, 'b> ExprResolver<'a, 'b> {
             }
 
             RefTest(i) | RefCast(i) | StructNew(i) | StructNewDefault(i) | ArrayNew(i)
-            | ArrayNewDefault(i) | ArrayGet(i) | ArrayGetS(i) | ArrayGetU(i) | ArraySet(i)
-            | ArrayLen(i) => {
+            | ArrayNewDefault(i) | ArrayGet(i) | ArrayGetS(i) | ArrayGetU(i) | ArraySet(i) => {
                 self.resolver.resolve(i, Ns::Type)?;
             }
 

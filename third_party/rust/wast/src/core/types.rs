@@ -73,7 +73,7 @@ pub enum HeapType<'a> {
     
     Eq,
     
-    Data,
+    Struct,
     
     Array,
     
@@ -99,9 +99,9 @@ impl<'a> Parse<'a> for HeapType<'a> {
         } else if l.peek::<kw::eq>() {
             parser.parse::<kw::eq>()?;
             Ok(HeapType::Eq)
-        } else if l.peek::<kw::data>() {
-            parser.parse::<kw::data>()?;
-            Ok(HeapType::Data)
+        } else if l.peek::<kw::r#struct>() {
+            parser.parse::<kw::r#struct>()?;
+            Ok(HeapType::Struct)
         } else if l.peek::<kw::array>() {
             parser.parse::<kw::array>()?;
             Ok(HeapType::Array)
@@ -122,7 +122,7 @@ impl<'a> Peek for HeapType<'a> {
             || kw::r#extern::peek(cursor)
             || kw::any::peek(cursor)
             || kw::eq::peek(cursor)
-            || kw::data::peek(cursor)
+            || kw::r#struct::peek(cursor)
             || kw::array::peek(cursor)
             || kw::i31::peek(cursor)
             || (LParen::peek(cursor) && kw::r#type::peek2(cursor))
@@ -174,10 +174,10 @@ impl<'a> RefType<'a> {
     }
 
     
-    pub fn data() -> Self {
+    pub fn r#struct() -> Self {
         RefType {
             nullable: true,
-            heap: HeapType::Data,
+            heap: HeapType::Struct,
         }
     }
 
@@ -216,9 +216,9 @@ impl<'a> Parse<'a> for RefType<'a> {
         } else if l.peek::<kw::eqref>() {
             parser.parse::<kw::eqref>()?;
             Ok(RefType::eq())
-        } else if l.peek::<kw::dataref>() {
-            parser.parse::<kw::dataref>()?;
-            Ok(RefType::data())
+        } else if l.peek::<kw::structref>() {
+            parser.parse::<kw::structref>()?;
+            Ok(RefType::r#struct())
         } else if l.peek::<kw::arrayref>() {
             parser.parse::<kw::arrayref>()?;
             Ok(RefType::array())
@@ -258,7 +258,7 @@ impl<'a> Peek for RefType<'a> {
             || kw::externref::peek(cursor)
             || kw::anyref::peek(cursor)
             || kw::eqref::peek(cursor)
-            || kw::dataref::peek(cursor)
+            || kw::structref::peek(cursor)
             || kw::arrayref::peek(cursor)
             || kw::i31ref::peek(cursor)
             || (LParen::peek(cursor) && kw::r#ref::peek2(cursor))
