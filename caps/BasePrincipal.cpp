@@ -689,14 +689,7 @@ BasePrincipal::IsSameOrigin(nsIURI* aURI, bool* aRes) {
     
     return NS_OK;
   }
-  nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-  if (!ssm) {
-    return NS_OK;
-  }
-  bool reportError = false;
-  bool isPrivateWindow = false;  
-  *aRes = NS_SUCCEEDED(
-      ssm->CheckSameOriginURI(prinURI, aURI, reportError, isPrivateWindow));
+  *aRes = nsScriptSecurityManager::SecurityCompareURIs(prinURI, aURI);
   return NS_OK;
 }
 
