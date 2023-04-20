@@ -2069,8 +2069,12 @@ class ExtensionData {
         `webextSitePerms.headerWithGatedPerms.${info.sitePermissions[0]}`,
         [host]
       );
+
+      
+      
+      
       result.text = bundle.GetStringFromName(
-        `webextSitePerms.descriptionGatedPerms`
+        `webextSitePerms.descriptionGatedPerms.midi`
       );
 
       return result;

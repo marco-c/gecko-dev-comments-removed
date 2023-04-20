@@ -357,6 +357,15 @@ var ExtensionsUI = {
           textEl.textContent = strings.text;
           textEl.hidden = !strings.text;
 
+          
+          
+          
+          let isMultiline = strings.text.includes("\n\n");
+          textEl.classList.toggle(
+            "addon-webext-perm-text-multiline",
+            isMultiline
+          );
+
           let listIntroEl = doc.getElementById("addon-webext-perm-intro");
           listIntroEl.textContent = strings.listIntro;
           listIntroEl.hidden = !strings.msgs.length || !strings.listIntro;
