@@ -3,7 +3,7 @@
 
 
 
-#include "lib/jxl/optimize.h"
+#include "lib/jxl/enc_optimize.h"
 
 #include <algorithm>
 

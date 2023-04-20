@@ -23,6 +23,7 @@ namespace jxl {
 
 enum class SpeedTier {
   
+  
   kGlacier = 0,
   
   kTortoise = 1,

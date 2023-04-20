@@ -598,14 +598,11 @@ HWY_INLINE void Merge16(D d, Traits st, V& v0, V& v1, V& v2, V& v3, V& v4,
 
 
 
-
-
-
-
-template <class Traits, typename T>
-HWY_NOINLINE void SortingNetwork(Traits st, T* HWY_RESTRICT buf, size_t cols) {
-  const CappedTag<T, Constants::kMaxCols> d;
-  using V = decltype(Zero(d));
+template <class Traits, class V>
+HWY_INLINE void SortingNetwork(Traits st, size_t cols, V& v0, V& v1, V& v2,
+                               V& v3, V& v4, V& v5, V& v6, V& v7, V& v8, V& v9,
+                               V& va, V& vb, V& vc, V& vd, V& ve, V& vf) {
+  const CappedTag<typename Traits::LaneType, Constants::kMaxCols> d;
 
   HWY_DASSERT(cols <= Constants::kMaxCols);
 
@@ -613,26 +610,6 @@ HWY_NOINLINE void SortingNetwork(Traits st, T* HWY_RESTRICT buf, size_t cols) {
   constexpr size_t kLanesPerKey = st.LanesPerKey();
   const size_t keys = cols / kLanesPerKey;
   constexpr size_t kMaxKeys = MaxLanes(d) / kLanesPerKey;
-
-  
-  
-  static_assert(Constants::kMaxRows == 16, "Update loads/stores/args");
-  V v0 = LoadU(d, buf + 0x0 * cols);
-  V v1 = LoadU(d, buf + 0x1 * cols);
-  V v2 = LoadU(d, buf + 0x2 * cols);
-  V v3 = LoadU(d, buf + 0x3 * cols);
-  V v4 = LoadU(d, buf + 0x4 * cols);
-  V v5 = LoadU(d, buf + 0x5 * cols);
-  V v6 = LoadU(d, buf + 0x6 * cols);
-  V v7 = LoadU(d, buf + 0x7 * cols);
-  V v8 = LoadU(d, buf + 0x8 * cols);
-  V v9 = LoadU(d, buf + 0x9 * cols);
-  V va = LoadU(d, buf + 0xa * cols);
-  V vb = LoadU(d, buf + 0xb * cols);
-  V vc = LoadU(d, buf + 0xc * cols);
-  V vd = LoadU(d, buf + 0xd * cols);
-  V ve = LoadU(d, buf + 0xe * cols);
-  V vf = LoadU(d, buf + 0xf * cols);
 
   Sort16(d, st, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, va, vb, vc, vd, ve, vf);
 
@@ -662,6 +639,41 @@ HWY_NOINLINE void SortingNetwork(Traits st, T* HWY_RESTRICT buf, size_t cols) {
       }
     }
   }
+}
+
+
+
+
+
+template <class Traits, typename T>
+HWY_NOINLINE void SortingNetwork(Traits st, T* HWY_RESTRICT buf, size_t cols) {
+  const CappedTag<T, Constants::kMaxCols> d;
+  using V = decltype(Zero(d));
+
+  HWY_DASSERT(cols <= Constants::kMaxCols);
+
+  
+  
+  static_assert(Constants::kMaxRows == 16, "Update loads/stores/args");
+  V v0 = LoadU(d, buf + 0x0 * cols);
+  V v1 = LoadU(d, buf + 0x1 * cols);
+  V v2 = LoadU(d, buf + 0x2 * cols);
+  V v3 = LoadU(d, buf + 0x3 * cols);
+  V v4 = LoadU(d, buf + 0x4 * cols);
+  V v5 = LoadU(d, buf + 0x5 * cols);
+  V v6 = LoadU(d, buf + 0x6 * cols);
+  V v7 = LoadU(d, buf + 0x7 * cols);
+  V v8 = LoadU(d, buf + 0x8 * cols);
+  V v9 = LoadU(d, buf + 0x9 * cols);
+  V va = LoadU(d, buf + 0xa * cols);
+  V vb = LoadU(d, buf + 0xb * cols);
+  V vc = LoadU(d, buf + 0xc * cols);
+  V vd = LoadU(d, buf + 0xd * cols);
+  V ve = LoadU(d, buf + 0xe * cols);
+  V vf = LoadU(d, buf + 0xf * cols);
+
+  SortingNetwork(st, cols, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, va, vb, vc,
+                 vd, ve, vf);
 
   StoreU(v0, d, buf + 0x0 * cols);
   StoreU(v1, d, buf + 0x1 * cols);

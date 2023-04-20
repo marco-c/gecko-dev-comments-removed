@@ -69,6 +69,9 @@ void jpegli_write_m_header(j_compress_ptr cinfo, int marker,
 
 void jpegli_write_m_byte(j_compress_ptr cinfo, int val);
 
+void jpegli_write_marker(j_compress_ptr cinfo, int marker,
+                         const JOCTET* dataptr, unsigned int datalen);
+
 void jpegli_write_icc_profile(j_compress_ptr cinfo, const JOCTET* icc_data_ptr,
                               unsigned int icc_data_len);
 
@@ -78,6 +81,8 @@ JDIMENSION jpegli_write_scanlines(j_compress_ptr cinfo, JSAMPARRAY scanlines,
                                   JDIMENSION num_lines);
 
 void jpegli_finish_compress(j_compress_ptr cinfo);
+
+void jpegli_abort_compress(j_compress_ptr cinfo);
 
 void jpegli_destroy_compress(j_compress_ptr cinfo);
 
@@ -96,22 +101,27 @@ float jpegli_quality_to_distance(int quality);
 
 
 
+
 void jpegli_set_xyb_mode(j_compress_ptr cinfo);
-
-typedef enum {
-  JPEGLI_TYPE_FLOAT = 0,
-  JPEGLI_TYPE_UINT8 = 2,
-  JPEGLI_TYPE_UINT16 = 3,
-} JpegliDataType;
-
-typedef enum {
-  JPEGLI_NATIVE_ENDIAN = 0,
-  JPEGLI_LITTLE_ENDIAN = 1,
-  JPEGLI_BIG_ENDIAN = 2,
-} JpegliEndianness;
 
 void jpegli_set_input_format(j_compress_ptr cinfo, JpegliDataType data_type,
                              JpegliEndianness endianness);
+
+
+
+
+void jpegli_enable_adaptive_quantization(j_compress_ptr cinfo, boolean value);
+
+
+
+void jpegli_set_progressive_level(j_compress_ptr cinfo, int level);
+
+
+
+
+
+
+void jpegli_use_standard_quant_tables(j_compress_ptr cinfo);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }  
