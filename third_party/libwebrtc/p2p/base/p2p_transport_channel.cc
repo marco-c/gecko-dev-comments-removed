@@ -324,6 +324,13 @@ bool P2PTransportChannel::MaybeSwitchSelectedConnection(
   return result.connection.has_value();
 }
 
+void P2PTransportChannel::ForgetLearnedStateForConnections(
+    std::vector<const Connection*> connections) {
+  for (const Connection* con : connections) {
+    FromIceController(con)->ForgetLearnedState();
+  }
+}
+
 void P2PTransportChannel::SetIceRole(IceRole ice_role) {
   RTC_DCHECK_RUN_ON(network_thread_);
   if (ice_role_ != ice_role) {
@@ -1207,8 +1214,7 @@ void P2PTransportChannel::OnNominated(Connection* conn) {
 
   if (ice_field_trials_.send_ping_on_nomination_ice_controlled &&
       conn != nullptr) {
-    PingConnection(conn);
-    MarkConnectionPinged(conn);
+    SendPingRequestInternal(conn);
   }
 
   
@@ -1747,6 +1753,14 @@ void P2PTransportChannel::MaybeStartPinging() {
   }
 }
 
+void P2PTransportChannel::OnStartedPinging() {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  RTC_LOG(LS_INFO) << ToString()
+                   << ": Have a pingable connection for the first time; "
+                      "starting to ping.";
+  regathering_controller_->Start();
+}
+
 bool P2PTransportChannel::IsPortPruned(const Port* port) const {
   RTC_DCHECK_RUN_ON(network_thread_);
   return !absl::c_linear_search(ports_, port);
@@ -1791,8 +1805,7 @@ void P2PTransportChannel::SortConnectionsAndUpdateState(
   
   
   
-  if (ice_role_ == ICEROLE_CONTROLLING ||
-      (selected_connection_ && selected_connection_->nominated())) {
+  if (AllowedToPruneConnections()) {
     PruneConnections();
   }
 
@@ -1812,7 +1825,7 @@ void P2PTransportChannel::SortConnectionsAndUpdateState(
   }
 
   
-  UpdateState();
+  UpdateTransportState();
 
   
   
@@ -1822,13 +1835,51 @@ void P2PTransportChannel::SortConnectionsAndUpdateState(
   MaybeStartPinging();
 }
 
+void P2PTransportChannel::UpdateState() {
+  
+  bool all_connections_timedout = true;
+  for (const Connection* conn : connections()) {
+    if (conn->write_state() != Connection::STATE_WRITE_TIMEOUT) {
+      all_connections_timedout = false;
+      break;
+    }
+  }
+
+  
+  
+  if (all_connections_timedout) {
+    HandleAllTimedOut();
+  }
+
+  
+  UpdateTransportState();
+}
+
+bool P2PTransportChannel::AllowedToPruneConnections() const {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  return ice_role_ == ICEROLE_CONTROLLING ||
+         (selected_connection_ && selected_connection_->nominated());
+}
+
+
 void P2PTransportChannel::PruneConnections() {
   RTC_DCHECK_RUN_ON(network_thread_);
   std::vector<const Connection*> connections_to_prune =
       ice_controller_->PruneConnections();
-  for (const Connection* conn : connections_to_prune) {
+  PruneConnections(connections_to_prune);
+}
+
+bool P2PTransportChannel::PruneConnections(
+    std::vector<const Connection*> connections) {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  if (!AllowedToPruneConnections()) {
+    RTC_LOG(LS_WARNING) << "Not allowed to prune connections";
+    return false;
+  }
+  for (const Connection* conn : connections) {
     FromIceController(conn)->Prune();
   }
+  return true;
 }
 
 rtc::NetworkRoute P2PTransportChannel::ConfigureNetworkRoute(
@@ -1849,9 +1900,17 @@ rtc::NetworkRoute P2PTransportChannel::ConfigureNetworkRoute(
           GetProtocolOverhead(conn->local_candidate().protocol())};
 }
 
+void P2PTransportChannel::SwitchSelectedConnection(
+    const Connection* new_connection,
+    IceSwitchReason reason) {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  SwitchSelectedConnectionInternal(FromIceController(new_connection), reason);
+}
 
-void P2PTransportChannel::SwitchSelectedConnection(Connection* conn,
-                                                   IceSwitchReason reason) {
+
+void P2PTransportChannel::SwitchSelectedConnectionInternal(
+    Connection* conn,
+    IceSwitchReason reason) {
   RTC_DCHECK_RUN_ON(network_thread_);
   
   
@@ -1891,8 +1950,7 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn,
       ((ice_field_trials_.send_ping_on_switch_ice_controlling &&
         old_selected_connection != nullptr) ||
        ice_field_trials_.send_ping_on_selected_ice_controlling)) {
-    PingConnection(conn);
-    MarkConnectionPinged(conn);
+    SendPingRequestInternal(conn);
   }
 
   SignalNetworkRouteChanged(network_route_);
@@ -1937,7 +1995,8 @@ int64_t P2PTransportChannel::ComputeEstimatedDisconnectedTimeMs(
 
 
 
-void P2PTransportChannel::UpdateState() {
+
+void P2PTransportChannel::UpdateTransportState() {
   RTC_DCHECK_RUN_ON(network_thread_);
   
   
@@ -2031,7 +2090,7 @@ void P2PTransportChannel::OnSelectedConnectionDestroyed() {
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_LOG(LS_INFO) << "Selected connection destroyed. Will choose a new one.";
   IceSwitchReason reason = IceSwitchReason::SELECTED_CONNECTION_DESTROYED;
-  SwitchSelectedConnection(nullptr, reason);
+  SwitchSelectedConnectionInternal(nullptr, reason);
   RequestSortAndStateUpdate(reason);
 }
 
@@ -2076,9 +2135,7 @@ void P2PTransportChannel::CheckAndPing() {
   TimeDelta delay = TimeDelta::Millis(result.recheck_delay_ms);
 
   if (result.connection.value_or(nullptr)) {
-    Connection* conn = FromIceController(*result.connection);
-    PingConnection(conn);
-    MarkConnectionPinged(conn);
+    SendPingRequest(result.connection.value());
   }
 
   network_thread_->PostDelayedTask(
@@ -2095,6 +2152,23 @@ Connection* P2PTransportChannel::FindNextPingableConnection() {
     return nullptr;
   }
 }
+
+int64_t P2PTransportChannel::GetLastPingSentMs() const {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  return last_ping_sent_ms_;
+}
+
+void P2PTransportChannel::SendPingRequest(const Connection* connection) {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  SendPingRequestInternal(FromIceController(connection));
+}
+
+void P2PTransportChannel::SendPingRequestInternal(Connection* connection) {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  PingConnection(connection);
+  MarkConnectionPinged(connection);
+}
+
 
 
 
@@ -2190,7 +2264,7 @@ void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
     
     
     
-    UpdateState();
+    UpdateTransportState();
   }
 }
 
@@ -2256,6 +2330,7 @@ bool P2PTransportChannel::PrunePort(PortInterface* port) {
   RTC_DCHECK_RUN_ON(network_thread_);
   auto it = absl::c_find(ports_, port);
   
+  
   if (it == ports_.end()) {
     return false;
   }
@@ -2282,6 +2357,7 @@ void P2PTransportChannel::OnReadPacket(Connection* connection,
     return;
   }
 
+  
   
   if (!FindConnection(connection))
     return;
