@@ -5,7 +5,6 @@
 "use strict";
 
 const EventEmitter = require("resource://devtools/shared/event-emitter.js");
-const { fetch } = require("resource://devtools/shared/DevToolsUtils.js");
 const InspectorUtils = require("InspectorUtils");
 const {
   getSourcemapBaseURL,
@@ -25,8 +24,8 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  ["getSheetOwnerNode"],
-  "resource://devtools/server/actors/style-sheet.js",
+  ["getStyleSheetOwnerNode", "getStyleSheetText"],
+  "resource://devtools/server/actors/utils/stylesheet-utils.js",
   true
 );
 
@@ -274,17 +273,7 @@ class StyleSheetsManager extends EventEmitter {
       return modifiedText;
     }
 
-    if (!styleSheet.href) {
-      if (styleSheet.ownerNode) {
-        
-        return styleSheet.ownerNode.textContent;
-      }
-      
-      
-      return "";
-    }
-
-    return this._fetchStyleSheet(styleSheet);
+    return getStyleSheetText(styleSheet);
   }
 
   
@@ -422,82 +411,6 @@ class StyleSheetsManager extends EventEmitter {
         event: { kind, cause },
       },
     });
-  }
-
-  
-
-
-
-
-
-  async _fetchStyleSheet(styleSheet) {
-    const href = styleSheet.href;
-
-    const options = {
-      loadFromCache: true,
-      policy: Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET,
-      charset: this._getCSSCharset(styleSheet),
-    };
-
-    
-    
-    
-    
-
-    
-    const excludedProtocolsRe = /^(chrome|file|resource|moz-extension):\/\//;
-    if (!excludedProtocolsRe.test(href)) {
-      
-      const ownerNode = getSheetOwnerNode(styleSheet);
-      if (ownerNode) {
-        
-        options.window = ownerNode.ownerDocument.defaultView;
-        options.principal = ownerNode.ownerDocument.nodePrincipal;
-      }
-    }
-
-    let result;
-
-    try {
-      result = await fetch(href, options);
-    } catch (e) {
-      
-      
-      console.error(
-        `stylesheets: fetch failed for ${href},` +
-          ` using system principal instead.`
-      );
-      options.window = undefined;
-      options.principal = undefined;
-      result = await fetch(href, options);
-    }
-
-    return result.content;
-  }
-
-  
-
-
-
-
-
-  _getCSSCharset(styleSheet) {
-    if (styleSheet) {
-      
-      if (styleSheet.ownerNode?.getAttribute) {
-        const linkCharset = styleSheet.ownerNode.getAttribute("charset");
-        if (linkCharset != null) {
-          return linkCharset;
-        }
-      }
-
-      
-      if (styleSheet.ownerNode?.ownerDocument.characterSet) {
-        return styleSheet.ownerNode.ownerDocument.characterSet;
-      }
-    }
-
-    return "UTF-8";
   }
 
   
@@ -721,7 +634,7 @@ class StyleSheetsManager extends EventEmitter {
     
     
     
-    const ownerNode = getSheetOwnerNode(styleSheet);
+    const ownerNode = getStyleSheetOwnerNode(styleSheet);
     const ownerDocument = ownerNode
       ? ownerNode.ownerDocument
       : this._targetActor.window;

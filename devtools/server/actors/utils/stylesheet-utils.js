@@ -11,24 +11,6 @@ const { fetch } = require("resource://devtools/shared/DevToolsUtils.js");
 
 
 
-const modifiedStyleSheets = new WeakMap();
-
-function getSheetText(sheet) {
-  const cssText = modifiedStyleSheets.get(sheet);
-  if (cssText !== undefined) {
-    return Promise.resolve(cssText);
-  }
-
-  if (!sheet.href) {
-    
-    const content = sheet.ownerNode.textContent;
-    return Promise.resolve(content);
-  }
-
-  return fetchStylesheet(sheet).then(({ content }) => content);
-}
-
-exports.getSheetText = getSheetText;
 
 
 
@@ -37,9 +19,7 @@ exports.getSheetText = getSheetText;
 
 
 
-
-
-function getSheetOwnerNode(sheet) {
+function getStyleSheetOwnerNode(sheet) {
   
   
   if (sheet.ownerNode) {
@@ -56,30 +36,35 @@ function getSheetOwnerNode(sheet) {
 
   return parentStyleSheet.ownerNode;
 }
-exports.getSheetOwnerNode = getSheetOwnerNode;
+
+exports.getStyleSheetOwnerNode = getStyleSheetOwnerNode;
 
 
 
 
-function getCSSCharset(sheet) {
-  if (sheet) {
-    
-    if (sheet.ownerNode?.getAttribute) {
-      const linkCharset = sheet.ownerNode.getAttribute("charset");
-      if (linkCharset != null) {
-        return linkCharset;
-      }
+
+
+
+
+
+
+
+
+async function getStyleSheetText(styleSheet) {
+  if (!styleSheet.href) {
+    if (styleSheet.ownerNode) {
+      
+      return styleSheet.ownerNode.textContent;
     }
-
     
-    if (sheet.ownerNode?.ownerDocument.characterSet) {
-      return sheet.ownerNode.ownerDocument.characterSet;
-    }
+    
+    return "";
   }
 
-  return "UTF-8";
+  return fetchStyleSheetText(styleSheet);
 }
 
+exports.getStyleSheetText = getStyleSheetText;
 
 
 
@@ -87,16 +72,13 @@ function getCSSCharset(sheet) {
 
 
 
-
-
-
-async function fetchStylesheet(sheet) {
-  const href = sheet.href;
+async function fetchStyleSheetText(styleSheet) {
+  const href = styleSheet.href;
 
   const options = {
     loadFromCache: true,
     policy: Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET,
-    charset: getCSSCharset(sheet),
+    charset: getCSSCharset(styleSheet),
   };
 
   
@@ -108,7 +90,7 @@ async function fetchStylesheet(sheet) {
   const excludedProtocolsRe = /^(chrome|file|resource|moz-extension):\/\//;
   if (!excludedProtocolsRe.test(href)) {
     
-    const ownerNode = getSheetOwnerNode(sheet);
+    const ownerNode = getStyleSheetOwnerNode(styleSheet);
     if (ownerNode) {
       
       options.window = ownerNode.ownerDocument.defaultView;
@@ -124,7 +106,7 @@ async function fetchStylesheet(sheet) {
     
     
     console.error(
-      `stylesheets actor: fetch failed for ${href},` +
+      `stylesheets: fetch failed for ${href},` +
         ` using system principal instead.`
     );
     options.window = undefined;
@@ -132,5 +114,30 @@ async function fetchStylesheet(sheet) {
     result = await fetch(href, options);
   }
 
-  return result;
+  return result.content;
+}
+
+
+
+
+
+
+
+function getCSSCharset(styleSheet) {
+  if (styleSheet) {
+    
+    if (styleSheet.ownerNode?.getAttribute) {
+      const linkCharset = styleSheet.ownerNode.getAttribute("charset");
+      if (linkCharset != null) {
+        return linkCharset;
+      }
+    }
+
+    
+    if (styleSheet.ownerNode?.ownerDocument.characterSet) {
+      return styleSheet.ownerNode.ownerDocument.characterSet;
+    }
+  }
+
+  return "UTF-8";
 }
