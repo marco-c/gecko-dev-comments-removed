@@ -591,10 +591,14 @@ var SignupOverlay = function (options) {
 
 
 function TagPicker(props) {
-  const [tags, setTags] = (0,react.useState)(props.tags);
+  const [tags, setTags] = (0,react.useState)(props.tags); 
+
+  const [allTags, setAllTags] = (0,react.useState)([]); 
+
+  const [recentTags, setRecentTags] = (0,react.useState)([]); 
+
   const [duplicateTag, setDuplicateTag] = (0,react.useState)(null);
-  const [inputValue, setInputValue] = (0,react.useState)("");
-  const [usedTags, setUsedTags] = (0,react.useState)([]); 
+  const [inputValue, setInputValue] = (0,react.useState)(""); 
 
   const [{
     tagInputStatus,
@@ -603,8 +607,6 @@ function TagPicker(props) {
     tagInputStatus: "",
     tagInputErrorMessage: ""
   });
-  const inputToSubmit = inputValue.trim();
-  const tagsToSubmit = [...tags, ...(inputToSubmit ? [inputToSubmit] : [])];
 
   let handleKeyDown = e => {
     const enterKey = e.keyCode === 13;
@@ -617,24 +619,23 @@ function TagPicker(props) {
       e.preventDefault();
 
       if (inputValue) {
-        addTag();
+        addTag(inputValue.trim());
+        setInputValue(``); 
       } else if (enterKey) {
         submitTags();
       }
     }
   };
 
-  let addTag = () => {
-    let newDuplicateTag = tags.find(item => item === inputToSubmit);
-
-    if (!inputToSubmit?.length) {
+  let addTag = tagToAdd => {
+    if (!tagToAdd?.length) {
       return;
     }
 
-    setInputValue(``); 
+    let newDuplicateTag = tags.find(item => item === tagToAdd);
 
     if (!newDuplicateTag) {
-      setTags(tagsToSubmit);
+      setTags([...tags, tagToAdd]);
     } else {
       setDuplicateTag(newDuplicateTag);
       setTimeout(() => {
@@ -651,6 +652,17 @@ function TagPicker(props) {
   };
 
   let submitTags = () => {
+    let tagsToSubmit = [];
+
+    if (tags?.length) {
+      tagsToSubmit = tags;
+    } 
+
+
+    if (inputValue?.trim().length) {
+      tagsToSubmit.push(inputValue.trim());
+    }
+
     if (!props.itemUrl || !tagsToSubmit?.length) {
       return;
     }
@@ -682,7 +694,14 @@ function TagPicker(props) {
   };
 
   (0,react.useEffect)(() => {
-    messages.sendMessage("PKT_getTags", {}, resp => setUsedTags(resp?.data?.tags));
+    messages.sendMessage("PKT_getTags", {}, resp => {
+      setAllTags(resp?.data?.tags);
+    });
+  }, []);
+  (0,react.useEffect)(() => {
+    messages.sendMessage("PKT_getRecentTags", {}, resp => {
+      setRecentTags(resp?.data?.recentTags);
+    });
   }, []);
   return react.createElement("div", {
     className: "stp_tag_picker"
@@ -693,10 +712,10 @@ function TagPicker(props) {
     className: "stp_tag_picker_tags"
   }, tags.map((tag, i) => react.createElement("div", {
     className: `stp_tag_picker_tag${duplicateTag === tag ? ` stp_tag_picker_tag_duplicate` : ``}`
-  }, tag, react.createElement("button", {
+  }, react.createElement("button", {
     onClick: () => removeTag(i),
     className: `stp_tag_picker_tag_remove`
-  }, "X"))), react.createElement("div", {
+  }, "X"), tag)), react.createElement("div", {
     className: "stp_tag_picker_input_wrapper"
   }, react.createElement("input", {
     className: "stp_tag_picker_input",
@@ -708,15 +727,24 @@ function TagPicker(props) {
     maxlength: "25"
   }), react.createElement("datalist", {
     id: "tag-list"
-  }, usedTags.sort((a, b) => a.search(inputValue) - b.search(inputValue)).map(item => react.createElement("option", {
+  }, allTags.sort((a, b) => a.search(inputValue) - b.search(inputValue)).map(item => react.createElement("option", {
     key: item,
     value: item
   }))), react.createElement("button", {
     className: "stp_tag_picker_button",
-    disabled: !tagsToSubmit?.length,
+    disabled: !inputValue?.length,
     "data-l10n-id": "pocket-panel-saved-save-tags",
     onClick: () => submitTags()
-  })))), tagInputStatus === "waiting" && react.createElement("h3", {
+  }))), react.createElement("div", {
+    className: "recent_tags"
+  }, recentTags.slice(0, 3).filter(recentTag => {
+    return !tags.find(item => item === recentTag);
+  }).map(tag => react.createElement("div", {
+    className: "stp_tag_picker_tag"
+  }, react.createElement("button", {
+    className: "stp_tag_picker_tag_remove",
+    onClick: () => addTag(tag)
+  }, "+"), tag)))), tagInputStatus === "waiting" && react.createElement("h3", {
     className: "header_large",
     "data-l10n-id": "pocket-panel-saved-processing-tags"
   }), tagInputStatus === "success" && react.createElement("h3", {
