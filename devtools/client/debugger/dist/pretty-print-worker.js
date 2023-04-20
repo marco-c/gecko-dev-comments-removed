@@ -108,10 +108,13 @@ var _worker = new WeakMap();
 
 var _pendingCalls = new WeakMap();
 
+var _url = new WeakMap();
+
 var _onMessage = new WeakMap();
 
 class WorkerDispatcher {
-  constructor() {
+  
+  constructor(url) {
     _classPrivateFieldInitSpec(this, _msgId, {
       writable: true,
       value: 1
@@ -125,6 +128,11 @@ class WorkerDispatcher {
     _classPrivateFieldInitSpec(this, _pendingCalls, {
       writable: true,
       value: new Map()
+    });
+
+    _classPrivateFieldInitSpec(this, _url, {
+      writable: true,
+      value: ""
     });
 
     _classPrivateFieldInitSpec(this, _onMessage, {
@@ -160,18 +168,20 @@ class WorkerDispatcher {
         });
       }
     });
+
+    _classPrivateFieldSet(this, _url, url);
   }
 
-  start(url) {
+  start() {
     
     if (typeof ChromeWorker == "function") {
-      _classPrivateFieldSet(this, _worker, new ChromeWorker(url));
+      _classPrivateFieldSet(this, _worker, new ChromeWorker(_classPrivateFieldGet(this, _url)));
     } else {
-      _classPrivateFieldSet(this, _worker, new Worker(url));
+      _classPrivateFieldSet(this, _worker, new Worker(_classPrivateFieldGet(this, _url)));
     }
 
     _classPrivateFieldGet(this, _worker).onerror = err => {
-      console.error(`Error in worker ${url}`, err.message);
+      console.error(`Error in worker ${_classPrivateFieldGet(this, _url)}`, err.message);
     };
 
     _classPrivateFieldGet(this, _worker).addEventListener("message", _classPrivateFieldGet(this, _onMessage));
@@ -221,7 +231,7 @@ class WorkerDispatcher {
       calls.length = 0;
 
       if (!_classPrivateFieldGet(this, _worker)) {
-        return;
+        this.start();
       }
 
       const id = (_classPrivateFieldSet(this, _msgId, (_this$msgId = +_classPrivateFieldGet(this, _msgId)) + 1), _this$msgId);
