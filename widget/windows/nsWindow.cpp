@@ -2756,54 +2756,6 @@ void nsWindow::UpdateDarkModeToolbar() {
                         sizeof dark);
 }
 
-LayoutDeviceIntMargin nsWindow::NormalWindowNonClientOffset() const {
-  bool glass = gfxWindowsPlatform::GetPlatform()->DwmCompositionEnabled();
-
-  LayoutDeviceIntMargin nonClientOffset;
-
-  
-  
-  
-  
-  
-  
-  
-
-  if (mNonClientMargins.top > 0 && glass) {
-    nonClientOffset.top = std::min(mCaptionHeight, mNonClientMargins.top);
-  } else if (mNonClientMargins.top == 0) {
-    nonClientOffset.top = mCaptionHeight;
-  } else {
-    nonClientOffset.top = 0;
-  }
-
-  if (mNonClientMargins.bottom > 0 && glass) {
-    nonClientOffset.bottom =
-        std::min(mVertResizeMargin, mNonClientMargins.bottom);
-  } else if (mNonClientMargins.bottom == 0) {
-    nonClientOffset.bottom = mVertResizeMargin;
-  } else {
-    nonClientOffset.bottom = 0;
-  }
-
-  if (mNonClientMargins.left > 0 && glass) {
-    nonClientOffset.left = std::min(mHorResizeMargin, mNonClientMargins.left);
-  } else if (mNonClientMargins.left == 0) {
-    nonClientOffset.left = mHorResizeMargin;
-  } else {
-    nonClientOffset.left = 0;
-  }
-
-  if (mNonClientMargins.right > 0 && glass) {
-    nonClientOffset.right = std::min(mHorResizeMargin, mNonClientMargins.right);
-  } else if (mNonClientMargins.right == 0) {
-    nonClientOffset.right = mHorResizeMargin;
-  } else {
-    nonClientOffset.right = 0;
-  }
-  return nonClientOffset;
-}
-
 
 
 
@@ -2954,7 +2906,50 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
       }
     }
   } else {
-    mNonClientOffset = NormalWindowNonClientOffset();
+    bool glass = gfxWindowsPlatform::GetPlatform()->DwmCompositionEnabled();
+
+    
+    
+    
+    
+    
+    
+    
+
+    if (mNonClientMargins.top > 0 && glass) {
+      mNonClientOffset.top = std::min(mCaptionHeight, mNonClientMargins.top);
+    } else if (mNonClientMargins.top == 0) {
+      mNonClientOffset.top = mCaptionHeight;
+    } else {
+      mNonClientOffset.top = 0;
+    }
+
+    if (mNonClientMargins.bottom > 0 && glass) {
+      mNonClientOffset.bottom =
+          std::min(mVertResizeMargin, mNonClientMargins.bottom);
+    } else if (mNonClientMargins.bottom == 0) {
+      mNonClientOffset.bottom = mVertResizeMargin;
+    } else {
+      mNonClientOffset.bottom = 0;
+    }
+
+    if (mNonClientMargins.left > 0 && glass) {
+      mNonClientOffset.left =
+          std::min(mHorResizeMargin, mNonClientMargins.left);
+    } else if (mNonClientMargins.left == 0) {
+      mNonClientOffset.left = mHorResizeMargin;
+    } else {
+      mNonClientOffset.left = 0;
+    }
+
+    if (mNonClientMargins.right > 0 && glass) {
+      mNonClientOffset.right =
+          std::min(mHorResizeMargin, mNonClientMargins.right);
+    } else if (mNonClientMargins.right == 0) {
+      mNonClientOffset.right = mHorResizeMargin;
+    } else {
+      mNonClientOffset.right = 0;
+    }
   }
 
   if (aReflowWindow) {
@@ -3873,24 +3868,17 @@ LayoutDeviceIntPoint nsWindow::WidgetToScreenOffset() {
 
 LayoutDeviceIntSize nsWindow::ClientToWindowSize(
     const LayoutDeviceIntSize& aClientSize) {
-  if (mWindowType == eWindowType_popup && !IsPopupWithTitleBar()) {
+  if (mWindowType == eWindowType_popup && !IsPopupWithTitleBar())
     return aClientSize;
-  }
 
   
-  const LayoutDeviceIntPoint point(200, 200);
-  if (mCustomNonClient) {
-    auto winRect = LayoutDeviceIntRect(point, aClientSize);
-    winRect.Inflate(NonClientSizeMargin(NormalWindowNonClientOffset()));
-    return winRect.Size();
-  }
-
   RECT r;
-  r.left = point.x;
-  r.top = point.y;
-  r.right = point.x + aClientSize.width;
-  r.bottom = point.y + aClientSize.height;
+  r.left = 200;
+  r.top = 200;
+  r.right = 200 + aClientSize.width;
+  r.bottom = 200 + aClientSize.height;
   ::AdjustWindowRectEx(&r, WindowStyle(), false, WindowExStyle());
+
   return LayoutDeviceIntSize(r.right - r.left, r.bottom - r.top);
 }
 
@@ -5364,11 +5352,10 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
         RECT* clientRect =
             wParam ? &(reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam))->rgrc[0]
                    : (reinterpret_cast<RECT*>(lParam));
-        auto margin = NonClientSizeMargin();
-        clientRect->top += margin.top;
-        clientRect->left += margin.left;
-        clientRect->right -= margin.right;
-        clientRect->bottom -= margin.bottom;
+        clientRect->top += mCaptionHeight - mNonClientOffset.top;
+        clientRect->left += mHorResizeMargin - mNonClientOffset.left;
+        clientRect->right -= mHorResizeMargin - mNonClientOffset.right;
+        clientRect->bottom -= mVertResizeMargin - mNonClientOffset.bottom;
         
         
         clientRect->right = std::max(clientRect->right, clientRect->left + 1);
@@ -6453,14 +6440,6 @@ BOOL CALLBACK nsWindow::BroadcastMsg(HWND aTopWindow, LPARAM aMsg) {
 
 
 
-LayoutDeviceIntMargin nsWindow::NonClientSizeMargin(
-    const LayoutDeviceIntMargin& aNonClientOffset) const {
-  return LayoutDeviceIntMargin(mCaptionHeight - aNonClientOffset.top,
-                               mHorResizeMargin - aNonClientOffset.right,
-                               mVertResizeMargin - aNonClientOffset.bottom,
-                               mHorResizeMargin - aNonClientOffset.left);
-}
-
 int32_t nsWindow::ClientMarginHitTestPoint(int32_t aX, int32_t aY) {
   const nsSizeMode sizeMode = mFrameState->GetSizeMode();
   if (sizeMode == nsSizeMode_Minimized || sizeMode == nsSizeMode_Fullscreen) {
@@ -6488,13 +6467,16 @@ int32_t nsWindow::ClientMarginHitTestPoint(int32_t aX, int32_t aY) {
       (mBorderStyle &
        (eBorderStyle_all | eBorderStyle_resizeh | eBorderStyle_default));
 
-  LayoutDeviceIntMargin nonClientSizeMargin = NonClientSizeMargin();
-
   
   
-  nonClientSizeMargin.EnsureAtLeast(
-      LayoutDeviceIntMargin(kResizableBorderMinSize, kResizableBorderMinSize,
-                            kResizableBorderMinSize, kResizableBorderMinSize));
+  const LayoutDeviceIntMargin nonClientSizeMargin(
+      std::max(mCaptionHeight - mNonClientOffset.top, kResizableBorderMinSize),
+      std::max(mHorResizeMargin - mNonClientOffset.right,
+               kResizableBorderMinSize),
+      std::max(mVertResizeMargin - mNonClientOffset.bottom,
+               kResizableBorderMinSize),
+      std::max(mHorResizeMargin - mNonClientOffset.left,
+               kResizableBorderMinSize));
 
   LayoutDeviceIntRect clientRect = winRect;
   clientRect.Deflate(nonClientSizeMargin);
