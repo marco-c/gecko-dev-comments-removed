@@ -19,7 +19,11 @@ child:
 
   async OnDataAvailable(Shmem aData);
 
-  async OnStopRequest(nsresult aReason);
+  
+  
+  async OnStopRequest(nsresult aReason, nsCString aContentCharset,
+                              nsString aHintCharset,
+                              nsString aDocumentCharset);
 
   async __delete__();
 };
