@@ -12,7 +12,28 @@ add_task(async function({ CDP }) {
   const { Target } = client;
   await getDiscoveredTargets(Target);
 
+  
+  const {
+    browserContextIds: browserContextIdsBefore,
+  } = await Target.getBrowserContexts();
+
+  is(
+    browserContextIdsBefore.length,
+    0,
+    "No browser context is open by default"
+  );
+
   const { browserContextId } = await Target.createBrowserContext();
+
+  
+  const { browserContextIds } = await Target.getBrowserContexts();
+
+  is(browserContextIds.length, 1, "Got expected length of browser contexts");
+  is(
+    browserContextIds[0],
+    browserContextId,
+    "Got expected browser context id from getBrowserContexts"
+  );
 
   const targetCreated = Target.targetCreated();
   const { targetId } = await Target.createTarget({ browserContextId });
@@ -33,6 +54,17 @@ add_task(async function({ CDP }) {
 
   
   await Target.disposeBrowserContext({ browserContextId });
+
+  
+  const {
+    browserContextIds: browserContextIdsAfter,
+  } = await Target.getBrowserContexts();
+
+  is(
+    browserContextIdsAfter.length,
+    0,
+    "After closing all browser contexts none is available anymore"
+  );
 
   await client.close();
   info("The client is closed");
