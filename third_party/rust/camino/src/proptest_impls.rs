@@ -8,9 +8,8 @@
 
 
 
-use proptest::{arbitrary::StrategyFor, prelude::*, strategy::MapInto};
-
 use crate::{Utf8Path, Utf8PathBuf};
+use proptest::{arbitrary::StrategyFor, prelude::*, strategy::MapInto};
 
 
 

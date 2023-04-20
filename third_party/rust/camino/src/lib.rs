@@ -222,7 +222,7 @@ impl Utf8PathBuf {
     #[must_use]
     pub fn as_path(&self) -> &Utf8Path {
         
-        unsafe { Utf8Path::assume_utf8(&*self.0) }
+        unsafe { Utf8Path::assume_utf8(&self.0) }
     }
 
     
@@ -1175,10 +1175,8 @@ impl Utf8Path {
     
     
     pub fn canonicalize_utf8(&self) -> io::Result<Utf8PathBuf> {
-        self.canonicalize().and_then(|path| {
-            path.try_into()
-                .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))
-        })
+        self.canonicalize()
+            .and_then(|path| path.try_into().map_err(FromPathBufError::into_io_error))
     }
 
     
@@ -1224,10 +1222,8 @@ impl Utf8Path {
     
     
     pub fn read_link_utf8(&self) -> io::Result<Utf8PathBuf> {
-        self.read_link().and_then(|path| {
-            path.try_into()
-                .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))
-        })
+        self.read_link()
+            .and_then(|path| path.try_into().map_err(FromPathBufError::into_io_error))
     }
 
     
@@ -2495,6 +2491,17 @@ impl FromPathBufError {
     pub fn from_path_error(&self) -> FromPathError {
         self.error
     }
+
+    
+    
+    
+    
+    
+    pub fn into_io_error(self) -> io::Error {
+        
+        
+        io::Error::new(io::ErrorKind::InvalidData, self)
+    }
 }
 
 impl fmt::Display for FromPathBufError {
@@ -2538,6 +2545,19 @@ impl error::Error for FromPathBufError {
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct FromPathError(());
+
+impl FromPathError {
+    
+    
+    
+    
+    
+    pub fn into_io_error(self) -> io::Error {
+        
+        
+        io::Error::new(io::ErrorKind::InvalidData, self)
+    }
+}
 
 impl fmt::Display for FromPathError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -2587,7 +2607,7 @@ impl AsRef<Path> for Utf8Path {
 
 impl AsRef<Path> for Utf8PathBuf {
     fn as_ref(&self) -> &Path {
-        &*self.0
+        &self.0
     }
 }
 
