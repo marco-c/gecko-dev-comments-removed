@@ -255,6 +255,10 @@ constexpr nsLiteralCString kDeprecatedFontFamilies[] = {
 };
 #endif  
 
+bool gfxMacPlatformFontList::sUseSizeSensitiveSystemFont = false;
+nsCString gfxMacPlatformFontList::sSystemTextFontFamilyName;
+nsCString gfxMacPlatformFontList::sSystemDisplayFontFamilyName;  
+
 
 
 #define INDEX_FONT_POSTSCRIPT_NAME 0
@@ -1048,7 +1052,7 @@ void gfxSingleFaceMacFontFamily::ReadOtherFamilyNames(gfxPlatformFontList* aPlat
 #pragma mark -
 
 gfxMacPlatformFontList::gfxMacPlatformFontList()
-    : gfxPlatformFontList(false), mDefaultFont(nullptr), mUseSizeSensitiveSystemFont(false) {
+    : gfxPlatformFontList(false), mDefaultFont(nullptr) {
   CheckFamilyList(kBaseFonts);
 
 #ifdef MOZ_BUNDLED_FONTS
@@ -1084,12 +1088,17 @@ gfxMacPlatformFontList::~gfxMacPlatformFontList() {
   if (mDefaultFont) {
     ::CFRelease(mDefaultFont);
   }
+
+  
+  
+  sSystemTextFontFamilyName.Truncate();
+  sSystemDisplayFontFamilyName.Truncate();
 }
 
 void gfxMacPlatformFontList::AddFamily(const nsACString& aFamilyName, FontVisibility aVisibility) {
   double sizeHint = 0.0;
-  if (aVisibility == FontVisibility::Hidden && mUseSizeSensitiveSystemFont &&
-      mSystemDisplayFontFamilyName.Equals(aFamilyName)) {
+  if (aVisibility == FontVisibility::Hidden && sUseSizeSensitiveSystemFont &&
+      sSystemDisplayFontFamilyName.Equals(aFamilyName)) {
     sizeHint = 128.0;
   }
 
@@ -1193,10 +1202,10 @@ void gfxMacPlatformFontList::ReadSystemFontList(dom::SystemFontList* aList)
   
   
   aList->entries().AppendElement(FontFamilyListEntry(
-      mSystemTextFontFamilyName, FontVisibility::Unknown, kTextSizeSystemFontFamily));
-  if (mUseSizeSensitiveSystemFont) {
+      sSystemTextFontFamilyName, FontVisibility::Unknown, kTextSizeSystemFontFamily));
+  if (sUseSizeSensitiveSystemFont) {
     aList->entries().AppendElement(FontFamilyListEntry(
-        mSystemDisplayFontFamilyName, FontVisibility::Unknown, kDisplaySizeSystemFontFamily));
+        sSystemDisplayFontFamilyName, FontVisibility::Unknown, kDisplaySizeSystemFontFamily));
   }
   
   for (auto f = mFontFamilies.Iter(); !f.Done(); f.Next()) {
@@ -1240,7 +1249,7 @@ nsresult gfxMacPlatformFontList::InitFontListForPlatform() {
 
   Telemetry::AutoTimer<Telemetry::MAC_INITFONTLIST_TOTAL> timer;
 
-  InitSystemFontNames();
+  CreateSystemFontFamily();
 
   if (XRE_IsParentProcess()) {
     static bool firstTime = true;
@@ -1276,18 +1285,18 @@ nsresult gfxMacPlatformFontList::InitFontListForPlatform() {
           
           
           if (nsCocoaFeatures::OnCatalinaOrLater() &&
-              (ffe.familyName() == mSystemTextFontFamilyName ||
-               ffe.familyName() == mSystemDisplayFontFamilyName)) {
+              (ffe.familyName() == sSystemTextFontFamilyName ||
+               ffe.familyName() == sSystemDisplayFontFamilyName)) {
             continue;
           }
           AddFamily(ffe.familyName(), ffe.visibility());
           break;
         case kTextSizeSystemFontFamily:
-          mSystemTextFontFamilyName = ffe.familyName();
+          sSystemTextFontFamilyName = ffe.familyName();
           break;
         case kDisplaySizeSystemFontFamily:
-          mSystemDisplayFontFamilyName = ffe.familyName();
-          mUseSizeSensitiveSystemFont = true;
+          sSystemDisplayFontFamilyName = ffe.familyName();
+          sUseSizeSensitiveSystemFont = true;
           break;
       }
     }
@@ -1313,7 +1322,7 @@ void gfxMacPlatformFontList::InitSharedFontListForPlatform() {
 
   gfxPlatformMac::WaitForFontRegistration();
 
-  InitSystemFontNames();
+  CreateSystemFontFamily();
 
   if (XRE_IsParentProcess()) {
     
@@ -1536,40 +1545,30 @@ static NSString* GetRealFamilyName(NSFont* aFont) {
 
 const CGFloat kTextDisplayCrossover = 20.0;  
 
+
+
+
 void gfxMacPlatformFontList::InitSystemFontNames() {
   
   
-  mUseSizeSensitiveSystemFont = !nsCocoaFeatures::OnCatalinaOrLater();
+  sUseSizeSensitiveSystemFont = !nsCocoaFeatures::OnCatalinaOrLater();
 
   
   NSFont* sys = [NSFont systemFontOfSize:0.0];
   NSString* textFamilyName = GetRealFamilyName(sys);
   nsAutoString familyName;
   nsCocoaUtils::GetStringForNSString(textFamilyName, familyName);
-  CopyUTF16toUTF8(familyName, mSystemTextFontFamilyName);
+  CopyUTF16toUTF8(familyName, sSystemTextFontFamilyName);
 
   
-  
-  
-  if (nsCocoaFeatures::OnCatalinaOrLater()) {
-    
-    RefPtr<gfxFontFamily> fam = new gfxMacFontFamily(mSystemTextFontFamilyName, sys);
-    if (fam) {
-      nsAutoCString key;
-      GenerateFontListKey(mSystemTextFontFamilyName, key);
-      mFontFamilies.InsertOrUpdate(key, std::move(fam));
-    }
-  }
-
-  
-  if (mUseSizeSensitiveSystemFont) {
+  if (sUseSizeSensitiveSystemFont) {
     NSFont* displaySys = [NSFont systemFontOfSize:128.0];
     NSString* displayFamilyName = GetRealFamilyName(displaySys);
     if ([displayFamilyName isEqualToString:textFamilyName]) {
-      mUseSizeSensitiveSystemFont = false;
+      sUseSizeSensitiveSystemFont = false;
     } else {
       nsCocoaUtils::GetStringForNSString(displayFamilyName, familyName);
-      CopyUTF16toUTF8(familyName, mSystemDisplayFontFamilyName);
+      CopyUTF16toUTF8(familyName, sSystemDisplayFontFamilyName);
     }
   }
 
@@ -1586,6 +1585,22 @@ void gfxMacPlatformFontList::InitSystemFontNames() {
                " -- please log a bug!!");
   }
 #endif
+}
+
+void gfxMacPlatformFontList::CreateSystemFontFamily() {
+  
+  
+  
+  if (nsCocoaFeatures::OnCatalinaOrLater()) {
+    
+    RefPtr<gfxFontFamily> fam =
+        new gfxMacFontFamily(sSystemTextFontFamilyName, [NSFont systemFontOfSize:0.0]);
+    if (fam) {
+      nsAutoCString key;
+      GenerateFontListKey(sSystemTextFontFamilyName, key);
+      mFontFamilies.InsertOrUpdate(key, std::move(fam));
+    }
+  }
 }
 
 gfxFontFamily* gfxMacPlatformFontList::FindSystemFontFamily(const nsACString& aFamily) {
@@ -1847,10 +1862,10 @@ bool gfxMacPlatformFontList::FindAndAddFamiliesLocked(
     
     
     const nsCString& systemFontFamilyName =
-        mUseSizeSensitiveSystemFont && aStyle &&
+        sUseSizeSensitiveSystemFont && aStyle &&
                 (aStyle->size * aDevToCssSize) >= kTextDisplayCrossover
-            ? mSystemDisplayFontFamilyName
-            : mSystemTextFontFamilyName;
+            ? sSystemDisplayFontFamilyName
+            : sSystemTextFontFamilyName;
     if (SharedFontList() && !nsCocoaFeatures::OnCatalinaOrLater()) {
       FindFamiliesFlags flags = aFlags | FindFamiliesFlags::eSearchHiddenFamilies;
       return gfxPlatformFontList::FindAndAddFamiliesLocked(aPresContext, aGeneric,
