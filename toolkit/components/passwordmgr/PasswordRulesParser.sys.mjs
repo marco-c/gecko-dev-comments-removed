@@ -1,11 +1,7 @@
+// Sourced from https://github.com/apple/password-manager-resources/blob/5f6da89483e75cdc4165a6fc4756796e0ced7a21/tools/PasswordRulesParser.js
+// Copyright (c) 2019 - 2020 Apple Inc. Licensed under MIT License.
 
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["PasswordRulesParser"];
-
-this.PasswordRulesParser = {
+export const PasswordRulesParser = {
   parsePasswordRules,
 };
 
@@ -81,7 +77,7 @@ class CustomCharacterClass {
   }
 }
 
-
+// MARK: Lexer functions
 
 function _isIdentifierCharacter(c) {
   console.assert(c.length === 1);
@@ -103,7 +99,7 @@ function _isASCIIWhitespace(c) {
   return c === " " || c === "\f" || c === "\n" || c === "\r" || c === "\t";
 }
 
-
+// MARK: ASCII printable character bit set and canonicalization functions
 
 function _bitSetIndexForCharacter(c) {
   console.assert(c.length == 1);
@@ -219,7 +215,7 @@ function _canonicalizedPropertyValues(
   let hasAllLower = checkRange("a", "z");
   let hasAllDigits = checkRange("0", "9");
 
-  
+  // Check for special characters, accounting for characters that are given special treatment (i.e. '-' and ']')
   let hasAllSpecial = false;
   let hasDash = false;
   let hasRightSquareBracket = false;
@@ -316,7 +312,7 @@ function _canonicalizedPropertyValues(
   return result;
 }
 
-
+// MARK: Parser functions
 
 function _indexOfNonWhitespaceCharacter(input, position = 0) {
   console.assert(position >= 0);
@@ -378,7 +374,7 @@ function _parseCustomCharacterClass(input, position) {
     }
 
     if (c === "-" && position - initialPosition > 0) {
-      
+      // FIXME: Should this be an error?
       console.warn(
         "Ignoring '-'; a '-' may only appear as the first character in a character class"
       );
@@ -397,7 +393,7 @@ function _parseCustomCharacterClass(input, position) {
     (position < length && input[position] !== CHARACTER_CLASS_END_SENTINEL) ||
     (position == length && input[position - 1] == CHARACTER_CLASS_END_SENTINEL)
   ) {
-    
+    // Fix up result; we over consumed.
     result.pop();
     return [result, position];
   }
@@ -460,7 +456,7 @@ function _parsePasswordRequiredOrAllowedPropertyValue(input, position) {
 
     console.error(
       "Failed to find start of next property or property value: " +
-      input.substr(position)
+        input.substr(position)
     );
     return [null, position];
   }
@@ -496,7 +492,7 @@ function _parsePasswordRule(input, position) {
   let property = { name: identifier, value: null };
 
   position = _indexOfNonWhitespaceCharacter(input, position + 1);
-  
+  // Empty value
   if (position >= length || input[position] === PROPERTY_SEPARATOR) {
     return [new Rule(property.name, property.value), position];
   }
@@ -553,7 +549,7 @@ function _parseInteger(input, position) {
   if (!_isASCIIDigit(input[position])) {
     console.error(
       "Failed to parse value of type integer; not a number: " +
-      input.substr(position)
+        input.substr(position)
     );
     return [null, position];
   }
@@ -576,7 +572,7 @@ function _parseInteger(input, position) {
 
   console.error(
     "Failed to parse value of type integer; not a number: " +
-    input.substr(initialPosition)
+      input.substr(initialPosition)
   );
   return [null, position];
 }
@@ -625,8 +621,8 @@ function _parsePasswordRulesInternal(input) {
 function parsePasswordRules(input, formatRulesForMinifiedVersion) {
   let passwordRules = _parsePasswordRulesInternal(input) || [];
 
-  
-  
+  // When formatting rules for minified version, we should keep the formatted rules
+  // as similar to the input as possible. Avoid copying required rules to allowed rules.
   let suppressCopyingRequiredToAllowed = formatRulesForMinifiedVersion;
 
   let newPasswordRules = [];

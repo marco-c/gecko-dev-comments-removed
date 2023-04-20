@@ -1,15 +1,13 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * Machine learning model for identifying new password input elements
+ * using Fathom.
+ */
 
-
-
-
-
-
-
-
-const EXPORTED_SYMBOLS = ["NewPasswordModel"];
-
-const {
+import {
   dom,
   element,
   out,
@@ -17,27 +15,28 @@ const {
   ruleset,
   score,
   type,
-  utils: { identity, isVisible, min, setDefault },
-  clusters: { euclidean },
-} = ChromeUtils.importESModule(
-  "resource://gre/modules/third_party/fathom/fathom.mjs"
-);
+  utils,
+  clusters,
+} from "resource://gre/modules/third_party/fathom/fathom.mjs";
 
+let { identity, isVisible, min, setDefault } = utils;
+let { euclidean } = clusters;
 
+/**
+ * ----- Start of model -----
+ *
+ * Everything below this comment up to the "End of model" comment is copied from:
+ * https://github.com/mozilla-services/fathom-login-forms/blob/78d4bf8f301b5aa6d62c06b45e826a0dd9df1afa/new-password/rulesets.js#L14-L613
+ * Deviations from that file:
+ *   - Remove import statements, instead using ``ChromeUtils.defineModuleGetter`` and destructuring assignments above.
+ *   - Set ``DEVELOPMENT`` constant to ``false``.
+ */
 
-
-
-
-
-
-
-
-
-
-
+// Whether this is running in the Vectorizer, rather than in-application, in a
+// privileged Chrome context
 const DEVELOPMENT = false;
 
-
+// Run me with confidence cutoff = 0.75.
 const coefficients = {
   new: [
     ["hasNewLabel", 2.9195094108581543],
@@ -114,24 +113,24 @@ const passwordStringAndAttrRegex = new RegExp(
 );
 
 function makeRuleset(coeffs, biases) {
-  
+  // HTMLElement => (selector => Array<HTMLElement>) nested map to cache querySelectorAll calls.
   let elementToSelectors;
-  
-  
+  // We want to clear the cache each time the model is executed to get the latest DOM snapshot
+  // for each classification.
   function clearCache() {
-    
+    // WeakMaps do not have a clear method
     elementToSelectors = new WeakMap();
   }
 
   function hasLabelMatchingRegex(element, regex) {
-    
+    // Check element.labels
     const labels = element.labels;
-    
+    // TODO: Should I be concerned with multiple labels?
     if (labels !== null && labels.length) {
       return regex.test(labels[0].textContent);
     }
 
-    
+    // Check element.aria-labelledby
     let labelledBy = element.getAttribute("aria-labelledby");
     if (labelledBy !== null) {
       labelledBy = labelledBy
@@ -148,20 +147,20 @@ function makeRuleset(coeffs, biases) {
     }
 
     const parentElement = element.parentElement;
-    
+    // Bug 1634819: element.parentElement is null if element.parentNode is a ShadowRoot
     if (!parentElement) {
       return false;
     }
-    
+    // Check if the input is in a <td>, and, if so, check the textContent of the containing <tr>
     if (parentElement.tagName === "TD" && parentElement.parentElement) {
-      
+      // TODO: How bad is the assumption that the <tr> won't be the parent of the <td>?
       return regex.test(parentElement.parentElement.textContent);
     }
 
-    
+    // Check if the input is in a <dd>, and, if so, check the textContent of the preceding <dt>
     if (
       parentElement.tagName === "DD" &&
-      
+      // previousElementSibling can be null
       parentElement.previousElementSibling
     ) {
       return regex.test(parentElement.previousElementSibling.textContent);
@@ -269,25 +268,25 @@ function makeRuleset(coeffs, biases) {
     return fnode.element.autocomplete === "current-password";
   }
 
-  
+  // Check cache before calling querySelectorAll on element
   function getElementDescendants(element, selector) {
-    
+    // Use the element to look up the selector map:
     const selectorToDescendants = setDefault(
       elementToSelectors,
       element,
       () => new Map()
     );
 
-    
+    // Use the selector to grab the descendants:
     return setDefault(selectorToDescendants, selector, () =>
       Array.from(element.querySelectorAll(selector))
     );
   }
 
-  
-
-
-
+  /**
+   * Return whether the form element directly after this one looks like a
+   * confirm-password input.
+   */
   function nextInputIsConfirmy(fnode) {
     const form = fnode.element.form;
     const me = fnode.element;
@@ -302,14 +301,14 @@ function makeRuleset(coeffs, biases) {
             !formEl.disabled &&
             formEl.getAttribute("aria-hidden") !== "true"
           ) {
-            
-            
+            // Now we're looking at a passwordy, visible input[type=password]
+            // directly after me.
             return elementAttrsMatchRegex(formEl, confirmAttrRegex);
-            
-            
+            // We could check other confirmy smells as well. Balance accuracy
+            // against time and complexity.
           }
-          
-          
+          // We look only at the very next element, so we may be thrown off by
+          // Hide buttons and such.
           break;
         }
       }
@@ -317,24 +316,24 @@ function makeRuleset(coeffs, biases) {
     return false;
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Returns true when the number of visible input found in the form is over
+   * the given threshold.
+   *
+   * Since the idea in the signal is based on the fact that registration pages
+   * often have multiple inputs, this rule only selects inputs whose type is
+   * either email, password, text, tel or empty, which are more likely a input
+   * field for users to fill their information.
+   */
   function formHasMultipleVisibleInput(element, selector, threshold) {
     let form = element.form;
     if (!form) {
-      
-      
-      
-      
-      
-      
+      // For password fields that don't have an associated form, we apply a heuristic
+      // to find a "form" for it. The heuristic works as follow:
+      // 1. Locate the closest preceding input.
+      // 2. Find the lowest common ancestor of the password field and the closet
+      //    preceding input.
+      // 3. Assume the common ancestor is the "form" of the password input.
       const previous = closestElementAbove(element, selector);
       if (!previous) {
         return false;
@@ -346,7 +345,7 @@ function makeRuleset(coeffs, biases) {
     }
     const inputs = Array.from(form.querySelectorAll(selector));
     for (const input of inputs) {
-      
+      // don't need to check visibility for the element we're testing against
       if (element === input || isVisible(input)) {
         threshold--;
         if (threshold === 0) {
@@ -357,13 +356,13 @@ function makeRuleset(coeffs, biases) {
     return false;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Returns true when there are three password fields in the form and the passed
+   * element is the first one.
+   *
+   * The signal is based on that change-password forms with 3 password fields often
+   * have the "current password", "new password", and "confirm password" pattern.
+   */
   function firstFieldInFormWithThreePasswordFields(fnode) {
     const element = fnode.element;
     const form = element.form;
@@ -371,8 +370,8 @@ function makeRuleset(coeffs, biases) {
       let elements = form.querySelectorAll(
         "input[type=password]:not([disabled], [aria-hidden=true])"
       );
-      
-      
+      // Only care forms with three password fields. If there are more than three password
+      // fields found, probably we include some hidden fields, so just ignore it.
       if (elements.length == 3 && elements[0] == element) {
         return true;
       }
@@ -422,9 +421,9 @@ function makeRuleset(coeffs, biases) {
   }
 
   function findLowestCommonAncestor(elementA, elementB) {
-    
-    
-    
+    // Walk up the ancestor chain of both elements and compare whether the
+    // ancestors in the depth are the same. If they are not the same, the
+    // ancestor in the previous run is the lowest common ancestor.
     function getAncestorChain(element) {
       let ancestors = [];
       let p = element.parentNode;
@@ -458,11 +457,11 @@ function makeRuleset(coeffs, biases) {
     return false;
   }
 
-  
-
-
-
-
+  /**
+   * Let us compactly represent a collection of rules that all take a single
+   * type with no .when() clause and have only a score() call on the right-hand
+   * side.
+   */
   function* simpleScoringRulesTakingType(inType, ruleMap) {
     for (const [name, scoringCallback] of Object.entries(ruleMap)) {
       yield rule(type(inType), score(scoringCallback), { name });
@@ -657,11 +656,11 @@ function makeRuleset(coeffs, biases) {
   );
 }
 
+/*
+ * ----- End of model -----
+ */
 
-
-
-
-const NewPasswordModel = {
+export const NewPasswordModel = {
   type: "new",
   rules: makeRuleset([...coefficients.new], biases),
 };

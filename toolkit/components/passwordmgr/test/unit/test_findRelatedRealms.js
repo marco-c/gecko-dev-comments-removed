@@ -3,8 +3,8 @@
 
 "use strict";
 
-const { LoginRelatedRealmsParent } = ChromeUtils.import(
-  "resource://gre/modules/LoginRelatedRealms.jsm"
+const { LoginRelatedRealmsParent } = ChromeUtils.importESModule(
+  "resource://gre/modules/LoginRelatedRealms.sys.mjs"
 );
 const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"

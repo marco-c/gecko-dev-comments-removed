@@ -1,61 +1,52 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * A factory to generate LoginForm objects that represent a set of login fields
+ * which aren't necessarily marked up with a <form> element.
+ */
 
-
-
-
-
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["LoginFormFactory"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   FormLikeFactory: "resource://gre/modules/FormLikeFactory.sys.mjs",
-});
-
-XPCOMUtils.defineLazyModuleGetters(lazy, {
-  LoginHelper: "resource://gre/modules/LoginHelper.jsm",
+  LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
 });
 
 XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   return lazy.LoginHelper.createLogger("LoginFormFactory");
 });
 
-const LoginFormFactory = {
-  
-
-
-
-
-
-
-
-
-
-
+export const LoginFormFactory = {
+  /**
+   * WeakMap of the root element of a LoginForm to the LoginForm representing its fields.
+   *
+   * This is used to be able to lookup an existing LoginForm for a given root element since multiple
+   * calls to LoginFormFactory.createFrom* won't give the exact same object. When batching fills we don't always
+   * want to use the most recent list of elements for a LoginForm since we may end up doing multiple
+   * fills for the same set of elements when a field gets added between arming and running the
+   * DeferredTask.
+   *
+   * @type {WeakMap}
+   */
   _loginFormsByRootElement: new WeakMap(),
 
-  
-
-
-
+  /**
+   * Maps all DOM content documents in this content process, including those in
+   * frames, to a WeakSet of LoginForm.rootElement for the document.
+   */
   _loginFormRootElementsByDocument: new WeakMap(),
 
-  
-
-
-
-
-
-
+  /**
+   * Create a LoginForm object from a <form>.
+   *
+   * @param {HTMLFormElement} aForm
+   * @return {LoginForm}
+   * @throws Error if aForm isn't an HTMLFormElement
+   */
   createFromForm(aForm) {
     let formLike = lazy.FormLikeFactory.createFromForm(aForm);
     formLike.action = lazy.LoginHelper.getFormActionOrigin(aForm);
@@ -75,22 +66,22 @@ const LoginFormFactory = {
     return formLike;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Create a LoginForm object from a password or username field.
+   *
+   * If the field is in a <form>, construct the LoginForm from the form.
+   * Otherwise, create a LoginForm with a rootElement (wrapper) according to
+   * heuristics. Currently all <input> not in a <form> are one LoginForm but this
+   * shouldn't be relied upon as the heuristics may change to detect multiple
+   * "forms" (e.g. registration and login) on one page with a <form>.
+   *
+   * Note that two LoginForms created from the same field won't return the same LoginForm object.
+   * Use the `rootElement` property on the LoginForm as a key instead.
+   *
+   * @param {HTMLInputElement} aField - a password or username field in a document
+   * @return {LoginForm}
+   * @throws Error if aField isn't a password or username field in a document
+   */
   createFromField(aField) {
     if (
       !HTMLInputElement.isInstance(aField) ||

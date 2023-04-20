@@ -1,36 +1,24 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * Contains functions shared by different Login Manager components.
+ *
+ * This JavaScript module exists in order to share code between the different
+ * XPCOM components that constitute the Login Manager, including implementations
+ * of nsILoginManager and nsILoginManagerStorage.
+ */
 
-
-
-
-
-
-
-
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = [
-  "LoginHelper",
-  "OptInFeature",
-  "ParentAutocompleteOption",
-];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { Logic } = ChromeUtils.importESModule(
-  "resource://gre/modules/LoginManager.shared.mjs"
-);
+import { Logic } from "resource://gre/modules/LoginManager.shared.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
 });
 
-class ParentAutocompleteOption {
+export class ParentAutocompleteOption {
   icon;
   title;
   subtitle;
@@ -46,22 +34,22 @@ class ParentAutocompleteOption {
   }
 }
 
-
-
-
+/**
+ * A helper class to deal with CSV import rows.
+ */
 class ImportRowProcessor {
   uniqueLoginIdentifiers = new Set();
   originToRows = new Map();
   summary = [];
   mandatoryFields = ["origin", "password"];
 
-  
-
-
-
-
-
-
+  /**
+   * Validates if the login data contains a GUID that was already found in a previous row in the current import.
+   * If this is the case, the summary will be updated with an error.
+   * @param {object} loginData
+   *        An vanilla object for the login without any methods.
+   * @returns {boolean} True if there is an error, false otherwise.
+   */
   checkNonUniqueGuidError(loginData) {
     if (loginData.guid) {
       if (this.uniqueLoginIdentifiers.has(loginData.guid)) {
@@ -73,13 +61,13 @@ class ImportRowProcessor {
     return false;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Validates if the login data contains invalid fields that are mandatory like origin and password.
+   * If this is the case, the summary will be updated with an error.
+   * @param {object} loginData
+   *        An vanilla object for the login without any methods.
+   * @returns {boolean} True if there is an error, false otherwise.
+   */
   checkMissingMandatoryFieldsError(loginData) {
     loginData.origin = LoginHelper.getLoginOrigin(loginData.origin);
     for (let mandatoryField of this.mandatoryFields) {
@@ -95,29 +83,29 @@ class ImportRowProcessor {
     return false;
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Validates if there is already an existing entry with similar values.
+   * If there are similar values but not identical, a new "modified" entry will be added to the summary.
+   * If there are identical values, a new "no_change" entry will be added to the summary
+   * If either of these is the case, it will return true.
+   * @param {object} loginData
+   *        An vanilla object for the login without any methods.
+   * @returns {boolean} True if the entry is similar or identical to another previously processed entry, false otherwise.
+   */
   async checkExistingEntry(loginData) {
     if (loginData.guid) {
-      
-      
-      
-      
+      // First check for `guid` matches if it's set.
+      // `guid` matches will allow every kind of update, including reverting
+      // to older passwords which can be useful if the user wants to recover
+      // an old password.
       let existingLogins = await Services.logins.searchLoginsAsync({
         guid: loginData.guid,
-        origin: loginData.origin, 
+        origin: loginData.origin, // Ignored outside of GV.
       });
 
       if (existingLogins.length) {
         lazy.log.debug("maybeImportLogins: Found existing login with GUID.");
-        
+        // There should only be one `guid` match.
         let existingLogin = existingLogins[0].QueryInterface(
           Ci.nsILoginMetaInfo
         );
@@ -131,8 +119,8 @@ class ImportRowProcessor {
           `${loginData.timePasswordChanged}` !==
             `${existingLogin.timePasswordChanged}`
         ) {
-          
-          
+          // Use a property bag rather than an nsILoginInfo so we don't clobber
+          // properties that the import source doesn't provide.
           let propBag = LoginHelper.newPropertyBag(loginData);
           this.addLoginToSummary({ ...existingLogin }, "modified", propBag);
           return true;
@@ -144,20 +132,20 @@ class ImportRowProcessor {
     return false;
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Validates if there is a conflict with previous rows based on the origin.
+   * We need to check the logins that we've already decided to add, to see if this is a duplicate.
+   * If this is the case, we mark this one as "no_change" in the summary and return true.
+   * @param {object} login
+   *        A login object.
+   * @returns {boolean} True if the entry is similar or identical to another previously processed entry, false otherwise.
+   */
   checkConflictingOriginWithPreviousRows(login) {
     let rowsPerOrigin = this.originToRows.get(login.origin);
     if (rowsPerOrigin) {
       if (
         rowsPerOrigin.some(r =>
-          login.matches(r.login, false )
+          login.matches(r.login, false /* ignorePassword */)
         )
       ) {
         this.addLoginToSummary(login, "no_change");
@@ -174,33 +162,33 @@ class ImportRowProcessor {
     return false;
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Validates if there is a conflict with existing logins based on the origin.
+   * If this is the case and there are some changes, we mark it as "modified" in the summary.
+   * If it matches an existing login without any extra modifications, we mark it as "no_change".
+   * For both cases we return true.
+   * @param {object} login
+   *        A login object.
+   * @returns {boolean} True if the entry is similar or identical to another previously processed entry, false otherwise.
+   */
   checkConflictingWithExistingLogins(login) {
-    
-    
+    // While here we're passing formActionOrigin and httpRealm, they could be empty/null and get
+    // ignored in that case, leading to multiple logins for the same username.
     let existingLogins = Services.logins.findLogins(
       login.origin,
       login.formActionOrigin,
       login.httpRealm
     );
-    
-    
+    // Check for an existing login that matches *including* the password.
+    // If such a login exists, we do not need to add a new login.
     if (
-      existingLogins.some(l => login.matches(l, false ))
+      existingLogins.some(l => login.matches(l, false /* ignorePassword */))
     ) {
       this.addLoginToSummary(login, "no_change");
       return true;
     }
-    
-    
+    // Now check for a login with the same username, where it may be that we have an
+    // updated password.
     let foundMatchingLogin = false;
     for (let existingLogin of existingLogins) {
       if (login.username == existingLogin.username) {
@@ -210,8 +198,8 @@ class ImportRowProcessor {
           (login.password != existingLogin.password) &
           (login.timePasswordChanged > existingLogin.timePasswordChanged)
         ) {
-          
-          
+          // if a login with the same username and different password already exists and it's older
+          // than the current one, update its password and timestamp.
           let propBag = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
             Ci.nsIWritablePropertyBag
           );
@@ -222,7 +210,7 @@ class ImportRowProcessor {
         }
       }
     }
-    
+    // if the new login is an update or is older than an exiting login, don't add it.
     if (foundMatchingLogin) {
       this.addLoginToSummary(login, "no_change");
       return true;
@@ -230,19 +218,19 @@ class ImportRowProcessor {
     return false;
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Validates if there are any invalid values using LoginHelper.checkLoginValues.
+   * If this is the case we mark it as "error" and return true.
+   * @param {object} login
+   *        A login object.
+   * @param {object} loginData
+   *        An vanilla object for the login without any methods.
+   * @returns {boolean} True if there is a validation error we return true, false otherwise.
+   */
   checkLoginValuesError(login, loginData) {
     try {
-      
-      
+      // Ensure we only send checked logins through, since the validation is optimized
+      // out from the bulk APIs below us.
       LoginHelper.checkLoginValues(login);
     } catch (e) {
       this.addLoginToSummary({ ...loginData }, "error");
@@ -252,12 +240,12 @@ class ImportRowProcessor {
     return false;
   }
 
-  
-
-
-
-
-
+  /**
+   * Creates a new login from loginData.
+   * @param {object} loginData
+   *        An vanilla object for the login without any methods.
+   * @returns {object} A login object.
+   */
   createNewLogin(loginData) {
     let login = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(
       Ci.nsILoginInfo
@@ -282,11 +270,11 @@ class ImportRowProcessor {
     return login;
   }
 
-  
-
-
-
-
+  /**
+   * Cleans the action and realm field of the loginData.
+   * @param {object} loginData
+   *        An vanilla object for the login without any methods.
+   */
   cleanupActionAndRealmFields(loginData) {
     const cleanOrigin = loginData.formActionOrigin
       ? LoginHelper.getLoginOrigin(loginData.formActionOrigin, true)
@@ -298,16 +286,16 @@ class ImportRowProcessor {
       typeof loginData.httpRealm == "string" ? loginData.httpRealm : null;
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Adds a login to the summary.
+   * @param {object} login
+   *        A login object.
+   * @param {string} result
+   *        The result type. One of "added", "modified", "error", "error_invalid_origin", "error_invalid_password" or "no_change".
+   * @param {object} propBag
+   *        An optional parameter with the properties bag.
+   * @returns {object} The row that was added.
+   */
   addLoginToSummary(login, result, propBag) {
     let rows = this.originToRows.get(login.origin) || [];
     if (rows.length === 0) {
@@ -319,11 +307,11 @@ class ImportRowProcessor {
     return newSummaryRow;
   }
 
-  
-
-
-
-
+  /**
+   * Iterates over all then rows where more than two match the same origin. It mutates the internal state of the processor.
+   * It makes sure that if the `timePasswordChanged` field is present it will be used to decide if it's a "no_change" or "added".
+   * The entry with the oldest `timePasswordChanged` will be "added", the rest will be "no_change".
+   */
   markLastTimePasswordChangedAsModified() {
     const originUserToRowMap = new Map();
     for (let currentRow of this.summary) {
@@ -352,12 +340,12 @@ class ImportRowProcessor {
     }
   }
 
-  
-
-
-
-
-
+  /**
+   * Iterates over all then rows where more than two match the same origin. It mutates the internal state of the processor.
+   * It makes sure that if the `timePasswordChanged` field is present it will be used to decide if it's a "no_change" or "added".
+   * The entry with the oldest `timePasswordChanged` will be "added", the rest will be "no_change".
+   * @returns {Object[]} An entry for each processed row containing how the row was processed and the login data.
+   */
   async processLoginsAndBuildSummary() {
     this.markLastTimePasswordChangedAsModified();
     for (let summaryRow of this.summary) {
@@ -376,10 +364,10 @@ class ImportRowProcessor {
   }
 }
 
-
-
-
-const LoginHelper = {
+/**
+ * Contains functions shared by different Login Manager components.
+ */
+export const LoginHelper = {
   debug: null,
   enabled: null,
   storageEnabled: null,
@@ -406,7 +394,7 @@ const LoginHelper = {
   captureInputChanges: null,
 
   init() {
-    
+    // Watch for pref changes to update cached pref values.
     Services.prefs.addObserver("signon.", () => this.updateSignonPrefs());
     this.updateSignonPrefs();
     Services.telemetry.setEventRecordingEnabled("pwmgr", true);
@@ -521,14 +509,14 @@ const LoginHelper = {
       return this.debug ? "Debug" : "Warn";
     };
 
-    
+    // Create a new instance of the ConsoleAPI so we can control the maxLogLevel with a pref.
     let consoleOptions = {
       maxLogLevel: getMaxLogLevel(),
       prefix: aLogPrefix,
     };
     let logger = console.createInstance(consoleOptions);
 
-    
+    // Watch for pref changes and update this.debug and the maxLogLevel for created loggers
     Services.prefs.addObserver("signon.debug", () => {
       this.debug = Services.prefs.getBoolPref("signon.debug");
       if (logger) {
@@ -539,17 +527,17 @@ const LoginHelper = {
     return logger;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Due to the way the signons2.txt file is formatted, we need to make
+   * sure certain field values or characters do not cause the file to
+   * be parsed incorrectly.  Reject origins that we can't store correctly.
+   *
+   * @throws String with English message in case validation failed.
+   */
   checkOriginValue(aOrigin) {
-    
-    
-    
+    // Nulls are invalid, as they don't round-trip well.  Newlines are also
+    // invalid for any field stored as plaintext, and an origin made of a
+    // single dot cannot be stored in the legacy format.
     if (
       aOrigin == "." ||
       aOrigin.includes("\r") ||
@@ -560,14 +548,14 @@ const LoginHelper = {
     }
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Due to the way the signons2.txt file was formatted, we needed to make
+   * sure certain field values or characters do not cause the file to
+   * be parsed incorrectly. These characters can cause problems in other
+   * formats/languages too so reject logins that may not be stored correctly.
+   *
+   * @throws String with English message in case validation failed.
+   */
   checkLoginValues(aLogin) {
     function badCharacterPresent(l, c) {
       return (
@@ -579,8 +567,8 @@ const LoginHelper = {
       );
     }
 
-    
-    
+    // Nulls are invalid, as they don't round-trip well.
+    // Mostly not a formatting problem, although ".\0" can be quirky.
     if (badCharacterPresent(aLogin, "\0")) {
       throw new Error("login values can't contain nulls");
     }
@@ -589,15 +577,15 @@ const LoginHelper = {
       throw new Error("passwords must be non-empty strings");
     }
 
-    
-    
-    
-    
+    // In theory these nulls should just be rolled up into the encrypted
+    // values, but nsISecretDecoderRing doesn't use nsStrings, so the
+    // nulls cause truncation. Check for them here just to avoid
+    // unexpected round-trip surprises.
     if (aLogin.username.includes("\0") || aLogin.password.includes("\0")) {
       throw new Error("login values can't contain nulls");
     }
 
-    
+    // Newlines are invalid for any field stored as plaintext.
     if (
       badCharacterPresent(aLogin, "\r") ||
       badCharacterPresent(aLogin, "\n")
@@ -605,29 +593,29 @@ const LoginHelper = {
       throw new Error("login values can't contain newlines");
     }
 
-    
+    // A line with just a "." can have special meaning.
     if (aLogin.usernameField == "." || aLogin.formActionOrigin == ".") {
       throw new Error("login values can't be periods");
     }
 
-    
-    
-    
+    // An origin with "\ \(" won't roundtrip.
+    // eg host="foo (", realm="bar" --> "foo ( (bar)"
+    // vs host="foo", realm=" (bar" --> "foo ( (bar)"
     if (aLogin.origin.includes(" (")) {
       throw new Error("bad parens in origin");
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns a new XPCOM property bag with the provided properties.
+   *
+   * @param {Object} aProperties
+   *        Each property of this object is copied to the property bag.  This
+   *        parameter can be omitted to return an empty property bag.
+   *
+   * @return A new property bag, that is an instance of nsIWritablePropertyBag,
+   *         nsIWritablePropertyBag2, nsIPropertyBag, and nsIPropertyBag2.
+   */
   newPropertyBag(aProperties) {
     let propertyBag = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
       Ci.nsIWritablePropertyBag
@@ -643,44 +631,44 @@ const LoginHelper = {
       .QueryInterface(Ci.nsIWritablePropertyBag2);
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Helper to avoid the property bags when calling
+   * Services.logins.searchLogins from JS.
+   * @deprecated Use Services.logins.searchLoginsAsync instead.
+   *
+   * @param {Object} aSearchOptions - A regular JS object to copy to a property bag before searching
+   * @return {nsILoginInfo[]} - The result of calling searchLogins.
+   */
   searchLoginsWithObject(aSearchOptions) {
     return Services.logins.searchLogins(this.newPropertyBag(aSearchOptions));
   },
 
-  
-
-
-
-
+  /**
+   * @param {string} aURL
+   * @returns {string} which is the hostPort of aURL if supported by the scheme
+   *                   otherwise, returns the original aURL.
+   */
   maybeGetHostPortForURL(aURL) {
     try {
       let uri = Services.io.newURI(aURL);
       return uri.hostPort;
     } catch (ex) {
-      
+      // No need to warn for javascript:/data:/about:/chrome:/etc.
     }
     return aURL;
   },
 
-  
-
-
-
+  /**
+   * Get the parts of the URL we want for identification.
+   * Strip out things like the userPass portion and handle javascript:.
+   */
   getLoginOrigin(uriString, allowJS = false) {
     let realm = "";
     try {
       const mozProxyRegex = /^moz-proxy:\/\//i;
       const isMozProxy = !!uriString.match(mozProxyRegex);
       if (isMozProxy) {
-        
+        // Special handling because uri.displayHostPort throws on moz-proxy://
         return (
           "moz-proxy://" +
           Services.io.newURI(uriString.replace(mozProxyRegex, "https://"))
@@ -694,11 +682,11 @@ const LoginHelper = {
         return "javascript:";
       }
 
-      
+      // Build this manually instead of using prePath to avoid including the userPass portion.
       realm = uri.scheme + "://" + uri.displayHostPort;
     } catch (e) {
-      
-      
+      // bug 159484 - disallow url types that don't support a hostPort.
+      // (although we handle "javascript:..." as a special case above.)
       lazy.log.warn(
         `Couldn't parse specified uri ${uriString} with error ${e.name}`
       );
@@ -711,26 +699,26 @@ const LoginHelper = {
   getFormActionOrigin(form) {
     let uriString = form.action;
 
-    
+    // A blank or missing action submits to where it came from.
     if (uriString == "") {
-      
+      // ala bug 297761
       uriString = form.baseURI;
     }
 
     return this.getLoginOrigin(uriString, true);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * @param {String} aLoginOrigin - An origin value from a stored login's
+   *                                origin or formActionOrigin properties.
+   * @param {String} aSearchOrigin - The origin that was are looking to match
+   *                                 with aLoginOrigin. This would normally come
+   *                                 from a form or page that we are considering.
+   * @param {nsILoginFindOptions} aOptions - Options to affect whether the origin
+   *                                         from the login (aLoginOrigin) is a
+   *                                         match for the origin we're looking
+   *                                         for (aSearchOrigin).
+   */
   isOriginMatching(
     aLoginOrigin,
     aSearchOrigin,
@@ -754,8 +742,8 @@ const LoginHelper = {
       return true;
     }
 
-    
-    
+    // We can only match logins now if either of these flags are true, so
+    // avoid doing the work of constructing URL objects if neither is true.
     if (!aOptions.acceptDifferentSubdomains && !aOptions.schemeUpgrades) {
       return false;
     }
@@ -799,8 +787,8 @@ const LoginHelper = {
         return true;
       }
     } catch (ex) {
-      
-      
+      // newURI will throw for some values e.g. chrome://FirefoxAccounts
+      // uri.host and uri.port will throw for some values e.g. javascript:
       return false;
     }
 
@@ -843,7 +831,7 @@ const LoginHelper = {
         return false;
       }
 
-      
+      // If either formActionOrigin is blank (but not null), then match.
       if (
         aLogin1.formActionOrigin != "" &&
         aLogin2.formActionOrigin != "" &&
@@ -853,24 +841,24 @@ const LoginHelper = {
       }
     }
 
-    
+    // The .usernameField and .passwordField values are ignored.
 
     return true;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Creates a new login object that results by modifying the given object with
+   * the provided data.
+   *
+   * @param {nsILoginInfo} aOldStoredLogin
+   *        Existing login object to modify.
+   * @param {nsILoginInfo|nsIProperyBag} aNewLoginData
+   *        The new login values, either as an nsILoginInfo or nsIProperyBag.
+   *
+   * @return {nsILoginInfo} The newly created nsILoginInfo object.
+   *
+   * @throws {Error} With English message in case validation failed.
+   */
   buildModifiedLogin(aOldStoredLogin, aNewLoginData) {
     function bagHasProperty(aPropName) {
       try {
@@ -884,8 +872,8 @@ const LoginHelper = {
 
     let newLogin;
     if (aNewLoginData instanceof Ci.nsILoginInfo) {
-      
-      
+      // Clone the existing login to get its nsILoginMetaInfo, then init it
+      // with the replacement nsILoginInfo data from the new login.
       newLogin = aOldStoredLogin.clone();
       newLogin.init(
         aNewLoginData.origin,
@@ -898,18 +886,18 @@ const LoginHelper = {
       );
       newLogin.QueryInterface(Ci.nsILoginMetaInfo);
 
-      
+      // Automatically update metainfo when password is changed.
       if (newLogin.password != aOldStoredLogin.password) {
         newLogin.timePasswordChanged = Date.now();
       }
     } else if (aNewLoginData instanceof Ci.nsIPropertyBag) {
-      
+      // Clone the existing login, along with all its properties.
       newLogin = aOldStoredLogin.clone();
       newLogin.QueryInterface(Ci.nsILoginMetaInfo);
 
-      
-      
-      
+      // Automatically update metainfo when password is changed.
+      // (Done before the main property updates, lest the caller be
+      // explicitly updating both .password and .timePasswordChanged)
       if (bagHasProperty("password")) {
         let newPassword = aNewLoginData.getProperty("password");
         if (newPassword != aOldStoredLogin.password) {
@@ -919,7 +907,7 @@ const LoginHelper = {
 
       for (let prop of aNewLoginData.enumerator) {
         switch (prop.name) {
-          
+          // nsILoginInfo (fall through)
           case "origin":
           case "httpRealm":
           case "formActionOrigin":
@@ -927,7 +915,7 @@ const LoginHelper = {
           case "password":
           case "usernameField":
           case "passwordField":
-          
+          // nsILoginMetaInfo (fall through)
           case "guid":
           case "timeCreated":
           case "timeLastUsed":
@@ -936,12 +924,12 @@ const LoginHelper = {
             newLogin[prop.name] = prop.value;
             break;
 
-          
+          // Fake property, allows easy incrementing.
           case "timesUsedIncrement":
             newLogin.timesUsed += prop.value;
             break;
 
-          
+          // Fail if caller requests setting an unknown property.
           default:
             throw new Error("Unexpected propertybag item: " + prop.name);
         }
@@ -950,12 +938,12 @@ const LoginHelper = {
       throw new Error("newLoginData needs an expected interface!");
     }
 
-    
+    // Sanity check the login
     if (newLogin.origin == null || !newLogin.origin.length) {
       throw new Error("Can't add a login with a null or empty origin.");
     }
 
-    
+    // For logins w/o a username, set to "", not null.
     if (newLogin.username == null) {
       throw new Error("Can't add a login with a null username.");
     }
@@ -965,45 +953,45 @@ const LoginHelper = {
     }
 
     if (newLogin.formActionOrigin || newLogin.formActionOrigin == "") {
-      
+      // We have a form submit URL. Can't have a HTTP realm.
       if (newLogin.httpRealm != null) {
         throw new Error(
           "Can't add a login with both a httpRealm and formActionOrigin."
         );
       }
     } else if (newLogin.httpRealm) {
-      
+      // We have a HTTP realm. Can't have a form submit URL.
       if (newLogin.formActionOrigin != null) {
         throw new Error(
           "Can't add a login with both a httpRealm and formActionOrigin."
         );
       }
     } else {
-      
+      // Need one or the other!
       throw new Error(
         "Can't add a login without a httpRealm or formActionOrigin."
       );
     }
 
-    
+    // Throws if there are bogus values.
     this.checkLoginValues(newLogin);
 
     return newLogin;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Remove http: logins when there is an https: login with the same username and hostPort.
+   * Sort order is preserved.
+   *
+   * @param {nsILoginInfo[]} logins
+   *        A list of logins we want to process for shadowing.
+   * @returns {nsILoginInfo[]} A subset of of the passed logins.
+   */
   shadowHTTPLogins(logins) {
-    
-
-
-
+    /**
+     * Map a (hostPort, username) to a boolean indicating whether `logins`
+     * contains an https: login for that combo.
+     */
     let hasHTTPSByHostPortUsername = new Map();
     for (let login of logins) {
       let key = this.getUniqueKeyForLogin(login, ["hostPort", "username"]);
@@ -1019,20 +1007,20 @@ const LoginHelper = {
       let key = this.getUniqueKeyForLogin(login, ["hostPort", "username"]);
       let loginURI = Services.io.newURI(login.origin);
       if (loginURI.scheme == "http" && hasHTTPSByHostPortUsername.get(key)) {
-        
-        
+        // If this is an http: login and we have an https: login for the
+        // (hostPort, username) combo then remove it.
         return false;
       }
       return true;
     });
   },
 
-  
-
-
-
-
-
+  /**
+   * Generate a unique key string from a login.
+   * @param {nsILoginInfo} login
+   * @param {string[]} uniqueKeys containing nsILoginInfo attribute names or "hostPort"
+   * @returns {string} to use as a key in a Map
+   */
   getUniqueKeyForLogin(login, uniqueKeys) {
     const KEY_DELIMITER = ":";
     return uniqueKeys.reduce((prev, key) => {
@@ -1047,31 +1035,31 @@ const LoginHelper = {
     }, "");
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Removes duplicates from a list of logins while preserving the sort order.
+   *
+   * @param {nsILoginInfo[]} logins
+   *        A list of logins we want to deduplicate.
+   * @param {string[]} [uniqueKeys = ["username", "password"]]
+   *        A list of login attributes to use as unique keys for the deduplication.
+   * @param {string[]} [resolveBy = ["timeLastUsed"]]
+   *        Ordered array of keyword strings used to decide which of the
+   *        duplicates should be used. "scheme" would prefer the login that has
+   *        a scheme matching `preferredOrigin`'s if there are two logins with
+   *        the same `uniqueKeys`. The default preference to distinguish two
+   *        logins is `timeLastUsed`. If there is no preference between two
+   *        logins, the first one found wins.
+   * @param {string} [preferredOrigin = undefined]
+   *        String representing the origin to use for preferring one login over
+   *        another when they are dupes. This is used with "scheme" for
+   *        `resolveBy` so the scheme from this origin will be preferred.
+   * @param {string} [preferredFormActionOrigin = undefined]
+   *        String representing the action origin to use for preferring one login over
+   *        another when they are dupes. This is used with "actionOrigin" for
+   *        `resolveBy` so the scheme from this action origin will be preferred.
+   *
+   * @returns {nsILoginInfo[]} list of unique logins.
+   */
   dedupeLogins(
     logins,
     uniqueKeys = ["username", "password"],
@@ -1099,7 +1087,7 @@ const LoginHelper = {
       try {
         preferredOriginScheme = Services.io.newURI(preferredOrigin).scheme;
       } catch (ex) {
-        
+        // Handle strings that aren't valid URIs e.g. chrome://FirefoxAccounts
       }
     }
 
@@ -1109,19 +1097,19 @@ const LoginHelper = {
       );
     }
 
-    
+    // We use a Map to easily lookup logins by their unique keys.
     let loginsByKeys = new Map();
 
-    
-
-
-
-
-
-
+    /**
+     * @return {bool} whether `login` is preferred over its duplicate (considering `uniqueKeys`)
+     *                `existingLogin`.
+     *
+     * `resolveBy` is a sorted array so we can return true the first time `login` is preferred
+     * over the existingLogin.
+     */
     function isLoginPreferred(existingLogin, login) {
       if (!resolveBy || !resolveBy.length) {
-        
+        // If there is no preference, prefer the existing login.
         return false;
       }
 
@@ -1153,11 +1141,11 @@ const LoginHelper = {
             }
 
             try {
-              
+              // Only `origin` is currently considered
               let existingLoginURI = Services.io.newURI(existingLogin.origin);
               let loginURI = Services.io.newURI(login.origin);
-              
-              
+              // If the schemes of the two logins are the same or neither match the
+              // preferredOriginScheme then we have no preference and look at the next resolveBy.
               if (
                 loginURI.scheme == existingLoginURI.scheme ||
                 (loginURI.scheme != preferredOriginScheme &&
@@ -1168,7 +1156,7 @@ const LoginHelper = {
 
               return loginURI.scheme == preferredOriginScheme;
             } catch (e) {
-              
+              // Some URLs aren't valid nsIURI (e.g. chrome://FirefoxAccounts)
               lazy.log.debug(
                 "dedupeLogins/shouldReplaceExisting: Error comparing schemes:",
                 existingLogin.origin,
@@ -1181,7 +1169,7 @@ const LoginHelper = {
             break;
           }
           case "subdomain": {
-            
+            // Replace the existing login only if the new login is an exact match on the host.
             let existingLoginURI = Services.io.newURI(existingLogin.origin);
             let newLoginURI = Services.io.newURI(login.origin);
             let preferredOriginURI = Services.io.newURI(preferredOrigin);
@@ -1197,8 +1185,8 @@ const LoginHelper = {
             ) {
               return true;
             }
-            
-            
+            // if the existing login host *is* a match and the new one isn't
+            // we explicitly want to keep the existing one
             if (
               existingLoginURI.host == preferredOriginURI.host &&
               newLoginURI.host != preferredOriginURI.host
@@ -1209,7 +1197,7 @@ const LoginHelper = {
           }
           case "timeLastUsed":
           case "timePasswordChanged": {
-            
+            // If we find a more recent login for the same key, replace the existing one.
             let loginDate = login.QueryInterface(Ci.nsILoginMetaInfo)[
               preference
             ];
@@ -1238,31 +1226,31 @@ const LoginHelper = {
 
       if (loginsByKeys.has(key)) {
         if (!isLoginPreferred(loginsByKeys.get(key), login)) {
-          
+          // If there is no preference for the new login, use the existing one.
           continue;
         }
       }
       loginsByKeys.set(key, login);
     }
 
-    
+    // Return the map values in the form of an array.
     return [...loginsByKeys.values()];
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Open the password manager window.
+   *
+   * @param {Window} window
+   *                 the window from where we want to open the dialog
+   *
+   * @param {object?} args
+   *                  params for opening the password manager
+   * @param {string} [args.filterString=""]
+   *                 the domain (not origin) to pass to the login manager dialog
+   *                 to pre-filter the results
+   * @param {string} args.entryPoint
+   *                 The name of the entry point, used for telemetry
+   */
   openPasswordManager(window, { filterString = "", entryPoint = "" } = {}) {
     const params = new URLSearchParams({
       ...(filterString && { filter: filterString }),
@@ -1271,30 +1259,30 @@ const LoginHelper = {
     const separator = params.toString() ? "?" : "";
     const destination = `about:logins${separator}${params}`;
 
-    
+    // We assume that managementURL has a '?' already
     window.openTrustedLinkIn(destination, "tab");
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Checks if a field type is password compatible.
+   *
+   * @param {Element} element
+   *                  the field we want to check.
+   * @param {Object} options
+   * @param {bool} [options.ignoreConnect] - Whether to ignore checking isConnected
+   *                                         of the element.
+   *
+   * @returns {Boolean} true if the field can
+   *                    be treated as a password input
+   */
   isPasswordFieldType(element, { ignoreConnect = false } = {}) {
     if (!HTMLInputElement.isInstance(element)) {
       return false;
     }
 
     if (!element.isConnected && !ignoreConnect) {
-      
-      
+      // If the element isn't connected then it isn't visible to the user so
+      // shouldn't be considered. It must have been connected in the past.
       return false;
     }
 
@@ -1302,9 +1290,9 @@ const LoginHelper = {
       return false;
     }
 
-    
-    
-    
+    // Ensure the element is of a type that could have autocomplete.
+    // These include the types with user-editable values. If not, even if it used to be
+    // a type=password, we can't treat it as a password input now
     let acInfo = element.getAutocompleteInfo();
     if (!acInfo) {
       return false;
@@ -1313,26 +1301,26 @@ const LoginHelper = {
     return true;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Checks if a field type is username compatible.
+   *
+   * @param {Element} element
+   *                  the field we want to check.
+   * @param {Object} options
+   * @param {bool} [options.ignoreConnect] - Whether to ignore checking isConnected
+   *                                         of the element.
+   *
+   * @returns {Boolean} true if the field type is one
+   *                    of the username types.
+   */
   isUsernameFieldType(element, { ignoreConnect = false } = {}) {
     if (!HTMLInputElement.isInstance(element)) {
       return false;
     }
 
     if (!element.isConnected && !ignoreConnect) {
-      
-      
+      // If the element isn't connected then it isn't visible to the user so
+      // shouldn't be considered. It must have been connected in the past.
       return false;
     }
 
@@ -1348,7 +1336,7 @@ const LoginHelper = {
     if (
       !(
         acFieldName == "username" ||
-        
+        // Bug 1540154: Some sites use tel/email on their username fields.
         acFieldName == "email" ||
         acFieldName == "tel" ||
         acFieldName == "tel-national" ||
@@ -1362,17 +1350,17 @@ const LoginHelper = {
     return true;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Infer whether a form is a sign-in form by searching keywords
+   * in its attributes
+   *
+   * @param {Element} element
+   *                  the form we want to check.
+   *
+   * @returns {boolean} True if any of the rules matches
+   */
   isInferredLoginForm(formElement) {
-    
+    // This is copied from 'loginFormAttrRegex' in NewPasswordModel.jsm
     const loginExpr = /login|log in|log on|log-on|sign in|sigin|sign\/in|sign-in|sign on|sign-on/i;
 
     if (Logic.elementAttrsMatchRegex(formElement, loginExpr)) {
@@ -1382,15 +1370,15 @@ const LoginHelper = {
     return false;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Infer whether an input field is a username field by searching
+   * 'username' keyword in its attributes
+   *
+   * @param {Element} element
+   *                  the field we want to check.
+   *
+   * @returns {boolean} True if any of the rules matches
+   */
   isInferredUsernameField(element) {
     const expr = /username/i;
 
@@ -1409,15 +1397,15 @@ const LoginHelper = {
     return false;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Search for keywords that indicates the input field is not likely a
+   * field of a username login form.
+   *
+   * @param {Element} element
+   *                  the input field we want to check.
+   *
+   * @returns {boolean} True if any of the rules matches
+   */
   isInferredNonUsernameField(element) {
     const expr = /search|code/i;
 
@@ -1431,15 +1419,15 @@ const LoginHelper = {
     return false;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Infer whether an input field is an email field by searching
+   * 'email' keyword in its attributes.
+   *
+   * @param {Element} element
+   *                  the field we want to check.
+   *
+   * @returns {boolean} True if any of the rules matches
+   */
   isInferredEmailField(element) {
     const expr = /email|邮箱/i;
 
@@ -1462,19 +1450,19 @@ const LoginHelper = {
     return false;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * For each login, add the login to the password manager if a similar one
+   * doesn't already exist. Merge it otherwise with the similar existing ones.
+   *
+   * @param {Object[]} loginDatas - For each login, the data that needs to be added.
+   * @returns {Object[]} An entry for each processed row containing how the row was processed and the login data.
+   */
   async maybeImportLogins(loginDatas) {
     this.importing = true;
     try {
       const processor = new ImportRowProcessor();
       for (let rawLoginData of loginDatas) {
-        
+        // Do some sanitization on a clone of the loginData.
         let loginData = ChromeUtils.shallowClone(rawLoginData);
         if (processor.checkNonUniqueGuidError(loginData)) {
           continue;
@@ -1506,19 +1494,19 @@ const LoginHelper = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Convert an array of nsILoginInfo to vanilla JS objects suitable for
+   * sending over IPC. Avoid using this in other cases.
+   *
+   * NB: All members of nsILoginInfo (not nsILoginMetaInfo) are strings.
+   */
   loginsToVanillaObjects(logins) {
     return logins.map(this.loginToVanillaObject);
   },
 
-  
-
-
+  /**
+   * Same as above, but for a single login.
+   */
   loginToVanillaObject(login) {
     let obj = {};
     for (let i in login.QueryInterface(Ci.nsILoginMetaInfo)) {
@@ -1529,9 +1517,9 @@ const LoginHelper = {
     return obj;
   },
 
-  
-
-
+  /**
+   * Convert an object received from IPC into an nsILoginInfo (with guid).
+   */
   vanillaObjectToLogin(login) {
     let formLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(
       Ci.nsILoginInfo
@@ -1559,9 +1547,9 @@ const LoginHelper = {
     return formLogin;
   },
 
-  
-
-
+  /**
+   * As above, but for an array of objects.
+   */
   vanillaObjectsToLogins(vanillaObjects) {
     const logins = [];
     for (const vanillaObject of vanillaObjects) {
@@ -1570,9 +1558,9 @@ const LoginHelper = {
     return logins;
   },
 
-  
-
-
+  /**
+   * Returns true if the user has a primary password set and false otherwise.
+   */
   isPrimaryPasswordSet() {
     let tokenDB = Cc["@mozilla.org/security/pk11tokendb;1"].getService(
       Ci.nsIPK11TokenDB
@@ -1581,16 +1569,16 @@ const LoginHelper = {
     return token.hasPassword;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Shows the Primary Password prompt if enabled, or the
+   * OS auth dialog otherwise.
+   * @param {Element} browser
+   *        The <browser> that the prompt should be shown on
+   * @param OSReauthEnabled Boolean indicating if OS reauth should be tried
+   * @param expirationTime Optional timestamp indicating next required re-authentication
+   * @param messageText Formatted and localized string to be displayed when the OS auth dialog is used.
+   * @param captionText Formatted and localized string to be displayed when the OS auth dialog is used.
+   */
   async requestReauth(
     browser,
     OSReauthEnabled,
@@ -1601,13 +1589,13 @@ const LoginHelper = {
     let isAuthorized = false;
     let telemetryEvent;
 
-    
+    // This does no harm if primary password isn't set.
     let tokendb = Cc["@mozilla.org/security/pk11tokendb;1"].createInstance(
       Ci.nsIPK11TokenDB
     );
     let token = tokendb.getInternalKeyToken();
 
-    
+    // Do we have a recent authorization?
     if (expirationTime && Date.now() < expirationTime) {
       isAuthorized = true;
       telemetryEvent = {
@@ -1621,7 +1609,7 @@ const LoginHelper = {
       };
     }
 
-    
+    // Default to true if there is no primary password and OS reauth is not available
     if (!token.hasPassword && !OSReauthEnabled) {
       isAuthorized = true;
       telemetryEvent = {
@@ -1634,7 +1622,7 @@ const LoginHelper = {
         telemetryEvent,
       };
     }
-    
+    // Use the OS auth dialog if there is no primary password
     if (!token.hasPassword && OSReauthEnabled) {
       let result = await lazy.OSKeyStore.ensureLoggedIn(
         messageText,
@@ -1654,11 +1642,11 @@ const LoginHelper = {
         telemetryEvent,
       };
     }
-    
+    // We'll attempt to re-auth via Primary Password, force a log-out
     token.checkPassword("");
 
-    
-    
+    // If a primary password prompt is already open, just exit early and return false.
+    // The user can re-trigger it after responding to the already open dialog.
     if (Services.logins.uiBusy) {
       isAuthorized = false;
       return {
@@ -1667,14 +1655,14 @@ const LoginHelper = {
       };
     }
 
-    
+    // So there's a primary password. But since checkPassword didn't succeed, we're logged out (per nsIPK11Token.idl).
     try {
-      
-      token.login(true); 
-      
+      // Relogin and ask for the primary password.
+      token.login(true); // 'true' means always prompt for token password. User will be prompted until
+      // clicking 'Cancel' or entering the correct password.
     } catch (e) {
-      
-      
+      // An exception will be thrown if the user cancels the login prompt dialog.
+      // User is also logged out of Software Security Device.
     }
     isAuthorized = token.isLoggedIn();
     telemetryEvent = {
@@ -1688,16 +1676,16 @@ const LoginHelper = {
     };
   },
 
-  
-
-
+  /**
+   * Send a notification when stored data is changed.
+   */
   notifyStorageChanged(changeType, data) {
     if (this.importing) {
       return;
     }
 
     let dataObject = data;
-    
+    // Can't pass a raw JS string or array though notifyObservers(). :-(
     if (Array.isArray(data)) {
       dataObject = Cc["@mozilla.org/array;1"].createInstance(
         Ci.nsIMutableArray
@@ -1719,7 +1707,7 @@ const LoginHelper = {
   },
 
   isUserFacingLogin(login) {
-    return login.origin != "chrome://FirefoxAccounts"; 
+    return login.origin != "chrome://FirefoxAccounts"; // FXA_PWDMGR_HOST
   },
 
   async getAllUserFacingLogins() {
@@ -1728,7 +1716,7 @@ const LoginHelper = {
       return logins.filter(this.isUserFacingLogin);
     } catch (e) {
       if (e.result == Cr.NS_ERROR_ABORT) {
-        
+        // If the user cancels the MP prompt then return no logins.
         return [];
       }
       throw e;
@@ -1736,8 +1724,8 @@ const LoginHelper = {
   },
 
   createLoginAlreadyExistsError(guid) {
-    
-    
+    // The GUID is stored in an nsISupportsString here because we cannot pass
+    // raw JS objects within Components.Exception due to bug 743121.
     let guidSupportsString = Cc[
       "@mozilla.org/supports-string;1"
     ].createInstance(Ci.nsISupportsString);
@@ -1747,18 +1735,18 @@ const LoginHelper = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Determine the <browser> that a prompt should be shown on.
+   *
+   * Some sites pop up a temporary login window, which disappears
+   * upon submission of credentials. We want to put the notification
+   * prompt in the opener window if this seems to be happening.
+   *
+   * @param {Element} browser
+   *        The <browser> that a prompt was triggered for
+   * @returns {Element} The <browser> that the prompt should be shown on,
+   *                    which could be in a different window.
+   */
   getBrowserForPrompt(browser) {
     let chromeWindow = browser.ownerGlobal;
     let openerBrowsingContext = browser.browsingContext.opener;
@@ -1768,10 +1756,10 @@ const LoginHelper = {
     if (openerBrowser) {
       let chromeDoc = chromeWindow.document.documentElement;
 
-      
-      
-      
-      
+      // Check to see if the current window was opened with chrome
+      // disabled, and if so use the opener window. But if the window
+      // has been used to visit other pages (ie, has a history),
+      // assume it'll stick around and *don't* use the opener.
       if (chromeDoc.getAttribute("chromehidden") && !browser.canGoBack) {
         lazy.log.debug("Using opener window for prompt.");
         return openerBrowser;
@@ -1792,7 +1780,7 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
 
 LoginHelper.init();
 
-class OptInFeature {
+export class OptInFeature {
   implementation;
   #offered;
   #enabled;
@@ -1822,8 +1810,8 @@ class OptInFeature {
   }
 
   get #currentPrefValue() {
-    
-    
+    // Read pref directly instead of relying on this.implementationPref because
+    // there is an implementationPref value update lag that affects tests.
     return Services.prefs.getStringPref(this.#pref, undefined);
   }
 

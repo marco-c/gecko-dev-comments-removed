@@ -1,29 +1,28 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * nsILoginManagerStorage implementation for the JSON back-end.
+ */
 
-
-
-
-
-
-
-"use strict";
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
+  LoginStore: "resource://gre/modules/LoginStore.sys.mjs",
+});
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   FXA_PWDMGR_HOST: "resource://gre/modules/FxAccountsCommon.js",
   FXA_PWDMGR_REALM: "resource://gre/modules/FxAccountsCommon.js",
-  LoginHelper: "resource://gre/modules/LoginHelper.jsm",
-  LoginStore: "resource://gre/modules/LoginStore.jsm",
 });
 
-class LoginManagerStorage_json {
+export class LoginManagerStorage_json {
   constructor() {
-    this.__crypto = null; 
+    this.__crypto = null; // nsILoginManagerCrypto service
     this.__decryptedPotentiallyVulnerablePasswords = null;
   }
 
@@ -63,13 +62,13 @@ class LoginManagerStorage_json {
 
   initialize() {
     try {
-      
-      
+      // Force initialization of the crypto module.
+      // See bug 717490 comment 17.
       this._crypto;
 
       let profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
 
-      
+      // Set the reference to LoginStore synchronously.
       let jsonPath = PathUtils.join(profileDir, "logins.json");
       let backupPath = "";
       let loginsBackupEnabled = Services.prefs.getBoolPref(
@@ -81,7 +80,7 @@ class LoginManagerStorage_json {
       this._store = new lazy.LoginStore(jsonPath, backupPath);
 
       return (async () => {
-        
+        // Load the data asynchronously.
         this.log(`Opening database at ${this._store.path}.`);
         await this._store.load();
       })().catch(console.error);
@@ -91,27 +90,27 @@ class LoginManagerStorage_json {
     }
   }
 
-  
-
-
-
+  /**
+   * Internal method used by regression tests only.  It is called before
+   * replacing this storage module with a new instance.
+   */
   terminate() {
     this._store._saver.disarm();
     return this._store._save();
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns the "sync id" used by Sync to know whether the store is current with
+   * respect to the sync servers. It is stored encrypted, but only so we
+   * can detect failure to decrypt (for example, a "reset" of the primary
+   * password will leave all logins alone, but they will fail to decrypt. We
+   * also want this metadata to be unavailable in that scenario)
+   *
+   * Returns null if the data doesn't exist or if the data can't be
+   * decrypted (including if the primary-password prompt is cancelled). This is
+   * OK for Sync as it can't even begin syncing if the primary-password is
+   * locked as the sync encrytion keys are stored in this login manager.
+   */
   async getSyncID() {
     await this._store.load();
     if (!this._store.data.sync) {
@@ -125,7 +124,7 @@ class LoginManagerStorage_json {
         this.log("Could not decrypt the syncID - returning null.");
         return null;
       }
-      
+      // any other errors get re-thrown.
       throw e;
     }
   }
@@ -174,36 +173,36 @@ class LoginManagerStorage_json {
 
     this._store.ensureDataReady();
 
-    
+    // Throws if there are bogus values.
     lazy.LoginHelper.checkLoginValues(login);
 
     let [encUsername, encPassword, encType] = preEncrypted
       ? [login.username, login.password, this._crypto.defaultEncType]
       : this._encryptLogin(login);
 
-    
+    // Reset the username and password to keep the same guarantees for preEncrypted
     if (preEncrypted) {
       login.username = plaintextUsername;
       login.password = plaintextPassword;
     }
 
-    
+    // Clone the login, so we don't modify the caller's object.
     let loginClone = login.clone();
 
-    
+    // Initialize the nsILoginMetaInfo fields, unless the caller gave us values
     loginClone.QueryInterface(Ci.nsILoginMetaInfo);
     if (loginClone.guid) {
       let guid = loginClone.guid;
       if (!this._isGuidUnique(guid)) {
-        
-        
-        
+        // We have an existing GUID, but it's possible that entry is unable
+        // to be decrypted - if that's the case we remove the existing one
+        // and allow this one to be added.
         let existing = this._searchLogins({ guid })[0];
         if (this._decryptLogins(existing).length) {
-          
+          // Existing item is good, so it's an error to try and re-add it.
           throw new Error("specified GUID already exists");
         }
-        
+        // find and remove the existing bad entry.
         let foundIndex = this._store.data.logins.findIndex(l => l.guid == guid);
         if (foundIndex == -1) {
           throw new Error("can't find a matching GUID to remove");
@@ -214,7 +213,7 @@ class LoginManagerStorage_json {
       loginClone.guid = Services.uuid.generateUUID().toString();
     }
 
-    
+    // Set timestamps
     let currentTime = Date.now();
     if (!loginClone.timeCreated) {
       loginClone.timeCreated = currentTime;
@@ -247,7 +246,7 @@ class LoginManagerStorage_json {
     });
     this._store.saveSoon();
 
-    
+    // Send a notification that a login was added.
     lazy.LoginHelper.notifyStorageChanged("addLogin", loginClone);
     return loginClone;
   }
@@ -282,7 +281,7 @@ class LoginManagerStorage_json {
       newLoginData
     );
 
-    
+    // Check if the new GUID is duplicate.
     if (
       newLogin.guid != oldStoredLogin.guid &&
       !this._isGuidUnique(newLogin.guid)
@@ -290,7 +289,7 @@ class LoginManagerStorage_json {
       throw new Error("specified GUID already exists");
     }
 
-    
+    // Look for an existing entry in case key properties changed.
     if (!newLogin.matches(oldLogin, true)) {
       let logins = this.findLogins(
         newLogin.origin,
@@ -306,7 +305,7 @@ class LoginManagerStorage_json {
       }
     }
 
-    
+    // Get the encrypted value of the username and password.
     let [encUsername, encPassword, encType] = this._encryptLogin(newLogin);
 
     for (let loginItem of this._store.data.logins) {
@@ -336,7 +335,7 @@ class LoginManagerStorage_json {
   }
 
   recordPasswordUse(login) {
-    
+    // Update the lastUsed timestamp and increment the use count.
     let propBag = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
       Ci.nsIWritablePropertyBag
     );
@@ -362,28 +361,28 @@ class LoginManagerStorage_json {
     return this._store._data.dismissedBreachAlertsByLoginGUID;
   }
 
-  
-
-
+  /**
+   * @return {nsILoginInfo[]}
+   */
   getAllLogins() {
     this._store.ensureDataReady();
 
     let [logins] = this._searchLogins({});
 
-    
+    // decrypt entries for caller.
     logins = this._decryptLogins(logins);
 
     this.log(`Returning ${logins.length} logins.`);
     return logins;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Returns an array of nsILoginInfo. If decryption of a login
+   * fails due to a corrupt entry, the login is not included in
+   * the resulting array.
+   *
+   * @resolve {nsILoginInfo[]}
+   */
   async getAllLoginsAsync() {
     this._store.ensureDataReady();
 
@@ -401,17 +400,17 @@ class LoginManagerStorage_json {
     let result = [];
     for (let i = 0; i < logins.length; i++) {
       if (!usernames[i] || !passwords[i]) {
-        
-        
-        
-        
+        // If the username or password is blank it means that decryption may have
+        // failed during decryptMany but we can't differentiate an empty string
+        // value from a failure so we attempt to decrypt again and check the
+        // result.
         let login = logins[i];
         try {
           this._crypto.decrypt(login.username);
           this._crypto.decrypt(login.password);
         } catch (e) {
-          
-          
+          // If decryption failed (corrupt entry?), just skip it.
+          // Rethrow other errors (like canceling entry of a primary pw)
           if (e.result == Cr.NS_ERROR_FAILURE) {
             this.log(
               `Could not decrypt login: ${
@@ -435,16 +434,16 @@ class LoginManagerStorage_json {
   async searchLoginsAsync(matchData) {
     this.log(`Searching for matching logins for origin ${matchData.origin}.`);
     let result = this.searchLogins(lazy.LoginHelper.newPropertyBag(matchData));
-    
+    // Emulate being async:
     return Promise.resolve(result);
   }
 
-  
-
-
-
-
-
+  /**
+   * Public wrapper around _searchLogins to convert the nsIPropertyBag to a
+   * JavaScript object and decrypt the results.
+   *
+   * @return {nsILoginInfo[]} which are decrypted.
+   */
   searchLogins(matchData) {
     this._store.ensureDataReady();
 
@@ -453,16 +452,16 @@ class LoginManagerStorage_json {
 
     matchData.QueryInterface(Ci.nsIPropertyBag2);
     if (matchData.hasKey("guid")) {
-      
-      
-      
+      // Enforce GUID-based filtering when available, since the origin of the
+      // login may not match the origin of the form in the case of scheme
+      // upgrades.
       realMatchData = { guid: matchData.getProperty("guid") };
     } else {
-      
+      // Convert nsIPropertyBag to normal JS object.
       for (let prop of matchData.enumerator) {
         switch (prop.name) {
-          
-          
+          // Some property names aren't field names but are special options to
+          // affect the search.
           case "acceptDifferentSubdomains":
           case "schemeUpgrades":
           case "acceptRelatedRealms":
@@ -480,20 +479,20 @@ class LoginManagerStorage_json {
 
     let [logins] = this._searchLogins(realMatchData, options);
 
-    
+    // Decrypt entries found for the caller.
     logins = this._decryptLogins(logins);
 
     return logins;
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Private method to perform arbitrary searches on any field. Decryption is
+   * left to the caller.
+   *
+   * Returns [logins, ids] for logins that match the arguments, where logins
+   * is an array of encrypted nsLoginInfo and ids is an array of associated
+   * ids in the database.
+   */
   _searchLogins(
     matchData,
     aOptions = {
@@ -507,7 +506,7 @@ class LoginManagerStorage_json {
     if (
       "formActionOrigin" in matchData &&
       matchData.formActionOrigin === "" &&
-      
+      // Carve an exception out for a unit test in test_legacy_empty_formSubmitURL.js
       Object.keys(matchData).length != 1
     ) {
       throw new Error(
@@ -519,8 +518,8 @@ class LoginManagerStorage_json {
       for (let field in matchData) {
         let wantedValue = matchData[field];
 
-        
-        
+        // Override the storage field name for some fields due to backwards
+        // compatibility with Sync/storage.
         let storageFieldName = field;
         switch (field) {
           case "formActionOrigin": {
@@ -536,7 +535,7 @@ class LoginManagerStorage_json {
         switch (field) {
           case "formActionOrigin":
             if (wantedValue != null) {
-              
+              // Historical compatibility requires this special case
               if (aLoginItem.formSubmitURL == "") {
                 break;
               }
@@ -551,10 +550,10 @@ class LoginManagerStorage_json {
               }
               break;
             }
-          
+          // fall through
           case "origin":
             if (wantedValue != null) {
-              
+              // needed for formActionOrigin fall through
               if (
                 !lazy.LoginHelper.isOriginMatching(
                   aLoginItem[storageFieldName],
@@ -566,8 +565,8 @@ class LoginManagerStorage_json {
               }
               break;
             }
-          
-          
+          // Normal cases.
+          // fall through
           case "httpRealm":
           case "id":
           case "usernameField":
@@ -586,7 +585,7 @@ class LoginManagerStorage_json {
               return false;
             }
             break;
-          
+          // Fail if caller requests an unknown property.
           default:
             throw new Error("Unexpected field: " + field);
         }
@@ -598,7 +597,7 @@ class LoginManagerStorage_json {
       foundIds = [];
     for (let loginItem of candidateLogins) {
       if (match(loginItem)) {
-        
+        // Create the new nsLoginInfo object, push to array
         let login = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(
           Ci.nsILoginInfo
         );
@@ -611,7 +610,7 @@ class LoginManagerStorage_json {
           loginItem.usernameField,
           loginItem.passwordField
         );
-        
+        // set nsILoginMetaInfo values
         login.QueryInterface(Ci.nsILoginMetaInfo);
         login.guid = loginItem.guid;
         login.timeCreated = loginItem.timeCreated;
@@ -629,12 +628,12 @@ class LoginManagerStorage_json {
     return [foundLogins, foundIds];
   }
 
-  
-
-
-
-
-
+  /**
+   * Removes all logins from local storage, including FxA Sync key.
+   *
+   * NOTE: You probably want removeAllUserFacingLogins instead of this function.
+   *
+   */
   removeAllLogins() {
     this._store.ensureDataReady();
     this._store.data.logins = [];
@@ -646,11 +645,11 @@ class LoginManagerStorage_json {
     lazy.LoginHelper.notifyStorageChanged("removeAllLogins", []);
   }
 
-  
-
-
-
-
+  /**
+   * Removes all user facing logins from storage. e.g. all logins except the FxA Sync key
+   *
+   * If you need to remove the FxA key, use `removeAllLogins` instead
+   */
   removeAllUserFacingLogins() {
     this._store.ensureDataReady();
     this.log("Removing all logins.");
@@ -693,7 +692,7 @@ class LoginManagerStorage_json {
     }
     let [logins] = this._searchLogins(matchData);
 
-    
+    // Decrypt entries found for the caller.
     logins = this._decryptLogins(logins);
 
     this.log(`Returning ${logins.length} logins.`);
@@ -722,7 +721,7 @@ class LoginManagerStorage_json {
 
   addPotentiallyVulnerablePassword(login) {
     this._store.ensureDataReady();
-    
+    // this breached password is already stored
     if (this.isPotentiallyVulnerablePassword(login)) {
       return;
     }
@@ -743,7 +742,7 @@ class LoginManagerStorage_json {
   clearAllPotentiallyVulnerablePasswords() {
     this._store.ensureDataReady();
     if (!this._store.data.potentiallyVulnerablePasswords.length) {
-      
+      // No need to write to disk
       return;
     }
     this._store.data.potentiallyVulnerablePasswords = [];
@@ -759,11 +758,11 @@ class LoginManagerStorage_json {
     return this._crypto.isLoggedIn;
   }
 
-  
-
-
-
-
+  /**
+   * Returns an array with two items: [id, login]. If the login was not
+   * found, both items will be null. The returned login contains the actual
+   * stored login (useful for looking at the actual nsILoginMetaInfo values).
+   */
   _getIdForLogin(login) {
     this._store.ensureDataReady();
 
@@ -778,10 +777,10 @@ class LoginManagerStorage_json {
     let id = null;
     let foundLogin = null;
 
-    
-    
-    
-    
+    // The specified login isn't encrypted, so we need to ensure
+    // the logins we're comparing with are decrypted. We decrypt one entry
+    // at a time, lest _decryptLogins return fewer entries and screw up
+    // indices between the two.
     for (let i = 0; i < logins.length; i++) {
       let [decryptedLogin] = this._decryptLogins([logins[i]]);
 
@@ -789,7 +788,7 @@ class LoginManagerStorage_json {
         continue;
       }
 
-      
+      // We've found a match, set id and break
       foundLogin = decryptedLogin;
       id = ids[i];
       break;
@@ -798,19 +797,19 @@ class LoginManagerStorage_json {
     return [id, foundLogin];
   }
 
-  
-
-
+  /**
+   * Checks to see if the specified GUID already exists.
+   */
   _isGuidUnique(guid) {
     this._store.ensureDataReady();
 
     return this._store.data.logins.every(l => l.guid != guid);
   }
 
-  
-
-
-
+  /**
+   * Returns the encrypted username, password, and encrypton type for the specified
+   * login. Can throw if the user cancels a primary password entry.
+   */
   _encryptLogin(login) {
     let encUsername = this._crypto.encrypt(login.username);
     let encPassword = this._crypto.encrypt(login.password);
@@ -819,17 +818,17 @@ class LoginManagerStorage_json {
     return [encUsername, encPassword, encType];
   }
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Decrypts username and password fields in the provided array of
+   * logins.
+   *
+   * The entries specified by the array will be decrypted, if possible.
+   * An array of successfully decrypted logins will be returned. The return
+   * value should be given to external callers (since still-encrypted
+   * entries are useless), whereas internal callers generally don't want
+   * to lose unencrypted entries (eg, because the user clicked Cancel
+   * instead of entering their primary password)
+   */
   _decryptLogins(logins) {
     let result = [];
 
@@ -838,8 +837,8 @@ class LoginManagerStorage_json {
         login.username = this._crypto.decrypt(login.username);
         login.password = this._crypto.decrypt(login.password);
       } catch (e) {
-        
-        
+        // If decryption failed (corrupt entry?), just skip it.
+        // Rethrow other errors (like canceling entry of a primary pw)
         if (e.result == Cr.NS_ERROR_FAILURE) {
           continue;
         }
@@ -856,5 +855,3 @@ XPCOMUtils.defineLazyGetter(LoginManagerStorage_json.prototype, "log", () => {
   let logger = lazy.LoginHelper.createLogger("Login storage");
   return logger.log.bind(logger);
 });
-
-const EXPORTED_SYMBOLS = ["LoginManagerStorage_json"];

@@ -1,16 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * Machine learning model for identifying sign up scenario forms
+ */
 
-
-
-
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["SignUpFormRuleset"];
-
-const {
+import {
   dom,
   out,
   rule,
@@ -18,17 +14,18 @@ const {
   score,
   type,
   element,
-  utils: { isVisible, attributesMatch, min, setDefault },
-  clusters: { euclidean },
-} = ChromeUtils.importESModule(
-  "resource://gre/modules/third_party/fathom/fathom.mjs"
-);
+  utils,
+  clusters,
+} from "resource://gre/modules/third_party/fathom/fathom.mjs";
+
+let { isVisible, attributesMatch, min, setDefault } = utils;
+let { euclidean } = clusters;
 
 const DEVELOPMENT = false;
 
-
-
-
+/**
+ * --- START OF RULESET ---
+ */
 const coefficients = {
   signup: new Map([
     ["formMethodIsPost", -0.7543129920959473],
@@ -73,7 +70,7 @@ const registerRegex = /create|regist[a-z]|sign up|signup|sign-up|sign_up|join|ne
 const emailRegex = /mail/gi;
 const usernameRegex = /user|name|member/gi;
 const newPasswordRegex = /new|create/gi;
-
+//const confirmAttrRegex = /confirm|retype|again|bevestigen|wiederhol|repeat|confirmation|verify|retype|repite|確認|の確認|تکرار|re-enter|확인|bevestigen|Повторите|tassyklamak|再次输入|ještě jednou|gentag|re-type|Répéter|conferma|Repetaţi|reenter|再入力|재입력|Ulangi|Bekræft/gi;
 const nameRegex = /first|last|middle/gi;
 const birthdateRegex = /birth|year|yyyy/gi;
 const phoneRegex = /phone|mobile|tel|number/gi;
@@ -88,9 +85,9 @@ const editProfile = /edit|profile/gi;
 function createRuleset(coeffs, biases) {
   let elementToSelectors;
 
-  
-
-
+  /**
+   * Check document characteristics
+   */
   function docHasLoginHyperlink(fnode) {
     const links = getElementDescendants(fnode.element.ownerDocument, "a");
 
@@ -120,9 +117,9 @@ function createRuleset(coeffs, biases) {
     return checkValueAgainstRegex(docTitle, editProfile);
   }
 
-  
-
-
+  /**
+   * Check header
+   */
   function closestHeaderMatchesLoginRegex(fnode) {
     return (
       headerInFormMatchesRegex(fnode.element, loginRegex) ||
@@ -143,9 +140,9 @@ function createRuleset(coeffs, biases) {
     );
   }
 
-  
-
-
+  /**
+   * Check Checkboxes
+   */
   function formHasRememberMeCheckbox(fnode) {
     return checkboxInFormMatchesRegex(fnode.element, rememberMeRegex);
   }
@@ -156,9 +153,9 @@ function createRuleset(coeffs, biases) {
     return checkboxInFormMatchesRegex(fnode.element, termsAndConditionsRegex);
   }
 
-  
-
-
+  /**
+   * Check input fields
+   */
   function formHasPhoneField(fnode) {
     return formContainsRegexMatchingElement(fnode.element, "input", phoneRegex);
   }
@@ -225,9 +222,9 @@ function createRuleset(coeffs, biases) {
     return checkInputFieldsForAttr(fnode.element, "type=password");
   }
 
-  
-
-
+  /**
+   * Check autocomplete values
+   */
   function formHasAcUsername(fnode) {
     return checkInputFieldsForAttr(fnode.element, "autocomplete=username");
   }
@@ -247,9 +244,9 @@ function createRuleset(coeffs, biases) {
     return checkInputFieldsForAttr(fnode.element, "autocomplete*=tel");
   }
 
-  
-
-
+  /**
+   * Check labels
+   */
   function closestElementIsNewPasswordLabelLike(fnode) {
     const passwordFields = getElementDescendants(
       fnode.element,
@@ -262,9 +259,9 @@ function createRuleset(coeffs, biases) {
     return closestElementIsRegexMatchingLabel(emailFields, emailRegex);
   }
 
-  
-
-
+  /**
+   * Check buttons
+   */
   function formHasRegisterButton(fnode) {
     const buttons = getButtons(fnode.element);
     return buttons.some(button =>
@@ -290,9 +287,9 @@ function createRuleset(coeffs, biases) {
     );
   }
 
-  
-
-
+  /**
+   * Check form attributes
+   */
   function formAttributesMatchRegisterRegex(fnode) {
     return attributesMatch(
       fnode.element,
@@ -317,9 +314,9 @@ function createRuleset(coeffs, biases) {
     return fnode.element.method === "post";
   }
 
-  
-
-
+  /**
+   * HELPER FUNCTIONS
+   */
   function closestElementIsRegexMatchingLabel(elements, regexExp) {
     return elements.some(elem => {
       const previousElem = elem.previousElementSibling;
@@ -444,7 +441,7 @@ function createRuleset(coeffs, biases) {
         type("form").note(clearCache)
       ),
 
-      
+      // Check form attributes
       rule(type("form"), score(formAttributesMatchRegisterRegex), {
         name: "formAttributesMatchRegisterRegex",
       }),
@@ -455,7 +452,7 @@ function createRuleset(coeffs, biases) {
       rule(type("form"), score(formAttributesMatchNewsletterRegex), {
         name: "formAttributesMatchNewsletterRegex",
       }),
-      
+      // Check autocomplete attributes
       rule(type("form"), score(formHasAcCurrentPassword), {
         name: "formHasAcCurrentPassword",
       }),
@@ -471,7 +468,7 @@ function createRuleset(coeffs, biases) {
       rule(type("form"), score(formHasAcEmail), {
         name: "formHasAcEmail",
       }),
-      
+      // Check input fields
       rule(type("form"), score(formHasEmailField), {
         name: "formHasEmailField",
       }),
@@ -493,7 +490,7 @@ function createRuleset(coeffs, biases) {
       rule(type("form"), score(formHasPhoneField), {
         name: "formHasPhoneField",
       }),
-      
+      // Check buttons
       rule(type("form"), score(formHasRegisterButton), {
         name: "formHasRegisterButton",
       }),
@@ -506,14 +503,14 @@ function createRuleset(coeffs, biases) {
       rule(type("form"), score(formHasSubscribeButton), {
         name: "formHasSubscribeButton",
       }),
-      
+      // Check labels
       rule(type("form"), score(closestElementIsEmailLabelLike), {
         name: "closestElementIsEmailLabelLike",
       }),
       rule(type("form"), score(closestElementIsNewPasswordLabelLike), {
         name: "closestElementIsNewPasswordLabelLike",
       }),
-      
+      // Check checkboxes
       rule(type("form"), score(formHasTermsAndConditionsCheckbox), {
         name: "formHasTermsAndConditionsCheckbox",
       }),
@@ -523,7 +520,7 @@ function createRuleset(coeffs, biases) {
       rule(type("form"), score(formHasSubcriptionCheckbox), {
         name: "formHasSubcriptionCheckbox",
       }),
-      
+      // Check header
       rule(type("form"), score(closestHeaderMatchesRegisterRegex), {
         name: "closestHeaderMatchesRegisterRegex",
       }),
@@ -533,7 +530,7 @@ function createRuleset(coeffs, biases) {
       rule(type("form"), score(closestHeaderMatchesNewsletterRegex), {
         name: "closestHeaderMatchesNewsletterRegex",
       }),
-      
+      // Check doc characteristics
       rule(type("form"), score(docTitleMatchesRegisterRegex), {
         name: "docTitleMatchesRegisterRegex",
       }),
@@ -554,11 +551,11 @@ function createRuleset(coeffs, biases) {
   return rules;
 }
 
+/**
+ * --- END OF RULESET ---
+ */
 
-
-
-
-const SignUpFormRuleset = {
+export const SignUpFormRuleset = {
   type: "form",
   rules: createRuleset([...coefficients.signup], biases),
 };

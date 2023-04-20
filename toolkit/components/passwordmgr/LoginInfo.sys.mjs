@@ -1,24 +1,22 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "LoginHelper",
-  "resource://gre/modules/LoginHelper.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
+});
 
-function nsLoginInfo() {}
+export function nsLoginInfo() {}
 
 nsLoginInfo.prototype = {
   classID: Components.ID("{0f2f347c-1e4f-40cc-8efd-792dea70a85e}"),
   QueryInterface: ChromeUtils.generateQI(["nsILoginInfo", "nsILoginMetaInfo"]),
 
-  
-  
-  
+  //
+  // nsILoginInfo interfaces...
+  //
 
   origin: null,
   formActionOrigin: null,
@@ -32,11 +30,11 @@ nsLoginInfo.prototype = {
     let displayOrigin = this.origin;
     try {
       let uri = Services.io.newURI(this.origin);
-      
+      // Fallback to handle file: URIs
       displayOrigin = uri.displayHostPort || this.origin;
     } catch (ex) {
-      
-      
+      // Fallback to this.origin set above in case a URI can't be contructed e.g.
+      // file://
     }
 
     if (this.httpRealm === null) {
@@ -46,16 +44,16 @@ nsLoginInfo.prototype = {
     return `${displayOrigin} (${this.httpRealm})`;
   },
 
-  
-
-
+  /**
+   * @deprecated Use `origin` instead.
+   */
   get hostname() {
     return this.origin;
   },
 
-  
-
-
+  /**
+   * @deprecated Use `formActionOrigin` instead.
+   */
   get formSubmitURL() {
     return this.formActionOrigin;
   },
@@ -114,7 +112,7 @@ nsLoginInfo.prototype = {
       this.passwordField
     );
 
-    
+    // Copy nsILoginMetaInfo props
     clone.QueryInterface(Ci.nsILoginMetaInfo);
     clone.guid = this.guid;
     clone.timeCreated = this.timeCreated;
@@ -125,15 +123,13 @@ nsLoginInfo.prototype = {
     return clone;
   },
 
-  
-  
-  
+  //
+  // nsILoginMetaInfo interfaces...
+  //
 
   guid: null,
   timeCreated: null,
   timeLastUsed: null,
   timePasswordChanged: null,
   timesUsed: null,
-}; 
-
-const EXPORTED_SYMBOLS = ["nsLoginInfo"];
+}; // end of nsLoginInfo implementation

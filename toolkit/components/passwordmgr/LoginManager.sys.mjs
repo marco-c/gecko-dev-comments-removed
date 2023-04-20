@@ -1,23 +1,17 @@
-
-
-
-
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const PERMISSION_SAVE_LOGINS = "login-saving";
 const MAX_DATE_MS = 8640000000000000;
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "LoginHelper",
-  "resource://gre/modules/LoginHelper.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
+});
 
 XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   let logger = lazy.LoginHelper.createLogger("LoginManager");
@@ -30,7 +24,7 @@ if (Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT) {
   throw new Error("LoginManager.jsm should only run in the parent process");
 }
 
-function LoginManager() {
+export function LoginManager() {
   this.init();
 }
 
@@ -48,7 +42,7 @@ LoginManager.prototype = {
     }
 
     if (aIID.equals(Ci.nsIVariant)) {
-      
+      // Allows unwrapping the JavaScript object for regression tests.
       return this;
     }
 
@@ -58,24 +52,24 @@ LoginManager.prototype = {
     );
   },
 
-  
+  /* ---------- private members ---------- */
 
-  _storage: null, 
+  _storage: null, // Storage component which contains the saved logins
 
-  
-
-
-
-
-
+  /**
+   * Initialize the Login Manager. Automatically called when service
+   * is created.
+   *
+   * Note: Service created in BrowserGlue#_scheduleStartupIdleTasks()
+   */
   init() {
-    
+    // Cache references to current |this| in utility objects
     this._observer._pwmgr = this;
 
     Services.obs.addObserver(this._observer, "xpcom-shutdown");
     Services.obs.addObserver(this._observer, "passwordmgr-storage-replace");
 
-    
+    // Initialize storage so that asynchronous data loading can start.
     this._initStorage();
 
     Services.obs.addObserver(this._observer, "gather-telemetry");
@@ -97,12 +91,12 @@ LoginManager.prototype = {
     });
   },
 
-  
+  /* ---------- Utility objects ---------- */
 
-  
-
-
-
+  /**
+   * Internal utility object, implements the nsIObserver interface.
+   * Used to receive notification for: form submission, preference changes.
+   */
   _observer: {
     _pwmgr: null,
 
@@ -111,7 +105,7 @@ LoginManager.prototype = {
       "nsISupportsWeakReference",
     ]),
 
-    
+    // nsIObserver
     observe(subject, topic, data) {
       if (topic == "xpcom-shutdown") {
         delete this._pwmgr._storage;
@@ -127,8 +121,8 @@ LoginManager.prototype = {
           );
         })();
       } else if (topic == "gather-telemetry") {
-        
-        
+        // When testing, the "data" parameter is a string containing the
+        // reference time in milliseconds for time-based statistics.
         this._pwmgr._gatherTelemetry(
           data ? parseInt(data) : new Date().getTime()
         );
@@ -138,18 +132,18 @@ LoginManager.prototype = {
     },
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Collects statistics about the current logins and settings. The telemetry
+   * histograms used here are not accumulated, but are reset each time this
+   * function is called, since it can be called multiple times in a session.
+   *
+   * This function might also not be called at all in the current session.
+   *
+   * @param referenceTimeMs
+   *        Current time used to calculate time-based statistics, expressed as
+   *        the number of milliseconds since January 1, 1970, 00:00:00 UTC.
+   *        This is set to a fake value during unit testing.
+   */
   async _gatherTelemetry(referenceTimeMs) {
     function clearAndGetHistogram(histogramId) {
       let histogram = Services.telemetry.getHistogramById(histogramId);
@@ -177,8 +171,8 @@ LoginManager.prototype = {
       "PWMGR_NUM_SAVED_PASSWORDS"
     );
 
-    
-    
+    // This is a boolean histogram, and not a flag, because we don't want to
+    // record any value if _gatherTelemetry is not called.
     clearAndGetHistogram("PWMGR_SAVING_ENABLED").add(lazy.LoginHelper.enabled);
     Services.obs.notifyObservers(
       null,
@@ -186,7 +180,7 @@ LoginManager.prototype = {
       "PWMGR_SAVING_ENABLED"
     );
 
-    
+    // Don't try to get logins if MP is enabled, since we don't want to show a MP prompt.
     if (!this.isLoggedIn) {
       return;
     }
@@ -236,19 +230,19 @@ LoginManager.prototype = {
     Services.obs.notifyObservers(null, "passwordmgr-gather-telemetry-complete");
   },
 
-  
-
-
-
-
-
+  /**
+   * Ensures that a login isn't missing any necessary fields.
+   *
+   * @param login
+   *        The login to check.
+   */
   _checkLogin(login) {
-    
+    // Sanity check the login
     if (login.origin == null || !login.origin.length) {
       throw new Error("Can't add a login with a null or empty origin.");
     }
 
-    
+    // For logins w/o a username, set to "", not null.
     if (login.username == null) {
       throw new Error("Can't add a login with a null username.");
     }
@@ -257,33 +251,33 @@ LoginManager.prototype = {
       throw new Error("Can't add a login with a null or empty password.");
     }
 
-    
-    
-    
-    
-    
-    
-    
+    // Duplicated from toolkit/components/passwordmgr/LoginHelper.jsm
+    // TODO: move all validations into this function.
+    //
+    // In theory these nulls should just be rolled up into the encrypted
+    // values, but nsISecretDecoderRing doesn't use nsStrings, so the
+    // nulls cause truncation. Check for them here just to avoid
+    // unexpected round-trip surprises.
     if (login.username.includes("\0") || login.password.includes("\0")) {
       throw new Error("login values can't contain nulls");
     }
 
     if (login.formActionOrigin || login.formActionOrigin == "") {
-      
+      // We have a form submit URL. Can't have a HTTP realm.
       if (login.httpRealm != null) {
         throw new Error(
           "Can't add a login with both a httpRealm and formActionOrigin."
         );
       }
     } else if (login.httpRealm) {
-      
+      // We have a HTTP realm. Can't have a form submit URL.
       if (login.formActionOrigin != null) {
         throw new Error(
           "Can't add a login with both a httpRealm and formActionOrigin."
         );
       }
     } else {
-      
+      // Need one or the other!
       throw new Error(
         "Can't add a login without a httpRealm or formActionOrigin."
       );
@@ -291,29 +285,29 @@ LoginManager.prototype = {
 
     login.QueryInterface(Ci.nsILoginMetaInfo);
     for (let pname of ["timeCreated", "timeLastUsed", "timePasswordChanged"]) {
-      
+      // Invalid dates
       if (login[pname] > MAX_DATE_MS) {
         throw new Error("Can't add a login with invalid date properties.");
       }
     }
   },
 
-  
+  /* ---------- Primary Public interfaces ---------- */
 
-  
-
-
-
-
+  /**
+   * @type Promise
+   * This promise is resolved when initialization is complete, and is rejected
+   * in case the asynchronous part of initialization failed.
+   */
   initializationPromise: null,
 
-  
-
-
+  /**
+   * Add a new login to login storage.
+   */
   addLogin(login) {
     this._checkLogin(login);
 
-    
+    // Look for an existing entry.
     let logins = this.findLogins(
       login.origin,
       login.formActionOrigin,
@@ -385,9 +379,9 @@ LoginManager.prototype = {
     return resultLogins;
   },
 
-  
-
-
+  /**
+   * Remove the specified login from the stored logins.
+   */
   removeLogin(login) {
     lazy.log.debug(
       "Removing login",
@@ -396,9 +390,9 @@ LoginManager.prototype = {
     return this._storage.removeLogin(login);
   },
 
-  
-
-
+  /**
+   * Change the specified login to match the new login or new properties.
+   */
   modifyLogin(oldLogin, newLogin) {
     lazy.log.debug(
       "Modifying login",
@@ -407,9 +401,9 @@ LoginManager.prototype = {
     return this._storage.modifyLogin(oldLogin, newLogin);
   },
 
-  
-
-
+  /**
+   * Record that the password of a saved login was used (e.g. submitted or copied).
+   */
   recordPasswordUse(
     login,
     privateContextWithoutExplicitConsent,
@@ -422,7 +416,7 @@ LoginManager.prototype = {
       login.QueryInterface(Ci.nsILoginMetaInfo).guid
     );
     if (!privateContextWithoutExplicitConsent) {
-      
+      // don't record non-interactive use in private browsing
       this._storage.recordPasswordUse(login);
     }
 
@@ -437,29 +431,29 @@ LoginManager.prototype = {
     );
   },
 
-  
-
-
-
-
+  /**
+   * Get a dump of all stored logins. Used by the login manager UI.
+   *
+   * @return {nsILoginInfo[]} - If there are no logins, the array is empty.
+   */
   getAllLogins() {
     lazy.log.debug("Getting a list of all logins.");
     return this._storage.getAllLogins();
   },
 
-  
-
-
-
-
+  /**
+   * Get a dump of all stored logins asynchronously. Used by the login manager UI.
+   *
+   * @return {nsILoginInfo[]} - If there are no logins, the array is empty.
+   */
   async getAllLoginsAsync() {
     lazy.log.debug("Getting a list of all logins asynchronously.");
     return this._storage.getAllLoginsAsync();
   },
 
-  
-
-
+  /**
+   * Get a dump of all stored logins asynchronously. Used by the login detection service.
+   */
   getAllLoginsWithCallbackAsync(aCallback) {
     lazy.log.debug("Searching a list of all logins asynchronously.");
     this._storage.getAllLoginsAsync().then(logins => {
@@ -467,36 +461,36 @@ LoginManager.prototype = {
     });
   },
 
-  
-
-
-
-
+  /**
+   * Remove all user facing stored logins.
+   *
+   * This will not remove the FxA Sync key, which is stored with the rest of a user's logins.
+   */
   removeAllUserFacingLogins() {
     lazy.log.debug("Removing all user facing logins.");
     this._storage.removeAllUserFacingLogins();
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Remove all logins from data store, including the FxA Sync key.
+   *
+   * NOTE: You probably want `removeAllUserFacingLogins()` instead of this function.
+   * This function will remove the FxA Sync key, which will break syncing of saved user data
+   * e.g. bookmarks, history, open tabs, logins and passwords, add-ons, and options
+   */
   removeAllLogins() {
     lazy.log.debug("Removing all logins from local store, including FxA key.");
     this._storage.removeAllLogins();
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Get a list of all origins for which logins are disabled.
+   *
+   * @param {Number} count - only needed for XPCOM.
+   *
+   * @return {String[]} of disabled origins. If there are no disabled origins,
+   *                    the array is empty.
+   */
   getAllDisabledHosts() {
     lazy.log.debug("Getting a list of all disabled origins.");
 
@@ -514,9 +508,9 @@ LoginManager.prototype = {
     return disabledHosts;
   },
 
-  
-
-
+  /**
+   * Search for the known logins for entries matching the specified criteria.
+   */
   findLogins(origin, formActionOrigin, httpRealm) {
     lazy.log.debug(
       "Searching for logins matching origin:",
@@ -542,9 +536,9 @@ LoginManager.prototype = {
     return this._storage.searchLoginsAsync(matchData);
   },
 
-  
-
-
+  /**
+   * @return {nsILoginInfo[]} which are decrypted.
+   */
   searchLogins(matchData) {
     lazy.log.debug(
       `Searching for matching logins for origin: ${matchData.origin}`
@@ -560,10 +554,10 @@ LoginManager.prototype = {
     return this._storage.searchLogins(matchData);
   },
 
-  
-
-
-
+  /**
+   * Search for the known logins for entries matching the specified criteria,
+   * returns only the count.
+   */
   countLogins(origin, formActionOrigin, httpRealm) {
     const loginsCount = this._storage.countLogins(
       origin,
@@ -578,7 +572,7 @@ LoginManager.prototype = {
     return loginsCount;
   },
 
-  
+  /* Sync metadata functions - see nsILoginManagerStorage for details */
   async getSyncID() {
     return this._storage.getSyncID();
   },
@@ -617,9 +611,9 @@ LoginManager.prototype = {
     return this._storage.isLoggedIn;
   },
 
-  
-
-
+  /**
+   * Check to see if user has disabled saving logins for the origin.
+   */
   getLoginSavingEnabled(origin) {
     lazy.log.debug(`Checking if logins to ${origin} can be saved.`);
     if (!lazy.LoginHelper.enabled) {
@@ -646,11 +640,11 @@ LoginManager.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Enable or disable storing logins for the specified origin.
+   */
   setLoginSavingEnabled(origin, enabled) {
-    
+    // Throws if there are bogus values.
     lazy.LoginHelper.checkOriginValue(origin);
 
     let uri = Services.io.newURI(origin);
@@ -676,6 +670,4 @@ LoginManager.prototype = {
       origin
     );
   },
-}; 
-
-const EXPORTED_SYMBOLS = ["LoginManager"];
+}; // end of LoginManager implementation

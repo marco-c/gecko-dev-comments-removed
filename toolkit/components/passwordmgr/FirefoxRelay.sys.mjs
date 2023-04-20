@@ -1,24 +1,14 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["FirefoxRelay"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
-const { FirefoxRelayTelemetry } = ChromeUtils.importESModule(
-  "resource://gre/modules/FirefoxRelayTelemetry.mjs"
-);
-
-const {
+import { FirefoxRelayTelemetry } from "resource://gre/modules/FirefoxRelayTelemetry.mjs";
+import {
   LoginHelper,
   OptInFeature,
   ParentAutocompleteOption,
-} = ChromeUtils.import("resource://gre/modules/LoginHelper.jsm");
+} from "resource://gre/modules/LoginHelper.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const { TelemetryUtils } = ChromeUtils.import(
   "resource://gre/modules/TelemetryUtils.jsm"
@@ -26,7 +16,7 @@ const { TelemetryUtils } = ChromeUtils.import(
 
 const lazy = {};
 
-
+// Static configuration
 const gConfig = (function() {
   const baseUrl = Services.prefs.getStringPref(
     "signon.firefoxRelay.base_url",
@@ -146,8 +136,8 @@ async function getReusableMasksAsync(browser, _origin) {
   );
 
   if (!response) {
-    
-    
+    // fetchWithReauth only returns undefined if login / obtaining a token failed.
+    // Otherwise, it will return a response object.
     return [undefined, RelayFeature.AUTH_TOKEN_ERROR_CODE];
   }
 
@@ -165,22 +155,22 @@ async function getReusableMasksAsync(browser, _origin) {
   return [undefined, response.status];
 }
 
-
-
-
-
-
+/**
+ * Show confirmation tooltip
+ * @param browser
+ * @param messageId message ID from browser/browser.properties
+ */
 function showConfirmation(browser, messageId) {
   const anchor = browser.ownerDocument.getElementById("identity-icon");
   anchor.ownerGlobal.ConfirmationHint.show(anchor, messageId, {});
 }
 
-
-
-
-
-
-
+/**
+ * Show localized notification.
+ * @param browser
+ * @param messageId messageId from browser/firefoxRelay.ftl
+ * @param messageArgs
+ */
 async function showErrorAsync(browser, messageId, messageArgs) {
   const { PopupNotifications } = browser.ownerGlobal.wrappedJSObject;
   const [message] = await lazy.strings.formatValues([
@@ -274,7 +264,7 @@ async function showReusableMasksAsync(browser, origin, error) {
       "error-message"
     )[0].textContent = error.detail || "";
 
-    
+    // rebuild "reuse mask" buttons list
     const list = getReusableMasksList();
     list.innerHTML = "";
 
@@ -332,7 +322,7 @@ async function showReusableMasksAsync(browser, origin, error) {
   notification = PopupNotifications.show(
     browser,
     "relay-integration-reuse-masks",
-    "", 
+    "", // content is provided after popup shown
     "password-notification-icon",
     getUnlimitedMasks,
     [],
@@ -517,7 +507,7 @@ class RelayOffered {
     notification = PopupNotifications.show(
       browser,
       "relay-integration-offer",
-      "", 
+      "", // content is provided after popup shown
       "password-notification-icon",
       enableIntegration,
       [postpone, disableIntegration],
@@ -595,14 +585,14 @@ class RelayEnabled {
 class RelayDisabled {}
 
 class RelayFeature extends OptInFeature {
-  
+  // Using 418 to avoid conflict with other standard http error code
   static AUTH_TOKEN_ERROR_CODE = 418;
 
   constructor() {
     super(RelayOffered, RelayEnabled, RelayDisabled, gConfig.relayFeaturePref);
     Services.telemetry.setEventRecordingEnabled("relay_integration", true);
-    
-    
+    // Update the config when the signon.firefoxRelay.base_url pref is changed.
+    // This is added mainly for tests.
     Services.prefs.addObserver(
       "signon.firefoxRelay.base_url",
       this.updateConfig
@@ -624,11 +614,11 @@ class RelayFeature extends OptInFeature {
   async autocompleteItemsAsync({ origin, scenarioName, hasInput }) {
     const result = [];
 
-    
-    
-    
-    
-    
+    // Generate a flowID to unique identify a series of user action. FlowId
+    // allows us to link users' interaction on different UI component (Ex. autocomplete, notification)
+    // We can use flowID to build the Funnel Diagram
+    // This value need to always be regenerated in the entry point of an user
+    // action so we overwrite the previous one.
     this.flowId = TelemetryUtils.generateUUID();
 
     if (this.implementation.autocompleteItemsAsync) {
@@ -653,4 +643,4 @@ class RelayFeature extends OptInFeature {
   }
 }
 
-const FirefoxRelay = new RelayFeature();
+export const FirefoxRelay = new RelayFeature();

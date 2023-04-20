@@ -1,14 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["CSV"];
+/**
+ * A Class to parse CSV files
+ */
 
 const QUOTATION_MARK = '"';
 const LINE_BREAKS = ["\r", "\n"];
@@ -20,18 +16,18 @@ class ParsingFailedException extends Error {
   }
 }
 
-class CSV {
-  
-
-
-
-
-
-
-
-
-
-
+export class CSV {
+  /**
+   * Parses a csv formated string into rows split into [headerLine, parsedLines].
+   * The csv string format has to follow RFC 4180, otherwise the parsing process is stopped and a ParsingFailedException is thrown, e.g.:
+   * (wrong format => right format):
+   * 'abc"def' => 'abc""def'
+   * abc,def => "abc,def"
+   *
+   * @param {string} text
+   * @param {string} delimiter a comma for CSV files and a tab for TSV files
+   * @returns {Array[]} headerLine: column names (first line of text), parsedLines: Array of Login Objects with column name as properties and login data as values.
+   */
   static parse(text, delimiter) {
     let headerline = [];
     let parsedLines = [];

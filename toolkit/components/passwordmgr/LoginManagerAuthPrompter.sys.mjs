@@ -1,16 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { PrivateBrowsingUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/PrivateBrowsingUtils.sys.mjs"
-);
-const { PromptUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/PromptUtils.sys.mjs"
-);
+import { PrivateBrowsingUtils } from "resource://gre/modules/PrivateBrowsingUtils.sys.mjs";
+import { PromptUtils } from "resource://gre/modules/PromptUtils.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -21,13 +15,11 @@ XPCOMUtils.defineLazyServiceGetter(
   Ci.nsILoginManagerPrompter
 );
 
+/* eslint-disable block-scoped-var, no-var */
 
-
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "LoginHelper",
-  "resource://gre/modules/LoginHelper.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
+});
 
 const LoginInfo = Components.Constructor(
   "@mozilla.org/login-manager/loginInfo;1",
@@ -35,9 +27,9 @@ const LoginInfo = Components.Constructor(
   "init"
 );
 
-
-
-
+/**
+ * A helper module to prevent modal auth prompt abuse.
+ */
 const PromptAbuseHelper = {
   getBaseDomainOrFallback(hostname) {
     try {
@@ -77,7 +69,7 @@ const PromptAbuseHelper = {
     }
 
     let abuseCounter = browser.authPromptAbuseCounter[baseDomain];
-    
+    // Allow for setting -1 to turn the feature off.
     if (this.abuseLimit < 0) {
       return false;
     }
@@ -91,12 +83,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "prompts.authentication_dialog_abuse_limit"
 );
 
-
-
-
-
-
-function LoginManagerAuthPromptFactory() {
+/**
+ * Implements nsIPromptFactory
+ *
+ * Invoked by [toolkit/components/prompts/src/Prompter.jsm]
+ */
+export function LoginManagerAuthPromptFactory() {
   Services.obs.addObserver(this, "passwordmgr-crypto-login", true);
 }
 
@@ -108,24 +100,24 @@ LoginManagerAuthPromptFactory.prototype = {
     "nsISupportsWeakReference",
   ]),
 
-  
-  
-  
-  
+  // Tracks pending auth prompts per top level browser and hash key.
+  // browser -> hashkey -> prompt
+  // This enables us to consolidate auth prompts with the same browser and
+  // hashkey (level, origin, realm).
   _pendingPrompts: new WeakMap(),
   _pendingSavePrompts: new WeakMap(),
-  
-  
+  // We use a separate bucket for when we don't have a browser.
+  // _noBrowser -> hashkey -> prompt
   _noBrowser: {},
-  
-  
+  // Promise used to defer prompts if the password manager isn't ready when
+  // they're called.
   _uiBusyPromise: null,
   _uiBusyResolve: null,
 
   observe(subject, topic, data) {
     this.log(`Observed topic: ${topic}.`);
     if (topic == "passwordmgr-crypto-login") {
-      
+      // Show the deferred prompters.
       this._uiBusyResolve?.();
     }
   },
@@ -137,9 +129,9 @@ LoginManagerAuthPromptFactory.prototype = {
   },
 
   getPendingPrompt(browser, hashKey) {
-    
-    
-    
+    // If there is already a matching auth prompt which has no browser
+    // associated we can reuse it. This way we avoid showing tab level prompts
+    // when there is already a pending window prompt.
     let pendingNoBrowserPrompt = this._pendingPrompts
       .get(this._noBrowser)
       ?.get(hashKey);
@@ -188,7 +180,7 @@ LoginManagerAuthPromptFactory.prototype = {
       prompt.authInfo
     );
 
-    
+    // No UI to wait for.
     if (!Services.logins.uiBusy) {
       return;
     }
@@ -202,7 +194,7 @@ LoginManagerAuthPromptFactory.prototype = {
       let httpOrigin = origin.replace(/^https:\/\//, "http://");
       hasLogins = Services.logins.countLogins(httpOrigin, null, httpRealm) > 0;
     }
-    
+    // We don't depend on saved logins.
     if (!hasLogins) {
       return;
     }
@@ -218,7 +210,7 @@ LoginManagerAuthPromptFactory.prototype = {
   async _doAsyncPrompt(prompt, hashKey) {
     this._setPendingPrompt(prompt, hashKey);
 
-    
+    // UI might be busy due to the primary password dialog. Wait for it to close.
     await this._waitForLoginsUI(prompt);
 
     let ok = false;
@@ -236,7 +228,7 @@ LoginManagerAuthPromptFactory.prototype = {
         e.result == Cr.NS_ERROR_NOT_AVAILABLE
       ) {
         this.log("Bypassed, UI is not available in this context.");
-        
+        // Prompts throw NS_ERROR_NOT_AVAILABLE if they're aborted.
         promptAborted = true;
       } else {
         console.error("LoginManagerAuthPrompter: _doAsyncPrompt " + e + "\n");
@@ -245,11 +237,11 @@ LoginManagerAuthPromptFactory.prototype = {
 
     this._removePendingPrompt(prompt, hashKey);
 
-    
+    // Handle callbacks
     for (var consumer of prompt.consumers) {
       if (!consumer.callback) {
-        
-        
+        // Not having a callback means that consumer didn't provide it
+        // or canceled the notification
         continue;
       }
 
@@ -261,11 +253,11 @@ LoginManagerAuthPromptFactory.prototype = {
           consumer.callback.onAuthCancelled(consumer.context, !promptAborted);
         }
       } catch (e) {
-        
+        /* Throw away exceptions caused by callback */
       }
     }
   },
-}; 
+}; // end of LoginManagerAuthPromptFactory implementation
 
 XPCOMUtils.defineLazyGetter(
   LoginManagerAuthPromptFactory.prototype,
@@ -276,20 +268,20 @@ XPCOMUtils.defineLazyGetter(
   }
 );
 
+/* ==================== LoginManagerAuthPrompter ==================== */
 
-
-
-
-
-
-
-
-
-
-
-
-
-function LoginManagerAuthPrompter() {}
+/**
+ * Implements interfaces for prompting the user to enter/save/change auth info.
+ *
+ * nsIAuthPrompt: Used by SeaMonkey, Thunderbird, but not Firefox.
+ *
+ * nsIAuthPrompt2: Is invoked by a channel for protocol-based authentication
+ * (eg HTTP Authenticate, FTP login).
+ *
+ * nsILoginManagerAuthPrompter: Used by consumers to indicate which tab/window a
+ * prompt should appear on.
+ */
+export function LoginManagerAuthPrompter() {}
 
 LoginManagerAuthPrompter.prototype = {
   classID: Components.ID("{8aa66d77-1bbb-45a6-991e-b8f47751c291}"),
@@ -303,7 +295,7 @@ LoginManagerAuthPrompter.prototype = {
   _chromeWindow: null,
   _browser: null,
 
-  __strBundle: null, 
+  __strBundle: null, // String bundle for L10N
   get _strBundle() {
     if (!this.__strBundle) {
       this.__strBundle = Services.strings.createBundle(
@@ -331,16 +323,16 @@ LoginManagerAuthPrompter.prototype = {
     return this.__ellipsis;
   },
 
-  
+  // Whether we are in private browsing mode
   get _inPrivateBrowsing() {
     if (this._chromeWindow) {
       return PrivateBrowsingUtils.isWindowPrivate(this._chromeWindow);
     }
-    
-    
-    
-    
-    
+    // If we don't that we're in private browsing mode if the caller did
+    // not provide a window.  The callers which really care about this
+    // will indeed pass down a window to us, and for those who don't,
+    // we can just assume that we don't want to save the entered login
+    // information.
     this.log("We have no chromeWindow so assume we're in a private context.");
     return true;
   },
@@ -352,12 +344,12 @@ LoginManagerAuthPrompter.prototype = {
     return lazy.LoginHelper.privateBrowsingCaptureEnabled;
   },
 
-  
+  /* ---------- nsIAuthPrompt prompts ---------- */
 
-  
-
-
-
+  /**
+   * Wrapper around the prompt service prompt. Saving random fields here
+   * doesn't really make sense and therefore isn't implemented.
+   */
   prompt(
     aDialogTitle,
     aText,
@@ -387,10 +379,10 @@ LoginManagerAuthPrompter.prototype = {
     );
   },
 
-  
-
-
-
+  /**
+   * Looks up a username and password in the database. Will prompt the user
+   * with a dialog, even if a username and password are found.
+   */
   promptUsernameAndPassword(
     aDialogTitle,
     aText,
@@ -411,7 +403,7 @@ LoginManagerAuthPrompter.prototype = {
     var selectedLogin = null;
     var [origin, realm] = this._getRealmInfo(aPasswordRealm);
 
-    
+    // If origin is null, we can't save this login.
     if (origin) {
       if (this._allowRememberLogin) {
         canRememberLogin =
@@ -419,17 +411,17 @@ LoginManagerAuthPrompter.prototype = {
           Services.logins.getLoginSavingEnabled(origin);
       }
 
-      
+      // Look for existing logins.
       foundLogins = Services.logins.findLogins(origin, null, realm);
 
-      
-      
+      // XXX Like the original code, we can't deal with multiple
+      // account selection. (bug 227632)
       if (foundLogins.length) {
         selectedLogin = foundLogins[0];
 
-        
-        
-        
+        // If the caller provided a username, try to use it. If they
+        // provided only a password, this will try to find a password-only
+        // login (or return null if none exists).
         if (aUsername.value) {
           selectedLogin = this._repickSelectedLogin(
             foundLogins,
@@ -439,7 +431,7 @@ LoginManagerAuthPrompter.prototype = {
 
         if (selectedLogin) {
           aUsername.value = selectedLogin.username;
-          
+          // If the caller provided a password, prefer it.
           if (!aPassword.value) {
             aPassword.value = selectedLogin.password;
           }
@@ -465,13 +457,13 @@ LoginManagerAuthPrompter.prototype = {
       return ok;
     }
 
-    
-    
-    
+    // XXX We can't prompt with multiple logins yet (bug 227632), so
+    // the entered login might correspond to an existing login
+    // other than the one we originally selected.
     selectedLogin = this._repickSelectedLogin(foundLogins, aUsername.value);
 
-    
-    
+    // If we didn't find an existing login, or if the username
+    // changed, save as a new login.
     let newLogin = new LoginInfo(
       origin,
       null,
@@ -480,11 +472,11 @@ LoginManagerAuthPrompter.prototype = {
       aPassword.value
     );
     if (!selectedLogin) {
-      
+      // add as new
       this.log(`New login seen for: ${realm}.`);
       Services.logins.addLogin(newLogin);
     } else if (aPassword.value != selectedLogin.password) {
-      
+      // update password
       this.log(`Updating password for ${realm}.`);
       this._updateLogin(selectedLogin, newLogin);
     } else {
@@ -500,14 +492,14 @@ LoginManagerAuthPrompter.prototype = {
     return ok;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * If a password is found in the database for the password realm, it is
+   * returned straight away without displaying a dialog.
+   *
+   * If a password is not found in the database, the user will be prompted
+   * with a dialog with a text field and ok/cancel buttons. If the user
+   * allows it, then the password will be saved in the database.
+   */
   promptPassword(
     aDialogTitle,
     aText,
@@ -527,23 +519,23 @@ LoginManagerAuthPrompter.prototype = {
     username = decodeURIComponent(username);
 
     let canRememberLogin = false;
-    
+    // If origin is null, we can't save this login.
     if (origin && !this._inPrivateBrowsing) {
       canRememberLogin =
         aSavePassword == Ci.nsIAuthPrompt.SAVE_PASSWORD_PERMANENTLY &&
         Services.logins.getLoginSavingEnabled(origin);
       if (!aPassword.value) {
-        
+        // Look for existing logins.
         var foundLogins = Services.logins.findLogins(origin, null, realm);
 
-        
-        
-        
-        
+        // XXX Like the original code, we can't deal with multiple
+        // account selection (bug 227632). We can deal with finding the
+        // account based on the supplied username - but in this case we'll
+        // just return the first match.
         for (var i = 0; i < foundLogins.length; ++i) {
           if (foundLogins[i].username == username) {
             aPassword.value = foundLogins[i].password;
-            
+            // wallet returned straight away, so this mimics that code
             return true;
           }
         }
@@ -574,20 +566,20 @@ LoginManagerAuthPrompter.prototype = {
     return ok;
   },
 
-  
+  /* ---------- nsIAuthPrompt helpers ---------- */
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Given aRealmString, such as "http://user@example.com/foo", returns an
+   * array of:
+   *   - the formatted origin
+   *   - the realm (origin + path)
+   *   - the username, if present
+   *
+   * If aRealmString is in the format produced by NS_GetAuthKey for HTTP[S]
+   * channels, e.g. "example.com:80 (httprealm)", null is returned for all
+   * arguments to let callers know the login can't be saved because we don't
+   * know whether it's http or https.
+   */
   _getRealmInfo(aRealmString) {
     var httpRealm = /^.+ \(.+\)$/;
     if (httpRealm.test(aRealmString)) {
@@ -614,14 +606,14 @@ LoginManagerAuthPrompter.prototype = {
     let autofilled = false;
 
     try {
-      
-      
-      
+      // If the user submits a login but it fails, we need to remove the
+      // notification prompt that was displayed. Conveniently, the user will
+      // be prompted for authentication again, which brings us here.
       this._factory._dismissPendingSavePrompt(this._browser);
 
       var [origin, httpRealm] = this._getAuthTarget(aChannel, aAuthInfo);
 
-      
+      // Looks for existing logins to prefill the prompt with.
       foundLogins = await Services.logins.searchLoginsAsync({
         origin,
         httpRealm,
@@ -637,7 +629,7 @@ LoginManagerAuthPrompter.prototype = {
       );
       this.log(`${foundLogins.length} matching logins remain after deduping.`);
 
-      
+      // XXX Can't select from multiple accounts yet. (bug 227632)
       if (foundLogins.length) {
         selectedLogin = foundLogins[0];
         this._SetAuthInfo(
@@ -647,7 +639,7 @@ LoginManagerAuthPrompter.prototype = {
         );
         autofilled = true;
 
-        
+        // Allow automatic proxy login
         if (
           aAuthInfo.flags & Ci.nsIAuthInformation.AUTH_PROXY &&
           !(aAuthInfo.flags & Ci.nsIAuthInformation.PREVIOUS_FAILED) &&
@@ -664,7 +656,7 @@ LoginManagerAuthPrompter.prototype = {
         canRememberLogin = false;
       }
     } catch (e) {
-      
+      // Ignore any errors and display the prompt anyway.
       epicfail = true;
       console.error(
         "LoginManagerAuthPrompter: Epic fail in promptAuth: " + e + "\n"
@@ -675,8 +667,8 @@ LoginManagerAuthPrompter.prototype = {
     let browser = this._browser;
     let baseDomain;
 
-    
-    
+    // We might not have a browser or browser.currentURI.host could fail
+    // (e.g. on about:blank). Fall back to the subresource hostname in that case.
     try {
       let topLevelHost = browser.currentURI.host;
       baseDomain = PromptAbuseHelper.getBaseDomainOrFallback(topLevelHost);
@@ -690,10 +682,10 @@ LoginManagerAuthPrompter.prototype = {
         return false;
       }
 
-      
-      
-      
-      
+      // Set up a counter for ensuring that the basic auth prompt can not
+      // be abused for DOS-style attacks. With this counter, each eTLD+1
+      // per browser will get a limited number of times a user can
+      // cancel the prompt until we stop showing it.
       PromptAbuseHelper.incrementPromptAbuseCounter(baseDomain, browser);
 
       if (this._chromeWindow) {
@@ -715,8 +707,8 @@ LoginManagerAuthPrompter.prototype = {
 
     let [username, password] = this._GetAuthInfo(aAuthInfo);
 
-    
-    
+    // Reset the counter state if the user replied to a prompt and actually
+    // tried to login (vs. simply clicking any button to get out).
     if (ok && (username || password)) {
       PromptAbuseHelper.resetPromptAbuseCounter(baseDomain, browser);
     }
@@ -731,13 +723,13 @@ LoginManagerAuthPrompter.prototype = {
         return ok;
       }
 
-      
-      
-      
+      // XXX We can't prompt with multiple logins yet (bug 227632), so
+      // the entered login might correspond to an existing login
+      // other than the one we originally selected.
       selectedLogin = this._repickSelectedLogin(foundLogins, username);
 
-      
-      
+      // If we didn't find an existing login, or if the username
+      // changed, save as a new login.
       let newLogin = new LoginInfo(origin, null, httpRealm, username, password);
       if (!selectedLogin) {
         this.log(`New login seen for origin: ${origin}.`);
@@ -774,15 +766,15 @@ LoginManagerAuthPrompter.prototype = {
     return ok;
   },
 
-  
+  /* ---------- nsIAuthPrompt2 prompts ---------- */
 
-  
-
-
-
-
-
-
+  /**
+   * Implementation of nsIAuthPrompt2.
+   *
+   * @param {nsIChannel} aChannel
+   * @param {int}        aLevel
+   * @param {nsIAuthInformation} aAuthInfo
+   */
   promptAuth(aChannel, aLevel, aAuthInfo) {
     let closed = false;
     let result = false;
@@ -800,9 +792,9 @@ LoginManagerAuthPrompter.prototype = {
     var cancelable = null;
 
     try {
-      
-      
-      
+      // If the user submits a login but it fails, we need to remove the
+      // notification prompt that was displayed. Conveniently, the user will
+      // be prompted for authentication again, which brings us here.
       this._factory._dismissPendingSavePrompt(this._browser);
 
       cancelable = this._newAsyncPromptConsumer(aCallback, aContext);
@@ -839,24 +831,24 @@ LoginManagerAuthPrompter.prototype = {
           e +
           "\nFalling back to promptAuth\n"
       );
-      
-      
+      // Fail the prompt operation to let the consumer fall back
+      // to synchronous promptAuth method
       throw e;
     }
 
     return cancelable;
   },
 
-  
+  /* ---------- nsILoginManagerAuthPrompter prompts ---------- */
 
   init(aWindow = null, aFactory = null) {
     if (!aWindow) {
-      
+      // There may be no applicable window e.g. in a Sandbox or JSM.
       this._chromeWindow = null;
       this._browser = null;
     } else if (aWindow.isChromeWindow) {
       this._chromeWindow = aWindow;
-      
+      // needs to be set explicitly using setBrowser
       this._browser = null;
     } else {
       let { win, browser } = this._getChromeWindow(aWindow);
@@ -874,7 +866,7 @@ LoginManagerAuthPrompter.prototype = {
     return this._browser;
   },
 
-  
+  /* ---------- Internal Methods ---------- */
 
   _updateLogin(login, aNewLogin) {
     var now = Date.now();
@@ -885,20 +877,20 @@ LoginManagerAuthPrompter.prototype = {
     propBag.setProperty("origin", aNewLogin.origin);
     propBag.setProperty("password", aNewLogin.password);
     propBag.setProperty("username", aNewLogin.username);
-    
-    
-    
+    // Explicitly set the password change time here (even though it would
+    // be changed automatically), to ensure that it's exactly the same
+    // value as timeLastUsed.
     propBag.setProperty("timePasswordChanged", now);
     propBag.setProperty("timeLastUsed", now);
     propBag.setProperty("timesUsedIncrement", 1);
-    
-    
+    // Note that we don't call `recordPasswordUse` so we won't potentially record
+    // both a use and a save/update. See bug 1640096.
     Services.logins.modifyLogin(login, propBag);
   },
 
-  
-
-
+  /**
+   * Given a content DOM window, returns the chrome window and browser it's in.
+   */
   _getChromeWindow(aWindow) {
     let browser = aWindow.docShell.chromeEventHandler;
     if (!browser) {
@@ -913,11 +905,11 @@ LoginManagerAuthPrompter.prototype = {
     return { win: chromeWin, browser };
   },
 
-  
-
-
-
-
+  /**
+   * The user might enter a login that isn't the one we prefilled, but
+   * is the same as some other existing login. So, pick a login with a
+   * matching username, or return null.
+   */
   _repickSelectedLogin(foundLogins, username) {
     for (var i = 0; i < foundLogins.length; i++) {
       if (foundLogins[i].username == username) {
@@ -927,17 +919,17 @@ LoginManagerAuthPrompter.prototype = {
     return null;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Can be called as:
+   *   _getLocalizedString("key1");
+   *   _getLocalizedString("key2", ["arg1"]);
+   *   _getLocalizedString("key3", ["arg1", "arg2"]);
+   *   (etc)
+   *
+   * Returns the localized string for the specified key,
+   * formatted if required.
+   *
+   */
   _getLocalizedString(key, formatArgs) {
     if (formatArgs) {
       return this._strBundle.formatStringFromName(key, formatArgs);
@@ -945,11 +937,11 @@ LoginManagerAuthPrompter.prototype = {
     return this._strBundle.GetStringFromName(key);
   },
 
-  
-
-
-
-
+  /**
+   * Sanitizes the specified username, by stripping quotes and truncating if
+   * it's too long. This helps prevent an evil site from messing with the
+   * "save password?" prompt too much.
+   */
   _sanitizeUsername(username) {
     if (username.length > 30) {
       username = username.substring(0, 30);
@@ -958,12 +950,12 @@ LoginManagerAuthPrompter.prototype = {
     return username.replace(/['"]/g, "");
   },
 
-  
-
-
-
-
-
+  /**
+   * The aURI parameter may either be a string uri, or an nsIURI instance.
+   *
+   * Returns the origin to use in a nsILoginInfo object (for example,
+   * "http://example.com").
+   */
   _getFormattedOrigin(aURI) {
     let uri;
     if (aURI instanceof Ci.nsIURI) {
@@ -975,11 +967,11 @@ LoginManagerAuthPrompter.prototype = {
     return uri.scheme + "://" + uri.displayHostPort;
   },
 
-  
-
-
-
-
+  /**
+   * Converts a login's origin field (a URL) to a short string for
+   * prompting purposes. Eg, "http://foo.com" --> "foo.com", or
+   * "ftp://www.site.co.uk" --> "site.co.uk".
+   */
   _getShortDisplayHost(aURIString) {
     var displayHost;
 
@@ -1001,15 +993,15 @@ LoginManagerAuthPrompter.prototype = {
     return displayHost;
   },
 
-  
-
-
-
+  /**
+   * Returns the origin and realm for which authentication is being
+   * requested, in the format expected to be used with nsILoginInfo.
+   */
   _getAuthTarget(aChannel, aAuthInfo) {
     var origin, realm;
 
-    
-    
+    // If our proxy is demanding authentication, don't use the
+    // channel's actual destination.
     if (aAuthInfo.flags & Ci.nsIAuthInformation.AUTH_PROXY) {
       this.log("getAuthTarget is for proxy auth.");
       if (!(aChannel instanceof Ci.nsIProxiedChannel)) {
@@ -1021,8 +1013,8 @@ LoginManagerAuthPrompter.prototype = {
         throw new Error("proxy auth needs nsIProxyInfo");
       }
 
-      
-      
+      // Proxies don't have a scheme, but we'll use "moz-proxy://"
+      // so that it's more obvious what the login is for.
       var idnService = Cc["@mozilla.org/network/idn-service;1"].getService(
         Ci.nsIIDNService
       );
@@ -1041,9 +1033,9 @@ LoginManagerAuthPrompter.prototype = {
 
     origin = this._getFormattedOrigin(aChannel.URI);
 
-    
-    
-    
+    // If a HTTP WWW-Authenticate header specified a realm, that value
+    // will be available here. If it wasn't set or wasn't HTTP, we'll use
+    // the formatted origin instead.
     realm = aAuthInfo.realm;
     if (!realm) {
       realm = origin;
@@ -1052,13 +1044,13 @@ LoginManagerAuthPrompter.prototype = {
     return [origin, realm];
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Returns [username, password] as extracted from aAuthInfo (which
+   * holds this info after having prompted the user).
+   *
+   * If the authentication was for a Windows domain, we'll prepend the
+   * return username with the domain. (eg, "domain\user")
+   */
   _GetAuthInfo(aAuthInfo) {
     var username, password;
 
@@ -1074,15 +1066,15 @@ LoginManagerAuthPrompter.prototype = {
     return [username, password];
   },
 
-  
-
-
-
-
+  /**
+   * Given a username (possibly in DOMAIN\user form) and password, parses the
+   * domain out of the username if necessary and sets domain, username and
+   * password on the auth information object.
+   */
   _SetAuthInfo(aAuthInfo, username, password) {
     var flags = aAuthInfo.flags;
     if (flags & Ci.nsIAuthInformation.NEED_DOMAIN) {
-      
+      // Domain is separated from username by a backslash
       var idx = username.indexOf("\\");
       if (idx == -1) {
         aAuthInfo.username = username;
@@ -1108,7 +1100,7 @@ LoginManagerAuthPrompter.prototype = {
       },
     };
   },
-}; 
+}; // end of LoginManagerAuthPrompter implementation
 
 XPCOMUtils.defineLazyGetter(LoginManagerAuthPrompter.prototype, "log", () => {
   let logger = lazy.LoginHelper.createLogger("LoginManagerAuthPrompter");
@@ -1121,8 +1113,3 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "prompts.modalType.httpAuth",
   Services.prompt.MODAL_TYPE_WINDOW
 );
-
-const EXPORTED_SYMBOLS = [
-  "LoginManagerAuthPromptFactory",
-  "LoginManagerAuthPrompter",
-];

@@ -1,25 +1,21 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * Module to support exporting logins to a .csv file.
+ */
 
-
-
-"use strict";
-
-
-
-
-
-const EXPORTED_SYMBOLS = ["LoginExport"];
-
-class LoginExport {
-  
-
-
-
-
-
-
-
-
+export class LoginExport {
+  /**
+   * Builds an array of strings representing a row in a CSV.
+   *
+   * @param {nsILoginInfo} login
+   *        The object that will be converted into a csv row.
+   * @param {string[]} columns
+   *        The CSV columns, used to find the properties from the login object.
+   * @returns {string[]} Representing a row.
+   */
   static _buildCSVRow(login, columns) {
     let row = [];
     for (let columnName of columns) {
@@ -36,14 +32,14 @@ class LoginExport {
     return row;
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Given a path it saves all the logins as a CSV file.
+   *
+   * @param {string} path
+   *        The file path to save the login to.
+   * @param {nsILoginInfo[]} [logins = null]
+   *        An optional list of logins.
+   */
   static async exportAsCSV(path, logins = null) {
     if (!logins) {
       logins = await Services.logins.getAllLoginsAsync();
@@ -71,7 +67,7 @@ class LoginExport {
     for (let login of logins) {
       rows.push(LoginExport._buildCSVRow(login, columns));
     }
-    
+    // https://tools.ietf.org/html/rfc7111 suggests always using CRLF.
     const csvAsString = rows.map(e => e.join(",")).join("\r\n");
     await IOUtils.writeUTF8(path, csvAsString, {
       tmpPath: path + ".tmp",

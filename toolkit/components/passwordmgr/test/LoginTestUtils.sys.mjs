@@ -1,13 +1,9 @@
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-
-
-
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["LoginTestUtils"];
+/**
+ * Shared functions generally available for testing login components.
+ */
 
 const lazy = {};
 
@@ -15,22 +11,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
 });
 
-let { Assert: AssertCls } = ChromeUtils.importESModule(
-  "resource://testing-common/Assert.sys.mjs"
-);
+import { Assert as AssertCls } from "resource://testing-common/Assert.sys.mjs";
+
 let Assert = AssertCls;
 
-const { TestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TestUtils.sys.mjs"
-);
-
-const { setTimeout } = ChromeUtils.importESModule(
-  "resource://gre/modules/Timer.sys.mjs"
-);
-
-const { FileTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/FileTestUtils.sys.mjs"
-);
+import { TestUtils } from "resource://testing-common/TestUtils.sys.mjs";
+import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
+import { FileTestUtils } from "resource://testing-common/FileTestUtils.sys.mjs";
 
 const LoginInfo = Components.Constructor(
   "@mozilla.org/login-manager/loginInfo;1",
@@ -38,23 +25,23 @@ const LoginInfo = Components.Constructor(
   "init"
 );
 
-const LoginTestUtils = {
+export const LoginTestUtils = {
   setAssertReporter(reporterFunc) {
     Assert = new AssertCls(Cu.waiveXrays(reporterFunc));
   },
 
-  
-
-
-
+  /**
+   * Forces the storage module to save all data, and the Login Manager service
+   * to replace the storage module with a newly initialized instance.
+   */
   async reloadData() {
     Services.obs.notifyObservers(null, "passwordmgr-storage-replace");
     await TestUtils.topicObserved("passwordmgr-storage-replace-complete");
   },
 
-  
-
-
+  /**
+   * Erases all the data stored by the Login Manager service.
+   */
   clearData() {
     Services.logins.removeAllUserFacingLogins();
     for (let origin of Services.logins.getAllDisabledHosts()) {
@@ -62,9 +49,9 @@ const LoginTestUtils = {
     }
   },
 
-  
-
-
+  /**
+   * Add a new login to the store
+   */
   async addLogin({
     username,
     password,
@@ -96,17 +83,17 @@ const LoginTestUtils = {
   },
 
   resetGeneratedPasswordsCache() {
-    let { LoginManagerParent } = ChromeUtils.import(
-      "resource://gre/modules/LoginManagerParent.jsm"
+    let { LoginManagerParent } = ChromeUtils.importESModule(
+      "resource://gre/modules/LoginManagerParent.sys.mjs"
     );
     LoginManagerParent.getGeneratedPasswordsByPrincipalOrigin().clear();
   },
 
-  
-
-
-
-
+  /**
+   * Checks that the currently stored list of nsILoginInfo matches the provided
+   * array.  If no `checkFn` is provided, the comparison uses the "equals"
+   * method of nsILoginInfo, that does not include nsILoginMetaInfo properties in the test.
+   */
   checkLogins(expectedLogins, msg = "checkLogins", checkFn = undefined) {
     this.assertLoginListsEqual(
       Services.logins.getAllLogins(),
@@ -116,12 +103,12 @@ const LoginTestUtils = {
     );
   },
 
-  
-
-
-
-
-
+  /**
+   * Checks that the two provided arrays of nsILoginInfo have the same length,
+   * and every login in "expected" is also found in "actual".  If no `checkFn`
+   * is provided, the comparison uses the "equals" method of nsILoginInfo, that
+   * does not include nsILoginMetaInfo properties in the test.
+   */
   assertLoginListsEqual(
     actual,
     expected,
@@ -139,39 +126,39 @@ const LoginTestUtils = {
     );
   },
 
-  
-
-
-
+  /**
+   * Checks that the two provided arrays of strings contain the same values,
+   * maybe in a different order, case-sensitively.
+   */
   assertDisabledHostsEqual(actual, expected) {
     Assert.deepEqual(actual.sort(), expected.sort());
   },
 
-  
-
-
-
+  /**
+   * Checks whether the given time, expressed as the number of milliseconds
+   * since January 1, 1970, 00:00:00 UTC, falls within 30 seconds of now.
+   */
   assertTimeIsAboutNow(timeMs) {
     Assert.ok(Math.abs(timeMs - Date.now()) < 30000);
   },
 };
 
-
-
-
-
-
-
-
-
+/**
+ * This object contains functions that return new instances of nsILoginInfo for
+ * every call.  The returned instances can be compared using their "equals" or
+ * "matches" methods, or modified for the needs of the specific test being run.
+ *
+ * Any modification to the test data requires updating the tests accordingly, in
+ * particular the search tests.
+ */
 LoginTestUtils.testData = {
-  
-
-
-
-
-
-
+  /**
+   * Returns a new nsILoginInfo for use with form submits.
+   *
+   * @param modifications
+   *        Each property of this object replaces the property of the same name
+   *        in the returned nsILoginInfo or nsILoginMetaInfo.
+   */
   formLogin(modifications) {
     let loginInfo = new LoginInfo(
       "http://www3.example.com",
@@ -194,13 +181,13 @@ LoginTestUtils.testData = {
     return loginInfo;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Returns a new nsILoginInfo for use with HTTP authentication.
+   *
+   * @param modifications
+   *        Each property of this object replaces the property of the same name
+   *        in the returned nsILoginInfo or nsILoginMetaInfo.
+   */
   authLogin(modifications) {
     let loginInfo = new LoginInfo(
       "http://www.example.org",
@@ -223,15 +210,15 @@ LoginTestUtils.testData = {
     return loginInfo;
   },
 
-  
-
-
-
+  /**
+   * Returns an array of typical nsILoginInfo that could be stored in the
+   * database.
+   */
   loginList() {
     return [
-      
+      // --- Examples of form logins (subdomains of example.com) ---
 
-      
+      // Simple form login with named fields for username and password.
       new LoginInfo(
         "http://www.example.com",
         "http://www.example.com",
@@ -242,7 +229,7 @@ LoginTestUtils.testData = {
         "form_field_password"
       ),
 
-      
+      // Different schemes are treated as completely different sites.
       new LoginInfo(
         "https://www.example.com",
         "https://www.example.com",
@@ -253,7 +240,7 @@ LoginTestUtils.testData = {
         "form_field_password"
       ),
 
-      
+      // Subdomains can be treated as completely different sites depending on the UI invoked.
       new LoginInfo(
         "https://example.com",
         "https://example.com",
@@ -264,8 +251,8 @@ LoginTestUtils.testData = {
         "form_field_password"
       ),
 
-      
-      
+      // Forms found on the same origin, but with different origins in the
+      // "action" attribute, are handled independently.
       new LoginInfo(
         "http://www3.example.com",
         "http://www.example.com",
@@ -294,9 +281,9 @@ LoginTestUtils.testData = {
         "form_field_password"
       ),
 
-      
-      
-      
+      // It is not possible to store multiple passwords for the same username,
+      // however multiple passwords can be stored when the usernames differ.
+      // An empty username is a valid case and different from the others.
       new LoginInfo(
         "http://www4.example.com",
         "http://www4.example.com",
@@ -325,7 +312,7 @@ LoginTestUtils.testData = {
         "form_field_password"
       ),
 
-      
+      // Username and passwords fields in forms may have no "name" attribute.
       new LoginInfo(
         "http://www5.example.com",
         "http://www5.example.com",
@@ -336,7 +323,7 @@ LoginTestUtils.testData = {
         ""
       ),
 
-      
+      // Forms with PIN-type authentication will typically have no username.
       new LoginInfo(
         "http://www6.example.com",
         "http://www6.example.com",
@@ -347,7 +334,7 @@ LoginTestUtils.testData = {
         "form_field_password"
       ),
 
-      
+      // Logins can be saved on non-default ports
       new LoginInfo(
         "https://www7.example.com:8080",
         "https://www7.example.com:8080",
@@ -364,9 +351,9 @@ LoginTestUtils.testData = {
         "8080_pass2"
       ),
 
-      
+      // --- Examples of authentication logins (subdomains of example.org) ---
 
-      
+      // Simple HTTP authentication login.
       new LoginInfo(
         "http://www.example.org",
         null,
@@ -375,7 +362,7 @@ LoginTestUtils.testData = {
         "the password"
       ),
 
-      
+      // Simple FTP authentication login.
       new LoginInfo(
         "ftp://ftp.example.org",
         null,
@@ -384,7 +371,7 @@ LoginTestUtils.testData = {
         "the password"
       ),
 
-      
+      // Multiple HTTP authentication logins can be stored for different realms.
       new LoginInfo(
         "http://www2.example.org",
         null,
@@ -400,7 +387,7 @@ LoginTestUtils.testData = {
         "the password other"
       ),
 
-      
+      // --- Both form and authentication logins (example.net) ---
 
       new LoginInfo(
         "http://example.net",
@@ -451,7 +438,7 @@ LoginTestUtils.testData = {
         "the password"
       ),
 
-      
+      // --- Examples of logins added by extensions (chrome scheme) ---
 
       new LoginInfo(
         "chrome://example_extension",
@@ -470,7 +457,7 @@ LoginTestUtils.testData = {
         "the password two"
       ),
 
-      
+      // -- file:// URIs throw accessing nsIURI.host
 
       new LoginInfo(
         "file://",
@@ -480,8 +467,8 @@ LoginTestUtils.testData = {
         "file: password"
       ),
 
-      
-      
+      // -- javascript: URIs throw accessing nsIURI.host.
+      // They should only be used for the formActionOrigin.
       new LoginInfo(
         "https://js.example.com",
         "javascript:",
@@ -495,8 +482,8 @@ LoginTestUtils.testData = {
 
 LoginTestUtils.recipes = {
   getRecipeParent() {
-    let { LoginManagerParent } = ChromeUtils.import(
-      "resource://gre/modules/LoginManagerParent.jsm"
+    let { LoginManagerParent } = ChromeUtils.importESModule(
+      "resource://gre/modules/LoginManagerParent.sys.mjs"
     );
     if (!LoginManagerParent.recipeParentPromise) {
       return null;
@@ -551,9 +538,9 @@ LoginTestUtils.primaryPassword = {
   },
 };
 
-
-
-
+/**
+ * Utilities related to interacting with login fields in content.
+ */
 LoginTestUtils.loginField = {
   checkPasswordMasked(field, expected, msg) {
     let { editor } = field;
@@ -588,8 +575,8 @@ LoginTestUtils.telemetry = {
     category = "pwmgr",
     method = undefined
   ) {
-    
-    
+    // The test is already unreliable (see bug 1627419 and 1605494) and relied on
+    // the implicit 100ms initial timer of waitForCondition that bug 1596165 removed.
     await new Promise(resolve => setTimeout(resolve, 100));
     let events = await TestUtils.waitForCondition(() => {
       let events = Services.telemetry.snapshotEvents(
@@ -613,15 +600,15 @@ LoginTestUtils.telemetry = {
 };
 
 LoginTestUtils.file = {
-  
-
-
-
-
-
-
-
-
+  /**
+   * Given an array of strings it creates a temporary CSV file that has them as content.
+   *
+   * @param {string[]} csvLines
+   *        The lines that make up the CSV file.
+   * @param {string} extension
+   *        Optional parameter. Either 'csv' or 'tsv'. Default is 'csv'.
+   * @returns {window.File} The File to the CSV file that was created.
+   */
   async setupCsvFileWithLines(csvLines, extension = "csv") {
     let tmpFile = FileTestUtils.getTempFile(`firefox_logins.${extension}`);
     await IOUtils.writeUTF8(tmpFile.path, csvLines.join("\r\n"));

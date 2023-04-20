@@ -1,40 +1,32 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["LoginManagerContextMenu"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "LoginHelper",
-  "resource://gre/modules/LoginHelper.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
+});
 
-
-
-
-const LoginManagerContextMenu = {
-  
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Password manager object for the browser contextual menu.
+ */
+export const LoginManagerContextMenu = {
+  /**
+   * Look for login items and add them to the contextual menu.
+   *
+   * @param {Object} inputElementIdentifier
+   *        An identifier generated for the input element via ContentDOMReference.
+   * @param {xul:browser} browser
+   *        The browser for the document the context menu was open on.
+   * @param {string} formOrigin
+   *        The origin of the document that the context menu was activated from.
+   *        This isn't the same as the browser's top-level document origin
+   *        when subframes are involved.
+   * @returns {DocumentFragment} a document fragment with all the login items.
+   */
   addLoginsToMenu(inputElementIdentifier, browser, formOrigin) {
     let foundLogins = this._findLogins(formOrigin);
 
@@ -48,7 +40,7 @@ const LoginManagerContextMenu = {
       let item = fragment.ownerDocument.createXULElement("menuitem");
 
       let username = login.username;
-      
+      // If login is empty or duplicated we want to append a modification date to it.
       if (!username || duplicateUsernames.has(username)) {
         if (!username) {
           username = this._getLocalizedString("noUsername");
@@ -62,7 +54,7 @@ const LoginManagerContextMenu = {
       item.setAttribute("label", username);
       item.setAttribute("class", "context-login-item");
 
-      
+      // login is bound so we can keep the reference to each object.
       item.addEventListener(
         "command",
         function(login, event) {
@@ -81,12 +73,12 @@ const LoginManagerContextMenu = {
     return fragment;
   },
 
-  
-
-
-
-
-
+  /**
+   * Undoes the work of addLoginsToMenu for the same menu.
+   *
+   * @param {Document}
+   *        The context menu owner document.
+   */
   clearLoginsFromMenu(document) {
     let loginItems = document.getElementsByClassName("context-login-item");
     while (loginItems.item(0)) {
@@ -94,9 +86,9 @@ const LoginManagerContextMenu = {
     }
   },
 
-  
-
-
+  /**
+   * Show the password autocomplete UI with the generation option forced to appear.
+   */
   async useGeneratedPassword(inputElementIdentifier, documentURI, browser) {
     let browsingContextId = inputElementIdentifier.browsingContextId;
     let browsingContext = BrowsingContext.get(browsingContextId);
@@ -107,16 +99,16 @@ const LoginManagerContextMenu = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Find logins for the specified origin..
+   *
+   * @param {string} formOrigin
+   *        Origin of the logins we want to find that has be sanitized by `getLoginOrigin`.
+   *        This isn't the same as the browser's top-level document URI
+   *        when subframes are involved.
+   *
+   * @returns {nsILoginInfo[]} a login list
+   */
   _findLogins(formOrigin) {
     let searchParams = {
       origin: formOrigin,
@@ -131,12 +123,12 @@ const LoginManagerContextMenu = {
       formOrigin
     );
 
-    
+    // Sort logins in alphabetical order and by date.
     logins.sort((loginA, loginB) => {
-      
+      // Sort alphabetically
       let result = loginA.username.localeCompare(loginB.username);
       if (result) {
-        
+        // Forces empty logins to be at the end
         if (!loginA.username) {
           return 1;
         }
@@ -146,7 +138,7 @@ const LoginManagerContextMenu = {
         return result;
       }
 
-      
+      // Same username logins are sorted by last change date
       let metaA = loginA.QueryInterface(Ci.nsILoginMetaInfo);
       let metaB = loginB.QueryInterface(Ci.nsILoginMetaInfo);
       return metaB.timePasswordChanged - metaA.timePasswordChanged;
@@ -155,14 +147,14 @@ const LoginManagerContextMenu = {
     return logins;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Find duplicate usernames in a login list.
+   *
+   * @param {nsILoginInfo[]} loginList
+   *        A list of logins we want to look for duplicate usernames.
+   *
+   * @returns {Set} a set with the duplicate usernames.
+   */
   _findDuplicates(loginList) {
     let seen = new Set();
     let duplicates = new Set();
@@ -175,19 +167,19 @@ const LoginManagerContextMenu = {
     return duplicates;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * @param {nsILoginInfo} login
+   *        The login we want to fill the form with.
+   * @param {Object} inputElementIdentifier
+   *        An identifier generated for the input element via ContentDOMReference.
+   * @param {xul:browser} browser
+   *        The target tab browser.
+   * @param {string} formOrigin
+   *        Origin of the document we're filling after sanitization via
+   *        `getLoginOrigin`.
+   *        This isn't the same as the browser's top-level
+   *        origin when subframes are involved.
+   */
   _fillTargetField(login, inputElementIdentifier, browser, formOrigin) {
     let browsingContextId = inputElementIdentifier.browsingContextId;
     let browsingContext = BrowsingContext.get(browsingContextId);
@@ -210,15 +202,15 @@ const LoginManagerContextMenu = {
       .catch(console.error);
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * @param {string} key
+   *        The localized string key
+   * @param {string[]} formatArgs
+   *        An array of formatting argument string
+   *
+   * @returns {string} the localized string for the specified key,
+   *          formatted with arguments if required.
+   */
   _getLocalizedString(key, formatArgs) {
     if (formatArgs) {
       return this._stringBundle.formatStringFromName(key, formatArgs);

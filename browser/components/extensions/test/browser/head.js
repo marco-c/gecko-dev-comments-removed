@@ -100,8 +100,8 @@ Services.prefs
 {
   
   
-  const { LoginManagerParent } = ChromeUtils.import(
-    "resource://gre/modules/LoginManagerParent.jsm"
+  const { LoginManagerParent } = ChromeUtils.importESModule(
+    "resource://gre/modules/LoginManagerParent.sys.mjs"
   );
   void LoginManagerParent.recipeParentPromise;
 }

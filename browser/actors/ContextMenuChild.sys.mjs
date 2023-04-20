@@ -4,8 +4,6 @@
 
 
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -13,12 +11,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
   InlineSpellCheckerContent:
     "resource://gre/modules/InlineSpellCheckerContent.sys.mjs",
+  LoginManagerChild: "resource://gre/modules/LoginManagerChild.sys.mjs",
   SelectionUtils: "resource://gre/modules/SelectionUtils.sys.mjs",
   SpellCheckHelper: "resource://gre/modules/InlineSpellChecker.sys.mjs",
-});
-
-XPCOMUtils.defineLazyModuleGetters(lazy, {
-  LoginManagerChild: "resource://gre/modules/LoginManagerChild.jsm",
 });
 
 let contextMenus = new WeakMap();

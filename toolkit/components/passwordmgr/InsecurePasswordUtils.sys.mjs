@@ -1,44 +1,38 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-const EXPORTED_SYMBOLS = ["InsecurePasswordUtils"];
+/* ownerGlobal doesn't exist in content privileged windows. */
+/* eslint-disable mozilla/use-ownerGlobal */
 
 const STRINGS_URI = "chrome://global/locale/security/security.properties";
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "LoginHelper",
-  "resource://gre/modules/LoginHelper.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
+});
 
 XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   return lazy.LoginHelper.createLogger("InsecurePasswordUtils");
 });
 
-
-
-
-
-const InsecurePasswordUtils = {
+/*
+ * A module that provides utility functions for form security.
+ *
+ */
+export const InsecurePasswordUtils = {
   _formRootsWarned: new WeakMap(),
 
-  
-
-
-
-
-
-
+  /**
+   * Gets the ID of the inner window of this DOM window.
+   *
+   * @param nsIDOMWindow window
+   * @return integer
+   *         Inner ID for the given window.
+   */
   _getInnerWindowId(window) {
     return window.windowGlobalChild.innerWindowId;
   },
@@ -46,7 +40,7 @@ const InsecurePasswordUtils = {
   _sendWebConsoleMessage(messageTag, domDoc) {
     let windowId = this._getInnerWindowId(domDoc.defaultView);
     let category = "Insecure Password Field";
-    
+    // All web console messages are warnings for now.
     let flag = Ci.nsIScriptError.warningFlag;
     let bundle = Services.strings.createBundle(STRINGS_URI);
     let message = bundle.GetStringFromName(messageTag);
@@ -67,16 +61,16 @@ const InsecurePasswordUtils = {
     Services.console.logMessage(consoleMsg);
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Gets the security state of the passed form.
+   *
+   * @param {FormLike} aForm A form-like object. @See {FormLikeFactory}
+   *
+   * @returns {Object} An object with the following boolean values:
+   *  isFormSubmitHTTP: if the submit action is an http:// URL
+   *  isFormSubmitSecure: if the submit action URL is secure,
+   *    either because it is HTTPS or because its origin is considered trustworthy
+   */
   _checkFormSecurity(aForm) {
     let isFormSubmitHTTP = false,
       isFormSubmitSecure = false;
@@ -93,7 +87,7 @@ const InsecurePasswordUtils = {
         isFormSubmitHTTP = true;
         if (
           principal.isOriginPotentiallyTrustworthy ||
-          
+          // Ignore sites with local IP addresses pointing to local forms.
           (this._isPrincipalForLocalIPAddress(
             aForm.rootElement.nodePrincipal
           ) &&
@@ -120,21 +114,21 @@ const InsecurePasswordUtils = {
     return res;
   },
 
-  
-
-
-
-
-
-
-
+  /**s
+   * Checks if there are insecure password fields present on the form's document
+   * i.e. passwords inside forms with http action, inside iframes with http src,
+   * or on insecure web pages.
+   *
+   * @param {FormLike} aForm A form-like object. @See {LoginFormFactory}
+   * @return {boolean} whether the form is secure
+   */
   isFormSecure(aForm) {
     let isSafePage = aForm.ownerDocument.defaultView.isSecureContext;
 
-    
-    
-    
-    
+    // Ignore insecure documents with URLs that are local IP addresses.
+    // This is done because the vast majority of routers and other devices
+    // on the network do not use HTTPS, making this warning show up almost
+    // constantly on local connections, which annoys users and hurts our cause.
     if (!isSafePage && this._ignoreLocalIPAddress) {
       let isLocalIP = this._isPrincipalForLocalIPAddress(
         aForm.rootElement.nodePrincipal
@@ -144,8 +138,8 @@ const InsecurePasswordUtils = {
         aForm.ownerDocument.defaultView.windowGlobalChild.windowContext
           .topWindowContext.isLocalIP;
 
-      
-      
+      // Only consider the page safe if the top window has a local IP address
+      // and, if this is an iframe, the iframe also has a local IP address.
       if (isLocalIP && topIsLocalIP) {
         isSafePage = true;
       }
@@ -158,11 +152,11 @@ const InsecurePasswordUtils = {
     return isSafePage && (isFormSubmitSecure || !isFormSubmitHTTP);
   },
 
-  
-
-
-
-
+  /**
+   * Report insecure password fields in a form to the web console to warn developers.
+   *
+   * @param {FormLike} aForm A form-like object. @See {FormLikeFactory}
+   */
   reportInsecurePasswords(aForm) {
     if (
       this._formRootsWarned.has(aForm.rootElement) ||
@@ -190,7 +184,7 @@ const InsecurePasswordUtils = {
       this._formRootsWarned.set(aForm.rootElement, true);
     }
 
-    
+    // The safety of a password field determined by the form action and the page protocol
     let passwordSafety;
     if (isSafePage) {
       if (isFormSubmitSecure) {
