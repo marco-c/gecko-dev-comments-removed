@@ -1188,8 +1188,7 @@ class AsyncPanZoomController {
 
 
 
-  CSSPoint GetCurrentAsyncScrollOffsetInCssPixels(
-      AsyncTransformConsumer aMode) const;
+  CSSRect GetCurrentAsyncVisualViewport(AsyncTransformConsumer aMode) const;
 
   
 
