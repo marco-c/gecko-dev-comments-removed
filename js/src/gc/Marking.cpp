@@ -2013,6 +2013,13 @@ void GCMarker::leaveWeakMarkingMode() {
   
 }
 
+void GCMarker::abortLinearWeakMarking() {
+  if (state == WeakMarking) {
+    leaveWeakMarkingMode();
+  }
+  state = IterativeMarking;
+}
+
 MOZ_NEVER_INLINE void GCMarker::delayMarkingChildrenOnOOM(Cell* cell) {
   delayMarkingChildren(cell);
 }

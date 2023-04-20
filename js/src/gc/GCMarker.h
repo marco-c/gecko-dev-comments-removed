@@ -31,6 +31,7 @@ namespace gc {
 
 enum IncrementalProgress { NotFinished = 0, Finished };
 
+class AutoSetMarkColor;
 struct Cell;
 
 struct EphemeronEdgeTableHashPolicy {
@@ -273,26 +274,85 @@ class GCMarker {
 #endif
 
   bool isActive() const { return state != NotActive; }
+  bool isRegularMarking() const { return state == RegularMarking; }
+  bool isWeakMarking() const { return state == WeakMarking; }
+
+  gc::MarkColor markColor() const { return markColor_; }
+
+  bool isDrained();
 
   void start();
   void stop();
   void reset();
 
+  enum ShouldReportMarkTime : bool {
+    ReportMarkTime = true,
+    DontReportMarkTime = false
+  };
+  [[nodiscard]] bool markUntilBudgetExhausted(
+      SliceBudget& budget, ShouldReportMarkTime reportTime = ReportMarkTime);
+
+  void setRootMarkingMode(bool newState);
+
+  bool enterWeakMarkingMode();
+  void leaveWeakMarkingMode();
+
+  
+  
+  
+  void abortLinearWeakMarking();
+
+  
+  void severWeakDelegate(JSObject* key, JSObject* delegate);
+
+  
+  void restoreWeakDelegate(JSObject* key, JSObject* delegate);
+
+#ifdef DEBUG
+  
+  
+  void setCheckAtomMarking(bool check);
+
+  bool shouldCheckCompartments() { return strictCompartmentChecking; }
+#endif
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+
+  static GCMarker* fromTracer(JSTracer* trc) {
+    MOZ_ASSERT(trc->isMarkingTracer());
+    auto* marker = reinterpret_cast<GCMarker*>(uintptr_t(trc) -
+                                               offsetof(GCMarker, tracer_));
+    MOZ_ASSERT(marker->tracer() == trc);
+    return marker;
+  }
+
+  
+
   
   template <uint32_t = gc::MarkingOptions::None, typename T>
   void markAndTraverse(T* thing);
 
-  
-  
-  
   template <typename T>
-  void traverse(T* thing);
+  void markImplicitEdges(T* oldThing);
 
+ private:
   
-  template <typename S, typename T>
-  void markAndTraverseEdge(S source, T* target);
-  template <typename S, typename T>
-  void markAndTraverseEdge(S source, const T& target);
+
+
+
+
+
+
+  void setMarkColor(gc::MarkColor newColor);
+  friend class js::gc::AutoSetMarkColor;
+
+  bool isMarkStackEmpty() { return stack.isEmpty(); }
+
+  bool hasBlackEntries() const { return stack.position() > grayPosition; }
+  bool hasGrayEntries() const { return grayPosition > 0 && !stack.isEmpty(); }
+
+  void processMarkStackTop(SliceBudget& budget);
+  friend class gc::GCRuntime;
 
   
   
@@ -305,100 +365,25 @@ class GCMarker {
     markAndTraverseEdge(source, target);
   }
 
+  
+  template <typename S, typename T>
+  void markAndTraverseEdge(S source, T* target);
+  template <typename S, typename T>
+  void markAndTraverseEdge(S source, const T& target);
+
   template <typename S, typename T>
   void checkTraversedEdge(S source, T* target);
 
-#ifdef DEBUG
   
   
-  void setCheckAtomMarking(bool check);
-#endif
-
-  
-
-
-
-
-
-
-  void setMarkColor(gc::MarkColor newColor);
-  gc::MarkColor markColor() const { return markColor_; }
-
-  void setRootMarkingMode(bool newState);
-
-  bool enterWeakMarkingMode();
-  void leaveWeakMarkingMode();
-
-  
-  
-  
-  void abortLinearWeakMarking() {
-    if (state == WeakMarking) {
-      leaveWeakMarkingMode();
-    }
-    state = IterativeMarking;
-  }
-
-  void delayMarkingChildrenOnOOM(gc::Cell* cell);
-  void delayMarkingChildren(gc::Cell* cell);
-
-  
-  void severWeakDelegate(JSObject* key, JSObject* delegate);
-
-  
-  void restoreWeakDelegate(JSObject* key, JSObject* delegate);
-
-  bool isDrained();
-
-  enum ShouldReportMarkTime : bool {
-    ReportMarkTime = true,
-    DontReportMarkTime = false
-  };
-  [[nodiscard]] bool markUntilBudgetExhausted(
-      SliceBudget& budget, ShouldReportMarkTime reportTime = ReportMarkTime);
-
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
-
-#ifdef DEBUG
-  bool shouldCheckCompartments() { return strictCompartmentChecking; }
-#endif
-
-  
-  
-  
-  void markEphemeronEdges(gc::EphemeronEdgeVector& edges,
-                          gc::CellColor srcColor);
-
-  static GCMarker* fromTracer(JSTracer* trc) {
-    MOZ_ASSERT(trc->isMarkingTracer());
-    auto* marker = reinterpret_cast<GCMarker*>(uintptr_t(trc) -
-                                               offsetof(GCMarker, tracer_));
-    MOZ_ASSERT(marker->tracer() == trc);
-    return marker;
-  }
-
   template <typename T>
-  void markImplicitEdges(T* oldThing);
-
-  bool isRegularMarking() const { return state == RegularMarking; }
-  bool isWeakMarking() const { return state == WeakMarking; }
-
-  bool isMarkStackEmpty() { return stack.isEmpty(); }
-
-  bool hasBlackEntries() const { return stack.position() > grayPosition; }
-
-  bool hasGrayEntries() const { return grayPosition > 0 && !stack.isEmpty(); }
-
- private:
-#ifdef DEBUG
-  void checkZone(void* p);
-#else
-  void checkZone(void* p) {}
-#endif
+  [[nodiscard]] bool mark(T* thing);
 
   
   
-  inline void repush(JSObject* obj);
+  
+  template <typename T>
+  void traverse(T* thing);
 
   
   template <typename T>
@@ -413,8 +398,6 @@ class GCMarker {
   template <typename T>
   void pushThing(T* thing);
 
-  template <typename T>
-  void markImplicitEdgesHelper(T oldThing);
   void eagerlyMarkChildren(JSLinearString* str);
   void eagerlyMarkChildren(JSRope* rope);
   void eagerlyMarkChildren(JSString* str);
@@ -422,23 +405,34 @@ class GCMarker {
   void eagerlyMarkChildren(PropMap* map);
   void eagerlyMarkChildren(Scope* scope);
 
-  
-  template <typename T>
-  void dispatchToTraceChildren(T* thing);
-
-  
-  
-  template <typename T>
-  [[nodiscard]] bool mark(T* thing);
-
   template <typename T>
   inline void pushTaggedPtr(T* ptr);
 
   inline void pushValueRange(JSObject* obj, SlotsOrElementsKind kind,
                              size_t start, size_t end);
 
-  void processMarkStackTop(SliceBudget& budget);
-  friend class gc::GCRuntime;
+  
+  
+  inline void repush(JSObject* obj);
+
+  template <typename T>
+  void markImplicitEdgesHelper(T oldThing);
+
+  
+  
+  
+  void markEphemeronEdges(gc::EphemeronEdgeVector& edges,
+                          gc::CellColor srcColor);
+  friend class JS::Zone;
+
+#ifdef DEBUG
+  void checkZone(void* p);
+#else
+  void checkZone(void* p) {}
+#endif
+
+  void delayMarkingChildrenOnOOM(gc::Cell* cell);
+  void delayMarkingChildren(gc::Cell* cell);
 
   void markDelayedChildren(gc::Arena* arena);
   void markAllDelayedChildren(ShouldReportMarkTime reportTime);
