@@ -6,18 +6,14 @@
 
 
 #include "gc/Barrier.h"
+#include "js/GCAPI.h"
 #include "jsapi-tests/tests.h"
 
 using namespace JS;
 using namespace js;
 
-struct AutoIgnoreRootingHazards {
-  
-  static volatile int depth;
-  AutoIgnoreRootingHazards() { depth++; }
-  ~AutoIgnoreRootingHazards() { depth--; }
-} JS_HAZ_GC_SUPPRESSED;
-volatile int AutoIgnoreRootingHazards::depth = 0;
+
+#define BAD_OBJECT_PTR reinterpret_cast<JSObject*>(1)
 
 BEGIN_TEST(testGCStoreBufferRemoval) {
   
@@ -29,32 +25,28 @@ BEGIN_TEST(testGCStoreBufferRemoval) {
   JS::RootedObject tenuredObject(cx, obj);
 
   
-  AutoIgnoreRootingHazards ignore;
-
-  
   {
-    JSObject* badObject = reinterpret_cast<JSObject*>(1);
     JSObject* punnedPtr = nullptr;
     HeapPtr<JSObject*>* relocPtr =
         reinterpret_cast<HeapPtr<JSObject*>*>(&punnedPtr);
     new (relocPtr) HeapPtr<JSObject*>;
     *relocPtr = NurseryObject();
     relocPtr->~HeapPtr<JSObject*>();
-    punnedPtr = badObject;
+    punnedPtr = BAD_OBJECT_PTR;
     JS_GC(cx);
 
     new (relocPtr) HeapPtr<JSObject*>;
     *relocPtr = NurseryObject();
     *relocPtr = tenuredObject;
     relocPtr->~HeapPtr<JSObject*>();
-    punnedPtr = badObject;
+    punnedPtr = BAD_OBJECT_PTR;
     JS_GC(cx);
 
     new (relocPtr) HeapPtr<JSObject*>;
     *relocPtr = NurseryObject();
     *relocPtr = nullptr;
     relocPtr->~HeapPtr<JSObject*>();
-    punnedPtr = badObject;
+    punnedPtr = BAD_OBJECT_PTR;
     JS_GC(cx);
   }
 
@@ -86,27 +78,26 @@ BEGIN_TEST(testGCStoreBufferRemoval) {
 
   
   {
-    JSObject* badObject = reinterpret_cast<JSObject*>(1);
     JSObject* punnedPtr = nullptr;
     Heap<JSObject*>* heapPtr = reinterpret_cast<Heap<JSObject*>*>(&punnedPtr);
     new (heapPtr) Heap<JSObject*>;
     *heapPtr = NurseryObject();
     heapPtr->~Heap<JSObject*>();
-    punnedPtr = badObject;
+    punnedPtr = BAD_OBJECT_PTR;
     JS_GC(cx);
 
     new (heapPtr) Heap<JSObject*>;
     *heapPtr = NurseryObject();
     *heapPtr = tenuredObject;
     heapPtr->~Heap<JSObject*>();
-    punnedPtr = badObject;
+    punnedPtr = BAD_OBJECT_PTR;
     JS_GC(cx);
 
     new (heapPtr) Heap<JSObject*>;
     *heapPtr = NurseryObject();
     *heapPtr = nullptr;
     heapPtr->~Heap<JSObject*>();
-    punnedPtr = badObject;
+    punnedPtr = BAD_OBJECT_PTR;
     JS_GC(cx);
   }
 
@@ -115,3 +106,5 @@ BEGIN_TEST(testGCStoreBufferRemoval) {
 
 JSObject* NurseryObject() { return JS_NewPlainObject(cx); }
 END_TEST(testGCStoreBufferRemoval)
+
+#undef BAD_OBJECT_PTR
