@@ -68,6 +68,10 @@ pub use crate::histogram::HistogramType;
 pub use recorded_experiment::RecordedExperiment;
 
 
+
+
+
+
 #[derive(Debug, Serialize)]
 pub struct DistributionData {
     
@@ -79,6 +83,7 @@ pub struct DistributionData {
     pub sum: i64,
 
     
+    #[serde(skip)]
     pub count: i64,
 }
 
