@@ -427,8 +427,9 @@ nsresult TimerThread::Shutdown() {
     
     
     
-    for (const UniquePtr<Entry>& entry : mTimers) {
-      timers.AppendElement(entry->Take());
+    timers.SetCapacity(mTimers.Length());
+    for (Entry& entry : mTimers) {
+      timers.AppendElement(entry.Take());
     }
 
     mTimers.Clear();
@@ -510,7 +511,7 @@ TimerThread::Run() {
       RemoveLeadingCanceledTimersInternal();
 
       if (!mTimers.IsEmpty()) {
-        if (now >= mTimers[0]->Value()->mTimeout || forceRunThisTimer) {
+        if (now >= mTimers[0].Value()->mTimeout || forceRunThisTimer) {
         next:
           
           
@@ -518,7 +519,7 @@ TimerThread::Run() {
           
           
 
-          RefPtr<nsTimerImpl> timerRef(mTimers[0]->Take());
+          RefPtr<nsTimerImpl> timerRef(mTimers[0].Take());
           RemoveFirstTimerInternal();
 
           MOZ_LOG(GetTimerLog(), LogLevel::Debug,
@@ -546,7 +547,7 @@ TimerThread::Run() {
       RemoveLeadingCanceledTimersInternal();
 
       if (!mTimers.IsEmpty()) {
-        TimeStamp timeout = mTimers[0]->Value()->mTimeout;
+        TimeStamp timeout = mTimers[0].Value()->mTimeout;
 
         
         
@@ -630,7 +631,7 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
   
   
   
-  if (mWaiting && (mTimers[0]->Value() == aTimer || aTimer->mDelay.IsZero())) {
+  if (mWaiting && (mTimers[0].Value() == aTimer || aTimer->mDelay.IsZero())) {
     mNotified = true;
     mMonitor.Notify();
   }
@@ -732,14 +733,14 @@ TimeStamp TimerThread::FindNextFireTimeForCurrentThread(TimeStamp aDefault,
   TimeStamp firstTimeStamp;
   Entry* initialFirstEntry = nullptr;
   if (!mTimers.IsEmpty()) {
-    initialFirstEntry = mTimers[0].get();
-    firstTimeStamp = mTimers[0]->Timeout();
+    initialFirstEntry = &mTimers[0];
+    firstTimeStamp = mTimers[0].Timeout();
   }
 #endif
 
   auto end = mTimers.end();
   while (end != mTimers.begin()) {
-    nsTimerImpl* timer = mTimers[0]->Value();
+    nsTimerImpl* timer = mTimers[0].Value();
     if (timer) {
       if (timer->mTimeout > aDefault) {
         timeStamp = aDefault;
@@ -779,17 +780,17 @@ TimeStamp TimerThread::FindNextFireTimeForCurrentThread(TimeStamp aDefault,
 
 #ifdef DEBUG
   if (!mTimers.IsEmpty()) {
-    if (firstTimeStamp != mTimers[0]->Timeout()) {
+    if (firstTimeStamp != mTimers[0].Timeout()) {
       TimeStamp now = TimeStamp::Now();
       printf_stderr(
-          "firstTimeStamp %f, mTimers[0]->Timeout() %f, "
+          "firstTimeStamp %f, mTimers[0].Timeout() %f, "
           "initialFirstTimer %p, current first %p\n",
           (firstTimeStamp - now).ToMilliseconds(),
-          (mTimers[0]->Timeout() - now).ToMilliseconds(), initialFirstEntry,
-          mTimers[0].get());
+          (mTimers[0].Timeout() - now).ToMilliseconds(), initialFirstEntry,
+          &mTimers[0]);
     }
   }
-  MOZ_ASSERT_IF(!mTimers.IsEmpty(), firstTimeStamp == mTimers[0]->Timeout());
+  MOZ_ASSERT_IF(!mTimers.IsEmpty(), firstTimeStamp == mTimers[0].Timeout());
 #endif
 
   return timeStamp;
@@ -809,8 +810,8 @@ bool TimerThread::AddTimerInternal(nsTimerImpl* aTimer) {
 
   LogTimerEvent::LogDispatch(aTimer);
 
-  UniquePtr<Entry>* entry = mTimers.AppendElement(
-      MakeUnique<Entry>(now, aTimer->mTimeout, aTimer), mozilla::fallible);
+  Entry* entry =
+      mTimers.EmplaceBack(mozilla::fallible, now, aTimer->mTimeout, aTimer);
   if (!entry) {
     return false;
   }
@@ -836,8 +837,8 @@ bool TimerThread::RemoveTimerInternal(nsTimerImpl* aTimer) {
   }
   AUTO_TIMERS_STATS(TimerThread_RemoveTimerInternal_in_list);
   for (auto& entry : mTimers) {
-    if (entry->Value() == aTimer) {
-      entry->Forget(aTimer);
+    if (entry.Value() == aTimer) {
+      entry.Forget(aTimer);
       return true;
     }
   }
@@ -855,7 +856,7 @@ void TimerThread::RemoveLeadingCanceledTimersInternal() {
   
   
   auto sortedEnd = mTimers.end();
-  while (sortedEnd != mTimers.begin() && !mTimers[0]->Value()) {
+  while (sortedEnd != mTimers.begin() && !mTimers[0].Value()) {
     std::pop_heap(mTimers.begin(), sortedEnd, Entry::UniquePtrLessThan);
     --sortedEnd;
   }
