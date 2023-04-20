@@ -18,6 +18,13 @@ const {
   WebConsoleUtils,
 } = require("resource://devtools/server/actors/webconsole/utils.js");
 
+loader.lazyRequireGetter(
+  this,
+  ["getStyleSheetText"],
+  "resource://devtools/server/actors/utils/stylesheet-utils.js",
+  true
+);
+
 const {
   TYPES: { CSS_MESSAGE },
 } = require("resource://devtools/server/actors/resources/index.js");
@@ -41,9 +48,7 @@ class CSSMessageWatcher extends nsIConsoleListenerWatcher {
 
     
     
-    if (targetActor.ensureCSSErrorReportingEnabled) {
-      targetActor.ensureCSSErrorReportingEnabled();
-    }
+    await this.#ensureCSSErrorReportingEnabled(targetActor);
   }
 
   
@@ -134,6 +139,64 @@ class CSSMessageWatcher extends nsIConsoleListenerWatcher {
       resourceType: CSS_MESSAGE,
       cssSelectors: error.cssSelectors,
     };
+  }
+
+  
+
+
+
+
+
+
+
+
+  async #ensureCSSErrorReportingEnabled(targetActor) {
+    const docShells = targetActor.docShells;
+    if (!docShells) {
+      
+      
+      return;
+    }
+
+    const promises = docShells.map(async docShell => {
+      if (docShell.cssErrorReportingEnabled) {
+        
+        return;
+      }
+
+      try {
+        docShell.cssErrorReportingEnabled = true;
+      } catch (e) {
+        return;
+      }
+
+      
+      
+
+      
+      docShell.QueryInterface(Ci.nsIWebNavigation);
+      
+      
+      const sheets = InspectorUtils.getAllStyleSheets(
+        docShell.document,
+         true
+      );
+      for (const sheet of sheets) {
+        if (InspectorUtils.hasRulesModifiedByCSSOM(sheet)) {
+          continue;
+        }
+
+        try {
+          
+          const text = await getStyleSheetText(sheet);
+          InspectorUtils.parseStyleSheet(sheet, text,  false);
+        } catch (e) {
+          console.error("Error while parsing stylesheet");
+        }
+      }
+    });
+
+    await Promise.all(promises);
   }
 }
 module.exports = CSSMessageWatcher;

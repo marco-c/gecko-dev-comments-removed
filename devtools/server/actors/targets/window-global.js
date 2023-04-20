@@ -30,7 +30,6 @@ var {
   SourcesManager,
 } = require("resource://devtools/server/actors/utils/sources-manager.js");
 var makeDebugger = require("resource://devtools/server/actors/utils/make-debugger.js");
-const InspectorUtils = require("InspectorUtils");
 const Targets = require("resource://devtools/server/actors/targets/index.js");
 const { TargetActorRegistry } = ChromeUtils.importESModule(
   "resource://devtools/server/actors/targets/target-actor-registry.sys.mjs"
@@ -71,12 +70,6 @@ loader.lazyRequireGetter(
   this,
   "TouchSimulator",
   "resource://devtools/server/actors/emulation/touch-simulator.js",
-  true
-);
-loader.lazyRequireGetter(
-  this,
-  ["getStyleSheetText"],
-  "resource://devtools/server/actors/utils/stylesheet-utils.js",
   true
 );
 
@@ -1217,53 +1210,6 @@ const windowGlobalTargetPrototype = {
         this.window.location = request.url;
       }, "WindowGlobalTargetActor.prototype.navigateTo's delayed body:" + request.url)
     );
-    return {};
-  },
-
-  
-
-
-  async ensureCSSErrorReportingEnabled() {
-    const promises = this.docShells.map(async docShell => {
-      if (docShell.cssErrorReportingEnabled) {
-        
-        return;
-      }
-
-      try {
-        docShell.cssErrorReportingEnabled = true;
-      } catch (e) {
-        return;
-      }
-
-      
-      
-
-      
-      docShell.QueryInterface(Ci.nsIWebNavigation);
-      
-      
-      const sheets = InspectorUtils.getAllStyleSheets(
-        docShell.document,
-         true
-      );
-      for (const sheet of sheets) {
-        if (InspectorUtils.hasRulesModifiedByCSSOM(sheet)) {
-          continue;
-        }
-
-        try {
-          
-          const text = await getStyleSheetText(sheet);
-          InspectorUtils.parseStyleSheet(sheet, text,  false);
-        } catch (e) {
-          console.error("Error while parsing stylesheet");
-        }
-      }
-    });
-
-    await Promise.all(promises);
-
     return {};
   },
 
