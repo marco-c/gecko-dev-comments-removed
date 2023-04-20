@@ -457,7 +457,7 @@ var PrintUtils = {
     return "FAILURE";
   },
 
-  _displayPrintingError(nsresult, isPrinting) {
+  _displayPrintingError(nsresult, isPrinting, browser) {
     
     
     
@@ -490,7 +490,12 @@ var PrintUtils = {
         : "printpreview_error_dialog_title"
     );
 
-    Services.prompt.alert(window, title, msg);
+    Services.prompt.asyncAlert(
+      browser.browsingContext,
+      Services.prompt.MODAL_TYPE_TAB,
+      title,
+      msg
+    );
 
     Services.telemetry.keyedScalarAdd(
       "printing.error",
