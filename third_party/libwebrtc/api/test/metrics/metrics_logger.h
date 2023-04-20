@@ -8,11 +8,10 @@
 
 
 
-#ifndef API_TEST_METRICS_METRICS_LOGGER_AND_EXPORTER_H_
-#define API_TEST_METRICS_METRICS_LOGGER_AND_EXPORTER_H_
+#ifndef API_TEST_METRICS_METRICS_LOGGER_H_
+#define API_TEST_METRICS_METRICS_LOGGER_H_
 
 #include <map>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -20,8 +19,6 @@
 #include "absl/strings/string_view.h"
 #include "api/numerics/samples_stats_counter.h"
 #include "api/test/metrics/metric.h"
-#include "api/test/metrics/metrics_exporter.h"
-#include "api/test/metrics/metrics_logger.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "system_wrappers/include/clock.h"
 
@@ -29,22 +26,48 @@ namespace webrtc {
 namespace test {
 
 
-
-class MetricsLoggerAndExporter : public MetricsLogger {
+class MetricsLogger {
  public:
-  
-  
-  MetricsLoggerAndExporter(
-      webrtc::Clock* clock,
-      std::vector<std::unique_ptr<MetricsExporter>> exporters,
-      bool crash_on_export_failure = true)
-      : clock_(clock),
-        crash_on_export_failure_(crash_on_export_failure),
-        exporters_(std::move(exporters)) {}
-  ~MetricsLoggerAndExporter() override;
+  virtual ~MetricsLogger() = default;
 
   
   
+  virtual void LogSingleValueMetric(
+      absl::string_view name,
+      absl::string_view test_case_name,
+      double value,
+      Unit unit,
+      ImprovementDirection improvement_direction,
+      std::map<std::string, std::string> metadata = {}) = 0;
+
+  
+  
+  virtual void LogMetric(absl::string_view name,
+                         absl::string_view test_case_name,
+                         const SamplesStatsCounter& values,
+                         Unit unit,
+                         ImprovementDirection improvement_direction,
+                         std::map<std::string, std::string> metadata = {}) = 0;
+
+  
+  
+  
+  virtual void LogMetric(absl::string_view name,
+                         absl::string_view test_case_name,
+                         const Metric::Stats& metric_stats,
+                         Unit unit,
+                         ImprovementDirection improvement_direction,
+                         std::map<std::string, std::string> metadata = {}) = 0;
+
+  
+  virtual std::vector<Metric> GetCollectedMetrics() const = 0;
+};
+
+class DefaultMetricsLogger : public MetricsLogger {
+ public:
+  explicit DefaultMetricsLogger(webrtc::Clock* clock) : clock_(clock) {}
+  ~DefaultMetricsLogger() override = default;
+
   void LogSingleValueMetric(
       absl::string_view name,
       absl::string_view test_case_name,
@@ -53,8 +76,6 @@ class MetricsLoggerAndExporter : public MetricsLogger {
       ImprovementDirection improvement_direction,
       std::map<std::string, std::string> metadata = {}) override;
 
-  
-  
   void LogMetric(absl::string_view name,
                  absl::string_view test_case_name,
                  const SamplesStatsCounter& values,
@@ -62,9 +83,6 @@ class MetricsLoggerAndExporter : public MetricsLogger {
                  ImprovementDirection improvement_direction,
                  std::map<std::string, std::string> metadata = {}) override;
 
-  
-  
-  
   void LogMetric(absl::string_view name,
                  absl::string_view test_case_name,
                  const Metric::Stats& metric_stats,
@@ -80,14 +98,11 @@ class MetricsLoggerAndExporter : public MetricsLogger {
 
  private:
   webrtc::Timestamp Now();
-  bool Export();
 
   webrtc::Clock* const clock_;
-  const bool crash_on_export_failure_;
 
   mutable Mutex mutex_;
   std::vector<Metric> metrics_ RTC_GUARDED_BY(mutex_);
-  std::vector<std::unique_ptr<MetricsExporter>> exporters_;
 };
 
 }  
