@@ -21,6 +21,9 @@ class HTMLElement final : public nsGenericHTMLFormElement {
                                            nsGenericHTMLFormElement)
 
   
+  void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
+
+  
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
   
@@ -36,6 +39,7 @@ class HTMLElement final : public nsGenericHTMLFormElement {
   
   already_AddRefed<mozilla::dom::ElementInternals> AttachInternals(
       ErrorResult& aRv) override;
+  bool IsDisabledForEvents(WidgetEvent* aEvent) override;
 
   
   bool IsFormAssociatedElement() const override;
