@@ -44,6 +44,8 @@ add_task(async function test_empty_search() {
   
   await PlacesUtils.history.remove(uri6);
 
+  await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
+
   
   
   

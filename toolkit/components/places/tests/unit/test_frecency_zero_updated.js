@@ -10,13 +10,13 @@ add_task(async function() {
     url: TEST_URI,
     title: "A title",
   });
-  await PlacesTestUtils.promiseAsyncUpdates();
+  await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
   Assert.ok(frecencyForUrl(TEST_URI) > 0);
 
   
   
   await PlacesUtils.bookmarks.remove(bookmark.guid);
-  await PlacesTestUtils.promiseAsyncUpdates();
+  await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
   Assert.equal(frecencyForUrl(TEST_URI), 0);
 
   

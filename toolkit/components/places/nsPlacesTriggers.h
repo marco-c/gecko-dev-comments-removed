@@ -17,43 +17,40 @@
 
 
 
-#  define EXCLUDED_VISIT_TYPES "0, 4, 7, 8, 9"
+#  define VISIT_COUNT_INC(field) \
+    "(SELECT CASE WHEN " field " IN (0, 4, 7, 8, 9) THEN 0 ELSE 1 END) "
 
 
 
 
 
-#  define CREATE_HISTORYVISITS_AFTERINSERT_TRIGGER                           \
-    nsLiteralCString(                                                        \
-        "CREATE TEMP TRIGGER moz_historyvisits_afterinsert_v2_trigger "      \
-        "AFTER INSERT ON moz_historyvisits FOR EACH ROW "                    \
-        "BEGIN "                                                             \
-        "SELECT invalidate_days_of_history();"                               \
-        "SELECT store_last_inserted_id('moz_historyvisits', NEW.id); "       \
-        "UPDATE moz_places SET "                                             \
-        "visit_count = visit_count + (SELECT NEW.visit_type NOT IN "         \
-        "(" EXCLUDED_VISIT_TYPES                                             \
-        ")), "                                                               \
-        "recalc_frecency = (frecency <> 0), "                                \
-        "last_visit_date = MAX(IFNULL(last_visit_date, 0), NEW.visit_date) " \
-        "WHERE id = NEW.place_id;"                                           \
+#  define CREATE_HISTORYVISITS_AFTERINSERT_TRIGGER \
+    nsLiteralCString(                                                         \
+        "CREATE TEMP TRIGGER moz_historyvisits_afterinsert_v2_trigger "       \
+        "AFTER INSERT ON moz_historyvisits FOR EACH ROW "                     \
+        "BEGIN "                                                              \
+        "SELECT invalidate_days_of_history();"                                \
+        "SELECT store_last_inserted_id('moz_historyvisits', NEW.id); "        \
+        "UPDATE moz_places SET "                                              \
+        "visit_count = visit_count + " VISIT_COUNT_INC("NEW.visit_type") ", " \
+        "recalc_frecency = (frecency <> 0), "                                 \
+        "last_visit_date = MAX(IFNULL(last_visit_date, 0), NEW.visit_date) "  \
+        "WHERE id = NEW.place_id;"                                            \
         "END")
 
-#  define CREATE_HISTORYVISITS_AFTERDELETE_TRIGGER                      \
-    nsLiteralCString(                                                   \
-        "CREATE TEMP TRIGGER moz_historyvisits_afterdelete_v2_trigger " \
-        "AFTER DELETE ON moz_historyvisits FOR EACH ROW "               \
-        "BEGIN "                                                        \
-        "SELECT invalidate_days_of_history();"                          \
-        "UPDATE moz_places SET "                                        \
-        "visit_count = visit_count - (SELECT OLD.visit_type NOT IN "    \
-        "(" EXCLUDED_VISIT_TYPES                                        \
-        ")), "                                                          \
-        "recalc_frecency = (frecency <> 0), "                           \
-        "last_visit_date = (SELECT visit_date FROM moz_historyvisits "  \
-        "WHERE place_id = OLD.place_id "                                \
-        "ORDER BY visit_date DESC LIMIT 1) "                            \
-        "WHERE id = OLD.place_id;"                                      \
+#  define CREATE_HISTORYVISITS_AFTERDELETE_TRIGGER \
+    nsLiteralCString(                                                         \
+        "CREATE TEMP TRIGGER moz_historyvisits_afterdelete_v2_trigger "       \
+        "AFTER DELETE ON moz_historyvisits FOR EACH ROW "                     \
+        "BEGIN "                                                              \
+        "SELECT invalidate_days_of_history();"                                \
+        "UPDATE moz_places SET "                                              \
+        "visit_count = visit_count - " VISIT_COUNT_INC("OLD.visit_type") ", " \
+        "recalc_frecency = (frecency <> 0), "                                 \
+        "last_visit_date = (SELECT visit_date FROM moz_historyvisits "        \
+        "WHERE place_id = OLD.place_id "                                      \
+        "ORDER BY visit_date DESC LIMIT 1) "                                  \
+        "WHERE id = OLD.place_id;"                                            \
         "END")
 
 
@@ -269,6 +266,14 @@
         "AND userContextId = NEW.userContextId;"                           \
         "END")
 
+
+
+
+
+#  define NOT_A_QUERY                                   \
+    " url_hash NOT BETWEEN hash('place', 'prefix_lo') " \
+    "                  AND hash('place', 'prefix_hi') "
+
 #  define CREATE_BOOKMARKS_FOREIGNCOUNT_AFTERDELETE_TRIGGER                    \
     nsLiteralCString(                                                          \
         "CREATE TEMP TRIGGER moz_bookmarks_foreign_count_afterdelete_trigger " \
@@ -276,9 +281,19 @@
         "BEGIN "                                                               \
         "UPDATE moz_places "                                                   \
         "SET foreign_count = foreign_count - 1, "                              \
-        "    recalc_frecency = (frecency <> 0) "                               \
+        "    recalc_frecency = " NOT_A_QUERY                                   \
         "WHERE id = OLD.fk;"                                                   \
         "END")
+
+
+
+
+
+
+
+
+
+
 
 #  define CREATE_BOOKMARKS_FOREIGNCOUNT_AFTERINSERT_TRIGGER                    \
     nsLiteralCString(                                                          \
@@ -288,8 +303,11 @@
         "SELECT store_last_inserted_id('moz_bookmarks', NEW.id); "             \
         "SELECT note_sync_change() WHERE NEW.syncChangeCounter > 0; "          \
         "UPDATE moz_places "                                                   \
+        "SET frecency = 1 WHERE frecency = -1 AND " NOT_A_QUERY                \
+        ";"                                                                    \
+        "UPDATE moz_places "                                                   \
         "SET foreign_count = foreign_count + 1, "                              \
-        "    recalc_frecency = (frecency <> 0) "                               \
+        "    recalc_frecency = " NOT_A_QUERY                                   \
         "WHERE id = NEW.fk;"                                                   \
         "END")
 
@@ -302,11 +320,11 @@
         "WHERE NEW.syncChangeCounter <> OLD.syncChangeCounter; "               \
         "UPDATE moz_places "                                                   \
         "SET foreign_count = foreign_count + 1, "                              \
-        "    recalc_frecency = (frecency <> 0) "                               \
+        "    recalc_frecency = " NOT_A_QUERY                                   \
         "WHERE OLD.fk <> NEW.fk AND id = NEW.fk;"                              \
         "UPDATE moz_places "                                                   \
         "SET foreign_count = foreign_count - 1, "                              \
-        "    recalc_frecency = (frecency <> 0) "                               \
+        "    recalc_frecency = " NOT_A_QUERY                                   \
         "WHERE OLD.fk <> NEW.fk AND id = OLD.fk;"                              \
         "END")
 
