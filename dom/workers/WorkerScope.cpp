@@ -272,9 +272,10 @@ bool WorkerGlobalScopeBase::IsSharedMemoryAllowed() const {
   return mWorkerPrivate->IsSharedMemoryAllowed();
 }
 
-bool WorkerGlobalScopeBase::ShouldResistFingerprinting() const {
+bool WorkerGlobalScopeBase::ShouldResistFingerprinting(
+    RFPTarget aTarget ) const {
   AssertIsOnWorkerThread();
-  return mShouldResistFingerprinting;
+  return mShouldResistFingerprinting && nsRFPService::IsRFPEnabledFor(aTarget);
 }
 
 OriginTrials WorkerGlobalScopeBase::Trials() const {

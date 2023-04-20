@@ -7,4 +7,15 @@
 
 
 
+
+
+
+
+ITEM_VALUE(PrecomputeIsEnabled, 0xFFFE)
+
+
+
+
+
+
 ITEM_VALUE(Unknown, 0xFFFF)
