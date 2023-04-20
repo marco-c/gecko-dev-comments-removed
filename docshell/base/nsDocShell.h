@@ -1057,9 +1057,13 @@ class nsDocShell final : public nsDocLoader,
     bool mCurrentURIHasRef = false;
     bool mNewURIHasRef = false;
     bool mSameExceptHashes = false;
+    bool mSecureUpgradeURI = false;
     bool mHistoryNavBetweenSameDoc = false;
   };
 
+  
+  
+  
   
   
   bool IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,

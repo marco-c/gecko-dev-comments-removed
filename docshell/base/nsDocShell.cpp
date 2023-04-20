@@ -8696,12 +8696,22 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
       
       
       if (!aState.mSameExceptHashes) {
-        nsCOMPtr<nsIChannel> docChannel = GetCurrentDocChannel();
-        if (docChannel) {
+        if (nsCOMPtr<nsIChannel> docChannel = GetCurrentDocChannel()) {
           nsCOMPtr<nsILoadInfo> docLoadInfo = docChannel->LoadInfo();
-          if (!docLoadInfo->GetLoadErrorPage()) {
-            if (nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(
-                    currentExposableURI, aLoadState->URI(), docLoadInfo)) {
+          if (!docLoadInfo->GetLoadErrorPage() &&
+              nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(
+                  currentExposableURI, aLoadState->URI(), docLoadInfo)) {
+            uint32_t status = docLoadInfo->GetHttpsOnlyStatus();
+            if (status & (nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_REGISTERED |
+                          nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST)) {
+              
+              
+              
+              
+              
+              
+              
+              aState.mSecureUpgradeURI = true;
               aState.mSameExceptHashes = true;
             }
           }
@@ -8789,6 +8799,22 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   nsCOMPtr<nsIURI> currentURI = mCurrentURI;
 
   
+  nsCOMPtr<nsIURI> newURI = aLoadState->URI();
+  if (aState.mSecureUpgradeURI) {
+    MOZ_TRY(NS_GetSecureUpgradedURI(aLoadState->URI(), getter_AddRefs(newURI)));
+    MOZ_LOG(gSHLog, LogLevel::Debug,
+            ("Upgraded URI to %s", newURI->GetSpecOrDefault().get()));
+  }
+
+#ifdef DEBUG
+  if (aState.mSameExceptHashes) {
+    bool sameExceptHashes = false;
+    currentURI->EqualsExceptRef(newURI, &sameExceptHashes);
+    MOZ_ASSERT(sameExceptHashes);
+  }
+#endif
+
+  
   nsPoint scrollPos = GetCurScrollPos();
 
   
@@ -8824,7 +8850,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   }
 
   
-  doc->SetDocumentURI(aLoadState->URI());
+  doc->SetDocumentURI(newURI);
 
   
 
@@ -8854,8 +8880,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
     newCsp = doc->GetCsp();
   }
 
-  uint32_t locationChangeFlags =
-      GetSameDocumentNavigationFlags(aLoadState->URI());
+  uint32_t locationChangeFlags = GetSameDocumentNavigationFlags(newURI);
 
   
   
@@ -8869,10 +8894,9 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   
   
   
-  bool locationChangeNeeded =
-      OnNewURI(aLoadState->URI(), nullptr, newURITriggeringPrincipal,
-               newURIPrincipalToInherit, newURIPartitionedPrincipalToInherit,
-               newCsp, false, true, true);
+  bool locationChangeNeeded = OnNewURI(
+      newURI, nullptr, newURITriggeringPrincipal, newURIPrincipalToInherit,
+      newURIPartitionedPrincipalToInherit, newCsp, false, true, true);
 
   nsCOMPtr<nsIInputStream> postData;
   uint32_t cacheKey = 0;
@@ -9039,15 +9063,13 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
 
       MOZ_LOG(gSHLog, LogLevel::Debug,
               ("Creating an active entry on nsDocShell %p to %s", this,
-               aLoadState->URI()->GetSpecOrDefault().get()));
+               newURI->GetSpecOrDefault().get()));
       if (mActiveEntry) {
-        mActiveEntry =
-            MakeUnique<SessionHistoryInfo>(*mActiveEntry, aLoadState->URI());
+        mActiveEntry = MakeUnique<SessionHistoryInfo>(*mActiveEntry, newURI);
       } else {
         mActiveEntry = MakeUnique<SessionHistoryInfo>(
-            aLoadState->URI(), newURITriggeringPrincipal,
-            newURIPrincipalToInherit, newURIPartitionedPrincipalToInherit,
-            newCsp, mContentTypeHint);
+            newURI, newURITriggeringPrincipal, newURIPrincipalToInherit,
+            newURIPartitionedPrincipalToInherit, newCsp, mContentTypeHint);
       }
 
       
@@ -9086,7 +9108,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   }
 
   if (locationChangeNeeded) {
-    FireOnLocationChange(this, nullptr, aLoadState->URI(), locationChangeFlags);
+    FireOnLocationChange(this, nullptr, newURI, locationChangeFlags);
   }
 
   
@@ -9097,13 +9119,13 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
 
   
 
-  UpdateGlobalHistoryTitle(aLoadState->URI());
+  UpdateGlobalHistoryTitle(newURI);
 
   SetDocCurrentStateObj(mOSHE, mActiveEntry.get());
 
   
   
-  CopyFavicon(currentURI, aLoadState->URI(), UsePrivateBrowsing());
+  CopyFavicon(currentURI, newURI, UsePrivateBrowsing());
 
   RefPtr<nsGlobalWindowOuter> scriptGlobal = mScriptGlobal;
   RefPtr<nsGlobalWindowInner> win =
@@ -9158,7 +9180,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
     if (doHashchange) {
       
       
-      win->DispatchAsyncHashchange(currentURI, aLoadState->URI());
+      win->DispatchAsyncHashchange(currentURI, newURI);
     }
   }
 
