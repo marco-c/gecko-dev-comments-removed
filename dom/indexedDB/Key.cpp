@@ -272,7 +272,7 @@ Result<Key, nsresult> Key::ToLocaleAwareKey(const nsCString& aLocale) const {
   
   while (it < end) {
     char* buffer;
-    const uint32_t oldLen = res.mBuffer.Length();
+    const size_t oldLen = res.mBuffer.Length();
     const auto type = *it % eMaxType;
 
     
@@ -392,8 +392,7 @@ IDBResult<Ok, IDBSpecialValue::Invalid> Key::EncodeJSValInternal(
     }
 
     
-    EncodeNumber(number, eFloat + aTypeOffset);
-    return Ok();
+    return EncodeNumber(number, eFloat + aTypeOffset);
   }
 
   
@@ -431,8 +430,7 @@ IDBResult<Ok, IDBSpecialValue::Invalid> Key::EncodeJSValInternal(
       }
 
       
-      EncodeNumber(ms, eDate + aTypeOffset);
-      return Ok();
+      return EncodeNumber(ms, eDate + aTypeOffset);
     }
 
     
@@ -572,7 +570,7 @@ Result<Ok, nsresult> Key::EncodeAsString(const Span<const T> aInput,
 
   
   
-  uint32_t size = 2;
+  size_t size = 2;
 
   
   
@@ -581,14 +579,13 @@ Result<Ok, nsresult> Key::EncodeAsString(const Span<const T> aInput,
   const auto inputRange = mozilla::detail::IteratorRange(
       aInput.Elements(), aInput.Elements() + aInput.Length());
 
-  uint32_t payloadSize = aInput.Length();
+  size_t payloadSize = aInput.Length();
   bool anyMultibyte = false;
   for (const T val : inputRange) {
     if (val > ONE_BYTE_LIMIT) {
       anyMultibyte = true;
       payloadSize += char16_t(val) > TWO_BYTE_LIMIT ? 2 : 1;
       if (payloadSize > KEY_MAXIMUM_BUFFER_LENGTH) {
-        IDB_REPORT_INTERNAL_ERR();
         return Err(NS_ERROR_DOM_INDEXEDDB_KEY_ERR);
       }
     }
@@ -597,11 +594,10 @@ Result<Ok, nsresult> Key::EncodeAsString(const Span<const T> aInput,
   size += payloadSize;
 
   
-  uint32_t oldLen = mBuffer.Length();
+  size_t oldLen = mBuffer.Length();
   size += oldLen;
 
   if (size > KEY_MAXIMUM_BUFFER_LENGTH) {
-    IDB_REPORT_INTERNAL_ERR();
     return Err(NS_ERROR_DOM_INDEXEDDB_KEY_ERR);
   }
 
@@ -638,7 +634,7 @@ Result<Ok, nsresult> Key::EncodeAsString(const Span<const T> aInput,
     
     
     
-    uint32_t inputLen = std::distance(inputRange.cbegin(), inputRange.cend());
+    size_t inputLen = std::distance(inputRange.cbegin(), inputRange.cend());
     MOZ_ASSERT(inputLen == payloadSize);
     std::transform(inputRange.cbegin(), inputRange.cend(), buffer,
                    [](auto value) { return value + ONE_BYTE_ADJUST; });
@@ -785,12 +781,17 @@ nsAutoString Key::DecodeString(const EncodedDataType*& aPos,
   return res;
 }
 
-void Key::EncodeNumber(double aFloat, uint8_t aType) {
+Result<Ok, nsresult> Key::EncodeNumber(double aFloat, uint8_t aType) {
   
-  uint32_t oldLen = mBuffer.Length();
+  size_t oldLen = mBuffer.Length();
+  size_t newLen = oldLen + 1 + sizeof(double);
+  if (newLen > KEY_MAXIMUM_BUFFER_LENGTH) {
+    return Err(NS_ERROR_DOM_INDEXEDDB_KEY_ERR);
+  }
+
   char* buffer;
-  if (!mBuffer.GetMutableData(&buffer, oldLen + 1 + sizeof(double))) {
-    return;
+  if (!mBuffer.GetMutableData(&buffer, newLen)) {
+    return Err(NS_ERROR_DOM_INDEXEDDB_KEY_ERR);
   }
   buffer += oldLen;
 
@@ -803,6 +804,7 @@ void Key::EncodeNumber(double aFloat, uint8_t aType) {
   uint64_t number = bits & signbit ? (0 - bits) : (bits | signbit);
 
   mozilla::BigEndian::writeUint64(buffer, number);
+  return Ok();
 }
 
 
