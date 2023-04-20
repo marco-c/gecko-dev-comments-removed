@@ -66,11 +66,13 @@
 #include "vm/TypedArrayObject.h"
 #include "wasm/WasmJS.h"
 
+#include "vm/ArrayObject-inl.h"
 #include "vm/Compartment-inl.h"
 #include "vm/ErrorObject-inl.h"
 #include "vm/InlineCharBuffer-inl.h"
 #include "vm/JSContext-inl.h"
 #include "vm/JSObject-inl.h"
+#include "vm/NativeObject-inl.h"
 #include "vm/ObjectOperations-inl.h"
 #include "vm/Realm-inl.h"
 
@@ -3672,11 +3674,32 @@ bool JSStructuredCloneReader::readObjectField(HandleObject obj,
     return false;
   }
 
-  if (!DefineDataProperty(context(), obj, id, val)) {
-    return false;
+  
+  
+  
+  if (id.isString() && obj->is<PlainObject>() &&
+      MOZ_LIKELY(!obj->as<PlainObject>().contains(context(), id))) {
+    return AddDataPropertyToPlainObject(context(), obj.as<PlainObject>(), id,
+                                        val);
   }
 
-  return true;
+  
+  
+  
+  if (id.isInt() && obj->is<ArrayObject>()) {
+    ArrayObject* arr = &obj->as<ArrayObject>();
+    switch (arr->addDenseElementNoLengthChange(context(), id.toInt(), val)) {
+      case DenseElementResult::Failure:
+        return false;
+      case DenseElementResult::Success:
+        return true;
+      case DenseElementResult::Incomplete:
+        
+        break;
+    }
+  }
+
+  return DefineDataProperty(context(), obj, id, val);
 }
 
 
