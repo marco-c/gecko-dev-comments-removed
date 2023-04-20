@@ -8,6 +8,7 @@
 
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/ComputedStyleInlines.h"
+#include "mozilla/dom/BindingDeclarations.h"
 #include "nsIFrame.h"
 #include "nsStyleStruct.h"
 
@@ -17,42 +18,62 @@ template <>
 bool StyleColor::MaybeTransparent() const {
   
   
-  return !IsNumeric() || AsNumeric().alpha != 1.0f;
+  return !IsAbsolute() || AsAbsolute().alpha != 1.0f;
 }
 
 template <>
-nscolor StyleColor::CalcColor(nscolor aColor) const {
-  return CalcColor(StyleRGBA::FromColor(aColor));
-}
-
-template <>
-nscolor StyleColor::CalcColor(const StyleRGBA& aForegroundColor) const {
-  if (IsNumeric()) {
-    return AsNumeric().ToColor();
+StyleAbsoluteColor StyleColor::ResolveColor(
+    const StyleAbsoluteColor& aForegroundColor) const {
+  if (IsAbsolute()) {
+    return AsAbsolute();
   }
+
   if (IsCurrentColor()) {
-    return aForegroundColor.ToColor();
+    return aForegroundColor;
   }
-  MOZ_ASSERT(IsColorMix());
+
+  MOZ_ASSERT(IsColorMix(), "should be the only type left at this point.");
   return Servo_ResolveColor(this, &aForegroundColor);
 }
 
 template <>
+nscolor StyleColor::CalcColor(nscolor aColor) const {
+  return ResolveColor(StyleAbsoluteColor::FromColor(aColor)).ToColor();
+}
+
+template <>
+nscolor StyleColor::CalcColor(
+    const StyleAbsoluteColor& aForegroundColor) const {
+  return ResolveColor(aForegroundColor).ToColor();
+}
+
+template <>
 nscolor StyleColor::CalcColor(const ComputedStyle& aStyle) const {
-  
-  
-  if (IsNumeric()) {
-    return AsNumeric().ToColor();
-  }
-  return CalcColor(aStyle.StyleText()->mColor);
+  return ResolveColor(aStyle.StyleText()->mColor).ToColor();
 }
 
 template <>
 nscolor StyleColor::CalcColor(const nsIFrame* aFrame) const {
-  if (IsNumeric()) {
-    return AsNumeric().ToColor();
+  return ResolveColor(aFrame->StyleText()->mColor).ToColor();
+}
+
+nscolor StyleAbsoluteColor::ToColor() const {
+  auto srgb = *this;
+  if (color_space != StyleColorSpace::Srgb) {
+    srgb = Servo_ConvertColorSpace(this, StyleColorSpace::Srgb);
   }
-  return CalcColor(aFrame->StyleText()->mColor);
+
+  
+  
+  
+  auto red = std::clamp(srgb.components._0, 0.0f, 1.0f);
+  auto green = std::clamp(srgb.components._1, 0.0f, 1.0f);
+  auto blue = std::clamp(srgb.components._2, 0.0f, 1.0f);
+
+  return NS_RGBA(nsStyleUtil::FloatToColorComponent(red),
+                 nsStyleUtil::FloatToColorComponent(green),
+                 nsStyleUtil::FloatToColorComponent(blue),
+                 nsStyleUtil::FloatToColorComponent(srgb.alpha));
 }
 
 }  

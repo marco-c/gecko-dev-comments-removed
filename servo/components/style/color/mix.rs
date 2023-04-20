@@ -6,7 +6,6 @@
 
 use super::{AbsoluteColor, ColorComponents, ColorSpace};
 use crate::parser::{Parse, ParserContext};
-use crate::values::animated::color::AnimatedRGBA as RGBA;
 use cssparser::Parser;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, ToCss};
@@ -65,10 +64,32 @@ pub struct ColorInterpolationMethod {
 
 impl ColorInterpolationMethod {
     
-    pub fn srgb() -> Self {
+    pub const fn srgb() -> Self {
         Self {
             space: ColorSpace::Srgb,
             hue: HueInterpolationMethod::Shorter,
+        }
+    }
+
+    
+    
+    pub const fn oklab() -> Self {
+        Self {
+            space: ColorSpace::Oklab,
+            hue: HueInterpolationMethod::Shorter,
+        }
+    }
+
+    
+    
+    pub fn best_interpolation_between(left: &AbsoluteColor, right: &AbsoluteColor) -> Self {
+        
+        
+        
+        if !left.is_legacy_color() || !right.is_legacy_color() {
+            Self::oklab()
+        } else {
+            Self::srgb()
         }
     }
 }
@@ -118,7 +139,7 @@ impl ToCss for ColorInterpolationMethod {
 
 
 
-trait ModelledColor: Clone + Copy + From<RGBA> + Into<RGBA> {
+trait ModelledColor: Clone + Copy {
     
     
     
@@ -134,7 +155,7 @@ trait ModelledColor: Clone + Copy + From<RGBA> + Into<RGBA> {
 
 
 pub fn mix(
-    interpolation: &ColorInterpolationMethod,
+    interpolation: ColorInterpolationMethod,
     left_color: &AbsoluteColor,
     mut left_weight: f32,
     right_color: &AbsoluteColor,

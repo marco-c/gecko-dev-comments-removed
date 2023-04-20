@@ -6,7 +6,6 @@
 
 use crate::color::mix::ColorInterpolationMethod;
 use crate::color::AbsoluteColor;
-use crate::values::animated::color::AnimatedRGBA;
 use crate::values::animated::ToAnimatedValue;
 use crate::values::specified::percentage::ToPercentage;
 use std::fmt::{self, Write};
@@ -16,9 +15,9 @@ use style_traits::{CssWriter, ToCss};
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToShmem)]
 #[repr(C)]
-pub enum GenericColor<RGBA, Percentage> {
+pub enum GenericColor<Percentage> {
     
-    Numeric(RGBA),
+    Absolute(AbsoluteColor),
     
     CurrentColor,
     
@@ -92,17 +91,18 @@ impl<Color: ToCss, Percentage: ToCss + ToPercentage> ToCss for ColorMix<Color, P
     }
 }
 
-impl<RGBA, Percentage> ColorMix<GenericColor<RGBA, Percentage>, Percentage> {
-    fn to_rgba(&self) -> Option<RGBA>
+impl<Percentage> ColorMix<GenericColor<Percentage>, Percentage> {
+    
+    
+    fn mix_into_absolute(&self) -> Option<AbsoluteColor>
     where
-        RGBA: Clone + ToAnimatedValue<AnimatedValue = AnimatedRGBA>,
         Percentage: ToPercentage,
     {
-        let left = AbsoluteColor::from(self.left.as_numeric()?.clone().to_animated_value());
-        let right = AbsoluteColor::from(self.right.as_numeric()?.clone().to_animated_value());
+        let left = self.left.as_absolute()?.to_animated_value();
+        let right = self.right.as_absolute()?.to_animated_value();
 
         let mixed = crate::color::mix::mix(
-            &self.interpolation,
+            self.interpolation,
             &left,
             self.left_percentage.to_percentage(),
             &right,
@@ -116,36 +116,34 @@ impl<RGBA, Percentage> ColorMix<GenericColor<RGBA, Percentage>, Percentage> {
 
 pub use self::GenericColor as Color;
 
-impl<RGBA, Percentage> Color<RGBA, Percentage> {
+impl<Percentage> Color<Percentage> {
     
-    
-    pub fn as_numeric(&self) -> Option<&RGBA> {
+    pub fn as_absolute(&self) -> Option<&AbsoluteColor> {
         match *self {
-            Self::Numeric(ref rgba) => Some(rgba),
+            Self::Absolute(ref absolute) => Some(absolute),
             _ => None,
         }
     }
 
     
     
-    pub fn simplify(&mut self, current_color: Option<&RGBA>)
+    pub fn simplify(&mut self, current_color: Option<&AbsoluteColor>)
     where
-        RGBA: Clone + ToAnimatedValue<AnimatedValue = AnimatedRGBA>,
         Percentage: ToPercentage,
     {
         match *self {
-            Self::Numeric(..) => {},
+            Self::Absolute(..) => {},
             Self::CurrentColor => {
                 if let Some(c) = current_color {
-                    *self = Self::Numeric(c.clone());
+                    *self = Self::Absolute(c.clone());
                 }
             },
             Self::ColorMix(ref mut mix) => {
                 mix.left.simplify(current_color);
                 mix.right.simplify(current_color);
 
-                if let Some(mix) = mix.to_rgba() {
-                    *self = Self::Numeric(mix);
+                if let Some(mix) = mix.mix_into_absolute() {
+                    *self = Self::Absolute(mix);
                 }
             },
         }
@@ -157,18 +155,13 @@ impl<RGBA, Percentage> Color<RGBA, Percentage> {
     }
 
     
-    pub fn rgba(color: RGBA) -> Self {
-        Self::Numeric(color)
-    }
-
-    
     pub fn is_currentcolor(&self) -> bool {
         matches!(*self, Self::CurrentColor)
     }
 
     
-    pub fn is_numeric(&self) -> bool {
-        matches!(*self, Self::Numeric(..))
+    pub fn is_absolute(&self) -> bool {
+        matches!(*self, Self::Absolute(..))
     }
 }
 

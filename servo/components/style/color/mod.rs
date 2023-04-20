@@ -13,6 +13,7 @@ use style_traits::{CssWriter, ToCss};
 
 
 #[derive(Copy, Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
+#[repr(C)]
 pub struct ColorComponents(pub f32, pub f32, pub f32);
 
 impl ColorComponents {
@@ -49,6 +50,11 @@ pub enum ColorSpace {
     
     
     
+    
+    Srgb = 0,
+    
+    
+    
     Hsl,
     
     
@@ -70,9 +76,6 @@ pub enum ColorSpace {
     
     
     Oklch,
-    
-    
-    Srgb,
     
     
     SrgbLinear,
@@ -141,7 +144,7 @@ bitflags! {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
+#[derive(Copy, Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 #[repr(C)]
 pub struct AbsoluteColor {
     
@@ -180,19 +183,66 @@ macro_rules! color_components_as {
 
 impl AbsoluteColor {
     
+    
     pub fn new(color_space: ColorSpace, components: ColorComponents, alpha: f32) -> Self {
+        let mut components = components;
+
+        
+        if matches!(
+            color_space,
+            ColorSpace::Lab | ColorSpace::Lch | ColorSpace::Oklab | ColorSpace::Oklch
+        ) {
+            components.0 = components.0.max(0.0);
+        }
+
+        
+        if matches!(color_space, ColorSpace::Lch | ColorSpace::Oklch) {
+            components.1 = components.1.max(0.0);
+        }
+
         Self {
             components,
-            alpha,
+            alpha: alpha.clamp(0.0, 1.0),
             color_space,
             flags: SerializationFlags::empty(),
         }
     }
 
     
+    pub fn srgb(red: f32, green: f32, blue: f32, alpha: f32) -> Self {
+        Self::new(ColorSpace::Srgb, ColorComponents(red, green, blue), alpha)
+    }
+
+    
+    pub fn transparent() -> Self {
+        Self::srgb(0.0, 0.0, 0.0, 0.0)
+    }
+
+    
+    pub fn black() -> Self {
+        Self::srgb(0.0, 0.0, 0.0, 1.0)
+    }
+
+    
+    pub fn white() -> Self {
+        Self::srgb(1.0, 1.0, 1.0, 1.0)
+    }
+
+    
     #[inline]
     pub fn raw_components(&self) -> &[f32; 4] {
         unsafe { color_components_as!(self, [f32; 4]) }
+    }
+
+    
+    #[inline]
+    pub fn is_legacy_color(&self) -> bool {
+        
+        match self.color_space {
+            ColorSpace::Srgb => !self.flags.contains(SerializationFlags::AS_COLOR_FUNCTION),
+            ColorSpace::Hsl | ColorSpace::Hwb => true,
+            _ => false,
+        }
     }
 
     

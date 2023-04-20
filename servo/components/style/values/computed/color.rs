@@ -4,24 +4,24 @@
 
 
 
-use crate::values::animated::color::AnimatedRGBA;
-use crate::values::animated::ToAnimatedValue;
+use crate::color::AbsoluteColor;
+use crate::values::animated::ToAnimatedZero;
 use crate::values::computed::percentage::Percentage;
 use crate::values::generics::color::{GenericCaretColor, GenericColor, GenericColorOrAuto};
-use cssparser::{Color as CSSParserColor, RGBA};
+use cssparser::Color as CSSParserColor;
 use std::fmt;
 use style_traits::{CssWriter, ToCss};
 
-pub use crate::values::specified::color::{ColorScheme, PrintColorAdjust, ForcedColorAdjust};
+pub use crate::values::specified::color::{ColorScheme, ForcedColorAdjust, PrintColorAdjust};
 
 
-pub type ColorPropertyValue = RGBA;
+pub type ColorPropertyValue = AbsoluteColor;
 
 
-pub type MozFontSmoothingBackgroundColor = RGBA;
+pub type MozFontSmoothingBackgroundColor = AbsoluteColor;
 
 
-pub type Color = GenericColor<RGBA, Percentage>;
+pub type Color = GenericColor<Percentage>;
 
 impl ToCss for Color {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
@@ -29,7 +29,7 @@ impl ToCss for Color {
         W: fmt::Write,
     {
         match *self {
-            Self::Numeric(ref c) => c.to_css(dest),
+            Self::Absolute(ref c) => c.to_css(dest),
             Self::CurrentColor => cssparser::ToCss::to_css(&CSSParserColor::CurrentColor, dest),
             Self::ColorMix(ref m) => m.to_css(dest),
         }
@@ -39,44 +39,30 @@ impl ToCss for Color {
 impl Color {
     
     pub fn transparent() -> Color {
-        Color::rgba(RGBA::transparent())
+        Color::Absolute(AbsoluteColor::transparent())
     }
 
     
     pub fn black() -> Color {
-        Color::rgba(RGBA::new(0, 0, 0, 1.0))
+        Color::Absolute(AbsoluteColor::black())
     }
 
     
     pub fn white() -> Color {
-        Color::rgba(RGBA::new(255, 255, 255, 1.0))
+        Color::Absolute(AbsoluteColor::white())
     }
 
     
     
-    pub fn into_rgba(mut self, current_color: RGBA) -> RGBA {
+    pub fn resolve_into_absolute(mut self, current_color: &AbsoluteColor) -> AbsoluteColor {
         self.simplify(Some(&current_color));
-        *self.as_numeric().unwrap()
+        *self.as_absolute().unwrap()
     }
 }
 
-impl ToAnimatedValue for RGBA {
-    type AnimatedValue = AnimatedRGBA;
-
-    #[inline]
-    fn to_animated_value(self) -> Self::AnimatedValue {
-        AnimatedRGBA::new(
-            self.red_f32(),
-            self.green_f32(),
-            self.blue_f32(),
-            self.alpha_f32(),
-        )
-    }
-
-    #[inline]
-    fn from_animated_value(animated: Self::AnimatedValue) -> Self {
-        
-        RGBA::from_floats(animated.red, animated.green, animated.blue, animated.alpha)
+impl ToAnimatedZero for AbsoluteColor {
+    fn to_animated_zero(&self) -> Result<Self, ()> {
+        Ok(Self::transparent())
     }
 }
 

@@ -8,6 +8,7 @@
 
 
 
+use crate::color::AbsoluteColor;
 use crate::properties::PropertyId;
 use crate::values::computed::length::LengthPercentage;
 use crate::values::computed::url::ComputedUrl;
@@ -380,6 +381,7 @@ trivial_to_animated_value!(ComputedUrl);
 trivial_to_animated_value!(bool);
 trivial_to_animated_value!(f32);
 trivial_to_animated_value!(i32);
+trivial_to_animated_value!(AbsoluteColor);
 
 
 

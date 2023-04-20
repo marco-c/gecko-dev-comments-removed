@@ -4,10 +4,11 @@
 
 
 
+use crate::color::AbsoluteColor;
 use crate::context::QuirksMode;
 use crate::custom_properties::CssEnvironment;
 use crate::font_metrics::FontMetrics;
-use crate::gecko::values::{convert_nscolor_to_rgba, convert_rgba_to_nscolor};
+use crate::gecko::values::{convert_absolute_color_to_nscolor, convert_nscolor_to_absolute_color};
 use crate::gecko_bindings::bindings;
 use crate::gecko_bindings::structs;
 use crate::media_queries::MediaType;
@@ -20,7 +21,6 @@ use crate::values::specified::font::FONT_MEDIUM_PX;
 use crate::values::specified::ViewportVariant;
 use crate::values::{CustomIdent, KeyframesName};
 use app_units::{Au, AU_PER_PX};
-use cssparser::RGBA;
 use euclid::default::Size2D;
 use euclid::{Scale, SideOffsets2D};
 use servo_arc::Arc;
@@ -189,9 +189,11 @@ impl Device {
     
     
     
-    pub fn set_body_text_color(&self, color: RGBA) {
-        self.body_text_color
-            .store(convert_rgba_to_nscolor(&color) as usize, Ordering::Relaxed)
+    pub fn set_body_text_color(&self, color: AbsoluteColor) {
+        self.body_text_color.store(
+            convert_absolute_color_to_nscolor(&color) as usize,
+            Ordering::Relaxed,
+        )
     }
 
     
@@ -268,8 +270,8 @@ impl Device {
     }
 
     
-    pub fn body_text_color(&self) -> RGBA {
-        convert_nscolor_to_rgba(self.body_text_color.load(Ordering::Relaxed) as u32)
+    pub fn body_text_color(&self) -> AbsoluteColor {
+        convert_nscolor_to_absolute_color(self.body_text_color.load(Ordering::Relaxed) as u32)
     }
 
     
@@ -494,17 +496,17 @@ impl Device {
     
     
     
-    pub fn default_background_color(&self) -> RGBA {
+    pub fn default_background_color(&self) -> AbsoluteColor {
         let normal = ColorScheme::normal();
-        convert_nscolor_to_rgba(self.system_nscolor(SystemColor::Canvas, &normal))
+        convert_nscolor_to_absolute_color(self.system_nscolor(SystemColor::Canvas, &normal))
     }
 
     
     
     
-    pub fn default_color(&self) -> RGBA {
+    pub fn default_color(&self) -> AbsoluteColor {
         let normal = ColorScheme::normal();
-        convert_nscolor_to_rgba(self.system_nscolor(SystemColor::Canvastext, &normal))
+        convert_nscolor_to_absolute_color(self.system_nscolor(SystemColor::Canvastext, &normal))
     }
 
     
