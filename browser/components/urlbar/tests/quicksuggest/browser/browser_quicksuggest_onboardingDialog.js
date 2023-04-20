@@ -7,8 +7,8 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
+ChromeUtils.defineESModuleGetters(this, {
+  TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
 });
 
 const OTHER_DIALOG_URI = getRootDirectory(gTestPath) + "subdialog.xhtml";

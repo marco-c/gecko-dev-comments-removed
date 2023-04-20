@@ -1,5 +1,5 @@
-/* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -9,12 +9,12 @@ ChromeUtils.defineESModuleGetters(this, {
   BrowserSearchTelemetry: "resource:///modules/BrowserSearchTelemetry.sys.mjs",
   SearchSERPTelemetry: "resource:///modules/SearchSERPTelemetry.sys.mjs",
   SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
+  TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
 });
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   NetUtil: "resource://gre/modules/NetUtil.jsm",
   sinon: "resource://testing-common/Sinon.jsm",
-  TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.jsm",
 });
 
 const TESTS = [
@@ -218,19 +218,19 @@ const TESTS = [
   },
 ];
 
-/**
- * This function is primarily for testing the Ad URL regexps that are triggered
- * when a URL is clicked on. These regexps are also used for the `with_ads`
- * probe. However, we test the ad_clicks route as that is easier to hit.
- *
- * @param {string} serpUrl
- *   The url to simulate where the page the click came from.
- * @param {string} adUrl
- *   The ad url to simulate being clicked.
- * @param {string} [expectedAdKey]
- *   The expected key to be logged for the scalar. Omit if no scalar should be
- *   logged.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function testAdUrlClicked(serpUrl, adUrl, expectedAdKey) {
   info(`Testing Ad URL: ${adUrl}`);
   let channel = NetUtil.newChannel({
@@ -246,8 +246,8 @@ async function testAdUrlClicked(serpUrl, adUrl, expectedAdKey) {
     Ci.nsIHttpActivityObserver.ACTIVITY_TYPE_HTTP_TRANSACTION,
     Ci.nsIHttpActivityObserver.ACTIVITY_SUBTYPE_TRANSACTION_CLOSE
   );
-  // Since the content handler takes a moment to allow the channel information
-  // to settle down, wait the same amount of time here.
+  
+  
   await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
 
   const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);

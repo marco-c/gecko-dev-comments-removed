@@ -11,12 +11,8 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "ClientID",
-  "resource://gre/modules/ClientID.jsm"
-);
 ChromeUtils.defineESModuleGetters(lazy, {
+  ClientID: "resource://gre/modules/ClientID.sys.mjs",
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
 });

@@ -1,11 +1,11 @@
 
 
 
-const { TelemetryController } = ChromeUtils.import(
-  "resource://gre/modules/TelemetryController.jsm"
+const { TelemetryController } = ChromeUtils.importESModule(
+  "resource://gre/modules/TelemetryController.sys.mjs"
 );
-const { TelemetrySession } = ChromeUtils.import(
-  "resource://gre/modules/TelemetrySession.jsm"
+const { TelemetrySession } = ChromeUtils.importESModule(
+  "resource://gre/modules/TelemetrySession.sys.mjs"
 );
 
 
@@ -40,8 +40,8 @@ add_task(async function actualTest() {
   await TelemetryController.testSetup();
 
   
-  let { TelemetryTimestamps } = ChromeUtils.import(
-    "resource://gre/modules/TelemetryTimestamps.jsm"
+  let { TelemetryTimestamps } = ChromeUtils.importESModule(
+    "resource://gre/modules/TelemetryTimestamps.sys.mjs"
   );
   let now = Date.now();
   TelemetryTimestamps.add("foo");

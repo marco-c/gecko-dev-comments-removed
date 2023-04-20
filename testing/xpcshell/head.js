@@ -1847,8 +1847,10 @@ try {
   
   if (runningInParent && _AppConstants.MOZ_UPDATE_CHANNEL == "default") {
     let startTime = Cu.now();
-    let { TelemetryController: _TelemetryController } = ChromeUtils.import(
-      "resource://gre/modules/TelemetryController.jsm"
+    let {
+      TelemetryController: _TelemetryController,
+    } = ChromeUtils.importESModule(
+      "resource://gre/modules/TelemetryController.sys.mjs"
     );
 
     let complete = false;

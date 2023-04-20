@@ -3,8 +3,8 @@
 
 
 
-const { TelemetrySession } = ChromeUtils.import(
-  "resource://gre/modules/TelemetrySession.jsm"
+const { TelemetrySession } = ChromeUtils.importESModule(
+  "resource://gre/modules/TelemetrySession.sys.mjs"
 );
 
 var gHttpServer = null;
@@ -56,8 +56,8 @@ add_task(async function testSendPendingOnIdleDaily() {
   Services.obs.removeObserver(gatherPromise.resolve, "gather-telemetry");
 
   
-  let { TelemetrySendImpl } = ChromeUtils.import(
-    "resource://gre/modules/TelemetrySend.jsm"
+  let { TelemetrySendImpl } = ChromeUtils.importESModule(
+    "resource://gre/modules/TelemetrySend.sys.mjs"
   );
   TelemetrySendImpl.observe(null, "idle-daily", null);
   let request = await pendingPromise;

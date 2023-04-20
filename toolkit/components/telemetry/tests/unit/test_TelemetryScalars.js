@@ -2,11 +2,9 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "TelemetryTestUtils",
-  "resource://testing-common/TelemetryTestUtils.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
+});
 
 const UINT_SCALAR = "telemetry.test.unsigned_int_kind";
 const STRING_SCALAR = "telemetry.test.string_kind";

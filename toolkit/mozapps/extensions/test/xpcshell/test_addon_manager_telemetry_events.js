@@ -2,8 +2,8 @@
 
 
 
-const { TelemetryController } = ChromeUtils.import(
-  "resource://gre/modules/TelemetryController.jsm"
+const { TelemetryController } = ChromeUtils.importESModule(
+  "resource://gre/modules/TelemetryController.sys.mjs"
 );
 const { AMTelemetry } = ChromeUtils.import(
   "resource://gre/modules/AddonManager.jsm"
