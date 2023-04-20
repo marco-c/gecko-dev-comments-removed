@@ -60,6 +60,9 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
             
             
             "layout.accessiblecaret.transition-duration": "0.0",
+            
+            
+            "layout.accessiblecaret.hapticfeedback": True,
         }
         self.marionette.set_prefs(self.prefs)
         self.actions = CaretActions(self.marionette)
