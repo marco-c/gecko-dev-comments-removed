@@ -6,6 +6,12 @@
 
 "use strict";
 
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  UrlbarProviderTopSites: "resource:///modules/UrlbarProviderTopSites.sys.mjs",
+});
+
 const TEST_URLS = [];
 const TEST_URLS_COUNT = 5;
 const TOP_SITES_VISIT_COUNT = 5;
@@ -174,6 +180,68 @@ add_task(async function topSites_changed() {
   });
 });
 
+add_task(async function topSites_nonTopSitesResults() {
+  await withNewBrowserWindow(async win => {
+    
+    await openViewAndAssertCached({ win, cached: false });
+
+    
+    
+    let suggestedIndexURL = "https://example.com/suggested-index-0";
+    let provider = new UrlbarTestUtils.TestProvider({
+      priority: lazy.UrlbarProviderTopSites.PRIORITY,
+      results: [
+        Object.assign(
+          new UrlbarResult(
+            UrlbarUtils.RESULT_TYPE.URL,
+            UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+            {
+              url: suggestedIndexURL,
+            }
+          ),
+          { suggestedIndex: 0 }
+        ),
+      ],
+    });
+    UrlbarProvidersManager.registerProvider(provider);
+
+    
+    
+    
+    await openViewAndAssertCached({ win, cached: true, keepOpen: true });
+
+    
+    
+    
+    Assert.equal(
+      UrlbarTestUtils.getResultCount(win),
+      TEST_URLS.length + 1,
+      "Should be one more result after search finishes"
+    );
+    let details = await UrlbarTestUtils.getDetailsOfResultAt(win, 0);
+    Assert.equal(
+      details.url,
+      suggestedIndexURL,
+      "First result after search finishes should be the suggested index result"
+    );
+
+    
+    
+
+    await UrlbarTestUtils.promisePopupClose(win);
+
+    
+    
+    await openViewAndAssertCached({
+      win,
+      cached: true,
+      urls: [suggestedIndexURL, ...TEST_URLS],
+    });
+
+    UrlbarProvidersManager.unregisterProvider(provider);
+  });
+});
+
 add_task(async function topSites_disabled_1() {
   await withNewBrowserWindow(async win => {
     
@@ -295,6 +363,8 @@ add_task(async function evict() {
 
 
 
+
+
 async function openViewAndAssertCached({
   win,
   cached,
@@ -302,6 +372,7 @@ async function openViewAndAssertCached({
   searchString = "",
   urls = TEST_URLS,
   ignoreOrder = false,
+  keepOpen = false,
 }) {
   let cache = win.gURLBar.view.queryContextCache;
   let getContext = () =>
@@ -345,36 +416,46 @@ async function openViewAndAssertCached({
       startIndex++;
       resultCount++;
     }
-    Assert.equal(
-      UrlbarTestUtils.getResultCount(win),
-      resultCount,
-      "View has expected result count"
-    );
-    for (let i = 0; i < urls.length; i++) {
-      let details = await UrlbarTestUtils.getDetailsOfResultAt(
-        win,
-        i + startIndex
+
+    
+    
+    
+    
+    let rows = UrlbarTestUtils.getResultsContainer(win).children;
+    Assert.equal(rows.length, resultCount, "View has expected row count");
+
+    
+    if (searchString) {
+      let result = rows[0].result;
+      Assert.ok(result.heuristic, "First row should be a heuristic");
+      Assert.equal(
+        result.payload.query,
+        searchString,
+        "First row's query should be the search string"
       );
-      if (!ignoreOrder) {
-        Assert.equal(
-          details.url,
-          urls[i],
-          `Result at index ${i} has expected URL`
-        );
-      } else {
-        Assert.ok(
-          urls.includes(details.url),
-          `Result URL at index ${i} is in expected URLs: ` + details.url
-        );
-      }
     }
+
+    
+    let actualURLs = [];
+    let urlRows = Array.from(rows).slice(startIndex);
+    for (let row of urlRows) {
+      actualURLs.push(row.result.payload.url);
+    }
+    if (ignoreOrder) {
+      urls.sort();
+      actualURLs.sort();
+    }
+    Assert.deepEqual(actualURLs, urls, "View should contain the expected URLs");
   }
 
   
   
   
+  
   await win.gURLBar.lastQueryContextPromise;
-  await UrlbarTestUtils.promisePopupClose(win);
+  if (!keepOpen) {
+    await UrlbarTestUtils.promisePopupClose(win);
+  }
 }
 
 
