@@ -31,7 +31,6 @@ class DragBlockState;
 class PanGestureBlockState;
 class PinchGestureBlockState;
 class KeyboardBlockState;
-enum class BrowserGestureResponse : bool;
 
 
 
@@ -156,7 +155,7 @@ class CancelableBlockState : public InputBlockState {
 
 
 
-  virtual bool TimeoutContentResponse();
+  bool TimeoutContentResponse();
 
   
 
@@ -328,10 +327,6 @@ class PanGestureBlockState : public CancelableBlockState {
 
   PanGestureBlockState* AsPanGestureBlock() override { return this; }
 
-  bool ShouldDropEvents() const override;
-
-  bool TimeoutContentResponse() override;
-
   
 
 
@@ -340,9 +335,6 @@ class PanGestureBlockState : public CancelableBlockState {
   bool WasInterrupted() const { return mInterrupted; }
 
   void SetNeedsToWaitForContentResponse(bool aWaitForContentResponse);
-  void SetNeedsToWaitForBrowserGestureResponse(
-      bool aWaitForBrowserGestureResponse);
-  void SetBrowserGestureResponse(BrowserGestureResponse aResponse);
 
   ScrollDirections GetAllowedScrollDirections() const {
     return mAllowedScrollDirections;
@@ -351,13 +343,6 @@ class PanGestureBlockState : public CancelableBlockState {
  private:
   bool mInterrupted;
   bool mWaitingForContentResponse;
-  
-  
-  
-  
-  
-  bool mWaitingForBrowserGestureResponse;
-  bool mStartedBrowserGesture;
   ScrollDirections mAllowedScrollDirections;
 };
 

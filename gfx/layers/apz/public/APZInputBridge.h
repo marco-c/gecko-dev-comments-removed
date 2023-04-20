@@ -262,15 +262,6 @@ class APZInputBridge {
 std::ostream& operator<<(std::ostream& aOut,
                          const APZHandledResult& aHandledResult);
 
-
-
-
-
-enum class BrowserGestureResponse : bool {
-  NotConsumed = 0,  
-  Consumed = 1,  
-};
-
 }  
 }  
 

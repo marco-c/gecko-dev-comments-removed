@@ -2233,15 +2233,10 @@ void nsBaseWidget::ReportSwipeStarted(uint64_t aInputBlockId,
   if (mSwipeEventQueue && mSwipeEventQueue->inputBlockId == aInputBlockId) {
     if (aStartSwipe) {
       PanGestureInput& startEvent = mSwipeEventQueue->queuedEvents[0];
-      TrackScrollEventAsSwipe(startEvent, mSwipeEventQueue->allowedDirections,
-                              aInputBlockId);
+      TrackScrollEventAsSwipe(startEvent, mSwipeEventQueue->allowedDirections);
       for (size_t i = 1; i < mSwipeEventQueue->queuedEvents.Length(); i++) {
         mSwipeTracker->ProcessEvent(mSwipeEventQueue->queuedEvents[i]);
       }
-    } else if (mAPZC) {
-      
-      mAPZC->SetBrowserGestureResponse(aInputBlockId,
-                                       BrowserGestureResponse::NotConsumed);
     }
     mSwipeEventQueue = nullptr;
   }
@@ -2249,7 +2244,7 @@ void nsBaseWidget::ReportSwipeStarted(uint64_t aInputBlockId,
 
 void nsBaseWidget::TrackScrollEventAsSwipe(
     const mozilla::PanGestureInput& aSwipeStartEvent,
-    uint32_t aAllowedDirections, uint64_t aInputBlockId) {
+    uint32_t aAllowedDirections) {
   
   
   if (mSwipeTracker) {
@@ -2268,11 +2263,6 @@ void nsBaseWidget::TrackScrollEventAsSwipe(
 
   if (!mAPZC) {
     mCurrentPanGestureBelongsToSwipe = true;
-  } else {
-    
-    
-    mAPZC->SetBrowserGestureResponse(aInputBlockId,
-                                     BrowserGestureResponse::Consumed);
   }
 }
 
@@ -2303,9 +2293,11 @@ nsBaseWidget::SwipeInfo nsBaseWidget::SendMayStartSwipe(
 }
 
 WidgetWheelEvent nsBaseWidget::MayStartSwipeForAPZ(
-    const PanGestureInput& aPanInput, const APZEventResult& aApzResult) {
+    const PanGestureInput& aPanInput, const APZEventResult& aApzResult,
+    CanTriggerSwipe aCanTriggerSwipe) {
   WidgetWheelEvent event = aPanInput.ToWidgetEvent(this);
-  if (aPanInput.AllowsSwipe()) {
+  if (aCanTriggerSwipe == CanTriggerSwipe::Yes &&
+      aPanInput.mOverscrollBehaviorAllowsSwipe) {
     SwipeInfo swipeInfo = SendMayStartSwipe(aPanInput);
     event.mCanTriggerSwipe = swipeInfo.wantsSwipe;
     if (swipeInfo.wantsSwipe) {
@@ -2315,8 +2307,7 @@ WidgetWheelEvent nsBaseWidget::MayStartSwipeForAPZ(
         
         
         
-        TrackScrollEventAsSwipe(aPanInput, swipeInfo.allowedDirections,
-                                aApzResult.mInputBlockId);
+        TrackScrollEventAsSwipe(aPanInput, swipeInfo.allowedDirections);
       } else {
         
         
@@ -2327,12 +2318,6 @@ WidgetWheelEvent nsBaseWidget::MayStartSwipeForAPZ(
         mSwipeEventQueue = MakeUnique<SwipeEventQueue>(
             swipeInfo.allowedDirections, aApzResult.mInputBlockId);
       }
-    } else {
-      
-      
-      
-      mAPZC->SetBrowserGestureResponse(aApzResult.mInputBlockId,
-                                       BrowserGestureResponse::NotConsumed);
     }
   }
 
@@ -2344,7 +2329,8 @@ WidgetWheelEvent nsBaseWidget::MayStartSwipeForAPZ(
   return event;
 }
 
-bool nsBaseWidget::MayStartSwipeForNonAPZ(const PanGestureInput& aPanInput) {
+bool nsBaseWidget::MayStartSwipeForNonAPZ(const PanGestureInput& aPanInput,
+                                          CanTriggerSwipe aCanTriggerSwipe) {
   if (aPanInput.mType == PanGestureInput::PANGESTURE_MAYSTART ||
       aPanInput.mType == PanGestureInput::PANGESTURE_START) {
     mCurrentPanGestureBelongsToSwipe = false;
@@ -2360,7 +2346,7 @@ bool nsBaseWidget::MayStartSwipeForNonAPZ(const PanGestureInput& aPanInput) {
     return true;
   }
 
-  if (!aPanInput.MayTriggerSwipe()) {
+  if (aCanTriggerSwipe == CanTriggerSwipe::No) {
     return false;
   }
 
@@ -2370,8 +2356,7 @@ bool nsBaseWidget::MayStartSwipeForNonAPZ(const PanGestureInput& aPanInput) {
   
   
   ScrollableLayerGuid guid;
-  uint64_t blockId = 0;
-  InputAPZContext context(guid, blockId, nsEventStatus_eIgnore);
+  InputAPZContext context(guid, 0, nsEventStatus_eIgnore);
 
   WidgetWheelEvent event = aPanInput.ToWidgetEvent(this);
   event.mCanTriggerSwipe = swipeInfo.wantsSwipe;
@@ -2382,9 +2367,9 @@ bool nsBaseWidget::MayStartSwipeForNonAPZ(const PanGestureInput& aPanInput) {
       
       
       mSwipeEventQueue =
-          MakeUnique<SwipeEventQueue>(swipeInfo.allowedDirections, blockId);
+          MakeUnique<SwipeEventQueue>(swipeInfo.allowedDirections, 0);
     } else if (event.TriggersSwipe()) {
-      TrackScrollEventAsSwipe(aPanInput, swipeInfo.allowedDirections, blockId);
+      TrackScrollEventAsSwipe(aPanInput, swipeInfo.allowedDirections);
     }
   }
 

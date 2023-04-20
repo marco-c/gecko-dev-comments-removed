@@ -300,9 +300,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
       uint64_t aInputBlockId,
       const nsTArray<TouchBehaviorFlags>& aValues) override;
 
-  void SetBrowserGestureResponse(uint64_t aInputBlockId,
-                                 BrowserGestureResponse aResponse) override;
-
   
 
 

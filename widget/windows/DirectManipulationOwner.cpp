@@ -528,6 +528,12 @@ void DManipEventHandler::SendPanCommon(nsWindow* aWindow, Phase aPhase,
                         ScreenPoint(aDeltaX, aDeltaY),
                         aMods};
 
+  
+  
+  
+  event.mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection =
+      SwipeTracker::CanTriggerSwipe(event);
+
   aWindow->SendAnAPZEvent(event);
 }
 
