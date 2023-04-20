@@ -295,7 +295,7 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallback(
 
   
   
-  if (mDatagrams->mOutgoingMaxDataSize < static_cast<int64_t>(data.Length())) {
+  if (mDatagrams->mOutgoingMaxDataSize < static_cast<uint64_t>(data.Length())) {
     return Promise::CreateResolvedWithUndefined(mDatagrams->GetParentObject(),
                                                 aError);
   }

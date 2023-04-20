@@ -126,6 +126,9 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   }
 
   uint64_t MaxDatagramSize() const { return mOutgoingMaxDataSize; }
+  void SetMaxDatagramSize(const uint64_t& aMaxDatagramSize) {
+    mOutgoingMaxDataSize = aMaxDatagramSize;
+  }
   double GetIncomingMaxAge(ErrorResult& aRv) const { return mIncomingMaxAge; }
   void SetIncomingMaxAge(double aMaxAge, ErrorResult& aRv);
   double GetOutgoingMaxAge(ErrorResult& aRv) const { return mOutgoingMaxAge; }
@@ -155,9 +158,7 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   
   double mIncomingHighWaterMark = 1.0;
   double mOutgoingHighWaterMark = 5.0;
-  
-  
-  int64_t mOutgoingMaxDataSize = 1024;  
+  uint64_t mOutgoingMaxDataSize;  
 
   mozilla::Queue<UniquePtr<DatagramEntry>, 32> mIncomingDatagramsQueue;
 };
