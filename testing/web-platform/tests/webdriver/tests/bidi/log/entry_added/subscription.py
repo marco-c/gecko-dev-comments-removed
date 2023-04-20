@@ -7,7 +7,7 @@ from . import assert_base_entry, create_log
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("log_type", ["console_api_log", "javascript_error"])
-async def test_subscribe_twice(bidi_session, top_context, wait_for_event, log_type):
+async def test_subscribe_twice(bidi_session, new_tab, wait_for_event, log_type):
     
     await bidi_session.session.subscribe(events=["log.entryAdded"])
     await bidi_session.session.subscribe(events=["log.entryAdded"])
@@ -22,7 +22,7 @@ async def test_subscribe_twice(bidi_session, top_context, wait_for_event, log_ty
 
     
     on_entry_added = wait_for_event("log.entryAdded")
-    expected_text = await create_log(bidi_session, top_context, log_type, "text1")
+    expected_text = await create_log(bidi_session, new_tab, log_type, "text1")
     await on_entry_added
 
     assert len(events) == 1
@@ -37,12 +37,12 @@ async def test_subscribe_twice(bidi_session, top_context, wait_for_event, log_ty
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("log_type", ["console_api_log", "javascript_error"])
-async def test_subscribe_unsubscribe(bidi_session, top_context, wait_for_event, log_type):
+async def test_subscribe_unsubscribe(bidi_session, new_tab, wait_for_event, log_type):
     
     await bidi_session.session.subscribe(events=["log.entryAdded"])
 
     on_entry_added = wait_for_event("log.entryAdded")
-    await create_log(bidi_session, top_context, log_type, "text1")
+    await create_log(bidi_session, new_tab, log_type, "some text")
     await on_entry_added
 
     
@@ -56,7 +56,7 @@ async def test_subscribe_unsubscribe(bidi_session, top_context, wait_for_event, 
 
     remove_listener = bidi_session.add_event_listener("log.entryAdded", on_event)
 
-    await create_log(bidi_session, top_context, log_type, "text2")
+    expected_text_0 = await create_log(bidi_session, new_tab, log_type, "text_0")
 
     
     await asyncio.sleep(0.5)
@@ -64,11 +64,11 @@ async def test_subscribe_unsubscribe(bidi_session, top_context, wait_for_event, 
 
     
     await bidi_session.browsing_context.navigate(
-        context=top_context["context"], url=top_context["url"], wait="complete"
+        context=new_tab["context"], url=new_tab["url"], wait="complete"
     )
 
     
-    await create_log(bidi_session, top_context, log_type, "text3")
+    expected_text_1 = await create_log(bidi_session, new_tab, log_type, "text_1")
 
     
     await asyncio.sleep(0.5)
@@ -77,27 +77,32 @@ async def test_subscribe_unsubscribe(bidi_session, top_context, wait_for_event, 
     
     
     await bidi_session.browsing_context.navigate(
-        context=top_context["context"], url=top_context["url"], wait="complete"
+        context=new_tab["context"], url=new_tab["url"], wait="complete"
     )
 
     
     await bidi_session.session.subscribe(events=["log.entryAdded"])
 
+    
+    assert len(events) == 2
+
     on_entry_added = wait_for_event("log.entryAdded")
-    expected_text = await create_log(bidi_session, top_context, log_type, "text4")
+    expected_text_2 = await create_log(bidi_session, new_tab, log_type, "text_2")
     await on_entry_added
 
-    assert len(events) == 1
-    assert_base_entry(events[0], text=expected_text, context=top_context["context"])
+    assert len(events) == 3
+    assert_base_entry(events[0], text=expected_text_0, context=new_tab["context"])
+    assert_base_entry(events[1], text=expected_text_1, context=new_tab["context"])
+    assert_base_entry(events[2], text=expected_text_2, context=new_tab["context"])
 
     
     new_context = await bidi_session.browsing_context.create(type_hint="tab")
 
     on_entry_added = wait_for_event("log.entryAdded")
-    expected_text = await create_log(bidi_session, new_context, log_type, "text5")
+    expected_text_3 = await create_log(bidi_session, new_context, log_type, "text_3")
     await on_entry_added
 
-    assert len(events) == 2
-    assert_base_entry(events[1], text=expected_text, context=new_context["context"])
+    assert len(events) == 4
+    assert_base_entry(events[3], text=expected_text_3, context=new_context["context"])
 
     remove_listener()
