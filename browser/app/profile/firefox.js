@@ -2785,8 +2785,12 @@ pref("browser.pdfjs.feature-tour", "{\"screen\":\"\",\"complete\":false}");
   pref("cookiebanners.service.mode.privateBrowsing", 1);
 #endif
 
-
-pref("cookiebanners.ui.desktop.enabled", false);
+#if defined(EARLY_BETA_OR_EARLIER)
+  
+  pref("cookiebanners.ui.desktop.enabled", true);
+#else
+  pref("cookiebanners.ui.desktop.enabled", false);
+#endif
 
 
 pref("cookiebanners.ui.desktop.cfrVariant", 0);
