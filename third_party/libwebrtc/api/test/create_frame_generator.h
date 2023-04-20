@@ -42,6 +42,15 @@ std::unique_ptr<FrameGeneratorInterface> CreateFromYuvFileFrameGenerator(
     int frame_repeat_count);
 
 
+
+
+std::unique_ptr<FrameGeneratorInterface> CreateFromNV12FileFrameGenerator(
+    std::vector<std::string> filenames,
+    size_t width,
+    size_t height,
+    int frame_repeat_count = 1);
+
+
 std::unique_ptr<FrameGeneratorInterface> CreateFromIvfFileFrameGenerator(
     std::string filename);
 
