@@ -11,6 +11,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/glean/bindings/jog/jog_ffi_generated.h"
+#include "mozilla/Logging.h"
 #include "mozilla/Omnijar.h"
 #include "mozilla/Tuple.h"
 #include "nsDirectoryServiceDefs.h"
@@ -20,6 +21,9 @@
 #include "nsTHashSet.h"
 
 namespace mozilla::glean {
+
+using mozilla::LogLevel;
+static mozilla::LazyLogModule sLog("jog");
 
 
 
@@ -43,18 +47,22 @@ bool JOG::EnsureRuntimeMetricsRegistered(bool aForce) {
 #ifdef MOZILLA_OFFICIAL
   
   
+  MOZ_LOG(sLog, LogLevel::Verbose, ("MOZILLA_OFFICIAL build. No JOG for you."));
   return false;
 #endif
 
   if (sFoundAndLoadedJogfile) {
     return sFoundAndLoadedJogfile.value();
   }
-  sFoundAndLoadedJogfile.emplace(false);
+  sFoundAndLoadedJogfile = Some(false);
+
+  MOZ_LOG(sLog, LogLevel::Debug, ("Determining whether there's JOG for you."));
 
   if (!mozilla::IsDevelopmentBuild()) {
     
     
     
+    MOZ_LOG(sLog, LogLevel::Debug, ("!IsDevelopmentBuild. No JOG for you."));
     return false;
   }
   
@@ -80,7 +88,11 @@ bool JOG::EnsureRuntimeMetricsRegistered(bool aForce) {
   if (NS_WARN_IF(NS_FAILED(jogfile->GetPath(jogfileString)))) {
     return false;
   }
-  sFoundAndLoadedJogfile.emplace(jog::jog_load_jogfile(&jogfileString));
+  sFoundAndLoadedJogfile = Some(jog::jog_load_jogfile(&jogfileString));
+  MOZ_LOG(sLog, LogLevel::Debug,
+          ("%s", sFoundAndLoadedJogfile.value()
+                     ? "Found and loaded jogfile. Yes! JOG for you!"
+                     : "Couldn't find and load jogfile. No JOG for you."));
   return sFoundAndLoadedJogfile.value();
 }
 
