@@ -20,9 +20,10 @@ CSSImportRule::CSSImportRule(RefPtr<RawServoImportRule> aRawRule,
     : css::Rule(aSheet, aParentRule, aLine, aColumn),
       mRawRule(std::move(aRawRule)) {
   const auto* sheet = Servo_ImportRule_GetSheet(mRawRule.get());
-  MOZ_ASSERT(sheet);
   mChildSheet = const_cast<StyleSheet*>(sheet);
-  mChildSheet->AddReferencingRule(*this);
+  if (mChildSheet) {
+    mChildSheet->AddReferencingRule(*this);
+  }
 }
 
 CSSImportRule::~CSSImportRule() {
@@ -84,24 +85,28 @@ void CSSImportRule::SetRawAfterClone(RefPtr<RawServoImportRule> aRaw) {
   }
   mChildSheet =
       const_cast<StyleSheet*>(Servo_ImportRule_GetSheet(mRawRule.get()));
-  mChildSheet->AddReferencingRule(*this);
+  if (mChildSheet) {
+    mChildSheet->AddReferencingRule(*this);
+  }
 }
 
 StyleSheet* CSSImportRule::GetStyleSheetForBindings() {
-  
-  
-  
-  
-  
-  if (StyleSheet* parent = GetParentStyleSheet()) {
-    parent->EnsureUniqueInner();
+  if (mChildSheet) {
+    
+    
+    
+    
+    
+    
+    if (StyleSheet* parent = GetParentStyleSheet()) {
+      parent->EnsureUniqueInner();
+    }
   }
   return mChildSheet;
 }
 
 dom::MediaList* CSSImportRule::GetMedia() {
   auto* sheet = GetStyleSheetForBindings();
-  
   return sheet ? sheet->Media() : nullptr;
 }
 
