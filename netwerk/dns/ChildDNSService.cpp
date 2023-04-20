@@ -510,19 +510,5 @@ ChildDNSService::GetTrrDomain(nsACString& aTRRDomain) {
   return NS_OK;
 }
 
-NS_IMETHODIMP
-ChildDNSService::GetLastConfirmationStatus(nsresult* aConfirmationStatus) {
-  
-  *aConfirmationStatus = NS_OK;
-  return NS_OK;
-}
-
-NS_IMETHODIMP ChildDNSService::GetLastConfirmationSkipReason(
-    TRRSkippedReason* aSkipReason) {
-  
-  *aSkipReason = nsITRRSkipReason::TRR_UNSET;
-  return NS_OK;
-}
-
 }  
 }  
