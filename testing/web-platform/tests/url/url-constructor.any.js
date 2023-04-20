@@ -1,5 +1,10 @@
 
 
+
+
+
+
+
 function bURL(url, base) {
   return base ? new URL(url, base) : new URL(url)
 }
@@ -9,7 +14,17 @@ function runURLTests(urltests) {
     var expected = urltests[i]
     if (typeof expected === "string") continue 
 
-    test(function() {
+    function getKey(expected) {
+      if (expected.protocol) {
+        return expected.protocol.replace(":", "");
+      }
+      if (expected.failure) {
+        return expected.input.split(":")[0];
+      }
+      return "other";
+    }
+
+    subsetTestByKey(getKey(expected), test, function() {
       if (expected.failure) {
         assert_throws_js(TypeError, function() {
           bURL(expected.input, expected.base)

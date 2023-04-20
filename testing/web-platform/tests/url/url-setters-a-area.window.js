@@ -1,5 +1,11 @@
 
 
+
+
+
+
+
+
 promise_test(() => fetch("resources/setters_tests.json").then(res => res.json()).then(runURLSettersTests), "Loading data…");
 
 function runURLSettersTests(all_test_cases) {
@@ -15,7 +21,8 @@ function runURLSettersTests(all_test_cases) {
       if ("comment" in test_case) {
         name += " " + test_case.comment;
       }
-      test(function() {
+      const key = test_case.href.split(":")[0];
+      subsetTestByKey(key, test, function() {
         var url = document.createElement("a");
         url.href = test_case.href;
         url[attribute_to_be_set] = test_case.new_value;
@@ -23,7 +30,7 @@ function runURLSettersTests(all_test_cases) {
           assert_equals(url[attribute], test_case.expected[attribute])
         }
       }, "<a>: " + name)
-      test(function() {
+      subsetTestByKey(key, test, function() {
         var url = document.createElement("area");
         url.href = test_case.href;
         url[attribute_to_be_set] = test_case.new_value;

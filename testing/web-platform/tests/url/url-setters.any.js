@@ -1,5 +1,11 @@
 
 
+
+
+
+
+
+
 promise_test(() => fetch("resources/setters_tests.json").then(res => res.json()).then(runURLSettersTests), "Loading data…");
 
 function runURLSettersTests(all_test_cases) {
@@ -15,7 +21,8 @@ function runURLSettersTests(all_test_cases) {
       if ("comment" in test_case) {
         name += " " + test_case.comment;
       }
-      test(function() {
+      const key = test_case.href.split(":")[0];
+      subsetTestByKey(key, test, function() {
         var url = new URL(test_case.href);
         url[attribute_to_be_set] = test_case.new_value;
         for (var attribute in test_case.expected) {
