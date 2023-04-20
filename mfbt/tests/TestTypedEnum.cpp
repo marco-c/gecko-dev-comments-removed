@@ -14,7 +14,7 @@
 
 
 
-#if __cplusplus >= 201103L && !defined(ANDROID)
+#if __cplusplus >= 201103L && __cplusplus < 202002L && !defined(ANDROID)
 #  if defined(__clang__)
 
 
