@@ -27,6 +27,7 @@
 #include "nsLayoutUtils.h"
 #include "nsPlaceholderFrame.h"
 #include "nsPresContext.h"
+#include "Baseline.h"
 
 using namespace mozilla;
 using namespace mozilla::layout;
@@ -430,8 +431,8 @@ class nsFlexContainerFrame::FlexItem final {
     }
 
     
-    mAscent = mFrame->SynthesizeBaselineBOffsetFromBorderBox(
-        mWM, BaselineSharingGroup::First);
+    mAscent = Baseline::SynthesizeBOffsetFromBorderBox(
+        mFrame, mWM, BaselineSharingGroup::First);
     return mAscent;
   }
 

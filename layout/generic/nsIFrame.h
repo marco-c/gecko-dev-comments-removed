@@ -81,6 +81,7 @@
 #include "nsDisplayItemTypes.h"
 #include "nsPresContext.h"
 #include "nsTHashSet.h"
+#include "Baseline.h"
 
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/AccTypes.h"
@@ -346,13 +347,6 @@ class nsReflowStatus final {
 std::ostream& operator<<(std::ostream& aStream, const nsReflowStatus& aStatus);
 
 namespace mozilla {
-
-
-enum class BaselineSharingGroup {
-  
-  First = 0,
-  Last = 1,
-};
 
 
 enum class AlignmentContext {
@@ -1530,50 +1524,6 @@ class nsIFrame : public nsQueryFrame {
   nscoord GetLogicalBaseline(mozilla::WritingMode aWM) const;
   nscoord GetLogicalBaseline(mozilla::WritingMode aWM,
                              BaselineSharingGroup aBaselineGroup) const;
-
-  
-
-
-
-
-
-
-
-
-
-
-  inline nscoord SynthesizeBaselineBOffsetFromMarginBox(
-      mozilla::WritingMode aWM, BaselineSharingGroup aGroup) const;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  inline nscoord SynthesizeBaselineBOffsetFromBorderBox(
-      mozilla::WritingMode aWM, BaselineSharingGroup aGroup) const;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  inline nscoord SynthesizeBaselineBOffsetFromContentBox(
-      mozilla::WritingMode aWM, BaselineSharingGroup aGroup) const;
 
   
 
