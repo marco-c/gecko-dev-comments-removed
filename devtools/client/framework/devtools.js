@@ -8,6 +8,10 @@ const { DevToolsShim } = ChromeUtils.importESModule(
   "chrome://devtools-startup/content/DevToolsShim.sys.mjs"
 );
 
+const { DEFAULT_SANDBOX_NAME } = ChromeUtils.importESModule(
+  "resource://devtools/shared/loader/Loader.sys.mjs"
+);
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserToolboxLauncher:
@@ -74,6 +78,21 @@ const DEVTOOLS_ALWAYS_ON_TOP = "devtools.toolbox.alwaysOnTop";
 
 
 function DevTools() {
+  
+  
+  
+  
+  
+  
+  if (
+    Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT ||
+    Cu.getRealmLocation(globalThis) != DEFAULT_SANDBOX_NAME
+  ) {
+    throw new Error(
+      "This module should be loaded in the parent process only, in the shared global."
+    );
+  }
+
   this._tools = new Map(); 
   this._themes = new Map(); 
   this._toolboxesPerCommands = new Map(); 
