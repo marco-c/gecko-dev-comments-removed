@@ -538,9 +538,7 @@ void PipeToPump::Finalize(JSContext* aCx,
                           JS::Handle<mozilla::Maybe<JS::Value>> aError) {
   IgnoredErrorResult rv;
   
-  WritableStreamDefaultWriterRelease(aCx, mWriter, rv);
-  NS_WARNING_ASSERTION(!rv.Failed(),
-                       "WritableStreamDefaultWriterRelease should not fail.");
+  WritableStreamDefaultWriterRelease(aCx, mWriter);
 
   
   

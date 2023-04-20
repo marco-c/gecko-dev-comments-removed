@@ -59,8 +59,7 @@ JSObject* ReadableStreamDefaultReader::WrapObject(
 
 
 bool ReadableStreamReaderGenericInitialize(ReadableStreamGenericReader* aReader,
-                                           ReadableStream* aStream,
-                                           ErrorResult& aRv) {
+                                           ReadableStream* aStream) {
   
   aReader->SetStream(aStream);
 
@@ -121,7 +120,7 @@ ReadableStreamDefaultReader::Constructor(const GlobalObject& aGlobal,
 
   
   RefPtr<ReadableStream> streamPtr = &aStream;
-  if (!ReadableStreamReaderGenericInitialize(reader, streamPtr, aRv)) {
+  if (!ReadableStreamReaderGenericInitialize(reader, streamPtr)) {
     return nullptr;
   }
 
@@ -407,7 +406,7 @@ void SetUpReadableStreamDefaultReader(ReadableStreamDefaultReader* aReader,
   }
 
   
-  if (!ReadableStreamReaderGenericInitialize(aReader, aStream, aRv)) {
+  if (!ReadableStreamReaderGenericInitialize(aReader, aStream)) {
     return;
   }
 

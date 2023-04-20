@@ -206,8 +206,7 @@ already_AddRefed<Promise> WritableStreamDefaultWriter::Close(JSContext* aCx,
 
 
 void WritableStreamDefaultWriterRelease(JSContext* aCx,
-                                        WritableStreamDefaultWriter* aWriter,
-                                        ErrorResult& aRv) {
+                                        WritableStreamDefaultWriter* aWriter) {
   
   RefPtr<WritableStream> stream = aWriter->GetStream();
 
@@ -229,20 +228,13 @@ void WritableStreamDefaultWriterRelease(JSContext* aCx,
   
   
   
-  WritableStreamDefaultWriterEnsureReadyPromiseRejected(aWriter, releasedError,
-                                                        aRv);
-  if (aRv.Failed()) {
-    return;
-  }
+  WritableStreamDefaultWriterEnsureReadyPromiseRejected(aWriter, releasedError);
 
   
   
   
-  WritableStreamDefaultWriterEnsureClosedPromiseRejected(aWriter, releasedError,
-                                                         aRv);
-  if (aRv.Failed()) {
-    return;
-  }
+  WritableStreamDefaultWriterEnsureClosedPromiseRejected(aWriter,
+                                                         releasedError);
 
   
   stream->SetWriter(nullptr);
@@ -252,8 +244,7 @@ void WritableStreamDefaultWriterRelease(JSContext* aCx,
 }
 
 
-void WritableStreamDefaultWriter::ReleaseLock(JSContext* aCx,
-                                              ErrorResult& aRv) {
+void WritableStreamDefaultWriter::ReleaseLock(JSContext* aCx) {
   
   RefPtr<WritableStream> stream = mStream;
 
@@ -267,7 +258,7 @@ void WritableStreamDefaultWriter::ReleaseLock(JSContext* aCx,
 
   
   RefPtr<WritableStreamDefaultWriter> thisRefPtr = this;
-  return WritableStreamDefaultWriterRelease(aCx, thisRefPtr, aRv);
+  return WritableStreamDefaultWriterRelease(aCx, thisRefPtr);
 }
 
 
@@ -329,10 +320,7 @@ already_AddRefed<Promise> WritableStreamDefaultWriterWrite(
   MOZ_ASSERT(state == WritableStream::WriterState::Writable);
 
   
-  RefPtr<Promise> promise = WritableStreamAddWriteRequest(stream, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
+  RefPtr<Promise> promise = WritableStreamAddWriteRequest(stream);
 
   
   
@@ -469,8 +457,7 @@ void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
 
 
 void WritableStreamDefaultWriterEnsureClosedPromiseRejected(
-    WritableStreamDefaultWriter* aWriter, JS::Handle<JS::Value> aError,
-    ErrorResult& aRv) {
+    WritableStreamDefaultWriter* aWriter, JS::Handle<JS::Value> aError) {
   RefPtr<Promise> closedPromise = aWriter->ClosedPromise();
   
   
@@ -490,8 +477,7 @@ void WritableStreamDefaultWriterEnsureClosedPromiseRejected(
 
 
 void WritableStreamDefaultWriterEnsureReadyPromiseRejected(
-    WritableStreamDefaultWriter* aWriter, JS::Handle<JS::Value> aError,
-    ErrorResult& aRv) {
+    WritableStreamDefaultWriter* aWriter, JS::Handle<JS::Value> aError) {
   RefPtr<Promise> readyPromise = aWriter->ReadyPromise();
   
   
