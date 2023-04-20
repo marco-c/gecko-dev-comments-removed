@@ -84,7 +84,7 @@ struct StringOffset final {
 
 
 struct InterfaceOffset final {
-  uint32_t mOffset;
+  uint16_t mOffset;
 };
 
 
@@ -223,6 +223,7 @@ struct JSServiceEntry final {
   ModuleID mModuleID;
 
   InterfaceOffset mInterfaceOffset;
+
   uint8_t mInterfaceCount;
 
   nsCString Name() const;
