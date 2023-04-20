@@ -2196,12 +2196,19 @@ const char* kExemptedDomainsPrefName =
     "privacy.resistFingerprinting.exemptedDomains";
 
 
-
 bool nsContentUtils::ShouldResistFingerprinting(const char* aJustification) {
   
   return ShouldResistFingerprinting();
 }
 
+
+bool nsContentUtils::ShouldResistFingerprinting(
+    CallerType aCallerType, nsIGlobalObject* aGlobalObject) {
+  if (aCallerType == CallerType::System) {
+    return false;
+  }
+  return ShouldResistFingerprinting(aGlobalObject);
+}
 
 bool nsContentUtils::ShouldResistFingerprinting(nsIDocShell* aDocShell) {
   if (!aDocShell) {
@@ -2219,7 +2226,6 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIDocShell* aDocShell) {
   }
   return doc->ShouldResistFingerprinting();
 }
-
 
 
 bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel) {
@@ -2300,7 +2306,6 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel) {
 }
 
 
-
 bool nsContentUtils::ShouldResistFingerprinting_dangerous(
     nsIURI* aURI, const mozilla::OriginAttributes& aOriginAttributes,
     const char* aJustification) {
@@ -2349,7 +2354,6 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
 }
 
 
-
 bool nsContentUtils::ShouldResistFingerprinting(nsILoadInfo* aLoadInfo) {
   MOZ_ASSERT(aLoadInfo->GetExternalContentPolicyType() !=
                  ExtContentPolicy::TYPE_DOCUMENT &&
@@ -2376,7 +2380,6 @@ bool nsContentUtils::ShouldResistFingerprinting(nsILoadInfo* aLoadInfo) {
              aLoadInfo->GetOriginAttributes());
   return ShouldResistFingerprinting_dangerous(principal, "Internal Call");
 }
-
 
 
 bool nsContentUtils::ShouldResistFingerprinting_dangerous(
@@ -2461,7 +2464,6 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
 
   return !isExemptDomain;
 }
-
 
 
 void nsContentUtils::CalcRoundedWindowSizeForResistingFingerprinting(

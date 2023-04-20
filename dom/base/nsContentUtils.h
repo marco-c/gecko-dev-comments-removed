@@ -348,6 +348,10 @@ class nsContentUtils {
   
   static bool ShouldResistFingerprinting();
   static bool ShouldResistFingerprinting(nsIGlobalObject* aGlobalObject);
+  
+  
+  static bool ShouldResistFingerprinting(mozilla::dom::CallerType aCallerType,
+                                         nsIGlobalObject* aGlobalObject);
   static bool ShouldResistFingerprinting(nsIDocShell* aDocShell);
   
   static bool ShouldResistFingerprinting(nsIChannel* aChannel);
@@ -2432,16 +2436,6 @@ class nsContentUtils {
 
   static bool IsCutCopyAllowed(Document* aDocument,
                                nsIPrincipal& aSubjectPrincipal);
-
-  
-
-
-
-
-  static bool ResistFingerprinting(mozilla::dom::CallerType aCallerType) {
-    return aCallerType != mozilla::dom::CallerType::System &&
-           ShouldResistFingerprinting();
-  }
 
   
 

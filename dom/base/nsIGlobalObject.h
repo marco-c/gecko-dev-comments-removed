@@ -50,6 +50,7 @@ class ServiceWorker;
 class ServiceWorkerRegistration;
 class ServiceWorkerRegistrationDescriptor;
 class StorageManager;
+enum class CallerType : uint32_t;
 }  
 namespace ipc {
 class PrincipalInfo;
@@ -255,6 +256,9 @@ class nsIGlobalObject : public nsISupports,
 
 
   virtual bool ShouldResistFingerprinting() const = 0;
+
+  
+  bool ShouldResistFingerprinting(mozilla::dom::CallerType aCallerType) const;
 
   RTPCallerType GetRTPCallerType() const;
 
