@@ -37,11 +37,11 @@
 extern "C" {
 #endif
 
-#define ZLIB_VERSION "1.2.12"
-#define ZLIB_VERNUM 0x12c0
+#define ZLIB_VERSION "1.2.13"
+#define ZLIB_VERNUM 0x12d0
 #define ZLIB_VER_MAJOR 1
 #define ZLIB_VER_MINOR 2
-#define ZLIB_VER_REVISION 12
+#define ZLIB_VER_REVISION 13
 #define ZLIB_VER_SUBREVISION 0
 
 
@@ -220,6 +220,7 @@ typedef gz_header FAR *gz_headerp;
                         
 
 ZEXTERN const char * ZEXPORT zlibVersion OF((void));
+
 
 
 
@@ -1756,8 +1757,6 @@ ZEXTERN uLong ZEXPORT crc32 OF((uLong crc, const Bytef *buf, uInt len));
 
 
 
-#ifndef Z_FREETYPE
-
 ZEXTERN uLong ZEXPORT crc32_z OF((uLong crc, const Bytef *buf,
                                   z_size_t len));
 
@@ -1780,6 +1779,8 @@ ZEXTERN uLong ZEXPORT crc32_z OF((uLong crc, const Bytef *buf,
 
 
 
+
+#ifndef Z_FREETYPE
 
 ZEXTERN uLong ZEXPORT crc32_combine_op OF((uLong crc1, uLong crc2, uLong op));
 
@@ -1945,8 +1946,10 @@ ZEXTERN int            ZEXPORT inflateSyncPoint OF((z_streamp));
 ZEXTERN const z_crc_t FAR * ZEXPORT get_crc_table    OF((void));
 ZEXTERN int            ZEXPORT inflateUndermine OF((z_streamp, int));
 ZEXTERN int            ZEXPORT inflateValidate OF((z_streamp, int));
-ZEXTERN unsigned long  ZEXPORT inflateCodesUsed OF ((z_streamp));
+ZEXTERN unsigned long  ZEXPORT inflateCodesUsed OF((z_streamp));
+#endif  
 ZEXTERN int            ZEXPORT inflateResetKeep OF((z_streamp));
+#ifndef Z_FREETYPE
 ZEXTERN int            ZEXPORT deflateResetKeep OF((z_streamp));
 #if defined(_WIN32) && !defined(Z_SOLO)
 ZEXTERN gzFile         ZEXPORT gzopen_w OF((const wchar_t *path,

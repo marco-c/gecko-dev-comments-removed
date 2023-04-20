@@ -144,9 +144,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
   typedef struct  PS_TableRec_
   {
     FT_Byte*           block;          
@@ -155,7 +152,6 @@ FT_BEGIN_HEADER
     FT_ULong           init;
 
     FT_Int             max_elems;
-    FT_Int             num_elems;
     FT_Byte**          elements;       
     FT_UInt*           lengths;        
 

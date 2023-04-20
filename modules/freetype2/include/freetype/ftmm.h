@@ -408,6 +408,10 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
   FT_EXPORT( FT_Error )
   FT_Set_Var_Design_Coordinates( FT_Face    face,
                                  FT_UInt    num_coords,
@@ -415,6 +419,11 @@ FT_BEGIN_HEADER
 
 
   
+
+
+
+
+
 
 
 

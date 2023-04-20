@@ -733,7 +733,7 @@
                               ttf_reserved ) )
               goto Fail;
           }
-          
+          FALL_THROUGH;
 
         case BEFORE_TABLE_DIR:
           
@@ -785,7 +785,7 @@
                               ttf_reserved ) )
               goto Fail;
           }
-          
+          FALL_THROUGH;
 
         case OTHER_TABLES:
           

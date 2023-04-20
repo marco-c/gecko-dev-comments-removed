@@ -67,6 +67,7 @@
 
 #include <freetype/freetype.h>
 #include <freetype/tttags.h>
+#include <freetype/internal/ftdebug.h>
 #include <freetype/internal/ftstream.h>
 #include "ftbase.h"
 
@@ -85,9 +86,13 @@
   
   
   
-  
 #ifndef HAVE_TYPE_RESOURCE_INDEX
+#if !defined( MAC_OS_X_VERSION_10_5 ) || \
+    ( MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_5 )
+#define HAVE_TYPE_RESOURCE_INDEX 0
+#else
 #define HAVE_TYPE_RESOURCE_INDEX 1
+#endif
 #endif 
 
 #if ( HAVE_TYPE_RESOURCE_INDEX == 0 )

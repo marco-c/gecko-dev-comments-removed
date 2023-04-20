@@ -172,8 +172,8 @@ FT_BEGIN_HEADER
   {
     FT_Bool        IsCIDFont;
     FT_BBox        FontBBox;
-    FT_Fixed       Ascender;
-    FT_Fixed       Descender;
+    FT_Fixed       Ascender;     
+    FT_Fixed       Descender;    
     AFM_TrackKern  TrackKerns;   
     FT_UInt        NumTrackKern;
     AFM_KernPair   KernPairs;    

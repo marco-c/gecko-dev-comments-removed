@@ -66,6 +66,7 @@ int ZEXPORT inflateBackInit_(
     state->window = window;
     state->wnext = 0;
     state->whave = 0;
+    state->sane = 1;
     return Z_OK;
 }
 
@@ -607,23 +608,25 @@ int ZEXPORT inflateBack(
         case DONE:
             
             ret = Z_STREAM_END;
-            if (left < state->wsize) {
-                if (out(out_desc, state->window, state->wsize - left))
-                    ret = Z_BUF_ERROR;
-            }
             goto inf_leave;
 
         case BAD:
             ret = Z_DATA_ERROR;
             goto inf_leave;
 
-        default:                
+        default:
+            
             ret = Z_STREAM_ERROR;
             goto inf_leave;
         }
 
     
   inf_leave:
+    if (left < state->wsize) {
+        if (out(out_desc, state->window, state->wsize - left) &&
+            ret == Z_STREAM_END)
+            ret = Z_BUF_ERROR;
+    }
     strm->next_in = next;
     strm->avail_in = have;
     return ret;

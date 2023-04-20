@@ -121,19 +121,30 @@
 #ifndef T1_CONFIG_OPTION_NO_MM_SUPPORT
   static const FT_Service_MultiMastersRec  t1_service_multi_masters =
   {
-    (FT_Get_MM_Func)             T1_Get_Multi_Master,    
-    (FT_Set_MM_Design_Func)      T1_Set_MM_Design,       
-    (FT_Set_MM_Blend_Func)       T1_Set_MM_Blend,        
-    (FT_Get_MM_Blend_Func)       T1_Get_MM_Blend,        
-    (FT_Get_MM_Var_Func)         T1_Get_MM_Var,          
-    (FT_Set_Var_Design_Func)     T1_Set_Var_Design,      
-    (FT_Get_Var_Design_Func)     T1_Get_Var_Design,      
-    (FT_Set_Instance_Func)       T1_Reset_MM_Blend,      
-    (FT_Set_MM_WeightVector_Func)T1_Set_MM_WeightVector, 
-    (FT_Get_MM_WeightVector_Func)T1_Get_MM_WeightVector, 
-
-    (FT_Get_Var_Blend_Func)      NULL,                   
-    (FT_Done_Blend_Func)         T1_Done_Blend           
+    (FT_Get_MM_Func)        T1_Get_Multi_Master,    
+    (FT_Set_MM_Design_Func) T1_Set_MM_Design,       
+    (FT_Set_MM_Blend_Func)  T1_Set_MM_Blend,        
+    (FT_Get_MM_Blend_Func)  T1_Get_MM_Blend,        
+    (FT_Get_MM_Var_Func)    T1_Get_MM_Var,          
+    (FT_Set_Var_Design_Func)T1_Set_Var_Design,      
+    (FT_Get_Var_Design_Func)T1_Get_Var_Design,      
+    (FT_Set_Instance_Func)  T1_Reset_MM_Blend,      
+    (FT_Set_MM_WeightVector_Func)
+                            T1_Set_MM_WeightVector, 
+    (FT_Get_MM_WeightVector_Func)
+                            T1_Get_MM_WeightVector, 
+    (FT_Var_Load_Delta_Set_Idx_Map_Func)
+                            NULL,                   
+    (FT_Var_Load_Item_Var_Store_Func)
+                            NULL,                   
+    (FT_Var_Get_Item_Delta_Func)
+                            NULL,                   
+    (FT_Var_Done_Item_Var_Store_Func)
+                            NULL,                   
+    (FT_Var_Done_Delta_Set_Idx_Map_Func)
+                            NULL,                   
+    (FT_Get_Var_Blend_Func) NULL,                   
+    (FT_Done_Blend_Func)    T1_Done_Blend           
   };
 #endif
 

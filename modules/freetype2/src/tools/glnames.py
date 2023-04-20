@@ -13,11 +13,7 @@
 
 
 
-
-
-
-"""\
-
+"""
 usage: %s <output-file>
 
   This python script generates the glyph names tables defined in the
@@ -26,11 +22,9 @@ usage: %s <output-file>
   Its single argument is the name of the header file to be created.
 """
 
-
-import sys, string, struct, re, os.path
-
-
-
+import os.path
+import struct
+import sys
 
 
 
@@ -39,112 +33,113 @@ import sys, string, struct, re, os.path
 
 
 
-mac_standard_names = \
-[
-  
-  ".notdef", ".null", "nonmarkingreturn", "space", "exclam",
-  "quotedbl", "numbersign", "dollar", "percent", "ampersand",
 
-  
-  "quotesingle", "parenleft", "parenright", "asterisk", "plus",
-  "comma", "hyphen", "period", "slash", "zero",
 
-  
-  "one", "two", "three", "four", "five",
-  "six", "seven", "eight", "nine", "colon",
+mac_standard_names = [
+    
+    ".notdef", ".null", "nonmarkingreturn", "space", "exclam",
+    "quotedbl", "numbersign", "dollar", "percent", "ampersand",
 
-  
-  "semicolon", "less", "equal", "greater", "question",
-  "at", "A", "B", "C", "D",
+    
+    "quotesingle", "parenleft", "parenright", "asterisk", "plus",
+    "comma", "hyphen", "period", "slash", "zero",
 
-  
-  "E", "F", "G", "H", "I",
-  "J", "K", "L", "M", "N",
+    
+    "one", "two", "three", "four", "five",
+    "six", "seven", "eight", "nine", "colon",
 
-  
-  "O", "P", "Q", "R", "S",
-  "T", "U", "V", "W", "X",
+    
+    "semicolon", "less", "equal", "greater", "question",
+    "at", "A", "B", "C", "D",
 
-  
-  "Y", "Z", "bracketleft", "backslash", "bracketright",
-  "asciicircum", "underscore", "grave", "a", "b",
+    
+    "E", "F", "G", "H", "I",
+    "J", "K", "L", "M", "N",
 
-  
-  "c", "d", "e", "f", "g",
-  "h", "i", "j", "k", "l",
+    
+    "O", "P", "Q", "R", "S",
+    "T", "U", "V", "W", "X",
 
-  
-  "m", "n", "o", "p", "q",
-  "r", "s", "t", "u", "v",
+    
+    "Y", "Z", "bracketleft", "backslash", "bracketright",
+    "asciicircum", "underscore", "grave", "a", "b",
 
-  
-  "w", "x", "y", "z", "braceleft",
-  "bar", "braceright", "asciitilde", "Adieresis", "Aring",
+    
+    "c", "d", "e", "f", "g",
+    "h", "i", "j", "k", "l",
 
-  
-  "Ccedilla", "Eacute", "Ntilde", "Odieresis", "Udieresis",
-  "aacute", "agrave", "acircumflex", "adieresis", "atilde",
+    
+    "m", "n", "o", "p", "q",
+    "r", "s", "t", "u", "v",
 
-  
-  "aring", "ccedilla", "eacute", "egrave", "ecircumflex",
-  "edieresis", "iacute", "igrave", "icircumflex", "idieresis",
+    
+    "w", "x", "y", "z", "braceleft",
+    "bar", "braceright", "asciitilde", "Adieresis", "Aring",
 
-  
-  "ntilde", "oacute", "ograve", "ocircumflex", "odieresis",
-  "otilde", "uacute", "ugrave", "ucircumflex", "udieresis",
+    
+    "Ccedilla", "Eacute", "Ntilde", "Odieresis", "Udieresis",
+    "aacute", "agrave", "acircumflex", "adieresis", "atilde",
 
-  
-  "dagger", "degree", "cent", "sterling", "section",
-  "bullet", "paragraph", "germandbls", "registered", "copyright",
+    
+    "aring", "ccedilla", "eacute", "egrave", "ecircumflex",
+    "edieresis", "iacute", "igrave", "icircumflex", "idieresis",
 
-  
-  "trademark", "acute", "dieresis", "notequal", "AE",
-  "Oslash", "infinity", "plusminus", "lessequal", "greaterequal",
+    
+    "ntilde", "oacute", "ograve", "ocircumflex", "odieresis",
+    "otilde", "uacute", "ugrave", "ucircumflex", "udieresis",
 
-  
-  "yen", "mu", "partialdiff", "summation", "product",
-  "pi", "integral", "ordfeminine", "ordmasculine", "Omega",
+    
+    "dagger", "degree", "cent", "sterling", "section",
+    "bullet", "paragraph", "germandbls", "registered", "copyright",
 
-  
-  "ae", "oslash", "questiondown", "exclamdown", "logicalnot",
-  "radical", "florin", "approxequal", "Delta", "guillemotleft",
+    
+    "trademark", "acute", "dieresis", "notequal", "AE",
+    "Oslash", "infinity", "plusminus", "lessequal", "greaterequal",
 
-  
-  "guillemotright", "ellipsis", "nonbreakingspace", "Agrave", "Atilde",
-  "Otilde", "OE", "oe", "endash", "emdash",
+    
+    "yen", "mu", "partialdiff", "summation", "product",
+    "pi", "integral", "ordfeminine", "ordmasculine", "Omega",
 
-  
-  "quotedblleft", "quotedblright", "quoteleft", "quoteright", "divide",
-  "lozenge", "ydieresis", "Ydieresis", "fraction", "currency",
+    
+    "ae", "oslash", "questiondown", "exclamdown", "logicalnot",
+    "radical", "florin", "approxequal", "Delta", "guillemotleft",
 
-  
-  "guilsinglleft", "guilsinglright", "fi", "fl", "daggerdbl",
-  "periodcentered", "quotesinglbase", "quotedblbase", "perthousand",
+    
+    "guillemotright", "ellipsis", "nonbreakingspace", "Agrave", "Atilde",
+    "Otilde", "OE", "oe", "endash", "emdash",
+
+    
+    "quotedblleft", "quotedblright", "quoteleft", "quoteright", "divide",
+    "lozenge", "ydieresis", "Ydieresis", "fraction", "currency",
+
+    
+    "guilsinglleft", "guilsinglright", "fi", "fl", "daggerdbl",
+    "periodcentered", "quotesinglbase", "quotedblbase", "perthousand",
     "Acircumflex",
 
-  
-  "Ecircumflex", "Aacute", "Edieresis", "Egrave", "Iacute",
-  "Icircumflex", "Idieresis", "Igrave", "Oacute", "Ocircumflex",
+    
+    "Ecircumflex", "Aacute", "Edieresis", "Egrave", "Iacute",
+    "Icircumflex", "Idieresis", "Igrave", "Oacute", "Ocircumflex",
 
-  
-  "apple", "Ograve", "Uacute", "Ucircumflex", "Ugrave",
-  "dotlessi", "circumflex", "tilde", "macron", "breve",
+    
+    "apple", "Ograve", "Uacute", "Ucircumflex", "Ugrave",
+    "dotlessi", "circumflex", "tilde", "macron", "breve",
 
-  
-  "dotaccent", "ring", "cedilla", "hungarumlaut", "ogonek",
-  "caron", "Lslash", "lslash", "Scaron", "scaron",
+    
+    "dotaccent", "ring", "cedilla", "hungarumlaut", "ogonek",
+    "caron", "Lslash", "lslash", "Scaron", "scaron",
 
-  
-  "Zcaron", "zcaron", "brokenbar", "Eth", "eth",
-  "Yacute", "yacute", "Thorn", "thorn", "minus",
+    
+    "Zcaron", "zcaron", "brokenbar", "Eth", "eth",
+    "Yacute", "yacute", "Thorn", "thorn", "minus",
 
-  
-  "multiply", "onesuperior", "twosuperior", "threesuperior", "onehalf",
-  "onequarter", "threequarters", "franc", "Gbreve", "gbreve",
+    
+    "multiply", "onesuperior", "twosuperior", "threesuperior", "onehalf",
+    "onequarter", "threequarters", "franc", "Gbreve", "gbreve",
 
-  
-  "Idotaccent", "Scedilla", "scedilla", "Cacute", "cacute",
-  "Ccaron", "ccaron", "dcroat"
+    
+    "Idotaccent", "Scedilla", "scedilla", "Cacute", "cacute",
+    "Ccaron", "ccaron", "dcroat"
 ]
 
 
@@ -152,265 +147,258 @@ mac_standard_names = \
 
 
 
+sid_standard_names = [
+    
+    ".notdef", "space", "exclam", "quotedbl", "numbersign",
+    "dollar", "percent", "ampersand", "quoteright", "parenleft",
 
-sid_standard_names = \
-[
-  
-  ".notdef", "space", "exclam", "quotedbl", "numbersign",
-  "dollar", "percent", "ampersand", "quoteright", "parenleft",
+    
+    "parenright", "asterisk", "plus", "comma", "hyphen",
+    "period", "slash", "zero", "one", "two",
 
-  
-  "parenright", "asterisk", "plus", "comma", "hyphen",
-  "period", "slash", "zero", "one", "two",
+    
+    "three", "four", "five", "six", "seven",
+    "eight", "nine", "colon", "semicolon", "less",
 
-  
-  "three", "four", "five", "six", "seven",
-  "eight", "nine", "colon", "semicolon", "less",
+    
+    "equal", "greater", "question", "at", "A",
+    "B", "C", "D", "E", "F",
 
-  
-  "equal", "greater", "question", "at", "A",
-  "B", "C", "D", "E", "F",
+    
+    "G", "H", "I", "J", "K",
+    "L", "M", "N", "O", "P",
 
-  
-  "G", "H", "I", "J", "K",
-  "L", "M", "N", "O", "P",
+    
+    "Q", "R", "S", "T", "U",
+    "V", "W", "X", "Y", "Z",
 
-  
-  "Q", "R", "S", "T", "U",
-  "V", "W", "X", "Y", "Z",
+    
+    "bracketleft", "backslash", "bracketright", "asciicircum", "underscore",
+    "quoteleft", "a", "b", "c", "d",
 
-  
-  "bracketleft", "backslash", "bracketright", "asciicircum", "underscore",
-  "quoteleft", "a", "b", "c", "d",
+    
+    "e", "f", "g", "h", "i",
+    "j", "k", "l", "m", "n",
 
-  
-  "e", "f", "g", "h", "i",
-  "j", "k", "l", "m", "n",
+    
+    "o", "p", "q", "r", "s",
+    "t", "u", "v", "w", "x",
 
-  
-  "o", "p", "q", "r", "s",
-  "t", "u", "v", "w", "x",
+    
+    "y", "z", "braceleft", "bar", "braceright",
+    "asciitilde", "exclamdown", "cent", "sterling", "fraction",
 
-  
-  "y", "z", "braceleft", "bar", "braceright",
-  "asciitilde", "exclamdown", "cent", "sterling", "fraction",
+    
+    "yen", "florin", "section", "currency", "quotesingle",
+    "quotedblleft", "guillemotleft", "guilsinglleft", "guilsinglright", "fi",
 
-  
-  "yen", "florin", "section", "currency", "quotesingle",
-  "quotedblleft", "guillemotleft", "guilsinglleft", "guilsinglright", "fi",
+    
+    "fl", "endash", "dagger", "daggerdbl", "periodcentered",
+    "paragraph", "bullet", "quotesinglbase", "quotedblbase", "quotedblright",
 
-  
-  "fl", "endash", "dagger", "daggerdbl", "periodcentered",
-  "paragraph", "bullet", "quotesinglbase", "quotedblbase", "quotedblright",
+    
+    "guillemotright", "ellipsis", "perthousand", "questiondown", "grave",
+    "acute", "circumflex", "tilde", "macron", "breve",
 
-  
-  "guillemotright", "ellipsis", "perthousand", "questiondown", "grave",
-  "acute", "circumflex", "tilde", "macron", "breve",
+    
+    "dotaccent", "dieresis", "ring", "cedilla", "hungarumlaut",
+    "ogonek", "caron", "emdash", "AE", "ordfeminine",
 
-  
-  "dotaccent", "dieresis", "ring", "cedilla", "hungarumlaut",
-  "ogonek", "caron", "emdash", "AE", "ordfeminine",
+    
+    "Lslash", "Oslash", "OE", "ordmasculine", "ae",
+    "dotlessi", "lslash", "oslash", "oe", "germandbls",
 
-  
-  "Lslash", "Oslash", "OE", "ordmasculine", "ae",
-  "dotlessi", "lslash", "oslash", "oe", "germandbls",
+    
+    "onesuperior", "logicalnot", "mu", "trademark", "Eth",
+    "onehalf", "plusminus", "Thorn", "onequarter", "divide",
 
-  
-  "onesuperior", "logicalnot", "mu", "trademark", "Eth",
-  "onehalf", "plusminus", "Thorn", "onequarter", "divide",
+    
+    "brokenbar", "degree", "thorn", "threequarters", "twosuperior",
+    "registered", "minus", "eth", "multiply", "threesuperior",
 
-  
-  "brokenbar", "degree", "thorn", "threequarters", "twosuperior",
-  "registered", "minus", "eth", "multiply", "threesuperior",
+    
+    "copyright", "Aacute", "Acircumflex", "Adieresis", "Agrave",
+    "Aring", "Atilde", "Ccedilla", "Eacute", "Ecircumflex",
 
-  
-  "copyright", "Aacute", "Acircumflex", "Adieresis", "Agrave",
-  "Aring", "Atilde", "Ccedilla", "Eacute", "Ecircumflex",
+    
+    "Edieresis", "Egrave", "Iacute", "Icircumflex", "Idieresis",
+    "Igrave", "Ntilde", "Oacute", "Ocircumflex", "Odieresis",
 
-  
-  "Edieresis", "Egrave", "Iacute", "Icircumflex", "Idieresis",
-  "Igrave", "Ntilde", "Oacute", "Ocircumflex", "Odieresis",
+    
+    "Ograve", "Otilde", "Scaron", "Uacute", "Ucircumflex",
+    "Udieresis", "Ugrave", "Yacute", "Ydieresis", "Zcaron",
 
-  
-  "Ograve", "Otilde", "Scaron", "Uacute", "Ucircumflex",
-  "Udieresis", "Ugrave", "Yacute", "Ydieresis", "Zcaron",
+    
+    "aacute", "acircumflex", "adieresis", "agrave", "aring",
+    "atilde", "ccedilla", "eacute", "ecircumflex", "edieresis",
 
-  
-  "aacute", "acircumflex", "adieresis", "agrave", "aring",
-  "atilde", "ccedilla", "eacute", "ecircumflex", "edieresis",
+    
+    "egrave", "iacute", "icircumflex", "idieresis", "igrave",
+    "ntilde", "oacute", "ocircumflex", "odieresis", "ograve",
 
-  
-  "egrave", "iacute", "icircumflex", "idieresis", "igrave",
-  "ntilde", "oacute", "ocircumflex", "odieresis", "ograve",
+    
+    "otilde", "scaron", "uacute", "ucircumflex", "udieresis",
+    "ugrave", "yacute", "ydieresis", "zcaron", "exclamsmall",
 
-  
-  "otilde", "scaron", "uacute", "ucircumflex", "udieresis",
-  "ugrave", "yacute", "ydieresis", "zcaron", "exclamsmall",
-
-  
-  "Hungarumlautsmall", "dollaroldstyle", "dollarsuperior", "ampersandsmall",
+    
+    "Hungarumlautsmall", "dollaroldstyle", "dollarsuperior", "ampersandsmall",
     "Acutesmall",
-  "parenleftsuperior", "parenrightsuperior", "twodotenleader",
+    "parenleftsuperior", "parenrightsuperior", "twodotenleader",
     "onedotenleader", "zerooldstyle",
 
-  
-  "oneoldstyle", "twooldstyle", "threeoldstyle", "fouroldstyle",
+    
+    "oneoldstyle", "twooldstyle", "threeoldstyle", "fouroldstyle",
     "fiveoldstyle",
-  "sixoldstyle", "sevenoldstyle", "eightoldstyle", "nineoldstyle",
+    "sixoldstyle", "sevenoldstyle", "eightoldstyle", "nineoldstyle",
     "commasuperior",
 
-  
-  "threequartersemdash", "periodsuperior", "questionsmall", "asuperior",
+    
+    "threequartersemdash", "periodsuperior", "questionsmall", "asuperior",
     "bsuperior",
-  "centsuperior", "dsuperior", "esuperior", "isuperior", "lsuperior",
+    "centsuperior", "dsuperior", "esuperior", "isuperior", "lsuperior",
 
-  
-  "msuperior", "nsuperior", "osuperior", "rsuperior", "ssuperior",
-  "tsuperior", "ff", "ffi", "ffl", "parenleftinferior",
+    
+    "msuperior", "nsuperior", "osuperior", "rsuperior", "ssuperior",
+    "tsuperior", "ff", "ffi", "ffl", "parenleftinferior",
 
-  
-  "parenrightinferior", "Circumflexsmall", "hyphensuperior", "Gravesmall",
+    
+    "parenrightinferior", "Circumflexsmall", "hyphensuperior", "Gravesmall",
     "Asmall",
-  "Bsmall", "Csmall", "Dsmall", "Esmall", "Fsmall",
+    "Bsmall", "Csmall", "Dsmall", "Esmall", "Fsmall",
 
-  
-  "Gsmall", "Hsmall", "Ismall", "Jsmall", "Ksmall",
-  "Lsmall", "Msmall", "Nsmall", "Osmall", "Psmall",
+    
+    "Gsmall", "Hsmall", "Ismall", "Jsmall", "Ksmall",
+    "Lsmall", "Msmall", "Nsmall", "Osmall", "Psmall",
 
-  
-  "Qsmall", "Rsmall", "Ssmall", "Tsmall", "Usmall",
-  "Vsmall", "Wsmall", "Xsmall", "Ysmall", "Zsmall",
+    
+    "Qsmall", "Rsmall", "Ssmall", "Tsmall", "Usmall",
+    "Vsmall", "Wsmall", "Xsmall", "Ysmall", "Zsmall",
 
-  
-  "colonmonetary", "onefitted", "rupiah", "Tildesmall", "exclamdownsmall",
-  "centoldstyle", "Lslashsmall", "Scaronsmall", "Zcaronsmall",
+    
+    "colonmonetary", "onefitted", "rupiah", "Tildesmall", "exclamdownsmall",
+    "centoldstyle", "Lslashsmall", "Scaronsmall", "Zcaronsmall",
     "Dieresissmall",
 
-  
-  "Brevesmall", "Caronsmall", "Dotaccentsmall", "Macronsmall", "figuredash",
-  "hypheninferior", "Ogoneksmall", "Ringsmall", "Cedillasmall",
+    
+    "Brevesmall", "Caronsmall", "Dotaccentsmall", "Macronsmall", "figuredash",
+    "hypheninferior", "Ogoneksmall", "Ringsmall", "Cedillasmall",
     "questiondownsmall",
 
-  
-  "oneeighth", "threeeighths", "fiveeighths", "seveneighths", "onethird",
-  "twothirds", "zerosuperior", "foursuperior", "fivesuperior",
+    
+    "oneeighth", "threeeighths", "fiveeighths", "seveneighths", "onethird",
+    "twothirds", "zerosuperior", "foursuperior", "fivesuperior",
     "sixsuperior",
 
-  
-  "sevensuperior", "eightsuperior", "ninesuperior", "zeroinferior",
+    
+    "sevensuperior", "eightsuperior", "ninesuperior", "zeroinferior",
     "oneinferior",
-  "twoinferior", "threeinferior", "fourinferior", "fiveinferior",
+    "twoinferior", "threeinferior", "fourinferior", "fiveinferior",
     "sixinferior",
 
-  
-  "seveninferior", "eightinferior", "nineinferior", "centinferior",
+    
+    "seveninferior", "eightinferior", "nineinferior", "centinferior",
     "dollarinferior",
-  "periodinferior", "commainferior", "Agravesmall", "Aacutesmall",
+    "periodinferior", "commainferior", "Agravesmall", "Aacutesmall",
     "Acircumflexsmall",
 
-  
-  "Atildesmall", "Adieresissmall", "Aringsmall", "AEsmall", "Ccedillasmall",
-  "Egravesmall", "Eacutesmall", "Ecircumflexsmall", "Edieresissmall",
+    
+    "Atildesmall", "Adieresissmall", "Aringsmall", "AEsmall", "Ccedillasmall",
+    "Egravesmall", "Eacutesmall", "Ecircumflexsmall", "Edieresissmall",
     "Igravesmall",
 
-  
-  "Iacutesmall", "Icircumflexsmall", "Idieresissmall", "Ethsmall",
+    
+    "Iacutesmall", "Icircumflexsmall", "Idieresissmall", "Ethsmall",
     "Ntildesmall",
-  "Ogravesmall", "Oacutesmall", "Ocircumflexsmall", "Otildesmall",
+    "Ogravesmall", "Oacutesmall", "Ocircumflexsmall", "Otildesmall",
     "Odieresissmall",
 
-  
-  "OEsmall", "Oslashsmall", "Ugravesmall", "Uacutesmall",
+    
+    "OEsmall", "Oslashsmall", "Ugravesmall", "Uacutesmall",
     "Ucircumflexsmall",
-  "Udieresissmall", "Yacutesmall", "Thornsmall", "Ydieresissmall",
+    "Udieresissmall", "Yacutesmall", "Thornsmall", "Ydieresissmall",
     "001.000",
 
-  
-  "001.001", "001.002", "001.003", "Black", "Bold",
-  "Book", "Light", "Medium", "Regular", "Roman",
+    
+    "001.001", "001.002", "001.003", "Black", "Bold",
+    "Book", "Light", "Medium", "Regular", "Roman",
 
-  
-  "Semibold"
+    
+    "Semibold"
 ]
 
 
 
 
+t1_standard_encoding = [
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   1,   2,   3,   4,   5,   6,   7,   8,
+      9,  10,  11,  12,  13,  14,  15,  16,  17,  18,
 
-t1_standard_encoding = \
-[
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   1,   2,   3,   4,   5,   6,   7,   8,
-    9,  10,  11,  12,  13,  14,  15,  16,  17,  18,
+     19,  20,  21,  22,  23,  24,  25,  26,  27,  28,
+     29,  30,  31,  32,  33,  34,  35,  36,  37,  38,
+     39,  40,  41,  42,  43,  44,  45,  46,  47,  48,
+     49,  50,  51,  52,  53,  54,  55,  56,  57,  58,
+     59,  60,  61,  62,  63,  64,  65,  66,  67,  68,
 
-   19,  20,  21,  22,  23,  24,  25,  26,  27,  28,
-   29,  30,  31,  32,  33,  34,  35,  36,  37,  38,
-   39,  40,  41,  42,  43,  44,  45,  46,  47,  48,
-   49,  50,  51,  52,  53,  54,  55,  56,  57,  58,
-   59,  60,  61,  62,  63,  64,  65,  66,  67,  68,
+     69,  70,  71,  72,  73,  74,  75,  76,  77,  78,
+     79,  80,  81,  82,  83,  84,  85,  86,  87,  88,
+     89,  90,  91,  92,  93,  94,  95,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
 
-   69,  70,  71,  72,  73,  74,  75,  76,  77,  78,
-   79,  80,  81,  82,  83,  84,  85,  86,  87,  88,
-   89,  90,  91,  92,  93,  94,  95,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,  96,  97,  98,  99, 100, 101, 102, 103, 104,
+    105, 106, 107, 108, 109, 110,   0, 111, 112, 113,
+    114,   0, 115, 116, 117, 118, 119, 120, 121, 122,
+      0, 123,   0, 124, 125, 126, 127, 128, 129, 130,
 
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0,  96,  97,  98,  99, 100, 101, 102, 103, 104,
-  105, 106, 107, 108, 109, 110,   0, 111, 112, 113,
-  114,   0, 115, 116, 117, 118, 119, 120, 121, 122,
-    0, 123,   0, 124, 125, 126, 127, 128, 129, 130,
+    131,   0, 132, 133,   0, 134, 135, 136, 137,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0, 138,   0, 139,   0,   0,
+      0,   0, 140, 141, 142, 143,   0,   0,   0,   0,
+      0, 144,   0,   0,   0, 145,   0,   0, 146, 147,
 
-  131,   0, 132, 133,   0, 134, 135, 136, 137,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0, 138,   0, 139,   0,   0,
-    0,   0, 140, 141, 142, 143,   0,   0,   0,   0,
-    0, 144,   0,   0,   0, 145,   0,   0, 146, 147,
-
-  148, 149,   0,   0,   0,   0
+    148, 149,   0,   0,   0, 0
 ]
 
 
 
 
+t1_expert_encoding = [
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   1, 229, 230,   0, 231, 232, 233, 234,
+    235, 236, 237, 238,  13,  14,  15,  99, 239, 240,
 
-t1_expert_encoding = \
-[
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   1, 229, 230,   0, 231, 232, 233, 234,
-  235, 236, 237, 238,  13,  14,  15,  99, 239, 240,
+    241, 242, 243, 244, 245, 246, 247, 248,  27,  28,
+    249, 250, 251, 252,   0, 253, 254, 255, 256, 257,
+      0,   0,   0, 258,   0,   0, 259, 260, 261, 262,
+      0,   0, 263, 264, 265,   0, 266, 109, 110, 267,
+    268, 269,   0, 270, 271, 272, 273, 274, 275, 276,
 
-  241, 242, 243, 244, 245, 246, 247, 248,  27,  28,
-  249, 250, 251, 252,   0, 253, 254, 255, 256, 257,
-    0,   0,   0, 258,   0,   0, 259, 260, 261, 262,
-    0,   0, 263, 264, 265,   0, 266, 109, 110, 267,
-  268, 269,   0, 270, 271, 272, 273, 274, 275, 276,
+    277, 278, 279, 280, 281, 282, 283, 284, 285, 286,
+    287, 288, 289, 290, 291, 292, 293, 294, 295, 296,
+    297, 298, 299, 300, 301, 302, 303,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
 
-  277, 278, 279, 280, 281, 282, 283, 284, 285, 286,
-  287, 288, 289, 290, 291, 292, 293, 294, 295, 296,
-  297, 298, 299, 300, 301, 302, 303,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      0, 304, 305, 306,   0,   0, 307, 308, 309, 310,
+    311,   0, 312,   0,   0, 313,   0,   0, 314, 315,
+      0,   0, 316, 317, 318,   0,   0,   0, 158, 155,
+    163, 319, 320, 321, 322, 323, 324, 325,   0,   0,
 
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0, 304, 305, 306,   0,   0, 307, 308, 309, 310,
-  311,   0, 312,   0,   0, 313,   0,   0, 314, 315,
-    0,   0, 316, 317, 318,   0,   0,   0, 158, 155,
-  163, 319, 320, 321, 322, 323, 324, 325,   0,   0,
+    326, 150, 164, 169, 327, 328, 329, 330, 331, 332,
+    333, 334, 335, 336, 337, 338, 339, 340, 341, 342,
+    343, 344, 345, 346, 347, 348, 349, 350, 351, 352,
+    353, 354, 355, 356, 357, 358, 359, 360, 361, 362,
+    363, 364, 365, 366, 367, 368, 369, 370, 371, 372,
 
-  326, 150, 164, 169, 327, 328, 329, 330, 331, 332,
-  333, 334, 335, 336, 337, 338, 339, 340, 341, 342,
-  343, 344, 345, 346, 347, 348, 349, 350, 351, 352,
-  353, 354, 355, 356, 357, 358, 359, 360, 361, 362,
-  363, 364, 365, 366, 367, 368, 369, 370, 371, 372,
-
-  373, 374, 375, 376, 377, 378
+    373, 374, 375, 376, 377, 378
 ]
-
 
 
 
@@ -4906,81 +4894,81 @@ a9;2720
 
 
 class StringTable:
-  def __init__( self, name_list, master_table_name ):
-    self.names        = name_list
-    self.master_table = master_table_name
-    self.indices      = {}
-    index             = 0
+    def __init__(self, name_list, master_table_name):
+        self.names = name_list
+        self.master_table = master_table_name
+        self.indices = {}
+        index = 0
 
-    for name in name_list:
-      self.indices[name] = index
-      index += len( name ) + 1
+        for name in name_list:
+            self.indices[name] = index
+            index += len(name) + 1
 
-    self.total = index
+        self.total = index
 
-  def dump( self, file ):
-    write = file.write
-    write( "#ifndef  DEFINE_PS_TABLES_DATA\n" )
-    write( "#ifdef  __cplusplus\n" )
-    write( '  extern "C"\n' )
-    write( "#else\n" )
-    write( "  extern\n" )
-    write( "#endif\n" )
-    write( "#endif\n" )
-    write( "  const char  " + self.master_table +
-           "[" + repr( self.total ) + "]\n" )
-    write( "#ifdef  DEFINE_PS_TABLES_DATA\n" )
-    write( "  =\n" )
-    write( "  {\n" )
+    def dump(self, file):
+        write = file.write
+        write("#ifndef  DEFINE_PS_TABLES_DATA\n")
+        write("#ifdef  __cplusplus\n")
+        write('  extern "C"\n')
+        write("#else\n")
+        write("  extern\n")
+        write("#endif\n")
+        write("#endif\n")
+        write("  const char  " + self.master_table +
+              "[" + repr(self.total) + "]\n")
+        write("#ifdef  DEFINE_PS_TABLES_DATA\n")
+        write("  =\n")
+        write("  {\n")
 
-    line = ""
-    for name in self.names:
-      line += "    '"
-      line += string.join( ( re.findall( ".", name ) ), "','" )
-      line += "', 0,\n"
+        line = ""
+        for name in self.names:
+            line += "    '"
+            line += "','".join(list(name))
+            line += "', 0,\n"
 
-    write( line )
-    write( "  }\n" )
-    write( "#endif /* DEFINE_PS_TABLES_DATA */\n" )
-    write( "  ;\n\n\n" )
+        write(line)
+        write("  }\n")
+        write("#endif /* DEFINE_PS_TABLES_DATA */\n")
+        write("  ;\n\n\n")
 
-  def dump_sublist( self, file, table_name, macro_name, sublist ):
-    write = file.write
-    write( "#define " + macro_name + "  " + repr( len( sublist ) ) + "\n\n" )
+    def dump_sublist(self, file, table_name, macro_name, sublist):
+        write = file.write
+        write("#define " + macro_name + "  " + repr(len(sublist)) + "\n\n")
 
-    write( "  /* Values are offsets into the `" +
-           self.master_table + "' table */\n\n" )
-    write( "#ifndef  DEFINE_PS_TABLES_DATA\n" )
-    write( "#ifdef  __cplusplus\n" )
-    write( '  extern "C"\n' )
-    write( "#else\n" )
-    write( "  extern\n" )
-    write( "#endif\n" )
-    write( "#endif\n" )
-    write( "  const short  " + table_name +
-           "[" + macro_name + "]\n" )
-    write( "#ifdef  DEFINE_PS_TABLES_DATA\n" )
-    write( "  =\n" )
-    write( "  {\n" )
+        write("  /* Values are offsets into the `" +
+              self.master_table + "' table */\n\n")
+        write("#ifndef  DEFINE_PS_TABLES_DATA\n")
+        write("#ifdef  __cplusplus\n")
+        write('  extern "C"\n')
+        write("#else\n")
+        write("  extern\n")
+        write("#endif\n")
+        write("#endif\n")
+        write("  const short  " + table_name +
+              "[" + macro_name + "]\n")
+        write("#ifdef  DEFINE_PS_TABLES_DATA\n")
+        write("  =\n")
+        write("  {\n")
 
-    line  = "    "
-    comma = ""
-    col   = 0
+        line = "    "
+        comma = ""
+        col = 0
 
-    for name in sublist:
-      line += comma
-      line += "%4d" % self.indices[name]
-      col  += 1
-      comma = ","
-      if col == 14:
-        col   = 0
-        comma = ",\n    "
+        for name in sublist:
+            line += comma
+            line += "%4d" % self.indices[name]
+            col += 1
+            comma = ","
+            if col == 14:
+                col = 0
+                comma = ",\n    "
 
-    write( line )
-    write( "\n" )
-    write( "  }\n" )
-    write( "#endif /* DEFINE_PS_TABLES_DATA */\n" )
-    write( "  ;\n\n\n" )
+        write(line)
+        write("\n")
+        write("  }\n")
+        write("#endif /* DEFINE_PS_TABLES_DATA */\n")
+        write("  ;\n\n\n")
 
 
 
@@ -5059,307 +5047,312 @@ class StringTable:
 
 
 class StringNode:
-  def __init__( self, letter, value ):
-    self.letter   = letter
-    self.value    = value
-    self.children = {}
+    def __init__(self, letter, value):
+        self.letter = letter
+        self.value = value
+        self.children = {}
 
-  def __cmp__( self, other ):
-    return ord( self.letter[0] ) - ord( other.letter[0] )
+    def __cmp__(self, other):
+        return ord(self.letter[0]) - ord(other.letter[0])
 
-  def add( self, word, value ):
-    if len( word ) == 0:
-      self.value = value
-      return
+    def __lt__(self, other):
+        return self.letter[0] < other.letter[0]
 
-    letter = word[0]
-    word   = word[1:]
+    def add(self, word, value):
+        if len(word) == 0:
+            self.value = value
+            return
 
-    if self.children.has_key( letter ):
-      child = self.children[letter]
-    else:
-      child = StringNode( letter, 0 )
-      self.children[letter] = child
+        letter = word[0]
+        word = word[1:]
 
-    child.add( word, value )
+        if letter in self.children:
+            child = self.children[letter]
+        else:
+            child = StringNode(letter, 0)
+            self.children[letter] = child
 
-  def optimize( self ):
-    
-    children      = self.children.values()
-    self.children = {}
+        child.add(word, value)
 
-    for child in children:
-      self.children[child.letter[0]] = child.optimize()
+    def optimize(self):
+        
+        children = list(self.children.values())
+        self.children = {}
 
-    
-    
-    
-    if ( self.value != 0 ) or ( not children ) or len( children ) > 1:
-      return self
+        for child in children:
+            self.children[child.letter[0]] = child.optimize()
 
-    child = children[0]
+        
+        
+        
+        if (self.value != 0) or (not children) or len(children) > 1:
+            return self
 
-    self.letter  += child.letter
-    self.value    = child.value
-    self.children = child.children
+        child = children[0]
 
-    return self
+        self.letter += child.letter
+        self.value = child.value
+        self.children = child.children
 
-  def dump_debug( self, write, margin ):
-    
-    line = margin + "+-"
-    if len( self.letter ) == 0:
-      line += "<NOLETTER>"
-    else:
-      line += self.letter
+        return self
 
-    if self.value:
-      line += " => " + repr( self.value )
+    def dump_debug(self, write, margin):
+        
+        line = margin + "+-"
+        if len(self.letter) == 0:
+            line += "<NOLETTER>"
+        else:
+            line += self.letter
 
-    write( line + "\n" )
+        if self.value:
+            line += " => " + repr(self.value)
 
-    if self.children:
-      margin += "| "
-      for child in self.children.values():
-        child.dump_debug( write, margin )
+        write(line + "\n")
 
-  def locate( self, index ):
-    self.index = index
-    if len( self.letter ) > 0:
-      index += len( self.letter ) + 1
-    else:
-      index += 2
+        if self.children:
+            margin += "| "
+            for child in self.children.values():
+                child.dump_debug(write, margin)
 
-    if self.value != 0:
-      index += 2
+    def locate(self, index):
+        self.index = index
+        if len(self.letter) > 0:
+            index += len(self.letter) + 1
+        else:
+            index += 2
 
-    children = self.children.values()
-    children.sort()
+        if self.value != 0:
+            index += 2
 
-    index += 2 * len( children )
-    for child in children:
-      index = child.locate( index )
+        children = list(self.children.values())
+        children.sort()
 
-    return index
+        index += 2 * len(children)
+        for child in children:
+            index = child.locate(index)
 
-  def store( self, storage ):
-    
-    l = len( self.letter )
-    if l == 0:
-      storage += struct.pack( "B", 0 )
-    else:
-      for n in range( l ):
-        val = ord( self.letter[n] )
-        if n < l - 1:
-          val += 128
-        storage += struct.pack( "B", val )
+        return index
 
-    
-    children = self.children.values()
-    children.sort()
+    def store(self, storage):
+        
+        length = len(self.letter)
+        if length == 0:
+            storage += struct.pack("B", 0)
+        else:
+            for n in range(length):
+                val = ord(self.letter[n])
+                if n < length - 1:
+                    val += 128
+                storage += struct.pack("B", val)
 
-    count = len( children )
+        
+        children = list(self.children.values())
+        children.sort()
 
-    if self.value != 0:
-      storage += struct.pack( "!BH", count + 128, self.value )
-    else:
-      storage += struct.pack( "B", count )
+        count = len(children)
 
-    for child in children:
-      storage += struct.pack( "!H", child.index )
+        if self.value != 0:
+            storage += struct.pack("!BH", count + 128, self.value)
+        else:
+            storage += struct.pack("B", count)
 
-    for child in children:
-      storage = child.store( storage )
+        for child in children:
+            storage += struct.pack("!H", child.index)
 
-    return storage
+        for child in children:
+            storage = child.store(storage)
+
+        return storage
 
 
 def adobe_glyph_values():
-  """return the list of glyph names and their unicode values"""
+    """return the list of glyph names and their unicode values"""
 
-  lines  = string.split( adobe_glyph_list, '\n' )
-  glyphs = []
-  values = []
+    lines = adobe_glyph_list.split("\n")
+    glyphs = []
+    values = []
 
-  for line in lines:
-    if line:
-      fields = string.split( line, ';' )
+    for line in lines:
+        if line:
+            fields = line.split(';')
+            
+            subfields = fields[1].split(' ')
+            if len(subfields) == 1:
+                glyphs.append(fields[0])
+                values.append(fields[1])
 
-      subfields = string.split( fields[1], ' ' )
-      if len( subfields ) == 1:
-        glyphs.append( fields[0] )
-        values.append( fields[1] )
-
-  return glyphs, values
-
-
-def filter_glyph_names( alist, filter ):
-  """filter `alist' by taking _out_ all glyph names that are in `filter'"""
-
-  count  = 0
-  extras = []
-
-  for name in alist:
-    try:
-      filtered_index = filter.index( name )
-    except:
-      extras.append( name )
-
-  return extras
+    return glyphs, values
 
 
-def dump_encoding( file, encoding_name, encoding_list ):
-  """dump a given encoding"""
+def filter_glyph_names(alist, filter):
+    """filter `alist' by taking _out_ all glyph names that are in `filter'"""
 
-  write = file.write
-  write( "  /* the following are indices into the SID name table */\n" )
-  write( "#ifndef  DEFINE_PS_TABLES_DATA\n" )
-  write( "#ifdef  __cplusplus\n" )
-  write( '  extern "C"\n' )
-  write( "#else\n" )
-  write( "  extern\n" )
-  write( "#endif\n" )
-  write( "#endif\n" )
-  write( "  const unsigned short  " + encoding_name +
-         "[" + repr( len( encoding_list ) ) + "]\n" )
-  write( "#ifdef  DEFINE_PS_TABLES_DATA\n" )
-  write( "  =\n" )
-  write( "  {\n" )
+    count = 0
+    extras = []
 
-  line  = "    "
-  comma = ""
-  col   = 0
-  for value in encoding_list:
-    line += comma
-    line += "%3d" % value
-    comma = ","
-    col  += 1
-    if col == 16:
-      col = 0
-      comma = ",\n    "
+    for name in alist:
+        try:
+            filtered_index = filter.index(name)
+        except:
+            extras.append(name)
 
-  write( line )
-  write( "\n" )
-  write( "  }\n" )
-  write( "#endif /* DEFINE_PS_TABLES_DATA */\n" )
-  write( "  ;\n\n\n" )
+    return extras
 
 
-def dump_array( the_array, write, array_name ):
-  """dumps a given encoding"""
+def dump_encoding(file, encoding_name, encoding_list):
+    """dump a given encoding"""
 
-  write( "#ifndef  DEFINE_PS_TABLES_DATA\n" )
-  write( "#ifdef  __cplusplus\n" )
-  write( '  extern "C"\n' )
-  write( "#else\n" )
-  write( "  extern\n" )
-  write( "#endif\n" )
-  write( "#endif\n" )
-  write( "  const unsigned char  " + array_name +
-         "[" + repr( len( the_array ) ) + "L]\n" )
-  write( "#ifdef  DEFINE_PS_TABLES_DATA\n" )
-  write( "  =\n" )
-  write( "  {\n" )
+    write = file.write
+    write("  /* the following are indices into the SID name table */\n")
+    write("#ifndef  DEFINE_PS_TABLES_DATA\n")
+    write("#ifdef  __cplusplus\n")
+    write('  extern "C"\n')
+    write("#else\n")
+    write("  extern\n")
+    write("#endif\n")
+    write("#endif\n")
+    write("  const unsigned short  " + encoding_name +
+          "[" + repr(len(encoding_list)) + "]\n")
+    write("#ifdef  DEFINE_PS_TABLES_DATA\n")
+    write("  =\n")
+    write("  {\n")
 
-  line  = ""
-  comma = "    "
-  col   = 0
+    line = "    "
+    comma = ""
+    col = 0
+    for value in encoding_list:
+        line += comma
+        line += "%3d" % value
+        comma = ","
+        col += 1
+        if col == 16:
+            col = 0
+            comma = ",\n    "
 
-  for value in the_array:
-    line += comma
-    line += "%3d" % ord( value )
-    comma = ","
-    col  += 1
+    write(line)
+    write("\n")
+    write("  }\n")
+    write("#endif /* DEFINE_PS_TABLES_DATA */\n")
+    write("  ;\n\n\n")
 
-    if col == 16:
-      col   = 0
-      comma = ",\n    "
 
-    if len( line ) > 1024:
-      write( line )
-      line = ""
+def dump_array(the_array, write, array_name):
+    """dumps a given encoding"""
 
-  write( line )
-  write( "\n" )
-  write( "  }\n" )
-  write( "#endif /* DEFINE_PS_TABLES_DATA */\n" )
-  write( "  ;\n\n\n" )
+    write("#ifndef  DEFINE_PS_TABLES_DATA\n")
+    write("#ifdef  __cplusplus\n")
+    write('  extern "C"\n')
+    write("#else\n")
+    write("  extern\n")
+    write("#endif\n")
+    write("#endif\n")
+    write("  const unsigned char  " + array_name +
+          "[" + repr(len(the_array)) + "L]\n")
+    write("#ifdef  DEFINE_PS_TABLES_DATA\n")
+    write("  =\n")
+    write("  {\n")
+
+    line = ""
+    comma = "    "
+    col = 0
+
+    for value in the_array:
+        line += comma
+        line += "%3d" % value
+        comma = ","
+        col += 1
+
+        if col == 16:
+            col = 0
+            comma = ",\n    "
+
+        if len(line) > 1024:
+            write(line)
+            line = ""
+
+    write(line)
+    write("\n")
+    write("  }\n")
+    write("#endif /* DEFINE_PS_TABLES_DATA */\n")
+    write("  ;\n\n\n")
 
 
 def main():
-  """main program body"""
+    """main program body"""
 
-  if len( sys.argv ) != 2:
-    print __doc__ % sys.argv[0]
-    sys.exit( 1 )
+    if len(sys.argv) != 2:
+        print(__doc__ % sys.argv[0])
+        sys.exit(1)
 
-  file  = open( sys.argv[1], "wb" )
-  write = file.write
+    file = open(sys.argv[1], "w")
+    write = file.write
 
-  count_sid = len( sid_standard_names )
+    count_sid = len(sid_standard_names)
 
-  
-  
-  
-  mac_extras = filter_glyph_names( mac_standard_names, sid_standard_names )
+    
+    
+    
+    mac_extras = filter_glyph_names(mac_standard_names, sid_standard_names)
 
-  
-  
-  
-  
-  mac_extras_count = len( mac_extras )
-  base_list        = mac_extras + sid_standard_names
+    
+    
+    
+    
+    mac_extras_count = len(mac_extras)
+    base_list = mac_extras + sid_standard_names
 
-  write( "/****************************************************************************\n" )
-  write( " *\n" )
+    write("/*\n")
+    write(" *\n")
+    write(" * %-71s\n" % os.path.basename(sys.argv[1]))
+    write(" *\n")
+    write(" *   PostScript glyph names.\n")
+    write(" *\n")
+    write(" * Copyright 2005-2022 by\n")
+    write(" * David Turner, Robert Wilhelm, and Werner Lemberg.\n")
+    write(" *\n")
+    write(" * This file is part of the FreeType project, and may only be "
+          "used,\n")
+    write(" * modified, and distributed under the terms of the FreeType "
+          "project\n")
+    write(" * license, LICENSE.TXT.  By continuing to use, modify, or "
+          "distribute\n")
+    write(" * this file you indicate that you have read the license and\n")
+    write(" * understand and accept it fully.\n")
+    write(" *\n")
+    write(" */\n")
+    write("\n")
+    write("\n")
+    write("  /* This file has been generated automatically -- do not edit! */"
+          "\n")
+    write("\n")
+    write("\n")
 
-  write( " * %-71s\n" % os.path.basename( sys.argv[1] ) )
+    
+    
+    st = StringTable(base_list, "ft_standard_glyph_names")
 
-  write( " *\n" )
-  write( " *   PostScript glyph names.\n" )
-  write( " *\n" )
-  write( " * Copyright 2005-2019 by\n" )
-  write( " * David Turner, Robert Wilhelm, and Werner Lemberg.\n" )
-  write( " *\n" )
-  write( " * This file is part of the FreeType project, and may only be used,\n" )
-  write( " * modified, and distributed under the terms of the FreeType project\n" )
-  write( " * license, LICENSE.TXT.  By continuing to use, modify, or distribute\n" )
-  write( " * this file you indicate that you have read the license and\n" )
-  write( " * understand and accept it fully.\n" )
-  write( " *\n" )
-  write( " */\n" )
-  write( "\n" )
-  write( "\n" )
-  write( "  /* This file has been generated automatically -- do not edit! */\n" )
-  write( "\n" )
-  write( "\n" )
+    st.dump(file)
+    st.dump_sublist(file, "ft_mac_names",
+                    "FT_NUM_MAC_NAMES", mac_standard_names)
+    st.dump_sublist(file, "ft_sid_names",
+                    "FT_NUM_SID_NAMES", sid_standard_names)
 
-  
-  
-  st = StringTable( base_list, "ft_standard_glyph_names" )
+    dump_encoding(file, "t1_standard_encoding", t1_standard_encoding)
+    dump_encoding(file, "t1_expert_encoding", t1_expert_encoding)
 
-  st.dump( file )
-  st.dump_sublist( file, "ft_mac_names",
-                   "FT_NUM_MAC_NAMES", mac_standard_names )
-  st.dump_sublist( file, "ft_sid_names",
-                   "FT_NUM_SID_NAMES", sid_standard_names )
+    
+    
+    agl_glyphs, agl_values = adobe_glyph_values()
+    dictionary = StringNode("", 0)
 
-  dump_encoding( file, "t1_standard_encoding", t1_standard_encoding )
-  dump_encoding( file, "t1_expert_encoding", t1_expert_encoding )
+    for g in range(len(agl_glyphs)):
+        dictionary.add(agl_glyphs[g], eval("0x" + agl_values[g]))
 
-  
-  
-  agl_glyphs, agl_values = adobe_glyph_values()
-  dict = StringNode( "", 0 )
+    dictionary = dictionary.optimize()
+    dict_len = dictionary.locate(0)
+    dict_array = dictionary.store(b"")
 
-  for g in range( len( agl_glyphs ) ):
-    dict.add( agl_glyphs[g], eval( "0x" + agl_values[g] ) )
-
-  dict       = dict.optimize()
-  dict_len   = dict.locate( 0 )
-  dict_array = dict.store( "" )
-
-  write( """\
+    write("""\
   /*
    * This table is a compressed version of the Adobe Glyph List (AGL),
    * optimized for efficient searching.  It has been generated by the
@@ -5371,13 +5364,13 @@ def main():
 
 #ifdef FT_CONFIG_OPTION_ADOBE_GLYPH_LIST
 
-""" )
+""")
 
-  dump_array( dict_array, write, "ft_adobe_glyph_list" )
+    dump_array(dict_array, write, "ft_adobe_glyph_list")
 
-  
-  
-  write( """\
+    
+    
+    write("""\
 #ifdef  DEFINE_PS_TABLES
   /*
    * This function searches the compressed table efficiently.
@@ -5477,64 +5470,64 @@ def main():
 
 #endif /* FT_CONFIG_OPTION_ADOBE_GLYPH_LIST */
 
-""" )
+""")
 
-  if 0:  
-    
-    
-    
-    write( "#ifdef TEST\n\n" )
+    if 0:  
+        
+        
+        
+        write("#ifdef TEST\n\n")
 
-    write( "static const char* const  the_names[] = {\n" )
-    for name in agl_glyphs:
-      write( '  "' + name + '",\n' )
-    write( "  0\n};\n" )
+        write("static const char* const  the_names[] = {\n")
+        for name in agl_glyphs:
+            write('  "' + name + '",\n')
+        write("  0\n};\n")
 
-    write( "static const unsigned long  the_values[] = {\n" )
-    for val in agl_values:
-      write( '  0x' + val + ',\n' )
-    write( "  0\n};\n" )
+        write("static const unsigned long  the_values[] = {\n")
+        for val in agl_values:
+            write('  0x' + val + ',\n')
+        write("  0\n};\n")
 
-    write( """
+        write("""
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
-  int
-  main( void )
+int
+main( void )
+{
+int                   result = 0;
+const char* const*    names  = the_names;
+const unsigned long*  values = the_values;
+
+
+for ( ; *names; names++, values++ )
+{
+  const char*    name      = *names;
+  unsigned long  reference = *values;
+  unsigned long  value;
+
+
+  value = ft_get_adobe_glyph_index( name, name + strlen( name ) );
+  if ( value != reference )
   {
-    int                   result = 0;
-    const char* const*    names  = the_names;
-    const unsigned long*  values = the_values;
-
-
-    for ( ; *names; names++, values++ )
-    {
-      const char*    name      = *names;
-      unsigned long  reference = *values;
-      unsigned long  value;
-
-
-      value = ft_get_adobe_glyph_index( name, name + strlen( name ) );
-      if ( value != reference )
-      {
-        result = 1;
-        fprintf( stderr, "name '%s' => %04x instead of %04x\\n",
-                         name, value, reference );
-      }
-    }
-
-    return result;
+    result = 1;
+    fprintf( stderr, "name '%s' => %04x instead of %04x\\n",
+                     name, value, reference );
   }
-""" )
+}
 
-    write( "#endif /* TEST */\n" )
+return result;
+}
+""")
 
-  write("\n/* END */\n")
+        write("#endif /* TEST */\n")
+
+    write("\n/* END */\n")
 
 
 
 
 main()
-
 
 

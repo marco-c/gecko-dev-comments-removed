@@ -21,8 +21,6 @@
 
 #include "aftypes.h"
 
-#define xxAF_SORT_SEGMENTS
-
 FT_BEGIN_HEADER
 
   
@@ -310,15 +308,12 @@ FT_BEGIN_HEADER
 
   typedef struct  AF_AxisHintsRec_
   {
-    FT_Int        num_segments; 
-    FT_Int        max_segments; 
+    FT_UInt       num_segments; 
+    FT_UInt       max_segments; 
     AF_Segment    segments;     
-#ifdef AF_SORT_SEGMENTS
-    FT_Int        mid_segments;
-#endif
 
-    FT_Int        num_edges;    
-    FT_Int        max_edges;    
+    FT_UInt       num_edges;    
+    FT_UInt       max_edges;    
     AF_Edge       edges;        
 
     AF_Direction  major_dir;    
@@ -380,14 +375,14 @@ FT_BEGIN_HEADER
 #ifdef FT_DEBUG_AUTOFIT
 
 #define AF_HINTS_DO_HORIZONTAL( h )                                     \
-          ( !_af_debug_disable_horz_hints                            && \
+          ( !af_debug_disable_horz_hints_                            && \
             !AF_HINTS_TEST_SCALER( h, AF_SCALER_FLAG_NO_HORIZONTAL ) )
 
 #define AF_HINTS_DO_VERTICAL( h )                                     \
-          ( !_af_debug_disable_vert_hints                          && \
+          ( !af_debug_disable_vert_hints_                          && \
             !AF_HINTS_TEST_SCALER( h, AF_SCALER_FLAG_NO_VERTICAL ) )
 
-#define AF_HINTS_DO_BLUES( h )  ( !_af_debug_disable_blue_hints )
+#define AF_HINTS_DO_BLUES( h )  ( !af_debug_disable_blue_hints_ )
 
 #else 
 

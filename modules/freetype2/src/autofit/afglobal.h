@@ -105,7 +105,7 @@ FT_BEGIN_HEADER
   typedef struct  AF_FaceGlobalsRec_
   {
     FT_Face          face;
-    FT_Long          glyph_count;    
+    FT_UInt          glyph_count;    
     FT_UShort*       glyph_styles;
 
 #ifdef FT_CONFIG_OPTION_USE_HARFBUZZ
@@ -158,7 +158,7 @@ FT_BEGIN_HEADER
   FT_LOCAL( void )
   af_face_globals_free( AF_FaceGlobals  globals );
 
-  FT_LOCAL_DEF( FT_Bool )
+  FT_LOCAL( FT_Bool )
   af_face_globals_is_digit( AF_FaceGlobals  globals,
                             FT_UInt         gindex );
 

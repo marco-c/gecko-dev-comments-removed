@@ -418,21 +418,21 @@ typedef ptrdiff_t  FT_PtrDist;
 
   
   
-#define FT_GRAY_SET( d, s, count )                          \
-  FT_BEGIN_STMNT                                            \
-    unsigned char* q = d;                                   \
-    switch ( count )                                        \
-    {                                                       \
-      case 7: *q++ = (unsigned char)s; /* fall through */   \
-      case 6: *q++ = (unsigned char)s; /* fall through */   \
-      case 5: *q++ = (unsigned char)s; /* fall through */   \
-      case 4: *q++ = (unsigned char)s; /* fall through */   \
-      case 3: *q++ = (unsigned char)s; /* fall through */   \
-      case 2: *q++ = (unsigned char)s; /* fall through */   \
-      case 1: *q   = (unsigned char)s; /* fall through */   \
-      case 0: break;                                        \
-      default: FT_MEM_SET( d, s, count );                   \
-    }                                                       \
+#define FT_GRAY_SET( d, s, count )                   \
+  FT_BEGIN_STMNT                                     \
+    unsigned char* q = d;                            \
+    switch ( count )                                 \
+    {                                                \
+      case 7: *q++ = (unsigned char)s; FALL_THROUGH; \
+      case 6: *q++ = (unsigned char)s; FALL_THROUGH; \
+      case 5: *q++ = (unsigned char)s; FALL_THROUGH; \
+      case 4: *q++ = (unsigned char)s; FALL_THROUGH; \
+      case 3: *q++ = (unsigned char)s; FALL_THROUGH; \
+      case 2: *q++ = (unsigned char)s; FALL_THROUGH; \
+      case 1: *q   = (unsigned char)s; FALL_THROUGH; \
+      case 0: break;                                 \
+      default: FT_MEM_SET( d, s, count );            \
+    }                                                \
   FT_END_STMNT
 
 
@@ -1909,10 +1909,10 @@ typedef ptrdiff_t  FT_PtrDist;
 
 
   static int
-  gray_convert_glyph_inner( RAS_ARG,
+  gray_convert_glyph_inner( RAS_ARG_
                             int  continued )
   {
-    int  error;
+    volatile int  error;
 
 
     if ( ft_setjmp( ras.jump_buffer ) == 0 )
@@ -2004,7 +2004,7 @@ typedef ptrdiff_t  FT_PtrDist;
         ras.max_ey    = band[0];
         ras.count_ey  = width;
 
-        error     = gray_convert_glyph_inner( RAS_VAR, continued );
+        error     = gray_convert_glyph_inner( RAS_VAR_ continued );
         continued = 1;
 
         if ( !error )

@@ -1107,13 +1107,7 @@
       
       
       if ( face->variation_support & TT_FACE_FLAG_VAR_FVAR )
-      {
-        if ( tt_face_lookup_table( face, TTAG_glyf ) != 0 &&
-             tt_face_lookup_table( face, TTAG_gvar ) != 0 )
-          flags |= FT_FACE_FLAG_MULTIPLE_MASTERS;
-        if ( tt_face_lookup_table( face, TTAG_CFF2 ) != 0 )
-          flags |= FT_FACE_FLAG_MULTIPLE_MASTERS;
-      }
+        flags |= FT_FACE_FLAG_MULTIPLE_MASTERS;
 #endif
 
       root->face_flags = flags;

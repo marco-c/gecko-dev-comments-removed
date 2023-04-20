@@ -871,7 +871,7 @@
       cbox.yMax = edge.control_b.y;
 
       is_set = 1;
-      
+      FALL_THROUGH;
 
     case SDF_EDGE_CONIC:
       if ( is_set )
@@ -899,7 +899,7 @@
 
         is_set = 1;
       }
-      
+      FALL_THROUGH;
 
     case SDF_EDGE_LINE:
       if ( is_set )
@@ -2109,7 +2109,8 @@
     FT_Error  error = FT_Err_Ok;
 
     FT_26D6_Vec  aA, bB;         
-    FT_26D6_Vec  nearest_point;  
+    FT_26D6_Vec  nearest_point = { 0, 0 };
+                                 
     FT_26D6_Vec  direction;      
 
     FT_26D6_Vec  p0, p1, p2;     
@@ -2405,7 +2406,8 @@
     FT_Error  error = FT_Err_Ok;
 
     FT_26D6_Vec  aA, bB, cC;     
-    FT_26D6_Vec  nearest_point;  
+    FT_26D6_Vec  nearest_point = { 0, 0 };
+                                 
     FT_26D6_Vec  direction;      
 
     FT_26D6_Vec  p0, p1, p2;     
@@ -3256,7 +3258,7 @@
     
     SDF_Signed_Distance*  dists = NULL;
 
-    const FT_16D16  fixed_spread = FT_INT_16D16( spread );
+    const FT_16D16  fixed_spread = (FT_16D16)FT_INT_16D16( spread );
 
 
     if ( !shape || !bitmap )

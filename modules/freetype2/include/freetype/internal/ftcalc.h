@@ -285,6 +285,40 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  FT_BASE( FT_Int32 )
+  FT_MulAddFix( FT_Fixed*  s,
+                FT_Int32*  f,
+                FT_UInt    count );
+
+
+  
+
+
+
+
+
+
   FT_BASE( void )
   FT_Matrix_Multiply_Scaled( const FT_Matrix*  a,
                              FT_Matrix        *b,
@@ -413,11 +447,11 @@ FT_BEGIN_HEADER
   extern __inline FT_Int32
   FT_MSB_i386( FT_UInt32  x );
 
-#pragma aux FT_MSB_i386 =     \
-  "bsr eax, eax"              \
-  parm [eax] nomemory         \
-  value [eax]                 \
-  modify exact [eax] nomemory;
+#pragma aux FT_MSB_i386 =             \
+  "bsr eax, eax"                      \
+  __parm [__eax] __nomemory           \
+  __value [__eax]                     \
+  __modify __exact [__eax] __nomemory;
 
 #define FT_MSB( x )  FT_MSB_i386( x )
 

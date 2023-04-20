@@ -70,20 +70,14 @@
   
   
 
-  
-  
-  
-  
-  
-  
 #if defined( __GNUC__ ) ||  defined( __clang__ )
-#define HAVE_HIDDEN  1
 #define ZEXPORT
 #define ZEXTERN      static
 #endif
 
-#define Z_SOLO      1
-#define Z_FREETYPE  1
+#define HAVE_MEMCPY  1
+#define Z_SOLO       1
+#define Z_FREETYPE   1
 
 #if defined( _MSC_VER )      
   
@@ -96,7 +90,9 @@
 
 #if defined( __GNUC__ )
 #pragma GCC diagnostic push
+#ifndef __cplusplus
 #pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #pragma GCC diagnostic ignored "-Wredundant-decls"
 #endif
@@ -156,28 +152,6 @@
 
     FT_MEM_FREE( address );
   }
-
-
-#if !defined( FT_CONFIG_OPTION_SYSTEM_ZLIB ) && !defined( USE_ZLIB_ZCALLOC )
-
-  voidpf ZLIB_INTERNAL
-  zcalloc ( voidpf    opaque,
-            unsigned  items,
-            unsigned  size )
-  {
-    return ft_gzip_alloc( opaque, items, size );
-  }
-
-
-  void ZLIB_INTERNAL
-  zcfree( voidpf  opaque,
-          voidpf  ptr )
-  {
-    ft_gzip_free( opaque, ptr );
-  }
-
-#endif 
-
 
 
 
@@ -788,6 +762,9 @@
       return FT_THROW( Array_Too_Large );
 
     if ( err == Z_DATA_ERROR )
+      return FT_THROW( Invalid_Table );
+
+    if ( err == Z_NEED_DICT )
       return FT_THROW( Invalid_Table );
 
     return FT_Err_Ok;

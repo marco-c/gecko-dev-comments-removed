@@ -143,7 +143,7 @@
           return -1;
       }
 
-      if ( FT_QRENEW_ARRAY( state->stack, old_size, new_size ) )
+      if ( FT_QREALLOC( state->stack, old_size, new_size ) )
         return -1;
 
       
@@ -315,7 +315,7 @@
 
         state->phase = FT_LZW_PHASE_CODE;
       }
-      
+      FALL_THROUGH;
 
     case FT_LZW_PHASE_CODE:
       {
@@ -373,7 +373,7 @@
 
         state->phase = FT_LZW_PHASE_STACK;
       }
-      
+      FALL_THROUGH;
 
     case FT_LZW_PHASE_STACK:
       {

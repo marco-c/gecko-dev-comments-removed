@@ -160,7 +160,7 @@
         if ( nn == phy_font->num_chars )
         {
           if ( phy_font->num_strikes > 0 )
-            pfrface->face_flags = 0;        
+            pfrface->face_flags &= ~FT_FACE_FLAG_SCALABLE;
           else
           {
             FT_ERROR(( "pfr_face_init: font doesn't contain glyphs\n" ));
@@ -170,7 +170,7 @@
         }
       }
 
-      if ( ( phy_font->flags & PFR_PHY_PROPORTIONAL ) == 0 )
+      if ( !( phy_font->flags & PFR_PHY_PROPORTIONAL ) )
         pfrface->face_flags |= FT_FACE_FLAG_FIXED_WIDTH;
 
       if ( phy_font->flags & PFR_PHY_VERTICAL )
@@ -338,7 +338,7 @@
     }
 
     
-    if ( ( load_flags & ( FT_LOAD_NO_SCALE | FT_LOAD_NO_BITMAP ) ) == 0 )
+    if ( !( load_flags & ( FT_LOAD_NO_SCALE | FT_LOAD_NO_BITMAP ) ) )
     {
       error = pfr_slot_load_bitmap(
                 slot,
@@ -486,17 +486,16 @@
     kerning->x = 0;
     kerning->y = 0;
 
-    if ( glyph1 > 0 )
-      glyph1--;
-
-    if ( glyph2 > 0 )
-      glyph2--;
+    
+    glyph1--;
+    glyph2--;
 
     
-    if ( glyph1 > phy_font->num_chars ||
-         glyph2 > phy_font->num_chars )
+    if ( glyph1 >= phy_font->num_chars ||
+         glyph2 >= phy_font->num_chars )
       goto Exit;
 
+    
     code1 = phy_font->chars[glyph1].char_code;
     code2 = phy_font->chars[glyph2].char_code;
     pair  = PFR_KERN_INDEX( code1, code2 );

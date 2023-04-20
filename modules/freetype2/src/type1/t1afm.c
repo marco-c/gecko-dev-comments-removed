@@ -178,7 +178,6 @@
     
     
     oldcharmap = t1_face->charmap;
-    charmap    = NULL;
 
     for ( n = 0; n < t1_face->num_charmaps; n++ )
     {
@@ -186,9 +185,7 @@
       
       if ( charmap->platform_id == 7 )
       {
-        error = FT_Set_Charmap( t1_face, charmap );
-        if ( error )
-          goto Exit;
+        t1_face->charmap = charmap;
         break;
       }
     }
@@ -209,10 +206,7 @@
       kp++;
     }
 
-    if ( oldcharmap )
-      error = FT_Set_Charmap( t1_face, oldcharmap );
-    if ( error )
-      goto Exit;
+    t1_face->charmap = oldcharmap;
 
     
     ft_qsort( fi->KernPairs, fi->NumKernPair, sizeof ( AFM_KernPairRec ),
@@ -303,8 +297,13 @@
       t1_face->bbox.yMax = ( fi->FontBBox.yMax + 0xFFFF ) >> 16;
 
       
-      t1_face->ascender  = (FT_Short)( ( fi->Ascender  + 0x8000 ) >> 16 );
-      t1_face->descender = (FT_Short)( ( fi->Descender + 0x8000 ) >> 16 );
+      
+      if ( fi->Ascender > fi->Descender )
+      {  
+        
+        t1_face->ascender  = (FT_Short)( ( fi->Ascender  + 0x8000 ) >> 16 );
+        t1_face->descender = (FT_Short)( ( fi->Descender + 0x8000 ) >> 16 );
+      }
 
       if ( fi->NumKernPair )
       {

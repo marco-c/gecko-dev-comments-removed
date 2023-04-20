@@ -457,6 +457,9 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
   FT_EXPORT( FT_Bool )
   FT_Get_Color_Glyph_Layer( FT_Face            face,
                             FT_UInt            base_glyph,
@@ -466,8 +469,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
 
 
 
@@ -542,6 +543,9 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
   typedef struct  FT_ColorStopIterator_
   {
     FT_UInt  num_color_stops;
@@ -549,12 +553,12 @@ FT_BEGIN_HEADER
 
     FT_Byte*  p;
 
+    FT_Bool  read_variable;
+
   } FT_ColorStopIterator;
 
 
   
-
-
 
 
 
@@ -601,18 +605,15 @@ FT_BEGIN_HEADER
 
 
 
-
   typedef struct  FT_ColorStop_
   {
-    FT_F2Dot14     stop_offset;
+    FT_Fixed       stop_offset;
     FT_ColorIndex  color;
 
   } FT_ColorStop;
 
 
   
-
-
 
 
 
@@ -635,8 +636,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
 
 
 
@@ -701,8 +700,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
   typedef struct  FT_Affine_23_
   {
     FT_Fixed  xx, xy, dx;
@@ -712,8 +709,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
 
 
 
@@ -788,8 +783,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
   typedef struct  FT_Opaque_Paint_
   {
     FT_Byte*  p;
@@ -817,8 +810,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
   typedef struct  FT_PaintColrLayers_
   {
     FT_LayerIterator  layer_iterator;
@@ -827,8 +818,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
 
 
 
@@ -885,8 +874,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
   typedef struct  FT_PaintLinearGradient_
   {
     FT_ColorLine  colorline;
@@ -900,9 +887,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
-
 
 
 
@@ -985,8 +969,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
   typedef struct  FT_PaintSweepGradient_
   {
     FT_ColorLine  colorline;
@@ -999,8 +981,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
 
 
 
@@ -1044,8 +1024,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
   typedef struct  FT_PaintColrGlyph_
   {
     FT_UInt  glyphID;
@@ -1054,8 +1032,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
 
 
 
@@ -1107,8 +1083,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
   typedef struct  FT_PaintTranslate_
   {
     FT_OpaquePaint  paint;
@@ -1120,8 +1094,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
 
 
 
@@ -1204,8 +1176,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
   typedef struct  FT_PaintRotate_
   {
     FT_OpaquePaint  paint;
@@ -1219,8 +1189,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
 
 
 
@@ -1294,9 +1262,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
   typedef struct  FT_PaintComposite_
   {
     FT_OpaquePaint     source_paint;
@@ -1307,8 +1272,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
 
 
 
@@ -1388,8 +1351,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
   typedef enum  FT_Color_Root_Transform_
   {
     FT_COLOR_INCLUDE_ROOT_TRANSFORM,
@@ -1431,8 +1392,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
   typedef struct  FT_ClipBox_
   {
     FT_Vector  bottom_left;
@@ -1444,8 +1403,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
 
 
 
@@ -1570,8 +1527,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
   FT_EXPORT( FT_Bool )
   FT_Get_Color_Glyph_ClipBox( FT_Face      face,
                               FT_UInt      base_glyph,
@@ -1579,8 +1534,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
 
 
 
@@ -1662,8 +1615,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
   FT_EXPORT( FT_Bool )
   FT_Get_Colorline_Stops( FT_Face                face,
                           FT_ColorStop*          color_stop,
@@ -1671,8 +1622,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
 
 
 

@@ -115,8 +115,8 @@ FT_BEGIN_HEADER
   typedef FT_Vector FT_26D6_Vec;   
   typedef FT_Vector FT_16D16_Vec;  
 
-  typedef FT_Fixed  FT_16D16;      
-  typedef FT_Fixed  FT_26D6;       
+  typedef FT_Int32  FT_16D16;      
+  typedef FT_Int32  FT_26D6;       
   typedef FT_Byte   FT_SDFFormat;  
 
   typedef FT_BBox   FT_CBox;       

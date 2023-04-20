@@ -73,6 +73,15 @@ FT_BEGIN_HEADER
   FT_GlyphSlot_Oblique( FT_GlyphSlot  slot );
 
   
+  
+  
+  
+  FT_EXPORT( void )
+  FT_GlyphSlot_Slant( FT_GlyphSlot  slot,
+                      FT_Fixed      xslant,
+                      FT_Fixed      yslant );
+
+  
 
 
 FT_END_HEADER

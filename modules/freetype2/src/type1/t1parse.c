@@ -331,49 +331,24 @@
       
 
       
+      
+      
       FT_Byte*    cur   = parser->base_dict;
       FT_Byte*    limit = cur + parser->base_len;
       FT_Pointer  pos_lf;
       FT_Bool     test_cr;
 
 
-    Again:
-      for (;;)
-      {
-        if ( cur[0] == 'e'   &&
-             cur + 9 < limit )      
-                                    
-        {
-          if ( cur[1] == 'e' &&
-               cur[2] == 'x' &&
-               cur[3] == 'e' &&
-               cur[4] == 'c' )
-            break;
-        }
-        cur++;
-        if ( cur >= limit )
-        {
-          FT_ERROR(( "T1_Get_Private_Dict:"
-                     " could not find `eexec' keyword\n" ));
-          error = FT_THROW( Invalid_File_Format );
-          goto Exit;
-        }
-      }
-
-      
-      
-
       parser->root.cursor = parser->base_dict;
-      
-      parser->root.limit  = cur + 10;
+      parser->root.limit  = parser->base_dict + parser->base_len;
 
       cur   = parser->root.cursor;
       limit = parser->root.limit;
 
       while ( cur < limit )
       {
-        if ( cur[0] == 'e'   &&
-             cur + 5 < limit )
+        
+        if ( cur[0] == 'e' && cur + 9 < limit )
         {
           if ( cur[1] == 'e' &&
                cur[2] == 'x' &&
@@ -389,21 +364,9 @@
         cur = parser->root.cursor;
       }
 
-      
-      
-
-      cur   = limit;
-      limit = parser->base_dict + parser->base_len;
-
-      if ( cur >= limit )
-      {
-        FT_ERROR(( "T1_Get_Private_Dict:"
-                   " premature end in private dictionary\n" ));
-        error = FT_THROW( Invalid_File_Format );
-        goto Exit;
-      }
-
-      goto Again;
+      FT_ERROR(( "T1_Get_Private_Dict: could not find `eexec' keyword\n" ));
+      error = FT_THROW( Invalid_File_Format );
+      goto Exit;
 
       
       

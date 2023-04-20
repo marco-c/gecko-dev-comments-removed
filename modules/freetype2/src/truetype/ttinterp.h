@@ -193,7 +193,6 @@ FT_BEGIN_HEADER
     FT_Long*           cvt;       
     FT_ULong           glyfCvtSize;
     FT_Long*           glyfCvt;   
-    FT_Long*           origCvt;
 
     FT_UInt            glyphSize; 
     FT_Byte*           glyphIns;  
@@ -224,7 +223,6 @@ FT_BEGIN_HEADER
     FT_Long*           storage;      
     FT_UShort          glyfStoreSize;
     FT_Long*           glyfStorage;  
-    FT_Long*           origStorage;
 
     FT_F26Dot6         period;     
     FT_F26Dot6         phase;      

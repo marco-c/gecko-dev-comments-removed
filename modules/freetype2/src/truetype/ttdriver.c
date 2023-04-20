@@ -507,19 +507,34 @@
   FT_DEFINE_SERVICE_MULTIMASTERSREC(
     tt_service_gx_multi_masters,
 
-    (FT_Get_MM_Func)             NULL,                  
-    (FT_Set_MM_Design_Func)      NULL,                  
-    (FT_Set_MM_Blend_Func)       TT_Set_MM_Blend,       
-    (FT_Get_MM_Blend_Func)       TT_Get_MM_Blend,       
-    (FT_Get_MM_Var_Func)         TT_Get_MM_Var,         
-    (FT_Set_Var_Design_Func)     TT_Set_Var_Design,     
-    (FT_Get_Var_Design_Func)     TT_Get_Var_Design,     
-    (FT_Set_Instance_Func)       TT_Set_Named_Instance, 
-    (FT_Set_MM_WeightVector_Func)NULL,                  
-    (FT_Get_MM_WeightVector_Func)NULL,                  
-
-    (FT_Get_Var_Blend_Func)      tt_get_var_blend,      
-    (FT_Done_Blend_Func)         tt_done_blend          
+    (FT_Get_MM_Func)        NULL,                  
+    (FT_Set_MM_Design_Func) NULL,                  
+    (FT_Set_MM_Blend_Func)  TT_Set_MM_Blend,       
+    (FT_Get_MM_Blend_Func)  TT_Get_MM_Blend,       
+    (FT_Get_MM_Var_Func)    TT_Get_MM_Var,         
+    (FT_Set_Var_Design_Func)TT_Set_Var_Design,     
+    (FT_Get_Var_Design_Func)TT_Get_Var_Design,     
+    (FT_Set_Instance_Func)  TT_Set_Named_Instance, 
+    (FT_Set_MM_WeightVector_Func)
+                            NULL,                  
+    (FT_Get_MM_WeightVector_Func)
+                            NULL,                  
+    (FT_Var_Load_Delta_Set_Idx_Map_Func)
+                            tt_var_load_delta_set_index_mapping,
+                                                   
+    (FT_Var_Load_Item_Var_Store_Func)
+                            tt_var_load_item_variation_store,
+                                                   
+    (FT_Var_Get_Item_Delta_Func)
+                            tt_var_get_item_delta, 
+    (FT_Var_Done_Item_Var_Store_Func)
+                            tt_var_done_item_variation_store,
+                                                   
+    (FT_Var_Done_Delta_Set_Idx_Map_Func)
+                            tt_var_done_delta_set_index_map,
+                                                   
+    (FT_Get_Var_Blend_Func) tt_get_var_blend,      
+    (FT_Done_Blend_Func)    tt_done_blend          
   )
 
   FT_DEFINE_SERVICE_METRICSVARIATIONSREC(

@@ -2593,8 +2593,8 @@ FT_BEGIN_HEADER
 
 
   FT_EXPORT( FT_Error )
-  FT_Attach_Stream( FT_Face        face,
-                    FT_Open_Args*  parameters );
+  FT_Attach_Stream( FT_Face              face,
+                    const FT_Open_Args*  parameters );
 
 
   
@@ -3576,6 +3576,7 @@ FT_BEGIN_HEADER
 
 
 
+
   typedef enum  FT_Render_Mode_
   {
     FT_RENDER_MODE_NORMAL = 0,
@@ -3838,89 +3839,6 @@ FT_BEGIN_HEADER
                         FT_Fixed   point_size,
                         FT_Int     degree,
                         FT_Fixed*  akerning );
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  FT_EXPORT( FT_Error )
-  FT_Get_Glyph_Name( FT_Face     face,
-                     FT_UInt     glyph_index,
-                     FT_Pointer  buffer,
-                     FT_UInt     buffer_max );
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  FT_EXPORT( const char* )
-  FT_Get_Postscript_Name( FT_Face  face );
 
 
   
@@ -4255,9 +4173,105 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
+
+
+
+
   FT_EXPORT( FT_UInt )
   FT_Get_Name_Index( FT_Face           face,
                      const FT_String*  glyph_name );
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  FT_EXPORT( FT_Error )
+  FT_Get_Glyph_Name( FT_Face     face,
+                     FT_UInt     glyph_index,
+                     FT_Pointer  buffer,
+                     FT_UInt     buffer_max );
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  FT_EXPORT( const char* )
+  FT_Get_Postscript_Name( FT_Face  face );
 
 
   
@@ -4344,13 +4358,6 @@ FT_BEGIN_HEADER
                         FT_Int       *p_arg1,
                         FT_Int       *p_arg2,
                         FT_Matrix    *p_transform );
-
-
-  
-
-
-
-
 
 
   
@@ -4709,6 +4716,7 @@ FT_BEGIN_HEADER
 
 
 
+
   
 
 
@@ -4941,8 +4949,8 @@ FT_BEGIN_HEADER
 
 
 #define FREETYPE_MAJOR  2
-#define FREETYPE_MINOR  12
-#define FREETYPE_PATCH  1
+#define FREETYPE_MINOR  13
+#define FREETYPE_PATCH  0
 
 
   

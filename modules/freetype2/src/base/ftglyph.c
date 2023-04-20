@@ -682,7 +682,10 @@
   Exit2:
     
     if ( error )
+    {
       FT_Done_Glyph( glyph );
+      *aglyph = NULL;
+    }
     else
       *aglyph = glyph;
 

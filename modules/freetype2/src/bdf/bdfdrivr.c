@@ -92,23 +92,17 @@
   {
     BDF_CMap          cmap      = (BDF_CMap)bdfcmap;
     BDF_encoding_el*  encodings = cmap->encodings;
-    FT_ULong          min, max, mid; 
     FT_UShort         result    = 0; 
 
+    FT_ULong  min = 0;
+    FT_ULong  max = cmap->num_encodings;
+    FT_ULong  mid = ( min + max ) >> 1;
 
-    min = 0;
-    max = cmap->num_encodings;
-    mid = ( min + max ) >> 1;
 
     while ( min < max )
     {
-      FT_ULong  code;
+      FT_ULong  code = encodings[mid].enc;
 
-
-      if ( mid >= max || mid < min )
-        mid = ( min + max ) >> 1;
-
-      code = encodings[mid].enc;
 
       if ( charcode == code )
       {
@@ -125,6 +119,8 @@
 
       
       mid += charcode - code;
+      if ( mid >= max || mid < min )
+        mid = ( min + max ) >> 1;
     }
 
     return result;
@@ -137,24 +133,18 @@
   {
     BDF_CMap          cmap      = (BDF_CMap)bdfcmap;
     BDF_encoding_el*  encodings = cmap->encodings;
-    FT_ULong          min, max, mid; 
     FT_UShort         result   = 0;  
     FT_ULong          charcode = *acharcode + 1;
 
+    FT_ULong  min = 0;
+    FT_ULong  max = cmap->num_encodings;
+    FT_ULong  mid = ( min + max ) >> 1;
 
-    min = 0;
-    max = cmap->num_encodings;
-    mid = ( min + max ) >> 1;
 
     while ( min < max )
     {
-      FT_ULong  code; 
+      FT_ULong  code = encodings[mid].enc;
 
-
-      if ( mid >= max || mid < min )
-        mid = ( min + max ) >> 1;
-
-      code = encodings[mid].enc;
 
       if ( charcode == code )
       {
@@ -171,6 +161,8 @@
 
       
       mid += charcode - code;
+      if ( mid >= max || mid < min )
+        mid = ( min + max ) >> 1;
     }
 
     charcode = 0;
