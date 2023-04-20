@@ -1,12 +1,13 @@
-use alloc::boxed::Box;
-use core::cell::UnsafeCell;
-use core::fmt;
-use core::marker::PhantomData;
-use core::mem::MaybeUninit;
-use core::ptr;
-use core::sync::atomic::{self, AtomicPtr, AtomicUsize, Ordering};
+use std::cell::UnsafeCell;
+use std::fmt;
+use std::marker::PhantomData;
+use std::mem::{self, ManuallyDrop};
+use std::ptr;
+use std::sync::atomic::{self, AtomicPtr, AtomicUsize, Ordering};
 
 use crossbeam_utils::{Backoff, CachePadded};
+
+use err::PopError;
 
 
 
@@ -28,18 +29,13 @@ const HAS_NEXT: usize = 1;
 
 struct Slot<T> {
     
-    value: UnsafeCell<MaybeUninit<T>>,
+    value: UnsafeCell<ManuallyDrop<T>>,
 
     
     state: AtomicUsize,
 }
 
 impl<T> Slot<T> {
-    const UNINIT: Self = Self {
-        value: UnsafeCell::new(MaybeUninit::uninit()),
-        state: AtomicUsize::new(0),
-    };
-
     
     fn wait_write(&self) {
         let backoff = Backoff::new();
@@ -63,10 +59,7 @@ struct Block<T> {
 impl<T> Block<T> {
     
     fn new() -> Block<T> {
-        Self {
-            next: AtomicPtr::new(ptr::null_mut()),
-            slots: [Slot::UNINIT; BLOCK_CAP],
-        }
+        unsafe { mem::zeroed() }
     }
 
     
@@ -158,7 +151,7 @@ impl<T> SegQueue<T> {
     
     
     
-    pub const fn new() -> SegQueue<T> {
+    pub fn new() -> SegQueue<T> {
         SegQueue {
             head: CachePadded::new(Position {
                 block: AtomicPtr::new(ptr::null_mut()),
@@ -212,12 +205,7 @@ impl<T> SegQueue<T> {
             if block.is_null() {
                 let new = Box::into_raw(Box::new(Block::<T>::new()));
 
-                if self
-                    .tail
-                    .block
-                    .compare_exchange(block, new, Ordering::Release, Ordering::Relaxed)
-                    .is_ok()
-                {
+                if self.tail.block.compare_and_swap(block, new, Ordering::Release) == block {
                     self.head.block.store(new, Ordering::Release);
                     block = new;
                 } else {
@@ -231,12 +219,14 @@ impl<T> SegQueue<T> {
             let new_tail = tail + (1 << SHIFT);
 
             
-            match self.tail.index.compare_exchange_weak(
-                tail,
-                new_tail,
-                Ordering::SeqCst,
-                Ordering::Acquire,
-            ) {
+            match self.tail.index
+                .compare_exchange_weak(
+                    tail,
+                    new_tail,
+                    Ordering::SeqCst,
+                    Ordering::Acquire,
+                )
+            {
                 Ok(_) => unsafe {
                     
                     if offset + 1 == BLOCK_CAP {
@@ -250,11 +240,11 @@ impl<T> SegQueue<T> {
 
                     
                     let slot = (*block).slots.get_unchecked(offset);
-                    slot.value.get().write(MaybeUninit::new(value));
+                    slot.value.get().write(ManuallyDrop::new(value));
                     slot.state.fetch_or(WRITE, Ordering::Release);
 
                     return;
-                },
+                }
                 Err(t) => {
                     tail = t;
                     block = self.tail.block.load(Ordering::Acquire);
@@ -279,7 +269,7 @@ impl<T> SegQueue<T> {
     
     
     
-    pub fn pop(&self) -> Option<T> {
+    pub fn pop(&self) -> Result<T, PopError> {
         let backoff = Backoff::new();
         let mut head = self.head.index.load(Ordering::Acquire);
         let mut block = self.head.block.load(Ordering::Acquire);
@@ -304,7 +294,7 @@ impl<T> SegQueue<T> {
 
                 
                 if head >> SHIFT == tail >> SHIFT {
-                    return None;
+                    return Err(PopError);
                 }
 
                 
@@ -323,12 +313,14 @@ impl<T> SegQueue<T> {
             }
 
             
-            match self.head.index.compare_exchange_weak(
-                head,
-                new_head,
-                Ordering::SeqCst,
-                Ordering::Acquire,
-            ) {
+            match self.head.index
+                .compare_exchange_weak(
+                    head,
+                    new_head,
+                    Ordering::SeqCst,
+                    Ordering::Acquire,
+                )
+            {
                 Ok(_) => unsafe {
                     
                     if offset + 1 == BLOCK_CAP {
@@ -345,7 +337,8 @@ impl<T> SegQueue<T> {
                     
                     let slot = (*block).slots.get_unchecked(offset);
                     slot.wait_write();
-                    let value = slot.value.get().read().assume_init();
+                    let m = slot.value.get().read();
+                    let value = ManuallyDrop::into_inner(m);
 
                     
                     
@@ -355,8 +348,8 @@ impl<T> SegQueue<T> {
                         Block::destroy(block, offset + 1);
                     }
 
-                    return Some(value);
-                },
+                    return Ok(value);
+                }
                 Err(h) => {
                     head = h;
                     block = self.head.block.load(Ordering::Acquire);
@@ -414,14 +407,6 @@ impl<T> SegQueue<T> {
                 head &= !((1 << SHIFT) - 1);
 
                 
-                if (tail >> SHIFT) & (LAP - 1) == LAP - 1 {
-                    tail = tail.wrapping_add(1 << SHIFT);
-                }
-                if (head >> SHIFT) & (LAP - 1) == LAP - 1 {
-                    head = head.wrapping_add(1 << SHIFT);
-                }
-
-                
                 let lap = (head >> SHIFT) / LAP;
                 tail = tail.wrapping_sub((lap * LAP) << SHIFT);
                 head = head.wrapping_sub((lap * LAP) << SHIFT);
@@ -429,6 +414,15 @@ impl<T> SegQueue<T> {
                 
                 tail >>= SHIFT;
                 head >>= SHIFT;
+
+                
+                if head == BLOCK_CAP {
+                    head = 0;
+                    tail -= LAP;
+                }
+                if tail == BLOCK_CAP {
+                    tail += 1;
+                }
 
                 
                 return tail - head - tail / LAP;
@@ -439,9 +433,9 @@ impl<T> SegQueue<T> {
 
 impl<T> Drop for SegQueue<T> {
     fn drop(&mut self) {
-        let mut head = *self.head.index.get_mut();
-        let mut tail = *self.tail.index.get_mut();
-        let mut block = *self.head.block.get_mut();
+        let mut head = self.head.index.load(Ordering::Relaxed);
+        let mut tail = self.tail.index.load(Ordering::Relaxed);
+        let mut block = self.head.block.load(Ordering::Relaxed);
 
         
         head &= !((1 << SHIFT) - 1);
@@ -455,11 +449,10 @@ impl<T> Drop for SegQueue<T> {
                 if offset < BLOCK_CAP {
                     
                     let slot = (*block).slots.get_unchecked(offset);
-                    let p = &mut *slot.value.get();
-                    p.as_mut_ptr().drop_in_place();
+                    ManuallyDrop::drop(&mut *(*slot).value.get());
                 } else {
                     
-                    let next = *(*block).next.get_mut();
+                    let next = (*block).next.load(Ordering::Relaxed);
                     drop(Box::from_raw(block));
                     block = next;
                 }
@@ -476,7 +469,7 @@ impl<T> Drop for SegQueue<T> {
 }
 
 impl<T> fmt::Debug for SegQueue<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.pad("SegQueue { .. }")
     }
 }
@@ -484,64 +477,5 @@ impl<T> fmt::Debug for SegQueue<T> {
 impl<T> Default for SegQueue<T> {
     fn default() -> SegQueue<T> {
         SegQueue::new()
-    }
-}
-
-impl<T> IntoIterator for SegQueue<T> {
-    type Item = T;
-
-    type IntoIter = IntoIter<T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        IntoIter { value: self }
-    }
-}
-
-#[derive(Debug)]
-pub struct IntoIter<T> {
-    value: SegQueue<T>,
-}
-
-impl<T> Iterator for IntoIter<T> {
-    type Item = T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let value = &mut self.value;
-        let head = *value.head.index.get_mut();
-        let tail = *value.tail.index.get_mut();
-        if head >> SHIFT == tail >> SHIFT {
-            None
-        } else {
-            let block = *value.head.block.get_mut();
-            let offset = (head >> SHIFT) % LAP;
-
-            
-            
-            
-            
-            let item = unsafe {
-                let slot = (*block).slots.get_unchecked(offset);
-                let p = &mut *slot.value.get();
-                p.as_mut_ptr().read()
-            };
-            if offset + 1 == BLOCK_CAP {
-                
-                
-                
-                
-                unsafe {
-                    let next = *(*block).next.get_mut();
-                    drop(Box::from_raw(block));
-                    *value.head.block.get_mut() = next;
-                }
-                
-                *value.head.index.get_mut() = head.wrapping_add(2 << SHIFT);
-                
-                debug_assert_eq!((*value.head.index.get_mut() >> SHIFT) % LAP, 0);
-            } else {
-                *value.head.index.get_mut() = head.wrapping_add(1 << SHIFT);
-            }
-            Some(item)
-        }
     }
 }
