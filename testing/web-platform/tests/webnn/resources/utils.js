@@ -1,11 +1,44 @@
 'use strict';
 
-const ExecutionArray = ['async', 'sync'];
+const ExecutionArray = ['sync', 'async'];
 
 
 const DeviceTypeArray = ['cpu', 'gpu'];
 
 
+const TypedArrayDict = {
+  float32: Float32Array,
+  int32: Int32Array,
+  uint32: Uint32Array,
+  int8: Int8Array,
+  uint8: Uint8Array,
+};
+
+const sizeOfShape = (array) => {
+  return array.reduce((accumulator, currentValue) => accumulator * currentValue, 1);
+};
+
+
+
+
+
+
+const loadResources = (file) => {
+  const loadJSON = () => {
+    let xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("GET", file, false);
+    xmlhttp.overrideMimeType("application/json");
+    xmlhttp.send();
+    if (xmlhttp.status == 200 && xmlhttp.readyState == 4) {
+      return xmlhttp.responseText;
+    } else {
+      throw new Error(`Failed to load ${file}`);
+    }
+  };
+
+  const json = loadJSON();
+  return JSON.parse(json.replace(/\\"|"(?:\\"|[^"])*"|(\/\/.*|\/\*[\s\S]*?\*\/)/g, (m, g) => g ? "" : m));
+};
 
 
 
@@ -13,22 +46,64 @@ const DeviceTypeArray = ['cpu', 'gpu'];
 
 
 
-  function getBitwise(value, dataType) {
+const getExpectedData = (resources, outputName) => {
+  let data;
+  for (let subResources of resources) {
+    if (subResources.name === outputName) {
+      data = subResources.data;
+      break;
+    }
+  }
+  if (data === undefined) {
+    throw new Error(`Failed to get expected data sources by ${outputName}`);
+  }
+  return data;
+};
+
+
+const PrecisionMetrics = {
+  concat: {ULP: {float32: 0, float16: 0}},
+};
+
+
+
+
+
+
+
+
+const getPrecisonTolerance = (operationName, metricType, resources) => {
+  
+  const precisionType = Array.isArray(resources.expected) ? resources.expected[0].type : resources.expected.type;
+  let tolerance = PrecisionMetrics[operationName][metricType][precisionType];
+  
+  if (tolerance instanceof Function) {
+    tolerance = tolerance(resources, operationName);
+  }
+  return tolerance;
+};
+
+
+
+
+
+
+
+
+
+const getBitwise = (value, dataType) => {
   const buffer = new ArrayBuffer(8);
   const int64Array = new BigInt64Array(buffer);
   int64Array[0] = value < 0 ? ~BigInt(0) : BigInt(0);
   let typedArray;
-
   if (dataType === "float32") {
-      typedArray = new Float32Array(buffer);
+    typedArray = new Float32Array(buffer);
   } else {
-      throw new AssertionError(`Data type ${dataType} is not supported`);
+    throw new AssertionError(`Data type ${dataType} is not supported`);
   }
-
   typedArray[0] = value;
-
   return int64Array[0];
-}
+};
 
 
 
@@ -42,20 +117,190 @@ const DeviceTypeArray = ['cpu', 'gpu'];
 
 
 
-function assert_array_approx_equals_ulp(actual, expected, nulp, dataType)
-{
+const assert_array_approx_equals_ulp = (actual, expected, nulp, dataType, description) => {
   
 
 
   assert_true(actual.length === expected.length,
-              `assert_array_approx_equals_ulp actual length ${actual.length} should be equal to expected length ${expected.length}`);
+              `assert_array_approx_equals_ulp: ${description} lengths differ, expected ${expected.length} but got ${actual.length}`);
   let actualBitwise, expectedBitwise, distance;
   for (let i = 0; i < actual.length; i++) {
-      actualBitwise = getBitwise(actual[i], dataType);
-      expectedBitwise = getBitwise(expected[i], dataType);
-      distance = actualBitwise - expectedBitwise;
-      distance = distance >= 0 ? distance : -distance;
-      assert_true(distance <= nulp,
-                  `The distance of ${actual[i]} should be close enough to the distance of ${expected[i]} by the acceptable ULP distance ${nulp}, while current they have ${distance} ULP distance`);
+    actualBitwise = getBitwise(actual[i], dataType);
+    expectedBitwise = getBitwise(expected[i], dataType);
+    distance = actualBitwise - expectedBitwise;
+    distance = distance >= 0 ? distance : -distance;
+    assert_true(distance <= nulp,
+                `assert_array_approx_equals_ulp: ${description} actual ${actual[i]} should be close enough to expected ${expected[i]} by the acceptable ${nulp} ULP distance, but they have ${distance} ULP distance`);
   }
-}
+};
+
+
+
+
+
+
+
+
+
+
+
+
+const doAssert = (operationName, actual, expected, tolerance, operandType, metricType) => {
+  const description = `test ${operationName} ${operandType}`;
+  if (typeof expected === 'number') {
+    
+    expected = [expected];
+    actual = [actual];
+  }
+  if (metricType === 'ULP') {
+    assert_array_approx_equals_ulp(actual, expected, tolerance, operandType, description);
+  } else if (metricType === 'ATOL') {
+    assert_array_approx_equals(actual, expected, tolerance, description);
+  }
+};
+
+
+
+
+
+
+
+
+const checkResults = (operationName, namedOutputOperands, outputs, resources) => {
+  const metricType = Object.keys(PrecisionMetrics[operationName])[0];
+  const tolerance = getPrecisonTolerance(operationName, metricType, resources);
+  const expected = resources.expected;
+  const operandType = expected.type;
+  let outputData;
+  let expectedData;
+  if (Array.isArray(expected)) {
+    
+    for (let operandName in namedOutputOperands) {
+      outputData = outputs[operandName];
+      expectedData = getExpectedData(expected, operandName);
+      doAssert(operationName, outputData, expectedData, tolerance, operandType, metricType)
+    }
+  } else {
+    outputData = outputs[expected.name];
+    expectedData = expected.data;
+    doAssert(operationName, outputData, expectedData, tolerance, operandType, metricType)
+  }
+};
+
+
+
+
+
+
+
+
+const buildGraph = (builder, resources, buildFunc) => {
+  const namedOperands = buildFunc(builder, resources);
+  let inputs = {};
+  if (Array.isArray(resources.inputs)) {
+    
+    for (let subInput of resources.inputs) {
+      inputs[subInput.name] = new TypedArrayDict[subInput.type](subInput.data);
+    }
+  } else {
+    for (let inputName in resources.inputs) {
+      const subTestByName = resources.inputs[inputName];
+      inputs[inputName] = new TypedArrayDict[subTestByName.type](subTestByName.data);
+    }
+  }
+  let outputs = {};
+  if (Array.isArray(resources.expected)) {
+    
+    for (let i = 0; i < resources.expected.length; i++) {
+      const subExpected = resources.expected[i];
+      outputs[subExpected.name] = new TypedArrayDict[subExpected.type](sizeOfShape(subExpected.shape));
+    }
+  } else {
+    
+    const shape = resources.expected.shape ? resources.expected.shape : [1];
+    outputs[resources.expected.name] = new TypedArrayDict[resources.expected.type](sizeOfShape(shape));
+  }
+  return [namedOperands, inputs, outputs];
+};
+
+
+
+
+
+
+
+
+
+const runSync = (operationName, context, builder, resources, buildFunc) => {
+  
+  const [namedOutputOperands, inputs, outputs] = buildGraph(builder, resources, buildFunc);
+  
+  const graph = builder.buildSync(namedOutputOperands);
+  
+  context.computeSync(graph, inputs, outputs);
+  checkResults(operationName, namedOutputOperands, outputs, resources);
+};
+
+
+
+
+
+
+
+
+
+const run = async (operationName, context, builder, resources, buildFunc) => {
+  
+  const [namedOutputOperands, inputs, outputs] = buildGraph(builder, resources, buildFunc);
+  
+  const graph = await builder.build(namedOutputOperands);
+  
+  await context.compute(graph, inputs, outputs);
+  checkResults(operationName, namedOutputOperands, outputs, resources);
+};
+
+
+
+
+
+
+
+const testWebNNOperation = (operationName, file, buildFunc) => {
+  const resources = loadResources(file);
+  const tests = resources.tests;
+  ExecutionArray.forEach(executionType => {
+    const isSync = executionType === 'sync';
+    if (self.GLOBAL.isWindow() && isSync) {
+      return;
+    }
+    let context;
+    let builder;
+    if (isSync) {
+      
+      DeviceTypeArray.forEach(deviceType => {
+        setup(() => {
+          context = navigator.ml.createContextSync({deviceType});
+          builder = new MLGraphBuilder(context);
+        });
+        for (const subTest of tests) {
+          test(() => {
+            runSync(operationName, context, builder, subTest, buildFunc);
+          }, `${subTest.name} / ${deviceType} / ${executionType}`);
+        }
+      });
+    } else {
+      
+      DeviceTypeArray.forEach(deviceType => {
+        promise_setup(async () => {
+          context = await navigator.ml.createContext({deviceType});
+          builder = new MLGraphBuilder(context);
+        });
+        for (const subTest of tests) {
+          promise_test(async () => {
+            await run(operationName, context, builder, subTest, buildFunc);
+          }, `${subTest.name} / ${deviceType} / ${executionType}`);
+        }
+      });
+    }
+  });
+};
