@@ -36,10 +36,6 @@ class RtpStreamReceiverController
       RtpPacketSinkInterface* sink) override;
 
   
-  bool AddSink(uint32_t ssrc, RtpPacketSinkInterface* sink) override;
-  size_t RemoveSink(const RtpPacketSinkInterface* sink) override;
-
-  
   bool OnRtpPacket(const RtpPacketReceived& packet);
 
  private:
@@ -55,6 +51,10 @@ class RtpStreamReceiverController
     RtpStreamReceiverController* const controller_;
     RtpPacketSinkInterface* const sink_;
   };
+
+  
+  bool AddSink(uint32_t ssrc, RtpPacketSinkInterface* sink);
+  bool RemoveSink(const RtpPacketSinkInterface* sink);
 
   
   

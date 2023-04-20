@@ -32,8 +32,6 @@ RtpStreamReceiverController::Receiver::Receiver(
 
 RtpStreamReceiverController::Receiver::~Receiver() {
   
-  
-  
   controller_->RemoveSink(sink_);
 }
 
@@ -58,7 +56,7 @@ bool RtpStreamReceiverController::AddSink(uint32_t ssrc,
   return demuxer_.AddSink(ssrc, sink);
 }
 
-size_t RtpStreamReceiverController::RemoveSink(
+bool RtpStreamReceiverController::RemoveSink(
     const RtpPacketSinkInterface* sink) {
   RTC_DCHECK_RUN_ON(&demuxer_sequence_);
   return demuxer_.RemoveSink(sink);
