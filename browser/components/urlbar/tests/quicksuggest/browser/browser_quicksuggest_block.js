@@ -52,6 +52,9 @@ add_setup(async function() {
     set: [
       ["browser.urlbar.bestMatch.blockingEnabled", true],
       ["browser.urlbar.quicksuggest.blockingEnabled", true],
+      
+      
+      ["browser.urlbar.resultMenu", false],
     ],
   });
 
