@@ -2855,12 +2855,15 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::RecreateWebRtcStream() {
 
   parameters_.encoder_config.encoder_specific_settings = NULL;
 
+  
+  
+  UpdateSendState();
+
+  
+  
   if (source_) {
     stream_->SetSource(source_, GetDegradationPreference());
   }
-
-  
-  UpdateSendState();
 }
 
 WebRtcVideoChannel::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
