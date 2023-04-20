@@ -130,6 +130,11 @@ class nsClipboard : public nsIClipboard, public nsIObserver {
   
   nsITransferable* GetTransferable(int32_t aWhichClipboard);
 
+  
+  void SetTransferableData(nsITransferable* aTransferable, nsCString& aFlavor,
+                           const char* aClipboardData,
+                           uint32_t aClipboardDataLength);
+
   void ClearTransferable(int32_t aWhichClipboard);
   void ClearCachedTargets(int32_t aWhichClipboard);
 
