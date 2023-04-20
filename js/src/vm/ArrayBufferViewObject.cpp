@@ -24,27 +24,27 @@ using namespace js;
 
 
 
-
-
-void ArrayBufferViewObject::trace(JSTracer* trc, JSObject* objArg) {
-  ArrayBufferViewObject* obj = &objArg->as<ArrayBufferViewObject>();
-  HeapSlot& bufSlot = obj->getFixedSlotRef(BUFFER_SLOT);
-  TraceEdge(trc, &bufSlot, "ArrayBufferViewObject.buffer");
+void ArrayBufferViewObject::trace(JSTracer* trc, JSObject* obj) {
+  ArrayBufferViewObject* view = &obj->as<ArrayBufferViewObject>();
 
   
-  if (bufSlot.isObject() &&
-      gc::MaybeForwardedObjectIs<ArrayBufferObject>(&bufSlot.toObject())) {
-    ArrayBufferObject& buf =
-        gc::MaybeForwardedObjectAs<ArrayBufferObject>(&bufSlot.toObject());
-    size_t offset = obj->byteOffset();
+  if (view->hasBuffer()) {
+    JSObject* bufferObj = &view->bufferValue().toObject();
+    if (gc::MaybeForwardedObjectIs<ArrayBufferObject>(bufferObj)) {
+      auto* buffer = &gc::MaybeForwardedObjectAs<ArrayBufferObject>(bufferObj);
 
-    MOZ_ASSERT_IF(buf.dataPointer() == nullptr, offset == 0);
+      size_t offset = view->byteOffset();
+      MOZ_ASSERT_IF(!buffer->dataPointer(), offset == 0);
 
-    
-    
-    
-    void* data = buf.dataPointer() + offset;
-    obj->getFixedSlotRef(DATA_SLOT).unbarrieredSet(PrivateValue(data));
+      
+      
+      
+      void* oldData = view->dataPointerEither_();
+      void* data = buffer->dataPointer() + offset;
+      if (data != oldData) {
+        view->getFixedSlotRef(DATA_SLOT).unbarrieredSet(PrivateValue(data));
+      }
+    }
   }
 }
 
