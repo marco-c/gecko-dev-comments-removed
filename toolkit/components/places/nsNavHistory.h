@@ -337,15 +337,13 @@ class nsNavHistory final : public nsSupportsWeakReference,
   
 
 
-
-
-  bool IsFrecencyDecaying() const;
+  static mozilla::Atomic<int64_t> sLastInsertedPlaceId;
+  static mozilla::Atomic<int64_t> sLastInsertedVisitId;
 
   
 
 
-  static mozilla::Atomic<int64_t> sLastInsertedPlaceId;
-  static mozilla::Atomic<int64_t> sLastInsertedVisitId;
+  static mozilla::Atomic<bool> sIsFrecencyDecaying;
 
   static void StoreLastInsertedId(const nsACString& aTable,
                                   const int64_t aLastInsertedId);
@@ -356,8 +354,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
       nsCOMArray<nsNavHistoryResultNode>* aFiltered,
       const RefPtr<nsNavHistoryQuery>& aQuery,
       nsNavHistoryQueryOptions* aOptions);
-
-  void DecayFrecencyCompleted();
 
   static void InvalidateDaysOfHistory();
 
@@ -460,8 +456,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
   int32_t mUnvisitedBookmarkBonus;
   int32_t mUnvisitedTypedBonus;
   int32_t mReloadVisitBonus;
-
-  uint32_t mDecayFrecencyPendingCount;
 
   nsresult RecalculateOriginFrecencyStatsInternal();
 

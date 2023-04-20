@@ -1429,19 +1429,13 @@ add_task(async function decayTest() {
   
   
   
-  
   UrlbarPrefs.set("autoFill.adaptiveHistory.useCountThreshold", 0.47);
 
   
   for (let i = 0; i < 29; i++) {
-    PlacesUtils.history
-      .QueryInterface(Ci.nsIObserver)
-      .observe(null, "idle-daily", "");
-    await PlacesTestUtils.waitForNotification(
-      "pages-rank-changed",
-      () => true,
-      "places"
-    );
+    await Cc["@mozilla.org/places/frecency-recalculator;1"]
+      .getService(Ci.nsIObserver)
+      .wrappedJSObject.decay();
   }
   const midContext = createContext("exa", { isPrivate: false });
   await check_results({
@@ -1459,14 +1453,9 @@ add_task(async function decayTest() {
   });
 
   
-  PlacesUtils.history
-    .QueryInterface(Ci.nsIObserver)
-    .observe(null, "idle-daily", "");
-  await PlacesTestUtils.waitForNotification(
-    "pages-rank-changed",
-    () => true,
-    "places"
-  );
+  await Cc["@mozilla.org/places/frecency-recalculator;1"]
+    .getService(Ci.nsIObserver)
+    .wrappedJSObject.decay();
   const context = createContext("exa", { isPrivate: false });
   await check_results({
     context,

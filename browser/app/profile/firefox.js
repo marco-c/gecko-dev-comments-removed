@@ -1154,6 +1154,9 @@ pref("accessibility.blockautorefresh", false);
 pref("places.history.enabled", true);
 
 
+pref("places.loglevel", "Error");
+
+
 pref("places.search.matchDiacritics", false);
 
 
