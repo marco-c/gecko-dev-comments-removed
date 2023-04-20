@@ -316,7 +316,7 @@ CryptoWrapper.prototype = {
     }
 
     
-    if (json_result.id != this.id) {
+    if (json_result.id && json_result.id != this.id) {
       throw new Error(`Record id mismatch: ${json_result.id} != ${this.id}`);
     }
 
