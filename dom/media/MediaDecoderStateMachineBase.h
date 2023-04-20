@@ -171,6 +171,7 @@ class MediaDecoderStateMachineBase {
   virtual void PreservesPitchChanged() = 0;
   virtual void PlayStateChanged() = 0;
   virtual void LoopingChanged() = 0;
+  virtual void UpdateSecondaryVideoContainer() = 0;
 
   
   virtual void InitializationTask(MediaDecoder* aDecoder);
@@ -229,6 +230,10 @@ class MediaDecoderStateMachineBase {
   
   
   Mirror<bool> mLooping;
+
+  
+  
+  Mirror<RefPtr<VideoFrameContainer>> mSecondaryVideoContainer;
 
   
   

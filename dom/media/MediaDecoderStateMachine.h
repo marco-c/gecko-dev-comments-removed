@@ -247,6 +247,7 @@ class MediaDecoderStateMachine
   void PreservesPitchChanged() override;
   void PlayStateChanged() override;
   void LoopingChanged() override;
+  void UpdateSecondaryVideoContainer() override;
 
   void ReaderSuspendedChanged();
 
@@ -275,7 +276,6 @@ class MediaDecoderStateMachine
   }
 
   void StreamNameChanged();
-  void UpdateSecondaryVideoContainer();
   void UpdateOutputCaptured();
   void OutputTracksChanged();
   void OutputPrincipalChanged();
@@ -544,10 +544,6 @@ class MediaDecoderStateMachine
   
   
   Mirror<RefPtr<AudioDeviceInfo>> mSinkDevice;
-
-  
-  
-  Mirror<RefPtr<VideoFrameContainer>> mSecondaryVideoContainer;
 
   
   
