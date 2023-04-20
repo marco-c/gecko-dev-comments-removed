@@ -13,9 +13,9 @@
 
 #include <stdint.h>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/types/optional.h"
 #include "api/scoped_refptr.h"
-#include "rtc_base/ref_count.h"
 #include "rtc_base/rtc_certificate.h"
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/system/rtc_export.h"
@@ -24,20 +24,14 @@
 namespace rtc {
 
 
-class RTCCertificateGeneratorCallback : public RefCountInterface {
- public:
-  virtual void OnSuccess(const scoped_refptr<RTCCertificate>& certificate) = 0;
-  virtual void OnFailure() = 0;
-
- protected:
-  ~RTCCertificateGeneratorCallback() override {}
-};
-
-
 
 class RTCCertificateGeneratorInterface {
  public:
-  virtual ~RTCCertificateGeneratorInterface() {}
+  
+  
+  using Callback = absl::AnyInvocable<void(scoped_refptr<RTCCertificate>) &&>;
+
+  virtual ~RTCCertificateGeneratorInterface() = default;
 
   
   
@@ -47,7 +41,7 @@ class RTCCertificateGeneratorInterface {
   virtual void GenerateCertificateAsync(
       const KeyParams& key_params,
       const absl::optional<uint64_t>& expires_ms,
-      const scoped_refptr<RTCCertificateGeneratorCallback>& callback) = 0;
+      Callback callback) = 0;
 };
 
 
@@ -74,10 +68,9 @@ class RTC_EXPORT RTCCertificateGenerator
   
   
   
-  void GenerateCertificateAsync(
-      const KeyParams& key_params,
-      const absl::optional<uint64_t>& expires_ms,
-      const scoped_refptr<RTCCertificateGeneratorCallback>& callback) override;
+  void GenerateCertificateAsync(const KeyParams& key_params,
+                                const absl::optional<uint64_t>& expires_ms,
+                                Callback callback) override;
 
  private:
   Thread* const signaling_thread_;
