@@ -30,7 +30,6 @@ extern mozilla::LogModule* GetTimerLog();
   }
 
 class nsIObserver;
-class nsTimerImplHolder;
 
 namespace mozilla {
 class LogModule;
@@ -41,7 +40,7 @@ class LogModule;
 
 class nsTimerImpl {
   ~nsTimerImpl() {
-    MOZ_ASSERT(!mHolder);
+    MOZ_ASSERT(!mIsInTimerThread);
 
     
     
@@ -137,7 +136,10 @@ class nsTimerImpl {
 
   void GetName(nsACString& aName);
 
-  void SetHolder(nsTimerImplHolder* aHolder);
+  bool IsInTimerThread() const { return mIsInTimerThread; }
+  void SetIsInTimerThread(bool aIsInTimerThread) {
+    mIsInTimerThread = aIsInTimerThread;
+  }
 
   nsCOMPtr<nsIEventTarget> mEventTarget;
 
@@ -154,8 +156,7 @@ class nsTimerImpl {
   
   
   
-  
-  nsTimerImplHolder* mHolder;
+  bool mIsInTimerThread;
 
   
   
@@ -219,38 +220,6 @@ class nsTimer final : public nsITimer {
   
   
   RefPtr<nsTimerImpl> mImpl;
-};
-
-
-
-class nsTimerImplHolder {
- public:
-  void Forget(nsTimerImpl* aTimerImpl) {
-    if (MOZ_UNLIKELY(!mTimerImpl)) {
-      return;
-    }
-    MOZ_ASSERT(aTimerImpl == mTimerImpl);
-    mTimerImpl->mMutex.AssertCurrentThreadOwns();
-    mTimerImpl->SetHolder(nullptr);
-    mTimerImpl = nullptr;
-  }
-
- protected:
-  explicit nsTimerImplHolder(nsTimerImpl* aTimerImpl) : mTimerImpl(aTimerImpl) {
-    if (mTimerImpl) {
-      mTimerImpl->mMutex.AssertCurrentThreadOwns();
-      mTimerImpl->SetHolder(this);
-    }
-  }
-
-  ~nsTimerImplHolder() {
-    if (mTimerImpl) {
-      mTimerImpl->mMutex.AssertCurrentThreadOwns();
-      mTimerImpl->SetHolder(nullptr);
-    }
-  }
-
-  RefPtr<nsTimerImpl> mTimerImpl;
 };
 
 #endif 

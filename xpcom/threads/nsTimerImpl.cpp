@@ -354,7 +354,7 @@ nsTimer::Release(void) {
 
 nsTimerImpl::nsTimerImpl(nsITimer* aTimer, nsIEventTarget* aTarget)
     : mEventTarget(aTarget),
-      mHolder(nullptr),
+      mIsInTimerThread(false),
       mType(0),
       mGeneration(0),
       mITimer(aTimer),
@@ -611,8 +611,7 @@ void nsTimerImpl::Fire(int32_t aGeneration) {
 
     
     
-    
-    MOZ_ASSERT(!mHolder);
+    MOZ_ASSERT(!mIsInTimerThread);
 
     ++mFiring;
     callbackDuringFire = mCallback;
@@ -777,8 +776,6 @@ void nsTimerImpl::GetName(nsACString& aName) {
   MutexAutoLock lock(mMutex);
   GetName(aName, lock);
 }
-
-void nsTimerImpl::SetHolder(nsTimerImplHolder* aHolder) { mHolder = aHolder; }
 
 nsTimer::~nsTimer() = default;
 
