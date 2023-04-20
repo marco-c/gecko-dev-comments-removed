@@ -433,6 +433,7 @@ void TextureHost::MaybeDestroyRenderTexture() {
   }
   
   TextureHost::DestroyRenderTexture(mExternalImageId.ref());
+  mExternalImageId = Nothing();
 }
 
 void TextureHost::DestroyRenderTexture(
