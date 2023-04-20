@@ -15,6 +15,7 @@
 
 #include <string>
 
+#include "modules/desktop_capture/desktop_capture_types.h"
 #include "modules/desktop_capture/linux/wayland/portal_request_response.h"
 #include "modules/desktop_capture/linux/wayland/screen_capture_portal_interface.h"
 #include "modules/desktop_capture/linux/wayland/xdg_desktop_portal_utils.h"
@@ -37,6 +38,7 @@ class ScreenCastPortal : public xdg_portal::ScreenCapturePortalInterface {
                GVariant* parameters,
                gpointer user_data);
 
+  
   
   
   
@@ -86,15 +88,22 @@ class ScreenCastPortal : public xdg_portal::ScreenCapturePortalInterface {
     virtual ~PortalNotifier() = default;
   };
 
-  explicit ScreenCastPortal(ScreenCastPortal::CaptureSourceType source_type,
-                            PortalNotifier* notifier);
-  explicit ScreenCastPortal(
-      CaptureSourceType source_type,
-      PortalNotifier* notifier,
-      ProxyRequestResponseHandler proxy_request_response_handler,
-      SourcesRequestResponseSignalHandler
-          sources_request_response_signal_handler,
-      gpointer user_data);
+  ScreenCastPortal(CaptureType type, PortalNotifier* notifier);
+  ScreenCastPortal(CaptureType type,
+                   PortalNotifier* notifier,
+                   ProxyRequestResponseHandler proxy_request_response_handler,
+                   SourcesRequestResponseSignalHandler
+                       sources_request_response_signal_handler,
+                   gpointer user_data);
+
+  
+  
+  ScreenCastPortal(CaptureSourceType source_type,
+                   PortalNotifier* notifier,
+                   ProxyRequestResponseHandler proxy_request_response_handler,
+                   SourcesRequestResponseSignalHandler
+                       sources_request_response_signal_handler,
+                   gpointer user_data);
   ~ScreenCastPortal();
 
   
