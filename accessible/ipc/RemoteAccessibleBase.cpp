@@ -395,73 +395,40 @@ Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
           break;
         }
 
-        
-        
-        
-        
-        
-        if (!lastMatch) {
-          if (acc->Bounds().Contains(aX, aY)) {
-            lastMatch = acc;
-          }
-          continue;
+        if (acc == this) {
+          MOZ_ASSERT(!acc->IsOuterDoc());
+          
+          
+          
+          
+          break;
         }
 
-        
-        
-        
-        
-        
-        
-        if (lastMatch->IsAncestorOf(acc) && acc->Bounds().Contains(aX, aY)) {
+        if (acc->Bounds().Contains(aX, aY)) {
+          if (aWhichChild == EWhichChildAtPoint::DeepestChild) {
+            
+            
+            
+            lastMatch = acc;
+            break;
+          }
+
+          
+          
           lastMatch = acc;
         }
       }
     }
   }
 
-  if (lastMatch == this || (!lastMatch && Bounds().Contains(aX, aY))) {
+  if (!lastMatch && Bounds().Contains(aX, aY)) {
     return this;
   }
-  if (!lastMatch) {
+  
+  
+  
+  if (lastMatch && !IsDoc() && !IsAncestorOf(lastMatch)) {
     return nullptr;
-  }
-
-  
-  
-  
-  
-  
-  if (aWhichChild == EWhichChildAtPoint::DeepestChild) {
-    if (IsDoc()) {
-      
-      
-      DocAccessibleParent* doc;
-      for (doc = lastMatch->Document(); doc; doc = doc->ParentDoc()) {
-        if (doc == this) {
-          break;
-        }
-      }
-      if (!doc) {
-        
-        return nullptr;
-      }
-    } else if (!IsAncestorOf(lastMatch)) {
-      return nullptr;
-    }
-  } else {
-    
-    RemoteAccessible* parent = lastMatch;
-    while ((parent = parent->RemoteParent())) {
-      if (parent == this) {
-        break;
-      }
-      lastMatch = parent;
-    }
-    if (!parent) {
-      
-      return nullptr;
-    }
   }
 
   return lastMatch;
