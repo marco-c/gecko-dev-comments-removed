@@ -80,6 +80,7 @@
 #include "js/RootingAPI.h"     
 #include "mozilla/PeerIdentity.h"
 #include "mozilla/dom/RTCCertificate.h"
+#include "mozilla/dom/RTCDtlsTransportBinding.h"  
 #include "mozilla/dom/RTCRtpReceiverBinding.h"
 #include "mozilla/dom/RTCRtpSenderBinding.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
@@ -329,6 +330,7 @@ PeerConnectionImpl::PeerConnectionImpl(const GlobalObject* aGlobal)
       mSignalingState(RTCSignalingState::Stable),
       mIceConnectionState(RTCIceConnectionState::New),
       mIceGatheringState(RTCIceGatheringState::New),
+      mConnectionState(RTCPeerConnectionState::New),
       mWindow(do_QueryInterface(aGlobal ? aGlobal->GetAsSupports() : nullptr)),
       mCertificate(nullptr),
       mSTSThread(nullptr),
@@ -1973,6 +1975,135 @@ nsresult PeerConnectionImpl::OnAlpnNegotiated(bool aPrivacyRequested) {
   return NS_OK;
 }
 
+void PeerConnectionImpl::OnDtlsStateChange(const std::string& aTransportId,
+                                           TransportLayer::State aState) {
+  auto it = mTransportIdToRTCDtlsTransport.find(aTransportId);
+  if (it != mTransportIdToRTCDtlsTransport.end()) {
+    it->second->UpdateState(aState);
+  }
+  UpdateConnectionState();
+}
+
+RTCPeerConnectionState PeerConnectionImpl::GetNewConnectionState() const {
+  
+  if (IsClosed()) {
+    return RTCPeerConnectionState::Closed;
+  }
+
+  
+  
+  std::set<RTCDtlsTransportState> statesFound;
+  for (const auto& [id, dtlsTransport] : mTransportIdToRTCDtlsTransport) {
+    statesFound.insert(dtlsTransport->State());
+  }
+
+  
+  
+  
+  
+  if (mIceConnectionState == RTCIceConnectionState::Failed ||
+      statesFound.count(RTCDtlsTransportState::Failed)) {
+    return RTCPeerConnectionState::Failed;
+  }
+
+  
+  
+  
+  
+  if (mIceConnectionState == RTCIceConnectionState::Disconnected) {
+    return RTCPeerConnectionState::Disconnected;
+  }
+
+  
+  
+  
+  
+  
+  if (mIceConnectionState == RTCIceConnectionState::New &&
+      !statesFound.count(RTCDtlsTransportState::Connecting) &&
+      !statesFound.count(RTCDtlsTransportState::Connected) &&
+      !statesFound.count(RTCDtlsTransportState::Failed)) {
+    return RTCPeerConnectionState::New;
+  }
+
+  
+  if (statesFound.empty()) {
+    return RTCPeerConnectionState::New;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (mIceConnectionState == RTCIceConnectionState::Checking ||
+      statesFound.count(RTCDtlsTransportState::New) ||
+      statesFound.count(RTCDtlsTransportState::Connecting)) {
+    return RTCPeerConnectionState::Connecting;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (mIceConnectionState == RTCIceConnectionState::Connected &&
+      !statesFound.count(RTCDtlsTransportState::New) &&
+      !statesFound.count(RTCDtlsTransportState::Failed) &&
+      !statesFound.count(RTCDtlsTransportState::Connecting)) {
+    return RTCPeerConnectionState::Connected;
+  }
+
+  
+  
+  
+
+  
+  
+  MOZ_ASSERT(mIceConnectionState != RTCIceConnectionState::Failed &&
+             mIceConnectionState != RTCIceConnectionState::Disconnected &&
+             mIceConnectionState != RTCIceConnectionState::Checking);
+  MOZ_ASSERT(!statesFound.count(RTCDtlsTransportState::New) &&
+             !statesFound.count(RTCDtlsTransportState::Connecting) &&
+             !statesFound.count(RTCDtlsTransportState::Failed));
+
+  
+  MOZ_ASSERT(statesFound.count(RTCDtlsTransportState::Connected) ||
+             statesFound.count(RTCDtlsTransportState::Closed));
+
+  
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+  
+  return mConnectionState;
+}
+
+void PeerConnectionImpl::UpdateConnectionState() {
+  auto newState = GetNewConnectionState();
+  if (newState != mConnectionState) {
+    CSFLogDebug(LOGTAG, "%s: %d -> %d (%p)", __FUNCTION__,
+                static_cast<int>(mConnectionState), static_cast<int>(newState),
+                this);
+    mConnectionState = newState;
+    if (mConnectionState != RTCPeerConnectionState::Closed) {
+      JSErrorResult jrv;
+      mPCObserver->OnStateChange(PCObserverStateType::ConnectionState, jrv);
+    }
+  }
+}
+
 void PeerConnectionImpl::OnMediaError(const std::string& aError) {
   CSFLogError(LOGTAG, "Encountered media error! %s", aError.c_str());
   
@@ -2191,6 +2322,15 @@ PeerConnectionImpl::IceGatheringState(RTCIceGatheringState* aState) {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+PeerConnectionImpl::ConnectionState(RTCPeerConnectionState* aState) {
+  PC_AUTO_ENTER_API_CALL_NO_CHECK();
+  MOZ_ASSERT(aState);
+
+  *aState = mConnectionState;
+  return NS_OK;
+}
+
 nsresult PeerConnectionImpl::CheckApiState(bool assert_ice_ready) const {
   PC_AUTO_ENTER_API_CALL_NO_CHECK();
   MOZ_ASSERT(mTrickle || !assert_ice_ready ||
@@ -2289,6 +2429,7 @@ PeerConnectionImpl::Close() {
   }
 
   mSignalingState = RTCSignalingState::Closed;
+  mConnectionState = RTCPeerConnectionState::Closed;
 
   if (!mTransportHandler) {
     
@@ -2752,6 +2893,10 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
           UpdateNegotiationNeeded();
         }
 
+        
+        
+        UpdateConnectionState();
+
         JSErrorResult jrv;
         if (newSignalingState != mSignalingState) {
           mSignalingState = newSignalingState;
@@ -2963,7 +3108,9 @@ void PeerConnectionImpl::IceConnectionStateChange(
     dom::RTCIceConnectionState domState) {
   PC_AUTO_ENTER_API_CALL_VOID_RETURN(false);
 
-  CSFLogDebug(LOGTAG, "%s: %d", __FUNCTION__, static_cast<int>(domState));
+  CSFLogDebug(LOGTAG, "%s: %d -> %d", __FUNCTION__,
+              static_cast<int>(mIceConnectionState),
+              static_cast<int>(domState));
 
   if (domState == mIceConnectionState) {
     
@@ -3006,6 +3153,7 @@ void PeerConnectionImpl::IceConnectionStateChange(
 
   WrappableJSErrorResult rv;
   mPCObserver->OnStateChange(PCObserverStateType::IceConnectionState, rv);
+  UpdateConnectionState();
 }
 
 void PeerConnectionImpl::OnCandidateFound(const std::string& aTransportId,
@@ -3588,19 +3736,29 @@ void PeerConnectionImpl::EnsureTransports(const JsepSession& aSession) {
 }
 
 void PeerConnectionImpl::UpdateRTCDtlsTransports(bool aMarkAsStable) {
-  for (auto& transceiver : mTransceivers) {
-    std::string transportId = transceiver->GetTransportId();
+  for (const auto& jsepTransceiver : mJsepSession->GetTransceivers()) {
+    std::string transportId = jsepTransceiver->mTransport.mTransportId;
     if (transportId.empty()) {
       continue;
     }
     if (!mTransportIdToRTCDtlsTransport.count(transportId)) {
       mTransportIdToRTCDtlsTransport.emplace(
-          transportId, new RTCDtlsTransport(transceiver->GetParentObject()));
+          transportId, new RTCDtlsTransport(GetParentObject()));
     }
-
-    transceiver->SetDtlsTransport(mTransportIdToRTCDtlsTransport[transportId],
-                                  aMarkAsStable);
   }
+
+  for (auto& transceiver : mTransceivers) {
+    std::string transportId = transceiver->GetTransportId();
+    if (transportId.empty()) {
+      continue;
+    }
+    if (mTransportIdToRTCDtlsTransport.count(transportId)) {
+      transceiver->SetDtlsTransport(mTransportIdToRTCDtlsTransport[transportId],
+                                    aMarkAsStable);
+    }
+  }
+
+  
 }
 
 void PeerConnectionImpl::RollbackRTCDtlsTransports() {
@@ -3639,6 +3797,8 @@ nsresult PeerConnectionImpl::UpdateTransports(const JsepSession& aSession,
   for (const auto& transceiverImpl : mTransceivers) {
     transceiverImpl->UpdateTransport();
   }
+
+  
 
   return NS_OK;
 }
@@ -3807,6 +3967,10 @@ void PeerConnectionImpl::SignalHandler::ConnectSignals() {
       this, &PeerConnectionImpl::SignalHandler::OnCandidateFound_s);
   mSource->SignalAlpnNegotiated.connect(
       this, &PeerConnectionImpl::SignalHandler::AlpnNegotiated_s);
+  mSource->SignalStateChange.connect(
+      this, &PeerConnectionImpl::SignalHandler::ConnectionStateChange_s);
+  mSource->SignalRtcpStateChange.connect(
+      this, &PeerConnectionImpl::SignalHandler::ConnectionStateChange_s);
 }
 
 void PeerConnectionImpl::AddIceCandidate(const std::string& aCandidate,
@@ -4099,6 +4263,20 @@ void PeerConnectionImpl::SignalHandler::AlpnNegotiated_s(
                                if (wrapper.impl()) {
                                  wrapper.impl()->OnAlpnNegotiated(
                                      aPrivacyRequested);
+                               }
+                             }),
+      NS_DISPATCH_NORMAL);
+}
+
+void PeerConnectionImpl::SignalHandler::ConnectionStateChange_s(
+    const std::string& aTransportId, TransportLayer::State aState) {
+  GetMainThreadSerialEventTarget()->Dispatch(
+      NS_NewRunnableFunction(__func__,
+                             [handle = mHandle, aTransportId, aState] {
+                               PeerConnectionWrapper wrapper(handle);
+                               if (wrapper.impl()) {
+                                 wrapper.impl()->OnDtlsStateChange(aTransportId,
+                                                                   aState);
                                }
                              }),
       NS_DISPATCH_NORMAL);
