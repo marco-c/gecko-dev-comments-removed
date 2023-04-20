@@ -4,12 +4,6 @@
 
 var EXPORTED_SYMBOLS = ["Service"];
 
-
-const CLUSTER_BACKOFF = 5 * 60 * 1000; 
-
-
-const PBKDF2_KEY_BYTES = 16;
-
 const CRYPTO_COLLECTION = "crypto";
 const KEYS_WBO = "keys";
 

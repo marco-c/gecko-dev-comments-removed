@@ -14,7 +14,7 @@
 
 
 
-const { Changeset, SyncEngine, Tracker } = ChromeUtils.import(
+const { SyncEngine, Tracker } = ChromeUtils.import(
   "resource://services-sync/engines.js"
 );
 const { RawCryptoWrapper } = ChromeUtils.import(
@@ -501,39 +501,5 @@ function transformError(code, message) {
 
     default:
       return new BridgeError(code, message);
-  }
-}
-
-class BridgedChangeset extends Changeset {
-  
-  
-  getModifiedTimestamp(id) {
-    throw new Error("Don't use timestamps to resolve bridged engine conflicts");
-  }
-
-  has(id) {
-    throw new Error(
-      "Don't use the changeset to resolve bridged engine conflicts"
-    );
-  }
-
-  delete(id) {
-    let change = this.changes[id];
-    if (change) {
-      
-      
-      
-      change.synced = true;
-    }
-  }
-
-  ids() {
-    let results = [];
-    for (let id in this.changes) {
-      if (!this.changes[id].synced) {
-        results.push(id);
-      }
-    }
-    return results;
   }
 }
