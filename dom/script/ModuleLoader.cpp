@@ -107,12 +107,8 @@ nsresult ModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
   securityFlags |= nsILoadInfo::SEC_ALLOW_CHROME;
 
   
-  
-  
-  
-  
-  nsresult rv = GetScriptLoader()->StartLoadInternal(
-      aRequest, securityFlags, 0, Nothing() );
+  nsresult rv =
+      GetScriptLoader()->StartLoadInternal(aRequest, securityFlags, 0);
   NS_ENSURE_SUCCESS(rv, rv);
 
   

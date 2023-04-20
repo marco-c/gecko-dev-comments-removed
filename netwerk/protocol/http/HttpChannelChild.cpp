@@ -2270,17 +2270,6 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
   openArgs.navigationStartTimeStamp() = navigationStartTimeStamp;
   openArgs.earlyHintPreloaderId() = mEarlyHintPreloaderId;
 
-  openArgs.classicScriptHintCharset() = mClassicScriptHintCharset;
-
-  RefPtr<Document> doc;
-  mLoadInfo->GetLoadingDocument(getter_AddRefs(doc));
-
-  if (doc) {
-    nsAutoString documentCharacterSet;
-    doc->GetCharacterSet(documentCharacterSet);
-    openArgs.documentCharacterSet() = documentCharacterSet;
-  }
-
   
   
   

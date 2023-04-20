@@ -505,27 +505,20 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
   nsresult StartLoad(ScriptLoadRequest* aRequest,
-                     uint64_t aEarlyHintPreloaderId,
-                     const Maybe<nsAutoString>& aCharsetForPreload);
+                     uint64_t aEarlyHintPreloaderId);
   
 
 
 
   nsresult StartClassicLoad(ScriptLoadRequest* aRequest,
-                            uint64_t aEarlyHintPreloaderId,
-                            const Maybe<nsAutoString>& aCharsetForPreload);
+                            uint64_t aEarlyHintPreloaderId);
 
   
 
 
-
-
-
-
   nsresult StartLoadInternal(ScriptLoadRequest* aRequest,
                              nsSecurityFlags securityFlags,
-                             uint64_t aEarlyHintPreloaderId,
-                             const Maybe<nsAutoString>& aCharsetForPreload);
+                             uint64_t aEarlyHintPreloaderId);
 
   
 
