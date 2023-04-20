@@ -1797,7 +1797,7 @@ constexpr int kOnlyLocalPorts = cricket::PORTALLOCATOR_DISABLE_STUN |
 
 
 
-#if defined(WEBRTC_WIN) || defined(WEBRTC_LINUX)
+#if defined(WEBRTC_WIN)
 #define MAYBE_IceStatesReachCompletionWithRemoteHostname \
   DISABLED_IceStatesReachCompletionWithRemoteHostname
 #else
@@ -1856,6 +1856,7 @@ TEST_P(PeerConnectionIntegrationTest,
   EXPECT_METRIC_EQ(1, webrtc::metrics::NumEvents(
                           "WebRTC.PeerConnection.CandidatePairType_UDP",
                           webrtc::kIceCandidatePairHostNameHostName));
+  DestroyPeerConnections();
 }
 
 #endif  

@@ -1717,6 +1717,20 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
 
   
   
+  
+  void DestroyPeerConnections() {
+    if (caller_) {
+      caller_->pc()->Close();
+    }
+    if (callee_) {
+      callee_->pc()->Close();
+    }
+    caller_.reset();
+    callee_.reset();
+  }
+
+  
+  
   PeerConnectionIntegrationWrapper* SetCallerPcWrapperAndReturnCurrent(
       PeerConnectionIntegrationWrapper* wrapper) {
     PeerConnectionIntegrationWrapper* old = caller_.release();
