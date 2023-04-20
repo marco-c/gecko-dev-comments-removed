@@ -80,8 +80,17 @@ async function createFileWithContents(test, name, contents, parent) {
 }
 
 function garbageCollect() {
+  if (self.TestUtils?.gc) return TestUtils.gc();
+  if (self.gc) return self.gc();
   
-  
-  if (self.gc)
-    self.gc();
-};
+  if (self.GCController) return GCController.collect();
+
+  for (var i = 0; i < 1000; i++) gcRec(10);
+
+  function gcRec(n) {
+    if (n < 1) return {};
+    let temp = { i: "ab" + i + i / 100000 };
+    temp += "foo";
+    gcRec(n - 1);
+  }
+}

@@ -47,23 +47,28 @@ self.constructorThrowsForAll = (constructor, firstArgs) => {
                                                  'constructor should throw a TypeError'));
 };
 
-self.garbageCollect = async () => {
-  if (self.TestUtils?.gc) {
-    
-    await TestUtils.gc();
-  } else if (self.gc) {
-    
-    
-    
-    self.gc();
-  } else if (self.GCController) {
-    
-    GCController.collect();
-  } else {
-    
-    console.warn('Tests are running without the ability to do manual garbage collection. They will still work, but ' +
-      'coverage will be suboptimal.');
-    
+self.garbageCollect = () => {
+  
+  if (self.TestUtils?.gc) return TestUtils.gc();
+  
+  
+  
+  if (self.gc) return self.gc();
+  
+  if (self.GCController) return GCController.collect();
+
+  
+  console.warn('Tests are running without the ability to do manual garbage collection. They will still work, but ' +
+  'coverage will be suboptimal.');
+  
+
+  for (var i = 0; i < 1000; i++) gcRec(10);
+
+  function gcRec(n) {
+    if (n < 1) return {};
+    let temp = { i: "ab" + i + i / 100000 };
+    temp += "foo";
+    gcRec(n - 1);
   }
 };
 
