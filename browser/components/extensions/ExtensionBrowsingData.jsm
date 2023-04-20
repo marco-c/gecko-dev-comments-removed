@@ -34,13 +34,15 @@ class BrowsingDataDelegate {
   
   
   handleRemoval(dataType, options) {
+    
+    let o = { progress: {} };
     switch (dataType) {
       case "downloads":
-        return lazy.Sanitizer.items.downloads.clear(lazy.makeRange(options));
+        return lazy.Sanitizer.items.downloads.clear(lazy.makeRange(options), o);
       case "formData":
-        return lazy.Sanitizer.items.formdata.clear(lazy.makeRange(options));
+        return lazy.Sanitizer.items.formdata.clear(lazy.makeRange(options), o);
       case "history":
-        return lazy.Sanitizer.items.history.clear(lazy.makeRange(options));
+        return lazy.Sanitizer.items.history.clear(lazy.makeRange(options), o);
 
       default:
         return undefined;
