@@ -4490,14 +4490,14 @@ void nsBlockFrame::DoReflowInlineFrames(
 
   
   
-  if ((0 == aLineLayout.GetLineNumber()) &&
-      (NS_BLOCK_HAS_FIRST_LETTER_CHILD & mState) &&
-      (NS_BLOCK_HAS_FIRST_LETTER_STYLE & mState)) {
+  if (0 == aLineLayout.GetLineNumber() &&
+      HasAllStateBits(NS_BLOCK_HAS_FIRST_LETTER_CHILD |
+                      NS_BLOCK_HAS_FIRST_LETTER_STYLE)) {
     aLineLayout.SetFirstLetterStyleOK(true);
   }
-  NS_ASSERTION(
-      !((NS_BLOCK_HAS_FIRST_LETTER_CHILD & mState) && GetPrevContinuation()),
-      "first letter child bit should only be on first continuation");
+  NS_ASSERTION(!(HasAnyStateBits(NS_BLOCK_HAS_FIRST_LETTER_CHILD) &&
+                 GetPrevContinuation()),
+               "first letter child bit should only be on first continuation");
 
   
   LineReflowStatus lineReflowStatus = LineReflowStatus::OK;
@@ -7517,7 +7517,7 @@ void nsBlockFrame::SetInitialChildList(ChildListID aListID,
         !IsColumnSetWrapperFrame() &&
         RefPtr<ComputedStyle>(GetFirstLetterStyle(PresContext())) != nullptr;
     NS_ASSERTION(haveFirstLetterStyle ==
-                     ((mState & NS_BLOCK_HAS_FIRST_LETTER_STYLE) != 0),
+                     HasAnyStateBits(NS_BLOCK_HAS_FIRST_LETTER_STYLE),
                  "NS_BLOCK_HAS_FIRST_LETTER_STYLE state out of sync");
 #endif
 
