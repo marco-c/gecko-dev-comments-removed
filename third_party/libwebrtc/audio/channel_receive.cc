@@ -1039,8 +1039,8 @@ absl::optional<Syncable::Info> ChannelReceive::GetSyncInfo() const {
   return info;
 }
 
-
 void ChannelReceive::UpdatePlayoutTimestamp(bool rtcp, int64_t now_ms) {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   
   
 

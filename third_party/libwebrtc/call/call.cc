@@ -1339,9 +1339,9 @@ void Call::OnAllocationLimitsChanged(BitrateAllocationLimits limits) {
                                             std::memory_order_relaxed);
 }
 
-
 AudioReceiveStreamImpl* Call::FindAudioStreamForSyncGroup(
     absl::string_view sync_group) {
+  RTC_DCHECK_RUN_ON(worker_thread_);
   RTC_DCHECK_RUN_ON(&receive_11993_checker_);
   if (!sync_group.empty()) {
     for (AudioReceiveStreamImpl* stream : audio_receive_streams_) {
@@ -1353,9 +1353,9 @@ AudioReceiveStreamImpl* Call::FindAudioStreamForSyncGroup(
   return nullptr;
 }
 
-
-
 void Call::ConfigureSync(absl::string_view sync_group) {
+  
+  RTC_DCHECK_RUN_ON(worker_thread_);
   
   AudioReceiveStreamImpl* audio_stream =
       FindAudioStreamForSyncGroup(sync_group);
@@ -1378,8 +1378,8 @@ void Call::ConfigureSync(absl::string_view sync_group) {
   }
 }
 
-
 void Call::DeliverRtcp(MediaType media_type, rtc::CopyOnWriteBuffer packet) {
+  RTC_DCHECK_RUN_ON(network_thread_);
   TRACE_EVENT0("webrtc", "Call::DeliverRtcp");
 
   
@@ -1524,10 +1524,10 @@ void Call::OnRecoveredPacket(const uint8_t* packet, size_t length) {
   video_receiver_controller_.OnRtpPacket(parsed_packet);
 }
 
-
 void Call::NotifyBweOfReceivedPacket(const RtpPacketReceived& packet,
                                      MediaType media_type,
                                      bool use_send_side_bwe) {
+  RTC_DCHECK_RUN_ON(worker_thread_);
   RTPHeader header;
   packet.GetHeader(&header);
 

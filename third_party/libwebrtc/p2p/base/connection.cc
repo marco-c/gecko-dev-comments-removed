@@ -1289,18 +1289,18 @@ void Connection::set_ice_event_log(webrtc::IceEventLog* ice_event_log) {
   ice_event_log_ = ice_event_log;
 }
 
-
 void Connection::LogCandidatePairConfig(
     webrtc::IceCandidatePairConfigType type) {
+  RTC_DCHECK_RUN_ON(network_thread_);
   if (ice_event_log_ == nullptr) {
     return;
   }
   ice_event_log_->LogCandidatePairConfig(type, id(), ToLogDescription());
 }
 
-
 void Connection::LogCandidatePairEvent(webrtc::IceCandidatePairEventType type,
                                        uint32_t transaction_id) {
+  RTC_DCHECK_RUN_ON(network_thread_);
   if (ice_event_log_ == nullptr) {
     return;
   }
@@ -1403,8 +1403,8 @@ void Connection::OnConnectionRequestTimeout(ConnectionRequest* request) {
                  << request->Elapsed() << " ms";
 }
 
-
 void Connection::OnConnectionRequestSent(ConnectionRequest* request) {
+  RTC_DCHECK_RUN_ON(network_thread_);
   
   rtc::LoggingSeverity sev = !writable() ? rtc::LS_INFO : rtc::LS_VERBOSE;
   RTC_LOG_V(sev) << ToString() << ": Sent "
@@ -1620,8 +1620,8 @@ void Connection::SetLocalCandidateNetworkCost(uint16_t cost) {
   SignalStateChange(this);
 }
 
-
 bool Connection::ShouldSendGoogPing(const StunMessage* message) {
+  RTC_DCHECK_RUN_ON(network_thread_);
   if (remote_support_goog_ping_ == true && cached_stun_binding_ &&
       cached_stun_binding_->EqualAttributes(message, [](int type) {
         

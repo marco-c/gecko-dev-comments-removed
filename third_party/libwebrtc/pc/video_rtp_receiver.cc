@@ -113,8 +113,8 @@ void VideoRtpReceiver::Stop() {
   track_->internal()->set_ended();
 }
 
-
 void VideoRtpReceiver::RestartMediaChannel(absl::optional<uint32_t> ssrc) {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
   MediaSourceInterface::SourceState state = source_->state();
   
   worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
@@ -124,10 +124,10 @@ void VideoRtpReceiver::RestartMediaChannel(absl::optional<uint32_t> ssrc) {
   source_->SetState(MediaSourceInterface::kLive);
 }
 
-
 void VideoRtpReceiver::RestartMediaChannel_w(
     absl::optional<uint32_t> ssrc,
     MediaSourceInterface::SourceState state) {
+  RTC_DCHECK_RUN_ON(worker_thread_);
   if (!media_channel_) {
     return;  
   }
@@ -166,8 +166,8 @@ void VideoRtpReceiver::RestartMediaChannel_w(
   }
 }
 
-
 void VideoRtpReceiver::SetSink(rtc::VideoSinkInterface<VideoFrame>* sink) {
+  RTC_DCHECK_RUN_ON(worker_thread_);
   if (ssrc_) {
     media_channel_->SetSink(*ssrc_, sink);
   } else {
@@ -260,8 +260,8 @@ void VideoRtpReceiver::SetMediaChannel(cricket::MediaChannel* media_channel) {
   SetMediaChannel_w(media_channel);
 }
 
-
 void VideoRtpReceiver::SetMediaChannel_w(cricket::MediaChannel* media_channel) {
+  RTC_DCHECK_RUN_ON(worker_thread_);
   if (media_channel == media_channel_)
     return;
 
@@ -347,8 +347,8 @@ void VideoRtpReceiver::OnEncodedSinkEnabled(bool enable) {
   saved_encoded_sink_enabled_ = enable;
 }
 
-
 void VideoRtpReceiver::SetEncodedSinkEnabled(bool enable) {
+  RTC_DCHECK_RUN_ON(worker_thread_);
   if (!media_channel_)
     return;
 

@@ -1274,8 +1274,8 @@ std::string WebRtcVideoChannel::CodecSettingsVectorToString(
   return out.Release();
 }
 
-
 void WebRtcVideoChannel::SetReceiverReportSsrc(uint32_t ssrc) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   if (ssrc == rtcp_receiver_report_ssrc_)
     return;
 
