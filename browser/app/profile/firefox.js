@@ -2111,7 +2111,7 @@ pref("browser.tabs.crashReporting.includeURL", false);
 
 pref("extensions.experiments.enabled", false);
 
-#if defined(XP_LINUX) || defined(XP_WIN)
+#if defined(XP_LINUX) || defined(XP_WIN) || defined(XP_MACOSX)
   
   pref("dom.ipc.processPriorityManager.enabled", true);
 #endif
