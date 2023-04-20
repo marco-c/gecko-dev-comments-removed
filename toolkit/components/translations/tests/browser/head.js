@@ -8,6 +8,10 @@ const { TranslationsParent } = ChromeUtils.importESModule(
 );
 
 
+const BLANK_PAGE =
+  "data:text/html;charset=utf-8,<!DOCTYPE html><title>Blank</title>Blank page";
+
+
 
 
 
@@ -74,7 +78,7 @@ async function openAboutTranslations({
   
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    "about:blank",
+    BLANK_PAGE,
     true 
   );
 
@@ -268,7 +272,7 @@ async function loadTestPage({ runInPage, languagePairs, page }) {
   
   const tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    "about:blank",
+    BLANK_PAGE,
     true 
   );
 
