@@ -262,6 +262,7 @@ class nsContentUtils {
   using TimeDuration = mozilla::TimeDuration;
   using Trusted = mozilla::Trusted;
   using JSONBehavior = mozilla::dom::JSONBehavior;
+  using RFPTarget = mozilla::RFPTarget;
 
  public:
   static nsresult Init();
@@ -352,16 +353,22 @@ class nsContentUtils {
 
   
   
-  static bool ShouldResistFingerprinting();
-  static bool ShouldResistFingerprinting(nsIGlobalObject* aGlobalObject);
+  static bool ShouldResistFingerprinting(
+      RFPTarget aTarget = RFPTarget::Unknown);
+  static bool ShouldResistFingerprinting(
+      nsIGlobalObject* aGlobalObject, RFPTarget aTarget = RFPTarget::Unknown);
   
   
-  static bool ShouldResistFingerprinting(mozilla::dom::CallerType aCallerType,
-                                         nsIGlobalObject* aGlobalObject);
-  static bool ShouldResistFingerprinting(nsIDocShell* aDocShell);
+  static bool ShouldResistFingerprinting(
+      mozilla::dom::CallerType aCallerType, nsIGlobalObject* aGlobalObject,
+      RFPTarget aTarget = RFPTarget::Unknown);
+  static bool ShouldResistFingerprinting(
+      nsIDocShell* aDocShell, RFPTarget aTarget = RFPTarget::Unknown);
   
-  static bool ShouldResistFingerprinting(nsIChannel* aChannel);
-  static bool ShouldResistFingerprinting(nsILoadInfo* aPrincipal);
+  static bool ShouldResistFingerprinting(
+      nsIChannel* aChannel, RFPTarget aTarget = RFPTarget::Unknown);
+  static bool ShouldResistFingerprinting(
+      nsILoadInfo* aLoadInfo, RFPTarget aTarget = RFPTarget::Unknown);
   
   
   
@@ -371,9 +378,10 @@ class nsContentUtils {
   
   static bool ShouldResistFingerprinting_dangerous(
       nsIURI* aURI, const mozilla::OriginAttributes& aOriginAttributes,
-      const char* aJustification);
-  static bool ShouldResistFingerprinting_dangerous(nsIPrincipal* aPrincipal,
-                                                   const char* aJustification);
+      const char* aJustification, RFPTarget aTarget = RFPTarget::Unknown);
+  static bool ShouldResistFingerprinting_dangerous(
+      nsIPrincipal* aPrincipal, const char* aJustification,
+      RFPTarget aTarget = RFPTarget::Unknown);
 
   
 
@@ -385,7 +393,8 @@ class nsContentUtils {
 
 
 
-  static bool ShouldResistFingerprinting(const char* aJustification);
+  static bool ShouldResistFingerprinting(
+      const char* aJustification, RFPTarget aTarget = RFPTarget::Unknown);
 
   
   
