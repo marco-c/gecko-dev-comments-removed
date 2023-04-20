@@ -16,6 +16,13 @@ const {
   shouldInputBeAutocompleted,
 } = require("resource://devtools/shared/webconsole/analyze-input-string.js");
 
+loader.lazyRequireGetter(
+  this,
+  "getSelectedTarget",
+  "resource://devtools/shared/commands/target/selectors/targets.js",
+  true
+);
+
 
 
 
@@ -244,10 +251,9 @@ function autocompleteDataFetch({
 
     let targetFront = commands.targetCommand.selectedTargetFront;
     
-    
-    const contextSelectorTargetFront = hud.toolbox
-      ? hud.toolbox.getSelectedTargetFront()
-      : null;
+    const contextSelectorTargetFront = getSelectedTarget(
+      hud.commands.targetCommand.store.getState()
+    );
     const selectedActorId = selectedNodeActorId || frameActorId;
     if (contextSelectorTargetFront) {
       targetFront = contextSelectorTargetFront;
