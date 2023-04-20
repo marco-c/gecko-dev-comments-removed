@@ -250,7 +250,11 @@ add_task(async function retryConfigOnConnectivityChange() {
   
   ohttpService.clearTRRConfig();
   configPromise = TestUtils.topicObserved("ohttp-service-config-loaded");
-  Services.obs.notifyObservers(null, "trrservice-confirmation-failed");
+  Services.obs.notifyObservers(
+    null,
+    "network:trr-confirmation",
+    "CONFIRM_FAILED"
+  );
   [, status] = await configPromise;
   equal(status, "success");
   await new TRRDNSListener("example4.com", "2.2.2.2");
