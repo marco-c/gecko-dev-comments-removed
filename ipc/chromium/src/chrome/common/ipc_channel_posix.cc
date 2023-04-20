@@ -45,6 +45,10 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 
+#ifdef FUZZING
+#  include "mozilla/ipc/Faulty.h"
+#endif
+
 
 #if defined(IOV_MAX)
 static const size_t kMaxIOVecSize = IOV_MAX;
@@ -583,6 +587,9 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
   
   
   while (!output_queue_.IsEmpty()) {
+#ifdef FUZZING
+    mozilla::ipc::Faulty::instance().MaybeCollectAndClosePipe(pipe_);
+#endif
     Message* msg = output_queue_.FirstElement().get();
 
     struct msghdr msgh = {0};
@@ -800,6 +807,11 @@ bool Channel::ChannelImpl::Send(mozilla::UniquePtr<Message> message) {
   DLOG(INFO) << "sending message @" << message.get() << " on channel @" << this
              << " with type " << message->type() << " ("
              << output_queue_.Count() << " in queue)";
+#endif
+
+#ifdef FUZZING
+  message = mozilla::ipc::Faulty::instance().MutateIPCMessage(
+      "Channel::ChannelImpl::Send", std::move(message));
 #endif
 
   

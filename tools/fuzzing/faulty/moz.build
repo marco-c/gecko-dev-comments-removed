@@ -1,0 +1,13 @@
+
+
+
+
+
+
+SOURCES += ["Faulty.cpp"]
+
+EXPORTS.mozilla.ipc += ["Faulty.h"]
+
+include("/ipc/chromium/chromium-config.mozbuild")
+
+FINAL_LIBRARY = "xul"
