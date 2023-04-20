@@ -91,8 +91,6 @@ class H264DecoderImpl : public H264Decoder {
 
   
   VideoFrameBufferPool ffmpeg_buffer_pool_;
-  
-  VideoFrameBufferPool output_buffer_pool_;
   std::unique_ptr<AVCodecContext, AVCodecContextDeleter> av_context_;
   std::unique_ptr<AVFrame, AVFrameDeleter> av_frame_;
 
@@ -102,9 +100,6 @@ class H264DecoderImpl : public H264Decoder {
   bool has_reported_error_;
 
   webrtc::H264BitstreamParser h264_bitstream_parser_;
-
-  
-  const VideoFrameBuffer::Type preferred_output_format_;
 };
 
 }  

@@ -95,16 +95,10 @@ ColorSpace ExtractVP9ColorSpace(vpx_color_space_t space_t,
 }  
 
 LibvpxVp9Decoder::LibvpxVp9Decoder()
-    : LibvpxVp9Decoder(FieldTrialBasedConfig()) {}
-LibvpxVp9Decoder::LibvpxVp9Decoder(const FieldTrialsView& trials)
     : decode_complete_callback_(nullptr),
       inited_(false),
       decoder_(nullptr),
-      key_frame_required_(true),
-      preferred_output_format_(
-          absl::StartsWith(trials.Lookup("WebRTC-NV12Decode"), "Enabled")
-              ? VideoFrameBuffer::Type::kNV12
-              : VideoFrameBuffer::Type::kI420) {}
+      key_frame_required_(true) {}
 
 LibvpxVp9Decoder::~LibvpxVp9Decoder() {
   inited_ = true;  
@@ -177,8 +171,7 @@ bool LibvpxVp9Decoder::Configure(const Settings& settings) {
   
   key_frame_required_ = true;
   if (absl::optional<int> buffer_pool_size = settings.buffer_pool_size()) {
-    if (!libvpx_buffer_pool_.Resize(*buffer_pool_size) ||
-        !output_buffer_pool_.Resize(*buffer_pool_size)) {
+    if (!libvpx_buffer_pool_.Resize(*buffer_pool_size)) {
       return false;
     }
   }
@@ -283,33 +276,15 @@ int LibvpxVp9Decoder::ReturnFrame(
   rtc::scoped_refptr<VideoFrameBuffer> img_wrapped_buffer;
   switch (img->fmt) {
     case VPX_IMG_FMT_I420:
-      if (preferred_output_format_ == VideoFrameBuffer::Type::kNV12) {
-        rtc::scoped_refptr<NV12Buffer> nv12_buffer =
-            output_buffer_pool_.CreateNV12Buffer(img->d_w, img->d_h);
-        if (!nv12_buffer.get()) {
+      img_wrapped_buffer = WrapI420Buffer(
+          img->d_w, img->d_h, img->planes[VPX_PLANE_Y],
+          img->stride[VPX_PLANE_Y], img->planes[VPX_PLANE_U],
+          img->stride[VPX_PLANE_U], img->planes[VPX_PLANE_V],
+          img->stride[VPX_PLANE_V],
           
-          return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
-        }
-        img_wrapped_buffer = nv12_buffer;
-        libyuv::I420ToNV12(img->planes[VPX_PLANE_Y], img->stride[VPX_PLANE_Y],
-                           img->planes[VPX_PLANE_U], img->stride[VPX_PLANE_U],
-                           img->planes[VPX_PLANE_V], img->stride[VPX_PLANE_V],
-                           nv12_buffer->MutableDataY(), nv12_buffer->StrideY(),
-                           nv12_buffer->MutableDataUV(),
-                           nv12_buffer->StrideUV(), img->d_w, img->d_h);
-        
-        
-      } else {
-        img_wrapped_buffer = WrapI420Buffer(
-            img->d_w, img->d_h, img->planes[VPX_PLANE_Y],
-            img->stride[VPX_PLANE_Y], img->planes[VPX_PLANE_U],
-            img->stride[VPX_PLANE_U], img->planes[VPX_PLANE_V],
-            img->stride[VPX_PLANE_V],
-            
-            
-            
-            [img_buffer] {});
-      }
+          
+          
+          [img_buffer] {});
       break;
     case VPX_IMG_FMT_I422:
       img_wrapped_buffer = WrapI422Buffer(
@@ -398,7 +373,6 @@ int LibvpxVp9Decoder::Release() {
   
   
   libvpx_buffer_pool_.ClearPool();
-  output_buffer_pool_.Release();
   inited_ = false;
   return ret_val;
 }

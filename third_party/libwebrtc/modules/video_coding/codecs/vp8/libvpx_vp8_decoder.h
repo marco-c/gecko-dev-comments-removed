@@ -67,9 +67,6 @@ class LibvpxVp8Decoder : public VideoDecoder {
   bool key_frame_required_;
   const absl::optional<DeblockParams> deblock_params_;
   const std::unique_ptr<QpSmoother> qp_smoother_;
-
-  
-  const VideoFrameBuffer::Type preferred_output_format_;
 };
 
 }  
