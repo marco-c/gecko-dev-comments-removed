@@ -74,6 +74,7 @@ enum class UtilityActorName {
   AudioDecoder_AppleMedia,
   AudioDecoder_WMF,
   MfMediaEngineCDM,
+  JSOracle,
 };
 
 
