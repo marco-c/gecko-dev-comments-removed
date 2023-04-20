@@ -18,7 +18,6 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
 #include "api/field_trials_view.h"
-#include "api/units/timestamp.h"
 #include "api/video/encoded_frame.h"
 #include "modules/video_coding/utility/decoded_frames_history.h"
 
@@ -49,7 +48,9 @@ class FrameBuffer {
 
   
   
-  void InsertFrame(std::unique_ptr<EncodedFrame> frame);
+  
+  
+  bool InsertFrame(std::unique_ptr<EncodedFrame> frame);
 
   
   
