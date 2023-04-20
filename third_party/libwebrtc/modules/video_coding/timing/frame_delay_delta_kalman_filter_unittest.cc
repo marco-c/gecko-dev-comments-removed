@@ -11,18 +11,80 @@
 #include "modules/video_coding/timing/frame_delay_delta_kalman_filter.h"
 
 #include "api/units/data_size.h"
+#include "api/units/frequency.h"
 #include "api/units/time_delta.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 namespace {
 
-TEST(FrameDelayDeltaKalmanFilterTest, InitialBandwidthStateIs512kbps) {
+
+
+
+TEST(FrameDelayDeltaKalmanFilterTest,
+     InitializedFilterWithZeroSizeFrameTakesNoTimeToPropagate) {
   FrameDelayDeltaKalmanFilter filter;
 
   
+  double frame_size_variation_bytes = 0.0;
+
   
-  EXPECT_EQ(filter.GetSlope(), 1 / (512e3 / 8));
+  EXPECT_EQ(filter.GetFrameDelayVariationEstimateSizeBased(
+                frame_size_variation_bytes),
+            0.0);
+
+  
+  EXPECT_EQ(
+      filter.GetFrameDelayVariationEstimateTotal(frame_size_variation_bytes),
+      0.0);
+}
+
+
+
+TEST(FrameDelayDeltaKalmanFilterTest,
+     InitializedFilterWithSmallSizeFrameTakesFixedTimeToPropagate) {
+  FrameDelayDeltaKalmanFilter filter;
+
+  
+  double frame_size_variation_bytes = 1000.0;
+  
+  double expected_frame_delay_variation_estimate_ms = 1000.0 / (512e3 / 8.0);
+
+  EXPECT_EQ(filter.GetFrameDelayVariationEstimateSizeBased(
+                frame_size_variation_bytes),
+            expected_frame_delay_variation_estimate_ms);
+  EXPECT_EQ(
+      filter.GetFrameDelayVariationEstimateTotal(frame_size_variation_bytes),
+      expected_frame_delay_variation_estimate_ms);
+}
+
+TEST(FrameDelayDeltaKalmanFilterTest,
+     VerifyConvergenceWithAlternatingDeviations) {
+  FrameDelayDeltaKalmanFilter filter;
+
+  
+  int framerate_fps = 30;
+  
+  TimeDelta frame_delay_variation = TimeDelta::Millis(3);
+  
+  DataSize max_frame_size = DataSize::Bytes(2000);
+  
+  double frame_size_variation_bytes = 200;
+  double var_noise = 0.1;
+  int test_duration_s = 60;
+
+  for (int i = 0; i < test_duration_s * framerate_fps; ++i) {
+    
+    double sign = (i % 2 == 0) ? 1.0 : -1.0;
+    filter.PredictAndUpdate(sign * frame_delay_variation,
+                            sign * frame_size_variation_bytes, max_frame_size,
+                            var_noise);
+  }
+
+  
+  EXPECT_NEAR(
+      filter.GetFrameDelayVariationEstimateTotal(frame_size_variation_bytes),
+      frame_delay_variation.ms(), 0.1);
 }
 
 }  

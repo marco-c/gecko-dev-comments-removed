@@ -16,49 +16,80 @@
 
 namespace webrtc {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class FrameDelayDeltaKalmanFilter {
  public:
   FrameDelayDeltaKalmanFilter();
   ~FrameDelayDeltaKalmanFilter() = default;
 
   
-  void Reset();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void PredictAndUpdate(TimeDelta frame_delay_variation,
+                        double frame_size_variation_bytes,
+                        DataSize max_frame_size,
+                        double var_noise);
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void KalmanEstimateChannel(TimeDelta frame_delay,
-                             double delta_frame_size_bytes,
-                             DataSize max_frame_size,
-                             double var_noise);
+  double GetFrameDelayVariationEstimateSizeBased(
+      double frame_size_variation_bytes) const;
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  double DeviationFromExpectedDelay(TimeDelta frame_delay,
-                                    double delta_frame_size_bytes) const;
-
-  
-  double GetSlope() const;
+  double GetFrameDelayVariationEstimateTotal(
+      double frame_size_variation_bytes) const;
 
  private:
   double theta_[2];         
+                            
+                            
   double theta_cov_[2][2];  
   double q_cov_[2][2];      
 };
