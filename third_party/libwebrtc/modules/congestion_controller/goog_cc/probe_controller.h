@@ -62,6 +62,7 @@ struct ProbeControllerConfig {
   FieldTrialParameter<TimeDelta> network_state_probe_duration;
 
   
+  FieldTrialParameter<bool> probe_on_max_allocated_bitrate_change;
   FieldTrialOptional<double> first_allocation_probe_scale;
   FieldTrialOptional<double> second_allocation_probe_scale;
   FieldTrialFlag allocation_allow_further_probing;
@@ -119,8 +120,6 @@ class ProbeController {
   ABSL_MUST_USE_RESULT std::vector<ProbeClusterConfig> RequestProbe(
       Timestamp at_time);
 
-  
-  void SetMaxBitrate(DataRate max_bitrate);
   void SetNetworkStateEstimate(webrtc::NetworkStateEstimate estimate);
 
   
