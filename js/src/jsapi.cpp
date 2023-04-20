@@ -948,11 +948,7 @@ JS_PUBLIC_API bool JS_ResolveStandardClass(JSContext* cx, HandleObject obj,
   } while (false);
 
   
-  
-  
-  
-  
-  return GlobalObject::getOrCreateObjectPrototype(cx, global);
+  return true;
 }
 
 JS_PUBLIC_API bool JS_MayResolveStandardClass(const JSAtomState& names, jsid id,

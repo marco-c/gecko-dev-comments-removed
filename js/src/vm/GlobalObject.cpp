@@ -609,6 +609,7 @@ GlobalObject* GlobalObject::new_(JSContext* cx, const JSClass* clasp,
 
     
     
+    
     if (!ensureConstructor(cx, global, JSProto_Object) ||
         !ensureConstructor(cx, global, JSProto_Function)) {
       return nullptr;
