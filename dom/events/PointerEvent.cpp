@@ -272,7 +272,8 @@ bool PointerEvent::ShouldResistFingerprinting() {
   
   
   
-  if (!nsContentUtils::ShouldResistFingerprinting("Efficiency Check") ||
+  if (!nsContentUtils::ShouldResistFingerprinting("Efficiency Check",
+                                                  RFPTarget::PointerEvents) ||
       !mEvent->IsTrusted() ||
       mEvent->AsPointerEvent()->mInputSource ==
           MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
@@ -281,7 +282,7 @@ bool PointerEvent::ShouldResistFingerprinting() {
 
   
   nsCOMPtr<Document> doc = GetDocument();
-  return doc ? doc->ShouldResistFingerprinting() : true;
+  return doc ? doc->ShouldResistFingerprinting(RFPTarget::PointerEvents) : true;
 }
 
 }  
