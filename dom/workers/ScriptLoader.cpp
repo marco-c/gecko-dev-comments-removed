@@ -236,8 +236,10 @@ void LoadAllScripts(WorkerPrivate* aWorkerPrivate,
   if (!ok) {
     return;
   }
-
-  if (aWorkerPrivate->WorkerType() == WorkerType::Module) {
+  
+  
+  if (aWorkerPrivate->WorkerType() == WorkerType::Module &&
+      aWorkerScriptType != DebuggerScript) {
     if (!StaticPrefs::dom_workers_modules_enabled()) {
       aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
       return;
@@ -549,8 +551,12 @@ bool WorkerScriptLoader::CreateScriptRequests(
   
   
   
+  
+  
+  
+  
   if (mWorkerRef->Private()->WorkerType() == WorkerType::Module &&
-      !aIsMainScript) {
+      !aIsMainScript && !IsDebuggerScript()) {
     
     
     mRv.ThrowTypeError(
@@ -640,7 +646,9 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
       new ScriptFetchOptions(CORSMode::CORS_NONE, referrerPolicy, nullptr);
 
   RefPtr<ScriptLoadRequest> request = nullptr;
-  if (mWorkerRef->Private()->WorkerType() == WorkerType::Classic) {
+  
+  if (mWorkerRef->Private()->WorkerType() == WorkerType::Classic ||
+      IsDebuggerScript()) {
     request = new ScriptLoadRequest(ScriptKind::eClassic, uri, fetchOptions,
                                     SRIMetadata(), nullptr,  
                                     loadContext);

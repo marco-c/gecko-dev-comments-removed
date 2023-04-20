@@ -1,0 +1,10 @@
+"use strict";
+
+
+
+const isLoadedAsEsModule = this != globalThis;
+
+
+if (isLoadedAsEsModule) {
+  postMessage("worker");
+}
