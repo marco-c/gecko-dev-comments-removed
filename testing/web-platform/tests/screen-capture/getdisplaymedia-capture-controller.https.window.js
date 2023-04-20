@@ -1,8 +1,6 @@
 
 
 
-
-
 'use strict';
 
 const validFocusBehaviors = ['focus-captured-surface', 'no-focus-change'];
