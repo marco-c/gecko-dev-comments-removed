@@ -890,7 +890,7 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint32_t z,
   
   
   float aaRound = swgl_ClipFlags & SWGL_CLIP_FLAG_AA ? 0.0f : 0.5f;
-  float y = floor(max(l0.y, clipRect.y0) + aaRound) + 0.5f;
+  float y = floor(clamp(l0.y, clipRect.y0, clipRect.y1) + aaRound) + 0.5f;
   
   Edge left(y, l0, l1, interp_outs[l0i], interp_outs[l1i], l1i);
   Edge right(y, r0, r1, interp_outs[r0i], interp_outs[r1i], r0i);
@@ -1158,7 +1158,7 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
   
   
   float aaRound = swgl_ClipFlags & SWGL_CLIP_FLAG_AA ? 0.0f : 0.5f;
-  float y = floor(max(l0.y, clipRect.y0) + aaRound) + 0.5f;
+  float y = floor(clamp(l0.y, clipRect.y0, clipRect.y1) + aaRound) + 0.5f;
   
   Edge left(y, l0, l1, interp_outs[l0i], interp_outs[l1i], l1i);
   Edge right(y, r0, r1, interp_outs[r0i], interp_outs[r1i], r0i);
