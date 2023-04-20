@@ -1,33 +1,22 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// _AboutLogins is only exported for testing
+import { setTimeout, clearTimeout } from "resource://gre/modules/Timer.sys.mjs";
 
-
-
-"use strict";
-
-
-var EXPORTED_SYMBOLS = ["AboutLoginsParent", "_AboutLogins"];
-
-const { setTimeout, clearTimeout } = ChromeUtils.importESModule(
-  "resource://gre/modules/Timer.sys.mjs"
-);
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-const { E10SUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/E10SUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { E10SUtils } from "resource://gre/modules/E10SUtils.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  LoginBreaches: "resource:///modules/LoginBreaches.sys.mjs",
   OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
 });
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
-  LoginBreaches: "resource:///modules/LoginBreaches.jsm",
   LoginHelper: "resource://gre/modules/LoginHelper.jsm",
   LoginExport: "resource://gre/modules/LoginExport.jsm",
   LoginCSVImport: "resource://gre/modules/LoginCSVImport.jsm",
@@ -67,11 +56,11 @@ XPCOMUtils.defineLazyGetter(lazy, "AboutLoginsL10n", () => {
 });
 
 const ABOUT_LOGINS_ORIGIN = "about:logins";
-const AUTH_TIMEOUT_MS = 5 * 60 * 1000; 
+const AUTH_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 const PRIMARY_PASSWORD_NOTIFICATION_ID = "primary-password-login-required";
 
-
-
+// about:logins will always use the privileged content process,
+// even if it is disabled for other consumers such as about:newtab.
 const EXPECTED_ABOUTLOGINS_REMOTE_TYPE = E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE;
 let _gPasswordRemaskTimeout = null;
 const convertSubjectToLogin = subject => {
@@ -85,22 +74,22 @@ const convertSubjectToLogin = subject => {
 
 const SUBDOMAIN_REGEX = new RegExp(/^www\d*\./);
 const augmentVanillaLoginObject = login => {
-  
+  // Note that `displayOrigin` can also include a httpRealm.
   let title = login.displayOrigin.replace(SUBDOMAIN_REGEX, "");
   return Object.assign({}, login, {
     title,
   });
 };
 
-class AboutLoginsParent extends JSWindowActorParent {
+export class AboutLoginsParent extends JSWindowActorParent {
   async receiveMessage(message) {
     if (!this.browsingContext.embedderElement) {
       return;
     }
 
-    
-    
-    
+    // Only respond to messages sent from a privlegedabout process. Ideally
+    // we would also check the contentPrincipal.originNoSuffix but this
+    // check has been removed due to bug 1576722.
     if (
       this.browsingContext.embedderElement.remoteType !=
       EXPECTED_ABOUTLOGINS_REMOTE_TYPE
@@ -193,7 +182,7 @@ class AboutLoginsParent extends JSWindowActorParent {
         }
       }
     }
-    
+    // Remove the path from the origin, if it was provided.
     let origin = lazy.LoginHelper.getLoginOrigin(newLogin.origin);
     if (!origin) {
       console.error(
@@ -267,10 +256,10 @@ class AboutLoginsParent extends JSWindowActorParent {
     let messageText = { value: "NOT SUPPORTED" };
     let captionText = { value: "" };
 
-    
-    
-    
-    
+    // This feature is only supported on Windows and macOS
+    // but we still call in to OSKeyStore on Linux to get
+    // the proper auth_details for Telemetry.
+    // See bug 1614874 for Linux support.
     if (lazy.OS_AUTH_ENABLED && lazy.OSKeyStore.canReauth()) {
       messageId += "-" + AppConstants.platform;
       [messageText, captionText] = await lazy.AboutLoginsL10n.formatMessages([
@@ -317,8 +306,8 @@ class AboutLoginsParent extends JSWindowActorParent {
         "name"
       );
       if (selectedSort == "breached") {
-        
-        
+        // The "breached" value was used since Firefox 70 and
+        // replaced with "alerts" in Firefox 76.
         selectedSort = "alerts";
       }
       this.sendAsyncMessage("AboutLogins:Setup", {
@@ -341,7 +330,7 @@ class AboutLoginsParent extends JSWindowActorParent {
         throw ex;
       }
 
-      
+      // The message manager may be destroyed before the replies can be sent.
       lazy.log.debug(
         "AboutLogins:Subscribe: exception when replying with logins",
         ex
@@ -378,10 +367,10 @@ class AboutLoginsParent extends JSWindowActorParent {
     let messageText = { value: "NOT SUPPORTED" };
     let captionText = { value: "" };
 
-    
-    
-    
-    
+    // This feature is only supported on Windows and macOS
+    // but we still call in to OSKeyStore on Linux to get
+    // the proper auth_details for Telemetry.
+    // See bug 1614874 for Linux support.
     if (lazy.OSKeyStore.canReauth()) {
       let messageId =
         "about-logins-export-password-os-auth-dialog-message-" +
@@ -399,7 +388,7 @@ class AboutLoginsParent extends JSWindowActorParent {
     let { isAuthorized, telemetryEvent } = await lazy.LoginHelper.requestReauth(
       this.browsingContext.embedderElement,
       true,
-      null, 
+      null, // Prompt regardless of a recent prompt
       messageText.value,
       captionText.value
     );
@@ -522,8 +511,8 @@ class AboutLoginsParent extends JSWindowActorParent {
     };
 
     if (error.message.includes("This login already exists")) {
-      
-      
+      // See comment in LoginHelper.createLoginAlreadyExistsError as to
+      // why we need to call .toString() on the nsISupportsString.
       messageObject.existingLoginGuid = error.data.toString();
     }
 
@@ -706,7 +695,7 @@ class AboutLoginsInternal {
         MozXULElement.insertFTLIfNeeded(ftl);
       }
 
-      
+      // If there's already an existing notification bar, don't do anything.
       let { gBrowser } = browser.ownerGlobal;
       let notificationBox = gBrowser.getNotificationBox(browser);
       let notification = notificationBox.getNotificationWithValue(id);
@@ -778,7 +767,7 @@ class AboutLoginsInternal {
         }
       } catch (ex) {
         if (ex.result == Cr.NS_ERROR_NOT_INITIALIZED) {
-          
+          // The actor may be destroyed before the message is sent.
           lazy.log.debug(
             "messageSubscribers: exception when calling sendAsyncMessage",
             ex
@@ -798,7 +787,7 @@ class AboutLoginsInternal {
         .map(augmentVanillaLoginObject);
     } catch (e) {
       if (e.result == Cr.NS_ERROR_ABORT) {
-        
+        // If the user cancels the MP prompt then return no logins.
         return [];
       }
       throw e;
@@ -833,9 +822,9 @@ class AboutLoginsInternal {
 
   getSyncState() {
     const state = lazy.UIState.get();
-    
-    
-    
+    // As long as Sync is configured, about:logins will treat it as
+    // authenticated. More diagnostics and error states can be handled
+    // by other more Sync-specific pages.
     const loggedIn = state.status != lazy.UIState.STATUS_NOT_CONFIGURED;
     const passwordSyncEnabled = state.syncEnabled && lazy.PASSWORD_SYNC_ENABLED;
 
@@ -878,7 +867,7 @@ class AboutLoginsInternal {
 }
 
 let AboutLogins = new AboutLoginsInternal();
-var _AboutLogins = AboutLogins;
+export var _AboutLogins = AboutLogins;
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,

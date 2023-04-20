@@ -1,25 +1,21 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["AboutLoginsTestUtils"];
-
-
-
-
-
-class AboutLoginsTestUtils {
-  
-
-
-
-
-
-
-
-
+/**
+ * An utility class to help out with the about:logins and about:loginsimportreport DOM interaction for the tests.
+ *
+ */
+export class AboutLoginsTestUtils {
+  /**
+   * An utility method to fetch the data from the CSV import success dialog.
+   *
+   * @param {content} content
+   *        The content object.
+   * @param {ContentTaskUtils} ContentTaskUtils
+   *        The ContentTaskUtils object.
+   * @returns {Promise<Object>} A promise that contains added, modified, noChange and errors count.
+   */
   static async getCsvImportSuccessDialogData(content, ContentTaskUtils) {
     let dialog = Cu.waiveXrays(
       content.document.querySelector("import-summary-dialog")
@@ -50,13 +46,13 @@ class AboutLoginsTestUtils {
     };
   }
 
-  
-
-
-
-
-
-
+  /**
+   * An utility method to fetch the data from the CSV import error dialog.
+   *
+   * @param {content} content
+   *        The content object.
+   * @returns {Promise<Object>} A promise that contains the hidden state and l10n id for title, description and focused element.
+   */
   static async getCsvImportErrorDialogData(content) {
     const dialog = Cu.waiveXrays(
       content.document.querySelector("import-error-dialog")
@@ -75,14 +71,14 @@ class AboutLoginsTestUtils {
     };
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * An utility method to fetch data from the about:loginsimportreport page.
+   * It also cleans up the tab so you don't have to.
+   *
+   * @param {content} content
+   *        The content object.
+   * @returns {Promise<Object>} A promise that contains the detailed report data like added, modified, noChange, errors and rows.
+   */
   static async getCsvImportReportData(content) {
     const rows = [];
     for (let element of content.document.querySelectorAll(".row-details")) {

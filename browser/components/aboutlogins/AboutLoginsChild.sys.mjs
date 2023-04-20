@@ -1,17 +1,11 @@
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["AboutLoginsChild"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { LoginHelper } = ChromeUtils.import(
   "resource://gre/modules/LoginHelper.jsm"
 );
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -46,7 +40,7 @@ function recordTelemetryEvent(event) {
   }
 }
 
-class AboutLoginsChild extends JSWindowActorChild {
+export class AboutLoginsChild extends JSWindowActorChild {
   handleEvent(event) {
     switch (event.type) {
       case "AboutLoginsInit": {
@@ -132,13 +126,13 @@ class AboutLoginsChild extends JSWindowActorChild {
       setFocus(element) {
         Services.focus.setFocus(element, Services.focus.FLAG_BYKEY);
       },
-      
-
-
-
-
-
-
+      /**
+       * Shows the Primary Password prompt if enabled, or the
+       * OS auth dialog otherwise.
+       * @param resolve Callback that is called with result of authentication.
+       * @param messageId The string ID that corresponds to a string stored in aboutLogins.ftl.
+       *                  This string will be displayed only when the OS auth dialog is used.
+       */
       async promptForPrimaryPassword(resolve, messageId) {
         gPrimaryPasswordPromise = {
           resolve,
@@ -151,7 +145,7 @@ class AboutLoginsChild extends JSWindowActorChild {
       fileImportEnabled: Services.prefs.getBoolPref(
         "signon.management.page.fileImport.enabled"
       ),
-      
+      // Default to enabled just in case a search is attempted before we get a response.
       primaryPasswordEnabled: true,
       passwordRevealVisible: true,
     };
@@ -221,11 +215,11 @@ class AboutLoginsChild extends JSWindowActorChild {
 
     if (method == "open_management") {
       let { docShell } = this.browsingContext;
-      
-      
-      
-      
-      
+      // Compare to the last time open_management was recorded for the same
+      // outerWindowID to not double-count them due to a redirect to remove
+      // the entryPoint query param (since replaceState isn't allowed for
+      // about:). Don't use performance.now for the tab since you can't
+      // compare that number between different tabs and this JSM is shared.
       let now = docShell.now();
       if (
         this.browsingContext.browserId == gLastOpenManagementBrowserId &&

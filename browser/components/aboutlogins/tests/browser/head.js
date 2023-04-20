@@ -1,14 +1,14 @@
 
 
 
-let { LoginBreaches } = ChromeUtils.import(
-  "resource:///modules/LoginBreaches.jsm"
+let { LoginBreaches } = ChromeUtils.importESModule(
+  "resource:///modules/LoginBreaches.sys.mjs"
 );
 let { RemoteSettings } = ChromeUtils.import(
   "resource://services-settings/remote-settings.js"
 );
-let { _AboutLogins } = ChromeUtils.import(
-  "resource:///actors/AboutLoginsParent.jsm"
+let { _AboutLogins } = ChromeUtils.importESModule(
+  "resource:///actors/AboutLoginsParent.sys.mjs"
 );
 let { OSKeyStoreTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/OSKeyStoreTestUtils.sys.mjs"
