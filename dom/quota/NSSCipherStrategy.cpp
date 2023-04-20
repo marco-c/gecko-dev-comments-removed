@@ -100,10 +100,10 @@ nsresult NSSCipherStrategy::Cipher(const Span<uint8_t> aIv,
 
   
   constexpr size_t tagLen = 16;
-  const auto tag = Span{aIv}.Last(tagLen);
+  const auto tag = aIv.Last(tagLen);
   
 
-  const auto iv = Span{aIv}.First(12);
+  const auto iv = aIv.First(12);
   MOZ_ASSERT(tag.Length() + iv.Length() <= aIv.Length());
 
   int outLen;
