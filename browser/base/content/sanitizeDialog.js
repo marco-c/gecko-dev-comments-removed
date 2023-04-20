@@ -160,10 +160,10 @@ var gSanitizePromptDialog = {
   
 
 
-
   _getItemPrefs() {
     return Preferences.getAll().filter(
-      p => p.id !== "privacy.sanitize.timeSpan"
+      p =>
+        p.id !== "privacy.sanitize.timeSpan" && p.id !== "privacy.cpd.downloads"
     );
   },
 
@@ -172,6 +172,8 @@ var gSanitizePromptDialog = {
 
 
   onReadGeneric() {
+    
+    
     
     
     var found = this._getItemPrefs().some(
@@ -199,9 +201,9 @@ var gSanitizePromptDialog = {
     Services.prefs.setIntPref(Sanitizer.PREF_TIMESPAN, this.selectedTimespan);
 
     
-    Preferences.get("privacy.cpd.downloads").value = Preferences.get(
-      "privacy.cpd.history"
-    ).value;
+    let historyValue = Preferences.get("privacy.cpd.history").value;
+    Preferences.get("privacy.cpd.downloads").value = historyValue;
+    Services.prefs.setBoolPref("privacy.cpd.downloads", historyValue);
 
     
     
