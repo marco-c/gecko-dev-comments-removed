@@ -969,7 +969,7 @@ HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
     AutoTrackDOMRange tracker(RangeUpdaterRef(), &range);
     Result<SplitNodeResult, nsresult> result =
         SplitAncestorStyledInlineElementsAt(
-            range.StartRef(), aStyle.mHTMLProperty, aStyle.mAttribute,
+            range.StartRef(), aStyle,
             SplitAtEdges::eAllowToCreateEmptyContainer);
     if (MOZ_UNLIKELY(result.isErr())) {
       NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
@@ -1000,8 +1000,7 @@ HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
     AutoTrackDOMRange tracker(RangeUpdaterRef(), &range);
     Result<SplitNodeResult, nsresult> result =
         SplitAncestorStyledInlineElementsAt(
-            range.EndRef(), aStyle.mHTMLProperty, aStyle.mAttribute,
-            SplitAtEdges::eAllowToCreateEmptyContainer);
+            range.EndRef(), aStyle, SplitAtEdges::eAllowToCreateEmptyContainer);
     if (MOZ_UNLIKELY(result.isErr())) {
       NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
       return result;
@@ -1032,7 +1031,7 @@ HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
 
 Result<SplitNodeResult, nsresult>
 HTMLEditor::SplitAncestorStyledInlineElementsAt(
-    const EditorDOMPoint& aPointToSplit, nsAtom* aProperty, nsAtom* aAttribute,
+    const EditorDOMPoint& aPointToSplit, const EditorInlineStyle& aStyle,
     SplitAtEdges aSplitAtEdges) {
   if (NS_WARN_IF(!aPointToSplit.IsInContentNode())) {
     return Err(NS_ERROR_INVALID_ARG);
@@ -1049,7 +1048,7 @@ HTMLEditor::SplitAncestorStyledInlineElementsAt(
   
   
   
-  const bool useCSS = aProperty != nsGkAtoms::tt || IsCSSEnabled();
+  const bool useCSS = aStyle.mHTMLProperty != nsGkAtoms::tt || IsCSSEnabled();
 
   AutoTArray<OwningNonNull<nsIContent>, 24> arrayOfParents;
   for (nsIContent* content :
@@ -1069,15 +1068,15 @@ HTMLEditor::SplitAncestorStyledInlineElementsAt(
   EditorDOMPoint pointToPutCaret;
   for (OwningNonNull<nsIContent>& content : arrayOfParents) {
     bool isSetByCSS = false;
-    if (useCSS &&
-        CSSEditUtils::IsCSSEditableProperty(content, aProperty, aAttribute)) {
-      
+    if (useCSS && CSSEditUtils::IsCSSEditableProperty(
+                      content, aStyle.mHTMLProperty, aStyle.mAttribute)) {
       
       
       nsAutoString firstValue;
       Result<bool, nsresult> isSpecifiedByCSSOrError =
           CSSEditUtils::IsSpecifiedCSSEquivalentToHTMLInlineStyleSet(
-              *this, *content, aProperty, aAttribute, firstValue);
+              *this, *content, aStyle.mHTMLProperty, aStyle.mAttribute,
+              firstValue);
       if (MOZ_UNLIKELY(isSpecifiedByCSSOrError.isErr())) {
         result.IgnoreCaretPointSuggestion();
         NS_WARNING(
@@ -1091,14 +1090,13 @@ HTMLEditor::SplitAncestorStyledInlineElementsAt(
       if (!content->IsElement()) {
         continue;
       }
-      
-      
-      if (aProperty) {
+      if (!aStyle.IsStyleToClearAllInlineStyles()) {
         
         
         
-        if (!content->IsHTMLElement(aProperty) &&
-            !(aProperty == nsGkAtoms::href && HTMLEditUtils::IsLink(content))) {
+        if (!content->IsHTMLElement(aStyle.mHTMLProperty) &&
+            !(aStyle.mHTMLProperty == nsGkAtoms::href &&
+              HTMLEditUtils::IsLink(content))) {
           continue;
         }
       }
@@ -1166,8 +1164,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
   EditorDOMPoint pointToPutCaret(aPoint);
   Result<SplitNodeResult, nsresult> splitNodeResult =
       SplitAncestorStyledInlineElementsAt(
-          aPoint, aStyleToRemove.mHTMLProperty, aStyleToRemove.mAttribute,
-          SplitAtEdges::eAllowToCreateEmptyContainer);
+          aPoint, aStyleToRemove, SplitAtEdges::eAllowToCreateEmptyContainer);
   if (MOZ_UNLIKELY(splitNodeResult.isErr())) {
     NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
     return splitNodeResult.propagateErr();
@@ -1246,8 +1243,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
   }
   Result<SplitNodeResult, nsresult> splitResultAtStartOfNextNode =
       SplitAncestorStyledInlineElementsAt(
-          atStartOfNextNode, aStyleToRemove.mHTMLProperty,
-          aStyleToRemove.mAttribute,
+          atStartOfNextNode, aStyleToRemove,
           SplitAtEdges::eAllowToCreateEmptyContainer);
   if (MOZ_UNLIKELY(splitResultAtStartOfNextNode.isErr())) {
     NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
