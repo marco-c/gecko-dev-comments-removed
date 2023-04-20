@@ -506,12 +506,17 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  mozilla::dom::Element* GetNearestInclusiveOpenPopover();
+  mozilla::dom::Element* GetNearestInclusiveOpenPopover() const;
 
   
 
 
-  mozilla::dom::Element* GetNearestInclusiveTargetPopoverForInvoker();
+  mozilla::dom::Element* GetNearestInclusiveTargetPopoverForInvoker() const;
+
+  
+
+
+  mozilla::dom::Element* GetTopmostClickedPopover() const;
 
   bool IsNode() const final { return true; }
 
