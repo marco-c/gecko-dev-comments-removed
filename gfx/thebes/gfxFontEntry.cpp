@@ -1267,6 +1267,8 @@ void gfxFontEntry::CheckForVariationAxes() {
       } else if (axis.mTag == HB_TAG('i', 't', 'a', 'l') &&
                  axis.mMaxValue >= 1.0f) {
         mRangeFlags |= RangeFlags::eItalicVariation;
+      } else if (axis.mTag == HB_TAG('s', 'l', 'n', 't')) {
+        mRangeFlags |= RangeFlags::eSlantVariation;
       } else if (axis.mTag == HB_TAG('o', 'p', 's', 'z')) {
         mRangeFlags |= RangeFlags::eOpticalSize;
       }
@@ -1286,6 +1288,13 @@ bool gfxFontEntry::HasItalicVariation() {
              "should not be called for user-font containers!");
   CheckForVariationAxes();
   return bool(mRangeFlags & RangeFlags::eItalicVariation);
+}
+
+bool gfxFontEntry::HasSlantVariation() {
+  MOZ_ASSERT(!mIsUserFontContainer,
+             "should not be called for user-font containers!");
+  CheckForVariationAxes();
+  return bool(mRangeFlags & RangeFlags::eSlantVariation);
 }
 
 bool gfxFontEntry::HasOpticalSize() {
@@ -1336,7 +1345,7 @@ void gfxFontEntry::GetVariationsForStyle(nsTArray<gfxFontVariation>& aResult,
     
     
     aResult.AppendElement(gfxFontVariation{HB_TAG('i', 't', 'a', 'l'), 1.0f});
-  } else if (SlantStyle().Min().IsOblique()) {
+  } else if (HasSlantVariation()) {
     
     
     float angle = aStyle.style.IsNormal() ? 0.0f

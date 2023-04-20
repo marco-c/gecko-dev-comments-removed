@@ -818,7 +818,7 @@ float gfxFont::AngleForSyntheticOblique() const {
   
   
   if (mStyle.style == FontSlantStyle::NORMAL || !mStyle.allowSyntheticStyle ||
-      !mFontEntry->IsUpright()) {
+      !mFontEntry->IsUpright() || mFontEntry->HasSlantVariation()) {
     return 0.0f;
   }
 

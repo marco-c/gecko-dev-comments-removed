@@ -452,6 +452,7 @@ class gfxFontEntry {
 
   bool HasBoldVariableWeight();
   bool HasItalicVariation();
+  bool HasSlantVariation();
   bool HasOpticalSize();
 
   void CheckForVariationAxes();
@@ -552,7 +553,7 @@ class gfxFontEntry {
   
   
   
-  enum class RangeFlags : uint8_t {
+  enum class RangeFlags : uint16_t {
     eNoFlags = 0,
     eAutoWeight = (1 << 0),
     eAutoStretch = (1 << 1),
@@ -564,16 +565,18 @@ class gfxFontEntry {
     eBoldVariableWeight = (1 << 3),
     
     eItalicVariation = (1 << 4),
+    
+    eSlantVariation = (1 << 5),
 
     
     
     
     
-    eNonCSSWeight = (1 << 5),
-    eNonCSSStretch = (1 << 6),
+    eNonCSSWeight = (1 << 6),
+    eNonCSSStretch = (1 << 7),
 
     
-    eOpticalSize = (1 << 7)
+    eOpticalSize = (1 << 8)
   };
   RangeFlags mRangeFlags = RangeFlags::eNoFlags;
 
