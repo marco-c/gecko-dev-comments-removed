@@ -50,6 +50,7 @@ RTCRtpSender::RTCRtpSender(nsPIDOMWindowInner* aWindow, PeerConnectionImpl* aPc,
                            nsISerialEventTarget* aStsThread,
                            MediaSessionConduit* aConduit,
                            dom::MediaStreamTrack* aTrack,
+                           const Sequence<RTCRtpEncodingParameters>& aEncodings,
                            RTCRtpTransceiver* aTransceiver)
     : mWindow(aWindow),
       mPc(aPc),
@@ -70,8 +71,28 @@ RTCRtpSender::RTCRtpSender(nsPIDOMWindowInner* aWindow, PeerConnectionImpl* aPc,
 
   if (aConduit->type() == MediaSessionConduit::AUDIO) {
     mDtmf = new RTCDTMFSender(aWindow, mTransceiver);
+    GetJsepTransceiver().mSendTrack.SetMaxEncodings(1);
+  } else {
+    GetJsepTransceiver().mSendTrack.SetMaxEncodings(
+        webrtc::kMaxSimulcastStreams);
   }
   mPipeline->SetTrack(mSenderTrack);
+
+  if (aEncodings.Length()) {
+    
+    mParameters.mEncodings = aEncodings;
+    SetJsepRids(mParameters);
+  } else {
+    
+    
+    RTCRtpEncodingParameters defaultEncoding;
+    defaultEncoding.mActive = true;
+    if (aConduit->type() == MediaSessionConduit::VIDEO) {
+      defaultEncoding.mScaleResolutionDownBy.Construct(1.0f);
+    }
+    Unused << mParameters.mEncodings.AppendElement(defaultEncoding, fallible);
+    MaybeGetJsepRids();
+  }
 }
 
 #undef INIT_CANONICAL
@@ -398,91 +419,290 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal() {
 }
 
 already_AddRefed<Promise> RTCRtpSender::SetParameters(
-    const dom::RTCRtpParameters& aParameters, ErrorResult& aError) {
+    const dom::RTCRtpSendParameters& aParameters, ErrorResult& aError) {
+  dom::RTCRtpSendParameters paramsCopy(aParameters);
   
+  
+  
+  
+  
+  
+
   RefPtr<dom::Promise> p = MakePromise(aError);
   if (aError.Failed()) {
     return nullptr;
   }
+
   if (mPc->IsClosed()) {
     p->MaybeRejectWithInvalidStateError("Peer connection is closed");
     return p.forget();
   }
 
+  
+  
   if (mTransceiver->Stopped()) {
     p->MaybeRejectWithInvalidStateError("This sender's transceiver is stopped");
     return p.forget();
   }
 
-  dom::RTCRtpParameters parameters(aParameters);
-
-  if (!parameters.mEncodings.WasPassed()) {
-    parameters.mEncodings.Construct();
+  
+  
+  if (!mLastReturnedParameters.isSome()) {
+    p->MaybeRejectWithInvalidStateError(
+        "Cannot call setParameters without first calling getParameters");
+    return p.forget();
   }
 
-  std::set<nsString> uniqueRids;
-  for (const auto& encoding : parameters.mEncodings.Value()) {
-    if (encoding.mScaleResolutionDownBy < 1.0f) {
-      p->MaybeRejectWithRangeError("scaleResolutionDownBy must be >= 1.0");
-      return p.forget();
-    }
-    if (parameters.mEncodings.Value().Length() > 1 &&
-        !encoding.mRid.WasPassed()) {
-      p->MaybeRejectWithTypeError("Missing rid");
-      return p.forget();
-    }
-    if (encoding.mRid.WasPassed()) {
-      if (uniqueRids.count(encoding.mRid.Value())) {
-        p->MaybeRejectWithTypeError("Duplicate rid");
-        return p.forget();
-      }
-      uniqueRids.insert(encoding.mRid.Value());
-    }
+  
+  
+  
+  
+  
+  
+  
 
-    if (encoding.mMaxFramerate.WasPassed()) {
-      if (encoding.mMaxFramerate.Value() < 0.0f) {
-        p->MaybeRejectWithRangeError("maxFramerate must be non-negative");
-        return p.forget();
+  
+  if (paramsCopy.mEncodings.Length() !=
+      mLastReturnedParameters->mEncodings.Length()) {
+    p->MaybeRejectWithInvalidModificationError(
+        "Cannot change the number of encodings with setParameters");
+    return p.forget();
+  }
+
+  
+  for (size_t i = 0; i < paramsCopy.mEncodings.Length(); ++i) {
+    const auto& oldEncoding = mLastReturnedParameters->mEncodings[i];
+    const auto& newEncoding = paramsCopy.mEncodings[i];
+    if (oldEncoding.mRid != newEncoding.mRid) {
+      p->MaybeRejectWithInvalidModificationError(
+          "Cannot change rid, or reorder encodings");
+      return p.forget();
+    }
+  }
+
+  
+  
+  
+  
+  if (mLastReturnedParameters->mTransactionId != paramsCopy.mTransactionId) {
+    p->MaybeRejectWithInvalidModificationError(
+        "Cannot change transaction id: call getParameters, modify the result, "
+        "and then call setParameters");
+    return p.forget();
+  }
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ErrorResult rv;
+  CheckAndRectifyEncodings(paramsCopy.mEncodings, mTransceiver->IsVideo(), rv);
+  if (rv.Failed()) {
+    p->MaybeReject(std::move(rv));
+    return p.forget();
+  }
+
+  
+  
+  
+  if (mTransceiver->IsVideo()) {
+    for (auto& encoding : paramsCopy.mEncodings) {
+      if (!encoding.mScaleResolutionDownBy.WasPassed()) {
+        encoding.mScaleResolutionDownBy.Construct(1.0);
       }
     }
   }
 
   
 
+  
+  
+  
+
+  
+  
+  
+  
+  mPendingParameters = Some(paramsCopy);
+  uint32_t serialNumber = ++mNumSetParametersCalls;
+  MaybeUpdateConduit();
+
+  
+  
   GetMainThreadEventTarget()->Dispatch(NS_NewRunnableFunction(
-      __func__, [this, self = RefPtr<RTCRtpSender>(this), p, parameters] {
+      __func__,
+      [this, self = RefPtr<RTCRtpSender>(this), p, paramsCopy, serialNumber] {
         
-        if (!mPc->IsClosed()) {
-          ApplyParameters(parameters);
-          p->MaybeResolveWithUndefined();
+        mLastReturnedParameters = Nothing();
+        
+        mParameters = paramsCopy;
+        
+        
+        
+        if (serialNumber == mNumSetParametersCalls) {
+          mPendingParameters = Nothing();
         }
+        MOZ_ASSERT(mParameters.mEncodings.Length());
+        
+        p->MaybeResolveWithUndefined();
       }));
 
+  
   return p.forget();
 }
 
-void RTCRtpSender::GetParameters(RTCRtpParameters& aParameters) const {
+
+void RTCRtpSender::CheckAndRectifyEncodings(
+    Sequence<RTCRtpEncodingParameters>& aEncodings, bool aVideo,
+    ErrorResult& aRv) {
   
-  aParameters = mParameters;
-}
-
-void RTCRtpSender::ApplyParameters(const RTCRtpParameters& aParameters) {
-  mParameters = aParameters;
-  std::vector<std::string> rids;
-
-  if (aParameters.mEncodings.WasPassed()) {
-    for (const auto& encoding : aParameters.mEncodings.Value()) {
-      if (encoding.mRid.WasPassed()) {
-        rids.push_back(NS_ConvertUTF16toUTF8(encoding.mRid.Value()).get());
+  
+  
+  for (const auto& encoding : aEncodings) {
+    if (encoding.mRid.WasPassed()) {
+      std::string utf8Rid = NS_ConvertUTF16toUTF8(encoding.mRid.Value()).get();
+      std::string error;
+      if (!SdpRidAttributeList::CheckRidValidity(utf8Rid, &error)) {
+        aRv.ThrowTypeError(nsCString(error));
+        return;
       }
     }
   }
 
-  if (!rids.empty()) {
-    GetJsepTransceiver().mSendTrack.SetRids(rids);
+  if (aEncodings.Length() > 1) {
+    
+    
+    
+    
+    for (const auto& encoding : aEncodings) {
+      if (!encoding.mRid.WasPassed()) {
+        aRv.ThrowTypeError("Missing rid");
+        return;
+      }
+    }
+
+    
+    
+    
+    
+    std::set<nsString> uniqueRids;
+    for (const auto& encoding : aEncodings) {
+      if (uniqueRids.count(encoding.mRid.Value())) {
+        aRv.ThrowTypeError("Duplicate rid");
+        return;
+      }
+      uniqueRids.insert(encoding.mRid.Value());
+    }
   }
   
-  GetJsepTransceiver().mSendTrack.SetMaxEncodings(rids.size());
+
+  
+  
+  if (!aVideo) {
+    for (auto& encoding : aEncodings) {
+      if (encoding.mScaleResolutionDownBy.WasPassed()) {
+        encoding.mScaleResolutionDownBy.Reset();
+      }
+      if (encoding.mMaxFramerate.WasPassed()) {
+        encoding.mMaxFramerate.Reset();
+      }
+    }
+  }
+
+  
+  
+  for (const auto& encoding : aEncodings) {
+    if (encoding.mScaleResolutionDownBy.WasPassed()) {
+      if (encoding.mScaleResolutionDownBy.Value() < 1.0f) {
+        aRv.ThrowRangeError("scaleResolutionDownBy must be >= 1.0");
+        return;
+      }
+    }
+  }
+
+  
+  
+  
+  for (const auto& encoding : aEncodings) {
+    if (encoding.mMaxFramerate.WasPassed()) {
+      if (encoding.mMaxFramerate.Value() < 0.0f) {
+        aRv.ThrowRangeError("maxFramerate must be non-negative");
+        return;
+      }
+    }
+  }
+}
+
+void RTCRtpSender::SetJsepRids(const RTCRtpSendParameters& aParameters) {
+  MOZ_ASSERT(aParameters.mEncodings.Length());
+
+  std::vector<std::string> rids;
+  for (const auto& encoding : aParameters.mEncodings) {
+    if (encoding.mRid.WasPassed()) {
+      rids.push_back(NS_ConvertUTF16toUTF8(encoding.mRid.Value()).get());
+    } else {
+      rids.push_back("");
+    }
+  }
+
+  GetJsepTransceiver().mSendTrack.SetRids(rids);
+  mSimulcastEnvelopeSet = true;
+}
+
+void RTCRtpSender::GetParameters(RTCRtpSendParameters& aParameters) {
+  MOZ_ASSERT(mParameters.mEncodings.Length());
+  
+  
+  if (mLastReturnedParameters.isSome()) {
+    aParameters = *mLastReturnedParameters;
+    return;
+  }
+
+  
+
+  
+  aParameters.mTransactionId = mPc->GenerateUUID();
+
+  
+  aParameters.mEncodings = mParameters.mEncodings;
+
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+  
+  aParameters.mRtcp.mCname.Construct();
+  aParameters.mRtcp.mReducedSize.Construct(false);
+
+  
+  mLastReturnedParameters = Some(aParameters);
+
+  
+  GetMainThreadEventTarget()->Dispatch(NS_NewRunnableFunction(
+      __func__, [this, self = RefPtr<RTCRtpSender>(this)] {
+        mLastReturnedParameters = Nothing();
+      }));
 }
 
 bool operator==(const RTCRtpEncodingParameters& a1,
@@ -496,6 +716,7 @@ bool operator==(const RTCRtpEncodingParameters& a1,
          a1.mSsrc == a2.mSsrc;
 }
 
+
 void RTCRtpSender::ApplyJsEncodingToConduitEncoding(
     const RTCRtpEncodingParameters& aJsEncoding,
     VideoCodecConfig::Encoding* aConduitEncoding) {
@@ -506,8 +727,91 @@ void RTCRtpSender::ApplyJsEncodingToConduitEncoding(
     aConduitEncoding->constraints.maxFps =
         Some(aJsEncoding.mMaxFramerate.Value());
   }
-  aConduitEncoding->constraints.scaleDownBy =
-      aJsEncoding.mScaleResolutionDownBy;
+  if (aJsEncoding.mScaleResolutionDownBy.WasPassed()) {
+    
+    
+    aConduitEncoding->constraints.scaleDownBy =
+        aJsEncoding.mScaleResolutionDownBy.Value();
+  } else {
+    aConduitEncoding->constraints.scaleDownBy = 1.0f;
+  }
+}
+
+Sequence<RTCRtpEncodingParameters> RTCRtpSender::ToSendEncodings(
+    const std::vector<std::string>& aRids) const {
+  MOZ_ASSERT(!aRids.empty());
+
+  Sequence<RTCRtpEncodingParameters> result;
+  
+  
+  for (const auto& rid : aRids) {
+    MOZ_ASSERT(!rid.empty());
+    RTCRtpEncodingParameters encoding;
+    encoding.mActive = true;
+    encoding.mRid.Construct(NS_ConvertUTF8toUTF16(rid.c_str()));
+    Unused << result.AppendElement(encoding, fallible);
+  }
+
+  
+  
+  if (mTransceiver->IsVideo()) {
+    double scale = 1.0f;
+    for (auto it = result.rbegin(); it != result.rend(); ++it) {
+      it->mScaleResolutionDownBy.Construct(scale);
+      scale *= 2;
+    }
+  }
+
+  return result;
+}
+
+void RTCRtpSender::MaybeGetJsepRids() {
+  MOZ_ASSERT(!mSimulcastEnvelopeSet);
+  MOZ_ASSERT(mParameters.mEncodings.Length() == 1);
+  MOZ_ASSERT(!mParameters.mEncodings[0].mRid.WasPassed());
+
+  auto jsepRids = GetJsepTransceiver().mSendTrack.GetRids();
+  if (!jsepRids.empty()) {
+    if (jsepRids.size() != 1 || !jsepRids[0].empty()) {
+      
+      mParameters.mEncodings = ToSendEncodings(jsepRids);
+    }
+    GetJsepTransceiver().mSendTrack.SetMaxEncodings(jsepRids.size());
+    mSimulcastEnvelopeSet = true;
+  }
+}
+
+Sequence<RTCRtpEncodingParameters> RTCRtpSender::GetMatchingEncodings(
+    const std::vector<std::string>& aRids) const {
+  Sequence<RTCRtpEncodingParameters> result;
+  if (!mParameters.mEncodings.Length()) {
+    MOZ_ASSERT(false);
+    return result;
+  }
+
+  if (aRids.empty() || (aRids.size() == 1 && aRids[0].empty())) {
+    
+    
+    Unused << result.AppendElement(mParameters.mEncodings[0], fallible);
+    return result;
+  }
+
+  for (const auto& encoding : mParameters.mEncodings) {
+    for (const auto& rid : aRids) {
+      MOZ_ASSERT(!rid.empty());
+      auto utf16Rid = NS_ConvertUTF8toUTF16(rid.c_str());
+      if (!encoding.mRid.WasPassed() || (utf16Rid == encoding.mRid.Value())) {
+        auto encodingCopy(encoding);
+        if (!encodingCopy.mRid.WasPassed()) {
+          encodingCopy.mRid.Construct(NS_ConvertUTF8toUTF16(rid.c_str()));
+        }
+        Unused << result.AppendElement(encodingCopy, fallible);
+        break;
+      }
+    }
+  }
+
+  return result;
 }
 
 void RTCRtpSender::SetStreams(
@@ -739,7 +1043,22 @@ void RTCRtpSender::MaybeUpdateConduit() {
   }
 }
 
-void RTCRtpSender::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {}
+void RTCRtpSender::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
+  if (!mSimulcastEnvelopeSet) {
+    
+    
+    MaybeGetJsepRids();
+  } else if (!aJsepTransceiver.mSendTrack.GetNegotiatedDetails() ||
+             !aJsepTransceiver.mSendTrack.IsInHaveRemote()) {
+    
+    
+    std::vector<std::string> rids = aJsepTransceiver.mSendTrack.GetRids();
+    mParameters.mEncodings = GetMatchingEncodings(rids);
+    MOZ_ASSERT(mParameters.mEncodings.Length());
+  }
+
+  MaybeUpdateConduit();
+}
 
 void RTCRtpSender::SyncToJsep(JsepTransceiver& aJsepTransceiver) const {
   std::vector<std::string> streamIds;
@@ -830,12 +1149,14 @@ Maybe<RTCRtpSender::VideoConfig> RTCRtpSender::GetNewVideoConfig() {
     return Nothing();
   }
 
-  MOZ_ASSERT(mParameters.mEncodings.WasPassed());
   newConfig.mVideoCodec = Some(configs[0]);
+  
+  
+  const RTCRtpSendParameters& parameters =
+      mPendingParameters.isSome() ? *mPendingParameters : mParameters;
   for (VideoCodecConfig::Encoding& conduitEncoding :
        newConfig.mVideoCodec->mEncodings) {
-    for (const RTCRtpEncodingParameters& jsEncoding :
-         mParameters.mEncodings.Value()) {
+    for (const RTCRtpEncodingParameters& jsEncoding : parameters.mEncodings) {
       std::string rid;
       if (jsEncoding.mRid.WasPassed()) {
         rid = NS_ConvertUTF16toUTF8(jsEncoding.mRid.Value()).get();

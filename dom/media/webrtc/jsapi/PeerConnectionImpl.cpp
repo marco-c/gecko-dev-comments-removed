@@ -927,7 +927,6 @@ nsresult PeerConnectionImpl::AddRtpTransceiverToJsepSession(
   }
 
   mJsepSession->AddTransceiver(transceiver);
-
   return NS_OK;
 }
 
@@ -944,6 +943,9 @@ static Maybe<SdpMediaSection::MediaType> ToSdpMediaType(
 already_AddRefed<RTCRtpTransceiver> PeerConnectionImpl::AddTransceiver(
     const dom::RTCRtpTransceiverInit& aInit, const nsAString& aKind,
     dom::MediaStreamTrack* aSendTrack, ErrorResult& aRv) {
+  
+  RTCRtpTransceiverInit init(aInit);
+
   Maybe<SdpMediaSection::MediaType> type = ToSdpMediaType(aKind);
   if (NS_WARN_IF(!type.isSome())) {
     MOZ_ASSERT(false, "Invalid media kind");
@@ -964,9 +966,93 @@ already_AddRefed<RTCRtpTransceiver> PeerConnectionImpl::AddTransceiver(
     return nullptr;
   }
 
+  auto& sendEncodings = init.mSendEncodings;
+
+  
+  
+  
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+  
+  RTCRtpSender::CheckAndRectifyEncodings(sendEncodings,
+                                         *type == SdpMediaSection::kVideo, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  
+
+  
+  
+  
+  for (const auto& constEncoding : sendEncodings) {
+    if (constEncoding.mScaleResolutionDownBy.WasPassed()) {
+      for (auto& encoding : sendEncodings) {
+        if (!encoding.mScaleResolutionDownBy.WasPassed()) {
+          encoding.mScaleResolutionDownBy.Construct(1.0f);
+        }
+      }
+      break;
+    }
+  }
+
+  
+  
+  
+  size_t maxN =
+      (*type == SdpMediaSection::kVideo) ? webrtc::kMaxSimulcastStreams : 1;
+
+  
+  
+  
+  
+  if (sendEncodings.Length() > maxN) {
+    sendEncodings.TruncateLength(maxN);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (sendEncodings.Length() && *type == SdpMediaSection::kVideo &&
+      !sendEncodings[0].mScaleResolutionDownBy.WasPassed()) {
+    double scale = 1.0f;
+    for (auto it = sendEncodings.rbegin(); it != sendEncodings.rend(); ++it) {
+      it->mScaleResolutionDownBy.Construct(scale);
+      scale *= 2;
+    }
+  }
+
+  
+  
+  if (sendEncodings.Length() == 1) {
+    sendEncodings[0].mRid.Reset();
+  }
+
   RefPtr<RTCRtpTransceiver> transceiver = CreateTransceiver(
       jsepTransceiver->GetUuid(),
-      jsepTransceiver->GetMediaType() == SdpMediaSection::kVideo, aInit,
+      jsepTransceiver->GetMediaType() == SdpMediaSection::kVideo, init,
       aSendTrack, aRv);
 
   if (aRv.Failed()) {

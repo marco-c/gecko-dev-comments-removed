@@ -109,6 +109,7 @@ void JsepTrack::AddToAnswer(const SdpMediaSection& offer,
 
 void JsepTrack::SetRids(const std::vector<std::string>& aRids) {
   MOZ_ASSERT(!aRids.empty());
+  MOZ_ASSERT(mRids.empty());
   MOZ_ASSERT(aRids.size() <= mMaxEncodings);
   mRids = aRids;
 }
@@ -122,6 +123,7 @@ void JsepTrack::SetMaxEncodings(size_t aMax) {
 
 void JsepTrack::RecvTrackSetRemote(const Sdp& aSdp,
                                    const SdpMediaSection& aMsection) {
+  mInHaveRemote = true;
   MOZ_ASSERT(mDirection == sdp::kRecv);
   MOZ_ASSERT(aMsection.GetMediaType() !=
              SdpMediaSection::MediaType::kApplication);
@@ -173,6 +175,7 @@ void JsepTrack::RecvTrackSetRemote(const Sdp& aSdp,
 
 void JsepTrack::SendTrackSetRemote(SsrcGenerator& aSsrcGenerator,
                                    const SdpMediaSection& aRemoteMsection) {
+  mInHaveRemote = true;
   if (mType == SdpMediaSection::kApplication) {
     return;
   }
@@ -181,7 +184,8 @@ void JsepTrack::SendTrackSetRemote(SsrcGenerator& aSsrcGenerator,
 
   
   
-  if (aRemoteMsection.GetAttributeList().HasAttribute(
+  if ((mType == SdpMediaSection::kVideo) &&
+      aRemoteMsection.GetAttributeList().HasAttribute(
           SdpAttribute::kSimulcastAttribute)) {
     
     
@@ -594,6 +598,7 @@ void JsepTrack::Negotiate(const SdpMediaSection& answer,
     }
   }
 
+  mInHaveRemote = false;
   mNegotiatedDetails = std::move(negotiatedDetails);
 }
 
