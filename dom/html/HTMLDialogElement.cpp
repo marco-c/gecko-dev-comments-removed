@@ -173,7 +173,7 @@ void HTMLDialogElement::FocusDialog() {
   
   
   BrowsingContext* bc = control->OwnerDoc()->GetBrowsingContext();
-  if (bc && bc->SameOriginWithTop()) {
+  if (bc && bc->IsInProcess() && bc->SameOriginWithTop()) {
     if (nsCOMPtr<nsIDocShell> docShell = bc->Top()->GetDocShell()) {
       if (Document* topDocument = docShell->GetExtantDocument()) {
         
