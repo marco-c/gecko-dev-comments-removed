@@ -105,7 +105,9 @@ class RTC_EXPORT RtpSenderInterface : public rtc::RefCountInterface {
           encoder_selector) = 0;
 
   
-  virtual RTCError GenerateKeyFrame() { return RTCError::OK(); }
+  virtual RTCError GenerateKeyFrame(const std::vector<std::string>& rids) {
+    return RTCError::OK();
+  }
 
  protected:
   ~RtpSenderInterface() override = default;

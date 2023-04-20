@@ -428,7 +428,9 @@ void FakeVideoMediaChannel::ClearRecordableEncodedFrameCallback(uint32_t ssrc) {
 }
 
 void FakeVideoMediaChannel::RequestRecvKeyFrame(uint32_t ssrc) {}
-void FakeVideoMediaChannel::GenerateSendKeyFrame(uint32_t ssrc) {}
+void FakeVideoMediaChannel::GenerateSendKeyFrame(
+    uint32_t ssrc,
+    const std::vector<std::string>& rids) {}
 
 FakeVoiceEngine::FakeVoiceEngine() : fail_create_channel_(false) {
   

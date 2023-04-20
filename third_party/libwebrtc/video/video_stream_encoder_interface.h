@@ -98,7 +98,9 @@ class VideoStreamEncoderInterface {
   virtual void SetStartBitrate(int start_bitrate_bps) = 0;
 
   
-  virtual void SendKeyFrame() = 0;
+  
+  
+  virtual void SendKeyFrame(const std::vector<VideoFrameType>& layers = {}) = 0;
 
   
   virtual void OnLossNotification(

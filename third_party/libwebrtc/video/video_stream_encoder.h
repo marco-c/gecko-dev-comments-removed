@@ -111,7 +111,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   
   void Stop() override;
 
-  void SendKeyFrame() override;
+  void SendKeyFrame(const std::vector<VideoFrameType>& layers = {}) override;
 
   void OnLossNotification(
       const VideoEncoder::LossNotification& loss_notification) override;
