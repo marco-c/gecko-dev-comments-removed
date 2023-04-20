@@ -38,27 +38,6 @@ add_task(async function nonsponsoredHelpButton() {
 });
 
 
-add_task(async function nonsponsoredHelpAndBlockButtons() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.bestMatch.blockingEnabled", true]],
-  });
-  let result = makeBestMatchResult({ helpUrl: "https://example.com/help" });
-  await withProvider(result, async () => {
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      window,
-      value: "test",
-    });
-    await checkBestMatchRow({
-      result,
-      hasHelpButton: true,
-      hasBlockButton: true,
-    });
-    await UrlbarTestUtils.promisePopupClose(window);
-  });
-  await SpecialPowers.popPrefEnv();
-});
-
-
 add_task(async function sponsored() {
   let result = makeBestMatchResult({ isSponsored: true });
   await withProvider(result, async () => {
@@ -88,31 +67,6 @@ add_task(async function sponsoredHelpButton() {
 });
 
 
-add_task(async function sponsoredHelpAndBlockButtons() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.bestMatch.blockingEnabled", true]],
-  });
-  let result = makeBestMatchResult({
-    isSponsored: true,
-    helpUrl: "https://example.com/help",
-  });
-  await withProvider(result, async () => {
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      window,
-      value: "test",
-    });
-    await checkBestMatchRow({
-      result,
-      isSponsored: true,
-      hasHelpButton: true,
-      hasBlockButton: true,
-    });
-    await UrlbarTestUtils.promisePopupClose(window);
-  });
-  await SpecialPowers.popPrefEnv();
-});
-
-
 add_task(async function keySelection() {
   let result = makeBestMatchResult({
     isSponsored: true,
@@ -121,79 +75,59 @@ add_task(async function keySelection() {
 
   await withProvider(result, async () => {
     
-    let expectedClassNames = [
-      "urlbarView-row-inner",
-      "urlbarView-button-block",
-      "urlbarView-button-help",
-    ];
+    let expectedClassNames = ["urlbarView-row-inner", "urlbarView-button-help"];
+
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "test",
+    });
+    await checkBestMatchRow({
+      result,
+      isSponsored: true,
+      hasHelpButton: true,
+    });
 
     
-    for (let showBlockButton of [false, true]) {
-      UrlbarPrefs.set("bestMatch.blockingEnabled", showBlockButton);
+    for (let useTabKey of [false, true]) {
+      for (let reverse of [false, true]) {
+        info("Doing key selection: " + JSON.stringify({ useTabKey, reverse }));
 
-      
-      
-      
-      await UrlbarTestUtils.promiseAutocompleteResultPopup({
-        window,
-        value: "test",
-      });
-      await checkBestMatchRow({
-        result,
-        isSponsored: true,
-        hasHelpButton: true,
-        hasBlockButton: showBlockButton,
-      });
+        let classNames = [...expectedClassNames];
+        if (reverse) {
+          classNames.reverse();
+        }
 
-      
-      for (let useTabKey of [false, true]) {
-        for (let reverse of [false, true]) {
-          info(
-            "Doing key selection: " +
-              JSON.stringify({ showBlockButton, useTabKey, reverse })
-          );
-
-          let classNames = [...expectedClassNames];
-          if (!showBlockButton) {
-            classNames.splice(classNames.indexOf("urlbarView-button-block"), 1);
+        let sendKey = () => {
+          if (useTabKey) {
+            EventUtils.synthesizeKey("KEY_Tab", { shiftKey: reverse });
+          } else if (reverse) {
+            EventUtils.synthesizeKey("KEY_ArrowUp");
+          } else {
+            EventUtils.synthesizeKey("KEY_ArrowDown");
           }
-          if (reverse) {
-            classNames.reverse();
-          }
+        };
 
-          let sendKey = () => {
-            if (useTabKey) {
-              EventUtils.synthesizeKey("KEY_Tab", { shiftKey: reverse });
-            } else if (reverse) {
-              EventUtils.synthesizeKey("KEY_ArrowUp");
-            } else {
-              EventUtils.synthesizeKey("KEY_ArrowDown");
-            }
-          };
-
-          
-          for (let className of classNames) {
-            info("Expecting selection: " + className);
-            sendKey();
-            Assert.ok(gURLBar.view.isOpen, "View remains open");
-            let { selectedElement } = gURLBar.view;
-            Assert.ok(selectedElement, "Selected element exists");
-            Assert.ok(
-              selectedElement.classList.contains(className),
-              "Expected element is selected"
-            );
-          }
+        
+        for (let className of classNames) {
+          info("Expecting selection: " + className);
           sendKey();
+          Assert.ok(gURLBar.view.isOpen, "View remains open");
+          let { selectedElement } = gURLBar.view;
+          Assert.ok(selectedElement, "Selected element exists");
           Assert.ok(
-            gURLBar.view.isOpen,
-            "View remains open after keying through best match row"
+            selectedElement.classList.contains(className),
+            "Expected element is selected"
           );
         }
+        sendKey();
+        Assert.ok(
+          gURLBar.view.isOpen,
+          "View remains open after keying through best match row"
+        );
       }
-
-      await UrlbarTestUtils.promisePopupClose(window);
-      UrlbarPrefs.clear("bestMatch.blockingEnabled");
     }
+
+    await UrlbarTestUtils.promisePopupClose(window);
   });
 });
 
@@ -201,7 +135,6 @@ async function checkBestMatchRow({
   result,
   isSponsored = false,
   hasHelpButton = false,
-  hasBlockButton = false,
 }) {
   Assert.equal(
     UrlbarTestUtils.getResultCount(window),
@@ -250,13 +183,6 @@ async function checkBestMatchRow({
       "",
       "Non-sponsored row bottom has empty textContext"
     );
-  }
-
-  let blockButton = row._buttons.get("block");
-  if (hasBlockButton) {
-    Assert.ok(blockButton, "Row has a block button");
-  } else {
-    Assert.ok(!blockButton, "Row does not have a block button");
   }
 
   let helpButton = row._buttons.get("help");
