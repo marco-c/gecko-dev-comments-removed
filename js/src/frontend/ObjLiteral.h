@@ -353,7 +353,7 @@ struct ObjLiteralWriter : private ObjLiteralWriterBase {
     kind_ = ObjLiteralKind::Shape;
   }
 
-  bool setPropName(JSContext* cx, frontend::ParserAtomsTable& parserAtoms,
+  bool setPropName(frontend::ParserAtomsTable& parserAtoms,
                    const frontend::TaggedParserAtomIndex propName) {
     
     setPropNameNoDuplicateCheck(parserAtoms, propName);
