@@ -171,7 +171,7 @@ class Perftest(object):
         
         
         
-        if self.config["app"] in ("chrome", "chrome-m", "chromium", "custom-car"):
+        if self.config["app"] in ("chrome", "chrome-m", "chromium"):
             LOG.set_app(self.config["app"])
 
         self.browser_name = None
@@ -185,9 +185,6 @@ class Perftest(object):
         self.device = None
         self.runtime_error = None
         self.profile_class = profile_class or app
-        
-        if app in ["custom-car"]:
-            self.profile_class = "chromium"
         self.conditioned_profile_dir = None
         self.interrupt_handler = interrupt_handler
         self.results_handler = results_handler_class(**self.config)
@@ -389,7 +386,7 @@ class Perftest(object):
             self.profile = None
             return
         elif (
-            self.config["app"] in ["chrome", "chromium", "chrome-m", "custom-car"]
+            self.config["app"] in ["chrome", "chromium", "chrome-m"]
             or self.config.get("conditioned_profile") is None
         ):
             self.profile = create_profile(self.profile_class)
