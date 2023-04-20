@@ -113,6 +113,46 @@ class UnderlyingSinkAlgorithms final : public UnderlyingSinkAlgorithmsBase {
   MOZ_KNOWN_LIVE RefPtr<UnderlyingSinkAbortCallback> mAbortCallback;
 };
 
+
+
+
+
+
+
+
+
+
+class UnderlyingSinkAlgorithmsWrapper : public UnderlyingSinkAlgorithmsBase {
+ public:
+  void StartCallback(JSContext* aCx,
+                     WritableStreamDefaultController& aController,
+                     JS::MutableHandle<JS::Value> aRetVal,
+                     ErrorResult& aRv) final {
+    
+    aRetVal.setUndefined();
+  }
+
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> CloseCallback(
+      JSContext* aCx, ErrorResult& aRv) final;
+
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> AbortCallback(
+      JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
+      ErrorResult& aRv) final;
+
+  virtual already_AddRefed<Promise> CloseCallbackImpl(JSContext* aCx,
+                                                      ErrorResult& aRv) {
+    
+    return nullptr;
+  }
+
+  virtual already_AddRefed<Promise> AbortCallbackImpl(
+      JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
+      ErrorResult& aRv) {
+    
+    return nullptr;
+  }
+};
+
 }  
 
 #endif

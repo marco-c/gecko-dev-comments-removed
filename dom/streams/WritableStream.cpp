@@ -754,4 +754,38 @@ already_AddRefed<Promise> WritableStreamAddWriteRequest(WritableStream* aStream,
   return promise.forget();
 }
 
+
+void WritableStream::SetUpNative(JSContext* aCx,
+                                 UnderlyingSinkAlgorithmsWrapper& aAlgorithms,
+                                 Maybe<double> aHighWaterMark,
+                                 QueuingStrategySize* aSizeAlgorithm,
+                                 ErrorResult& aRv) {
+  
+  double highWaterMark = aHighWaterMark.valueOr(1);
+  
+  MOZ_ASSERT(IsNonNegativeNumber(highWaterMark));
+
+  
+  
+  
+  
+
+  
+  
+  
+
+  
+  
+
+  
+  auto controller =
+      MakeRefPtr<WritableStreamDefaultController>(GetParentObject(), *this);
+
+  
+  
+  
+  SetUpWritableStreamDefaultController(aCx, this, controller, &aAlgorithms,
+                                       highWaterMark, aSizeAlgorithm, aRv);
+}
+
 }  

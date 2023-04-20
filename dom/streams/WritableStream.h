@@ -153,12 +153,26 @@ class WritableStream : public nsISupports, public nsWrapperCache {
       JSContext* aCx, nsIGlobalObject* aGlobal, MessagePort& aPort,
       JS::MutableHandle<JSObject*> aReturnObject);
 
+  
+  
+
+  
+ protected:
+  MOZ_CAN_RUN_SCRIPT void SetUpNative(
+      JSContext* aCx, UnderlyingSinkAlgorithmsWrapper& aAlgorithms,
+      Maybe<double> aHighWaterMark, QueuingStrategySize* aSizeAlgorithm,
+      ErrorResult& aRv);
+
+ public:
+  
+
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   
+
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static already_AddRefed<WritableStream>
   Constructor(const GlobalObject& aGlobal,

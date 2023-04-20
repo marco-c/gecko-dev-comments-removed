@@ -27,7 +27,7 @@ namespace mozilla::dom {
 namespace {
 
 class WritableFileStreamUnderlyingSinkAlgorithms final
-    : public UnderlyingSinkAlgorithmsBase {
+    : public UnderlyingSinkAlgorithmsWrapper {
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(
       WritableFileStreamUnderlyingSinkAlgorithms, UnderlyingSinkAlgorithmsBase)
@@ -36,20 +36,14 @@ class WritableFileStreamUnderlyingSinkAlgorithms final
       FileSystemWritableFileStream& aStream)
       : mStream(&aStream) {}
 
-  
-  void StartCallback(JSContext* aCx,
-                     WritableStreamDefaultController& aController,
-                     JS::MutableHandle<JS::Value> aRetVal,
-                     ErrorResult& aRv) override;
-
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> WriteCallback(
+  already_AddRefed<Promise> WriteCallback(
       JSContext* aCx, JS::Handle<JS::Value> aChunk,
       WritableStreamDefaultController& aController, ErrorResult& aRv) override;
 
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> CloseCallback(
-      JSContext* aCx, ErrorResult& aRv) override;
+  already_AddRefed<Promise> CloseCallbackImpl(JSContext* aCx,
+                                              ErrorResult& aRv) override;
 
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> AbortCallback(
+  already_AddRefed<Promise> AbortCallbackImpl(
       JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
       ErrorResult& aRv) override;
 
@@ -142,9 +136,6 @@ FileSystemWritableFileStream::~FileSystemWritableFileStream() {
 
 
 
-
-
-
 MOZ_CAN_RUN_SCRIPT_BOUNDARY already_AddRefed<FileSystemWritableFileStream>
 FileSystemWritableFileStream::Create(
     nsIGlobalObject* aGlobal, RefPtr<FileSystemManager>& aManager,
@@ -168,24 +159,21 @@ FileSystemWritableFileStream::Create(
       MakeRefPtr<WritableFileStreamUnderlyingSinkAlgorithms>(*stream);
 
   
-  auto controller =
-      MakeRefPtr<WritableStreamDefaultController>(aGlobal, *stream);
-
-  
   
   
   IgnoredErrorResult rv;
-  SetUpWritableStreamDefaultController(
-      cx, stream, controller, algorithms,
+  stream->SetUpNative(
+      cx, *algorithms,
       
-      
-      1,
+      Some(1),
       
       
       nullptr, rv);
   if (rv.Failed()) {
     return nullptr;
   }
+
+  
   return stream.forget();
 }
 
@@ -640,13 +628,7 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(
 NS_IMPL_CYCLE_COLLECTION_INHERITED(WritableFileStreamUnderlyingSinkAlgorithms,
                                    UnderlyingSinkAlgorithmsBase, mStream)
 
-void WritableFileStreamUnderlyingSinkAlgorithms::StartCallback(
-    JSContext* aCx, WritableStreamDefaultController& aController,
-    JS::MutableHandle<JS::Value> aRetVal, ErrorResult& aRv) {
-  
-  
-  aRetVal.setUndefined();
-}
+
 
 already_AddRefed<Promise>
 WritableFileStreamUnderlyingSinkAlgorithms::WriteCallback(
@@ -655,12 +637,11 @@ WritableFileStreamUnderlyingSinkAlgorithms::WriteCallback(
   return mStream->Write(aCx, aChunk, aRv);
 }
 
-already_AddRefed<Promise>
-WritableFileStreamUnderlyingSinkAlgorithms::CloseCallback(JSContext* aCx,
-                                                          ErrorResult& aRv) {
-  
-  
 
+
+already_AddRefed<Promise>
+WritableFileStreamUnderlyingSinkAlgorithms::CloseCallbackImpl(
+    JSContext* aCx, ErrorResult& aRv) {
   RefPtr<Promise> promise = Promise::Create(mStream->GetParentObject(), aRv);
   if (aRv.Failed()) {
     return nullptr;
@@ -675,24 +656,22 @@ WritableFileStreamUnderlyingSinkAlgorithms::CloseCallback(JSContext* aCx,
   
   mStream->Close();
 
-  
   promise->MaybeResolveWithUndefined();
   return promise.forget();
 }
 
+
+
 already_AddRefed<Promise>
-WritableFileStreamUnderlyingSinkAlgorithms::AbortCallback(
+WritableFileStreamUnderlyingSinkAlgorithms::AbortCallbackImpl(
     JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
     ErrorResult& aRv) {
   
   
-
   
   
   mStream->Close();
-
-  
-  return Promise::CreateResolvedWithUndefined(mStream->GetParentObject(), aRv);
+  return nullptr;
 }
 
 void WritableFileStreamUnderlyingSinkAlgorithms::ReleaseObjects() {
