@@ -1036,7 +1036,7 @@ class RootingContext {
   
   uint32_t wasiRecursionDepth = 0u;
 
-  static constexpr uint32_t wasiRecursionDepthLimit = 100u;
+  static constexpr uint32_t wasiRecursionDepthLimit = 350u;
 #endif  
 
   static const RootingContext* get(const JSContext* cx) {
