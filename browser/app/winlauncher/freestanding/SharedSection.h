@@ -10,6 +10,18 @@
 #include "mozilla/NativeNt.h"
 #include "mozilla/interceptor/MMPolicies.h"
 
+
+#define MOZ_LITERAL_UNICODE_STRING(s)                                        \
+  {                                                                          \
+    /* Length of the string in bytes, less the null terminator */            \
+    sizeof(s) - sizeof(wchar_t),                                             \
+    /* Length of the string in bytes, including the null terminator */       \
+    sizeof(s),                                                               \
+    /* Pointer to the buffer */                                              \
+    const_cast<wchar_t*>(s)                                                  \
+  }
+
+
 namespace mozilla {
 namespace freestanding {
 
@@ -84,21 +96,28 @@ class MOZ_TRIVIAL_CTOR_DTOR SharedSection final {
     Kernel32ExportsSolver mK32Exports;
     wchar_t mModulePathArray[1];
 
+    Span<wchar_t> GetModulePathArray() {
+      return Span<wchar_t>(
+          mModulePathArray,
+          (kSharedViewSize - (reinterpret_cast<uintptr_t>(mModulePathArray) -
+                              reinterpret_cast<uintptr_t>(this))) /
+              sizeof(wchar_t));
+    }
     Layout() = delete;  
   };
 
   
-  static void Reset(HANDLE aNewSecionObject = sSectionHandle);
+  static void Reset(HANDLE aNewSectionObject = sSectionHandle);
 
   
   static void ConvertToReadOnly();
 
   
   
-  static LauncherVoidResult Init(const nt::PEHeaders& aPEHeaders);
+  static LauncherVoidResult Init();
 
   
-  static LauncherVoidResult AddDepenentModule(PCUNICODE_STRING aNtPath);
+  static LauncherVoidResult AddDependentModule(PCUNICODE_STRING aNtPath);
 
   
   static LauncherResult<Layout*> GetView();
