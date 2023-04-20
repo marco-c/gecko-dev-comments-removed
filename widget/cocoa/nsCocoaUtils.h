@@ -238,6 +238,12 @@ class nsCocoaUtils {
 
   static nsIWidget* GetHiddenWindowWidget();
 
+  
+
+
+
+  static BOOL ShouldRestoreStateDueToLaunchAtLogin();
+
   static void PrepareForNativeAppModalDialog();
   static void CleanUpAfterNativeAppModalDialog();
 
@@ -537,6 +543,11 @@ class nsCocoaUtils {
 
 
   static NSString* GetTitleForURLFromPasteboardItem(NSPasteboardItem* item);
+
+  
+
+
+  static BOOL WasLaunchedAtLogin();
 
   
 

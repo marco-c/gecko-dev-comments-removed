@@ -251,6 +251,49 @@ nsIWidget* nsCocoaUtils::GetHiddenWindowWidget() {
   return hiddenWindowWidget;
 }
 
+BOOL nsCocoaUtils::WasLaunchedAtLogin() {
+  ProcessSerialNumber processSerialNumber = {0, kCurrentProcess};
+  ProcessInfoRec processInfoRec = {};
+  processInfoRec.processInfoLength = sizeof(processInfoRec);
+
+  
+  
+  if (::GetProcessInformation(&processSerialNumber, &processInfoRec) == noErr) {
+    ProcessInfoRec parentProcessInfo = {};
+    parentProcessInfo.processInfoLength = sizeof(parentProcessInfo);
+    if (::GetProcessInformation(&processInfoRec.processLauncher, &parentProcessInfo) == noErr) {
+      return parentProcessInfo.processSignature == 'lgnw';
+    }
+  }
+  return NO;
+}
+
+BOOL nsCocoaUtils::ShouldRestoreStateDueToLaunchAtLogin() {
+  
+  
+  if (!WasLaunchedAtLogin()) {
+    return NO;
+  }
+
+  CFStringRef lgnwPlistName = CFSTR("com.apple.loginwindow");
+  CFStringRef saveStateKey = CFSTR("TALLogoutSavesState");
+  CFPropertyListRef lgnwPlist =
+      (CFPropertyListRef)(::CFPreferencesCopyAppValue(saveStateKey, lgnwPlistName));
+  
+  
+  
+  
+  if (!lgnwPlist) {
+    return YES;
+  }
+
+  if (CFBooleanRef shouldRestoreState = static_cast<CFBooleanRef>(lgnwPlist)) {
+    return ::CFBooleanGetValue(shouldRestoreState);
+  }
+
+  return NO;
+}
+
 void nsCocoaUtils::PrepareForNativeAppModalDialog() {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
