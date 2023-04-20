@@ -3473,8 +3473,11 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
     } else {
       language = mCanvasElement->OwnerDoc()->GetLanguageForStyle();
     }
+  } else {
+    
+    
+    language = nsLanguageAtomService::GetService()->GetLocaleLanguage();
   }
-  
 
   
   gfxFontGroup* fontGroup =
