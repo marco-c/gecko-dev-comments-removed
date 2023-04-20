@@ -4,6 +4,7 @@
 
 
 
+#include <memory>
 #include <utility>
 
 #define ANNOTATE(property) __attribute__((annotate(property)))
@@ -30,6 +31,14 @@ void GC() {
   asm("");
   invisible();
 }
+
+struct GCOnDestruction {
+  ~GCOnDestruction() { GC(); }
+};
+
+struct NoGCOnDestruction {
+  ~NoGCOnDestruction() { asm(""); }
+};
 
 extern void usecell(Cell*);
 
@@ -96,4 +105,16 @@ void rvalue_ref_arg_ok(World::NS::Unsafe&& unsafe3) {
 void rvalue_ref_arg_not_ok(World::NS::Unsafe&& unsafe4) {
   eat(unsafe4);
   GC();
+}
+
+void shared_ptr_hazard() {
+  Cell* unsafe5 = f();
+  { auto p = std::make_shared<GCOnDestruction>(); }
+  usecell(unsafe5);
+}
+
+void shared_ptr_no_hazard() {
+  Cell* safe6 = f();
+  { auto p = std::make_shared<NoGCOnDestruction>(); }
+  usecell(safe6);
 }
