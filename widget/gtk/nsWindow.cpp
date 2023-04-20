@@ -625,7 +625,7 @@ void nsWindow::Destroy() {
   if (rollupListener) {
     nsCOMPtr<nsIWidget> rollupWidget = rollupListener->GetRollupWidget();
     if (static_cast<nsIWidget*>(this) == rollupWidget) {
-      rollupListener->Rollup(0, false, nullptr, nullptr);
+      rollupListener->Rollup({});
     }
   }
 
@@ -4017,7 +4017,7 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
     
     
     if (mBounds.x != screenBounds.x || mBounds.y != screenBounds.y) {
-      CheckForRollup(0, 0, false, true);
+      RollupAllMenus();
     }
   }
 
@@ -4782,7 +4782,7 @@ void nsWindow::OnContainerFocusOutEvent(GdkEventFocus* aEvent) {
     }();
 
     if (shouldRollupMenus) {
-      CheckForRollup(0, 0, false, true);
+      RollupAllMenus();
     }
 
     if (RefPtr pm = nsXULPopupManager::GetInstance()) {
@@ -7407,53 +7407,52 @@ bool nsWindow::CheckForRollup(gdouble aMouseX, gdouble aMouseY, bool aIsWheel,
     return false;
   }
 
-  bool retVal = false;
   auto* currentPopup =
       (GdkWindow*)rollupWidget->GetNativeData(NS_NATIVE_WINDOW);
-  if (aAlwaysRollup || !is_mouse_in_window(currentPopup, aMouseX, aMouseY)) {
-    bool rollup = true;
-    if (aIsWheel) {
-      rollup = rollupListener->ShouldRollupOnMouseWheelEvent();
-      retVal = rollupListener->ShouldConsumeOnMouseWheelEvent();
+  if (!aAlwaysRollup && is_mouse_in_window(currentPopup, aMouseX, aMouseY)) {
+    return false;
+  }
+  bool retVal = false;
+  if (aIsWheel) {
+    retVal = rollupListener->ShouldConsumeOnMouseWheelEvent();
+    if (!rollupListener->ShouldRollupOnMouseWheelEvent()) {
+      return retVal;
     }
-    
-    
-    
-    uint32_t popupsToRollup = UINT32_MAX;
-    if (!aAlwaysRollup) {
-      AutoTArray<nsIWidget*, 5> widgetChain;
-      uint32_t sameTypeCount =
-          rollupListener->GetSubmenuWidgetChain(&widgetChain);
-      for (unsigned long i = 0; i < widgetChain.Length(); ++i) {
-        nsIWidget* widget = widgetChain[i];
-        auto* currWindow = (GdkWindow*)widget->GetNativeData(NS_NATIVE_WINDOW);
-        if (is_mouse_in_window(currWindow, aMouseX, aMouseY)) {
-          
-          
-          
-          
-          
-          if (i < sameTypeCount) {
-            rollup = false;
-          } else {
-            popupsToRollup = sameTypeCount;
-          }
-          break;
+  }
+  LayoutDeviceIntPoint point;
+  nsIRollupListener::RollupOptions options{0,
+                                           nsIRollupListener::FlushViews::Yes};
+  
+  
+  
+  if (!aAlwaysRollup) {
+    AutoTArray<nsIWidget*, 5> widgetChain;
+    uint32_t sameTypeCount =
+        rollupListener->GetSubmenuWidgetChain(&widgetChain);
+    for (unsigned long i = 0; i < widgetChain.Length(); ++i) {
+      nsIWidget* widget = widgetChain[i];
+      auto* currWindow = (GdkWindow*)widget->GetNativeData(NS_NATIVE_WINDOW);
+      if (is_mouse_in_window(currWindow, aMouseX, aMouseY)) {
+        
+        
+        
+        
+        
+        if (i < sameTypeCount) {
+          return retVal;
         }
-      }  
-    }    
-
-    
-    bool usePoint = !aIsWheel && !aAlwaysRollup;
-    LayoutDeviceIntPoint point;
-    if (usePoint) {
+        options.mCount = sameTypeCount;
+        break;
+      }
+    }  
+    if (!aIsWheel) {
       point = GdkEventCoordsToDevicePixels(aMouseX, aMouseY);
+      options.mPoint = &point;
     }
-    if (rollup &&
-        rollupListener->Rollup(popupsToRollup, true,
-                               usePoint ? &point : nullptr, nullptr)) {
-      retVal = true;
-    }
+  }
+
+  if (rollupListener->Rollup(options)) {
+    retVal = true;
   }
   return retVal;
 }

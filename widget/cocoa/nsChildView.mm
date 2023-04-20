@@ -2397,56 +2397,57 @@ NSEvent* gLastDragMouseDownEvent = nil;
   }
 
   nsCOMPtr<nsIWidget> rollupWidget = rollupListener->GetRollupWidget();
-  if (rollupWidget) {
-    NSWindow* currentPopup = static_cast<NSWindow*>(rollupWidget->GetNativeData(NS_NATIVE_WINDOW));
-    if (!nsCocoaUtils::IsEventOverWindow(theEvent, currentPopup)) {
-      
-      bool shouldRollup = true;
+  if (!rollupWidget) {
+    return consumeEvent;
+  }
 
-      
-      if (isWheelTypeEvent) {
-        shouldRollup = rollupListener->ShouldRollupOnMouseWheelEvent();
-        
-        
-        consumeEvent = rollupListener->ShouldConsumeOnMouseWheelEvent();
-      }
+  NSWindow* currentPopup = static_cast<NSWindow*>(rollupWidget->GetNativeData(NS_NATIVE_WINDOW));
+  if (nsCocoaUtils::IsEventOverWindow(theEvent, currentPopup)) {
+    return consumeEvent;
+  }
 
-      
-      
-      
-      uint32_t popupsToRollup = UINT32_MAX;
-      AutoTArray<nsIWidget*, 5> widgetChain;
-      uint32_t sameTypeCount = rollupListener->GetSubmenuWidgetChain(&widgetChain);
-      for (uint32_t i = 0; i < widgetChain.Length(); i++) {
-        nsIWidget* widget = widgetChain[i];
-        NSWindow* currWindow = (NSWindow*)widget->GetNativeData(NS_NATIVE_WINDOW);
-        if (nsCocoaUtils::IsEventOverWindow(theEvent, currWindow)) {
-          
-          
-          
-          
-          if (i < sameTypeCount) {
-            shouldRollup = false;
-          } else {
-            popupsToRollup = sameTypeCount;
-          }
-          break;
-        }
-      }
-
-      if (shouldRollup) {
-        if ([theEvent type] == NSEventTypeLeftMouseDown) {
-          NSPoint point = [NSEvent mouseLocation];
-          FlipCocoaScreenCoordinate(point);
-          LayoutDeviceIntPoint devPoint = mGeckoChild->CocoaPointsToDevPixels(point);
-          consumeEvent = (BOOL)rollupListener->Rollup(popupsToRollup, true, &devPoint, nullptr);
-        } else {
-          consumeEvent = (BOOL)rollupListener->Rollup(popupsToRollup, true, nullptr, nullptr);
-        }
-      }
+  
+  if (isWheelTypeEvent) {
+    
+    
+    consumeEvent = rollupListener->ShouldConsumeOnMouseWheelEvent();
+    if (!rollupListener->ShouldRollupOnMouseWheelEvent()) {
+      return consumeEvent;
     }
   }
 
+  
+  
+  
+  uint32_t popupsToRollup = UINT32_MAX;
+  AutoTArray<nsIWidget*, 5> widgetChain;
+  uint32_t sameTypeCount = rollupListener->GetSubmenuWidgetChain(&widgetChain);
+  for (uint32_t i = 0; i < widgetChain.Length(); i++) {
+    nsIWidget* widget = widgetChain[i];
+    NSWindow* currWindow = (NSWindow*)widget->GetNativeData(NS_NATIVE_WINDOW);
+    if (nsCocoaUtils::IsEventOverWindow(theEvent, currWindow)) {
+      
+      
+      
+      
+      if (i < sameTypeCount) {
+        return consumeEvent;
+      }
+      popupsToRollup = sameTypeCount;
+      break;
+    }
+  }
+
+  LayoutDeviceIntPoint devPoint;
+  nsIRollupListener::RollupOptions rollupOptions{popupsToRollup,
+                                                 nsIRollupListener::FlushViews::Yes};
+  if ([theEvent type] == NSEventTypeLeftMouseDown) {
+    NSPoint point = [NSEvent mouseLocation];
+    FlipCocoaScreenCoordinate(point);
+    devPoint = mGeckoChild->CocoaPointsToDevPixels(point);
+    rollupOptions.mPoint = &devPoint;
+  }
+  consumeEvent = (BOOL)rollupListener->Rollup(rollupOptions);
   return consumeEvent;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(NO);

@@ -43,8 +43,8 @@ add_task(async function test_PanelMultiView_toggle_with_other_popup() {
           eventTypeToWait: "mouseup",
         });
 
-      if (AppConstants.platform == "win") {
-        
+      
+      if (AppConstants.platform == "win" || AppConstants.platform == "macosx") {
         await gCUITestUtils.hidePanelMultiView(PanelUI.panel, clickFn);
         await new Promise(resolve => executeSoon(resolve));
 
