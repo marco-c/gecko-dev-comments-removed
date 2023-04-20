@@ -514,17 +514,6 @@ static NativeGetPropKind IsCacheableGetPropCall(NativeObject* obj,
   }
 
   
-  
-  
-  if (IsWindow(obj)) {
-    
-    
-    if (!getter.hasJitInfo() || getter.jitInfo()->needsOuterizedThisObject()) {
-      return NativeGetPropKind::None;
-    }
-  }
-
-  
   if (getter.hasJitEntry()) {
     return NativeGetPropKind::ScriptedGetter;
   }
@@ -994,10 +983,11 @@ static bool CanAttachDOMCall(JSContext* cx, JSJitInfo::OpType type,
   }
 
   const JSJitInfo* jitInfo = fun->jitInfo();
-  MOZ_ASSERT_IF(IsWindow(obj), !jitInfo->needsOuterizedThisObject());
   if (jitInfo->type() != type) {
     return false;
   }
+
+  MOZ_ASSERT_IF(IsWindow(obj), !jitInfo->needsOuterizedThisObject());
 
   const JSClass* clasp = obj->getClass();
   if (!clasp->isDOMClass()) {
@@ -1167,6 +1157,15 @@ static ObjOperandId GuardAndLoadWindowProxyWindow(CacheIRWriter& writer,
   return windowObjId;
 }
 
+
+
+
+static bool GetterNeedsWindowProxyThis(NativeObject* holder,
+                                       PropertyInfo prop) {
+  JSFunction* callee = &holder->getGetter(prop)->as<JSFunction>();
+  return !callee->hasJitInfo() || callee->jitInfo()->needsOuterizedThisObject();
+}
+
 AttachDecision GetPropIRGenerator::tryAttachWindowProxy(HandleObject obj,
                                                         ObjOperandId objId,
                                                         HandleId id) {
@@ -1215,20 +1214,14 @@ AttachDecision GetPropIRGenerator::tryAttachWindowProxy(HandleObject obj,
       return AttachDecision::Attach;
     }
 
-    case NativeGetPropKind::NativeGetter: {
-      
-      
-      JSFunction* callee = &holder->getGetter(*prop)->as<JSFunction>();
-      MOZ_ASSERT(callee->isNativeWithoutJitEntry());
-      if (!callee->hasJitInfo() ||
-          callee->jitInfo()->needsOuterizedThisObject()) {
-        return AttachDecision::NoAction;
-      }
-
+    case NativeGetPropKind::NativeGetter:
+    case NativeGetPropKind::ScriptedGetter: {
       
       if (isSuper()) {
         return AttachDecision::NoAction;
       }
+
+      bool needsWindowProxy = GetterNeedsWindowProxyThis(holder, *prop);
 
       
       
@@ -1238,11 +1231,13 @@ AttachDecision GetPropIRGenerator::tryAttachWindowProxy(HandleObject obj,
 
       if (CanAttachDOMGetterSetter(cx_, JSJitInfo::Getter, windowObj, holder,
                                    *prop, mode_)) {
+        MOZ_ASSERT(!needsWindowProxy);
         EmitCallDOMGetterResult(cx_, writer, windowObj, holder, id, *prop,
                                 windowObjId);
         trackAttached("WindowProxyDOMGetter");
       } else {
-        ValOperandId receiverId = writer.boxObject(windowObjId);
+        ValOperandId receiverId =
+            writer.boxObject(needsWindowProxy ? objId : windowObjId);
         EmitCallGetterResult(cx_, writer, kind, windowObj, holder, id, *prop,
                              windowObjId, receiverId, mode_);
         trackAttached("WindowProxyGetter");
@@ -1250,9 +1245,6 @@ AttachDecision GetPropIRGenerator::tryAttachWindowProxy(HandleObject obj,
 
       return AttachDecision::Attach;
     }
-
-    case NativeGetPropKind::ScriptedGetter:
-      MOZ_ASSERT_UNREACHABLE("Not possible for window proxies");
   }
 
   MOZ_CRASH("Unreachable");
@@ -3065,9 +3057,13 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameGetter(ObjOperandId objId,
   GlobalObject* global = &globalLexical->global();
 
   NativeGetPropKind kind = IsCacheableGetPropCall(global, holder, *prop);
-  if (kind != NativeGetPropKind::NativeGetter) {
+  if (kind != NativeGetPropKind::NativeGetter &&
+      kind != NativeGetPropKind::ScriptedGetter) {
     return AttachDecision::NoAction;
   }
+
+  bool needsWindowProxy =
+      IsWindow(global) && GetterNeedsWindowProxyThis(holder, *prop);
 
   
   writer.guardShape(objId, globalLexical->shape());
@@ -3092,10 +3088,18 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameGetter(ObjOperandId objId,
   if (CanAttachDOMGetterSetter(cx_, JSJitInfo::Getter, global, holder, *prop,
                                mode_)) {
     
+    MOZ_ASSERT(!needsWindowProxy);
     EmitCallDOMGetterResultNoGuards(writer, holder, *prop, globalId);
     trackAttached("GlobalNameDOMGetter");
   } else {
-    ValOperandId receiverId = writer.boxObject(globalId);
+    ObjOperandId receiverObjId;
+    if (needsWindowProxy) {
+      MOZ_ASSERT(cx_->global()->maybeWindowProxy());
+      receiverObjId = writer.loadObject(cx_->global()->maybeWindowProxy());
+    } else {
+      receiverObjId = globalId;
+    }
+    ValOperandId receiverId = writer.boxObject(receiverObjId);
     EmitCallGetterResultNoGuards(cx_, writer, kind, global, holder, *prop,
                                  receiverId);
     trackAttached("GlobalNameGetter");

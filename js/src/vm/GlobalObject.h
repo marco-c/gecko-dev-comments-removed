@@ -997,7 +997,11 @@ class GlobalObject : public NativeObject {
   JSObject* maybeWindowProxy() const { return data().windowProxy; }
 
   void setWindowProxy(JSObject* windowProxy) {
-    data().windowProxy = windowProxy;
+    
+    
+    
+    MOZ_ASSERT(!data().windowProxy);
+    data().windowProxy.init(windowProxy);
   }
 
   ArrayObject* getSourceURLsHolder() const { return data().sourceURLsHolder; }
