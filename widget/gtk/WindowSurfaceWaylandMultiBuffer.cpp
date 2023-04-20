@@ -285,8 +285,8 @@ void WindowSurfaceWaylandMB::Commit(
   mFrameInProcess = false;
 
   MozContainer* container = mWindow->GetMozContainer();
-  MozContainerSurfaceLock lock(container);
-  struct wl_surface* waylandSurface = lock.GetSurface();
+  MozContainerSurfaceLock MozContainerLock(container);
+  struct wl_surface* waylandSurface = MozContainerLock.GetSurface();
   if (!waylandSurface) {
     LOGWAYLAND(
         "WindowSurfaceWaylandMB::Commit [%p] frame queued: can't lock "
@@ -319,8 +319,19 @@ void WindowSurfaceWaylandMB::Commit(
     }
   }
 
+  
+  
+  
   moz_container_wayland_set_scale_factor_locked(aProofOfLock, container);
-  mInProgressBuffer->AttachAndCommit(waylandSurface);
+
+  
+  
+  
+  
+  if (moz_container_wayland_size_matches_scale_factor_locked(
+          aProofOfLock, container, mWindowSize.width, mWindowSize.height)) {
+    mInProgressBuffer->AttachAndCommit(waylandSurface);
+  }
 
   mInProgressBuffer->ResetBufferAge();
   mFrontBuffer = mInProgressBuffer;
