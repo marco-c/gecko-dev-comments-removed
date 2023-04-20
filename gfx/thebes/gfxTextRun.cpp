@@ -2284,7 +2284,7 @@ already_AddRefed<gfxFont> gfxFontGroup::GetDefaultFont() {
 }
 
 already_AddRefed<gfxFont> gfxFontGroup::GetFirstValidFont(
-    uint32_t aCh, StyleGenericFontFamily* aGeneric) {
+    uint32_t aCh, StyleGenericFontFamily* aGeneric, bool* aIsFirst) {
   
   CheckForUpdatedPlatformList();
 
@@ -2319,6 +2319,9 @@ already_AddRefed<gfxFont> gfxFontGroup::GetFirstValidFont(
       if (aGeneric) {
         *aGeneric = ff.Generic();
       }
+      if (aIsFirst) {
+        *aIsFirst = (i == 0);
+      }
       return font.forget();
     }
 
@@ -2349,11 +2352,17 @@ already_AddRefed<gfxFont> gfxFontGroup::GetFirstValidFont(
       if (aGeneric) {
         *aGeneric = ff.Generic();
       }
+      if (aIsFirst) {
+        *aIsFirst = (i == 0);
+      }
       return font.forget();
     }
   }
   if (aGeneric) {
     *aGeneric = StyleGenericFontFamily::None;
+  }
+  if (aIsFirst) {
+    *aIsFirst = false;
   }
   return GetDefaultFont();
 }
@@ -3829,6 +3838,35 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichSystemFontSupportsChar(
   return gfxPlatformFontList::PlatformFontList()->SystemFindFontForChar(
       mPresContext, aCh, aNextCh, aRunScript, aPresentation, &mStyle,
       &visibility);
+}
+
+gfxFont::Metrics gfxFontGroup::GetMetricsForCSSUnits(
+    gfxFont::Orientation aOrientation) {
+  bool isFirst;
+  RefPtr<gfxFont> font = GetFirstValidFont(0x20, nullptr, &isFirst);
+  auto metrics = font->GetMetrics(aOrientation);
+
+  
+  
+  
+  if (!isFirst || !font->HasCharacter('0')) {
+    RefPtr<gfxFont> zeroFont = GetFirstValidFont('0');
+    if (zeroFont != font) {
+      const auto& zeroMetrics = zeroFont->GetMetrics(aOrientation);
+      metrics.zeroWidth = zeroMetrics.zeroWidth;
+    }
+  }
+
+  
+  if (!isFirst || !font->HasCharacter(0x6C34)) {
+    RefPtr<gfxFont> icFont = GetFirstValidFont(0x6C34);
+    if (icFont != font) {
+      const auto& icMetrics = icFont->GetMetrics(aOrientation);
+      metrics.ideographicWidth = icMetrics.ideographicWidth;
+    }
+  }
+
+  return metrics;
 }
 
 void gfxMissingFontRecorder::Flush() {

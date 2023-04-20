@@ -947,8 +947,10 @@ class gfxFontGroup final : public gfxTextRunFactory {
   
   
   
+  
   already_AddRefed<gfxFont> GetFirstValidFont(
-      uint32_t aCh = 0x20, mozilla::StyleGenericFontFamily* aGeneric = nullptr);
+      uint32_t aCh = 0x20, mozilla::StyleGenericFontFamily* aGeneric = nullptr,
+      bool* aIsFirst = nullptr);
 
   
   
@@ -1103,6 +1105,14 @@ class gfxFontGroup final : public gfxTextRunFactory {
   }
 
   nsAtom* Language() const { return mLanguage.get(); }
+
+  
+  
+  
+  
+  
+  
+  gfxFont::Metrics GetMetricsForCSSUnits(gfxFont::Orientation aOrientation);
 
  protected:
   friend class mozilla::PostTraversalTask;
