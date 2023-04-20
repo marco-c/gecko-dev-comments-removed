@@ -117,6 +117,7 @@ option(
 
 @depends(
     "--with-clang-path",
+    configure_cache,
     c_compiler,
     cxx_compiler,
     clang_search_path,
@@ -125,7 +126,13 @@ option(
 )
 @checking("for clang for bindgen", lambda x: x.path if x else "not found")
 def bindgen_clang_compiler(
-    clang_path, c_compiler, cxx_compiler, clang_search_path, target, sysroot_path
+    clang_path,
+    configure_cache,
+    c_compiler,
+    cxx_compiler,
+    clang_search_path,
+    target,
+    sysroot_path,
 ):
     
     if cxx_compiler.type == "clang":
@@ -165,14 +172,14 @@ def bindgen_clang_compiler(
     flags = []
     if sysroot_path:
         flags.extend(("--sysroot", sysroot_path))
-    info = check_compiler([clang_path] + flags, "C++", target)
+    info = check_compiler(configure_cache, [clang_path] + flags, "C++", target)
     
     
     
     
     if info.flags:
         flags += info.flags
-        info = check_compiler([clang_path] + flags, "C++", target)
+        info = check_compiler(configure_cache, [clang_path] + flags, "C++", target)
     return namespace(
         path=clang_path,
         flags=flags + info.flags,
