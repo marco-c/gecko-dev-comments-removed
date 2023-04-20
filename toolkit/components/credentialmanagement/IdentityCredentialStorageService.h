@@ -8,38 +8,88 @@
 #define MOZILLA_IDENTITYCREDENTIALSTORAGESERVICE_H_
 
 #include "ErrorList.h"
-#include "mozIStorageConnection.h"
 #include "mozilla/AlreadyAddRefed.h"
-#include "nsIIdentityCredentialStorageService.h"
 #include "mozilla/dom/FlippedOnce.h"
+#include "mozilla/Monitor.h"
+#include "mozIStorageConnection.h"
+#include "nsIAsyncShutdown.h"
+#include "nsIIdentityCredentialStorageService.h"
 #include "nsIObserver.h"
 #include "nsISupports.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 
 class IdentityCredentialStorageService final
     : public nsIIdentityCredentialStorageService,
-      public nsIObserver {
+      public nsIObserver,
+      public nsIAsyncShutdownBlocker {
  public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIIDENTITYCREDENTIALSTORAGESERVICE
   NS_DECL_NSIOBSERVER
+  NS_DECL_NSIASYNCSHUTDOWNBLOCKER
 
   
   static already_AddRefed<IdentityCredentialStorageService> GetSingleton();
 
+  
   IdentityCredentialStorageService(const IdentityCredentialStorageService&) =
       delete;
   IdentityCredentialStorageService& operator=(
       const IdentityCredentialStorageService&) = delete;
 
  private:
-  IdentityCredentialStorageService() = default;
-  ~IdentityCredentialStorageService();
+  IdentityCredentialStorageService()
+      : mMonitor("mozilla::IdentityCredentialStorageService::mMonitor"){};
+  ~IdentityCredentialStorageService() = default;
+
+  
+  
+  
   nsresult Init();
+
+  
+  
+  nsresult WaitForInitialization();
+
+  
+  
+  already_AddRefed<nsIAsyncShutdownClient> GetAsyncShutdownBarrier() const;
+
+  
+  
+  
+  void Finalize();
+
+  
+  
   static nsresult ValidatePrincipal(nsIPrincipal* aPrincipal);
 
-  FlippedOnce<false> mInitialized;
+  
+  
+  RefPtr<mozIStorageConnection> mDiskDatabaseConnection;  
+  RefPtr<mozIStorageConnection>
+      mMemoryDatabaseConnection;  
+                                  
+
+  
+  
+  nsCOMPtr<nsISerialEventTarget> mBackgroundThread;  
+
+  
+  
+  
+  nsCOMPtr<nsIFile> mDatabaseFile;  
+                                    
+
+  
+  
+  
+  Monitor mMonitor;
+  FlippedOnce<false> mInitialized MOZ_GUARDED_BY(mMonitor);
+  FlippedOnce<false> mErrored MOZ_GUARDED_BY(mMonitor);
+  FlippedOnce<false> mFinalized MOZ_GUARDED_BY(mMonitor);
 };
 
 }  
