@@ -50,19 +50,29 @@ function makeDnrTestUtils() {
     };
   };
 
+  function serializeForLog(rule) {
+    
+    
+    
+    let str = JSON.stringify(rule, rep => rep ?? undefined);
+    
+    str = str.replace(/x{10,}/g, xxx => `x{${xxx.length}}`);
+    return str;
+  }
+
   async function testInvalidRule(rule, expectedError, isSchemaError) {
     if (isSchemaError) {
       
       browser.test.assertThrows(
         () => dnr.updateSessionRules({ addRules: [rule] }),
         expectedError,
-        `Rule should be invalid (schema-validated): ${JSON.stringify(rule)}`
+        `Rule should be invalid (schema-validated): ${serializeForLog(rule)}`
       );
     } else {
       await browser.test.assertRejects(
         dnr.updateSessionRules({ addRules: [rule] }),
         expectedError,
-        `Rule should be invalid: ${JSON.stringify(rule)}`
+        `Rule should be invalid: ${serializeForLog(rule)}`
       );
     }
   }
@@ -99,6 +109,36 @@ function makeDnrTestUtils() {
         regexSubstitution: null,
         ...rule.action.redirect,
       };
+      if (rule.action.redirect.transform) {
+        expectedRule.action.redirect.transform = {
+          scheme: null,
+          username: null,
+          password: null,
+          host: null,
+          port: null,
+          path: null,
+          query: null,
+          queryTransform: null,
+          fragment: null,
+          ...rule.action.redirect.transform,
+        };
+        if (rule.action.redirect.transform.queryTransform) {
+          const qt = {
+            removeParams: null,
+            addOrReplaceParams: null,
+            ...rule.action.redirect.transform.queryTransform,
+          };
+          if (qt.addOrReplaceParams) {
+            qt.addOrReplaceParams = qt.addOrReplaceParams.map(v => ({
+              key: null,
+              value: null,
+              replaceOnly: false,
+              ...v,
+            }));
+          }
+          expectedRule.action.redirect.transform.queryTransform = qt;
+        }
+      }
     }
     if (rule.action.requestHeaders) {
       expectedRule.action.requestHeaders = rule.action.requestHeaders.map(
@@ -538,6 +578,11 @@ add_task(async function validate_actions() {
         type: "redirect",
         redirect: { url: browser.runtime.getURL("/") },
       });
+      await testValidAction({
+        type: "redirect",
+        redirect: { transform: {} },
+      });
+      
 
       
       await testInvalidAction(
@@ -641,6 +686,203 @@ add_task(async function validate_actions() {
         /type: Invalid enumeration value "MODIFYHEADERS"/,
          true
       );
+
+      browser.test.notifyPass();
+    },
+  });
+});
+
+
+
+
+
+add_task(async function validate_action_redirect_transform() {
+  await runAsDNRExtension({
+    background: async dnrTestUtils => {
+      const { testInvalidAction, testValidAction } = dnrTestUtils;
+
+      const GENERIC_TRANSFORM_ERROR =
+        "redirect.transform does not describe a valid URL transformation";
+
+      const testValidTransform = transform =>
+        testValidAction({ type: "redirect", redirect: { transform } });
+      const testInvalidTransform = (transform, expectedError, isSchemaError) =>
+        testInvalidAction(
+          { type: "redirect", redirect: { transform } },
+          expectedError ?? GENERIC_TRANSFORM_ERROR,
+          isSchemaError
+        );
+
+      
+      
+      
+      
+      
+      
+      const VERY_LONG_STRING = "x".repeat(1048576);
+
+      
+      await testValidTransform({});
+
+      
+      await testValidTransform({ scheme: "http" });
+      await testValidTransform({ scheme: "https" });
+      await testValidTransform({ scheme: "moz-extension" });
+      await testInvalidTransform(
+        { scheme: "HTTPS" },
+        /scheme: Invalid enumeration value "HTTPS"/,
+         true
+      );
+      await testInvalidTransform(
+        { scheme: "javascript" },
+        /scheme: Invalid enumeration value "javascript"/,
+         true
+      );
+      
+      
+      
+      await testInvalidTransform(
+        { scheme: "ftp" },
+        /scheme: Invalid enumeration value "ftp"/,
+         true
+      );
+
+      
+      await testValidTransform({ host: "example.com" });
+      await testValidTransform({ host: "example.com." });
+      await testValidTransform({ host: "localhost" });
+      await testValidTransform({ host: "127.0.0.1" });
+      await testValidTransform({ host: "[::1]" });
+      await testValidTransform({ host: "." });
+      await testValidTransform({ host: "straß.de" });
+      await testValidTransform({ host: "xn--stra-yna.de" });
+      await testInvalidTransform({ host: "::1" }); 
+      await testInvalidTransform({ host: "[]" }); 
+      await testInvalidTransform({ host: "/" }); 
+      await testInvalidTransform({ host: " a" }); 
+      await testInvalidTransform({ host: "foo:1234" }); 
+      await testInvalidTransform({ host: "foo:" }); 
+      await testInvalidTransform({ host: "" }); 
+      await testInvalidTransform({ host: VERY_LONG_STRING });
+
+      
+      await testValidTransform({ port: "" }); 
+      await testValidTransform({ port: "0" });
+      await testValidTransform({ port: "0700" });
+      await testValidTransform({ port: "65535" });
+      const PORT_ERR = "redirect.transform.port should be empty or an integer";
+      await testInvalidTransform({ port: "65536" }, GENERIC_TRANSFORM_ERROR);
+      await testInvalidTransform({ port: " 0" }, PORT_ERR);
+      await testInvalidTransform({ port: "0 " }, PORT_ERR);
+      await testInvalidTransform({ port: "0." }, PORT_ERR);
+      await testInvalidTransform({ port: "0x1" }, PORT_ERR);
+      await testInvalidTransform({ port: "1.2" }, PORT_ERR);
+      await testInvalidTransform({ port: "-1" }, PORT_ERR);
+      await testInvalidTransform({ port: "a" }, PORT_ERR);
+      
+      
+      await testInvalidTransform({ host: "[::1", port: "2]" }, PORT_ERR);
+      await testInvalidTransform({ port: VERY_LONG_STRING }, PORT_ERR);
+
+      
+      await testValidTransform({ path: "" }); 
+      await testValidTransform({ path: "/slash" });
+      await testValidTransform({ path: "/ref#ok" }); 
+      await testValidTransform({ path: "/\n\t\x00" }); 
+      
+      
+      await testValidTransform({ path: "noslash" });
+      await testValidTransform({ path: "http://example.com/" });
+      await testInvalidTransform({ path: VERY_LONG_STRING });
+
+      
+      await testValidTransform({ query: "" }); 
+      await testValidTransform({ query: "?suffix" });
+      await testValidTransform({ query: "?ref#ok" }); 
+      await testValidTransform({ query: "?\n\t\x00" }); 
+      await testInvalidTransform(
+        { query: "noquestionmark" },
+        "redirect.transform.query should be empty or start with a '?'"
+      );
+      await testInvalidTransform({ query: "?" + VERY_LONG_STRING });
+
+      
+      await testInvalidTransform(
+        { query: "", queryTransform: {} },
+        "redirect.transform.query and redirect.transform.queryTransform are mutually exclusive"
+      );
+      await testValidTransform({ queryTransform: {} });
+      await testValidTransform({ queryTransform: { removeParams: [] } });
+      await testValidTransform({ queryTransform: { removeParams: ["x"] } });
+      await testValidTransform({ queryTransform: { addOrReplaceParams: [] } });
+      await testValidTransform({
+        queryTransform: {
+          addOrReplaceParams: [{ key: "k", value: "v" }],
+        },
+      });
+      await testValidTransform({
+        queryTransform: {
+          addOrReplaceParams: [{ key: "k", value: "v", replaceOnly: true }],
+        },
+      });
+      await testInvalidTransform({
+        queryTransform: {
+          addOrReplaceParams: [{ key: "k", value: VERY_LONG_STRING }],
+        },
+      });
+      await testInvalidTransform(
+        {
+          queryTransform: {
+            addOrReplaceParams: [{ key: "k" }],
+          },
+        },
+        /addOrReplaceParams\.0: Property "value" is required/,
+         true
+      );
+      await testInvalidTransform(
+        {
+          queryTransform: {
+            addOrReplaceParams: [{ value: "v" }],
+          },
+        },
+        /addOrReplaceParams\.0: Property "key" is required/,
+         true
+      );
+
+      
+      await testValidTransform({ fragment: "" }); 
+      await testValidTransform({ fragment: "#suffix" });
+      await testValidTransform({ fragment: "#\n\t\x00" }); 
+      await testInvalidTransform(
+        { fragment: "nohash" },
+        "redirect.transform.fragment should be empty or start with a '#'"
+      );
+      await testInvalidTransform({ fragment: "#" + VERY_LONG_STRING });
+
+      
+      await testValidTransform({ username: "" }); 
+      await testValidTransform({ username: "username" });
+      await testValidTransform({ username: "@:" }); 
+      await testInvalidTransform({ username: VERY_LONG_STRING });
+
+      
+      await testValidTransform({ password: "" }); 
+      await testValidTransform({ password: "pass" });
+      await testValidTransform({ password: "@:" }); 
+      await testInvalidTransform({ password: VERY_LONG_STRING });
+
+      
+      await testValidTransform({
+        scheme: "http",
+        username: "a",
+        password: "b",
+        host: "c",
+        port: "12345",
+        path: "/d",
+        query: "?e",
+        queryTransform: null,
+        fragment: "#f",
+      });
 
       browser.test.notifyPass();
     },

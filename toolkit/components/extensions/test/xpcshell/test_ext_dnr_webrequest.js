@@ -11,6 +11,12 @@ const server = createHttpServer({
 server.registerPathHandler("/never_reached", (req, res) => {
   Assert.ok(false, "Server should never have been reached");
 });
+server.registerPathHandler("/source", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+});
+server.registerPathHandler("/destination", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+});
 
 add_task(async function block_request_with_dnr() {
   async function background() {
@@ -188,6 +194,89 @@ add_task(async function block_request_with_webRequest_after_allow_with_dnr() {
   let extension = ExtensionTestUtils.loadExtension({
     background,
     temporarilyInstalled: true, 
+    manifest: {
+      manifest_version: 3,
+      granted_host_permissions: true,
+      host_permissions: ["*://example.com/*"],
+      permissions: [
+        "declarativeNetRequest",
+        "webRequest",
+        "webRequestBlocking",
+      ],
+    },
+  });
+  await extension.startup();
+  await extension.awaitFinish();
+  await extension.unload();
+});
+
+add_task(async function redirect_with_webRequest_after_failing_dnr_redirect() {
+  async function background() {
+    
+    const network_standard_url_max_length = 1048576;
+    
+    
+    
+    
+    const VERY_LONG_STRING = "x".repeat(network_standard_url_max_length - 20);
+
+    browser.webRequest.onBeforeRequest.addListener(
+      d => {
+        return { redirectUrl: "http://redir/destination?by-webrequest" };
+      },
+      { urls: ["*://example.com/*"] },
+      ["blocking"]
+    );
+    await browser.declarativeNetRequest.updateSessionRules({
+      addRules: [
+        {
+          id: 1,
+          condition: { requestDomains: ["example.com"] },
+          action: {
+            type: "redirect",
+            redirect: {
+              transform: {
+                host: "redir",
+                path: "/destination",
+                queryTransform: {
+                  addOrReplaceParams: [
+                    { key: "dnr", value: VERY_LONG_STRING, replaceOnly: true },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      ],
+    });
+
+    
+    
+    
+    
+    const shortx = s => s.replace(/x{10,}/g, xxx => `x{${xxx.length}}`);
+
+    browser.test.assertEq(
+      "http://redir/destination?1",
+      shortx((await fetch("http://example.com/never_reached?1")).url),
+      "Successful DNR redirect."
+    );
+
+    
+    
+    
+    browser.test.assertEq(
+      "http://redir/destination?by-webrequest",
+      shortx((await fetch("http://example.com/source?dnr")).url),
+      "When DNR fails, we fall back to webRequest redirect"
+    );
+
+    browser.test.notifyPass();
+  }
+  let extension = ExtensionTestUtils.loadExtension({
+    background,
+    temporarilyInstalled: true, 
+    allowInsecureRequests: true,
     manifest: {
       manifest_version: 3,
       granted_host_permissions: true,
