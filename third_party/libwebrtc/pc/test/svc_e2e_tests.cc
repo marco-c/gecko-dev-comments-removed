@@ -335,11 +335,12 @@ INSTANTIATE_TEST_SUITE_P(
     SvcTest,
     Combine(ValuesIn({
                 SvcTestParameters::Create(kH264CodecName, "L1T1"),
-                
-                
+                SvcTestParameters::Create(kH264CodecName, "L1T2"),
+                SvcTestParameters::Create(kH264CodecName, "L1T3"),
             }),
-            Values(UseDependencyDescriptor::Disabled,
-                   UseDependencyDescriptor::Enabled)),
+            
+            
+            Values(UseDependencyDescriptor::Enabled)),
     SvcTestNameGenerator);
 #endif
 
