@@ -37,7 +37,11 @@ module.exports = {
     "../**/*.stories.md",
     "../stories/**/*.stories.mdx",
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
-    `${projectRoot}/toolkit/**/*.stories.@(js|jsx|mjs|ts|tsx|md)`,
+    {
+      directory: `${projectRoot}/toolkit/content/widgets`,
+      files: `**/*.stories.@(js|jsx|mjs|ts|tsx|md)`,
+      titlePrefix: "UI Widgets",
+    },
   ],
   
   
