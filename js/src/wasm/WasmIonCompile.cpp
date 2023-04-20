@@ -4274,6 +4274,32 @@ class FunctionCompiler {
     return true;
   }
 
+  [[nodiscard]] bool brOnNonStruct(const DefVector& values) {
+    if (inDeadCode()) {
+      return true;
+    }
+
+    MBasicBlock* fallthroughBlock = nullptr;
+    if (!newBlock(curBlock_, &fallthroughBlock)) {
+      return false;
+    }
+
+    MOZ_ASSERT(values.length() > 0);
+    MOZ_ASSERT(values.back()->type() == MIRType::RefOrNull);
+
+    MGoto* jump = MGoto::New(alloc(), fallthroughBlock);
+    if (!jump) {
+      return false;
+    }
+    if (!pushDefs(values)) {
+      return false;
+    }
+
+    curBlock_->end(jump);
+    curBlock_ = fallthroughBlock;
+    return true;
+  }
+
   
 
   
@@ -7017,6 +7043,16 @@ static bool EmitRefAsStruct(FunctionCompiler& f) {
   return true;
 }
 
+static bool EmitBrOnNonStruct(FunctionCompiler& f) {
+  uint32_t labelRelativeDepth;
+  ResultType labelType;
+  DefVector values;
+  if (!f.iter().readBrOnNonStruct(&labelRelativeDepth, &labelType, &values)) {
+    return false;
+  }
+  return f.brOnNonStruct(values);
+}
+
 static bool EmitExternInternalize(FunctionCompiler& f) {
   
   
@@ -7656,6 +7692,8 @@ static bool EmitBodyExprs(FunctionCompiler& f) {
             CHECK(EmitBrOnCastCommon(f, false));
           case uint32_t(GcOp::RefAsStruct):
             CHECK(EmitRefAsStruct(f));
+          case uint32_t(GcOp::BrOnNonStruct):
+            CHECK(EmitBrOnNonStruct(f));
           case uint16_t(GcOp::ExternInternalize):
             CHECK(EmitExternInternalize(f));
           case uint16_t(GcOp::ExternExternalize):
