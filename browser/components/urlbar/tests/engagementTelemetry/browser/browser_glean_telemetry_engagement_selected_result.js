@@ -9,6 +9,9 @@
 
 
 
+
+requestLongerTimeout(5);
+
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/browser/components/urlbar/tests/ext/browser/head.js",
   this
@@ -477,26 +480,6 @@ add_task(async function selected_result_site_specific_contextual_search() {
   await SpecialPowers.popPrefEnv();
 });
 
-add_task(async function selected_result_weather() {
-  await doTest(async browser => {
-    
-    await lazy.MerinoTestUtils.initWeather();
-
-    await showResultByArrowDown();
-    EventUtils.synthesizeKey("KEY_ArrowDown");
-    await doEnter();
-
-    assertEngagementTelemetry([
-      {
-        selected_result: "weather",
-        selected_result_subtype: "",
-        provider: "Weather",
-        results: "weather,action",
-      },
-    ]);
-  });
-});
-
 add_task(async function selected_result_experimental_addon() {
   const extension = await loadExtension({
     background: async () => {
@@ -626,4 +609,31 @@ add_task(async function selected_result_input_field() {
 
     assertEngagementTelemetry(expected);
   });
+});
+
+add_task(async function selected_result_weather() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.quickactions.enabled", false]],
+  });
+
+  const cleanupQuickSuggest = await ensureQuickSuggestInit();
+  await MerinoTestUtils.initWeather();
+
+  await doTest(async browser => {
+    await openPopup("");
+    await selectRowByProvider("Weather");
+    await doEnter();
+
+    assertEngagementTelemetry([
+      {
+        selected_result: "weather",
+        selected_result_subtype: "",
+        provider: "Weather",
+        results: "weather",
+      },
+    ]);
+  });
+
+  cleanupQuickSuggest();
+  await SpecialPowers.popPrefEnv();
 });

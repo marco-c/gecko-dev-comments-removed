@@ -22,8 +22,7 @@ XPCOMUtils.defineLazyGetter(lazy, "QuickSuggestTestUtils", () => {
   return module;
 });
 
-
-XPCOMUtils.defineLazyGetter(lazy, "MerinoTestUtils", () => {
+XPCOMUtils.defineLazyGetter(this, "MerinoTestUtils", () => {
   const { MerinoTestUtils: module } = ChromeUtils.importESModule(
     "resource://testing-common/MerinoTestUtils.sys.mjs"
   );
