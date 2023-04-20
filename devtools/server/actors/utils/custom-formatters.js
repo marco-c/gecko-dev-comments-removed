@@ -11,7 +11,25 @@ loader.lazyRequireGetter(
   true
 );
 
+loader.lazyRequireGetter(
+  this,
+  "createValueGripForTarget",
+  "resource://devtools/server/actors/object/utils.js",
+  true
+);
+
 const _invalidCustomFormatterHooks = new WeakSet();
+function addInvalidCustomFormatterHooks(hook) {
+  if (!hook) {
+    return;
+  }
+
+  try {
+    _invalidCustomFormatterHooks.add(hook);
+  } catch (e) {
+    console.error("Couldn't add hook to the WeakSet", hook);
+  }
+}
 
 
 class FormatterError extends Error {
@@ -33,8 +51,8 @@ class FormatterError extends Error {
 
 
 
-
-function customFormatterHeader(rawValue) {
+function customFormatterHeader(objectActor) {
+  const rawValue = objectActor.rawValue();
   const globalWrapper = Cu.getGlobalForObject(rawValue);
   const global = globalWrapper?.wrappedJSObject;
 
@@ -43,13 +61,30 @@ function customFormatterHeader(rawValue) {
     return null;
   }
 
+  const customFormatterTooDeep =
+    (objectActor.hooks.customFormatterObjectTagDepth || 0) > 20;
+  if (customFormatterTooDeep) {
+    logCustomFormatterError(
+      globalWrapper,
+      `Too deep hierarchy of inlined custom previews`
+    );
+    return null;
+  }
+
   
   
   const dbg = makeSideeffectFreeDebugger();
 
   try {
+    const targetActor = objectActor.thread._parent;
+    const {
+      customFormatterConfig,
+      customFormatterObjectTagDepth,
+    } = objectActor.hooks;
+
     const dbgGlobal = dbg.makeGlobalObjectReference(global);
-    const debuggeeValue = dbgGlobal.makeDebuggeeValue(rawValue);
+    const valueDbgObj = dbgGlobal.makeDebuggeeValue(rawValue);
+    const configDbgObj = dbgGlobal.makeDebuggeeValue(customFormatterConfig);
 
     for (const [
       customFormatterIndex,
@@ -65,18 +100,21 @@ function customFormatterHeader(rawValue) {
       try {
         const rv = processFormatterForHeader({
           customFormatterIndex,
-          debuggeeValue,
+          customFormatterObjectTagDepth,
+          valueDbgObj,
+          configDbgObj,
           formatter,
           dbgGlobal,
           globalWrapper,
           global,
+          targetActor,
         });
         
         if (rv) {
+          dbg.removeAllDebuggees();
           return rv;
         }
       } catch (e) {
-        _invalidCustomFormatterHooks.add(formatter);
         logCustomFormatterError(
           globalWrapper,
           e instanceof FormatterError
@@ -85,6 +123,7 @@ function customFormatterHeader(rawValue) {
           
           e.script
         );
+        addInvalidCustomFormatterHooks(formatter);
       }
     }
   } finally {
@@ -118,12 +157,18 @@ exports.customFormatterHeader = customFormatterHeader;
 
 
 
+
+
+
+
 function processFormatterForHeader({
   customFormatterIndex,
+  customFormatterObjectTagDepth,
   formatter,
-  debuggeeValue,
+  valueDbgObj,
+  configDbgObj,
   dbgGlobal,
-  global,
+  targetActor,
 }) {
   const headerType = typeof formatter?.header;
   if (headerType !== "function") {
@@ -132,7 +177,11 @@ function processFormatterForHeader({
 
   
   const formatterHeaderDbgValue = dbgGlobal.makeDebuggeeValue(formatter.header);
-  const header = formatterHeaderDbgValue.call(dbgGlobal, debuggeeValue);
+  const header = formatterHeaderDbgValue.call(
+    dbgGlobal,
+    valueDbgObj,
+    configDbgObj
+  );
 
   
   if (header?.return === null) {
@@ -165,13 +214,23 @@ function processFormatterForHeader({
     );
   }
 
+  const sanitizedHeader = buildJsonMlFromCustomFormatterHookResult(
+    header.return,
+    customFormatterObjectTagDepth,
+    targetActor
+  );
+
   let hasBody = false;
   const hasBodyType = typeof formatter?.hasBody;
   if (hasBodyType === "function") {
     const formatterHasBodyDbgValue = dbgGlobal.makeDebuggeeValue(
       formatter.hasBody
     );
-    hasBody = formatterHasBodyDbgValue.call(dbgGlobal, debuggeeValue);
+    hasBody = formatterHasBodyDbgValue.call(
+      dbgGlobal,
+      valueDbgObj,
+      configDbgObj
+    );
 
     if (hasBody == null) {
       throw new FormatterError(
@@ -193,10 +252,7 @@ function processFormatterForHeader({
   return {
     useCustomFormatter: true,
     customFormatterIndex,
-    
-    
-    
-    header: global.structuredClone(rawHeader),
+    header: sanitizedHeader,
     hasBody: !!hasBody?.return,
   };
 }
@@ -209,7 +265,9 @@ function processFormatterForHeader({
 
 
 
-async function customFormatterBody(rawValue, customFormatterIndex) {
+
+async function customFormatterBody(objectActor, customFormatterIndex) {
+  const rawValue = objectActor.rawValue();
   const globalWrapper = Cu.getGlobalForObject(rawValue);
   const global = globalWrapper?.wrappedJSObject;
 
@@ -217,6 +275,12 @@ async function customFormatterBody(rawValue, customFormatterIndex) {
   
   const dbg = makeSideeffectFreeDebugger();
   try {
+    const targetActor = objectActor.thread._parent;
+    const {
+      customFormatterConfig,
+      customFormatterObjectTagDepth,
+    } = objectActor.hooks;
+
     const dbgGlobal = dbg.makeGlobalObjectReference(global);
     const formatter = global.devtoolsFormatters[customFormatterIndex];
 
@@ -228,11 +292,11 @@ async function customFormatterBody(rawValue, customFormatterIndex) {
 
     const bodyType = typeof formatter?.body;
     if (bodyType !== "function") {
-      _invalidCustomFormatterHooks.add(formatter);
       logCustomFormatterError(
         globalWrapper,
         `devtoolsFormatters[${customFormatterIndex}].body should be a function, got ${bodyType}`
       );
+      addInvalidCustomFormatterHooks(formatter);
       return {
         customFormatterBody: null,
       };
@@ -242,31 +306,34 @@ async function customFormatterBody(rawValue, customFormatterIndex) {
       formatter && dbgGlobal.makeDebuggeeValue(formatter.body);
     const body = formatterBodyDbgValue.call(
       dbgGlobal,
-      dbgGlobal.makeDebuggeeValue(rawValue)
+      dbgGlobal.makeDebuggeeValue(rawValue),
+      dbgGlobal.makeDebuggeeValue(customFormatterConfig)
     );
     if (body?.return?.class === "Array") {
       const rawBody = body.return.unsafeDereference();
       if (rawBody.length === 0) {
-        _invalidCustomFormatterHooks.add(formatter);
         logCustomFormatterError(
           globalWrapper,
           `devtoolsFormatters[${customFormatterIndex}].body returned an empty array`,
           formatterBodyDbgValue?.script
         );
+        addInvalidCustomFormatterHooks(formatter);
         return {
           customFormatterBody: null,
         };
       }
 
+      const customFormatterBodyJsonMl = buildJsonMlFromCustomFormatterHookResult(
+        body.return,
+        customFormatterObjectTagDepth,
+        targetActor
+      );
+
       return {
-        
-        
-        
-        customFormatterBody: global.structuredClone(rawBody),
+        customFormatterBody: customFormatterBodyJsonMl,
       };
     }
 
-    _invalidCustomFormatterHooks.add(formatter);
     let errorMsg = "";
     if (body == null) {
       errorMsg = `devtoolsFormatters[${customFormatterIndex}].body was not run because it has side effects`;
@@ -287,6 +354,7 @@ async function customFormatterBody(rawValue, customFormatterIndex) {
       errorMsg,
       formatterBodyDbgValue?.script
     );
+    addInvalidCustomFormatterHooks(formatter);
   } catch (e) {
     logCustomFormatterError(
       globalWrapper,
@@ -328,4 +396,134 @@ function logCustomFormatterError(window, errorMsg, script) {
     window.windowGlobalChild.innerWindowId
   );
   Services.console.logMessage(scriptError);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function buildJsonMlFromCustomFormatterHookResult(
+  jsonMlDbgObj,
+  customFormatterObjectTagDepth,
+  targetActor
+) {
+  const tagName = jsonMlDbgObj.getProperty(0)?.return;
+  if (typeof tagName !== "string") {
+    const tagNameType =
+      tagName?.class || (tagName === null ? "null" : typeof tagName);
+    throw new Error(`tagName should be a string, got ${tagNameType}`);
+  }
+
+  
+  const rest = [];
+  const dbgObjLength = jsonMlDbgObj.getProperty("length")?.return || 0;
+  for (let i = 1; i < dbgObjLength; i++) {
+    rest.push(jsonMlDbgObj.getProperty(i)?.return);
+  }
+
+  
+  
+  const attributesDbgObj =
+    rest[0] && rest[0].class === "Object" ? rest[0] : null;
+  const childrenDbgObj = attributesDbgObj ? rest.slice(1) : rest;
+
+  
+  
+  if (tagName == "object") {
+    if (!attributesDbgObj) {
+      throw new Error(`"object" tag should have attributes`);
+    }
+
+    
+    
+    return processObjectTag(
+      attributesDbgObj,
+      customFormatterObjectTagDepth,
+      targetActor
+    );
+  }
+
+  const jsonMl = [tagName, {}];
+  if (attributesDbgObj) {
+    
+    jsonMl[1].style = attributesDbgObj.getProperty("style")?.return;
+  }
+
+  
+  for (const childDbgObj of childrenDbgObj) {
+    const childDbgObjType = typeof childDbgObj;
+    if (childDbgObj?.class === "Array") {
+      
+      jsonMl.push(
+        buildJsonMlFromCustomFormatterHookResult(
+          childDbgObj,
+          customFormatterObjectTagDepth,
+          targetActor
+        )
+      );
+    } else if (childDbgObjType == "object" && childDbgObj !== null) {
+      
+      jsonMl.push("[object Object]");
+    } else {
+      
+      
+      const grip = createValueGripForTarget(targetActor, childDbgObj);
+      if (grip !== null) {
+        jsonMl.push(grip);
+      }
+    }
+  }
+  return jsonMl;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function processObjectTag(
+  attributesDbgObj,
+  customFormatterObjectTagDepth,
+  targetActor
+) {
+  const objectDbgObj = attributesDbgObj.getProperty("object")?.return;
+  if (typeof objectDbgObj == "undefined") {
+    throw new Error(
+      `attribute of "object" tag should have an "object" property`
+    );
+  }
+
+  
+  
+  
+  
+  const configRv = attributesDbgObj.getProperty("config");
+  const grip = createValueGripForTarget(targetActor, objectDbgObj, 0, {
+    
+    
+    
+    customFormatterConfig: configRv?.return?.unsafeDereference(),
+    customFormatterObjectTagDepth: (customFormatterObjectTagDepth || 0) + 1,
+  });
+
+  return grip;
 }
