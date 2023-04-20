@@ -126,7 +126,8 @@ void PassFramesThroughAnalyzer(DefaultVideoQualityAnalyzer& analyzer,
     frame.set_id(frame_id);
     analyzer.OnFramePreEncode(sender, frame);
     analyzer.OnFrameEncoded(sender, frame.id(), FakeEncode(frame),
-                            VideoQualityAnalyzerInterface::EncoderStats());
+                            VideoQualityAnalyzerInterface::EncoderStats(),
+                            false);
     for (absl::string_view receiver : receivers) {
       VideoFrame received_frame = DeepCopy(frame);
       analyzer.OnFramePreDecode(receiver, received_frame.id(),
@@ -165,7 +166,8 @@ TEST(DefaultVideoQualityAnalyzerTest,
     captured_frames.insert({frame.id(), frame});
     analyzer.OnFramePreEncode(kSenderPeerName, frame);
     analyzer.OnFrameEncoded(kSenderPeerName, frame.id(), FakeEncode(frame),
-                            VideoQualityAnalyzerInterface::EncoderStats());
+                            VideoQualityAnalyzerInterface::EncoderStats(),
+                            false);
   }
 
   for (const uint16_t& frame_id : frames_order) {
@@ -218,7 +220,8 @@ TEST(DefaultVideoQualityAnalyzerTest,
     captured_frames.insert({frame.id(), frame});
     analyzer.OnFramePreEncode(kSenderPeerName, frame);
     analyzer.OnFrameEncoded(kSenderPeerName, frame.id(), FakeEncode(frame),
-                            VideoQualityAnalyzerInterface::EncoderStats());
+                            VideoQualityAnalyzerInterface::EncoderStats(),
+                            false);
   }
 
   
@@ -246,7 +249,8 @@ TEST(DefaultVideoQualityAnalyzerTest,
     captured_frames.insert({frame.id(), frame});
     analyzer.OnFramePreEncode(kSenderPeerName, frame);
     analyzer.OnFrameEncoded(kSenderPeerName, frame.id(), FakeEncode(frame),
-                            VideoQualityAnalyzerInterface::EncoderStats());
+                            VideoQualityAnalyzerInterface::EncoderStats(),
+                            false);
   }
 
   
@@ -299,7 +303,8 @@ TEST(DefaultVideoQualityAnalyzerTest,
     captured_frames.insert({frame.id(), frame});
     analyzer.OnFramePreEncode(kSenderPeerName, frame);
     analyzer.OnFrameEncoded(kSenderPeerName, frame.id(), FakeEncode(frame),
-                            VideoQualityAnalyzerInterface::EncoderStats());
+                            VideoQualityAnalyzerInterface::EncoderStats(),
+                            false);
   }
 
   for (size_t i = kMaxFramesInFlightPerStream; i < frames_order.size(); ++i) {
@@ -350,7 +355,8 @@ TEST(DefaultVideoQualityAnalyzerTest, NormalScenario) {
     captured_frames.insert({frame.id(), frame});
     analyzer.OnFramePreEncode(kSenderPeerName, frame);
     analyzer.OnFrameEncoded(kSenderPeerName, frame.id(), FakeEncode(frame),
-                            VideoQualityAnalyzerInterface::EncoderStats());
+                            VideoQualityAnalyzerInterface::EncoderStats(),
+                            false);
   }
 
   for (size_t i = 1; i < frames_order.size(); i += 2) {
@@ -405,7 +411,7 @@ TEST(DefaultVideoQualityAnalyzerTest, OneFrameReceivedTwice) {
   analyzer.OnFramePreEncode(kSenderPeerName, captured_frame);
   analyzer.OnFrameEncoded(kSenderPeerName, captured_frame.id(),
                           FakeEncode(captured_frame),
-                          VideoQualityAnalyzerInterface::EncoderStats());
+                          VideoQualityAnalyzerInterface::EncoderStats(), false);
 
   VideoFrame received_frame = DeepCopy(captured_frame);
   analyzer.OnFramePreDecode(kReceiverPeerName, received_frame.id(),
@@ -465,7 +471,8 @@ TEST(DefaultVideoQualityAnalyzerTest, NormalScenario2Receivers) {
     analyzer.OnFramePreEncode(kAlice, frame);
     SleepMs(20);
     analyzer.OnFrameEncoded(kAlice, frame.id(), FakeEncode(frame),
-                            VideoQualityAnalyzerInterface::EncoderStats());
+                            VideoQualityAnalyzerInterface::EncoderStats(),
+                            false);
   }
 
   SleepMs(50);
@@ -592,7 +599,7 @@ TEST(DefaultVideoQualityAnalyzerTest,
   analyzer.OnFramePreEncode(kAlice, captured_frame);
   analyzer.OnFrameEncoded(kAlice, captured_frame.id(),
                           FakeEncode(captured_frame),
-                          VideoQualityAnalyzerInterface::EncoderStats());
+                          VideoQualityAnalyzerInterface::EncoderStats(), false);
 
   VideoFrame received_frame = DeepCopy(captured_frame);
   analyzer.OnFramePreDecode(kBob, received_frame.id(),
@@ -653,7 +660,8 @@ TEST(DefaultVideoQualityAnalyzerTest, HeavyQualityMetricsFromEqualFrames) {
         analyzer.OnFrameCaptured(kSenderPeerName, kStreamLabel, frame));
     analyzer.OnFramePreEncode(kSenderPeerName, frame);
     analyzer.OnFrameEncoded(kSenderPeerName, frame.id(), FakeEncode(frame),
-                            VideoQualityAnalyzerInterface::EncoderStats());
+                            VideoQualityAnalyzerInterface::EncoderStats(),
+                            false);
 
     VideoFrame received_frame = DeepCopy(frame);
     analyzer.OnFramePreDecode(kReceiverPeerName, received_frame.id(),
@@ -713,7 +721,8 @@ TEST(DefaultVideoQualityAnalyzerTest,
         analyzer.OnFrameCaptured(kSenderPeerName, kStreamLabel, frame));
     analyzer.OnFramePreEncode(kSenderPeerName, frame);
     analyzer.OnFrameEncoded(kSenderPeerName, frame.id(), FakeEncode(frame),
-                            VideoQualityAnalyzerInterface::EncoderStats());
+                            VideoQualityAnalyzerInterface::EncoderStats(),
+                            false);
 
     VideoFrame received_frame = frame;
     
@@ -776,7 +785,8 @@ TEST(DefaultVideoQualityAnalyzerTest, CpuUsage) {
     captured_frames.insert({frame.id(), frame});
     analyzer.OnFramePreEncode(kSenderPeerName, frame);
     analyzer.OnFrameEncoded(kSenderPeerName, frame.id(), FakeEncode(frame),
-                            VideoQualityAnalyzerInterface::EncoderStats());
+                            VideoQualityAnalyzerInterface::EncoderStats(),
+                            false);
   }
 
   
@@ -841,7 +851,8 @@ TEST(DefaultVideoQualityAnalyzerTest, RuntimeParticipantsAdding) {
     captured_frames.insert({frame.id(), frame});
     analyzer.OnFramePreEncode(kAlice, frame);
     analyzer.OnFrameEncoded(kAlice, frame.id(), FakeEncode(frame),
-                            VideoQualityAnalyzerInterface::EncoderStats());
+                            VideoQualityAnalyzerInterface::EncoderStats(),
+                            false);
   }
 
   
@@ -984,7 +995,7 @@ TEST(DefaultVideoQualityAnalyzerTest,
   analyzer.OnFramePreEncode(kAlice, frame);
   
   analyzer.OnFrameEncoded(kAlice, frame.id(), FakeEncode(frame),
-                          VideoQualityAnalyzerInterface::EncoderStats());
+                          VideoQualityAnalyzerInterface::EncoderStats(), false);
 
   
   VideoFrame received_frame = DeepCopy(frame);
@@ -1003,7 +1014,7 @@ TEST(DefaultVideoQualityAnalyzerTest,
 
   
   analyzer.OnFrameEncoded(kAlice, frame.id(), FakeEncode(frame),
-                          VideoQualityAnalyzerInterface::EncoderStats());
+                          VideoQualityAnalyzerInterface::EncoderStats(), false);
 
   
   
@@ -1047,7 +1058,8 @@ TEST(DefaultVideoQualityAnalyzerTest,
     frames.push_back(frame);
     analyzer.OnFramePreEncode(kSenderPeerName, frame);
     analyzer.OnFrameEncoded(kSenderPeerName, frame.id(), FakeEncode(frame),
-                            VideoQualityAnalyzerInterface::EncoderStats());
+                            VideoQualityAnalyzerInterface::EncoderStats(),
+                            false);
   }
 
   
@@ -1143,7 +1155,8 @@ TEST(DefaultVideoQualityAnalyzerTest,
     frames.push_back(frame);
     analyzer.OnFramePreEncode(kSenderPeerName, frame);
     analyzer.OnFrameEncoded(kSenderPeerName, frame.id(), FakeEncode(frame),
-                            VideoQualityAnalyzerInterface::EncoderStats());
+                            VideoQualityAnalyzerInterface::EncoderStats(),
+                            false);
   }
 
   
@@ -1241,7 +1254,7 @@ TEST(DefaultVideoQualityAnalyzerTest, CodecTrackedCorrectly) {
       analyzer.OnFramePreEncode(kSenderPeerName, frame);
       encoder_stats.encoder_name = codec_names[i];
       analyzer.OnFrameEncoded(kSenderPeerName, frame.id(), FakeEncode(frame),
-                              encoder_stats);
+                              encoder_stats, false);
       frames.push_back(std::move(frame));
     }
   }
@@ -1322,9 +1335,9 @@ TEST(DefaultVideoQualityAnalyzerTest,
     analyzer.OnFramePreEncode(kSenderPeerName, frames[i]);
   }
   for (int i = 0; i < 4; ++i) {
-    analyzer.OnFrameEncoded(kSenderPeerName, frames[i].id(),
-                            FakeEncode(frames[i]),
-                            VideoQualityAnalyzerInterface::EncoderStats());
+    analyzer.OnFrameEncoded(
+        kSenderPeerName, frames[i].id(), FakeEncode(frames[i]),
+        VideoQualityAnalyzerInterface::EncoderStats(), false);
   }
 
   
@@ -1415,9 +1428,9 @@ TEST(
     analyzer.OnFramePreEncode(kSenderPeerName, frames[i]);
   }
   for (int i = 0; i < 4; ++i) {
-    analyzer.OnFrameEncoded(kSenderPeerName, frames[i].id(),
-                            FakeEncode(frames[i]),
-                            VideoQualityAnalyzerInterface::EncoderStats());
+    analyzer.OnFrameEncoded(
+        kSenderPeerName, frames[i].id(), FakeEncode(frames[i]),
+        VideoQualityAnalyzerInterface::EncoderStats(), false);
   }
 
   
@@ -1517,7 +1530,8 @@ TEST(DefaultVideoQualityAnalyzerTest, GetStreamFrames) {
     frames.push_back(frame);
     analyzer.OnFramePreEncode(sender, frame);
     analyzer.OnFrameEncoded(sender, frame.id(), FakeEncode(frame),
-                            VideoQualityAnalyzerInterface::EncoderStats());
+                            VideoQualityAnalyzerInterface::EncoderStats(),
+                            false);
   }
   
 
@@ -1547,7 +1561,7 @@ TEST(DefaultVideoQualityAnalyzerTest, ReceiverReceivedFramesWhenSenderRemoved) {
   frame.set_id(frame_id);
   analyzer.OnFramePreEncode("alice", frame);
   analyzer.OnFrameEncoded("alice", frame.id(), FakeEncode(frame),
-                          VideoQualityAnalyzerInterface::EncoderStats());
+                          VideoQualityAnalyzerInterface::EncoderStats(), false);
 
   analyzer.UnregisterParticipantInCall("alice");
 
@@ -1591,7 +1605,7 @@ TEST(DefaultVideoQualityAnalyzerTest,
   frame.set_id(frame_id);
   analyzer.OnFramePreEncode("alice", frame);
   analyzer.OnFrameEncoded("alice", frame.id(), FakeEncode(frame),
-                          VideoQualityAnalyzerInterface::EncoderStats());
+                          VideoQualityAnalyzerInterface::EncoderStats(), false);
 
   analyzer.UnregisterParticipantInCall("alice");
 
@@ -1635,7 +1649,7 @@ TEST(DefaultVideoQualityAnalyzerTest,
   frame.set_id(frame_id);
   analyzer.OnFramePreEncode("alice", frame);
   analyzer.OnFrameEncoded("alice", frame.id(), FakeEncode(frame),
-                          VideoQualityAnalyzerInterface::EncoderStats());
+                          VideoQualityAnalyzerInterface::EncoderStats(), false);
 
   analyzer.UnregisterParticipantInCall("bob");
 
@@ -1679,7 +1693,7 @@ TEST(DefaultVideoQualityAnalyzerTest,
   frame.set_id(frame_id);
   analyzer.OnFramePreEncode("alice", frame);
   analyzer.OnFrameEncoded("alice", frame.id(), FakeEncode(frame),
-                          VideoQualityAnalyzerInterface::EncoderStats());
+                          VideoQualityAnalyzerInterface::EncoderStats(), false);
 
   analyzer.OnFramePreDecode("bob", frame.id(), FakeEncode(frame));
   analyzer.OnFrameDecoded("bob", DeepCopy(frame),
@@ -1777,7 +1791,7 @@ TEST(DefaultVideoQualityAnalyzerTest, ReceiverRemovedBeforePreEncoded) {
   analyzer.UnregisterParticipantInCall("bob");
   analyzer.OnFramePreEncode("alice", frame);
   analyzer.OnFrameEncoded("alice", frame.id(), FakeEncode(frame),
-                          VideoQualityAnalyzerInterface::EncoderStats());
+                          VideoQualityAnalyzerInterface::EncoderStats(), false);
 
   
   
@@ -1820,7 +1834,7 @@ TEST(DefaultVideoQualityAnalyzerTest, ReceiverRemovedBeforeEncoded) {
   analyzer.OnFramePreEncode("alice", frame);
   analyzer.UnregisterParticipantInCall("bob");
   analyzer.OnFrameEncoded("alice", frame.id(), FakeEncode(frame),
-                          VideoQualityAnalyzerInterface::EncoderStats());
+                          VideoQualityAnalyzerInterface::EncoderStats(), false);
 
   
   
@@ -1864,11 +1878,11 @@ TEST(DefaultVideoQualityAnalyzerTest,
   analyzer.OnFramePreEncode("alice", frame);
   
   analyzer.OnFrameEncoded("alice", frame.id(), FakeEncode(frame),
-                          VideoQualityAnalyzerInterface::EncoderStats());
+                          VideoQualityAnalyzerInterface::EncoderStats(), false);
   analyzer.UnregisterParticipantInCall("bob");
   
   analyzer.OnFrameEncoded("alice", frame.id(), FakeEncode(frame),
-                          VideoQualityAnalyzerInterface::EncoderStats());
+                          VideoQualityAnalyzerInterface::EncoderStats(), false);
 
   
   
@@ -2030,7 +2044,7 @@ TEST(DefaultVideoQualityAnalyzerTest,
   analyzer.OnFramePreEncode("alice", frame);
   SleepMs(10);
   analyzer.OnFrameEncoded("alice", frame.id(), FakeEncode(frame),
-                          VideoQualityAnalyzerInterface::EncoderStats());
+                          VideoQualityAnalyzerInterface::EncoderStats(), false);
 
   analyzer.UnregisterParticipantInCall("bob");
 

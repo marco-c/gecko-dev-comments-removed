@@ -101,7 +101,8 @@ class VideoQualityAnalyzerInterface
   virtual void OnFrameEncoded(absl::string_view peer_name,
                               uint16_t frame_id,
                               const EncodedImage& encoded_image,
-                              const EncoderStats& stats) {}
+                              const EncoderStats& stats,
+                              bool discarded) {}
   
   
   virtual void OnFrameDropped(absl::string_view peer_name,
