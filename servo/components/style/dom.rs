@@ -944,7 +944,7 @@ pub trait TElement:
         -> &<SelectorImpl as selectors::parser::SelectorImpl>::BorrowedNamespaceUrl;
 
     
-    fn primary_content_box_size(&self) -> euclid::default::Size2D<app_units::Au>;
+    fn primary_content_box_size(&self) -> euclid::default::Size2D<Option<app_units::Au>>;
 }
 
 
