@@ -38,12 +38,7 @@ class nsThreadManager : public nsIThreadManager {
 
   
   
-  
-  
   void ShutdownMainThread();
-
-  
-  void ReleaseMainThread();
 
   
   

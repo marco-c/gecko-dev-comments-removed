@@ -585,6 +585,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 
     
     
+    NS_ProcessPendingEvents(thread);
     gfxPlatform::ShutdownLayersIPC();
 
     mozilla::AppShutdown::AdvanceShutdownPhase(
@@ -594,11 +595,11 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     
     ThreadEventTarget::XPCOMShutdownThreadsNotificationFinished();
 #endif
+    NS_ProcessPendingEvents(thread);
 
     
     nsTimerImpl::Shutdown();
 
-    
     NS_ProcessPendingEvents(thread);
 
     
@@ -619,6 +620,8 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     
     AppShutdown::AdvanceShutdownPhase(ShutdownPhase::XPCOMShutdownFinal);
 
+    NS_ProcessPendingEvents(thread);
+
     
     
     nsThreadManager::get().ShutdownMainThread();
@@ -628,6 +631,8 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 
     mozilla::dom::JSExecutionManager::Shutdown();
   }
+
+  AbstractThread::ShutdownMainThread();
 
   
   
@@ -642,10 +647,6 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   if (nsComponentManagerImpl::gComponentManager) {
     nsComponentManagerImpl::gComponentManager->FreeServices();
   }
-
-  
-  nsThreadManager::get().ReleaseMainThread();
-  AbstractThread::ShutdownMainThread();
 
   
   nsDirectoryService::gService = nullptr;
