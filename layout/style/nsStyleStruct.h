@@ -1290,15 +1290,17 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   
   
   mozilla::StyleDisplay mOriginalDisplay;
-  mozilla::StyleContain mContain;
   
   
-  mozilla::StyleContain mEffectiveContainment;
   mozilla::StyleContentVisibility mContentVisibility;
   mozilla::StyleContainerType mContainerType;
 
  private:
   mozilla::StyleAppearance mAppearance;
+  mozilla::StyleContain mContain;
+  
+  
+  mozilla::StyleContain mEffectiveContainment;
 
  public:
   mozilla::StyleAppearance mDefaultAppearance;
@@ -1725,6 +1727,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   inline bool
   IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() const;
   inline bool IsFixedPosContainingBlockForTransformSupportingFrames() const;
+
+  mozilla::ContainSizeAxes GetContainSizeAxes(const nsIFrame& aFrame) const;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTable {
