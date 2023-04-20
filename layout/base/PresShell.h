@@ -1791,11 +1791,11 @@ class PresShell final : public nsStubDocumentObserver,
   bool DetermineFontSizeInflationState();
 
   void RecordAlloc(void* aPtr) {
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#ifdef DEBUG
     if (!mAllocatedPointers) {
       return;  
     }
-    MOZ_DIAGNOSTIC_ASSERT(!mAllocatedPointers->Contains(aPtr));
+    MOZ_ASSERT(!mAllocatedPointers->Contains(aPtr));
     if (!mAllocatedPointers->Insert(aPtr, fallible)) {
       
       
@@ -1807,11 +1807,11 @@ class PresShell final : public nsStubDocumentObserver,
   }
 
   void RecordFree(void* aPtr) {
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#ifdef DEBUG
     if (!mAllocatedPointers) {
       return;  
     }
-    MOZ_DIAGNOSTIC_ASSERT(mAllocatedPointers->Contains(aPtr));
+    MOZ_ASSERT(mAllocatedPointers->Contains(aPtr));
     mAllocatedPointers->Remove(aPtr);
 #endif
   }
@@ -2910,7 +2910,7 @@ class PresShell final : public nsStubDocumentObserver,
   
   nsCOMPtr<nsITimer> mReflowContinueTimer;
 
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#ifdef DEBUG
   
   
   
@@ -2918,7 +2918,8 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   
-  UniquePtr<nsTHashSet<void*>> mAllocatedPointers;
+  UniquePtr<nsTHashSet<void*>> mAllocatedPointers{
+      MakeUnique<nsTHashSet<void*>>()};
 #endif
 
   
