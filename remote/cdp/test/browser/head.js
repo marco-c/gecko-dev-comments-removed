@@ -3,6 +3,12 @@
 
 "use strict";
 
+
+
+
+const { RemoteAgent } = ChromeUtils.importESModule(
+  "chrome://remote/content/components/RemoteAgent.sys.mjs"
+);
 const { RemoteAgentError } = ChromeUtils.importESModule(
   "chrome://remote/content/cdp/Error.sys.mjs"
 );
