@@ -9,5 +9,7 @@ config = {
     "locale": os.environ.get("LOCALE"),
     
     "tooltool_cache": os.environ.get("TOOLTOOL_CACHE"),
-    "run_configure": False,
+    
+    
+    "run_configure": True,
 }
