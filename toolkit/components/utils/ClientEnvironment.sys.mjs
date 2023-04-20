@@ -1,16 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 
-
+/* eslint-disable prettier/prettier */
 ChromeUtils.defineModuleGetter(
   lazy,
   "ShellService",
@@ -31,7 +27,7 @@ ChromeUtils.defineModuleGetter(
   "NormandyUtils",
   "resource://normandy/lib/NormandyUtils.jsm"
 );
-
+/* eslint-enable prettier/prettier */
 ChromeUtils.defineESModuleGetters(lazy, {
   TelemetryArchive: "resource://gre/modules/TelemetryArchive.sys.mjs",
   TelemetryController: "resource://gre/modules/TelemetryController.sys.mjs",
@@ -39,19 +35,17 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AttributionCode: "resource:///modules/AttributionCode.sys.mjs",
 });
 
-var EXPORTED_SYMBOLS = ["ClientEnvironmentBase"];
-
-
-
-
-
-
-
-
-
-
-
-class ClientEnvironmentBase {
+/**
+ * Create an object that provides general information about the client application.
+ *
+ * Components like Normandy RecipeRunner use this as part of the context for filter expressions,
+ * so avoid adding non-getter functions as attributes, as filter expressions
+ * cannot execute functions.
+ *
+ * Also note that, because filter expressions implicitly resolve promises, you
+ * can add getter functions that return promises for async data.
+ */
+export class ClientEnvironmentBase {
   static get distribution() {
     return Services.prefs
       .getDefaultBranch(null)
@@ -62,7 +56,7 @@ class ClientEnvironmentBase {
     return (async () => {
       const pings = await lazy.TelemetryArchive.promiseArchivedPingList();
 
-      
+      // get most recent ping per type
       const mostRecentPings = {};
       for (const ping of pings) {
         if (ping.type in mostRecentPings) {
@@ -88,10 +82,10 @@ class ClientEnvironmentBase {
   }
 
   static get liveTelemetry() {
-    
-    
-    
-    
+    // Construct a proxy object that forwards access to the main ping, and
+    // throws errors for other ping types. The intent is to allow using
+    // `telemetry` and `liveTelemetry` in similar ways, but to fail fast if
+    // the wrong telemetry types are accessed.
     let target = {};
     try {
       target.main = lazy.TelemetryController.getCurrentPingData();
@@ -105,7 +99,7 @@ class ClientEnvironmentBase {
           return target.main;
         }
         if (prop == "then") {
-          
+          // this isn't a Promise, but it's not a problem to check
           return undefined;
         }
         throw new Error(
@@ -118,7 +112,7 @@ class ClientEnvironmentBase {
     });
   }
 
-  
+  // Note that we intend to replace usages of this with client_id in https://bugzilla.mozilla.org/show_bug.cgi?id=1542955
   static get randomizationId() {
     let id = Services.prefs.getCharPref("app.normandy.user_id", "");
     if (!id) {
@@ -218,7 +212,7 @@ class ClientEnvironmentBase {
       try {
         version = Services.sysinfo.getProperty("version", null);
       } catch (_e) {
-        
+        // getProperty can throw if the version does not exist
       }
       if (version) {
         version = coerceToNumber(version);
@@ -238,11 +232,11 @@ class ClientEnvironmentBase {
         return getOsVersion();
       },
 
-      
-
-
-
-
+      /**
+       * Gets the windows build number by querying the OS directly. The initial
+       * version was copied from toolkit/components/telemetry/app/TelemetryEnvironment.jsm
+       * @returns {number | null} The build number, or null on non-Windows platform or if there is an error.
+       */
       get windowsBuildNumber() {
         if (!osInfo.isWindows) {
           return null;
@@ -253,9 +247,9 @@ class ClientEnvironmentBase {
 
       get macVersion() {
         const darwinVersion = osInfo.darwinVersion;
-        
+        // Versions of OSX with Darwin < 5 don't follow this pattern
         if (darwinVersion >= 5) {
-          
+          // OSX 10.1 used Darwin 5, OSX 10.2 used Darwin 6, and so on.
           const intPart = Math.floor(darwinVersion);
           return 10 + 0.1 * (intPart - 4);
         }
@@ -269,8 +263,8 @@ class ClientEnvironmentBase {
         return getOsVersion();
       },
 
-      
-      
+      // Version information on linux is a lot harder and a lot less useful, so
+      // don't do anything about it here.
     };
 
     return osInfo;

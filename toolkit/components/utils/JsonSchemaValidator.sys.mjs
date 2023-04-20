@@ -1,23 +1,19 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* This file implements a not-quite standard JSON schema validator. It differs
+ * from the spec in a few ways:
+ *
+ *  - the spec doesn't allow custom types to be defined, but this validator
+ *    defines "URL", "URLorEmpty", "origin" etc.
+ * - Strings are automatically converted to `URL` objects for the appropriate
+ *   types.
+ * - It doesn't support "pattern" when matching strings.
+ * - The boolean type accepts (and casts) 0 and 1 as valid values.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-"use strict";
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -27,103 +23,101 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   );
   return new ConsoleAPI({
     prefix: "JsonSchemaValidator.jsm",
-    
-    
+    // tip: set maxLogLevel to "debug" and use log.debug() to create detailed
+    // messages during development. See LOG_LEVELS in Console.sys.mjs for details.
     maxLogLevel: "error",
   });
 });
 
-var EXPORTED_SYMBOLS = ["JsonSchemaValidator"];
-
-
-
-
-
-
-
-class JsonSchemaValidator {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * To validate a single value, use the static `JsonSchemaValidator.validate`
+ * method.  If you need to validate multiple values, you instead might want to
+ * make a JsonSchemaValidator instance with the options you need and then call
+ * the `validate` instance method.
+ */
+export class JsonSchemaValidator {
+  /**
+   * Validates a value against a schema.
+   *
+   * @param {*} value
+   *   The value to validate.
+   * @param {object} schema
+   *   The schema to validate against.
+   * @param {boolean} allowArrayNonMatchingItems
+   *   When true:
+   *     Invalid items in arrays will be ignored, and they won't be included in
+   *     result.parsedValue.
+   *   When false:
+   *     Invalid items in arrays will cause validation to fail.
+   * @param {boolean} allowExplicitUndefinedProperties
+   *   When true:
+   *     `someProperty: undefined` will be allowed for non-required properties.
+   *   When false:
+   *     `someProperty: undefined` will cause validation to fail even for
+   *     properties that are not required.
+   * @param {boolean} allowNullAsUndefinedProperties
+   *   When true:
+   *     `someProperty: null` will be allowed for non-required properties whose
+   *     expected types are non-null.
+   *   When false:
+   *     `someProperty: null` will cause validation to fail for non-required
+   *     properties, except for properties whose expected types are null.
+   * @param {boolean} allowExtraProperties
+   *   When true:
+   *     Properties that are not defined in the schema will be ignored, and they
+   *     won't be included in result.parsedValue.
+   *   When false:
+   *     Properties that are not defined in the schema will cause validation to
+   *     fail.
+   * @return {object}
+   *   The result of the validation, an object that looks like this:
+   *
+   *   {
+   *     valid,
+   *     parsedValue,
+   *     error: {
+   *       message,
+   *       rootValue,
+   *       rootSchema,
+   *       invalidValue,
+   *       invalidPropertyNameComponents,
+   *     }
+   *   }
+   *
+   *   {boolean} valid
+   *     True if validation is successful, false if not.
+   *   {*} parsedValue
+   *     If validation is successful, this is the validated value.  It can
+   *     differ from the passed-in value in the following ways:
+   *       * If a type in the schema is "URL" or "URLorEmpty", the passed-in
+   *         value can use a string instead and it will be converted into a
+   *         `URL` object in parsedValue.
+   *       * Some of the `allow*` parameters control the properties that appear.
+   *         See above.
+   *   {Error} error
+   *     If validation fails, `error` will be present.  It contains a number of
+   *     properties useful for understanding the validation failure.
+   *   {string} error.message
+   *     The validation failure message.
+   *   {*} error.rootValue
+   *     The passed-in value.
+   *   {object} error.rootSchema
+   *     The passed-in schema.
+   *   {*} invalidValue
+   *     The value that caused validation to fail.  If the passed-in value is a
+   *     scalar type, this will be the value itself.  If the value is an object
+   *     or array, it will be the specific nested value in the object or array
+   *     that caused validation to fail.
+   *   {array} invalidPropertyNameComponents
+   *     If the passed-in value is an object or array, this will contain the
+   *     names of the object properties or array indexes where invalidValue can
+   *     be found.  For example, assume the passed-in value is:
+   *       { foo: { bar: { baz: 123 }}}
+   *     And assume `baz` should be a string instead of a number.  Then
+   *     invalidValue will be 123, and invalidPropertyNameComponents will be
+   *     ["foo", "bar", "baz"], indicating that the erroneous property in the
+   *     passed-in object is `foo.bar.baz`.
+   */
   static validate(
     value,
     schema,
@@ -143,18 +137,18 @@ class JsonSchemaValidator {
     return validator.validate(value, schema);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Constructor.
+   *
+   * @param {boolean} allowArrayNonMatchingItems
+   *   See the static `validate` method above.
+   * @param {boolean} allowExplicitUndefinedProperties
+   *   See the static `validate` method above.
+   * @param {boolean} allowNullAsUndefinedProperties
+   *   See the static `validate` method above.
+   * @param {boolean} allowExtraProperties
+   *   See the static `validate` method above.
+   */
   constructor({
     allowArrayNonMatchingItems = false,
     allowExplicitUndefinedProperties = false,
@@ -167,16 +161,16 @@ class JsonSchemaValidator {
     this.allowExtraProperties = allowExtraProperties;
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Validates a value against a schema.
+   *
+   * @param {*} value
+   *   The value to validate.
+   * @param {object} schema
+   *   The schema to validate against.
+   * @return {object}
+   *   The result object.  See the static `validate` method above.
+   */
   validate(value, schema) {
     return this._validateRecursive(value, schema, [], {
       rootValue: value,
@@ -184,16 +178,16 @@ class JsonSchemaValidator {
     });
   }
 
-  
+  // eslint-disable-next-line complexity
   _validateRecursive(param, properties, keyPath, state) {
     lazy.log.debug(`checking @${param}@ for type ${properties.type}`);
 
     if (Array.isArray(properties.type)) {
       lazy.log.debug("type is an array");
-      
-      
-      
-      
+      // For an array of types, the value is valid if it matches any of the
+      // listed types. To check this, make versions of the object definition
+      // that include only one type at a time, and check the value against each
+      // one.
       for (const type of properties.type) {
         let typeProperties = Object.assign({}, properties, { type });
         lazy.log.debug(`checking subtype ${type}`);
@@ -207,7 +201,7 @@ class JsonSchemaValidator {
           return result;
         }
       }
-      
+      // None of the types matched
       return {
         valid: false,
         error: new JsonSchemaValidatorError({
@@ -473,7 +467,7 @@ class JsonSchemaValidator {
         valid = typeof param == type;
         break;
 
-      
+      // integer is an alias to "number" that some JSON schema tools use
       case "integer":
         valid = typeof param == "number";
         break;
@@ -491,14 +485,14 @@ class JsonSchemaValidator {
           parsedParam = new URL(param);
 
           if (parsedParam.protocol == "file:") {
-            
-            
-            
-            
+            // Treat the entire file URL as an origin.
+            // Note this is stricter than the current Firefox policy,
+            // but consistent with Chrome.
+            // See https://bugzilla.mozilla.org/show_bug.cgi?id=803143
             valid = true;
           } else {
             let pathQueryRef = parsedParam.pathname + parsedParam.hash;
-            
+            // Make sure that "origin" types won't accept full URLs.
             if (pathQueryRef != "/" && pathQueryRef != "") {
               lazy.log.error(
                 `Ignoring parameter "${param}" - origin was expected but received full URL.`

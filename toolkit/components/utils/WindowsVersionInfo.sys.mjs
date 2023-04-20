@@ -1,14 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["WindowsVersionInfo"];
-
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
 const { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
 
 const BYTE = ctypes.uint8_t;
@@ -17,26 +12,26 @@ const DWORD = ctypes.uint32_t;
 const WCHAR = ctypes.char16_t;
 const BOOL = ctypes.int;
 
-var WindowsVersionInfo = {
+export var WindowsVersionInfo = {
   UNKNOWN_VERSION_INFO: {
     servicePackMajor: null,
     servicePackMinor: null,
     buildNumber: null,
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Gets the service pack and build number on Windows platforms.
+   *
+   * @param opts {Object} keyword arguments
+   * @param opts.throwOnError {boolean} Optional, defaults to true. If set to
+   *    false will return an object with keys set to null instead of throwing an
+   *    error. If set to true, errors will be thrown instead.
+   * @throws If `throwOnError` is true and version information cannot be
+   *    determined.
+   * @return {object} An object containing keys `servicePackMajor`,
+   *    `servicePackMinor`, and `buildNumber`. If `throwOnError` is false, these
+   *    values may be null.
+   */
   get({ throwOnError = true } = {}) {
     function throwOrUnknown(err) {
       if (throwOnError) {
@@ -54,8 +49,8 @@ var WindowsVersionInfo = {
       );
     }
 
-    
-    
+    // This structure is described at:
+    // http://msdn.microsoft.com/en-us/library/ms724833%28v=vs.85%29.aspx
     const SZCSDVERSIONLENGTH = 128;
     const OSVERSIONINFOEXW = new ctypes.StructType("OSVERSIONINFOEXW", [
       { dwOSVersionInfoSize: DWORD },
