@@ -252,6 +252,10 @@ void MonoAgc::SetLevel(int new_level) {
     return;
   }
 
+  
+  
+  
+  
   if (voe_level > level_ + kLevelQuantizationSlack ||
       voe_level < level_ - kLevelQuantizationSlack) {
     RTC_DLOG(LS_INFO) << "[agc] Mic volume was manually adjusted. Updating "
