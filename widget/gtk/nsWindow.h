@@ -412,7 +412,7 @@ class nsWindow final : public nsBaseWidget {
 
 #ifdef MOZ_WAYLAND
   
-  static void RequestFocusWaylandWindow(RefPtr<nsWindow> aWindow);
+  static void TransferFocusToWaylandWindow(nsWindow* aWindow);
   void FocusWaylandWindow(const char* aTokenID);
 
   bool GetCSDDecorationOffset(int* aDx, int* aDy);
@@ -979,7 +979,6 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntPoint mNativePointerLockCenter;
   zwp_locked_pointer_v1* mLockedPointer = nullptr;
   zwp_relative_pointer_v1* mRelativePointer = nullptr;
-  xdg_activation_token_v1* mXdgToken = nullptr;
 #endif
   
   
