@@ -21,6 +21,7 @@
 #include "net/dcsctp/packet/chunk/iforward_tsn_chunk.h"
 #include "net/dcsctp/packet/chunk/sack_chunk.h"
 #include "net/dcsctp/packet/data.h"
+#include "net/dcsctp/public/types.h"
 
 namespace dcsctp {
 
@@ -120,10 +121,11 @@ class OutstandingData {
   
   
   
-  absl::optional<UnwrappedTSN> Insert(const Data& data,
-                                      MaxRetransmits max_retransmissions,
-                                      TimeMs time_sent,
-                                      TimeMs expires_at);
+  absl::optional<UnwrappedTSN> Insert(
+      const Data& data,
+      TimeMs time_sent,
+      MaxRetransmits max_retransmissions = MaxRetransmits::NoLimit(),
+      TimeMs expires_at = TimeMs::InfiniteFuture());
 
   
   void NackAll();
@@ -162,14 +164,17 @@ class OutstandingData {
       kAbandon,
     };
 
-    explicit Item(Data data,
-                  MaxRetransmits max_retransmissions,
-                  TimeMs time_sent,
-                  TimeMs expires_at)
-        : max_retransmissions_(max_retransmissions),
-          time_sent_(time_sent),
+    Item(Data data,
+         TimeMs time_sent,
+         MaxRetransmits max_retransmissions,
+         TimeMs expires_at)
+        : time_sent_(time_sent),
+          max_retransmissions_(max_retransmissions),
           expires_at_(expires_at),
           data_(std::move(data)) {}
+
+    Item(const Item&) = delete;
+    Item& operator=(const Item&) = delete;
 
     TimeMs time_sent() const { return time_sent_; }
 
@@ -208,7 +213,7 @@ class OutstandingData {
     bool has_expired(TimeMs now) const;
 
    private:
-    enum class Lifecycle {
+    enum class Lifecycle : uint8_t {
       
       kActive,
       
@@ -217,7 +222,7 @@ class OutstandingData {
       
       kAbandoned
     };
-    enum class AckState {
+    enum class AckState : uint8_t {
       
       kUnacked,
       
@@ -225,6 +230,19 @@ class OutstandingData {
       
       kNacked
     };
+
+    
+    
+
+    
+    const TimeMs time_sent_;
+    
+    
+    
+    const MaxRetransmits max_retransmissions_;
+    
+    
+
     
     Lifecycle lifecycle_ = Lifecycle::kActive;
     
@@ -236,17 +254,11 @@ class OutstandingData {
     uint8_t nack_count_ = 0;
     
     uint16_t num_retransmissions_ = 0;
-    
-    
-    
-    const MaxRetransmits max_retransmissions_;
-    
-    const TimeMs time_sent_;
-    
-    
+
     const TimeMs expires_at_;
+
     
-    Data data_;
+    const Data data_;
   };
 
   
