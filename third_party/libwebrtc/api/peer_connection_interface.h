@@ -428,7 +428,10 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
 
     
     
-    bool disable_ipv6 = false;
+    union {
+      bool DEPRECATED_disable_ipv6 = false;
+      bool ABSL_DEPRECATED("https:
+    };
 
     
     
