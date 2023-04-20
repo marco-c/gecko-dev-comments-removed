@@ -206,7 +206,7 @@ void SVGMPathElement::UpdateHrefTarget(nsIContent* aParent,
     
     
     nsCOMPtr<nsIReferrerInfo> referrerInfo =
-        ReferrerInfo::CreateForSVGResources(OwnerDoc());
+        ReferrerInfo::CreateForInternalCSSAndSVGResources(OwnerDoc());
 
     mPathTracker.ResetToURIFragmentID(aParent, targetURI, referrerInfo);
   } else {

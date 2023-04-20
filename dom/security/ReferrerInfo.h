@@ -141,17 +141,7 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
 
-  static already_AddRefed<nsIReferrerInfo> CreateForInternalCSSResources(
-      Document* aDocument);
-
-  
-
-
-
-
-
-
-  static already_AddRefed<nsIReferrerInfo> CreateForSVGResources(
+  static already_AddRefed<nsIReferrerInfo> CreateForInternalCSSAndSVGResources(
       Document* aDocument);
 
   

@@ -1281,20 +1281,8 @@ already_AddRefed<nsIReferrerInfo> ReferrerInfo::CreateForExternalCSSResources(
 }
 
 
-already_AddRefed<nsIReferrerInfo> ReferrerInfo::CreateForInternalCSSResources(
-    Document* aDocument) {
-  MOZ_ASSERT(aDocument);
-  nsCOMPtr<nsIReferrerInfo> referrerInfo;
-
-  referrerInfo = new ReferrerInfo(aDocument->GetDocumentURI(),
-                                  aDocument->GetReferrerPolicy());
-  return referrerInfo.forget();
-}
-
-
-
-already_AddRefed<nsIReferrerInfo> ReferrerInfo::CreateForSVGResources(
-    Document* aDocument) {
+already_AddRefed<nsIReferrerInfo>
+ReferrerInfo::CreateForInternalCSSAndSVGResources(Document* aDocument) {
   MOZ_ASSERT(aDocument);
   nsCOMPtr<nsIReferrerInfo> referrerInfo;
 

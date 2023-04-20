@@ -1440,7 +1440,7 @@ SVGGeometryElement* SVGObserverUtils::GetAndObserveTextPathsPath(
     
     
     nsCOMPtr<nsIReferrerInfo> referrerInfo =
-        ReferrerInfo::CreateForSVGResources(content->OwnerDoc());
+        ReferrerInfo::CreateForInternalCSSAndSVGResources(content->OwnerDoc());
     RefPtr<URLAndReferrerInfo> target =
         ResolveURLUsingLocalRef(aTextPathFrame, href, referrerInfo);
 
@@ -1493,7 +1493,7 @@ nsIFrame* SVGObserverUtils::GetAndObserveTemplate(
     
     
     nsCOMPtr<nsIReferrerInfo> referrerInfo =
-        ReferrerInfo::CreateForSVGResources(content->OwnerDoc());
+        ReferrerInfo::CreateForInternalCSSAndSVGResources(content->OwnerDoc());
     RefPtr<URLAndReferrerInfo> target =
         new URLAndReferrerInfo(targetURI, referrerInfo);
 
@@ -1526,7 +1526,8 @@ Element* SVGObserverUtils::GetAndObserveBackgroundImage(nsIFrame* aFrame,
       aFrame->GetContent()->GetUncomposedDoc(),
       aFrame->GetContent()->GetBaseURI());
   nsCOMPtr<nsIReferrerInfo> referrerInfo =
-      ReferrerInfo::CreateForSVGResources(aFrame->GetContent()->OwnerDoc());
+      ReferrerInfo::CreateForInternalCSSAndSVGResources(
+          aFrame->GetContent()->OwnerDoc());
   RefPtr<URLAndReferrerInfo> url =
       new URLAndReferrerInfo(targetURI, referrerInfo);
 
