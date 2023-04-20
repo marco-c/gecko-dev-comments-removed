@@ -109,23 +109,31 @@ PRThread* gfxPlatformMac::sFontRegistrationThread = nullptr;
 
 
 void gfxPlatformMac::RegisterSupplementalFonts() {
-  if (XRE_IsParentProcess()) {
-    sFontRegistrationThread = PR_CreateThread(
-        PR_USER_THREAD, FontRegistrationCallback, nullptr, PR_PRIORITY_NORMAL,
-        PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
-  } else if (!nsCocoaFeatures::OnCatalinaOrLater()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    for (const auto& dir : kLangFontsDirs) {
-      gfxMacPlatformFontList::ActivateFontsFromDir(dir);
-    }
+  switch (XRE_GetProcessType()) {
+    case GeckoProcessType_Default:
+    case GeckoProcessType_Content:
+      
+      
+      
+      
+      
+      
+      
+      
+      if (nsCocoaFeatures::OnCatalinaOrLater()) {
+        sFontRegistrationThread = PR_CreateThread(
+            PR_USER_THREAD, FontRegistrationCallback, nullptr,
+            PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
+      } else {
+        for (const auto& dir : kLangFontsDirs) {
+          gfxMacPlatformFontList::ActivateFontsFromDir(dir);
+        }
+      }
+      break;
+
+    default:
+      
+      break;
   }
 }
 
