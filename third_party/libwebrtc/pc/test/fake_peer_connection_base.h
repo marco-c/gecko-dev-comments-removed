@@ -28,8 +28,6 @@ namespace webrtc {
 
 
 
-
-
 class FakePeerConnectionBase : public PeerConnectionInternal {
  public:
   

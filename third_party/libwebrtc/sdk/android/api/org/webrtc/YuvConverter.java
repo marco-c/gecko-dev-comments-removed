@@ -37,8 +37,6 @@ public final class YuvConverter {
       
       
       
-      
-      
       + "  gl_FragColor.r = coeffs.a + dot(coeffs.rgb,\n"
       + "      sample(tc - 1.5 * xUnit).rgb);\n"
       + "  gl_FragColor.g = coeffs.a + dot(coeffs.rgb,\n"
