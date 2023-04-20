@@ -24,7 +24,7 @@ namespace cricket {
 
 struct IceFieldTrials;  
 
-struct IceControllerEvent {
+struct IceRecheckEvent {
   
   enum Type {
     REMOTE_CANDIDATE_GENERATION_CHANGE,
@@ -42,11 +42,11 @@ struct IceControllerEvent {
     ICE_CONTROLLER_RECHECK,
   };
 
-  [[deprecated("bugs.webrtc.org/14125")]] IceControllerEvent(
+  [[deprecated("bugs.webrtc.org/14125")]] IceRecheckEvent(
       const Type& _type)  
       : type(_type), reason(FromType(_type)) {}
 
-  IceControllerEvent(IceSwitchReason _reason, int _recheck_delay_ms)
+  IceRecheckEvent(IceSwitchReason _reason, int _recheck_delay_ms)
       : type(FromIceSwitchReason(_reason)),
         reason(_reason),
         recheck_delay_ms(_recheck_delay_ms) {}
@@ -61,6 +61,9 @@ struct IceControllerEvent {
   IceSwitchReason reason;
   int recheck_delay_ms = 0;
 };
+
+
+using IceControllerEvent = IceRecheckEvent;
 
 
 
@@ -93,7 +96,7 @@ class IceControllerInterface {
     absl::optional<const Connection*> connection;
 
     
-    absl::optional<IceControllerEvent> recheck_event;
+    absl::optional<IceRecheckEvent> recheck_event;
 
     
     std::vector<const Connection*> connections_to_forget_state_on;
@@ -152,9 +155,8 @@ class IceControllerInterface {
   
   
   [[deprecated("bugs.webrtc.org/14125")]] virtual SwitchResult
-  ShouldSwitchConnection(IceControllerEvent reason,
-                         const Connection* connection) {
-    return ShouldSwitchConnection(IceControllerEvent::FromType(reason.type),
+  ShouldSwitchConnection(IceRecheckEvent reason, const Connection* connection) {
+    return ShouldSwitchConnection(IceRecheckEvent::FromType(reason.type),
                                   connection);
   }
   virtual SwitchResult ShouldSwitchConnection(IceSwitchReason reason,
@@ -162,8 +164,8 @@ class IceControllerInterface {
 
   
   [[deprecated("bugs.webrtc.org/14125")]] virtual SwitchResult
-  SortAndSwitchConnection(IceControllerEvent reason) {
-    return SortAndSwitchConnection(IceControllerEvent::FromType(reason.type));
+  SortAndSwitchConnection(IceRecheckEvent reason) {
+    return SortAndSwitchConnection(IceRecheckEvent::FromType(reason.type));
   }
   virtual SwitchResult SortAndSwitchConnection(IceSwitchReason reason) = 0;
 
