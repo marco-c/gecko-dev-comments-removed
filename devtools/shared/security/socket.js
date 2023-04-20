@@ -43,10 +43,20 @@ loader.lazyRequireGetter(
   true
 );
 const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
-  DevToolsSocketStatus:
-    "resource://devtools/shared/security/DevToolsSocketStatus.sys.mjs",
-});
+
+DevToolsUtils.defineLazyGetter(
+  lazy,
+  "DevToolsSocketStatus",
+  () =>
+    ChromeUtils.importESModule(
+      "resource://devtools/shared/security/DevToolsSocketStatus.sys.mjs",
+      {
+        
+        
+        loadInDevToolsLoader: false,
+      }
+    ).DevToolsSocketStatus
+);
 
 loader.lazyRequireGetter(
   this,
