@@ -1507,7 +1507,15 @@ static DebuggerObject* ToNativeDebuggerObject(JSContext* cx,
     return nullptr;
   }
 
-  return &obj->as<DebuggerObject>();
+  DebuggerObject* ndobj = &obj->as<DebuggerObject>();
+
+  if (!ndobj->isInstance()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEBUG_PROTO,
+                              "Debugger.Object", "Debugger.Object");
+    return nullptr;
+  }
+
+  return ndobj;
 }
 
 bool Debugger::unwrapDebuggeeObject(JSContext* cx, MutableHandleObject obj) {
@@ -4054,13 +4062,6 @@ const JSClass DebuggerInstanceObject::class_ = {
     "Debugger", JSCLASS_HAS_RESERVED_SLOTS(Debugger::JSSLOT_DEBUG_COUNT),
     &classOps_};
 
-static_assert(Debugger::JSSLOT_DEBUG_PROTO_START == 0,
-              "DebuggerPrototypeObject only needs slots for the proto objects");
-
-const JSClass DebuggerPrototypeObject::class_ = {
-    "DebuggerPrototype",
-    JSCLASS_HAS_RESERVED_SLOTS(Debugger::JSSLOT_DEBUG_PROTO_STOP)};
-
 static Debugger* Debugger_fromThisValue(JSContext* cx, const CallArgs& args,
                                         const char* fnname) {
   JSObject* thisobj = RequireObject(cx, args.thisv());
@@ -4074,8 +4075,15 @@ static Debugger* Debugger_fromThisValue(JSContext* cx, const CallArgs& args,
     return nullptr;
   }
 
+  
+  
+  
   Debugger* dbg = Debugger::fromJSObject(thisobj);
-  MOZ_ASSERT(dbg);
+  if (!dbg) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_INCOMPATIBLE_PROTO, "Debugger", fnname,
+                              "prototype object");
+  }
   return dbg;
 }
 
@@ -4661,7 +4669,7 @@ bool Debugger::construct(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
   Rooted<NativeObject*> proto(cx, &v.toObject().as<NativeObject>());
-  MOZ_ASSERT(proto->is<DebuggerPrototypeObject>());
+  MOZ_ASSERT(proto->is<DebuggerInstanceObject>());
 
   
   
@@ -5078,6 +5086,16 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
 
       DebuggerSource& debuggerSourceObj =
           debuggerSource.toObject().as<DebuggerSource>();
+
+      
+      
+      
+      if (!debuggerSourceObj.isInstance()) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_DEBUG_PROTO, "Debugger.Source",
+                                  "Debugger.Source");
+        return false;
+      }
 
       
       
@@ -6775,10 +6793,10 @@ extern JS_PUBLIC_API bool JS_DefineDebuggerObject(JSContext* cx,
   RootedValue debuggeeWouldRunCtor(cx);
   Handle<GlobalObject*> global = obj.as<GlobalObject>();
 
-  debugProto = InitClass(cx, global, &DebuggerPrototypeObject::class_, nullptr,
-                         "Debugger", Debugger::construct, 1,
-                         Debugger::properties, Debugger::methods, nullptr,
-                         Debugger::static_methods, debugCtor.address());
+  debugProto =
+      InitClass(cx, global, nullptr, &DebuggerInstanceObject::class_,
+                Debugger::construct, 1, Debugger::properties, Debugger::methods,
+                nullptr, Debugger::static_methods, debugCtor.address());
   if (!debugProto) {
     return false;
   }
@@ -6808,9 +6826,10 @@ extern JS_PUBLIC_API bool JS_DefineDebuggerObject(JSContext* cx,
     return false;
   }
 
-  memoryProto = InitClass(
-      cx, debugCtor, nullptr, nullptr, "Memory", DebuggerMemory::construct, 0,
-      DebuggerMemory::properties, DebuggerMemory::methods, nullptr, nullptr);
+  memoryProto =
+      InitClass(cx, debugCtor, nullptr, &DebuggerMemory::class_,
+                DebuggerMemory::construct, 0, DebuggerMemory::properties,
+                DebuggerMemory::methods, nullptr, nullptr);
   if (!memoryProto) {
     return false;
   }
@@ -6847,11 +6866,8 @@ extern JS_PUBLIC_API bool JS_DefineDebuggerObject(JSContext* cx,
 JS_PUBLIC_API bool JS::dbg::IsDebugger(JSObject& obj) {
   
   JSObject* unwrapped = CheckedUnwrapStatic(&obj);
-  if (!unwrapped || !unwrapped->is<DebuggerInstanceObject>()) {
-    return false;
-  }
-  MOZ_ASSERT(js::Debugger::fromJSObject(unwrapped));
-  return true;
+  return unwrapped && unwrapped->is<DebuggerInstanceObject>() &&
+         js::Debugger::fromJSObject(unwrapped) != nullptr;
 }
 
 JS_PUBLIC_API bool JS::dbg::GetDebuggeeGlobals(

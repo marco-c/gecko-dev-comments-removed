@@ -91,6 +91,19 @@ DebuggerMemory* DebuggerMemory::checkThis(JSContext* cx, CallArgs& args) {
     return nullptr;
   }
 
+  
+  
+  
+  
+  if (thisObject.as<DebuggerMemory>()
+          .getReservedSlot(JSSLOT_DEBUGGER)
+          .isUndefined()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_INCOMPATIBLE_PROTO, class_.name, "method",
+                              "prototype object");
+    return nullptr;
+  }
+
   return &thisObject.as<DebuggerMemory>();
 }
 
