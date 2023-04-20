@@ -57,7 +57,7 @@ bool ExtendBufferMapping(void* dataStart, size_t mappedSize,
 void UnmapBufferMemory(wasm::IndexType t, void* dataStart, size_t mappedSize);
 
 
-int32_t LiveMappedBufferCount();
+uint64_t WasmReservedBytes();
 
 
 
