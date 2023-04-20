@@ -681,7 +681,7 @@ EngineStore.prototype = {
 
   
   _isSameEngine(aEngineClone) {
-    return aEngineClone.originalEngine == this.originalEngine;
+    return aEngineClone.originalEngine.id == this.originalEngine.id;
   },
 
   addEngine(aEngine) {
