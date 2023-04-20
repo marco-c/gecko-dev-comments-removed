@@ -406,6 +406,32 @@ int U444ToABGR(const uint8_t* src_y,
 
 
 LIBYUV_API
+int I444ToRGB24(const uint8_t* src_y,
+                int src_stride_y,
+                const uint8_t* src_u,
+                int src_stride_u,
+                const uint8_t* src_v,
+                int src_stride_v,
+                uint8_t* dst_rgb24,
+                int dst_stride_rgb24,
+                int width,
+                int height);
+
+
+LIBYUV_API
+int I444ToRAW(const uint8_t* src_y,
+              int src_stride_y,
+              const uint8_t* src_u,
+              int src_stride_u,
+              const uint8_t* src_v,
+              int src_stride_v,
+              uint8_t* dst_raw,
+              int dst_stride_raw,
+              int width,
+              int height);
+
+
+LIBYUV_API
 int I010ToARGB(const uint16_t* src_y,
                int src_stride_y,
                const uint16_t* src_u,
@@ -1312,6 +1338,32 @@ int J420ToRAW(const uint8_t* src_y,
               int width,
               int height);
 
+
+LIBYUV_API
+int I422ToRGB24(const uint8_t* src_y,
+                int src_stride_y,
+                const uint8_t* src_u,
+                int src_stride_u,
+                const uint8_t* src_v,
+                int src_stride_v,
+                uint8_t* dst_rgb24,
+                int dst_stride_rgb24,
+                int width,
+                int height);
+
+
+LIBYUV_API
+int I422ToRAW(const uint8_t* src_y,
+              int src_stride_y,
+              const uint8_t* src_u,
+              int src_stride_u,
+              const uint8_t* src_v,
+              int src_stride_v,
+              uint8_t* dst_raw,
+              int dst_stride_raw,
+              int width,
+              int height);
+
 LIBYUV_API
 int I420ToRGB565(const uint8_t* src_y,
                  int src_stride_y,
@@ -1494,6 +1546,20 @@ int I444ToARGBMatrix(const uint8_t* src_y,
                      const struct YuvConstants* yuvconstants,
                      int width,
                      int height);
+
+
+LIBYUV_API
+int I444ToRGB24Matrix(const uint8_t* src_y,
+                      int src_stride_y,
+                      const uint8_t* src_u,
+                      int src_stride_u,
+                      const uint8_t* src_v,
+                      int src_stride_v,
+                      uint8_t* dst_rgb24,
+                      int dst_stride_rgb24,
+                      const struct YuvConstants* yuvconstants,
+                      int width,
+                      int height);
 
 
 LIBYUV_API
@@ -1895,7 +1961,35 @@ int I420ToRGB24Matrix(const uint8_t* src_y,
 
 
 LIBYUV_API
+int I422ToRGB24Matrix(const uint8_t* src_y,
+                      int src_stride_y,
+                      const uint8_t* src_u,
+                      int src_stride_u,
+                      const uint8_t* src_v,
+                      int src_stride_v,
+                      uint8_t* dst_rgb24,
+                      int dst_stride_rgb24,
+                      const struct YuvConstants* yuvconstants,
+                      int width,
+                      int height);
+
+
+LIBYUV_API
 int I420ToRGB565Matrix(const uint8_t* src_y,
+                       int src_stride_y,
+                       const uint8_t* src_u,
+                       int src_stride_u,
+                       const uint8_t* src_v,
+                       int src_stride_v,
+                       uint8_t* dst_rgb565,
+                       int dst_stride_rgb565,
+                       const struct YuvConstants* yuvconstants,
+                       int width,
+                       int height);
+
+
+LIBYUV_API
+int I422ToRGB565Matrix(const uint8_t* src_y,
                        int src_stride_y,
                        const uint8_t* src_u,
                        int src_stride_u,
@@ -1960,6 +2054,36 @@ int I422ToARGBMatrixFilter(const uint8_t* src_y,
                            int width,
                            int height,
                            enum FilterMode filter);
+
+
+LIBYUV_API
+int I422ToRGB24MatrixFilter(const uint8_t* src_y,
+                            int src_stride_y,
+                            const uint8_t* src_u,
+                            int src_stride_u,
+                            const uint8_t* src_v,
+                            int src_stride_v,
+                            uint8_t* dst_rgb24,
+                            int dst_stride_rgb24,
+                            const struct YuvConstants* yuvconstants,
+                            int width,
+                            int height,
+                            enum FilterMode filter);
+
+
+LIBYUV_API
+int I420ToRGB24MatrixFilter(const uint8_t* src_y,
+                            int src_stride_y,
+                            const uint8_t* src_u,
+                            int src_stride_u,
+                            const uint8_t* src_v,
+                            int src_stride_v,
+                            uint8_t* dst_rgb24,
+                            int dst_stride_rgb24,
+                            const struct YuvConstants* yuvconstants,
+                            int width,
+                            int height,
+                            enum FilterMode filter);
 
 
 LIBYUV_API

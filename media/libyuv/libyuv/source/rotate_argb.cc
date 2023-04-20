@@ -8,11 +8,12 @@
 
 
 
-#include "libyuv/rotate.h"
+#include "libyuv/rotate_argb.h"
 
 #include "libyuv/convert.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"
+#include "libyuv/rotate.h"
 #include "libyuv/row.h"
 #include "libyuv/scale_row.h" 
 

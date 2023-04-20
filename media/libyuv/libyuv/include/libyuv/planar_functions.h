@@ -85,13 +85,23 @@ void SetPlane(uint8_t* dst_y,
 
 
 LIBYUV_API
-void DetilePlane(const uint8_t* src_y,
-                 int src_stride_y,
-                 uint8_t* dst_y,
-                 int dst_stride_y,
-                 int width,
-                 int height,
-                 int tile_height);
+int DetilePlane(const uint8_t* src_y,
+                int src_stride_y,
+                uint8_t* dst_y,
+                int dst_stride_y,
+                int width,
+                int height,
+                int tile_height);
+
+
+LIBYUV_API
+int DetilePlane_16(const uint16_t* src_y,
+                   int src_stride_y,
+                   uint16_t* dst_y,
+                   int dst_stride_y,
+                   int width,
+                   int height,
+                   int tile_height);
 
 
 LIBYUV_API
@@ -104,6 +114,18 @@ void DetileSplitUVPlane(const uint8_t* src_uv,
                         int width,
                         int height,
                         int tile_height);
+
+
+LIBYUV_API
+void DetileToYUY2(const uint8_t* src_y,
+                  int src_stride_y,
+                  const uint8_t* src_uv,
+                  int src_stride_uv,
+                  uint8_t* dst_yuy2,
+                  int dst_stride_yuy2,
+                  int width,
+                  int height,
+                  int tile_height);
 
 
 LIBYUV_API
@@ -371,6 +393,7 @@ int I210Copy(const uint16_t* src_y,
              int height);
 
 
+LIBYUV_API
 int NV12Copy(const uint8_t* src_y,
              int src_stride_y,
              const uint8_t* src_uv,
@@ -383,6 +406,7 @@ int NV12Copy(const uint8_t* src_y,
              int height);
 
 
+LIBYUV_API
 int NV21Copy(const uint8_t* src_y,
              int src_stride_y,
              const uint8_t* src_vu,

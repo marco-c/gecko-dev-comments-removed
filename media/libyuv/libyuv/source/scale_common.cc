@@ -1605,6 +1605,12 @@ void ScalePlaneVertical_16(int src_height,
   }
 }
 
+
+
+
+
+
+
 void ScalePlaneVertical_16To8(int src_height,
                               int dst_width,
                               int dst_height,
@@ -1632,6 +1638,22 @@ void ScalePlaneVertical_16To8(int src_height,
   assert(dst_height > 0);
   src_argb += (x >> 16) * wpp;
 
+#if defined(HAS_INTERPOLATEROW_16TO8_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    InterpolateRow_16To8 = InterpolateRow_16To8_Any_NEON;
+    if (IS_ALIGNED(dst_width, 8)) {
+      InterpolateRow_16To8 = InterpolateRow_16To8_NEON;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_16TO8_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    InterpolateRow_16To8 = InterpolateRow_16To8_Any_AVX2;
+    if (IS_ALIGNED(dst_width, 32)) {
+      InterpolateRow_16To8 = InterpolateRow_16To8_AVX2;
+    }
+  }
+#endif
   for (j = 0; j < dst_height; ++j) {
     int yi;
     int yf;
