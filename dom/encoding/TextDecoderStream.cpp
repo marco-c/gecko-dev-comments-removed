@@ -48,7 +48,7 @@ JSObject* TextDecoderStream::WrapObject(JSContext* aCx,
 
 
 
-Span<const uint8_t> ExtractSpanFromBufferSource(
+static Span<const uint8_t> ExtractSpanFromBufferSource(
     JSContext* aCx, JS::Handle<JS::Value> aBufferSource, ErrorResult& aRv) {
   RootedUnion<OwningArrayBufferViewOrArrayBuffer> bufferSource(aCx);
   if (!bufferSource.Init(aCx, aBufferSource)) {

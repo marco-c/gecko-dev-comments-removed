@@ -81,14 +81,6 @@ class nsJSUtils {
   static void ResetTimeZone();
 
   static bool DumpEnabled();
-
-  
-  
-  
-  
-  
-  static JSObject* MoveBufferAsUint8Array(JSContext* aCx, size_t aSize,
-                                          mozilla::UniquePtr<uint8_t>& aBuffer);
 };
 
 inline void AssignFromStringBuffer(nsStringBuffer* buffer, size_t len,
