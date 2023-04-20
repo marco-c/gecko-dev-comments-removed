@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
 var EXPORTED_SYMBOLS = ["ExtensionsUI"];
@@ -54,10 +54,15 @@ var ExtensionsUI = {
   sideloaded: new Set(),
   updates: new Set(),
   sideloadListener: null,
+  histogram: null,
 
   pendingNotifications: new WeakMap(),
 
   async init() {
+    this.histogram = Services.telemetry.getHistogramById(
+      "EXTENSION_INSTALL_PROMPT_RESULT"
+    );
+
     Services.obs.addObserver(this, "webextension-permission-prompt");
     Services.obs.addObserver(this, "webextension-update-permissions");
     Services.obs.addObserver(this, "webextension-install-notify");
@@ -74,12 +79,12 @@ var ExtensionsUI = {
     let sideloaded = await lazy.AddonManagerPrivate.getNewSideloads();
 
     if (!sideloaded.length) {
-      
+      // No new side-loads. We're done.
       return;
     }
 
-    
-    
+    // The ordering shouldn't matter, but tests depend on notifications
+    // happening in a specific order.
     sideloaded.sort((a, b) => a.id.localeCompare(b.id));
 
     if (!this.sideloadListener) {
@@ -116,13 +121,13 @@ var ExtensionsUI = {
     this.emit("change");
   },
 
-  showAddonsManager(tabbrowser, strings, icon) {
+  showAddonsManager(tabbrowser, strings, icon, histkey) {
     let global = tabbrowser.selectedBrowser.ownerGlobal;
     return global
       .BrowserOpenAddonsMgr("addons://list/extension")
       .then(aomWin => {
         let aomBrowser = aomWin.docShell.chromeEventHandler;
-        return this.showPermissionsPrompt(aomBrowser, strings, icon);
+        return this.showPermissionsPrompt(aomBrowser, strings, icon, histkey);
       });
   },
 
@@ -141,16 +146,16 @@ var ExtensionsUI = {
       num_strings: strings.msgs.length,
     });
 
-    this.showAddonsManager(tabbrowser, strings, addon.iconURL).then(
+    this.showAddonsManager(tabbrowser, strings, addon.iconURL, "sideload").then(
       async answer => {
         if (answer) {
           await addon.enable();
 
           this._updateNotifications();
 
-          
-          
-          
+          // The user has just enabled a sideloaded extension, if the permission
+          // can be changed for the extension, show the post-install panel to
+          // give the user that opportunity.
           if (
             addon.permissions &
             lazy.AddonManager.PERM_CAN_CHANGE_PRIVATEBROWSING_ACCESS
@@ -169,19 +174,22 @@ var ExtensionsUI = {
       num_strings: info.strings.msgs.length,
     });
 
-    this.showAddonsManager(browser, info.strings, info.addon.iconURL).then(
-      answer => {
-        if (answer) {
-          info.resolve();
-        } else {
-          info.reject();
-        }
-        
-        
-        this.updates.delete(info);
-        this._updateNotifications();
+    this.showAddonsManager(
+      browser,
+      info.strings,
+      info.addon.iconURL,
+      "update"
+    ).then(answer => {
+      if (answer) {
+        info.resolve();
+      } else {
+        info.reject();
       }
-    );
+      // At the moment, this prompt will re-appear next time we do an update
+      // check.  See bug 1332360 for proposal to avoid this.
+      this.updates.delete(info);
+      this._updateNotifications();
+    });
   },
 
   observe(subject, topic, data) {
@@ -190,9 +198,9 @@ var ExtensionsUI = {
 
       let { browser, window } = getTabBrowser(target);
 
-      
-      
-      
+      // Dismiss the progress notification.  Note that this is bad if
+      // there are multiple simultaneous installs happening, see
+      // bug 1329884 for a longer explanation.
       let progressNotification = window.PopupNotifications.getNotification(
         "addon-progress",
         browser
@@ -213,7 +221,7 @@ var ExtensionsUI = {
 
       let strings = this._buildStrings(info);
 
-      
+      // If this is an update with no promptable permissions, just apply it
       if (info.type == "update" && !strings.msgs.length) {
         info.resolve();
         return;
@@ -222,6 +230,19 @@ var ExtensionsUI = {
       let icon = info.unsigned
         ? "chrome://global/skin/icons/warning.svg"
         : info.icon;
+
+      let histkey;
+      if (info.type == "sideload") {
+        histkey = "sideload";
+      } else if (info.type == "update") {
+        histkey = "update";
+      } else if (info.source == "AMO") {
+        histkey = "installAmo";
+      } else if (info.source == "local") {
+        histkey = "installLocal";
+      } else {
+        histkey = "installWeb";
+      }
 
       if (info.type == "sideload") {
         lazy.AMTelemetry.recordManageEvent(info.addon, "sideload_prompt", {
@@ -234,19 +255,21 @@ var ExtensionsUI = {
         });
       }
 
-      this.showPermissionsPrompt(browser, strings, icon).then(answer => {
-        if (answer) {
-          info.resolve();
-        } else {
-          info.reject();
+      this.showPermissionsPrompt(browser, strings, icon, histkey).then(
+        answer => {
+          if (answer) {
+            info.resolve();
+          } else {
+            info.reject();
+          }
         }
-      });
+      );
     } else if (topic == "webextension-update-permissions") {
       let info = subject.wrappedJSObject;
       info.type = "update";
       let strings = this._buildStrings(info);
 
-      
+      // If we don't prompt for any new permissions, just apply it
       if (!strings.msgs.length) {
         info.resolve();
         return;
@@ -284,7 +307,7 @@ var ExtensionsUI = {
         permissions,
       });
 
-      
+      // If we don't have any promptable permissions, just proceed
       if (!strings.msgs.length) {
         resolve(true);
         return;
@@ -325,7 +348,7 @@ var ExtensionsUI = {
     }
   },
 
-  
+  // Create a set of formatted strings for a permission prompt
   _buildStrings(info) {
     let bundle = Services.strings.createBundle(BROWSER_PROPERTIES);
     let brandBundle = Services.strings.createBundle(BRAND_PROPERTIES);
@@ -340,10 +363,10 @@ var ExtensionsUI = {
     return strings;
   },
 
-  async showPermissionsPrompt(target, strings, icon) {
+  async showPermissionsPrompt(target, strings, icon, histkey) {
     let { browser, window } = getTabBrowser(target);
 
-    
+    // Wait for any pending prompts to complete before showing the next one.
     let pending;
     while ((pending = this.pendingNotifications.get(browser))) {
       await pending;
@@ -412,17 +435,17 @@ var ExtensionsUI = {
           position: "bottomright topright",
         },
       };
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // The prompt/notification machinery has a special affordance wherein
+      // certain subsets of the header string can be designated "names", and
+      // referenced symbolically as "<>" and "{}" to receive special formatting.
+      // That code assumes that the existence of |name| and |secondName| in the
+      // options object imply the presence of "<>" and "{}" (respectively) in
+      // in the string.
+      //
+      // At present, WebExtensions use this affordance while SitePermission
+      // add-ons don't, so we need to conditionally set the |name| field.
+      //
+      // NB: This could potentially be cleaned up, see bug 1799710.
       if (strings.header.includes("<>")) {
         options.name = strings.addonName;
       }
@@ -431,6 +454,9 @@ var ExtensionsUI = {
         label: strings.acceptText,
         accessKey: strings.acceptKey,
         callback: () => {
+          if (histkey) {
+            this.histogram.add(histkey + "Accepted");
+          }
           resolve(true);
         },
       };
@@ -439,6 +465,9 @@ var ExtensionsUI = {
           label: strings.cancelText,
           accessKey: strings.cancelKey,
           callback: () => {
+            if (histkey) {
+              this.histogram.add(histkey + "Rejected");
+            }
             resolve(false);
           },
         },
@@ -521,7 +550,7 @@ var ExtensionsUI = {
     const hasIncognito = permissions.includes(permissionName);
 
     return new Promise(resolve => {
-      
+      // Show or hide private permission ui based on the pref.
       function setCheckbox(win) {
         let checkbox = win.document.getElementById("addon-incognito-checkbox");
         checkbox.checked = hasIncognito;
@@ -545,8 +574,8 @@ var ExtensionsUI = {
         };
 
         let value;
-        
-        
+        // The checkbox has been changed at this point, otherwise we would
+        // have exited early above.
         if (checkbox.checked) {
           await lazy.ExtensionPermissions.add(addon.id, incognitoPermission);
           value = "on";
@@ -563,8 +592,8 @@ var ExtensionsUI = {
             value,
           });
         }
-        
-        
+        // Reload the extension if it is already enabled.  This ensures any change
+        // on the private browsing permission is properly handled.
         if (addon.isActive) {
           await addon.reload();
         }
@@ -599,7 +628,7 @@ var ExtensionsUI = {
     });
   },
 
-  
+  // Populate extension toolbar popup menu with origin controls.
   originControlsMenu(popup, extensionId) {
     let policy = WebExtensionPolicy.getByID(extensionId);
     if (!policy?.extension.originControls) {
@@ -658,8 +687,8 @@ var ExtensionsUI = {
       });
     }
 
-    
-    
+    // Insert all before Pin to toolbar OR Manage Extension, after any
+    // extension's menu items.
     let items = [headerItem, whenClicked, alwaysOn, allDomains, separator];
     let manageItem =
       popup.querySelector(".customize-context-manageExtension") ||
