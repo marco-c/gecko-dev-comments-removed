@@ -20,6 +20,7 @@ class SourceIcon extends PureComponent {
       modifier: PropTypes.func.isRequired,
       source: PropTypes.object.isRequired,
       iconClass: PropTypes.string,
+      forTab: PropTypes.bool,
     };
   }
 
@@ -40,10 +41,11 @@ class SourceIcon extends PureComponent {
 }
 
 export default connect((state, props) => {
-  const { source } = props;
+  const { forTab, source } = props;
   const symbols = getSymbols(state, source);
   const isBlackBoxed = isSourceBlackBoxed(state, source);
-  const hasMatchingPrettyTab = hasPrettyTab(state, source.url);
+  
+  const hasMatchingPrettyTab = !forTab && hasPrettyTab(state, source.url);
 
   
   
