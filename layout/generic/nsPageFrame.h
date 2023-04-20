@@ -50,10 +50,6 @@ class nsPageFrame final : public nsContainerFrame {
   void SetSharedPageData(nsSharedPageData* aPD);
   nsSharedPageData* GetSharedPageData() const { return mPD; }
 
-  
-  
-  bool HonorPrintBackgroundSettings() const override { return false; }
-
   void PaintHeaderFooter(gfxContext& aRenderingContext, nsPoint aPt,
                          bool aSubpixelAA);
 

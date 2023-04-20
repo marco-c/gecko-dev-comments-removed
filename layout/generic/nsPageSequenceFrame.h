@@ -145,10 +145,6 @@ class nsPageSequenceFrame final : public nsContainerFrame {
 
   nsresult DoPageEnd();
 
-  
-  
-  bool HonorPrintBackgroundSettings() const override { return false; }
-
   ComputeTransformFunction GetTransformGetter() const override;
 
 #ifdef DEBUG_FRAME_DUMP
