@@ -5,8 +5,8 @@
 
 
 
-const page = document.querySelector(":root[dialogroot=true]")
-  ? "spotlight"
+const page = document.querySelector("#root.onboardingContainer[data-page]")
+  ? document.querySelector("#root[data-page]").dataset.page
   : document.location.href;
 
 export const AboutWelcomeUtils = {

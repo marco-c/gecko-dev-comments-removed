@@ -148,6 +148,8 @@ function renderMultistage(ready) {
 
   document.body.classList.add("onboardingContainer");
   document.body.id = "root";
+  
+  document.body.dataset.page = "spotlight";
 
   
   

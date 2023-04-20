@@ -34,7 +34,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const page = document.querySelector(":root[dialogroot=true]") ? "spotlight" : document.location.href;
+const page = document.querySelector("#root.onboardingContainer[data-page]") ? document.querySelector("#root[data-page]").dataset.page : document.location.href;
 const AboutWelcomeUtils = {
   handleUserAction(action) {
     window.AWSendToParent("SPECIAL_ACTION", action);
