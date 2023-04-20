@@ -116,6 +116,35 @@ const getConv2dPrecisionTolerance = (resources) => {
 
 
 
+const getGemmPrecisionTolerance = (resources) => {
+  
+  
+  
+  
+  
+  const shapeA = resources.inputs[Object.keys(resources.inputs)[0]].shape;
+  const options = {...resources.options};
+  const width = options.aTranspose ? shapeA[0] : shapeA[1];
+  let tolerance = width * 2;
+  
+  if (options.alpha !== undefined && options.alpha !== 1.0) {
+    tolerance++;
+  }
+  if (options.c && options.beta !== 0.0) {
+    
+    if (options.beta !== undefined && options.beta !== 1.0) {
+      tolerance++;
+    }
+    tolerance++;
+  }
+  return tolerance;
+};
+
+
+
+
+
+
 const getMatmulPrecisionTolerance = (resources) => {
   
   
@@ -143,6 +172,7 @@ const PrecisionMetrics = {
   clamp: {ULP: {float32: 0, float16: 0}},
   concat: {ULP: {float32: 0, float16: 0}},
   conv2d: {ULP: {float32: getConv2dPrecisionTolerance, float16: getConv2dPrecisionTolerance}},
+  gemm: {ULP: {float32: getGemmPrecisionTolerance, float16: getGemmPrecisionTolerance}},
   leakyRelu: {ULP: {float32: 1, float16: 1}},
   matmul: {ULP: {float32: getMatmulPrecisionTolerance, float16: getMatmulPrecisionTolerance}},
   relu: {ULP: {float32: 0, float16: 0}},
