@@ -1858,4 +1858,28 @@ void ChromeUtils::GetAllPossibleUtilityActorNames(GlobalObject& aGlobal,
     aNames.AppendElement(WebIDLUtilityActorNameValues::GetString(idlName));
   }
 }
+
+std::atomic<uint32_t> ChromeUtils::sDevToolsOpenedCount = 0;
+
+
+bool ChromeUtils::IsDevToolsOpened() {
+  return ChromeUtils::sDevToolsOpenedCount > 0;
+}
+
+
+bool ChromeUtils::IsDevToolsOpened(GlobalObject& aGlobal) {
+  return ChromeUtils::IsDevToolsOpened();
+}
+
+
+void ChromeUtils::NotifyDevToolsOpened(GlobalObject& aGlobal) {
+  ChromeUtils::sDevToolsOpenedCount++;
+}
+
+
+void ChromeUtils::NotifyDevToolsClosed(GlobalObject& aGlobal) {
+  MOZ_ASSERT(ChromeUtils::sDevToolsOpenedCount >= 1);
+  ChromeUtils::sDevToolsOpenedCount--;
+}
+
 }  
