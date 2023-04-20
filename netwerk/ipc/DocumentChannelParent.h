@@ -16,6 +16,8 @@ class CanonicalBrowsingContext;
 }
 namespace net {
 
+class EarlyHintConnectArgs;
+
 
 
 
@@ -52,7 +54,8 @@ class DocumentChannelParent final
   RedirectToRealChannel(
       nsTArray<ipc::Endpoint<extensions::PStreamFilterParent>>&&
           aStreamFilterEndpoints,
-      uint32_t aRedirectFlags, uint32_t aLoadFlags);
+      uint32_t aRedirectFlags, uint32_t aLoadFlags,
+      nsTArray<EarlyHintConnectArgs>&& aEarlyHints);
 
   virtual ~DocumentChannelParent();
 
