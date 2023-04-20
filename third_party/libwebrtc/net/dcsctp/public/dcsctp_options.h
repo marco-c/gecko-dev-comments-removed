@@ -74,6 +74,11 @@ struct DcSctpOptions {
   
   
   
+  StreamPriority default_stream_priority = StreamPriority(256);
+
+  
+  
+  
   
   
   

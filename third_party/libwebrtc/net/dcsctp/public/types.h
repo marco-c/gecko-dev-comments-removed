@@ -32,6 +32,10 @@ using TimeoutID = webrtc::StrongAlias<class TimeoutTag, uint64_t>;
 using IsUnordered = webrtc::StrongAlias<class IsUnorderedTag, bool>;
 
 
+
+using StreamPriority = webrtc::StrongAlias<class StreamPriorityTag, uint16_t>;
+
+
 class DurationMs : public webrtc::StrongAlias<class DurationMsTag, int32_t> {
  public:
   constexpr explicit DurationMs(const UnderlyingType& v)
