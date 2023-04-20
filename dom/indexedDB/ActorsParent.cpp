@@ -13776,8 +13776,14 @@ nsresult Maintenance::BeginDatabaseMaintenance() {
           MOZ_ASSERT(threadPool);
         }
 
+        
+        
+        
+        const auto taskQueue = TaskQueue::Create(
+            do_AddRef(threadPool), "IndexedDB Database Maintenance");
+
         MOZ_ALWAYS_SUCCEEDS(
-            threadPool->Dispatch(databaseMaintenance, NS_DISPATCH_NORMAL));
+            taskQueue->Dispatch(databaseMaintenance, NS_DISPATCH_NORMAL));
 
         RegisterDatabaseMaintenance(databaseMaintenance);
       }
