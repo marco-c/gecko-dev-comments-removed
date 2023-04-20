@@ -46,7 +46,7 @@ impl IdleTimeout {
             IdleTimeoutState::Init => now,
             IdleTimeoutState::PacketReceived(t) | IdleTimeoutState::AckElicitingPacketSent(t) => t,
         };
-        let delay = if keep_alive {
+        let delay = if keep_alive && !self.keep_alive_outstanding {
             
             
             max(self.timeout / 2, pto)

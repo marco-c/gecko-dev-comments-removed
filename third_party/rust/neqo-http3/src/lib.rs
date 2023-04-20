@@ -7,16 +7,144 @@
 #![cfg_attr(feature = "deny-warnings", deny(warnings))]
 #![warn(clippy::pedantic)]
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 mod buffered_send_stream;
 mod client_events;
 mod conn_params;
 mod connection;
-pub mod connection_client;
+mod connection_client;
 mod connection_server;
 mod control_stream_local;
 mod control_stream_remote;
 pub mod features;
-pub mod frames;
+mod frames;
 mod headers_checks;
 mod priority;
 mod push_controller;
@@ -24,12 +152,12 @@ mod qlog;
 mod qpack_decoder_receiver;
 mod qpack_encoder_receiver;
 mod recv_message;
-pub mod request_target;
+mod request_target;
 mod send_message;
-pub mod server;
+mod server;
 mod server_connection_events;
 mod server_events;
-pub mod settings;
+mod settings;
 mod stream_type_reader;
 
 use neqo_qpack::Error as QpackError;
@@ -38,24 +166,24 @@ pub use neqo_transport::{Output, StreamId};
 use std::fmt::Debug;
 
 use crate::priority::PriorityHandler;
-pub use buffered_send_stream::BufferedStream;
+use buffered_send_stream::BufferedStream;
 pub use client_events::{Http3ClientEvent, WebTransportEvent};
 pub use conn_params::Http3Parameters;
-pub use connection::Http3State;
+pub use connection::{Http3State, WebTransportSessionAcceptAction};
 pub use connection_client::Http3Client;
 use features::extended_connect::WebTransportSession;
-pub use frames::HFrame;
-pub use neqo_common::{Header, MessageType};
+use frames::HFrame;
+pub use neqo_common::Header;
+use neqo_common::MessageType;
 pub use priority::Priority;
 pub use server::Http3Server;
 pub use server_events::{
     Http3OrWebTransportStream, Http3ServerEvent, WebTransportRequest, WebTransportServerEvent,
 };
-pub use settings::HttpZeroRttChecker;
 use std::any::Any;
 use std::cell::RefCell;
 use std::rc::Rc;
-pub use stream_type_reader::NewStreamType;
+use stream_type_reader::NewStreamType;
 
 type Res<T> = Result<T, Error>;
 
@@ -299,9 +427,8 @@ pub enum Http3StreamType {
 
 #[must_use]
 #[derive(PartialEq, Eq, Debug)]
-pub enum ReceiveOutput {
+enum ReceiveOutput {
     NoOutput,
-    PushStream,
     ControlFrames(Vec<HFrame>),
     UnblockedStreams(Vec<StreamId>),
     NewStream(NewStreamType),
@@ -313,11 +440,11 @@ impl Default for ReceiveOutput {
     }
 }
 
-pub trait Stream: Debug {
+trait Stream: Debug {
     fn stream_type(&self) -> Http3StreamType;
 }
 
-pub trait RecvStream: Stream {
+trait RecvStream: Stream {
     
     
     
@@ -345,7 +472,7 @@ pub trait RecvStream: Stream {
     }
 }
 
-pub trait HttpRecvStream: RecvStream {
+trait HttpRecvStream: RecvStream {
     
     
     
@@ -400,12 +527,12 @@ impl Http3StreamInfo {
     }
 }
 
-pub trait RecvStreamEvents: Debug {
+trait RecvStreamEvents: Debug {
     fn data_readable(&self, _stream_info: Http3StreamInfo) {}
     fn recv_closed(&self, _stream_info: Http3StreamInfo, _close_type: CloseType) {}
 }
 
-pub trait HttpRecvStreamEvents: RecvStreamEvents {
+trait HttpRecvStreamEvents: RecvStreamEvents {
     fn header_ready(
         &self,
         stream_info: Http3StreamInfo,
@@ -416,7 +543,7 @@ pub trait HttpRecvStreamEvents: RecvStreamEvents {
     fn extended_connect_new_session(&self, _stream_id: StreamId, _headers: Vec<Header>) {}
 }
 
-pub trait SendStream: Stream {
+trait SendStream: Stream {
     
     
     fn send(&mut self, conn: &mut Connection) -> Res<()>;
@@ -454,7 +581,7 @@ pub trait SendStream: Stream {
     }
 }
 
-pub trait HttpSendStream: SendStream {
+trait HttpSendStream: SendStream {
     
     
     
@@ -465,7 +592,7 @@ pub trait HttpSendStream: SendStream {
     fn any(&self) -> &dyn Any;
 }
 
-pub trait SendStreamEvents: Debug {
+trait SendStreamEvents: Debug {
     fn send_closed(&self, _stream_info: Http3StreamInfo, _close_type: CloseType) {}
     fn data_writable(&self, _stream_info: Http3StreamInfo) {}
 }
@@ -477,7 +604,7 @@ pub trait SendStreamEvents: Debug {
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CloseType {
+enum CloseType {
     ResetApp(AppError),
     ResetRemote(AppError),
     LocalError(AppError),
@@ -493,5 +620,10 @@ impl CloseType {
             }
             Self::Done => None,
         }
+    }
+
+    #[must_use]
+    pub fn locally_initiated(&self) -> bool {
+        matches!(self, CloseType::ResetApp(_))
     }
 }

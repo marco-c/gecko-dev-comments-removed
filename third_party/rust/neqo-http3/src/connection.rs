@@ -27,11 +27,12 @@ use crate::{
     HttpRecvStreamEvents, NewStreamType, Priority, PriorityHandler, ReceiveOutput, RecvStream,
     RecvStreamEvents, SendStream, SendStreamEvents,
 };
-use neqo_common::{qdebug, qerror, qinfo, qtrace, qwarn, Header, MessageType, Role};
+use neqo_common::{qdebug, qerror, qinfo, qtrace, qwarn, Decoder, Header, MessageType, Role};
 use neqo_qpack::decoder::QPackDecoder;
 use neqo_qpack::encoder::QPackEncoder;
 use neqo_transport::{
-    AppError, Connection, ConnectionError, State, StreamId, StreamType, ZeroRttState,
+    AppError, Connection, ConnectionError, DatagramTracking, State, StreamId, StreamType,
+    ZeroRttState,
 };
 use std::cell::RefCell;
 use std::collections::{BTreeSet, HashMap};
@@ -41,7 +42,7 @@ use std::rc::Rc;
 
 use crate::{Error, Res};
 
-pub struct RequestDescription<'b, 't, T>
+pub(crate) struct RequestDescription<'b, 't, T>
 where
     T: AsRequestTarget<'t> + ?Sized + Debug,
 {
@@ -52,12 +53,39 @@ where
     pub priority: Priority,
 }
 
+pub enum WebTransportSessionAcceptAction {
+    Accept,
+    Reject(Vec<Header>),
+}
+
+impl ::std::fmt::Display for WebTransportSessionAcceptAction {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            WebTransportSessionAcceptAction::Accept => f.write_str("Accept"),
+            WebTransportSessionAcceptAction::Reject(_) => f.write_str("Reject"),
+        }
+    }
+}
+
 #[derive(Debug)]
 enum Http3RemoteSettingsState {
     NotReceived,
     Received(HSettings),
     ZeroRtt(HSettings),
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Clone)]
 pub enum Http3State {
@@ -78,6 +106,194 @@ impl Http3State {
         )
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[derive(Debug)]
 pub(crate) struct Http3Connection {
@@ -126,10 +342,15 @@ impl Http3Connection {
         }
     }
 
+    
+    
+    
     pub fn set_features_listener(&mut self, feature_listener: Http3ClientEvents) {
         self.webtransport.set_listener(feature_listener);
     }
 
+    
+    
     fn initialize_http3_connection(&mut self, conn: &mut Connection) -> Res<()> {
         qinfo!([self], "Initialize the http3 connection.");
         self.control_stream_local.create(conn)?;
@@ -173,6 +394,10 @@ impl Http3Connection {
         !self.streams_with_pending_data.is_empty()
     }
 
+    
+    
+    
+    
     fn send_non_control_streams(&mut self, conn: &mut Connection) -> Res<()> {
         let to_send = mem::take(&mut self.streams_with_pending_data);
         for stream_id in to_send {
@@ -192,6 +417,7 @@ impl Http3Connection {
         Ok(())
     }
 
+    
     
     pub fn process_sending(&mut self, conn: &mut Connection) -> Res<()> {
         
@@ -228,6 +454,8 @@ impl Http3Connection {
         }
     }
 
+    
+    
     pub fn add_new_stream(&mut self, stream_id: StreamId) {
         qtrace!([self], "A new stream: {}.", stream_id);
         self.recv_streams.insert(
@@ -236,6 +464,8 @@ impl Http3Connection {
         );
     }
 
+    
+    
     #[allow(clippy::option_if_let_else)] 
     fn stream_receive(&mut self, conn: &mut Connection, stream_id: StreamId) -> Res<ReceiveOutput> {
         qtrace!([self], "Readable stream {}.", stream_id);
@@ -274,6 +504,7 @@ impl Http3Connection {
     
     
     
+    
     pub fn handle_stream_readable(
         &mut self,
         conn: &mut Connection,
@@ -306,7 +537,7 @@ impl Http3Connection {
             ReceiveOutput::NewStream(_) => {
                 unreachable!("NewStream should have been handled already")
             }
-            _ => Ok(output),
+            ReceiveOutput::NoOutput => Ok(output),
         }
     }
 
@@ -416,6 +647,17 @@ impl Http3Connection {
         } else {
             debug_assert!(false, "Zero rtt rejected in the wrong state.");
             Err(Error::HttpInternal(3))
+        }
+    }
+
+    pub fn handle_datagram(&mut self, datagram: &[u8]) {
+        let mut decoder = Decoder::new(datagram);
+        let session = decoder
+            .decode_varint()
+            .and_then(|id| self.recv_streams.get_mut(&StreamId::from(id)))
+            .and_then(|stream| stream.webtransport());
+        if let Some(s) = session {
+            s.borrow_mut().datagram(decoder.decode_remainder().to_vec());
         }
     }
 
@@ -872,9 +1114,12 @@ impl Http3Connection {
         conn: &mut Connection,
         stream_id: StreamId,
         events: Box<dyn ExtendedConnectEvents>,
-        accept: bool,
+        accept_res: &WebTransportSessionAcceptAction,
     ) -> Res<()> {
-        qtrace!("Respond to WebTransport session with accept={}.", accept);
+        qtrace!(
+            "Respond to WebTransport session with accept={}.",
+            accept_res
+        );
         if !self.webtransport_enabled() {
             return Err(Error::Unavailable);
         }
@@ -891,17 +1136,17 @@ impl Http3Connection {
 
         let send_stream = self.send_streams.get_mut(&stream_id);
 
-        match (send_stream, recv_stream, accept) {
+        match (send_stream, recv_stream, accept_res) {
             (None, None, _) => Err(Error::InvalidStreamId),
             (None, Some(_), _) | (Some(_), None, _) => {
                 
                 self.cancel_fetch(stream_id, Error::HttpRequestRejected.code(), conn)?;
                 Err(Error::InvalidStreamId)
             }
-            (Some(s), Some(_r), false) => {
+            (Some(s), Some(_r), WebTransportSessionAcceptAction::Reject(headers)) => {
                 if s.http_stream()
                     .ok_or(Error::InvalidStreamId)?
-                    .send_headers(&[Header::new(":status", "404")], conn)
+                    .send_headers(headers, conn)
                     .is_ok()
                 {
                     mem::drop(self.stream_close_send(conn, stream_id));
@@ -912,7 +1157,7 @@ impl Http3Connection {
                 }
                 Ok(())
             }
-            (Some(s), Some(_r), true) => {
+            (Some(s), Some(_r), WebTransportSessionAcceptAction::Accept) => {
                 if s.http_stream()
                     .ok_or(Error::InvalidStreamId)?
                     .send_headers(&[Header::new(":status", "200")], conn)
@@ -1090,6 +1335,23 @@ impl Http3Connection {
         }
     }
 
+    pub fn webtransport_send_datagram(
+        &mut self,
+        session_id: StreamId,
+        conn: &mut Connection,
+        buf: &[u8],
+        id: impl Into<DatagramTracking>,
+    ) -> Res<()> {
+        self.recv_streams
+            .get_mut(&session_id)
+            .ok_or(Error::InvalidStreamId)?
+            .webtransport()
+            .ok_or(Error::InvalidStreamId)?
+            .borrow_mut()
+            .send_datagram(conn, buf, id)
+    }
+
+    
     
     
     fn handle_control_frame(&mut self, f: HFrame) -> Res<Option<HFrame>> {
@@ -1266,11 +1528,7 @@ impl Http3Connection {
         wt: &Rc<RefCell<WebTransportSession>>,
         conn: &mut Connection,
     ) {
-        let out = wt.borrow_mut().take_sub_streams();
-        if out.is_none() {
-            return;
-        }
-        let (recv, send) = out.unwrap();
+        let (recv, send) = wt.borrow_mut().take_sub_streams();
 
         for id in recv {
             qtrace!("Remove the extended connect sub receiver stream {}", id);

@@ -17,7 +17,7 @@ use std::fmt::Debug;
 
 const MAX_READ_SIZE: usize = 4096;
 
-pub trait FrameDecoder<T> {
+pub(crate) trait FrameDecoder<T> {
     fn is_known_type(frame_type: u64) -> bool;
     
     
@@ -29,7 +29,7 @@ pub trait FrameDecoder<T> {
     fn decode(frame_type: u64, frame_len: u64, data: Option<&[u8]>) -> Res<Option<T>>;
 }
 
-pub trait StreamReader {
+pub(crate) trait StreamReader {
     
     
     
@@ -37,7 +37,7 @@ pub trait StreamReader {
     fn read_data(&mut self, buf: &mut [u8]) -> Res<(usize, bool)>;
 }
 
-pub struct StreamReaderConnectionWrapper<'a> {
+pub(crate) struct StreamReaderConnectionWrapper<'a> {
     conn: &'a mut Connection,
     stream_id: StreamId,
 }
@@ -57,7 +57,7 @@ impl<'a> StreamReader for StreamReaderConnectionWrapper<'a> {
     }
 }
 
-pub struct StreamReaderRecvStreamWrapper<'a> {
+pub(crate) struct StreamReaderRecvStreamWrapper<'a> {
     recv_stream: &'a mut Box<dyn RecvStream>,
     conn: &'a mut Connection,
 }
@@ -86,7 +86,7 @@ enum FrameReaderState {
 
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug)]
-pub struct FrameReader {
+pub(crate) struct FrameReader {
     state: FrameReaderState,
     frame_type: u64,
     frame_len: u64,

@@ -21,10 +21,11 @@ use neqo_common::{
 use neqo_crypto::{agent::CertificateInfo, AuthenticationStatus, ResumptionToken, SecretAgentInfo};
 use neqo_qpack::Stats as QpackStats;
 use neqo_transport::{
-    AppError, Connection, ConnectionEvent, ConnectionId, ConnectionIdGenerator, Output,
-    Stats as TransportStats, StreamId, StreamType, Version, ZeroRttState,
+    AppError, Connection, ConnectionEvent, ConnectionId, ConnectionIdGenerator, DatagramTracking,
+    Output, Stats as TransportStats, StreamId, StreamType, Version, ZeroRttState,
 };
 use std::cell::RefCell;
+use std::convert::TryFrom;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::mem;
@@ -58,6 +59,231 @@ fn alpn_from_quic_version(version: Version) -> &'static str {
         Version::Draft32 => "h3-32",
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 pub struct Http3Client {
     conn: Connection,
@@ -103,6 +329,10 @@ impl Http3Client {
         ))
     }
 
+    
+    
+    
+    
     #[must_use]
     pub fn new_with_conn(c: Connection, http3_parameters: Http3Parameters) -> Self {
         let events = Http3ClientEvents::default();
@@ -125,6 +355,7 @@ impl Http3Client {
         self.conn.role()
     }
 
+    
     #[must_use]
     pub fn state(&self) -> Http3State {
         self.base_handler.state()
@@ -141,6 +372,10 @@ impl Http3Client {
         self.conn.peer_certificate()
     }
 
+    
+    
+    
+    
     
     pub fn authenticated(&mut self, status: AuthenticationStatus, now: Instant) {
         self.conn.authenticated(status, now);
@@ -181,12 +416,22 @@ impl Http3Client {
     
     
     
+    
+    
+    
+    
+    
+    
     pub fn take_resumption_token(&mut self, now: Instant) -> Option<ResumptionToken> {
         self.conn
             .take_resumption_token(now)
             .and_then(|t| self.encode_resumption_token(&t))
     }
 
+    
+    
+    
+    
     
     
     
@@ -201,7 +446,7 @@ impl Http3Client {
             Some(v) => v,
             None => return Err(Error::InvalidResumptionToken),
         };
-        qtrace!([self], "  settings {}", hex_with_len(&settings_slice));
+        qtrace!([self], "  settings {}", hex_with_len(settings_slice));
         let mut dec_settings = Decoder::from(settings_slice);
         let mut settings = HSettings::default();
         Error::map_error(
@@ -209,7 +454,7 @@ impl Http3Client {
             Error::InvalidResumptionToken,
         )?;
         let tok = dec.decode_remainder();
-        qtrace!([self], "  Transport token {}", hex(&tok));
+        qtrace!([self], "  Transport token {}", hex(tok));
         self.conn.enable_resumption(now, tok)?;
         if self.conn.state().closed() {
             let state = self.conn.state().clone();
@@ -260,6 +505,7 @@ impl Http3Client {
 
     
 
+    
     
     
     
@@ -343,6 +589,9 @@ impl Http3Client {
             .stream_stop_sending(&mut self.conn, stream_id, error)
     }
 
+    
+    
+    
     
     
     
@@ -478,6 +727,35 @@ impl Http3Client {
         )
     }
 
+    
+    
+    
+    
+    
+    pub fn webtransport_send_datagram(
+        &mut self,
+        session_id: StreamId,
+        buf: &[u8],
+        id: impl Into<DatagramTracking>,
+    ) -> Res<()> {
+        qtrace!("webtransport_send_datagram session:{:?}", session_id);
+        self.base_handler
+            .webtransport_send_datagram(session_id, &mut self.conn, buf, id)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn webtransport_max_datagram_size(&self, session_id: StreamId) -> Res<u64> {
+        Ok(self.conn.max_datagram_size()?
+            - u64::try_from(Encoder::varint_len(session_id.as_u64())).unwrap())
+    }
+
+    
     pub fn process(&mut self, dgram: Option<Datagram>, now: Instant) -> Output {
         qtrace!([self], "Process.");
         if let Some(d) = dgram {
@@ -487,6 +765,15 @@ impl Http3Client {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn process_input(&mut self, dgram: Datagram, now: Instant) {
         qtrace!([self], "Process input.");
         self.conn.process_input(dgram, now);
@@ -494,10 +781,16 @@ impl Http3Client {
     }
 
     
+    
+    
     pub fn conn(&mut self) -> &mut Connection {
         &mut self.conn
     }
 
+    
+    
+    
+    
     
     fn process_http3(&mut self, now: Instant) {
         qtrace!([self], "Process http3 internal.");
@@ -521,6 +814,30 @@ impl Http3Client {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     pub fn process_output(&mut self, now: Instant) -> Output {
@@ -560,12 +877,30 @@ impl Http3Client {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn check_connection_events(&mut self) -> Res<()> {
         qtrace!([self], "Check connection events.");
         while let Some(e) = self.conn.next_event() {
             qdebug!([self], "check_connection_events - event {:?}.", e);
             match e {
                 ConnectionEvent::NewStream { stream_id } => {
+                    
+                    
+                    
+                    
+                    
                     self.base_handler.add_new_stream(stream_id);
                 }
                 ConnectionEvent::SendStreamWritable { stream_id } => {
@@ -617,8 +952,10 @@ impl Http3Client {
                         self.events.resumption_token(t);
                     }
                 }
+                ConnectionEvent::Datagram(dgram) => {
+                    self.base_handler.handle_datagram(&dgram);
+                }
                 ConnectionEvent::SendStreamComplete { .. }
-                | ConnectionEvent::Datagram { .. }
                 | ConnectionEvent::OutgoingDatagramOutcome { .. }
                 | ConnectionEvent::IncomingDatagramDropped => {}
             }
@@ -626,6 +963,25 @@ impl Http3Client {
         Ok(())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn handle_stream_readable(&mut self, stream_id: StreamId) -> Res<()> {
         match self
             .base_handler
@@ -4326,7 +4682,7 @@ mod tests {
             &mut client,
             &mut server,
             request_stream_id,
-            &[0x0, 0x3, 0x61, 0x62, 0x63], 
+            [0x0, 0x3, 0x61, 0x62, 0x63], 
             false,
         );
 
@@ -4351,7 +4707,7 @@ mod tests {
             &mut client,
             &mut server,
             request_stream_id,
-            &[0x0, 0x0],
+            [0x0, 0x0],
             true,
         );
 

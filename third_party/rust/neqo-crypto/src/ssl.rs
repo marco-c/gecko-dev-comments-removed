@@ -14,7 +14,6 @@
     unknown_lints,
     clippy::borrow_as_ptr
 )]
-#![allow(unknown_lints, deref_nullptr)] 
 
 use crate::constants::Epoch;
 use crate::err::{secstatus_to_res, Res};
