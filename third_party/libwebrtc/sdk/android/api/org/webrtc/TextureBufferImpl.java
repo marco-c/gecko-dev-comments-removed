@@ -169,6 +169,7 @@ public class TextureBufferImpl implements VideoFrame.TextureBuffer {
 
 
 
+  @Override
   public TextureBufferImpl applyTransformMatrix(
       Matrix transformMatrix, int newWidth, int newHeight) {
     return applyTransformMatrix(transformMatrix,  newWidth,

@@ -136,6 +136,16 @@ public class VideoFrame implements RefCounted {
 
 
     Matrix getTransformMatrix();
+
+    
+
+
+
+
+    default TextureBuffer applyTransformMatrix(
+        Matrix transformMatrix, int newWidth, int newHeight) {
+      throw new UnsupportedOperationException("Not implemented");
+    }
   }
 
   private final Buffer buffer;
