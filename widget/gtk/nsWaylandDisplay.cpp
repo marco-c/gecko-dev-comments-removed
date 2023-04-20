@@ -4,7 +4,6 @@
 
 
 
-
 #include "nsWaylandDisplay.h"
 
 #include <dlfcn.h>
@@ -12,14 +11,13 @@
 #include "base/message_loop.h"  
 #include "base/task.h"          
 #include "mozilla/StaticMutex.h"
+#include "mozilla/Array.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/ThreadLocal.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "WidgetUtilsGtk.h"
 
-struct _GdkSeat;
-typedef struct _GdkSeat GdkSeat;
-
-namespace mozilla {
-namespace widget {
+namespace mozilla::widget {
 
 
 
@@ -27,15 +25,16 @@ namespace widget {
 
 
 
+static StaticDataMutex<
+    Array<StaticRefPtr<nsWaylandDisplay>, MAX_DISPLAY_CONNECTIONS>>
+    gWaylandDisplays{"gWaylandDisplays"};
 
-static RefPtr<nsWaylandDisplay> gWaylandDisplays[MAX_DISPLAY_CONNECTIONS];
-static StaticMutex gWaylandDisplayArrayWriteMutex MOZ_UNANNOTATED;
+MOZ_THREAD_LOCAL(nsWaylandDisplay*) sTLSDisplay;
 
 
 void WaylandDispatchDisplays() {
-  MOZ_ASSERT(NS_IsMainThread(),
-             "WaylandDispatchDisplays() is supposed to run in main thread");
-  for (auto& display : gWaylandDisplays) {
+  auto lock = gWaylandDisplays.Lock();
+  for (auto& display : *lock) {
     if (display) {
       display->DispatchEventQueue();
     }
@@ -43,49 +42,61 @@ void WaylandDispatchDisplays() {
 }
 
 void WaylandDisplayRelease() {
-  StaticMutexAutoLock lock(gWaylandDisplayArrayWriteMutex);
-  for (auto& display : gWaylandDisplays) {
+  auto lock = gWaylandDisplays.Lock();
+  for (auto& display : *lock) {
     if (display) {
-      display = nullptr;
+      display->ShutdownEventQueue();
+      
+      
     }
   }
 }
 
 
-RefPtr<nsWaylandDisplay> WaylandDisplayGet(GdkDisplay* aGdkDisplay) {
-  wl_display* waylandDisplay = WaylandDisplayGetWLDisplay(aGdkDisplay);
+RefPtr<nsWaylandDisplay> WaylandDisplayGet() {
+  bool hasTLS = false;
+  if (MOZ_LIKELY(sTLSDisplay.init())) {
+    if (auto* disp = sTLSDisplay.get()) {
+      return disp;
+    }
+    hasTLS = true;
+  }
+
+  wl_display* waylandDisplay = WaylandDisplayGetWLDisplay();
   if (!waylandDisplay) {
     return nullptr;
   }
 
+  RefPtr<nsWaylandDisplay> ret;
+  if (MOZ_LIKELY(hasTLS)) {
+    ret = new nsWaylandDisplay(waylandDisplay);
+    sTLSDisplay.set(ret.get());
+  }
+
+  auto lock = gWaylandDisplays.Lock();
+
   
-  for (auto& display : gWaylandDisplays) {
-    if (display && display->Matches(waylandDisplay)) {
+  for (auto& display : *lock) {
+    if (display) {
+      if (display->Matches(waylandDisplay)) {
+        MOZ_ASSERT(!hasTLS, "We shouldn't have got here");
+        return display;
+      }
+    } else {
+      display = ret ? ret.get() : new nsWaylandDisplay(waylandDisplay);
       return display;
     }
   }
-
-  StaticMutexAutoLock arrayLock(gWaylandDisplayArrayWriteMutex);
-  for (auto& display : gWaylandDisplays) {
-    if (display == nullptr) {
-      display = new nsWaylandDisplay(waylandDisplay);
-      return display;
-    }
-  }
-
   MOZ_CRASH("There's too many wayland display conections!");
   return nullptr;
 }
 
-wl_display* WaylandDisplayGetWLDisplay(GdkDisplay* aGdkDisplay) {
-  if (!aGdkDisplay) {
-    aGdkDisplay = gdk_display_get_default();
-    if (!GdkIsWaylandDisplay(aGdkDisplay)) {
-      return nullptr;
-    }
+wl_display* WaylandDisplayGetWLDisplay() {
+  GdkDisplay* disp = gdk_display_get_default();
+  if (!GdkIsWaylandDisplay(disp)) {
+    return nullptr;
   }
-
-  return gdk_wayland_display_get_wl_display(aGdkDisplay);
+  return gdk_wayland_display_get_wl_display(disp);
 }
 
 void nsWaylandDisplay::SetShm(wl_shm* aShm) { mShm = aShm; }
@@ -192,11 +203,19 @@ static void global_registry_remover(void* data, wl_registry* registry,
 static const struct wl_registry_listener registry_listener = {
     global_registry_handler, global_registry_remover};
 
-bool nsWaylandDisplay::DispatchEventQueue() {
+void nsWaylandDisplay::DispatchEventQueue() {
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
   if (mEventQueue) {
     wl_display_dispatch_queue_pending(mDisplay, mEventQueue);
   }
-  return true;
+}
+
+void nsWaylandDisplay::ShutdownEventQueue() {
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+  if (mEventQueue) {
+    wl_event_queue_destroy(mEventQueue);
+    mEventQueue = nullptr;
+  }
 }
 
 void nsWaylandDisplay::SyncEnd() {
@@ -304,13 +323,6 @@ nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
                         "We're missing subcompositor interface!");
 }
 
-nsWaylandDisplay::~nsWaylandDisplay() {
-  if (mEventQueue) {
-    wl_event_queue_destroy(mEventQueue);
-    mEventQueue = nullptr;
-  }
-  mDisplay = nullptr;
-}
+nsWaylandDisplay::~nsWaylandDisplay() { ShutdownEventQueue(); }
 
-}  
 }  
