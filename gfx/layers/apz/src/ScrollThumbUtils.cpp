@@ -134,6 +134,17 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
 
   const float scale = desiredThumbLength / mScrollbarData.mThumbLength;
 
+  CSSCoord effectiveThumbLength = mScrollbarData.mThumbLength;
+
+  if (haveAsyncZoom) {
+    effectiveThumbLength = desiredThumbLength;
+
+    
+    
+    
+    ScaleThumbBy(aAxis, scale, ScrollThumbExtent::Start);
+  }
+
   
   
   const CSSCoord curPos = aAxis.GetRectOffset(visualViewportRect) -
@@ -141,18 +152,11 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
 
   const float thumbPosRatio =
       (maxMinPosDifference != 0)
-          ? float((mScrollbarData.mScrollTrackLength - desiredThumbLength) /
+          ? float((mScrollbarData.mScrollTrackLength - effectiveThumbLength) /
                   maxMinPosDifference)
           : 1.f;
 
   const CSSCoord desiredThumbPos = curPos * thumbPosRatio;
-
-  if (haveAsyncZoom) {
-    
-    
-    
-    ScaleThumbBy(aAxis, scale, ScrollThumbExtent::Start);
-  }
 
   
   
