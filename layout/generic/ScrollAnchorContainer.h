@@ -9,6 +9,7 @@
 
 #include "nsPoint.h"
 #include "mozilla/Saturate.h"
+#include "mozilla/TimeStamp.h"
 
 class nsFrameList;
 class nsIFrame;
@@ -18,8 +19,7 @@ namespace mozilla {
 class ScrollFrameHelper;
 }  
 
-namespace mozilla {
-namespace layout {
+namespace mozilla::layout {
 
 
 
@@ -142,6 +142,8 @@ class ScrollAnchorContainer final {
   
   ScrollFrameHelper* mScrollFrame;
 
+  ScrollFrameHelper* ScrollFrame() const { return mScrollFrame; }
+
   
   
   
@@ -153,14 +155,23 @@ class ScrollAnchorContainer final {
   
   nscoord mLastAnchorOffset;
 
-  
-  
-  SaturateUint32 mConsecutiveScrollAnchoringAdjustments{0};
+  struct DisablingHeuristic {
+    
+    
+    SaturateUint32 mConsecutiveScrollAnchoringAdjustments{0};
 
-  
-  
-  
-  nscoord mConsecutiveScrollAnchoringAdjustmentLength{0};
+    
+    
+    
+    nscoord mConsecutiveScrollAnchoringAdjustmentLength{0};
+
+    
+    TimeStamp mTimeStamp;
+
+    
+    bool AdjustmentMade(const ScrollAnchorContainer&, nscoord aAdjustment);
+    void Reset();
+  } mHeuristic;
 
   
   
@@ -178,7 +189,6 @@ class ScrollAnchorContainer final {
   bool mSuppressAnchorAdjustment : 1;
 };
 
-}  
 }  
 
 #endif  
