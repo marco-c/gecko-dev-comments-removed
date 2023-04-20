@@ -244,7 +244,7 @@ static void ReportSyntaxError(TokenStreamAnyChars& ts,
 
   
   
-  StringBuffer windowBuf(ts.jsContext(), ts.context());
+  StringBuffer windowBuf(ts.jsContext());
   if (!windowBuf.append(windowStart, windowEnd)) {
     return;
   }

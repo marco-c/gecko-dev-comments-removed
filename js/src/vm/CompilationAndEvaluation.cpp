@@ -32,9 +32,9 @@
 #include "util/CompleteFile.h"     
 #include "util/StringBuffer.h"     
 #include "vm/EnvironmentObject.h"  
-#include "vm/ErrorContext.h"  
-#include "vm/Interpreter.h"  
-#include "vm/JSContext.h"    
+#include "vm/ErrorContext.h"       
+#include "vm/Interpreter.h"        
+#include "vm/JSContext.h"          
 
 #include "vm/JSContext-inl.h"  
 
@@ -181,7 +181,7 @@ JS_PUBLIC_API bool JS_Utf8BufferIsCompilableUnit(JSContext* cx,
 
   LifoAllocScope allocScope(&cx->tempLifoAlloc());
   js::frontend::NoScopeBindingCache scopeCache;
-  frontend::CompilationState compilationState(cx, &ec, allocScope, input.get());
+  frontend::CompilationState compilationState(cx, allocScope, input.get());
   if (!compilationState.init(cx, &ec, &scopeCache)) {
     return false;
   }
@@ -215,8 +215,8 @@ class FunctionCompiler {
   bool nameIsIdentifier_ = true;
 
  public:
-  explicit FunctionCompiler(JSContext* cx, ErrorContext* ec)
-      : cx_(cx), nameAtom_(cx), funStr_(cx, ec) {
+  explicit FunctionCompiler(JSContext* cx)
+      : cx_(cx), nameAtom_(cx), funStr_(cx) {
     AssertHeapIsIdle();
     CHECK_THREAD(cx);
     MOZ_ASSERT(!cx->zone()->isAtomsZone());
@@ -362,15 +362,12 @@ JS_PUBLIC_API JSFunction* JS::CompileFunction(
     JSContext* cx, HandleObjectVector envChain,
     const ReadOnlyCompileOptions& options, const char* name, unsigned nargs,
     const char* const* argnames, SourceText<char16_t>& srcBuf) {
-  ManualReportFrontendContext fc(cx);
-  FunctionCompiler compiler(cx, &fc);
+  FunctionCompiler compiler(cx);
   if (!compiler.init(name, nargs, argnames) ||
       !compiler.addFunctionBody(srcBuf)) {
-    fc.failure();
     return nullptr;
   }
 
-  fc.ok();
   return compiler.finish(envChain, options);
 }
 
@@ -378,15 +375,12 @@ JS_PUBLIC_API JSFunction* JS::CompileFunction(
     JSContext* cx, HandleObjectVector envChain,
     const ReadOnlyCompileOptions& options, const char* name, unsigned nargs,
     const char* const* argnames, SourceText<Utf8Unit>& srcBuf) {
-  ManualReportFrontendContext fc(cx);
-  FunctionCompiler compiler(cx, &fc);
+  FunctionCompiler compiler(cx);
   if (!compiler.init(name, nargs, argnames) ||
       !compiler.addFunctionBody(srcBuf)) {
-    fc.failure();
     return nullptr;
   }
 
-  fc.ok();
   return compiler.finish(envChain, options);
 }
 
