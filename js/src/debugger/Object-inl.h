@@ -20,15 +20,7 @@
 
 #include "debugger/Debugger-inl.h"  
 
-
-
-
-inline bool js::DebuggerObject::isInstance() const {
-  return !getReservedSlot(OWNER_SLOT).isUndefined();
-}
-
 inline js::Debugger* js::DebuggerObject::owner() const {
-  MOZ_ASSERT(isInstance());
   JSObject* dbgobj = &getReservedSlot(OWNER_SLOT).toObject();
   return Debugger::fromJSObject(dbgobj);
 }
