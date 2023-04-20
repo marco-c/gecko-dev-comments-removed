@@ -606,18 +606,30 @@ self.onmessage = (0, _workerUtils.workerHandler)({
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = assert;
+exports.default = void 0;
 
 var _environment = __webpack_require__(968);
 
 
 
 
-function assert(condition, message) {
-  if ((0, _environment.isNodeTest)() && !condition) {
-    throw new Error(`Assertion failure: ${message}`);
-  }
+let assert; 
+
+
+
+
+if ((0, _environment.isNodeTest)()) {
+  assert = function (condition, message) {
+    if (!condition) {
+      throw new Error(`Assertion failure: ${message}`);
+    }
+  };
+} else {
+  assert = function () {};
 }
+
+var _default = assert;
+exports.default = _default;
 
  }),
 

@@ -2,20 +2,25 @@
 
 
 
-import { generatedToOriginalId } from "devtools/client/shared/source-map-loader/index";
+import {
+  generatedToOriginalId,
+  originalToGeneratedId,
+} from "devtools/client/shared/source-map-loader/index";
 
 import assert from "../../utils/assert";
 import { recordEvent } from "../../utils/telemetry";
 import { updateBreakpointsForNewPrettyPrintedSource } from "../breakpoints";
 
-import { setSymbols } from "./symbols";
 import {
   getPrettySourceURL,
   isGenerated,
   isJavaScript,
 } from "../../utils/source";
 import { isFulfilled } from "../../utils/async-value";
-import { loadGeneratedSourceText } from "./loadSourceText";
+import {
+  loadGeneratedSourceText,
+  loadOriginalSourceText,
+} from "./loadSourceText";
 import { mapFrames } from "../pause";
 import { selectSpecificLocation } from "../sources";
 import { createPrettyPrintOriginalSource } from "../../client/firefox/create";
@@ -23,7 +28,6 @@ import { createPrettyPrintOriginalSource } from "../../client/firefox/create";
 import {
   getSource,
   getFirstSourceActorForGeneratedSource,
-  getSourceFromId,
   getSourceByURL,
   getSelectedLocation,
   getThreadContext,
@@ -77,11 +81,10 @@ export async function prettyPrintSource(
   };
 }
 
-export function createPrettySource(cx, sourceId) {
-  return async ({ dispatch, getState }) => {
-    const source = getSourceFromId(getState(), sourceId);
+function createPrettySource(cx, source) {
+  return async ({ dispatch, sourceMapLoader, getState }) => {
     const url = getPrettyOriginalSourceURL(source);
-    const id = generatedToOriginalId(sourceId, url);
+    const id = generatedToOriginalId(source.id, url);
     const prettySource = createPrettyPrintOriginalSource(id, url);
 
     dispatch({
@@ -89,20 +92,21 @@ export function createPrettySource(cx, sourceId) {
       cx,
       originalSources: [prettySource],
     });
-
-    await dispatch(selectSource(cx, id));
-
     return prettySource;
   };
 }
 
-function selectPrettyLocation(cx, prettySource, generatedLocation) {
+function selectPrettyLocation(cx, prettySource) {
   return async ({ dispatch, sourceMapLoader, getState }) => {
-    let location = generatedLocation
-      ? generatedLocation
-      : getSelectedLocation(getState());
+    let location = getSelectedLocation(getState());
 
-    if (location && location.line >= 1) {
+    
+    
+    if (
+      location &&
+      location.line >= 1 &&
+      location.sourceId == originalToGeneratedId(prettySource.id)
+    ) {
       location = await sourceMapLoader.getOriginalLocation(location);
 
       return dispatch(
@@ -113,8 +117,6 @@ function selectPrettyLocation(cx, prettySource, generatedLocation) {
     return dispatch(selectSource(cx, prettySource.id));
   };
 }
-
-
 
 
 
@@ -156,15 +158,25 @@ export function togglePrettyPrint(cx, sourceId) {
       return dispatch(selectPrettyLocation(cx, prettySource));
     }
 
-    const selectedLocation = getSelectedLocation(getState());
-    const newPrettySource = await dispatch(createPrettySource(cx, sourceId));
-    await dispatch(selectPrettyLocation(cx, newPrettySource, selectedLocation));
+    const newPrettySource = await dispatch(createPrettySource(cx, source));
+
+    
+    
+    
+    await dispatch(loadOriginalSourceText({ cx, source: newPrettySource }));
+    
+    
+    
+    
+    
+    
+    
+    await dispatch(selectPrettyLocation(cx, newPrettySource));
 
     const threadcx = getThreadContext(getState());
+    
     await dispatch(mapFrames(threadcx));
-
-    await dispatch(setSymbols({ cx, source: newPrettySource, sourceActor }));
-
+    
     await dispatch(updateBreakpointsForNewPrettyPrintedSource(cx, sourceId));
 
     return newPrettySource;

@@ -4,8 +4,19 @@
 
 import { isNodeTest } from "./environment";
 
-export default function assert(condition, message) {
-  if (isNodeTest() && !condition) {
-    throw new Error(`Assertion failure: ${message}`);
-  }
+let assert;
+
+
+
+
+
+if (isNodeTest()) {
+  assert = function(condition, message) {
+    if (!condition) {
+      throw new Error(`Assertion failure: ${message}`);
+    }
+  };
+} else {
+  assert = function() {};
 }
+export default assert;
