@@ -104,7 +104,13 @@ function getTopWin({ skipPopups, forceNonPrivate } = {}) {
 }
 
 function doGetProtocolFlags(aURI) {
-  return Services.io.getDynamicProtocolFlags(aURI);
+  let handler = Services.io.getProtocolHandler(aURI.scheme);
+  
+  return handler instanceof Ci.nsIProtocolHandlerWithDynamicFlags
+    ? handler
+        .QueryInterface(Ci.nsIProtocolHandlerWithDynamicFlags)
+        .getFlagsForURI(aURI)
+    : handler.protocolFlags;
 }
 
 

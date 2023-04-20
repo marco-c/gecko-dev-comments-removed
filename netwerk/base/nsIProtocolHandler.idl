@@ -38,9 +38,6 @@ interface nsIProtocolHandlerWithDynamicFlags : nsISupports
 
 
 
-
-
-
     unsigned long getFlagsForURI(in nsIURI aURI);
 };
 
@@ -54,6 +51,34 @@ interface nsIProtocolHandler : nsISupports
 
 
     readonly attribute ACString scheme;
+
+    
+
+
+
+
+    readonly attribute long defaultPort;
+
+    
+
+
+    readonly attribute unsigned long protocolFlags;
+
+%{C++
+  
+  nsresult DoGetProtocolFlags(nsIURI* aURI, uint32_t* aFlags)
+  {
+      nsCOMPtr<nsIProtocolHandlerWithDynamicFlags> dh = do_QueryInterface(this);
+      nsresult rv = dh ? dh->GetFlagsForURI(aURI, aFlags) : GetProtocolFlags(aFlags);
+      if (NS_SUCCEEDED(rv)) {
+#if !IS_ORIGIN_IS_FULL_SPEC_DEFINED
+        MOZ_RELEASE_ASSERT(!(*aFlags & nsIProtocolHandler::ORIGIN_IS_FULL_SPEC),
+                           "ORIGIN_IS_FULL_SPEC is unsupported but used");
+#endif
+      }
+      return rv;
+  }
+%}
 
     
 
@@ -74,10 +99,6 @@ interface nsIProtocolHandler : nsISupports
 
 
     
-
-
-
-
 
 
 
@@ -295,17 +316,4 @@ interface nsIProtocolHandler : nsISupports
 
 
     const unsigned long WEBEXT_URI_WEB_ACCESSIBLE = (1 << 24);
-
-    
-
-
-
-
-
-
-    const unsigned long DYNAMIC_URI_FLAGS =
-        URI_LOADABLE_BY_ANYONE | URI_DANGEROUS_TO_LOAD |
-        URI_IS_POTENTIALLY_TRUSTWORTHY | URI_FETCHABLE_BY_ANYONE |
-        URI_LOADABLE_BY_EXTENSIONS | URI_DISALLOW_IN_PRIVATE_CONTEXT |
-        WEBEXT_URI_WEB_ACCESSIBLE;
 };

@@ -292,8 +292,20 @@ bool DownloadPlatform::IsURLPossiblyFromWeb(nsIURI* aURI) {
   while (uri) {
     
     
+    
+    
+    nsAutoCString scheme;
+    nsresult rv = uri->GetScheme(scheme);
+    if (NS_FAILED(rv)) {
+      return true;
+    }
+    nsCOMPtr<nsIProtocolHandler> ph;
+    rv = ios->GetProtocolHandler(scheme.get(), getter_AddRefs(ph));
+    if (NS_FAILED(rv)) {
+      return true;
+    }
     uint32_t flags;
-    nsresult rv = ios->GetDynamicProtocolFlags(uri, &flags);
+    rv = ph->DoGetProtocolFlags(uri, &flags);
     if (NS_FAILED(rv)) {
       return true;
     }

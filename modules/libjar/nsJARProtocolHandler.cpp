@@ -68,6 +68,23 @@ nsJARProtocolHandler::GetScheme(nsACString& result) {
 }
 
 NS_IMETHODIMP
+nsJARProtocolHandler::GetDefaultPort(int32_t* result) {
+  *result = -1;  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsJARProtocolHandler::GetProtocolFlags(uint32_t* result) {
+  
+  
+  *result = URI_NORELATIVE | URI_NOAUTH | URI_LOADABLE_BY_ANYONE;
+  
+
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsJARProtocolHandler::NewChannel(nsIURI* uri, nsILoadInfo* aLoadInfo,
                                  nsIChannel** result) {
   nsJARChannel* chan = new nsJARChannel();
