@@ -40,12 +40,23 @@ void OverflowAreas::ApplyOverflowClippingOnRect(nsRect& aOverflowRect,
 }
 
 void OverflowAreas::UnionWith(const OverflowAreas& aOther) {
-  InkOverflow().UnionRect(InkOverflow(), aOther.InkOverflow());
-  ScrollableOverflow().UnionRect(ScrollableOverflow(),
-                                 aOther.ScrollableOverflow());
+  
+  
+  
+  if (!aOther.InkOverflow().IsEqualEdges(nsRect())) {
+    InkOverflow().UnionRect(InkOverflow(), aOther.InkOverflow());
+  }
+  if (!aOther.ScrollableOverflow().IsEqualEdges(nsRect())) {
+    ScrollableOverflow().UnionRect(ScrollableOverflow(),
+                                   aOther.ScrollableOverflow());
+  }
 }
 
 void OverflowAreas::UnionAllWith(const nsRect& aRect) {
+  if (aRect.IsEqualEdges(nsRect())) {
+    
+    return;
+  }
   InkOverflow().UnionRect(InkOverflow(), aRect);
   ScrollableOverflow().UnionRect(ScrollableOverflow(), aRect);
 }
