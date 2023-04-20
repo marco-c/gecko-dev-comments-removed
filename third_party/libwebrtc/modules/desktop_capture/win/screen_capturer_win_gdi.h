@@ -47,7 +47,6 @@ class ScreenCapturerWinGdi : public DesktopCapturer {
 
  private:
   typedef HRESULT(WINAPI* DwmEnableCompositionFunc)(UINT);
-  typedef HRESULT(WINAPI* DwmIsCompositionEnabledFunc)(BOOL*);
 
   
   void PrepareCaptureResources();
@@ -77,7 +76,6 @@ class ScreenCapturerWinGdi : public DesktopCapturer {
 
   HMODULE dwmapi_library_ = NULL;
   DwmEnableCompositionFunc composition_func_ = nullptr;
-  DwmIsCompositionEnabledFunc composition_enabled_func_;
 };
 
 }  

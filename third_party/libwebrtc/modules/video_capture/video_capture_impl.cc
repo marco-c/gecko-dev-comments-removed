@@ -149,11 +149,13 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
   
   bool apply_rotation = apply_rotation_;
 
-  if (apply_rotation &&
-      (_rotateFrame == kVideoRotation_90 ||
-       _rotateFrame == kVideoRotation_270)) {
-    target_width = abs(height);
-    target_height = width;
+  if (apply_rotation) {
+    
+    if (_rotateFrame == kVideoRotation_90 ||
+        _rotateFrame == kVideoRotation_270) {
+      target_width = abs(height);
+      target_height = width;
+    }
   }
 
   int stride_y = target_width;

@@ -130,7 +130,6 @@ int AcmReceiver::InsertPacket(const RTPHeader& rtp_header,
                                   format->sample_rate_hz,
                                   format->num_channels,
                                   std::move(format->sdp_format)};
-      last_audio_format_clockrate_hz_ = format->sdp_format.clockrate_hz;
     }
   }  
 
@@ -311,10 +310,6 @@ void AcmReceiver::GetNetworkStatistics(
       neteq_->GetOperationsAndState();
   acm_stat->packetBufferFlushes =
       neteq_operations_and_state.packet_buffer_flushes;
-}
-
-int AcmReceiver::LastAudioSampleRate() const {
-  return last_audio_format_clockrate_hz_;
 }
 
 int AcmReceiver::EnableNack(size_t max_nack_list_size) {

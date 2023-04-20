@@ -173,8 +173,6 @@ class AcmReceiver {
   
   absl::optional<std::pair<int, SdpAudioFormat>> LastDecoder() const;
 
-  int LastAudioSampleRate() const;
-
   
   
   
@@ -227,7 +225,6 @@ class AcmReceiver {
   const std::unique_ptr<NetEq> neteq_;  
   Clock* const clock_;
   std::atomic<bool> resampled_last_output_frame_;
-  std::atomic<int> last_audio_format_clockrate_hz_;
 };
 
 }  

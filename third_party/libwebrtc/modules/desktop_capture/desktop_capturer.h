@@ -216,11 +216,6 @@ class RTC_EXPORT DesktopCapturer {
       const DesktopCaptureOptions& options);
 
   
-  
-  static std::unique_ptr<DesktopCapturer> CreateRawAppCapturer(
-      const DesktopCaptureOptions& options);
-
-  
   static std::unique_ptr<DesktopCapturer> CreateRawTabCapturer(
       const DesktopCaptureOptions& options);
 };

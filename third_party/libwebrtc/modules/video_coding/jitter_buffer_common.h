@@ -30,8 +30,7 @@ enum VCMJitterBufferEnum {
   
   kMaxPacketsInSession = 1400,      
   kBufferIncStepSizeBytes = 30000,  
-  kMaxJBFrameSizeBytes            = 4000000, 
-  kBufferSafetyMargin             = 100      
+  kMaxJBFrameSizeBytes = 4000000    
 };
 
 enum VCMFrameBufferEnum {
