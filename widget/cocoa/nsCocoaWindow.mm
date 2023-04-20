@@ -1809,6 +1809,19 @@ void nsCocoaWindow::ProcessTransitions() {
           }
         } else if (mWindow.zoomed) {
           [mWindow zoom:nil];
+
+          
+          
+          
+          
+          if (mWindow.zoomed) {
+            NSRect maximumFrame = mWindow.frame;
+            const CGFloat INSET_OUT_OF_ZOOM = 20.0f;
+            [mWindow setFrame:NSInsetRect(maximumFrame, INSET_OUT_OF_ZOOM, INSET_OUT_OF_ZOOM)
+                      display:YES];
+            MOZ_ASSERT(!mWindow.zoomed,
+                       "We should be able to unzoom by shrinking the frame a bit.");
+          }
         }
         break;
       }
@@ -2804,6 +2817,10 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
 - (NSSize)windowWillResize:(NSWindow*)sender toSize:(NSSize)proposedFrameSize {
   RollUpPopups();
   return proposedFrameSize;
+}
+
+- (NSRect)windowWillUseStandardFrame:(NSWindow*)window defaultFrame:(NSRect)newFrame {
+  return newFrame;
 }
 
 void nsCocoaWindow::CocoaSendToplevelActivateEvents() {
