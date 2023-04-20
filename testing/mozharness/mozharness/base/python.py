@@ -479,7 +479,7 @@ class VirtualenvMixin(object):
                 / "python"
                 / "_venv"
                 / "wheels"
-                / "pip-23.0.1-py3-none-any.whl"
+                / "pip-21.2.3-py3-none-any.whl"
             )
             setuptools_wheel_path = (
                 src_dir
@@ -487,7 +487,7 @@ class VirtualenvMixin(object):
                 / "python"
                 / "_venv"
                 / "wheels"
-                / "setuptools-67.4.0-py3-none-any.whl"
+                / "setuptools-51.2.0-py3-none-any.whl"
             )
 
             if all(path.exists() for path in (pip_wheel_path, setuptools_wheel_path)):
@@ -530,22 +530,15 @@ class VirtualenvMixin(object):
                                     sys.executable, str(expected_python_debug_exe)
                                 )
 
+            
+            
+            
+            
             self.mkdir_p(dirs["abs_work_dir"])
-
             self.run_command(
                 [sys.executable, "-m", "venv", "--without-pip", venv_path],
                 cwd=dirs["abs_work_dir"],
                 error_list=VirtualenvErrorList,
-                halt_on_failure=True,
-            )
-
-            
-            
-            
-            
-            self.run_command(
-                [str(venv_python_bin), "-m", "ensurepip", "--default-pip"],
-                cwd=dirs["abs_work_dir"],
                 halt_on_failure=True,
             )
 
@@ -565,11 +558,16 @@ class VirtualenvMixin(object):
                     new_venv_config = Path(venv_path) / "pyvenv.cfg"
                     shutil.copyfile(str(this_venv_config), str(new_venv_config))
 
+            
+            
+            
+            
+            pip_path = pip_wheel_path / "pip"
+
             self.run_command(
                 [
                     str(venv_python_bin),
-                    "-m",
-                    "pip",
+                    str(pip_path),
                     "install",
                     "--only-binary",
                     ":all:",
