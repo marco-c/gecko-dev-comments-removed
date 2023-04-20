@@ -95,9 +95,6 @@ enum TextureAllocationFlags {
   
   
   ALLOC_UPDATE_FROM_SURFACE = 1 << 7,
-
-  
-  ALLOC_DO_NOT_ACCELERATE = 1 << 8,
 };
 
 enum class BackendSelector { Content, Canvas };

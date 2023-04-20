@@ -1348,13 +1348,7 @@ void CanvasRenderingContext2D::RestoreClipsAndTransformToTarget() {
 
 bool CanvasRenderingContext2D::BorrowTarget(const IntRect& aPersistedRect,
                                             bool aNeedsClear) {
-  
-  
-  
-  
-  
-  if (!mBufferProvider || mBufferProvider->RequiresRefresh() ||
-      (mBufferProvider->IsAccelerated() && mWillReadFrequently)) {
+  if (!mBufferProvider || mBufferProvider->RequiresRefresh()) {
     return false;
   }
   mTarget = mBufferProvider->BorrowDrawTarget(aPersistedRect);
@@ -1570,9 +1564,7 @@ bool CanvasRenderingContext2D::TryAcceleratedTarget(
     
     mAllowAcceleration = false;
   }
-  
-  
-  if (!mAllowAcceleration || mWillReadFrequently) {
+  if (!mAllowAcceleration) {
     return false;
   }
   aOutDT = DrawTargetWebgl::Create(GetSize(), GetSurfaceFormat());
@@ -1823,8 +1815,6 @@ CanvasRenderingContext2D::SetContextOptions(JSContext* aCx,
     aRvForDictionaryInit.Throw(NS_ERROR_UNEXPECTED);
     return NS_ERROR_UNEXPECTED;
   }
-
-  mWillReadFrequently = attributes.mWillReadFrequently;
 
   mContextAttributesHasAlpha = attributes.mAlpha;
   UpdateIsOpaque();

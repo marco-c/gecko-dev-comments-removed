@@ -750,9 +750,6 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
   
   bool mAllowAcceleration = true;
-  
-  
-  bool mWillReadFrequently = false;
 
   RefPtr<CanvasShutdownObserver> mShutdownObserver;
   virtual void AddShutdownObserver();
