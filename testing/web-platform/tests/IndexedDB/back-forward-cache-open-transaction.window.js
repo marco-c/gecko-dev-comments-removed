@@ -14,21 +14,26 @@ promise_test(async t => {
        null,  {features: 'noopener'});
 
   await rc1.executeScript(() => {
-    
-    
-    const db = indexedDB.open( 'test_idb',  1);
-    db.onupgradeneeded = () => {
-      db.result.createObjectStore('store');
-    };
-    addEventListener('pagehide', () => {
-      let transaction = db.result.transaction(['store'], 'readwrite');
-      let store = transaction.objectStore('store');
-      store.put("key", "value");
+    return new Promise(resolve => {
+      
+      
+      const db = indexedDB.open( 'test_idb',  1);
+      db.onupgradeneeded = () => {
+        db.result.createObjectStore('store');
+        addEventListener('pagehide', () => {
+          let transaction = db.result.transaction(['store'], 'readwrite');
+          let store = transaction.objectStore('store');
+          store.put('key', 'value');
 
-      
-      
-      
-      db.result.close();
+          
+          
+          
+          db.result.close();
+        });
+        
+        
+        resolve();
+      };
     });
   });
 
