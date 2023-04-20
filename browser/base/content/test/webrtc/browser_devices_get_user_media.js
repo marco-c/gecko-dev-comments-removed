@@ -902,6 +902,7 @@ var gTests = [
       let browser = gBrowser.selectedBrowser;
       BrowserTestUtils.loadURIString(
         browser,
+        
         browser.documentURI.spec.replace("https://", "http://")
       );
       await BrowserTestUtils.browserLoaded(browser);

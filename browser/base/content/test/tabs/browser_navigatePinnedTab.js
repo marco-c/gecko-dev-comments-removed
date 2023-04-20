@@ -37,18 +37,22 @@ add_task(async function() {
   let pageLoadPromise = BrowserTestUtils.browserLoaded(
     appTab.linkedBrowser,
     false,
+    
     "http://example.com/"
   );
+  
   BrowserTestUtils.loadURIString(appTab.linkedBrowser, "http://example.com/");
   info("Started loading example.com");
   await pageLoadPromise;
   info("Loaded example.com");
   let newTabPromise = BrowserTestUtils.waitForNewTab(
     gBrowser,
+    
     "http://example.org/"
   );
   await SpecialPowers.spawn(browser, [], async function() {
     let link = content.document.createElement("a");
+    
     link.href = "http://example.org/";
     content.document.body.appendChild(link);
     link.click();

@@ -2,6 +2,7 @@
 
 
 const TEST_FILE = "dummy_page.html";
+
 const WEB_ADDRESS = "http://example.org/";
 
 
@@ -39,6 +40,7 @@ add_task(async function() {
 
   let openedBrowser = openedTab.linkedBrowser;
 
+  
   
   BrowserTestUtils.loadURIString(openedBrowser, "http://example.org/");
   let href = await BrowserTestUtils.browserLoaded(

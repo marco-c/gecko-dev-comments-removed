@@ -14,6 +14,7 @@
 
 const TEST_HIGH1 = "https://example.org/";
 const TEST_HIGH2 = "https://test1.example.org/";
+
 const TEST_LOW1 = "http://example.org/";
 const TEST_LOW2 = "https://example.com/";
 

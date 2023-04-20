@@ -4,6 +4,7 @@
 "use strict";
 
 const TEST_PAGE =
+  
   "http://example.org/browser/browser/base/content/test/zoom/zoom_test.html";
 
 var gTab1, gTab2, gLevel1;

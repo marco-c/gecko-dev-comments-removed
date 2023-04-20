@@ -164,6 +164,7 @@ add_task(async function test_navigation() {
     skipAnimation: true,
   });
   let { permanentKey } = gBrowser.selectedBrowser;
+  
   await waitForLoad("http://example.org/" + DUMMY_PATH);
   is(
     gBrowser.selectedBrowser.isRemoteBrowser,
@@ -177,6 +178,7 @@ add_task(async function test_navigation() {
   );
 
   info("2");
+  
   
   await waitForLoad("http://example.com/" + DUMMY_PATH);
   is(
@@ -211,6 +213,7 @@ add_task(async function test_navigation() {
   await check_history();
 
   info("4");
+  
   
   await waitForLoad("http://example.org/" + DUMMY_PATH);
   is(
@@ -310,6 +313,7 @@ add_task(async function test_navigation() {
   info("10");
   
   gExpectedHistory.entries.splice(gExpectedHistory.entries.length - 1, 1);
+  
   await waitForLoad("http://example.com/" + DUMMY_PATH);
   is(
     gBrowser.selectedBrowser.isRemoteBrowser,
@@ -339,6 +343,7 @@ add_task(async function test_synchronous() {
     skipAnimation: true,
   });
   let { permanentKey } = gBrowser.selectedBrowser;
+  
   await waitForLoad("http://example.org/" + DUMMY_PATH);
   is(
     gBrowser.selectedBrowser.isRemoteBrowser,
@@ -372,6 +377,7 @@ add_task(async function test_synchronous() {
   info("Loading http://example.org/" + DUMMY_PATH);
   BrowserTestUtils.loadURIString(
     gBrowser.selectedBrowser,
+    
     "http://example.org/" + DUMMY_PATH
   );
   await BrowserTestUtils.browserStopped(gBrowser);
@@ -416,6 +422,7 @@ add_task(async function test_loadflags() {
   info("2");
   
   await waitForLoadWithFlags(
+    
     "http://example.com/" + DUMMY_PATH,
     Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY
   );
@@ -443,6 +450,7 @@ add_task(async function test_loadflags() {
   info("4");
   
   await waitForLoadWithFlags(
+    
     "http://example.org/" + DUMMY_PATH,
     Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY
   );
@@ -456,6 +464,7 @@ add_task(async function test_loadflags() {
   info("5");
   
   await waitForLoadWithFlags(
+    
     "http://example.com/" + DUMMY_PATH,
     Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY
   );

@@ -1,6 +1,7 @@
 "use strict";
 
 const example_base =
+  
   "http://example.com/browser/browser/base/content/test/tabs/";
 
 add_task(async function test_contextmenu_openlink_after_tabnavigated() {
@@ -32,6 +33,7 @@ add_task(async function test_contextmenu_openlink_after_tabnavigated() {
 
   let awaitNewTabOpen = BrowserTestUtils.waitForNewTab(
     gBrowser,
+    
     "http://example.com/",
     true
   );
@@ -48,6 +50,7 @@ add_task(async function test_contextmenu_openlink_after_tabnavigated() {
 
   is(
     newTab.linkedBrowser.currentURI.spec,
+    
     "http://example.com/",
     "Got the expected URL loaded in the new tab"
   );

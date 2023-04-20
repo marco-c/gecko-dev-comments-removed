@@ -3,6 +3,7 @@
 
 
 async function addTab_example_com() {
+  
   const tab = BrowserTestUtils.addTab(gBrowser, "http://example.com/", {
     skipAnimation: true,
   });
