@@ -1,18 +1,18 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+// Enables logging and shorter save intervals.
 const debugMode = false;
 
-
-
+// Delay when a change is made to when the file is saved.
+// 30 seconds normally, or 3 seconds for testing
 const WRITE_DELAY_MS = (debugMode ? 3 : 30) * 1000;
 
 const XULSTORE_CID = Components.ID("{6f46b6f4-c8b1-4bd4-a4fa-9ebbed0753ea}");
 const STOREDB_FILENAME = "xulstore.json";
 
-function XULStore() {
+export function XULStore() {
   if (!Services.appinfo.inSafeMode) {
     this.load();
   }
@@ -26,20 +26,20 @@ XULStore.prototype = {
     "nsISupportsWeakReference",
   ]),
 
-  
+  /* ---------- private members ---------- */
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /*
+   * The format of _data is _data[docuri][elementid][attribute]. For example:
+   *  {
+   *      "chrome://blah/foo.xul" : {
+   *                                    "main-window" : { aaa : 1, bbb : "c" },
+   *                                    "barColumn"   : { ddd : 9, eee : "f" },
+   *                                },
+   *
+   *      "chrome://foopy/b.xul" :  { ... },
+   *      ...
+   *  }
+   */
   _data: {},
   _storeFile: null,
   _needsSaving: false,
@@ -70,9 +70,9 @@ XULStore.prototype = {
     }
   },
 
-  
-
-
+  /*
+   * Internal function for logging debug messages to the Error Console window
+   */
   log(message) {
     if (!debugMode) {
       return;
@@ -85,8 +85,8 @@ XULStore.prototype = {
       this._data = JSON.parse(Cu.readUTF8File(this._storeFile));
     } catch (e) {
       this.log("Error reading JSON: " + e);
-      
-      
+      // This exception could mean that the file didn't exist.
+      // We'll just ignore the error and start with a blank slate.
     }
   },
 
@@ -114,12 +114,12 @@ XULStore.prototype = {
       return;
     }
 
-    
+    // Don't write the file more than once every 30 seconds.
     this._needsSaving = true;
     this._writeTimer.init(this, WRITE_DELAY_MS, Ci.nsITimer.TYPE_ONE_SHOT);
   },
 
-  
+  /* ---------- interface implementation ---------- */
 
   persist(node, attr) {
     if (!node.id) {
@@ -134,10 +134,10 @@ XULStore.prototype = {
       return;
     }
 
-    
-    
-    
-    
+    // See Bug 1476680 - we could drop the `hasValue` check so that
+    // any time there's an empty attribute it gets removed from the
+    // store. Since this is copying behavior from document.persist,
+    // callers would need to be updated with that change.
     if (!value && this.hasValue(uri, node.id, attr)) {
       this.removeValue(uri, node.id, attr);
     } else {
@@ -157,7 +157,7 @@ XULStore.prototype = {
       return;
     }
 
-    
+    // bug 319846 -- don't save really long attributes or values.
     if (id.length > 512 || attr.length > 512) {
       throw Components.Exception(
         "id or attribute name too long",
@@ -182,12 +182,12 @@ XULStore.prototype = {
     }
     obj = obj[id];
 
-    
+    // Don't set the value if it is already set to avoid saving the file.
     if (attr in obj && obj[attr] == value) {
       return;
     }
 
-    obj[attr] = value; 
+    obj[attr] = value; // IE, this._data[docURI][id][attr] = value;
 
     this.markAsChanged();
   },
@@ -325,5 +325,3 @@ nsStringEnumerator.prototype = {
     return this._items[this._nextIndex++];
   },
 };
-
-var EXPORTED_SYMBOLS = ["XULStore"];
