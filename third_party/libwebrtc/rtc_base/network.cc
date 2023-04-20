@@ -1111,9 +1111,11 @@ IPAddress Network::GetBestIP() const {
   }
 
   InterfaceAddress selected_ip, link_local_ip, ula_ip;
+  
+  
   const bool prefer_global_ipv6_to_link_local =
       field_trials_
-          ? field_trials_->IsEnabled("WebRTC-PreferGlobalIPv6ToLinkLocal")
+          ? field_trials_->IsEnabled("WebRTC-IPv6NetworkResolutionFixes")
           : false;
   for (const InterfaceAddress& ip : ips_) {
     
