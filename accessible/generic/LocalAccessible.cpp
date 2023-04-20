@@ -3832,6 +3832,22 @@ void LocalAccessible::MaybeQueueCacheUpdateForStyleChanges() {
       mDoc->QueueCacheUpdate(this, CacheDomain::TransformMatrix);
     }
 
+    if (newStyle->StyleDisplay()->IsPositionedStyle()) {
+      
+      
+      
+      for (auto prop : {eCSSProperty_left, eCSSProperty_right, eCSSProperty_top,
+                        eCSSProperty_bottom}) {
+        nsAutoCString oldVal, newVal;
+        mOldComputedStyle->GetComputedPropertyValue(prop, oldVal);
+        newStyle->GetComputedPropertyValue(prop, newVal);
+        if (oldVal != newVal) {
+          mDoc->QueueCacheUpdate(this, CacheDomain::Bounds);
+          break;
+        }
+      }
+    }
+
     mOldComputedStyle = newStyle;
     if (newHasValidTransformStyle) {
       mStateFlags |= eOldFrameHasValidTransformStyle;
