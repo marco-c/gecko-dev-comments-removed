@@ -1808,68 +1808,9 @@ TEST_F(WebRtcVideoChannelBaseTest, SetSendWithoutCodecs) {
 TEST_F(WebRtcVideoChannelBaseTest, SetSendSetsTransportBufferSizes) {
   EXPECT_TRUE(SetOneCodec(DefaultCodec()));
   EXPECT_TRUE(SetSend(true));
-  EXPECT_EQ(64 * 1024, network_interface_.sendbuf_size());
-  EXPECT_EQ(256 * 1024, network_interface_.recvbuf_size());
+  EXPECT_EQ(kVideoRtpSendBufferSize, network_interface_.sendbuf_size());
+  EXPECT_EQ(kVideoRtpRecvBufferSize, network_interface_.recvbuf_size());
 }
-
-
-
-TEST_F(WebRtcVideoChannelBaseTest, OverridesRecvBufferSize) {
-  
-  
-  const int kCustomRecvBufferSize = 123456;
-  override_field_trials_ = std::make_unique<webrtc::test::ScopedKeyValueConfig>(
-      field_trials_, "WebRTC-IncreasedReceivebuffers/123456/");
-
-  ResetTest();
-
-  EXPECT_TRUE(SetOneCodec(DefaultCodec()));
-  EXPECT_TRUE(SetSend(true));
-  EXPECT_EQ(64 * 1024, network_interface_.sendbuf_size());
-  EXPECT_EQ(kCustomRecvBufferSize, network_interface_.recvbuf_size());
-}
-
-
-
-TEST_F(WebRtcVideoChannelBaseTest, OverridesRecvBufferSizeWithSuffix) {
-  
-  
-  const int kCustomRecvBufferSize = 123456;
-  override_field_trials_ = std::make_unique<webrtc::test::ScopedKeyValueConfig>(
-      field_trials_, "WebRTC-IncreasedReceivebuffers/123456_Dogfood/");
-  ResetTest();
-
-  EXPECT_TRUE(SetOneCodec(DefaultCodec()));
-  EXPECT_TRUE(SetSend(true));
-  EXPECT_EQ(64 * 1024, network_interface_.sendbuf_size());
-  EXPECT_EQ(kCustomRecvBufferSize, network_interface_.recvbuf_size());
-}
-
-class InvalidRecvBufferSizeFieldTrial
-    : public WebRtcVideoChannelBaseTest,
-      public ::testing::WithParamInterface<const char*> {};
-
-
-
-TEST_P(InvalidRecvBufferSizeFieldTrial, InvalidRecvBufferSize) {
-  
-  
-  
-  override_field_trials_ = std::make_unique<webrtc::test::ScopedKeyValueConfig>(
-      field_trials_,
-      std::string("WebRTC-IncreasedReceivebuffers/") + GetParam() + "/");
-
-  ResetTest();
-
-  EXPECT_TRUE(SetOneCodec(DefaultCodec()));
-  EXPECT_TRUE(SetSend(true));
-  EXPECT_EQ(64 * 1024, network_interface_.sendbuf_size());
-  EXPECT_EQ(256 * 1024, network_interface_.recvbuf_size());
-}
-
-INSTANTIATE_TEST_SUITE_P(All,
-                         InvalidRecvBufferSizeFieldTrial,
-                         Values("NotANumber", "-1", " ", "0"));
 
 
 TEST_F(WebRtcVideoChannelBaseTest, GetStats) {

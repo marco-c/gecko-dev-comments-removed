@@ -1892,23 +1892,8 @@ void WebRtcVideoChannel::SetInterface(NetworkInterface* iface) {
   RTC_DCHECK_RUN_ON(&network_thread_checker_);
   MediaChannel::SetInterface(iface);
   
-
-  
-  
-  
-  const std::string group_name_recv_buf_size =
-      call_->trials().Lookup("WebRTC-IncreasedReceivebuffers");
-  int recv_buffer_size = kVideoRtpRecvBufferSize;
-  if (!group_name_recv_buf_size.empty() &&
-      (sscanf(group_name_recv_buf_size.c_str(), "%d", &recv_buffer_size) != 1 ||
-       recv_buffer_size <= 0)) {
-    RTC_LOG(LS_WARNING) << "Invalid receive buffer size: "
-                        << group_name_recv_buf_size;
-    recv_buffer_size = kVideoRtpRecvBufferSize;
-  }
-
   MediaChannel::SetOption(NetworkInterface::ST_RTP, rtc::Socket::OPT_RCVBUF,
-                          recv_buffer_size);
+                          kVideoRtpRecvBufferSize);
 
   
   
