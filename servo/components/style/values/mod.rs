@@ -367,6 +367,14 @@ impl AtomIdent {
             callback(&*atom)
         })
     }
+
+    
+    #[inline]
+    pub fn cast<'a>(atom: &'a Atom) -> &'a Self {
+        let ptr = atom as *const _ as *const Self;
+        
+        unsafe { &*ptr }
+    }
 }
 
 #[cfg(feature = "gecko")]
