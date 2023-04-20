@@ -91,10 +91,7 @@ UrlClassifierFeatureEmailTrackingProtection::MaybeCreate(nsIChannel* aChannel) {
        aChannel));
 
   
-  if (!StaticPrefs::privacy_trackingprotection_emailtracking_enabled() &&
-      !(NS_UsePrivateBrowsing(aChannel) &&
-        StaticPrefs::
-            privacy_trackingprotection_emailtracking_pbmode_enabled())) {
+  if (!StaticPrefs::privacy_trackingprotection_emailtracking_enabled()) {
     return nullptr;
   }
 
