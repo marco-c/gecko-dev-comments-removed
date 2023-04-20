@@ -17,10 +17,13 @@ namespace mozilla::dom {
 
 class WebTransportError;
 class WebTransportDatagramDuplexStream;
+class WebTransportIncomingStreamsAlgorithms;
 class ReadableStream;
 class WritableStream;
 
 class WebTransport final : public nsISupports, public nsWrapperCache {
+  friend class WebTransportIncomingStreamsAlgorithms;
+
  public:
   explicit WebTransport(nsIGlobalObject* aGlobal);
 
@@ -29,15 +32,21 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
 
   enum class WebTransportState { CONNECTING, CONNECTED, CLOSED, FAILED };
 
-  bool Init(const GlobalObject& aGlobal, const nsAString& aUrl,
-            const WebTransportOptions& aOptions, ErrorResult& aError);
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Init(const GlobalObject& aGlobal,
+                                        const nsAString& aUrl,
+                                        const WebTransportOptions& aOptions,
+                                        ErrorResult& aError);
   void ResolveWaitingConnection(WebTransportReliabilityMode aReliability,
                                 WebTransportChild* aChild);
   void RejectWaitingConnection(nsresult aRv);
   bool ParseURL(const nsAString& aURL) const;
-  MOZ_CAN_RUN_SCRIPT void Cleanup(WebTransportError* aError,
-                                  const WebTransportCloseInfo* aCloseInfo,
-                                  ErrorResult& aRv);
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Cleanup(
+      WebTransportError* aError, const WebTransportCloseInfo* aCloseInfo,
+      ErrorResult& aRv);
 
   
   nsIGlobalObject* GetParentObject() const;
@@ -48,38 +57,35 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   
   static already_AddRefed<WebTransport> Constructor(
       const GlobalObject& aGlobal, const nsAString& aUrl,
-      const WebTransportOptions& aOptions, ErrorResult& aRv);
+      const WebTransportOptions& aOptions, ErrorResult& aError);
 
   already_AddRefed<Promise> GetStats(ErrorResult& aError);
 
-  already_AddRefed<Promise> Ready();
+  already_AddRefed<Promise> Ready() { return do_AddRef(mReady); }
   WebTransportReliabilityMode Reliability();
   WebTransportCongestionControl CongestionControl();
   already_AddRefed<Promise> Closed();
   void Close(const WebTransportCloseInfo& aOptions);
   already_AddRefed<WebTransportDatagramDuplexStream> Datagrams();
   already_AddRefed<Promise> CreateBidirectionalStream(ErrorResult& aError);
-  already_AddRefed<ReadableStream> IncomingBidirectionalStreams();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY already_AddRefed<ReadableStream>
+  IncomingBidirectionalStreams();
   already_AddRefed<Promise> CreateUnidirectionalStream(ErrorResult& aError);
-  already_AddRefed<ReadableStream> IncomingUnidirectionalStreams();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY already_AddRefed<ReadableStream>
+  IncomingUnidirectionalStreams();
 
   void Shutdown() {}
 
  private:
-  ~WebTransport() {
-    
-    
-    MOZ_ASSERT(mSendStreams.IsEmpty());
-    MOZ_ASSERT(mReceiveStreams.IsEmpty());
-    
-    
-    if (mChild) {
-      mChild->Shutdown();
-    }
-  }
+  ~WebTransport();
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
   RefPtr<WebTransportChild> mChild;
+
+  
+  
+  
+  
 
   
   
@@ -93,6 +99,8 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
 
   WebTransportState mState;
   RefPtr<Promise> mReady;
+  RefPtr<Promise> mIncomingUnidirectionalPromise;
+  RefPtr<Promise> mIncomingBidirectionalPromise;
   WebTransportReliabilityMode mReliability;
   
   RefPtr<ReadableStream> mIncomingUnidirectionalStreams;
@@ -103,4 +111,4 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
 
 }  
 
-#endif
+#endif  

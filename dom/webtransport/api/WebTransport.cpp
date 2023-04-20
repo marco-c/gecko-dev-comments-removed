@@ -15,6 +15,7 @@
 #include "mozilla/dom/ReadableStreamDefaultController.h"
 #include "mozilla/dom/WebTransportDatagramDuplexStream.h"
 #include "mozilla/dom/WebTransportError.h"
+#include "mozilla/dom/WebTransportStreams.h"
 #include "mozilla/dom/WebTransportLog.h"
 #include "mozilla/dom/WritableStream.h"
 #include "mozilla/ipc/BackgroundChild.h"
@@ -43,6 +44,18 @@ WebTransport::WebTransport(nsIGlobalObject* aGlobal)
   LOG(("Creating WebTransport %p", this));
 }
 
+WebTransport::~WebTransport() {
+  
+  
+  MOZ_ASSERT(mSendStreams.IsEmpty());
+  MOZ_ASSERT(mReceiveStreams.IsEmpty());
+  
+  
+  if (mChild) {
+    mChild->Shutdown();
+  }
+}
+
 
 
 nsIGlobalObject* WebTransport::GetParentObject() const { return mGlobal; }
@@ -62,48 +75,87 @@ already_AddRefed<WebTransport> WebTransport::Constructor(
 
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
   RefPtr<WebTransport> result = new WebTransport(global);
-  if (!result->Init(aGlobal, aURL, aOptions, aError)) {
+  result->Init(aGlobal, aURL, aOptions, aError);
+  if (aError.Failed()) {
     return nullptr;
   }
 
   return result.forget();
 }
 
-bool WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
+void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
                         const WebTransportOptions& aOptions,
                         ErrorResult& aError) {
+  
   
   using mozilla::ipc::BackgroundChild;
   using mozilla::ipc::Endpoint;
   using mozilla::ipc::PBackgroundChild;
 
+  
+  
+  
+  
+  
+  
+  if (!ParseURL(aURL)) {
+    aError.ThrowSyntaxError("Invalid WebTransport URL");
+    return;
+  }
+  
+  
+  
+  bool dedicated = !aOptions.mAllowPooling;
+  
+  
+  
+  
+  if (aOptions.mServerCertificateHashes.WasPassed()) {
+    
+    aError.ThrowNotSupportedError("No support for serverCertificateHashes yet");
+    
+    
+    return;
+  }
+  
+  bool requireUnreliable = aOptions.mRequireUnreliable;
+  
+  
+  
+  
+  
+  WebTransportCongestionControl congestionControl =
+      WebTransportCongestionControl::Default;  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+  
   mReady = Promise::Create(mGlobal, aError);
   if (NS_WARN_IF(aError.Failed())) {
-    return false;
+    return;
   }
 
+  
   mClosed = Promise::Create(mGlobal, aError);
   if (NS_WARN_IF(aError.Failed())) {
-    return false;
-  }
-
-  QueuingStrategy strategy;
-  Optional<JS::Handle<JSObject*>> underlying;
-  mIncomingUnidirectionalStreams =
-      ReadableStream::Constructor(aGlobal, underlying, strategy, aError);
-  if (aError.Failed()) {
-    return false;
-  }
-  mIncomingBidirectionalStreams =
-      ReadableStream::Constructor(aGlobal, underlying, strategy, aError);
-  if (aError.Failed()) {
-    return false;
+    return;
   }
 
   PBackgroundChild* backgroundChild =
       BackgroundChild::GetOrCreateForCurrentThread();
   if (NS_WARN_IF(!backgroundChild)) {
-    return false;
+    return;
   }
 
   nsCOMPtr<nsIPrincipal> principal = nsContentUtils::GetSystemPrincipal();
@@ -115,29 +167,74 @@ bool WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
 
   RefPtr<WebTransportChild> child = new WebTransportChild();
   if (!childEndpoint.Bind(child)) {
-    return false;
+    return;
   }
 
   mState = WebTransportState::CONNECTING;
-  LOG(("Connecting WebTransport to parent for %s",
-       NS_ConvertUTF16toUTF8(aURL).get()));
+
+  JSContext* cx = aGlobal.Context();
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
-  if (!ParseURL(aURL)) {
-    aError.ThrowSyntaxError("Invalid WebTransport URL");
-    return false;
+
+  
+  
+  
+  
+  
+  Optional<JS::Handle<JSObject*>> underlying;
+  
+  
+  
+  const nsCOMPtr<nsIGlobalObject> global(mGlobal);
+  
+  mIncomingBidirectionalPromise = Promise::Create(mGlobal, aError);
+  if (NS_WARN_IF(aError.Failed())) {
+    return;
   }
-  bool dedicated =
-      !aOptions.mAllowPooling;  
-  bool requireUnreliable = aOptions.mRequireUnreliable;
-  WebTransportCongestionControl congestionControl = aOptions.mCongestionControl;
-  if (aOptions.mServerCertificateHashes.WasPassed()) {
-    
-    aError.ThrowNotSupportedError("No support for serverCertificateHashes yet");
-    
-    
-    return false;
+
+  RefPtr<WebTransportIncomingStreamsAlgorithms> algorithm =
+      new WebTransportIncomingStreamsAlgorithms(mIncomingBidirectionalPromise,
+                                                false, this);
+
+  mIncomingBidirectionalStreams = CreateReadableStream(
+      cx, global, algorithm, Some(0.0), nullptr, aError);  
+  if (aError.Failed()) {
+    return;
   }
+  
+  
+  
+  
+  
+
+  
+  mIncomingUnidirectionalPromise = Promise::Create(mGlobal, aError);
+  if (NS_WARN_IF(aError.Failed())) {
+    return;
+  }
+
+  algorithm = new WebTransportIncomingStreamsAlgorithms(
+      mIncomingUnidirectionalPromise, true, this);
+
+  mIncomingUnidirectionalStreams =
+      CreateReadableStream(cx, global, algorithm, Some(0.0), nullptr, aError);
+  if (aError.Failed()) {
+    return;
+  }
+
+  
+  
+  LOG(("Connecting WebTransport to parent for %s",
+       NS_ConvertUTF16toUTF8(aURL).get()));
 
   
   backgroundChild
@@ -162,14 +259,14 @@ bool WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
                } else {
                  
                  
+
+                 
                  self->ResolveWaitingConnection(
                      static_cast<WebTransportReliabilityMode>(
                          Get<1>(aResult.ResolveValue())),
                      child);
                }
              });
-
-  return true;
 }
 
 void WebTransport::ResolveWaitingConnection(
@@ -195,6 +292,12 @@ void WebTransport::RejectWaitingConnection(nsresult aRv) {
   
   
   mReady->MaybeReject(aRv);
+  
+  mIncomingBidirectionalPromise->MaybeResolveWithUndefined();
+  mIncomingUnidirectionalPromise->MaybeResolveWithUndefined();
+
+  
+  
 }
 
 bool WebTransport::ParseURL(const nsAString& aURL) const {
@@ -223,8 +326,6 @@ already_AddRefed<Promise> WebTransport::GetStats(ErrorResult& aError) {
   aError.Throw(NS_ERROR_NOT_IMPLEMENTED);
   return nullptr;
 }
-
-already_AddRefed<Promise> WebTransport::Ready() { return do_AddRef(mReady); }
 
 WebTransportReliabilityMode WebTransport::Reliability() { return mReliability; }
 
@@ -271,6 +372,12 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions) {
     }
     mState = WebTransportState::CLOSED;
 
+    
+    mIncomingBidirectionalPromise->MaybeResolveWithUndefined();   
+    mIncomingUnidirectionalPromise->MaybeResolveWithUndefined();  
+
+    
+    
     
     
     mChild = nullptr;
@@ -366,6 +473,7 @@ void WebTransport::Cleanup(WebTransportError* aError,
     
     MOZ_ASSERT(mReady->State() != Promise::PromiseState::Pending);
     
+    
     RefPtr<ReadableStream> stream = mIncomingBidirectionalStreams;
     stream->CloseNative(cx, IgnoreErrors());
     
@@ -388,6 +496,9 @@ void WebTransport::Cleanup(WebTransportError* aError,
     ReadableStreamDefaultControllerError(cx, controller, errorValue,
                                          IgnoreErrors());
   }
+  
+  mIncomingUnidirectionalPromise->MaybeReject(errorValue);
+  mIncomingBidirectionalPromise->MaybeReject(errorValue);
 }
 
 }  
