@@ -120,42 +120,6 @@ function TargetMixin(parentClass) {
       return true;
     }
 
-    
-
-
-
-
-
-
-    get descriptorFront() {
-      if (this.isDestroyed()) {
-        throw new Error("Descriptor already destroyed for target: " + this);
-      }
-
-      if (this.isWorkerTarget) {
-        return this;
-      }
-
-      if (this._descriptorFront) {
-        return this._descriptorFront;
-      }
-
-      if (this.parentFront.typeName.endsWith("Descriptor")) {
-        return this.parentFront;
-      }
-      throw new Error("Missing descriptor for target: " + this);
-    }
-
-    
-
-
-
-
-
-    setDescriptor(descriptorFront) {
-      this._descriptorFront = descriptorFront;
-    }
-
     get targetType() {
       return this._targetType;
     }
@@ -270,24 +234,6 @@ function TargetMixin(parentClass) {
       }
 
       return this.client.traits[traitName];
-    }
-
-    get isLocalTab() {
-      
-      
-      if (this.isWorkerTarget) {
-        return false;
-      }
-      return !!this.descriptorFront?.isLocalTab;
-    }
-
-    get localTab() {
-      
-      
-      if (this.isWorkerTarget) {
-        return null;
-      }
-      return this.descriptorFront?.localTab || null;
     }
 
     

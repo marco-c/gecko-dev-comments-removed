@@ -21,7 +21,6 @@ SimpleTest.registerCleanupFunction(() => {
 
 function assertTarget(target, url, chrome = false) {
   is(target.url, url);
-  is(target.isLocalTab, false);
   is(target.chrome, chrome);
   is(target.isBrowsingContext, true);
 }
@@ -45,7 +44,18 @@ add_task(async function() {
   );
   
   await commands.targetCommand.startListening();
+
+  
+  
+  
+  is(
+    commands.descriptorFront.isLocalTab,
+    false,
+    "Even if we refer to a local tab, isLocalTab is false (for now)"
+  );
+
   target = await commands.descriptorFront.getTarget();
+
   assertTarget(target, TEST_URI);
   await commands.destroy();
 
