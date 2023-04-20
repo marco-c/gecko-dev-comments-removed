@@ -271,7 +271,8 @@ bool nsAccessibilityService::ShouldCreateImgAccessible(
 
 
 
-static bool MustSVGElementBeAccessible(nsIContent* aContent) {
+static bool MustSVGElementBeAccessible(nsIContent* aContent,
+                                       DocAccessible* aDocument) {
   
   for (nsIContent* childElm = aContent->GetFirstChild(); childElm;
        childElm = childElm->GetNextSibling()) {
@@ -279,7 +280,7 @@ static bool MustSVGElementBeAccessible(nsIContent* aContent) {
       return true;
     }
   }
-  return false;
+  return MustBeAccessible(aContent, aDocument);
 }
 
 
@@ -1331,7 +1332,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
         
         
         
-        if (MustSVGElementBeAccessible(content)) {
+        if (MustSVGElementBeAccessible(content, document)) {
           newAcc = new EnumRoleAccessible<roles::GRAPHIC>(content, document);
         }
       } else if (content->IsSVGElement(nsGkAtoms::text)) {
@@ -1344,7 +1345,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
         newAcc =
             new EnumRoleHyperTextAccessible<roles::DIAGRAM>(content, document);
       } else if (content->IsSVGElement(nsGkAtoms::g) &&
-                 MustSVGElementBeAccessible(content)) {
+                 MustSVGElementBeAccessible(content, document)) {
         
         newAcc =
             new EnumRoleHyperTextAccessible<roles::GROUPING>(content, document);
