@@ -53,7 +53,11 @@ def read_build_config(docdir):
             
             absdir = os.path.normpath(os.path.join(build.topsrcdir, reldir, value))
             if not is_main and absdir not in (docdir, MAIN_DOC_PATH):
-                continue
+                
+                if docdir.startswith(absdir):
+                    key = os.path.join(key, docdir.split(f"{key}/")[-1])
+                else:
+                    continue
 
             assert key
             if key.startswith("/"):
