@@ -595,9 +595,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
         }
 
         let (mut texture_guard, _) = hub.textures.write(&mut token); 
-        let dst = texture_guard
-            .get_mut(destination.texture)
-            .map_err(|_| TransferError::InvalidTexture(destination.texture))?;
+        let dst = texture_guard.get_mut(destination.texture).unwrap();
 
         let (selector, dst_base, texture_format) =
             extract_texture_selector(destination, size, dst)?;
@@ -709,10 +707,6 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
             }
         }
 
-        
-        
-        
-        
         let dst = texture_guard.get(destination.texture).unwrap();
         let transition = trackers
             .textures

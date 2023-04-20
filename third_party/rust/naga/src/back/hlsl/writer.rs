@@ -829,7 +829,10 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 }
             }
             let ty_inner = &module.types[member.ty].inner;
-            last_offset = member.offset + ty_inner.size_hlsl(&module.types, &module.constants);
+            last_offset = member.offset
+                + ty_inner
+                    .try_size_hlsl(&module.types, &module.constants)
+                    .unwrap();
 
             
             write!(self.out, "{}", back::INDENT)?;
@@ -1822,47 +1825,18 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
 
                 for (i, case) in cases.iter().enumerate() {
                     match case.value {
-                        crate::SwitchValue::Integer(value) => write!(
+                        crate::SwitchValue::Integer(value) => writeln!(
                             self.out,
-                            "{}case {}{}:",
+                            "{}case {}{}: {{",
                             indent_level_1, value, type_postfix
                         )?,
                         crate::SwitchValue::Default => {
-                            write!(self.out, "{}default:", indent_level_1)?
+                            writeln!(self.out, "{}default: {{", indent_level_1)?
                         }
                     }
 
                     
-                    
-                    
-                    
-                    
-                    
-                    let write_block_braces = !(case.fall_through && case.body.is_empty());
-                    if write_block_braces {
-                        writeln!(self.out, " {{")?;
-                    } else {
-                        writeln!(self.out)?;
-                    }
-
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    if case.fall_through && !case.body.is_empty() {
+                    if case.fall_through {
                         let curr_len = i + 1;
                         let end_case_idx = curr_len
                             + cases
@@ -1887,16 +1861,12 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         for sta in case.body.iter() {
                             self.write_stmt(module, sta, func_ctx, indent_level_2)?;
                         }
-                        if !case.fall_through
-                            && case.body.last().map_or(true, |s| !s.is_terminator())
-                        {
+                        if case.body.last().map_or(true, |s| !s.is_terminator()) {
                             writeln!(self.out, "{}break;", indent_level_2)?;
                         }
                     }
 
-                    if write_block_braces {
-                        writeln!(self.out, "{}}}", indent_level_1)?;
-                    }
+                    writeln!(self.out, "{}}}", indent_level_1)?;
                 }
 
                 writeln!(self.out, "{}}}", level)?
@@ -2425,9 +2395,8 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         }
                     },
                 };
-                write!(self.out, "{}(", op_str)?;
+                write!(self.out, "{}", op_str)?;
                 self.write_expr(module, expr, func_ctx)?;
-                write!(self.out, ")")?;
             }
             Expression::As {
                 expr,
