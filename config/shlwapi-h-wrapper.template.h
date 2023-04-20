@@ -4,15 +4,15 @@
 
 
 
-#ifndef mozilla_windows_h
-#define mozilla_windows_h
+#ifndef mozilla_shlwapi_h
+#define mozilla_shlwapi_h
 
 
 
 
 
 #pragma GCC system_header
-#include_next <windows.h>
+#include_next <shlwapi.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -27,7 +27,7 @@
 #else
 
 
-#  define MOZ_WRAPPED_WINDOWS_H
+#  define MOZ_WRAPPED_SHLWAPI_H
 extern "C++" {
 
 
@@ -35,8 +35,6 @@ ${decls}
 
 
 }  
-
-#  undef GetCurrentTime // Use GetTickCount() instead.
 
 #endif  
 

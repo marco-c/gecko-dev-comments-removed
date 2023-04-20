@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+HRESULT GetAcceptLanguages(LPTSTR, DWORD*);
