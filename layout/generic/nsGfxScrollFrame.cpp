@@ -666,7 +666,7 @@ bool nsHTMLScrollFrame::TryLayout(ScrollReflowInput& aState,
         mHelper.mMinimumScaleSize.height - overflowRect.YMost();
   }
   nsRect scrolledRect =
-      mHelper.GetUnsnappedScrolledRectInternal(overflowRect, scrollPortSize);
+      mHelper.GetScrolledRectInternal(overflowRect, scrollPortSize);
   ROOT_SCROLLBAR_LOG(
       "TryLayout scrolledRect:%s overflowRect:%s scrollportSize:%s\n",
       ToString(scrolledRect).c_str(), ToString(overflowRect).c_str(),
@@ -1025,7 +1025,7 @@ void nsHTMLScrollFrame::ReflowContents(ScrollReflowInput& aState,
     nsSize kidSize = GetContainSizeAxes().ContainSize(
         kidDesiredSize.PhysicalSize(), *aState.mReflowInput.mFrame);
     nsSize insideBorderSize = ComputeInsideBorderSize(aState, kidSize);
-    nsRect scrolledRect = mHelper.GetUnsnappedScrolledRectInternal(
+    nsRect scrolledRect = mHelper.GetScrolledRectInternal(
         kidDesiredSize.ScrollableOverflow(), insideBorderSize);
     if (nsRect(nsPoint(0, 0), insideBorderSize).Contains(scrolledRect)) {
       
@@ -1099,7 +1099,7 @@ void nsHTMLScrollFrame::PlaceScrollArea(ScrollReflowInput& aState,
 
   
   const nsSize portSize = mHelper.ScrollPort().Size();
-  nsRect scrolledRect = mHelper.GetUnsnappedScrolledRectInternal(
+  nsRect scrolledRect = mHelper.GetScrolledRectInternal(
       aState.mContentsOverflowAreas.ScrollableOverflow(), portSize);
   nsRect scrolledArea =
       scrolledRect.UnionEdges(nsRect(nsPoint(0, 0), portSize));
@@ -1721,7 +1721,7 @@ bool ScrollFrameHelper::WantAsyncScroll() const {
   ScrollStyles styles = GetScrollStylesFromFrame();
   nscoord oneDevPixel =
       GetScrolledFrame()->PresContext()->AppUnitsPerDevPixel();
-  nsRect scrollRange = GetUnsnappedLayoutScrollRange();
+  nsRect scrollRange = GetLayoutScrollRange();
 
   
   
@@ -4298,8 +4298,8 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       
       DisplayListClipState::AutoSaveRestore scrolledRectClipState(aBuilder);
       nsRect scrolledRectClip =
-          GetUnsnappedScrolledRectInternal(
-              mScrolledFrame->ScrollableOverflowRect(), mScrollPort.Size()) +
+          GetScrolledRectInternal(mScrolledFrame->ScrollableOverflowRect(),
+                                  mScrollPort.Size()) +
           mScrolledFrame->GetPosition();
       bool clippedToDisplayPort = false;
       if (mWillBuildScrollableLayer && aBuilder->IsPaintingToWindow()) {
@@ -4853,14 +4853,6 @@ ScrollStyles ScrollFrameHelper::GetScrollStylesFromFrame() const {
 
 nsRect ScrollFrameHelper::GetLayoutScrollRange() const {
   return GetScrollRange(mScrollPort.width, mScrollPort.height);
-}
-
-nsRect ScrollFrameHelper::GetUnsnappedLayoutScrollRange() const {
-  nsRect range = GetUnsnappedScrolledRectInternal(
-      mScrolledFrame->ScrollableOverflowRect(), mScrollPort.Size());
-  range.width = std::max(range.width - mScrollPort.Width(), 0);
-  range.height = std::max(range.height - mScrollPort.Height(), 0);
-  return range;
 }
 
 nsRect ScrollFrameHelper::GetScrollRange(nscoord aWidth,
@@ -7412,93 +7404,9 @@ bool ScrollFrameHelper::GetBorderRadii(const nsSize& aFrameSize,
   return true;
 }
 
-static nscoord SnapCoord(nscoord aCoord, double aRes,
-                         nscoord aAppUnitsPerPixel) {
-  double snappedToLayerPixels = NS_round((aRes * aCoord) / aAppUnitsPerPixel);
-  return NSToCoordRoundWithClamp(snappedToLayerPixels * aAppUnitsPerPixel /
-                                 aRes);
-}
-
 nsRect ScrollFrameHelper::GetScrolledRect() const {
-  nsRect result = GetUnsnappedScrolledRectInternal(
-      mScrolledFrame->ScrollableOverflowRect(), mScrollPort.Size());
-
-#if 0
-  
-  if (result.width < mScrollPort.width || result.height < mScrollPort.height) {
-    NS_WARNING("Scrolled rect smaller than scrollport?");
-  }
-#endif
-
-  
-  
-  
-
-  if (result.x == 0 && result.y == 0 && result.width == mScrollPort.width &&
-      result.height == mScrollPort.height) {
-    
-    
-    return result;
-  }
-
-  
-  
-  
-  nsSize visualViewportSize = GetVisualViewportSize();
-  const nsIFrame* referenceFrame =
-      mReferenceFrameDuringPainting ? mReferenceFrameDuringPainting
-                                    : nsLayoutUtils::GetReferenceFrame(mOuter);
-  nsPoint toReferenceFrame = mOuter->GetOffsetToCrossDoc(referenceFrame);
-  nsRect scrollPort(mScrollPort.TopLeft() + toReferenceFrame,
-                    visualViewportSize);
-  nsRect scrolledRect = result + scrollPort.TopLeft();
-
-  if (scrollPort.Overflows() || scrolledRect.Overflows()) {
-    return result;
-  }
-
-  
-  
-  nscoord appUnitsPerDevPixel =
-      mScrolledFrame->PresContext()->AppUnitsPerDevPixel();
-  MatrixScales scale = GetPaintedLayerScaleForFrame(mScrolledFrame);
-  if (scale.xScale == 0 || scale.yScale == 0) {
-    scale = MatrixScales();
-  }
-
-  
-  
-  nscoord snappedScrolledAreaBottom =
-      SnapCoord(scrolledRect.YMost(), scale.yScale, appUnitsPerDevPixel);
-  nscoord snappedScrollPortBottom =
-      SnapCoord(scrollPort.YMost(), scale.yScale, appUnitsPerDevPixel);
-  nscoord maximumScrollOffsetY =
-      snappedScrolledAreaBottom - snappedScrollPortBottom;
-  result.SetBottomEdge(scrollPort.height + maximumScrollOffsetY);
-
-  if (GetScrolledFrameDir() == StyleDirection::Ltr) {
-    nscoord snappedScrolledAreaRight =
-        SnapCoord(scrolledRect.XMost(), scale.xScale, appUnitsPerDevPixel);
-    nscoord snappedScrollPortRight =
-        SnapCoord(scrollPort.XMost(), scale.xScale, appUnitsPerDevPixel);
-    nscoord maximumScrollOffsetX =
-        snappedScrolledAreaRight - snappedScrollPortRight;
-    result.SetRightEdge(scrollPort.width + maximumScrollOffsetX);
-  } else {
-    
-    
-    
-    
-    nscoord snappedScrolledAreaLeft =
-        SnapCoord(scrolledRect.x, scale.xScale, appUnitsPerDevPixel);
-    nscoord snappedScrollPortLeft =
-        SnapCoord(scrollPort.x, scale.xScale, appUnitsPerDevPixel);
-    nscoord minimumScrollOffsetX =
-        snappedScrolledAreaLeft - snappedScrollPortLeft;
-    result.SetLeftEdge(minimumScrollOffsetX);
-  }
-
-  return result;
+  return GetScrolledRectInternal(mScrolledFrame->ScrollableOverflowRect(),
+                                 mScrollPort.Size());
 }
 
 StyleDirection ScrollFrameHelper::GetScrolledFrameDir() const {
@@ -7516,7 +7424,7 @@ StyleDirection ScrollFrameHelper::GetScrolledFrameDir() const {
   return IsBidiLTR() ? StyleDirection::Ltr : StyleDirection::Rtl;
 }
 
-nsRect ScrollFrameHelper::GetUnsnappedScrolledRectInternal(
+nsRect ScrollFrameHelper::GetScrolledRectInternal(
     const nsRect& aScrolledOverflowArea, const nsSize& aScrollPortSize) const {
   return nsLayoutUtils::GetScrolledRect(mScrolledFrame, aScrolledOverflowArea,
                                         aScrollPortSize, GetScrolledFrameDir());
