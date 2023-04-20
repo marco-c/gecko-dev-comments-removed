@@ -17,10 +17,19 @@
 
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 
-enum { kNumChannels = 6 };   
-enum { kNumGaussians = 2 };  
-enum { kTableSize = kNumChannels * kNumGaussians };
-enum { kMinEnergy = 10 };  
+
+#if defined(__cplusplus)
+#define CONSTEXPR_INT(x) constexpr int x
+#else
+#define CONSTEXPR_INT(x) enum { x }
+#endif
+
+CONSTEXPR_INT(kNumChannels = 6);  
+CONSTEXPR_INT(
+    kNumGaussians = 2);  
+CONSTEXPR_INT(kTableSize = kNumChannels * kNumGaussians);
+CONSTEXPR_INT(
+    kMinEnergy = 10);  
 
 typedef struct VadInstT_ {
   int vad;

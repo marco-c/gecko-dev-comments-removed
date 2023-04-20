@@ -26,6 +26,16 @@
 
 namespace webrtc {
 
+
+constexpr uint8_t kH264FBit = 0x80;
+constexpr uint8_t kH264NriMask = 0x60;
+constexpr uint8_t kH264TypeMask = 0x1F;
+
+
+constexpr uint8_t kH264SBit = 0x80;
+constexpr uint8_t kH264EBit = 0x40;
+constexpr uint8_t kH264RBit = 0x20;
+
 class RtpPacketizerH264 : public RtpPacketizer {
  public:
   

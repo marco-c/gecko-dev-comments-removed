@@ -51,12 +51,6 @@ static const size_t kNalHeaderSize = 1;
 static const size_t kFuAHeaderSize = 2;
 
 
-enum NalDefs { kFBit = 0x80, kNriMask = 0x60, kTypeMask = 0x1F };
-
-
-enum FuDefs { kSBit = 0x80, kEBit = 0x40, kRBit = 0x20 };
-
-
 rtc::Buffer GenerateNalUnit(size_t size) {
   RTC_CHECK_GT(size, 0);
   rtc::Buffer buffer(size);
@@ -359,13 +353,13 @@ TEST(RtpPacketizerH264Test, MixedStapAFUA) {
   ASSERT_THAT(packets, SizeIs(3));
   
   EXPECT_THAT(packets[0].payload().subview(0, kFuAHeaderSize),
-              ElementsAre(kFuA, FuDefs::kSBit | nalus[0][0]));
+              ElementsAre(kFuA, kH264SBit | nalus[0][0]));
   EXPECT_THAT(
       packets[0].payload().subview(kFuAHeaderSize),
       ElementsAreArray(nalus[0].data() + kNalHeaderSize, kFuaPayloadSize));
 
   EXPECT_THAT(packets[1].payload().subview(0, kFuAHeaderSize),
-              ElementsAre(kFuA, FuDefs::kEBit | nalus[0][0]));
+              ElementsAre(kFuA, kH264EBit | nalus[0][0]));
   EXPECT_THAT(
       packets[1].payload().subview(kFuAHeaderSize),
       ElementsAreArray(nalus[0].data() + kNalHeaderSize + kFuaPayloadSize,
@@ -426,11 +420,11 @@ std::vector<int> TestFua(size_t frame_payload_size,
     payload_sizes.push_back(payload.size() - kFuAHeaderSize);
   }
 
-  EXPECT_TRUE(fua_header.front() & FuDefs::kSBit);
-  EXPECT_TRUE(fua_header.back() & FuDefs::kEBit);
+  EXPECT_TRUE(fua_header.front() & kH264SBit);
+  EXPECT_TRUE(fua_header.back() & kH264EBit);
   
-  fua_header.front() &= ~FuDefs::kSBit;
-  fua_header.back() &= ~FuDefs::kEBit;
+  fua_header.front() &= ~kH264SBit;
+  fua_header.back() &= ~kH264EBit;
   EXPECT_THAT(fua_header, Each(Eq((kFuA << 8) | nalu[0][0])));
 
   return payload_sizes;

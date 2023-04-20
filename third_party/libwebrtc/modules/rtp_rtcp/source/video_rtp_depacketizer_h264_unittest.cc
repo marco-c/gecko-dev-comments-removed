@@ -18,6 +18,7 @@
 #include "common_video/h264/h264_common.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
+#include "modules/rtp_rtcp/source/rtp_format_h264.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -41,12 +42,6 @@ enum Nalu {
   kStapA = 24,
   kFuA = 28
 };
-
-
-enum NalDefs { kFBit = 0x80, kNriMask = 0x60, kTypeMask = 0x1F };
-
-
-enum FuDefs { kSBit = 0x80, kEBit = 0x40, kRBit = 0x20 };
 
 constexpr uint8_t kOriginalSps[] = {kSps, 0x00, 0x00, 0x03, 0x03,
                                     0xF4, 0x05, 0x03, 0xC7, 0xC0};
@@ -293,8 +288,8 @@ TEST(VideoRtpDepacketizerH264Test, StapADelta) {
 TEST(VideoRtpDepacketizerH264Test, FuA) {
   
   uint8_t packet1[] = {
-      kFuA,          
-      kSBit | kIdr,  
+      kFuA,              
+      kH264SBit | kIdr,  
       0x85, 0xB8, 0x0, 0x4, 0x0, 0x0, 0x13, 0x93, 0x12, 0x0  
   };
   
@@ -309,9 +304,9 @@ TEST(VideoRtpDepacketizerH264Test, FuA) {
   const uint8_t kExpected2[] = {0x02};
 
   uint8_t packet3[] = {
-      kFuA,          
-      kEBit | kIdr,  
-      0x03           
+      kFuA,              
+      kH264EBit | kIdr,  
+      0x03               
   };
   const uint8_t kExpected3[] = {0x03};
 
