@@ -68,7 +68,7 @@ void SVGContainerFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
 }
 
 bool SVGContainerFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
-  if (mState & NS_FRAME_IS_NONDISPLAY) {
+  if (HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
     
     
     return false;
@@ -128,7 +128,6 @@ void SVGDisplayContainerFrame::Init(nsIContent* aContent,
   if (!IsSVGOuterSVGFrame()) {
     AddStateBits(aParent->GetStateBits() & NS_STATE_SVG_CLIPPATH_CHILD);
   }
-  AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
   SVGContainerFrame::Init(aContent, aParent, aPrevInFlow);
 }
 
@@ -272,7 +271,7 @@ void SVGDisplayContainerFrame::ReflowSVG() {
   
   
 
-  bool isFirstReflow = (mState & NS_FRAME_FIRST_REFLOW);
+  bool isFirstReflow = HasAnyStateBits(NS_FRAME_FIRST_REFLOW);
 
   bool outerSVGHasHadFirstReflow =
       !GetParent()->HasAnyStateBits(NS_FRAME_FIRST_REFLOW);

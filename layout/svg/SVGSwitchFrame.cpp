@@ -205,7 +205,7 @@ void SVGSwitchFrame::ReflowSVG() {
   
   
 
-  bool isFirstReflow = (mState & NS_FRAME_FIRST_REFLOW);
+  bool isFirstReflow = HasAnyStateBits(NS_FRAME_FIRST_REFLOW);
 
   bool outerSVGHasHadFirstReflow =
       !GetParent()->HasAnyStateBits(NS_FRAME_FIRST_REFLOW);

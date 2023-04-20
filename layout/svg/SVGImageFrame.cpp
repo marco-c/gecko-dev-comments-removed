@@ -741,7 +741,7 @@ void SVGImageFrame::ReflowSVG() {
     mRect.SetEmpty();
   }
 
-  if (mState & NS_FRAME_FIRST_REFLOW) {
+  if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     
     
     

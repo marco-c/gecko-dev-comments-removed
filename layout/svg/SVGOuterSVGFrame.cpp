@@ -48,7 +48,8 @@ SVGOuterSVGFrame::SVGOuterSVGFrame(ComputedStyle* aStyle,
       mIsInIframe(false) {
   
   RemoveStateBits(NS_FRAME_SVG_LAYOUT);
-  AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
+  AddStateBits(NS_FRAME_REFLOW_ROOT | NS_FRAME_FONT_INFLATION_CONTAINER |
+               NS_FRAME_FONT_INFLATION_FLOW_ROOT | NS_FRAME_MAY_BE_TRANSFORMED);
 }
 
 
@@ -69,9 +70,6 @@ void SVGOuterSVGFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                             nsIFrame* aPrevInFlow) {
   NS_ASSERTION(aContent->IsSVGElement(nsGkAtoms::svg),
                "Content is not an SVG 'svg' element!");
-
-  AddStateBits(NS_FRAME_REFLOW_ROOT | NS_FRAME_FONT_INFLATION_CONTAINER |
-               NS_FRAME_FONT_INFLATION_FLOW_ROOT);
 
   
   
