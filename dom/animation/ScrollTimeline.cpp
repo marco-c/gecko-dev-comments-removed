@@ -175,7 +175,7 @@ Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
   
   
   if (!scrollFrame->GetAvailableScrollingDirections().contains(orientation)) {
-    return TimeDuration::FromMilliseconds(PROGRESS_TIMELINE_DURATION_MILLISEC);
+    return nullptr;
   }
 
   const nsPoint& scrollOffset = scrollFrame->GetScrollPosition();
