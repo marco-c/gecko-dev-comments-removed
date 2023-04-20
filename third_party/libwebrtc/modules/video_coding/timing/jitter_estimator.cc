@@ -52,8 +52,6 @@ JitterEstimator::JitterEstimator(Clock* clock,
                                  const FieldTrialsView& field_trials)
     : fps_counter_(30),  
                          
-      enable_reduced_delay_(
-          !field_trials.IsEnabled("WebRTC-ReducedJitterDelayKillSwitch")),
       clock_(clock) {
   Reset();
 }
@@ -374,24 +372,22 @@ TimeDelta JitterEstimator::GetJitterEstimate(
     }
   }
 
-  if (enable_reduced_delay_) {
-    static const Frequency kJitterScaleLowThreshold = Frequency::Hertz(5);
-    static const Frequency kJitterScaleHighThreshold = Frequency::Hertz(10);
-    Frequency fps = GetFrameRate();
-    
-    if (fps < kJitterScaleLowThreshold) {
-      if (fps.IsZero()) {
-        return std::max(TimeDelta::Zero(), jitter);
-      }
-      return TimeDelta::Zero();
+  static const Frequency kJitterScaleLowThreshold = Frequency::Hertz(5);
+  static const Frequency kJitterScaleHighThreshold = Frequency::Hertz(10);
+  Frequency fps = GetFrameRate();
+  
+  if (fps < kJitterScaleLowThreshold) {
+    if (fps.IsZero()) {
+      return std::max(TimeDelta::Zero(), jitter);
     }
+    return TimeDelta::Zero();
+  }
 
-    
-    
-    if (fps < kJitterScaleHighThreshold) {
-      jitter = (1.0 / (kJitterScaleHighThreshold - kJitterScaleLowThreshold)) *
-               (fps - kJitterScaleLowThreshold) * jitter;
-    }
+  
+  
+  if (fps < kJitterScaleHighThreshold) {
+    jitter = (1.0 / (kJitterScaleHighThreshold - kJitterScaleLowThreshold)) *
+             (fps - kJitterScaleLowThreshold) * jitter;
   }
 
   return std::max(TimeDelta::Zero(), jitter);
