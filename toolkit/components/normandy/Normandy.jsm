@@ -83,7 +83,7 @@ var Normandy = {
     
     if (runAsync) {
       await Promise.race([
-        this.uiAvailableNotificationObserved,
+        this.uiAvailableNotificationObserved.promise,
         new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000)),
       ]);
     }
