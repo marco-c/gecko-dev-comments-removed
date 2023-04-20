@@ -55,8 +55,12 @@ class CounterStyle {
   
   bool IsDependentStyle() const;
 
-  virtual void GetPrefix(nsAString& aResult) = 0;
-  virtual void GetSuffix(nsAString& aResult) = 0;
+  
+  
+  
+  virtual void GetPrefix(CounterValue aOrdinal, nsAString& aResult) = 0;
+  virtual void GetSuffix(CounterValue aOrdinal, nsAString& aResult) = 0;
+
   void GetCounterText(CounterValue aOrdinal, WritingMode aWritingMode,
                       nsAString& aResult, bool& aIsRTL);
   virtual void GetSpokenCounterText(CounterValue aOrdinal,
@@ -94,6 +98,12 @@ class CounterStyle {
 
   virtual AnonymousCounterStyle* AsAnonymous() { return nullptr; }
 
+  
+
+
+
+  virtual CounterStyle* ResolveFallbackFor(CounterValue aOrdinal);
+
  protected:
   const ListStyle mStyle;
 };
@@ -103,8 +113,8 @@ class AnonymousCounterStyle final : public CounterStyle {
   explicit AnonymousCounterStyle(const nsAString& aContent);
   AnonymousCounterStyle(StyleSymbolsType, nsTArray<nsString> aSymbols);
 
-  virtual void GetPrefix(nsAString& aResult) override;
-  virtual void GetSuffix(nsAString& aResult) override;
+  virtual void GetPrefix(CounterValue aOrdinal, nsAString& aResult) override;
+  virtual void GetSuffix(CounterValue aOrdinal, nsAString& aResult) override;
   virtual bool IsBullet() override;
 
   virtual void GetNegative(NegativeType& aResult) override;
