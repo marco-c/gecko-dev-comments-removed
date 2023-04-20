@@ -1023,6 +1023,7 @@ pref("javascript.options.mem.gc_incremental_slice_ms", 5);
 pref("javascript.options.mem.gc_compacting", true);
 
 
+
 pref("javascript.options.mem.gc_parallel_marking", false);
 
 

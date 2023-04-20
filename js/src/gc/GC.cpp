@@ -1042,7 +1042,8 @@ bool GCRuntime::setParameter(JSGCParamKey key, uint32_t value,
       compactingEnabled = value != 0;
       break;
     case JSGC_PARALLEL_MARKING_ENABLED:
-      parallelMarkingEnabled = value != 0;
+      
+      parallelMarkingEnabled = rt->isMainRuntime() && value != 0;
       updateMarkersVector();
       break;
     case JSGC_INCREMENTAL_WEAKMAP_ENABLED:
