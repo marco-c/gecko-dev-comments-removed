@@ -230,7 +230,7 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
   mozilla::TimeDuration mRequestedCaptureInterval;
   
   
-  int64_t mLastFrameTimeMs;
+  webrtc::Timestamp mNextFrameMinimumTime;
   
   
   bool mRunning;
