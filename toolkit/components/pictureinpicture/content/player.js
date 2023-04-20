@@ -357,12 +357,7 @@ let Player = {
       case "keydown": {
         if (event.keyCode == KeyEvent.DOM_VK_TAB) {
           this.controls.setAttribute("keying", true);
-          this.actor.sendAsyncMessage("PictureInPicture:ShowVideoControls", {
-            isFullscreen: this.isFullscreen,
-            isVideoControlsShowing: true,
-            playerBottomControlsDOMRect: this.controlsBottom.getBoundingClientRect(),
-            isScrubberShowing: !this.scrubber.hidden,
-          });
+          this.showVideoControls();
         } else if (event.keyCode == KeyEvent.DOM_VK_ESCAPE) {
           event.preventDefault();
           if (this.isFullscreen) {
@@ -685,12 +680,7 @@ let Player = {
     } else {
       this.settingsPanel.classList.remove("hide");
       this.controls.setAttribute("donthide", true);
-      this.actor.sendAsyncMessage("PictureInPicture:ShowVideoControls", {
-        isFullscreen: this.isFullscreen,
-        isVideoControlsShowing: true,
-        playerBottomControlsDOMRect: this.controlsBottom.getBoundingClientRect(),
-        isScrubberShowing: !this.scrubber.hidden,
-      });
+      this.showVideoControls();
     }
   },
 
@@ -987,12 +977,7 @@ let Player = {
   onMouseEnter() {
     if (!this.isFullscreen) {
       this.isCurrentHover = true;
-      this.actor.sendAsyncMessage("PictureInPicture:ShowVideoControls", {
-        isFullscreen: this.isFullscreen,
-        isVideoControlsShowing: true,
-        playerBottomControlsDOMRect: this.controlsBottom.getBoundingClientRect(),
-        isScrubberShowing: !this.scrubber.hidden,
-      });
+      this.showVideoControls();
     }
   },
 
@@ -1185,6 +1170,20 @@ let Player = {
   
 
 
+  showVideoControls() {
+    
+    
+    this.actor.sendAsyncMessage("PictureInPicture:ShowVideoControls", {
+      isFullscreen: this.isFullscreen,
+      isVideoControlsShowing: true,
+      playerBottomControlsDOMRect: this.controlsBottom.getBoundingClientRect(),
+      isScrubberShowing: !!this.scrubber.offsetParent,
+    });
+  },
+
+  
+
+
 
 
 
@@ -1200,12 +1199,7 @@ let Player = {
     if (!this.isFullscreen) {
       
       
-      this.actor.sendAsyncMessage("PictureInPicture:ShowVideoControls", {
-        isFullscreen: false,
-        isVideoControlsShowing: true,
-        playerBottomControlsDOMRect: this.controlsBottom.getBoundingClientRect(),
-        isScrubberShowing: !this.scrubber.hidden,
-      });
+      this.showVideoControls();
     }
 
     if (!revealIndefinitely) {
