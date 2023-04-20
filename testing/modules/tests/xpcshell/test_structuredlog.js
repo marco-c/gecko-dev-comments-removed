@@ -21,15 +21,9 @@ function run_test() {
     }
     
     equal(lastMsg.source, "test_log");
-    
-    equal(lastMsg.source_file, "test_structuredlog.js");
   };
 
-  let addFileName = function(data) {
-    data.source_file = "test_structuredlog.js";
-  };
-
-  let logger = new StructuredLogger("test_log", appendBuffer, [addFileName]);
+  let logger = new StructuredLogger("test_log", appendBuffer);
 
   
   logger.info("Test message");

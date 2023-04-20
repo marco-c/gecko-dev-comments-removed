@@ -16,14 +16,9 @@ var EXPORTED_SYMBOLS = ["StructuredLogger", "StructuredFormatter"];
 
 
 
-
-
-
-
-var StructuredLogger = function(name, dumpFun = dump, mutators = []) {
+var StructuredLogger = function(name, dumpFun = dump) {
   this.name = name;
   this._dumpFun = dumpFun;
-  this._mutatorFuns = mutators;
 };
 
 
@@ -213,10 +208,6 @@ StructuredLogger.prototype = {
 
     for (var field in data) {
       allData[field] = data[field];
-    }
-
-    for (var fun of this._mutatorFuns) {
-      fun(allData);
     }
 
     this._dumpFun(allData);
