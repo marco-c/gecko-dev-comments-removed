@@ -111,7 +111,6 @@ function lazyRequireGetter(obj, properties, module, destructure) {
 
 exports.modules = {
   HeapSnapshot,
-  InspectorUtils,
   
   
   

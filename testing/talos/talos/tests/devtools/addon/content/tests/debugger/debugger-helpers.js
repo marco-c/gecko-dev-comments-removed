@@ -5,7 +5,6 @@
 "use strict";
 
 const { openToolboxAndLog, reloadPageAndLog } = require("../head");
-const InspectorUtils = require("InspectorUtils");
 
 
 

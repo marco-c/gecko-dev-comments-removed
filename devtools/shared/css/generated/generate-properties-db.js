@@ -15,7 +15,6 @@ var { require } = ChromeUtils.importESModule(
 var {
   generateCssProperties,
 } = require("resource://devtools/server/actors/css-properties.js");
-const InspectorUtils = require("InspectorUtils");
 
 
 
