@@ -472,7 +472,12 @@ class PlacesViewBase {
   }
 
   nodeURIChanged(aPlacesNode, aURIString) {
-    let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
+    let elt = this._getDOMNodeForPlacesNode(aPlacesNode, true);
+
+    
+    if (!elt) {
+      return;
+    }
 
     
     if (elt.localName == "menupopup") {
@@ -486,11 +491,11 @@ class PlacesViewBase {
   }
 
   nodeIconChanged(aPlacesNode) {
-    let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
+    let elt = this._getDOMNodeForPlacesNode(aPlacesNode, true);
 
     
     
-    if (elt == this._rootElt) {
+    if (!elt || elt == this._rootElt) {
       return;
     }
 
