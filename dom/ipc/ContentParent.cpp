@@ -1688,7 +1688,7 @@ void ContentParent::Init() {
 #ifdef ACCESSIBILITY
   
   
-  if (PresShell::IsAccessibilityActive()) {
+  if (GetAccService()) {
 #  if defined(XP_WIN)
     
     if (!mozilla::a11y::Compatibility::IsOldJAWS()) {
