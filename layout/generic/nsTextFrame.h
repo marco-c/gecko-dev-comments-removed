@@ -8,9 +8,9 @@
 #define nsTextFrame_h__
 
 #include "mozilla/Attributes.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Text.h"
+#include "mozilla/gfx/2D.h"
 
 #include "nsIFrame.h"
 #include "nsISelectionController.h"
@@ -931,9 +931,8 @@ class nsTextFrame : public nsIFrame {
   
   
   void GetSelectionTextShadow(
-      SelectionType aSelectionType,
-      mozilla::Span<const mozilla::StyleSimpleShadow>* aShadows,
-      nsTextPaintStyle* aTextPaintStyle = nullptr);
+      SelectionType aSelectionType, nsTextPaintStyle& aTextPaintStyle,
+      mozilla::Span<const mozilla::StyleSimpleShadow>* aShadows);
 
   
 
