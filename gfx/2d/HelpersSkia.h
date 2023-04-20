@@ -332,21 +332,6 @@ static inline bool IsBackedByPixels(const SkCanvas* aCanvas) {
   return true;
 }
 
-
-
-
-
-float ComputeResScaleForStroking(const Matrix& aTransform);
-
-
-
-
-
-
-
-int ConvertConicToQuads(const Point& aP0, const Point& aP1, const Point& aP2,
-                        float aWeight, std::vector<Point>& aQuads);
-
 }  
 }  
 

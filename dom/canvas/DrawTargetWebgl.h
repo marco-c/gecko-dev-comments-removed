@@ -45,7 +45,6 @@ class SharedTextureHandle;
 class StandaloneTexture;
 class GlyphCache;
 class PathCache;
-struct PathVertexRange;
 
 
 
@@ -163,12 +162,8 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     bool mDirtyAA = true;
 
     
-    RefPtr<WebGLBufferJS> mPathVertexBuffer;
-    RefPtr<WebGLVertexArrayJS> mPathVertexArray;
-    
-    uint32_t mPathVertexOffset = 0;
-    
-    uint32_t mPathVertexCapacity = 0;
+    RefPtr<WebGLBufferJS> mVertexBuffer;
+    RefPtr<WebGLVertexArrayJS> mVertexArray;
     RefPtr<WebGLProgramJS> mSolidProgram;
     RefPtr<WebGLUniformLocationJS> mSolidProgramViewport;
     RefPtr<WebGLUniformLocationJS> mSolidProgramAA;
@@ -239,7 +234,6 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
 
     bool Initialize();
     bool CreateShaders();
-    void ResetPathVertexBuffer();
 
     void SetBlendState(CompositionOp aOp,
                        const Maybe<DeviceColor>& aBlendColor = Nothing());
@@ -287,8 +281,7 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
                        RefPtr<TextureHandle>* aHandle = nullptr,
                        bool aTransformed = true, bool aClipped = true,
                        bool aAccelOnly = false, bool aForceUpdate = false,
-                       const StrokeOptions* aStrokeOptions = nullptr,
-                       const PathVertexRange* aVertexRange = nullptr);
+                       const StrokeOptions* aStrokeOptions = nullptr);
 
     bool DrawPathAccel(const Path* aPath, const Pattern& aPattern,
                        const DrawOptions& aOptions,
@@ -317,8 +310,6 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     void ClearCachesIfNecessary();
 
     void WaitForShmem(DrawTargetWebgl* aTarget);
-
-    void CachePrefs();
   };
 
   RefPtr<SharedContext> mSharedContext;
@@ -483,8 +474,6 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
                 bool aTransformed = true, bool aClipped = true,
                 bool aAccelOnly = false, bool aForceUpdate = false,
                 const StrokeOptions* aStrokeOptions = nullptr);
-
-  bool ShouldAccelPath(const DrawOptions& aOptions);
   void DrawPath(const Path* aPath, const Pattern& aPattern,
                 const DrawOptions& aOptions,
                 const StrokeOptions* aStrokeOptions = nullptr);

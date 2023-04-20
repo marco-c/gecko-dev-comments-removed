@@ -11,7 +11,6 @@
 
 #include "mozilla/HashFunctions.h"
 #include "mozilla/gfx/PathSkia.h"
-#include "mozilla/gfx/WPFGpuRaster.h"
 
 namespace mozilla::gfx {
 
@@ -109,7 +108,6 @@ class CacheEntryImpl : public CacheEntry, public LinkedListElement<RefPtr<T>> {
 
 template <typename T>
 class CacheImpl {
- protected:
   typedef LinkedList<RefPtr<T>> ListType;
 
   static constexpr size_t kNumChains = 17;
@@ -371,62 +369,33 @@ class GlyphCache : public LinkedListElement<GlyphCache>,
   ScaledFont* mFont;
 };
 
-struct QuantizedPath {
-  explicit QuantizedPath(const WGR::Path& aPath);
-  
-  QuantizedPath(QuantizedPath&&) noexcept;
-  QuantizedPath(const QuantizedPath&) = delete;
-  ~QuantizedPath();
-
-  bool operator==(const QuantizedPath&) const;
-
-  WGR::Path mPath;
-};
-
-struct PathVertexRange {
-  uint32_t mOffset;
-  uint32_t mLength;
-
-  PathVertexRange() : mOffset(0), mLength(0) {}
-  PathVertexRange(uint32_t aOffset, uint32_t aLength)
-      : mOffset(aOffset), mLength(aLength) {}
-
-  bool IsValid() const { return mLength > 0; }
-};
-
 
 
 class PathCacheEntry : public CacheEntryImpl<PathCacheEntry> {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(PathCacheEntry, override)
 
-  PathCacheEntry(QuantizedPath&& aPath, Pattern* aPattern,
+  PathCacheEntry(const SkPath& aPath, Pattern* aPattern,
                  StoredStrokeOptions* aStrokeOptions, const Matrix& aTransform,
                  const IntRect& aBounds, const Point& aOrigin, HashNumber aHash,
                  float aSigma = -1.0f);
 
-  bool MatchesPath(const QuantizedPath& aPath, const Pattern* aPattern,
+  bool MatchesPath(const SkPath& aPath, const Pattern* aPattern,
                    const StrokeOptions* aStrokeOptions,
                    const Matrix& aTransform, const IntRect& aBounds,
                    const Point& aOrigin, HashNumber aHash, float aSigma);
 
-  static HashNumber HashPath(const QuantizedPath& aPath,
-                             const Pattern* aPattern, const Matrix& aTransform,
-                             const IntRect& aBounds, const Point& aOrigin);
-
-  const QuantizedPath& GetPath() const { return mPath; }
+  static HashNumber HashPath(const SkPath& aPath, const Pattern* aPattern,
+                             const Matrix& aTransform, const IntRect& aBounds);
 
   const Point& GetOrigin() const { return mOrigin; }
 
   
   bool IsValid() const override { return !mPattern || mPattern->IsValid(); }
 
-  const PathVertexRange& GetVertexRange() const { return mVertexRange; }
-  void SetVertexRange(const PathVertexRange& aRange) { mVertexRange = aRange; }
-
  private:
   
-  QuantizedPath mPath;
+  SkPath mPath;
   
   Point mOrigin;
   
@@ -435,8 +404,6 @@ class PathCacheEntry : public CacheEntryImpl<PathCacheEntry> {
   UniquePtr<StoredStrokeOptions> mStrokeOptions;
   
   float mSigma;
-  
-  PathVertexRange mVertexRange;
 };
 
 class PathCache : public CacheImpl<PathCacheEntry> {
@@ -444,11 +411,9 @@ class PathCache : public CacheImpl<PathCacheEntry> {
   PathCache() = default;
 
   already_AddRefed<PathCacheEntry> FindOrInsertEntry(
-      QuantizedPath aPath, const Pattern* aPattern,
+      const SkPath& aPath, const Pattern* aPattern,
       const StrokeOptions* aStrokeOptions, const Matrix& aTransform,
       const IntRect& aBounds, const Point& aOrigin, float aSigma = -1.0f);
-
-  void ClearVertexRanges();
 };
 
 }  
