@@ -18,8 +18,8 @@ function afterSessionStartupInitialization(cb) {
 
   
   
-  const { CrashMonitor } = ChromeUtils.import(
-    "resource://gre/modules/CrashMonitor.jsm"
+  const { CrashMonitor } = ChromeUtils.importESModule(
+    "resource://gre/modules/CrashMonitor.sys.mjs"
   );
   CrashMonitor.init();
 
