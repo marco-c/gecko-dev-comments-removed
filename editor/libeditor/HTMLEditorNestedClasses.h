@@ -259,6 +259,37 @@ class MOZ_STACK_CLASS HTMLEditor::AutoMoveOneLineHandler final {
 
 
 
+
+
+
+
+
+
+
+
+  [[nodiscard]] static PreserveWhiteSpaceStyle
+  ConsiderWhetherPreserveWhiteSpaceStyle(
+      const nsIContent* aContentInLine,
+      const Element* aInclusiveAncestorBlockOfInsertionPoint);
+
+  
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static Element*
+  GetMostDistantInclusiveAncestorBlockInSpecificAncestorElement(
+      Element& aBlockElement, const Element& aAncestorElement);
+
+  
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
   SplitToMakeTheLineIsolated(
       HTMLEditor& aHTMLEditor, const Element& aEditingHost,
