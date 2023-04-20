@@ -9,13 +9,11 @@ use crate::parser::{Parse, ParserContext};
 use crate::properties::{LonghandId, PropertyDeclarationId};
 use crate::properties::{PropertyId, ShorthandId};
 use crate::values::generics::box_::{
-    GenericAnimationIterationCount, GenericLineClamp, GenericPerspective,
-};
-use crate::values::generics::box_::{
-    GenericContainIntrinsicSize, GenericVerticalAlign, VerticalAlignKeyword,
+    GenericLineClamp, GenericPerspective, GenericContainIntrinsicSize, GenericVerticalAlign,
+    VerticalAlignKeyword,
 };
 use crate::values::specified::length::{LengthPercentage, NonNegativeLength};
-use crate::values::specified::{AllowQuirks, Integer, Number};
+use crate::values::specified::{AllowQuirks, Integer, NonNegativeNumber};
 use crate::values::{CustomIdent, KeyframesName, TimelineName};
 use crate::Atom;
 use cssparser::Parser;
@@ -663,30 +661,19 @@ impl Parse for VerticalAlign {
 }
 
 
-pub type AnimationIterationCount = GenericAnimationIterationCount<Number>;
-
-impl Parse for AnimationIterationCount {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut ::cssparser::Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        if input
-            .try_parse(|input| input.expect_ident_matching("infinite"))
-            .is_ok()
-        {
-            return Ok(GenericAnimationIterationCount::Infinite);
-        }
-
-        let number = Number::parse_non_negative(context, input)?;
-        Ok(GenericAnimationIterationCount::Number(number))
-    }
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, Parse, SpecifiedValueInfo, ToCss, ToShmem)]
+pub enum AnimationIterationCount {
+    
+    Number(NonNegativeNumber),
+    
+    Infinite,
 }
 
 impl AnimationIterationCount {
     
     #[inline]
     pub fn one() -> Self {
-        GenericAnimationIterationCount::Number(Number::new(1.0))
+        Self::Number(NonNegativeNumber::new(1.0))
     }
 }
 
