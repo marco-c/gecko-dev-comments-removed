@@ -2612,9 +2612,6 @@ bool CacheIRCompiler::emitDoubleAddResult(NumberOperandId lhsId,
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   AutoOutputRegister output(*this);
 
-  
-  
-  
   AutoAvailableFloatRegister floatScratch0(*this, FloatReg0);
   AutoAvailableFloatRegister floatScratch1(*this, FloatReg1);
 
@@ -6428,8 +6425,6 @@ bool CacheIRCompiler::emitCompareDoubleResult(JSOp op, NumberOperandId lhsId,
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   AutoOutputRegister output(*this);
 
-  
-  
   AutoAvailableFloatRegister floatScratch0(*this, FloatReg0);
   AutoAvailableFloatRegister floatScratch1(*this, FloatReg1);
 
@@ -6536,8 +6531,6 @@ bool CacheIRCompiler::emitCompareBigIntNumberResult(JSOp op,
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   AutoOutputRegister output(*this);
 
-  
-  
   AutoAvailableFloatRegister floatScratch0(*this, FloatReg0);
 
   Register lhs = allocator.useRegister(masm, lhsId);
@@ -7464,9 +7457,6 @@ bool CacheIRCompiler::emitCallNumberToString(NumberOperandId inputId,
                                              StringOperandId resultId) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
 
-  
-  
-  
   AutoAvailableFloatRegister floatScratch0(*this, FloatReg0);
 
   allocator.ensureDoubleRegister(masm, inputId, floatScratch0);
