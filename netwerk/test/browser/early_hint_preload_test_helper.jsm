@@ -5,7 +5,7 @@
 "use strict";
 
 const EXPORTED_SYMBOLS = [
-  "lax_request_count_checking",
+  "request_count_checking",
   "test_hint_preload",
   "test_hint_preload_internal",
 ];
@@ -18,23 +18,22 @@ const { BrowserTestUtils } = ChromeUtils.importESModule(
 );
 const { gBrowser } = Services.wm.getMostRecentWindow("navigator:browser");
 
-
-async function lax_request_count_checking(testName, got, expected) {
+async function request_count_checking(testName, got, expected) {
   
   let g = JSON.stringify(got);
   let e = JSON.stringify(expected);
   
   
-  await Assert.ok(
-    got.hinted <= expected.hinted,
-    `${testName}: unexpected amount of hinted request made expected at most ${expected.hinted} (${e}), got ${got.hinted} (${g})`
+  Assert.ok(
+    got.hinted == expected.hinted,
+    `${testName}: unexpected amount of hinted request made expected ${expected.hinted} (${e}), got ${got.hinted} (${g})`
   );
   
   
-  let expected_normal = expected.normal + expected.hinted;
-  await Assert.ok(
-    got.normal <= expected_normal,
-    `${testName}: unexpected amount of normal request made expected at most ${expected_normal} (${e}), got ${got.normal} (${g})`
+  let expected_normal = expected.normal;
+  Assert.ok(
+    got.normal == expected_normal,
+    `${testName}: unexpected amount of normal request made expected ${expected_normal} (${e}), got ${got.normal} (${g})`
   );
 }
 
@@ -95,17 +94,5 @@ async function test_hint_preload_internal(
     "http://example.com/browser/netwerk/test/browser/early_hint_pixel_count.sjs"
   ).then(response => response.json());
 
-  
-  await lax_request_count_checking(
-    testName,
-    gotRequestCount,
-    expectedRequestCount
-  );
-  
-
-
-
-
-
-
+  await request_count_checking(testName, gotRequestCount, expectedRequestCount);
 }
