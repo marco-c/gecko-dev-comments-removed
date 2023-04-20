@@ -70,6 +70,14 @@
 #  define MOZ_HAVE_NORETURN_PTR __attribute__((noreturn))
 #endif
 
+#if defined(__clang__)
+#  if __has_attribute(no_stack_protector)
+#    define MOZ_HAVE_NO_STACK_PROTECTOR __attribute__((no_stack_protector))
+#  endif
+#elif defined(__GNUC__)
+#  define MOZ_HAVE_NO_STACK_PROTECTOR __attribute__((no_stack_protector))
+#endif
+
 
 
 
@@ -379,6 +387,26 @@
 #  define MOZ_MAYBE_UNUSED __pragma(warning(suppress : 4505))
 #else
 #  define MOZ_MAYBE_UNUSED
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(MOZ_HAVE_NO_STACK_PROTECTOR)
+#  define MOZ_NO_STACK_PROTECTOR MOZ_HAVE_NO_STACK_PROTECTOR
+#else
+#  define MOZ_NO_STACK_PROTECTOR
 #endif
 
 #ifdef __cplusplus
