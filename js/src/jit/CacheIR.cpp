@@ -7854,7 +7854,10 @@ StringOperandId IRGenerator::emitToStringGuard(ValOperandId id,
 
 AttachDecision InlinableNativeIRGenerator::tryAttachNumberToString() {
   
-  if (argc_ != 0) {
+  if (argc_ > 1) {
+    return AttachDecision::NoAction;
+  }
+  if (argc_ == 1 && !args_[0].isInt32()) {
     return AttachDecision::NoAction;
   }
 
@@ -7862,6 +7865,21 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberToString() {
   if (!thisval_.isNumber()) {
     return AttachDecision::NoAction;
   }
+
+  
+  int32_t base = 10;
+  if (argc_ > 0) {
+    base = args_[0].toInt32();
+    if (base < 2 || base > 36) {
+      return AttachDecision::NoAction;
+    }
+
+    
+    if (base != 10 && !thisval_.isInt32()) {
+      return AttachDecision::NoAction;
+    }
+  }
+  MOZ_ASSERT(2 <= base && base <= 36);
 
   
   initializeInputOperand();
@@ -7874,10 +7892,37 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberToString() {
       writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
 
   
-  StringOperandId strId = emitToStringGuard(thisValId, thisval_);
+  if (base == 10) {
+    
+    if (argc_ > 0) {
+      
+      ValOperandId baseId =
+          writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+      Int32OperandId intBaseId = writer.guardToInt32(baseId);
 
-  
-  writer.loadStringResult(strId);
+      
+      writer.guardSpecificInt32(intBaseId, 10);
+    }
+
+    StringOperandId strId = emitToStringGuard(thisValId, thisval_);
+
+    
+    writer.loadStringResult(strId);
+  } else {
+    MOZ_ASSERT(argc_ > 0);
+
+    
+    Int32OperandId thisIntId = writer.guardToInt32(thisValId);
+
+    
+    ValOperandId baseId =
+        writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+    Int32OperandId intBaseId = writer.guardToInt32(baseId);
+
+    
+    writer.int32ToStringWithBaseResult(thisIntId, intBaseId);
+  }
+
   writer.returnFromIC();
 
   trackAttached("NumberToString");
