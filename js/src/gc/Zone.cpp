@@ -484,6 +484,13 @@ void Zone::discardJitCode(JS::GCContext* gcx, const DiscardOptions& options) {
   }
 
   
+  
+  for (auto regExp = cellIterUnsafe<RegExpShared>(); !regExp.done();
+       regExp.next()) {
+    regExp->discardJitCode();
+  }
+
+  
 
 
 

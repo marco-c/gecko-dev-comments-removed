@@ -543,15 +543,6 @@ RegExpShared::RegExpShared(JSAtom* source, RegExpFlags flags)
     : CellWithTenuredGCPointer(source), pairCount_(0), flags(flags) {}
 
 void RegExpShared::traceChildren(JSTracer* trc) {
-  
-  gc::GCRuntime* gc = &trc->runtime()->gc;
-  
-  
-  if (trc->isMarkingTracer() && gc->isIncrementalGCInProgress() &&
-      gc->isShrinkingGC()) {
-    discardJitCode();
-  }
-
   TraceNullableCellHeaderEdge(trc, this, "RegExpShared source");
   if (kind() == RegExpShared::Kind::Atom) {
     TraceNullableEdge(trc, &patternAtom_, "RegExpShared pattern atom");
