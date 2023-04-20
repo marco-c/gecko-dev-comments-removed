@@ -95,7 +95,6 @@ class VideoFrameSurface<LIBAV_VER> {
   
   
   bool IsUsed() const { return mSurface->IsGlobalRefSet(); }
-  void MarkAsUsed() { mSurface->GlobalRefAdd(); }
 
   
   bool IsFFMPEGSurface() const { return !!mLib; }
