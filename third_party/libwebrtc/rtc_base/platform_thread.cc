@@ -50,6 +50,9 @@ bool SetPriority(ThreadPriority priority) {
   
   
   return true;
+#elif defined(WEBRTC_MOZILLA_BUILD) && defined(WEBRTC_LINUX)
+  
+  return true;
 #else
   const int policy = SCHED_FIFO;
   const int min_prio = sched_get_priority_min(policy);
