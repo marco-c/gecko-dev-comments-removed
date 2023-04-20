@@ -16,12 +16,6 @@ use std::fmt::Debug;
 use std::io::Cursor;
 
 
-
-const VERSION: &[u8] = b"vdaf-03";
-
-const DST_LEN: usize = VERSION.len() + 4;
-
-
 #[derive(Debug, thiserror::Error)]
 pub enum VdafError {
     
@@ -127,9 +121,6 @@ where
     for<'a> &'a Self::AggregateShare: Into<Vec<u8>>,
 {
     
-    const ID: u32;
-
-    
     type Measurement: Clone + Debug;
 
     
@@ -138,9 +129,6 @@ where
     
     
     type AggregationParam: Clone + Debug + Decode + Encode;
-
-    
-    type PublicShare: Clone + Debug + for<'a> ParameterizedDecode<&'a Self> + Encode;
 
     
     type InputShare: Clone + Debug + for<'a> ParameterizedDecode<(&'a Self, usize)> + Encode;
@@ -162,11 +150,7 @@ where
     for<'a> &'a Self::AggregateShare: Into<Vec<u8>>,
 {
     
-    
-    fn shard(
-        &self,
-        measurement: &Self::Measurement,
-    ) -> Result<(Self::PublicShare, Vec<Self::InputShare>), VdafError>;
+    fn shard(&self, measurement: &Self::Measurement) -> Result<Vec<Self::InputShare>, VdafError>;
 }
 
 
@@ -198,7 +182,6 @@ where
         agg_id: usize,
         agg_param: &Self::AggregationParam,
         nonce: &[u8],
-        public_share: &Self::PublicShare,
         input_share: &Self::InputShare,
     ) -> Result<(Self::PrepareState, Self::PrepareShare), VdafError>;
 
@@ -408,15 +391,8 @@ where
     let mut num_measurements: usize = 0;
     for measurement in measurements.into_iter() {
         num_measurements += 1;
-        let (public_share, input_shares) = vdaf.shard(&measurement)?;
-        let out_shares = run_vdaf_prepare(
-            vdaf,
-            &verify_key,
-            agg_param,
-            nonce,
-            public_share,
-            input_shares,
-        )?;
+        let input_shares = vdaf.shard(&measurement)?;
+        let out_shares = run_vdaf_prepare(vdaf, &verify_key, agg_param, nonce, input_shares)?;
         for (out_share, agg_share) in out_shares.into_iter().zip(agg_shares.iter_mut()) {
             if let Some(ref mut inner) = agg_share {
                 inner.merge(&out_share.into())?;
@@ -440,7 +416,6 @@ pub(crate) fn run_vdaf_prepare<V, M, const L: usize>(
     verify_key: &[u8; L],
     agg_param: &V::AggregationParam,
     nonce: &[u8],
-    public_share: V::PublicShare,
     input_shares: M,
 ) -> Result<Vec<V::OutputShare>, VdafError>
 where
@@ -460,7 +435,6 @@ where
             agg_id,
             agg_param,
             nonce,
-            &public_share,
             &V::InputShare::get_decoded_with_param(&(vdaf, agg_id), &input_share)
                 .expect("failed to decode input share"),
         )?;

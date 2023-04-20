@@ -339,13 +339,9 @@ where
     I: Idpf<2, 2>,
     P: Prg<L>,
 {
-    
-    
-    const ID: u32 = 0xFFFF0000;
     type Measurement = IdpfInput;
     type AggregateResult = BTreeMap<IdpfInput, u64>;
     type AggregationParam = BTreeSet<IdpfInput>;
-    type PublicShare = (); 
     type InputShare = Poplar1InputShare<I, L>;
     type OutputShare = OutputShare<I::Field>;
     type AggregateShare = AggregateShare<I::Field>;
@@ -361,7 +357,7 @@ where
     P: Prg<L>,
 {
     #[allow(clippy::many_single_char_names)]
-    fn shard(&self, input: &IdpfInput) -> Result<((), Vec<Poplar1InputShare<I, L>>), VdafError> {
+    fn shard(&self, input: &IdpfInput) -> Result<Vec<Poplar1InputShare<I, L>>, VdafError> {
         let idpf_values: Vec<[I::Field; 2]> = Prng::new()?
             .take(input.level + 1)
             .map(|k| [I::Field::one(), k])
@@ -400,21 +396,18 @@ where
         
         let idpf_shares = I::gen(input, idpf_values)?;
 
-        Ok((
-            (),
-            vec![
-                Poplar1InputShare {
-                    idpf: idpf_shares[0].clone(),
-                    sketch_start_seed: leader_sketch_start_seed,
-                    sketch_next: Share::Leader(leader_sketch_next),
-                },
-                Poplar1InputShare {
-                    idpf: idpf_shares[1].clone(),
-                    sketch_start_seed: helper_sketch_start_seed,
-                    sketch_next: Share::Helper(helper_sketch_next_seed),
-                },
-            ],
-        ))
+        Ok(vec![
+            Poplar1InputShare {
+                idpf: idpf_shares[0].clone(),
+                sketch_start_seed: leader_sketch_start_seed,
+                sketch_next: Share::Leader(leader_sketch_next),
+            },
+            Poplar1InputShare {
+                idpf: idpf_shares[1].clone(),
+                sketch_start_seed: helper_sketch_start_seed,
+                sketch_next: Share::Helper(helper_sketch_next_seed),
+            },
+        ])
     }
 }
 
@@ -454,7 +447,6 @@ where
         agg_id: usize,
         agg_param: &BTreeSet<IdpfInput>,
         nonce: &[u8],
-        _public_share: &Self::PublicShare,
         input_share: &Self::InputShare,
     ) -> Result<
         (
@@ -875,21 +867,13 @@ mod tests {
         let mut agg_param = BTreeSet::new();
         agg_param.insert(IdpfInput::new(&[0b0000_0111], 6).unwrap());
         agg_param.insert(IdpfInput::new(&[0b0000_1000], 7).unwrap());
-        let (public_share, input_shares) = vdaf.shard(&input[0]).unwrap();
-        run_vdaf_prepare(
-            &vdaf,
-            &verify_key,
-            &agg_param,
-            nonce,
-            public_share,
-            input_shares,
-        )
-        .unwrap_err();
+        let input_shares = vdaf.shard(&input[0]).unwrap();
+        run_vdaf_prepare(&vdaf, &verify_key, &agg_param, nonce, input_shares).unwrap_err();
 
         
         
         
-        let (public_share, mut input_shares) = vdaf.shard(&input[0]).unwrap();
+        let mut input_shares = vdaf.shard(&input[0]).unwrap();
         for (i, x) in input_shares[0].idpf.data0.iter_mut().enumerate() {
             if i != input[0].index {
                 *x += Field128::one();
@@ -897,32 +881,16 @@ mod tests {
         }
         let mut agg_param = BTreeSet::new();
         agg_param.insert(IdpfInput::new(&[0b0000_0111], 8).unwrap());
-        run_vdaf_prepare(
-            &vdaf,
-            &verify_key,
-            &agg_param,
-            nonce,
-            public_share,
-            input_shares,
-        )
-        .unwrap_err();
+        run_vdaf_prepare(&vdaf, &verify_key, &agg_param, nonce, input_shares).unwrap_err();
 
         
-        let (public_share, mut input_shares) = vdaf.shard(&input[0]).unwrap();
+        let mut input_shares = vdaf.shard(&input[0]).unwrap();
         for x in input_shares[0].idpf.data1.iter_mut() {
             *x = Field128::zero();
         }
         let mut agg_param = BTreeSet::new();
         agg_param.insert(IdpfInput::new(&[0b0000_0111], 8).unwrap());
-        run_vdaf_prepare(
-            &vdaf,
-            &verify_key,
-            &agg_param,
-            nonce,
-            public_share,
-            input_shares,
-        )
-        .unwrap_err();
+        run_vdaf_prepare(&vdaf, &verify_key, &agg_param, nonce, input_shares).unwrap_err();
     }
 
     fn check_btree(btree: &BTreeMap<IdpfInput, u64>, counts: &[u64]) {
