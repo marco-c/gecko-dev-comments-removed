@@ -148,7 +148,7 @@ class TCPConnection : public Connection, public sigslot::has_slots<> {
  protected:
   
   
-  void OnConnectionRequestResponse(ConnectionRequest* req,
+  void OnConnectionRequestResponse(StunRequest* req,
                                    StunMessage* response) override;
 
  private:

@@ -56,21 +56,6 @@ struct CandidatePair final : public CandidatePairInterface {
 };
 
 
-class ConnectionRequest : public StunRequest {
- public:
-  ConnectionRequest(StunRequestManager& manager, Connection* connection);
-  void Prepare(StunMessage* message) override;
-  void OnResponse(StunMessage* response) override;
-  void OnErrorResponse(StunMessage* response) override;
-  void OnTimeout() override;
-  void OnSent() override;
-  int resend_delay() override;
-
- private:
-  Connection* const connection_;
-};
-
-
 
 class Connection : public CandidatePairInterface {
  public:
@@ -330,13 +315,16 @@ class Connection : public CandidatePairInterface {
 
  protected:
   
+  class ConnectionRequest;
+
+  
   Connection(rtc::WeakPtr<Port> port, size_t index, const Candidate& candidate);
 
   
   void OnSendStunPacket(const void* data, size_t size, StunRequest* req);
 
   
-  virtual void OnConnectionRequestResponse(ConnectionRequest* req,
+  virtual void OnConnectionRequestResponse(StunRequest* req,
                                            StunMessage* response);
   void OnConnectionRequestErrorResponse(ConnectionRequest* req,
                                         StunMessage* response)
@@ -380,8 +368,7 @@ class Connection : public CandidatePairInterface {
  private:
   
   
-  void MaybeUpdateLocalCandidate(ConnectionRequest* request,
-                                 StunMessage* response)
+  void MaybeUpdateLocalCandidate(StunRequest* request, StunMessage* response)
       RTC_RUN_ON(network_thread_);
 
   void LogCandidatePairConfig(webrtc::IceCandidatePairConfigType type)
@@ -467,8 +454,6 @@ class Connection : public CandidatePairInterface {
   const IceFieldTrials* field_trials_;
   rtc::EventBasedExponentialMovingAverage rtt_estimate_
       RTC_GUARDED_BY(network_thread_);
-
-  friend class ConnectionRequest;
 };
 
 

@@ -419,7 +419,7 @@ int TCPConnection::GetError() {
   return error_;
 }
 
-void TCPConnection::OnConnectionRequestResponse(ConnectionRequest* req,
+void TCPConnection::OnConnectionRequestResponse(StunRequest* req,
                                                 StunMessage* response) {
   
   Connection::OnConnectionRequestResponse(req, response);
