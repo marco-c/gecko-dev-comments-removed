@@ -57,7 +57,7 @@ class SVGImageElement : public SVGImageElementBase,
   bool IsNodeOfType(uint32_t aFlags) const override {
     
     
-    return !(aFlags & ~eUSE_TARGET);
+    return SVGGraphicsElement::IsNodeOfType(aFlags);
   }
 
   nsresult BindToTree(BindContext&, nsINode& aParent) override;

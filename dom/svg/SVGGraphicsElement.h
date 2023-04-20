@@ -24,6 +24,8 @@ class SVGGraphicsElement : public SVGGraphicsElementBase, public SVGTests {
   
   NS_DECL_ISUPPORTS_INHERITED
 
+  NS_IMPL_FROMNODE_HELPER(SVGGraphicsElement, IsSVGGraphicsElement())
+
   
   SVGElement* GetNearestViewportElement();
   SVGElement* GetFarthestViewportElement();
@@ -35,6 +37,7 @@ class SVGGraphicsElement : public SVGGraphicsElementBase, public SVGTests {
   bool IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) override;
   bool IsSVGGraphicsElement() const final { return true; }
 
+  using nsINode::Clone;
   
   SVGElement* AsSVGElement() final { return this; }
 

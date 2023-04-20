@@ -384,8 +384,6 @@ class nsINode : public mozilla::dom::EventTarget {
     
     eHTML_FORM_CONTROL = 1 << 6,
     
-    eUSE_TARGET = 1 << 9,
-    
     eSHAPE = 1 << 12
   };
 
@@ -821,6 +819,8 @@ class nsINode : public mozilla::dom::EventTarget {
   inline bool IsAnyOfSVGElements(First aFirst, Args... aArgs) const {
     return IsSVGElement() && IsNodeInternal(aFirst, aArgs...);
   }
+
+  virtual bool IsSVGGraphicsElement() const { return false; }
 
   inline bool IsXULElement() const {
     return IsElement() && IsInNamespace(kNameSpaceID_XUL);
