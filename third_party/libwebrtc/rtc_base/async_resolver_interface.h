@@ -11,6 +11,7 @@
 #ifndef RTC_BASE_ASYNC_RESOLVER_INTERFACE_H_
 #define RTC_BASE_ASYNC_RESOLVER_INTERFACE_H_
 
+#include "rtc_base/checks.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
@@ -25,6 +26,12 @@ class RTC_EXPORT AsyncResolverInterface {
 
   
   virtual void Start(const SocketAddress& addr) = 0;
+  
+  virtual void Start(const SocketAddress& addr, int family) {
+    
+    
+    RTC_DCHECK_NOTREACHED();
+  }
   
   
   
