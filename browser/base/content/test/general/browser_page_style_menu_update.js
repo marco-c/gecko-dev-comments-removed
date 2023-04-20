@@ -3,6 +3,15 @@
 const PAGE =
   "http://example.com/browser/browser/base/content/test/general/page_style_sample.html";
 
+async function openMenu(id) {
+  let menu = document.getElementById(id);
+  let popup = menu.querySelector(":scope > menupopup");
+  let shown = BrowserTestUtils.waitForPopupEvent(popup, "shown");
+  menu.openMenu(true);
+  await shown;
+  return popup;
+}
+
 
 
 
@@ -17,8 +26,8 @@ add_task(async function() {
   BrowserTestUtils.loadURI(browser, PAGE);
   await promiseStylesheetsLoaded(tab, 18);
 
-  let menupopup = document.getElementById("pageStyleMenu").menupopup;
-  gPageStyleMenu.fillPopup(menupopup);
+  await openMenu("view-menu");
+  let menupopup = await openMenu("pageStyleMenu");
 
   
   
@@ -29,9 +38,13 @@ add_task(async function() {
     "Should have '6' stylesheet selected by default"
   );
 
+  let closed = BrowserTestUtils.waitForEvent(menupopup, "popuphidden");
+
   
   let target = menupopup.querySelector("menuitem[label='1']");
-  target.click();
+  menupopup.activateItem(target);
+
+  await closed;
 
   gPageStyleMenu.fillPopup(menupopup);
   

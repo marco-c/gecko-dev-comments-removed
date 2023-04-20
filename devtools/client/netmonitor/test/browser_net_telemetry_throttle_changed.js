@@ -29,7 +29,10 @@ add_task(async function() {
   
   
   
-  toolbox.topWindow.document.querySelector("menuitem[label='GPRS']").click();
+  const item = toolbox.topWindow.document.querySelector(
+    "menuitem[label='GPRS']"
+  );
+  item.parentNode.activateItem(item);
   await monitor.panelWin.api.once(TEST_EVENTS.THROTTLING_CHANGED);
 
   
