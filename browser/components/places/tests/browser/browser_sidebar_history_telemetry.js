@@ -9,18 +9,18 @@ const { TelemetryTestUtils } = ChromeUtils.import(
 );
 const firstNodeIndex = 0;
 
-function mockPromptService(response) {
-  let promptService = {
-    
-    _response: response,
-    QueryInterface: ChromeUtils.generateQI(["nsIPromptService"]),
-    confirmEx: () => promptService._response,
+
+let gResponse = 1;
+(function replacePromptService() {
+  let originalPromptService = Services.prompt;
+  Services.prompt = {
+    QueryInterface: ChromeUtils.generateQI([Ci.nsIPromptService]),
+    confirmEx: () => gResponse,
   };
-
-  Services.prompt = promptService;
-
-  return promptService;
-}
+  registerCleanupFunction(() => {
+    Services.prompt = originalPromptService;
+  });
+})();
 
 add_setup(async function() {
   await PlacesUtils.history.clear();
@@ -65,7 +65,7 @@ add_task(async function test_click_multiple_history_entries() {
     
     
     
-    mockPromptService(1);
+    gResponse = 1;
     await SpecialPowers.pushPrefEnv({
       set: [["browser.tabs.maxOpenBeforeWarn", 4]],
     });
@@ -80,7 +80,7 @@ add_task(async function test_click_multiple_history_entries() {
 
     
     
-    mockPromptService(0);
+    gResponse = 0;
     synthesizeClickOnSelectedTreeCell(tree, { button: 1 });
 
     TelemetryTestUtils.assertKeyedScalar(
@@ -91,9 +91,6 @@ add_task(async function test_click_multiple_history_entries() {
     );
   });
 
-  
-  let { prompt } = Services;
-  Services.prompt = prompt;
   await SpecialPowers.popPrefEnv();
 
   while (gBrowser.tabs.length > 1) {
