@@ -376,6 +376,8 @@ nsresult nsPrintDialogWidgetGTK::ImportSettings(nsIPrintSettings* aNSSettings) {
   GtkPrintSettings* settings = aNSSettingsGTK->GetGtkPrintSettings();
   GtkPageSetup* setup = aNSSettingsGTK->GetGtkPageSetup();
 
+  
+
   bool geckoBool;
   aNSSettings->GetShrinkToFit(&geckoBool);
   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(shrink_to_fit_toggle),
@@ -386,6 +388,11 @@ nsresult nsPrintDialogWidgetGTK::ImportSettings(nsIPrintSettings* aNSSettings) {
 
   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(print_bg_images_toggle),
                                aNSSettings->GetPrintBGImages());
+
+  
+  int32_t pagesPerSide;
+  aNSSettings->GetNumPagesPerSheet(&pagesPerSide);
+  gtk_print_settings_set_number_up(settings, pagesPerSide);
 
   gtk_print_unix_dialog_set_settings(GTK_PRINT_UNIX_DIALOG(dialog), settings);
   gtk_print_unix_dialog_set_page_setup(GTK_PRINT_UNIX_DIALOG(dialog), setup);
@@ -422,6 +429,13 @@ nsresult nsPrintDialogWidgetGTK::ExportSettings(nsIPrintSettings* aNSSettings) {
         GTK_TOGGLE_BUTTON(print_bg_colors_toggle)));
     aNSSettings->SetPrintBGImages(gtk_toggle_button_get_active(
         GTK_TOGGLE_BUTTON(print_bg_images_toggle)));
+
+    
+    
+    
+    int32_t pagesPerSide = gtk_print_settings_get_number_up(settings);
+    gtk_print_settings_set_number_up(settings, 1);
+    aNSSettings->SetNumPagesPerSheet(pagesPerSide);
 
     
     nsCOMPtr<nsPrintSettingsGTK> aNSSettingsGTK(do_QueryInterface(aNSSettings));
