@@ -4305,7 +4305,10 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  [[nodiscard]] Focusable IsFocusable(bool aWithMouse = false);
+
+
+  [[nodiscard]] Focusable IsFocusable(bool aWithMouse = false,
+                                      bool aCheckVisibility = true);
 
   
   

@@ -447,7 +447,23 @@ uint64_t LocalAccessible::NativeInteractiveState() const {
   if (NativelyUnavailable()) return states::UNAVAILABLE;
 
   nsIFrame* frame = GetFrame();
-  if (frame && frame->IsFocusable()) return states::FOCUSABLE;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool ignoreVisibility =
+      mDoc->IPCDoc() && StaticPrefs::accessibility_cache_enabled_AtStartup();
+  if (frame && frame->IsFocusable(
+                    false,
+                    !ignoreVisibility)) {
+    return states::FOCUSABLE;
+  }
 
   return 0;
 }
