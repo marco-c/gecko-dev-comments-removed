@@ -2045,9 +2045,8 @@ static nsresult CreateNativeGlobalForInner(
   creationOptions.setDefineSharedArrayBufferConstructor(
       aDefineSharedArrayBufferConstructor);
 
-  xpc::InitGlobalObjectOptions(
-      options, principal->IsSystemPrincipal(),
-      aDocument->ShouldResistFingerprinting());
+  xpc::InitGlobalObjectOptions(options, principal->IsSystemPrincipal(),
+                               aDocument->ShouldResistFingerprinting());
 
   
   bool needComponents = principal->IsSystemPrincipal();
