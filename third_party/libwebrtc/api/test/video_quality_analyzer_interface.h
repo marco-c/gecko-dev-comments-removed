@@ -131,9 +131,14 @@ class VideoQualityAnalyzerInterface
   
   
   
+  
   virtual void OnDecoderError(absl::string_view peer_name,
                               uint16_t frame_id,
                               int32_t error_code) {}
+  virtual void OnDecoderError(absl::string_view peer_name,
+                              uint16_t frame_id,
+                              int32_t error_code,
+                              const DecoderStats& stats) {}
   
   
   void OnStatsReports(

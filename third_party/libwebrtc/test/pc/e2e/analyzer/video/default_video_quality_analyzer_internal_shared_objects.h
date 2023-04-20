@@ -68,6 +68,8 @@ struct FrameStats {
   absl::optional<StreamCodecInfo> used_encoder = absl::nullopt;
   
   absl::optional<StreamCodecInfo> used_decoder = absl::nullopt;
+
+  bool decoder_failed = false;
 };
 
 

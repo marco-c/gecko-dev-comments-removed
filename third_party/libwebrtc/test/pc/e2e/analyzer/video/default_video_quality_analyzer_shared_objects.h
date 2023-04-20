@@ -64,6 +64,9 @@ struct FrameCounters {
   
   
   int64_t dropped = 0;
+  
+  
+  int64_t failed_to_decode = 0;
 };
 
 
@@ -86,6 +89,7 @@ struct StreamCodecInfo {
 std::ostream& operator<<(std::ostream& os, const StreamCodecInfo& state);
 rtc::StringBuilder& operator<<(rtc::StringBuilder& sb,
                                const StreamCodecInfo& state);
+bool operator==(const StreamCodecInfo& a, const StreamCodecInfo& b);
 
 
 
@@ -93,6 +97,7 @@ enum class FrameDropPhase : int {
   kBeforeEncoder,
   kByEncoder,
   kTransport,
+  kByDecoder,
   kAfterDecoder,
   
   kLastValue
