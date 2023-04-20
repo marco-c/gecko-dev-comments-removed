@@ -84,19 +84,27 @@ namespace mozilla::glean {
 
 
 
+
+
 using LabeledCounterMetric = const impl::Labeled<impl::CounterMetric>;
 static Atomic<LabeledCounterMetric*> gCpuTimePerThreadMetric(nullptr);
 static Atomic<LabeledCounterMetric*> gWakeupsPerThreadMetric(nullptr);
+static Atomic<LabeledCounterMetric*> gIpcSentMessagesMetric(nullptr);
+static Atomic<LabeledCounterMetric*> gIpcReceivedMessagesMetric(nullptr);
 
 
 
-#  define SET_PER_THREAD_CPU_METRICS(aProcessType)                    \
-    gCpuTimePerThreadMetric = &power_cpu_ms_per_thread::aProcessType; \
-    gWakeupsPerThreadMetric = &power_wakeups_per_thread::aProcessType;
+#  define SET_PROCESS_TYPE_SPECIFIC_METRICS(aProcessType)              \
+    gCpuTimePerThreadMetric = &power_cpu_ms_per_thread::aProcessType;  \
+    gWakeupsPerThreadMetric = &power_wakeups_per_thread::aProcessType; \
+    gIpcSentMessagesMetric = &ipc_sent_messages::aProcessType;         \
+    gIpcReceivedMessagesMetric = &ipc_received_messages::aProcessType;
 
-#  define RESET_PER_THREAD_CPU_METRICS() \
-    gCpuTimePerThreadMetric = nullptr;   \
-    gWakeupsPerThreadMetric = nullptr;
+#  define RESET_PROCESS_TYPE_SPECIFIC_METRICS() \
+    gCpuTimePerThreadMetric = nullptr;          \
+    gWakeupsPerThreadMetric = nullptr;          \
+    gIpcSentMessagesMetric = nullptr;           \
+    gIpcReceivedMessagesMetric = nullptr;
 
 void RecordThreadCpuUse(const nsACString& aThreadName, uint64_t aCpuTimeMs,
                         uint64_t aWakeCount) {
@@ -110,7 +118,7 @@ void RecordThreadCpuUse(const nsACString& aThreadName, uint64_t aCpuTimeMs,
     if (XRE_IsParentProcess()) {
       
       
-      SET_PER_THREAD_CPU_METRICS(parent_inactive);
+      SET_PROCESS_TYPE_SPECIFIC_METRICS(parent_inactive);
       cpuTimeMetric = gCpuTimePerThreadMetric;
       wakeupsMetric = gWakeupsPerThreadMetric;
       if (!cpuTimeMetric || !wakeupsMetric) {
@@ -153,9 +161,27 @@ void RecordThreadCpuUse(const nsACString& aThreadName, uint64_t aCpuTimeMs,
     wakeupsMetric->Get(threadName).Add(int32_t(aWakeCount));
   }
 }
+
+
+nsLiteralCString GleanKeyFromIPCMessageType(uint32_t aMessageType);
+
+void RecordIPCSentMessage(uint32_t aMessageType) {
+  LabeledCounterMetric* metric = gIpcSentMessagesMetric;
+  if (metric) {
+    metric->Get(GleanKeyFromIPCMessageType(aMessageType)).Add();
+  }
+}
+
+void RecordIPCReceivedMessage(uint32_t aMessageType) {
+  LabeledCounterMetric* metric = gIpcReceivedMessagesMetric;
+  if (metric) {
+    metric->Get(GleanKeyFromIPCMessageType(aMessageType)).Add();
+  }
+}
+
 #else  
-#  define SET_PER_THREAD_CPU_METRICS(aProcessType)
-#  define RESET_PER_THREAD_CPU_METRICS()
+#  define SET_PROCESS_TYPE_SPECIFIC_METRICS(aProcessType)
+#  define RESET_PROCESS_TYPE_SPECIFIC_METRICS()
 #endif
 
 void RecordPowerMetrics() {
@@ -191,31 +217,31 @@ void RecordPowerMetrics() {
         switch (cc->GetProcessPriority()) {
           case hal::PROCESS_PRIORITY_BACKGROUND:
             type.AppendLiteral(".background");
-            SET_PER_THREAD_CPU_METRICS(content_background);
+            SET_PROCESS_TYPE_SPECIFIC_METRICS(content_background);
             break;
           case hal::PROCESS_PRIORITY_FOREGROUND:
             type.AppendLiteral(".foreground");
-            SET_PER_THREAD_CPU_METRICS(content_foreground);
+            SET_PROCESS_TYPE_SPECIFIC_METRICS(content_foreground);
             break;
           case hal::PROCESS_PRIORITY_BACKGROUND_PERCEIVABLE:
             type.AppendLiteral(".background-perceivable");
-            RESET_PER_THREAD_CPU_METRICS();
+            RESET_PROCESS_TYPE_SPECIFIC_METRICS();
             break;
           default:
-            RESET_PER_THREAD_CPU_METRICS();
+            RESET_PROCESS_TYPE_SPECIFIC_METRICS();
             break;
         }
       }
     } else {
-      RESET_PER_THREAD_CPU_METRICS();
+      RESET_PROCESS_TYPE_SPECIFIC_METRICS();
     }
   } else if (XRE_IsParentProcess()) {
     if (nsContentUtils::GetUserIsInteracting()) {
       type.AssignLiteral("parent.active");
-      SET_PER_THREAD_CPU_METRICS(parent_active);
+      SET_PROCESS_TYPE_SPECIFIC_METRICS(parent_active);
     } else {
       type.AssignLiteral("parent.inactive");
-      SET_PER_THREAD_CPU_METRICS(parent_inactive);
+      SET_PROCESS_TYPE_SPECIFIC_METRICS(parent_inactive);
     }
     hal::WakeLockInformation info;
     GetWakeLockInfo(u"video-playing"_ns, &info);
@@ -228,9 +254,9 @@ void RecordPowerMetrics() {
       }
     }
   } else if (XRE_IsGPUProcess()) {
-    SET_PER_THREAD_CPU_METRICS(gpu_process);
+    SET_PROCESS_TYPE_SPECIFIC_METRICS(gpu_process);
   } else {
-    RESET_PER_THREAD_CPU_METRICS();
+    RESET_PROCESS_TYPE_SPECIFIC_METRICS();
   }
 
   if (newCpuTime) {
