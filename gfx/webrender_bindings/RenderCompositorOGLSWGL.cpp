@@ -196,9 +196,6 @@ void RenderCompositorOGLSWGL::HandleExternalImage(
   GLenum wrapMode = LOCAL_GL_CLAMP_TO_EDGE;
 
   auto* host = aExternalImage->AsRenderAndroidSurfaceTextureHost();
-
-  host->UpdateTexImageIfNecessary();
-
   
   
   RefPtr<SurfaceTextureSource> layer = new SurfaceTextureSource(
