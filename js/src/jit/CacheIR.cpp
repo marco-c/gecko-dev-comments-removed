@@ -54,6 +54,7 @@
 #include "vm/BytecodeUtil-inl.h"
 #include "vm/EnvironmentObject-inl.h"
 #include "vm/JSContext-inl.h"
+#include "vm/JSFunction-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/JSScript-inl.h"
 #include "vm/NativeObject-inl.h"
@@ -9722,6 +9723,135 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayConstructor() {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachSpecializedFunctionBind(
+    Handle<JSObject*> target, Handle<BoundFunctionObject*> templateObj) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (!isFirstStub()) {
+    return AttachDecision::NoAction;
+  }
+  if (!target->is<JSFunction>() && !target->is<BoundFunctionObject>()) {
+    return AttachDecision::NoAction;
+  }
+  if (target->staticPrototype() != &cx_->global()->getFunctionPrototype()) {
+    return AttachDecision::NoAction;
+  }
+  size_t numBoundArgs = argc_ > 0 ? argc_ - 1 : 0;
+  if (numBoundArgs > BoundFunctionObject::MaxInlineBoundArgs) {
+    return AttachDecision::NoAction;
+  }
+
+  const bool targetIsConstructor = target->isConstructor();
+  Rooted<JSAtom*> targetName(cx_);
+  uint32_t targetLength = 0;
+
+  if (target->is<JSFunction>()) {
+    Rooted<JSFunction*> fun(cx_, &target->as<JSFunction>());
+    if (fun->isNativeFun()) {
+      return AttachDecision::NoAction;
+    }
+    if (fun->hasResolvedLength() || fun->hasResolvedName()) {
+      return AttachDecision::NoAction;
+    }
+    uint16_t len;
+    if (!JSFunction::getUnresolvedLength(cx_, fun, &len)) {
+      cx_->clearPendingException();
+      return AttachDecision::NoAction;
+    }
+    targetName = fun->infallibleGetUnresolvedName(cx_);
+    targetLength = len;
+  } else {
+    BoundFunctionObject* bound = &target->as<BoundFunctionObject>();
+    if (!targetIsConstructor) {
+      
+      
+      return AttachDecision::NoAction;
+    }
+    Shape* initialShape =
+        cx_->global()->maybeBoundFunctionShapeWithDefaultProto();
+    if (bound->shape() != initialShape) {
+      return AttachDecision::NoAction;
+    }
+    Value lenVal = bound->getLengthForInitialShape();
+    Value nameVal = bound->getNameForInitialShape();
+    if (!lenVal.isInt32() || lenVal.toInt32() < 0 || !nameVal.isString() ||
+        !nameVal.toString()->isAtom()) {
+      return AttachDecision::NoAction;
+    }
+    targetName = &nameVal.toString()->asAtom();
+    targetLength = uint32_t(lenVal.toInt32());
+  }
+
+  if (!templateObj->initTemplateSlotsForSpecializedBind(
+          cx_, numBoundArgs, targetIsConstructor, targetLength, targetName)) {
+    cx_->recoverFromOutOfMemory();
+    return AttachDecision::NoAction;
+  }
+
+  initializeInputOperand();
+  emitNativeCalleeGuard();
+
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ObjOperandId targetId = writer.guardToObject(thisValId);
+
+  
+  
+  writer.guardShape(targetId, target->shape());
+
+  
+  if (target->is<JSFunction>()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    JSFunction* fun = &target->as<JSFunction>();
+    if (fun->isSelfHostedBuiltin()) {
+      writer.guardSpecificFunction(targetId, fun);
+    } else {
+      writer.guardFunctionScript(targetId, fun->baseScript());
+    }
+    writer.guardFixedSlotValue(
+        targetId, JSFunction::offsetOfFlagsAndArgCount(),
+        fun->getReservedSlot(JSFunction::FlagsAndArgCountSlot));
+    writer.guardFixedSlotValue(targetId, JSFunction::offsetOfAtom(),
+                               fun->getReservedSlot(JSFunction::AtomSlot));
+  } else {
+    BoundFunctionObject* bound = &target->as<BoundFunctionObject>();
+    writer.guardBoundFunctionIsConstructor(targetId);
+    writer.guardFixedSlotValue(targetId,
+                               BoundFunctionObject::offsetOfLengthSlot(),
+                               bound->getLengthForInitialShape());
+    writer.guardFixedSlotValue(targetId,
+                               BoundFunctionObject::offsetOfNameSlot(),
+                               bound->getNameForInitialShape());
+  }
+
+  writer.specializedBindFunctionResult(targetId, argc_, templateObj);
+  writer.returnFromIC();
+
+  trackAttached("SpecializedFunctionBind");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachFunctionBind() {
   
   
@@ -9747,11 +9877,14 @@ AttachDecision InlinableNativeIRGenerator::tryAttachFunctionBind() {
     return AttachDecision::NoAction;
   }
 
-  JSObject* templateObj = BoundFunctionObject::createTemplateObject(cx_);
+  Rooted<BoundFunctionObject*> templateObj(
+      cx_, BoundFunctionObject::createTemplateObject(cx_));
   if (!templateObj) {
     cx_->recoverFromOutOfMemory();
     return AttachDecision::NoAction;
   }
+
+  TRY_ATTACH(tryAttachSpecializedFunctionBind(target, templateObj));
 
   initializeInputOperand();
 
