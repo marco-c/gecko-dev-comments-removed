@@ -922,33 +922,34 @@ nsresult CSSEditUtils::RemoveCSSEquivalentToStyle(
 }
 
 
+nsresult CSSEditUtils::GetComputedCSSEquivalentTo(
+    Element& aElement, const EditorElementStyle& aStyle, nsAString& aOutValue) {
+  return GetCSSEquivalentTo(aElement, aStyle, aOutValue, StyleType::Computed);
+}
 
 
+nsresult CSSEditUtils::GetCSSEquivalentTo(Element& aElement,
+                                          const EditorElementStyle& aStyle,
+                                          nsAString& aOutValue,
+                                          StyleType aStyleType) {
+  MOZ_ASSERT_IF(aStyle.IsInlineStyle(),
+                !aStyle.AsInlineStyle().IsStyleToClearAllInlineStyles());
 
+  nsStaticAtom* const htmlProperty =
+      aStyle.IsInlineStyle() ? aStyle.AsInlineStyle().mHTMLProperty : nullptr;
+  const RefPtr<nsAtom> attributeOrStyle =
+      aStyle.IsInlineStyle() ? aStyle.AsInlineStyle().mAttribute
+                             : aStyle.Style();
+  MOZ_DIAGNOSTIC_ASSERT(
+      IsCSSEditableProperty(&aElement, htmlProperty, attributeOrStyle));
 
-
-nsresult CSSEditUtils::GetCSSEquivalentToHTMLInlineStyleSetInternal(
-    nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute,
-    nsAString& aValue, StyleType aStyleType) {
-  MOZ_ASSERT(aHTMLProperty || aAttribute);
-
-  aValue.Truncate();
-  RefPtr<Element> theElement = aContent.GetAsElementOrParentElement();
-  if (NS_WARN_IF(!theElement)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  if (!theElement ||
-      !IsCSSEditableProperty(theElement, aHTMLProperty, aAttribute)) {
-    return NS_OK;
-  }
-
+  aOutValue.Truncate();
   
   nsTArray<nsStaticAtom*> cssPropertyArray;
   nsTArray<nsString> cssValueArray;
   
   
-  GenerateCSSDeclarationsFromHTMLStyle(*theElement, aHTMLProperty, aAttribute,
+  GenerateCSSDeclarationsFromHTMLStyle(aElement, htmlProperty, attributeOrStyle,
                                        nullptr, cssPropertyArray, cssValueArray,
                                        true);
   int32_t count = cssPropertyArray.Length();
@@ -957,14 +958,14 @@ nsresult CSSEditUtils::GetCSSEquivalentToHTMLInlineStyleSetInternal(
     
     if (aStyleType == StyleType::Computed) {
       nsresult rv = GetComputedCSSInlinePropertyBase(
-          *theElement, MOZ_KnownLive(*cssPropertyArray[index]), valueString);
+          aElement, MOZ_KnownLive(*cssPropertyArray[index]), valueString);
       if (NS_FAILED(rv)) {
         NS_WARNING("CSSEditUtils::GetComputedCSSInlinePropertyBase() failed");
         return rv;
       }
     } else {
       nsresult rv = GetSpecifiedCSSInlinePropertyBase(
-          *theElement, *cssPropertyArray[index], valueString);
+          aElement, *cssPropertyArray[index], valueString);
       if (NS_FAILED(rv)) {
         NS_WARNING("CSSEditUtils::GetSpecifiedCSSInlinePropertyBase() failed");
         return rv;
@@ -972,9 +973,9 @@ nsresult CSSEditUtils::GetCSSEquivalentToHTMLInlineStyleSetInternal(
     }
     
     if (index) {
-      aValue.Append(HTMLEditUtils::kSpace);
+      aOutValue.Append(HTMLEditUtils::kSpace);
     }
-    aValue.Append(valueString);
+    aOutValue.Append(valueString);
   }
   return NS_OK;
 }
@@ -1015,15 +1016,12 @@ Result<bool, nsresult> CSSEditUtils::IsCSSEquivalentTo(
   bool isSet = false;
   
   
-  
-  for (nsCOMPtr<nsIContent> content = &aContent; content;
-       content = content->GetParentElement()) {
-    nsCOMPtr<nsINode> parentNode = content->GetParentNode();
+  for (RefPtr<Element> element = aContent.GetAsElementOrParentElement();
+       element; element = element->GetParentElement()) {
+    nsCOMPtr<nsINode> parentNode = element->GetParentNode();
     aInOutValue.Assign(htmlValueString);
     
-    nsresult rv = GetCSSEquivalentToHTMLInlineStyleSetInternal(
-        *content, aStyle.mHTMLProperty, aStyle.mAttribute, aInOutValue,
-        aStyleType);
+    nsresult rv = GetCSSEquivalentTo(*element, aStyle, aInOutValue, aStyleType);
     if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
       return Err(NS_ERROR_EDITOR_DESTROYED);
     }
@@ -1033,7 +1031,7 @@ Result<bool, nsresult> CSSEditUtils::IsCSSEquivalentTo(
           "failed");
       return Err(rv);
     }
-    if (NS_WARN_IF(parentNode != content->GetParentNode())) {
+    if (NS_WARN_IF(parentNode != element->GetParentNode())) {
       return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
 
@@ -1193,15 +1191,12 @@ Result<bool, nsresult> CSSEditUtils::HaveCSSEquivalentStyles(
 
   
   
-  
   nsAutoString valueString;
-  for (nsCOMPtr<nsIContent> content = &aContent; content;
-       content = content->GetParentElement()) {
-    nsCOMPtr<nsINode> parentNode = content->GetParentNode();
+  for (RefPtr<Element> element = aContent.GetAsElementOrParentElement();
+       element; element = element->GetParentElement()) {
+    nsCOMPtr<nsINode> parentNode = element->GetParentNode();
     
-    nsresult rv = GetCSSEquivalentToHTMLInlineStyleSetInternal(
-        *content, aStyle.mHTMLProperty, aStyle.mAttribute, valueString,
-        aStyleType);
+    nsresult rv = GetCSSEquivalentTo(*element, aStyle, valueString, aStyleType);
     if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
       return Err(NS_ERROR_EDITOR_DESTROYED);
     }
@@ -1211,7 +1206,7 @@ Result<bool, nsresult> CSSEditUtils::HaveCSSEquivalentStyles(
           "failed");
       return Err(rv);
     }
-    if (NS_WARN_IF(parentNode != content->GetParentNode())) {
+    if (NS_WARN_IF(parentNode != element->GetParentNode())) {
       return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
 

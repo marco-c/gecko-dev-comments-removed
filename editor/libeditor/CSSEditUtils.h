@@ -175,16 +175,9 @@ class CSSEditUtils final {
 
 
 
-
-
-  MOZ_CAN_RUN_SCRIPT static nsresult
-  GetComputedCSSEquivalentToHTMLInlineStyleSet(nsIContent& aContent,
-                                               nsAtom* aHTMLProperty,
-                                               nsAtom* aAttribute,
-                                               nsAString& aValue) {
-    return GetCSSEquivalentToHTMLInlineStyleSetInternal(
-        aContent, aHTMLProperty, aAttribute, aValue, StyleType::Computed);
-  }
+  MOZ_CAN_RUN_SCRIPT static nsresult GetComputedCSSEquivalentTo(
+      dom::Element& aElement, const EditorElementStyle& aStyle,
+      nsAString& aOutValue);
 
   
 
@@ -287,7 +280,6 @@ class CSSEditUtils final {
   static bool DoStyledElementsHaveSameStyle(
       nsStyledElement& aStyledElement, nsStyledElement& aOtherStyledElement);
 
- public:
   
 
 
@@ -366,12 +358,9 @@ class CSSEditUtils final {
 
 
 
-  MOZ_CAN_RUN_SCRIPT static nsresult
-  GetCSSEquivalentToHTMLInlineStyleSetInternal(nsIContent& aContent,
-                                               nsAtom* aHTMLProperty,
-                                               nsAtom* aAttribute,
-                                               nsAString& aValue,
-                                               StyleType aStyleType);
+  MOZ_CAN_RUN_SCRIPT static nsresult GetCSSEquivalentTo(
+      dom::Element& aElement, const EditorElementStyle& aStyle,
+      nsAString& aOutValue, StyleType aStyleType);
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<bool, nsresult>
   IsCSSEquivalentTo(const HTMLEditor& aHTMLEditor, nsIContent& aContent,
                     const EditorInlineStyle& aStyle, nsAString& aInOutValue,
