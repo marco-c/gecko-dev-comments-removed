@@ -132,9 +132,6 @@ where
     visited_handling: VisitedHandlingMode,
 
     
-    
-    
-    
     nesting_level: usize,
 
     
