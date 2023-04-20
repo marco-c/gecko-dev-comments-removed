@@ -1,7 +1,6 @@
 "use strict";
 
 let notificationURL =
-  
   "http://example.org/browser/browser/base/content/test/alerts/file_dom_notifications.html";
 
 add_task(async function test_notificationReplace() {

@@ -10,11 +10,9 @@ add_task(
     
     
     
-    
     let tabB = BrowserTestUtils.addTab(gBrowser, "http://example.com/");
     await BrowserTestUtils.browserLoaded(tabB.linkedBrowser);
 
-    
     let tabC = BrowserTestUtils.addTab(gBrowser, "http://example.com/");
     await BrowserTestUtils.browserLoaded(tabC.linkedBrowser);
 

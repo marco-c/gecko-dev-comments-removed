@@ -4,7 +4,6 @@
 "use strict";
 
 const TRACKING_PAGE =
-  
   "http://example.org/browser/browser/base/content/test/protectionsUI/trackingPage.html";
 const CM_PROTECTION_PREF = "privacy.trackingprotection.cryptomining.enabled";
 let cmHistogram;
@@ -165,7 +164,6 @@ async function testSubview(hasException) {
   ok(BrowserTestUtils.is_visible(listItem), "List item is visible");
   is(
     listItem.querySelector("label").value,
-    
     "http://cryptomining.example.com",
     "Has the correct host"
   );

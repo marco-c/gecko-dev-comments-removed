@@ -6,7 +6,6 @@
 
 const CC = Components.Constructor;
 
-
 const TEST_SITE = "http://example.net";
 const TEST_THIRD_PARTY_SITE = "http://mochi.test:8888";
 

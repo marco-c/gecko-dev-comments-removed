@@ -7,12 +7,10 @@
 add_task(async function() {
   let tab1 = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    
     "http://www.example.com"
   );
   let tab2 = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    
     "http://www.example.com"
   );
 

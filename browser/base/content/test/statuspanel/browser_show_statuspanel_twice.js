@@ -3,7 +3,6 @@
 
 "use strict";
 
-
 const TEST_URL = "http://example.com";
 
 

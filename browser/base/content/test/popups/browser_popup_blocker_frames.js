@@ -4,7 +4,6 @@
 
 const baseURL = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
-  
   "http://example.com"
 );
 
@@ -90,11 +89,9 @@ async function test_opening_blocked_popups(testURL) {
 }
 
 add_task(async function() {
-  
   await test_opening_blocked_popups("http://example.com/");
 });
 
 add_task(async function() {
-  
   await test_opening_blocked_popups("http://w3c-test.org/");
 });

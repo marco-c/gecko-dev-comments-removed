@@ -97,7 +97,6 @@ var tests = [
       this.oldSelectedTab = gBrowser.selectedTab;
       await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
-        
         "http://example.com/"
       );
 
@@ -199,7 +198,6 @@ var tests = [
   {
     id: "Test#6",
     async run() {
-      
       await promiseTabLoadEvent(gBrowser.selectedTab, "http://example.com/");
       let notifyObj = new BasicNotification(this.id);
       notifyObj.options.eventCallback = function(eventName) {
@@ -221,7 +219,6 @@ var tests = [
       let oldSelectedTab = gBrowser.selectedTab;
       let newTab = await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
-        
         "http://example.com/"
       );
       gBrowser.selectedTab = oldSelectedTab;
@@ -248,12 +245,10 @@ var tests = [
   {
     id: "Test#8",
     async run() {
-      
       await promiseTabLoadEvent(gBrowser.selectedTab, "http://example.com/");
       let originalTab = gBrowser.selectedTab;
       let bgTab = await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
-        
         "http://example.com/"
       );
       let anchor = document.createXULElement("box");
@@ -309,13 +304,11 @@ var tests = [
 
       await Promise.all([
         BrowserUtils.promiseObserved("window-global-created", wgp =>
-          
           wgp.documentURI.spec.startsWith("http://example.org/")
         ),
         SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
           content.document
             .getElementById("iframe")
-            
             .setAttribute("src", "http://example.org/");
         }),
       ]);

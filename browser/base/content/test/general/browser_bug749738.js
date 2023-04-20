@@ -5,7 +5,6 @@
 "use strict";
 
 const DUMMY_PAGE =
-  
   "http://example.org/browser/browser/base/content/test/general/dummy_page.html";
 
 

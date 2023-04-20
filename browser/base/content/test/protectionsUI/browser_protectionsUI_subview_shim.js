@@ -12,7 +12,6 @@
 
 
 const TRACKING_PAGE =
-  
   "http://example.net/browser/browser/base/content/test/protectionsUI/trackingPage.html";
 
 add_setup(async function() {
@@ -188,7 +187,6 @@ async function runTestForCategoryAndState(category, action) {
       elementId: "socialblock",
     },
     cryptomining: {
-      
       origin: "http://cryptomining.example.com",
       elementId: "cryptominers",
     },

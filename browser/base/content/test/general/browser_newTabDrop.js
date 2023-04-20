@@ -41,7 +41,6 @@ add_task(async function single_url3() {
 
 add_task(async function multiple_urls() {
   await dropText("www.mochi.test/1\nmochi.test/2", [
-    
     "http://www.mochi.test/1",
     "http://mochi.test/2",
   ]);

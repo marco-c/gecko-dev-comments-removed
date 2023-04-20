@@ -153,7 +153,6 @@ add_task(async function open_10_tabs() {
     tabs.push(
       await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
-        
         "http://example.com",
         true,
         true
@@ -260,17 +259,14 @@ add_task(async function navigate_around() {
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    
     "http://example.com",
     true,
     true
   );
 
   let urls = [
-    
     "http://example.com/",
     "https://example.com/",
-    
     "http://example.org/",
     "https://example.org/",
   ];

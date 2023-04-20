@@ -4,13 +4,10 @@
 "use strict";
 
 const TRACKING_PAGE =
-  
   "http://tracking.example.org/browser/browser/base/content/test/protectionsUI/trackingPage.html";
 const BENIGN_PAGE =
-  
   "http://tracking.example.org/browser/browser/base/content/test/protectionsUI/benignPage.html";
 const COOKIE_PAGE =
-  
   "http://not-tracking.example.com/browser/browser/base/content/test/protectionsUI/cookiePage.html";
 
 const CM_PREF = "privacy.trackingprotection.cryptomining.enabled";

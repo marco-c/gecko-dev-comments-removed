@@ -24,7 +24,6 @@ onmessage = event => {
       );
       break;
     case "cryptomining":
-      
       createIframe("http://cryptomining.example.com/");
       break;
     case "fingerprinting":
@@ -46,7 +45,6 @@ onmessage = event => {
       
       
       createIframe(
-        
         "http://not-tracking.example.com/browser/browser/base/content/test/protectionsUI/cookieServer.sjs"
       );
       break;
@@ -57,13 +55,11 @@ onmessage = event => {
       break;
     case "image":
       createImage(
-        
         "http://trackertest.org/browser/browser/base/content/test/protectionsUI/cookieServer.sjs?type=image-no-cookie"
       );
       break;
     case "window-open":
       window.win = window.open(
-        
         "http://trackertest.org/browser/browser/base/content/test/protectionsUI/cookieServer.sjs",
         "_blank",
         "width=100,height=100"

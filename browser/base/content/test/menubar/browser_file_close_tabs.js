@@ -12,7 +12,6 @@ add_task(async function test_menu_close_tab_count() {
   
   
   info("Adding new tabs");
-  
   await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com");
 
   info("Selecting all tabs");

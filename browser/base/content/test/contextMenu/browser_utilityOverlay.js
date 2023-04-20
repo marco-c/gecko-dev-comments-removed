@@ -56,7 +56,6 @@ add_task(async function test_getTopWin() {
 });
 
 add_task(async function test_openUILink() {
-  
   const kURL = "http://example.org/";
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,

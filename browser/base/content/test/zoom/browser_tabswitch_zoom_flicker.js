@@ -10,7 +10,6 @@ function test() {
   Services.prefs.setBoolPref("browser.zoom.siteSpecific", true);
 
   let uri =
-    
     "http://example.org/browser/browser/base/content/test/zoom/zoom_test.html";
 
   (async function() {

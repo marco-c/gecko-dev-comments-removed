@@ -13,7 +13,6 @@ const { PermissionTestUtils } = ChromeUtils.import(
 
 const baseURL = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
-  
   "http://example.com"
 );
 const URL = baseURL + "popup_blocker2.html";

@@ -6,7 +6,6 @@
 const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 const BASE = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
-  
   "http://example.com"
 );
 const TEST_URL = BASE + "browser_contextmenu_shareurl.html";

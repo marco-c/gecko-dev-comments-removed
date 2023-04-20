@@ -385,7 +385,6 @@ add_task(async function test_dragging_zoom_handling() {
   let tab1 = await BrowserTestUtils.openNewForegroundTab(win1.gBrowser);
   let tab2 = await BrowserTestUtils.openNewForegroundTab(
     win2.gBrowser,
-    
     "http://example.com/"
   );
 

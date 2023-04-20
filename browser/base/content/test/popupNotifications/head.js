@@ -53,7 +53,6 @@ const PREF_SECURITY_DELAY_INITIAL = Services.prefs.getIntPref(
 
 
 function setup() {
-  
   BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/").then(
     goNext
   );
@@ -151,7 +150,6 @@ function BasicNotification(testId) {
     },
   ];
   this.options = {
-    
     name: "http://example.com",
     eventCallback: eventName => {
       switch (eventName) {

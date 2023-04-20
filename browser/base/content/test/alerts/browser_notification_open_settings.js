@@ -1,7 +1,6 @@
 "use strict";
 
 var notificationURL =
-  
   "http://example.org/browser/browser/base/content/test/alerts/file_dom_notifications.html";
 var expectedURL = "about:preferences#privacy";
 

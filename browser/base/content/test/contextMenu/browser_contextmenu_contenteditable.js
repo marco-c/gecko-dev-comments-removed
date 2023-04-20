@@ -6,7 +6,6 @@
 let contextMenu;
 
 const example_base =
-  
   "http://example.com/browser/browser/base/content/test/contextMenu/";
 const chrome_base =
   "chrome://mochitests/content/browser/browser/base/content/test/contextMenu/";

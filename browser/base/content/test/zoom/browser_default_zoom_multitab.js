@@ -4,9 +4,7 @@
 "use strict";
 
 add_task(async function test_multidomain_global_zoom() {
-  
   const TEST_PAGE_URL_1 = "http://example.com/";
-  
   const TEST_PAGE_URL_2 = "http://example.org/";
 
   
@@ -95,9 +93,7 @@ add_task(async function test_multidomain_global_zoom() {
 });
 
 add_task(async function test_site_specific_global_zoom() {
-  
   const TEST_PAGE_URL_1 = "http://example.net/";
-  
   const TEST_PAGE_URL_2 = "http://example.net/";
 
   

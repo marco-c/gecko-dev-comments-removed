@@ -13,7 +13,6 @@
 const TEST_URL =
   getRootDirectory(gTestPath).replace(
     "chrome://mochitests/content",
-    
     "http://example.com"
   ) + "file_mixedContentFramesOnHttp.html";
 

@@ -95,7 +95,6 @@ add_task(async function withBothGroupsAndTab() {
     "SessionStore should know how many tabs were just closed"
   );
 
-  
   let tab4 = await addTab("http://example.com/4");
 
   is(

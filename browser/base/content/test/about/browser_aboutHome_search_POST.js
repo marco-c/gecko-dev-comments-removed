@@ -54,7 +54,6 @@ add_task(async function() {
       let engine;
       await promiseContentSearchChange(browser, async () => {
         Services.search.addOpenSearchEngine(
-          
           "http://test:80/browser/browser/base/content/test/about/POSTSearchEngine.xml",
           null
         );

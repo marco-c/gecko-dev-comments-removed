@@ -48,7 +48,6 @@ add_task(async function test_https() {
 
 
 add_task(async function test_http() {
-  
   await BrowserTestUtils.withNewTab("http://example.com", async function() {
     let promisePanelOpen = BrowserTestUtils.waitForEvent(
       window,

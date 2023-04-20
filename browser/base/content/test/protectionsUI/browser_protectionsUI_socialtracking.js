@@ -4,7 +4,6 @@
 "use strict";
 
 const TRACKING_PAGE =
-  
   "http://example.com/browser/browser/base/content/test/protectionsUI/trackingPage.html";
 
 const ST_PROTECTION_PREF = "privacy.trackingprotection.socialtracking.enabled";

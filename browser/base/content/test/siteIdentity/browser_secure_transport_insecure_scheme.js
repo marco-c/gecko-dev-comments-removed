@@ -174,12 +174,10 @@ add_task(async function() {
   
   
   
-  
   await BrowserTestUtils.withNewTab("http://example.com/", async browser => {
     let identityMode = window.document.getElementById("identity-box").className;
     is(identityMode, "notSecure", "identity should be 'not secure'");
 
-    
     await testPageInfoNotEncrypted("http://example.com");
   });
 });

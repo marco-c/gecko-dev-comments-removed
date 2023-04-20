@@ -16,7 +16,6 @@ add_task(async function test_tabdialogbox_tab_switch_focus() {
     tabPromises.push(
       BrowserTestUtils.openNewForegroundTab(
         gBrowser,
-        
         "http://example.com",
         true
       )
@@ -169,7 +168,6 @@ add_task(async function test_tabdialogbox_tab_switch_hidden() {
     tabPromises.push(
       BrowserTestUtils.openNewForegroundTab(
         gBrowser,
-        
         "http://example.com",
         true
       )

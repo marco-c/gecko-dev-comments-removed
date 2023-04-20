@@ -120,7 +120,6 @@ add_task(async function() {
     url:
       getRootDirectory(gTestPath).replace(
         "chrome://mochitests/content",
-        
         "http://example.com"
       ) + "file_empty.html",
     forceNewProcess: true,

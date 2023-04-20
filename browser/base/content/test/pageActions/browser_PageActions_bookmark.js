@@ -2,7 +2,6 @@
 
 add_task(async function starButtonCtrlClick() {
   
-  
   let url = "http://example.com/browser_page_action_star_button";
   await BrowserTestUtils.withNewTab(url, async () => {
     StarUI._createPanelIfNeeded();
@@ -27,7 +26,6 @@ add_task(async function starButtonCtrlClick() {
 });
 
 add_task(async function bookmark() {
-  
   
   let url = "http://example.com/browser_page_action_menu";
   await BrowserTestUtils.withNewTab(url, async () => {

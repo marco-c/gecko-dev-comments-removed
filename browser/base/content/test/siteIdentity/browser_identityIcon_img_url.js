@@ -19,7 +19,6 @@ const kBaseURILocalhost = getRootDirectory(gTestPath).replace(
 const TEST_CASES = [
   {
     type: "http",
-    
     testURL: "http://example.com",
     img_url: `url("chrome://global/skin/icons/security-broken.svg")`,
   },

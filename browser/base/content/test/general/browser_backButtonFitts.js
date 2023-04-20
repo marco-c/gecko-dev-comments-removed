@@ -4,7 +4,6 @@
 
 add_task(async function() {
   let firstLocation =
-    
     "http://example.org/browser/browser/base/content/test/general/dummy_page.html";
   await BrowserTestUtils.openNewForegroundTab(gBrowser, firstLocation);
 

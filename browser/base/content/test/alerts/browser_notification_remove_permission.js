@@ -6,7 +6,6 @@ const { PermissionTestUtils } = ChromeUtils.import(
 
 var tab;
 var notificationURL =
-  
   "http://example.org/browser/browser/base/content/test/alerts/file_dom_notifications.html";
 var alertWindowClosed = false;
 var permRemoved = false;

@@ -83,7 +83,6 @@ const sessData = {
     },
   ],
 };
-
 const urlbarURL = "http://example.com/#urlbar";
 
 async function doTest(aInsertRelatedAfterCurrent, aInsertAfterCurrent) {
@@ -110,7 +109,6 @@ async function doTest(aInsertRelatedAfterCurrent, aInsertAfterCurrent) {
   
   let pageURL = getRootDirectory(gTestPath).replace(
     "chrome://mochitests/content",
-    
     "http://example.com"
   );
   pageURL = `${pageURL}file_new_tab_page.html`;
@@ -133,7 +131,6 @@ async function doTest(aInsertRelatedAfterCurrent, aInsertAfterCurrent) {
 
   let newTabPromise = BrowserTestUtils.waitForNewTab(
     gBrowser,
-    
     "http://example.com/#linkclick",
     true
   );
@@ -145,7 +142,6 @@ async function doTest(aInsertRelatedAfterCurrent, aInsertAfterCurrent) {
   let openTab = await newTabPromise;
   is(
     openTab.linkedBrowser.currentURI.spec,
-    
     "http://example.com/#linkclick",
     "Middle click should open site to correct url."
   );

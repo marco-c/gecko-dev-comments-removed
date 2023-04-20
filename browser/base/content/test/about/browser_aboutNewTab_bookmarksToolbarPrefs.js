@@ -58,7 +58,6 @@ add_task(async function test_with_different_pref_states() {
 
       await BrowserTestUtils.openNewForegroundTab({
         gBrowser: win.gBrowser,
-        
         opening: "http://example.com",
       });
       await waitForBookmarksToolbarVisibility({

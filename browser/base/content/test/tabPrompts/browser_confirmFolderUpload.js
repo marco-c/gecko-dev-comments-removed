@@ -54,7 +54,6 @@ add_setup(async function() {
 
 
 async function testUploadPrompt(confirmUpload) {
-  
   await BrowserTestUtils.withNewTab("http://example.com", async browser => {
     
     await ContentTask.spawn(browser, null, () => {

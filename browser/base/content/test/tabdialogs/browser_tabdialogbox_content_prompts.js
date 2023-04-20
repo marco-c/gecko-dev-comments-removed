@@ -31,7 +31,6 @@ const TEST_EXTENSION_DATA = {
     "alert.js": `window.addEventListener("load", () => alert("Hi"));`,
   },
 };
-
 const TEST_ORIGIN = "http://example.com";
 const TEST_PAGE =
   TEST_ROOT_CHROME.replace("chrome://mochitests/content", TEST_ORIGIN) +
@@ -52,7 +51,6 @@ add_setup(async function() {
 
 
 add_task(async function test_tabdialog_content_prompts() {
-  
   await BrowserTestUtils.withNewTab("http://example.com", async function(
     browser
   ) {

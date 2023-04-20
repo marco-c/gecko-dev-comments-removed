@@ -22,13 +22,11 @@ function runNextTest() {
 function test_openUILink_checkPrincipal() {
   let tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(
     gBrowser,
-    
     "http://example.com/"
   )); 
   BrowserTestUtils.browserLoaded(tab.linkedBrowser).then(async function() {
     is(
       tab.linkedBrowser.currentURI.spec,
-      
       "http://example.com/",
       "example.com loaded"
     );
@@ -54,7 +52,6 @@ function test_openUILink_checkPrincipal() {
       );
       is(
         content.document.nodePrincipal.asciiSpec,
-        
         "http://example.com/",
         "sanity: correct doc.nodePrincipal URL"
       );
@@ -64,7 +61,6 @@ function test_openUILink_checkPrincipal() {
     runNextTest();
   });
 
-  
   
   openUILink("http://example.com", null, {
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal({}),

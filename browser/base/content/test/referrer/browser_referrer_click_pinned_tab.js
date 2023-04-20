@@ -7,24 +7,19 @@
 
 _referrerTests = [
   {
-    
     fromScheme: "http://",
-    
     toScheme: "http://",
     cross: true,
-    
     result: "http://test1.example.com/", 
   },
   {
     fromScheme: "https://",
-    
     toScheme: "http://",
     cross: true,
     result: "", 
   },
   {
     fromScheme: "https://",
-    
     toScheme: "http://",
     policy: "origin",
     cross: true,
@@ -32,7 +27,6 @@ _referrerTests = [
   },
   {
     fromScheme: "https://",
-    
     toScheme: "http://",
     policy: "origin",
     rel: "noreferrer",
@@ -47,7 +41,6 @@ _referrerTests = [
     result: "", 
   },
   {
-    
     fromScheme: "http://",
     toScheme: "https://",
     policy: "no-referrer",

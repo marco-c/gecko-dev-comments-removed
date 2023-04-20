@@ -223,7 +223,6 @@ function startTest1() {
   gBrowser.addTabsProgressListener(gAllProgressListener);
 
   gFrontNotifications = gAllNotifications;
-  
   runTest(gForegroundBrowser, "http://example.org" + gTestPage, startTest2);
 }
 
@@ -236,7 +235,6 @@ function startTest2() {
 function startTest3() {
   info("\nTest 3");
   gFrontNotifications = [];
-  
   runTest(gBackgroundBrowser, "http://example.org" + gTestPage, startTest4);
 }
 
@@ -260,14 +258,12 @@ function startTest5() {
   gBrowser.addProgressListener(gFrontProgressListener);
 
   gFrontNotifications = gAllNotifications;
-  
   runTest(gForegroundBrowser, "http://example.org" + gTestPage, startTest6);
 }
 
 function startTest6() {
   info("\nTest 6");
   gFrontNotifications = [];
-  
   runTest(gBackgroundBrowser, "http://example.org" + gTestPage, startTest7);
 }
 
@@ -318,7 +314,6 @@ function startTest9() {
     "onSecurityChange",
     "onStateChange",
   ];
-  
   runTest(gBackgroundBrowser, "http://example.org" + gTestPage, finishTest);
 }
 

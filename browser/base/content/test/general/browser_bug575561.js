@@ -1,7 +1,6 @@
 requestLongerTimeout(2);
 
 const TEST_URL =
-  
   "http://example.com/browser/browser/base/content/test/general/app_bug575561.html";
 
 add_task(async function() {
