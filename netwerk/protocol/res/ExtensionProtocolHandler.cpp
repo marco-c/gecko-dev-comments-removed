@@ -395,9 +395,7 @@ ExtensionProtocolHandler::GetSingleton() {
 }
 
 ExtensionProtocolHandler::ExtensionProtocolHandler()
-    : SubstitutingProtocolHandler(
-          EXTENSION_SCHEME,
-          URI_STD | URI_IS_LOCAL_RESOURCE | URI_IS_POTENTIALLY_TRUSTWORTHY) {
+    : SubstitutingProtocolHandler(EXTENSION_SCHEME) {
   
   
   
@@ -414,8 +412,8 @@ static inline ExtensionPolicyService& EPS() {
 
 nsresult ExtensionProtocolHandler::GetFlagsForURI(nsIURI* aURI,
                                                   uint32_t* aFlags) {
-  uint32_t flags;
-  GetProtocolFlags(&flags);
+  uint32_t flags =
+      URI_STD | URI_IS_LOCAL_RESOURCE | URI_IS_POTENTIALLY_TRUSTWORTHY;
 
   URLInfo url(aURI);
   if (auto* policy = EPS().GetByURL(url)) {
