@@ -7,6 +7,7 @@
 #ifndef mozilla_freestanding_SharedSection_h
 #define mozilla_freestanding_SharedSection_h
 
+#include "mozilla/glue/SharedSection.h"
 #include "mozilla/NativeNt.h"
 #include "mozilla/interceptor/MMPolicies.h"
 
@@ -59,7 +60,7 @@ struct MOZ_TRIVIAL_CTOR_DTOR Kernel32ExportsSolver final
 
 
 
-class MOZ_TRIVIAL_CTOR_DTOR SharedSection final {
+class MOZ_TRIVIAL_CTOR_DTOR SharedSection final : public nt::SharedSection {
   struct Layout final {
     enum class State {
       kUninitialized,
@@ -116,7 +117,7 @@ class MOZ_TRIVIAL_CTOR_DTOR SharedSection final {
   
   
   Kernel32ExportsSolver* GetKernel32Exports();
-  Span<const wchar_t> GetDependentModules();
+  Span<const wchar_t> GetDependentModules() final override;
 
   
   static LauncherVoidResult TransferHandle(
