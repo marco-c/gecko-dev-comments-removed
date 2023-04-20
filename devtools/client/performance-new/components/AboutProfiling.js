@@ -49,7 +49,7 @@ const Presets = createFactory(
 const selectors = require("resource://devtools/client/performance-new/store/selectors.js");
 const {
   restartBrowserWithEnvironmentVariable,
-} = require("resource://devtools/client/performance-new/browser.js");
+} = require("resource://devtools/client/performance-new/shared/browser.js");
 
 
 
