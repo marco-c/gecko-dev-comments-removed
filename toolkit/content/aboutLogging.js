@@ -3,6 +3,9 @@
 
 
 "use strict";
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 const gDashboard = Cc["@mozilla.org/network/dashboard;1"].getService(
   Ci.nsIDashboard
 );
@@ -10,7 +13,35 @@ const gDirServ = Cc["@mozilla.org/file/directory_service;1"].getService(
   Ci.nsIDirectoryServiceProvider
 );
 
+const { ProfilerMenuButton } = ChromeUtils.import(
+  "resource://devtools/client/performance-new/popup/menu-button.jsm.js"
+);
+const { CustomizableUI } = ChromeUtils.import(
+  "resource:///modules/CustomizableUI.jsm"
+);
+
+XPCOMUtils.defineLazyGetter(this, "ProfilerPopupBackground", function() {
+  return ChromeUtils.import(
+    "resource://devtools/client/performance-new/popup/background.jsm.js"
+  );
+});
+
 const $ = document.querySelector.bind(document);
+const $$ = document.querySelectorAll.bind(document);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const gLoggingPresets = {
   networking: {
@@ -20,6 +51,7 @@ const gLoggingPresets = {
       label: "about-logging-preset-networking-label",
       description: "about-logging-preset-networking-description",
     },
+    profilerPreset: "networking",
   },
   "media-playback": {
     modules:
@@ -28,6 +60,7 @@ const gLoggingPresets = {
       label: "about-logging-preset-media-playback-label",
       description: "about-logging-preset-media-playback-description",
     },
+    profilerPreset: "media",
   },
   custom: {
     modules: "",
@@ -38,6 +71,12 @@ const gLoggingPresets = {
   },
 };
 
+const gLoggingSettings = {
+  loggingOutputType: "profiler",
+  running: false,
+  loggingPreset: "",
+};
+
 function populatePresets() {
   let dropdown = $("#logging-preset-dropdown");
   for (let presetName in gLoggingPresets) {
@@ -46,6 +85,9 @@ function populatePresets() {
     document.l10n.setAttributes(option, preset.l10nIds.label);
     option.value = presetName;
     dropdown.appendChild(option);
+    if (option.value === gLoggingSettings.loggingPreset) {
+      option.setAttribute("selected", true);
+    }
   }
 
   function setPresetAndDescription(preset) {
@@ -53,20 +95,42 @@ function populatePresets() {
       $("#logging-preset-description"),
       gLoggingPresets[preset].l10nIds.description
     );
+    gLoggingSettings.loggingPreset = preset;
   }
 
   dropdown.onchange = function() {
-    $("#log-modules").value = gLoggingPresets[dropdown.value].modules;
+    
+    
+    if (dropdown.value != "custom") {
+      $("#log-modules").value = gLoggingPresets[dropdown.value].modules;
+    }
     setPresetAndDescription(dropdown.value);
-    Services.prefs.setCharPref("logging.config.preset", dropdown.value);
     setLogModules();
+    Services.prefs.setCharPref("logging.config.preset", dropdown.value);
   };
 
   $("#log-modules").value = gLoggingPresets[dropdown.value].modules;
   setPresetAndDescription(dropdown.value);
+  
   $("#log-modules").oninput = e => {
     dropdown.value = "custom";
   };
+}
+
+function updateLoggingOutputType(profilerOutputType) {
+  gLoggingSettings.loggingOutputType = profilerOutputType;
+
+  if (gLoggingSettings.loggingOutputType === "profiler") {
+    
+    $("#log-file-configuration").hidden = true;
+  } else if (gLoggingSettings.loggingOutputType === "file") {
+    $("#log-file-configuration").hidden = false;
+  }
+
+  Services.prefs.setCharPref(
+    "logging.config.output_type",
+    gLoggingSettings.loggingOutputType
+  );
 }
 
 let gInited = false;
@@ -77,27 +141,55 @@ function init() {
   gInited = true;
   gDashboard.enableLogging = true;
 
-  let setLogButton = document.getElementById("set-log-file-button");
+  populatePresets();
+
+  let setLogButton = $("#set-log-file-button");
   setLogButton.addEventListener("click", setLogFile);
 
-  let setModulesButton = document.getElementById("set-log-modules-button");
+  let setModulesButton = $("#set-log-modules-button");
   setModulesButton.addEventListener("click", setLogModules);
 
-  let startLoggingButton = document.getElementById("start-logging-button");
-  startLoggingButton.addEventListener("click", startLogging);
+  let toggleLoggingButton = $("#toggle-logging-button");
+  toggleLoggingButton.addEventListener("click", startStopLogging);
 
-  let stopLoggingButton = document.getElementById("stop-logging-button");
-  stopLoggingButton.addEventListener("click", stopLogging);
+  $$("input[type=radio]").forEach(radio => {
+    radio.onchange = e => {
+      updateLoggingOutputType(e.target.value);
+    };
+  });
+
+  try {
+    let loggingOutputType = Services.prefs.getCharPref(
+      "logging.config.output_type"
+    );
+    if (loggingOutputType.length) {
+      updateLoggingOutputType(loggingOutputType);
+    }
+  } catch {
+    updateLoggingOutputType("profiler");
+  }
+
+  try {
+    let loggingPreset = Services.prefs.getCharPref("logging.config.preset");
+    gLoggingSettings.loggingPreset = loggingPreset;
+  } catch {}
+
+  try {
+    let running = Services.prefs.getBoolPref("logging.config.running");
+    gLoggingSettings.running = running;
+    $("#toggle-logging-button").setAttribute(
+      "data-l10n-id",
+      `about-logging-${gLoggingSettings.running ? "stop" : "start"}-logging`
+    );
+  } catch {}
 
   try {
     let file = gDirServ.getFile("TmpD", {});
     file.append("log.txt");
-    document.getElementById("log-file").value = file.path;
+    $("#log-file").value = file.path;
   } catch (e) {
     console.error(e);
   }
-
-  populatePresets();
 
   
   updateLogFile();
@@ -108,9 +200,8 @@ function init() {
   
   
   if (setLogButton.disabled || setModulesButton.disabled) {
-    document.querySelector("#buttons-disabled").hidden = false;
-    startLoggingButton.disabled = true;
-    stopLoggingButton.disabled = true;
+    $("#buttons-disabled").hidden = false;
+    toggleLoggingButton.disabled = true;
   }
 }
 
@@ -120,8 +211,8 @@ function updateLogFile() {
   
   logPath =
     Services.env.get("MOZ_LOG_FILE") || Services.env.get("NSPR_LOG_FILE");
-  let currentLogFile = document.getElementById("current-log-file");
-  let setLogFileButton = document.getElementById("set-log-file-button");
+  let currentLogFile = $("#current-log-file");
+  let setLogFileButton = $("#set-log-file-button");
 
   
   
@@ -135,15 +226,15 @@ function updateLogFile() {
     try {
       let file = gDirServ.getFile("TmpD", {});
       file.append("log.txt");
-      document.getElementById("log-file").value = file.path;
+      $("#log-file").value = file.path;
     } catch (e) {
       console.error(e);
     }
     
-    currentLogFile.innerText = document.getElementById("log-file").value;
+    currentLogFile.innerText = $("#log-file").value;
   }
 
-  let openLogFileButton = document.getElementById("open-log-file-button");
+  let openLogFileButton = $("#open-log-file-button");
   openLogFileButton.disabled = true;
 
   if (currentLogFile.innerText.length) {
@@ -165,8 +256,8 @@ function updateLogModules() {
     Services.env.get("MOZ_LOG") ||
     Services.env.get("MOZ_LOG_MODULES") ||
     Services.env.get("NSPR_LOG_MODULES");
-  let currentLogModules = document.getElementById("current-log-modules");
-  let setLogModulesButton = document.getElementById("set-log-modules-button");
+  let currentLogModules = $("#current-log-modules");
+  let setLogModulesButton = $("#set-log-modules-button");
   if (logModules.length) {
     currentLogModules.innerText = logModules;
     
@@ -220,12 +311,12 @@ function updateLogModules() {
 }
 
 function setLogFile() {
-  let setLogButton = document.getElementById("set-log-file-button");
+  let setLogButton = $("#set-log-file-button");
   if (setLogButton.disabled) {
     
     return;
   }
-  let logFile = document.getElementById("log-file").value.trim();
+  let logFile = $("#log-file").value.trim();
   Services.prefs.setCharPref("logging.config.LOG_FILE", logFile);
   updateLogFile();
 }
@@ -244,13 +335,13 @@ function clearLogModules() {
 }
 
 function setLogModules() {
-  let setLogModulesButton = document.getElementById("set-log-modules-button");
+  let setLogModulesButton = $("#set-log-modules-button");
   if (setLogModulesButton.disabled) {
     
     return;
   }
 
-  let modules = document.getElementById("log-modules").value.trim();
+  let modules = $("#log-modules").value.trim();
 
   
   clearLogModules();
@@ -280,16 +371,75 @@ function setLogModules() {
   updateLogModules();
 }
 
-function startLogging() {
-  setLogFile();
-  setLogModules();
+function isLogging() {
+  try {
+    return Services.prefs.getBoolPref("logging.config.running");
+  } catch {
+    return false;
+  }
 }
 
-function stopLogging() {
+function startStopLogging() {
+  if (isLogging()) {
+    document.l10n.setAttributes(
+      $("#toggle-logging-button"),
+      "about-logging-start-logging"
+    );
+    stopLogging();
+  } else {
+    document.l10n.setAttributes(
+      $("#toggle-logging-button"),
+      "about-logging-stop-logging"
+    );
+    startLogging();
+  }
+}
+
+function startLogging() {
+  setLogModules();
+  if (gLoggingSettings.loggingOutputType === "profiler") {
+    if (gLoggingSettings.loggingPreset != "custom") {
+      
+      
+      const profilerPreset =
+        gLoggingPresets[gLoggingSettings.loggingPreset].profilerPreset;
+      const supportedFeatures = Services.profiler.GetFeatures();
+      ProfilerPopupBackground.changePreset(
+        "aboutlogging",
+        profilerPreset,
+        supportedFeatures
+      );
+    }
+    
+    
+    if (!ProfilerMenuButton.isInNavbar()) {
+      
+      Services.prefs.setBoolPref(
+        "devtools.performance.popup.feature-flag",
+        true
+      );
+      
+      ProfilerMenuButton.addToNavbar();
+      
+      
+      CustomizableUI.dispatchToolboxEvent("customizationchange");
+    }
+    ProfilerPopupBackground.startProfiler("aboutlogging");
+  } else {
+    setLogFile();
+  }
+  Services.prefs.setBoolPref("logging.config.running", true);
+}
+
+async function stopLogging() {
+  if (gLoggingSettings.loggingOutputType === "profiler") {
+    await ProfilerPopupBackground.captureProfile("aboutlogging");
+  } else {
+    Services.prefs.clearUserPref("logging.config.LOG_FILE");
+    updateLogFile();
+  }
+  Services.prefs.setBoolPref("logging.config.running", false);
   clearLogModules();
-  
-  Services.prefs.clearUserPref("logging.config.LOG_FILE");
-  updateLogFile();
 }
 
 
