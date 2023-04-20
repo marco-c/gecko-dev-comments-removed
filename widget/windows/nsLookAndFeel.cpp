@@ -70,6 +70,42 @@ static nsresult SystemWantsDarkTheme(int32_t& darkThemeEnabled) {
   return rv;
 }
 
+static int32_t SystemColorFilter() {
+  nsresult rv = NS_OK;
+  nsCOMPtr<nsIWindowsRegKey> colorFilteringKey =
+      do_CreateInstance("@mozilla.org/windows-registry-key;1", &rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return 0;
+  }
+
+  rv = colorFilteringKey->Open(
+      nsIWindowsRegKey::ROOT_KEY_CURRENT_USER,
+      u"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Accessibility\\ATConfig\\colorfiltering"_ns,
+      nsIWindowsRegKey::ACCESS_QUERY_VALUE);
+  if (NS_FAILED(rv)) {
+    return 0;
+  }
+
+  
+  
+  
+  
+  uint32_t active;
+  rv = colorFilteringKey->ReadIntValue(u"Active"_ns, &active);
+  if (NS_FAILED(rv) || active == 0) {
+    return 0;
+  }
+
+  
+  uint32_t filterType;
+  rv = colorFilteringKey->ReadIntValue(u"FilterType"_ns, &filterType);
+  if (NS_SUCCEEDED(rv)) {
+    return filterType;
+  }
+
+  return 0;
+}
+
 nsLookAndFeel::nsLookAndFeel() {
   mozilla::Telemetry::Accumulate(mozilla::Telemetry::TOUCH_ENABLED_DEVICE,
                                  WinUtils::IsTouchDeviceSupportPresent());
@@ -612,6 +648,15 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       
       
       aResult = !WindowsUIUtils::ComputeTransparencyEffects();
+      break;
+    }
+    case IntID::InvertedColors: {
+      int32_t colorFilter = SystemColorFilter();
+
+      
+      
+      
+      aResult = colorFilter == 1 || colorFilter == 2 ? 1 : 0;
       break;
     }
     case IntID::PrimaryPointerCapabilities: {

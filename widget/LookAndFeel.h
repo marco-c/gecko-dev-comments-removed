@@ -308,6 +308,14 @@ class LookAndFeel {
 
 
 
+    InvertedColors,
+
+    
+
+
+
+
+
 
     PrimaryPointerCapabilities,
     

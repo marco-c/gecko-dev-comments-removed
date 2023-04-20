@@ -329,6 +329,13 @@ fn disabled_by_pref(feature: &Atom, context: &ParserContext) -> bool {
             return !context.in_ua_or_chrome_sheet() &&
                 !static_prefs::pref!("layout.css.prefers-reduced-transparency.enabled");
         }
+
+        
+        
+        if *feature == atom!("inverted-colors") {
+            return !context.in_ua_or_chrome_sheet() &&
+                !static_prefs::pref!("layout.css.inverted-colors.enabled");
+        }
     }
     false
 }

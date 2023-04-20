@@ -952,6 +952,10 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       EnsureInit();
       aResult = mSystemTheme.mHighContrast;
       break;
+    case IntID::InvertedColors:
+      
+      aResult = 0;
+      break;
     case IntID::TitlebarRadius: {
       EnsureInit();
       aResult = EffectiveTheme().mTitlebarRadius;
