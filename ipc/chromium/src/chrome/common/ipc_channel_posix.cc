@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include "mozilla/Mutex.h"
 #if defined(OS_MACOSX)
 #  include <mach/message.h>
 #  include <mach/port.h>
@@ -143,7 +144,8 @@ void Channel::SetClientChannelFd(int fd) { gClientChannelFd = fd; }
 
 Channel::ChannelImpl::ChannelImpl(const ChannelId& channel_id, Mode mode,
                                   Listener* listener)
-    : io_thread_(MessageLoopForIO::current()->SerialEventTarget()) {
+    : chan_cap_("ChannelImpl::SendMutex",
+                MessageLoopForIO::current()->SerialEventTarget()) {
   Init(mode, listener);
 
   if (!CreatePipe(mode)) {
@@ -158,7 +160,8 @@ Channel::ChannelImpl::ChannelImpl(const ChannelId& channel_id, Mode mode,
 
 Channel::ChannelImpl::ChannelImpl(ChannelHandle pipe, Mode mode,
                                   Listener* listener)
-    : io_thread_(MessageLoopForIO::current()->SerialEventTarget()) {
+    : chan_cap_("ChannelImpl::SendMutex",
+                MessageLoopForIO::current()->SerialEventTarget()) {
   Init(mode, listener);
   SetPipe(pipe.release());
 
@@ -166,7 +169,7 @@ Channel::ChannelImpl::ChannelImpl(ChannelHandle pipe, Mode mode,
 }
 
 void Channel::ChannelImpl::SetPipe(int fd) {
-  io_thread_.AssertOnCurrentThread();
+  IOThread().AssertOnCurrentThread();
 
   pipe_ = fd;
   pipe_buf_len_ = 0;
@@ -249,8 +252,8 @@ bool Channel::ChannelImpl::EnqueueHelloMessage() {
 }
 
 bool Channel::ChannelImpl::Connect() {
-  io_thread_.AssertOnCurrentThread();
-  mozilla::MutexAutoLock lock(mutex_);
+  IOThread().AssertOnCurrentThread();
+  mozilla::MutexAutoLock lock(SendMutex());
   return ConnectLocked();
 }
 
@@ -525,7 +528,7 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
         
         other_pid_ = MessageIterator(m).NextInt();
         int32_t other_pid = other_pid_;
-        mozilla::MutexAutoUnlock unlock(mutex_);
+        mozilla::MutexAutoUnlock unlock(SendMutex());
         listener_->OnChannelConnected(other_pid);
 #if defined(OS_MACOSX)
       } else if (m.routing_id() == MSG_ROUTING_NONE &&
@@ -540,7 +543,7 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
           return false;
         }
 #endif
-        mozilla::MutexAutoUnlock unlock(mutex_);
+        mozilla::MutexAutoUnlock unlock(SendMutex());
         listener_->OnMessageReceived(std::move(incoming_message_));
       }
 
@@ -707,7 +710,7 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
           
           
           
-          if (io_thread_.IsOnCurrentThread()) {
+          if (IOThread().IsOnCurrentThread()) {
             sched_yield();
           }
           break;
@@ -735,7 +738,7 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
       }
 
       is_blocked_on_write_ = true;
-      if (io_thread_.IsOnCurrentThread()) {
+      if (IOThread().IsOnCurrentThread()) {
         
         
         MessageLoopForIO::current()->WatchFileDescriptor(
@@ -746,7 +749,7 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
         
         
         
-        io_thread_.Dispatch(mozilla::NewRunnableMethod<int>(
+        IOThread().Dispatch(mozilla::NewRunnableMethod<int>(
             "ChannelImpl::ContinueProcessOutgoing", this,
             &ChannelImpl::OnFileCanWriteWithoutBlocking, -1));
       }
@@ -786,7 +789,7 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
 
 bool Channel::ChannelImpl::Send(mozilla::UniquePtr<Message> message) {
   
-  mozilla::MutexAutoLock lock(mutex_);
+  mozilla::MutexAutoLock lock(SendMutex());
 
 #ifdef IPC_MESSAGE_DEBUG_EXTRA
   DLOG(INFO) << "sending message @" << message.get() << " on channel @" << this
@@ -824,14 +827,14 @@ bool Channel::ChannelImpl::Send(mozilla::UniquePtr<Message> message) {
 
 void Channel::ChannelImpl::GetClientFileDescriptorMapping(int* src_fd,
                                                           int* dest_fd) const {
-  io_thread_.AssertOnCurrentThread();
+  IOThread().AssertOnCurrentThread();
   DCHECK(mode_ == MODE_SERVER);
   *src_fd = client_pipe_;
   *dest_fd = gClientChannelFd;
 }
 
 void Channel::ChannelImpl::CloseClientFileDescriptor() {
-  io_thread_.AssertOnCurrentThread();
+  IOThread().AssertOnCurrentThread();
   if (client_pipe_ != -1) {
     IGNORE_EINTR(close(client_pipe_));
     client_pipe_ = -1;
@@ -840,8 +843,8 @@ void Channel::ChannelImpl::CloseClientFileDescriptor() {
 
 
 void Channel::ChannelImpl::OnFileCanReadWithoutBlocking(int fd) {
-  io_thread_.AssertOnCurrentThread();
-  mozilla::ReleasableMutexAutoLock lock(mutex_);
+  IOThread().AssertOnCurrentThread();
+  mozilla::ReleasableMutexAutoLock lock(SendMutex());
 
   if (!waiting_connect_ && fd == pipe_ && pipe_ != -1) {
     if (!ProcessIncomingMessages()) {
@@ -886,8 +889,8 @@ void Channel::ChannelImpl::OutputQueuePop() {
 
 void Channel::ChannelImpl::OnFileCanWriteWithoutBlocking(int fd) {
   RefPtr<ChannelImpl> grip(this);
-  io_thread_.AssertOnCurrentThread();
-  mozilla::ReleasableMutexAutoLock lock(mutex_);
+  IOThread().AssertOnCurrentThread();
+  mozilla::ReleasableMutexAutoLock lock(SendMutex());
   if (pipe_ != -1 && !ProcessOutgoingMessages()) {
     CloseLocked();
     lock.Unlock();
@@ -896,8 +899,8 @@ void Channel::ChannelImpl::OnFileCanWriteWithoutBlocking(int fd) {
 }
 
 void Channel::ChannelImpl::Close() {
-  io_thread_.AssertOnCurrentThread();
-  mozilla::MutexAutoLock lock(mutex_);
+  IOThread().AssertOnCurrentThread();
+  mozilla::MutexAutoLock lock(SendMutex());
   CloseLocked();
 }
 
@@ -937,8 +940,8 @@ void Channel::ChannelImpl::CloseLocked() {
 
 #if defined(OS_MACOSX)
 void Channel::ChannelImpl::SetOtherMachTask(task_t task) {
-  io_thread_.AssertOnCurrentThread();
-  mozilla::MutexAutoLock lock(mutex_);
+  IOThread().AssertOnCurrentThread();
+  mozilla::MutexAutoLock lock(SendMutex());
 
   if (NS_WARN_IF(pipe_ == -1)) {
     return;
@@ -951,8 +954,8 @@ void Channel::ChannelImpl::SetOtherMachTask(task_t task) {
 }
 
 void Channel::ChannelImpl::StartAcceptingMachPorts(Mode mode) {
-  io_thread_.AssertOnCurrentThread();
-  mozilla::MutexAutoLock lock(mutex_);
+  IOThread().AssertOnCurrentThread();
+  mozilla::MutexAutoLock lock(SendMutex());
 
   if (accept_mach_ports_) {
     MOZ_ASSERT(privileged_ == (MODE_SERVER == mode));
