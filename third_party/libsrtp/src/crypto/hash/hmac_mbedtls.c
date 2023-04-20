@@ -72,6 +72,10 @@ static srtp_err_status_t srtp_hmac_mbedtls_alloc(srtp_auth_t **a,
                 out_len);
 
     
+    if (key_len > SHA1_DIGEST_SIZE) {
+        return srtp_err_status_bad_param;
+    }
+    
     if (out_len > SHA1_DIGEST_SIZE) {
         return srtp_err_status_bad_param;
     }

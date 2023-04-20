@@ -66,7 +66,6 @@ extern "C" {
 
 typedef struct srtp_stream_ctx_t_ srtp_stream_ctx_t;
 typedef srtp_stream_ctx_t *srtp_stream_t;
-typedef struct srtp_stream_list_ctx_t_ *srtp_stream_list_t;
 
 
 
@@ -96,6 +95,12 @@ srtp_err_status_t srtp_steam_init_all_master_keys(
     unsigned char *key,
     srtp_master_key_t **keys,
     const unsigned int max_master_keys);
+
+
+
+
+
+srtp_err_status_t srtp_stream_init(srtp_stream_t srtp, const srtp_policy_t *p);
 
 
 
@@ -144,21 +149,14 @@ typedef struct srtp_stream_ctx_t_ {
     int *enc_xtn_hdr;
     int enc_xtn_hdr_count;
     uint32_t pending_roc;
-    
-
-
-
-
-
-    struct srtp_stream_ctx_t_ *next;
-    struct srtp_stream_ctx_t_ *prev;
+    struct srtp_stream_ctx_t_ *next; 
 } strp_stream_ctx_t_;
 
 
 
 
 typedef struct srtp_ctx_t_ {
-    srtp_stream_list_t stream_list;             
+    struct srtp_stream_ctx_t_ *stream_list;     
     struct srtp_stream_ctx_t_ *stream_template; 
                                                 
     void *user_data;                            
