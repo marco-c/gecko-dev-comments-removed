@@ -126,10 +126,6 @@ class nsBoxFrame : public nsContainerFrame {
   static nsresult LayoutChildAt(nsBoxLayoutState& aState, nsIFrame* aBox,
                                 const nsRect& aRect);
 
-  
-  
-  static nsIFrame* SlowOrdinalGroupAwareSibling(nsIFrame*, bool aNext);
-
  private:
   explicit nsBoxFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
       : nsBoxFrame(aStyle, aPresContext, kClassID) {}
