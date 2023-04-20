@@ -431,7 +431,8 @@ nsWindow::nsWindow()
       mMovedAfterMoveToRect(false),
       mResizedAfterMoveToRect(false),
       mConfiguredClearColor(false),
-      mGotNonBlankPaint(false) {
+      mGotNonBlankPaint(false),
+      mNeedsToRetryCapturingMouse(false) {
   mWindowType = eWindowType_child;
   mSizeConstraints.mMaxSize = GetSafeWindowSize(mSizeConstraints.mMaxSize);
 
@@ -754,11 +755,7 @@ void nsWindow::SetParent(nsIWidget* aNewParent) {
   GdkWindow* parentWindow = newParent->GetToplevelGdkWindow();
   LOG("  child GdkWindow %p set parent GdkWindow %p", window, parentWindow);
   gdk_window_reparent(window, parentWindow, 0, 0);
-
-  bool parentHasMappedToplevel = newParent && newParent->mHasMappedToplevel;
-  if (mHasMappedToplevel != parentHasMappedToplevel) {
-    SetHasMappedToplevel(parentHasMappedToplevel);
-  }
+  SetHasMappedToplevel(newParent && newParent->mHasMappedToplevel);
 }
 
 bool nsWindow::WidgetTypeSupportsAcceleration() {
@@ -948,12 +945,6 @@ void nsWindow::Show(bool aState) {
     LOG("  closing Drag&Drop source window, D&D will be canceled!");
   }
 #endif
-
-  if (aState) {
-    
-    
-    SetHasMappedToplevel(mHasMappedToplevel);
-  }
 
   
   
@@ -3678,40 +3669,78 @@ LayoutDeviceIntPoint nsWindow::WidgetToScreenOffset() {
   return GdkPointToDevicePixels({origin.x, origin.y});
 }
 
-void nsWindow::CaptureMouse(bool aCapture) {
-  LOG("nsWindow::CaptureMouse()");
-
+void nsWindow::CaptureRollupEvents(bool aDoCapture) {
+  LOG("CaptureRollupEvents(%d)\n", aDoCapture);
   if (mIsDestroyed) {
     return;
   }
 
-  if (aCapture) {
+  static constexpr auto kCaptureEventsMask =
+      GdkEventMask(GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
+                   GDK_POINTER_MOTION_MASK | GDK_TOUCH_MASK);
+
+  static bool sSystemNeedsPointerGrab = [&] {
+    if (GdkIsWaylandDisplay()) {
+      return false;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return true;
+  }();
+
+  const bool grabPointer = [] {
+    switch (StaticPrefs::widget_gtk_grab_pointer()) {
+      case 0:
+        return false;
+      case 1:
+        return true;
+      default:
+        return sSystemNeedsPointerGrab;
+    }
+  }();
+
+  if (!grabPointer) {
+    return;
+  }
+
+  mNeedsToRetryCapturingMouse = false;
+  if (aDoCapture) {
+    if (mIsDragPopup || DragInProgress()) {
+      
+      
+      return;
+    }
+
+    if (!mHasMappedToplevel) {
+      
+      
+      
+      mNeedsToRetryCapturingMouse = true;
+      return;
+    }
+
+    GdkGrabStatus status = gdk_device_grab(
+        GdkGetPointer(), GetToplevelGdkWindow(), GDK_OWNERSHIP_NONE,
+         true, kCaptureEventsMask,
+         nullptr, GetLastUserInputTime());
+    Unused << NS_WARN_IF(status != GDK_GRAB_SUCCESS);
+    LOG(" > pointer grab with status %d", int(status));
     gtk_grab_add(GTK_WIDGET(mContainer));
   } else {
+    
+    
+    
     gtk_grab_remove(GTK_WIDGET(mContainer));
-  }
-}
-
-void nsWindow::CaptureRollupEvents(bool aDoCapture) {
-  LOG("CaptureRollupEvents() %i\n", int(aDoCapture));
-
-  if (mIsDestroyed) {
-    return;
-  }
-
-  if (aDoCapture) {
-    
-    
-    if (!GdkIsWaylandDisplay() && !mIsDragPopup &&
-        !nsWindow::DragInProgress()) {
-      gtk_grab_add(GTK_WIDGET(mContainer));
-    }
-  } else {
-    
-    
-    
-    LOG("  remove mContainer grab [%p]\n", this);
-    gtk_grab_remove(GTK_WIDGET(mContainer));
+    gdk_device_ungrab(GdkGetPointer(), GetLastUserInputTime());
   }
 }
 
@@ -5119,9 +5148,7 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
     
     bool mapped = !(aEvent->new_window_state &
                     (GDK_WINDOW_STATE_ICONIFIED | GDK_WINDOW_STATE_WITHDRAWN));
-    if (mHasMappedToplevel != mapped) {
-      SetHasMappedToplevel(mapped);
-    }
+    SetHasMappedToplevel(mapped);
     LOG("\tquick return because IS_MOZ_CONTAINER(aWidget) is true\n");
     return;
   }
@@ -6684,11 +6711,18 @@ void nsWindow::NativeShow(bool aAction) {
 }
 
 void nsWindow::SetHasMappedToplevel(bool aState) {
-  LOG("nsWindow::SetHasMappedToplevel() state %d", aState);
+  LOG("nsWindow::SetHasMappedToplevel(%d)", aState);
+  if (aState == mHasMappedToplevel) {
+    return;
+  }
   
   
   
   mHasMappedToplevel = aState;
+  if (aState && mNeedsToRetryCapturingMouse) {
+    CaptureRollupEvents(true);
+    MOZ_ASSERT(!mNeedsToRetryCapturingMouse);
+  }
 }
 
 LayoutDeviceIntSize nsWindow::GetSafeWindowSize(LayoutDeviceIntSize aSize) {
@@ -7484,7 +7518,7 @@ bool nsWindow::CheckForRollup(gdouble aMouseX, gdouble aMouseY, bool aIsWheel,
 }
 
 
-bool nsWindow::DragInProgress(void) {
+bool nsWindow::DragInProgress() {
   nsCOMPtr<nsIDragService> dragService =
       do_GetService("@mozilla.org/widget/dragservice;1");
   if (!dragService) {
@@ -7493,8 +7527,7 @@ bool nsWindow::DragInProgress(void) {
 
   nsCOMPtr<nsIDragSession> currentDragSession;
   dragService->GetCurrentSession(getter_AddRefs(currentDragSession));
-
-  return currentDragSession != nullptr;
+  return !!currentDragSession;
 }
 
 
@@ -8939,6 +8972,8 @@ nsresult nsWindow::SynthesizeNativeMouseEvent(
     MouseButton aButton, nsIWidget::Modifiers aModifierFlags,
     nsIObserver* aObserver) {
   AutoObserverNotifier notifier(aObserver, "mouseevent");
+  LOG("SynthesizeNativeMouseEvent(%d, %d, %d, %d, %d)", aPoint.x.value,
+      aPoint.y.value, aNativeMessage, aButton, aModifierFlags);
 
   if (!mGdkWindow) {
     return NS_OK;
