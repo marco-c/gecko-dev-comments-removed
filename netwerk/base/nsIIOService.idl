@@ -64,6 +64,19 @@ interface nsIIOService : nsISupports
 
 
 
+    unsigned long getDynamicProtocolFlags(in nsIURI aURI);
+
+    
+
+
+
+
+
+    long getDefaultPort(in string aScheme);
+
+    
+
+
 
 
     nsIURI newURI(in AUTF8String aSpec,
@@ -270,6 +283,35 @@ interface nsIIOService : nsISupports
 
 
     readonly attribute unsigned long long socketProcessId;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void registerProtocolHandler(in ACString aScheme,
+                                 in nsIProtocolHandler aHandler,
+                                 in unsigned long aProtocolFlags,
+                                 in long aDefaultPort);
+
+    
+
+
+
+
+
+    void unregisterProtocolHandler(in ACString aScheme);
 };
 
 %{C++

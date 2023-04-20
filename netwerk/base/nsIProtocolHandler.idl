@@ -38,6 +38,9 @@ interface nsIProtocolHandlerWithDynamicFlags : nsISupports
 
 
 
+
+
+
     unsigned long getFlagsForURI(in nsIURI aURI);
 };
 
@@ -109,6 +112,10 @@ interface nsIProtocolHandler : nsISupports
 
 
     
+
+
+
+
 
 
 
@@ -328,6 +335,7 @@ interface nsIProtocolHandler : nsISupports
     const unsigned long WEBEXT_URI_WEB_ACCESSIBLE = (1 << 24);
 
     
+
 
 
 
