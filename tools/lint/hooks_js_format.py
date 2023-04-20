@@ -33,7 +33,7 @@ def run_js_format(hooktype, changedFiles):
         
         return
 
-    extensions = (".js", ".jsx", ".jsm")
+    extensions = (".js", ".jsx", ".jsm", ".mjs", "sjs", "html", "xhtml")
     path_list = []
     for filename in sorted(changedFiles):
         
