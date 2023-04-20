@@ -25,6 +25,8 @@
 
 
 
+
+
 "use strict";
 
 const {
@@ -50,8 +52,13 @@ const DevToolsPresetSelection = createFactory(
 const OnboardingMessage = createFactory(
   require("resource://devtools/client/performance-new/components/panel/OnboardingMessage.js")
 );
+const ToolboxHighlightController = createFactory(
+  require("resource://devtools/client/performance-new/components/panel/ToolboxHighlightController.js")
+);
 
 const selectors = require("resource://devtools/client/performance-new/store/selectors.js");
+const anyWindow =  (window);
+const panelWindow =  (anyWindow);
 
 
 
@@ -77,6 +84,9 @@ class DevToolsPanel extends PureComponent {
       div(
         { className: `perf perf-devtools` },
         RecordingButton({ perfFront, onProfileReceived }),
+        panelWindow.gToolbox
+          ? ToolboxHighlightController({ toolbox: panelWindow.gToolbox })
+          : null,
         Description(),
         hr({ className: "perf-presets-hr" }),
         DevToolsPresetSelection({ onEditSettingsLinkClicked })
