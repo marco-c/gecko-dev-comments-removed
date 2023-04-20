@@ -1,33 +1,28 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["Sync", "Authentication", "initConfig", "triggerSync"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+/*
+ * This module is used in automation to connect the browser to
+ * a specific FxA account and trigger FX Sync.
+ *
+ * To use it, you can call this sequence:
+ *
+ *    initConfig("https://accounts.stage.mozaws.net");
+ *    await Authentication.signIn(username, password);
+ *    await Sync.triggerSync();
+ *    await Authentication.signOut();
+ *
+ *
+ * Where username is your FxA e-mail. it will connect your browser
+ * to that account and trigger a Sync (on stage servers.)
+ *
+ * You can also use the convenience function that does everything:
+ *
+ *    await triggerSync(username, password, "https://accounts.stage.mozaws.net");
+ *
+ */
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -49,9 +44,9 @@ XPCOMUtils.defineLazyGetter(lazy, "fxAccounts", () => {
 
 const AUTOCONFIG_PREF = "identity.fxaccounts.autoconfig.uri";
 
-
-
-
+/*
+ * Log helpers.
+ */
 var _LOG = [];
 
 function LOG(msg, error) {
@@ -86,17 +81,17 @@ function promiseObserver(aEventName) {
   });
 }
 
-
-
-
-
-
-
-
-
-
-
-var Authentication = {
+/*
+ *  Authentication
+ *
+ *  Used to sign in an FxA account, takes care of
+ *  the e-mail verification flow.
+ *
+ *  Usage:
+ *
+ *    await Authentication.signIn(username, password);
+ */
+export var Authentication = {
   async isLoggedIn() {
     return !!(await this.getSignedInUser());
   },
@@ -190,10 +185,10 @@ var Authentication = {
     return didVerify;
   },
 
-  
-
-
-
+  /*
+   * This whole verification process may be bypassed if the
+   * account is allow-listed.
+   */
   async _completeVerification(username) {
     LOG("Fetching mail (from restmail) for user " + username);
     let restmailURI = `https://www.restmail.net/mail/${encodeURIComponent(
@@ -205,10 +200,10 @@ var Authentication = {
     for (let i = 0; i < tries; ++i) {
       let resp = await fetch(restmailURI);
       let messages = await resp.json();
-      
+      // Sort so that the most recent emails are first.
       messages.sort((a, b) => new Date(b.receivedAt) - new Date(a.receivedAt));
       for (let m of messages) {
-        
+        // We look for a link that has a x-link that we haven't yet tried.
         if (!m.headers["x-link"] || triedAlready.has(m.headers["x-link"])) {
           continue;
         }
@@ -232,7 +227,7 @@ var Authentication = {
         }
       }
       if (i === 0) {
-        
+        // first time through after failing we'll do this.
         LOG("resendVerificationEmail");
         await lazy.fxAccounts.resendVerificationEmail();
       }
@@ -240,14 +235,14 @@ var Authentication = {
         return true;
       }
     }
-    
+    // One last try.
     return this.shortWaitForVerification(normalWait);
   },
 
   async signIn(username, password) {
     LOG("Login user: " + username);
     try {
-      
+      // Required here since we don't go through the real login page
       LOG("Calling FxAccountsConfig.ensureConfigured");
       await lazy.FxAccountsConfig.ensureConfigured();
       let client = new lazy.FxAccountsClient();
@@ -256,7 +251,7 @@ var Authentication = {
       LOG("Signed in, setting up the signed user in fxAccounts");
       await lazy.fxAccounts._internal.setSignedInUser(credentials);
 
-      
+      // If the account is not allow-listed for tests, we need to verify it
       if (!credentials.verified) {
         LOG("We need to verify the account");
         await this._completeVerification(username);
@@ -272,22 +267,22 @@ var Authentication = {
 
   async signOut() {
     if (await Authentication.isLoggedIn()) {
-      
+      // Note: This will clean up the device ID.
       await lazy.fxAccounts.signOut();
     }
   },
 };
 
-
-
-
-
-
-
-
-
-
-var Sync = {
+/*
+ * Sync
+ *
+ * Used to trigger sync.
+ *
+ * usage:
+ *
+ *   await Sync.triggerSync();
+ */
+export var Sync = {
   getSyncLogsDirectory() {
     return PathUtils.join(PathUtils.profileDir, "weave", "logs");
   },
@@ -296,12 +291,12 @@ var Sync = {
     lazy.Svc.Obs.add("weave:service:sync:error", this);
     lazy.Svc.Obs.add("weave:service:setup-complete", this);
     lazy.Svc.Obs.add("weave:service:tracking-started", this);
-    
+    // Delay the automatic sync operations, so we can trigger it manually
     lazy.Weave.Svc.Prefs.set("scheduler.immediateInterval", 7200);
     lazy.Weave.Svc.Prefs.set("scheduler.idleInterval", 7200);
     lazy.Weave.Svc.Prefs.set("scheduler.activeInterval", 7200);
     lazy.Weave.Svc.Prefs.set("syncThreshold", 10000000);
-    
+    // Wipe all the logs
     await this.wipeLogs();
   },
 
@@ -310,8 +305,8 @@ var Sync = {
   },
 
   async configureSync() {
-    
-    
+    // todo, enable all sync engines here
+    // the addon engine requires kinto creds...
     LOG("configuring sync");
     console.assert(await Authentication.isReady(), "You are not connected");
     await lazy.Weave.Service.configure();
@@ -323,11 +318,11 @@ var Sync = {
     }
   },
 
-  
-
-
-
-
+  /*
+   * triggerSync() runs the whole process of Syncing.
+   *
+   * returns 1 on success, 0 on failure.
+   */
   async triggerSync() {
     if (!(await Authentication.isLoggedIn())) {
       LOG("Not connected");
@@ -340,7 +335,7 @@ var Sync = {
       LOG("Triggering a sync");
       await lazy.Weave.Service.sync();
 
-      
+      // wait a second for things to settle...
       await new Promise(resolve => lazy.setTimeout(resolve, 1000));
 
       LOG("Sync done");
@@ -370,7 +365,7 @@ var Sync = {
     let entries = [];
 
     if (await IOUtils.exists(outputDirectory)) {
-      
+      // Iterate through the directory
       for (const path of await IOUtils.getChildren(outputDirectory)) {
         const info = await IOUtils.stat(path);
 
@@ -397,11 +392,11 @@ var Sync = {
   },
 };
 
-function initConfig(autoconfig) {
+export function initConfig(autoconfig) {
   Services.prefs.setCharPref(AUTOCONFIG_PREF, autoconfig);
 }
 
-async function triggerSync(username, password, autoconfig) {
+export async function triggerSync(username, password, autoconfig) {
   initConfig(autoconfig);
   await Authentication.signIn(username, password);
   var result = await Sync.triggerSync();

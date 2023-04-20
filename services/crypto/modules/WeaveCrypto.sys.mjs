@@ -1,12 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-var EXPORTED_SYMBOLS = ["WeaveCrypto"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const CRYPT_ALGO = "AES-CBC";
 const CRYPT_ALGO_LENGTH = 256;
@@ -15,18 +11,13 @@ const AES_CBC_IV_SIZE = 16;
 const OPERATIONS = { ENCRYPT: 0, DECRYPT: 1 };
 const UTF_LABEL = "utf-8";
 
-const KEY_DERIVATION_ALGO = "PBKDF2";
-const KEY_DERIVATION_HASHING_ALGO = "SHA-1";
-const KEY_DERIVATION_ITERATIONS = 4096; 
-const DERIVED_KEY_ALGO = CRYPT_ALGO;
-
-function WeaveCrypto() {
+export function WeaveCrypto() {
   this.init();
 }
 
 WeaveCrypto.prototype = {
   prefBranch: null,
-  debug: true, 
+  debug: true, // services.sync.log.cryptoDebug
 
   observer: {
     _self: null,
@@ -46,7 +37,7 @@ WeaveCrypto.prototype = {
   },
 
   init() {
-    
+    // Preferences. Add observer so we get notified of changes.
     this.prefBranch = Services.prefs.getBranch("services.sync.log.");
     this.prefBranch.addObserver("cryptoDebug", this.observer);
     this.observer._self = this;
@@ -71,7 +62,7 @@ WeaveCrypto.prototype = {
     Services.console.logStringMessage("WeaveCrypto: " + message);
   },
 
-  
+  // /!\ Only use this for tests! /!\
   _getCrypto() {
     return crypto;
   },
@@ -103,17 +94,17 @@ WeaveCrypto.prototype = {
     return this.decoder.decode(decrypted);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * _commonCrypt
+   *
+   * @args
+   * data: data to encrypt/decrypt (ArrayBuffer)
+   * symKeyStr: symmetric key (Base64 String)
+   * ivStr: initialization vector (Base64 String)
+   * operation: operation to apply (either OPERATIONS.ENCRYPT or OPERATIONS.DECRYPT)
+   * @returns
+   * the encrypted/decrypted data (ArrayBuffer)
+   */
   async _commonCrypt(data, symKeyStr, ivStr, operation) {
     this.log("_commonCrypt() called");
     ivStr = atob(ivStr);
@@ -121,8 +112,8 @@ WeaveCrypto.prototype = {
     if (operation !== OPERATIONS.ENCRYPT && operation !== OPERATIONS.DECRYPT) {
       throw new Error("Unsupported operation in _commonCrypt.");
     }
-    
-    
+    // We never want an IV longer than the block size, which is 16 bytes
+    // for AES, neither do we want one smaller; throw in both cases.
     if (ivStr.length !== AES_CBC_IV_SIZE) {
       throw new Error(`Invalid IV size; must be ${AES_CBC_IV_SIZE} bytes.`);
     }
@@ -163,19 +154,19 @@ WeaveCrypto.prototype = {
     return this.encodeBase64(randBytes);
   },
 
-  
-  
-  
+  //
+  // SymKey CryptoKey memoization.
+  //
 
-  
-  
+  // Memoize the import of symmetric keys. We do this by using the base64
+  // string itself as a key.
   _encryptionSymKeyMemo: {},
   _decryptionSymKeyMemo: {},
   async importSymKey(encodedKeyString, operation) {
     let memo;
 
-    
-    
+    // We use two separate memos for thoroughness: operation is an input to
+    // key import.
     switch (operation) {
       case OPERATIONS.ENCRYPT:
         memo = this._encryptionSymKeyMemo;
@@ -205,14 +196,14 @@ WeaveCrypto.prototype = {
     return symKey;
   },
 
-  
-  
-  
+  //
+  // Utility functions
+  //
 
-  
-
-
-
+  /**
+   * Returns an Uint8Array filled with a JS string,
+   * which means we only keep utf-16 characters from 0x00 to 0xFF.
+   */
   byteCompressInts(str) {
     let arrayBuffer = new Uint8Array(str.length);
     for (let i = 0; i < str.length; i++) {
