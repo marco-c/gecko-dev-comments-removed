@@ -180,15 +180,11 @@ class nsTableFrame : public nsContainerFrame {
   
   
   
-  
-  
-  
-  static void PositionedTablePartMaybeChanged(
-      nsIFrame*, mozilla::ComputedStyle* aOldStyle);
+  static void RegisterPositionedTablePart(nsIFrame* aFrame);
 
   
-  static void MaybeUnregisterPositionedTablePart(nsIFrame* aFrame,
-                                                 nsIFrame* aDestructRoot);
+  static void UnregisterPositionedTablePart(nsIFrame* aFrame,
+                                            nsIFrame* aDestructRoot);
 
   
 

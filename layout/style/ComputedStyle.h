@@ -234,32 +234,6 @@ class ComputedStyle {
 
 
 
-  inline bool IsAbsPosContainingBlock(const nsIFrame*) const;
-
-  
-
-
-
-
-  inline bool IsFixedPosContainingBlock(const nsIFrame*) const;
-
-  
-
-
-
-
-
-
-
-
-
-  inline bool IsFixedPosContainingBlockForNonSVGTextFrames() const;
-
-  
-
-
-
-
 
 
 

@@ -52,18 +52,17 @@ ComputedStyle::ComputedStyle(PseudoStyleType aPseudoType,
 
 static bool ContainingBlockMayHaveChanged(const ComputedStyle& aOldStyle,
                                           const ComputedStyle& aNewStyle) {
-  const auto& oldDisp = *aOldStyle.StyleDisplay();
-  const auto& newDisp = *aNewStyle.StyleDisplay();
+  auto* oldDisp = aOldStyle.StyleDisplay();
+  auto* newDisp = aNewStyle.StyleDisplay();
 
-  if (oldDisp.IsPositionedStyle() != newDisp.IsPositionedStyle()) {
-    
-    
-    
+  if (oldDisp->IsPositionedStyle() != newDisp->IsPositionedStyle()) {
     return true;
   }
 
-  const bool fixedCB = aOldStyle.IsFixedPosContainingBlockForNonSVGTextFrames();
-  if (fixedCB != aNewStyle.IsFixedPosContainingBlockForNonSVGTextFrames()) {
+  bool fixedCB =
+      oldDisp->IsFixedPosContainingBlockForNonSVGTextFrames(aOldStyle);
+  if (fixedCB !=
+      newDisp->IsFixedPosContainingBlockForNonSVGTextFrames(aNewStyle)) {
     return true;
   }
   
@@ -72,21 +71,20 @@ static bool ContainingBlockMayHaveChanged(const ComputedStyle& aOldStyle,
   if (fixedCB) {
     return false;
   }
-
   
   
   
   
   
   
-  if (oldDisp.IsFixedPosContainingBlockForTransformSupportingFrames() !=
-      newDisp.IsFixedPosContainingBlockForTransformSupportingFrames()) {
+  if (oldDisp->IsFixedPosContainingBlockForTransformSupportingFrames() !=
+      newDisp->IsFixedPosContainingBlockForTransformSupportingFrames()) {
     return true;
   }
   if (oldDisp
-          .IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() !=
+          ->IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() !=
       newDisp
-          .IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames()) {
+          ->IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames()) {
     return true;
   }
   return false;

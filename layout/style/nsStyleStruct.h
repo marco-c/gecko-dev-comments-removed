@@ -1730,6 +1730,33 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
 
   inline bool HasPerspective(const nsIFrame* aContextFrame) const;
 
+  
+
+
+
+
+  inline bool IsAbsPosContainingBlock(const nsIFrame* aContextFrame) const;
+
+  
+
+
+
+
+  inline bool IsFixedPosContainingBlock(const nsIFrame* aContextFrame) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+  inline bool IsFixedPosContainingBlockForNonSVGTextFrames(
+      const mozilla::ComputedStyle&) const;
   inline bool
   IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() const;
   inline bool IsFixedPosContainingBlockForTransformSupportingFrames() const;
