@@ -529,7 +529,7 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
         new ScriptFetchOptions(CORSMode::CORS_NONE, referrerPolicy, nullptr);
 
     request = new ScriptLoadRequest(ScriptKind::eClassic, uri, fetchOptions,
-                                    SRIMetadata(), nullptr, 
+                                    SRIMetadata(), nullptr,  
                                     loadContext);
   } else {
     
@@ -540,11 +540,23 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
     RefPtr<ScriptFetchOptions> fetchOptions =
         new ScriptFetchOptions(CORSMode::CORS_NONE, referrerPolicy, nullptr);
 
-    
     RefPtr<WorkerModuleLoader::ModuleLoaderBase> moduleLoader =
         static_cast<WorkerGlobalScopeBase*>(GetGlobal())->GetModuleLoader();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIURI> referrer =
+        mWorkerRef->Private()->GetReferrerInfo()->GetOriginalReferrer();
+
+    
     request = new ModuleLoadRequest(
-        uri, fetchOptions, SRIMetadata(), nullptr, loadContext,
+        uri, fetchOptions, SRIMetadata(), referrer, loadContext,
         true,  
         false, 
         moduleLoader, ModuleLoadRequest::NewVisitedSetForTopLevelImport(uri),
@@ -788,18 +800,24 @@ nsresult WorkerScriptLoader::LoadScript(
   }
 
   if (!channel) {
-    nsCOMPtr<nsIReferrerInfo> referrerInfo =
-        ReferrerInfo::CreateForFetch(principal, nullptr);
-    if (parentWorker && !loadContext->IsTopLevel()) {
+    nsCOMPtr<nsIReferrerInfo> referrerInfo;
+    ScriptLoadRequest* request = aRequestHandle->GetRequest();
+    if (request->IsModuleRequest()) {
       referrerInfo =
-          static_cast<ReferrerInfo*>(referrerInfo.get())
-              ->CloneWithNewPolicy(parentWorker->GetReferrerPolicy());
+          new ReferrerInfo(request->mReferrer, request->ReferrerPolicy());
+    } else {
+      referrerInfo = ReferrerInfo::CreateForFetch(principal, nullptr);
+      if (parentWorker && !loadContext->IsTopLevel()) {
+        referrerInfo =
+            static_cast<ReferrerInfo*>(referrerInfo.get())
+                ->CloneWithNewPolicy(parentWorker->GetReferrerPolicy());
+      }
     }
 
     rv = ChannelFromScriptURL(
         principal, parentDoc, mWorkerRef->Private(), loadGroup, ios, secMan,
-        aRequestHandle->GetRequest()->mURI, loadContext->mClientInfo,
-        mController, loadContext->IsTopLevel(), mWorkerScriptType,
+        request->mURI, loadContext->mClientInfo, mController,
+        loadContext->IsTopLevel(), mWorkerScriptType,
         mWorkerRef->Private()->ContentPolicyType(), loadFlags,
         mWorkerRef->Private()->CookieJarSettings(), referrerInfo,
         getter_AddRefs(channel));
