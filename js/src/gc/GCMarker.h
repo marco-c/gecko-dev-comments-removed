@@ -228,7 +228,11 @@ enum : uint32_t {
   None = 0,
 
   
-  MarkRootCompartments = 1
+  MarkRootCompartments = 1,
+
+  
+  
+  ParallelMarking = 2
 };
 }  
 
