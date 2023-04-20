@@ -213,7 +213,6 @@ class IconLoad final : public imgINotificationObserver {
   nsTObserverArray<nsImageFrame*> mIconObservers;
 
  public:
-  RefPtr<imgRequestProxy> mLoadingImage;
   RefPtr<imgRequestProxy> mBrokenImage;
 };
 
@@ -300,6 +299,10 @@ bool nsImageFrame::ShouldShowBrokenImageIcon() const {
   
   
   if (mKind != Kind::ImageLoadingContent) {
+    return false;
+  }
+
+  if (!StaticPrefs::browser_display_show_image_placeholders()) {
     return false;
   }
 
@@ -1734,8 +1737,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedback(gfxContext& aRenderingContext,
   }
 
   
-  if (!isLoading ||
-      StaticPrefs::browser_display_show_loading_image_placeholder()) {
+  if (!isLoading) {
     nsRecessedBorder recessedBorder(borderEdgeWidth, PresContext());
 
     
@@ -1764,18 +1766,14 @@ ImgDrawResult nsImageFrame::DisplayAltFeedback(gfxContext& aRenderingContext,
   aRenderingContext.Clip(NSRectToSnappedRect(
       inner, PresContext()->AppUnitsPerDevPixel(), *drawTarget));
 
-  ImgDrawResult result = ImgDrawResult::NOT_READY;
+  ImgDrawResult result = ImgDrawResult::SUCCESS;
 
   
-  if (!ShouldShowBrokenImageIcon() ||
-      !StaticPrefs::browser_display_show_image_placeholders() ||
-      (isLoading && StaticPrefs::browser_display_show_loading_image_placeholder())) {
-    result = ImgDrawResult::SUCCESS;
-  } else {
+  if (ShouldShowBrokenImageIcon()) {
+    result = ImgDrawResult::NOT_READY;
     nscoord size = nsPresContext::CSSPixelsToAppUnits(ICON_SIZE);
 
-    imgIRequest* request = isLoading ? gIconLoad->mLoadingImage
-                                     : gIconLoad->mBrokenImage;
+    imgIRequest* request = gIconLoad->mBrokenImage;
 
     
     
@@ -1919,8 +1917,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
   AutoSaveRestore autoSaveRestore(aBuilder, textDrawResult);
 
   
-  if (!isLoading ||
-      StaticPrefs::browser_display_show_loading_image_placeholder()) {
+  if (!isLoading) {
     nsRecessedBorder recessedBorder(borderEdgeWidth, PresContext());
     
     
@@ -1948,14 +1945,10 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
   auto wrBounds = wr::ToLayoutRect(bounds);
 
   
-  if (ShouldShowBrokenImageIcon() &&
-      StaticPrefs::browser_display_show_image_placeholders() &&
-      (!isLoading ||
-       StaticPrefs::browser_display_show_loading_image_placeholder())) {
+  if (ShouldShowBrokenImageIcon()) {
     ImgDrawResult result = ImgDrawResult::NOT_READY;
     nscoord size = nsPresContext::CSSPixelsToAppUnits(ICON_SIZE);
-    imgIRequest* request =
-        isLoading ? gIconLoad->mLoadingImage : gIconLoad->mBrokenImage;
+    imgIRequest* request = gIconLoad->mBrokenImage;
 
     
     
@@ -2784,35 +2777,15 @@ void nsImageFrame::GetLoadGroup(nsPresContext* aPresContext,
 nsresult nsImageFrame::LoadIcons(nsPresContext* aPresContext) {
   NS_ASSERTION(!gIconLoad, "called LoadIcons twice");
 
-  constexpr auto loadingSrc = u"resource://gre-resources/loading-image.png"_ns;
   constexpr auto brokenSrc = u"resource://gre-resources/broken-image.png"_ns;
-
   gIconLoad = new IconLoad();
-
-  nsresult rv;
-  
-  rv = LoadIcon(loadingSrc, aPresContext,
-                getter_AddRefs(gIconLoad->mLoadingImage));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  rv = LoadIcon(brokenSrc, aPresContext,
-                getter_AddRefs(gIconLoad->mBrokenImage));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  return rv;
+  return LoadIcon(brokenSrc, aPresContext,
+                  getter_AddRefs(gIconLoad->mBrokenImage));
 }
 
 NS_IMPL_ISUPPORTS(IconLoad, imgINotificationObserver)
 
 void IconLoad::Shutdown() {
-  if (mLoadingImage) {
-    mLoadingImage->CancelAndForgetObserver(NS_ERROR_FAILURE);
-    mLoadingImage = nullptr;
-  }
   if (mBrokenImage) {
     mBrokenImage->CancelAndForgetObserver(NS_ERROR_FAILURE);
     mBrokenImage = nullptr;
