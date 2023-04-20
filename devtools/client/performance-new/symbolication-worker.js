@@ -122,6 +122,12 @@ class FileAndPathHelper {
     
     if (arch && (path.startsWith("/usr/") || path.startsWith("/System/"))) {
       
+
+      
+      candidatePaths.push(
+        `dyldcache:/System/Volumes/Preboot/Cryptexes/OS/System/Library/dyld/dyld_shared_cache_${arch}:${path}`
+      );
+      
       candidatePaths.push(
         `dyldcache:/System/Library/dyld/dyld_shared_cache_${arch}:${path}`
       );
@@ -180,6 +186,12 @@ class FileAndPathHelper {
     
     
     if (arch && (path.startsWith("/usr/") || path.startsWith("/System/"))) {
+      
+
+      
+      candidatePaths.push(
+        `dyldcache:/System/Volumes/Preboot/Cryptexes/OS/System/Library/dyld/dyld_shared_cache_${arch}:${path}`
+      );
       
       candidatePaths.push(
         `dyldcache:/System/Library/dyld/dyld_shared_cache_${arch}:${path}`
