@@ -73,7 +73,7 @@ this.SyncedTabsPanelList = class SyncedTabsPanelList {
       }
       
       SyncedTabs.syncTabs().catch(ex => {
-        Cu.reportError(ex);
+        console.error(ex);
       });
       this.deck.toggleAttribute("syncingtabs", true);
       
@@ -99,7 +99,7 @@ this.SyncedTabsPanelList = class SyncedTabsPanelList {
         return this.__showSyncedTabs(paginationInfo);
       },
       e => {
-        Cu.reportError(e);
+        console.error(e);
       }
     );
   }
@@ -176,7 +176,7 @@ this.SyncedTabsPanelList = class SyncedTabsPanelList {
         this.tabsList.appendChild(fragment);
       })
       .catch(err => {
-        Cu.reportError(err);
+        console.error(err);
       })
       .then(() => {
         
@@ -574,7 +574,7 @@ var gSync = {
 
   observe(subject, topic, data) {
     if (!this._initialized) {
-      Cu.reportError("browser-sync observer called after unload: " + topic);
+      console.error("browser-sync observer called after unload: ", topic);
       return;
     }
     switch (topic) {

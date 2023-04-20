@@ -208,8 +208,6 @@ module.exports = {
       
       
       files: [
-        "browser/actors/**",
-        "browser/base/content/**",
         "browser/components/Browser*.*",
         "browser/components/**",
         "browser/extensions/report-site-issue/**",

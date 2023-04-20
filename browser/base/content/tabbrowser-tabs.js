@@ -501,12 +501,12 @@
         
         PageThumbs.captureToCanvas(browser, canvas)
           .then(captureListener)
-          .catch(e => Cu.reportError(e));
+          .catch(e => console.error(e));
       } else {
         
         
         PageThumbs.captureToCanvas(browser, canvas).catch(e =>
-          Cu.reportError(e)
+          console.error(e)
         );
         dragImageOffset = dragImageOffset * scale;
       }
