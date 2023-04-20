@@ -3,12 +3,11 @@
 
 from __future__ import print_function
 
-import argparse
-import glob
 import os
 import sys
+import glob
+import argparse
 import traceback
-
 import WebIDL
 
 
@@ -61,7 +60,7 @@ class TestHarness(object):
         try:
             parser.parse(code)
             parser.finish()
-        except Exception:
+        except:
             threw = True
 
         self.ok(threw, "Should have thrown: %s" % msg)
