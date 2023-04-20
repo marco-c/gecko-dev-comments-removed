@@ -2,10 +2,10 @@
 
 
 
-use std::{cmp, fmt, io, str};
-
 use crate::consts::*;
 use crate::util::io_err;
+use serde::Serialize;
+use std::{cmp, fmt, io, str};
 
 pub fn to_hex(data: &[u8], joiner: &str) -> String {
     let parts: Vec<String> = data.iter().map(|byte| format!("{:02x}", byte)).collect();
@@ -54,7 +54,7 @@ pub trait U2FDevice {
 pub struct U2FHIDInit {}
 
 impl U2FHIDInit {
-    pub fn read<T>(dev: &mut T) -> io::Result<Vec<u8>>
+    pub fn read<T>(dev: &mut T) -> io::Result<(HIDCmd, Vec<u8>)>
     where
         T: U2FDevice + io::Read,
     {
@@ -69,13 +69,15 @@ impl U2FHIDInit {
             return Err(io_err("invalid init packet"));
         }
 
+        let cmd = HIDCmd::from(frame[4] | TYPE_INIT);
+
         let cap = (frame[5] as usize) << 8 | (frame[6] as usize);
         let mut data = Vec::with_capacity(cap);
 
         let len = cmp::min(cap, dev.in_init_data_size());
         data.extend_from_slice(&frame[7..7 + len]);
 
-        Ok(data)
+        Ok((cmd, data))
     }
 
     pub fn write<T>(dev: &mut T, cmd: u8, data: &[u8]) -> io::Result<usize>
@@ -169,7 +171,7 @@ pub struct U2FHIDInitResp {
     pub version_major: u8,
     pub version_minor: u8,
     pub version_build: u8,
-    pub cap_flags: u8,
+    pub cap_flags: Capability,
 }
 
 impl U2FHIDInitResp {
@@ -195,7 +197,7 @@ impl U2FHIDInitResp {
             version_major: data[INIT_NONCE_SIZE + 5],
             version_minor: data[INIT_NONCE_SIZE + 6],
             version_build: data[INIT_NONCE_SIZE + 7],
-            cap_flags: data[INIT_NONCE_SIZE + 8],
+            cap_flags: Capability::from_bits_truncate(data[INIT_NONCE_SIZE + 8]),
         };
 
         Ok(rsp)
@@ -205,30 +207,100 @@ impl U2FHIDInitResp {
 
 
 
-pub struct U2FAPDUHeader {}
 
-impl U2FAPDUHeader {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct CTAP1RequestAPDU {}
+
+impl CTAP1RequestAPDU {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn serialize(ins: u8, p1: u8, data: &[u8]) -> io::Result<Vec<u8>> {
         if data.len() > 0xffff {
             return Err(io_err("payload length > 2^16"));
         }
-
         
-        let mut bytes = vec![0u8; U2FAPDUHEADER_SIZE + data.len() + 2];
+        let data_size = if data.is_empty() { 0 } else { 2 + data.len() };
+        let mut bytes = vec![0u8; U2FAPDUHEADER_SIZE + data_size];
+
         
         bytes[1] = ins;
         bytes[2] = p1;
         
-        
-        bytes[5] = (data.len() >> 8) as u8;
-        bytes[6] = data.len() as u8;
-        bytes[7..7 + data.len()].copy_from_slice(data);
 
+        
+        if !data.is_empty() {
+            bytes[5] = (data.len() >> 8) as u8; 
+            bytes[6] = data.len() as u8; 
+
+            bytes[7..7 + data.len()].copy_from_slice(data);
+        }
+
+        
         Ok(bytes)
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct U2FDeviceInfo {
     pub vendor_name: Vec<u8>,
     pub device_name: Vec<u8>,
@@ -236,7 +308,7 @@ pub struct U2FDeviceInfo {
     pub version_major: u8,
     pub version_minor: u8,
     pub version_build: u8,
-    pub cap_flags: u8,
+    pub cap_flags: Capability,
 }
 
 impl fmt::Display for U2FDeviceInfo {
@@ -250,7 +322,42 @@ impl fmt::Display for U2FDeviceInfo {
             &self.version_major,
             &self.version_minor,
             &self.version_build,
-            to_hex(&[self.cap_flags], ":"),
+            to_hex(&[self.cap_flags.bits()], ":"),
         )
+    }
+}
+
+
+
+
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use super::CTAP1RequestAPDU;
+
+    #[test]
+    fn test_ctap1_serialize() {
+        
+        assert_eq!(
+            vec![0, 1, 2, 0, 0, 0, 0],
+            CTAP1RequestAPDU::serialize(1, 2, &[]).unwrap()
+        );
+
+        
+        assert_eq!(
+            vec![0, 1, 2, 0, 0, 0, 1, 42, 0, 0],
+            CTAP1RequestAPDU::serialize(1, 2, &[42]).unwrap()
+        );
+
+        
+        let d = [0xFF; 300];
+        let mut expected = vec![0, 1, 2, 0, 0, 0x1, 0x2c];
+        expected.extend_from_slice(&d);
+        expected.extend_from_slice(&[0, 0]); 
+        assert_eq!(expected, CTAP1RequestAPDU::serialize(1, 2, &d).unwrap());
+
+        
+        let big = [0xFF; 65536];
+        assert!(CTAP1RequestAPDU::serialize(1, 2, &big).is_err());
     }
 }
