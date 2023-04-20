@@ -479,6 +479,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "GPUAdapter", nightly: true },
   
+  { name: "GPUAdapterInfo", nightly: true },
+  
   { name: "GPUBindGroup", nightly: true },
   
   { name: "GPUBindGroupLayout", nightly: true },
