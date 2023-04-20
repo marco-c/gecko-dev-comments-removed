@@ -27,15 +27,8 @@ StaticRefPtr<nsCookieInjector> sCookieInjectorSingleton;
 
 static constexpr auto kHttpObserverMessage =
     NS_HTTP_ON_MODIFY_REQUEST_BEFORE_COOKIES_TOPIC;
-
-
-
-static constexpr nsLiteralCString kObservedPrefs[] = {
-    "cookiebanners.service.mode"_ns,
-    "cookiebanners.service.mode.privateBrowsing"_ns,
-    "cookiebanners.service.detectOnly"_ns,
-    "cookiebanners.cookieInjector.enabled"_ns,
-};
+static const char kCookieInjectorEnabledPref[] =
+    "cookiebanners.cookieInjector.enabled";
 
 NS_IMPL_ISUPPORTS(nsCookieInjector, nsIObserver);
 
@@ -44,34 +37,37 @@ already_AddRefed<nsCookieInjector> nsCookieInjector::GetSingleton() {
     sCookieInjectorSingleton = new nsCookieInjector();
 
     
-    for (auto& pref : kObservedPrefs) {
-      MOZ_LOG(gCookieInjectorLog, LogLevel::Debug,
-              ("Registering pref observer. %s", pref.get()));
-      DebugOnly<nsresult> rv =
-          Preferences::RegisterCallback(&nsCookieInjector::OnPrefChange, pref);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "Failed to register pref listener.");
-    }
+    DebugOnly<nsresult> rv = Preferences::RegisterCallbackAndCall(
+        &nsCookieInjector::OnPrefChange, kCookieInjectorEnabledPref);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "Failed to register pref listener for kCookieInjectorEnabledPref.");
 
-    
-    
-    nsCookieInjector::OnPrefChange(nullptr, nullptr);
+    rv = Preferences::RegisterCallback(&nsCookieInjector::OnPrefChange,
+                                       kCookieBannerServiceModePBMPref);
+    rv = Preferences::RegisterCallbackAndCall(&nsCookieInjector::OnPrefChange,
+                                              kCookieBannerServiceModePref);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "Failed to register pref listener for kCookieBannerServiceModePref.");
 
     
     RunOnShutdown([] {
       MOZ_LOG(gCookieInjectorLog, LogLevel::Debug, ("RunOnShutdown"));
 
       
-      for (auto& pref : kObservedPrefs) {
-        MOZ_LOG(gCookieInjectorLog, LogLevel::Debug,
-                ("Unregistering pref observer. %s", pref.get()));
-        DebugOnly<nsresult> rv = Preferences::UnregisterCallback(
-            &nsCookieInjector::OnPrefChange, pref);
-        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                             "Failed to unregister pref listener.");
-      }
+      DebugOnly<nsresult> rv = Preferences::UnregisterCallback(
+          &nsCookieInjector::OnPrefChange, kCookieInjectorEnabledPref);
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "Failed to unregister pref listener for kCookieInjectorEnabledPref.");
+      rv = Preferences::UnregisterCallback(&nsCookieInjector::OnPrefChange,
+                                           kCookieBannerServiceModePref);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "Failed to unregister pref listener for "
+                           "kCookieBannerServiceModePref.");
 
-      nsresult rv = sCookieInjectorSingleton->Shutdown();
+      rv = sCookieInjectorSingleton->Shutdown();
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                            "nsCookieInjector::Shutdown failed.");
       sCookieInjectorSingleton = nullptr;
@@ -93,7 +89,7 @@ bool nsCookieInjector::IsEnabledForCurrentPrefState() {
   
   
   return StaticPrefs::cookiebanners_service_mode() !=
-             nsICookieBannerService::MODE_DISABLED ||
+             nsICookieBannerService::MODE_DISABLED &&
          StaticPrefs::cookiebanners_service_mode_privateBrowsing() !=
              nsICookieBannerService::MODE_DISABLED;
 }
