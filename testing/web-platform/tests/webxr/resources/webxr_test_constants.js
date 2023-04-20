@@ -195,3 +195,10 @@ const SCREEN_CONTROLLER = {
     pointerOrigin: VALID_POINTER_TRANSFORM,
     profiles: []
 };
+
+
+const DEFAULT_FEATURES = {
+  "inline": ["viewer"],
+  "immersive-vr": ["viewer", "local"],
+  "immersive-ar": ["viewer", "local"],
+};
