@@ -100,12 +100,20 @@ async function testTextRange(accDoc, browser, id, start, end) {
   
   
   
+  
+  let x = {};
+  let y = {};
+  let w = {};
+  let h = {};
+  accDoc.getBoundsInCSSPixels(x, y, w, h);
+  r[0] += x.value;
+  r[1] += y.value;
   if (end != -1 && end - start == 1) {
     
     
-    testTextPos(hyperTextNode, start, [r[0], r[1]], COORDTYPE_PARENT_RELATIVE);
+    testTextPos(hyperTextNode, start, [r[0], r[1]], COORDTYPE_SCREEN_RELATIVE);
   } else {
-    testTextBounds(hyperTextNode, start, end, r, COORDTYPE_PARENT_RELATIVE);
+    testTextBounds(hyperTextNode, start, end, r, COORDTYPE_SCREEN_RELATIVE);
   }
 }
 
@@ -477,32 +485,30 @@ X</pre>`,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+addAccessibleTask(
+  `
+  <style>
+    @font-face {
+      font-family: Ahem;
+      src: url(${CURRENT_CONTENT_DIR}e10s/fonts/Ahem.sjs);
+    }
+  </style>
+  <div>hello<pre id="t" style="margin-left:100px;margin-top:30px;background-color:blue;">XX
+XXX
+XX
+X</pre></div>`,
+  async function(browser, docAcc) {
+    await testChar(docAcc, browser, "t", 0);
+    await testChar(docAcc, browser, "t", 3);
+    await testChar(docAcc, browser, "t", 7);
+    await testChar(docAcc, browser, "t", 10);
+  },
+  {
+    chrome: true,
+    topLevel: !isWinNoCache,
+    iframe: !isWinNoCache,
+  }
+);
 
 
 
