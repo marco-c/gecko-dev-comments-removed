@@ -7,7 +7,6 @@
 #include "TRRQuery.h"
 
 #include "DNSLogging.h"
-#include "TRRSkippedReason.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/Telemetry.h"
 #include "TRRService.h"
