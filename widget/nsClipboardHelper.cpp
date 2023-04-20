@@ -47,21 +47,18 @@ nsClipboardHelper::CopyStringToClipboard(const nsAString& aString,
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(clipboard, NS_ERROR_FAILURE);
 
-  bool clipboardSupported;
   
   
-  if (nsIClipboard::kSelectionClipboard == aClipboardID) {
-    rv = clipboard->SupportsSelectionClipboard(&clipboardSupported);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (!clipboardSupported) return NS_ERROR_FAILURE;
+  if (nsIClipboard::kSelectionClipboard == aClipboardID &&
+      !clipboard->IsClipboardTypeSupported(nsIClipboard::kSelectionClipboard)) {
+    return NS_ERROR_FAILURE;
   }
 
   
   
-  if (nsIClipboard::kFindClipboard == aClipboardID) {
-    rv = clipboard->SupportsFindClipboard(&clipboardSupported);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (!clipboardSupported) return NS_ERROR_FAILURE;
+  if (nsIClipboard::kFindClipboard == aClipboardID &&
+      !clipboard->IsClipboardTypeSupported(nsIClipboard::kFindClipboard)) {
+    return NS_ERROR_FAILURE;
   }
 
   

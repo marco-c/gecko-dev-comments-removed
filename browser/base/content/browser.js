@@ -3177,10 +3177,11 @@ function readFromClipboard() {
     trans.addDataFlavor("text/unicode");
 
     
-    if (Services.clipboard.supportsSelectionClipboard()) {
-      Services.clipboard.getData(trans, Services.clipboard.kSelectionClipboard);
+    let clipboard = Services.clipboard;
+    if (clipboard.isClipboardTypeSupported(clipboard.kSelectionClipboard)) {
+      clipboard.getData(trans, clipboard.kSelectionClipboard);
     } else {
-      Services.clipboard.getData(trans, Services.clipboard.kGlobalClipboard);
+      clipboard.getData(trans, clipboard.kGlobalClipboard);
     }
 
     var data = {};
