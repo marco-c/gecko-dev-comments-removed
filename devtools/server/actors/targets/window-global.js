@@ -65,6 +65,12 @@ loader.lazyRequireGetter(
   "resource://devtools/server/actors/worker/worker-descriptor-actor-list.js",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "StyleSheetsManager",
+  "resource://devtools/server/actors/utils/stylesheets-manager.js",
+  true
+);
 const lazy = {};
 ChromeUtils.defineModuleGetter(lazy, "ExtensionContent", EXTENSION_CONTENT_JSM);
 
@@ -557,6 +563,13 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     return this._sourcesManager;
   }
 
+  getStyleSheetsManager() {
+    if (!this._styleSheetsManager) {
+      this._styleSheetsManager = new StyleSheetsManager(this);
+    }
+    return this._styleSheetsManager;
+  }
+
   _createExtraActors() {
     
     
@@ -708,6 +721,11 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     this._unwatchDocshells();
 
     this._destroyThreadActor();
+
+    if (this._styleSheetsManager) {
+      this._styleSheetsManager.destroy();
+      this._styleSheetsManager = null;
+    }
 
     
     if (this._targetScopedActorPool) {
