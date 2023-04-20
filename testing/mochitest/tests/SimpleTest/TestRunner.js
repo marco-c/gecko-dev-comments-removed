@@ -13,8 +13,14 @@
 
 
 
-
 "use strict";
+
+const {
+  StructuredLogger,
+  StructuredFormatter,
+} = SpecialPowers.ChromeUtils.importESModule(
+  "resource://testing-common/StructuredLog.sys.mjs"
+);
 
 function getElement(id) {
   return typeof id == "string" ? document.getElementById(id) : id;
@@ -337,7 +343,9 @@ TestRunner._dumpMessage = function(message) {
 
 TestRunner.structuredLogger = new StructuredLogger(
   "mochitest",
-  TestRunner._dumpMessage
+  TestRunner._dumpMessage,
+  [],
+  TestRunner
 );
 TestRunner.structuredLogger.deactivateBuffering = function() {
   TestRunner.structuredLogger.logData("buffering_off");

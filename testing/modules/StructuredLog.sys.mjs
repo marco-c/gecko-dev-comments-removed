@@ -1,28 +1,29 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["StructuredLogger", "StructuredFormatter"];
-
-
-
-
-
-
-
-
-
-
-
-class StructuredLogger {
+/**
+ * TestLogger: Logger class generating messages compliant with the
+ * structured logging protocol for tests exposed by mozlog
+ *
+ * @param {string} name
+ *        The name of the logger to instantiate.
+ * @param {function} [dumpFun]
+ *        An underlying function to be used to log raw messages. This function
+ *        will receive the complete serialized json string to log.
+ * @param {object} [scope]
+ *        The scope that the dumpFun is loaded in, so that messages are cloned
+ *        into that scope before passing them.
+ */
+export class StructuredLogger {
   name = null;
   #dumpFun = null;
+  #dumpScope = null;
 
-  constructor(name, dumpFun = dump) {
+  constructor(name, dumpFun = dump, scope = null) {
     this.name = name;
     this.#dumpFun = dumpFun;
+    this.#dumpScope = scope;
   }
 
   testStart(test) {
@@ -40,7 +41,7 @@ class StructuredLogger {
     extra = null
   ) {
     if (subtest === null || subtest === undefined) {
-      
+      // Fix for assertions that don't pass in a name
       subtest = "undefined assertion name";
     }
 
@@ -149,11 +150,11 @@ class StructuredLogger {
     this.logData("suite_end", data);
   }
 
-  
-
-
-
-
+  /**
+   * Unstructured logging functions. The "extra" parameter can always by used to
+   * log suite specific data. If a "stack" field is provided it is logged at the
+   * top level of the data object for the benefit of mozlog's formatters.
+   */
   log(level, message, extra = null) {
     var data = {
       level,
@@ -210,7 +211,11 @@ class StructuredLogger {
       allData[field] = data[field];
     }
 
-    this.#dumpFun(allData);
+    if (this.#dumpScope) {
+      this.#dumpFun(Cu.cloneInto(allData, this.#dumpScope));
+    } else {
+      this.#dumpFun(allData);
+    }
   }
 
   #testId(test) {
@@ -221,12 +226,12 @@ class StructuredLogger {
   }
 }
 
-
-
-
-
-class StructuredFormatter {
-  
+/**
+ * StructuredFormatter: Formatter class turning structured messages
+ * into human-readable messages.
+ */
+export class StructuredFormatter {
+  // The time at which the whole suite of tests started.
   #suiteStartTime = null;
 
   #testStartTimes = new Map();

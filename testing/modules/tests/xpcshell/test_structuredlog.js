@@ -2,8 +2,8 @@
 
 
 function run_test() {
-  const { StructuredLogger } = ChromeUtils.import(
-    "resource://testing-common/StructuredLog.jsm"
+  const { StructuredLogger } = ChromeUtils.importESModule(
+    "resource://testing-common/StructuredLog.sys.mjs"
   );
 
   let testBuffer = [];
