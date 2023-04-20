@@ -277,12 +277,14 @@ const MessageLoaderUtils = {
 
 
 
+
+
   async _remoteSettingsLoader(provider, options) {
     let messages = [];
-    if (provider.bucket) {
+    if (provider.collection) {
       try {
         messages = await MessageLoaderUtils._getRemoteSettingsMessages(
-          provider.bucket
+          provider.collection
         );
         if (!messages.length) {
           MessageLoaderUtils._handleRemoteSettingsUndesiredEvent(
@@ -332,8 +334,14 @@ const MessageLoaderUtils = {
     return messages;
   },
 
-  _getRemoteSettingsMessages(bucket) {
-    return RemoteSettings(bucket).get();
+  
+
+
+
+
+
+  _getRemoteSettingsMessages(collection) {
+    return RemoteSettings(collection).get();
   },
 
   
