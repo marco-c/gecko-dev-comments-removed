@@ -6,7 +6,6 @@
 
 
 
-
 var acorn = require("acorn");
 var sourceMap = require("source-map");
 var SourceNode = sourceMap.SourceNode;
@@ -761,7 +760,7 @@ export function prettyFast(input, options) {
     const buffer = [];
     let bufferLine = -1;
     let bufferColumn = -1;
-    return function write(str, line, column, ignoreNewline) {
+    return function innerWrite(str, line, column, ignoreNewline) {
       if (line != null && bufferLine === -1) {
         bufferLine = line;
       }
