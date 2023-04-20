@@ -2556,8 +2556,11 @@ void AppWindow::ApplyChromeFlags() {
 NS_IMETHODIMP
 AppWindow::BeforeStartLayout() {
   ApplyChromeFlags();
-  LoadPersistentWindowState();
+  
+  
+  
   SyncAttributesToWidget();
+  LoadPersistentWindowState();
   if (mWindow) {
     SizeShell();
   }
