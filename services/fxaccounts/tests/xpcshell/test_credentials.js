@@ -1,8 +1,8 @@
 
 
 
-const { Credentials } = ChromeUtils.importESModule(
-  "resource://gre/modules/Credentials.sys.mjs"
+const { Credentials } = ChromeUtils.import(
+  "resource://gre/modules/Credentials.jsm"
 );
 const { CryptoUtils } = ChromeUtils.import(
   "resource://services-crypto/utils.js"

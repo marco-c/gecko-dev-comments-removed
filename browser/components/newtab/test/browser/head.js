@@ -14,8 +14,8 @@ ChromeUtils.defineModuleGetter(
   "resource://activity-stream/lib/ASRouterTargeting.jsm"
 );
 
-const { FxAccounts } = ChromeUtils.importESModule(
-  "resource://gre/modules/FxAccounts.sys.mjs"
+const { FxAccounts } = ChromeUtils.import(
+  "resource://gre/modules/FxAccounts.jsm"
 );
 
 

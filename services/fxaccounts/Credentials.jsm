@@ -1,16 +1,21 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/**
- * This module implements client-side key stretching for use in Firefox
- * Accounts account creation and login.
- *
- * See https://github.com/mozilla/fxa-auth-server/wiki/onepw-protocol
- */
 
-import { Log } from "resource://gre/modules/Log.sys.mjs";
 
+
+
+
+
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["Credentials"];
+
+const { Log } = ChromeUtils.importESModule(
+  "resource://gre/modules/Log.sys.mjs"
+);
 const { CryptoUtils } = ChromeUtils.import(
   "resource://services-crypto/utils.js"
 );
@@ -24,9 +29,9 @@ const STRETCHED_PW_LENGTH_BYTES = 32;
 const HKDF_SALT = CommonUtils.hexToBytes("00");
 const HKDF_LENGTH = 32;
 
-// loglevel preference should be one of: "FATAL", "ERROR", "WARN", "INFO",
-// "CONFIG", "DEBUG", "TRACE" or "ALL". We will be logging error messages by
-// default.
+
+
+
 const PREF_LOG_LEVEL = "identity.fxaccounts.loglevel";
 let LOG_LEVEL = Log.Level.Error;
 try {
@@ -40,10 +45,10 @@ var log = Log.repository.getLogger("Identity.FxAccounts");
 log.level = LOG_LEVEL;
 log.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
 
-export var Credentials = Object.freeze({
-  /**
-   * Make constants accessible to tests
-   */
+var Credentials = Object.freeze({
+  
+
+
   constants: {
     PROTOCOL_VERSION,
     PBKDF2_ROUNDS,
@@ -52,36 +57,36 @@ export var Credentials = Object.freeze({
     HKDF_LENGTH,
   },
 
-  /**
-   * KW function from https://github.com/mozilla/fxa-auth-server/wiki/onepw-protocol
-   *
-   * keyWord derivation for use as a salt.
-   *
-   *
-   *   @param {String} context  String for use in generating salt
-   *
-   *   @return {bitArray} the salt
-   *
-   * Note that PROTOCOL_VERSION does not refer in any way to the version of the
-   * Firefox Accounts API.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
   keyWord(context) {
     return CommonUtils.stringToBytes(PROTOCOL_VERSION + context);
   },
 
-  /**
-   * KWE function from https://github.com/mozilla/fxa-auth-server/wiki/onepw-protocol
-   *
-   * keyWord extended with a name and an email.
-   *
-   *   @param {String} name The name of the salt
-   *   @param {String} email The email of the user.
-   *
-   *   @return {bitArray} the salt combination with the namespace
-   *
-   * Note that PROTOCOL_VERSION does not refer in any way to the version of the
-   * Firefox Accounts API.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
   keyWordExtended(name, email) {
     return CommonUtils.stringToBytes(PROTOCOL_VERSION + name + ":" + email);
   },

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 const { Async } = ChromeUtils.import("resource://services-common/async.js");
 const {
@@ -19,18 +19,18 @@ const {
   log,
 } = ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js");
 
-/**
- * FxAccountsPushService manages Push notifications for Firefox Accounts in the browser
- *
- * @param [options]
- *        Object, custom options that used for testing
- * @constructor
- */
-export function FxAccountsPushService(options = {}) {
+
+
+
+
+
+
+
+function FxAccountsPushService(options = {}) {
   this.log = log;
 
   if (options.log) {
-    // allow custom log for testing purposes
+    
     this.log = options.log;
   }
 
@@ -40,31 +40,31 @@ export function FxAccountsPushService(options = {}) {
 }
 
 FxAccountsPushService.prototype = {
-  /**
-   * Helps only initialize observers once.
-   */
+  
+
+
   _initialized: false,
-  /**
-   * Instance of the nsIPushService or a mocked object.
-   */
+  
+
+
   pushService: null,
-  /**
-   * Instance of FxAccountsInternal or a mocked object.
-   */
+  
+
+
   fxai: null,
-  /**
-   * Component ID of this service, helps register this component.
-   */
+  
+
+
   classID: Components.ID("{1b7db999-2ecd-4abf-bb95-a726896798ca}"),
-  /**
-   * Register used interfaces in this service
-   */
+  
+
+
   QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
-  /**
-   * Initialize the service and register all the required observers.
-   *
-   * @param [options]
-   */
+  
+
+
+
+
   initialize(options) {
     if (this._initialized) {
       return false;
@@ -83,21 +83,21 @@ FxAccountsPushService.prototype = {
     if (options.fxai) {
       this.fxai = options.fxai;
     } else {
-      const { getFxAccountsSingleton } = ChromeUtils.importESModule(
-        "resource://gre/modules/FxAccounts.sys.mjs"
+      const { getFxAccountsSingleton } = ChromeUtils.import(
+        "resource://gre/modules/FxAccounts.jsm"
       );
       const fxAccounts = getFxAccountsSingleton();
       this.fxai = fxAccounts._internal;
     }
 
     this.asyncObserver = Async.asyncObserver(this, this.log);
-    // We use an async observer because a device waking up can
-    // observe multiple "Send Tab received" push notifications at the same time.
-    // The way these notifications are handled is as follows:
-    // Read index from storage, make network request, update the index.
-    // You can imagine what happens when multiple calls race: we load
-    // the same index multiple times and receive the same exact tabs, multiple times.
-    // The async observer will ensure we make these network requests serially.
+    
+    
+    
+    
+    
+    
+    
     Services.obs.addObserver(this.asyncObserver, this.pushService.pushTopic);
     Services.obs.addObserver(
       this.asyncObserver,
@@ -108,12 +108,12 @@ FxAccountsPushService.prototype = {
     this.log.debug("FxAccountsPush initialized");
     return true;
   },
-  /**
-   * Registers a new endpoint with the Push Server
-   *
-   * @returns {Promise}
-   *          Promise always resolves with a subscription or a null if failed to subscribe.
-   */
+  
+
+
+
+
+
   registerPushEndpoint() {
     this.log.trace("FxAccountsPush registerPushEndpoint");
 
@@ -133,14 +133,14 @@ FxAccountsPushService.prototype = {
       );
     });
   },
-  /**
-   * Async observer interface to listen to push messages, changes and logout.
-   *
-   * @param subject
-   * @param topic
-   * @param data
-   * @returns {Promise}
-   */
+  
+
+
+
+
+
+
+
   async observe(subject, topic, data) {
     try {
       this.log.trace(
@@ -159,7 +159,7 @@ FxAccountsPushService.prototype = {
           }
           break;
         case ONLOGOUT_NOTIFICATION:
-          // user signed out, we need to stop polling the Push Server
+          
           await this.unsubscribe();
           break;
       }
@@ -168,16 +168,16 @@ FxAccountsPushService.prototype = {
     }
   },
 
-  /**
-   * Fired when the Push server sends a notification.
-   *
-   * @private
-   * @returns {Promise}
-   */
+  
+
+
+
+
+
   async _onPushMessage(message) {
     this.log.trace("FxAccountsPushService _onPushMessage");
     if (!message.data) {
-      // Use the empty signal to check the verification state of the account right away
+      
       this.log.debug("empty push message - checking account status");
       this.fxai.checkVerificationStatus();
       return;
@@ -199,8 +199,8 @@ FxAccountsPushService.prototype = {
         this.fxai._handleDeviceDisconnection(payload.data.id);
         return;
       case ON_PROFILE_UPDATED_NOTIFICATION:
-        // We already have a "profile updated" notification sent via WebChannel,
-        // let's just re-use that.
+        
+        
         Services.obs.notifyObservers(null, ON_PROFILE_CHANGE_NOTIFICATION);
         return;
       case ON_PASSWORD_CHANGED_NOTIFICATION:
@@ -228,40 +228,40 @@ FxAccountsPushService.prototype = {
         this.log.warn("FxA Push command unrecognized: " + payload.command);
     }
   },
-  /**
-   * Check the FxA session status after a password change/reset event.
-   * If the session is invalid, reset credentials and notify listeners of
-   * ON_ACCOUNT_STATE_CHANGE_NOTIFICATION that the account may have changed
-   *
-   * @returns {Promise}
-   * @private
-   */
+  
+
+
+
+
+
+
+
   _onPasswordChanged() {
     return this.fxai.withCurrentAccountState(async state => {
       return this.fxai.checkAccountStatus(state);
     });
   },
-  /**
-   * Fired when the Push server drops a subscription, or the subscription identifier changes.
-   *
-   * https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIPushService#Receiving_Push_Messages
-   *
-   * @returns {Promise}
-   * @private
-   */
+  
+
+
+
+
+
+
+
   _onPushSubscriptionChange() {
     this.log.trace("FxAccountsPushService _onPushSubscriptionChange");
     return this.fxai.updateDeviceRegistration();
   },
-  /**
-   * Unsubscribe from the Push server
-   *
-   * Ref: https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIPushService#unsubscribe()
-   *
-   * @returns {Promise} - The promise resolves with a bool to indicate if we successfully unsubscribed.
-   *                      The promise never rejects.
-   * @private
-   */
+  
+
+
+
+
+
+
+
+
   unsubscribe() {
     this.log.trace("FxAccountsPushService unsubscribe");
     return new Promise(resolve => {
@@ -289,13 +289,13 @@ FxAccountsPushService.prototype = {
     });
   },
 
-  /**
-   * Get our Push server subscription.
-   *
-   * Ref: https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIPushService#getSubscription()
-   *
-   * @returns {Promise} - resolves with the subscription or null. Never rejects.
-   */
+  
+
+
+
+
+
+
   getSubscription() {
     return new Promise(resolve => {
       this.pushService.getSubscription(
@@ -312,3 +312,5 @@ FxAccountsPushService.prototype = {
     });
   },
 };
+
+var EXPORTED_SYMBOLS = ["FxAccountsPushService"];

@@ -1,0 +1,28 @@
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["RemoteSettingsTimer"];
+
+const lazy = {};
+
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "RemoteSettings",
+  "resource://services-settings/remote-settings.js"
+);
+
+var RemoteSettingsTimer = function() {};
+RemoteSettingsTimer.prototype = {
+  QueryInterface: ChromeUtils.generateQI(["nsITimerCallback"]),
+  classID: Components.ID("{5e756573-234a-49ea-bbe4-59ec7a70657d}"),
+  contractID: "@mozilla.org/services/settings;1",
+
+  
+  notify(timer) {
+    lazy.RemoteSettings.pollChanges({ trigger: "timer" }).catch(e =>
+      console.error(e)
+    );
+  },
+};
