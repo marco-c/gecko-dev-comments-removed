@@ -132,11 +132,6 @@ class DecoderDatabase {
 
   
   
-  
-  virtual void Reset();
-
-  
-  
   virtual std::vector<int> SetCodecs(
       const std::map<int, SdpAudioFormat>& codecs);
 
@@ -181,12 +176,6 @@ class DecoderDatabase {
   
   
   AudioDecoder* GetDecoder(uint8_t rtp_payload_type) const;
-
-  
-  bool IsType(uint8_t rtp_payload_type, const char* name) const;
-
-  
-  bool IsType(uint8_t rtp_payload_type, const std::string& name) const;
 
   
   bool IsComfortNoise(uint8_t rtp_payload_type) const;
