@@ -67,7 +67,7 @@ class Sprinter final : public GenericPrinter {
     ~InvariantChecker() { parent->checkInvariants(); }
   };
 
-  JSContext* context;  
+  JSContext* maybeCx;  
 
  private:
   static const size_t DefaultSize;
@@ -82,7 +82,15 @@ class Sprinter final : public GenericPrinter {
   [[nodiscard]] bool realloc_(size_t newSize);
 
  public:
-  explicit Sprinter(JSContext* cx, bool shouldReportOOM = true);
+  
+  
+  
+  
+  
+  
+  
+  
+  explicit Sprinter(JSContext* maybeCx = nullptr, bool shouldReportOOM = true);
   ~Sprinter();
 
   
