@@ -189,7 +189,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/textwrap/0.15.0")]
+#![doc(html_root_url = "https://docs.rs/textwrap/0.15.2")]
 #![forbid(unsafe_code)] 
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
