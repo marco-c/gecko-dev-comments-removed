@@ -38,8 +38,7 @@ class CookieBannerDomainPrefService final : public nsIAsyncShutdownBlocker,
   
   [[nodiscard]] nsresult SetPref(const nsACString& aDomain,
                                  nsICookieBannerService::Modes aMode,
-                                 bool aIsPrivate,
-                                 bool aPersistInPrivateBrowsing);
+                                 bool aIsPrivate);
 
   
   [[nodiscard]] nsresult RemovePref(const nsACString& aDomain, bool aIsPrivate);
@@ -55,7 +54,6 @@ class CookieBannerDomainPrefService final : public nsIAsyncShutdownBlocker,
   CookieBannerDomainPrefService()
       : mIsInitialized(false),
         mIsContentPrefLoaded(false),
-        mIsPrivateContentPrefLoaded(false),
         mIsShuttingDown(false) {}
 
   
@@ -65,46 +63,20 @@ class CookieBannerDomainPrefService final : public nsIAsyncShutdownBlocker,
   bool mIsContentPrefLoaded;
 
   
-  
-  bool mIsPrivateContentPrefLoaded;
-
-  
   bool mIsShuttingDown;
 
   
-  
-  class DomainPrefData final : public nsISupports {
-   public:
-    NS_DECL_ISUPPORTS
-
-    explicit DomainPrefData(nsICookieBannerService::Modes aMode,
-                            bool aIsPersistent)
-        : mMode(aMode), mIsPersistent(aIsPersistent) {}
-
-   private:
-    ~DomainPrefData() = default;
-
-    friend class CookieBannerDomainPrefService;
-
-    nsICookieBannerService::Modes mMode;
-    bool mIsPersistent;
-  };
+  nsTHashMap<nsCStringHashKey, nsICookieBannerService::Modes> mPrefs;
 
   
-  nsTHashMap<nsCStringHashKey, RefPtr<DomainPrefData>> mPrefs;
-
-  
-  nsTHashMap<nsCStringHashKey, RefPtr<DomainPrefData>> mPrefsPrivate;
+  nsTHashMap<nsCStringHashKey, nsICookieBannerService::Modes> mPrefsPrivate;
 
   
   
-  void EnsureInitCompleted(bool aIsPrivate);
+  void EnsureInitCompleted();
 
   nsresult AddShutdownBlocker();
   nsresult RemoveShutdownBlocker();
-
-  nsresult RemoveContentPrefForDomain(const nsACString& aDomain,
-                                      bool aIsPrivate);
 
   class BaseContentPrefCallback : public nsIContentPrefCallback2 {
    public:
@@ -127,11 +99,8 @@ class CookieBannerDomainPrefService final : public nsIAsyncShutdownBlocker,
     NS_DECL_NSICONTENTPREFCALLBACK2
 
     explicit InitialLoadContentPrefCallback(
-        CookieBannerDomainPrefService* aService, bool aIsPrivate)
-        : BaseContentPrefCallback(aService), mIsPrivate(aIsPrivate) {}
-
-   private:
-    bool mIsPrivate;
+        CookieBannerDomainPrefService* aService)
+        : BaseContentPrefCallback(aService) {}
   };
 
   class WriteContentPrefCallback final : public BaseContentPrefCallback {
