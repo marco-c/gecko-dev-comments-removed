@@ -18,7 +18,6 @@
 #include "mozilla/gfx/Rect.h"               
 #include "mozilla/layers/APZThreadUtils.h"  
 #include "mozilla/mozalloc.h"               
-#include "mozilla/FloatingPoint.h"          
 #include "nsMathUtils.h"                    
 #include "nsPrintfCString.h"                
 #include "nsThreadUtils.h"                  
@@ -31,9 +30,8 @@ namespace mozilla {
 namespace layers {
 
 bool FuzzyEqualsCoordinate(CSSCoord aValue1, CSSCoord aValue2) {
-  return FuzzyEqualsAdditive(aValue1.value, aValue2.value,
-                             COORDINATE_EPSILON.value) ||
-         FuzzyEqualsMultiplicative(aValue1.value, aValue2.value);
+  return FuzzyEqualsAdditive(aValue1, aValue2, COORDINATE_EPSILON) ||
+         FuzzyEqualsMultiplicative(aValue1, aValue2);
 }
 
 Axis::Axis(AsyncPanZoomController* aAsyncPanZoomController)

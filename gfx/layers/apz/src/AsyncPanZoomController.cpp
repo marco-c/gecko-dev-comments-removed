@@ -73,7 +73,6 @@
 #include "mozilla/layers/APZPublicUtils.h"  
 #include "mozilla/mozalloc.h"               
 #include "mozilla/Unused.h"                 
-#include "mozilla/FloatingPoint.h"          
 #include "nsAlgorithm.h"                    
 #include "nsCOMPtr.h"                       
 #include "nsDebug.h"                        
@@ -564,8 +563,7 @@ bool AsyncPanZoomController::IsZero(ParentLayerCoord aCoord) const {
     return true;
   }
 
-  return FuzzyEqualsAdditive((aCoord / zoom).value, 0.0f,
-                             COORDINATE_EPSILON.value);
+  return FuzzyEqualsAdditive((aCoord / zoom), CSSCoord(), COORDINATE_EPSILON);
 }
 
 bool AsyncPanZoomController::FuzzyGreater(ParentLayerCoord aCoord1,
@@ -5216,11 +5214,10 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   
   
   CSSPoint lastScrollOffset = mLastContentPaintMetrics.GetLayoutScrollOffset();
-  bool userScrolled =
-      !FuzzyEqualsAdditive(Metrics().GetVisualScrollOffset().x.value,
-                           lastScrollOffset.x.value) ||
-      !FuzzyEqualsAdditive(Metrics().GetVisualScrollOffset().y.value,
-                           lastScrollOffset.y.value);
+  bool userScrolled = !FuzzyEqualsAdditive(Metrics().GetVisualScrollOffset().x,
+                                           lastScrollOffset.x) ||
+                      !FuzzyEqualsAdditive(Metrics().GetVisualScrollOffset().y,
+                                           lastScrollOffset.y);
 
   if (aScrollMetadata.DidContentGetPainted()) {
     mLastContentPaintMetadata = aScrollMetadata;
@@ -5340,9 +5337,8 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     
     
     if (FuzzyEqualsAdditive(
-            Metrics().GetCompositionBoundsWidthIgnoringScrollbars().value,
-            aLayerMetrics.GetCompositionBoundsWidthIgnoringScrollbars()
-                .value) &&
+            Metrics().GetCompositionBoundsWidthIgnoringScrollbars(),
+            aLayerMetrics.GetCompositionBoundsWidthIgnoringScrollbars()) &&
         Metrics().GetDevPixelsPerCSSPixel() ==
             aLayerMetrics.GetDevPixelsPerCSSPixel() &&
         !viewportSizeUpdated && !aScrollMetadata.IsResolutionUpdated()) {
