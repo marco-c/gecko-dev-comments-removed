@@ -127,15 +127,6 @@ class nsBoxFrame : public nsContainerFrame {
                                 const nsRect& aRect);
 
   
-
-
-
-
-  void WrapListsInRedirector(nsDisplayListBuilder* aBuilder,
-                             const nsDisplayListSet& aIn,
-                             const nsDisplayListSet& aOut);
-
-  
   
   static nsIFrame* SlowOrdinalGroupAwareSibling(nsIFrame*, bool aNext);
 
