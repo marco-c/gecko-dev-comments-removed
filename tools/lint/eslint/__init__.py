@@ -87,16 +87,12 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
         + paths
     )
     log.debug("Command: {}".format(" ".join(cmd_args)))
-    results = run(cmd_args, config)
-    fixed = 0
-    
-    if fix:
-        fixed += len(results)
-        cmd_args.insert(2, "--fix")
-        results = run(cmd_args, config)
-        fixed = fixed - len(results)
 
-    return {"results": results, "fixed": fixed}
+    if fix:
+        
+        cmd_args.insert(2, "--fix")
+
+    return run(cmd_args, config)
 
 
 def run(cmd_args, config):
@@ -120,7 +116,7 @@ def run(cmd_args, config):
         output, errors = proc.communicate()
     except KeyboardInterrupt:
         proc.kill()
-        return []
+        return {"results": [], "fixed": 0}
 
     if errors:
         errors = errors.decode(encoding, "replace")
@@ -130,7 +126,7 @@ def run(cmd_args, config):
         return 1
 
     if not output:
-        return []  
+        return {"results": [], "fixed": 0}  
     output = output.decode(encoding, "replace")
     try:
         jsonresult = json.loads(output)
@@ -139,8 +135,13 @@ def run(cmd_args, config):
         return 1
 
     results = []
+    fixed = 0
     for obj in jsonresult:
         errors = obj["messages"]
+        
+        
+        if "output" in obj:
+            fixed = fixed + 1
 
         for err in errors:
             err.update(
@@ -154,4 +155,4 @@ def run(cmd_args, config):
             )
             results.append(result.from_config(config, **err))
 
-    return results
+    return {"results": results, "fixed": fixed}
