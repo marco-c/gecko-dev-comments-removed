@@ -5,6 +5,7 @@
 
 
 DIRS += [
+    "micromatch",
     "source-map",
 ]
 
