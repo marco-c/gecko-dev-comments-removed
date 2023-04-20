@@ -38,6 +38,12 @@ struct PacketDeliveryInfo {
   static constexpr int kNotReceived = -1;
   PacketDeliveryInfo(PacketInFlightInfo source, int64_t receive_time_us)
       : receive_time_us(receive_time_us), packet_id(source.packet_id) {}
+
+  bool operator==(const PacketDeliveryInfo& other) const {
+    return receive_time_us == other.receive_time_us &&
+           packet_id == other.packet_id;
+  }
+
   int64_t receive_time_us;
   uint64_t packet_id;
 };
@@ -64,12 +70,48 @@ struct BuiltInNetworkBehaviorConfig {
   int packet_overhead = 0;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class NetworkBehaviorInterface {
  public:
+  
+  
+  
+  
+  
+  
+  
   virtual bool EnqueuePacket(PacketInFlightInfo packet_info) = 0;
+  
+  
+  
+  
+  
   
   virtual std::vector<PacketDeliveryInfo> DequeueDeliverablePackets(
       int64_t receive_time_us) = 0;
+  
+  
+  
   
   
   virtual absl::optional<int64_t> NextDeliveryTimeUs() const = 0;
@@ -85,6 +127,10 @@ class SimulatedNetworkInterface : public NetworkBehaviorInterface {
   virtual void SetConfig(const BuiltInNetworkBehaviorConfig& config) = 0;
   virtual void UpdateConfig(
       std::function<void(BuiltInNetworkBehaviorConfig*)> config_modifier) = 0;
+  
+  
+  
+  
   virtual void PauseTransmissionUntil(int64_t until_us) = 0;
 };
 

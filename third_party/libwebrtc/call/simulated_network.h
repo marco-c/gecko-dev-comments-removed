@@ -31,12 +31,23 @@ namespace webrtc {
 
 
 
+
+
+
+
+
 class SimulatedNetwork : public SimulatedNetworkInterface {
  public:
   using Config = BuiltInNetworkBehaviorConfig;
   explicit SimulatedNetwork(Config config, uint64_t random_seed = 1);
   ~SimulatedNetwork() override;
 
+  
+  
+  
+  
+  
+  
   
   void SetConfig(const Config& config) override;
   void UpdateConfig(std::function<void(BuiltInNetworkBehaviorConfig*)>
@@ -53,6 +64,7 @@ class SimulatedNetwork : public SimulatedNetworkInterface {
  private:
   struct PacketInfo {
     PacketInFlightInfo packet;
+    
     int64_t arrival_time_us;
   };
   
@@ -78,22 +90,43 @@ class SimulatedNetwork : public SimulatedNetworkInterface {
   
   
   rtc::RaceChecker process_checker_;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   std::queue<PacketInfo> capacity_link_ RTC_GUARDED_BY(process_checker_);
-  Random random_;
-
+  
+  
+  
+  
   std::deque<PacketInfo> delay_link_ RTC_GUARDED_BY(process_checker_);
+  
+  
+  
+  absl::optional<int64_t> next_process_time_us_
+      RTC_GUARDED_BY(process_checker_);
 
   ConfigState config_state_ RTC_GUARDED_BY(config_lock_);
 
+  Random random_ RTC_GUARDED_BY(process_checker_);
   
   bool bursting_;
 
-  int64_t queue_size_bytes_ RTC_GUARDED_BY(process_checker_) = 0;
-  int64_t pending_drain_bits_ RTC_GUARDED_BY(process_checker_) = 0;
-  absl::optional<int64_t> last_capacity_link_visit_us_
-      RTC_GUARDED_BY(process_checker_);
-  absl::optional<int64_t> next_process_time_us_
-      RTC_GUARDED_BY(process_checker_);
+  
+  
+  int64_t last_enqueue_time_us_;
+
+  
+  
+  
+  int64_t last_capacity_link_exit_time_;
 };
 
 }  

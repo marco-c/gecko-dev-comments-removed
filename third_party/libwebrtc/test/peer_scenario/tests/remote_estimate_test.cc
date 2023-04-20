@@ -96,7 +96,10 @@ TEST(RemoteEstimateEndToEnd, AudioUsesAbsSendTimeExtension) {
         
         
         RtpPacket rtp_packet(&extension_map);
-        if (rtp_packet.Parse(packet.data)) {
+        
+        
+        
+        if (rtp_packet.Parse(packet.data) && rtp_packet.PayloadType() == 111) {
           EXPECT_TRUE(rtp_packet.HasExtension<AbsoluteSendTime>());
           received_abs_send_time = true;
         }

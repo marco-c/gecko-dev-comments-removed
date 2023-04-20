@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <utility>
 
 #include "api/units/data_rate.h"
@@ -21,11 +22,33 @@
 
 namespace webrtc {
 namespace {
-constexpr TimeDelta kDefaultProcessDelay = TimeDelta::Millis(5);
+
+
+
+
+int64_t CalculateArrivalTimeUs(int64_t start_time_us,
+                               int64_t bits,
+                               int capacity_kbps) {
+  
+  if (capacity_kbps == 0) {
+    return start_time_us;
+  }
+  
+  
+  
+  
+  
+  
+  return start_time_us + ((1000 * bits + capacity_kbps - 1) / capacity_kbps);
+}
+
 }  
 
 SimulatedNetwork::SimulatedNetwork(Config config, uint64_t random_seed)
-    : random_(random_seed), bursting_(false) {
+    : random_(random_seed),
+      bursting_(false),
+      last_enqueue_time_us_(0),
+      last_capacity_link_exit_time_(0) {
   SetConfig(config);
 }
 
@@ -69,12 +92,25 @@ void SimulatedNetwork::PauseTransmissionUntil(int64_t until_us) {
 
 bool SimulatedNetwork::EnqueuePacket(PacketInFlightInfo packet) {
   RTC_DCHECK_RUNS_SERIALIZED(&process_checker_);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   ConfigState state = GetConfigState();
 
-  UpdateCapacityQueue(state, packet.send_time_us);
-
+  
+  
   packet.size += state.config.packet_overhead;
 
+  
   if (state.config.queue_length_packets > 0 &&
       capacity_link_.size() >= state.config.queue_length_packets) {
     
@@ -83,12 +119,25 @@ bool SimulatedNetwork::EnqueuePacket(PacketInFlightInfo packet) {
 
   
   
-  queue_size_bytes_ += packet.size;
-  capacity_link_.push({packet, packet.send_time_us});
+  
+  int64_t packet_send_time_us = packet.send_time_us;
+  if (!capacity_link_.empty()) {
+    packet_send_time_us =
+        std::max(packet_send_time_us, capacity_link_.back().arrival_time_us);
+  }
+  capacity_link_.push({.packet = packet,
+                       .arrival_time_us = CalculateArrivalTimeUs(
+                           packet_send_time_us, packet.size * 8,
+                           state.config.link_capacity_kbps)});
+
+  
+  
   if (!next_process_time_us_) {
-    next_process_time_us_ = packet.send_time_us + kDefaultProcessDelay.us();
+    RTC_DCHECK_EQ(capacity_link_.size(), 1);
+    next_process_time_us_ = capacity_link_.front().arrival_time_us;
   }
 
+  last_enqueue_time_us_ = packet.send_time_us;
   return true;
 }
 
@@ -99,52 +148,40 @@ absl::optional<int64_t> SimulatedNetwork::NextDeliveryTimeUs() const {
 
 void SimulatedNetwork::UpdateCapacityQueue(ConfigState state,
                                            int64_t time_now_us) {
-  bool needs_sort = false;
+  
+  
+  
+  if (!capacity_link_.empty()) {
+    capacity_link_.front().arrival_time_us = CalculateArrivalTimeUs(
+        std::max(capacity_link_.front().packet.send_time_us,
+                 last_capacity_link_exit_time_),
+        capacity_link_.front().packet.size * 8,
+        state.config.link_capacity_kbps);
+  }
 
   
-  if (time_now_us < last_capacity_link_visit_us_.value_or(time_now_us))
+  if (capacity_link_.empty() ||
+      time_now_us < capacity_link_.front().arrival_time_us) {
     return;
+  }
+  bool reorder_packets = false;
 
-  int64_t time_us = last_capacity_link_visit_us_.value_or(time_now_us);
-  
-  while (!capacity_link_.empty()) {
-    int64_t time_until_front_exits_us = 0;
-    if (state.config.link_capacity_kbps > 0) {
-      int64_t remaining_bits =
-          capacity_link_.front().packet.size * 8 - pending_drain_bits_;
-      RTC_DCHECK(remaining_bits > 0);
-      
-      time_until_front_exits_us =
-          (1000 * remaining_bits + state.config.link_capacity_kbps - 1) /
-          state.config.link_capacity_kbps;
-    }
-
-    if (time_us + time_until_front_exits_us > time_now_us) {
-      
-      
-      pending_drain_bits_ +=
-          ((time_now_us - time_us) * state.config.link_capacity_kbps) / 1000;
-      break;
-    }
-    if (state.config.link_capacity_kbps > 0) {
-      pending_drain_bits_ +=
-          (time_until_front_exits_us * state.config.link_capacity_kbps) / 1000;
-    } else {
-      
-      pending_drain_bits_ = queue_size_bytes_ * 8;
-    }
-
+  do {
+    
     
     PacketInfo packet = capacity_link_.front();
     capacity_link_.pop();
 
-    time_us += time_until_front_exits_us;
-    RTC_DCHECK(time_us >= packet.packet.send_time_us);
-    packet.arrival_time_us =
-        std::max(state.pause_transmission_until_us, time_us);
-    queue_size_bytes_ -= packet.packet.size;
-    pending_drain_bits_ -= packet.packet.size * 8;
-    RTC_DCHECK(pending_drain_bits_ >= 0);
+    
+    
+    if (state.pause_transmission_until_us > packet.arrival_time_us) {
+      packet.arrival_time_us = state.pause_transmission_until_us;
+    }
+
+    
+    
+    
+    last_capacity_link_exit_time_ = packet.arrival_time_us;
 
     
     
@@ -153,6 +190,7 @@ void SimulatedNetwork::UpdateCapacityQueue(ConfigState state,
       bursting_ = true;
       packet.arrival_time_us = PacketDeliveryInfo::kNotReceived;
     } else {
+      
       bursting_ = false;
       int64_t arrival_time_jitter_us = std::max(
           random_.Gaussian(state.config.queue_delay_ms * 1000,
@@ -169,24 +207,38 @@ void SimulatedNetwork::UpdateCapacityQueue(ConfigState state,
         arrival_time_jitter_us = last_arrival_time_us - packet.arrival_time_us;
       }
       packet.arrival_time_us += arrival_time_jitter_us;
-      if (packet.arrival_time_us >= last_arrival_time_us) {
-        last_arrival_time_us = packet.arrival_time_us;
-      } else {
-        needs_sort = true;
+
+      
+      
+      if (last_arrival_time_us > packet.arrival_time_us) {
+        reorder_packets = true;
       }
     }
     delay_link_.emplace_back(packet);
-  }
-  last_capacity_link_visit_us_ = time_now_us;
-  
-  pending_drain_bits_ = std::min(pending_drain_bits_, queue_size_bytes_ * 8);
 
-  if (needs_sort) {
     
-    std::sort(delay_link_.begin(), delay_link_.end(),
-              [](const PacketInfo& p1, const PacketInfo& p2) {
-                return p1.arrival_time_us < p2.arrival_time_us;
-              });
+    if (capacity_link_.empty()) {
+      break;
+    }
+    
+    
+    
+    int64_t next_start = std::max(last_capacity_link_exit_time_,
+                                  capacity_link_.front().packet.send_time_us);
+    capacity_link_.front().arrival_time_us = CalculateArrivalTimeUs(
+        next_start, capacity_link_.front().packet.size * 8,
+        state.config.link_capacity_kbps);
+    
+  } while (capacity_link_.front().arrival_time_us <= time_now_us);
+
+  if (state.config.allow_reordering && reorder_packets) {
+    
+    
+    
+    std::stable_sort(delay_link_.begin(), delay_link_.end(),
+                     [](const PacketInfo& p1, const PacketInfo& p2) {
+                       return p1.arrival_time_us < p2.arrival_time_us;
+                     });
   }
 }
 
@@ -198,8 +250,10 @@ SimulatedNetwork::ConfigState SimulatedNetwork::GetConfigState() const {
 std::vector<PacketDeliveryInfo> SimulatedNetwork::DequeueDeliverablePackets(
     int64_t receive_time_us) {
   RTC_DCHECK_RUNS_SERIALIZED(&process_checker_);
+
   UpdateCapacityQueue(GetConfigState(), receive_time_us);
   std::vector<PacketDeliveryInfo> packets_to_deliver;
+
   
   while (!delay_link_.empty() &&
          receive_time_us >= delay_link_.front().arrival_time_us) {
@@ -212,7 +266,7 @@ std::vector<PacketDeliveryInfo> SimulatedNetwork::DequeueDeliverablePackets(
   if (!delay_link_.empty()) {
     next_process_time_us_ = delay_link_.front().arrival_time_us;
   } else if (!capacity_link_.empty()) {
-    next_process_time_us_ = receive_time_us + kDefaultProcessDelay.us();
+    next_process_time_us_ = capacity_link_.front().arrival_time_us;
   } else {
     next_process_time_us_.reset();
   }
