@@ -1941,47 +1941,36 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
   bind(&negative);
   {
     
-    
-    Label loadJoin;
     loadConstantFloat32(-0.5f, scratch);
-    branchFloat(Assembler::DoubleLessThan, src, scratch, &loadJoin);
-    loadConstantFloat32(0.5f, temp);
-    bind(&loadJoin);
+    branchFloat(Assembler::DoubleGreaterThanOrEqual, src, scratch, fail);
+
+    
+    
+    
+    
+    addFloat32(src, temp);
 
     if (HasSSE41()) {
       
-      
-      addFloat32(src, temp);
       vroundss(X86Encoding::RoundDown, temp, scratch);
 
       
       truncateFloat32ToInt32(scratch, dest, fail);
-
-      
-      
-      
-      branchTest32(Assembler::Zero, dest, dest, fail);
     } else {
-      addFloat32(src, temp);
       
-      {
-        
-        
-        branchFloat(Assembler::DoubleGreaterThanOrEqual, temp, scratch, fail);
 
-        
-        
-        truncateFloat32ToInt32(temp, dest, fail);
+      
+      
+      truncateFloat32ToInt32(temp, dest, fail);
 
-        
-        convertInt32ToFloat32(dest, scratch);
-        branchFloat(Assembler::DoubleEqualOrUnordered, temp, scratch, &end);
+      
+      convertInt32ToFloat32(dest, scratch);
+      branchFloat(Assembler::DoubleEqualOrUnordered, temp, scratch, &end);
 
-        
-        
-        subl(Imm32(1), dest);
-        
-      }
+      
+      
+      subl(Imm32(1), dest);
+      
     }
   }
 
@@ -2027,47 +2016,36 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
   bind(&negative);
   {
     
-    
-    Label loadJoin;
     loadConstantDouble(-0.5, scratch);
-    branchDouble(Assembler::DoubleLessThan, src, scratch, &loadJoin);
-    loadConstantDouble(0.5, temp);
-    bind(&loadJoin);
+    branchDouble(Assembler::DoubleGreaterThanOrEqual, src, scratch, fail);
+
+    
+    
+    
+    
+    addDouble(src, temp);
 
     if (HasSSE41()) {
       
-      
-      addDouble(src, temp);
       vroundsd(X86Encoding::RoundDown, temp, scratch);
 
       
       truncateDoubleToInt32(scratch, dest, fail);
-
-      
-      
-      
-      branchTest32(Assembler::Zero, dest, dest, fail);
     } else {
-      addDouble(src, temp);
       
-      {
-        
-        
-        branchDouble(Assembler::DoubleGreaterThanOrEqual, temp, scratch, fail);
 
-        
-        
-        truncateDoubleToInt32(temp, dest, fail);
+      
+      
+      truncateDoubleToInt32(temp, dest, fail);
 
-        
-        convertInt32ToDouble(dest, scratch);
-        branchDouble(Assembler::DoubleEqualOrUnordered, temp, scratch, &end);
+      
+      convertInt32ToDouble(dest, scratch);
+      branchDouble(Assembler::DoubleEqualOrUnordered, temp, scratch, &end);
 
-        
-        
-        subl(Imm32(1), dest);
-        
-      }
+      
+      
+      subl(Imm32(1), dest);
+      
     }
   }
 
