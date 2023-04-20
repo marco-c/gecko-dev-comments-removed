@@ -653,7 +653,12 @@ int TurnPort::SendTo(const void* data,
   if (!entry) {
     RTC_LOG(LS_ERROR) << "Did not find the TurnEntry for address "
                       << addr.ToSensitiveString();
-    return 0;
+    
+    
+    
+    
+    error_ = EADDRNOTAVAIL;
+    return SOCKET_ERROR;
   }
 
   if (!ready()) {
@@ -666,6 +671,7 @@ int TurnPort::SendTo(const void* data,
   CopyPortInformationToPacketInfo(&modified_options.info_signaled_after_sent);
   int sent = entry->Send(data, size, payload, modified_options);
   if (sent <= 0) {
+    error_ = socket_->GetError();
     return SOCKET_ERROR;
   }
 
