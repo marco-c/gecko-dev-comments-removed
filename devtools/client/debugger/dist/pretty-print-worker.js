@@ -6259,7 +6259,78 @@ var acorn = __webpack_require__(1103);
 
 var sourceMap = __webpack_require__(632);
 
-var SourceNode = sourceMap.SourceNode; 
+var SourceNode = sourceMap.SourceNode;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class RootSourceNode extends SourceNode {
+  
+
+
+
+
+
+  add(leafSourceNode) {
+    this.children.push(leafSourceNode);
+  }
+  
+
+
+
+
+
+
+
+  walk(func) {
+    for (let i = 0, len = this.children.length; i < len; i++) {
+      const child = this.children[i];
+      func(child.str, child);
+    }
+  }
+  
+
+
+
+
+  walkSourceContents() {
+    
+  }
+
+} 
+
+
+
+class LeafSourceNode {
+  
+
+
+
+
+
+  constructor(line, column, source, str) {
+    this.str = str;
+    this.line = line;
+    this.column = column;
+    this.source = source;
+    this.name = null;
+  }
+
+} 
+
 
 
 
@@ -6810,7 +6881,7 @@ function prettyFast(input, options) {
   
   let indentLevel = 0; 
 
-  const result = new SourceNode();
+  const rootNode = new RootSourceNode();
   
 
 
@@ -6853,7 +6924,7 @@ function prettyFast(input, options) {
           lineStr += buffer[i];
         }
 
-        result.add(new SourceNode(bufferLine, bufferColumn, options.url, lineStr));
+        rootNode.add(new LeafSourceNode(bufferLine, bufferColumn, options.url, lineStr));
         buffer.splice(0, buffer.length);
         bufferLine = -1;
         bufferColumn = -1;
@@ -7008,7 +7079,7 @@ function prettyFast(input, options) {
     lastToken.isArrayLiteral = token.isArrayLiteral;
   }
 
-  return result.toStringWithSourceMap({
+  return rootNode.toStringWithSourceMap({
     file: options.url
   });
 }

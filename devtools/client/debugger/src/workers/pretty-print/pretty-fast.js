@@ -14,6 +14,73 @@ var SourceNode = sourceMap.SourceNode;
 
 
 
+
+
+
+
+
+
+
+
+class RootSourceNode extends SourceNode {
+  
+
+
+
+
+
+  add(leafSourceNode) {
+    this.children.push(leafSourceNode);
+  }
+
+  
+
+
+
+
+
+  walk(func) {
+    for (let i = 0, len = this.children.length; i < len; i++) {
+      const child = this.children[i];
+      func(child.str, child);
+    }
+  }
+
+  
+
+
+  walkSourceContents() {
+    
+    
+  }
+}
+
+
+
+class LeafSourceNode {
+  
+
+
+
+
+
+  constructor(line, column, source, str) {
+    this.str = str;
+    this.line = line;
+    this.column = column;
+    this.source = source;
+    this.name = null;
+  }
+}
+
+
+
+
+
+
+
+
+
 const PRE_ARRAY_LITERAL_TOKENS = new Set([
   "typeof",
   "void",
@@ -752,7 +819,7 @@ export function prettyFast(input, options) {
   let indentLevel = 0;
 
   
-  const result = new SourceNode();
+  const rootNode = new RootSourceNode();
 
   
 
@@ -791,8 +858,8 @@ export function prettyFast(input, options) {
         for (let i = 0, len = buffer.length; i < len; i++) {
           lineStr += buffer[i];
         }
-        result.add(
-          new SourceNode(bufferLine, bufferColumn, options.url, lineStr)
+        rootNode.add(
+          new LeafSourceNode(bufferLine, bufferColumn, options.url, lineStr)
         );
         buffer.splice(0, buffer.length);
         bufferLine = -1;
@@ -962,7 +1029,7 @@ export function prettyFast(input, options) {
     lastToken.isArrayLiteral = token.isArrayLiteral;
   }
 
-  return result.toStringWithSourceMap({ file: options.url });
+  return rootNode.toStringWithSourceMap({ file: options.url });
 }
 
 
