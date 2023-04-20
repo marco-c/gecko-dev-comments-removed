@@ -3635,8 +3635,9 @@ bool BrowsingContext::ShouldAddEntryForRefresh(nsIURI* aPreviousURI,
 
 void BrowsingContext::SessionHistoryCommit(
     const LoadingSessionHistoryInfo& aInfo, uint32_t aLoadType,
-    nsIURI* aPreviousURI, bool aHadActiveEntry, bool aPersist,
-    bool aCloneEntryChildren, bool aChannelExpired, uint32_t aCacheKey) {
+    nsIURI* aPreviousURI, SessionHistoryInfo* aPreviousActiveEntry,
+    bool aPersist, bool aCloneEntryChildren, bool aChannelExpired,
+    uint32_t aCacheKey) {
   nsID changeID = {};
   if (XRE_IsContentProcess()) {
     RefPtr<ChildSHistory> rootSH = Top()->GetChildSessionHistory();
@@ -3650,9 +3651,17 @@ void BrowsingContext::SessionHistoryCommit(
         
         
         
+        
+        
+        
+        
+        
+        
         if (!LOAD_TYPE_HAS_FLAGS(
                 aLoadType, nsIWebNavigation::LOAD_FLAGS_REPLACE_HISTORY) &&
-            (IsTop() || aHadActiveEntry) &&
+            (IsTop()
+                 ? (!aPreviousActiveEntry || aPreviousActiveEntry->GetPersist())
+                 : !!aPreviousActiveEntry) &&
             ShouldUpdateSessionHistory(aLoadType) &&
             (!LOAD_TYPE_HAS_FLAGS(aLoadType,
                                   nsIWebNavigation::LOAD_FLAGS_IS_REFRESH) ||
