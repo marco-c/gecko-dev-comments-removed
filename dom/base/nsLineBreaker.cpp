@@ -13,12 +13,14 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/intl/LineBreaker.h"  
 #include "mozilla/intl/Locale.h"
+#include "mozilla/intl/UnicodeProperties.h"
 
 using mozilla::AutoRestore;
 using mozilla::intl::LineBreaker;
 using mozilla::intl::LineBreakRule;
 using mozilla::intl::Locale;
 using mozilla::intl::LocaleParser;
+using mozilla::intl::UnicodeProperties;
 using mozilla::intl::WordBreakRule;
 
 nsLineBreaker::nsLineBreaker()
@@ -40,25 +42,50 @@ nsLineBreaker::~nsLineBreaker() {
 static void SetupCapitalization(const char16_t* aWord, uint32_t aLength,
                                 bool* aCapitalization) {
   
-  
-  
+  using mozilla::intl::GeneralCategory;
   bool capitalizeNextChar = true;
   for (uint32_t i = 0; i < aLength; ++i) {
     uint32_t ch = aWord[i];
-    if (capitalizeNextChar) {
-      if (i + 1 < aLength && NS_IS_SURROGATE_PAIR(ch, aWord[i + 1])) {
-        ch = SURROGATE_TO_UCS4(ch, aWord[i + 1]);
-      }
-      if (nsContentUtils::IsAlphanumeric(ch)) {
-        aCapitalization[i] = true;
-        capitalizeNextChar = false;
-      }
-      if (!IS_IN_BMP(ch)) {
-        ++i;
-      }
+    if (i + 1 < aLength && NS_IS_SURROGATE_PAIR(ch, aWord[i + 1])) {
+      ch = SURROGATE_TO_UCS4(ch, aWord[i + 1]);
     }
-    if (ch == 0xA0 ) {
-      capitalizeNextChar = true;
+    auto category = UnicodeProperties::CharType(ch);
+    switch (category) {
+      case GeneralCategory::Uppercase_Letter:
+      case GeneralCategory::Lowercase_Letter:
+      case GeneralCategory::Titlecase_Letter:
+      case GeneralCategory::Modifier_Letter:
+      case GeneralCategory::Other_Letter:
+      case GeneralCategory::Decimal_Number:
+      case GeneralCategory::Letter_Number:
+      case GeneralCategory::Other_Number:
+        if (capitalizeNextChar) {
+          aCapitalization[i] = true;
+          capitalizeNextChar = false;
+        }
+        break;
+      case GeneralCategory::Space_Separator:
+      case GeneralCategory::Line_Separator:
+      case GeneralCategory::Paragraph_Separator:
+      case GeneralCategory::Dash_Punctuation:
+      case GeneralCategory::Other_Punctuation:
+      case GeneralCategory::Initial_Punctuation:
+      case GeneralCategory::Final_Punctuation:
+        
+
+
+
+
+
+
+
+        capitalizeNextChar = true;
+        break;
+      default:
+        break;
+    }
+    if (!IS_IN_BMP(ch)) {
+      ++i;
     }
   }
 }
