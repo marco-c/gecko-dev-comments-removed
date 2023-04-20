@@ -14,6 +14,7 @@
 #include "nsIAnonymousContentCreator.h"
 #include "nsIDOMEventListener.h"
 #include "nsCOMPtr.h"
+#include "nsTArray.h"
 
 class nsDisplayRangeFocusRing;
 
@@ -21,6 +22,7 @@ namespace mozilla {
 class PresShell;
 namespace dom {
 class Event;
+class HTMLInputElement;
 }  
 }  
 
@@ -124,6 +126,14 @@ class nsRangeFrame final : public nsContainerFrame,
   
 
 
+
+
+
+  double GetDoubleAsFractionOfRange(const mozilla::Decimal& value);
+
+  
+
+
   bool ShouldUseNativeStyle() const;
 
   mozilla::Decimal GetValueAtEventPoint(mozilla::WidgetGUIEvent* aEvent);
@@ -136,6 +146,11 @@ class nsRangeFrame final : public nsContainerFrame,
 
 
   void UpdateForValueChange();
+
+  nsTArray<double> TickMarks();
+
+ protected:
+  mozilla::dom::HTMLInputElement& InputElement() const;
 
  private:
   
