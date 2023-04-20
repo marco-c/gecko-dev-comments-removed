@@ -9,10 +9,7 @@
 
 #include "mozilla/dom/quota/IPCStreamCipherStrategy.h"
 #include "mozilla/DataMutex.h"
-#include "nsHashKeys.h"
 #include "nsTHashMap.h"
-#include "nsTHashSet.h"
-#include "mozilla/Mutex.h"
 
 namespace mozilla::dom::indexedDB {
 
@@ -37,33 +34,16 @@ class IndexedDBCipherKeyManager {
   using PrivateBrowsingInfoHashtable =
       nsTHashMap<nsCStringHashKey, nsTHashMap<nsCStringHashKey, CipherKey>>;
 
-  IndexedDBCipherKeyManager() : mMutex("IndexedDBCipherKeyManager"){};
-
-  Maybe<CipherKey> Get(const nsACString& aStorageId,
-                       const nsAString& aDatabaseName,
-                       const nsACString& keyStoreId = "default"_ns);
-
-  CipherKey Ensure(const nsACString& aStorageId, const nsAString& aDatabaseName,
-                   const nsACString& keyStoreId = "default"_ns);
-
-  bool RemoveKey(const nsACString& aStorageId, const nsAString& aDatabaseName);
-
-  bool RemoveAllKeysWithStorageId(const nsACString& aStorageId);
-  uint32_t Count();
+  IndexedDBCipherKeyManager()
+      : mPrivateBrowsingInfoHashTable("IndexedDBCipherKeyManager"){};
+  Maybe<CipherKey> Get(const nsCString& aDatabaseID,
+                       const nsCString& keyStoreID = "default"_ns);
+  CipherKey Ensure(const nsCString& aDatabaseID,
+                   const nsCString& keyStoreID = "default"_ns);
+  bool Remove(const nsCString& aDatabaseID);
 
  private:
-  mozilla::Mutex mMutex;
-  PrivateBrowsingInfoHashtable mPrivateBrowsingInfoHashTable;
-
-  
-  
-  
-  
-  
-  nsTHashMap<nsCStringHashKey, nsTHashSet<nsCString>> mStorageIdAndKeyIdHashMap;
-
-  nsCString GenerateKeyId(const nsACString& aStorageId,
-                          const nsAString& aDatabaseName);
+  DataMutex<PrivateBrowsingInfoHashtable> mPrivateBrowsingInfoHashTable;
 };
 
 }  
