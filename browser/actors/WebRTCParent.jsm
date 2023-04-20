@@ -854,7 +854,7 @@ function prompt(aActor, aBrowser, aRequest) {
         );
         menupopup.appendChild(doc.createXULElement("menuseparator"));
 
-        let isPipeWire = false;
+        let isPipeWireDetected = false;
 
         
         let monitorIndex = 1;
@@ -869,7 +869,7 @@ function prompt(aActor, aBrowser, aRequest) {
             
             
 
-            isPipeWire = true;
+            isPipeWireDetected = true;
             let item = addDeviceToList(
               menupopup,
               localization.formatValueSync("webrtc-share-pipe-wire-portal"),
@@ -882,8 +882,7 @@ function prompt(aActor, aBrowser, aRequest) {
             
             
             menupopup.parentNode.selectedItem = item;
-            menupopup.parentNode.disabled = true;
-            break;
+            continue;
           } else if (type == "screen") {
             
             if (device.name == "Primary Monitor") {
@@ -983,7 +982,9 @@ function prompt(aActor, aBrowser, aRequest) {
             perms.EXPIRE_SESSION
           );
 
-          if (!isPipeWire) {
+          
+          
+          if (!isPipeWireDetected || mediaSource == "browser") {
             video.deviceId = deviceId;
             let constraints = {
               video: { mediaSource, deviceId: { exact: deviceId } },
