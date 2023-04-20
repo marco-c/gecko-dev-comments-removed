@@ -3231,6 +3231,12 @@ class DirectoryInstaller {
   cleanStagingDir(aLeafNames = []) {
     let dir = this.getStagingDir();
 
+    
+    
+    if (!dir) {
+      return;
+    }
+
     for (let name of aLeafNames) {
       let file = getFile(name, dir);
       recursiveRemove(file);
