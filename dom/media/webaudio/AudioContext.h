@@ -421,6 +421,7 @@ class AudioContext final : public DOMEventTargetHelper,
   
   uint32_t mNumberOfChannels;
   const RTPCallerType mRTPCallerType;
+  const bool mShouldResistFingerprinting;
   const bool mIsOffline;
   
   bool mIsStarted;
