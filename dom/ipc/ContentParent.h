@@ -362,6 +362,9 @@ class ContentParent final : public PContentParent,
                                       StructuredCloneData& aData) override;
 
   
+  void NotifyTabWillDestroy();
+
+  
   void NotifyTabDestroying();
 
   
@@ -791,7 +794,9 @@ class ContentParent final : public PContentParent,
 
 
 
-  bool TryToRecycle();
+
+
+  bool TryToRecycleE10SOnly();
 
   
 
@@ -799,7 +804,9 @@ class ContentParent final : public PContentParent,
 
 
 
-  void StopRecycling(bool aForeground = true);
+
+
+  void StopRecyclingE10SOnly(bool aForeground = true);
 
   
 
@@ -830,6 +837,8 @@ class ContentParent final : public PContentParent,
 
 
   void SignalImpendingShutdownToContentJS();
+
+  bool CheckTabDestroyWillKeepAlive(uint32_t aExpectedBrowserCount);
 
   
 

@@ -934,7 +934,7 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
                (unsigned int)retval->ChildID(),
                PromiseFlatCString(aRemoteType).get()));
       retval->AssertAlive();
-      retval->StopRecycling();
+      retval->StopRecyclingE10SOnly();
       return retval.forget();
     }
   } else {
@@ -948,7 +948,7 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
                random.get(), (unsigned int)random->ChildID(),
                PromiseFlatCString(aRemoteType).get()));
       random->AssertAlive();
-      random->StopRecycling();
+      random->StopRecyclingE10SOnly();
       return random.forget();
     }
   }
@@ -959,8 +959,7 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
     RefPtr<ContentParent> recycled = sRecycledE10SProcess;
     MOZ_DIAGNOSTIC_ASSERT(recycled->GetRemoteType() == DEFAULT_REMOTE_TYPE);
     recycled->AssertAlive();
-    recycled->StopRecycling();
-
+    recycled->StopRecyclingE10SOnly();
     if (profiler_thread_is_being_profiled_for_markers()) {
       nsPrintfCString marker("Recycled process %u (%p)",
                              (unsigned int)recycled->ChildID(), recycled.get());
@@ -1052,7 +1051,7 @@ ContentParent::GetNewOrUsedLaunchingBrowserProcess(
               ("GetNewOrUsedProcess: Existing host process %p (launching %d)",
                contentParent.get(), contentParent->IsLaunching()));
       contentParent->AssertAlive();
-      contentParent->StopRecycling();
+      contentParent->StopRecyclingE10SOnly();
       return contentParent.forget();
     }
   }
@@ -1094,7 +1093,7 @@ ContentParent::GetNewOrUsedLaunchingBrowserProcess(
   
 
   contentParent->AssertAlive();
-  contentParent->StopRecycling();
+  contentParent->StopRecyclingE10SOnly();
   if (aGroup) {
     aGroup->EnsureHostProcess(contentParent);
   }
@@ -1717,6 +1716,30 @@ void ContentParent::Init() {
   Unused << SendInitNextGenLocalStorageEnabled(NextGenLocalStorageEnabled());
 }
 
+
+
+
+bool ContentParent::CheckTabDestroyWillKeepAlive(
+    uint32_t aExpectedBrowserCount) {
+  return ManagedPBrowserParent().Count() != aExpectedBrowserCount ||
+         ShouldKeepProcessAlive();
+}
+
+void ContentParent::NotifyTabWillDestroy() {
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed) ||
+      (
+       mozilla::FissionAutostart() &&
+       !CheckTabDestroyWillKeepAlive(mNumDestroyingTabs + 1))) {
+    
+    
+    
+    
+    
+    
+    NotifyImpendingShutdown();
+  }
+}
+
 void ContentParent::MaybeBeginShutDown(uint32_t aExpectedBrowserCount,
                                        bool aSendShutDown) {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
@@ -1724,8 +1747,11 @@ void ContentParent::MaybeBeginShutDown(uint32_t aExpectedBrowserCount,
            ManagedPBrowserParent().Count(), aExpectedBrowserCount));
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (ManagedPBrowserParent().Count() != aExpectedBrowserCount ||
-      ShouldKeepProcessAlive() || TryToRecycle()) {
+  
+  
+  
+  if (CheckTabDestroyWillKeepAlive(aExpectedBrowserCount) ||
+      TryToRecycleE10SOnly()) {
     return;
   }
 
@@ -1975,7 +2001,7 @@ void ContentParent::RemoveFromList() {
     group->RemoveHostProcess(this);
   }
 
-  StopRecycling( false);
+  StopRecyclingE10SOnly( false);
 
   if (sBrowserContentParents) {
     if (auto entry = sBrowserContentParents->Lookup(mRemoteType)) {
@@ -2218,7 +2244,7 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
 
 void ContentParent::ActorDealloc() { mSelfRef = nullptr; }
 
-bool ContentParent::TryToRecycle() {
+bool ContentParent::TryToRecycleE10SOnly() {
   
   
   
@@ -2249,7 +2275,7 @@ bool ContentParent::TryToRecycle() {
     
     
     
-    StopRecycling( false);
+    StopRecyclingE10SOnly( false);
     return false;
   }
 
@@ -2276,7 +2302,7 @@ bool ContentParent::TryToRecycle() {
   return false;
 }
 
-void ContentParent::StopRecycling(bool aForeground) {
+void ContentParent::StopRecyclingE10SOnly(bool aForeground) {
   if (sRecycledE10SProcess != this) {
     return;
   }
@@ -2318,6 +2344,11 @@ bool ContentParent::ShouldKeepProcessAlive() {
 
   
   if (IsDead()) {
+    return false;
+  }
+
+  
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
     return false;
   }
 
