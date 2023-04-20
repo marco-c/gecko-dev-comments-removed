@@ -103,6 +103,8 @@
 
 
 
+
+
 pub use unic_langid_impl::*;
 
 #[cfg(feature = "unic-langid-macros")]
@@ -112,12 +114,23 @@ pub use unic_langid_macros::{lang, langid, region, script, variant};
 #[macro_export]
 macro_rules! langids {
     ( $($langid:expr),* ) => {
-        {
-            let mut v = vec![];
-            $(
-                v.push(langid!($langid));
-            )*
-            v
-        }
+        vec![$(
+            $crate::langid!($langid),
+        )*]
+    };
+    ( $($langid:expr,)* ) => {
+        $crate::langids![$($langid),*]
+    };
+}
+#[cfg(feature = "unic-langid-macros")]
+#[macro_export]
+macro_rules! langid_slice {
+    ( $($langid:expr),* ) => {
+        &[$(
+            $crate::langid!($langid),
+        )*]
+    };
+    ( $($langid:expr,)* ) => {
+        $crate::langid_slice![$($langid),*]
     };
 }
