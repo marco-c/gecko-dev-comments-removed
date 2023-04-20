@@ -1304,7 +1304,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "TreeWalker", insecureContext: true },
   
-  { name: "U2F", insecureContext: false, android: false },
+  { name: "U2F", insecureContext: false, disabled: true },
   
   { name: "UIEvent", insecureContext: true },
   
@@ -1854,7 +1854,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "top", insecureContext: true },
   
-  { name: "u2f", insecureContext: false, android: false },
+  { name: "u2f", insecureContext: false, disabled: true },
   
   { name: "updateCommands", insecureContext: true },
   
