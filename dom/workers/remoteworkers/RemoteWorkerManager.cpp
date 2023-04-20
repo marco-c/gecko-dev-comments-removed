@@ -639,7 +639,9 @@ void RemoteWorkerManager::LaunchNewContentProcess(
 
   nsCOMPtr<nsISerialEventTarget> bgEventTarget = GetCurrentSerialEventTarget();
 
-  using CallbackParamType = ContentParent::LaunchPromise::ResolveOrRejectValue;
+  using LaunchPromiseType = ContentParent::LaunchPromise;
+  using LaunchErrorType = ContentParent::LaunchError;
+  using CallbackParamType = LaunchPromiseType::ResolveOrRejectValue;
 
   
   
@@ -693,28 +695,38 @@ void RemoteWorkerManager::LaunchNewContentProcess(
         auto remoteType =
             workerRemoteType.IsEmpty() ? DEFAULT_REMOTE_TYPE : workerRemoteType;
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        ContentParent::GetNewOrUsedBrowserProcessAsync(
-             remoteType,
-             nullptr,
-            hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
-             true)
-            ->Then(GetCurrentSerialEventTarget(), __func__,
-                   [callback = std::move(callback),
-                    remoteType](const CallbackParamType& aValue) mutable {
-                     callback(aValue, remoteType);
-                   });
+        RefPtr<LaunchPromiseType> onFinished;
+        if (!AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          onFinished = ContentParent::GetNewOrUsedBrowserProcessAsync(
+               remoteType,
+               nullptr,
+              hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
+               true);
+        } else {
+          
+          
+          
+          onFinished =
+              LaunchPromiseType::CreateAndReject(LaunchErrorType(), __func__);
+        }
+        onFinished->Then(GetCurrentSerialEventTarget(), __func__,
+                         [callback = std::move(callback),
+                          remoteType](const CallbackParamType& aValue) mutable {
+                           callback(aValue, remoteType);
+                         });
       });
 
   SchedulerGroup::Dispatch(TaskCategory::Other, r.forget());
