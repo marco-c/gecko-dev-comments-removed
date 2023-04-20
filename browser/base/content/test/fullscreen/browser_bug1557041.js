@@ -3,10 +3,6 @@
 
 "use strict";
 
-const { BrowserTestUtils } = ChromeUtils.import(
-  "resource://testing-common/BrowserTestUtils.jsm"
-);
-
 
 
 

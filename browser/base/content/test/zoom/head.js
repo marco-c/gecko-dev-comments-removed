@@ -1,10 +1,6 @@
 
 
 
-const { BrowserTestUtils } = ChromeUtils.import(
-  "resource://testing-common/BrowserTestUtils.jsm"
-);
-
 let gContentPrefs = Cc["@mozilla.org/content-pref/service;1"].getService(
   Ci.nsIContentPrefService2
 );

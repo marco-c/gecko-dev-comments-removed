@@ -11,8 +11,8 @@ const { UnsubmittedCrashHandler } = ChromeUtils.import(
 const { FileUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/FileUtils.sys.mjs"
 );
-const { makeFakeAppDir } = ChromeUtils.import(
-  "resource://testing-common/AppData.jsm"
+const { makeFakeAppDir } = ChromeUtils.importESModule(
+  "resource://testing-common/AppData.sys.mjs"
 );
 const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 

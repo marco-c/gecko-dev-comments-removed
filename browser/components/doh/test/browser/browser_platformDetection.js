@@ -13,8 +13,8 @@ add_task(setup);
 add_task(async function testPlatformIndications() {
   
 
-  let { MockRegistrar } = ChromeUtils.import(
-    "resource://testing-common/MockRegistrar.jsm"
+  let { MockRegistrar } = ChromeUtils.importESModule(
+    "resource://testing-common/MockRegistrar.sys.mjs"
   );
 
   let mockedLinkService = {

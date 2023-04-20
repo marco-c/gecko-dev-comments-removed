@@ -1,7 +1,3 @@
-const { TestUtils } = ChromeUtils.import(
-  "resource://testing-common/TestUtils.jsm"
-);
-
 add_task(async function initialState() {
   
   const prefTests = [
