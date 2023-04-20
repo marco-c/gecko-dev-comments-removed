@@ -36,7 +36,7 @@ class MFTManager {
   
   virtual HRESULT Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutput) = 0;
 
-  void Flush() {
+  virtual void Flush() {
     mDecoder->Flush();
     mSeekTargetThreshold.reset();
   }
