@@ -29,9 +29,9 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
   
   
   
-  if (decorators->empty()) {
-    return true;
-  }
+  
+  MOZ_ASSERT(!decorators->empty());
+
   
   
   
@@ -41,111 +41,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
       return false;
     }
 
-    
-    CallOrNewEmitter cone(bce_, JSOp::Call,
-                          CallOrNewEmitter::ArgumentsKind::Other,
-                          ValueUsage::WantValue);
-
-    
-    if (decorator->is<NameNode>()) {
-      if (!cone.emitNameCallee(decorator->as<NameNode>().name())) {
-        
-        return false;
-      }
-    } else if (decorator->is<ListNode>()) {
-      
-      
-      PropOpEmitter& poe = cone.prepareForPropCallee(false);
-      if (!poe.prepareForObj()) {
-        return false;
-      }
-
-      ListNode* ln = &decorator->as<ListNode>();
-      bool first = true;
-      for (ParseNode* node : ln->contentsTo(ln->last())) {
-        
-        
-        MOZ_ASSERT(node->is<NameNode>());
-
-        if (first) {
-          NameNode* obj = &node->as<NameNode>();
-          if (!bce_->emitGetName(obj)) {
-            return false;
-          }
-          first = false;
-        } else {
-          NameNode* prop = &node->as<NameNode>();
-          GCThingIndex propAtomIndex;
-
-          if (!bce_->makeAtomIndex(prop->atom(), ParserAtom::Atomize::Yes,
-                                   &propAtomIndex)) {
-            return false;
-          }
-
-          if (!bce_->emitAtomOp(JSOp::GetProp, propAtomIndex)) {
-            return false;
-          }
-        }
-      }
-
-      NameNode* prop = &ln->last()->as<NameNode>();
-      if (!poe.emitGet(prop->atom())) {
-        return false;
-      }
-    } else {
-      
-      
-      if (!cone.prepareForFunctionCallee()) {
-        return false;
-      }
-
-      if (!bce_->emitTree(decorator)) {
-        return false;
-      }
-    }
-
-    if (!cone.emitThis()) {
-      
-      return false;
-    }
-
-    if (!cone.prepareForNonSpreadArguments()) {
-      return false;
-    }
-
-    
-    
-    if (kind == Kind::Method) {
-      
-      
-      if (!bce_->emitDupAt(2)) {
-        
-        return false;
-      }
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!emitCreateDecoratorContextObject(kind, key, isStatic,
-                                          decorator->pn_pos)) {
-      
-      
-      return false;
-    }
-
-    
-    
-    if (!cone.emitEnd(2, decorator->pn_pos.begin)) {
-      
+    if (!emitCallDecorator(kind, key, isStatic, decorator)) {
       return false;
     }
 
@@ -182,15 +78,8 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
     if (!ie.emitIf(mozilla::Nothing())) {
       return false;
     }
-    if (!bce_->emit1(JSOp::Dup)) {
-      
-      return false;
-    }
-    if (!bce_->emit1(JSOp::Undefined)) {
-      
-      return false;
-    }
-    if (!bce_->emit1(JSOp::Eq)) {
+
+    if (!emitCheckIsUndefined()) {
       
       return false;
     }
@@ -199,6 +88,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
       
       return false;
     }
+
     
     
     if (!bce_->emitPopN(1)) {
@@ -209,21 +99,9 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
     if (!ie.emitElseIf(mozilla::Nothing())) {
       return false;
     }
+
     
-    if (!bce_->emitAtomOp(JSOp::GetIntrinsic,
-                          TaggedParserAtomIndex::WellKnown::IsCallable())) {
-      
-      return false;
-    }
-    if (!bce_->emit1(JSOp::Undefined)) {
-      
-      return false;
-    }
-    if (!bce_->emitDupAt(2)) {
-      
-      return false;
-    }
-    if (!bce_->emitCall(JSOp::Call, 1)) {
+    if (!emitCheckIsCallable()) {
       
       return false;
     }
@@ -249,7 +127,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
     if (!ie.emitElse()) {
       return false;
     }
-    
+
     if (!bce_->emitPopN(1)) {
       
       return false;
@@ -278,6 +156,117 @@ bool DecoratorEmitter::emitUpdateDecorationState() {
   return true;
 }
 
+[[nodiscard]] bool DecoratorEmitter::emitCallDecorator(Kind kind,
+                                                       ParseNode* key,
+                                                       bool isStatic,
+                                                       ParseNode* decorator) {
+  
+  CallOrNewEmitter cone(bce_, JSOp::Call,
+                        CallOrNewEmitter::ArgumentsKind::Other,
+                        ValueUsage::WantValue);
+
+  
+  if (decorator->is<NameNode>()) {
+    if (!cone.emitNameCallee(decorator->as<NameNode>().name())) {
+      
+      return false;
+    }
+  } else if (decorator->is<ListNode>()) {
+    
+    
+    PropOpEmitter& poe = cone.prepareForPropCallee(false);
+    if (!poe.prepareForObj()) {
+      return false;
+    }
+
+    ListNode* ln = &decorator->as<ListNode>();
+    bool first = true;
+    for (ParseNode* node : ln->contentsTo(ln->last())) {
+      
+      
+      MOZ_ASSERT(node->is<NameNode>());
+
+      if (first) {
+        NameNode* obj = &node->as<NameNode>();
+        if (!bce_->emitGetName(obj)) {
+          return false;
+        }
+        first = false;
+      } else {
+        NameNode* prop = &node->as<NameNode>();
+        GCThingIndex propAtomIndex;
+
+        if (!bce_->makeAtomIndex(prop->atom(), ParserAtom::Atomize::Yes,
+                                 &propAtomIndex)) {
+          return false;
+        }
+
+        if (!bce_->emitAtomOp(JSOp::GetProp, propAtomIndex)) {
+          return false;
+        }
+      }
+    }
+
+    NameNode* prop = &ln->last()->as<NameNode>();
+    if (!poe.emitGet(prop->atom())) {
+      return false;
+    }
+  } else {
+    
+    
+    if (!cone.prepareForFunctionCallee()) {
+      return false;
+    }
+
+    if (!bce_->emitTree(decorator)) {
+      return false;
+    }
+  }
+
+  if (!cone.emitThis()) {
+    
+    return false;
+  }
+
+  if (!cone.prepareForNonSpreadArguments()) {
+    return false;
+  }
+
+  
+  
+  if (kind == Kind::Method) {
+    
+    
+    if (!bce_->emitDupAt(2)) {
+      
+      return false;
+    }
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!emitCreateDecoratorContextObject(kind, key, isStatic,
+                                        decorator->pn_pos)) {
+    
+    
+    return false;
+  }
+
+  
+  
+  return cone.emitEnd(2, decorator->pn_pos.begin);
+  
+}
+
 bool DecoratorEmitter::emitCreateDecoratorAccessObject() {
   
   ObjectEmitter oe(bce_);
@@ -285,6 +274,43 @@ bool DecoratorEmitter::emitCreateDecoratorAccessObject() {
     return false;
   }
   return oe.emitEnd();
+}
+
+bool DecoratorEmitter::emitCheckIsUndefined() {
+  
+  
+  
+  if (!bce_->emit1(JSOp::Dup)) {
+    
+    return false;
+  }
+  if (!bce_->emit1(JSOp::Undefined)) {
+    
+    return false;
+  }
+  return bce_->emit1(JSOp::Eq);
+  
+}
+
+bool DecoratorEmitter::emitCheckIsCallable() {
+  
+  
+  
+  if (!bce_->emitAtomOp(JSOp::GetIntrinsic,
+                        TaggedParserAtomIndex::WellKnown::IsCallable())) {
+    
+    return false;
+  }
+  if (!bce_->emit1(JSOp::Undefined)) {
+    
+    return false;
+  }
+  if (!bce_->emitDupAt(2)) {
+    
+    return false;
+  }
+  return bce_->emitCall(JSOp::Call, 1);
+  
 }
 
 bool DecoratorEmitter::emitCreateAddInitializerFunction() {
