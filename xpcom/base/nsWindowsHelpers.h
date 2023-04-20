@@ -328,6 +328,15 @@ struct FreeSidDeleter {
 
 typedef mozilla::UniquePtr<void, FreeSidDeleter> UniqueSidPtr;
 
+struct CloseHandleDeleter {
+  typedef HANDLE pointer;
+  void operator()(pointer aHandle) {
+    if (aHandle != INVALID_HANDLE_VALUE) {
+      ::CloseHandle(aHandle);
+    }
+  }
+};
+
 
 
 
