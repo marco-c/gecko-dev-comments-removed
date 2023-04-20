@@ -13,7 +13,6 @@
 #include "nsIDOMWindow.h"
 #include "nsIDOMChromeWindow.h"
 #include "nsIBrowserDOMWindow.h"
-#include "nsIEmbeddingSiteWindow.h"
 #include "nsIOpenWindowInfo.h"
 #include "nsIPrompt.h"
 #include "nsIAuthPrompt.h"
@@ -48,37 +47,8 @@ using namespace mozilla;
 
 
 
-class nsSiteWindow : public nsIEmbeddingSiteWindow {
-  
-  
-  
-  
-  
-  
-  friend class nsContentTreeOwner;
-
- public:
-  explicit nsSiteWindow(nsContentTreeOwner* aAggregator);
-
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_NSIEMBEDDINGSITEWINDOW
-
- private:
-  virtual ~nsSiteWindow();
-  nsContentTreeOwner* mAggregator;
-};
-
-
-
-
-
 nsContentTreeOwner::nsContentTreeOwner(bool fPrimary)
-    : mAppWindow(nullptr), mPrimary(fPrimary) {
-  
-  mSiteWindow = new nsSiteWindow(this);
-}
-
-nsContentTreeOwner::~nsContentTreeOwner() { delete mSiteWindow; }
+    : mAppWindow(nullptr), mPrimary(fPrimary) {}
 
 
 
@@ -94,15 +64,6 @@ NS_INTERFACE_MAP_BEGIN(nsContentTreeOwner)
   NS_INTERFACE_MAP_ENTRY(nsIWebBrowserChrome)
   NS_INTERFACE_MAP_ENTRY(nsIInterfaceRequestor)
   NS_INTERFACE_MAP_ENTRY(nsIWindowProvider)
-  
-  
-  
-  
-  
-  
-  
-  
-  NS_INTERFACE_MAP_ENTRY_AGGREGATED(nsIEmbeddingSiteWindow, mSiteWindow)
 NS_INTERFACE_MAP_END
 
 
@@ -112,7 +73,7 @@ NS_INTERFACE_MAP_END
 NS_IMETHODIMP nsContentTreeOwner::GetInterface(const nsIID& aIID,
                                                void** aSink) {
   NS_ENSURE_ARG_POINTER(aSink);
-  *aSink = 0;
+  *aSink = nullptr;
 
   if (aIID.Equals(NS_GET_IID(nsIPrompt))) {
     NS_ENSURE_STATE(mAppWindow);
@@ -447,6 +408,27 @@ NS_IMETHODIMP nsContentTreeOwner::GetPositionAndSize(int32_t* aX, int32_t* aY,
   return mAppWindow->GetPositionAndSize(aX, aY, aCX, aCY);
 }
 
+NS_IMETHODIMP
+nsContentTreeOwner::SetDimensions(DimensionRequest&& aRequest) {
+  MOZ_TRY(aRequest.SupplementFrom(this));
+  if (aRequest.mDimensionKind == DimensionKind::Outer) {
+    return aRequest.ApplyOuterTo(this);
+  }
+  return aRequest.ApplyInnerTo(this,  false);
+}
+
+NS_IMETHODIMP
+nsContentTreeOwner::GetDimensions(DimensionKind aDimensionKind, int32_t* aX,
+                                  int32_t* aY, int32_t* aCX, int32_t* aCY) {
+  if (aDimensionKind == DimensionKind::Outer) {
+    return GetPositionAndSize(aX, aY, aCX, aCY);
+  }
+  if (aY || aX) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+  return GetPrimaryContentSize(aCX, aCY);
+}
+
 NS_IMETHODIMP nsContentTreeOwner::Repaint(bool aForce) {
   NS_ENSURE_STATE(mAppWindow);
   return mAppWindow->Repaint(aForce);
@@ -613,54 +595,21 @@ mozilla::AppWindow* nsContentTreeOwner::AppWindow() { return mAppWindow; }
 
 
 
-
-
-nsSiteWindow::nsSiteWindow(nsContentTreeOwner* aAggregator) {
-  mAggregator = aAggregator;
-}
-
-nsSiteWindow::~nsSiteWindow() {}
-
-NS_IMPL_ADDREF_USING_AGGREGATOR(nsSiteWindow, mAggregator)
-NS_IMPL_RELEASE_USING_AGGREGATOR(nsSiteWindow, mAggregator)
-
-NS_INTERFACE_MAP_BEGIN(nsSiteWindow)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-  NS_INTERFACE_MAP_ENTRY(nsIEmbeddingSiteWindow)
-NS_INTERFACE_MAP_END_AGGREGATED(mAggregator)
-
 NS_IMETHODIMP
-nsSiteWindow::SetDimensions(uint32_t aFlags, int32_t aX, int32_t aY,
-                            int32_t aCX, int32_t aCY) {
-  
-  return mAggregator->SetPositionAndSize(aX, aY, aCX, aCY,
-                                         nsIBaseWindow::eRepaint);
-}
-
-NS_IMETHODIMP
-nsSiteWindow::GetDimensions(uint32_t aFlags, int32_t* aX, int32_t* aY,
-                            int32_t* aCX, int32_t* aCY) {
-  
-  return mAggregator->GetPositionAndSize(aX, aY, aCX, aCY);
-}
-
-
-
-NS_IMETHODIMP
-nsSiteWindow::Blur(void) {
+nsContentTreeOwner::Blur() {
   NS_DEFINE_CID(kWindowMediatorCID, NS_WINDOWMEDIATOR_CID);
 
   nsCOMPtr<nsISimpleEnumerator> windowEnumerator;
   nsCOMPtr<nsIAppWindow> appWindow;
   bool more, foundUs;
-  AppWindow* ourWindow = mAggregator->AppWindow();
 
   {
     nsCOMPtr<nsIWindowMediator> windowMediator(
         do_GetService(kWindowMediatorCID));
-    if (windowMediator)
+    if (windowMediator) {
       windowMediator->GetZOrderAppWindowEnumerator(
-          0, true, getter_AddRefs(windowEnumerator));
+          nullptr, true, getter_AddRefs(windowEnumerator));
+    }
   }
 
   if (!windowEnumerator) return NS_ERROR_FAILURE;
@@ -685,7 +634,9 @@ nsSiteWindow::Blur(void) {
     if (!appWindow) appWindow = nextAppWindow;
 
     
-    if (nextAppWindow == ourWindow) foundUs = true;
+    if (nextAppWindow == mAppWindow) {
+      foundUs = true;
+    }
 
     windowEnumerator->HasMoreElements(&more);
   }
@@ -702,29 +653,4 @@ nsSiteWindow::Blur(void) {
     if (domWindow) domWindow->Focus(mozilla::dom::CallerType::System);
   }
   return NS_OK;
-}
-
-NS_IMETHODIMP
-nsSiteWindow::GetVisibility(bool* aVisibility) {
-  return mAggregator->GetVisibility(aVisibility);
-}
-
-NS_IMETHODIMP
-nsSiteWindow::SetVisibility(bool aVisibility) {
-  return mAggregator->SetVisibility(aVisibility);
-}
-
-NS_IMETHODIMP
-nsSiteWindow::GetTitle(nsAString& aTitle) {
-  return mAggregator->GetTitle(aTitle);
-}
-
-NS_IMETHODIMP
-nsSiteWindow::SetTitle(const nsAString& aTitle) {
-  return mAggregator->SetTitle(aTitle);
-}
-
-NS_IMETHODIMP
-nsSiteWindow::GetSiteWindow(void** aSiteWindow) {
-  return mAggregator->GetParentNativeWindow(aSiteWindow);
 }

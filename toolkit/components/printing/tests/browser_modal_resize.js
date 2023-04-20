@@ -21,26 +21,28 @@ function closeEnough(actual, expected) {
 }
 
 async function resizeWindow(x, y) {
-  window.innerWidth = x;
-  window.innerHeight = y;
+  
+  if (window.innerWidth != x) {
+    let resizePromise = BrowserTestUtils.waitForEvent(window, "resize");
+    window.innerWidth = x;
+    await resizePromise;
+  }
+
+  if (window.innerHeight != y) {
+    let resizePromise = BrowserTestUtils.waitForEvent(window, "resize");
+    window.innerHeight = y;
+    await resizePromise;
+  }
 
   await waitForAnimationFrames();
 
-  await TestUtils.waitForCondition(
-    () => {
-      info(`window is ${window.innerWidth} x ${window.innerHeight}`);
-      if (
-        closeEnough(window.innerWidth, x) &&
-        closeEnough(window.innerHeight, y)
-      ) {
-        return true;
-      }
-      window.innerWidth = x;
-      window.innerHeight = y;
-      return false;
-    },
-    `Wait for ${x}x${y}`,
-    250
+  ok(
+    closeEnough(window.innerWidth, x),
+    `Window innerWidth ${window.innerWidth} is close enough to ${x}`
+  );
+  ok(
+    closeEnough(window.innerHeight, y),
+    `Window innerHeight ${window.innerHeight} is close enough to ${y}`
   );
 }
 
@@ -97,6 +99,33 @@ async function checkPreviewNavigationVisibility(expected) {
 }
 
 add_task(async function testResizing() {
+  if (window.windowState != window.STATE_NORMAL) {
+    todo_is(
+      window.windowState,
+      window.STATE_NORMAL,
+      "windowState should be STATE_NORMAL"
+    );
+    
+    
+    
+    
+    
+    
+    window.restore();
+    
+    
+    
+    await BrowserTestUtils.waitForCondition(async () => {
+      let width = window.screen.availWidth * 0.75;
+      let height = window.screen.availHeight * 0.75;
+      window.resizeTo(width, height);
+      return (
+        closeEnough(window.outerWidth, width) &&
+        closeEnough(window.outerHeight, height)
+      );
+    });
+  }
+
   await PrintHelper.withTestPage(async helper => {
     let { innerWidth, innerHeight } = window;
 
