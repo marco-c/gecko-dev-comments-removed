@@ -243,9 +243,6 @@ class Connection : public CandidatePairInterface {
   
   void PrintPingsSinceLastResponse(std::string* pings, size_t max);
 
-  bool reported() const;
-  void set_reported(bool reported);
-
   
   
   
@@ -436,7 +433,6 @@ class Connection : public CandidatePairInterface {
   absl::optional<int> unwritable_min_checks_ RTC_GUARDED_BY(network_thread_);
   absl::optional<int> inactive_timeout_ RTC_GUARDED_BY(network_thread_);
 
-  bool reported_ RTC_GUARDED_BY(network_thread_);
   IceCandidatePairState state_ RTC_GUARDED_BY(network_thread_);
   
   absl::optional<int> receiving_timeout_ RTC_GUARDED_BY(network_thread_);

@@ -39,7 +39,6 @@ struct ConnectionInfo {
   bool writable;             
   bool receiving;            
   bool timeout;              
-  bool new_connection;       
   size_t rtt;                
   size_t sent_discarded_bytes;  
                                 
