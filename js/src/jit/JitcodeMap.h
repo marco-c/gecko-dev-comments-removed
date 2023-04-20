@@ -12,6 +12,7 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
+#include "ds/AvlTree.h"         
 #include "jit/CompactBuffer.h"  
 #include "jit/shared/Assembler-shared.h"  
 #include "js/AllocPolicy.h"               
@@ -75,6 +76,18 @@ class JitCodeRange {
     MOZ_ASSERT(start < end);
   }
 
+  
+  static int compare(const JitCodeRange* r1, const JitCodeRange* r2) {
+    
+    if (r1->nativeEndAddr_ <= r2->nativeStartAddr_) {
+      return -1;
+    }
+    if (r1->nativeStartAddr_ >= r2->nativeEndAddr_) {
+      return 1;
+    }
+    return 0;
+  }
+
   void* nativeStartAddr() const { return nativeStartAddr_; }
   void* nativeEndAddr() const { return nativeEndAddr_; }
 
@@ -83,94 +96,11 @@ class JitCodeRange {
   }
 };
 
-class JitcodeSkiplistTower {
- public:
-  static const unsigned MAX_HEIGHT = 32;
-
- private:
-  uint8_t height_;
-  bool isFree_;
-  JitcodeGlobalEntry* ptrs_[1];
-
- public:
-  explicit JitcodeSkiplistTower(unsigned height)
-      : height_(height), isFree_(false) {
-    MOZ_ASSERT(height >= 1 && height <= MAX_HEIGHT);
-    clearPtrs();
-  }
-
-  unsigned height() const { return height_; }
-
-  JitcodeGlobalEntry* next(unsigned level) const {
-    MOZ_ASSERT(!isFree_);
-    MOZ_ASSERT(level < height());
-    return ptrs_[level];
-  }
-  void setNext(unsigned level, JitcodeGlobalEntry* entry) {
-    MOZ_ASSERT(!isFree_);
-    MOZ_ASSERT(level < height());
-    ptrs_[level] = entry;
-  }
-
-  
-  
-  
-  
-  
-  
-
-  void addToFreeList(JitcodeSkiplistTower** freeList) {
-    JitcodeSkiplistTower* nextFreeTower = *freeList;
-    MOZ_ASSERT_IF(nextFreeTower,
-                  nextFreeTower->isFree_ && nextFreeTower->height() == height_);
-    ptrs_[0] = (JitcodeGlobalEntry*)nextFreeTower;
-    isFree_ = true;
-    *freeList = this;
-  }
-
-  static JitcodeSkiplistTower* PopFromFreeList(
-      JitcodeSkiplistTower** freeList) {
-    if (!*freeList) {
-      return nullptr;
-    }
-
-    JitcodeSkiplistTower* tower = *freeList;
-    MOZ_ASSERT(tower->isFree_);
-    JitcodeSkiplistTower* nextFreeTower =
-        (JitcodeSkiplistTower*)tower->ptrs_[0];
-    tower->clearPtrs();
-    tower->isFree_ = false;
-    *freeList = nextFreeTower;
-    return tower;
-  }
-
-  static size_t CalculateSize(unsigned height) {
-    MOZ_ASSERT(height >= 1);
-    return sizeof(JitcodeSkiplistTower) +
-           (sizeof(JitcodeGlobalEntry*) * (height - 1));
-  }
-
- private:
-  void clearPtrs() {
-    for (unsigned i = 0; i < height_; i++) {
-      ptrs_[0] = nullptr;
-    }
-  }
-};
-
 class JitcodeGlobalEntry {
   friend class JitcodeGlobalTable;
 
  public:
-  enum Kind {
-    INVALID = 0,
-    Ion,
-    Baseline,
-    BaselineInterpreter,
-    Dummy,
-    Query,
-    LIMIT
-  };
+  enum Kind { INVALID = 0, Ion, Baseline, BaselineInterpreter, Dummy, LIMIT };
   static_assert(LIMIT <= 8);
 
   typedef Vector<BytecodeLocation, 0, SystemAllocPolicy> BytecodeLocationVector;
@@ -195,7 +125,7 @@ class JitcodeGlobalEntry {
 
     void init(Kind kind, JitCode* code, void* nativeStartAddr,
               void* nativeEndAddr) {
-      MOZ_ASSERT_IF(kind != Query, code);
+      MOZ_ASSERT(code);
       MOZ_ASSERT(nativeStartAddr);
       MOZ_ASSERT(nativeEndAddr);
       MOZ_ASSERT(kind > INVALID && kind < LIMIT);
@@ -219,13 +149,6 @@ class JitcodeGlobalEntry {
 
     Kind kind() const { return kind_; }
     JitCode* jitcode() const { return jitcode_; }
-
-    bool startsBelowPointer(void* ptr) const {
-      return ((uint8_t*)nativeStartAddr()) <= ((uint8_t*)ptr);
-    }
-    bool endsAbovePointer(void* ptr) const {
-      return ((uint8_t*)nativeEndAddr()) > ((uint8_t*)ptr);
-    }
 
     bool traceJitcode(JSTracer* trc);
     bool isJitcodeMarkedFromAnyThread(JSRuntime* rt);
@@ -385,19 +308,7 @@ class JitcodeGlobalEntry {
     uint64_t lookupRealmID() const { return 0; }
   };
 
-  
-  
-  struct QueryEntry : public BaseEntry {
-    void init(void* addr) { BaseEntry::init(Query, nullptr, addr, addr); }
-    uint8_t* addr() const {
-      return reinterpret_cast<uint8_t*>(nativeStartAddr());
-    }
-    void destroy() {}
-  };
-
  private:
-  JitcodeSkiplistTower* tower_;
-
   union {
     
     
@@ -415,14 +326,10 @@ class JitcodeGlobalEntry {
 
     
     DummyEntry dummy_;
-
-    
-    
-    QueryEntry query_;
   };
 
  public:
-  JitcodeGlobalEntry() : tower_(nullptr) { base_.init(); }
+  JitcodeGlobalEntry() { base_.init(); }
 
   explicit JitcodeGlobalEntry(const IonEntry& ion) : JitcodeGlobalEntry() {
     ion_ = ion;
@@ -442,16 +349,6 @@ class JitcodeGlobalEntry {
     dummy_ = dummy;
   }
 
-  explicit JitcodeGlobalEntry(const QueryEntry& query) : JitcodeGlobalEntry() {
-    query_ = query;
-  }
-
-  static JitcodeGlobalEntry MakeQuery(void* ptr) {
-    QueryEntry query;
-    query.init(ptr);
-    return JitcodeGlobalEntry(query);
-  }
-
   void destroy() {
     switch (kind()) {
       case Ion:
@@ -465,9 +362,6 @@ class JitcodeGlobalEntry {
         break;
       case Dummy:
         dummyEntry().destroy();
-        break;
-      case Query:
-        queryEntry().destroy();
         break;
       default:
         MOZ_CRASH("Invalid JitcodeGlobalEntry kind.");
@@ -486,27 +380,7 @@ class JitcodeGlobalEntry {
     return baseEntry().isSampled(bufferRangeStart);
   }
 
-  bool startsBelowPointer(void* ptr) const {
-    return base_.startsBelowPointer(ptr);
-  }
-  bool endsAbovePointer(void* ptr) const { return base_.endsAbovePointer(ptr); }
   bool containsPointer(void* ptr) const { return base_.containsPointer(ptr); }
-
-  bool overlapsWith(const JitcodeGlobalEntry& entry) const {
-    
-    if (containsPointer(entry.nativeStartAddr()) ||
-        containsPointer(entry.nativeEndAddr())) {
-      return true;
-    }
-
-    
-    if (startsBelowPointer(entry.nativeEndAddr()) &&
-        endsAbovePointer(entry.nativeStartAddr())) {
-      return true;
-    }
-
-    return false;
-  }
 
   Kind kind() const { return base_.kind(); }
 
@@ -515,7 +389,6 @@ class JitcodeGlobalEntry {
   bool isBaseline() const { return kind() == Baseline; }
   bool isBaselineInterpreter() const { return kind() == BaselineInterpreter; }
   bool isDummy() const { return kind() == Dummy; }
-  bool isQuery() const { return kind() == Query; }
 
   BaseEntry& baseEntry() {
     MOZ_ASSERT(isValid());
@@ -537,11 +410,6 @@ class JitcodeGlobalEntry {
     MOZ_ASSERT(isDummy());
     return dummy_;
   }
-  QueryEntry& queryEntry() {
-    MOZ_ASSERT(isQuery());
-    return query_;
-  }
-
   const BaseEntry& baseEntry() const {
     MOZ_ASSERT(isValid());
     return base_;
@@ -561,10 +429,6 @@ class JitcodeGlobalEntry {
   const DummyEntry& dummyEntry() const {
     MOZ_ASSERT(isDummy());
     return dummy_;
-  }
-  const QueryEntry& queryEntry() const {
-    MOZ_ASSERT(isQuery());
-    return query_;
   }
 
   void* canonicalNativeAddrFor(JSRuntime* rt, void* ptr) const {
@@ -639,13 +503,6 @@ class JitcodeGlobalEntry {
   
   uint32_t lookupInlineCallDepth(void* ptr);
 
-  
-  static int compare(const JitcodeGlobalEntry& ent1,
-                     const JitcodeGlobalEntry& ent2);
-  int compareTo(const JitcodeGlobalEntry& other) {
-    return compare(*this, other);
-  }
-
   Zone* zone() { return baseEntry().jitcode()->zone(); }
 
   bool trace(JSTracer* trc) {
@@ -681,69 +538,32 @@ class JitcodeGlobalEntry {
         MOZ_CRASH("Invalid JitcodeGlobalEntry kind.");
     }
   }
-
-  
-  
-  
-  
-  
-  
-
-  void addToFreeList(JitcodeGlobalEntry** freeList) {
-    MOZ_ASSERT(!isValid());
-
-    JitcodeGlobalEntry* nextFreeEntry = *freeList;
-    MOZ_ASSERT_IF(nextFreeEntry, !nextFreeEntry->isValid());
-
-    tower_ = (JitcodeSkiplistTower*)nextFreeEntry;
-    *freeList = this;
-  }
-
-  static JitcodeGlobalEntry* PopFromFreeList(JitcodeGlobalEntry** freeList) {
-    if (!*freeList) {
-      return nullptr;
-    }
-
-    JitcodeGlobalEntry* entry = *freeList;
-    MOZ_ASSERT(!entry->isValid());
-    JitcodeGlobalEntry* nextFreeEntry = (JitcodeGlobalEntry*)entry->tower_;
-    entry->tower_ = nullptr;
-    *freeList = nextFreeEntry;
-    return entry;
-  }
 };
-
-
 
 
 class JitcodeGlobalTable {
  private:
+  
+  
+  
+  using EntryVector =
+      Vector<UniquePtr<JitcodeGlobalEntry>, 0, SystemAllocPolicy>;
+  EntryVector entries_;
+
+  
+  
+  using EntryTree = AvlTree<JitCodeRange*, JitCodeRange>;
   static const size_t LIFO_CHUNK_SIZE = 16 * 1024;
-
   LifoAlloc alloc_;
-  JitcodeGlobalEntry* freeEntries_;
-  uint32_t rand_;
-  uint32_t skiplistSize_;
-
-  JitcodeGlobalEntry* startTower_[JitcodeSkiplistTower::MAX_HEIGHT];
-  JitcodeSkiplistTower* freeTowers_[JitcodeSkiplistTower::MAX_HEIGHT];
+  EntryTree tree_;
 
  public:
-  JitcodeGlobalTable()
-      : alloc_(LIFO_CHUNK_SIZE),
-        freeEntries_(nullptr),
-        rand_(0),
-        skiplistSize_(0) {
-    for (unsigned i = 0; i < JitcodeSkiplistTower::MAX_HEIGHT; i++) {
-      startTower_[i] = nullptr;
-    }
-    for (unsigned i = 0; i < JitcodeSkiplistTower::MAX_HEIGHT; i++) {
-      freeTowers_[i] = nullptr;
-    }
-  }
-  ~JitcodeGlobalTable() = default;
+  JitcodeGlobalTable() : alloc_(LIFO_CHUNK_SIZE), tree_(&alloc_) {}
 
-  bool empty() const { return skiplistSize_ == 0; }
+  bool empty() const {
+    MOZ_ASSERT(entries_.empty() == tree_.empty());
+    return entries_.empty();
+  }
 
   JitcodeGlobalEntry* lookup(void* ptr) { return lookupInternal(ptr); }
 
@@ -764,10 +584,6 @@ class JitcodeGlobalTable {
     return addEntry(JitcodeGlobalEntry(entry));
   }
 
-  void removeEntry(JitcodeGlobalEntry& entry, JitcodeGlobalEntry** prevTower);
-  void releaseEntry(JitcodeGlobalEntry& entry, JitcodeGlobalEntry** prevTower,
-                    JSRuntime* rt);
-
   void setAllEntriesAsExpired();
   [[nodiscard]] bool markIteratively(GCMarker* marker);
   void traceWeak(JSRuntime* rt, JSTracer* trc);
@@ -776,67 +592,6 @@ class JitcodeGlobalTable {
   [[nodiscard]] bool addEntry(const JitcodeGlobalEntry& entry);
 
   JitcodeGlobalEntry* lookupInternal(void* ptr);
-
-  
-  
-  
-  
-  
-  
-  void searchInternal(const JitcodeGlobalEntry& query,
-                      JitcodeGlobalEntry** towerOut);
-
-  JitcodeGlobalEntry* searchAtHeight(unsigned level, JitcodeGlobalEntry* start,
-                                     const JitcodeGlobalEntry& query);
-
-  
-  unsigned generateTowerHeight();
-
-  JitcodeSkiplistTower* allocateTower(unsigned height);
-  JitcodeGlobalEntry* allocateEntry();
-
-#ifdef DEBUG
-  void verifySkiplist();
-#else
-  void verifySkiplist() {}
-#endif
-
- public:
-  class Range {
-   protected:
-    JitcodeGlobalTable& table_;
-    JitcodeGlobalEntry* cur_;
-
-   public:
-    explicit Range(JitcodeGlobalTable& table)
-        : table_(table), cur_(table.startTower_[0]) {}
-
-    JitcodeGlobalEntry* front() const {
-      MOZ_ASSERT(!empty());
-      return cur_;
-    }
-
-    bool empty() const { return !cur_; }
-
-    void popFront() {
-      MOZ_ASSERT(!empty());
-      cur_ = cur_->tower_->next(0);
-    }
-  };
-
-  
-  
-  class Enum : public Range {
-    JSRuntime* rt_;
-    JitcodeGlobalEntry* next_;
-    JitcodeGlobalEntry* prevTower_[JitcodeSkiplistTower::MAX_HEIGHT];
-
-   public:
-    Enum(JitcodeGlobalTable& table, JSRuntime* rt);
-
-    void popFront();
-    void removeFront();
-  };
 };
 
 
