@@ -35,5 +35,30 @@ WorkerLoadContext::GetCacheCreator() {
   return mCacheCreator.get();
 }
 
+ThreadSafeRequestHandle::ThreadSafeRequestHandle(
+    JS::loader::ScriptLoadRequest* aRequest, nsISerialEventTarget* aSyncTarget)
+    : mRequest(aRequest), mOwningEventTarget(aSyncTarget) {}
+
+already_AddRefed<JS::loader::ScriptLoadRequest>
+ThreadSafeRequestHandle::ReleaseRequest() {
+  return mRequest.forget();
+}
+
+ThreadSafeRequestHandle::~ThreadSafeRequestHandle() {
+  
+  
+  
+  
+  if (!mRequest || mOwningEventTarget->IsOnCurrentThread()) {
+    return;
+  }
+
+  
+  
+  
+  MOZ_ALWAYS_SUCCEEDS(NS_ProxyRelease("ThreadSafeRequestHandle::mRequest",
+                                      mOwningEventTarget, mRequest.forget()));
+}
+
 }  
 }  

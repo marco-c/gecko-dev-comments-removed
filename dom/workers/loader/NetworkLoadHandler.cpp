@@ -37,10 +37,10 @@ NS_IMPL_ISUPPORTS(NetworkLoadHandler, nsIStreamLoaderObserver,
                   nsIRequestObserver)
 
 NetworkLoadHandler::NetworkLoadHandler(WorkerScriptLoader* aLoader,
-                                       JS::loader::ScriptLoadRequest* aRequest)
+                                       ThreadSafeRequestHandle* aRequestHandle)
     : mLoader(aLoader),
       mWorkerRef(aLoader->mWorkerRef),
-      mLoadContext(aRequest->GetWorkerLoadContext()) {
+      mRequestHandle(aRequestHandle) {
   MOZ_ASSERT(mLoader);
 
   
@@ -59,12 +59,12 @@ NetworkLoadHandler::OnStreamComplete(nsIStreamLoader* aLoader,
     return mLoader->GetCancelResult();
   }
 
-  if (!mLoadContext->mRequest) {
+  if (!mRequestHandle->IsEmpty()) {
     return NS_BINDING_ABORTED;
   }
 
   nsresult rv = DataReceivedFromNetwork(aLoader, aStatus, aStringLen, aString);
-  return mLoader->OnStreamComplete(mLoadContext->mRequest, rv);
+  return mLoader->OnStreamComplete(mRequestHandle, rv);
 }
 
 nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
@@ -72,7 +72,8 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
                                                      uint32_t aStringLen,
                                                      const uint8_t* aString) {
   AssertIsOnMainThread();
-  MOZ_ASSERT(mLoadContext->mRequest);
+  MOZ_ASSERT(!mRequestHandle->IsEmpty());
+  WorkerLoadContext* loadContext = mRequestHandle->GetContext();
 
   if (NS_FAILED(aStatus)) {
     return aStatus;
@@ -105,7 +106,7 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
   }
 
 #ifdef DEBUG
-  if (mLoadContext->IsTopLevel()) {
+  if (loadContext->IsTopLevel()) {
     nsCOMPtr<nsIPrincipal> loadingPrincipal =
         mWorkerRef->Private()->GetLoadingPrincipal();
     
@@ -121,8 +122,8 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
   
   
   
-  mLoadContext->mMutedErrorFlag.emplace(!mLoadContext->IsTopLevel() &&
-                                        !principal->Subsumes(channelPrincipal));
+  loadContext->mMutedErrorFlag.emplace(!loadContext->IsTopLevel() &&
+                                       !principal->Subsumes(channelPrincipal));
 
   
   
@@ -149,7 +150,7 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
 
     nsAutoCString sourceMapURL;
     if (nsContentUtils::GetSourceMapURL(httpChannel, sourceMapURL)) {
-      mLoadContext->mRequest->mSourceMapURL =
+      loadContext->mRequest->mSourceMapURL =
           Some(NS_ConvertUTF8toUTF16(sourceMapURL));
     }
   }
@@ -158,21 +159,21 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
   Document* parentDoc = mWorkerRef->Private()->GetDocument();
 
   
-  mLoadContext->mRequest->SetTextSource();
+  loadContext->mRequest->SetTextSource();
 
   
   
-  rv = mDecoder->DecodeRawData(mLoadContext->mRequest, aString, aStringLen,
+  rv = mDecoder->DecodeRawData(loadContext->mRequest, aString, aStringLen,
                                 true);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (!mLoadContext->mRequest->ScriptTextLength()) {
+  if (!loadContext->mRequest->ScriptTextLength()) {
     nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
                                     parentDoc, nsContentUtils::eDOM_PROPERTIES,
                                     "EmptyWorkerSourceWarning");
   }
 
-  if (mLoadContext->mRequest->IsModuleRequest()) {
+  if (loadContext->mRequest->IsModuleRequest()) {
     
     
     
@@ -183,7 +184,7 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
     rv = channel->GetOriginalURI(getter_AddRefs(uri));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    channel->GetURI(getter_AddRefs(mLoadContext->mRequest->mBaseURL));
+    channel->GetURI(getter_AddRefs(loadContext->mRequest->mBaseURL));
   }
 
   
@@ -201,13 +202,13 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
       
       
       
-      mLoadContext->mRequest->mURL = filename;
+      loadContext->mRequest->mURL = filename;
     }
   }
 
   
   
-  if (mLoadContext->IsTopLevel()) {
+  if (loadContext->IsTopLevel()) {
     
     mWorkerRef->Private()->SetBaseURI(finalURI);
 
@@ -282,7 +283,8 @@ NetworkLoadHandler::OnStartRequest(nsIRequest* aRequest) {
 
 nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
   AssertIsOnMainThread();
-  MOZ_ASSERT(mLoadContext->mRequest);
+  MOZ_ASSERT(!mRequestHandle->IsEmpty());
+  WorkerLoadContext* loadContext = mRequestHandle->GetContext();
 
   
   
@@ -313,7 +315,7 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
           scope, "ServiceWorkerRegisterMimeTypeError2",
           nsTArray<nsString>{
               NS_ConvertUTF8toUTF16(scope), NS_ConvertUTF8toUTF16(mimeType),
-              NS_ConvertUTF8toUTF16(mLoadContext->mRequest->mURL)});
+              NS_ConvertUTF8toUTF16(loadContext->mRequest->mURL)});
 
       return NS_ERROR_DOM_NETWORK_ERR;
     }
@@ -322,12 +324,12 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
   
   SafeRefPtr<mozilla::dom::InternalResponse> ir =
       MakeSafeRefPtr<mozilla::dom::InternalResponse>(200, "OK"_ns);
-  ir->SetBody(mLoadContext->mCacheReadStream,
+  ir->SetBody(loadContext->mCacheReadStream,
               InternalResponse::UNKNOWN_BODY_SIZE);
 
   
   
-  mLoadContext->mCacheReadStream = nullptr;
+  loadContext->mCacheReadStream = nullptr;
 
   
   
@@ -349,12 +351,12 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
   ir->Headers()->FillResponseHeaders(channel);
 
   RefPtr<mozilla::dom::Response> response = new mozilla::dom::Response(
-      mLoadContext->GetCacheCreator()->Global(), std::move(ir), nullptr);
+      loadContext->GetCacheCreator()->Global(), std::move(ir), nullptr);
 
   mozilla::dom::RequestOrUSVString request;
 
-  MOZ_ASSERT(!mLoadContext->mFullURL.IsEmpty());
-  request.SetAsUSVString().ShareOrDependUpon(mLoadContext->mFullURL);
+  MOZ_ASSERT(!loadContext->mFullURL.IsEmpty());
+  request.SetAsUSVString().ShareOrDependUpon(loadContext->mFullURL);
 
   
   
@@ -362,7 +364,7 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
   jsapi.Init();
 
   ErrorResult error;
-  RefPtr<Promise> cachePromise = mLoadContext->GetCacheCreator()->Cache_()->Put(
+  RefPtr<Promise> cachePromise = loadContext->GetCacheCreator()->Cache_()->Put(
       jsapi.cx(), request, *response, error);
   error.WouldReportJSException();
   if (NS_WARN_IF(error.Failed())) {
@@ -370,11 +372,11 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
   }
 
   RefPtr<CachePromiseHandler> promiseHandler =
-      new CachePromiseHandler(mLoader, mLoadContext);
+      new CachePromiseHandler(mLoader, mRequestHandle);
   cachePromise->AppendNativeHandler(promiseHandler);
 
-  mLoadContext->mCachePromise.swap(cachePromise);
-  mLoadContext->mCacheStatus = WorkerLoadContext::WritingToCache;
+  loadContext->mCachePromise.swap(cachePromise);
+  loadContext->mCacheStatus = WorkerLoadContext::WritingToCache;
 
   return NS_OK;
 }
