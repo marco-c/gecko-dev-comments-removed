@@ -991,6 +991,23 @@ struct MOZ_STACK_CLASS EditorInlineStyle : public EditorElementStyle {
     return mHTMLProperty == nsGkAtoms::sup || mHTMLProperty == nsGkAtoms::sub;
   }
 
+  
+
+
+
+  [[nodiscard]] nsStaticAtom* GetSimilarElementNameAtom() const {
+    if (mHTMLProperty == nsGkAtoms::b) {
+      return nsGkAtoms::strong;
+    }
+    if (mHTMLProperty == nsGkAtoms::i) {
+      return nsGkAtoms::em;
+    }
+    if (mHTMLProperty == nsGkAtoms::strike) {
+      return nsGkAtoms::s;
+    }
+    return nullptr;
+  }
+
   explicit EditorInlineStyle(nsStaticAtom& aHTMLProperty,
                              nsAtom* aAttribute = nullptr)
       : mHTMLProperty(&aHTMLProperty), mAttribute(aAttribute) {}
