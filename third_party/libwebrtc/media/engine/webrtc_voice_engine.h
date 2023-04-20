@@ -321,6 +321,8 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   
   rtc::scoped_refptr<webrtc::FrameDecryptorInterface>
       unsignaled_frame_decryptor_;
+  rtc::scoped_refptr<webrtc::FrameTransformerInterface>
+      unsignaled_frame_transformer_;
 };
 }  
 
