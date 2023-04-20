@@ -42,6 +42,7 @@ namespace workerinternals {
 
 namespace loader {
 class ScriptExecutorRunnable;
+class ScriptLoaderRunnable;
 class CachePromiseHandler;
 class CacheLoadHandler;
 class CacheCreator;
@@ -116,9 +117,26 @@ class NetworkLoadHandler;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class WorkerScriptLoader : public JS::loader::ScriptLoaderInterface,
                            public nsINamed {
   friend class ScriptExecutorRunnable;
+  friend class ScriptLoaderRunnable;
   friend class CachePromiseHandler;
   friend class CacheLoadHandler;
   friend class CacheCreator;
@@ -166,9 +184,6 @@ class WorkerScriptLoader : public JS::loader::ScriptLoaderInterface,
                      nsISerialEventTarget* aSyncLoopTarget,
                      WorkerScriptType aWorkerScriptType, ErrorResult& aRv);
 
-  void CancelMainThreadWithBindingAborted(
-      nsTArray<ThreadSafeRequestHandle*>&& aContextList);
-
   void CreateScriptRequests(const nsTArray<nsString>& aScriptURLs,
                             const mozilla::Encoding* aDocumentEncoding,
                             bool aIsMainScript);
@@ -186,8 +201,6 @@ class WorkerScriptLoader : public JS::loader::ScriptLoaderInterface,
 
   nsIURI* GetInitialBaseURI();
 
-  void MaybeExecuteFinishedScripts(ThreadSafeRequestHandle* aRequestHandle);
-
   void MaybeMoveToLoadedList(ScriptLoadRequest* aRequest);
 
   bool StoreCSP();
@@ -198,9 +211,6 @@ class WorkerScriptLoader : public JS::loader::ScriptLoaderInterface,
     return mLoadingRequests.isEmpty() && mLoadedRequests.isEmpty();
   }
 
-  nsresult OnStreamComplete(ThreadSafeRequestHandle* aRequestHandle,
-                            nsresult aStatus);
-
   bool IsDebuggerScript() const { return mWorkerScriptType == DebuggerScript; }
 
   void SetController(const Maybe<ServiceWorkerDescriptor>& aDescriptor) {
@@ -208,17 +218,6 @@ class WorkerScriptLoader : public JS::loader::ScriptLoaderInterface,
   }
 
   Maybe<ServiceWorkerDescriptor>& GetController() { return mController; }
-
-  bool IsCancelled() { return mCancelMainThread.isSome(); }
-
-  nsresult GetCancelResult() {
-    return (IsCancelled()) ? mCancelMainThread.ref() : NS_OK;
-  }
-
-  void CancelMainThread(nsresult aCancelResult,
-                        nsTArray<ThreadSafeRequestHandle*>* aContextList);
-
-  nsresult LoadScripts(nsTArray<ThreadSafeRequestHandle*>&& aContextList);
 
   nsresult LoadScript(ThreadSafeRequestHandle* aRequestHandle);
 
@@ -235,13 +234,9 @@ class WorkerScriptLoader : public JS::loader::ScriptLoaderInterface,
 
   void TryShutdown();
 
-  nsTArray<ThreadSafeRequestHandle*> GetLoadingList();
+  nsTArray<RefPtr<ThreadSafeRequestHandle>> GetLoadingList();
 
   nsIGlobalObject* GetGlobal();
-
-  void LoadingFinished(ThreadSafeRequestHandle* aRequestHandle, nsresult aRv);
-
-  void DispatchMaybeMoveToLoadedList(ThreadSafeRequestHandle* aRequestHandle);
 
   bool EvaluateScript(JSContext* aCx, ScriptLoadRequest* aRequest);
 
@@ -260,8 +255,60 @@ class WorkerScriptLoader : public JS::loader::ScriptLoaderInterface,
   }
 
   void LogExceptionToConsole(JSContext* aCx, WorkerPrivate* aWorkerPrivate);
+};
 
+
+
+
+
+
+
+
+
+
+class ScriptLoaderRunnable final : public nsIRunnable, public nsINamed {
+  RefPtr<WorkerScriptLoader> mScriptLoader;
+  RefPtr<ThreadSafeWorkerRef> mWorkerRef;
+  nsTArray<RefPtr<ThreadSafeRequestHandle>> mLoadingRequests;
   Maybe<nsresult> mCancelMainThread;
+
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  explicit ScriptLoaderRunnable(
+      WorkerScriptLoader* aScriptLoader,
+      nsTArray<RefPtr<ThreadSafeRequestHandle>> aLoadingRequests);
+
+  nsresult OnStreamComplete(ThreadSafeRequestHandle* aRequestHandle,
+                            nsresult aStatus);
+
+  void LoadingFinished(ThreadSafeRequestHandle* aRequestHandle, nsresult aRv);
+
+  void MaybeExecuteFinishedScripts(ThreadSafeRequestHandle* aRequestHandle);
+
+  bool IsCancelled() { return mCancelMainThread.isSome(); }
+
+  nsresult GetCancelResult() {
+    return (IsCancelled()) ? mCancelMainThread.ref() : NS_OK;
+  }
+
+  void CancelMainThreadWithBindingAborted();
+
+ private:
+  ~ScriptLoaderRunnable() = default;
+
+  void CancelMainThread(nsresult aCancelResult);
+
+  void DispatchMaybeMoveToLoadedList(ThreadSafeRequestHandle* aRequestHandle);
+
+  NS_IMETHOD
+  Run() override;
+
+  NS_IMETHOD
+  GetName(nsACString& aName) override {
+    aName.AssignLiteral("ScriptLoaderRunnable");
+    return NS_OK;
+  }
 };
 
 }  

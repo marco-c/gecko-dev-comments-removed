@@ -56,7 +56,7 @@ NetworkLoadHandler::OnStreamComplete(nsIStreamLoader* aLoader,
   
   
   nsresult rv = DataReceivedFromNetwork(aLoader, aStatus, aStringLen, aString);
-  return mLoader->OnStreamComplete(mRequestHandle, rv);
+  return mRequestHandle->OnStreamComplete(rv);
 }
 
 nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
@@ -77,8 +77,8 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
     return aStatus;
   }
 
-  if (mLoader->IsCancelled()) {
-    return mLoader->GetCancelResult();
+  if (mRequestHandle->IsCancelled()) {
+    return mRequestHandle->GetCancelResult();
   }
 
   NS_ASSERTION(aString, "This should never be null!");
@@ -290,7 +290,7 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
 
   
   
-  if (mLoader->IsCancelled()) {
+  if (mRequestHandle->IsCancelled()) {
     return NS_ERROR_FAILURE;
   }
 
