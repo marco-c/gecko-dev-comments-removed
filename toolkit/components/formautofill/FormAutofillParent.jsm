@@ -585,71 +585,33 @@ class FormAutofillParent extends JSWindowActorParent {
     delete creditCard.record["cc-type"];
 
     
-    if (creditCard.guid) {
-      let originalCCData = await lazy.gFormAutofillStorage.creditCards.get(
-        creditCard.guid
-      );
-      let recordUnchanged = true;
-      for (let field in creditCard.record) {
-        if (creditCard.record[field] === "" && !originalCCData[field]) {
-          continue;
-        }
-        
-        
-        let untouched = creditCard.untouchedFields.includes(field);
-        if (untouched && field !== "cc-number") {
-          creditCard.record[field] = originalCCData[field];
-        }
-        
-        recordUnchanged &= untouched;
-      }
+    lazy.gFormAutofillStorage.creditCards._normalizeRecord(creditCard.record);
 
-      if (recordUnchanged) {
-        lazy.gFormAutofillStorage.creditCards.notifyUsed(creditCard.guid);
-        return false;
-      }
-    } else {
-      let existingGuid = await lazy.gFormAutofillStorage.creditCards.getDuplicateGuid(
-        creditCard.record
-      );
+    
+    const getMatchRecord = lazy.gFormAutofillStorage.creditCards.getMatchRecord(
+      creditCard.record
+    );
+    const matchRecord = (await getMatchRecord.next()).value;
+    if (matchRecord) {
+      lazy.gFormAutofillStorage.creditCards.notifyUsed(matchRecord.guid);
+      return false;
+    }
 
-      if (existingGuid) {
-        creditCard.guid = existingGuid;
+    
+    if (!FormAutofill.isAutofillCreditCardsEnabled) {
+      return false;
+    }
 
-        let originalCCData = await lazy.gFormAutofillStorage.creditCards.get(
-          creditCard.guid
-        );
-
-        lazy.gFormAutofillStorage.creditCards._normalizeRecord(
-          creditCard.record
-        );
-
-        
-        
-        let recordUnchanged = true;
-        for (let field in creditCard.record) {
-          if (field == "cc-number") {
-            continue;
-          }
-          if (creditCard.record[field] != originalCCData[field]) {
-            recordUnchanged = false;
-            break;
-          }
-        }
-
-        if (recordUnchanged) {
-          lazy.gFormAutofillStorage.creditCards.notifyUsed(creditCard.guid);
-          return false;
-        }
-      }
+    
+    const getDuplicateRecord = lazy.gFormAutofillStorage.creditCards.getDuplicateRecord(
+      creditCard.record
+    );
+    let existingRecord = (await getDuplicateRecord.next()).value;
+    if (existingRecord) {
+      creditCard.guid = existingRecord.guid;
     }
 
     return async () => {
-      
-      if (!FormAutofill.isAutofillCreditCardsEnabled) {
-        return;
-      }
-
       await lazy.FormAutofillPrompter.promptToSaveCreditCard(
         browser,
         creditCard,

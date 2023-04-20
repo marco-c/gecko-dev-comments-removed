@@ -554,7 +554,6 @@ class AutofillRecords {
 
 
   notifyUsed(guid) {
-    dump("notifyUsed:" + guid + "\n");
     this.log.debug("notifyUsed:", guid);
 
     let recordFound = this._findByGUID(guid);
@@ -1925,25 +1924,59 @@ class CreditCardsBase extends AutofillRecords {
 
 
 
-  async getDuplicateGuid(targetCreditCard) {
-    let clonedTargetCreditCard = this._clone(targetCreditCard);
-    this._normalizeRecord(clonedTargetCreditCard);
-    if (!clonedTargetCreditCard["cc-number"]) {
+
+
+
+
+
+  async *getMatchRecord(record) {
+    for await (const recordInStorage of this.getDuplicateRecord(record)) {
+      const fields = this.VALID_FIELDS.filter(f => f != "cc-number");
+      if (
+        fields.every(
+          field => !record[field] || record[field] == recordInStorage[field]
+        )
+      ) {
+        yield recordInStorage;
+      }
+    }
+    return null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async *getDuplicateRecord(record) {
+    if (!record["cc-number"]) {
       return null;
     }
 
-    for (let creditCard of this._data) {
-      if (creditCard.deleted) {
+    for (const recordInStorage of this._data) {
+      if (recordInStorage.deleted) {
         continue;
       }
 
-      let decrypted = await lazy.OSKeyStore.decrypt(
-        creditCard["cc-number-encrypted"],
+      const decrypted = await lazy.OSKeyStore.decrypt(
+        recordInStorage["cc-number-encrypted"],
         false
       );
 
-      if (decrypted == clonedTargetCreditCard["cc-number"]) {
-        return creditCard.guid;
+      if (decrypted == record["cc-number"]) {
+        yield recordInStorage;
       }
     }
     return null;
