@@ -1777,6 +1777,16 @@ class BrowsertimeOutput(PerftestOutput):
 
                         
                         
+                        for schema_name in (
+                            "minBackWindow",
+                            "maxBackWindow",
+                            "foreWindow",
+                        ):
+                            if suite.get(schema_name, None) is not None:
+                                subtest[schema_name] = suite[schema_name]
+
+                        
+                        
                         if self.subtest_alert_on is not None:
                             if measurement_name in self.subtest_alert_on:
                                 LOG.info(
