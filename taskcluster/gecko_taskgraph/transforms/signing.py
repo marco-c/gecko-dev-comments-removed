@@ -207,8 +207,6 @@ def make_task_description(config, jobs):
         
         if "macosx" in build_platform and config.kind == "build-mac-notarization":
             task["worker"]["mac-behavior"] = "apple_notarization"
-        elif "macosx" in build_platform and config.kind == "build-mac-signing":
-            task["worker"]["mac-behavior"] = "mac_sign"
         elif "macosx" in build_platform:
             
             shippable = "false"
@@ -246,6 +244,10 @@ def make_task_description(config, jobs):
             for attr in ("entitlements-url", "requirements-plist-url"):
                 if job.get(attr):
                     task["worker"][attr] = job[attr]
+
+            
+            if config.kind == "build-mac-signing":
+                task["worker"]["mac-behavior"] = "mac_sign"
 
         task["worker-type"] = worker_type_alias
         if treeherder:
