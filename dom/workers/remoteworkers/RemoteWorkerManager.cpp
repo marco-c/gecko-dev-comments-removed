@@ -419,6 +419,7 @@ void RemoteWorkerManager::Launch(RemoteWorkerController* aController,
     pending->mController = aController;
     pending->mData = aData;
 
+    
     LaunchNewContentProcess(aData);
     return;
   }

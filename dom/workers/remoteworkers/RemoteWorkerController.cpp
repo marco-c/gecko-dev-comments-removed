@@ -45,6 +45,7 @@ already_AddRefed<RemoteWorkerController> RemoteWorkerController::Create(
   RefPtr<RemoteWorkerManager> manager = RemoteWorkerManager::GetOrCreate();
   MOZ_ASSERT(manager);
 
+  
   manager->Launch(controller, aData, aProcessId);
 
   return controller.forget();

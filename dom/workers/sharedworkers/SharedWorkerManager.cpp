@@ -63,6 +63,12 @@ bool SharedWorkerManager::MaybeCreateRemoteWorker(
     UniqueMessagePortId& aPortIdentifier, base::ProcessId aProcessId) {
   ::mozilla::ipc::AssertIsOnBackgroundThread();
 
+  
+  
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    return false;
+  }
+
   if (!mRemoteWorkerController) {
     mRemoteWorkerController =
         RemoteWorkerController::Create(aData, this, aProcessId);
