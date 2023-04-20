@@ -2834,20 +2834,21 @@ APZCTreeManager::HitTestResult APZCTreeManager::GetTargetAPZC(
   return mHitTester->GetAPZCAtPoint(aPoint, lock);
 }
 
-AsyncPanZoomController* APZCTreeManager::FindHandoffParent(
+APZCTreeManager::TargetApzcForNodeResult APZCTreeManager::FindHandoffParent(
     const AsyncPanZoomController* aApzc) {
   RefPtr<HitTestingTreeNode> node = GetTargetNode(aApzc->GetGuid(), nullptr);
   while (node) {
-    if (auto* apzc = GetTargetApzcForNode(node->GetParent())) {
+    auto result = GetTargetApzcForNode(node->GetParent());
+    if (result.mApzc) {
       
-      if (apzc != aApzc) {
-        return apzc;
+      if (result.mApzc != aApzc) {
+        return result;
       }
     }
     node = node->GetParent();
   }
 
-  return nullptr;
+  return {nullptr, false};
 }
 
 RefPtr<const OverscrollHandoffChain>
@@ -2881,11 +2882,17 @@ APZCTreeManager::BuildOverscrollHandoffChain(
         
         NS_WARNING("Found a non-root APZ with no handoff parent");
       }
+    }
 
-      
-      
-      
-      apzc = FindHandoffParent(apzc);
+    APZCTreeManager::TargetApzcForNodeResult handoffResult =
+        FindHandoffParent(apzc);
+
+    
+    
+    
+    if (handoffResult.mIsFixed || apzc->GetScrollHandoffParentId() ==
+                                      ScrollableLayerGuid::NULL_SCROLL_ID) {
+      apzc = handoffResult.mApzc;
       continue;
     }
 
@@ -2949,23 +2956,26 @@ void APZCTreeManager::FindScrollThumbNode(
   }
 }
 
-AsyncPanZoomController* APZCTreeManager::GetTargetApzcForNode(
+APZCTreeManager::TargetApzcForNodeResult APZCTreeManager::GetTargetApzcForNode(
     const HitTestingTreeNode* aNode) {
   for (const HitTestingTreeNode* n = aNode;
        n && n->GetLayersId() == aNode->GetLayersId(); n = n->GetParent()) {
-    if (n->GetApzc()) {
-      APZCTM_LOG("Found target %p using ancestor lookup\n", n->GetApzc());
-      return n->GetApzc();
-    }
+    
+    
+    
     if (n->GetFixedPosTarget() != ScrollableLayerGuid::NULL_SCROLL_ID) {
       RefPtr<AsyncPanZoomController> fpTarget =
           GetTargetAPZC(n->GetLayersId(), n->GetFixedPosTarget());
       APZCTM_LOG("Found target APZC %p using fixed-pos lookup on %" PRIu64 "\n",
                  fpTarget.get(), n->GetFixedPosTarget());
-      return fpTarget.get();
+      return {fpTarget.get(), true};
+    }
+    if (n->GetApzc()) {
+      APZCTM_LOG("Found target %p using ancestor lookup\n", n->GetApzc());
+      return {n->GetApzc(), false};
     }
   }
-  return nullptr;
+  return {nullptr, false};
 }
 
 HitTestingTreeNode* APZCTreeManager::FindRootNodeForLayersId(

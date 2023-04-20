@@ -111,6 +111,16 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   using HitTestResult = IAPZHitTester::HitTestResult;
 
   
+
+
+  struct TargetApzcForNodeResult {
+    
+    AsyncPanZoomController* mApzc;
+    
+    bool mIsFixed;
+  };
+
+  
   
   
   
@@ -604,8 +614,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   HitTestingTreeNode* FindTargetNode(HitTestingTreeNode* aNode,
                                      const ScrollableLayerGuid& aGuid,
                                      GuidComparator aComparator);
-  AsyncPanZoomController* GetTargetApzcForNode(const HitTestingTreeNode* aNode);
-  AsyncPanZoomController* FindHandoffParent(
+  TargetApzcForNodeResult GetTargetApzcForNode(const HitTestingTreeNode* aNode);
+  TargetApzcForNodeResult FindHandoffParent(
       const AsyncPanZoomController* aApzc);
   HitTestingTreeNode* FindRootNodeForLayersId(LayersId aLayersId) const;
   AsyncPanZoomController* FindRootContentApzcForLayersId(
