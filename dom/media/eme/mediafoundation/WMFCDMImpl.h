@@ -17,7 +17,6 @@
 #include "nsThreadUtils.h"
 
 namespace mozilla {
-class MFCDMChild;
 
 
 
