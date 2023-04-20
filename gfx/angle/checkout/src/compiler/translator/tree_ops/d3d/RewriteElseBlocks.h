@@ -19,9 +19,9 @@ class TCompiler;
 class TIntermNode;
 class TSymbolTable;
 
-[[nodiscard]] bool RewriteElseBlocks(TCompiler *compiler,
-                                     TIntermNode *node,
-                                     TSymbolTable *symbolTable);
+ANGLE_NO_DISCARD bool RewriteElseBlocks(TCompiler *compiler,
+                                        TIntermNode *node,
+                                        TSymbolTable *symbolTable);
 }  
 
 #endif  

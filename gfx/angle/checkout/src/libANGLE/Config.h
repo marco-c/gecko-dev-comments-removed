@@ -77,7 +77,6 @@ struct Config
     EGLBoolean yInverted;  
                            
                            
-    EGLint matchFormat;    
 };
 
 class ConfigSet

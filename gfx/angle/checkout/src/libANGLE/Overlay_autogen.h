@@ -29,29 +29,9 @@ enum class WidgetId
     
     VulkanDescriptorSetAllocations,
     
-    VulkanShaderResourceDSHitRate,
+    VulkanShaderBufferDSHitRate,
     
     VulkanDynamicBufferAllocations,
-    
-    VulkanDescriptorCacheSize,
-    
-    VulkanTextureDescriptorCacheSize,
-    
-    VulkanUniformDescriptorCacheSize,
-    
-    VulkanDescriptorCacheKeySize,
-    
-    VulkanAttemptedSubmissions,
-    
-    VulkanActualSubmissions,
-    
-    VulkanPipelineCacheLookups,
-    
-    VulkanPipelineCacheMisses,
-    
-    VulkanTotalPipelineCacheMissTimeMs,
-    
-    VulkanTotalPipelineCacheHitTimeMs,
 
     InvalidEnum,
     EnumCount = InvalidEnum,
@@ -67,17 +47,7 @@ enum class WidgetId
     PROC(VulkanSecondaryCommandBufferPoolWaste) \
     PROC(VulkanWriteDescriptorSetCount)         \
     PROC(VulkanDescriptorSetAllocations)        \
-    PROC(VulkanShaderResourceDSHitRate)         \
-    PROC(VulkanDynamicBufferAllocations)        \
-    PROC(VulkanDescriptorCacheSize)             \
-    PROC(VulkanTextureDescriptorCacheSize)      \
-    PROC(VulkanUniformDescriptorCacheSize)      \
-    PROC(VulkanDescriptorCacheKeySize)          \
-    PROC(VulkanAttemptedSubmissions)            \
-    PROC(VulkanActualSubmissions)               \
-    PROC(VulkanPipelineCacheLookups)            \
-    PROC(VulkanPipelineCacheMisses)             \
-    PROC(VulkanTotalPipelineCacheMissTimeMs)    \
-    PROC(VulkanTotalPipelineCacheHitTimeMs)
+    PROC(VulkanShaderBufferDSHitRate)           \
+    PROC(VulkanDynamicBufferAllocations)
 
 }  

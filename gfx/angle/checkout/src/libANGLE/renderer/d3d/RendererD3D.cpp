@@ -152,16 +152,6 @@ const gl::Limitations &RendererD3D::getNativeLimitations() const
     return mNativeLimitations;
 }
 
-ShPixelLocalStorageType RendererD3D::getNativePixelLocalStorageType() const
-{
-    if (!getNativeExtensions().shaderPixelLocalStorageANGLE)
-    {
-        return ShPixelLocalStorageType::NotSupported;
-    }
-    
-    return ShPixelLocalStorageType::ImageStoreR32PackedFormats;
-}
-
 Serial RendererD3D::generateSerial()
 {
     return mSerialFactory.generate();

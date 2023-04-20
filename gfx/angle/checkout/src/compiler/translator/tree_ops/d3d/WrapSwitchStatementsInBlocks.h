@@ -18,7 +18,7 @@ class TCompiler;
 class TIntermBlock;
 
 
-[[nodiscard]] bool WrapSwitchStatementsInBlocks(TCompiler *compiler, TIntermBlock *root);
+ANGLE_NO_DISCARD bool WrapSwitchStatementsInBlocks(TCompiler *compiler, TIntermBlock *root);
 
 }  
 

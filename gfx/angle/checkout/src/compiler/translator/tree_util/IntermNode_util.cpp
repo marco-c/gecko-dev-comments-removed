@@ -113,40 +113,12 @@ TIntermTyped *CreateZeroNode(const TType &type)
     return TIntermAggregate::CreateConstructor(constType, &arguments);
 }
 
-TIntermConstantUnion *CreateFloatNode(float value, TPrecision precision)
+TIntermConstantUnion *CreateFloatNode(float value)
 {
     TConstantUnion *u = new TConstantUnion[1];
     u[0].setFConst(value);
 
-    TType type(EbtFloat, precision, EvqConst, 1);
-    return new TIntermConstantUnion(u, type);
-}
-
-TIntermConstantUnion *CreateVecNode(const float values[],
-                                    unsigned int vecSize,
-                                    TPrecision precision)
-{
-    TConstantUnion *u = new TConstantUnion[vecSize];
-    for (unsigned int channel = 0; channel < vecSize; ++channel)
-    {
-        u[channel].setFConst(values[channel]);
-    }
-
-    TType type(EbtFloat, precision, EvqConst, static_cast<uint8_t>(vecSize));
-    return new TIntermConstantUnion(u, type);
-}
-
-TIntermConstantUnion *CreateUVecNode(const unsigned int values[],
-                                     unsigned int vecSize,
-                                     TPrecision precision)
-{
-    TConstantUnion *u = new TConstantUnion[vecSize];
-    for (unsigned int channel = 0; channel < vecSize; ++channel)
-    {
-        u[channel].setUConst(values[channel]);
-    }
-
-    TType type(EbtUInt, precision, EvqConst, static_cast<uint8_t>(vecSize));
+    TType type(EbtFloat, EbpUndefined, EvqConst, 1);
     return new TIntermConstantUnion(u, type);
 }
 
@@ -155,7 +127,7 @@ TIntermConstantUnion *CreateIndexNode(int index)
     TConstantUnion *u = new TConstantUnion[1];
     u[0].setIConst(index);
 
-    TType type(EbtInt, EbpHigh, EvqConst, 1);
+    TType type(EbtInt, EbpUndefined, EvqConst, 1);
     return new TIntermConstantUnion(u, type);
 }
 
@@ -164,7 +136,7 @@ TIntermConstantUnion *CreateUIntNode(unsigned int value)
     TConstantUnion *u = new TConstantUnion[1];
     u[0].setUConst(value);
 
-    TType type(EbtUInt, EbpHigh, EvqConst, 1);
+    TType type(EbtUInt, EbpUndefined, EvqConst, 1);
     return new TIntermConstantUnion(u, type);
 }
 
@@ -252,50 +224,6 @@ TVariable *DeclareTempVariable(TSymbolTable *symbolTable,
     return variable;
 }
 
-std::pair<const TVariable *, const TVariable *> DeclareStructure(
-    TIntermBlock *root,
-    TSymbolTable *symbolTable,
-    TFieldList *fieldList,
-    TQualifier qualifier,
-    const TMemoryQualifier &memoryQualifier,
-    uint32_t arraySize,
-    const ImmutableString &structTypeName,
-    const ImmutableString *structInstanceName)
-{
-    TStructure *structure =
-        new TStructure(symbolTable, structTypeName, fieldList, SymbolType::AngleInternal);
-
-    auto makeStructureType = [&](bool isStructSpecifier) {
-        TType *structureType = new TType(structure, isStructSpecifier);
-        structureType->setQualifier(qualifier);
-        structureType->setMemoryQualifier(memoryQualifier);
-        if (arraySize > 0)
-        {
-            structureType->makeArray(arraySize);
-        }
-        return structureType;
-    };
-
-    TIntermSequence insertSequence;
-
-    TVariable *typeVar = new TVariable(symbolTable, kEmptyImmutableString, makeStructureType(true),
-                                       SymbolType::Empty);
-    insertSequence.push_back(new TIntermDeclaration{typeVar});
-
-    TVariable *instanceVar = nullptr;
-    if (structInstanceName)
-    {
-        instanceVar = new TVariable(symbolTable, *structInstanceName, makeStructureType(false),
-                                    SymbolType::AngleInternal);
-        insertSequence.push_back(new TIntermDeclaration{instanceVar});
-    }
-
-    size_t firstFunctionIndex = FindFirstFunctionDefinitionIndex(root);
-    root->insertChildNodes(firstFunctionIndex, insertSequence);
-
-    return {typeVar, instanceVar};
-}
-
 const TVariable *DeclareInterfaceBlock(TIntermBlock *root,
                                        TSymbolTable *symbolTable,
                                        TFieldList *fieldList,
@@ -351,9 +279,9 @@ TIntermBlock *EnsureBlock(TIntermNode *node)
 
 TIntermSymbol *ReferenceGlobalVariable(const ImmutableString &name, const TSymbolTable &symbolTable)
 {
-    const TSymbol *symbol = symbolTable.findGlobal(name);
-    ASSERT(symbol && symbol->isVariable());
-    return new TIntermSymbol(static_cast<const TVariable *>(symbol));
+    const TVariable *var = static_cast<const TVariable *>(symbolTable.findGlobal(name));
+    ASSERT(var);
+    return new TIntermSymbol(var);
 }
 
 TIntermSymbol *ReferenceBuiltInVariable(const ImmutableString &name,
@@ -374,63 +302,11 @@ TIntermTyped *CreateBuiltInFunctionCallNode(const char *name,
     const TFunction *fn = LookUpBuiltInFunction(name, arguments, symbolTable, shaderVersion);
     ASSERT(fn);
     TOperator op = fn->getBuiltInOp();
-    if (BuiltInGroup::IsMath(op) && arguments->size() == 1)
+    if (op != EOpCallBuiltInFunction && arguments->size() == 1)
     {
         return new TIntermUnary(op, arguments->at(0)->getAsTyped(), fn);
     }
     return TIntermAggregate::CreateBuiltInFunctionCall(*fn, arguments);
-}
-
-TIntermTyped *CreateBuiltInFunctionCallNode(const char *name,
-                                            const std::initializer_list<TIntermNode *> &arguments,
-                                            const TSymbolTable &symbolTable,
-                                            int shaderVersion)
-{
-    TIntermSequence argSequence(arguments);
-    return CreateBuiltInFunctionCallNode(name, &argSequence, symbolTable, shaderVersion);
-}
-
-TIntermTyped *CreateBuiltInUnaryFunctionCallNode(const char *name,
-                                                 TIntermTyped *argument,
-                                                 const TSymbolTable &symbolTable,
-                                                 int shaderVersion)
-{
-    return CreateBuiltInFunctionCallNode(name, {argument}, symbolTable, shaderVersion);
-}
-
-int GetESSLOrGLSLVersion(ShShaderSpec spec, int esslVersion, int glslVersion)
-{
-    return IsDesktopGLSpec(spec) ? glslVersion : esslVersion;
-}
-
-
-
-
-
-bool EndsInBranch(TIntermBlock *block)
-{
-    while (block != nullptr)
-    {
-        
-        TIntermSequence &statements = *block->getSequence();
-        if (statements.empty())
-        {
-            return false;
-        }
-
-        TIntermNode *lastStatement = statements.back();
-
-        
-        if (lastStatement->getAsBranchNode())
-        {
-            return true;
-        }
-
-        
-        block = lastStatement->getAsBlock();
-    }
-
-    return false;
 }
 
 }  

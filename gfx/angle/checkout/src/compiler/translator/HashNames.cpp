@@ -69,6 +69,37 @@ ImmutableString HashName(const ImmutableString &name,
             
             return name;
         }
+        if (name == "gl_ClipDistance" || name == "gl_CullDistance" || name == "gl_LastFragData")
+        {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            return name;
+        }
         ImmutableStringBuilder prefixedName(kUnhashedNamePrefix.length() + name.length());
         prefixedName << kUnhashedNamePrefix << name;
         ImmutableString res = prefixedName;

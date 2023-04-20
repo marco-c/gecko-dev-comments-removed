@@ -10,9 +10,6 @@
 
 #include "libANGLE/renderer/Format.h"
 
-
-#include <d3d9.h>
-
 namespace rx
 {
 namespace d3d9

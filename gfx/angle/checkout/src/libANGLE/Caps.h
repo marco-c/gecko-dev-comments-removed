@@ -10,7 +10,6 @@
 #include "angle_gl.h"
 #include "libANGLE/Version.h"
 #include "libANGLE/angletypes.h"
-#include "libANGLE/gles_extensions_autogen.h"
 #include "libANGLE/renderer/Format.h"
 
 #include <array>
@@ -21,6 +20,9 @@
 
 namespace gl
 {
+
+struct Extensions;
+
 struct TextureCaps
 {
     TextureCaps();
@@ -90,6 +92,650 @@ void InitMinimumTextureCapsMap(const Version &clientVersion,
 
 bool DetermineCompressedTextureETCSupport(const TextureCapsMap &textureCaps);
 
+struct Extensions
+{
+    Extensions();
+    Extensions(const Extensions &other);
+
+    Extensions &operator=(const Extensions &other);
+
+    
+    std::vector<std::string> getStrings() const;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    void setTextureExtensionSupport(const TextureCapsMap &textureCaps);
+
+    
+    bool depthTextureAny() const { return (depthTextureANGLE || depthTextureOES); }
+
+    
+
+    
+    bool elementIndexUintOES = false;
+
+    
+    bool packedDepthStencilOES = false;
+
+    
+    bool readDepthNV = false;
+
+    
+    bool readStencilNV = false;
+
+    
+    bool depthBufferFloat2NV = false;
+
+    
+    bool getProgramBinaryOES = false;
+
+    
+    
+    bool rgb8rgba8OES = false;
+
+    
+    
+    bool textureFormatBGRA8888 = false;
+
+    
+    bool readFormatBGRA = false;
+
+    
+    bool pixelBufferObjectNV = false;
+
+    
+    bool glSyncARB = false;
+
+    
+    bool mapBufferOES   = false;
+    bool mapBufferRange = false;
+
+    
+    
+    
+    bool colorBufferHalfFloat = false;
+
+    
+    
+    
+    bool textureHalfFloat       = false;
+    bool textureHalfFloatLinear = false;
+
+    
+    
+    
+    bool textureFloatOES       = false;
+    bool textureFloatLinearOES = false;
+
+    
+    
+    
+    bool textureRG = false;
+
+    
+    bool textureFormat2101010REV = false;
+
+    
+    
+    
+    
+    bool textureCompressionDXT1 = false;
+    bool textureCompressionDXT3 = false;
+    bool textureCompressionDXT5 = false;
+
+    
+    
+    
+    
+    bool textureCompressionS3TCsRGB = false;
+
+    
+    bool textureCompressionASTCLDRKHR = false;
+
+    
+    bool textureCompressionASTCHDRKHR = false;
+
+    
+    bool textureCompressionASTCOES = false;
+
+    
+    bool textureCompressionSliced3dASTCKHR = false;
+
+    
+    bool textureCompressionBPTC = false;
+
+    
+    bool textureCompressionRGTC = false;
+
+    
+    
+    bool compressedETC1RGB8TextureOES = false;
+
+    
+    bool compressedETC1RGB8SubTexture = false;
+
+    
+    bool compressedETC2RGB8TextureOES = false;
+
+    
+    bool compressedETC2sRGB8TextureOES = false;
+
+    
+    bool compressedETC2PunchthroughARGB8TextureOES = false;
+
+    
+    bool compressedETC2PunchthroughAsRGB8AlphaTextureOES = false;
+
+    
+    bool compressedETC2RGBA8TextureOES = false;
+
+    
+    bool compressedETC2sRGB8Alpha8TextureOES = false;
+
+    
+    bool compressedEACR11UnsignedTextureOES = false;
+
+    
+    bool compressedEACR11SignedTextureOES = false;
+
+    
+    bool compressedEACRG11UnsignedTextureOES = false;
+
+    
+    bool compressedEACRG11SignedTextureOES = false;
+
+    
+    
+    
+    
+    
+    bool compressedTextureETC = false;
+
+    
+    bool compressedTexturePVRTC = false;
+
+    
+    bool compressedTexturePVRTCsRGB = false;
+
+    
+    
+    
+    bool sRGB = false;
+
+    
+    bool sRGBR8EXT = false;
+
+    
+    bool depthTextureANGLE = false;
+
+    
+    bool depthTextureOES = false;
+
+    
+    bool depthTextureCubeMapOES = false;
+
+    
+    
+    bool depth24OES = false;
+
+    
+    
+    bool depth32OES = false;
+
+    
+    bool texture3DOES = false;
+
+    
+    bool textureStorage = false;
+
+    
+    bool textureNPOTOES = false;
+
+    
+    bool drawBuffers = false;
+
+    
+    bool drawBuffersIndexedEXT = false;
+
+    
+    bool drawBuffersIndexedOES = false;
+
+    
+    bool drawBuffersIndexedAny() const { return (drawBuffersIndexedEXT || drawBuffersIndexedOES); }
+
+    
+    bool textureFilterAnisotropic = false;
+    GLfloat maxTextureAnisotropy  = 0.0f;
+
+    
+    bool occlusionQueryBoolean = false;
+
+    
+    bool fenceNV = false;
+
+    
+    bool disjointTimerQuery            = false;
+    GLuint queryCounterBitsTimeElapsed = 0;
+    GLuint queryCounterBitsTimestamp   = 0;
+
+    
+    bool robustness = false;
+
+    
+    bool robustBufferAccessBehavior = false;
+
+    
+    bool blendMinMax = false;
+
+    
+    bool framebufferBlitANGLE = false;
+    
+    bool framebufferBlitNV = false;
+    
+    bool framebufferBlitAny() const { return (framebufferBlitANGLE || framebufferBlitNV); }
+
+    
+    bool framebufferMultisample = false;
+
+    
+    bool multisampledRenderToTexture = false;
+
+    
+    bool multisampledRenderToTexture2 = false;
+
+    
+    bool instancedArraysANGLE = false;
+    
+    bool instancedArraysEXT = false;
+    
+    bool instancedArraysAny() const { return (instancedArraysANGLE || instancedArraysEXT); }
+
+    
+    bool packReverseRowOrder = false;
+
+    
+    bool standardDerivativesOES = false;
+
+    
+    bool shaderTextureLOD = false;
+
+    
+    bool shaderFramebufferFetchNonCoherentEXT = false;
+
+    
+    bool fragDepth = false;
+
+    
+    bool multiview  = false;
+    GLuint maxViews = 1;
+
+    
+    bool multiview2 = false;
+
+    
+    bool textureUsage = false;
+
+    
+    bool translatedShaderSource = false;
+
+    
+    bool fboRenderMipmapOES = false;
+
+    
+    bool discardFramebuffer = false;
+
+    
+    bool debugMarker = false;
+
+    
+    bool debugLabel = false;
+
+    
+    bool eglImageOES = false;
+
+    
+    bool eglImageExternalOES = false;
+
+    
+    bool eglImageExternalEssl3OES = false;
+
+    
+    bool eglImageExternalWrapModesEXT = false;
+
+    
+    bool eglSyncOES = false;
+
+    
+    bool memoryObject = false;
+
+    
+    bool memoryObjectFd = false;
+
+    
+    bool memoryObjectFlagsANGLE = false;
+
+    
+    bool memoryObjectFuchsiaANGLE = false;
+
+    
+    bool semaphore = false;
+
+    
+    bool semaphoreFd = false;
+
+    
+    bool semaphoreFuchsiaANGLE = false;
+
+    
+    bool eglStreamConsumerExternalNV = false;
+
+    
+    bool unpackSubimage = false;
+
+    
+    bool packSubimage = false;
+
+    
+    bool noperspectiveInterpolationNV = false;
+
+    
+    bool vertexHalfFloatOES = false;
+
+    
+    bool vertexArrayObjectOES = false;
+
+    
+    bool vertexAttribType1010102OES = false;
+
+    
+    bool debug                     = false;
+    GLuint maxDebugMessageLength   = 0;
+    GLuint maxDebugLoggedMessages  = 0;
+    GLuint maxDebugGroupStackDepth = 0;
+    GLuint maxLabelLength          = 0;
+
+    
+    bool noError = false;
+
+    
+    bool lossyETCDecode = false;
+
+    
+    bool bindUniformLocation = false;
+
+    
+    bool syncQuery = false;
+
+    
+    bool copyTexture = false;
+
+    
+    bool copyCompressedTexture = false;
+
+    
+    bool copyTexture3d = false;
+
+    
+    bool webglCompatibility = false;
+
+    
+    bool requestExtension = false;
+
+    
+    bool bindGeneratesResource = false;
+
+    
+    bool robustClientMemory = false;
+
+    
+    bool textureBorderClampOES = false;
+
+    
+    bool textureBorderClampEXT = false;
+
+    
+    bool textureBorderClampAny() const { return (textureBorderClampOES || textureBorderClampEXT); }
+
+    
+    bool textureSRGBDecode = false;
+
+    
+    bool textureSRGBOverride = false;
+
+    
+    bool sRGBWriteControl = false;
+
+    
+    bool colorBufferFloatRGB = false;
+
+    
+    bool colorBufferFloatRGBA = false;
+
+    
+    bool eglImageArray = false;
+
+    
+
+    
+    bool colorBufferFloat = false;
+
+    
+    
+    bool multisampleCompatibility = false;
+
+    
+    bool framebufferMixedSamples = false;
+
+    
+    
+    bool textureNorm16 = false;
+
+    
+    bool surfacelessContextOES = false;
+
+    
+    bool clientArrays = false;
+
+    
+    bool robustResourceInitialization = false;
+
+    
+    bool programCacheControl = false;
+
+    
+    bool textureRectangle = false;
+
+    
+    bool geometryShader = false;
+
+    
+    
+    bool pointSizeArrayOES = false;
+
+    
+    bool textureCubeMapOES = false;
+
+    
+    bool pointSpriteOES = false;
+
+    
+    bool drawTextureOES = false;
+
+    
+    bool framebufferObjectOES = false;
+
+    
+    
+    bool explicitContextGles1 = false;
+    
+    bool explicitContext = false;
+
+    
+    bool parallelShaderCompile = false;
+
+    
+    bool separateShaderObjects = false;
+
+    
+    bool textureStorageMultisample2DArrayOES = false;
+
+    
+    bool multiviewMultisample = false;
+
+    
+    bool blendEquationAdvancedKHR = false;
+
+    
+    bool blendFuncExtended          = false;
+    GLuint maxDualSourceDrawBuffers = 0;
+
+    
+    bool floatBlend = false;
+
+    
+    bool memorySize = false;
+
+    
+    bool textureMultisample = false;
+
+    
+    bool multiDraw = false;
+
+    
+    bool provokingVertex = false;
+
+    
+    bool textureFilteringCHROMIUM = false;
+
+    
+    bool loseContextCHROMIUM = false;
+
+    
+    bool textureExternalUpdateANGLE = false;
+
+    
+    bool baseVertexBaseInstance = false;
+
+    
+    bool getImageANGLE = false;
+
+    
+    bool drawElementsBaseVertexOES = false;
+    
+    bool drawElementsBaseVertexEXT = false;
+    
+    bool drawElementsBaseVertexAny() const
+    {
+        return (drawElementsBaseVertexOES || drawElementsBaseVertexEXT);
+    }
+
+    
+    bool shaderNonConstGlobalInitializersEXT = false;
+
+    
+    bool shaderIoBlocksOES = false;
+    
+    bool shaderIoBlocksEXT = false;
+    
+    bool shaderIoBlocksAny() const { return (shaderIoBlocksOES || shaderIoBlocksEXT); }
+
+    
+    bool gpuShader5EXT = false;
+    
+    bool webglVideoTexture = false;
+
+    
+    bool clipDistanceAPPLE = false;
+
+    
+    bool clipControlEXT = false;
+
+    
+    bool textureCubeMapArrayOES = false;
+    
+    bool textureCubeMapArrayEXT = false;
+    
+    bool textureCubeMapArrayAny() const
+    {
+        return (textureCubeMapArrayOES || textureCubeMapArrayEXT);
+    }
+
+    
+    bool shadowSamplersEXT = false;
+
+    
+    bool bufferStorageEXT = false;
+
+    
+    bool externalBufferEXT = false;
+
+    
+    bool stencilIndex8 = false;
+
+    
+    bool sampleShadingOES = false;
+
+    
+    bool multisampleInterpolationOES = false;
+
+    
+    bool shaderImageAtomicOES = false;
+
+    
+    bool sampleVariablesOES = false;
+
+    
+    bool robustnessVideoMemoryPurgeNV = false;
+
+    
+    bool getTexLevelParameterANGLE = false;
+
+    
+    bool tessellationShaderEXT = false;
+
+    
+    bool copyImageEXT = false;
+
+    
+    bool textureBufferOES = false;
+    
+    bool textureBufferEXT = false;
+    
+    bool textureBufferAny() const { return (textureBufferOES || textureBufferEXT); }
+
+    
+    bool yuvTargetEXT = false;
+
+    
+    bool clipCullDistanceEXT = false;
+
+    
+    bool getSerializedContextStringANGLE = false;
+
+    
+    bool primitiveBoundingBoxEXT = false;
+};
+
 
 using ExtensionBool = bool Extensions::*;
 
@@ -134,9 +780,6 @@ struct Limitations
     bool noSimultaneousConstantColorAndAlphaBlendFunc = false;
 
     
-    bool noUnclampedBlendColor = false;
-
-    
     bool noFlexibleVaryingPacking = false;
 
     
@@ -154,17 +797,6 @@ struct Limitations
 
     
     bool emulatedEtc1 = false;
-
-    
-    bool emulatedAstc = false;
-
-    
-    bool noCompressedTexture3D = false;
-
-    
-    bool compressedBaseMipLevelMultipleOfFour = false;
-
-    bool limitWebglMaxTextureSizeTo4096 = false;
 };
 
 struct TypePrecision
@@ -175,7 +807,6 @@ struct TypePrecision
     TypePrecision &operator=(const TypePrecision &other);
 
     void setIEEEFloat();
-    void setIEEEHalfFloat();
     void setTwosComplementInt(unsigned int bits);
     void setSimulatedFloat(unsigned int range, unsigned int precision);
     void setSimulatedInt(unsigned int range);
@@ -351,33 +982,9 @@ struct Caps
     GLuint subPixelBits = 4;
 
     
-    GLuint maxDualSourceDrawBuffers = 0;
-
-    
-    GLfloat maxTextureAnisotropy = 0.0f;
-
-    
-    GLuint queryCounterBitsTimeElapsed = 0;
-    GLuint queryCounterBitsTimestamp   = 0;
-
-    
-    GLuint maxViews = 1;
-
-    
-    GLuint maxDebugMessageLength   = 0;
-    GLuint maxDebugLoggedMessages  = 0;
-    GLuint maxDebugGroupStackDepth = 0;
-    GLuint maxLabelLength          = 0;
-
-    
     GLuint maxClipDistances                = 0;
     GLuint maxCullDistances                = 0;
     GLuint maxCombinedClipAndCullDistances = 0;
-
-    
-    GLuint maxPixelLocalStoragePlanes                       = 0;
-    GLuint maxColorAttachmentsWithActivePixelLocalStorage   = 0;
-    GLuint maxCombinedDrawBuffersAndPixelLocalStoragePlanes = 0;
 
     
     GLuint maxMultitextureUnits                 = 0;
@@ -476,6 +1083,9 @@ struct DisplayExtensions
     bool getAllProcAddresses = false;
 
     
+    bool flexibleSurfaceCompatibility = false;
+
+    
     bool directComposition = false;
 
     
@@ -533,10 +1143,10 @@ struct DisplayExtensions
     bool createContextClientArrays = false;
 
     
-    bool programCacheControlANGLE = false;
+    bool programCacheControl = false;
 
     
-    bool robustResourceInitializationANGLE = false;
+    bool robustResourceInitialization = false;
 
     
     bool iosurfaceClientBuffer = false;
@@ -558,9 +1168,6 @@ struct DisplayExtensions
 
     
     bool getFrameTimestamps = false;
-
-    
-    bool timestampSurfaceAttributeANGLE = false;
 
     
     bool recordable = false;
@@ -614,9 +1221,6 @@ struct DisplayExtensions
     bool glColorspaceDisplayP3Passthrough = false;
 
     
-    bool eglColorspaceAttributePassthroughANGLE = false;
-
-    
     bool framebufferTargetANDROID = false;
 
     
@@ -642,33 +1246,6 @@ struct DisplayExtensions
 
     
     bool bufferAgeEXT = false;
-
-    
-    bool mutableRenderBufferKHR = false;
-
-    
-    bool protectedContentEXT = false;
-
-    
-    bool createSurfaceSwapIntervalANGLE = false;
-
-    
-    bool contextVirtualizationANGLE = false;
-
-    
-    bool lockSurface3KHR = false;
-
-    
-    bool vulkanImageANGLE = false;
-
-    
-    bool metalCreateContextOwnershipIdentityANGLE = false;
-
-    
-    bool partialUpdateKHR = false;
-
-    
-    bool mtlSyncSharedEventANGLE = false;
 };
 
 struct DeviceExtensions
@@ -689,9 +1266,6 @@ struct DeviceExtensions
 
     
     bool deviceMetal = false;
-
-    
-    bool deviceVulkan = false;
 };
 
 struct ClientExtensions
@@ -710,12 +1284,6 @@ struct ClientExtensions
 
     
     bool platformDevice = false;
-
-    
-    bool platformGbmKHR = false;
-
-    
-    bool platformWaylandEXT = false;
 
     
     bool platformANGLE = false;
@@ -739,13 +1307,13 @@ struct ClientExtensions
     bool platformANGLEMetal = false;
 
     
+    bool platformANGLEContextVirtualization = false;
+
+    
     bool platformANGLEDeviceContextVolatileEagl = false;
 
     
     bool platformANGLEDeviceContextVolatileCgl = false;
-
-    
-    bool platformANGLEDeviceId = false;
 
     
     bool deviceCreation = false;
@@ -766,6 +1334,9 @@ struct ClientExtensions
     bool debug = false;
 
     
+    bool explicitContext = false;
+
+    
     bool featureControlANGLE = false;
 
     
@@ -776,9 +1347,6 @@ struct ClientExtensions
 
     
     bool deviceQueryEXT = false;
-
-    
-    bool displayPowerPreferenceANGLE = false;
 };
 
 }  

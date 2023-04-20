@@ -20,9 +20,9 @@ class TCompiler;
 class TIntermNode;
 class TSymbolTable;
 
-[[nodiscard]] bool SeparateExpressionsReturningArrays(TCompiler *compiler,
-                                                      TIntermNode *root,
-                                                      TSymbolTable *symbolTable);
+ANGLE_NO_DISCARD bool SeparateExpressionsReturningArrays(TCompiler *compiler,
+                                                         TIntermNode *root,
+                                                         TSymbolTable *symbolTable);
 }  
 
 #endif  

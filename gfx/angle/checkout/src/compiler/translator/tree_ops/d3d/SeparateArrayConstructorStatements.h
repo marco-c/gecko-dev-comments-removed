@@ -19,7 +19,7 @@ namespace sh
 class TCompiler;
 class TIntermBlock;
 
-[[nodiscard]] bool SeparateArrayConstructorStatements(TCompiler *compiler, TIntermBlock *root);
+ANGLE_NO_DISCARD bool SeparateArrayConstructorStatements(TCompiler *compiler, TIntermBlock *root);
 }  
 
 #endif  

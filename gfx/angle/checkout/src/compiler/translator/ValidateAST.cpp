@@ -6,13 +6,10 @@
 
 #include "compiler/translator/ValidateAST.h"
 
-#include "common/utilities.h"
 #include "compiler/translator/Diagnostics.h"
-#include "compiler/translator/ImmutableStringBuilder.h"
 #include "compiler/translator/Symbol.h"
 #include "compiler/translator/tree_util/IntermTraverse.h"
 #include "compiler/translator/tree_util/SpecializationConstant.h"
-#include "compiler/translator/util.h"
 
 namespace sh
 {
@@ -54,19 +51,7 @@ class ValidateAST : public TIntermTraverser
     void visitNode(Visit visit, TIntermNode *node);
     
     void visitStructOrInterfaceBlockDeclaration(const TType &type, const TSourceLoc &location);
-    void visitStructUsage(const TType &type, const TSourceLoc &location);
-    
-    void visitBuiltInFunction(TIntermOperator *op, const TFunction *function);
-    
-    void visitFunctionCall(TIntermAggregate *node);
-    
-    void validateExpressionTypeBinary(TIntermBinary *node);
-    
-    void validateExpressionTypeSwitch(TIntermSwitch *node);
-    
-    void visitVariableNeedingDeclaration(TIntermSymbol *node);
-    
-    void visitBuiltInVariable(TIntermSymbol *node);
+    void visitStructInDeclarationUsage(const TType &type, const TSourceLoc &location);
 
     void scope(Visit visit);
     bool isVariableDeclared(const TVariable *variable);
@@ -88,53 +73,18 @@ class ValidateAST : public TIntermTraverser
     
     std::vector<std::set<const TVariable *>> mDeclaredVariables;
     std::set<const TInterfaceBlock *> mNamelessInterfaceBlocks;
-    std::map<ImmutableString, const TVariable *> mReferencedBuiltIns;
     bool mVariableReferencesFailed = false;
 
     
-    bool mBuiltInOpsFailed = false;
-
-    
-    std::set<const TFunction *> mDeclaredFunctions;
-    bool mFunctionCallFailed = false;
-
-    
-    bool mNoRawFunctionCallsFailed = false;
-
-    
     bool mNullNodesFailed = false;
-
-    
-    bool mQualifiersFailed = false;
-
-    
-    bool mPrecisionFailed = false;
 
     
     std::vector<std::map<ImmutableString, const TFieldListCollection *>> mStructsAndBlocksByName;
     bool mStructUsageFailed = false;
 
     
-    bool mExpressionTypesFailed = false;
-
-    
     bool mMultiDeclarationsFailed = false;
-
-    
-    bool mNoSwizzleOfSwizzleFailed = false;
-
-    
-    bool mIsBranchVisitedInBlock        = false;
-    bool mNoStatementsAfterBranchFailed = false;
 };
-
-bool IsSameType(const TType &a, const TType &b)
-{
-    return a.getBasicType() == b.getBasicType() && a.getNominalSize() == b.getNominalSize() &&
-           a.getSecondarySize() == b.getSecondarySize() && a.getArraySizes() == b.getArraySizes() &&
-           a.getStruct() == b.getStruct() &&
-           (!a.isInterfaceBlock() || a.getInterfaceBlock() == b.getInterfaceBlock());
-}
 
 bool ValidateAST::validate(TIntermNode *root,
                            TDiagnostics *diagnostics,
@@ -156,8 +106,6 @@ ValidateAST::ValidateAST(TIntermNode *root,
     if (!isTreeRoot)
     {
         mOptions.validateVariableReferences = false;
-        mOptions.validateFunctionCall       = false;
-        mOptions.validateStructUsage        = false;
     }
 
     if (mOptions.validateSingleParent)
@@ -189,18 +137,6 @@ void ValidateAST::visitNode(Visit visit, TIntermNode *node)
             mParent[child] = node;
         }
     }
-
-    if (visit == PreVisit && mOptions.validateNoStatementsAfterBranch)
-    {
-        
-        
-        if (mIsBranchVisitedInBlock)
-        {
-            mDiagnostics->error(node->getLine(), "Found dead code after branch",
-                                "<validateNoStatementsAfterBranch>");
-            mNoStatementsAfterBranchFailed = true;
-        }
-    }
 }
 
 void ValidateAST::visitStructOrInterfaceBlockDeclaration(const TType &type,
@@ -213,53 +149,11 @@ void ValidateAST::visitStructOrInterfaceBlockDeclaration(const TType &type,
 
     
     ImmutableString typeName("");
-    const TFieldListCollection *namedStructOrBlock = getStructOrInterfaceBlock(type, &typeName);
+    const TFieldListCollection *structOrBlock = getStructOrInterfaceBlock(type, &typeName);
 
-    
-    
-    
-    {
-        
-        
-        const TFieldListCollection *structOrBlock = namedStructOrBlock;
-        if (structOrBlock == nullptr)
-        {
-            structOrBlock = type.getStruct();
-        }
-        ASSERT(structOrBlock != nullptr);
-
-        for (const TField *field : structOrBlock->fields())
-        {
-            visitStructUsage(*field->type(), field->line());
-        }
-    }
-
-    if (namedStructOrBlock)
+    if (structOrBlock)
     {
         ASSERT(!typeName.empty());
-        
-        if (type.getStruct() == nullptr)
-        {
-            
-            std::string name(typeName.data());
-
-            if (IsShaderIn(type.getQualifier()))
-            {
-                typeName = ImmutableString(name + "<input>");
-            }
-            else if (IsShaderOut(type.getQualifier()))
-            {
-                typeName = ImmutableString(name + "<output>");
-            }
-            else if (IsStorageBuffer(type.getQualifier()))
-            {
-                typeName = ImmutableString(name + "<buffer>");
-            }
-            else if (type.getQualifier() == EvqUniform)
-            {
-                typeName = ImmutableString(name + "<uniform>");
-            }
-        }
 
         if (mStructsAndBlocksByName.back().find(typeName) != mStructsAndBlocksByName.back().end())
         {
@@ -272,12 +166,26 @@ void ValidateAST::visitStructOrInterfaceBlockDeclaration(const TType &type,
         else
         {
             
-            mStructsAndBlocksByName.back()[typeName] = namedStructOrBlock;
+            mStructsAndBlocksByName.back()[typeName] = structOrBlock;
         }
+    }
+
+    
+    
+    
+    if (structOrBlock == nullptr)
+    {
+        structOrBlock = type.getStruct();
+    }
+    ASSERT(structOrBlock != nullptr);
+
+    for (const TField *field : structOrBlock->fields())
+    {
+        visitStructInDeclarationUsage(*field->type(), field->line());
     }
 }
 
-void ValidateAST::visitStructUsage(const TType &type, const TSourceLoc &location)
+void ValidateAST::visitStructInDeclarationUsage(const TType &type, const TSourceLoc &location)
 {
     if (type.getStruct() == nullptr)
     {
@@ -308,8 +216,6 @@ void ValidateAST::visitStructUsage(const TType &type, const TSourceLoc &location
                                     typeName.data());
                 mStructUsageFailed = true;
             }
-
-            break;
         }
     }
 
@@ -320,243 +226,6 @@ void ValidateAST::visitStructUsage(const TType &type, const TSourceLoc &location
                             "<validateStructUsage>",
                             typeName.data());
         mStructUsageFailed = true;
-    }
-}
-
-void ValidateAST::visitBuiltInFunction(TIntermOperator *node, const TFunction *function)
-{
-    const TOperator op = node->getOp();
-    if (!BuiltInGroup::IsBuiltIn(op))
-    {
-        return;
-    }
-
-    ImmutableStringBuilder opValueBuilder(16);
-    opValueBuilder << "op: ";
-    opValueBuilder.appendDecimal(op);
-
-    ImmutableString opValue = opValueBuilder;
-
-    if (function == nullptr)
-    {
-        mDiagnostics->error(node->getLine(),
-                            "Found node calling built-in without a reference to the built-in "
-                            "function <validateBuiltInOps>",
-                            opValue.data());
-        mVariableReferencesFailed = true;
-    }
-    else if (function->getBuiltInOp() != op)
-    {
-        mDiagnostics->error(node->getLine(),
-                            "Found node calling built-in with a reference to a different function "
-                            "<validateBuiltInOps>",
-                            opValue.data());
-        mVariableReferencesFailed = true;
-    }
-}
-
-void ValidateAST::visitFunctionCall(TIntermAggregate *node)
-{
-    if (node->getOp() != EOpCallFunctionInAST)
-    {
-        return;
-    }
-
-    const TFunction *function = node->getFunction();
-
-    if (function == nullptr)
-    {
-        mDiagnostics->error(node->getLine(),
-                            "Found node calling function without a reference to it",
-                            "<validateFunctionCall>");
-        mFunctionCallFailed = true;
-    }
-    else if (mDeclaredFunctions.find(function) == mDeclaredFunctions.end())
-    {
-        mDiagnostics->error(node->getLine(),
-                            "Found node calling previously undeclared function "
-                            "<validateFunctionCall>",
-                            function->name().data());
-        mFunctionCallFailed = true;
-    }
-}
-
-void ValidateAST::validateExpressionTypeBinary(TIntermBinary *node)
-{
-    switch (node->getOp())
-    {
-        case EOpIndexDirect:
-        case EOpIndexIndirect:
-        {
-            TType expectedType(node->getLeft()->getType());
-            if (!expectedType.isArray())
-            {
-                
-                
-                break;
-            }
-
-            expectedType.toArrayElementType();
-
-            if (!IsSameType(node->getType(), expectedType))
-            {
-                const TSymbol *symbol = expectedType.getStruct();
-                if (symbol == nullptr)
-                {
-                    symbol = expectedType.getInterfaceBlock();
-                }
-                const char *name = nullptr;
-                if (symbol)
-                {
-                    name = symbol->name().data();
-                }
-                else if (expectedType.isScalar())
-                {
-                    name = "<scalar array>";
-                }
-                else if (expectedType.isVector())
-                {
-                    name = "<vector array>";
-                }
-                else
-                {
-                    ASSERT(expectedType.isMatrix());
-                    name = "<matrix array>";
-                }
-
-                mDiagnostics->error(
-                    node->getLine(),
-                    "Found index node with type that is inconsistent with the array being indexed "
-                    "<validateExpressionTypes>",
-                    name);
-                mExpressionTypesFailed = true;
-            }
-        }
-        break;
-        default:
-            
-            break;
-    }
-
-    switch (node->getOp())
-    {
-        case EOpIndexDirect:
-        case EOpIndexDirectStruct:
-        case EOpIndexDirectInterfaceBlock:
-            if (node->getRight()->getAsConstantUnion() == nullptr)
-            {
-                mDiagnostics->error(node->getLine(),
-                                    "Found direct index node with a non-constant index",
-                                    "<validateExpressionTypes>");
-                mExpressionTypesFailed = true;
-            }
-            break;
-        default:
-            break;
-    }
-}
-
-void ValidateAST::validateExpressionTypeSwitch(TIntermSwitch *node)
-{
-    const TType &selectorType = node->getInit()->getType();
-
-    if (selectorType.getBasicType() != EbtYuvCscStandardEXT &&
-        selectorType.getBasicType() != EbtInt && selectorType.getBasicType() != EbtUInt)
-    {
-        mDiagnostics->error(node->getLine(), "Found switch selector expression that is not integer",
-                            "<validateExpressionTypes>");
-        mExpressionTypesFailed = true;
-    }
-    else if (!selectorType.isScalar())
-    {
-        mDiagnostics->error(node->getLine(), "Found switch selector expression that is not scalar",
-                            "<validateExpressionTypes>");
-        mExpressionTypesFailed = true;
-    }
-}
-
-void ValidateAST::visitVariableNeedingDeclaration(TIntermSymbol *node)
-{
-    const TVariable *variable = &node->variable();
-    const TType &type         = node->getType();
-
-    
-    if (type.getInterfaceBlock() && !type.isInterfaceBlock())
-    {
-        const TInterfaceBlock *interfaceBlock = type.getInterfaceBlock();
-        const TFieldList &fieldList           = interfaceBlock->fields();
-        const size_t fieldIndex               = type.getInterfaceBlockFieldIndex();
-
-        if (mNamelessInterfaceBlocks.count(interfaceBlock) == 0)
-        {
-            mDiagnostics->error(node->getLine(),
-                                "Found reference to undeclared or inconsistenly transformed "
-                                "nameless interface block <validateVariableReferences>",
-                                node->getName().data());
-            mVariableReferencesFailed = true;
-        }
-        else if (fieldIndex >= fieldList.size() || node->getName() != fieldList[fieldIndex]->name())
-        {
-            mDiagnostics->error(node->getLine(),
-                                "Found reference to inconsistenly transformed nameless "
-                                "interface block field <validateVariableReferences>",
-                                node->getName().data());
-            mVariableReferencesFailed = true;
-        }
-        return;
-    }
-
-    const bool isStructDeclaration =
-        type.isStructSpecifier() && variable->symbolType() == SymbolType::Empty;
-
-    if (!isStructDeclaration && !isVariableDeclared(variable))
-    {
-        mDiagnostics->error(node->getLine(),
-                            "Found reference to undeclared or inconsistently transformed "
-                            "variable <validateVariableReferences>",
-                            node->getName().data());
-        mVariableReferencesFailed = true;
-    }
-}
-
-void ValidateAST::visitBuiltInVariable(TIntermSymbol *node)
-{
-    const TVariable *variable = &node->variable();
-    ImmutableString name      = variable->name();
-
-    if (mOptions.validateVariableReferences)
-    {
-        auto iter = mReferencedBuiltIns.find(name);
-        if (iter == mReferencedBuiltIns.end())
-        {
-            mReferencedBuiltIns[name] = variable;
-            return;
-        }
-
-        if (variable != iter->second)
-        {
-            mDiagnostics->error(
-                node->getLine(),
-                "Found inconsistent references to built-in variable <validateVariableReferences>",
-                name.data());
-            mVariableReferencesFailed = true;
-        }
-    }
-
-    if (mOptions.validateQualifiers)
-    {
-        TQualifier qualifier = variable->getType().getQualifier();
-
-        if ((name == "gl_ClipDistance" && qualifier != EvqClipDistance) ||
-            (name == "gl_CullDistance" && qualifier != EvqCullDistance) ||
-            (name == "gl_LastFragData" && qualifier != EvqLastFragData))
-        {
-            mDiagnostics->error(
-                node->getLine(),
-                "Incorrect qualifier applied to redeclared built-in <validateQualifiers>",
-                name.data());
-            mQualifiersFailed = true;
-        }
     }
 }
 
@@ -605,16 +274,17 @@ bool ValidateAST::isVariableDeclared(const TVariable *variable)
 bool ValidateAST::variableNeedsDeclaration(const TVariable *variable)
 {
     
-    if (gl::IsBuiltInName(variable->name().data()))
+    if (variable->name().beginsWith("gl_"))
     {
         return false;
     }
 
     
     
-    if (variable->getType().getQualifier() == EvqSpecConst)
+    if (variable->symbolType() == SymbolType::AngleInternal &&
+        SpecConst::IsSpecConstName(variable->name()))
     {
-        return mOptions.validateSpecConstReferences;
+        return false;
     }
 
     return true;
@@ -671,31 +341,48 @@ void ValidateAST::visitSymbol(TIntermSymbol *node)
     visitNode(PreVisit, node);
 
     const TVariable *variable = &node->variable();
+    const TType &type         = node->getType();
 
-    if (mOptions.validateVariableReferences)
+    if (mOptions.validateVariableReferences && variableNeedsDeclaration(variable))
     {
-        if (variableNeedsDeclaration(variable))
+        
+        if (type.getInterfaceBlock() && !type.isInterfaceBlock())
         {
-            visitVariableNeedingDeclaration(node);
+            const TInterfaceBlock *interfaceBlock = type.getInterfaceBlock();
+            const TFieldList &fieldList           = interfaceBlock->fields();
+            const size_t fieldIndex               = type.getInterfaceBlockFieldIndex();
+
+            if (mNamelessInterfaceBlocks.count(interfaceBlock) == 0)
+            {
+                mDiagnostics->error(node->getLine(),
+                                    "Found reference to undeclared or inconsistenly redeclared "
+                                    "nameless interface block <validateVariableReferences>",
+                                    node->getName().data());
+                mVariableReferencesFailed = true;
+            }
+            else if (fieldIndex >= fieldList.size() ||
+                     node->getName() != fieldList[fieldIndex]->name())
+            {
+                mDiagnostics->error(node->getLine(),
+                                    "Found reference to inconsistenly redeclared nameless "
+                                    "interface block field <validateVariableReferences>",
+                                    node->getName().data());
+                mVariableReferencesFailed = true;
+            }
         }
-    }
-
-    const bool isBuiltIn = gl::IsBuiltInName(variable->name().data());
-    if (isBuiltIn)
-    {
-        visitBuiltInVariable(node);
-    }
-
-    if (mOptions.validatePrecision)
-    {
-        if (!isBuiltIn && IsPrecisionApplicableToType(node->getBasicType()) &&
-            node->getType().getPrecision() == EbpUndefined)
+        else
         {
-            
-            mDiagnostics->error(node->getLine(),
-                                "Found symbol with undefined precision <validatePrecision>",
-                                variable->name().data());
-            mPrecisionFailed = true;
+            const bool isStructDeclaration =
+                type.isStructSpecifier() && variable->symbolType() == SymbolType::Empty;
+
+            if (!isStructDeclaration && !isVariableDeclared(variable))
+            {
+                mDiagnostics->error(node->getLine(),
+                                    "Found reference to undeclared or inconsistently redeclared "
+                                    "variable <validateVariableReferences>",
+                                    node->getName().data());
+                mVariableReferencesFailed = true;
+            }
         }
     }
 }
@@ -708,41 +395,18 @@ void ValidateAST::visitConstantUnion(TIntermConstantUnion *node)
 bool ValidateAST::visitSwizzle(Visit visit, TIntermSwizzle *node)
 {
     visitNode(visit, node);
-
-    if (mOptions.validateNoSwizzleOfSwizzle)
-    {
-        if (node->getOperand()->getAsSwizzleNode() != nullptr)
-        {
-            mDiagnostics->error(node->getLine(), "Found swizzle applied to swizzle",
-                                "<validateNoSwizzleOfSwizzle>");
-            mNoSwizzleOfSwizzleFailed = true;
-        }
-    }
-
     return true;
 }
 
 bool ValidateAST::visitBinary(Visit visit, TIntermBinary *node)
 {
     visitNode(visit, node);
-
-    if (mOptions.validateExpressionTypes && visit == PreVisit)
-    {
-        validateExpressionTypeBinary(node);
-    }
-
     return true;
 }
 
 bool ValidateAST::visitUnary(Visit visit, TIntermUnary *node)
 {
     visitNode(visit, node);
-
-    if (visit == PreVisit && mOptions.validateBuiltInOps)
-    {
-        visitBuiltInFunction(node, node->getFunction());
-    }
-
     return true;
 }
 
@@ -761,104 +425,18 @@ bool ValidateAST::visitIfElse(Visit visit, TIntermIfElse *node)
 bool ValidateAST::visitSwitch(Visit visit, TIntermSwitch *node)
 {
     visitNode(visit, node);
-
-    if (mOptions.validateExpressionTypes && visit == PreVisit)
-    {
-        validateExpressionTypeSwitch(node);
-    }
-
     return true;
 }
 
 bool ValidateAST::visitCase(Visit visit, TIntermCase *node)
 {
-    
-    
-    mIsBranchVisitedInBlock = false;
-
     visitNode(visit, node);
-
     return true;
 }
 
 void ValidateAST::visitFunctionPrototype(TIntermFunctionPrototype *node)
 {
     visitNode(PreVisit, node);
-
-    if (mOptions.validateFunctionCall)
-    {
-        const TFunction *function = node->getFunction();
-        mDeclaredFunctions.insert(function);
-    }
-
-    const TFunction *function = node->getFunction();
-    const TType &returnType   = function->getReturnType();
-    if (mOptions.validatePrecision && IsPrecisionApplicableToType(returnType.getBasicType()) &&
-        returnType.getPrecision() == EbpUndefined)
-    {
-        mDiagnostics->error(
-            node->getLine(),
-            "Found function with undefined precision on return value <validatePrecision>",
-            function->name().data());
-        mPrecisionFailed = true;
-    }
-
-    if (mOptions.validateStructUsage)
-    {
-        if (returnType.isStructSpecifier())
-        {
-            visitStructOrInterfaceBlockDeclaration(returnType, node->getLine());
-        }
-        else
-        {
-            visitStructUsage(returnType, node->getLine());
-        }
-    }
-
-    for (size_t paramIndex = 0; paramIndex < function->getParamCount(); ++paramIndex)
-    {
-        const TVariable *param = function->getParam(paramIndex);
-        const TType &paramType = param->getType();
-
-        if (mOptions.validateStructUsage)
-        {
-            visitStructUsage(paramType, node->getLine());
-        }
-
-        if (mOptions.validateQualifiers)
-        {
-            TQualifier qualifier = paramType.getQualifier();
-            if (qualifier != EvqParamIn && qualifier != EvqParamOut && qualifier != EvqParamInOut &&
-                qualifier != EvqParamConst)
-            {
-                mDiagnostics->error(node->getLine(),
-                                    "Found function prototype with an invalid qualifier "
-                                    "<validateQualifiers>",
-                                    param->name().data());
-                mQualifiersFailed = true;
-            }
-
-            if (IsOpaqueType(paramType.getBasicType()) && qualifier != EvqParamIn)
-            {
-                mDiagnostics->error(
-                    node->getLine(),
-                    "Found function prototype with an invalid qualifier on opaque parameter "
-                    "<validateQualifiers>",
-                    param->name().data());
-                mQualifiersFailed = true;
-            }
-        }
-
-        if (mOptions.validatePrecision && IsPrecisionApplicableToType(paramType.getBasicType()) &&
-            paramType.getPrecision() == EbpUndefined)
-        {
-            mDiagnostics->error(
-                node->getLine(),
-                "Found function parameter with undefined precision <validatePrecision>",
-                param->name().data());
-            mPrecisionFailed = true;
-        }
-    }
 }
 
 bool ValidateAST::visitFunctionDefinition(Visit visit, TIntermFunctionDefinition *node)
@@ -896,29 +474,6 @@ bool ValidateAST::visitAggregate(Visit visit, TIntermAggregate *node)
 {
     visitNode(visit, node);
     expectNonNullChildren(visit, node, 0);
-
-    if (visit == PreVisit && mOptions.validateBuiltInOps)
-    {
-        visitBuiltInFunction(node, node->getFunction());
-    }
-
-    if (visit == PreVisit && mOptions.validateFunctionCall)
-    {
-        visitFunctionCall(node);
-    }
-
-    if (visit == PreVisit && mOptions.validateNoRawFunctionCalls)
-    {
-        if (node->getOp() == EOpCallInternalRawFunction)
-        {
-            mDiagnostics->error(node->getLine(),
-                                "Found node calling a raw function (deprecated) "
-                                "<validateNoRawFunctionCalls>",
-                                node->getFunction()->name().data());
-            mNoRawFunctionCallsFailed = true;
-        }
-    }
-
     return true;
 }
 
@@ -927,18 +482,6 @@ bool ValidateAST::visitBlock(Visit visit, TIntermBlock *node)
     visitNode(visit, node);
     scope(visit);
     expectNonNullChildren(visit, node, 0);
-
-    if (visit == PostVisit)
-    {
-        
-        
-        
-        if (getParentNode() == nullptr || getParentNode()->getAsBlock() == nullptr)
-        {
-            mIsBranchVisitedInBlock = false;
-        }
-    }
-
     return true;
 }
 
@@ -946,20 +489,6 @@ bool ValidateAST::visitGlobalQualifierDeclaration(Visit visit,
                                                   TIntermGlobalQualifierDeclaration *node)
 {
     visitNode(visit, node);
-
-    const TVariable *variable = &node->getSymbol()->variable();
-
-    if (mOptions.validateVariableReferences && variableNeedsDeclaration(variable))
-    {
-        if (!isVariableDeclared(variable))
-        {
-            mDiagnostics->error(node->getLine(),
-                                "Found reference to undeclared or inconsistently transformed "
-                                "variable <validateVariableReferences>",
-                                variable->name().data());
-            mVariableReferencesFailed = true;
-        }
-    }
     return true;
 }
 
@@ -972,19 +501,6 @@ bool ValidateAST::visitDeclaration(Visit visit, TIntermDeclaration *node)
 
     if (mOptions.validateMultiDeclarations && sequence.size() > 1)
     {
-        TIntermSymbol *symbol = sequence[1]->getAsSymbolNode();
-        if (symbol == nullptr)
-        {
-            TIntermBinary *init = sequence[1]->getAsBinaryNode();
-            ASSERT(init && init->getOp() == EOpInitialize);
-            symbol = init->getLeft()->getAsSymbolNode();
-        }
-        ASSERT(symbol);
-
-        mDiagnostics->error(node->getLine(),
-                            "Found multiple declarations where SeparateDeclarations should have "
-                            "separated them <validateMultiDeclarations>",
-                            symbol->variable().name().data());
         mMultiDeclarationsFailed = true;
     }
 
@@ -1004,7 +520,6 @@ bool ValidateAST::visitDeclaration(Visit visit, TIntermDeclaration *node)
             ASSERT(symbol);
 
             const TVariable *variable = &symbol->variable();
-            const TType &type         = variable->getType();
 
             if (mOptions.validateVariableReferences)
             {
@@ -1039,42 +554,9 @@ bool ValidateAST::visitDeclaration(Visit visit, TIntermDeclaration *node)
                 
                 validateStructUsage = false;
 
+                const TType &type = variable->getType();
                 if (type.isStructSpecifier() || type.isInterfaceBlock())
-                {
                     visitStructOrInterfaceBlockDeclaration(type, node->getLine());
-                }
-                else
-                {
-                    visitStructUsage(type, node->getLine());
-                }
-            }
-
-            if (gl::IsBuiltInName(variable->name().data()))
-            {
-                visitBuiltInVariable(symbol);
-            }
-
-            if (mOptions.validatePrecision && (type.isStructSpecifier() || type.isInterfaceBlock()))
-            {
-                const TFieldListCollection *structOrBlock = type.getStruct();
-                if (structOrBlock == nullptr)
-                {
-                    structOrBlock = type.getInterfaceBlock();
-                }
-
-                for (const TField *field : structOrBlock->fields())
-                {
-                    const TType *fieldType = field->type();
-                    if (IsPrecisionApplicableToType(fieldType->getBasicType()) &&
-                        fieldType->getPrecision() == EbpUndefined)
-                    {
-                        mDiagnostics->error(
-                            node->getLine(),
-                            "Found block field with undefined precision <validatePrecision>",
-                            field->name().data());
-                        mPrecisionFailed = true;
-                    }
-                }
             }
         }
     }
@@ -1091,12 +573,6 @@ bool ValidateAST::visitLoop(Visit visit, TIntermLoop *node)
 bool ValidateAST::visitBranch(Visit visit, TIntermBranch *node)
 {
     visitNode(visit, node);
-
-    if (visit == PostVisit)
-    {
-        mIsBranchVisitedInBlock = true;
-    }
-
     return true;
 }
 
@@ -1107,26 +583,14 @@ void ValidateAST::visitPreprocessorDirective(TIntermPreprocessorDirective *node)
 
 bool ValidateAST::validateInternal()
 {
-    return !mSingleParentFailed && !mVariableReferencesFailed && !mBuiltInOpsFailed &&
-           !mFunctionCallFailed && !mNoRawFunctionCallsFailed && !mNullNodesFailed &&
-           !mQualifiersFailed && !mPrecisionFailed && !mStructUsageFailed &&
-           !mExpressionTypesFailed && !mMultiDeclarationsFailed && !mNoSwizzleOfSwizzleFailed &&
-           !mNoStatementsAfterBranchFailed;
+    return !mSingleParentFailed && !mVariableReferencesFailed && !mNullNodesFailed &&
+           !mStructUsageFailed && !mMultiDeclarationsFailed;
 }
 
 }  
 
 bool ValidateAST(TIntermNode *root, TDiagnostics *diagnostics, const ValidateASTOptions &options)
 {
-    
-    
-    if (options.validateNoMoreTransformations)
-    {
-        diagnostics->error(kNoSourceLoc, "Unexpected transformation after AST post-processing",
-                           "<validateNoMoreTransformations>");
-        return false;
-    }
-
     return ValidateAST::validate(root, diagnostics, options);
 }
 

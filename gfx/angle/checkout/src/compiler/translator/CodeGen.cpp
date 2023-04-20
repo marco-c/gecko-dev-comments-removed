@@ -21,10 +21,6 @@
 #endif  
 
 #ifdef ANGLE_ENABLE_METAL
-#    include "compiler/translator/TranslatorMetalDirect.h"
-#endif  
-
-#ifdef ANGLE_ENABLE_METAL_SPIRV
 #    include "compiler/translator/TranslatorMetal.h"
 #endif  
 
@@ -68,16 +64,10 @@ TCompiler *ConstructCompiler(sh::GLenum type, ShShaderSpec spec, ShShaderOutput 
     }
 #endif  
 
-#ifdef ANGLE_ENABLE_METAL_SPIRV
+#ifdef ANGLE_ENABLE_METAL
     if (IsOutputMetal(output))
     {
         return new TranslatorMetal(type, spec);
-    }
-#endif
-#ifdef ANGLE_ENABLE_METAL
-    if (IsOutputMetalDirect(output))
-    {
-        return new TranslatorMetalDirect(type, spec, output);
     }
 #endif  
 

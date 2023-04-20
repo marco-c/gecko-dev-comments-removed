@@ -28,52 +28,52 @@ class IntermNodePatternMatcher
     static bool IsDynamicIndexingOfVectorOrMatrix(TIntermBinary *node);
     static bool IsDynamicIndexingOfSwizzledVector(TIntermBinary *node);
 
-    enum PatternType : unsigned int
+    enum PatternType
     {
         
-        kUnfoldedShortCircuitExpression = 1u << 0u,
+        kUnfoldedShortCircuitExpression = 0x0001,
 
         
         
-        kExpressionReturningArray = 1u << 1u,
+        kExpressionReturningArray = 0x0001 << 1,
 
         
-        kDynamicIndexingOfVectorOrMatrixInLValue = 1u << 2u,
+        kDynamicIndexingOfVectorOrMatrixInLValue = 0x0001 << 2,
 
         
-        kMultiDeclaration = 1u << 3u,
+        kMultiDeclaration = 0x0001 << 3,
 
         
-        kArrayDeclaration = 1u << 4u,
+        kArrayDeclaration = 0x0001 << 4,
 
         
-        kNamelessStructDeclaration = 1u << 5u,
+        kNamelessStructDeclaration = 0x0001 << 5,
 
         
-        kArrayLengthMethod = 1u << 6u,
+        kArrayLengthMethod = 0x0001 << 6,
 
         
         
-        kScalarizedVecOrMatConstructor = 1u << 7u,
+        kScalarizedVecOrMatConstructor = 0x0001 << 7
     };
     IntermNodePatternMatcher(const unsigned int mask);
 
-    bool match(TIntermUnary *node) const;
+    bool match(TIntermUnary *node);
 
-    bool match(TIntermBinary *node, TIntermNode *parentNode) const;
+    bool match(TIntermBinary *node, TIntermNode *parentNode);
 
     
     
-    bool match(TIntermBinary *node, TIntermNode *parentNode, bool isLValueRequiredHere) const;
+    bool match(TIntermBinary *node, TIntermNode *parentNode, bool isLValueRequiredHere);
 
-    bool match(TIntermAggregate *node, TIntermNode *parentNode) const;
-    bool match(TIntermTernary *node) const;
-    bool match(TIntermDeclaration *node) const;
+    bool match(TIntermAggregate *node, TIntermNode *parentNode);
+    bool match(TIntermTernary *node);
+    bool match(TIntermDeclaration *node);
 
   private:
     const unsigned int mMask;
 
-    bool matchInternal(TIntermBinary *node, TIntermNode *parentNode) const;
+    bool matchInternal(TIntermBinary *node, TIntermNode *parentNode);
 };
 
 }  

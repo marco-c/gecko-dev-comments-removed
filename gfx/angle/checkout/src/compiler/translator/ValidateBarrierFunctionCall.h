@@ -16,7 +16,7 @@ namespace sh
 class TDiagnostics;
 class TIntermBlock;
 
-[[nodiscard]] bool ValidateBarrierFunctionCall(TIntermBlock *root, TDiagnostics *diagnostics);
+ANGLE_NO_DISCARD bool ValidateBarrierFunctionCall(TIntermBlock *root, TDiagnostics *diagnostics);
 }  
 
 #endif  

@@ -11,7 +11,6 @@
 
 
 
-
 #include "compiler/translator/tree_ops/PruneNoOps.h"
 
 #include "compiler/translator/Symbol.h"
@@ -41,18 +40,15 @@ bool IsNoOp(TIntermNode *node)
 class PruneNoOpsTraverser : private TIntermTraverser
 {
   public:
-    [[nodiscard]] static bool apply(TCompiler *compiler,
-                                    TIntermBlock *root,
-                                    TSymbolTable *symbolTable);
+    ANGLE_NO_DISCARD static bool apply(TCompiler *compiler,
+                                       TIntermBlock *root,
+                                       TSymbolTable *symbolTable);
 
   private:
     PruneNoOpsTraverser(TSymbolTable *symbolTable);
     bool visitDeclaration(Visit, TIntermDeclaration *node) override;
     bool visitBlock(Visit visit, TIntermBlock *node) override;
     bool visitLoop(Visit visit, TIntermLoop *loop) override;
-    bool visitBranch(Visit visit, TIntermBranch *node) override;
-
-    bool mIsBranchVisited = false;
 };
 
 bool PruneNoOpsTraverser::apply(TCompiler *compiler, TIntermBlock *root, TSymbolTable *symbolTable)
@@ -63,16 +59,11 @@ bool PruneNoOpsTraverser::apply(TCompiler *compiler, TIntermBlock *root, TSymbol
 }
 
 PruneNoOpsTraverser::PruneNoOpsTraverser(TSymbolTable *symbolTable)
-    : TIntermTraverser(true, true, true, symbolTable)
+    : TIntermTraverser(true, false, false, symbolTable)
 {}
 
-bool PruneNoOpsTraverser::visitDeclaration(Visit visit, TIntermDeclaration *node)
+bool PruneNoOpsTraverser::visitDeclaration(Visit, TIntermDeclaration *node)
 {
-    if (visit != PreVisit)
-    {
-        return true;
-    }
-
     TIntermSequence *sequence = node->getSequence();
     if (sequence->size() >= 1)
     {
@@ -136,52 +127,22 @@ bool PruneNoOpsTraverser::visitDeclaration(Visit visit, TIntermDeclaration *node
 
 bool PruneNoOpsTraverser::visitBlock(Visit visit, TIntermBlock *node)
 {
-    ASSERT(visit == PreVisit);
+    TIntermSequence *statements = node->getSequence();
 
-    TIntermSequence &statements = *node->getSequence();
-
-    
-    
-    for (size_t statementIndex = 0; statementIndex < statements.size(); ++statementIndex)
+    for (TIntermNode *statement : *statements)
     {
-        TIntermNode *statement = statements[statementIndex];
-
-        
-        if (statement->getAsCaseNode() != nullptr)
-        {
-            mIsBranchVisited = false;
-        }
-
-        
-        if (mIsBranchVisited || IsNoOp(statement))
+        if (IsNoOp(statement))
         {
             TIntermSequence emptyReplacement;
             mMultiReplacements.emplace_back(node, statement, std::move(emptyReplacement));
-            continue;
         }
-
-        
-        statement->traverse(this);
     }
 
-    
-    
-    
-    if (mIsBranchVisited && getParentNode()->getAsBlock() == nullptr)
-    {
-        mIsBranchVisited = false;
-    }
-
-    return false;
+    return true;
 }
 
 bool PruneNoOpsTraverser::visitLoop(Visit visit, TIntermLoop *loop)
 {
-    if (visit != PreVisit)
-    {
-        return true;
-    }
-
     TIntermTyped *expr = loop->getExpression();
     if (expr != nullptr && IsNoOp(expr))
     {
@@ -196,15 +157,6 @@ bool PruneNoOpsTraverser::visitLoop(Visit visit, TIntermLoop *loop)
     return true;
 }
 
-bool PruneNoOpsTraverser::visitBranch(Visit visit, TIntermBranch *node)
-{
-    ASSERT(visit == PreVisit);
-
-    mIsBranchVisited = true;
-
-    
-    return false;
-}
 }  
 
 bool PruneNoOps(TCompiler *compiler, TIntermBlock *root, TSymbolTable *symbolTable)

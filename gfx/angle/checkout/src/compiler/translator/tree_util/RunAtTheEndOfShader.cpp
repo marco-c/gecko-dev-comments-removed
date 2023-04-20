@@ -19,10 +19,6 @@
 
 
 
-
-
-
-
 #include "compiler/translator/tree_util/RunAtTheEndOfShader.h"
 
 #include "compiler/translator/Compiler.h"
@@ -41,33 +37,31 @@ namespace
 
 constexpr const ImmutableString kMainString("main");
 
-class ContainsReturnOrDiscardTraverser : public TIntermTraverser
+class ContainsReturnTraverser : public TIntermTraverser
 {
   public:
-    ContainsReturnOrDiscardTraverser()
-        : TIntermTraverser(true, false, false), mContainsReturnOrDiscard(false)
-    {}
+    ContainsReturnTraverser() : TIntermTraverser(true, false, false), mContainsReturn(false) {}
 
     bool visitBranch(Visit visit, TIntermBranch *node) override
     {
-        if (node->getFlowOp() == EOpReturn || node->getFlowOp() == EOpKill)
+        if (node->getFlowOp() == EOpReturn)
         {
-            mContainsReturnOrDiscard = true;
+            mContainsReturn = true;
         }
         return false;
     }
 
-    bool containsReturnOrDiscard() { return mContainsReturnOrDiscard; }
+    bool containsReturn() { return mContainsReturn; }
 
   private:
-    bool mContainsReturnOrDiscard;
+    bool mContainsReturn;
 };
 
-bool ContainsReturnOrDiscard(TIntermNode *node)
+bool ContainsReturn(TIntermNode *node)
 {
-    ContainsReturnOrDiscardTraverser traverser;
+    ContainsReturnTraverser traverser;
     node->traverse(&traverser);
-    return traverser.containsReturnOrDiscard();
+    return traverser.containsReturn();
 }
 
 void WrapMainAndAppend(TIntermBlock *root,
@@ -78,7 +72,7 @@ void WrapMainAndAppend(TIntermBlock *root,
     
     TFunction *oldMain =
         new TFunction(symbolTable, kEmptyImmutableString, SymbolType::AngleInternal,
-                      StaticType::GetBasic<EbtVoid, EbpUndefined>(), false);
+                      StaticType::GetBasic<EbtVoid>(), false);
     TIntermFunctionDefinition *oldMainDefinition =
         CreateInternalFunctionDefinitionNode(*oldMain, main->getBody());
 
@@ -87,7 +81,7 @@ void WrapMainAndAppend(TIntermBlock *root,
 
     
     TFunction *newMain = new TFunction(symbolTable, kMainString, SymbolType::UserDefined,
-                                       StaticType::GetBasic<EbtVoid, EbpUndefined>(), false);
+                                       StaticType::GetBasic<EbtVoid>(), false);
     TIntermFunctionPrototype *newMainProto = new TIntermFunctionPrototype(newMain);
 
     
@@ -114,13 +108,13 @@ bool RunAtTheEndOfShader(TCompiler *compiler,
                          TSymbolTable *symbolTable)
 {
     TIntermFunctionDefinition *main = FindMain(root);
-    if (ContainsReturnOrDiscard(main))
+    if (!ContainsReturn(main))
     {
-        WrapMainAndAppend(root, main, codeToRun, symbolTable);
+        main->getBody()->appendStatement(codeToRun);
     }
     else
     {
-        main->getBody()->appendStatement(codeToRun);
+        WrapMainAndAppend(root, main, codeToRun, symbolTable);
     }
 
     return compiler->validateAST(root);

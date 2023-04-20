@@ -33,6 +33,12 @@ class MemoryProgramCache final : angle::NonCopyable
                             egl::BlobCache::Key *hashOut);
 
     
+    bool get(const Context *context,
+             const egl::BlobCache::Key &programHash,
+             egl::BlobCache::Value *programOut,
+             size_t *programSizeOut);
+
+    
     bool getAt(size_t index,
                const egl::BlobCache::Key **hashOut,
                egl::BlobCache::Value *programOut);
@@ -50,9 +56,9 @@ class MemoryProgramCache final : angle::NonCopyable
 
     
     
-    [[nodiscard]] bool putBinary(const egl::BlobCache::Key &programHash,
-                                 const uint8_t *binary,
-                                 size_t length);
+    ANGLE_NO_DISCARD bool putBinary(const egl::BlobCache::Key &programHash,
+                                    const uint8_t *binary,
+                                    size_t length);
 
     
     
@@ -80,6 +86,7 @@ class MemoryProgramCache final : angle::NonCopyable
 
   private:
     egl::BlobCache &mBlobCache;
+    unsigned int mIssuedWarnings;
 };
 
 }  

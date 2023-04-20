@@ -29,7 +29,7 @@ class BoxedUint32
     {
         return T{mValue};
     }
-    BoxedUint32(const BoxedUint32 &other)            = default;
+    BoxedUint32(const BoxedUint32 &other) = default;
     BoxedUint32 &operator=(const BoxedUint32 &other) = default;
     operator uint32_t() const { return mValue.value; }
     bool operator==(const BoxedUint32 &other) const { return mValue.value == other.mValue.value; }
@@ -112,20 +112,7 @@ using Blob = std::vector<uint32_t>;
 
 
 
-enum HeaderIndex
-{
-    kHeaderIndexMagic        = 0,
-    kHeaderIndexVersion      = 1,
-    kHeaderIndexGenerator    = 2,
-    kHeaderIndexIndexBound   = 3,
-    kHeaderIndexSchema       = 4,
-    kHeaderIndexInstructions = 5,
-};
-
-
-
 bool Validate(const Blob &blob);
-void Print(const Blob &blob);
 
 }  
 }  

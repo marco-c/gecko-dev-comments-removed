@@ -12,10 +12,6 @@
 #include "common/angleutils.h"
 #include "common/platform.h"
 
-#ifdef ANGLE_PLATFORM_WINDOWS
-#    include <windows.h>
-#endif
-
 namespace gl
 {
 class Context;
@@ -44,8 +40,10 @@ typedef pthread_key_t TLSIndex;
 #    error Unsupported platform.
 #endif
 
-using PthreadKeyDestructor = void (*)(void *);
-TLSIndex CreateTLSIndex(PthreadKeyDestructor destructor);
+
+
+
+TLSIndex CreateTLSIndex();
 bool DestroyTLSIndex(TLSIndex index);
 
 bool SetTLSValue(TLSIndex index, void *value);

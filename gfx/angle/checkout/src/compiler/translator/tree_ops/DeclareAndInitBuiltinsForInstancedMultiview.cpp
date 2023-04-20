@@ -42,7 +42,7 @@ void InitializeViewIDAndInstanceID(const TVariable *viewID,
     TConstantUnion *numberOfViewsUnsignedConstant = new TConstantUnion();
     numberOfViewsUnsignedConstant->setUConst(numberOfViews);
     TIntermConstantUnion *numberOfViewsUint =
-        new TIntermConstantUnion(numberOfViewsUnsignedConstant, TType(EbtUInt, EbpLow, EvqConst));
+        new TIntermConstantUnion(numberOfViewsUnsignedConstant, TType(EbtUInt, EbpHigh, EvqConst));
 
     
     TIntermSequence glInstanceIDSymbolCastArguments;
@@ -127,7 +127,7 @@ bool DeclareAndInitBuiltinsForInstancedMultiview(TCompiler *compiler,
                                                  TIntermBlock *root,
                                                  unsigned numberOfViews,
                                                  GLenum shaderType,
-                                                 const ShCompileOptions &compileOptions,
+                                                 ShCompileOptions compileOptions,
                                                  ShShaderOutput shaderOutput,
                                                  TSymbolTable *symbolTable)
 {
@@ -163,7 +163,7 @@ bool DeclareAndInitBuiltinsForInstancedMultiview(TCompiler *compiler,
 
         
         
-        const bool selectView = compileOptions.selectViewInNvGLSLVertexShader;
+        const bool selectView = (compileOptions & SH_SELECT_VIEW_IN_NV_GLSL_VERTEX_SHADER) != 0;
         
         
         ASSERT(!selectView || IsOutputGLSL(shaderOutput) || IsOutputESSL(shaderOutput));

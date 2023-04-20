@@ -38,14 +38,13 @@ class TCompiler;
 class TIntermBlock;
 class TSymbolTable;
 
-[[nodiscard]] bool DeclareAndInitBuiltinsForInstancedMultiview(
-    TCompiler *compiler,
-    TIntermBlock *root,
-    unsigned numberOfViews,
-    GLenum shaderType,
-    const ShCompileOptions &compileOptions,
-    ShShaderOutput shaderOutput,
-    TSymbolTable *symbolTable);
+ANGLE_NO_DISCARD bool DeclareAndInitBuiltinsForInstancedMultiview(TCompiler *compiler,
+                                                                  TIntermBlock *root,
+                                                                  unsigned numberOfViews,
+                                                                  GLenum shaderType,
+                                                                  ShCompileOptions compileOptions,
+                                                                  ShShaderOutput shaderOutput,
+                                                                  TSymbolTable *symbolTable);
 
 }  
 

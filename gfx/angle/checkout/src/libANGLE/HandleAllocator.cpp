@@ -11,7 +11,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <limits>
 
 #include "common/debug.h"
 
@@ -90,22 +89,6 @@ void HandleAllocator::release(GLuint handle)
     if (mLoggingEnabled)
     {
         WARN() << "HandleAllocator::release releasing " << handle << std::endl;
-    }
-
-    
-    for (HandleRange &handleRange : mUnallocatedList)
-    {
-        if (handleRange.begin - 1 == handle)
-        {
-            handleRange.begin--;
-            return;
-        }
-
-        if (handleRange.end == handle - 1)
-        {
-            handleRange.end++;
-            return;
-        }
     }
 
     

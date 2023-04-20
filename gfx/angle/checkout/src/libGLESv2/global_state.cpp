@@ -16,18 +16,13 @@
 #include "libGLESv2/resource.h"
 
 #include <atomic>
-#if defined(ANGLE_PLATFORM_APPLE)
-#    include <dispatch/dispatch.h>
-#endif
+
 namespace egl
 {
 namespace
 {
-ANGLE_REQUIRE_CONSTANT_INIT std::atomic<angle::GlobalMutex *> g_Mutex{};
+ANGLE_REQUIRE_CONSTANT_INIT std::atomic<angle::GlobalMutex *> g_Mutex(nullptr);
 static_assert(std::is_trivially_destructible<decltype(g_Mutex)>::value,
-              "global mutex is not trivially destructible");
-ANGLE_REQUIRE_CONSTANT_INIT std::atomic<angle::GlobalMutex *> g_SurfaceMutex{};
-static_assert(std::is_trivially_destructible<decltype(g_SurfaceMutex)>::value,
               "global mutex is not trivially destructible");
 
 ANGLE_REQUIRE_CONSTANT_INIT gl::Context *g_LastContext(nullptr);
@@ -36,7 +31,7 @@ static_assert(std::is_trivially_destructible<decltype(g_LastContext)>::value,
 
 void SetContextToAndroidOpenGLTLSSlot(gl::Context *value)
 {
-#if defined(ANGLE_USE_ANDROID_TLS_SLOT)
+#if defined(ANGLE_PLATFORM_ANDROID)
     if (angle::gUseAndroidOpenGLTlsSlot)
     {
         ANGLE_ANDROID_GET_GL_TLS()[angle::kAndroidOpenGLTlsSlot] = static_cast<void *>(value);
@@ -44,122 +39,42 @@ void SetContextToAndroidOpenGLTLSSlot(gl::Context *value)
 #endif
 }
 
-
-[[maybe_unused]] void ThreadCleanupCallback(void *ptr)
-{
-    ANGLE_SCOPED_GLOBAL_LOCK();
-    angle::PthreadKeyDestructorCallback(ptr);
-}
-
 Thread *AllocateCurrentThread()
 {
-    Thread *thread;
     {
         
         ANGLE_SCOPED_DISABLE_LSAN();
-        thread = new Thread();
-#if defined(ANGLE_PLATFORM_APPLE)
-        SetCurrentThreadTLS(thread);
-#else
-        gCurrentThread = thread;
-#endif
+        gCurrentThread = new Thread();
     }
 
     
     SetContextToAndroidOpenGLTLSSlot(nullptr);
-
-#if defined(ANGLE_PLATFORM_APPLE)
-    gl::SetCurrentValidContextTLS(nullptr);
-#else
     gl::gCurrentValidContext = nullptr;
-#endif
 
-#if defined(ANGLE_PLATFORM_ANDROID)
-    static pthread_once_t keyOnce          = PTHREAD_ONCE_INIT;
-    static TLSIndex gThreadCleanupTLSIndex = TLS_INVALID_INDEX;
-
-    
-    auto CreateThreadCleanupTLSIndex = []() {
-        gThreadCleanupTLSIndex = CreateTLSIndex(ThreadCleanupCallback);
-    };
-    pthread_once(&keyOnce, CreateThreadCleanupTLSIndex);
-    ASSERT(gThreadCleanupTLSIndex != TLS_INVALID_INDEX);
-
-    
-    SetTLSValue(gThreadCleanupTLSIndex, thread);
-#endif  
-
-    ASSERT(thread);
-    return thread;
+    return gCurrentThread;
 }
 
-void AllocateGlobalMutex(std::atomic<angle::GlobalMutex *> &mutex)
+void AllocateMutex()
 {
-    if (mutex == nullptr)
+    if (g_Mutex == nullptr)
     {
         std::unique_ptr<angle::GlobalMutex> newMutex(new angle::GlobalMutex());
         angle::GlobalMutex *expected = nullptr;
-        if (mutex.compare_exchange_strong(expected, newMutex.get()))
+        if (g_Mutex.compare_exchange_strong(expected, newMutex.get()))
         {
             newMutex.release();
         }
     }
 }
 
-void AllocateMutex()
-{
-    AllocateGlobalMutex(g_Mutex);
-}
-
-void AllocateSurfaceMutex()
-{
-    AllocateGlobalMutex(g_SurfaceMutex);
-}
-
 }  
 
-#if defined(ANGLE_PLATFORM_APPLE)
-
-
-
-
-
-static TLSIndex GetCurrentThreadTLSIndex()
-{
-    static TLSIndex CurrentThreadIndex = TLS_INVALID_INDEX;
-    static dispatch_once_t once;
-    dispatch_once(&once, ^{
-      ASSERT(CurrentThreadIndex == TLS_INVALID_INDEX);
-      CurrentThreadIndex = CreateTLSIndex(nullptr);
-    });
-    return CurrentThreadIndex;
-}
-Thread *GetCurrentThreadTLS()
-{
-    TLSIndex CurrentThreadIndex = GetCurrentThreadTLSIndex();
-    ASSERT(CurrentThreadIndex != TLS_INVALID_INDEX);
-    return static_cast<Thread *>(GetTLSValue(CurrentThreadIndex));
-}
-void SetCurrentThreadTLS(Thread *thread)
-{
-    TLSIndex CurrentThreadIndex = GetCurrentThreadTLSIndex();
-    ASSERT(CurrentThreadIndex != TLS_INVALID_INDEX);
-    SetTLSValue(CurrentThreadIndex, thread);
-}
-#else
 thread_local Thread *gCurrentThread = nullptr;
-#endif
 
 angle::GlobalMutex &GetGlobalMutex()
 {
     AllocateMutex();
     return *g_Mutex;
-}
-
-angle::GlobalMutex &GetGlobalSurfaceMutex()
-{
-    AllocateSurfaceMutex();
-    return *g_SurfaceMutex;
 }
 
 gl::Context *GetGlobalLastContext()
@@ -172,49 +87,21 @@ void SetGlobalLastContext(gl::Context *context)
     g_LastContext = context;
 }
 
-
-
-ANGLE_NO_SANITIZE_MEMORY ANGLE_NO_SANITIZE_THREAD Thread *GetCurrentThread()
+Thread *GetCurrentThread()
 {
-#if defined(ANGLE_PLATFORM_APPLE)
-    Thread *current = GetCurrentThreadTLS();
-#else
     Thread *current = gCurrentThread;
-#endif
     return (current ? current : AllocateCurrentThread());
 }
 
 void SetContextCurrent(Thread *thread, gl::Context *context)
 {
-#if defined(ANGLE_PLATFORM_APPLE)
-    Thread *currentThread = GetCurrentThreadTLS();
-#else
-    Thread *currentThread = gCurrentThread;
-#endif
-    ASSERT(currentThread);
-    currentThread->setCurrent(context);
+    ASSERT(gCurrentThread);
+    gCurrentThread->setCurrent(context);
     SetContextToAndroidOpenGLTLSSlot(context);
-
-#if defined(ANGLE_PLATFORM_APPLE)
-    gl::SetCurrentValidContextTLS(context);
-#else
     gl::gCurrentValidContext = context;
-#endif
-
 #if defined(ANGLE_FORCE_CONTEXT_CHECK_EVERY_CALL)
     DirtyContextIfNeeded(context);
 #endif
-}
-
-ScopedSyncCurrentContextFromThread::ScopedSyncCurrentContextFromThread(egl::Thread *thread)
-    : mThread(thread)
-{
-    ASSERT(mThread);
-}
-
-ScopedSyncCurrentContextFromThread::~ScopedSyncCurrentContextFromThread()
-{
-    SetContextCurrent(mThread, mThread->getContext());
 }
 
 }  
@@ -225,17 +112,12 @@ void GenerateContextLostErrorOnContext(Context *context)
 {
     if (context && context->isContextLost())
     {
-        context->validationError(angle::EntryPoint::GLInvalid, GL_CONTEXT_LOST, err::kContextLost);
+        context->validationError(GL_CONTEXT_LOST, err::kContextLost);
     }
 }
 
 void GenerateContextLostErrorOnCurrentGlobalContext()
 {
-    
-    
-    
-    egl::GetCurrentThread();
-
     GenerateContextLostErrorOnContext(GetGlobalContext());
 }
 }  
@@ -246,19 +128,6 @@ namespace egl
 
 namespace
 {
-
-void DeallocateGlobalMutex(std::atomic<angle::GlobalMutex *> &mutex)
-{
-    angle::GlobalMutex *toDelete = mutex.exchange(nullptr);
-    if (!mutex)
-        return;
-    {
-        
-        std::lock_guard<angle::GlobalMutex> lock(*toDelete);
-    }
-    SafeDelete(toDelete);
-}
-
 void DeallocateCurrentThread()
 {
     SafeDelete(gCurrentThread);
@@ -266,12 +135,12 @@ void DeallocateCurrentThread()
 
 void DeallocateMutex()
 {
-    DeallocateGlobalMutex(g_Mutex);
-}
-
-void DeallocateSurfaceMutex()
-{
-    DeallocateGlobalMutex(g_SurfaceMutex);
+    angle::GlobalMutex *mutex = g_Mutex.exchange(nullptr);
+    {
+        
+        std::lock_guard<angle::GlobalMutex> lock(*mutex);
+    }
+    SafeDelete(mutex);
 }
 
 bool InitializeProcess()
@@ -284,7 +153,6 @@ bool InitializeProcess()
 void TerminateProcess()
 {
     DeallocateDebug();
-    DeallocateSurfaceMutex();
     DeallocateMutex();
     DeallocateCurrentThread();
 }

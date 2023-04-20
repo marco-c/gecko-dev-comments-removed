@@ -77,8 +77,6 @@ class BufferImpl : public angle::Subject
                                      GLsizeiptr size,
                                      void *outData);
 
-    virtual angle::Result onLabelUpdate(const gl::Context *context);
-
     
     virtual GLint64 getMemorySize() const;
 

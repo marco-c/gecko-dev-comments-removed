@@ -13,7 +13,6 @@
 #include "compiler/translator/Compiler.h"
 #include "compiler/translator/SymbolTable.h"
 
-class TIntermBlock;
 class TIntermTyped;
 class TIntermSymbol;
 class TVariable;
@@ -24,28 +23,41 @@ namespace sh
 class SpecConst
 {
   public:
-    SpecConst(TSymbolTable *symbolTable, const ShCompileOptions &compileOptions, GLenum shaderType);
+    SpecConst(TSymbolTable *symbolTable, ShCompileOptions compileOptions, GLenum shaderType);
     virtual ~SpecConst();
 
     
-    
-    TIntermTyped *getSwapXY();
+    TIntermSymbol *getLineRasterEmulation();
 
     
-    TIntermTyped *getDither();
+    TIntermTyped *getMultiplierXForDFdx();
+    TIntermTyped *getMultiplierYForDFdx();
+    TIntermTyped *getMultiplierXForDFdy();
+    TIntermTyped *getMultiplierYForDFdy();
+    TIntermTyped *getFragRotationMatrix();
+    TIntermTyped *getFlipXY();
+    TIntermTyped *getNegFlipXY();
+    TIntermTyped *getFlipY();
+    TIntermTyped *getFragRotationMultiplyFlipXY();
 
-    void declareSpecConsts(TIntermBlock *root);
+    
+    TIntermBinary *getHalfRenderArea();
+
+    void outputLayoutString(TInfoSinkBase &sink) const;
     SpecConstUsageBits getSpecConstUsageBits() const { return mUsageBits; }
 
+    static bool IsSpecConstName(const ImmutableString &name);
+
   private:
-    TIntermSymbol *getRotation();
+    TIntermSymbol *getFlipRotation();
+    TIntermTyped *getNegFlipY();
+    TIntermSymbol *getDrawableWidth();
+    TIntermSymbol *getDrawableHeight();
+    TIntermTyped *getHalfRenderAreaRotationMatrix();
 
     
     TSymbolTable *mSymbolTable;
-    const ShCompileOptions &mCompileOptions;
-
-    TVariable *mSurfaceRotationVar;
-    TVariable *mDitherVar;
+    ShCompileOptions mCompileOptions;
 
     
     SpecConstUsageBits mUsageBits;

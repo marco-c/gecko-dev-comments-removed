@@ -31,12 +31,12 @@ void CreateInitCode(const TIntermTyped *initializedSymbol,
                     TSymbolTable *symbolTable);
 
 
-[[nodiscard]] bool InitializeUninitializedLocals(TCompiler *compiler,
-                                                 TIntermBlock *root,
-                                                 int shaderVersion,
-                                                 bool canUseLoopsToInitialize,
-                                                 bool highPrecisionSupported,
-                                                 TSymbolTable *symbolTable);
+ANGLE_NO_DISCARD bool InitializeUninitializedLocals(TCompiler *compiler,
+                                                    TIntermBlock *root,
+                                                    int shaderVersion,
+                                                    bool canUseLoopsToInitialize,
+                                                    bool highPrecisionSupported,
+                                                    TSymbolTable *symbolTable);
 
 
 
@@ -46,14 +46,14 @@ void CreateInitCode(const TIntermTyped *initializedSymbol,
 
 
 
-[[nodiscard]] bool InitializeVariables(TCompiler *compiler,
-                                       TIntermBlock *root,
-                                       const InitVariableList &vars,
-                                       TSymbolTable *symbolTable,
-                                       int shaderVersion,
-                                       const TExtensionBehavior &extensionBehavior,
-                                       bool canUseLoopsToInitialize,
-                                       bool highPrecisionSupported);
+ANGLE_NO_DISCARD bool InitializeVariables(TCompiler *compiler,
+                                          TIntermBlock *root,
+                                          const InitVariableList &vars,
+                                          TSymbolTable *symbolTable,
+                                          int shaderVersion,
+                                          const TExtensionBehavior &extensionBehavior,
+                                          bool canUseLoopsToInitialize,
+                                          bool highPrecisionSupported);
 
 }  
 

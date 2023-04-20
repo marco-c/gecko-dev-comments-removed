@@ -28,16 +28,16 @@ class TIntermTyped;
 
 
 
-[[nodiscard]] bool ReplaceClipDistanceAssignments(TCompiler *compiler,
-                                                  TIntermBlock *root,
-                                                  TSymbolTable *symbolTable,
-                                                  const GLenum shaderType,
-                                                  const TIntermTyped *clipDistanceEnableFlags);
+ANGLE_NO_DISCARD bool ReplaceClipDistanceAssignments(TCompiler *compiler,
+                                                     TIntermBlock *root,
+                                                     TSymbolTable *symbolTable,
+                                                     const GLenum shaderType,
+                                                     const TIntermTyped *clipDistanceEnableFlags);
 
-[[nodiscard]] bool ReplaceCullDistanceAssignments(TCompiler *compiler,
-                                                  TIntermBlock *root,
-                                                  TSymbolTable *symbolTable,
-                                                  const GLenum shaderType);
+ANGLE_NO_DISCARD bool ReplaceCullDistanceAssignments(TCompiler *compiler,
+                                                     TIntermBlock *root,
+                                                     TSymbolTable *symbolTable,
+                                                     const GLenum shaderType);
 }  
 
 #endif

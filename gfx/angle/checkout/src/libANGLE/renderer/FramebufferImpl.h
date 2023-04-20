@@ -14,7 +14,6 @@
 #include "libANGLE/Error.h"
 #include "libANGLE/Framebuffer.h"
 #include "libANGLE/State.h"
-#include "libANGLE/angletypes.h"
 
 namespace gl
 {
@@ -22,6 +21,8 @@ class Buffer;
 class Framebuffer;
 class FramebufferAttachment;
 struct PixelPackState;
+struct Rectangle;
+class State;
 }  
 
 namespace rx
@@ -97,8 +98,6 @@ class FramebufferImpl : angle::NonCopyable
     
     
     virtual bool shouldSyncStateBeforeCheckStatus() const;
-
-    virtual angle::Result onLabelUpdate(const gl::Context *context);
 
     const gl::FramebufferState &getState() const { return mState; }
 

@@ -31,8 +31,6 @@ struct TSourceLoc
     int last_line;
 };
 
-constexpr TSourceLoc kNoSourceLoc{-1, -1, -1, -1};
-
 
 
 

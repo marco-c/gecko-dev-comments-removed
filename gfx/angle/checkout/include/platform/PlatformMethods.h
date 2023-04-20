@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <array>
 
-#define EGL_PLATFORM_ANGLE_PLATFORM_METHODS_ANGLEX 0x6AFB
+#define EGL_PLATFORM_ANGLE_PLATFORM_METHODS_ANGLEX 0x3482
 
 #if !defined(ANGLE_PLATFORM_EXPORT)
 #    if defined(_WIN32)
@@ -218,6 +218,23 @@ using HistogramBooleanFunc = void (*)(PlatformMethods *platform, const char *nam
 inline void DefaultHistogramBoolean(PlatformMethods *platform, const char *name, bool sample) {}
 
 
+using OverrideWorkaroundsD3DFunc = void (*)(PlatformMethods *platform,
+                                            angle::FeaturesD3D *featuresD3D);
+inline void DefaultOverrideWorkaroundsD3D(PlatformMethods *platform,
+                                          angle::FeaturesD3D *featuresD3D)
+{}
+
+using OverrideFeaturesVkFunc = void (*)(PlatformMethods *platform,
+                                        angle::FeaturesVk *featuresVulkan);
+inline void DefaultOverrideFeaturesVk(PlatformMethods *platform, angle::FeaturesVk *featuresVulkan)
+{}
+
+using OverrideFeaturesMtlFunc = void (*)(PlatformMethods *platform,
+                                         angle::FeaturesMtl *featuresMetal);
+inline void DefaultOverrideFeaturesMtl(PlatformMethods *platform, angle::FeaturesMtl *featuresMetal)
+{}
+
+
 
 using ProgramKeyType   = std::array<uint8_t, 20>;
 using CacheProgramFunc = void (*)(PlatformMethods *platform,
@@ -237,13 +254,6 @@ using PostWorkerTaskFunc                           = void (*)(PlatformMethods *p
 constexpr PostWorkerTaskFunc DefaultPostWorkerTask = nullptr;
 
 
-
-
-
-using PlaceholderCallbackFunc = void (*)(...);
-inline void DefaultPlaceholderCallback(...) {}
-
-
 #define ANGLE_PLATFORM_OP(OP)                                    \
     OP(currentTime, CurrentTime)                                 \
     OP(monotonicallyIncreasingTime, MonotonicallyIncreasingTime) \
@@ -257,10 +267,10 @@ inline void DefaultPlaceholderCallback(...) {}
     OP(histogramEnumeration, HistogramEnumeration)               \
     OP(histogramSparse, HistogramSparse)                         \
     OP(histogramBoolean, HistogramBoolean)                       \
-    OP(placeholder1, PlaceholderCallback)                        \
-    OP(placeholder2, PlaceholderCallback)                        \
+    OP(overrideWorkaroundsD3D, OverrideWorkaroundsD3D)           \
+    OP(overrideFeaturesVk, OverrideFeaturesVk)                   \
     OP(cacheProgram, CacheProgram)                               \
-    OP(placeholder3, PlaceholderCallback)                        \
+    OP(overrideFeaturesMtl, OverrideFeaturesMtl)                 \
     OP(postWorkerTask, PostWorkerTask)
 
 #define ANGLE_PLATFORM_METHOD_DEF(Name, CapsName) CapsName##Func Name = Default##CapsName;
@@ -283,11 +293,6 @@ inline PlatformMethods::PlatformMethods() = default;
 
 
 constexpr unsigned int g_NumPlatformMethods = (sizeof(PlatformMethods) / sizeof(uintptr_t)) - 1;
-
-
-
-
-static_assert(g_NumPlatformMethods == 17, "Avoid adding methods to PlatformMethods");
 
 #define ANGLE_PLATFORM_METHOD_STRING(Name) #Name
 #define ANGLE_PLATFORM_METHOD_STRING2(Name, CapsName) ANGLE_PLATFORM_METHOD_STRING(Name),

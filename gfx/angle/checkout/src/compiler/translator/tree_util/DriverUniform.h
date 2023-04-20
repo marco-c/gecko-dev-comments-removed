@@ -23,63 +23,36 @@ class TIntermTyped;
 class TIntermSwizzle;
 class TIntermBinary;
 
-enum class DriverUniformMode
-{
-    
-    
-    InterfaceBlock,
-
-    
-    
-    Structure
-};
-
-enum class DriverUniformFlip
-{
-    
-    Fragment,
-    
-    
-    PreFragment,
-};
-
 class DriverUniform
 {
   public:
-    DriverUniform(DriverUniformMode mode)
-        : mMode(mode), mDriverUniforms(nullptr), mEmulatedDepthRangeType(nullptr)
-    {}
+    DriverUniform() : mDriverUniforms(nullptr), mEmulatedDepthRangeType(nullptr) {}
     virtual ~DriverUniform() = default;
 
     bool addComputeDriverUniformsToShader(TIntermBlock *root, TSymbolTable *symbolTable);
     bool addGraphicsDriverUniformsToShader(TIntermBlock *root, TSymbolTable *symbolTable);
 
-    TIntermTyped *getAcbBufferOffsets() const;
-    TIntermTyped *getDepthRange() const;
-    TIntermTyped *getViewportZScale() const;
-    TIntermTyped *getHalfRenderArea() const;
-    TIntermTyped *getFlipXY(TSymbolTable *symbolTable, DriverUniformFlip stage) const;
-    
-    TIntermTyped *getNegFlipXY(TSymbolTable *symbolTable, DriverUniformFlip stage) const;
-    TIntermTyped *getDither() const;
-    TIntermTyped *getSwapXY() const;
-    TIntermTyped *getAdvancedBlendEquation() const;
-    TIntermTyped *getNumSamples() const;
-    TIntermTyped *getClipDistancesEnabled() const;
-    TIntermTyped *getTransformDepth() const;
+    TIntermBinary *getViewportRef() const;
+    TIntermBinary *getAbcBufferOffsets() const;
+    TIntermBinary *getXfbActiveUnpaused() const;
+    TIntermBinary *getXfbVerticesPerInstance() const;
+    TIntermBinary *getXfbBufferOffsets() const;
+    TIntermBinary *getClipDistancesEnabled() const;
+    TIntermBinary *getDepthRangeRef() const;
+    TIntermBinary *getDepthRangeReservedFieldRef() const;
+    TIntermBinary *getNumSamplesRef() const;
 
-    virtual TIntermTyped *getViewport() const { return nullptr; }
-    virtual TIntermTyped *getXfbBufferOffsets() const { return nullptr; }
-    virtual TIntermTyped *getXfbVerticesPerInstance() const { return nullptr; }
-
-    const TVariable *getDriverUniformsVariable() const { return mDriverUniforms; }
+    virtual TIntermBinary *getFlipXYRef() const { return nullptr; }
+    virtual TIntermBinary *getNegFlipXYRef() const { return nullptr; }
+    virtual TIntermBinary *getFragRotationMatrixRef() const { return nullptr; }
+    virtual TIntermBinary *getHalfRenderAreaRef() const { return nullptr; }
+    virtual TIntermSwizzle *getNegFlipYRef() const { return nullptr; }
 
   protected:
-    TIntermTyped *createDriverUniformRef(const char *fieldName) const;
+    TIntermBinary *createDriverUniformRef(const char *fieldName) const;
     virtual TFieldList *createUniformFields(TSymbolTable *symbolTable);
-    const TType *createEmulatedDepthRangeType(TSymbolTable *symbolTable);
+    TType *createEmulatedDepthRangeType(TSymbolTable *symbolTable);
 
-    const DriverUniformMode mMode;
     const TVariable *mDriverUniforms;
     TType *mEmulatedDepthRangeType;
 };
@@ -87,23 +60,18 @@ class DriverUniform
 class DriverUniformExtended : public DriverUniform
 {
   public:
-    DriverUniformExtended(DriverUniformMode mode) : DriverUniform(mode) {}
-    ~DriverUniformExtended() override {}
+    DriverUniformExtended() : DriverUniform() {}
+    virtual ~DriverUniformExtended() override {}
 
-    TIntermTyped *getXfbBufferOffsets() const override;
-    TIntermTyped *getXfbVerticesPerInstance() const override;
+    TIntermBinary *getFlipXYRef() const override;
+    TIntermBinary *getNegFlipXYRef() const override;
+    TIntermBinary *getFragRotationMatrixRef() const override;
+    TIntermBinary *getHalfRenderAreaRef() const override;
+    TIntermSwizzle *getNegFlipYRef() const override;
 
   protected:
-    TFieldList *createUniformFields(TSymbolTable *symbolTable) override;
+    virtual TFieldList *createUniformFields(TSymbolTable *symbolTable) override;
 };
-
-
-
-
-
-
-TIntermTyped *MakeSwapXMultiplier(TIntermTyped *swapped);
-TIntermTyped *MakeSwapYMultiplier(TIntermTyped *swapped);
 
 }  
 

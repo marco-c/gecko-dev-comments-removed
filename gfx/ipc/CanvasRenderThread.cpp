@@ -44,12 +44,8 @@ void CanvasRenderThread::Start() {
   
   
   
-  
-  
-  
-  
   const uint32_t stackSize =
-      nsIThreadManager::DEFAULT_STACK_SIZE ? 4096 << 10 : 0;
+      nsIThreadManager::DEFAULT_STACK_SIZE ? 512 << 10 : 0;
 
   RefPtr<nsIThread> thread;
   nsresult rv = NS_NewNamedThread(

@@ -243,11 +243,6 @@ bool ValidateQueryDisplayAttribANGLE(const ValidationContext *val,
                                      const EGLAttrib *value);
 
 
-bool ValidateCopyMetalSharedEventANGLE(const ValidationContext *val,
-                                       const egl::Display *dpyPacked,
-                                       const Sync *syncPacked);
-
-
 bool ValidateReleaseHighPowerGPUANGLE(const ValidationContext *val,
                                       const egl::Display *dpyPacked,
                                       const gl::Context *ctxPacked);
@@ -255,15 +250,6 @@ bool ValidateReacquireHighPowerGPUANGLE(const ValidationContext *val,
                                         const egl::Display *dpyPacked,
                                         const gl::Context *ctxPacked);
 bool ValidateHandleGPUSwitchANGLE(const ValidationContext *val, const egl::Display *dpyPacked);
-bool ValidateForceGPUSwitchANGLE(const ValidationContext *val,
-                                 const egl::Display *dpyPacked,
-                                 EGLint gpuIDHigh,
-                                 EGLint gpuIDLow);
-
-
-bool ValidatePrepareSwapBuffersANGLE(const ValidationContext *val,
-                                     const egl::Display *dpyPacked,
-                                     const Surface *surfacePacked);
 
 
 bool ValidateProgramCacheGetAttribANGLE(const ValidationContext *val,
@@ -319,13 +305,6 @@ bool ValidateGetMscRateANGLE(const ValidationContext *val,
                              const EGLint *denominator);
 
 
-bool ValidateExportVkImageANGLE(const ValidationContext *val,
-                                const egl::Display *dpyPacked,
-                                const Image *imagePacked,
-                                const void *vk_image,
-                                const void *vk_image_create_info);
-
-
 bool ValidateGetSyncValuesCHROMIUM(const ValidationContext *val,
                                    const egl::Display *dpyPacked,
                                    const Surface *surfacePacked,
@@ -345,20 +324,6 @@ bool ValidateQueryDisplayAttribEXT(const ValidationContext *val,
                                    const egl::Display *dpyPacked,
                                    EGLint attribute,
                                    const EGLAttrib *value);
-
-
-bool ValidateQueryDmaBufFormatsEXT(const ValidationContext *val,
-                                   const egl::Display *dpyPacked,
-                                   EGLint max_formats,
-                                   const EGLint *formats,
-                                   const EGLint *num_formats);
-bool ValidateQueryDmaBufModifiersEXT(const ValidationContext *val,
-                                     const egl::Display *dpyPacked,
-                                     EGLint format,
-                                     EGLint max_modifiers,
-                                     const EGLuint64KHR *modifiers,
-                                     const EGLBoolean *external_only,
-                                     const EGLint *num_modifiers);
 
 
 bool ValidateCreatePlatformPixmapSurfaceEXT(const ValidationContext *val,
@@ -416,27 +381,6 @@ bool ValidateCreateImageKHR(const ValidationContext *val,
 bool ValidateDestroyImageKHR(const ValidationContext *val,
                              const egl::Display *dpyPacked,
                              const Image *imagePacked);
-
-
-bool ValidateLockSurfaceKHR(const ValidationContext *val,
-                            const egl::Display *dpyPacked,
-                            const Surface *surfacePacked,
-                            const AttributeMap &attrib_listPacked);
-bool ValidateQuerySurface64KHR(const ValidationContext *val,
-                               const egl::Display *dpyPacked,
-                               const Surface *surfacePacked,
-                               EGLint attribute,
-                               const EGLAttribKHR *value);
-bool ValidateUnlockSurfaceKHR(const ValidationContext *val,
-                              const egl::Display *dpyPacked,
-                              const Surface *surfacePacked);
-
-
-bool ValidateSetDamageRegionKHR(const ValidationContext *val,
-                                const egl::Display *dpyPacked,
-                                const Surface *surfacePacked,
-                                const EGLint *rects,
-                                EGLint n_rects);
 
 
 bool ValidateSignalSyncKHR(const ValidationContext *val,

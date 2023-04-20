@@ -98,8 +98,9 @@ bool ValidateGlobalInitializerTraverser::visitAggregate(Visit visit, TIntermAggr
 {
     
     
-    if (node->isFunctionCall() ||
-        (BuiltInGroup::IsBuiltIn(node->getOp()) && !BuiltInGroup::IsMath(node->getOp())))
+    
+    
+    if (node->isFunctionCall())
     {
         onNonConstInitializerVisit(mExtNonConstGlobalInitializers);
     }

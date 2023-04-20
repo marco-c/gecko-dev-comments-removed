@@ -83,11 +83,6 @@ bool EndsWith(const std::string &str, const char *suffix);
 bool EndsWith(const char *str, const char *suffix);
 
 
-
-
-bool ContainsToken(const std::string &tokenStr, char delimiter, const std::string &token);
-
-
 void ToLower(std::string *str);
 
 
@@ -97,14 +92,6 @@ void ToUpper(std::string *str);
 bool ReplaceSubstring(std::string *str,
                       const std::string &substring,
                       const std::string &replacement);
-
-
-int ReplaceAllSubstrings(std::string *str,
-                         const std::string &substring,
-                         const std::string &replacement);
-
-
-std::string ToCamelCase(const std::string &str);
 
 
 std::vector<std::string> GetStringsFromEnvironmentVarOrAndroidProperty(const char *varName,
@@ -119,7 +106,7 @@ std::vector<std::string> GetCachedStringsFromEnvironmentVarOrAndroidProperty(
     const char *separator);
 
 
-bool NamesMatchWithWildcard(const char *glob, const char *name);
+bool NamesMatchWithWildcard(const char *ref, const char *testName);
 }  
 
 #endif  

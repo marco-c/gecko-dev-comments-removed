@@ -47,13 +47,10 @@ enum class WidgetType
 
 namespace overlay
 {
-class Text;
 class Widget
 {
   public:
     virtual ~Widget() {}
-
-    virtual const Text *getDescriptionWidget() const;
 
   protected:
     WidgetType type;
@@ -69,11 +66,6 @@ class Widget
     int32_t coords[4];
     float color[4];
 
-    
-    
-    
-    Widget *matchToWidget;
-
     friend class gl::Overlay;
     friend class gl::OverlayState;
     friend class overlay_impl::AppendWidgetDataHelper;
@@ -83,12 +75,11 @@ class Count : public Widget
 {
   public:
     ~Count() override {}
-    void add(uint64_t n) { count += n; }
-    void set(uint64_t n) { count = n; }
+    void add(size_t n) { count += n; }
     void reset() { count = 0; }
 
   protected:
-    uint64_t count = 0;
+    size_t count = 0;
 
     friend class gl::Overlay;
     friend class overlay_impl::AppendWidgetDataHelper;
@@ -100,7 +91,7 @@ class PerSecond : public Count
     ~PerSecond() override {}
 
   protected:
-    uint64_t lastPerSecondCount = 0;
+    size_t lastPerSecondCount = 0;
 
     friend class gl::Overlay;
     friend class overlay_impl::AppendWidgetDataHelper;
@@ -125,7 +116,7 @@ class RunningGraph : public Widget
     RunningGraph(size_t n);
     ~RunningGraph() override;
 
-    void add(uint64_t n)
+    void add(size_t n)
     {
         if (!ignoreFirstValue)
         {
@@ -146,10 +137,8 @@ class RunningGraph : public Widget
         }
     }
 
-    const Text *getDescriptionWidget() const override;
-
   protected:
-    std::vector<uint64_t> runningValues;
+    std::vector<size_t> runningValues;
     size_t lastValueIndex = 0;
     Text description;
     bool ignoreFirstValue = true;
@@ -164,19 +153,14 @@ class RunningHistogram : public RunningGraph
   public:
     RunningHistogram(size_t n) : RunningGraph(n) {}
     ~RunningHistogram() override {}
-
     void set(float n)
     {
         ASSERT(n >= 0.0f && n <= 1.0f);
-        uint64_t rank =
-            n == 1.0f ? runningValues.size() - 1 : static_cast<uint64_t>(n * runningValues.size());
+        size_t rank =
+            n == 1.0f ? runningValues.size() - 1 : static_cast<size_t>(n * runningValues.size());
 
         runningValues[lastValueIndex] = rank;
     }
-
-  private:
-    
-    using RunningGraph::add;
 };
 
 
