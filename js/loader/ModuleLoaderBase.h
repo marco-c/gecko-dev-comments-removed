@@ -245,6 +245,15 @@ class ModuleLoaderBase : public nsISupports {
   virtual void OnModuleLoadComplete(ModuleLoadRequest* aRequest) = 0;
 
   
+  
+  
+  
+  
+  virtual nsresult GetResolveFailureMessage(ResolveError aError,
+                                            const nsAString& aSpecifier,
+                                            nsAString& aResult);
+
+  
 
  public:
   ScriptLoaderInterface* GetScriptLoaderInterface() const { return mLoader; }
@@ -330,12 +339,11 @@ class ModuleLoaderBase : public nsISupports {
   ResolveResult ResolveModuleSpecifier(LoadedScript* aScript,
                                        const nsAString& aSpecifier);
 
-  static nsresult HandleResolveFailure(JSContext* aCx, LoadedScript* aScript,
-                                       const nsAString& aSpecifier,
-                                       ResolveError aError,
-                                       uint32_t aLineNumber,
-                                       uint32_t aColumnNumber,
-                                       JS::MutableHandle<JS::Value> aErrorOut);
+  nsresult HandleResolveFailure(JSContext* aCx, LoadedScript* aScript,
+                                const nsAString& aSpecifier,
+                                ResolveError aError, uint32_t aLineNumber,
+                                uint32_t aColumnNumber,
+                                JS::MutableHandle<JS::Value> aErrorOut);
 
   enum class RestartRequest { No, Yes };
   nsresult StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
