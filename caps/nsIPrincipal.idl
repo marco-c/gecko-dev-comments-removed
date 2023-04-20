@@ -551,7 +551,6 @@ interface nsIPrincipal : nsISupports
 
 
     readonly attribute WebExtensionPolicy addonPolicy;
-    readonly attribute WebExtensionPolicy contentScriptAddonPolicy;
 
     
 

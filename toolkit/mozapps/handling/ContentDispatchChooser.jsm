@@ -293,6 +293,10 @@ class nsContentDispatchChooser {
       return false;
     }
 
+    if (aPrincipal.isAddonOrExpandedAddonPrincipal) {
+      return true;
+    }
+
     let key = this._getSkipProtoDialogPermissionKey(scheme);
     return (
       Services.perms.testPermissionFromPrincipal(aPrincipal, key) ===
@@ -392,28 +396,16 @@ class nsContentDispatchChooser {
       return;
     }
 
-    let principal = aPrincipal;
-
-    
-    
-    let addonPolicy = aPrincipal.contentScriptAddonPolicy;
-    if (addonPolicy) {
-      principal = Services.scriptSecurityManager.principalWithOA(
-        addonPolicy.extension.principal,
-        principal.originAttributes
-      );
-    }
-
     let permKey = this._getSkipProtoDialogPermissionKey(aScheme);
     if (aAllow) {
       Services.perms.addFromPrincipal(
-        principal,
+        aPrincipal,
         permKey,
         Services.perms.ALLOW_ACTION,
         Services.perms.EXPIRE_NEVER
       );
     } else {
-      Services.perms.removeFromPrincipal(principal, permKey);
+      Services.perms.removeFromPrincipal(aPrincipal, permKey);
     }
   }
 
@@ -423,18 +415,11 @@ class nsContentDispatchChooser {
 
 
   _isSupportedPrincipal(aPrincipal) {
-    if (!aPrincipal) {
-      return false;
-    }
-
-    
-    
-    if (aPrincipal.contentScriptAddonPolicy) {
-      return true;
-    }
-
-    return ["http", "https", "moz-extension", "file"].some(scheme =>
-      aPrincipal.schemeIs(scheme)
+    return (
+      aPrincipal &&
+      ["http", "https", "moz-extension", "file"].some(scheme =>
+        aPrincipal.schemeIs(scheme)
+      )
     );
   }
 }

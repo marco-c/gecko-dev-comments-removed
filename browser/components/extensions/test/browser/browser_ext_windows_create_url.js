@@ -147,34 +147,6 @@ add_task(async function testWindowCreate() {
     }
   }
 
-  
-  let dialogCount = 0;
-  let windowObserver = window => {
-    
-    
-    
-    window.addEventListener("dialogopen", event => {
-      dialogCount++;
-      let { dialog } = event.detail;
-      Assert.equal(
-        dialog?._openedURL,
-        "chrome://mozapps/content/handling/permissionDialog.xhtml",
-        "Should only ever see the permission dialog"
-      );
-      let dialogEl = dialog._frame.contentDocument.querySelector("dialog");
-      Assert.ok(dialogEl, "Dialog element should exist");
-      dialogEl.setAttribute("buttondisabledaccept", false);
-      dialogEl.acceptDialog();
-    });
-  };
-  Services.obs.addObserver(windowObserver, "browser-delayed-startup-finished");
-  registerCleanupFunction(() => {
-    Services.obs.removeObserver(
-      windowObserver,
-      "browser-delayed-startup-finished"
-    );
-  });
-
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       permissions: ["tabs"],
@@ -198,13 +170,4 @@ add_task(async function testWindowCreate() {
   await extension.awaitFinish("window-create-url");
   await extension.unload();
   await pageExt.unload();
-
-  Assert.equal(
-    dialogCount,
-    2,
-    "Expected to see the right number of permission prompts."
-  );
-
-  
-  Cu.forceGC();
 });
