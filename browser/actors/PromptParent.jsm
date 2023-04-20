@@ -11,6 +11,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   PromptUtils: "resource://gre/modules/PromptUtils.sys.mjs",
+  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
 });
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -314,8 +315,11 @@ class PromptParent extends JSWindowActorParent {
         if (dialogBox._allowTabFocusByPromptPrincipal) {
           this.addTabSwitchCheckboxToArgs(dialogBox, args);
         }
+
+        let currentLocationsTabLabel;
+
+        let targetTab = win.gBrowser.getTabForBrowser(browser);
         if (args.isTopLevelCrossDomainAuth) {
-          
           
           
           
@@ -324,6 +328,14 @@ class PromptParent extends JSWindowActorParent {
           if (browser == win.gBrowser.selectedBrowser) {
             win.gURLBar.setURI();
           }
+          
+          
+          
+          currentLocationsTabLabel = targetTab.label;
+          win.gBrowser.setTabLabelForAuthPrompts(
+            targetTab,
+            lazy.BrowserUtils.formatURIForDisplay(args.channel.URI)
+          );
         }
         bag = lazy.PromptUtils.objectToPropBag(args);
         try {
@@ -345,6 +357,10 @@ class PromptParent extends JSWindowActorParent {
             if (browser == win.gBrowser.selectedBrowser) {
               win.gURLBar.setURI();
             }
+            win.gBrowser.setTabLabelForAuthPrompts(
+              targetTab,
+              currentLocationsTabLabel
+            );
           }
         }
       } else {

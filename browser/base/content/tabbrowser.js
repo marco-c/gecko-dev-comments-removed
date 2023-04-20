@@ -1653,6 +1653,14 @@
       return this._setTabLabel(aTab, title, { isContentTitle, isURL });
     },
 
+    
+    
+    
+    
+    setTabLabelForAuthPrompts(aTab, aLabel) {
+      return this._setTabLabel(aTab, aLabel);
+    },
+
     _setTabLabel(aTab, aLabel, { beforeTabOpen, isContentTitle, isURL } = {}) {
       if (!aLabel || aLabel.includes("about:reader?")) {
         return false;

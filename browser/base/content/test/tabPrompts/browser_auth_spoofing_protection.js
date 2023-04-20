@@ -57,6 +57,11 @@ async function waitForDialog(doConfirmPrompt, crossDomain) {
       AUTH_URL,
       "Correct location is provided by the prompt"
     );
+    Assert.equal(
+      window.gBrowser.selectedTab.label,
+      "example.org",
+      "Tab title is manipulated"
+    );
     
     let tab = await BrowserTestUtils.openNewForegroundTab(
       gBrowser,
@@ -67,12 +72,22 @@ async function waitForDialog(doConfirmPrompt, crossDomain) {
       "https://example.org",
       "No location is provided by the prompt, correct location is displayed"
     );
+    Assert.equal(
+      window.gBrowser.selectedTab.label,
+      "mochitest index /",
+      "Tab title is not manipulated"
+    );
     
     BrowserTestUtils.removeTab(tab);
     Assert.equal(
       window.gURLBar.value,
       AUTH_URL,
       "Correct location is provided by the prompt"
+    );
+    Assert.equal(
+      window.gBrowser.selectedTab.label,
+      "example.org",
+      "Tab title is manipulated"
     );
     
     gBrowser.selectedBrowser.userTypedValue = "user value";
@@ -101,6 +116,11 @@ async function waitForDialog(doConfirmPrompt, crossDomain) {
       SAME_DOMAIN_URL,
       "No location is provided by the prompt, correct location is displayed"
     );
+    Assert.equal(
+      window.gBrowser.selectedTab.label,
+      "example.com",
+      "Tab title is not manipulated"
+    );
   }
 
   let onDialogClosed = BrowserTestUtils.waitForEvent(
@@ -124,6 +144,11 @@ async function waitForDialog(doConfirmPrompt, crossDomain) {
     window.gURLBar.value,
     crossDomain ? CROSS_DOMAIN_URL : SAME_DOMAIN_URL,
     "No location is provided by the prompt"
+  );
+  Assert.equal(
+    window.gBrowser.selectedTab.label,
+    "example.com",
+    "Tab title is not manipulated"
   );
 }
 
