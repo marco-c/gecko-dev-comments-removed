@@ -15,6 +15,7 @@
 
 #include "api/array_view.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/aec3/block.h"
 
 namespace webrtc {
 
@@ -32,10 +33,10 @@ class BlockFramer {
   BlockFramer& operator=(const BlockFramer&) = delete;
 
   
-  void InsertBlock(const std::vector<std::vector<std::vector<float>>>& block);
+  void InsertBlock(const Block& block);
   
   void InsertBlockAndExtractSubFrame(
-      const std::vector<std::vector<std::vector<float>>>& block,
+      const Block& block,
       std::vector<std::vector<rtc::ArrayView<float>>>* sub_frame);
 
  private:

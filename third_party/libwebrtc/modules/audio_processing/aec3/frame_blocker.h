@@ -17,6 +17,7 @@
 
 #include "api/array_view.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/aec3/block.h"
 
 namespace webrtc {
 
@@ -33,12 +34,12 @@ class FrameBlocker {
   
   void InsertSubFrameAndExtractBlock(
       const std::vector<std::vector<rtc::ArrayView<float>>>& sub_frame,
-      std::vector<std::vector<std::vector<float>>>* block);
+      Block* block);
   
   
   bool IsBlockAvailable() const;
   
-  void ExtractBlock(std::vector<std::vector<std::vector<float>>>* block);
+  void ExtractBlock(Block* block);
 
  private:
   const size_t num_bands_;

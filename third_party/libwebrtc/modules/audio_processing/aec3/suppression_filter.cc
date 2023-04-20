@@ -86,9 +86,9 @@ void SuppressionFilter::ApplyGain(
     const std::array<float, kFftLengthBy2Plus1>& suppression_gain,
     float high_bands_gain,
     rtc::ArrayView<const FftData> E_lowest_band,
-    std::vector<std::vector<std::vector<float>>>* e) {
+    Block* e) {
   RTC_DCHECK(e);
-  RTC_DCHECK_EQ(e->size(), NumBandsForRate(sample_rate_hz_));
+  RTC_DCHECK_EQ(e->NumBands(), NumBandsForRate(sample_rate_hz_));
 
   
   std::array<float, kFftLengthBy2Plus1> noise_gain;
@@ -121,7 +121,7 @@ void SuppressionFilter::ApplyGain(
     constexpr float kIfftNormalization = 2.f / kFftLength;
     fft_.Ifft(E, &e_extended);
 
-    float* e0 = (*e)[0][ch].data();
+    auto e0 = e->View(0, ch);
     float* e0_old = e_output_old_[0][ch].data();
 
     
@@ -138,20 +138,20 @@ void SuppressionFilter::ApplyGain(
               std::begin(e_output_old_[0][ch]));
 
     
-    for (size_t b = 1; b < e->size(); ++b) {
-      float* e_band = (*e)[b][ch].data();
+    for (int b = 1; b < e->NumBands(); ++b) {
+      auto e_band = e->View(b, ch);
       for (size_t i = 0; i < kFftLengthBy2; ++i) {
         e_band[i] *= high_bands_gain;
       }
     }
 
     
-    if (e->size() > 1) {
+    if (e->NumBands() > 1) {
       E.Assign(comfort_noise_high_band[ch]);
       std::array<float, kFftLength> time_domain_high_band_noise;
       fft_.Ifft(E, &time_domain_high_band_noise);
 
-      float* e1 = (*e)[1][ch].data();
+      auto e1 = e->View(1, ch);
       const float gain = high_bands_noise_scaling * kIfftNormalization;
       for (size_t i = 0; i < kFftLengthBy2; ++i) {
         e1[i] += time_domain_high_band_noise[i] * gain;
@@ -159,8 +159,8 @@ void SuppressionFilter::ApplyGain(
     }
 
     
-    for (size_t b = 1; b < e->size(); ++b) {
-      float* e_band = (*e)[b][ch].data();
+    for (int b = 1; b < e->NumBands(); ++b) {
+      auto e_band = e->View(b, ch);
       float* e_band_old = e_output_old_[b][ch].data();
       for (size_t i = 0; i < kFftLengthBy2; ++i) {
         std::swap(e_band[i], e_band_old[i]);
@@ -168,8 +168,8 @@ void SuppressionFilter::ApplyGain(
     }
 
     
-    for (size_t b = 0; b < e->size(); ++b) {
-      float* e_band = (*e)[b][ch].data();
+    for (int b = 0; b < e->NumBands(); ++b) {
+      auto e_band = e->View(b, ch);
       for (size_t i = 0; i < kFftLengthBy2; ++i) {
         e_band[i] = rtc::SafeClamp(e_band[i], -32768.f, 32767.f);
       }
