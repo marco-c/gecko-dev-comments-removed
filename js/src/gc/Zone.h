@@ -259,6 +259,13 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadOrGCTaskData<js::FunctionToStringCache> functionToStringCache_;
 
   
+  
+  using BoundPrefixCache =
+      js::HashMap<JSAtom*, JSAtom*, js::PointerHasher<JSAtom*>,
+                  js::SystemAllocPolicy>;
+  js::MainThreadData<BoundPrefixCache> boundPrefixCache_;
+
+  
   js::MainThreadData<js::ShapeZone> shapeZone_;
 
   
@@ -518,6 +525,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::FunctionToStringCache& functionToStringCache() {
     return functionToStringCache_.ref();
   }
+
+  BoundPrefixCache& boundPrefixCache() { return boundPrefixCache_.ref(); }
 
   js::ShapeZone& shapeZone() { return shapeZone_.ref(); }
 
