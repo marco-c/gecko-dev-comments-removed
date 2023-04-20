@@ -751,18 +751,15 @@
 
           
           
-          requestAnimationFrame(() => {
-            let { width } = window.windowUtils.getBoundsWithoutFlushing(this);
-            if (popup.oneOffButtons) {
-              
-              
-              width = Math.max(width, popup.oneOffButtons.buttonWidth * 4);
-            }
-            popup.style.setProperty("--panel-width", width + "px");
-          });
+          let { width } = window.windowUtils.getBoundsWithoutFlushing(this);
+          if (popup.oneOffButtons) {
+            
+            
+            width = Math.max(width, popup.oneOffButtons.buttonWidth * 4);
+          }
 
+          popup.style.setProperty("--panel-width", width + "px");
           popup._invalidate();
-
           popup.openPopup(this, "after_start");
         }
       };
