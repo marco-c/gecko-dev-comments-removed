@@ -13,14 +13,7 @@ add_task(async function() {
   
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
-
-  const isFissionEnabledForBrowserConsole = Services.prefs.getBoolPref(
-    "devtools.browsertoolbox.fission",
-    false
-  );
-  if (isFissionEnabledForBrowserConsole) {
-    await pushPref("devtools.browsertoolbox.scope", "everything");
-  }
+  await pushPref("devtools.browsertoolbox.scope", "everything");
 
   const wcHud = await openNewTabAndConsole(TEST_URI);
   ok(wcHud, "web console opened");
@@ -69,23 +62,21 @@ add_task(async function() {
   
   
   
-  const onViewSourceTargetAvailable = !isFissionEnabledForBrowserConsole
-    ? Promise.resolve()
-    : new Promise(resolve => {
-        const onAvailable = ({ targetFront }) => {
-          if (targetFront.url.includes("view-source:")) {
-            targetCommand.unwatchTargets({
-              types: [targetCommand.TYPES.FRAME],
-              onAvailable,
-            });
-            resolve();
-          }
-        };
-        targetCommand.watchTargets({
+  const onViewSourceTargetAvailable = new Promise(resolve => {
+    const onAvailable = ({ targetFront }) => {
+      if (targetFront.url.includes("view-source:")) {
+        targetCommand.unwatchTargets({
           types: [targetCommand.TYPES.FRAME],
           onAvailable,
         });
-      });
+        resolve();
+      }
+    };
+    targetCommand.watchTargets({
+      types: [targetCommand.TYPES.FRAME],
+      onAvailable,
+    });
+  });
 
   const onTabOpen = BrowserTestUtils.waitForNewTab(
     gBrowser,

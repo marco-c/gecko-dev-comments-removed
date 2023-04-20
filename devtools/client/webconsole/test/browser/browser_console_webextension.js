@@ -15,21 +15,6 @@ add_task(async function() {
   await pushPref("devtools.browsertoolbox.scope", "everything");
   await addTab(TEST_URI);
 
-  info("Check with devtools.browsertoolbox.fission set to false");
-  await pushPref("devtools.browsertoolbox.fission", false);
-  await testWebExtensionMessages(false);
-  await testWebExtensionMessages(true);
-
-  
-  
-  
-  
-  await pushPref("devtools.browsertoolbox.fission", true);
-  const hud = await BrowserConsoleManager.toggleBrowserConsole();
-  await clearOutput(hud);
-  await safeCloseBrowserConsole();
-
-  info("Check with devtools.browsertoolbox.fission set to true");
   await testWebExtensionMessages(false);
   await testWebExtensionMessages(true);
 });
@@ -62,25 +47,16 @@ async function testWebExtensionMessages(
   
   await wait(1000);
 
-  
-  
-  
-  
-  if (
-    !createWebExtensionBeforeOpeningBrowserConsole ||
-    Services.prefs.getBoolPref("devtools.browsertoolbox.fission", false)
-  ) {
-    await checkUniqueMessageExists(
-      hud,
-      "content console API message",
-      ".console-api"
-    );
-    await checkUniqueMessageExists(
-      hud,
-      "background console API message",
-      ".console-api"
-    );
-  }
+  await checkUniqueMessageExists(
+    hud,
+    "content console API message",
+    ".console-api"
+  );
+  await checkUniqueMessageExists(
+    hud,
+    "background console API message",
+    ".console-api"
+  );
 
   await checkUniqueMessageExists(hud, "content error", ".error");
   await checkUniqueMessageExists(hud, "background error", ".error");
