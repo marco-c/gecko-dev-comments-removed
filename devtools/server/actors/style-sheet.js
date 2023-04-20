@@ -10,15 +10,6 @@ const { fetch } = require("resource://devtools/shared/DevToolsUtils.js");
 
 
 
-const UPDATE_PRESERVING_RULES = 0;
-exports.UPDATE_PRESERVING_RULES = UPDATE_PRESERVING_RULES;
-const UPDATE_GENERAL = 1;
-exports.UPDATE_GENERAL = UPDATE_GENERAL;
-
-
-
-
-
 
 const modifiedStyleSheets = new WeakMap();
 

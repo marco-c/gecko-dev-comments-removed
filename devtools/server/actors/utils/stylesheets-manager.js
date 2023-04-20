@@ -25,7 +25,7 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  ["getSheetOwnerNode", "UPDATE_GENERAL", "UPDATE_PRESERVING_RULES"],
+  ["getSheetOwnerNode"],
   "resource://devtools/server/actors/style-sheet.js",
   true
 );
@@ -44,6 +44,13 @@ const TRANSITION_SHEET =
     transition-property: all !important;
   }
 `);
+
+
+
+
+
+const UPDATE_PRESERVING_RULES = 0;
+const UPDATE_GENERAL = 1;
 
 
 
@@ -935,4 +942,6 @@ class StyleSheetsManager extends EventEmitter {
 
 module.exports = {
   StyleSheetsManager,
+  UPDATE_GENERAL,
+  UPDATE_PRESERVING_RULES,
 };
