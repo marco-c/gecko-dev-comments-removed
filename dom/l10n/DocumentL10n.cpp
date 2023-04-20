@@ -177,6 +177,9 @@ already_AddRefed<Promise> DocumentL10n::TranslateDocument(ErrorResult& aRv) {
   MOZ_ASSERT(mState == DocumentL10nState::Constructed,
              "This method should be called only from Constructed state.");
   RefPtr<Promise> promise = Promise::Create(mGlobal, aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return nullptr;
+  }
 
   Element* elem = mDocument->GetDocumentElement();
   if (!elem) {
@@ -253,17 +256,18 @@ already_AddRefed<Promise> DocumentL10n::TranslateDocument(ErrorResult& aRv) {
     
     AutoEntryScript aes(mGlobal, "DocumentL10n InitialTranslationCompleted");
     promise = Promise::All(aes.cx(), promises, aRv);
+    if (NS_WARN_IF(aRv.Failed())) {
+      return nullptr;
+    }
   } else {
     
 
     
     
     promise = TranslateElements(elements, nullptr, aRv);
-  }
-
-  if (NS_WARN_IF(!promise || aRv.Failed())) {
-    promise->MaybeRejectWithUndefined();
-    return promise.forget();
+    if (NS_WARN_IF(aRv.Failed())) {
+      return nullptr;
+    }
   }
 
   return promise.forget();
