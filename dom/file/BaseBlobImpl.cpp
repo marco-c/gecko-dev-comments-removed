@@ -64,12 +64,10 @@ void BaseBlobImpl::SetLastModificationDatePrecisely(int64_t aDate) {
   mLastModificationDate = aDate;
 }
 
-void BaseBlobImpl::SetLastModificationDate(bool aCrossOriginIsolated,
+void BaseBlobImpl::SetLastModificationDate(RTPCallerType aRTPCallerType,
                                            int64_t aDate) {
   return SetLastModificationDatePrecisely(
-      nsRFPService::ReduceTimePrecisionAsUSecs(aDate, 0,
-                                                false,
-                                               aCrossOriginIsolated));
+      nsRFPService::ReduceTimePrecisionAsUSecs(aDate, 0, aRTPCallerType));
   
   
 }
