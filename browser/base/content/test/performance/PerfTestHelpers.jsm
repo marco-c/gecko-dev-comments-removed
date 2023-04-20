@@ -50,6 +50,9 @@ var PerfTestHelpers = {
         let channel = lazy.NetUtil.newChannel({
           uri,
           loadUsingSystemPrincipal: true,
+          
+          
+          contentPolicyType: Ci.nsIContentPolicy.TYPE_FETCH,
         });
 
         channel.asyncOpen({

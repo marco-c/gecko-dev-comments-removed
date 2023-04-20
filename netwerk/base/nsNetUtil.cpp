@@ -3864,6 +3864,17 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
   nsCString spec;
   aURI->GetSpec(spec);
 
+#ifdef ANDROID
+  
+  
+  if (StringEndsWith(spec, "info-pages.css"_ns) ||
+      StringEndsWith(spec, "aboutLicense.css"_ns) ||
+      
+      StringBeginsWith(spec, "resource://android/assets/web_extensions/"_ns)) {
+    return;
+  }
+#endif
+
   
   if (StringBeginsWith(spec, "resource://gre/res/dtd/"_ns)) {
     return;
