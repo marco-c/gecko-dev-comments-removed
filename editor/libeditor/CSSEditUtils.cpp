@@ -640,17 +640,6 @@ void CSSEditUtils::GetDefaultBackgroundColor(nsAString& aColor) {
 }
 
 
-
-
-void CSSEditUtils::GetDefaultLengthUnit(nsAString& aLengthUnit) {
-  
-  if (MOZ_UNLIKELY(NS_FAILED(Preferences::GetString(
-          "editor.css.default_length_unit", aLengthUnit)))) {
-    aLengthUnit.AssignLiteral("px");
-  }
-}
-
-
 void CSSEditUtils::ParseLength(const nsAString& aString, float* aValue,
                                nsAtom** aUnit) {
   if (aString.IsEmpty()) {

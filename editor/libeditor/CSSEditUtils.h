@@ -151,14 +151,6 @@ class CSSEditUtils final {
 
 
 
-  static void GetDefaultLengthUnit(nsAString& aLengthUnit);
-
-  
-
-
-
-
-
 
 
   MOZ_CAN_RUN_SCRIPT static nsresult GetComputedCSSEquivalentTo(
