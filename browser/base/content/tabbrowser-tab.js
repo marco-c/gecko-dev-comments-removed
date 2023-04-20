@@ -325,6 +325,11 @@
     }
 
     on_dragstart(event) {
+      
+      
+      
+      
+      event.dataTransfer.mozShowFailAnimation = false;
       if (event.eventPhase == Event.CAPTURING_PHASE) {
         this.style.MozUserFocus = "";
       } else if (

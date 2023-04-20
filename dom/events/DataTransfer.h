@@ -84,7 +84,8 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
                bool aIsExternal, bool aUserCancelled,
                bool aIsCrossDomainSubFrameDrop, int32_t aClipboardType,
                DataTransferItemList* aItems, Element* aDragImage,
-               uint32_t aDragImageX, uint32_t aDragImageY);
+               uint32_t aDragImageX, uint32_t aDragImageY,
+               bool aShowFailAnimation);
 
   ~DataTransfer();
 
@@ -380,6 +381,11 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
   already_AddRefed<DataTransfer> MozCloneForEvent(const nsAString& aEvent,
                                                   ErrorResult& aRv);
 
+  void SetMozShowFailAnimation(bool aShouldAnimate) {
+    mShowFailAnimation = aShouldAnimate;
+  }
+  bool MozShowFailAnimation() const { return mShowFailAnimation; }
+
   
   
   
@@ -509,6 +515,10 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<mozilla::dom::Element> mDragImage;
   uint32_t mDragImageX;
   uint32_t mDragImageY;
+
+  
+  
+  bool mShowFailAnimation = true;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DataTransfer, NS_DATATRANSFER_IID)
