@@ -1081,8 +1081,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
-  CreateStyleForInsertText(const EditorDOMPoint& aPointToInsertText);
+  CreateStyleForInsertText(const EditorDOMPoint& aPointToInsertText,
+                           const Element& aEditingHost);
 
   
 
@@ -3265,6 +3267,16 @@ class HTMLEditor final : public EditorBase,
   template <size_t N>
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SetInlinePropertiesAsSubAction(
       const AutoTArray<EditorInlineStyleAndValue, N>& aStylesToSet);
+
+  
+
+
+
+  template <size_t N>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SetInlinePropertiesAroundRanges(
+      AutoRangeArray& aRanges,
+      const AutoTArray<EditorInlineStyleAndValue, N>& aStylesToSet,
+      const Element& aEditingHost);
 
   
 

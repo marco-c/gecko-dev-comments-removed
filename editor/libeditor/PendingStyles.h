@@ -266,6 +266,13 @@ class PendingStyles final {
 
 
 
+  void TakeAllPreservedStyles(
+      nsTArray<EditorInlineStyleAndValue>& aOutStylesAndValues);
+
+  
+
+
+
   int32_t TakeRelativeFontSize();
 
   
