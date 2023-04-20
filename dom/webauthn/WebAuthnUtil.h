@@ -62,15 +62,4 @@ nsresult BuildTransactionHashes(const nsCString& aRpId,
 
 }  
 
-namespace IPC {
-
-template <>
-struct ParamTraits<mozilla::dom::UserVerificationRequirement>
-    : public ContiguousEnumSerializer<
-          mozilla::dom::UserVerificationRequirement,
-          mozilla::dom::UserVerificationRequirement::Required,
-          mozilla::dom::UserVerificationRequirement::EndGuard_> {};
-
-}  
-
 #endif  
