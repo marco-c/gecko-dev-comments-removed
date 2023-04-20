@@ -499,9 +499,19 @@ async function withDevToolsPanel(url, callback, aWindow = window) {
 
   info("About to remove the about:blank tab");
   await toolbox.destroy();
+
+  
+  
+  
+  await TestUtils.waitForTick();
+
+  
+  
+  const waitForClosingPromise = BrowserTestUtils.waitForTabClosing(tab);
   BrowserTestUtils.removeTab(tab);
+  info("Requested closing the about:blank tab, waiting...");
+  await waitForClosingPromise;
   info("The about:blank tab is now removed.");
-  await new Promise(resolve => setTimeout(resolve, 500));
 }
 
 
