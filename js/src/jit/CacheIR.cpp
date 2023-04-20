@@ -11389,6 +11389,10 @@ AttachDecision CompareIRGenerator::tryAttachStub() {
   
   
   
+  
+  
+  
+  
 
   if (IsEqualityOp(op_)) {
     TRY_ATTACH(tryAttachObject(lhsId, rhsId));
@@ -11419,6 +11423,12 @@ AttachDecision CompareIRGenerator::tryAttachStub() {
   TRY_ATTACH(tryAttachBigIntInt32(lhsId, rhsId));
   TRY_ATTACH(tryAttachBigIntNumber(lhsId, rhsId));
   TRY_ATTACH(tryAttachBigIntString(lhsId, rhsId));
+
+  
+  MOZ_ASSERT(!IsStrictEqualityOp(op_));
+
+  
+  MOZ_ASSERT(lhsVal_.isObject() || rhsVal_.isObject());
 
   trackAttached(IRGenerator::NotAttached);
   return AttachDecision::NoAction;
