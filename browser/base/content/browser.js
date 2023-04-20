@@ -439,11 +439,28 @@ XPCOMUtils.defineLazyGetter(this, "PopupNotifications", () => {
       );
     };
 
+    
+    
+    
+    const getVisibleAnchorElement = anchorElement => {
+      
+      
+      gURLBar.maybeHandleRevertFromPopup(anchorElement);
+      if (anchorElement?.checkVisibility()) {
+        return anchorElement;
+      }
+      let fallback = [
+        document.getElementById("identity-icon"),
+        document.getElementById("urlbar-search-button"),
+      ];
+      return fallback.find(element => element?.checkVisibility()) ?? null;
+    };
+
     return new PopupNotifications(
       gBrowser,
       document.getElementById("notification-popup"),
       document.getElementById("notification-popup-box"),
-      { shouldSuppress }
+      { shouldSuppress, getVisibleAnchorElement }
     );
   } catch (ex) {
     console.error(ex);
