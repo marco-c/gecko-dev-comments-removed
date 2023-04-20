@@ -80,6 +80,7 @@ struct BytecodeEmitter;
 
 
 
+
 class MOZ_STACK_CLASS AsyncEmitter {
  private:
   BytecodeEmitter* bce_;
@@ -158,8 +159,8 @@ class MOZ_STACK_CLASS AsyncEmitter {
  public:
   explicit AsyncEmitter(BytecodeEmitter* bce) : bce_(bce){};
 
-  [[nodiscard]] bool prepareForParamsWithoutExpression();
-  [[nodiscard]] bool prepareForParamsWithExpression();
+  [[nodiscard]] bool prepareForParamsWithoutExpressionOrDestructuring();
+  [[nodiscard]] bool prepareForParamsWithExpressionOrDestructuring();
   [[nodiscard]] bool prepareForModule();
   [[nodiscard]] bool emitParamsEpilogue();
   [[nodiscard]] bool prepareForBody();
