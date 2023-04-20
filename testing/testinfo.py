@@ -361,7 +361,6 @@ class TestInfoReport(TestInfo):
         
         runcounts = self.get_runcounts()
         runcounts = self.squash_runcounts(runcounts, days=30)
-        runcounts = self.expand_runcounts(runcounts)
         return runcounts
 
     def get_testinfoall_index_url(self):
@@ -426,15 +425,6 @@ class TestInfoReport(TestInfo):
 
         return testrundata
 
-    def expand_runcounts(self, runcounts):
-        
-        retVal = {}
-        jtn = runcounts["job_type_names"]
-        for m in runcounts["manifests"]:
-            mname = list(m.keys())[0]
-            retVal[mname] = [[jtn[x[0]]] + x[1:] for x in m[mname]]
-        return retVal
-
     def squash_runcounts(self, runcounts, days=30):
         
         endday = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
@@ -442,15 +432,14 @@ class TestInfoReport(TestInfo):
         )
         oldest = endday - datetime.timedelta(days=days)
 
-        all_jtn = []
         testgroup_runinfo = defaultdict(lambda: defaultdict(int))
 
+        retVal = {}
         for datekey in runcounts.keys():
             
             if datetime.date.fromisoformat(datekey) < oldest.date():
                 continue
 
-            
             jtn = runcounts[datekey]["job_type_names"]
             for m in runcounts[datekey]["manifests"]:
                 man_name = list(m.keys())[0]
@@ -459,17 +448,13 @@ class TestInfoReport(TestInfo):
                     
                     
                     job_name = jtn[job_type_id]
-                    if job_name not in all_jtn:
-                        all_jtn.append(job_name)
-                    job_id = all_jtn.index(job_name)
-                    key = (job_id, result, classification)
+                    key = (job_name, result, classification)
                     testgroup_runinfo[man_name][key] += count
 
-        
-        
-        retVal = {"job_type_names": all_jtn, "manifests": []}
-        for manifest, val in testgroup_runinfo.items():
-            retVal["manifests"].append({manifest: [list(x) + [val[x]] for x in val]})
+        for m in testgroup_runinfo:
+            retVal[m] = [
+                list(x) + [testgroup_runinfo[m][x]] for x in testgroup_runinfo[m]
+            ]
         return retVal
 
     def get_intermittent_failure_data(self, start, end):
