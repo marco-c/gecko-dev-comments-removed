@@ -7,12 +7,21 @@
 #ifndef DOM_MEDIA_WEBRTC_LIBWEBRTCGLUE_MEDIACONDUITCONTROL_H_
 #define DOM_MEDIA_WEBRTC_LIBWEBRTCGLUE_MEDIACONDUITCONTROL_H_
 
-#include "jsapi/RTCDTMFSender.h"
-#include "MediaConduitInterface.h"
+#include "jsapi/RTCDTMFSender.h"  
 #include "mozilla/StateMirroring.h"
 #include "RtpRtcpConfig.h"
+#include <vector>
+#include <string>
+#include "mozilla/Maybe.h"
+#include "CodecConfig.h"                   
+#include "api/rtp_parameters.h"            
+#include "api/video_codecs/video_codec.h"  
 
 namespace mozilla {
+
+using RtpExtList = std::vector<webrtc::RtpExtension>;
+using Ssrc = uint32_t;
+using Ssrcs = std::vector<uint32_t>;
 
 
 

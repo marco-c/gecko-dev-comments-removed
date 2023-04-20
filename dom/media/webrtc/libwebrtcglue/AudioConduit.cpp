@@ -336,7 +336,9 @@ void WebrtcAudioConduit::OnControlConfigChange() {
 
   if (mSendStream && sendStreamReconfigureNeeded) {
     MOZ_ASSERT(!sendStreamRecreationNeeded);
-    mSendStream->Reconfigure(mSendStreamConfig);
+    
+    
+    mSendStream->Reconfigure(mSendStreamConfig, nullptr);
   }
 
   if (!mControl.mReceiving) {
