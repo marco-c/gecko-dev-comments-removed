@@ -136,12 +136,18 @@ class CookieBannerChild extends JSWindowActorChild {
 
 
 
+  get #hasInjectedCookieForCookieBannerHandling() {
+    return this.docShell?.currentDocumentChannel?.loadInfo
+      ?.hasInjectedCookieForCookieBannerHandling;
+  }
+
+  
+
+
+
 
   #dispatchEventsForBannerHandledByInjection() {
-    if (
-      !this.docShell?.currentDocumentChannel?.loadInfo
-        ?.hasInjectedCookieForCookieBannerHandling
-    ) {
+    if (!this.#hasInjectedCookieForCookieBannerHandling) {
       return false;
     }
     
@@ -192,7 +198,17 @@ class CookieBannerChild extends JSWindowActorChild {
     if (!rules.length) {
       
       
-      this.#dispatchEventsForBannerHandledByInjection();
+      let dispatchedEvents = this.#dispatchEventsForBannerHandledByInjection();
+      
+      
+      
+      
+      
+      if (dispatchedEvents) {
+        this.#telemetryStatus.failReason = null;
+        this.#telemetryStatus.success = true;
+        this.#telemetryStatus.successStage = "cookie_injected";
+      }
 
       this.#maybeSendTestMessage();
       return;
@@ -213,6 +229,14 @@ class CookieBannerChild extends JSWindowActorChild {
     } = await this.handleCookieBanner();
 
     let dispatchedEventsForCookieInjection = this.#dispatchEventsForBannerHandledByInjection();
+    
+    
+    
+    
+    if (dispatchedEventsForCookieInjection && !bannerDetected) {
+      this.#telemetryStatus.success = true;
+      this.#telemetryStatus.successStage = "cookie_injected";
+    }
 
     
     if (bannerDetected) {
@@ -309,13 +333,12 @@ class CookieBannerChild extends JSWindowActorChild {
 
   #reportTelemetry() {
     
-    
     if (
-      this.#telemetryStatus.currentStage == null ||
-      !this.#clickRules?.length
+      this.#telemetryStatus.successStage == null &&
+      this.#telemetryStatus.failReason == null
     ) {
       lazy.logConsole.debug(
-        "Skip clickResult telemetry",
+        "Skip telemetry",
         this.#telemetryStatus,
         this.#clickRules
       );
