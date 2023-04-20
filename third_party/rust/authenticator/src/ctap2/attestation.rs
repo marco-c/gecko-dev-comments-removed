@@ -529,7 +529,8 @@ impl Serialize for AttestationObject {
             .map(serde_cbor::Value::Bytes)
             .map_err(|_| SerError::custom("Failed to serialize auth_data"))?;
 
-        map.serialize_entry(&"authData", &auth_data)?;
+        
+        
         match self.att_statement {
             AttestationStatement::None => {
                 
@@ -546,6 +547,7 @@ impl Serialize for AttestationObject {
                 map.serialize_entry(&"attStmt", v)?;
             }
         }
+        map.serialize_entry(&"authData", &auth_data)?;
         map.end()
     }
 }
