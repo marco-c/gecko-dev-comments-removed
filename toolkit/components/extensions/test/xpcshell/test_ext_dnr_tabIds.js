@@ -1,13 +1,13 @@
 "use strict";
 
-// This test verifies that the internals for associating requests with tabId
-// are only active when a session rule with a tabId rule exists.
-//
-// There are tests for the logic of tabId matching in the match_tabIds task in
-// toolkit/components/extensions/test/xpcshell/test_ext_dnr_testMatchOutcome.js
-//
-// And there are tests that verify matching with real network requests in
-// toolkit/components/extensions/test/mochitest/test_ext_dnr_tabIds.html
+
+
+
+
+
+
+
+
 
 const server = createHttpServer({ hosts: ["from", "any", "in", "ex"] });
 server.registerPathHandler("/", (req, res) => {
@@ -20,11 +20,13 @@ add_setup(async () => {
   Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
   Services.prefs.setBoolPref("extensions.dnr.enabled", true);
 
-  // Install a spy on WebRequest.getTabIdForChannelWrapper.
+  
   const { WebRequest } = ChromeUtils.import(
     "resource://gre/modules/WebRequest.jsm"
   );
-  const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
+  const { sinon } = ChromeUtils.importESModule(
+    "resource://testing-common/Sinon.sys.mjs"
+  );
   gTabLookupSpy = sinon.spy(WebRequest, "getTabIdForChannelWrapper");
 
   await ExtensionTestUtils.startAddonManager();
@@ -36,10 +38,10 @@ function numberOfTabLookupsSinceLastCheck() {
   return result;
 }
 
-// This test checks that WebRequest.getTabIdForChannelWrapper is only called
-// when there are any registered tabId/excludedTabIds rules. Moreover, it
-// verifies that after unloading (reloading) the extension, that the method is
-// still not called unnecessarily.
+
+
+
+
 add_task(async function getTabIdForChannelWrapper_only_called_when_needed() {
   async function background() {
     const RULE_ANY_TAB_ID = {
@@ -90,10 +92,10 @@ add_task(async function getTabIdForChannelWrapper_only_called_when_needed() {
     if (startupCount !== 0) {
       browser.test.assertEq(1, startupCount, "Extension restarted once");
 
-      // Note: declarativeNetRequest.updateSessionRules is intentionally not
-      // called here, because we want to verify that upon unloading the
-      // extension, that the tabId lookup logic was properly cleaned up,
-      // i.e. that NetworkIntegration.maybeUpdateTabIdChecker() was called.
+      
+      
+      
+      
 
       await testFetchUrl(
         "http://from/?after-restart-supposedly-no-include-tab",
@@ -128,7 +130,7 @@ add_task(async function getTabIdForChannelWrapper_only_called_when_needed() {
     await browser.declarativeNetRequest.updateSessionRules({
       addRules: [RULE_ANY_TAB_ID],
     });
-    // Active rules now: RULE_ANY_TAB_ID
+    
 
     await testFetchUrl(
       "http://from/?only_dnr_rule_matches_any_tab",
@@ -140,26 +142,26 @@ add_task(async function getTabIdForChannelWrapper_only_called_when_needed() {
     await browser.declarativeNetRequest.updateSessionRules({
       addRules: [RULE_EXCLUDE_TAB_ID],
     });
-    // Active rules now: RULE_ANY_TAB_ID, RULE_EXCLUDE_TAB_ID
+    
 
     await testFetchUrl(
       "http://from/?dnr_rule_matches_any,dnr_rule_excludes_-1",
-      // should be "any" instead of "ex" because excludedTabIds: [-1] should
-      // exclude the background.
+      
+      
       "http://any/",
-      2, // initial request + redirect request.
+      2, 
       "Expected tabId lookup when a tabId rule is registered"
     );
 
     await browser.declarativeNetRequest.updateSessionRules({
       removeRuleIds: [RULE_ANY_TAB_ID.id],
     });
-    // Active rules now: RULE_EXCLUDE_TAB_ID
+    
 
     await testFetchUrl(
       "http://from/?only_dnr_rule_excludes_-1",
-      // Not redirected to "ex" because excludedTabIds: [-1] does not match the
-      // background that has tabId -1.
+      
+      
       "http://from/?only_dnr_rule_excludes_-1",
       1,
       "Expected lookup after unregistering unrelated rule, keeping tabId rule"
@@ -168,30 +170,30 @@ add_task(async function getTabIdForChannelWrapper_only_called_when_needed() {
     await browser.declarativeNetRequest.updateSessionRules({
       addRules: [RULE_INCLUDE_TAB_ID],
     });
-    // Active rules now: RULE_EXCLUDE_TAB_ID, RULE_INCLUDE_TAB_ID
+    
     await testFetchUrl(
       "http://from/?two_dnr_rule_include_and_exclude_-1",
       "http://in/",
-      2, // initial request + redirect request.
+      2, 
       "Expecting lookup because of 2 DNR rules with tabId and excludedTabIds"
     );
 
     await browser.declarativeNetRequest.updateSessionRules({
       removeRuleIds: [RULE_EXCLUDE_TAB_ID.id],
     });
-    // Active rules now: RULE_INCLUDE_TAB_ID
+    
 
     await testFetchUrl(
       "http://from/?only_dnr_rule_includes_-1",
       "http://in/",
-      2, // initial request + redirect request.
+      2, 
       "Expecting lookup because of remaining tabId DNR rule"
     );
 
     await browser.declarativeNetRequest.updateSessionRules({
       removeRuleIds: [RULE_INCLUDE_TAB_ID.id],
     });
-    // Active rules now: none
+    
 
     await testFetchUrl(
       "http://from/?no_rules_again",
@@ -203,22 +205,22 @@ add_task(async function getTabIdForChannelWrapper_only_called_when_needed() {
     await browser.declarativeNetRequest.updateSessionRules({
       addRules: [RULE_INCLUDE_TAB_ID],
     });
-    // Active rules now: RULE_INCLUDE_TAB_ID
+    
 
     await testFetchUrl(
       "http://from/?again_with-include-1",
       "http://in/",
-      2, // initial request + redirect request.
+      2, 
       "Expecting lookup again because of include rule"
     );
 
-    // Ending test with remaining rule: RULE_INCLUDE_TAB_ID
-    // Reload extension.
+    
+    
     browser.test.sendMessage("reload_extension");
   }
   let extension = ExtensionTestUtils.loadExtension({
     background,
-    useAddonManager: "temporary", // for reload and granted_host_permissions.
+    useAddonManager: "temporary", 
     allowInsecureRequests: true,
     manifest: {
       manifest_version: 3,

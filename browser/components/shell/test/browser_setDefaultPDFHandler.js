@@ -1,11 +1,14 @@
 
 
 
+ChromeUtils.defineESModuleGetters(this, {
+  sinon: "resource://testing-common/Sinon.sys.mjs",
+});
+
 XPCOMUtils.defineLazyModuleGetters(this, {
   ExperimentAPI: "resource://nimbus/ExperimentAPI.jsm",
   ExperimentFakes: "resource://testing-common/NimbusTestUtils.jsm",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
-  sinon: "resource://testing-common/Sinon.jsm",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
