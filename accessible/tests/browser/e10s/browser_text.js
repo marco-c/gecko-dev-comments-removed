@@ -222,6 +222,29 @@ addAccessibleTask(
 
 
 addAccessibleTask(
+  `<p id="p">test</p>`,
+  async function(browser, docAcc) {
+    const p = findAccessibleChildByID(docAcc, "p");
+    testTextAtOffset(p, BOUNDARY_LINE_START, [[5, 5, "", 0, 0]]);
+    testTextBeforeOffset(p, BOUNDARY_LINE_START, [[5, 5, "", 0, 0]]);
+    testTextAfterOffset(p, BOUNDARY_LINE_START, [[5, 5, "", 0, 0]]);
+  },
+  {
+    
+    
+    
+    
+    chrome: isCacheEnabled,
+    topLevel: isCacheEnabled,
+    iframe: isCacheEnabled,
+    remoteIframe: isCacheEnabled,
+  }
+);
+
+
+
+
+addAccessibleTask(
   `<div id="container">a<a id="link" href="https://example.com/">b</a>c</div>`,
   async function(browser, docAcc) {
     const container = findAccessibleChildByID(docAcc, "container", [

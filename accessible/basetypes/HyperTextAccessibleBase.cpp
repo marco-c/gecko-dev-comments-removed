@@ -420,6 +420,10 @@ void HyperTextAccessibleBase::TextBeforeOffset(
   } else {
     orig = ToTextLeafPoint(static_cast<int32_t>(adjustedOffset));
   }
+  if (!orig) {
+    
+    return;
+  }
   AdjustOriginIfEndBoundary(orig, aBoundaryType);
   TextLeafPoint end = orig.FindBoundary(aBoundaryType, eDirPrevious,
                                          true);
@@ -496,6 +500,10 @@ void HyperTextAccessibleBase::TextAtOffset(int32_t aOffset,
       end = start;
     }
   }
+  if (!start) {
+    
+    return;
+  }
   start = start.FindBoundary(aBoundaryType, eDirPrevious,
                               true);
   bool ok;
@@ -546,6 +554,10 @@ void HyperTextAccessibleBase::TextAfterOffset(
   } else {
     orig = ToTextLeafPoint(static_cast<int32_t>(adjustedOffset),
                             true);
+  }
+  if (!orig) {
+    
+    return;
   }
   AdjustOriginIfEndBoundary(orig, aBoundaryType);
   TextLeafPoint start = orig.FindBoundary(aBoundaryType, eDirNext);
