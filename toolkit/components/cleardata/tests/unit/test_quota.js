@@ -19,11 +19,6 @@ const skipLocalStorageTests = Services.prefs.getBoolPref(
 );
 
 
-const skipCleanupAfterDeletionAtShutdownTests = Services.prefs.getBoolPref(
-  "dom.quotaManager.backgroundTask.enabled"
-);
-
-
 
 
 
@@ -539,11 +534,6 @@ add_task(async function test_deleteAllAtShutdown() {
     TEST_ORIGINS.length,
     `storage/to-be-removed has ${TEST_ORIGINS.length} subdirectories`
   );
-
-  if (skipCleanupAfterDeletionAtShutdownTests) {
-    
-    return;
-  }
 
   info("Verifying cleanupAfterDeletionAtShutdown");
   await new Promise(aResolve => {
