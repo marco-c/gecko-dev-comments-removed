@@ -17,6 +17,7 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/MacroForEach.h"
+#include "mozilla/Monitor.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RemoteLazyInputStreamThread.h"
@@ -66,17 +67,17 @@
 
 #define FAILSAFE_CANCEL_SYNC_OP_MS 50000
 
+
+
+
+
+#define SYNC_OP_WAKE_INTERVAL_MS 500
+
 namespace mozilla::dom {
 
 namespace {
 
 class RequestHelper;
-
-
-
-
-
-
 
 
 
@@ -120,7 +121,9 @@ class RequestHelper final : public Runnable, public LSRequestChildCallback {
 
 
 
-    Finishing,
+
+
+    Canceling,
     
 
 
@@ -139,17 +142,12 @@ class RequestHelper final : public Runnable, public LSRequestChildCallback {
   
   
   
-  nsCOMPtr<nsISerialEventTarget> mNestedEventTarget;
-  
-  
-  
   LSRequestChild* mActor;
   const LSRequestParams mParams;
-  LSRequestResponse mResponse;
-  nsresult mResultCode;
-  State mState;
-  
-  bool mWaiting;
+  Monitor mMonitor;
+  LSRequestResponse mResponse MOZ_GUARDED_BY(mMonitor);
+  nsresult mResultCode MOZ_GUARDED_BY(mMonitor);
+  State mState MOZ_GUARDED_BY(mMonitor);
 
  public:
   RequestHelper(LSObject* aObject, const LSRequestParams& aParams)
@@ -158,9 +156,9 @@ class RequestHelper final : public Runnable, public LSRequestChildCallback {
         mOwningEventTarget(GetCurrentEventTarget()),
         mActor(nullptr),
         mParams(aParams),
+        mMonitor("dom::RequestHelper::mMonitor"),
         mResultCode(NS_OK),
-        mState(State::Initial),
-        mWaiting(true) {}
+        mState(State::Initial) {}
 
   bool IsOnOwningThread() const {
     MOZ_ASSERT(mOwningEventTarget);
@@ -179,10 +177,6 @@ class RequestHelper final : public Runnable, public LSRequestChildCallback {
 
  private:
   ~RequestHelper() = default;
-
-  nsresult Start();
-
-  void Finish();
 
   NS_DECL_ISUPPORTS_INHERITED
 
@@ -438,8 +432,7 @@ nsresult LSObject::CreateForPrincipal(nsPIDOMWindowInner* aWindow,
   return NS_OK;
 }  
 
-LSRequestChild* LSObject::StartRequest(nsIEventTarget* aMainEventTarget,
-                                       const LSRequestParams& aParams,
+LSRequestChild* LSObject::StartRequest(const LSRequestParams& aParams,
                                        LSRequestChildCallback* aCallback) {
   AssertIsOnDOMFileThread();
 
@@ -1044,105 +1037,60 @@ void LSObject::LastRelease() {
 nsresult RequestHelper::StartAndReturnResponse(LSRequestResponse& aResponse) {
   AssertIsOnOwningThread();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  {
-    auto thread = static_cast<nsThread*>(NS_GetCurrentThread());
-
-    const nsLocalExecutionGuard localExecution(thread->EnterLocalExecution());
-    mNestedEventTarget = localExecution.GetEventTarget();
-    MOZ_ASSERT(mNestedEventTarget);
-
-    nsCOMPtr<nsIEventTarget> domFileThread =
-        RemoteLazyInputStreamThread::GetOrCreate();
-    if (NS_WARN_IF(!domFileThread)) {
-      return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
-    }
-
-    nsresult rv;
-
-    {
-      rv = domFileThread->Dispatch(this, NS_DISPATCH_NORMAL);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-
-      nsCOMPtr<nsITimer> timer = NS_NewTimer();
-
-      MOZ_ALWAYS_SUCCEEDS(timer->SetTarget(domFileThread));
-
-      auto cancelRequest = [](nsITimer* aTimer, void* aClosure) {
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-
-        auto helper = static_cast<RequestHelper*>(aClosure);
-
-        LSRequestChild* actor = helper->mActor;
-
-        
-        
-        
-        
-        
-        if (actor && !actor->Finishing()) {
-          actor->SendCancel();
-        }
-      };
-
-      MOZ_ALWAYS_SUCCEEDS(timer->InitWithNamedFuncCallback(
-          cancelRequest, this, FAILSAFE_CANCEL_SYNC_OP_MS,
-          nsITimer::TYPE_ONE_SHOT,
-          "RequestHelper::StartAndReturnResponse::SpinEventLoopTimer"));
-
-      MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
-          "RequestHelper::StartAndReturnResponse"_ns,
-          [&]() {
-            if (mozilla::ipc::ProcessChild::ExpectingShutdown()) {
-              MOZ_ALWAYS_SUCCEEDS(timer->Cancel());
-              MOZ_ALWAYS_SUCCEEDS(timer->InitWithNamedFuncCallback(
-                  cancelRequest, this, 0, nsITimer::TYPE_ONE_SHOT,
-                  "RequestHelper::StartAndReturnResponse::SpinEventLoopAbort"));
-            }
-
-            return !mWaiting;
-          },
-          thread));
-
-      MOZ_ALWAYS_SUCCEEDS(timer->Cancel());
-    }
-
-    
-    
-    MOZ_ASSERT(mState == State::Complete);
-
-    
-    MOZ_ASSERT(!mWaiting);
-
-    
-    
-    
-    mNestedEventTarget = nullptr;
+  nsCOMPtr<nsIEventTarget> domFileThread =
+      RemoteLazyInputStreamThread::GetOrCreate();
+  if (NS_WARN_IF(!domFileThread)) {
+    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
   }
+
+  nsresult rv = domFileThread->Dispatch(this, NS_DISPATCH_NORMAL);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  TimeStamp deadline = TimeStamp::Now() + TimeDuration::FromMilliseconds(
+                                              FAILSAFE_CANCEL_SYNC_OP_MS);
+
+  MonitorAutoLock lock(mMonitor);
+  while (mState != State::Complete) {
+    TimeStamp now = TimeStamp::Now();
+    
+    
+    
+    
+    if (mozilla::ipc::ProcessChild::ExpectingShutdown() || now >= deadline) {
+      switch (mState) {
+        case State::Initial:
+          
+          
+          mResultCode = NS_ERROR_FAILURE;
+          mState = State::Complete;
+          continue;
+        case State::ResponsePending:
+          
+          
+          mState = State::Canceling;
+          MOZ_ALWAYS_SUCCEEDS(
+              domFileThread->Dispatch(this, NS_DISPATCH_NORMAL));
+          [[fallthrough]];
+        case State::Canceling:
+          
+          
+          lock.Wait();
+          continue;
+        default:
+          MOZ_ASSERT_UNREACHABLE("unexpected state");
+      }
+    }
+
+    
+    lock.Wait(TimeDuration::Min(
+        TimeDuration::FromMilliseconds(SYNC_OP_WAKE_INTERVAL_MS),
+        deadline - now));
+  }
+
+  
+  mObject = nullptr;
 
   if (NS_WARN_IF(NS_FAILED(mResultCode))) {
     return mResultCode;
@@ -1152,81 +1100,68 @@ nsresult RequestHelper::StartAndReturnResponse(LSRequestResponse& aResponse) {
   return NS_OK;
 }
 
-nsresult RequestHelper::Start() {
-  AssertIsOnDOMFileThread();
-  MOZ_ASSERT(mState == State::Initial);
-
-  mState = State::ResponsePending;
-
-  LSRequestChild* actor =
-      mObject->StartRequest(mNestedEventTarget, mParams, this);
-  if (NS_WARN_IF(!actor)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  mActor = actor;
-
-  return NS_OK;
-}
-
-void RequestHelper::Finish() {
-  AssertIsOnOwningThread();
-  MOZ_ASSERT(mState == State::Finishing);
-
-  mObject = nullptr;
-
-  mWaiting = false;
-
-  mState = State::Complete;
-}
-
 NS_IMPL_ISUPPORTS_INHERITED0(RequestHelper, Runnable)
 
 NS_IMETHODIMP
 RequestHelper::Run() {
-  nsresult rv;
+  AssertIsOnDOMFileThread();
+
+  MonitorAutoLock lock(mMonitor);
 
   switch (mState) {
-    case State::Initial:
-      rv = Start();
-      break;
-
-    case State::Finishing:
-      Finish();
+    case State::Initial: {
+      mState = State::ResponsePending;
+      {
+        MonitorAutoUnlock unlock(mMonitor);
+        mActor = mObject->StartRequest(mParams, this);
+      }
+      if (NS_WARN_IF(!mActor) && mState != State::Complete) {
+        
+        
+        
+        mResultCode = NS_ERROR_FAILURE;
+        mState = State::Complete;
+        lock.Notify();
+      }
       return NS_OK;
+    }
+
+    case State::Canceling: {
+      
+      
+      
+      
+      
+      if (mActor && !mActor->Finishing()) {
+        mActor->SendCancel();
+      }
+      return NS_OK;
+    }
+
+    case State::Complete: {
+      
+      return NS_OK;
+    }
 
     default:
       MOZ_CRASH("Bad state!");
   }
-
-  if (NS_WARN_IF(NS_FAILED(rv)) && mState != State::Finishing) {
-    if (NS_SUCCEEDED(mResultCode)) {
-      mResultCode = rv;
-    }
-
-    mState = State::Finishing;
-
-    if (IsOnOwningThread()) {
-      Finish();
-    } else {
-      MOZ_ALWAYS_SUCCEEDS(
-          mNestedEventTarget->Dispatch(this, NS_DISPATCH_NORMAL));
-    }
-  }
-
-  return NS_OK;
 }
 
 void RequestHelper::OnResponse(const LSRequestResponse& aResponse) {
   AssertIsOnDOMFileThread();
-  MOZ_ASSERT(mState == State::ResponsePending);
+
+  MonitorAutoLock lock(mMonitor);
+
+  MOZ_ASSERT(mState == State::ResponsePending || mState == State::Canceling);
 
   mActor = nullptr;
 
   mResponse = aResponse;
 
-  mState = State::Finishing;
-  MOZ_ALWAYS_SUCCEEDS(mNestedEventTarget->Dispatch(this, NS_DISPATCH_NORMAL));
+  mState = State::Complete;
+
+  lock.Notify();
 }
 
 }  
