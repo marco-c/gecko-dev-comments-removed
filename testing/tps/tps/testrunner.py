@@ -79,6 +79,8 @@ class TPSTestRunner(object):
         
         "xpinstall.signatures.required": False,
         "services.sync.testing.tps": True,
+        
+        "services.sync.engine.tabs.filteredSchemes": "about|resource|chrome|file|blob|moz-extension",
         "engine.bookmarks.repair.enabled": False,
         "extensions.experiments.enabled": True,
         "webextensions.storage.sync.kinto": False,
