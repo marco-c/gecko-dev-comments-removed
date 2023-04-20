@@ -594,18 +594,19 @@ nsPageContentFrame* nsPageFrame::PageContentFrame() const {
 }
 
 nsSize nsPageFrame::ComputePageSize() const {
-  const nsPageContentFrame* const pcf = PageContentFrame();
-  nsSize size = PresContext()->GetPageSize();
-
   
-  const nsStylePage* const stylePage = pcf->StylePage();
-  const StylePageSize& pageSize = stylePage->mSize;
+  const nsIFrame* const frame = StaticPrefs::layout_css_allow_mixed_page_sizes()
+                                    ? static_cast<nsIFrame*>(PageContentFrame())
+                                    : PageContentFrame()->FirstContinuation();
+  const StylePageSize& pageSize = frame->StylePage()->mSize;
 
   if (pageSize.IsSize()) {
     
     return nsSize{pageSize.AsSize().width.ToAppUnits(),
                   pageSize.AsSize().height.ToAppUnits()};
   }
+
+  nsSize size = PresContext()->GetPageSize();
   if (pageSize.IsOrientation()) {
     
     if (pageSize.AsOrientation() == StylePageSizeOrientation::Portrait) {
@@ -631,8 +632,15 @@ float nsPageFrame::ComputePageSizeScale(const nsSize aContentPageSize) const {
 
   
   
-  if (PageContentFrame()->StylePage()->mSize.IsAuto()) {
-    return 1.0f;
+  {
+    const nsIFrame* const frame =
+        StaticPrefs::layout_css_allow_mixed_page_sizes()
+            ? static_cast<nsIFrame*>(PageContentFrame())
+            : PageContentFrame()->FirstContinuation();
+    const StylePageSize& pageSize = frame->StylePage()->mSize;
+    if (pageSize.IsAuto()) {
+      return 1.0f;
+    }
   }
 
   
