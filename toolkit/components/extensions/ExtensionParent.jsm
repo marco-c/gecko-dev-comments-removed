@@ -1238,7 +1238,7 @@ ParentAPIManager = {
 
     
     
-    if (context.viewType === "background" && context.listenerPromises) {
+    if (context.isBackgroundContext && context.listenerPromises) {
       const { listenerPromises } = context;
       listenerPromises.add(promise);
       let remove = () => {
