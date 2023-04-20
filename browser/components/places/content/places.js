@@ -468,7 +468,7 @@ var PlacesOrganizer = {
   importFromBrowser: function PO_importFromBrowser() {
     
     MigrationUtils.showMigrationWizard(window, [
-      MigrationUtils.MIGRATION_ENTRYPOINT_PLACES,
+      MigrationUtils.MIGRATION_ENTRYPOINTS.PLACES,
     ]);
   },
 
