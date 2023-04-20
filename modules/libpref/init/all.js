@@ -3790,6 +3790,10 @@ pref("browser.translations.useHTML", false);
 pref("browser.translations.autoTranslate", false);
 
 
+pref("browser.translations.simulateUnsupportedEngine", false);
+
+
+
 
 
 
