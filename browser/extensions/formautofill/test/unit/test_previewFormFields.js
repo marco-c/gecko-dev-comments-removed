@@ -3,14 +3,14 @@
 
 "use strict";
 
-const { FormAutofillHandler } = ChromeUtils.import(
-  "resource://autofill/FormAutofillHandler.jsm"
+const { FormAutofillHandler } = ChromeUtils.importESModule(
+  "resource://autofill/FormAutofillHandler.sys.mjs"
 );
 
 
 
-({ FormAutofillUtils } = ChromeUtils.import(
-  "resource://autofill/FormAutofillUtils.jsm"
+({ FormAutofillUtils } = ChromeUtils.importESModule(
+  "resource://autofill/FormAutofillUtils.sys.mjs"
 ));
 const { FIELD_STATES } = FormAutofillUtils;
 const PREVIEW = FIELD_STATES.PREVIEW;
