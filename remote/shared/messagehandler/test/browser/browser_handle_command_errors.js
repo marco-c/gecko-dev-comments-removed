@@ -6,9 +6,6 @@
 const { RootMessageHandler } = ChromeUtils.importESModule(
   "chrome://remote/content/shared/messagehandler/RootMessageHandler.sys.mjs"
 );
-const { WindowGlobalMessageHandler } = ChromeUtils.importESModule(
-  "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.sys.mjs"
-);
 
 
 
