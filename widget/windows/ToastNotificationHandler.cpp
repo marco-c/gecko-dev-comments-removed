@@ -249,6 +249,15 @@ Result<nsString, nsresult> ToastNotificationHandler::GetLaunchArgument() {
   launchArg +=
       u"\n"_ns + nsDependentString(kLaunchArgTag) + u"\n"_ns + mWindowsTag;
 
+  
+  if (Preferences::GetBool(
+          "alerts.useSystemBackend.windows.notificationserver.verbose",
+          false)) {
+    
+    launchArg +=
+        u"\n"_ns + nsDependentString(kLaunchArgLogging) + u"\nverbose"_ns;
+  }
+
   return launchArg;
 }
 
