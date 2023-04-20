@@ -1385,7 +1385,7 @@ void DrawTargetWebgl::PushClip(const Path* aPath) {
     
     const PathSkia* pathSkia = static_cast<const PathSkia*>(aPath);
     const SkPath& skPath = pathSkia->GetPath();
-    SkRect rect;
+    SkRect rect = SkRect::MakeEmpty();
     if (skPath.isRect(&rect)) {
       PushClipRect(SkRectToRect(rect));
       return;
@@ -2287,9 +2287,20 @@ bool DrawTargetWebgl::SharedContext::PruneTextureMemory(size_t aMargin,
   return mNumTextureHandles < oldItems;
 }
 
+
+
+
+
+static inline bool RectInsidePrecisionLimits(const Rect& aRect,
+                                             const Matrix& aTransform) {
+  return Rect(-(1 << 20), -(1 << 20), 2 << 20, 2 << 20)
+      .Contains(aTransform.TransformBounds(aRect));
+}
+
 void DrawTargetWebgl::FillRect(const Rect& aRect, const Pattern& aPattern,
                                const DrawOptions& aOptions) {
-  if (SupportsPattern(aPattern)) {
+  if (SupportsPattern(aPattern) &&
+      RectInsidePrecisionLimits(aRect, GetTransform())) {
     DrawRect(aRect, aPattern, aOptions);
   } else if (!mWebglValid) {
     MarkSkiaChanged(aOptions);
@@ -2435,14 +2446,19 @@ void DrawTargetWebgl::Fill(const Path* aPath, const Pattern& aPattern,
   if (!aPath || aPath->GetBackendType() != BackendType::SKIA) {
     return;
   }
+
   const SkPath& skiaPath = static_cast<const PathSkia*>(aPath)->GetPath();
-  SkRect rect;
+  SkRect skiaRect = SkRect::MakeEmpty();
   
-  if (skiaPath.isRect(&rect) && SupportsPattern(aPattern)) {
-    DrawRect(SkRectToRect(rect), aPattern, aOptions);
-  } else {
-    DrawPath(aPath, aPattern, aOptions);
+  if (skiaPath.isRect(&skiaRect) && SupportsPattern(aPattern)) {
+    Rect rect = SkRectToRect(skiaRect);
+    if (RectInsidePrecisionLimits(rect, GetTransform())) {
+      DrawRect(rect, aPattern, aOptions);
+      return;
+    }
   }
+
+  DrawPath(aPath, aPattern, aOptions);
 }
 
 QuantizedPath::QuantizedPath(const WGR::Path& aPath) : mPath(aPath) {}
@@ -2498,13 +2514,11 @@ static Maybe<QuantizedPath> GenerateQuantizedPath(const SkPath& aPath,
     switch (currentVerb) {
       case SkPath::kMove_Verb: {
         Point p0 = transform.TransformPoint(SkPointToPoint(params[0]));
-        
         WGR::wgr_builder_move_to(pb, p0.x, p0.y);
         break;
       }
       case SkPath::kLine_Verb: {
         Point p1 = transform.TransformPoint(SkPointToPoint(params[1]));
-        
         WGR::wgr_builder_line_to(pb, p1.x, p1.y);
         break;
       }
