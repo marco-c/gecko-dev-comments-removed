@@ -52,6 +52,15 @@ class PacingController {
     virtual std::vector<std::unique_ptr<RtpPacketToSend>> FetchFec() = 0;
     virtual std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
         DataSize size) = 0;
+
+    
+    
+    virtual void OnAbortedRetransmissions(
+        uint32_t ssrc,
+        rtc::ArrayView<const uint16_t> sequence_numbers) {}
+    virtual absl::optional<uint32_t> GetRtxSsrcForMedia(uint32_t ssrc) const {
+      return absl::nullopt;
+    }
   };
 
   
