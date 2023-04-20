@@ -819,10 +819,6 @@ void GCRuntime::updateRuntimePointersToRelocatedCells(AutoGCSession& session) {
     cache->traceWeak(&trc, nullptr);
   }
 
-  if (rt->hasJitRuntime() && rt->jitRuntime()->hasInterpreterEntryMap()) {
-    rt->jitRuntime()->getInterpreterEntryMap()->updateScriptsAfterMovingGC();
-  }
-
   
   {
     AutoLockHelperThreadState lock;

@@ -21,7 +21,6 @@
 #include "jit/BaselineICList.h"
 #include "jit/BaselineJIT.h"
 #include "jit/CalleeToken.h"
-#include "jit/InterpreterEntryTrampoline.h"
 #include "jit/IonCompileTask.h"
 #include "jit/IonTypes.h"
 #include "jit/JitCode.h"
@@ -180,10 +179,6 @@ class JitRuntime {
   WriteOnceData<JitCode*> trampolineCode_{nullptr};
 
   
-  
-  WriteOnceData<uint32_t> vmInterpreterEntryOffset_{0};
-
-  
   using VMWrapperOffsets = Vector<uint32_t, 0, SystemAllocPolicy>;
   VMWrapperOffsets functionWrapperOffsets_;
 
@@ -195,10 +190,6 @@ class JitRuntime {
 
   
   UnprotectedData<JitcodeGlobalTable*> jitcodeGlobalTable_{nullptr};
-
-  
-  
-  MainThreadData<EntryTrampolineMap*> interpreterEntryMap_{nullptr};
 
 #ifdef DEBUG
   
@@ -268,12 +259,7 @@ class JitRuntime {
     return TrampolinePtr(trampolineCode_->raw() + offset);
   }
 
-  void generateBaselineInterpreterEntryTrampoline(MacroAssembler& masm);
-  void generateInterpreterEntryTrampoline(MacroAssembler& masm);
-
  public:
-  JitCode* generateEntryTrampolineForScript(JSContext* cx, JSScript* script);
-
   JitRuntime() = default;
   ~JitRuntime();
   [[nodiscard]] bool initialize(JSContext* cx);
@@ -334,8 +320,6 @@ class JitRuntime {
     return trampolineCode(argumentsRectifierOffset_);
   }
 
-  uint32_t vmInterpreterEntryOffset() { return vmInterpreterEntryOffset_; }
-
   TrampolinePtr getArgumentsRectifierReturnAddr() const {
     return trampolineCode(argumentsRectifierReturnOffset_);
   }
@@ -389,15 +373,6 @@ class JitRuntime {
   JitcodeGlobalTable* getJitcodeGlobalTable() {
     MOZ_ASSERT(hasJitcodeGlobalTable());
     return jitcodeGlobalTable_;
-  }
-
-  bool hasInterpreterEntryMap() const {
-    return interpreterEntryMap_ != nullptr;
-  }
-
-  EntryTrampolineMap* getInterpreterEntryMap() {
-    MOZ_ASSERT(hasInterpreterEntryMap());
-    return interpreterEntryMap_;
   }
 
   bool isProfilerInstrumentationEnabled(JSRuntime* rt) {

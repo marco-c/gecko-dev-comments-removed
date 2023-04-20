@@ -374,10 +374,6 @@ void JSJitFrameIter::dump() const {
       }
       break;
     }
-    case FrameType::BaselineInterpreterEntry:
-      fprintf(stderr, " Baseline Interpreter Entry frame\n");
-      fprintf(stderr, "  Caller frame ptr: %p\n", current()->callerFramePtr());
-      break;
     case FrameType::Rectifier:
       fprintf(stderr, " Rectifier frame\n");
       fprintf(stderr, "  Caller frame ptr: %p\n", current()->callerFramePtr());
@@ -718,24 +714,6 @@ void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  if (frame->prevType() == FrameType::BaselineInterpreterEntry) {
-    frame = GetPreviousRawFrame<BaselineInterpreterEntryFrameLayout*>(frame);
-  }
-
   
   if (frame->prevType() == FrameType::Rectifier) {
     frame = GetPreviousRawFrame<RectifierFrameLayout*>(frame);
@@ -784,7 +762,6 @@ void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
       type_ = FrameType::CppToJSJit;
       return;
 
-    case FrameType::BaselineInterpreterEntry:
     case FrameType::Rectifier:
     case FrameType::Exit:
     case FrameType::Bailout:
