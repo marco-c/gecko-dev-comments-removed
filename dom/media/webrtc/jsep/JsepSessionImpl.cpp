@@ -1057,7 +1057,6 @@ JsepSession::Result JsepSessionImpl::SetRemoteDescription(
         
         
         transceiver->ClearLevel();
-        transceiver->mSendTrack.ClearRids();
       }
     }
   }
