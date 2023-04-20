@@ -319,3 +319,16 @@ export const getSelectedBreakableLines = createSelector(
   },
   breakableLines => new Set(breakableLines || [])
 );
+
+export function isSourceOverridden(state, source) {
+  if (!source || !source.url) {
+    return false;
+  }
+  return state.sources.mutableOverrideSources.has(source.url);
+}
+
+
+
+export function getOverridesSupport(state) {
+  return state.sources.isOverridesSupported;
+}

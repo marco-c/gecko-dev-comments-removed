@@ -23,6 +23,18 @@ export function initialSourcesState(state) {
 
 
 
+    isOverridesSupported: state?.isOverridesSupported || false,
+    
+
+
+
+
+    mutableOverrideSources: state?.mutableOverrideSources || new Map(),
+
+    
+
+
+
 
 
     urls: {},
@@ -152,6 +164,18 @@ function update(state = initialSourcesState(), action) {
 
     case "REMOVE_THREAD": {
       return removeSourcesAndActors(state, action.threadActorID);
+    }
+
+    case "SET_OVERRIDE": {
+      state.mutableOverrideSources.set(action.url, action.path);
+      return state;
+    }
+
+    case "REMOVE_OVERRIDE": {
+      if (state.mutableOverrideSources.has(action.url)) {
+        state.mutableOverrideSources.delete(action.url);
+      }
+      return state;
     }
   }
 

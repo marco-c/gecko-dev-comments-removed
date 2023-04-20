@@ -793,6 +793,8 @@ exports.openFileStream = function(filePath) {
 
 
 
+
+
 exports.saveAs = async function(
   parentWindow,
   dataArray,
@@ -807,12 +809,14 @@ exports.saveAs = async function(
       filters
     );
   } catch (ex) {
-    return;
+    return null;
   }
 
   await IOUtils.write(returnFile.path, dataArray, {
     tmpPath: returnFile.path + ".tmp",
   });
+
+  return returnFile.path;
 };
 
 
