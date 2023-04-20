@@ -681,8 +681,15 @@
 
 
 
+
+
+
+
+
+
+
 #![no_std]
-#![cfg_attr(feature = "simd-accel", feature(stdsimd, core_intrinsics))]
+#![cfg_attr(feature = "simd-accel", feature(core_intrinsics))]
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(test, macro_use)]
@@ -2925,6 +2932,9 @@ impl Encoding {
     
     
     
+    
+    
+    
     #[inline]
     pub fn output_encoding(&'static self) -> &'static Encoding {
         if self == REPLACEMENT || self == UTF_16BE || self == UTF_16LE {
@@ -2934,6 +2944,8 @@ impl Encoding {
         }
     }
 
+    
+    
     
     
     
@@ -2980,6 +2992,8 @@ impl Encoding {
         (cow, encoding, had_errors)
     }
 
+    
+    
     
     
     
@@ -3257,6 +3271,7 @@ impl Encoding {
     
     
     
+    
     #[cfg(feature = "alloc")]
     pub fn encode<'a>(&'static self, string: &'a str) -> (Cow<'a, [u8]>, &'static Encoding, bool) {
         let output_encoding = self.output_encoding();
@@ -3323,6 +3338,7 @@ impl Encoding {
     
     
     
+    
     #[inline]
     pub fn new_decoder(&'static self) -> Decoder {
         Decoder::new(self, self.new_variant_decoder(), BomHandling::Sniff)
@@ -3358,6 +3374,10 @@ impl Encoding {
         Decoder::new(self, self.new_variant_decoder(), BomHandling::Off)
     }
 
+    
+    
+    
+    
     
     
     
