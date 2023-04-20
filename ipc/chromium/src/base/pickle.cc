@@ -32,10 +32,6 @@ static const uint32_t kDefaultSegmentCapacity = 4096;
 
 static const char kBytePaddingMarker = char(0xbf);
 
-
-
-static const uint32_t kMinTelemetryIPCReadLatencyMs = 1;
-
 namespace {
 
 
