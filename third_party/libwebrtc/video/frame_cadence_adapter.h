@@ -47,7 +47,7 @@ class FrameCadenceAdapterInterface
 
   struct ZeroHertzModeParams {
     
-    int num_simulcast_layers = 0;
+    size_t num_simulcast_layers = 0;
   };
 
   
@@ -106,11 +106,11 @@ class FrameCadenceAdapterInterface
   
   
   
-  virtual void UpdateLayerQualityConvergence(int spatial_index,
+  virtual void UpdateLayerQualityConvergence(size_t spatial_index,
                                              bool converged) = 0;
 
   
-  virtual void UpdateLayerStatus(int spatial_index, bool enabled) = 0;
+  virtual void UpdateLayerStatus(size_t spatial_index, bool enabled) = 0;
 
   
   
