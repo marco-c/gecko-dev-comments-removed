@@ -39,6 +39,7 @@ struct nsStyleSVG;
 struct nsRect;
 
 namespace mozilla {
+class nsPaintedDisplayItem;
 class SVGAnimatedEnumeration;
 class SVGAnimatedLength;
 class SVGContextPaint;
@@ -260,6 +261,24 @@ class SVGUtils final {
 
   static nsIFrame* HitTestChildren(SVGDisplayContainerFrame* aFrame,
                                    const gfxPoint& aPoint);
+
+  
+
+
+
+
+
+
+
+  static void HitTest(nsDisplayListBuilder* aBuilder,
+                      const nsPaintedDisplayItem* aDisplayItem,
+                      const nsRect& aRect, nsTArray<nsIFrame*>* aOutFrames);
+
+  
+
+
+  static void Paint(nsDisplayListBuilder* aBuilder,
+                    const nsPaintedDisplayItem* aDisplayItem, gfxContext* aCtx);
 
   
 
