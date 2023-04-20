@@ -1063,9 +1063,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  GetInlineStyles(nsIContent& aContent,
-                  AutoPendingStyleCacheArray& aPendingStyleCacheArray);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult GetInlineStyles(
+      Element& aElement, AutoPendingStyleCacheArray& aPendingStyleCacheArray);
 
   
 
@@ -1073,7 +1072,7 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  CacheInlineStyles(nsIContent& aContent);
+  CacheInlineStyles(Element& aElement);
 
   
 

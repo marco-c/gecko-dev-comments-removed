@@ -415,9 +415,7 @@ Result<bool, nsresult> HTMLEditor::ElementIsGoodContainerForTheStyle(
   
   
   
-  if (!CSSEditUtils::IsCSSEditableProperty(&aElement,
-                                           &aStyleAndValue.HTMLPropertyRef(),
-                                           aStyleAndValue.mAttribute) ||
+  if (!aStyleAndValue.IsCSSEditable(aElement) ||
       !aElement.IsHTMLElement(nsGkAtoms::span) ||
       aElement.GetAttrCount() != 1 ||
       !aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::style)) {
@@ -438,9 +436,7 @@ Result<bool, nsresult> HTMLEditor::ElementIsGoodContainerForTheStyle(
   if (!styledNewSpanElement) {
     return false;
   }
-  if (CSSEditUtils::IsCSSEditableProperty(styledNewSpanElement,
-                                          &aStyleAndValue.HTMLPropertyRef(),
-                                          aStyleAndValue.mAttribute)) {
+  if (aStyleAndValue.IsCSSEditable(*styledNewSpanElement)) {
     
     
     Result<int32_t, nsresult> result = CSSEditUtils::SetCSSEquivalentToStyle(
@@ -468,9 +464,9 @@ Result<SplitRangeOffFromNodeResult, nsresult>
 HTMLEditor::SetInlinePropertyOnTextNode(
     Text& aText, uint32_t aStartOffset, uint32_t aEndOffset,
     const EditorInlineStyleAndValue& aStyleToSet) {
-  if (!aText.GetParentNode() ||
-      !HTMLEditUtils::CanNodeContain(*aText.GetParentNode(),
-                                     aStyleToSet.HTMLPropertyRef())) {
+  const RefPtr<Element> element = aText.GetParentElement();
+  if (!element ||
+      !HTMLEditUtils::CanNodeContain(*element, aStyleToSet.HTMLPropertyRef())) {
     return SplitRangeOffFromNodeResult(nullptr, &aText, nullptr);
   }
 
@@ -480,13 +476,12 @@ HTMLEditor::SetInlinePropertyOnTextNode(
   }
 
   
-  if (CSSEditUtils::IsCSSEditableProperty(
-          &aText, &aStyleToSet.HTMLPropertyRef(), aStyleToSet.mAttribute)) {
+  if (aStyleToSet.IsCSSEditable(*element)) {
     
     
     nsAutoString value(aStyleToSet.mAttributeValue);
     Result<bool, nsresult> isComputedCSSEquivalentToStyleOrError =
-        CSSEditUtils::IsComputedCSSEquivalentTo(*this, aText, aStyleToSet,
+        CSSEditUtils::IsComputedCSSEquivalentTo(*this, *element, aStyleToSet,
                                                 value);
     if (MOZ_UNLIKELY(isComputedCSSEquivalentToStyleOrError.isErr())) {
       NS_WARNING("CSSEditUtils::IsComputedCSSEquivalentTo() failed");
@@ -496,7 +491,7 @@ HTMLEditor::SetInlinePropertyOnTextNode(
       return SplitRangeOffFromNodeResult(nullptr, &aText, nullptr);
     }
   } else if (HTMLEditUtils::IsInlineStyleSetByElement(
-                 aText, aStyleToSet, &aStyleToSet.mAttributeValue)) {
+                 *element, aStyleToSet, &aStyleToSet.mAttributeValue)) {
     return SplitRangeOffFromNodeResult(nullptr, &aText, nullptr);
   }
 
@@ -753,8 +748,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNodeImpl(
       return canMoveIntoNextSibling.propagateErr();
     }
     if (canMoveIntoNextSibling.inspect()) {
-      Result<MoveNodeResult, nsresult> moveNodeResult =
-          MoveNodeWithTransaction(aContent, EditorDOMPoint(nextElement, 0u));
+      Result<MoveNodeResult, nsresult> moveNodeResult = MoveNodeWithTransaction(
+          MOZ_KnownLive(aContent), EditorDOMPoint(nextElement, 0u));
       if (MOZ_UNLIKELY(moveNodeResult.isErr())) {
         NS_WARNING("HTMLEditor::MoveNodeWithTransaction() failed");
         return moveNodeResult.propagateErr();
@@ -764,28 +759,30 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNodeImpl(
   }
 
   
-  if (CSSEditUtils::IsCSSEditableProperty(
-          &aContent, &aStyleToSet.HTMLPropertyRef(), aStyleToSet.mAttribute)) {
-    nsAutoString value(aStyleToSet.mAttributeValue);
-    Result<bool, nsresult> isComputedCSSEquivalentToStyleOrError =
-        CSSEditUtils::IsComputedCSSEquivalentTo(*this, aContent, aStyleToSet,
-                                                value);
-    if (MOZ_UNLIKELY(isComputedCSSEquivalentToStyleOrError.isErr())) {
-      NS_WARNING("CSSEditUtils::IsComputedCSSEquivalentTo() failed");
-      return isComputedCSSEquivalentToStyleOrError.propagateErr();
-    }
-    if (isComputedCSSEquivalentToStyleOrError.unwrap()) {
+  if (const RefPtr<Element> element = aContent.GetAsElementOrParentElement()) {
+    if (aStyleToSet.IsCSSEditable(*element)) {
+      nsAutoString value(aStyleToSet.mAttributeValue);
+      
+      Result<bool, nsresult> isComputedCSSEquivalentToStyleOrError =
+          CSSEditUtils::IsComputedCSSEquivalentTo(*this, *element, aStyleToSet,
+                                                  value);
+      if (MOZ_UNLIKELY(isComputedCSSEquivalentToStyleOrError.isErr())) {
+        NS_WARNING("CSSEditUtils::IsComputedCSSEquivalentTo() failed");
+        return isComputedCSSEquivalentToStyleOrError.propagateErr();
+      }
+      if (isComputedCSSEquivalentToStyleOrError.unwrap()) {
+        return EditorDOMPoint();
+      }
+    } else if (HTMLEditUtils::IsInlineStyleSetByElement(
+                   *element, aStyleToSet, &aStyleToSet.mAttributeValue)) {
       return EditorDOMPoint();
     }
-  } else if (HTMLEditUtils::IsInlineStyleSetByElement(
-                 aContent, aStyleToSet, &aStyleToSet.mAttributeValue)) {
-    return EditorDOMPoint();
   }
 
   auto ShouldUseCSS = [&]() {
-    return (IsCSSEnabled() && CSSEditUtils::IsCSSEditableProperty(
-                                  &aContent, &aStyleToSet.HTMLPropertyRef(),
-                                  aStyleToSet.mAttribute)) ||
+    return (IsCSSEnabled() && aContent.GetAsElementOrParentElement() &&
+            aStyleToSet.IsCSSEditable(
+                *aContent.GetAsElementOrParentElement())) ||
            
            aStyleToSet.mAttribute == nsGkAtoms::bgcolor ||
            
@@ -819,24 +816,19 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNodeImpl(
     }
 
     
-    if (nsStyledElement* spanStyledElement =
-            nsStyledElement::FromNode(spanElement)) {
-      if (CSSEditUtils::IsCSSEditableProperty(spanStyledElement,
-                                              &aStyleToSet.HTMLPropertyRef(),
-                                              aStyleToSet.mAttribute)) {
-        
-        
-        Result<int32_t, nsresult> result =
-            CSSEditUtils::SetCSSEquivalentToStyle(
-                WithTransaction::Yes, *this, MOZ_KnownLive(*spanStyledElement),
-                aStyleToSet, &aStyleToSet.mAttributeValue);
-        if (MOZ_UNLIKELY(result.isErr())) {
-          if (NS_WARN_IF(result.inspectErr() == NS_ERROR_EDITOR_DESTROYED)) {
-            return Err(NS_ERROR_EDITOR_DESTROYED);
-          }
-          NS_WARNING(
-              "CSSEditUtils::SetCSSEquivalentToStyle() failed, but ignored");
+    nsStyledElement* spanStyledElement = nsStyledElement::FromNode(spanElement);
+    if (spanStyledElement && aStyleToSet.IsCSSEditable(*spanStyledElement)) {
+      
+      
+      Result<int32_t, nsresult> result = CSSEditUtils::SetCSSEquivalentToStyle(
+          WithTransaction::Yes, *this, MOZ_KnownLive(*spanStyledElement),
+          aStyleToSet, &aStyleToSet.mAttributeValue);
+      if (MOZ_UNLIKELY(result.isErr())) {
+        if (NS_WARN_IF(result.inspectErr() == NS_ERROR_EDITOR_DESTROYED)) {
+          return Err(NS_ERROR_EDITOR_DESTROYED);
         }
+        NS_WARNING(
+            "CSSEditUtils::SetCSSEquivalentToStyle() failed, but ignored");
       }
     }
     return pointToPutCaret;
@@ -1055,8 +1047,8 @@ HTMLEditor::SplitAncestorStyledInlineElementsAt(
   EditorDOMPoint pointToPutCaret;
   for (OwningNonNull<nsIContent>& content : arrayOfParents) {
     bool isSetByCSS = false;
-    if (useCSS && CSSEditUtils::IsCSSEditableProperty(
-                      content, aStyle.mHTMLProperty, aStyle.mAttribute)) {
+    if (useCSS && MOZ_LIKELY(content->GetAsElementOrParentElement()) &&
+        aStyle.IsCSSEditable(*content->GetAsElementOrParentElement())) {
       
       
       nsAutoString firstValue;
@@ -1541,8 +1533,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
   
   
   
-  if (CSSEditUtils::IsCSSEditableProperty(
-          &aElement, aStyleToRemove.mHTMLProperty, aStyleToRemove.mAttribute)) {
+  if (aStyleToRemove.IsCSSEditable(aElement)) {
     Result<bool, nsresult> elementHasSpecifiedCSSEquivalentStylesOrError =
         CSSEditUtils::HaveSpecifiedCSSEquivalentStyles(*this, aElement,
                                                        aStyleToRemove);
@@ -1798,8 +1789,7 @@ nsresult HTMLEditor::GetInlinePropertyBase(const EditorInlineStyle& aStyle,
     bool firstNodeInRange = true;
 
     if (isCollapsed) {
-      const nsCOMPtr<nsINode> collapsedNode = range->GetStartContainer();
-      if (NS_WARN_IF(!collapsedNode)) {
+      if (NS_WARN_IF(!range->GetStartContainer())) {
         return NS_ERROR_FAILURE;
       }
       nsString tOutString;
@@ -1821,16 +1811,18 @@ nsresult HTMLEditor::GetInlinePropertyBase(const EditorInlineStyle& aStyle,
         return NS_OK;
       }
 
-      if (collapsedNode->IsContent() &&
-          CSSEditUtils::IsCSSEditableProperty(
-              collapsedNode, aStyle.mHTMLProperty, aStyle.mAttribute)) {
+      nsIContent* const collapsedContent =
+          nsIContent::FromNode(range->GetStartContainer());
+      if (MOZ_LIKELY(collapsedContent &&
+                     collapsedContent->GetAsElementOrParentElement()) &&
+          aStyle.IsCSSEditable(
+              *collapsedContent->GetAsElementOrParentElement())) {
         if (aValue) {
           tOutString.Assign(*aValue);
         }
         Result<bool, nsresult> isComputedCSSEquivalentToStyleOrError =
             CSSEditUtils::IsComputedCSSEquivalentTo(
-                *this, MOZ_KnownLive(*collapsedNode->AsContent()), aStyle,
-                tOutString);
+                *this, MOZ_KnownLive(*collapsedContent), aStyle, tOutString);
         if (MOZ_UNLIKELY(isComputedCSSEquivalentToStyleOrError.isErr())) {
           NS_WARNING("CSSEditUtils::IsComputedCSSEquivalentTo() failed");
           return isComputedCSSEquivalentToStyleOrError.unwrapErr();
@@ -1844,9 +1836,8 @@ nsresult HTMLEditor::GetInlinePropertyBase(const EditorInlineStyle& aStyle,
       }
 
       *aFirst = *aAny = *aAll =
-          collapsedNode->IsContent() &&
-          HTMLEditUtils::IsInlineStyleSetByElement(*collapsedNode->AsContent(),
-                                                   aStyle, aValue, outValue);
+          collapsedContent && HTMLEditUtils::IsInlineStyleSetByElement(
+                                  *collapsedContent, aStyle, aValue, outValue);
       return NS_OK;
     }
 
@@ -1862,57 +1853,53 @@ nsresult HTMLEditor::GetInlinePropertyBase(const EditorInlineStyle& aStyle,
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                          "Failed to initialize post-order content iterator");
     for (; !postOrderIter.IsDone(); postOrderIter.Next()) {
-      if (!postOrderIter.GetCurrentNode()->IsContent()) {
-        continue;
-      }
-      nsCOMPtr<nsIContent> content =
-          postOrderIter.GetCurrentNode()->AsContent();
-
-      if (content->IsHTMLElement(nsGkAtoms::body)) {
+      if (postOrderIter.GetCurrentNode()->IsHTMLElement(nsGkAtoms::body)) {
         break;
+      }
+      RefPtr<Text> textNode = Text::FromNode(postOrderIter.GetCurrentNode());
+      if (!textNode) {
+        continue;
       }
 
       
-      if (content->IsText() &&
-          (!EditorUtils::IsEditableContent(*content, EditorType::HTML) ||
-           !HTMLEditUtils::IsVisibleTextNode(*content->AsText()))) {
-        continue;
-      }
-      if (content->GetAsText()) {
-        if (!isCollapsed && first && firstNodeInRange) {
-          firstNodeInRange = false;
-          if (range->StartOffset() == content->Length()) {
-            continue;
-          }
-        } else if (content == endNode && !endOffset) {
-          continue;
-        }
-      } else if (content->IsElement()) {
-        
+      if (!EditorUtils::IsEditableContent(*textNode, EditorType::HTML) ||
+          !HTMLEditUtils::IsVisibleTextNode(*textNode)) {
         continue;
       }
 
+      if (!isCollapsed && first && firstNodeInRange) {
+        firstNodeInRange = false;
+        if (range->StartOffset() == textNode->TextDataLength()) {
+          continue;
+        }
+      } else if (textNode == endNode && !endOffset) {
+        continue;
+      }
+
+      const RefPtr<Element> element = textNode->GetParentElement();
+
       bool isSet = false;
       if (first) {
-        if (CSSEditUtils::IsCSSEditableProperty(content, aStyle.mHTMLProperty,
-                                                aStyle.mAttribute)) {
-          
-          
-          
-          if (aValue) {
-            firstValue.Assign(*aValue);
+        if (element) {
+          if (aStyle.IsCSSEditable(*element)) {
+            
+            
+            
+            if (aValue) {
+              firstValue.Assign(*aValue);
+            }
+            Result<bool, nsresult> isComputedCSSEquivalentToStyleOrError =
+                CSSEditUtils::IsComputedCSSEquivalentTo(*this, *element, aStyle,
+                                                        firstValue);
+            if (MOZ_UNLIKELY(isComputedCSSEquivalentToStyleOrError.isErr())) {
+              NS_WARNING("CSSEditUtils::IsComputedCSSEquivalentTo() failed");
+              return isComputedCSSEquivalentToStyleOrError.unwrapErr();
+            }
+            isSet = isComputedCSSEquivalentToStyleOrError.unwrap();
+          } else {
+            isSet = HTMLEditUtils::IsInlineStyleSetByElement(
+                *element, aStyle, aValue, &firstValue);
           }
-          Result<bool, nsresult> isComputedCSSEquivalentToStyleOrError =
-              CSSEditUtils::IsComputedCSSEquivalentTo(*this, *content, aStyle,
-                                                      firstValue);
-          if (MOZ_UNLIKELY(isComputedCSSEquivalentToStyleOrError.isErr())) {
-            NS_WARNING("CSSEditUtils::IsComputedCSSEquivalentTo() failed");
-            return isComputedCSSEquivalentToStyleOrError.unwrapErr();
-          }
-          isSet = isComputedCSSEquivalentToStyleOrError.unwrap();
-        } else {
-          isSet = HTMLEditUtils::IsInlineStyleSetByElement(*content, aStyle,
-                                                           aValue, &firstValue);
         }
         *aFirst = isSet;
         first = false;
@@ -1920,25 +1907,26 @@ nsresult HTMLEditor::GetInlinePropertyBase(const EditorInlineStyle& aStyle,
           *outValue = firstValue;
         }
       } else {
-        if (CSSEditUtils::IsCSSEditableProperty(content, aStyle.mHTMLProperty,
-                                                aStyle.mAttribute)) {
-          
-          
-          
-          if (aValue) {
-            theValue.Assign(*aValue);
+        if (element) {
+          if (aStyle.IsCSSEditable(*element)) {
+            
+            
+            
+            if (aValue) {
+              theValue.Assign(*aValue);
+            }
+            Result<bool, nsresult> isComputedCSSEquivalentToStyleOrError =
+                CSSEditUtils::IsComputedCSSEquivalentTo(*this, *element, aStyle,
+                                                        theValue);
+            if (MOZ_UNLIKELY(isComputedCSSEquivalentToStyleOrError.isErr())) {
+              NS_WARNING("CSSEditUtils::IsComputedCSSEquivalentTo() failed");
+              return isComputedCSSEquivalentToStyleOrError.unwrapErr();
+            }
+            isSet = isComputedCSSEquivalentToStyleOrError.unwrap();
+          } else {
+            isSet = HTMLEditUtils::IsInlineStyleSetByElement(*element, aStyle,
+                                                             aValue, &theValue);
           }
-          Result<bool, nsresult> isComputedCSSEquivalentToStyleOrError =
-              CSSEditUtils::IsComputedCSSEquivalentTo(*this, *content, aStyle,
-                                                      theValue);
-          if (MOZ_UNLIKELY(isComputedCSSEquivalentToStyleOrError.isErr())) {
-            NS_WARNING("CSSEditUtils::IsComputedCSSEquivalentTo() failed");
-            return isComputedCSSEquivalentToStyleOrError.unwrapErr();
-          }
-          isSet = isComputedCSSEquivalentToStyleOrError.unwrap();
-        } else {
-          isSet = HTMLEditUtils::IsInlineStyleSetByElement(*content, aStyle,
-                                                           aValue, &theValue);
         }
 
         if (firstValue != theValue &&
@@ -2556,19 +2544,20 @@ Result<bool, nsresult> HTMLEditor::IsRemovableParentStyleWithNewSpanElement(
 
   
   
-  if (!CSSEditUtils::IsCSSEditableProperty(&aContent, aStyle.mHTMLProperty,
-                                           aStyle.mAttribute)) {
+  
+  const RefPtr<Element> element = aContent.GetAsElementOrParentElement();
+  if (MOZ_UNLIKELY(!element)) {
     return false;
   }
 
   
   
-  
-  
-  
+  if (!aStyle.IsCSSEditable(*element)) {
+    return false;
+  }
   nsAutoString emptyString;
   Result<bool, nsresult> isComputedCSSEquivalentToStyleOrError =
-      CSSEditUtils::IsComputedCSSEquivalentTo(*this, aContent, aStyle,
+      CSSEditUtils::IsComputedCSSEquivalentTo(*this, *element, aStyle,
                                               emptyString);
   NS_WARNING_ASSERTION(isComputedCSSEquivalentToStyleOrError.isOk(),
                        "CSSEditUtils::IsComputedCSSEquivalentTo() failed");

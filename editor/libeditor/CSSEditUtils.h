@@ -81,20 +81,6 @@ class CSSEditUtils final {
 
 
 
-
-  static bool IsCSSEditableProperty(nsINode* aNode, nsAtom* aProperty,
-                                    nsAtom* aAttribute);
-
-  
-
-
-
-
-
-
-
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
   SetCSSPropertyWithTransaction(HTMLEditor& aHTMLEditor,
                                 nsStyledElement& aStyledElement,
@@ -377,6 +363,20 @@ class CSSEditUtils final {
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult SetCSSPropertyInternal(
       HTMLEditor& aHTMLEditor, nsStyledElement& aStyledElement,
       nsAtom& aProperty, const nsAString& aValue, bool aSuppressTxn = false);
+
+  
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsCSSEditableStyle(
+      const dom::Element& aElement, const EditorElementStyle& aStyle);
+
+  friend class EditorElementStyle;  
 };
 
 #define NS_EDITOR_INDENT_INCREMENT_IN 0.4134f
