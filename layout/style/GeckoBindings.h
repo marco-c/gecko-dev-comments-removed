@@ -389,7 +389,6 @@ void Gecko_EnsureImageLayersLength(nsStyleImageLayers* layers, size_t len,
 
 void Gecko_EnsureStyleAnimationArrayLength(void* array, size_t len);
 void Gecko_EnsureStyleTransitionArrayLength(void* array, size_t len);
-void Gecko_EnsureStyleViewTimelineArrayLength(void* array, size_t len);
 
 
 

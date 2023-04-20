@@ -1268,29 +1268,6 @@ struct StyleAnimation {
   StyleAnimationTimeline mTimeline;
 };
 
-struct StyleViewTimeline {
-  StyleViewTimeline() = default;
-  explicit StyleViewTimeline(const StyleViewTimeline& aCopy) = default;
-
-  
-  
-  
-  void SetInitialValues() {}
-
-  bool operator==(const StyleViewTimeline& aOther) const {
-    return mName == aOther.mName && mAxis == aOther.mAxis &&
-           mInset == aOther.mInset;
-  }
-  bool operator!=(const StyleViewTimeline& aOther) const {
-    return !(*this == aOther);
-  }
-
- private:
-  StyleScrollTimelineName mName;
-  StyleScrollAxis mAxis = StyleScrollAxis::Block;
-  StyleViewTimelineInset mInset;
-};
-
 }  
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
@@ -1905,15 +1882,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
   uint32_t mAnimationCompositionCount;
   uint32_t mAnimationTimelineCount;
 
-  
-  
   mozilla::StyleScrollTimelineName mScrollTimelineName;
   mozilla::StyleScrollAxis mScrollTimelineAxis;
-
-  nsStyleAutoArray<mozilla::StyleViewTimeline> mViewTimelines;
-  uint32_t mViewTimelineNameCount;
-  uint32_t mViewTimelineAxisCount;
-  uint32_t mViewTimelineInsetCount;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUI {
@@ -2286,7 +2256,5 @@ STATIC_ASSERT_TYPE_LAYOUTS_MATCH(nsTArray<mozilla::StyleTransition>,
                                  nsTArray_Simple<mozilla::StyleTransition>);
 STATIC_ASSERT_TYPE_LAYOUTS_MATCH(nsTArray<mozilla::StyleAnimation>,
                                  nsTArray_Simple<mozilla::StyleAnimation>);
-STATIC_ASSERT_TYPE_LAYOUTS_MATCH(nsTArray<mozilla::StyleViewTimeline>,
-                                 nsTArray_Simple<mozilla::StyleViewTimeline>);
 
 #endif 
