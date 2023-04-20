@@ -83,7 +83,6 @@ LIB_TO_LICENSES_DICT = {
     'androidx': [],
 
     
-    'yasm': [],
     'ow2_asm': [],
     'jdk': [],
 }
