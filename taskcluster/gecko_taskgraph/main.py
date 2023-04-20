@@ -394,7 +394,9 @@ def show_taskgraph(options):
 
         
         for mod in sys.modules.copy():
-            if mod != __name__ and mod.split(".", 1)[0].endswith("taskgraph"):
+            if mod != __name__ and mod.split(".", 1)[0].endswith(
+                ("taskgraph", "mozbuild")
+            ):
                 del sys.modules[mod]
 
         
