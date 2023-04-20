@@ -285,8 +285,6 @@ var whitelist = [
   
   { file: "chrome://browser/content/screenshots/copied-notification.svg" },
 
-  { file: "resource://app/modules/SnapshotSelector.sys.mjs" },
-
   
   { file: "resource://gre/localization/en-US/toolkit/global/run-from-dmg.ftl" },
 
