@@ -27,11 +27,7 @@ class RTC_EXPORT AsyncResolverInterface {
   
   virtual void Start(const SocketAddress& addr) = 0;
   
-  virtual void Start(const SocketAddress& addr, int family) {
-    
-    
-    RTC_DCHECK_NOTREACHED();
-  }
+  virtual void Start(const SocketAddress& addr, int family) = 0;
   
   
   
