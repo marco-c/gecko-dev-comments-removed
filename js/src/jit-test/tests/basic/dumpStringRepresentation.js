@@ -71,5 +71,18 @@ print("\nt, s: Original leaves, representation unchanged:");
 dumpStringRepresentation(t);
 dumpStringRepresentation(s);
 
+
+print("\nExtensible:");
+var e = newString("一二三四五六七八九*一二三四五六七八", { capacity: 80 });
+dumpStringRepresentation(e);
+
+
+
+print("\nFlattened dag with shared leaves:");
+var e_flat = newRope(e, newRope(e, "!"));
+ensureLinearString(e_flat);
+dumpStringRepresentation(e_flat);
+assertEq(e_flat.charAt(e.length), e_flat.charAt(0));
+
 for (var str of representativeStringArray())
     dumpStringRepresentation(str);
