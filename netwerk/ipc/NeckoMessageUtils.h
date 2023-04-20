@@ -17,6 +17,7 @@
 #include "prio.h"
 #include "mozilla/net/DNS.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
+#include "nsITRRSkipReason.h"
 
 namespace IPC {
 
@@ -138,6 +139,23 @@ struct ParamTraits<nsIRequest::TRRMode> {
     }
     
     *aResult = static_cast<nsIRequest::TRRMode>(mode);
+    return true;
+  }
+};
+
+template <>
+struct ParamTraits<nsITRRSkipReason::value> {
+  static void Write(MessageWriter* aWriter,
+                    const nsITRRSkipReason::value& aParam) {
+    WriteParam(aWriter, (uint8_t)aParam);
+  }
+  static bool Read(MessageReader* aReader, nsITRRSkipReason::value* aResult) {
+    uint8_t reason;
+    if (!ReadParam(aReader, &reason)) {
+      return false;
+    }
+    
+    *aResult = static_cast<nsITRRSkipReason::value>(reason);
     return true;
   }
 };
