@@ -101,24 +101,22 @@ Logger::Logger(const nsACString& aLeafBaseName)
     : mMutex("mozilla::com::InterceptorLog::Logger") {
   MOZ_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIFile> logFileName;
-  GeckoProcessType procType = XRE_GetProcessType();
-  nsAutoCString leafName(aLeafBaseName);
-  nsresult rv;
-  if (procType == GeckoProcessType_Default) {
-    leafName.AppendLiteral("-Parent-");
-    rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(logFileName));
-  } else if (procType == GeckoProcessType_Content) {
-    leafName.AppendLiteral("-Content-");
-#if defined(MOZ_SANDBOX)
-    rv = NS_GetSpecialDirectory(NS_APP_CONTENT_PROCESS_TEMP_DIR,
-                                getter_AddRefs(logFileName));
-#else
-    rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(logFileName));
-#endif  
-  } else {
+  nsresult rv =
+      NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(logFileName));
+  if (NS_FAILED(rv)) {
     return;
   }
-  if (NS_FAILED(rv)) {
+
+  GeckoProcessType procType = XRE_GetProcessType();
+  nsAutoCString leafName(aLeafBaseName);
+  if (procType == GeckoProcessType_Default) {
+    leafName.AppendLiteral("-Parent-");
+  } else if (procType == GeckoProcessType_Content) {
+    
+    
+    
+    leafName.AppendLiteral("-Content-");
+  } else {
     return;
   }
   DWORD pid = GetCurrentProcessId();
