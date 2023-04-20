@@ -233,6 +233,9 @@ const INSTALL_AND_UPDATE_STARTUP_REASONS = new Set([
   "ADDON_DOWNGRADE",
 ]);
 
+const PROTOCOL_HANDLER_OPEN_PERM_KEY = "open-protocol-handler";
+const PERMISSION_KEY_DELIMITER = "^";
+
 
 
 
@@ -572,6 +575,16 @@ var ExtensionAddonObserver = {
         "WebExtensions-unlimitedStorage"
       );
       Services.perms.removeFromPrincipal(principal, "persistent-storage");
+    }
+
+    
+    let permissions = Services.perms.getAllWithTypePrefix(
+      PROTOCOL_HANDLER_OPEN_PERM_KEY + PERMISSION_KEY_DELIMITER
+    );
+    for (let perm of permissions) {
+      if (perm.principal.equalsURI(baseURI)) {
+        Services.perms.removePermission(perm);
+      }
     }
 
     if (!Services.prefs.getBoolPref(LEAVE_UUID_PREF, false)) {
