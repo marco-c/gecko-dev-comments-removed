@@ -475,7 +475,7 @@ decompress_smooth_data(j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
     if (!compptr->component_needed)
       continue;
     
-    if (cinfo->output_iMCU_row < last_iMCU_row - 1) {
+    if (cinfo->output_iMCU_row + 1 < last_iMCU_row) {
       block_rows = compptr->v_samp_factor;
       access_rows = block_rows * 3; 
     } else if (cinfo->output_iMCU_row < last_iMCU_row) {
@@ -560,7 +560,7 @@ decompress_smooth_data(j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
         next_block_row = buffer_ptr;
 
       if (block_row < block_rows - 2 ||
-          cinfo->output_iMCU_row < last_iMCU_row - 1)
+          cinfo->output_iMCU_row + 1 < last_iMCU_row)
         next_next_block_row =
           buffer[block_row + 2] + cinfo->master->first_MCU_col[ci];
       else
