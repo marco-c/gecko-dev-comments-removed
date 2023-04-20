@@ -1017,7 +1017,7 @@ WhiteSpaceVisibilityKeeper::InsertBRElement(
 
 Result<InsertTextResult, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
     HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
-    const EditorDOMRange& aRangeToBeReplaced) {
+    const EditorDOMRange& aRangeToBeReplaced, const Element& aEditingHost) {
   
   
   
@@ -1031,9 +1031,8 @@ Result<InsertTextResult, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
     return InsertTextResult();
   }
 
-  RefPtr<Element> editingHost = aHTMLEditor.ComputeEditingHost();
   TextFragmentData textFragmentDataAtStart(aRangeToBeReplaced.StartRef(),
-                                           editingHost);
+                                           &aEditingHost);
   if (MOZ_UNLIKELY(NS_WARN_IF(!textFragmentDataAtStart.IsInitialized()))) {
     return Err(NS_ERROR_FAILURE);
   }
@@ -1043,7 +1042,7 @@ Result<InsertTextResult, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
   TextFragmentData textFragmentDataAtEnd =
       aRangeToBeReplaced.Collapsed()
           ? textFragmentDataAtStart
-          : TextFragmentData(aRangeToBeReplaced.EndRef(), editingHost);
+          : TextFragmentData(aRangeToBeReplaced.EndRef(), &aEditingHost);
   if (MOZ_UNLIKELY(NS_WARN_IF(!textFragmentDataAtEnd.IsInitialized()))) {
     return Err(NS_ERROR_FAILURE);
   }
@@ -1083,6 +1082,7 @@ Result<InsertTextResult, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
                 aRangeToBeReplaced.EndRef())
           : PointPosition::NotInSameDOMTree;
 
+  EditorDOMPoint pointToPutCaret;
   EditorDOMPoint pointToInsert(aRangeToBeReplaced.StartRef());
   EditorDOMPoint atNBSPReplaceableWithSP;
   if (!invisibleTrailingWhiteSpaceRangeAtEnd.IsPositioned() &&
@@ -1124,17 +1124,8 @@ Result<InsertTextResult, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
               "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
           return caretPointOrError.propagateErr();
         }
-        nsresult rv = caretPointOrError.unwrap().SuggestCaretPointTo(
-            aHTMLEditor, {SuggestCaret::OnlyIfHasSuggestion,
-                          SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-                          SuggestCaret::AndIgnoreTrivialError});
-        if (NS_FAILED(rv)) {
-          NS_WARNING("CaretPoint::SuggestCaretPointTo() failed");
-          return Err(rv);
-        }
-        NS_WARNING_ASSERTION(
-            rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-            "CaretPoint::SuggestCaretPointTo() failed, but ignored");
+        caretPointOrError.unwrap().MoveCaretPointTo(
+            pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
       }
     }
     
@@ -1152,6 +1143,8 @@ Result<InsertTextResult, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
               .GetInclusiveNextNBSPPointIfNeedToReplaceWithASCIIWhiteSpace(
                   aRangeToBeReplaced.EndRef());
       if (atNBSPReplacedWithASCIIWhiteSpace.IsSet()) {
+        AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
+                                               &pointToPutCaret);
         AutoTrackDOMPoint trackPointToInsert(aHTMLEditor.RangeUpdaterRef(),
                                              &pointToInsert);
         AutoTrackDOMPoint trackPrecedingNBSP(aHTMLEditor.RangeUpdaterRef(),
@@ -1179,6 +1172,8 @@ Result<InsertTextResult, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
 
     if (invisibleLeadingWhiteSpaceRangeAtStart.IsPositioned()) {
       if (!invisibleLeadingWhiteSpaceRangeAtStart.Collapsed()) {
+        AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
+                                               &pointToPutCaret);
         AutoTrackDOMPoint trackPointToInsert(aHTMLEditor.RangeUpdaterRef(),
                                              &pointToInsert);
         AutoTrackDOMRange trackInvisibleTrailingWhiteSpaceRange(
@@ -1198,17 +1193,9 @@ Result<InsertTextResult, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
               "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
           return caretPointOrError.propagateErr();
         }
-        nsresult rv = caretPointOrError.unwrap().SuggestCaretPointTo(
-            aHTMLEditor, {SuggestCaret::OnlyIfHasSuggestion,
-                          SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-                          SuggestCaret::AndIgnoreTrivialError});
-        if (NS_FAILED(rv)) {
-          NS_WARNING("CaretPoint::SuggestCaretPointTo() failed");
-          return Err(rv);
-        }
-        NS_WARNING_ASSERTION(
-            rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-            "CaretPoint::SuggestCaretPointTo() failed, but ignored");
+        trackPointToPutCaret.FlushAndStopTracking();
+        caretPointOrError.unwrap().MoveCaretPointTo(
+            pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
         
         
         atNBSPReplaceableWithSP.Clear();
@@ -1226,6 +1213,8 @@ Result<InsertTextResult, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
           atNBSPReplaceableWithSP.AsInText();
       if (!atNBSPReplacedWithASCIIWhiteSpace.IsEndOfContainer() &&
           atNBSPReplacedWithASCIIWhiteSpace.IsCharNBSP()) {
+        AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
+                                               &pointToPutCaret);
         AutoTrackDOMPoint trackPointToInsert(aHTMLEditor.RangeUpdaterRef(),
                                              &pointToInsert);
         AutoTrackDOMRange trackInvisibleTrailingWhiteSpaceRange(
@@ -1264,11 +1253,11 @@ Result<InsertTextResult, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
         !pointToInsert.IsInContentNode() ||
         !EditorUtils::IsNewLinePreformatted(
             *pointToInsert.ContainerAs<nsIContent>());
-    auto isCollapsibleChar = [&isNewLineCollapsible](char16_t aChar) -> bool {
+    auto IsCollapsibleChar = [&isNewLineCollapsible](char16_t aChar) -> bool {
       return nsCRT::IsAsciiSpace(aChar) &&
              (isNewLineCollapsible || aChar != HTMLEditUtils::kNewLine);
     };
-    if (isCollapsibleChar(theString[0])) {
+    if (IsCollapsibleChar(theString[0])) {
       
       
       if (isInvisibleLeadingWhiteSpaceRangeAtStartPositioned) {
@@ -1300,7 +1289,7 @@ Result<InsertTextResult, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
 
     
     const uint32_t lastCharIndex = theString.Length() - 1;
-    if (isCollapsibleChar(theString[lastCharIndex])) {
+    if (IsCollapsibleChar(theString[lastCharIndex])) {
       
       
       if (isInvisibleTrailingWhiteSpaceRangeAtEndPositioned) {
@@ -1342,7 +1331,7 @@ Result<InsertTextResult, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
     };
     PreviousChar previousChar = PreviousChar::NonCollapsibleChar;
     for (uint32_t i = 0; i <= lastCharIndex; i++) {
-      if (isCollapsibleChar(theString[i])) {
+      if (IsCollapsibleChar(theString[i])) {
         
         
         
@@ -1396,6 +1385,8 @@ Result<InsertTextResult, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
         "WhiteSpaceVisibilityKeeper::ReplaceText() lost proper document");
     return Err(NS_ERROR_UNEXPECTED);
   }
+  AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
+                                         &pointToPutCaret);
   OwningNonNull<Document> document = *aHTMLEditor.GetDocument();
   Result<InsertTextResult, nsresult> insertTextResult =
       aHTMLEditor.InsertTextWithTransaction(document, theString, pointToInsert);
@@ -1403,7 +1394,12 @@ Result<InsertTextResult, nsresult> WhiteSpaceVisibilityKeeper::ReplaceText(
     NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
     return insertTextResult.propagateErr();
   }
-  return insertTextResult;
+  trackPointToPutCaret.FlushAndStopTracking();
+  if (insertTextResult.inspect().HasCaretPointSuggestion()) {
+    return insertTextResult;
+  }
+  return InsertTextResult(insertTextResult.unwrap(),
+                          std::move(pointToPutCaret));
 }
 
 
