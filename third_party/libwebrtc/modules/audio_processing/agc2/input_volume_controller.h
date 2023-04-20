@@ -82,7 +82,7 @@ class InputVolumeController final {
   void Initialize();
 
   
-  void set_stream_analog_level(int level);
+  void SetAppliedInputVolume(int level);
 
   
   
@@ -105,9 +105,7 @@ class InputVolumeController final {
   
   
   
-  
-  
-  int recommended_analog_level() const { return recommended_input_volume_; }
+  int recommended_input_volume() const { return recommended_input_volume_; }
 
   
   
@@ -151,8 +149,10 @@ class InputVolumeController final {
   
   
   
-  
   int recommended_input_volume_ = 0;
+  
+  
+  int applied_input_volume_ = 0;
 
   bool capture_output_used_;
 
