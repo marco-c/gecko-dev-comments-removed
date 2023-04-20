@@ -16,7 +16,11 @@ protected:
   
   static unsigned checkExplicitAlignment(const Decl *D) {
     ASTContext &Context = D->getASTContext();
+#if CLANG_VERSION_FULL >= 1600
+    unsigned PointerAlign = Context.getTargetInfo().getPointerAlign(LangAS::Default);
+#else
     unsigned PointerAlign = Context.getTargetInfo().getPointerAlign(0);
+#endif
 
     
     
