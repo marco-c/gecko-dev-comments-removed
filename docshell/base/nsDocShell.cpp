@@ -13080,8 +13080,7 @@ nsresult nsDocShell::OnLinkClickSync(nsIContent* aContent,
   
   
   nsPIDOMWindowInner* referrerInner = referrerDoc->GetInnerWindow();
-  NS_ENSURE_TRUE(referrerInner, NS_ERROR_UNEXPECTED);
-  if (!mScriptGlobal ||
+  if (!mScriptGlobal || !referrerInner ||
       mScriptGlobal->GetCurrentInnerWindow() != referrerInner) {
     
     return NS_OK;
