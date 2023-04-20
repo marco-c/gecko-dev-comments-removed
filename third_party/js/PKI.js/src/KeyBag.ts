@@ -1,0 +1,18 @@
+import { PrivateKeyInfo } from "./PrivateKeyInfo";
+
+
+
+
+
+export class KeyBag extends PrivateKeyInfo {
+
+  
+
+
+
+  constructor(parameters = {}) {
+    super(parameters);
+  }
+
+}
+
