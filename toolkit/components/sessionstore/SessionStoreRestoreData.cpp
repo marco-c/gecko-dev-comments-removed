@@ -4,13 +4,16 @@
 
 
 
-namespace mozilla {
-namespace dom {
-
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/SessionStoreUtils.h"
 #include "mozilla/dom/sessionstore/SessionStoreTypes.h"
+#include "mozilla/dom/WindowContext.h"
 #include "nsISessionStoreRestoreData.h"
+#include "nsNetUtil.h"
+
+namespace mozilla {
+namespace dom {
 
 bool SessionStoreRestoreData::IsEmpty() {
   return (!mURI && mScroll.IsEmpty() && mInnerHTML.IsEmpty() &&
