@@ -83,6 +83,7 @@
 
 
 use anyhow::Result;
+use uniffi_meta::Checksum;
 
 use super::enum_::{Enum, Variant};
 use super::types::{Type, TypeIterator};
@@ -94,7 +95,7 @@ use super::{APIConverter, ComponentInterface};
 
 
 
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone, Checksum)]
 pub struct Error {
     pub name: String,
     enum_: Enum,

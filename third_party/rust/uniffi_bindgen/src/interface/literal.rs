@@ -8,12 +8,13 @@
 
 
 use anyhow::{bail, Result};
+use uniffi_meta::Checksum;
 
 use super::types::Type;
 
 
 
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone, Checksum)]
 pub enum Literal {
     Boolean(bool),
     String(String),
@@ -35,7 +36,7 @@ pub enum Literal {
 
 
 
-#[derive(Debug, Clone, Copy, Hash)]
+#[derive(Debug, Clone, Copy, Checksum)]
 pub enum Radix {
     Decimal = 10,
     Octal = 8,
