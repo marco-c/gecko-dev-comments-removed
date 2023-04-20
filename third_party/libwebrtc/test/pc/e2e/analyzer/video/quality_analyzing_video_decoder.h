@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "api/test/video_quality_analyzer_interface.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_frame.h"
@@ -113,12 +114,13 @@ class QualityAnalyzingVideoDecoder : public VideoDecoder {
 
   
   std::string codec_name_ RTC_GUARDED_BY(mutex_);
-  std::map<uint32_t, uint16_t> timestamp_to_frame_id_ RTC_GUARDED_BY(mutex_);
+  std::map<uint32_t, absl::optional<uint16_t>> timestamp_to_frame_id_
+      RTC_GUARDED_BY(mutex_);
   
   
   
   
-  std::map<uint16_t, EncodedImage> decoding_images_ RTC_GUARDED_BY(mutex_);
+  std::map<uint32_t, EncodedImage> decoding_images_ RTC_GUARDED_BY(mutex_);
 };
 
 

@@ -29,6 +29,9 @@ namespace webrtc {
 
 class RTC_EXPORT VideoFrame {
  public:
+  
+  static constexpr uint16_t kNotSetId = 0;
+
   struct RTC_EXPORT UpdateRect {
     int offset_x;
     int offset_y;
@@ -99,7 +102,7 @@ class RTC_EXPORT VideoFrame {
     Builder& set_packet_infos(RtpPacketInfos packet_infos);
 
    private:
-    uint16_t id_ = 0;
+    uint16_t id_ = kNotSetId;
     rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
     int64_t timestamp_us_ = 0;
     uint32_t timestamp_rtp_ = 0;
