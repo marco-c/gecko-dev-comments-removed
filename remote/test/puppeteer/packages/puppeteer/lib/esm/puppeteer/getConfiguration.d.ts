@@ -1,5 +1,0 @@
-import { Configuration } from 'puppeteer-core';
-
-
-
-export declare const getConfiguration: () => Configuration;

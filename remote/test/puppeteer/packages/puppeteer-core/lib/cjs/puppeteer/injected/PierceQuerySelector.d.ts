@@ -1,8 +1,0 @@
-
-
-
-export declare const pierceQuerySelector: (root: Node, selector: string) => Element | null;
-
-
-
-export declare const pierceQuerySelectorAll: (element: Node, selector: string) => Element[];

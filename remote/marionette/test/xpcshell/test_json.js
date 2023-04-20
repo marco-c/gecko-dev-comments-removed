@@ -4,7 +4,7 @@ const { json } = ChromeUtils.importESModule(
 const { NodeCache } = ChromeUtils.importESModule(
   "chrome://remote/content/shared/webdriver/NodeCache.sys.mjs"
 );
-const { ShadowRoot, WebElement, WebReference } = ChromeUtils.importESModule(
+const { WebElement, WebReference } = ChromeUtils.importESModule(
   "chrome://remote/content/marionette/element.sys.mjs"
 );
 
@@ -55,19 +55,7 @@ add_test(function test_clone_generalTypes() {
   run_next_test();
 });
 
-add_test(function test_clone_ShadowRoot() {
-  const { nodeCache, shadowRoot } = setupTest();
-
-  const shadowRootRef = nodeCache.getOrCreateNodeReference(shadowRoot);
-  deepEqual(
-    json.clone(shadowRoot, nodeCache),
-    WebReference.from(shadowRoot, shadowRootRef).toJSON()
-  );
-
-  run_next_test();
-});
-
-add_test(function test_clone_WebElement() {
+add_test(function test_clone_WebElements() {
   const { htmlEl, nodeCache, svgEl } = setupTest();
 
   const htmlElRef = nodeCache.getOrCreateNodeReference(htmlEl);
@@ -196,31 +184,7 @@ add_test(function test_deserialize_generalTypes() {
   run_next_test();
 });
 
-add_test(function test_deserialize_ShadowRoot() {
-  const { browser, nodeCache, shadowRoot } = setupTest();
-  const win = browser.document.ownerGlobal;
-
-  
-  const unknownShadowRootId = { [ShadowRoot.Identifier]: "foo" };
-  Assert.throws(() => {
-    json.deserialize(unknownShadowRootId, nodeCache, win);
-  }, /NoSuchShadowRootError/);
-
-  const shadowRootRef = nodeCache.getOrCreateNodeReference(shadowRoot);
-  const shadowRootEl = { [ShadowRoot.Identifier]: shadowRootRef };
-
-  
-  Assert.throws(() => json.deserialize(shadowRootEl, nodeCache), /TypeError/);
-
-  
-  const root = json.deserialize(shadowRootEl, nodeCache, win);
-  deepEqual(root, shadowRoot);
-  deepEqual(root, nodeCache.getNode(browser.browsingContext, shadowRootRef));
-
-  run_next_test();
-});
-
-add_test(function test_deserialize_WebElement() {
+add_test(function test_deserialize_WebElements() {
   const { browser, htmlEl, nodeCache } = setupTest();
   const win = browser.document.ownerGlobal;
 
@@ -232,7 +196,6 @@ add_test(function test_deserialize_WebElement() {
 
   const htmlElRef = nodeCache.getOrCreateNodeReference(htmlEl);
   const htmlWebEl = { [WebElement.Identifier]: htmlElRef };
-
   
   Assert.throws(() => json.deserialize(htmlWebEl, nodeCache), /TypeError/);
 

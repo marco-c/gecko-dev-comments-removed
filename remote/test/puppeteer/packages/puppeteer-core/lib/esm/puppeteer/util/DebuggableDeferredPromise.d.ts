@@ -1,8 +1,0 @@
-import { DeferredPromise } from './DeferredPromise.js';
-
-
-
-
-
-
-export declare function createDebuggableDeferredPromise<T>(message: string): DeferredPromise<T>;
