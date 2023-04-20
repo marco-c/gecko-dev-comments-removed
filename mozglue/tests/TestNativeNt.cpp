@@ -28,6 +28,12 @@ const wchar_t kPrefixedHex16[] = L"Pabcdef0123456789.dll";
 const uint32_t kTlsDataValue = 1234;
 static MOZ_THREAD_LOCAL(uint32_t) sTlsData;
 
+
+
+
+MOZ_NEVER_INLINE uint32_t getTlsData() { return sTlsData.get(); }
+MOZ_NEVER_INLINE void setTlsData(uint32_t x) { sTlsData.set(x); }
+
 const char kFailFmt[] =
     "TEST-FAILED | NativeNt | %s(%s) should have returned %s but did not\n";
 
@@ -419,13 +425,13 @@ int wmain(int argc, wchar_t* argv[]) {
   bool isExceptionThrown = false;
   
   
-  printf("sTlsData#1 = %08x\n", sTlsData.get());
+  printf("sTlsData#1 = %08x\n", getTlsData());
   MOZ_SEH_TRY {
     
     
     
     origTlsHead = SwapThreadLocalStoragePointer(nullptr);
-    sTlsData.set(~kTlsDataValue);
+    setTlsData(~kTlsDataValue);
   }
   MOZ_SEH_EXCEPT(GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION
                      ? EXCEPTION_EXECUTE_HANDLER
@@ -433,10 +439,10 @@ int wmain(int argc, wchar_t* argv[]) {
     isExceptionThrown = true;
   }
   SwapThreadLocalStoragePointer(origTlsHead);
-  printf("sTlsData#2 = %08x\n", sTlsData.get());
-  sTlsData.set(kTlsDataValue);
-  printf("sTlsData#3 = %08x\n", sTlsData.get());
-  if (!isExceptionThrown || sTlsData.get() != kTlsDataValue) {
+  printf("sTlsData#2 = %08x\n", getTlsData());
+  setTlsData(kTlsDataValue);
+  printf("sTlsData#3 = %08x\n", getTlsData());
+  if (!isExceptionThrown || getTlsData() != kTlsDataValue) {
     printf(
         "TEST-FAILED | NativeNt | RtlGetThreadLocalStoragePointer() is "
         "broken\n");

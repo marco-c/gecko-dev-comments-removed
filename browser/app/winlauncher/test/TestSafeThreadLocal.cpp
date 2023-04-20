@@ -25,10 +25,16 @@ MOZ_NEVER_INLINE PVOID SwapThreadLocalStoragePointer(PVOID aNewValue) {
 
 static mozilla::freestanding::SafeThreadLocal<int*> gTheStorage;
 
+
+
+
+MOZ_NEVER_INLINE int* getTheStorage() { return gTheStorage.get(); }
+MOZ_NEVER_INLINE void setTheStorage(int* p) { gTheStorage.set(p); }
+
 static unsigned int __stdcall TestNonMainThread(void* aArg) {
   for (int i = 0; i < 100; ++i) {
-    gTheStorage.set(&i);
-    if (gTheStorage.get() != &i) {
+    setTheStorage(&i);
+    if (getTheStorage() != &i) {
       printf(
           "TEST-FAILED | TestSafeThreadLocal | "
           "A value is not correctly stored in the thread-local storage.\n");
@@ -43,7 +49,7 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
 
   auto origHead = SwapThreadLocalStoragePointer(nullptr);
   
-  gTheStorage.set(&dummy);
+  setTheStorage(&dummy);
   SwapThreadLocalStoragePointer(origHead);
 
   nsAutoHandle handles[8];
@@ -53,7 +59,7 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
   }
 
   for (int i = 0; i < 100; ++i) {
-    if (gTheStorage.get() != &dummy) {
+    if (getTheStorage() != &dummy) {
       printf(
           "TEST-FAILED | TestSafeThreadLocal | "
           "A value is not correctly stored in the global scope.\n");
