@@ -891,18 +891,6 @@ where
     if element.ignores_nth_child_selectors() {
         return false;
     }
-    
-
-
-
-
-
-
-
-
-    if !selectors.is_empty() && !list_matches_complex_selector(selectors, element, context) {
-        return false;
-    }
 
     let NthSelectorData { ty, a, b, .. } = *nth_data;
     let is_of_type = ty.is_of_type();
@@ -938,6 +926,10 @@ where
         } else {
             ElementSelectorFlags::HAS_SLOW_SELECTOR_LATER_SIBLINGS
         });
+    }
+
+    if !selectors.is_empty() && !list_matches_complex_selector(selectors, element, context) {
+        return false;
     }
 
     
