@@ -1051,6 +1051,13 @@ ContentParent::GetNewOrUsedLaunchingBrowserProcess(
            PromiseFlatCString(aRemoteType).get()));
 
   
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    MOZ_DIAGNOSTIC_ASSERT(
+        false, "Late attempt to GetNewOrUsedLaunchingBrowserProcess!");
+    return nullptr;
+  }
+
+  
   
   
   RefPtr<ContentParent> contentParent;
@@ -1459,12 +1466,6 @@ already_AddRefed<RemoteBrowser> ContentParent::CreateBrowser(
       !aBrowsingContext->Canonical()->GetBrowserParent(),
       "BrowsingContext must not have BrowserParent, or have previous "
       "BrowserParent cleared");
-
-  
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdown)) {
-    MOZ_ASSERT(false, "Late attempt to CreateBrowser!");
-    return nullptr;
-  }
 
   nsAutoCString remoteType(aRemoteType);
   if (remoteType.IsEmpty()) {
@@ -2586,10 +2587,6 @@ bool ContentParent::BeginSubprocessLaunch(ProcessPriority aPriority) {
   
   AddShutdownBlockers();
 
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdown)) {
-    MOZ_ASSERT(false, "Late attempt to launch a process!");
-    return false;
-  }
   if (!ContentProcessManager::GetSingleton()) {
     MOZ_ASSERT(false, "Unable to acquire ContentProcessManager singleton!");
     return false;
