@@ -39,6 +39,14 @@ inline mozAccessible* GetNativeFromGeckoAccessible(
   return reinterpret_cast<mozAccessible*>(proxy->GetWrapper());
 }
 
+
+enum CheckedState {
+  kUncheckable = -1,
+  kUnchecked = 0,
+  kChecked = 1,
+  kMixed = 2
+};
+
 }  
 }  
 
