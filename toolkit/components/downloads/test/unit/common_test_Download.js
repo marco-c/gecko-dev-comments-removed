@@ -2463,25 +2463,25 @@ add_task(async function test_history() {
   
   await PlacesUtils.history.clear();
   let promiseVisit = promiseWaitForVisit(sourceUrl);
-  let promiseAnnotation = waitForAnnotation(
-    sourceUrl,
-    "downloads/destinationFileURI"
-  );
 
   
   let download = await promiseStartDownload(sourceUrl);
+  let expectedFile = new FileUtils.File(download.target.path);
+  let expectedFileURI = Services.io.newFileURI(expectedFile);
+  let promiseAnnotation = waitForAnnotation(
+    sourceUrl,
+    "downloads/destinationFileURI",
+    expectedFileURI.spec
+  );
 
   
   let [time, transitionType, lastKnownTitle] = await promiseVisit;
   await promiseAnnotation;
 
-  let expectedFile = new FileUtils.File(download.target.path);
-
   Assert.equal(time, download.startTime.getTime());
   Assert.equal(transitionType, Ci.nsINavHistoryService.TRANSITION_DOWNLOAD);
   Assert.equal(lastKnownTitle, expectedFile.leafName);
 
-  let expectedFileURI = Services.io.newFileURI(expectedFile);
   let pageInfo = await PlacesUtils.history.fetch(sourceUrl, {
     includeAnnotations: true,
   });
