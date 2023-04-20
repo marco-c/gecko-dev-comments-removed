@@ -416,7 +416,6 @@
       
       
       
-      
       if (this.currentPage.hasAttribute("data-header-label-id")) {
         let id = this.currentPage.getAttribute("data-header-label-id");
         document.l10n.setAttributes(labelElement, id);

@@ -2805,10 +2805,6 @@ this.VideoControlsImplWidget = class {
   }
 
   generateContent() {
-    
-
-
-
     const parser = new this.window.DOMParser();
     let parserDoc = parser.parseFromString(
       `<div class="videocontrols" xmlns="http://www.w3.org/1999/xhtml" role="none">
@@ -3097,10 +3093,6 @@ this.NoControlsMobileImplWidget = class {
   }
 
   generateContent() {
-    
-
-
-
     const parser = new this.window.DOMParser();
     let parserDoc = parser.parseFromString(
       `<div class="videocontrols" xmlns="http://www.w3.org/1999/xhtml" role="none">
@@ -3149,10 +3141,6 @@ this.NoControlsPictureInPictureImplWidget = class {
   }
 
   generateContent() {
-    
-
-
-
     const parser = new this.window.DOMParser();
     let parserDoc = parser.parseFromString(
       `<div class="videocontrols" xmlns="http://www.w3.org/1999/xhtml" role="none">
@@ -3332,10 +3320,6 @@ this.NoControlsDesktopImplWidget = class {
   }
 
   generateContent() {
-    
-
-
-
     const parser = new this.window.DOMParser();
     let parserDoc = parser.parseFromString(
       `<div class="videocontrols" xmlns="http://www.w3.org/1999/xhtml" role="none">
