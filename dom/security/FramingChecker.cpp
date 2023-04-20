@@ -141,21 +141,6 @@ static bool ShouldIgnoreFrameOptions(nsIChannel* aChannel,
     return false;
   }
 
-  
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  uint64_t innerWindowID = loadInfo->GetInnerWindowID();
-  bool privateWindow = !!loadInfo->GetOriginAttributes().mPrivateBrowsingId;
-  AutoTArray<nsString, 2> params = {u"x-frame-options"_ns,
-                                    u"frame-ancestors"_ns};
-  CSP_LogLocalizedStr("IgnoringSrcBecauseOfDirective", params,
-                      u""_ns,  
-                      u""_ns,  
-                      0,       
-                      0,       
-                      nsIScriptError::warningFlag,
-                      "IgnoringSrcBecauseOfDirective"_ns, innerWindowID,
-                      privateWindow);
-
   return true;
 }
 
@@ -165,7 +150,8 @@ static bool ShouldIgnoreFrameOptions(nsIChannel* aChannel,
 
 
 bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
-                                       nsIContentSecurityPolicy* aCsp) {
+                                       nsIContentSecurityPolicy* aCsp,
+                                       bool& outIsFrameCheckingSkipped) {
   if (!aChannel) {
     return true;
   }
@@ -218,6 +204,7 @@ bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
   
   
   if (ShouldIgnoreFrameOptions(aChannel, aCsp)) {
+    outIsFrameCheckingSkipped = true;
     return true;
   }
 

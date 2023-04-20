@@ -25,7 +25,8 @@ class FramingChecker {
   
   
   static bool CheckFrameOptions(nsIChannel* aChannel,
-                                nsIContentSecurityPolicy* aCSP);
+                                nsIContentSecurityPolicy* aCSP,
+                                bool& outIsFrameCheckingSkipped);
 
  protected:
   enum XFOHeader { eDENY, eSAMEORIGIN };

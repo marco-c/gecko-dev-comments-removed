@@ -17,6 +17,7 @@
 #include "mozilla/dom/nsCSPService.h"
 #include "mozilla/StoragePrincipalHelper.h"
 
+#include "nsContentSecurityUtils.h"
 #include "nsHttp.h"
 #include "nsHttpChannel.h"
 #include "nsHttpChannelAuthProvider.h"
@@ -2372,6 +2373,13 @@ nsresult nsHttpChannel::ContinueProcessResponse3(nsresult rv) {
       if (MOZ_UNLIKELY(LoadCustomAuthHeader()) && httpStatus == 401) {
         
         
+        
+        
+        rv = NS_ERROR_FAILURE;
+      } else if (httpStatus == 401 &&
+                 StaticPrefs::
+                     network_auth_supress_auth_prompt_for_XFO_failures() &&
+                 !nsContentSecurityUtils::CheckCSPFrameAncestorAndXFO(this)) {
         
         
         rv = NS_ERROR_FAILURE;
