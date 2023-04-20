@@ -9,13 +9,6 @@ var { AppTestDelegate } = SpecialPowers.ChromeUtils.importESModule(
   "resource://specialpowers/AppTestDelegate.sys.mjs"
 );
 
-let remote = SpecialPowers.getBoolPref("extensions.webextensions.remote");
-if (remote) {
-  
-  
-  SpecialPowers.setIntPref("dom.ipc.keepProcessesAlive.extension", 1);
-}
-
 {
   let chromeScript = SpecialPowers.loadChromeScript(
     SimpleTest.getTestFileURL("chrome_cleanup_script.js")
