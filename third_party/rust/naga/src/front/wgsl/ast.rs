@@ -1,4 +1,4 @@
-use crate::front::wgsl::parse::number::Number;
+use super::Number;
 use crate::{Arena, FastHashSet, Handle, Span};
 use std::hash::Hash;
 
@@ -105,9 +105,6 @@ pub struct EntryPoint {
     pub early_depth_test: Option<crate::EarlyDepthTest>,
     pub workgroup_size: [u32; 3],
 }
-
-#[cfg(doc)]
-use crate::front::wgsl::lower::{ExpressionContext, StatementContext};
 
 #[derive(Debug)]
 pub struct Function<'a> {
@@ -380,9 +377,6 @@ pub enum Literal {
     Bool(bool),
     Number(Number),
 }
-
-#[cfg(doc)]
-use crate::front::wgsl::lower::Lowerer;
 
 #[derive(Debug)]
 pub enum Expression<'a> {

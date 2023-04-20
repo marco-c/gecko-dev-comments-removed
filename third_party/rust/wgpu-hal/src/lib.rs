@@ -38,8 +38,6 @@
     clippy::non_send_fields_in_send_ty,
     
     clippy::missing_safety_doc,
-    
-    clippy::needless_borrowed_reference,
 )]
 #![warn(
     trivial_casts,
@@ -870,26 +868,6 @@ pub struct TextureDescriptor<'a> {
     
     
     pub view_formats: Vec<wgt::TextureFormat>,
-}
-
-impl TextureDescriptor<'_> {
-    pub fn copy_extent(&self) -> CopyExtent {
-        CopyExtent::map_extent_to_copy_size(&self.size, self.dimension)
-    }
-
-    pub fn is_cube_compatible(&self) -> bool {
-        self.dimension == wgt::TextureDimension::D2
-            && self.size.depth_or_array_layers % 6 == 0
-            && self.sample_count == 1
-            && self.size.width == self.size.height
-    }
-
-    pub fn array_layer_count(&self) -> u32 {
-        match self.dimension {
-            wgt::TextureDimension::D1 | wgt::TextureDimension::D3 => 1,
-            wgt::TextureDimension::D2 => self.size.depth_or_array_layers,
-        }
-    }
 }
 
 

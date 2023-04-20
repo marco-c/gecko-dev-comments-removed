@@ -24,8 +24,6 @@
     
     
     unused_braces,
-    
-    clippy::needless_borrowed_reference,
 )]
 #![warn(
     trivial_casts,
