@@ -39,6 +39,7 @@
 #include "js/StructuredClone.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsDebug.h"
 #include "nsGlobalWindow.h"
 #include "nsIScriptObjectPrincipal.h"
 #include "nsJSEnvironment.h"
@@ -99,7 +100,31 @@ already_AddRefed<Promise> Promise::Create(
   return p.forget();
 }
 
+
+already_AddRefed<Promise> Promise::CreateInfallible(
+    nsIGlobalObject* aGlobal,
+    PropagateUserInteraction aPropagateUserInteraction) {
+  RefPtr<Promise> p = new Promise(aGlobal);
+  IgnoredErrorResult rv;
+  p->CreateWrapper(rv, aPropagateUserInteraction);
+  if (rv.Failed() && rv.ErrorCodeIs(NS_ERROR_OUT_OF_MEMORY)) {
+    MOZ_CRASH("Out of memory");
+  }
+
+  
+  
+  
+  
+  
+  
+  NS_WARN_IF(!p->PromiseObj());
+
+  return p.forget();
+}
+
 bool Promise::MaybePropagateUserInputEventHandling() {
+  MOZ_ASSERT(mPromiseObj,
+             "Should be called only if the wrapper is successfully created");
   JS::PromiseUserInputEventHandlingState state =
       UserActivation::IsHandlingUserInput()
           ? JS::PromiseUserInputEventHandlingState::HadUserInteractionAtCreation
@@ -163,8 +188,13 @@ already_AddRefed<Promise> Promise::All(
     return nullptr;
   }
 
-  for (auto& promise : aPromiseList) {
+  for (const auto& promise : aPromiseList) {
     JS::Rooted<JSObject*> promiseObj(aCx, promise->PromiseObj());
+    if (!promiseObj) {
+      
+      
+      return do_AddRef(promise);
+    }
     
     if (!JS_WrapObject(aCx, &promiseObj)) {
       aRv.NoteJSContextException(aCx);
@@ -196,6 +226,11 @@ void Promise::Then(JSContext* aCx,
   
   
   JS::Rooted<JSObject*> promise(aCx, PromiseObj());
+  if (!promise) {
+    
+    return;
+  }
+
   if (!JS_WrapObject(aCx, &promise)) {
     aRv.NoteJSContextException(aCx);
     return;
@@ -319,7 +354,7 @@ void Promise::MaybeResolve(JSContext* aCx, JS::Handle<JS::Value> aValue) {
   NS_ASSERT_OWNINGTHREAD(Promise);
 
   JS::Rooted<JSObject*> p(aCx, PromiseObj());
-  if (!JS::ResolvePromise(aCx, p, aValue)) {
+  if (!p || !JS::ResolvePromise(aCx, p, aValue)) {
     
     JS_ClearPendingException(aCx);
   }
@@ -329,7 +364,7 @@ void Promise::MaybeReject(JSContext* aCx, JS::Handle<JS::Value> aValue) {
   NS_ASSERT_OWNINGTHREAD(Promise);
 
   JS::Rooted<JSObject*> p(aCx, PromiseObj());
-  if (!JS::RejectPromise(aCx, p, aValue)) {
+  if (!p || !JS::RejectPromise(aCx, p, aValue)) {
     
     JS_ClearPendingException(aCx);
   }
@@ -487,7 +522,7 @@ void Promise::AppendNativeHandler(PromiseNativeHandler* aRunnable) {
   NS_ASSERT_OWNINGTHREAD(Promise);
 
   AutoJSAPI jsapi;
-  if (NS_WARN_IF(!jsapi.Init(mGlobal))) {
+  if (NS_WARN_IF(!mPromiseObj || !jsapi.Init(mGlobal))) {
     
     
     return;
@@ -963,6 +998,10 @@ Promise::PromiseState Promise::State() const {
 }
 
 bool Promise::SetSettledPromiseIsHandled() {
+  if (!mPromiseObj) {
+    
+    return false;
+  }
   AutoAllowLegacyScriptExecution exemption;
   AutoEntryScript aes(mGlobal, "Set settled promise handled");
   JSContext* cx = aes.cx();
@@ -971,6 +1010,10 @@ bool Promise::SetSettledPromiseIsHandled() {
 }
 
 bool Promise::SetAnyPromiseIsHandled() {
+  if (!mPromiseObj) {
+    
+    return false;
+  }
   AutoAllowLegacyScriptExecution exemption;
   AutoEntryScript aes(mGlobal, "Set any promise handled");
   JSContext* cx = aes.cx();
