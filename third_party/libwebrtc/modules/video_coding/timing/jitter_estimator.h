@@ -24,8 +24,7 @@
 #include "modules/video_coding/timing/frame_delay_variation_kalman_filter.h"
 #include "modules/video_coding/timing/rtt_filter.h"
 #include "rtc_base/experiments/struct_parameters_parser.h"
-#include "rtc_base/numerics/moving_median_filter.h"
-#include "rtc_base/numerics/percentile_filter.h"
+#include "rtc_base/numerics/moving_percentile_filter.h"
 #include "rtc_base/rolling_accumulator.h"
 
 namespace webrtc {
@@ -133,7 +132,6 @@ class JitterEstimator {
 
  private:
   
-  double GetMaxFrameSizeEstimateBytes() const;
   double GetNumStddevDelayOutlier() const;
   double GetNumStddevSizeOutlier() const;
   double GetCongestionRejectionFactor() const;
@@ -176,10 +174,7 @@ class JitterEstimator {
   double max_frame_size_bytes_;
   
   MovingMedianFilter<int64_t> avg_frame_size_median_bytes_;
-  
-  
-  PercentileFilter<int64_t> max_frame_size_bytes_percentile_;
-  std::queue<int64_t> frame_sizes_in_percentile_filter_;
+  MovingPercentileFilter<int64_t> max_frame_size_bytes_percentile_;
   
   
   double startup_frame_size_sum_bytes_;
