@@ -434,11 +434,9 @@ fn tweak_when_ignoring_colors(
         return;
     }
 
-    fn alpha_channel(color: &Color, context: &computed::Context) -> f32 {
+    fn alpha_channel(color: &Color, context: &computed::Context) -> u8 {
         
-        let color = color
-            .to_computed_value(context)
-            .into_rgba(RGBA::new(0, 0, 0, 1.0));
+        let color = color.to_computed_value(context).into_rgba(RGBA::new(0, 0, 0, 255));
         color.alpha
     }
 
@@ -461,7 +459,7 @@ fn tweak_when_ignoring_colors(
             
             
             let alpha = alpha_channel(color, context);
-            if alpha == 0.0 {
+            if alpha == 0 {
                 return;
             }
             let mut color = context.builder.device.default_background_color();
@@ -477,7 +475,7 @@ fn tweak_when_ignoring_colors(
             
             
             
-            if context.builder.get_parent_inherited_text().clone_color().alpha == 0.0 {
+            if context.builder.get_parent_inherited_text().clone_color().alpha == 0 {
                 let color = context.builder.device.default_color();
                 declarations_to_apply_unless_overriden.push(PropertyDeclaration::Color(
                     specified::ColorPropertyValue(color.into()),
