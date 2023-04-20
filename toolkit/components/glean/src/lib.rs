@@ -17,7 +17,10 @@
 
 
 
-use firefox_on_glean::{ipc, metrics, pings};
+
+
+pub extern crate fog;
+
 use nserror::{nsresult, NS_ERROR_FAILURE, NS_OK};
 use nsstring::{nsACString, nsCString};
 use thin_vec::ThinVec;
@@ -38,7 +41,7 @@ pub extern "C" fn fog_shutdown() {
 
 #[no_mangle]
 pub extern "C" fn fog_register_pings() {
-    pings::register_pings(None);
+    fog::pings::register_pings(None);
 }
 
 static mut PENDING_BUF: Vec<u8> = Vec::new();
@@ -50,7 +53,7 @@ static mut PENDING_BUF: Vec<u8> = Vec::new();
 
 #[no_mangle]
 pub unsafe extern "C" fn fog_serialize_ipc_buf() -> usize {
-    if let Some(buf) = ipc::take_buf() {
+    if let Some(buf) = fog::ipc::take_buf() {
         PENDING_BUF = buf;
         PENDING_BUF.len()
     } else {
@@ -79,10 +82,10 @@ pub unsafe extern "C" fn fog_give_ipc_buf(buf: *mut u8, buf_len: usize) -> usize
 #[no_mangle]
 pub unsafe extern "C" fn fog_use_ipc_buf(buf: *const u8, buf_len: usize) {
     let slice = std::slice::from_raw_parts(buf, buf_len);
-    let res = ipc::replay_from_buf(slice);
+    let res = fog::ipc::replay_from_buf(slice);
     if res.is_err() {
         log::warn!("Unable to replay ipc buffer. This will result in data loss.");
-        metrics::fog_ipc::replay_failures.add(1);
+        fog::metrics::fog_ipc::replay_failures.add(1);
     }
 }
 

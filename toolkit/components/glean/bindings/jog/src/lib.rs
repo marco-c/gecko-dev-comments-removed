@@ -2,9 +2,9 @@
 
 
 
-use firefox_on_glean::factory;
-use firefox_on_glean::private::traits::HistogramType;
-use firefox_on_glean::private::{CommonMetricData, Lifetime, MemoryUnit, TimeUnit};
+use fog::factory;
+use fog::private::traits::HistogramType;
+use fog::private::{CommonMetricData, Lifetime, MemoryUnit, TimeUnit};
 #[cfg(feature = "with_gecko")]
 use nsstring::{nsACString, nsAString, nsCString};
 use serde::Deserialize;

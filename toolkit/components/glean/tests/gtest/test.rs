@@ -1,9 +1,6 @@
 
 
 
-extern crate firefox_on_glean;
-use firefox_on_glean::metrics;
-
 extern crate nsstring;
 use nsstring::nsString;
 
@@ -40,8 +37,8 @@ pub extern "C" fn Rust_TestRustInGTest() {
     
     
     
-    metrics::test_only::bad_code.add(12);
-    expect!(metrics::test_only::bad_code.test_get_value(None) == Some(12));
+    fog::metrics::test_only::bad_code.add(12);
+    expect!(fog::metrics::test_only::bad_code.test_get_value(None) == Some(12));
 }
 
 #[no_mangle]
