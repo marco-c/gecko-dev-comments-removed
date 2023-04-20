@@ -216,6 +216,8 @@ class WasmStructObject : public WasmGcObject {
 
   
   
+  
+  
   uint8_t* outlineData_;
 
   
