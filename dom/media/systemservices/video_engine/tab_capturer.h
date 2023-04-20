@@ -11,6 +11,7 @@
 #ifndef MODULES_DESKTOP_CAPTURE_TAB_CAPTURER_H_
 #define MODULES_DESKTOP_CAPTURE_TAB_CAPTURER_H_
 
+#include "api/sequence_checker.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "mozilla/MozPromise.h"
 #include "nsDeque.h"
@@ -18,8 +19,8 @@
 
 namespace mozilla {
 namespace dom {
-class ImageBitmap;
-}
+struct ImageBitmapCloneData;
+}  
 
 class CaptureFrameRequest;
 class TabCapturedHandler;
@@ -51,15 +52,36 @@ class TabCapturerWebrtc : public webrtc::DesktopCapturer {
 
  private:
   
-  using CapturePromise = MozPromise<RefPtr<dom::ImageBitmap>, nsresult, true>;
+  using CapturePromise =
+      MozPromise<UniquePtr<dom::ImageBitmapCloneData>, nsresult, true>;
   RefPtr<CapturePromise> CaptureFrameNow();
 
   
   
+  
+  
   bool CompleteRequest(CaptureFrameRequest* aRequest);
 
+  
+  
+  void DisconnectRequest(CaptureFrameRequest* aRequest);
+
+  
+  void OnCaptureFrameSuccess(UniquePtr<dom::ImageBitmapCloneData> aData);
+  void OnCaptureFrameFailure();
+
   const RefPtr<TaskQueue> mMainThreadWorker;
-  webrtc::DesktopCapturer::Callback* mCallback = nullptr;
+  webrtc::SequenceChecker mControlChecker;
+  webrtc::SequenceChecker mCallbackChecker;
+  
+  
+  
+  
+  RefPtr<TaskQueue> mCallbackWorker;
+  
+  webrtc::DesktopCapturer::Callback* mCallback
+      RTC_GUARDED_BY(mCallbackChecker) = nullptr;
+  
   uint64_t mBrowserId = 0;
 
   

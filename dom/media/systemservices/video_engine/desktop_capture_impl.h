@@ -19,30 +19,24 @@
 #include <set>
 #include <string>
 
+#include "api/sequence_checker.h"
 #include "api/video/video_frame.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "api/video/video_sink_interface.h"
+#include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/video_capture/video_capture.h"
-#include "modules/video_capture/video_capture_config.h"
-#include "modules/video_coding/event_wrapper.h"
-#include "modules/desktop_capture/shared_memory.h"
-#include "modules/desktop_capture/desktop_and_cursor_composer.h"
-#include "rtc_base/deprecated/recursive_critical_section.h"
 
 #include "desktop_device_info.h"
-#include "VideoEngine.h"
+#include "mozilla/DataMutex.h"
+#include "mozilla/TimeStamp.h"
+#include "nsCOMPtr.h"
+#include "PerformanceRecorder.h"
 
-#if !defined(_WIN32)
-#  include "rtc_base/platform_thread.h"
-#endif
+class nsIThread;
+class nsITimer;
 
-using namespace webrtc::videocapturemodule;
-using namespace mozilla::camera;  
-
-namespace rtc {
-#if defined(_WIN32)
-class PlatformUIThread;
-#endif
-}  
+namespace mozilla::camera {
+enum class CaptureDeviceType;
+}
 
 namespace webrtc {
 
@@ -185,67 +179,62 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
 
   const char* CurrentDeviceName() const override;
 
-  int32_t IncomingFrame(uint8_t* videoFrame, size_t videoFrameLength,
-                        size_t widthWithPadding,
-                        const VideoCaptureCapability& frameInfo);
-
-  
   int32_t StartCapture(const VideoCaptureCapability& aCapability) override;
   virtual bool FocusOnSelectedSource() override;
   int32_t StopCapture() override;
   bool CaptureStarted() override;
   int32_t CaptureSettings(VideoCaptureCapability& aSettings) override;
 
+  void CaptureFrameOnThread();
+
+  const int32_t mModuleId;
+  const mozilla::TrackingId mTrackingId;
+  const std::string mDeviceUniqueId;
+  const mozilla::camera::CaptureDeviceType mDeviceType;
+
  protected:
   DesktopCaptureImpl(const int32_t aId, const char* aUniqueId,
                      const mozilla::camera::CaptureDeviceType aType);
   virtual ~DesktopCaptureImpl();
-  int32_t DeliverCapturedFrame(webrtc::VideoFrame& aCaptureFrame);
-
-  static const uint32_t kMaxDesktopCaptureCpuUsage =
-      50;  
-
-  int32_t mModuleId;  
-  const mozilla::TrackingId
-      mTrackingId;              
-  std::string mDeviceUniqueId;  
-  CaptureDeviceType mDeviceType;
 
  private:
-  void LazyInitCaptureThread();
-  int32_t LazyInitDesktopCapturer();
+  
+  static constexpr uint32_t kMaxDesktopCaptureCpuUsage = 50;
+  int32_t EnsureCapturer();
+  void InitOnThread(int aFramerate);
+  void ShutdownOnThread();
+  
+  void OnCaptureResult(DesktopCapturer::Result aResult,
+                       std::unique_ptr<DesktopFrame> aFrame) override;
 
   
-  void OnCaptureResult(DesktopCapturer::Result result,
-                       std::unique_ptr<DesktopFrame> frame) override;
+  void NotifyOnFrame(const VideoFrame& aFrame);
 
- public:
-  static void Run(void* aObj) {
-    static_cast<DesktopCaptureImpl*>(aObj)->process();
-  };
-  void process();
-  void ProcessIter();
-
- private:
-  rtc::RecursiveCriticalSection mApiCs;
-  std::atomic<uint32_t> mMaxFPSNeeded = {0};
+  
+  const nsCOMPtr<nsISerialEventTarget> mControlThread;
   
   VideoCaptureCapability mRequestedCapability;
   
   
   
   std::unique_ptr<DesktopCapturer> mCapturer;
-  bool mCapturerStarted = false;
-  std::unique_ptr<EventWrapper> mTimeEvent;
-#if defined(_WIN32)
-  std::unique_ptr<rtc::PlatformUIThread> mCaptureThread;
-#else
-  std::unique_ptr<rtc::PlatformThread> mCaptureThread;
-#endif
+  
+  nsCOMPtr<nsIThread> mCaptureThread;
+  
+  webrtc::SequenceChecker mCaptureThreadChecker;
+  
+  
+  nsCOMPtr<nsITimer> mCaptureTimer;
+  
+  
+  mozilla::TimeDuration mRequestedCaptureInterval;
+  
   
   int64_t mLastFrameTimeMs;
   
-  std::atomic<bool> mRunning;
+  
+  bool mRunning;
+  
   
   mozilla::DataMutex<std::set<rtc::VideoSinkInterface<VideoFrame>*>> mCallbacks;
 };

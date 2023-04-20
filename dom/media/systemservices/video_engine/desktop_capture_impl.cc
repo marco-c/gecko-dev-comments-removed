@@ -15,10 +15,9 @@
 #include <string>
 
 #include "CamerasTypes.h"
-#include "PerformanceRecorder.h"
-
+#include "VideoEngine.h"
+#include "VideoUtils.h"
 #include "api/video/i420_buffer.h"
-#include "base/scoped_nsautorelease_pool.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "libyuv.h"  
 #include "modules/include/module_common_types.h"
@@ -29,20 +28,25 @@
 #include "rtc_base/ref_counted_object.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
+#include "modules/desktop_capture/desktop_and_cursor_composer.h"
 #include "modules/desktop_capture/desktop_frame.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/video_capture/video_capture.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/SyncRunnable.h"
+#include "mozilla/TaskQueue.h"
+#include "mozilla/TimeStamp.h"
+#include "nsThreadUtils.h"
 
-#include "PerformanceRecorder.h"
+using mozilla::NewRunnableMethod;
+using mozilla::TimeDuration;
+using mozilla::camera::CaptureDeviceType;
+using mozilla::camera::CaptureEngine;
 
-#if defined(_WIN32)
-#  include "platform_uithread.h"
-#else
-#  include "rtc_base/platform_thread.h"
-#endif
+static void CaptureFrameOnThread(nsITimer* aTimer, void* aClosure) {
+  static_cast<webrtc::DesktopCaptureImpl*>(aClosure)->CaptureFrameOnThread();
+}
 
 namespace webrtc {
 
@@ -379,7 +383,9 @@ static DesktopCaptureOptions CreateDesktopCaptureOptions() {
   return options;
 }
 
-int32_t DesktopCaptureImpl::LazyInitDesktopCapturer() {
+int32_t DesktopCaptureImpl::EnsureCapturer() {
+  MOZ_DIAGNOSTIC_ASSERT(mControlThread->IsOnCurrentThread());
+
   if (mCapturer) {
     
 
@@ -463,21 +469,12 @@ DesktopCaptureImpl::DesktopCaptureImpl(const int32_t aId, const char* aUniqueId,
                                       aId)),
       mDeviceUniqueId(aUniqueId),
       mDeviceType(aType),
-      mTimeEvent(EventWrapper::Create()),
+      mControlThread(mozilla::GetCurrentSerialEventTarget()),
       mLastFrameTimeMs(rtc::TimeMillis()),
       mRunning(false),
       mCallbacks("DesktopCaptureImpl::mCallbacks") {}
 
-DesktopCaptureImpl::~DesktopCaptureImpl() {
-  mTimeEvent->Set();
-  if (mCaptureThread) {
-#if defined(_WIN32)
-    mCaptureThread->Stop();
-#else
-    mCaptureThread->Finalize();
-#endif
-  }
-}
+DesktopCaptureImpl::~DesktopCaptureImpl() { MOZ_ASSERT(!mCaptureThread); }
 
 void DesktopCaptureImpl::RegisterCaptureDataCallback(
     rtc::VideoSinkInterface<VideoFrame>* aDataCallback) {
@@ -504,42 +501,118 @@ int32_t DesktopCaptureImpl::StopCaptureIfAllClientsClose() {
   return StopCapture();
 }
 
-int32_t DesktopCaptureImpl::DeliverCapturedFrame(
-    webrtc::VideoFrame& aCaptureFrame) {
+int32_t DesktopCaptureImpl::SetCaptureRotation(VideoRotation aRotation) {
+  MOZ_ASSERT_UNREACHABLE("Unused");
+  return -1;
+}
+
+bool DesktopCaptureImpl::SetApplyRotation(bool aEnable) { return true; }
+
+int32_t DesktopCaptureImpl::StartCapture(
+    const VideoCaptureCapability& aCapability) {
+  MOZ_DIAGNOSTIC_ASSERT(mControlThread->IsOnCurrentThread());
+
+  if (mRunning) {
+    return 0;
+  }
+
+  if (int32_t err = EnsureCapturer(); err) {
+    return err;
+  }
+
+  mRequestedCapability = aCapability;
+
+  MOZ_DIAGNOSTIC_ASSERT(!mCaptureThread);
+  mCaptureThreadChecker.Detach();
+  nsIThreadManager::ThreadCreationOptions options;
+#ifdef XP_WIN
   
-  aCaptureFrame.set_timestamp_us(rtc::TimeMicros());
+  options.isUiThread = true;
+#endif
+  NS_NewNamedThread(
+      "DesktopCapture", getter_AddRefs(mCaptureThread),
+      NS_NewRunnableFunction(
+          "DesktopCaptureImpl::InitOnThread",
+          [this, self = RefPtr(this),
+           maxFps = std::max(aCapability.maxFPS, 1)] { InitOnThread(maxFps); }),
+      options);
 
-  if (aCaptureFrame.render_time_ms() == mLastFrameTimeMs) {
-    
-    return -1;
-  }
-  mLastFrameTimeMs = aCaptureFrame.render_time_ms();
-
-  auto callbacks = mCallbacks.Lock();
-  for (auto* callback : *callbacks) {
-    callback->OnFrame(aCaptureFrame);
-  }
+  mRunning = true;
 
   return 0;
 }
 
+bool DesktopCaptureImpl::FocusOnSelectedSource() {
+  MOZ_DIAGNOSTIC_ASSERT(mControlThread->IsOnCurrentThread());
+  if (uint32_t err = EnsureCapturer(); err) {
+    return false;
+  }
 
+  return mCapturer->FocusOnSelectedSource();
+}
 
-int32_t DesktopCaptureImpl::IncomingFrame(
-    uint8_t* aVideoFrame, size_t aVideoFrameLength, size_t aWidthWithPadding,
-    const VideoCaptureCapability& aFrameInfo) {
-  int64_t startProcessTime = rtc::TimeNanos();
-  rtc::CritScope cs(&mApiCs);
-
-  const int32_t width = aFrameInfo.width;
-  const int32_t height = aFrameInfo.height;
+int32_t DesktopCaptureImpl::StopCapture() {
+  MOZ_DIAGNOSTIC_ASSERT(mControlThread->IsOnCurrentThread());
+  if (mCaptureThread) {
+    
+    
+    MOZ_ALWAYS_SUCCEEDS(mozilla::SyncRunnable::DispatchToThread(
+        mCaptureThread,
+        NewRunnableMethod(__func__, this,
+                          &DesktopCaptureImpl::ShutdownOnThread)));
+  }
 
   
-  if (aFrameInfo.videoType != VideoType::kMJPEG &&
-      CalcBufferSize(aFrameInfo.videoType, width, abs(height)) !=
-          aVideoFrameLength) {
+  
+  mCapturer = nullptr;
+
+  if (mCaptureThread) {
+    
+    mCaptureThread->AsyncShutdown();
+    mCaptureThread = nullptr;
+  }
+
+  mRunning = false;
+  return 0;
+}
+
+bool DesktopCaptureImpl::CaptureStarted() {
+  MOZ_ASSERT_UNREACHABLE("Unused");
+  return true;
+}
+
+int32_t DesktopCaptureImpl::CaptureSettings(VideoCaptureCapability& aSettings) {
+  MOZ_ASSERT_UNREACHABLE("Unused");
+  return -1;
+}
+
+void DesktopCaptureImpl::OnCaptureResult(DesktopCapturer::Result aResult,
+                                         std::unique_ptr<DesktopFrame> aFrame) {
+  MOZ_ASSERT(mCaptureThreadChecker.IsCurrent());
+  if (!aFrame) {
+    return;
+  }
+
+  int64_t startProcessTimeNs = rtc::TimeNanos();
+
+  uint8_t* videoFrame = aFrame->data();
+  VideoCaptureCapability frameInfo;
+  frameInfo.width = aFrame->size().width();
+  frameInfo.height = aFrame->size().height();
+  frameInfo.videoType = VideoType::kARGB;
+
+  size_t videoFrameLength =
+      frameInfo.width * frameInfo.height * DesktopFrame::kBytesPerPixel;
+
+  const int32_t width = frameInfo.width;
+  const int32_t height = frameInfo.height;
+
+  
+  if (frameInfo.videoType != VideoType::kMJPEG &&
+      CalcBufferSize(frameInfo.videoType, width, abs(height)) !=
+          videoFrameLength) {
     RTC_LOG(LS_ERROR) << "Wrong incoming frame length.";
-    return -1;
+    return;
   }
 
   int stride_y = width;
@@ -556,185 +629,91 @@ int32_t DesktopCaptureImpl::IncomingFrame(
       I420Buffer::Create(width, abs(height), stride_y, stride_uv, stride_uv);
 
   const int conversionResult = libyuv::ConvertToI420(
-      aVideoFrame, aVideoFrameLength, buffer->MutableDataY(), buffer->StrideY(),
+      videoFrame, videoFrameLength, buffer->MutableDataY(), buffer->StrideY(),
       buffer->MutableDataU(), buffer->StrideU(), buffer->MutableDataV(),
       buffer->StrideV(), 0, 0,  
-      static_cast<int>(aWidthWithPadding), height, width, height,
-      libyuv::kRotate0, ConvertVideoType(aFrameInfo.videoType));
+      aFrame->stride() / DesktopFrame::kBytesPerPixel, height, width, height,
+      libyuv::kRotate0, ConvertVideoType(frameInfo.videoType));
   if (conversionResult != 0) {
     RTC_LOG(LS_ERROR) << "Failed to convert capture frame from type "
-                      << static_cast<int>(aFrameInfo.videoType) << "to I420.";
-    return -1;
+                      << static_cast<int>(frameInfo.videoType) << "to I420.";
+    return;
   }
   rec.Record();
 
-  VideoFrame captureFrame(buffer, 0, rtc::TimeMillis(), kVideoRotation_0);
+  NotifyOnFrame(VideoFrame::Builder()
+                    .set_video_frame_buffer(buffer)
+                    .set_timestamp_us(rtc::TimeMicros())
+                    .build());
 
-  DeliverCapturedFrame(captureFrame);
+  const int64_t processTimeMs =
+      (rtc::TimeNanos() - startProcessTimeNs) / rtc::kNumNanosecsPerMillisec;
 
-  const int64_t processTime =
-      (rtc::TimeNanos() - startProcessTime) / rtc::kNumNanosecsPerMillisec;
-
-  if (processTime > 10) {
-    RTC_LOG(LS_WARNING) << "Too long processing time of incoming frame: "
-                        << processTime << " ms";
+  if (processTimeMs > 10) {
+    RTC_LOG(LS_WARNING)
+        << "Too long processing time of incoming frame with dimensions "
+        << width << "x" << height << ": " << processTimeMs << " ms";
   }
-
-  return 0;
 }
 
-int32_t DesktopCaptureImpl::SetCaptureRotation(VideoRotation aRotation) {
-  MOZ_ASSERT_UNREACHABLE("Unused");
-  return -1;
-}
-
-bool DesktopCaptureImpl::SetApplyRotation(bool aEnable) { return true; }
-
-void DesktopCaptureImpl::LazyInitCaptureThread() {
-  MOZ_ASSERT(mCapturer,
-             "DesktopCapturer must be initialized before the capture thread");
-  if (mCaptureThread) {
+void DesktopCaptureImpl::NotifyOnFrame(const VideoFrame& aFrame) {
+  MOZ_ASSERT(mCaptureThreadChecker.IsCurrent());
+  if (aFrame.render_time_ms() == mLastFrameTimeMs) {
+    
     return;
   }
-#if defined(_WIN32)
-  mCaptureThread = std::make_unique<rtc::PlatformUIThread>(
-      std::function([self = (void*)this]() { Run(self); }),
-      "ScreenCaptureThread", rtc::ThreadAttributes{});
-  mCaptureThread->RequestCallbackTimer(mMaxFPSNeeded);
-#else
-  auto self = rtc::scoped_refptr<DesktopCaptureImpl>(this);
-  mCaptureThread =
-      std::make_unique<rtc::PlatformThread>(rtc::PlatformThread::SpawnJoinable(
-          [self] { self->process(); }, "ScreenCaptureThread"));
-#endif
-  mRunning = true;
-}
-
-int32_t DesktopCaptureImpl::StartCapture(
-    const VideoCaptureCapability& aCapability) {
-  rtc::CritScope lock(&mApiCs);
-  
-  
-  
-  if (mRunning) {
-    return 0;
+  mLastFrameTimeMs = aFrame.render_time_ms();
+  auto callbacks = mCallbacks.Lock();
+  for (auto* cb : *callbacks) {
+    cb->OnFrame(aFrame);
   }
-
-  if (int32_t err = LazyInitDesktopCapturer(); err) {
-    return err;
-  }
-  mRunning = true;
-  mRequestedCapability = aCapability;
-  mMaxFPSNeeded = mRequestedCapability.maxFPS > 0
-                      ? 1000 / mRequestedCapability.maxFPS
-                      : 1000;
-  LazyInitCaptureThread();
-
-  return 0;
 }
 
-bool DesktopCaptureImpl::FocusOnSelectedSource() {
-  if (uint32_t err = LazyInitDesktopCapturer(); err) {
-    return false;
-  }
-
-  return mCapturer->FocusOnSelectedSource();
-}
-
-int32_t DesktopCaptureImpl::StopCapture() {
-  if (mRunning) {
-    mRunning = false;
-    MOZ_ASSERT(mCaptureThread, "Capturer thread should be initialized.");
-
-#if defined(_WIN32)
-    
-    mCaptureThread->Stop();
-#else
-    
-    mCaptureThread->Finalize();
-#endif
-    mCapturer.reset();
-    mCapturerStarted = false;
-    mCaptureThread.reset();
-    return 0;
-  }
-  return -1;
-}
-
-bool DesktopCaptureImpl::CaptureStarted() { return mRunning; }
-
-int32_t DesktopCaptureImpl::CaptureSettings(VideoCaptureCapability& aSettings) {
-  MOZ_ASSERT_UNREACHABLE("Unused");
-  return -1;
-}
-
-void DesktopCaptureImpl::OnCaptureResult(DesktopCapturer::Result aResult,
-                                         std::unique_ptr<DesktopFrame> aFrame) {
-  if (!aFrame) {
-    return;
-  }
-  uint8_t* videoFrame = aFrame->data();
-  VideoCaptureCapability frameInfo;
-  frameInfo.width = aFrame->size().width();
-  frameInfo.height = aFrame->size().height();
-  frameInfo.videoType = VideoType::kARGB;
-
-  size_t videoFrameLength =
-      frameInfo.width * frameInfo.height * DesktopFrame::kBytesPerPixel;
-  IncomingFrame(videoFrame, videoFrameLength,
-                aFrame->stride() / DesktopFrame::kBytesPerPixel, frameInfo);
-}
-
-void DesktopCaptureImpl::process() {
-  
-  if (!mCapturerStarted) {
-    mCapturer->Start(this);
-    mCapturerStarted = true;
-  }
-#if defined(WEBRTC_WIN)
-  ProcessIter();
-#else
-  do {
-    ProcessIter();
-  } while (mRunning);
-#endif
-}
-
-void DesktopCaptureImpl::ProcessIter() {
-
-#if !defined(_WIN32)
-  int64_t startProcessTime = rtc::TimeNanos();
-#endif
+void DesktopCaptureImpl::InitOnThread(int aFramerate) {
+  MOZ_DIAGNOSTIC_ASSERT(mCaptureThreadChecker.IsCurrent());
 
   
-  base::ScopedNSAutoreleasePool autoreleasepool;
+  mCapturer->Start(this);
 
-#if defined(WEBRTC_MAC)
-  
-  CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.01, true);
-#endif
+  mCaptureTimer = NS_NewTimer();
+  mRequestedCaptureInterval =
+      TimeDuration::FromSeconds(1. / static_cast<double>(aFramerate));
+  MOZ_ASSERT(!mRequestedCaptureInterval.IsZero());
 
+  CaptureFrameOnThread();
+}
+
+void DesktopCaptureImpl::ShutdownOnThread() {
+  MOZ_DIAGNOSTIC_ASSERT(mCaptureThreadChecker.IsCurrent());
+  if (mCaptureTimer) {
+    mCaptureTimer->Cancel();
+    mCaptureTimer = nullptr;
+  }
+  mRequestedCaptureInterval = mozilla::TimeDuration();
+}
+
+void DesktopCaptureImpl::CaptureFrameOnThread() {
+  MOZ_DIAGNOSTIC_ASSERT(mCaptureThreadChecker.IsCurrent());
+
+  auto start = mozilla::TimeStamp::Now();
   mCapturer->CaptureFrame();
+  auto end = mozilla::TimeStamp::Now();
 
-#if !defined(_WIN32)
-  const int32_t processTimeMs = static_cast<int32_t>(
-      (rtc::TimeNanos() - startProcessTime) / rtc::kNumNanosecsPerMillisec);
   
-  const float sleepTimeFactor = (100.0f / kMaxDesktopCaptureCpuUsage) - 1.0f;
-  const int32_t sleepTimeMs =
-      static_cast<int32_t>(sleepTimeFactor * static_cast<float>(processTimeMs));
-  mTimeEvent->Wait(std::max(static_cast<int32_t>(mMaxFPSNeeded), sleepTimeMs));
-#endif
+  const auto duration = end - start;
+  const auto timeUntilRequestedCapture = mRequestedCaptureInterval - duration;
 
-#if defined(WEBRTC_WIN)
+  
+  constexpr float sleepTimeFactor =
+      (100.0f / kMaxDesktopCaptureCpuUsage) - 1.0f;
+  static_assert(sleepTimeFactor >= 0.0);
+  static_assert(sleepTimeFactor < 100.0);
+  const auto sleepTime = duration.MultDouble(sleepTimeFactor);
 
-
-#elif defined(WEBRTC_MAC)
-  sched_yield();
-#else
-  static const struct timespec ts_null = {0};
-  nanosleep(&ts_null, nullptr);
-#endif
+  mCaptureTimer->InitHighResolutionWithNamedFuncCallback(
+      &::CaptureFrameOnThread, this,
+      std::max(timeUntilRequestedCapture, sleepTime), nsITimer::TYPE_ONE_SHOT,
+      "DesktopCaptureImpl::mCaptureTimer");
 }
 
 }  
