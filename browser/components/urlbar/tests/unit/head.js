@@ -836,10 +836,14 @@ function makeSearchResult(
 
 
 
+
+
+
 function makeVisitResult(
   queryContext,
   {
     title,
+    fallbackTitle,
     uri,
     iconUri,
     providerName,
@@ -850,8 +854,15 @@ function makeVisitResult(
 ) {
   let payload = {
     url: [uri, UrlbarUtils.HIGHLIGHT.TYPED],
-    title: [title, UrlbarUtils.HIGHLIGHT.TYPED],
   };
+
+  if (title) {
+    payload.title = [title, UrlbarUtils.HIGHLIGHT.TYPED];
+  }
+
+  if (fallbackTitle) {
+    payload.fallbackTitle = [fallbackTitle, UrlbarUtils.HIGHLIGHT.TYPED];
+  }
 
   if (iconUri) {
     payload.icon = iconUri;
@@ -898,14 +909,11 @@ function makeVisitResult(
 
 
 
-
-
 async function check_results({
   context,
   incompleteSearch,
   autofilled,
   completed,
-  hasAutofillTitle,
   matches = [],
 } = {}) {
   if (!context) {
@@ -961,11 +969,6 @@ async function check_results({
         "The completed autofill value is correct."
       );
     }
-    Assert.equal(
-      context.results[0].autofill.hasTitle,
-      hasAutofillTitle,
-      "The hasTitle flag is correct."
-    );
   }
   if (context.results.length != matches.length) {
     info("Actual results: " + JSON.stringify(context.results));

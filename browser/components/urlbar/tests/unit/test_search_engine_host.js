@@ -66,12 +66,11 @@ add_task(async function test_searchEngine_noautoFill() {
     context,
     autofilled: "my.search.com/",
     completed: "http://my.search.com/",
-    hasAutofillTitle: false,
     matches: [
       
       makeVisitResult(context, {
         uri: "http://my.search.com/",
-        title: "my.search.com",
+        fallbackTitle: "my.search.com",
         heuristic: true,
       }),
       makeSearchResult(context, {
