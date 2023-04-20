@@ -178,7 +178,8 @@
     }
 
     async setAlign() {
-      if (!this.parentElement || this.parentIsXULPanel()) {
+      const hostElement = this.parentElement || this.getRootNode().host;
+      if (!hostElement || this.parentIsXULPanel()) {
         
         
         
@@ -190,7 +191,7 @@
       this.setAttribute("showing", "true");
       
       
-      this.parentElement.style.overflow = "hidden";
+      hostElement.style.overflow = "hidden";
 
       
       let {
@@ -211,7 +212,7 @@
         requestAnimationFrame(() =>
           setTimeout(() => {
             let target = this.getTargetForEvent(this.triggeringEvent);
-            let anchorNode = target || this.parentElement;
+            let anchorElement = target || hostElement;
             
             
             let getBounds = el =>
@@ -219,7 +220,7 @@
                 ? window.windowUtils.getBoundsWithoutFlushing(el)
                 : el.getBoundingClientRect();
             
-            let anchorBounds = getBounds(anchorNode);
+            let anchorBounds = getBounds(anchorElement);
             let panelBounds = getBounds(this);
             resolve({
               anchorHeight: anchorBounds.height,
@@ -266,7 +267,7 @@
       
       this.setAttribute("align", align);
       this.setAttribute("valign", valign);
-      this.parentElement.style.overflow = "";
+      hostElement.style.overflow = "";
 
       this.style.left = `${leftOffset + winScrollX}px`;
       this.style.top = `${topOffset + winScrollY}px`;
