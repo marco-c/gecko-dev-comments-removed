@@ -2349,6 +2349,66 @@ async function setLogPoint(dbg, index, value) {
 
 
 
+function openProjectSearch(dbg) {
+  info("Opening the project search panel");
+  synthesizeKeyShortcut("CmdOrCtrl+Shift+F");
+  return waitForState(
+    dbg,
+    state => dbg.selectors.getActiveSearch() === "project"
+  );
+}
+
+
+
+
+
+
+
+
+async function doProjectSearch(dbg, searchTerm) {
+  type(dbg, searchTerm);
+  pressKey(dbg, "Enter");
+  return waitForSearchResults(dbg);
+}
+
+
+
+
+
+
+
+async function waitForSearchResults(dbg) {
+  await waitForState(dbg, state => state.projectTextSearch.status === "DONE");
+  return findAllElements(dbg, "projectSearchFileResults");
+}
+
+
+
+
+
+
+
+function closeProjectSearch(dbg) {
+  info("Closing the project search panel");
+  synthesizeKeyShortcut("CmdOrCtrl+Shift+F");
+  return waitForState(dbg, state => !dbg.selectors.getActiveSearch());
+}
+
+
+
+
+
+
+
+function getExpandedResultsCount(dbg) {
+  return findAllElements(dbg, "projectSearchExpandedResults").length;
+}
+
+
+
+
+
+
 
 
 
