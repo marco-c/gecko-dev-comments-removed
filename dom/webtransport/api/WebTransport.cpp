@@ -21,9 +21,7 @@ namespace mozilla::dom {
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(WebTransport, mGlobal,
                                       mIncomingUnidirectionalStreams,
-                                      mIncomingBidirectionalStreams,
-                                      mSendStreams, mReceiveStreams, mDatagrams,
-                                      mReady, mClosed)
+                                      mIncomingBidirectionalStreams, mReady)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(WebTransport)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(WebTransport)
@@ -33,9 +31,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(WebTransport)
 NS_INTERFACE_MAP_END
 
 WebTransport::WebTransport(nsIGlobalObject* aGlobal)
-    : mGlobal(aGlobal),
-      mState(WebTransportState::CONNECTING),
-      mReliability(WebTransportReliabilityMode::Pending) {
+    : mGlobal(aGlobal), mState(WebTransportState::CONNECTING) {
   LOG(("Creating WebTransport %p", this));
 }
 
@@ -74,11 +70,6 @@ bool WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   using mozilla::ipc::PBackgroundChild;
 
   mReady = Promise::Create(mGlobal, aError);
-  if (NS_WARN_IF(aError.Failed())) {
-    return false;
-  }
-
-  mClosed = Promise::Create(mGlobal, aError);
   if (NS_WARN_IF(aError.Failed())) {
     return false;
   }
@@ -122,58 +113,38 @@ bool WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
     aError.ThrowSyntaxError("Invalid WebTransport URL");
     return false;
   }
-  bool dedicated =
-      !aOptions.mAllowPooling;  
-  bool requireUnreliable = aOptions.mRequireUnreliable;
-  WebTransportCongestionControl congestionControl = aOptions.mCongestionControl;
-  if (aOptions.mServerCertificateHashes.WasPassed()) {
-    
-    aError.ThrowNotSupportedError("No support for serverCertificateHashes yet");
-    
-    
-    return false;
-  }
-
+  
+  
   
   backgroundChild
-      ->SendCreateWebTransportParent(aURL, dedicated, requireUnreliable,
-                                     (uint32_t)congestionControl,
-                                     
+      ->SendCreateWebTransportParent(aURL ,
                                      std::move(parentEndpoint))
-      ->Then(GetCurrentSerialEventTarget(), __func__,
-             [self = RefPtr{this},
-              child](PBackgroundChild::CreateWebTransportParentPromise::
-                         ResolveOrRejectValue&& aResult) {
-               
-               
-               
-               
-               nsresult rv = aResult.IsReject()
-                                 ? NS_ERROR_FAILURE
-                                 : Get<0>(aResult.ResolveValue());
-               if (NS_FAILED(rv)) {
-                 self->RejectWaitingConnection(rv);
-               } else {
-                 
-                 
-                 self->ResolveWaitingConnection(
-                     static_cast<WebTransportReliabilityMode>(
-                         Get<1>(aResult.ResolveValue())),
-                     child);
-               }
-             });
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [self = RefPtr{this}, child](nsresult rv) {
+            if (NS_FAILED(rv)) {
+              self->RejectWaitingConnection(rv);
+            } else {
+              
+              
+              self->ResolveWaitingConnection(child);
+            }
+          },
+          [self = RefPtr<WebTransport>(this)](
+              const mozilla::ipc::ResponseRejectReason&) {
+            
+            
+            self->RejectWaitingConnection(NS_ERROR_FAILURE);
+          });
 
   return true;
 }
 
-void WebTransport::ResolveWaitingConnection(
-    WebTransportReliabilityMode aReliability, WebTransportChild* aChild) {
-  LOG(("Resolved Connection %p, reliability = %u", this,
-       (unsigned)aReliability));
+void WebTransport::ResolveWaitingConnection(WebTransportChild* aChild) {
+  LOG(("Resolved Connection %p", this));
   MOZ_ASSERT(mState == WebTransportState::CONNECTING);
   mChild = aChild;
   mState = WebTransportState::CONNECTED;
-  mReliability = aReliability;
 
   mReady->MaybeResolve(true);
 }
@@ -184,9 +155,6 @@ void WebTransport::RejectWaitingConnection(nsresult aRv) {
   mState = WebTransportState::FAILED;
   LOG(("Rejected connection %x", (uint32_t)aRv));
 
-  
-  
-  
   mReady->MaybeReject(aRv);
 }
 
@@ -219,7 +187,10 @@ already_AddRefed<Promise> WebTransport::GetStats(ErrorResult& aError) {
 
 already_AddRefed<Promise> WebTransport::Ready() { return do_AddRef(mReady); }
 
-WebTransportReliabilityMode WebTransport::Reliability() { return mReliability; }
+WebTransportReliabilityMode WebTransport::Reliability() {
+  
+  return WebTransportReliabilityMode::Pending;
+}
 
 WebTransportCongestionControl WebTransport::CongestionControl() {
   
