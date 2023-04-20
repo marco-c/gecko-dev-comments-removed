@@ -28,7 +28,7 @@
 namespace webrtc {
 class AudioSinkInterface;
 
-class AudioReceiveStream : public MediaReceiveStreamInterface {
+class AudioReceiveStreamInterface : public MediaReceiveStreamInterface {
  public:
   struct Stats {
     Stats();
@@ -208,8 +208,14 @@ class AudioReceiveStream : public MediaReceiveStreamInterface {
   virtual const std::vector<RtpExtension>& GetRtpExtensions() const = 0;
 
  protected:
-  virtual ~AudioReceiveStream() {}
+  virtual ~AudioReceiveStreamInterface() {}
 };
+
+
+
+using AudioReceiveStream [[deprecated("Use AudioReceiveStreamInterface")]] =
+    AudioReceiveStreamInterface;
+
 }  
 
 #endif  
