@@ -12,7 +12,7 @@ const certOverrideService = Cc[
   "@mozilla.org/security/certoverride;1"
 ].getService(Ci.nsICertOverrideService);
 
-function setup() {
+add_setup(async function setup() {
   
   
   Services.prefs.setBoolPref(
@@ -32,13 +32,12 @@ function setup() {
   
   Services.env.set("MOZ_TLS_ECH_ALPN_FLAG", 1);
 
-  add_tls_server_setup(
+  await asyncStartTLSTestServer(
     "EncryptedClientHelloServer",
     "../../../security/manager/ssl/tests/unit/test_encrypted_client_hello"
   );
-}
+});
 
-setup();
 registerCleanupFunction(async () => {
   trr_clear_prefs();
   Services.prefs.clearUserPref("network.trr.mode");
