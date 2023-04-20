@@ -500,7 +500,7 @@ var gPermissionPanel = {
         if (permContainer) {
           anchor.appendChild(permContainer);
         }
-      } else if (["camera", "screen", "microphone"].includes(id)) {
+      } else if (["camera", "screen", "microphone", "speaker"].includes(id)) {
         item = this._createWebRTCPermissionItem(permission, id, key);
         if (!item) {
           continue;
@@ -890,7 +890,7 @@ var gPermissionPanel = {
 
 
   _createWebRTCPermissionItem(permission, id, key) {
-    if (id != "camera" && id != "microphone" && id != "screen") {
+    if (!["camera", "screen", "microphone", "speaker"].includes(id)) {
       throw new Error("Invalid permission id for WebRTC permission item.");
     }
     
