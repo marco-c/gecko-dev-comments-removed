@@ -66,6 +66,7 @@ struct MOZ_STACK_CLASS MediaFormatReaderInit {
   already_AddRefed<GMPCrashHelper> mCrashHelper;
   
   MediaDecoderOwnerID mMediaDecoderOwnerID = nullptr;
+  Maybe<TrackingId> mTrackingId;
 };
 
 DDLoggedTypeDeclName(MediaFormatReader);
@@ -866,6 +867,8 @@ class MediaFormatReader final
 
   
   Maybe<uint64_t> mMediaEngineId;
+
+  const Maybe<TrackingId> mTrackingId;
 };
 
 }  

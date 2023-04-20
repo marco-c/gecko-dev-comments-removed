@@ -375,7 +375,7 @@ RemoteDecoderManagerChild::CreateVideoDecoder(
             params.mKnowsCompositor
                 ? Some(params.mKnowsCompositor->GetTextureFactoryIdentifier())
                 : Nothing(),
-            params.mMediaEngineId);
+            params.mMediaEngineId, params.mTrackingId);
         if (NS_FAILED(result)) {
           return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
               result, __func__);
@@ -656,7 +656,8 @@ PRemoteDecoderChild* RemoteDecoderManagerChild::AllocPRemoteDecoderChild(
     const RemoteDecoderInfoIPDL& ,
     const CreateDecoderParams::OptionSet& aOptions,
     const Maybe<layers::TextureFactoryIdentifier>& aIdentifier,
-    const Maybe<uint64_t>& aMediaEngineId) {
+    const Maybe<uint64_t>& aMediaEngineId,
+    const Maybe<TrackingId>& aTrackingId) {
   
   
   MOZ_ASSERT(false,

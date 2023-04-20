@@ -24,7 +24,8 @@ class MediaDataCodec {
 
 
 
-  static WebrtcVideoDecoder* CreateDecoder(webrtc::VideoCodecType aCodecType);
+  static WebrtcVideoDecoder* CreateDecoder(webrtc::VideoCodecType aCodecType,
+                                           TrackingId aTrackingId);
 };
 }  
 
