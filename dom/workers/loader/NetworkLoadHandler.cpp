@@ -213,7 +213,9 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
 
   
   
-  if (loadContext->IsTopLevel()) {
+  bool isDynamic = loadContext->mRequest->IsModuleRequest() &&
+                   loadContext->mRequest->AsModuleRequest()->IsDynamicImport();
+  if (loadContext->IsTopLevel() && !isDynamic) {
     
     mWorkerRef->Private()->SetBaseURI(finalURI);
 
