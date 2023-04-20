@@ -134,7 +134,6 @@ pub enum SystemColor {
     Buttonhighlight,
     Buttonshadow,
     Buttontext,
-    Buttonborder,
     
     Captiontext,
     #[parse(aliases = "-moz-field")]
@@ -144,9 +143,6 @@ pub enum SystemColor {
     MozDisabledfield,
     #[parse(aliases = "-moz-fieldtext")]
     Fieldtext,
-
-    Mark,
-    Marktext,
 
     
     MozComboboxtext,
