@@ -8,7 +8,9 @@ do_get_profile();
 
 
 add_task(async function() {
-  const { Sanitizer } = ChromeUtils.import("resource:///modules/Sanitizer.jsm");
+  const { Sanitizer } = ChromeUtils.importESModule(
+    "resource:///modules/Sanitizer.sys.mjs"
+  );
 
   Services.prefs.setBoolPref(Sanitizer.PREF_NEWTAB_SEGREGATION, false);
 

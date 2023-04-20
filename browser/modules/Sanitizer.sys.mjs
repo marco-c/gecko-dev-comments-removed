@@ -1,26 +1,22 @@
+// -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-
-
-
-var EXPORTED_SYMBOLS = ["Sanitizer"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
+  PrincipalsCollector: "resource://gre/modules/PrincipalsCollector.sys.mjs",
 });
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   FormHistory: "resource://gre/modules/FormHistory.jsm",
-  PrincipalsCollector: "resource://gre/modules/PrincipalsCollector.jsm",
+
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.jsm",
 });
@@ -37,46 +33,46 @@ function log(msg) {
   logConsole.log(msg);
 }
 
-
+// Used as unique id for pending sanitizations.
 var gPendingSanitizationSerial = 0;
 
-var Sanitizer = {
-  
-
-
+export var Sanitizer = {
+  /**
+   * Whether we should sanitize on shutdown.
+   */
   PREF_SANITIZE_ON_SHUTDOWN: "privacy.sanitize.sanitizeOnShutdown",
 
-  
-
-
-
-
-
+  /**
+   * During a sanitization this is set to a JSON containing an array of the
+   * pending sanitizations. This allows to retry sanitizations on startup in
+   * case they dind't run or were interrupted by a crash.
+   * Use addPendingSanitization and removePendingSanitization to manage it.
+   */
   PREF_PENDING_SANITIZATIONS: "privacy.sanitize.pending",
 
-  
-
-
+  /**
+   * Pref branches to fetch sanitization options from.
+   */
   PREF_CPD_BRANCH: "privacy.cpd.",
   PREF_SHUTDOWN_BRANCH: "privacy.clearOnShutdown.",
 
-  
-
-
-
+  /**
+   * The fallback timestamp used when no argument is given to
+   * Sanitizer.getClearRange.
+   */
   PREF_TIMESPAN: "privacy.sanitize.timeSpan",
 
-  
-
-
-
+  /**
+   * Pref to newTab segregation. If true, on shutdown, the private container
+   * used in about:newtab is cleaned up.  Exposed because used in tests.
+   */
   PREF_NEWTAB_SEGREGATION:
     "privacy.usercontext.about_newtab_segregation.enabled",
 
-  
-
-
-
+  /**
+   * Time span constants corresponding to values of the privacy.sanitize.timeSpan
+   * pref.  Used to determine how much history to clear, for various items
+   */
   TIMESPAN_EVERYTHING: 0,
   TIMESPAN_HOUR: 1,
   TIMESPAN_2HOURS: 2,
@@ -85,29 +81,29 @@ var Sanitizer = {
   TIMESPAN_5MIN: 5,
   TIMESPAN_24HOURS: 6,
 
-  
-
-
-
-
-
+  /**
+   * Whether we should sanitize on shutdown.
+   * When this is set, a pending sanitization should also be added and removed
+   * when shutdown sanitization is complete. This allows to retry incomplete
+   * sanitizations on startup.
+   */
   shouldSanitizeOnShutdown: false,
 
-  
-
-
+  /**
+   * Whether we should sanitize the private container for about:newtab.
+   */
   shouldSanitizeNewTabContainer: false,
 
-  
-
-
-
-
-
-
-
+  /**
+   * Shows a sanitization dialog to the user. Returns after the dialog box has
+   * closed.
+   *
+   * @param parentWindow the browser window to use as parent for the created
+   *        dialog.
+   * @throws if parentWindow is undefined or doesn't have a gDialogBox.
+   */
   showUI(parentWindow) {
-    
+    // Treat the hidden window as not being a parent window:
     if (
       parentWindow?.document.documentURI ==
       "chrome://browser/content/hiddenWindowMac.xhtml"
@@ -129,41 +125,41 @@ var Sanitizer = {
     }
   },
 
-  
-
-
-
-
+  /**
+   * Performs startup tasks:
+   *  - Checks if sanitizations were not completed during the last session.
+   *  - Registers sanitize-on-shutdown.
+   */
   async onStartup() {
-    
-    
+    // First, collect pending sanitizations from the last session, before we
+    // add pending sanitizations for this session.
     let pendingSanitizations = getAndClearPendingSanitizations();
 
-    
+    // Check if we should sanitize on shutdown.
     this.shouldSanitizeOnShutdown = Services.prefs.getBoolPref(
       Sanitizer.PREF_SANITIZE_ON_SHUTDOWN,
       false
     );
     Services.prefs.addObserver(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN, this, true);
-    
+    // Add a pending shutdown sanitization, if necessary.
     if (this.shouldSanitizeOnShutdown) {
       let itemsToClear = getItemsToClearFromPrefBranch(
         Sanitizer.PREF_SHUTDOWN_BRANCH
       );
       addPendingSanitization("shutdown", itemsToClear, {});
     }
-    
-    
-    
+    // Shutdown sanitization is always pending, but the user may change the
+    // sanitize on shutdown prefs during the session. Then the pending
+    // sanitization would become stale and must be updated.
     Services.prefs.addObserver(Sanitizer.PREF_SHUTDOWN_BRANCH, this, true);
 
-    
+    // Make sure that we are triggered during shutdown.
     let shutdownClient = lazy.PlacesUtils.history.shutdownClient.jsclient;
-    
-    
-    
-    
-    
+    // We need to pass to sanitize() (through sanitizeOnShutdown) a state object
+    // that tracks the status of the shutdown blocker. This `progress` object
+    // will be updated during sanitization and reported with the crash in case of
+    // a shutdown timeout.
+    // We use the `options` argument to pass the `progress` object to sanitize().
     let progress = { isShutdown: true, clearHonoringExceptions: true };
     shutdownClient.addBlocker(
       "sanitize.js: Sanitize on shutdown",
@@ -185,11 +181,11 @@ var Sanitizer = {
       sanitizeNewTabSegregation();
     }
 
-    
-    
+    // Finally, run the sanitizations that were left pending, because we crashed
+    // before completing them.
     for (let { itemsToClear, options } of pendingSanitizations) {
       try {
-        
+        // We need to set this flag to watch out for the users exceptions like we do on shutdown
         options.progress = { clearHonoringExceptions: true };
         await this.sanitize(itemsToClear, options);
       } catch (ex) {
@@ -203,20 +199,20 @@ var Sanitizer = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns a 2 element array representing the start and end times,
+   * in the uSec-since-epoch format that PRTime likes. If we should
+   * clear everything, this function returns null.
+   *
+   * @param ts [optional] a timespan to convert to start and end time.
+   *                      Falls back to the privacy.sanitize.timeSpan preference
+   *                      if this argument is omitted.
+   *                      If this argument is provided, it has to be one of the
+   *                      Sanitizer.TIMESPAN_* constants. This function will
+   *                      throw an error otherwise.
+   *
+   * @return {Array} a 2-element Array containing the start and end times.
+   */
   getClearRange(ts) {
     if (ts === undefined) {
       ts = Services.prefs.getIntPref(Sanitizer.PREF_TIMESPAN);
@@ -225,31 +221,31 @@ var Sanitizer = {
       return null;
     }
 
-    
+    // PRTime is microseconds while JS time is milliseconds
     var endDate = Date.now() * 1000;
     switch (ts) {
       case Sanitizer.TIMESPAN_5MIN:
-        var startDate = endDate - 300000000; 
+        var startDate = endDate - 300000000; // 5*60*1000000
         break;
       case Sanitizer.TIMESPAN_HOUR:
-        startDate = endDate - 3600000000; 
+        startDate = endDate - 3600000000; // 1*60*60*1000000
         break;
       case Sanitizer.TIMESPAN_2HOURS:
-        startDate = endDate - 7200000000; 
+        startDate = endDate - 7200000000; // 2*60*60*1000000
         break;
       case Sanitizer.TIMESPAN_4HOURS:
-        startDate = endDate - 14400000000; 
+        startDate = endDate - 14400000000; // 4*60*60*1000000
         break;
       case Sanitizer.TIMESPAN_TODAY:
-        var d = new Date(); 
-        d.setHours(0); 
+        var d = new Date(); // Start with today
+        d.setHours(0); // zero us back to midnight...
         d.setMinutes(0);
         d.setSeconds(0);
         d.setMilliseconds(0);
-        startDate = d.valueOf() * 1000; 
+        startDate = d.valueOf() * 1000; // convert to epoch usec
         break;
       case Sanitizer.TIMESPAN_24HOURS:
-        startDate = endDate - 86400000000; 
+        startDate = endDate - 86400000000; // 24*60*60*1000000
         break;
       default:
         throw new Error("Invalid time span for clear private data: " + ts);
@@ -257,27 +253,27 @@ var Sanitizer = {
     return [startDate, endDate];
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Deletes privacy sensitive data in a batch, according to user preferences.
+   * Returns a promise which is resolved if no errors occurred.  If an error
+   * occurs, a message is reported to the console and all other items are still
+   * cleared before the promise is finally rejected.
+   *
+   * @param [optional] itemsToClear
+   *        Array of items to be cleared. if specified only those
+   *        items get cleared, irrespectively of the preference settings.
+   * @param [optional] options
+   *        Object whose properties are options for this sanitization:
+   *         - ignoreTimespan (default: true): Time span only makes sense in
+   *           certain cases.  Consumers who want to only clear some private
+   *           data can opt in by setting this to false, and can optionally
+   *           specify a specific range.
+   *           If timespan is not ignored, and range is not set, sanitize() will
+   *           use the value of the timespan pref to determine a range.
+   *         - range (default: null): array-tuple of [from, to] timestamps
+   *         - privateStateForNewWindow (default: "non-private"): when clearing
+   *           open windows, defines the private state for the newly opened window.
+   */
   async sanitize(itemsToClear = null, options = {}) {
     let progress = options.progress || {};
     if (!itemsToClear) {
@@ -285,11 +281,11 @@ var Sanitizer = {
     }
     let promise = sanitizeInternal(this.items, itemsToClear, progress, options);
 
-    
-    
-    
-    
-    
+    // Depending on preferences, the sanitizer may perform asynchronous
+    // work before it starts cleaning up the Places database (e.g. closing
+    // windows). We need to make sure that the connection to that database
+    // hasn't been closed by the time we use it.
+    // Though, if this is a sanitize on shutdown, we already have a blocker.
     if (!progress.isShutdown) {
       let shutdownClient = lazy.PlacesUtils.history.shutdownClient.jsclient;
       shutdownClient.addBlocker("sanitize.js: Sanitize", promise, {
@@ -310,7 +306,7 @@ var Sanitizer = {
         data.startsWith(this.PREF_SHUTDOWN_BRANCH) &&
         this.shouldSanitizeOnShutdown
       ) {
-        
+        // Update the pending shutdown sanitization.
         removePendingSanitization("shutdown");
         let itemsToClear = getItemsToClearFromPrefBranch(
           Sanitizer.PREF_SHUTDOWN_BRANCH
@@ -346,7 +342,7 @@ var Sanitizer = {
     "nsISupportsWeakReference",
   ]),
 
-  
+  // This method is meant to be used by tests.
   async runSanitizeOnShutdown() {
     return sanitizeOnShutdown({
       isShutdown: true,
@@ -354,9 +350,9 @@ var Sanitizer = {
     });
   },
 
-  
-  
-  
+  // When making any changes to the sanitize implementations here,
+  // please check whether the changes are applicable to Android
+  // (mobile/android/modules/geckoview/GeckoViewStorageController.jsm) as well.
 
   items: {
     cache: {
@@ -372,8 +368,8 @@ var Sanitizer = {
       async clear(range, { progress, principalsForShutdownClearing }) {
         let refObj = {};
         TelemetryStopwatch.start("FX_SANITIZE_COOKIES_2", refObj);
-        
-        
+        // This is true if called by sanitizeOnShutdown.
+        // On shutdown we clear by principal to be able to honor the users exceptions
         if (progress && principalsForShutdownClearing) {
           await maybeSanitizeSessionPrincipals(
             progress,
@@ -381,7 +377,7 @@ var Sanitizer = {
             Ci.nsIClearDataService.CLEAR_COOKIES
           );
         } else {
-          
+          // Not on shutdown
           await clearData(range, Ci.nsIClearDataService.CLEAR_COOKIES);
         }
         await clearData(range, Ci.nsIClearDataService.CLEAR_MEDIA_DEVICES);
@@ -391,17 +387,17 @@ var Sanitizer = {
 
     offlineApps: {
       async clear(range, { progress, principalsForShutdownClearing }) {
-        
-        
+        // This is true if called by sanitizeOnShutdown.
+        // On shutdown we clear by principal to be able to honor the users exceptions
         if (progress && principalsForShutdownClearing) {
-          
+          // Cleaning per principal to be able to consider the users exceptions
           await maybeSanitizeSessionPrincipals(
             progress,
             principalsForShutdownClearing,
             Ci.nsIClearDataService.CLEAR_DOM_STORAGES
           );
         } else {
-          
+          // Not on shutdown
           await clearData(range, Ci.nsIClearDataService.CLEAR_DOM_STORAGES);
         }
       },
@@ -418,12 +414,12 @@ var Sanitizer = {
             Ci.nsIClearDataService.CLEAR_CONTENT_BLOCKING_RECORDS
         );
 
-        
-        
-        
-        
-        
-        
+        // storageAccessAPI permissions record every site that the user
+        // interacted with and thus mirror history quite closely. It makes
+        // sense to clear them when we clear history. However, since their absence
+        // indicates that we can purge cookies and site data for tracking origins without
+        // user interaction, we need to ensure that we only delete those permissions that
+        // do not have any existing storage.
         let principalsCollector = new lazy.PrincipalsCollector();
         let principals = await principalsCollector.getAllPrincipals();
         await new Promise(resolve => {
@@ -443,13 +439,13 @@ var Sanitizer = {
         let refObj = {};
         TelemetryStopwatch.start("FX_SANITIZE_FORMDATA", refObj);
         try {
-          
+          // Clear undo history of all search bars.
           for (let currentWindow of Services.wm.getEnumerator(
             "navigator:browser"
           )) {
             let currentDocument = currentWindow.document;
 
-            
+            // searchBar may not exist if it's in the customize mode.
             let searchBar = currentDocument.getElementById("searchbar");
             if (searchBar) {
               let input = searchBar.textbox;
@@ -459,10 +455,10 @@ var Sanitizer = {
 
             let tabBrowser = currentWindow.gBrowser;
             if (!tabBrowser) {
-              
-              
-              
-              
+              // No tab browser? This means that it's too early during startup (typically,
+              // Session Restore hasn't completed yet). Since we don't have find
+              // bars at that stage and since Session Restore will not restore
+              // find bars further down during startup, we have nothing to clear.
               continue;
             }
             for (let tab of tabBrowser.tabs) {
@@ -470,7 +466,7 @@ var Sanitizer = {
                 tabBrowser.getCachedFindBar(tab).clear();
               }
             }
-            
+            // Clear any saved find value
             tabBrowser._lastFindValue = "";
           }
         } catch (ex) {
@@ -537,9 +533,9 @@ var Sanitizer = {
     openWindows: {
       _canCloseWindow(win) {
         if (win.CanCloseWindow()) {
-          
-          
-          
+          // We already showed PermitUnload for the window, so let's
+          // make sure we don't do it again when we actually close the
+          // window.
           win.skipNextCanClose = true;
           return true;
         }
@@ -551,18 +547,18 @@ var Sanitizer = {
         }
       },
       async clear(range, privateStateForNewWindow = "non-private") {
-        
-        
+        // NB: this closes all *browser* windows, not other windows like the library, about window,
+        // browser console, etc.
 
-        
-        
+        // Keep track of the time in case we get stuck in la-la-land because of onbeforeunload
+        // dialogs
         let startDate = Date.now();
 
-        
+        // First check if all these windows are OK with being closed:
         let windowList = [];
         for (let someWin of Services.wm.getEnumerator("navigator:browser")) {
           windowList.push(someWin);
-          
+          // If someone says "no" to a beforeunload prompt, we abort here:
           if (!this._canCloseWindow(someWin)) {
             this._resetAllWindowClosures(windowList);
             throw new Error(
@@ -570,10 +566,10 @@ var Sanitizer = {
             );
           }
 
-          
-          
-          
-          
+          // ...however, beforeunload prompts spin the event loop, and so the code here won't get
+          // hit until the prompt has been dismissed. If more than 1 minute has elapsed since we
+          // started prompting, stop, because the user might not even remember initiating the
+          // 'forget', and the timespans will be all wrong by now anyway:
           if (Date.now() > startDate + 60 * 1000) {
             this._resetAllWindowClosures(windowList);
             throw new Error("Sanitize could not close windows: timeout");
@@ -584,13 +580,13 @@ var Sanitizer = {
           return;
         }
 
-        
+        // If/once we get here, we should actually be able to close all windows.
 
         let refObj = {};
         TelemetryStopwatch.start("FX_SANITIZE_OPENWINDOWS", refObj);
 
-        
-        
+        // First create a new window. We do this first so that on non-mac, we don't
+        // accidentally close the app by closing all the windows.
         let handler = Cc["@mozilla.org/browser/clh;1"].getService(
           Ci.nsIBrowserHandler
         );
@@ -621,12 +617,12 @@ var Sanitizer = {
         }
 
         let promiseReady = new Promise(resolve => {
-          
-          
-          
-          
-          
-          
+          // Window creation and destruction is asynchronous. We need to wait
+          // until all existing windows are fully closed, and the new window is
+          // fully open, before continuing. Otherwise the rest of the sanitizer
+          // could run too early (and miss new cookies being set when a page
+          // closes) and/or run too late (and not have a fully-formed window yet
+          // in existence). See bug 1088137.
           let newWindowOpened = false;
           let onWindowOpened = function(subject, topic, data) {
             if (subject != newWindow) {
@@ -641,7 +637,7 @@ var Sanitizer = {
               newWindow.removeEventListener("fullscreen", onFullScreen);
             }
             newWindowOpened = true;
-            
+            // If we're the last thing to happen, invoke callback.
             if (numWindowsClosing == 0) {
               TelemetryStopwatch.finish("FX_SANITIZE_OPENWINDOWS", refObj);
               resolve();
@@ -656,7 +652,7 @@ var Sanitizer = {
                 onWindowClosed,
                 "xul-window-destroyed"
               );
-              
+              // If we're the last thing to happen, invoke callback.
               if (newWindowOpened) {
                 TelemetryStopwatch.finish("FX_SANITIZE_OPENWINDOWS", refObj);
                 resolve();
@@ -670,7 +666,7 @@ var Sanitizer = {
           Services.obs.addObserver(onWindowClosed, "xul-window-destroyed");
         });
 
-        
+        // Start the process of closing windows
         while (windowList.length) {
           windowList.pop().close();
         }
@@ -688,29 +684,29 @@ var Sanitizer = {
 async function sanitizeInternal(items, aItemsToClear, progress, options = {}) {
   let { ignoreTimespan = true, range } = options;
   let seenError = false;
-  
+  // Shallow copy the array, as we are going to modify it in place later.
   if (!Array.isArray(aItemsToClear)) {
     throw new Error("Must pass an array of items to clear.");
   }
   let itemsToClear = [...aItemsToClear];
 
-  
-  
+  // Store the list of items to clear, in case we are killed before we
+  // get a chance to complete.
   let uid = gPendingSanitizationSerial++;
-  
+  // Shutdown sanitization is managed outside.
   if (!progress.isShutdown) {
     addPendingSanitization(uid, itemsToClear, options);
   }
 
-  
+  // Store the list of items to clear, for debugging/forensics purposes
   for (let k of itemsToClear) {
     progress[k] = "ready";
   }
 
-  
-  
-  
-  
+  // Ensure open windows get cleared first, if they're in our list, so that
+  // they don't stick around in the recently closed windows list, and so we
+  // can cancel the whole thing if the user selects to keep a window open
+  // from a beforeunload prompt.
   let openWindowsIndex = itemsToClear.indexOf("openWindows");
   if (openWindowsIndex != -1) {
     itemsToClear.splice(openWindowsIndex, 1);
@@ -718,18 +714,18 @@ async function sanitizeInternal(items, aItemsToClear, progress, options = {}) {
     progress.openWindows = "cleared";
   }
 
-  
-  
+  // If we ignore timespan, clear everything,
+  // otherwise, pick a range.
   if (!ignoreTimespan && !range) {
     range = Sanitizer.getClearRange();
   }
 
-  
-  
-  
-  
-  
-  
+  // For performance reasons we start all the clear tasks at once, then wait
+  // for their promises later.
+  // Some of the clear() calls may raise exceptions (for example bug 265028),
+  // we catch and store them, but continue to sanitize as much as possible.
+  // Callers should check returned errors and give user feedback
+  // about items that could not be sanitized
   let refObj = {};
   TelemetryStopwatch.start("FX_SANITIZE_TOTAL", refObj);
 
@@ -739,21 +735,21 @@ async function sanitizeInternal(items, aItemsToClear, progress, options = {}) {
     console.error("Error sanitizing " + name, ex);
   };
 
-  
+  // When clearing on shutdown we clear by principal for certain cleaning categories, to consider the users exceptions
   if (progress.clearHonoringExceptions) {
     let principalsCollector = new lazy.PrincipalsCollector();
     let principals = await principalsCollector.getAllPrincipals(progress);
     options.principalsForShutdownClearing = principals;
     options.progress = progress;
   }
-  
-  
-  
+  // Array of objects in form { name, promise }.
+  // `name` is the item's name and `promise` may be a promise, if the
+  // sanitization is asynchronous, or the function return value, otherwise.
   let handles = [];
   for (let name of itemsToClear) {
     let item = items[name];
     try {
-      
+      // Catch errors here, so later we can just loop through these.
       handles.push({
         name,
         promise: item.clear(range, options).then(
@@ -770,7 +766,7 @@ async function sanitizeInternal(items, aItemsToClear, progress, options = {}) {
     await handle.promise;
   }
 
-  
+  // Sanitization is complete.
   TelemetryStopwatch.finish("FX_SANITIZE_TOTAL", refObj);
   if (!progress.isShutdown) {
     removePendingSanitization(uid);
@@ -818,15 +814,15 @@ async function sanitizeOnShutdown(progress) {
 
   let needsSyncSavePrefs = false;
   if (Sanitizer.shouldSanitizeOnShutdown) {
-    
+    // Need to sanitize upon shutdown
     progress.advancement = "shutdown-cleaner";
     let itemsToClear = getItemsToClearFromPrefBranch(
       Sanitizer.PREF_SHUTDOWN_BRANCH
     );
     await Sanitizer.sanitize(itemsToClear, { progress });
 
-    
-    
+    // We didn't crash during shutdown sanitization, so annotate it to avoid
+    // sanitizing again on startup.
     removePendingSanitization("shutdown");
     needsSyncSavePrefs = true;
   }
@@ -842,14 +838,14 @@ async function sanitizeOnShutdown(progress) {
     Services.prefs.savePrefFile(null);
   }
 
-  
-  
+  // In case the user has not activated sanitizeOnShutdown but has explicitely set exceptions
+  // to always clear particular origins, we clear those here
   let principalsCollector = new lazy.PrincipalsCollector();
 
   progress.advancement = "session-permission";
 
   let exceptions = 0;
-  
+  // Let's see if we have to forget some particular site.
   for (let permission of Services.perms.all) {
     if (
       permission.type != "cookie" ||
@@ -858,7 +854,7 @@ async function sanitizeOnShutdown(progress) {
       continue;
     }
 
-    
+    // We consider just permissions set for http, https and file URLs.
     if (!isSupportedPrincipal(permission.principal)) {
       continue;
     }
@@ -869,7 +865,7 @@ async function sanitizeOnShutdown(progress) {
     );
     exceptions++;
 
-    
+    // We use just the URI here, because permissions ignore OriginAttributes.
     let principals = await principalsCollector.getAllPrincipals(progress);
     let selectedPrincipals = extractMatchingPrincipals(
       principals,
@@ -888,20 +884,20 @@ async function sanitizeOnShutdown(progress) {
   progress.advancement = "done";
 }
 
-
+// Extracts the principals matching matchUri as root domain.
 function extractMatchingPrincipals(principals, matchHost) {
   return principals.filter(principal => {
     return Services.eTLD.hasRootDomain(matchHost, principal.host);
   });
 }
 
-
-
-
-
-
-
-
+/**  This method receives a list of principals and it checks if some of them or
+ * some of their sub-domain need to be sanitize.
+ * @param {Object} progress - Object to keep track of the sanitization progress, prefs and mode
+ * @param {nsIPrincipal[]} principals - The principals generated by the PrincipalsCollector
+ * @param {int} flags - The cleaning categories that need to be cleaned for the principals.
+ * @returns {Promise} - Resolves once the clearing of the principals to be cleared is done
+ */
 async function maybeSanitizeSessionPrincipals(progress, principals, flags) {
   log("Sanitizing " + principals.length + " principals");
 
@@ -932,8 +928,8 @@ async function maybeSanitizeSessionPrincipals(progress, principals, flags) {
 function cookiesAllowedForDomainOrSubDomain(principal, permissions) {
   log("Checking principal: " + principal.asciiSpec);
 
-  
-  
+  // If we have the 'cookie' permission for this principal, let's return
+  // immediately.
   let cookiePermission = checkIfCookiePermissionIsSet(principal);
   if (cookiePermission != null) {
     return cookiePermission;
@@ -944,13 +940,13 @@ function cookiesAllowedForDomainOrSubDomain(principal, permissions) {
       permissions.delete(perm.principal.origin);
       continue;
     }
-    
+    // We consider just permissions set for http, https and file URLs.
     if (!isSupportedPrincipal(perm.principal)) {
       permissions.delete(perm.principal.origin);
       continue;
     }
 
-    
+    // We don't care about scheme, port, and anything else.
     if (Services.eTLD.hasRootDomain(perm.principal.host, principal.host)) {
       log("Cookie check on principal: " + perm.principal.asciiSpec);
       let rootDomainCookiePermission = checkIfCookiePermissionIsSet(
@@ -966,11 +962,11 @@ function cookiesAllowedForDomainOrSubDomain(principal, permissions) {
   return false;
 }
 
-
-
-
-
-
+/**
+ * Checks if a cookie permission is set for a given principal
+ * @returns {boolean} - true: cookie permission "ACCESS_ALLOW", false: cookie permission "ACCESS_DENY"/"ACCESS_SESSION"
+ * @returns {null} - No cookie permission is set for this principal
+ */
 function checkIfCookiePermissionIsSet(principal) {
   let p = Services.perms.testPermissionFromPrincipal(principal, "cookie");
 
@@ -986,7 +982,7 @@ function checkIfCookiePermissionIsSet(principal) {
     log("Cookie denied or session!");
     return false;
   }
-  
+  // This is an old profile with unsupported permission values
   if (p != Ci.nsICookiePermission.ACCESS_DEFAULT) {
     log("Not supported cookie permission: " + p);
     return false;
@@ -1001,7 +997,7 @@ async function sanitizeSessionPrincipal(progress, principal, flags) {
     progress.sanitizePrincipal = "started";
     Services.clearData.deleteDataFromPrincipal(
       principal,
-      true ,
+      true /* user request */,
       flags,
       resolve
     );
@@ -1020,11 +1016,11 @@ function sanitizeNewTabSegregation() {
   }
 }
 
-
-
-
-
-
+/**
+ * Gets an array of items to clear from the given pref branch.
+ * @param branch The pref branch to fetch.
+ * @return Array of items to clear
+ */
 function getItemsToClearFromPrefBranch(branch) {
   branch = Services.prefs.getBranch(branch);
   return Object.keys(Sanitizer.items).filter(itemName => {
@@ -1036,13 +1032,13 @@ function getItemsToClearFromPrefBranch(branch) {
   });
 }
 
-
-
-
-
-
-
-
+/**
+ * These functions are used to track pending sanitization on the next startup
+ * in case of a crash before a sanitization could happen.
+ * @param id A unique id identifying the sanitization
+ * @param itemsToClear The items to clear
+ * @param options The Sanitize options
+ */
 function addPendingSanitization(id, itemsToClear, options) {
   let pendingSanitizations = safeGetPendingSanitizations();
   pendingSanitizations.push({ id, itemsToClear, options });
@@ -1088,7 +1084,7 @@ async function clearData(range, flags) {
       Services.clearData.deleteDataInTimeRange(
         range[0],
         range[1],
-        true ,
+        true /* user request */,
         flags,
         resolve
       );

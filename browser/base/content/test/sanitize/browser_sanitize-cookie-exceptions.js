@@ -1,9 +1,11 @@
 
 
 
-const { Sanitizer } = ChromeUtils.import("resource:///modules/Sanitizer.jsm");
-const { SiteDataTestUtils } = ChromeUtils.import(
-  "resource://testing-common/SiteDataTestUtils.jsm"
+const { Sanitizer } = ChromeUtils.importESModule(
+  "resource:///modules/Sanitizer.sys.mjs"
+);
+const { SiteDataTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/SiteDataTestUtils.sys.mjs"
 );
 const { PermissionTestUtils } = ChromeUtils.import(
   "resource://testing-common/PermissionTestUtils.jsm"
