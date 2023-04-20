@@ -1271,30 +1271,20 @@ impl<'a> Deserializer<'a> {
         }
     }
 
-    
-    
-    
-    
+    #[doc(hidden)]
+    #[deprecated(since = "0.5.11")]
     pub fn end(&mut self) -> Result<(), Error> {
         Ok(())
     }
 
-    
-    
-    
-    
-    
-    
+    #[doc(hidden)]
+    #[deprecated(since = "0.5.11")]
     pub fn set_require_newline_after_table(&mut self, require: bool) {
         self.require_newline_after_table = require;
     }
 
-    
-    
-    
-    
-    
-    
+    #[doc(hidden)]
+    #[deprecated(since = "0.5.11")]
     pub fn set_allow_duplicate_after_longer_table(&mut self, allow: bool) {
         self.allow_duplciate_after_longer_table = allow;
     }
