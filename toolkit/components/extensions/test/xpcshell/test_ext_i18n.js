@@ -352,9 +352,8 @@ add_task(async function test_get_accept_languages() {
   await extension.awaitMessage("content-loaded");
 
   
-  
   let expectedLangs =
-    AppConstants.platform == "android" ? ["en-us"] : ["en-US", "en"];
+    AppConstants.platform == "android" ? ["en-US"] : ["en-US", "en"];
   extension.sendMessage(["expect-results", expectedLangs]);
   await extension.awaitMessage("background-done");
   await extension.awaitMessage("content-done");
