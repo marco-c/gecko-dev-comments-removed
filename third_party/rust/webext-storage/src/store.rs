@@ -3,12 +3,11 @@
 
 
 use crate::api::{self, StorageChanges};
-use crate::db::StorageDb;
+use crate::db::{StorageDb, ThreadSafeStorageDb};
 use crate::error::*;
 use crate::migration::{migrate, MigrationInfo};
 use crate::sync;
 use std::path::Path;
-use std::result;
 use std::sync::Arc;
 
 use interrupt_support::SqlInterruptHandle;
@@ -25,24 +24,30 @@ use serde_json::Value as JsonValue;
 
 
 
+
+
+
+
 pub struct Store {
-    db: StorageDb,
+    db: Arc<ThreadSafeStorageDb>,
 }
 
 impl Store {
     
     
     pub fn new(db_path: impl AsRef<Path>) -> Result<Self> {
+        let db = StorageDb::new(db_path)?;
         Ok(Self {
-            db: StorageDb::new(db_path)?,
+            db: Arc::new(ThreadSafeStorageDb::new(db)),
         })
     }
 
     
     #[cfg(test)]
     pub fn new_memory(db_path: &str) -> Result<Self> {
+        let db = StorageDb::new_memory(db_path)?;
         Ok(Self {
-            db: StorageDb::new_memory(db_path)?,
+            db: Arc::new(ThreadSafeStorageDb::new(db)),
         })
     }
 
@@ -54,7 +59,8 @@ impl Store {
     
     
     pub fn set(&self, ext_id: &str, val: JsonValue) -> Result<StorageChanges> {
-        let tx = self.db.unchecked_transaction()?;
+        let db = self.db.lock();
+        let tx = db.unchecked_transaction()?;
         let result = api::set(&tx, ext_id, val)?;
         tx.commit()?;
         Ok(result)
@@ -62,7 +68,8 @@ impl Store {
 
     
     pub fn usage(&self) -> Result<Vec<crate::UsageInfo>> {
-        api::usage(&self.db)
+        let db = self.db.lock();
+        api::usage(&db)
     }
 
     
@@ -83,7 +90,8 @@ impl Store {
     
     pub fn get(&self, ext_id: &str, keys: JsonValue) -> Result<JsonValue> {
         
-        api::get(&self.db, ext_id, keys)
+        let db = self.db.lock();
+        api::get(&db, ext_id, keys)
     }
 
     
@@ -91,7 +99,8 @@ impl Store {
     
     
     pub fn remove(&self, ext_id: &str, keys: JsonValue) -> Result<StorageChanges> {
-        let tx = self.db.unchecked_transaction()?;
+        let db = self.db.lock();
+        let tx = db.unchecked_transaction()?;
         let result = api::remove(&tx, ext_id, keys)?;
         tx.commit()?;
         Ok(result)
@@ -101,7 +110,8 @@ impl Store {
     
     
     pub fn clear(&self, ext_id: &str) -> Result<StorageChanges> {
-        let tx = self.db.unchecked_transaction()?;
+        let db = self.db.lock();
+        let tx = db.unchecked_transaction()?;
         let result = api::clear(&tx, ext_id)?;
         tx.commit()?;
         Ok(result)
@@ -110,18 +120,45 @@ impl Store {
     
     
     pub fn get_bytes_in_use(&self, ext_id: &str, keys: JsonValue) -> Result<usize> {
-        api::get_bytes_in_use(&self.db, ext_id, keys)
+        let db = self.db.lock();
+        api::get_bytes_in_use(&db, ext_id, keys)
     }
 
     
-    pub fn bridged_engine(&self) -> sync::BridgedEngine<'_> {
+    pub fn bridged_engine(&self) -> sync::BridgedEngine {
         sync::BridgedEngine::new(&self.db)
     }
 
     
     
-    pub fn close(self) -> result::Result<(), (Store, Error)> {
-        self.db.close().map_err(|(db, err)| (Store { db }, err))
+    pub fn close(self) -> Result<()> {
+        
+        
+        
+        let shared: ThreadSafeStorageDb = match Arc::try_unwrap(self.db) {
+            Ok(shared) => shared,
+            _ => {
+                
+                
+                
+                
+
+                
+                
+                
+                
+
+                
+                
+                
+                
+                log::warn!("Attempting to close a store while other DB references exist.");
+                return Err(ErrorKind::OtherConnectionReferencesExist.into());
+            }
+        };
+        
+        let db = shared.into_inner();
+        db.close()
     }
 
     
@@ -130,7 +167,8 @@ impl Store {
     
     
     pub fn get_synced_changes(&self) -> Result<Vec<sync::SyncedExtensionChange>> {
-        sync::get_synced_changes(&self.db)
+        let db = self.db.lock();
+        sync::get_synced_changes(&db)
     }
 
     
@@ -139,11 +177,12 @@ impl Store {
     
     
     pub fn migrate(&self, filename: impl AsRef<Path>) -> Result<()> {
-        let tx = self.db.unchecked_transaction()?;
+        let db = self.db.lock();
+        let tx = db.unchecked_transaction()?;
         let result = migrate(&tx, filename.as_ref())?;
         tx.commit()?;
         
-        if let Err(e) = result.store(&self.db) {
+        if let Err(e) = result.store(&db) {
             debug_assert!(false, "Migration error: {:?}", e);
             log::warn!("Failed to record migration telmetry: {}", e);
         }
@@ -153,7 +192,8 @@ impl Store {
     
     
     pub fn take_migration_info(&self) -> Result<Option<MigrationInfo>> {
-        let tx = self.db.unchecked_transaction()?;
+        let db = self.db.lock();
+        let tx = db.unchecked_transaction()?;
         let result = MigrationInfo::take(&tx)?;
         tx.commit()?;
         Ok(result)
@@ -172,7 +212,7 @@ pub mod test {
 
     pub fn new_mem_store() -> Store {
         Store {
-            db: crate::db::test::new_mem_db(),
+            db: Arc::new(ThreadSafeStorageDb::new(crate::db::test::new_mem_db())),
         }
     }
 }

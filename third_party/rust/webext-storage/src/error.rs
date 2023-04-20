@@ -49,8 +49,15 @@ pub enum ErrorKind {
     #[error("Error opening database: {0}")]
     OpenDatabaseError(#[from] sql_support::open_database::Error),
 
-    #[error("Sync Payload Error: {0}")]
-    IncomingPayloadError(#[from] sync15::Error),
+    
+    #[error("Other shared references to this connection are alive")]
+    OtherConnectionReferencesExist,
+
+    #[error("The storage database has been closed")]
+    DatabaseConnectionClosed,
+
+    #[error("Sync Error: {0}")]
+    SyncError(String),
 }
 
 error_support::define_error! {
@@ -60,7 +67,6 @@ error_support::define_error! {
         (IoError, std::io::Error),
         (InterruptedError, Interrupted),
         (Utf8Error, std::str::Utf8Error),
-        (IncomingPayloadError, sync15::Error),
         (OpenDatabaseError, sql_support::open_database::Error),
     }
 }

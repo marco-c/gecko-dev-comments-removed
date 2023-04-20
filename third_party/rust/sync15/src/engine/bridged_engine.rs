@@ -2,8 +2,9 @@
 
 
 
-use crate::bso::{IncomingBso, OutgoingBso};
+use anyhow::Result;
 
+use crate::bso::{IncomingBso, OutgoingBso};
 use crate::Guid;
 
 
@@ -15,28 +16,25 @@ use crate::Guid;
 
 
 
-pub trait BridgedEngine {
+pub trait BridgedEngine: Send + Sync {
     
-    type Error;
+    
+    
+    fn last_sync(&self) -> Result<i64>;
 
     
     
     
-    fn last_sync(&self) -> Result<i64, Self::Error>;
+    fn set_last_sync(&self, last_sync_millis: i64) -> Result<()>;
+
+    
+    
+    fn sync_id(&self) -> Result<Option<String>>;
 
     
     
     
-    fn set_last_sync(&self, last_sync_millis: i64) -> Result<(), Self::Error>;
-
-    
-    
-    fn sync_id(&self) -> Result<Option<String>, Self::Error>;
-
-    
-    
-    
-    fn reset_sync_id(&self) -> Result<String, Self::Error>;
+    fn reset_sync_id(&self) -> Result<String>;
 
     
     
@@ -45,48 +43,48 @@ pub trait BridgedEngine {
     
     
     
-    fn ensure_current_sync_id(&self, new_sync_id: &str) -> Result<String, Self::Error>;
+    fn ensure_current_sync_id(&self, new_sync_id: &str) -> Result<String>;
 
     
     
     
-    fn prepare_for_sync(&self, _client_data: &str) -> Result<(), Self::Error> {
+    fn prepare_for_sync(&self, _client_data: &str) -> Result<()> {
         Ok(())
     }
 
     
     
-    fn sync_started(&self) -> Result<(), Self::Error>;
+    fn sync_started(&self) -> Result<()>;
 
     
     
     
     
-    fn store_incoming(&self, incoming_records: Vec<IncomingBso>) -> Result<(), Self::Error>;
+    fn store_incoming(&self, incoming_records: Vec<IncomingBso>) -> Result<()>;
 
     
     
-    fn apply(&self) -> Result<ApplyResults, Self::Error>;
-
-    
-    
-    
-    fn set_uploaded(&self, server_modified_millis: i64, ids: &[Guid]) -> Result<(), Self::Error>;
+    fn apply(&self) -> Result<ApplyResults>;
 
     
     
     
-    
-    fn sync_finished(&self) -> Result<(), Self::Error>;
+    fn set_uploaded(&self, server_modified_millis: i64, ids: &[Guid]) -> Result<()>;
 
     
     
     
-    fn reset(&self) -> Result<(), Self::Error>;
+    
+    fn sync_finished(&self) -> Result<()>;
 
     
     
-    fn wipe(&self) -> Result<(), Self::Error>;
+    
+    fn reset(&self) -> Result<()>;
+
+    
+    
+    fn wipe(&self) -> Result<()>;
 }
 
 
