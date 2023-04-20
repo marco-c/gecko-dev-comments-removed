@@ -353,24 +353,15 @@ class WebConsoleUI {
       }
     );
 
+    const networkFront = await commands.watcherFront.getNetworkParentActor();
     
     
-    const hasNetworkResourceCommandSupport = resourceCommand.hasResourceCommandSupport(
-      resourceCommand.TYPES.NETWORK_EVENT
-    );
-    const supportsWatcherRequest = commands.targetCommand.hasTargetWatcherSupport();
-    if (hasNetworkResourceCommandSupport && supportsWatcherRequest) {
-      const networkFront = await commands.watcherFront.getNetworkParentActor();
-      
-      
-      
-      const saveBodies =
-        !this.isBrowserConsole &&
-        Services.prefs.getBoolPref(
-          "devtools.netmonitor.saveRequestAndResponseBodies"
-        );
-      await networkFront.setSaveRequestAndResponseBodies(saveBodies);
-    }
+    const saveBodies =
+      !this.isBrowserConsole &&
+      Services.prefs.getBoolPref(
+        "devtools.netmonitor.saveRequestAndResponseBodies"
+      );
+    await networkFront.setSaveRequestAndResponseBodies(saveBodies);
   }
 
   async stopWatchingNetworkResources() {
@@ -525,32 +516,8 @@ class WebConsoleUI {
 
 
   async _onTargetAvailable({ targetFront }) {
-    if (this._destroyed) {
-      return;
-    }
-
     
     
-    const { targetCommand, resourceCommand } = this.hud.commands;
-    const hasNetworkResourceCommandSupport = resourceCommand.hasResourceCommandSupport(
-      resourceCommand.TYPES.NETWORK_EVENT
-    );
-    const supportsWatcherRequest = targetCommand.hasTargetWatcherSupport();
-    if (!hasNetworkResourceCommandSupport || !supportsWatcherRequest) {
-      
-      
-      const saveBodies =
-        !this.isBrowserConsole &&
-        Services.prefs.getBoolPref(
-          "devtools.netmonitor.saveRequestAndResponseBodies"
-        );
-
-      const front = await targetFront.getFront("console");
-      
-      await front.setPreferences({
-        "NetworkMonitor.saveRequestAndResponseBodies": saveBodies,
-      });
-    }
   }
 
   _onTargetDestroyed({ targetFront, isModeSwitching }) {
