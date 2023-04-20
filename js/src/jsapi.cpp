@@ -913,41 +913,38 @@ JS_PUBLIC_API bool JS_ResolveStandardClass(JSContext* cx, HandleObject obj,
     return GlobalObject::maybeResolveGlobalThis(cx, global, resolved);
   }
 
-  do {
+  
+  const JSStdName* stdnm =
+      LookupStdName(cx->names(), idAtom, standard_class_names);
+  if (!stdnm) {
     
-    const JSStdName* stdnm =
-        LookupStdName(cx->names(), idAtom, standard_class_names);
+    stdnm = LookupStdName(cx->names(), idAtom, builtin_property_names);
     if (!stdnm) {
-      
-      stdnm = LookupStdName(cx->names(), idAtom, builtin_property_names);
-      if (!stdnm) {
-        break;
-      }
+      return true;
     }
+  }
 
-    if (GlobalObject::skipDeselectedConstructor(cx, stdnm->key) ||
-        SkipUneval(id, cx)) {
-      break;
-    }
-
-    if (JSProtoKey key = stdnm->key; key != JSProto_Null) {
-      
-      
-      
-      const JSClass* clasp = ProtoKeyToClass(key);
-      if ((!clasp || clasp->specShouldDefineConstructor()) &&
-          !SkipSharedArrayBufferConstructor(key, global)) {
-        if (!GlobalObject::ensureConstructor(cx, global, key)) {
-          return false;
-        }
-
-        *resolved = true;
-        return true;
-      }
-    }
-  } while (false);
+  JSProtoKey key = stdnm->key;
+  if (key == JSProto_Null || GlobalObject::skipDeselectedConstructor(cx, key) ||
+      SkipUneval(id, cx)) {
+    return true;
+  }
 
   
+  
+  
+  const JSClass* clasp = ProtoKeyToClass(key);
+  if (clasp && !clasp->specShouldDefineConstructor()) {
+    return true;
+  }
+  if (SkipSharedArrayBufferConstructor(key, global)) {
+    return true;
+  }
+
+  if (!GlobalObject::ensureConstructor(cx, global, key)) {
+    return false;
+  }
+  *resolved = true;
   return true;
 }
 
