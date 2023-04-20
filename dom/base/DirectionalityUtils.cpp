@@ -213,6 +213,7 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/intl/UnicodeProperties.h"
@@ -683,6 +684,21 @@ Directionality RecomputeDirectionality(Element* aElement, bool aNotify) {
   }
 
   Directionality dir = eDir_LTR;
+
+  
+  
+  
+  
+  
+  
+  
+  if (auto* input = HTMLInputElement::FromNode(*aElement)) {
+    if (input->ControlType() == FormControlType::InputTel) {
+      aElement->SetDirectionality(dir, aNotify);
+      return dir;
+    }
+  }
+
   if (nsIContent* parent = GetParentOrHostOrSlot(aElement)) {
     if (ShadowRoot* shadow = ShadowRoot::FromNode(parent)) {
       parent = shadow->GetHost();
