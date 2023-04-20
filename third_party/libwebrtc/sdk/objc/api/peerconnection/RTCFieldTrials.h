@@ -13,8 +13,7 @@
 #import "RTCMacros.h"
 
 
-RTC_EXTERN NSString * const kRTCFieldTrialAudioForceABWENoTWCCKey;
-RTC_EXTERN NSString * const kRTCFieldTrialSendSideBweWithOverheadKey;
+RTC_EXTERN NSString *const kRTCFieldTrialAudioForceABWENoTWCCKey;
 RTC_EXTERN NSString * const kRTCFieldTrialFlexFec03AdvertisedKey;
 RTC_EXTERN NSString * const kRTCFieldTrialFlexFec03Key;
 RTC_EXTERN NSString * const kRTCFieldTrialH264HighProfileKey;
