@@ -568,18 +568,11 @@ SVGPatternFrame* SVGPatternFrame::GetReferencedPattern() {
     this->mNoHRefURI = aHref.IsEmpty();
   };
 
-  nsIFrame* tframe = SVGObserverUtils::GetAndObserveTemplate(this, GetHref);
-  if (tframe) {
-    LayoutFrameType frameType = tframe->Type();
-    if (frameType == LayoutFrameType::SVGPattern) {
-      return static_cast<SVGPatternFrame*>(tframe);
-    }
-    
-    
-    
-  }
+  
+  
+  
 
-  return nullptr;
+  return do_QueryFrame(SVGObserverUtils::GetAndObserveTemplate(this, GetHref));
 }
 
 gfxRect SVGPatternFrame::GetPatternRect(uint16_t aPatternUnits,

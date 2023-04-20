@@ -344,15 +344,11 @@ SVGGradientFrame* SVGGradientFrame::GetReferencedGradient() {
     this->mNoHRefURI = aHref.IsEmpty();
   };
 
-  nsIFrame* tframe = SVGObserverUtils::GetAndObserveTemplate(this, GetHref);
-  if (tframe) {
-    return static_cast<SVGGradientFrame*>(do_QueryFrame(tframe));
-  }
   
   
   
 
-  return nullptr;
+  return do_QueryFrame(SVGObserverUtils::GetAndObserveTemplate(this, GetHref));
 }
 
 void SVGGradientFrame::GetStopFrames(nsTArray<nsIFrame*>* aStopFrames) {
