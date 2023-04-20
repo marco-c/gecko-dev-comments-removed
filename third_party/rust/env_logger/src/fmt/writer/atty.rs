@@ -6,20 +6,19 @@
 
 
 
-#[cfg(feature = "auto-color")]
-mod imp {
-    use is_terminal::IsTerminal;
 
+#[cfg(feature = "atty")]
+mod imp {
     pub(in crate::fmt) fn is_stdout() -> bool {
-        std::io::stdout().is_terminal()
+        atty::is(atty::Stream::Stdout)
     }
 
     pub(in crate::fmt) fn is_stderr() -> bool {
-        std::io::stderr().is_terminal()
+        atty::is(atty::Stream::Stderr)
     }
 }
 
-#[cfg(not(feature = "auto-color"))]
+#[cfg(not(feature = "atty"))]
 mod imp {
     pub(in crate::fmt) fn is_stdout() -> bool {
         false
