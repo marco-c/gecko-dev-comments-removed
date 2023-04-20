@@ -63,6 +63,11 @@ class OutstandingData {
 
     
     UnwrappedTSN highest_tsn_acked;
+
+    
+    std::vector<LifecycleId> acked_lifecycle_ids;
+    
+    std::vector<LifecycleId> abandoned_lifecycle_ids;
   };
 
   OutstandingData(
@@ -125,7 +130,8 @@ class OutstandingData {
       const Data& data,
       TimeMs time_sent,
       MaxRetransmits max_retransmissions = MaxRetransmits::NoLimit(),
-      TimeMs expires_at = TimeMs::InfiniteFuture());
+      TimeMs expires_at = TimeMs::InfiniteFuture(),
+      LifecycleId lifecycle_id = LifecycleId::NotSet());
 
   
   void NackAll();
@@ -167,10 +173,12 @@ class OutstandingData {
     Item(Data data,
          TimeMs time_sent,
          MaxRetransmits max_retransmissions,
-         TimeMs expires_at)
+         TimeMs expires_at,
+         LifecycleId lifecycle_id)
         : time_sent_(time_sent),
           max_retransmissions_(max_retransmissions),
           expires_at_(expires_at),
+          lifecycle_id_(lifecycle_id),
           data_(std::move(data)) {}
 
     Item(const Item&) = delete;
@@ -212,6 +220,8 @@ class OutstandingData {
     
     bool has_expired(TimeMs now) const;
 
+    LifecycleId lifecycle_id() const { return lifecycle_id_; }
+
    private:
     enum class Lifecycle : uint8_t {
       
@@ -240,8 +250,6 @@ class OutstandingData {
     
     
     const MaxRetransmits max_retransmissions_;
-    
-    
 
     
     Lifecycle lifecycle_ = Lifecycle::kActive;
@@ -255,7 +263,12 @@ class OutstandingData {
     
     uint16_t num_retransmissions_ = 0;
 
+    
+    
     const TimeMs expires_at_;
+
+    
+    const LifecycleId lifecycle_id_;
 
     
     const Data data_;
