@@ -177,11 +177,10 @@ ConfigureVideoEncoderSettings(const VideoCodecConfig& aConfig,
   if (aConfig.mName == kVp9CodecName) {
     webrtc::VideoCodecVP9 vp9_settings =
         webrtc::VideoEncoder::GetDefaultVp9Settings();
-    if (is_screencast) {
+    if (!is_screencast) {
       
       
-      vp9_settings.numberOfSpatialLayers = 2;
-    } else {
+      
       vp9_settings.numberOfSpatialLayers = aConduit->SpatialLayers();
     }
     
