@@ -1484,15 +1484,10 @@ var PlacesControllerDragHelper = {
 
 
 
-
-  getFirstValidFlavor: function PCDH_getFirstValidFlavor(aFlavors) {
-    for (let i = 0; i < aFlavors.length; i++) {
-      if (PlacesUIUtils.SUPPORTED_FLAVORS.includes(aFlavors[i])) {
-        return aFlavors[i];
-      }
-    }
-
-    return null;
+  getMostRelevantFlavor(flavors) {
+    
+    flavors = Array.from(flavors);
+    return PlacesUIUtils.SUPPORTED_FLAVORS.find(f => flavors.includes(f));
   },
 
   
@@ -1510,7 +1505,7 @@ var PlacesControllerDragHelper = {
 
     
     for (let i = 0; i < dropCount; i++) {
-      let flavor = this.getFirstValidFlavor(dt.mozTypesAt(i));
+      let flavor = this.getMostRelevantFlavor(dt.mozTypesAt(i));
       if (!flavor) {
         return false;
       }
@@ -1623,7 +1618,7 @@ var PlacesControllerDragHelper = {
     let nodes = [];
     let externalDrag = false;
     for (let i = 0; i < dropCount; ++i) {
-      let flavor = this.getFirstValidFlavor(dt.mozTypesAt(i));
+      let flavor = this.getMostRelevantFlavor(dt.mozTypesAt(i));
       if (!flavor) {
         return;
       }
