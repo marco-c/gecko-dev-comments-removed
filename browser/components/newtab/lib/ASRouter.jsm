@@ -374,8 +374,8 @@ const MessageLoaderUtils = {
       : MESSAGING_EXPERIMENTS_DEFAULT_FEATURES;
     let experiments = [];
     for (const featureId of featureIds) {
-      let featureAPI = lazy.NimbusFeatures[featureId];
-      let experimentData = lazy.ExperimentAPI.getExperimentMetaData({
+      const featureAPI = lazy.NimbusFeatures[featureId];
+      const experimentData = lazy.ExperimentAPI.getExperimentMetaData({
         featureId,
       });
 
@@ -388,41 +388,56 @@ const MessageLoaderUtils = {
         continue;
       }
 
-      let message = featureAPI.getAllVariables();
+      const featureValue = featureAPI.getAllVariables();
 
-      if (message?.id) {
-        
-        
-        
-        message._nimbusFeature = featureId;
-        experiments.push(message);
+      
+      
+      
+      
+      const messages =
+        featureValue?.template === "multi" &&
+        Array.isArray(featureValue.messages)
+          ? featureValue.messages
+          : [featureValue];
+      for (const message of messages) {
+        if (message?.id) {
+          message._nimbusFeature = featureId;
+          experiments.push(message);
+        }
       }
 
-      if (!REACH_EVENT_GROUPS.includes(featureId)) {
+      
+      
+      
+      if (!REACH_EVENT_GROUPS.includes(featureId) || !experimentData) {
         continue;
       }
 
       
-      if (experimentData) {
-        
-        
-        
-        
-        const branches =
-          (await lazy.ExperimentAPI.getAllBranches(experimentData.slug)) || [];
-        for (const branch of branches) {
-          let branchValue = branch[featureId].value;
-          if (
-            branch.slug !== experimentData.branch.slug &&
-            branchValue?.trigger
-          ) {
-            experiments.push({
-              forReachEvent: { sent: false, group: featureId },
-              experimentSlug: experimentData.slug,
-              branchSlug: branch.slug,
-              ...branchValue,
-            });
+      
+      
+      const branches =
+        (await lazy.ExperimentAPI.getAllBranches(experimentData.slug)) || [];
+      for (const branch of branches) {
+        let branchValue = branch[featureId].value;
+        if (!branchValue || branch.slug === experimentData.branch.slug) {
+          continue;
+        }
+        const branchMessages =
+          branchValue?.template === "multi" &&
+          Array.isArray(branchValue.messages)
+            ? branchValue.messages
+            : [branchValue];
+        for (const message of branchMessages) {
+          if (!message?.trigger) {
+            continue;
           }
+          experiments.push({
+            forReachEvent: { sent: false, group: featureId },
+            experimentSlug: experimentData.slug,
+            branchSlug: branch.slug,
+            ...message,
+          });
         }
       }
     }

@@ -310,13 +310,9 @@ def bundle_schema(schema_def: SchemaDefinition):
     
     
     defs["Message"]["properties"]["template"]["enum"] = all_templates
-
-    
-    return {
-        "$schema": "https://json-schema.org/draft/2019-09/schema",
-        "$id": schema_def.schema_id,
-        "title": "Messaging Experiment",
-        "description": "A Firefox Messaging System message.",
+    defs["TemplatedMessage"] = {
+        "description": "An FxMS message of one of a variety of types.",
+        "type": "object",
         "allOf": [
             
             
@@ -353,6 +349,35 @@ def bundle_schema(schema_def: SchemaDefinition):
                 }
                 for message_type in schema_def.message_types
             ),
+        ],
+    }
+    defs["MultiMessage"] = {
+        "description": "An object containing an array of messages.",
+        "type": "object",
+        "properties": {
+            "template": {"type": "string", "const": "multi"},
+            "messages": {
+                "type": "array",
+                "description": "An array of messages.",
+                "items": {"$ref": f"{schema_def.schema_id}#/$defs/TemplatedMessage"},
+            },
+        },
+        "required": ["template", "messages"],
+    }
+
+    
+    return {
+        "$schema": "https://json-schema.org/draft/2019-09/schema",
+        "$id": schema_def.schema_id,
+        "title": "Messaging Experiment",
+        "description": "A Firefox Messaging System message.",
+        
+        
+        
+        
+        "oneOf": [
+            {"$ref": f"{schema_def.schema_id}#/$defs/TemplatedMessage"},
+            {"$ref": f"{schema_def.schema_id}#/$defs/MultiMessage"},
         ],
         "$defs": defs,
     }
