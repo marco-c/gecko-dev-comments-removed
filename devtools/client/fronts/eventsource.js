@@ -16,6 +16,9 @@ const {
 
 
 
+
+
+
 class EventSourceFront extends FrontClassWithSpec(eventSourceSpec) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);

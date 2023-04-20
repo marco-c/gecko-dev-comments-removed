@@ -1334,6 +1334,8 @@ loader.lazyRequireGetter(
   ResourceCommand.TYPES.THREAD_STATE,
   "resource://devtools/shared/commands/resource/legacy-listeners/thread-states.js"
 );
+
+
 loader.lazyRequireGetter(
   LegacyListeners,
   ResourceCommand.TYPES.SERVER_SENT_EVENT,

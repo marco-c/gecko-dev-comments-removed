@@ -8,6 +8,8 @@ const {
   generateActorSpec,
 } = require("resource://devtools/shared/protocol.js");
 
+
+
 const eventSourceSpec = generateActorSpec({
   typeName: "eventSource",
 
