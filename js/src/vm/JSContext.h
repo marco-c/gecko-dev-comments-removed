@@ -80,7 +80,7 @@ class MOZ_RAII AutoCycleDetector {
 
 struct AutoResolving;
 
-struct OffThreadFrontendErrors;  
+struct FrontendErrors;  
 
 class InternalJobQueue : public JS::JobQueue {
  public:
@@ -178,7 +178,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   js::ThreadId currentThread_;
 
-  js::OffThreadFrontendErrors* errors_;
+  js::FrontendErrors* errors_;
 
   
   
@@ -329,12 +329,8 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   inline void leaveRealm(JS::Realm* oldRealm);
 
-  void setOffThreadFrontendErrors(js::OffThreadFrontendErrors* errors) {
-    errors_ = errors;
-  }
-  js::OffThreadFrontendErrors* offThreadFrontendErrors() const {
-    return errors_;
-  }
+  void setFrontendErrors(js::FrontendErrors* errors) { errors_ = errors; }
+  js::FrontendErrors* frontendErrors() const { return errors_; }
 
   
   JS::Compartment* compartment() const {

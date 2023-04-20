@@ -15,8 +15,8 @@ namespace js {
 
 class ErrorContext;
 
-struct OffThreadFrontendErrors {
-  OffThreadFrontendErrors() = default;
+struct FrontendErrors {
+  FrontendErrors() = default;
   
   
   Vector<UniquePtr<CompileError>, 0, SystemAllocPolicy> errors;
@@ -83,7 +83,7 @@ class ErrorContext {
 
 class OffThreadErrorContext : public ErrorContext {
  private:
-  js::OffThreadFrontendErrors errors_;
+  js::FrontendErrors errors_;
 
  protected:
   
