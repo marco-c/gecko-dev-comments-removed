@@ -9536,6 +9536,8 @@ nsIFrame::SelectablePeekReport nsIFrame::GetFrameFromDirection(
   bool selectable = false;
   nsIFrame* traversedFrame = this;
   AutoAssertNoDomMutations guard;
+  const nsIContent* const nativeAnonymousSubtreeContent =
+      GetClosestNativeAnonymousSubtreeRoot();
   while (!selectable) {
     auto [blockFrame, lineFrame] =
         traversedFrame->GetContainingBlockForLine(aScrollViewStop);
@@ -9573,8 +9575,15 @@ nsIFrame::SelectablePeekReport nsIFrame::GetFrameFromDirection(
       return result;
     }
 
-    auto IsSelectable = [aForceEditableRegion](const nsIFrame* aFrame) {
+    auto IsSelectable = [aForceEditableRegion, nativeAnonymousSubtreeContent](
+                            const nsIFrame* aFrame) {
       if (!aFrame->IsSelectable(nullptr)) {
+        return false;
+      }
+      
+      
+      if (aFrame->GetClosestNativeAnonymousSubtreeRoot() !=
+          nativeAnonymousSubtreeContent) {
         return false;
       }
       return !aForceEditableRegion || aFrame->GetContent()->IsEditable();
