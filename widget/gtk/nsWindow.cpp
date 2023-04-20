@@ -656,6 +656,13 @@ void nsWindow::Destroy() {
     }
   }
 
+  
+  
+  
+  if (AtkObject* ac = gtk_widget_get_accessible(GTK_WIDGET(mContainer))) {
+    gtk_accessible_set_widget(GTK_ACCESSIBLE(ac), nullptr);
+  }
+
   gtk_widget_destroy(mShell);
   mShell = nullptr;
   mContainer = nullptr;
