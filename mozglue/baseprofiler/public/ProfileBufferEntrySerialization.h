@@ -13,7 +13,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/ProfileBufferIndex.h"
 #include "mozilla/Span.h"
-#include "mozilla/Tuple.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/Unused.h"
 #include "mozilla/Variant.h"
@@ -1019,79 +1018,6 @@ struct ProfileBufferEntryReader::Deserializer<std::tuple<Ts...>> {
     return ob;
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename... Ts>
-struct ProfileBufferEntryWriter::Serializer<Tuple<Ts...>> {
- private:
-  template <size_t... Is>
-  static Length TupleBytes(const Tuple<Ts...>& aTuple,
-                           std::index_sequence<Is...>) {
-    return (0 + ... + SumBytes(Get<Is>(aTuple)));
-  }
-
-  template <size_t... Is>
-  static void TupleWrite(ProfileBufferEntryWriter& aEW,
-                         const Tuple<Ts...>& aTuple,
-                         std::index_sequence<Is...>) {
-    (aEW.WriteObject(Get<Is>(aTuple)), ...);
-  }
-
- public:
-  static Length Bytes(const Tuple<Ts...>& aTuple) {
-    
-    return TupleBytes(aTuple, std::index_sequence_for<Ts...>());
-  }
-
-  static void Write(ProfileBufferEntryWriter& aEW, const Tuple<Ts...>& aTuple) {
-    
-    TupleWrite(aEW, aTuple, std::index_sequence_for<Ts...>());
-  }
-};
-
-template <typename... Ts>
-struct ProfileBufferEntryReader::Deserializer<Tuple<Ts...>> {
-  template <size_t I>
-  static void TupleIReadInto(ProfileBufferEntryReader& aER,
-                             Tuple<Ts...>& aTuple) {
-    aER.ReadIntoObject(Get<I>(aTuple));
-  }
-
-  template <size_t... Is>
-  static void TupleReadInto(ProfileBufferEntryReader& aER, Tuple<Ts...>& aTuple,
-                            std::index_sequence<Is...>) {
-    (TupleIReadInto<Is>(aER, aTuple), ...);
-  }
-
-  static void ReadInto(ProfileBufferEntryReader& aER, Tuple<Ts...>& aTuple) {
-    TupleReadInto(aER, aTuple, std::index_sequence_for<Ts...>());
-  }
-
-  static Tuple<Ts...> Read(ProfileBufferEntryReader& aER) {
-    
-    Tuple<Ts...> ob;
-    ReadInto(aER, ob);
-    return ob;
-  }
-};
-
 
 
 

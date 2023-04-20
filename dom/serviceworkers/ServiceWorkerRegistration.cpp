@@ -328,17 +328,17 @@ already_AddRefed<Promise> ServiceWorkerRegistration::Unregister(
   }
 
   mActor->SendUnregister(
-      [outer](Tuple<bool, CopyableErrorResult>&& aResult) {
-        if (Get<1>(aResult).Failed()) {
+      [outer](std::tuple<bool, CopyableErrorResult>&& aResult) {
+        if (std::get<1>(aResult).Failed()) {
           
           
           
-          Get<1>(aResult).SuppressException();
+          std::get<1>(aResult).SuppressException();
           outer->MaybeResolve(false);
           return;
         }
         
-        outer->MaybeResolve(Get<0>(aResult));
+        outer->MaybeResolve(std::get<0>(aResult));
       },
       [outer](ResponseRejectReason&& aReason) {
         

@@ -1520,7 +1520,7 @@ void FetchEventOp::ResolvedCallback(JSContext* aCx,
   
   mHandled->MaybeResolveWithUndefined();
   mRespondWithPromiseHolder.Resolve(
-      FetchEventRespondWithResult(MakeTuple(
+      FetchEventRespondWithResult(std::make_tuple(
           std::move(ir), mRespondWithClosure.ref(),
           FetchEventTimeStamps(mFetchHandlerStart, mFetchHandlerFinish))),
       __func__);

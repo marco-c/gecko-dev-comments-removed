@@ -68,11 +68,11 @@ class nsGIFDecoder2 : public Decoder {
 
   
   template <typename PixelSize>
-  Tuple<int32_t, Maybe<WriteState>> YieldPixels(const uint8_t* aData,
-                                                size_t aLength,
-                                                size_t* aBytesReadOut,
-                                                PixelSize* aPixelBlock,
-                                                int32_t aBlockSize);
+  std::tuple<int32_t, Maybe<WriteState>> YieldPixels(const uint8_t* aData,
+                                                     size_t aLength,
+                                                     size_t* aBytesReadOut,
+                                                     PixelSize* aPixelBlock,
+                                                     int32_t aBlockSize);
 
   
   
