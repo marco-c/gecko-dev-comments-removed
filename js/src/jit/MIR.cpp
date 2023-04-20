@@ -32,6 +32,7 @@
 #include "js/ScalarType.h"            
 #include "util/Text.h"
 #include "util/Unicode.h"
+#include "vm/Iteration.h"    
 #include "vm/PlainObject.h"  
 #include "vm/Uint8Clamped.h"
 #include "wasm/WasmCode.h"

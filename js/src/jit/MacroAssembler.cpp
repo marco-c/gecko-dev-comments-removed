@@ -5074,6 +5074,22 @@ void MacroAssembler::iteratorClose(Register obj, Register temp1, Register temp2,
   bind(&done);
 }
 
+void MacroAssembler::registerIterator(Register enumeratorsList, Register iter,
+                                      Register temp) {
+  
+  storePtr(enumeratorsList, Address(iter, NativeIterator::offsetOfNext()));
+
+  
+  loadPtr(Address(enumeratorsList, NativeIterator::offsetOfPrev()), temp);
+  storePtr(temp, Address(iter, NativeIterator::offsetOfPrev()));
+
+  
+  storePtr(iter, Address(temp, NativeIterator::offsetOfNext()));
+
+  
+  storePtr(iter, Address(enumeratorsList, NativeIterator::offsetOfPrev()));
+}
+
 void MacroAssembler::toHashableNonGCThing(ValueOperand value,
                                           ValueOperand result,
                                           FloatRegister tempFloat) {
