@@ -431,6 +431,22 @@ nsresult nsHttpChannel::PrepareToConnect() {
   AddCookiesToRequest();
 
 #ifdef XP_WIN
+
+  auto prefEnabledForCurrentContainer = [&]() {
+    uint32_t containerId = mLoadInfo->GetOriginAttributes().mUserContextId;
+    
+    static_assert(nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID == 0);
+    nsPrintfCString prefName("network.http.windows-sso.container-enabled.%u",
+                             containerId);
+
+    bool enabled = false;
+    Preferences::GetBool(prefName.get(), &enabled);
+
+    LOG(("Pref for %s is %d\n", prefName.get(), enabled));
+
+    return enabled;
+  };
+
   
   
   
@@ -438,8 +454,9 @@ nsresult nsHttpChannel::PrepareToConnect() {
       mURI->SchemeIs("https") && !(mLoadFlags & LOAD_ANONYMOUS) &&
       !mPrivateBrowsing) {
     ExtContentPolicyType type = mLoadInfo->GetExternalContentPolicyType();
-    if (type == ExtContentPolicy::TYPE_DOCUMENT ||
-        type == ExtContentPolicy::TYPE_SUBDOCUMENT) {
+    if ((type == ExtContentPolicy::TYPE_DOCUMENT ||
+         type == ExtContentPolicy::TYPE_SUBDOCUMENT) &&
+        prefEnabledForCurrentContainer()) {
       AddWindowsSSO(this);
     }
   }
