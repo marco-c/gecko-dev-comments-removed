@@ -35,6 +35,7 @@ class MIDIPermissionRequest final : public ContentPermissionRequestBase,
  private:
   ~MIDIPermissionRequest() = default;
   nsresult DoPrompt();
+  void CancelWithRandomizedDelay();
 
   
   
