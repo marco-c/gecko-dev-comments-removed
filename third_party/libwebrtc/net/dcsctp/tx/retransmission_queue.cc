@@ -51,6 +51,7 @@ constexpr float kMinBytesRequiredToSendFactor = 0.9;
 
 RetransmissionQueue::RetransmissionQueue(
     absl::string_view log_prefix,
+    DcSctpSocketCallbacks* callbacks,
     TSN my_initial_tsn,
     size_t a_rwnd,
     SendQueue& send_queue,
@@ -60,7 +61,8 @@ RetransmissionQueue::RetransmissionQueue(
     const DcSctpOptions& options,
     bool supports_partial_reliability,
     bool use_message_interleaving)
-    : options_(options),
+    : callbacks_(*callbacks),
+      options_(options),
       min_bytes_required_to_send_(options.mtu * kMinBytesRequiredToSendFactor),
       partial_reliability_(supports_partial_reliability),
       log_prefix_(std::string(log_prefix) + "tx: "),
@@ -279,6 +281,21 @@ bool RetransmissionQueue::HandleSack(TimeMs now, const SackChunk& sack) {
       cumulative_tsn_ack, sack.gap_ack_blocks(), is_in_fast_recovery());
 
   
+  for (LifecycleId lifecycle_id : ack_info.acked_lifecycle_ids) {
+    RTC_DLOG(LS_VERBOSE) << "Triggering OnLifecycleMessageDelivered("
+                         << lifecycle_id.value() << ")";
+    callbacks_.OnLifecycleMessageDelivered(lifecycle_id);
+    callbacks_.OnLifecycleEnd(lifecycle_id);
+  }
+  for (LifecycleId lifecycle_id : ack_info.abandoned_lifecycle_ids) {
+    RTC_DLOG(LS_VERBOSE) << "Triggering OnLifecycleMessageExpired("
+                         << lifecycle_id.value() << ", true)";
+    callbacks_.OnLifecycleMessageExpired(lifecycle_id,
+                                         true);
+    callbacks_.OnLifecycleEnd(lifecycle_id);
+  }
+
+  
   UpdateReceiverWindow(sack.a_rwnd());
 
   RTC_DLOG(LS_VERBOSE) << log_prefix_ << "Received SACK, cum_tsn_ack="
@@ -467,10 +484,14 @@ std::vector<std::pair<TSN, Data>> RetransmissionQueue::GetChunksToSend(
         chunk_opt->data, now,
         partial_reliability_ ? chunk_opt->max_retransmissions
                              : MaxRetransmits::NoLimit(),
-        partial_reliability_ ? chunk_opt->expires_at
-                             : TimeMs::InfiniteFuture());
+        partial_reliability_ ? chunk_opt->expires_at : TimeMs::InfiniteFuture(),
+        chunk_opt->lifecycle_id);
 
     if (tsn.has_value()) {
+      if (chunk_opt->lifecycle_id.IsSet()) {
+        RTC_DCHECK(chunk_opt->data.is_end);
+        callbacks_.OnLifecycleMessageFullySent(chunk_opt->lifecycle_id);
+      }
       to_be_sent.emplace_back(tsn->Wrap(), std::move(chunk_opt->data));
     }
   }
