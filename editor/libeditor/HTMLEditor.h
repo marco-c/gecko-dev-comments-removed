@@ -3897,9 +3897,9 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitRangeOffFromNodeResult, nsresult>
-  SetInlinePropertyOnTextNode(Text& aData, uint32_t aStartOffset,
-                              uint32_t aEndOffset, nsAtom& aProperty,
-                              nsAtom* aAttribute, const nsAString& aValue);
+  SetInlinePropertyOnTextNode(Text& aText, uint32_t aStartOffset,
+                              uint32_t aEndOffset,
+                              const EditorInlineStyleAndValue& aStyleToSet);
 
   nsresult PromoteInlineRange(nsRange& aRange);
   nsresult PromoteRangeIfStartsOrEndsInNamedAnchor(nsRange& aRange);
