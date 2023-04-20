@@ -12,7 +12,6 @@
 #include "mozilla/Utf8.h"
 
 #include "js/Vector.h"
-#include "vm/ErrorContext.h"
 #include "vm/StringType.h"
 
 namespace js {
@@ -57,8 +56,8 @@ class StringBufferAllocPolicy {
   const arena_id_t& arenaId_;
 
  public:
-  StringBufferAllocPolicy(ErrorContext* ec, const arena_id_t& arenaId)
-      : impl_(ec), arenaId_(arenaId) {}
+  StringBufferAllocPolicy(JSContext* cx, const arena_id_t& arenaId)
+      : impl_(cx), arenaId_(arenaId) {}
 
   template <typename T>
   T* maybe_pod_malloc(size_t numElems) {
@@ -122,7 +121,6 @@ class StringBuffer {
   using TwoByteCharBuffer = BufferType<char16_t>;
 
   JSContext* cx_;
-  ErrorContext* ec_;
   const arena_id_t& arenaId_;
 
   
@@ -181,10 +179,10 @@ class StringBuffer {
   JSLinearString* finishStringInternal(JSContext* cx);
 
  public:
-  explicit StringBuffer(JSContext* cx, ErrorContext* ec,
+  explicit StringBuffer(JSContext* cx,
                         const arena_id_t& arenaId = js::MallocArena)
-      : cx_(cx), ec_(ec), arenaId_(arenaId), reserved_(0) {
-    cb.construct<Latin1CharBuffer>(StringBufferAllocPolicy{ec_, arenaId_});
+      : cx_(cx), arenaId_(arenaId), reserved_(0) {
+    cb.construct<Latin1CharBuffer>(StringBufferAllocPolicy{cx_, arenaId_});
   }
 
   void clear() {
@@ -366,50 +364,12 @@ class StringBuffer {
   char16_t* stealChars();
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class JSStringBuilder : public StringBuffer {
-  OffThreadErrorContext ec_;
-#ifdef DEBUG
-  bool handled_ = false;
-#endif
-
  public:
   explicit JSStringBuilder(JSContext* cx)
-      : StringBuffer(cx, &ec_, js::StringBufferArena) {
-    ec_.setCurrentJSContext(cx);
-  }
-
-  ~JSStringBuilder() { MOZ_ASSERT(handled_); }
-
-  void failure() {
-#ifdef DEBUG
-    handled_ = true;
-#endif 
-    ec_.convertToRuntimeError(cx_);
-  }
-
-  void ok() {
-#ifdef DEBUG
-    handled_ = true;
-#endif 
-  }
+      : StringBuffer(cx, js::StringBufferArena) {}
 
   
-
-
 
 
 
