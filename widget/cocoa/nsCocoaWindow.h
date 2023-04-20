@@ -16,7 +16,6 @@
 #include "nsCocoaUtils.h"
 #include "nsTouchBar.h"
 #include <dlfcn.h>
-#include <queue>
 
 class nsCocoaWindow;
 class nsChildView;
@@ -263,6 +262,8 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
   virtual void SuppressAnimation(bool aSuppress) override;
   virtual void HideWindowChrome(bool aShouldHide) override;
 
+  void WillEnterFullScreen(bool aFullScreen);
+  void EnteredFullScreen(bool aFullScreen, bool aNativeMode = true);
   virtual bool PrepareForFullscreenTransition(nsISupports** aData) override;
   virtual void PerformFullscreenTransition(FullscreenTransitionStage aStage, uint16_t aDuration,
                                            nsISupports* aData, nsIRunnable* aCallback) override;
@@ -361,25 +362,6 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
                             const ScrollableLayerGuid& aGuid) override;
   void StopAsyncAutoscroll(const ScrollableLayerGuid& aGuid) override;
 
-  
-  
-  void CocoaWindowWillEnterFullscreen(bool aFullscreen);
-  void CocoaWindowDidFailFullscreen(bool aAttemptedFullscreen);
-  void CocoaWindowDidResize();
-  void CocoaSendToplevelActivateEvents();
-  void CocoaSendToplevelDeactivateEvents();
-
-  enum class TransitionType {
-    Windowed,
-    Fullscreen,
-    EmulatedFullscreen,
-    Miniaturize,
-    Deminiaturize,
-    Zoom,
-  };
-  void FinishCurrentTransition();
-  void FinishCurrentTransitionIfMatching(const TransitionType& aTransition);
-
  protected:
   virtual ~nsCocoaWindow();
 
@@ -393,6 +375,7 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
   void DoResize(double aX, double aY, double aWidth, double aHeight, bool aRepaint,
                 bool aConstrainToCurrentScreen);
 
+  inline bool ShouldToggleNativeFullscreen(bool aFullScreen, bool aUseSystemTransition);
   void UpdateFullscreenState(bool aFullScreen, bool aNativeMode);
   nsresult DoMakeFullScreen(bool aFullScreen, bool aUseSystemTransition);
 
@@ -422,27 +405,8 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
                          
   nsSizeMode mSizeMode;
   bool mInFullScreenMode;
-  
-  
-  bool mInNativeFullScreenMode;
-
-  mozilla::Maybe<TransitionType> mTransitionCurrent;
-  std::queue<TransitionType> mTransitionsPending;
-
-  
-  
-  mozilla::Maybe<TransitionType> mUpdateFullscreenOnResize;
-
-  bool IsInTransition() { return mTransitionCurrent.isSome(); }
-  void QueueTransition(const TransitionType& aTransition);
-  void ProcessTransitions();
-
-  bool mInProcessTransitions = false;
-
-  
-  
-  
-  bool mSuppressSizeModeEvents = false;
+  bool mInFullScreenTransition;  
+                                 
 
   
   
@@ -451,6 +415,10 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
 
   bool mModal;
   bool mFakeModal;
+
+  
+  
+  bool mInNativeFullScreenMode;
 
   bool mIsAnimationSuppressed;
 

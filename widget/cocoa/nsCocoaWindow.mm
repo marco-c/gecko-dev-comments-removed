@@ -139,10 +139,11 @@ nsCocoaWindow::nsCocoaWindow()
       mSheetNeedsShow(false),
       mSizeMode(nsSizeMode_Normal),
       mInFullScreenMode(false),
-      mInNativeFullScreenMode(false),
+      mInFullScreenTransition(false),
       mIgnoreOcclusionCount(0),
       mModal(false),
       mFakeModal(false),
+      mInNativeFullScreenMode(false),
       mIsAnimationSuppressed(false),
       mInReportMoveEvent(false),
       mInResize(false),
@@ -1255,15 +1256,32 @@ void nsCocoaWindow::Move(double aX, double aY) {
 }
 
 void nsCocoaWindow::SetSizeMode(nsSizeMode aMode) {
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+
+  if (!mWindow) return;
+
+  
+  
+  
+  nsSizeMode previousMode = mSizeMode;
+
   if (aMode == nsSizeMode_Normal) {
-    QueueTransition(TransitionType::Windowed);
+    if ([mWindow isMiniaturized])
+      [mWindow deminiaturize:nil];
+    else if (previousMode == nsSizeMode_Maximized && [mWindow isZoomed])
+      [mWindow zoom:nil];
+    else if (previousMode == nsSizeMode_Fullscreen)
+      MakeFullScreen(false);
   } else if (aMode == nsSizeMode_Minimized) {
-    QueueTransition(TransitionType::Miniaturize);
+    if (![mWindow isMiniaturized]) [mWindow miniaturize:nil];
   } else if (aMode == nsSizeMode_Maximized) {
-    QueueTransition(TransitionType::Zoom);
+    if ([mWindow isMiniaturized]) [mWindow deminiaturize:nil];
+    if (![mWindow isZoomed]) [mWindow zoom:nil];
   } else if (aMode == nsSizeMode_Fullscreen) {
-    MakeFullScreen(true);
+    if (!mInFullScreenMode) MakeFullScreen(true);
   }
+
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
@@ -1621,33 +1639,18 @@ static bool AlwaysUsesNativeFullScreen() {
   [mFullscreenTransitionAnimation startAnimation];
 }
 
-void nsCocoaWindow::CocoaWindowWillEnterFullscreen(bool aFullscreen) {
-  MOZ_ASSERT(mUpdateFullscreenOnResize.isNothing());
-
-  
-  
-  mUpdateFullscreenOnResize =
-      Some(aFullscreen ? TransitionType::Fullscreen : TransitionType::Windowed);
-
+void nsCocoaWindow::WillEnterFullScreen(bool aFullScreen) {
   if (mWidgetListener) {
-    mWidgetListener->FullscreenWillChange(aFullscreen);
+    mWidgetListener->FullscreenWillChange(aFullScreen);
   }
+  
+  
+  UpdateFullscreenState(aFullScreen, true);
 }
 
-void nsCocoaWindow::CocoaWindowDidFailFullscreen(bool aAttemptedFullscreen) {
-  if (mWidgetListener) {
-    mWidgetListener->FullscreenWillChange(!aAttemptedFullscreen);
-  }
-
-  
-  if (mUpdateFullscreenOnResize.isNothing()) {
-    UpdateFullscreenState(!aAttemptedFullscreen, true);
-    ReportSizeEvent();
-  }
-
-  TransitionType transition =
-      aAttemptedFullscreen ? TransitionType::Fullscreen : TransitionType::Windowed;
-  FinishCurrentTransitionIfMatching(transition);
+void nsCocoaWindow::EnteredFullScreen(bool aFullScreen, bool aNativeMode) {
+  mInFullScreenTransition = false;
+  UpdateFullscreenState(aFullScreen, aNativeMode);
 }
 
 void nsCocoaWindow::UpdateFullscreenState(bool aFullScreen, bool aNativeMode) {
@@ -1668,6 +1671,29 @@ void nsCocoaWindow::UpdateFullscreenState(bool aFullScreen, bool aNativeMode) {
   }
 }
 
+inline bool nsCocoaWindow::ShouldToggleNativeFullscreen(bool aFullScreen,
+                                                        bool aUseSystemTransition) {
+  
+  
+  
+  NSWindowCollectionBehavior colBehavior = [mWindow collectionBehavior];
+  if (!(colBehavior & NSWindowCollectionBehaviorFullScreenPrimary)) {
+    return false;
+  }
+
+  if (mInNativeFullScreenMode) {
+    
+    return true;
+  }
+  if (!aUseSystemTransition) {
+    
+    
+    return false;
+  }
+  
+  return aFullScreen;
+}
+
 nsresult nsCocoaWindow::MakeFullScreen(bool aFullScreen) {
   return DoMakeFullScreen(aFullScreen, AlwaysUsesNativeFullScreen());
 }
@@ -1677,196 +1703,45 @@ nsresult nsCocoaWindow::MakeFullScreenWithNativeTransition(bool aFullScreen) {
 }
 
 nsresult nsCocoaWindow::DoMakeFullScreen(bool aFullScreen, bool aUseSystemTransition) {
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+
   if (!mWindow) {
     return NS_OK;
   }
 
   
-  TransitionType transition = TransitionType::Windowed;
-  if (aFullScreen) {
-    
-    transition = (aUseSystemTransition &&
-                  (mWindow.collectionBehavior & NSWindowCollectionBehaviorFullScreenPrimary))
-                     ? TransitionType::Fullscreen
-                     : TransitionType::EmulatedFullscreen;
+  
+  
+  if (mInFullScreenMode == aFullScreen) {
+    return NS_OK;
   }
 
-  QueueTransition(transition);
+  mInFullScreenTransition = true;
+
+  if (ShouldToggleNativeFullscreen(aFullScreen, aUseSystemTransition)) {
+    MOZ_ASSERT(mInNativeFullScreenMode != aFullScreen,
+               "We shouldn't have been in native fullscreen.");
+    
+    
+    
+    [mWindow toggleFullScreen:nil];
+  } else {
+    if (mWidgetListener) {
+      mWidgetListener->FullscreenWillChange(aFullScreen);
+    }
+    NSDisableScreenUpdates();
+    
+    
+    
+    nsCocoaUtils::HideOSChromeOnScreen(aFullScreen);
+    nsBaseWidget::InfallibleMakeFullScreen(aFullScreen);
+    NSEnableScreenUpdates();
+    EnteredFullScreen(aFullScreen,  false);
+  }
+
   return NS_OK;
-}
 
-void nsCocoaWindow::QueueTransition(const TransitionType& aTransition) {
-  mTransitionsPending.push(aTransition);
-  ProcessTransitions();
-}
-
-void nsCocoaWindow::ProcessTransitions() {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK
-
-  if (mInProcessTransitions) {
-    return;
-  }
-
-  mInProcessTransitions = true;
-
-  
-  
-  
-  while (!mTransitionsPending.empty() && !IsInTransition()) {
-    TransitionType nextTransition = mTransitionsPending.front();
-
-    
-    
-    
-    
-    
-    
-    switch (nextTransition) {
-      case TransitionType::Fullscreen:
-      case TransitionType::EmulatedFullscreen:
-      case TransitionType::Windowed:
-      case TransitionType::Zoom:
-        
-        if (mWindow.miniaturized) {
-          
-          
-          if (nextTransition != TransitionType::Windowed) {
-            mSuppressSizeModeEvents = true;
-          }
-          mTransitionCurrent = Some(TransitionType::Deminiaturize);
-        }
-        break;
-      case TransitionType::Miniaturize:
-        
-        if (mInFullScreenMode) {
-          mSuppressSizeModeEvents = true;
-          mTransitionCurrent = Some(TransitionType::Windowed);
-        }
-        break;
-      default:
-        break;
-    }
-
-    
-    
-    if (mTransitionCurrent.isNothing()) {
-      mTransitionCurrent = Some(nextTransition);
-      mTransitionsPending.pop();
-    }
-
-    switch (*mTransitionCurrent) {
-      case TransitionType::Fullscreen: {
-        if (!mInFullScreenMode) {
-          
-          [mWindow toggleFullScreen:nil];
-          continue;
-        }
-        break;
-      }
-
-      case TransitionType::EmulatedFullscreen: {
-        if (!mInFullScreenMode) {
-          
-          if (mWidgetListener) {
-            mWidgetListener->FullscreenWillChange(true);
-          }
-          NSDisableScreenUpdates();
-          mSuppressSizeModeEvents = true;
-          
-          
-          
-          nsCocoaUtils::HideOSChromeOnScreen(true);
-          nsBaseWidget::InfallibleMakeFullScreen(true);
-          mSuppressSizeModeEvents = false;
-          NSEnableScreenUpdates();
-          UpdateFullscreenState(true, false);
-        }
-        break;
-      }
-
-      case TransitionType::Windowed: {
-        if (mInFullScreenMode) {
-          if (mInNativeFullScreenMode) {
-            
-            [mWindow toggleFullScreen:nil];
-            continue;
-          } else {
-            
-            if (mWidgetListener) {
-              mWidgetListener->FullscreenWillChange(false);
-            }
-            NSDisableScreenUpdates();
-            mSuppressSizeModeEvents = true;
-            
-            
-            
-            nsCocoaUtils::HideOSChromeOnScreen(false);
-            nsBaseWidget::InfallibleMakeFullScreen(false);
-            mSuppressSizeModeEvents = false;
-            NSEnableScreenUpdates();
-            UpdateFullscreenState(false, false);
-          }
-        } else if (mWindow.zoomed) {
-          [mWindow zoom:nil];
-        }
-        break;
-      }
-
-      case TransitionType::Miniaturize:
-        if (!mWindow.miniaturized) {
-          
-          [mWindow miniaturize:nil];
-          continue;
-        }
-        break;
-
-      case TransitionType::Deminiaturize:
-        if (mWindow.miniaturized) {
-          
-          [mWindow deminiaturize:nil];
-          continue;
-        }
-        break;
-
-      case TransitionType::Zoom:
-        if (!mWindow.zoomed) {
-          [mWindow zoom:nil];
-        }
-        break;
-
-      default:
-        break;
-    }
-
-    mTransitionCurrent.reset();
-  }
-
-  mInProcessTransitions = false;
-
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
-}
-
-void nsCocoaWindow::FinishCurrentTransition() {
-  mTransitionCurrent.reset();
-  mSuppressSizeModeEvents = false;
-  ProcessTransitions();
-}
-
-void nsCocoaWindow::FinishCurrentTransitionIfMatching(const TransitionType& aTransition) {
-  
-  
-  
-  
-  if (mTransitionCurrent.isSome() && (*mTransitionCurrent == aTransition)) {
-    
-    
-    
-    
-    
-    
-    NS_DispatchToCurrentThread(NewRunnableMethod("FinishCurrentTransition", this,
-                                                 &nsCocoaWindow::FinishCurrentTransition));
-  }
+  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
 
@@ -2221,12 +2096,12 @@ void nsCocoaWindow::DispatchSizeModeEvent() {
     return;
   }
 
-  if (mSuppressSizeModeEvents) {
-    return;
-  }
-
   nsSizeMode newMode = GetWindowSizeMode(mWindow, mInFullScreenMode);
-  if (mSizeMode == newMode) {
+
+  
+  
+  
+  if (mInFullScreenTransition || mSizeMode == newMode) {
     return;
   }
 
@@ -2263,6 +2138,7 @@ void nsCocoaWindow::ReportSizeEvent() {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   UpdateBounds();
+
   if (mWidgetListener) {
     LayoutDeviceIntRect innerBounds = GetClientBounds();
     mWidgetListener->WindowResized(this, innerBounds.width, innerBounds.height);
@@ -2789,41 +2665,8 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
 
 - (NSSize)windowWillResize:(NSWindow*)sender toSize:(NSSize)proposedFrameSize {
   RollUpPopups();
+
   return proposedFrameSize;
-}
-
-void nsCocoaWindow::CocoaSendToplevelActivateEvents() {
-  if (mWidgetListener) {
-    mWidgetListener->WindowActivated();
-  }
-}
-
-void nsCocoaWindow::CocoaSendToplevelDeactivateEvents() {
-  if (mWidgetListener) {
-    mWidgetListener->WindowDeactivated();
-  }
-}
-
-void nsCocoaWindow::CocoaWindowDidResize() {
-  
-  
-  UpdateBounds();
-
-  if (mUpdateFullscreenOnResize.isSome()) {
-    
-    
-    
-    bool toFullscreen = (*mUpdateFullscreenOnResize == TransitionType::Fullscreen);
-    mUpdateFullscreenOnResize.reset();
-
-    UpdateFullscreenState(toFullscreen, true);
-    ReportSizeEvent();
-    return;
-  }
-
-  
-  DispatchSizeModeEvent();
-  ReportSizeEvent();
 }
 
 - (void)windowDidResize:(NSNotification*)aNotification {
@@ -2832,7 +2675,9 @@ void nsCocoaWindow::CocoaWindowDidResize() {
 
   if (!mGeckoWindow) return;
 
-  mGeckoWindow->CocoaWindowDidResize();
+  
+  mGeckoWindow->DispatchSizeModeEvent();
+  mGeckoWindow->ReportSizeEvent();
 }
 
 - (void)windowDidChangeScreen:(NSNotification*)aNotification {
@@ -2869,13 +2714,20 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   if (!mGeckoWindow) {
     return;
   }
-  mGeckoWindow->CocoaWindowWillEnterFullscreen(true);
+
+  mGeckoWindow->WillEnterFullScreen(true);
 }
 
 
 
 
 - (void)windowDidEnterFullScreen:(NSNotification*)notification {
+  if (!mGeckoWindow) {
+    return;
+  }
+
+  mGeckoWindow->EnteredFullScreen(true);
+
   
   
   
@@ -2898,40 +2750,38 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   if ([titlebarContainerView respondsToSelector:@selector(setTransparent:)]) {
     [titlebarContainerView setTransparent:NO];
   }
-
-  if (!mGeckoWindow) {
-    return;
-  }
-
-  mGeckoWindow->FinishCurrentTransitionIfMatching(nsCocoaWindow::TransitionType::Fullscreen);
 }
 
 - (void)windowWillExitFullScreen:(NSNotification*)notification {
   if (!mGeckoWindow) {
     return;
   }
-  mGeckoWindow->CocoaWindowWillEnterFullscreen(false);
+
+  mGeckoWindow->WillEnterFullScreen(false);
 }
 
 - (void)windowDidExitFullScreen:(NSNotification*)notification {
   if (!mGeckoWindow) {
     return;
   }
-  mGeckoWindow->FinishCurrentTransitionIfMatching(nsCocoaWindow::TransitionType::Windowed);
+
+  mGeckoWindow->EnteredFullScreen(false);
 }
 
 - (void)windowDidFailToEnterFullScreen:(NSWindow*)window {
   if (!mGeckoWindow) {
     return;
   }
-  mGeckoWindow->CocoaWindowDidFailFullscreen(true);
+
+  mGeckoWindow->EnteredFullScreen(false);
 }
 
 - (void)windowDidFailToExitFullScreen:(NSWindow*)window {
   if (!mGeckoWindow) {
     return;
   }
-  mGeckoWindow->CocoaWindowDidFailFullscreen(false);
+
+  mGeckoWindow->EnteredFullScreen(true);
 }
 
 - (void)windowDidBecomeMain:(NSNotification*)aNotification {
@@ -3033,19 +2883,11 @@ void nsCocoaWindow::CocoaWindowDidResize() {
 }
 
 - (void)windowDidMiniaturize:(NSNotification*)aNotification {
-  if (!mGeckoWindow) {
-    return;
-  }
-  mGeckoWindow->DispatchSizeModeEvent();
-  mGeckoWindow->FinishCurrentTransitionIfMatching(nsCocoaWindow::TransitionType::Miniaturize);
+  if (mGeckoWindow) mGeckoWindow->DispatchSizeModeEvent();
 }
 
 - (void)windowDidDeminiaturize:(NSNotification*)aNotification {
-  if (!mGeckoWindow) {
-    return;
-  }
-  mGeckoWindow->DispatchSizeModeEvent();
-  mGeckoWindow->FinishCurrentTransitionIfMatching(nsCocoaWindow::TransitionType::Deminiaturize);
+  if (mGeckoWindow) mGeckoWindow->DispatchSizeModeEvent();
 }
 
 - (BOOL)windowShouldZoom:(NSWindow*)window toFrame:(NSRect)proposedFrame {
@@ -3114,15 +2956,20 @@ void nsCocoaWindow::CocoaWindowDidResize() {
 
 - (void)sendToplevelActivateEvents {
   if (!mToplevelActiveState && mGeckoWindow) {
-    mGeckoWindow->CocoaSendToplevelActivateEvents();
-
+    nsIWidgetListener* listener = mGeckoWindow->GetWidgetListener();
+    if (listener) {
+      listener->WindowActivated();
+    }
     mToplevelActiveState = true;
   }
 }
 
 - (void)sendToplevelDeactivateEvents {
   if (mToplevelActiveState && mGeckoWindow) {
-    mGeckoWindow->CocoaSendToplevelDeactivateEvents();
+    nsIWidgetListener* listener = mGeckoWindow->GetWidgetListener();
+    if (listener) {
+      listener->WindowDeactivated();
+    }
     mToplevelActiveState = false;
   }
 }
