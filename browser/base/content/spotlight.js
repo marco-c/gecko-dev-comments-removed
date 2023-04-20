@@ -27,7 +27,6 @@ function renderMultistage(ready) {
 
   
   window.AWGetFeatureConfig = () => CONFIG;
-  window.AWGetRegion = receive("GET_REGION");
   window.AWGetSelectedTheme = receive("GET_SELECTED_THEME");
   window.AWSelectTheme = data => receive("SELECT_THEME")(data?.toUpperCase());
   
