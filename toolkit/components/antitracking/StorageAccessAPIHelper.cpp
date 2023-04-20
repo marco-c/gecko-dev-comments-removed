@@ -453,7 +453,8 @@ StorageAccessAPIHelper::CompleteAllowAccessFor(
       
       
       if (aReason != ContentBlockingNotifier::eOpener) {
-        dom::ContentParent* cp = aParentContext->Canonical()->GetContentParent();
+        dom::ContentParent* cp =
+            aParentContext->Canonical()->GetContentParent();
         Unused << cp->SendOnAllowAccessFor(aParentContext, trackingOrigin,
                                            aCookieBehavior, aReason);
       }

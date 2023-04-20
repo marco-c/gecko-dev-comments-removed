@@ -72,7 +72,6 @@ uint32_t mozilla::detail::CheckCookiePermissionForPrincipal(
 
 
 
-
 static StorageAccess InternalStorageAllowedCheck(
     nsIPrincipal* aPrincipal, nsPIDOMWindowInner* aWindow, nsIURI* aURI,
     nsIChannel* aChannel, nsICookieJarSettings* aCookieJarSettings,
@@ -664,8 +663,8 @@ bool ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
     return false;
   }
 
-  uint32_t cookiePermission =
-      detail::CheckCookiePermissionForPrincipal(cookieJarSettings, channelPrincipal);
+  uint32_t cookiePermission = detail::CheckCookiePermissionForPrincipal(
+      cookieJarSettings, channelPrincipal);
   if (cookiePermission != nsICookiePermission::ACCESS_DEFAULT) {
     LOG(
         ("CheckCookiePermissionForPrincipal() returned a non-default access "
