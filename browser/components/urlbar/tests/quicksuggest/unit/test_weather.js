@@ -524,6 +524,27 @@ add_task(async function locale_nonEnglish() {
 
 
 
+add_task(async function spacesInSearchString() {
+  
+  assertEnabled({
+    message: "Sanity check initial state",
+    hasSuggestion: true,
+    pendingFetchCount: 0,
+  });
+
+  for (let searchString of [" ", "  ", "   ", " doesn't match anything"]) {
+    await check_results({
+      context: createContext(searchString, {
+        providers: [UrlbarProviderQuickSuggest.name],
+        isPrivate: false,
+      }),
+      matches: [],
+    });
+  }
+});
+
+
+
 
 
 
