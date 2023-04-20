@@ -2885,7 +2885,8 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
   
   
   
-  if (mState == OVERSCROLL_ANIMATION || mState == NOTHING) {
+  PanZoomState currentState = GetState();
+  if (currentState == OVERSCROLL_ANIMATION || currentState == NOTHING) {
     return nsEventStatus_eIgnore;
   }
 
@@ -2918,7 +2919,8 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
   
   
   
-  if (mState != OVERSCROLL_ANIMATION) {
+  currentState = GetState();
+  if (currentState != OVERSCROLL_ANIMATION) {
     
     
     
@@ -2930,7 +2932,7 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
               "layers::AsyncPanZoomController::"
               "DoDelayedTransformEndNotification",
               this, &AsyncPanZoomController::DoDelayedTransformEndNotification,
-              mState),
+              currentState),
           StaticPrefs::apz_scrollend_event_content_delay_ms());
       SetStateNoContentControllerDispatch(NOTHING);
     } else {
@@ -6152,6 +6154,11 @@ void AsyncPanZoomController::SetState(PanZoomState aNewState) {
   PanZoomState oldState = SetStateNoContentControllerDispatch(aNewState);
 
   DispatchStateChangeNotification(oldState, aNewState);
+}
+
+auto AsyncPanZoomController::GetState() const -> PanZoomState {
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  return mState;
 }
 
 void AsyncPanZoomController::DispatchStateChangeNotification(

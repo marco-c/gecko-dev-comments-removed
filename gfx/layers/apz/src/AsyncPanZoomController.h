@@ -1444,6 +1444,11 @@ class AsyncPanZoomController {
 
 
 
+  PanZoomState GetState() const;
+  
+
+
+
   void DispatchStateChangeNotification(PanZoomState aOldState,
                                        PanZoomState aNewState);
   
