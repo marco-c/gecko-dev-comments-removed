@@ -446,7 +446,7 @@ nsresult MenuBarListener::Fullscreen(Event* aEvent) {
 MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
 MenuBarListener::HandleEvent(Event* aEvent) {
   
-  if (!mMenuBar->GetPrimaryFrame() ||
+  if (!mMenuBar || !mMenuBar->GetPrimaryFrame() ||
       !mMenuBar->GetPrimaryFrame()->StyleVisibility()->IsVisible()) {
     return NS_OK;
   }
