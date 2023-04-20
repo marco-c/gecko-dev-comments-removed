@@ -171,6 +171,23 @@ void Assembler::copyDataRelocationTable(uint8_t* dest) {
 }
 
 void Assembler::RV_li(Register rd, int64_t imm) {
+  UseScratchRegisterScope temps(this);
+  if (RecursiveLiCount(imm) > GeneralLiCount(imm, temps.hasAvailable())) {
+    GeneralLi(rd, imm);
+  } else {
+    RecursiveLi(rd, imm);
+  }
+}
+
+int Assembler::RV_li_count(int64_t imm, bool is_get_temp_reg) {
+  if (RecursiveLiCount(imm) > GeneralLiCount(imm, is_get_temp_reg)) {
+    return GeneralLiCount(imm, is_get_temp_reg);
+  } else {
+    return RecursiveLiCount(imm);
+  }
+}
+
+void Assembler::GeneralLi(Register rd, int64_t imm) {
   
   
   
@@ -198,8 +215,8 @@ void Assembler::RV_li(Register rd, int64_t imm) {
     }
     return;
   } else {
-    
     UseScratchRegisterScope temps(this);
+    
     int64_t up_32 = imm >> 32;
     int64_t low_32 = imm & 0xffffffffull;
     Register temp_reg = rd;
@@ -207,6 +224,7 @@ void Assembler::RV_li(Register rd, int64_t imm) {
     if (up_32 == 0 || low_32 == 0) {
       
     } else {
+      BlockTrampolinePoolScope block_trampoline_pool(this, 0);
       temp_reg = temps.hasAvailable() ? temps.Acquire() : InvalidReg;
     }
     if (temp_reg != InvalidReg) {
@@ -319,6 +337,129 @@ void Assembler::RV_li(Register rd, int64_t imm) {
       shift_val = 0;
     }
   }
+}
+
+int Assembler::GeneralLiCount(int64_t imm, bool is_get_temp_reg) {
+  int count = 0;
+  
+  if (is_int32(imm + 0x800)) {
+    
+    int64_t high_20 = ((imm + 0x800) >> 12);
+    int64_t low_12 = imm << 52 >> 52;
+    if (high_20) {
+      count++;
+      if (low_12) {
+        count++;
+      }
+    } else {
+      count++;
+    }
+    return count;
+  } else {
+    
+    int64_t up_32 = imm >> 32;
+    int64_t low_32 = imm & 0xffffffffull;
+    
+    if (is_get_temp_reg) {
+      
+      int64_t sim_low = 0;
+      
+      if (low_32 != 0) {
+        int64_t high_20 = ((low_32 + 0x800) >> 12);
+        int64_t low_12 = low_32 & 0xfff;
+        if (high_20) {
+          
+          high_20 &= 0xfffff;
+          sim_low = ((high_20 << 12) << 32) >> 32;
+          count++;
+          if (low_12) {
+            sim_low += (low_12 << 52 >> 52) | low_12;
+            count++;
+          }
+        } else {
+          sim_low = low_12;
+          count++;
+        }
+      }
+      if (sim_low & 0x100000000) {
+        
+        if (up_32 == 0) {
+          
+          count++;
+          count++;
+          return count;
+        }
+        
+        up_32 = (up_32 - 0xffffffff) & 0xffffffff;
+      }
+      if (up_32 == 0) {
+        return count;
+      }
+      int64_t high_20 = (up_32 + 0x800) >> 12;
+      int64_t low_12 = up_32 & 0xfff;
+      if (high_20) {
+        
+        high_20 &= 0xfffff;
+        count++;
+        if (low_12) {
+          count++;
+        }
+      } else {
+        count++;
+      }
+      
+      count++;
+      if (low_32 != 0) {
+        count++;
+      }
+      return count;
+    }
+    
+    
+    
+    
+    int64_t high_20 = (up_32 + 0x800) >> 12;
+    int64_t low_12 = up_32 & 0xfff;
+    if (high_20) {
+      
+      high_20 &= 0xfffff;
+      count++;
+      if (low_12) {
+        count++;
+      }
+    } else {
+      count++;
+    }
+    
+    
+    
+    
+    uint32_t mask = 0x80000000;
+    int32_t i;
+    for (i = 0; i < 32; i++) {
+      if ((low_32 & mask) == 0) {
+        mask >>= 1;
+        if (i == 31) {
+          
+          count++;
+        }
+        continue;
+      }
+      
+      if ((i + 11) < 32) {
+        
+        count++;
+        count++;
+        i += 10;
+        mask >>= 11;
+      } else {
+        count++;
+        count++;
+        break;
+      }
+    }
+  }
+  return count;
 }
 
 void Assembler::li_ptr(Register rd, int64_t imm) {
