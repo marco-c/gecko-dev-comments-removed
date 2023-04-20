@@ -26,13 +26,12 @@ add_task(async function setup() {
 
   
   
-  await SearchTestUtils.installSearchExtension({
-    name: DEFAULT_ENGINE_NAME,
-    search_url: "https://my.search.com/",
-  });
-
-  Services.search.defaultEngine = Services.search.getEngineByName(
-    DEFAULT_ENGINE_NAME
+  await SearchTestUtils.installSearchExtension(
+    {
+      name: DEFAULT_ENGINE_NAME,
+      search_url: "https://my.search.com/",
+    },
+    { setAsDefault: true }
   );
 
   

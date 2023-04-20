@@ -12,18 +12,10 @@ add_setup(async function() {
   await PlacesUtils.bookmarks.eraseEverything();
 
   
-  let oldDefaultEngine = await Services.search.getDefault();
-  await SearchTestUtils.installSearchExtension({ name: "Test" });
-  await Services.search.setDefault(
-    Services.search.getEngineByName("Test"),
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+  await SearchTestUtils.installSearchExtension(
+    { name: "Test" },
+    { setAsDefault: true }
   );
-  registerCleanupFunction(async () => {
-    await Services.search.setDefault(
-      oldDefaultEngine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-    );
-  });
 
   
   await PlacesUtils.bookmarks.insert({

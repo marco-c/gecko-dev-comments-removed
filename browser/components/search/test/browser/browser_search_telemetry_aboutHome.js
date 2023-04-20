@@ -12,22 +12,17 @@ add_setup(async function() {
   
   
   
-  await SearchTestUtils.installSearchExtension({
-    name: "MozSearch",
-    keyword: "mozalias",
-  });
+  await SearchTestUtils.installSearchExtension(
+    {
+      name: "MozSearch",
+      keyword: "mozalias",
+    },
+    { setAsDefault: true }
+  );
   await SearchTestUtils.installSearchExtension({
     name: "MozSearch2",
     keyword: "mozalias2",
   });
-
-  
-  let engineDefault = Services.search.getEngineByName("MozSearch");
-  let originalEngine = await Services.search.getDefault();
-  await Services.search.setDefault(
-    engineDefault,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
 
   
   let engineOneOff = Services.search.getEngineByName("MozSearch2");
@@ -49,12 +44,7 @@ add_setup(async function() {
     ],
   });
 
-  
   registerCleanupFunction(async function() {
-    await Services.search.setDefault(
-      originalEngine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-    );
     await PlacesUtils.history.clear();
     Services.telemetry.setEventRecordingEnabled("navigation", false);
     Services.telemetry.canRecordExtended = oldCanRecord;

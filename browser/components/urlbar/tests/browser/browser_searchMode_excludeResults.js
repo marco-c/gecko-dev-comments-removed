@@ -26,18 +26,16 @@ add_setup(async function() {
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();
 
-  let oldDefaultEngine = await Services.search.getDefault();
   
   
   
-  await SearchTestUtils.installSearchExtension({
-    search_url: "https://subdomain.example.ca/",
-  });
-  let engine = Services.search.getEngineByName("Example");
-  await Services.search.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+  await SearchTestUtils.installSearchExtension(
+    {
+      search_url: "https://subdomain.example.ca/",
+    },
+    { setAsDefault: true }
   );
+  let engine = Services.search.getEngineByName("Example");
   await Services.search.moveEngine(engine, 0);
 
   const REMOTE_TAB = {
@@ -98,10 +96,6 @@ add_setup(async function() {
     sandbox.restore();
     weaveXPCService.ready = oldWeaveServiceReady;
     SyncedTabs._internal = originalSyncedTabsInternal;
-    await Services.search.setDefault(
-      oldDefaultEngine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-    );
     await PlacesUtils.history.clear();
   });
 });

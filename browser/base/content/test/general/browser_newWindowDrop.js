@@ -4,29 +4,18 @@ const { SearchTestUtils } = ChromeUtils.importESModule(
 
 SearchTestUtils.init(this);
 
-registerCleanupFunction(async function cleanup() {
-  await Services.search.setDefault(
-    originalEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
-});
-
-let originalEngine;
 add_task(async function test_setup() {
   
   requestLongerTimeout(10);
 
   
-  await SearchTestUtils.installSearchExtension({
-    name: "MozSearch",
-    search_url: "https://example.com/",
-    search_url_get_params: "q={searchTerms}",
-  });
-  let engine = Services.search.getEngineByName("MozSearch");
-  originalEngine = await Services.search.getDefault();
-  await Services.search.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+  await SearchTestUtils.installSearchExtension(
+    {
+      name: "MozSearch",
+      search_url: "https://example.com/",
+      search_url_get_params: "q={searchTerms}",
+    },
+    { setAsDefault: true }
   );
 
   

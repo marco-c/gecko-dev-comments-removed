@@ -93,21 +93,17 @@ async function withNewSearchEngine(taskFn) {
 }
 
 add_setup(async function() {
-  await SearchTestUtils.installSearchExtension({
-    name: "MozSearch",
-    keyword: "mozalias",
-    search_url: "https://example.com/",
-  });
-
-  
-  let engine = Services.search.getEngineByName("MozSearch");
-  let originalEngine = await Services.search.getDefault();
-  await Services.search.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+  await SearchTestUtils.installSearchExtension(
+    {
+      name: "MozSearch",
+      keyword: "mozalias",
+      search_url: "https://example.com/",
+    },
+    { setAsDefault: true }
   );
 
   
+  let engine = Services.search.getEngineByName("MozSearch");
   await Services.search.moveEngine(engine, 0);
 
   
@@ -142,10 +138,6 @@ add_setup(async function() {
   
   registerCleanupFunction(async function() {
     Services.telemetry.canRecordExtended = oldCanRecord;
-    await Services.search.setDefault(
-      originalEngine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-    );
     Services.prefs.setBoolPref(SUGGEST_URLBAR_PREF, suggestionsEnabled);
     await PlacesUtils.history.clear();
     await UrlbarTestUtils.formHistory.clear();

@@ -23,22 +23,9 @@ add_setup(async function() {
   await UrlbarTestUtils.formHistory.clear();
 
   
-  await SearchTestUtils.installSearchExtension();
-  let originalEngine = await Services.search.getDefault();
-  let engine = Services.search.getEngineByName("Example");
-  await Services.search.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
 
   await MerinoTestUtils.server.start();
-
-  registerCleanupFunction(async () => {
-    await Services.search.setDefault(
-      originalEngine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-    );
-  });
 });
 
 
