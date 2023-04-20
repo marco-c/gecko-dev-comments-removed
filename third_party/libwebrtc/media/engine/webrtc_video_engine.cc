@@ -3060,9 +3060,9 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetFlexFecPayload(
     flexfec_stream_->SetPayloadType(payload_type);
 
     if (payload_type == -1) {
-      
-      
-      flexfec_needs_recreation = true;
+      stream_->SetFlexFecProtection(nullptr);
+      call_->DestroyFlexfecReceiveStream(flexfec_stream_);
+      flexfec_stream_ = nullptr;
     }
   } else if (payload_type != -1) {
     flexfec_config_.payload_type = payload_type;

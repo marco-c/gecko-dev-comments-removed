@@ -188,6 +188,13 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   
   void SetRtcpMode(RtcpMode mode);
 
+  
+  
+  
+  
+  
+  void SetPacketSink(RtpPacketSinkInterface* packet_sink);
+
   absl::optional<int64_t> LastReceivedPacketMs() const;
   absl::optional<int64_t> LastReceivedKeyframePacketMs() const;
 
@@ -326,6 +333,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   
   
   RTC_NO_UNIQUE_ADDRESS SequenceChecker packet_sequence_checker_;
+  RtpPacketSinkInterface* packet_sink_ RTC_GUARDED_BY(packet_sequence_checker_);
   bool receiving_ RTC_GUARDED_BY(packet_sequence_checker_);
   int64_t last_packet_log_ms_ RTC_GUARDED_BY(packet_sequence_checker_);
 
