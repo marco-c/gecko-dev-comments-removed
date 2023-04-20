@@ -1,8 +1,12 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
+
+
+"use strict";
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 
 const lazy = {};
 
@@ -19,11 +23,13 @@ if (Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_CONTENT) {
   );
 }
 
+const EXPORTED_SYMBOLS = ["ServiceWorkerCleanUp"];
+
 function unregisterServiceWorker(aSW) {
   return new Promise(resolve => {
     let unregisterCallback = {
       unregisterSucceeded: resolve,
-      unregisterFailed: resolve, // We don't care about failures.
+      unregisterFailed: resolve, 
       QueryInterface: ChromeUtils.generateQI([
         "nsIServiceWorkerUnregisterCallback",
       ]),
@@ -51,7 +57,7 @@ function unregisterServiceWorkersMatching(filterFn) {
   return Promise.all(promises);
 }
 
-export const ServiceWorkerCleanUp = {
+const ServiceWorkerCleanUp = {
   removeFromHost(aHost) {
     return unregisterServiceWorkersMatching(sw =>
       Services.eTLD.hasRootDomain(sw.principal.host, aHost)
@@ -59,10 +65,10 @@ export const ServiceWorkerCleanUp = {
   },
 
   removeFromBaseDomain(aBaseDomain) {
-    // Service workers are disabled in partitioned contexts. This means we don't
-    // have to check for a partitionKey, but only look at the top level base
-    // domain. If this ever changes we need to update this method to account for
-    // partitions. See Bug 1495241.
+    
+    
+    
+    
     return unregisterServiceWorkersMatching(
       sw => sw.principal.baseDomain == aBaseDomain
     );
