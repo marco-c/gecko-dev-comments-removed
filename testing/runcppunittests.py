@@ -5,16 +5,18 @@
 
 
 from __future__ import absolute_import, print_function, with_statement
-import sys
+
 import os
+import sys
 from optparse import OptionParser
 from os import environ as env
+
 import manifestparser
-import mozprocess
-import mozinfo
 import mozcrash
 import mozfile
+import mozinfo
 import mozlog
+import mozprocess
 import mozrunner.utils
 
 SCRIPT_DIR = os.path.abspath(os.path.realpath(os.path.dirname(__file__)))
@@ -158,11 +160,6 @@ class CPPUnitTests(object):
                 self.log.info("ASan using symbolizer at %s" % llvmsym)
             else:
                 self.log.info("Failed to find ASan symbolizer at %s" % llvmsym)
-
-            
-            
-            assert "ASAN_OPTIONS" not in env
-            env["ASAN_OPTIONS"] = "detect_leaks=0:detect_odr_violation=0"
 
         return env
 
