@@ -56,6 +56,7 @@ class CamerasParent final : public PCamerasParent,
       CamerasParent, mPBackgroundEventTarget)
 
  public:
+  class VideoEngineArray;
   friend DeliverFrameRunnable;
 
   static already_AddRefed<CamerasParent> Create();
@@ -134,6 +135,9 @@ class CamerasParent final : public PCamerasParent,
 
   
   const nsCOMPtr<nsISerialEventTarget> mVideoCaptureThread;
+
+  
+  const RefPtr<VideoEngineArray> mEngines;
 
   
   ShmemPool mShmemPool;
