@@ -602,10 +602,6 @@ this.tabs = class extends ExtensionAPIPersistent {
       
       
       
-      
-      if (url.startsWith("about:")) {
-        options.allowInheritPrincipal = false;
-      }
       options.triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipal(
         Services.io.newURI(url),
         {
@@ -713,12 +709,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           }).then(window => {
             let url;
 
-            let options = {
-              
-              
-              allowInheritPrincipal: true,
-              triggeringPrincipal: context.principal,
-            };
+            let options = { triggeringPrincipal: context.principal };
             if (createProperties.cookieStoreId) {
               
               options.userContextId = getUserContextIdForCookieStoreId(
