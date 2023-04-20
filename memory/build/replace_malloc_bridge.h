@@ -117,16 +117,6 @@ struct DMDFuncs;
 
 namespace phc {
 class AddrInfo;
-
-struct MemoryUsage {
-  
-  
-  size_t mMetadataBytes = 0;
-
-  
-  
-  size_t mFragmentationBytes = 0;
-};
 }  
 
 
@@ -136,10 +126,11 @@ struct DebugFdRegistry {
 
   virtual void UnRegisterHandle(intptr_t aFd);
 };
+
 }  
 
 struct ReplaceMallocBridge {
-  ReplaceMallocBridge() : mVersion(5) {}
+  ReplaceMallocBridge() : mVersion(4) {}
 
   
   virtual mozilla::dmd::DMDFuncs* GetDMDFuncs() { return nullptr; }
@@ -190,10 +181,6 @@ struct ReplaceMallocBridge {
   
   
   virtual bool IsPHCEnabledOnCurrentThread() { return false; }
-
-  
-  
-  virtual void PHCMemoryUsage(mozilla::phc::MemoryUsage& aMemoryUsage) {}
 
 #  ifndef REPLACE_MALLOC_IMPL
   
@@ -261,13 +248,6 @@ struct ReplaceMalloc {
   static bool IsPHCEnabledOnCurrentThread() {
     auto singleton = ReplaceMallocBridge::Get( 4);
     return singleton ? singleton->IsPHCEnabledOnCurrentThread() : false;
-  }
-
-  static void PHCMemoryUsage(mozilla::phc::MemoryUsage& aMemoryUsage) {
-    auto singleton = ReplaceMallocBridge::Get( 5);
-    if (singleton) {
-      singleton->PHCMemoryUsage(aMemoryUsage);
-    }
   }
 };
 #  endif

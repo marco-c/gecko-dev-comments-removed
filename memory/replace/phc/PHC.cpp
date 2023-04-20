@@ -657,12 +657,6 @@ class GMut {
     }
 
     
-    size_t FragmentationBytes() const {
-      MOZ_ASSERT(kPageSize >= UsableSize());
-      return mState == AllocPageState::InUse ? kPageSize - UsableSize() : 0;
-    }
-
-    
     
     
     Maybe<StackTrace> mAllocStack;
@@ -723,15 +717,6 @@ class GMut {
     AssertAllocPageInUse(aLock, page);
 
     return page.UsableSize();
-  }
-
-  
-  size_t FragmentationBytes() const {
-    size_t sum = 0;
-    for (auto page : mAllocPages) {
-      sum += page.FragmentationBytes();
-    }
-    return sum;
   }
 
   void SetPageInUse(GMutLock aLock, uintptr_t aIndex,
@@ -1404,11 +1389,6 @@ static size_t replace_malloc_usable_size(usable_ptr_t aPtr) {
   return gMut->PageUsableSize(lock, index);
 }
 
-static size_t metadata_size() {
-  return sMallocTable.malloc_usable_size(gConst) +
-         sMallocTable.malloc_usable_size(gMut);
-}
-
 void replace_jemalloc_stats(jemalloc_stats_t* aStats,
                             jemalloc_bin_stats_t* aBinStats) {
   sMallocTable.jemalloc_stats_internal(aStats, aBinStats);
@@ -1431,19 +1411,16 @@ void replace_jemalloc_stats(jemalloc_stats_t* aStats,
   aStats->allocated += allocated;
 
   
-  
-  
-  
-  
+  size_t waste = mapped - allocated;
+  aStats->waste += waste;
 
   
   
 
   
   
-  
-  
-  size_t bookkeeping = metadata_size();
+  size_t bookkeeping = sMallocTable.malloc_usable_size(gConst) +
+                       sMallocTable.malloc_usable_size(gMut);
   aStats->allocated -= bookkeeping;
   aStats->bookkeeping += bookkeeping;
 }
@@ -1574,17 +1551,6 @@ class PHCBridge : public ReplaceMallocBridge {
     bool enabled = !GTls::IsDisabledOnCurrentThread();
     LOG("IsPHCEnabledOnCurrentThread: %zu\n", size_t(enabled));
     return enabled;
-  }
-
-  virtual void PHCMemoryUsage(
-      mozilla::phc::MemoryUsage& aMemoryUsage) override {
-    aMemoryUsage.mMetadataBytes = metadata_size();
-    if (gMut) {
-      MutexAutoLock lock(GMut::sMutex);
-      aMemoryUsage.mFragmentationBytes = gMut->FragmentationBytes();
-    } else {
-      aMemoryUsage.mFragmentationBytes = 0;
-    }
   }
 };
 
