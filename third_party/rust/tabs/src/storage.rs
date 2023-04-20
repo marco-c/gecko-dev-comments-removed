@@ -27,8 +27,6 @@ pub type RemoteTabRecord = RemoteTab;
 
 pub(crate) const TABS_CLIENT_TTL: u32 = 15_552_000; 
 const FAR_FUTURE: i64 = 4_102_405_200_000; 
-const MAX_PAYLOAD_SIZE: usize = 512 * 1024; 
-const MAX_TITLE_CHAR_LENGTH: usize = 512; 
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RemoteTab {
@@ -148,44 +146,30 @@ impl TabsStorage {
         self.local_tabs.borrow_mut().replace(local_state);
     }
 
-    
-    
-    
     pub fn prepare_local_tabs_for_upload(&self) -> Option<Vec<RemoteTab>> {
         if let Some(local_tabs) = self.local_tabs.borrow().as_ref() {
-            let mut sanitized_tabs: Vec<RemoteTab> = local_tabs
-                .iter()
-                .cloned()
-                .filter_map(|mut tab| {
-                    if tab.url_history.is_empty() || !is_url_syncable(&tab.url_history[0]) {
-                        return None;
-                    }
-                    let mut sanitized_history = Vec::with_capacity(TAB_ENTRIES_LIMIT);
-                    for url in tab.url_history {
-                        if sanitized_history.len() == TAB_ENTRIES_LIMIT {
-                            break;
+            return Some(
+                local_tabs
+                    .iter()
+                    .cloned()
+                    .filter_map(|mut tab| {
+                        if tab.url_history.is_empty() || !is_url_syncable(&tab.url_history[0]) {
+                            return None;
                         }
-                        if is_url_syncable(&url) {
-                            sanitized_history.push(url);
+                        let mut sanitized_history = Vec::with_capacity(TAB_ENTRIES_LIMIT);
+                        for url in tab.url_history {
+                            if sanitized_history.len() == TAB_ENTRIES_LIMIT {
+                                break;
+                            }
+                            if is_url_syncable(&url) {
+                                sanitized_history.push(url);
+                            }
                         }
-                    }
-
-                    tab.url_history = sanitized_history;
-                    
-                    
-                    if tab.title.len() > MAX_TITLE_CHAR_LENGTH {
-                        tab.title.truncate(MAX_TITLE_CHAR_LENGTH - 3);
-                        
-                        tab.title.push('\u{2026}');
-                    }
-                    Some(tab)
-                })
-                .collect();
-            
-            sanitized_tabs.sort_by(|a, b| b.last_used.cmp(&a.last_used));
-            
-            trim_tabs_length(&mut sanitized_tabs, MAX_PAYLOAD_SIZE);
-            return Some(sanitized_tabs);
+                        tab.url_history = sanitized_history;
+                        Some(tab)
+                    })
+                    .collect(),
+            );
         }
         None
     }
@@ -346,11 +330,12 @@ impl TabsStorage {
     }
 
     pub(crate) fn put_meta(&mut self, key: &str, value: &dyn ToSql) -> Result<()> {
-        let db = self.open_or_create()?;
-        db.execute_cached(
-            "REPLACE INTO moz_meta (key, value) VALUES (:key, :value)",
-            &[(":key", &key as &dyn ToSql), (":value", value)],
-        )?;
+        if let Some(db) = self.open_if_exists()? {
+            db.execute_cached(
+                "REPLACE INTO moz_meta (key, value) VALUES (:key, :value)",
+                &[(":key", &key as &dyn ToSql), (":value", value)],
+            )?;
+        }
         Ok(())
     }
 
@@ -375,28 +360,6 @@ impl TabsStorage {
         }
         Ok(())
     }
-}
-
-
-fn trim_tabs_length(tabs: &mut Vec<RemoteTab>, payload_size_max_bytes: usize) {
-    
-    
-    let max_serialized_size = (payload_size_max_bytes / 4) * 3 - 1500;
-    let size = compute_serialized_size(tabs);
-    if size > max_serialized_size {
-        
-        let cutoff = (tabs.len() * max_serialized_size) / size;
-        tabs.truncate(cutoff);
-
-        
-        while compute_serialized_size(tabs) > max_serialized_size {
-            tabs.pop();
-        }
-    }
-}
-
-fn compute_serialized_size(v: &Vec<RemoteTab>) -> usize {
-    serde_json::to_string(v).unwrap_or_default().len()
 }
 
 
@@ -442,15 +405,12 @@ mod tests {
 
     #[test]
     fn test_tabs_meta() {
-        let dir = tempfile::tempdir().unwrap();
-        let db_name = dir.path().join("test_tabs_meta.db");
-        let mut db = TabsStorage::new(db_name);
+        let mut db = TabsStorage::new_with_mem_path("test");
         let test_key = "TEST KEY A";
         let test_value = "TEST VALUE A";
         let test_key2 = "TEST KEY B";
         let test_value2 = "TEST VALUE B";
 
-        
         db.put_meta(test_key, &test_value).unwrap();
         db.put_meta(test_key2, &test_value2).unwrap();
 
@@ -544,54 +504,6 @@ mod tests {
                 },
             ])
         );
-    }
-    #[test]
-    fn test_trimming_tab_title() {
-        let mut storage = TabsStorage::new_with_mem_path("test_prepare_local_tabs_for_upload");
-        assert_eq!(storage.prepare_local_tabs_for_upload(), None);
-        storage.update_local_state(vec![RemoteTab {
-            title: "a".repeat(MAX_TITLE_CHAR_LENGTH + 10), // Fill a string more than max
-            url_history: vec!["https://foo.bar".to_owned()],
-            icon: None,
-            last_used: 0,
-        }]);
-        let mut truncated_title = "a".repeat(MAX_TITLE_CHAR_LENGTH - 3);
-        truncated_title.push('\u{2026}');
-        assert_eq!(
-            storage.prepare_local_tabs_for_upload(),
-            Some(vec![
-                // title trimmed to 50 characters
-                RemoteTab {
-                    title: truncated_title, // title was trimmed to only max char length
-                    url_history: vec!["https://foo.bar".to_owned()],
-                    icon: None,
-                    last_used: 0,
-                },
-            ])
-        );
-    }
-    #[test]
-    fn test_trim_tabs_length() {
-        let mut storage = TabsStorage::new_with_mem_path("test_prepare_local_tabs_for_upload");
-        assert_eq!(storage.prepare_local_tabs_for_upload(), None);
-        let mut too_many_tabs: Vec<RemoteTab> = Vec::new();
-        for n in 1..5000 {
-            too_many_tabs.push(RemoteTab {
-                title: "aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa" 
-                    .to_owned(),
-                url_history: vec![format!("https://foo{}.bar", n)],
-                icon: None,
-                last_used: 0,
-            });
-        }
-        let tabs_mem_size = compute_serialized_size(&too_many_tabs);
-        
-        assert!(tabs_mem_size > MAX_PAYLOAD_SIZE);
-        
-        storage.update_local_state(too_many_tabs.clone());
-        
-        let tabs_to_upload = &storage.prepare_local_tabs_for_upload().unwrap();
-        assert!(compute_serialized_size(tabs_to_upload) <= MAX_PAYLOAD_SIZE);
     }
     
     struct TabsSQLRecord {

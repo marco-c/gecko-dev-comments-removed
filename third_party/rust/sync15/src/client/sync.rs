@@ -2,7 +2,10 @@
 
 
 
-use super::{CollectionUpdate, GlobalState, LocalCollStateMachine, Sync15StorageClient};
+use super::coll_state::LocalCollStateMachine;
+use super::coll_update::CollectionUpdate;
+use super::state::GlobalState;
+use super::storage_client::Sync15StorageClient;
 use crate::clients_engine;
 use crate::engine::{IncomingChangeset, SyncEngine};
 use crate::error::Error;
@@ -25,17 +28,18 @@ pub fn synchronize_with_clients_engine(
     log::info!("Syncing collection {}", collection);
 
     
-    let coll_state = match LocalCollStateMachine::get_state(engine, global_state, root_sync_key)? {
-        Some(coll_state) => coll_state,
-        None => {
-            
-            log::warn!(
-                "can't setup for the {} collection - hopefully it works later",
-                collection
-            );
-            return Ok(());
-        }
-    };
+    let mut coll_state =
+        match LocalCollStateMachine::get_state(engine, global_state, root_sync_key)? {
+            Some(coll_state) => coll_state,
+            None => {
+                
+                log::warn!(
+                    "can't setup for the {} collection - hopefully it works later",
+                    collection
+                );
+                return Ok(());
+            }
+        };
 
     if let Some(clients) = clients {
         engine.prepare_for_sync(&|| clients.get_client_data())?;
@@ -55,7 +59,7 @@ pub fn synchronize_with_clients_engine(
             .map(|(idx, collection_request)| {
                 interruptee.err_if_interrupted()?;
                 let incoming_changes =
-                    super::fetch_incoming(client, &coll_state, collection_request)?;
+                    super::fetch_incoming(client, &mut coll_state, &collection_request)?;
 
                 log::info!(
                     "Downloaded {} remote changes (request {} of {})",
@@ -68,18 +72,25 @@ pub fn synchronize_with_clients_engine(
             .collect::<Result<Vec<_>, Error>>()?
     };
 
-    let outgoing = engine.apply_incoming(incoming, telem_engine)?;
+    let new_timestamp = incoming.last().expect("must have >= 1").timestamp;
+    let mut outgoing = engine.apply_incoming(incoming, telem_engine)?;
+
     interruptee.err_if_interrupted()?;
+    
+    
+    outgoing.timestamp = new_timestamp;
+    coll_state.last_modified = new_timestamp;
+
     log::info!("Uploading {} outgoing changes", outgoing.changes.len());
     let upload_info =
         CollectionUpdate::new_from_changeset(client, &coll_state, outgoing, fully_atomic)?
             .upload()?;
+
     log::info!(
         "Upload success ({} records success, {} records failed)",
         upload_info.successful_ids.len(),
         upload_info.failed_ids.len()
     );
-
     
     
     let mut telem_outgoing = telemetry::EngineOutgoing::new();

@@ -57,8 +57,6 @@ mod argument;
 
 
 
-
-
 #[proc_macro_attribute]
 pub fn handle_error(args: TokenStream, input: TokenStream) -> TokenStream {
     let args = syn::parse_macro_input!(args as syn::AttributeArgs);
@@ -74,13 +72,18 @@ fn impl_handle_error(
     arguments: &syn::AttributeArgs,
 ) -> syn::Result<proc_macro2::TokenStream> {
     if let syn::Item::Fn(item_fn) = input {
-        let err_path = argument::validate(arguments)?;
+        argument::validate(arguments)?;
         let original_body = &item_fn.block;
 
         let mut new_fn = item_fn.clone();
         new_fn.block = parse_quote! {
             {
-                (|| -> ::std::result::Result<_, #err_path> {
+                // Note: the `Result` here is a smell
+                // because the macro is **assuming** a `Result` exists
+                // that reflects the return value of the block
+                // An improvement would include the error of the `original_block`
+                // as an attribute to the macro itself.
+                (|| -> Result<_> {
                     #original_body
                 })().map_err(::error_support::convert_log_report_error)
             }
@@ -92,7 +95,7 @@ fn impl_handle_error(
     } else {
         Err(syn::Error::new(
             input.span(),
-            "#[handle_error(..)] can only be used on functions",
+            "#[handle_error] can only be used on functions",
         ))
     }
 }

@@ -2,7 +2,7 @@
 
 
 
-use crate::{sync::engine::TabsSyncImpl, ApiResult, TabsEngine, TabsStore};
+use crate::{sync::engine::TabsSyncImpl, ApiResult, Result, TabsEngine, TabsStore};
 use error_support::handle_error;
 use interrupt_support::NeverInterrupts;
 use std::sync::Arc;
@@ -11,7 +11,7 @@ use sync15::engine::EngineSyncAssociation;
 use sync15::KeyBundle;
 
 impl TabsStore {
-    #[handle_error(crate::Error)]
+    #[handle_error]
     pub fn reset(self: Arc<Self>) -> ApiResult<()> {
         let mut sync_impl = TabsSyncImpl::new(Arc::clone(&self));
         sync_impl.reset(&EngineSyncAssociation::Disconnected)?;
@@ -19,7 +19,7 @@ impl TabsStore {
     }
 
     
-    #[handle_error(crate::Error)]
+    #[handle_error]
     pub fn sync(
         self: Arc<Self>,
         key_id: String,

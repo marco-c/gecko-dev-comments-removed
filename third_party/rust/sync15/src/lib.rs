@@ -38,11 +38,6 @@ pub use server_timestamp::ServerTimestamp;
 pub use sync_guid::Guid;
 
 
-
-
-pub type CollectionName = std::borrow::Cow<'static, str>;
-
-
 fn skip_if_default<T: PartialEq + Default>(v: &T) -> bool {
     *v == T::default()
 }
