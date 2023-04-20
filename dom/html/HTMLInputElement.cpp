@@ -4659,6 +4659,15 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue,
           aValue);
     } break;
     case FormControlType::InputNumber: {
+      if (!aValue.IsEmpty() &&
+          (aValue.First() == '+' || aValue.Last() == '.')) {
+        
+        
+        
+        aValue.Truncate();
+        return;
+      }
+
       Decimal value;
       bool ok = mInputType->ConvertStringToNumber(aValue, value);
       if (!ok) {
