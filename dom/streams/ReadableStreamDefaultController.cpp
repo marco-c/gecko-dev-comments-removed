@@ -4,8 +4,6 @@
 
 
 
-#include "mozilla/dom/ReadableStreamDefaultController.h"
-
 #include "js/Exception.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
@@ -16,6 +14,7 @@
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/ReadableStreamController.h"
+#include "mozilla/dom/ReadableStreamDefaultController.h"
 #include "mozilla/dom/ReadableStreamDefaultControllerBinding.h"
 #include "mozilla/dom/ReadableStreamDefaultReaderBinding.h"
 #include "mozilla/dom/UnderlyingSourceBinding.h"
@@ -24,8 +23,6 @@
 #include "nsISupports.h"
 
 namespace mozilla::dom {
-
-using namespace streams_abstract;
 
 NS_IMPL_CYCLE_COLLECTION(ReadableStreamController, mGlobal, mAlgorithms,
                          mStream)
@@ -98,8 +95,6 @@ JSObject* ReadableStreamDefaultController::WrapObject(
     JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
   return ReadableStreamDefaultController_Binding::Wrap(aCx, this, aGivenProto);
 }
-
-namespace streams_abstract {
 
 
 static bool ReadableStreamDefaultControllerCanCloseOrEnqueue(
@@ -174,15 +169,11 @@ Nullable<double> ReadableStreamDefaultControllerGetDesiredSize(
   return aController->StrategyHWM() - aController->QueueTotalSize();
 }
 
-}  
-
 
 Nullable<double> ReadableStreamDefaultController::GetDesiredSize() {
   
   return ReadableStreamDefaultControllerGetDesiredSize(this);
 }
-
-namespace streams_abstract {
 
 
 
@@ -230,8 +221,6 @@ void ReadableStreamDefaultControllerClose(
   }
 }
 
-}  
-
 
 void ReadableStreamDefaultController::Close(JSContext* aCx, ErrorResult& aRv) {
   
@@ -243,8 +232,6 @@ void ReadableStreamDefaultController::Close(JSContext* aCx, ErrorResult& aRv) {
   
   ReadableStreamDefaultControllerClose(aCx, this, aRv);
 }
-
-namespace streams_abstract {
 
 MOZ_CAN_RUN_SCRIPT static void ReadableStreamDefaultControllerCallPullIfNeeded(
     JSContext* aCx, ReadableStreamDefaultController* aController,
@@ -341,8 +328,6 @@ void ReadableStreamDefaultControllerEnqueue(
   ReadableStreamDefaultControllerCallPullIfNeeded(aCx, aController, aRv);
 }
 
-}  
-
 
 void ReadableStreamDefaultController::Enqueue(JSContext* aCx,
                                               JS::Handle<JS::Value> aChunk,
@@ -362,8 +347,6 @@ void ReadableStreamDefaultController::Error(JSContext* aCx,
                                             ErrorResult& aRv) {
   ReadableStreamDefaultControllerError(aCx, this, aError, aRv);
 }
-
-namespace streams_abstract {
 
 
 bool ReadableStreamDefaultControllerShouldCallPull(
@@ -575,8 +558,6 @@ void SetupReadableStreamDefaultControllerFromUnderlyingSource(
   SetUpReadableStreamDefaultController(aCx, aStream, controller, algorithms,
                                        aHighWaterMark, aSizeAlgorithm, aRv);
 }
-
-}  
 
 
 already_AddRefed<Promise> ReadableStreamDefaultController::CancelSteps(

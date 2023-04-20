@@ -1583,7 +1583,7 @@ bool StructuredCloneHolder::CustomCanTransferHandler(
       
       
       
-      return !stream->Locked();
+      return !IsReadableStreamLocked(stream);
     }
   }
 
@@ -1594,7 +1594,7 @@ bool StructuredCloneHolder::CustomCanTransferHandler(
       
       
       
-      return !stream->Locked();
+      return !IsWritableStreamLocked(stream);
     }
   }
 
@@ -1605,7 +1605,8 @@ bool StructuredCloneHolder::CustomCanTransferHandler(
       
       
       
-      return !stream->Readable()->Locked() && !stream->Writable()->Locked();
+      return !IsReadableStreamLocked(stream->Readable()) &&
+             !IsWritableStreamLocked(stream->Writable());
     }
   }
 

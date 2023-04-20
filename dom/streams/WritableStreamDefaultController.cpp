@@ -22,8 +22,6 @@
 
 namespace mozilla::dom {
 
-using namespace streams_abstract;
-
 
 
 
@@ -119,8 +117,6 @@ void WritableStreamDefaultController::SetSignal(AbortSignal* aSignal) {
   MOZ_ASSERT(aSignal);
   mSignal = aSignal;
 }
-
-namespace streams_abstract {
 
 MOZ_CAN_RUN_SCRIPT static void
 WritableStreamDefaultControllerAdvanceQueueIfNeeded(
@@ -558,7 +554,5 @@ double WritableStreamDefaultControllerGetChunkSize(
   
   return chunkSize;
 }
-
-}  
 
 }  

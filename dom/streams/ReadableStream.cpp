@@ -70,8 +70,6 @@ inline void ImplCycleCollectionUnlink(
 
 namespace mozilla::dom {
 
-using namespace streams_abstract;
-
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WITH_JS_MEMBERS(
     ReadableStream, (mGlobal, mController, mReader), (mStoredError))
@@ -108,8 +106,6 @@ void ReadableStream::SetReader(ReadableStreamGenericReader* aReader) {
   mReader = aReader;
 }
 
-namespace streams_abstract {
-
 
 bool ReadableStreamHasBYOBReader(ReadableStream* aStream) {
   
@@ -139,8 +135,6 @@ bool ReadableStreamHasDefaultReader(ReadableStream* aStream) {
   
   return reader->IsDefault();
 }
-
-}  
 
 
 
@@ -234,8 +228,6 @@ bool ReadableStream::Locked() const {
   
   return mReader;
 }
-
-namespace streams_abstract {
 
 
 static void InitializeReadableStream(ReadableStream* aStream) {
@@ -413,8 +405,6 @@ already_AddRefed<Promise> ReadableStreamCancel(JSContext* aCx,
   return returnResult.unwrap().forget();
 }
 
-}  
-
 
 already_AddRefed<Promise> ReadableStream::Cancel(JSContext* aCx,
                                                  JS::Handle<JS::Value> aReason,
@@ -431,7 +421,6 @@ already_AddRefed<Promise> ReadableStream::Cancel(JSContext* aCx,
   return ReadableStreamCancel(aCx, thisRefPtr, aReason, aRv);
 }
 
-namespace streams_abstract {
 
 already_AddRefed<ReadableStreamDefaultReader>
 AcquireReadableStreamDefaultReader(ReadableStream* aStream, ErrorResult& aRv) {
@@ -448,7 +437,6 @@ AcquireReadableStreamDefaultReader(ReadableStream* aStream, ErrorResult& aRv) {
   
   return reader.forget();
 }
-}  
 
 
 void ReadableStream::GetReader(const ReadableStreamGetReaderOptions& aOptions,
@@ -478,13 +466,11 @@ void ReadableStream::GetReader(const ReadableStreamGetReaderOptions& aOptions,
   resultReader.SetAsReadableStreamBYOBReader() = byobReader;
 }
 
-namespace streams_abstract {
 
 bool IsReadableStreamLocked(ReadableStream* aStream) {
   
   return aStream->Locked();
 }
-}  
 
 
 MOZ_CAN_RUN_SCRIPT already_AddRefed<ReadableStream> ReadableStream::PipeThrough(
@@ -526,8 +512,6 @@ MOZ_CAN_RUN_SCRIPT already_AddRefed<ReadableStream> ReadableStream::PipeThrough(
   
   return do_AddRef(aTransform.mReadable.get());
 };
-
-namespace streams_abstract {
 
 
 double ReadableStreamGetNumReadRequests(ReadableStream* aStream) {
@@ -627,8 +611,6 @@ void ReadableStreamAddReadRequest(ReadableStream* aStream,
   
   aStream->GetDefaultReader()->ReadRequests().insertBack(aReadRequest);
 }
-
-}  
 
 
 
@@ -971,8 +953,6 @@ already_AddRefed<Promise> ReadableStream::IteratorReturn(
   return Promise::CreateResolvedWithUndefined(GetParentObject(), aRv);
 }
 
-namespace streams_abstract {
-
 
 void ReadableStreamAddReadIntoRequest(ReadableStream* aStream,
                                       ReadIntoRequest* aReadIntoRequest) {
@@ -1013,8 +993,6 @@ already_AddRefed<ReadableStream> CreateReadableByteStream(
   
   return stream.forget();
 }
-
-}  
 
 
 

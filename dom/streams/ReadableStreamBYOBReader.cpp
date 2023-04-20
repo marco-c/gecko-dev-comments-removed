@@ -23,8 +23,6 @@
 
 namespace mozilla::dom {
 
-using namespace streams_abstract;
-
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_INHERITED(ReadableStreamBYOBReader,
                                                 ReadableStreamGenericReader,
                                                 mReadIntoRequests)
@@ -170,7 +168,6 @@ NS_IMPL_RELEASE_INHERITED(Read_ReadIntoRequest, ReadIntoRequest)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(Read_ReadIntoRequest)
 NS_INTERFACE_MAP_END_INHERITING(ReadIntoRequest)
 
-namespace streams_abstract {
 
 void ReadableStreamBYOBReaderRead(JSContext* aCx,
                                   ReadableStreamBYOBReader* aReader,
@@ -204,7 +201,6 @@ void ReadableStreamBYOBReaderRead(JSContext* aCx,
   ReadableByteStreamControllerPullInto(aCx, controller, aView, aReadIntoRequest,
                                        aRv);
 }
-}  
 
 
 already_AddRefed<Promise> ReadableStreamBYOBReader::Read(
@@ -273,8 +269,6 @@ already_AddRefed<Promise> ReadableStreamBYOBReader::Read(
   return promise.forget();
 }
 
-namespace streams_abstract {
-
 
 void ReadableStreamBYOBReaderErrorReadIntoRequests(
     JSContext* aCx, ReadableStreamBYOBReader* aReader,
@@ -318,8 +312,6 @@ void ReadableStreamBYOBReaderRelease(JSContext* aCx,
   ReadableStreamBYOBReaderErrorReadIntoRequests(aCx, aReader, error, aRv);
 }
 
-}  
-
 
 void ReadableStreamBYOBReader::ReleaseLock(ErrorResult& aRv) {
   
@@ -338,7 +330,6 @@ void ReadableStreamBYOBReader::ReleaseLock(ErrorResult& aRv) {
   ReadableStreamBYOBReaderRelease(cx, thisRefPtr, aRv);
 }
 
-namespace streams_abstract {
 
 already_AddRefed<ReadableStreamBYOBReader> AcquireReadableStreamBYOBReader(
     ReadableStream* aStream, ErrorResult& aRv) {
@@ -355,6 +346,5 @@ already_AddRefed<ReadableStreamBYOBReader> AcquireReadableStreamBYOBReader(
   
   return reader.forget();
 }
-}  
 
 }  
