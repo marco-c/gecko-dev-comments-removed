@@ -2918,6 +2918,14 @@ void gfxPlatform::InitWebGLConfig() {
     
     gfxVars::SetAllowWebglOop(allowWebGLOop &&
                               gfxConfig::IsEnabled(Feature::GPU_PROCESS));
+    
+    
+#ifdef MOZ_WIDGET_ANDROID
+    if (gfxVars::AllowWebglOop() && jni::GetAPIVersion() >= 26 &&
+        StaticPrefs::webgl_out_of_process_enable_ahardwarebuffer_AtStartup()) {
+      gfxVars::SetUseAHardwareBufferSharedSurfaceWebglOop(true);
+    }
+#endif
   }
 
   bool threadsafeGL = IsFeatureOk(nsIGfxInfo::FEATURE_THREADSAFE_GL);

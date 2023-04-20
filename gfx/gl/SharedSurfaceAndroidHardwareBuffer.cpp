@@ -120,20 +120,12 @@ void SharedSurface_AndroidHardwareBuffer::ProducerReleaseImpl() {
 
 Maybe<layers::SurfaceDescriptor>
 SharedSurface_AndroidHardwareBuffer::ToSurfaceDescriptor() {
-  
-  
-  
-  
-  
-  
   return Some(layers::SurfaceDescriptorAndroidHardwareBuffer(
-      ipc::FileDescriptor(), mAndroidHardwareBuffer->mId,
-      mAndroidHardwareBuffer->mSize, mAndroidHardwareBuffer->mFormat));
+      mAndroidHardwareBuffer->mId, mAndroidHardwareBuffer->mSize,
+      mAndroidHardwareBuffer->mFormat));
 }
 
 void SharedSurface_AndroidHardwareBuffer::WaitForBufferOwnership() {
-  mAndroidHardwareBuffer->WaitForBufferOwnership();
-
   ipc::FileDescriptor fenceFd =
       mAndroidHardwareBuffer->GetAndResetReleaseFence();
   if (!fenceFd.IsValid()) {
