@@ -2767,11 +2767,13 @@ static void AdjustViews(nsIFrame* aFrame) {
 void ScrollFrameHelper::MarkScrollbarsDirtyForReflow() const {
   PresShell* presShell = mOuter->PresShell();
   if (mVScrollbarBox) {
-    presShell->FrameNeedsReflow(mVScrollbarBox, IntrinsicDirty::StyleChange,
+    presShell->FrameNeedsReflow(mVScrollbarBox,
+                                IntrinsicDirty::FrameAncestorsAndDescendants,
                                 NS_FRAME_IS_DIRTY);
   }
   if (mHScrollbarBox) {
-    presShell->FrameNeedsReflow(mHScrollbarBox, IntrinsicDirty::StyleChange,
+    presShell->FrameNeedsReflow(mHScrollbarBox,
+                                IntrinsicDirty::FrameAncestorsAndDescendants,
                                 NS_FRAME_IS_DIRTY);
   }
 }
@@ -6824,7 +6826,7 @@ bool ScrollFrameHelper::ReflowFinished() {
              parentFrame->GetChildList(FrameChildListID::Fixed).FirstChild();
          fixedChild; fixedChild = fixedChild->GetNextSibling()) {
       
-      mOuter->PresShell()->FrameNeedsReflow(fixedChild, IntrinsicDirty::Resize,
+      mOuter->PresShell()->FrameNeedsReflow(fixedChild, IntrinsicDirty::None,
                                             NS_FRAME_HAS_DIRTY_CHILDREN);
     }
   }
@@ -6938,7 +6940,7 @@ bool ScrollFrameHelper::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
     
     
     
-    mOuter->PresShell()->FrameNeedsReflow(mOuter, IntrinsicDirty::Resize,
+    mOuter->PresShell()->FrameNeedsReflow(mOuter, IntrinsicDirty::None,
                                           NS_FRAME_HAS_DIRTY_CHILDREN);
     
     

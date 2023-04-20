@@ -724,7 +724,8 @@ void ImageLoader::OnSizeAvailable(imgIRequest* aRequest,
   for (const FrameWithFlags& fwf : *frameSet) {
     if (fwf.mFlags & Flags::RequiresReflowOnSizeAvailable) {
       fwf.mFrame->PresShell()->FrameNeedsReflow(
-          fwf.mFrame, IntrinsicDirty::StyleChange, NS_FRAME_IS_DIRTY);
+          fwf.mFrame, IntrinsicDirty::FrameAncestorsAndDescendants,
+          NS_FRAME_IS_DIRTY);
     }
   }
 }
@@ -781,8 +782,9 @@ void ImageLoader::ImageFrameChanged(imgIRequest* aRequest, bool aFirstFrame) {
       
       
       nsIFrame* parent = fwf.mFrame->GetInFlowParent();
-      parent->PresShell()->FrameNeedsReflow(parent, IntrinsicDirty::StyleChange,
-                                            NS_FRAME_IS_DIRTY);
+      parent->PresShell()->FrameNeedsReflow(
+          parent, IntrinsicDirty::FrameAncestorsAndDescendants,
+          NS_FRAME_IS_DIRTY);
       
       
       if (fwf.mFlags & Flags::IsBlockingLoadEvent) {

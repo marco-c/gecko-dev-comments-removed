@@ -360,7 +360,8 @@ void HTMLSelectEventListener::ComboboxMightHaveChanged() {
     PresShell* ps = f->PresShell();
     
     
-    ps->FrameNeedsReflow(f, IntrinsicDirty::StyleChange, NS_FRAME_IS_DIRTY);
+    ps->FrameNeedsReflow(f, IntrinsicDirty::FrameAncestorsAndDescendants,
+                         NS_FRAME_IS_DIRTY);
 #ifdef ACCESSIBILITY
     if (nsAccessibilityService* acc = GetAccService()) {
       acc->ScheduleAccessibilitySubtreeUpdate(ps, mElement);

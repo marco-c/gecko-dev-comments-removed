@@ -302,6 +302,7 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
 
 
 
+
   void ScheduleReflowSVGNonDisplayText(IntrinsicDirty aReason);
 
   

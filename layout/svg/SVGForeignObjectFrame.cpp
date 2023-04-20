@@ -430,7 +430,7 @@ void SVGForeignObjectFrame::NotifySVGChanged(uint32_t aFlags) {
   
   
   if (needReflow && !PresShell()->IsReflowLocked()) {
-    RequestReflow(IntrinsicDirty::Resize);
+    RequestReflow(IntrinsicDirty::None);
   }
 
   if (needNewCanvasTM) {

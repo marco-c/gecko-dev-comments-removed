@@ -43,9 +43,12 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ResizeReflowOptions)
 
 enum class IntrinsicDirty {
   
-  Resize,       
-  TreeChange,   
-  StyleChange,  
+  None,
+  
+  FrameAndAncestors,
+  
+  
+  FrameAncestorsAndDescendants,
 };
 
 enum class ReflowRootHandling {

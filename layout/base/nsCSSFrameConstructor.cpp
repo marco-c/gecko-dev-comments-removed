@@ -5870,7 +5870,8 @@ void nsCSSFrameConstructor::AppendFramesToParent(
       
       
       
-      mPresShell->FrameNeedsReflow(aParentFrame, IntrinsicDirty::TreeChange,
+      mPresShell->FrameNeedsReflow(aParentFrame,
+                                   IntrinsicDirty::FrameAndAncestors,
                                    NS_FRAME_HAS_DIRTY_CHILDREN);
 
       
