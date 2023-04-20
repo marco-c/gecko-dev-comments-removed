@@ -216,7 +216,13 @@ static bool MustBeGenericAccessible(nsIContent* aContent,
 static bool MustBeAccessible(nsIContent* aContent, DocAccessible* aDocument) {
   nsIFrame* frame = aContent->GetPrimaryFrame();
   MOZ_ASSERT(frame);
-  if (frame->IsFocusable()) {
+  
+  
+  
+  
+  
+  if (frame->IsFocusable( false,
+                          false)) {
     return true;
   }
 
