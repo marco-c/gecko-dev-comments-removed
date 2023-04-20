@@ -119,7 +119,7 @@ add_task(async function eventsWhenNavigatingFrameSet({ client }) {
     
     
     
-    expectedEvents: [DESTROYED, CLEARED, DESTROYED, CREATED],
+    expectedEvents: [DESTROYED, CLEARED, CREATED, DESTROYED],
   });
 
   const destroyedContextIds = historyFrom.findEvents(DESTROYED);
