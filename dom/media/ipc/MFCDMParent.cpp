@@ -12,7 +12,6 @@
 #include "mozilla/dom/KeySystemNames.h"
 #include "mozilla/EMEUtils.h"
 #include "mozilla/KeySystemConfig.h"
-#include "MFCDMProxy.h"
 #include "RemoteDecodeUtils.h"       
 #include "SpecialSystemDirectory.h"  
 
@@ -29,9 +28,8 @@ DEFINE_PROPERTYKEY(EME_CONTENTDECRYPTIONMODULE_ORIGIN_ID, 0x1218a3e2, 0xcfb0,
                    PID_FIRST_USABLE);
 #endif
 
-#define MFCDM_PARENT_LOG(msg, ...)                                     \
-  EME_LOG("MFCDMParent[%p, Id=%" PRIu64 "]@%s: " msg, this, this->mId, \
-          __func__, ##__VA_ARGS__)
+#define MFCDM_PARENT_LOG(msg, ...) \
+  EME_LOG("MFCDMParent[%p]@%s: " msg, this, __func__, ##__VA_ARGS__)
 #define MFCDM_PARENT_SLOG(msg, ...) \
   EME_LOG("MFCDMParent@%s: " msg, __func__, ##__VA_ARGS__)
 
@@ -62,18 +60,6 @@ DEFINE_PROPERTYKEY(EME_CONTENTDECRYPTIONMODULE_ORIGIN_ID, 0x1218a3e2, 0xcfb0,
       return IPC_OK();                                             \
     }                                                              \
   } while (false)
-
-void MFCDMParent::Register() {
-  MOZ_ASSERT(!sRegisteredCDMs.Contains(this->mId));
-  sRegisteredCDMs.InsertOrUpdate(this->mId, this);
-  MFCDM_PARENT_LOG("Registered!");
-}
-
-void MFCDMParent::Unregister() {
-  MOZ_ASSERT(sRegisteredCDMs.Contains(this->mId));
-  sRegisteredCDMs.Remove(this->mId);
-  MFCDM_PARENT_LOG("Unregistered!");
-}
 
 MFCDMParent::MFCDMParent(const nsAString& aKeySystem,
                          RemoteDecoderManagerParent* aManager,
@@ -177,7 +163,6 @@ mozilla::ipc::IPCResult MFCDMParent::RecvGetCapabilities(
       KeySystemConfig::EME_CODEC_VP8,
       KeySystemConfig::EME_CODEC_VP9,
   });
-  
   
   
   nsTArray<KeySystemConfig::EMECodecString> supportedVideoCodecs;
@@ -613,14 +598,6 @@ MFCDMSession* MFCDMParent::GetSession(const nsString& aSessionId) {
     return nullptr;
   }
   return iter->second.get();
-}
-
-already_AddRefed<MFCDMProxy> MFCDMParent::GetMFCDMProxy() {
-  if (!mCDM) {
-    return nullptr;
-  }
-  RefPtr<MFCDMProxy> proxy = new MFCDMProxy(mCDM.Get());
-  return proxy.forget();
 }
 
 #undef MFCDM_REJECT_IF_FAILED
