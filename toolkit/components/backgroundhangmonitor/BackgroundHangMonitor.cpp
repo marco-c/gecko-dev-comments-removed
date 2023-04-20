@@ -6,6 +6,7 @@
 
 #include "mozilla/BackgroundHangMonitor.h"
 
+#include <string_view>
 #include <utility>
 
 #include "GeckoProfiler.h"
@@ -39,11 +40,6 @@
 
 
 #define BHR_BETA_MOD INT32_MAX;
-
-
-
-
-static const size_t kMaxThreadHangStackDepth = 30;
 
 
 
@@ -596,7 +592,11 @@ void BackgroundHangMonitor::Startup() {
       mozilla::services::GetObserverService();
   MOZ_ASSERT(observerService);
 
-  if (!strcmp(MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL), "beta")) {
+#  ifdef __clang__
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wunreachable-code"
+#  endif
+  if constexpr (std::string_view(MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL)) == "beta") {
     if (XRE_IsParentProcess()) {  
       BackgroundHangThread::Startup();
       new BackgroundHangManager();
@@ -609,6 +609,9 @@ void BackgroundHangMonitor::Startup() {
       return;
     }
   }
+#  ifdef __clang__
+#    pragma clang diagnostic pop
+#  endif
 
   BackgroundHangThread::Startup();
   new BackgroundHangManager();
