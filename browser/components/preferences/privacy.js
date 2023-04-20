@@ -563,10 +563,24 @@ var gPrivacyPane = {
     this.updateDoHResolverList(mode);
 
     let customInput = document.getElementById(`${mode}InputField`);
+
+    function updateURIPref() {
+      if (customInput.value == "") {
+        
+        
+        
+        
+        
+        Services.prefs.setStringPref("network.trr.uri", " ");
+      } else {
+        Services.prefs.setStringPref("network.trr.uri", customInput.value);
+      }
+    }
+
     menu.addEventListener("command", () => {
       if (menu.value == "custom") {
         customInput.hidden = false;
-        Services.prefs.setStringPref("network.trr.uri", customInput.value);
+        updateURIPref();
       } else {
         customInput.hidden = true;
         if (
@@ -589,16 +603,18 @@ var gPrivacyPane = {
 
     
     customInput.addEventListener("change", () => {
-      Services.prefs.setStringPref("network.trr.uri", customInput.value);
+      updateURIPref();
     });
   },
 
-  updateDoHStatus() {
+  async updateDoHStatus() {
     let trrURI = Services.dns.currentTrrURI;
     let hostname = "";
     try {
       hostname = new URL(trrURI).hostname;
-    } catch (e) {}
+    } catch (e) {
+      hostname = await document.l10n.formatValue("preferences-doh-bad-url");
+    }
 
     let steering = document.getElementById("dohSteeringStatus");
     steering.hidden = true;
