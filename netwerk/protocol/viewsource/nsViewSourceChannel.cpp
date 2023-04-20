@@ -1032,6 +1032,19 @@ NS_IMETHODIMP nsViewSourceChannel::GetClassicScriptHintCharset(
                              aClassicScriptHintCharset);
 }
 
+NS_IMETHODIMP nsViewSourceChannel::SetDocumentCharacterSet(
+    const nsAString& aDocumentCharacterSet) {
+  return !mHttpChannel
+             ? NS_ERROR_NULL_POINTER
+             : mHttpChannel->SetDocumentCharacterSet(aDocumentCharacterSet);
+}
+
+NS_IMETHODIMP nsViewSourceChannel::GetDocumentCharacterSet(
+    nsAString& aDocumentCharacterSet) {
+  return !mHttpChannel
+             ? NS_ERROR_NULL_POINTER
+             : mHttpChannel->GetDocumentCharacterSet(aDocumentCharacterSet);
+}
 
 void nsViewSourceChannel::SetCorsPreflightParameters(
     const nsTArray<nsCString>& aUnsafeHeaders,
