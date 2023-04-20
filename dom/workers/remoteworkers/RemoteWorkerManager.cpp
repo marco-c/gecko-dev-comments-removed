@@ -640,7 +640,6 @@ void RemoteWorkerManager::LaunchNewContentProcess(
   nsCOMPtr<nsISerialEventTarget> bgEventTarget = GetCurrentSerialEventTarget();
 
   using LaunchPromiseType = ContentParent::LaunchPromise;
-  using LaunchErrorType = ContentParent::LaunchError;
   using CallbackParamType = LaunchPromiseType::ResolveOrRejectValue;
 
   
@@ -719,8 +718,8 @@ void RemoteWorkerManager::LaunchNewContentProcess(
           
           
           
-          onFinished =
-              LaunchPromiseType::CreateAndReject(LaunchErrorType(), __func__);
+          onFinished = LaunchPromiseType::CreateAndReject(
+              NS_ERROR_ILLEGAL_DURING_SHUTDOWN, __func__);
         }
         onFinished->Then(GetCurrentSerialEventTarget(), __func__,
                          [callback = std::move(callback),

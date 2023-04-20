@@ -33,6 +33,10 @@
 #include "base/process.h"
 
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Result.h"
+#include "mozilla/ResultVariant.h"
+
+#include "mozilla/ipc/LaunchError.h"
 
 #if defined(MOZ_ENABLE_FORKSERVER)
 #  include "nsStringFwd.h"
@@ -52,6 +56,11 @@ struct kinfo_proc;
 class CommandLine;
 
 namespace base {
+
+using mozilla::Err;
+using mozilla::Ok;
+using mozilla::Result;
+using mozilla::ipc::LaunchError;
 
 enum ProcessArchitecture {
   PROCESS_ARCH_INVALID = 0x0,
@@ -191,8 +200,9 @@ struct LaunchOptions {
 
 
 
-bool LaunchApp(const std::wstring& cmdline, const LaunchOptions& options,
-               ProcessHandle* process_handle);
+Result<Ok, LaunchError> LaunchApp(const std::wstring& cmdline,
+                                  const LaunchOptions& options,
+                                  ProcessHandle* process_handle);
 
 #elif defined(OS_POSIX)
 
@@ -202,8 +212,9 @@ bool LaunchApp(const std::wstring& cmdline, const LaunchOptions& options,
 
 
 
-bool LaunchApp(const std::vector<std::string>& argv,
-               const LaunchOptions& options, ProcessHandle* process_handle);
+Result<Ok, LaunchError> LaunchApp(const std::vector<std::string>& argv,
+                                  const LaunchOptions& options,
+                                  ProcessHandle* process_handle);
 
 
 
@@ -261,8 +272,8 @@ void RegisterForkServerNoCloseFD(int aFd);
 
 
 
-bool LaunchApp(const CommandLine& cl, const LaunchOptions&,
-               ProcessHandle* process_handle);
+Result<Ok, LaunchError> LaunchApp(const CommandLine& cl, const LaunchOptions&,
+                                  ProcessHandle* process_handle);
 
 
 

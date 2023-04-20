@@ -10,6 +10,9 @@
 #include "sandboxBroker.h"
 #include "RemoteSandboxBrokerParent.h"
 
+#include "mozilla/Result.h"
+#include "mozilla/ipc/LaunchError.h"
+
 namespace mozilla {
 
 
@@ -27,10 +30,11 @@ class RemoteSandboxBroker : public AbstractSandboxBroker {
   
   
   
-  bool LaunchApp(const wchar_t* aPath, const wchar_t* aArguments,
-                 base::EnvironmentMap& aEnvironment,
-                 GeckoProcessType aProcessType, const bool aEnableLogging,
-                 const IMAGE_THUNK_DATA*, void** aProcessHandle) override;
+  Result<Ok, mozilla::ipc::LaunchError> LaunchApp(
+      const wchar_t* aPath, const wchar_t* aArguments,
+      base::EnvironmentMap& aEnvironment, GeckoProcessType aProcessType,
+      const bool aEnableLogging, const IMAGE_THUNK_DATA*,
+      void** aProcessHandle) override;
 
   
   void SetSecurityLevelForContentProcess(int32_t aSandboxLevel,

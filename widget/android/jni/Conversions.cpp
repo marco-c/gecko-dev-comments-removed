@@ -91,7 +91,9 @@ double Java2Native(mozilla::jni::Object::Param aData, JNIEnv* aEnv) {
 
 template <>
 ipc::LaunchError Java2Native(mozilla::jni::Object::Param aData, JNIEnv* aEnv) {
-  return ipc::LaunchError{};
+  
+  
+  return ipc::LaunchError("Java2Native");
 }
 
 template <>
