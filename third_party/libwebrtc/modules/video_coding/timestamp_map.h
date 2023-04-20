@@ -19,14 +19,15 @@
 #include "api/video/encoded_image.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_rotation.h"
-#include "api/video/video_timing.h"
 
 namespace webrtc {
 
-struct VCMFrameInformation {
-  int64_t renderTimeMs;
-  absl::optional<Timestamp> decodeStart;
-  void* userData;
+struct FrameInformation {
+  
+  
+  
+  absl::optional<Timestamp> render_time;
+  absl::optional<Timestamp> decode_start;
   VideoRotation rotation;
   VideoContentType content_type;
   EncodedImage::Timing timing;
@@ -35,20 +36,20 @@ struct VCMFrameInformation {
   
 };
 
-class VCMTimestampMap {
+class TimestampMap {
  public:
-  explicit VCMTimestampMap(size_t capacity);
-  ~VCMTimestampMap();
+  explicit TimestampMap(size_t capacity);
+  ~TimestampMap();
 
-  void Add(uint32_t timestamp, const VCMFrameInformation& data);
-  absl::optional<VCMFrameInformation> Pop(uint32_t timestamp);
+  void Add(uint32_t timestamp, const FrameInformation& data);
+  absl::optional<FrameInformation> Pop(uint32_t timestamp);
   size_t Size() const;
   void Clear();
 
  private:
   struct TimestampDataTuple {
     uint32_t timestamp;
-    VCMFrameInformation data;
+    FrameInformation data;
   };
   bool IsEmpty() const;
 
