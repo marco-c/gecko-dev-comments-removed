@@ -3262,6 +3262,7 @@ class nsContentUtils {
 
 
 
+
   static bool StringifyJSON(JSContext* aCx, JS::Handle<JS::Value> aValue,
                             nsAString& aOutStr);
 
