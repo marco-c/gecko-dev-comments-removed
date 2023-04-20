@@ -5653,6 +5653,10 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
         &mTransactionTimings, std::move(mSource));
   }
 
+  
+  
+  bool needAsyncAbort = !mTransactionPump && !mCachePump;
+
   if (mProxyRequest) mProxyRequest->Cancel(status);
   CancelNetworkRequest(status);
   mCacheInputStream.CloseAndRelease();
@@ -5663,10 +5667,16 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
     mOnTailUnblock = nullptr;
     mRequestContext->CancelTailedRequest(this);
     CloseCacheEntry(false);
+    needAsyncAbort = false;
     Unused << AsyncAbort(status);
   } else if (channelClassifierCancellationPending) {
     
     
+    needAsyncAbort = false;
+    Unused << AsyncAbort(status);
+  }
+
+  if (needAsyncAbort) {
     Unused << AsyncAbort(status);
   }
   return NS_OK;
