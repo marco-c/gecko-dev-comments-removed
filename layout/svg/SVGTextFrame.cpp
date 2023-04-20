@@ -548,9 +548,7 @@ struct TextRenderedRun {
     
     eIncludeStroke = 2,
     
-    eIncludeTextShadow = 4,
-    
-    eNoHorizontalOverflow = 8
+    eNoHorizontalOverflow = 4
   };
 
   
@@ -863,12 +861,6 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
     
     std::swap(fillInAppUnits.x, fillInAppUnits.y);
     std::swap(fillInAppUnits.width, fillInAppUnits.height);
-  }
-
-  
-  if (aFlags & eIncludeTextShadow) {
-    fillInAppUnits =
-        nsLayoutUtils::GetTextShadowRectsUnion(fillInAppUnits, mFrame);
   }
 
   
@@ -3282,15 +3274,9 @@ void SVGTextFrame::ReflowSVG() {
     uint32_t runFlags = 0;
     if (!run.mFrame->StyleSVG()->mFill.kind.IsNone()) {
       runFlags |= TextRenderedRun::eIncludeFill;
-      if (run.mFrame->StyleText()->HasTextShadow()) {
-        runFlags |= TextRenderedRun::eIncludeTextShadow;
-      }
     }
     if (SVGUtils::HasStroke(run.mFrame)) {
       runFlags |= TextRenderedRun::eIncludeStroke;
-      if (run.mFrame->StyleText()->HasTextShadow()) {
-        runFlags |= TextRenderedRun::eIncludeTextShadow;
-      }
     }
     
     
