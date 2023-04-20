@@ -14,7 +14,7 @@
 
 
 const { createLazyLoaders } = ChromeUtils.import(
-  "resource://devtools/client/performance-new/typescript-lazy-load.jsm.js"
+  "resource://devtools/client/performance-new/shared/typescript-lazy-load.jsm.js"
 );
 
 
@@ -87,7 +87,8 @@ function require(path) {
 
 
 const lazy = createLazyLoaders({
-  Utils: () => require("devtools/client/performance-new/utils"),
+  Utils: () =>
+    require("resource://devtools/client/performance-new/shared/utils.js"),
   BrowserModule: () => require("devtools/client/performance-new/browser"),
   RecordingUtils: () =>
     require("resource://devtools/shared/performance-new/recording-utils.js"),
