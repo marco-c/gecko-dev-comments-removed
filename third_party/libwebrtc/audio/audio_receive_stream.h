@@ -40,19 +40,21 @@ class ChannelReceiveInterface;
 
 namespace internal {
 class AudioSendStream;
+}  
 
-class AudioReceiveStream final : public webrtc::AudioReceiveStream,
-                                 public AudioMixer::Source,
-                                 public Syncable {
+class AudioReceiveStreamImpl final : public webrtc::AudioReceiveStream,
+                                     public AudioMixer::Source,
+                                     public Syncable {
  public:
-  AudioReceiveStream(Clock* clock,
-                     PacketRouter* packet_router,
-                     NetEqFactory* neteq_factory,
-                     const webrtc::AudioReceiveStream::Config& config,
-                     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
-                     webrtc::RtcEventLog* event_log);
+  AudioReceiveStreamImpl(
+      Clock* clock,
+      PacketRouter* packet_router,
+      NetEqFactory* neteq_factory,
+      const webrtc::AudioReceiveStream::Config& config,
+      const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
+      webrtc::RtcEventLog* event_log);
   
-  AudioReceiveStream(
+  AudioReceiveStreamImpl(
       Clock* clock,
       PacketRouter* packet_router,
       const webrtc::AudioReceiveStream::Config& config,
@@ -60,16 +62,16 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
       webrtc::RtcEventLog* event_log,
       std::unique_ptr<voe::ChannelReceiveInterface> channel_receive);
 
-  AudioReceiveStream() = delete;
-  AudioReceiveStream(const AudioReceiveStream&) = delete;
-  AudioReceiveStream& operator=(const AudioReceiveStream&) = delete;
+  AudioReceiveStreamImpl() = delete;
+  AudioReceiveStreamImpl(const AudioReceiveStreamImpl&) = delete;
+  AudioReceiveStreamImpl& operator=(const AudioReceiveStreamImpl&) = delete;
 
   
   
   
   
   
-  ~AudioReceiveStream() override;
+  ~AudioReceiveStreamImpl() override;
 
   
   
@@ -121,7 +123,7 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
                                          int64_t time_ms) override;
   bool SetMinimumPlayoutDelay(int delay_ms) override;
 
-  void AssociateSendStream(AudioSendStream* send_stream);
+  void AssociateSendStream(internal::AudioSendStream* send_stream);
   void DeliverRtcp(const uint8_t* packet, size_t length);
 
   void SetSyncGroup(absl::string_view sync_group);
@@ -146,7 +148,7 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   void ReconfigureForTesting(const webrtc::AudioReceiveStream::Config& config);
 
  private:
-  AudioState* audio_state() const;
+  internal::AudioState* audio_state() const;
 
   RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_thread_checker_;
   
@@ -169,7 +171,6 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   std::unique_ptr<RtpStreamReceiverInterface> rtp_stream_receiver_
       RTC_GUARDED_BY(packet_sequence_checker_);
 };
-}  
 }  
 
 #endif  
