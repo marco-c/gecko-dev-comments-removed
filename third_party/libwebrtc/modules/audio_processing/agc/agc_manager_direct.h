@@ -35,6 +35,8 @@ class GainControl;
 
 
 
+
+
 class AgcManagerDirect final {
  public:
   
@@ -57,6 +59,11 @@ class AgcManagerDirect final {
   void SetupDigitalGainControl(GainControl& gain_control) const;
 
   
+  void set_stream_analog_level(int level);
+
+  
+  
+  
   
   
   
@@ -64,20 +71,21 @@ class AgcManagerDirect final {
 
   
   
-  
   void Process(const AudioBuffer* audio);
+
+  
+  
+  
+  
+  
+  
+  int recommended_analog_level() const { return recommended_input_volume_; }
 
   
   
   void HandleCaptureOutputUsedChange(bool capture_output_used);
 
   float voice_probability() const;
-
-  
-  int stream_analog_level() const { return stream_analog_level_; }
-
-  
-  void set_stream_analog_level(int level);
 
   int num_channels() const { return num_capture_channels_; }
 
@@ -129,6 +137,8 @@ class AgcManagerDirect final {
 
   void AggregateChannelLevels();
 
+  const bool analog_controller_enabled_;
+
   const absl::optional<int> min_mic_level_override_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
   static std::atomic<int> instance_counter_;
@@ -137,7 +147,17 @@ class AgcManagerDirect final {
   const bool disable_digital_adaptive_;
 
   int frames_since_clipped_;
-  int stream_analog_level_ = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  int recommended_input_volume_ = 0;
+
   bool capture_output_used_;
   int channel_controlling_gain_ = 0;
 
@@ -156,6 +176,8 @@ class AgcManagerDirect final {
   int clipping_rate_log_counter_;
 };
 
+
+
 class MonoAgc {
  public:
   MonoAgc(ApmDataDumper* data_dumper,
@@ -170,12 +192,22 @@ class MonoAgc {
   void Initialize();
   void HandleCaptureOutputUsedChange(bool capture_output_used);
 
+  
+  void set_stream_analog_level(int level) { recommended_input_volume_ = level; }
+
+  
+  
+  
   void HandleClipping(int clipped_level_step);
 
+  
+  
+  
   void Process(rtc::ArrayView<const int16_t> audio);
 
-  void set_stream_analog_level(int level) { stream_analog_level_ = level; }
-  int stream_analog_level() const { return stream_analog_level_; }
+  
+  int recommended_analog_level() const { return recommended_input_volume_; }
+
   float voice_probability() const { return agc_->voice_probability(); }
   void ActivateLogging() { log_to_histograms_ = true; }
   absl::optional<int> new_compression() const {
@@ -215,7 +247,15 @@ class MonoAgc {
   bool startup_ = true;
   int startup_min_level_;
   int calls_since_last_gain_log_ = 0;
-  int stream_analog_level_ = 0;
+
+  
+  
+  
+  
+  
+  
+  int recommended_input_volume_ = 0;
+
   absl::optional<int> new_compression_to_set_;
   bool log_to_histograms_ = false;
   const int clipped_level_min_;
