@@ -233,7 +233,7 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
 
  private:
   friend class NetworkTest;
-
+  const webrtc::FieldTrialsView* field_trials_ = nullptr;
   EnumerationPermission enumeration_permission_;
 
   std::vector<Network*> networks_;
@@ -370,18 +370,21 @@ class RTC_EXPORT Network {
   Network(absl::string_view name,
           absl::string_view description,
           const IPAddress& prefix,
-          int prefix_length)
+          int prefix_length,
+          const webrtc::FieldTrialsView* field_trials = nullptr)
       : Network(name,
                 description,
                 prefix,
                 prefix_length,
-                rtc::ADAPTER_TYPE_UNKNOWN) {}
+                rtc::ADAPTER_TYPE_UNKNOWN,
+                field_trials) {}
 
   Network(absl::string_view name,
           absl::string_view description,
           const IPAddress& prefix,
           int prefix_length,
-          AdapterType type);
+          AdapterType type,
+          const webrtc::FieldTrialsView* field_trials = nullptr);
 
   Network(const Network&);
   ~Network();
@@ -430,6 +433,8 @@ class RTC_EXPORT Network {
   
   
   
+  
+  
 
   
   
@@ -441,10 +446,6 @@ class RTC_EXPORT Network {
   
   
   IPAddress GetBestIP() const;
-
-  
-  
-  IPAddress ip() const { return GetBestIP(); }
 
   
   void AddIP(const InterfaceAddress& ip) { ips_.push_back(ip); }
@@ -564,6 +565,7 @@ class RTC_EXPORT Network {
   std::string ToString() const;
 
  private:
+  const webrtc::FieldTrialsView* field_trials_ = nullptr;
   const DefaultLocalAddressProvider* default_local_address_provider_ = nullptr;
   const MdnsResponderProvider* mdns_responder_provider_ = nullptr;
   std::string name_;

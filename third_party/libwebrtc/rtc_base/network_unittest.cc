@@ -339,9 +339,11 @@ TEST_F(NetworkTest, TestNetworkConstruct) {
 
 TEST_F(NetworkTest, TestIsIgnoredNetworkIgnoresIPsStartingWith0) {
   Network ipv4_network1("test_eth0", "Test Network Adapter 1",
-                        IPAddress(0x12345600U), 24, ADAPTER_TYPE_ETHERNET);
+                        IPAddress(0x12345600U), 24, ADAPTER_TYPE_ETHERNET,
+                        &field_trials_);
   Network ipv4_network2("test_eth1", "Test Network Adapter 2",
-                        IPAddress(0x010000U), 24, ADAPTER_TYPE_ETHERNET);
+                        IPAddress(0x010000U), 24, ADAPTER_TYPE_ETHERNET,
+                        &field_trials_);
   PhysicalSocketServer socket_server;
   BasicNetworkManager network_manager(&socket_server);
   network_manager.StartUpdating();
@@ -821,19 +823,19 @@ TEST_F(NetworkTest, NetworksSortedByInterfaceName) {
 
 TEST_F(NetworkTest, TestNetworkAdapterTypes) {
   Network wifi("wlan0", "Wireless Adapter", IPAddress(0x12345600U), 24,
-               ADAPTER_TYPE_WIFI);
+               ADAPTER_TYPE_WIFI, &field_trials_);
   EXPECT_EQ(ADAPTER_TYPE_WIFI, wifi.type());
   Network ethernet("eth0", "Ethernet", IPAddress(0x12345600U), 24,
-                   ADAPTER_TYPE_ETHERNET);
+                   ADAPTER_TYPE_ETHERNET, &field_trials_);
   EXPECT_EQ(ADAPTER_TYPE_ETHERNET, ethernet.type());
   Network cellular("test_cell", "Cellular Adapter", IPAddress(0x12345600U), 24,
-                   ADAPTER_TYPE_CELLULAR);
+                   ADAPTER_TYPE_CELLULAR, &field_trials_);
   EXPECT_EQ(ADAPTER_TYPE_CELLULAR, cellular.type());
   Network vpn("bridge_test", "VPN Adapter", IPAddress(0x12345600U), 24,
-              ADAPTER_TYPE_VPN);
+              ADAPTER_TYPE_VPN, &field_trials_);
   EXPECT_EQ(ADAPTER_TYPE_VPN, vpn.type());
   Network unknown("test", "Test Adapter", IPAddress(0x12345600U), 24,
-                  ADAPTER_TYPE_UNKNOWN);
+                  ADAPTER_TYPE_UNKNOWN, &field_trials_);
   EXPECT_EQ(ADAPTER_TYPE_UNKNOWN, unknown.type());
 }
 
@@ -1150,6 +1152,69 @@ TEST_F(NetworkTest, TestIPv6Selection) {
   ipstr = "2401:fa00:4:1000:be30:5bff:fee5:c6";
   ASSERT_TRUE(IPFromString(ipstr, IPV6_ADDRESS_FLAG_TEMPORARY, &ip));
   ipv6_network.AddIP(ip);
+  EXPECT_EQ(ipv6_network.GetBestIP(), static_cast<IPAddress>(ip));
+}
+
+
+TEST_F(NetworkTest, TestGetBestIPWithPreferGlobalIPv6ToLinkLocalEnabled) {
+  webrtc::test::ScopedKeyValueConfig field_trials(
+      "WebRTC-PreferGlobalIPv6ToLinkLocal/Enabled/");
+  InterfaceAddress ip, link_local;
+  std::string ipstr;
+
+  ipstr = "2401:fa00:4:1000:be30:5bff:fee5:c3";
+  ASSERT_TRUE(IPFromString(ipstr, IPV6_ADDRESS_FLAG_DEPRECATED, &ip));
+
+  
+  Network ipv6_network("test_eth0", "Test NetworkAdapter", TruncateIP(ip, 64),
+                       64, ADAPTER_TYPE_UNKNOWN, &field_trials);
+
+  
+  
+  EXPECT_EQ(ipv6_network.GetBestIP(), IPAddress());
+  EXPECT_TRUE(IPIsUnspec(ipv6_network.GetBestIP()));
+
+  
+  ipv6_network.AddIP(ip);
+  EXPECT_EQ(ipv6_network.GetBestIP(), IPAddress());
+
+  
+  
+  ipstr = "fd00:fa00:4:1000:be30:5bff:fee5:c4";
+  ASSERT_TRUE(IPFromString(ipstr, IPV6_ADDRESS_FLAG_NONE, &ip));
+  ipv6_network.AddIP(ip);
+  EXPECT_EQ(ipv6_network.GetBestIP(), static_cast<IPAddress>(ip));
+
+  
+  ipstr = "fe80::aabb:ccff:fedd:eeff";
+  ASSERT_TRUE(IPFromString(ipstr, IPV6_ADDRESS_FLAG_NONE, &link_local));
+  ipv6_network.AddIP(link_local);
+  EXPECT_EQ(ipv6_network.GetBestIP(), static_cast<IPAddress>(link_local));
+
+  
+  ipstr = "2401:fa00:4:1000:be30:5bff:fee5:c5";
+  ASSERT_TRUE(IPFromString(ipstr, IPV6_ADDRESS_FLAG_NONE, &ip));
+  ipv6_network.AddIP(ip);
+  EXPECT_EQ(ipv6_network.GetBestIP(), static_cast<IPAddress>(ip));
+
+  
+  
+  ipstr = "fe80::aabb:ccff:fedd:eedd";
+  ASSERT_TRUE(IPFromString(ipstr, IPV6_ADDRESS_FLAG_NONE, &link_local));
+  ipv6_network.AddIP(link_local);
+  EXPECT_EQ(ipv6_network.GetBestIP(), static_cast<IPAddress>(ip));
+
+  
+  ipstr = "2401:fa00:4:1000:be30:5bff:fee5:c6";
+  ASSERT_TRUE(IPFromString(ipstr, IPV6_ADDRESS_FLAG_TEMPORARY, &ip));
+  ipv6_network.AddIP(ip);
+  EXPECT_EQ(ipv6_network.GetBestIP(), static_cast<IPAddress>(ip));
+
+  
+  
+  ipstr = "fe80::aabb:ccff:fedd:eedd";
+  ASSERT_TRUE(IPFromString(ipstr, IPV6_ADDRESS_FLAG_NONE, &link_local));
+  ipv6_network.AddIP(link_local);
   EXPECT_EQ(ipv6_network.GetBestIP(), static_cast<IPAddress>(ip));
 }
 

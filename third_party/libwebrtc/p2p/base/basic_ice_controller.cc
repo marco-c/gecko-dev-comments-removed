@@ -796,7 +796,7 @@ std::vector<const Connection*> BasicIceController::PruneConnections() {
   auto best_connection_by_network = GetBestConnectionByNetwork();
   for (const Connection* conn : connections_) {
     const Connection* best_conn = selected_connection_;
-    if (!rtc::IPIsAny(conn->network()->ip())) {
+    if (!rtc::IPIsAny(conn->network()->GetBestIP())) {
       
       
       
