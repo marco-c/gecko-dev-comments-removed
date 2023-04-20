@@ -6259,78 +6259,7 @@ var acorn = __webpack_require__(1103);
 
 var sourceMap = __webpack_require__(632);
 
-var SourceNode = sourceMap.SourceNode;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class RootSourceNode extends SourceNode {
-  
-
-
-
-
-
-  add(leafSourceNode) {
-    this.children.push(leafSourceNode);
-  }
-  
-
-
-
-
-
-
-
-  walk(func) {
-    for (let i = 0, len = this.children.length; i < len; i++) {
-      const child = this.children[i];
-      func(child.str, child);
-    }
-  }
-  
-
-
-
-
-  walkSourceContents() {
-    
-  }
-
-} 
-
-
-
-class LeafSourceNode {
-  
-
-
-
-
-
-  constructor(line, column, source, str) {
-    this.str = str;
-    this.line = line;
-    this.column = column;
-    this.source = source;
-    this.name = null;
-  }
-
-} 
-
+const NEWLINE_CODE = 10; 
 
 
 
@@ -6473,7 +6402,7 @@ function isLineDelimiter(token, stack) {
 
 function appendNewline(token, write, stack) {
   if (isLineDelimiter(token, stack)) {
-    write("\n", token.loc.start.line, token.loc.start.column);
+    write("\n");
     return true;
   }
 
@@ -6656,27 +6585,27 @@ function prependWhiteSpace(token, lastToken, addedNewline, addedSpace, write, op
 
   if (lastToken && ltt == "}") {
     if (ttk == "while" && stack.at(-1) == "do" || needsSpaceBeforeClosingCurlyBracket(ttk)) {
-      write(" ", lastToken.loc.start.line, lastToken.loc.start.column);
+      write(" ");
       spaceAdded = true;
     } else if (needsLineBreakBeforeClosingCurlyBracket(ttl)) {
-      write("\n", lastToken.loc.start.line, lastToken.loc.start.column);
+      write("\n");
       newlineAdded = true;
     }
   }
 
   if (ttl == ":" && stack.at(-1) == "?" || ttl == "}" && stack.at(-1) == "${") {
-    write(" ", lastToken.loc.start.line, lastToken.loc.start.column);
+    write(" ");
     spaceAdded = true;
   }
 
   if (lastToken && ltt != "}" && ltt != "." && ttk == "else") {
-    write(" ", lastToken.loc.start.line, lastToken.loc.start.column);
+    write(" ");
     spaceAdded = true;
   }
 
   function ensureNewline() {
     if (!newlineAdded) {
-      write("\n", lastToken.loc.start.line, lastToken.loc.start.column);
+      write("\n");
       newlineAdded = true;
     }
   }
@@ -6691,12 +6620,12 @@ function prependWhiteSpace(token, lastToken, addedNewline, addedSpace, write, op
 
   if (newlineAdded) {
     if (ttk == "case" || ttk == "default") {
-      write(options.indent.repeat(indentLevel - 1), token.loc.start.line, token.loc.start.column);
+      write(options.indent.repeat(indentLevel - 1));
     } else {
-      write(options.indent.repeat(indentLevel), token.loc.start.line, token.loc.start.column);
+      write(options.indent.repeat(indentLevel));
     }
   } else if (!spaceAdded && needsSpaceAfter(token, lastToken)) {
-    write(" ", lastToken.loc.start.line, lastToken.loc.start.column);
+    write(" ");
     spaceAdded = true;
   }
 }
@@ -6751,9 +6680,9 @@ function sanitize(str) {
 
 function addToken(token, write) {
   if (token.type.label == "string") {
-    write(`'${sanitize(token.value)}'`, token.loc.start.line, token.loc.start.column);
+    write(`'${sanitize(token.value)}'`, token.loc.start.line, token.loc.start.column, true);
   } else if (token.type.label == "regexp") {
-    write(String(token.value.value), token.loc.start.line, token.loc.start.column);
+    write(String(token.value.value), token.loc.start.line, token.loc.start.column, true);
   } else {
     let value;
 
@@ -6767,7 +6696,7 @@ function addToken(token, write) {
       value = token.type.label;
     }
 
-    write(String(value), token.loc.start.line, token.loc.start.column);
+    write(String(value), token.loc.start.line, token.loc.start.column, true);
   }
 }
 
@@ -6837,27 +6766,16 @@ function incrementsIndent(token) {
 
 function addComment(write, indentLevel, options, block, text, line, column, nextToken) {
   const indentString = options.indent.repeat(indentLevel);
-  let needNewline = true;
-  write(indentString, line, column);
+  const needNewLineAfter = !block || !(nextToken && nextToken.loc.start.line == line);
 
   if (block) {
-    write("/*"); 
-
-    write(text.split(new RegExp(`/\n${indentString}/`, "g")).join(`\n${indentString}`), null, null, true);
-    write("*/");
-    needNewline = !(nextToken && nextToken.loc.start.line == line);
+    const commentLinesText = text.split(new RegExp(`/\n${indentString}/`, "g")).join(`\n${indentString}`);
+    write(`${indentString}/*${commentLinesText}*/${needNewLineAfter ? "\n" : " "}`);
   } else {
-    write("//");
-    write(text);
+    write(`${indentString}//${text}\n`);
   }
 
-  if (needNewline) {
-    write("\n");
-  } else {
-    write(" ");
-  }
-
-  return needNewline;
+  return needNewLineAfter;
 }
 
 
@@ -6877,11 +6795,19 @@ function addComment(write, indentLevel, options, block, text, line, column, next
 
 
 
-function prettyFast(input, options) {
+function prettyFast(input, options = {}) {
   
   let indentLevel = 0; 
 
-  const rootNode = new RootSourceNode();
+  const {
+    url: file
+  } = options;
+  const sourceMapGenerator = new sourceMap.SourceMapGenerator({
+    file
+  });
+  let currentCode = "";
+  let currentLine = 1;
+  let currentColumn = 0;
   
 
 
@@ -6897,40 +6823,35 @@ function prettyFast(input, options) {
 
 
 
+  const write = (str, line, column, isToken) => {
+    currentCode += str;
 
+    if (isToken) {
+      sourceMapGenerator.addMapping({
+        source: file,
+        
+        
+        generated: {
+          line,
+          column
+        },
+        original: {
+          line: currentLine,
+          column: currentColumn
+        },
+        name: null
+      });
+    }
 
-
-
-
-  const write = function () {
-    const buffer = [];
-    let bufferLine = -1;
-    let bufferColumn = -1;
-    return function innerWrite(str, line, column, ignoreNewline) {
-      if (line != null && bufferLine === -1) {
-        bufferLine = line;
+    for (let idx = 0, length = str.length; idx < length; idx++) {
+      if (str.charCodeAt(idx) === NEWLINE_CODE) {
+        currentLine++;
+        currentColumn = 0;
+      } else {
+        currentColumn++;
       }
-
-      if (column != null && bufferColumn === -1) {
-        bufferColumn = column;
-      }
-
-      buffer.push(str);
-
-      if (str == "\n" && !ignoreNewline) {
-        let lineStr = "";
-
-        for (let i = 0, len = buffer.length; i < len; i++) {
-          lineStr += buffer[i];
-        }
-
-        rootNode.add(new LeafSourceNode(bufferLine, bufferColumn, options.url, lineStr));
-        buffer.splice(0, buffer.length);
-        bufferLine = -1;
-        bufferColumn = -1;
-      }
-    };
-  }(); 
+    }
+  }; 
 
 
   let addedNewline = false; 
@@ -6979,7 +6900,7 @@ function prettyFast(input, options) {
 
   const tokenQueue = getTokens(input, options);
 
-  for (let i = 0; i < tokenQueue.length; i++) {
+  for (let i = 0, len = tokenQueue.length; i < len; i++) {
     var _lastToken2, _lastToken2$type;
 
     const token = tokenQueue[i];
@@ -7079,9 +7000,10 @@ function prettyFast(input, options) {
     lastToken.isArrayLiteral = token.isArrayLiteral;
   }
 
-  return rootNode.toStringWithSourceMap({
-    file: options.url
-  });
+  return {
+    code: currentCode,
+    map: sourceMapGenerator
+  };
 }
 
 
@@ -10619,29 +10541,7 @@ function prettyPrint({
   } = (0, _prettyFast.prettyFast)(sourceText, {
     url,
     indent: " ".repeat(indent)
-  }); 
-  
-
-  const mappingLength = sourceMapGenerator._mappings._array.length;
-
-  for (let i = 0; i < mappingLength; i++) {
-    const mapping = sourceMapGenerator._mappings._array[i];
-    const {
-      originalLine,
-      originalColumn,
-      generatedLine,
-      generatedColumn
-    } = mapping;
-    mapping.originalLine = generatedLine;
-    mapping.originalColumn = generatedColumn;
-    mapping.generatedLine = originalLine;
-    mapping.generatedColumn = originalColumn;
-  } 
-  
-  
-
-
-  sourceMapGenerator._mappings._sorted = false;
+  });
   return {
     code,
     sourceMap: sourceMapGenerator.toJSON()
