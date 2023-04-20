@@ -15,10 +15,14 @@
 #include <map>
 #include <vector>
 
+#include "absl/types/optional.h"
+#include "api/make_ref_counted.h"
+#include "api/ref_counted_base.h"
+#include "api/scoped_refptr.h"
+#include "api/task_queue/task_queue_base.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
 #include "rtc_base/fake_clock.h"
-#include "rtc_base/message_handler.h"
 #include "rtc_base/socket_server.h"
 #include "rtc_base/synchronization/mutex.h"
 
@@ -30,9 +34,7 @@ class SocketAddressPair;
 
 
 
-class VirtualSocket : public Socket,
-                      public MessageHandler,
-                      public sigslot::has_slots<> {
+class VirtualSocket : public Socket, public sigslot::has_slots<> {
  public:
   VirtualSocket(VirtualSocketServer* server, int family, int type);
   ~VirtualSocket() override;
@@ -58,7 +60,6 @@ class VirtualSocket : public Socket,
   ConnState GetState() const override;
   int GetOption(Option opt, int* value) override;
   int SetOption(Option opt, int value) override;
-  void OnMessage(Message* pmsg) override;
 
   size_t recv_buffer_size() const { return recv_buffer_size_; }
   size_t send_buffer_size() const { return send_buffer_.size(); }
@@ -85,16 +86,82 @@ class VirtualSocket : public Socket,
   
   size_t PurgeNetworkPackets(int64_t cur_time);
 
+  void PostPacket(webrtc::TimeDelta delay, std::unique_ptr<Packet> packet);
+  void PostConnect(webrtc::TimeDelta delay, const SocketAddress& remote_addr);
+  void PostDisconnect(webrtc::TimeDelta delay);
+
  private:
+  
+  class SafetyBlock : public RefCountedNonVirtual<SafetyBlock> {
+   public:
+    explicit SafetyBlock(VirtualSocket* socket);
+    SafetyBlock(const SafetyBlock&) = delete;
+    SafetyBlock& operator=(const SafetyBlock&) = delete;
+    ~SafetyBlock();
+
+    
+    
+    void SetNotAlive();
+    bool IsAlive();
+
+    
+    
+    
+    int RecvFrom(void* buffer, size_t size, SocketAddress& addr);
+
+    void Listen();
+
+    struct AcceptResult {
+      int error = 0;
+      std::unique_ptr<VirtualSocket> socket;
+      SocketAddress remote_addr;
+    };
+    AcceptResult Accept();
+
+    bool AddPacket(std::unique_ptr<Packet> packet);
+    void PostConnect(webrtc::TimeDelta delay, const SocketAddress& remote_addr);
+
+   private:
+    enum class Signal { kNone, kReadEvent, kConnectEvent };
+    
+    
+    using PostedConnects = std::list<SocketAddress>;
+
+    void PostSignalReadEvent() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+    void MaybeSignalReadEvent();
+    Signal Connect(PostedConnects::iterator remote_addr_it);
+
+    webrtc::Mutex mutex_;
+    VirtualSocket& socket_;
+    bool alive_ RTC_GUARDED_BY(mutex_) = true;
+    
+    
+    bool pending_read_signal_event_ RTC_GUARDED_BY(mutex_) = false;
+
+    
+    
+    
+    
+
+    
+    
+    PostedConnects posted_connects_ RTC_GUARDED_BY(mutex_);
+
+    
+    std::list<std::unique_ptr<Packet>> recv_buffer_ RTC_GUARDED_BY(mutex_);
+
+    
+    absl::optional<std::deque<SocketAddress>> listen_queue_
+        RTC_GUARDED_BY(mutex_);
+  };
+
   struct NetworkEntry {
     size_t size;
     int64_t done_time;
   };
 
-  typedef std::deque<SocketAddress> ListenQueue;
   typedef std::deque<NetworkEntry> NetworkQueue;
   typedef std::vector<char> SendBuffer;
-  typedef std::list<Packet*> RecvBuffer;
   typedef std::map<Option, int> OptionsMap;
 
   int InitiateConnect(const SocketAddress& addr, bool use_delay);
@@ -111,9 +178,8 @@ class VirtualSocket : public Socket,
   SocketAddress local_addr_;
   SocketAddress remote_addr_;
 
-  
-  std::unique_ptr<ListenQueue> listen_queue_ RTC_GUARDED_BY(mutex_)
-      RTC_PT_GUARDED_BY(mutex_);
+  const scoped_refptr<SafetyBlock> safety_ =
+      make_ref_counted<SafetyBlock>(this);
 
   
   SendBuffer send_buffer_;
@@ -122,17 +188,12 @@ class VirtualSocket : public Socket,
   bool ready_to_send_ = true;
 
   
-  webrtc::Mutex mutex_;
-
-  
   NetworkQueue network_;
   size_t network_size_;
   
   
   int64_t last_delivery_time_ = 0;
 
-  
-  RecvBuffer recv_buffer_ RTC_GUARDED_BY(mutex_);
   
   size_t recv_buffer_size_;
 
@@ -309,14 +370,6 @@ class VirtualSocketServer : public SocketServer {
   uint32_t SendDelay(uint32_t size) RTC_LOCKS_EXCLUDED(mutex_);
 
   
-  void CancelConnects(VirtualSocket* socket);
-
-  
-  void Clear(VirtualSocket* socket);
-
-  void PostSignalReadEvent(VirtualSocket* socket);
-
-  
   sigslot::signal0<> SignalReadyToSend;
 
  protected:
@@ -327,6 +380,7 @@ class VirtualSocketServer : public SocketServer {
   VirtualSocket* LookupBinding(const SocketAddress& addr);
 
  private:
+  friend VirtualSocket;
   uint16_t GetNextPort();
 
   
