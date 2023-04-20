@@ -71,8 +71,8 @@ HRESULT MFMediaEngineAudioStream::CreateMediaType(const TrackInfo& aInfo,
 bool MFMediaEngineAudioStream::HasEnoughRawData() const {
   
   
-  static const int64_t AMPLE_AUDIO_USECS = 2000000;
-  return mRawDataQueueForFeedingEngine.Duration() >= AMPLE_AUDIO_USECS;
+  return mRawDataQueueForFeedingEngine.Duration() >=
+         StaticPrefs::media_wmf_media_engine_raw_data_threshold_audio();
 }
 
 already_AddRefed<MediaData> MFMediaEngineAudioStream::OutputDataInternal() {
