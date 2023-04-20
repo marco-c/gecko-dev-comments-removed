@@ -2113,9 +2113,6 @@ nscoord nsIFrame::SynthesizeFallbackBaseline(
     WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
   const auto margin = GetLogicalUsedMargin(aWM);
   NS_ASSERTION(!IsSubtreeDirty(), "frame must not be dirty");
-  if (aWM.IsCentralBaseline()) {
-    return (BSize(aWM) + GetLogicalUsedMargin(aWM).BEnd(aWM)) / 2;
-  }
   
   
   if (aWM.IsLineInverted()) {

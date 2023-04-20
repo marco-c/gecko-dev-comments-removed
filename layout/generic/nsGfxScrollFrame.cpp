@@ -1456,21 +1456,6 @@ static void GetScrollableOverflowForPerspective(
   }
 }
 
-BaselineSharingGroup nsHTMLScrollFrame::GetDefaultBaselineSharingGroup() const {
-  return mScrolledFrame->GetDefaultBaselineSharingGroup();
-}
-
-nscoord nsHTMLScrollFrame::SynthesizeFallbackBaseline(
-    mozilla::WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
-  
-  if (aWM.IsLineInverted()) {
-    return -GetLogicalUsedMargin(aWM).BStart(aWM);
-  }
-  return aBaselineGroup == BaselineSharingGroup::First
-             ? BSize(aWM) + GetLogicalUsedMargin(aWM).BEnd(aWM)
-             : -GetLogicalUsedMargin(aWM).BEnd(aWM);
-}
-
 Maybe<nscoord> nsHTMLScrollFrame::GetNaturalBaselineBOffset(
     WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
   
@@ -1480,8 +1465,7 @@ Maybe<nscoord> nsHTMLScrollFrame::GetNaturalBaselineBOffset(
   
   
   
-  if (aBaselineGroup == BaselineSharingGroup::Last &&
-      mScrolledFrame->IsBlockFrameOrSubclass()) {
+  if (mScrolledFrame->IsBlockFrameOrSubclass()) {
     return Some(SynthesizeFallbackBaseline(aWM, aBaselineGroup));
   }
 
