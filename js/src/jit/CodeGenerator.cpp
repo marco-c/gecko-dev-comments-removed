@@ -7594,7 +7594,17 @@ void CodeGenerator::emitGetInlinedArgument(GetInlinedArgument* lir,
                                            Register index,
                                            ValueOperand output) {
   uint32_t numActuals = lir->mir()->numActuals();
-  MOZ_ASSERT(numActuals > 0 && numActuals <= ArgumentsObject::MaxInlinedArgs);
+  MOZ_ASSERT(numActuals <= ArgumentsObject::MaxInlinedArgs);
+
+  
+  
+  
+  
+  
+  if (numActuals == 0) {
+    masm.assumeUnreachable("LGetInlinedArgument: invalid index");
+    return;
+  }
 
   
   Label done;
