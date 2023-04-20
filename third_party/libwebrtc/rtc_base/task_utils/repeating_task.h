@@ -15,11 +15,10 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "api/task_queue/pending_task_safety_flag.h"
-#include "api/task_queue/queued_task.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
-#include "api/units/timestamp.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -31,64 +30,6 @@ void RepeatingTaskHandleDTraceProbeStart();
 void RepeatingTaskHandleDTraceProbeDelayedStart();
 void RepeatingTaskImplDTraceProbeRun();
 
-class RepeatingTaskBase : public QueuedTask {
- public:
-  RepeatingTaskBase(TaskQueueBase* task_queue,
-                    TaskQueueBase::DelayPrecision precision,
-                    TimeDelta first_delay,
-                    Clock* clock,
-                    rtc::scoped_refptr<PendingTaskSafetyFlag> alive_flag);
-  ~RepeatingTaskBase() override;
-
- private:
-  virtual TimeDelta RunClosure() = 0;
-
-  bool Run() final;
-
-  TaskQueueBase* const task_queue_;
-  const TaskQueueBase::DelayPrecision precision_;
-  Clock* const clock_;
-  
-  Timestamp next_run_time_ RTC_GUARDED_BY(task_queue_);
-  rtc::scoped_refptr<PendingTaskSafetyFlag> alive_flag_
-      RTC_GUARDED_BY(task_queue_);
-};
-
-
-
-
-
-template <class Closure>
-class RepeatingTaskImpl final : public RepeatingTaskBase {
- public:
-  RepeatingTaskImpl(TaskQueueBase* task_queue,
-                    TaskQueueBase::DelayPrecision precision,
-                    TimeDelta first_delay,
-                    Closure&& closure,
-                    Clock* clock,
-                    rtc::scoped_refptr<PendingTaskSafetyFlag> alive_flag)
-      : RepeatingTaskBase(task_queue,
-                          precision,
-                          first_delay,
-                          clock,
-                          std::move(alive_flag)),
-        closure_(std::forward<Closure>(closure)) {
-    static_assert(
-        std::is_same<TimeDelta,
-                     typename std::invoke_result<decltype(&Closure::operator()),
-                                                 Closure>::type>::value,
-        "");
-  }
-
- private:
-  TimeDelta RunClosure() override {
-    RepeatingTaskImplDTraceProbeRun();
-    return closure_();
-  }
-
-  typename std::remove_const<
-      typename std::remove_reference<Closure>::type>::type closure_;
-};
 }  
 
 
@@ -111,43 +52,21 @@ class RepeatingTaskHandle {
   
   
   
-  template <class Closure>
   static RepeatingTaskHandle Start(TaskQueueBase* task_queue,
-                                   Closure&& closure,
+                                   absl::AnyInvocable<TimeDelta()> closure,
                                    TaskQueueBase::DelayPrecision precision =
                                        TaskQueueBase::DelayPrecision::kLow,
-                                   Clock* clock = Clock::GetRealTimeClockRaw()) {
-    auto alive_flag = PendingTaskSafetyFlag::CreateDetached();
-    webrtc_repeating_task_impl::RepeatingTaskHandleDTraceProbeStart();
-    task_queue->PostTask(
-        std::make_unique<
-            webrtc_repeating_task_impl::RepeatingTaskImpl<Closure>>(
-            task_queue, precision, TimeDelta::Zero(),
-            std::forward<Closure>(closure), clock, alive_flag));
-    return RepeatingTaskHandle(std::move(alive_flag));
-  }
+                                   Clock* clock = Clock::GetRealTimeClockRaw());
 
   
   
-  template <class Closure>
   static RepeatingTaskHandle DelayedStart(
       TaskQueueBase* task_queue,
       TimeDelta first_delay,
-      Closure&& closure,
+      absl::AnyInvocable<TimeDelta()> closure,
       TaskQueueBase::DelayPrecision precision =
           TaskQueueBase::DelayPrecision::kLow,
-      Clock* clock = Clock::GetRealTimeClockRaw()) {
-    auto alive_flag = PendingTaskSafetyFlag::CreateDetached();
-    webrtc_repeating_task_impl::RepeatingTaskHandleDTraceProbeDelayedStart();
-    task_queue->PostDelayedTaskWithPrecision(
-        precision,
-        std::make_unique<
-            webrtc_repeating_task_impl::RepeatingTaskImpl<Closure>>(
-            task_queue, precision, first_delay, std::forward<Closure>(closure),
-            clock, alive_flag),
-        first_delay.ms());
-    return RepeatingTaskHandle(std::move(alive_flag));
-  }
+      Clock* clock = Clock::GetRealTimeClockRaw());
 
   
   
