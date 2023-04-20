@@ -295,9 +295,8 @@ void nsHttpConnection::StartSpdy(nsISSLSocketControl* sslControl,
     
     
     
-    bool disallowHttp3 =
-        mTransaction ? mTransaction->Caps() & NS_HTTP_DISALLOW_HTTP3 : false;
-    gHttpHandler->ConnMgr()->ReportSpdyConnection(this, true, disallowHttp3);
+    gHttpHandler->ConnMgr()->ReportSpdyConnection(this, true,
+                                                  mTransactionDisallowHttp3);
   }
 
   
@@ -524,6 +523,8 @@ nsresult nsHttpConnection::Activate(nsAHttpTransaction* trans, uint32_t caps,
 
   
   mKeepAliveMask = mKeepAlive = (caps & NS_HTTP_ALLOW_KEEPALIVE);
+
+  mTransactionDisallowHttp3 |= (caps & NS_HTTP_DISALLOW_HTTP3);
 
   
   
