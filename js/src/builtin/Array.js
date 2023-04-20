@@ -11,7 +11,7 @@ function ArrayEvery(callbackfn ) {
   var len = ToLength(O.length);
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.every");
   }
   if (!IsCallable(callbackfn)) {
@@ -19,7 +19,7 @@ function ArrayEvery(callbackfn ) {
   }
 
   
-  var T = arguments.length > 1 ? arguments[1] : undefined;
+  var T = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   
@@ -48,7 +48,7 @@ function ArraySome(callbackfn ) {
   var len = ToLength(O.length);
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.some");
   }
   if (!IsCallable(callbackfn)) {
@@ -56,7 +56,7 @@ function ArraySome(callbackfn ) {
   }
 
   
-  var T = arguments.length > 1 ? arguments[1] : undefined;
+  var T = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   
@@ -164,7 +164,7 @@ function ArrayForEach(callbackfn ) {
   var len = ToLength(O.length);
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.forEach");
   }
   if (!IsCallable(callbackfn)) {
@@ -172,7 +172,7 @@ function ArrayForEach(callbackfn ) {
   }
 
   
-  var T = arguments.length > 1 ? arguments[1] : undefined;
+  var T = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   
@@ -199,7 +199,7 @@ function ArrayMap(callbackfn ) {
   var len = ToLength(O.length);
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.map");
   }
   if (!IsCallable(callbackfn)) {
@@ -207,7 +207,7 @@ function ArrayMap(callbackfn ) {
   }
 
   
-  var T = arguments.length > 1 ? arguments[1] : undefined;
+  var T = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   var A = ArraySpeciesCreate(O, len);
@@ -238,7 +238,7 @@ function ArrayFilter(callbackfn ) {
   var len = ToLength(O.length);
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.filter");
   }
   if (!IsCallable(callbackfn)) {
@@ -246,7 +246,7 @@ function ArrayFilter(callbackfn ) {
   }
 
   
-  var T = arguments.length > 1 ? arguments[1] : undefined;
+  var T = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   var A = ArraySpeciesCreate(O, 0);
@@ -294,7 +294,7 @@ function ArrayGroup(callbackfn ) {
   
   var object = std_Object_create(null);
 
-  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  var thisArg = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   for (var k = 0; k < len; k++) {
@@ -361,7 +361,7 @@ function ArrayGroupToMap(callbackfn ) {
   var C = GetBuiltinConstructor("Map");
   var map = new C();
 
-  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  var thisArg = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
 
@@ -418,7 +418,7 @@ function ArrayReduce(callbackfn ) {
   var len = ToLength(O.length);
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.reduce");
   }
   if (!IsCallable(callbackfn)) {
@@ -430,8 +430,8 @@ function ArrayReduce(callbackfn ) {
 
   
   var accumulator;
-  if (arguments.length > 1) {
-    accumulator = arguments[1];
+  if (ArgumentsLength() > 1) {
+    accumulator = GetArgument(1);
   } else {
     
     
@@ -488,7 +488,7 @@ function ArrayReduceRight(callbackfn ) {
   var len = ToLength(O.length);
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.reduce");
   }
   if (!IsCallable(callbackfn)) {
@@ -500,8 +500,8 @@ function ArrayReduceRight(callbackfn ) {
 
   
   var accumulator;
-  if (arguments.length > 1) {
-    accumulator = arguments[1];
+  if (ArgumentsLength() > 1) {
+    accumulator = GetArgument(1);
   } else {
     
     
@@ -558,7 +558,7 @@ function ArrayFind(predicate ) {
   var len = ToLength(O.length);
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.find");
   }
   if (!IsCallable(predicate)) {
@@ -566,7 +566,7 @@ function ArrayFind(predicate ) {
   }
 
   
-  var T = arguments.length > 1 ? arguments[1] : undefined;
+  var T = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   
@@ -594,7 +594,7 @@ function ArrayFindIndex(predicate ) {
   var len = ToLength(O.length);
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.find");
   }
   if (!IsCallable(predicate)) {
@@ -602,7 +602,7 @@ function ArrayFindIndex(predicate ) {
   }
 
   
-  var T = arguments.length > 1 ? arguments[1] : undefined;
+  var T = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   
@@ -1294,7 +1294,7 @@ function ArrayConcat(arg1) {
 
   
   var i = 0;
-  var argsLen = arguments.length;
+  var argsLen = ArgumentsLength();
 
   
   var E = O;
@@ -1355,7 +1355,7 @@ function ArrayConcat(arg1) {
       break;
     }
     
-    E = arguments[i];
+    E = GetArgument(i);
     i++;
   }
 
@@ -1381,7 +1381,7 @@ function ArrayFlatMap(mapperFunction ) {
   }
 
   
-  var T = arguments.length > 1 ? arguments[1] : undefined;
+  var T = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   var A = ArraySpeciesCreate(O, 0);
@@ -1406,8 +1406,8 @@ function ArrayFlat() {
   var depthNum = 1;
 
   
-  if (arguments.length && arguments[0] !== undefined) {
-    depthNum = ToInteger(arguments[0]);
+  if (ArgumentsLength() && GetArgument(0) !== undefined) {
+    depthNum = ToInteger(GetArgument(0));
   }
 
   
@@ -1443,7 +1443,7 @@ function FlattenIntoArray(
 
       if (mapperFunction) {
         
-        assert(arguments.length === 7, "thisArg is present");
+        assert(ArgumentsLength() === 7, "thisArg is present");
 
         
         element = callContentFunction(
@@ -1622,14 +1622,14 @@ function ArrayFindLast(predicate ) {
   var len = ToLength(O.length);
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.findLast");
   }
   if (!IsCallable(predicate)) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
   }
 
-  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  var thisArg = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   for (var k = len - 1; k >= 0; k--) {
@@ -1658,14 +1658,14 @@ function ArrayFindLastIndex(predicate ) {
   var len = ToLength(O.length);
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.findLastIndex");
   }
   if (!IsCallable(predicate)) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
   }
 
-  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  var thisArg = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   for (var k = len - 1; k >= 0; k--) {

@@ -468,7 +468,7 @@ async function AsyncIteratorReduce(reducer ) {
 
   
   let accumulator;
-  if (arguments.length === 1) {
+  if (ArgumentsLength() === 1) {
     
     const next = await callContentFunction(iterated.next, iterated);
     if (!IsObject(next)) {
@@ -482,7 +482,7 @@ async function AsyncIteratorReduce(reducer ) {
     accumulator = next.value;
   } else {
     
-    accumulator = arguments[1];
+    accumulator = GetArgument(1);
   }
 
   

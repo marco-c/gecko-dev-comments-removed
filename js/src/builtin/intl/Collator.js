@@ -249,7 +249,7 @@ function InitializeCollator(collator, locales, options) {
 
 
 function Intl_Collator_supportedLocalesOf(locales ) {
-  var options = arguments.length > 1 ? arguments[1] : undefined;
+  var options = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   var availableLocales = "Collator";

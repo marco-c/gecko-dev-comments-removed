@@ -112,6 +112,7 @@ module.exports = {
 
       globals: {
         
+        ArgumentsLength: "readonly",
         allowContentIter: "readonly",
         allowContentIterWith: "readonly",
         callContentFunction: "readonly",
@@ -119,6 +120,7 @@ module.exports = {
         constructContentFunction: "readonly",
         DefineDataProperty: "readonly",
         forceInterpreter: "readonly",
+        GetArgument: "readonly",
         GetBuiltinConstructor: "readonly",
         GetBuiltinPrototype: "readonly",
         GetBuiltinSymbol: "readonly",

@@ -653,14 +653,14 @@ function String_concat(arg1) {
   var str = ToString(this);
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     return str;
   }
-  if (arguments.length === 1) {
-    return str + ToString(arguments[0]);
+  if (ArgumentsLength() === 1) {
+    return str + ToString(GetArgument(0));
   }
-  if (arguments.length === 2) {
-    return str + ToString(arguments[0]) + ToString(arguments[1]);
+  if (ArgumentsLength() === 2) {
+    return str + ToString(GetArgument(0)) + ToString(GetArgument(1));
   }
 
   
@@ -668,9 +668,9 @@ function String_concat(arg1) {
   var result = str;
 
   
-  for (var i = 0; i < arguments.length; i++) {
+  for (var i = 0; i < ArgumentsLength(); i++) {
     
-    var nextString = ToString(arguments[i]);
+    var nextString = ToString(GetArgument(i));
     
     result += nextString;
   }
@@ -895,8 +895,8 @@ function String_localeCompare(that) {
   var That = ToString(that);
 
   
-  var locales = arguments.length > 1 ? arguments[1] : undefined;
-  var options = arguments.length > 2 ? arguments[2] : undefined;
+  var locales = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
+  var options = ArgumentsLength() > 2 ? GetArgument(2) : undefined;
 
   
   var collator;
@@ -932,7 +932,7 @@ function String_toLocaleLowerCase() {
 
   
   
-  var locales = arguments.length ? arguments[0] : undefined;
+  var locales = ArgumentsLength() ? GetArgument(0) : undefined;
   var requestedLocale;
   if (locales === undefined) {
     
@@ -977,7 +977,7 @@ function String_toLocaleUpperCase() {
 
   
   
-  var locales = arguments.length ? arguments[0] : undefined;
+  var locales = ArgumentsLength() ? GetArgument(0) : undefined;
   var requestedLocale;
   if (locales === undefined) {
     
@@ -1047,8 +1047,8 @@ function String_static_raw(callSite ) {
   
   for (var nextIndex = 1; nextIndex < literalSegments; nextIndex++) {
     
-    if (nextIndex < arguments.length) {
-      resultString += ToString(arguments[nextIndex]);
+    if (nextIndex < ArgumentsLength()) {
+      resultString += ToString(GetArgument(nextIndex));
     }
 
     

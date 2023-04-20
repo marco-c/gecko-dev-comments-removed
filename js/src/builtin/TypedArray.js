@@ -280,14 +280,14 @@ function TypedArrayEvery(callbackfn ) {
   }
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.every");
   }
   if (!IsCallable(callbackfn)) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
   }
 
-  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  var thisArg = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   for (var k = 0; k < len; k++) {
@@ -405,7 +405,7 @@ function TypedArrayFilter(callbackfn ) {
   }
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.filter");
   }
   if (!IsCallable(callbackfn)) {
@@ -413,7 +413,7 @@ function TypedArrayFilter(callbackfn ) {
   }
 
   
-  var T = arguments.length > 1 ? arguments[1] : undefined;
+  var T = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   var kept = new_List();
@@ -473,14 +473,14 @@ function TypedArrayFind(predicate ) {
   }
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.find");
   }
   if (!IsCallable(predicate)) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
   }
 
-  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  var thisArg = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   for (var k = 0; k < len; k++) {
@@ -524,7 +524,7 @@ function TypedArrayFindIndex(predicate ) {
   }
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(
       JSMSG_MISSING_FUN_ARG,
       0,
@@ -535,7 +535,7 @@ function TypedArrayFindIndex(predicate ) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
   }
 
-  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  var thisArg = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   for (var k = 0; k < len; k++) {
@@ -576,14 +576,14 @@ function TypedArrayForEach(callbackfn ) {
   }
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "TypedArray.prototype.forEach");
   }
   if (!IsCallable(callbackfn)) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
   }
 
-  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  var thisArg = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   for (var k = 0; k < len; k++) {
@@ -766,12 +766,12 @@ function TypedArrayKeys() {
 function TypedArrayLastIndexOf(searchElement ) {
   
   if (!IsObject(this) || !IsTypedArray(this)) {
-    if (arguments.length > 1) {
+    if (ArgumentsLength() > 1) {
       return callFunction(
         CallTypedArrayMethodIfWrapped,
         this,
         searchElement,
-        arguments[1],
+        GetArgument(1),
         "TypedArrayLastIndexOf"
       );
     }
@@ -797,7 +797,7 @@ function TypedArrayLastIndexOf(searchElement ) {
   }
 
   
-  var n = arguments.length > 1 ? ToInteger(arguments[1]) : len - 1;
+  var n = ArgumentsLength() > 1 ? ToInteger(GetArgument(1)) : len - 1;
 
   
   
@@ -852,7 +852,7 @@ function TypedArrayMap(callbackfn ) {
   }
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.map");
   }
   if (!IsCallable(callbackfn)) {
@@ -860,7 +860,7 @@ function TypedArrayMap(callbackfn ) {
   }
 
   
-  var T = arguments.length > 1 ? arguments[1] : undefined;
+  var T = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   var A = TypedArraySpeciesCreateWithLength(O, len);
@@ -905,7 +905,7 @@ function TypedArrayReduce(callbackfn ) {
   }
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.reduce");
   }
   if (!IsCallable(callbackfn)) {
@@ -913,7 +913,7 @@ function TypedArrayReduce(callbackfn ) {
   }
 
   
-  if (len === 0 && arguments.length === 1) {
+  if (len === 0 && ArgumentsLength() === 1) {
     ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
   }
 
@@ -921,7 +921,7 @@ function TypedArrayReduce(callbackfn ) {
   var k = 0;
 
   
-  var accumulator = arguments.length > 1 ? arguments[1] : O[k++];
+  var accumulator = ArgumentsLength() > 1 ? GetArgument(1) : O[k++];
 
   
   for (; k < len; k++) {
@@ -964,7 +964,7 @@ function TypedArrayReduceRight(callbackfn ) {
   }
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(
       JSMSG_MISSING_FUN_ARG,
       0,
@@ -976,7 +976,7 @@ function TypedArrayReduceRight(callbackfn ) {
   }
 
   
-  if (len === 0 && arguments.length === 1) {
+  if (len === 0 && ArgumentsLength() === 1) {
     ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
   }
 
@@ -984,7 +984,7 @@ function TypedArrayReduceRight(callbackfn ) {
   var k = len - 1;
 
   
-  var accumulator = arguments.length > 1 ? arguments[1] : O[k--];
+  var accumulator = ArgumentsLength() > 1 ? GetArgument(1) : O[k--];
 
   
   for (; k >= 0; k--) {
@@ -1150,14 +1150,14 @@ function TypedArraySome(callbackfn ) {
   }
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.some");
   }
   if (!IsCallable(callbackfn)) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
   }
 
-  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  var thisArg = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   for (var k = 0; k < len; k++) {
@@ -1476,14 +1476,14 @@ function TypedArrayFindLast(predicate ) {
   }
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.findLast");
   }
   if (!IsCallable(predicate)) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
   }
 
-  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  var thisArg = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   for (var k = len - 1; k >= 0; k--) {
@@ -1526,7 +1526,7 @@ function TypedArrayFindLastIndex(predicate ) {
   }
 
   
-  if (arguments.length === 0) {
+  if (ArgumentsLength() === 0) {
     ThrowTypeError(
       JSMSG_MISSING_FUN_ARG,
       0,
@@ -1537,7 +1537,7 @@ function TypedArrayFindLastIndex(predicate ) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
   }
 
-  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  var thisArg = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   for (var k = len - 1; k >= 0; k--) {
@@ -1786,10 +1786,9 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
 
 function TypedArrayStaticOf() {
   
-  var len = arguments.length;
+  var len = ArgumentsLength();
 
   
-  var items = arguments;
 
   
   var C = this;
@@ -1804,7 +1803,7 @@ function TypedArrayStaticOf() {
 
   
   for (var k = 0; k < len; k++) {
-    newObj[k] = items[k];
+    newObj[k] = GetArgument(k);
   }
 
   

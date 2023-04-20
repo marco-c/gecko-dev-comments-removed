@@ -311,7 +311,7 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
 
 
 function Intl_DisplayNames_supportedLocalesOf(locales ) {
-  var options = arguments.length > 1 ? arguments[1] : undefined;
+  var options = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
   
   var availableLocales = "DisplayNames";
