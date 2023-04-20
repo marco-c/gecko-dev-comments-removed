@@ -4664,7 +4664,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  Matrix ComputeWidgetTransform();
+  Matrix ComputeWidgetTransform() const;
 
   
 
