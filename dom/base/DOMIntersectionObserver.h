@@ -95,6 +95,9 @@ struct IntersectionInput {
   nsMargin mRootMargin;
   
   Maybe<nsRect> mRemoteDocumentVisibleRect;
+  
+  
+  bool mIsForContentVisibility = false;
 };
 
 struct IntersectionOutput {
@@ -151,7 +154,11 @@ class DOMIntersectionObserver final : public nsISupports,
   static IntersectionInput ComputeInput(
       const Document& aDocument, const nsINode* aRoot,
       const StyleRect<LengthPercentage>* aRootMargin);
-  static IntersectionOutput Intersect(const IntersectionInput&, Element&);
+
+  enum class IgnoreContentVisibility : bool { No, Yes };
+  static IntersectionOutput Intersect(
+      const IntersectionInput&, Element&,
+      IgnoreContentVisibility = IgnoreContentVisibility::No);
   
   static IntersectionOutput Intersect(const IntersectionInput&, const nsRect&);
 

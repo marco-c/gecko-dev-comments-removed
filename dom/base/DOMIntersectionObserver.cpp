@@ -634,7 +634,8 @@ IntersectionInput DOMIntersectionObserver::ComputeInput(
 
 
 IntersectionOutput DOMIntersectionObserver::Intersect(
-    const IntersectionInput& aInput, Element& aTarget) {
+    const IntersectionInput& aInput, Element& aTarget,
+    IgnoreContentVisibility aIgnoreContentVisibility) {
   const bool isSimilarOrigin = SimilarOrigin(aTarget, aInput.mRootNode) ==
                                BrowsingContextOrigin::Similar;
   nsIFrame* targetFrame = aTarget.GetPrimaryFrame();
@@ -647,7 +648,12 @@ IntersectionOutput DOMIntersectionObserver::Intersect(
   
   
   
-  if (targetFrame->IsHiddenByContentVisibilityOnAnyAncestor()) {
+  
+  
+  
+  
+  if (aIgnoreContentVisibility == IgnoreContentVisibility::No &&
+      targetFrame->IsHiddenByContentVisibilityOnAnyAncestor()) {
     return {isSimilarOrigin};
   }
 
@@ -709,9 +715,18 @@ void DOMIntersectionObserver::Update(Document* aDocument,
 
   
   
+  
+  IgnoreContentVisibility ignoreContentVisibility =
+      aDocument->GetContentVisibilityObserver() == this
+          ? IgnoreContentVisibility::Yes
+          : IgnoreContentVisibility::No;
+
+  
+  
   for (Element* target : mObservationTargets) {
     
-    IntersectionOutput output = Intersect(input, *target);
+    IntersectionOutput output =
+        Intersect(input, *target, ignoreContentVisibility);
 
     
     int64_t targetArea = (int64_t)output.mTargetRect.Width() *
