@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+DisableStlWrapping()
+
+
+
+CppUnitTests(
+    [
+        "TestMozJemallocUtils",
+    ]
+)
