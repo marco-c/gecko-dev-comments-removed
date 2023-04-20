@@ -1,5 +1,19 @@
+async function waitForScrollendEvent(test, target, timeoutMs = 500) {
+  return new Promise((resolve, reject) => {
+    const timeoutCallback = test.step_timeout(() => {
+      reject(`No Scrollend event received for target ${target}`);
+    }, timeoutMs);
+    target.addEventListener('scrollend', (evt) => {
+      clearTimeout(timeoutCallback);
+      resolve(evt);
+    }, { once: true });
+  });
+}
+
 const MAX_FRAME = 700;
 const MAX_UNCHANGED_FRAMES = 20;
+
+
 
 
 
@@ -19,6 +33,9 @@ function waitFor(condition, error_message = 'Reaches the maximum frames.') {
   });
 }
 
+
+
+
 function waitForCompositorCommit() {
   return new Promise((resolve) => {
     
@@ -27,6 +44,8 @@ function waitForCompositorCommit() {
     });
   });
 }
+
+
 
 function waitForAnimationEnd(getValue) {
   var last_changed_frame = 0;
@@ -120,6 +139,8 @@ function mouseActionsInTarget(target, origin, delta, pause_time_in_ms = 100) {
     .pointerUp()
     .send();
 }
+
+
 
 
 
