@@ -1258,60 +1258,7 @@ class Label {
   friend class SMRegExpMacroAssembler;
 };
 
-
-
-
-
-
-
-const bool FLAG_correctness_fuzzer_suppressions = false;
-
-
-
-const bool FLAG_enable_regexp_unaligned_accesses = false;
-
-
-
-
-const bool FLAG_harmony_regexp_sequence = false;
-
-
-const bool FLAG_regexp_interpret_all = false;
-
-
-
-
-const bool FLAG_regexp_mode_modifiers = false;
-
-
-
-const bool FLAG_regexp_possessive_quantifier = false;
-
-
-
-
-
-const bool FLAG_regexp_optimization = true;
-#if MOZ_BIG_ENDIAN()
-
-const bool FLAG_regexp_peephole_optimization = false;
-#else
-const bool FLAG_regexp_peephole_optimization = true;
-#endif
-
-
-
-
-const bool FLAG_regexp_tier_up = true;
-
-
-
-
-
-#define FLAG_trace_regexp_bytecodes js::jit::JitOptions.traceRegExpInterpreter
-#define FLAG_trace_regexp_parser js::jit::JitOptions.traceRegExpParser
-#define FLAG_trace_regexp_peephole_optimization \
-  js::jit::JitOptions.traceRegExpPeephole
+#define v8_flags js::jit::JitOptions
 
 #define V8_USE_COMPUTED_GOTO 1
 #define COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER

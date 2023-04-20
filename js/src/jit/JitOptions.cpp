@@ -301,15 +301,6 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(wasmBatchIonThreshold, 1100);
 
   
-  SET_DEFAULT(traceRegExpParser, false);
-  
-  SET_DEFAULT(traceRegExpAssembler, false);
-  
-  SET_DEFAULT(traceRegExpInterpreter, false);
-  
-  SET_DEFAULT(traceRegExpPeephole, false);
-
-  
   SET_DEFAULT(lessDebugCode, false);
 
   
@@ -321,6 +312,43 @@ DefaultJitOptions::DefaultJitOptions() {
 #ifdef WASM_CODEGEN_DEBUG
   SET_DEFAULT(enableWasmImportCallSpew, false);
   SET_DEFAULT(enableWasmFuncCallSpew, false);
+#endif
+
+  
+  
+  
+  SET_DEFAULT(regexp_tier_up, true);
+
+  
+  SET_DEFAULT(trace_regexp_parser, false);
+  
+  SET_DEFAULT(trace_regexp_assembler, false);
+  
+  SET_DEFAULT(trace_regexp_bytecodes, false);
+  
+  SET_DEFAULT(trace_regexp_peephole_optimization, false);
+
+  
+
+  
+  
+  SET_DEFAULT(correctness_fuzzer_suppressions, false);
+  
+  
+  SET_DEFAULT(enable_regexp_unaligned_accesses, false);
+  
+  
+  SET_DEFAULT(regexp_possessive_quantifier, false);
+  
+  
+  
+  
+  SET_DEFAULT(regexp_optimization, true);
+#if MOZ_BIG_ENDIAN()
+  
+  SET_DEFAULT(regexp_peephole_optimization, false);
+#else
+  SET_DEFAULT(regexp_peephole_optimization, true);
 #endif
 }
 
