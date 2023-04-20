@@ -4,8 +4,22 @@
 
 
 
-SOURCES += ["nsHapticFeedback.cpp", "WindowsLocationProvider.cpp"]
+EXPORTS.mozilla.dom += [
+    "WindowsUtilsChild.h",
+    "WindowsUtilsParent.h",
+]
+
+UNIFIED_SOURCES += [
+    "nsHapticFeedback.cpp",
+    "WindowsLocationProvider.cpp",
+]
+
+IPDL_SOURCES += [
+    "PWindowsUtils.ipdl",
+]
 
 LOCAL_INCLUDES += ["/dom/geolocation"]
+
+include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"

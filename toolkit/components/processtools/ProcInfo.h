@@ -75,6 +75,7 @@ enum class UtilityActorName {
   AudioDecoder_WMF,
   MfMediaEngineCDM,
   JSOracle,
+  WindowsUtils,
 };
 
 
