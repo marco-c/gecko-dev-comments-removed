@@ -26,6 +26,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ProvenanceData: "resource:///modules/ProvenanceData.sys.mjs",
   SearchSERPTelemetry: "resource:///modules/SearchSERPTelemetry.sys.mjs",
+  SearchSERPTelemetryUtils: "resource:///modules/SearchSERPTelemetry.sys.mjs",
   WindowsInstallsInfo:
     "resource://gre/modules/components-utils/WindowsInstallsInfo.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -279,7 +280,10 @@ let URICountListener = {
       webProgress.isTopLevel
     ) {
       
-      lazy.SearchSERPTelemetry.stopTrackingBrowser(browser);
+      lazy.SearchSERPTelemetry.stopTrackingBrowser(
+        browser,
+        lazy.SearchSERPTelemetryUtils.ABANDONMENTS.NAVIGATION
+      );
     }
 
     
