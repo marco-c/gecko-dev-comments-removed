@@ -219,14 +219,6 @@ module.exports = {
     
     "no-proto": "error",
     
-    "no-restricted-properties": [
-      "error",
-      {
-        property: "setupInParent",
-        message: "avoid child/parent communication with setupInParent",
-      },
-    ],
-    
     
     "no-return-assign": "error",
     

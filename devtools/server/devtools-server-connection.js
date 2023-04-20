@@ -86,13 +86,6 @@ DevToolsServerConnection.prototype = {
     return this._transport;
   },
 
-  
-
-
-
-
-  parentMessageManager: null,
-
   close(options) {
     if (this._transport) {
       this._transport.close(options);
@@ -546,29 +539,5 @@ DevToolsServerConnection.prototype = {
     this._extraPools.forEach(pool => this.dumpPool(pool, output, dumpedPools));
 
     return output;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  setupInParent({ module, setupParent }) {
-    if (!this.parentMessageManager) {
-      return false;
-    }
-
-    return this.parentMessageManager.sendSyncMessage("debug:setup-in-parent", {
-      prefix: this.prefix,
-      module,
-      setupParent,
-    });
   },
 };
