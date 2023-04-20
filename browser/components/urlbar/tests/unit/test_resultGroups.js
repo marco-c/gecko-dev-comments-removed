@@ -7,6 +7,12 @@
 
 "use strict";
 
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
+  sinon: "resource://testing-common/Sinon.jsm",
+});
+
 
 const LIMIT_KEYS = ["availableSpan", "maxResultCount"];
 
@@ -19,16 +25,22 @@ const LIMIT_KEYS = ["availableSpan", "maxResultCount"];
 
 
 
-const RESULT_GROUPS_PREF = "browser.urlbar.resultGroups";
 const MAX_RICH_RESULTS_PREF = "browser.urlbar.maxRichResults";
 
 
 
 const MAX_RESULTS = 10;
 
+let sandbox;
+
 add_task(async function setup() {
   
   Services.prefs.setIntPref(MAX_RICH_RESULTS_PREF, MAX_RESULTS);
+
+  sandbox = lazy.sinon.createSandbox();
+  registerCleanupFunction(() => {
+    sandbox.restore();
+  });
 });
 
 add_resultGroupsLimit_tasks({
@@ -1557,12 +1569,8 @@ function makeIndexRange(startIndex, count) {
 }
 
 function setResultGroups(resultGroups) {
+  sandbox.restore();
   if (resultGroups) {
-    Services.prefs.setCharPref(
-      RESULT_GROUPS_PREF,
-      JSON.stringify(resultGroups)
-    );
-  } else {
-    Services.prefs.clearUserPref(RESULT_GROUPS_PREF);
+    sandbox.stub(UrlbarPrefs, "resultGroups").get(() => resultGroups);
   }
 }

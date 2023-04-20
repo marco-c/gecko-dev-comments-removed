@@ -5,8 +5,13 @@
 
 "use strict";
 
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
+  sinon: "resource://testing-common/Sinon.jsm",
+});
+
 const MAX_RESULTS = 10;
-const RESULT_GROUPS_PREF = "browser.urlbar.resultGroups";
 const MAX_RICH_RESULTS_PREF = "browser.urlbar.maxRichResults";
 
 
@@ -32,6 +37,14 @@ const RESULT_GROUPS = {
     },
   ],
 };
+
+let sandbox;
+add_task(function setuo() {
+  sandbox = lazy.sinon.createSandbox();
+  registerCleanupFunction(() => {
+    sandbox.restore();
+  });
+});
 
 add_task(async function test() {
   
@@ -577,12 +590,8 @@ function makeSuggestedIndexResults(objects) {
 }
 
 function setResultGroups(resultGroups) {
+  sandbox.restore();
   if (resultGroups) {
-    Services.prefs.setCharPref(
-      RESULT_GROUPS_PREF,
-      JSON.stringify(resultGroups)
-    );
-  } else {
-    Services.prefs.clearUserPref(RESULT_GROUPS_PREF);
+    sandbox.stub(UrlbarPrefs, "resultGroups").get(() => resultGroups);
   }
 }
