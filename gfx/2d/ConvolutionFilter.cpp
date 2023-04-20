@@ -5,17 +5,14 @@
 
 
 #include "ConvolutionFilter.h"
-#include "skia/src/core/SkBitmapFilter.h"
-#include "skia/src/core/SkConvolver.h"
-#include "skia/src/core/SkOpts.h"
-#include <algorithm>
-#include <cmath>
-#include "mozilla/Vector.h"
+#include "HelpersSkia.h"
+#include "SkConvolver.h"
+#include "skia/include/core/SkBitmap.h"
 
 namespace mozilla::gfx {
 
 ConvolutionFilter::ConvolutionFilter()
-    : mFilter(MakeUnique<SkConvolutionFilter1D>()) {}
+    : mFilter(MakeUnique<skia::SkConvolutionFilter1D>()) {}
 
 ConvolutionFilter::~ConvolutionFilter() = default;
 
@@ -35,7 +32,7 @@ bool ConvolutionFilter::GetFilterOffsetAndLength(int32_t aRowIndex,
 
 void ConvolutionFilter::ConvolveHorizontally(const uint8_t* aSrc, uint8_t* aDst,
                                              bool aHasAlpha) {
-  SkOpts::convolve_horizontally(aSrc, *mFilter, aDst, aHasAlpha);
+  skia::convolve_horizontally(aSrc, *mFilter, aDst, aHasAlpha);
 }
 
 void ConvolutionFilter::ConvolveVertically(uint8_t* const* aSrc, uint8_t* aDst,
@@ -47,134 +44,71 @@ void ConvolutionFilter::ConvolveVertically(uint8_t* const* aSrc, uint8_t* aDst,
   int32_t filterLength;
   auto filterValues =
       mFilter->FilterForValue(aRowIndex, &filterOffset, &filterLength);
-  SkOpts::convolve_vertically(filterValues, filterLength, aSrc, aRowSize, aDst,
-                              aHasAlpha);
+  skia::convolve_vertically(filterValues, filterLength, aSrc, aRowSize, aDst,
+                            aHasAlpha);
 }
-
-
-
-
-
 
 bool ConvolutionFilter::ComputeResizeFilter(ResizeMethod aResizeMethod,
                                             int32_t aSrcSize,
                                             int32_t aDstSize) {
-  typedef SkConvolutionFilter1D::ConvolutionFixed Fixed;
-
   if (aSrcSize < 0 || aDstSize < 0) {
     return false;
   }
 
-  UniquePtr<SkBitmapFilter> bitmapFilter;
   switch (aResizeMethod) {
     case ResizeMethod::BOX:
-      bitmapFilter = MakeUnique<SkBoxFilter>();
-      break;
-    case ResizeMethod::TRIANGLE:
-      bitmapFilter = MakeUnique<SkTriangleFilter>();
-      break;
+      return mFilter->ComputeFilterValues(skia::SkBoxFilter(), aSrcSize,
+                                          aDstSize);
     case ResizeMethod::LANCZOS3:
-      bitmapFilter = MakeUnique<SkLanczosFilter>();
-      break;
-    case ResizeMethod::HAMMING:
-      bitmapFilter = MakeUnique<SkHammingFilter>();
-      break;
-    case ResizeMethod::MITCHELL:
-      bitmapFilter = MakeUnique<SkMitchellFilter>();
-      break;
+      return mFilter->ComputeFilterValues(skia::SkLanczosFilter(), aSrcSize,
+                                          aDstSize);
     default:
       return false;
   }
+}
 
-  
-  
-  
-  
-  
-  float scale = float(aDstSize) / float(aSrcSize);
-  float clampedScale = std::min(1.0f, scale);
-  
-  
-  float srcSupport = bitmapFilter->width() / clampedScale;
-  float invScale = 1.0f / scale;
-
-  Vector<float, 64> filterValues;
-  Vector<Fixed, 64> fixedFilterValues;
-
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  const int32_t maxToPassToReserveAdditional = 1717986913;
-
-  int32_t filterValueCount = int32_t(ceil(aDstSize * srcSupport * 2));
-  if (aDstSize > maxToPassToReserveAdditional || filterValueCount < 0 ||
-      filterValueCount > maxToPassToReserveAdditional) {
+bool Scale(uint8_t* srcData, int32_t srcWidth, int32_t srcHeight,
+           int32_t srcStride, uint8_t* dstData, int32_t dstWidth,
+           int32_t dstHeight, int32_t dstStride, SurfaceFormat format) {
+  if (!srcData || !dstData || srcWidth < 1 || srcHeight < 1 || dstWidth < 1 ||
+      dstHeight < 1) {
     return false;
   }
-  mFilter->reserveAdditional(aDstSize, filterValueCount);
-  for (int32_t destI = 0; destI < aDstSize; destI++) {
-    
-    
-    
-    
-    
-    
-    float srcPixel = (static_cast<float>(destI) + 0.5f) * invScale;
 
-    
-    float srcBegin = std::max(0.0f, floorf(srcPixel - srcSupport));
-    float srcEnd = std::min(aSrcSize - 1.0f, ceilf(srcPixel + srcSupport));
+  SkPixmap srcPixmap(MakeSkiaImageInfo(IntSize(srcWidth, srcHeight), format),
+                     srcData, srcStride);
 
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    float destFilterDist = (srcBegin + 0.5f - srcPixel) * clampedScale;
-    int32_t filterCount = int32_t(srcEnd - srcBegin) + 1;
-    if (filterCount <= 0 || !filterValues.resize(filterCount) ||
-        !fixedFilterValues.resize(filterCount)) {
+  
+  SkBitmap tmpBitmap;
+  if (srcPixmap.colorType() != kN32_SkColorType) {
+    if (!tmpBitmap.tryAllocPixels(
+            SkImageInfo::MakeN32Premul(srcWidth, srcHeight)) ||
+        !tmpBitmap.writePixels(srcPixmap) ||
+        !tmpBitmap.peekPixels(&srcPixmap)) {
       return false;
     }
-    float filterSum = bitmapFilter->evaluate_n(
-        destFilterDist, clampedScale, filterCount, filterValues.begin());
-
-    
-    
-    Fixed fixedSum = 0;
-    float invFilterSum = 1.0f / filterSum;
-    for (int32_t fixedI = 0; fixedI < filterCount; fixedI++) {
-      Fixed curFixed = SkConvolutionFilter1D::FloatToFixed(
-          filterValues[fixedI] * invFilterSum);
-      fixedSum += curFixed;
-      fixedFilterValues[fixedI] = curFixed;
-    }
-
-    
-    
-    
-    
-    
-    Fixed leftovers = SkConvolutionFilter1D::FloatToFixed(1) - fixedSum;
-    fixedFilterValues[filterCount / 2] += leftovers;
-
-    mFilter->AddFilter(int32_t(srcBegin), fixedFilterValues.begin(),
-                       filterCount);
   }
 
-  return mFilter->maxFilter() > 0 && mFilter->numValues() == aDstSize;
+  ConvolutionFilter xFilter;
+  ConvolutionFilter yFilter;
+  ConvolutionFilter* xOrYFilter = &xFilter;
+  bool isSquare = srcWidth == srcHeight && dstWidth == dstHeight;
+  if (!xFilter.ComputeResizeFilter(ConvolutionFilter::ResizeMethod::LANCZOS3,
+                                   srcWidth, dstWidth)) {
+    return false;
+  }
+  if (!isSquare) {
+    if (!yFilter.ComputeResizeFilter(ConvolutionFilter::ResizeMethod::LANCZOS3,
+                                     srcHeight, dstHeight)) {
+      return false;
+    }
+    xOrYFilter = &yFilter;
+  }
+
+  return skia::BGRAConvolve2D(
+      static_cast<const uint8_t*>(srcPixmap.addr()), int(srcPixmap.rowBytes()),
+      !srcPixmap.isOpaque(), xFilter.GetSkiaFilter(),
+      xOrYFilter->GetSkiaFilter(), int(dstStride), dstData);
 }
 
 }  
