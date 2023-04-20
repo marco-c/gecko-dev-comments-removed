@@ -122,6 +122,27 @@ nsresult nsMIMEHeaderParamImpl::GetParameterHTTP(const nsACString& aHeaderVal,
 
 
 
+bool nsMIMEHeaderParamImpl::ContainsTrailingCharPastNull(
+    const nsACString& aVal) {
+  nsACString::const_iterator first;
+  aVal.BeginReading(first);
+  nsACString::const_iterator end;
+  aVal.EndReading(end);
+
+  if (FindCharInReadable(L'\0', first, end)) {
+    while (first != end) {
+      if (*first != '\0') {
+        
+        return true;
+      }
+      ++first;
+    }
+  }
+  return false;
+}
+
+
+
 nsresult nsMIMEHeaderParamImpl::DoGetParameter(
     const nsACString& aHeaderVal, const char* aParamName,
     ParamDecoding aDecoding, const nsACString& aFallbackCharset,
@@ -133,9 +154,8 @@ nsresult nsMIMEHeaderParamImpl::DoGetParameter(
   
   nsCString med;
   nsCString charset;
-  rv = DoParameterInternal(PromiseFlatCString(aHeaderVal).get(), aParamName,
-                           aDecoding, getter_Copies(charset), aLang,
-                           getter_Copies(med));
+  rv = DoParameterInternal(aHeaderVal, aParamName, aDecoding,
+                           getter_Copies(charset), aLang, getter_Copies(med));
   if (NS_FAILED(rv)) return rv;
 
   
@@ -370,7 +390,7 @@ bool IsValidOctetSequenceForCharset(const nsACString& aCharset,
 
 
 NS_IMETHODIMP
-nsMIMEHeaderParamImpl::GetParameterInternal(const char* aHeaderValue,
+nsMIMEHeaderParamImpl::GetParameterInternal(const nsACString& aHeaderValue,
                                             const char* aParamName,
                                             char** aCharset, char** aLang,
                                             char** aResult) {
@@ -380,9 +400,23 @@ nsMIMEHeaderParamImpl::GetParameterInternal(const char* aHeaderValue,
 
 
 nsresult nsMIMEHeaderParamImpl::DoParameterInternal(
-    const char* aHeaderValue, const char* aParamName, ParamDecoding aDecoding,
-    char** aCharset, char** aLang, char** aResult) {
-  if (!aHeaderValue || !*aHeaderValue || !aResult) return NS_ERROR_INVALID_ARG;
+    const nsACString& aHeaderValue, const char* aParamName,
+    ParamDecoding aDecoding, char** aCharset, char** aLang, char** aResult) {
+  if (aHeaderValue.IsEmpty() || !aResult) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  if (ContainsTrailingCharPastNull(aHeaderValue)) {
+    
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  const nsCString& flat = PromiseFlatCString(aHeaderValue);
+  const char* str = flat.get();
+
+  if (!*str) {
+    return NS_ERROR_INVALID_ARG;
+  }
 
   *aResult = nullptr;
 
@@ -394,8 +428,6 @@ nsresult nsMIMEHeaderParamImpl::DoParameterInternal(
   
   
   bool acceptContinuations = true;
-
-  const char* str = aHeaderValue;
 
   
   for (; *str && nsCRT::IsAsciiSpace(*str); ++str) {
