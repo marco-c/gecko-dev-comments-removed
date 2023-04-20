@@ -193,19 +193,6 @@ const webconsoleSpecPrototype = {
     clearMessagesCacheAsync: {
       request: {},
     },
-
-    
-
-
-
-
-
-    sendHTTPRequest: {
-      request: {
-        request: Arg(0, "json"),
-      },
-      response: RetVal("json"),
-    },
   },
 };
 
