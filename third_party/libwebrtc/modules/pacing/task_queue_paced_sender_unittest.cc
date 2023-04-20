@@ -459,9 +459,9 @@ TEST(TaskQueuePacedSenderTest, SchedulesProbeAtSentTime) {
 
 TEST(TaskQueuePacedSenderTest, NoMinSleepTimeWhenProbing) {
   
-  const TimeDelta kMinProbeDelta = TimeDelta::Micros(100);
+  const TimeDelta kMinProbeDelta = TimeDelta::Micros(200);
   ScopedKeyValueConfig trials(
-      "WebRTC-Bwe-ProbingBehavior/min_probe_delta:100us/");
+      "WebRTC-Bwe-ProbingBehavior/min_probe_delta:200us/");
   GlobalSimulatedTimeController time_controller(Timestamp::Millis(1234));
   MockPacketRouter packet_router;
   TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router, trials,
@@ -515,7 +515,7 @@ TEST(TaskQueuePacedSenderTest, NoMinSleepTimeWhenProbing) {
   
   
   
-  const DataSize kMinProbeSize = 2 * kMinProbeDelta * kProbingRate;
+  const DataSize kMinProbeSize = kMinProbeDelta * kProbingRate;
   EXPECT_EQ(data_sent, DataSize::Bytes(1) + kPacketSize + 4 * kMinProbeSize);
 }
 
