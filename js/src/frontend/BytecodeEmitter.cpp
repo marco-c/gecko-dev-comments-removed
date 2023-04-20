@@ -7950,8 +7950,7 @@ bool BytecodeEmitter::emitOptionalCall(CallNode* callNode, OptionalEmitter& oe,
   return true;
 }
 
-bool BytecodeEmitter::emitCallOrNew(
-    CallNode* callNode, ValueUsage valueUsage ) {
+bool BytecodeEmitter::emitCallOrNew(CallNode* callNode, ValueUsage valueUsage) {
   
 
 
@@ -8570,8 +8569,7 @@ bool BytecodeEmitter::emitShortCircuit(ListNode* node, ValueUsage valueUsage) {
   return true;
 }
 
-bool BytecodeEmitter::emitSequenceExpr(
-    ListNode* node, ValueUsage valueUsage ) {
+bool BytecodeEmitter::emitSequenceExpr(ListNode* node, ValueUsage valueUsage) {
   for (ParseNode* child : node->contentsTo(node->last())) {
     if (!updateSourceCoordNotes(child->pn_pos.begin)) {
       return false;
@@ -8632,8 +8630,7 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitLabeledStatement(
 }
 
 bool BytecodeEmitter::emitConditionalExpression(
-    ConditionalExpression& conditional,
-    ValueUsage valueUsage ) {
+    ConditionalExpression& conditional, ValueUsage valueUsage) {
   CondEmitter cond(this);
   if (!cond.emitCond()) {
     return false;
