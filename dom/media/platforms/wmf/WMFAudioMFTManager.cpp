@@ -13,6 +13,8 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Telemetry.h"
 #include "nsTArray.h"
+#include "BufferReader.h"
+#include "mozilla/ScopeExit.h"
 
 #define LOG(...) MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
 
@@ -37,6 +39,14 @@ WMFAudioMFTManager::WMFAudioMFTManager(const AudioInfo& aConfig)
           aacCodecSpecificData.mDecoderConfigDescriptorBinaryBlob->Elements();
       configLength =
           aacCodecSpecificData.mDecoderConfigDescriptorBinaryBlob->Length();
+
+      mRemainingEncoderDelay = mEncoderDelay =
+          aacCodecSpecificData.mEncoderDelayFrames;
+      mTotalMediaFrames = aacCodecSpecificData.mMediaFrameCount;
+      LOG("AudioMFT decoder: Found AAC decoder delay (%" PRIu32
+          "frames) and total media frames (%" PRIu64
+          " frames)\n",
+          mEncoderDelay, mTotalMediaFrames);
     } else {
       
       
@@ -215,6 +225,7 @@ WMFAudioMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
                          
   DWORD maxLength = 0, currentLength = 0;
   hr = buffer->Lock(&data, &maxLength, &currentLength);
+  ScopeExit exit([buffer] { buffer->Unlock(); });
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
   
@@ -228,6 +239,43 @@ WMFAudioMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
     return S_OK;
   }
 
+  bool trimmed = false;
+  float* floatData = reinterpret_cast<float*>(data);
+  if (mRemainingEncoderDelay) {
+    trimmed = true;
+    int32_t toPop = std::min(numFrames, (int32_t)mRemainingEncoderDelay);
+    floatData += toPop * mAudioChannels;
+    numFrames -= toPop;
+    numSamples -= toPop * mAudioChannels;
+    mRemainingEncoderDelay -= toPop;
+    LOG("AudioMFTManager: Dropped %" PRId32
+        " audio frames, corresponding the the encoder delay. Remaining %" PRIu32
+        ".\n",
+        toPop, mRemainingEncoderDelay);
+  }
+
+  mDecodedFrames += numFrames;
+
+  if (mTotalMediaFrames && mDecodedFrames > mTotalMediaFrames) {
+    trimmed = true;
+    uint64_t paddingFrames =
+        std::min(mDecodedFrames - mTotalMediaFrames, (uint64_t)numFrames);
+    
+    
+    numFrames -= paddingFrames;
+    numSamples -= paddingFrames * mAudioChannels;
+    
+    
+    mDecodedFrames = 0;
+    mRemainingEncoderDelay = mEncoderDelay;
+
+    LOG("Dropped: %llu frames, corresponding to the padding", paddingFrames);
+  }
+
+  if (!numSamples) {
+    return S_OK;
+  }
+
   if (oldAudioRate != mAudioRate) {
     LOG("Audio rate changed from %" PRIu32 " to %" PRIu32, oldAudioRate,
         mAudioRate);
@@ -235,18 +283,19 @@ WMFAudioMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
 
   AlignedAudioBuffer audioData(numSamples);
   if (!audioData) {
+    if (numSamples == 0) {
+      return S_OK;
+    }
     return E_OUTOFMEMORY;
   }
 
-  PodCopy(audioData.Data(), reinterpret_cast<float*>(data), numSamples);
-
-  buffer->Unlock();
+  PodCopy(audioData.Data(), floatData, numSamples);
 
   TimeUnit duration = FramesToTimeUnit(numFrames, mAudioRate);
   NS_ENSURE_TRUE(duration.IsValid(), E_FAIL);
 
   const bool isAudioRateChangedToHigher = oldAudioRate < mAudioRate;
-  if (IsPartialOutput(duration, isAudioRateChangedToHigher)) {
+  if (!trimmed && IsPartialOutput(duration, isAudioRateChangedToHigher)) {
     LOG("Encounter a partial frame?! duration shrinks from %" PRId64
         " to %" PRId64,
         mLastOutputDuration.ToMicroseconds(), duration.ToMicroseconds());
