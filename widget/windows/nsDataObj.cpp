@@ -1188,13 +1188,13 @@ nsDataObj ::GetFileDescriptorInternetShortcutA(FORMATETC& aFE,
 
   
   
-  if (!CreateFilenameFromTextA(title, ".URL", fileGroupDescA->fgd[0].cFileName,
+  if (!CreateFilenameFromTextA(title, ".url", fileGroupDescA->fgd[0].cFileName,
                                MAX_PATH)) {
     nsAutoString untitled;
     if (!GetLocalizedString("noPageTitle", untitled) ||
-        !CreateFilenameFromTextA(untitled, ".URL",
+        !CreateFilenameFromTextA(untitled, ".url",
                                  fileGroupDescA->fgd[0].cFileName, MAX_PATH)) {
-      strcpy(fileGroupDescA->fgd[0].cFileName, "Untitled.URL");
+      strcpy(fileGroupDescA->fgd[0].cFileName, "Untitled.url");
     }
   }
 
@@ -1230,13 +1230,13 @@ nsDataObj ::GetFileDescriptorInternetShortcutW(FORMATETC& aFE,
 
   
   
-  if (!CreateFilenameFromTextW(title, L".URL", fileGroupDescW->fgd[0].cFileName,
+  if (!CreateFilenameFromTextW(title, L".url", fileGroupDescW->fgd[0].cFileName,
                                MAX_PATH)) {
     nsAutoString untitled;
     if (!GetLocalizedString("noPageTitle", untitled) ||
-        !CreateFilenameFromTextW(untitled, L".URL",
+        !CreateFilenameFromTextW(untitled, L".url",
                                  fileGroupDescW->fgd[0].cFileName, MAX_PATH)) {
-      wcscpy(fileGroupDescW->fgd[0].cFileName, L"Untitled.URL");
+      wcscpy(fileGroupDescW->fgd[0].cFileName, L"Untitled.url");
     }
   }
 
