@@ -1,7 +1,7 @@
 <!doctype html>
 <meta charset=utf-8>
 <title>Element.getAnimations() for CSS animations</title>
-
+<!-- TODO: Add a more specific link for this once it is specified. -->
 <link rel="help" href="https://drafts.csswg.org/css-animations-2/">
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
@@ -352,7 +352,7 @@ test(t => {
   assert_equals(animations.length, 1,
                 'Should find only the element even if it has a child');
   assert_equals(animations[0].effect.target, parent,
-                'Effect target shuld be the element');
+                'Effect target should be the element');
 }, '{ subtree: false } on an element with a child returns only the element\'s'
    + ' animations');
 
