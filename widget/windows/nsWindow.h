@@ -476,7 +476,7 @@ class nsWindow final : public nsBaseWidget {
     nsSizeMode mLastSizeMode = nsSizeMode_Normal;
     
     
-    nsSizeMode mOldSizeMode = nsSizeMode_Normal;
+    nsSizeMode mPreFullscreenSizeMode = nsSizeMode_Normal;
     
     
     
