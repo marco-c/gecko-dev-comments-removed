@@ -242,7 +242,7 @@ class nsIGlobalObject : public nsISupports,
 
 
 
-  virtual bool ShouldResistFingerprinting() const;
+  virtual bool ShouldResistFingerprinting() const = 0;
 
   
 
