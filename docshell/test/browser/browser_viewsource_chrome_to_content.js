@@ -13,7 +13,7 @@ add_task(async function chrome_to_content_view_source() {
     is(browser.documentURI.spec, "about:mozilla");
 
     
-    BrowserTestUtils.loadURI(browser, TEST_URI);
+    BrowserTestUtils.loadURIString(browser, TEST_URI);
     await BrowserTestUtils.browserLoaded(browser);
     is(browser.documentURI.spec, TEST_URI);
   });

@@ -61,7 +61,7 @@ async function openTestTab(
   knownTabs.byName.set(name, knownTab);
 
   
-  BrowserTestUtils.loadURI(tab.linkedBrowser, realUrl);
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, realUrl);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   let pid = tab.linkedBrowser.frameLoader.remoteTab.osPid;

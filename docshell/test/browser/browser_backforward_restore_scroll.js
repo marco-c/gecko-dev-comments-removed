@@ -32,7 +32,7 @@ add_task(async function test() {
 
   
   let loaded = promiseBrowserLoaded(URL2);
-  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, URL2);
+  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, URL2);
   await loaded;
 
   loaded = promiseBrowserLoaded(URL1);

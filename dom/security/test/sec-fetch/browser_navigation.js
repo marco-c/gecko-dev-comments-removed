@@ -54,7 +54,7 @@ async function testNavigations() {
 
   
   let loaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  BrowserTestUtils.loadURI(gBrowser, REQUEST_URL + "?test1");
+  BrowserTestUtils.loadURIString(gBrowser, REQUEST_URL + "?test1");
   await loaded;
 
   

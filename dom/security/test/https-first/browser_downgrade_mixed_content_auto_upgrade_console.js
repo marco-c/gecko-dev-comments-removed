@@ -40,7 +40,7 @@ add_task(async function() {
   });
   Services.console.registerListener(on_new_message);
   
-  await BrowserTestUtils.loadURI(gBrowser.selectedBrowser, kTestURI);
+  await BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, kTestURI);
 
   await BrowserTestUtils.waitForCondition(() => tests.length === 0);
 

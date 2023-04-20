@@ -37,7 +37,7 @@ add_task(async function() {
   });
   Services.console.registerListener(on_new_message);
   
-  await BrowserTestUtils.loadURI(
+  await BrowserTestUtils.loadURIString(
     gBrowser.selectedBrowser,
     "http://httpsfirst.com"
   );
