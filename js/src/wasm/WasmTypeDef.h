@@ -49,6 +49,9 @@ class RecGroup;
 
 
 
+
+
+
 class FuncType {
   ValTypeVector args_;
   ValTypeVector results_;
@@ -226,6 +229,7 @@ class FuncType {
 
 
 
+
 struct StructField {
   FieldType type;
   uint32_t offset;
@@ -379,6 +383,7 @@ class StructLayout {
 
 
 
+
 class ArrayType {
  public:
   FieldType elementType_;  
@@ -503,6 +508,9 @@ using ArrayTypeVector = Vector<ArrayType, 0, SystemAllocPolicy>;
 
 
 
+
+
+
 class SuperTypeVector {
   SuperTypeVector() : typeDef_(nullptr), length_(0) {}
 
@@ -551,6 +559,9 @@ class SuperTypeVector {
 
 
 static_assert(offsetof(SuperTypeVector, types_) == sizeof(SuperTypeVector));
+
+
+
 
 
 
@@ -841,6 +852,9 @@ using TypeDefPtrToIndexMap =
 
 
 
+
+
+
 class RecGroup : public AtomicRefCounted<RecGroup> {
   
   
@@ -1034,6 +1048,9 @@ using SharedRecGroupVector = Vector<SharedRecGroup, 0, SystemAllocPolicy>;
 
 
 
+
+
+
 class TypeContext : public AtomicRefCounted<TypeContext> {
   FeatureArgs features_;
   
@@ -1169,6 +1186,9 @@ using MutableTypeContext = RefPtr<TypeContext>;
 
 
 
+
+
+
 class TypeHandle {
  private:
   SharedTypeContext context_;
@@ -1189,6 +1209,9 @@ class TypeHandle {
   uint32_t index() const { return index_; }
   const TypeDef& def() const { return context_->type(index_); }
 };
+
+
+
 
 
 inline uintptr_t TypeDef::forMatch(const TypeDef* typeDef,
@@ -1273,6 +1296,7 @@ inline bool RefType::isSubTypeOf(RefType subType, RefType superType) {
 
   return false;
 }
+
 
 
 

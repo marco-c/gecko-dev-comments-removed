@@ -72,6 +72,9 @@ using mozilla::IsPowerOfTwo;
 
 
 
+
+
+
 using ImmediateType = uint32_t;
 static const unsigned sTotalBits = sizeof(ImmediateType) * 8;
 static const unsigned sTagBits = 1;
@@ -212,6 +215,9 @@ static ImmediateType EncodeImmediateFuncType(const FuncType& funcType) {
   return immediate;
 }
 
+
+
+
 void FuncType::initImmediateTypeId() {
   if (!IsImmediateFuncType(*this)) {
     immediateTypeId_ = NO_IMMEDIATE_TYPE_ID;
@@ -236,6 +242,9 @@ bool FuncType::canHaveJitExit() const {
 size_t FuncType::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
   return args_.sizeOfExcludingThis(mallocSizeOf);
 }
+
+
+
 
 static inline CheckedInt32 RoundUpToAlignment(CheckedInt32 address,
                                               uint32_t align) {
@@ -353,6 +362,9 @@ size_t TypeDef::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
 }
 
 
+
+
+
 size_t SuperTypeVector::offsetOfTypeDefInVector(uint32_t typeDefDepth) {
   return offsetof(SuperTypeVector, types_) + sizeof(void*) * typeDefDepth;
 }
@@ -438,6 +450,9 @@ const SuperTypeVector* SuperTypeVector::createMultipleForRecGroup(
 
   return firstVector;
 }
+
+
+
 
 struct RecGroupHashPolicy {
   using Lookup = const SharedRecGroup&;
