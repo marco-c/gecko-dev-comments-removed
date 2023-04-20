@@ -3012,7 +3012,6 @@ bool WebRtcVideoChannel::WebRtcVideoReceiveStream::ReconfigureCodecs(
   }
 
   if (codec.ulpfec.red_rtx_payload_type != -1) {
-    
     rtx_associated_payload_types[codec.ulpfec.red_rtx_payload_type] =
         codec.ulpfec.red_payload_type;
   }

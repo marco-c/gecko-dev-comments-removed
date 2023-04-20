@@ -276,10 +276,6 @@ class VideoReceiveStream2
   std::unique_ptr<VideoStreamDecoder> video_stream_decoder_;
   RtpStreamsSynchronizer rtp_stream_sync_;
 
-  
-  
-  std::vector<std::unique_ptr<VideoDecoder>> video_decoders_;
-
   std::unique_ptr<VideoStreamBufferController> buffer_;
 
   std::unique_ptr<RtpStreamReceiverInterface> media_receiver_

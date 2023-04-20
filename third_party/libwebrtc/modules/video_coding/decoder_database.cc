@@ -19,13 +19,14 @@ VCMDecoderDataBase::VCMDecoderDataBase() {
   decoder_sequence_checker_.Detach();
 }
 
-bool VCMDecoderDataBase::DeregisterExternalDecoder(uint8_t payload_type) {
+VideoDecoder* VCMDecoderDataBase::DeregisterExternalDecoder(
+    uint8_t payload_type) {
   RTC_DCHECK_RUN_ON(&decoder_sequence_checker_);
   auto it = decoders_.find(payload_type);
   if (it == decoders_.end()) {
-    
-    return false;
+    return nullptr;
   }
+
   
   
   
@@ -33,8 +34,9 @@ bool VCMDecoderDataBase::DeregisterExternalDecoder(uint8_t payload_type) {
     
     current_decoder_ = absl::nullopt;
   }
+  VideoDecoder* ret = it->second;
   decoders_.erase(it);
-  return true;
+  return ret;
 }
 
 
