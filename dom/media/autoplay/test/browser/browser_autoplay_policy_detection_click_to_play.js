@@ -10,6 +10,13 @@
 
 "use strict";
 
+
+add_setup(async function setSharedPrefs() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.media.autoplay-policy-detection.enabled", true]],
+  });
+});
+
 async function testAutoplayPolicy(defaultPolicy) {
   await setupTestPref(defaultPolicy);
   let tab = await BrowserTestUtils.openNewForegroundTab(
