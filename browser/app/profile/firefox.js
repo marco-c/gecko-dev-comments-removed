@@ -2462,6 +2462,10 @@ pref("devtools.gridinspector.showInfiniteLines", false);
 pref("devtools.gridinspector.maxHighlighters", 3);
 
 
+
+pref("devtools.inspector.simple-highlighters-reduced-motion", false);
+
+
 pref("devtools.layout.boxmodel.opened", true);
 
 pref("devtools.layout.flexbox.opened", true);
