@@ -282,6 +282,7 @@ addAccessibleTask(
     let styleChanged = waitForEvent(EVENT_TABLE_STYLING_CHANGED, layout);
     await invokeContentTask(browser, [], () => {
       content.document.getElementById("cell").style.border = "1px solid black";
+      content.document.body.offsetTop; 
     });
     if (!isCacheEnabled) {
       

@@ -13,12 +13,17 @@ addAccessibleTask(
     const div = findAccessibleChildByID(accDoc, "div");
     ok(div, "Got accessible with 'div' ID.");
 
-    
-    
-    
     let contentPromise = invokeContentTask(browser, [], () => {
       content.document.getElementById("div").id = "foo";
     });
+    
+    
+    
+    if (!isCacheEnabled) {
+      
+      
+      await contentPromise;
+    }
 
     await untilCacheIs(
       () => div.id,
@@ -26,8 +31,10 @@ addAccessibleTask(
       "ID is correct and updated in cache"
     );
 
-    
-    await contentPromise;
+    if (isCacheEnabled) {
+      
+      await contentPromise;
+    }
   },
   { iframe: true, remoteIframe: true }
 );

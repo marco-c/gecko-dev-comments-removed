@@ -126,14 +126,17 @@ addAccessibleTask(
       "Correct checked value"
     );
 
-    evt = waitForMacEvent("AXValueChanged", "checkbox");
+    
+    
+    evt = waitForMacEvent("AXValueChanged", (iface, data) => {
+      return (
+        iface.getAttributeValue("AXDOMIdentifier") == "checkbox" &&
+        iface.getAttributeValue("AXValue") == 2
+      );
+    });
     checkbox.performAction("AXPress");
     await evt;
-    await untilCacheIs(
-      () => checkbox.getAttributeValue("AXValue"),
-      2,
-      "Correct checked value"
-    );
+    is(checkbox.getAttributeValue("AXValue"), 2, "Correct checked value");
   }
 );
 
