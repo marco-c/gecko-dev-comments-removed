@@ -131,7 +131,9 @@ DOMHighResTimeStamp Performance::Now() {
 
   
   
-  if (mSystemPrincipal) {
+  
+  
+  if (mRTPCallerType == RTPCallerType::SystemPrincipal) {
     return rawTime;
   }
 
