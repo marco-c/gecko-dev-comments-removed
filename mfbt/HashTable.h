@@ -212,6 +212,7 @@ class HashMap {
 
   
   
+  
   [[nodiscard]] bool reserve(uint32_t aLen) { return mImpl.reserve(aLen); }
 
   
@@ -506,6 +507,7 @@ class HashSet {
   
   void compact() { mImpl.compact(); }
 
+  
   
   
   [[nodiscard]] bool reserve(uint32_t aLen) { return mImpl.reserve(aLen); }
