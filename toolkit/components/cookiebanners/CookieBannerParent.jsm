@@ -30,15 +30,49 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 class CookieBannerParent extends JSWindowActorParent {
-  #isPrivateBrowsing() {
+  
+
+
+
+  get #browserElement() {
     let topBC = this.browsingContext.top;
 
     
-    
-    if (topBC.embedderElementType != "browser" || !topBC.embedderElement) {
+    if (topBC.embedderElementType != "browser") {
+      return null;
+    }
+
+    return topBC.embedderElement;
+  }
+
+  #isPrivateBrowsing() {
+    let browser = this.#browserElement;
+    if (!browser) {
       return false;
     }
-    return lazy.PrivateBrowsingUtils.isBrowserPrivate(topBC.embedderElement);
+    return lazy.PrivateBrowsingUtils.isBrowserPrivate(browser);
+  }
+
+  /**
+   * Dispatches a custom "cookiebannerhandled" event on the chrome window.
+   */
+  #notifyCookieBannerHandled() {
+    let chromeWin = this.browsingContext.topChromeWindow;
+    if (!chromeWin) {
+      return;
+    }
+    let windowUtils = chromeWin.windowUtils;
+    if (!windowUtils) {
+      return;
+    }
+    let event = new CustomEvent("cookiebannerhandled", {
+      bubbles: true,
+      cancelable: false,
+      detail: {
+        windowContext: this.manager,
+      },
+    });
+    windowUtils.dispatchEventToChromeOnly(chromeWin, event);
   }
 
   async receiveMessage(message) {
@@ -51,11 +85,17 @@ class CookieBannerParent extends JSWindowActorParent {
       return undefined;
     }
 
+    // Forwards cookie banner handled signals to frontend consumers.
+    if (message.name == "CookieBanner::HandledBanner") {
+      this.#notifyCookieBannerHandled();
+      return undefined;
+    }
+
     if (message.name != "CookieBanner::GetClickRules") {
       return undefined;
     }
 
-    
+    // TODO: Bug 1790688: consider moving this logic to the cookie banner service.
     let mode;
     let isPrivateBrowsing = this.#isPrivateBrowsing();
     if (isPrivateBrowsing) {
@@ -64,13 +104,13 @@ class CookieBannerParent extends JSWindowActorParent {
       mode = lazy.serviceMode;
     }
 
-    
-    
+    // Check if we have a site preference of the top-level URI. If so, it
+    // takes precedence over the pref setting.
     let topBrowsingContext = this.manager.browsingContext.top;
     let topURI = topBrowsingContext.currentWindowGlobal?.documentURI;
 
-    
-    
+    // We don't need to check the domain preference if the cookie banner
+    // handling was disabled by pref.
     if (mode != Ci.nsICookieBannerService.MODE_DISABLED && topURI) {
       try {
         let perDomainMode = Services.cookieBanners.getDomainPref(
@@ -82,9 +122,9 @@ class CookieBannerParent extends JSWindowActorParent {
           mode = perDomainMode;
         }
       } catch (e) {
-        
-        
-        
+        // getPerSitePref could throw with NS_ERROR_NOT_AVAILABLE if the service
+        // is disabled. We will fallback to global pref setting if any errors
+        // occur.
         if (e.result == Cr.NS_ERROR_NOT_AVAILABLE) {
           Cu.reportError("The cookie banner handling service is not available");
         } else {
@@ -93,8 +133,8 @@ class CookieBannerParent extends JSWindowActorParent {
       }
     }
 
-    
-    
+    // Service is disabled for current context (normal or private browsing),
+    // return empty array.
     if (mode == Ci.nsICookieBannerService.MODE_DISABLED) {
       return [];
     }
