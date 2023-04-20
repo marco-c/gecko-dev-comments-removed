@@ -70,7 +70,7 @@ async function openAboutTranslations({
 
   
   if (languagePairs) {
-    TranslationsParent.mock(languagePairs);
+    TranslationsParent.mockLanguagePairs(languagePairs);
   }
 
   
@@ -84,7 +84,7 @@ async function openAboutTranslations({
   );
 
   if (languagePairs) {
-    TranslationsParent.mock(null);
+    TranslationsParent.mockLanguagePairs(null);
   }
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
