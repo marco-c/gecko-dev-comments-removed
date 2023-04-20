@@ -389,31 +389,46 @@ Result<bool, nsresult>
 HTMLEditor::AutoInlineStyleSetter::ElementIsGoodContainerForTheStyle(
     HTMLEditor& aHTMLEditor, Element& aElement) const {
   
-  if (aElement.IsHTMLElement(&HTMLPropertyRef()) && !aElement.GetAttrCount() &&
-      !mAttribute) {
-    return true;
-  }
-
   
-  if (mAttribute) {
-    nsString attrValue;
+  const bool isCSSEditable = IsCSSEditable(aElement);
+  if (!aHTMLEditor.IsCSSEnabled() || !isCSSEditable) {
+    
     if (aElement.IsHTMLElement(&HTMLPropertyRef()) &&
-        !HTMLEditUtils::ElementHasAttributeExcept(aElement, *mAttribute) &&
-        aElement.GetAttr(kNameSpaceID_None, mAttribute, attrValue) &&
-        attrValue.Equals(mAttributeValue, nsCaseInsensitiveStringComparator)) {
-      
-      
-      
+        !aElement.GetAttrCount() && !mAttribute) {
       return true;
+    }
+
+    
+    if (mAttribute) {
+      nsString attrValue;
+      if (aElement.IsHTMLElement(&HTMLPropertyRef()) &&
+          !HTMLEditUtils::ElementHasAttributeExcept(aElement, *mAttribute) &&
+          aElement.GetAttr(kNameSpaceID_None, mAttribute, attrValue) &&
+          attrValue.Equals(mAttributeValue,
+                           nsCaseInsensitiveStringComparator)) {
+        
+        
+        
+        return true;
+      }
+    }
+
+    if (!isCSSEditable) {
+      return false;
     }
   }
 
   
   
   
-  if (!IsCSSEditable(aElement) || !aElement.IsHTMLElement(nsGkAtoms::span) ||
-      aElement.GetAttrCount() != 1 ||
-      !aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::style)) {
+  if (!aElement.IsHTMLElement(nsGkAtoms::span) ||
+      !aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::style) ||
+      HTMLEditUtils::ElementHasAttributeExcept(aElement, *nsGkAtoms::style)) {
+    return false;
+  }
+
+  nsStyledElement* styledElement = nsStyledElement::FromNode(&aElement);
+  if (MOZ_UNLIKELY(!styledElement)) {
     return false;
   }
 
@@ -432,24 +447,18 @@ HTMLEditor::AutoInlineStyleSetter::ElementIsGoodContainerForTheStyle(
   if (MOZ_UNLIKELY(!styledNewSpanElement)) {
     return false;
   }
-  if (IsCSSEditable(*styledNewSpanElement)) {
+  
+  
+  Result<size_t, nsresult> result = CSSEditUtils::SetCSSEquivalentToStyle(
+      WithTransaction::No, aHTMLEditor, MOZ_KnownLive(*styledNewSpanElement),
+      *this, &mAttributeValue);
+  if (MOZ_UNLIKELY(result.isErr())) {
     
     
-    Result<size_t, nsresult> result = CSSEditUtils::SetCSSEquivalentToStyle(
-        WithTransaction::No, aHTMLEditor, MOZ_KnownLive(*styledNewSpanElement),
-        *this, &mAttributeValue);
-    if (MOZ_UNLIKELY(result.isErr())) {
-      
-      
-      MOZ_ASSERT_UNREACHABLE("How did you destroy this editor?");
-      if (NS_WARN_IF(result.inspectErr() == NS_ERROR_EDITOR_DESTROYED)) {
-        return Err(NS_ERROR_EDITOR_DESTROYED);
-      }
-      return false;
+    MOZ_ASSERT_UNREACHABLE("How did you destroy this editor?");
+    if (NS_WARN_IF(result.inspectErr() == NS_ERROR_EDITOR_DESTROYED)) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
     }
-  }
-  nsStyledElement* styledElement = nsStyledElement::FromNode(&aElement);
-  if (MOZ_UNLIKELY(!styledElement)) {
     return false;
   }
   return CSSEditUtils::DoStyledElementsHaveSameStyle(*styledNewSpanElement,
