@@ -572,6 +572,20 @@ class AddonManagerListener {
       extension,
     });
   }
+
+  async onUninstalled(aAddon) {
+    debug`onUninstalled ${aAddon.id}`;
+
+    const extension = await exportExtension(
+      aAddon,
+      aAddon.userPermissions,
+       null
+    );
+    lazy.EventDispatcher.instance.sendRequestForResult({
+      type: "GeckoView:WebExtension:OnUninstalled",
+      extension,
+    });
+  }
 }
 
 new AddonManagerListener();
