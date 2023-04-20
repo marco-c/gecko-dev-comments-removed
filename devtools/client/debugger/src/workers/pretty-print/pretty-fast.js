@@ -2,6 +2,8 @@
 
 
 
+
+
 var acorn = require("acorn");
 var sourceMap = require("source-map");
 const NEWLINE_CODE = 10;
@@ -731,19 +733,43 @@ function addComment(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 export function prettyFast(input, options = {}) {
   
   let indentLevel = 0;
 
+  const {
+    url: file,
+    originalStartLine,
+    originalStartColumn,
+    prefixWithNewLine,
+    generatedStartLine,
+  } = options;
+
   
-  const { url: file } = options;
-  const sourceMapGenerator = new sourceMap.SourceMapGenerator({
-    file,
-  });
+  const sourceMapGenerator =
+    options.sourceMapGenerator ||
+    new sourceMap.SourceMapGenerator({
+      file,
+    });
 
   let currentCode = "";
   let currentLine = 1;
   let currentColumn = 0;
+
+  const hasOriginalStartLine = "originalStartLine" in options;
+  const hasOriginalStartColumn = "originalStartColumn" in options;
+  const hasGeneratedStartLine = "generatedStartLine" in options;
 
   
 
@@ -767,11 +793,22 @@ export function prettyFast(input, options = {}) {
         
         
         generated: {
-          line,
-          column,
+          
+          
+          line: hasOriginalStartLine ? line + (originalStartLine - 1) : line,
+          
+          
+          column:
+            line == 1 && hasOriginalStartColumn
+              ? column + originalStartColumn
+              : column,
         },
         original: {
-          line: currentLine,
+          
+          
+          line: hasGeneratedStartLine
+            ? currentLine + (generatedStartLine - 1)
+            : currentLine,
           column: currentColumn,
         },
         name: null,
@@ -787,6 +824,11 @@ export function prettyFast(input, options = {}) {
       }
     }
   };
+
+  
+  if (prefixWithNewLine) {
+    write("\n");
+  }
 
   
   let addedNewline = false;

@@ -322,6 +322,12 @@ class Frame extends Component {
     let displaySource = showFullSourceUrl ? unicodeLong : unicodeShort;
     if (originalLocation) {
       displaySource = getSourceMappedFile(displaySource);
+
+      
+      
+      if (showEmptyPathAsHost && displaySource == ":formatted") {
+        displaySource = host + displaySource;
+      }
     } else if (
       showEmptyPathAsHost &&
       (displaySource === "" || displaySource === "/")

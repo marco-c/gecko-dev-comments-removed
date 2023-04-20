@@ -2,7 +2,6 @@
 
 
 
-import { prefs } from "../../utils/prefs";
 import { WorkerDispatcher } from "devtools/client/shared/worker-utils";
 
 const WORKER_URL =
@@ -14,12 +13,18 @@ export class PrettyPrintDispatcher extends WorkerDispatcher {
   }
 
   #prettyPrintTask = this.task("prettyPrint");
+  #prettyPrintInlineScriptTask = this.task("prettyPrintInlineScript");
+  #getSourceMapForTask = this.task("getSourceMapForTask");
 
-  prettyPrint({ url, text }) {
-    return this.#prettyPrintTask({
-      url,
-      indent: prefs.indentSize,
-      sourceText: text,
-    });
+  prettyPrint(options) {
+    return this.#prettyPrintTask(options);
+  }
+
+  prettyPrintInlineScript(options) {
+    return this.#prettyPrintInlineScriptTask(options);
+  }
+
+  getSourceMap(taskId) {
+    return this.#getSourceMapForTask(taskId);
   }
 }

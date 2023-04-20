@@ -6255,6 +6255,8 @@ exports.prettyFast = prettyFast;
 
 
 
+
+
 var acorn = __webpack_require__(1103);
 
 var sourceMap = __webpack_require__(632);
@@ -6795,19 +6797,37 @@ function addComment(write, indentLevel, options, block, text, line, column, next
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 function prettyFast(input, options = {}) {
   
-  let indentLevel = 0; 
-
+  let indentLevel = 0;
   const {
-    url: file
-  } = options;
-  const sourceMapGenerator = new sourceMap.SourceMapGenerator({
+    url: file,
+    originalStartLine,
+    originalStartColumn,
+    prefixWithNewLine,
+    generatedStartLine
+  } = options; 
+
+  const sourceMapGenerator = options.sourceMapGenerator || new sourceMap.SourceMapGenerator({
     file
   });
   let currentCode = "";
   let currentLine = 1;
   let currentColumn = 0;
+  const hasOriginalStartLine = ("originalStartLine" in options);
+  const hasOriginalStartColumn = ("originalStartColumn" in options);
+  const hasGeneratedStartLine = ("generatedStartLine" in options);
   
 
 
@@ -6832,11 +6852,17 @@ function prettyFast(input, options = {}) {
         
         
         generated: {
-          line,
-          column
+          
+          
+          line: hasOriginalStartLine ? line + (originalStartLine - 1) : line,
+          
+          
+          column: line == 1 && hasOriginalStartColumn ? column + originalStartColumn : column
         },
         original: {
-          line: currentLine,
+          
+          
+          line: hasGeneratedStartLine ? currentLine + (generatedStartLine - 1) : currentLine,
           column: currentColumn
         },
         name: null
@@ -6852,6 +6878,11 @@ function prettyFast(input, options = {}) {
       }
     }
   }; 
+
+
+  if (prefixWithNewLine) {
+    write("\n");
+  } 
 
 
   let addedNewline = false; 
@@ -10530,6 +10561,12 @@ var _prettyFast = __webpack_require__(1105);
 
 
 
+var {
+  SourceMapGenerator
+} = __webpack_require__(632);
+
+const sourceMapGeneratorByTaskId = new Map();
+
 function prettyPrint({
   url,
   indent,
@@ -10540,7 +10577,7 @@ function prettyPrint({
     map: sourceMapGenerator
   } = (0, _prettyFast.prettyFast)(sourceText, {
     url,
-    indent: " ".repeat(indent)
+    indent
   });
   return {
     code,
@@ -10548,8 +10585,86 @@ function prettyPrint({
   };
 }
 
+function prettyPrintInlineScript({
+  taskId,
+  url,
+  indent,
+  sourceText,
+  originalStartLine,
+  originalStartColumn,
+  generatedStartLine
+}) {
+  let taskSourceMapGenerator;
+
+  if (!sourceMapGeneratorByTaskId.has(taskId)) {
+    taskSourceMapGenerator = new SourceMapGenerator({
+      file: url
+    });
+    sourceMapGeneratorByTaskId.set(taskId, taskSourceMapGenerator);
+  } else {
+    taskSourceMapGenerator = sourceMapGeneratorByTaskId.get(taskId);
+  }
+
+  const {
+    code
+  } = (0, _prettyFast.prettyFast)(sourceText, {
+    url,
+    indent,
+    sourceMapGenerator: taskSourceMapGenerator,
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    prefixWithNewLine: true,
+    originalStartLine,
+    originalStartColumn,
+    generatedStartLine
+  }); 
+  
+
+  return code;
+}
+
+
+
+
+
+
+
+
+function getSourceMapForTask(taskId) {
+  if (!sourceMapGeneratorByTaskId.has(taskId)) {
+    return null;
+  }
+
+  const taskSourceMapGenerator = sourceMapGeneratorByTaskId.get(taskId);
+  sourceMapGeneratorByTaskId.delete(taskId);
+  return taskSourceMapGenerator.toJSON();
+}
+
 self.onmessage = (0, _workerUtils.workerHandler)({
-  prettyPrint
+  prettyPrint,
+  prettyPrintInlineScript,
+  getSourceMapForTask
 });
 
  })

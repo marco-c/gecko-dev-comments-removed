@@ -19,6 +19,7 @@ import {
 } from "../../utils/source";
 import { isFulfilled } from "../../utils/async-value";
 import { getOriginalLocation } from "../../utils/source-maps";
+import { prefs } from "../../utils/prefs";
 import {
   loadGeneratedSourceText,
   loadOriginalSourceText,
@@ -37,6 +38,13 @@ import {
 
 import { selectSource } from "./select";
 
+import DevToolsUtils from "devtools/shared/DevToolsUtils";
+
+const LINE_BREAK_REGEX = /\r\n?|\n|\u2028|\u2029/g;
+function matchAllLineBreaks(str) {
+  return Array.from(str.matchAll(LINE_BREAK_REGEX));
+}
+
 function getPrettyOriginalSourceURL(generatedSource) {
   return getPrettySourceURL(generatedSource.url || generatedSource.id);
 }
@@ -54,17 +62,31 @@ export async function prettyPrintSource(
 
   const contentValue = content.value;
   if (
-    !isJavaScript(generatedSource, contentValue) ||
+    (!isJavaScript(generatedSource, contentValue) && !generatedSource.isHTML) ||
     contentValue.type !== "text"
   ) {
-    throw new Error("Can't prettify non-javascript files.");
+    throw new Error(
+      `Can't prettify ${contentValue.contentType} files, only HTML and Javascript.`
+    );
   }
 
   const url = getPrettyOriginalSourceURL(generatedSource);
-  const { code, sourceMap } = await prettyPrintWorker.prettyPrint({
-    text: contentValue.value,
-    url,
-  });
+
+  let prettyPrintWorkerResult;
+  if (generatedSource.isHTML) {
+    prettyPrintWorkerResult = await prettyPrintHtmlFile({
+      prettyPrintWorker,
+      generatedSource,
+      content,
+      actors,
+    });
+  } else {
+    prettyPrintWorkerResult = await prettyPrintWorker.prettyPrint({
+      sourceText: contentValue.value,
+      indent: " ".repeat(prefs.indentSize),
+      url,
+    });
+  }
 
   
   
@@ -74,13 +96,132 @@ export async function prettyPrintSource(
   ];
   await sourceMapLoader.setSourceMapForGeneratedSources(
     generatedSourceIds,
-    sourceMap
+    prettyPrintWorkerResult.sourceMap
   );
 
   return {
-    text: code,
-    contentType: "text/javascript",
+    text: prettyPrintWorkerResult.code,
+    contentType: contentValue.contentType,
   };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function prettyPrintHtmlFile({
+  prettyPrintWorker,
+  generatedSource,
+  content,
+  actors,
+}) {
+  const url = getPrettyOriginalSourceURL(generatedSource);
+  const contentValue = content.value;
+  const htmlFileText = contentValue.value;
+  const prettyPrintWorkerResult = { code: htmlFileText };
+
+  const allLineBreaks = matchAllLineBreaks(htmlFileText);
+  let lineCountDelta = 0;
+
+  
+  actors.sort((a, b) => {
+    if (a.sourceStartLine === b.sourceStartLine) {
+      return a.sourceStartColumn > b.sourceStartColumn;
+    }
+    return a.sourceStartLine > b.sourceStartLine;
+  });
+
+  const prettyPrintTaskId = generatedSource.id;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const replacements = [];
+
+  for (const sourceInfo of actors) {
+    if (!sourceInfo.sourceLength) {
+      continue;
+    }
+    
+    
+    
+    const previousLineBreakIndexInHtmlText =
+      sourceInfo.sourceStartLine > 1
+        ? allLineBreaks[sourceInfo.sourceStartLine - 2].index
+        : 0;
+    const startIndex =
+      previousLineBreakIndexInHtmlText + sourceInfo.sourceStartColumn + 1;
+    const endIndex = startIndex + sourceInfo.sourceLength;
+    const scriptText = htmlFileText.substring(startIndex, endIndex);
+    DevToolsUtils.assert(
+      scriptText.length == sourceInfo.sourceLength,
+      "script text has expected length"
+    );
+
+    
+    
+    
+    
+    
+    const prettyText = await prettyPrintWorker.prettyPrintInlineScript({
+      taskId: prettyPrintTaskId,
+      sourceText: scriptText,
+      indent: " ".repeat(prefs.indentSize),
+      url,
+      originalStartLine: sourceInfo.sourceStartLine,
+      originalStartColumn: sourceInfo.sourceStartColumn,
+      
+      
+      generatedStartLine: sourceInfo.sourceStartLine + lineCountDelta,
+      generatedStartColumn: sourceInfo.sourceStartColumn,
+      lineCountDelta,
+    });
+
+    
+    
+    lineCountDelta +=
+      matchAllLineBreaks(prettyText).length -
+      matchAllLineBreaks(scriptText).length;
+
+    replacements.push({
+      startIndex,
+      endIndex,
+      prettyText,
+    });
+  }
+
+  
+  
+  prettyPrintWorkerResult.sourceMap = await prettyPrintWorker.getSourceMap(
+    prettyPrintTaskId
+  );
+
+  
+  replacements.sort((a, b) => a.startIndex < b.startIndex);
+  for (const { startIndex, endIndex, prettyText } of replacements) {
+    prettyPrintWorkerResult.code =
+      prettyPrintWorkerResult.code.substring(0, startIndex) +
+      prettyText +
+      prettyPrintWorkerResult.code.substring(endIndex);
+  }
+
+  return prettyPrintWorkerResult;
 }
 
 function createPrettySource(cx, source) {

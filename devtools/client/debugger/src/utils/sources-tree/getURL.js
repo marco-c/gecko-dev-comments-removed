@@ -16,6 +16,8 @@ export function getFilenameFromPath(pathname) {
     
     if (filename == "") {
       filename = "(index)";
+    } else if (filename == ":formatted") {
+      filename = "(index:formatted)";
     }
   }
   return filename;
