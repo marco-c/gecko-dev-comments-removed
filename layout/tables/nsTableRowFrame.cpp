@@ -774,13 +774,6 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
     nsRect kidRect = kidFrame->GetRect();
     LogicalPoint origKidNormalPosition =
         kidFrame->GetLogicalNormalPosition(wm, containerSize);
-    
-    
-    
-    
-    
-    NS_ASSERTION(origKidNormalPosition.B(wm) == 0 || wm.IsVerticalRL(),
-                 "unexpected kid position");
 
     nsRect kidInkOverflow = kidFrame->InkOverflowRect();
     LogicalPoint kidPosition(wm, iCoord, 0);
