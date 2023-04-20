@@ -246,6 +246,12 @@ const PreflightBehavior = {
     "preflight-headers": "cors+pna",
   }),
 
+  optionalSuccess: (uuid) => ({
+    "preflight-uuid": uuid,
+    "preflight-headers": "cors+pna",
+    "is-preflight-optional": true,
+  }),
+
   
   
   serviceWorkerSuccess: (uuid) => ({
