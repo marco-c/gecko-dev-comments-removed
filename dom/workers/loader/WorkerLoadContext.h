@@ -133,15 +133,6 @@ class WorkerLoadContext : public JS::loader::LoadContextBase {
   
   nsCOMPtr<nsIInputStream> mCacheReadStream;
 
-  nsMainThreadPtrHandle<workerinternals::loader::CacheCreator> mCacheCreator;
-
-  void ClearCacheCreator();
-
-  void SetCacheCreator(
-      RefPtr<workerinternals::loader::CacheCreator> aCacheCreator);
-
-  RefPtr<workerinternals::loader::CacheCreator> GetCacheCreator();
-
   enum CacheStatus {
     
     
@@ -196,6 +187,8 @@ class ThreadSafeRequestHandle final {
   nsresult GetCancelResult();
 
   already_AddRefed<JS::loader::ScriptLoadRequest> ReleaseRequest();
+
+  workerinternals::loader::CacheCreator* GetCacheCreator();
 
   RefPtr<workerinternals::loader::ScriptLoaderRunnable> mRunnable;
 
