@@ -338,12 +338,11 @@ already_AddRefed<SourceSurface> SVGPatternFrame::PaintPattern(
   }
   dt->ClearRect(Rect(0, 0, surfaceSize.width, surfaceSize.height));
 
-  UniquePtr<gfxContext> ctx = gfxContext::CreateOrNull(dt);
-  MOZ_ASSERT(ctx);  
+  gfxContext ctx(dt);
 
   if (aGraphicOpacity != 1.0f) {
-    ctx->Save();
-    ctx->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, aGraphicOpacity);
+    ctx.Save();
+    ctx.PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, aGraphicOpacity);
   }
 
   
@@ -369,15 +368,15 @@ already_AddRefed<SourceSurface> SVGPatternFrame::PaintPattern(
         tm = SVGUtils::GetTransformMatrixInUserSpace(kid) * tm;
       }
 
-      SVGUtils::PaintFrameWithEffects(kid, *ctx, tm, aImgParams);
+      SVGUtils::PaintFrameWithEffects(kid, ctx, tm, aImgParams);
     }
   }
 
   patternWithChildren->mSource = nullptr;
 
   if (aGraphicOpacity != 1.0f) {
-    ctx->PopGroupAndBlend();
-    ctx->Restore();
+    ctx.PopGroupAndBlend();
+    ctx.Restore();
   }
 
   

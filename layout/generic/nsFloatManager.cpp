@@ -2703,11 +2703,10 @@ nsFloatManager::ShapeInfo::CreateImageShape(const StyleImage& aShapeImage,
     return nullptr;
   }
 
-  UniquePtr<gfxContext> context = gfxContext::CreateOrNull(drawTarget);
-  MOZ_ASSERT(context);  
+  gfxContext context(drawTarget);
 
   ImgDrawResult result =
-      imageRenderer.DrawShapeImage(aFrame->PresContext(), *context);
+      imageRenderer.DrawShapeImage(aFrame->PresContext(), context);
 
   if (result != ImgDrawResult::SUCCESS) {
     return nullptr;
