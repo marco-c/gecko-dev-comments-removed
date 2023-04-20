@@ -217,7 +217,7 @@ nsresult DecoderFactory::CreateAnimationDecoder(
   }
 
   MOZ_ASSERT(aType == DecoderType::GIF || aType == DecoderType::PNG ||
-                 aType == DecoderType::WEBP,
+                 aType == DecoderType::WEBP || aType == DecoderType::AVIF,
              "Calling CreateAnimationDecoder for non-animating DecoderType");
 
   
@@ -272,7 +272,7 @@ already_AddRefed<Decoder> DecoderFactory::CloneAnimationDecoder(
   
   DecoderType type = aDecoder->GetType();
   MOZ_ASSERT(type == DecoderType::GIF || type == DecoderType::PNG ||
-                 type == DecoderType::WEBP,
+                 type == DecoderType::WEBP || type == DecoderType::AVIF,
              "Calling CloneAnimationDecoder for non-animating DecoderType");
 
   RefPtr<Decoder> decoder = GetDecoder(type, nullptr,  true);
