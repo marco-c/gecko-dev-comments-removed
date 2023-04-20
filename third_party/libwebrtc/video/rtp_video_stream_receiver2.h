@@ -186,6 +186,8 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   
   void SetRtcpMode(RtcpMode mode);
 
+  void SetReferenceTimeReport(bool enabled);
+
   
   
   
