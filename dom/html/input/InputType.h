@@ -143,14 +143,6 @@ class InputType {
   
 
 
-
-
-
-  Decimal GetStepBase() const;
-
-  
-
-
   nsIFrame* GetPrimaryFrame() const;
 
   

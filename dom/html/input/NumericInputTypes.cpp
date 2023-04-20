@@ -43,23 +43,7 @@ bool NumericInputTypeBase::IsRangeUnderflow() const {
 
 bool NumericInputTypeBase::HasStepMismatch(bool aUseZeroIfValueNaN) const {
   Decimal value = mInputElement->GetValueAsDecimal();
-  if (value.isNaN()) {
-    if (aUseZeroIfValueNaN) {
-      value = Decimal(0);
-    } else {
-      
-      
-      return false;
-    }
-  }
-
-  Decimal step = mInputElement->GetStep();
-  if (step == kStepAny) {
-    return false;
-  }
-
-  
-  return NS_floorModulo(value - GetStepBase(), step) != Decimal(0);
+  return mInputElement->ValueIsStepMismatch(value, aUseZeroIfValueNaN);
 }
 
 nsresult NumericInputTypeBase::GetRangeOverflowMessage(nsAString& aMessage) {
