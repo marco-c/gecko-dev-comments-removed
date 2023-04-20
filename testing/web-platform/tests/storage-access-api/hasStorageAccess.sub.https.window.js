@@ -11,7 +11,9 @@ test(() => {
 promise_test(async () => {
   const hasAccess = await document.hasStorageAccess();
   if (topLevelDocument || testPrefix.includes('same-origin')) {
-    assert_true(hasAccess, "Access should be granted in top-level frame or same-origin iframe by default.");
+    assert_true(hasAccess, "Access should be granted in top-level frame or iframe that is in first-party context by default.");
+  } else if (testPrefix == 'ABA') {
+    assert_false(hasAccess, "Access should not be granted in secure same-origin iframe that is in a third-party context by default.");
   } else {
     assert_false(hasAccess, "Access should not be granted in secure cross-origin iframes.");
   }
@@ -38,7 +40,7 @@ if (topLevelDocument) {
   RunTestsInIFrame("resources/hasStorageAccess-iframe.https.html?testCase=same-origin-frame");
 
   
-  RunTestsInIFrame("https://{{domains[www]}}:{{ports[https][0]}}/storage-access-api/resources/hasStorageAccess-iframe.https.html?testCase=cross-origin-frame");
+  RunTestsInIFrame("https://{{hosts[alt][]}}:{{ports[https][0]}}/storage-access-api/resources/hasStorageAccess-iframe.https.html?testCase=cross-site-frame");
 
   
   
@@ -46,5 +48,5 @@ if (topLevelDocument) {
 
   
   
-  RunTestsInNestedIFrame("https://{{domains[www]}}:{{ports[https][0]}}/storage-access-api/resources/hasStorageAccess-iframe.https.html?testCase=nested-cross-origin-frame");
+  RunTestsInNestedIFrame("https://{{hosts[alt][]}}:{{ports[https][0]}}/storage-access-api/resources/hasStorageAccess-iframe.https.html?testCase=nested-cross-site-frame");
 }

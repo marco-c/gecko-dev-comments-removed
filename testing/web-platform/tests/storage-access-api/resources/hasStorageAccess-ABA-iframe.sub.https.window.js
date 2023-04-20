@@ -1,0 +1,9 @@
+
+'use strict';
+
+
+(async function() {
+  
+  
+  RunTestsInIFrame("https://{{host}}:{{ports[https][0]}}/storage-access-api/resources/hasStorageAccess-iframe.https.html?testCase=ABA");
+})();
