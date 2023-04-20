@@ -1094,7 +1094,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
 
   
   Result<EditorDOMPoint, nsresult> setStyleResult =
-      CreateStyleForInsertText(pointToInsert);
+      CreateStyleForInsertText(pointToInsert, *editingHost);
   if (MOZ_UNLIKELY(setStyleResult.isErr())) {
     NS_WARNING("HTMLEditor::CreateStyleForInsertText() failed");
     return setStyleResult.propagateErr();
@@ -2258,7 +2258,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::HandleInsertLinefeed(
   
 
   Result<EditorDOMPoint, nsresult> setStyleResult =
-      CreateStyleForInsertText(aPointToBreak);
+      CreateStyleForInsertText(aPointToBreak, aEditingHost);
   if (MOZ_UNLIKELY(setStyleResult.isErr())) {
     NS_WARNING("HTMLEditor::CreateStyleForInsertText() failed");
     return setStyleResult.propagateErr();
@@ -6078,7 +6078,7 @@ Result<CreateElementResult, nsresult> HTMLEditor::ChangeListElementType(
 }
 
 Result<EditorDOMPoint, nsresult> HTMLEditor::CreateStyleForInsertText(
-    const EditorDOMPoint& aPointToInsertText) {
+    const EditorDOMPoint& aPointToInsertText, const Element& aEditingHost) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aPointToInsertText.IsSetAndValid());
   MOZ_ASSERT(mPendingStylesToApplyToNewContent);
@@ -6116,9 +6116,17 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::CreateStyleForInsertText(
   
   const int32_t relFontSize =
       mPendingStylesToApplyToNewContent->TakeRelativeFontSize();
-  pendingStyle = mPendingStylesToApplyToNewContent->TakePreservedStyle();
+  AutoTArray<EditorInlineStyleAndValue, 32> stylesToSet;
+  mPendingStylesToApplyToNewContent->TakeAllPreservedStyles(stylesToSet);
+  if (stylesToSet.IsEmpty() && !relFontSize) {
+    return pointToPutCaret;
+  }
 
-  if (pendingStyle || relFontSize) {
+  
+  
+  
+  
+  if (relFontSize) {
     
     
     EditorDOMPoint pointToInsertTextNode(pointToPutCaret);
@@ -6164,33 +6172,25 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::CreateStyleForInsertText(
     insertNewTextNodeResult.inspect().IgnoreCaretPointSuggestion();
     pointToPutCaret.Set(newEmptyTextNode, 0u);
 
-    if (relFontSize) {
-      HTMLEditor::FontSize incrementOrDecrement =
-          relFontSize > 0 ? HTMLEditor::FontSize::incr
-                          : HTMLEditor::FontSize::decr;
-      for ([[maybe_unused]] uint32_t j : IntegerRange(Abs(relFontSize))) {
-        Result<CreateElementResult, nsresult>
-            wrapTextInBigOrSmallElementResult = SetFontSizeOnTextNode(
-                *newEmptyTextNode, 0, UINT32_MAX, incrementOrDecrement);
-        if (MOZ_UNLIKELY(wrapTextInBigOrSmallElementResult.isErr())) {
-          NS_WARNING("HTMLEditor::SetFontSizeOnTextNode() failed");
-          return wrapTextInBigOrSmallElementResult.propagateErr();
-        }
-        
-        
-        MOZ_ASSERT(pointToPutCaret.IsSet());
-        wrapTextInBigOrSmallElementResult.inspect()
-            .IgnoreCaretPointSuggestion();
+    HTMLEditor::FontSize incrementOrDecrement =
+        relFontSize > 0 ? HTMLEditor::FontSize::incr
+                        : HTMLEditor::FontSize::decr;
+    for ([[maybe_unused]] uint32_t j : IntegerRange(Abs(relFontSize))) {
+      Result<CreateElementResult, nsresult> wrapTextInBigOrSmallElementResult =
+          SetFontSizeOnTextNode(*newEmptyTextNode, 0, UINT32_MAX,
+                                incrementOrDecrement);
+      if (MOZ_UNLIKELY(wrapTextInBigOrSmallElementResult.isErr())) {
+        NS_WARNING("HTMLEditor::SetFontSizeOnTextNode() failed");
+        return wrapTextInBigOrSmallElementResult.propagateErr();
       }
+      
+      
+      MOZ_ASSERT(pointToPutCaret.IsSet());
+      wrapTextInBigOrSmallElementResult.inspect().IgnoreCaretPointSuggestion();
     }
 
-    while (pendingStyle) {
-      AutoInlineStyleSetter inlineStyleSetter(
-          pendingStyle->GetAttribute()
-              ? EditorInlineStyleAndValue(
-                    *pendingStyle->GetTag(), *pendingStyle->GetAttribute(),
-                    pendingStyle->AttributeValueOrCSSValueRef())
-              : EditorInlineStyleAndValue(*pendingStyle->GetTag()));
+    for (const EditorInlineStyleAndValue& styleToSet : stylesToSet) {
+      AutoInlineStyleSetter inlineStyleSetter(styleToSet);
       
       
       Result<CaretPoint, nsresult> setStyleResult =
@@ -6204,10 +6204,43 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::CreateStyleForInsertText(
       
       MOZ_ASSERT(pointToPutCaret.IsSet());
       setStyleResult.unwrap().IgnoreCaretPointSuggestion();
-      pendingStyle = mPendingStylesToApplyToNewContent->TakePreservedStyle();
     }
+    return pointToPutCaret;
   }
 
+  
+  
+  AutoRangeArray ranges(pointToPutCaret);
+  if (MOZ_UNLIKELY(ranges.Ranges().IsEmpty())) {
+    NS_WARNING("AutoRangeArray::AutoRangeArray() failed");
+    return Err(NS_ERROR_FAILURE);
+  }
+  nsresult rv =
+      SetInlinePropertiesAroundRanges(ranges, stylesToSet, aEditingHost);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("HTMLEditor::SetInlinePropertiesAroundRanges() failed");
+    return Err(rv);
+  }
+  if (NS_WARN_IF(ranges.Ranges().IsEmpty())) {
+    return Err(NS_ERROR_FAILURE);
+  }
+  
+  
+  
+  nsINode* container = ranges.FirstRangeRef()->GetStartContainer();
+  if (MOZ_UNLIKELY(!container->IsContent())) {
+    container = ranges.FirstRangeRef()->GetChildAtStartOffset();
+    if (MOZ_UNLIKELY(!container)) {
+      NS_WARNING("How did we get lost insertion point?");
+      return Err(NS_ERROR_FAILURE);
+    }
+  }
+  pointToPutCaret =
+      HTMLEditUtils::GetDeepestEditableStartPointOf<EditorDOMPoint>(
+          *container->AsContent());
+  if (NS_WARN_IF(!pointToPutCaret.IsSet())) {
+    return Err(NS_ERROR_FAILURE);
+  }
   return pointToPutCaret;
 }
 
