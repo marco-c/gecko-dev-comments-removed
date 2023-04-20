@@ -963,6 +963,33 @@ TEST_P(RtpSenderEgressTest, TransportFeedbackObserverFec) {
   sender->SendPacket(fec_packet.get(), PacedPacketInfo());
 }
 
+TEST_P(RtpSenderEgressTest, SupportsAbortingRetransmissions) {
+  std::unique_ptr<RtpSenderEgress> sender = CreateRtpSenderEgress();
+  packet_history_.SetStorePacketsStatus(
+      RtpPacketHistory::StorageMode::kStoreAndCull, 10);
+
+  
+  std::unique_ptr<RtpPacketToSend> media_packet = BuildRtpPacket();
+  media_packet->set_packet_type(RtpPacketMediaType::kVideo);
+  media_packet->set_allow_retransmission(true);
+  const uint16_t media_sequence_number = media_packet->SequenceNumber();
+  sender->SendPacket(media_packet.get(), PacedPacketInfo());
+
+  
+  
+  std::unique_ptr<RtpPacketToSend> retransmission_packet =
+      packet_history_.GetPacketAndMarkAsPending(media_sequence_number);
+  ASSERT_TRUE(retransmission_packet);
+  EXPECT_FALSE(
+      packet_history_.GetPacketAndMarkAsPending(media_sequence_number));
+
+  
+  retransmission_packet.reset();
+  uint16_t kAbortedSequenceNumbers[] = {media_sequence_number};
+  sender->OnAbortedRetransmissions(kAbortedSequenceNumbers);
+  EXPECT_TRUE(packet_history_.GetPacketAndMarkAsPending(media_sequence_number));
+}
+
 INSTANTIATE_TEST_SUITE_P(WithAndWithoutOverhead,
                          RtpSenderEgressTest,
                          ::testing::Values(TestConfig(false),

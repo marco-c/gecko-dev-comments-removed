@@ -91,6 +91,10 @@ class RtpSenderEgress {
                                   const FecProtectionParams& key_params);
   std::vector<std::unique_ptr<RtpPacketToSend>> FetchFecPackets();
 
+  
+  void OnAbortedRetransmissions(
+      rtc::ArrayView<const uint16_t> sequence_numbers);
+
  private:
   
   
