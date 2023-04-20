@@ -66,7 +66,7 @@ class MOZ_STACK_CLASS CaretPoint {
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SuggestCaretPointTo(
-      const EditorBase& aEditorBase, const SuggestCaretOptions& aOptions) const;
+      EditorBase& aEditorBase, const SuggestCaretOptions& aOptions) const;
 
   
 
