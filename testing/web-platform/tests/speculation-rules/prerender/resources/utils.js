@@ -79,10 +79,17 @@ async function readValueFromServer(key) {
 
 
 async function nextValueFromServer(key) {
+  let retry = 0;
   while (true) {
     
-    const { status, value } = await readValueFromServer(key);
-    if (!status) {
+    let success = true;
+    const { status, value } = await readValueFromServer(key).catch(e => {
+      if (retry++ >= 5) {
+        throw new Error('readValueFromServer failed');
+      }
+      success = false;
+    });
+    if (!success || !status) {
       
       await new Promise(resolve => setTimeout(resolve, 100));
       continue;
