@@ -152,7 +152,6 @@ class WasmArrayObject : public WasmGcObject {
 
   
   
-  
   uint8_t* data_;
 
   
