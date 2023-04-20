@@ -439,8 +439,8 @@ function makeSideeffectFreeDebugger(
       
       
       if (
-        reason == "get" ||
-        (reason == "call" && nativeHasNoSideEffects(callee))
+        (reason == "get" || reason == "call") &&
+        nativeHasNoSideEffects(callee)
       ) {
         
         return undefined;
