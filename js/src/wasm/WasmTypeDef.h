@@ -1076,14 +1076,20 @@ inline bool RefType::isSubTypeOf(RefType subType, RefType superType) {
   }
 
   
-  if (subType.isTypeRef() && subType.typeDef()->isStructType() &&
+  if ((subType.isStruct() || subType.isArray()) &&
       (superType.isAny() || superType.isEq())) {
     return true;
   }
 
   
+  if (subType.isTypeRef() && subType.typeDef()->isStructType() &&
+      (superType.isAny() || superType.isEq() || superType.isStruct())) {
+    return true;
+  }
+
+  
   if (subType.isTypeRef() && subType.typeDef()->isArrayType() &&
-      (superType.isAny() || superType.isEq())) {
+      (superType.isAny() || superType.isEq() || superType.isArray())) {
     return true;
   }
 

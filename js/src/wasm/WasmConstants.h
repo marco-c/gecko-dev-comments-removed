@@ -85,6 +85,12 @@ enum class TypeCode {
   Ref = 0x6b,  
 
   
+  StructRef = 0x67,  
+
+  
+  ArrayRef = 0x66,  
+
+  
   Func = 0x60,  
 
   
@@ -476,8 +482,9 @@ enum class GcOp {
   ArrayGetS = 0x14,
   ArrayGetU = 0x15,
   ArraySet = 0x16,
-  ArrayLen = 0x17,
+  ArrayLenWithTypeIndex = 0x17,
   ArrayCopy = 0x18,
+  ArrayLen = 0x19,
 
   
   RefTest = 0x44,

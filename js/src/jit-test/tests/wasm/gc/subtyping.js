@@ -46,12 +46,24 @@ assertNotSubtype('anyref', 'externref');
 assertSubtype('anyref', 'eqref');
 
 
+assertSubtype('anyref', 'structref');
+assertSubtype('eqref', 'structref');
+
+
+assertSubtype('anyref', 'arrayref');
+assertSubtype('eqref', 'arrayref');
+
+
 assertSubtype(
  'anyref',
  '(ref 0)',
  simpleTypeSection(['(struct)']));
 assertSubtype(
  'eqref',
+ '(ref 0)',
+ simpleTypeSection(['(struct)']));
+assertSubtype(
+ 'structref',
  '(ref 0)',
  simpleTypeSection(['(struct)']));
 
@@ -164,6 +176,10 @@ assertSubtype(
  simpleTypeSection(['(array i32)']));
 assertSubtype(
  'eqref',
+ '(ref 0)',
+ simpleTypeSection(['(array i32)']));
+assertSubtype(
+ 'arrayref',
  '(ref 0)',
  simpleTypeSection(['(array i32)']));
 
