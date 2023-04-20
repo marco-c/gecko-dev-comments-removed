@@ -20,6 +20,7 @@
 #include "mozilla/dom/KeyframeEffect.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/ScrollTimeline.h"
+#include "mozilla/dom/ViewTimeline.h"
 
 #include "nsPresContext.h"
 #include "nsPresContextInlines.h"
@@ -41,6 +42,7 @@ using mozilla::dom::Element;
 using mozilla::dom::KeyframeEffect;
 using mozilla::dom::MutationObservers;
 using mozilla::dom::ScrollTimeline;
+using mozilla::dom::ViewTimeline;
 
 
 
@@ -236,7 +238,12 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
         }
       }
 
-      
+      if (auto* collection =
+              TimelineCollection<ViewTimeline>::Get(element, pseudoType)) {
+        if (RefPtr<ViewTimeline> timeline = collection->Lookup(aName)) {
+          return timeline.forget();
+        }
+      }
     }
   }
 

@@ -2068,6 +2068,13 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
         scrollTimeline->SourceScrollStyle() == StyleOverflow::Hidden) {
       return KeyframeEffect::MatchForCompositor::No;
     }
+
+    
+    
+    
+    if (scrollTimeline->IsViewTimeline()) {
+      return KeyframeEffect::MatchForCompositor::No;
+    }
   }
 
   if (!HasEffectiveAnimationOfPropertySet(aPropertySet, aEffects)) {

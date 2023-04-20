@@ -149,6 +149,8 @@ class ScrollTimeline : public AnimationTimeline {
   bool IsMonotonicallyIncreasing() const override { return false; }
   bool IsScrollTimeline() const override { return true; }
   const ScrollTimeline* AsScrollTimeline() const override { return this; }
+  bool IsViewTimeline() const override { return false; }
+
   Nullable<TimeDuration> TimelineDuration() const override {
     
     
