@@ -58,6 +58,9 @@ check_and_add_warning("-Wshadow-field-in-constructor-modified")
 add_warning("-Wsign-compare")
 
 
+check_and_add_warning("-Wtautological-constant-in-range-compare")
+
+
 add_warning("-Wtype-limits")
 
 
