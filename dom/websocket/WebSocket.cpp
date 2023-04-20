@@ -1255,6 +1255,34 @@ class AsyncOpenRunnable final : public WebSocketMainThreadRunnable {
 
 }  
 
+
+bool WebSocket::IsValidProtocolString(const nsString& aValue) {
+  
+  const char16_t illegalCharacters[] = {0x28, 0x29, 0x3C, 0x3E, 0x40, 0x2C,
+                                        0x3B, 0x3A, 0x5C, 0x22, 0x2F, 0x5B,
+                                        0x5D, 0x3F, 0x3D, 0x7B, 0x7D};
+
+  
+  if (aValue.IsEmpty()) {
+    return false;
+  }
+
+  const auto* start = aValue.BeginReading();
+  const auto* end = aValue.EndReading();
+
+  auto charFilter = [&](char16_t c) {
+    
+    if (c < 0x21 || c > 0x7E) {
+      return true;
+    }
+
+    return std::find(std::begin(illegalCharacters), std::end(illegalCharacters),
+                     c) != std::end(illegalCharacters);
+  };
+
+  return std::find_if(start, end, charFilter) == end;
+}
+
 already_AddRefed<WebSocket> WebSocket::ConstructorCommon(
     const GlobalObject& aGlobal, const nsAString& aUrl,
     const Sequence<nsString>& aProtocols,
@@ -1291,15 +1319,14 @@ already_AddRefed<WebSocket> WebSocket::ConstructorCommon(
   for (uint32_t index = 0, len = aProtocols.Length(); index < len; ++index) {
     const nsString& protocolElement = aProtocols[index];
 
-    if (protocolElement.IsEmpty()) {
-      aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
-      return nullptr;
-    }
+    
     if (protocolArray.Contains(protocolElement)) {
       aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
       return nullptr;
     }
-    if (protocolElement.FindChar(',') != -1)  {
+
+    
+    if (!IsValidProtocolString(protocolElement)) {
       aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
       return nullptr;
     }
@@ -1718,11 +1745,8 @@ nsresult WebSocketImpl::Init(JSContext* aCx, bool aIsSecure,
 
   
   for (uint32_t index = 0; index < aProtocolArray.Length(); ++index) {
-    for (uint32_t i = 0; i < aProtocolArray[index].Length(); ++i) {
-      if (aProtocolArray[index][i] < static_cast<char16_t>(0x0021) ||
-          aProtocolArray[index][i] > static_cast<char16_t>(0x007E)) {
-        return NS_ERROR_DOM_SYNTAX_ERR;
-      }
+    if (!WebSocket::IsValidProtocolString(aProtocolArray[index])) {
+      return NS_ERROR_DOM_SYNTAX_ERR;
     }
 
     if (!mRequestedProtocolList.IsEmpty()) {
