@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
 <% from data import SYSTEM_FONT_LONGHANDS %>
@@ -81,9 +81,9 @@
             }
         % endif
         loop {
-            // Special-case 'normal' because it is valid in each of
-            // font-style, font-weight, font-variant and font-stretch.
-            // Leaves the values to None, 'normal' is the initial value for each of them.
+            
+            
+            
             if input.try_parse(|input| input.expect_ident_matching("normal")).is_ok() {
                 nb_normals += 1;
                 continue;
@@ -101,9 +101,9 @@
                 }
             }
             if variant_caps.is_none() {
-                // The only variant-caps value allowed is small-caps (from CSS2); the added values
-                // defined by CSS Fonts 3 and later are not accepted.
-                // https://www.w3.org/TR/css-fonts-4/#font-prop
+                
+                
+                
                 if input.try_parse(|input| input.expect_ident_matching("small-caps")).is_ok() {
                     variant_caps = Some(SmallCaps);
                     continue
@@ -201,8 +201,8 @@
             % endfor
             % endif
 
-            // Only font-stretch keywords are allowed as part as the font
-            // shorthand.
+            
+            
             let font_stretch = match *self.font_stretch {
                 FontStretch::Keyword(kw) => kw,
                 FontStretch::Stretch(percentage) => {
@@ -214,9 +214,9 @@
                 FontStretch::System(..) => return Ok(()),
             };
 
-            // The only variant-caps value allowed in the shorthand is small-caps (from CSS2);
-            // the added values defined by CSS Fonts 3 and later are not supported.
-            // https://www.w3.org/TR/css-fonts-4/#font-prop
+            
+            
+            
             if self.font_variant_caps != &font_variant_caps::get_initial_specified_value() &&
                 *self.font_variant_caps != SmallCaps {
                 return Ok(());
@@ -229,9 +229,9 @@
                 }
             % endfor
 
-            // The initial specified font-weight value of 'normal' computes as a number (400),
-            // not to the keyword, so we need to check for that as well in order to properly
-            // serialize the computed style.
+            
+            
+            
             if self.font_weight != &FontWeight::normal() &&
                self.font_weight != &FontWeight::from_gecko_keyword(400)  {
                 self.font_weight.to_css(dest)?;
@@ -259,7 +259,7 @@
 
     impl<'a> LonghandsToSerialize<'a> {
         % if engine == "gecko":
-        /// Check if some or all members are system fonts
+        
         fn check_system(&self) -> CheckSystemResult {
             let mut sys = None;
             let mut all = true;
@@ -331,12 +331,11 @@
                                     ${'font-variant-numeric' if engine == 'gecko' else ''}
                                     ${'font-variant-position' if engine == 'gecko' else ''}"
                     spec="https://drafts.csswg.org/css-fonts-3/#propdef-font-variant">
-    <% gecko_sub_properties = "alternates east_asian emoji ligatures numeric position".split() %>
-    <%
-        sub_properties = ["caps"]
-        if engine == "gecko":
-            sub_properties += gecko_sub_properties
-    %>
+% if engine == 'gecko':
+    <% sub_properties = "ligatures caps alternates numeric east_asian position emoji".split() %>
+% else:
+    <% sub_properties = ["caps"] %>
+% endif
 
 % for prop in sub_properties:
     use crate::properties::longhands::font_variant_${prop};
@@ -353,10 +352,10 @@
     % endfor
 
         if input.try_parse(|input| input.expect_ident_matching("normal")).is_ok() {
-            // Leave the values to None, 'normal' is the initial value for all the sub properties.
+            
         } else if input.try_parse(|input| input.expect_ident_matching("none")).is_ok() {
-            // The 'none' value sets 'font-variant-ligatures' to 'none' and resets all other sub properties
-            // to their initial value.
+            
+            
         % if engine == "gecko":
             ligatures = Some(FontVariantLigatures::NONE);
         % endif
@@ -418,8 +417,8 @@
             }
         % if prop == "emoji":
             else {
-                // The property was disabled, so we count it as 'normal' for the purpose
-                // of deciding how the shorthand can be serialized.
+                
+                
                 nb_normals += 1;
             }
         % endif
@@ -430,8 +429,8 @@
                 dest.write_str("normal")?;
             } else if has_none_ligatures {
                 if nb_normals == TOTAL_SUBPROPS - 1 {
-                    // Serialize to 'none' if 'font-variant-ligatures' is set to 'none' and all other
-                    // font feature properties are reset to their initial value.
+                    
+                    
                     dest.write_str("none")?;
                 } else {
                     return Ok(())
@@ -480,7 +479,7 @@
     % endfor
 
         if input.try_parse(|input| input.expect_ident_matching("none")).is_ok() {
-            // Leave all the individual values as None
+            
         } else {
             let mut has_custom_value = false;
             while !input.is_exhausted() {
@@ -528,8 +527,8 @@
         }
     }
 
-    // The shorthand takes the sub-property names of the longhands, and not the
-    // 'auto' keyword like they do, so we can't automatically derive this.
+    
+    
     impl SpecifiedValueInfo for Longhands {
         fn collect_completion_keywords(f: KeywordsCollectFn) {
             f(&[
