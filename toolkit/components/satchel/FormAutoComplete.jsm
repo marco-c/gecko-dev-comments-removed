@@ -186,17 +186,6 @@ FormAutoComplete.prototype = {
     "nsISupportsWeakReference",
   ]),
 
-  _prefBranch: null,
-  _debug: true, 
-  _enabled: true, 
-  _agedWeight: 2,
-  _bucketSize: 1,
-  _maxTimeGroupings: 25,
-  _timeGroupingSize: 7 * 24 * 60 * 60 * 1000 * 1000,
-  _expireDays: null,
-  _boundaryWeight: 25,
-  _prefixWeight: 5,
-
   
   
   
@@ -212,12 +201,6 @@ FormAutoComplete.prototype = {
 
     this._debug = this._prefBranch.getBoolPref("debug");
     this._enabled = this._prefBranch.getBoolPref("enable");
-    this._agedWeight = this._prefBranch.getIntPref("agedWeight");
-    this._bucketSize = this._prefBranch.getIntPref("bucketSize");
-    this._maxTimeGroupings = this._prefBranch.getIntPref("maxTimeGroupings");
-    this._timeGroupingSize =
-      this._prefBranch.getIntPref("timeGroupingSize") * 1000 * 1000;
-    this._expireDays = this._prefBranch.getIntPref("expire_days");
   },
 
   observer: {
@@ -236,33 +219,12 @@ FormAutoComplete.prototype = {
         self.log("got change to " + prefName + " preference");
 
         switch (prefName) {
-          case "agedWeight":
-            self._agedWeight = self._prefBranch.getIntPref(prefName);
-            break;
           case "debug":
             self._debug = self._prefBranch.getBoolPref(prefName);
             break;
           case "enable":
             self._enabled = self._prefBranch.getBoolPref(prefName);
             break;
-          case "maxTimeGroupings":
-            self._maxTimeGroupings = self._prefBranch.getIntPref(prefName);
-            break;
-          case "timeGroupingSize":
-            self._timeGroupingSize =
-              self._prefBranch.getIntPref(prefName) * 1000 * 1000;
-            break;
-          case "bucketSize":
-            self._bucketSize = self._prefBranch.getIntPref(prefName);
-            break;
-          case "boundaryWeight":
-            self._boundaryWeight = self._prefBranch.getIntPref(prefName);
-            break;
-          case "prefixWeight":
-            self._prefixWeight = self._prefBranch.getIntPref(prefName);
-            break;
-          default:
-            self.log("Oops! Pref not handled, change ignored.");
         }
       }
     },
@@ -577,15 +539,7 @@ FormAutoComplete.prototype = {
   getAutoCompleteValues(client, fieldName, searchString, params, callback) {
     params = Object.assign(
       {
-        agedWeight: this._agedWeight,
-        bucketSize: this._bucketSize,
-        expiryDate:
-          1000 * (Date.now() - this._expireDays * 24 * 60 * 60 * 1000),
         fieldname: fieldName,
-        maxTimeGroupings: this._maxTimeGroupings,
-        timeGroupingSize: this._timeGroupingSize,
-        prefixWeight: this._prefixWeight,
-        boundaryWeight: this._boundaryWeight,
       },
       params
     );
