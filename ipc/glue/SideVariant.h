@@ -13,7 +13,8 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "ipc/IPCMessageUtils.h"
 
-namespace mozilla::ipc {
+namespace mozilla {
+namespace ipc {
 
 
 
@@ -24,7 +25,6 @@ namespace mozilla::ipc {
 
 template <typename ParentSide, typename ChildSide>
 struct SideVariant {
- private:
  public:
   SideVariant() = default;
   template <typename U,
@@ -72,6 +72,64 @@ struct SideVariant {
   
   ParentSide mParent = nullptr;
   ChildSide mChild = nullptr;
+};
+
+}  
+
+
+
+template <typename ParentSide, typename ChildSide>
+class NotNull<mozilla::ipc::SideVariant<ParentSide, ChildSide>> {
+  template <typename U>
+  friend constexpr NotNull<U> WrapNotNull(U aBasePtr);
+  template <typename U>
+  friend constexpr NotNull<U> WrapNotNullUnchecked(U aBasePtr);
+  template <typename U>
+  friend class NotNull;
+
+  using BasePtr = mozilla::ipc::SideVariant<ParentSide, ChildSide>;
+
+  BasePtr mBasePtr;
+
+  
+  template <typename U>
+  constexpr explicit NotNull(U aBasePtr) : mBasePtr(aBasePtr) {}
+
+ public:
+  
+  NotNull() = delete;
+
+  
+  template <typename U, typename = std::enable_if_t<
+                            std::is_convertible_v<const U&, BasePtr>>>
+  constexpr MOZ_IMPLICIT NotNull(const NotNull<U>& aOther)
+      : mBasePtr(aOther.get()) {
+    static_assert(sizeof(BasePtr) == sizeof(NotNull<BasePtr>),
+                  "NotNull must have zero space overhead.");
+    static_assert(offsetof(NotNull<BasePtr>, mBasePtr) == 0,
+                  "mBasePtr must have zero offset.");
+  }
+
+  template <typename U,
+            typename = std::enable_if_t<std::is_convertible_v<U&&, BasePtr>>>
+  constexpr MOZ_IMPLICIT NotNull(MovingNotNull<U>&& aOther)
+      : mBasePtr(NotNull{std::move(aOther)}) {}
+
+  
+  explicit operator bool() const = delete;
+
+  
+  
+  constexpr const BasePtr& get() const { return mBasePtr; }
+
+  
+  constexpr operator const BasePtr&() const { return get(); }
+
+  bool IsParent() const { return get().IsParent(); }
+  bool IsChild() const { return get().IsChild(); }
+
+  NotNull<ParentSide> AsParent() const { return WrapNotNull(get().AsParent()); }
+  NotNull<ChildSide> AsChild() const { return WrapNotNull(get().AsChild()); }
 };
 
 }  
