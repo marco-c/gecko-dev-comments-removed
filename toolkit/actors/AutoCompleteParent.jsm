@@ -326,7 +326,8 @@ class AutoCompleteParent extends JSWindowActorParent {
     
     results.reduce((accumulated, r) => {
       
-      if (r.style === "importableLearnMore") {
+      
+      if (r.style === "importableLearnMore" || r.style === "generic") {
         return accumulated;
       }
 
