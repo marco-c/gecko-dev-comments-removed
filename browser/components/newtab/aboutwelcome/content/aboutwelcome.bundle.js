@@ -433,12 +433,17 @@ const ProgressBar = ({
   totalNumberOfScreens
 }) => {
   const [progress, setProgress] = react__WEBPACK_IMPORTED_MODULE_0___default().useState(previousStep / totalNumberOfScreens);
-  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => setProgress(step / totalNumberOfScreens), [step, totalNumberOfScreens]);
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    
+    
+    setProgress(step / totalNumberOfScreens);
+  }, []); 
+
   return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "indicator",
     role: "presentation",
     style: {
-      width: `${progress * 100}%`
+      "--progress-bar-progress": `${progress * 100}%`
     }
   });
 };
