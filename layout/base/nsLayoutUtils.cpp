@@ -9709,24 +9709,15 @@ void nsLayoutUtils::ComputeSystemFont(nsFont* aSystemFont,
   if (aFontID == LookAndFeel::FontID::MozField ||
       aFontID == LookAndFeel::FontID::MozButton ||
       aFontID == LookAndFeel::FontID::MozList) {
-    const bool isWindowsOrNonNativeTheme =
-#ifdef XP_WIN
-        true;
-#else
-        aDocument->ShouldAvoidNativeTheme();
-#endif
-
-    if (isWindowsOrNonNativeTheme) {
-      
-      
-      
-      
-      
-      
-      auto newSize =
-          aDefaultVariableFont.size.ToCSSPixels() - CSSPixel::FromPoints(2.0f);
-      aSystemFont->size = Length::FromPixels(std::max(float(newSize), 0.0f));
-    }
+    
+    
+    
+    
+    
+    
+    auto newSize =
+        aDefaultVariableFont.size.ToCSSPixels() - CSSPixel::FromPoints(2.0f);
+    aSystemFont->size = Length::FromPixels(std::max(float(newSize), 0.0f));
   }
 }
 
