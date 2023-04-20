@@ -45,7 +45,6 @@ function prepareServer(cbAfterTokenFetch) {
   
   
   let callback = {
-    __proto__: SyncServerCallback,
     onRequest(req, resp) {
       let full = `${req.scheme}://${req.host}:${req.port}${req.path}`;
       let expected = config.fxaccount.token.endpoint;
@@ -55,6 +54,7 @@ function prepareServer(cbAfterTokenFetch) {
       );
     },
   };
+  Object.setPrototypeOf(callback, SyncServerCallback);
   let server = new SyncServer(callback);
   server.registerUser("johndoe");
   server.start();

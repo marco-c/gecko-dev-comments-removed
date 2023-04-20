@@ -317,8 +317,6 @@ function BridgedEngine(name, service) {
 }
 
 BridgedEngine.prototype = {
-  __proto__: SyncEngine.prototype,
-
   
 
 
@@ -494,6 +492,7 @@ BridgedEngine.prototype = {
     await this._bridge.reset();
   },
 };
+Object.setPrototypeOf(BridgedEngine.prototype, SyncEngine.prototype);
 
 function transformError(code, message) {
   switch (code) {

@@ -37,7 +37,7 @@ async function DumpBookmarks() {
 
 
 function extend(child, supertype) {
-  child.prototype.__proto__ = supertype.prototype;
+  Object.setPrototypeOf(child.prototype, supertype.prototype);
 }
 
 

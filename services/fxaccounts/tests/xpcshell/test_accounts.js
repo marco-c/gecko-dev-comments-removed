@@ -178,10 +178,11 @@ function MockFxAccountsClient() {
 
   FxAccountsClient.apply(this);
 }
-MockFxAccountsClient.prototype = {
-  __proto__: FxAccountsClient.prototype,
-};
-
+MockFxAccountsClient.prototype = {};
+Object.setPrototypeOf(
+  MockFxAccountsClient.prototype,
+  FxAccountsClient.prototype
+);
 
 
 

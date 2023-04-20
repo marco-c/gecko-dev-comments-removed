@@ -9,21 +9,21 @@ function SteamEngine() {
   SyncEngine.call(this, "Steam", Service);
 }
 SteamEngine.prototype = {
-  __proto__: SyncEngine.prototype,
   async _sync() {
     syncedEngines.push(this.name);
   },
 };
+Object.setPrototypeOf(SteamEngine.prototype, SyncEngine.prototype);
 
 function StirlingEngine() {
   SyncEngine.call(this, "Stirling", Service);
 }
 StirlingEngine.prototype = {
-  __proto__: SteamEngine.prototype,
   async _sync() {
     syncedEngines.push(this.name);
   },
 };
+Object.setPrototypeOf(StirlingEngine.prototype, SteamEngine.prototype);
 
 
 var collectionsHelper = track_collections_helper();
