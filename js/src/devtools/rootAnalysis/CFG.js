@@ -194,9 +194,8 @@ function BFS_upwards(start_body, start_ppoint, bodies, visitor,
                 
                 
                 
-            } else {
-                work.push([body, edge.Index[0], edge, value]);
             }
+            work.push([body, edge.Index[0], edge, value]);
         }
 
         
