@@ -90,6 +90,10 @@ TextureHost* VideoBridgeParent::LookupTexture(uint64_t aSerial) {
 }
 
 void VideoBridgeParent::ActorDestroy(ActorDestroyReason aWhy) {
+  if (aWhy == AbnormalShutdown) {
+    gfxCriticalNote
+        << "VideoBridgeParent receives IPC close with reason=AbnormalShutdown";
+  }
   
   mClosed = true;
 }

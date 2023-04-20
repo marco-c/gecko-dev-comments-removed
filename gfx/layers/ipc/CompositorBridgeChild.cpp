@@ -314,7 +314,8 @@ void CompositorBridgeChild::ActorDestroy(ActorDestroyReason aWhy) {
     
     
     
-    gfxCriticalNote << "Receive IPC close with reason=AbnormalShutdown";
+    gfxCriticalNote << "CompositorBridgeChild receives IPC close with "
+                       "reason=AbnormalShutdown";
   }
 
   mCanSend = false;
