@@ -26,7 +26,7 @@ class GMPSharedMem {
   
   
   
-  static const uint32_t kGMPBufLimit = 20;
+  static const uint32_t kGMPBufLimit = 40;
 
   GMPSharedMem() {
     for (size_t i = 0; i < sizeof(mGmpAllocated) / sizeof(mGmpAllocated[0]);
