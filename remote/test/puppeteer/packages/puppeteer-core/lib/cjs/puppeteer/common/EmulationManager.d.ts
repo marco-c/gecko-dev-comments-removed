@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import { CDPSession } from './Connection.js';
+import { Viewport } from './PuppeteerViewport.js';
+
+
+
+export declare class EmulationManager {
+    #private;
+    constructor(client: CDPSession);
+    emulateViewport(viewport: Viewport): Promise<boolean>;
+}

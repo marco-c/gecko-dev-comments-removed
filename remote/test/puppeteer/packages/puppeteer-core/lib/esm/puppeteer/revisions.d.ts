@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export declare const PUPPETEER_REVISIONS: Readonly<{
+    chromium: "1083080";
+    firefox: "latest";
+}>;

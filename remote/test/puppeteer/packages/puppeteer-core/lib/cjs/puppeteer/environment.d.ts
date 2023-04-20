@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export declare const isNode: boolean;
+
+
+
+export declare const DEFERRED_PROMISE_DEBUG_TIMEOUT: number;

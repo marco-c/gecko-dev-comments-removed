@@ -1,0 +1,16 @@
+
+
+
+
+export interface ErrorLike extends Error {
+    name: string;
+    message: string;
+}
+
+
+
+export declare function isErrorLike(obj: unknown): obj is ErrorLike;
+
+
+
+export declare function isErrnoException(obj: unknown): obj is NodeJS.ErrnoException;

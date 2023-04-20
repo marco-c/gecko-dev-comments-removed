@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const getFetch = async () => {
+    return globalThis.fetch || (await import('cross-fetch')).fetch;
+};

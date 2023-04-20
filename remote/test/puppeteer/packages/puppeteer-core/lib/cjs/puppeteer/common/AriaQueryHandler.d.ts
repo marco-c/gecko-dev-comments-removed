@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import type { PuppeteerQueryHandler } from './QueryHandler.js';
+
+
+
+export declare const ariaHandler: PuppeteerQueryHandler;

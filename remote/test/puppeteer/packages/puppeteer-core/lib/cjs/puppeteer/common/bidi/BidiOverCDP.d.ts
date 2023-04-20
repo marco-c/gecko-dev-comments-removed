@@ -1,0 +1,6 @@
+import { Connection as CDPPPtrConnection } from '../Connection.js';
+import { Connection as BidiPPtrConnection } from './Connection.js';
+
+
+
+export declare function connectBidiOverCDP(cdp: CDPPPtrConnection): Promise<BidiPPtrConnection>;

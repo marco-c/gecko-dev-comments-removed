@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export declare class TaskQueue {
+    #private;
+    constructor();
+    postTask<T>(task: () => Promise<T>): Promise<T>;
+}

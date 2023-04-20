@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export declare const createFunction: (functionValue: string) => (...args: unknown[]) => unknown;
+
+
+
+export declare const checkVisibility: (node: Node | null, visible?: boolean) => Node | boolean;

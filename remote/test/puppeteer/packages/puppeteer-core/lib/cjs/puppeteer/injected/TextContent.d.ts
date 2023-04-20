@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export declare const isSuitableNodeForTextMatching: (node: Node) => boolean;
+
+
+
+export type TextContent = {
+    full: string;
+    immediate: string[];
+};
+
+
+
+
+
+
+
+
+
+export declare const createTextContent: (root: Node) => TextContent;

@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export declare class LazyArg<T> {
+    #private;
+    constructor(get: () => Promise<T>);
+    get(): Promise<T>;
+}

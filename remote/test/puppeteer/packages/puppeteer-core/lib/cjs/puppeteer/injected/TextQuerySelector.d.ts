@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export declare const textQuerySelector: (root: Node, selector: string) => Element | null;
+
+
+
+
+
+export declare const textQuerySelectorAll: (root: Node, selector: string) => Element[];

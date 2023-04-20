@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export declare class TimeoutSettings {
+    #private;
+    constructor();
+    setDefaultTimeout(timeout: number): void;
+    setDefaultNavigationTimeout(timeout: number): void;
+    navigationTimeout(): number;
+    timeout(): number;
+}
