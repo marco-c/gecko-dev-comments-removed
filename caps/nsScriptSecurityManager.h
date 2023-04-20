@@ -134,7 +134,7 @@ class nsScriptSecurityManager final : public nsIScriptSecurityManager {
   
   nsCOMPtr<nsIDomainPolicy> mDomainPolicy;
 
-  static bool sStrictFileOriginPolicy;
+  static std::atomic<bool> sStrictFileOriginPolicy;
 
   static nsIIOService* sIOService;
   static nsIStringBundle* sStrBundle;
