@@ -10,6 +10,7 @@
 
 #include "gfxTextRun.h"
 #include "nsArray.h"
+#include "nsContentList.h"
 #include "nsString.h"
 #include "nsIContentInlines.h"
 #include "nsIScrollableFrame.h"
@@ -141,41 +142,32 @@ bool InspectorUtils::IsIgnorableWhitespace(CharacterData& aDataNode) {
 
 nsINode* InspectorUtils::GetParentForNode(nsINode& aNode,
                                           bool aShowingAnonymousContent) {
-  
-  nsINode* parent = nullptr;
-
   if (aNode.IsDocument()) {
-    parent = inLayoutUtils::GetContainerFor(*aNode.AsDocument());
-  } else if (aShowingAnonymousContent) {
-    if (aNode.IsContent()) {
-      parent = aNode.AsContent()->GetFlattenedTreeParent();
-    }
+    return inLayoutUtils::GetContainerFor(*aNode.AsDocument());
   }
-
-  if (!parent) {
-    
-    return aNode.GetParentNode();
+  if (aShowingAnonymousContent && aNode.IsContent()) {
+    return aNode.AsContent()->GetFlattenedTreeParentNode();
   }
-
-  return parent;
+  
+  return aNode.GetParentNode();
 }
 
 
 already_AddRefed<nsINodeList> InspectorUtils::GetChildrenForNode(
     nsINode& aNode, bool aShowingAnonymousContent) {
   nsCOMPtr<nsINodeList> kids;
-
-  if (aShowingAnonymousContent) {
-    if (aNode.IsContent()) {
-      kids = aNode.AsContent()->GetChildren(nsIContent::eAllChildren);
+  if (aShowingAnonymousContent && aNode.IsContent()) {
+    
+    
+    AllChildrenIterator iter(aNode.AsContent(), nsIContent::eAllChildren);
+    RefPtr list = new nsSimpleContentList(&aNode);
+    while (nsIContent* kid = iter.GetNextChild()) {
+      list->AppendElement(kid);
     }
+    return list.forget();
   }
 
-  if (!kids) {
-    kids = aNode.ChildNodes();
-  }
-
-  return kids.forget();
+  return do_AddRef(aNode.ChildNodes());
 }
 
 

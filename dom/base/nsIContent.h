@@ -140,12 +140,6 @@ class nsIContent : public nsINode {
 
 
 
-  virtual already_AddRefed<nsINodeList> GetChildren(uint32_t aFilter) = 0;
-
-  
-
-
-
   void SetIsNativeAnonymousRoot() {
     SetFlags(NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE |
              NODE_IS_NATIVE_ANONYMOUS_ROOT);

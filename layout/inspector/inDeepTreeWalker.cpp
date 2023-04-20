@@ -141,26 +141,12 @@ static already_AddRefed<nsINodeList> GetChildren(nsINode* aParent,
                                                  bool aShowAnonymousContent,
                                                  bool aShowSubDocuments) {
   MOZ_ASSERT(aParent);
-
-  nsCOMPtr<nsINodeList> ret;
   if (aShowSubDocuments) {
-    mozilla::dom::Document* domdoc = inLayoutUtils::GetSubDocumentFor(aParent);
-    if (domdoc) {
-      aParent = domdoc;
+    if (auto* doc = inLayoutUtils::GetSubDocumentFor(aParent)) {
+      aParent = doc;
     }
   }
-
-  nsCOMPtr<nsIContent> parentAsContent = do_QueryInterface(aParent);
-  if (parentAsContent && aShowAnonymousContent) {
-    ret = parentAsContent->GetChildren(nsIContent::eAllChildren);
-  } else {
-    
-    
-    
-    
-    ret = aParent->ChildNodes();
-  }
-  return ret.forget();
+  return InspectorUtils::GetChildrenForNode(*aParent, aShowAnonymousContent);
 }
 
 NS_IMETHODIMP
