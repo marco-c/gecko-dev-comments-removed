@@ -1,8 +1,6 @@
-
-
-
-
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
@@ -10,8 +8,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TelemetryController: "resource://gre/modules/TelemetryController.sys.mjs",
 });
 
-function BHRTelemetryService() {
-  
+export function BHRTelemetryService() {
+  // Allow tests to get access to this object to verify it works correctly.
   this.wrappedJSObject = this;
 
   Services.obs.addObserver(this, "profile-before-change");
@@ -51,8 +49,8 @@ BHRTelemetryService.prototype = Object.freeze({
       return;
     }
 
-    
-    
+    // Create a mapping from module indicies in the original nsIHangDetails
+    // object to this.payload.modules indicies.
     let moduleIdxs = modules.map(module => {
       let idx = this.payload.modules.findIndex(m => {
         return m[0] === module[0] && m[1] === module[1];
@@ -64,19 +62,19 @@ BHRTelemetryService.prototype = Object.freeze({
       return idx;
     });
 
-    
-    
+    // Native stack frames are [modIdx, offset] arrays. If we have a valid
+    // module index, we want to map it to the this.payload.modules array.
     for (let i = 0; i < stack.length; ++i) {
       if (Array.isArray(stack[i]) && stack[i][0] !== -1) {
         stack[i][0] = moduleIdxs[stack[i][0]];
       } else if (typeof stack[i] == "string") {
-        
-        
-        
-        
-        
-        
-        
+        // This is just a precaution - we don't currently know of sensitive
+        // URLs being included in label frames' dynamic strings which we
+        // include here, but this is just an added guard. Here we strip any
+        // string with a :// in it that isn't a chrome:// or resource://
+        // URL. This is not completely robust, but we are already trying to
+        // protect against this by only including dynamic strings from the
+        // opt-in AUTO_PROFILER_..._NONSENSITIVE macros.
         let match = /[^\s]+:\/\/.*/.exec(stack[i]);
         if (
           match &&
@@ -88,7 +86,7 @@ BHRTelemetryService.prototype = Object.freeze({
       }
     }
 
-    
+    // Create the hang object to record in the payload.
     this.payload.hangs.push({
       duration,
       thread,
@@ -103,8 +101,8 @@ BHRTelemetryService.prototype = Object.freeze({
       this.clearPermahangFile = true;
     }
 
-    
-    
+    // If we have collected enough hangs, we can submit the hangs we have
+    // collected to telemetry.
     if (this.payload.hangs.length > this.TRANSMIT_HANG_COUNT) {
       this.submit();
     }
@@ -112,7 +110,7 @@ BHRTelemetryService.prototype = Object.freeze({
 
   submit() {
     if (this.clearPermahangFile) {
-      
+      // NB: This is async but it is called from an Observer callback.
       IOUtils.remove(
         PathUtils.join(PathUtils.profileDir, "last_permahang.bin")
       );
@@ -122,10 +120,10 @@ BHRTelemetryService.prototype = Object.freeze({
       return;
     }
 
-    
-    
-    
-    
+    // NOTE: We check a separate bhrPing.enabled pref here. This pref is unset
+    // when running tests so that we run as much of BHR as possible (to catch
+    // errors) while avoiding timeouts caused by invoking `pingsender` during
+    // testing.
     if (
       Services.prefs.getBoolPref("toolkit.telemetry.bhrPing.enabled", false)
     ) {
@@ -161,5 +159,3 @@ BHRTelemetryService.prototype = Object.freeze({
     }
   },
 });
-
-var EXPORTED_SYMBOLS = ["BHRTelemetryService"];
