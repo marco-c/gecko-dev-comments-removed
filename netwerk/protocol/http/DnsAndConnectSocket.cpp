@@ -965,10 +965,10 @@ nsresult DnsAndConnectSocket::TransportSetup::CheckConnectedResult(
     bool trrEnabled;
     mDNSRecord->IsTRR(&trrEnabled);
     if (trrEnabled) {
-      uint32_t trrMode = 0;
+      nsIRequest::TRRMode trrMode = nsIRequest::TRR_DEFAULT_MODE;
       mDNSRecord->GetEffectiveTRRMode(&trrMode);
       
-      if (trrMode != 3) {
+      if (trrMode != nsIRequest::TRR_ONLY_MODE) {
         
         
         
