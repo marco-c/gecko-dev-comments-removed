@@ -7,12 +7,15 @@
 
 #include "mozilla/Maybe.h"
 #include "mozilla/PreloadHashKey.h"
+#include "NeckoCommon.h"
+#include "mozilla/net/NeckoChannelParams.h"
+#include "nsHashtablesFwd.h"
 #include "nsIChannelEventSink.h"
 #include "nsIInterfaceRequestor.h"
+#include "nsIMultiPartChannel.h"
 #include "nsIRedirectResultListener.h"
 #include "nsIStreamListener.h"
 #include "nsNetUtil.h"
-#include "nsRefPtrHashtable.h"
 
 class nsAttrValue;
 class nsICookieJarSettings;
@@ -23,13 +26,13 @@ namespace mozilla::net {
 
 class EarlyHintPreloader;
 class EarlyHintConnectArgs;
+class ParentChannelListener;
 struct LinkHeader;
 
 
 class OngoingEarlyHints final {
  public:
   NS_INLINE_DECL_REFCOUNTING(OngoingEarlyHints)
-  MOZ_DECLARE_REFCOUNTED_TYPENAME(OngoingEarlyHints)
 
   OngoingEarlyHints() = default;
 
@@ -45,17 +48,23 @@ class OngoingEarlyHints final {
 
  private:
   ~OngoingEarlyHints() = default;
-  nsRefPtrHashtable<PreloadHashKey, EarlyHintPreloader> mOngoingPreloads;
 
   
   
-  nsTArray<EarlyHintConnectArgs> mLinks;
+  
+  
+  
+  
+  
+  nsTHashSet<PreloadHashKey> mStartedPreloads;
+  nsTArray<RefPtr<EarlyHintPreloader>> mPreloaders;
 };
 
 class EarlyHintPreloader final : public nsIStreamListener,
                                  public nsIChannelEventSink,
                                  public nsIRedirectResultListener,
-                                 public nsIInterfaceRequestor {
+                                 public nsIInterfaceRequestor,
+                                 public nsIMultiPartChannelListener {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIREQUESTOBSERVER
@@ -63,6 +72,7 @@ class EarlyHintPreloader final : public nsIStreamListener,
   NS_DECL_NSICHANNELEVENTSINK
   NS_DECL_NSIREDIRECTRESULTLISTENER
   NS_DECL_NSIINTERFACEREQUESTOR
+  NS_DECL_NSIMULTIPARTCHANNELLISTENER
 
  public:
   
@@ -73,13 +83,20 @@ class EarlyHintPreloader final : public nsIStreamListener,
       nsICookieJarSettings* aCookieJarSettings);
 
   
+  EarlyHintConnectArgs Register();
+
+  
+  
   
   nsresult CancelChannel(nsresult aStatus);
 
   void OnParentReady(nsIParentChannel* aParent, uint64_t aChannelId);
 
  private:
-  explicit EarlyHintPreloader(nsIURI* aURI);
+  void SetParentChannel();
+  bool InvokeStreamListenerFunctions();
+
+  EarlyHintPreloader();
   ~EarlyHintPreloader() = default;
 
   static Maybe<PreloadHashKey> GenerateHashKey(ASDestination aAs, nsIURI* aURI,
@@ -92,16 +109,38 @@ class EarlyHintPreloader final : public nsIStreamListener,
                                               bool aIsModule);
 
   
-  nsresult OpenChannel(nsIPrincipal* aPrincipal, nsSecurityFlags aSecurityFlags,
+  nsresult OpenChannel(nsIURI* aURI, nsIPrincipal* aPrincipal,
+                       nsSecurityFlags aSecurityFlags,
                        nsContentPolicyType aContentPolicyType,
                        nsIReferrerInfo* aReferrerInfo,
                        nsICookieJarSettings* aCookieJarSettings);
+  void SetLinkHeader(const LinkHeader& aLinkHeader);
 
   static void CollectResourcesTypeTelemetry(ASDestination aASDestination);
-  
-  nsCOMPtr<nsIURI> mURI;
   nsCOMPtr<nsIChannel> mChannel;
   nsCOMPtr<nsIChannel> mRedirectChannel;
+  uint64_t mChannelId = 0;
+
+  EarlyHintConnectArgs mConnectArgs;
+
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<StreamListenerFunction> mStreamListenerFunctions;
+
+  
+  bool mSuspended = false;
+  nsCOMPtr<nsIParentChannel> mParent;
+  
+  
+  
+  bool mIsFinished = false;
+
+  RefPtr<ParentChannelListener> mParentListener;
 };
 
 inline nsISupports* ToSupports(EarlyHintPreloader* aObj) {
