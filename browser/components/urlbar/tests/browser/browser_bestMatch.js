@@ -88,35 +88,43 @@ add_task(async function keySelection() {
     });
 
     
-    for (let reverse of [false, true]) {
-      info("Doing TAB key selection: " + JSON.stringify({ reverse }));
+    for (let useTabKey of [false, true]) {
+      for (let reverse of [false, true]) {
+        info("Doing key selection: " + JSON.stringify({ useTabKey, reverse }));
 
-      let classNames = [...expectedClassNames];
-      if (reverse) {
-        classNames.reverse();
-      }
+        let classNames = [...expectedClassNames];
+        if (reverse) {
+          classNames.reverse();
+        }
 
-      let sendKey = () => {
-        EventUtils.synthesizeKey("KEY_Tab", { shiftKey: reverse });
-      };
+        let sendKey = () => {
+          if (useTabKey) {
+            EventUtils.synthesizeKey("KEY_Tab", { shiftKey: reverse });
+          } else if (reverse) {
+            EventUtils.synthesizeKey("KEY_ArrowUp");
+          } else {
+            EventUtils.synthesizeKey("KEY_ArrowDown");
+          }
+        };
 
-      
-      for (let className of classNames) {
-        info("Expecting selection: " + className);
+        
+        for (let className of classNames) {
+          info("Expecting selection: " + className);
+          sendKey();
+          Assert.ok(gURLBar.view.isOpen, "View remains open");
+          let { selectedElement } = gURLBar.view;
+          Assert.ok(selectedElement, "Selected element exists");
+          Assert.ok(
+            selectedElement.classList.contains(className),
+            "Expected element is selected"
+          );
+        }
         sendKey();
-        Assert.ok(gURLBar.view.isOpen, "View remains open");
-        let { selectedElement } = gURLBar.view;
-        Assert.ok(selectedElement, "Selected element exists");
         Assert.ok(
-          selectedElement.classList.contains(className),
-          "Expected element is selected"
+          gURLBar.view.isOpen,
+          "View remains open after keying through best match row"
         );
       }
-      sendKey();
-      Assert.ok(
-        gURLBar.view.isOpen,
-        "View remains open after keying through best match row"
-      );
     }
 
     await UrlbarTestUtils.promisePopupClose(window);

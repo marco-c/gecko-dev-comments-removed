@@ -142,7 +142,7 @@ async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
   
   
   if (!click) {
-    EventUtils.synthesizeKey("KEY_Tab", { repeat: helpUrl ? 2 : 1 });
+    EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: helpUrl ? 2 : 1 });
     Assert.equal(
       UrlbarTestUtils.getSelectedElement(window),
       target,
