@@ -614,81 +614,95 @@ static void reportHandshakeResult(int32_t bytesTransferred, bool wasReading,
   }
 }
 
-
-
-
-
-
-int32_t checkHandshake(int32_t bytesTransferred, bool wasReading,
+int32_t checkHandshake(int32_t bytesTransfered, bool wasReading,
                        PRFileDesc* ssl_layer_fd, NSSSocketControl* socketInfo) {
   const PRErrorCode originalError = PR_GetError();
+  PRErrorCode err = originalError;
 
   
-  if (bytesTransferred < 0 && originalError == PR_WOULD_BLOCK_ERROR) {
-    PR_SetError(PR_WOULD_BLOCK_ERROR, 0);
-    return bytesTransferred;
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
+  
+  
+
   bool handleHandshakeResultNow = socketInfo->IsHandshakePending();
-  if (!handleHandshakeResultNow) {
-    
-    
-    
-    
-    if (bytesTransferred < 0) {
-      if (!socketInfo->IsCanceled()) {
-        socketInfo->SetCanceled(originalError);
+
+  bool wantRetry = false;
+
+  if (0 > bytesTransfered) {
+    if (handleHandshakeResultNow) {
+      if (PR_WOULD_BLOCK_ERROR == err) {
+        PR_SetError(err, 0);
+        return bytesTransfered;
       }
-      PR_SetError(originalError, 0);
+
+      wantRetry = retryDueToTLSIntolerance(err, socketInfo);
     }
-    return bytesTransferred;
-  }
 
-  
-  
-  
-  socketInfo->SetHandshakeNotPending();
-  
-  
-  
-  reportHandshakeResult(bytesTransferred, wasReading, originalError,
-                        socketInfo);
-
-  
-  
-  
-  
-  if (bytesTransferred > 0) {
-    return bytesTransferred;
-  }
-
-  
-  
-  PRErrorCode errorToUse = originalError;
-  
-  if (bytesTransferred == 0) {
-    errorToUse = wasReading ? PR_END_OF_FILE_ERROR : SEC_ERROR_LIBRARY_FAILURE;
-    bytesTransferred = -1;
-  }
-  bool wantRetry = retryDueToTLSIntolerance(errorToUse, socketInfo);
-  
-  if (!socketInfo->IsCanceled()) {
-    socketInfo->SetCanceled(errorToUse);
+    
+    
+    
+    
+    
+    
+    
+    if (!wantRetry && mozilla::psm::IsNSSErrorCode(err) &&
+        !socketInfo->IsCanceled()) {
+      socketInfo->SetCanceled(err);
+    }
+  } else if (wasReading && 0 == bytesTransfered) {
+    
+    if (handleHandshakeResultNow) {
+      wantRetry = retryDueToTLSIntolerance(PR_END_OF_FILE_ERROR, socketInfo);
+    }
   }
 
   if (wantRetry) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("[%p] checkHandshake: will retry with lower max TLS version",
+            ("[%p] checkHandshake: will retry with lower max TLS version\n",
              ssl_layer_fd));
     
-    
-    PR_SetError(PR_CONNECT_RESET_ERROR, 0);
-  } else {
-    PR_SetError(originalError, 0);
+    err = PR_CONNECT_RESET_ERROR;
+    if (wasReading) bytesTransfered = -1;
   }
 
-  return bytesTransferred;
+  
+  
+  
+  if (handleHandshakeResultNow) {
+    
+    
+    
+    reportHandshakeResult(bytesTransfered, wasReading, originalError,
+                          socketInfo);
+    socketInfo->SetHandshakeNotPending();
+  }
+
+  if (bytesTransfered < 0) {
+    
+    
+    
+    
+    
+    if (originalError != PR_WOULD_BLOCK_ERROR && !socketInfo->IsCanceled()) {
+      socketInfo->SetCanceled(originalError);
+    }
+    PR_SetError(err, 0);
+  }
+
+  return bytesTransfered;
 }
 
 }  
