@@ -1,0 +1,20 @@
+
+
+
+
+
+include protocol PJSValidator;
+
+namespace mozilla {
+namespace dom {
+
+
+async protocol PJSOracle {
+  manages PJSValidator;
+
+child:
+  async PJSValidator();
+};
+
+}  
+}  
