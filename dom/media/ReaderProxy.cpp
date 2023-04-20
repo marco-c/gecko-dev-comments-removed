@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/CDMProxy.h"
 #include "mozilla/MozPromise.h"
 #include "MediaFormatReader.h"
 #include "ReaderProxy.h"
@@ -204,6 +205,12 @@ void ReaderProxy::UpdateMediaEngineId(uint64_t aMediaEngineId) {
   nsresult rv = mReader->OwnerThread()->Dispatch(r.forget());
   MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
   Unused << rv;
+}
+
+RefPtr<SetCDMPromise> ReaderProxy::SetCDMProxy(CDMProxy* aProxy) {
+  return InvokeAsync<RefPtr<CDMProxy>>(mReader->OwnerThread(), mReader.get(),
+                                       __func__,
+                                       &MediaFormatReader::SetCDMProxy, aProxy);
 }
 
 }  
