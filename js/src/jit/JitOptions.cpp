@@ -130,6 +130,15 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(baselineInterpreter, true);
 
   
+  
+  
+#if defined(JS_ION_PERF)
+  SET_DEFAULT(emitInterpreterEntryTrampoline, true);
+#else
+  SET_DEFAULT(emitInterpreterEntryTrampoline, false);
+#endif
+
+  
   SET_DEFAULT(baselineJit, true);
 
   
