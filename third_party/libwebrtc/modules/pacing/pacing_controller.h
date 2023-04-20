@@ -18,6 +18,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "absl/types/optional.h"
 #include "api/field_trials_view.h"
 #include "api/function_view.h"
@@ -41,9 +42,6 @@ namespace webrtc {
 
 class PacingController {
  public:
-  
-  
-  
   
   
   enum class ProcessMode { kPeriodic, kDynamic };
@@ -125,6 +123,11 @@ class PacingController {
 
   PacingController(Clock* clock,
                    PacketSender* packet_sender,
+                   const FieldTrialsView& field_trials);
+
+  ABSL_DEPRECATED("Use constructor without mode parameter instead.")
+  PacingController(Clock* clock,
+                   PacketSender* packet_sender,
                    const FieldTrialsView& field_trials,
                    ProcessMode mode);
 
@@ -144,7 +147,7 @@ class PacingController {
 
   
   void SetPacingRates(DataRate pacing_rate, DataRate padding_rate);
-  DataRate pacing_rate() const { return pacing_bitrate_; }
+  DataRate pacing_rate() const { return media_rate_; }
 
   
   
@@ -211,7 +214,6 @@ class PacingController {
 
   Timestamp CurrentTime() const;
 
-  const ProcessMode mode_;
   Clock* const clock_;
   PacketSender* const packet_sender_;
   const FieldTrialsView& field_trials_;
@@ -233,19 +235,6 @@ class PacingController {
   mutable Timestamp last_timestamp_;
   bool paused_;
 
-  
-  
-  
-  
-
-  
-  
-  IntervalBudget media_budget_;
-  
-  
-  
-  IntervalBudget padding_budget_;
-
   DataSize media_debt_;
   DataSize padding_debt_;
   DataRate media_rate_;
@@ -253,8 +242,6 @@ class PacingController {
 
   BitrateProber prober_;
   bool probing_send_failure_;
-
-  DataRate pacing_bitrate_;
 
   Timestamp last_process_time_;
   Timestamp last_send_time_;
