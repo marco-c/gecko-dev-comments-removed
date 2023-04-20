@@ -23,6 +23,7 @@
 #include "frontend/FrontendContext.h"  
 #include "frontend/ModuleSharedContext.h"
 #include "js/experimental/JSStencil.h"
+#include "js/Modules.h"  
 #include "js/SourceText.h"
 #include "js/Stack.h"  
 #include "js/UniquePtr.h"
@@ -767,8 +768,7 @@ bool ModuleCompiler<Unit>::compile(JSContext* maybeCx, FrontendContext* fc) {
     return false;
   }
 
-  
-  ModuleBuilder builder(maybeCx, fc, parser.ptr());
+  ModuleBuilder builder(fc, parser.ptr());
 
   const auto& options = compilationState_.input.options;
 

@@ -15,6 +15,7 @@
 
 #include "js/AllocPolicy.h"     
 #include "js/ErrorReport.h"     
+#include "js/Modules.h"         
 #include "js/Vector.h"          
 #include "vm/ErrorReporting.h"  
 #include "vm/MallocProvider.h"  
@@ -70,6 +71,8 @@ class FrontendContext {
 
   js::SharedScriptDataTableHolder* scriptDataTableHolder_;
 
+  JS::ImportAssertionVector supportedImportAssertions_;
+
  protected:
   
   
@@ -82,7 +85,8 @@ class FrontendContext {
       : alloc_(this),
         nameCollectionPool_(nullptr),
         ownNameCollectionPool_(false),
-        scriptDataTableHolder_(&js::globalSharedScriptDataTableHolder) {}
+        scriptDataTableHolder_(&js::globalSharedScriptDataTableHolder),
+        supportedImportAssertions_() {}
   ~FrontendContext();
 
   bool allocateOwnedPool();
@@ -115,6 +119,12 @@ class FrontendContext {
   
   
   JSContext* maybeCurrentJSContext() { return maybeCx_; }
+
+  const JS::ImportAssertionVector& getSupportedImportAssertions() const {
+    return supportedImportAssertions_;
+  }
+  bool setSupportedImportAssertions(
+      const JS::ImportAssertionVector& supportedImportAssertions);
 
   enum class Warning { Suppress, Report };
 
