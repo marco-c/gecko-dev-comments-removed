@@ -201,13 +201,13 @@ let testCases = [
   
   
   
-  ["xn--pixel-8fd.com", "pi\u0307xel.com", kUnsafe, "DISABLED"],
+  ["xn--pixel-8fd.com", "pi\u0307xel.com", kUnsafe],
   
   ["xn--pxel-lza43z.com", "p\u0131\u0307xel.com", kUnsafe],
   
-  ["xn--jack-qwc.com", "j\u0307ack.com", kUnsafe, "DISABLED"],
+  ["xn--jack-qwc.com", "j\u0307ack.com", kUnsafe],
   
-  ["xn--lace-qwc.com", "l\u0307ace.com", kUnsafe, "DISABLED"],
+  ["xn--lace-qwc.com", "l\u0307ace.com", kUnsafe],
 
   
   ["xn--pxel-lza29y.com", "p\u0131\u0300xel.com", kUnsafe],
@@ -344,7 +344,7 @@ let testCases = [
   
   ["mail.xn--igklmo68-kcb.co.uk", "mail.\u0111igklmo68.co.uk", kUnsafe, "DISABLED"],
   
-  ["xn--digklmo68-6jf.com", "di\u0307gklmo68.com", kUnsafe, "DISABLED"],
+  ["xn--digklmo68-6jf.com", "di\u0307gklmo68.com", kUnsafe],
   
   ["xn--digklmo68-7vf.com", "dig\u0331klmo68.com", kUnsafe, "DISABLED"],
   
