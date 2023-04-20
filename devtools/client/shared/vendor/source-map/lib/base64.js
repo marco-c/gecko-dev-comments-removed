@@ -5,12 +5,13 @@
 
 
 
-const intToCharMap = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".split("");
+const intToCharMap =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".split("");
 
 
 
 
-exports.encode = function(number) {
+exports.encode = function (number) {
   if (0 <= number && number < intToCharMap.length) {
     return intToCharMap[number];
   }

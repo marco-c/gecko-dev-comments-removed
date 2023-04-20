@@ -45,7 +45,7 @@ function recursiveSearch(aLow, aHigh, aNeedle, aHaystack, aCompare, aBias) {
 
     
     
-    if (aBias == exports.LEAST_UPPER_BOUND) {
+    if (aBias === exports.LEAST_UPPER_BOUND) {
       return aHigh < aHaystack.length ? aHigh : -1;
     }
     return mid;
@@ -87,8 +87,14 @@ exports.search = function search(aNeedle, aHaystack, aCompare, aBias) {
     return -1;
   }
 
-  let index = recursiveSearch(-1, aHaystack.length, aNeedle, aHaystack,
-                              aCompare, aBias || exports.GREATEST_LOWER_BOUND);
+  let index = recursiveSearch(
+    -1,
+    aHaystack.length,
+    aNeedle,
+    aHaystack,
+    aCompare,
+    aBias || exports.GREATEST_LOWER_BOUND
+  );
   if (index < 0) {
     return -1;
   }

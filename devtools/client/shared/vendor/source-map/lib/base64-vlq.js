@@ -67,24 +67,7 @@ const VLQ_CONTINUATION_BIT = VLQ_BASE;
 
 
 function toVLQSigned(aValue) {
-  return aValue < 0
-    ? ((-aValue) << 1) + 1
-    : (aValue << 1) + 0;
-}
-
-
-
-
-
-
-
-
-function fromVLQSigned(aValue) {
-  const isNegative = (aValue & 1) === 1;
-  const shifted = aValue >> 1;
-  return isNegative
-    ? -shifted
-    : shifted;
+  return aValue < 0 ? (-aValue << 1) + 1 : (aValue << 1) + 0;
 }
 
 

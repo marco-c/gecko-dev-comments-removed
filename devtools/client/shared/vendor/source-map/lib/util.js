@@ -23,15 +23,14 @@ function getArg(aArgs, aName, aDefaultValue) {
   } else if (arguments.length === 3) {
     return aDefaultValue;
   }
-    throw new Error('"' + aName + '" is a required argument.');
-
+  throw new Error('"' + aName + '" is a required argument.');
 }
 exports.getArg = getArg;
 
-const supportsNullProto = (function() {
+const supportsNullProto = (function () {
   const obj = Object.create(null);
   return !("__proto__" in obj);
-}());
+})();
 
 function identity(s) {
   return s;
@@ -76,15 +75,17 @@ function isProtoString(s) {
   }
 
   
-  if (s.charCodeAt(length - 1) !== 95   ||
-      s.charCodeAt(length - 2) !== 95   ||
-      s.charCodeAt(length - 3) !== 111  ||
-      s.charCodeAt(length - 4) !== 116  ||
-      s.charCodeAt(length - 5) !== 111  ||
-      s.charCodeAt(length - 6) !== 114  ||
-      s.charCodeAt(length - 7) !== 112  ||
-      s.charCodeAt(length - 8) !== 95   ||
-      s.charCodeAt(length - 9) !== 95  ) {
+  if (
+    s.charCodeAt(length - 1) !== 95  ||
+    s.charCodeAt(length - 2) !== 95  ||
+    s.charCodeAt(length - 3) !== 111  ||
+    s.charCodeAt(length - 4) !== 116  ||
+    s.charCodeAt(length - 5) !== 111  ||
+    s.charCodeAt(length - 6) !== 114  ||
+    s.charCodeAt(length - 7) !== 112  ||
+    s.charCodeAt(length - 8) !== 95  ||
+    s.charCodeAt(length - 9) !== 95 
+  ) {
     return false;
   }
   
@@ -150,7 +151,8 @@ function compareByGeneratedPositionsInflated(mappingA, mappingB) {
 
   return strcmp(mappingA.name, mappingB.name);
 }
-exports.compareByGeneratedPositionsInflated = compareByGeneratedPositionsInflated;
+exports.compareByGeneratedPositionsInflated =
+  compareByGeneratedPositionsInflated;
 
 
 
@@ -203,7 +205,7 @@ function withBase(url, base) {
 function buildUniqueSegment(prefix, str) {
   let id = 0;
   do {
-    const ident = prefix + (id++);
+    const ident = prefix + id++;
     if (str.indexOf(ident) === -1) return ident;
   } while (true);
 }
@@ -337,14 +339,18 @@ function join(aRoot, aPath) {
     return normalize(aPath);
   }
   if (rootType === "scheme-relative") {
-    return withBase(aPath, withBase(aRoot, PROTOCOL_AND_HOST)).slice(PROTOCOL.length);
+    return withBase(aPath, withBase(aRoot, PROTOCOL_AND_HOST)).slice(
+      PROTOCOL.length
+    );
   }
 
   if (pathType === "path-absolute") {
     return normalize(aPath);
   }
   if (rootType === "path-absolute") {
-    return withBase(aPath, withBase(aRoot, PROTOCOL_AND_HOST)).slice(PROTOCOL_AND_HOST.length);
+    return withBase(aPath, withBase(aRoot, PROTOCOL_AND_HOST)).slice(
+      PROTOCOL_AND_HOST.length
+    );
   }
 
   const base = buildSafeBase(aPath + aRoot);
