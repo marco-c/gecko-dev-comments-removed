@@ -3,6 +3,7 @@
 
 
 
+
 bluetooth_test(async () => {
   let iframe = document.createElement('iframe');
   let error;
@@ -16,7 +17,7 @@ bluetooth_test(async () => {
   iframe.remove();
   
   iframe = null;
-  await runGarbageCollection();
+  await garbageCollect();
 
   try {
     await service.getCharacteristic(measurement_interval.alias);

@@ -80,13 +80,6 @@ async function createFileWithContents(test, name, contents, parent) {
   return handle;
 }
 
-function garbageCollect() {
-  
-  
-  if (self.gc)
-    self.gc();
-};
-
 var fs_cleanups = [];
 
 async function cleanup(test, value, cleanup_func) {

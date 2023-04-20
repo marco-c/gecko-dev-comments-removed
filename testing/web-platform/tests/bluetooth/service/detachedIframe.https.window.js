@@ -3,6 +3,7 @@
 
 
 
+
 bluetooth_test(async () => {
   let iframe = document.createElement('iframe');
   const {device} = await getHealthThermometerDeviceFromIframe(iframe);
@@ -11,7 +12,7 @@ bluetooth_test(async () => {
   iframe.remove();
   
   iframe = null;
-  await runGarbageCollection();
+  await garbageCollect();
 
   try {
     await device.gatt.getPrimaryService(health_thermometer.name);

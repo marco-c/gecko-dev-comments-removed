@@ -19,7 +19,7 @@ bluetooth_test(() => getEmptyHealthThermometerDevice()
       
       
       device.gatt.disconnect();
-      return runGarbageCollection();
+      return garbageCollect();
     })
     .then(() => promise),
     test_desc);

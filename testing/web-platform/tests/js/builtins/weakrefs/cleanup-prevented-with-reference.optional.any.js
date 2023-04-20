@@ -14,6 +14,7 @@
 
 
 
+
 let holdingsList = [];
 function cb(holding) {
   holdingsList.push(holding);

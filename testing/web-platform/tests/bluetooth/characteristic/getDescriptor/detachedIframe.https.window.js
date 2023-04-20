@@ -3,6 +3,7 @@
 
 
 
+
 bluetooth_test(async () => {
   let iframe = document.createElement('iframe');
   let error;
@@ -18,7 +19,7 @@ bluetooth_test(async () => {
   iframe.remove();
   
   iframe = null;
-  await runGarbageCollection();
+  await garbageCollect();
 
   try {
     await characteristic.getDescriptor(user_description.name);

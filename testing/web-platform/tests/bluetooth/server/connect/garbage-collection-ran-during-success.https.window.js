@@ -2,6 +2,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'Garbage Collection ran during a connect call that ' +
     'succeeds. Should not crash.';
@@ -14,5 +15,5 @@ bluetooth_test(async () => {
     await fake_peripheral.setNextGATTConnectionResponse({code: HCI_SUCCESS});
     connectPromise = device.gatt.connect();
   }
-  await Promise.all([connectPromise, runGarbageCollection()]);
+  await Promise.all([connectPromise, garbageCollect()]);
 }, test_desc);

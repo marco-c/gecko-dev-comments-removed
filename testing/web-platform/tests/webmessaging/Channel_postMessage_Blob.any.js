@@ -1,5 +1,6 @@
 
 
+
     var TARGET = null;
     var SOURCE = null;
     var description = "Messages can contain Blobs.";
@@ -15,9 +16,7 @@
     (function() {
       SOURCE.postMessage({blob: new Blob(['foo', 'bar'])});
     })();
-    
-    
-    if (self.gc) self.gc();
+    garbageCollect();
 
     function TestMessageEvent(evt)
     {

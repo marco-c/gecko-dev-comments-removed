@@ -3,6 +3,7 @@
 
 
 
+
 'use strict';
 const test_desc =
     'Calls to getPrimaryService when device disconnects and discovery' +
@@ -32,9 +33,7 @@ bluetooth_test(
         
         
         
-        promise_rejects_dom(
-            t, 'NetworkError',
-            device.gatt.getPrimaryService('health_thermometer')),
+        promise_rejects_dom(t, 'NetworkError', device.gatt.getPrimaryService('health_thermometer')),
       ]);
     },
     test_desc, '',
@@ -44,3 +43,4 @@ bluetooth_test(
     
     
      false);
+

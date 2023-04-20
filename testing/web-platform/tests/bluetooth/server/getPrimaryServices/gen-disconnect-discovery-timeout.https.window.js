@@ -3,6 +3,7 @@
 
 
 
+
 'use strict';
 const test_desc =
     'Calls to getPrimaryServices when device disconnects and discovery' +
@@ -32,8 +33,7 @@ bluetooth_test(
         
         
         
-        promise_rejects_dom(
-            t, 'NetworkError', device.gatt.getPrimaryServices()),
+        promise_rejects_dom(t, 'NetworkError', device.gatt.getPrimaryServices()),
       ]);
     },
     test_desc, '',
@@ -43,3 +43,4 @@ bluetooth_test(
     
     
      false);
+

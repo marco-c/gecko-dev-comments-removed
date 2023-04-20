@@ -2,6 +2,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'Detach frame then garbage collect. We shouldn\'t crash.';
 let iframe = document.createElement('iframe');
@@ -27,7 +28,7 @@ bluetooth_test(async () => {
     window.onmessage = messageEvent => {
       assert_equals(messageEvent.data, 'Connected');
       iframe.remove();
-      runGarbageCollection().then(resolve);
+      garbageCollect().then(resolve);
     }
   })
 }, test_desc)

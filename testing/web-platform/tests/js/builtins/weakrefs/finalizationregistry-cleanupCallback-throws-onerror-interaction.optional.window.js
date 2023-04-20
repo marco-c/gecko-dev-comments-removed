@@ -23,6 +23,7 @@
 
 
 
+
 let error = new Error('FinalizationRegistryError');
 
 let finalizationRegistry = new FinalizationRegistry(function() {

@@ -181,18 +181,6 @@ function assert_promise_rejects_with_message(promise, expected, description) {
 
 
 
-
-function runGarbageCollection() {
-  
-  return new Promise(function(resolve, reject) {
-    GCController.collect();
-    step_timeout(resolve, 0);
-  });
-}
-
-
-
-
 class EventCatcher {
   
 

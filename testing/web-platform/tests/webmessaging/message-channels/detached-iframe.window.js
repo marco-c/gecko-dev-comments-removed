@@ -3,6 +3,7 @@
 
 
 
+
 const IframeAction = {
   REMOVE_BEFORE_CREATION: 'remove-before-creation',
   REMOVE_AFTER_CREATION: 'remove-after-creation',
@@ -27,9 +28,7 @@ async function detached_frame_test(t, action) {
     iframe.remove();
   }
 
-  
-  
-  if (self.gc) self.gc();
+  await garbageCollect();
 
   
   
