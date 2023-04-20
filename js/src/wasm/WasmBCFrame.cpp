@@ -378,9 +378,20 @@ bool StackMapGenerator::createStackMap(
       i++;
     }
   }
-  
-  for (uint32_t i = 0; i < augmentedMstWords; i++) {
-    if (augmentedMst.isGCPointer(i)) {
+  {
+    
+    
+    
+    
+    
+    
+    
+    MachineStackTracker::Iter iter(augmentedMst);
+    while (true) {
+      size_t i = iter.get();
+      if (i == MachineStackTracker::Iter::FINISHED) {
+        break;
+      }
       stackMap->setBit(extraWords + i);
     }
   }

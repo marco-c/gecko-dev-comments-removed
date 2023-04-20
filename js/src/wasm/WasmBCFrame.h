@@ -1109,6 +1109,42 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MachineStackTracker {
   
   
@@ -1118,8 +1154,9 @@ class MachineStackTracker {
   
   
   
+  
   size_t numPtrs_;
-  Vector<bool, 64, SystemAllocPolicy> vec_;
+  Vector<uint8_t, 64, SystemAllocPolicy> vec_;
 
  public:
   MachineStackTracker() : numPtrs_(0) {}
@@ -1127,7 +1164,7 @@ class MachineStackTracker {
   ~MachineStackTracker() {
 #ifdef DEBUG
     size_t n = 0;
-    for (bool b : vec_) {
+    for (uint8_t b : vec_) {
       n += (b ? 1 : 0);
     }
     MOZ_ASSERT(n == numPtrs_);
@@ -1139,7 +1176,7 @@ class MachineStackTracker {
 
   
   [[nodiscard]] bool pushNonGCPointers(size_t n) {
-    return vec_.appendN(false, n);
+    return vec_.appendN(uint8_t(false), n);
   }
 
   
@@ -1151,23 +1188,23 @@ class MachineStackTracker {
 
     size_t offsetFromTop = vec_.length() - 1 - offsetFromSP;
     numPtrs_ = numPtrs_ + 1 - (vec_[offsetFromTop] ? 1 : 0);
-    vec_[offsetFromTop] = true;
+    vec_[offsetFromTop] = uint8_t(true);
   }
 
   
-  bool isGCPointer(size_t offsetFromSP) {
+  bool isGCPointer(size_t offsetFromSP) const {
     MOZ_ASSERT(offsetFromSP < vec_.length());
 
     size_t offsetFromTop = vec_.length() - 1 - offsetFromSP;
-    return vec_[offsetFromTop];
+    return bool(vec_[offsetFromTop]);
   }
 
   
-  size_t length() { return vec_.length(); }
+  size_t length() const { return vec_.length(); }
 
   
   
-  size_t numPtrs() {
+  size_t numPtrs() const {
     MOZ_ASSERT(numPtrs_ <= length());
     return numPtrs_;
   }
@@ -1178,6 +1215,80 @@ class MachineStackTracker {
     vec_.clear();
     numPtrs_ = 0;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  class Iter {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const uint8_t* bufU8_;
+    const uint32_t* bufU32_;
+    
+    const size_t nElems_;
+    
+    size_t next_;
+
+   public:
+    explicit Iter(const MachineStackTracker& mst)
+        : bufU8_((uint8_t*)mst.vec_.begin()),
+          bufU32_((uint32_t*)mst.vec_.begin()),
+          nElems_(mst.vec_.length()),
+          next_(mst.vec_.length() - 1) {
+      MOZ_ASSERT(uintptr_t(bufU8_) == uintptr_t(bufU32_));
+      
+      MOZ_ASSERT(0 == (uintptr_t(bufU8_) & 3));
+    }
+
+    ~Iter() { MOZ_ASSERT(uintptr_t(bufU8_) == uintptr_t(bufU32_)); }
+
+    
+    
+    static constexpr size_t FINISHED = ~size_t(0);
+    static_assert(FINISHED == size_t(0) - 1);
+
+    
+    size_t get() {
+      while (next_ != FINISHED) {
+        if (bufU8_[next_]) {
+          next_--;
+          return nElems_ - 1 - (next_ + 1);
+        }
+        
+        
+        
+        
+        
+        
+        if ((next_ & 7) == 0) {
+          
+          
+          
+          
+          while (next_ >= 8 &&
+                 (bufU32_[(next_ - 4) >> 2] | bufU32_[(next_ - 8) >> 2]) == 0) {
+            next_ -= 8;
+          }
+        }
+        
+        next_--;
+      }
+      return FINISHED;
+    }
+  };
 };
 
 
