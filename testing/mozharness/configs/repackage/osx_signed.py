@@ -2,7 +2,6 @@
 
 
 
-from __future__ import absolute_import
 import os
 
 config = {
@@ -10,4 +9,7 @@ config = {
     "locale": os.environ.get("LOCALE"),
     
     "tooltool_cache": os.environ.get("TOOLTOOL_CACHE"),
+    
+    
+    "run_configure": True,
 }
