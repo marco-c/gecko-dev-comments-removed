@@ -1166,37 +1166,40 @@ add_setup(function test_common_initialize() {
   
   
   
-  Integration.downloads.register(base => ({
-    __proto__: base,
-    loadPublicDownloadListFromStore: () => Promise.resolve(),
-    shouldKeepBlockedData: () => Promise.resolve(false),
-    shouldBlockForParentalControls: () => Promise.resolve(false),
-    shouldBlockForReputationCheck: () =>
-      Promise.resolve({
-        shouldBlock: false,
-        verdict: "",
-      }),
-    confirmLaunchExecutable: () => Promise.resolve(),
-    launchFile: () => Promise.resolve(),
-    showContainingDirectory: () => Promise.resolve(),
-    
-    allowObservers: false,
-    addListObservers() {
-      return this.allowObservers
-        ? super.addListObservers(...arguments)
-        : Promise.resolve();
-    },
-    
-    _allowDirectories: false,
-    set allowDirectories(value) {
-      this._allowDirectories = value;
+  Integration.downloads.register(base => {
+    let override = {
+      loadPublicDownloadListFromStore: () => Promise.resolve(),
+      shouldKeepBlockedData: () => Promise.resolve(false),
+      shouldBlockForParentalControls: () => Promise.resolve(false),
+      shouldBlockForReputationCheck: () =>
+        Promise.resolve({
+          shouldBlock: false,
+          verdict: "",
+        }),
+      confirmLaunchExecutable: () => Promise.resolve(),
+      launchFile: () => Promise.resolve(),
+      showContainingDirectory: () => Promise.resolve(),
       
-      this._downloadsDirectory = null;
-    },
-    _getDirectory(name) {
-      return super._getDirectory(this._allowDirectories ? name : "TmpD");
-    },
-  }));
+      allowObservers: false,
+      addListObservers() {
+        return this.allowObservers
+          ? super.addListObservers(...arguments)
+          : Promise.resolve();
+      },
+      
+      _allowDirectories: false,
+      set allowDirectories(value) {
+        this._allowDirectories = value;
+        
+        this._downloadsDirectory = null;
+      },
+      _getDirectory(name) {
+        return super._getDirectory(this._allowDirectories ? name : "TmpD");
+      },
+    };
+    Object.setPrototypeOf(override, base);
+    return override;
+  });
 
   
   
