@@ -131,28 +131,7 @@ nsEventStatus SwipeTracker::ProcessEvent(
   }
 
   const bool computedSwipeSuccess = ComputeSwipeSuccess();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   double eventAmount = mGestureAmount;
-  if (computedSwipeSuccess &&
-      StaticPrefs::browser_swipe_navigation_icon_move_distance() == 0) {
-    eventAmount = kSwipeSuccessThreshold;
-    if (mGestureAmount < 0.f) {
-      eventAmount = -eventAmount;
-    }
-  }
-
   
   
   
