@@ -187,7 +187,6 @@ bool RemoteTextureHostWrapper::CheckIsReadyForRendering() {
   if (!mRemoteTextureForDisplayList) {
     
     RemoteTextureMap::Get()->GetRemoteTextureForDisplayList(this);
-    MOZ_ASSERT(mRemoteTextureForDisplayList);
   }
   return !!mRemoteTextureForDisplayList;
 }
