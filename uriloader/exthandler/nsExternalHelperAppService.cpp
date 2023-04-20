@@ -3293,6 +3293,8 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
   
   fileName.Trim(".");
 
+  bool urlIsFile = !!aURI && aURI->SchemeIs("file");
+
   
   
   
@@ -3315,7 +3317,7 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
         
         
         
-        if (aAllowURLExtension || isBinaryType) {
+        if (aAllowURLExtension || isBinaryType || urlIsFile) {
           url->GetFileExtension(extension);
         }
       }
@@ -3351,8 +3353,11 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
       
       
       
+      
+      
+      
       bool useExtension =
-          isBinaryType || aMimeType.EqualsLiteral(APPLICATION_OGG);
+          isBinaryType || urlIsFile || aMimeType.EqualsLiteral(APPLICATION_OGG);
       mimeService->GetFromTypeAndExtension(
           aMimeType, useExtension ? extension : EmptyCString(),
           getter_AddRefs(mimeInfo));
