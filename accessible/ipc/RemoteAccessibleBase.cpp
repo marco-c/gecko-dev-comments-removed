@@ -491,7 +491,7 @@ void RemoteAccessibleBase<Derived>::ApplyCrossDocOffset(nsRect& aBounds) const {
 
 template <class Derived>
 bool RemoteAccessibleBase<Derived>::ApplyTransform(
-    nsRect& aCumulativeBounds, const nsRect& aParentRelativeBounds) const {
+    nsRect& aCumulativeBounds) const {
   
   Maybe<const UniquePtr<gfx::Matrix4x4>&> maybeTransform =
       mCachedFields->GetAttribute<UniquePtr<gfx::Matrix4x4>>(
@@ -499,13 +499,6 @@ bool RemoteAccessibleBase<Derived>::ApplyTransform(
   if (!maybeTransform) {
     return false;
   }
-
-  
-  
-  
-  
-  
-  aCumulativeBounds.MoveBy(-aParentRelativeBounds.TopLeft());
 
   auto mtxInPixels = gfx::Matrix4x4Typed<CSSPixel, CSSPixel>::FromUnknownMatrix(
       *(*maybeTransform));
@@ -572,6 +565,10 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
   Maybe<nsRect> maybeBounds = RetrieveCachedBounds();
   if (maybeBounds) {
     nsRect bounds = *maybeBounds;
+    
+    
+    
+    bounds.MoveTo(0, 0);
     const DocAccessibleParent* topDoc = IsDoc() ? AsDoc() : nullptr;
 
     if (aOffset.isSome()) {
@@ -581,9 +578,11 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
       bounds.SetRectY(bounds.y + internalRect.y, internalRect.height);
     }
 
-    ApplyCrossDocOffset(bounds);
+    Unused << ApplyTransform(bounds);
+    
+    bounds.MoveBy(maybeBounds->TopLeft());
 
-    Unused << ApplyTransform(bounds, *maybeBounds);
+    ApplyCrossDocOffset(bounds);
 
     LayoutDeviceIntRect devPxBounds;
     const Accessible* acc = Parent();
@@ -638,8 +637,11 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
           
           
           
+          Unused << remoteAcc->ApplyTransform(bounds);
+          
+          
+          
           bounds.MoveBy(remoteBounds.X(), remoteBounds.Y());
-          Unused << remoteAcc->ApplyTransform(bounds, remoteBounds);
         }
 
         if (remoteAcc->IsFixedPos()) {

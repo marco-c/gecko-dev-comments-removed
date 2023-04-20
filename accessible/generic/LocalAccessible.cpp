@@ -53,6 +53,7 @@
 #include "nsIContent.h"
 #include "nsIFormControl.h"
 
+#include "nsDisplayList.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsIFrame.h"
@@ -3480,14 +3481,10 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     if (frame && frame->IsTransformed()) {
       
       
-      
-      
-      nsIFrame* boundingFrame = FindNearestAccessibleAncestorFrame();
-      
-      
-      
-      gfx::Matrix4x4Flagged mtx = nsLayoutUtils::GetTransformToAncestor(
-          RelativeTo{frame}, RelativeTo{boundingFrame}, nsIFrame::IN_CSS_UNITS);
+      gfx::Matrix4x4 mtx = nsDisplayTransform::GetResultingTransformMatrix(
+          frame, nsPoint(0, 0), AppUnitsPerCSSPixel(),
+          nsDisplayTransform::INCLUDE_PERSPECTIVE |
+              nsDisplayTransform::OFFSET_BY_ORIGIN);
       
       
       
@@ -3496,8 +3493,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       
       transformed = !mtx.IsIdentity();
       if (transformed) {
-        UniquePtr<gfx::Matrix4x4> ptr =
-            MakeUnique<gfx::Matrix4x4>(mtx.GetMatrix());
+        UniquePtr<gfx::Matrix4x4> ptr = MakeUnique<gfx::Matrix4x4>(mtx);
         fields->SetAttribute(nsGkAtoms::transform, std::move(ptr));
       }
     }
