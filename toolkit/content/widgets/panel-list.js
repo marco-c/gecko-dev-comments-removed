@@ -179,9 +179,7 @@
 
     async setAlign() {
       const hostElement = this.parentElement || this.getRootNode().host;
-      if (!hostElement || this.parentIsXULPanel()) {
-        
-        
+      if (!hostElement) {
         
         
         return;
@@ -239,38 +237,45 @@
       });
 
       
-      let align;
-      let leftOffset;
-      let leftAlignX = anchorLeft;
-      let rightAlignX = anchorLeft + anchorWidth - panelWidth;
-
-      if (this.isDocumentRTL()) {
+      if (!this.parentIsXULPanel()) {
         
-        align = rightAlignX < 0 ? "left" : "right";
-      } else {
+        let align;
+        let leftOffset;
+        let leftAlignX = anchorLeft;
+        let rightAlignX = anchorLeft + anchorWidth - panelWidth;
+
+        if (this.isDocumentRTL()) {
+          
+          align = rightAlignX < 0 ? "left" : "right";
+        } else {
+          
+          align = leftAlignX + panelWidth > winWidth ? "right" : "left";
+        }
+        leftOffset = align === "left" ? leftAlignX : rightAlignX;
+
+        let bottomAlignY = anchorTop + anchorHeight;
+        let valign;
+        let topOffset;
+        if (bottomAlignY + panelHeight > winHeight) {
+          topOffset = anchorTop - panelHeight;
+          valign = "top";
+        } else {
+          topOffset = bottomAlignY;
+          valign = "bottom";
+        }
+
         
-        align = leftAlignX + panelWidth > winWidth ? "right" : "left";
-      }
-      leftOffset = align === "left" ? leftAlignX : rightAlignX;
+        this.setAttribute("align", align);
+        this.setAttribute("valign", valign);
+        hostElement.style.overflow = "";
 
-      let bottomAlignY = anchorTop + anchorHeight;
-      let valign;
-      let topOffset;
-      if (bottomAlignY + panelHeight > winHeight) {
-        topOffset = anchorTop - panelHeight;
-        valign = "top";
-      } else {
-        topOffset = bottomAlignY;
-        valign = "bottom";
+        this.style.left = `${leftOffset + winScrollX}px`;
+        this.style.top = `${topOffset + winScrollY}px`;
       }
 
-      
-      this.setAttribute("align", align);
-      this.setAttribute("valign", valign);
-      hostElement.style.overflow = "";
-
-      this.style.left = `${leftOffset + winScrollX}px`;
-      this.style.top = `${topOffset + winScrollY}px`;
+      this.style.minWidth = this.hasAttribute("min-width-from-anchor")
+        ? `${anchorWidth}px`
+        : "";
 
       this.removeAttribute("showing");
     }
