@@ -68,6 +68,13 @@ enum Dav1dInloopFilterType {
                              DAV1D_INLOOPFILTER_RESTORATION,
 };
 
+enum Dav1dDecodeFrameType {
+    DAV1D_DECODEFRAMETYPE_ALL   = 0, 
+    DAV1D_DECODEFRAMETYPE_REFERENCE = 1,
+    DAV1D_DECODEFRAMETYPE_INTRA = 2, 
+    DAV1D_DECODEFRAMETYPE_KEY   = 3, 
+};
+
 typedef struct Dav1dSettings {
     int n_threads; 
     int max_frame_delay; 
@@ -86,7 +93,9 @@ typedef struct Dav1dSettings {
                                  
     enum Dav1dInloopFilterType inloop_filters; 
                                                
-    uint8_t reserved[20]; 
+    enum Dav1dDecodeFrameType decode_frame_type; 
+                                                 
+    uint8_t reserved[16]; 
 } Dav1dSettings;
 
 
