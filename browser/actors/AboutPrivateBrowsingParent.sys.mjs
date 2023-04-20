@@ -1,20 +1,12 @@
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["AboutPrivateBrowsingParent"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { ASRouter } = ChromeUtils.import(
   "resource://activity-stream/lib/ASRouter.jsm"
 );
-const { BrowserUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/BrowserUtils.sys.mjs"
-);
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { BrowserUtils } from "resource://gre/modules/BrowserUtils.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const SHOWN_PREF = "browser.search.separatePrivateDefault.ui.banner.shown";
 const lazy = {};
@@ -41,15 +33,15 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
     "resource://messaging-system/lib/SpecialMessageActions.jsm",
 });
 
-
+// We only show the private search banner once per browser session.
 let gSearchBannerShownThisSession;
 
-class AboutPrivateBrowsingParent extends JSWindowActorParent {
+export class AboutPrivateBrowsingParent extends JSWindowActorParent {
   constructor() {
     super();
     Services.telemetry.setEventRecordingEnabled("aboutprivatebrowsing", true);
   }
-  
+  // Used by tests
   static setShownThisSession(shown) {
     gSearchBannerShownThisSession = shown;
   }
@@ -79,15 +71,15 @@ class AboutPrivateBrowsingParent extends JSWindowActorParent {
         if (!aMessage.data || !aMessage.data.text) {
           urlBar.setHiddenFocus();
         } else {
-          
+          // Pass the provided text to the awesomebar
           urlBar.handoff(aMessage.data.text, searchEngine);
           isFirstChange = false;
         }
 
         let checkFirstChange = () => {
-          
-          
-          
+          // Check if this is the first change since we hidden focused. If it is,
+          // remove hidden focus styles, prepend the search alias and hide the
+          // in-content search.
           if (isFirstChange) {
             isFirstChange = false;
             urlBar.removeHiddenFocus(true);
@@ -99,18 +91,18 @@ class AboutPrivateBrowsingParent extends JSWindowActorParent {
         };
 
         let onKeydown = ev => {
-          
+          // Check if the keydown will cause a value change.
           if (ev.key.length === 1 && !ev.altKey && !ev.ctrlKey && !ev.metaKey) {
             checkFirstChange();
           }
-          
+          // If the Esc button is pressed, we are done. Show in-content search and cleanup.
           if (ev.key === "Escape") {
             onDone();
           }
         };
 
         let onDone = ev => {
-          
+          // We are done. Show in-content search again and cleanup.
           this.sendAsyncMessage("ShowSearch");
 
           const forceSuppressFocusBorder = ev?.type === "mousedown";
@@ -141,12 +133,12 @@ class AboutPrivateBrowsingParent extends JSWindowActorParent {
         return [engineName, shouldHandOffToSearchMode];
       }
       case "ShouldShowSearchBanner": {
-        
-        
-        
-        
-        
-        
+        // If this is a pre-loaded private browsing new tab, then we don't want
+        // to display the banner - it might never get displayed to the user
+        // and we won't know, or it might get displayed at the wrong time.
+        // This has the minor downside of not displaying the banner if
+        // you go into private browsing via opening a link, and then opening
+        // a new tab, we won't display the banner, for now, that's ok.
         if (browser.getAttribute("preloadedState") === "preloaded") {
           return null;
         }
