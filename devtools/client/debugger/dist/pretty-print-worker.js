@@ -6213,43 +6213,44 @@ function prependWhiteSpace(token, lastToken, addedNewline, addedSpace, write, op
   }
 }
 
+const escapeCharacters = {
+  
+  "\\": "\\\\",
+  
+  "\n": "\\n",
+  
+  "\r": "\\r",
+  
+  "\t": "\\t",
+  
+  "\v": "\\v",
+  
+  "\f": "\\f",
+  
+  "\0": "\\x00",
+  
+  "\u2028": "\\u2028",
+  
+  "\u2029": "\\u2029",
+  
+  "'": "\\'"
+}; 
+
+const regExpString = "(" + Object.values(escapeCharacters).join("|") + ")";
+const escapeCharactersRegExp = new RegExp(regExpString, "g");
+
+function sanitizerReplaceFunc(_, c) {
+  return escapeCharacters[c];
+}
 
 
 
 
 
-const sanitize = function () {
-  const escapeCharacters = {
-    
-    "\\": "\\\\",
-    
-    "\n": "\\n",
-    
-    "\r": "\\r",
-    
-    "\t": "\\t",
-    
-    "\v": "\\v",
-    
-    "\f": "\\f",
-    
-    "\0": "\\x00",
-    
-    "\u2028": "\\u2028",
-    
-    "\u2029": "\\u2029",
-    
-    "'": "\\'"
-  }; 
 
-  const regExpString = "(" + Object.values(escapeCharacters).join("|") + ")";
-  const escapeCharactersRegExp = new RegExp(regExpString, "g");
-  return function (str) {
-    return str.replace(escapeCharactersRegExp, function (_, c) {
-      return escapeCharacters[c];
-    });
-  };
-}();
+function sanitize(str) {
+  return str.replace(escapeCharactersRegExp, sanitizerReplaceFunc);
+}
 
 
 
