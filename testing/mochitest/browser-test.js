@@ -1352,21 +1352,14 @@ Tester.prototype = {
   QueryInterface: ChromeUtils.generateQI(["nsIConsoleListener"]),
 };
 
-
 function isError(err) {
   
   
   if (!err) {
     return false;
   }
-  try {
-    let glob = Cu.getGlobalForObject(err);
-    return err instanceof glob.Error;
-  } catch {
-    
-    
-  }
-  return err instanceof Error;
+  let glob = Cu.getGlobalForObject(err);
+  return err instanceof glob.Error;
 }
 
 
@@ -1422,7 +1415,7 @@ function testResult({ name, pass, todo, ex, stack, allowFailure }) {
       this.msg += "at " + ex.fileName + ":" + ex.lineNumber + " - ";
     }
 
-    if (typeof ex == "string" || (typeof ex == "object" && isError(ex))) {
+    if (isError(ex)) {
       this.msg += String(ex);
     } else {
       try {
