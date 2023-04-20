@@ -4,12 +4,12 @@
 
 
 
+use crate::color::mix::ColorInterpolationMethod;
 use crate::values::animated::color::AnimatedRGBA;
 use crate::values::animated::ToAnimatedValue;
 use crate::values::specified::percentage::ToPercentage;
-use crate::values::{Parse, Parser, ParserContext};
 use std::fmt::{self, Write};
-use style_traits::{CssWriter, ParseError, ToCss};
+use style_traits::{CssWriter, ToCss};
 
 
 
@@ -22,158 +22,6 @@ pub enum GenericColor<RGBA, Percentage> {
     CurrentColor,
     
     ColorMix(Box<GenericColorMix<Self, Percentage>>),
-}
-
-
-
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    MallocSizeOf,
-    Parse,
-    PartialEq,
-    ToAnimatedValue,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[repr(u8)]
-pub enum InterpolationColorSpace {
-    
-    Srgb,
-    
-    LinearSrgb,
-    
-    #[parse(aliases = "xyz-d65")]
-    Xyz,
-    
-    XyzD50,
-    
-    Lab,
-    
-    Hsl,
-    
-    Hwb,
-    
-    Lch,
-    
-}
-
-impl InterpolationColorSpace {
-    
-    pub fn is_polar(self) -> bool {
-        match self {
-            Self::Srgb | Self::LinearSrgb | Self::Xyz | Self::XyzD50 | Self::Lab => false,
-            Self::Hsl | Self::Hwb | Self::Lch => true,
-        }
-    }
-}
-
-
-
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    MallocSizeOf,
-    Parse,
-    PartialEq,
-    ToAnimatedValue,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[repr(u8)]
-pub enum HueInterpolationMethod {
-    
-    Shorter,
-    
-    Longer,
-    
-    Increasing,
-    
-    Decreasing,
-    
-    Specified,
-}
-
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    MallocSizeOf,
-    PartialEq,
-    ToShmem,
-    ToAnimatedValue,
-    ToComputedValue,
-    ToResolvedValue,
-)]
-#[repr(C)]
-pub struct ColorInterpolationMethod {
-    
-    pub space: InterpolationColorSpace,
-    
-    pub hue: HueInterpolationMethod,
-}
-
-impl ColorInterpolationMethod {
-    
-    pub fn srgb() -> Self {
-        Self {
-            space: InterpolationColorSpace::Srgb,
-            hue: HueInterpolationMethod::Shorter,
-        }
-    }
-}
-
-impl Parse for ColorInterpolationMethod {
-    fn parse<'i, 't>(
-        _: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        input.expect_ident_matching("in")?;
-        let space = InterpolationColorSpace::parse(input)?;
-        
-        
-        
-        let hue = if space.is_polar() {
-            input
-                .try_parse(|input| -> Result<_, ParseError<'i>> {
-                    let hue = HueInterpolationMethod::parse(input)?;
-                    input.expect_ident_matching("hue")?;
-                    Ok(hue)
-                })
-                .unwrap_or(HueInterpolationMethod::Shorter)
-        } else {
-            HueInterpolationMethod::Shorter
-        };
-        Ok(Self { space, hue })
-    }
-}
-
-impl ToCss for ColorInterpolationMethod {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        dest.write_str("in ")?;
-        self.space.to_css(dest)?;
-        if self.hue != HueInterpolationMethod::Shorter {
-            dest.write_char(' ')?;
-            self.hue.to_css(dest)?;
-            dest.write_str(" hue")?;
-        }
-        Ok(())
-    }
 }
 
 
@@ -249,17 +97,18 @@ impl<RGBA, Percentage> ColorMix<GenericColor<RGBA, Percentage>, Percentage> {
         RGBA: Clone + ToAnimatedValue<AnimatedValue = AnimatedRGBA>,
         Percentage: ToPercentage,
     {
-        use crate::values::animated::color::Color as AnimatedColor;
         let left = self.left.as_numeric()?.clone().to_animated_value();
         let right = self.right.as_numeric()?.clone().to_animated_value();
-        Some(ToAnimatedValue::from_animated_value(AnimatedColor::mix(
-            &self.interpolation,
-            &left,
-            self.left_percentage.to_percentage(),
-            &right,
-            self.right_percentage.to_percentage(),
-            self.normalize_weights,
-        )))
+        Some(ToAnimatedValue::from_animated_value(
+            crate::color::mix::mix(
+                &self.interpolation,
+                &left,
+                self.left_percentage.to_percentage(),
+                &right,
+                self.right_percentage.to_percentage(),
+                self.normalize_weights,
+            ),
+        ))
     }
 }
 
