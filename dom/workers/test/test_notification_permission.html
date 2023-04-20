@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=916893
+-->
 <head>
   <title>Bug 916893 - Make sure error is fired on Notification if permission is denied.</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -42,10 +42,7 @@
   }
 
   SimpleTest.waitForExplicitFinish();
-  SpecialPowers.pushPrefEnv(
-    {"set": [["dom.webnotifications.workers.enabled", true]]},
-    runTest
-  );
+  runTest();
 </script>
 </body>
 </html>

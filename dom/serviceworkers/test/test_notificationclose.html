@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1265841
+-->
 <head>
   <title>Bug 1265841 - Test ServiceWorkerGlobalScope.notificationclose event.</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -58,7 +58,6 @@
     ["dom.serviceWorkers.exemptFromPerDomainMax", true],
     ["dom.serviceWorkers.enabled", true],
     ["dom.serviceWorkers.testing.enabled", true],
-    ["dom.webnotifications.workers.enabled", true],
     ["dom.webnotifications.serviceworker.enabled", true],
     ["notification.prompt.testing", true],
   ]}, runTest);
