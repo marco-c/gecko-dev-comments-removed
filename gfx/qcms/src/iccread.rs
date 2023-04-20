@@ -50,6 +50,8 @@ pub struct Profile {
     pub(crate) redColorant: XYZNumber,
     pub(crate) blueColorant: XYZNumber,
     pub(crate) greenColorant: XYZNumber,
+    
+    
     pub(crate) redTRC: Option<Box<curveType>>,
     pub(crate) blueTRC: Option<Box<curveType>>,
     pub(crate) greenTRC: Option<Box<curveType>>,
@@ -93,7 +95,7 @@ pub(crate) struct lutmABType {
 }
 #[derive(Clone, Debug)]
 pub(crate) enum curveType {
-    Curve(Vec<uInt16Number>),
+    Curve(Vec<uInt16Number>), 
     
     
     

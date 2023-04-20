@@ -52,7 +52,7 @@ extern "C" {
 
 
 
- 
+
 typedef enum {
     icSigXYZData                        = 0x58595A20L,  
     icSigLabData                        = 0x4C616220L,  
@@ -79,12 +79,13 @@ typedef enum {
     icSig13colorData                    = 0x44434C52L,  
     icSig14colorData                    = 0x45434C52L,  
     icSig15colorData                    = 0x46434C52L,  
-    icMaxEnumData                       = 0xFFFFFFFFL   
+    icMaxEnumData                       = 0xFFFFFFFFL
 } icColorSpaceSignature;
 #endif
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <cstdint>
 
 struct _qcms_transform;
 typedef struct _qcms_transform qcms_transform;
@@ -195,6 +196,42 @@ void qcms_transform_data(qcms_transform *transform, const void *src, void *dest,
 void qcms_enable_iccv4();
 void qcms_enable_neon();
 void qcms_enable_avx();
+
+
+
+
+
+
+
+
+
+
+
+
+struct qcms_profile_data {
+    uint32_t class_type;
+    uint32_t color_space;
+    uint32_t pcs;
+    qcms_intent rendering_intent;
+    float red_colorant_xyzd50[3];
+    float blue_colorant_xyzd50[3];
+    float green_colorant_xyzd50[3];
+    int32_t linear_from_trc_red_samples;
+    int32_t linear_from_trc_blue_samples;
+    int32_t linear_from_trc_green_samples;
+};
+
+void qcms_profile_get_data(const qcms_profile*, qcms_profile_data* out_data);
+
+
+enum class qcms_color_channel : uint8_t {
+    Red,
+    Green,
+    Blue,
+};
+
+void qcms_profile_get_lut(const qcms_profile*, qcms_color_channel,
+    float* begin, float* end);
 
 #ifdef  __cplusplus
 }
