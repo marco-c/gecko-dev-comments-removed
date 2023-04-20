@@ -33,6 +33,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/RangeUtils.h"
 #include "mozilla/StaticPrefs_editor.h"  
 #include "mozilla/TextComposition.h"
@@ -224,6 +225,19 @@ void HTMLEditor::OnStartToHandleTopLevelEditSubAction(
       "EditorBase::OnStartToHandleTopLevelEditSubAction() failed");
 
   
+  
+  RefPtr<Document> document = GetDocument();
+  if (NS_WARN_IF(!document)) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return;
+  }
+  document->FlushPendingNotifications(FlushType::Frames);
+  if (NS_WARN_IF(Destroyed())) {
+    aRv.Throw(NS_ERROR_EDITOR_DESTROYED);
+    return;
+  }
+
+  
   const auto atCompositionStart =
       GetFirstIMESelectionStartPoint<EditorRawDOMPoint>();
   if (atCompositionStart.IsSet()) {
@@ -288,11 +302,6 @@ void HTMLEditor::OnStartToHandleTopLevelEditSubAction(
   }
 
   
-  Document* document = GetDocument();
-  if (NS_WARN_IF(!document)) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
-  }
   if (document->GetEditingState() == Document::EditingState::eContentEditable) {
     document->ChangeContentEditableCount(nullptr, +1);
     TopLevelEditSubActionDataRef().mRestoreContentEditableCount = true;

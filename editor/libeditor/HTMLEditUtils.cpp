@@ -1256,6 +1256,25 @@ bool HTMLEditUtils::CanNodeContain(nsHTMLTag aParentTagId,
   return !!(parent.mCanContainGroups & child.mGroup);
 }
 
+bool HTMLEditUtils::ContentIsInert(const nsIContent& aContent) {
+  for (nsIContent* content :
+       aContent.InclusiveFlatTreeAncestorsOfType<nsIContent>()) {
+    if (nsIFrame* frame = content->GetPrimaryFrame()) {
+      return frame->StyleUI()->IsInert();
+    }
+    
+    
+    
+    if (!content->IsElement()) {
+      continue;
+    }
+    if (content->AsElement()->State().HasState(dom::ElementState::INERT)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool HTMLEditUtils::IsContainerNode(nsHTMLTag aTagId) {
   NS_ASSERTION(aTagId > eHTMLTag_unknown && aTagId <= eHTMLTag_userdefined,
                "aTagId out of range!");

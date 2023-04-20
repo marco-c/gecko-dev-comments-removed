@@ -77,15 +77,7 @@ class HTMLEditUtils final {
   
 
 
-  static bool ContentIsInert(const nsIContent& aContent) {
-    for (const Element* element :
-         aContent.InclusiveFlatTreeAncestorsOfType<Element>()) {
-      if (element->State().HasState(dom::ElementState::INERT)) {
-        return true;
-      }
-    }
-    return false;
-  }
+  static bool ContentIsInert(const nsIContent& aContent);
 
   
 
