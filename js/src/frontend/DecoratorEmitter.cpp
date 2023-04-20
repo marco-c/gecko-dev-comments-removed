@@ -8,6 +8,8 @@
 #include "frontend/CallOrNewEmitter.h"
 #include "frontend/IfEmitter.h"
 #include "frontend/ObjectEmitter.h"
+#include "frontend/ParseNode.h"
+#include "frontend/ParserAtom.h"
 #include "vm/ThrowMsgKind.h"
 
 using namespace js;
@@ -16,7 +18,8 @@ using namespace js::frontend;
 DecoratorEmitter::DecoratorEmitter(BytecodeEmitter* bce) : bce_(bce) {}
 
 bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
-    DecoratorEmitter::Kind kind, ParseNode* key, ListNode* decorators) {
+    DecoratorEmitter::Kind kind, ParseNode* key, ListNode* decorators,
+    bool isStatic) {
   
   
   
@@ -132,7 +135,9 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
     
     
     
-    if (!emitCreateDecoratorContextObject()) {
+    if (!emitCreateDecoratorContextObject(kind, key, isStatic,
+                                          decorator->pn_pos)) {
+      
       
       return false;
     }
@@ -273,12 +278,158 @@ bool DecoratorEmitter::emitUpdateDecorationState() {
   return true;
 }
 
-bool DecoratorEmitter::emitCreateDecoratorContextObject() {
+bool DecoratorEmitter::emitCreateDecoratorAccessObject() {
   
   ObjectEmitter oe(bce_);
   if (!oe.emitObject(0)) {
+    return false;
+  }
+  return oe.emitEnd();
+}
+
+bool DecoratorEmitter::emitCreateAddInitializerFunction() {
+  
+  ObjectEmitter oe(bce_);
+  if (!oe.emitObject(0)) {
+    return false;
+  }
+  return oe.emitEnd();
+}
+
+bool DecoratorEmitter::emitCreateDecoratorContextObject(Kind kind,
+                                                        ParseNode* key,
+                                                        bool isStatic,
+                                                        TokenPos pos) {
+  MOZ_ASSERT(key->is<NameNode>());
+
+  
+  ObjectEmitter oe(bce_);
+  if (!oe.emitObject( 6)) {
     
     return false;
   }
+  if (!oe.prepareForPropValue(pos.begin, PropertyEmitter::Kind::Prototype)) {
+    return false;
+  }
+
+  if (kind == Kind::Method) {
+    
+    if (!bce_->emitStringOp(
+            JSOp::String,
+            frontend::TaggedParserAtomIndex::WellKnown::method())) {
+      
+      return false;
+    }
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return false;
+  }
+
+  
+  if (!oe.emitInit(frontend::AccessorType::None,
+                   frontend::TaggedParserAtomIndex::WellKnown::kind())) {
+    
+    return false;
+  }
+  
+  if (kind != Kind::Class) {
+    
+    
+    if (!oe.prepareForPropValue(pos.begin, PropertyEmitter::Kind::Prototype)) {
+      return false;
+    }
+    if (!emitCreateDecoratorAccessObject()) {
+      return false;
+    }
+    if (!oe.emitInit(frontend::AccessorType::None,
+                     frontend::TaggedParserAtomIndex::WellKnown::access())) {
+      
+      return false;
+    }
+    
+    
+    if (!oe.prepareForPropValue(pos.begin, PropertyEmitter::Kind::Prototype)) {
+      return false;
+    }
+    if (!bce_->emit1(isStatic ? JSOp::True : JSOp::False)) {
+      
+      return false;
+    }
+    if (!oe.emitInit(frontend::AccessorType::None,
+                     frontend::TaggedParserAtomIndex::WellKnown::static_())) {
+      
+      return false;
+    }
+    
+    
+    
+    
+    
+    
+    if (!oe.prepareForPropValue(pos.begin, PropertyEmitter::Kind::Prototype)) {
+      return false;
+    }
+    if (!bce_->emit1(key->isKind(ParseNodeKind::PrivateName) ? JSOp::True
+                                                             : JSOp::False)) {
+      
+      return false;
+    }
+    if (!oe.emitInit(frontend::AccessorType::None,
+                     frontend::TaggedParserAtomIndex::WellKnown::private_())) {
+      
+      return false;
+    }
+    
+    
+    
+    
+    
+    if (!oe.prepareForPropValue(pos.begin, PropertyEmitter::Kind::Prototype)) {
+      return false;
+    }
+    if (!bce_->emitStringOp(JSOp::String, key->as<NameNode>().atom())) {
+      return false;
+    }
+    if (!oe.emitInit(frontend::AccessorType::None,
+                     frontend::TaggedParserAtomIndex::WellKnown::name())) {
+      
+      return false;
+    }
+  } else {
+    
+    
+    
+    return false;
+  }
+  
+  
+  if (!oe.prepareForPropValue(pos.begin, PropertyEmitter::Kind::Prototype)) {
+    return false;
+  }
+  if (!emitCreateAddInitializerFunction()) {
+    
+    return false;
+  }
+  
+  
+  if (!oe.emitInit(
+          frontend::AccessorType::None,
+          frontend::TaggedParserAtomIndex::WellKnown::addInitializer())) {
+    
+    return false;
+  }
+  
   return oe.emitEnd();
 }

@@ -8976,7 +8976,8 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
           
           
           if (!de.emitApplyDecoratorsToElementDefinition(
-                  DecoratorEmitter::Method, key, method.decorators())) {
+                  DecoratorEmitter::Method, key, method.decorators(),
+                  method.isStatic())) {
             
             return false;
           }
