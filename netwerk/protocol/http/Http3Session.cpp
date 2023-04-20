@@ -708,11 +708,28 @@ nsresult Http3Session::ProcessEvents() {
             RefPtr<Http3WebTransportSession> wt =
                 stream->GetHttp3WebTransportSession();
             MOZ_RELEASE_ASSERT(wt, "It must be a WebTransport session");
+
             
             
-            
+            SessionCloseReasonExternal& reasonExternal =
+                event.web_transport._0.session_closed.reason;
+            uint32_t status = 0;
             nsCString reason = ""_ns;
-            wt->OnSessionClosed(0, reason);
+            if (reasonExternal.tag == SessionCloseReasonExternal::Tag::Error) {
+              status = reasonExternal.error._0;
+            } else if (reasonExternal.tag ==
+                       SessionCloseReasonExternal::Tag::Status) {
+              status = reasonExternal.status._0;
+            } else {
+              status = reasonExternal.clean._0;
+              reason.Assign(reinterpret_cast<const char*>(data.Elements()),
+                            data.Length());
+            }
+            LOG(("reason.tag=%u err=%u data=%s\n",
+                 static_cast<uint32_t>(reasonExternal.tag), status,
+                 reason.get()));
+            wt->OnSessionClosed(status, reason);
+
           } break;
           case WebTransportEventExternal::Tag::NewStream: {
             LOG(
