@@ -654,18 +654,7 @@
     `;
     }
 
-    _adjustAcItem() {
-      const popup = this.parentNode.parentNode;
-      const minWidth = getComputedStyle(popup).minWidth.replace("px", "");
-      
-      
-      
-      this.firstElementChild.style.width =
-        Math.max(
-          minWidth,
-          parseFloat(popup.style.getPropertyValue("--panel-width") || "0")
-        ) + "px";
-    }
+    _adjustAcItem() {}
 
     _onOverflow() {}
 
