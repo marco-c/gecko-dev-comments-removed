@@ -115,6 +115,35 @@ add_task(async function test_shouldShowVPNPromo() {
   }
 });
 
+add_task(async function test_shouldShowRallyPromo() {
+  const allowedRegion = "US";
+  const disallowedRegion = "CN";
+  const allowedLanguage = "en-US";
+  const disallowedLanguage = "fr";
+
+  
+  setupRegions(allowedRegion, allowedRegion);
+  setLanguage(allowedLanguage);
+  Assert.ok(BrowserUtils.shouldShowRallyPromo());
+
+  
+  setupRegions(disallowedRegion);
+  Assert.ok(!BrowserUtils.shouldShowRallyPromo());
+
+  
+  setLanguage(disallowedLanguage);
+  setupRegions(allowedRegion);
+  Assert.ok(!BrowserUtils.shouldShowRallyPromo());
+
+  
+  setupRegions(disallowedRegion);
+  Assert.ok(!BrowserUtils.shouldShowRallyPromo());
+
+  
+  setupRegions(allowedRegion, disallowedRegion);
+  Assert.ok(!BrowserUtils.shouldShowRallyPromo());
+});
+
 add_task(async function test_sendToDeviceEmailsSupported() {
   const allowedLanguage = "en-US";
   const disallowedLanguage = "ar";
@@ -181,27 +210,6 @@ add_task(async function test_shouldShowPinPromo() {
   Assert.ok(!BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.PIN));
 
   Preferences.resetBranch("browser.promo.pin");
-});
-
-add_task(async function test_shouldShowRelayPromo() {
-  Assert.ok(BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.RELAY));
-
-  
-  if (AppConstants.platform !== "android") {
-    
-    await setupEnterprisePolicy();
-
-    Assert.ok(!BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.RELAY));
-
-    
-    await EnterprisePolicyTesting.setupPolicyEngineWithJson("");
-  }
-
-  
-  Preferences.set("identity.fxaccounts.autoconfig.uri", "https://x");
-  Assert.ok(!BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.RELAY));
-
-  Preferences.reset("identity.fxaccounts.autoconfig.uri");
 });
 
 add_task(function test_isShareableURL() {

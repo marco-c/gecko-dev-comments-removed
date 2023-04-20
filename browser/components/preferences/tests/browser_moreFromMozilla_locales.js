@@ -38,26 +38,14 @@ async function getPromoCards() {
   let doc = gBrowser.contentDocument;
   let vpnPromoCard = doc.getElementById("mozilla-vpn");
   let mobileCard = doc.getElementById("firefox-mobile");
-  let relayPromoCard = doc.getElementById("firefox-relay");
+  let rallyPromoCard = doc.getElementById("mozilla-rally");
 
   return {
     vpnPromoCard,
     mobileCard,
-    relayPromoCard,
+    rallyPromoCard,
   };
 }
-
-let mockFxA, unmockFxA;
-
-
-
-
-
-add_setup(async function() {
-  let { mock, unmock } = await mockDefaultFxAInstance();
-  mockFxA = mock;
-  unmockFxA = unmock;
-});
 
 add_task(async function test_VPN_promo_enabled() {
   await clearPolicies();
@@ -170,6 +158,62 @@ add_task(async function test_VPN_promo_in_illegal_current_region() {
   ok(mobileCard, "The Mobile promo is visible");
 
   setupRegions(initialHomeRegion, initialCurrentRegion); 
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+add_task(
+  async function test_rally_promo_with_approved_home_region_and_language() {
+    
+    setupRegions("US");
+
+    let { rallyPromoCard, mobileCard } = await getPromoCards();
+
+    ok(rallyPromoCard, "The Rally promo is visible");
+    ok(mobileCard, "The Mobile promo is visible");
+
+    setupRegions(initialHomeRegion, initialCurrentRegion); 
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  }
+);
+
+add_task(async function test_rally_promo_with_unapproved_home_region() {
+  setupRegions("IS");
+
+  let { rallyPromoCard, mobileCard } = await getPromoCards();
+
+  ok(!rallyPromoCard, "The Rally promo is not visible");
+  ok(mobileCard, "The Mobile promo is visible");
+
+  setupRegions(initialHomeRegion, initialCurrentRegion); 
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+add_task(async function test_rally_promo_with_unapproved_current_region() {
+  setupRegions("US", "IS");
+
+  let { rallyPromoCard, mobileCard } = await getPromoCards();
+
+  ok(!rallyPromoCard, "The Rally promo is not visible");
+  ok(mobileCard, "The Mobile promo is visible");
+
+  setupRegions(initialHomeRegion, initialCurrentRegion); 
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+add_task(async function test_rally_promo_with_unapproved_language() {
+  
+  setupRegions("US");
+  const initialLanguage = Services.locale.appLocaleAsBCP47;
+  setLocale("ko-KR");
+
+  let { rallyPromoCard, mobileCard } = await getPromoCards();
+
+  ok(!rallyPromoCard, "The Rally promo is not visible");
+  ok(mobileCard, "The Mobile promo is visible");
+
+  setupRegions(initialHomeRegion, initialCurrentRegion); 
+  
+  setLocale(initialLanguage);
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
@@ -305,27 +349,4 @@ add_task(async function test_VPN_promo_with_active_enterprise_policy() {
   setupRegions(initialHomeRegion, initialCurrentRegion); 
   await clearPolicies();
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
-
-add_task(async function test_relay_promo_with_supported_fxa_server() {
-  await clearPolicies();
-
-  let { relayPromoCard } = await getPromoCards();
-  ok(relayPromoCard, "The Relay promo is visible");
-
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
-
-add_task(async function test_relay_promo_with_unsupported_fxa_server() {
-  await clearPolicies();
-  
-  
-  
-  unmockFxA();
-
-  let { relayPromoCard } = await getPromoCards();
-  ok(!relayPromoCard, "The Relay promo is not visible");
-
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  mockFxA();
 });
