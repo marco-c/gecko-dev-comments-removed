@@ -300,7 +300,17 @@ void LazyInstantiator::TransplantRefCnt() {
 
 HRESULT
 LazyInstantiator::MaybeResolveRoot() {
-  MOZ_ASSERT(NS_IsMainThread());
+  if (!NS_IsMainThread()) {
+    MOZ_ASSERT_UNREACHABLE("Called on a background thread!");
+    
+    
+    
+    
+    
+    
+    return RPC_E_WRONG_THREAD;
+  }
+
   if (mWeakAccessible) {
     return S_OK;
   }
