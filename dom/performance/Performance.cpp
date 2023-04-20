@@ -856,6 +856,8 @@ void Performance::InsertResourceEntry(PerformanceEntry* aEntry) {
     return;
   }
 
+  QueueEntry(aEntry);
+
   
 
 
@@ -868,7 +870,6 @@ void Performance::InsertResourceEntry(PerformanceEntry* aEntry) {
 
 
     mResourceEntries.InsertElementSorted(aEntry, PerformanceEntryComparator());
-    QueueEntry(aEntry);
     return;
   }
 
