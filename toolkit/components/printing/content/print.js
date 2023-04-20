@@ -318,8 +318,35 @@ var PrintEventHandler = {
       await this.print(settings);
     });
 
-    let settingsToChange = await this.refreshSettings(selectedPrinter.value);
-    await this.updateSettings(settingsToChange, true);
+    let originalError;
+    const printersByPriority = [
+      selectedPrinter.value,
+      ...Object.getOwnPropertyNames(printersByName).filter(
+        name => name != selectedPrinter.value
+      ),
+    ];
+
+    
+    for (const printerName of printersByPriority) {
+      try {
+        let settingsToChange = await this.refreshSettings(printerName);
+        await this.updateSettings(settingsToChange, true);
+        originalError = null;
+        break;
+      } catch (e) {
+        if (!originalError) {
+          originalError = e;
+          
+          this.reportPrintingError("PRINTER_SETTINGS_LAST_USED");
+        }
+      }
+    }
+
+    
+    if (originalError) {
+      this.reportPrintingError("PRINTER_SETTINGS");
+      throw originalError;
+    }
 
     let initialPreviewDone = this._updatePrintPreview();
 
