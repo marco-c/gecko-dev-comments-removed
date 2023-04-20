@@ -21,6 +21,7 @@
 #include "jit/BaselineICList.h"
 #include "jit/BaselineJIT.h"
 #include "jit/CalleeToken.h"
+#include "jit/InterpreterEntryTrampoline.h"
 #include "jit/IonCompileTask.h"
 #include "jit/IonTypes.h"
 #include "jit/JitCode.h"
@@ -190,6 +191,10 @@ class JitRuntime {
 
   
   UnprotectedData<JitcodeGlobalTable*> jitcodeGlobalTable_{nullptr};
+
+  
+  
+  MainThreadData<EntryTrampolineMap*> interpreterEntryMap_{nullptr};
 
 #ifdef DEBUG
   
@@ -373,6 +378,15 @@ class JitRuntime {
   JitcodeGlobalTable* getJitcodeGlobalTable() {
     MOZ_ASSERT(hasJitcodeGlobalTable());
     return jitcodeGlobalTable_;
+  }
+
+  bool hasInterpreterEntryMap() const {
+    return interpreterEntryMap_ != nullptr;
+  }
+
+  EntryTrampolineMap* getInterpreterEntryMap() {
+    MOZ_ASSERT(hasInterpreterEntryMap());
+    return interpreterEntryMap_;
   }
 
   bool isProfilerInstrumentationEnabled(JSRuntime* rt) {
