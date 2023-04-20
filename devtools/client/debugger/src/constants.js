@@ -1,0 +1,9 @@
+
+
+
+
+export const searchKeys = {
+  PROJECT_SEARCH: "project-search",
+  FILE_SEARCH: "file-search",
+  QUICKOPEN_SEARCH: "quickopen-search",
+};

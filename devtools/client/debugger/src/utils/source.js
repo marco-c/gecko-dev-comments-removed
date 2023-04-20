@@ -8,7 +8,11 @@
 
 
 const { getUnicodeUrl } = require("devtools/client/shared/unicode-url");
+const {
+  micromatch,
+} = require("devtools/client/shared/vendor/micromatch/micromatch.js");
 
+import { getRelativePath } from "../utils/sources-tree/utils";
 import { endTruncateStr } from "./utils";
 import { truncateMiddleText } from "../utils/text";
 import { parse as parseURL } from "../utils/url";
@@ -473,4 +477,34 @@ export function getSourceQueryString(source) {
 
 export function isUrlExtension(url) {
   return url.includes("moz-extension:") || url.includes("chrome-extension");
+}
+
+
+
+
+
+
+
+
+
+
+export function matchesGlobPatterns(source, excludePatterns) {
+  if (!excludePatterns) {
+    return false;
+  }
+  const patterns = excludePatterns
+    .split(",")
+    .map(pattern => pattern.trim())
+    .filter(pattern => pattern !== "");
+
+  if (!patterns.length) {
+    return false;
+  }
+
+  return micromatch.contains(
+    
+    
+    source.url ? getRelativePath(source.url) : getFormattedSourceId(source.id),
+    patterns
+  );
 }
