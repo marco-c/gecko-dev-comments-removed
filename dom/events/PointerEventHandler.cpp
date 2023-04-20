@@ -336,7 +336,7 @@ void PointerEventHandler::CheckPointerCaptureState(WidgetPointerEvent* aEvent) {
   
   
   
-  if (nsContentUtils::ShouldResistFingerprinting() &&
+  if (nsContentUtils::ShouldResistFingerprinting("Efficiency Check") &&
       aEvent->pointerId != (uint32_t)GetSpoofedPointerIdForRFP() &&
       !captureInfo) {
     PointerCaptureInfo* spoofedCaptureInfo =
@@ -345,9 +345,10 @@ void PointerEventHandler::CheckPointerCaptureState(WidgetPointerEvent* aEvent) {
     
     
     
-    if (!spoofedCaptureInfo ||
-        (spoofedCaptureInfo->mPendingElement &&
-         spoofedCaptureInfo->mPendingElement->IsInChromeDocument())) {
+    
+    if (!spoofedCaptureInfo || !spoofedCaptureInfo->mPendingElement ||
+        !spoofedCaptureInfo->mPendingElement->OwnerDoc()
+             ->ShouldResistFingerprinting()) {
       return;
     }
 
