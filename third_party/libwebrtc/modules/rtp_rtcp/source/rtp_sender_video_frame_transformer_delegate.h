@@ -87,6 +87,10 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
   std::unique_ptr<TaskQueueBase, TaskQueueDeleter> owned_encoder_queue_;
 };
 
+
+std::unique_ptr<TransformableVideoFrameInterface> CloneSenderVideoFrame(
+    TransformableVideoFrameInterface* original);
+
 }  
 
 #endif  
