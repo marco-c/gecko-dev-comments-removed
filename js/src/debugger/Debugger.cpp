@@ -5090,16 +5090,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
       
       
       
-      if (!debuggerSourceObj.isInstance()) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_DEBUG_PROTO, "Debugger.Source",
-                                  "Debugger.Source");
-        return false;
-      }
-
-      
-      
-      
       if (debuggerSourceObj.owner() != debugger) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                   JSMSG_DEBUG_WRONG_OWNER, "Debugger.Source");
