@@ -511,22 +511,35 @@ var OriginControls = {
 
 
 
-  getStateMessageIDs(policy, uri) {
+
+
+
+
+
+
+
+
+
+  getStateMessageIDs({ policy, uri, isAction = false, hasPopup = false }) {
     const state = this.getState(policy, uri);
 
     
 
+    const onHoverForAction = hasPopup
+      ? "origin-controls-state-runnable-hover-open"
+      : "origin-controls-state-runnable-hover-run";
+
     if (state.noAccess) {
       return {
         default: "origin-controls-state-no-access",
-        onHover: null,
+        onHover: isAction ? onHoverForAction : null,
       };
     }
 
     if (state.allDomains || (state.alwaysOn && state.hasAccess)) {
       return {
         default: "origin-controls-state-always-on",
-        onHover: null,
+        onHover: isAction ? onHoverForAction : null,
       };
     }
 
