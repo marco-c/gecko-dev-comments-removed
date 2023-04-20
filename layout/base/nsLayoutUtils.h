@@ -1067,15 +1067,6 @@ class nsLayoutUtils {
 
 
 
-  static bool GetLayerTransformForFrame(nsIFrame* aFrame,
-                                        Matrix4x4Flagged* aTransform);
-
-  
-
-
-
-
-
 
 
 
