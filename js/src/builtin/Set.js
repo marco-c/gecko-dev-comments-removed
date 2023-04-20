@@ -523,10 +523,7 @@ function SetForEach(callbackfn, thisArg = undefined) {
   var values = callFunction(std_Set_values, S);
 
   
-  var setIterationResult = setIteratorTemp.setIterationResult;
-  if (!setIterationResult) {
-    setIterationResult = setIteratorTemp.setIterationResult = CreateSetIterationResult();
-  }
+  var setIterationResult = globalSetIterationResult;
 
   while (true) {
     var done = GetNextSetEntryForIterator(values, setIterationResult);
@@ -550,7 +547,7 @@ function $SetSpecies() {
 }
 SetCanonicalName($SetSpecies, "get [Symbol.species]");
 
-var setIteratorTemp = { setIterationResult: null };
+var globalSetIterationResult = CreateSetIterationResult();
 
 function SetIteratorNext() {
   
@@ -568,10 +565,7 @@ function SetIteratorNext() {
   
   
 
-  var setIterationResult = setIteratorTemp.setIterationResult;
-  if (!setIterationResult) {
-    setIterationResult = setIteratorTemp.setIterationResult = CreateSetIterationResult();
-  }
+  var setIterationResult = globalSetIterationResult;
 
   var retVal = { value: undefined, done: true };
 
