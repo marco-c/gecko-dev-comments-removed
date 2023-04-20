@@ -351,16 +351,14 @@ class NativeLayerCA : public NativeLayer {
     
     
     
-    bool ApplyChanges(UpdateType aUpdate, const gfx::IntSize& aSize,
-                      bool aIsOpaque, const gfx::IntPoint& aPosition,
-                      const gfx::Matrix4x4& aTransform,
-                      const gfx::IntRect& aDisplayRect,
-                      const Maybe<gfx::IntRect>& aClipRect, float aBackingScale,
-                      bool aSurfaceIsFlipped,
-                      gfx::SamplingFilter aSamplingFilter,
-                      bool aSpecializeVideo,
-                      CFTypeRefPtr<IOSurfaceRef> aFrontSurface,
-                      CFTypeRefPtr<CGColorRef> aColor, bool aIsDRM);
+    bool ApplyChanges(
+        UpdateType aUpdate, const gfx::IntSize& aSize, bool aIsOpaque,
+        const gfx::IntPoint& aPosition, const gfx::Matrix4x4& aTransform,
+        const gfx::IntRect& aDisplayRect, const Maybe<gfx::IntRect>& aClipRect,
+        float aBackingScale, bool aSurfaceIsFlipped,
+        gfx::SamplingFilter aSamplingFilter, bool aSpecializeVideo,
+        CFTypeRefPtr<IOSurfaceRef> aFrontSurface,
+        CFTypeRefPtr<CGColorRef> aColor, bool aIsDRM, bool aIsVideo);
 
     
     
@@ -377,6 +375,10 @@ class NativeLayerCA : public NativeLayer {
     CALayer* mWrappingCALayer = nullptr;      
     CALayer* mContentCALayer = nullptr;       
     CALayer* mOpaquenessTintLayer = nullptr;  
+
+#ifdef NIGHTLY_BUILD
+    bool mLogNextVideoSurface = false;
+#endif
 
     bool mMutatedPosition : 1;
     bool mMutatedTransform : 1;
