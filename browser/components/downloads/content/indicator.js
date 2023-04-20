@@ -359,10 +359,6 @@ const DownloadsIndicatorView = {
       return;
     }
 
-    if (!DownloadsCommon.animateNotifications) {
-      return;
-    }
-
     
     if (this._currentNotificationType) {
       
@@ -384,6 +380,11 @@ const DownloadsIndicatorView = {
   _showNotification(aType) {
     let anchor = DownloadsButton._placeholder;
     if (!anchor || !isElementVisible(anchor.parentNode)) {
+      
+      return;
+    }
+
+    if (anchor.ownerGlobal.matchMedia("(prefers-reduced-motion)").matches) {
       
       return;
     }
