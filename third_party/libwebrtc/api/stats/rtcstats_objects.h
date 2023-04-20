@@ -561,6 +561,7 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
   RTCStatsMember<bool> active;
   RTCRestrictedStatsMember<bool, StatExposureCriteria::kHardwareCapability>
       power_efficient_encoder;
+  RTCStatsMember<std::string> scalability_mode;
 };
 
 
