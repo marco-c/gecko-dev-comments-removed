@@ -3455,6 +3455,18 @@ class Document : public nsINode,
 
   
   
+  MOZ_CAN_RUN_SCRIPT void HideAllPopoversUntil(nsINode& aEndpoint,
+                                               bool aFocusPreviousElement,
+                                               bool aFireEvents);
+
+  
+  
+  MOZ_CAN_RUN_SCRIPT void HidePopover(Element& popover,
+                                      bool aFocusPreviousElement,
+                                      bool aFireEvents, ErrorResult& aRv);
+
+  
+  
   
   nsTArray<Element*> AutoPopoverList() const;
 

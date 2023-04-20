@@ -3176,18 +3176,7 @@ void nsGenericHTMLElement::ShowPopover(ErrorResult& aRv) {
 
 
 void nsGenericHTMLElement::HidePopover(ErrorResult& aRv) {
-  if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, aRv)) {
-    return;
-  }
-
-  
-  
-  
-
-  PopoverPseudoStateUpdate(false, true);
-  GetPopoverData()->SetPopoverVisibilityState(PopoverVisibilityState::Hidden);
-
-  
+  OwnerDoc()->HidePopover(*this, true, true, aRv);
 }
 
 
