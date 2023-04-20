@@ -52,6 +52,8 @@ const EXPORTED_SYMBOLS = [
 
 
 
+
+
 const {
   ExtensionUtils: { DefaultWeakMap, ExtensionError },
 } = ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
@@ -90,6 +92,7 @@ const Hub = {
 
 
 
+
   openConduit(conduit) {
     this.conduits.set(conduit.id, conduit);
     for (let name of conduit.address.recv || []) {
@@ -105,6 +108,7 @@ const Hub = {
 
 
 
+
   closeConduit({ id, address }) {
     this.conduits.delete(id);
     for (let name of address.recv || []) {
@@ -113,6 +117,7 @@ const Hub = {
   },
 
   
+
 
 
 
@@ -138,6 +143,7 @@ const Hub = {
   },
 
   
+
 
 
 
@@ -179,6 +185,7 @@ const Hub = {
 
 
 
+
   fillInAddress(address, actor) {
     address.actor = actor;
     address.verified = this.verifyEnv(address);
@@ -202,6 +209,7 @@ const Hub = {
 
 
 
+
   recvConduitOpened(address, actor) {
     this.fillInAddress(address, actor);
     this.remotes.set(address.id, address);
@@ -209,6 +217,7 @@ const Hub = {
   },
 
   
+
 
 
 
@@ -225,6 +234,7 @@ const Hub = {
   },
 
   
+
 
 
 
@@ -276,6 +286,7 @@ class BroadcastConduit extends BaseConduit {
 
 
 
+
   _send(method, query, target, arg = {}) {
     if (!this.open) {
       throw new Error(`send${method} on closed conduit ${this.id}`);
@@ -291,6 +302,7 @@ class BroadcastConduit extends BaseConduit {
   }
 
   
+
 
 
 
@@ -334,6 +346,7 @@ class BroadcastConduit extends BaseConduit {
   }
 
   
+
 
 
 
@@ -392,6 +405,7 @@ class ConduitsParent extends JSWindowActorParent {
 
 
 
+
   batch(name, data) {
     let pos = this.batchData.length;
     this.batchData.push(data);
@@ -423,6 +437,8 @@ class ConduitsParent extends JSWindowActorParent {
   }
 
   
+
+
 
 
 

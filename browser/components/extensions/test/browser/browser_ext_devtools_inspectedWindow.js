@@ -29,6 +29,7 @@ function getAdditionalPanelId(toolbox, label) {
 
 
 
+
 function getTargetActorsCount(tab) {
   return SpecialPowers.spawn(tab.linkedBrowser, [], () => {
     const { TargetActorRegistry } = ChromeUtils.importESModule(

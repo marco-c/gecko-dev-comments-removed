@@ -5,6 +5,8 @@
 "use strict";
 
 module.exports = {
+  extends: ["plugin:mozilla/valid-jsdoc"],
+
   globals: {
     
     Cc: true,
@@ -32,24 +34,6 @@ module.exports = {
     
     
     "mozilla/reject-importGlobalProperties": "off",
-
-    "valid-jsdoc": [
-      "error",
-      {
-        prefer: {
-          return: "returns",
-        },
-        preferType: {
-          Boolean: "boolean",
-          Number: "number",
-          String: "string",
-          bool: "boolean",
-        },
-        requireParamDescription: false,
-        requireReturn: false,
-        requireReturnDescription: false,
-      },
-    ],
 
     
     "consistent-return": "off",

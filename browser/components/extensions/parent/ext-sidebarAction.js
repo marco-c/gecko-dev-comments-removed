@@ -304,6 +304,10 @@ this.sidebarAction = class extends ExtensionAPI {
 
 
 
+
+
+
+
   getTargetFromDetails({ tabId, windowId }) {
     if (tabId != null && windowId != null) {
       throw new ExtensionError(

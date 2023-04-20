@@ -632,6 +632,7 @@ class ExtensionData {
 
 
 
+
   static async constructAsync({
     rootURI,
     checkPrivileged,
@@ -668,11 +669,13 @@ class ExtensionData {
 
 
 
+
   manifestError(message) {
     this.packagingError(`Reading manifest: ${message}`);
   }
 
   
+
 
 
 
@@ -1854,6 +1857,11 @@ class ExtensionData {
 
 
 
+  
+
+
+
+
 
 
 
@@ -2395,6 +2403,7 @@ class SitePermissionBootstrapScope extends BootstrapScope {
 let activeExtensionIDs = new Set();
 
 let pendingExtensions = new Map();
+
 
 
 

@@ -190,6 +190,7 @@ this.tabs = class extends ExtensionAPI {
 
 
 
+
         onHighlighted: makeGlobalEvent(
           context,
           "tabs.onHighlighted",

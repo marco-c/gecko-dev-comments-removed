@@ -350,6 +350,7 @@ class KeyRingEncryptionRemoteTransformer extends EncryptionRemoteTransformer {
 
 
 
+
 async function storageSyncInit() {
   
   if (storageSyncInit.promise === undefined) {
@@ -481,6 +482,7 @@ class CryptoCollection {
   }
 
   
+
 
 
 

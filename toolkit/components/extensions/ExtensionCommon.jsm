@@ -435,6 +435,7 @@ class ExtensionAPIPersistent extends ExtensionAPI {
 
 
 
+
 class BaseContext {
   constructor(envType, extension) {
     this.envType = envType;
@@ -501,6 +502,7 @@ class BaseContext {
   }
 
   
+
 
 
 

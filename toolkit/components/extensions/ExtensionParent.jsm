@@ -266,6 +266,7 @@ const ProxyMessenger = {
 
 
 
+
   
   ports: new Map(),
 
@@ -1850,6 +1851,7 @@ async function promiseExtensionViewLoaded(browser) {
 
 
 
+
 function watchExtensionProxyContextLoad(
   { extension, viewType, browser },
   onExtensionProxyContextLoaded
@@ -1870,6 +1872,7 @@ function watchExtensionProxyContextLoad(
     extension.off("extension-proxy-context-load", listener);
   };
 }
+
 
 
 
@@ -2315,6 +2318,7 @@ XPCOMUtils.defineLazyGetter(ExtensionParent, "PlatformInfo", () => {
     })(),
   });
 });
+
 
 
 

@@ -7,6 +7,7 @@
 
 
 
+
 async function test_sidebar_theme(theme, isBrightText) {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {

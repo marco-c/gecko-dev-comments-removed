@@ -50,6 +50,12 @@ baseCSP[3] = {
 
 
 
+
+
+
+
+
+
 async function testPolicy({
   manifest_version = 2,
   customCSP = null,

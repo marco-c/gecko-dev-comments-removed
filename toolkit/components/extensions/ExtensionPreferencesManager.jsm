@@ -438,6 +438,8 @@ ExtensionPreferencesManager = {
 
 
 
+
+
   async removeSettingsForPermissions(id, permissions) {
     if (!permissions || !permissions.length) {
       return;

@@ -130,6 +130,7 @@ var NativeApp = class extends EventEmitter {
 
 
 
+
   onConnect(portId, port) {
     
     this.on("message", (_, message) => {

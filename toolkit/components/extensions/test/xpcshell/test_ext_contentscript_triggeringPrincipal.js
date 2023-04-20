@@ -144,8 +144,6 @@ const AUTOCLOSE_TAGS = new Set(["img", "input", "link", "source"]);
 
 
 
-
-
 function getElementData(test, opts) {
   let baseURL = typeof BASE_URL !== "undefined" ? BASE_URL : location.href;
 
@@ -855,6 +853,18 @@ function computeBaseURLs(tests, expectedSources, forbiddenSources = {}) {
 
   return { expectedURLs, forbiddenURLs, blockedURLs: forbiddenURLs };
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

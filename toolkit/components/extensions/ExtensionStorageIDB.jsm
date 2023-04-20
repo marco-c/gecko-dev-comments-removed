@@ -171,6 +171,7 @@ var ErrorsTelemetry = {
 
 
 
+
   recordStorageLocalError({ extensionId, storageMethod, error }) {
     this.lazyInit();
 

@@ -267,6 +267,7 @@ class ExtensionWrapper {
 
 
 
+
   terminateBackground(...args) {
     return this.extension.terminateBackground(...args);
   }
@@ -793,7 +794,9 @@ var ExtensionTestUtils = {
 
 
 
-  loadContentPage(...args) {
-    return XPCShellContentUtils.loadContentPage(...args);
+
+
+  loadContentPage(url, options, ...args) {
+    return XPCShellContentUtils.loadContentPage(url, options, ...args);
   },
 };

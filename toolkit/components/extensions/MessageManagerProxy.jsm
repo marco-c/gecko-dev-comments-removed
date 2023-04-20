@@ -151,6 +151,7 @@ class MessageManagerProxy {
 
 
 
+
   *iterListeners() {
     for (let [message, listeners] of this.listeners) {
       for (let [listener, listenWhenClosed] of listeners) {

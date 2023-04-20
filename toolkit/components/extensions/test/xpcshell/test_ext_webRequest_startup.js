@@ -51,6 +51,7 @@ function trackEvents(wrapper) {
 
 
 
+
 async function testPersistentRequestStartup(extension, events, expect = {}) {
   equal(
     events.get("background-script-event"),

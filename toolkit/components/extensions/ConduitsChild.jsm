@@ -60,6 +60,7 @@ class BaseConduit {
 
 
 
+
   _send(method, query, actor, data) {
     if (query) {
       return actor.sendQuery(method, data);
@@ -68,6 +69,7 @@ class BaseConduit {
   }
 
   
+
 
 
 
@@ -107,6 +109,7 @@ class PointConduit extends BaseConduit {
 
 
 
+
   _send(method, query, arg = {}) {
     if (!this.actor) {
       throw new Error(`send${method} on closed conduit ${this.id}`);
@@ -116,6 +119,7 @@ class PointConduit extends BaseConduit {
   }
 
   
+
 
 
 
@@ -141,6 +145,7 @@ class PointConduit extends BaseConduit {
 
 
 
+
   setCloseCallback(callback) {
     this.closeCallback = callback;
   }
@@ -161,6 +166,7 @@ class ConduitsChild extends JSWindowActorChild {
 
 
 
+
   openConduit(subject, address) {
     let conduit = new PointConduit(subject, address, this);
     this.conduits.set(conduit.id, conduit);
@@ -168,6 +174,8 @@ class ConduitsChild extends JSWindowActorChild {
   }
 
   
+
+
 
 
 

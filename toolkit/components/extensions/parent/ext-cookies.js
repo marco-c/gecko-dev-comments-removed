@@ -308,6 +308,7 @@ const oaFromDetails = (details, context, allowPattern) => {
 
 
 
+
 const query = function*(detailsIn, props, context, allowPattern) {
   let details = {};
   props.forEach(property => {

@@ -387,6 +387,7 @@ class ExtensionShortcuts {
 
 
 
+
   registerKeysToDocument(window, commands) {
     if (
       !this.extension.privateBrowsingAllowed &&

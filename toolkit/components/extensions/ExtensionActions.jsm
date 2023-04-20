@@ -366,6 +366,8 @@ class PanelActionBase {
 
 
 
+
+
   getTargetFromDetails({ tabId, windowId }) {
     return null;
   }

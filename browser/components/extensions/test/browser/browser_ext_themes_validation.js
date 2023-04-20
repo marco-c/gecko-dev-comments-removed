@@ -6,6 +6,7 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(/packaging errors/);
 
 
 
+
 async function testThemeWithInvalidProperties(invalidProps) {
   let manifest = {
     theme: {},

@@ -69,6 +69,7 @@ async function loadTipExtension(options = {}) {
 
 
 
+
 async function updateTopSites(condition, searchShortcuts = false) {
   
   await SpecialPowers.pushPrefEnv({

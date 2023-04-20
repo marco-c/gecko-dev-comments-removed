@@ -1963,6 +1963,7 @@ class TabManagerBase {
 
 
 
+
   activateScripts(nativeTab) {
     let tab = this.getWrapper(nativeTab);
     if (

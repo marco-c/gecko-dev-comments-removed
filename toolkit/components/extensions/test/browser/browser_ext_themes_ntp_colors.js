@@ -17,6 +17,7 @@ function waitForAboutNewTabReady(browser, url) {
 
 
 
+
 async function test_ntp_theme(theme, isBrightText) {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {

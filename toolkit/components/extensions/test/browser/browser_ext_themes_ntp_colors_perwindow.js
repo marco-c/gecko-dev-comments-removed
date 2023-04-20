@@ -20,6 +20,7 @@ function waitForAboutNewTabReady(browser, url) {
 
 
 
+
 function test_ntp_theme(browser, theme, isBrightText) {
   Services.ppmm.sharedData.flush();
   return SpecialPowers.spawn(
@@ -65,6 +66,7 @@ function test_ntp_theme(browser, theme, isBrightText) {
     }
   );
 }
+
 
 
 

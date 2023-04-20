@@ -316,6 +316,7 @@ function parseMatchPatterns(patterns, options) {
 
 
 
+
 async function makeDataURI(iconUrl) {
   let response;
   try {
