@@ -47,15 +47,15 @@ class EffectSet {
   
   void Traverse(nsCycleCollectionTraversalCallback& aCallback);
 
-  static EffectSet* GetEffectSet(const dom::Element* aElement,
-                                 PseudoStyleType aPseudoType);
-  static EffectSet* GetOrCreateEffectSet(dom::Element* aElement,
-                                         PseudoStyleType aPseudoType);
+  static EffectSet* Get(const dom::Element* aElement,
+                        PseudoStyleType aPseudoType);
+  static EffectSet* GetOrCreate(dom::Element* aElement,
+                                PseudoStyleType aPseudoType);
 
-  static EffectSet* GetEffectSetForFrame(const nsIFrame* aFrame,
-                                         const nsCSSPropertyIDSet& aProperties);
-  static EffectSet* GetEffectSetForFrame(const nsIFrame* aFrame,
-                                         DisplayItemType aDisplayItemType);
+  static EffectSet* GetForFrame(const nsIFrame* aFrame,
+                                const nsCSSPropertyIDSet& aProperties);
+  static EffectSet* GetForFrame(const nsIFrame* aFrame,
+                                DisplayItemType aDisplayItemType);
   
   
   
@@ -76,9 +76,9 @@ class EffectSet {
   
   
   
-  static EffectSet* GetEffectSetForStyleFrame(const nsIFrame* aStyleFrame);
+  static EffectSet* GetForStyleFrame(const nsIFrame* aStyleFrame);
 
-  static EffectSet* GetEffectSetForEffect(const dom::KeyframeEffect* aEffect);
+  static EffectSet* GetForEffect(const dom::KeyframeEffect* aEffect);
 
   static void DestroyEffectSet(dom::Element* aElement,
                                PseudoStyleType aPseudoType);

@@ -902,7 +902,7 @@ void AnimationInfo::AddAnimationsForDisplayItem(
   
   
   
-  EffectSet* effects = EffectSet::GetEffectSetForFrame(aFrame, aType);
+  EffectSet* effects = EffectSet::GetForFrame(aFrame, aType);
   uint64_t animationGeneration =
       effects ? effects->GetAnimationGeneration() : 0;
   SetAnimationGeneration(animationGeneration);

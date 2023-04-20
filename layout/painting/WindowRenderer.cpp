@@ -154,10 +154,9 @@ void WindowRenderer::RemovePartialPrerenderedAnimation(
       
       aAnimation->GetEffect() && aAnimation->GetEffect()->AsKeyframeEffect() &&
       animation->GetEffect() && animation->GetEffect()->AsKeyframeEffect()) {
-    MOZ_ASSERT(EffectSet::GetEffectSetForEffect(
-                   aAnimation->GetEffect()->AsKeyframeEffect()) ==
-               EffectSet::GetEffectSetForEffect(
-                   animation->GetEffect()->AsKeyframeEffect()));
+    MOZ_ASSERT(
+        EffectSet::GetForEffect(aAnimation->GetEffect()->AsKeyframeEffect()) ==
+        EffectSet::GetForEffect(animation->GetEffect()->AsKeyframeEffect()));
   }
 #else
   mPartialPrerenderedAnimations.Remove(aCompositorAnimationId);

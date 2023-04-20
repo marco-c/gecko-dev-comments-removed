@@ -693,7 +693,7 @@ void nsIFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     
     
     
-    EffectSet* effectSet = EffectSet::GetEffectSetForStyleFrame(this);
+    EffectSet* effectSet = EffectSet::GetForStyleFrame(this);
     if (effectSet) {
       mMayHaveOpacityAnimation = effectSet->MayHaveOpacityAnimation();
 
@@ -869,7 +869,7 @@ void nsIFrame::DestroyFrom(nsIFrame* aDestructRoot,
       
       
       
-      EffectSet::GetEffectSetForStyleFrame(this)) {
+      EffectSet::GetForStyleFrame(this)) {
     
     
     RestyleManager::AnimationsWithDestroyedFrame* adf =
@@ -3136,8 +3136,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
   const auto& style = *Style();
   const nsStyleDisplay* disp = style.StyleDisplay();
   const nsStyleEffects* effects = style.StyleEffects();
-  EffectSet* effectSetForOpacity = EffectSet::GetEffectSetForFrame(
-      this, nsCSSPropertyIDSet::OpacityProperties());
+  EffectSet* effectSetForOpacity =
+      EffectSet::GetForFrame(this, nsCSSPropertyIDSet::OpacityProperties());
   
   
   bool needHitTestInfo = aBuilder->BuildCompositorHitTestInfo() &&
