@@ -91,12 +91,26 @@ nsresult DOMSubtreeIterator::Init(nsRange& aRange) {
 
 
 
-bool EditorElementStyle::IsCSSEditable(const nsStaticAtom& aTagName) const {
+bool EditorElementStyle::IsCSSSettable(const nsStaticAtom& aTagName) const {
   return CSSEditUtils::IsCSSEditableStyle(aTagName, *this);
 }
 
-bool EditorElementStyle::IsCSSEditable(const Element& aElement) const {
+bool EditorElementStyle::IsCSSSettable(const Element& aElement) const {
   return CSSEditUtils::IsCSSEditableStyle(aElement, *this);
+}
+
+bool EditorElementStyle::IsCSSRemovable(const nsStaticAtom& aTagName) const {
+  
+  
+  return EditorElementStyle::IsCSSSettable(aTagName) ||
+         (IsInlineStyle() && AsInlineStyle().IsStyleOfFontSize());
+}
+
+bool EditorElementStyle::IsCSSRemovable(const Element& aElement) const {
+  
+  
+  return EditorElementStyle::IsCSSSettable(aElement) ||
+         (IsInlineStyle() && AsInlineStyle().IsStyleOfFontSize());
 }
 
 
@@ -143,7 +157,7 @@ bool EditorInlineStyle::IsRepresentedBy(const nsIContent& aContent) const {
 Result<bool, nsresult> EditorInlineStyle::IsSpecifiedBy(
     const HTMLEditor& aHTMLEditor, Element& aElement) const {
   MOZ_ASSERT(!IsStyleToClearAllInlineStyles());
-  if (!IsCSSEditable(aElement)) {
+  if (!IsCSSSettable(aElement) && !IsCSSRemovable(aElement)) {
     return false;
   }
   

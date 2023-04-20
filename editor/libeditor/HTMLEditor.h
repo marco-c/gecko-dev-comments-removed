@@ -873,9 +873,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitRangeOffResult, nsresult>
-  SplitAncestorStyledInlineElementsAtRangeEdges(
-      const EditorDOMRange& aRange, const EditorInlineStyle& aStyle);
+  SplitAncestorStyledInlineElementsAtRangeEdges(const EditorDOMRange& aRange,
+                                                const EditorInlineStyle& aStyle,
+                                                SplitAtEdges aSplitAtEdges);
 
   
 
