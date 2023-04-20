@@ -622,15 +622,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   
   
   
-  
-  
-  
-  virtual bool CreateAndAttachAecDump(const std::string& file_name,
-                                      int64_t max_log_size_bytes,
-                                      rtc::TaskQueue* worker_queue) {
-    return CreateAndAttachAecDump(absl::string_view(file_name),
-                                  max_log_size_bytes, worker_queue);
-  }
   virtual bool CreateAndAttachAecDump(absl::string_view file_name,
                                       int64_t max_log_size_bytes,
                                       rtc::TaskQueue* worker_queue) = 0;
