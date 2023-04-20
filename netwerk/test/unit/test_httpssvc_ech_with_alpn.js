@@ -32,9 +32,11 @@ function setup() {
   
   Services.env.set("MOZ_TLS_ECH_ALPN_FLAG", 1);
 
-  add_tls_server_setup(
-    "EncryptedClientHelloServer",
-    "../../../security/manager/ssl/tests/unit/test_encrypted_client_hello"
+  add_setup(
+    asyncStartTLSTestServer(
+      "EncryptedClientHelloServer",
+      "../../../security/manager/ssl/tests/unit/test_encrypted_client_hello"
+    )
   );
 }
 
