@@ -459,6 +459,11 @@ class Selection final : public nsSupportsWeakReference,
   
 
 
+  void SetHighlightName(const nsAtom* aHighlightName);
+
+  
+
+
 
 
   void GetRangesForInterval(nsINode& aBeginNode, uint32_t aBeginOffset,
@@ -938,6 +943,7 @@ class Selection final : public nsSupportsWeakReference,
   CachedOffsetForFrame* mCachedOffsetForFrame;
   nsDirection mDirection;
   const SelectionType mSelectionType;
+  RefPtr<const nsAtom> mHighlightName;
   UniquePtr<SelectionCustomColors> mCustomColors;
 
   
