@@ -7,6 +7,7 @@
 #include "nsISupports.idl"
 
 [ptr] native PRThread(PRThread);
+      native ThreadCreationOptions(nsIThreadManager::ThreadCreationOptions);
 
 interface nsIEventTarget;
 interface nsIRunnable;
@@ -53,6 +54,21 @@ interface nsIThreadManager : nsISupports
 #endif
 
   static const uint32_t kThreadPoolStackSize = DEFAULT_STACK_SIZE;
+
+  struct ThreadCreationOptions {
+    
+    
+    uint32_t stackSize = nsIThreadManager::DEFAULT_STACK_SIZE;
+
+    
+    
+    
+    
+    
+    
+    
+    bool blockDispatch = false;
+  };
 %}
 
   
@@ -66,8 +82,7 @@ interface nsIThreadManager : nsISupports
 
 
 
-
-  [noscript] nsIThread newNamedThread(in ACString name, [optional] in unsigned long stackSize);
+  [noscript] nsIThread newNamedThread(in ACString name, in ThreadCreationOptions options);
 
   
 
