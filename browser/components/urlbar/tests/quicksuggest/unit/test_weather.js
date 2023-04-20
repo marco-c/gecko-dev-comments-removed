@@ -7,6 +7,7 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  MockRegistrar: "resource://testing-common/MockRegistrar.sys.mjs",
   UrlbarProviderWeather: "resource:///modules/UrlbarProviderWeather.sys.mjs",
 });
 
@@ -1450,6 +1451,58 @@ async function doManyNotificationsTest(notifications) {
 
   dateNowStub.restore();
 }
+
+
+
+add_task(async function vpn() {
+  
+  let mockLinkService = {
+    isLinkUp: true,
+    linkStatusKnown: true,
+    linkType: Ci.nsINetworkLinkService.LINK_TYPE_WIFI,
+    networkID: "abcd",
+    dnsSuffixList: [],
+    platformDNSIndications: Ci.nsINetworkLinkService.NONE_DETECTED,
+    QueryInterface: ChromeUtils.generateQI(["nsINetworkLinkService"]),
+  };
+  let networkLinkServiceCID = MockRegistrar.register(
+    "@mozilla.org/network/network-link-service;1",
+    mockLinkService
+  );
+  QuickSuggest.weather._test_linkService = mockLinkService;
+
+  
+  await QuickSuggest.weather._test_fetch();
+  Assert.ok(QuickSuggest.weather.suggestion, "Suggestion should exist");
+
+  
+  mockLinkService.platformDNSIndications =
+    Ci.nsINetworkLinkService.VPN_DETECTED;
+
+  
+  await QuickSuggest.weather._test_fetch();
+  Assert.ok(!QuickSuggest.weather.suggestion, "Suggestion should be null");
+
+  
+  
+  let fetchPromise = QuickSuggest.weather.waitForFetches();
+  QuickSuggest.weather.observe(null, "network:link-status-changed", "changed");
+  await fetchPromise;
+  Assert.ok(!QuickSuggest.weather.suggestion, "Suggestion should remain null");
+
+  
+  mockLinkService.platformDNSIndications =
+    Ci.nsINetworkLinkService.NONE_DETECTED;
+
+  
+  fetchPromise = QuickSuggest.weather.waitForFetches();
+  QuickSuggest.weather.observe(null, "network:link-status-changed", "changed");
+  await fetchPromise;
+  Assert.ok(QuickSuggest.weather.suggestion, "Suggestion should be fetched");
+
+  MockRegistrar.unregister(networkLinkServiceCID);
+  delete QuickSuggest.weather._test_linkService;
+});
 
 function assertEnabled({ message, hasSuggestion, pendingFetchCount }) {
   info("Asserting feature is enabled");
