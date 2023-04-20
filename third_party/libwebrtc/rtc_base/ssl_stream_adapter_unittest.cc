@@ -583,10 +583,11 @@ class SSLStreamAdapterTestBase : public ::testing::Test,
     
     EXPECT_EQ(rtc::SS_OPENING, client_ssl_->GetState());
     EXPECT_EQ(rtc::SS_OPENING, server_ssl_->GetState());
-    unsigned char packet[1];
+    uint8_t packet[1];
     size_t sent;
-    EXPECT_EQ(rtc::SR_BLOCK, client_ssl_->Write(&packet, 1, &sent, 0));
-    EXPECT_EQ(rtc::SR_BLOCK, server_ssl_->Write(&packet, 1, &sent, 0));
+    int error;
+    EXPECT_EQ(rtc::SR_BLOCK, client_ssl_->Write(packet, sent, error));
+    EXPECT_EQ(rtc::SR_BLOCK, server_ssl_->Write(packet, sent, error));
 
     
     
@@ -625,8 +626,10 @@ class SSLStreamAdapterTestBase : public ::testing::Test,
       EXPECT_EQ(rtc::SS_OPEN, client_ssl_->GetState());
       
       
-      EXPECT_EQ(rtc::SR_SUCCESS, client_ssl_->Write(&packet, 1, &sent, 0));
-      EXPECT_EQ(rtc::SR_BLOCK, server_ssl_->Read(&packet, 1, 0, 0));
+      int error;
+      EXPECT_EQ(rtc::SR_SUCCESS, client_ssl_->Write(packet, sent, error));
+      size_t read;
+      EXPECT_EQ(rtc::SR_BLOCK, server_ssl_->Read(packet, read, error));
     } else {
       EXPECT_EQ(rtc::SS_CLOSED, client_ssl_->GetState());
     }
