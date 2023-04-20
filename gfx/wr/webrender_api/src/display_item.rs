@@ -525,6 +525,10 @@ pub struct NinePatchBorder {
     
     
     pub repeat_vertical: RepeatMode,
+
+    
+    
+    pub outset: LayoutSideOffsets, 
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, PeekPoke)]
