@@ -57,23 +57,23 @@ class SVGMarkerFrame final : public SVGContainerFrame {
 
   
 #ifdef DEBUG
-  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
-                    nsIFrame* aPrevInFlow) override;
+  void Init(nsIContent* aContent, nsContainerFrame* aParent,
+            nsIFrame* aPrevInFlow) override;
 #endif
 
-  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
-                                const nsDisplayListSet& aLists) override {}
+  void BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                        const nsDisplayListSet& aLists) override {}
 
-  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                    int32_t aModType) override;
+  nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                            int32_t aModType) override;
 
 #ifdef DEBUG_FRAME_DUMP
-  virtual nsresult GetFrameName(nsAString& aResult) const override {
+  nsresult GetFrameName(nsAString& aResult) const override {
     return MakeFrameName(u"SVGMarker"_ns, aResult);
   }
 #endif
 
-  virtual nsContainerFrame* GetContentInsertionFrame() override {
+  nsContainerFrame* GetContentInsertionFrame() override {
     
     MOZ_ASSERT(
         PrincipalChildList().FirstChild() &&
@@ -101,7 +101,7 @@ class SVGMarkerFrame final : public SVGContainerFrame {
   Matrix mMarkerTM;
 
   
-  virtual gfxMatrix GetCanvasTM() override;
+  gfxMatrix GetCanvasTM() override;
 
   
   
@@ -143,18 +143,18 @@ class SVGMarkerAnonChildFrame final : public SVGDisplayContainerFrame {
   NS_DECL_FRAMEARENA_HELPERS(SVGMarkerAnonChildFrame)
 
 #ifdef DEBUG
-  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
-                    nsIFrame* aPrevInFlow) override;
+  void Init(nsIContent* aContent, nsContainerFrame* aParent,
+            nsIFrame* aPrevInFlow) override;
 #endif
 
 #ifdef DEBUG_FRAME_DUMP
-  virtual nsresult GetFrameName(nsAString& aResult) const override {
+  nsresult GetFrameName(nsAString& aResult) const override {
     return MakeFrameName(u"SVGMarkerAnonChild"_ns, aResult);
   }
 #endif
 
   
-  virtual gfxMatrix GetCanvasTM() override {
+  gfxMatrix GetCanvasTM() override {
     return static_cast<SVGMarkerFrame*>(GetParent())->GetCanvasTM();
   }
 };

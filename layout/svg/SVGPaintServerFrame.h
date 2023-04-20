@@ -73,8 +73,8 @@ class SVGPaintServerFrame : public SVGContainerFrame {
       const gfxRect* aOverrideBounds = nullptr) = 0;
 
   
-  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
-                                const nsDisplayListSet& aLists) override {}
+  void BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                        const nsDisplayListSet& aLists) override {}
 };
 
 }  
