@@ -18,22 +18,3 @@ function takeScreenshotDelayed(timeout) {
         takeScreenshot();
     }, timeout);
 }
-
-
-
-
-
-
-function failIfNot(condition, msg) {
-  const fail = () => {
-    (document.body || document.documentElement).textContent = `Precondition Failed: ${msg}`;
-    takeScreenshot();
-  };
-  if (!condition) {
-    if (document.readyState == "interactive") {
-      fail();
-    } else {
-      document.addEventListener("DOMContentLoaded", fail, false);
-    }
-  }
-}
