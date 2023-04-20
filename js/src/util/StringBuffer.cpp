@@ -63,7 +63,7 @@ char16_t* StringBuffer::stealChars() {
 bool StringBuffer::inflateChars() {
   MOZ_ASSERT(isLatin1());
 
-  TwoByteCharBuffer twoByte(StringBufferAllocPolicy{cx_, arenaId_});
+  TwoByteCharBuffer twoByte(StringBufferAllocPolicy{ec_, arenaId_});
 
   
 
