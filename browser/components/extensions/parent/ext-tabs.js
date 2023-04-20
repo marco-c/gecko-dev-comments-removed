@@ -1077,24 +1077,25 @@ this.tabs = class extends ExtensionAPIPersistent {
 
 
 
-          let indexMap = new Map();
-          let lastInsertion = new Map();
+          let lastInsertionMap = new Map();
 
           for (let nativeTab of getNativeTabsFromIDArray(tabIds)) {
             
             let window = destinationWindow || nativeTab.ownerGlobal;
+            let isSameWindow = nativeTab.ownerGlobal == window;
             let gBrowser = window.gBrowser;
 
             
             
-            if (nativeTab.ownerGlobal == window && gBrowser.tabs.length === 1) {
+            if (isSameWindow && gBrowser.tabs.length === 1) {
+              lastInsertionMap.set(window, 0);
               continue;
             }
             
             
             if (
-              nativeTab.ownerGlobal != window &&
-              PrivateBrowsingUtils.isBrowserPrivate(window.gBrowser) !=
+              !isSameWindow &&
+              PrivateBrowsingUtils.isBrowserPrivate(gBrowser) !=
                 PrivateBrowsingUtils.isBrowserPrivate(
                   nativeTab.ownerGlobal.gBrowser
                 )
@@ -1102,10 +1103,28 @@ this.tabs = class extends ExtensionAPIPersistent {
               continue;
             }
 
-            let insertionPoint = indexMap.get(window) || moveProperties.index;
-            
-            if (insertionPoint == -1) {
-              insertionPoint = gBrowser.tabs.length;
+            let insertionPoint;
+            let lastInsertion = lastInsertionMap.get(window);
+            if (lastInsertion == null) {
+              insertionPoint = moveProperties.index;
+              let maxIndex = gBrowser.tabs.length - (isSameWindow ? 1 : 0);
+              if (insertionPoint == -1) {
+                
+                insertionPoint = maxIndex;
+              } else {
+                insertionPoint = Math.min(insertionPoint, maxIndex);
+              }
+            } else if (isSameWindow && nativeTab._tPos <= lastInsertion) {
+              
+              
+              
+              
+              
+              insertionPoint = lastInsertion;
+            } else {
+              
+              
+              insertionPoint = lastInsertion + 1;
             }
 
             
@@ -1120,28 +1139,15 @@ this.tabs = class extends ExtensionAPIPersistent {
               continue;
             }
 
-            
-            
-            
-            
-            if (
-              lastInsertion.has(window) &&
-              lastInsertion.get(window) === insertionPoint &&
-              nativeTab._tPos > insertionPoint
-            ) {
-              insertionPoint++;
-              indexMap.set(window, insertionPoint);
-            }
-
-            if (nativeTab.ownerGlobal != window) {
+            if (isSameWindow) {
+              
+              gBrowser.moveTabTo(nativeTab, insertionPoint);
+            } else {
               
               
               nativeTab = gBrowser.adoptTab(nativeTab, insertionPoint, false);
-            } else {
-              
-              gBrowser.moveTabTo(nativeTab, insertionPoint);
             }
-            lastInsertion.set(window, nativeTab._tPos);
+            lastInsertionMap.set(window, nativeTab._tPos);
             tabsMoved.push(nativeTab);
           }
 
