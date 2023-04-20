@@ -16,22 +16,9 @@ LayoutDeviceIntSize ScrollbarDrawingAndroid::GetMinimumWidgetSize(
     nsPresContext* aPresContext, StyleAppearance aAppearance,
     nsIFrame* aFrame) {
   MOZ_ASSERT(nsNativeTheme::IsWidgetScrollbarPart(aAppearance));
-
-  auto sizes =
-      GetScrollbarSizes(aPresContext, StyleScrollbarWidth::Auto, Overlay::Yes);
-  MOZ_ASSERT(sizes.mHorizontal == sizes.mVertical);
-
-  return LayoutDeviceIntSize{sizes.mHorizontal, sizes.mVertical};
-}
-
-auto ScrollbarDrawingAndroid::GetScrollbarSizes(nsPresContext* aPresContext,
-                                                StyleScrollbarWidth aWidth,
-                                                Overlay aOverlay)
-    -> ScrollbarSizes {
-  
-  
-  return ScrollbarDrawing::GetScrollbarSizes(
-      aPresContext, StyleScrollbarWidth::Auto, aOverlay);
+  auto size =
+      GetScrollbarSize(aPresContext, StyleScrollbarWidth::Auto, Overlay::Yes);
+  return LayoutDeviceIntSize{size, size};
 }
 
 template <typename PaintBackendData>
@@ -89,5 +76,9 @@ void ScrollbarDrawingAndroid::RecomputeScrollbarParams() {
   if (overrideSize > 0) {
     defaultSize = overrideSize;
   }
-  mHorizontalScrollbarHeight = mVerticalScrollbarWidth = defaultSize;
+  ConfigureScrollbarSize(defaultSize);
+  
+  
+  ConfigureScrollbarSize(StyleScrollbarWidth::Thin, Overlay::Yes, defaultSize);
+  ConfigureScrollbarSize(StyleScrollbarWidth::Thin, Overlay::No, defaultSize);
 }

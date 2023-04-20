@@ -310,11 +310,9 @@ class LookAndFeel {
 
 
     AllPointerCapabilities,
-    
-    SystemVerticalScrollbarWidth,
 
     
-    SystemHorizontalScrollbarHeight,
+    SystemScrollbarSize,
 
     
     TouchDeviceSupportPresent,

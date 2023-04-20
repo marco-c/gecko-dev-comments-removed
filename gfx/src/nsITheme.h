@@ -110,12 +110,9 @@ class nsITheme : public nsISupports {
 
 
   enum class Overlay { No, Yes };
-  struct ScrollbarSizes {
-    LayoutDeviceIntCoord mVertical;
-    LayoutDeviceIntCoord mHorizontal;
-  };
-  virtual ScrollbarSizes GetScrollbarSizes(nsPresContext*, StyleScrollbarWidth,
-                                           Overlay) = 0;
+  virtual LayoutDeviceIntCoord GetScrollbarSize(const nsPresContext*,
+                                                StyleScrollbarWidth,
+                                                Overlay) = 0;
 
   
 

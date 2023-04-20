@@ -25,7 +25,6 @@ class ScrollbarDrawing {
   using DrawTarget = mozilla::gfx::DrawTarget;
   using sRGBColor = mozilla::gfx::sRGBColor;
   using Colors = ThemeColors;
-  using ScrollbarSizes = nsITheme::ScrollbarSizes;
   using Overlay = nsITheme::Overlay;
   using WebRenderBackendData = mozilla::widget::WebRenderBackendData;
 
@@ -48,7 +47,7 @@ class ScrollbarDrawing {
     VerticalRight,
   };
 
-  static DPIRatio GetDPIRatioForScrollbarPart(nsPresContext*);
+  DPIRatio GetDPIRatioForScrollbarPart(const nsPresContext*);
 
   static nsIFrame* GetParentScrollbarFrame(nsIFrame* aFrame);
   static bool IsParentScrollbarRolledOver(nsIFrame* aFrame);
@@ -57,9 +56,11 @@ class ScrollbarDrawing {
   static bool IsScrollbarWidthThin(const ComputedStyle& aStyle);
   static bool IsScrollbarWidthThin(nsIFrame* aFrame);
 
-  virtual ScrollbarSizes GetScrollbarSizes(nsPresContext*, StyleScrollbarWidth,
-                                           Overlay);
-  ScrollbarSizes GetScrollbarSizes(nsPresContext*, nsIFrame*);
+  CSSIntCoord GetCSSScrollbarSize(StyleScrollbarWidth, Overlay) const;
+  LayoutDeviceIntCoord GetScrollbarSize(const nsPresContext*,
+                                        StyleScrollbarWidth, Overlay);
+  LayoutDeviceIntCoord GetScrollbarSize(const nsPresContext*, nsIFrame*);
+
   virtual LayoutDeviceIntSize GetMinimumWidgetSize(nsPresContext*,
                                                    StyleAppearance aAppearance,
                                                    nsIFrame* aFrame) = 0;
@@ -149,17 +150,21 @@ class ScrollbarDrawing {
 
   virtual bool ShouldDrawScrollbarButtons() { return true; }
 
-  uint32_t GetHorizontalScrollbarHeight() const {
-    return mHorizontalScrollbarHeight;
-  }
-  uint32_t GetVerticalScrollbarWidth() const { return mVerticalScrollbarWidth; }
+ private:
+  
+  
+  CSSIntCoord mScrollbarSize[2][2]{};
 
  protected:
   
   
   Kind mKind;
-  uint32_t mHorizontalScrollbarHeight = 0;
-  uint32_t mVerticalScrollbarWidth = 0;
+
+  
+  void ConfigureScrollbarSize(CSSIntCoord);
+
+  
+  void ConfigureScrollbarSize(StyleScrollbarWidth, Overlay, CSSIntCoord);
 };
 
 }  

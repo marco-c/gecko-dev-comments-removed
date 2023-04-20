@@ -188,16 +188,14 @@ void Theme::LookAndFeelChanged() {
   }
 }
 
-
 auto Theme::GetDPIRatio(nsPresContext* aPc, StyleAppearance aAppearance)
     -> DPIRatio {
   
   if (IsWidgetScrollbarPart(aAppearance)) {
-    return ScrollbarDrawing::GetDPIRatioForScrollbarPart(aPc);
+    return GetScrollbarDrawing().GetDPIRatioForScrollbarPart(aPc);
   }
   return DPIRatio(float(AppUnitsPerCSSPixel()) / aPc->AppUnitsPerDevPixel());
 }
-
 
 auto Theme::GetDPIRatio(nsIFrame* aFrame, StyleAppearance aAppearance)
     -> DPIRatio {
@@ -1500,11 +1498,10 @@ bool Theme::GetWidgetOverflow(nsDeviceContext* aContext, nsIFrame* aFrame,
   return true;
 }
 
-auto Theme::GetScrollbarSizes(nsPresContext* aPresContext,
-                              StyleScrollbarWidth aWidth, Overlay aOverlay)
-    -> ScrollbarSizes {
-  return GetScrollbarDrawing().GetScrollbarSizes(aPresContext, aWidth,
-                                                 aOverlay);
+LayoutDeviceIntCoord Theme::GetScrollbarSize(const nsPresContext* aPresContext,
+                                             StyleScrollbarWidth aWidth,
+                                             Overlay aOverlay) {
+  return GetScrollbarDrawing().GetScrollbarSize(aPresContext, aWidth, aOverlay);
 }
 
 nscoord Theme::GetCheckboxRadioPrefSize() {
