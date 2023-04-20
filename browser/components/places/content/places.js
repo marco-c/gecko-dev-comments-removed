@@ -416,12 +416,7 @@ var PlacesOrganizer = {
         
         
         
-        PlacesUIUtils.openMultipleLinksInTabs(
-          node,
-          aEvent,
-          this._places,
-          PlacesSearchBox.updateHistorySearchTelemetry
-        );
+        PlacesUIUtils.openMultipleLinksInTabs(node, aEvent, this._places);
       }
     }
   },
@@ -996,28 +991,32 @@ var PlacesSearchBox = {
   set value(value) {
     this.searchFilter.value = value;
   },
-
-  updateHistorySearchTelemetry(urlsOpened) {
-    let historyLinks = urlsOpened.filter(link => !link.isBookmark);
-
-    if (historyLinks.length) {
-      
-      let searchesHistogram = Services.telemetry.getHistogramById(
-        "PLACES_LIBRARY_CUMULATIVE_HISTORY_SEARCHES"
-      );
-      searchesHistogram.add(PlacesSearchBox.cumulativeSearchCount);
-
-      
-      PlacesSearchBox.cumulativeSearchCount = 0;
-
-      Services.telemetry.keyedScalarAdd(
-        "library.link",
-        "history",
-        historyLinks.length
-      );
-    }
-  },
 };
+
+function updateTelemetry(urlsOpened) {
+  let historyLinks = urlsOpened.filter(
+    link => !link.isBookmark && !PlacesUtils.nodeIsBookmark(link)
+  );
+  if (!historyLinks.length) {
+    
+    return;
+  }
+
+  
+  let searchesHistogram = Services.telemetry.getHistogramById(
+    "PLACES_LIBRARY_CUMULATIVE_HISTORY_SEARCHES"
+  );
+  searchesHistogram.add(PlacesSearchBox.cumulativeSearchCount);
+
+  
+  PlacesSearchBox.cumulativeSearchCount = 0;
+
+  Services.telemetry.keyedScalarAdd(
+    "library.link",
+    "history",
+    historyLinks.length
+  );
+}
 
 
 
@@ -1519,20 +1518,11 @@ var ContentTree = {
       if (PlacesUtils.nodeIsURI(node) && (doubleClick || middleClick)) {
         
         this.openSelectedNode(aEvent);
-
-        if (!PlacesUtils.nodeIsBookmark(node)) {
-          PlacesSearchBox.updateHistorySearchTelemetry([node]);
-        }
       } else if (middleClick && PlacesUtils.nodeIsContainer(node)) {
         
         
         
-        PlacesUIUtils.openMultipleLinksInTabs(
-          node,
-          aEvent,
-          this.view,
-          PlacesSearchBox.updateHistorySearchTelemetry
-        );
+        PlacesUIUtils.openMultipleLinksInTabs(node, aEvent, this.view);
       }
     }
   },
@@ -1540,13 +1530,6 @@ var ContentTree = {
   onKeyPress: function CT_onKeyPress(aEvent) {
     if (aEvent.keyCode == KeyEvent.DOM_VK_RETURN) {
       this.openSelectedNode(aEvent);
-
-      let node = this.view.selectedNode;
-      if (node) {
-        if (!PlacesUtils.nodeIsBookmark(node)) {
-          PlacesSearchBox.updateHistorySearchTelemetry([node]);
-        }
-      }
     }
   },
 };
