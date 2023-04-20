@@ -149,9 +149,21 @@ async function testOriginControls(
   if (click) {
     itemToClick = visibleOriginItems[click];
   }
-  await closeChromeContextMenu(contextMenuId, itemToClick, win);
 
-  if (contextMenuId === "unified-extensions-context-menu") {
+  
+  
+  let panelHidden =
+    itemToClick && contextMenuId === "unified-extensions-context-menu"
+      ? BrowserTestUtils.waitForEvent(win.document, "popuphidden", true)
+      : Promise.resolve();
+
+  await closeChromeContextMenu(contextMenuId, itemToClick, win);
+  await panelHidden;
+
+  
+  
+  
+  if (!itemToClick && contextMenuId === "unified-extensions-context-menu") {
     await closeExtensionsPanel(win);
   }
 
