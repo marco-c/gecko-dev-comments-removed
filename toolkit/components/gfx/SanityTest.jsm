@@ -24,6 +24,8 @@ const DISABLE_VIDEO_PREF = "media.hardware-video-decoding.failed";
 const RUNNING_PREF = "sanity-test.running";
 const TIMEOUT_SEC = 20;
 
+const MEDIA_ENGINE_PREF = "media.wmf.media-engine.enabled";
+
 
 const TEST_PASSED = 0;
 const TEST_FAILED_RENDER = 1;
@@ -217,6 +219,7 @@ var listener = {
   canvas: null,
   ctx: null,
   mm: null,
+  disabledPrefs: [],
 
   messages: ["gfxSanity:ContentLoaded"],
 
@@ -257,6 +260,13 @@ var listener = {
   },
 
   onWindowLoaded() {
+    
+    
+    if (Services.prefs.getBoolPref(MEDIA_ENGINE_PREF, false)) {
+      Services.prefs.setBoolPref(MEDIA_ENGINE_PREF, false);
+      this.disabledPrefs.push(MEDIA_ENGINE_PREF);
+    }
+
     let browser = this.win.document.createXULElement("browser");
     browser.setAttribute("type", "content");
     browser.setAttribute("disableglobalhistory", "true");
@@ -297,6 +307,11 @@ var listener = {
 
       this.mm = null;
     }
+
+    for (let pref of this.disabledPrefs) {
+      Services.prefs.setBoolPref(pref, true);
+    }
+    this.disabledPrefs = null;
 
     
     
