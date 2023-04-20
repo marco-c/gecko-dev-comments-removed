@@ -147,7 +147,7 @@ class InputVolumeController final {
   FRIEND_TEST_ALL_PREFIXES(InputVolumeControllerParametrizedTest,
                            UnusedClippingPredictionsProduceEqualAnalogLevels);
   FRIEND_TEST_ALL_PREFIXES(InputVolumeControllerParametrizedTest,
-                           EmptyRmsErrorOverrideHasNoEffect);
+                           EmptyRmsErrorHasNoEffect);
 
   void AggregateChannelLevels();
 
@@ -216,7 +216,7 @@ class MonoInputVolumeController {
 
   
   
-  void Process(absl::optional<int> rms_error_override);
+  void Process(absl::optional<int> rms_error);
 
   
   int recommended_analog_level() const { return recommended_input_volume_; }
