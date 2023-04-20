@@ -2001,7 +2001,8 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
       
       
       
-      else if (!firstFrame->IsBrFrame() && lastTextNode) {
+      else if (!firstFrame->IsBrFrame() && lastTextNode &&
+               lastTextNode->GetPrimaryFrame()) {
         FrameRelativeRect brRectRelativeToLastTextFrame =
             GuessLineBreakerRectAfter(*lastTextNode);
         if (NS_WARN_IF(!brRectRelativeToLastTextFrame.IsValid())) {
@@ -2345,7 +2346,8 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
   
   
   
-  else if (!firstFrame->IsBrFrame() && lastTextNode) {
+  else if (!firstFrame->IsBrFrame() && lastTextNode &&
+           lastTextNode->GetPrimaryFrame()) {
     FrameRelativeRect brRectAfterLastChar =
         GuessLineBreakerRectAfter(*lastTextNode);
     if (NS_WARN_IF(!brRectAfterLastChar.IsValid())) {
