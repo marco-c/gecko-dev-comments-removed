@@ -15,9 +15,8 @@
 #include "threading/ExclusiveData.h"
 
 #if JS_HAS_INTL_API
-namespace mozilla::intl {
-class TimeZone;
-}
+#  include "mozilla/intl/ICU4CGlue.h"
+#  include "mozilla/intl/TimeZone.h"
 #endif
 
 namespace js {
@@ -61,15 +60,6 @@ enum class ResetTimeZoneMode : bool {
 
 
 extern void ResetTimeZoneInternal(ResetTimeZoneMode mode);
-
-
-
-
-
-
-
-
-extern void ResyncICUDefaultTimeZone();
 
 
 
@@ -186,6 +176,16 @@ class DateTimeInfo {
     return guard->internalTimeZoneDisplayName(buf, buflen, utcMilliseconds,
                                               locale);
   }
+
+  
+
+
+
+  template <typename B>
+  static mozilla::intl::ICUResult timeZoneId(B& buffer) {
+    auto guard = acquireLockWithValidTimeZone();
+    return guard->timeZone()->GetId(buffer);
+  }
 #else
   
 
@@ -198,18 +198,11 @@ class DateTimeInfo {
 
  private:
   
-  
   friend void js::ResetTimeZoneInternal(ResetTimeZoneMode);
-  friend void js::ResyncICUDefaultTimeZone();
 
   static void resetTimeZone(ResetTimeZoneMode mode) {
     auto guard = instance->lock();
     guard->internalResetTimeZone(mode);
-  }
-
-  static void resyncICUDefaultTimeZone() {
-    auto guard = acquireLockWithValidTimeZone();
-    (void)guard;
   }
 
   struct RangeCache {
