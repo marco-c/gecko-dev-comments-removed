@@ -15,6 +15,8 @@
 #include "mozilla/Likely.h"
 #include "mozilla/net/SocketProcessChild.h"
 #include "mozilla/net/SocketProcessParent.h"
+#include "mozilla/ipc/UtilityProcessParent.h"
+#include "mozilla/ipc/UtilityProcessChild.h"
 #include "mozilla/RDDChild.h"
 #include "mozilla/RDDParent.h"
 #include "mozilla/RDDProcessManager.h"
@@ -78,6 +80,7 @@ bool UntrustedModulesProcessor::IsSupportedProcessType() {
     case GeckoProcessType_Socket:
       return Telemetry::CanRecordReleaseData();
     case GeckoProcessType_RDD:
+    case GeckoProcessType_Utility:
       
       
       
@@ -749,6 +752,11 @@ UntrustedModulesProcessor::SendGetModulesTrust(ModulePaths&& aModules,
     case GeckoProcessType_Socket: {
       return ::mozilla::SendGetModulesTrust(
           net::SocketProcessChild::GetSingleton(), std::move(aModules),
+          runNormal);
+    }
+    case GeckoProcessType_Utility: {
+      return ::mozilla::SendGetModulesTrust(
+          ipc::UtilityProcessChild::GetSingleton().get(), std::move(aModules),
           runNormal);
     }
     default: {
