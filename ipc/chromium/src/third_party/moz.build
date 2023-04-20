@@ -38,8 +38,8 @@ UNIFIED_SOURCES += [
 ]
 
 SOURCES += [
-    'libevent/bufferevent_pair.c', 
-    'libevent/evrpc.c',            
+    'libevent/bufferevent_pair.c',       
+    
 ]
 
 if os_macosx or os_bsd:
