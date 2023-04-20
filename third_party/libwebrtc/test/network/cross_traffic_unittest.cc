@@ -53,6 +53,7 @@ struct TrafficCounterFixture {
                                     1,
                                     rtc::IPAddress(kTestIpAddress),
                                     EmulatedEndpointConfig(),
+                                    EmulatedNetworkStatsGatheringMode::kDefault,
                                 },
                                 true, &task_queue_, &clock};
 };
@@ -124,7 +125,8 @@ TEST(CrossTrafficTest, RandomWalkCrossTraffic) {
 }
 
 TEST(TcpMessageRouteTest, DeliveredOnLossyNetwork) {
-  NetworkEmulationManagerImpl net(TimeMode::kSimulated);
+  NetworkEmulationManagerImpl net(TimeMode::kSimulated,
+                                  EmulatedNetworkStatsGatheringMode::kDefault);
   BuiltInNetworkBehaviorConfig send;
   
   

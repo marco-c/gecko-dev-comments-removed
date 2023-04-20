@@ -92,7 +92,6 @@ struct EmulatedNetworkIncomingStats {
 
   
   
-  
   SamplesStatsCounter received_packets_size;
 
   
@@ -101,7 +100,6 @@ struct EmulatedNetworkIncomingStats {
   
   DataSize bytes_discarded_no_receiver = DataSize::Zero();
 
-  
   
   
   SamplesStatsCounter packets_discarded_no_receiver_size;
@@ -124,7 +122,6 @@ struct EmulatedNetworkStats {
 
   DataSize BytesSent() const { return overall_outgoing_stats.bytes_sent; }
 
-  
   
   
   
@@ -165,7 +162,6 @@ struct EmulatedNetworkStats {
   
   
   
-  
   const SamplesStatsCounter& ReceivedPacketsSizeCounter() const {
     return overall_incoming_stats.received_packets_size;
   }
@@ -180,7 +176,6 @@ struct EmulatedNetworkStats {
     return overall_incoming_stats.bytes_discarded_no_receiver;
   }
 
-  
   
   
   
@@ -228,8 +223,21 @@ struct EmulatedNetworkStats {
   
   
   
-  
   SamplesStatsCounter sent_packets_queue_wait_time_us;
+};
+
+struct EmulatedNetworkNodeStats {
+  
+  
+  
+  
+  SamplesStatsCounter packet_transport_time;
+
+  
+  
+  
+  
+  SamplesStatsCounter size_to_packet_transport_time;
 };
 
 

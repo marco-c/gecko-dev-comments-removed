@@ -49,15 +49,18 @@ class EmulatedNetworkNode;
 
 class EmulatedRoute;
 
+enum class EmulatedNetworkStatsGatheringMode {
+  
+  
+  
+  kDefault,
+  
+  
+  kDebug
+};
+
 struct EmulatedEndpointConfig {
   enum class IpAddressFamily { kIpv4, kIpv6 };
-  enum class StatsGatheringMode {
-    
-    kDefault,
-    
-    
-    kDebug
-  };
 
   
   absl::optional<std::string> name = absl::nullopt;
@@ -70,7 +73,6 @@ struct EmulatedEndpointConfig {
   bool start_as_enabled = true;
   
   rtc::AdapterType type = rtc::AdapterType::ADAPTER_TYPE_UNKNOWN;
-  StatsGatheringMode stats_gathering_mode = StatsGatheringMode::kDefault;
   
   
   
@@ -338,6 +340,13 @@ class NetworkEmulationManager {
   virtual void GetStats(
       rtc::ArrayView<EmulatedEndpoint* const> endpoints,
       std::function<void(EmulatedNetworkStats)> stats_callback) = 0;
+
+  
+  
+  
+  virtual void GetStats(
+      rtc::ArrayView<EmulatedNetworkNode* const> nodes,
+      std::function<void(EmulatedNetworkNodeStats)> stats_callback) = 0;
 
   
   

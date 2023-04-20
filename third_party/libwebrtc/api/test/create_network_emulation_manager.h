@@ -19,7 +19,9 @@ namespace webrtc {
 
 
 std::unique_ptr<NetworkEmulationManager> CreateNetworkEmulationManager(
-    TimeMode mode = TimeMode::kRealTime);
+    TimeMode time_mode = TimeMode::kRealTime,
+    EmulatedNetworkStatsGatheringMode stats_gathering_mode =
+        EmulatedNetworkStatsGatheringMode::kDefault);
 
 }  
 
