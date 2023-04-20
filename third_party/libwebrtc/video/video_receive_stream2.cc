@@ -74,10 +74,8 @@ namespace internal {
 namespace {
 
 
-constexpr TimeDelta kMaxWaitForKeyFrame = TimeDelta::Millis(200);
 constexpr TimeDelta kMinBaseMinimumDelay = TimeDelta::Zero();
 constexpr TimeDelta kMaxBaseMinimumDelay = TimeDelta::Seconds(10);
-constexpr TimeDelta kMaxWaitForFrame = TimeDelta::Seconds(3);
 
 
 
