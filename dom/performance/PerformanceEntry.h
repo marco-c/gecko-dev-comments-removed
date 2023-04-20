@@ -54,6 +54,13 @@ class PerformanceEntry : public nsISupports, public nsWrapperCache {
 
   virtual DOMHighResTimeStamp StartTime() const { return 0; }
 
+  
+  
+  virtual DOMHighResTimeStamp UnclampedStartTime() const {
+    MOZ_ASSERT(false, "UnclampedStartTime should not be called on this class.");
+    return 0;
+  }
+
   virtual DOMHighResTimeStamp Duration() const { return 0; }
 
   virtual const PerformanceResourceTiming* ToResourceTiming() const {

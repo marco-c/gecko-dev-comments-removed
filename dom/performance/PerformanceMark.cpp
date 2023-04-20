@@ -16,10 +16,12 @@ using namespace mozilla::dom;
 
 PerformanceMark::PerformanceMark(nsISupports* aParent, const nsAString& aName,
                                  DOMHighResTimeStamp aStartTime,
-                                 const JS::Handle<JS::Value>& aDetail)
+                                 const JS::Handle<JS::Value>& aDetail,
+                                 DOMHighResTimeStamp aUnclampedStartTime)
     : PerformanceEntry(aParent, aName, u"mark"_ns),
       mStartTime(aStartTime),
-      mDetail(aDetail) {
+      mDetail(aDetail),
+      mUnclampedStartTime(aUnclampedStartTime) {
   mozilla::HoldJSObjects(this);
 }
 
@@ -53,6 +55,13 @@ already_AddRefed<PerformanceMark> PerformanceMark::Constructor(
   DOMHighResTimeStamp startTime = aMarkOptions.mStartTime.WasPassed()
                                       ? aMarkOptions.mStartTime.Value()
                                       : performance->Now();
+  
+  
+  
+  
+  DOMHighResTimeStamp unclampedStartTime = aMarkOptions.mStartTime.WasPassed()
+                                               ? startTime
+                                               : performance->NowUnclamped();
   if (startTime < 0) {
     aRv.ThrowTypeError("Expected startTime >= 0");
     return nullptr;
@@ -71,7 +80,8 @@ already_AddRefed<PerformanceMark> PerformanceMark::Constructor(
     }
   }
 
-  return do_AddRef(new PerformanceMark(aGlobal, aMarkName, startTime, detail));
+  return do_AddRef(new PerformanceMark(aGlobal, aMarkName, startTime, detail,
+                                       unclampedStartTime));
 }
 
 PerformanceMark::~PerformanceMark() { mozilla::DropJSObjects(this); }
