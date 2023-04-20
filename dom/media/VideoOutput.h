@@ -67,6 +67,10 @@ class VideoOutput : public DirectMediaTrackListener {
       return;
     }
 
+    if (!mEnabled && mDisabledBlackImageSent) {
+      return;
+    }
+
     
     AutoTArray<ImageContainer::NonOwningImage, 16> images;
     PrincipalHandle lastPrincipalHandle = PRINCIPAL_HANDLE_NONE;
@@ -100,6 +104,12 @@ class VideoOutput : public DirectMediaTrackListener {
           image, chunk.mTimeStamp, frameId, mProducerID));
 
       lastPrincipalHandle = chunk.GetPrincipalHandle();
+
+      if (!mEnabled && mBlackImage) {
+        MOZ_ASSERT(images.Length() == 1);
+        mDisabledBlackImageSent = true;
+        break;
+      }
     }
 
     if (images.IsEmpty()) {
@@ -190,6 +200,9 @@ class VideoOutput : public DirectMediaTrackListener {
     MutexAutoLock lock(mMutex);
     mEnabled = aEnabled;
     DropPastFrames();
+    if (mEnabled) {
+      mDisabledBlackImageSent = false;
+    }
     if (!mEnabled || mFrames.Length() > 1) {
       
       
@@ -218,6 +231,8 @@ class VideoOutput : public DirectMediaTrackListener {
   
   
   RefPtr<Image> mBlackImage;
+  
+  bool mDisabledBlackImageSent = false;
   bool mEnabled = true;
   
   
