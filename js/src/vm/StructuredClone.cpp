@@ -2545,8 +2545,8 @@ bool JSStructuredCloneReader::readTypedArray(uint32_t arrayType,
   }
 
   
-  if (nelems > ArrayBufferObject::maxBufferByteLength() ||
-      byteOffset > ArrayBufferObject::maxBufferByteLength()) {
+  if (nelems > ArrayBufferObject::MaxByteLength ||
+      byteOffset > ArrayBufferObject::MaxByteLength) {
     JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
                               JSMSG_SC_BAD_SERIALIZED_DATA,
                               "invalid typed array length or offset");
@@ -2616,8 +2616,8 @@ bool JSStructuredCloneReader::readDataView(uint64_t byteLength,
   }
 
   
-  if (byteLength > ArrayBufferObject::maxBufferByteLength() ||
-      byteOffset > ArrayBufferObject::maxBufferByteLength()) {
+  if (byteLength > ArrayBufferObject::MaxByteLength ||
+      byteOffset > ArrayBufferObject::MaxByteLength) {
     JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
                               JSMSG_SC_BAD_SERIALIZED_DATA,
                               "invalid DataView length or offset");
@@ -2654,7 +2654,7 @@ bool JSStructuredCloneReader::readArrayBuffer(StructuredDataType type,
 
   
   
-  if (nbytes > ArrayBufferObject::maxBufferByteLength()) {
+  if (nbytes > ArrayBufferObject::MaxByteLength) {
     JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
                               JSMSG_BAD_ARRAY_LENGTH);
     return false;
@@ -2688,7 +2688,7 @@ bool JSStructuredCloneReader::readSharedArrayBuffer(MutableHandleValue vp) {
 
   
   
-  if (byteLength > ArrayBufferObject::maxBufferByteLength()) {
+  if (byteLength > ArrayBufferObject::MaxByteLength) {
     JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
                               JSMSG_BAD_ARRAY_LENGTH);
     return false;
@@ -3266,7 +3266,7 @@ bool JSStructuredCloneReader::readTransferMap() {
         return false;
       }
 
-      MOZ_RELEASE_ASSERT(extraData <= ArrayBufferObject::maxBufferByteLength());
+      MOZ_RELEASE_ASSERT(extraData <= ArrayBufferObject::MaxByteLength);
       size_t nbytes = extraData;
 
       MOZ_ASSERT(data == JS::SCTAG_TMO_ALLOC_DATA ||

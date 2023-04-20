@@ -131,9 +131,7 @@ class TypedArrayObject : public ArrayBufferViewObject {
   
 
 
-  static size_t maxByteLength() {
-    return ArrayBufferObject::maxBufferByteLength();
-  }
+  static size_t maxByteLength() { return ArrayBufferObject::MaxByteLength; }
 
   static bool isOriginalLengthGetter(Native native);
 

@@ -182,17 +182,15 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
                 "self-hosted code with burned-in constants must get the "
                 "right flags slot");
 
+  
+  
   static constexpr size_t MaxByteLengthForSmallBuffer = INT32_MAX;
-
-  
-  
-  static constexpr size_t maxBufferByteLength() {
 #ifdef JS_64BIT
-    return size_t(8) * 1024 * 1024 * 1024;  
+  static constexpr size_t MaxByteLength =
+      size_t(8) * 1024 * 1024 * 1024;  
 #else
-    return MaxByteLengthForSmallBuffer;
+  static constexpr size_t MaxByteLength = MaxByteLengthForSmallBuffer;
 #endif
-  }
 
   
   static constexpr size_t MaxInlineBytes =

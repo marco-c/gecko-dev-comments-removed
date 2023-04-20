@@ -129,7 +129,7 @@ int32_t js::LiveMappedBufferCount() { return liveBufferCount; }
 [[nodiscard]] static bool CheckArrayBufferTooLarge(JSContext* cx,
                                                    uint64_t nbytes) {
   
-  if (MOZ_UNLIKELY(nbytes > ArrayBufferObject::maxBufferByteLength())) {
+  if (MOZ_UNLIKELY(nbytes > ArrayBufferObject::MaxByteLength)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_BAD_ARRAY_LENGTH);
     return false;
@@ -991,7 +991,7 @@ inline size_t ArrayBufferObject::associatedBytes() const {
 }
 
 void ArrayBufferObject::setByteLength(size_t length) {
-  MOZ_ASSERT(length <= maxBufferByteLength());
+  MOZ_ASSERT(length <= ArrayBufferObject::MaxByteLength);
   setFixedSlot(BYTE_LENGTH_SLOT, PrivateValue(length));
 }
 
@@ -1093,7 +1093,7 @@ bool ArrayBufferObject::wasmGrowToPagesInPlace(
     return false;
   }
   MOZ_ASSERT(newPages <= wasm::MaxMemoryPages(t) &&
-             newPages.byteLength() <= ArrayBufferObject::maxBufferByteLength());
+             newPages.byteLength() <= ArrayBufferObject::MaxByteLength);
 
   
   
@@ -1148,7 +1148,7 @@ bool ArrayBufferObject::wasmMovingGrowToPages(
     return false;
   }
   MOZ_ASSERT(newPages <= wasm::MaxMemoryPages(t) &&
-             newPages.byteLength() < ArrayBufferObject::maxBufferByteLength());
+             newPages.byteLength() < ArrayBufferObject::MaxByteLength);
 
   
   
@@ -1323,7 +1323,7 @@ template <ArrayBufferObject::FillContents FillType>
 ArrayBufferObject::createBufferAndData(
     JSContext* cx, size_t nbytes, AutoSetNewObjectMetadata&,
     JS::Handle<JSObject*> proto ) {
-  MOZ_ASSERT(nbytes <= ArrayBufferObject::maxBufferByteLength(),
+  MOZ_ASSERT(nbytes <= ArrayBufferObject::MaxByteLength,
              "caller must validate the byte count it passes");
 
   
