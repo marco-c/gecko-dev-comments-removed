@@ -16,6 +16,13 @@
 
 #include "shared-libraries.h"
 
+namespace IPC {
+class MessageReader;
+class MessageWriter;
+template <typename T>
+struct ParamTraits;
+}  
+
 namespace mozilla {
 
 
@@ -45,6 +52,16 @@ struct ProfileAndAdditionalInformation {
 
   nsCString mProfile;
   Maybe<ProfileGenerationAdditionalInformation> mAdditionalInformation;
+};
+}  
+
+namespace IPC {
+template <>
+struct ParamTraits<mozilla::ProfileGenerationAdditionalInformation> {
+  typedef mozilla::ProfileGenerationAdditionalInformation paramType;
+
+  static void Write(MessageWriter* aWriter, const paramType& aParam);
+  static bool Read(MessageReader* aReader, paramType* aResult);
 };
 }  
 
