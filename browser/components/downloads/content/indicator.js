@@ -275,7 +275,8 @@ const DownloadsIndicatorView = {
     }
     this._initialized = true;
 
-    window.addEventListener("unload", this.onWindowUnload);
+    window.addEventListener("unload", this);
+    window.addEventListener("visibilitychange", this);
     DownloadsCommon.getIndicatorData(window).addView(this);
   },
 
@@ -288,7 +289,8 @@ const DownloadsIndicatorView = {
     }
     this._initialized = false;
 
-    window.removeEventListener("unload", this.onWindowUnload);
+    window.removeEventListener("unload", this);
+    window.removeEventListener("visibilitychange", this);
     DownloadsCommon.getIndicatorData(window).removeView(this);
 
     
@@ -463,14 +465,18 @@ const DownloadsIndicatorView = {
       }
       this._percentComplete = aValue;
       this._refreshAttention();
-      if (this._progressRaf) {
-        cancelAnimationFrame(this._progressRaf);
-        delete this._progressRaf;
-      }
+      this._maybeScheduleProgressUpdate();
+    }
+  },
+
+  _maybeScheduleProgressUpdate() {
+    if (!this._progressRaf && document.visibilityState == "visible") {
       this._progressRaf = requestAnimationFrame(() => {
         
         if (this._percentComplete >= 0) {
-          this.indicator.setAttribute("progress", "true");
+          if (!this.indicator.hasAttribute("progress")) {
+            this.indicator.setAttribute("progress", "true");
+          }
           
           
           this.indicator.style.setProperty(
@@ -481,6 +487,7 @@ const DownloadsIndicatorView = {
           this.indicator.removeAttribute("progress");
           this.indicator.style.setProperty("--download-progress-pcent", "0%");
         }
+        this._progressRaf = null;
       });
     }
   },
@@ -524,10 +531,16 @@ const DownloadsIndicatorView = {
   _attention: DownloadsCommon.ATTENTION_NONE,
 
   
+  handleEvent(aEvent) {
+    switch (aEvent.type) {
+      case "unload":
+        this.ensureTerminated();
+        break;
 
-  onWindowUnload() {
-    
-    DownloadsIndicatorView.ensureTerminated();
+      case "visibilitychange":
+        this._maybeScheduleProgressUpdate();
+        break;
+    }
   },
 
   onCommand(aEvent) {
