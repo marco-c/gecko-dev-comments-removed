@@ -71,7 +71,6 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
   constexpr int kSampleRateHz = 48000;
   constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
 
-  Random random_generator(42U);
   Block render(kNumBands, kNumRenderChannels);
   Block capture(1, kNumCaptureChannels);
   ApmDataDumper data_dumper(0);
@@ -82,6 +81,9 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
     config.delay.down_sampling_factor = down_sampling_factor;
     config.delay.num_filters = 10;
     for (size_t delay_samples : {30, 64, 150, 200, 800, 4000}) {
+      
+      
+      Random random_generator(42U);
       SCOPED_TRACE(ProduceDebugText(delay_samples, down_sampling_factor));
       std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
           RenderDelayBuffer::Create(config, kSampleRateHz, kNumRenderChannels));
