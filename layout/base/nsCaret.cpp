@@ -750,9 +750,10 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection* aFrameSelection,
                 
                 BidiEmbeddingLevel baseLevel = frameAfter->GetBaseLevel();
                 if (baseLevel != levelAfter) {
-                  nsPeekOffsetStruct pos(eSelectBeginLine, eDirPrevious, 0,
-                                         nsPoint(0, 0), false, true, false,
-                                         true, false);
+                  PeekOffsetStruct pos(eSelectBeginLine, eDirPrevious, 0,
+                                       nsPoint(0, 0),
+                                       {PeekOffsetOption::ScrollViewStop,
+                                        PeekOffsetOption::Visual});
                   if (NS_SUCCEEDED(frameAfter->PeekOffset(&pos))) {
                     theFrame = pos.mResultFrame;
                     theFrameOffset = pos.mContentOffset;
@@ -781,9 +782,10 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection* aFrameSelection,
                 
                 BidiEmbeddingLevel baseLevel = frameBefore->GetBaseLevel();
                 if (baseLevel != levelBefore) {
-                  nsPeekOffsetStruct pos(eSelectEndLine, eDirNext, 0,
-                                         nsPoint(0, 0), false, true, false,
-                                         true, false);
+                  PeekOffsetStruct pos(eSelectEndLine, eDirNext, 0,
+                                       nsPoint(0, 0),
+                                       {PeekOffsetOption::ScrollViewStop,
+                                        PeekOffsetOption::Visual});
                   if (NS_SUCCEEDED(frameBefore->PeekOffset(&pos))) {
                     theFrame = pos.mResultFrame;
                     theFrameOffset = pos.mContentOffset;
