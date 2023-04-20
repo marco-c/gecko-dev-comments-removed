@@ -1213,6 +1213,14 @@ class GCRuntime {
 
   MainThreadData<bool> compactingEnabled;
 
+  
+
+
+
+
+
+  MainThreadData<bool> parallelMarkingEnabled;
+
   MainThreadData<bool> rootsRemoved;
 
   
