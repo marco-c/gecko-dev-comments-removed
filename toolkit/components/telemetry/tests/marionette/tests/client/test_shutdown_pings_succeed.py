@@ -2,28 +2,54 @@
 
 
 
+from marionette_harness import parameterized
 from telemetry_harness.testcase import TelemetryTestCase
 
 
 class TestShutdownPingsSucced(TelemetryTestCase):
     """Test Firefox shutdown pings."""
 
-    def test_shutdown_pings_succeed(self):
-        """Test that known Firefox shutdown pings are received."""
+    def tearDown(self):
+        super(TestShutdownPingsSucced, self).tearDown()
 
-        ping_types = (
-            "event",
-            "first-shutdown",
-            "main",
-            "new-profile",
+        
+        
+        self.marionette.profile = None
+
+    @parameterized("pingsender1", pingsender_version=b"1.0")
+    @parameterized("pingsender2", pingsender_version=b"2.0")
+    def test_shutdown_pings_succeed(self, pingsender_version=b""):
+        """Test that known Firefox shutdown pings are received, with the correct
+        X-PingSender-Version headers."""
+
+        pingsender2_enabled = {b"1.0": False, b"2.0": True}[pingsender_version]
+        self.marionette.set_pref(
+            "toolkit.telemetry.shutdownPingSender.backgroundtask.enabled",
+            pingsender2_enabled,
         )
+
+        
+        
+        
+        ping_types = {
+            "event": pingsender_version,
+            "first-shutdown": pingsender_version,
+            "main": b"",
+            "new-profile": pingsender_version,
+        }
 
         
         
         
         pings = self.wait_for_pings(
-            self.restart_browser, lambda p: p["type"] in ping_types, len(ping_types)
+            self.restart_browser,
+            lambda p: p["type"] in ping_types.keys(),
+            len(ping_types),
         )
 
         self.assertEqual(len(pings), len(ping_types))
-        self.assertEqual(set(ping_types), set(p["type"] for p in pings))
+        self.assertEqual(set(ping_types.keys()), set(p["type"] for p in pings))
+
+        self.assertEqual(
+            ping_types, dict((p["type"], p["X-PingSender-Version"]) for p in pings)
+        )

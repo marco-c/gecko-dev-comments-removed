@@ -35,6 +35,11 @@ class PingServer(object):
             ping_data = json.loads(request_data)
 
             
+            ping_data["X-PingSender-Version"] = request.headers.get(
+                "X-PingSender-Version", b""
+            )
+
+            
             self.pings.append(ping_data)
 
             ping_type = ping_data["type"]

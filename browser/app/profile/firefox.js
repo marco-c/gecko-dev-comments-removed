@@ -1822,6 +1822,8 @@ pref("toolkit.telemetry.archive.enabled", true);
 
 pref("toolkit.telemetry.shutdownPingSender.enabled", true);
 
+pref("toolkit.telemetry.shutdownPingSender.backgroundtask.enabled", false);
+
 pref("toolkit.telemetry.shutdownPingSender.enabledFirstSession", false);
 
 pref("toolkit.telemetry.firstShutdownPing.enabled", true);
