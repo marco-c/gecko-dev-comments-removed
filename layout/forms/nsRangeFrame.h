@@ -149,6 +149,12 @@ class nsRangeFrame final : public nsContainerFrame,
 
   nsTArray<mozilla::Decimal> TickMarks();
 
+  
+
+
+
+  mozilla::Decimal NearestTickMark(const mozilla::Decimal& aValue);
+
  protected:
   mozilla::dom::HTMLInputElement& InputElement() const;
 
