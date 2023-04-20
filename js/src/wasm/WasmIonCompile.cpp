@@ -1697,7 +1697,8 @@ class FunctionCompiler {
         
         auto* store =
             MWasmStoreRef::New(alloc(), instancePointer_, valueAddr,
-                               0, v, AliasSet::WasmGlobalCell);
+                               0, v, AliasSet::WasmGlobalCell,
+                               WasmPreBarrierKind::Normal);
         curBlock_->add(store);
 
         
@@ -1726,7 +1727,8 @@ class FunctionCompiler {
       
       auto* store =
           MWasmStoreRef::New(alloc(), instancePointer_, valueAddr,
-                             0, v, AliasSet::WasmGlobalVar);
+                             0, v, AliasSet::WasmGlobalVar,
+                             WasmPreBarrierKind::Normal);
       curBlock_->add(store);
 
       
@@ -1804,9 +1806,9 @@ class FunctionCompiler {
     curBlock_->add(loc);
 
     
-    auto* store =
-        MWasmStoreRef::New(alloc(), instancePointer_, loc, 0,
-                           value, AliasSet::WasmTableElement);
+    auto* store = MWasmStoreRef::New(
+        alloc(), instancePointer_, loc, 0, value,
+        AliasSet::WasmTableElement, WasmPreBarrierKind::Normal);
     curBlock_->add(store);
 
     
@@ -2303,7 +2305,8 @@ class FunctionCompiler {
           if (result.type().isRefRepr()) {
             auto* store = MWasmStoreRef::New(
                 alloc(), instancePointer_, stackResultPointer_,
-                result.stackOffset(), values[i], AliasSet::WasmStackResult);
+                result.stackOffset(), values[i], AliasSet::WasmStackResult,
+                WasmPreBarrierKind::None);
             curBlock_->add(store);
           } else {
             auto* store = MWasmStoreStackResult::New(
@@ -2833,7 +2836,7 @@ class FunctionCompiler {
     curBlock_->add(exceptionAddr);
     auto* setException = MWasmStoreRef::New(
         alloc(), instancePointer_, exceptionAddr, 0, exception,
-        AliasSet::WasmPendingException);
+        AliasSet::WasmPendingException, WasmPreBarrierKind::Normal);
     curBlock_->add(setException);
     if (!postBarrierPrecise(0, exceptionAddr, exception)) {
       return false;
@@ -2845,7 +2848,7 @@ class FunctionCompiler {
     curBlock_->add(exceptionTagAddr);
     auto* setExceptionTag = MWasmStoreRef::New(
         alloc(), instancePointer_, exceptionTagAddr, 0, tag,
-        AliasSet::WasmPendingException);
+        AliasSet::WasmPendingException, WasmPreBarrierKind::Normal);
     curBlock_->add(setExceptionTag);
     return postBarrierPrecise(0, exceptionTagAddr, tag);
   }
@@ -3289,7 +3292,7 @@ class FunctionCompiler {
       
       auto* store = MWasmStoreFieldRefKA::New(
           alloc(), instancePointer_, exception, data, offset, argValues[i],
-          AliasSet::Store(AliasSet::Any));
+          AliasSet::Store(AliasSet::Any), WasmPreBarrierKind::None);
       if (!store) {
         return false;
       }
@@ -3547,7 +3550,7 @@ class FunctionCompiler {
   [[nodiscard]] bool writeGcValueAtBasePlusOffset(
       uint32_t lineOrBytecode, FieldType fieldType, MDefinition* keepAlive,
       AliasSet::Flag aliasBitset, MDefinition* value, MDefinition* base,
-      uint32_t offset, bool needsTrapInfo) {
+      uint32_t offset, bool needsTrapInfo, WasmPreBarrierKind preBarrierKind) {
     MOZ_ASSERT(aliasBitset != 0);
     MOZ_ASSERT(keepAlive->type() == MIRType::RefOrNull);
     MOZ_ASSERT(fieldType.widenToValType().toMIRType() == value->type());
@@ -3588,9 +3591,9 @@ class FunctionCompiler {
     curBlock_->add(prevValue);
 
     
-    auto* store =
-        MWasmStoreFieldRefKA::New(alloc(), instancePointer_, keepAlive, base,
-                                  offset, value, AliasSet::Store(aliasBitset));
+    auto* store = MWasmStoreFieldRefKA::New(
+        alloc(), instancePointer_, keepAlive, base, offset, value,
+        AliasSet::Store(aliasBitset), preBarrierKind);
     if (!store) {
       return false;
     }
@@ -3609,7 +3612,7 @@ class FunctionCompiler {
   [[nodiscard]] bool writeGcValueAtBasePlusScaledIndex(
       uint32_t lineOrBytecode, FieldType fieldType, MDefinition* keepAlive,
       AliasSet::Flag aliasBitset, MDefinition* value, MDefinition* base,
-      uint32_t scale, MDefinition* index) {
+      uint32_t scale, MDefinition* index, WasmPreBarrierKind preBarrierKind) {
     MOZ_ASSERT(aliasBitset != 0);
     MOZ_ASSERT(keepAlive->type() == MIRType::RefOrNull);
     MOZ_ASSERT(fieldType.widenToValType().toMIRType() == value->type());
@@ -3628,10 +3631,10 @@ class FunctionCompiler {
       return false;
     }
 
-    return writeGcValueAtBasePlusOffset(lineOrBytecode, fieldType, keepAlive,
-                                        aliasBitset, value, finalAddr,
-                                        0,
-                                        false);
+    return writeGcValueAtBasePlusOffset(
+        lineOrBytecode, fieldType, keepAlive, aliasBitset, value, finalAddr,
+        0,
+        false, preBarrierKind);
   }
 
   
@@ -3732,10 +3735,10 @@ class FunctionCompiler {
   
   
   
-  [[nodiscard]] bool writeValueToStructField(uint32_t lineOrBytecode,
-                                             const StructField& field,
-                                             MDefinition* structObject,
-                                             MDefinition* value) {
+  [[nodiscard]] bool writeValueToStructField(
+      uint32_t lineOrBytecode, const StructField& field,
+      MDefinition* structObject, MDefinition* value,
+      WasmPreBarrierKind preBarrierKind) {
     FieldType fieldType = field.type;
     uint32_t fieldOffset = field.offset;
 
@@ -3777,7 +3780,7 @@ class FunctionCompiler {
 
     return writeGcValueAtBasePlusOffset(lineOrBytecode, fieldType, structObject,
                                         fieldAliasSet, value, base, areaOffset,
-                                        needsTrapInfo);
+                                        needsTrapInfo, preBarrierKind);
   }
 
   
@@ -4127,10 +4130,10 @@ class FunctionCompiler {
     
     
     
-    if (!writeGcValueAtBasePlusOffset(lineOrBytecode, fillValueFieldType,
-                                      arrayObject, AliasSet::WasmArrayDataArea,
-                                      fillValue, ptrPhi, 0,
-                                      false)) {
+    if (!writeGcValueAtBasePlusOffset(
+            lineOrBytecode, fillValueFieldType, arrayObject,
+            AliasSet::WasmArrayDataArea, fillValue, ptrPhi, 0,
+            false, WasmPreBarrierKind::None)) {
       return nullptr;
     }
 
@@ -6577,7 +6580,8 @@ static bool EmitStructNew(FunctionCompiler& f) {
     }
     const StructField& field = structType.fields_[fieldIndex];
     if (!f.writeValueToStructField(lineOrBytecode, field, structObject,
-                                   args[fieldIndex])) {
+                                   args[fieldIndex],
+                                   WasmPreBarrierKind::None)) {
       return false;
     }
   }
@@ -6636,7 +6640,8 @@ static bool EmitStructSet(FunctionCompiler& f) {
   
   const StructType& structType = (*f.moduleEnv().types)[typeIndex].structType();
   const StructField& field = structType.fields_[fieldIndex];
-  return f.writeValueToStructField(lineOrBytecode, field, structObject, value);
+  return f.writeValueToStructField(lineOrBytecode, field, structObject, value,
+                                   WasmPreBarrierKind::Normal);
 }
 
 static bool EmitStructGet(FunctionCompiler& f, FieldWideningOp wideningOp) {
@@ -6775,7 +6780,7 @@ static bool EmitArrayNewFixed(FunctionCompiler& f) {
     if (!f.writeGcValueAtBasePlusOffset(
             lineOrBytecode, elemFieldType, arrayObject,
             AliasSet::WasmArrayDataArea, values[numElements - 1 - i], base,
-            i * elemSize, false)) {
+            i * elemSize, false, WasmPreBarrierKind::None)) {
       return false;
     }
   }
@@ -6901,7 +6906,7 @@ static bool EmitArraySet(FunctionCompiler& f) {
 
   return f.writeGcValueAtBasePlusScaledIndex(
       lineOrBytecode, elemFieldType, arrayObject, AliasSet::WasmArrayDataArea,
-      value, base, elemSize, index);
+      value, base, elemSize, index, WasmPreBarrierKind::Normal);
 }
 
 static bool EmitArrayGet(FunctionCompiler& f, FieldWideningOp wideningOp) {
