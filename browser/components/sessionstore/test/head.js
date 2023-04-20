@@ -468,6 +468,13 @@ function forgetClosedWindows() {
 }
 
 
+function forgetClosedTabs(win) {
+  while (ss.getClosedTabCount(win) > 0) {
+    ss.forgetClosedTab(win, 0);
+  }
+}
+
+
 
 
 
@@ -749,4 +756,27 @@ async function openAndCloseTab(window, url) {
   await promiseBrowserLoaded(tab.linkedBrowser, true, url);
   await TabStateFlusher.flush(tab.linkedBrowser);
   await promiseRemoveTabAndSessionState(tab);
+}
+
+
+
+
+
+
+function promiseSessionStoreLoads(numberOfLoads) {
+  let loadsSeen = 0;
+  return new Promise(resolve => {
+    Services.obs.addObserver(function obs(browser) {
+      loadsSeen++;
+      if (loadsSeen == numberOfLoads) {
+        resolve();
+      }
+      
+      
+      if (typeof info == "undefined" || loadsSeen >= numberOfLoads) {
+        Services.obs.removeObserver(obs, "sessionstore-debug-tab-restored");
+      }
+      info("Saw load for " + browser.currentURI.spec);
+    }, "sessionstore-debug-tab-restored");
+  });
 }

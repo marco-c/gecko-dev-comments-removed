@@ -17,10 +17,7 @@ add_task(async function() {
     Services.prefs.clearUserPref("browser.sessionstore.max_tabs_undo")
   );
 
-  
-  while (ss.getClosedTabCount(window)) {
-    ss.forgetClosedTab(window, 0);
-  }
+  forgetClosedTabs(window);
 
   
   let tab = BrowserTestUtils.addTab(gBrowser, "about:mozilla");

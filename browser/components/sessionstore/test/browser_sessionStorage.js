@@ -262,9 +262,7 @@ add_task(async function respect_privacy_level() {
   
   
   
-  while (ss.getClosedTabCount(window) > 0) {
-    ss.forgetClosedTab(window, 0);
-  }
+  forgetClosedTabs(window);
 
   
   Services.prefs.clearUserPref("browser.sessionstore.privacy_level");

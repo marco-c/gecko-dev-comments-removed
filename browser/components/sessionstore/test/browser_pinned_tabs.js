@@ -10,29 +10,6 @@ const NO_TITLE_URL = "data:text/plain,foo";
 const BACKUP_STATE = SessionStore.getBrowserState();
 registerCleanupFunction(() => promiseBrowserState(BACKUP_STATE));
 
-
-
-
-
-
-function promiseSessionStoreLoads(numberOfLoads) {
-  let loadsSeen = 0;
-  return new Promise(resolve => {
-    Services.obs.addObserver(function obs(browser) {
-      loadsSeen++;
-      if (loadsSeen == numberOfLoads) {
-        resolve();
-      }
-      
-      
-      if (typeof info == "undefined" || loadsSeen >= numberOfLoads) {
-        Services.obs.removeObserver(obs, "sessionstore-debug-tab-restored");
-      }
-      info("Saw load for " + browser.currentURI.spec);
-    }, "sessionstore-debug-tab-restored");
-  });
-}
-
 add_setup(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [

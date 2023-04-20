@@ -24,29 +24,6 @@ const state = {
   ],
 };
 
-
-
-
-
-
-function promiseSessionStoreLoads(numberOfLoads) {
-  let loadsSeen = 0;
-  return new Promise(resolve => {
-    Services.obs.addObserver(function obs(browser) {
-      loadsSeen++;
-      if (loadsSeen == numberOfLoads) {
-        resolve();
-      }
-      
-      
-      if (typeof info == "undefined" || loadsSeen >= numberOfLoads) {
-        Services.obs.removeObserver(obs, "sessionstore-debug-tab-restored");
-      }
-      info("Saw load for " + browser.currentURI.spec);
-    }, "sessionstore-debug-tab-restored");
-  });
-}
-
 add_task(async function test_firefox_view_selected_tab() {
   let fxViewBtn = document.getElementById("firefox-view-button");
   ok(fxViewBtn, "Got the Firefox View button");
