@@ -39,7 +39,8 @@ enum class ReferrerPolicy : uint8_t;
 
 namespace extensions {
 class WebExtensionPolicy;
-}
+class WebExtensionPolicyCore;
+}  
 
 class BasePrincipal;
 
@@ -229,6 +230,7 @@ class BasePrincipal : public nsJSPrincipals {
     return mOriginAttributes;
   }
   extensions::WebExtensionPolicy* AddonPolicy();
+  RefPtr<extensions::WebExtensionPolicyCore> AddonPolicyCore();
   uint32_t UserContextId() const { return mOriginAttributes.mUserContextId; }
   uint32_t PrivateBrowsingId() const {
     return mOriginAttributes.mPrivateBrowsingId;
@@ -245,6 +247,7 @@ class BasePrincipal : public nsJSPrincipals {
   
   
   extensions::WebExtensionPolicy* ContentScriptAddonPolicy();
+  RefPtr<extensions::WebExtensionPolicyCore> ContentScriptAddonPolicyCore();
 
   
   
@@ -275,20 +278,7 @@ class BasePrincipal : public nsJSPrincipals {
 
 
 
-  bool OverridesCSP(nsIPrincipal* aDocumentPrincipal) {
-    MOZ_ASSERT(aDocumentPrincipal);
-
-    
-    
-    if (mKind == eExpandedPrincipal) {
-      return FastSubsumes(aDocumentPrincipal);
-    }
-    
-    
-    
-    return (AddonPolicy() &&
-            !BasePrincipal::Cast(aDocumentPrincipal)->AddonPolicy());
-  }
+  bool OverridesCSP(nsIPrincipal* aDocumentPrincipal);
 
   uint32_t GetOriginNoSuffixHash() const { return mOriginNoSuffix->hash(); }
   uint32_t GetOriginSuffixHash() const { return mOriginSuffix->hash(); }
