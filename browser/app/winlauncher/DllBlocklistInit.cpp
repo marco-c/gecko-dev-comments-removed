@@ -196,8 +196,7 @@ LauncherVoidResultWithLineInfo InitializeDllBlocklistOOPFromLauncher(
   
   
   
-  LauncherVoidResultWithLineInfo result =
-      freestanding::gSharedSection.Init(transferMgr.LocalPEHeaders());
+  LauncherVoidResultWithLineInfo result = freestanding::gSharedSection.Init();
   if (result.isErr()) {
     return result.propagateErr();
   }
