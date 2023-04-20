@@ -35,6 +35,14 @@
 
 #include "util/Text.h"
 #include "vm/MutexIDs.h"
+#include "vm/Realm.h"
+
+
+js::DateTimeInfo::ShouldRFP js::DateTimeInfo::shouldRFP(JS::Realm* realm) {
+  return realm->behaviors().shouldResistFingerprinting()
+             ? DateTimeInfo::ShouldRFP::Yes
+             : DateTimeInfo::ShouldRFP::No;
+}
 
 static bool ComputeLocalTime(time_t local, struct tm* ptm) {
   
@@ -225,7 +233,8 @@ void js::DateTimeInfo::updateTimeZone() {
   }
 }
 
-js::DateTimeInfo::DateTimeInfo() {
+js::DateTimeInfo::DateTimeInfo(bool shouldResistFingerprinting)
+    : shouldResistFingerprinting_(shouldResistFingerprinting) {
   
   
   
@@ -475,7 +484,13 @@ bool js::DateTimeInfo::internalTimeZoneDisplayName(char16_t* buf, size_t buflen,
 
 mozilla::intl::TimeZone* js::DateTimeInfo::timeZone() {
   if (!timeZone_) {
-    auto timeZone = mozilla::intl::TimeZone::TryCreate();
+    
+    mozilla::Maybe<mozilla::Span<const char16_t>> timeZoneOverride;
+    if (shouldResistFingerprinting_) {
+      timeZoneOverride = mozilla::Some(mozilla::MakeStringSpan(u"UTC"));
+    }
+
+    auto timeZone = mozilla::intl::TimeZone::TryCreate(timeZoneOverride);
 
     
     
@@ -491,13 +506,17 @@ mozilla::intl::TimeZone* js::DateTimeInfo::timeZone() {
 #endif 
 
  js::ExclusiveData<js::DateTimeInfo>* js::DateTimeInfo::instance;
+ js::ExclusiveData<js::DateTimeInfo>* js::DateTimeInfo::instanceRFP;
 
 bool js::InitDateTimeState() {
-  MOZ_ASSERT(!DateTimeInfo::instance, "we should be initializing only once");
+  MOZ_ASSERT(!DateTimeInfo::instance && !DateTimeInfo::instanceRFP,
+             "we should be initializing only once");
 
   DateTimeInfo::instance =
-      js_new<ExclusiveData<DateTimeInfo>>(mutexid::DateTimeInfoMutex);
-  return !!DateTimeInfo::instance;
+      js_new<ExclusiveData<DateTimeInfo>>(mutexid::DateTimeInfoMutex, false);
+  DateTimeInfo::instanceRFP =
+      js_new<ExclusiveData<DateTimeInfo>>(mutexid::DateTimeInfoMutex, true);
+  return DateTimeInfo::instance && DateTimeInfo::instanceRFP;
 }
 
 
@@ -731,6 +750,15 @@ static bool ReadTimeZoneLink(std::string_view tz,
 
 void js::DateTimeInfo::internalResyncICUDefaultTimeZone() {
 #if JS_HAS_INTL_API
+  
+  
+  
+  
+  
+  if (shouldResistFingerprinting_) {
+    return;
+  }
+
   if (const char* tzenv = std::getenv("TZ")) {
     std::string_view tz(tzenv);
 

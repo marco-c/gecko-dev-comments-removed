@@ -9,6 +9,7 @@
 
 #include "js/Date.h"
 #include "js/Value.h"
+#include "vm/DateTime.h"
 #include "vm/NativeObject.h"
 
 namespace js {
@@ -56,6 +57,8 @@ class DateObject : public NativeObject {
   static const JSClass class_;
   static const JSClass protoClass_;
 
+  js::DateTimeInfo::ShouldRFP shouldRFP() const;
+
   JS::ClippedTime clippedTime() const {
     double t = getFixedSlot(UTC_TIME_SLOT).toDouble();
     JS::ClippedTime clipped = JS::TimeClip(t);
@@ -64,12 +67,13 @@ class DateObject : public NativeObject {
   }
 
   const js::Value& UTCTime() const { return getFixedSlot(UTC_TIME_SLOT); }
+  const js::Value& localTime() const {
+    return getReservedSlot(LOCAL_TIME_SLOT);
+  }
 
   
   void setUTCTime(JS::ClippedTime t);
   void setUTCTime(JS::ClippedTime t, MutableHandleValue vp);
-
-  inline double cachedLocalTime();
 
   
   
