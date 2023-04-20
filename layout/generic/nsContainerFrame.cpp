@@ -869,16 +869,19 @@ void nsContainerFrame::SetSizeConstraints(nsPresContext* aPresContext,
   
   
   
-  LayoutDeviceIntSize windowSize =
-      aWidget->ClientToWindowSize(LayoutDeviceIntSize(200, 200));
-  if (constraints.mMinSize.width)
-    constraints.mMinSize.width += windowSize.width - 200;
-  if (constraints.mMinSize.height)
-    constraints.mMinSize.height += windowSize.height - 200;
-  if (constraints.mMaxSize.width != NS_MAXSIZE)
-    constraints.mMaxSize.width += windowSize.width - 200;
-  if (constraints.mMaxSize.height != NS_MAXSIZE)
-    constraints.mMaxSize.height += windowSize.height - 200;
+  const LayoutDeviceIntSize sizeDiff = aWidget->ClientToWindowSizeDifference();
+  if (constraints.mMinSize.width) {
+    constraints.mMinSize.width += sizeDiff.width;
+  }
+  if (constraints.mMinSize.height) {
+    constraints.mMinSize.height += sizeDiff.height;
+  }
+  if (constraints.mMaxSize.width != NS_MAXSIZE) {
+    constraints.mMaxSize.width += sizeDiff.width;
+  }
+  if (constraints.mMaxSize.height != NS_MAXSIZE) {
+    constraints.mMaxSize.height += sizeDiff.height;
+  }
 
   aWidget->SetSizeConstraints(constraints);
 }
