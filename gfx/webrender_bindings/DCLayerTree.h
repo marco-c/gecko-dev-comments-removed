@@ -222,9 +222,11 @@ class DCLayerTree {
 
 class DCSurface {
  public:
+  const bool mIsVirtualSurface;
+
   explicit DCSurface(wr::DeviceIntSize aTileSize,
-                     wr::DeviceIntPoint aVirtualOffset, bool aIsOpaque,
-                     DCLayerTree* aDCLayerTree);
+                     wr::DeviceIntPoint aVirtualOffset, bool aIsVirtualSurface,
+                     bool aIsOpaque, DCLayerTree* aDCLayerTree);
   virtual ~DCSurface();
 
   bool Initialize();
@@ -275,6 +277,12 @@ class DCSurface {
   
   
   
+  
+  
+  
+  
+  
+  
   RefPtr<IDCompositionVisual2> mVisual;
 
   wr::DeviceIntSize mTileSize;
@@ -291,7 +299,8 @@ class DCSurface {
 class DCExternalSurfaceWrapper : public DCSurface {
  public:
   DCExternalSurfaceWrapper(bool aIsOpaque, DCLayerTree* aDCLayerTree)
-      : DCSurface(wr::DeviceIntSize{}, wr::DeviceIntPoint{}, false ,
+      : DCSurface(wr::DeviceIntSize{}, wr::DeviceIntPoint{},
+                  false , false ,
                   aDCLayerTree),
         mIsOpaque(aIsOpaque) {}
   ~DCExternalSurfaceWrapper() = default;
@@ -370,13 +379,38 @@ class DCSurfaceHandle : public DCSurface {
 
 class DCTile {
  public:
-  explicit DCTile(DCLayerTree* aDCLayerTree);
-  ~DCTile();
-  bool Initialize(int aX, int aY, wr::DeviceIntSize aSize, bool aIsOpaque);
-
   gfx::IntRect mValidRect;
 
   DCLayerTree* mDCLayerTree;
+  
+  
+  bool mNeedsFullDraw;
+
+  explicit DCTile(DCLayerTree* aDCLayerTree);
+  ~DCTile();
+  bool Initialize(int aX, int aY, wr::DeviceIntSize aSize,
+                  bool aIsVirtualSurface, bool aIsOpaque,
+                  RefPtr<IDCompositionVisual2> mSurfaceVisual);
+  RefPtr<IDCompositionSurface> Bind(wr::DeviceIntRect aValidRect);
+  IDCompositionVisual2* GetVisual() { return mVisual; }
+
+ protected:
+  
+  wr::DeviceIntSize mSize;
+  
+  
+  bool mIsOpaque;
+  
+  bool mIsVirtualSurface;
+  
+  
+  RefPtr<IDCompositionVisual2> mVisual;
+  
+  
+  RefPtr<IDCompositionSurface> mCompositionSurface;
+
+  RefPtr<IDCompositionSurface> CreateCompositionSurface(wr::DeviceIntSize aSize,
+                                                        bool aIsOpaque);
 };
 
 static inline bool operator==(const DCSurface::TileKey& a0,
