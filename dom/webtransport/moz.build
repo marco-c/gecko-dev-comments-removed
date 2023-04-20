@@ -4,6 +4,9 @@
 
 
 
+with Files("**"):
+    BUG_COMPONENT = ("Core", "DOM: Networking")
+
 DIRS += [
     "api",
     "child",
