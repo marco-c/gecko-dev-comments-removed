@@ -11,24 +11,18 @@ run-using handlers in `taskcluster/gecko_taskgraph/transforms/job`.
 
 
 import copy
-import logging
 import json
+import logging
 
 import mozpack.path as mozpath
+from gecko_taskgraph.transforms.cached_tasks import order_tasks
+from gecko_taskgraph.transforms.task import task_description_schema
+from gecko_taskgraph.util.workertypes import worker_type_implementation
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.python_path import import_sibling_modules
-from taskgraph.util.taskcluster import get_artifact_prefix
 from taskgraph.util.schema import Schema, validate_schema
-from voluptuous import (
-    Extra,
-    Optional,
-    Required,
-    Exclusive,
-)
-
-from gecko_taskgraph.transforms.cached_tasks import order_tasks
-from gecko_taskgraph.util.workertypes import worker_type_implementation
-from gecko_taskgraph.transforms.task import task_description_schema
+from taskgraph.util.taskcluster import get_artifact_prefix
+from voluptuous import Any, Exclusive, Extra, Optional, Required
 
 logger = logging.getLogger(__name__)
 
@@ -72,12 +66,15 @@ job_description_schema = Schema(
         
         
         
-        Exclusive("when", "optimization"): {
-            
-            
-            
-            Optional("files-changed"): [str],
-        },
+        Exclusive("when", "optimization"): Any(
+            None,
+            {
+                
+                
+                
+                Optional("files-changed"): [str],
+            },
+        ),
         
         Optional("fetches"): {
             str: [
