@@ -471,7 +471,11 @@ const DownloadsIndicatorView = {
   },
 
   _maybeScheduleProgressUpdate() {
-    if (!this._progressRaf && document.visibilityState == "visible") {
+    if (
+      this.indicator &&
+      !this._progressRaf &&
+      document.visibilityState == "visible"
+    ) {
       this._progressRaf = requestAnimationFrame(() => {
         
         if (this._percentComplete >= 0) {
