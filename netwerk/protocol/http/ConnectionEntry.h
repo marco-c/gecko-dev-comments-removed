@@ -48,6 +48,7 @@ class ConnectionEntry {
   nsresult CloseIdleConnection(nsHttpConnection* conn);
   void CloseIdleConnections();
   void CloseIdleConnections(uint32_t maxToClose);
+  void CloseH2WebsocketConnections();
   nsresult RemoveIdleConnection(nsHttpConnection* conn);
   bool IsInIdleConnections(HttpConnectionBase* conn);
   size_t IdleConnectionsLength() const { return mIdleConns.Length(); }
@@ -64,6 +65,10 @@ class ConnectionEntry {
   bool FindConnToClaim(PendingTransactionInfo* pendingTransInfo);
   void CloseActiveConnections();
   void CloseAllActiveConnsWithNullTransactcion(nsresult aCloseCode);
+
+  bool IsInH2WebsocketConns(HttpConnectionBase* conn);
+  void InsertIntoH2WebsocketConns(HttpConnectionBase* conn);
+  void RemoveH2WebsocketConns(HttpConnectionBase* conn);
 
   HttpConnectionBase* GetH2orH3ActiveConn();
   
@@ -197,6 +202,9 @@ class ConnectionEntry {
 
   nsTArray<RefPtr<nsHttpConnection>> mIdleConns;  
   nsTArray<RefPtr<HttpConnectionBase>> mActiveConns;  
+
+  
+  nsTArray<RefPtr<HttpConnectionBase>> mH2WebsocketConns;
 
   nsTArray<RefPtr<DnsAndConnectSocket>>
       mDnsAndConnectSockets;  

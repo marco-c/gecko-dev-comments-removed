@@ -1366,6 +1366,7 @@ nsresult nsHttpConnectionMgr::TryDispatchTransaction(
         
         RefPtr<nsHttpConnection> connToTunnel;
         connTCP->CreateTunnelStream(trans, getter_AddRefs(connToTunnel), true);
+        ent->InsertIntoH2WebsocketConns(connToTunnel);
         trans->SetConnection(nullptr);
         connToTunnel->SetInSpdyTunnel();  
         trans->SetIsHttp2Websocket(true);
@@ -2012,6 +2013,9 @@ void nsHttpConnectionMgr::AbortAndCloseAllConnections(int32_t, ARefBase*) {
     ent->CloseIdleConnections();
 
     
+    ent->CloseH2WebsocketConnections();
+
+    
     ent->CancelAllTransactions(NS_ERROR_ABORT);
 
     
@@ -2467,6 +2471,9 @@ void nsHttpConnectionMgr::OnMsgReclaimConnection(HttpConnectionBase* conn) {
 
     ent->InsertIntoIdleConnections(connTCP);
   } else {
+    if (ent->IsInH2WebsocketConns(conn)) {
+      ent->RemoveH2WebsocketConns(conn);
+    }
     LOG(("  connection cannot be reused; closing connection\n"));
     conn->Close(NS_ERROR_ABORT);
   }
