@@ -3841,6 +3841,9 @@ async function checkSearch({ name, searchString, expectedResults }) {
   
   
   let isPrivate = true;
+  if (UrlbarProviderQuickSuggest._resultFromLastQuery) {
+    UrlbarProviderQuickSuggest._resultFromLastQuery.isVisible = true;
+  }
   UrlbarProviderQuickSuggest.onEngagement(isPrivate, "engagement", context, {
     selIndex: -1,
   });
