@@ -36,6 +36,16 @@ add_task(async function test_parent_blur() {
     "Test that when a picker panel is opened by an input the parent is not blurred"
   );
 
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.prefersReducedMotion", 1]],
+  });
+  Assert.ok(
+    matchMedia("(prefers-reduced-motion: reduce)").matches,
+    "The reduce motion mode is active"
+  );
+
   await helper.openPicker(PAGE_CONTENT, false, "showPicker");
 
   Assert.equal(
@@ -137,6 +147,58 @@ add_task(async function test_parent_blur() {
     "No new focus events were fired on the Date input while its picker is opened"
   );
 
+  info(
+    `Test that the date input field is not blurred after interacting
+    with a month-year panel`
+  );
+
+  
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
+
+  Assert.ok(
+    helper.getElement(BTN_MONTH_YEAR).matches(":focus"),
+    "The month-year toggle button is focused"
+  );
+
+  
+  EventUtils.synthesizeKey(" ", {});
+
+  Assert.equal(
+    helper.getElement(BTN_MONTH_YEAR).getAttribute("aria-expanded"),
+    "true",
+    "Month-year button is expanded when the spinners are shown"
+  );
+  Assert.ok(
+    BrowserTestUtils.is_visible(helper.getElement(MONTH_YEAR_VIEW)),
+    "Month-year selection panel is visible"
+  );
+
+  
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
+
+  
+  EventUtils.synthesizeKey("KEY_ArrowDown", {});
+
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    const input = content.document.querySelector("#date");
+
+    Assert.ok(
+      input.matches(":focus"),
+      `The keyboard focus is retained on the date input field`
+    );
+    Assert.equal(
+      input,
+      content.document.activeElement,
+      "Input field does not loose focus when the month-year picker is opened and interacted with"
+    );
+  });
+
+  Assert.equal(
+    await getBlurEvents(),
+    0,
+    "Date input field is not blurred after interacting with a month-year panel"
+  );
+
   info(`Test that when a picker panel is opened and then it is closed
   with a click on the other field, the focus is updated`);
 
@@ -198,4 +260,6 @@ add_task(async function test_parent_blur() {
   );
 
   await helper.tearDown();
+  
+  await SpecialPowers.popPrefEnv();
 });
