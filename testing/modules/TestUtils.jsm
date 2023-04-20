@@ -27,6 +27,12 @@ const ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"].getService(
   Ci.nsIConsoleAPIStorage
 );
 
+
+
+
+
+
+
 var TestUtils = {
   executeSoon(callbackFn) {
     Services.tm.dispatchToMainThread(callbackFn);

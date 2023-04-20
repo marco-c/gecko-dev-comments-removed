@@ -18,30 +18,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 window.__defineGetter__("_EU_Ci", function() {
   var c = Object.getOwnPropertyDescriptor(window, "Components");
   return c && c.value && !c.writable ? Ci : SpecialPowers.Ci;
@@ -215,15 +191,6 @@ async function promiseElementReadyForUserInput(
   throw new Error("The element or the window did not become interactive");
 }
 
-
-
-
-
-
-
-
-
-
 function getElement(id) {
   return typeof id == "string" ? document.getElementById(id) : id;
 }
@@ -252,6 +219,16 @@ function computeButtons(aEvent, utils) {
 
   return utils.MOUSE_BUTTONS_NOT_SPECIFIED;
 }
+
+
+
+
+
+
+
+
+
+
 
 function sendMouseEvent(aEvent, aTarget, aWindow) {
   if (
@@ -1070,23 +1047,56 @@ function synthesizeNativeTap(
   utils.sendNativeTouchTap(x, y, aLongTap, observer);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function synthesizeNativeMouseEvent(aParams, aCallback = null) {
   const {
-    type, 
-    target, 
-    offsetX, 
-    offsetY, 
-    atCenter, 
-    screenX, 
-    screenY, 
-    
-    
+    type,
+    target,
+    offsetX,
+    offsetY,
+    atCenter,
+    screenX,
+    screenY,
     scale = "screenPixelsPerCSSPixel",
-    button = 0, 
-    modifiers = {}, 
-    win = window, 
-    
-    
+    button = 0,
+    modifiers = {},
+    win = window,
     elementOnWidget = target,
   } = aParams;
   if (atCenter) {
@@ -1312,6 +1322,20 @@ function synthesizeAndWaitNativeMouseMove(
   });
   return eventReceivedPromise;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2763,6 +2787,19 @@ function createDragEventObject(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 function synthesizeDragOver(
   aSrcElement,
   aDestElement,
@@ -2862,6 +2899,9 @@ function synthesizeDragOver(
 
 
 
+
+
+
 function synthesizeDropAfterDragOver(
   aResult,
   aDataTransfer,
@@ -2892,6 +2932,20 @@ function synthesizeDropAfterDragOver(
 
   return effect;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2986,6 +3040,11 @@ function _computeSrcElementFromSrcSelection(aSrcSelection) {
   }
   return srcElement;
 }
+
+
+
+
+
 
 
 
@@ -3482,6 +3541,26 @@ function _checkDataTransferItems(aDataTransfer, aExpectedDragData) {
   }
   return true;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

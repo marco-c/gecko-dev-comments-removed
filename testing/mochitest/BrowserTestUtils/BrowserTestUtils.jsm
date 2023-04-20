@@ -114,12 +114,17 @@ function registerActors() {
 
 registerActors();
 
+
+
+
+
+
+
+
+
+
 var BrowserTestUtils = {
   
-
-
-
-
 
 
 
@@ -849,6 +854,7 @@ var BrowserTestUtils = {
 
 
 
+
   waitForNewWindow(aParams = {}) {
     let { url = null, anyWindow = false, maybeErrorPage = false } = aParams;
 
@@ -1246,6 +1252,9 @@ var BrowserTestUtils = {
 
 
 
+
+
+
   waitForEvent(subject, eventName, capture, checkFn, wantsUntrusted) {
     let startTime = Cu.now();
     let innerWindowId = subject.ownerGlobal?.windowGlobalChild.innerWindowId;
@@ -1475,6 +1484,8 @@ var BrowserTestUtils = {
 
 
 
+
+
   _receivedContentEventListener(listenerId, browserId) {
     let listenerData = this._contentEventListeners.get(listenerId);
     if (!listenerData) {
@@ -1487,6 +1498,8 @@ var BrowserTestUtils = {
   },
 
   
+
+
 
 
 
@@ -2262,6 +2275,7 @@ var BrowserTestUtils = {
 
 
 
+
   waitForNotificationBar(tabbrowser, browser, notificationValue) {
     let notificationBox = tabbrowser.getNotificationBox(browser);
     return this.waitForNotificationInNotificationBox(
@@ -2271,6 +2285,7 @@ var BrowserTestUtils = {
   },
 
   
+
 
 
 
@@ -2356,7 +2371,10 @@ var BrowserTestUtils = {
 
   _knownAboutPages: new Set(),
   _loadedAboutContentScript: false,
+
   
+
+
 
 
 
@@ -2506,6 +2524,7 @@ var BrowserTestUtils = {
 
 
 
+
   async promiseAlertDialog(
     buttonNameOrElementID,
     uri = "chrome://global/content/commonDialog.xhtml",
@@ -2559,6 +2578,9 @@ var BrowserTestUtils = {
   },
 
   
+
+
+
 
 
 

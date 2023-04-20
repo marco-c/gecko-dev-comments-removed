@@ -8,17 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 var SimpleTest = {};
 var parentRunner = null;
 
@@ -371,6 +360,7 @@ function usesFailurePatterns() {
 
 
 
+
 function recordIfMatchesFailurePattern(name, diag) {
   let index = SimpleTest.expected.findIndex(([pat, count]) => {
     return (
@@ -559,6 +549,7 @@ SimpleTest.todo = function(condition, name, diag) {
   SimpleTest._logResult(test, successInfo, failureInfo);
   SimpleTest._tests.push(test);
 };
+
 
 
 
@@ -821,6 +812,9 @@ SimpleTest.waitForExplicitFinish = function() {
 
 
 
+
+
+
 SimpleTest.requestLongerTimeout = function(factor) {
   if (parentRunner) {
     parentRunner.requestLongerTimeout(factor);
@@ -830,6 +824,8 @@ SimpleTest.requestLongerTimeout = function(factor) {
     );
   }
 };
+
+
 
 
 
@@ -918,12 +914,14 @@ window.setTimeout = function SimpleTest_setTimeoutShim() {
 
 
 
+
 SimpleTest.requestFlakyTimeout = function(reason) {
   SimpleTest.is(typeof reason, "string", "A valid string reason is expected");
   SimpleTest.isnot(reason, "", "Reason cannot be empty");
   SimpleTest._flakyTimeoutIsOK = true;
   SimpleTest._flakyTimeoutReason = reason;
 };
+
 
 
 
@@ -1060,7 +1058,6 @@ const kTextHtmlPrefixClipboardDataWindows =
 
 const kTextHtmlSuffixClipboardDataWindows =
   "<!--EndFragment-->\n</body>\n</html>";
-
 
 
 
@@ -1284,6 +1281,9 @@ SimpleTest.promiseWaitForCondition = async function(aCond, aErrorMsg) {
 
 
 
+
+
+
 SimpleTest.executeSoon = function(aFunc) {
   if ("SpecialPowers" in window) {
     return SpecialPowers.executeSoon(aFunc, window);
@@ -1291,6 +1291,15 @@ SimpleTest.executeSoon = function(aFunc) {
   setTimeout(aFunc, 0);
   return null; 
 };
+
+
+
+
+
+
+
+
+
 
 SimpleTest.registerCleanupFunction = function(aFunc) {
   SimpleTest._cleanupFunctions.push(aFunc);
@@ -1544,6 +1553,7 @@ SimpleTest.finish = function() {
 
 
 
+
 SimpleTest.monitorConsole = function(continuation, msgs, forbidUnexpectedMsgs) {
   if (SimpleTest._stopOnLoad) {
     ok(false, "Console monitoring requires use of waitForExplicitFinish.");
@@ -1639,6 +1649,7 @@ SimpleTest.monitorConsole = function(continuation, msgs, forbidUnexpectedMsgs) {
 SimpleTest.endMonitorConsole = function() {
   SpecialPowers.postConsoleSentinel();
 };
+
 
 
 

@@ -6,10 +6,6 @@
 
 
 
-
-
-
-
 "use strict";
 
 var EXPORTED_SYMBOLS = ["Assert"];
@@ -17,6 +13,16 @@ var EXPORTED_SYMBOLS = ["Assert"];
 const { ObjectUtils } = ChromeUtils.import(
   "resource://gre/modules/ObjectUtils.jsm"
 );
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -114,6 +120,8 @@ function getMessage(error, prefix = "") {
 
 
 
+
+
 Assert.AssertionError = function(options) {
   this.name = "AssertionError";
   this.actual = options.actual;
@@ -138,9 +146,7 @@ Assert.AssertionError.prototype = Object.create(Error.prototype, {
   },
 });
 
-var proto = Assert.prototype;
-
-proto._reporter = null;
+Assert.prototype._reporter = null;
 
 
 
@@ -163,7 +169,14 @@ proto._reporter = null;
 
 
 
-proto.setReporter = function(reporterFunc) {
+
+
+
+
+
+
+
+Assert.prototype.setReporter = function(reporterFunc) {
   this._reporter = reporterFunc;
 };
 
@@ -195,8 +208,7 @@ proto.setReporter = function(reporterFunc) {
 
 
 
-
-proto.report = function(
+Assert.prototype.report = function(
   failed,
   actual,
   expected,
@@ -241,7 +253,7 @@ proto.report = function(
 
 
 
-proto.ok = function(value, message) {
+Assert.prototype.ok = function(value, message) {
   if (arguments.length > 2) {
     this.report(
       true,
@@ -266,7 +278,7 @@ proto.ok = function(value, message) {
 
 
 
-proto.equal = function equal(actual, expected, message) {
+Assert.prototype.equal = function equal(actual, expected, message) {
   this.report(actual != expected, actual, expected, message, "==");
 };
 
@@ -281,7 +293,10 @@ proto.equal = function equal(actual, expected, message) {
 
 
 
-proto.notEqual = function notEqual(actual, expected, message) {
+
+
+
+Assert.prototype.notEqual = function notEqual(actual, expected, message) {
   this.report(actual == expected, actual, expected, message, "!=");
 };
 
@@ -301,7 +316,7 @@ proto.notEqual = function notEqual(actual, expected, message) {
 
 
 
-proto.deepEqual = function deepEqual(actual, expected, message) {
+Assert.prototype.deepEqual = function deepEqual(actual, expected, message) {
   this.report(
     !ObjectUtils.deepEqual(actual, expected),
     actual,
@@ -323,7 +338,12 @@ proto.deepEqual = function deepEqual(actual, expected, message) {
 
 
 
-proto.notDeepEqual = function notDeepEqual(actual, expected, message) {
+
+Assert.prototype.notDeepEqual = function notDeepEqual(
+  actual,
+  expected,
+  message
+) {
   this.report(
     ObjectUtils.deepEqual(actual, expected),
     actual,
@@ -345,7 +365,7 @@ proto.notDeepEqual = function notDeepEqual(actual, expected, message) {
 
 
 
-proto.strictEqual = function strictEqual(actual, expected, message) {
+Assert.prototype.strictEqual = function strictEqual(actual, expected, message) {
   this.report(actual !== expected, actual, expected, message, "===");
 };
 
@@ -360,7 +380,11 @@ proto.strictEqual = function strictEqual(actual, expected, message) {
 
 
 
-proto.notStrictEqual = function notStrictEqual(actual, expected, message) {
+Assert.prototype.notStrictEqual = function notStrictEqual(
+  actual,
+  expected,
+  message
+) {
   this.report(actual === expected, actual, expected, message, "!==");
 };
 
@@ -426,7 +450,7 @@ function expectedException(actual, expected) {
 
 
 
-proto.throws = function(block, expected, message) {
+Assert.prototype.throws = function(block, expected, message) {
   checkExpectedArgument(this, "throws", expected);
 
   
@@ -489,7 +513,7 @@ proto.throws = function(block, expected, message) {
 
 
 
-proto.rejects = function(promise, expected, message) {
+Assert.prototype.rejects = function(promise, expected, message) {
   checkExpectedArgument(this, "rejects", expected);
   return new Promise((resolve, reject) => {
     return promise
@@ -543,7 +567,7 @@ function compareNumbers(expression, lhs, rhs, message, operator) {
 
 
 
-proto.greater = function greater(lhs, rhs, message) {
+Assert.prototype.greater = function greater(lhs, rhs, message) {
   compareNumbers.call(this, lhs <= rhs, lhs, rhs, message, ">");
 };
 
@@ -558,7 +582,7 @@ proto.greater = function greater(lhs, rhs, message) {
 
 
 
-proto.greaterOrEqual = function greaterOrEqual(lhs, rhs, message) {
+Assert.prototype.greaterOrEqual = function greaterOrEqual(lhs, rhs, message) {
   compareNumbers.call(this, lhs < rhs, lhs, rhs, message, ">=");
 };
 
@@ -573,7 +597,7 @@ proto.greaterOrEqual = function greaterOrEqual(lhs, rhs, message) {
 
 
 
-proto.less = function less(lhs, rhs, message) {
+Assert.prototype.less = function less(lhs, rhs, message) {
   compareNumbers.call(this, lhs >= rhs, lhs, rhs, message, "<");
 };
 
@@ -588,7 +612,7 @@ proto.less = function less(lhs, rhs, message) {
 
 
 
-proto.lessOrEqual = function lessOrEqual(lhs, rhs, message) {
+Assert.prototype.lessOrEqual = function lessOrEqual(lhs, rhs, message) {
   compareNumbers.call(this, lhs > rhs, lhs, rhs, message, "<=");
 };
 
@@ -607,7 +631,7 @@ proto.lessOrEqual = function lessOrEqual(lhs, rhs, message) {
 
 
 
-proto.stringMatches = function stringMatches(lhs, rhs, message) {
+Assert.prototype.stringMatches = function stringMatches(lhs, rhs, message) {
   if (typeof rhs != "string" && !instanceOf(rhs, "RegExp")) {
     this.report(
       true,
@@ -656,7 +680,7 @@ proto.stringMatches = function stringMatches(lhs, rhs, message) {
 
 
 
-proto.stringContains = function stringContains(lhs, rhs, message) {
+Assert.prototype.stringContains = function stringContains(lhs, rhs, message) {
   if (typeof lhs != "string" || typeof rhs != "string") {
     this.report(
       true,
