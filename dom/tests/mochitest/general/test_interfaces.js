@@ -1498,12 +1498,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "mozInnerScreenY", insecureContext: true },
   
-  { name: "mozRTCIceCandidate", insecureContext: true },
-  
-  { name: "mozRTCPeerConnection", insecureContext: true },
-  
-  { name: "mozRTCSessionDescription", insecureContext: true },
-  
   { name: "name", insecureContext: true },
   
   { name: "navigator", insecureContext: true },
