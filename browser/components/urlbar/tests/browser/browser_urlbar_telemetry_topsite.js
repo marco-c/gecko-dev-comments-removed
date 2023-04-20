@@ -53,6 +53,10 @@ async function updateTopSites(condition, searchShortcuts = false) {
   
   await SpecialPowers.pushPrefEnv({
     set: [
+      [
+        "browser.newtabpage.activity-stream.discoverystream.endpointSpocsClear",
+        "",
+      ],
       ["browser.newtabpage.activity-stream.feeds.system.topsites", false],
       ["browser.newtabpage.activity-stream.feeds.system.topsites", true],
       [

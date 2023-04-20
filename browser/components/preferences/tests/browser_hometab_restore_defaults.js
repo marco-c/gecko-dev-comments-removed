@@ -11,6 +11,10 @@ add_task(async function testRestoreDefaultsBtn_visible() {
         "browser.newtabpage.activity-stream.feeds.section.topstories.options",
         JSON.stringify(Object.assign({}, JSON.parse(before), { hidden: true })),
       ],
+      [
+        "browser.newtabpage.activity-stream.discoverystream.endpointSpocsClear",
+        "",
+      ],
       
       ["browser.newtabpage.activity-stream.feeds.topsites", false],
     ],
@@ -109,6 +113,10 @@ add_task(async function testRestoreDefaultsBtn_hidden() {
       [
         "browser.newtabpage.activity-stream.feeds.section.topstories.options",
         JSON.stringify(Object.assign({}, JSON.parse(before), { hidden: true })),
+      ],
+      [
+        "browser.newtabpage.activity-stream.discoverystream.endpointSpocsClear",
+        "",
       ],
     ],
   });

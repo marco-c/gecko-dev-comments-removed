@@ -165,8 +165,12 @@ class DiscoveryStreamFeed {
   }
 
   get showSponsoredTopsites() {
+    const placements = this.getPlacements();
     
-    return this.store.getState().Prefs.values[PREF_SHOW_SPONSORED_TOPSITES];
+    return !!(
+      this.store.getState().Prefs.values[PREF_SHOW_SPONSORED_TOPSITES] &&
+      placements.find(placement => placement.name === "sponsored-topsites")
+    );
   }
 
   get showStories() {
@@ -1854,22 +1858,36 @@ class DiscoveryStreamFeed {
       case PREF_COLLECTIONS_ENABLED:
         this.onCollectionsChanged();
         break;
-      case PREF_USER_TOPSTORIES:
-      case PREF_SYSTEM_TOPSTORIES:
-        if (!action.data.value) {
+      case PREF_USER_TOPSITES:
+      case PREF_SYSTEM_TOPSITES:
+        if (
+          !(
+            this.showTopsites ||
+            (this.showStories && this.showSponsoredStories)
+          )
+        ) {
           
           this.clearSpocs();
-        } else {
+        }
+        break;
+      case PREF_USER_TOPSTORIES:
+      case PREF_SYSTEM_TOPSTORIES:
+        if (
+          !(
+            this.showStories ||
+            (this.showTopsites && this.showSponsoredTopsites)
+          )
+        ) {
+          
+          this.clearSpocs();
+        }
+        if (action.data.value) {
           this.enableStories();
         }
         break;
       
       case PREF_SHOW_SPONSORED:
       case PREF_SHOW_SPONSORED_TOPSITES:
-        if (!action.data.value) {
-          
-          this.clearSpocs();
-        }
         const dispatch = update =>
           this.store.dispatch(ac.BroadcastToContent(update));
         
@@ -1877,6 +1895,20 @@ class DiscoveryStreamFeed {
           dispatch,
           this.store.getState().DiscoveryStream.layout
         );
+        
+        
+        
+        if (
+          !(
+            (this.showSponsoredStories ||
+              (this.showTopSites && this.showSponsoredTopSites)) &&
+            (this.showSponsoredTopsites ||
+              (this.showStories && this.showSponsoredStories))
+          )
+        ) {
+          
+          this.clearSpocs();
+        }
         
         await this.cache.set("spocs", {});
         await this.loadSpocs(dispatch);
