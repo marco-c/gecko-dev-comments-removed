@@ -292,7 +292,6 @@ class XPathNSResolver;
 class XPathResult;
 class BrowsingContext;
 
-class nsDocumentOnStack;
 class nsUnblockOnloadEvent;
 
 template <typename, typename>
@@ -4382,17 +4381,6 @@ class Document : public nsINode,
   UniquePtr<ServoStyleSet> mStyleSet;
 
  protected:
-  friend class nsDocumentOnStack;
-
-  void IncreaseStackRefCnt() { ++mStackRefCnt; }
-
-  void DecreaseStackRefCnt() {
-    if (--mStackRefCnt == 0 && mNeedsReleaseAfterStackRefCntRelease) {
-      mNeedsReleaseAfterStackRefCntRelease = false;
-      NS_RELEASE_THIS();
-    }
-  }
-
   
   nsPIDOMWindowOuter* GetWindowInternal() const;
 
@@ -4749,8 +4737,6 @@ class Document : public nsINode,
   bool mIsGoingAway : 1;
 
   bool mInXBLUpdate : 1;
-
-  bool mNeedsReleaseAfterStackRefCntRelease : 1;
 
   
   bool mStyleSetFilled : 1;
@@ -5113,8 +5099,6 @@ class Document : public nsINode,
   
   
   RefPtr<nsXULPrototypeDocument> mPrototypeDocument;
-
-  nsrefcnt mStackRefCnt;
 
   
   
