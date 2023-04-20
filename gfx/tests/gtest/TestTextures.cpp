@@ -5,7 +5,6 @@
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "TestLayers.h"
 
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Tools.h"
@@ -40,6 +39,14 @@ using namespace mozilla::layers;
 
 namespace mozilla {
 namespace layers {
+
+class TestSurfaceAllocator final : public ISurfaceAllocator {
+ public:
+  TestSurfaceAllocator() = default;
+  virtual ~TestSurfaceAllocator() = default;
+
+  bool IsSameProcess() const override { return true; }
+};
 
 
 static void SetupSurface(gfxImageSurface* surface) {
