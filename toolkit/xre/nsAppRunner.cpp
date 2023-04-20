@@ -3949,17 +3949,6 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
 
   mozilla::startup::IncreaseDescriptorLimits();
 
-#ifdef USE_GLX_TEST
-  
-  
-  
-  
-  
-  
-  
-  fire_glxtest_process();
-#endif
-
   SetupErrorHandling(gArgv[0]);
 
 #ifdef CAIRO_HAS_DWRITE_FONT
@@ -5120,6 +5109,10 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 
   
   mozilla::glean_pings::Pageload.Submit("startup"_ns);
+
+#ifdef USE_GLX_TEST
+  fire_glxtest_process();
+#endif
 
   return 0;
 }
