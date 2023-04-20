@@ -1227,6 +1227,8 @@ let BrowserUsageTelemetry = {
       "browser.engagement.profile_count",
       valueToReport
     );
+    
+    Glean.browser.engagement.profile_count.set(valueToReport);
   },
 
   
