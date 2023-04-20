@@ -236,7 +236,7 @@ DevToolsServerConnection.prototype = {
     const errorString = prefix + ": " + DevToolsUtils.safeErrorString(error);
     
     if (!isWorker) {
-      Cu.reportError(errorString);
+      console.error(errorString);
     }
     dumpn(errorString);
     return {
