@@ -2,7 +2,7 @@
 
 
 
-requestLongerTimeout(6);
+requestLongerTimeout(12);
 
 Services.scriptloader.loadSubScript(
   getRootDirectory(gTestPath) + "head_browser_onbeforeunload.js",

@@ -1,9 +1,5 @@
 "use strict";
 
-
-
-requestLongerTimeout(6);
-
 const BASE_URL = "http://mochi.test:8888/browser/docshell/test/browser/";
 
 const TEST_PAGE = BASE_URL + "file_onbeforeunload_0.html";
