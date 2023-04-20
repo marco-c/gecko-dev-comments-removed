@@ -45,8 +45,9 @@ inline void nsIContent::SetPrimaryFrame(nsIFrame* aFrame) {
   MOZ_ASSERT(IsInUncomposedDoc() || IsInShadowTree(), "This will end badly!");
 
   
-  NS_ASSERTION(!aFrame || !mPrimaryFrame || aFrame == mPrimaryFrame,
-               "Losing track of existing primary frame");
+  MOZ_ASSERT(IsHTMLElement(nsGkAtoms::area) || !aFrame || !mPrimaryFrame ||
+                 aFrame == mPrimaryFrame,
+             "Losing track of existing primary frame");
 
   if (aFrame) {
     MOZ_ASSERT(!aFrame->IsPlaceholderFrame());
