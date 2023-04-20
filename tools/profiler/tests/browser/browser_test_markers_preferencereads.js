@@ -36,13 +36,13 @@ async function waitForPaintAfterLoad() {
 
 
 
-add_task(async function test_profile_feature_preferencereads() {
+add_task(async function test_profile_preferencereads_markers() {
   Assert.ok(
     !Services.profiler.IsActive(),
     "The profiler is not currently active"
   );
 
-  await startProfiler({ features: ["js", "preferencereads"] });
+  await startProfiler({ features: ["js"] });
 
   const url = BASE_URL + "single_frame.html";
   await BrowserTestUtils.withNewTab(url, async contentBrowser => {
@@ -60,56 +60,13 @@ add_task(async function test_profile_feature_preferencereads() {
     });
 
     
-    
     {
       const { contentThread } = await stopProfilerNowAndGetThreads(contentPid);
 
       Assert.greater(
         countPrefReadsInThread(kContentPref, contentThread),
         0,
-        `PreferenceRead profile markers for ${kContentPref} were recorded ` +
-          "when the PreferenceRead feature was turned on."
-      );
-    }
-
-    await startProfiler({ features: ["js"] });
-    
-    await ContentTask.spawn(contentBrowser, null, () => {
-      return new Promise(resolve => {
-        addEventListener("pageshow", () => resolve(), {
-          capturing: true,
-          once: true,
-        });
-        content.location.reload();
-      });
-    });
-
-    await waitForPaintAfterLoad();
-
-    
-    await SpecialPowers.spawn(contentBrowser, [kContentPref], pref => {
-      Services.prefs.getIntPref(pref);
-    });
-
-    
-    
-    {
-      const {
-        parentThread,
-        contentThread,
-      } = await stopProfilerNowAndGetThreads(contentPid);
-      Assert.equal(
-        getPayloadsOfType(parentThread, "PreferenceRead").length,
-        0,
-        "No PreferenceRead profile were recorded " +
-          "when the PreferenceRead feature was turned off."
-      );
-
-      Assert.equal(
-        getPayloadsOfType(contentThread, "PreferenceRead").length,
-        0,
-        "No PreferenceRead profile were recorded " +
-          "when the PreferenceRead feature was turned off."
+        `PreferenceRead profile markers for ${kContentPref} were recorded.`
       );
     }
   });
