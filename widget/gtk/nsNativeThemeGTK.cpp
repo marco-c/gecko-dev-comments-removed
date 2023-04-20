@@ -1130,13 +1130,36 @@ auto nsNativeThemeGTK::IsWidgetNonNative(nsIFrame* aFrame,
       aAppearance == StyleAppearance::FocusOutline) {
     return NonNative::Always;
   }
+
   
-  if (Theme::ThemeSupportsWidget(aFrame->PresContext(), aFrame, aAppearance) &&
-      LookAndFeel::ColorSchemeForFrame(aFrame) !=
-          LookAndFeel::ColorSchemeForChrome()) {
-    return NonNative::BecauseColorMismatch;
+  
+  if (LookAndFeel::ColorSchemeForFrame(aFrame) ==
+      LookAndFeel::ColorSchemeForChrome()) {
+    return NonNative::No;
   }
-  return NonNative::No;
+
+  
+  
+  
+  if (aAppearance == StyleAppearance::Tooltip) {
+    auto darkColor =
+        LookAndFeel::Color(StyleSystemColor::Infotext, ColorScheme::Dark,
+                           LookAndFeel::UseStandins::No);
+    auto lightColor =
+        LookAndFeel::Color(StyleSystemColor::Infotext, ColorScheme::Light,
+                           LookAndFeel::UseStandins::No);
+    if (darkColor == lightColor) {
+      return NonNative::No;
+    }
+  }
+
+  
+  if (NS_WARN_IF(!Theme::ThemeSupportsWidget(aFrame->PresContext(), aFrame,
+                                             aAppearance))) {
+    return NonNative::No;
+  }
+
+  return NonNative::BecauseColorMismatch;
 }
 
 LayoutDeviceIntSize nsNativeThemeGTK::GetMinimumWidgetSize(
