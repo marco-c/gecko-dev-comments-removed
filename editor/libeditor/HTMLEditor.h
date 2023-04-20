@@ -1509,8 +1509,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
   InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
       const EditorDOMPoint& aPointToInsert);
 
