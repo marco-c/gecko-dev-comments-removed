@@ -648,19 +648,23 @@ void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState) {
     needCallback = true;
   }
 
-  nsRect bounds(GetRect());
+  
+  const nsSize preLayoutSize = GetSize();
   XULLayout(aState);
 
   
   
   
   
+  
+  
   bool rePosition = shouldPosition && (mPosition == POPUPPOSITION_SELECTION);
-  nsSize newsize = GetSize();
-  if (newsize.width > bounds.width || newsize.height > bounds.height) {
+  const nsSize postLayoutSize = GetSize();
+  if (postLayoutSize.width > preLayoutSize.width ||
+      postLayoutSize.height > preLayoutSize.height) {
     
     
-    mPrefSize = newsize;
+    mPrefSize = postLayoutSize;
     if (isOpen) {
       rePosition = true;
       needCallback = true;
