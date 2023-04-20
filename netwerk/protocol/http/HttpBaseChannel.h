@@ -577,6 +577,8 @@ class HttpBaseChannel : public nsHashPropertyBag,
   [[nodiscard]] virtual nsresult SetupReplacementChannel(
       nsIURI*, nsIChannel*, bool preserveMethod, uint32_t redirectFlags);
 
+  bool IsNewChannelSameOrigin(nsIChannel* aNewChannel);
+
   
   virtual bool ShouldTaintReplacementChannelOrigin(nsIChannel* aNewChannel,
                                                    uint32_t aRedirectFlags);
