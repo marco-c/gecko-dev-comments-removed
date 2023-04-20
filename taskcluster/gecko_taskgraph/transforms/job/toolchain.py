@@ -168,13 +168,33 @@ def common_toolchain(config, job, taskdesc, is_docker):
 
     
     
-    if taskdesc["attributes"].get("local-toolchain"):
+    local_toolchain = taskdesc["attributes"].get("local-toolchain")
+    if local_toolchain:
         if taskdesc.get("run-on-projects"):
             raise Exception(
                 "Toolchain {} used for local developement must not have"
                 " run-on-projects set".format(taskdesc["label"])
             )
         taskdesc["run-on-projects"] = ["integration", "release"]
+
+    script = run.pop("script")
+    arguments = run.pop("arguments", [])
+    if local_toolchain and not attributes["toolchain-artifact"].startswith("public/"):
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        attributes["toolchain-command"] = {
+            "script": script,
+            "arguments": list(arguments),
+        }
+        arguments.insert(0, script)
+        script = "private_local_toolchain.sh"
 
     run["using"] = "run-task"
     if is_docker:
@@ -187,8 +207,8 @@ def common_toolchain(config, job, taskdesc, is_docker):
     if is_docker:
         run["cwd"] = run["workdir"]
     run["command"] = [
-        "{}/taskcluster/scripts/misc/{}".format(gecko_path, run.pop("script"))
-    ] + run.pop("arguments", [])
+        "{}/taskcluster/scripts/misc/{}".format(gecko_path, script)
+    ] + arguments
     if not is_docker:
         
         
