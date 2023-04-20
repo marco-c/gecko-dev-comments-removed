@@ -3791,6 +3791,10 @@ pref("browser.translations.useHTML", false);
 
 
 
+pref("browser.translations.autoTranslate", false);
+
+
+
 
 
 
