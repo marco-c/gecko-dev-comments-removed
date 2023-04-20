@@ -6,7 +6,6 @@ import pytest
 
 
 
-
 @pytest.mark.asyncio
 async def test_subscribe_to_module(bidi_session, subscribe_events, wait_for_event):
     

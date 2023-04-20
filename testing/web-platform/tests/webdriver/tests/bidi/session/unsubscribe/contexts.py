@@ -8,7 +8,6 @@ from ... import create_console_api_message, recursive_compare
 
 
 
-
 @pytest.mark.asyncio
 async def test_unsubscribe_from_one_context(
     bidi_session, top_context, new_tab, wait_for_event
