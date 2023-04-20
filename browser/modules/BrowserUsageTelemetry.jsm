@@ -160,6 +160,19 @@ const SET_USAGECOUNT_PREF_BUTTONS = [
   "pageAction-panel-shareURL",
 ];
 
+
+const PLACES_CONTEXT_MENU_ID = "placesContext";
+const PLACES_OPEN_IN_CONTAINER_TAB_MENU_ID =
+  "placesContext_open:newcontainertab";
+
+
+const PLACES_OPEN_COMMANDS = [
+  "placesCmd_open",
+  "placesCmd_open:window",
+  "placesCmd_open:privatewindow",
+  "placesCmd_open:tab",
+];
+
 function telemetryId(widgetId, obscureAddons = true) {
   
   function addonId(id) {
@@ -773,11 +786,9 @@ let BrowserUsageTelemetry = {
       return;
     }
 
-    let types = [event.type];
     let sourceEvent = event;
     while (sourceEvent.sourceEvent) {
       sourceEvent = sourceEvent.sourceEvent;
-      types.push(sourceEvent.type);
     }
 
     let lastTarget = this.lastClickTarget?.get();
@@ -835,6 +846,19 @@ let BrowserUsageTelemetry = {
         
         
         return;
+      }
+    }
+
+    if (sourceEvent.type === "command") {
+      const { command, ownerDocument, parentNode } = node;
+      
+      
+      
+      if (
+        PLACES_OPEN_COMMANDS.includes(command) ||
+        parentNode?.parentNode?.id === PLACES_OPEN_IN_CONTAINER_TAB_MENU_ID
+      ) {
+        node = ownerDocument.getElementById(PLACES_CONTEXT_MENU_ID).triggerNode;
       }
     }
 
