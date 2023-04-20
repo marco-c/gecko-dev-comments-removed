@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=662170
+-->
 <head>
   <title>Test for Bug 662170</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -14,7 +14,7 @@
 
 <script type="application/javascript">
 
-/** Test for Bug 662170 **/
+/** Test for Bug 662170 */
 SimpleTest.waitForExplicitFinish();
 
 function childLoad() {
@@ -44,7 +44,7 @@ function childLoad2() {
 
 </script>
 
-
+<!-- When the iframe loads, it calls childLoad(). -->
 <iframe height='100px' id='iframe' src='file_bug662170.html'></iframe>
 
 </body>

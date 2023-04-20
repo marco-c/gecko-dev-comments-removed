@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=811363
+-->
 <head>
   <title>Test for Bug 811363</title>
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js">
@@ -19,7 +19,7 @@
 <iframe id="testframe"></iframe>
 <pre id="test">
 <script class="testbody" type="text/javascript">
-/** Test for Bug 811363 **/
+/** Test for Bug 811363 */
 CharsetDetectionTests("bug811363-3.text",
 		      "UTF-8",
 		      new Array("ja_parallel_state_machine"));

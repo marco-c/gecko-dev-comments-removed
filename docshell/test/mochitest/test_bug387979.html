@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=387979
+-->
 <head>
   <title>Test for Bug 387979</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>        
@@ -16,7 +16,7 @@
 <pre id="test">
 <script class="testbody" type="text/javascript">
 
-/** Test for Bug 387979 **/
+/** Test for Bug 387979 */
 function a(s) {
   var r;
   try { r = frames[0].document.body; } catch (e) { r = e; }

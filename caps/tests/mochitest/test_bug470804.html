@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=470804
+-->
 <head>
   <title>Test for Bug 470804</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -19,7 +19,7 @@
 
 /** Test for Bug 470804
     Passing a null targetURL to checkLoadURIWithPrincipal shouldn't crash
- **/
+ */
 
 const nsIScriptSecurityManager = SpecialPowers.Ci.nsIScriptSecurityManager;
 var secMan = SpecialPowers.Services.scriptSecurityManager;

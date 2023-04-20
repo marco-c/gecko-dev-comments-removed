@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1045096
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1045096</title>
@@ -19,7 +19,7 @@
 </pre>
   <script type="application/javascript">
 
-  /** Test for Bug 1045096 **/
+  /** Test for Bug 1045096 */
   var i = document.createElement("iframe");
   i.src = "javascript:false"; // This is required!
   $("content").appendChild(i);

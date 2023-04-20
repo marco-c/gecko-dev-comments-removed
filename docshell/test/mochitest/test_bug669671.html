@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=669671
+-->
 <head>
   <title>Test for Bug 669671</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -40,9 +40,9 @@
  * Then we go back and repeat the whole process but call history.replaceState
  * instead of pushState.  And for good measure, we test once more, this time
  * modifying only the hash of the URI using replaceState.  In this case, we
- * *should* load from the cache.
+ * should* load from the cache.
  *
- **/
+ */
 SimpleTest.requestLongerTimeout(2);
 SimpleTest.waitForExplicitFinish();
 

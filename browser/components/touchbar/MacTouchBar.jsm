@@ -39,6 +39,7 @@ XPCOMUtils.defineLazyServiceGetter(
 
 
 
+
 function execCommand(commandName) {
   if (!TouchBarHelper.window) {
     return;
@@ -48,6 +49,7 @@ function execCommand(commandName) {
     command.doCommand();
   }
 }
+
 
 
 
@@ -367,6 +369,7 @@ class TouchBarHelper {
 
 
 
+
   _updateTouchBarInputs(...inputNames) {
     if (!TouchBarHelper.window || !inputNames.length) {
       return;
@@ -390,6 +393,7 @@ class TouchBarHelper {
   }
 
   
+
 
 
 
@@ -531,6 +535,7 @@ helperProto._l10n = new Localization(["browser/touchbar/touchbar.ftl"]);
 
 
 
+
 class TouchBarInput {
   constructor(input) {
     this._key = input.key || input.title;
@@ -616,6 +621,7 @@ class TouchBarInput {
   }
 
   
+
 
 
 

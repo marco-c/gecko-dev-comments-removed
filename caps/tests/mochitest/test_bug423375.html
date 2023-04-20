@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=423375
+-->
 <head>
   <title>Test for Bug 423375</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -18,9 +18,9 @@
 <script class="testbody" type="text/javascript">
 
 /**
- ** Test for Bug 423375
- ** (content shouldn't be able to load chrome: or resource:)
- **/
+ *Test for Bug 423375
+ *(content shouldn't be able to load chrome: or resource:)
+ */
 function tryLoad(url) {
     try {
         window.frames[0].location = url;

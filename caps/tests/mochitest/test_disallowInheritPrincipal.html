@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=732413
+-->
 <head>
   <title>Test for Bug 732413</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -20,7 +20,7 @@
 /** Test for Bug 732413
     Passing DISALLOW_INHERIT_PRINCIPAL flag should be effective even if
     aPrincipal is the system principal.
- **/
+ */
 
 const nsIScriptSecurityManager = SpecialPowers.Ci.nsIScriptSecurityManager;
 var secMan = SpecialPowers.Cc["@mozilla.org/scriptsecuritymanager;1"]

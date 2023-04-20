@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=246699
+-->
 <head>
   <title>Test for Bug 246699</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -18,9 +18,9 @@
 <script class="testbody" type="text/javascript">
 
 /**
- ** Test for Bug 246699
- ** (should produce stack information for caps errors)
- **/
+ * Test for Bug 246699
+ * (should produce stack information for caps errors)
+ */
 function isError(e) {
   return e.constructor.name === "Error" || e.constructor.name === "TypeError";
 }
