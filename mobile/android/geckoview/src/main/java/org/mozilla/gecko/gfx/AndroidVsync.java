@@ -5,15 +5,9 @@
 
 package org.mozilla.gecko.gfx;
 
-import android.content.Context;
-import android.hardware.display.DisplayManager;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Choreographer;
-import android.view.Display;
-import androidx.annotation.RequiresApi;
-import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.JNIObject;
 
@@ -74,22 +68,5 @@ import org.mozilla.gecko.mozglue.JNIObject;
       }
     }
     return mObservingVsync;
-  }
-
-  
-
-
-
-
-
-
-
-  @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
-  @WrapForJNI
-  public float getRefreshRate() {
-    final DisplayManager dm =
-        (DisplayManager)
-            GeckoAppShell.getApplicationContext().getSystemService(Context.DISPLAY_SERVICE);
-    return dm.getDisplay(Display.DEFAULT_DISPLAY).getRefreshRate();
   }
 }
