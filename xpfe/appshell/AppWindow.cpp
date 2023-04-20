@@ -1373,9 +1373,12 @@ void AppWindow::SetSpecifiedSize(int32_t aSpecWidth, int32_t aSpecHeight) {
   
   auto newSize = RoundedToInt(CSSIntSize(aSpecWidth, aSpecHeight) *
                               UnscaledDevicePixelsPerCSSPixel());
-  if (newSize != GetSize()) {
-    SetSize(newSize.width, newSize.height, false);
-  }
+
+  
+  
+  
+  
+  SetSize(newSize.width, newSize.height, false);
 }
 
 
@@ -2744,19 +2747,22 @@ void AppWindow::SizeShellToWithLimit(int32_t aDesiredWidth,
   int32_t widthDelta = aDesiredWidth - shellItemWidth;
   int32_t heightDelta = aDesiredHeight - shellItemHeight;
 
-  if (widthDelta || heightDelta) {
-    int32_t winWidth = 0;
-    int32_t winHeight = 0;
+  int32_t winWidth = 0;
+  int32_t winHeight = 0;
 
-    GetSize(&winWidth, &winHeight);
-    
-    
-    
-    
-    winWidth = std::max(winWidth + widthDelta, aDesiredWidth);
-    winHeight = std::max(winHeight + heightDelta, aDesiredHeight);
-    SetSize(winWidth, winHeight, true);
-  }
+  GetSize(&winWidth, &winHeight);
+  
+  
+  
+  
+  winWidth = std::max(winWidth + widthDelta, aDesiredWidth);
+  winHeight = std::max(winHeight + heightDelta, aDesiredHeight);
+
+  
+  
+  
+  
+  SetSize(winWidth, winHeight, true);
 }
 
 nsresult AppWindow::GetTabCount(uint32_t* aResult) {
