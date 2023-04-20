@@ -405,6 +405,13 @@ pref("browser.urlbar.suggest.calculator",           false);
 #endif
 
 
+pref("browser.urlbar.weather.featureGate", false);
+
+
+
+pref("browser.urlbar.suggest.weather", true);
+
+
 
 
 
