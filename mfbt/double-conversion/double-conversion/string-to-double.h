@@ -196,12 +196,12 @@ class StringToDoubleConverter {
   
   
   
-  float StringToFloat(const char* buffer,
+  MFBT_API float StringToFloat(const char* buffer,
                       int length,
                       int* processed_characters_count) const;
 
   
-  float StringToFloat(const uc16* buffer,
+  MFBT_API float StringToFloat(const uc16* buffer,
                       int length,
                       int* processed_characters_count) const;
 
