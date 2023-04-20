@@ -9,20 +9,16 @@
 
 
 add_task(async function test_migration_dialog_open_in_tab_dialog_box() {
-  let wizardReady = BrowserTestUtils.waitForEvent(
-    window,
-    "MigrationWizard:Ready"
-  );
-  let dialogPromise = TestUtils.topicObserved("subdialog-loaded");
+  let migrationDialogPromise = waitForMigrationWizardSubdialogTab();
   MigrationUtils.showMigrationWizard(window, {});
-  await dialogPromise;
-  await wizardReady;
-
+  let prefsBrowser = await migrationDialogPromise;
   Assert.ok(true, "Migration dialog was opened");
 
   let dialogClosed = BrowserTestUtils.waitForEvent(window, "dialogclose");
-  EventUtils.sendKey("ESCAPE");
+  await BrowserTestUtils.synthesizeKey("VK_ESCAPE", {}, prefsBrowser);
   await dialogClosed;
+  BrowserTestUtils.loadURIString(prefsBrowser, "about:blank");
+  await BrowserTestUtils.browserLoaded(prefsBrowser);
 });
 
 
