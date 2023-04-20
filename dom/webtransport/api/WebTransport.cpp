@@ -113,23 +113,11 @@ bool WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
     aError.ThrowSyntaxError("Invalid WebTransport URL");
     return false;
   }
-  bool dedicated =
-      !aOptions.mAllowPooling;  
-  bool requireUnreliable = aOptions.mRequireUnreliable;
-  WebTransportCongestionControl congestionControl = aOptions.mCongestionControl;
-  if (aOptions.mServerCertificateHashes.WasPassed()) {
-    
-    aError.ThrowNotSupportedError("No support for serverCertificateHashes yet");
-    
-    
-    return false;
-  }
-
+  
+  
   
   backgroundChild
-      ->SendCreateWebTransportParent(aURL, dedicated, requireUnreliable,
-                                     (uint32_t)congestionControl,
-                                     
+      ->SendCreateWebTransportParent(aURL ,
                                      std::move(parentEndpoint))
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
