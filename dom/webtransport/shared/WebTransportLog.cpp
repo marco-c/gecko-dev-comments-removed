@@ -1,0 +1,13 @@
+
+
+
+
+
+
+#include "WebTransportLog.h"
+
+namespace mozilla {
+
+LazyLogModule gWebTransportLog("WebTransport");
+
+}
