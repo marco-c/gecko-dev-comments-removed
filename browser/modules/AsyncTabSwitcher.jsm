@@ -169,7 +169,7 @@ class AsyncTabSwitcher {
 
     let tabIsLoaded =
       !initialBrowser.isRemoteBrowser ||
-      initialBrowser.frameLoader.remoteTab.hasLayers;
+      initialBrowser.frameLoader.remoteTab?.hasLayers;
 
     
     
