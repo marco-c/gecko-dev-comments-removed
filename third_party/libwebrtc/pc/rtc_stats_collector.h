@@ -80,6 +80,10 @@ class RTCStatsCollector : public rtc::RefCountInterface,
                       rtc::scoped_refptr<RTCStatsCollectorCallback> callback);
   
   
+  
+  
+  
+  
   void ClearCachedStatsReport();
 
   
@@ -93,6 +97,8 @@ class RTCStatsCollector : public rtc::RefCountInterface,
   struct CertificateStatsPair {
     std::unique_ptr<rtc::SSLCertificateStats> local;
     std::unique_ptr<rtc::SSLCertificateStats> remote;
+
+    CertificateStatsPair Copy() const;
   };
 
   
@@ -227,7 +233,7 @@ class RTCStatsCollector : public rtc::RefCountInterface,
   std::map<std::string, CertificateStatsPair>
   PrepareTransportCertificateStats_n(
       const std::map<std::string, cricket::TransportStats>&
-          transport_stats_by_name) const;
+          transport_stats_by_name);
   
   void PrepareTransceiverStatsInfosAndCallStats_s_w_n();
 
@@ -279,6 +285,10 @@ class RTCStatsCollector : public rtc::RefCountInterface,
   
   
   std::vector<RtpTransceiverStatsInfo> transceiver_stats_infos_;
+  
+  
+  
+  std::map<std::string, CertificateStatsPair> cached_certificates_by_transport_;
 
   Call::Stats call_stats_;
 
