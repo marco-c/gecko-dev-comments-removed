@@ -205,6 +205,10 @@ class RenderThread final {
   void UnregisterExternalImage(const wr::ExternalImageId& aExternalImageId);
 
   
+  void DestroyExternalImagesSyncWait(
+      const std::vector<wr::ExternalImageId>&& aIds);
+
+  
   void PrepareForUse(const wr::ExternalImageId& aExternalImageId);
 
   
@@ -320,6 +324,8 @@ class RenderThread final {
                           const wr::ExternalImageId& aExternalImageId);
 
   void CreateSingletonGL(nsACString& aError);
+
+  void DestroyExternalImages(const std::vector<wr::ExternalImageId>&& aIds);
 
   ~RenderThread();
 

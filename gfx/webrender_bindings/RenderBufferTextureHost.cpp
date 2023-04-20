@@ -51,8 +51,10 @@ wr::WrExternalImage RenderBufferTextureHost::Lock(uint8_t aChannelIndex,
                                                   gl::GLContext* aGL) {
   if (!mLocked) {
     if (!GetBuffer()) {
-      
-      gfxCriticalNote << "GetBuffer Failed";
+      if (!mDestroyed) {
+        
+        gfxCriticalNote << "GetBuffer Failed";
+      }
       return InvalidToWrExternalImage();
     }
     if (mFormat != gfx::SurfaceFormat::YUV) {
@@ -196,8 +198,10 @@ bool RenderBufferTextureHost::MapPlane(RenderCompositor* aCompositor,
                                        uint8_t aChannelIndex,
                                        PlaneInfo& aPlaneInfo) {
   if (!mBuffer) {
-    
-    gfxCriticalNote << "GetBuffer Failed";
+    if (!mDestroyed) {
+      
+      gfxCriticalNote << "GetBuffer Failed";
+    }
     return false;
   }
 
@@ -240,6 +244,11 @@ bool RenderBufferTextureHost::MapPlane(RenderCompositor* aCompositor,
 }
 
 void RenderBufferTextureHost::UnmapPlanes() {}
+
+void RenderBufferTextureHost::Destroy() {
+  mBuffer = nullptr;
+  mDestroyed = true;
+}
 
 }  
 }  
