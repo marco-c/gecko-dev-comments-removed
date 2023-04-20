@@ -49,6 +49,9 @@ class DecoderFactory {
   static DecoderType GetDecoderType(const char* aMimeType);
 
   
+  static DecoderFlags GetDefaultDecoderFlagsForType(DecoderType aType);
+
+  
 
 
 
@@ -128,7 +131,7 @@ class DecoderFactory {
 
 
   static already_AddRefed<IDecodingTask> CreateMetadataDecoder(
-      DecoderType aType, NotNull<RasterImage*> aImage,
+      DecoderType aType, NotNull<RasterImage*> aImage, DecoderFlags aFlags,
       NotNull<SourceBuffer*> aSourceBuffer);
 
   
