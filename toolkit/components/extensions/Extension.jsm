@@ -1290,6 +1290,29 @@ class ExtensionData {
       manifest.applications = manifest.browser_specific_settings;
     }
 
+    
+    
+    
+    
+    
+    if (
+      AppConstants.platform == "android" &&
+      manifest.browser_specific_settings?.gecko_android
+    ) {
+      const {
+        strict_min_version,
+        strict_max_version,
+      } = manifest.browser_specific_settings.gecko_android;
+
+      if (strict_min_version?.length) {
+        manifest.applications.gecko.strict_min_version = strict_min_version;
+      }
+
+      if (strict_max_version?.length) {
+        manifest.applications.gecko.strict_max_version = strict_max_version;
+      }
+    }
+
     if (
       this.manifestVersion < 3 &&
       manifest.background &&
