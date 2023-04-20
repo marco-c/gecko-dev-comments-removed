@@ -55,6 +55,7 @@
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/Text.h"
+#include "mozilla/dom/XULPopupElement.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/EventDispatcher.h"
@@ -568,7 +569,7 @@ nsFocusManager::ClearFocus(mozIDOMWindowProxy* aWindow) {
     RefPtr<BrowsingContext> bc = window->GetBrowsingContext();
     bool isAncestor = (GetFocusedBrowsingContext() != bc);
     uint64_t actionId = GenerateFocusActionId();
-    if (Blur(bc, nullptr, isAncestor, true, actionId)) {
+    if (Blur(bc, nullptr, isAncestor, true, false, actionId)) {
       
       
       if (isAncestor) {
@@ -830,7 +831,7 @@ void nsFocusManager::WindowLowered(mozIDOMWindowProxy* aWindow,
   }
 
   if (mFocusedWindow) {
-    Blur(nullptr, nullptr, true, true, aActionId);
+    Blur(nullptr, nullptr, true, true, false, aActionId);
   }
 
   mWindowBeingLowered = nullptr;
@@ -1451,6 +1452,26 @@ void LogWarningFullscreenWindowRaise(Element* aElement) {
       windowGlobalParent->GetDocumentURI());
 }
 
+
+
+static bool IsEmeddededInNoautofocusPopup(BrowsingContext& aBc) {
+  auto* embedder = aBc.GetEmbedderElement();
+  if (!embedder) {
+    return false;
+  }
+  nsIFrame* f = embedder->GetPrimaryFrame();
+  if (!f || !f->HasAnyStateBits(NS_FRAME_IN_POPUP)) {
+    return false;
+  }
+
+  nsIFrame* menuPopup =
+      nsLayoutUtils::GetClosestFrameOfType(f, LayoutFrameType::MenuPopup);
+  MOZ_ASSERT(menuPopup, "NS_FRAME_IN_POPUP lied?");
+  return static_cast<nsMenuPopupFrame*>(menuPopup)
+      ->PopupElement()
+      .GetXULBoolAttr(nsGkAtoms::noautofocus);
+}
+
 void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
                                    bool aFocusChanged, bool aAdjustWidget,
                                    uint64_t aActionId) {
@@ -1737,29 +1758,34 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
               ? GetCommonAncestor(newWindow, focusedBrowsingContext)
               : nullptr;
 
-      bool needToClearFocusedElement = false;
-      if (focusedBrowsingContext->IsChrome()) {
-        
-        needToClearFocusedElement = true;
-      } else {
-        
-        
-        if (focusedBrowsingContext->Top() == browsingContextToFocus->Top()) {
+      const bool needToClearFocusedElement = [&] {
+        if (focusedBrowsingContext->IsChrome()) {
           
           
-          
-          
-          needToClearFocusedElement = (focusMovesToDifferentBC ||
-                                       focusedBrowsingContext->IsInProcess());
+          return !IsEmeddededInNoautofocusPopup(*browsingContextToFocus);
         }
-      }
+        if (focusedBrowsingContext->Top() != browsingContextToFocus->Top()) {
+          
+          
+          return false;
+        }
+        
+        
+        
+        
+        return focusMovesToDifferentBC || focusedBrowsingContext->IsInProcess();
+      }();
+
+      const bool remainActive =
+          focusMovesToDifferentBC &&
+          IsEmeddededInNoautofocusPopup(*browsingContextToFocus);
 
       
       if (!Blur(MOZ_KnownLive(needToClearFocusedElement
                                   ? focusedBrowsingContext.get()
                                   : nullptr),
                 commonAncestor, focusMovesToDifferentBC, aAdjustWidget,
-                aActionId, elementToFocus)) {
+                remainActive, aActionId, elementToFocus)) {
         return;
       }
     }
@@ -2003,7 +2029,7 @@ bool nsFocusManager::AdjustInProcessWindowFocus(
       RefPtr<nsFrameLoader> loader = loaderOwner->GetFrameLoader();
       if (loader && loader->IsRemoteFrame() &&
           GetFocusedBrowsingContext() == bc) {
-        Blur(nullptr, nullptr, true, true, aActionId);
+        Blur(nullptr, nullptr, true, true, false, aActionId);
       }
     }
   }
@@ -2117,11 +2143,12 @@ Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
 bool nsFocusManager::Blur(BrowsingContext* aBrowsingContextToClear,
                           BrowsingContext* aAncestorBrowsingContextToFocus,
                           bool aIsLeavingDocument, bool aAdjustWidget,
-                          uint64_t aActionId, Element* aElementToFocus) {
+                          bool aRemainActive, uint64_t aActionId,
+                          Element* aElementToFocus) {
   if (XRE_IsParentProcess()) {
     return BlurImpl(aBrowsingContextToClear, aAncestorBrowsingContextToFocus,
-                    aIsLeavingDocument, aAdjustWidget, aElementToFocus,
-                    aActionId);
+                    aIsLeavingDocument, aAdjustWidget, aRemainActive,
+                    aElementToFocus, aActionId);
   }
   mozilla::dom::ContentChild* contentChild =
       mozilla::dom::ContentChild::GetSingleton();
@@ -2164,8 +2191,8 @@ bool nsFocusManager::Blur(BrowsingContext* aBrowsingContextToClear,
                                           true);
     }
     return BlurImpl(aBrowsingContextToClear, aAncestorBrowsingContextToFocus,
-                    aIsLeavingDocument, aAdjustWidget, aElementToFocus,
-                    aActionId);
+                    aIsLeavingDocument, aAdjustWidget, aRemainActive,
+                    aElementToFocus, aActionId);
   }
   if (aBrowsingContextToClear && aBrowsingContextToClear->IsInProcess()) {
     nsPIDOMWindowOuter* windowToClear = aBrowsingContextToClear->GetDOMWindow();
@@ -2201,13 +2228,15 @@ void nsFocusManager::BlurFromOtherProcess(
     return;
   }
   BlurImpl(aBrowsingContextToClear, aAncestorBrowsingContextToFocus,
-           aIsLeavingDocument, aAdjustWidget, nullptr, aActionId);
+           aIsLeavingDocument, aAdjustWidget,  false,
+           nullptr, aActionId);
 }
 
 bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
                               BrowsingContext* aAncestorBrowsingContextToFocus,
                               bool aIsLeavingDocument, bool aAdjustWidget,
-                              Element* aElementToFocus, uint64_t aActionId) {
+                              bool aRemainActive, Element* aElementToFocus,
+                              uint64_t aActionId) {
   LOGFOCUS(("<<Blur begin actionid: %" PRIu64 ">>", aActionId));
 
   
@@ -2307,36 +2336,39 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
       NotifyFocusStateChange(element, aElementToFocus, 0, false, false);
     }
 
-    bool windowBeingLowered = !aBrowsingContextToClear &&
-                              !aAncestorBrowsingContextToFocus &&
-                              aIsLeavingDocument && aAdjustWidget;
-    
-    
-    if (BrowserParent* remote = BrowserParent::GetFrom(element)) {
-      MOZ_ASSERT(XRE_IsParentProcess());
+    if (!aRemainActive) {
+      bool windowBeingLowered = !aBrowsingContextToClear &&
+                                !aAncestorBrowsingContextToFocus &&
+                                aIsLeavingDocument && aAdjustWidget;
       
-      BrowsingContext* topLevelBrowsingContext = remote->GetBrowsingContext();
-      topLevelBrowsingContext->PreOrderWalk([&](BrowsingContext* aContext) {
-        if (WindowGlobalParent* windowGlobalParent =
-                aContext->Canonical()->GetCurrentWindowGlobal()) {
-          if (RefPtr<BrowserParent> browserParent =
-                  windowGlobalParent->GetBrowserParent()) {
-            browserParent->Deactivate(windowBeingLowered, aActionId);
-            LOGFOCUS(
-                ("%s remote browser deactivated %p, %d, actionid: %" PRIu64,
-                 aContext == topLevelBrowsingContext ? "Top-level"
-                                                     : "OOP iframe",
-                 browserParent.get(), windowBeingLowered, aActionId));
+      
+      if (BrowserParent* remote = BrowserParent::GetFrom(element)) {
+        MOZ_ASSERT(XRE_IsParentProcess());
+        
+        BrowsingContext* topLevelBrowsingContext = remote->GetBrowsingContext();
+        topLevelBrowsingContext->PreOrderWalk([&](BrowsingContext* aContext) {
+          if (WindowGlobalParent* windowGlobalParent =
+                  aContext->Canonical()->GetCurrentWindowGlobal()) {
+            if (RefPtr<BrowserParent> browserParent =
+                    windowGlobalParent->GetBrowserParent()) {
+              browserParent->Deactivate(windowBeingLowered, aActionId);
+              LOGFOCUS(
+                  ("%s remote browser deactivated %p, %d, actionid: %" PRIu64,
+                   aContext == topLevelBrowsingContext ? "Top-level"
+                                                       : "OOP iframe",
+                   browserParent.get(), windowBeingLowered, aActionId));
+            }
           }
-        }
-      });
-    }
+        });
+      }
 
-    
-    if (BrowserBridgeChild* bbc = BrowserBridgeChild::GetFrom(element)) {
-      bbc->Deactivate(windowBeingLowered, aActionId);
-      LOGFOCUS(("Out-of-process iframe deactivated %p, %d, actionid: %" PRIu64,
-                bbc, windowBeingLowered, aActionId));
+      
+      if (BrowserBridgeChild* bbc = BrowserBridgeChild::GetFrom(element)) {
+        bbc->Deactivate(windowBeingLowered, aActionId);
+        LOGFOCUS(
+            ("Out-of-process iframe deactivated %p, %d, actionid: %" PRIu64,
+             bbc, windowBeingLowered, aActionId));
+      }
     }
   }
 
@@ -3629,7 +3661,8 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
         if (tookFocus) {
           RefPtr<BrowsingContext> focusedBC = GetFocusedBrowsingContext();
           if (focusedBC && focusedBC->IsInProcess()) {
-            Blur(focusedBC, nullptr, true, true, GenerateFocusActionId());
+            Blur(focusedBC, nullptr, true, true, false,
+                 GenerateFocusActionId());
           } else {
             nsCOMPtr<nsPIDOMWindowOuter> window = docShell->GetWindow();
             window->SetFocusedElement(nullptr);
