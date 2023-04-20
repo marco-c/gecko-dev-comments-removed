@@ -80,10 +80,9 @@
 #  include <gdk/gdk.h>
 #  if defined(MOZ_X11)
 #    include <gdk/gdkx.h>
+#    include "X11UndefineNone.h"
 #  endif
 #endif
-
-#include "Layers.h"
 
 #include "mozilla/dom/AudioDeviceInfo.h"
 #include "mozilla/dom/Element.h"

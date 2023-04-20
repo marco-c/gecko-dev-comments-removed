@@ -22,7 +22,6 @@
 #include "nsRefreshDriver.h"
 #include "nsContentUtils.h"  
 #include "nsLayoutUtils.h"
-#include "Layers.h"
 #include "gfxPlatform.h"
 #include "WindowRenderer.h"
 

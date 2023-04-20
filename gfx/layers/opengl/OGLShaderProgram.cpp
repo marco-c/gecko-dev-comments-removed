@@ -11,7 +11,6 @@
 #include <sstream>  
 
 #include "GLContext.h"
-#include "Layers.h"
 #include "gfxEnv.h"
 #include "gfxRect.h"  
 #include "gfxUtils.h"

@@ -10,7 +10,6 @@
 
 #include "ImageBridgeParent.h"  
 #include "ImageContainer.h"     
-#include "Layers.h"             
 #include "SynchronousTask.h"
 #include "mozilla/Assertions.h"        
 #include "mozilla/Monitor.h"           

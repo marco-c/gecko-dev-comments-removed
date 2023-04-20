@@ -6,7 +6,6 @@
 #include "Image.h"
 
 #include "imgRequest.h"
-#include "Layers.h"  
 #include "WebRenderImageProvider.h"
 #include "nsIObserverService.h"
 #include "nsRefreshDriver.h"

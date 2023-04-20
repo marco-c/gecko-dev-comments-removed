@@ -25,7 +25,6 @@
 #include "GLScreenBuffer.h"
 #include "ImageContainer.h"
 #include "ImageEncoder.h"
-#include "Layers.h"
 #include "LayerUserData.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Document.h"

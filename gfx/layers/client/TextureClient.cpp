@@ -11,7 +11,6 @@
 #include "BufferTexture.h"
 #include "IPDLActor.h"
 #include "ImageContainer.h"  
-#include "Layers.h"          
 #include "MainThreadUtils.h"
 #include "gfx2DGlue.h"
 #include "gfxPlatform.h"  

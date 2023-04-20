@@ -13,7 +13,6 @@
 #include "GMPUtils.h"  
 #include "IMFYCbCrImage.h"
 #include "ImageContainer.h"
-#include "Layers.h"
 #include "MediaInfo.h"
 #include "MediaTelemetryConstants.h"
 #include "VideoUtils.h"

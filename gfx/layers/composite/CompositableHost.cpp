@@ -9,7 +9,6 @@
 #include <utility>    
 #include "Effects.h"  
 #include "gfxUtils.h"
-#include "Layers.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/TextureHost.h"     
