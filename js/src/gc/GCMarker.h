@@ -75,6 +75,10 @@ using EphemeronEdgeTable =
 
 
 
+
+
+
+
 class MarkStack {
  public:
   
@@ -147,6 +151,13 @@ class MarkStack {
   void setMaxCapacity(size_t maxCapacity);
 #endif
 
+  void setMarkColor(MarkColor newColor);
+  MarkColor markColor() const { return markColor_; }
+
+  bool hasBlackEntries() const { return position() > grayPosition_; }
+  bool hasGrayEntries() const { return grayPosition_ > 0 && !isEmpty(); }
+  bool hasEntries(MarkColor color) const;
+
   template <typename T>
   [[nodiscard]] bool push(T* ptr);
 
@@ -187,11 +198,19 @@ class MarkStack {
   const TaggedPtr& peekPtr() const;
   [[nodiscard]] bool pushTaggedPtr(Tag tag, Cell* ptr);
 
+  void assertGrayPositionValid() const;
+
   
   MainThreadOrGCTaskData<StackVector> stack_;
 
   
   MainThreadOrGCTaskData<size_t> topIndex_;
+
+  
+  MainThreadOrGCTaskData<size_t> grayPosition_;
+
+  
+  MainThreadOrGCTaskData<gc::MarkColor> markColor_;
 
 #ifdef JS_GC_ZEAL
   
@@ -271,7 +290,7 @@ class GCMarker {
   bool isRegularMarking() const { return state == RegularMarking; }
   bool isWeakMarking() const { return state == WeakMarking; }
 
-  gc::MarkColor markColor() const { return markColor_; }
+  gc::MarkColor markColor() const { return stack.markColor(); }
 
   bool isDrained();
 
@@ -337,13 +356,12 @@ class GCMarker {
 
 
 
-  void setMarkColor(gc::MarkColor newColor);
+  void setMarkColor(gc::MarkColor newColor) { stack.setMarkColor(newColor); }
   friend class js::gc::AutoSetMarkColor;
 
-  bool isMarkStackEmpty() { return stack.isEmpty(); }
-
-  bool hasBlackEntries() const { return stack.position() > grayPosition; }
-  bool hasGrayEntries() const { return grayPosition > 0 && !stack.isEmpty(); }
+  bool isMarkStackEmpty() const { return stack.isEmpty(); }
+  bool hasBlackEntries() const { return stack.hasBlackEntries(); }
+  bool hasGrayEntries() const { return stack.hasGrayEntries(); }
 
   void processMarkStackTop(SliceBudget& budget);
   friend class gc::GCRuntime;
@@ -447,17 +465,7 @@ class GCMarker {
   JSRuntime* const runtime_;
 
   
-
-
-
-
   gc::MarkStack stack;
-
-  
-  MainThreadOrGCTaskData<size_t> grayPosition;
-
-  
-  MainThreadOrGCTaskData<gc::MarkColor> markColor_;
 
   
   MainThreadOrGCTaskData<js::gc::Arena*> delayedMarkingList;
