@@ -2,41 +2,120 @@ use crate::{encode_section, Encode, Section, SectionId};
 
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
-#[repr(u8)]
 pub enum ValType {
     
-    I32 = 0x7F,
+    I32,
     
-    I64 = 0x7E,
+    I64,
     
-    F32 = 0x7D,
+    F32,
     
-    F64 = 0x7C,
-    
-    
-    
-    V128 = 0x7B,
+    F64,
     
     
     
-    
-    FuncRef = 0x70,
-    
+    V128,
     
     
-    ExternRef = 0x6F,
+    
+    
+    
+    Ref(RefType),
 }
 
-impl From<ValType> for u8 {
-    #[inline]
-    fn from(t: ValType) -> u8 {
-        t as u8
-    }
+impl ValType {
+    
+    pub const FUNCREF: ValType = ValType::Ref(RefType::FUNCREF);
+    
+    pub const EXTERNREF: ValType = ValType::Ref(RefType::EXTERNREF);
 }
 
 impl Encode for ValType {
     fn encode(&self, sink: &mut Vec<u8>) {
-        sink.push(*self as u8);
+        match self {
+            ValType::I32 => sink.push(0x7F),
+            ValType::I64 => sink.push(0x7E),
+            ValType::F32 => sink.push(0x7D),
+            ValType::F64 => sink.push(0x7C),
+            ValType::V128 => sink.push(0x7B),
+            ValType::Ref(rt) => rt.encode(sink),
+        }
+    }
+}
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[allow(missing_docs)]
+pub struct RefType {
+    pub nullable: bool,
+    pub heap_type: HeapType,
+}
+
+impl RefType {
+    
+    pub const FUNCREF: RefType = RefType {
+        nullable: true,
+        heap_type: HeapType::Func,
+    };
+
+    
+    pub const EXTERNREF: RefType = RefType {
+        nullable: true,
+        heap_type: HeapType::Extern,
+    };
+}
+
+impl Encode for RefType {
+    fn encode(&self, sink: &mut Vec<u8>) {
+        if self.nullable {
+            
+            
+            match self.heap_type {
+                HeapType::Func => return sink.push(0x70),
+                HeapType::Extern => return sink.push(0x6f),
+                _ => {}
+            }
+        }
+
+        if self.nullable {
+            sink.push(0x6C);
+        } else {
+            sink.push(0x6B);
+        }
+        self.heap_type.encode(sink);
+    }
+}
+
+impl From<RefType> for ValType {
+    fn from(ty: RefType) -> ValType {
+        ValType::Ref(ty)
+    }
+}
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
+pub enum HeapType {
+    
+    Func,
+    
+    Extern,
+    
+    TypedFunc(u32),
+}
+
+impl Encode for HeapType {
+    fn encode(&self, sink: &mut Vec<u8>) {
+        match self {
+            HeapType::Func => sink.push(0x70),
+            HeapType::Extern => sink.push(0x6F),
+            
+            
+            HeapType::TypedFunc(i) => i64::from(*i).encode(sink),
+        }
     }
 }
 
@@ -91,9 +170,9 @@ impl TypeSection {
 
         self.bytes.push(0x60);
         params.len().encode(&mut self.bytes);
-        self.bytes.extend(params.map(u8::from));
+        params.for_each(|p| p.encode(&mut self.bytes));
         results.len().encode(&mut self.bytes);
-        self.bytes.extend(results.map(u8::from));
+        results.for_each(|p| p.encode(&mut self.bytes));
         self.num_added += 1;
         self
     }

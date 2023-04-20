@@ -42,6 +42,12 @@ const INSTANCE_SORT: u8 = 0x05;
 pub trait ComponentSection: Encode {
     
     fn id(&self) -> u8;
+
+    
+    fn append_to_component(&self, dst: &mut Vec<u8>) {
+        dst.push(self.id());
+        self.encode(dst);
+    }
 }
 
 
@@ -102,12 +108,18 @@ pub struct Component {
 
 impl Component {
     
+    #[rustfmt::skip]
+    pub const HEADER: [u8; 8] = [
+        
+        0x00, 0x61, 0x73, 0x6D,
+        
+        0x0c, 0x00, 0x01, 0x00,
+    ];
+
+    
     pub fn new() -> Self {
         Self {
-            bytes: vec![
-                0x00, 0x61, 0x73, 0x6D, // magic (`\0asm`)
-                0x0c, 0x00, 0x01, 0x00, // version
-            ],
+            bytes: Self::HEADER.to_vec(),
         }
     }
 

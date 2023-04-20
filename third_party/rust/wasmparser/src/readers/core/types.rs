@@ -31,42 +31,179 @@ pub enum ValType {
     
     V128,
     
-    FuncRef,
     
-    ExternRef,
+    
+    
+    Ref(RefType),
+}
+
+
+
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[repr(packed)]
+pub struct RefType {
+    
+    pub nullable: bool,
+    
+    pub heap_type: HeapType,
+}
+
+impl RefType {
+    
+    pub const FUNCREF: RefType = RefType {
+        nullable: true,
+        heap_type: HeapType::Func,
+    };
+    
+    pub const EXTERNREF: RefType = RefType {
+        nullable: true,
+        heap_type: HeapType::Extern,
+    };
+}
+
+impl From<RefType> for ValType {
+    fn from(ty: RefType) -> ValType {
+        ValType::Ref(ty)
+    }
+}
+
+
+
+
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[repr(packed)]
+pub struct PackedIndex(u16);
+
+impl TryFrom<u32> for PackedIndex {
+    type Error = ();
+
+    fn try_from(idx: u32) -> Result<PackedIndex, ()> {
+        idx.try_into().map(PackedIndex).map_err(|_| ())
+    }
+}
+
+impl From<PackedIndex> for u32 {
+    fn from(x: PackedIndex) -> u32 {
+        x.0 as u32
+    }
+}
+
+
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum HeapType {
+    
+    
+    TypedFunc(PackedIndex),
+    
+    Func,
+    
+    Extern,
 }
 
 impl ValType {
+    
+    pub const FUNCREF: ValType = ValType::Ref(RefType::FUNCREF);
+    
+    pub const EXTERNREF: ValType = ValType::Ref(RefType::EXTERNREF);
+
     
     
     
     
     pub fn is_reference_type(&self) -> bool {
-        matches!(self, ValType::FuncRef | ValType::ExternRef)
+        matches!(self, ValType::Ref(_))
+    }
+    
+    
+    pub fn is_defaultable(&self) -> bool {
+        !matches!(
+            self,
+            ValType::Ref(RefType {
+                nullable: false,
+                ..
+            })
+        )
     }
 
-    pub(crate) fn from_byte(byte: u8) -> Option<ValType> {
+    pub(crate) fn is_valtype_byte(byte: u8) -> bool {
         match byte {
-            0x7F => Some(ValType::I32),
-            0x7E => Some(ValType::I64),
-            0x7D => Some(ValType::F32),
-            0x7C => Some(ValType::F64),
-            0x7B => Some(ValType::V128),
-            0x70 => Some(ValType::FuncRef),
-            0x6F => Some(ValType::ExternRef),
-            _ => None,
+            0x7F | 0x7E | 0x7D | 0x7C | 0x7B | 0x70 | 0x6F | 0x6B | 0x6C => true,
+            _ => false,
         }
     }
 }
 
 impl<'a> FromReader<'a> for ValType {
     fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
-        match ValType::from_byte(reader.peek()?) {
-            Some(ty) => {
+        match reader.peek()? {
+            0x7F => {
                 reader.position += 1;
-                Ok(ty)
+                Ok(ValType::I32)
             }
-            None => bail!(reader.original_position(), "invalid value type"),
+            0x7E => {
+                reader.position += 1;
+                Ok(ValType::I64)
+            }
+            0x7D => {
+                reader.position += 1;
+                Ok(ValType::F32)
+            }
+            0x7C => {
+                reader.position += 1;
+                Ok(ValType::F64)
+            }
+            0x7B => {
+                reader.position += 1;
+                Ok(ValType::V128)
+            }
+            0x70 | 0x6F | 0x6B | 0x6C => Ok(ValType::Ref(reader.read()?)),
+            _ => bail!(reader.original_position(), "invalid value type"),
+        }
+    }
+}
+
+impl<'a> FromReader<'a> for RefType {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        match reader.read()? {
+            0x70 => Ok(RefType::FUNCREF),
+            0x6F => Ok(RefType::EXTERNREF),
+            byte @ (0x6B | 0x6C) => Ok(RefType {
+                nullable: byte == 0x6C,
+                heap_type: reader.read()?,
+            }),
+            _ => bail!(reader.original_position(), "malformed reference type"),
+        }
+    }
+}
+
+impl<'a> FromReader<'a> for HeapType {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        match reader.peek()? {
+            0x70 => {
+                reader.position += 1;
+                Ok(HeapType::Func)
+            }
+            0x6F => {
+                reader.position += 1;
+                Ok(HeapType::Extern)
+            }
+            _ => {
+                let idx = match u32::try_from(reader.read_var_s33()?) {
+                    Ok(idx) => idx,
+                    Err(_) => {
+                        bail!(reader.original_position(), "invalid function heap type",);
+                    }
+                };
+                match idx.try_into() {
+                    Ok(packed) => Ok(HeapType::TypedFunc(packed)),
+                    Err(_) => {
+                        bail!(reader.original_position(), "function index too large");
+                    }
+                }
+            }
         }
     }
 }
@@ -142,7 +279,7 @@ impl FuncType {
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct TableType {
     
-    pub element_type: ValType,
+    pub element_type: RefType,
     
     pub initial: u32,
     
