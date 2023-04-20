@@ -188,10 +188,7 @@ class BasePrincipal : public nsJSPrincipals {
   NS_IMETHOD GetPrecursorPrincipal(nsIPrincipal** aPrecursor) override;
 
   nsresult ToJSON(nsACString& aJSON);
-  nsresult ToJSON(Json::Value& aObject);
-
   static already_AddRefed<BasePrincipal> FromJSON(const nsACString& aJSON);
-  static already_AddRefed<BasePrincipal> FromJSON(const Json::Value& aJSON);
   
   
   virtual nsresult PopulateJSONObject(Json::Value& aObject);
@@ -341,23 +338,6 @@ class BasePrincipal : public nsJSPrincipals {
     virtual ~Deserializer() = default;
     RefPtr<BasePrincipal> mPrincipal;
   };
-
- private:
-  static const char* JSONEnumKeyStrings[4];
-
-  static void SetJSONValue(Json::Value& aObject, const char* aKey,
-                           const nsCString& aValue);
-
- protected:
-  template <auto EnumValue>
-  static inline constexpr const char* JSONEnumKeyString() {
-    static_assert(EnumValue < ArrayLength(JSONEnumKeyStrings));
-    return JSONEnumKeyStrings[EnumValue];
-  }
-  template <auto EnumValue>
-  static void SetJSONValue(Json::Value& aObject, const nsCString& aValue) {
-    SetJSONValue(aObject, JSONEnumKeyString<EnumValue>(), aValue);
-  }
 
  private:
   static already_AddRefed<BasePrincipal> CreateContentPrincipal(
