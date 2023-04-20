@@ -264,13 +264,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   
   
   
-  
-  [[deprecated("Use the rid member of config struct instead'")]] virtual void
-  SetRid(absl::string_view rid) = 0;
-
-  
-  
-  
   virtual void SetMid(absl::string_view mid) = 0;
 
   
