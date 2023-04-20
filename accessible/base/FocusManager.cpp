@@ -68,11 +68,11 @@ Accessible* FocusManager::FocusedAccessible() const {
   } else {
     nsAccessibilityService::GetAndroidMonitor().AssertCurrentThreadOwns();
   }
+  return mFocusedRemoteDoc ? mFocusedRemoteDoc->GetFocusedAcc() : nullptr;
 #else
   if (Accessible* focusedAcc = FocusedLocalAccessible()) {
     return focusedAcc;
   }
-#endif  
 
   if (!XRE_IsParentProcess()) {
     
@@ -96,6 +96,7 @@ Accessible* FocusManager::FocusedAccessible() const {
   DocAccessibleParent* focusedDoc =
       DocAccessibleParent::GetFrom(focusedContext);
   return focusedDoc ? focusedDoc->GetFocusedAcc() : nullptr;
+#endif  
 }
 
 bool FocusManager::IsFocusWithin(const Accessible* aContainer) const {
