@@ -394,7 +394,7 @@ HTMLEditor::AutoInlineStyleSetter::ElementIsGoodContainerForTheStyle(
   if (!aHTMLEditor.IsCSSEnabled() || !isCSSEditable) {
     
     if (aElement.IsHTMLElement(&HTMLPropertyRef()) &&
-        !aElement.GetAttrCount() && !mAttribute) {
+        !HTMLEditUtils::ElementHasAttribute(aElement) && !mAttribute) {
       return true;
     }
 
@@ -813,7 +813,7 @@ Result<CaretPoint, nsresult> HTMLEditor::AutoInlineStyleSetter::ApplyStyle(
     
     
     if (aContent.IsHTMLElement(nsGkAtoms::span) &&
-        !aContent.AsElement()->GetAttrCount()) {
+        !HTMLEditUtils::ElementHasAttribute(*aContent.AsElement())) {
       spanElement = aContent.AsElement();
     } else {
       Result<CreateElementResult, nsresult> wrapInSpanElementResult =

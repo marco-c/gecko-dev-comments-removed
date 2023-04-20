@@ -10444,7 +10444,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ChangeMarginStart(
 
   
   if (!aElement.IsHTMLElement(nsGkAtoms::div) ||
-      HTMLEditUtils::ElementHasAttributesExceptMozDirty(aElement)) {
+      HTMLEditUtils::ElementHasAttribute(aElement)) {
     return EditorDOMPoint();
   }
   

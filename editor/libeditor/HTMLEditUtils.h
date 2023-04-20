@@ -609,17 +609,6 @@ class HTMLEditUtils final {
 
 
 
-  static bool ElementHasAttributesExceptMozDirty(const Element& aElement) {
-    uint32_t attrCount = aElement.GetAttrCount();
-    return attrCount > 1 ||
-           (attrCount == 1u &&
-            !aElement.GetAttrNameAt(0)->Equals(nsGkAtoms::mozdirty));
-  }
-
-  
-
-
-
 
 
 
@@ -2090,8 +2079,24 @@ class HTMLEditUtils final {
 
 
 
-  [[nodiscard]] static bool ElementHasAttributeExcept(const Element& aElement,
-                                                      const nsAtom& aAttribute);
+  [[nodiscard]] static bool ElementHasAttribute(const Element& aElement) {
+    return ElementHasAttributeExcept(aElement, *nsGkAtoms::_empty,
+                                     *nsGkAtoms::empty, *nsGkAtoms::_empty);
+  }
+  [[nodiscard]] static bool ElementHasAttributeExcept(
+      const Element& aElement, const nsAtom& aAttribute) {
+    return ElementHasAttributeExcept(aElement, aAttribute, *nsGkAtoms::_empty,
+                                     *nsGkAtoms::empty);
+  }
+  [[nodiscard]] static bool ElementHasAttributeExcept(
+      const Element& aElement, const nsAtom& aAttribute1,
+      const nsAtom& aAttribute2) {
+    return ElementHasAttributeExcept(aElement, aAttribute1, aAttribute2,
+                                     *nsGkAtoms::empty);
+  }
+  [[nodiscard]] static bool ElementHasAttributeExcept(
+      const Element& aElement, const nsAtom& aAttribute1,
+      const nsAtom& aAttribute2, const nsAtom& aAttribute3);
 
  private:
   static bool CanNodeContain(nsHTMLTag aParentTagId, nsHTMLTag aChildTagId);

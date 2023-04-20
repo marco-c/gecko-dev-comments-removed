@@ -2149,7 +2149,9 @@ size_t HTMLEditUtils::CollectEmptyInlineContainerDescendants(
 
 
 bool HTMLEditUtils::ElementHasAttributeExcept(const Element& aElement,
-                                              const nsAtom& aAttribute) {
+                                              const nsAtom& aAttribute1,
+                                              const nsAtom& aAttribute2,
+                                              const nsAtom& aAttribute3) {
   
   
   for (auto i : IntegerRange<uint32_t>(aElement.GetAttrCount())) {
@@ -2158,8 +2160,21 @@ bool HTMLEditUtils::ElementHasAttributeExcept(const Element& aElement,
       return true;
     }
 
-    if (name->LocalName() == &aAttribute) {
+    if (name->LocalName() == &aAttribute1 ||
+        name->LocalName() == &aAttribute2 ||
+        name->LocalName() == &aAttribute3) {
       continue;  
+    }
+
+    
+    
+    if (name->LocalName() == nsGkAtoms::style ||
+        name->LocalName() == nsGkAtoms::_class ||
+        name->LocalName() == nsGkAtoms::id) {
+      if (aElement.HasNonEmptyAttr(name->LocalName())) {
+        return true;
+      }
+      continue;
     }
 
     
