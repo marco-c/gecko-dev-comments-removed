@@ -2,12 +2,8 @@
 
 
 
-import json
-import os
-
 import mozpack.path as mozpath
 from mach.decorators import Command, SubCommand
-from mozpack.manifests import InstallManifest
 
 
 @Command(
@@ -43,84 +39,16 @@ def storybook_launch(command_context):
 
 
 def build_storybook_manifest(command_context):
+    print("Build ChromeMap backend")
+    run_mach(command_context, "build-backend", backend=["ChromeMap"])
     config_environment = command_context.config_environment
-    
-    unified_manifest = InstallManifest(
-        mozpath.join(config_environment.topobjdir, "faster", "unified_install_dist_bin")
-    )
-    paths = {}
-
-    for dest, entry in unified_manifest._dests.items():
-        
-        
-        
-        if (
-            entry[0] == 1
-            and (dest.endswith(".js") or dest.endswith(".mjs"))
-            and (
-                dest.startswith("chrome/toolkit/") or dest.startswith("browser/chrome/")
-            )
-        ):
-            try:
-                
-                
-                chrome_uri = _parse_dest_to_chrome_uri(dest)
-                
-                paths[chrome_uri] = os.path.relpath(entry[1])
-            except Exception as e:
-                
-                print('Error rewriting to chrome:// URI "{}" [{}]'.format(dest, e))
-                pass
-
-    with open("browser/components/storybook/.storybook/rewrites.js", "w") as f:
-        f.write("module.exports = ")
-        json.dump(paths, f, indent=2)
-
-
-def _parse_dest_to_chrome_uri(dest):
-    """Turn a jar destination into a chrome:// URI. Will raise an error on unknown input."""
-
-    global_start = dest.find("global/")
-    content_start = dest.find("content/")
-    skin_classic_browser = "skin/classic/browser/"
-    browser_skin_start = dest.find(skin_classic_browser)
-    package, provider, path = "", "", ""
-
-    if global_start != -1:
-        
-        
-        
-        
-        
-        
-        package = "global"
-        provider = "skin" if "/skin/" in dest else "content"
-        path = dest[global_start + len("global/") :]
-    elif content_start != -1:
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        provider, package, path = dest[content_start:].split("/", 2)
-    elif browser_skin_start != -1:
-        
-        
-        
-        
-        
-        
-        package = "browser"
-        provider = "skin"
-        path = dest[browser_skin_start + len(skin_classic_browser) :]
-
-    return "chrome://{package}/{provider}/{path}".format(
-        package=package, provider=provider, path=path
-    )
+    storybook_chrome_map_path = "browser/components/storybook/.storybook/chrome-map.js"
+    chrome_map_path = mozpath.join(config_environment.topobjdir, "chrome-map.json")
+    with open(chrome_map_path, "r") as chrome_map_f:
+        with open(storybook_chrome_map_path, "w") as storybook_chrome_map_f:
+            storybook_chrome_map_f.write("module.exports = ")
+            storybook_chrome_map_f.write(chrome_map_f.read())
+            storybook_chrome_map_f.write(";")
 
 
 def run_mach(command_context, cmd, **kwargs):
