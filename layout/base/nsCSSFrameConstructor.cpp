@@ -8476,6 +8476,37 @@ static nsIContent* GetTopmostMathMLElement(nsIContent* aMathMLContent) {
   return root;
 }
 
+
+
+static bool ShouldRecreateContainerForNativeAnonymousContentRoot(
+    nsIContent* aContent) {
+  if (!aContent->IsRootOfNativeAnonymousSubtree()) {
+    return false;
+  }
+  if (ManualNACPtr::IsManualNAC(aContent)) {
+    
+    
+    return false;
+  }
+  if (auto* el = Element::FromNode(aContent)) {
+    if (auto* classes = el->GetClasses()) {
+      if (classes->Contains(nsGkAtoms::mozCustomContentContainer,
+                            eCaseMatters)) {
+        
+        
+        
+        
+        
+        
+        
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 void nsCSSFrameConstructor::RecreateFramesForContent(
     nsIContent* aContent, InsertionKind aInsertionKind) {
   MOZ_ASSERT(aContent);
@@ -8498,11 +8529,10 @@ void nsCSSFrameConstructor::RecreateFramesForContent(
   
   
   
-  if (aContent->IsRootOfNativeAnonymousSubtree() &&
-      !ManualNACPtr::IsManualNAC(aContent)) {
+  if (ShouldRecreateContainerForNativeAnonymousContentRoot(aContent)) {
     do {
       aContent = aContent->GetParent();
-    } while (aContent->IsRootOfNativeAnonymousSubtree());
+    } while (ShouldRecreateContainerForNativeAnonymousContentRoot(aContent));
     return RecreateFramesForContent(aContent, InsertionKind::Async);
   }
 
