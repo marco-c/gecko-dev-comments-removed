@@ -15,6 +15,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "call/rtp_transport_controller_send.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
@@ -205,8 +206,7 @@ class RtpVideoSenderTestFixture {
   
   
   
-  template <typename Closure>
-  void RunOnTransportQueue(Closure&& task) {
+  void RunOnTransportQueue(absl::AnyInvocable<void() &&> task) {
     transport_controller_.GetWorkerQueue()->PostTask(std::move(task));
     AdvanceTime(TimeDelta::Millis(0));
   }
