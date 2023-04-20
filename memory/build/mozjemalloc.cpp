@@ -1466,7 +1466,6 @@ static inline const char* _getprogname(void) { return "<jemalloc>"; }
 
 
 
-
 static inline void ApplyZeroOrJunk(void* aPtr, size_t aSize) {
   if (opt_junk) {
     memset(aPtr, kAllocJunk, aSize);
