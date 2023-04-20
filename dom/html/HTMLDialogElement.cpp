@@ -143,45 +143,14 @@ void HTMLDialogElement::FocusDialog() {
     doc->FlushPendingNotifications(FlushType::Frames);
   }
 
-  Element* controlCandidate = GetFocusDelegate(false );
+  RefPtr<Element> control = GetFocusDelegate(false );
 
   
-  if (!controlCandidate) {
-    controlCandidate = this;
+  if (!control) {
+    control = this;
   }
 
-  RefPtr<Element> control = controlCandidate;
-
-  
-  ErrorResult rv;
-  nsIFrame* frame = control->GetPrimaryFrame();
-  if (frame && frame->IsFocusable()) {
-    control->Focus(FocusOptions(), CallerType::NonSystem, rv);
-    if (rv.Failed()) {
-      return;
-    }
-  } else if (IsInTopLayer()) {
-    if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
-      
-      nsCOMPtr<nsPIDOMWindowOuter> outerWindow = OwnerDoc()->GetWindow();
-      fm->ClearFocus(outerWindow);
-    }
-  }
-
-  
-  
-  
-  
-  BrowsingContext* bc = control->OwnerDoc()->GetBrowsingContext();
-  if (bc && bc->IsInProcess() && bc->SameOriginWithTop()) {
-    if (nsCOMPtr<nsIDocShell> docShell = bc->Top()->GetDocShell()) {
-      if (Document* topDocument = docShell->GetExtantDocument()) {
-        
-        
-        topDocument->SetAutoFocusFired();
-      }
-    }
-  }
+  FocusCandidate(*control, IsInTopLayer());
 }
 
 void HTMLDialogElement::QueueCancelDialog() {

@@ -103,6 +103,7 @@
 #include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/CustomElementRegistry.h"
+#include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/ElementInternals.h"
 
 using namespace mozilla;
@@ -3260,6 +3261,54 @@ void nsGenericHTMLElement::TogglePopover(bool force, ErrorResult& aRv) {
     HidePopover(aRv);
   } else if (force && !PopoverOpen()) {
     ShowPopover(aRv);
+  }
+}
+
+
+void nsGenericHTMLElement::FocusPopover() {
+  
+  
+  RefPtr<Element> control =
+      GetBoolAttr(nsGkAtoms::autofocus)
+          ? this
+          : GetFocusDelegate(false , true );
+  if (!control) {
+    return;
+  }
+  FocusCandidate(*control, false );
+}
+
+void nsGenericHTMLElement::FocusCandidate(Element& aControl,
+                                          bool aClearUpFocus) {
+  
+  IgnoredErrorResult rv;
+  nsIFrame* frame = aControl.GetPrimaryFrame();
+  if (frame && frame->IsFocusable()) {
+    aControl.Focus(FocusOptions(), CallerType::NonSystem, rv);
+    if (rv.Failed()) {
+      return;
+    }
+  } else if (aClearUpFocus) {
+    if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
+      
+      nsCOMPtr<nsPIDOMWindowOuter> outerWindow = OwnerDoc()->GetWindow();
+      fm->ClearFocus(outerWindow);
+    }
+  }
+
+  
+  
+  
+  
+  BrowsingContext* bc = aControl.OwnerDoc()->GetBrowsingContext();
+  if (bc && bc->IsInProcess() && bc->SameOriginWithTop()) {
+    if (nsCOMPtr<nsIDocShell> docShell = bc->Top()->GetDocShell()) {
+      if (Document* topDocument = docShell->GetExtantDocument()) {
+        
+        
+        topDocument->SetAutoFocusFired();
+      }
+    }
   }
 }
 
