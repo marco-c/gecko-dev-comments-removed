@@ -329,13 +329,88 @@ class InputVolumeControllerParametrizedTest
     : public ::testing::TestWithParam<int> {};
 
 TEST_P(InputVolumeControllerParametrizedTest,
-       StartupMinVolumeConfigurationIsRespected) {
+       StartupMinVolumeConfigurationRespectedWhenAppliedInputVolumeAboveMin) {
   InputVolumeControllerTestHelper helper(
       {.min_input_volume = GetParam()});
 
-  EXPECT_EQ(*helper.CallAgcSequence(kInitialInputVolume, kHighSpeechProbability,
-                                    kSpeechLevel),
-            kInitialInputVolume);
+  EXPECT_EQ(*helper.CallAgcSequence(128,
+                                    0.9f,
+                                    -80),
+            128);
+}
+
+TEST_P(
+    InputVolumeControllerParametrizedTest,
+    StartupMinVolumeConfigurationRespectedWhenAppliedInputVolumeMaybeBelowMin) {
+  InputVolumeControllerTestHelper helper(
+      {.min_input_volume = GetParam()});
+
+  EXPECT_GE(*helper.CallAgcSequence(10,
+                                    0.9f,
+                                    -80),
+            10);
+}
+
+TEST_P(InputVolumeControllerParametrizedTest,
+       StartupMinVolumeRespectedWhenAppliedVolumeNonZero) {
+  const int kMinInputVolume = GetParam();
+  InputVolumeControllerTestHelper helper(
+      {.min_input_volume = kMinInputVolume,
+                  .target_range_min_dbfs = -30,
+                  .update_input_volume_wait_frames = 1,
+                  .speech_probability_threshold = 0.5f,
+                  .speech_ratio_threshold = 0.5f});
+
+  
+  int volume = *helper.CallAgcSequence(1,
+                                       0.9f,
+                                       -80);
+
+  EXPECT_EQ(volume, kMinInputVolume);
+}
+
+TEST_P(InputVolumeControllerParametrizedTest,
+       MinVolumeRepeatedlyRespectedWhenAppliedVolumeNonZero) {
+  const int kMinInputVolume = GetParam();
+  InputVolumeControllerTestHelper helper(
+      {.min_input_volume = kMinInputVolume,
+                  .target_range_min_dbfs = -30,
+                  .update_input_volume_wait_frames = 1,
+                  .speech_probability_threshold = 0.5f,
+                  .speech_ratio_threshold = 0.5f});
+
+  
+  for (int i = 0; i < 100; ++i) {
+    const int volume = *helper.CallAgcSequence(1,
+                                               0.9f,
+                                               -80);
+    EXPECT_GE(volume, kMinInputVolume);
+  }
+}
+
+TEST_P(InputVolumeControllerParametrizedTest,
+       StartupMinVolumeRespectedOnceWhenAppliedVolumeZero) {
+  const int kMinInputVolume = GetParam();
+  InputVolumeControllerTestHelper helper(
+      {.min_input_volume = kMinInputVolume,
+                  .target_range_min_dbfs = -30,
+                  .update_input_volume_wait_frames = 1,
+                  .speech_probability_threshold = 0.5f,
+                  .speech_ratio_threshold = 0.5f});
+
+  int volume = *helper.CallAgcSequence(0,
+                                       0.9f,
+                                       -80);
+
+  EXPECT_EQ(volume, kMinInputVolume);
+
+  
+  
+  volume = *helper.CallAgcSequence(0,
+                                   0.9f,
+                                   -80);
+
+  EXPECT_EQ(volume, 0);
 }
 
 TEST_P(InputVolumeControllerParametrizedTest, MicVolumeResponseToRmsError) {
