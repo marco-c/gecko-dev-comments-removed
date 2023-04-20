@@ -1257,7 +1257,7 @@ class Element : public FragmentOrElement {
 
 
 
-  void ExplicitlySetAttrElement(Element* aElement, nsAtom* aAttr);
+  void ExplicitlySetAttrElement(nsAtom* aAttr, Element* aElement);
 
   PseudoStyleType GetPseudoElementType() const {
     nsresult rv = NS_OK;

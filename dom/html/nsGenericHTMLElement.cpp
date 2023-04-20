@@ -2797,15 +2797,12 @@ bool nsGenericHTMLFormControlElementWithState::ParseAttribute(
 
 mozilla::dom::Element*
 nsGenericHTMLFormControlElementWithState::GetPopoverTargetElement() const {
-  
-  
-  return nullptr;
+  return GetAttrAssociatedElement(nsGkAtoms::popovertarget);
 }
 
 void nsGenericHTMLFormControlElementWithState::SetPopoverTargetElement(
-    mozilla::dom::Element*) {
-  
-  
+    mozilla::dom::Element* aElement) {
+  ExplicitlySetAttrElement(nsGkAtoms::popovertarget, aElement);
 }
 
 void nsGenericHTMLFormControlElementWithState::GenerateStateKey() {
