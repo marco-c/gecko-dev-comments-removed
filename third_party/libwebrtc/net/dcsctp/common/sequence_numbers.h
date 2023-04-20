@@ -120,6 +120,14 @@ class UnwrappedSequenceNumber {
   }
 
   
+  constexpr const int64_t* operator->() const { return &value_; }
+  constexpr const int64_t& operator*() const& { return value_; }
+  constexpr const int64_t&& operator*() const&& { return std::move(value_); }
+  constexpr const int64_t& value() const& { return value_; }
+  constexpr const int64_t&& value() const&& { return std::move(value_); }
+  constexpr explicit operator const int64_t&() const& { return value_; }
+
+  
   void Increment() { ++value_; }
 
   
