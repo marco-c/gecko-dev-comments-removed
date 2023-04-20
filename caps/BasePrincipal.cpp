@@ -278,12 +278,53 @@ already_AddRefed<BasePrincipal> BasePrincipal::FromJSON(
     return nullptr;
   }
 
+  return FromJSON(root);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool IsLegacyFormat(const Json::Value& aValue) {
+  const auto& specs = std::to_string(ExpandedPrincipal::eSpecs);
+  return aValue.isMember(specs) && aValue[specs].isString();
+}
+
+
+already_AddRefed<BasePrincipal> BasePrincipal::FromJSON(
+    const Json::Value& aJSON) {
   int principalKind = -1;
-  const Json::Value* value = GetPrincipalObject(root, principalKind);
+  const Json::Value* value = GetPrincipalObject(aJSON, principalKind);
   if (!value) {
 #ifdef DEBUG
     fprintf(stderr, "Unexpected JSON principal %s\n",
-            root.toStyledString().c_str());
+            aJSON.toStyledString().c_str());
 #endif
     MOZ_ASSERT(false, "Unexpected JSON to deserialize as a principal");
 
@@ -310,9 +351,15 @@ already_AddRefed<BasePrincipal> BasePrincipal::FromJSON(
   }
 
   if (principalKind == eExpandedPrincipal) {
-    nsTArray<ExpandedPrincipal::KeyVal> res =
-        GetJSONKeys<ExpandedPrincipal>(value);
-    return ExpandedPrincipal::FromProperties(res);
+    
+    
+    if (IsLegacyFormat(*value)) {
+      nsTArray<ExpandedPrincipal::KeyVal> res =
+          GetJSONKeys<ExpandedPrincipal>(value);
+      return ExpandedPrincipal::FromProperties(res);
+    }
+
+    return ExpandedPrincipal::FromProperties(*value);
   }
 
   MOZ_RELEASE_ASSERT(false, "Unexpected enum to deserialize as a principal");
@@ -325,26 +372,36 @@ nsresult BasePrincipal::PopulateJSONObject(Json::Value& aObject) {
 
 
 
-nsresult BasePrincipal::ToJSON(nsACString& aResult) {
-  MOZ_ASSERT(aResult.IsEmpty(), "ToJSON only supports an empty result input");
-  aResult.Truncate();
+nsresult BasePrincipal::ToJSON(nsACString& aJSON) {
+  MOZ_ASSERT(aJSON.IsEmpty(), "ToJSON only supports an empty result input");
+  aJSON.Truncate();
 
   Json::StreamWriterBuilder builder;
   builder["indentation"] = "";
-  Json::Value innerJSONObject = Json::objectValue;
-
-  nsresult rv = PopulateJSONObject(innerJSONObject);
-  NS_ENSURE_SUCCESS(rv, rv);
+  builder["emitUTF8"] = true;
 
   Json::Value root = Json::objectValue;
-  std::string key = std::to_string(Kind());
-  root[key] = innerJSONObject;
+  nsresult rv = ToJSON(root);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   std::string result = Json::writeString(builder, root);
-  aResult.Append(result);
-  if (aResult.Length() == 0) {
+  aJSON.Append(result);
+  if (aJSON.Length() == 0) {
     MOZ_ASSERT(false, "JSON writer failed to output a principal serialization");
     return NS_ERROR_UNEXPECTED;
   }
+
+  return NS_OK;
+}
+
+nsresult BasePrincipal::ToJSON(Json::Value& aObject) {
+  Json::Value innerJSONObject = Json::objectValue;
+  nsresult rv = PopulateJSONObject(innerJSONObject);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  std::string key = std::to_string(Kind());
+  aObject[key] = innerJSONObject;
+
   return NS_OK;
 }
 
