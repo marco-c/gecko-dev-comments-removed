@@ -7,6 +7,7 @@
 #include "APZCTreeManagerTester.h"
 #include "APZTestCommon.h"
 #include "InputUtils.h"
+#include "Units.h"
 
 class APZCTreeManagerGenericTester : public APZCTreeManagerTester {
  protected:
@@ -303,4 +304,45 @@ TEST_F(APZCTreeManagerTester, Bug1557424) {
   
   compositedScrollOffset = apzc->GetCompositedScrollOffset();
   EXPECT_EQ(CSSPoint(200, 200), compositedScrollOffset);
+}
+
+TEST_F(APZCTreeManagerTester, Bug1805601) {
+  
+  
+  CreateSimpleScrollingLayer();
+  ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
+  UpdateHitTestingTree();
+  RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);
+  FrameMetrics& compositorMetrics = apzc->GetFrameMetrics();
+  EXPECT_EQ(CSSRect(0, 0, 300, 300), compositorMetrics.CalculateScrollRange());
+
+  
+  
+  
+  compositorMetrics.SetZoom(CSSToParentLayerScale(2.0));
+  EXPECT_EQ(CSSRect(0, 0, 400, 400), compositorMetrics.CalculateScrollRange());
+
+  
+  compositorMetrics.ClampAndSetVisualScrollOffset(CSSPoint(350, 350));
+  EXPECT_EQ(CSSPoint(350, 350), compositorMetrics.GetVisualScrollOffset());
+
+  
+  
+  ModifyFrameMetrics(root, [](ScrollMetadata& aSm, FrameMetrics& aMetrics) {
+    
+    
+    
+    
+    aMetrics.SetVisualScrollOffset(CSSPoint(350, 350));
+
+    
+    
+    
+    aSm.SetResolutionUpdated(true);
+  });
+  UpdateHitTestingTree();
+
+  
+  EXPECT_EQ(CSSRect(0, 0, 300, 300), compositorMetrics.CalculateScrollRange());
+  EXPECT_EQ(CSSPoint(300, 300), compositorMetrics.GetVisualScrollOffset());
 }

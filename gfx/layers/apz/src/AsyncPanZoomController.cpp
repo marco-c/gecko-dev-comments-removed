@@ -5336,6 +5336,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
 
     
     
+    CSSToParentLayerScale oldZoom = Metrics().GetZoom();
     if (FuzzyEqualsAdditive(
             Metrics().GetCompositionBoundsWidthIgnoringScrollbars(),
             aLayerMetrics.GetCompositionBoundsWidthIgnoringScrollbars()) &&
@@ -5369,12 +5370,20 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       
       
       
+      
+      
       Metrics().SetZoom(aLayerMetrics.GetZoom());
       for (auto& sampledState : mSampledState) {
         sampledState.UpdateZoomProperties(aLayerMetrics);
       }
       Metrics().SetDevPixelsPerCSSPixel(
           aLayerMetrics.GetDevPixelsPerCSSPixel());
+    }
+
+    if (Metrics().GetZoom() != oldZoom) {
+      
+      
+      needToReclampScroll = true;
     }
 
     mExpectedGeckoMetrics.UpdateZoomFrom(aLayerMetrics);
