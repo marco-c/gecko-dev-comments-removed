@@ -25,6 +25,10 @@ namespace js {
 
 class FrontendContext;
 
+namespace frontend {
+class NameCollectionPool;
+}  
+
 struct FrontendErrors {
   FrontendErrors() = default;
   
@@ -57,6 +61,12 @@ class FrontendContext {
   FrontendAllocator alloc_;
   js::FrontendErrors errors_;
 
+  
+  
+  
+  frontend::NameCollectionPool* nameCollectionPool_;
+  bool ownNameCollectionPool_;
+
  protected:
   
   
@@ -65,8 +75,20 @@ class FrontendContext {
   JSContext* maybeCx_ = nullptr;
 
  public:
-  FrontendContext() : alloc_(this) {}
-  ~FrontendContext() = default;
+  FrontendContext()
+      : alloc_(this),
+        nameCollectionPool_(nullptr),
+        ownNameCollectionPool_(false) {}
+  ~FrontendContext();
+
+  bool allocateOwnedPool();
+
+  frontend::NameCollectionPool& nameCollectionPool() {
+    MOZ_ASSERT(
+        nameCollectionPool_,
+        "Either allocateOwnedPool or setCurrentJSContext must be called");
+    return *nameCollectionPool_;
+  }
 
   FrontendAllocator* getAllocator() { return &alloc_; }
 

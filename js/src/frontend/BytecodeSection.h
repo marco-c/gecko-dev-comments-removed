@@ -368,8 +368,8 @@ class BytecodeSection {
 
 class PerScriptData {
  public:
-  explicit PerScriptData(FrontendContext* fc, NameCollectionPool& ncp,
-                         frontend::CompilationState& compilationState);
+  PerScriptData(FrontendContext* fc,
+                frontend::CompilationState& compilationState);
 
   [[nodiscard]] bool init(FrontendContext* fc);
 
