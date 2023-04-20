@@ -202,7 +202,9 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
   static const uint32_t kMaxDesktopCaptureCpuUsage =
       50;  
 
-  int32_t _id;                  
+  int32_t _id;  
+  const mozilla::TrackingId
+      _tracking_id;             
   std::string _deviceUniqueId;  
   CaptureDeviceType _deviceType;
 

@@ -25,7 +25,10 @@ class AudioDestinationTrackSource final : public MediaStreamTrackSource {
                               mozilla::MediaTrack* aInputTrack,
                               ProcessedMediaTrack* aTrack,
                               nsIPrincipal* aPrincipal)
-      : MediaStreamTrackSource(aPrincipal, nsString()),
+      : MediaStreamTrackSource(
+            aPrincipal, nsString(),
+            
+            TrackingId(TrackingId::Source::AudioDestinationNode, 0)),
         mTrack(aTrack),
         mPort(mTrack->AllocateInputPort(aInputTrack)),
         mNode(aNode) {}

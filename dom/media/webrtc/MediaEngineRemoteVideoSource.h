@@ -128,6 +128,8 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
     return mFirstFramePromise;
   }
 
+  const TrackingId& GetTrackingId() const override;
+
   static camera::CaptureEngine CaptureEngine(dom::MediaSourceEnum aMediaSource);
 
  private:
@@ -149,6 +151,13 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
 
   int mCaptureId = -1;
   const camera::CaptureEngine mCapEngine;  
+
+  
+  
+  TrackingId mTrackingId;
+
+  
+  Maybe<TrackingId> mFrameDeliveringTrackingId;
 
   
   

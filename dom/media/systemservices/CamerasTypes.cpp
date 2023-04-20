@@ -1,0 +1,26 @@
+
+
+
+
+
+
+#include "CamerasTypes.h"
+
+namespace mozilla::camera {
+
+TrackingId::Source CaptureEngineToTrackingSourceStr(
+    const CaptureEngine& aEngine) {
+  switch (aEngine) {
+    case ScreenEngine:
+      return TrackingId::Source::Screen;
+    case BrowserEngine:
+      return TrackingId::Source::Tab;
+    case WinEngine:
+      return TrackingId::Source::Window;
+    case CameraEngine:
+      return TrackingId::Source::Camera;
+    default:
+      return TrackingId::Source::Unimplemented;
+  }
+}
+}  

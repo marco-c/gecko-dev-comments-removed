@@ -14,6 +14,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
 #include "nsStringFwd.h"
+#include "PerformanceRecorder.h"
 
 namespace mozilla {
 
@@ -79,6 +80,13 @@ class MediaEngineSourceInterface {
   virtual RefPtr<GenericNonExclusivePromise> GetFirstFramePromise() const {
     return nullptr;
   }
+
+  
+
+
+
+
+  virtual const TrackingId& GetTrackingId() const = 0;
 
   
 
@@ -214,6 +222,11 @@ class MediaEngineSource : public MediaEngineSourceInterface {
 
   void AssertIsOnOwningThread() const {
     NS_ASSERT_OWNINGTHREAD(MediaEngineSource);
+  }
+
+  const TrackingId& GetTrackingId() const override {
+    static auto notImplementedId = TrackingId();
+    return notImplementedId;
   }
 
   

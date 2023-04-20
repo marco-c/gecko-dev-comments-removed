@@ -17,6 +17,7 @@
 #include "nsError.h"
 #include "nsID.h"
 #include "nsIPrincipal.h"
+#include "PerformanceRecorder.h"
 
 namespace mozilla {
 
@@ -104,8 +105,12 @@ class MediaStreamTrackSource : public nsISupports {
     virtual ~Sink() = default;
   };
 
-  MediaStreamTrackSource(nsIPrincipal* aPrincipal, const nsString& aLabel)
-      : mPrincipal(aPrincipal), mLabel(aLabel), mStopped(false) {}
+  MediaStreamTrackSource(nsIPrincipal* aPrincipal, const nsString& aLabel,
+                         TrackingId aTrackingId)
+      : mPrincipal(aPrincipal),
+        mLabel(aLabel),
+        mTrackingId(std::move(aTrackingId)),
+        mStopped(false) {}
 
   
 
@@ -313,9 +318,15 @@ class MediaStreamTrackSource : public nsISupports {
   
   nsTArray<WeakPtr<Sink>> mSinks;
 
+ public:
   
   const nsString mLabel;
 
+  
+  
+  const TrackingId mTrackingId;
+
+ protected:
   
   
   bool mStopped;
@@ -329,7 +340,7 @@ class BasicTrackSource : public MediaStreamTrackSource {
   explicit BasicTrackSource(
       nsIPrincipal* aPrincipal,
       const MediaSourceEnum aMediaSource = MediaSourceEnum::Other)
-      : MediaStreamTrackSource(aPrincipal, nsString()),
+      : MediaStreamTrackSource(aPrincipal, nsString(), TrackingId()),
         mMediaSource(aMediaSource) {}
 
   MediaSourceEnum GetMediaSource() const override { return mMediaSource; }

@@ -729,8 +729,9 @@ class LocalTrackSource : public MediaStreamTrackSource {
   LocalTrackSource(nsIPrincipal* aPrincipal, const nsString& aLabel,
                    const RefPtr<DeviceListener>& aListener,
                    MediaSourceEnum aSource, MediaTrack* aTrack,
-                   RefPtr<PeerIdentity> aPeerIdentity)
-      : MediaStreamTrackSource(aPrincipal, aLabel),
+                   RefPtr<PeerIdentity> aPeerIdentity,
+                   TrackingId aTrackingId = TrackingId())
+      : MediaStreamTrackSource(aPrincipal, aLabel, std::move(aTrackingId)),
         mSource(aSource),
         mTrack(aTrack),
         mPeerIdentity(std::move(aPeerIdentity)),
@@ -1031,6 +1032,10 @@ MediaEngineSource* LocalMediaDevice::Source() {
     mSource = mRawDevice->mEngine->CreateSource(mRawDevice);
   }
   return mSource;
+}
+
+const TrackingId& LocalMediaDevice::GetTrackingId() const {
+  return mSource->GetTrackingId();
 }
 
 
@@ -1404,6 +1409,7 @@ class GetUserMediaStreamTask final : public GetUserMediaTask {
           mAudioDevice->Deallocate();
         }
       } else {
+        mVideoTrackingId.emplace(mVideoDevice->GetTrackingId());
         if (mCallerType == CallerType::NonSystem) {
           if (mShouldFocusSource) {
             rv = mVideoDevice->FocusOnSelectedSource();
@@ -1459,6 +1465,9 @@ class GetUserMediaStreamTask final : public GetUserMediaTask {
   
   RefPtr<LocalMediaDevice> mAudioDevice;
   RefPtr<LocalMediaDevice> mVideoDevice;
+  
+  
+  Maybe<TrackingId> mVideoTrackingId;
   
   const MediaEnginePrefs mPrefs;
   
@@ -1552,7 +1561,7 @@ void GetUserMediaStreamTask::PrepareDOMStream() {
     RefPtr<MediaTrack> track = mtg->CreateSourceTrack(MediaSegment::VIDEO);
     videoTrackSource = new LocalTrackSource(
         principal, videoDeviceName, mVideoDeviceListener,
-        mVideoDevice->GetMediaSource(), track, peerIdentity);
+        mVideoDevice->GetMediaSource(), track, peerIdentity, *mVideoTrackingId);
     MOZ_ASSERT(MediaManager::IsOn(mConstraints.mVideo));
     RefPtr<MediaStreamTrack> domTrack = new dom::VideoStreamTrack(
         window, track, videoTrackSource, dom::MediaStreamTrackState::Live,

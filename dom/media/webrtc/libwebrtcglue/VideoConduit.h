@@ -136,7 +136,8 @@ class WebrtcVideoConduit
 
   WebrtcVideoConduit(RefPtr<WebrtcCallWrapper> aCall,
                      nsCOMPtr<nsISerialEventTarget> aStsThread,
-                     Options aOptions, std::string aPCHandle);
+                     Options aOptions, std::string aPCHandle,
+                     const TrackingId& aRecvTrackingId);
   virtual ~WebrtcVideoConduit();
 
   
@@ -286,6 +287,10 @@ class WebrtcVideoConduit
   
   
   const nsCOMPtr<nsISerialEventTarget> mStsThread;
+
+  
+  
+  nsCOMPtr<nsISerialEventTarget> mFrameSendingThread;
 
   struct Control {
     
