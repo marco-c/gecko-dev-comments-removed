@@ -135,3 +135,25 @@ add_task(async function user_overwrites_search_term() {
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
 });
+
+
+
+add_task(async function user_overwrites_search_term() {
+  let { tab: tab1 } = await searchWithTab(SEARCH_STRING);
+
+  gURLBar.focus();
+  gURLBar.select();
+  EventUtils.sendKey("delete");
+
+  Assert.equal(gURLBar.value, "", "Empty string should be in url bar.");
+
+  
+  
+  let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+  await BrowserTestUtils.switchTab(gBrowser, tab1);
+
+  assertSearchStringIsInUrlbar(SEARCH_STRING);
+
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
+});
