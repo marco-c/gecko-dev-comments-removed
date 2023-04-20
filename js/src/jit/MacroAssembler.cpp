@@ -817,9 +817,11 @@ void MacroAssembler::initTypedArraySlots(Register obj, Register temp,
     }
 
     
-    liveRegs.addUnchecked(temp);
-    liveRegs.addUnchecked(obj);
-    liveRegs.addUnchecked(lengthReg);
+    if (obj.volatile_()) {
+      liveRegs.addUnchecked(obj);
+    }
+
+    
     PushRegsInMask(liveRegs);
     using Fn = void (*)(JSContext * cx, TypedArrayObject * obj, int32_t count);
     setupUnalignedABICall(temp);
