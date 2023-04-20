@@ -395,17 +395,6 @@ HTMLEditor::AutoInlineStyleSetter::ElementIsGoodContainerForTheStyle(
   }
 
   
-  if (!aElement.GetAttrCount() &&
-      ((&HTMLPropertyRef() == nsGkAtoms::b &&
-        aElement.IsHTMLElement(nsGkAtoms::strong)) ||
-       (&HTMLPropertyRef() == nsGkAtoms::i &&
-        aElement.IsHTMLElement(nsGkAtoms::em)) ||
-       (&HTMLPropertyRef() == nsGkAtoms::strike &&
-        aElement.IsHTMLElement(nsGkAtoms::s)))) {
-    return true;
-  }
-
-  
   if (mAttribute) {
     nsString attrValue;
     if (aElement.IsHTMLElement(&HTMLPropertyRef()) &&
