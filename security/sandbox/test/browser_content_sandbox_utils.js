@@ -49,17 +49,37 @@ function sanityChecks() {
 
 
 function createFile(path) {
-  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-  let encoder = new TextEncoder();
-  let array = encoder.encode("TEST FILE DUMMY DATA");
-  return OS.File.writeAtomic(path, array).then(
-    function(value) {
-      return { ok: true };
-    },
-    function(reason) {
-      return { ok: false };
-    }
+  const { FileUtils } = ChromeUtils.importESModule(
+    "resource://gre/modules/FileUtils.sys.mjs"
   );
+
+  try {
+    const fstream = Cc[
+      "@mozilla.org/network/file-output-stream;1"
+    ].createInstance(Ci.nsIFileOutputStream);
+
+    fstream.init(
+      new FileUtils.File(path),
+      -1, 
+      -1, 
+      0
+    ); 
+
+    const ostream = Cc["@mozilla.org/binaryoutputstream;1"].createInstance(
+      Ci.nsIBinaryOutputStream
+    );
+    ostream.setOutputStream(fstream);
+
+    const data = "TEST FILE DUMMY DATA";
+    ostream.writeBytes(data, data.length);
+
+    ostream.close();
+    fstream.close();
+  } catch (e) {
+    return { ok: false };
+  }
+
+  return { ok: true };
 }
 
 
@@ -67,16 +87,29 @@ function createFile(path) {
 
 
 function createSymlink(path) {
-  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-  
-  return OS.File.unixSymLink("/Users", path).then(
-    function(value) {
-      return { ok: true };
-    },
-    function(reason) {
+  const { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
+
+  try {
+    const libc = ctypes.open(
+      Services.appinfo.OS === "Darwin" ? "libSystem.B.dylib" : "libc.so"
+    );
+
+    const symlink = libc.declare(
+      "symlink",
+      ctypes.default_abi,
+      ctypes.int, 
+      ctypes.char.ptr, 
+      ctypes.char.ptr 
+    );
+
+    if (symlink("/etc", path)) {
       return { ok: false };
     }
-  );
+  } catch (e) {
+    return { ok: false };
+  }
+
+  return { ok: true };
 }
 
 
@@ -84,14 +117,18 @@ function createSymlink(path) {
 
 
 function deleteFile(path) {
-  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-  return OS.File.remove(path, { ignoreAbsent: false })
-    .then(function(value) {
-      return { ok: true };
-    })
-    .catch(function(err) {
-      return { ok: false };
-    });
+  const { FileUtils } = ChromeUtils.importESModule(
+    "resource://gre/modules/FileUtils.sys.mjs"
+  );
+
+  try {
+    const file = new FileUtils.File(path);
+    file.remove(false);
+  } catch (e) {
+    return { ok: false };
+  }
+
+  return { ok: true };
 }
 
 
@@ -99,51 +136,73 @@ function deleteFile(path) {
 
 
 function readDir(path) {
-  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  const { FileUtils } = ChromeUtils.importESModule(
+    "resource://gre/modules/FileUtils.sys.mjs"
+  );
+
   let numEntries = 0;
-  let iterator = new OS.File.DirectoryIterator(path);
-  let promise = iterator
-    .forEach(function(dirEntry) {
+
+  try {
+    const file = new FileUtils.File(path);
+    const enumerator = file.directoryEntries;
+
+    while (enumerator.hasMoreElements()) {
+      void enumerator.nextFile;
       numEntries++;
-    })
-    .then(function() {
-      iterator.close();
-      return { ok: true, numEntries };
-    })
-    .catch(function() {
-      return { ok: false, numEntries };
-    });
-  return promise;
+    }
+  } catch (e) {
+    return { ok: false, numEntries };
+  }
+
+  return { ok: true, numEntries };
 }
 
 
 
 
 function readFile(path) {
-  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-  let promise = OS.File.read(path)
-    .then(function(binaryData) {
-      return { ok: true };
-    })
-    .catch(function(error) {
-      return { ok: false };
-    });
-  return promise;
+  const { FileUtils } = ChromeUtils.importESModule(
+    "resource://gre/modules/FileUtils.sys.mjs"
+  );
+
+  try {
+    const file = new FileUtils.File(path);
+
+    const fstream = Cc[
+      "@mozilla.org/network/file-input-stream;1"
+    ].createInstance(Ci.nsIFileInputStream);
+    fstream.init(file, -1, -1, 0);
+
+    const istream = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
+      Ci.nsIBinaryInputStream
+    );
+    istream.setInputStream(fstream);
+
+    const available = istream.available();
+    void istream.readBytes(available);
+  } catch (e) {
+    return { ok: false };
+  }
+
+  return { ok: true };
 }
 
 
 
 
 function statPath(path) {
-  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-  let promise = OS.File.stat(path)
-    .then(function(stat) {
-      return { ok: true };
-    })
-    .catch(function(error) {
-      return { ok: false };
-    });
-  return promise;
+  const { FileUtils } = ChromeUtils.importESModule(
+    "resource://gre/modules/FileUtils.sys.mjs"
+  );
+
+  try {
+    const file = new FileUtils.File(path);
+    void file.lastModifiedTime;
+  } catch (e) {
+    return { ok: false };
+  }
+
+  return { ok: true };
 }
 
 
