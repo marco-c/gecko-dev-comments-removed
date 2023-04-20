@@ -11,24 +11,7 @@
 #ifndef MODULES_DESKTOP_CAPTURE_LINUX_WAYLAND_PORTAL_REQUEST_RESPONSE_H_
 #define MODULES_DESKTOP_CAPTURE_LINUX_WAYLAND_PORTAL_REQUEST_RESPONSE_H_
 
-namespace webrtc {
-namespace xdg_portal {
 
+#include "modules/portal/portal_request_response.h"
 
-
-enum class RequestResponse {
-  
-  kUnknown,
-  
-  kSuccess,
-  
-  kUserCancelled,
-  
-  kError,
-
-  kMaxValue = kError,
-};
-
-}  
-}  
 #endif  

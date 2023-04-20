@@ -11,23 +11,7 @@
 #ifndef MODULES_DESKTOP_CAPTURE_LINUX_WAYLAND_XDG_SESSION_DETAILS_H_
 #define MODULES_DESKTOP_CAPTURE_LINUX_WAYLAND_XDG_SESSION_DETAILS_H_
 
-#include <gio/gio.h>
 
-#include <string>
-
-namespace webrtc {
-namespace xdg_portal {
-
-
-
-struct SessionDetails {
-  GDBusProxy* proxy = nullptr;
-  GCancellable* cancellable = nullptr;
-  std::string session_handle;
-  uint32_t pipewire_stream_node_id = 0;
-};
-
-}  
-}  
+#include "modules/portal/xdg_session_details.h"
 
 #endif  

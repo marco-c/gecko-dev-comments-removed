@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef MODULES_PORTAL_PORTAL_REQUEST_RESPONSE_H_
+#define MODULES_PORTAL_PORTAL_REQUEST_RESPONSE_H_
+
+namespace webrtc {
+namespace xdg_portal {
+
+
+
+enum class RequestResponse {
+  
+  kUnknown,
+  
+  kSuccess,
+  
+  kUserCancelled,
+  
+  kError,
+
+  kMaxValue = kError,
+};
+
+}  
+}  
+#endif  

@@ -8,7 +8,7 @@
 
 
 
-#include "modules/desktop_capture/linux/wayland/scoped_glib.h"
+#include "modules/portal/scoped_glib.h"
 
 namespace webrtc {
 

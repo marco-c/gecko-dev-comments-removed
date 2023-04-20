@@ -8,10 +8,10 @@
 
 
 #include "modules/desktop_capture/linux/wayland/screen_capture_portal_interface.h"
-#include "modules/desktop_capture/linux/wayland/xdg_desktop_portal_utils.h"
 
 #include <string>
 
+#include "modules/portal/xdg_desktop_portal_utils.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {
