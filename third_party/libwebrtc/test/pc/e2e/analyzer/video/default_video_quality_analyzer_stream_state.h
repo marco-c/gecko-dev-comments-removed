@@ -11,7 +11,9 @@
 #ifndef TEST_PC_E2E_ANALYZER_VIDEO_DEFAULT_VIDEO_QUALITY_ANALYZER_STREAM_STATE_H_
 #define TEST_PC_E2E_ANALYZER_VIDEO_DEFAULT_VIDEO_QUALITY_ANALYZER_STREAM_STATE_H_
 
+#include <limits>
 #include <map>
+#include <set>
 
 #include "absl/types/optional.h"
 #include "api/units/timestamp.h"
@@ -21,39 +23,44 @@ namespace webrtc {
 
 
 
+
+
+
+
+
+
+
+
+
+
 class StreamState {
  public:
-  StreamState(size_t owner,
-              size_t peers_count,
-              bool enable_receive_own_stream,
-              Timestamp stream_started_time)
-      : owner_(owner),
-        enable_receive_own_stream_(enable_receive_own_stream),
-        stream_started_time_(stream_started_time),
-        frame_ids_(enable_receive_own_stream ? peers_count + 1 : peers_count) {}
+  StreamState(size_t sender,
+              std::set<size_t> receivers,
+              Timestamp stream_started_time);
 
-  size_t owner() const { return owner_; }
+  size_t sender() const { return sender_; }
   Timestamp stream_started_time() const { return stream_started_time_; }
 
   void PushBack(uint16_t frame_id) { frame_ids_.PushBack(frame_id); }
   
-  
   uint16_t PopFront(size_t peer);
-  bool IsEmpty(size_t peer) const {
-    return frame_ids_.IsEmpty(GetPeerQueueIndex(peer));
-  }
+  bool IsEmpty(size_t peer) const { return frame_ids_.IsEmpty(peer); }
   
-  uint16_t Front(size_t peer) const {
-    return frame_ids_.Front(GetPeerQueueIndex(peer)).value();
-  }
+  uint16_t Front(size_t peer) const { return frame_ids_.Front(peer).value(); }
+
+  
+  
+  void AddPeer(size_t peer);
 
   
   
   
-  void AddPeer() { frame_ids_.AddReader(GetAliveFramesQueueIndex()); }
+  
+  void RemovePeer(size_t peer);
 
   size_t GetAliveFramesCount() const {
-    return frame_ids_.size(GetAliveFramesQueueIndex());
+    return frame_ids_.size(kAliveFramesQueueIndex);
   }
   uint16_t MarkNextAliveFrameAsDead();
 
@@ -63,17 +70,15 @@ class StreamState {
  private:
   
   
-  size_t GetPeerQueueIndex(size_t peer_index) const;
+  static constexpr size_t kAliveFramesQueueIndex =
+      std::numeric_limits<size_t>::max();
+
+  size_t GetLongestReceiverQueue() const;
 
   
-  
-  
-  size_t GetAliveFramesQueueIndex() const;
-
-  
-  const size_t owner_;
-  const bool enable_receive_own_stream_;
+  const size_t sender_;
   const Timestamp stream_started_time_;
+  std::set<size_t> receivers_;
   
   
   

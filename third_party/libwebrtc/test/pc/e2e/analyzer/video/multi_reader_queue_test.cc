@@ -71,7 +71,8 @@ TEST(MultiReaderQueueTest, SingleHeadOneAddOneRemove) {
 }
 
 TEST(MultiReaderQueueTest, SingleHead) {
-  MultiReaderQueue<size_t> queue = MultiReaderQueue<size_t>(1);
+  MultiReaderQueue<size_t> queue =
+      MultiReaderQueue<size_t>(1);
   for (size_t i = 0; i < 10; ++i) {
     queue.PushBack(i);
     EXPECT_EQ(queue.size(), i + 1);
@@ -84,7 +85,8 @@ TEST(MultiReaderQueueTest, SingleHead) {
 }
 
 TEST(MultiReaderQueueTest, ThreeHeadsAddAllRemoveAllPerHead) {
-  MultiReaderQueue<size_t> queue = MultiReaderQueue<size_t>(3);
+  MultiReaderQueue<size_t> queue =
+      MultiReaderQueue<size_t>(3);
   for (size_t i = 0; i < 10; ++i) {
     queue.PushBack(i);
     EXPECT_EQ(queue.size(), i + 1);
@@ -110,7 +112,8 @@ TEST(MultiReaderQueueTest, ThreeHeadsAddAllRemoveAllPerHead) {
 }
 
 TEST(MultiReaderQueueTest, ThreeHeadsAddAllRemoveAll) {
-  MultiReaderQueue<size_t> queue = MultiReaderQueue<size_t>(3);
+  MultiReaderQueue<size_t> queue =
+      MultiReaderQueue<size_t>(3);
   for (size_t i = 0; i < 10; ++i) {
     queue.PushBack(i);
     EXPECT_EQ(queue.size(), i + 1);
@@ -129,27 +132,51 @@ TEST(MultiReaderQueueTest, ThreeHeadsAddAllRemoveAll) {
   }
 }
 
-TEST(MultiReaderQueueTest, AddReader) {
-  MultiReaderQueue<size_t> queue = MultiReaderQueue<size_t>(1);
+TEST(MultiReaderQueueTest, AddReaderSeeElementsOnlyFromReaderToCopy) {
+  MultiReaderQueue<size_t> queue =
+      MultiReaderQueue<size_t>(2);
   for (size_t i = 0; i < 10; ++i) {
     queue.PushBack(i);
-    EXPECT_EQ(queue.size(), i + 1);
   }
-  queue.AddReader(0);
-  EXPECT_EQ(queue.readers_count(), 2lu);
+  for (size_t i = 0; i < 5; ++i) {
+    queue.PopFront(0);
+  }
+
+  queue.AddReader(2, 0);
+
+  EXPECT_EQ(queue.readers_count(), 3lu);
+  for (size_t i = 5; i < 10; ++i) {
+    absl::optional<size_t> value = queue.PopFront(2);
+    EXPECT_EQ(queue.size(2), 10 - i - 1);
+    ASSERT_TRUE(value.has_value());
+    EXPECT_EQ(value.value(), i);
+  }
+}
+
+TEST(MultiReaderQueueTest, AddReaderWithoutReaderToCopySeeFullQueue) {
+  MultiReaderQueue<size_t> queue =
+      MultiReaderQueue<size_t>(2);
   for (size_t i = 0; i < 10; ++i) {
-    absl::optional<size_t> value1 = queue.PopFront(0);
-    absl::optional<size_t> value2 = queue.PopFront(1);
-    EXPECT_EQ(queue.size(), 10 - i - 1);
-    ASSERT_TRUE(value1.has_value());
-    ASSERT_TRUE(value2.has_value());
-    EXPECT_EQ(value1.value(), i);
-    EXPECT_EQ(value2.value(), i);
+    queue.PushBack(i);
+  }
+  for (size_t i = 0; i < 5; ++i) {
+    queue.PopFront(0);
+  }
+
+  queue.AddReader(2);
+
+  EXPECT_EQ(queue.readers_count(), 3lu);
+  for (size_t i = 0; i < 10; ++i) {
+    absl::optional<size_t> value = queue.PopFront(2);
+    EXPECT_EQ(queue.size(2), 10 - i - 1);
+    ASSERT_TRUE(value.has_value());
+    EXPECT_EQ(value.value(), i);
   }
 }
 
 TEST(MultiReaderQueueTest, RemoveReaderWontChangeOthers) {
-  MultiReaderQueue<size_t> queue = MultiReaderQueue<size_t>(2);
+  MultiReaderQueue<size_t> queue =
+      MultiReaderQueue<size_t>(2);
   for (size_t i = 0; i < 10; ++i) {
     queue.PushBack(i);
   }
@@ -162,7 +189,8 @@ TEST(MultiReaderQueueTest, RemoveReaderWontChangeOthers) {
 }
 
 TEST(MultiReaderQueueTest, RemoveLastReaderMakesQueueEmpty) {
-  MultiReaderQueue<size_t> queue = MultiReaderQueue<size_t>(1);
+  MultiReaderQueue<size_t> queue =
+      MultiReaderQueue<size_t>(1);
   for (size_t i = 0; i < 10; ++i) {
     queue.PushBack(i);
   }

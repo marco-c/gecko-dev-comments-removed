@@ -45,14 +45,6 @@ class MultiReaderQueue {
   
   
   
-  
-  void AddReader(size_t reader_to_copy) {
-    AddReader(heads_.size(), reader_to_copy);
-  }
-
-  
-  
-  
   void AddReader(size_t reader, size_t reader_to_copy) {
     size_t pos = GetHeadPositionOrDie(reader_to_copy);
 
@@ -61,6 +53,19 @@ class MultiReaderQueue {
         << "Reader " << reader << " is already in the queue";
     heads_[reader] = heads_[reader_to_copy];
     for (size_t i = pos; i < queue_.size(); ++i) {
+      in_queues_[i]++;
+    }
+  }
+
+  
+  
+  
+  void AddReader(size_t reader) {
+    auto it = heads_.find(reader);
+    RTC_CHECK(it == heads_.end())
+        << "Reader " << reader << " is already in the queue";
+    heads_[reader] = removed_elements_count_;
+    for (size_t i = 0; i < queue_.size(); ++i) {
       in_queues_[i]++;
     }
   }
