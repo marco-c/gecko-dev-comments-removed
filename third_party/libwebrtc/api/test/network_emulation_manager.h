@@ -144,10 +144,6 @@ class EmulatedNetworkManagerInterface {
   
   
   
-  
-  virtual void GetStats(
-      std::function<void(std::unique_ptr<EmulatedNetworkStats>)> stats_callback)
-      const = 0;
   virtual void GetStats(
       std::function<void(EmulatedNetworkStats)> stats_callback) const = 0;
 };
@@ -332,11 +328,6 @@ class NetworkEmulationManager {
   
   
   
-  
-  virtual void GetStats(
-      rtc::ArrayView<EmulatedEndpoint* const> endpoints,
-      std::function<void(std::unique_ptr<EmulatedNetworkStats>)>
-          stats_callback) = 0;
   virtual void GetStats(
       rtc::ArrayView<EmulatedEndpoint* const> endpoints,
       std::function<void(EmulatedNetworkStats)> stats_callback) = 0;
