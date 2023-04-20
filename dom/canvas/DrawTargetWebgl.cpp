@@ -547,6 +547,18 @@ bool DrawTargetWebgl::SharedContext::SetTarget(DrawTargetWebgl* aDT) {
   return true;
 }
 
+
+void DrawTargetWebgl::SharedContext::SetClipRect(const Rect& aClipRect) {
+  
+  if (!mClipAARect.IsEqualEdges(aClipRect)) {
+    mClipAARect = aClipRect;
+    
+    mClipRect = RoundedOut(aClipRect);
+    
+    mDirtyClip = true;
+  }
+}
+
 bool DrawTargetWebgl::SharedContext::SetClipMask(
     const RefPtr<WebGLTextureJS>& aTex) {
   if (mLastClipMask != aTex) {
@@ -645,6 +657,7 @@ bool DrawTargetWebgl::GenerateComplexClipMask() {
     
     mClipBounds = GetRect();
   }
+  mClipAARect = Rect(mClipBounds);
   
   
   
@@ -703,18 +716,34 @@ bool DrawTargetWebgl::SetSimpleClipRect() {
   
   
   
-  Maybe<IntRect> clip = mSkia->GetDeviceClipRect(false);
-  if (!clip) {
-    return false;
+  if (Maybe<IntRect> clip = mSkia->GetDeviceClipRect(false)) {
+    
+    
+    
+    
+    if (!clip->IsEmpty() && clip->Contains(GetRect())) {
+      clip = Some(GetRect());
+    }
+    mSharedContext->SetClipRect(*clip);
+    mSharedContext->SetNoClipMask();
+    return true;
   }
+
   
   
-  
-  
-  if (!clip->IsEmpty() && clip->Contains(GetRect())) {
-    clip = Some(GetRect());
+  Rect rect(GetRect());
+  for (auto& clipStack : mClipStack) {
+    
+    
+    if (clipStack.mPath ||
+        !clipStack.mTransform.PreservesAxisAlignedRectangles()) {
+      return false;
+    }
+    
+    rect =
+        clipStack.mTransform.TransformBounds(clipStack.mRect).Intersect(rect);
   }
-  mSharedContext->SetClipRect(*clip);
+  mSharedContext->SetClipRect(rect);
   mSharedContext->SetNoClipMask();
   return true;
 }
@@ -912,11 +941,11 @@ already_AddRefed<TextureHandle> DrawTargetWebgl::SharedContext::CopySnapshot(
 inline DrawTargetWebgl::AutoRestoreContext::AutoRestoreContext(
     DrawTargetWebgl* aTarget)
     : mTarget(aTarget),
-      mClipRect(aTarget->mSharedContext->mClipRect),
+      mClipAARect(aTarget->mSharedContext->mClipAARect),
       mLastClipMask(aTarget->mSharedContext->mLastClipMask) {}
 
 inline DrawTargetWebgl::AutoRestoreContext::~AutoRestoreContext() {
-  mTarget->mSharedContext->SetClipRect(mClipRect);
+  mTarget->mSharedContext->SetClipRect(mClipAARect);
   if (mLastClipMask) {
     mTarget->mSharedContext->SetClipMask(mLastClipMask);
   }
@@ -1163,7 +1192,7 @@ bool DrawTargetWebgl::SharedContext::CreateShaders() {
         "uniform vec2 u_transform[3];\n"
         "uniform vec2 u_viewport;\n"
         "uniform float u_aa;\n"
-        "varying vec2 v_cliptc;\n"
+        "varying vec4 v_cliptc;\n"
         "varying vec4 v_dist;\n"
         "varying float v_alpha;\n"
         "void main() {\n"
@@ -1177,7 +1206,7 @@ bool DrawTargetWebgl::SharedContext::CreateShaders() {
         "                 u_transform[1] * extrude.y +\n"
         "                 u_transform[2];\n"
         "   gl_Position = vec4(vertex * 2.0 / u_viewport - 1.0, 0.0, 1.0);\n"
-        "   v_cliptc = vertex / u_viewport;\n"
+        "   v_cliptc = vec4(vertex / u_viewport, vertex);\n"
         "   v_dist = vec4(extrude, 1.0 - extrude) * scale.xyxy + 1.5 - u_aa;\n"
         "   v_alpha = a_vertex.z;\n"
         "}\n"_ns;
@@ -1185,12 +1214,16 @@ bool DrawTargetWebgl::SharedContext::CreateShaders() {
         u"precision mediump float;\n"
         "uniform vec4 u_color;\n"
         "uniform sampler2D u_clipmask;\n"
-        "varying vec2 v_cliptc;\n"
+        "uniform vec4 u_clipbounds;\n"
+        "varying vec4 v_cliptc;\n"
         "varying vec4 v_dist;\n"
         "varying float v_alpha;\n"
         "void main() {\n"
-        "   float clip = texture2D(u_clipmask, v_cliptc).r;\n"
-        "   vec2 dist = min(v_dist.xy, v_dist.zw);\n"
+        "   float clip = texture2D(u_clipmask, v_cliptc.xy).r;\n"
+        "   vec4 clipdist = vec4(v_cliptc.zw - u_clipbounds.xy,\n"
+        "                        u_clipbounds.zw - v_cliptc.zw);\n"
+        "   vec4 dist = min(v_dist, clipdist);\n"
+        "   dist.xy = min(dist.xy, dist.zw);\n"
         "   float aa = v_alpha * clamp(min(dist.x, dist.y), 0.0, 1.0);\n"
         "   gl_FragColor = clip * aa * u_color;\n"
         "}\n"_ns;
@@ -1223,8 +1256,11 @@ bool DrawTargetWebgl::SharedContext::CreateShaders() {
         mWebgl->GetUniformLocation(*mSolidProgram, u"u_color"_ns);
     mSolidProgramClipMask =
         mWebgl->GetUniformLocation(*mSolidProgram, u"u_clipmask"_ns);
+    mSolidProgramClipBounds =
+        mWebgl->GetUniformLocation(*mSolidProgram, u"u_clipbounds"_ns);
     if (!mSolidProgramViewport || !mSolidProgramAA || !mSolidProgramTransform ||
-        !mSolidProgramColor || !mSolidProgramClipMask) {
+        !mSolidProgramColor || !mSolidProgramClipMask ||
+        !mSolidProgramClipBounds) {
       return false;
     }
     mWebgl->UseProgram(mSolidProgram);
@@ -1240,7 +1276,7 @@ bool DrawTargetWebgl::SharedContext::CreateShaders() {
         "uniform float u_aa;\n"
         "uniform vec2 u_transform[3];\n"
         "uniform vec2 u_texmatrix[3];\n"
-        "varying vec2 v_cliptc;\n"
+        "varying vec4 v_cliptc;\n"
         "varying vec2 v_texcoord;\n"
         "varying vec4 v_dist;\n"
         "varying float v_alpha;\n"
@@ -1255,7 +1291,7 @@ bool DrawTargetWebgl::SharedContext::CreateShaders() {
         "                 u_transform[1] * extrude.y +\n"
         "                 u_transform[2];\n"
         "   gl_Position = vec4(vertex * 2.0 / u_viewport - 1.0, 0.0, 1.0);\n"
-        "   v_cliptc = vertex / u_viewport;\n"
+        "   v_cliptc = vec4(vertex / u_viewport, vertex);\n"
         "   v_texcoord = u_texmatrix[0] * extrude.x +\n"
         "                u_texmatrix[1] * extrude.y +\n"
         "                u_texmatrix[2];\n"
@@ -1269,15 +1305,19 @@ bool DrawTargetWebgl::SharedContext::CreateShaders() {
         "uniform float u_swizzle;\n"
         "uniform sampler2D u_sampler;\n"
         "uniform sampler2D u_clipmask;\n"
-        "varying vec2 v_cliptc;\n"
+        "uniform vec4 u_clipbounds;\n"
+        "varying vec4 v_cliptc;\n"
         "varying vec2 v_texcoord;\n"
         "varying vec4 v_dist;\n"
         "varying float v_alpha;\n"
         "void main() {\n"
         "   vec2 tc = clamp(v_texcoord, u_texbounds.xy, u_texbounds.zw);\n"
         "   vec4 image = texture2D(u_sampler, tc);\n"
-        "   float clip = texture2D(u_clipmask, v_cliptc).r;\n"
-        "   vec2 dist = min(v_dist.xy, v_dist.zw);\n"
+        "   float clip = texture2D(u_clipmask, v_cliptc.xy).r;\n"
+        "   vec4 clipdist = vec4(v_cliptc.zw - u_clipbounds.xy,\n"
+        "                        u_clipbounds.zw - v_cliptc.zw);\n"
+        "   vec4 dist = min(v_dist, clipdist);\n"
+        "   dist.xy = min(dist.xy, dist.zw);\n"
         "   float aa = v_alpha * clamp(min(dist.x, dist.y), 0.0, 1.0);\n"
         "   gl_FragColor = clip * aa * u_color *\n"
         "                  mix(image, image.rrrr, u_swizzle);\n"
@@ -1319,10 +1359,12 @@ bool DrawTargetWebgl::SharedContext::CreateShaders() {
         mWebgl->GetUniformLocation(*mImageProgram, u"u_sampler"_ns);
     mImageProgramClipMask =
         mWebgl->GetUniformLocation(*mImageProgram, u"u_clipmask"_ns);
+    mImageProgramClipBounds =
+        mWebgl->GetUniformLocation(*mImageProgram, u"u_clipbounds"_ns);
     if (!mImageProgramViewport || !mImageProgramAA || !mImageProgramTransform ||
         !mImageProgramTexMatrix || !mImageProgramTexBounds ||
         !mImageProgramSwizzle || !mImageProgramColor || !mImageProgramSampler ||
-        !mImageProgramClipMask) {
+        !mImageProgramClipMask || !mImageProgramClipBounds) {
       return false;
     }
     mWebgl->UseProgram(mImageProgram);
@@ -1355,7 +1397,7 @@ void DrawTargetWebgl::ClearRect(const Rect& aRect) {
   if (mTransform.PreservesAxisAlignedRectangles() &&
       mTransform.TransformBounds(aRect).Contains(Rect(GetRect())) &&
       mSharedContext->IsCurrentTarget(this) && !mSharedContext->HasClipMask() &&
-      mSharedContext->mClipRect.Contains(GetRect())) {
+      mSharedContext->mClipAARect.Contains(Rect(GetRect()))) {
     mIsClear = true;
   }
 }
@@ -1858,7 +1900,7 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
   if (aOptions.mCompositionOp == CompositionOp::OP_SOURCE && aTransformed &&
       aClipped &&
       (HasClipMask() || !currentTransform.PreservesAxisAlignedRectangles() ||
-       !currentTransform.TransformBounds(aRect).Contains(Rect(mClipRect)) ||
+       !currentTransform.TransformBounds(aRect).Contains(Rect(mClipAARect)) ||
        (aPattern.GetType() == PatternType::SURFACE &&
         !IsAlignedRect(aTransformed, currentTransform, aRect)))) {
     
@@ -1906,7 +1948,8 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
             aOptions.mCompositionOp == CompositionOp::OP_OVER) ||
            aOptions.mCompositionOp == CompositionOp::OP_SOURCE ||
            aOptions.mCompositionOp == CompositionOp::OP_CLEAR) &&
-          !aStrokeOptions && !aVertexRange && !HasClipMask()) {
+          !aStrokeOptions && !aVertexRange && !HasClipMask() &&
+          mClipAARect.IsEqualEdges(Rect(mClipRect))) {
         
         
         
@@ -1948,6 +1991,7 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
         
         mDirtyViewport = true;
         mDirtyAA = true;
+        mDirtyClip = true;
       }
       if (mDirtyViewport) {
         float viewportData[2] = {float(mViewportSize.width),
@@ -1963,6 +2007,16 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
         mWebgl->UniformData(LOCAL_GL_FLOAT, mSolidProgramAA, false,
                             {(const uint8_t*)&aaData, sizeof(aaData)});
         mDirtyAA = aaData == 0.0f;
+      }
+      if (mDirtyClip) {
+        
+        
+        float clipData[4] = {mClipAARect.x - 0.5f, mClipAARect.y - 0.5f,
+                             mClipAARect.XMost() + 0.5f,
+                             mClipAARect.YMost() + 0.5f};
+        mWebgl->UniformData(LOCAL_GL_FLOAT_VEC4, mSolidProgramClipBounds, false,
+                            {(const uint8_t*)clipData, sizeof(clipData)});
+        mDirtyClip = false;
       }
       float colorData[4] = {color.b, color.g, color.r, color.a};
       Matrix xform(aRect.width, 0.0f, 0.0f, aRect.height, aRect.x, aRect.y);
@@ -2159,6 +2213,7 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
         
         mDirtyViewport = true;
         mDirtyAA = true;
+        mDirtyClip = true;
       }
       if (mDirtyViewport) {
         float viewportData[2] = {float(mViewportSize.width),
@@ -2179,6 +2234,16 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
         mWebgl->UniformData(LOCAL_GL_FLOAT, mImageProgramAA, false,
                             {(const uint8_t*)&aaData, sizeof(aaData)});
         mDirtyAA = aaData == 0.0f;
+      }
+      if (mDirtyClip) {
+        
+        
+        float clipData[4] = {mClipAARect.x - 0.5f, mClipAARect.y - 0.5f,
+                             mClipAARect.XMost() + 0.5f,
+                             mClipAARect.YMost() + 0.5f};
+        mWebgl->UniformData(LOCAL_GL_FLOAT_VEC4, mImageProgramClipBounds, false,
+                            {(const uint8_t*)clipData, sizeof(clipData)});
+        mDirtyClip = false;
       }
       DeviceColor color =
           mLastCompositionOp == CompositionOp::OP_CLEAR

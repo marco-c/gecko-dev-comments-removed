@@ -75,7 +75,10 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   RefPtr<WebGLFramebufferJS> mFramebuffer;
   RefPtr<WebGLTextureJS> mTex;
   RefPtr<WebGLTextureJS> mClipMask;
+  
   IntRect mClipBounds;
+  
+  Rect mClipAARect;
   RefPtr<DrawTargetSkia> mSkia;
   
   RefPtr<DrawTargetSkia> mSkiaNoClip;
@@ -166,7 +169,10 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
 
     WeakPtr<DrawTargetWebgl> mCurrentTarget;
     IntSize mViewportSize;
+    
     IntRect mClipRect;
+    
+    Rect mClipAARect;
 
     RefPtr<ClientWebGLContext> mWebgl;
 
@@ -174,8 +180,12 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     RefPtr<WebGLProgramJS> mLastProgram;
     RefPtr<WebGLTextureJS> mLastTexture;
     RefPtr<WebGLTextureJS> mLastClipMask;
+    
     bool mDirtyViewport = true;
+    
     bool mDirtyAA = true;
+    
+    bool mDirtyClip = true;
 
     
     RefPtr<WebGLBufferJS> mPathVertexBuffer;
@@ -198,6 +208,7 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     RefPtr<WebGLUniformLocationJS> mSolidProgramTransform;
     RefPtr<WebGLUniformLocationJS> mSolidProgramColor;
     RefPtr<WebGLUniformLocationJS> mSolidProgramClipMask;
+    RefPtr<WebGLUniformLocationJS> mSolidProgramClipBounds;
     RefPtr<WebGLProgramJS> mImageProgram;
     RefPtr<WebGLUniformLocationJS> mImageProgramViewport;
     RefPtr<WebGLUniformLocationJS> mImageProgramAA;
@@ -208,6 +219,7 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     RefPtr<WebGLUniformLocationJS> mImageProgramSwizzle;
     RefPtr<WebGLUniformLocationJS> mImageProgramSampler;
     RefPtr<WebGLUniformLocationJS> mImageProgramClipMask;
+    RefPtr<WebGLUniformLocationJS> mImageProgramClipBounds;
 
     
     RefPtr<WebGLFramebufferJS> mScratchFramebuffer;
@@ -268,7 +280,8 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     void SetBlendState(CompositionOp aOp,
                        const Maybe<DeviceColor>& aBlendColor = Nothing());
 
-    void SetClipRect(const IntRect& aClipRect) { mClipRect = aClipRect; }
+    void SetClipRect(const Rect& aClipRect);
+    void SetClipRect(const IntRect& aClipRect) { SetClipRect(Rect(aClipRect)); }
     bool SetClipMask(const RefPtr<WebGLTextureJS>& aTex);
     bool SetNoClipMask();
     bool HasClipMask() const {
@@ -563,7 +576,7 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   
   struct AutoRestoreContext {
     DrawTargetWebgl* mTarget;
-    IntRect mClipRect;
+    Rect mClipAARect;
     RefPtr<WebGLTextureJS> mLastClipMask;
 
     explicit AutoRestoreContext(DrawTargetWebgl* aTarget);
