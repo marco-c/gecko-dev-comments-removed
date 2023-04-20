@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
+#include <dlfcn.h>
 
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/SSE.h"
@@ -65,6 +66,7 @@ nsresult GfxInfo::Init() {
   mHasMultipleGPUs = false;
   mGlxTestError = false;
   mIsVAAPISupported = false;
+  mIsX11ThreadSafe = false;
   return GfxInfoBase::Init();
 }
 
@@ -524,6 +526,14 @@ void GfxInfo::GetData() {
   mIsWayland = GdkIsWaylandDisplay();
   mIsXWayland = IsXWaylandProtocol();
 
+  
+  
+  
+  
+  if (!mIsWayland) {
+    mIsX11ThreadSafe = dlsym(RTLD_DEFAULT, "XSetIOErrorExitHandler") != nullptr;
+  }
+
   if (!ddxDriver.IsEmpty()) {
     PRInt32 start = 0;
     PRInt32 loc = ddxDriver.Find(";", start);
@@ -955,6 +965,15 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       !mIsVAAPISupported) {
     *aStatus = nsIGfxInfo::FEATURE_BLOCKED_PLATFORM_TEST;
     aFailureId = "FEATURE_FAILURE_VIDEO_DECODING_TEST_FAILED";
+    return NS_OK;
+  }
+
+  if (aFeature == nsIGfxInfo::FEATURE_THREADSAFE_GL && !mIsWayland &&
+      !mIsX11ThreadSafe) {
+    
+    
+    *aStatus = nsIGfxInfo::FEATURE_BLOCKED_OS_VERSION;
+    aFailureId = "FEATURE_FAILURE_THREADSAFE_GL";
     return NS_OK;
   }
 
