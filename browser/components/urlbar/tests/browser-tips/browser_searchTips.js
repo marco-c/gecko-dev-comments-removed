@@ -346,6 +346,44 @@ add_task(async function persistTipOnceOnDefaultSerp() {
 });
 
 
+
+add_task(async function noPersistTipInWindowWithNonSerpTab() {
+  await setDefaultEngine("Example");
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.showSearchTerms.featureGate", true]],
+  });
+
+  
+  let newWindow = await BrowserTestUtils.openNewBrowserWindow();
+
+  
+  window.focus();
+  await waitForBrowserWindowActive(window);
+
+  
+  let browserLoadedPromise = BrowserTestUtils.browserLoaded(
+    newWindow.gBrowser.selectedBrowser,
+    false,
+    SEARCH_SERP_URL
+  );
+  BrowserTestUtils.loadURI(newWindow.gBrowser.selectedBrowser, SEARCH_SERP_URL);
+  await browserLoadedPromise;
+
+  
+  
+  await new Promise(resolve =>
+    
+    setTimeout(resolve, UrlbarProviderSearchTips.SHOW_PERSIST_TIP_DELAY_MS * 2)
+  );
+  Assert.ok(!window.gURLBar.view.isOpen);
+
+  
+  await BrowserTestUtils.closeWindow(newWindow);
+  await SpecialPowers.popPrefEnv();
+  resetSearchTipsProvider();
+});
+
+
 add_task(async function oncePerSession() {
   await setDefaultEngine("Google");
   await checkTab(
@@ -380,3 +418,19 @@ add_task(async function shortcut_buttons_with_tip() {
     UrlbarProviderSearchTips.TIP_TYPE.ONBOARD
   );
 });
+
+function waitForBrowserWindowActive(win) {
+  return new Promise(resolve => {
+    if (Services.focus.activeWindow == win) {
+      resolve();
+    } else {
+      win.addEventListener(
+        "activate",
+        () => {
+          resolve();
+        },
+        { once: true }
+      );
+    }
+  });
+}
