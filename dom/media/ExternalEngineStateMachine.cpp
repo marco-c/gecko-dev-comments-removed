@@ -1028,6 +1028,12 @@ void ExternalEngineStateMachine::UpdateSecondaryVideoContainer() {
   mOnSecondaryVideoContainerInstalled.Notify(mSecondaryVideoContainer.Ref());
 }
 
+RefPtr<SetCDMPromise> ExternalEngineStateMachine::SetCDMProxy(
+    CDMProxy* aProxy) {
+  
+  return MediaDecoderStateMachineBase::SetCDMProxy(aProxy);
+}
+
 #undef FMT
 #undef LOG
 #undef LOGV
