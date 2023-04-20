@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 #include "p2p/base/port_allocator.h"
@@ -475,21 +476,19 @@ void Connection::OnReadPacket(const char* data,
     switch (msg->integrity()) {
       case StunMessage::IntegrityStatus::kNotSet:
         
+        
         msg->ValidateMessageIntegrity(remote_candidate().password());
         break;
       case StunMessage::IntegrityStatus::kIntegrityOk:
         if (remote_candidate().password() != msg->password()) {
           
-          
-          msg->RevalidateMessageIntegrity(remote_candidate().password());
+          RTC_LOG(LS_INFO) << "STUN code error - Different passwords, old = "
+                           << absl::CHexEscape(msg->password()) << ", new "
+                           << absl::CHexEscape(remote_candidate().password());
         }
         break;
-      case StunMessage::IntegrityStatus::kIntegrityBad:
-        
-        
-        msg->RevalidateMessageIntegrity(remote_candidate().password());
-        break;
       default:
+        
         
         RTC_DCHECK_NOTREACHED();
         break;
