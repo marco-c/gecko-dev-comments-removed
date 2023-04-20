@@ -166,8 +166,6 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   
   TaskQueueForTest task_queue_;
 
-  rtc::scoped_refptr<SharedModuleThread> module_thread_;
-
   const FieldTrialBasedConfig field_trials_;
 };
 

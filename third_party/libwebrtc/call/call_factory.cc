@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/test/simulated_network.h"
 #include "api/units/time_delta.h"
@@ -155,33 +156,18 @@ Call* CallFactory::CreateCall(const Call::Config& config) {
 
   RtpTransportConfig transportConfig = config.ExtractTransportConfig();
 
-  if (!send_degradation_configs.empty() ||
-      !receive_degradation_configs.empty()) {
-    RTC_CHECK(false);
-    return nullptr;
-    
-
-
-
-
-
-
-
-
-
-  }
-
-  if (!module_thread_) {
-    module_thread_ = SharedModuleThread::Create(
-        ProcessThread::Create("SharedModThread"), [this]() {
-          RTC_DCHECK_RUN_ON(&call_thread_);
-          module_thread_ = nullptr;
-        });
-  }
-
   RTC_CHECK(false);
   return nullptr;
   
+
+
+
+
+
+
+
+
+
 
 
 
