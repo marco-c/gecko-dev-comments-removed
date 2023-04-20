@@ -12,6 +12,7 @@ add_setup(async function() {
   
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
+    
     url: "http://example.com/",
   });
 

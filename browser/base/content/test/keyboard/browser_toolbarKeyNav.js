@@ -111,6 +111,7 @@ add_setup(async function() {
   
   let bookmarks = new Array(BOOKMARKS_COUNT);
   for (let i = 0; i < BOOKMARKS_COUNT; ++i) {
+    
     bookmarks[i] = { url: `http://test.places.${i}/` };
   }
   await PlacesUtils.bookmarks.insertTree({

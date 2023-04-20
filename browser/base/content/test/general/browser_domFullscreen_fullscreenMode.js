@@ -133,6 +133,7 @@ function checkState(expectedStates, contentStates) {
 }
 
 const kPage =
+  
   "http://example.org/browser/browser/" +
   "base/content/test/general/dummy_page.html";
 

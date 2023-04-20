@@ -20,6 +20,7 @@ const BLUE = "rgb(0, 0, 255)";
 
 const WEB_ROOT = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
+  
   "http://example.com"
 );
 

@@ -6,6 +6,7 @@ const { TabStateFlusher } = ChromeUtils.importESModule(
 );
 
 const DUMMY =
+  
   "http://example.com/browser/browser/base/content/test/general/dummy_page.html";
 
 function isBrowserAppTab(browser) {

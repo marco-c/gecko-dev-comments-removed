@@ -134,6 +134,7 @@ add_task(async function() {
   );
   await loadURI(
     tabs[4],
+    
     "http://example.com/browser/browser/base/content/test/general/browser_tab_dragdrop_embed.html"
   );
   await BrowserTestUtils.switchTab(gBrowser, tabs[3]);

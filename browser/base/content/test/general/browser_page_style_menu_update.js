@@ -1,6 +1,7 @@
 "use strict";
 
 const PAGE =
+  
   "http://example.com/browser/browser/base/content/test/general/page_style_sample.html";
 
 

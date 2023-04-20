@@ -35,6 +35,7 @@ async function insertIFrame() {
 add_task(async function test_disable_style() {
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
+    
     "http://example.com/browser/browser/base/content/test/pageStyle/page_style.html",
      true
   );

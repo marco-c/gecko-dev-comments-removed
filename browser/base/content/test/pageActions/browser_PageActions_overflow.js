@@ -203,6 +203,7 @@ add_task(async function test_disabledPageAction_hidden_in_protonOverflowMenu() {
     },
   });
 
+  
   await BrowserTestUtils.withNewTab("http://example.com", async browser => {
     const win = browser.ownerGlobal;
     const promisePageActionPanelClosed = async () => {

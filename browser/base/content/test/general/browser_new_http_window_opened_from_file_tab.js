@@ -2,6 +2,7 @@
 
 
 const TEST_FILE = "file_with_link_to_http.html";
+
 const TEST_HTTP = "http://example.org/";
 
 

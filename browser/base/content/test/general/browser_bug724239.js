@@ -9,6 +9,7 @@ add_task(async function test_blank() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
     async function(browser) {
+      
       BrowserTestUtils.loadURIString(browser, "http://example.com");
       await BrowserTestUtils.browserLoaded(browser);
       ok(!gBrowser.canGoBack, "about:blank wasn't added to session history");
@@ -25,7 +26,9 @@ add_task(async function test_newtab() {
       BrowserTestUtils.loadURIString(browser, "about:newtab");
       await stopped;
 
+      
       stopped = BrowserTestUtils.browserStopped(browser, "http://example.com/");
+      
       BrowserTestUtils.loadURIString(browser, "http://example.com/");
       await stopped;
 

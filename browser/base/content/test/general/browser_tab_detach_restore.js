@@ -6,6 +6,7 @@ const { TabStateFlusher } = ChromeUtils.importESModule(
 
 add_task(async function() {
   let uri =
+    
     "http://example.com/browser/browser/base/content/test/general/dummy_page.html";
 
   

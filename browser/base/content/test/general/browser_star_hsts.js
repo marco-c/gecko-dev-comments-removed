@@ -6,6 +6,7 @@
 var secureURL =
   "https://example.com/browser/browser/base/content/test/general/browser_star_hsts.sjs";
 var unsecureURL =
+  
   "http://example.com/browser/browser/base/content/test/general/browser_star_hsts.sjs";
 
 add_task(async function test_star_redirect() {
@@ -15,6 +16,7 @@ add_task(async function test_star_redirect() {
       Ci.nsISiteSecurityService
     );
     sss.resetState(
+      
       NetUtil.newURI("http://example.com/"),
       Services.prefs.getBoolPref("privacy.partition.network_state")
         ? { partitionKey: "(http,example.com)" }

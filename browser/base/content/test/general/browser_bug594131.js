@@ -3,6 +3,7 @@
 
 
 function test() {
+  
   let newTab = BrowserTestUtils.addTab(gBrowser, "http://example.com");
   waitForExplicitFinish();
   BrowserTestUtils.browserLoaded(newTab.linkedBrowser).then(mainPart);
@@ -11,6 +12,7 @@ function test() {
     gBrowser.pinTab(newTab);
     gBrowser.selectedTab = newTab;
 
+    
     openTrustedLinkIn("http://example.org/", "current", {
       inBackground: true,
     });
