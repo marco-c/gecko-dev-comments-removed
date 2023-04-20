@@ -584,11 +584,9 @@ static sandbox::MitigationFlags DynamicCodeFlagForSystemMediaLibraries() {
     }
 #endif  
 
-#ifdef NIGHTLY_BUILD
     if (IsWin10AnniversaryUpdateOrLater()) {
       return sandbox::MITIGATION_DYNAMIC_CODE_DISABLE_WITH_OPT_OUT;
     }
-#endif  
 
     return sandbox::MitigationFlags{};
   }();
@@ -1092,12 +1090,10 @@ bool SandboxBroker::SetSecurityLevelForRDDProcess() {
   mitigations = sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
                 sandbox::MITIGATION_DLL_SEARCH_ORDER;
 
-
-
-#ifdef NIGHTLY_BUILD
-  
-  mitigations |= DynamicCodeFlagForSystemMediaLibraries();
-#endif  
+  if (StaticPrefs::security_sandbox_rdd_acg_enabled()) {
+    
+    mitigations |= DynamicCodeFlagForSystemMediaLibraries();
+  }
 
   if (exceptionModules.isNothing()) {
     mitigations |= sandbox::MITIGATION_FORCE_MS_SIGNED_BINS;
@@ -1357,17 +1353,24 @@ bool SandboxBroker::SetSecurityLevelForUtilityProcess(
   mitigations = sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
                 sandbox::MITIGATION_DLL_SEARCH_ORDER;
 
-  if (aSandbox == mozilla::ipc::SandboxingKind::UTILITY_AUDIO_DECODING_WMF) {
+  switch (aSandbox) {
+#ifdef MOZ_WMF
     
-    mitigations |= DynamicCodeFlagForSystemMediaLibraries();
-  }
-#ifdef MOZ_WMF_MEDIA_ENGINE
-  
-  else if (aSandbox == mozilla::ipc::SandboxingKind::MF_MEDIA_ENGINE_CDM) {
-  }
+    case mozilla::ipc::SandboxingKind::UTILITY_AUDIO_DECODING_WMF:
+      if (StaticPrefs::security_sandbox_utility_wmf_acg_enabled()) {
+        mitigations |= DynamicCodeFlagForSystemMediaLibraries();
+      }
+      break;
 #endif  
-  else {
-    mitigations |= sandbox::MITIGATION_DYNAMIC_CODE_DISABLE;
+
+#ifdef MOZ_WMF_MEDIA_ENGINE
+    
+    case mozilla::ipc::SandboxingKind::MF_MEDIA_ENGINE_CDM:
+      break;
+#endif  
+
+    default:
+      mitigations |= sandbox::MITIGATION_DYNAMIC_CODE_DISABLE;
   }
 
   if (exceptionModules.isNothing()) {
