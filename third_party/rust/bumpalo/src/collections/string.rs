@@ -810,6 +810,24 @@ impl<'bump> String<'bump> {
     
     
     
+    #[inline]
+    #[must_use]
+    pub fn bump(&self) -> &'bump Bump {
+        self.vec.bump()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     

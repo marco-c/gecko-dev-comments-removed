@@ -1686,6 +1686,10 @@ impl Bump {
     
     
     
+    
+    
+    
+    
     pub fn allocated_bytes(&self) -> usize {
         let footer = self.current_chunk_footer.get();
 

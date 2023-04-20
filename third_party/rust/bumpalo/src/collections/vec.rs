@@ -687,6 +687,26 @@ impl<'bump, T: 'bump> Vec<'bump, T> {
     
     
     
+    
+    
+    #[inline]
+    #[must_use]
+    pub fn bump(&self) -> &'bump Bump {
+        self.buf.bump()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn capacity(&self) -> usize {
         self.buf.cap()
