@@ -1927,6 +1927,10 @@ class Document : public nsINode,
   
   Element* TopLayerPop(FunctionRef<bool(Element*)> aPredicate);
 
+  
+  
+  Element* TopLayerPop(Element&);
+
   MOZ_CAN_RUN_SCRIPT bool TryAutoFocusCandidate(Element& aElement);
 
  public:
@@ -3448,6 +3452,20 @@ class Document : public nsINode,
 
   MOZ_CAN_RUN_SCRIPT void GetWireframe(bool aIncludeNodes,
                                        Nullable<Wireframe>&);
+
+  
+  
+  
+  nsTArray<Element*> AutoPopoverList() const;
+
+  
+  
+  
+  Element* GetTopmostAutoPopover() const;
+
+  
+  void AddToAutoPopoverList(Element&);
+  void RemoveFromAutoPopoverList(Element&);
 
   Element* GetTopLayerTop();
   
