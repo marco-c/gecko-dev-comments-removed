@@ -36,7 +36,8 @@ class CustomSocketServer : public rtc::PhysicalSocketServer {
   void set_conductor(Conductor* conductor) { conductor_ = conductor; }
 
   
-  bool Wait(int cms, bool process_io) override {
+  
+  bool Wait(webrtc::TimeDelta max_wait_duration, bool process_io) override {
     
     
     
@@ -49,7 +50,7 @@ class CustomSocketServer : public rtc::PhysicalSocketServer {
         client_ != NULL && !client_->is_connected()) {
       message_queue_->Quit();
     }
-    return rtc::PhysicalSocketServer::Wait(0 ,
+    return rtc::PhysicalSocketServer::Wait(webrtc::TimeDelta::Zero(),
                                            process_io);
   }
 

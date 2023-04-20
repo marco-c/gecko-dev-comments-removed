@@ -11,6 +11,7 @@
 #ifndef RTC_BASE_PHYSICAL_SOCKET_SERVER_H_
 #define RTC_BASE_PHYSICAL_SOCKET_SERVER_H_
 
+#include "api/units/time_delta.h"
 #if defined(WEBRTC_POSIX) && defined(WEBRTC_LINUX)
 #include <sys/epoll.h>
 #define WEBRTC_USE_EPOLL 1
@@ -74,7 +75,7 @@ class RTC_EXPORT PhysicalSocketServer : public SocketServer {
   virtual Socket* WrapSocket(SOCKET s);
 
   
-  bool Wait(int cms, bool process_io) override;
+  bool Wait(webrtc::TimeDelta max_wait_duration, bool process_io) override;
   void WakeUp() override;
 
   void Add(Dispatcher* dispatcher);
@@ -84,16 +85,19 @@ class RTC_EXPORT PhysicalSocketServer : public SocketServer {
  private:
   
   static constexpr size_t kNumEpollEvents = 128;
+  
+  static constexpr int kForeverMs = -1;
 
+  static int ToCmsWait(webrtc::TimeDelta max_wait_duration);
 #if defined(WEBRTC_POSIX)
-  bool WaitSelect(int cms, bool process_io);
+  bool WaitSelect(int cmsWait, bool process_io);
 #endif  
 #if defined(WEBRTC_USE_EPOLL)
   void AddEpoll(Dispatcher* dispatcher, uint64_t key);
   void RemoveEpoll(Dispatcher* dispatcher);
   void UpdateEpoll(Dispatcher* dispatcher, uint64_t key);
-  bool WaitEpoll(int cms);
-  bool WaitPoll(int cms, Dispatcher* dispatcher);
+  bool WaitEpoll(int cmsWait);
+  bool WaitPoll(int cmsWait, Dispatcher* dispatcher);
 
   
   

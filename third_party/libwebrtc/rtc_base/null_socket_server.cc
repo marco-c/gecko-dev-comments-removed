@@ -20,14 +20,12 @@ namespace rtc {
 NullSocketServer::NullSocketServer() = default;
 NullSocketServer::~NullSocketServer() {}
 
-bool NullSocketServer::Wait(int cms, bool process_io) {
+bool NullSocketServer::Wait(webrtc::TimeDelta max_wait_duration,
+                            bool process_io) {
   
   
   
-  event_.Wait(cms == kForever
-                  ? Event::kForever
-                  : webrtc::TimeDelta::Millis(cms),
-              Event::kForever);
+  event_.Wait(max_wait_duration, Event::kForever);
   return true;
 }
 

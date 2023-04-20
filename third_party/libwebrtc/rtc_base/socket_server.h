@@ -13,6 +13,8 @@
 
 #include <memory>
 
+#include "api/units/time_delta.h"
+#include "rtc_base/event.h"
 #include "rtc_base/socket_factory.h"
 
 namespace rtc {
@@ -30,7 +32,7 @@ class NetworkBinderInterface;
 
 class SocketServer : public SocketFactory {
  public:
-  static const int kForever = -1;
+  static constexpr webrtc::TimeDelta kForever = rtc::Event::kForever;
 
   static std::unique_ptr<SocketServer> CreateDefault();
   
@@ -43,7 +45,8 @@ class SocketServer : public SocketFactory {
   
   
   
-  virtual bool Wait(int cms, bool process_io) = 0;
+  
+  virtual bool Wait(webrtc::TimeDelta max_wait_duration, bool process_io) = 0;
 
   
   virtual void WakeUp() = 0;
