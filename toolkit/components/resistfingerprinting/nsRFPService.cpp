@@ -691,6 +691,13 @@ void nsRFPService::UpdateRFPPref() {
       StaticPrefs::javascript_options_use_fdlibm_for_sin_cos_tan() ||
       resistFingerprinting);
 
+  
+  
+  
+  if (!StaticPrefs::privacy_resistFingerprinting_testing_setTZtoUTC()) {
+    return;
+  }
+
   if (resistFingerprinting) {
     PR_SetEnv("TZ=UTC");
   } else if (sInitialized) {
