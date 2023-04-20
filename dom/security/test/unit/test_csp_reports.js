@@ -293,23 +293,4 @@ function run_test() {
       false
     );
   });
-
-  
-  makeTest(
-    8,
-    { "blocked-uri": "ftp://blocked.test/profile.png" },
-    false,
-    function(csp) {
-      
-      csp.shouldLoad(
-        Ci.nsIContentPolicy.TYPE_SCRIPT,
-        null, 
-        NetUtil.newURI("ftp://blocked.test/profile.png"),
-        null,
-        true,
-        null,
-        false
-      );
-    }
-  );
 }

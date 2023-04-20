@@ -201,59 +201,6 @@ bool nsContentSecurityManager::AllowInsecureRedirectToDataURI(
   return false;
 }
 
-
-nsresult nsContentSecurityManager::CheckFTPSubresourceLoad(
-    nsIChannel* aChannel) {
-  
-  
-  
-
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  ExtContentPolicyType type = loadInfo->GetExternalContentPolicyType();
-
-  
-  
-  if (type == ExtContentPolicy::TYPE_DOCUMENT ||
-      type == ExtContentPolicy::TYPE_SAVEAS_DOWNLOAD) {
-    return NS_OK;
-  }
-
-  
-  
-  nsIPrincipal* triggeringPrincipal = loadInfo->TriggeringPrincipal();
-  if (triggeringPrincipal->IsSystemPrincipal()) {
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (!uri) {
-    return NS_OK;
-  }
-
-  bool isFtpURI = uri->SchemeIs("ftp");
-  if (!isFtpURI) {
-    return NS_OK;
-  }
-
-  nsCOMPtr<Document> doc;
-  if (nsINode* node = loadInfo->LoadingNode()) {
-    doc = node->OwnerDoc();
-  }
-
-  nsAutoCString spec;
-  uri->GetSpec(spec);
-  AutoTArray<nsString, 1> params;
-  CopyUTF8toUTF16(NS_UnescapeURL(spec), *params.AppendElement());
-
-  nsContentUtils::ReportToConsole(
-      nsIScriptError::warningFlag, "FTP_URI_BLOCKED"_ns, doc,
-      nsContentUtils::eSECURITY_PROPERTIES, "BlockSubresourceFTP", params);
-
-  return NS_ERROR_CONTENT_BLOCKED;
-}
-
 static nsresult ValidateSecurityFlags(nsILoadInfo* aLoadInfo) {
   nsSecurityFlags securityMode = aLoadInfo->GetSecurityMode();
 
@@ -1593,10 +1540,6 @@ nsresult nsContentSecurityManager::doContentSecurityCheck(
   rv = DoContentSecurityChecks(aChannel, loadInfo);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  rv = CheckFTPSubresourceLoad(aChannel);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   rv = CheckAllowFileProtocolScriptLoad(aChannel);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1622,9 +1565,6 @@ nsContentSecurityManager::AsyncOnChannelRedirect(
 
   nsCOMPtr<nsILoadInfo> loadInfo = aOldChannel->LoadInfo();
   nsresult rv = CheckChannel(aNewChannel);
-  if (NS_SUCCEEDED(rv)) {
-    rv = CheckFTPSubresourceLoad(aNewChannel);
-  }
   if (NS_FAILED(rv)) {
     aOldChannel->Cancel(rv);
     return rv;

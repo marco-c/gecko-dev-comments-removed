@@ -1008,11 +1008,10 @@ void StripURIForReporting(nsIURI* aSelfURI, nsIURI* aURI,
   
   
   
-  bool isHttpFtpOrWs =
-      (aURI->SchemeIs("http") || aURI->SchemeIs("https") ||
-       aURI->SchemeIs("ftp") || aURI->SchemeIs("ws") || aURI->SchemeIs("wss"));
+  bool isHttpOrWs = (aURI->SchemeIs("http") || aURI->SchemeIs("https") ||
+                     aURI->SchemeIs("ws") || aURI->SchemeIs("wss"));
 
-  if (!isHttpFtpOrWs) {
+  if (!isHttpOrWs) {
     
     
     
