@@ -160,11 +160,7 @@ FxAccountsPushService.prototype = {
           break;
         case ONLOGOUT_NOTIFICATION:
           
-          try {
-            await this.unsubscribe();
-          } catch (err) {
-            this.log.error("Error during unsubscribe", err);
-          }
+          await this.unsubscribe();
           break;
       }
     } catch (err) {
@@ -258,6 +254,7 @@ FxAccountsPushService.prototype = {
     return this.fxai.updateDeviceRegistration();
   },
   
+
 
 
 

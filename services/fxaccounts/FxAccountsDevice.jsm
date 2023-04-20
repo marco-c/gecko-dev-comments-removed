@@ -274,9 +274,14 @@ class FxAccountsDevice {
     
     
     const ourDevice = remoteDevices.find(device => device.isCurrentDevice);
+    const subscription = await this._fxai.fxaPushService.getSubscription();
     if (
       ourDevice &&
-      (ourDevice.pushCallback === null || ourDevice.pushEndpointExpired)
+      (ourDevice.pushCallback === null || 
+      ourDevice.pushEndpointExpired || 
+      !subscription || 
+      subscription.isExpired() || 
+        ourDevice.pushCallback != subscription.endpoint) 
     ) {
       log.warn(`Our push endpoint needs resubscription`);
       await this._fxai.fxaPushService.unsubscribe();
@@ -289,6 +294,8 @@ class FxAccountsDevice {
     ) {
       log.warn(`Our commands need to be updated on the server`);
       await this._registerOrUpdateDevice(currentState, accountData);
+    } else {
+      log.trace(`Our push subscription looks OK`);
     }
   }
 
