@@ -1718,6 +1718,20 @@ const JSJitInfo* MCallDOMNative::getJitInfo() const {
   return getSingleTarget()->jitInfo();
 }
 
+MCallClassHook* MCallClassHook::New(TempAllocator& alloc, JSNative target,
+                                    uint32_t argc, bool constructing) {
+  auto* ins = new (alloc) MCallClassHook(target, constructing);
+
+  
+  uint32_t numOperands = 2 + argc + constructing;
+
+  if (!ins->init(alloc, numOperands)) {
+    return nullptr;
+  }
+
+  return ins;
+}
+
 MDefinition* MStringLength::foldsTo(TempAllocator& alloc) {
   if (string()->isConstant()) {
     JSString* str = string()->toConstant()->toString();
@@ -2261,7 +2275,7 @@ bool MPhi::typeIncludes(MDefinition* def) {
   return this->mightBeType(def->type());
 }
 
-void MCall::addArg(size_t argnum, MDefinition* arg) {
+void MCallBase::addArg(size_t argnum, MDefinition* arg) {
   
   
   

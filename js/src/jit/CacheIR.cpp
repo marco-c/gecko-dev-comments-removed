@@ -10757,7 +10757,7 @@ AttachDecision CallIRGenerator::tryAttachCallHook(HandleObject calleeObj) {
   }
 
   
-  if (isSpread && args_.length() > JIT_ARGS_LENGTH_MAX) {
+  if (isSpread) {
     return AttachDecision::NoAction;
   }
 
