@@ -31,7 +31,7 @@ AddonTestUtils.createAppInfo(
   "42"
 );
 
-add_task(async function setup() {
+add_setup(async () => {
   
   
   await ExtensionPermissions._uninit();
@@ -320,14 +320,18 @@ async function test_permissions({
     "contains() returns true for runtime requested permissions"
   );
 
-  
-  if (useAddonManager === "permanent") {
-    await AddonTestUtils.promiseRestartManager();
-  } else {
-    
-    await extension.addon.reload();
+  async function restart() {
+    if (useAddonManager === "permanent") {
+      await AddonTestUtils.promiseRestartManager();
+    } else {
+      
+      await extension.addon.reload();
+    }
+    await extension.awaitBackgroundStarted();
   }
-  await extension.awaitBackgroundStarted();
+
+  
+  await restart();
 
   result = await call("getAll");
   deepEqual(
@@ -354,6 +358,30 @@ async function test_permissions({
   perms.origins = REQUIRED_ORIGINS_EXPECTED;
   result = await call("getAll");
   deepEqual(result, perms, "Back to default permissions after removing more");
+
+  if (granted_host_permissions && expectAllGranted) {
+    
+
+    result = await call("remove", { origins: REQUIRED_ORIGINS });
+    equal(result, true, "remove() succeeded");
+    perms.origins = [];
+
+    result = await call("getAll");
+    deepEqual(
+      result,
+      perms,
+      "Expected only api permissions remain after removing all origins in mv3."
+    );
+  }
+
+  
+  await ExtensionParent.StartupCache.clearAddonData(extension.id);
+
+  
+  await restart();
+
+  result = await call("getAll");
+  deepEqual(result, perms, "Expected the same permissions after restart.");
 
   await extension.unload();
 }
@@ -522,7 +550,7 @@ async function test_alreadyGranted(manifest_version) {
       granted_host_permissions: true,
     },
     temporarilyInstalled: true,
-
+    startupReason: "ADDON_INSTALL",
     files: {
       "page.html": `<html><head>
           <script src="page.js"><\/script>

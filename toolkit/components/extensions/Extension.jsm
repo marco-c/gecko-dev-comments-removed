@@ -1342,11 +1342,10 @@ class ExtensionData {
       );
 
       
-      if (
-        (isPrivileged || this.temporarilyInstalled) &&
-        manifest.granted_host_permissions
-      ) {
-        result.originControls = false;
+      
+      
+      if (!isPrivileged && !this.temporarilyInstalled) {
+        manifest.granted_host_permissions = false;
       }
 
       let host_permissions = manifest.host_permissions ?? [];
@@ -3228,7 +3227,15 @@ class Extension extends ExtensionData {
     }
   }
 
+  
+  
+  
+  
   _setupStartupPermissions() {
+    
+    
+    let updateCache = false;
+
     
     
     let isAllowed = this.permissions.has(PRIVATE_ALLOWED_PERMISSION);
@@ -3244,7 +3251,6 @@ class Extension extends ExtensionData {
         this.permissions.delete(PRIVATE_ALLOWED_PERMISSION);
       }
     } else if (!isAllowed && this.isPrivileged && !this.temporarilyInstalled) {
-      
       
       lazy.ExtensionPermissions.add(this.id, {
         permissions: [PRIVATE_ALLOWED_PERMISSION],
@@ -3264,7 +3270,6 @@ class Extension extends ExtensionData {
     if (INSTALL_AND_UPDATE_STARTUP_REASONS.has(this.startupReason)) {
       if (isMozillaExtension(this)) {
         
-        
         lazy.ExtensionPermissions.add(this.id, {
           permissions: [SVG_CONTEXT_PROPERTIES_PERMISSION],
           origins: [],
@@ -3277,6 +3282,7 @@ class Extension extends ExtensionData {
         });
         this.permissions.delete(SVG_CONTEXT_PROPERTIES_PERMISSION);
       }
+      updateCache = true;
     }
 
     
@@ -3289,6 +3295,26 @@ class Extension extends ExtensionData {
         origins: [],
       });
       this.permissions.add("devtools");
+    }
+
+    if (
+      this.originControls &&
+      this.manifest.granted_host_permissions &&
+      this.startupReason === "ADDON_INSTALL"
+    ) {
+      let origins = this.getManifestOrigins();
+      lazy.ExtensionPermissions.add(this.id, { permissions: [], origins });
+      updateCache = true;
+
+      let allowed = this.allowedOrigins.patterns.map(p => p.pattern);
+      this.allowedOrigins = new MatchPatternSet(origins.concat(allowed), {
+        restrictSchemes: this.restrictSchemes,
+        ignorePath: true,
+      });
+    }
+
+    if (updateCache) {
+      this.cachePermissions();
     }
   }
 
