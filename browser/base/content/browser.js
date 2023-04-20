@@ -9307,6 +9307,10 @@ class TabDialogBox {
 
 
 
+
+
+
+
   open(
     aURL,
     {
@@ -9316,6 +9320,7 @@ class TabDialogBox {
       keepOpenSameOriginNav,
       modalType = null,
       allowFocusCheckbox = false,
+      hideContent = false,
     } = {},
     ...aParams
   ) {
@@ -9358,6 +9363,7 @@ class TabDialogBox {
         sizeTo,
         closingCallback,
         closedCallback: resolveClosed,
+        hideContent,
       },
       ...aParams
     );
