@@ -7713,8 +7713,20 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberParseInt() {
   if (argc_ < 1 || argc_ > 2) {
     return AttachDecision::NoAction;
   }
-  if (!args_[0].isString() && !args_[0].isInt32()) {
+  if (!args_[0].isString() && !args_[0].isNumber()) {
     return AttachDecision::NoAction;
+  }
+  if (args_[0].isDouble()) {
+    double d = args_[0].toDouble();
+
+    
+    
+    bool canTruncateToInt32 =
+        (DOUBLE_DECIMAL_IN_SHORTEST_LOW <= d && d <= double(INT32_MAX)) ||
+        (double(INT32_MIN) <= d && d <= -1.0) || (d == 0.0);
+    if (!canTruncateToInt32) {
+      return AttachDecision::NoAction;
+    }
   }
   if (argc_ > 1 && !args_[1].isInt32(10)) {
     return AttachDecision::NoAction;
@@ -7748,14 +7760,20 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberParseInt() {
     }
 
     writer.numberParseIntResult(strId, intRadixId);
-  } else {
-    MOZ_ASSERT(args_[0].isInt32());
-
+  } else if (args_[0].isInt32()) {
     Int32OperandId intId = writer.guardToInt32(inputId);
     if (argc_ > 1) {
       guardRadix();
     }
     writer.loadInt32Result(intId);
+  } else {
+    MOZ_ASSERT(args_[0].isDouble());
+
+    NumberOperandId numId = writer.guardIsNumber(inputId);
+    if (argc_ > 1) {
+      guardRadix();
+    }
+    writer.doubleParseIntResult(numId);
   }
 
   writer.returnFromIC();
