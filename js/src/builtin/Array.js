@@ -269,6 +269,8 @@ function ArrayFilter(callbackfn ) {
   return A;
 }
 
+SetIsInlinableLargeFunction(ArrayFilter);
+
 #ifdef NIGHTLY_BUILD
 
 
@@ -581,6 +583,8 @@ function ArrayFind(predicate ) {
   return undefined;
 }
 
+SetIsInlinableLargeFunction(ArrayFind);
+
 
 function ArrayFindIndex(predicate ) {
   
@@ -612,6 +616,8 @@ function ArrayFindIndex(predicate ) {
   
   return -1;
 }
+
+SetIsInlinableLargeFunction(ArrayFindIndex);
 
 
 
@@ -1640,6 +1646,8 @@ function ArrayFindLast(predicate ) {
   return undefined;
 }
 
+SetIsInlinableLargeFunction(ArrayFindLast);
+
 
 
 function ArrayFindLastIndex(predicate ) {
@@ -1670,3 +1678,5 @@ function ArrayFindLastIndex(predicate ) {
   
   return -1;
 }
+
+SetIsInlinableLargeFunction(ArrayFindLastIndex);

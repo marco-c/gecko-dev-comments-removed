@@ -446,6 +446,8 @@ function TypedArrayFilter(callbackfn ) {
   return A;
 }
 
+SetIsInlinableLargeFunction(TypedArrayFilter);
+
 
 
 
@@ -494,6 +496,8 @@ function TypedArrayFind(predicate ) {
   
   return undefined;
 }
+
+SetIsInlinableLargeFunction(TypedArrayFind);
 
 
 
@@ -544,6 +548,8 @@ function TypedArrayFindIndex(predicate ) {
   
   return -1;
 }
+
+SetIsInlinableLargeFunction(TypedArrayFindIndex);
 
 
 
@@ -1494,6 +1500,8 @@ function TypedArrayFindLast(predicate ) {
   return undefined;
 }
 
+SetIsInlinableLargeFunction(TypedArrayFindLast);
+
 
 
 function TypedArrayFindLastIndex(predicate ) {
@@ -1542,6 +1550,8 @@ function TypedArrayFindLastIndex(predicate ) {
   
   return -1;
 }
+
+SetIsInlinableLargeFunction(TypedArrayFindLastIndex);
 
 
 
