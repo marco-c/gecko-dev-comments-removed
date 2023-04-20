@@ -2080,13 +2080,23 @@ WorkerThreadPrimaryRunnable::Run() {
 
       
       
-      JS::PrepareForFullGC(cx);
-      JS::NonIncrementalGC(cx, JS::GCOptions::Shutdown,
-                           JS::GCReason::WORKER_SHUTDOWN);
+      bool doGCCC = true;
+      while (doGCCC) {
+        JS::PrepareForFullGC(cx);
+        JS::NonIncrementalGC(cx, JS::GCOptions::Shutdown,
+                             JS::GCReason::WORKER_SHUTDOWN);
+
+        
+        doGCCC = NS_HasPendingEvents(nullptr);
+        NS_ProcessPendingEvents(nullptr);
+      }
 
       
       
       nsCycleCollector_shutdown();
+
+      
+      NS_ProcessPendingEvents(nullptr);
 
       
       nsCOMPtr<DOMEventTargetHelper> globalScopeAlive =
