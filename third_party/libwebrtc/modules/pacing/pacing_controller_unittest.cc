@@ -27,6 +27,7 @@
 #include "test/gtest.h"
 
 using ::testing::_;
+using ::testing::AnyNumber;
 using ::testing::Field;
 using ::testing::Pointee;
 using ::testing::Property;
@@ -1520,7 +1521,7 @@ TEST_F(PacingControllerTest, SmallFirstProbePacket) {
   size_t packets_sent = 0;
   bool media_seen = false;
   EXPECT_CALL(callback, SendPacket)
-      .Times(::testing::AnyNumber())
+      .Times(AnyNumber())
       .WillRepeatedly([&](std::unique_ptr<RtpPacketToSend> packet,
                           const PacedPacketInfo& cluster_info) {
         if (packets_sent == 0) {
@@ -1674,7 +1675,7 @@ TEST_F(PacingControllerTest,
   for (bool account_for_audio : {false, true}) {
     uint16_t sequence_number = 1234;
     MockPacketSender callback;
-    EXPECT_CALL(callback, SendPacket).Times(::testing::AnyNumber());
+    EXPECT_CALL(callback, SendPacket).Times(AnyNumber());
     auto pacer =
         std::make_unique<PacingController>(&clock_, &callback, trials_);
     pacer->SetAccountForAudioPackets(account_for_audio);
@@ -2139,6 +2140,35 @@ TEST_F(PacingControllerTest, AbortsAfterReachingCircuitBreakLimit) {
   clock_.AdvanceTime(TimeDelta::Seconds(1));
 
   pacer.ProcessPackets();
+}
+
+TEST_F(PacingControllerTest, DoesNotPadIfProcessThreadIsBorked) {
+  PacingControllerPadding callback;
+  PacingController pacer(&clock_, &callback, trials_);
+
+  
+  pacer.SetPacingRates(kTargetRate, kTargetRate);
+
+  
+  pacer.EnqueuePacket(BuildPacket(RtpPacketMediaType::kVideo, kVideoSsrc,
+                                  1,
+                                  1,
+                                  1000));
+
+  
+  clock_.AdvanceTime(TimeDelta::Seconds(42));
+
+  
+  
+  pacer.ProcessPackets();
+
+  
+  
+  const DataSize kMaxPadding = (PacingController::kMaxPaddingReplayDuration +
+                                PacingController::kTargetPaddingDuration) *
+                               kTargetRate;
+
+  EXPECT_LE(callback.padding_sent(), kMaxPadding.bytes<size_t>());
 }
 
 }  

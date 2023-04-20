@@ -33,7 +33,6 @@ constexpr TimeDelta kCongestedPacketInterval = TimeDelta::Millis(500);
 
 constexpr TimeDelta kMaxDebtInTime = TimeDelta::Millis(500);
 constexpr TimeDelta kMaxElapsedTime = TimeDelta::Seconds(2);
-constexpr TimeDelta kTargetPaddingDuration = TimeDelta::Millis(5);
 
 bool IsDisabled(const FieldTrialsView& field_trials, absl::string_view key) {
   return absl::StartsWith(field_trials.Lookup(key), "Disabled");
@@ -50,6 +49,9 @@ const TimeDelta PacingController::kMaxExpectedQueueLength =
 const TimeDelta PacingController::kPausedProcessInterval =
     kCongestedPacketInterval;
 const TimeDelta PacingController::kMinSleepTime = TimeDelta::Millis(1);
+const TimeDelta PacingController::kTargetPaddingDuration = TimeDelta::Millis(5);
+const TimeDelta PacingController::kMaxPaddingReplayDuration =
+    TimeDelta::Millis(50);
 const TimeDelta PacingController::kMaxEarlyProbeProcessing =
     TimeDelta::Millis(1);
 
@@ -438,6 +440,14 @@ void PacingController::ProcessPackets() {
         GetPendingPacket(pacing_info, target_send_time, now);
     if (rtp_packet == nullptr) {
       
+      if (now - target_send_time > kMaxPaddingReplayDuration) {
+        
+        
+        
+        target_send_time = now - kMaxPaddingReplayDuration;
+        last_process_time_ = std::max(last_process_time_, target_send_time);
+      }
+
       DataSize padding_to_add = PaddingToAdd(recommended_probe_size, data_sent);
       if (padding_to_add > DataSize::Zero()) {
         std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets =

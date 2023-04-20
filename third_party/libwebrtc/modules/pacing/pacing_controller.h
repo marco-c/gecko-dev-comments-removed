@@ -72,9 +72,14 @@ class PacingController {
   
   
   static const TimeDelta kPausedProcessInterval;
-
+  
   static const TimeDelta kMinSleepTime;
-
+  
+  
+  static const TimeDelta kTargetPaddingDuration;
+  
+  
+  static const TimeDelta kMaxPaddingReplayDuration;
   
   
   
