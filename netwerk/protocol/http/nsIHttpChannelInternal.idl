@@ -5,8 +5,6 @@
 
 #include "nsISupports.idl"
 #include "nsILoadInfo.idl"
-#include "nsIRequest.idl"
-#include "nsITRRSkipReason.idl"
 
 %{C++
 #include "nsStringFwd.h"
@@ -283,22 +281,6 @@ interface nsIHttpChannelInternal : nsISupports
 
 
     [must_use] readonly attribute boolean isResolvedByTRR;
-
-
-    
-
-
-
-
-
-
-    [must_use] readonly attribute nsIRequest_TRRMode effectiveTRRMode;
-
-    
-
-
-
-    [must_use] readonly attribute nsITRRSkipReason_value trrSkipReason;
 
     
 

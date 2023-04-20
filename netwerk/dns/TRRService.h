@@ -82,7 +82,6 @@ class TRRService : public TRRServiceBase,
   
   
   static const nsCString& ProviderKey();
-  static void SetProviderDomain(const nsACString& aTRRDomain);
 
   void InitTRRConnectionInfo() override;
 

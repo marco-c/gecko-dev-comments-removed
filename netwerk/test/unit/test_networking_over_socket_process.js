@@ -145,7 +145,6 @@ add_task(async function testSimpleRequestAfterCrash() {
   info("wait socket process restart...");
   
   await new Promise(resolve => setTimeout(resolve, 1000));
-  Services.dns; 
   await TestUtils.waitForCondition(() => Services.io.socketProcessLaunched);
 
   await doTestSimpleRequest(true);
