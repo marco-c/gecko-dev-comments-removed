@@ -78,6 +78,15 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInlineStyleSetter final
   Result<EditorRawDOMRange, nsresult> ExtendOrShrinkRangeToApplyTheStyle(
       const HTMLEditor& aHTMLEditor, const EditorDOMRange& aRange) const;
 
+  
+
+
+
+  [[nodiscard]] static nsIContent* GetNextEditableInlineContent(
+      const nsIContent& aContent, const nsINode* aLimiter = nullptr);
+  [[nodiscard]] static nsIContent* GetPreviousEditableInlineContent(
+      const nsIContent& aContent, const nsINode* aLimiter = nullptr);
+
  private:
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult> ApplyStyle(
       HTMLEditor& aHTMLEditor, nsIContent& aContent);
