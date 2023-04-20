@@ -188,7 +188,7 @@ GeneratedFile(
 
 
 
-if not CONFIG["COMPILE_ENVIRONMENT"]:
+if CONFIG["MOZ_ARTIFACT_BUILDS"]:
     GeneratedFile(
         "jogfile.json",
         script="build_scripts/glean_parser_ext/run_glean_parser.py",
