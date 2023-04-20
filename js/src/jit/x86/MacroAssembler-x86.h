@@ -1105,10 +1105,6 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
     }
   }
 
-  void loadInstructionPointerAfterCall(Register dest) {
-    movl(Operand(StackPointer, 0x0), dest);
-  }
-
   
   inline void convertUInt32ToDouble(Register src, FloatRegister dest);
 

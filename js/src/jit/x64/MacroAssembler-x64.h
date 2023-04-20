@@ -1173,10 +1173,6 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
     }
   }
 
-  void loadInstructionPointerAfterCall(Register dest) {
-    loadPtr(Address(StackPointer, 0x0), dest);
-  }
-
   
   
   
