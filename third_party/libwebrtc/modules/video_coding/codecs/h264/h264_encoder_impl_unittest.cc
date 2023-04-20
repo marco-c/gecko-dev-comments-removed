@@ -33,7 +33,7 @@ void SetDefaultSettings(VideoCodec* codec_settings) {
   codec_settings->height = 480;
   
   
-  codec_settings->H264()->frameDroppingOn = true;
+  codec_settings->SetFrameDropEnabled(true);
   codec_settings->startBitrate = 2000;
   codec_settings->maxBitrate = 4000;
 }

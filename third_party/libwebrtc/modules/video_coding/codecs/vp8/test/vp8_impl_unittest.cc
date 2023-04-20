@@ -436,7 +436,7 @@ TEST_F(TestVp8Impl, DontDropKeyframes) {
 
   
   
-  codec_settings_.VP8()->frameDroppingOn = false;
+  codec_settings_.SetFrameDropEnabled(false);
   codec_settings_.mode = VideoCodecMode::kScreensharing;
   
   codec_settings_.VP8()->numberOfTemporalLayers = 2;

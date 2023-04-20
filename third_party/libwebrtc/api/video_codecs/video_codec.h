@@ -118,6 +118,9 @@ class RTC_EXPORT VideoCodec {
   VideoCodecComplexity GetVideoEncoderComplexity() const;
   void SetVideoEncoderComplexity(VideoCodecComplexity complexity_setting);
 
+  bool GetFrameDropEnabled() const;
+  void SetFrameDropEnabled(bool enabled);
+
   
   VideoCodecType codecType;
 
@@ -181,6 +184,9 @@ class RTC_EXPORT VideoCodec {
   
   
   absl::optional<VideoCodecComplexity> complexity_;
+  
+  
+  absl::optional<bool> frame_drop_enabled_;
 };
 
 }  
