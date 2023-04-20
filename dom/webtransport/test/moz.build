@@ -1,0 +1,9 @@
+
+
+
+
+
+
+TEST_DIRS += [
+    "xpcshell",
+]
