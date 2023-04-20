@@ -34,6 +34,12 @@ WorkerModuleLoader::WorkerModuleLoader(WorkerScriptLoader* aScriptLoader,
 
 already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateStaticImport(
     nsIURI* aURI, ModuleLoadRequest* aParent) {
+  
+  
+  
+  
+  
+  
   Maybe<ClientInfo> clientInfo = GetGlobalObject()->GetClientInfo();
 
   RefPtr<WorkerLoadContext> loadContext =
