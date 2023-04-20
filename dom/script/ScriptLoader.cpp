@@ -1186,6 +1186,13 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
       }
     }
 
+    {
+      
+      
+      
+      mozilla::nsAutoMicroTask mt;
+    }
+
     
     
     nsresult rv = modReq->OnFetchComplete(NS_OK);
