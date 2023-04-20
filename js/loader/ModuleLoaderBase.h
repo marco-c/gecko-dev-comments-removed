@@ -288,6 +288,8 @@ class ModuleLoaderBase : public nsISupports {
   
   void RegisterImportMap(mozilla::UniquePtr<ImportMap> aImportMap);
 
+  bool HasImportMapRegistered() const { return bool(mImportMap); }
+
   
   bool IsImportMapAllowed() const { return mImportMapsAllowed; }
   
