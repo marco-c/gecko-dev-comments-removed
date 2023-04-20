@@ -1485,17 +1485,6 @@ class ContentParent final : public PContentParent,
 
   void AssertAlive();
 
-  
-
-
-
-
-
-
-
-
-  static void DidLaunchSubprocess();
-
  private:
   
   RefPtr<ContentParent> mSelfRef;
@@ -1659,7 +1648,6 @@ class ContentParent final : public PContentParent,
 
   static uint32_t sMaxContentProcesses;
   static uint32_t sPageLoadEventCounter;
-  static Maybe<TimeStamp> sLastContentProcessLaunch;
 
   bool mIsSignaledImpendingShutdown = false;
   bool mIsNotifiedShutdownSuccess = false;
