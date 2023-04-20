@@ -573,6 +573,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   }
   void SetFullZoom(float aZoom);
   void SetOverrideDPPX(float);
+  void SetInRDMPane(bool aInRDMPane);
 
  public:
   float GetFullZoom() { return mFullZoom; }
@@ -824,18 +825,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   uint32_t GetBidi() const;
 
-  
-
-
-
-
-
-  nsITheme* Theme() MOZ_NONNULL_RETURN {
-    if (MOZ_LIKELY(mTheme)) {
-      return mTheme;
-    }
-    return EnsureTheme();
-  }
+  nsITheme* Theme() const MOZ_NONNULL_RETURN;
 
   void RecomputeTheme();
 
@@ -1352,6 +1342,9 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   unsigned mIsVisual : 1;
 
+  
+  unsigned mInRDMPane : 1;
+
   unsigned mHasWarnedAboutTooLargeDashedOrDottedRadius : 1;
 
   
@@ -1383,7 +1376,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   void LastRelease();
 
-  nsITheme* EnsureTheme();
+  void EnsureTheme();
 
 #ifdef DEBUG
  private:
