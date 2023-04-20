@@ -4,7 +4,6 @@
 
 import { isOriginalId } from "devtools/client/shared/source-map-loader/index";
 import {
-  getSourceActorsForSource,
   getBreakableLines,
   getSourceActorBreakableLines,
 } from "../../selectors";
@@ -21,16 +20,26 @@ function calculateBreakableLines(positions) {
   return lines;
 }
 
-export function setBreakableLines(cx, sourceId) {
+
+
+
+
+
+
+
+
+
+
+export function setBreakableLines(cx, source, sourceActor) {
   return async ({ getState, dispatch, client }) => {
     let breakableLines;
-    if (isOriginalId(sourceId)) {
+    if (isOriginalId(source.id)) {
       const positions = await dispatch(
-        setBreakpointPositions({ cx, sourceId })
+        setBreakpointPositions({ cx, sourceId: source.id })
       );
       breakableLines = calculateBreakableLines(positions);
 
-      const existingBreakableLines = getBreakableLines(getState(), sourceId);
+      const existingBreakableLines = getBreakableLines(getState(), source.id);
       if (existingBreakableLines) {
         breakableLines = [
           ...new Set([...existingBreakableLines, ...breakableLines]),
@@ -40,33 +49,21 @@ export function setBreakableLines(cx, sourceId) {
       dispatch({
         type: "SET_ORIGINAL_BREAKABLE_LINES",
         cx,
-        sourceId,
+        sourceId: source.id,
         breakableLines,
       });
     } else {
-      const sourceActors = getSourceActorsForSource(getState(), sourceId);
-
       
-      await Promise.all(
-        sourceActors.map(async sourceActor => {
-          
-          breakableLines = getSourceActorBreakableLines(
-            getState(),
-            sourceActor.id
-          );
-          if (breakableLines) {
-            return;
-          }
-          breakableLines = await client.getSourceActorBreakableLines(
-            sourceActor
-          );
-          await dispatch({
-            type: "SET_SOURCE_ACTOR_BREAKABLE_LINES",
-            sourceActorId: sourceActor.id,
-            breakableLines,
-          });
-        })
-      );
+      breakableLines = getSourceActorBreakableLines(getState(), sourceActor.id);
+      if (breakableLines) {
+        return;
+      }
+      breakableLines = await client.getSourceActorBreakableLines(sourceActor);
+      await dispatch({
+        type: "SET_SOURCE_ACTOR_BREAKABLE_LINES",
+        sourceActorId: sourceActor.id,
+        breakableLines,
+      });
     }
   };
 }
