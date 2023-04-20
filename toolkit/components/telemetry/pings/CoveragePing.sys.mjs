@@ -1,11 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-const { Log } = ChromeUtils.importESModule(
-  "resource://gre/modules/Log.sys.mjs"
-);
+import { Log } from "resource://gre/modules/Log.sys.mjs";
 
 const lazy = {};
 
@@ -20,8 +17,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
 });
 
-var EXPORTED_SYMBOLS = ["CoveragePing"];
-
 const COVERAGE_VERSION = "2";
 
 const COVERAGE_ENABLED_PREF = "toolkit.coverage.enabled";
@@ -32,13 +27,13 @@ const COVERAGE_UUID_PREF = `toolkit.coverage.uuid.v${COVERAGE_VERSION}`;
 const TELEMETRY_ENABLED_PREF = "datareporting.healthreport.uploadEnabled";
 const REPORTING_ENDPOINT_BASE_PREF = `toolkit.coverage.endpoint.base`;
 const REPORTING_ENDPOINT = "submit/coverage/coverage";
-const PING_SUBMISSION_TIMEOUT = 30 * 1000; 
+const PING_SUBMISSION_TIMEOUT = 30 * 1000; // 30 seconds
 
 const log = Log.repository.getLogger("Telemetry::CoveragePing");
 log.level = Services.prefs.getIntPref(LOG_LEVEL_PREF, Log.Level.Error);
 log.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
 
-var CoveragePing = Object.freeze({
+export var CoveragePing = Object.freeze({
   async startup() {
     if (!Services.prefs.getBoolPref(COVERAGE_ENABLED_PREF, false)) {
       log.debug("coverage not enabled");
@@ -67,9 +62,9 @@ var CoveragePing = Object.freeze({
     }
   },
 
-  
-  
-  
+  // NOTE - this does not use existing Telemetry code or honor Telemetry opt-out prefs,
+  // by design. It also sends no identifying data like the client ID. See the "coverage ping"
+  // documentation for details.
   reportTelemetrySetting() {
     const enabled = Services.prefs.getBoolPref(TELEMETRY_ENABLED_PREF, false);
 
@@ -83,7 +78,7 @@ var CoveragePing = Object.freeze({
 
     let cachedUuid = Services.prefs.getCharPref(COVERAGE_UUID_PREF, null);
     if (!cachedUuid) {
-      
+      // Totally random UUID, just for detecting duplicates.
       cachedUuid = lazy.CommonUtils.generateUUID();
       Services.prefs.setCharPref(COVERAGE_UUID_PREF, cachedUuid);
     }
@@ -124,25 +119,25 @@ var CoveragePing = Object.freeze({
       let success = false;
 
       if (statusClass === 200) {
-        
+        // We can treat all 2XX as success.
         log.info(`successfully submitted, status: ${status}`);
         success = true;
       } else if (statusClass === 400) {
-        
+        // 4XX means that something with the request was broken.
 
-        
-        
+        // TODO: we should handle this better, but for now we should avoid resubmitting
+        // broken requests by pretending success.
         success = true;
         log.error(
           `error submitting to ${endpoint}, status: ${status} - ping request broken?`
         );
       } else if (statusClass === 500) {
-        
+        // 5XX means there was a server-side error and we should try again later.
         log.error(
           `error submitting to ${endpoint}, status: ${status} - server error, should retry later`
         );
       } else {
-        
+        // We received an unexpected status code.
         log.error(
           `error submitting to ${endpoint}, status: ${status}, type: ${event.type}`
         );

@@ -1,17 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { Log } from "resource://gre/modules/Log.sys.mjs";
+import { clearTimeout, setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["TelemetryReportingPolicy", "Policy"];
-
-const { Log } = ChromeUtils.importESModule(
-  "resource://gre/modules/Log.sys.mjs"
-);
-const { clearTimeout, setTimeout } = ChromeUtils.importESModule(
-  "resource://gre/modules/Timer.sys.mjs"
-);
 const { Observers } = ChromeUtils.import(
   "resource://services-common/observers.js"
 );
@@ -30,14 +23,14 @@ ChromeUtils.defineModuleGetter(
 const LOGGER_NAME = "Toolkit.Telemetry";
 const LOGGER_PREFIX = "TelemetryReportingPolicy::";
 
-
-
+// Oldest year to allow in date preferences. The FHR infobar was implemented in
+// 2012 and no dates older than that should be encountered.
 const OLDEST_ALLOWED_ACCEPTANCE_YEAR = 2012;
 
 const PREF_BRANCH = "datareporting.policy.";
 
-
-
+// The following preferences are deprecated and will be purged during the preferences
+// migration process.
 const DEPRECATED_FHR_PREFS = [
   PREF_BRANCH + "dataSubmissionPolicyAccepted",
   PREF_BRANCH + "dataSubmissionPolicyBypassAcceptance",
@@ -45,17 +38,17 @@ const DEPRECATED_FHR_PREFS = [
   PREF_BRANCH + "dataSubmissionPolicyResponseTime",
 ];
 
+// How much time until we display the data choices notification bar, on the first run.
+const NOTIFICATION_DELAY_FIRST_RUN_MSEC = 60 * 1000; // 60s
+// Same as above, for the next runs.
+const NOTIFICATION_DELAY_NEXT_RUNS_MSEC = 10 * 1000; // 10s
 
-const NOTIFICATION_DELAY_FIRST_RUN_MSEC = 60 * 1000; 
-
-const NOTIFICATION_DELAY_NEXT_RUNS_MSEC = 10 * 1000; 
-
-
-
-
-
-
-var Policy = {
+/**
+ * This is a policy object used to override behavior within this module.
+ * Tests override properties on this object to allow for control of behavior
+ * that would otherwise be very hard to cover.
+ */
+export var Policy = {
   now: () => new Date(),
   setShowInfobarTimeout: (callback, delayMs) => setTimeout(callback, delayMs),
   clearShowInfobarTimeout: id => clearTimeout(id),
@@ -68,106 +61,107 @@ var Policy = {
   },
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Represents a request to display data policy.
+ *
+ * Receivers of these instances are expected to call one or more of the on*
+ * functions when events occur.
+ *
+ * When one of these requests is received, the first thing a callee should do
+ * is present notification to the user of the data policy. When the notice
+ * is displayed to the user, the callee should call `onUserNotifyComplete`.
+ *
+ * If for whatever reason the callee could not display a notice,
+ * it should call `onUserNotifyFailed`.
+ *
+ * @param {Object} aLog The log object used to log the error in case of failures.
+ */
 function NotifyPolicyRequest(aLog) {
   this._log = aLog;
 }
 
 NotifyPolicyRequest.prototype = Object.freeze({
-  
-
-
+  /**
+   * Called when the user is notified of the policy.
+   */
   onUserNotifyComplete() {
     return TelemetryReportingPolicyImpl._userNotified();
   },
 
-  
-
-
-
-
-
+  /**
+   * Called when there was an error notifying the user about the policy.
+   *
+   * @param error
+   *        (Error) Explains what went wrong.
+   */
   onUserNotifyFailed(error) {
     this._log.error("onUserNotifyFailed - " + error);
   },
 });
 
-var TelemetryReportingPolicy = {
-  
-  
-  
+export var TelemetryReportingPolicy = {
+  // The current policy version number. If the version number stored in the prefs
+  // is smaller than this, data upload will be disabled until the user is re-notified
+  // about the policy changes.
   DEFAULT_DATAREPORTING_POLICY_VERSION: 1,
 
-  
-
-
+  /**
+   * Setup the policy.
+   */
   setup() {
     return TelemetryReportingPolicyImpl.setup();
   },
 
-  
-
-
+  /**
+   * Shutdown and clear the policy.
+   */
   shutdown() {
     return TelemetryReportingPolicyImpl.shutdown();
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Check if we are allowed to upload data. In order to submit data both these conditions
+   * should be true:
+   * - The data submission preference should be true.
+   * - The datachoices infobar should have been displayed.
+   *
+   * @return {Boolean} True if we are allowed to upload data, false otherwise.
+   */
   canUpload() {
     return TelemetryReportingPolicyImpl.canUpload();
   },
 
-  
-
-
+  /**
+   * Check if this is the first time the browser ran.
+   */
   isFirstRun() {
     return TelemetryReportingPolicyImpl.isFirstRun();
   },
 
-  
-
-
+  /**
+   * Test only method, restarts the policy.
+   */
   reset() {
     return TelemetryReportingPolicyImpl.reset();
   },
 
-  
-
-
+  /**
+   * Test only method, used to check if user is notified of the policy in tests.
+   */
   testIsUserNotified() {
     return TelemetryReportingPolicyImpl.isUserNotifiedOfCurrentPolicy;
   },
 
-  
-
-
+  /**
+   * Test only method, used to simulate the infobar being shown in xpcshell tests.
+   */
   testInfobarShown() {
     return TelemetryReportingPolicyImpl._userNotified();
   },
 
-  
-
-
+  /**
+   * Test only method, used to trigger an update of the "first run" state.
+   */
   testUpdateFirstRun() {
     TelemetryReportingPolicyImpl._isFirstRun = undefined;
     TelemetryReportingPolicyImpl.isFirstRun();
@@ -176,12 +170,12 @@ var TelemetryReportingPolicy = {
 
 var TelemetryReportingPolicyImpl = {
   _logger: null,
-  
+  // Keep track of the notification status if user wasn't notified already.
   _notificationInProgress: false,
-  
+  // The timer used to show the datachoices notification at startup.
   _startupNotificationTimerId: null,
-  
-  
+  // Keep track of the first session state, as the related preference
+  // is flipped right after the browser starts.
   _isFirstRun: undefined,
 
   get _log() {
@@ -195,10 +189,10 @@ var TelemetryReportingPolicyImpl = {
     return this._logger;
   },
 
-  
-
-
-
+  /**
+   * Get the date the policy was notified.
+   * @return {Object} A date object or null on errors.
+   */
   get dataSubmissionPolicyNotifiedDate() {
     let prefString = Services.prefs.getStringPref(
       TelemetryUtils.Preferences.AcceptedPolicyDate,
@@ -206,7 +200,7 @@ var TelemetryReportingPolicyImpl = {
     );
     let valueInteger = parseInt(prefString, 10);
 
-    
+    // Bail out if we didn't store any value yet.
     if (valueInteger == 0) {
       this._log.info(
         "get dataSubmissionPolicyNotifiedDate - No date stored yet."
@@ -214,7 +208,7 @@ var TelemetryReportingPolicyImpl = {
       return null;
     }
 
-    
+    // If an invalid value is saved in the prefs, bail out too.
     if (Number.isNaN(valueInteger)) {
       this._log.error(
         "get dataSubmissionPolicyNotifiedDate - Invalid date stored."
@@ -222,7 +216,7 @@ var TelemetryReportingPolicyImpl = {
       return null;
     }
 
-    
+    // Make sure the notification date is newer then the oldest allowed date.
     let date = new Date(valueInteger);
     if (date.getFullYear() < OLDEST_ALLOWED_ACCEPTANCE_YEAR) {
       this._log.error(
@@ -234,10 +228,10 @@ var TelemetryReportingPolicyImpl = {
     return date;
   },
 
-  
-
-
-
+  /**
+   * Set the date the policy was notified.
+   * @param {Object} aDate A valid date object.
+   */
   set dataSubmissionPolicyNotifiedDate(aDate) {
     this._log.trace("set dataSubmissionPolicyNotifiedDate - aDate: " + aDate);
 
@@ -254,14 +248,14 @@ var TelemetryReportingPolicyImpl = {
     );
   },
 
-  
-
-
-
-
-
+  /**
+   * Whether submission of data is allowed.
+   *
+   * This is the master switch for remote server communication. If it is
+   * false, we never request upload or deletion.
+   */
   get dataSubmissionEnabled() {
-    
+    // Default is true because we are opt-out.
     return Services.prefs.getBoolPref(
       TelemetryUtils.Preferences.DataSubmissionEnabled,
       true
@@ -275,18 +269,18 @@ var TelemetryReportingPolicyImpl = {
     );
   },
 
-  
-
-
-
+  /**
+   * The minimum policy version which for dataSubmissionPolicyAccepted to
+   * to be valid.
+   */
   get minimumPolicyVersion() {
     const minPolicyVersion = Services.prefs.getIntPref(
       TelemetryUtils.Preferences.MinimumPolicyVersion,
       1
     );
 
-    
-    
+    // First check if the current channel has a specific minimum policy version. If not,
+    // use the general minimum policy version.
     let channel = "";
     try {
       channel = TelemetryUtils.getUpdateChannel();
@@ -315,13 +309,13 @@ var TelemetryReportingPolicyImpl = {
     );
   },
 
-  
-
-
-
-
+  /**
+   * Checks to see if the user has been notified about data submission
+   * @return {Bool} True if user has been notified and the notification is still valid,
+   *         false otherwise.
+   */
   get isUserNotifiedOfCurrentPolicy() {
-    
+    // If we don't have a sane notification date, the user was not notified yet.
     if (
       !this.dataSubmissionPolicyNotifiedDate ||
       this.dataSubmissionPolicyNotifiedDate.getTime() <= 0
@@ -329,40 +323,40 @@ var TelemetryReportingPolicyImpl = {
       return false;
     }
 
-    
+    // The accepted policy version should not be less than the minimum policy version.
     if (this.dataSubmissionPolicyAcceptedVersion < this.minimumPolicyVersion) {
       return false;
     }
 
-    
+    // Otherwise the user was already notified.
     return true;
   },
 
-  
-
-
+  /**
+   * Test only method, restarts the policy.
+   */
   reset() {
     this.shutdown();
     this._isFirstRun = undefined;
     return this.setup();
   },
 
-  
-
-
+  /**
+   * Setup the policy.
+   */
   setup() {
     this._log.trace("setup");
 
-    
+    // Migrate the data choices infobar, if needed.
     this._migratePreferences();
 
-    
+    // Add the event observers.
     Services.obs.addObserver(this, "sessionstore-windows-restored");
   },
 
-  
-
-
+  /**
+   * Clean up the reporting policy.
+   */
   shutdown() {
     this._log.trace("shutdown");
 
@@ -371,30 +365,30 @@ var TelemetryReportingPolicyImpl = {
     Policy.clearShowInfobarTimeout(this._startupNotificationTimerId);
   },
 
-  
-
-
+  /**
+   * Detach the observers that were attached during setup.
+   */
   _detachObservers() {
     Services.obs.removeObserver(this, "sessionstore-windows-restored");
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Check if we are allowed to upload data. In order to submit data both these conditions
+   * should be true:
+   * - The data submission preference should be true.
+   * - The datachoices infobar should have been displayed.
+   *
+   * @return {Boolean} True if we are allowed to upload data, false otherwise.
+   */
   canUpload() {
-    
-    
+    // If data submission is disabled, there's no point in showing the infobar. Just
+    // forbid to upload.
     if (!this.dataSubmissionEnabled) {
       return false;
     }
 
-    
-    
+    // Submission is enabled. We enable upload if user is notified or we need to bypass
+    // the policy.
     const bypassNotification = Services.prefs.getBoolPref(
       TelemetryUtils.Preferences.BypassNotification,
       false
@@ -412,19 +406,19 @@ var TelemetryReportingPolicyImpl = {
     return this._isFirstRun;
   },
 
-  
-
-
+  /**
+   * Migrate the data policy preferences, if needed.
+   */
   _migratePreferences() {
-    
+    // Current prefs are mostly the same than the old ones, except for some deprecated ones.
     for (let pref of DEPRECATED_FHR_PREFS) {
       Services.prefs.clearUserPref(pref);
     }
   },
 
-  
-
-
+  /**
+   * Determine whether the user should be notified.
+   */
   _shouldNotify() {
     if (!this.dataSubmissionEnabled) {
       this._log.trace(
@@ -454,9 +448,9 @@ var TelemetryReportingPolicyImpl = {
     return true;
   },
 
-  
-
-
+  /**
+   * Show the data choices infobar if needed.
+   */
   _showInfobar() {
     if (!this._shouldNotify()) {
       return;
@@ -468,30 +462,30 @@ var TelemetryReportingPolicyImpl = {
     Observers.notify("datareporting:notify-data-policy:request", request);
   },
 
-  
-
-
+  /**
+   * Called when the user is notified with the infobar or otherwise.
+   */
   _userNotified() {
     this._log.trace("_userNotified");
     this._recordNotificationData();
     lazy.TelemetrySend.notifyCanUpload();
   },
 
-  
-
-
+  /**
+   * Record date and the version of the accepted policy.
+   */
   _recordNotificationData() {
     this._log.trace("_recordNotificationData");
     this.dataSubmissionPolicyNotifiedDate = Policy.now();
     this.dataSubmissionPolicyAcceptedVersion = this.currentPolicyVersion;
-    
-    
+    // The user was notified and the notification data saved: the notification
+    // is no longer in progress.
     this._notificationInProgress = false;
   },
 
-  
-
-
+  /**
+   * Try to open the privacy policy in a background tab instead of showing the infobar.
+   */
   _openFirstRunPage() {
     if (!this._shouldNotify()) {
       return false;
@@ -518,8 +512,8 @@ var TelemetryReportingPolicyImpl = {
       return false;
     }
 
-    
-    
+    // We'll consider the user notified once the privacy policy has been loaded
+    // in a background tab even if that tab hasn't been selected.
     let tab;
     let progressListener = {};
     progressListener.onStateChange = (
@@ -573,7 +567,7 @@ var TelemetryReportingPolicyImpl = {
     }
 
     if (this.isFirstRun()) {
-      
+      // We're performing the first run, flip firstRun preference for subsequent runs.
       Services.prefs.setBoolPref(TelemetryUtils.Preferences.FirstRun, false);
 
       try {
@@ -585,13 +579,13 @@ var TelemetryReportingPolicyImpl = {
       }
     }
 
-    
+    // Show the info bar.
     const delay = this.isFirstRun()
       ? NOTIFICATION_DELAY_FIRST_RUN_MSEC
       : NOTIFICATION_DELAY_NEXT_RUNS_MSEC;
 
     this._startupNotificationTimerId = Policy.setShowInfobarTimeout(
-      
+      // Calling |canUpload| eventually shows the infobar, if needed.
       () => this._showInfobar(),
       delay
     );

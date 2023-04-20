@@ -1,13 +1,10 @@
+/* -*- js-indent-level: 2; indent-tabs-mode: nil -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { Log } from "resource://gre/modules/Log.sys.mjs";
 
-
-
-
-"use strict";
-
-const { Log } = ChromeUtils.importESModule(
-  "resource://gre/modules/Log.sys.mjs"
-);
 const { TelemetryUtils } = ChromeUtils.import(
   "resource://gre/modules/TelemetryUtils.jsm"
 );
@@ -25,14 +22,12 @@ const PING_TYPE = "update";
 const UPDATE_DOWNLOADED_TOPIC = "update-downloaded";
 const UPDATE_STAGED_TOPIC = "update-staged";
 
-var EXPORTED_SYMBOLS = ["UpdatePing"];
-
-
-
-
-
-
-var UpdatePing = {
+/**
+ * This module is responsible for listening to all the relevant update
+ * signals, gathering the needed information and assembling the "update"
+ * ping.
+ */
+export var UpdatePing = {
   _enabled: false,
 
   earlyInit() {
@@ -55,12 +50,12 @@ var UpdatePing = {
     Services.obs.addObserver(this, UPDATE_STAGED_TOPIC);
   },
 
-  
-
-
-
-
-
+  /**
+   * Get the information about the update we're going to apply/was just applied
+   * from the update manager.
+   *
+   * @return {nsIUpdate} The information about the update, if available, or null.
+   */
   _getActiveUpdate() {
     let updateManager = Cc["@mozilla.org/updates/update-manager;1"].getService(
       Ci.nsIUpdateManager
@@ -72,13 +67,13 @@ var UpdatePing = {
     return updateManager.readyUpdate;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Generate an "update" ping with reason "success" and dispatch it
+   * to the Telemetry system.
+   *
+   * @param {String} aPreviousVersion The browser version we updated from.
+   * @param {String} aPreviousBuildId The browser build id we updated from.
+   */
   handleUpdateSuccess(aPreviousVersion, aPreviousBuildId) {
     if (!this._enabled) {
       return;
@@ -86,13 +81,13 @@ var UpdatePing = {
 
     this._log.trace("handleUpdateSuccess");
 
-    
-    
-    
-    
-    
-    
-    
+    // An update could potentially change the update channel. Moreover,
+    // updates can only be applied if the update's channel matches with the build channel.
+    // There's no way to pass this information from the caller nor the environment as,
+    // in that case, the environment would report the "new" channel. However, the
+    // update manager should still have information about the active update: given the
+    // previous assumptions, we can simply get the channel from the update and assume
+    // it matches with the state previous to the update.
     let update = this._getActiveUpdate();
 
     const payload = {
@@ -117,13 +112,13 @@ var UpdatePing = {
     );
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Generate an "update" ping with reason "ready" and dispatch it
+   * to the Telemetry system.
+   *
+   * @param {String} aUpdateState The state of the downloaded patch. See
+   *        nsIUpdateService.idl for a list of possible values.
+   */
   _handleUpdateReady(aUpdateState) {
     const ALLOWED_STATES = [
       "applied",
@@ -137,8 +132,8 @@ var UpdatePing = {
       return;
     }
 
-    
-    
+    // Get the information about the update we're going to apply from the
+    // update manager.
     let update = this._getActiveUpdate();
     if (!update) {
       this._log.trace(
@@ -170,9 +165,9 @@ var UpdatePing = {
     );
   },
 
-  
-
-
+  /**
+   * The notifications handler.
+   */
   observe(aSubject, aTopic, aData) {
     this._log.trace("observe - aTopic: " + aTopic);
     if (aTopic == UPDATE_DOWNLOADED_TOPIC || aTopic == UPDATE_STAGED_TOPIC) {

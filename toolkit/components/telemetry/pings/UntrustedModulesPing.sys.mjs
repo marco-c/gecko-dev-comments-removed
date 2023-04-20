@@ -1,24 +1,16 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/*
+ * This module periodically sends a Telemetry ping containing information
+ * about untrusted module loads on Windows.
+ *
+ * https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/telemetry/data/third-party-modules-ping.html
+ */
 
-
-
-
-
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["TelemetryUntrustedModulesPing"];
-
-const { Log } = ChromeUtils.importESModule(
-  "resource://gre/modules/Log.sys.mjs"
-);
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { Log } from "resource://gre/modules/Log.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -34,14 +26,14 @@ XPCOMUtils.defineLazyServiceGetters(lazy, {
   ],
 });
 
-const DEFAULT_INTERVAL_SECONDS = 24 * 60 * 60; 
+const DEFAULT_INTERVAL_SECONDS = 24 * 60 * 60; // 1 day
 
 const LOGGER_NAME = "Toolkit.Telemetry";
 const LOGGER_PREFIX = "TelemetryUntrustedModulesPing::";
 const TIMER_NAME = "telemetry_untrustedmodules_ping";
 const PING_SUBMISSION_NAME = "third-party-modules";
 
-var TelemetryUntrustedModulesPing = Object.freeze({
+export var TelemetryUntrustedModulesPing = Object.freeze({
   _log: Log.repository.getLoggerWithMessagePrefix(LOGGER_NAME, LOGGER_PREFIX),
 
   start() {

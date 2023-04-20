@@ -2,8 +2,6 @@ const { TelemetryArchive } = ChromeUtils.import(
   "resource://gre/modules/TelemetryArchive.jsm"
 );
 
-var EXPORTED_SYMBOLS = ["TelemetryArchiveTesting"];
-
 function checkForProperties(ping, expected) {
   for (let [props, val] of expected) {
     let test = ping;
@@ -20,11 +18,11 @@ function checkForProperties(ping, expected) {
   return true;
 }
 
-
-
-
-
-
+/**
+ * A helper object that allows test code to check whether a telemetry ping
+ * was properly saved. To use, first initialize to collect the starting pings
+ * and then check for new ping data.
+ */
 function Checker() {}
 Checker.prototype = {
   promiseInit() {
@@ -36,18 +34,18 @@ Checker.prototype = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Find and return a new ping with certain properties.
+   *
+   * @param expected: an array of [['prop'...], 'value'] to check
+   * For example:
+   * [
+   *   [['environment', 'build', 'applicationId'], '20150101010101'],
+   *   [['version'], 1],
+   *   [['metadata', 'OOMAllocationSize'], 123456789],
+   * ]
+   * @returns a matching ping if found, or null
+   */
   async promiseFindPing(type, expected) {
     let candidates = [];
     let plist = await TelemetryArchive.promiseArchivedPingList();
@@ -70,7 +68,7 @@ Checker.prototype = {
   },
 };
 
-const TelemetryArchiveTesting = {
+export const TelemetryArchiveTesting = {
   setup() {
     Services.prefs.setCharPref("toolkit.telemetry.log.level", "Trace");
     Services.prefs.setBoolPref("toolkit.telemetry.archive.enabled", true);

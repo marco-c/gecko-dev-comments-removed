@@ -1,26 +1,17 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { Log } from "resource://gre/modules/Log.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["TelemetryEnvironment", "Policy"];
-
-const { Log } = ChromeUtils.importESModule(
-  "resource://gre/modules/Log.sys.mjs"
-);
 const { TelemetryUtils } = ChromeUtils.import(
   "resource://gre/modules/TelemetryUtils.jsm"
 );
 const { ObjectUtils } = ChromeUtils.import(
   "resource://gre/modules/ObjectUtils.jsm"
 );
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-const { UpdateUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/UpdateUtils.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { UpdateUtils } from "resource://gre/modules/UpdateUtils.sys.mjs";
 
 const Utils = TelemetryUtils;
 
@@ -39,9 +30,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
   WindowsRegistry: "resource://gre/modules/WindowsRegistry.sys.mjs",
 });
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 XPCOMUtils.defineLazyGetter(lazy, "fxAccounts", () => {
   return ChromeUtils.import(
     "resource://gre/modules/FxAccounts.jsm"
@@ -53,21 +43,21 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/components-utils/WindowsVersionInfo.jsm"
 );
 
-
+// The maximum length of a string (e.g. description) in the addons section.
 const MAX_ADDON_STRING_LENGTH = 100;
-
+// The maximum length of a string value in the settings.attribution object.
 const MAX_ATTRIBUTION_STRING_LENGTH = 100;
-
+// The maximum lengths for the experiment id and branch in the experiments section.
 const MAX_EXPERIMENT_ID_LENGTH = 100;
 const MAX_EXPERIMENT_BRANCH_LENGTH = 100;
 const MAX_EXPERIMENT_TYPE_LENGTH = 20;
 const MAX_EXPERIMENT_ENROLLMENT_ID_LENGTH = 40;
 
-
-
-
-
-var Policy = {
+/**
+ * This is a policy object used to override behavior for testing.
+ */
+// eslint-disable-next-line no-unused-vars
+export var Policy = {
   now: () => new Date(),
   _intlLoaded: false,
   _browserDelayedStartup() {
@@ -86,9 +76,9 @@ var Policy = {
   },
 };
 
-
-
-
+// This is used to buffer calls to setExperimentActive and friends, so that we
+// don't prematurely initialize our environment if it is called early during
+// startup.
 var gActiveExperimentStartupBuffer = new Map();
 
 var gGlobalEnvironment;
@@ -99,7 +89,7 @@ function getGlobal() {
   return gGlobalEnvironment;
 }
 
-var TelemetryEnvironment = {
+export var TelemetryEnvironment = {
   get currentEnvironment() {
     return getGlobal().currentEnvironment;
   },
@@ -120,17 +110,17 @@ var TelemetryEnvironment = {
     return getGlobal().unregisterChangeListener(name);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Add an experiment annotation to the environment.
+   * If an annotation with the same id already exists, it will be overwritten.
+   * This triggers a new subsession, subject to throttling.
+   *
+   * @param {String} id The id of the active experiment.
+   * @param {String} branch The experiment branch.
+   * @param {Object} [options] Optional object with options.
+   * @param {String} [options.type=false] The specific experiment type.
+   * @param {String} [options.enrollmentId=undefined] The id of the enrollment.
+   */
   setExperimentActive(id, branch, options = {}) {
     if (gGlobalEnvironment) {
       gGlobalEnvironment.setExperimentActive(id, branch, options);
@@ -139,12 +129,12 @@ var TelemetryEnvironment = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Remove an experiment annotation from the environment.
+   * If the annotation exists, a new subsession will triggered.
+   *
+   * @param {String} id The id of the active experiment.
+   */
   setExperimentInactive(id) {
     if (gGlobalEnvironment) {
       gGlobalEnvironment.setExperimentInactive(id);
@@ -153,16 +143,16 @@ var TelemetryEnvironment = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns an object containing the data for the active experiments.
+   *
+   * The returned object is of the format:
+   *
+   * {
+   *   "<experiment id>": { branch: "<branch>" },
+   *   // …
+   * }
+   */
   getActiveExperiments() {
     if (gGlobalEnvironment) {
       return gGlobalEnvironment.getActiveExperiments();
@@ -179,41 +169,41 @@ var TelemetryEnvironment = {
     return getGlobal().shutdown();
   },
 
-  
-  
+  // Policy to use when saving preferences. Exported for using them in tests.
+  // Reports "<user-set>" if there is a value set on the user branch
   RECORD_PREF_STATE: 1,
 
-  
+  // Reports the value set on the user branch, if one is set
   RECORD_PREF_VALUE: 2,
 
-  
-  
+  // Reports the active value (set on either the user or default branch)
+  // for this pref, if one is set
   RECORD_DEFAULTPREF_VALUE: 3,
 
-  
-  
+  // Reports "<set>" if a value for this pref is defined on either the user
+  // or default branch
   RECORD_DEFAULTPREF_STATE: 4,
 
-  
+  // Testing method
   async testWatchPreferences(prefMap) {
     return getGlobal()._watchPreferences(prefMap);
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Intended for use in tests only.
+   *
+   * In multiple tests we need a way to shut and re-start telemetry together
+   * with TelemetryEnvironment. This is problematic due to the fact that
+   * TelemetryEnvironment is a singleton. We, therefore, need this helper
+   * method to be able to re-set TelemetryEnvironment.
+   */
   testReset() {
     return getGlobal().reset();
   },
 
-  
-
-
+  /**
+   * Intended for use in tests only.
+   */
   testCleanRestart() {
     getGlobal().shutdown();
     gGlobalEnvironment = null;
@@ -415,12 +405,12 @@ const BACKGROUND_UPDATE_PREF_CHANGE_TOPIC =
     .observerTopic;
 const SERVICES_INFO_CHANGE_TOPIC = "sync-ui-state:update";
 
-
-
-
-
-
-
+/**
+ * Enforces the parameter to a boolean value.
+ * @param aValue The input value.
+ * @return {Boolean|Object} If aValue is a boolean or a number, returns its truthfulness
+ *         value. Otherwise, return null.
+ */
 function enforceBoolean(aValue) {
   if (typeof aValue !== "number" && typeof aValue !== "boolean") {
     return null;
@@ -428,10 +418,10 @@ function enforceBoolean(aValue) {
   return Boolean(aValue);
 }
 
-
-
-
-
+/**
+ * Get the current browser locale.
+ * @return a string with the locale or null on failure.
+ */
 function getBrowserLocale() {
   try {
     return Services.locale.appLocaleAsBCP47;
@@ -440,10 +430,10 @@ function getBrowserLocale() {
   }
 }
 
-
-
-
-
+/**
+ * Get the current OS locale.
+ * @return a string with the OS locale or null on failure.
+ */
 function getSystemLocale() {
   try {
     return Cc["@mozilla.org/intl/ospreferences;1"].getService(
@@ -454,10 +444,10 @@ function getSystemLocale() {
   }
 }
 
-
-
-
-
+/**
+ * Get the current OS locales.
+ * @return an array of strings with the OS locales or null on failure.
+ */
 function getSystemLocales() {
   try {
     return Cc["@mozilla.org/intl/ospreferences;1"].getService(
@@ -468,10 +458,10 @@ function getSystemLocales() {
   }
 }
 
-
-
-
-
+/**
+ * Get the current OS regional preference locales.
+ * @return an array of strings with the OS regional preference locales or null on failure.
+ */
 function getRegionalPrefsLocales() {
   try {
     return Cc["@mozilla.org/intl/ospreferences;1"].getService(
@@ -496,36 +486,36 @@ function getIntlSettings() {
   };
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Safely get a sysinfo property and return its value. If the property is not
+ * available, return aDefault.
+ *
+ * @param aPropertyName the property name to get.
+ * @param aDefault the value to return if aPropertyName is not available.
+ * @return The property value, if available, or aDefault.
+ */
 function getSysinfoProperty(aPropertyName, aDefault) {
   try {
-    
+    // |getProperty| may throw if |aPropertyName| does not exist.
     return Services.sysinfo.getProperty(aPropertyName);
   } catch (e) {}
 
   return aDefault;
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Safely get a gfxInfo field and return its value. If the field is not available, return
+ * aDefault.
+ *
+ * @param aPropertyName the property name to get.
+ * @param aDefault the value to return if aPropertyName is not available.
+ * @return The property value, if available, or aDefault.
+ */
 function getGfxField(aPropertyName, aDefault) {
   let gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo);
 
   try {
-    
+    // Accessing the field may throw if |aPropertyName| does not exist.
     let gfxProp = gfxInfo[aPropertyName];
     if (gfxProp !== undefined && gfxProp !== "") {
       return gfxProp;
@@ -535,14 +525,14 @@ function getGfxField(aPropertyName, aDefault) {
   return aDefault;
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Returns a substring of the input string.
+ *
+ * @param {String} aString The input string.
+ * @param {Integer} aMaxLength The maximum length of the returned substring. If this is
+ *        greater than the length of the input string, we return the whole input string.
+ * @return {String} The substring or null if the input string is null.
+ */
 function limitStringToLength(aString, aMaxLength) {
   if (typeof aString !== "string") {
     return null;
@@ -550,10 +540,10 @@ function limitStringToLength(aString, aMaxLength) {
   return aString.substring(0, aMaxLength);
 }
 
-
-
-
-
+/**
+ * Force a value to be a string.
+ * Only if the value is null, null is returned instead.
+ */
 function forceToStringOrNull(aValue) {
   if (aValue === null) {
     return null;
@@ -562,15 +552,15 @@ function forceToStringOrNull(aValue) {
   return String(aValue);
 }
 
-
-
-
-
-
-
+/**
+ * Get the information about a graphic adapter.
+ *
+ * @param aSuffix A suffix to add to the properties names.
+ * @return An object containing the adapter properties.
+ */
 function getGfxAdapter(aSuffix = "") {
-  
-  
+  // Note that gfxInfo, and so getGfxField, might return "Unknown" for the RAM on failures,
+  // not null.
   let memoryMB = parseInt(getGfxField("adapterRAM" + aSuffix, null), 10);
   if (Number.isNaN(memoryMB)) {
     memoryMB = null;
@@ -589,32 +579,32 @@ function getGfxAdapter(aSuffix = "") {
   };
 }
 
-
-
-
-
+/**
+ * Encapsulates the asynchronous magic interfacing with the addon manager. The builder
+ * is owned by a parent environment object and is an addon listener.
+ */
 function EnvironmentAddonBuilder(environment) {
   this._environment = environment;
 
-  
-  
+  // The pending task blocks addon manager shutdown. It can either be the initial load
+  // or a change load.
   this._pendingTask = null;
 
-  
-  
+  // Have we added an observer to listen for blocklist changes that still needs to be
+  // removed:
   this._gmpProviderObserverAdded = false;
 
-  
+  // Set to true once initial load is complete and we're watching for changes.
   this._loaded = false;
 
-  
+  // The state reported by the shutdown blocker if we hang shutdown.
   this._shutdownState = "Initial";
 }
 EnvironmentAddonBuilder.prototype = {
-  
-
-
-
+  /**
+   * Get the initial set of addons.
+   * @returns Promise<void> when the initial load is complete.
+   */
   async init() {
     AddonManager.beforeShutdown.addBlocker(
       "EnvironmentAddonBuilder",
@@ -625,16 +615,16 @@ EnvironmentAddonBuilder.prototype = {
     this._pendingTask = (async () => {
       try {
         this._shutdownState = "Awaiting _updateAddons";
-        
+        // Gather initial addons details
         await this._updateAddons();
 
         if (!this._environment._addonsAreFull) {
-          
-          
+          // The addon database has not been loaded, wait for it to
+          // initialize and gather full data as soon as it does.
           this._shutdownState = "Awaiting AddonManagerPrivate.databaseReady";
           await AddonManagerPrivate.databaseReady;
 
-          
+          // Now gather complete addons details.
           this._shutdownState = "Awaiting second _updateAddons";
           await this._updateAddons();
         }
@@ -649,15 +639,15 @@ EnvironmentAddonBuilder.prototype = {
     return this._pendingTask;
   },
 
-  
-
-
+  /**
+   * Register an addon listener and watch for changes.
+   */
   watchForChanges() {
     this._loaded = true;
     AddonManager.addAddonListener(this);
   },
 
-  
+  // AddonListener
   onEnabled(addon) {
     this._onAddonChange(addon);
   },
@@ -682,7 +672,7 @@ EnvironmentAddonBuilder.prototype = {
     this._checkForChanges("addons-changed");
   },
 
-  
+  // nsIObserver
   observe(aSubject, aTopic, aData) {
     this._environment._log.trace("observe - Topic " + aTopic);
     if (aTopic == GMP_PROVIDER_REGISTERED_TOPIC) {
@@ -744,24 +734,24 @@ EnvironmentAddonBuilder.prototype = {
       }
     }
 
-    
-    
-    
-    
-    
+    // At startup, _pendingTask is set to a Promise that does not resolve
+    // until the addons database has been read so complete details about
+    // addons are available.  Returning it here will cause it to block
+    // profileBeforeChange, guranteeing that full information will be
+    // available by the time profileBeforeChangeTelemetry is fired.
     return this._pendingTask;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Collect the addon data for the environment.
+   *
+   * This should only be called from _pendingTask; otherwise we risk
+   * running this during addon manager shutdown.
+   *
+   * @returns Promise<Object> This returns a Promise resolved with a status object with the following members:
+   *   changed - Whether the environment changed.
+   *   oldEnvironment - Only set if a change occured, contains the environment data before the change.
+   */
   async _updateAddons() {
     this._environment._log.trace("_updateAddons");
 
@@ -792,13 +782,13 @@ EnvironmentAddonBuilder.prototype = {
     return result;
   },
 
-  
-
-
-
+  /**
+   * Get the addon data in object form.
+   * @return Promise<object> containing the addon data.
+   */
   async _getActiveAddons() {
-    
-    
+    // Request addons, asynchronously.
+    // "theme" is excluded because it is already handled by _getActiveTheme.
     let { addons: allAddons, fullData } = await AddonManager.getActiveAddons(
       AddonManagerPrivate.getAddonTypesByProvider("XPIProvider").filter(
         addonType => addonType != "theme"
@@ -808,14 +798,14 @@ EnvironmentAddonBuilder.prototype = {
     this._environment._addonsAreFull = fullData;
     let activeAddons = {};
     for (let addon of allAddons) {
-      
+      // Don't collect any information about the new built-in search webextensions
       if (addon.isBuiltin && !addon.isSystem) {
         continue;
       }
-      
-      
+      // Weird addon data in the wild can lead to exceptions while collecting
+      // the data.
       try {
-        
+        // Make sure to have valid dates.
         let updateDate = new Date(Math.max(0, addon.updateDate));
 
         activeAddons[addon.id] = {
@@ -828,8 +818,8 @@ EnvironmentAddonBuilder.prototype = {
           multiprocessCompatible: true,
         };
 
-        
-        
+        // getActiveAddons() gives limited data during startup and full
+        // data after the addons database is loaded.
         if (fullData) {
           let installDate = new Date(Math.max(0, addon.installDate));
           Object.assign(activeAddons[addon.id], {
@@ -860,19 +850,19 @@ EnvironmentAddonBuilder.prototype = {
     return activeAddons;
   },
 
-  
-
-
-
+  /**
+   * Get the currently active theme data in object form.
+   * @return Promise<object> containing the active theme data.
+   */
   async _getActiveTheme() {
-    
+    // Request themes, asynchronously.
     let { addons: themes } = await AddonManager.getActiveAddons(["theme"]);
 
     let activeTheme = {};
-    
+    // We only store information about the active theme.
     let theme = themes.find(theme => theme.isActive);
     if (theme) {
-      
+      // Make sure to have valid dates.
       let installDate = new Date(Math.max(0, theme.installDate));
       let updateDate = new Date(Math.max(0, theme.updateDate));
 
@@ -899,17 +889,17 @@ EnvironmentAddonBuilder.prototype = {
     return activeTheme;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Get the GMPlugins data in object form.
+   *
+   * @return Object containing the GMPlugins data.
+   *
+   * This should only be called from _pendingTask; otherwise we risk
+   * running this during addon manager shutdown.
+   */
   async _getActiveGMPlugins() {
-    
-    
+    // If we haven't yet loaded the blocklist, pass back dummy data for now,
+    // and add an observer to update this data as soon as we get it.
     if (!AddonManager.hasProvider("GMPProvider")) {
       if (!this._gmpProviderObserverAdded) {
         Services.obs.addObserver(this, GMP_PROVIDER_REGISTERED_TOPIC);
@@ -923,12 +913,12 @@ EnvironmentAddonBuilder.prototype = {
         },
       };
     }
-    
+    // Request plugins, asynchronously.
     let allPlugins = await AddonManager.getAddonsByTypes(["plugin"]);
 
     let activeGMPlugins = {};
     for (let plugin of allPlugins) {
-      
+      // Only get info for active GMplugins.
       if (!plugin.isGMPlugin || !plugin.isActive) {
         continue;
       }
@@ -960,18 +950,18 @@ function EnvironmentCache() {
   this._log.trace("constructor");
 
   this._shutdown = false;
-  
-  
+  // Don't allow querying the search service too early to prevent
+  // impacting the startup performance.
   this._canQuerySearch = false;
-  
-  
+  // To guard against slowing down startup, defer gathering heavy environment
+  // entries until the session is restored.
   this._sessionWasRestored = false;
 
-  
+  // A map of listeners that will be called on environment changes.
   this._changeListeners = new Map();
 
-  
-  
+  // A map of watched preferences which trigger an Environment change when
+  // modified. Every entry contains a recording policy (RECORD_PREF_*).
   this._watchedPrefs = DEFAULT_ENVIRONMENT_PREFS;
 
   this._currentEnvironment = {
@@ -982,8 +972,8 @@ function EnvironmentCache() {
 
   this._addObservers();
 
-  
-  
+  // Build the remaining asynchronous parts of the environment. Don't register change listeners
+  // until the initial environment has been built.
 
   let p = [this._updateSettings()];
   this._addonBuilder = new EnvironmentAddonBuilder(this);
@@ -1016,30 +1006,30 @@ function EnvironmentCache() {
   this._initTask = Promise.all(p).then(
     () => setup(),
     err => {
-      
+      // log errors but eat them for consumers
       this._log.error("EnvironmentCache - error while initializing", err);
       return setup();
     }
   );
 
-  
-  
+  // Addons may contain partial or full data depending on whether the Addons DB
+  // has had a chance to load. Do we have full data yet?
   this._addonsAreFull = false;
 }
 EnvironmentCache.prototype = {
-  
-
-
-
-
+  /**
+   * The current environment data. The returned data is cloned to avoid
+   * unexpected sharing or mutation.
+   * @returns object
+   */
   get currentEnvironment() {
     return Cu.cloneInto(this._currentEnvironment, {});
   },
 
-  
-
-
-
+  /**
+   * Wait for the current enviroment to be fully initialized.
+   * @returns Promise<object>
+   */
   onInitialized() {
     if (this._initTask) {
       return this._initTask;
@@ -1047,14 +1037,14 @@ EnvironmentCache.prototype = {
     return Promise.resolve(this.currentEnvironment);
   },
 
-  
-
-
+  /**
+   * This gets called when the delayed init completes.
+   */
   async delayedInit() {
     this._processData = await Services.sysinfo.processInfo;
     let processData = await Services.sysinfo.processInfo;
-    
-    
+    // Remove isWow64 and isWowARM64 from processData
+    // to strip it down to just CPU info
     delete processData.isWow64;
     delete processData.isWowARM64;
 
@@ -1064,7 +1054,7 @@ EnvironmentCache.prototype = {
     }
 
     this._cpuData = this._getCPUData();
-    
+    // Augment the return value from the promises with cached values
     this._cpuData = { ...processData, ...this._cpuData };
 
     this._currentEnvironment.system.cpu = this._getCPUData();
@@ -1074,24 +1064,24 @@ EnvironmentCache.prototype = {
       let osData = await Services.sysinfo.osInfo;
 
       if (!this._initTask) {
-        
-        
-        
-        
-        
-        
+        // We've finished creating the initial env, so notify for the update
+        // This is all a bit awkward because `currentEnvironment` clones
+        // the object, which we need to pass to the notification, but we
+        // should only notify once we've updated the current environment...
+        // Ideally, _onEnvironmentChange should somehow deal with all this
+        // instead of all the consumers.
         oldEnv = this.currentEnvironment;
       }
 
       this._osData = this._getOSData();
 
-      
+      // Augment the return values from the promises with cached values
       this._osData = Object.assign(osData, this._osData);
 
       this._currentEnvironment.system.os = this._getOSData();
       this._currentEnvironment.system.hdd = this._getHDDData();
 
-      
+      // Windows only values stored in processData
       this._currentEnvironment.system.isWow64 = this._getProcessData().isWow64;
       this._currentEnvironment.system.isWowARM64 = this._getProcessData().isWowARM64;
     }
@@ -1101,13 +1091,13 @@ EnvironmentCache.prototype = {
     }
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Register a listener for environment changes.
+   * @param name The name of the listener. If a new listener is registered
+   *             with the same name, the old listener will be replaced.
+   * @param listener function(reason, oldEnvironment) - Will receive a reason for
+                     the change and the environment data before the change.
+   */
   registerChangeListener(name, listener) {
     this._log.trace("registerChangeListener for " + name);
     if (this._shutdown) {
@@ -1117,11 +1107,11 @@ EnvironmentCache.prototype = {
     this._changeListeners.set(name, listener);
   },
 
-  
-
-
-
-
+  /**
+   * Unregister from listening to environment changes.
+   * It's fine to call this on an unitialized TelemetryEnvironment.
+   * @param name The name of the listener to remove.
+   */
   unregisterChangeListener(name) {
     this._log.trace("unregisterChangeListener for " + name);
     if (this._shutdown) {
@@ -1133,7 +1123,7 @@ EnvironmentCache.prototype = {
 
   setExperimentActive(id, branch, options) {
     this._log.trace(`setExperimentActive - id: ${id}, branch: ${branch}`);
-    
+    // Make sure both the id and the branch have sane lengths.
     const saneId = limitStringToLength(id, MAX_EXPERIMENT_ID_LENGTH);
     const saneBranch = limitStringToLength(
       branch,
@@ -1146,14 +1136,14 @@ EnvironmentCache.prototype = {
       return;
     }
 
-    
+    // Warn the user about any content truncation.
     if (saneId.length != id.length || saneBranch.length != branch.length) {
       this._log.warn(
         "setExperimentActive - the experiment id or branch were truncated."
       );
     }
 
-    
+    // Truncate the experiment type if present.
     if (options.hasOwnProperty("type")) {
       let type = limitStringToLength(options.type, MAX_EXPERIMENT_TYPE_LENGTH);
       if (type.length != options.type.length) {
@@ -1164,7 +1154,7 @@ EnvironmentCache.prototype = {
       }
     }
 
-    
+    // Truncate the enrollment id if present.
     if (options.hasOwnProperty("enrollmentId")) {
       let enrollmentId = limitStringToLength(
         options.enrollmentId,
@@ -1179,7 +1169,7 @@ EnvironmentCache.prototype = {
     }
 
     let oldEnvironment = Cu.cloneInto(this._currentEnvironment, {});
-    
+    // Add the experiment annotation.
     let experiments = this._currentEnvironment.experiments || {};
     experiments[saneId] = { branch: saneBranch };
     if (options.hasOwnProperty("type")) {
@@ -1189,7 +1179,7 @@ EnvironmentCache.prototype = {
       experiments[saneId].enrollmentId = options.enrollmentId;
     }
     this._currentEnvironment.experiments = experiments;
-    
+    // Notify of the change.
     this._onEnvironmentChange("experiment-annotation-changed", oldEnvironment);
   },
 
@@ -1197,11 +1187,11 @@ EnvironmentCache.prototype = {
     this._log.trace("setExperimentInactive");
     let experiments = this._currentEnvironment.experiments || {};
     if (id in experiments) {
-      
+      // Only attempt to notify if a previous annotation was found and removed.
       let oldEnvironment = Cu.cloneInto(this._currentEnvironment, {});
-      
+      // Remove the experiment annotation.
       delete this._currentEnvironment.experiments[id];
-      
+      // Notify of the change.
       this._onEnvironmentChange(
         "experiment-annotation-changed",
         oldEnvironment
@@ -1218,10 +1208,10 @@ EnvironmentCache.prototype = {
     this._shutdown = true;
   },
 
-  
-
-
-
+  /**
+   * Only used in tests, set the preferences to watch.
+   * @param aPreferences A map of preferences names and their recording policy.
+   */
   _watchPreferences(aPreferences) {
     this._stopWatchingPrefs();
     this._watchedPrefs = aPreferences;
@@ -1229,12 +1219,12 @@ EnvironmentCache.prototype = {
     this._startWatchingPrefs();
   },
 
-  
-
-
-
-
-
+  /**
+   * Get an object containing the values for the watched preferences. Depending on the
+   * policy, the value for a preference or whether it was changed by user is reported.
+   *
+   * @return An object containing the preferences values.
+   */
   _getPrefData() {
     let prefData = {};
     for (let [pref, policy] of this._watchedPrefs.entries()) {
@@ -1249,29 +1239,29 @@ EnvironmentCache.prototype = {
     return prefData;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Get the value of a preference given the preference name and the policy.
+   * @param pref Name of the preference.
+   * @param what Policy of the preference.
+   *
+   * @returns The value we need to store for this preference. It can be undefined
+   *          or null if the preference is invalid or has a value set by the user.
+   */
   _getPrefValue(pref, what) {
-    
-    
+    // Check the policy for the preference and decide if we need to store its value
+    // or whether it changed from the default value.
     let prefType = Services.prefs.getPrefType(pref);
 
     if (
       what == TelemetryEnvironment.RECORD_DEFAULTPREF_VALUE ||
       what == TelemetryEnvironment.RECORD_DEFAULTPREF_STATE
     ) {
-      
+      // For default prefs, make sure they exist
       if (prefType == Ci.nsIPrefBranch.PREF_INVALID) {
         return undefined;
       }
     } else if (!Services.prefs.prefHasUserValue(pref)) {
-      
+      // For user prefs, make sure they are set
       return undefined;
     }
 
@@ -1295,9 +1285,9 @@ EnvironmentCache.prototype = {
 
   QueryInterface: ChromeUtils.generateQI(["nsISupportsWeakReference"]),
 
-  
-
-
+  /**
+   * Start watching the preferences.
+   */
   _startWatchingPrefs() {
     this._log.trace("_startWatchingPrefs - " + this._watchedPrefs);
 
@@ -1314,9 +1304,9 @@ EnvironmentCache.prototype = {
     this._onEnvironmentChange("pref-changed", oldEnvironment);
   },
 
-  
-
-
+  /**
+   * Do not receive any more change notifications for the preferences.
+   */
   _stopWatchingPrefs() {
     this._log.trace("_stopWatchingPrefs");
 
@@ -1324,7 +1314,7 @@ EnvironmentCache.prototype = {
   },
 
   _addObservers() {
-    
+    // Watch the search engine change and service topics.
     Services.obs.addObserver(this, SESSIONSTORE_WINDOWS_RESTORED_TOPIC);
     Services.obs.addObserver(this, COMPOSITOR_CREATED_TOPIC);
     Services.obs.addObserver(this, COMPOSITOR_PROCESS_ABORTED_TOPIC);
@@ -1373,42 +1363,42 @@ EnvironmentCache.prototype = {
         ) {
           return;
         }
-        
+        // Record the new default search choice and send the change notification.
         this._onSearchEngineChange();
         break;
       case SEARCH_SERVICE_TOPIC:
         if (aData != "init-complete") {
           return;
         }
-        
+        // Now that the search engine init is complete, record the default search choice.
         this._canQuerySearch = true;
         this._updateSearchEngine();
         break;
       case GFX_FEATURES_READY_TOPIC:
       case COMPOSITOR_CREATED_TOPIC:
-        
-        
-        
+        // Full graphics information is not available until we have created at
+        // least one off-main-thread-composited window. Thus we wait for the
+        // first compositor to be created and then query nsIGfxInfo again.
         this._updateGraphicsFeatures();
         break;
       case COMPOSITOR_PROCESS_ABORTED_TOPIC:
-        
-        
+        // Our compositor process has been killed for whatever reason, so refresh
+        // our reported graphics features and trigger an environment change.
         this._onCompositorProcessAborted();
         break;
       case DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC:
-        
-        
+        // Distribution customizations are applied after final-ui-startup. query
+        // partner prefs again when they are ready.
         this._updatePartner();
         Services.obs.removeObserver(this, aTopic);
         break;
       case SESSIONSTORE_WINDOWS_RESTORED_TOPIC:
         this._sessionWasRestored = true;
-        
-        
+        // Make sure to initialize the search service once we've done restoring
+        // the windows, so that we don't risk loosing search data.
         Services.search.init();
-        
-        
+        // The default browser check could take some time, so just call it after
+        // the session was restored.
         this._updateDefaultBrowser();
         break;
       case PREF_CHANGED_TOPIC:
@@ -1429,9 +1419,9 @@ EnvironmentCache.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Update the default search engine value.
+   */
   _updateSearchEngine() {
     if (!this._canQuerySearch) {
       this._log.trace("_updateSearchEngine - ignoring early call");
@@ -1445,10 +1435,10 @@ EnvironmentCache.prototype = {
       return;
     }
 
-    
+    // Make sure we have a settings section.
     this._currentEnvironment.settings = this._currentEnvironment.settings || {};
 
-    
+    // Update the search engine entry in the current environment.
     const defaultEngineInfo = Services.search.getDefaultEngineInfo();
     this._currentEnvironment.settings.defaultSearchEngine =
       defaultEngineInfo.defaultSearchEngine;
@@ -1466,35 +1456,35 @@ EnvironmentCache.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Update the default search engine value and trigger the environment change.
+   */
   _onSearchEngineChange() {
     this._log.trace("_onSearchEngineChange");
 
-    
+    // Finally trigger the environment change notification.
     let oldEnvironment = Cu.cloneInto(this._currentEnvironment, {});
     this._updateSearchEngine();
     this._onEnvironmentChange("search-engine-changed", oldEnvironment);
   },
 
-  
-
-
-
-
+  /**
+   * Refresh the Telemetry environment and trigger an environment change due to
+   * a change in compositor process (normally this will mean we've fallen back
+   * from out-of-process to in-process compositing).
+   */
   _onCompositorProcessAborted() {
     this._log.trace("_onCompositorProcessAborted");
 
-    
+    // Trigger the environment change notification.
     let oldEnvironment = Cu.cloneInto(this._currentEnvironment, {});
     this._updateGraphicsFeatures();
     this._onEnvironmentChange("gfx-features-changed", oldEnvironment);
   },
 
-  
-
-
+  /**
+   * Update the graphics features object.
+   */
   _updateGraphicsFeatures() {
     let gfxData = this._currentEnvironment.system.gfx;
     try {
@@ -1505,17 +1495,17 @@ EnvironmentCache.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Update the partner prefs.
+   */
   _updatePartner() {
     this._currentEnvironment.partner = this._getPartner();
   },
 
-  
-
-
-
+  /**
+   * Get the build data in object form.
+   * @return Object containing the build data.
+   */
   _getBuild() {
     let buildData = {
       applicationId: Services.appinfo.ID || null,
@@ -1533,10 +1523,10 @@ EnvironmentCache.prototype = {
     return buildData;
   },
 
-  
-
-
-
+  /**
+   * Determine if we're the default browser.
+   * @returns null on error, true if we are the default browser, or false otherwise.
+   */
   _isDefaultBrowser() {
     let isDefault = (service, ...args) => {
       try {
@@ -1561,7 +1551,7 @@ EnvironmentCache.prototype = {
       let { ShellService } = ChromeUtils.import(
         "resource:///modules/ShellService.jsm"
       );
-      
+      // This uses the same set of flags used by the pref pane.
       return isDefault(ShellService, false, true);
     } catch (ex) {
       this._log.error("_isDefaultBrowser - Could not obtain shell service JSM");
@@ -1571,7 +1561,7 @@ EnvironmentCache.prototype = {
       let shellService = Cc["@mozilla.org/browser/shell-service;1"].getService(
         Ci.nsIShellService
       );
-      
+      // This uses the same set of flags used by the pref pane.
       return isDefault(shellService, true);
     } catch (ex) {
       this._log.error("_isDefaultBrowser - Could not obtain shell service", ex);
@@ -1583,7 +1573,7 @@ EnvironmentCache.prototype = {
     if (AppConstants.platform === "android") {
       return;
     }
-    
+    // Make sure to have a settings section.
     this._currentEnvironment.settings = this._currentEnvironment.settings || {};
     this._currentEnvironment.settings.isDefaultBrowser = this
       ._sessionWasRestored
@@ -1591,9 +1581,9 @@ EnvironmentCache.prototype = {
       : null;
   },
 
-  
-
-
+  /**
+   * Update the cached settings data.
+   */
   _updateSettings() {
     let updateChannel = null;
     try {
@@ -1610,8 +1600,8 @@ EnvironmentCache.prototype = {
       fissionEnabled: Services.appinfo.fissionAutostart,
       telemetryEnabled: Utils.isTelemetryEnabled,
       locale: getBrowserLocale(),
-      
-      
+      // We need to wait for browser-delayed-startup-finished to ensure that the locales
+      // have settled, once that's happened we can get the intl data directly.
       intl: Policy._intlLoaded ? getIntlSettings() : {},
       update: {
         channel: updateChannel,
@@ -1621,8 +1611,8 @@ EnvironmentCache.prototype = {
       sandbox: this._getSandboxData(),
     };
 
-    
-    
+    // Services.appinfo.launcherProcessState is not available in all build
+    // configurations, in which case an exception may be thrown.
     try {
       this._currentEnvironment.settings.launcherProcessState =
         Services.appinfo.launcherProcessState;
@@ -1649,8 +1639,8 @@ EnvironmentCache.prototype = {
       effectiveContentProcessLevel =
         sandboxSettings.effectiveContentSandboxLevel;
 
-      
-      
+      // The possible values for this are defined in the ContentWin32kLockdownState
+      // enum in security/sandbox/common/SandboxSettings.h
       contentWin32kLockdownState = sandboxSettings.contentWin32kLockdownState;
     } catch (e) {}
     return {
@@ -1659,10 +1649,10 @@ EnvironmentCache.prototype = {
     };
   },
 
-  
-
-
-
+  /**
+   * Update the cached profile data.
+   * @returns Promise<> resolved when the I/O is complete.
+   */
   async _updateProfile() {
     let profileAccessor = await lazy.ProfileAge();
 
@@ -1685,31 +1675,31 @@ EnvironmentCache.prototype = {
     }
   },
 
-  
-
-
-
+  /**
+   * Load the attribution data object and updates the environment.
+   * @returns Promise<> resolved when the I/O is complete.
+   */
   async _loadAttributionAsync() {
     try {
       await lazy.AttributionCode.getAttrDataAsync();
     } catch (e) {
-      
-      
+      // The AttributionCode.jsm module might not be always available
+      // (e.g. tests). Gracefully handle this.
       return;
     }
     this._updateAttribution();
   },
 
-  
-
-
+  /**
+   * Update the environment with the cached attribution data.
+   */
   _updateAttribution() {
     let data = null;
     try {
       data = lazy.AttributionCode.getCachedAttributionData();
     } catch (e) {
-      
-      
+      // The AttributionCode.jsm module might not be always available
+      // (e.g. tests). Gracefully handle this.
     }
 
     if (!data || !Object.keys(data).length) {
@@ -1719,8 +1709,8 @@ EnvironmentCache.prototype = {
     let attributionData = {};
     for (let key in data) {
       attributionData[key] =
-        
-        
+        // At least one of these may be boolean, and limitStringToLength
+        // returns null for non-string inputs.
         typeof data[key] === "string"
           ? limitStringToLength(data[key], MAX_ATTRIBUTION_STRING_LENGTH)
           : data[key];
@@ -1728,10 +1718,10 @@ EnvironmentCache.prototype = {
     this._currentEnvironment.settings.attribution = attributionData;
   },
 
-  
-
-
-
+  /**
+   * Load the per-installation update settings, cache them, and add them to the
+   * environment.
+   */
   async _loadAsyncUpdateSettings() {
     if (AppConstants.MOZ_UPDATER) {
       this._updateAutoDownloadCache = await UpdateUtils.getAppUpdateAutoEnabled();
@@ -1745,10 +1735,10 @@ EnvironmentCache.prototype = {
     this._loadAsyncUpdateSettingsFromCache();
   },
 
-  
-
-
-
+  /**
+   * Update the environment with the cached values for per-installation update
+   * settings.
+   */
   _loadAsyncUpdateSettingsFromCache() {
     if (this._updateAutoDownloadCache !== undefined) {
       this._currentEnvironment.settings.update.autoDownload = this._updateAutoDownloadCache;
@@ -1758,17 +1748,17 @@ EnvironmentCache.prototype = {
     }
   },
 
-  
-
-
-
+  /**
+   * Get i18n data about the system.
+   * @return A promise of completion.
+   */
   async _loadIntlData() {
-    
+    // Wait for the startup topic.
     await Policy._browserDelayedStartup();
     this._currentEnvironment.settings.intl = getIntlSettings();
     Policy._intlLoaded = true;
   },
-  
+  // This exists as a separate function for testing.
   async _getFxaSignedInUser() {
     return lazy.fxAccounts.getSignedInUser();
   },
@@ -1780,20 +1770,20 @@ EnvironmentCache.prototype = {
       .wrappedJSObject;
     syncEnabled = weaveService && weaveService.enabled;
     if (syncEnabled) {
-      
+      // All sync users are account users, definitely.
       accountEnabled = true;
     } else {
-      
+      // Not all account users are sync users. See if they're signed into FxA.
       try {
         let user = await this._getFxaSignedInUser();
         if (user) {
           accountEnabled = true;
         }
       } catch (e) {
-        
-        
-        
-        
+        // We don't know. This might be a transient issue which will clear
+        // itself up later, but the information in telemetry is quite possibly stale
+        // (this is called from a change listener), so clear it out to avoid
+        // reporting data which might be wrong until we can figure it out.
         delete this._currentEnvironment.services;
         this._log.error("_updateServicesInfo() caught error", e);
         return;
@@ -1805,10 +1795,10 @@ EnvironmentCache.prototype = {
     };
   },
 
-  
-
-
-
+  /**
+   * Get the partner data in object form.
+   * @return Object containing the partner data.
+   */
   _getPartner() {
     let defaults = Services.prefs.getDefaultBranch(null);
     let partnerData = {
@@ -1822,7 +1812,7 @@ EnvironmentCache.prototype = {
       distributorChannel: defaults.getCharPref(PREF_DISTRIBUTOR_CHANNEL, null),
     };
 
-    
+    // Get the PREF_APP_PARTNER_BRANCH branch and append its children to partner data.
     let partnerBranch = Services.prefs.getDefaultBranch(
       PREF_APP_PARTNER_BRANCH
     );
@@ -1832,10 +1822,10 @@ EnvironmentCache.prototype = {
   },
 
   _cpuData: null,
-  
-
-
-
+  /**
+   * Get the CPU information.
+   * @return Object containing the CPU information data.
+   */
   _getCPUData() {
     if (this._cpuData) {
       return this._cpuData;
@@ -1862,7 +1852,7 @@ EnvironmentCache.prototype = {
       "hasUserCET",
     ];
 
-    
+    // Enumerate the available CPU extensions.
     let availableExts = [];
     for (let ext of CPU_EXTENSIONS) {
       if (getSysinfoProperty(ext, false)) {
@@ -1876,10 +1866,10 @@ EnvironmentCache.prototype = {
   },
 
   _processData: null,
-  
-
-
-
+  /**
+   * Get the process information.
+   * @return Object containing the process information data.
+   */
   _getProcessData() {
     if (this._processData) {
       return this._processData;
@@ -1887,11 +1877,11 @@ EnvironmentCache.prototype = {
     return {};
   },
 
-  
-
-
-
-
+  /**
+   * Get the device information, if we are on a portable device.
+   * @return Object containing the device information data, or null if
+   * not a portable device.
+   */
   _getDeviceData() {
     if (AppConstants.platform !== "android") {
       return null;
@@ -1906,10 +1896,10 @@ EnvironmentCache.prototype = {
   },
 
   _osData: null,
-  
-
-
-
+  /**
+   * Get the OS information.
+   * @return Object containing the OS data.
+   */
   _getOSData() {
     if (this._osData) {
       return this._osData;
@@ -1925,7 +1915,7 @@ EnvironmentCache.prototype = {
         getSysinfoProperty("kernel_version", null)
       );
     } else if (AppConstants.platform === "win") {
-      
+      // The path to the "UBR" key, queried to get additional version details on Windows.
       const WINDOWS_UBR_KEY_PATH =
         "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
 
@@ -1933,13 +1923,13 @@ EnvironmentCache.prototype = {
       this._osData.servicePackMajor = versionInfo.servicePackMajor;
       this._osData.servicePackMinor = versionInfo.servicePackMinor;
       this._osData.windowsBuildNumber = versionInfo.buildNumber;
-      
+      // We only need the UBR if we're at or above Windows 10.
       if (
         typeof this._osData.version === "string" &&
         Services.vc.compare(this._osData.version, "10") >= 0
       ) {
-        
-        
+        // Query the UBR key and only add it to the environment if it's available.
+        // |readRegKey| doesn't throw, but rather returns 'undefined' on error.
         let ubr = lazy.WindowsRegistry.readRegKey(
           Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
           WINDOWS_UBR_KEY_PATH,
@@ -1954,10 +1944,10 @@ EnvironmentCache.prototype = {
   },
 
   _hddData: null,
-  
-
-
-
+  /**
+   * Get the HDD information.
+   * @return Object containing the HDD data.
+   */
   _getHDDData() {
     if (this._hddData) {
       return this._hddData;
@@ -1966,10 +1956,10 @@ EnvironmentCache.prototype = {
     return { profile: nullData, binary: nullData, system: nullData };
   },
 
-  
-
-
-
+  /**
+   * Get registered security product information.
+   * @return Object containing the security product data
+   */
   _getSecurityAppData() {
     const maxStringLength = 256;
 
@@ -1993,10 +1983,10 @@ EnvironmentCache.prototype = {
     return result;
   },
 
-  
-
-
-
+  /**
+   * Get the GFX information.
+   * @return Object containing the GFX data.
+   */
   _getGFXData() {
     let gfxData = {
       D2DEnabled: getGfxField("D2DEnabled", null),
@@ -2004,9 +1994,9 @@ EnvironmentCache.prototype = {
       ContentBackend: getGfxField("ContentBackend", null),
       Headless: getGfxField("isHeadless", null),
       EmbeddedInFirefoxReality: getGfxField("EmbeddedInFirefoxReality", null),
-      
-      
-      
+      // The following line is disabled due to main thread jank and will be enabled
+      // again as part of bug 1154500.
+      // DWriteVersion: getGfxField("DWriteVersion", null),
       adapters: [],
       monitors: [],
       features: {},
@@ -2028,11 +2018,11 @@ EnvironmentCache.prototype = {
       this._log.error("nsIGfxInfo.getFeatures() caught error", e);
     }
 
-    
+    // GfxInfo does not yet expose a way to iterate through all the adapters.
     gfxData.adapters.push(getGfxAdapter(""));
     gfxData.adapters[0].GPUActive = true;
 
-    
+    // If we have a second adapter add it to the gfxData.adapters section.
     let hasGPU2 = getGfxField("adapterDeviceID2", null) !== null;
     if (!hasGPU2) {
       this._log.trace("_getGFXData - Only one display adapter detected.");
@@ -2047,22 +2037,22 @@ EnvironmentCache.prototype = {
     return gfxData;
   },
 
-  
-
-
-
+  /**
+   * Get the system data in object form.
+   * @return Object containing the system data.
+   */
   _getSystem() {
     let memoryMB = getSysinfoProperty("memsize", null);
     if (memoryMB) {
-      
-      
+      // Send RAM size in megabytes. Rounding because sysinfo doesn't
+      // always provide RAM in multiples of 1024.
       memoryMB = Math.round(memoryMB / 1024 / 1024);
     }
 
     let virtualMB = getSysinfoProperty("virtualmemsize", null);
     if (virtualMB) {
-      
-      
+      // Send the total virtual memory size in megabytes. Rounding because
+      // sysinfo doesn't always provide RAM in multiples of 1024.
       virtualMB = Math.round(virtualMB / 1024 / 1024);
     }
 
@@ -2078,7 +2068,7 @@ EnvironmentCache.prototype = {
     };
 
     if (AppConstants.platform === "win") {
-      
+      // This is only sent for Mozilla produced MSIX packages
       let winPackageFamilyName = getSysinfoProperty("winPackageFamilyName", "");
       if (
         winPackageFamilyName.startsWith("Mozilla.") ||
@@ -2091,7 +2081,7 @@ EnvironmentCache.prototype = {
       data.device = this._getDeviceData();
     }
 
-    
+    // Windows 8+
     if (AppConstants.isPlatformAndVersionAtLeast("win", "6.2")) {
       data.sec = this._getSecurityAppData();
     }
@@ -2102,7 +2092,7 @@ EnvironmentCache.prototype = {
   _onEnvironmentChange(what, oldEnvironment) {
     this._log.trace("_onEnvironmentChange for " + what);
 
-    
+    // We are already skipping change events in _checkChanges if there is a pending change task running.
     if (this._shutdown) {
       this._log.trace("_onEnvironmentChange - Already shut down.");
       return;

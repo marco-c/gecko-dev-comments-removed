@@ -1,19 +1,13 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/*
+ * This module sends Origin Telemetry periodically:
+ * https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/telemetry/data/prio-ping.html
+ */
 
-
-
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["TelemetryPrioPing", "Policy"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -34,23 +28,23 @@ const Utils = TelemetryUtils;
 const LOGGER_NAME = "Toolkit.Telemetry";
 const LOGGER_PREFIX = "TelemetryPrioPing";
 
-
+// Triggered from native Origin Telemetry storage.
 const PRIO_LIMIT_REACHED_TOPIC = "origin-telemetry-storage-limit-reached";
 
 const PRIO_PING_VERSION = "1";
 
-var Policy = {
+export var Policy = {
   sendPing: (type, payload, options) =>
     lazy.TelemetryController.submitExternalPing(type, payload, options),
   getEncodedOriginSnapshot: async aClear =>
     Services.telemetry.getEncodedOriginSnapshot(aClear),
 };
 
-var TelemetryPrioPing = {
+export var TelemetryPrioPing = {
   Reason: Object.freeze({
-    PERIODIC: "periodic", 
-    MAX: "max", 
-    SHUTDOWN: "shutdown", 
+    PERIODIC: "periodic", // Sent the ping containing Origin Telemetry from the past periodic interval (default 24h).
+    MAX: "max", // Sent the ping containing at least the maximum number (default 10) of prioData elements, earlier than the periodic interval.
+    SHUTDOWN: "shutdown", // Recorded data was sent on shutdown.
   }),
 
   PRIO_PING_TYPE: "prio",
@@ -79,7 +73,7 @@ var TelemetryPrioPing = {
 
   async shutdown() {
     this._log.trace("Shutting down.");
-    
+    // removeObserver may throw, which could interrupt shutdown.
     try {
       Services.obs.removeObserver(this, PRIO_LIMIT_REACHED_TOPIC);
     } catch (ex) {}
@@ -101,15 +95,15 @@ var TelemetryPrioPing = {
     this._submitPing(this.Reason.PERIODIC);
   },
 
-  
-
-
-
-
+  /**
+   * Submits an "prio" ping and restarts the timer for the next interval.
+   *
+   * @param {String} reason The reason we're sending the ping. One of TelemetryPrioPing.Reason.
+   */
   async _submitPing(reason) {
     this._log.trace("_submitPing");
 
-    let snapshot = await Policy.getEncodedOriginSnapshot(true );
+    let snapshot = await Policy.getEncodedOriginSnapshot(true /* clear */);
 
     if (!this._testing) {
       snapshot = snapshot.filter(
@@ -118,7 +112,7 @@ var TelemetryPrioPing = {
     }
 
     if (snapshot.length === 0) {
-      
+      // Don't send a ping if we haven't anything to send
       this._log.trace("nothing to send");
       return;
     }
@@ -138,9 +132,9 @@ var TelemetryPrioPing = {
     Policy.sendPing(this.PRIO_PING_TYPE, payload, options);
   },
 
-  
-
-
+  /**
+   * Test-only, restore to initial state.
+   */
   testReset() {
     this._testing = true;
   },

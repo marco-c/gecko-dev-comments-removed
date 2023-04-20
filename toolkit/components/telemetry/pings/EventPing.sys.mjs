@@ -1,22 +1,16 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["TelemetryEventPing", "Policy"];
+/*
+ * This module sends Telemetry Events periodically:
+ * https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/telemetry/data/event-ping.html
+ */
 
 const { TelemetryUtils } = ChromeUtils.import(
   "resource://gre/modules/TelemetryUtils.jsm"
 );
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -44,18 +38,18 @@ const LOGGER_PREFIX = "TelemetryEventPing::";
 
 const EVENT_LIMIT_REACHED_TOPIC = "event-telemetry-storage-limit-reached";
 
-var Policy = {
+export var Policy = {
   setTimeout: (callback, delayMs) => lazy.setTimeout(callback, delayMs),
   clearTimeout: id => lazy.clearTimeout(id),
   sendPing: (type, payload, options) =>
     lazy.TelemetryController.submitExternalPing(type, payload, options),
 };
 
-var TelemetryEventPing = {
+export var TelemetryEventPing = {
   Reason: Object.freeze({
-    PERIODIC: "periodic", 
-    MAX: "max", 
-    SHUTDOWN: "shutdown", 
+    PERIODIC: "periodic", // Sent the ping containing events from the past periodic interval (default one hour).
+    MAX: "max", // Sent the ping containing the maximum number (default 1000) of event records, earlier than the periodic interval.
+    SHUTDOWN: "shutdown", // Recorded data was sent on shutdown.
   }),
 
   EVENT_PING_TYPE: "event",
@@ -64,7 +58,7 @@ var TelemetryEventPing = {
 
   _testing: false,
 
-  
+  // So that if we quickly reach the max limit we can immediately send.
   _lastSendTime: -DEFAULT_MIN_FREQUENCY_MS,
 
   _processStartTimestamp: 0,
@@ -78,7 +72,7 @@ var TelemetryEventPing = {
   startup() {
     this._log.trace("Starting up.");
 
-    
+    // Calculate process creation once.
     this._processStartTimestamp =
       Math.round(
         (Date.now() - TelemetryUtils.monotonicNow()) / MS_IN_A_MINUTE
@@ -104,12 +98,12 @@ var TelemetryEventPing = {
 
   shutdown() {
     this._log.trace("Shutting down.");
-    
+    // removeObserver may throw, which could interrupt shutdown.
     try {
       Services.obs.removeObserver(this, EVENT_LIMIT_REACHED_TOPIC);
     } catch (ex) {}
 
-    this._submitPing(this.Reason.SHUTDOWN, true );
+    this._submitPing(this.Reason.SHUTDOWN, true /* discardLeftovers */);
     this._clearTimer();
   },
 
@@ -123,7 +117,7 @@ var TelemetryEventPing = {
           this._startTimer(
             this.maxFrequency - this._lastSendTime,
             this.Reason.MAX,
-            true 
+            true /* discardLeftovers*/
           );
         } else {
           this._log.trace("submitting ping immediately");
@@ -152,12 +146,12 @@ var TelemetryEventPing = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Submits an "event" ping and restarts the timer for the next interval.
+   *
+   * @param {String} reason The reason we're sending the ping. One of TelemetryEventPing.Reason.
+   * @param {bool} discardLeftovers Whether to discard event records left over from a previous ping.
+   */
   _submitPing(reason, discardLeftovers = false) {
     this._log.trace("_submitPing");
 
@@ -167,7 +161,7 @@ var TelemetryEventPing = {
 
     let snapshot = Services.telemetry.snapshotEvents(
       this.dataset,
-      true ,
+      true /* clear */,
       DEFAULT_EVENT_LIMIT
     );
 
@@ -184,12 +178,12 @@ var TelemetryEventPing = {
       0
     );
     if (eventCount === 0) {
-      
+      // Don't send a ping if we haven't any events.
       this._log.trace("not sending event ping due to lack of events");
       return;
     }
 
-    
+    // The reason doesn't matter as it will just be echo'd back.
     let sessionMeta = lazy.TelemetrySession.getMetadata(reason);
 
     let payload = {
@@ -202,12 +196,12 @@ var TelemetryEventPing = {
     };
 
     if (discardLeftovers) {
-      
-      
-      
+      // Any leftovers must be discarded, the count submitted in the ping.
+      // This can happen on shutdown or if our max was reached before faster
+      // than our maxFrequency.
       let leftovers = Services.telemetry.snapshotEvents(
         this.dataset,
-        true 
+        true /* clear */
       );
       let leftoverCount = Object.values(leftovers).reduce(
         (acc, val) => acc + val.length,
@@ -229,9 +223,9 @@ var TelemetryEventPing = {
     Policy.sendPing(this.EVENT_PING_TYPE, payload, options);
   },
 
-  
-
-
+  /**
+   * Test-only, restore to initial state.
+   */
   testReset() {
     this._lastSendTime = -DEFAULT_MIN_FREQUENCY_MS;
     this._clearTimer();

@@ -45,8 +45,8 @@ const known_scripts = {
     "resource:///modules/InteractionsBlocklist.sys.mjs",
 
     
-    "resource://gre/modules/TelemetryControllerBase.jsm", 
-    "resource://gre/modules/TelemetryControllerContent.jsm", 
+    "resource://gre/modules/TelemetryControllerBase.sys.mjs", 
+    "resource://gre/modules/TelemetryControllerContent.sys.mjs", 
 
     
     "resource://gre/modules/ExtensionProcessScript.jsm",

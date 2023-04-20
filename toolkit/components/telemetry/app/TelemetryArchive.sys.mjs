@@ -1,17 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { Log } from "resource://gre/modules/Log.sys.mjs";
+import { Preferences } from "resource://gre/modules/Preferences.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["TelemetryArchive"];
-
-const { Log } = ChromeUtils.importESModule(
-  "resource://gre/modules/Log.sys.mjs"
-);
-const { Preferences } = ChromeUtils.importESModule(
-  "resource://gre/modules/Preferences.sys.mjs"
-);
 const { TelemetryUtils } = ChromeUtils.import(
   "resource://gre/modules/TelemetryUtils.jsm"
 );
@@ -27,48 +20,48 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/TelemetryStorage.jsm"
 );
 
-var TelemetryArchive = {
-  
-
-
-
-
-
-
-
-
-
-
+export var TelemetryArchive = {
+  /**
+   * Get a list of the archived pings, sorted by the creation date.
+   * Note that scanning the archived pings on disk is delayed on startup,
+   * use promizeInitialized() to access this after scanning.
+   *
+   * @return {Promise<sequence<Object>>}
+   *                    A list of the archived ping info in the form:
+   *                    { id: <string>,
+   *                      timestampCreated: <number>,
+   *                      type: <string> }
+   */
   promiseArchivedPingList() {
     return TelemetryArchiveImpl.promiseArchivedPingList();
   },
 
-  
-
-
-
-
-
+  /**
+   * Load an archived ping from disk by id, asynchronously.
+   *
+   * @param id {String} The pings UUID.
+   * @return {Promise<PingData>} A promise resolved with the pings data on success.
+   */
   promiseArchivedPingById(id) {
     return TelemetryArchiveImpl.promiseArchivedPingById(id);
   },
 
-  
-
-
-
-
-
+  /**
+   * Archive a ping and persist it to disk.
+   *
+   * @param {object} ping The ping data to archive.
+   * @return {promise} Promise that is resolved when the ping is successfully archived.
+   */
   promiseArchivePing(ping) {
     return TelemetryArchiveImpl.promiseArchivePing(ping);
   },
 };
 
-
-
-
-
-
+/**
+ * Checks if pings can be archived. Some products (e.g. Thunderbird) might not want
+ * to do that.
+ * @return {Boolean} True if pings should be archived, false otherwise.
+ */
 function shouldArchivePings() {
   return Preferences.get(TelemetryUtils.Preferences.ArchiveEnabled, false);
 }
