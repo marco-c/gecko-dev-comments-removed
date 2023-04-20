@@ -618,7 +618,9 @@ void* JS::ProfilingFrameIterator::stackAddress() const {
 
 Maybe<JS::ProfilingFrameIterator::Frame>
 JS::ProfilingFrameIterator::getPhysicalFrameAndEntry(
-    jit::JitcodeGlobalEntry* entry) const {
+    const jit::JitcodeGlobalEntry** entry) const {
+  *entry = nullptr;
+
   void* stackAddr = stackAddress();
 
   MOZ_DIAGNOSTIC_ASSERT(endStackAddress_);
@@ -653,38 +655,34 @@ JS::ProfilingFrameIterator::getPhysicalFrameAndEntry(
   
   
   
-  const jit::JitcodeGlobalEntry* lookedUpEntry = nullptr;
   if (samplePositionInProfilerBuffer_) {
-    lookedUpEntry = table->lookupForSampler(returnAddr, cx_->runtime(),
-                                            *samplePositionInProfilerBuffer_);
+    *entry = table->lookupForSampler(returnAddr, cx_->runtime(),
+                                     *samplePositionInProfilerBuffer_);
   } else {
-    lookedUpEntry = table->lookup(returnAddr);
+    *entry = table->lookup(returnAddr);
   }
 
   
-  if (!lookedUpEntry) {
+  if (!*entry) {
     return mozilla::Nothing();
   }
-  *entry = *lookedUpEntry;
-
-  MOZ_ASSERT(entry->isIon() || entry->isBaseline() ||
-             entry->isBaselineInterpreter() || entry->isDummy());
 
   
-  if (entry->isDummy()) {
+  if ((*entry)->isDummy()) {
     return mozilla::Nothing();
   }
 
   Frame frame;
-  if (entry->isBaselineInterpreter()) {
+  if ((*entry)->isBaselineInterpreter()) {
     frame.kind = Frame_BaselineInterpreter;
-  } else if (entry->isBaseline()) {
+  } else if ((*entry)->isBaseline()) {
     frame.kind = Frame_Baseline;
   } else {
+    MOZ_ASSERT((*entry)->isIon());
     frame.kind = Frame_Ion;
   }
   frame.stackAddress = stackAddr;
-  if (entry->isBaselineInterpreter()) {
+  if ((*entry)->isBaselineInterpreter()) {
     frame.label = jsJitIter().baselineInterpreterLabel();
     jsJitIter().baselineInterpreterScriptPC(
         &frame.interpreterScript, &frame.interpreterPC_, &frame.realmID);
@@ -708,7 +706,7 @@ uint32_t JS::ProfilingFrameIterator::extractStack(Frame* frames,
     return 0;
   }
 
-  jit::JitcodeGlobalEntry entry;
+  const jit::JitcodeGlobalEntry* entry;
   Maybe<Frame> physicalFrame = getPhysicalFrameAndEntry(&entry);
 
   
@@ -729,9 +727,9 @@ uint32_t JS::ProfilingFrameIterator::extractStack(Frame* frames,
 
   
   const char* labels[64];
-  uint32_t depth = entry.callStackAtAddr(cx_->runtime(),
-                                         jsJitIter().resumePCinCurrentFrame(),
-                                         labels, std::size(labels));
+  uint32_t depth = entry->callStackAtAddr(cx_->runtime(),
+                                          jsJitIter().resumePCinCurrentFrame(),
+                                          labels, std::size(labels));
   MOZ_ASSERT(depth < std::size(labels));
   for (uint32_t i = 0; i < depth; i++) {
     if (offset + i >= end) {
@@ -746,7 +744,7 @@ uint32_t JS::ProfilingFrameIterator::extractStack(Frame* frames,
 
 Maybe<JS::ProfilingFrameIterator::Frame>
 JS::ProfilingFrameIterator::getPhysicalFrameWithoutLabel() const {
-  jit::JitcodeGlobalEntry unused;
+  const jit::JitcodeGlobalEntry* unused;
   return getPhysicalFrameAndEntry(&unused);
 }
 

@@ -13176,9 +13176,14 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
     JitcodeIonTable* ionTable = (JitcodeIonTable*)ionTableAddr;
 
     
-    JitcodeGlobalEntry::IonEntry entry;
-    if (!ionTable->makeIonEntry(cx, code, nativeToBytecodeScriptListLength_,
-                                nativeToBytecodeScriptList_, entry)) {
+    auto entry =
+        MakeJitcodeGlobalEntry<IonEntry>(cx, code, code->raw(), code->rawEnd());
+    if (!entry) {
+      return false;
+    }
+    if (!ionTable->finishIonEntry(cx, nativeToBytecodeScriptListLength_,
+                                  nativeToBytecodeScriptList_,
+                                  entry->ionEntry())) {
       js_free(nativeToBytecodeScriptList_);
       js_free(nativeToBytecodeMap_);
       return false;
@@ -13190,9 +13195,7 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
     
     JitcodeGlobalTable* globalTable =
         cx->runtime()->jitRuntime()->getJitcodeGlobalTable();
-    if (!globalTable->addEntry(entry)) {
-      
-      entry.destroy();
+    if (!globalTable->addEntry(std::move(entry))) {
       return false;
     }
 
@@ -13200,15 +13203,16 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
     code->setHasBytecodeMap();
   } else {
     
-    JitcodeGlobalEntry::DummyEntry entry;
-    entry.init(code, code->raw(), code->rawEnd());
+    auto entry = MakeJitcodeGlobalEntry<DummyEntry>(cx, code, code->raw(),
+                                                    code->rawEnd());
+    if (!entry) {
+      return false;
+    }
 
     
     JitcodeGlobalTable* globalTable =
         cx->runtime()->jitRuntime()->getJitcodeGlobalTable();
-    if (!globalTable->addEntry(entry)) {
-      
-      entry.destroy();
+    if (!globalTable->addEntry(std::move(entry))) {
       return false;
     }
 
