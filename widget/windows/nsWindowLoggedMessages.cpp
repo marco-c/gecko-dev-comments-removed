@@ -3,7 +3,7 @@
 
 
 
-#include <WinUser.h>
+#include <winuser.h>
 #include "nsWindowLoggedMessages.h"
 #include "nsWindow.h"
 #include "WinUtils.h"
