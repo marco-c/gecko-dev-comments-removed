@@ -141,8 +141,16 @@ nsHtml5TreeOpExecutor::~nsHtml5TreeOpExecutor() {
       }
     }
   }
-  NS_ASSERTION(NS_FAILED(mBroken) || mOpQueue.IsEmpty(),
-               "Somehow there's stuff in the op queue.");
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 }
 
 
