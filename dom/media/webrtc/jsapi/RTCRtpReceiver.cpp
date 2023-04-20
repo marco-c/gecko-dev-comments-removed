@@ -75,7 +75,8 @@ RTCRtpReceiver::RTCRtpReceiver(
     AbstractThread* aCallThread, nsISerialEventTarget* aStsThread,
     MediaSessionConduit* aConduit, RTCRtpTransceiver* aTransceiver,
     const TrackingId& aTrackingId)
-    : mWindow(aWindow),
+    : mWatchManager(this, AbstractThread::MainThread()),
+      mWindow(aWindow),
       mPc(aPc),
       mCallThread(aCallThread),
       mStsThread(aStsThread),
@@ -130,8 +131,16 @@ RTCRtpReceiver::RTCRtpReceiver(
         GetMainThreadSerialEventTarget(), this, &RTCRtpReceiver::OnRtcpTimeout);
   }
 
+  
+  
+  
+  
   mUnmuteListener = mPipeline->UnmuteEvent().Connect(
       GetMainThreadSerialEventTarget(), this, &RTCRtpReceiver::OnUnmute);
+  mWatchManager.Watch(mReceiveTrackMute,
+                      &RTCRtpReceiver::UpdateReceiveTrackMute);
+  mWatchManager.Watch(mBlockUnmuteEvents,
+                      &RTCRtpReceiver::UpdateReceiveTrackMute);
 }
 
 #undef INIT_CANONICAL
@@ -546,6 +555,7 @@ nsPIDOMWindowInner* RTCRtpReceiver::GetParentObject() const { return mWindow; }
 
 void RTCRtpReceiver::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
+  mWatchManager.Shutdown();
   if (mPipeline) {
     mPipeline->Shutdown();
     mPipeline = nullptr;
@@ -623,6 +633,7 @@ void RTCRtpReceiver::UpdateConduit() {
 
   if ((mReceiving = GetJsepTransceiver().mRecvTrack.GetActive())) {
     Start();
+    mHaveStartedReceiving = true;
   }
 }
 
@@ -768,10 +779,8 @@ bool RTCRtpReceiver::HasTrack(const dom::MediaStreamTrack* aTrack) const {
 void RTCRtpReceiver::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
   
   
-  if (!aJsepTransceiver.mRecvTrack.GetRemoteSetSendBit() ||
-      !aJsepTransceiver.mRecvTrack.GetActive()) {
-    Stop();
-  }
+  mBlockUnmuteEvents = !aJsepTransceiver.mRecvTrack.GetRemoteSetSendBit() ||
+                       !aJsepTransceiver.mRecvTrack.GetActive();
 }
 
 void RTCRtpReceiver::SyncToJsep(JsepTransceiver& aJsepTransceiver) const {}
@@ -807,7 +816,7 @@ void RTCRtpReceiver::UpdateStreams(StreamAssociationChanges* aChanges) {
     if (mRemoteSetSendBit) {
       needsTrackEvent = true;
     } else {
-      aChanges->mTracksToMute.push_back(mTrack);
+      aChanges->mReceiversToMute.push_back(this);
     }
   }
 
@@ -839,17 +848,37 @@ void RTCRtpReceiver::MozInsertAudioLevelForContributingSource(
       aSource, aTimestamp, aRtpTimestamp, aHasLevel, aLevel);
 }
 
-void RTCRtpReceiver::OnRtcpBye() { SetReceiveTrackMuted(true); }
+void RTCRtpReceiver::OnRtcpBye() { mReceiveTrackMute = true; }
 
-void RTCRtpReceiver::OnRtcpTimeout() { SetReceiveTrackMuted(true); }
+void RTCRtpReceiver::OnRtcpTimeout() { mReceiveTrackMute = true; }
 
-void RTCRtpReceiver::OnUnmute() { SetReceiveTrackMuted(false); }
+void RTCRtpReceiver::SetTrackMuteFromRemoteSdp() {
+  MOZ_ASSERT(mBlockUnmuteEvents,
+             "PeerConnectionImpl should have blocked unmute events prior to "
+             "firing mute");
+  mReceiveTrackMute = true;
+  
+  
+  UpdateReceiveTrackMute();
+  MOZ_ASSERT(mTrack->Muted(), "Muted state was indeed set synchronously");
+}
 
-void RTCRtpReceiver::SetReceiveTrackMuted(bool aMuted) {
-  if (mTrackSource) {
-    
-    mTrackSource->SetMuted(aMuted);
+void RTCRtpReceiver::OnUnmute() { mReceiveTrackMute = false; }
+
+void RTCRtpReceiver::UpdateReceiveTrackMute() {
+  if (!mTrack) {
+    return;
   }
+  if (!mTrackSource) {
+    return;
+  }
+  if (mBlockUnmuteEvents && !mReceiveTrackMute) {
+    
+    return;
+  }
+  
+  
+  mTrackSource->SetMuted(mReceiveTrackMute);
 }
 
 std::string RTCRtpReceiver::GetMid() const {

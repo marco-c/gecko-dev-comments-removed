@@ -2764,9 +2764,9 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
             transceiver->Receiver()->UpdateStreams(&changes);
           }
 
-          for (const auto& track : changes.mTracksToMute) {
+          for (const auto& receiver : changes.mReceiversToMute) {
             
-            static_cast<RemoteTrackSource&>(track->GetSource()).SetMuted(true);
+            receiver->SetTrackMuteFromRemoteSdp();
           }
 
           for (const auto& association : changes.mStreamAssociationsRemoved) {
