@@ -411,13 +411,12 @@ async function doEngagementWithoutAddingResultToView(
   });
 
   
-  let result = await TestUtils.waitForCondition(
-    () =>
-      context?.results.find(
-        r => r.providerName == "UrlbarProviderQuickSuggest"
-      ),
-    "Waiting for quick suggest result to be added to context.results"
-  );
+  let result = await TestUtils.waitForCondition(() => {
+    let query = UrlbarProvidersManager.queries.get(context);
+    return query?.unsortedResults.find(
+      r => r.providerName == "UrlbarProviderQuickSuggest"
+    );
+  }, "Waiting for quick suggest result to be added to context.unsortedResults");
 
   gURLBar.controller.removeQueryListener(queryListener);
 
