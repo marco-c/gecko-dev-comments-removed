@@ -519,6 +519,7 @@ void EarlyHintPreloader::SetParentChannel() {
 
 void EarlyHintPreloader::InvokeStreamListenerFunctions() {
   AssertIsOnMainThread();
+  RefPtr<EarlyHintPreloader> self(this);
 
   LOG((
       "EarlyHintPreloader::InvokeStreamListenerFunctions [this=%p parent=%p]\n",
