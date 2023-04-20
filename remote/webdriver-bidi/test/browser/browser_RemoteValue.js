@@ -418,6 +418,20 @@ add_task(function test_deserializeLocalValues() {
   }
 });
 
+add_task(async function test_deserializeLocalValuesInWindowRealm() {
+  for (const type of REMOTE_SIMPLE_VALUES.concat(REMOTE_COMPLEX_VALUES)) {
+    const { value: expectedValue, serialized, deserializable } = type;
+
+    
+    if (!deserializable) {
+      continue;
+    }
+
+    const value = await deserializeInWindowRealm(serialized);
+    assertLocalValue(serialized.type, value, expectedValue);
+  }
+});
+
 add_task(function test_deserializeLocalValuesByHandle() {
   
   
@@ -984,5 +998,23 @@ function assertInternalIds(serializationInternalMap, amount) {
     remoteValuesWithInternalIds.length,
     amount,
     "Got expected amount of internalIds in serializationInternalMap"
+  );
+}
+
+function deserializeInWindowRealm(serialized) {
+  return SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [serialized],
+    async _serialized => {
+      const { WindowRealm } = ChromeUtils.importESModule(
+        "chrome://remote/content/webdriver-bidi/Realm.sys.mjs"
+      );
+      const { deserialize } = ChromeUtils.importESModule(
+        "chrome://remote/content/webdriver-bidi/RemoteValue.sys.mjs"
+      );
+      const realm = new WindowRealm(content);
+      info(`Checking '${_serialized.type}'`);
+      return deserialize(realm, _serialized);
+    }
   );
 }
