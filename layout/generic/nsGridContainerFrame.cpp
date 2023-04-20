@@ -5346,31 +5346,9 @@ static nscoord ContentContribution(
       iMinSizeClamp = aMinSizeClamp;
     }
     LogicalSize availableSize(childWM, availISize, availBSize);
-    if (MOZ_UNLIKELY(child->IsXULBoxFrame())) {
-      auto* pc = child->PresContext();
-      
-      
-      
-      
-      
-      
-      ReflowInput childRI(pc, *aState.mReflowInput, child, availableSize,
-                          Some(cbSize));
-
-      nsBoxLayoutState state(pc, &aState.mRenderingContext, &childRI,
-                             childRI.mReflowDepth);
-      nsSize physicalPrefSize = child->GetXULPrefSize(state);
-      auto prefSize = LogicalSize(childWM, physicalPrefSize);
-      size = prefSize.BSize(childWM);
-
-      
-      
-      size += childRI.ComputedLogicalMargin(childWM).BStartEnd(childWM);
-    } else {
-      size = ::MeasuringReflow(child, aState.mReflowInput, aRC, availableSize,
-                               cbSize, iMinSizeClamp, bMinSizeClamp);
-      size += child->GetLogicalUsedMargin(childWM).BStartEnd(childWM);
-    }
+    size = ::MeasuringReflow(child, aState.mReflowInput, aRC, availableSize,
+                             cbSize, iMinSizeClamp, bMinSizeClamp);
+    size += child->GetLogicalUsedMargin(childWM).BStartEnd(childWM);
     nscoord overflow = size - aMinSizeClamp;
     if (MOZ_UNLIKELY(overflow > 0)) {
       nscoord contentSize = child->ContentSize(childWM).BSize(childWM);
