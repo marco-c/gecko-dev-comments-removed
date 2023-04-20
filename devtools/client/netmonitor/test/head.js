@@ -1385,3 +1385,18 @@ const clickOnSidebarTab = (doc, name) => {
   );
   AccessibilityUtils.resetEnv();
 };
+
+
+
+
+
+
+
+
+
+
+function typeInNetmonitor(string, monitor) {
+  for (const ch of string) {
+    EventUtils.synthesizeKey(ch, {}, monitor.panelWin);
+  }
+}

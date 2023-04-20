@@ -37,15 +37,8 @@ add_task(async function() {
   await store.dispatch(Actions.openSearch());
 
   
-  const type = string => {
-    for (const ch of string) {
-      EventUtils.synthesizeKey(ch, {}, monitor.panelWin);
-    }
-  };
-
   
-  
-  type(SEARCH_STRING);
+  typeInNetmonitor(SEARCH_STRING, monitor);
   EventUtils.synthesizeKey("KEY_Enter");
 
   

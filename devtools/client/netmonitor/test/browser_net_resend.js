@@ -329,8 +329,8 @@ async function testOldEditAndResendPanel() {
     await queryFocus;
 
     
-    type(["VK_RETURN"]);
-    type(ADD_QUERY);
+    typeInNetmonitor(["VK_RETURN"], monitor);
+    typeInNetmonitor(ADD_QUERY, monitor);
 
     const headers = document.getElementById("custom-headers-value");
     const headersFocus = once(headers, "focus", false);
@@ -339,13 +339,13 @@ async function testOldEditAndResendPanel() {
     await headersFocus;
 
     
-    type(["VK_RETURN"]);
-    type(ADD_HEADER);
+    typeInNetmonitor(["VK_RETURN"], monitor);
+    typeInNetmonitor(ADD_HEADER, monitor);
 
     
     
-    type(["VK_RETURN"]);
-    type(ADD_UA_HEADER);
+    typeInNetmonitor(["VK_RETURN"], monitor);
+    typeInNetmonitor(ADD_UA_HEADER, monitor);
 
     const postData = document.getElementById("custom-postdata-value");
     const postFocus = once(postData, "focus", false);
@@ -355,7 +355,7 @@ async function testOldEditAndResendPanel() {
 
     
     await waitUntil(() => postData.textContent !== "");
-    type(ADD_POSTDATA);
+    typeInNetmonitor(ADD_POSTDATA, monitor);
   }
 
   
@@ -379,11 +379,5 @@ async function testOldEditAndResendPanel() {
       origData.requestPostData.postData.text + ADD_POSTDATA,
       "post data added to sent request"
     );
-  }
-
-  function type(string) {
-    for (const ch of string) {
-      EventUtils.synthesizeKey(ch, {}, monitor.panelWin);
-    }
   }
 }

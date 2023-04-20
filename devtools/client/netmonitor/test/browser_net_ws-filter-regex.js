@@ -53,17 +53,11 @@ add_task(async function() {
   
   is(frames.length, 2, "There should be two frames");
 
-  
-  const type = string => {
-    for (const ch of string) {
-      EventUtils.synthesizeKey(ch, {}, monitor.panelWin);
-    }
-  };
   const filterInput = document.querySelector(
     "#messages-view .devtools-filterinput"
   );
   filterInput.focus();
-  type("/Payload [0-9]+/");
+  typeInNetmonitor("/Payload [0-9]+/", monitor);
 
   
   await waitUntil(() => getDisplayedMessages(store.getState()).length == 2);

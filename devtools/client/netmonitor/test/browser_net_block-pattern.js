@@ -27,13 +27,6 @@ add_task(async function() {
   store.dispatch(Actions.toggleRequestBlockingPanel());
 
   
-  const type = string => {
-    for (const ch of string) {
-      EventUtils.synthesizeKey(ch, {}, monitor.panelWin);
-    }
-  };
-
-  
   await waitUntil(() => {
     return document.querySelector(
       "#network-action-bar-blocked-panel .request-blocking-add-form input.devtools-searchinput:focus"
@@ -41,9 +34,9 @@ add_task(async function() {
   });
 
   
-  type("test1");
+  typeInNetmonitor("test1", monitor);
   EventUtils.synthesizeKey("KEY_Enter");
-  type("test/*/test3");
+  typeInNetmonitor("test/*/test3", monitor);
   EventUtils.synthesizeKey("KEY_Enter");
 
   
