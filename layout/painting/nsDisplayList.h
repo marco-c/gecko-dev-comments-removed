@@ -1771,12 +1771,21 @@ class nsDisplayListBuilder {
     uint32_t mUsage;
   };
 
-  
-  typedef uint32_t DocumentWillChangeBudget;
-
   nsIFrame* const mReferenceFrame;
   nsIFrame* mIgnoreScrollFrame;
 
+  using Arena = nsPresArena<32768, DisplayListArenaObjectId,
+                            size_t(DisplayListArenaObjectId::COUNT)>;
+  Arena mPool;
+
+  AutoTArray<PresShellState, 8> mPresShellStates;
+  AutoTArray<nsIFrame*, 400> mFramesMarkedForDisplay;
+  AutoTArray<nsIFrame*, 40> mFramesMarkedForDisplayIfVisible;
+  AutoTArray<nsIFrame*, 20> mFramesWithOOFData;
+  nsClassHashtable<nsPtrHashKey<nsDisplayItem>,
+                   nsTArray<nsIWidget::ThemeGeometry>>
+      mThemeGeometries;
+  DisplayListClipState mClipState;
   const ActiveScrolledRoot* mCurrentActiveScrolledRoot;
   const ActiveScrolledRoot* mCurrentContainerASR;
   
@@ -1784,41 +1793,13 @@ class nsDisplayListBuilder {
   const nsIFrame* mCurrentFrame;
   
   const nsIFrame* mCurrentReferenceFrame;
+  
+  nsPoint mCurrentOffsetToReferenceFrame;
+
+  Maybe<nsPoint> mAdditionalOffset;
 
   
-  
-  
-  nsDisplayItem* mGlassDisplayItem;
-
-  nsIFrame* mCaretFrame;
-  
-  
-  
-  
-  
-  nsDisplayList* mScrollInfoItemsForHoisting;
-  nsTArray<RefPtr<ActiveScrolledRoot>> mActiveScrolledRoots;
-  DisplayItemClipChain* mFirstClipChainToDestroy;
-  nsTArray<nsDisplayItem*> mTemporaryItems;
-  nsDisplayTableBackgroundSet* mTableBackgroundSet;
-  ViewID mCurrentScrollParentId;
-  ViewID mCurrentScrollbarTarget;
-
-  nsTArray<nsIFrame*> mSVGEffectsFrames;
-  
-  
-  const ActiveScrolledRoot* mFilterASR;
-  nsCString mLinkSpec;  
-
-  
-  LayoutDeviceIntRegion mWindowDraggingRegion;
-  LayoutDeviceIntRegion mWindowNoDraggingRegion;
-  nsRegion mWindowOpaqueRegion;
-
-  nsClassHashtable<nsPtrHashKey<nsDisplayItem>,
-                   nsTArray<nsIWidget::ThemeGeometry>>
-      mThemeGeometries;
-  DisplayListClipState mClipState;
+  typedef uint32_t DocumentWillChangeBudget;
   nsTHashMap<nsPtrHashKey<const nsPresContext>, DocumentWillChangeBudget>
       mDocumentWillChangeBudgets;
 
@@ -1827,13 +1808,14 @@ class nsDisplayListBuilder {
   nsTHashMap<nsPtrHashKey<const nsIFrame>, FrameWillChangeBudget>
       mFrameWillChangeBudgets;
 
+  uint8_t mBuildingExtraPagesForPageNum;
+
   nsTHashMap<nsPtrHashKey<dom::RemoteBrowser>, dom::EffectsInfo>
       mEffectsUpdates;
 
-  nsTHashSet<nsCString> mDestinations;  
-
   
-  nsTHashSet<nsDisplayItem*> mReuseableItems;
+  nsRect mVisibleRect;
+  nsRect mDirtyRect;
 
   
   WeakFrameRegion mWindowExcludeGlassRegion;
@@ -1843,44 +1825,47 @@ class nsDisplayListBuilder {
   
   WeakFrameRegion mRetainedWindowOpaqueRegion;
 
-  std::unordered_set<const DisplayItemClipChain*, DisplayItemClipChainHasher,
-                     DisplayItemClipChainEqualer>
-      mClipDeduplicator;
-  std::unordered_set<nsIScrollableFrame*> mScrollFramesToNotify;
-
-  AutoTArray<nsIFrame*, 20> mFramesWithOOFData;
-  AutoTArray<nsIFrame*, 40> mFramesMarkedForDisplayIfVisible;
-  AutoTArray<PresShellState, 8> mPresShellStates;
-
-  using Arena = nsPresArena<32768, DisplayListArenaObjectId,
-                            size_t(DisplayListArenaObjectId::COUNT)>;
-  Arena mPool;
-
-  AutoTArray<nsIFrame*, 400> mFramesMarkedForDisplay;
-
-  gfx::CompositorHitTestInfo mCompositorHitTestInfo;
+  
+  LayoutDeviceIntRegion mWindowDraggingRegion;
+  LayoutDeviceIntRegion mWindowNoDraggingRegion;
+  nsRegion mWindowOpaqueRegion;
 
   
-  nsPoint mCurrentOffsetToReferenceFrame;
-
-  Maybe<float> mVisibleThreshold;
-
-  Maybe<nsPoint> mAdditionalOffset;
-
   
-  nsRect mVisibleRect;
-  nsRect mDirtyRect;
-  nsRect mCaretRect;
-
-  Preserves3DContext mPreserves3DCtx;
-
-  uint8_t mBuildingExtraPagesForPageNum;
-
+  
+  nsDisplayItem* mGlassDisplayItem;
   
   
   bool mHasGlassItemDuringPartial;
 
+  nsIFrame* mCaretFrame;
+  nsRect mCaretRect;
+
+  
+  
+  
+  
+  
+  nsDisplayList* mScrollInfoItemsForHoisting;
+  nsTArray<RefPtr<ActiveScrolledRoot>> mActiveScrolledRoots;
+  std::unordered_set<const DisplayItemClipChain*, DisplayItemClipChainHasher,
+                     DisplayItemClipChainEqualer>
+      mClipDeduplicator;
+  DisplayItemClipChain* mFirstClipChainToDestroy;
+  nsTArray<nsDisplayItem*> mTemporaryItems;
   nsDisplayListBuilderMode mMode;
+  nsDisplayTableBackgroundSet* mTableBackgroundSet;
+  ViewID mCurrentScrollParentId;
+  ViewID mCurrentScrollbarTarget;
+  Maybe<layers::ScrollDirection> mCurrentScrollbarDirection;
+  Preserves3DContext mPreserves3DCtx;
+  nsTArray<nsIFrame*> mSVGEffectsFrames;
+  
+  
+  const ActiveScrolledRoot* mFilterASR;
+  std::unordered_set<nsIScrollableFrame*> mScrollFramesToNotify;
+  nsCString mLinkSpec;  
+  nsTHashSet<nsCString> mDestinations;  
   bool mContainsBlendMode;
   bool mIsBuildingScrollbar;
   bool mCurrentScrollbarWillHaveLayer;
@@ -1926,9 +1911,13 @@ class nsDisplayListBuilder {
   bool mUseOverlayScrollbars;
   bool mAlwaysLayerizeScrollbars;
 
+  Maybe<float> mVisibleThreshold;
+  gfx::CompositorHitTestInfo mCompositorHitTestInfo;
+
   bool mIsReusingStackingContextItems;
 
-  Maybe<layers::ScrollDirection> mCurrentScrollbarDirection;
+  
+  nsTHashSet<nsDisplayItem*> mReuseableItems;
 };
 
 
