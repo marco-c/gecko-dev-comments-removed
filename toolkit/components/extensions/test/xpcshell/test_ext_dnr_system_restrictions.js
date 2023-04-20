@@ -5,6 +5,16 @@ server.registerPathHandler("/", (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.write("response from server");
 });
+server.registerPathHandler("/style_with_import.css", (req, res) => {
+  res.setHeader("Content-Type", "text/css");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.write("@import url('http://example.com/imported.css');");
+});
+server.registerPathHandler("/imported.css", (req, res) => {
+  res.setHeader("Content-Type", "text/css");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.write("imported_stylesheet_here { }");
+});
 
 add_setup(() => {
   Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
@@ -21,7 +31,18 @@ async function startDNRExtension() {
   let extension = ExtensionTestUtils.loadExtension({
     async background() {
       await browser.declarativeNetRequest.updateSessionRules({
-        addRules: [{ id: 1, condition: {}, action: { type: "block" } }],
+        addRules: [
+          {
+            id: 1,
+            condition: { resourceTypes: ["xmlhttprequest", "stylesheet"] },
+            action: { type: "block" },
+          },
+          {
+            id: 2,
+            condition: { urlFilter: "blockme", resourceTypes: ["main_frame"] },
+            action: { type: "block" },
+          },
+        ],
       });
       browser.test.sendMessage("dnr_registered");
     },
@@ -62,5 +83,63 @@ add_task(async function dnr_ignores_initiator_from_restrictedDomains() {
     "response from server",
     "DNR should not block requests initiated from a page in restrictedDomains"
   );
+  await extension.unload();
+});
+
+add_task(async function dnr_ignores_navigation_to_restrictedDomains() {
+  let extension = await startDNRExtension();
+  let contentPage = await ExtensionTestUtils.loadContentPage(
+    "http://restricted/?blockme"
+  );
+  await contentPage.spawn(null, () => {
+    const { document } = content;
+    Assert.equal(document.URL, "http://restricted/?blockme", "Same URL");
+    Assert.equal(document.body.textContent, "response from server", "body");
+  });
+  await contentPage.close();
+  await extension.unload();
+});
+
+add_task(async function dnr_ignores_css_import_at_restrictedDomains() {
+  
+  
+  
+  
+  let extension = await startDNRExtension();
+  let contentPage = await ExtensionTestUtils.loadContentPage(
+    "http://restricted/"
+  );
+  await contentPage.spawn(null, async () => {
+    
+    
+    const { document } = content.wrappedJSObject;
+    const style = document.createElement("link");
+    style.rel = "stylesheet";
+    
+    
+    style.href = "http://example.com/style_with_import.css";
+    style.crossOrigin = "anonymous";
+    await new Promise(resolve => {
+      info("Waiting for style sheet to load...");
+      style.onload = resolve;
+      document.head.append(style);
+    });
+    const importRule = style.sheet.cssRules[0];
+    Assert.equal(
+      importRule?.cssText,
+      `@import url("http://example.com/imported.css");`,
+      "Not blocked by DNR: Loaded style_with_import.css"
+    );
+    
+    
+    
+    const importedStylesheet = Cu.unwaiveXrays(importRule.styleSheet);
+    Assert.equal(
+      importedStylesheet.cssRules[0]?.cssText,
+      "imported_stylesheet_here { }",
+      "Not blocked by DNR: Loaded import.css"
+    );
+  });
+  await contentPage.close();
   await extension.unload();
 });
