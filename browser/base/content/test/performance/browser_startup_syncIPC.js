@@ -137,7 +137,7 @@ const startupPhases = {
       
       name: "PCompositorBridge::Msg_Resume",
       condition: LINUX,
-      ignoreIfUnused: true,
+      ignoreIfUnused: true, 
       maxCount: 1,
     },
   ],
@@ -148,9 +148,15 @@ const startupPhases = {
   "before handling user events": [
     {
       name: "PCompositorBridge::Msg_FlushRendering",
-      condition: !WIN,
+      condition: MAC,
       ignoreIfUnused: true,
       maxCount: 1,
+    },
+    {
+      name: "PCompositorBridge::Msg_FlushRendering",
+      condition: LINUX,
+      ignoreIfUnused: true, 
+      maxCount: 2,
     },
     {
       name: "PLayerTransaction::Msg_GetTextureFactoryIdentifier",
@@ -218,6 +224,15 @@ const startupPhases = {
       ignoreIfUnused: true, 
       maxCount: 1,
     },
+    {
+      
+      
+      
+      name: "PCompositorBridge::Msg_Resume",
+      condition: LINUX,
+      ignoreIfUnused: true, 
+      maxCount: 1,
+    },
   ],
 
   
@@ -275,8 +290,14 @@ const startupPhases = {
     },
     {
       name: "PCompositorBridge::Msg_FlushRendering",
-      condition: MAC || LINUX || SKELETONUI,
+      condition: MAC || SKELETONUI,
       ignoreIfUnused: true,
+      maxCount: 1,
+    },
+    {
+      name: "PCompositorBridge::Msg_FlushRendering",
+      condition: LINUX,
+      ignoreIfUnused: true, 
       maxCount: 1,
     },
     {
