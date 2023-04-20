@@ -126,7 +126,7 @@ class PrototypeDocumentContentSink final : public nsIStreamLoaderObserver,
 
 
 
-  char16_t* mOffThreadCompileStringBuf;
+  Utf8Unit* mOffThreadCompileStringBuf;
   size_t mOffThreadCompileStringLength;
 
   
