@@ -213,3 +213,21 @@ promise_test(async t => {
   assert_equals(len, 3*bytes.length);
 }, 'Transfer large chunks of data on a unidirectional stream');
 
+promise_test(async t => {
+  
+  const wt = new WebTransport(webtransport_url('echo.py'));
+  await wt.ready;
+
+  
+  const bidi_stream = await wt.createBidirectionalStream();
+
+  
+  const writer = bidi_stream.writable.getWriter();
+  writer.close();
+
+  
+  const chunks = await read_stream(bidi_stream.readable);
+  assert_equals(chunks.length, 0);
+
+  await bidi_stream.readable.closed;
+}, 'Closing the stream with no data still resolves the read request');
