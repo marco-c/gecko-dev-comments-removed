@@ -474,6 +474,17 @@ bool DMABufSurfaceRGBA::Create(mozilla::gl::GLContext* aGLContext,
     return false;
   }
 
+  
+  
+  for (int i = 0; i < mBufferPlaneCount; i++) {
+    if (mDmabufFds[i] < 0) {
+      LOGDMABUF(
+          ("  ExportDMABUFImageMESA failed, mDmabufFds[%d] is invalid, quit",
+           i));
+      return false;
+    }
+  }
+
   LOGDMABUF(("  imported size %d x %d format %x planes %d modifiers %" PRIx64,
              mWidth, mHeight, mDrmFormats[0], mBufferPlaneCount,
              mBufferModifiers[0]));
