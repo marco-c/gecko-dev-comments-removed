@@ -57,18 +57,6 @@ class CustomProcessing;
 
 
 
-#if defined(WEBRTC_CHROMIUM_BUILD)
-static constexpr int kAgcStartupMinVolume = 85;
-#else
-static constexpr int kAgcStartupMinVolume = 0;
-#endif  
-
-
-
-
-
-
-
 
 
 
@@ -287,7 +275,7 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
       struct AnalogGainController {
         bool enabled = true;
         
-        int startup_min_volume = kAgcStartupMinVolume;
+        int startup_min_volume = 0;
         
         
         int clipped_level_min = 70;
