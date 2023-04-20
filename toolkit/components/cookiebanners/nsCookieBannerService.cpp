@@ -1034,6 +1034,10 @@ void nsCookieBannerService::DailyReportTelemetry() {
     glean::cookie_banners::private_window_service_mode.Get(label).Set(
         modePBMStr.Equals(label));
   }
+
+  
+  glean::cookie_banners::service_detect_only.Set(
+      StaticPrefs::cookiebanners_service_detectOnly());
 }
 
 nsresult nsCookieBannerService::GetServiceModeForBrowsingContext(
