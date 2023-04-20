@@ -24,16 +24,18 @@ namespace mozilla::dom::quota {
 
 template <class FileStreamBase>
 NS_IMETHODIMP FileQuotaStream<FileStreamBase>::SetEOF() {
-  QM_TRY(MOZ_TO_RESULT(FileStreamBase::SetEOF()));
-
+  
+  
+  
   if (mQuotaObject) {
-    int64_t offset;
+    int64_t offset = 0;
     QM_TRY(MOZ_TO_RESULT(FileStreamBase::Tell(&offset)));
 
-    DebugOnly<bool> res =
-        mQuotaObject->MaybeUpdateSize(offset,  true);
-    MOZ_ASSERT(res);
+    QM_TRY(OkIf(mQuotaObject->MaybeUpdateSize(offset,  true)),
+           NS_ERROR_FILE_NO_DEVICE_SPACE);
   }
+
+  QM_TRY(MOZ_TO_RESULT(FileStreamBase::SetEOF()));
 
   return NS_OK;
 }
