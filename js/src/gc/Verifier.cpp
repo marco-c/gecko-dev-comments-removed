@@ -560,10 +560,10 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
   }
 
   
-#ifdef DEBUG
+#  ifdef DEBUG
   size_t savedQueuePos = gc->queuePos;
   mozilla::Maybe<MarkColor> savedQueueColor = gc->queueMarkColor;
-#endif
+#  endif
 
   
 
@@ -661,10 +661,10 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
     }
   }
 
-#ifdef DEBUG
+#  ifdef DEBUG
   gc->queuePos = savedQueuePos;
   gc->queueMarkColor = savedQueueColor;
-#endif
+#  endif
 
   gc->incrementalState = state;
 }
