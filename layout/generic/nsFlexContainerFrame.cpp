@@ -5471,20 +5471,22 @@ nsReflowStatus nsFlexContainerFrame::ReflowFlexItem(
   
   if (aItem.IsInlineAxisMainAxis()) {
     sizeOverrides.mStyleISize.emplace(aItem.StyleMainSize());
+    FLEX_LOGV(" Main size (inline-size) override: %d", aItem.MainSize());
   } else {
     sizeOverrides.mStyleBSize.emplace(aItem.StyleMainSize());
+    FLEX_LOGV(" Main size (block-size) override: %d", aItem.MainSize());
   }
-  FLEX_LOGV(" Main size override: %d", aItem.MainSize());
 
   
   
   if (aItem.IsStretched()) {
     if (aItem.IsInlineAxisCrossAxis()) {
       sizeOverrides.mStyleISize.emplace(aItem.StyleCrossSize());
+      FLEX_LOGV(" Cross size (inline-size) override: %d", aItem.CrossSize());
     } else {
       sizeOverrides.mStyleBSize.emplace(aItem.StyleCrossSize());
+      FLEX_LOGV(" Cross size (block-size) override: %d", aItem.CrossSize());
     }
-    FLEX_LOGV(" Cross size override: %d", aItem.CrossSize());
   }
   if (sizeOverrides.mStyleBSize) {
     
@@ -5518,6 +5520,9 @@ nsReflowStatus nsFlexContainerFrame::ReflowFlexItem(
   
   
   
+
+  FLEX_LOG("Reflowing flex item %p at its desired position %s", aItem.Frame(),
+           ToString(aFramePos).c_str());
 
   
   
