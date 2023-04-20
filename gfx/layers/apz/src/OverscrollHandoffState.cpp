@@ -153,8 +153,8 @@ bool OverscrollHandoffChain::HasAutoscrollApzc() const {
 }
 
 RefPtr<AsyncPanZoomController> OverscrollHandoffChain::FindFirstScrollable(
-    const InputData& aInput,
-    ScrollDirections* aOutAllowedScrollDirections) const {
+    const InputData& aInput, ScrollDirections* aOutAllowedScrollDirections,
+    IncludeOverscroll aIncludeOverscroll) const {
   
   
   *aOutAllowedScrollDirections += ScrollDirection::eVertical;
@@ -170,7 +170,7 @@ RefPtr<AsyncPanZoomController> OverscrollHandoffChain::FindFirstScrollable(
     
     
     
-    if (StaticPrefs::apz_overscroll_enabled() &&
+    if (StaticPrefs::apz_overscroll_enabled() && bool(aIncludeOverscroll) &&
         
         aInput.mInputType == PANGESTURE_INPUT && mChain[i]->IsRootContent()) {
       
