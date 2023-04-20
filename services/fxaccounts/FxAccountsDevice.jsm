@@ -118,9 +118,7 @@ class FxAccountsDevice {
     let hostname;
     try {
       
-      hostname = Cc["@mozilla.org/network/dns-service;1"].getService(
-        Ci.nsIDNSService
-      ).myHostName;
+      hostname = Services.dns.myHostName;
     } catch (ex) {
       console.error(ex);
     }
