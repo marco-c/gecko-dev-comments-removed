@@ -175,7 +175,6 @@ class RTCRtpSender : public nsISupports,
   
   bool mHaveWarnedBecauseNoGetParameters = false;
   bool mHaveWarnedBecauseEncodingCountChange = false;
-  bool mHaveWarnedBecauseRidChange = false;
   bool mHaveWarnedBecauseNoTransactionId = false;
   bool mHaveWarnedBecauseStaleTransactionId = false;
   
