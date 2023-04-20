@@ -586,6 +586,16 @@ class nsDisplayListBuilder {
   
 
 
+  static uint32_t GetPaintSequenceNumber() { return sPaintSequenceNumber; }
+
+  
+
+
+  static void IncrementPaintSequenceNumber() { ++sPaintSequenceNumber; }
+
+  
+
+
 
   bool AllowMergingAndFlattening() { return mAllowMergingAndFlattening; }
   void SetAllowMergingAndFlattening(bool aAllow) {
@@ -1881,6 +1891,8 @@ class nsDisplayListBuilder {
   bool mHasGlassItemDuringPartial;
 
   nsDisplayListBuilderMode mMode;
+  static uint32_t sPaintSequenceNumber;
+
   bool mContainsBlendMode;
   bool mIsBuildingScrollbar;
   bool mCurrentScrollbarWillHaveLayer;

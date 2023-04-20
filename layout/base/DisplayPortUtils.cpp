@@ -876,6 +876,15 @@ bool DisplayPortUtils::MaybeCreateDisplayPortInFirstScrollFrameEncountered(
   }
   if (nsIScrollableFrame* sf = do_QueryFrame(aFrame)) {
     if (MaybeCreateDisplayPort(aBuilder, aFrame, sf, RepaintMode::Repaint)) {
+      
+      
+      
+      
+      
+      
+      
+      sf->SetIsFirstScrollableFrameSequenceNumber(
+          Some(nsDisplayListBuilder::GetPaintSequenceNumber()));
       return true;
     }
   }

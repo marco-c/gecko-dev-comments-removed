@@ -562,6 +562,14 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   bool IsRootScrollFrameOfDocument() const { return mIsRoot; }
 
+  Maybe<uint32_t> IsFirstScrollableFrameSequenceNumber() const {
+    return mIsFirstScrollableFrameSequenceNumber;
+  }
+
+  void SetIsFirstScrollableFrameSequenceNumber(Maybe<uint32_t> aValue) {
+    mIsFirstScrollableFrameSequenceNumber = aValue;
+  }
+
   bool SmoothScrollVisual(
       const nsPoint& aVisualViewportOffset,
       mozilla::layers::FrameMetrics::ScrollOffsetUpdateType aUpdateType);
@@ -681,6 +689,10 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   
   APZScrollAnimationType mCurrentAPZScrollAnimationType;
+
+  
+  
+  Maybe<uint32_t> mIsFirstScrollableFrameSequenceNumber;
 
   
   
@@ -1338,6 +1350,14 @@ class nsHTMLScrollFrame : public nsContainerFrame,
     return mHelper.IsRootScrollFrameOfDocument();
   }
 
+  Maybe<uint32_t> IsFirstScrollableFrameSequenceNumber() const final {
+    return mHelper.IsFirstScrollableFrameSequenceNumber();
+  }
+
+  void SetIsFirstScrollableFrameSequenceNumber(Maybe<uint32_t> aValue) final {
+    return mHelper.SetIsFirstScrollableFrameSequenceNumber(aValue);
+  }
+
   const ScrollAnchorContainer* Anchor() const final { return &mHelper.mAnchor; }
 
   ScrollAnchorContainer* Anchor() final { return &mHelper.mAnchor; }
@@ -1822,6 +1842,14 @@ class nsXULScrollFrame final : public nsBoxFrame,
 
   bool IsRootScrollFrameOfDocument() const final {
     return mHelper.IsRootScrollFrameOfDocument();
+  }
+
+  Maybe<uint32_t> IsFirstScrollableFrameSequenceNumber() const final {
+    return mHelper.IsFirstScrollableFrameSequenceNumber();
+  }
+
+  void SetIsFirstScrollableFrameSequenceNumber(Maybe<uint32_t> aValue) final {
+    return mHelper.SetIsFirstScrollableFrameSequenceNumber(aValue);
   }
 
   const ScrollAnchorContainer* Anchor() const final { return &mHelper.mAnchor; }

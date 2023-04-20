@@ -623,6 +623,20 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
+  virtual mozilla::Maybe<uint32_t> IsFirstScrollableFrameSequenceNumber()
+      const = 0;
+
+  
+
+
+
+  virtual void SetIsFirstScrollableFrameSequenceNumber(
+      mozilla::Maybe<uint32_t> aValue) = 0;
+
+  
+
+
+
   virtual const ScrollAnchorContainer* Anchor() const = 0;
   virtual ScrollAnchorContainer* Anchor() = 0;
 
