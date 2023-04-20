@@ -317,7 +317,8 @@ nsCookieBannerService::GetCookiesForURI(
 
   
   
-  if (mode != nsICookieBannerService::MODE_DISABLED) {
+  if (mode != nsICookieBannerService::MODE_DISABLED &&
+      mode != nsICookieBannerService::MODE_DETECT_ONLY) {
     
     
     
@@ -332,7 +333,9 @@ nsCookieBannerService::GetCookiesForURI(
 
   
   
-  if (mode == nsICookieBannerService::MODE_DISABLED) {
+  
+  if (mode == nsICookieBannerService::MODE_DISABLED ||
+      mode == nsICookieBannerService::MODE_DETECT_ONLY) {
     MOZ_LOG(gCookieBannerLog, LogLevel::Debug,
             ("%s. Returning empty array. Got MODE_DISABLED for "
              "aIsPrivateBrowsing: %d.",
