@@ -183,14 +183,6 @@ class MediaContentDescription {
     AddStream(sp);
   }
 
-  
-  virtual void SetCnameIfEmpty(const std::string& cname) {
-    for (cricket::StreamParamsVec::iterator it = send_streams_.begin();
-         it != send_streams_.end(); ++it) {
-      if (it->cname.empty())
-        it->cname = cname;
-    }
-  }
   virtual uint32_t first_ssrc() const {
     if (send_streams_.empty()) {
       return 0;
