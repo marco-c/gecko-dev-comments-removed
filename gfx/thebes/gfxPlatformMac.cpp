@@ -49,41 +49,6 @@ using namespace mozilla::unicode;
 using mozilla::dom::SystemFontList;
 
 
-enum { kAutoActivationDisabled = 1 };
-typedef uint32_t AutoActivationSetting;
-
-
-
-static void DisableFontActivation() {
-  
-  CFBundleRef mainBundle = ::CFBundleGetMainBundle();
-  CFStringRef mainBundleID = nullptr;
-
-  if (mainBundle) {
-    mainBundleID = ::CFBundleGetIdentifier(mainBundle);
-  }
-
-  
-  if (!mainBundleID) {
-    NS_WARNING("missing bundle ID, packaging set up incorrectly");
-    return;
-  }
-
-  
-  void (*CTFontManagerSetAutoActivationSettingPtr)(CFStringRef,
-                                                   AutoActivationSetting);
-  CTFontManagerSetAutoActivationSettingPtr =
-      (void (*)(CFStringRef, AutoActivationSetting))dlsym(
-          RTLD_DEFAULT, "CTFontManagerSetAutoActivationSetting");
-
-  
-  if (CTFontManagerSetAutoActivationSettingPtr) {
-    CTFontManagerSetAutoActivationSettingPtr(mainBundleID,
-                                             kAutoActivationDisabled);
-  }
-}
-
-
 
 
 
@@ -138,7 +103,6 @@ void gfxPlatformMac::WaitForFontRegistration() {
 }
 
 gfxPlatformMac::gfxPlatformMac() {
-  DisableFontActivation();
   mFontAntiAliasingThreshold = ReadAntiAliasingThreshold();
 
   InitBackendPrefs(GetBackendPrefs());

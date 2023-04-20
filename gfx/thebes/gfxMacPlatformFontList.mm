@@ -1749,6 +1749,25 @@ gfxFontEntry* gfxMacPlatformFontList::LookupLocalFont(nsPresContext* aPresContex
 
   nsAutoreleasePool localPool;
 
+  
+  
+  static bool firstTime = true;
+  if (firstTime) {
+    firstTime = false;
+    
+    CFBundleRef mainBundle = ::CFBundleGetMainBundle();
+    CFStringRef mainBundleID = nullptr;
+    if (mainBundle) {
+      mainBundleID = ::CFBundleGetIdentifier(mainBundle);
+    }
+    
+    if (!mainBundleID) {
+      NS_WARNING("missing bundle ID, packaging set up incorrectly");
+    } else {
+      CTFontManagerSetAutoActivationSetting(mainBundleID, kCTFontManagerAutoActivationDisabled);
+    }
+  }
+
   CrashReporter::AutoAnnotateCrashReport autoFontName(CrashReporter::Annotation::FontName,
                                                       aFontName);
 
