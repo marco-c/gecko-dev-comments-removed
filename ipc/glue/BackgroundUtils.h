@@ -85,8 +85,10 @@ nsresult PrincipalToPrincipalInfo(nsIPrincipal* aPrincipal,
 
 
 
-bool NonExpandedPrincipalInfoEquals(const PrincipalInfo& aLeft,
-                                    const PrincipalInfo& aRight);
+
+
+
+bool StorageKeysEqual(const PrincipalInfo& aLeft, const PrincipalInfo& aRight);
 
 
 

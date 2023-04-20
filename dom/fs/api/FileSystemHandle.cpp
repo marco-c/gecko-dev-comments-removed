@@ -54,12 +54,15 @@ bool ConstructHandleMetadata(JSContext* aCx, nsIGlobalObject* aGlobal,
     return false;
   }
 
-  mozilla::ipc::PrincipalInfo principalInfo;
-  if (!nsJSPrincipals::ReadPrincipalInfo(aReader, principalInfo)) {
+  mozilla::ipc::PrincipalInfo storageKey;
+  if (!nsJSPrincipals::ReadPrincipalInfo(aReader, storageKey)) {
     return false;
   }
 
-  if (!aGlobal->IsEqualStorageKey(principalInfo)) {
+  QM_TRY_UNWRAP(auto hasEqualStorageKey,
+                aGlobal->HasEqualStorageKey(storageKey), false);
+
+  if (!hasEqualStorageKey) {
     LOG(("Blocking deserialization of %s due to cross-origin",
          NS_ConvertUTF16toUTF8(name).get()));
     return false;
@@ -258,9 +261,9 @@ bool FileSystemHandle::WriteStructuredClone(
 
   
   
-  QM_TRY_INSPECT(const auto& principalInfo, mGlobal->GetStorageKey(), false);
+  QM_TRY_INSPECT(const auto& storageKey, mGlobal->GetStorageKey(), false);
 
-  return nsJSPrincipals::WritePrincipalInfo(aWriter, principalInfo);
+  return nsJSPrincipals::WritePrincipalInfo(aWriter, storageKey);
 }
 
 
