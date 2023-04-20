@@ -9,16 +9,11 @@
 
 var EXPORTED_SYMBOLS = ["BrowserWindowTracker"];
 
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-
 const lazy = {};
 
 
 ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-  PromiseUtils: "resource://gre/modules/PromiseUtils.sys.mjs",
 });
 
 
@@ -150,8 +145,6 @@ var WindowHelper = {
 };
 
 const BrowserWindowTracker = {
-  pendingWindows: new Map(),
-
   
 
 
@@ -174,90 +167,6 @@ const BrowserWindowTracker = {
       }
     }
     return null;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getPendingWindow(options = {}) {
-    for (let pending of this.pendingWindows.values()) {
-      if (
-        !("private" in options) ||
-        lazy.PrivateBrowsingUtils.permanentPrivateBrowsing ||
-        pending.isPrivate == options.private
-      ) {
-        return pending.deferred.promise;
-      }
-    }
-    return null;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  registerOpeningWindow(window, isPrivate) {
-    let deferred = lazy.PromiseUtils.defer();
-
-    this.pendingWindows.set(window, {
-      isPrivate,
-      deferred,
-    });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  openWindow({
-    private: isPrivate = false,
-    features = undefined,
-    args = null,
-  } = {}) {
-    let windowFeatures = "chrome,dialog=no,all";
-    if (features) {
-      windowFeatures += `,${features}`;
-    }
-    if (isPrivate) {
-      windowFeatures += ",private";
-    }
-
-    let win = Services.ww.openWindow(
-      null,
-      AppConstants.BROWSER_CHROME_URL,
-      "_blank",
-      windowFeatures,
-      args
-    );
-    this.registerOpeningWindow(win, isPrivate);
-    return win;
   },
 
   windowCreated(browser) {
@@ -298,14 +207,6 @@ const BrowserWindowTracker = {
   },
 
   track(window) {
-    let pending = this.pendingWindows.get(window);
-    if (pending) {
-      this.pendingWindows.delete(window);
-      
-      
-      window.delayedStartupPromise.then(() => pending.deferred.resolve(window));
-    }
-
     return WindowHelper.addWindow(window);
   },
 
