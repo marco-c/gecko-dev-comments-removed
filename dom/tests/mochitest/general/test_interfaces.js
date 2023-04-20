@@ -991,8 +991,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "RTCRtpTransceiver", insecureContext: true },
   
-  { name: "RTCSctpTransport", insecureContext: true },
-  
   { name: "RTCSessionDescription", insecureContext: true },
   
   { name: "RTCStatsReport", insecureContext: true },
@@ -1505,6 +1503,12 @@ let interfaceNamesInGlobalScope = [
   { name: "mozInnerScreenX", insecureContext: true },
   
   { name: "mozInnerScreenY", insecureContext: true },
+  
+  { name: "mozRTCIceCandidate", insecureContext: true },
+  
+  { name: "mozRTCPeerConnection", insecureContext: true },
+  
+  { name: "mozRTCSessionDescription", insecureContext: true },
   
   { name: "name", insecureContext: true },
   
