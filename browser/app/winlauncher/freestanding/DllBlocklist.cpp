@@ -17,18 +17,6 @@
 #include "ModuleLoadFrame.h"
 #include "SharedSection.h"
 
-
-#define MOZ_LITERAL_UNICODE_STRING(s)                                        \
-  {                                                                          \
-    /* Length of the string in bytes, less the null terminator */            \
-    sizeof(s) - sizeof(wchar_t),                                             \
-    /* Length of the string in bytes, including the null terminator */       \
-    sizeof(s),                                                               \
-    /* Pointer to the buffer */                                              \
-    const_cast<wchar_t*>(s)                                                  \
-  }
-
-
 #define DLL_BLOCKLIST_ENTRY(name, ...) \
   {MOZ_LITERAL_UNICODE_STRING(L##name), __VA_ARGS__},
 #define DLL_BLOCKLIST_STRING_TYPE UNICODE_STRING
@@ -427,7 +415,7 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
   nt::GetLeafName(&leafOnStack, sectionFileName);
 
   bool isDependent = false;
-  auto resultView = freestanding::gSharedSection.GetView();
+  auto resultView = gSharedSection.GetView();
   
   
   if (resultView.isOk() && !ModuleLoadFrame::ExistsTopFrame()) {
@@ -441,7 +429,7 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
     
     
     
-    Unused << freestanding::gSharedSection.AddDepenentModule(sectionFileName);
+    Unused << gSharedSection.AddDependentModule(sectionFileName);
 
     
     
