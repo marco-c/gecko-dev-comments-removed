@@ -122,7 +122,6 @@ nsresult ChannelFromScriptURL(
   
   
   
-  
   if (parentDoc && parentDoc->NodePrincipal() != principal) {
     parentDoc = nullptr;
   }
@@ -140,6 +139,7 @@ nsresult ChannelFromScriptURL(
 
   nsCOMPtr<nsIChannel> channel;
   if (parentDoc) {
+    
     rv = NS_NewChannel(getter_AddRefs(channel), uri, parentDoc, aSecFlags,
                        aContentPolicyType,
                        nullptr,  
@@ -148,6 +148,11 @@ nsresult ChannelFromScriptURL(
                        aLoadFlags, ios);
     NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_SECURITY_ERR);
   } else {
+    
+    
+    
+    
+
     
     
     MOZ_ASSERT(loadGroup);
@@ -161,6 +166,8 @@ nsresult ChannelFromScriptURL(
     }
 
     if (aClientInfo.isSome()) {
+      
+      
       rv = NS_NewChannel(getter_AddRefs(channel), uri, principal,
                          aClientInfo.ref(), aController, aSecFlags,
                          aContentPolicyType, aCookieJarSettings,
@@ -538,6 +545,26 @@ nsTArray<RefPtr<ThreadSafeRequestHandle>> WorkerScriptLoader::GetLoadingList() {
   return list;
 }
 
+nsContentPolicyType WorkerScriptLoader::GetContentPolicyType(
+    ScriptLoadRequest* aRequest) {
+  if (aRequest->GetWorkerLoadContext()->IsTopLevel()) {
+    
+    
+    
+    return mWorkerRef->Private()->ContentPolicyType();
+  }
+  if (aRequest->IsModuleRequest()) {
+    
+    
+    
+    
+    
+    
+    return nsIContentPolicy::TYPE_INTERNAL_WORKER_STATIC_MODULE;
+  }
+  return nsIContentPolicy::TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS;
+}
+
 already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
     const nsString& aScriptURL, const mozilla::Encoding* aDocumentEncoding,
     bool aIsMainScript) {
@@ -873,10 +900,7 @@ nsresult WorkerScriptLoader::LoadScript(
       return rv;
     }
 
-    nsContentPolicyType contentPolicyType =
-        loadContext->IsTopLevel()
-            ? mWorkerRef->Private()->ContentPolicyType()
-            : nsIContentPolicy::TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS;
+    nsContentPolicyType contentPolicyType = GetContentPolicyType(request);
 
     rv = ChannelFromScriptURL(
         principal, parentDoc, mWorkerRef->Private(), loadGroup, ios, secMan,
