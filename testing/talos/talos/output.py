@@ -6,6 +6,7 @@
 
 import simplejson as json
 from mozlog import get_proxy_logger
+
 from talos import filter, utils
 
 LOG = get_proxy_logger()

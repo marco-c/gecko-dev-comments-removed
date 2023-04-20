@@ -3,6 +3,7 @@
 
 
 from marionette_harness.runtests import cli as mn_cli
+
 from telemetry_harness.runner import TelemetryTestRunner
 
 

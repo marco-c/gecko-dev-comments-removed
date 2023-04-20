@@ -3,6 +3,7 @@
 
 
 import mozlog
+
 from telemetry_harness.fog_ping_server import FOGPingServer
 from telemetry_harness.testcase import TelemetryTestCase
 
