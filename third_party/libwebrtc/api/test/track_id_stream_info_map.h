@@ -11,6 +11,8 @@
 #ifndef API_TEST_TRACK_ID_STREAM_INFO_MAP_H_
 #define API_TEST_TRACK_ID_STREAM_INFO_MAP_H_
 
+#include <string>
+
 #include "absl/strings/string_view.h"
 
 namespace webrtc {
@@ -20,19 +22,19 @@ namespace webrtc_pc_e2e {
 
 class TrackIdStreamInfoMap {
  public:
+  struct StreamInfo {
+    std::string receiver_peer;
+    std::string stream_label;
+    std::string sync_group;
+  };
+
   virtual ~TrackIdStreamInfoMap() = default;
 
   
   
 
   
-  
-  virtual absl::string_view GetStreamLabelFromTrackId(
-      absl::string_view track_id) const = 0;
-
-  
-  
-  virtual absl::string_view GetSyncGroupLabelFromTrackId(
+  virtual StreamInfo GetStreamInfoFromTrackId(
       absl::string_view track_id) const = 0;
 };
 

@@ -13,18 +13,30 @@
 namespace webrtc {
 namespace webrtc_pc_e2e {
 
+
 class MetricMetadataKey {
  public:
+  
   static constexpr char kPeerMetadataKey[] = "peer";
-  static constexpr char kStreamMetadataKey[] = "stream";
+  
+  static constexpr char kSenderMetadataKey[] = "sender";
+  
   static constexpr char kReceiverMetadataKey[] = "receiver";
+  
+  static constexpr char kAudioStreamMetadataKey[] = "audio_stream";
+  
+  static constexpr char kVideoStreamMetadataKey[] = "video_stream";
+  
+  static constexpr char kPeerSyncGroupMetadataKey[] = "peer_sync_group";
 
  private:
   MetricMetadataKey() = default;
 };
 
+
 class SampleMetadataKey {
  public:
+  
   static constexpr char kFrameIdMetadataKey[] = "frame_id";
 
  private:
