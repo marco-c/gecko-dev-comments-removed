@@ -330,6 +330,11 @@ def run_fzf(cmd, tasks):
     env.update(
         {"PYTHONPATH": os.pathsep.join([p for p in sys.path if "requests" in p])}
     )
+    
+    
+    
+    if platform.system() == "Windows":
+        env["SHELL"] = env["COMSPEC"]
     proc = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
