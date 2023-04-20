@@ -65,6 +65,10 @@ class FlexfecReceiveStream : public RtpPacketSinkInterface,
   
   
   virtual void SetRtcpMode(RtcpMode mode) = 0;
+
+  
+  virtual void SetPayloadType(int payload_type) = 0;
+  virtual int payload_type() const = 0;
 };
 
 }  
