@@ -182,7 +182,7 @@ async function checkCopyEditorValue(view) {
 }
 
 function checkClipboardData(expectedPattern) {
-  const actual = SpecialPowers.getClipboardData("text/unicode");
+  const actual = SpecialPowers.getClipboardData("text/plain");
   const expectedRegExp = new RegExp(expectedPattern, "g");
   return expectedRegExp.test(actual);
 }
@@ -194,7 +194,7 @@ function failedClipboard(expectedPattern) {
   expectedPattern = expectedPattern.replace(/\\\(/g, "(");
   expectedPattern = expectedPattern.replace(/\\\)/g, ")");
 
-  let actual = SpecialPowers.getClipboardData("text/unicode");
+  let actual = SpecialPowers.getClipboardData("text/plain");
 
   
   

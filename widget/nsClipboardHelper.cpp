@@ -73,7 +73,7 @@ nsClipboardHelper::CopyStringToClipboard(const nsAString& aString,
   }
 
   
-  rv = trans->AddDataFlavor(kUnicodeMime);
+  rv = trans->AddDataFlavor(kTextMime);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -93,7 +93,7 @@ nsClipboardHelper::CopyStringToClipboard(const nsAString& aString,
   NS_ENSURE_TRUE(genericData, NS_ERROR_FAILURE);
 
   
-  rv = trans->SetTransferData(kUnicodeMime, genericData);
+  rv = trans->SetTransferData(kTextMime, genericData);
   NS_ENSURE_SUCCESS(rv, rv);
 
   

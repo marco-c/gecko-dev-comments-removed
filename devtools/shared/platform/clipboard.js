@@ -20,7 +20,7 @@ function copyString(string) {
 
 
 function getText() {
-  const flavor = "text/unicode";
+  const flavor = "text/plain";
 
   const xferable = Cc["@mozilla.org/widget/transferable;1"].createInstance(
     Ci.nsITransferable

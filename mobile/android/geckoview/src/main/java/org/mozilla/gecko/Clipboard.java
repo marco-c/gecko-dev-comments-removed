@@ -15,7 +15,7 @@ import org.mozilla.gecko.annotation.WrapForJNI;
 
 public final class Clipboard {
   private static final String HTML_MIME = "text/html";
-  private static final String UNICODE_MIME = "text/unicode";
+  private static final String PLAINTEXT_MIME = "text/plain";
   private static final String LOGTAG = "GeckoClipboard";
 
   private Clipboard() {}
@@ -27,7 +27,7 @@ public final class Clipboard {
 
 
   public static String getText(final Context context) {
-    return getData(context, UNICODE_MIME);
+    return getData(context, PLAINTEXT_MIME);
   }
 
   
@@ -57,7 +57,7 @@ public final class Clipboard {
         }
         return data.toString();
       }
-      if (UNICODE_MIME.equals(mimeType)) {
+      if (PLAINTEXT_MIME.equals(mimeType)) {
         try {
           return clip.getItemAt(0).coerceToText(context).toString();
         } catch (final SecurityException e) {
@@ -130,7 +130,7 @@ public final class Clipboard {
   @WrapForJNI(calledFrom = "gecko")
   public static boolean hasData(final Context context, final String mimeType) {
     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-      if (HTML_MIME.equals(mimeType) || UNICODE_MIME.equals(mimeType)) {
+      if (HTML_MIME.equals(mimeType) || PLAINTEXT_MIME.equals(mimeType)) {
         return !TextUtils.isEmpty(getData(context, mimeType));
       }
       return false;
@@ -155,7 +155,7 @@ public final class Clipboard {
       return description.hasMimeType(ClipDescription.MIMETYPE_TEXT_HTML);
     }
 
-    if (UNICODE_MIME.equals(mimeType)) {
+    if (PLAINTEXT_MIME.equals(mimeType)) {
       
       return description.hasMimeType(ClipDescription.MIMETYPE_TEXT_HTML)
           || description.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN);

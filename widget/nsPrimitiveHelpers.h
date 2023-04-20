@@ -45,7 +45,7 @@ class nsLinebreakHelpers {
   
   
   
-  static nsresult ConvertPlatformToDOMLinebreaks(const nsACString& inFlavor,
+  static nsresult ConvertPlatformToDOMLinebreaks(bool aIsSingleByteChars,
                                                  void** ioData,
                                                  int32_t* ioLengthInBytes);
 

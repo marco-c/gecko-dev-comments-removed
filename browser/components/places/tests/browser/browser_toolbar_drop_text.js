@@ -133,7 +133,7 @@ add_task(async function test() {
   };
 
   
-  let mimeTypes = ["text/plain", "text/unicode", "text/x-moz-url"];
+  let mimeTypes = ["text/plain", "text/x-moz-url"];
   let effects = ["move", "copy", "link"];
   for (let effect of effects) {
     for (let mimeType of mimeTypes) {

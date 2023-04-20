@@ -178,7 +178,7 @@ PlacesController.prototype = {
             [
               ...PlacesUIUtils.PLACES_FLAVORS,
               PlacesUtils.TYPE_X_MOZ_URL,
-              PlacesUtils.TYPE_UNICODE,
+              PlacesUtils.TYPE_PLAINTEXT,
             ],
             Ci.nsIClipboard.kGlobalClipboard
           )
@@ -1049,7 +1049,7 @@ PlacesController.prototype = {
 
     function addURIData(index) {
       addData(PlacesUtils.TYPE_X_MOZ_URL, index);
-      addData(PlacesUtils.TYPE_UNICODE, index);
+      addData(PlacesUtils.TYPE_PLAINTEXT, index);
       addData(PlacesUtils.TYPE_HTML, index);
     }
 
@@ -1131,7 +1131,7 @@ PlacesController.prototype = {
       { type: PlacesUtils.TYPE_X_MOZ_PLACE, entries: [] },
       { type: PlacesUtils.TYPE_X_MOZ_URL, entries: [] },
       { type: PlacesUtils.TYPE_HTML, entries: [] },
-      { type: PlacesUtils.TYPE_UNICODE, entries: [] },
+      { type: PlacesUtils.TYPE_PLAINTEXT, entries: [] },
     ];
 
     
@@ -1264,7 +1264,7 @@ PlacesController.prototype = {
     [
       PlacesUtils.TYPE_X_MOZ_PLACE,
       PlacesUtils.TYPE_X_MOZ_URL,
-      PlacesUtils.TYPE_UNICODE,
+      PlacesUtils.TYPE_PLAINTEXT,
     ].forEach(type => xferable.addDataFlavor(type));
 
     Services.clipboard.getData(xferable, Ci.nsIClipboard.kGlobalClipboard);
@@ -1494,13 +1494,6 @@ var PlacesControllerDragHelper = {
       }
     }
 
-    
-    
-    
-    if (aFlavors.contains("text/plain")) {
-      return PlacesUtils.TYPE_UNICODE;
-    }
-
     return null;
   },
 
@@ -1623,7 +1616,7 @@ var PlacesControllerDragHelper = {
 
     
     let duplicable = new Map();
-    duplicable.set(PlacesUtils.TYPE_UNICODE, new Set());
+    duplicable.set(PlacesUtils.TYPE_PLAINTEXT, new Set());
     duplicable.set(PlacesUtils.TYPE_X_MOZ_URL, new Set());
 
     

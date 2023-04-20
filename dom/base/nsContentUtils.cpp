@@ -7785,9 +7785,7 @@ void nsContentUtils::CallOnAllRemoteChildren(
 bool nsContentUtils::IPCDataTransferItemHasKnownFlavor(
     const IPCDataTransferItem& aItem) {
   
-  
-  if (aItem.flavor().EqualsASCII(kCustomTypesMime) ||
-      aItem.flavor().EqualsASCII(kUnicodeMime)) {
+  if (aItem.flavor().EqualsASCII(kCustomTypesMime)) {
     return true;
   }
 

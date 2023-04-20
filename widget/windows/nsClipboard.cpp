@@ -99,8 +99,6 @@ UINT nsClipboard::GetFormat(const char* aMimeStr, bool aMapHTMLMime) {
   UINT format;
 
   if (strcmp(aMimeStr, kTextMime) == 0) {
-    format = CF_TEXT;
-  } else if (strcmp(aMimeStr, kUnicodeMime) == 0) {
     format = CF_UNICODETEXT;
   } else if (strcmp(aMimeStr, kRTFMime) == 0) {
     format = ::RegisterClipboardFormat(L"Rich Text Format");
@@ -210,7 +208,7 @@ nsresult nsClipboard::SetupNativeDataObject(
     
     
     
-    if (flavorStr.EqualsLiteral(kUnicodeMime)) {
+    if (flavorStr.EqualsLiteral(kTextMime)) {
       
       
       FORMATETC textFE;
@@ -888,7 +886,7 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject* aDataObject,
     
     
     if (!dataFound) {
-      if (flavorStr.EqualsLiteral(kUnicodeMime)) {
+      if (flavorStr.EqualsLiteral(kTextMime)) {
         dataFound =
             FindUnicodeFromPlainText(aDataObject, anIndex, &data, &dataLen);
       } else if (flavorStr.EqualsLiteral(kURLMime)) {
@@ -954,14 +952,15 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject* aDataObject,
       } else {
         
         if (!flavorStr.EqualsLiteral(kCustomTypesMime)) {
+          bool isRTF = flavorStr.EqualsLiteral(kRTFMime);
           
           
           int32_t signedLen = static_cast<int32_t>(dataLen);
-          nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks(flavorStr, &data,
+          nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks(isRTF, &data,
                                                              &signedLen);
           dataLen = signedLen;
 
-          if (flavorStr.EqualsLiteral(kRTFMime)) {
+          if (isRTF) {
             
             if (dataLen > 0 && static_cast<char*>(data)[dataLen - 1] == '\0') {
               dataLen--;
@@ -1052,6 +1051,8 @@ bool nsClipboard ::FindPlatformHTML(IDataObject* inDataObject, UINT inIndex,
 
 
 
+
+
 bool nsClipboard ::FindUnicodeFromPlainText(IDataObject* inDataObject,
                                             UINT inIndex, void** outData,
                                             uint32_t* outDataLen) {
@@ -1060,9 +1061,8 @@ bool nsClipboard ::FindUnicodeFromPlainText(IDataObject* inDataObject,
   
   
   
-  nsresult rv =
-      GetNativeDataOffClipboard(inDataObject, inIndex, GetFormat(kTextMime),
-                                nullptr, outData, outDataLen);
+  nsresult rv = GetNativeDataOffClipboard(inDataObject, inIndex, CF_TEXT,
+                                          nullptr, outData, outDataLen);
   if (NS_FAILED(rv) || !*outData) {
     return false;
   }
@@ -1303,30 +1303,10 @@ NS_IMETHODIMP nsClipboard::HasDataMatchingFlavors(
   }
 
   for (auto& flavor : aFlavorList) {
-#ifdef DEBUG
-    if (flavor.EqualsLiteral(kTextMime)) {
-      NS_WARNING(
-          "DO NOT USE THE text/plain DATA FLAVOR ANY MORE. USE text/unicode "
-          "INSTEAD");
-    }
-#endif
-
     UINT format = GetFormat(flavor.get());
     if (IsClipboardFormatAvailable(format)) {
       *_retval = true;
       break;
-    } else {
-      
-      
-      if (flavor.EqualsLiteral(kUnicodeMime)) {
-        
-        
-        
-        if (IsClipboardFormatAvailable(GetFormat(kTextMime))) {
-          *_retval = true;
-          break;
-        }
-      }
     }
   }
 

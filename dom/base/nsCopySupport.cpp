@@ -93,7 +93,7 @@ static nsresult EncodeForTextUnicode(nsIDocumentEncoder& aEncoder,
   
   
   nsAutoString mimeType;
-  mimeType.AssignLiteral(kUnicodeMime);
+  mimeType.AssignLiteral("text/unicode");
 
   
   uint32_t flags = aAdditionalEncoderFlags |
@@ -278,10 +278,9 @@ static nsresult CreateTransferable(
       
       
       
-      rv =
-          AppendString(aTransferable,
-                       aEncodedDocumentWithContext.mSerializationForTextUnicode,
-                       kUnicodeMime);
+      rv = AppendString(
+          aTransferable,
+          aEncodedDocumentWithContext.mSerializationForTextUnicode, kTextMime);
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
@@ -308,10 +307,9 @@ static nsresult CreateTransferable(
   } else {
     if (!aEncodedDocumentWithContext.mSerializationForTextUnicode.IsEmpty()) {
       
-      rv =
-          AppendString(aTransferable,
-                       aEncodedDocumentWithContext.mSerializationForTextUnicode,
-                       kUnicodeMime);
+      rv = AppendString(
+          aTransferable,
+          aEncodedDocumentWithContext.mSerializationForTextUnicode, kTextMime);
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }
@@ -475,7 +473,7 @@ nsresult nsCopySupport::ImageCopy(nsIImageLoadingContent* aImageElement,
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    rv = AppendString(trans, NS_ConvertUTF8toUTF16(location), kUnicodeMime);
+    rv = AppendString(trans, NS_ConvertUTF8toUTF16(location), kTextMime);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

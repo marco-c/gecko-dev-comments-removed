@@ -797,7 +797,13 @@ nsDragService::GetData(nsITransferable* aTransferable, uint32_t aItemIndex) {
   
   for (uint32_t i = 0; i < flavors.Length(); ++i) {
     nsCString& flavorStr = flavors[i];
-    GdkAtom gdkFlavor = gdk_atom_intern(flavorStr.get(), FALSE);
+
+    GdkAtom gdkFlavor;
+    if (flavorStr.EqualsLiteral(kTextMime)) {
+      gdkFlavor = gdk_atom_intern(gTextPlainUTF8Type, FALSE);
+    } else {
+      gdkFlavor = gdk_atom_intern(flavorStr.get(), FALSE);
+    }
     LOGDRAGSERVICE("  we're getting data %s (gdk flavor %p)\n", flavorStr.get(),
                    gdkFlavor);
     bool dataFound = false;
@@ -855,45 +861,14 @@ nsDragService::GetData(nsITransferable* aTransferable, uint32_t aItemIndex) {
       }
 
       
-      
-      
-      if (flavorStr.EqualsLiteral(kUnicodeMime)) {
-        LOGDRAGSERVICE("  conversion %s => %s", kUnicodeMime,
-                       gTextPlainUTF8Type);
-        gdkFlavor = gdk_atom_intern(gTextPlainUTF8Type, FALSE);
+      if (flavorStr.EqualsLiteral(kTextMime)) {
+        LOGDRAGSERVICE("  conversion %s => %s", kTextMime, kTextMime);
+        gdkFlavor = gdk_atom_intern(kTextMime, FALSE);
         GetTargetDragData(gdkFlavor, dragFlavors);
         if (mTargetDragData) {
-          const char* castedText = reinterpret_cast<char*>(mTargetDragData);
-          char16_t* convertedText = nullptr;
-          NS_ConvertUTF8toUTF16 ucs2string(castedText, mTargetDragDataLen);
-          convertedText = ToNewUnicode(ucs2string, mozilla::fallible);
-          if (convertedText) {
-            
-            g_free(mTargetDragData);
-            mTargetDragData = convertedText;
-            mTargetDragDataLen = ucs2string.Length() * 2;
-            dataFound = true;
-          }  
-        } else {
-          LOGDRAGSERVICE("  conversion %s => %s", kUnicodeMime, kTextMime);
-          gdkFlavor = gdk_atom_intern(kTextMime, FALSE);
-          GetTargetDragData(gdkFlavor, dragFlavors);
-          if (mTargetDragData) {
-            const char* castedText = reinterpret_cast<char*>(mTargetDragData);
-            char16_t* convertedText = nullptr;
-            uint32_t convertedTextLen = 0;
-            UTF8ToNewUTF16(castedText, mTargetDragDataLen, &convertedText,
-                           &convertedTextLen);
-            if (convertedText) {
-              
-              g_free(mTargetDragData);
-              mTargetDragData = convertedText;
-              mTargetDragDataLen = convertedTextLen * 2;
-              dataFound = true;
-            }  
-          }    
-        }      
-      }        
+          dataFound = true;
+        }  
+      }    
 
       
       
@@ -945,6 +920,18 @@ nsDragService::GetData(nsITransferable* aTransferable, uint32_t aItemIndex) {
       LOGDRAGSERVICE("  actual data found %s\n",
                      GUniquePtr<gchar>(gdk_atom_name(gdkFlavor)).get());
 
+      if (flavorStr.EqualsLiteral(kTextMime)) {
+        
+        const char* text = static_cast<char*>(mTargetDragData);
+        NS_ConvertUTF8toUTF16 ucs2string(text, mTargetDragDataLen);
+        char16_t* convertedText = ToNewUnicode(ucs2string, mozilla::fallible);
+        if (convertedText) {
+          g_free(mTargetDragData);
+          mTargetDragData = convertedText;
+          mTargetDragDataLen = ucs2string.Length() * 2;
+        }
+      }
+
       if (flavorStr.EqualsLiteral(kJPEGImageMime) ||
           flavorStr.EqualsLiteral(kJPGImageMime) ||
           flavorStr.EqualsLiteral(kPNGImageMime) ||
@@ -963,7 +950,7 @@ nsDragService::GetData(nsITransferable* aTransferable, uint32_t aItemIndex) {
         
         
         nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks(
-            flavorStr, &mTargetDragData,
+            flavorStr.EqualsLiteral(kRTFMime), &mTargetDragData,
             reinterpret_cast<int*>(&mTargetDragDataLen));
       }
 
@@ -1060,11 +1047,6 @@ nsDragService::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
     
     else if (strcmp(name.get(), gMozUrlType) == 0 &&
              (strcmp(aDataFlavor, kURLMime) == 0)) {
-      *_retval = true;
-    }
-    
-    else if (strcmp(name.get(), kTextMime) == 0 &&
-             (strcmp(aDataFlavor, kUnicodeMime) == 0)) {
       *_retval = true;
     }
 
@@ -1375,12 +1357,8 @@ GtkTargetList* nsDragService::GetSourceList(void) {
           TargetArrayAddTarget(targetArray, gTextUriListType);
         }
         
-        
-        
-        
-        else if (flavorStr.EqualsLiteral(kUnicodeMime)) {
+        else if (flavorStr.EqualsLiteral(kTextMime)) {
           TargetArrayAddTarget(targetArray, gTextPlainUTF8Type);
-          TargetArrayAddTarget(targetArray, kTextMime);
         }
         
         
@@ -2051,7 +2029,7 @@ void nsDragService::SourceDataGet(GtkWidget* aWidget, GdkDragContext* aContext,
 
   if (mimeFlavor.EqualsLiteral(kTextMime) ||
       mimeFlavor.EqualsLiteral(gTextPlainUTF8Type)) {
-    SourceDataGetText(item, nsDependentCString(kUnicodeMime),
+    SourceDataGetText(item, nsDependentCString(kTextMime),
                        true,
                       aSelectionData);
     

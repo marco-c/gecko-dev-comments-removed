@@ -283,7 +283,7 @@ nsClipboard::SetData(nsITransferable* aTransferable, nsIClipboardOwner* aOwner,
     LOGCLIP("    processing target %s\n", flavorStr.get());
 
     
-    if (flavorStr.EqualsLiteral(kUnicodeMime)) {
+    if (flavorStr.EqualsLiteral(kTextMime)) {
       LOGCLIP("    adding TEXT targets\n");
       gtk_target_list_add_text_targets(list, 0);
       continue;
@@ -579,12 +579,12 @@ nsClipboard::GetData(nsITransferable* aTransferable, int32_t aWhichClipboard) {
 
     
     
-    if (flavorStr.EqualsLiteral(kUnicodeMime)) {
-      LOGCLIP("    Getting unicode %s MIME clipboard data\n", flavorStr.get());
+    if (flavorStr.EqualsLiteral(kTextMime)) {
+      LOGCLIP("    Getting text %s MIME clipboard data\n", flavorStr.get());
 
       auto clipboardData = mContext->GetClipboardText(aWhichClipboard);
       if (!clipboardData) {
-        LOGCLIP("    failed to get unicode data\n");
+        LOGCLIP("    failed to get text data\n");
         
         
         
@@ -597,7 +597,7 @@ nsClipboard::GetData(nsITransferable* aTransferable, int32_t aWhichClipboard) {
                           (const char*)ucs2string.BeginReading(),
                           ucs2string.Length() * 2);
 
-      LOGCLIP("    got unicode data, length %zd\n", ucs2string.Length());
+      LOGCLIP("    got text data, length %zd\n", ucs2string.Length());
       return NS_OK;
     }
 
@@ -706,14 +706,14 @@ static RefPtr<GenericPromise> AsyncGetTextImpl(nsITransferable* aTransferable,
 
         
         NS_ConvertUTF8toUTF16 utf16string(aText, dataLength);
-        nsLiteralCString flavor(kUnicodeMime);
+        nsLiteralCString flavor(kTextMime);
         SetTransferableData(ref->mTransferable, flavor,
                             (const char*)utf16string.BeginReading(),
                             utf16string.Length() * 2);
         LOGCLIP("  text is set, length = %d", (int)dataLength);
         ref->mDataPromise->Resolve(true, __func__);
       },
-      new DataPromiseHandler(aTransferable, dataPromise, kUnicodeMime));
+      new DataPromiseHandler(aTransferable, dataPromise, kTextMime));
 
   return dataPromise;
 }
@@ -814,7 +814,7 @@ static RefPtr<GenericPromise> AsyncGetDataFlavor(nsITransferable* aTransferable,
   }
   
   
-  if (aFlavorStr.EqualsLiteral(kUnicodeMime)) {
+  if (aFlavorStr.EqualsLiteral(kTextMime)) {
     LOGCLIP("  Getting unicode clipboard data");
     return AsyncGetTextImpl(aTransferable, aWhichClipboard);
   }
@@ -985,11 +985,11 @@ nsClipboard::HasDataMatchingFlavors(const nsTArray<nsCString>& aFlavorList,
   
   for (auto& flavor : aFlavorList) {
     
-    if (flavor.EqualsLiteral(kUnicodeMime) &&
+    if (flavor.EqualsLiteral(kTextMime) &&
         gtk_targets_include_text(targets.AsSpan().data(),
                                  targets.AsSpan().Length())) {
       *_retval = true;
-      LOGCLIP("    has kUnicodeMime\n");
+      LOGCLIP("    has kTextMime\n");
       return NS_OK;
     }
     for (const auto& target : targets.AsSpan()) {
@@ -1041,11 +1041,10 @@ RefPtr<DataFlavorsPromise> nsClipboard::AsyncHasDataMatchingFlavors(
         if (targetsNum) {
           for (auto& flavor : handler->mAcceptedFlavorList) {
             LOGCLIP("  looking for %s", flavor.get());
-            
-            if (flavor.EqualsLiteral(kUnicodeMime) &&
+            if (flavor.EqualsLiteral(kTextMime) &&
                 gtk_targets_include_text(targets, targetsNum)) {
               results.AppendElement(flavor);
-              LOGCLIP("    has kUnicodeMime\n");
+              LOGCLIP("    has kTextMime\n");
               continue;
             }
             for (int i = 0; i < targetsNum; i++) {
@@ -1119,13 +1118,13 @@ void nsClipboard::SelectionGetEvent(GtkClipboard* aClipboard,
 
   
   if (gtk_targets_include_text(&selectionTarget, 1)) {
-    LOGCLIP("  providing text/unicode data\n");
+    LOGCLIP("  providing text/plain data\n");
     
     
     
-    rv = trans->GetTransferData("text/unicode", getter_AddRefs(item));
+    rv = trans->GetTransferData("text/plain", getter_AddRefs(item));
     if (NS_FAILED(rv) || !item) {
-      LOGCLIP("  GetTransferData() failed to get text/unicode!\n");
+      LOGCLIP("  GetTransferData() failed to get text/plain!\n");
       return;
     }
 

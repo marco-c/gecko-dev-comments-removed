@@ -22,15 +22,7 @@ NS_IMPL_CYCLE_COLLECTION(ClipboardItem::ItemEntry, mData,
 
 ClipboardItem::ItemEntry::ItemEntry(const nsAString& aType,
                                     const nsACString& aFormat)
-    : mType(aType), mFormat(aFormat) {
-  
-  
-  
-  
-  MOZ_ASSERT_IF(
-      !mType.Equals(NS_ConvertUTF8toUTF16(mFormat)),
-      mType.EqualsLiteral(kTextMime) && mFormat.EqualsLiteral(kUnicodeMime));
-}
+    : mType(aType), mFormat(aFormat) {}
 
 void ClipboardItem::ItemEntry::SetData(already_AddRefed<Blob>&& aBlob) {
   
@@ -190,9 +182,7 @@ already_AddRefed<ClipboardItem> ClipboardItem::Constructor(
 
   nsTArray<RefPtr<ItemEntry>> items;
   for (const auto& entry : aItems.Entries()) {
-    nsAutoCString format = entry.mKey.EqualsLiteral(kTextMime)
-                               ? nsAutoCString(kUnicodeMime)
-                               : NS_ConvertUTF16toUTF8(entry.mKey);
+    nsAutoCString format = NS_ConvertUTF16toUTF8(entry.mKey);
     items.AppendElement(
         MakeRefPtr<ItemEntry>(entry.mKey, format, entry.mValue));
   }

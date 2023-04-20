@@ -1131,7 +1131,7 @@ SimpleTest.promiseClipboardChange = async function(
   aExpectFailure,
   aDontInitializeClipboardIfExpectFailure
 ) {
-  let requestedFlavor = aFlavor || "text/unicode";
+  let requestedFlavor = aFlavor || "text/plain";
 
   
   let initialVal = "waitForClipboard-known-value-" + Math.random();
@@ -1223,7 +1223,7 @@ SimpleTest.promiseClipboardChange = async function(
       function(aData) {
         return aData == preExpectedVal;
       },
-      "text/unicode",
+      "text/plain",
       false
     );
 
