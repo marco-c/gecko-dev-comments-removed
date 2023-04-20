@@ -1903,16 +1903,12 @@ bool JSStructuredCloneWriter::traverseError(HandleObject obj) {
 
   
   
-  
-  
   RootedValue stack(cx, NullValue());
-  if (cloneDataPolicy.areErrorStackFramesAllowed()) {
-    RootedObject stackObj(cx, unwrapped->stack());
-    if (stackObj && stackObj->canUnwrapAs<SavedFrame>()) {
-      stack.setObject(*stackObj);
-      if (!cx->compartment()->wrap(cx, &stack)) {
-        return false;
-      }
+  RootedObject stackObj(cx, unwrapped->stack());
+  if (stackObj && stackObj->canUnwrapAs<SavedFrame>()) {
+    stack.setObject(*stackObj);
+    if (!cx->compartment()->wrap(cx, &stack)) {
+      return false;
     }
   }
   if (!otherEntries.append(stack)) {
@@ -3631,12 +3627,6 @@ bool JSStructuredCloneReader::readErrorFields(Handle<ErrorObject*> errorObj,
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_SC_BAD_SERIALIZED_DATA,
                                 "invalid 'stack' field for Error object");
-      return false;
-    }
-    if (!cloneDataPolicy.areErrorStackFramesAllowed()) {
-      JS_ReportErrorNumberASCII(
-          cx, GetErrorMessage, nullptr, JSMSG_SC_BAD_SERIALIZED_DATA,
-          "disallowed 'stack' field encountered for Error object");
       return false;
     }
     errorObj->setStackSlot(stack);
