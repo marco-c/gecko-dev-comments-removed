@@ -58,13 +58,16 @@ async function startTests(testFun, name) {
           
           
           
-          if (window.fullScreen) {
+          if (
+            window.fullScreen ||
+            document.documentElement.hasAttribute("inFullscreen")
+          ) {
             info("widget is still in fullscreen, wait again");
             await waitWidgetFullscreenEvent(window, false, true);
           }
           if (document.documentElement.hasAttribute("inDOMFullscreen")) {
             info("chrome document is still in fullscreen, wait again");
-            await waitDOMFullscreenEvent(document, false, true);
+            await waitForFullScreenObserver(document, false, true);
           }
 
           

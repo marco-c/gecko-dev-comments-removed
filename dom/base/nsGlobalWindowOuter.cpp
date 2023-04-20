@@ -1297,8 +1297,7 @@ static JSObject* NewOuterWindowProxy(JSContext* cx,
 
 nsGlobalWindowOuter::nsGlobalWindowOuter(uint64_t aWindowID)
     : nsPIDOMWindowOuter(aWindowID),
-      mFullscreen(false),
-      mFullscreenMode(false),
+      mFullscreenHasChangedDuringProcessing(false),
       mForceFullScreenInWidget(false),
       mIsClosed(false),
       mInClose(false),
@@ -4255,15 +4254,6 @@ FullscreenTransitionTask::Run() {
   } else if (stage == eToggleFullscreen) {
     PROFILER_MARKER_UNTYPED("Fullscreen toggle start", DOM);
     mFullscreenChangeStartTime = TimeStamp::Now();
-    if (MOZ_UNLIKELY(mWindow->mFullscreen != mFullscreen)) {
-      
-      
-      
-      
-      
-      NS_WARNING("The fullscreen state of the window does not match");
-      mWindow->mFullscreen = mFullscreen;
-    }
     
     if (!mWindow->SetWidgetFullscreen(FullscreenReason::ForFullscreenAPI,
                                       mFullscreen, mWidget)) {
@@ -4374,6 +4364,44 @@ static bool MakeWidgetFullscreen(nsGlobalWindowOuter* aWindow,
   return true;
 }
 
+nsresult nsGlobalWindowOuter::ProcessWidgetFullscreenRequest(
+    FullscreenReason aReason, bool aFullscreen) {
+  mInProcessFullscreenRequest.emplace(aReason, aFullscreen);
+
+  
+  
+  nsCOMPtr<nsIBaseWindow> treeOwnerAsWin = GetTreeOwnerWindow();
+  nsCOMPtr<nsIAppWindow> appWin(do_GetInterface(treeOwnerAsWin));
+  if (aFullscreen && appWin) {
+    appWin->SetIntrinsicallySized(false);
+  }
+
+  
+  
+  
+  
+  
+  
+  if (!Preferences::GetBool("full-screen-api.ignore-widgets", false) &&
+      !mForceFullScreenInWidget) {
+    if (MakeWidgetFullscreen(this, aReason, aFullscreen)) {
+      
+      
+      
+      return NS_OK;
+    }
+  }
+
+#if defined(NIGHTLY_BUILD) && defined(XP_WIN)
+  if (FxRWindowManager::GetInstance()->IsFxRWindow(mWindowID)) {
+    mozilla::gfx::VRShMem shmem(nullptr, true );
+    shmem.SendFullscreenState(mWindowID, aFullscreen);
+  }
+#endif  
+  FinishFullscreenChange(aFullscreen);
+  return NS_OK;
+}
+
 nsresult nsGlobalWindowOuter::SetFullscreenInternal(FullscreenReason aReason,
                                                     bool aFullscreen) {
   MOZ_ASSERT(nsContentUtils::IsSafeToRunScript(),
@@ -4411,7 +4439,26 @@ nsresult nsGlobalWindowOuter::SetFullscreenInternal(FullscreenReason aReason,
     return NS_ERROR_FAILURE;
 
   
-  if (mFullscreen == aFullscreen) {
+  
+  MOZ_ASSERT_IF(
+      mFullscreen.isSome(),
+      mFullscreen.value() != FullscreenReason::ForForceExitFullscreen);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mFullscreen.isSome() == aFullscreen) {
+    
+    
+    MOZ_ASSERT_IF(aFullscreen && aReason == FullscreenReason::ForFullscreenMode,
+                  mFullscreen.value() != FullscreenReason::ForFullscreenAPI);
     return NS_OK;
   }
 
@@ -4419,61 +4466,45 @@ nsresult nsGlobalWindowOuter::SetFullscreenInternal(FullscreenReason aReason,
   
   
   if (aReason == FullscreenReason::ForFullscreenMode) {
-    if (!aFullscreen && !mFullscreenMode) {
+    if (!aFullscreen && mFullscreen &&
+        mFullscreen.value() == FullscreenReason::ForFullscreenAPI) {
       
       
       
       
       aReason = FullscreenReason::ForFullscreenAPI;
-    } else {
-      mFullscreenMode = aFullscreen;
     }
   } else {
     
     
     
-    if (!aFullscreen && mFullscreenMode) {
-      FinishDOMFullscreenChange(mDoc, false);
+    if (!aFullscreen && mFullscreen &&
+        mFullscreen.value() == FullscreenReason::ForFullscreenMode) {
+      
+      
+      if (!mInProcessFullscreenRequest.isSome()) {
+        FinishDOMFullscreenChange(mDoc, false);
+      }
       return NS_OK;
     }
   }
 
   
   
-  nsCOMPtr<nsIBaseWindow> treeOwnerAsWin = GetTreeOwnerWindow();
-  nsCOMPtr<nsIAppWindow> appWin(do_GetInterface(treeOwnerAsWin));
-  if (aFullscreen && appWin) {
-    appWin->SetIntrinsicallySized(false);
+  if (aFullscreen) {
+    mFullscreen.emplace(aReason);
+  } else {
+    mFullscreen.reset();
   }
 
   
   
-  mFullscreen = aFullscreen;
-
-  
-  
-  
-  
-  
-  
-  if (!Preferences::GetBool("full-screen-api.ignore-widgets", false) &&
-      !mForceFullScreenInWidget) {
-    if (MakeWidgetFullscreen(this, aReason, aFullscreen)) {
-      
-      
-      
-      return NS_OK;
-    }
+  if (mInProcessFullscreenRequest.isSome()) {
+    mFullscreenHasChangedDuringProcessing = true;
+    return NS_OK;
   }
 
-#if defined(NIGHTLY_BUILD) && defined(XP_WIN)
-  if (FxRWindowManager::GetInstance()->IsFxRWindow(mWindowID)) {
-    mozilla::gfx::VRShMem shmem(nullptr, true );
-    shmem.SendFullscreenState(mWindowID, aFullscreen);
-  }
-#endif  
-  FinishFullscreenChange(aFullscreen);
-  return NS_OK;
+  return ProcessWidgetFullscreenRequest(aReason, aFullscreen);
 }
 
 
@@ -4515,6 +4546,21 @@ bool nsGlobalWindowOuter::SetWidgetFullscreen(FullscreenReason aReason,
 
 
 void nsGlobalWindowOuter::FullscreenWillChange(bool aIsFullscreen) {
+  if (!mInProcessFullscreenRequest.isSome()) {
+    
+    
+    
+    MOZ_ASSERT(mFullscreen.isSome() != aIsFullscreen,
+               "FullscreenWillChange should not be notified if the fullscreen "
+               "state isn't changed");
+    mInProcessFullscreenRequest.emplace(FullscreenReason::ForFullscreenMode,
+                                        aIsFullscreen);
+    if (aIsFullscreen) {
+      mFullscreen.emplace(FullscreenReason::ForFullscreenMode);
+    } else {
+      mFullscreen.reset();
+    }
+  }
   if (aIsFullscreen) {
     DispatchCustomEvent(u"willenterfullscreen"_ns, ChromeOnlyDispatch::eYes);
   } else {
@@ -4524,23 +4570,23 @@ void nsGlobalWindowOuter::FullscreenWillChange(bool aIsFullscreen) {
 
 
 void nsGlobalWindowOuter::FinishFullscreenChange(bool aIsFullscreen) {
-  if (aIsFullscreen != mFullscreen) {
+  mozilla::Maybe<FullscreenRequest> currentInProcessRequest =
+      std::move(mInProcessFullscreenRequest);
+  if (!mFullscreenHasChangedDuringProcessing &&
+      aIsFullscreen != mFullscreen.isSome()) {
     NS_WARNING("Failed to toggle fullscreen state of the widget");
     
     
     if (!aIsFullscreen) {
-      mFullscreen = false;
-      mFullscreenMode = false;
+      mFullscreen.reset();
     } else {
 #ifndef XP_MACOSX
       MOZ_ASSERT_UNREACHABLE("Failed to exit fullscreen?");
 #endif
-      mFullscreen = true;
       
       
       
-      
-      mFullscreenMode = true;
+      mFullscreen.emplace(FullscreenReason::ForFullscreenAPI);
     }
     return;
   }
@@ -4549,7 +4595,7 @@ void nsGlobalWindowOuter::FinishFullscreenChange(bool aIsFullscreen) {
   
   
   
-  FinishDOMFullscreenChange(mDoc, mFullscreen);
+  FinishDOMFullscreenChange(mDoc, aIsFullscreen);
 
   
   
@@ -4562,6 +4608,24 @@ void nsGlobalWindowOuter::FinishFullscreenChange(bool aIsFullscreen) {
         rd->Thaw();
       }
       mChromeFields.mFullscreenPresShell = nullptr;
+    }
+  }
+
+  
+  
+  if (mFullscreenHasChangedDuringProcessing) {
+    mFullscreenHasChangedDuringProcessing = false;
+    
+    
+    
+    if (aIsFullscreen != mFullscreen.isSome()) {
+      
+      
+      
+      ProcessWidgetFullscreenRequest(
+          mFullscreen.isSome() ? mFullscreen.value()
+                               : currentInProcessRequest.value().mReason,
+          mFullscreen.isSome());
     }
   }
 }
@@ -4600,7 +4664,7 @@ void nsGlobalWindowOuter::MacFullscreenMenubarOverlapChanged(
 }
 
 bool nsGlobalWindowOuter::Fullscreen() const {
-  NS_ENSURE_TRUE(mDocShell, mFullscreen);
+  NS_ENSURE_TRUE(mDocShell, mFullscreen.isSome());
 
   
   
@@ -4609,7 +4673,7 @@ bool nsGlobalWindowOuter::Fullscreen() const {
   if (rootItem == mDocShell) {
     if (!XRE_IsContentProcess()) {
       
-      return mFullscreen;
+      return mFullscreen.isSome();
     }
     if (nsCOMPtr<nsIWidget> widget = GetNearestWidget()) {
       
@@ -4620,7 +4684,7 @@ bool nsGlobalWindowOuter::Fullscreen() const {
   }
 
   nsCOMPtr<nsPIDOMWindowOuter> window = rootItem->GetWindow();
-  NS_ENSURE_TRUE(window, mFullscreen);
+  NS_ENSURE_TRUE(window, mFullscreen.isSome());
 
   return nsGlobalWindowOuter::Cast(window)->Fullscreen();
 }
