@@ -1211,9 +1211,6 @@ void SdpOfferAnswerHandler::Initialize(
   audio_options_.audio_jitter_buffer_min_delay_ms =
       configuration.audio_jitter_buffer_min_delay_ms;
 
-  audio_options_.audio_jitter_buffer_enable_rtx_handling =
-      configuration.audio_jitter_buffer_enable_rtx_handling;
-
   
   rtc::scoped_refptr<rtc::RTCCertificate> certificate;
   if (!configuration.certificates.empty()) {

@@ -59,8 +59,6 @@ struct RTC_EXPORT AudioOptions {
   
   absl::optional<int> audio_jitter_buffer_min_delay_ms;
   
-  absl::optional<bool> audio_jitter_buffer_enable_rtx_handling;
-  
   
   
   

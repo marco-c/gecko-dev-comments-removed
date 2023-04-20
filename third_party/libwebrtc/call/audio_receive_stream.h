@@ -130,7 +130,6 @@ class AudioReceiveStream : public MediaReceiveStreamInterface {
     size_t jitter_buffer_max_packets = 200;
     bool jitter_buffer_fast_accelerate = false;
     int jitter_buffer_min_delay_ms = 0;
-    bool jitter_buffer_enable_rtx_handling = false;
 
     
     

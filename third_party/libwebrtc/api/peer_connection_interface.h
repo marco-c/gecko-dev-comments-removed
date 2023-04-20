@@ -493,10 +493,6 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
 
     
     
-    bool audio_jitter_buffer_enable_rtx_handling = false;
-
-    
-    
     
     int ice_connection_receiving_timeout = kUndefined;
 
