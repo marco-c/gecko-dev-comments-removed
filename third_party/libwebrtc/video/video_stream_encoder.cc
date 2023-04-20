@@ -1838,9 +1838,12 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
 
   
   VideoEncoder::EncoderInfo info = encoder_->GetEncoderInfo();
-  if (info.implementation_name != encoder_info_.implementation_name) {
-    encoder_stats_observer_->OnEncoderImplementationChanged(
-        info.implementation_name);
+  if (info.implementation_name != encoder_info_.implementation_name ||
+      info.is_hardware_accelerated != encoder_info_.is_hardware_accelerated) {
+    encoder_stats_observer_->OnEncoderImplementationChanged({
+        .name = info.implementation_name,
+        .is_hardware_accelerated = info.is_hardware_accelerated,
+    });
     if (bitrate_adjuster_) {
       
       bitrate_adjuster_->Reset();

@@ -62,7 +62,7 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
                           const CodecSpecificInfo* codec_info) override;
 
   void OnEncoderImplementationChanged(
-      const std::string& implementation_name) override;
+      EncoderImplementation implementation) override;
 
   
   void OnIncomingFrame(int width, int height) override;
