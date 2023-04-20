@@ -3986,7 +3986,9 @@ nsresult Http2Session::OnWriteSegment(char* buf, uint32_t count,
     *countWritten = count;
 
     if (mFlatHTTPResponseHeaders.Length() == mFlatHTTPResponseHeadersOut) {
-      if (!mInputFrameFinal) {
+      
+      
+      if (!mInputFrameFinal && !mInputFrameDataStream->RecvdFin()) {
         
         
         
