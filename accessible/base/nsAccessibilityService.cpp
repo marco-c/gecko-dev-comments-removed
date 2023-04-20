@@ -985,6 +985,21 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     return nullptr;
   }
 
+  if (nsMenuPopupFrame* popupFrame = do_QueryFrame(frame)) {
+    
+    
+    if (content->IsAnyOfXULElements(nsGkAtoms::tooltip, nsGkAtoms::panel)) {
+      nsPopupState popupState = popupFrame->PopupState();
+      if (popupState == ePopupHiding || popupState == ePopupInvisible ||
+          popupState == ePopupClosed) {
+        if (aIsSubtreeHidden) {
+          *aIsSubtreeHidden = true;
+        }
+        return nullptr;
+      }
+    }
+  }
+
   if (frame->GetContent() != content) {
     
     

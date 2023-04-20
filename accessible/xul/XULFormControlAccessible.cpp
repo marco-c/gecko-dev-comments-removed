@@ -135,7 +135,7 @@ bool XULButtonAccessible::IsAcceptableChild(nsIContent* aEl) const {
       
       
       
-      aEl->IsText();
+      (aEl->IsText() && aEl->GetParent() == mContent);
 }
 
 
