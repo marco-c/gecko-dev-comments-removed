@@ -48,7 +48,7 @@ class RetransmissionTimeout {
   
   bool first_measurement_ = true;
   
-  int32_t scaled_srtt_ = 0;
+  int32_t scaled_srtt_;
   
   int32_t scaled_rtt_var_ = 0;
   
