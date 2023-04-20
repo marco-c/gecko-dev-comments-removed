@@ -1,3 +1,5 @@
+#![deny(missing_docs)]
+
 
 
 
@@ -144,6 +146,8 @@
 use std::alloc::*;
 use std::borrow::*;
 use std::cmp::*;
+use std::convert::TryFrom;
+use std::convert::TryInto;
 use std::hash::*;
 use std::iter::FromIterator;
 use std::marker::PhantomData;
@@ -270,10 +274,13 @@ struct Header {
 }
 
 impl Header {
+    #[inline]
+    #[allow(clippy::unnecessary_cast)]
     fn len(&self) -> usize {
         self._len as usize
     }
 
+    #[inline]
     fn set_len(&mut self, len: usize) {
         self._len = assert_size(len);
     }
@@ -303,6 +310,7 @@ impl Header {
 
 #[cfg(not(feature = "gecko-ffi"))]
 impl Header {
+    #[allow(clippy::unnecessary_cast)]
     fn cap(&self) -> usize {
         self._cap as usize
     }
@@ -330,19 +338,35 @@ extern "C" {
 
 
 
+
+
+
 fn alloc_size<T>(cap: usize) -> usize {
     
-    let header_size = mem::size_of::<Header>();
-    let elem_size = mem::size_of::<T>();
-    let padding = padding::<T>();
+    
+    
+    
+    let header_size = mem::size_of::<Header>() as isize;
+    let padding = padding::<T>() as isize;
+
+    let data_size = if mem::size_of::<T>() == 0 {
+        
+        
+        0
+    } else {
+        let cap: isize = cap.try_into().expect("capacity overflow");
+        let elem_size = mem::size_of::<T>() as isize;
+        elem_size.checked_mul(cap).expect("capacity overflow")
+    };
+
+    let final_size = data_size
+        .checked_add(header_size + padding)
+        .expect("capacity overflow");
 
     
-    let data_size = elem_size.checked_mul(cap).expect("capacity overflow");
-
-    data_size
-        .checked_add(header_size + padding)
-        .expect("capacity overflow")
+    final_size as usize
 }
+
 
 fn padding<T>() -> usize {
     let alloc_align = alloc_align::<T>();
@@ -361,13 +385,24 @@ fn padding<T>() -> usize {
     }
 }
 
+
 fn alloc_align<T>() -> usize {
     max(mem::align_of::<T>(), mem::align_of::<Header>())
 }
 
+
+
+
+
+
 fn layout<T>(cap: usize) -> Layout {
     unsafe { Layout::from_size_align_unchecked(alloc_size::<T>(cap), alloc_align::<T>()) }
 }
+
+
+
+
+
 
 fn header_with_capacity<T>(cap: usize) -> NonNull<Header> {
     debug_assert!(cap > 0);
@@ -404,6 +439,8 @@ unsafe impl<T: Send> Send for ThinVec<T> {}
 
 
 
+#[cfg_attr(not(feature = "gecko-ffi"), doc = "```")]
+#[cfg_attr(feature = "gecko-ffi", doc = "```ignore")]
 
 
 
@@ -437,10 +474,67 @@ macro_rules! thin_vec {
 }
 
 impl<T> ThinVec<T> {
+    
+    
+    
     pub fn new() -> ThinVec<T> {
         ThinVec::with_capacity(0)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn with_capacity(cap: usize) -> ThinVec<T> {
         
         
@@ -523,16 +617,134 @@ impl<T> ThinVec<T> {
         &mut *self.ptr()
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn len(&self) -> usize {
         self.header().len()
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn capacity(&self) -> usize {
         self.header().cap()
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub unsafe fn set_len(&mut self, len: usize) {
         if self.is_singleton() {
             
@@ -548,6 +760,21 @@ impl<T> ThinVec<T> {
         self.header_mut().set_len(len)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn push(&mut self, val: T) {
         let old_len = self.len();
         if old_len == self.capacity() {
@@ -559,6 +786,18 @@ impl<T> ThinVec<T> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn pop(&mut self) -> Option<T> {
         let old_len = self.len();
         if old_len == 0 {
@@ -571,6 +810,24 @@ impl<T> ThinVec<T> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn insert(&mut self, idx: usize, elem: T) {
         let old_len = self.len();
 
@@ -586,6 +843,29 @@ impl<T> ThinVec<T> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn remove(&mut self, idx: usize) -> T {
         let old_len = self.len();
 
@@ -600,6 +880,32 @@ impl<T> ThinVec<T> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn swap_remove(&mut self, idx: usize) -> T {
         let old_len = self.len();
 
@@ -613,6 +919,54 @@ impl<T> ThinVec<T> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn truncate(&mut self, len: usize) {
         unsafe {
             
@@ -626,6 +980,20 @@ impl<T> ThinVec<T> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn clear(&mut self) {
         unsafe {
             ptr::drop_in_place(&mut self[..]);
@@ -633,10 +1001,34 @@ impl<T> ThinVec<T> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn as_slice(&self) -> &[T] {
         unsafe { slice::from_raw_parts(self.data_raw(), self.len()) }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn as_mut_slice(&mut self) -> &mut [T] {
         unsafe { slice::from_raw_parts_mut(self.data_raw(), self.len()) }
     }
@@ -749,6 +1141,22 @@ impl<T> ThinVec<T> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn shrink_to_fit(&mut self) {
         let old_cap = self.capacity();
         let new_cap = self.len();
@@ -772,6 +1180,8 @@ impl<T> ThinVec<T> {
     
     
     
+    #[cfg_attr(not(feature = "gecko-ffi"), doc = "```")]
+    #[cfg_attr(feature = "gecko-ffi", doc = "```ignore")]
     
     
     
@@ -783,13 +1193,41 @@ impl<T> ThinVec<T> {
     where
         F: FnMut(&T) -> bool,
     {
+        self.retain_mut(|x| f(&*x));
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(not(feature = "gecko-ffi"), doc = "```")]
+    #[cfg_attr(feature = "gecko-ffi", doc = "```ignore")]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn retain_mut<F>(&mut self, mut f: F)
+    where
+        F: FnMut(&mut T) -> bool,
+    {
         let len = self.len();
         let mut del = 0;
         {
             let v = &mut self[..];
 
             for i in 0..len {
-                if !f(&v[i]) {
+                if !f(&mut v[i]) {
                     del += 1;
                 } else if del > 0 {
                     v.swap(i - del, i);
@@ -808,6 +1246,8 @@ impl<T> ThinVec<T> {
     
     
     
+    #[cfg_attr(not(feature = "gecko-ffi"), doc = "```")]
+    #[cfg_attr(feature = "gecko-ffi", doc = "```ignore")]
     
     
     
@@ -836,6 +1276,8 @@ impl<T> ThinVec<T> {
     
     
     
+    #[cfg_attr(not(feature = "gecko-ffi"), doc = "```")]
+    #[cfg_attr(feature = "gecko-ffi", doc = "```ignore")]
     
     
     
@@ -879,6 +1321,26 @@ impl<T> ThinVec<T> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn split_off(&mut self, at: usize) -> ThinVec<T> {
         let old_len = self.len();
         let new_vec_len = old_len - at;
@@ -897,14 +1359,64 @@ impl<T> ThinVec<T> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn append(&mut self, other: &mut ThinVec<T>) {
         self.extend(other.drain(..))
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn drain<R>(&mut self, range: R) -> Drain<'_, T>
     where
         R: RangeBounds<usize>,
     {
+        
         let len = self.len();
         let start = match range.start_bound() {
             Bound::Included(&n) => n,
@@ -935,9 +1447,50 @@ impl<T> ThinVec<T> {
         }
     }
 
-    unsafe fn deallocate(&mut self) {
-        if self.has_allocation() {
-            dealloc(self.ptr() as *mut u8, layout::<T>(self.capacity()))
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn splice<R, I>(&mut self, range: R, replace_with: I) -> Splice<'_, I::IntoIter>
+    where
+        R: RangeBounds<usize>,
+        I: IntoIterator<Item = T>,
+    {
+        Splice {
+            drain: self.drain(range),
+            replace_with: replace_with.into_iter(),
         }
     }
 
@@ -988,7 +1541,12 @@ impl<T> ThinVec<T> {
 
     #[cfg(feature = "gecko-ffi")]
     #[inline]
+    #[allow(unused_unsafe)]
     fn is_singleton(&self) -> bool {
+        
+        
+        
+        
         unsafe { self.ptr.as_ptr() as *const Header == &EMPTY_HEADER }
     }
 
@@ -1021,6 +1579,8 @@ impl<T: Clone> ThinVec<T> {
     
     
     
+    #[cfg_attr(not(feature = "gecko-ffi"), doc = "```")]
+    #[cfg_attr(feature = "gecko-ffi", doc = "```ignore")]
     
     
     
@@ -1050,6 +1610,27 @@ impl<T: Clone> ThinVec<T> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn extend_from_slice(&mut self, other: &[T]) {
         self.extend(other.iter().cloned())
     }
@@ -1063,6 +1644,8 @@ impl<T: PartialEq> ThinVec<T> {
     
     
     
+    #[cfg_attr(not(feature = "gecko-ffi"), doc = "```")]
+    #[cfg_attr(feature = "gecko-ffi", doc = "```ignore")]
     
     
     
@@ -1078,10 +1661,25 @@ impl<T: PartialEq> ThinVec<T> {
 }
 
 impl<T> Drop for ThinVec<T> {
+    #[inline]
     fn drop(&mut self) {
-        unsafe {
-            ptr::drop_in_place(&mut self[..]);
-            self.deallocate();
+        #[cold]
+        #[inline(never)]
+        fn drop_non_singleton<T>(this: &mut ThinVec<T>) {
+            unsafe {
+                ptr::drop_in_place(&mut this[..]);
+
+                #[cfg(feature = "gecko-ffi")]
+                if this.ptr.as_ref().uses_stack_allocated_buffer() {
+                    return;
+                }
+
+                dealloc(this.ptr() as *mut u8, layout::<T>(this.capacity()))
+            }
+        }
+
+        if !self.is_singleton() {
+            drop_non_singleton(self);
         }
     }
 }
@@ -1125,7 +1723,10 @@ impl<T> Extend<T> for ThinVec<T> {
         I: IntoIterator<Item = T>,
     {
         let iter = iter.into_iter();
-        self.reserve(iter.size_hint().0);
+        let hint = iter.size_hint().0;
+        if hint > 0 {
+            self.reserve(hint);
+        }
         for x in iter {
             self.push(x);
         }
@@ -1318,20 +1919,33 @@ impl<T> Clone for ThinVec<T>
 where
     T: Clone,
 {
+    #[inline]
     fn clone(&self) -> ThinVec<T> {
-        let len = self.len();
-        let mut new_vec = ThinVec::<T>::with_capacity(len);
-        let mut data_raw = new_vec.data_raw();
-        for x in self.iter() {
-            unsafe {
-                ptr::write(data_raw, x.clone());
-                data_raw = data_raw.add(1);
+        #[cold]
+        #[inline(never)]
+        fn clone_non_singleton<T: Clone>(this: &ThinVec<T>) -> ThinVec<T> {
+            let len = this.len();
+            let mut new_vec = ThinVec::<T>::with_capacity(len);
+            let mut data_raw = new_vec.data_raw();
+            for x in this.iter() {
+                unsafe {
+                    ptr::write(data_raw, x.clone());
+                    data_raw = data_raw.add(1);
+                }
             }
+            unsafe {
+                
+                
+                new_vec.set_len(len); 
+            }
+            new_vec
         }
-        unsafe {
-            new_vec.set_len(len); 
+
+        if self.is_singleton() {
+            ThinVec::new()
+        } else {
+            clone_non_singleton(self)
         }
-        new_vec
     }
 }
 
@@ -1350,16 +1964,256 @@ impl<T> FromIterator<T> for ThinVec<T> {
     }
 }
 
+impl<T: Clone> From<&[T]> for ThinVec<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from(s: &[T]) -> ThinVec<T> {
+        s.iter().cloned().collect()
+    }
+}
+
+#[cfg(not(no_global_oom_handling))]
+impl<T: Clone> From<&mut [T]> for ThinVec<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from(s: &mut [T]) -> ThinVec<T> {
+        s.iter().cloned().collect()
+    }
+}
+
+impl<T, const N: usize> From<[T; N]> for ThinVec<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from(s: [T; N]) -> ThinVec<T> {
+        std::iter::IntoIterator::into_iter(s).collect()
+    }
+}
+
+impl<T> From<Box<[T]>> for ThinVec<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from(s: Box<[T]>) -> Self {
+        
+        Vec::from(s).into_iter().collect()
+    }
+}
+
+impl<T> From<Vec<T>> for ThinVec<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from(s: Vec<T>) -> Self {
+        s.into_iter().collect()
+    }
+}
+
+impl<T> From<ThinVec<T>> for Vec<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from(s: ThinVec<T>) -> Self {
+        s.into_iter().collect()
+    }
+}
+
+impl<T> From<ThinVec<T>> for Box<[T]> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from(v: ThinVec<T>) -> Self {
+        v.into_iter().collect()
+    }
+}
+
+impl From<&str> for ThinVec<u8> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from(s: &str) -> ThinVec<u8> {
+        From::from(s.as_bytes())
+    }
+}
+
+impl<T, const N: usize> TryFrom<ThinVec<T>> for [T; N] {
+    type Error = ThinVec<T>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn try_from(mut vec: ThinVec<T>) -> Result<[T; N], ThinVec<T>> {
+        if vec.len() != N {
+            return Err(vec);
+        }
+
+        
+        unsafe { vec.set_len(0) };
+
+        
+        
+        
+        
+        
+        let array = unsafe { ptr::read(vec.data_raw() as *const [T; N]) };
+        Ok(array)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub struct IntoIter<T> {
     vec: ThinVec<T>,
     start: usize,
 }
 
-pub struct Drain<'a, T> {
-    iter: IterMut<'a, T>,
-    vec: *mut ThinVec<T>,
-    end: usize,
-    tail: usize,
+impl<T> IntoIter<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn as_slice(&self) -> &[T] {
+        unsafe { slice::from_raw_parts(self.vec.data_raw().add(self.start), self.len()) }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
+        unsafe { &mut *self.as_raw_mut_slice() }
+    }
+
+    fn as_raw_mut_slice(&mut self) -> *mut [T] {
+        unsafe { ptr::slice_from_raw_parts_mut(self.vec.data_raw().add(self.start), self.len()) }
+    }
 }
 
 impl<T> Iterator for IntoIter<T> {
@@ -1387,20 +2241,156 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
         if self.start == self.vec.len() {
             None
         } else {
-            
             self.vec.pop()
         }
     }
 }
 
+impl<T> ExactSizeIterator for IntoIter<T> {}
+
+impl<T> std::iter::FusedIterator for IntoIter<T> {}
+
+
+#[cfg(feature = "unstable")]
+unsafe impl<T> std::iter::TrustedLen for IntoIter<T> {}
+
 impl<T> Drop for IntoIter<T> {
+    #[inline]
     fn drop(&mut self) {
-        unsafe {
-            let mut vec = mem::replace(&mut self.vec, ThinVec::new());
-            ptr::drop_in_place(&mut vec[self.start..]);
-            vec.set_len(0) 
+        #[cold]
+        #[inline(never)]
+        fn drop_non_singleton<T>(this: &mut IntoIter<T>) {
+            unsafe {
+                let mut vec = mem::replace(&mut this.vec, ThinVec::new());
+                ptr::drop_in_place(&mut vec[this.start..]);
+                vec.set_len_non_singleton(0)
+            }
+        }
+
+        if !self.vec.is_singleton() {
+            drop_non_singleton(self);
         }
     }
+}
+
+impl<T: fmt::Debug> fmt::Debug for IntoIter<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("IntoIter").field(&self.as_slice()).finish()
+    }
+}
+
+impl<T> AsRef<[T]> for IntoIter<T> {
+    fn as_ref(&self) -> &[T] {
+        self.as_slice()
+    }
+}
+
+impl<T: Clone> Clone for IntoIter<T> {
+    #[allow(clippy::into_iter_on_ref)]
+    fn clone(&self) -> Self {
+        
+        self.as_slice()
+            .into_iter()
+            .cloned()
+            .collect::<ThinVec<_>>()
+            .into_iter()
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct Drain<'a, T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    iter: IterMut<'a, T>,
+    
+    
+    
+    
+    
+    
+    vec: *mut ThinVec<T>,
+    
+    end: usize,
+    
+    tail: usize,
 }
 
 impl<'a, T> Iterator for Drain<'a, T> {
@@ -1422,6 +2412,12 @@ impl<'a, T> DoubleEndedIterator for Drain<'a, T> {
 
 impl<'a, T> ExactSizeIterator for Drain<'a, T> {}
 
+
+#[cfg(feature = "unstable")]
+unsafe impl<T> std::iter::TrustedLen for Drain<'_, T> {}
+
+impl<T> std::iter::FusedIterator for Drain<'_, T> {}
+
 impl<'a, T> Drop for Drain<'a, T> {
     fn drop(&mut self) {
         
@@ -1440,6 +2436,167 @@ impl<'a, T> Drop for Drain<'a, T> {
                 vec.set_len_non_singleton(old_len + self.tail);
             }
         }
+    }
+}
+
+impl<T: fmt::Debug> fmt::Debug for Drain<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("Drain").field(&self.iter.as_slice()).finish()
+    }
+}
+
+impl<'a, T> Drain<'a, T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use]
+    pub fn as_slice(&self) -> &[T] {
+        
+        
+        self.iter.as_slice()
+    }
+}
+
+impl<'a, T> AsRef<[T]> for Drain<'a, T> {
+    fn as_ref(&self) -> &[T] {
+        self.as_slice()
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct Splice<'a, I: Iterator + 'a> {
+    drain: Drain<'a, I::Item>,
+    replace_with: I,
+}
+
+impl<I: Iterator> Iterator for Splice<'_, I> {
+    type Item = I::Item;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.drain.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.drain.size_hint()
+    }
+}
+
+impl<I: Iterator> DoubleEndedIterator for Splice<'_, I> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.drain.next_back()
+    }
+}
+
+impl<I: Iterator> ExactSizeIterator for Splice<'_, I> {}
+
+impl<I: Iterator> Drop for Splice<'_, I> {
+    fn drop(&mut self) {
+        
+        self.drain.by_ref().for_each(drop);
+
+        unsafe {
+            
+            
+            if self.drain.tail == 0 {
+                (*self.drain.vec).extend(self.replace_with.by_ref());
+                return;
+            }
+
+            
+            if !self.drain.fill(&mut self.replace_with) {
+                return;
+            }
+
+            
+            let (lower_bound, _upper_bound) = self.replace_with.size_hint();
+            if lower_bound > 0 {
+                self.drain.move_tail(lower_bound);
+                if !self.drain.fill(&mut self.replace_with) {
+                    return;
+                }
+            }
+
+            
+            
+            let mut collected = self
+                .replace_with
+                .by_ref()
+                .collect::<Vec<I::Item>>()
+                .into_iter();
+            
+            if collected.len() > 0 {
+                self.drain.move_tail(collected.len());
+                let filled = self.drain.fill(&mut collected);
+                debug_assert!(filled);
+                debug_assert_eq!(collected.len(), 0);
+            }
+        }
+        
+    }
+}
+
+
+impl<T> Drain<'_, T> {
+    
+    
+    
+    
+    unsafe fn fill<I: Iterator<Item = T>>(&mut self, replace_with: &mut I) -> bool {
+        let vec = unsafe { &mut *self.vec };
+        let range_start = vec.len();
+        let range_end = self.end;
+        let range_slice = unsafe {
+            slice::from_raw_parts_mut(vec.data_raw().add(range_start), range_end - range_start)
+        };
+
+        for place in range_slice {
+            if let Some(new_item) = replace_with.next() {
+                unsafe { ptr::write(place, new_item) };
+                vec.set_len(vec.len() + 1);
+            } else {
+                return false;
+            }
+        }
+        true
+    }
+
+    
+    unsafe fn move_tail(&mut self, additional: usize) {
+        let vec = unsafe { &mut *self.vec };
+        let len = self.end + self.tail;
+        vec.reserve(len.checked_add(additional).expect("capacity overflow"));
+
+        let new_tail_start = self.end + additional;
+        unsafe {
+            let src = vec.data_raw().add(self.end);
+            let dst = vec.data_raw().add(new_tail_start);
+            ptr::copy(src, dst, self.tail);
+        }
+        self.end = new_tail_start;
     }
 }
 
@@ -1681,6 +2838,19 @@ mod tests {
 
         {
             let mut v = ThinVec::<i32>::new();
+            assert_eq!(v.splice(.., []).len(), 0);
+
+            for _ in v.splice(.., []) {
+                unreachable!()
+            }
+
+            assert_eq!(v.len(), 0);
+            assert_eq!(v.capacity(), 0);
+            assert_eq!(&v[..], &[]);
+        }
+
+        {
+            let mut v = ThinVec::<i32>::new();
             v.truncate(1);
             assert_eq!(v.len(), 0);
             assert_eq!(v.capacity(), 0);
@@ -1780,6 +2950,15 @@ mod tests {
 
         {
             let mut v = ThinVec::<i32>::new();
+            v.retain_mut(|_| unreachable!());
+
+            assert_eq!(v.len(), 0);
+            assert_eq!(v.capacity(), 0);
+            assert_eq!(&v[..], &[]);
+        }
+
+        {
+            let mut v = ThinVec::<i32>::new();
             v.dedup_by_key(|x| *x);
 
             assert_eq!(v.len(), 0);
@@ -1795,6 +2974,27 @@ mod tests {
             assert_eq!(v.capacity(), 0);
             assert_eq!(&v[..], &[]);
         }
+
+        {
+            let v = ThinVec::<i32>::new();
+            let v = v.clone();
+
+            assert_eq!(v.len(), 0);
+            assert_eq!(v.capacity(), 0);
+            assert_eq!(&v[..], &[]);
+        }
+    }
+
+    #[test]
+    fn test_clone() {
+        let mut v = ThinVec::<i32>::new();
+        assert!(v.is_singleton());
+        v.push(0);
+        v.pop();
+        assert!(!v.is_singleton());
+
+        let v2 = v.clone();
+        assert!(v2.is_singleton());
     }
 }
 
@@ -2032,6 +3232,18 @@ mod std_tests {
         let mut vec = thin_vec![1, 2, 3, 4];
         vec.retain(|&x| x % 2 == 0);
         assert_eq!(vec, [2, 4]);
+    }
+
+    #[test]
+    fn test_retain_mut() {
+        let mut vec = thin_vec![9, 9, 9, 9];
+        let mut i = 0;
+        vec.retain_mut(|x| {
+            i += 1;
+            *x = i;
+            i != 4
+        });
+        assert_eq!(vec, [1, 2, 3]);
     }
 
     #[test]
@@ -2391,70 +3603,76 @@ mod std_tests {
         v.drain(5..=5);
     }
 
-    
+    #[test]
+    fn test_splice() {
+        let mut v = thin_vec![1, 2, 3, 4, 5];
+        let a = [10, 11, 12];
+        v.splice(2..4, a.iter().cloned());
+        assert_eq!(v, &[1, 2, 10, 11, 12, 5]);
+        v.splice(1..3, Some(20));
+        assert_eq!(v, &[1, 20, 11, 12, 5]);
+    }
 
+    #[test]
+    fn test_splice_inclusive_range() {
+        let mut v = thin_vec![1, 2, 3, 4, 5];
+        let a = [10, 11, 12];
+        let t1: ThinVec<_> = v.splice(2..=3, a.iter().cloned()).collect();
+        assert_eq!(v, &[1, 2, 10, 11, 12, 5]);
+        assert_eq!(t1, &[3, 4]);
+        let t2: ThinVec<_> = v.splice(1..=2, Some(20)).collect();
+        assert_eq!(v, &[1, 20, 11, 12, 5]);
+        assert_eq!(t2, &[2, 10]);
+    }
 
+    #[test]
+    #[should_panic]
+    fn test_splice_out_of_bounds() {
+        let mut v = thin_vec![1, 2, 3, 4, 5];
+        let a = [10, 11, 12];
+        v.splice(5..6, a.iter().cloned());
+    }
 
+    #[test]
+    #[should_panic]
+    fn test_splice_inclusive_out_of_bounds() {
+        let mut v = thin_vec![1, 2, 3, 4, 5];
+        let a = [10, 11, 12];
+        v.splice(5..=5, a.iter().cloned());
+    }
 
+    #[test]
+    fn test_splice_items_zero_sized() {
+        let mut vec = thin_vec![(), (), ()];
+        let vec2 = thin_vec![];
+        let t: ThinVec<_> = vec.splice(1..2, vec2.iter().cloned()).collect();
+        assert_eq!(vec, &[(), ()]);
+        assert_eq!(t, &[()]);
+    }
 
+    #[test]
+    fn test_splice_unbounded() {
+        let mut vec = thin_vec![1, 2, 3, 4, 5];
+        let t: ThinVec<_> = vec.splice(.., None).collect();
+        assert_eq!(vec, &[]);
+        assert_eq!(t, &[1, 2, 3, 4, 5]);
+    }
 
+    #[test]
+    fn test_splice_forget() {
+        let mut v = thin_vec![1, 2, 3, 4, 5];
+        let a = [10, 11, 12];
+        ::std::mem::forget(v.splice(2..4, a.iter().cloned()));
+        assert_eq!(v, &[1, 2]);
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    #[test]
+    fn test_splice_from_empty() {
+        let mut v = thin_vec![];
+        let a = [10, 11, 12];
+        v.splice(.., a.iter().cloned());
+        assert_eq!(v, &[10, 11, 12]);
+    }
 
     
 
@@ -2482,81 +3700,59 @@ mod std_tests {
         assert_eq!(vec2, [5, 6]);
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    #[test]
+    fn test_into_iter_as_slice() {
+        let vec = thin_vec!['a', 'b', 'c'];
+        let mut into_iter = vec.into_iter();
+        assert_eq!(into_iter.as_slice(), &['a', 'b', 'c']);
+        let _ = into_iter.next().unwrap();
+        assert_eq!(into_iter.as_slice(), &['b', 'c']);
+        let _ = into_iter.next().unwrap();
+        let _ = into_iter.next().unwrap();
+        assert_eq!(into_iter.as_slice(), &[]);
+    }
+
+    #[test]
+    fn test_into_iter_as_mut_slice() {
+        let vec = thin_vec!['a', 'b', 'c'];
+        let mut into_iter = vec.into_iter();
+        assert_eq!(into_iter.as_slice(), &['a', 'b', 'c']);
+        into_iter.as_mut_slice()[0] = 'x';
+        into_iter.as_mut_slice()[1] = 'y';
+        assert_eq!(into_iter.next().unwrap(), 'x');
+        assert_eq!(into_iter.as_slice(), &['y', 'c']);
+    }
+
+    #[test]
+    fn test_into_iter_debug() {
+        let vec = thin_vec!['a', 'b', 'c'];
+        let into_iter = vec.into_iter();
+        let debug = format!("{:?}", into_iter);
+        assert_eq!(debug, "IntoIter(['a', 'b', 'c'])");
+    }
+
+    #[test]
+    fn test_into_iter_count() {
+        assert_eq!(thin_vec![1, 2, 3].into_iter().count(), 3);
+    }
+
+    #[test]
+    fn test_into_iter_clone() {
+        fn iter_equal<I: Iterator<Item = i32>>(it: I, slice: &[i32]) {
+            let v: ThinVec<i32> = it.collect();
+            assert_eq!(&v[..], slice);
+        }
+        let mut it = thin_vec![1, 2, 3].into_iter();
+        iter_equal(it.clone(), &[1, 2, 3]);
+        assert_eq!(it.next(), Some(1));
+        let mut it = it.rev();
+        iter_equal(it.clone(), &[3, 2]);
+        assert_eq!(it.next(), Some(3));
+        iter_equal(it.clone(), &[2]);
+        assert_eq!(it.next(), Some(2));
+        iter_equal(it.clone(), &[]);
+        assert_eq!(it.next(), None);
+    }
 
     
 
@@ -2588,22 +3784,21 @@ mod std_tests {
 
 
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    #[test]
+    #[cfg_attr(feature = "gecko-ffi", ignore)]
+    fn overaligned_allocations() {
+        #[repr(align(256))]
+        struct Foo(usize);
+        let mut v = thin_vec![Foo(273)];
+        for i in 0..0x1000 {
+            v.reserve_exact(i);
+            assert!(v[0].0 == 273);
+            assert!(v.as_ptr() as usize & 0xff == 0);
+            v.shrink_to_fit();
+            assert!(v[0].0 == 273);
+            assert!(v.as_ptr() as usize & 0xff == 0);
+        }
+    }
 
     
 
@@ -3058,5 +4253,36 @@ mod std_tests {
         unsafe {
             vec.set_len(1);
         }
+    }
+
+    #[test]
+    #[should_panic(expected = "capacity overflow")]
+    fn test_capacity_overflow_header_too_big() {
+        let vec: ThinVec<u8> = ThinVec::with_capacity(isize::MAX as usize - 2);
+        assert!(vec.capacity() > 0);
+    }
+    #[test]
+    #[should_panic(expected = "capacity overflow")]
+    fn test_capacity_overflow_cap_too_big() {
+        let vec: ThinVec<u8> = ThinVec::with_capacity(isize::MAX as usize + 1);
+        assert!(vec.capacity() > 0);
+    }
+    #[test]
+    #[should_panic(expected = "capacity overflow")]
+    fn test_capacity_overflow_size_mul1() {
+        let vec: ThinVec<u16> = ThinVec::with_capacity(isize::MAX as usize + 1);
+        assert!(vec.capacity() > 0);
+    }
+    #[test]
+    #[should_panic(expected = "capacity overflow")]
+    fn test_capacity_overflow_size_mul2() {
+        let vec: ThinVec<u16> = ThinVec::with_capacity(isize::MAX as usize / 2 + 1);
+        assert!(vec.capacity() > 0);
+    }
+    #[test]
+    #[should_panic(expected = "capacity overflow")]
+    fn test_capacity_overflow_cap_really_isnt_isize() {
+        let vec: ThinVec<u8> = ThinVec::with_capacity(isize::MAX as usize);
+        assert!(vec.capacity() > 0);
     }
 }
