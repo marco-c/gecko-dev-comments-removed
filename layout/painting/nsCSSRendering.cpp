@@ -18,6 +18,7 @@
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Helpers.h"
+#include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/MathAlgorithms.h"
@@ -3892,11 +3893,22 @@ static void GetTextIntercepts(const sk_sp<const SkTextBlob>& aBlob,
                               const SkScalar aBounds[],
                               nsTArray<SkScalar>& aIntercepts) {
   
-  int count = aBlob->getIntercepts(aBounds, nullptr);
-  if (count < 2) {
-    return;
+  
+  
+  
+  int count = 0;
+  MOZ_SEH_TRY {
+    
+    count = aBlob->getIntercepts(aBounds, nullptr);
+    if (count < 2) {
+      return;
+    }
+    aBlob->getIntercepts(aBounds, aIntercepts.AppendElements(count));
   }
-  aBlob->getIntercepts(aBounds, aIntercepts.AppendElements(count));
+  MOZ_SEH_EXCEPT(EXCEPTION_EXECUTE_HANDLER) {
+    gfxCriticalNote << "Exception occurred getting text intercepts";
+    aIntercepts.TruncateLength(aIntercepts.Length() - count);
+  }
 }
 
 
