@@ -446,7 +446,6 @@ interface nsIPrincipal : nsISupports
     readonly attribute AString addonId;
 
     readonly attribute WebExtensionPolicy addonPolicy;
-    readonly attribute WebExtensionPolicy contentScriptAddonPolicy;
 
     
 
