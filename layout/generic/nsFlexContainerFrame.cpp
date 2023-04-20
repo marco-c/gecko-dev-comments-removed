@@ -1097,12 +1097,20 @@ struct nsFlexContainerFrame::StrutInfo {
 
 
 
-struct nsFlexContainerFrame::SharedFlexData {
+struct nsFlexContainerFrame::SharedFlexData final {
+  
   nsTArray<FlexLine> mLines;
 
   
   nscoord mContentBoxMainSize = NS_UNCONSTRAINEDSIZE;
   nscoord mContentBoxCrossSize = NS_UNCONSTRAINEDSIZE;
+
+  
+  void Update(FlexLayoutResult&& aFlr) {
+    mLines = std::move(aFlr.mLines);
+    mContentBoxMainSize = aFlr.mContentBoxMainSize;
+    mContentBoxCrossSize = aFlr.mContentBoxCrossSize;
+  }
 
   
   
@@ -4646,18 +4654,16 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     
     
     if (!prevInFlow) {
-      SharedFlexData* data = GetProperty(SharedFlexData::Prop());
+      SharedFlexData* sharedData = GetProperty(SharedFlexData::Prop());
       if (!aStatus.IsFullyComplete()) {
-        if (!data) {
-          data = new SharedFlexData;
-          SetProperty(SharedFlexData::Prop(), data);
+        if (!sharedData) {
+          sharedData = new SharedFlexData;
+          SetProperty(SharedFlexData::Prop(), sharedData);
         }
-        data->mLines = std::move(flr.mLines);
-        data->mContentBoxMainSize = flr.mContentBoxMainSize;
-        data->mContentBoxCrossSize = flr.mContentBoxCrossSize;
+        sharedData->Update(std::move(flr));
 
         SetProperty(SumOfChildrenBlockSizeProperty(), sumOfChildrenBlockSize);
-      } else if (data && !GetNextInFlow()) {
+      } else if (sharedData && !GetNextInFlow()) {
         
         
         
