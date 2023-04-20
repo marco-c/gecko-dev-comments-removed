@@ -147,9 +147,10 @@ LogMessage::LogMessage(const char* file,
                        int err) {
   log_line_.set_severity(sev);
   if (log_timestamp_) {
+    int64_t log_start_time = LogStartTime();
     
     
-    int64_t time = TimeDiff(SystemTimeMillis(), LogStartTime());
+    int64_t time = TimeDiff(SystemTimeMillis(), log_start_time);
     
     
     WallClockStartTime();
