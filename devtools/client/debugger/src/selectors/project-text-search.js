@@ -2,18 +2,18 @@
 
 
 
-export function getTextSearchOperation(state) {
+export function getProjectSearchOperation(state) {
   return state.projectTextSearch.ongoingSearch;
 }
 
-export function getTextSearchResults(state) {
+export function getProjectSearchResults(state) {
   return state.projectTextSearch.results;
 }
 
-export function getTextSearchStatus(state) {
+export function getProjectSearchStatus(state) {
   return state.projectTextSearch.status;
 }
 
-export function getTextSearchQuery(state) {
+export function getProjectSearchQuery(state) {
   return state.projectTextSearch.query;
 }
