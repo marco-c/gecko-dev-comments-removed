@@ -3284,154 +3284,39 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoListElementCreator::Run(
     return Err(NS_ERROR_FAILURE);
   }
 
-  AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContents;
-
-  if (Element* parentListElement =
-          aSelectAllOfCurrentList == SelectAllOfCurrentList::Yes
-              ? aRanges.GetClosestAncestorAnyListElementOfRange()
-              : nullptr) {
-    arrayOfContents.AppendElement(
-        OwningNonNull<nsIContent>(*parentListElement));
-  } else {
-    AutoRangeArray extendedRanges(aRanges);
-
-    
-    
-    
-    
-    AutoTransactionsConserveSelection dontChangeMySelection(aHTMLEditor);
-
-    extendedRanges.ExtendRangesToWrapLinesToHandleBlockLevelEditAction(
-        EditSubAction::eCreateOrChangeList, aEditingHost);
-    Result<EditorDOMPoint, nsresult> splitResult =
-        extendedRanges
-            .SplitTextAtEndBoundariesAndInlineAncestorsAtBothBoundaries(
-                aHTMLEditor, aEditingHost);
-    if (MOZ_UNLIKELY(splitResult.isErr())) {
-      NS_WARNING(
-          "AutoRangeArray::"
-          "SplitTextAtEndBoundariesAndInlineAncestorsAtBothBoundaries() "
-          "failed");
-      return splitResult.propagateErr();
-    }
-    nsresult rv = extendedRanges.CollectEditTargetNodes(
-        aHTMLEditor, arrayOfContents, EditSubAction::eCreateOrChangeList,
-        AutoRangeArray::CollectNonEditableNodes::No);
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "AutoRangeArray::CollectEditTargetNodes(EditSubAction::"
-          "eCreateOrChangeList, CollectNonEditableNodes::No) failed");
-      return Err(rv);
-    }
-
-    Result<EditorDOMPoint, nsresult> splitAtBRElementsResult =
-        aHTMLEditor.MaybeSplitElementsAtEveryBRElement(
-            arrayOfContents, EditSubAction::eCreateOrChangeList);
-    if (MOZ_UNLIKELY(splitAtBRElementsResult.isErr())) {
-      NS_WARNING(
-          "HTMLEditor::MaybeSplitElementsAtEveryBRElement(EditSubAction::"
-          "eCreateOrChangeList) failed");
-      return splitAtBRElementsResult.propagateErr();
-    }
+  AutoContentNodeArray arrayOfContents;
+  nsresult rv = SplitAtRangeEdgesAndCollectContentNodesToMoveIntoList(
+      aHTMLEditor, aRanges, aSelectAllOfCurrentList, aEditingHost,
+      arrayOfContents);
+  if (NS_FAILED(rv)) {
+    NS_WARNING(
+        "AutoListElementCreator::"
+        "SplitAtRangeEdgesAndCollectContentNodesToMoveIntoList() failed");
+    return Err(rv);
   }
 
   
-  auto IsEmptyOrContainsOnlyBRElementsOrEmptyInlineElements =
-      [](const nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents) {
-        for (const OwningNonNull<nsIContent>& content : aArrayOfContents) {
-          
-          if (!content->IsHTMLElement(nsGkAtoms::br) &&
-              !HTMLEditUtils::IsEmptyInlineContainer(
-                  content, {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
-            return false;
-          }
-        }
-        return true;
-      };
-
   
   
-  if (IsEmptyOrContainsOnlyBRElementsOrEmptyInlineElements(arrayOfContents)) {
-    
-    for (auto& content : arrayOfContents) {
-      
-      
-      nsresult rv =
-          aHTMLEditor.DeleteNodeWithTransaction(MOZ_KnownLive(*content));
-      if (NS_FAILED(rv)) {
-        NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
-        return Err(rv);
-      }
+  if (AutoListElementCreator::
+          IsEmptyOrContainsOnlyBRElementsOrEmptyInlineElements(
+              arrayOfContents)) {
+    Result<RefPtr<Element>, nsresult> newListItemElementOrError =
+        ReplaceContentNodesWithEmptyNewList(aHTMLEditor, aRanges,
+                                            arrayOfContents, aEditingHost);
+    if (MOZ_UNLIKELY(newListItemElementOrError.isErr())) {
+      NS_WARNING(
+          "AutoListElementCreator::ReplaceContentNodesWithEmptyNewList() "
+          "failed");
+      return newListItemElementOrError.propagateErr();
     }
-
-    const auto firstRangeStartPoint =
-        aRanges.GetFirstRangeStartPoint<EditorDOMPoint>();
-    if (NS_WARN_IF(!firstRangeStartPoint.IsSet())) {
-      return Err(NS_ERROR_FAILURE);
-    }
-
-    
-    if (!HTMLEditUtils::CanNodeContain(*firstRangeStartPoint.GetContainer(),
-                                       mListTagName)) {
+    if (MOZ_UNLIKELY(!newListItemElementOrError.inspect())) {
       aRanges.RestoreFromSavedRanges();
       return EditActionResult::CanceledResult();
     }
-
-    RefPtr<Element> newListItemElement;
-    Result<CreateElementResult, nsresult> createNewListElementResult =
-        aHTMLEditor.InsertElementWithSplittingAncestorsWithTransaction(
-            mListTagName, firstRangeStartPoint, BRElementNextToSplitPoint::Keep,
-            aEditingHost,
-            
-            [&](HTMLEditor& aHTMLEditor, Element& aListElement,
-                const EditorDOMPoint& aPointToInsert)
-                MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-                  const auto withTransaction = aListElement.IsInComposedDoc()
-                                                   ? WithTransaction::Yes
-                                                   : WithTransaction::No;
-                  Result<CreateElementResult, nsresult>
-                      createNewListItemElementResult =
-                          aHTMLEditor.CreateAndInsertElement(
-                              withTransaction, mListItemTagName,
-                              EditorDOMPoint(&aListElement, 0u));
-                  if (MOZ_UNLIKELY(createNewListItemElementResult.isErr())) {
-                    NS_WARNING(
-                        nsPrintfCString(
-                            "HTMLEditor::CreateAndInsertElement(%s) failed",
-                            ToString(withTransaction).c_str())
-                            .get());
-                    return createNewListItemElementResult.unwrapErr();
-                  }
-                  CreateElementResult unwrappedCreateNewListItemElementResult =
-                      createNewListItemElementResult.unwrap();
-                  
-                  
-                  
-                  
-                  
-                  
-                  unwrappedCreateNewListItemElementResult
-                      .IgnoreCaretPointSuggestion();
-                  newListItemElement =
-                      unwrappedCreateNewListItemElementResult.UnwrapNewNode();
-                  MOZ_ASSERT(newListItemElement);
-                  return NS_OK;
-                });
-    if (MOZ_UNLIKELY(createNewListElementResult.isErr())) {
-      NS_WARNING(
-          nsPrintfCString(
-              "HTMLEditor::InsertElementWithSplittingAncestorsWithTransaction("
-              "%s) failed",
-              nsAtomCString(&mListTagName).get())
-              .get());
-      return createNewListElementResult.propagateErr();
-    }
-    MOZ_ASSERT(createNewListElementResult.inspect().GetNewNode());
-
-    
-    createNewListElementResult.inspect().IgnoreCaretPointSuggestion();
     aRanges.ClearSavedRanges();
-    nsresult rv = aRanges.Collapse(EditorRawDOMPoint(newListItemElement, 0u));
+    nsresult rv = aRanges.Collapse(
+        EditorRawDOMPoint(newListItemElementOrError.inspect(), 0u));
     if (NS_FAILED(rv)) {
       NS_WARNING("AutoRangeArray::Collapse() failed");
       return Err(rv);
@@ -3439,21 +3324,210 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoListElementCreator::Run(
     return EditActionResult::IgnoredResult();
   }
 
+  Result<RefPtr<Element>, nsresult> listItemOrListToPutCaretOrError =
+      WrapContentNodesIntoNewListElements(aHTMLEditor, aRanges, arrayOfContents,
+                                          aEditingHost);
+  if (MOZ_UNLIKELY(listItemOrListToPutCaretOrError.isErr())) {
+    NS_WARNING(
+        "AutoListElementCreator::WrapContentNodesIntoNewListElements() failed");
+    return listItemOrListToPutCaretOrError.propagateErr();
+  }
+
+  MOZ_ASSERT(aRanges.HasSavedRanges());
+  aRanges.RestoreFromSavedRanges();
+
   
   
-  if (arrayOfContents.Length() == 1) {
+  if (listItemOrListToPutCaretOrError.inspect()) {
+    DebugOnly<nsresult> rvIgnored =
+        EnsureCollapsedRangeIsInListItemOrListElement(
+            *listItemOrListToPutCaretOrError.inspect(), aRanges);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rvIgnored),
+        "AutoListElementCreator::"
+        "EnsureCollapsedRangeIsInListItemOrListElement() failed, but ignored");
+  }
+
+  return EditActionResult::HandledResult();
+}
+
+nsresult HTMLEditor::AutoListElementCreator::
+    SplitAtRangeEdgesAndCollectContentNodesToMoveIntoList(
+        HTMLEditor& aHTMLEditor, AutoRangeArray& aRanges,
+        SelectAllOfCurrentList aSelectAllOfCurrentList,
+        const Element& aEditingHost,
+        ContentNodeArray& aOutArrayOfContents) const {
+  MOZ_ASSERT(aOutArrayOfContents.IsEmpty());
+
+  if (aSelectAllOfCurrentList == SelectAllOfCurrentList::Yes) {
+    if (Element* parentListElementOfRanges =
+            aRanges.GetClosestAncestorAnyListElementOfRange()) {
+      aOutArrayOfContents.AppendElement(
+          OwningNonNull<nsIContent>(*parentListElementOfRanges));
+      return NS_OK;
+    }
+  }
+
+  AutoRangeArray extendedRanges(aRanges);
+
+  
+  
+  
+  
+  AutoTransactionsConserveSelection dontChangeMySelection(aHTMLEditor);
+
+  extendedRanges.ExtendRangesToWrapLinesToHandleBlockLevelEditAction(
+      EditSubAction::eCreateOrChangeList, aEditingHost);
+  Result<EditorDOMPoint, nsresult> splitResult =
+      extendedRanges.SplitTextAtEndBoundariesAndInlineAncestorsAtBothBoundaries(
+          aHTMLEditor, aEditingHost);
+  if (MOZ_UNLIKELY(splitResult.isErr())) {
+    NS_WARNING(
+        "AutoRangeArray::"
+        "SplitTextAtEndBoundariesAndInlineAncestorsAtBothBoundaries() failed");
+    return splitResult.unwrapErr();
+  }
+  nsresult rv = extendedRanges.CollectEditTargetNodes(
+      aHTMLEditor, aOutArrayOfContents, EditSubAction::eCreateOrChangeList,
+      AutoRangeArray::CollectNonEditableNodes::No);
+  if (NS_FAILED(rv)) {
+    NS_WARNING(
+        "AutoRangeArray::CollectEditTargetNodes(EditSubAction::"
+        "eCreateOrChangeList, CollectNonEditableNodes::No) failed");
+    return rv;
+  }
+
+  Result<EditorDOMPoint, nsresult> splitAtBRElementsResult =
+      aHTMLEditor.MaybeSplitElementsAtEveryBRElement(
+          aOutArrayOfContents, EditSubAction::eCreateOrChangeList);
+  if (MOZ_UNLIKELY(splitAtBRElementsResult.isErr())) {
+    NS_WARNING(
+        "HTMLEditor::MaybeSplitElementsAtEveryBRElement(EditSubAction::"
+        "eCreateOrChangeList) failed");
+    return splitAtBRElementsResult.unwrapErr();
+  }
+  return NS_OK;
+}
+
+
+bool HTMLEditor::AutoListElementCreator::
+    IsEmptyOrContainsOnlyBRElementsOrEmptyInlineElements(
+        const ContentNodeArray& aArrayOfContents) {
+  for (const OwningNonNull<nsIContent>& content : aArrayOfContents) {
+    
+    
+    if (!content->IsHTMLElement(nsGkAtoms::br) &&
+        !HTMLEditUtils::IsEmptyInlineContainer(
+            content, {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
+      return false;
+    }
+  }
+  return true;
+}
+
+Result<RefPtr<Element>, nsresult>
+HTMLEditor::AutoListElementCreator::ReplaceContentNodesWithEmptyNewList(
+    HTMLEditor& aHTMLEditor, const AutoRangeArray& aRanges,
+    const AutoContentNodeArray& aArrayOfContents,
+    const Element& aEditingHost) const {
+  
+  for (const OwningNonNull<nsIContent>& content : aArrayOfContents) {
+    
+    nsresult rv =
+        aHTMLEditor.DeleteNodeWithTransaction(MOZ_KnownLive(*content));
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+      return Err(rv);
+    }
+  }
+
+  const auto firstRangeStartPoint =
+      aRanges.GetFirstRangeStartPoint<EditorDOMPoint>();
+  if (NS_WARN_IF(!firstRangeStartPoint.IsSet())) {
+    return Err(NS_ERROR_FAILURE);
+  }
+
+  
+  if (!HTMLEditUtils::CanNodeContain(*firstRangeStartPoint.GetContainer(),
+                                     mListTagName)) {
+    return RefPtr<Element>();
+  }
+
+  RefPtr<Element> newListItemElement;
+  Result<CreateElementResult, nsresult> createNewListElementResult =
+      aHTMLEditor.InsertElementWithSplittingAncestorsWithTransaction(
+          mListTagName, firstRangeStartPoint, BRElementNextToSplitPoint::Keep,
+          aEditingHost,
+          
+          [&](HTMLEditor& aHTMLEditor, Element& aListElement,
+              const EditorDOMPoint& aPointToInsert)
+              MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+                const auto withTransaction = aListElement.IsInComposedDoc()
+                                                 ? WithTransaction::Yes
+                                                 : WithTransaction::No;
+                Result<CreateElementResult, nsresult>
+                    createNewListItemElementResult =
+                        aHTMLEditor.CreateAndInsertElement(
+                            withTransaction, mListItemTagName,
+                            EditorDOMPoint(&aListElement, 0u));
+                if (MOZ_UNLIKELY(createNewListItemElementResult.isErr())) {
+                  NS_WARNING(
+                      nsPrintfCString(
+                          "HTMLEditor::CreateAndInsertElement(%s) failed",
+                          ToString(withTransaction).c_str())
+                          .get());
+                  return createNewListItemElementResult.unwrapErr();
+                }
+                CreateElementResult unwrappedCreateNewListItemElementResult =
+                    createNewListItemElementResult.unwrap();
+                
+                
+                
+                
+                
+                
+                unwrappedCreateNewListItemElementResult
+                    .IgnoreCaretPointSuggestion();
+                newListItemElement =
+                    unwrappedCreateNewListItemElementResult.UnwrapNewNode();
+                MOZ_ASSERT(newListItemElement);
+                return NS_OK;
+              });
+  if (MOZ_UNLIKELY(createNewListElementResult.isErr())) {
+    NS_WARNING(
+        nsPrintfCString(
+            "HTMLEditor::InsertElementWithSplittingAncestorsWithTransaction("
+            "%s) failed",
+            nsAtomCString(&mListTagName).get())
+            .get());
+    return createNewListElementResult.propagateErr();
+  }
+  MOZ_ASSERT(createNewListElementResult.inspect().GetNewNode());
+
+  
+  createNewListElementResult.inspect().IgnoreCaretPointSuggestion();
+  return newListItemElement;
+}
+
+Result<RefPtr<Element>, nsresult>
+HTMLEditor::AutoListElementCreator::WrapContentNodesIntoNewListElements(
+    HTMLEditor& aHTMLEditor, AutoRangeArray& aRanges,
+    AutoContentNodeArray& aArrayOfContents, const Element& aEditingHost) const {
+  
+  
+  if (aArrayOfContents.Length() == 1) {
     if (Element* deepestDivBlockquoteOrListElement =
             HTMLEditUtils::GetInclusiveDeepestFirstChildWhichHasOneChild(
-                arrayOfContents[0], {WalkTreeOption::IgnoreNonEditableNode},
+                aArrayOfContents[0], {WalkTreeOption::IgnoreNonEditableNode},
                 nsGkAtoms::div, nsGkAtoms::blockquote, nsGkAtoms::ul,
                 nsGkAtoms::ol, nsGkAtoms::dl)) {
       if (deepestDivBlockquoteOrListElement->IsAnyOfHTMLElements(
               nsGkAtoms::div, nsGkAtoms::blockquote)) {
-        arrayOfContents.Clear();
+        aArrayOfContents.Clear();
         HTMLEditUtils::CollectChildren(*deepestDivBlockquoteOrListElement,
-                                       arrayOfContents, 0, {});
+                                       aArrayOfContents, 0, {});
       } else {
-        arrayOfContents.ReplaceElementAt(
+        aArrayOfContents.ReplaceElementAt(
             0, OwningNonNull<nsIContent>(*deepestDivBlockquoteOrListElement));
       }
     }
@@ -3462,12 +3536,12 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoListElementCreator::Run(
   
   
 
-  uint32_t countOfCollectedContents = arrayOfContents.Length();
+  uint32_t countOfCollectedContents = aArrayOfContents.Length();
   RefPtr<Element> curList, prevListItem, listItemOrListToPutCaret;
 
   for (uint32_t i = 0; i < countOfCollectedContents; i++) {
     
-    const OwningNonNull<nsIContent> content = arrayOfContents[i];
+    const OwningNonNull<nsIContent> content = aArrayOfContents[i];
 
     
     
@@ -3704,7 +3778,7 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoListElementCreator::Run(
     if (content->IsHTMLElement(nsGkAtoms::div)) {
       prevListItem = nullptr;
       HTMLEditUtils::CollectChildren(
-          *content, arrayOfContents, i + 1,
+          *content, aArrayOfContents, i + 1,
           {CollectChildrenOption::CollectListChildren,
            CollectChildrenOption::CollectTableChildren});
       Result<EditorDOMPoint, nsresult> unwrapDivElementResult =
@@ -3717,7 +3791,7 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoListElementCreator::Run(
       MOZ_ASSERT(aRanges.HasSavedRanges());  
 
       
-      countOfCollectedContents = arrayOfContents.Length();
+      countOfCollectedContents = aArrayOfContents.Length();
       continue;
     }
 
@@ -3840,35 +3914,36 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoListElementCreator::Run(
     
   }
 
-  MOZ_ASSERT(aRanges.HasSavedRanges());
-  aRanges.RestoreFromSavedRanges();
+  return listItemOrListToPutCaret;
+}
 
-  
-  
-  if (listItemOrListToPutCaret && aRanges.IsCollapsed() &&
-      aRanges.Ranges().Length()) {
-    const auto firstRangeStartPoint =
-        aRanges.GetFirstRangeStartPoint<EditorRawDOMPoint>();
-    if (MOZ_LIKELY(firstRangeStartPoint.IsSet())) {
-      const Result<EditorRawDOMPoint, nsresult> pointToPutCaretOrError =
-          HTMLEditUtils::ComputePointToPutCaretInElementIfOutside<
-              EditorRawDOMPoint>(*listItemOrListToPutCaret,
-                                 firstRangeStartPoint);
-      if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
-        NS_WARNING(
-            "HTMLEditUtils::ComputePointToPutCaretInElementIfOutside() "
-            "failed, but ignored");
-      } else if (pointToPutCaretOrError.inspect().IsSet()) {
-        DebugOnly<nsresult> rvIgnored =
-            aRanges.Collapse(pointToPutCaretOrError.inspect());
-        NS_WARNING_ASSERTION(
-            NS_SUCCEEDED(rvIgnored),
-            "EditorBase::CollapseSelectionTo() failed, but ignored");
-      }
-    }
+nsresult HTMLEditor::AutoListElementCreator::
+    EnsureCollapsedRangeIsInListItemOrListElement(
+        Element& aListItemOrListToPutCaret, AutoRangeArray& aRanges) const {
+  if (!aRanges.IsCollapsed() || aRanges.Ranges().IsEmpty()) {
+    return NS_OK;
   }
 
-  return EditActionResult::HandledResult();
+  const auto firstRangeStartPoint =
+      aRanges.GetFirstRangeStartPoint<EditorRawDOMPoint>();
+  if (MOZ_UNLIKELY(!firstRangeStartPoint.IsSet())) {
+    return NS_OK;
+  }
+  Result<EditorRawDOMPoint, nsresult> pointToPutCaretOrError =
+      HTMLEditUtils::ComputePointToPutCaretInElementIfOutside<
+          EditorRawDOMPoint>(aListItemOrListToPutCaret, firstRangeStartPoint);
+  if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
+    NS_WARNING("HTMLEditUtils::ComputePointToPutCaretInElementIfOutside()");
+    return pointToPutCaretOrError.unwrapErr();
+  }
+  if (pointToPutCaretOrError.inspect().IsSet()) {
+    nsresult rv = aRanges.Collapse(pointToPutCaretOrError.inspect());
+    if (NS_FAILED(rv)) {
+      NS_WARNING("AutoRangeArray::Collapse() failed");
+      return rv;
+    }
+  }
+  return NS_OK;
 }
 
 nsresult HTMLEditor::RemoveListAtSelectionAsSubAction(

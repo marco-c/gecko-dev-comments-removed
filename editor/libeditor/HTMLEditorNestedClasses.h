@@ -12,6 +12,7 @@
 #include "HTMLEditHelpers.h"  
 
 #include "mozilla/Attributes.h"
+#include "mozilla/OwningNonNull.h"
 #include "mozilla/Result.h"
 
 namespace mozilla {
@@ -395,6 +396,63 @@ class MOZ_STACK_CLASS HTMLEditor::AutoListElementCreator final {
       const Element& aEditingHost) const;
 
  private:
+  using ContentNodeArray = nsTArray<OwningNonNull<nsIContent>>;
+  using AutoContentNodeArray = AutoTArray<OwningNonNull<nsIContent>, 64>;
+
+  
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  SplitAtRangeEdgesAndCollectContentNodesToMoveIntoList(
+      HTMLEditor& aHTMLEditor, AutoRangeArray& aRanges,
+      SelectAllOfCurrentList aSelectAllOfCurrentList,
+      const Element& aEditingHost, ContentNodeArray& aOutArrayOfContents) const;
+
+  
+
+
+
+
+  [[nodiscard]] static bool
+  IsEmptyOrContainsOnlyBRElementsOrEmptyInlineElements(
+      const ContentNodeArray& aArrayOfContents);
+
+  
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
+  ReplaceContentNodesWithEmptyNewList(
+      HTMLEditor& aHTMLEditor, const AutoRangeArray& aRanges,
+      const AutoContentNodeArray& aArrayOfContents,
+      const Element& aEditingHost) const;
+
+  
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
+  WrapContentNodesIntoNewListElements(HTMLEditor& aHTMLEditor,
+                                      AutoRangeArray& aRanges,
+                                      AutoContentNodeArray& aArrayOfContents,
+                                      const Element& aEditingHost) const;
+
+  
+
+
+
+  nsresult EnsureCollapsedRangeIsInListItemOrListElement(
+      Element& aListItemOrListToPutCaret, AutoRangeArray& aRanges) const;
+
   MOZ_KNOWN_LIVE nsStaticAtom& mListTagName;
   MOZ_KNOWN_LIVE nsStaticAtom& mListItemTagName;
   const nsAutoString mBulletType;
