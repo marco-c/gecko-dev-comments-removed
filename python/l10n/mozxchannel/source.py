@@ -2,9 +2,9 @@
 
 
 
-from compare_locales import paths, mozpath
-from compare_locales.paths.matcher import expand
 import toml
+from compare_locales import mozpath, paths
+from compare_locales.paths.matcher import expand
 
 from .projectconfig import generate_filename
 
