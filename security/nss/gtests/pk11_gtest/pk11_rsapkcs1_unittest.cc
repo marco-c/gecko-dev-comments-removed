@@ -169,7 +169,11 @@ class Pkcs11RsaPkcs1WycheproofTest : public ::testing::Test {
 
 
 TEST(RsaPkcs1Test, Pkcs1MinimumPadding) {
-  const size_t kRsaShortKeyBits = 736;
+#define RSA_SHORT_KEY_LENGTH 736
+
+
+#if RSA_MIN_MODULUS_BITS < RSA_SHORT_KEY_LENGTH
+  const size_t kRsaShortKeyBits = RSA_SHORT_KEY_LENGTH;
   const size_t kRsaKeyBits = 752;
   static const std::vector<uint8_t> kMsg{'T', 'E', 'S', 'T'};
   static const std::vector<uint8_t> kSha512DigestInfo{
@@ -269,6 +273,9 @@ TEST(RsaPkcs1Test, Pkcs1MinimumPadding) {
                               SEC_OID_PKCS1_RSA_ENCRYPTION, SEC_OID_SHA512,
                               nullptr);
   EXPECT_EQ(SECSuccess, rv);
+#else
+  GTEST_SKIP();
+#endif
 }
 
 TEST(RsaPkcs1Test, RequireNullParameter) {
