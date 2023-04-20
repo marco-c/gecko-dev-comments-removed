@@ -547,9 +547,6 @@ pref("browser.urlbar.shortcuts.history", true);
 pref("browser.urlbar.eventTelemetry.enabled", false);
 
 
-pref("browser.urlbar.searchEngagementTelemetry.enabled", false);
-
-
 
 pref("browser.urlbar.extension.timeout", 400);
 
