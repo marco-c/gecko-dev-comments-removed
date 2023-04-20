@@ -392,7 +392,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
                           const nsAString& aIntegrity, bool aScriptFromHead,
                           bool aAsync, bool aDefer, bool aNoModule,
                           bool aLinkPreload,
-                          const ReferrerPolicy aReferrerPolicy);
+                          const ReferrerPolicy aReferrerPolicy,
+                          uint64_t aEarlyHintPreloaderId);
 
   
 
@@ -490,18 +491,21 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
 
 
-  nsresult StartLoad(ScriptLoadRequest* aRequest);
+  nsresult StartLoad(ScriptLoadRequest* aRequest,
+                     uint64_t aEarlyHintPreloaderId);
   
 
 
 
-  nsresult StartClassicLoad(ScriptLoadRequest* aRequest);
+  nsresult StartClassicLoad(ScriptLoadRequest* aRequest,
+                            uint64_t aEarlyHintPreloaderId);
 
   
 
 
   nsresult StartLoadInternal(ScriptLoadRequest* aRequest,
-                             nsSecurityFlags securityFlags);
+                             nsSecurityFlags securityFlags,
+                             uint64_t aEarlyHintPreloaderId);
 
   
 
