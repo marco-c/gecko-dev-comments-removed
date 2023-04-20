@@ -13,6 +13,38 @@ from .files import BaseFile, File
 DEFAULT_MTIME = 1451606400
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class HackedType(bytes):
+    def __eq__(self, other):
+        if other == tarfile.CHRTYPE:
+            return True
+        return self == other
+
+
+class TarInfo(tarfile.TarInfo):
+    @staticmethod
+    def _create_header(info, format, encoding, errors):
+        info["type"] = HackedType(info["type"])
+        return tarfile.TarInfo._create_header(info, format, encoding, errors)
+
+
 def create_tar_from_files(fp, files):
     """Create a tar file deterministically.
 
@@ -35,7 +67,7 @@ def create_tar_from_files(fp, files):
             if not isinstance(f, BaseFile):
                 f = File(f)
 
-            ti = tarfile.TarInfo(archive_path)
+            ti = TarInfo(archive_path)
             ti.mode = f.mode or 0o0644
             ti.type = tarfile.REGTYPE
 
