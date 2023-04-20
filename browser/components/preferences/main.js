@@ -1727,11 +1727,12 @@ var gMainPane = {
 
     
     
-    migrationWizardDialog.firstElementChild?.remove();
-    let wizard = document.createElement("migration-wizard");
-    wizard.toggleAttribute("dialog-mode", true);
-    migrationWizardDialog.appendChild(wizard);
-
+    if (!migrationWizardDialog.firstElementChild) {
+      let wizard = document.createElement("migration-wizard");
+      wizard.toggleAttribute("dialog-mode", true);
+      migrationWizardDialog.appendChild(wizard);
+    }
+    migrationWizardDialog.firstElementChild.requestState();
     migrationWizardDialog.showModal();
   },
 
