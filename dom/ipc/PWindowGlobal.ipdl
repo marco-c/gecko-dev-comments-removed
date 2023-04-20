@@ -104,9 +104,9 @@ parent:
   
   
   async LoadURI(MaybeDiscardedBrowsingContext aTargetBC,
-                nullable nsDocShellLoadState aLoadState, bool aSetNavigating);
+                nsDocShellLoadState aLoadState, bool aSetNavigating);
 
-  async InternalLoad(nullable nsDocShellLoadState aLoadState);
+  async InternalLoad(nsDocShellLoadState aLoadState);
 
   
   [LazySend] async UpdateDocumentURI(nullable nsIURI aUri);

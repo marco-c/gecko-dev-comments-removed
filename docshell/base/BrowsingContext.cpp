@@ -2077,7 +2077,7 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
     nsCOMPtr<nsPIDOMWindowOuter> win(sourceBC->GetDOMWindow());
     if (WindowGlobalChild* wgc =
             win->GetCurrentInnerWindow()->GetWindowGlobalChild()) {
-      wgc->SendLoadURI(this, aLoadState, aSetNavigating);
+      wgc->SendLoadURI(this, mozilla::WrapNotNull(aLoadState), aSetNavigating);
     }
   } else if (XRE_IsParentProcess()) {
     if (Canonical()->LoadInParent(aLoadState, aSetNavigating)) {
@@ -2100,7 +2100,7 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
       
       
       
-      cp->SendLoadURI(this, aLoadState, aSetNavigating)
+      cp->SendLoadURI(this, mozilla::WrapNotNull(aLoadState), aSetNavigating)
           ->Then(GetMainThreadSerialEventTarget(), __func__,
                  [loadIdentifier](
                      const PContentParent::LoadURIPromise::ResolveOrRejectValue&
@@ -2170,7 +2170,7 @@ nsresult BrowsingContext::InternalLoad(nsDocShellLoadState* aLoadState) {
 
     MOZ_ALWAYS_SUCCEEDS(
         SetCurrentLoadIdentifier(Some(aLoadState->GetLoadIdentifier())));
-    Unused << cp->SendInternalLoad(aLoadState);
+    Unused << cp->SendInternalLoad(mozilla::WrapNotNull(aLoadState));
   } else {
     MOZ_DIAGNOSTIC_ASSERT(sourceBC);
     MOZ_DIAGNOSTIC_ASSERT(sourceBC->Group() == Group());
@@ -2188,7 +2188,7 @@ nsresult BrowsingContext::InternalLoad(nsDocShellLoadState* aLoadState) {
 
     MOZ_ALWAYS_SUCCEEDS(
         SetCurrentLoadIdentifier(Some(aLoadState->GetLoadIdentifier())));
-    wgc->SendInternalLoad(aLoadState);
+    wgc->SendInternalLoad(mozilla::WrapNotNull(aLoadState));
   }
 
   return NS_OK;
