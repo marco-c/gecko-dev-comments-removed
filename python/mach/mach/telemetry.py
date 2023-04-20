@@ -2,29 +2,27 @@
 
 
 
-from __future__ import print_function, absolute_import
+from __future__ import absolute_import, print_function
 
 import json
 import os
 import subprocess
 import sys
-
 from pathlib import Path
-from six.moves import input, configparser
 from textwrap import dedent
 
 import requests
 import six.moves.urllib.parse as urllib_parse
+from mozbuild.base import BuildEnvironmentNotFoundException, MozbuildObject
+from mozbuild.settings import TelemetrySettings
+from mozbuild.telemetry import filter_args
+from mozversioncontrol import InvalidRepoPath, get_repository_object
+from six.moves import configparser, input
 
 from mach.config import ConfigSettings
 from mach.site import MozSiteMetadata
-from mach.telemetry_interface import NoopTelemetry, GleanTelemetry
+from mach.telemetry_interface import GleanTelemetry, NoopTelemetry
 from mach.util import get_state_dir
-from mozbuild.base import MozbuildObject, BuildEnvironmentNotFoundException
-from mozbuild.settings import TelemetrySettings
-from mozbuild.telemetry import filter_args
-
-from mozversioncontrol import get_repository_object, InvalidRepoPath
 
 MACH_METRICS_PATH = (Path(__file__) / ".." / ".." / "metrics.yaml").resolve()
 

@@ -1,19 +1,17 @@
 
 
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 import imp
 import sys
-
 from pathlib import Path
-
-from mach.base import MachError
-from mach.test.conftest import TestBase
 from unittest.mock import patch
 
 from mozunit import main
+
+from mach.base import MachError
+from mach.test.conftest import TestBase
 
 
 class Entry:

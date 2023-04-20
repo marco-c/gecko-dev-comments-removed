@@ -1,14 +1,13 @@
 
 
 
-from datetime import datetime, timedelta
 import re
+from datetime import datetime, timedelta
 
 from mozperftest.metrics.exceptions import (
-    NotebookTransformOptionsError,
     NotebookTransformError,
+    NotebookTransformOptionsError,
 )
-
 
 TIME_MATCHER = re.compile(r"(\s+[\d.:]+\s+)")
 

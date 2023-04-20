@@ -1,24 +1,24 @@
 
 
 
-import logging
 import contextlib
-from datetime import datetime, date, timedelta
-import sys
-import os
-from io import StringIO
-from collections import defaultdict
-from pathlib import Path
-import tempfile
-import shutil
-import importlib
-import subprocess
-import shlex
 import functools
+import importlib
+import logging
+import os
+import shlex
+import shutil
+import subprocess
+import sys
+import tempfile
+from collections import defaultdict
+from datetime import date, datetime, timedelta
+from io import StringIO
+from pathlib import Path
 
+import requests
 from redo import retry
 from requests.packages.urllib3.util.retry import Retry
-import requests
 
 RETRY_SLEEP = 10
 API_ROOT = "https://firefox-ci-tc.services.mozilla.com/api/index/v1"

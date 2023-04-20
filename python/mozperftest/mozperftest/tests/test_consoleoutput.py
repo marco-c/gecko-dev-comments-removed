@@ -1,9 +1,10 @@
 
-import mozunit
 from unittest import mock
 
-from mozperftest.tests.support import EXAMPLE_TEST, get_running_env, BT_DATA
+import mozunit
+
 from mozperftest.environment import METRICS
+from mozperftest.tests.support import BT_DATA, EXAMPLE_TEST, get_running_env
 from mozperftest.utils import silence, temp_dir
 
 

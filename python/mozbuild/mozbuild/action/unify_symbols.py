@@ -3,9 +3,10 @@
 
 
 import argparse
-from mozpack.files import FileFinder
+
 from mozpack.copier import FileCopier
 from mozpack.errors import errors
+from mozpack.files import FileFinder
 from mozpack.unify import UnifiedFinder
 
 

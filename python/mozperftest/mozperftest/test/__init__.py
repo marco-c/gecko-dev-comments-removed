@@ -1,11 +1,11 @@
 
 
 
-from mozperftest.test.browsertime import BrowsertimeRunner
-from mozperftest.test.androidlog import AndroidLog
-from mozperftest.test.xpcshell import XPCShell
-from mozperftest.test.webpagetest import WebPageTest
 from mozperftest.layers import Layers
+from mozperftest.test.androidlog import AndroidLog
+from mozperftest.test.browsertime import BrowsertimeRunner
+from mozperftest.test.webpagetest import WebPageTest
+from mozperftest.test.xpcshell import XPCShell
 
 
 def get_layers():

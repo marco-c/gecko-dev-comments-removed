@@ -2,18 +2,18 @@
 
 
 
+import os
+import shutil
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
-import os
-import shutil
-from compare_locales import merge
-import hglib
 from pathlib import Path
 
+import hglib
+from compare_locales import merge
 from mozpack import path as mozpath
-from . import projectconfig
-from . import source
+
+from . import projectconfig, source
 
 
 def get_default_config(topsrcdir, strings_path):

@@ -1,14 +1,14 @@
 
 
 
-from collections import defaultdict
 import datetime
 import statistics
+from collections import defaultdict
 
-from mozperftest.layers import Layer
-from mozperftest.metrics.common import filtered_metrics, COMMON_ARGS
-from mozperftest.utils import get_tc_secret, install_package
 from mozperftest import utils
+from mozperftest.layers import Layer
+from mozperftest.metrics.common import COMMON_ARGS, filtered_metrics
+from mozperftest.utils import get_tc_secret, install_package
 
 
 class Influx(Layer):

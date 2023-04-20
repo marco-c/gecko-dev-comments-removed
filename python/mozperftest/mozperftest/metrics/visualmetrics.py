@@ -1,16 +1,16 @@
 
 
 
+import errno
 import json
 import os
 import sys
-import errno
 from pathlib import Path
 
 from mozfile import which
-from mozperftest.layers import Layer
-from mozperftest.utils import silence, run_script
 
+from mozperftest.layers import Layer
+from mozperftest.utils import run_script, silence
 
 METRICS_FIELDS = (
     "SpeedIndex",

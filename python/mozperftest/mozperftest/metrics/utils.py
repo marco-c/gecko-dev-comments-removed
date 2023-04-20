@@ -2,14 +2,13 @@
 
 
 import ast
-import os
 import json
+import os
 import pathlib
 import re
 
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
-
 
 
 PARENT = pathlib.Path(__file__).parent.parent

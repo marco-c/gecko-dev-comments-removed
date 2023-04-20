@@ -13,15 +13,16 @@ import datetime
 import sys
 import time
 
-import mozbuild.util
 import mozpack.path as mozpath
-from mozpack.manifests import InstallManifest
-from mozpack.copier import FileCopier
-from mozbuild.backend import get_backend_class
 
 
 
 import pywatchman
+from mozpack.copier import FileCopier
+from mozpack.manifests import InstallManifest
+
+import mozbuild.util
+from mozbuild.backend import get_backend_class
 
 
 def print_line(prefix, m, now=None):

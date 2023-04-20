@@ -2,10 +2,9 @@
 
 
 
-from __future__ import print_function, absolute_import
+from __future__ import absolute_import, print_function
 
 import sys
-
 from pathlib import Path
 from typing import Union
 from unittest.mock import Mock
@@ -73,6 +72,7 @@ class GleanTelemetry(object):
 
     def submit(self, _):
         from pathlib import Path
+
         from glean import load_pings
 
         pings = load_pings(Path(__file__).parent.parent / "pings.yaml")

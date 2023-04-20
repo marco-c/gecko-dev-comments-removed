@@ -1,10 +1,10 @@
 
 
 
-from mozperftest.metrics.common import filtered_metrics, COMMON_ARGS
-from mozperftest.layers import Layer
 import os
 
+from mozperftest.layers import Layer
+from mozperftest.metrics.common import COMMON_ARGS, filtered_metrics
 
 RESULTS_TEMPLATE = """\
 

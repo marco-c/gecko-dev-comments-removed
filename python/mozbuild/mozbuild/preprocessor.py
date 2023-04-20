@@ -26,14 +26,15 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import errno
 import io
-from optparse import OptionParser
 import os
 import re
-import six
 import sys
+from optparse import OptionParser
+
+import six
+from mozpack.path import normsep
 
 from mozbuild.makeutil import Makefile
-from mozpack.path import normsep
 
 
 
@@ -311,7 +312,7 @@ class Preprocessor:
         self.context.update({"FILE": "", "LINE": 0, "DIRECTORY": os.path.abspath(".")})
         try:
             
-            from buildconfig import topsrcdir, topobjdir
+            from buildconfig import topobjdir, topsrcdir
         except ImportError:
             
             topsrcdir = topobjdir = None

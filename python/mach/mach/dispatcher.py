@@ -2,21 +2,15 @@
 
 
 
-from __future__ import print_function
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
 import difflib
 import shlex
 import sys
-
 from operator import itemgetter
 
-from .base import (
-    NoCommandError,
-    UnknownCommandError,
-    UnrecognizedArgumentError,
-)
+from .base import NoCommandError, UnknownCommandError, UnrecognizedArgumentError
 from .decorators import SettingsProvider
 
 

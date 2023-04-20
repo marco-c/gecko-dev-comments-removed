@@ -3,15 +3,14 @@
 
 """ Collects visualmetrics dependencies.
 """
+import contextlib
 import os
 import subprocess
 import sys
 import time
-import contextlib
 from distutils.spawn import find_executable
 
 from mozperftest.utils import host_platform
-
 
 _PILLOW_VERSION = "7.2.0"
 _PYSSIM_VERSION = "0.4"

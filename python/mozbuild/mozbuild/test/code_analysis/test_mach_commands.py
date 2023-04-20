@@ -1,15 +1,17 @@
 
 
 
-from __future__ import absolute_import, unicode_literals, print_function
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import unittest
 from unittest import mock
 
-from mozunit import main
-from mach.registrar import Registrar
-from mozbuild.base import MozbuildObject
 import mozpack.path as mozpath
+from mach.registrar import Registrar
+from mozunit import main
+
+from mozbuild.base import MozbuildObject
 
 
 class TestStaticAnalysis(unittest.TestCase):

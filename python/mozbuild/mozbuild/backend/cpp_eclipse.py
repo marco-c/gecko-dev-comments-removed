@@ -10,10 +10,11 @@ import os
 import shutil
 import subprocess
 from xml.sax.saxutils import quoteattr
-from .common import CommonBackend
+
+from mozbuild.base import ExecutionSummary
 
 from ..frontend.data import ComputedFlags
-from mozbuild.base import ExecutionSummary
+from .common import CommonBackend
 
 
 

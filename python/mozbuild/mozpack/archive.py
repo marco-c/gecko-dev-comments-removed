@@ -9,10 +9,7 @@ import gzip
 import stat
 import tarfile
 
-from .files import (
-    BaseFile,
-    File,
-)
+from .files import BaseFile, File
 
 
 DEFAULT_MTIME = 1451606400

@@ -2,9 +2,9 @@
 
 
 import os
-from pathlib import Path
 from collections import defaultdict
 from distutils.dir_util import copy_tree
+from pathlib import Path
 
 from mozperftest.layers import Layer
 from mozperftest.utils import temp_dir

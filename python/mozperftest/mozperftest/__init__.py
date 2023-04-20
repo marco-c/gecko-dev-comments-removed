@@ -7,7 +7,7 @@ from mozperftest.argparser import (
     PerftestArgumentParser,
     PerftestToolsArgumentParser,
 )
-from mozperftest.metadata import Metadata  
 from mozperftest.environment import MachEnvironment  
+from mozperftest.metadata import Metadata  
 
 logger = mozlog.commandline.setup_logging("mozperftest", {})

@@ -20,7 +20,6 @@ import tempfile
 import time
 from pathlib import Path
 
-import mozbuild.settings  
 import mozpack.path as mozpath
 from mach.decorators import (
     Command,
@@ -29,6 +28,8 @@ from mach.decorators import (
     SettingsProvider,
     SubCommand,
 )
+
+import mozbuild.settings  
 from mozbuild.base import BinaryNotFoundException, BuildEnvironmentNotFoundException
 from mozbuild.base import MachCommandConditions as conditions
 from mozbuild.base import MozbuildObject

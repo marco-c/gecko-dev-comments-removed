@@ -2,13 +2,13 @@
 
 
 
+import os
 from collections import defaultdict
 from itertools import chain
 from json import JSONEncoder
-import os
-import mozpack.path as mozpath
 
 import attr
+import mozpack.path as mozpath
 
 
 class ResultSummary(object):

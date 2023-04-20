@@ -2,12 +2,11 @@
 
 
 import importlib
+import shutil
 import tempfile
 from pathlib import Path
-import shutil
 
-from mozperftest.utils import download_file, MachLogger
-
+from mozperftest.utils import MachLogger, download_file
 
 _LOADED_MODULES = {}
 

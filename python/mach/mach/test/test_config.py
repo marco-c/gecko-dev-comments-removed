@@ -1,15 +1,15 @@
 
 
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 import sys
 import unittest
-
 from pathlib import Path
 
 from mozfile.mozfile import NamedTemporaryFile
+from mozunit import main
+from six import string_types
 
 from mach.config import (
     BooleanType,
@@ -21,9 +21,6 @@ from mach.config import (
     StringType,
 )
 from mach.decorators import SettingsProvider
-from mozunit import main
-from six import string_types
-
 
 CONFIG1 = r"""
 [foo]

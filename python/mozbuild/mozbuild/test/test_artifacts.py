@@ -2,10 +2,10 @@
 
 
 
+from unittest import TestCase
+
 import buildconfig
 import mozunit
-
-from unittest import TestCase
 
 from mozbuild.artifacts import ArtifactJob, ThunderbirdMixin
 

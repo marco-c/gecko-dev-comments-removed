@@ -2,16 +2,15 @@
 
 
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 import unittest
 from io import StringIO
+from pathlib import Path
 
 import pytest
 from mozunit import main
 from six import string_types
-from pathlib import Path
 
 from mach.base import CommandContext
 from mach.registrar import Registrar

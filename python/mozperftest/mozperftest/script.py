@@ -1,16 +1,15 @@
 
 
 
-from collections import defaultdict
+import io
 import re
 import textwrap
-from pathlib import Path
-from enum import Enum
-import io
 import traceback
+from collections import defaultdict
+from enum import Enum
+from pathlib import Path
 
 import esprima
-
 
 
 METADATA = [

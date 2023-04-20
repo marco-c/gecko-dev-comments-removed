@@ -3,8 +3,8 @@
 
 
 import re
-from compare_locales import mozpath
 
+from compare_locales import mozpath
 
 
 TARGET_PATH = b"_configs"

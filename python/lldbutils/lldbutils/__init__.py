@@ -2,8 +2,8 @@
 
 
 from __future__ import absolute_import
-import lldb
 
+import lldb
 
 __all__ = ["content", "general", "gfx", "layout", "utils"]
 

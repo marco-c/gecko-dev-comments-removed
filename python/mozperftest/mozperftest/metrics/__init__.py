@@ -2,11 +2,11 @@
 
 
 from mozperftest.layers import Layers
-from mozperftest.metrics.perfherder import Perfherder
 from mozperftest.metrics.consoleoutput import ConsoleOutput
 from mozperftest.metrics.notebookupload import Notebook
-from mozperftest.metrics.visualmetrics import VisualMetrics
 from mozperftest.metrics.perfboard.influx import Influx
+from mozperftest.metrics.perfherder import Perfherder
+from mozperftest.metrics.visualmetrics import VisualMetrics
 
 
 def get_layers():

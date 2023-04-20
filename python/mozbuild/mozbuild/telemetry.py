@@ -2,19 +2,20 @@
 
 
 
-from __future__ import division, absolute_import, print_function, unicode_literals
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 """
 This file contains functions used for telemetry.
 """
 
-import distro
-import os
 import math
+import os
 import platform
 import sys
 
+import distro
 import mozpack.path as mozpath
+
 from .base import BuildEnvironmentNotFoundException
 
 

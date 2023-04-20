@@ -1,10 +1,10 @@
 
 
 
-from grafana_api.grafana_face import GrafanaFace
 import json
 import os
 
+from grafana_api.grafana_face import GrafanaFace
 
 HERE = os.path.dirname(__file__)
 

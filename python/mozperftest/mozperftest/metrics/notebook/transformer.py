@@ -1,16 +1,17 @@
 
 
 
-import json
 import importlib.util
 import inspect
+import json
 import pathlib
 
 from jsonschema import validate
+
 from mozperftest.metrics.exceptions import (
-    NotebookInvalidTransformError,
-    NotebookInvalidPathError,
     NotebookDuplicateTransformsError,
+    NotebookInvalidPathError,
+    NotebookInvalidTransformError,
 )
 from mozperftest.runner import HERE
 from mozperftest.utils import load_class

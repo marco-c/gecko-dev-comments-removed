@@ -2,6 +2,7 @@
 
 
 from collections import defaultdict
+
 from mozperftest.utils import MachLogger
 
 

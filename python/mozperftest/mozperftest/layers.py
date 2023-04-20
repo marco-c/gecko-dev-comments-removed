@@ -2,6 +2,7 @@
 
 
 import traceback
+
 from mozperftest.utils import MachLogger
 
 

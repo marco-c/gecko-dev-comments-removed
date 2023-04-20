@@ -2,11 +2,12 @@
 
 
 
-import mozunit
 import json
+
+import mozunit
 import pytest
 
-from mozperftest.metrics.utils import open_file, metric_fields
+from mozperftest.metrics.utils import metric_fields, open_file
 from mozperftest.tests.support import temp_file
 
 

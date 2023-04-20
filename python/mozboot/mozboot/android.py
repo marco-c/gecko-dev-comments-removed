@@ -13,12 +13,12 @@ from pathlib import Path
 from typing import Optional, Union
 
 import requests
+from tqdm import tqdm
 
 
 
 
 from mozboot.bootstrap import MOZCONFIG_SUGGESTION_TEMPLATE
-from tqdm import tqdm
 
 NDK_VERSION = "r21d"
 CMDLINE_TOOLS_VERSION_STRING = "7.0"

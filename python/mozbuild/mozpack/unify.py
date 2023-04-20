@@ -2,25 +2,20 @@
 
 
 
-from collections import OrderedDict
-from mozpack.files import (
-    BaseFinder,
-    ExecutableFile,
-    BaseFile,
-    GeneratedFile,
-)
-from mozpack.executables import (
-    MACHO_SIGNATURES,
-)
-from mozpack.errors import errors
-from mozbuild.util import hexdump
-from tempfile import mkstemp
-import mozpack.path as mozpath
-import struct
 import os
 import re
+import struct
 import subprocess
+from collections import OrderedDict
+from tempfile import mkstemp
+
 import buildconfig
+import mozpack.path as mozpath
+from mozpack.errors import errors
+from mozpack.executables import MACHO_SIGNATURES
+from mozpack.files import BaseFile, BaseFinder, ExecutableFile, GeneratedFile
+
+from mozbuild.util import hexdump
 
 
 FIND_TARGET_PLATFORM = re.compile(

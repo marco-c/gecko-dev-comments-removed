@@ -3,12 +3,13 @@
 
 
 import os
-import mozunit
-from unittest import mock
 import tempfile
+from unittest import mock
 
-from mozperftest.tests.support import get_running_env
+import mozunit
+
 from mozperftest.system.profile import Profile, ProfileNotFoundError
+from mozperftest.tests.support import get_running_env
 
 
 def test_profile():

@@ -1,23 +1,25 @@
 
 
 
-from argparse import ArgumentParser, Namespace
-import os
-import mozlog
 import copy
+import os
+from argparse import ArgumentParser, Namespace
+
+import mozlog
 
 here = os.path.abspath(os.path.dirname(__file__))
 try:
-    from mozbuild.base import MozbuildObject, MachCommandConditions as conditions
+    from mozbuild.base import MachCommandConditions as conditions
+    from mozbuild.base import MozbuildObject
 
     build_obj = MozbuildObject.from_environment(cwd=here)
 except Exception:
     build_obj = None
     conditions = None
 
+from mozperftest.metrics import get_layers as metrics_layers  
 from mozperftest.system import get_layers as system_layers  
 from mozperftest.test import get_layers as test_layers  
-from mozperftest.metrics import get_layers as metrics_layers  
 from mozperftest.utils import convert_day  
 
 FLAVORS = "desktop-browser", "mobile-browser", "doc", "xpcshell", "webpagetest"

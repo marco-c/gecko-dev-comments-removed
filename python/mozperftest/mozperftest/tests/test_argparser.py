@@ -2,14 +2,15 @@
 
 
 
-import mozunit
-import pytest
 from datetime import date
 
+import mozunit
+import pytest
+
 from mozperftest.argparser import (
-    PerftestToolsArgumentParser,
-    PerftestArgumentParser,
     Options,
+    PerftestArgumentParser,
+    PerftestToolsArgumentParser,
 )
 
 

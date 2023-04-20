@@ -2,18 +2,17 @@
 
 
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 from pathlib import Path
 
 from buildconfig import topsrcdir
+from mozunit import main
+
 from mach.base import MachError
 from mach.main import Mach
 from mach.registrar import Registrar
-from mach.test.conftest import TestBase, PROVIDER_DIR
-
-from mozunit import main
+from mach.test.conftest import PROVIDER_DIR, TestBase
 
 
 def _make_populate_context(include_extra_attributes):
