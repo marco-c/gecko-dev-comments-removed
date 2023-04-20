@@ -1343,14 +1343,16 @@ class WhiteSpaceVisibilityKeeper final {
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<CaretPoint, nsresult>
   PrepareToDeleteRangeAndTrackPoints(HTMLEditor& aHTMLEditor,
                                      EditorDOMPoint* aStartPoint,
-                                     EditorDOMPoint* aEndPoint) {
+                                     EditorDOMPoint* aEndPoint,
+                                     const Element& aEditingHost) {
     MOZ_ASSERT(aStartPoint->IsSetAndValid());
     MOZ_ASSERT(aEndPoint->IsSetAndValid());
     AutoTrackDOMPoint trackerStart(aHTMLEditor.RangeUpdaterRef(), aStartPoint);
     AutoTrackDOMPoint trackerEnd(aHTMLEditor.RangeUpdaterRef(), aEndPoint);
     Result<CaretPoint, nsresult> caretPointOrError =
         WhiteSpaceVisibilityKeeper::PrepareToDeleteRange(
-            aHTMLEditor, EditorDOMRange(*aStartPoint, *aEndPoint));
+            aHTMLEditor, EditorDOMRange(*aStartPoint, *aEndPoint),
+            aEditingHost);
     NS_WARNING_ASSERTION(
         caretPointOrError.isOk(),
         "WhiteSpaceVisibilityKeeper::PrepareToDeleteRange() failed");
@@ -1359,24 +1361,26 @@ class WhiteSpaceVisibilityKeeper final {
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<CaretPoint, nsresult>
   PrepareToDeleteRange(HTMLEditor& aHTMLEditor,
                        const EditorDOMPoint& aStartPoint,
-                       const EditorDOMPoint& aEndPoint) {
+                       const EditorDOMPoint& aEndPoint,
+                       const Element& aEditingHost) {
     MOZ_ASSERT(aStartPoint.IsSetAndValid());
     MOZ_ASSERT(aEndPoint.IsSetAndValid());
     Result<CaretPoint, nsresult> caretPointOrError =
         WhiteSpaceVisibilityKeeper::PrepareToDeleteRange(
-            aHTMLEditor, EditorDOMRange(aStartPoint, aEndPoint));
+            aHTMLEditor, EditorDOMRange(aStartPoint, aEndPoint), aEditingHost);
     NS_WARNING_ASSERTION(
         caretPointOrError.isOk(),
         "WhiteSpaceVisibilityKeeper::PrepareToDeleteRange() failed");
     return caretPointOrError;
   }
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<CaretPoint, nsresult>
-  PrepareToDeleteRange(HTMLEditor& aHTMLEditor, const EditorDOMRange& aRange) {
+  PrepareToDeleteRange(HTMLEditor& aHTMLEditor, const EditorDOMRange& aRange,
+                       const Element& aEditingHost) {
     MOZ_ASSERT(aRange.IsPositionedAndValid());
     Result<CaretPoint, nsresult> caretPointOrError =
         WhiteSpaceVisibilityKeeper::
             MakeSureToKeepVisibleStateOfWhiteSpacesAroundDeletingRange(
-                aHTMLEditor, aRange);
+                aHTMLEditor, aRange, aEditingHost);
     NS_WARNING_ASSERTION(
         caretPointOrError.isOk(),
         "WhiteSpaceVisibilityKeeper::"
@@ -1546,11 +1550,11 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<CaretPoint, nsresult>
   DeleteContentNodeAndJoinTextNodesAroundIt(HTMLEditor& aHTMLEditor,
                                             nsIContent& aContentToDelete,
-                                            const EditorDOMPoint& aCaretPoint);
+                                            const EditorDOMPoint& aCaretPoint,
+                                            const Element& aEditingHost);
 
   
 
@@ -1571,7 +1575,8 @@ class WhiteSpaceVisibilityKeeper final {
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<CaretPoint, nsresult>
   MakeSureToKeepVisibleStateOfWhiteSpacesAroundDeletingRange(
-      HTMLEditor& aHTMLEditor, const EditorDOMRange& aRangeToDelete);
+      HTMLEditor& aHTMLEditor, const EditorDOMRange& aRangeToDelete,
+      const Element& aEditingHost);
 
   
 
