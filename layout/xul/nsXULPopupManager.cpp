@@ -372,9 +372,19 @@ bool nsXULPopupManager::RollupInternal(RollupKind aKind,
         
         auto r = popupFrame->GetScreenAnchorRect();
         if (r.x != -1 && r.y != -1) {
+          
+          
+          
+          
+          
+          auto untransformed = popupFrame->GetUntransformedAnchorRect();
+          if (!untransformed.IsEmpty()) {
+            return CSSIntRect::FromAppUnitsRounded(untransformed);
+          }
           return r;
         }
       }
+
       auto* anchor = Element::FromNodeOrNull(popupFrame->GetAnchor());
       if (!anchor) {
         return CSSIntRect();
