@@ -1,5 +1,4 @@
-use crate::prelude::*;
-use sha1;
+use crate::Uuid;
 
 impl Uuid {
     
@@ -18,23 +17,23 @@ impl Uuid {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn new_v5(namespace: &Uuid, name: &[u8]) -> Uuid {
-        let mut hash = sha1::Sha1::new();
-
-        hash.update(namespace.as_bytes());
-        hash.update(name);
-
-        let buffer = hash.digest().bytes();
-
-        let mut bytes = crate::Bytes::default();
-        bytes.copy_from_slice(&buffer[..16]);
-
-        let mut builder = crate::Builder::from_bytes(bytes);
-        builder
-            .set_variant(Variant::RFC4122)
-            .set_version(Version::Sha1);
-
-        builder.build()
+        crate::Builder::from_sha1_bytes(crate::sha1::hash(namespace.as_bytes(), name)).into_uuid()
     }
 }
 
@@ -42,7 +41,10 @@ impl Uuid {
 mod tests {
     use super::*;
 
-    use crate::std::string::ToString;
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::*;
+
+    use crate::{std::string::ToString, Variant, Version};
 
     static FIXTURE: &'static [(&'static Uuid, &'static str, &'static str)] = &[
         (
@@ -128,30 +130,32 @@ mod tests {
     ];
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn test_get_version() {
-        let uuid =
-            Uuid::new_v5(&Uuid::NAMESPACE_DNS, "rust-lang.org".as_bytes());
+        let uuid = Uuid::new_v5(&Uuid::NAMESPACE_DNS, "rust-lang.org".as_bytes());
 
         assert_eq!(uuid.get_version(), Some(Version::Sha1));
         assert_eq!(uuid.get_version_num(), 5);
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn test_hyphenated() {
         for &(ref ns, ref name, ref expected) in FIXTURE {
             let uuid = Uuid::new_v5(*ns, name.as_bytes());
 
-            assert_eq!(uuid.to_hyphenated().to_string(), *expected)
+            assert_eq!(uuid.hyphenated().to_string(), *expected)
         }
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn test_new() {
         for &(ref ns, ref name, ref u) in FIXTURE {
             let uuid = Uuid::new_v5(*ns, name.as_bytes());
 
-            assert_eq!(uuid.get_variant(), Some(Variant::RFC4122));
             assert_eq!(uuid.get_version(), Some(Version::Sha1));
+            assert_eq!(uuid.get_variant(), Variant::RFC4122);
             assert_eq!(Ok(uuid), u.parse());
         }
     }
