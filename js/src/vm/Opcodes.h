@@ -1529,6 +1529,7 @@
 
 
 
+
  \
     MACRO(InitElemInc, init_elem_inc, NULL, 1, 3, 2, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC) \
     

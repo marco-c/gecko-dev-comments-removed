@@ -9570,6 +9570,51 @@ bool BytecodeEmitter::emitCreateMemberInitializers(ClassEmitter& ce,
     }
   }
 
+#ifdef ENABLE_DECORATORS
+  
+  if (!emitNumberOp(numInitializers)) {
+    
+    
+    
+    return false;
+  }
+
+  for (ParseNode* propdef : obj->contents()) {
+    if (!propdef->is<ClassField>()) {
+      continue;
+    }
+    ClassField* field = &propdef->as<ClassField>();
+    if (placement == FieldPlacement::Static && !field->isStatic()) {
+      continue;
+    }
+    if (field->decorators() && !field->decorators()->empty()) {
+      DecoratorEmitter de(this);
+      if (!de.emitApplyDecoratorsToFieldDefinition(
+              &field->name(), field->decorators(), field->isStatic())) {
+        
+        
+        
+        return false;
+      }
+
+      if (!emit1(JSOp::InitElemInc)) {
+        
+        
+        
+        return false;
+      }
+    }
+  }
+
+  
+  if (!emitPopN(1)) {
+    
+    
+    
+    return false;
+  }
+#endif
+
   if (!ce.emitMemberInitializersEnd()) {
     
     
@@ -9846,31 +9891,123 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
   }
 
   size_t numInitializers = memberInitializers.numMemberInitializers;
-  if (numInitializers == 0) {
-    return true;
-  }
-
-  if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotInitializers())) {
-    
-    return false;
-  }
-
-  for (size_t index = 0; index < numInitializers; index++) {
-    if (index < numInitializers - 1) {
-      
-      
-      
-      if (!emit1(JSOp::Dup)) {
-        
-        return false;
-      }
-    }
-
-    if (!emitNumberOp(index)) {
+  if (numInitializers > 0) {
+    if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotInitializers())) {
       
       return false;
     }
 
+    for (size_t index = 0; index < numInitializers; index++) {
+      if (index < numInitializers - 1) {
+        
+        
+        
+        if (!emit1(JSOp::Dup)) {
+          
+          return false;
+        }
+      }
+
+      if (!emitNumberOp(index)) {
+        
+        return false;
+      }
+
+      if (!emit1(JSOp::GetElem)) {
+        
+        return false;
+      }
+
+      
+      if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotThis())) {
+        
+        return false;
+      }
+
+      
+      if (!emitCall(JSOp::CallIgnoresRv, 0)) {
+        
+        return false;
+      }
+
+      if (!emit1(JSOp::Pop)) {
+        
+        return false;
+      }
+    }
+#ifdef ENABLE_DECORATORS
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotInitializers())) {
+      
+      return false;
+    }
+
+    if (!emit1(JSOp::Dup)) {
+      
+      return false;
+    }
+
+    if (!emitAtomOp(JSOp::GetProp,
+                    TaggedParserAtomIndex::WellKnown::length())) {
+      
+      return false;
+    }
+
+    if (!emitNumberOp(static_cast<double>(numInitializers))) {
+      
+      return false;
+    }
+
+    WhileEmitter wh(this);
+    
+    
+    
+    if (!wh.emitCond(0, 0, 0)) {
+      
+      return false;
+    }
+
+    if (!emit1(JSOp::Dup)) {
+      
+      return false;
+    }
+
+    if (!emitDupAt(2)) {
+      
+      return false;
+    }
+
+    if (!emit1(JSOp::Lt)) {
+      
+      return false;
+    }
+
+    if (!wh.emitBody()) {
+      
+      return false;
+    }
+
+    if (!emitDupAt(2)) {
+      
+      return false;
+    }
+
+    if (!emitDupAt(1)) {
+      
+      return false;
+    }
+
+    
     if (!emit1(JSOp::GetElem)) {
       
       return false;
@@ -9882,18 +10019,34 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
       return false;
     }
 
+    if (!emit1(JSOp::Swap)) {
+      
+      return false;
+    }
+
+    DecoratorEmitter de(this);
+    if (!de.emitInitializeFieldOrAccessor()) {
+      
+      return false;
+    }
+
+    if (!emit1(JSOp::Inc)) {
+      
+      return false;
+    }
+
+    if (!wh.emitEnd()) {
+      
+      return false;
+    }
+
+    if (!emitPopN(3)) {
+      
+      return false;
+    }
     
-    if (!emitCall(JSOp::CallIgnoresRv, 0)) {
-      
-      return false;
-    }
-
-    if (!emit1(JSOp::Pop)) {
-      
-      return false;
-    }
+#endif
   }
-
   return true;
 }
 

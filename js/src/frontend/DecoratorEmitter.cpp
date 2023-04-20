@@ -7,9 +7,11 @@
 #include "frontend/BytecodeEmitter.h"
 #include "frontend/CallOrNewEmitter.h"
 #include "frontend/IfEmitter.h"
+#include "frontend/NameAnalysisTypes.h"
 #include "frontend/ObjectEmitter.h"
 #include "frontend/ParseNode.h"
 #include "frontend/ParserAtom.h"
+#include "frontend/WhileEmitter.h"
 #include "vm/ThrowMsgKind.h"
 
 using namespace js;
@@ -20,6 +22,8 @@ DecoratorEmitter::DecoratorEmitter(BytecodeEmitter* bce) : bce_(bce) {}
 bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
     DecoratorEmitter::Kind kind, ParseNode* key, ListNode* decorators,
     bool isStatic) {
+  MOZ_ASSERT(kind != Kind::Field);
+
   
   
   
@@ -49,29 +53,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
     if (!emitUpdateDecorationState()) {
       return false;
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
-    
-    
     
     
     IfEmitter ie(bce_);
@@ -110,6 +92,24 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
       
       return false;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     
     
     
@@ -122,6 +122,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
       
       return false;
     }
+    
     
     
     if (!ie.emitElse()) {
@@ -139,6 +140,353 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
     }
 
     if (!ie.emitEnd()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool DecoratorEmitter::emitApplyDecoratorsToFieldDefinition(
+    ParseNode* key, ListNode* decorators, bool isStatic) {
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!decorators->empty());
+
+  
+  
+  if (!bce_->emitUint32Operand(JSOp::NewArray, 1)) {
+    
+    return false;
+  }
+
+  if (!emitPropertyKey(key)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitUint32Operand(JSOp::InitElemArray, 0)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::One)) {
+    
+    return false;
+  }
+
+  
+  
+  
+  for (ParseNode* decorator : decorators->contents()) {
+    
+    if (!emitDecorationState()) {
+      return false;
+    }
+
+    if (!emitCallDecorator(Kind::Field, key, isStatic, decorator)) {
+      
+      return false;
+    }
+
+    
+    if (!emitUpdateDecorationState()) {
+      
+      return false;
+    }
+
+    
+    
+    IfEmitter ie(bce_);
+    if (!ie.emitIf(mozilla::Nothing())) {
+      return false;
+    }
+
+    if (!emitCheckIsUndefined()) {
+      
+      return false;
+    }
+
+    if (!ie.emitThenElse()) {
+      
+      return false;
+    }
+
+    
+    
+    if (!bce_->emitPopN(1)) {
+      
+      return false;
+    }
+
+    if (!ie.emitElseIf(mozilla::Nothing())) {
+      return false;
+    }
+
+    
+    if (!emitCheckIsCallable()) {
+      
+      return false;
+    }
+
+    if (!ie.emitThenElse()) {
+      
+      return false;
+    }
+
+    
+    
+    
+    if (!bce_->emit1(JSOp::InitElemInc)) {
+      
+      return false;
+    }
+
+    
+    
+    
+    if (!ie.emitElse()) {
+      return false;
+    }
+
+    if (!bce_->emitPopN(1)) {
+      
+      return false;
+    }
+
+    if (!bce_->emit2(JSOp::ThrowMsg,
+                     uint8_t(ThrowMsgKind::DecoratorInvalidReturnType))) {
+      return false;
+    }
+
+    if (!ie.emitEnd()) {
+      return false;
+    }
+  }
+
+  
+  return bce_->emitPopN(1);
+  
+}
+
+bool DecoratorEmitter::emitInitializeFieldOrAccessor() {
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!bce_->emit1(JSOp::Dup)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Zero)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::GetElem)) {
+    
+    return false;
+  }
+
+  
+  if (!bce_->emit1(JSOp::Dup)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitDupAt(3)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Swap)) {
+    
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  if (!bce_->emit1(JSOp::GetElem)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit2(JSOp::Pick, 2)) {
+    
+    return false;
+  }
+
+  
+  if (!bce_->emit1(JSOp::Dup)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitAtomOp(JSOp::GetProp,
+                        TaggedParserAtomIndex::WellKnown::length())) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::One)) {
+    
+    return false;
+  }
+
+  
+  WhileEmitter wh(bce_);
+  
+  
+  
+  if (!wh.emitCond(0, 0, 0)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Dup)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitDupAt(2)) {
+    
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Lt)) {
+    
+    return false;
+  }
+
+  
+  if (!wh.emitBody()) {
+    
+    return false;
+  }
+
+  if (!bce_->emitDupAt(2)) {
+    
+    
+    return false;
+  }
+
+  if (!bce_->emitDupAt(1)) {
+    
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::GetElem)) {
+    
+    return false;
+  }
+
+  
+  if (!bce_->emitGetName(TaggedParserAtomIndex::WellKnown::dotThis())) {
+    
+    
+    return false;
+  }
+
+  
+  if (!bce_->emit2(JSOp::Pick, 5)) {
+    
+    
+    return false;
+  }
+
+  
+  if (!bce_->emitCall(JSOp::Call, 1)) {
+    
+    return false;
+  }
+
+  
+  if (!bce_->emit2(JSOp::Unpick, 3)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::Inc)) {
+    
+    return false;
+  }
+
+  if (!wh.emitEnd()) {
+    
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!bce_->emitPopN(3)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::InitElem)) {
+    
+    return false;
+  }
+
+  
+  return bce_->emitPopN(1);
+  
+}
+
+bool DecoratorEmitter::emitPropertyKey(ParseNode* key) {
+  if (key->is<NameNode>()) {
+    NameNode* keyAsNameNode = &key->as<NameNode>();
+    if (keyAsNameNode->privateNameKind() == PrivateNameKind::None) {
+      if (!bce_->emitStringOp(JSOp::String, keyAsNameNode->atom())) {
+        
+        return false;
+      }
+    } else {
+      MOZ_ASSERT(keyAsNameNode->privateNameKind() == PrivateNameKind::Field);
+      if (!bce_->emitGetPrivateName(keyAsNameNode)) {
+        
+        return false;
+      }
+    }
+  } else if (key->isKind(ParseNodeKind::NumberExpr)) {
+    if (!bce_->emitNumberOp(key->as<NumericLiteral>().value())) {
+      
+      return false;
+    }
+  } else {
+    
+    
+    MOZ_ASSERT(key->isKind(ParseNodeKind::ComputedName));
+
+    if (!bce_->emitComputedPropertyName(&key->as<UnaryNode>())) {
+      
       return false;
     }
   }
@@ -232,9 +580,14 @@ bool DecoratorEmitter::emitUpdateDecorationState() {
     return false;
   }
 
-  
-  
-  if (kind == Kind::Method) {
+  if (kind == Kind::Field) {
+    
+    if (!bce_->emit1(JSOp::Undefined)) {
+      
+      return false;
+    }
+  } else if (kind == Kind::Method) {
+    
     
     
     if (!bce_->emitDupAt(2)) {
@@ -326,8 +679,6 @@ bool DecoratorEmitter::emitCreateDecoratorContextObject(Kind kind,
                                                         ParseNode* key,
                                                         bool isStatic,
                                                         TokenPos pos) {
-  MOZ_ASSERT(key->is<NameNode>());
-
   
   ObjectEmitter oe(bce_);
   if (!oe.emitObject( 6)) {
@@ -346,9 +697,15 @@ bool DecoratorEmitter::emitCreateDecoratorContextObject(Kind kind,
       
       return false;
     }
+  } else if (kind == Kind::Field) {
+    
+    if (!bce_->emitStringOp(
+            JSOp::String,
+            frontend::TaggedParserAtomIndex::WellKnown::field())) {
+      
+      return false;
+    }
   } else {
-    
-    
     
     
     
@@ -425,8 +782,14 @@ bool DecoratorEmitter::emitCreateDecoratorContextObject(Kind kind,
     if (!oe.prepareForPropValue(pos.begin, PropertyEmitter::Kind::Prototype)) {
       return false;
     }
-    if (!bce_->emitStringOp(JSOp::String, key->as<NameNode>().atom())) {
-      return false;
+    if (key->is<NameNode>()) {
+      if (!bce_->emitStringOp(JSOp::String, key->as<NameNode>().atom())) {
+        return false;
+      }
+    } else {
+      if (!emitPropertyKey(key)) {
+        return false;
+      }
     }
     if (!oe.emitInit(frontend::AccessorType::None,
                      frontend::TaggedParserAtomIndex::WellKnown::name())) {
