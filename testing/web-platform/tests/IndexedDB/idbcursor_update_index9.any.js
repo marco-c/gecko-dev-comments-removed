@@ -13,7 +13,7 @@ promise_test(async t => {
     
     
     
-    const tx = db.transaction('store', 'readwrite');
+    const tx = db.transaction('store', 'readwrite', {durability: 'relaxed'});
     const range = IDBKeyRange.upperBound(9);
     const index = tx.objectStore('store').index('index');
     const request = index.openCursor(range);
@@ -33,7 +33,7 @@ promise_test(async t => {
   }
 
   {
-    const tx = db.transaction('store', 'readonly');
+    const tx = db.transaction('store', 'readonly', {durability: 'relaxed'});
     const results = await promiseForRequest(t, tx.objectStore('store').getAll());
     assert_array_equals(
       results.map(record => record.value),
