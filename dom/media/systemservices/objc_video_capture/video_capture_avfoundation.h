@@ -9,6 +9,7 @@
 
 #import "components/capturer/RTCCameraVideoCapturer.h"
 
+#include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "modules/video_capture/video_capture_impl.h"
 #include "mozilla/Maybe.h"
@@ -40,25 +41,24 @@ class VideoCaptureAvFoundation : public VideoCaptureImpl {
   int32_t CaptureSettings(VideoCaptureCapability& aSettings) override;
 
   
-  int32_t OnFrame(webrtc::VideoFrame& aFrame) MOZ_EXCLUDES(api_lock_);
+  int32_t OnFrame(__strong RTCVideoFrame* _Nonnull aFrame) MOZ_EXCLUDES(api_lock_);
 
   void SetTrackingId(uint32_t aTrackingIdProcId) MOZ_EXCLUDES(api_lock_) override;
-
-  
-  
-  void StartFrameRecording(int32_t aWidth, int32_t aHeight) MOZ_EXCLUDES(api_lock_);
 
   
   void MaybeRegisterCallbackThread();
 
  private:
+  
   SequenceChecker mChecker;
-  AVCaptureDevice* _Nonnull mDevice RTC_GUARDED_BY(mChecker);
-  VideoCaptureAdapter* _Nonnull mAdapter RTC_GUARDED_BY(mChecker);
-  RTC_OBJC_TYPE(RTCCameraVideoCapturer) * _Nullable mCapturer RTC_GUARDED_BY(mChecker);
+  AVCaptureDevice* _Nonnull const mDevice RTC_GUARDED_BY(mChecker);
+  VideoCaptureAdapter* _Nonnull const mAdapter RTC_GUARDED_BY(mChecker);
+  RTCCameraVideoCapturer* _Nonnull const mCapturer RTC_GUARDED_BY(mChecker);
   
   
   mozilla::Maybe<VideoCaptureCapability> mCapability MOZ_GUARDED_BY(api_lock_);
+  
+  mozilla::Maybe<mozilla::CaptureStage::ImageType> mImageType MOZ_GUARDED_BY(api_lock_);
   
   mozilla::Maybe<mozilla::TrackingId> mTrackingId MOZ_GUARDED_BY(api_lock_);
   
@@ -69,8 +69,11 @@ class VideoCaptureAvFoundation : public VideoCaptureImpl {
 
 }  
 
-@interface VideoCaptureAdapter : NSObject <RTC_OBJC_TYPE (RTCVideoCapturerDelegate)>
-@property(nonatomic) webrtc::videocapturemodule::VideoCaptureAvFoundation* _Nullable capturer;
+@interface VideoCaptureAdapter : NSObject <RTCVideoCapturerDelegate> {
+  webrtc::Mutex _mutex;
+  webrtc::videocapturemodule::VideoCaptureAvFoundation* _Nullable _capturer RTC_GUARDED_BY(_mutex);
+}
+- (void)setCapturer:(webrtc::videocapturemodule::VideoCaptureAvFoundation* _Nullable)capturer;
 @end
 
 #endif
