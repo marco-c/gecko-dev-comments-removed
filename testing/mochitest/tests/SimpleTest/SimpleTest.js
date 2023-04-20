@@ -26,6 +26,16 @@ let isSameOrigin = function(w) {
 };
 let isXOrigin = !isSameOrigin(window);
 
+function isErrorObj(err) {
+  
+  
+  if (!err) {
+    return false;
+  }
+  let glob = SpecialPowers.Cu.getGlobalForObject(err);
+  return err instanceof glob.Error;
+}
+
 
 
 
@@ -2129,7 +2139,7 @@ var add_task = (function() {
           } catch (ex) {
             try {
               let serializedEx;
-              if (ex instanceof Error) {
+              if (isErrorObj(ex)) {
                 serializedEx = `${ex}`;
               } else {
                 serializedEx = JSON.stringify(ex);

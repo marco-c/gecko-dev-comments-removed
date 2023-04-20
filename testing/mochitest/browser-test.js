@@ -1352,6 +1352,16 @@ Tester.prototype = {
   QueryInterface: ChromeUtils.generateQI(["nsIConsoleListener"]),
 };
 
+function isError(err) {
+  
+  
+  if (!err) {
+    return false;
+  }
+  let glob = Cu.getGlobalForObject(err);
+  return err instanceof glob.Error;
+}
+
 
 
 
@@ -1405,7 +1415,7 @@ function testResult({ name, pass, todo, ex, stack, allowFailure }) {
       this.msg += "at " + ex.fileName + ":" + ex.lineNumber + " - ";
     }
 
-    if (ex instanceof Error) {
+    if (isError(ex)) {
       this.msg += String(ex);
     } else {
       try {
