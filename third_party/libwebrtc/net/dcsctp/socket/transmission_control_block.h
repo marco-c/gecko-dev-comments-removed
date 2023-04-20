@@ -118,7 +118,17 @@ class TransmissionControlBlock : public Context {
                               &reassembly_queue_,
                               &retransmission_queue_,
                               handover_state),
-        heartbeat_handler_(log_prefix, options, this, &timer_manager_) {}
+        heartbeat_handler_(log_prefix, options, this, &timer_manager_) {
+    
+    
+    
+    
+    
+    
+    if (handover_state == nullptr) {
+      send_queue.Reset();
+    }
+  }
 
   
   bool is_connection_established() const override {
