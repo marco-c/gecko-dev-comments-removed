@@ -833,7 +833,8 @@ bool ReadableStream::Transfer(JSContext* aCx, UniqueMessagePortId& aPortId) {
   }
 
   
-  RefPtr<WritableStream> writable = new WritableStream(mGlobal);
+  RefPtr<WritableStream> writable = new WritableStream(
+      mGlobal, WritableStream::HoldDropJSObjectsCaller::Implicit);
 
   
   
@@ -957,7 +958,8 @@ WritableStreamTransferReceivingStepsImpl(JSContext* aCx,
   
 
   
-  auto writable = MakeRefPtr<WritableStream>(aGlobal);
+  auto writable = MakeRefPtr<WritableStream>(
+      aGlobal, WritableStream::HoldDropJSObjectsCaller::Implicit);
   ErrorResult rv;
   SetUpCrossRealmTransformWritable(writable, &aPort, rv);
   if (rv.MaybeSetPendingException(aCx)) {
