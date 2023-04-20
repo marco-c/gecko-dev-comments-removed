@@ -52,13 +52,23 @@ var MigrationWizard = {
     this._wiz = document.querySelector("wizard");
 
     let args = window.arguments[0]?.wrappedJSObject || {};
-    let entryPointId =
+    let entrypoint =
       args.entrypoint || MigrationUtils.MIGRATION_ENTRYPOINTS.UNKNOWN;
+    Services.telemetry
+      .getHistogramById("FX_MIGRATION_ENTRY_POINT_CATEGORICAL")
+      .add(entrypoint);
+
+    
+    
+    
+    
+    let entryPointId = MigrationUtils.getLegacyMigrationEntrypoint(entrypoint);
     Services.telemetry
       .getHistogramById("FX_MIGRATION_ENTRY_POINT")
       .add(entryPointId);
+
     this.isInitialMigration =
-      entryPointId == MigrationUtils.MIGRATION_ENTRYPOINTS.FIRSTRUN;
+      entrypoint == MigrationUtils.MIGRATION_ENTRYPOINTS.FIRSTRUN;
 
     
     if (Services.env.get("MOZ_UNINSTALLER_PROFILE_REFRESH")) {
