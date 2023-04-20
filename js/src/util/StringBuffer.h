@@ -366,6 +366,20 @@ class StringBuffer {
   char16_t* stealChars();
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class JSStringBuilder : public StringBuffer {
   OffThreadErrorContext ec_;
 #ifdef DEBUG
@@ -394,6 +408,8 @@ class JSStringBuilder : public StringBuffer {
   }
 
   
+
+
 
 
 
