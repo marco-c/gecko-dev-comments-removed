@@ -52,6 +52,14 @@ interface nsIThread : nsISerialEventTarget
 
   [noscript] attribute boolean CanInvokeJS;
 
+  
+
+
+
+  cenum QoSPriority : 32 {
+    QOS_PRIORITY_NORMAL,
+    QOS_PRIORITY_LOW
+  };
 
   
 
@@ -200,4 +208,15 @@ interface nsIThread : nsISerialEventTarget
   [noscript] void setRunningEventDelay(in TimeDuration delay, in TimeStamp start);
 
   [noscript] void setNameForWakeupTelemetry(in ACString name);
+
+  
+
+
+
+
+
+
+
+  [noscript] void setThreadQoS(in nsIThread_QoSPriority aPriority);
+
 };

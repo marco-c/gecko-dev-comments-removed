@@ -635,4 +635,10 @@ LazyIdleThread::Observe(nsISupports* , const char* aTopic,
   return NS_OK;
 }
 
+NS_IMETHODIMP
+LazyIdleThread::SetThreadQoS(nsIThread::QoSPriority aPriority) {
+  
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
 }  

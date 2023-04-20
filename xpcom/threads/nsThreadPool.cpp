@@ -59,6 +59,7 @@ nsThreadPool::nsThreadPool()
       mIdleThreadLimit(DEFAULT_IDLE_THREAD_LIMIT),
       mIdleThreadTimeout(DEFAULT_IDLE_THREAD_TIMEOUT),
       mIdleCount(0),
+      mQoSPriority(nsIThread::QOS_PRIORITY_NORMAL),
       mStackSize(nsIThreadManager::DEFAULT_STACK_SIZE),
       mShutdown(false),
       mRegressiveMaxIdleTime(false),
@@ -175,6 +176,18 @@ void nsThreadPool::ShutdownThread(nsIThread* aThread) {
                         &nsIThread::AsyncShutdown));
 }
 
+NS_IMETHODIMP
+nsThreadPool::SetQoSForThreads(nsIThread::QoSPriority aPriority) {
+  MutexAutoLock lock(mMutex);
+  mQoSPriority = aPriority;
+
+  
+  
+  
+
+  return NS_OK;
+}
+
 
 
 
@@ -213,6 +226,7 @@ nsThreadPool::Run() {
   bool exitThread = false;
   bool wasIdle = false;
   TimeStamp idleSince;
+  nsIThread::QoSPriority threadPriority = nsIThread::QOS_PRIORITY_NORMAL;
 
   
   static_cast<nsThread*>(current.get())
@@ -223,6 +237,13 @@ nsThreadPool::Run() {
     MutexAutoLock lock(mMutex);
     listener = mListener;
     LOG(("THRD-P(%p) enter %s\n", this, mName.BeginReading()));
+
+    
+    
+    if (threadPriority != mQoSPriority) {
+      current->SetThreadQoS(threadPriority);
+      threadPriority = mQoSPriority;
+    }
   }
 
   if (listener) {
@@ -237,6 +258,12 @@ nsThreadPool::Run() {
     TimeDuration delay;
     {
       MutexAutoLock lock(mMutex);
+
+      
+      if (threadPriority != mQoSPriority) {
+        current->SetThreadQoS(threadPriority);
+        threadPriority = mQoSPriority;
+      }
 
       event = mEvents.GetEvent(lock, &delay);
       if (!event) {

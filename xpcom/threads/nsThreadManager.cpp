@@ -93,6 +93,12 @@ nsresult BackgroundEventTarget::Init() {
   nsCOMPtr<nsIThreadPool> ioPool(new nsThreadPool());
   NS_ENSURE_TRUE(pool, NS_ERROR_FAILURE);
 
+  
+  
+  rv = ioPool->SetQoSForThreads(nsIThread::QOS_PRIORITY_LOW);
+  NS_ENSURE_SUCCESS(
+      rv, rv);  
+
   rv = ioPool->SetName("BgIOThreadPool"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
 
