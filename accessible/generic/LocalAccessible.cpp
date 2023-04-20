@@ -3454,8 +3454,20 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
         if (nsTextFrame* currTextFrame = do_QueryFrame(frame)) {
           nsTArray<int32_t> charData(nsAccUtils::TextLength(this) *
                                      kNumbersInRect);
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          nsRect accOffset =
+              nsLayoutUtils::GetAllInFlowRectsUnion(frame, frame);
           while (currTextFrame) {
             nsPoint contOffset = currTextFrame->GetOffsetTo(frame);
+            contOffset -= accOffset.TopLeft();
             int32_t length = currTextFrame->GetContentLength();
             nsTArray<nsRect> charBounds(length);
             currTextFrame->GetCharacterRectsInRange(
