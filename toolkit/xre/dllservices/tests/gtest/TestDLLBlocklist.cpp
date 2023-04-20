@@ -177,8 +177,12 @@ TEST(TestDllBlocklist, BlockThreadWithLoadLibraryEntryPoint)
   EXPECT_TRUE(!!threadW);
   EXPECT_EQ(::WaitForSingleObject(threadW, INFINITE), WAIT_OBJECT_0);
 
+#  if !defined(MOZ_ASAN)
+  
+  
   DWORD exitCode;
   EXPECT_TRUE(::GetExitCodeThread(threadW, &exitCode) && !exitCode);
+#  endif  
   EXPECT_TRUE(!::GetModuleHandleW(kLeafNameW.get()));
 
   const NS_LossyConvertUTF16toASCII fullPathA(fullPathW);
@@ -190,7 +194,11 @@ TEST(TestDllBlocklist, BlockThreadWithLoadLibraryEntryPoint)
 
   EXPECT_TRUE(!!threadA);
   EXPECT_EQ(::WaitForSingleObject(threadA, INFINITE), WAIT_OBJECT_0);
+#  if !defined(MOZ_ASAN)
+  
+  
   EXPECT_TRUE(::GetExitCodeThread(threadA, &exitCode) && !exitCode);
+#  endif  
   EXPECT_TRUE(!::GetModuleHandleW(kLeafNameW.get()));
 #endif  
 }

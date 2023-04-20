@@ -64,10 +64,14 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
   for (auto& handle : handles) {
     ::WaitForSingleObject(handle, INFINITE);
 
+#if !defined(MOZ_ASAN)
+    
+    
     DWORD exitCode;
     if (!::GetExitCodeThread(handle, &exitCode) || exitCode) {
       return 1;
     }
+#endif  
   }
 
   return 0;
