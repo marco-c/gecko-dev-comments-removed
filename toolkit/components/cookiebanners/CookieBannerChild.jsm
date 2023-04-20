@@ -134,6 +134,26 @@ class CookieBannerChild extends JSWindowActorChild {
 
 
 
+
+  #dispatchEventsForBannerHandledByInjection() {
+    if (
+      !this.docShell?.currentDocumentChannel?.loadInfo
+        ?.hasInjectedCookieForCookieBannerHandling
+    ) {
+      return false;
+    }
+    
+    
+    
+    this.sendAsyncMessage("CookieBanner::DetectedBanner");
+    this.sendAsyncMessage("CookieBanner::HandledBanner");
+    return true;
+  }
+
+  
+
+
+
   async #onDOMContentLoaded() {
     lazy.logConsole.debug("onDOMContentLoaded", { didLoad: this.#didLoad });
     this.#didLoad = false;
@@ -168,6 +188,10 @@ class CookieBannerChild extends JSWindowActorChild {
     lazy.logConsole.debug("Got rules:", rules);
     
     if (!rules.length) {
+      
+      
+      this.#dispatchEventsForBannerHandledByInjection();
+
       this.#maybeSendTestMessage();
       return;
     }
@@ -186,13 +210,20 @@ class CookieBannerChild extends JSWindowActorChild {
       matchedRule,
     } = await this.handleCookieBanner();
 
+    let dispatchedEventsForCookieInjection = this.#dispatchEventsForBannerHandledByInjection();
+
+    
     if (bannerDetected) {
       lazy.logConsole.info("Detected cookie banner.", {
         url: this.document?.location.href,
       });
-      this.sendAsyncMessage("CookieBanner::DetectedBanner");
+      
+      if (!dispatchedEventsForCookieInjection) {
+        this.sendAsyncMessage("CookieBanner::DetectedBanner");
+      }
     }
 
+    
     if (bannerHandled) {
       lazy.logConsole.info("Handled cookie banner.", {
         url: this.document?.location.href,
@@ -208,7 +239,10 @@ class CookieBannerChild extends JSWindowActorChild {
         this.#gleanBannerHandlingTimer
       );
 
-      this.sendAsyncMessage("CookieBanner::HandledBanner");
+      
+      if (!dispatchedEventsForCookieInjection) {
+        this.sendAsyncMessage("CookieBanner::HandledBanner");
+      }
     } else if (!this.#isDetectOnly) {
       
       Glean.cookieBannersClick.handleDuration.cancel(
