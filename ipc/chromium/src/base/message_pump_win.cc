@@ -154,8 +154,7 @@ void MessagePumpForUI::PumpOutPendingPaintMessages() {
     MSG msg;
     if (!PeekMessage(&msg, NULL, 0, 0, PM_REMOVE | PM_QS_PAINT)) break;
     ProcessMessageHelper(msg);
-    if (state_->should_quit)  
-      break;
+    if (state_->should_quit) break;
   }
 }
 
@@ -308,9 +307,8 @@ bool MessagePumpForUI::ProcessMessageHelper(const MSG& msg) {
   if (WM_QUIT == msg.message) {
     
     
-    state_->should_quit = true;
-    PostQuitMessage(static_cast<int>(msg.wParam));
-    return false;
+    
+    return true;
   }
 
   
