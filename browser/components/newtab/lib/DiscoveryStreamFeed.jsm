@@ -703,9 +703,6 @@ class DiscoveryStreamFeed {
         spocPositions: this.parseGridPositions(
           pocketConfig.spocPositions?.split(`,`)
         ),
-        spocTopsitesPositions: this.parseGridPositions(
-          pocketConfig.spocTopsitesPositions?.split(`,`)
-        ),
         widgetPositions: this.parseGridPositions(
           pocketConfig.widgetPositions?.split(`,`)
         ),
@@ -2159,12 +2156,10 @@ class DiscoveryStreamFeed {
 
 
 
-
 getHardcodedLayout = ({
   spocsUrl = SPOCS_URL,
   items = 21,
   spocPositions = [1, 5, 7, 11, 18, 20],
-  spocTopsitesPositions = [1],
   spocPlacementData = { ad_types: [3617], zone_ids: [217758, 217995] },
   spocTopsitesPlacementData,
   widgetPositions = [],
@@ -2203,9 +2198,11 @@ getHardcodedLayout = ({
                 spocs: {
                   probability: 1,
                   prefs: [PREF_SHOW_SPONSORED_TOPSITES],
-                  positions: spocTopsitesPositions.map(position => {
-                    return { index: position };
-                  }),
+                  positions: [
+                    {
+                      index: 1,
+                    },
+                  ],
                 },
               }
             : {}),
