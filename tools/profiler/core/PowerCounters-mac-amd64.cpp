@@ -163,6 +163,8 @@ class RaplDomain final : public BaseProfilerCount {
   explicit RaplDomain(const char* aLabel, const char* aDescription)
       : BaseProfilerCount(aLabel, nullptr, nullptr, "power", aDescription),
         mSample(0),
+        mEnergyStatusUnits(0),
+        mWrapAroundCount(0),
         mIsSampleNew(false) {}
 
   CountSample Sample() override {
@@ -172,7 +174,11 @@ class RaplDomain final : public BaseProfilerCount {
     
     constexpr double NANOJOULES_PER_JOULE = 1'000'000'000;
     constexpr double NANOJOULES_TO_PICOWATTHOUR = 3.6;
-    result.count = mSample * NANOJOULES_PER_JOULE / NANOJOULES_TO_PICOWATTHOUR;
+
+    uint64_t ticks = (uint64_t(mWrapAroundCount) << 32) + mSample;
+    double joulesPerTick = (double)1 / (1 << mEnergyStatusUnits);
+    result.count = static_cast<double>(ticks) * joulesPerTick *
+                   NANOJOULES_PER_JOULE / NANOJOULES_TO_PICOWATTHOUR;
 
     result.number = 0;
     result.isSampleNew = mIsSampleNew;
@@ -180,15 +186,36 @@ class RaplDomain final : public BaseProfilerCount {
     return result;
   }
 
-  void AddSample(double aSample) {
+  void AddSample(uint32_t aSample, uint32_t aEnergyStatusUnits) {
+    if (aSample == mSample) {
+      return;
+    }
+
+    mEnergyStatusUnits = aEnergyStatusUnits;
+
     if (aSample > mSample) {
       mIsSampleNew = true;
       mSample = aSample;
+      return;
+    }
+
+    
+    
+    
+    constexpr uint32_t highestBit = 1 << 31;
+    if ((mSample & highestBit) && !(aSample & highestBit)) {
+      mIsSampleNew = true;
+      ++mWrapAroundCount;
+      mSample = aSample;
+    } else {
+      NS_WARNING("unexpected sample with smaller value");
     }
   }
 
  private:
-  double mSample;
+  uint32_t mSample;
+  uint32_t mEnergyStatusUnits;
+  uint32_t mWrapAroundCount;
   bool mIsSampleNew;
 };
 
@@ -204,7 +231,7 @@ class RAPL {
   bool mHasRamUnitsQuirk;
 
   
-  static constexpr double kQuirkyRamJoulesPerTick = (double)1 / 65536;
+  static constexpr double kQuirkyRamEnergyStatusUnits = 16;
 
   
   pkg_energy_statistics_t* mPkes;
@@ -331,10 +358,6 @@ class RAPL {
     delete mRam;
   }
 
-  static double Joules(uint64_t aTicks, double aJoulesPerTick) {
-    return double(aTicks) * aJoulesPerTick;
-  }
-
   void Sample() {
     constexpr uint64_t kSupportedVersion = 1;
 
@@ -365,17 +388,15 @@ class RAPL {
     
     
     uint32_t energyStatusUnits = (mPkes->pkg_power_unit >> 8) & 0x1f;
-    double joulesPerTick = ((double)1 / (1 << energyStatusUnits));
-
-    mPkg->AddSample(Joules(mPkes->pkg_energy, joulesPerTick));
-    mCores->AddSample(Joules(mPkes->pp0_energy, joulesPerTick));
+    mPkg->AddSample(mPkes->pkg_energy, energyStatusUnits);
+    mCores->AddSample(mPkes->pp0_energy, energyStatusUnits);
     if (mIsGpuSupported) {
-      mGpu->AddSample(Joules(mPkes->pp1_energy, joulesPerTick));
+      mGpu->AddSample(mPkes->pp1_energy, energyStatusUnits);
     }
     if (mIsRamSupported) {
-      mRam->AddSample(Joules(mPkes->ddr_energy, mHasRamUnitsQuirk
-                                                    ? kQuirkyRamJoulesPerTick
-                                                    : joulesPerTick));
+      mRam->AddSample(mPkes->ddr_energy, mHasRamUnitsQuirk
+                                             ? kQuirkyRamEnergyStatusUnits
+                                             : energyStatusUnits);
     }
   }
 };
