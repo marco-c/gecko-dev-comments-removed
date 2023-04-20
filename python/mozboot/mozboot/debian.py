@@ -19,7 +19,6 @@ class DebianBootstrapper(LinuxBootstrapper, BaseBootstrapper):
         "libpython3-dev",
         "m4",
         "unzip",
-        "uuid",
     ]
 
     
