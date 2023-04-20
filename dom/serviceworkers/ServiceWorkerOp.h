@@ -183,6 +183,8 @@ class FetchEventOp final : public ExtendableEventOp,
   
   MozPromiseRequestHolder<FetchEventPreloadResponseAvailablePromise>
       mPreloadResponseAvailablePromiseRequestHolder;
+  MozPromiseRequestHolder<FetchEventPreloadResponseTimingPromise>
+      mPreloadResponseTimingPromiseRequestHolder;
   MozPromiseRequestHolder<FetchEventPreloadResponseEndPromise>
       mPreloadResponseEndPromiseRequestHolder;
 
