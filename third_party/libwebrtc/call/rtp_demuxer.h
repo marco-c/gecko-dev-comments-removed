@@ -145,7 +145,7 @@ class RtpDemuxer {
 
   
   
-  void AddSink(const std::string& rsid, RtpPacketSinkInterface* sink);
+  void AddSink(absl::string_view rsid, RtpPacketSinkInterface* sink);
 
   
   
@@ -167,12 +167,12 @@ class RtpDemuxer {
   RtpPacketSinkInterface* ResolveSink(const RtpPacketReceived& packet);
 
   
-  RtpPacketSinkInterface* ResolveSinkByMid(const std::string& mid,
+  RtpPacketSinkInterface* ResolveSinkByMid(absl::string_view mid,
                                            uint32_t ssrc);
-  RtpPacketSinkInterface* ResolveSinkByMidRsid(const std::string& mid,
-                                               const std::string& rsid,
+  RtpPacketSinkInterface* ResolveSinkByMidRsid(absl::string_view mid,
+                                               absl::string_view rsid,
                                                uint32_t ssrc);
-  RtpPacketSinkInterface* ResolveSinkByRsid(const std::string& rsid,
+  RtpPacketSinkInterface* ResolveSinkByRsid(absl::string_view rsid,
                                             uint32_t ssrc);
   RtpPacketSinkInterface* ResolveSinkByPayloadType(uint8_t payload_type,
                                                    uint32_t ssrc);
