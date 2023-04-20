@@ -1267,9 +1267,8 @@ static already_AddRefed<gl::GLContext> CreateGLContextANGLE(
   
   
 
-  const auto dummySize = mozilla::gfx::IntSize(16, 16);
-  auto gl = gl::GLContextEGL::CreateEGLPBufferOffscreenContext(
-      egl, {flags}, dummySize, &failureId);
+  auto gl = gl::GLContextEGL::CreateEGLPBufferOffscreenContext(egl, {flags},
+                                                               &failureId);
   if (!gl || !gl->IsANGLE()) {
     aError.Assign(nsPrintfCString("RcANGLE(create GL context failed: %p, %s)",
                                   gl.get(), failureId.get()));
