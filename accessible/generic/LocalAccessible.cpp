@@ -658,7 +658,7 @@ nsRect LocalAccessible::ParentRelativeBounds() {
       
       
       result = frame->InkOverflowRectRelativeToSelf();
-      nsLayoutUtils::TransformRect(frame, boundingFrame, result);
+      result.MoveBy(frame->GetOffsetTo(boundingFrame));
     }
 
     if (boundingFrame->GetRect().IsEmpty()) {
@@ -666,9 +666,23 @@ nsRect LocalAccessible::ParentRelativeBounds() {
       
       
       
-      nsRect boundingOverflow = boundingFrame->InkOverflowRectRelativeToSelf();
-      if (boundingOverflow.x < 0 || boundingOverflow.y < 0) {
-        result.MoveBy(-boundingOverflow.x, -boundingOverflow.y);
+      
+      
+      
+      
+      nsRect boundingUnion =
+          nsLayoutUtils::GetAllInFlowRectsUnion(boundingFrame, boundingFrame);
+      if (!boundingUnion.IsEmpty()) {
+        result.MoveBy(-boundingUnion.TopLeft());
+      } else {
+        
+        
+        
+        
+        
+        nsRect boundingOverflow =
+            boundingFrame->InkOverflowRectRelativeToSelf();
+        result.MoveBy(-boundingOverflow.TopLeft());
       }
     }
 
