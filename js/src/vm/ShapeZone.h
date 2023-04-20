@@ -161,6 +161,31 @@ using PropMapShapeSet =
     JS::WeakCache<JS::GCHashSet<WeakHeapPtr<SharedShape*>, PropMapShapeHasher,
                                 SystemAllocPolicy>>;
 
+
+
+struct ProxyShapeHasher : public ShapeBaseHasher {
+  static bool match(const WeakHeapPtr<ProxyShape*>& key, const Lookup& lookup) {
+    const ProxyShape* shape = key.unbarrieredGet();
+    return ShapeBaseHasher::match(shape, lookup);
+  }
+};
+using ProxyShapeSet =
+    JS::WeakCache<JS::GCHashSet<WeakHeapPtr<ProxyShape*>, ProxyShapeHasher,
+                                SystemAllocPolicy>>;
+
+
+
+struct WasmGCShapeHasher : public ShapeBaseHasher {
+  static bool match(const WeakHeapPtr<WasmGCShape*>& key,
+                    const Lookup& lookup) {
+    const WasmGCShape* shape = key.unbarrieredGet();
+    return ShapeBaseHasher::match(shape, lookup);
+  }
+};
+using WasmGCShapeSet =
+    JS::WeakCache<JS::GCHashSet<WeakHeapPtr<WasmGCShape*>, WasmGCShapeHasher,
+                                SystemAllocPolicy>>;
+
 struct ShapeZone {
   
   BaseShapeSet baseShapes;
@@ -174,6 +199,12 @@ struct ShapeZone {
 
   
   PropMapShapeSet propMapShapes;
+
+  
+  ProxyShapeSet proxyShapes;
+
+  
+  WasmGCShapeSet wasmGCShapes;
 
   using ShapeWithCacheVector = js::Vector<js::Shape*, 0, js::SystemAllocPolicy>;
   ShapeWithCacheVector shapesWithCache;

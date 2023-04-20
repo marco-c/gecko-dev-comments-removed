@@ -274,6 +274,16 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
   
   BaseShape* base() const { return headerPtr(); }
 
+  enum class Kind : uint8_t {
+    
+    Shared,
+    Dictionary,
+    
+    Proxy,
+    
+    WasmGC,
+  };
+
  protected:
   
   
@@ -285,12 +295,13 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
     MAP_LENGTH_MASK = BitMask(4),
 
     
-    IS_DICTIONARY = 1 << 4,
+    KIND_SHIFT = 4,
+    KIND_MASK = 0b11,
 
     
     
     FIXED_SLOTS_MAX = 0x1f,
-    FIXED_SLOTS_SHIFT = 5,
+    FIXED_SLOTS_SHIFT = 6,
     FIXED_SLOTS_MASK = uint32_t(FIXED_SLOTS_MAX << FIXED_SLOTS_SHIFT),
 
     
@@ -301,7 +312,7 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
     
     
     SMALL_SLOTSPAN_MAX = 0x3ff,  
-    SMALL_SLOTSPAN_SHIFT = 10,
+    SMALL_SLOTSPAN_SHIFT = 11,
     SMALL_SLOTSPAN_MASK = uint32_t(SMALL_SLOTSPAN_MAX << SMALL_SLOTSPAN_SHIFT),
   };
 
@@ -366,22 +377,28 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
   }
 
  protected:
-  Shape(BaseShape* base, ObjectFlags objectFlags, uint32_t nfixed, PropMap* map,
-        uint32_t mapLength, bool isDictionary)
+  Shape(Kind kind, BaseShape* base, ObjectFlags objectFlags, uint32_t nfixed,
+        PropMap* map, uint32_t mapLength)
       : CellWithTenuredGCPointer(base),
-        immutableFlags((isDictionary ? IS_DICTIONARY : 0) |
-                       (nfixed << FIXED_SLOTS_SHIFT) | mapLength),
+        immutableFlags((nfixed << FIXED_SLOTS_SHIFT) |
+                       (uint32_t(kind) << KIND_SHIFT) | mapLength),
         objectFlags_(objectFlags),
         propMap_(map) {
     MOZ_ASSERT(base);
     MOZ_ASSERT(mapLength <= PropMap::Capacity);
+    MOZ_ASSERT(this->kind() == kind, "kind must fit in KIND_MASK");
   }
 
   Shape(const Shape& other) = delete;
 
  public:
-  bool isShared() const { return !isDictionary(); }
-  bool isDictionary() const { return immutableFlags & IS_DICTIONARY; }
+  Kind kind() const { return Kind((immutableFlags >> KIND_SHIFT) & KIND_MASK); }
+
+  bool isNative() const { return isShared() || isDictionary(); }
+  bool isShared() const { return kind() == Kind::Shared; }
+  bool isDictionary() const { return kind() == Kind::Dictionary; }
+  bool isProxy() const { return kind() == Kind::Proxy; }
+  bool isWasmGC() const { return kind() == Kind::WasmGC; }
 
   inline SharedShape& asShared();
   inline DictionaryShape& asDictionary();
@@ -437,15 +454,14 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
   }
 };
 
-class SharedShape : public js::Shape {
+
+class SharedShape : public Shape {
   friend class js::gc::CellAllocator;
   SharedShape(BaseShape* base, ObjectFlags objectFlags, uint32_t nfixed,
               PropMap* map, uint32_t mapLength)
-      : Shape(base, objectFlags, nfixed, map, mapLength,
-               false) {
-    if (base->clasp()->isNativeObject()) {
-      initSmallSlotSpan();
-    }
+      : Shape(Kind::Shared, base, objectFlags, nfixed, map, mapLength) {
+    MOZ_ASSERT(base->clasp()->isNativeObject());
+    initSmallSlotSpan();
   }
 
   static SharedShape* new_(JSContext* cx, Handle<BaseShape*> base,
@@ -548,16 +564,17 @@ class SharedShape : public js::Shape {
                                               Handle<ObjectSubclass*> obj);
 };
 
-class DictionaryShape : public js::Shape {
+
+class DictionaryShape : public Shape {
   friend class ::JSObject;
   friend class js::gc::CellAllocator;
   friend class NativeObject;
 
   DictionaryShape(BaseShape* base, ObjectFlags objectFlags, uint32_t nfixed,
                   PropMap* map, uint32_t mapLength)
-      : Shape(base, objectFlags, nfixed, map, mapLength,
-               true) {
+      : Shape(Kind::Dictionary, base, objectFlags, nfixed, map, mapLength) {
     MOZ_ASSERT(map);
+    MOZ_ASSERT(base->clasp()->isNativeObject());
   }
 
   
@@ -597,6 +614,41 @@ class DictionaryShape : public js::Shape {
     MOZ_ASSERT(propMap_);
     return propMap_->asDictionary();
   }
+};
+
+
+class ProxyShape : public Shape {
+  friend class js::gc::CellAllocator;
+  ProxyShape(BaseShape* base, ObjectFlags objectFlags)
+      : Shape(Kind::Proxy, base, objectFlags, 0, nullptr, 0) {
+    MOZ_ASSERT(base->clasp()->isProxyObject());
+  }
+
+  static ProxyShape* new_(JSContext* cx, Handle<BaseShape*> base,
+                          ObjectFlags objectFlags);
+
+ public:
+  static ProxyShape* getShape(JSContext* cx, const JSClass* clasp,
+                              JS::Realm* realm, TaggedProto proto,
+                              ObjectFlags objectFlags);
+};
+
+
+class WasmGCShape : public Shape {
+  friend class js::gc::CellAllocator;
+  WasmGCShape(BaseShape* base, ObjectFlags objectFlags)
+      : Shape(Kind::WasmGC, base, objectFlags, 0, nullptr, 0) {
+    MOZ_ASSERT(!base->clasp()->isProxyObject());
+    MOZ_ASSERT(!base->clasp()->isNativeObject());
+  }
+
+  static WasmGCShape* new_(JSContext* cx, Handle<BaseShape*> base,
+                           ObjectFlags objectFlags);
+
+ public:
+  static WasmGCShape* getShape(JSContext* cx, const JSClass* clasp,
+                               JS::Realm* realm, TaggedProto proto,
+                               ObjectFlags objectFlags);
 };
 
 inline SharedShape& js::Shape::asShared() {
