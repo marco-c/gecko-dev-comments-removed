@@ -34,7 +34,7 @@ child:
 
   
   
-  async GatherProfile() returns (Shmem profile);
+  async GatherProfile() returns (IPCProfileAndAdditionalInformation profileAndAdditionalInformation);
   async GetGatherProfileProgress() returns (GatherProfileProgress progress);
 
   async ClearAllPages();

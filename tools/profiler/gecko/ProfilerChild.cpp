@@ -420,7 +420,11 @@ void ProfilerChild::GatherProfileThreadFunction(
                   }
                 }
 
-                parameters->resolver(std::move(shmem));
+                SharedLibraryInfo sharedLibraryInfo =
+                    SharedLibraryInfo::GetInfoForSelf();
+                parameters->resolver(IPCProfileAndAdditionalInformation{
+                    shmem, Some(ProfileGenerationAdditionalInformation{
+                               std::move(sharedLibraryInfo)})});
               }))))) {
     
     
@@ -451,7 +455,7 @@ mozilla::ipc::IPCResult ProfilerChild::RecvGatherProfile(
     if (AllocShmem(1, &shmem)) {
       shmem.get<char>()[0] = '\0';
     }
-    parameters->resolver(std::move(shmem));
+    parameters->resolver(IPCProfileAndAdditionalInformation{shmem, Nothing()});
     
     parameters.get()->Release();
     mGatherProfileProgress = nullptr;
