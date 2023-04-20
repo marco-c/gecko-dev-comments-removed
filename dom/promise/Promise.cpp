@@ -104,6 +104,7 @@ already_AddRefed<Promise> Promise::Create(
 already_AddRefed<Promise> Promise::CreateInfallible(
     nsIGlobalObject* aGlobal,
     PropagateUserInteraction aPropagateUserInteraction) {
+  MOZ_ASSERT(aGlobal);
   RefPtr<Promise> p = new Promise(aGlobal);
   IgnoredErrorResult rv;
   p->CreateWrapper(rv, aPropagateUserInteraction);

@@ -1896,7 +1896,7 @@ void SetUpReadableByteStreamController(
 
   
   RefPtr<Promise> startPromise =
-      Promise::CreateInfallible(GetIncumbentGlobal());
+      Promise::CreateInfallible(aStream->GetParentObject());
   startPromise->MaybeResolve(startResult);
 
   
