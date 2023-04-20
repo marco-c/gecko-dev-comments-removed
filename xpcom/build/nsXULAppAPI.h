@@ -226,16 +226,6 @@ nsresult XRE_GetBinaryPath(nsIFile** aResult);
 
 
 
-nsresult XRE_LockProfileDirectory(nsIFile* aDirectory,
-                                  nsISupports** aLockObject);
-
-
-
-
-
-
-
-
 
 
 
@@ -297,34 +287,6 @@ nsresult XRE_AddManifestLocation(NSLocationType aType, nsIFile* aLocation);
 
 
 nsresult XRE_AddJarManifestLocation(NSLocationType aType, nsIFile* aLocation);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void XRE_NotifyProfile();
 
 
 
@@ -400,10 +362,6 @@ bool XRE_IsSocketProcess();
 bool XRE_UseNativeEventProcessing();
 
 typedef void (*MainFunction)(void* aData);
-
-nsresult XRE_InitParentProcess(int aArgc, char* aArgv[],
-                               MainFunction aMainFunction,
-                               void* aMainFunctionExtraData);
 
 int XRE_RunIPDLTest(int aArgc, char* aArgv[]);
 
