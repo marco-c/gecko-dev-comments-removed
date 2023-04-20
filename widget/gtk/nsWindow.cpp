@@ -4207,6 +4207,51 @@ void nsWindow::OnEnterNotifyEvent(GdkEventCrossing* aEvent) {
   DispatchInputEvent(&event);
 }
 
+
+
+
+
+
+
+
+static bool IsBogusLeaveNotifyEvent(GdkWindow* aWindow,
+                                    GdkEventCrossing* aEvent) {
+  static bool sBogusWm = [] {
+    if (GdkIsWaylandDisplay()) {
+      return false;
+    }
+    const auto& desktopEnv = GetDesktopEnvironmentIdentifier();
+    return desktopEnv.EqualsLiteral("fluxbox") ||   
+           desktopEnv.EqualsLiteral("blackbox") ||  
+           StringBeginsWith(desktopEnv, "fvwm"_ns);
+  }();
+
+  const bool shouldCheck = [] {
+    switch (StaticPrefs::widget_gtk_ignore_bogus_leave_notify()) {
+      case 0:
+        return false;
+      case 1:
+        return true;
+      default:
+        return sBogusWm;
+    }
+  }();
+
+  if (!shouldCheck) {
+    return false;
+  }
+  GdkDevice* pointer = GdkGetPointer();
+  GdkWindow* winAtPt =
+      gdk_device_get_window_at_position(pointer, nullptr, nullptr);
+  if (!winAtPt) {
+    return false;
+  }
+  
+  GdkWindow* topLevelAtPt = gdk_window_get_toplevel(winAtPt);
+  GdkWindow* topLevelWidget = gdk_window_get_toplevel(aWindow);
+  return topLevelAtPt == topLevelWidget;
+}
+
 void nsWindow::OnLeaveNotifyEvent(GdkEventCrossing* aEvent) {
   LOG("leave notify (win=%p, sub=%p): %f, %f mode %d, detail %d\n",
       aEvent->window, aEvent->subwindow, aEvent->x, aEvent->y, aEvent->mode,
@@ -4224,16 +4269,20 @@ void nsWindow::OnLeaveNotifyEvent(GdkEventCrossing* aEvent) {
     return;
   }
 
+  
+  
+  const bool leavingTopLevel =
+      mWindowType == eWindowType_toplevel || mWindowType == eWindowType_dialog;
+
+  if (leavingTopLevel && IsBogusLeaveNotifyEvent(mGdkWindow, aEvent)) {
+    return;
+  }
+
   WidgetMouseEvent event(true, eMouseExitFromWidget, this,
                          WidgetMouseEvent::eReal);
 
   event.mRefPoint = GdkEventCoordsToDevicePixels(aEvent->x, aEvent->y);
   event.AssignEventTime(GetWidgetEventTime(aEvent->time));
-
-  
-  
-  const bool leavingTopLevel =
-      mWindowType == eWindowType_toplevel || mWindowType == eWindowType_dialog;
   event.mExitFrom = Some(leavingTopLevel ? WidgetMouseEvent::ePlatformTopLevel
                                          : WidgetMouseEvent::ePlatformChild);
 
