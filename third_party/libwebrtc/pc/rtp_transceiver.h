@@ -108,7 +108,7 @@ class RtpTransceiver : public RtpTransceiverInterface,
   
   RtpTransceiver(const RtpTransceiver&) = delete;
   RtpTransceiver& operator=(const RtpTransceiver&) = delete;
-  
+  RtpTransceiver(RtpTransceiver&&) = delete;
   RtpTransceiver& operator=(RtpTransceiver&&) = delete;
 
   
