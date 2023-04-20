@@ -208,7 +208,6 @@ module.exports = {
       
       
       files: [
-        "browser/components/Browser*.*",
         "browser/components/**",
         "browser/extensions/report-site-issue/**",
         "browser/extensions/search-detection/**",
@@ -226,6 +225,7 @@ module.exports = {
         "toolkit/**",
         "uriloader/exthandler/**",
       ],
+      excludedFiles: ["browser/components/Browser*.*"],
       rules: {
         "mozilla/no-cu-reportError": "off",
       },
