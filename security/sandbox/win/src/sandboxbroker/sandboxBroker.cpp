@@ -54,8 +54,6 @@ bool SandboxBroker::sRunningFromNetworkDrive = false;
 
 static UniquePtr<nsString> sBinDir;
 static UniquePtr<nsString> sProfileDir;
-static UniquePtr<nsString> sContentTempDir;
-static UniquePtr<nsString> sRoamingAppDataDir;
 static UniquePtr<nsString> sLocalAppDataDir;
 #ifdef ENABLE_SYSTEM_EXTENSION_DIRS
 static UniquePtr<nsString> sUserExtensionsDir;
@@ -160,9 +158,6 @@ void SandboxBroker::GeckoDependentInitialize() {
 
     CacheDirAndAutoClear(dirSvc, NS_GRE_DIR, &sBinDir);
     CacheDirAndAutoClear(dirSvc, NS_APP_USER_PROFILE_50_DIR, &sProfileDir);
-    CacheDirAndAutoClear(dirSvc, NS_APP_CONTENT_PROCESS_TEMP_DIR,
-                         &sContentTempDir);
-    CacheDirAndAutoClear(dirSvc, NS_WIN_APPDATA_DIR, &sRoamingAppDataDir);
     CacheDirAndAutoClear(dirSvc, NS_WIN_LOCAL_APPDATA_DIR, &sLocalAppDataDir);
 #ifdef ENABLE_SYSTEM_EXTENSION_DIRS
     CacheDirAndAutoClear(dirSvc, XRE_USER_SYS_EXTENSION_DIR,
@@ -762,13 +757,6 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
   result = mPolicy->SetDelayedProcessMitigations(mitigations);
   MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
                      "Invalid flags for SetDelayedProcessMitigations.");
-
-  
-  
-  
-  
-  AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_ANY,
-                   sContentTempDir, u"\\*"_ns);
 
   
   
