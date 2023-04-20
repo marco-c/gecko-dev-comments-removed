@@ -3575,13 +3575,13 @@ public class GeckoSession {
 
   public interface SelectionActionDelegate {
     
-    final int FLAG_IS_COLLAPSED = 1;
+    final int FLAG_IS_COLLAPSED = 1 << 0;
     
 
 
-    final int FLAG_IS_EDITABLE = 2;
+    final int FLAG_IS_EDITABLE = 1 << 1;
     
-    final int FLAG_IS_PASSWORD = 4;
+    final int FLAG_IS_PASSWORD = 1 << 2;
 
     
     final String ACTION_HIDE = "org.mozilla.geckoview.HIDE";
