@@ -376,8 +376,7 @@ nsresult TimerThread::Init() {
     nsTimerEvent::Init();
 
     
-    nsresult rv = NS_NewNamedThread("Timer", getter_AddRefs(mThread), this,
-                                    {.blockDispatch = true});
+    nsresult rv = NS_NewNamedThread("Timer", getter_AddRefs(mThread), this);
     if (NS_FAILED(rv)) {
       mThread = nullptr;
     } else {
