@@ -1,11 +1,3 @@
-const PREF_MULTISELECT_TABS = "browser.tabs.multiselect";
-
-add_task(async function setPref() {
-  await SpecialPowers.pushPrefEnv({
-    set: [[PREF_MULTISELECT_TABS, true]],
-  });
-});
-
 add_task(async function test() {
   let tab1 = await addTab();
   let tab2 = await addTab();
@@ -59,6 +51,7 @@ add_task(async function testLazyTabs() {
   let numTabs = 4;
   for (let i = 0; i < numTabs; ++i) {
     oldTabs.push(
+      
       BrowserTestUtils.addTab(gBrowser, `http://example.com/?${i}`, params)
     );
   }
@@ -115,12 +108,14 @@ add_task(async function testLazyTabs() {
 
   is(
     newTabs[0].linkedBrowser.currentURI.spec,
+    
     `http://example.com/?0`,
     `New tab 0 should have the right URL`
   );
   for (let i = 1; i < numTabs; ++i) {
     is(
       SessionStore.getLazyTabValue(newTabs[i], "url"),
+      
       `http://example.com/?${i}`,
       `New tab ${i} should have the right lazy URL`
     );

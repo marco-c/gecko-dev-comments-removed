@@ -1,6 +1,8 @@
 var gTestPage =
+  
   "http://example.org/browser/browser/base/content/test/zoom/zoom_test.html";
 var gTestImage =
+  
   "http://example.org/browser/browser/base/content/test/general/moz.png";
 var gTab1, gTab2, gTab3;
 var gLevel;

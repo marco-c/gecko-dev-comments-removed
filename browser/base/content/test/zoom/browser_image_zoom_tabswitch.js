@@ -6,6 +6,7 @@
 function test() {
   let tab1, tab2;
   const TEST_IMAGE =
+    
     "http://example.org/browser/browser/base/content/test/general/moz.png";
 
   waitForExplicitFinish();

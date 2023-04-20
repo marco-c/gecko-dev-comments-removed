@@ -78,8 +78,11 @@ class TabEventTracker {
 
 add_task(async function test_hidden_muted_lazy_tabs_and_swapping() {
   const params = { createLazyBrowser: true };
+  
   const URL_HIDDEN = "http://example.com/hide";
+  
   const URL_MUTED = "http://example.com/mute";
+  
   const URL_NORMAL = "http://example.com/back";
 
   const lazyTab = BrowserTestUtils.addTab(gBrowser, "", params);

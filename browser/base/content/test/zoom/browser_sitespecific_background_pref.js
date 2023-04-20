@@ -3,6 +3,7 @@ function test() {
 
   (async function() {
     let testPage =
+      
       "http://example.org/browser/browser/base/content/test/zoom/zoom_test.html";
     let tab1 = BrowserTestUtils.addTab(gBrowser);
     await FullZoomHelper.selectTabAndWaitForLocationChange(tab1);

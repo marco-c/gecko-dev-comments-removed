@@ -2,9 +2,8 @@
 
 
 
-const PREF_MULTISELECT_TABS = "browser.tabs.multiselect";
-
 async function addTab_example_com() {
+  
   const tab = BrowserTestUtils.addTab(gBrowser, "http://example.com/", {
     skipAnimation: true,
   });
@@ -12,12 +11,6 @@ async function addTab_example_com() {
   await BrowserTestUtils.browserLoaded(browser);
   return tab;
 }
-
-add_task(async function setPref() {
-  await SpecialPowers.pushPrefEnv({
-    set: [[PREF_MULTISELECT_TABS, true]],
-  });
-});
 
 add_task(async function test() {
   let tab1 = await addTab();
