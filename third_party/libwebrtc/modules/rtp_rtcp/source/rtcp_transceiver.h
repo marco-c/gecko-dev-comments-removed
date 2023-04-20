@@ -11,11 +11,11 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_RTCP_TRANSCEIVER_H_
 #define MODULES_RTP_RTCP_SOURCE_RTCP_TRANSCEIVER_H_
 
-#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "api/task_queue/task_queue_base.h"
 #include "modules/rtp_rtcp/source/rtcp_transceiver_config.h"
 #include "modules/rtp_rtcp/source/rtcp_transceiver_impl.h"
@@ -44,7 +44,7 @@ class RtcpTransceiver : public RtcpFeedbackSenderInterface {
   
   
   
-  void Stop(std::function<void()> on_destroyed);
+  void Stop(absl::AnyInvocable<void() &&> on_destroyed);
 
   
   
@@ -52,9 +52,10 @@ class RtcpTransceiver : public RtcpFeedbackSenderInterface {
                                     MediaReceiverRtcpObserver* observer);
   
   
-  void RemoveMediaReceiverRtcpObserver(uint32_t remote_ssrc,
-                                       MediaReceiverRtcpObserver* observer,
-                                       std::function<void()> on_removed);
+  void RemoveMediaReceiverRtcpObserver(
+      uint32_t remote_ssrc,
+      MediaReceiverRtcpObserver* observer,
+      absl::AnyInvocable<void() &&> on_removed);
 
   
   
