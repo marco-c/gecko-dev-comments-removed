@@ -2184,11 +2184,17 @@ inline bool CookieJarSettingsSaysShouldResistFingerprinting(
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
   nsresult rv =
       aLoadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
+  if (rv == NS_ERROR_NOT_IMPLEMENTED) {
+    
+    
+    
+    return false;
+  }
   if (NS_WARN_IF(NS_FAILED(rv))) {
     MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
             ("Called CookieJarSettingsSaysShouldResistFingerprinting but the "
              "loadinfo's CookieJarSettings couldn't be retrieved"));
-    return true;
+    return false;
   }
   return cookieJarSettings->GetShouldResistFingerprinting();
 }
@@ -2382,12 +2388,9 @@ bool nsContentUtils::ShouldResistFingerprinting(
   
   nsIPrincipal* principal = aLoadInfo->GetLoadingPrincipal();
 
-  if (principal->IsSystemPrincipal()) {
-    return false;
-  }
-
-  MOZ_ASSERT(BasePrincipal::Cast(principal)->OriginAttributesRef() ==
-             aLoadInfo->GetOriginAttributes());
+  MOZ_ASSERT_IF(principal,
+                BasePrincipal::Cast(principal)->OriginAttributesRef() ==
+                    aLoadInfo->GetOriginAttributes());
   return ShouldResistFingerprinting_dangerous(principal, "Internal Call",
                                               aTarget);
 }
