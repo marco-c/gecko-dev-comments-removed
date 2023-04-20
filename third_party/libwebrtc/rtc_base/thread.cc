@@ -1022,20 +1022,6 @@ void Thread::ClearCurrentTaskQueue() {
   task_queue_registration_.reset();
 }
 
-void Thread::QueuedTaskHandler::OnMessage(Message* msg) {
-  RTC_DCHECK(msg);
-  auto* data = static_cast<ScopedMessageData<webrtc::QueuedTask>*>(msg->pdata);
-  std::unique_ptr<webrtc::QueuedTask> task(data->Release());
-  
-  
-  delete data;
-
-  
-  
-  if (!task->Run())
-    task.release();
-}
-
 void Thread::AllowInvokesToThread(Thread* thread) {
 #if (!defined(NDEBUG) || RTC_DCHECK_IS_ON)
   if (!IsCurrent()) {
@@ -1088,28 +1074,6 @@ bool Thread::IsInvokeToThreadAllowed(rtc::Thread* target) {
 #else
   return true;
 #endif
-}
-
-void Thread::PostTask(std::unique_ptr<webrtc::QueuedTask> task) {
-  
-  
-  Post(RTC_FROM_HERE, &queued_task_handler_,
-       0, new ScopedMessageData<webrtc::QueuedTask>(std::move(task)));
-}
-
-void Thread::PostDelayedTask(std::unique_ptr<webrtc::QueuedTask> task,
-                             uint32_t milliseconds) {
-  
-  PostDelayedHighPrecisionTask(std::move(task), milliseconds);
-}
-
-void Thread::PostDelayedHighPrecisionTask(
-    std::unique_ptr<webrtc::QueuedTask> task,
-    uint32_t milliseconds) {
-  
-  
-  PostDelayed(RTC_FROM_HERE, milliseconds, &queued_task_handler_, 0,
-              new ScopedMessageData<webrtc::QueuedTask>(std::move(task)));
 }
 
 void Thread::Delete() {

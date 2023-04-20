@@ -30,7 +30,6 @@
 #include "absl/base/attributes.h"
 #include "absl/functional/any_invocable.h"
 #include "api/function_view.h"
-#include "api/task_queue/queued_task.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
 #include "rtc_base/checks.h"
@@ -403,24 +402,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   
   
   
-  void PostTask(std::unique_ptr<webrtc::QueuedTask> task) override;
-  void PostDelayedTask(std::unique_ptr<webrtc::QueuedTask> task,
-                       uint32_t milliseconds) override;
-  void PostDelayedHighPrecisionTask(std::unique_ptr<webrtc::QueuedTask> task,
-                                    uint32_t milliseconds) override;
-
-  
-  
-  
-  ABSL_DEPRECATED("Pass delay as webrtc::TimeDelta type")
-  void PostDelayedTask(absl::AnyInvocable<void() &&> task,
-                       uint32_t milliseconds) {
-    PostDelayedTask(std::move(task), webrtc::TimeDelta::Millis(milliseconds));
-  }
-
-  
-  
-  
   bool ProcessMessages(int cms);
 
   
@@ -541,12 +522,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
  private:
   static const int kSlowDispatchLoggingThreshold = 50;  
 
-  class QueuedTaskHandler final : public MessageHandler {
-   public:
-    QueuedTaskHandler() {}
-    void OnMessage(Message* msg) override;
-  };
-
   
   
   bool SetAllowBlockingCalls(bool allow);
@@ -621,8 +596,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   
   bool blocking_calls_allowed_ = true;
 
-  
-  QueuedTaskHandler queued_task_handler_;
   std::unique_ptr<TaskQueueBase::CurrentTaskQueueSetter>
       task_queue_registration_;
 
