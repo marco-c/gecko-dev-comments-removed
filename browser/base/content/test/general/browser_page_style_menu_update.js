@@ -31,7 +31,7 @@ add_task(async function() {
 
   
   let target = menupopup.querySelector("menuitem[label='1']");
-  target.click();
+  target.doCommand();
 
   gPageStyleMenu.fillPopup(menupopup);
   

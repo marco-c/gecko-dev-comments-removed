@@ -219,6 +219,20 @@ async function doTest({
   await BrowserTestUtils.closeWindow(win);
 }
 
+async function openTabMenuFor(tab) {
+  let tabMenu = tab.ownerDocument.getElementById("tabContextMenu");
+
+  let tabMenuShown = BrowserTestUtils.waitForEvent(tabMenu, "popupshown");
+  EventUtils.synthesizeMouseAtCenter(
+    tab,
+    { type: "contextmenu" },
+    tab.ownerGlobal
+  );
+  await tabMenuShown;
+
+  return tabMenu;
+}
+
 
 
 add_task(async function duplicateTabs() {
@@ -238,15 +252,12 @@ add_task(async function duplicateTabs() {
   });
 
   
-  
-  
-  window.TabContextMenu.contextTab = gBrowser.selectedTab;
+  const menu = await openTabMenuFor(gBrowser.selectedTab);
   let tabPromise = BrowserTestUtils.waitForNewTab(
     gBrowser,
     gBrowser.currentURI.spec
   );
-  let menuitem = document.getElementById("context_duplicateTab");
-  menuitem.click();
+  menu.activateItem(document.getElementById("context_duplicateTab"));
   let newTab = await tabPromise;
   Assert.equal(
     gBrowser.selectedTab,

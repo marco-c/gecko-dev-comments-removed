@@ -58,11 +58,7 @@ add_task(async function() {
   );
 
   
-  const sentOption = getContextMenuItem(
-    monitor,
-    "message-list-context-filter-sent"
-  );
-  sentOption.click();
+  await selectContextMenuItem(monitor, "message-list-context-filter-sent");
 
   const sentFrames = document.querySelectorAll(
     "#messages-view .message-list-table .message-list-item"
@@ -80,11 +76,13 @@ add_task(async function() {
   );
 
   
-  const receivedOption = getContextMenuItem(
-    monitor,
-    "message-list-context-filter-received"
+  EventUtils.sendMouseEvent(
+    { type: "click" },
+    document.querySelector("#frame-filter-menu")
   );
-  receivedOption.click();
+
+  
+  await selectContextMenuItem(monitor, "message-list-context-filter-received");
 
   const receivedFrames = document.querySelectorAll(
     "#messages-view .message-list-table .message-list-item"
