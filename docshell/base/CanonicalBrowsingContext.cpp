@@ -1611,7 +1611,7 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishTopContent() {
                         "non-remote iframes");
 
   
-  if (mContentParent && NS_WARN_IF(mContentParent->IsDead())) {
+  if (mContentParent && NS_WARN_IF(mContentParent->IsShuttingDown())) {
     return NS_ERROR_FAILURE;
   }
 
@@ -1741,7 +1741,7 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishSubframe() {
   
   
   if (mContentParent != embedderBrowser->Manager() &&
-      NS_WARN_IF(mContentParent->IsDead())) {
+      NS_WARN_IF(mContentParent->IsShuttingDown())) {
     return NS_ERROR_FAILURE;
   }
 
