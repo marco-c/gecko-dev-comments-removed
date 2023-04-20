@@ -3544,7 +3544,7 @@ mozilla::ipc::IPCResult ContentParent::RecvGetClipboard(
   clipboard->GetData(trans, aWhichClipboard);
 
   nsContentUtils::TransferableToIPCTransferable(
-      trans, aDataTransfer, true , nullptr, this);
+      trans, aDataTransfer, true , this);
   return IPC_OK();
 }
 
@@ -3626,8 +3626,7 @@ mozilla::ipc::IPCResult ContentParent::RecvGetClipboardAsync(
                  GenericPromise::ResolveOrRejectValue&& aValue) {
                IPCDataTransfer ipcDataTransfer;
                nsContentUtils::TransferableToIPCTransferable(
-                   trans, &ipcDataTransfer, false , nullptr,
-                   self);
+                   trans, &ipcDataTransfer, false , self);
                aResolver(std::move(ipcDataTransfer));
              });
   return IPC_OK();
@@ -5438,7 +5437,7 @@ void ContentParent::MaybeInvokeDragSession(BrowserParent* aParent) {
           aParent ? aParent->GetLoadContext() : nullptr;
       nsCOMPtr<nsIArray> transferables = transfer->GetTransferables(lc);
       nsContentUtils::TransferablesToIPCTransferables(
-          transferables, dataTransfers, false, nullptr, this);
+          transferables, dataTransfers, false, this);
       uint32_t action;
       session->GetDragAction(&action);
 
