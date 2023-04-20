@@ -77,18 +77,25 @@ function RunCallbackWithGesture(callback) {
 
 
 
-function PostMessageAndAwait(message, targetWindow, promise) {
-  targetWindow.postMessage(message, "*");
-  return promise;
+function PostMessageAndAwaitReply(message, targetWindow) {
+  const timestamp = window.performance.now();
+  const reply = ReplyPromise(timestamp);
+  targetWindow.postMessage({timestamp, ...message}, "*");
+  return reply;
 }
 
 
 
-function ReplyPromise() {
+
+function ReplyPromise(timestamp) {
   return new Promise((resolve) => {
-    window.addEventListener("message", (event) => {
-      resolve(event.data);
-    }, { once: true });
+    const listener = (event) => {
+      if (event.data.timestamp == timestamp) {
+        window.removeEventListener("message", listener);
+        resolve(event.data.data);
+      }
+    };
+    window.addEventListener("message", listener);
   });
 }
 
@@ -103,34 +110,48 @@ function ReloadPromise(frame) {
 
 
 function GetJSCookiesFromFrame(frame) {
-  return PostMessageAndAwait({ command: "document.cookie" }, frame.contentWindow, ReplyPromise());
+  return PostMessageAndAwaitReply(
+      { command: "document.cookie" }, frame.contentWindow);
 }
 
 
 function GetHTTPCookiesFromFrame(frame) {
-  return PostMessageAndAwait({ command: "httpCookies" }, frame.contentWindow, ReplyPromise());
+  return PostMessageAndAwaitReply(
+      { command: "httpCookies" }, frame.contentWindow);
 }
 
 
 function FrameHasStorageAccess(frame) {
-  return PostMessageAndAwait({ command: "hasStorageAccess" }, frame.contentWindow, ReplyPromise());
+  return PostMessageAndAwaitReply(
+      { command: "hasStorageAccess" }, frame.contentWindow);
 }
 
 
 function RequestStorageAccessInFrame(frame) {
-  return PostMessageAndAwait({ command: "requestStorageAccess" }, frame.contentWindow, ReplyPromise());
+  return PostMessageAndAwaitReply(
+      { command: "requestStorageAccess" }, frame.contentWindow);
 }
 
 
 
 function SetPermissionInFrame(frame, args = []) {
-  return PostMessageAndAwait({ command: "set_permission", args }, frame.contentWindow, ReplyPromise());
+  return PostMessageAndAwaitReply(
+      { command: "set_permission", args }, frame.contentWindow);
+}
+
+
+
+function ObservePermissionChange(frame, args = []) {
+  return PostMessageAndAwaitReply(
+      { command: "observe_permission_change", args }, frame.contentWindow);
 }
 
 
 
 function FrameInitiatedReload(frame) {
-  return PostMessageAndAwait({ command: "reload" }, frame.contentWindow, ReloadPromise(frame));
+  const reload = ReloadPromise(frame);
+  frame.contentWindow.postMessage({ command: "reload" }, "*");
+  return reload;
 }
 
 
