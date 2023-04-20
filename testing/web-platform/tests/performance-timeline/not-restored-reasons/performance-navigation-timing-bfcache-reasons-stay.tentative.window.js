@@ -22,7 +22,7 @@ promise_test(async t => {
   });
 
   
-  await assertBFCache(rc1,  false);
+  await assertBFCacheEligibility(rc1,  false);
   await assertNotRestoredReasonsEquals(
       rc1,
        true,
@@ -35,7 +35,7 @@ promise_test(async t => {
 
   
   
-  await assertBFCache(rc1,  true);
+  await assertBFCacheEligibility(rc1,  true);
   await assertNotRestoredReasonsEquals(
       rc1,
        true,

@@ -18,7 +18,7 @@ promise_test(async t => {
 
   
   
-  await assertBFCache(rc1,  true);
+  await assertBFCacheEligibility(rc1,  true);
   assert_true(await rc1.executeScript(() => {
     let reasons =
         performance.getEntriesByType('navigation')[0].notRestoredReasons;

@@ -20,7 +20,7 @@ async function getBeforeBFCache(remoteContextHelper) {
 
 
 
-async function assert_implements_bfcache(remoteContextHelper) {
+async function assertImplementsBFCacheOptional(remoteContextHelper) {
   var beforeBFCache = await getBeforeBFCache(remoteContextHelper);
   assert_implements_optional(beforeBFCache == true, 'BFCache not supported.');
 }
@@ -37,7 +37,7 @@ async function assert_implements_bfcache(remoteContextHelper) {
 
 
 
-async function assert_not_bfcached(
+async function assertNotRestoredFromBFCache(
     remoteContextHelper, notRestoredReasons) {
   var beforeBFCache = await getBeforeBFCache(remoteContextHelper);
   assert_equals(beforeBFCache, undefined);
@@ -86,15 +86,18 @@ async function assert_not_bfcached(
 
 
 
-async function assertBFCache(remoteContextHelper, shouldRestoreFromBFCache) {
+
+
+async function assertBFCacheEligibility(
+    remoteContextHelper, shouldRestoreFromBFCache) {
   await prepareForBFCache(remoteContextHelper);
   
   const newRemoteContextHelper = await remoteContextHelper.navigateToNew();
   await newRemoteContextHelper.historyBack();
 
   if (shouldRestoreFromBFCache) {
-    await assert_implements_bfcache(remoteContextHelper);
+    await assertImplementsBFCacheOptional(remoteContextHelper);
   } else {
-    await assert_not_bfcached(remoteContextHelper);
+    await assertNotRestoredFromBFCache(remoteContextHelper);
   }
 }

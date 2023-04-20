@@ -37,5 +37,5 @@ promise_test(async t => {
     });
   });
 
-  await assertBFCache(rc1,  true);
+  await assertBFCacheEligibility(rc1,  true);
 });

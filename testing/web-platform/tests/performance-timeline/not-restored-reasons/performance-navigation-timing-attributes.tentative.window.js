@@ -34,7 +34,7 @@ promise_test(async t => {
     return location.href;
   });
   
-  await assertBFCache(rc1,  false);
+  await assertBFCacheEligibility(rc1,  false);
   await assertNotRestoredReasonsEquals(
       rc1,
        true,

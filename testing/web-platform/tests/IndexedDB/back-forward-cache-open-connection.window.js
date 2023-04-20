@@ -15,7 +15,7 @@ promise_test(async t => {
        null,  {features: 'noopener'});
 
   await createIndexedDBForTesting(rc1, 'test_idb', 1);
-  await assertBFCache(rc1,  true);
+  await assertBFCacheEligibility(rc1,  true);
 
   
   
@@ -30,5 +30,5 @@ promise_test(async t => {
   
   
   
-  await assert_not_bfcached(rc1, ['Internal error']);
+  await assertNotRestoredFromBFCache(rc1, ['Internal error']);
 });
