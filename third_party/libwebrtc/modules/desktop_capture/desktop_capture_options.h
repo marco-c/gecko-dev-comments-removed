@@ -105,6 +105,17 @@ class RTC_EXPORT DesktopCaptureOptions {
     detect_updated_region_ = detect_updated_region;
   }
 
+  
+  
+  
+  
+  
+  
+  bool prefer_cursor_embedded() const { return prefer_cursor_embedded_; }
+  void set_prefer_cursor_embedded(bool prefer_cursor_embedded) {
+    prefer_cursor_embedded_ = prefer_cursor_embedded;
+  }
+
 #if defined(WEBRTC_WIN)
   
   
@@ -237,6 +248,7 @@ class RTC_EXPORT DesktopCaptureOptions {
 #endif
   bool disable_effects_ = true;
   bool detect_updated_region_ = false;
+  bool prefer_cursor_embedded_ = false;
 #if defined(WEBRTC_USE_PIPEWIRE)
   bool allow_pipewire_ = false;
   bool pipewire_use_damage_region_ = true;
