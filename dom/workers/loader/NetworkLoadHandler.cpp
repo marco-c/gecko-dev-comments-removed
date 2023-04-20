@@ -55,6 +55,9 @@ NetworkLoadHandler::OnStreamComplete(nsIStreamLoader* aLoader,
                                      const uint8_t* aString) {
   
   
+  if (mRequestHandle->IsEmpty()) {
+    return NS_OK;
+  }
   nsresult rv = DataReceivedFromNetwork(aLoader, aStatus, aStringLen, aString);
   return mRequestHandle->OnStreamComplete(rv);
 }
