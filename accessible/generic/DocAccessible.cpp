@@ -1562,6 +1562,9 @@ void DocAccessible::SendAccessiblesWillMove() {
     
     if (!acc->IsDefunct() && acc->IsInDocument()) {
       ids.AppendElement(reinterpret_cast<uintptr_t>(acc->UniqueID()));
+      
+      
+      QueueCacheUpdate(acc, CacheDomain::Bounds);
     }
   }
   if (!ids.IsEmpty()) {
