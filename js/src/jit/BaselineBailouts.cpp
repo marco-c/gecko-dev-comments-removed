@@ -1735,6 +1735,11 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
   MOZ_DIAGNOSTIC_ASSERT(*bailoutInfo->bailoutKind != BailoutKind::Unreachable);
 
   JSContext* cx = TlsContext.get();
+
+  
+  
+  MOZ_ASSERT(!cx->isInUnsafeRegion());
+
   BaselineFrame* topFrame = GetTopBaselineFrame(cx);
 
   

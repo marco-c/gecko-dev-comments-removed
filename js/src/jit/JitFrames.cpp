@@ -663,6 +663,12 @@ void HandleException(ResumeFromException* rfe) {
 
 #ifdef DEBUG
   cx->runtime()->jitRuntime()->clearDisallowArbitraryCode();
+
+  
+  
+  
+  
+  cx->resetInUnsafeRegion();
 #endif
 
   auto resetProfilerFrame = mozilla::MakeScopeExit([=] {

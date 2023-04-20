@@ -4011,6 +4011,7 @@ static bool NeedsKeepAlive(MInstruction* slotsOrElements, MInstruction* use) {
     return true;
   }
 
+  
   if (use->type() == MIRType::BigInt) {
     return true;
   }
@@ -4043,6 +4044,8 @@ static bool NeedsKeepAlive(MInstruction* slotsOrElements, MInstruction* use) {
       case MDefinition::Opcode::BoundsCheck:
       case MDefinition::Opcode::GuardElementNotHole:
       case MDefinition::Opcode::SpectreMaskIndex:
+      case MDefinition::Opcode::DebugEnterGCUnsafeRegion:
+      case MDefinition::Opcode::DebugLeaveGCUnsafeRegion:
         iter++;
         break;
       default:
@@ -4108,6 +4111,22 @@ bool jit::AddKeepAliveInstructions(MIRGraph& graph) {
         }
 
         if (!NeedsKeepAlive(ins, use)) {
+#ifdef DEBUG
+          
+          
+          
+          if (use->isApplyArray() || use->isConstructArray()) {
+            continue;
+          }
+
+          
+          auto* enter = MDebugEnterGCUnsafeRegion::New(graph.alloc());
+          use->block()->insertAfter(ins, enter);
+
+          
+          auto* leave = MDebugLeaveGCUnsafeRegion::New(graph.alloc());
+          use->block()->insertAfter(use, leave);
+#endif
           continue;
         }
 

@@ -584,6 +584,18 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
                           "[AutoAssertNoGC] possible GC in GC-unsafe region");
   }
 
+  bool isInUnsafeRegion() const { return bool(inUnsafeRegion); }
+
+  
+  void resetInUnsafeRegion() {
+    MOZ_ASSERT(inUnsafeRegion >= 0);
+    inUnsafeRegion = 0;
+  }
+
+  static constexpr size_t offsetOfInUnsafeRegion() {
+    return offsetof(JSContext, inUnsafeRegion);
+  }
+
   
  private:
   mozilla::Atomic<bool, mozilla::SequentiallyConsistent>

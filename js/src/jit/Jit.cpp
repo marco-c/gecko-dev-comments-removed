@@ -37,6 +37,11 @@ static EnterJitStatus JS_HAZ_JSNATIVE_CALLER EnterJit(JSContext* cx,
     return EnterJitStatus::Error;
   }
 
+  
+  
+  
+  MOZ_ASSERT(!cx->isInUnsafeRegion());
+
 #ifdef DEBUG
   
   
@@ -108,6 +113,9 @@ static EnterJitStatus JS_HAZ_JSNATIVE_CALLER EnterJit(JSContext* cx,
                         calleeToken, envChain,  0,
                         result.address());
   }
+
+  
+  MOZ_ASSERT(!cx->isInUnsafeRegion());
 
   
   cx->runtime()->jitRuntime()->freeIonOsrTempData();
