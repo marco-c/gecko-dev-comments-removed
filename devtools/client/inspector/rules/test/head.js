@@ -372,7 +372,19 @@ var setProperty = async function(
   info("Set property to: " + value);
   await focusEditableField(view, textProp.editor.valueSpan);
 
-  const onPreview = view.once("ruleview-changed");
+  
+  
+  
+  
+  
+  let previewStartedCounter = 0;
+  const onStartPreview = () => previewStartedCounter++;
+  view.on("start-preview-property-value", onStartPreview);
+
+  let previewCounter = 0;
+  const onPreviewApplied = () => previewCounter++;
+  view.on("ruleview-changed", onPreviewApplied);
+
   if (value === null) {
     const onPopupOpened = once(view.popup, "popup-opened");
     EventUtils.synthesizeKey("VK_DELETE", {}, view.styleWindow);
@@ -381,19 +393,26 @@ var setProperty = async function(
     EventUtils.sendString(value, view.styleWindow);
   }
 
-  info("Waiting for ruleview-changed after updating property");
+  info(`Flush debounced ruleview methods (remaining: ${flushCount})`);
   view.debounce.flush();
+  await waitFor(() => previewStartedCounter === previewCounter);
+
   flushCount--;
 
   while (flushCount > 0) {
     
     
     await wait(100);
+
+    info(`Flush debounced ruleview methods (remaining: ${flushCount})`);
     view.debounce.flush();
+    await waitFor(() => previewStartedCounter === previewCounter);
+
     flushCount--;
   }
 
-  await onPreview;
+  view.off("start-preview-property-value", onStartPreview);
+  view.off("ruleview-changed", onPreviewApplied);
 
   const onValueDone = view.once("ruleview-changed");
   EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
