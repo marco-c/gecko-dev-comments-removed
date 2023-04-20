@@ -141,12 +141,13 @@ async function callRequestStorageAccess(callback, expectFail) {
     window.location.search != "?disableWaitUntilPermission" &&
     origin != TEST_ANOTHER_3RD_PARTY_ORIGIN
   ) {
+    let protocol = isSecureContext ? "https" : "http";
     
     
     
     
     await waitUntilPermission(
-      "http://example.net/browser/toolkit/components/antitracking/test/browser/page.html",
+      `${protocol}://example.net/browser/toolkit/components/antitracking/test/browser/page.html`,
       "3rdPartyStorage^" + window.origin
     );
   }
