@@ -2790,7 +2790,7 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
     
     
     if (!maskIsComplete &&
-        (aMaskItem->Frame()->GetStateBits() & NS_FRAME_SVG_LAYOUT)) {
+        aMaskItem->Frame()->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
       return Nothing();
     }
 

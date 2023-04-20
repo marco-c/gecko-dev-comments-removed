@@ -58,16 +58,12 @@ bool nsSprocketLayout::IsXULHorizontal(nsIFrame* aBox) {
   return aBox->HasAnyStateBits(NS_STATE_IS_HORIZONTAL);
 }
 
-void nsSprocketLayout::GetFrameState(nsIFrame* aBox, nsFrameState& aState) {
-  aState = aBox->GetStateBits();
-}
-
 static StyleDirection GetFrameDirection(nsIFrame* aBox) {
   return aBox->StyleVisibility()->mDirection;
 }
 
-static void HandleBoxPack(nsIFrame* aBox, const nsFrameState& aFrameState,
-                          nscoord& aX, nscoord& aY, const nsRect& aOriginalRect,
+static void HandleBoxPack(nsIFrame* aBox, nscoord& aX, nscoord& aY,
+                          const nsRect& aOriginalRect,
                           const nsRect& aClientRect) {
   
   
@@ -75,8 +71,8 @@ static void HandleBoxPack(nsIFrame* aBox, const nsFrameState& aFrameState,
   
   StyleDirection frameDirection = GetFrameDirection(aBox);
 
-  if (aFrameState & NS_STATE_IS_HORIZONTAL) {
-    if (aFrameState & NS_STATE_IS_DIRECTION_NORMAL) {
+  if (aBox->HasAnyStateBits(NS_STATE_IS_HORIZONTAL)) {
+    if (aBox->HasAnyStateBits(NS_STATE_IS_DIRECTION_NORMAL)) {
       
       aX = aClientRect.x;
     } else {
@@ -94,7 +90,7 @@ static void HandleBoxPack(nsIFrame* aBox, const nsFrameState& aFrameState,
       
       aX = aClientRect.x + aOriginalRect.width;
     }
-    if (aFrameState & NS_STATE_IS_DIRECTION_NORMAL) {
+    if (aBox->HasAnyStateBits(NS_STATE_IS_DIRECTION_NORMAL)) {
       
       aY = aClientRect.y;
     } else {
@@ -116,20 +112,20 @@ static void HandleBoxPack(nsIFrame* aBox, const nsFrameState& aFrameState,
   
   
   
-  if (aFrameState & NS_STATE_IS_HORIZONTAL) {
+  if (aBox->HasAnyStateBits(NS_STATE_IS_HORIZONTAL)) {
     switch (halign) {
       case nsBoxFrame::hAlign_Left:
         break;  
 
       case nsBoxFrame::hAlign_Center:
-        if (aFrameState & NS_STATE_IS_DIRECTION_NORMAL)
+        if (aBox->HasAnyStateBits(NS_STATE_IS_DIRECTION_NORMAL))
           aX += (aOriginalRect.width - aClientRect.width) / 2;
         else
           aX -= (aOriginalRect.width - aClientRect.width) / 2;
         break;
 
       case nsBoxFrame::hAlign_Right:
-        if (aFrameState & NS_STATE_IS_DIRECTION_NORMAL)
+        if (aBox->HasAnyStateBits(NS_STATE_IS_DIRECTION_NORMAL))
           aX += (aOriginalRect.width - aClientRect.width);
         else
           aX -= (aOriginalRect.width - aClientRect.width);
@@ -144,14 +140,14 @@ static void HandleBoxPack(nsIFrame* aBox, const nsFrameState& aFrameState,
         break;  
 
       case nsBoxFrame::vAlign_Middle:
-        if (aFrameState & NS_STATE_IS_DIRECTION_NORMAL)
+        if (aBox->HasAnyStateBits(NS_STATE_IS_DIRECTION_NORMAL))
           aY += (aOriginalRect.height - aClientRect.height) / 2;
         else
           aY -= (aOriginalRect.height - aClientRect.height) / 2;
         break;
 
       case nsBoxFrame::vAlign_Bottom:
-        if (aFrameState & NS_STATE_IS_DIRECTION_NORMAL)
+        if (aBox->HasAnyStateBits(NS_STATE_IS_DIRECTION_NORMAL))
           aY += (aOriginalRect.height - aClientRect.height);
         else
           aY -= (aOriginalRect.height - aClientRect.height);
@@ -192,11 +188,6 @@ nsSprocketLayout::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState) {
   nsRect originalClientRect(clientRect);
 
   
-  
-  nsFrameState frameState = nsFrameState(0);
-  GetFrameState(aBox, frameState);
-
-  
   nsBoxSize* boxSizes = nullptr;
   nsComputedBoxSize* computedBoxSizes = nullptr;
 
@@ -225,14 +216,14 @@ nsSprocketLayout::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState) {
     clientRect.width = size;
     if (clientRect.height < min) clientRect.height = min;
 
-    if (frameState & NS_STATE_AUTO_STRETCH) {
+    if (aBox->HasAnyStateBits(NS_STATE_AUTO_STRETCH)) {
       if (clientRect.height > max) clientRect.height = max;
     }
   } else {
     clientRect.height = size;
     if (clientRect.width < min) clientRect.width = min;
 
-    if (frameState & NS_STATE_AUTO_STRETCH) {
+    if (aBox->HasAnyStateBits(NS_STATE_AUTO_STRETCH)) {
       if (clientRect.width > max) clientRect.width = max;
     }
   }
@@ -266,7 +257,7 @@ nsSprocketLayout::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState) {
     finished = true;
 
     
-    HandleBoxPack(aBox, frameState, x, y, originalClientRect, clientRect);
+    HandleBoxPack(aBox, x, y, originalClientRect, clientRect);
 
     
     
@@ -299,7 +290,7 @@ nsSprocketLayout::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState) {
         
         
         
-        if (!(frameState & NS_STATE_AUTO_STRETCH)) {
+        if (!aBox->HasAnyStateBits(NS_STATE_AUTO_STRETCH)) {
           nsSize prefSize = child->GetXULPrefSize(aState);
           nsSize minSize = child->GetXULMinSize(aState);
           nsSize maxSize = child->GetXULMaxSize(aState);
@@ -314,19 +305,19 @@ nsSprocketLayout::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState) {
       
       
       
-      if (frameState & NS_STATE_IS_HORIZONTAL)
+      if (aBox->HasAnyStateBits(NS_STATE_IS_HORIZONTAL))
         width = childComputedBoxSize->size;
       else
         height = childComputedBoxSize->size;
 
       
-      if (frameState & NS_STATE_IS_HORIZONTAL) {
-        if (frameState & NS_STATE_IS_DIRECTION_NORMAL)
+      if (aBox->HasAnyStateBits(NS_STATE_IS_HORIZONTAL)) {
+        if (aBox->HasAnyStateBits(NS_STATE_IS_DIRECTION_NORMAL))
           x += (childBoxSize->left);
         else
           x -= (childBoxSize->right);
       } else {
-        if (frameState & NS_STATE_IS_DIRECTION_NORMAL)
+        if (aBox->HasAnyStateBits(NS_STATE_IS_DIRECTION_NORMAL))
           y += (childBoxSize->left);
         else
           y -= (childBoxSize->right);
@@ -335,8 +326,8 @@ nsSprocketLayout::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState) {
       
       nscoord rectX = x;
       nscoord rectY = y;
-      if (!(frameState & NS_STATE_IS_DIRECTION_NORMAL)) {
-        if (frameState & NS_STATE_IS_HORIZONTAL)
+      if (!aBox->HasAnyStateBits(NS_STATE_IS_DIRECTION_NORMAL)) {
+        if (aBox->HasAnyStateBits(NS_STATE_IS_HORIZONTAL))
           rectX -= width;
         else
           rectY -= height;
@@ -367,14 +358,14 @@ nsSprocketLayout::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState) {
       
       
       
-      if (frameState & NS_STATE_IS_HORIZONTAL) {
-        if (frameState & NS_STATE_IS_DIRECTION_NORMAL)
+      if (aBox->HasAnyStateBits(NS_STATE_IS_HORIZONTAL)) {
+        if (aBox->HasAnyStateBits(NS_STATE_IS_DIRECTION_NORMAL))
           nextX += (childBoxSize->right);
         else
           nextX -= (childBoxSize->left);
         childRect.y = originalClientRect.y;
       } else {
-        if (frameState & NS_STATE_IS_DIRECTION_NORMAL)
+        if (aBox->HasAnyStateBits(NS_STATE_IS_DIRECTION_NORMAL))
           nextY += (childBoxSize->right);
         else
           nextY -= (childBoxSize->left);
@@ -426,8 +417,8 @@ nsSprocketLayout::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState) {
 
       
       
-      if (!(frameState & NS_STATE_AUTO_STRETCH)) {
-        if (frameState & NS_STATE_IS_HORIZONTAL) {
+      if (!aBox->HasAnyStateBits(NS_STATE_AUTO_STRETCH)) {
+        if (aBox->HasAnyStateBits(NS_STATE_IS_HORIZONTAL)) {
           childRect.y = oldRect.y;
         } else {
           childRect.x = oldRect.x;
@@ -495,20 +486,20 @@ nsSprocketLayout::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState) {
         if (clientRect.height > originalClientRect.height)
           originalClientRect.height = clientRect.height;
 
-        if (!(frameState & NS_STATE_IS_DIRECTION_NORMAL)) {
+        if (!aBox->HasAnyStateBits(NS_STATE_IS_DIRECTION_NORMAL)) {
           
           
           
           
           
           
-          if (frameState & NS_STATE_IS_HORIZONTAL)
+          if (aBox->HasAnyStateBits(NS_STATE_IS_HORIZONTAL))
             newChildRect.x = childRect.XMost() - newChildRect.width;
           else
             newChildRect.y = childRect.YMost() - newChildRect.height;
         }
 
-        if (!(frameState & NS_STATE_IS_HORIZONTAL)) {
+        if (!aBox->HasAnyStateBits(NS_STATE_IS_HORIZONTAL)) {
           if (GetFrameDirection(aBox) != StyleDirection::Ltr) {
             
             newChildRect.x = childRect.XMost() - newChildRect.width;
@@ -587,7 +578,7 @@ nsSprocketLayout::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState) {
 
   
   
-  HandleBoxPack(aBox, frameState, x, y, originalClientRect, clientRect);
+  HandleBoxPack(aBox, x, y, originalClientRect, clientRect);
 
   
   
@@ -604,7 +595,7 @@ nsSprocketLayout::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState) {
   }
 
   
-  if (!(frameState & NS_STATE_AUTO_STRETCH)) {
+  if (!aBox->HasAnyStateBits(NS_STATE_AUTO_STRETCH)) {
     AlignChildren(aBox, aState);
   }
 
@@ -764,19 +755,17 @@ void nsSprocketLayout::ComputeChildsNextPosition(
     nscoord& aNextY, const nsRect& aCurrentChildSize) {
   
   
-  nsFrameState frameState = nsFrameState(0);
-  GetFrameState(aBox, frameState);
 
   if (IsXULHorizontal(aBox)) {
     
-    if (frameState & NS_STATE_IS_DIRECTION_NORMAL)
+    if (aBox->HasAnyStateBits(NS_STATE_IS_DIRECTION_NORMAL))
       aNextX = aCurX + aCurrentChildSize.width;
     else
       aNextX = aCurX - aCurrentChildSize.width;
 
   } else {
     
-    if (frameState & NS_STATE_IS_DIRECTION_NORMAL)
+    if (aBox->HasAnyStateBits(NS_STATE_IS_DIRECTION_NORMAL))
       aNextY = aCurY + aCurrentChildSize.height;
     else
       aNextY = aCurY - aCurrentChildSize.height;
@@ -784,13 +773,11 @@ void nsSprocketLayout::ComputeChildsNextPosition(
 }
 
 void nsSprocketLayout::AlignChildren(nsIFrame* aBox, nsBoxLayoutState& aState) {
-  nsFrameState frameState = nsFrameState(0);
-  GetFrameState(aBox, frameState);
-  bool isHorizontal = (frameState & NS_STATE_IS_HORIZONTAL) != 0;
+  bool isHorizontal = aBox->HasAnyStateBits(NS_STATE_IS_HORIZONTAL);
   nsRect clientRect;
   aBox->GetXULClientRect(clientRect);
 
-  MOZ_ASSERT(!(frameState & NS_STATE_AUTO_STRETCH),
+  MOZ_ASSERT(!aBox->HasAnyStateBits(NS_STATE_AUTO_STRETCH),
              "Only AlignChildren() with non-stretch alignment");
 
   

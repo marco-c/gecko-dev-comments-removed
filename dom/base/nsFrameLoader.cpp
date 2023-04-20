@@ -1144,7 +1144,7 @@ bool nsFrameLoader::ShowRemoteFrame(const ScreenIntSize& size,
     NS_ENSURE_SUCCESS(GetWindowDimensions(dimensions), false);
 
     
-    if (!aFrame || !(aFrame->GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
+    if (!aFrame || !aFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
       mRemoteBrowser->UpdateDimensions(dimensions, size);
     }
   }
@@ -1187,7 +1187,7 @@ void nsFrameLoader::ForceLayoutIfNecessary() {
 
   
   
-  if (frame->GetStateBits() & NS_FRAME_FIRST_REFLOW) {
+  if (frame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     if (RefPtr<PresShell> presShell = presContext->GetPresShell()) {
       presShell->FlushPendingNotifications(FlushType::Layout);
     }

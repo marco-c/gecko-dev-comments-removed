@@ -145,8 +145,6 @@ class nsSprocketLayout : public nsBoxLayout {
 
   virtual bool GetDefaultFlex(int32_t& aFlex);
 
-  virtual void GetFrameState(nsIFrame* aBox, nsFrameState& aState);
-
  private:
   
   
