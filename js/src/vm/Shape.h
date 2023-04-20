@@ -275,15 +275,7 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
   
   BaseShape* base() const { return headerPtr(); }
 
-  enum class Kind : uint8_t {
-    
-    Shared,
-    Dictionary,
-    
-    Proxy,
-    
-    WasmGC,
-  };
+  using Kind = JS::shadow::Shape::Kind;
 
  protected:
   
@@ -298,6 +290,7 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
     
     KIND_SHIFT = 4,
     KIND_MASK = 0b11,
+    IS_NATIVE_BIT = 0x1 << KIND_SHIFT,
 
     
     
@@ -372,6 +365,7 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
         objectFlags_(objectFlags) {
     MOZ_ASSERT(base);
     MOZ_ASSERT(this->kind() == kind, "kind must fit in KIND_MASK");
+    MOZ_ASSERT(isNative() == base->clasp()->isNativeObject());
   }
 
   Shape(const Shape& other) = delete;
@@ -379,7 +373,11 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
  public:
   Kind kind() const { return Kind((immutableFlags >> KIND_SHIFT) & KIND_MASK); }
 
-  bool isNative() const { return isShared() || isDictionary(); }
+  bool isNative() const {
+    
+    return immutableFlags & IS_NATIVE_BIT;
+  }
+
   bool isShared() const { return kind() == Kind::Shared; }
   bool isDictionary() const { return kind() == Kind::Dictionary; }
   bool isProxy() const { return kind() == Kind::Proxy; }
@@ -416,6 +414,10 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
     return offsetof(Shape, immutableFlags);
   }
 
+  static constexpr uint32_t kindShift() { return KIND_SHIFT; }
+  static constexpr uint32_t kindMask() { return KIND_MASK; }
+  static constexpr uint32_t isNativeBit() { return IS_NATIVE_BIT; }
+
   static constexpr size_t offsetOfCachePtr() { return offsetof(Shape, cache_); }
 
  private:
@@ -423,6 +425,8 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
     static_assert(offsetOfBaseShape() == offsetof(JS::shadow::Shape, base));
     static_assert(offsetof(Shape, immutableFlags) ==
                   offsetof(JS::shadow::Shape, immutableFlags));
+    static_assert(KIND_SHIFT == JS::shadow::Shape::KIND_SHIFT);
+    static_assert(KIND_MASK == JS::shadow::Shape::KIND_MASK);
     static_assert(FIXED_SLOTS_SHIFT == JS::shadow::Shape::FIXED_SLOTS_SHIFT);
     static_assert(FIXED_SLOTS_MASK == JS::shadow::Shape::FIXED_SLOTS_MASK);
     
