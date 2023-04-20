@@ -19,6 +19,55 @@ function isCuReportError(node) {
   );
 }
 
+function isConcatenation(node) {
+  return node.type == "BinaryExpression" && node.operator == "+";
+}
+
+function isIdentOrMember(node) {
+  return node.type == "MemberExpression" || node.type == "Identifier";
+}
+
+function isLiteralOrConcat(node) {
+  return node.type == "Literal" || isConcatenation(node);
+}
+
+function replaceConcatWithComma(fixer, node) {
+  let fixes = [];
+  let didFixTrailingIdentifier = false;
+  let recursiveFixes;
+  let trailingIdentifier;
+  
+  if (isConcatenation(node.right)) {
+    
+    
+    
+    
+    return { fixes: [], trailingIdentifier: false };
+  }
+  if (isConcatenation(node.left)) {
+    ({ fixes: recursiveFixes, trailingIdentifier } = replaceConcatWithComma(
+      fixer,
+      node.left
+    ));
+    fixes.push(...recursiveFixes);
+  }
+  
+  
+  if (
+    (isIdentOrMember(node.left) && isLiteralOrConcat(node.right)) ||
+    (isIdentOrMember(node.right) && isLiteralOrConcat(node.left)) ||
+    
+    
+    (trailingIdentifier && isLiteralOrConcat(node.right))
+  ) {
+    fixes.push(
+      fixer.replaceTextRange([node.left.range[1], node.right.range[0]], ", ")
+    );
+    didFixTrailingIdentifier = isIdentOrMember(node.right);
+  }
+  return { fixes, trailingIdentifier: didFixTrailingIdentifier };
+}
+
 module.exports = {
   meta: {
     docs: {
@@ -60,10 +109,23 @@ module.exports = {
         context.report({
           node,
           fix: fixer => {
-            return [
+            let fixes = [
               fixer.replaceText(checkNode.object, "console"),
               fixer.replaceText(checkNode.property, "error"),
             ];
+            
+            
+            if (
+              checkNode == node.callee &&
+              isConcatenation(node.arguments[0])
+            ) {
+              let { fixes: recursiveFixes } = replaceConcatWithComma(
+                fixer,
+                node.arguments[0]
+              );
+              fixes.push(...recursiveFixes);
+            }
+            return fixes;
           },
           messageId: "useConsoleError",
         });

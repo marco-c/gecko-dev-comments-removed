@@ -44,5 +44,47 @@ ruleTester.run("no-cu-reportError", rule, {
       output: "foo().catch(console.error)",
       errors: callError(),
     },
+    
+    
+    {
+      code: "Cu.reportError('foo' + e)",
+      output: "console.error('foo', e)",
+      errors: callError(),
+    },
+    {
+      code: "Cu.reportError('foo' + msg.data)",
+      output: "console.error('foo', msg.data)",
+      errors: callError(),
+    },
+    
+    
+    {
+      code: "Cu.reportError('foo' + 'bar' + 'baz')",
+      output: "console.error('foo' + 'bar' + 'baz')",
+      errors: callError(),
+    },
+    
+    {
+      code: "Cu.reportError('foo' + e + 'baz')",
+      output: "console.error('foo', e, 'baz')",
+      errors: callError(),
+    },
+    
+    {
+      code: "Cu.reportError('foo' + e + 'quux' + 'baz')",
+      output: "console.error('foo', e, 'quux' + 'baz')",
+      errors: callError(),
+    },
+    {
+      code: "Cu.reportError('foo' + 'quux' + e + 'baz')",
+      output: "console.error('foo' + 'quux', e, 'baz')",
+      errors: callError(),
+    },
+    
+    {
+      code: "Cu.reportError('foo' + 'quux' + (e + 'baz'))",
+      output: "console.error('foo' + 'quux' + (e + 'baz'))",
+      errors: callError(),
+    },
   ],
 });
