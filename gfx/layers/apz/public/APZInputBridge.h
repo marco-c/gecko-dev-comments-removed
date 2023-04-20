@@ -102,6 +102,14 @@ struct APZEventResult {
   
   void SetStatusAsConsumeDoDefault(
       const RefPtr<AsyncPanZoomController>& aTarget);
+
+  
+  
+  
+  void SetStatusAsConsumeDoDefault() {
+    mStatus = nsEventStatus_eConsumeDoDefault;
+  }
+
   
   
   void SetStatusAsConsumeDoDefault(const InputBlockState& aBlock);

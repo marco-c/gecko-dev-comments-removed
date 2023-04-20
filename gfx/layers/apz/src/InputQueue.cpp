@@ -426,7 +426,14 @@ APZEventResult InputQueue::ReceivePanGestureInput(
   }
 
   PanGestureInput event = aEvent;
-  result.SetStatusAsConsumeDoDefault(aTarget);
+
+  
+  
+  
+  
+  
+  
+  result.SetStatusAsConsumeDoDefault();
 
   if (!block || block->WasInterrupted()) {
     if (event.mType == PanGestureInput::PANGESTURE_MOMENTUMSTART ||

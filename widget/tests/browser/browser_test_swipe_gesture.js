@@ -1130,6 +1130,31 @@ add_task(async () => {
     });
   });
 
+  
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    content.document.documentElement.addEventListener("wheel", e => {}, {
+      passive: false,
+    });
+    await content.wrappedJSObject.promiseApzFlushedRepaints();
+  });
+
+  
+  
+  await panLeftToRight(tab.linkedBrowser, 100, 100, 1);
+
+  let startLoadingPromise = BrowserTestUtils.browserStarted(
+    tab.linkedBrowser,
+    "about:about"
+  );
+  let stoppedLoadingPromise = BrowserTestUtils.browserStopped(
+    tab.linkedBrowser,
+    "about:about"
+  );
+
+  await Promise.all([startLoadingPromise, stoppedLoadingPromise]);
+
+  ok(gBrowser.webNavigation.canGoForward);
+
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
 });
