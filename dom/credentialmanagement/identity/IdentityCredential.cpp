@@ -84,6 +84,44 @@ IdentityCredential::DiscoverFromExternalSource(
   RefPtr<IdentityCredential::GetIdentityCredentialPromise::Private> result =
       new IdentityCredential::GetIdentityCredentialPromise::Private(__func__);
 
+  if (StaticPrefs::
+          dom_security_credentialmanagement_identity_reject_delay_enabled()) {
+    
+    
+    
+    RefPtr<IdentityCredential::GetIdentityCredentialPromise::Private>
+        forCallbackResult = result;
+
+    RefPtr<nsITimer> timeout;
+    nsresult rv = NS_NewTimerWithFuncCallback(
+        getter_AddRefs(timeout),
+        [](nsITimer* aTimer, void* aClosure) -> void {
+          auto* promise = static_cast<
+              IdentityCredential::GetIdentityCredentialPromise::Private*>(
+              aClosure);
+          if (!promise->IsResolved()) {
+            promise->Reject(NS_ERROR_DOM_NETWORK_ERR, __func__);
+          }
+          
+          
+          
+          NS_RELEASE(promise);
+          NS_RELEASE(aTimer);
+        },
+        do_AddRef(forCallbackResult).take(),
+        StaticPrefs::
+            dom_security_credentialmanagement_identity_reject_delay_duration_ms(),
+        nsITimer::TYPE_ONE_SHOT, "IdentityCredentialTimeoutCallback");
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      result->Reject(NS_ERROR_FAILURE, __func__);
+      return result.forget();
+    }
+
+    
+    
+    Unused << timeout.forget();
+  }
+
   
   
   MOZ_ASSERT(aOptions.mIdentity.WasPassed());
@@ -101,13 +139,20 @@ IdentityCredential::DiscoverFromExternalSource(
             if (aResult.isSome()) {
               credential->CopyValuesFrom(aResult.value());
               result->Resolve(credential, __func__);
-            } else {
+            } else if (
+                !StaticPrefs::
+                    dom_security_credentialmanagement_identity_reject_delay_enabled()) {
               result->Reject(NS_ERROR_DOM_UNKNOWN_ERR, __func__);
             }
           },
           [result](const WindowGlobalChild::
                        DiscoverIdentityCredentialFromExternalSourcePromise::
-                           RejectValueType& aResult) { return; });
+                           RejectValueType& aResult) {
+            if (!StaticPrefs::
+                    dom_security_credentialmanagement_identity_reject_delay_enabled()) {
+              result->Reject(NS_ERROR_DOM_UNKNOWN_ERR, __func__);
+            }
+          });
   return result.forget();
 }
 
