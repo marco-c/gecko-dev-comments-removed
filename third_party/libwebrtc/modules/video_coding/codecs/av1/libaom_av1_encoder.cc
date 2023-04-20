@@ -32,6 +32,7 @@
 #include "modules/video_coding/svc/scalable_video_controller_no_layering.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/sequence_number_util.h"
 #include "third_party/libaom/source/libaom/aom/aom_codec.h"
 #include "third_party/libaom/source/libaom/aom/aom_encoder.h"
 #include "third_party/libaom/source/libaom/aom/aomcx.h"
@@ -117,6 +118,7 @@ class LibaomAv1Encoder final : public VideoEncoder {
   aom_codec_ctx_t ctx_;
   aom_codec_enc_cfg_t cfg_;
   EncodedImageCallback* encoded_image_callback_;
+  SeqNumUnwrapper<uint32_t> rtp_timestamp_unwrapper_;
 };
 
 int32_t VerifyCodecSettings(const VideoCodec& codec_settings) {
@@ -637,8 +639,10 @@ int32_t LibaomAv1Encoder::Encode(
     }
 
     
-    aom_codec_err_t ret = aom_codec_encode(&ctx_, frame_for_encode_,
-                                           frame.timestamp(), duration, flags);
+    
+    aom_codec_err_t ret = aom_codec_encode(
+        &ctx_, frame_for_encode_,
+        rtp_timestamp_unwrapper_.Unwrap(frame.timestamp()), duration, flags);
     if (ret != AOM_CODEC_OK) {
       RTC_LOG(LS_WARNING) << "LibaomAv1Encoder::Encode returned " << ret
                           << " on aom_codec_encode.";

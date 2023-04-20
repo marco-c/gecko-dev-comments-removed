@@ -47,6 +47,8 @@ class EncodedVideoFrameProducer {
 
   EncodedVideoFrameProducer& SetFramerateFps(int value);
 
+  EncodedVideoFrameProducer& SetRtpTimestamp(uint32_t value);
+
   
   
   
@@ -85,6 +87,12 @@ inline EncodedVideoFrameProducer& EncodedVideoFrameProducer::SetFramerateFps(
     int value) {
   RTC_DCHECK_GT(value, 0);
   framerate_fps_ = value;
+  return *this;
+}
+
+inline EncodedVideoFrameProducer& EncodedVideoFrameProducer::SetRtpTimestamp(
+    uint32_t value) {
+  rtp_timestamp_ = value;
   return *this;
 }
 
