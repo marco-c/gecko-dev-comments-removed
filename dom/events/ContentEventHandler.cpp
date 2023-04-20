@@ -1839,6 +1839,72 @@ ContentEventHandler::GuessFirstCaretRectIn(nsIFrame* aFrame) {
   return FrameRelativeRect(caretRect, aFrame);
 }
 
+
+LayoutDeviceIntRect ContentEventHandler::GetCaretRectBefore(
+    const LayoutDeviceIntRect& aCharRect, const WritingMode& aWritingMode) {
+  LayoutDeviceIntRect caretRectBefore(aCharRect);
+  if (aWritingMode.IsVertical()) {
+    caretRectBefore.height = 1;
+  } else {
+    
+    caretRectBefore.width = 1;
+  }
+  return caretRectBefore;
+}
+
+
+nsRect ContentEventHandler::GetCaretRectBefore(
+    const nsRect& aCharRect, const WritingMode& aWritingMode) {
+  nsRect caretRectBefore(aCharRect);
+  if (aWritingMode.IsVertical()) {
+    
+    
+    caretRectBefore.height = 1;
+  } else {
+    
+    
+    
+    caretRectBefore.width = 1;
+  }
+  return caretRectBefore;
+}
+
+
+LayoutDeviceIntRect ContentEventHandler::GetCaretRectAfter(
+    const LayoutDeviceIntRect& aCharRect, const WritingMode& aWritingMode) {
+  LayoutDeviceIntRect caretRectAfter(aCharRect);
+  if (aWritingMode.IsVertical()) {
+    caretRectAfter.y = aCharRect.YMost() + 1;
+    caretRectAfter.height = 1;
+  } else {
+    
+    caretRectAfter.x = aCharRect.XMost() + 1;
+    caretRectAfter.width = 1;
+  }
+  return caretRectAfter;
+}
+
+
+nsRect ContentEventHandler::GetCaretRectAfter(nsPresContext& aPresContext,
+                                              const nsRect& aCharRect,
+                                              const WritingMode& aWritingMode) {
+  nsRect caretRectAfter(aCharRect);
+  const nscoord onePixel = aPresContext.AppUnitsPerDevPixel();
+  if (aWritingMode.IsVertical()) {
+    caretRectAfter.y = aCharRect.YMost() + onePixel;
+    
+    
+    caretRectAfter.height = 1;
+  } else {
+    
+    caretRectAfter.x = aCharRect.XMost() + onePixel;
+    
+    
+    caretRectAfter.width = 1;
+  }
+  return caretRectAfter;
+}
+
 nsresult ContentEventHandler::OnQueryTextRectArray(
     WidgetQueryContentEvent* aEvent) {
   nsresult rv = Init(aEvent);
@@ -1851,7 +1917,7 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
   LineBreakType lineBreakType = GetLineBreakType(aEvent);
   const uint32_t kBRLength = GetBRLength(lineBreakType);
 
-  bool isVertical = false;
+  WritingMode lastVisibleFrameWritingMode;
   LayoutDeviceIntRect rect;
   uint32_t offset = aEvent->mInput.mOffset;
   const uint32_t kEndOffset = aEvent->mInput.EndOffset();
@@ -1951,8 +2017,7 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
 
     bool startsBetweenLineBreaker = false;
     nsAutoString chars;
-    
-    isVertical = firstFrame->GetWritingMode().IsVertical();
+    lastVisibleFrameWritingMode = firstFrame->GetWritingMode();
 
     nsIFrame* baseFrame = firstFrame;
     
@@ -2032,15 +2097,8 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
         baseFrame = lastFrame;
         brRect = lastCharRect;
         if (!wasLineBreaker) {
-          if (isVertical) {
-            
-            brRect.y = brRect.YMost() + 1;
-            brRect.height = 1;
-          } else {
-            
-            brRect.x = brRect.XMost() + 1;
-            brRect.width = 1;
-          }
+          brRect = GetCaretRectAfter(*baseFrame->PresContext(), brRect,
+                                     lastVisibleFrameWritingMode);
         }
       }
       
@@ -2135,12 +2193,8 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
         const uint32_t offsetInRange =
             offset - CheckedInt<uint32_t>(aEvent->mInput.mOffset).value();
         if (offsetInRange > aEvent->mReply->mRectArray.Length()) {
-          LayoutDeviceIntRect caretRectBefore = rect;
-          if (isVertical) {
-            caretRectBefore.height = 1;
-          } else {
-            caretRectBefore.width = 1;
-          }
+          LayoutDeviceIntRect caretRectBefore =
+              GetCaretRectBefore(rect, lastVisibleFrameWritingMode);
           for ([[maybe_unused]] uint32_t index : IntegerRange<uint32_t>(
                    offsetInRange - aEvent->mReply->mRectArray.Length())) {
             aEvent->mReply->mRectArray.AppendElement(caretRectBefore);
@@ -2190,16 +2244,8 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
         offset - CheckedInt<uint32_t>(aEvent->mInput.mOffset).value();
     if (offsetInRange > aEvent->mReply->mRectArray.Length()) {
       LayoutDeviceIntRect caretRectAfter =
-          aEvent->mReply->mRectArray.LastElement();
-      if (isVertical) {
-        caretRectAfter.y = caretRectAfter.YMost() + 1;
-        caretRectAfter.height = 1;
-        MOZ_ASSERT(caretRectAfter.width);
-      } else {
-        caretRectAfter.x = caretRectAfter.XMost() + 1;
-        caretRectAfter.width = 1;
-        MOZ_ASSERT(caretRectAfter.height);
-      }
+          GetCaretRectAfter(aEvent->mReply->mRectArray.LastElement(),
+                            lastVisibleFrameWritingMode);
       for ([[maybe_unused]] uint32_t index : IntegerRange<uint32_t>(
                offsetInRange - aEvent->mReply->mRectArray.Length())) {
         aEvent->mReply->mRectArray.AppendElement(caretRectAfter);
@@ -2219,16 +2265,8 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
     
     
     if (!aEvent->mReply->mRectArray.IsEmpty() && !wasLineBreaker) {
-      rect = aEvent->mReply->mRectArray.LastElement();
-      if (isVertical) {
-        rect.y = rect.YMost() + 1;
-        rect.height = 1;
-        MOZ_ASSERT(rect.width);
-      } else {
-        rect.x = rect.XMost() + 1;
-        rect.width = 1;
-        MOZ_ASSERT(rect.height);
-      }
+      rect = GetCaretRectAfter(aEvent->mReply->mRectArray.LastElement(),
+                               lastVisibleFrameWritingMode);
       aEvent->mReply->mRectArray.AppendElement(rect);
     } else {
       
@@ -2654,14 +2692,10 @@ nsresult ContentEventHandler::OnQueryCaretRect(
   queryTextRectEvent.mReply->TruncateData();
   aEvent->mReply->mOffsetAndData =
       std::move(queryTextRectEvent.mReply->mOffsetAndData);
-  aEvent->mReply->mRect = std::move(queryTextRectEvent.mReply->mRect);
   aEvent->mReply->mWritingMode =
       std::move(queryTextRectEvent.mReply->mWritingMode);
-  if (aEvent->mReply->WritingModeRef().IsVertical()) {
-    aEvent->mReply->mRect.height = 1;
-  } else {
-    aEvent->mReply->mRect.width = 1;
-  }
+  aEvent->mReply->mRect = GetCaretRectBefore(queryTextRectEvent.mReply->mRect,
+                                             aEvent->mReply->mWritingMode);
 
   MOZ_ASSERT(aEvent->Succeeded());
   return NS_OK;
