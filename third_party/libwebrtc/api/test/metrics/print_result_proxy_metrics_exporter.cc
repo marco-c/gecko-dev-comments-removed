@@ -93,6 +93,16 @@ bool PrintResultProxyMetricsExporter::Export(
       continue;
     }
 
+    if (metric.time_series.samples.size() == 1lu) {
+      
+      PrintResult(
+          metric.name, "", metric.test_case,
+          ToPrintResultValue(metric.time_series.samples[0].value, metric.unit),
+          ToPrintResultUnit(metric.unit), false,
+          ToPrintResultImproveDirection(metric.improvement_direction));
+      continue;
+    }
+
     SamplesStatsCounter counter;
     for (size_t i = 0; i < metric.time_series.samples.size(); ++i) {
       counter.AddSample(SamplesStatsCounter::StatsSample{
