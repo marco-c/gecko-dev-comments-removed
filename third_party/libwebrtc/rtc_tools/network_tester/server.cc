@@ -8,13 +8,16 @@
 
 
 
+#include "rtc_base/null_socket_server.h"
 #include "rtc_tools/network_tester/test_controller.h"
 
 int main(int , char* []) {
+  rtc::Thread main_thread(std::make_unique<rtc::NullSocketServer>());
   webrtc::TestController server(9090, 9090, "server_config.dat",
                                 "server_packet_log.dat");
   while (!server.IsTestDone()) {
-    server.Run();
+    
+    main_thread.ProcessMessages(100);
   }
   return 0;
 }
