@@ -50,7 +50,7 @@ class VRManagerChild : public PVRManagerChild {
   friend class PVRManagerChild;
 
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VRManagerChild, override);
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VRManagerChild);
 
   static VRManagerChild* Get();
 
@@ -116,6 +116,8 @@ class VRManagerChild : public PVRManagerChild {
   PVRLayerChild* AllocPVRLayerChild(const uint32_t& aDisplayID,
                                     const uint32_t& aGroup);
   bool DeallocPVRLayerChild(PVRLayerChild* actor);
+
+  void ActorDealloc() override;
 
   
   

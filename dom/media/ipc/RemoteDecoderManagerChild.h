@@ -107,6 +107,10 @@ class RemoteDecoderManagerChild final
       RemoteDecodeIn aLocation);
 
  protected:
+  void InitIPDL();
+
+  void ActorDealloc() override;
+
   void HandleFatalError(const char* aMsg) const override;
 
   PRemoteDecoderChild* AllocPRemoteDecoderChild(
@@ -136,6 +140,7 @@ class RemoteDecoderManagerChild final
   
   static RefPtr<GenericNonExclusivePromise> LaunchRDDProcessIfNeeded();
 
+  RefPtr<RemoteDecoderManagerChild> mIPDLSelfRef;
   
   const RemoteDecodeIn mLocation;
 };

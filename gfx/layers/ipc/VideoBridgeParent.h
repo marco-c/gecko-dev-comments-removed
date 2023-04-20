@@ -20,7 +20,7 @@ class VideoBridgeParent final : public PVideoBridgeParent,
                                 public HostIPCAllocator,
                                 public mozilla::ipc::IShmemAllocator {
  public:
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(VideoBridgeParent, HostIPCAllocator)
+  ~VideoBridgeParent();
 
   static VideoBridgeParent* GetSingleton(
       const Maybe<VideoBridgeSource>& aSource);
@@ -63,14 +63,16 @@ class VideoBridgeParent final : public PVideoBridgeParent,
   void OnChannelError() override;
 
  private:
-  ~VideoBridgeParent();
-
   explicit VideoBridgeParent(VideoBridgeSource aSource);
   void Bind(Endpoint<PVideoBridgeParent>&& aEndpoint);
 
+  void ActorDealloc() override;
   void ReleaseCompositorThread();
   void DoUnregisterExternalImages();
 
+  
+  
+  RefPtr<VideoBridgeParent> mSelfRef;
   RefPtr<CompositorThreadHolder> mCompositorThreadHolder;
 
   std::map<uint64_t, PTextureParent*> mTextureMap;

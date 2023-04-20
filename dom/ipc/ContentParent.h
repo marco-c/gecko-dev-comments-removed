@@ -685,6 +685,7 @@ class ContentParent final : public PContentParent,
                                     const char* aOperation) const;
 
   void ActorDestroy(ActorDestroyReason why) override;
+  void ActorDealloc() override;
 
   bool ShouldContinueFromReplyTimeout() override;
 
@@ -1486,6 +1487,9 @@ class ContentParent final : public PContentParent,
 
  private:
   
+  RefPtr<ContentParent> mSelfRef;
+
+  
   
   
 
@@ -1583,7 +1587,7 @@ class ContentParent final : public PContentParent,
   ScopedClose mChildXSocketFdDup;
 #endif
 
-  RefPtr<PProcessHangMonitorParent> mHangMonitorActor;
+  PProcessHangMonitorParent* mHangMonitorActor;
 
   UniquePtr<gfx::DriverCrashGuard> mDriverCrashGuard;
   UniquePtr<MemoryReportRequestHost> mMemoryReportRequest;

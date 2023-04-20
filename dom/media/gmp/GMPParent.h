@@ -58,7 +58,7 @@ class GMPParent final
   friend class PGMPParent;
 
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPParent, final)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPParent)
 
   GMPParent();
 
@@ -227,6 +227,12 @@ class GMPParent final
   uint32_t mGMPContentChildCount;
 
   int mChildPid;
+
+  
+  
+  
+  
+  bool mHoldingSelfRef;
 
 #ifdef ALLOW_GECKO_CHILD_PROCESS_ARCH
   

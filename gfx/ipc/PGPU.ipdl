@@ -52,7 +52,7 @@ struct LayerTreeIdMapping {
 
 
 
-[NeedsOtherPid]
+[ManualDealloc, NeedsOtherPid]
 sync protocol PGPU
 {
 parent:

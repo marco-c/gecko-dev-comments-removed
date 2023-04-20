@@ -17,7 +17,7 @@ namespace net {
 
 
 
-[NeedsOtherPid]
+[ManualDealloc, NeedsOtherPid]
 sync protocol PSocketProcessBridge
 {
 

@@ -60,7 +60,7 @@ union CompositorBridgeOptions {
 
 
 
-[NeedsOtherPid]
+[ManualDealloc, NeedsOtherPid]
 sync protocol PCompositorManager
 {
   manages PCompositorBridge;
