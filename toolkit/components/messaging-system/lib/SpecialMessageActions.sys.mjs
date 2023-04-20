@@ -1,13 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["SpecialMessageActions"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
 const DOH_DOORHANGER_DECISION_PREF = "doh-rollout.doorhanger-decision";
 const NETWORK_TRR_MODE_PREF = "network.trr.mode";
 
@@ -25,18 +21,18 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   ColorwayClosetOpener: "resource:///modules/ColorwayClosetOpener.jsm",
 });
 
-const SpecialMessageActions = {
-  
+export const SpecialMessageActions = {
+  // This is overridden by ASRouter.init
   blockMessageById() {
     throw new Error("ASRouter not intialized yet");
   },
 
-  
-
-
-
-
-
+  /**
+   * loadAddonIconInURLBar - load addons-notification icon by displaying
+   * box containing addons icon in urlbar. See Bug 1513882
+   *
+   * @param  {Browser} browser browser element for showing addons icon
+   */
   loadAddonIconInURLBar(browser) {
     if (!browser) {
       return;
@@ -56,20 +52,20 @@ const SpecialMessageActions = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   *
+   * @param {Browser} browser The revelant Browser
+   * @param {string} url URL to look up install location
+   * @param {string} telemetrySource Telemetry information to pass to getInstallForURL
+   */
   async installAddonFromURL(browser, url, telemetrySource = "amo") {
     try {
       this.loadAddonIconInURLBar(browser);
       const aUri = Services.io.newURI(url);
       const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
 
-      
-      
+      // AddonManager installation source associated to the addons installed from activitystream's CFR
+      // and RTAMO (source is going to be "amo" if not configured explicitly in the message provider).
       const telemetryInfo = { source: telemetrySource };
       const install = await lazy.AddonManager.getInstallForURL(aUri.spec, {
         telemetryInfo,
@@ -85,72 +81,72 @@ const SpecialMessageActions = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Pin Firefox to taskbar.
+   *
+   * @param {Window} window Reference to a window object
+   * @param {boolean} pin Private Browsing Mode if true
+   */
   pinFirefoxToTaskbar(window, privateBrowsing = false) {
     return window.getShellService().pinToTaskbar(privateBrowsing);
   },
 
-  
-
-
-
-
+  /**
+   *  Set browser as the operating system default browser.
+   *
+   *  @param {Window} window Reference to a window object
+   */
   setDefaultBrowser(window) {
     window.getShellService().setAsDefault();
   },
 
-  
-
-
-
-
+  /**
+   * Set browser as the default PDF handler.
+   *
+   * @param {Window} window Reference to a window object
+   */
   setDefaultPDFHandler(window, onlyIfKnownBrowser = false) {
     window.getShellService().setAsDefaultPDFHandler(onlyIfKnownBrowser);
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Reset browser homepage and newtab to default with a certain section configuration
+   *
+   * @param {"default"|null} home Value to set for browser homepage
+   * @param {"default"|null} newtab Value to set for browser newtab
+   * @param {obj} layout Configuration options for newtab sections
+   * @returns {undefined}
+   */
   configureHomepage({ homePage = null, newtab = null, layout = null }) {
-    
+    // Homepage can be default, blank or a custom url
     if (homePage === "default") {
       Services.prefs.clearUserPref("browser.startup.homepage");
     }
-    
+    // Newtab page can only be default or blank
     if (newtab === "default") {
       Services.prefs.clearUserPref("browser.newtabpage.enabled");
     }
     if (layout) {
-      
-      
+      // Existing prefs that interact with the newtab page layout, we default to true
+      // or payload configuration
       let newtabConfigurations = [
         [
-          
+          // controls the search bar
           "browser.newtabpage.activity-stream.showSearch",
           layout.search,
         ],
         [
-          
+          // controls the topsites
           "browser.newtabpage.activity-stream.feeds.topsites",
           layout.topsites,
-          
+          // User can control number of topsite rows
           ["browser.newtabpage.activity-stream.topSitesRows"],
         ],
         [
-          
+          // controls the highlights section
           "browser.newtabpage.activity-stream.feeds.section.highlights",
           layout.highlights,
-          
+          // User can control number of rows and highlight sources
           [
             "browser.newtabpage.activity-stream.section.highlights.rows",
             "browser.newtabpage.activity-stream.section.highlights.includeVisited",
@@ -160,17 +156,17 @@ const SpecialMessageActions = {
           ],
         ],
         [
-          
+          // controls the snippets section
           "browser.newtabpage.activity-stream.feeds.snippets",
           layout.snippets,
         ],
         [
-          
+          // controls the topstories section
           "browser.newtabpage.activity-stream.feeds.system.topstories",
           layout.topstories,
         ],
       ].filter(
-        
+        // If a section has configs that the user changed we will skip that section
         ([, , sectionConfigs]) =>
           !sectionConfigs ||
           sectionConfigs.every(
@@ -184,15 +180,15 @@ const SpecialMessageActions = {
     }
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Set prefs with special message actions
+   *
+   * @param {Object} pref - A pref to be updated.
+   * @param {string} pref.name - The name of the pref to be updated
+   * @param {string} [pref.value] - The value of the pref to be updated. If not included, the pref will be reset.
+   */
   setPref(pref) {
-    
+    // Array of prefs that are allowed to be edited by SET_PREF
     const allowedPrefs = [
       "browser.dataFeatureRecommendations.enabled",
       "browser.startup.homepage",
@@ -207,7 +203,7 @@ const SpecialMessageActions = {
     if (!allowedPrefs.includes(pref.name)) {
       pref.name = `messaging-system-action.${pref.name}`;
     }
-    
+    // If pref has no value, reset it, otherwise set it to desired value
     switch (typeof pref.value) {
       case "object":
       case "undefined":
@@ -229,14 +225,14 @@ const SpecialMessageActions = {
     }
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Processes "Special Message Actions", which are definitions of behaviors such as opening tabs
+   * installing add-ons, or focusing the awesome bar that are allowed to can be triggered from
+   * Messaging System interactions.
+   *
+   * @param {{type: string, data?: any}} action User action defined in message JSON.
+   * @param browser {Browser} The browser most relevant to the message.
+   */
   async handleAction(action, browser) {
     const window = browser.ownerGlobal;
     switch (action.type) {
@@ -249,7 +245,7 @@ const SpecialMessageActions = {
         );
         break;
       case "OPEN_PRIVATE_BROWSER_WINDOW":
-        
+        // Forcefully open about:privatebrowsing
         window.OpenBrowserWindow({ private: true });
         break;
       case "OPEN_URL":
@@ -336,7 +332,7 @@ const SpecialMessageActions = {
           (data && data.entrypoint) || "snippets",
           (data && data.extraParams) || {}
         );
-        
+        // Use location provided; if not specified, replace the current tab.
         window.openLinkIn(url, data.where || "current", {
           private: false,
           triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
@@ -373,8 +369,8 @@ const SpecialMessageActions = {
         Services.prefs.setStringPref(DOH_DOORHANGER_DECISION_PREF, "UIOk");
         break;
       case "CANCEL":
-        
-        
+        // A no-op used by CFRs that minimizes the notification but does not
+        // trigger a dismiss or block (it keeps the notification around)
         break;
       case "CONFIGURE_HOMEPAGE":
         this.configureHomepage(action.data);
