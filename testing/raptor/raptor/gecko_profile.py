@@ -167,7 +167,7 @@ class GeckoProfile(object):
                     )
 
             profile_locations = []
-            if self.raptor_config.get("chimera", False) and not is_extra_profiler_run:
+            if self.raptor_config.get("chimera", False):
                 if results["warm"] is None or results["cold"] is None:
                     raise Exception(
                         "The test ran in chimera mode but we found no cold "
