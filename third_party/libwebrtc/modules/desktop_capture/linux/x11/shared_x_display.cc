@@ -48,10 +48,12 @@ rtc::scoped_refptr<SharedXDisplay> SharedXDisplay::CreateDefault() {
 }
 
 void SharedXDisplay::AddEventHandler(int type, XEventHandler* handler) {
+  MutexLock lock(&mutex_);
   event_handlers_[type].push_back(handler);
 }
 
 void SharedXDisplay::RemoveEventHandler(int type, XEventHandler* handler) {
+  MutexLock lock(&mutex_);
   EventHandlersMap::iterator handlers = event_handlers_.find(type);
   if (handlers == event_handlers_.end())
     return;
@@ -69,6 +71,10 @@ void SharedXDisplay::ProcessPendingXEvents() {
   
   
   rtc::scoped_refptr<SharedXDisplay> self(this);
+
+  
+  
+  MutexLock lock(&mutex_);
 
   
   

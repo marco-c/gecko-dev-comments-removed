@@ -147,18 +147,21 @@ void MouseCursorMonitorX11::Capture() {
     Window child_window;
     unsigned int mask;
 
-    XErrorTrap error_trap(display());
-    Bool result = XQueryPointer(display(), window_, &root_window, &child_window,
-                                &root_x, &root_y, &win_x, &win_y, &mask);
     CursorState state;
-    if (!result || error_trap.GetLastErrorAndDisable() != 0) {
-      state = OUTSIDE;
-    } else {
-      
-      
-      
-      state =
-          (window_ == root_window || child_window != None) ? INSIDE : OUTSIDE;
+    {
+      XErrorTrap error_trap(display());
+      Bool result =
+          XQueryPointer(display(), window_, &root_window, &child_window,
+                        &root_x, &root_y, &win_x, &win_y, &mask);
+      if (!result || error_trap.GetLastErrorAndDisable() != 0) {
+        state = OUTSIDE;
+      } else {
+        
+        
+        
+        state =
+            (window_ == root_window || child_window != None) ? INSIDE : OUTSIDE;
+      }
     }
 
     
