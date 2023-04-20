@@ -97,9 +97,7 @@ class ICState {
     return true;
   }
 
-  
-  
-  [[nodiscard]] MOZ_ALWAYS_INLINE bool maybeTransition() {
+  [[nodiscard]] MOZ_ALWAYS_INLINE bool shouldTransition() {
     
     
     
@@ -108,6 +106,15 @@ class ICState {
     }
     if (numOptimizedStubs_ < MaxOptimizedStubs &&
         numFailures_ < maxFailures()) {
+      return false;
+    }
+    return true;
+  }
+
+  
+  
+  [[nodiscard]] MOZ_ALWAYS_INLINE bool maybeTransition() {
+    if (!shouldTransition()) {
       return false;
     }
     if (numFailures_ == maxFailures() || mode() == Mode::Megamorphic) {
