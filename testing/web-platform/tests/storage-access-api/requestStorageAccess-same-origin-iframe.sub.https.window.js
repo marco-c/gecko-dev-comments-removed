@@ -4,4 +4,4 @@
 'use strict';
 
 
-RunTestsInIFrame('resources/requestStorageAccess-iframe.html?testCase=same-origin-frame');
+RunTestsInIFrame('resources/requestStorageAccess-iframe.https.html?testCase=same-origin-frame');
