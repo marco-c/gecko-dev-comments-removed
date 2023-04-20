@@ -200,7 +200,6 @@ function waitForSelectedLocation(dbg, line, column) {
 
 function waitForSelectedSource(dbg, sourceOrUrl) {
   const {
-    getSelectedSource,
     getSelectedSourceTextContent,
     getSymbols,
     getBreakableLines,
@@ -212,7 +211,7 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
   return waitForState(
     dbg,
     state => {
-      const source = getSelectedSource() || {};
+      const location = dbg.selectors.getSelectedLocation() || {};
       const sourceTextContent = getSelectedSourceTextContent();
       if (!sourceTextContent) {
         return false;
@@ -222,19 +221,13 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
         
         
         if (typeof sourceOrUrl == "string") {
-          if (!source.url.includes(encodeURI(sourceOrUrl))) {
+          if (!location.source.url.includes(encodeURI(sourceOrUrl))) {
             return false;
           }
-        } else if (source.id != sourceOrUrl.id) {
+        } else if (location.source.id != sourceOrUrl.id) {
           return false;
         }
       }
-
-      const firstSourceActor = getFirstSourceActorForGeneratedSource(source.id);
-      const location = createLocation({
-        source,
-        sourceActor: firstSourceActor,
-      });
 
       
       if (!getSymbols(location)) {
@@ -242,17 +235,17 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
       }
 
       
-      if (source.isHTML) {
+      if (location.source.isHTML) {
         
         
         
-        const sourceActors = getSourceActorsForSource(source.id);
+        const sourceActors = getSourceActorsForSource(location.source.id);
         const allSourceActorsProcessed = sourceActors.every(
           sourceActor => !!getSourceActorBreakableLines(sourceActor.id)
         );
         return allSourceActorsProcessed;
       }
-      return getBreakableLines(source.id);
+      return getBreakableLines(location.source.id);
     },
     "selected source"
   );
