@@ -2171,7 +2171,9 @@ class IDLDictionary(IDLObjectWithScope):
                 assert member.type.isComplete()
 
         
-        self.members.sort(key=lambda x: x.identifier.name)
+        
+        if not self.getExtendedAttribute("Unsorted"):
+            self.members.sort(key=lambda x: x.identifier.name)
 
         inheritedMembers = []
         ancestor = self.parent
@@ -2307,6 +2309,11 @@ class IDLDictionary(IDLObjectWithScope):
                 
                 
                 self.needsConversionToJS = True
+            elif identifier == "Unsorted":
+                if not attr.noArguments():
+                    raise WebIDLError(
+                        "[Unsorted] must take no arguments", [attr.location]
+                    )
             else:
                 raise WebIDLError(
                     "[%s] extended attribute not allowed on "
