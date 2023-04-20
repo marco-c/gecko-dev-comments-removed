@@ -36,6 +36,9 @@ class InputVolumeController final {
   
   struct Config {
     
+    
+    int min_input_volume = 20;
+    
     int clipped_level_min = 70;
     
     
@@ -53,12 +56,8 @@ class InputVolumeController final {
     
     
     
-    
-    
-    
-    
-    int target_range_max_dbfs = -18;
-    int target_range_min_dbfs = -48;
+    int target_range_max_dbfs = -30;
+    int target_range_min_dbfs = -50;
     
     int update_input_volume_wait_frames = 100;
     

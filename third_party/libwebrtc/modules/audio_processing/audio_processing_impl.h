@@ -138,14 +138,6 @@ class AudioProcessingImpl : public AudioProcessing {
 
   AudioProcessing::Config GetConfig() const override;
 
-  
-  
-  struct GainController2ConfigOverride {
-    InputVolumeController::Config input_volume_controller_config;
-    AudioProcessing::Config::GainController2::AdaptiveDigital
-        adaptive_digital_config;
-  };
-
  protected:
   
   virtual void InitializeLocked()
@@ -202,15 +194,43 @@ class AudioProcessingImpl : public AudioProcessing {
   
   
   
-  const absl::optional<GainController2ConfigOverride>
-      gain_controller2_config_override_;
+  
+  
+  
+  struct GainController2ExperimentParams {
+    struct Agc2Config {
+      InputVolumeController::Config input_volume_controller;
+      AudioProcessing::Config::GainController2::AdaptiveDigital
+          adaptive_digital_controller;
+    };
+    
+    
+    absl::optional<Agc2Config> agc2_config;
+    
+    
+    bool disallow_transient_suppressor_usage;
+  };
+  
+  
+  
+  const absl::optional<GainController2ExperimentParams>
+      gain_controller2_experiment_params_;
+
+  
+  
+  static absl::optional<GainController2ExperimentParams>
+  GetGainController2ExperimentParams();
+
+  
+  
+  
+  static AudioProcessing::Config AdjustConfig(
+      const AudioProcessing::Config& config,
+      const absl::optional<GainController2ExperimentParams>& experiment_params);
+  static TransientSuppressor::VadMode GetTransientSuppressorVadMode(
+      const absl::optional<GainController2ExperimentParams>& experiment_params);
 
   const bool use_denormal_disabler_;
-
-  
-  
-  
-  const bool disallow_transient_supporessor_usage_;
 
   const TransientSuppressor::VadMode transient_suppressor_vad_mode_;
 
