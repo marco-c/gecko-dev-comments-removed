@@ -100,7 +100,7 @@ export default function update(state = initialSourcesTreeState(), action) {
       
       
       
-      const newSourceActors = action.sourceActors.filter(sourceActor =>
+      const newSourceActors = action.items.filter(sourceActor =>
         isSourceVisibleInSourceTree(
           sourceActor.sourceObject,
           state.chromeAndExtensionsEnabled,

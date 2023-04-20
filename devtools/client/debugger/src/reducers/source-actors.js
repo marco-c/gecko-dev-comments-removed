@@ -11,91 +11,78 @@ import { asyncActionAsValue } from "../actions/utils/middleware/promise";
 
 
 
-function initialSourceActorsState() {
-  return {
-    
-    
-    mutableSourceActors: new Map(),
 
-    
-    
-    
-    mutableBreakableLines: new Map(),
-  };
-}
 
-export const initial = initialSourceActorsState();
 
-export default function update(state = initialSourceActorsState(), action) {
+export const initial = new Map();
+
+export default function update(state = initial, action) {
   switch (action.type) {
     case "INSERT_SOURCE_ACTORS": {
-      for (const sourceActor of action.sourceActors) {
-        state.mutableSourceActors.set(sourceActor.id, sourceActor);
+      const { items } = action;
+      
+      state = new Map(state);
+      for (const sourceActor of items) {
+        state.set(sourceActor.id, {
+          ...sourceActor,
+          breakableLines: null,
+        });
       }
-      return {
-        ...state,
-      };
+      break;
     }
 
     case "NAVIGATE": {
-      state = initialSourceActorsState();
+      state = initial;
       break;
     }
 
     case "REMOVE_THREAD": {
-      for (const sourceActor of state.mutableSourceActors.values()) {
+      state = new Map(state);
+      for (const sourceActor of state.values()) {
         if (sourceActor.thread == action.threadActorID) {
-          state.mutableSourceActors.delete(sourceActor.id);
+          state.delete(sourceActor.id);
         }
       }
-      return {
-        ...state,
-      };
+      break;
     }
 
     case "SET_SOURCE_ACTOR_BREAKABLE_LINES":
-      return updateBreakableLines(state, action);
+      state = updateBreakableLines(state, action);
+      break;
 
     case "CLEAR_SOURCE_ACTOR_MAP_URL":
-      return clearSourceActorMapURL(state, action.sourceActorId);
+      state = clearSourceActorMapURL(state, action.id);
+      break;
   }
 
   return state;
 }
 
-function clearSourceActorMapURL(state, sourceActorId) {
-  const existingSourceActor = state.mutableSourceActors.get(sourceActorId);
-  if (!existingSourceActor) {
+function clearSourceActorMapURL(state, id) {
+  if (!state.has(id)) {
     return state;
   }
 
-  
-  
-  
-  
-  
-  
-  state.mutableSourceActors.set(sourceActorId, {
-    ...existingSourceActor,
+  const newMap = new Map(state);
+  newMap.set(id, {
+    ...state.get(id),
     sourceMapURL: "",
   });
-
-  return {
-    ...state,
-  };
+  return newMap;
 }
 
 function updateBreakableLines(state, action) {
   const value = asyncActionAsValue(action);
-  const { sourceActorId } = action;
+  const { sourceId } = action;
 
-  
-  if (!state.mutableSourceActors.has(sourceActorId)) {
+  if (!state.has(sourceId)) {
     return state;
   }
 
-  state.mutableBreakableLines.set(sourceActorId, value);
-  return {
-    ...state,
-  };
+  const newMap = new Map(state);
+  newMap.set(sourceId, {
+    ...state.get(sourceId),
+    breakableLines: value,
+  });
+  return newMap;
 }

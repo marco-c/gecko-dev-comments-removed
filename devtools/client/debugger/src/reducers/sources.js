@@ -244,7 +244,7 @@ function removeSourcesAndActors(state, threadActorID) {
 }
 
 function insertSourceActors(state, action) {
-  const { sourceActors } = action;
+  const { items } = action;
   state = {
     ...state,
     actors: { ...state.actors },
@@ -252,14 +252,14 @@ function insertSourceActors(state, action) {
 
   
   
-  for (const sourceActor of sourceActors) {
+  for (const sourceActor of items) {
     state.actors[sourceActor.source] = [
       ...(state.actors[sourceActor.source] || []),
       { id: sourceActor.id, thread: sourceActor.thread },
     ];
   }
 
-  const scriptActors = sourceActors.filter(
+  const scriptActors = items.filter(
     item => item.introductionType === "scriptElement"
   );
   if (scriptActors.length) {
