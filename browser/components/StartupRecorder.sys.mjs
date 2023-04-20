@@ -1,18 +1,14 @@
-
-
-
-
-var EXPORTED_SYMBOLS = ["StartupRecorder"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const Cm = Components.manager;
 Cm.QueryInterface(Ci.nsIServiceManager);
 
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 let firstPaintNotification = "widget-first-paint";
-
+// widget-first-paint fires much later than expected on Linux.
 if (
   AppConstants.platform == "linux" ||
   Services.prefs.getBoolPref("browser.startup.preXulSkeletonUI", false)
@@ -50,16 +46,16 @@ let afterPaintListener = () => {
   });
 };
 
-
-
-
-
-
-
-
-
-
-function StartupRecorder() {
+/**
+ * The StartupRecorder component observes notifications at various stages of
+ * startup and records the set of JS modules that were already loaded at
+ * each of these points.
+ * The records are meant to be used by startup tests in
+ * browser/base/content/test/performance
+ * This component only exists in nightly and debug builds, it doesn't ship in
+ * our release builds.
+ */
+export function StartupRecorder() {
   this.wrappedJSObject = this;
   this.data = {
     images: {
@@ -74,6 +70,7 @@ function StartupRecorder() {
     this._resolve = resolve;
   });
 }
+
 StartupRecorder.prototype = {
   QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
 
@@ -96,7 +93,7 @@ StartupRecorder.prototype = {
 
   observe(subject, topic, data) {
     if (topic == "app-startup" || topic == "content-process-ready-for-script") {
-      
+      // Don't do anything in xpcshell.
       if (Services.appinfo.ID != "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}") {
         return;
       }
@@ -110,20 +107,20 @@ StartupRecorder.prototype = {
         return;
       }
 
-      
-      
-      
+      // We can't ensure our observer will be called first or last, so the list of
+      // topics we observe here should avoid the topics used to trigger things
+      // during startup (eg. the topics observed by BrowserGlue.sys.mjs).
       let topics = [
-        "profile-do-change", 
-        "toplevel-window-ready", 
+        "profile-do-change", // This catches stuff loaded during app-startup
+        "toplevel-window-ready", // Catches stuff from final-ui-startup
         firstPaintNotification,
         "sessionstore-windows-restored",
         "browser-startup-idle-tasks-finished",
       ];
 
       if (Services.prefs.getBoolPref("browser.startup.recordImages", false)) {
-        
-        
+        // For code simplicify, recording images excludes the other startup
+        // recorder behaviors, so we can observe only the image topics.
         topics = [
           "image-loading",
           "image-drawing",
@@ -136,11 +133,11 @@ StartupRecorder.prototype = {
       return;
     }
 
-    
-    
+    // We only care about the first paint notification for browser windows, and
+    // not other types (for example, the gfx sanity test window)
     if (topic == firstPaintNotification) {
-      
-      
+      // In the case we're handling xul-window-visible, we'll have been handed
+      // an nsIAppWindow instead of an nsIDOMWindow.
       if (subject instanceof Ci.nsIAppWindow) {
         subject = subject
           .QueryInterface(Ci.nsIInterfaceRequestor)
@@ -163,8 +160,8 @@ StartupRecorder.prototype = {
     Services.obs.removeObserver(this, topic);
 
     if (topic == firstPaintNotification) {
-      
-      
+      // Because of the check for navigator:browser we made earlier, we know
+      // that if we got here, then the subject must be the first browser window.
       win = subject;
       canvas = win.document.createElementNS(
         "http://www.w3.org/1999/xhtml",
@@ -176,9 +173,9 @@ StartupRecorder.prototype = {
     }
 
     if (topic == "sessionstore-windows-restored") {
-      
-      
-      
+      // We use idleDispatchToMainThread here to record the set of
+      // loaded scripts after we are fully done with startup and ready
+      // to react to user events.
       Services.tm.dispatchToMainThread(
         this.record.bind(this, "before handling user events")
       );
@@ -211,9 +208,9 @@ StartupRecorder.prototype = {
 
       Services.profiler.getProfileDataAsync().then(profileData => {
         this.data.profile = profileData;
-        
-        
-        
+        // There's no equivalent StartProfiler call in this file because the
+        // profiler is started using the MOZ_PROFILER_STARTUP environment
+        // variable in browser/base/content/test/performance/browser.ini
         Services.profiler.StopProfiler();
 
         this._resolve();
