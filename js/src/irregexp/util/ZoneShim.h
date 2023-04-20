@@ -109,6 +109,17 @@ class ZoneList final : public ZoneObject {
     AddAll(other, zone);
   }
 
+  ZoneList(ZoneList<T>&& other) { *this = std::move(other); }
+
+  ZoneList& operator=(ZoneList&& other) {
+    MOZ_ASSERT(!data_);
+    data_ = other.data_;
+    capacity_ = other.capacity_;
+    length_ = other.length_;
+    other.Clear();
+    return *this;
+  }
+
   
   
   
@@ -191,8 +202,6 @@ class ZoneList final : public ZoneObject {
   
   inline T RemoveLast() { return Remove(length_ - 1); }
 
-  
-  
   
   inline void Clear() {
     data_ = nullptr;
