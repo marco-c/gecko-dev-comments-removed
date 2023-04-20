@@ -1204,6 +1204,7 @@ ResourceCommand.TYPES = ResourceCommand.prototype.TYPES = {
   SOURCE: "source",
   THREAD_STATE: "thread-state",
   SERVER_SENT_EVENT: "server-sent-event",
+  LAST_PRIVATE_CONTEXT_EXIT: "last-private-context-exit",
 };
 ResourceCommand.ALL_TYPES = ResourceCommand.prototype.ALL_TYPES = Object.values(
   ResourceCommand.TYPES
@@ -1331,6 +1332,15 @@ loader.lazyRequireGetter(
   LegacyListeners,
   ResourceCommand.TYPES.REFLOW,
   "resource://devtools/shared/commands/resource/legacy-listeners/reflow.js"
+);
+
+
+
+
+loader.lazyRequireGetter(
+  LegacyListeners,
+  ResourceCommand.TYPES.LAST_PRIVATE_CONTEXT_EXIT,
+  "resource://devtools/shared/commands/resource/legacy-listeners/last-private-context-exit.js"
 );
 
 

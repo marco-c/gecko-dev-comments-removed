@@ -68,7 +68,6 @@ class WebConsoleUI {
     this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
     this._onResourceAvailable = this._onResourceAvailable.bind(this);
     this._onNetworkResourceUpdated = this._onNetworkResourceUpdated.bind(this);
-    this.clearPrivateMessages = this.clearPrivateMessages.bind(this);
     this._onScopePrefChanged = this._onScopePrefChanged.bind(this);
 
     if (this.isBrowserConsole) {
@@ -180,6 +179,7 @@ class WebConsoleUI {
         resourceCommand.TYPES.ERROR_MESSAGE,
         resourceCommand.TYPES.PLATFORM_MESSAGE,
         resourceCommand.TYPES.DOCUMENT_EVENT,
+        resourceCommand.TYPES.LAST_PRIVATE_CONTEXT_EXIT,
       ],
       { onAvailable: this._onResourceAvailable }
     );
@@ -329,6 +329,7 @@ class WebConsoleUI {
         resourceCommand.TYPES.ERROR_MESSAGE,
         resourceCommand.TYPES.PLATFORM_MESSAGE,
         resourceCommand.TYPES.DOCUMENT_EVENT,
+        resourceCommand.TYPES.LAST_PRIVATE_CONTEXT_EXIT,
       ],
       { onAvailable: this._onResourceAvailable }
     );
@@ -462,6 +463,14 @@ class WebConsoleUI {
         this.handleDocumentEvent(resource);
         continue;
       }
+      if (resource.resourceType == TYPES.LAST_PRIVATE_CONTEXT_EXIT) {
+        
+        
+        if (this.isBrowserConsole || this.isBrowserToolboxConsole) {
+          this.clearPrivateMessages();
+        }
+        continue;
+      }
       
       if (
         !this.wrapper ||
@@ -554,13 +563,6 @@ class WebConsoleUI {
 
     if (targetFront.isTopLevel) {
       this._webConsoleFront = await targetFront.getFront("console");
-      if (this.isBrowserConsole || this.isBrowserToolboxConsole) {
-        
-        this.webConsoleFront.on(
-          "lastPrivateContextExited",
-          this.clearPrivateMessages
-        );
-      }
     }
   }
 
