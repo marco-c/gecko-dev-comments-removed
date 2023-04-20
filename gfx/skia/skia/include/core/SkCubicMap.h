@@ -9,8 +9,6 @@
 #define SkCubicMap_DEFINED
 
 #include "include/core/SkPoint.h"
-#include "include/core/SkScalar.h"
-#include "include/core/SkTypes.h"
 
 
 

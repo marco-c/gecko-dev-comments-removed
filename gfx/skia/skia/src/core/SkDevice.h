@@ -8,54 +8,24 @@
 #ifndef SkDevice_DEFINED
 #define SkDevice_DEFINED
 
-#include "include/core/SkBlender.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkRegion.h"
-#include "include/core/SkShader.h"
 #include "include/core/SkSurfaceProps.h"
-#include "include/private/base/SkNoncopyable.h"
-#include "include/private/base/SkTArray.h"
-#include "src/core/SkMatrixPriv.h"
-#include "src/core/SkMatrixProvider.h"
-#include "src/core/SkRasterClip.h"
-#include "src/core/SkScalerContext.h"
-#include "src/shaders/SkShaderBase.h"
+#include "include/private/SkNoncopyable.h"
 
-namespace sktext {
-class GlyphRun;
-class GlyphRunList;
-}
 class SkBitmap;
-class SkColorSpace;
-class SkMesh;
 struct SkDrawShadowRec;
-class SkImageFilter;
+class SkGlyphRun;
+class SkGlyphRunList;
 class SkImageFilterCache;
 struct SkIRect;
+class SkMatrix;
 class SkRasterHandleAllocator;
 class SkSpecialImage;
 
-namespace skif { class Mapping; }
-namespace skgpu::ganesh {
-class Device;
-}
-namespace skgpu::graphite {
-class Device;
-}
-namespace sktext::gpu {
-class SDFTControl;
-}
-
-struct SkStrikeDeviceInfo {
-    const SkSurfaceProps fSurfaceProps;
-    const SkScalerContextFlags fScalerContextFlags;
-    
-    const sktext::gpu::SDFTControl* const fSDFTControl;
-};
-
-class SkBaseDevice : public SkRefCnt, public SkMatrixProvider {
+class SkBaseDevice : public SkRefCnt {
 public:
     SkBaseDevice(const SkImageInfo&, const SkSurfaceProps&);
 
@@ -72,14 +42,6 @@ public:
         return fSurfaceProps;
     }
 
-    SkScalerContextFlags scalerContextFlags() const;
-
-    virtual SkStrikeDeviceInfo strikeDeviceInfo() const {
-        return {fSurfaceProps, this->scalerContextFlags(), nullptr};
-    }
-
-    SkIRect bounds() const { return SkIRect::MakeWH(this->width(), this->height()); }
-
     
 
 
@@ -87,7 +49,8 @@ public:
 
     void getGlobalBounds(SkIRect* bounds) const {
         SkASSERT(bounds);
-        *bounds = SkMatrixPriv::MapRect(fDeviceToGlobal, SkRect::Make(this->bounds())).roundOut();
+        const SkIPoint& origin = this->getOrigin();
+        bounds->setXYWH(origin.x(), origin.y(), this->width(), this->height());
     }
 
     SkIRect getGlobalBounds() const {
@@ -95,14 +58,6 @@ public:
         this->getGlobalBounds(&bounds);
         return bounds;
     }
-
-    
-
-
-
-
-
-    SkIRect devClipBounds() const { return this->onDevClipBounds(); }
 
     int width() const {
         return this->imageInfo().width();
@@ -139,44 +94,14 @@ public:
 
 
 
-
-    const SkM44& deviceToGlobal() const { return fDeviceToGlobal; }
-    
-
-
-
-    const SkM44& globalToDevice() const { return fGlobalToDevice; }
-    
-
-
-
-
-    SkIPoint getOrigin() const;
-    
-
-
-
-    bool isPixelAlignedToGlobal() const;
-    
-
-
-
-
-
-    SkMatrix getRelativeTransform(const SkBaseDevice&) const;
+    const SkIPoint& getOrigin() const { return fOrigin; }
 
     virtual void* getRasterHandle() const { return nullptr; }
 
-    const SkMatrixProvider& asMatrixProvider() const { return *this; }
-
     void save() { this->onSave(); }
-    void restore(const SkM44& ctm) {
+    void restore(const SkMatrix& ctm) {
         this->onRestore();
         this->setGlobalCTM(ctm);
-    }
-    void restoreLocal(const SkM44& localToDevice) {
-        this->onRestore();
-        this->setLocalToDevice(localToDevice);
     }
     void clipRect(const SkRect& rect, SkClipOp op, bool aa) {
         this->onClipRect(rect, op, aa);
@@ -187,53 +112,20 @@ public:
     void clipPath(const SkPath& path, SkClipOp op, bool aa) {
         this->onClipPath(path, op, aa);
     }
-    void clipShader(sk_sp<SkShader> sh, SkClipOp op) {
-        sh = as_SB(sh)->makeWithCTM(this->localToDevice());
-        if (op == SkClipOp::kDifference) {
-            sh = as_SB(sh)->makeInvertAlpha();
-        }
-        this->onClipShader(std::move(sh));
-    }
     void clipRegion(const SkRegion& region, SkClipOp op) {
         this->onClipRegion(region, op);
     }
-    void replaceClip(const SkIRect& rect) {
-        this->onReplaceClip(rect);
+    void androidFramework_setDeviceClipRestriction(SkIRect* mutableClipRestriction) {
+        this->onSetDeviceClipRestriction(mutableClipRestriction);
     }
+    bool clipIsWideOpen() const;
 
-    bool clipIsWideOpen() const {
-        return this->onClipIsWideOpen();
+    const SkMatrix& ctm() const { return fCTM; }
+    void setCTM(const SkMatrix& ctm) {
+        fCTM = ctm;
     }
-
-    void setLocalToDevice(const SkM44& localToDevice) {
-        fLocalToDevice = localToDevice;
-        fLocalToDevice33 = fLocalToDevice.asM33();
-        fLocalToDeviceDirty = true;
-    }
-    void setGlobalCTM(const SkM44& ctm);
+    void setGlobalCTM(const SkMatrix& ctm);
     virtual void validateDevBounds(const SkIRect&) {}
-
-    virtual bool android_utils_clipWithStencil() { return false; }
-
-    virtual skgpu::ganesh::Device* asGaneshDevice() { return nullptr; }
-    virtual skgpu::graphite::Device* asGraphiteDevice() { return nullptr; }
-
-    
-    void drawGlyphRunList(SkCanvas*,
-                          const sktext::GlyphRunList& glyphRunList,
-                          const SkPaint& initialPaint,
-                          const SkPaint& drawingPaint);
-
-    
-    
-    
-    
-    virtual sk_sp<SkSpecialImage> snapSpecial(const SkIRect& subset, bool forceCopy = false);
-    
-    
-    virtual sk_sp<SkSpecialImage> snapSpecialScaled(const SkIRect& subset, const SkISize& dstDims);
-    
-    sk_sp<SkSpecialImage> snapSpecial();
 
 protected:
     enum TileUsage {
@@ -250,11 +142,9 @@ protected:
     virtual void onClipRect(const SkRect& rect, SkClipOp, bool aa) {}
     virtual void onClipRRect(const SkRRect& rrect, SkClipOp, bool aa) {}
     virtual void onClipPath(const SkPath& path, SkClipOp, bool aa) {}
-    virtual void onClipShader(sk_sp<SkShader>) {}
     virtual void onClipRegion(const SkRegion& deviceRgn, SkClipOp) {}
-    virtual void onReplaceClip(const SkIRect& rect) {}
+    virtual void onSetDeviceClipRestriction(SkIRect* mutableClipRestriction) {}
     virtual bool onClipIsAA() const = 0;
-    virtual bool onClipIsWideOpen() const = 0;
     virtual void onAsRgnClip(SkRegion*) const = 0;
     enum class ClipType {
         kEmpty,
@@ -262,10 +152,6 @@ protected:
         kComplex
     };
     virtual ClipType onGetClipType() const = 0;
-
-    
-    
-    virtual SkIRect onDevClipBounds() const = 0;
 
     
 
@@ -299,33 +185,41 @@ protected:
     virtual void drawPath(const SkPath& path,
                           const SkPaint& paint,
                           bool pathIsMutable = false) = 0;
+    virtual void drawSprite(const SkBitmap& bitmap,
+                            int x, int y, const SkPaint& paint) = 0;
+
+    
+
+
+
+    virtual void drawBitmapRect(const SkBitmap&,
+                                const SkRect* srcOrNull, const SkRect& dst,
+                                const SkPaint& paint,
+                                SkCanvas::SrcRectConstraint) = 0;
+    virtual void drawBitmapNine(const SkBitmap&, const SkIRect& center,
+                                const SkRect& dst, const SkPaint&);
+    virtual void drawBitmapLattice(const SkBitmap&, const SkCanvas::Lattice&,
+                                   const SkRect& dst, const SkPaint&);
 
     virtual void drawImageRect(const SkImage*, const SkRect* src, const SkRect& dst,
-                               const SkSamplingOptions&, const SkPaint&,
-                               SkCanvas::SrcRectConstraint) = 0;
+                               const SkPaint&, SkCanvas::SrcRectConstraint);
+    virtual void drawImageNine(const SkImage*, const SkIRect& center,
+                               const SkRect& dst, const SkPaint&);
     virtual void drawImageLattice(const SkImage*, const SkCanvas::Lattice&,
-                                  const SkRect& dst, SkFilterMode, const SkPaint&);
+                                  const SkRect& dst, const SkPaint&);
 
-    
-
-
-
-    virtual void drawVertices(const SkVertices*,
-                              sk_sp<SkBlender>,
-                              const SkPaint&,
-                              bool skipColorXform = false) = 0;
-#ifdef SK_ENABLE_SKSL
-    virtual void drawMesh(const SkMesh& mesh, sk_sp<SkBlender>, const SkPaint&) = 0;
-#endif
+    virtual void drawVertices(const SkVertices*, const SkVertices::Bone bones[], int boneCount,
+                              SkBlendMode, const SkPaint&) = 0;
     virtual void drawShadow(const SkPath&, const SkDrawShadowRec&);
 
+    virtual void drawGlyphRunList(const SkGlyphRunList& glyphRunList) = 0;
     
     virtual void drawPatch(const SkPoint cubics[12], const SkColor colors[4],
-                           const SkPoint texCoords[4], sk_sp<SkBlender>, const SkPaint& paint);
+                           const SkPoint texCoords[4], SkBlendMode, const SkPaint& paint);
 
     
-    virtual void drawAtlas(const SkRSXform[], const SkRect[], const SkColor[], int count,
-                           sk_sp<SkBlender>, const SkPaint&);
+    virtual void drawAtlas(const SkImage* atlas, const SkRSXform[], const SkRect[],
+                           const SkColor[], int count, SkBlendMode, const SkPaint&);
 
     virtual void drawAnnotation(const SkRect&, const char[], SkData*) {}
 
@@ -339,63 +233,37 @@ protected:
     
     virtual void drawEdgeAAImageSet(const SkCanvas::ImageSetEntry[], int count,
                                     const SkPoint dstClips[], const SkMatrix preViewMatrices[],
-                                    const SkSamplingOptions&, const SkPaint&,
-                                    SkCanvas::SrcRectConstraint);
-
-    virtual void drawDrawable(SkCanvas*, SkDrawable*, const SkMatrix*);
-
-    
-    virtual void onDrawGlyphRunList(SkCanvas*,
-                                    const sktext::GlyphRunList&,
-                                    const SkPaint& initialPaint,
-                                    const SkPaint& drawingPaint) = 0;
-
-    
-#if (defined(SK_GANESH) || defined(SK_GRAPHITE))
-    virtual sk_sp<sktext::gpu::Slug> convertGlyphRunListToSlug(
-            const sktext::GlyphRunList& glyphRunList,
-            const SkPaint& initialPaint,
-            const SkPaint& drawingPaint);
-    virtual void drawSlug(SkCanvas*, const sktext::gpu::Slug* slug, const SkPaint& drawingPaint);
-#endif
+                                    const SkPaint& paint, SkCanvas::SrcRectConstraint);
 
     
 
 
+    virtual void drawDevice(SkBaseDevice*, int x, int y, const SkPaint&) = 0;
 
+    void drawGlyphRunRSXform(const SkFont&, const SkGlyphID[], const SkRSXform[], int count,
+                             SkPoint origin, const SkPaint& paint);
 
+    virtual void drawDrawable(SkDrawable*, const SkMatrix*, SkCanvas*);
 
-
-
-    virtual void drawDevice(SkBaseDevice*, const SkSamplingOptions&, const SkPaint&);
-
-    
-
-
-
-    virtual void drawSpecial(SkSpecialImage*, const SkMatrix& localToDevice,
-                             const SkSamplingOptions&, const SkPaint&);
-
-    
-
-
-
-
-
-
-
-
-
-
-    void drawFilteredImage(const skif::Mapping& mapping, SkSpecialImage* src, SkColorType ct,
-                           const SkImageFilter*, const SkSamplingOptions&, const SkPaint&);
-
+    virtual void drawSpecial(SkSpecialImage*, int x, int y, const SkPaint&,
+                             SkImage* clipImage, const SkMatrix& clipMatrix);
     virtual sk_sp<SkSpecialImage> makeSpecial(const SkBitmap&);
     virtual sk_sp<SkSpecialImage> makeSpecial(const SkImage*);
+    
+    sk_sp<SkSpecialImage> snapSpecial();
+    
+    
+    
+    
+    virtual sk_sp<SkSpecialImage> snapSpecial(const SkIRect& subset, bool forceCopy = false);
 
     virtual void setImmutable() {}
 
     bool readPixels(const SkPixmap&, int x, int y);
+
+    
+
+    virtual GrContext* context() const { return nullptr; }
 
     virtual sk_sp<SkSurface> makeSurface(const SkImageInfo&, const SkSurfaceProps&);
     virtual bool onPeekPixels(SkPixmap*) { return false; }
@@ -419,19 +287,25 @@ protected:
     virtual bool onAccessPixels(SkPixmap*) { return false; }
 
     struct CreateInfo {
+        static SkPixelGeometry AdjustGeometry(TileUsage, SkPixelGeometry);
+
+        
         CreateInfo(const SkImageInfo& info,
-                   SkPixelGeometry geo,
                    TileUsage tileUsage,
+                   SkPixelGeometry geo,
+                   bool trackCoverage,
                    SkRasterHandleAllocator* allocator)
             : fInfo(info)
             , fTileUsage(tileUsage)
-            , fPixelGeometry(geo)
+            , fPixelGeometry(AdjustGeometry(tileUsage, geo))
+            , fTrackCoverage(trackCoverage)
             , fAllocator(allocator)
         {}
 
-        const SkImageInfo        fInfo;
-        const TileUsage          fTileUsage;
-        const SkPixelGeometry    fPixelGeometry;
+        const SkImageInfo       fInfo;
+        const TileUsage         fTileUsage;
+        const SkPixelGeometry   fPixelGeometry;
+        const bool              fTrackCoverage = false;
         SkRasterHandleAllocator* fAllocator = nullptr;
     };
 
@@ -451,28 +325,21 @@ protected:
     }
 
     
-    
-    virtual bool isNoPixelsDevice() const { return false; }
-
-    
-    bool checkLocalToDeviceDirty() {
-        bool wasDirty = fLocalToDeviceDirty;
-        fLocalToDeviceDirty = false;
-        return wasDirty;
-    }
+    static void LogDrawScaleFactor(const SkMatrix& view, const SkMatrix& srcToDst, SkFilterQuality);
 
 private:
     friend class SkAndroidFrameworkUtils;
     friend class SkCanvas;
+    friend struct DeviceCM; 
     friend class SkDraw;
-    friend class SkDrawBase;
+    friend class SkDrawIter;
     friend class SkSurface_Raster;
     friend class DeviceTestingAccess;
 
-    void simplifyGlyphRunRSXFormAndRedraw(SkCanvas*,
-                                          const sktext::GlyphRunList&,
-                                          const SkPaint& initialPaint,
-                                          const SkPaint& drawingPaint);
+    
+    friend class SkGlyphRun;
+    friend class SkGlyphRunList;
+    friend class SkGlyphRunBuilder;
 
     
     
@@ -483,23 +350,16 @@ private:
     virtual bool forceConservativeRasterClip() const { return false; }
 
     
+
+
+    virtual GrRenderTargetContext* accessRenderTargetContext() { return nullptr; }
+
     
+    void setOrigin(const SkMatrix& ctm, int x, int y);
+
     
-    
-    
-    
-    
-    
-    void setDeviceCoordinateSystem(const SkM44& deviceToGlobal,
-                                   const SkM44& globalToDevice,
-                                   const SkM44& localToDevice,
-                                   int bufferOriginX,
-                                   int bufferOriginY);
-    
-    
-    void setOrigin(const SkM44& globalCTM, int x, int y) {
-        this->setDeviceCoordinateSystem(SkM44(), SkM44(), globalCTM, x, y);
-    }
+
+    virtual void flush() {}
 
     virtual SkImageFilterCache* getImageFilterCache() { return nullptr; }
 
@@ -509,129 +369,84 @@ private:
         *const_cast<SkImageInfo*>(&fInfo) = fInfo.makeWH(w, h);
     }
 
+    SkIPoint             fOrigin;
     const SkImageInfo    fInfo;
     const SkSurfaceProps fSurfaceProps;
-    
-    
-    SkM44 fDeviceToGlobal;
-    SkM44 fGlobalToDevice;
+    SkMatrix             fCTM;
 
-    
-    
-    
-    
-    
-    
-    
-    bool fLocalToDeviceDirty = true;
-
-    using INHERITED = SkRefCnt;
+    typedef SkRefCnt INHERITED;
 };
 
 class SkNoPixelsDevice : public SkBaseDevice {
 public:
-    SkNoPixelsDevice(const SkIRect& bounds, const SkSurfaceProps& props);
     SkNoPixelsDevice(const SkIRect& bounds, const SkSurfaceProps& props,
-                     sk_sp<SkColorSpace> colorSpace);
+                     sk_sp<SkColorSpace> colorSpace = nullptr)
+            : SkBaseDevice(SkImageInfo::Make(bounds.size(), kUnknown_SkColorType,
+                                             kUnknown_SkAlphaType, std::move(colorSpace)),
+                           props) {
+        
+        
+
+        this->setOrigin(SkMatrix::I(), bounds.left(), bounds.top());
+    }
 
     void resetForNextPicture(const SkIRect& bounds) {
         
         this->privateResize(bounds.width(), bounds.height());
-        this->setOrigin(SkM44(), bounds.left(), bounds.top());
-        this->resetClipStack();
+        this->setOrigin(SkMatrix::I(), bounds.left(), bounds.top());
     }
 
 protected:
     
     
-    void onSave() override;
-    void onRestore() override;
-    void onClipRect(const SkRect& rect, SkClipOp op, bool aa) override;
-    void onClipRRect(const SkRRect& rrect, SkClipOp op, bool aa) override;
-    void onClipPath(const SkPath& path, SkClipOp op, bool aa) override;
-    void onClipRegion(const SkRegion& globalRgn, SkClipOp op) override;
-    void onClipShader(sk_sp<SkShader> shader) override;
-    void onReplaceClip(const SkIRect& rect) override;
-    bool onClipIsAA() const override { return this->clip().fIsAA; }
-    bool onClipIsWideOpen() const override {
-        return this->clip().fIsRect &&
-               this->onDevClipBounds() == this->bounds();
-    }
+    void onSave() override {}
+    void onRestore() override {}
+    void onClipRect(const SkRect& rect, SkClipOp, bool aa) override {}
+    void onClipRRect(const SkRRect& rrect, SkClipOp, bool aa) override {}
+    void onClipPath(const SkPath& path, SkClipOp, bool aa) override {}
+    void onClipRegion(const SkRegion& deviceRgn, SkClipOp) override {}
+    void onSetDeviceClipRestriction(SkIRect* mutableClipRestriction) override {}
+    bool onClipIsAA() const override { return false; }
     void onAsRgnClip(SkRegion* rgn) const override {
-        rgn->setRect(this->onDevClipBounds());
+        rgn->setRect(SkIRect::MakeWH(this->width(), this->height()));
     }
-    ClipType onGetClipType() const override;
-    SkIRect onDevClipBounds() const override { return this->clip().fClipBounds; }
+    ClipType onGetClipType() const override {
+        return ClipType::kRect;
+    }
 
     void drawPaint(const SkPaint& paint) override {}
     void drawPoints(SkCanvas::PointMode, size_t, const SkPoint[], const SkPaint&) override {}
-    void drawImageRect(const SkImage*, const SkRect*, const SkRect&,
-                       const SkSamplingOptions&, const SkPaint&,
-                       SkCanvas::SrcRectConstraint) override {}
     void drawRect(const SkRect&, const SkPaint&) override {}
     void drawOval(const SkRect&, const SkPaint&) override {}
     void drawRRect(const SkRRect&, const SkPaint&) override {}
     void drawPath(const SkPath&, const SkPaint&, bool) override {}
-    void drawDevice(SkBaseDevice*, const SkSamplingOptions&, const SkPaint&) override {}
-    void drawVertices(const SkVertices*, sk_sp<SkBlender>, const SkPaint&, bool) override {}
-#ifdef SK_ENABLE_SKSL
-    void drawMesh(const SkMesh&, sk_sp<SkBlender>, const SkPaint&) override {}
-#endif
-
-#if defined(SK_GANESH)
-    void drawSlug(SkCanvas*, const sktext::gpu::Slug*, const SkPaint&) override {}
-#endif
-
-    void onDrawGlyphRunList(
-            SkCanvas*, const sktext::GlyphRunList&, const SkPaint&, const SkPaint&) override {}
-
-    bool isNoPixelsDevice() const override { return true; }
+    void drawSprite(const SkBitmap&, int, int, const SkPaint&) override {}
+    void drawBitmapRect(const SkBitmap&, const SkRect*, const SkRect&, const SkPaint&,
+                        SkCanvas::SrcRectConstraint) override {}
+    void drawDevice(SkBaseDevice*, int, int, const SkPaint&) override {}
+    void drawGlyphRunList(const SkGlyphRunList& glyphRunList) override {}
+    void drawVertices(const SkVertices*, const SkVertices::Bone[], int, SkBlendMode,
+                      const SkPaint&) override {}
 
 private:
-    struct ClipState {
-        SkIRect fClipBounds;
-        int fDeferredSaveCount;
-        bool fIsAA;
-        bool fIsRect;
-
-        ClipState(const SkIRect& bounds, bool isAA, bool isRect)
-                : fClipBounds(bounds)
-                , fDeferredSaveCount(0)
-                , fIsAA(isAA)
-                , fIsRect(isRect) {}
-
-        void op(SkClipOp op, const SkM44& transform, const SkRect& bounds,
-                bool isAA, bool fillsBounds);
-    };
-
-    const ClipState& clip() const { return fClipStack.back(); }
-    ClipState& writableClip();
-
-    void resetClipStack() {
-        fClipStack.clear();
-        fClipStack.emplace_back(this->bounds(), false, true);
-    }
-
-    SkSTArray<4, ClipState> fClipStack;
-
-    using INHERITED = SkBaseDevice;
+    typedef SkBaseDevice INHERITED;
 };
 
-class SkAutoDeviceTransformRestore : SkNoncopyable {
+class SkAutoDeviceCTMRestore : SkNoncopyable {
 public:
-    SkAutoDeviceTransformRestore(SkBaseDevice* device, const SkMatrix& localToDevice)
+    SkAutoDeviceCTMRestore(SkBaseDevice* device, const SkMatrix& ctm)
         : fDevice(device)
-        , fPrevLocalToDevice(device->localToDevice())
+        , fPrevCTM(device->ctm())
     {
-        fDevice->setLocalToDevice(SkM44(localToDevice));
+        fDevice->setCTM(ctm);
     }
-    ~SkAutoDeviceTransformRestore() {
-        fDevice->setLocalToDevice(fPrevLocalToDevice);
+    ~SkAutoDeviceCTMRestore() {
+        fDevice->setCTM(fPrevCTM);
     }
 
 private:
-    SkBaseDevice* fDevice;
-    const SkM44   fPrevLocalToDevice;
+    SkBaseDevice*   fDevice;
+    const SkMatrix  fPrevCTM;
 };
 
 #endif

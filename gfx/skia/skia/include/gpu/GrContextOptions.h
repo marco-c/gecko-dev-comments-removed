@@ -9,18 +9,16 @@
 #define GrContextOptions_DEFINED
 
 #include "include/core/SkData.h"
-#include "include/core/SkString.h"
 #include "include/core/SkTypes.h"
 #include "include/gpu/GrDriverBugWorkarounds.h"
 #include "include/gpu/GrTypes.h"
-#include "include/gpu/ShaderErrorHandler.h"
-#include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "include/private/GrTypesPriv.h"
 
 #include <vector>
 
 class SkExecutor;
 
-#if defined(SK_GANESH)
+#if SK_SUPPORT_GPU
 struct SK_API GrContextOptions {
     enum class Enable {
         
@@ -46,45 +44,31 @@ struct SK_API GrContextOptions {
 
     class SK_API PersistentCache {
     public:
-        virtual ~PersistentCache() = default;
+        virtual ~PersistentCache() {}
 
         
 
 
         virtual sk_sp<SkData> load(const SkData& key) = 0;
 
-        
-        
-        virtual void store(const SkData& , const SkData& ) { SkASSERT(false); }
-
-        
-
-
-
-        virtual void store(const SkData& key, const SkData& data, const SkString& ) {
-            this->store(key, data);
-        }
-
-    protected:
-        PersistentCache() = default;
-        PersistentCache(const PersistentCache&) = delete;
-        PersistentCache& operator=(const PersistentCache&) = delete;
+        virtual void store(const SkData& key, const SkData& data) = 0;
     };
 
-    using ShaderErrorHandler = skgpu::ShaderErrorHandler;
+    
+
+
+
+
+    class SK_API ShaderErrorHandler {
+    public:
+        virtual ~ShaderErrorHandler() {}
+        virtual void compileError(const char* shader, const char* errors) = 0;
+    };
 
     GrContextOptions() {}
 
     
     bool fSuppressPrints = false;
-
-    
-
-
-
-
-
-    Enable fSkipGLErrorChecks = Enable::kDefault;
 
     
 
@@ -145,18 +129,14 @@ struct SK_API GrContextOptions {
 
 
 
-    float fMinDistanceFieldFontSize = 18;
+
+    float fMinDistanceFieldFontSize = -1.f;
 
     
 
 
-#if defined(SK_BUILD_FOR_ANDROID)
-    float fGlyphsAsPathsFontSize = 384;
-#elif defined(SK_BUILD_FOR_MAC)
-    float fGlyphsAsPathsFontSize = 256;
-#else
-    float fGlyphsAsPathsFontSize = 324;
-#endif
+
+    float fGlyphsAsPathsFontSize = -1.f;
 
     
 
@@ -173,11 +153,16 @@ struct SK_API GrContextOptions {
     
 
 
-    Enable fUseDrawInsteadOfClear = Enable::kDefault;
+
+
+    bool fSharpenMipmappedTextures = false;
 
     
 
 
+    Enable fUseDrawInsteadOfClear = Enable::kDefault;
+
+    
 
 
 
@@ -229,69 +214,6 @@ struct SK_API GrContextOptions {
 
     int  fInternalMultisampleCount = 4;
 
-    
-
-
-
-
-
-
-
-
-    int fMaxCachedVulkanSecondaryCommandBuffers = -1;
-
-    
-
-
-    bool fSuppressMipmapSupport = false;
-
-    
-
-
-
-    bool fDisableTessellationPathRenderer = false;
-
-    
-
-
-
-    bool fEnableExperimentalHardwareTessellation = false;
-
-    
-
-
-
-    bool fSupportBilerpFromGlyphAtlas = false;
-
-    
-
-
-
-    bool fReducedShaderVariations = false;
-
-    
-
-
-    bool fAllowMSAAOnNewIntel = false;
-
-    
-
-
-
-
-
-
-    bool fAlwaysUseTexStorageWhenAvailable = false;
-
-    
-
-
-
-
-
-    GrDirectContextDestroyedContext fContextDeleteContext = nullptr;
-    GrDirectContextDestroyedProc fContextDeleteProc = nullptr;
-
 #if GR_TEST_UTILS
     
 
@@ -301,7 +223,7 @@ struct SK_API GrContextOptions {
 
 
 
-    bool fFailFlushTimeCallbacks = false;
+    int  fMaxTileSizeOverride = 0;
 
     
 
@@ -311,18 +233,7 @@ struct SK_API GrContextOptions {
     
 
 
-
-    bool fSuppressAdvancedBlendEquations = false;
-
-    
-
-
-    bool fSuppressFramebufferFetch = false;
-
-    
-
-
-    bool fAllPathsVolatile = false;
+    bool fSuppressGeometryShaders = false;
 
     
 
@@ -337,30 +248,15 @@ struct SK_API GrContextOptions {
     
 
 
-    bool fRandomGLOOM = false;
+    GpuPathRenderers fGpuPathRenderers = GpuPathRenderers::kAll;
+#endif
 
-    
-
-
-    bool fDisallowWriteAndTransferPixelRowBytes = false;
-
-    
-
-
-    GpuPathRenderers fGpuPathRenderers = GpuPathRenderers::kDefault;
-
+#if SK_SUPPORT_ATLAS_TEXT
     
 
 
 
-
-
-    int fResourceCacheLimitOverride = -1;
-
-    
-
-
-    int  fMaxTextureAtlasSize = 2048;
+    Enable fDistanceFieldGlyphVerticesAlwaysHaveW = Enable::kDefault;
 #endif
 
     GrDriverBugWorkarounds fDriverBugWorkarounds;

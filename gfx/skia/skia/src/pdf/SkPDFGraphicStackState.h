@@ -6,7 +6,6 @@
 #include "include/core/SkColor.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkScalar.h"
-#include "include/private/base/SkFloatingPoint.h"
 #include "src/core/SkClipStack.h"
 
 class SkDynamicMemoryWStream;
@@ -17,13 +16,13 @@ struct SkPDFGraphicStackState {
     struct Entry {
         SkMatrix fMatrix = SkMatrix::I();
         uint32_t fClipStackGenID = SkClipStack::kWideOpenGenID;
-        SkColor4f fColor = {SK_FloatNaN, SK_FloatNaN, SK_FloatNaN, SK_FloatNaN};
+        SkColor4f fColor = {0, 0, 0, 1};
         SkScalar fTextScaleX = 1;  
         int fShaderIndex = -1;
         int fGraphicStateIndex = -1;
     };
     
-    inline static constexpr int kMaxStackDepth = 2;
+    static constexpr int kMaxStackDepth = 2;
     Entry fEntries[kMaxStackDepth + 1];
     int fStackDepth = 0;
     SkDynamicMemoryWStream* fContentStream;

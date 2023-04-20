@@ -11,18 +11,8 @@
 #include "include/gpu/GrTypes.h"
 
 #include "include/gpu/gl/GrGLTypes.h"
-
-#ifdef SK_METAL
 #include "include/gpu/mtl/GrMtlTypes.h"
-#endif
-
-#ifdef SK_VULKAN
 #include "include/gpu/vk/GrVkTypes.h"
-#endif
-
-#ifdef SK_DIRECT3D
-#include "include/private/gpu/ganesh/GrD3DTypesMinimal.h"
-#endif
 
 
 
@@ -31,16 +21,7 @@ class GrBackendSemaphore {
 public:
     
     
-    GrBackendSemaphore()
-            : fBackend(GrBackendApi::kOpenGL), fGLSync(nullptr), fIsInitialized(false) {}
-
-#ifdef SK_DIRECT3D
-    
-    
-    ~GrBackendSemaphore();
-    GrBackendSemaphore(const GrBackendSemaphore&);
-    GrBackendSemaphore& operator=(const GrBackendSemaphore&);
-#endif
+    GrBackendSemaphore() : fBackend(GrBackendApi::kOpenGL), fGLSync(0), fIsInitialized(false) {}
 
     void initGL(GrGLsync sync) {
         fBackend = GrBackendApi::kOpenGL;
@@ -48,12 +29,36 @@ public:
         fIsInitialized = true;
     }
 
-#ifdef SK_VULKAN
     void initVulkan(VkSemaphore semaphore) {
         fBackend = GrBackendApi::kVulkan;
         fVkSemaphore = semaphore;
-
+#ifdef SK_VULKAN
         fIsInitialized = true;
+#else
+        fIsInitialized = false;
+#endif
+    }
+
+    
+    
+    void initMetal(GrMTLHandle event, uint64_t value) {
+        fBackend = GrBackendApi::kMetal;
+        fMtlEvent = event;
+        fMtlValue = value;
+#ifdef SK_METAL
+        fIsInitialized = true;
+#else
+        fIsInitialized = false;
+#endif
+    }
+
+    bool isInitialized() const { return fIsInitialized; }
+
+    GrGLsync glSync() const {
+        if (!fIsInitialized || GrBackendApi::kOpenGL != fBackend) {
+            return 0;
+        }
+        return fGLSync;
     }
 
     VkSemaphore vkSemaphore() const {
@@ -61,18 +66,6 @@ public:
             return VK_NULL_HANDLE;
         }
         return fVkSemaphore;
-    }
-#endif
-
-#ifdef SK_METAL
-    
-    
-    void initMetal(GrMTLHandle event, uint64_t value) {
-        fBackend = GrBackendApi::kMetal;
-        fMtlEvent = event;
-        fMtlValue = value;
-
-        fIsInitialized = true;
     }
 
     GrMTLHandle mtlSemaphore() const {
@@ -89,51 +82,14 @@ public:
         return fMtlValue;
     }
 
-#endif
-
-#ifdef SK_DIRECT3D
-    void initDirect3D(const GrD3DFenceInfo& info) {
-        fBackend = GrBackendApi::kDirect3D;
-        this->assignD3DFenceInfo(info);
-        fIsInitialized = true;
-    }
-#endif
-
-    bool isInitialized() const { return fIsInitialized; }
-
-    GrGLsync glSync() const {
-        if (!fIsInitialized || GrBackendApi::kOpenGL != fBackend) {
-            return nullptr;
-        }
-        return fGLSync;
-    }
-
-
-#ifdef SK_DIRECT3D
-    bool getD3DFenceInfo(GrD3DFenceInfo* outInfo) const;
-#endif
-
 private:
-#ifdef SK_DIRECT3D
-    void assignD3DFenceInfo(const GrD3DFenceInfo& info);
-#endif
-
     GrBackendApi fBackend;
     union {
         GrGLsync    fGLSync;
-#ifdef SK_VULKAN
         VkSemaphore fVkSemaphore;
-#endif
-#ifdef SK_METAL
         GrMTLHandle fMtlEvent;    
-#endif
-#ifdef SK_DIRECT3D
-        GrD3DFenceInfo* fD3DFenceInfo;
-#endif
     };
-#ifdef SK_METAL
     uint64_t fMtlValue;
-#endif
     bool fIsInitialized;
 };
 

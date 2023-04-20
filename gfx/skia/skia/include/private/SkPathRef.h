@@ -8,33 +8,20 @@
 #ifndef SkPathRef_DEFINED
 #define SkPathRef_DEFINED
 
+#include "include/core/SkMatrix.h"
 #include "include/core/SkPoint.h"
+#include "include/core/SkRRect.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
-#include "include/core/SkScalar.h"
-#include "include/core/SkTypes.h"
-#include "include/private/SkIDChangeListener.h"
-#include "include/private/base/SkDebug.h"
-#include "include/private/base/SkTArray.h"
-#include "include/private/base/SkTo.h"
-
+#include "include/private/SkMutex.h"
+#include "include/private/SkTDArray.h"
+#include "include/private/SkTemplates.h"
+#include "include/private/SkTo.h"
 #include <atomic>
-#include <cstddef>
-#include <cstdint>
-#include <tuple>
-#include <utility>
+#include <limits>
 
-class SkMatrix;
-class SkRRect;
-
-
-struct SkPathVerbAnalysis {
-    bool     valid;
-    int      points, weights;
-    unsigned segmentMask;
-};
-SkPathVerbAnalysis sk_path_analyze_verbs(const uint8_t verbs[], int count);
-
+class SkRBuffer;
+class SkWBuffer;
 
 
 
@@ -53,32 +40,6 @@ SkPathVerbAnalysis sk_path_analyze_verbs(const uint8_t verbs[], int count);
 
 class SK_API SkPathRef final : public SkNVRefCnt<SkPathRef> {
 public:
-    
-    
-    using PointsArray = SkSTArray<4, SkPoint>;
-    using VerbsArray = SkSTArray<4, uint8_t>;
-    using ConicWeightsArray = SkSTArray<2, SkScalar>;
-
-    SkPathRef(PointsArray points, VerbsArray verbs, ConicWeightsArray weights,
-              unsigned segmentMask)
-        : fPoints(std::move(points))
-        , fVerbs(std::move(verbs))
-        , fConicWeights(std::move(weights))
-    {
-        fBoundsIsDirty = true;    
-        fGenerationID = 0;        
-        fSegmentMask = segmentMask;
-        fIsOval = false;
-        fIsRRect = false;
-        
-        fRRectOrOvalIsCCW = false;
-        fRRectOrOvalStartIdx = 0xAC;
-        SkDEBUGCODE(fEditorsAttached.store(0);)
-
-        this->computeBounds();  
-        SkDEBUGCODE(this->validate();)
-    }
-
     class Editor {
     public:
         Editor(sk_sp<SkPathRef>* pathRef,
@@ -120,17 +81,6 @@ public:
                                      int numVbs,
                                      SkScalar** weights = nullptr) {
             return fPathRef->growForRepeatedVerb(verb, numVbs, weights);
-        }
-
-        
-
-
-
-
-
-
-        std::tuple<SkPoint*, SkScalar*> growForVerbsInPath(const SkPathRef& path) {
-            return fPathRef->growForVerbsInPath(path);
         }
 
         
@@ -241,7 +191,21 @@ public:
         return SkToBool(fIsOval);
     }
 
-    bool isRRect(SkRRect* rrect, bool* isCCW, unsigned* start) const;
+    bool isRRect(SkRRect* rrect, bool* isCCW, unsigned* start) const {
+        if (fIsRRect) {
+            if (rrect) {
+                *rrect = this->getRRect();
+            }
+            if (isCCW) {
+                *isCCW = SkToBool(fRRectOrOvalIsCCW);
+            }
+            if (start) {
+                *start = fRRectOrOvalStartIdx;
+            }
+        }
+        return SkToBool(fIsRRect);
+    }
+
 
     bool hasComputedBounds() const {
         return !fBoundsIsDirty;
@@ -278,11 +242,9 @@ public:
     static void Rewind(sk_sp<SkPathRef>* pathRef);
 
     ~SkPathRef();
-    int countPoints() const { return fPoints.size(); }
-    int countVerbs() const { return fVerbs.size(); }
-    int countWeights() const { return fConicWeights.size(); }
-
-    size_t approximateBytesUsed() const;
+    int countPoints() const { return fPoints.count(); }
+    int countVerbs() const { return fVerbs.count(); }
+    int countWeights() const { return fConicWeights.count(); }
 
     
 
@@ -315,6 +277,16 @@ public:
 
     bool operator== (const SkPathRef& ref) const;
 
+    
+
+
+    void writeToBuffer(SkWBuffer* buffer) const;
+
+    
+
+
+    uint32_t writeSize() const;
+
     void interpolate(const SkPathRef& ending, SkScalar weight, SkPathRef* out) const;
 
     
@@ -322,24 +294,32 @@ public:
 
 
 
+    uint32_t genID() const;
 
-    uint32_t genID(uint8_t fillType) const;
+    class GenIDChangeListener : public SkRefCnt {
+    public:
+        GenIDChangeListener() : fShouldUnregisterFromPath(false) {}
+        virtual ~GenIDChangeListener() {}
 
-    void addGenIDChangeListener(sk_sp<SkIDChangeListener>);   
-    int genIDChangeListenerCount();                           
+        virtual void onChange() = 0;
 
-    bool dataMatchesVerbs() const;
+        
+        
+        void markShouldUnregisterFromPath() {
+            fShouldUnregisterFromPath.store(true, std::memory_order_relaxed);
+        }
+        bool shouldUnregisterFromPath() {
+            return fShouldUnregisterFromPath.load(std::memory_order_acquire);
+        }
+
+    private:
+        std::atomic<bool> fShouldUnregisterFromPath;
+    };
+
+    void addGenIDChangeListener(sk_sp<GenIDChangeListener>);  
+
     bool isValid() const;
     SkDEBUGCODE(void validate() const { SkASSERT(this->isValid()); } )
-
-    
-
-
-    void reset();
-
-    bool isInitialEmptyPathRef() const {
-        return fGenerationID == kEmptyGenID;
-    }
 
 private:
     enum SerializationOffsets {
@@ -351,7 +331,7 @@ private:
         kSegmentMask_SerializationShift = 0                 
     };
 
-    SkPathRef(int numVerbs = 0, int numPoints = 0) {
+    SkPathRef() {
         fBoundsIsDirty = true;    
         fGenerationID = kEmptyGenID;
         fSegmentMask = 0;
@@ -360,15 +340,14 @@ private:
         
         fRRectOrOvalIsCCW = false;
         fRRectOrOvalStartIdx = 0xAC;
-        if (numPoints > 0)
-            fPoints.reserve_back(numPoints);
-        if (numVerbs > 0)
-            fVerbs.reserve_back(numVerbs);
         SkDEBUGCODE(fEditorsAttached.store(0);)
         SkDEBUGCODE(this->validate();)
     }
 
     void copy(const SkPathRef& ref, int additionalReserveVerbs, int additionalReservePoints);
+
+    
+    unsigned computeSegmentMask() const;
 
     
     static bool ComputePtBounds(SkRect* bounds, const SkPathRef& ref) {
@@ -396,20 +375,15 @@ private:
     
     void incReserve(int additionalVerbs, int additionalPoints) {
         SkDEBUGCODE(this->validate();)
-        
-        
-        if (additionalPoints > 0)
-            fPoints.reserve(fPoints.size() + additionalPoints);
-        if (additionalVerbs > 0)
-            fVerbs.reserve(fVerbs.size() + additionalVerbs);
+        fPoints.setReserve(fPoints.count() + additionalPoints);
+        fVerbs.setReserve(fVerbs.count() + additionalVerbs);
         SkDEBUGCODE(this->validate();)
     }
 
     
 
-
-
-    void commonReset() {
+    void resetToSize(int verbCount, int pointCount, int conicCount,
+                     int reserveVerbs = 0, int reservePoints = 0) {
         SkDEBUGCODE(this->validate();)
         this->callGenIDChangeListeners();
         fBoundsIsDirty = true;      
@@ -418,25 +392,12 @@ private:
         fSegmentMask = 0;
         fIsOval = false;
         fIsRRect = false;
-    }
 
-    
-
-    void resetToSize(int verbCount, int pointCount, int conicCount,
-                     int reserveVerbs = 0, int reservePoints = 0) {
-        commonReset();
-        
-        const int pointDelta = pointCount + reservePoints - fPoints.size();
-        if (pointDelta > 0) {
-            fPoints.reserve_back(pointDelta);
-        }
-        fPoints.resize_back(pointCount);
-        const int verbDelta = verbCount + reserveVerbs - fVerbs.size();
-        if (verbDelta > 0) {
-            fVerbs.reserve_back(verbDelta);
-        }
-        fVerbs.resize_back(verbCount);
-        fConicWeights.resize_back(conicCount);
+        fPoints.setReserve(pointCount + reservePoints);
+        fPoints.setCount(pointCount);
+        fVerbs.setReserve(verbCount + reserveVerbs);
+        fVerbs.setCount(verbCount);
+        fConicWeights.setCount(conicCount);
         SkDEBUGCODE(this->validate();)
     }
 
@@ -454,14 +415,6 @@ private:
 
 
     SkPoint* growForVerb(int  verb, SkScalar weight);
-
-    
-
-
-
-
-
-    std::tuple<SkPoint*, SkScalar*> growForVerbsInPath(const SkPathRef& path);
 
     
 
@@ -506,9 +459,9 @@ private:
 
     mutable SkRect   fBounds;
 
-    PointsArray fPoints;
-    VerbsArray fVerbs;
-    ConicWeightsArray fConicWeights;
+    SkTDArray<SkPoint>  fPoints;
+    SkTDArray<uint8_t>  fVerbs;
+    SkTDArray<SkScalar> fConicWeights;
 
     enum {
         kEmptyGenID = 1, 
@@ -516,7 +469,8 @@ private:
     mutable uint32_t    fGenerationID;
     SkDEBUGCODE(std::atomic<int> fEditorsAttached;) 
 
-    SkIDChangeListener::List fGenIDChangeListeners;
+    SkMutex                         fGenIDChangeListenersMutex;
+    SkTDArray<GenIDChangeListener*> fGenIDChangeListeners;  
 
     mutable uint8_t  fBoundsIsDirty;
     mutable bool     fIsFinite;    
@@ -532,7 +486,6 @@ private:
     friend class PathRefTest_Private;
     friend class ForceIsRRect_Private; 
     friend class SkPath;
-    friend class SkPathBuilder;
     friend class SkPathPriv;
 };
 

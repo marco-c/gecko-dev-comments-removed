@@ -9,16 +9,12 @@
 #define SkAutoPixmapStorage_DEFINED
 
 #include "include/core/SkPixmap.h"
-#include "include/private/base/SkMalloc.h"
-
-class SkData;
+#include "include/private/SkMalloc.h"
 
 class SkAutoPixmapStorage : public SkPixmap {
 public:
     SkAutoPixmapStorage();
     ~SkAutoPixmapStorage();
-
-    SkAutoPixmapStorage(SkAutoPixmapStorage&& other);
 
     
 
@@ -53,13 +49,6 @@ public:
 
 
 
-
-    void* SK_WARN_UNUSED_RESULT detachPixels();
-
-    
-
-
-
     sk_sp<SkData> SK_WARN_UNUSED_RESULT detachPixelsAsData();
 
     
@@ -86,7 +75,7 @@ private:
         fStorage = nullptr;
     }
 
-    using INHERITED = SkPixmap;
+    typedef SkPixmap INHERITED;
 };
 
 #endif

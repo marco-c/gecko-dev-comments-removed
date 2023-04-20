@@ -20,8 +20,8 @@ protected:
         SkISize dim = this->dimensions();
         
         
-        dim.fWidth = std::max(1, SkScalarRoundToInt(desiredScale * dim.fWidth));
-        dim.fHeight = std::max(1, SkScalarRoundToInt(desiredScale * dim.fHeight));
+        dim.fWidth = SkTMax(1, SkScalarRoundToInt(desiredScale * dim.fWidth));
+        dim.fHeight = SkTMax(1, SkScalarRoundToInt(desiredScale * dim.fHeight));
         return dim;
     }
 
@@ -33,7 +33,7 @@ protected:
     }
 
 private:
-    using INHERITED = SkCodec;
+    typedef SkCodec INHERITED;
 };
 
 #endif  

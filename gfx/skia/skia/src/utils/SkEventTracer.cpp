@@ -5,12 +5,11 @@
 
 
 
+#include "include/private/SkOnce.h"
 #include "include/utils/SkEventTracer.h"
-
-#include "include/private/base/SkOnce.h"
+#include <atomic>
 
 #include <stdlib.h>
-#include <atomic>
 
 class SkDefaultEventTracer : public SkEventTracer {
     SkEventTracer::Handle
@@ -35,28 +34,21 @@ class SkDefaultEventTracer : public SkEventTracer {
     }
     const char* getCategoryGroupName(
       const uint8_t* categoryEnabledFlag) override {
-        static const char* stub = "stub";
-        return stub;
+        static const char* dummy = "dummy";
+        return dummy;
     }
-
-    
-    void newTracingSection(const char* name) override {}
 };
 
 
 static std::atomic<SkEventTracer*> gUserTracer{nullptr};
 
-bool SkEventTracer::SetInstance(SkEventTracer* tracer, bool leakTracer) {
+bool SkEventTracer::SetInstance(SkEventTracer* tracer) {
     SkEventTracer* expected = nullptr;
     if (!gUserTracer.compare_exchange_strong(expected, tracer)) {
         delete tracer;
         return false;
     }
-    
-    
-    if (!leakTracer) {
-        atexit([]() { delete gUserTracer.load(); });
-    }
+    atexit([]() { delete gUserTracer.load(); });
     return true;
 }
 

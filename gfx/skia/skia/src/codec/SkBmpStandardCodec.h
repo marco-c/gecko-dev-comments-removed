@@ -7,23 +7,11 @@
 #ifndef SkBmpStandardCodec_DEFINED
 #define SkBmpStandardCodec_DEFINED
 
-#include "include/codec/SkCodec.h"
-#include "include/core/SkRefCnt.h"
+#include "include/core/SkImageInfo.h"
 #include "include/core/SkTypes.h"
-#include "include/private/SkEncodedInfo.h"
 #include "src/codec/SkBmpBaseCodec.h"
 #include "src/codec/SkColorTable.h"
 #include "src/codec/SkSwizzler.h"
-
-#include <cstddef>
-#include <cstdint>
-#include <memory>
-
-class SkSampler;
-class SkStream;
-enum SkAlphaType : int;
-enum SkColorType : int;
-struct SkImageInfo;
 
 
 
@@ -99,6 +87,6 @@ private:
     const bool                  fInIco;
     const size_t                fAndMaskRowBytes; 
 
-    using INHERITED = SkBmpBaseCodec;
+    typedef SkBmpBaseCodec INHERITED;
 };
 #endif  

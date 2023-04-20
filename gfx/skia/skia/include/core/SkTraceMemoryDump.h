@@ -83,17 +83,8 @@ public:
 
     virtual bool shouldDumpWrappedObjects() const { return true; }
 
-    
-
-
-
-    virtual void dumpWrappedState(const char* , bool ) {}
-
 protected:
-    virtual ~SkTraceMemoryDump() = default;
-    SkTraceMemoryDump() = default;
-    SkTraceMemoryDump(const SkTraceMemoryDump&) = delete;
-    SkTraceMemoryDump& operator=(const SkTraceMemoryDump&) = delete;
+    virtual ~SkTraceMemoryDump() { }
 };
 
 #endif

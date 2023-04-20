@@ -8,164 +8,291 @@
 #ifndef SKSL_PROGRAM
 #define SKSL_PROGRAM
 
-#include "src/sksl/ir/SkSLType.h"
-
-#include <memory>
-#include <string>
 #include <vector>
+#include <memory>
+
+#include "src/sksl/ir/SkSLBoolLiteral.h"
+#include "src/sksl/ir/SkSLExpression.h"
+#include "src/sksl/ir/SkSLFloatLiteral.h"
+#include "src/sksl/ir/SkSLIntLiteral.h"
+#include "src/sksl/ir/SkSLModifiers.h"
+#include "src/sksl/ir/SkSLProgramElement.h"
+#include "src/sksl/ir/SkSLSymbolTable.h"
+
+#ifdef SK_VULKAN
+#include "src/gpu/vk/GrVkCaps.h"
+#endif
 
 
+#define SKSL_RTWIDTH_NAME "u_skRTWidth"
 
-#define SKSL_RTFLIP_NAME "u_skRTFlip"
+
+#define SKSL_RTHEIGHT_NAME "u_skRTHeight"
 
 namespace SkSL {
 
 class Context;
-class FunctionDeclaration;
-class ModifiersPool;
-class Pool;
-class ProgramElement;
-class ProgramUsage;
-class SymbolTable;
-struct ProgramConfig;
-
-
-struct UniformInfo {
-    struct Uniform {
-        std::string fName;
-        SkSL::Type::NumberKind fKind;
-        int fColumns;
-        int fRows;
-        int fSlot;
-    };
-    std::vector<Uniform> fUniforms;
-    int fUniformSlotCount = 0;
-};
 
 
 
 
 struct Program {
-    struct Inputs {
-        bool fUseFlipRTUniform = false;
-        bool operator==(const Inputs& that) const {
-            return fUseFlipRTUniform == that.fUseFlipRTUniform;
-        }
-        bool operator!=(const Inputs& that) const { return !(*this == that); }
-    };
+    struct Settings {
+        struct Value {
+            Value(bool b)
+            : fKind(kBool_Kind)
+            , fValue(b) {}
 
-    Program(std::unique_ptr<std::string> source,
-            std::unique_ptr<ProgramConfig> config,
-            std::shared_ptr<Context> context,
-            std::vector<std::unique_ptr<ProgramElement>> elements,
-            std::vector<const ProgramElement*> sharedElements,
-            std::unique_ptr<ModifiersPool> modifiers,
-            std::shared_ptr<SymbolTable> symbols,
-            std::unique_ptr<Pool> pool,
-            Inputs inputs);
+            Value(int i)
+            : fKind(kInt_Kind)
+            , fValue(i) {}
 
-    ~Program();
+            Value(unsigned int i)
+            : fKind(kInt_Kind)
+            , fValue(i) {}
 
-    class ElementsCollection {
-    public:
-        class iterator {
-        public:
-            const ProgramElement* operator*() {
-                if (fShared != fSharedEnd) {
-                    return *fShared;
-                } else {
-                    return fOwned->get();
+            Value(float f)
+            : fKind(kFloat_Kind)
+            , fValue(f) {}
+
+            std::unique_ptr<Expression> literal(const Context& context, int offset) const {
+                switch (fKind) {
+                    case Program::Settings::Value::kBool_Kind:
+                        return std::unique_ptr<Expression>(new BoolLiteral(context,
+                                                                           offset,
+                                                                           fValue));
+                    case Program::Settings::Value::kInt_Kind:
+                        return std::unique_ptr<Expression>(new IntLiteral(context,
+                                                                          offset,
+                                                                          fValue));
+                    case Program::Settings::Value::kFloat_Kind:
+                        return std::unique_ptr<Expression>(new FloatLiteral(context,
+                                                                          offset,
+                                                                          fValue));
+                    default:
+                        SkASSERT(false);
+                        return nullptr;
                 }
             }
 
-            iterator& operator++() {
-                if (fShared != fSharedEnd) {
-                    ++fShared;
-                } else {
-                    ++fOwned;
-                }
-                return *this;
-            }
+            enum {
+                kBool_Kind,
+                kInt_Kind,
+                kFloat_Kind,
+            } fKind;
 
-            bool operator==(const iterator& other) const {
-                return fOwned == other.fOwned && fShared == other.fShared;
-            }
-
-            bool operator!=(const iterator& other) const {
-                return !(*this == other);
-            }
-
-        private:
-            using Owned  = std::vector<std::unique_ptr<ProgramElement>>::const_iterator;
-            using Shared = std::vector<const ProgramElement*>::const_iterator;
-            friend class ElementsCollection;
-
-            iterator(Owned owned, Owned ownedEnd, Shared shared, Shared sharedEnd)
-                    : fOwned(owned), fOwnedEnd(ownedEnd), fShared(shared), fSharedEnd(sharedEnd) {}
-
-            Owned  fOwned;
-            Owned  fOwnedEnd;
-            Shared fShared;
-            Shared fSharedEnd;
+            int fValue;
         };
 
-        iterator begin() const {
-            return iterator(fProgram.fOwnedElements.begin(), fProgram.fOwnedElements.end(),
-                            fProgram.fSharedElements.begin(), fProgram.fSharedElements.end());
+#if defined(SKSL_STANDALONE) || !SK_SUPPORT_GPU
+        const StandaloneShaderCaps* fCaps = &standaloneCaps;
+#else
+        const GrShaderCaps* fCaps = nullptr;
+#ifdef SK_VULKAN
+        const GrVkCaps* fVkCaps = nullptr;
+#endif
+#endif
+        
+        
+        bool fFlipY = false;
+        
+        bool fFragColorIsInOut = false;
+        
+        
+        bool fReplaceSettings = true;
+        
+        bool fForceHighPrecision = false;
+        
+        bool fSharpenTextures = false;
+        
+        
+        int fRTHeightOffset = -1;
+        std::unordered_map<String, Value> fArgs;
+    };
+
+    struct Inputs {
+        
+        bool fRTWidth;
+
+        
+        bool fRTHeight;
+
+        
+        
+        bool fFlipY;
+
+        void reset() {
+            fRTWidth = false;
+            fRTHeight = false;
+            fFlipY = false;
         }
 
-        iterator end() const {
-            return iterator(fProgram.fOwnedElements.end(), fProgram.fOwnedElements.end(),
-                            fProgram.fSharedElements.end(), fProgram.fSharedElements.end());
+        bool isEmpty() {
+            return !fRTWidth && !fRTHeight && !fFlipY;
+        }
+    };
+
+    class iterator {
+    public:
+        ProgramElement& operator*() {
+            if (fIter1 != fEnd1) {
+                return **fIter1;
+            }
+            return **fIter2;
+        }
+
+        iterator& operator++() {
+            if (fIter1 != fEnd1) {
+                ++fIter1;
+                return *this;
+            }
+            ++fIter2;
+            return *this;
+        }
+
+        bool operator==(const iterator& other) const {
+            return fIter1 == other.fIter1 && fIter2 == other.fIter2;
+        }
+
+        bool operator!=(const iterator& other) const {
+            return !(*this == other);
         }
 
     private:
-        friend struct Program;
+        using inner = std::vector<std::unique_ptr<ProgramElement>>::iterator;
 
-        ElementsCollection(const Program& program) : fProgram(program) {}
-        const Program& fProgram;
+        iterator(inner begin1, inner end1, inner begin2, inner end2)
+        : fIter1(begin1)
+        , fEnd1(end1)
+        , fIter2(begin2)
+        , fEnd2(end2) {}
+
+        inner fIter1;
+        inner fEnd1;
+        inner fIter2;
+        inner fEnd2;
+
+        friend struct Program;
     };
 
-    
+    class const_iterator {
+    public:
+        const ProgramElement& operator*() {
+            if (fIter1 != fEnd1) {
+                return **fIter1;
+            }
+            return **fIter2;
+        }
 
+        const_iterator& operator++() {
+            if (fIter1 != fEnd1) {
+                ++fIter1;
+                return *this;
+            }
+            ++fIter2;
+            return *this;
+        }
 
+        bool operator==(const const_iterator& other) const {
+            return fIter1 == other.fIter1 && fIter2 == other.fIter2;
+        }
 
+        bool operator!=(const const_iterator& other) const {
+            return !(*this == other);
+        }
 
-    ElementsCollection elements() const { return ElementsCollection(*this); }
+    private:
+        using inner = std::vector<std::unique_ptr<ProgramElement>>::const_iterator;
 
-    
+        const_iterator(inner begin1, inner end1, inner begin2, inner end2)
+        : fIter1(begin1)
+        , fEnd1(end1)
+        , fIter2(begin2)
+        , fEnd2(end2) {}
 
+        inner fIter1;
+        inner fEnd1;
+        inner fIter2;
+        inner fEnd2;
 
+        friend struct Program;
+    };
 
+    enum Kind {
+        kFragment_Kind,
+        kVertex_Kind,
+        kGeometry_Kind,
+        kFragmentProcessor_Kind,
+        kPipelineStage_Kind,
+        kGeneric_Kind,
+    };
 
-    const FunctionDeclaration* getFunction(const char* functionName) const;
+    Program(Kind kind,
+            std::unique_ptr<String> source,
+            Settings settings,
+            std::shared_ptr<Context> context,
+            std::vector<std::unique_ptr<ProgramElement>>* inheritedElements,
+            std::vector<std::unique_ptr<ProgramElement>> elements,
+            std::shared_ptr<SymbolTable> symbols,
+            Inputs inputs)
+    : fKind(kind)
+    , fSource(std::move(source))
+    , fSettings(settings)
+    , fContext(context)
+    , fSymbols(symbols)
+    , fInputs(inputs)
+    , fInheritedElements(inheritedElements)
+    , fElements(std::move(elements)) {}
 
-    
+    iterator begin() {
+        if (fInheritedElements) {
+            return iterator(fInheritedElements->begin(), fInheritedElements->end(),
+                            fElements.begin(), fElements.end());
+        }
+        return iterator(fElements.begin(), fElements.end(), fElements.end(), fElements.end());
+    }
 
+    iterator end() {
+        if (fInheritedElements) {
+            return iterator(fInheritedElements->end(), fInheritedElements->end(),
+                            fElements.end(), fElements.end());
+        }
+        return iterator(fElements.end(), fElements.end(), fElements.end(), fElements.end());
+    }
 
+    const_iterator begin() const {
+        if (fInheritedElements) {
+            return const_iterator(fInheritedElements->begin(), fInheritedElements->end(),
+                                  fElements.begin(), fElements.end());
+        }
+        return const_iterator(fElements.begin(), fElements.end(), fElements.end(), fElements.end());
+    }
 
-    std::unique_ptr<UniformInfo> getUniformInfo();
+    const_iterator end() const {
+        if (fInheritedElements) {
+            return const_iterator(fInheritedElements->end(), fInheritedElements->end(),
+                                  fElements.end(), fElements.end());
+        }
+        return const_iterator(fElements.end(), fElements.end(), fElements.end(), fElements.end());
+    }
 
-    std::string description() const;
-    const ProgramUsage* usage() const { return fUsage.get(); }
-
-    std::unique_ptr<std::string> fSource;
-    std::unique_ptr<ProgramConfig> fConfig;
+    Kind fKind;
+    std::unique_ptr<String> fSource;
+    Settings fSettings;
     std::shared_ptr<Context> fContext;
-    std::unique_ptr<ProgramUsage> fUsage;
-    std::unique_ptr<ModifiersPool> fModifiers;
     
     
     std::shared_ptr<SymbolTable> fSymbols;
-    std::unique_ptr<Pool> fPool;
-    
-    std::vector<std::unique_ptr<ProgramElement>> fOwnedElements;
-    
-    
-    std::vector<const ProgramElement*> fSharedElements;
     Inputs fInputs;
+    bool fIsOptimized = false;
+
+private:
+    std::vector<std::unique_ptr<ProgramElement>>* fInheritedElements;
+    std::vector<std::unique_ptr<ProgramElement>> fElements;
+
+    friend class Compiler;
 };
 
-}  
+} 
 
 #endif

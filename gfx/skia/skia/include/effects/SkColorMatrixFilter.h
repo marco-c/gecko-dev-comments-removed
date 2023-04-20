@@ -9,14 +9,17 @@
 #define SkColorMatrixFilter_DEFINED
 
 #include "include/core/SkColorFilter.h"
-
-
+#include "include/effects/SkColorMatrix.h"
 
 class SK_API SkColorMatrixFilter : public SkColorFilter {
 public:
-    static sk_sp<SkColorFilter> MakeLightingFilter(SkColor mul, SkColor add) {
-        return SkColorFilters::Lighting(mul, add);
-    }
+    
+
+
+
+
+
+    static sk_sp<SkColorFilter> MakeLightingFilter(SkColor mul, SkColor add);
 };
 
 #endif

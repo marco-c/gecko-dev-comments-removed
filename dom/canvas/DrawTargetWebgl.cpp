@@ -2666,10 +2666,10 @@ static Maybe<QuantizedPath> GenerateQuantizedPath(const SkPath& aPath,
   if (!pb) {
     return Nothing();
   }
-  WGR::wgr_builder_set_fill_mode(pb,
-                                 aPath.getFillType() == SkPathFillType::kWinding
-                                     ? WGR::FillMode::Winding
-                                     : WGR::FillMode::EvenOdd);
+  WGR::wgr_builder_set_fill_mode(
+      pb, aPath.getFillType() == SkPath::kWinding_FillType
+              ? WGR::FillMode::Winding
+              : WGR::FillMode::EvenOdd);
 
   SkPath::RawIter iter(aPath);
   SkPoint params[4];
@@ -3077,26 +3077,30 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
         
         
         
-        Maybe<Rect> cullRect;
-        Matrix invTransform = currentTransform;
-        if (invTransform.Invert()) {
-          
-          
-          Rect invRect = invTransform.TransformBounds(Rect(mClipRect));
-          invRect.RoundOut();
-          cullRect = Some(invRect);
-        }
-        SkPath fillPath;
-        if (pathSkia->GetFillPath(*aStrokeOptions, currentTransform, fillPath,
-                                  cullRect)) {
-          
-          
-          
-          if (Maybe<QuantizedPath> qp = GenerateQuantizedPath(
-                  fillPath, quantBounds, currentTransform)) {
-            wgrVB = GeneratePathVertexBuffer(
-                *qp, IntRect(-intBounds.TopLeft(), mViewportSize),
-                mRasterizationTruncates, outputBuffer, outputBufferCapacity);
+        SkPaint paint;
+        if (StrokeOptionsToPaint(paint, *aStrokeOptions)) {
+          Maybe<SkRect> cullRect;
+          Matrix invTransform = currentTransform;
+          if (invTransform.Invert()) {
+            
+            
+            Rect invRect = invTransform.TransformBounds(Rect(mClipRect));
+            invRect.RoundOut();
+            cullRect = Some(RectToSkRect(invRect));
+          }
+          SkPath fillPath;
+          if (paint.getFillPath(pathSkia->GetPath(), &fillPath,
+                                cullRect.ptrOr(nullptr),
+                                ComputeResScaleForStroking(currentTransform))) {
+            
+            
+            
+            if (Maybe<QuantizedPath> qp = GenerateQuantizedPath(
+                    fillPath, quantBounds, currentTransform)) {
+              wgrVB = GeneratePathVertexBuffer(
+                  *qp, IntRect(-intBounds.TopLeft(), mViewportSize),
+                  mRasterizationTruncates, outputBuffer, outputBufferCapacity);
+            }
           }
         }
       }

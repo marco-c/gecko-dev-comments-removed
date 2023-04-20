@@ -10,8 +10,6 @@
 
 #include "include/core/SkTypes.h"
 
-#include <cstddef>
-
 struct SkBase64 {
 public:
     enum Error {
@@ -20,34 +18,22 @@ public:
         kBadCharError
     };
 
+    SkBase64();
+    Error decode(const char* src, size_t length);
+    char* getData() { return fData; }
     
 
 
 
 
+    static size_t Encode(const void* src, size_t length, void* dest, const char* encode = nullptr);
 
+private:
+    Error decode(const void* srcPtr, size_t length, bool writeDestination);
 
-
-
-
-
-
-
-
-    static size_t Encode(const void* src, size_t length, void* dst, const char* encode = nullptr);
-
-    
-
-
-
-
-
-
-
-
-
-    static Error SK_WARN_UNUSED_RESULT Decode(const void* src, size_t  srcLength,
-                                                    void* dst, size_t* dstLength);
+    size_t fLength;
+    char* fData;
+    friend class SkImageBaseBitmap;
 };
 
 #endif 

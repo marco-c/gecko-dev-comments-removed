@@ -4,12 +4,11 @@
 
 
 
-#include "src/pathops/SkPathOpsRect.h"
-
 #include "src/pathops/SkPathOpsConic.h"
 #include "src/pathops/SkPathOpsCubic.h"
+#include "src/pathops/SkPathOpsLine.h"
 #include "src/pathops/SkPathOpsQuad.h"
-#include "src/pathops/SkPathOpsTCurve.h"
+#include "src/pathops/SkPathOpsRect.h"
 
 void SkDRect::setBounds(const SkDQuad& curve, const SkDQuad& sub, double startT, double endT) {
     set(sub[0]);

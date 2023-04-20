@@ -7,9 +7,9 @@
 
 #include "src/pdf/SkJpegInfo.h"
 
-#include "include/private/base/SkTo.h"
+#include "include/private/SkTo.h"
 
-#ifndef SK_CODEC_DECODES_JPEG
+#ifndef SK_HAS_JPEG_LIBRARY
 
 namespace {
 class JpegSegment {

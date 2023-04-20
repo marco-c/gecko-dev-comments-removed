@@ -4,15 +4,11 @@
 
 
 
-#include "src/pathops/SkPathWriter.h"
-
-#include "include/core/SkTypes.h"
-#include "include/private/base/SkMath.h"
-#include "src/base/SkTSort.h"
+#include "src/core/SkTSort.h"
 #include "src/pathops/SkOpSegment.h"
 #include "src/pathops/SkOpSpan.h"
-#include "src/pathops/SkPathOpsDebug.h"
-#include "src/pathops/SkPathOpsTypes.h"
+#include "src/pathops/SkPathOpsPoint.h"
+#include "src/pathops/SkPathWriter.h"
 
 
 SkPathWriter::SkPathWriter(SkPath& path)
@@ -174,7 +170,7 @@ SkPoint SkPathWriter::update(const SkOpPtT* pt) {
 
 bool SkPathWriter::someAssemblyRequired() {
     this->finishContour();
-    return !fEndPtTs.empty();
+    return fEndPtTs.count() > 0;
 }
 
 bool SkPathWriter::changedSlopes(const SkOpPtT* ptT) const {
@@ -190,7 +186,7 @@ class DistanceLessThan {
 public:
     DistanceLessThan(double* distances) : fDistances(distances) { }
     double* fDistances;
-    bool operator()(const int one, const int two) const {
+    bool operator()(const int one, const int two) {
         return fDistances[one] < fDistances[two];
     }
 };
@@ -203,6 +199,9 @@ public:
 
 
 void SkPathWriter::assemble() {
+#if DEBUG_SHOW_TEST_NAME
+    SkDebugf("</div>\n");
+#endif
     if (!this->someAssemblyRequired()) {
         return;
     }
@@ -210,9 +209,9 @@ void SkPathWriter::assemble() {
     SkDebugf("%s\n", __FUNCTION__);
 #endif
     SkOpPtT const* const* runs = fEndPtTs.begin();  
-    int endCount = fEndPtTs.size(); 
+    int endCount = fEndPtTs.count(); 
     SkASSERT(endCount > 0);
-    SkASSERT(endCount == fPartials.size() * 2);
+    SkASSERT(endCount == fPartials.count() * 2);
 #if DEBUG_ASSEMBLE
     for (int index = 0; index < endCount; index += 2) {
         const SkOpPtT* eStart = runs[index];
@@ -226,8 +225,8 @@ void SkPathWriter::assemble() {
     
     for (int pIndex = 0; pIndex < endCount; pIndex++) {
         SkOpPtT* opPtT = const_cast<SkOpPtT*>(runs[pIndex]);
-        SkPath p;
-        SkPathWriter partWriter(p);
+        SkPath dummy;
+        SkPathWriter partWriter(dummy);
         do {
             if (!zero_or_one(opPtT->fT)) {
                 break;
@@ -251,7 +250,7 @@ void SkPathWriter::assemble() {
         } while (true);
         partWriter.finishContour();
         const SkTArray<SkPath>& partPartials = partWriter.partials();
-        if (partPartials.empty()) {
+        if (!partPartials.count()) {
             continue;
         }
         
@@ -294,7 +293,7 @@ void SkPathWriter::assemble() {
         rRow += endCount;
     }
     SkASSERT(dIndex == entries);
-    SkTQSort<int>(sortedDist.begin(), sortedDist.end(), DistanceLessThan(distances.begin()));
+    SkTQSort<int>(sortedDist.begin(), sortedDist.end() - 1, DistanceLessThan(distances.begin()));
     int remaining = linkCount;  
     for (rIndex = 0; rIndex < entries; ++rIndex) {
         int pair = sortedDist[rIndex];
@@ -368,6 +367,7 @@ void SkPathWriter::assemble() {
 
 
 
+                    SkDebugf("");
                 }
             }
             if (forward) {

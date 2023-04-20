@@ -8,29 +8,18 @@
 #ifndef GrMtlTypes_DEFINED
 #define GrMtlTypes_DEFINED
 
-#include "include/gpu/GpuTypes.h"
+#include "include/gpu/GrTypes.h"
 #include "include/ports/SkCFObject.h"
 
 
 
 
-using GrMTLPixelFormat = unsigned int;
-using GrMTLTextureUsage = unsigned int;
-using GrMTLStorageMode = unsigned int;
-using GrMTLHandle = const void*;
+typedef unsigned int GrMTLPixelFormat;
+typedef const void*  GrMTLHandle;
 
 
 
-#ifdef __APPLE__
-
-#include <TargetConditionals.h>
-
-#if TARGET_OS_SIMULATOR
-#define SK_API_AVAILABLE_CA_METAL_LAYER SK_API_AVAILABLE(macos(10.11), ios(13.0))
-#else  
-#define SK_API_AVAILABLE_CA_METAL_LAYER SK_API_AVAILABLE(macos(10.11), ios(8.0))
-#endif  
-
+#ifdef SK_METAL
 
 
 
@@ -39,25 +28,12 @@ struct GrMtlTextureInfo {
 public:
     GrMtlTextureInfo() {}
 
-    sk_cfp<GrMTLHandle> fTexture;
+    sk_cf_obj<const void*> fTexture;
 
     bool operator==(const GrMtlTextureInfo& that) const {
         return fTexture == that.fTexture;
     }
 };
-
-struct GrMtlSurfaceInfo {
-    uint32_t fSampleCount = 1;
-    uint32_t fLevelCount = 0;
-    skgpu::Protected fProtected = skgpu::Protected::kNo;
-
-    
-    
-    GrMTLPixelFormat fFormat = 0;       
-    GrMTLTextureUsage fUsage = 0;       
-    GrMTLStorageMode fStorageMode = 0;  
-};
-
 #endif
 
 #endif

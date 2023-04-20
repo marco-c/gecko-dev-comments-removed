@@ -14,11 +14,6 @@
 #include "src/core/SkTraceEventCommon.h"
 #include <atomic>
 
-#if defined(SK_ANDROID_FRAMEWORK_USE_PERFETTO)
-    #include <string>
-    #include <utility>
-#endif
-
 
 
 
@@ -30,47 +25,10 @@
 #endif
 
 
-#if defined(SK_ANDROID_FRAMEWORK_USE_PERFETTO)
-    
-    
-    
-    
-    
-    
-    
-    
-    #define TRACE_STR_COPY(str) (::perfetto::DynamicString{str})
 
-    
-    
-    
-    
-    
-    
-    
-    
-    #define TRACE_STR_STATIC(str) (::perfetto::StaticString{str})
-#else 
-    
-    
-    
-    
-    
-    
-    
-    
-    #define TRACE_STR_COPY(str) (::skia_private::TraceStringWithCopy(str))
+#define TRACE_STR_COPY(str) \
+    skia::tracing_internals::TraceStringWithCopy(str)
 
-    
-    
-    
-    
-    
-    
-    
-    
-    #define TRACE_STR_STATIC(str) (str)
-#endif 
 
 #define INTERNAL_TRACE_EVENT_CATEGORY_GROUP_ENABLED_FOR_RECORDING_MODE() \
     *INTERNAL_TRACE_EVENT_UID(category_group_enabled) & \
@@ -111,16 +69,6 @@
 
 #define TRACE_EVENT_API_UPDATE_TRACE_EVENT_DURATION \
     SkEventTracer::GetInstance()->updateTraceEventDuration
-
-#ifdef SK_ANDROID_FRAMEWORK_USE_PERFETTO
-    #define TRACE_EVENT_API_NEW_TRACE_SECTION(...) do {} while (0)
-#else
-    
-    
-    
-    #define TRACE_EVENT_API_NEW_TRACE_SECTION \
-        SkEventTracer::GetInstance()->newTracingSection
-#endif
 
 
 #define TRACE_EVENT_API_CLASS_EXPORT SK_API
@@ -169,9 +117,9 @@
     do { \
       INTERNAL_TRACE_EVENT_GET_CATEGORY_INFO(category_group); \
       if (INTERNAL_TRACE_EVENT_CATEGORY_GROUP_ENABLED_FOR_RECORDING_MODE()) { \
-        skia_private::AddTraceEvent( \
+        skia::tracing_internals::AddTraceEvent( \
             phase, INTERNAL_TRACE_EVENT_UID(category_group_enabled), name, \
-            skia_private::kNoEventId, flags, ##__VA_ARGS__); \
+            skia::tracing_internals::kNoEventId, flags, ##__VA_ARGS__); \
       } \
     } while (0)
 
@@ -183,9 +131,9 @@
       INTERNAL_TRACE_EVENT_GET_CATEGORY_INFO(category_group); \
       if (INTERNAL_TRACE_EVENT_CATEGORY_GROUP_ENABLED_FOR_RECORDING_MODE()) { \
         unsigned char trace_event_flags = flags | TRACE_EVENT_FLAG_HAS_ID; \
-        skia_private::TraceID trace_event_trace_id( \
+        skia::tracing_internals::TraceID trace_event_trace_id( \
             id, &trace_event_flags); \
-        skia_private::AddTraceEvent( \
+        skia::tracing_internals::AddTraceEvent( \
             phase, INTERNAL_TRACE_EVENT_UID(category_group_enabled), \
             name, trace_event_trace_id.data(), trace_event_flags, \
             ##__VA_ARGS__); \
@@ -197,20 +145,21 @@
 
 #define INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, ...) \
     INTERNAL_TRACE_EVENT_GET_CATEGORY_INFO(category_group); \
-    skia_private::ScopedTracer INTERNAL_TRACE_EVENT_UID(tracer); \
+    skia::tracing_internals::ScopedTracer INTERNAL_TRACE_EVENT_UID(tracer); \
     do { \
         if (INTERNAL_TRACE_EVENT_CATEGORY_GROUP_ENABLED_FOR_RECORDING_MODE()) { \
-          SkEventTracer::Handle h = skia_private::AddTraceEvent( \
+          SkEventTracer::Handle h = skia::tracing_internals::AddTraceEvent( \
               TRACE_EVENT_PHASE_COMPLETE, \
               INTERNAL_TRACE_EVENT_UID(category_group_enabled), \
-              name, skia_private::kNoEventId, \
+              name, skia::tracing_internals::kNoEventId, \
               TRACE_EVENT_FLAG_NONE, ##__VA_ARGS__); \
           INTERNAL_TRACE_EVENT_UID(tracer).Initialize( \
               INTERNAL_TRACE_EVENT_UID(category_group_enabled), name, h); \
         } \
     } while (0)
 
-namespace skia_private {
+namespace skia {
+namespace tracing_internals {
 
 
 
@@ -397,9 +346,6 @@ class TRACE_EVENT_API_CLASS_EXPORT ScopedTracer {
   }
 
  private:
-    ScopedTracer(const ScopedTracer&) = delete;
-    ScopedTracer& operator=(const ScopedTracer&) = delete;
-
   
   
   
@@ -414,6 +360,7 @@ class TRACE_EVENT_API_CLASS_EXPORT ScopedTracer {
   Data data_;
 };
 
+}  
 }  
 
 #endif

@@ -6,16 +6,7 @@
 
 
 #include "src/core/SkImageFilterTypes.h"
-
 #include "src/core/SkImageFilter_Base.h"
-#include "src/core/SkMatrixPriv.h"
-
-
-
-
-
-
-static constexpr float kRoundEpsilon = 1e-3f;
 
 
 
@@ -31,141 +22,40 @@ static SkVector map_as_vector(SkScalar x, SkScalar y, const SkMatrix& matrix) {
     return v;
 }
 
-
-
-
-
-
-static bool is_nearly_integer_translation(const skif::LayerSpace<SkMatrix>& m,
-                                          skif::LayerSpace<SkIPoint>* out=nullptr) {
-    float tx = SkScalarRoundToScalar(sk_ieee_float_divide(m.rc(0,2), m.rc(2,2)));
-    float ty = SkScalarRoundToScalar(sk_ieee_float_divide(m.rc(1,2), m.rc(2,2)));
-    SkMatrix expected = SkMatrix::MakeAll(1.f, 0.f, tx,
-                                          0.f, 1.f, ty,
-                                          0.f, 0.f, 1.f);
-    for (int i = 0; i < 9; ++i) {
-        if (!SkScalarNearlyEqual(expected.get(i), m.get(i), kRoundEpsilon)) {
-            return false;
-        }
-    }
-
-    if (out) {
-        *out = skif::LayerSpace<SkIPoint>({(int) tx, (int) ty});
-    }
-    return true;
-}
-
-static SkRect map_rect(const SkMatrix& matrix, const SkRect& rect) {
-    if (rect.isEmpty()) {
-        return SkRect::MakeEmpty();
-    }
-    return matrix.mapRect(rect);
-}
-
-static SkIRect map_rect(const SkMatrix& matrix, const SkIRect& rect) {
-    if (rect.isEmpty()) {
-        return SkIRect::MakeEmpty();
-    }
-    
-    
-    
-    
-    
-    if (matrix.isScaleTranslate()) {
-        double l = (double)matrix.getScaleX()*rect.fLeft   + (double)matrix.getTranslateX();
-        double r = (double)matrix.getScaleX()*rect.fRight  + (double)matrix.getTranslateX();
-        double t = (double)matrix.getScaleY()*rect.fTop    + (double)matrix.getTranslateY();
-        double b = (double)matrix.getScaleY()*rect.fBottom + (double)matrix.getTranslateY();
-
-        return {sk_double_saturate2int(sk_double_floor(std::min(l, r) + kRoundEpsilon)),
-                sk_double_saturate2int(sk_double_floor(std::min(t, b) + kRoundEpsilon)),
-                sk_double_saturate2int(sk_double_ceil(std::max(l, r)  - kRoundEpsilon)),
-                sk_double_saturate2int(sk_double_ceil(std::max(t, b)  - kRoundEpsilon))};
-    } else {
-        return skif::RoundOut(matrix.mapRect(SkRect::Make(rect)));
-    }
-}
-
 namespace skif {
 
-SkIRect RoundOut(SkRect r) { return r.makeInset(kRoundEpsilon, kRoundEpsilon).roundOut(); }
-
-SkIRect RoundIn(SkRect r) { return r.makeOutset(kRoundEpsilon, kRoundEpsilon).roundIn(); }
-
-bool Mapping::decomposeCTM(const SkMatrix& ctm, const SkImageFilter* filter,
-                           const skif::ParameterSpace<SkPoint>& representativePt) {
+Mapping Mapping::Make(const SkMatrix& ctm, const SkImageFilter* filter) {
     SkMatrix remainder, layer;
-    SkSize decomposed;
-    using MatrixCapability = SkImageFilter_Base::MatrixCapability;
-    MatrixCapability capability =
-            filter ? as_IFB(filter)->getCTMCapability() : MatrixCapability::kComplex;
-    if (capability == MatrixCapability::kTranslate) {
-        
-        remainder = ctm;
-        layer = SkMatrix::I();
-    } else if (ctm.isScaleTranslate() || capability == MatrixCapability::kComplex) {
+    SkSize scale;
+    if (ctm.isScaleTranslate() || as_IFB(filter)->canHandleComplexCTM()) {
         
         
         remainder = SkMatrix::I();
         layer = ctm;
-    } else if (ctm.decomposeScale(&decomposed, &remainder)) {
+    } else if (ctm.decomposeScale(&scale, &remainder)) {
         
         
-        layer = SkMatrix::Scale(decomposed.fWidth, decomposed.fHeight);
+        
+        layer = SkMatrix::MakeScale(scale.fWidth, scale.fHeight);
     } else {
         
         
-        SkScalar scale = SkMatrixPriv::DifferentialAreaScale(ctm, SkPoint(representativePt));
-        if (SkScalarIsFinite(scale) && !SkScalarNearlyZero(scale)) {
-            
-            
-            scale = SkScalarSqrt(scale);
-        } else {
-            
-            
-            scale = 1.f;
-        }
-
+        
         remainder = ctm;
-        remainder.preScale(SkScalarInvert(scale), SkScalarInvert(scale));
-        layer = SkMatrix::Scale(scale, scale);
+        layer = SkMatrix::I();
     }
-
-    SkMatrix invRemainder;
-    if (!remainder.invert(&invRemainder)) {
-        
-        
-        
-        
-        return false;
-    } else {
-        fParamToLayerMatrix = layer;
-        fLayerToDevMatrix = remainder;
-        fDevToLayerMatrix = invRemainder;
-        return true;
-    }
+    return Mapping(remainder, layer);
 }
 
-bool Mapping::adjustLayerSpace(const SkMatrix& layer) {
-    SkMatrix invLayer;
-    if (!layer.invert(&invLayer)) {
-        return false;
-    }
-    fParamToLayerMatrix.postConcat(layer);
-    fDevToLayerMatrix.postConcat(layer);
-    fLayerToDevMatrix.preConcat(invLayer);
-    return true;
-}
-
-
-template<>
-SkRect Mapping::map<SkRect>(const SkRect& geom, const SkMatrix& matrix) {
-    return map_rect(matrix, geom);
-}
 
 template<>
 SkIRect Mapping::map<SkIRect>(const SkIRect& geom, const SkMatrix& matrix) {
-    return map_rect(matrix, geom);
+    return matrix.mapRect(SkRect::Make(geom)).roundOut();
+}
+
+template<>
+SkRect Mapping::map<SkRect>(const SkRect& geom, const SkMatrix& matrix) {
+    return matrix.mapRect(geom);
 }
 
 template<>
@@ -202,229 +92,6 @@ template<>
 SkSize Mapping::map<SkSize>(const SkSize& geom, const SkMatrix& matrix) {
     SkVector v = map_as_vector(geom.fWidth, geom.fHeight, matrix);
     return SkSize::Make(v.fX, v.fY);
-}
-
-template<>
-SkMatrix Mapping::map<SkMatrix>(const SkMatrix& m, const SkMatrix& matrix) {
-    
-    
-    
-    
-    SkMatrix inv;
-    SkAssertResult(matrix.invert(&inv));
-    inv.postConcat(m);
-    inv.postConcat(matrix);
-    return inv;
-}
-
-LayerSpace<SkRect> LayerSpace<SkMatrix>::mapRect(const LayerSpace<SkRect>& r) const {
-    return LayerSpace<SkRect>(map_rect(fData, SkRect(r)));
-}
-
-LayerSpace<SkIRect> LayerSpace<SkMatrix>::mapRect(const LayerSpace<SkIRect>& r) const {
-    return LayerSpace<SkIRect>(map_rect(fData, SkIRect(r)));
-}
-
-sk_sp<SkSpecialImage> FilterResult::imageAndOffset(SkIPoint* offset) const {
-    auto [image, origin] = this->resolve(fLayerBounds);
-    *offset = SkIPoint(origin);
-    return image;
-}
-
-FilterResult FilterResult::applyCrop(const Context& ctx,
-                                     const LayerSpace<SkIRect>& crop) const {
-    LayerSpace<SkIRect> tightBounds = crop;
-    
-    
-    if (!fImage || !tightBounds.intersect(ctx.desiredOutput())) {
-        
-        return {};
-    }
-
-    if (crop.contains(fLayerBounds)) {
-        
-        
-        
-        
-        FilterResult restrictedOutput = *this;
-        SkAssertResult(restrictedOutput.fLayerBounds.intersect(ctx.desiredOutput()));
-        return restrictedOutput;
-    } else {
-        return this->resolve(tightBounds);
-    }
-}
-
-static bool compatible_sampling(const SkSamplingOptions& currentSampling,
-                                bool currentXformWontAffectNearest,
-                                SkSamplingOptions* nextSampling,
-                                bool nextXformWontAffectNearest) {
-    
-    
-    
-    
-    
-    
-    
-    if (currentSampling.isAniso() && nextSampling->isAniso()) {
-        
-        *nextSampling =  SkSamplingOptions::Aniso(std::max(currentSampling.maxAniso,
-                                                           nextSampling->maxAniso));
-        return true;
-    } else if (currentSampling.useCubic && (nextSampling->filter == SkFilterMode::kLinear ||
-                                            (nextSampling->useCubic &&
-                                             currentSampling.cubic.B == nextSampling->cubic.B &&
-                                             currentSampling.cubic.C == nextSampling->cubic.C))) {
-        
-        
-        *nextSampling = currentSampling;
-        return true;
-    } else if (nextSampling->useCubic && currentSampling.filter == SkFilterMode::kLinear) {
-        
-        return true;
-    } else if (currentSampling.filter == SkFilterMode::kLinear &&
-               nextSampling->filter == SkFilterMode::kLinear) {
-        
-        return true;
-    } else if (nextSampling->filter == SkFilterMode::kNearest && currentXformWontAffectNearest) {
-        
-        SkASSERT(currentSampling.filter == SkFilterMode::kLinear);
-        return true;
-    } else if (currentSampling.filter == SkFilterMode::kNearest && nextXformWontAffectNearest) {
-        
-        SkASSERT(nextSampling->filter == SkFilterMode::kLinear);
-        *nextSampling = currentSampling;
-        return true;
-    } else {
-        
-        
-        return false;
-    }
-}
-
-FilterResult FilterResult::applyTransform(const Context& ctx,
-                                          const LayerSpace<SkMatrix> &transform,
-                                          const SkSamplingOptions &sampling) const {
-    if (!fImage) {
-        
-        return {};
-    }
-
-    
-    
-    
-    
-    const bool currentXformIsInteger = is_nearly_integer_translation(fTransform);
-    const bool nextXformIsInteger = is_nearly_integer_translation(transform);
-
-    SkASSERT(!currentXformIsInteger || fSamplingOptions == kDefaultSampling);
-    SkSamplingOptions nextSampling = nextXformIsInteger ? kDefaultSampling : sampling;
-
-    FilterResult transformed;
-    if (compatible_sampling(fSamplingOptions, currentXformIsInteger,
-                            &nextSampling, nextXformIsInteger)) {
-        
-        
-        transformed = *this;
-    } else {
-        
-        
-        transformed = this->resolve(fLayerBounds);
-    }
-
-    transformed.concatTransform(transform, nextSampling, ctx.desiredOutput());
-    if (transformed.layerBounds().isEmpty()) {
-        return {};
-    } else {
-        return transformed;
-    }
-}
-
-void FilterResult::concatTransform(const LayerSpace<SkMatrix>& transform,
-                                   const SkSamplingOptions& newSampling,
-                                   const LayerSpace<SkIRect>& desiredOutput) {
-    if (!fImage) {
-        
-        
-        
-        return;
-    }
-    fSamplingOptions = newSampling;
-    fTransform.postConcat(transform);
-    
-    
-    
-    
-    fLayerBounds = transform.mapRect(fLayerBounds);
-    if (!fLayerBounds.intersect(desiredOutput)) {
-        
-        
-        fLayerBounds = LayerSpace<SkIRect>::Empty();
-    }
-}
-
-std::pair<sk_sp<SkSpecialImage>, LayerSpace<SkIPoint>> FilterResult::resolve(
-        LayerSpace<SkIRect> dstBounds) const {
-    
-    
-    
-    if (!fImage || !dstBounds.intersect(fLayerBounds)) {
-        return {nullptr, {}};
-    }
-
-    
-    
-    
-    
-    
-    LayerSpace<SkIPoint> origin;
-    if (is_nearly_integer_translation(fTransform, &origin)) {
-        LayerSpace<SkIRect> imageBounds(SkIRect::MakeXYWH(origin.x(), origin.y(),
-                                                          fImage->width(), fImage->height()));
-        if (!imageBounds.intersect(dstBounds)) {
-            return {nullptr, {}};
-        }
-
-        
-        
-        
-        SkIRect subset = { imageBounds.left() - origin.x(),
-                           imageBounds.top() - origin.y(),
-                           imageBounds.right() - origin.x(),
-                           imageBounds.bottom() - origin.y() };
-        SkASSERT(subset.fLeft >= 0 && subset.fTop >= 0 &&
-                 subset.fRight <= fImage->width() && subset.fBottom <= fImage->height());
-
-        return {fImage->makeSubset(subset), imageBounds.topLeft()};
-    } 
-
-    sk_sp<SkSpecialSurface> surface = fImage->makeSurface(fImage->colorType(),
-                                                          fImage->getColorSpace(),
-                                                          SkISize(dstBounds.size()),
-                                                          kPremul_SkAlphaType, {});
-    if (!surface) {
-        return {nullptr, {}};
-    }
-    SkCanvas* canvas = surface->getCanvas();
-    
-    canvas->clear(SK_ColorTRANSPARENT);
-    canvas->translate(-dstBounds.left(), -dstBounds.top()); 
-
-    SkPaint paint;
-    paint.setAntiAlias(true);
-    paint.setBlendMode(SkBlendMode::kSrc);
-
-    
-    
-    if (!fLayerBounds.contains(dstBounds)) {
-        
-        
-        
-        canvas->clipIRect(SkIRect(fLayerBounds));
-    }
-    canvas->concat(SkMatrix(fTransform)); 
-    fImage->draw(canvas, 0.f, 0.f, fSamplingOptions, &paint);
-
-    return {surface->makeImageSnapshot(), dstBounds.topLeft()};
 }
 
 } 

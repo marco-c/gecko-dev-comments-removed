@@ -8,6 +8,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifndef VK_PLATFORM_H_
 #define VK_PLATFORM_H_
 
@@ -58,9 +68,7 @@ extern "C"
     #define VKAPI_PTR
 #endif
 
-#if !defined(VK_NO_STDDEF_H)
-    #include <stddef.h>
-#endif 
+#include <stddef.h>
 
 #if !defined(VK_NO_STDINT_H)
     #if defined(_MSC_VER) && (_MSC_VER < 1600)

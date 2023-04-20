@@ -8,13 +8,12 @@
 #include "src/pdf/SkDeflate.h"
 
 #include "include/core/SkData.h"
-#include "include/private/base/SkMalloc.h"
-#include "include/private/base/SkTo.h"
+#include "include/private/SkMalloc.h"
+#include "include/private/SkTo.h"
+#include "src/core/SkMakeUnique.h"
 #include "src/core/SkTraceEvent.h"
 
 #include "zlib.h"
-
-#include <algorithm>
 
 namespace {
 
@@ -67,14 +66,7 @@ struct SkDeflateWStream::Impl {
 SkDeflateWStream::SkDeflateWStream(SkWStream* out,
                                    int compressionLevel,
                                    bool gzip)
-    : fImpl(std::make_unique<SkDeflateWStream::Impl>()) {
-
-    
-    
-    
-    
-    SkASSERT(compressionLevel != 0);
-
+    : fImpl(skstd::make_unique<SkDeflateWStream::Impl>()) {
     fImpl->fOut = out;
     fImpl->fInBufferIndex = 0;
     if (!fImpl->fOut) {
@@ -112,7 +104,7 @@ bool SkDeflateWStream::write(const void* void_buffer, size_t len) {
     const char* buffer = (const char*)void_buffer;
     while (len > 0) {
         size_t tocopy =
-                std::min(len, sizeof(fImpl->fInBuffer) - fImpl->fInBufferIndex);
+                SkTMin(len, sizeof(fImpl->fInBuffer) - fImpl->fInBufferIndex);
         memcpy(fImpl->fInBuffer + fImpl->fInBufferIndex, buffer, tocopy);
         len -= tocopy;
         buffer += tocopy;

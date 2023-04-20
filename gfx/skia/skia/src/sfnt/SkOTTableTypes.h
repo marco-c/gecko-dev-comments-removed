@@ -9,7 +9,7 @@
 #define SkOTTableTypes_DEFINED
 
 #include "include/core/SkTypes.h"
-#include "src/base/SkEndian.h"
+#include "src/core/SkEndian.h"
 
 
 typedef uint8_t SK_OT_BYTE;

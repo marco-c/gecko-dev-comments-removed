@@ -7,32 +7,18 @@
 
 #include "src/codec/SkWebpCodec.h"
 
-#include "include/codec/SkCodec.h"
 #include "include/codec/SkCodecAnimation.h"
-#include "include/core/SkAlphaType.h"
 #include "include/core/SkBitmap.h"
-#include "include/core/SkColorType.h"
-#include "include/core/SkImageInfo.h"
-#include "include/core/SkRect.h"
-#include "include/core/SkSize.h"
-#include "include/core/SkStream.h"
-#include "include/private/base/SkAlign.h"
-#include "include/private/base/SkMath.h"
-#include "include/private/base/SkTFitsIn.h"
-#include "include/private/base/SkTemplates.h"
-#include "include/private/base/SkTo.h"
-#include "modules/skcms/skcms.h"
+#include "include/core/SkCanvas.h"
+#include "include/private/SkTemplates.h"
+#include "include/private/SkTo.h"
+#include "src/codec/SkCodecAnimationPriv.h"
+#include "src/codec/SkCodecPriv.h"
 #include "src/codec/SkParseEncodedOrigin.h"
 #include "src/codec/SkSampler.h"
+#include "src/core/SkMakeUnique.h"
 #include "src/core/SkRasterPipeline.h"
-#include "src/core/SkRasterPipelineOpContexts.h"
-#include "src/core/SkRasterPipelineOpList.h"
 #include "src/core/SkStreamPriv.h"
-
-#include <algorithm>
-#include <cstdint>
-#include <cstring>
-#include <utility>
 
 
 
@@ -44,7 +30,7 @@
 
 #include "webp/decode.h"
 #include "webp/demux.h"
-#include "webp/mux_types.h"
+#include "webp/encode.h"
 
 bool SkWebpCodec::IsWebp(const void* buf, size_t bytesRead) {
     
@@ -158,7 +144,7 @@ std::unique_ptr<SkCodec> SkWebpCodec::MakeFromStream(std::unique_ptr<SkStream> s
             
             
             
-            [[fallthrough]];
+            
         case 2:
             
             if (hasAlpha) {
@@ -234,13 +220,12 @@ int SkWebpCodec::onGetRepetitionCount() {
         return 0;
     }
 
-    int loopCount = WebPDemuxGetI(fDemux.get(), WEBP_FF_LOOP_COUNT);
-    if (0 == loopCount) {
+    const int repCount = WebPDemuxGetI(fDemux.get(), WEBP_FF_LOOP_COUNT);
+    if (0 == repCount) {
         return kRepetitionCountInfinite;
     }
 
-    loopCount--;
-    return loopCount;
+    return repCount;
 }
 
 int SkWebpCodec::onGetFrameCount() {
@@ -281,7 +266,7 @@ int SkWebpCodec::onGetFrameCount() {
                 SkCodecAnimation::DisposalMethod::kKeep);
         frame->setDuration(iter.duration);
         if (WEBP_MUX_BLEND != iter.blend_method) {
-            frame->setBlend(SkCodecAnimation::Blend::kSrc);
+            frame->setBlend(SkCodecAnimation::Blend::kBG);
         }
         fFrameHolder.setAlphaAndRequiredFrame(frame);
     }
@@ -310,9 +295,14 @@ bool SkWebpCodec::onGetFrameInfo(int i, FrameInfo* frameInfo) const {
     }
 
     if (frameInfo) {
+        frameInfo->fRequiredFrame = frame->getRequiredFrame();
+        frameInfo->fDuration = frame->getDuration();
         
         
-        frame->fillIn(frameInfo, true);
+        frameInfo->fFullyReceived = true;
+        frameInfo->fAlphaType = frame->hasAlpha() ? kUnpremul_SkAlphaType
+                                                  : kOpaque_SkAlphaType;
+        frameInfo->fDisposalMethod = frame->getDisposalMethod();
     }
 
     return true;
@@ -341,18 +331,18 @@ static void blend_line(SkColorType dstCT, void* dst,
 
     p.append_load_dst(dstCT, &dst_ctx);
     if (kUnpremul_SkAlphaType == dstAt) {
-        p.append(SkRasterPipelineOp::premul_dst);
+        p.append(SkRasterPipeline::premul_dst);
     }
 
     p.append_load(srcCT, &src_ctx);
     if (srcHasAlpha) {
-        p.append(SkRasterPipelineOp::premul);
+        p.append(SkRasterPipeline::premul);
     }
 
-    p.append(SkRasterPipelineOp::srcover);
+    p.append(SkRasterPipeline::srcover);
 
     if (kUnpremul_SkAlphaType == dstAt) {
-        p.append(SkRasterPipelineOp::unpremul);
+        p.append(SkRasterPipeline::unpremul);
     }
     p.append_store(dstCT, &dst_ctx);
 
@@ -405,8 +395,8 @@ SkCodec::Result SkWebpCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst, 
             return kSuccess;
         }
 
-        int minXOffset = std::min(dstX, subset.x());
-        int minYOffset = std::min(dstY, subset.y());
+        int minXOffset = SkTMin(dstX, subset.x());
+        int minYOffset = SkTMin(dstY, subset.y());
         dstX -= minXOffset;
         dstY -= minYOffset;
         frameRect.offset(-minXOffset, -minYOffset);
@@ -461,12 +451,10 @@ SkCodec::Result SkWebpCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst, 
     const bool blendWithPrevFrame = !independent && frame.blend_method == WEBP_MUX_BLEND
         && frame.has_alpha;
 
+    SkBitmap webpDst;
     auto webpInfo = dstInfo;
     if (!frame.has_alpha) {
         webpInfo = webpInfo.makeAlphaType(kOpaque_SkAlphaType);
-    } else if (this->colorXform() || blendWithPrevFrame) {
-        
-        webpInfo = webpInfo.makeAlphaType(kUnpremul_SkAlphaType);
     }
     if (this->colorXform()) {
         
@@ -475,9 +463,12 @@ SkCodec::Result SkWebpCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst, 
         
         
         webpInfo = webpInfo.makeColorType(kBGRA_8888_SkColorType);
+
+        if (webpInfo.alphaType() == kPremul_SkAlphaType) {
+            webpInfo = webpInfo.makeAlphaType(kUnpremul_SkAlphaType);
+        }
     }
 
-    SkBitmap webpDst;
     if ((this->colorXform() && !is_8888(dstInfo.colorType())) || blendWithPrevFrame) {
         
         
@@ -489,7 +480,7 @@ SkCodec::Result SkWebpCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst, 
     }
 
     config.output.colorspace = webp_decode_mode(webpInfo.colorType(),
-            webpInfo.alphaType() == kPremul_SkAlphaType);
+            frame.has_alpha && dstInfo.alphaType() == kPremul_SkAlphaType && !this->colorXform());
     config.output.is_external_memory = 1;
 
     config.output.u.RGBA.rgba = reinterpret_cast<uint8_t*>(webpDst.getAddr(dstX, dstY));

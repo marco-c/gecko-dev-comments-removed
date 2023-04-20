@@ -40,15 +40,22 @@ public:
             
             
             
+            
             float newMinRadius = *minRadius;
 
+            
+            
             float newMaxRadius = (float)(limit - newMinRadius);
 
             
             
             
-            while (newMaxRadius + newMinRadius > limit) {
+            
+            if (newMaxRadius + newMinRadius > limit) {
                 newMaxRadius = nextafterf(newMaxRadius, 0.0f);
+                if (newMaxRadius + newMinRadius > limit) {
+                    newMaxRadius = nextafterf(newMaxRadius, 0.0f);
+                }
             }
             *maxRadius = newMaxRadius;
         }

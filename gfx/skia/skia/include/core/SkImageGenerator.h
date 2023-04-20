@@ -8,34 +8,21 @@
 #ifndef SkImageGenerator_DEFINED
 #define SkImageGenerator_DEFINED
 
-#include "include/core/SkData.h"
+#include "include/core/SkBitmap.h"
+#include "include/core/SkColor.h"
 #include "include/core/SkImage.h"
 #include "include/core/SkImageInfo.h"
-#include "include/core/SkPixmap.h"
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkYUVAPixmaps.h"
-#include "include/private/base/SkAPI.h"
-
-#if defined(SK_GANESH)
-#include "include/gpu/GrTypes.h"
-#endif
-
-#include <cstddef>
-#include <cstdint>
-#include <memory>
-#include <optional>
+#include "include/core/SkYUVAIndex.h"
+#include "include/core/SkYUVASizeInfo.h"
 
 class GrRecordingContext;
-class GrSurfaceProxyView;
-class SkColorSpace;
+class GrTextureProxy;
+class GrSamplerState;
+class SkBitmap;
+class SkData;
 class SkMatrix;
 class SkPaint;
 class SkPicture;
-class SkSurfaceProps;
-enum SkAlphaType : int;
-enum class GrImageTexGenPolicy : int;
-namespace skgpu { enum class Mipmapped : bool; }
-struct SkISize;
 
 class SK_API SkImageGenerator {
 public:
@@ -67,7 +54,7 @@ public:
 
 
 
-    bool isValid(GrRecordingContext* context) const {
+    bool isValid(GrContext* context) const {
         return this->onIsValid(context);
     }
 
@@ -95,9 +82,18 @@ public:
 
     bool getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes);
 
-    bool getPixels(const SkPixmap& pm) {
-        return this->getPixels(pm.info(), pm.writable_addr(), pm.rowBytes());
-    }
+    
+
+
+
+
+
+
+
+
+    bool queryYUVA8(SkYUVASizeInfo* sizeInfo,
+                    SkYUVAIndex yuvaIndices[SkYUVAIndex::kIndexCount],
+                    SkYUVColorSpace* colorSpace) const;
 
     
 
@@ -110,9 +106,12 @@ public:
 
 
 
-    bool queryYUVAInfo(const SkYUVAPixmapInfo::SupportedDataTypes& supportedDataTypes,
-                       SkYUVAPixmapInfo* yuvaPixmapInfo) const;
 
+    bool getYUVA8Planes(const SkYUVASizeInfo& sizeInfo,
+                        const SkYUVAIndex yuvaIndices[SkYUVAIndex::kIndexCount],
+                        void* planes[]);
+
+#if SK_SUPPORT_GPU
     
 
 
@@ -121,10 +120,6 @@ public:
 
 
 
-    bool getYUVAPlanes(const SkYUVAPixmaps& yuvaPixmaps);
-
-#if defined(SK_GANESH)
-    
 
 
 
@@ -143,43 +138,29 @@ public:
 
 
 
-    GrSurfaceProxyView generateTexture(GrRecordingContext*,
-                                       const SkImageInfo& info,
-                                       skgpu::Mipmapped mipmapped,
-                                       GrImageTexGenPolicy);
+
+    sk_sp<GrTextureProxy> generateTexture(GrRecordingContext*, const SkImageInfo& info,
+                                          const SkIPoint& origin,
+                                          bool willNeedMipMaps);
 #endif
 
-#if defined(SK_GRAPHITE)
-    sk_sp<SkImage> makeTextureImage(skgpu::graphite::Recorder*,
-                                    const SkImageInfo&,
-                                    skgpu::Mipmapped);
-#endif
+    
+
+
+
+
+    static std::unique_ptr<SkImageGenerator> MakeFromEncoded(sk_sp<SkData>);
 
     
 
 
 
 
-
-
-
-    static std::unique_ptr<SkImageGenerator> MakeFromEncoded(
-            sk_sp<SkData>, std::optional<SkAlphaType> = std::nullopt);
-
-    
-
-
-
-
-    static std::unique_ptr<SkImageGenerator> MakeFromPicture(const SkISize&, sk_sp<SkPicture>,
-                                                             const SkMatrix*, const SkPaint*,
-                                                             SkImage::BitDepth,
-                                                             sk_sp<SkColorSpace>,
-                                                             SkSurfaceProps props);
     static std::unique_ptr<SkImageGenerator> MakeFromPicture(const SkISize&, sk_sp<SkPicture>,
                                                              const SkMatrix*, const SkPaint*,
                                                              SkImage::BitDepth,
                                                              sk_sp<SkColorSpace>);
+
 protected:
     static constexpr int kNeedNewImageUniqueID = 0;
 
@@ -188,26 +169,22 @@ protected:
     virtual sk_sp<SkData> onRefEncodedData() { return nullptr; }
     struct Options {};
     virtual bool onGetPixels(const SkImageInfo&, void*, size_t, const Options&) { return false; }
-    virtual bool onIsValid(GrRecordingContext*) const { return true; }
-    virtual bool onQueryYUVAInfo(const SkYUVAPixmapInfo::SupportedDataTypes&,
-                                 SkYUVAPixmapInfo*) const { return false; }
-    virtual bool onGetYUVAPlanes(const SkYUVAPixmaps&) { return false; }
-#if defined(SK_GANESH)
-    
-    virtual GrSurfaceProxyView onGenerateTexture(GrRecordingContext*, const SkImageInfo&,
-                                                 GrMipmapped, GrImageTexGenPolicy);
+    virtual bool onIsValid(GrContext*) const { return true; }
+    virtual bool onQueryYUVA8(SkYUVASizeInfo*, SkYUVAIndex[SkYUVAIndex::kIndexCount],
+                              SkYUVColorSpace*) const { return false; }
+    virtual bool onGetYUVA8Planes(const SkYUVASizeInfo&, const SkYUVAIndex[SkYUVAIndex::kIndexCount],
+                                  void*[4] ) { return false; }
+#if SK_SUPPORT_GPU
+    enum class TexGenType {
+        kNone,           
+        kCheap,          
+        kExpensive,      
+    };
 
-    
-    
-    
-    
-    virtual GrSurfaceOrigin origin() const { return kTopLeft_GrSurfaceOrigin; }
-#endif
-
-#if defined(SK_GRAPHITE)
-    virtual sk_sp<SkImage> onMakeTextureImage(skgpu::graphite::Recorder*,
-                                              const SkImageInfo&,
-                                              skgpu::Mipmapped);
+    virtual TexGenType onCanGenerateTexture() const { return TexGenType::kNone; }
+    virtual sk_sp<GrTextureProxy> onGenerateTexture(GrRecordingContext*, const SkImageInfo&,
+                                                    const SkIPoint&,
+                                                    bool willNeedMipMaps);  
 #endif
 
 private:
@@ -219,8 +196,7 @@ private:
     
     
     
-    static std::unique_ptr<SkImageGenerator> MakeFromEncodedImpl(sk_sp<SkData>,
-                                                                 std::optional<SkAlphaType>);
+    static std::unique_ptr<SkImageGenerator> MakeFromEncodedImpl(sk_sp<SkData>);
 
     SkImageGenerator(SkImageGenerator&&) = delete;
     SkImageGenerator(const SkImageGenerator&) = delete;

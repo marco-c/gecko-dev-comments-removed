@@ -7,516 +7,1458 @@
 
 #include "src/sksl/SkSLCompiler.h"
 
-#include "include/private/SkSLDefines.h"
-#include "include/private/SkSLIRNode.h"
-#include "include/private/SkSLProgramKind.h"
-#include "include/private/SkSLSymbol.h"
-#include "include/private/base/SkDebug.h"
-#include "include/sksl/DSLCore.h"
-#include "include/sksl/DSLModifiers.h"
-#include "include/sksl/DSLType.h"
-#include "src/core/SkTraceEvent.h"
-#include "src/sksl/SkSLAnalysis.h"
-#include "src/sksl/SkSLContext.h"
-#include "src/sksl/SkSLInliner.h"
-#include "src/sksl/SkSLModuleLoader.h"
-#include "src/sksl/SkSLOutputStream.h"
-#include "src/sksl/SkSLParser.h"
-#include "src/sksl/SkSLProgramSettings.h"
-#include "src/sksl/SkSLStringStream.h"
-#include "src/sksl/analysis/SkSLProgramUsage.h"
+#include "src/sksl/SkSLByteCodeGenerator.h"
+#include "src/sksl/SkSLCFGGenerator.h"
+#include "src/sksl/SkSLCPPCodeGenerator.h"
+#include "src/sksl/SkSLGLSLCodeGenerator.h"
+#include "src/sksl/SkSLHCodeGenerator.h"
+#include "src/sksl/SkSLIRGenerator.h"
+#include "src/sksl/SkSLMetalCodeGenerator.h"
+#include "src/sksl/SkSLPipelineStageCodeGenerator.h"
+#include "src/sksl/SkSLSPIRVCodeGenerator.h"
+#include "src/sksl/ir/SkSLEnum.h"
 #include "src/sksl/ir/SkSLExpression.h"
-#include "src/sksl/ir/SkSLField.h"
-#include "src/sksl/ir/SkSLFieldAccess.h"
-#include "src/sksl/ir/SkSLFunctionDeclaration.h"
-#include "src/sksl/ir/SkSLFunctionReference.h"
-#include "src/sksl/ir/SkSLProgram.h"
-#include "src/sksl/ir/SkSLSymbolTable.h"  
-#include "src/sksl/ir/SkSLTypeReference.h"
-#include "src/sksl/ir/SkSLVariable.h"
-#include "src/sksl/ir/SkSLVariableReference.h"
-#include "src/sksl/transform/SkSLTransform.h"
-
-#include <atomic>
-#include <cstdint>
-#include <memory>
-#include <utility>
-
-#if defined(SKSL_STANDALONE)
-#include <fstream>
-#endif
-
-#if defined(SKSL_STANDALONE) || defined(SK_GANESH) || defined(SK_GRAPHITE)
-#include "src/sksl/codegen/SkSLGLSLCodeGenerator.h"
-#include "src/sksl/codegen/SkSLMetalCodeGenerator.h"
-#include "src/sksl/codegen/SkSLSPIRVCodeGenerator.h"
-#include "src/sksl/codegen/SkSLSPIRVtoHLSL.h"
-#include "src/sksl/codegen/SkSLWGSLCodeGenerator.h"
-#endif
+#include "src/sksl/ir/SkSLExpressionStatement.h"
+#include "src/sksl/ir/SkSLFunctionCall.h"
+#include "src/sksl/ir/SkSLIntLiteral.h"
+#include "src/sksl/ir/SkSLModifiersDeclaration.h"
+#include "src/sksl/ir/SkSLNop.h"
+#include "src/sksl/ir/SkSLSymbolTable.h"
+#include "src/sksl/ir/SkSLTernaryExpression.h"
+#include "src/sksl/ir/SkSLUnresolvedFunction.h"
+#include "src/sksl/ir/SkSLVarDeclarations.h"
 
 #ifdef SK_ENABLE_SPIRV_VALIDATION
 #include "spirv-tools/libspirv.hpp"
 #endif
 
-#ifdef SK_ENABLE_WGSL_VALIDATION
-#include "tint/tint.h"
-#endif
+
+
+#define STRINGIFY(x) #x
+
+static const char* SKSL_GPU_INCLUDE =
+#include "sksl_gpu.inc"
+;
+
+static const char* SKSL_INTERP_INCLUDE =
+#include "sksl_interp.inc"
+;
+
+static const char* SKSL_VERT_INCLUDE =
+#include "sksl_vert.inc"
+;
+
+static const char* SKSL_FRAG_INCLUDE =
+#include "sksl_frag.inc"
+;
+
+static const char* SKSL_GEOM_INCLUDE =
+#include "sksl_geom.inc"
+;
+
+static const char* SKSL_FP_INCLUDE =
+#include "sksl_enums.inc"
+#include "sksl_fp.inc"
+;
+
+static const char* SKSL_PIPELINE_INCLUDE =
+#include "sksl_pipeline.inc"
+;
 
 namespace SkSL {
 
-class ModifiersPool;
+Compiler::Compiler(Flags flags)
+: fFlags(flags)
+, fContext(new Context())
+, fErrorCount(0) {
+    auto types = std::shared_ptr<SymbolTable>(new SymbolTable(this));
+    auto symbols = std::shared_ptr<SymbolTable>(new SymbolTable(types, this));
+    fIRGenerator = new IRGenerator(fContext.get(), symbols, *this);
+    fTypes = types;
+    #define ADD_TYPE(t) types->addWithoutOwnership(fContext->f ## t ## _Type->fName, \
+                                                   fContext->f ## t ## _Type.get())
+    ADD_TYPE(Void);
+    ADD_TYPE(Float);
+    ADD_TYPE(Float2);
+    ADD_TYPE(Float3);
+    ADD_TYPE(Float4);
+    ADD_TYPE(Half);
+    ADD_TYPE(Half2);
+    ADD_TYPE(Half3);
+    ADD_TYPE(Half4);
+    ADD_TYPE(Double);
+    ADD_TYPE(Double2);
+    ADD_TYPE(Double3);
+    ADD_TYPE(Double4);
+    ADD_TYPE(Int);
+    ADD_TYPE(Int2);
+    ADD_TYPE(Int3);
+    ADD_TYPE(Int4);
+    ADD_TYPE(UInt);
+    ADD_TYPE(UInt2);
+    ADD_TYPE(UInt3);
+    ADD_TYPE(UInt4);
+    ADD_TYPE(Short);
+    ADD_TYPE(Short2);
+    ADD_TYPE(Short3);
+    ADD_TYPE(Short4);
+    ADD_TYPE(UShort);
+    ADD_TYPE(UShort2);
+    ADD_TYPE(UShort3);
+    ADD_TYPE(UShort4);
+    ADD_TYPE(Byte);
+    ADD_TYPE(Byte2);
+    ADD_TYPE(Byte3);
+    ADD_TYPE(Byte4);
+    ADD_TYPE(UByte);
+    ADD_TYPE(UByte2);
+    ADD_TYPE(UByte3);
+    ADD_TYPE(UByte4);
+    ADD_TYPE(Bool);
+    ADD_TYPE(Bool2);
+    ADD_TYPE(Bool3);
+    ADD_TYPE(Bool4);
+    ADD_TYPE(Float2x2);
+    ADD_TYPE(Float2x3);
+    ADD_TYPE(Float2x4);
+    ADD_TYPE(Float3x2);
+    ADD_TYPE(Float3x3);
+    ADD_TYPE(Float3x4);
+    ADD_TYPE(Float4x2);
+    ADD_TYPE(Float4x3);
+    ADD_TYPE(Float4x4);
+    ADD_TYPE(Half2x2);
+    ADD_TYPE(Half2x3);
+    ADD_TYPE(Half2x4);
+    ADD_TYPE(Half3x2);
+    ADD_TYPE(Half3x3);
+    ADD_TYPE(Half3x4);
+    ADD_TYPE(Half4x2);
+    ADD_TYPE(Half4x3);
+    ADD_TYPE(Half4x4);
+    ADD_TYPE(Double2x2);
+    ADD_TYPE(Double2x3);
+    ADD_TYPE(Double2x4);
+    ADD_TYPE(Double3x2);
+    ADD_TYPE(Double3x3);
+    ADD_TYPE(Double3x4);
+    ADD_TYPE(Double4x2);
+    ADD_TYPE(Double4x3);
+    ADD_TYPE(Double4x4);
+    ADD_TYPE(GenType);
+    ADD_TYPE(GenHType);
+    ADD_TYPE(GenDType);
+    ADD_TYPE(GenIType);
+    ADD_TYPE(GenUType);
+    ADD_TYPE(GenBType);
+    ADD_TYPE(Mat);
+    ADD_TYPE(Vec);
+    ADD_TYPE(GVec);
+    ADD_TYPE(GVec2);
+    ADD_TYPE(GVec3);
+    ADD_TYPE(GVec4);
+    ADD_TYPE(HVec);
+    ADD_TYPE(DVec);
+    ADD_TYPE(IVec);
+    ADD_TYPE(UVec);
+    ADD_TYPE(SVec);
+    ADD_TYPE(USVec);
+    ADD_TYPE(ByteVec);
+    ADD_TYPE(UByteVec);
+    ADD_TYPE(BVec);
 
+    ADD_TYPE(Sampler1D);
+    ADD_TYPE(Sampler2D);
+    ADD_TYPE(Sampler3D);
+    ADD_TYPE(SamplerExternalOES);
+    ADD_TYPE(SamplerCube);
+    ADD_TYPE(Sampler2DRect);
+    ADD_TYPE(Sampler1DArray);
+    ADD_TYPE(Sampler2DArray);
+    ADD_TYPE(SamplerCubeArray);
+    ADD_TYPE(SamplerBuffer);
+    ADD_TYPE(Sampler2DMS);
+    ADD_TYPE(Sampler2DMSArray);
 
-Compiler::OverrideFlag Compiler::sOptimizer = OverrideFlag::kDefault;
-Compiler::OverrideFlag Compiler::sInliner = OverrideFlag::kDefault;
+    ADD_TYPE(ISampler2D);
 
-using RefKind = VariableReference::RefKind;
+    ADD_TYPE(Image2D);
+    ADD_TYPE(IImage2D);
 
-class AutoSource {
-public:
-    AutoSource(Compiler* compiler, std::string_view source)
-            : fCompiler(compiler) {
-        SkASSERT(!fCompiler->errorReporter().source().data());
-        fCompiler->errorReporter().setSource(source);
-    }
+    ADD_TYPE(SubpassInput);
+    ADD_TYPE(SubpassInputMS);
 
-    ~AutoSource() {
-        fCompiler->errorReporter().setSource(std::string_view());
-    }
+    ADD_TYPE(GSampler1D);
+    ADD_TYPE(GSampler2D);
+    ADD_TYPE(GSampler3D);
+    ADD_TYPE(GSamplerCube);
+    ADD_TYPE(GSampler2DRect);
+    ADD_TYPE(GSampler1DArray);
+    ADD_TYPE(GSampler2DArray);
+    ADD_TYPE(GSamplerCubeArray);
+    ADD_TYPE(GSamplerBuffer);
+    ADD_TYPE(GSampler2DMS);
+    ADD_TYPE(GSampler2DMSArray);
 
-    Compiler* fCompiler;
-};
+    ADD_TYPE(Sampler1DShadow);
+    ADD_TYPE(Sampler2DShadow);
+    ADD_TYPE(SamplerCubeShadow);
+    ADD_TYPE(Sampler2DRectShadow);
+    ADD_TYPE(Sampler1DArrayShadow);
+    ADD_TYPE(Sampler2DArrayShadow);
+    ADD_TYPE(SamplerCubeArrayShadow);
+    ADD_TYPE(GSampler2DArrayShadow);
+    ADD_TYPE(GSamplerCubeArrayShadow);
+    ADD_TYPE(FragmentProcessor);
+    ADD_TYPE(Sampler);
+    ADD_TYPE(Texture2D);
 
-class AutoProgramConfig {
-public:
-    AutoProgramConfig(Context& context, ProgramConfig* config)
-            : fContext(context)
-            , fOldConfig(context.fConfig) {
-        fContext.fConfig = config;
-    }
+    StringFragment skCapsName("sk_Caps");
+    Variable* skCaps = new Variable(-1, Modifiers(), skCapsName,
+                                    *fContext->fSkCaps_Type, Variable::kGlobal_Storage);
+    fIRGenerator->fSymbolTable->add(skCapsName, std::unique_ptr<Symbol>(skCaps));
 
-    ~AutoProgramConfig() {
-        fContext.fConfig = fOldConfig;
-    }
+    StringFragment skArgsName("sk_Args");
+    Variable* skArgs = new Variable(-1, Modifiers(), skArgsName,
+                                    *fContext->fSkArgs_Type, Variable::kGlobal_Storage);
+    fIRGenerator->fSymbolTable->add(skArgsName, std::unique_ptr<Symbol>(skArgs));
 
-    Context& fContext;
-    ProgramConfig* fOldConfig;
-};
-
-class AutoShaderCaps {
-public:
-    AutoShaderCaps(std::shared_ptr<Context>& context, const ShaderCaps* caps)
-            : fContext(context.get())
-            , fOldCaps(fContext->fCaps) {
-        fContext->fCaps = caps;
-    }
-
-    ~AutoShaderCaps() {
-        fContext->fCaps = fOldCaps;
-    }
-
-    Context* fContext;
-    const ShaderCaps* fOldCaps;
-};
-
-class AutoModifiersPool {
-public:
-    AutoModifiersPool(std::shared_ptr<Context>& context, ModifiersPool* modifiersPool)
-            : fContext(context.get()) {
-        SkASSERT(!fContext->fModifiersPool);
-        fContext->fModifiersPool = modifiersPool;
-    }
-
-    ~AutoModifiersPool() {
-        fContext->fModifiersPool = nullptr;
-    }
-
-    Context* fContext;
-};
-
-Compiler::Compiler(const ShaderCaps* caps) : fErrorReporter(this), fCaps(caps) {
-    SkASSERT(caps);
-
-    auto moduleLoader = ModuleLoader::Get();
-    fContext = std::make_shared<Context>(moduleLoader.builtinTypes(), nullptr,
-                                         fErrorReporter);
+    std::vector<std::unique_ptr<ProgramElement>> ignored;
+    this->processIncludeFile(Program::kFragment_Kind, SKSL_GPU_INCLUDE, strlen(SKSL_GPU_INCLUDE),
+                             symbols, &ignored, &fGpuSymbolTable);
+    this->processIncludeFile(Program::kVertex_Kind, SKSL_VERT_INCLUDE, strlen(SKSL_VERT_INCLUDE),
+                             fGpuSymbolTable, &fVertexInclude, &fVertexSymbolTable);
+    this->processIncludeFile(Program::kFragment_Kind, SKSL_FRAG_INCLUDE, strlen(SKSL_FRAG_INCLUDE),
+                             fGpuSymbolTable, &fFragmentInclude, &fFragmentSymbolTable);
+    this->processIncludeFile(Program::kGeometry_Kind, SKSL_GEOM_INCLUDE, strlen(SKSL_GEOM_INCLUDE),
+                             fGpuSymbolTable, &fGeometryInclude, &fGeometrySymbolTable);
+    this->processIncludeFile(Program::kPipelineStage_Kind, SKSL_PIPELINE_INCLUDE,
+                             strlen(SKSL_PIPELINE_INCLUDE), fGpuSymbolTable, &fPipelineInclude,
+                             &fPipelineSymbolTable);
+    this->processIncludeFile(Program::kGeneric_Kind, SKSL_INTERP_INCLUDE,
+                             strlen(SKSL_INTERP_INCLUDE), symbols, &fInterpreterInclude,
+                             &fInterpreterSymbolTable);
 }
 
-Compiler::~Compiler() {}
-
-const Module* Compiler::moduleForProgramKind(ProgramKind kind) {
-    auto m = ModuleLoader::Get();
-    switch (kind) {
-        case ProgramKind::kVertex:                return m.loadVertexModule(this);
-        case ProgramKind::kFragment:              return m.loadFragmentModule(this);
-        case ProgramKind::kCompute:               return m.loadComputeModule(this);
-        case ProgramKind::kGraphiteVertex:        return m.loadGraphiteVertexModule(this);
-        case ProgramKind::kGraphiteFragment:      return m.loadGraphiteFragmentModule(this);
-        case ProgramKind::kPrivateRuntimeShader:  return m.loadPrivateRTShaderModule(this);
-        case ProgramKind::kRuntimeColorFilter:
-        case ProgramKind::kRuntimeShader:
-        case ProgramKind::kRuntimeBlender:
-        case ProgramKind::kPrivateRuntimeColorFilter:
-        case ProgramKind::kPrivateRuntimeBlender:
-        case ProgramKind::kMeshVertex:
-        case ProgramKind::kMeshFragment:          return m.loadPublicModule(this);
-    }
-    SkUNREACHABLE;
+Compiler::~Compiler() {
+    delete fIRGenerator;
 }
 
-void Compiler::FinalizeSettings(ProgramSettings* settings, ProgramKind kind) {
-    
-    switch (sOptimizer) {
-        case OverrideFlag::kDefault:
-            break;
-        case OverrideFlag::kOff:
-            settings->fOptimize = false;
-            break;
-        case OverrideFlag::kOn:
-            settings->fOptimize = true;
-            break;
+void Compiler::processIncludeFile(Program::Kind kind, const char* src, size_t length,
+                                  std::shared_ptr<SymbolTable> base,
+                                  std::vector<std::unique_ptr<ProgramElement>>* outElements,
+                                  std::shared_ptr<SymbolTable>* outSymbolTable) {
+    fIRGenerator->fSymbolTable = std::move(base);
+    Program::Settings settings;
+    fIRGenerator->start(&settings, nullptr);
+    fIRGenerator->convertProgram(kind, src, length, *fTypes, outElements);
+    if (this->fErrorCount) {
+        printf("Unexpected errors: %s\n", this->fErrorText.c_str());
     }
+    SkASSERT(!fErrorCount);
+    fIRGenerator->fSymbolTable->markAllFunctionsBuiltin();
+    *outSymbolTable = fIRGenerator->fSymbolTable;
+}
 
-    switch (sInliner) {
-        case OverrideFlag::kDefault:
-            break;
-        case OverrideFlag::kOff:
-            settings->fInlineThreshold = 0;
-            break;
-        case OverrideFlag::kOn:
-            if (settings->fInlineThreshold == 0) {
-                settings->fInlineThreshold = kDefaultInlineThreshold;
+
+void Compiler::addDefinition(const Expression* lvalue, std::unique_ptr<Expression>* expr,
+                             DefinitionMap* definitions) {
+    switch (lvalue->fKind) {
+        case Expression::kVariableReference_Kind: {
+            const Variable& var = ((VariableReference*) lvalue)->fVariable;
+            if (var.fStorage == Variable::kLocal_Storage) {
+                (*definitions)[&var] = expr;
             }
             break;
-    }
-
-    
-    settings->fInlineThreshold *= (int)settings->fOptimize;
-    settings->fRemoveDeadFunctions &= settings->fOptimize;
-    settings->fRemoveDeadVariables &= settings->fOptimize;
-
-    
-    if (ProgramConfig::IsRuntimeEffect(kind)) {
-        settings->fAllowNarrowingConversions = true;
-    }
-}
-
-std::unique_ptr<Module> Compiler::compileModule(ProgramKind kind,
-                                                const char* moduleName,
-                                                std::string moduleSource,
-                                                const Module* parent,
-                                                ModifiersPool& modifiersPool,
-                                                bool shouldInline) {
-    SkASSERT(parent);
-    SkASSERT(!moduleSource.empty());
-    SkASSERT(this->errorCount() == 0);
-
-    
-    AutoShaderCaps autoCaps(fContext, nullptr);
-    AutoModifiersPool autoPool(fContext, &modifiersPool);
-
-    
-    ProgramSettings settings;
-    FinalizeSettings(&settings, kind);
-    SkSL::Parser parser{this, settings, kind, std::move(moduleSource)};
-    std::unique_ptr<Module> module = parser.moduleInheritingFrom(parent);
-    if (this->errorCount() != 0) {
-        SkDebugf("Unexpected errors compiling %s:\n\n%s\n", moduleName, this->errorText().c_str());
-        return nullptr;
-    }
-    if (shouldInline) {
-        this->optimizeModuleAfterLoading(kind, *module);
-    }
-    return module;
-}
-
-std::unique_ptr<Program> Compiler::convertProgram(ProgramKind kind,
-                                                  std::string text,
-                                                  ProgramSettings settings) {
-    TRACE_EVENT0("skia.shaders", "SkSL::Compiler::convertProgram");
-
-    
-    FinalizeSettings(&settings, kind);
-
-    
-    AutoShaderCaps autoCaps(fContext, fCaps);
-
-    this->resetErrors();
-
-    return Parser(this, settings, kind, std::move(text)).program();
-}
-
-std::unique_ptr<Expression> Compiler::convertIdentifier(Position pos, std::string_view name) {
-    const Symbol* result = fSymbolTable->find(name);
-    if (!result) {
-        this->errorReporter().error(pos, "unknown identifier '" + std::string(name) + "'");
-        return nullptr;
-    }
-    switch (result->kind()) {
-        case Symbol::Kind::kFunctionDeclaration: {
-            return std::make_unique<FunctionReference>(*fContext, pos,
-                                                       &result->as<FunctionDeclaration>());
         }
-        case Symbol::Kind::kVariable: {
-            const Variable* var = &result->as<Variable>();
+        case Expression::kSwizzle_Kind:
             
-            return VariableReference::Make(pos, var, VariableReference::RefKind::kRead);
-        }
-        case Symbol::Kind::kField: {
-            const Field* field = &result->as<Field>();
-            auto base = VariableReference::Make(pos, &field->owner(),
-                                                VariableReference::RefKind::kRead);
-            return FieldAccess::Make(*fContext, pos, std::move(base), field->fieldIndex(),
-                                     FieldAccess::OwnerKind::kAnonymousInterfaceBlock);
-        }
-        case Symbol::Kind::kType: {
             
-            dsl::DSLModifiers modifiers;
-            dsl::DSLType dslType(result->name(), &modifiers, pos);
-            return TypeReference::Convert(*fContext, pos, &dslType.skslType());
-        }
+            
+            
+            
+            
+            this->addDefinition(((Swizzle*) lvalue)->fBase.get(),
+                                (std::unique_ptr<Expression>*) &fContext->fDefined_Expression,
+                                definitions);
+            break;
+        case Expression::kIndex_Kind:
+            
+            this->addDefinition(((IndexExpression*) lvalue)->fBase.get(),
+                                (std::unique_ptr<Expression>*) &fContext->fDefined_Expression,
+                                definitions);
+            break;
+        case Expression::kFieldAccess_Kind:
+            
+            this->addDefinition(((FieldAccess*) lvalue)->fBase.get(),
+                                (std::unique_ptr<Expression>*) &fContext->fDefined_Expression,
+                                definitions);
+            break;
+        case Expression::kTernary_Kind:
+            
+            
+            
+            this->addDefinition(((TernaryExpression*) lvalue)->fIfTrue.get(),
+                                (std::unique_ptr<Expression>*) &fContext->fDefined_Expression,
+                                definitions);
+            this->addDefinition(((TernaryExpression*) lvalue)->fIfFalse.get(),
+                                (std::unique_ptr<Expression>*) &fContext->fDefined_Expression,
+                                definitions);
+            break;
+        case Expression::kExternalValue_Kind:
+            break;
         default:
-            SK_ABORT("unsupported symbol type %d\n", (int) result->kind());
-    }
-}
-
-bool Compiler::optimizeModuleBeforeMinifying(ProgramKind kind, Module& module) {
-    SkASSERT(this->errorCount() == 0);
-
-    auto m = SkSL::ModuleLoader::Get();
-
-    
-    ProgramConfig config;
-    config.fIsBuiltinCode = true;
-    config.fKind = kind;
-    AutoProgramConfig autoConfig(this->context(), &config);
-    AutoModifiersPool autoPool(fContext, &m.coreModifiers());
-
-    std::unique_ptr<ProgramUsage> usage = Analysis::GetUsage(module);
-
-    
-    Transform::RenamePrivateSymbols(this->context(), module, usage.get(), kind);
-
-    
-    Transform::ReplaceConstVarsWithLiterals(module, usage.get());
-
-    
-    Transform::EliminateUnreachableCode(module, usage.get());
-
-    
-    
-    
-    if (kind == ProgramKind::kRuntimeShader) {
-        while (Transform::EliminateDeadFunctions(this->context(), module, usage.get())) {
             
-        }
+            SkASSERT(false);
     }
-
-    while (Transform::EliminateDeadLocalVariables(this->context(), module, usage.get())) {
-        
-    }
-
-    
-    
-    
-    bool onlyPrivateGlobals = !ProgramConfig::IsRuntimeEffect(kind);
-    while (Transform::EliminateDeadGlobalVariables(this->context(), module, usage.get(),
-                                                   onlyPrivateGlobals)) {
-        
-    }
-
-    
-    SkSL::Transform::EliminateEmptyStatements(module);
-
-    
-    SkASSERT(*usage == *Analysis::GetUsage(module));
-
-    return this->errorCount() == 0;
 }
 
-bool Compiler::optimizeModuleAfterLoading(ProgramKind kind, Module& module) {
-    SkASSERT(this->errorCount() == 0);
 
-#ifndef SK_ENABLE_OPTIMIZE_SIZE
-    
-    ProgramConfig config;
-    config.fIsBuiltinCode = true;
-    config.fKind = kind;
-    AutoProgramConfig autoConfig(this->context(), &config);
+void Compiler::addDefinitions(const BasicBlock::Node& node,
+                              DefinitionMap* definitions) {
+    switch (node.fKind) {
+        case BasicBlock::Node::kExpression_Kind: {
+            SkASSERT(node.expression());
+            const Expression* expr = (Expression*) node.expression()->get();
+            switch (expr->fKind) {
+                case Expression::kBinary_Kind: {
+                    BinaryExpression* b = (BinaryExpression*) expr;
+                    if (b->fOperator == Token::EQ) {
+                        this->addDefinition(b->fLeft.get(), &b->fRight, definitions);
+                    } else if (Compiler::IsAssignment(b->fOperator)) {
+                        this->addDefinition(
+                                      b->fLeft.get(),
+                                      (std::unique_ptr<Expression>*) &fContext->fDefined_Expression,
+                                      definitions);
 
-    std::unique_ptr<ProgramUsage> usage = Analysis::GetUsage(module);
-
-    
-    Inliner inliner(fContext.get());
-    while (this->errorCount() == 0) {
-        if (!this->runInliner(&inliner, module.fElements, module.fSymbols, usage.get())) {
+                    }
+                    break;
+                }
+                case Expression::kFunctionCall_Kind: {
+                    const FunctionCall& c = (const FunctionCall&) *expr;
+                    for (size_t i = 0; i < c.fFunction.fParameters.size(); ++i) {
+                        if (c.fFunction.fParameters[i]->fModifiers.fFlags & Modifiers::kOut_Flag) {
+                            this->addDefinition(
+                                      c.fArguments[i].get(),
+                                      (std::unique_ptr<Expression>*) &fContext->fDefined_Expression,
+                                      definitions);
+                        }
+                    }
+                    break;
+                }
+                case Expression::kPrefix_Kind: {
+                    const PrefixExpression* p = (PrefixExpression*) expr;
+                    if (p->fOperator == Token::MINUSMINUS || p->fOperator == Token::PLUSPLUS) {
+                        this->addDefinition(
+                                      p->fOperand.get(),
+                                      (std::unique_ptr<Expression>*) &fContext->fDefined_Expression,
+                                      definitions);
+                    }
+                    break;
+                }
+                case Expression::kPostfix_Kind: {
+                    const PostfixExpression* p = (PostfixExpression*) expr;
+                    if (p->fOperator == Token::MINUSMINUS || p->fOperator == Token::PLUSPLUS) {
+                        this->addDefinition(
+                                      p->fOperand.get(),
+                                      (std::unique_ptr<Expression>*) &fContext->fDefined_Expression,
+                                      definitions);
+                    }
+                    break;
+                }
+                case Expression::kVariableReference_Kind: {
+                    const VariableReference* v = (VariableReference*) expr;
+                    if (v->fRefKind != VariableReference::kRead_RefKind) {
+                        this->addDefinition(
+                                      v,
+                                      (std::unique_ptr<Expression>*) &fContext->fDefined_Expression,
+                                      definitions);
+                    }
+                }
+                default:
+                    break;
+            }
+            break;
+        }
+        case BasicBlock::Node::kStatement_Kind: {
+            const Statement* stmt = (Statement*) node.statement()->get();
+            if (stmt->fKind == Statement::kVarDeclaration_Kind) {
+                VarDeclaration& vd = (VarDeclaration&) *stmt;
+                if (vd.fValue) {
+                    (*definitions)[vd.fVar] = &vd.fValue;
+                }
+            }
             break;
         }
     }
-    
-    SkASSERT(*usage == *Analysis::GetUsage(module));
-#endif
+}
 
-    return this->errorCount() == 0;
+void Compiler::scanCFG(CFG* cfg, BlockId blockId, std::set<BlockId>* workList) {
+    BasicBlock& block = cfg->fBlocks[blockId];
+
+    
+    DefinitionMap after = block.fBefore;
+    for (const BasicBlock::Node& n : block.fNodes) {
+        this->addDefinitions(n, &after);
+    }
+
+    
+    for (BlockId exitId : block.fExits) {
+        if (exitId == blockId) {
+            continue;
+        }
+        BasicBlock& exit = cfg->fBlocks[exitId];
+        for (const auto& pair : after) {
+            std::unique_ptr<Expression>* e1 = pair.second;
+            auto found = exit.fBefore.find(pair.first);
+            if (found == exit.fBefore.end()) {
+                
+                workList->insert(exitId);
+                exit.fBefore[pair.first] = e1;
+            } else {
+                
+                std::unique_ptr<Expression>* e2 = exit.fBefore[pair.first];
+                if (e1 != e2) {
+                    
+                    workList->insert(exitId);
+                    if (e1 && e2) {
+                        exit.fBefore[pair.first] =
+                                      (std::unique_ptr<Expression>*) &fContext->fDefined_Expression;
+                    } else {
+                        exit.fBefore[pair.first] = nullptr;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
+static DefinitionMap compute_start_state(const CFG& cfg) {
+    DefinitionMap result;
+    for (const auto& block : cfg.fBlocks) {
+        for (const auto& node : block.fNodes) {
+            if (node.fKind == BasicBlock::Node::kStatement_Kind) {
+                SkASSERT(node.statement());
+                const Statement* s = node.statement()->get();
+                if (s->fKind == Statement::kVarDeclarations_Kind) {
+                    const VarDeclarationsStatement* vd = (const VarDeclarationsStatement*) s;
+                    for (const auto& decl : vd->fDeclaration->fVars) {
+                        if (decl->fKind == Statement::kVarDeclaration_Kind) {
+                            result[((VarDeclaration&) *decl).fVar] = nullptr;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return result;
+}
+
+
+
+
+static bool is_dead(const Expression& lvalue) {
+    switch (lvalue.fKind) {
+        case Expression::kVariableReference_Kind:
+            return ((VariableReference&) lvalue).fVariable.dead();
+        case Expression::kSwizzle_Kind:
+            return is_dead(*((Swizzle&) lvalue).fBase);
+        case Expression::kFieldAccess_Kind:
+            return is_dead(*((FieldAccess&) lvalue).fBase);
+        case Expression::kIndex_Kind: {
+            const IndexExpression& idx = (IndexExpression&) lvalue;
+            return is_dead(*idx.fBase) && !idx.fIndex->hasSideEffects();
+        }
+        case Expression::kTernary_Kind: {
+            const TernaryExpression& t = (TernaryExpression&) lvalue;
+            return !t.fTest->hasSideEffects() && is_dead(*t.fIfTrue) && is_dead(*t.fIfFalse);
+        }
+        case Expression::kExternalValue_Kind:
+            return false;
+        default:
+            ABORT("invalid lvalue: %s\n", lvalue.description().c_str());
+    }
+}
+
+
+
+
+
+static bool dead_assignment(const BinaryExpression& b) {
+    if (!Compiler::IsAssignment(b.fOperator)) {
+        return false;
+    }
+    return is_dead(*b.fLeft);
+}
+
+void Compiler::computeDataFlow(CFG* cfg) {
+    cfg->fBlocks[cfg->fStart].fBefore = compute_start_state(*cfg);
+    std::set<BlockId> workList;
+    for (BlockId i = 0; i < cfg->fBlocks.size(); i++) {
+        workList.insert(i);
+    }
+    while (workList.size()) {
+        BlockId next = *workList.begin();
+        workList.erase(workList.begin());
+        this->scanCFG(cfg, next, &workList);
+    }
+}
+
+
+
+
+
+
+
+bool try_replace_expression(BasicBlock* b,
+                            std::vector<BasicBlock::Node>::iterator* iter,
+                            std::unique_ptr<Expression>* newExpression) {
+    std::unique_ptr<Expression>* target = (*iter)->expression();
+    if (!b->tryRemoveExpression(iter)) {
+        *target = std::move(*newExpression);
+        return false;
+    }
+    *target = std::move(*newExpression);
+    return b->tryInsertExpression(iter, target);
+}
+
+
+
+
+
+bool is_constant(const Expression& expr, double value) {
+    switch (expr.fKind) {
+        case Expression::kIntLiteral_Kind:
+            return ((IntLiteral&) expr).fValue == value;
+        case Expression::kFloatLiteral_Kind:
+            return ((FloatLiteral&) expr).fValue == value;
+        case Expression::kConstructor_Kind: {
+            Constructor& c = (Constructor&) expr;
+            bool isFloat = c.fType.columns() > 1 ? c.fType.componentType().isFloat()
+                                                 : c.fType.isFloat();
+            if (c.fType.kind() == Type::kVector_Kind && c.isConstant()) {
+                for (int i = 0; i < c.fType.columns(); ++i) {
+                    if (isFloat) {
+                        if (c.getFVecComponent(i) != value) {
+                            return false;
+                        }
+                    } else if (c.getIVecComponent(i) != value) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+        default:
+            return false;
+    }
+}
+
+
+
+
+
+void delete_left(BasicBlock* b,
+                 std::vector<BasicBlock::Node>::iterator* iter,
+                 bool* outUpdated,
+                 bool* outNeedsRescan) {
+    *outUpdated = true;
+    std::unique_ptr<Expression>* target = (*iter)->expression();
+    SkASSERT((*target)->fKind == Expression::kBinary_Kind);
+    BinaryExpression& bin = (BinaryExpression&) **target;
+    SkASSERT(!bin.fLeft->hasSideEffects());
+    bool result;
+    if (bin.fOperator == Token::EQ) {
+        result = b->tryRemoveLValueBefore(iter, bin.fLeft.get());
+    } else {
+        result = b->tryRemoveExpressionBefore(iter, bin.fLeft.get());
+    }
+    *target = std::move(bin.fRight);
+    if (!result) {
+        *outNeedsRescan = true;
+        return;
+    }
+    if (*iter == b->fNodes.begin()) {
+        *outNeedsRescan = true;
+        return;
+    }
+    --(*iter);
+    if ((*iter)->fKind != BasicBlock::Node::kExpression_Kind ||
+        (*iter)->expression() != &bin.fRight) {
+        *outNeedsRescan = true;
+        return;
+    }
+    *iter = b->fNodes.erase(*iter);
+    SkASSERT((*iter)->expression() == target);
+}
+
+
+
+
+
+void delete_right(BasicBlock* b,
+                  std::vector<BasicBlock::Node>::iterator* iter,
+                  bool* outUpdated,
+                  bool* outNeedsRescan) {
+    *outUpdated = true;
+    std::unique_ptr<Expression>* target = (*iter)->expression();
+    SkASSERT((*target)->fKind == Expression::kBinary_Kind);
+    BinaryExpression& bin = (BinaryExpression&) **target;
+    SkASSERT(!bin.fRight->hasSideEffects());
+    if (!b->tryRemoveExpressionBefore(iter, bin.fRight.get())) {
+        *target = std::move(bin.fLeft);
+        *outNeedsRescan = true;
+        return;
+    }
+    *target = std::move(bin.fLeft);
+    if (*iter == b->fNodes.begin()) {
+        *outNeedsRescan = true;
+        return;
+    }
+    --(*iter);
+    if (((*iter)->fKind != BasicBlock::Node::kExpression_Kind ||
+        (*iter)->expression() != &bin.fLeft)) {
+        *outNeedsRescan = true;
+        return;
+    }
+    *iter = b->fNodes.erase(*iter);
+    SkASSERT((*iter)->expression() == target);
+}
+
+
+
+
+static std::unique_ptr<Expression> construct(const Type& type, std::unique_ptr<Expression> v) {
+    std::vector<std::unique_ptr<Expression>> args;
+    args.push_back(std::move(v));
+    auto result = std::unique_ptr<Expression>(new Constructor(-1, type, std::move(args)));
+    return result;
+}
+
+
+
+
+
+static void vectorize(BasicBlock* b,
+                      std::vector<BasicBlock::Node>::iterator* iter,
+                      const Type& type,
+                      std::unique_ptr<Expression>* otherExpression,
+                      bool* outUpdated,
+                      bool* outNeedsRescan) {
+    SkASSERT((*(*iter)->expression())->fKind == Expression::kBinary_Kind);
+    SkASSERT(type.kind() == Type::kVector_Kind);
+    SkASSERT((*otherExpression)->fType.kind() == Type::kScalar_Kind);
+    *outUpdated = true;
+    std::unique_ptr<Expression>* target = (*iter)->expression();
+    if (!b->tryRemoveExpression(iter)) {
+        *target = construct(type, std::move(*otherExpression));
+        *outNeedsRescan = true;
+    } else {
+        *target = construct(type, std::move(*otherExpression));
+        if (!b->tryInsertExpression(iter, target)) {
+            *outNeedsRescan = true;
+        }
+    }
+}
+
+
+
+
+
+static void vectorize_left(BasicBlock* b,
+                           std::vector<BasicBlock::Node>::iterator* iter,
+                           bool* outUpdated,
+                           bool* outNeedsRescan) {
+    BinaryExpression& bin = (BinaryExpression&) **(*iter)->expression();
+    vectorize(b, iter, bin.fRight->fType, &bin.fLeft, outUpdated, outNeedsRescan);
+}
+
+
+
+
+
+static void vectorize_right(BasicBlock* b,
+                            std::vector<BasicBlock::Node>::iterator* iter,
+                            bool* outUpdated,
+                            bool* outNeedsRescan) {
+    BinaryExpression& bin = (BinaryExpression&) **(*iter)->expression();
+    vectorize(b, iter, bin.fLeft->fType, &bin.fRight, outUpdated, outNeedsRescan);
+}
+
+
+void clear_write(const Expression& expr) {
+    switch (expr.fKind) {
+        case Expression::kVariableReference_Kind: {
+            ((VariableReference&) expr).setRefKind(VariableReference::kRead_RefKind);
+            break;
+        }
+        case Expression::kFieldAccess_Kind:
+            clear_write(*((FieldAccess&) expr).fBase);
+            break;
+        case Expression::kSwizzle_Kind:
+            clear_write(*((Swizzle&) expr).fBase);
+            break;
+        case Expression::kIndex_Kind:
+            clear_write(*((IndexExpression&) expr).fBase);
+            break;
+        default:
+            ABORT("shouldn't be writing to this kind of expression\n");
+            break;
+    }
+}
+
+void Compiler::simplifyExpression(DefinitionMap& definitions,
+                                  BasicBlock& b,
+                                  std::vector<BasicBlock::Node>::iterator* iter,
+                                  std::unordered_set<const Variable*>* undefinedVariables,
+                                  bool* outUpdated,
+                                  bool* outNeedsRescan) {
+    Expression* expr = (*iter)->expression()->get();
+    SkASSERT(expr);
+    if ((*iter)->fConstantPropagation) {
+        std::unique_ptr<Expression> optimized = expr->constantPropagate(*fIRGenerator, definitions);
+        if (optimized) {
+            *outUpdated = true;
+            if (!try_replace_expression(&b, iter, &optimized)) {
+                *outNeedsRescan = true;
+                return;
+            }
+            SkASSERT((*iter)->fKind == BasicBlock::Node::kExpression_Kind);
+            expr = (*iter)->expression()->get();
+        }
+    }
+    switch (expr->fKind) {
+        case Expression::kVariableReference_Kind: {
+            const VariableReference& ref = (VariableReference&) *expr;
+            const Variable& var = ref.fVariable;
+            if (ref.refKind() != VariableReference::kWrite_RefKind &&
+                ref.refKind() != VariableReference::kPointer_RefKind &&
+                var.fStorage == Variable::kLocal_Storage && !definitions[&var] &&
+                (*undefinedVariables).find(&var) == (*undefinedVariables).end()) {
+                (*undefinedVariables).insert(&var);
+                this->error(expr->fOffset,
+                            "'" + var.fName + "' has not been assigned");
+            }
+            break;
+        }
+        case Expression::kTernary_Kind: {
+            TernaryExpression* t = (TernaryExpression*) expr;
+            if (t->fTest->fKind == Expression::kBoolLiteral_Kind) {
+                
+                
+                if (((BoolLiteral&) *t->fTest).fValue) {
+                    (*iter)->setExpression(std::move(t->fIfTrue));
+                } else {
+                    (*iter)->setExpression(std::move(t->fIfFalse));
+                }
+                *outUpdated = true;
+                *outNeedsRescan = true;
+            }
+            break;
+        }
+        case Expression::kBinary_Kind: {
+            BinaryExpression* bin = (BinaryExpression*) expr;
+            if (dead_assignment(*bin)) {
+                delete_left(&b, iter, outUpdated, outNeedsRescan);
+                break;
+            }
+            
+            if (((bin->fLeft->fType.kind()  != Type::kScalar_Kind) &&
+                 (bin->fLeft->fType.kind()  != Type::kVector_Kind)) ||
+                ((bin->fRight->fType.kind() != Type::kScalar_Kind) &&
+                 (bin->fRight->fType.kind() != Type::kVector_Kind))) {
+                break;
+            }
+            switch (bin->fOperator) {
+                case Token::STAR:
+                    if (is_constant(*bin->fLeft, 1)) {
+                        if (bin->fLeft->fType.kind() == Type::kVector_Kind &&
+                            bin->fRight->fType.kind() == Type::kScalar_Kind) {
+                            
+                            vectorize_right(&b, iter, outUpdated, outNeedsRescan);
+                        } else {
+                            
+                            
+                            
+                            delete_left(&b, iter, outUpdated, outNeedsRescan);
+                        }
+                    }
+                    else if (is_constant(*bin->fLeft, 0)) {
+                        if (bin->fLeft->fType.kind() == Type::kScalar_Kind &&
+                            bin->fRight->fType.kind() == Type::kVector_Kind &&
+                            !bin->fRight->hasSideEffects()) {
+                            
+                            vectorize_left(&b, iter, outUpdated, outNeedsRescan);
+                        } else {
+                            
+                            
+                            
+                            if (!bin->fRight->hasSideEffects()) {
+                                delete_right(&b, iter, outUpdated, outNeedsRescan);
+                            }
+                        }
+                    }
+                    else if (is_constant(*bin->fRight, 1)) {
+                        if (bin->fLeft->fType.kind() == Type::kScalar_Kind &&
+                            bin->fRight->fType.kind() == Type::kVector_Kind) {
+                            
+                            vectorize_left(&b, iter, outUpdated, outNeedsRescan);
+                        } else {
+                            
+                            
+                            
+                            delete_right(&b, iter, outUpdated, outNeedsRescan);
+                        }
+                    }
+                    else if (is_constant(*bin->fRight, 0)) {
+                        if (bin->fLeft->fType.kind() == Type::kVector_Kind &&
+                            bin->fRight->fType.kind() == Type::kScalar_Kind &&
+                            !bin->fLeft->hasSideEffects()) {
+                            
+                            vectorize_right(&b, iter, outUpdated, outNeedsRescan);
+                        } else {
+                            
+                            
+                            
+                            if (!bin->fLeft->hasSideEffects()) {
+                                delete_left(&b, iter, outUpdated, outNeedsRescan);
+                            }
+                        }
+                    }
+                    break;
+                case Token::PLUS:
+                    if (is_constant(*bin->fLeft, 0)) {
+                        if (bin->fLeft->fType.kind() == Type::kVector_Kind &&
+                            bin->fRight->fType.kind() == Type::kScalar_Kind) {
+                            
+                            vectorize_right(&b, iter, outUpdated, outNeedsRescan);
+                        } else {
+                            
+                            
+                            
+                            delete_left(&b, iter, outUpdated, outNeedsRescan);
+                        }
+                    } else if (is_constant(*bin->fRight, 0)) {
+                        if (bin->fLeft->fType.kind() == Type::kScalar_Kind &&
+                            bin->fRight->fType.kind() == Type::kVector_Kind) {
+                            
+                            vectorize_left(&b, iter, outUpdated, outNeedsRescan);
+                        } else {
+                            
+                            
+                            
+                            delete_right(&b, iter, outUpdated, outNeedsRescan);
+                        }
+                    }
+                    break;
+                case Token::MINUS:
+                    if (is_constant(*bin->fRight, 0)) {
+                        if (bin->fLeft->fType.kind() == Type::kScalar_Kind &&
+                            bin->fRight->fType.kind() == Type::kVector_Kind) {
+                            
+                            vectorize_left(&b, iter, outUpdated, outNeedsRescan);
+                        } else {
+                            
+                            
+                            
+                            delete_right(&b, iter, outUpdated, outNeedsRescan);
+                        }
+                    }
+                    break;
+                case Token::SLASH:
+                    if (is_constant(*bin->fRight, 1)) {
+                        if (bin->fLeft->fType.kind() == Type::kScalar_Kind &&
+                            bin->fRight->fType.kind() == Type::kVector_Kind) {
+                            
+                            vectorize_left(&b, iter, outUpdated, outNeedsRescan);
+                        } else {
+                            
+                            
+                            
+                            delete_right(&b, iter, outUpdated, outNeedsRescan);
+                        }
+                    } else if (is_constant(*bin->fLeft, 0)) {
+                        if (bin->fLeft->fType.kind() == Type::kScalar_Kind &&
+                            bin->fRight->fType.kind() == Type::kVector_Kind &&
+                            !bin->fRight->hasSideEffects()) {
+                            
+                            vectorize_left(&b, iter, outUpdated, outNeedsRescan);
+                        } else {
+                            
+                            
+                            
+                            if (!bin->fRight->hasSideEffects()) {
+                                delete_right(&b, iter, outUpdated, outNeedsRescan);
+                            }
+                        }
+                    }
+                    break;
+                case Token::PLUSEQ:
+                    if (is_constant(*bin->fRight, 0)) {
+                        clear_write(*bin->fLeft);
+                        delete_right(&b, iter, outUpdated, outNeedsRescan);
+                    }
+                    break;
+                case Token::MINUSEQ:
+                    if (is_constant(*bin->fRight, 0)) {
+                        clear_write(*bin->fLeft);
+                        delete_right(&b, iter, outUpdated, outNeedsRescan);
+                    }
+                    break;
+                case Token::STAREQ:
+                    if (is_constant(*bin->fRight, 1)) {
+                        clear_write(*bin->fLeft);
+                        delete_right(&b, iter, outUpdated, outNeedsRescan);
+                    }
+                    break;
+                case Token::SLASHEQ:
+                    if (is_constant(*bin->fRight, 1)) {
+                        clear_write(*bin->fLeft);
+                        delete_right(&b, iter, outUpdated, outNeedsRescan);
+                    }
+                    break;
+                default:
+                    break;
+            }
+            break;
+        }
+        case Expression::kSwizzle_Kind: {
+            Swizzle& s = (Swizzle&) *expr;
+            
+            if ((int) s.fComponents.size() == s.fBase->fType.columns()) {
+                bool identity = true;
+                for (int i = 0; i < (int) s.fComponents.size(); ++i) {
+                    if (s.fComponents[i] != i) {
+                        identity = false;
+                        break;
+                    }
+                }
+                if (identity) {
+                    *outUpdated = true;
+                    if (!try_replace_expression(&b, iter, &s.fBase)) {
+                        *outNeedsRescan = true;
+                        return;
+                    }
+                    SkASSERT((*iter)->fKind == BasicBlock::Node::kExpression_Kind);
+                    break;
+                }
+            }
+            
+            if (s.fBase->fKind == Expression::kSwizzle_Kind) {
+                Swizzle& base = (Swizzle&) *s.fBase;
+                std::vector<int> final;
+                for (int c : s.fComponents) {
+                    if (c == SKSL_SWIZZLE_0 || c == SKSL_SWIZZLE_1) {
+                        final.push_back(c);
+                    } else {
+                        final.push_back(base.fComponents[c]);
+                    }
+                }
+                *outUpdated = true;
+                std::unique_ptr<Expression> replacement(new Swizzle(*fContext, base.fBase->clone(),
+                                                                    std::move(final)));
+                if (!try_replace_expression(&b, iter, &replacement)) {
+                    *outNeedsRescan = true;
+                    return;
+                }
+                SkASSERT((*iter)->fKind == BasicBlock::Node::kExpression_Kind);
+                break;
+            }
+        }
+        default:
+            break;
+    }
+}
+
+
+
+static bool contains_conditional_break(Statement& s, bool inConditional) {
+    switch (s.fKind) {
+        case Statement::kBlock_Kind:
+            for (const auto& sub : ((Block&) s).fStatements) {
+                if (contains_conditional_break(*sub, inConditional)) {
+                    return true;
+                }
+            }
+            return false;
+        case Statement::kBreak_Kind:
+            return inConditional;
+        case Statement::kIf_Kind: {
+            const IfStatement& i = (IfStatement&) s;
+            return contains_conditional_break(*i.fIfTrue, true) ||
+                   (i.fIfFalse && contains_conditional_break(*i.fIfFalse, true));
+        }
+        default:
+            return false;
+    }
+}
+
+
+
+static bool contains_unconditional_break(Statement& s) {
+    switch (s.fKind) {
+        case Statement::kBlock_Kind:
+            for (const auto& sub : ((Block&) s).fStatements) {
+                if (contains_unconditional_break(*sub)) {
+                    return true;
+                }
+            }
+            return false;
+        case Statement::kBreak_Kind:
+            return true;
+        default:
+            return false;
+    }
+}
+
+
+
+
+
+
+static std::unique_ptr<Statement> block_for_case(SwitchStatement* s, SwitchCase* c) {
+    bool capturing = false;
+    std::vector<std::unique_ptr<Statement>*> statementPtrs;
+    for (const auto& current : s->fCases) {
+        if (current.get() == c) {
+            capturing = true;
+        }
+        if (capturing) {
+            for (auto& stmt : current->fStatements) {
+                if (contains_conditional_break(*stmt, s->fKind == Statement::kIf_Kind)) {
+                    return nullptr;
+                }
+                if (contains_unconditional_break(*stmt)) {
+                    capturing = false;
+                    break;
+                }
+                statementPtrs.push_back(&stmt);
+            }
+            if (!capturing) {
+                break;
+            }
+        }
+    }
+    std::vector<std::unique_ptr<Statement>> statements;
+    for (const auto& s : statementPtrs) {
+        statements.push_back(std::move(*s));
+    }
+    return std::unique_ptr<Statement>(new Block(-1, std::move(statements), s->fSymbols));
+}
+
+void Compiler::simplifyStatement(DefinitionMap& definitions,
+                                 BasicBlock& b,
+                                 std::vector<BasicBlock::Node>::iterator* iter,
+                                 std::unordered_set<const Variable*>* undefinedVariables,
+                                 bool* outUpdated,
+                                 bool* outNeedsRescan) {
+    Statement* stmt = (*iter)->statement()->get();
+    switch (stmt->fKind) {
+        case Statement::kVarDeclaration_Kind: {
+            const auto& varDecl = (VarDeclaration&) *stmt;
+            if (varDecl.fVar->dead() &&
+                (!varDecl.fValue ||
+                 !varDecl.fValue->hasSideEffects())) {
+                if (varDecl.fValue) {
+                    SkASSERT((*iter)->statement()->get() == stmt);
+                    if (!b.tryRemoveExpressionBefore(iter, varDecl.fValue.get())) {
+                        *outNeedsRescan = true;
+                    }
+                }
+                (*iter)->setStatement(std::unique_ptr<Statement>(new Nop()));
+                *outUpdated = true;
+            }
+            break;
+        }
+        case Statement::kIf_Kind: {
+            IfStatement& i = (IfStatement&) *stmt;
+            if (i.fTest->fKind == Expression::kBoolLiteral_Kind) {
+                
+                if (((BoolLiteral&) *i.fTest).fValue) {
+                    SkASSERT(i.fIfTrue);
+                    (*iter)->setStatement(std::move(i.fIfTrue));
+                } else {
+                    if (i.fIfFalse) {
+                        (*iter)->setStatement(std::move(i.fIfFalse));
+                    } else {
+                        (*iter)->setStatement(std::unique_ptr<Statement>(new Nop()));
+                    }
+                }
+                *outUpdated = true;
+                *outNeedsRescan = true;
+                break;
+            }
+            if (i.fIfFalse && i.fIfFalse->isEmpty()) {
+                
+                i.fIfFalse.reset();
+                *outUpdated = true;
+                *outNeedsRescan = true;
+            }
+            if (!i.fIfFalse && i.fIfTrue->isEmpty()) {
+                
+                if (i.fTest->hasSideEffects()) {
+                    
+                    (*iter)->setStatement(std::unique_ptr<Statement>(
+                                                      new ExpressionStatement(std::move(i.fTest))));
+                } else {
+                    
+                    
+                    (*iter)->setStatement(std::unique_ptr<Statement>(new Nop()));
+                }
+                *outUpdated = true;
+                *outNeedsRescan = true;
+            }
+            break;
+        }
+        case Statement::kSwitch_Kind: {
+            SwitchStatement& s = (SwitchStatement&) *stmt;
+            if (s.fValue->isConstant()) {
+                
+                bool found = false;
+                SwitchCase* defaultCase = nullptr;
+                for (const auto& c : s.fCases) {
+                    if (!c->fValue) {
+                        defaultCase = c.get();
+                        continue;
+                    }
+                    SkASSERT(c->fValue->fKind == s.fValue->fKind);
+                    found = c->fValue->compareConstant(*fContext, *s.fValue);
+                    if (found) {
+                        std::unique_ptr<Statement> newBlock = block_for_case(&s, c.get());
+                        if (newBlock) {
+                            (*iter)->setStatement(std::move(newBlock));
+                            break;
+                        } else {
+                            if (s.fIsStatic && !(fFlags & kPermitInvalidStaticTests_Flag)) {
+                                this->error(s.fOffset,
+                                            "static switch contains non-static conditional break");
+                                s.fIsStatic = false;
+                            }
+                            return; 
+                        }
+                    }
+                }
+                if (!found) {
+                    
+                    if (defaultCase) {
+                        std::unique_ptr<Statement> newBlock = block_for_case(&s, defaultCase);
+                        if (newBlock) {
+                            (*iter)->setStatement(std::move(newBlock));
+                        } else {
+                            if (s.fIsStatic && !(fFlags & kPermitInvalidStaticTests_Flag)) {
+                                this->error(s.fOffset,
+                                            "static switch contains non-static conditional break");
+                                s.fIsStatic = false;
+                            }
+                            return; 
+                        }
+                    } else {
+                        (*iter)->setStatement(std::unique_ptr<Statement>(new Nop()));
+                    }
+                }
+                *outUpdated = true;
+                *outNeedsRescan = true;
+            }
+            break;
+        }
+        case Statement::kExpression_Kind: {
+            ExpressionStatement& e = (ExpressionStatement&) *stmt;
+            SkASSERT((*iter)->statement()->get() == &e);
+            if (!e.fExpression->hasSideEffects()) {
+                
+                if (!b.tryRemoveExpressionBefore(iter, e.fExpression.get())) {
+                    *outNeedsRescan = true;
+                }
+                SkASSERT((*iter)->statement()->get() == stmt);
+                (*iter)->setStatement(std::unique_ptr<Statement>(new Nop()));
+                *outUpdated = true;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void Compiler::scanCFG(FunctionDefinition& f) {
+    CFG cfg = CFGGenerator().getCFG(f);
+    this->computeDataFlow(&cfg);
+
+    
+    for (size_t i = 0; i < cfg.fBlocks.size(); i++) {
+        if (i != cfg.fStart && !cfg.fBlocks[i].fEntrances.size() &&
+            cfg.fBlocks[i].fNodes.size()) {
+            int offset;
+            switch (cfg.fBlocks[i].fNodes[0].fKind) {
+                case BasicBlock::Node::kStatement_Kind:
+                    offset = (*cfg.fBlocks[i].fNodes[0].statement())->fOffset;
+                    break;
+                case BasicBlock::Node::kExpression_Kind:
+                    offset = (*cfg.fBlocks[i].fNodes[0].expression())->fOffset;
+                    break;
+            }
+            this->error(offset, String("unreachable"));
+        }
+    }
+    if (fErrorCount) {
+        return;
+    }
+
+    
+    std::unordered_set<const Variable*> undefinedVariables;
+    bool updated;
+    bool needsRescan = false;
+    do {
+        if (needsRescan) {
+            cfg = CFGGenerator().getCFG(f);
+            this->computeDataFlow(&cfg);
+            needsRescan = false;
+        }
+
+        updated = false;
+        for (BasicBlock& b : cfg.fBlocks) {
+            DefinitionMap definitions = b.fBefore;
+
+            for (auto iter = b.fNodes.begin(); iter != b.fNodes.end() && !needsRescan; ++iter) {
+                if (iter->fKind == BasicBlock::Node::kExpression_Kind) {
+                    this->simplifyExpression(definitions, b, &iter, &undefinedVariables, &updated,
+                                             &needsRescan);
+                } else {
+                    this->simplifyStatement(definitions, b, &iter, &undefinedVariables, &updated,
+                                             &needsRescan);
+                }
+                if (needsRescan) {
+                    break;
+                }
+                this->addDefinitions(*iter, &definitions);
+            }
+        }
+    } while (updated);
+    SkASSERT(!needsRescan);
+
+    
+    for (BasicBlock& b : cfg.fBlocks) {
+        DefinitionMap definitions = b.fBefore;
+
+        for (auto iter = b.fNodes.begin(); iter != b.fNodes.end() && !needsRescan;) {
+            if (iter->fKind == BasicBlock::Node::kStatement_Kind) {
+                const Statement& s = **iter->statement();
+                switch (s.fKind) {
+                    case Statement::kIf_Kind:
+                        if (((const IfStatement&) s).fIsStatic &&
+                            !(fFlags & kPermitInvalidStaticTests_Flag)) {
+                            this->error(s.fOffset, "static if has non-static test");
+                        }
+                        ++iter;
+                        break;
+                    case Statement::kSwitch_Kind:
+                        if (((const SwitchStatement&) s).fIsStatic &&
+                             !(fFlags & kPermitInvalidStaticTests_Flag)) {
+                            this->error(s.fOffset, "static switch has non-static test");
+                        }
+                        ++iter;
+                        break;
+                    case Statement::kVarDeclarations_Kind: {
+                        VarDeclarations& decls = *((VarDeclarationsStatement&) s).fDeclaration;
+                        for (auto varIter = decls.fVars.begin(); varIter != decls.fVars.end();) {
+                            if ((*varIter)->fKind == Statement::kNop_Kind) {
+                                varIter = decls.fVars.erase(varIter);
+                            } else {
+                                ++varIter;
+                            }
+                        }
+                        if (!decls.fVars.size()) {
+                            iter = b.fNodes.erase(iter);
+                        } else {
+                            ++iter;
+                        }
+                        break;
+                    }
+                    default:
+                        ++iter;
+                        break;
+                }
+            } else {
+                ++iter;
+            }
+        }
+    }
+
+    
+    if (f.fDeclaration.fReturnType != *fContext->fVoid_Type) {
+        if (cfg.fBlocks[cfg.fExit].fEntrances.size()) {
+            this->error(f.fOffset, String("function can exit without returning a value"));
+        }
+    }
+}
+
+void Compiler::registerExternalValue(ExternalValue* value) {
+    fIRGenerator->fRootSymbolTable->addWithoutOwnership(value->fName, value);
+}
+
+Symbol* Compiler::takeOwnership(std::unique_ptr<Symbol> symbol) {
+    return fIRGenerator->fRootSymbolTable->takeOwnership(std::move(symbol));
+}
+
+std::unique_ptr<Program> Compiler::convertProgram(Program::Kind kind, String text,
+                                                  const Program::Settings& settings) {
+    fErrorText = "";
+    fErrorCount = 0;
+    std::vector<std::unique_ptr<ProgramElement>>* inherited;
+    std::vector<std::unique_ptr<ProgramElement>> elements;
+    switch (kind) {
+        case Program::kVertex_Kind:
+            inherited = &fVertexInclude;
+            fIRGenerator->fSymbolTable = fVertexSymbolTable;
+            fIRGenerator->start(&settings, inherited);
+            break;
+        case Program::kFragment_Kind:
+            inherited = &fFragmentInclude;
+            fIRGenerator->fSymbolTable = fFragmentSymbolTable;
+            fIRGenerator->start(&settings, inherited);
+            break;
+        case Program::kGeometry_Kind:
+            inherited = &fGeometryInclude;
+            fIRGenerator->fSymbolTable = fGeometrySymbolTable;
+            fIRGenerator->start(&settings, inherited);
+            break;
+        case Program::kFragmentProcessor_Kind:
+            inherited = nullptr;
+            fIRGenerator->fSymbolTable = fGpuSymbolTable;
+            fIRGenerator->start(&settings, nullptr);
+            fIRGenerator->convertProgram(kind, SKSL_FP_INCLUDE, strlen(SKSL_FP_INCLUDE), *fTypes,
+                                         &elements);
+            fIRGenerator->fSymbolTable->markAllFunctionsBuiltin();
+            break;
+        case Program::kPipelineStage_Kind:
+            inherited = &fPipelineInclude;
+            fIRGenerator->fSymbolTable = fPipelineSymbolTable;
+            fIRGenerator->start(&settings, inherited);
+            break;
+        case Program::kGeneric_Kind:
+            inherited = &fInterpreterInclude;
+            fIRGenerator->fSymbolTable = fInterpreterSymbolTable;
+            fIRGenerator->start(&settings, inherited);
+            break;
+    }
+    for (auto& element : elements) {
+        if (element->fKind == ProgramElement::kEnum_Kind) {
+            ((Enum&) *element).fBuiltin = true;
+        }
+    }
+    std::unique_ptr<String> textPtr(new String(std::move(text)));
+    fSource = textPtr.get();
+    fIRGenerator->convertProgram(kind, textPtr->c_str(), textPtr->size(), *fTypes, &elements);
+    auto result = std::unique_ptr<Program>(new Program(kind,
+                                                       std::move(textPtr),
+                                                       settings,
+                                                       fContext,
+                                                       inherited,
+                                                       std::move(elements),
+                                                       fIRGenerator->fSymbolTable,
+                                                       fIRGenerator->fInputs));
+    if (fErrorCount) {
+        return nullptr;
+    }
+    return result;
 }
 
 bool Compiler::optimize(Program& program) {
-    
-    if (!program.fConfig->fSettings.fOptimize) {
-        return true;
+    SkASSERT(!fErrorCount);
+    if (!program.fIsOptimized) {
+        program.fIsOptimized = true;
+        fIRGenerator->fKind = program.fKind;
+        fIRGenerator->fSettings = &program.fSettings;
+        for (auto& element : program) {
+            if (element.fKind == ProgramElement::kFunction_Kind) {
+                this->scanCFG((FunctionDefinition&) element);
+            }
+        }
+        if (program.fKind != Program::kFragmentProcessor_Kind) {
+            for (auto iter = program.fElements.begin(); iter != program.fElements.end();) {
+                if ((*iter)->fKind == ProgramElement::kVar_Kind) {
+                    VarDeclarations& vars = (VarDeclarations&) **iter;
+                    for (auto varIter = vars.fVars.begin(); varIter != vars.fVars.end();) {
+                        const Variable& var = *((VarDeclaration&) **varIter).fVar;
+                        if (var.dead()) {
+                            varIter = vars.fVars.erase(varIter);
+                        } else {
+                            ++varIter;
+                        }
+                    }
+                    if (vars.fVars.size() == 0) {
+                        iter = program.fElements.erase(iter);
+                        continue;
+                    }
+                }
+                ++iter;
+            }
+        }
     }
-
-    AutoShaderCaps autoCaps(fContext, fCaps);
-
-    SkASSERT(!this->errorCount());
-    if (this->errorCount() == 0) {
-#ifndef SK_ENABLE_OPTIMIZE_SIZE
-        
-        
-        Inliner inliner(fContext.get());
-        this->runInliner(&inliner, program.fOwnedElements, program.fSymbols, program.fUsage.get());
-#endif
-
-        
-        Transform::EliminateUnreachableCode(program);
-
-        while (Transform::EliminateDeadFunctions(program)) {
-            
-        }
-        while (Transform::EliminateDeadLocalVariables(program)) {
-            
-        }
-        while (Transform::EliminateDeadGlobalVariables(program)) {
-            
-        }
-        
-        SkASSERT(*program.usage() == *Analysis::GetUsage(program));
-    }
-
-    return this->errorCount() == 0;
+    return fErrorCount == 0;
 }
 
-bool Compiler::runInliner(Inliner* inliner,
-                          const std::vector<std::unique_ptr<ProgramElement>>& elements,
-                          std::shared_ptr<SymbolTable> symbols,
-                          ProgramUsage* usage) {
-#ifdef SK_ENABLE_OPTIMIZE_SIZE
-    return true;
-#else
-    
-    
-    
-    
-    
-    
-    
-    
-    SkASSERT(!fSymbolTable);
-    fSymbolTable = symbols;
-
-    bool result = inliner->analyze(elements, symbols, usage);
-
-    fSymbolTable = nullptr;
-    return result;
-#endif
-}
-
-bool Compiler::finalize(Program& program) {
-    AutoShaderCaps autoCaps(fContext, fCaps);
-
-    
-    Transform::FindAndDeclareBuiltinFunctions(program);
-
-    
-    Transform::FindAndDeclareBuiltinVariables(program);
-
-    
-    
-    Analysis::DoFinalizationChecks(program);
-
-    if (fContext->fConfig->strictES2Mode() && this->errorCount() == 0) {
-        
-        
-        for (const auto& pe : program.fOwnedElements) {
-            Analysis::ValidateIndexingForES2(*pe, this->errorReporter());
-        }
+std::unique_ptr<Program> Compiler::specialize(
+                   Program& program,
+                   const std::unordered_map<SkSL::String, SkSL::Program::Settings::Value>& inputs) {
+    std::vector<std::unique_ptr<ProgramElement>> elements;
+    for (const auto& e : program) {
+        elements.push_back(e.clone());
     }
-    if (this->errorCount() == 0) {
-        bool enforceSizeLimit = ProgramConfig::IsRuntimeEffect(program.fConfig->fKind);
-        Analysis::CheckProgramStructure(program, enforceSizeLimit);
+    Program::Settings settings;
+    settings.fCaps = program.fSettings.fCaps;
+    for (auto iter = inputs.begin(); iter != inputs.end(); ++iter) {
+        settings.fArgs.insert(*iter);
     }
-
-    
-    SkASSERT(*program.usage() == *Analysis::GetUsage(program));
-
-    return this->errorCount() == 0;
-}
-
-#if defined(SKSL_STANDALONE) || defined(SK_GANESH) || defined(SK_GRAPHITE)
-
-#if defined(SK_ENABLE_SPIRV_VALIDATION)
-static bool validate_spirv(ErrorReporter& reporter, std::string_view program) {
-    SkASSERT(0 == program.size() % 4);
-    const uint32_t* programData = reinterpret_cast<const uint32_t*>(program.data());
-    size_t programSize = program.size() / 4;
-
-    spvtools::SpirvTools tools(SPV_ENV_VULKAN_1_0);
-    std::string errors;
-    auto msgFn = [&errors](spv_message_level_t, const char*, const spv_position_t&, const char* m) {
-        errors += "SPIR-V validation error: ";
-        errors += m;
-        errors += '\n';
-    };
-    tools.SetMessageConsumer(msgFn);
-
-    
-    
-    
-    bool result = tools.Validate(programData, programSize);
-    if (!result) {
-#if defined(SKSL_STANDALONE)
-        
-        std::string disassembly;
-        if (tools.Disassemble(programData, programSize, &disassembly)) {
-            errors.append(disassembly);
-        }
-        reporter.error(Position(), errors);
-#else
-        SkDEBUGFAILF("%s", errors.c_str());
-#endif
-    }
+    std::unique_ptr<Program> result(new Program(program.fKind,
+                                                nullptr,
+                                                settings,
+                                                program.fContext,
+                                                program.fInheritedElements,
+                                                std::move(elements),
+                                                program.fSymbols,
+                                                program.fInputs));
     return result;
 }
-#endif
+
+#if defined(SKSL_STANDALONE) || SK_SUPPORT_GPU
 
 bool Compiler::toSPIRV(Program& program, OutputStream& out) {
-    TRACE_EVENT0("skia.shaders", "SkSL::Compiler::toSPIRV");
-    AutoSource as(this, *program.fSource);
-    AutoShaderCaps autoCaps(fContext, fCaps);
-    ProgramSettings settings;
-    settings.fUseMemoryPool = false;
-    dsl::Start(this, program.fConfig->fKind, settings);
-    dsl::SetErrorReporter(&fErrorReporter);
-    fSymbolTable = program.fSymbols;
+    if (!this->optimize(program)) {
+        return false;
+    }
 #ifdef SK_ENABLE_SPIRV_VALIDATION
     StringStream buffer;
-    SPIRVCodeGenerator cg(fContext.get(), &program, &buffer);
+    fSource = program.fSource.get();
+    SPIRVCodeGenerator cg(fContext.get(), &program, this, &buffer);
     bool result = cg.generateCode();
-
-    if (result && program.fConfig->fSettings.fValidateSPIRV) {
-        std::string_view binary = buffer.str();
-        result = validate_spirv(this->errorReporter(), binary);
-        out.write(binary.data(), binary.size());
+    fSource = nullptr;
+    if (result) {
+        spvtools::SpirvTools tools(SPV_ENV_VULKAN_1_0);
+        const String& data = buffer.str();
+        SkASSERT(0 == data.size() % 4);
+        auto dumpmsg = [](spv_message_level_t, const char*, const spv_position_t&, const char* m) {
+            SkDebugf("SPIR-V validation error: %s\n", m);
+        };
+        tools.SetMessageConsumer(dumpmsg);
+        
+        
+        SkAssertResult(tools.Validate((const uint32_t*) data.c_str(), data.size() / 4));
+        out.write(data.c_str(), data.size());
     }
 #else
-    SPIRVCodeGenerator cg(fContext.get(), &program, &out);
+    fSource = program.fSource.get();
+    SPIRVCodeGenerator cg(fContext.get(), &program, this, &out);
     bool result = cg.generateCode();
+    fSource = nullptr;
 #endif
-    dsl::End();
     return result;
 }
 
-bool Compiler::toSPIRV(Program& program, std::string* out) {
+bool Compiler::toSPIRV(Program& program, String* out) {
     StringStream buffer;
     bool result = this->toSPIRV(program, buffer);
     if (result) {
@@ -526,15 +1468,17 @@ bool Compiler::toSPIRV(Program& program, std::string* out) {
 }
 
 bool Compiler::toGLSL(Program& program, OutputStream& out) {
-    TRACE_EVENT0("skia.shaders", "SkSL::Compiler::toGLSL");
-    AutoSource as(this, *program.fSource);
-    AutoShaderCaps autoCaps(fContext, fCaps);
-    GLSLCodeGenerator cg(fContext.get(), &program, &out);
+    if (!this->optimize(program)) {
+        return false;
+    }
+    fSource = program.fSource.get();
+    GLSLCodeGenerator cg(fContext.get(), &program, this, &out);
     bool result = cg.generateCode();
+    fSource = nullptr;
     return result;
 }
 
-bool Compiler::toGLSL(Program& program, std::string* out) {
+bool Compiler::toGLSL(Program& program, String* out) {
     StringStream buffer;
     bool result = this->toGLSL(program, buffer);
     if (result) {
@@ -543,40 +1487,19 @@ bool Compiler::toGLSL(Program& program, std::string* out) {
     return result;
 }
 
-bool Compiler::toHLSL(Program& program, OutputStream& out) {
-    TRACE_EVENT0("skia.shaders", "SkSL::Compiler::toHLSL");
-    std::string hlsl;
-    if (!this->toHLSL(program, &hlsl)) {
-        return false;
-    }
-    out.writeString(hlsl);
-    return true;
-}
-
-bool Compiler::toHLSL(Program& program, std::string* out) {
-    std::string spirv;
-    if (!this->toSPIRV(program, &spirv)) {
-        return false;
-    }
-
-    if (!SPIRVtoHLSL(spirv, out)) {
-        fErrorText += "HLSL cross-compilation not enabled";
-        return false;
-    }
-
-    return true;
-}
-
 bool Compiler::toMetal(Program& program, OutputStream& out) {
-    TRACE_EVENT0("skia.shaders", "SkSL::Compiler::toMetal");
-    AutoSource as(this, *program.fSource);
-    AutoShaderCaps autoCaps(fContext, fCaps);
-    MetalCodeGenerator cg(fContext.get(), &program, &out);
+    if (!this->optimize(program)) {
+        return false;
+    }
+    MetalCodeGenerator cg(fContext.get(), &program, this, &out);
     bool result = cg.generateCode();
     return result;
 }
 
-bool Compiler::toMetal(Program& program, std::string* out) {
+bool Compiler::toMetal(Program& program, String* out) {
+    if (!this->optimize(program)) {
+        return false;
+    }
     StringStream buffer;
     bool result = this->toMetal(program, buffer);
     if (result) {
@@ -585,142 +1508,169 @@ bool Compiler::toMetal(Program& program, std::string* out) {
     return result;
 }
 
-#if defined(SK_ENABLE_WGSL_VALIDATION)
-static bool validate_wgsl(ErrorReporter& reporter, const std::string& wgsl) {
-    tint::Source::File srcFile("", wgsl);
-    tint::Program program(tint::reader::wgsl::Parse(&srcFile));
-    if (program.Diagnostics().count() > 0) {
-        tint::diag::Formatter diagFormatter;
-        std::string diagOutput = diagFormatter.format(program.Diagnostics());
-#if defined(SKSL_STANDALONE)
-        reporter.error(Position(), diagOutput);
-#else
-        SkDEBUGFAILF("%s", diagOutput.c_str());
-#endif
+bool Compiler::toCPP(Program& program, String name, OutputStream& out) {
+    if (!this->optimize(program)) {
         return false;
     }
-    return true;
-}
-#endif  
-
-bool Compiler::toWGSL(Program& program, OutputStream& out) {
-    TRACE_EVENT0("skia.shaders", "SkSL::Compiler::toWGSL");
-    AutoSource as(this, *program.fSource);
-#ifdef SK_ENABLE_WGSL_VALIDATION
-    StringStream wgsl;
-    WGSLCodeGenerator cg(fContext.get(), &program, &wgsl);
+    fSource = program.fSource.get();
+    CPPCodeGenerator cg(fContext.get(), &program, this, name, &out);
     bool result = cg.generateCode();
-    if (result) {
-        std::string wgslString = wgsl.str();
-        result = validate_wgsl(this->errorReporter(), wgslString);
-        out.writeString(wgslString);
-    }
-#else
-    WGSLCodeGenerator cg(fContext.get(), &program, &out);
-    bool result = cg.generateCode();
-#endif
+    fSource = nullptr;
     return result;
 }
 
-#endif 
-
-void Compiler::handleError(std::string_view msg, Position pos) {
-    fErrorText += "error: ";
-    bool printLocation = false;
-    std::string_view src = this->errorReporter().source();
-    int line = -1;
-    if (pos.valid()) {
-        line = pos.line(src);
-        printLocation = pos.startOffset() < (int)src.length();
-        fErrorText += std::to_string(line) + ": ";
+bool Compiler::toH(Program& program, String name, OutputStream& out) {
+    if (!this->optimize(program)) {
+        return false;
     }
-    fErrorText += std::string(msg) + "\n";
-    if (printLocation) {
-        const int kMaxSurroundingChars = 100;
+    fSource = program.fSource.get();
+    HCodeGenerator cg(fContext.get(), &program, this, name, &out);
+    bool result = cg.generateCode();
+    fSource = nullptr;
+    return result;
+}
 
-        
-        int lineStart = pos.startOffset();
-        while (lineStart > 0) {
-            if (src[lineStart - 1] == '\n') {
-                break;
-            }
-            --lineStart;
-        }
+#endif
 
-        
-        
-        std::string lineText;
-        std::string caretText;
-        if ((pos.startOffset() - lineStart) > kMaxSurroundingChars) {
-            lineStart = pos.startOffset() - kMaxSurroundingChars;
-            lineText = "...";
-            caretText = "   ";
-        }
+#if !defined(SKSL_STANDALONE) && SK_SUPPORT_GPU
+bool Compiler::toPipelineStage(const Program& program, String* out,
+                               std::vector<FormatArg>* outFormatArgs,
+                               std::vector<GLSLFunction>* outFunctions) {
+    SkASSERT(program.fIsOptimized);
+    fSource = program.fSource.get();
+    StringStream buffer;
+    PipelineStageCodeGenerator cg(fContext.get(), &program, this, &buffer, outFormatArgs,
+                                  outFunctions);
+    bool result = cg.generateCode();
+    fSource = nullptr;
+    if (result) {
+        *out = buffer.str();
+    }
+    return result;
+}
+#endif
 
-        
-        
-        const char* lineSuffix = "...\n";
-        int lineStop = pos.endOffset() + kMaxSurroundingChars;
-        if (lineStop >= (int)src.length()) {
-            lineStop = src.length() - 1;
-            lineSuffix = "\n";  
-        }
-        for (int i = lineStart; i < lineStop; ++i) {
-            char c = src[i];
-            if (c == '\n') {
-                lineSuffix = "\n";  
-                break;
-            }
-            switch (c) {
-                case '\t': lineText += "    "; break;
-                case '\0': lineText += " ";    break;
-                default:   lineText += src[i]; break;
-            }
-        }
-        fErrorText += lineText + lineSuffix;
+std::unique_ptr<ByteCode> Compiler::toByteCode(Program& program) {
+#if defined(SK_ENABLE_SKSL_INTERPRETER)
+    if (!this->optimize(program)) {
+        return nullptr;
+    }
+    std::unique_ptr<ByteCode> result(new ByteCode());
+    ByteCodeGenerator cg(fContext.get(), &program, this, result.get());
+    if (cg.generateCode()) {
+        return result;
+    }
+#else
+    ABORT("ByteCode interpreter not enabled");
+#endif
+    return nullptr;
+}
 
-        
-        for (int i = lineStart; i < (int)src.length(); i++) {
-            if (i >= pos.endOffset()) {
-                break;
-            }
-            switch (src[i]) {
-                case '\t':
-                   caretText += (i >= pos.startOffset()) ? "^^^^" : "    ";
-                   break;
-                case '\n':
-                    SkASSERT(i >= pos.startOffset());
-                    
-                    caretText += (pos.endOffset() > i + 1) ? "..." : "^";
-                    i = src.length();
-                    break;
-                default:
-                    caretText += (i >= pos.startOffset()) ? '^' : ' ';
-                    break;
-            }
-        }
-        fErrorText += caretText + '\n';
+const char* Compiler::OperatorName(Token::Kind kind) {
+    switch (kind) {
+        case Token::PLUS:         return "+";
+        case Token::MINUS:        return "-";
+        case Token::STAR:         return "*";
+        case Token::SLASH:        return "/";
+        case Token::PERCENT:      return "%";
+        case Token::SHL:          return "<<";
+        case Token::SHR:          return ">>";
+        case Token::LOGICALNOT:   return "!";
+        case Token::LOGICALAND:   return "&&";
+        case Token::LOGICALOR:    return "||";
+        case Token::LOGICALXOR:   return "^^";
+        case Token::BITWISENOT:   return "~";
+        case Token::BITWISEAND:   return "&";
+        case Token::BITWISEOR:    return "|";
+        case Token::BITWISEXOR:   return "^";
+        case Token::EQ:           return "=";
+        case Token::EQEQ:         return "==";
+        case Token::NEQ:          return "!=";
+        case Token::LT:           return "<";
+        case Token::GT:           return ">";
+        case Token::LTEQ:         return "<=";
+        case Token::GTEQ:         return ">=";
+        case Token::PLUSEQ:       return "+=";
+        case Token::MINUSEQ:      return "-=";
+        case Token::STAREQ:       return "*=";
+        case Token::SLASHEQ:      return "/=";
+        case Token::PERCENTEQ:    return "%=";
+        case Token::SHLEQ:        return "<<=";
+        case Token::SHREQ:        return ">>=";
+        case Token::LOGICALANDEQ: return "&&=";
+        case Token::LOGICALOREQ:  return "||=";
+        case Token::LOGICALXOREQ: return "^^=";
+        case Token::BITWISEANDEQ: return "&=";
+        case Token::BITWISEOREQ:  return "|=";
+        case Token::BITWISEXOREQ: return "^=";
+        case Token::PLUSPLUS:     return "++";
+        case Token::MINUSMINUS:   return "--";
+        case Token::COMMA:        return ",";
+        default:
+            ABORT("unsupported operator: %d\n", kind);
     }
 }
 
-std::string Compiler::errorText(bool showCount) {
-    if (showCount) {
-        this->writeErrorCount();
+
+bool Compiler::IsAssignment(Token::Kind op) {
+    switch (op) {
+        case Token::EQ:           
+        case Token::PLUSEQ:       
+        case Token::MINUSEQ:      
+        case Token::STAREQ:       
+        case Token::SLASHEQ:      
+        case Token::PERCENTEQ:    
+        case Token::SHLEQ:        
+        case Token::SHREQ:        
+        case Token::BITWISEOREQ:  
+        case Token::BITWISEXOREQ: 
+        case Token::BITWISEANDEQ: 
+        case Token::LOGICALOREQ:  
+        case Token::LOGICALXOREQ: 
+        case Token::LOGICALANDEQ:
+            return true;
+        default:
+            return false;
     }
-    std::string result = fErrorText;
-    this->resetErrors();
+}
+
+Position Compiler::position(int offset) {
+    SkASSERT(fSource);
+    int line = 1;
+    int column = 1;
+    for (int i = 0; i < offset; i++) {
+        if ((*fSource)[i] == '\n') {
+            ++line;
+            column = 1;
+        }
+        else {
+            ++column;
+        }
+    }
+    return Position(line, column);
+}
+
+void Compiler::error(int offset, String msg) {
+    fErrorCount++;
+    Position pos = this->position(offset);
+    fErrorText += "error: " + to_string(pos.fLine) + ": " + msg.c_str() + "\n";
+}
+
+String Compiler::errorText() {
+    this->writeErrorCount();
+    fErrorCount = 0;
+    String result = fErrorText;
     return result;
 }
 
 void Compiler::writeErrorCount() {
-    int count = this->errorCount();
-    if (count) {
-        fErrorText += std::to_string(count) + " error";
-        if (count > 1) {
+    if (fErrorCount) {
+        fErrorText += to_string(fErrorCount) + " error";
+        if (fErrorCount > 1) {
             fErrorText += "s";
         }
         fErrorText += "\n";
     }
 }
 
-}  
+} 

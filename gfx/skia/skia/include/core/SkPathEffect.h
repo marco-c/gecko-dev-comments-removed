@@ -9,12 +9,11 @@
 #define SkPathEffect_DEFINED
 
 #include "include/core/SkFlattenable.h"
-#include "include/core/SkScalar.h"
-
 #include "include/core/SkPath.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkRect.h"
 
 class SkPath;
-struct SkRect;
 class SkStrokeRec;
 
 
@@ -44,11 +43,87 @@ public:
 
     static sk_sp<SkPathEffect> MakeCompose(sk_sp<SkPathEffect> outer, sk_sp<SkPathEffect> inner);
 
-    static SkFlattenable::Type GetFlattenableType() {
-        return kSkPathEffect_Type;
-    }
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool filterPath(SkPath* dst, const SkPath& src, SkStrokeRec*, const SkRect* cullR) const;
 
     
+
+
+
+    void computeFastBounds(SkRect* dst, const SkRect& src) const;
+
+    
+
+
+
+
+    class PointData {
+    public:
+        PointData()
+            : fFlags(0)
+            , fPoints(nullptr)
+            , fNumPoints(0) {
+            fSize.set(SK_Scalar1, SK_Scalar1);
+            
+            
+        }
+        ~PointData() {
+            delete [] fPoints;
+        }
+
+        
+        
+        
+
+        
+        enum PointFlags {
+            kCircles_PointFlag            = 0x01,   
+            kUsePath_PointFlag            = 0x02,   
+            kUseClip_PointFlag            = 0x04,   
+        };
+
+        uint32_t           fFlags;      
+        SkPoint*           fPoints;     
+        int                fNumPoints;  
+        SkVector           fSize;       
+        SkRect             fClipRect;   
+        SkPath             fPath;       
+
+        SkPath             fFirst;      
+        SkPath             fLast;       
+    };
+
+    
+
+
+
+    bool asPoints(PointData* results, const SkPath& src,
+                          const SkStrokeRec&, const SkMatrix&,
+                          const SkRect* cullR) const;
+
+    
+
+
+
+
+
+
+
+
 
     enum DashType {
         kNone_DashType, 
@@ -69,38 +144,44 @@ public:
 
     DashType asADash(DashInfo* info) const;
 
-    
+    static void RegisterFlattenables();
 
+    static SkFlattenable::Type GetFlattenableType() {
+        return kSkPathEffect_Type;
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-    bool filterPath(SkPath* dst, const SkPath& src, SkStrokeRec*, const SkRect* cullR) const;
-
-    
-    bool filterPath(SkPath* dst, const SkPath& src, SkStrokeRec*, const SkRect* cullR,
-                    const SkMatrix& ctm) const;
-
-    
-    bool needsCTM() const;
+    SkFlattenable::Type getFlattenableType() const override {
+        return kSkPathEffect_Type;
+    }
 
     static sk_sp<SkPathEffect> Deserialize(const void* data, size_t size,
-                                           const SkDeserialProcs* procs = nullptr);
+                                          const SkDeserialProcs* procs = nullptr) {
+        return sk_sp<SkPathEffect>(static_cast<SkPathEffect*>(
+                                  SkFlattenable::Deserialize(
+                                  kSkPathEffect_Type, data, size, procs).release()));
+    }
+
+protected:
+    SkPathEffect() {}
+
+    virtual bool onFilterPath(SkPath*, const SkPath&, SkStrokeRec*, const SkRect*) const = 0;
+    virtual SkRect onComputeFastBounds(const SkRect& src) const {
+        return src;
+    }
+    virtual bool onAsPoints(PointData*, const SkPath&, const SkStrokeRec&, const SkMatrix&,
+                            const SkRect*) const {
+        return false;
+    }
+    virtual DashType onAsADash(DashInfo*) const {
+        return kNone_DashType;
+    }
 
 private:
-    SkPathEffect() = default;
-    friend class SkPathEffectBase;
+    
+    SkPathEffect(const SkPathEffect&);
+    SkPathEffect& operator=(const SkPathEffect&);
 
-    using INHERITED = SkFlattenable;
+    typedef SkFlattenable INHERITED;
 };
 
 #endif

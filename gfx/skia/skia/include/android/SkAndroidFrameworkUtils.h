@@ -8,18 +8,14 @@
 #ifndef SkAndroidFrameworkUtils_DEFINED
 #define SkAndroidFrameworkUtils_DEFINED
 
-#include "include/core/SkColor.h"
-#include "include/core/SkPoint.h"
 #include "include/core/SkRefCnt.h"
-#include "include/core/SkTileMode.h"
+#include "include/core/SkTypes.h"
 
 #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
 
 class SkCanvas;
-struct SkIRect;
 struct SkRect;
 class SkSurface;
-class SkShader;
 
 
 
@@ -27,7 +23,7 @@ class SkShader;
 class SkAndroidFrameworkUtils {
 public:
 
-#if defined(SK_GANESH)
+#if SK_SUPPORT_GPU
     
 
 
@@ -46,10 +42,6 @@ public:
     static int SaveBehind(SkCanvas* canvas, const SkRect* subset);
 
     
-    
-    static void ResetClip(SkCanvas* canvas);
-
-    
 
 
 
@@ -57,31 +49,6 @@ public:
 
 
     static SkCanvas* getBaseWrappedCanvas(SkCanvas* canvas);
-
-    
-
-
-
-
-
-
-
-
-
-
-    struct LinearGradientInfo {
-        int         fColorCount    = 0;        
-                                               
-                                               
-                                               
-        SkColor*    fColors        = nullptr;  
-        SkScalar*   fColorOffsets  = nullptr;  
-        SkPoint     fPoints[2];                
-        SkTileMode  fTileMode;
-        uint32_t    fGradientFlags = 0;        
-    };
-
-    static bool ShaderAsALinearGradient(SkShader* shader, LinearGradientInfo*);
 };
 
 #endif 

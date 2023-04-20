@@ -8,52 +8,23 @@
 #ifndef SkImage_Base_DEFINED
 #define SkImage_Base_DEFINED
 
-#include "include/core/SkData.h"
 #include "include/core/SkImage.h"
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkSamplingOptions.h"
-#include "include/core/SkTypes.h"
-#include "src/core/SkMipmap.h"
-
+#include "include/core/SkSurface.h"
 #include <atomic>
-#include <cstddef>
-#include <cstdint>
-#include <memory>
-#include <string_view>
-#include <tuple>
 
-#if defined(SK_GANESH)
-#include "include/gpu/GrTypes.h"
-#include "src/gpu/ganesh/SkGr.h"
-#endif
+#if SK_SUPPORT_GPU
+#include "include/private/SkTDArray.h"
+#include "src/gpu/GrTextureProxy.h"
 
-#if defined(SK_GRAPHITE)
-namespace skgpu {
-namespace graphite {
-class TextureProxyView;
-}
-}
-#endif
-
-class GrBackendTexture;
-class GrDirectContext;
-class GrFragmentProcessor;
-class GrImageContext;
 class GrRecordingContext;
-class GrSurfaceProxyView;
-class SkBitmap;
-class SkColorSpace;
-class SkMatrix;
-class SkPixmap;
-enum SkAlphaType : int;
-enum SkColorType : int;
-enum SkYUVColorSpace : int;
-enum class GrColorType;
-enum class SkTileMode;
-struct SkIRect;
-struct SkISize;
-struct SkImageInfo;
-struct SkRect;
+class GrTexture;
+#endif
+
+#include <new>
+
+class GrSamplerState;
+class SkCachedData;
+struct SkYUVASizeInfo;
 
 enum {
     kNeedNewImageUniqueID = 0
@@ -61,149 +32,60 @@ enum {
 
 class SkImage_Base : public SkImage {
 public:
-    ~SkImage_Base() override;
+    virtual ~SkImage_Base();
+
+    virtual SkIRect onGetSubset() const {
+        return { 0, 0, this->width(), this->height() };
+    }
 
     virtual bool onPeekPixels(SkPixmap*) const { return false; }
 
     virtual const SkBitmap* onPeekBitmap() const { return nullptr; }
 
-    virtual bool onReadPixels(GrDirectContext*,
-                              const SkImageInfo& dstInfo,
-                              void* dstPixels,
-                              size_t dstRowBytes,
-                              int srcX,
-                              int srcY,
-                              CachingHint) const = 0;
+    virtual bool onReadPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+                              int srcX, int srcY, CachingHint) const = 0;
 
-    virtual bool onHasMipmaps() const = 0;
+    virtual GrContext* context() const { return nullptr; }
 
-    virtual SkMipmap* onPeekMips() const { return nullptr; }
-
-    sk_sp<SkMipmap> refMips() const {
-        return sk_ref_sp(this->onPeekMips());
-    }
-
-    
-
-
-    virtual void onAsyncRescaleAndReadPixels(const SkImageInfo&,
-                                             SkIRect srcRect,
-                                             RescaleGamma,
-                                             RescaleMode,
-                                             ReadPixelsCallback,
-                                             ReadPixelsContext) const;
-    
-
-
-    virtual void onAsyncRescaleAndReadPixelsYUV420(SkYUVColorSpace,
-                                                   sk_sp<SkColorSpace> dstColorSpace,
-                                                   SkIRect srcRect,
-                                                   SkISize dstSize,
-                                                   RescaleGamma,
-                                                   RescaleMode,
-                                                   ReadPixelsCallback,
-                                                   ReadPixelsContext) const;
-
-    virtual GrImageContext* context() const { return nullptr; }
-
-    
-    GrDirectContext* directContext() const;
-
-#if defined(SK_GANESH)
-    virtual GrSemaphoresSubmitted onFlush(GrDirectContext*, const GrFlushInfo&) const {
+#if SK_SUPPORT_GPU
+    virtual GrSemaphoresSubmitted onFlush(GrContext* context, const GrFlushInfo&) {
         return GrSemaphoresSubmitted::kNo;
     }
 
     
     
     
-    
-    std::tuple<GrSurfaceProxyView, GrColorType> asView(
-            GrRecordingContext* context,
-            GrMipmapped mipmapped,
-            GrImageTexGenPolicy policy = GrImageTexGenPolicy::kDraw) const;
-
-    
-
-
-
-
-
-
-
-    std::unique_ptr<GrFragmentProcessor> asFragmentProcessor(GrRecordingContext*,
-                                                             SkSamplingOptions,
-                                                             const SkTileMode[2],
-                                                             const SkMatrix&,
-                                                             const SkRect* subset = nullptr,
-                                                             const SkRect* domain = nullptr) const;
-
-    
-    
-    virtual void generatingSurfaceIsDeleted() {}
-
+    virtual GrTextureProxy* peekProxy() const { return nullptr; }
+    virtual sk_sp<GrTextureProxy> asTextureProxyRef(GrRecordingContext*) const { return nullptr; }
+    virtual sk_sp<GrTextureProxy> asTextureProxyRef(GrRecordingContext*, const GrSamplerState&,
+                                                    SkScalar scaleAdjust[2]) const = 0;
+    virtual sk_sp<GrTextureProxy> refPinnedTextureProxy(GrRecordingContext*,
+                                                        uint32_t* uniqueID) const {
+        return nullptr;
+    }
+    virtual bool isYUVA() const { return false; }
+    virtual GrTexture* onGetTexture() const { return nullptr; }
+#endif
     virtual GrBackendTexture onGetBackendTexture(bool flushPendingGrContextIO,
                                                  GrSurfaceOrigin* origin) const;
-#endif
-#if defined(SK_GRAPHITE)
-    
-    
-    
-    
-    std::tuple<skgpu::graphite::TextureProxyView, SkColorType> asView(
-            skgpu::graphite::Recorder*,
-            skgpu::Mipmapped) const;
-
-#endif
-#if defined(SK_GANESH) || defined(SK_GRAPHITE)
-    bool isYUVA() const {
-        return this->type() == Type::kGaneshYUVA || this->type() == Type::kGraphiteYUVA;
-    }
-#endif
-
-    virtual bool onPinAsTexture(GrRecordingContext*) const { return false; }
-    virtual void onUnpinAsTexture(GrRecordingContext*) const {}
-    virtual bool isPinnedOnContext(GrRecordingContext*) const { return false; }
 
     
     
-    virtual bool getROPixels(GrDirectContext*, SkBitmap*,
-                             CachingHint = kAllow_CachingHint) const = 0;
+    virtual bool getROPixels(SkBitmap*, CachingHint = kAllow_CachingHint) const = 0;
 
-    virtual sk_sp<SkImage> onMakeSubset(const SkIRect&, GrDirectContext*) const = 0;
+    virtual sk_sp<SkImage> onMakeSubset(GrRecordingContext*, const SkIRect&) const = 0;
 
+    virtual sk_sp<SkCachedData> getPlanes(SkYUVASizeInfo*, SkYUVAIndex[4],
+                                          SkYUVColorSpace*, const void* planes[4]);
     virtual sk_sp<SkData> onRefEncoded() const { return nullptr; }
 
-    virtual bool onAsLegacyBitmap(GrDirectContext*, SkBitmap*) const;
-
-    enum class Type {
-        kUnknown,
-        kRaster,
-        kRasterPinnable,
-        kLazy,
-        kGanesh,
-        kGaneshYUVA,
-        kGraphite,
-        kGraphiteYUVA,
-    };
-
-    virtual Type type() const { return Type::kUnknown; }
+    virtual bool onAsLegacyBitmap(SkBitmap*) const;
 
     
-    bool onIsLazyGenerated() const { return this->type() == Type::kLazy; }
+    virtual bool onIsLazyGenerated() const { return false; }
 
     
-    bool isGaneshBacked() const {
-        return this->type() == Type::kGanesh || this->type() == Type::kGaneshYUVA;
-    }
-
-    
-    bool isGraphiteBacked() const {
-        return this->type() == Type::kGraphite || this->type() == Type::kGraphiteYUVA;
-    }
-
-    
-    virtual size_t onTextureSize() const { return 0; }
+    virtual bool onIsTextureBacked() const { return false; }
 
     
     
@@ -211,80 +93,24 @@ public:
         fAddedToRasterCache.store(true);
     }
 
-    virtual bool onIsValid(GrRecordingContext*) const = 0;
+    virtual bool onIsValid(GrContext*) const = 0;
 
-    virtual sk_sp<SkImage> onMakeColorTypeAndColorSpace(SkColorType, sk_sp<SkColorSpace>,
-                                                        GrDirectContext*) const = 0;
+    virtual bool onPinAsTexture(GrContext*) const { return false; }
+    virtual void onUnpinAsTexture(GrContext*) const {}
+
+    virtual sk_sp<SkImage> onMakeColorTypeAndColorSpace(GrRecordingContext*,
+                                                        SkColorType, sk_sp<SkColorSpace>) const = 0;
 
     virtual sk_sp<SkImage> onReinterpretColorSpace(sk_sp<SkColorSpace>) const = 0;
-
-    
-    virtual sk_sp<SkImage> onMakeWithMipmaps(sk_sp<SkMipmap>) const {
-        return nullptr;
-    }
-
-#if defined(SK_GRAPHITE)
-    virtual sk_sp<SkImage> onMakeTextureImage(skgpu::graphite::Recorder*,
-                                              RequiredImageProperties) const = 0;
-    virtual sk_sp<SkImage> onMakeSubset(const SkIRect&,
-                                        skgpu::graphite::Recorder*,
-                                        RequiredImageProperties) const = 0;
-    virtual sk_sp<SkImage> onMakeColorTypeAndColorSpace(SkColorType,
-                                                        sk_sp<SkColorSpace>,
-                                                        skgpu::graphite::Recorder*,
-                                                        RequiredImageProperties) const = 0;
-#endif
 
 protected:
     SkImage_Base(const SkImageInfo& info, uint32_t uniqueID);
 
-#if defined(SK_GANESH)
-    
-    static GrSurfaceProxyView CopyView(GrRecordingContext*,
-                                       GrSurfaceProxyView src,
-                                       GrMipmapped,
-                                       GrImageTexGenPolicy,
-                                       std::string_view label);
-
-    static std::unique_ptr<GrFragmentProcessor> MakeFragmentProcessorFromView(GrRecordingContext*,
-                                                                              GrSurfaceProxyView,
-                                                                              SkAlphaType,
-                                                                              SkSamplingOptions,
-                                                                              const SkTileMode[2],
-                                                                              const SkMatrix&,
-                                                                              const SkRect* subset,
-                                                                              const SkRect* domain);
-
-    
-
-
-
-
-
-
-    static GrSurfaceProxyView FindOrMakeCachedMipmappedView(GrRecordingContext*,
-                                                            GrSurfaceProxyView,
-                                                            uint32_t imageUniqueID);
-#endif
-
 private:
-#if defined(SK_GANESH)
-    virtual std::tuple<GrSurfaceProxyView, GrColorType> onAsView(
-            GrRecordingContext*,
-            GrMipmapped,
-            GrImageTexGenPolicy policy) const = 0;
-
-    virtual std::unique_ptr<GrFragmentProcessor> onAsFragmentProcessor(
-            GrRecordingContext*,
-            SkSamplingOptions,
-            const SkTileMode[2],
-            const SkMatrix&,
-            const SkRect* subset,
-            const SkRect* domain) const = 0;
-#endif
-
     
     mutable std::atomic<bool> fAddedToRasterCache;
+
+    typedef SkImage INHERITED;
 };
 
 static inline SkImage_Base* as_IB(SkImage* image) {

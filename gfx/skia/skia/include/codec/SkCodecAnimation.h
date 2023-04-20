@@ -39,23 +39,5 @@ namespace SkCodecAnimation {
 
         kRestorePrevious    = 3,
     };
-
-    
-
-
-    enum class Blend {
-        
-
-
-        kSrcOver,
-
-        
-
-
-
-
-        kSrc,
-    };
-
-} 
+}
 #endif 

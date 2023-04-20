@@ -46,9 +46,9 @@ public:
                                                       SkBlurStyle, SkIPoint* margin = nullptr);
 
     
-    static SkScalar SK_SPI ConvertRadiusToSigma(SkScalar radius);
+    static SkScalar SK_API ConvertRadiusToSigma(SkScalar radius);
     
-    static SkScalar SK_SPI ConvertSigmaToRadius(SkScalar sigma);
+    static SkScalar SK_API ConvertSigmaToRadius(SkScalar sigma);
 
     
 

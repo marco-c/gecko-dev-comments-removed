@@ -10,8 +10,6 @@
 
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
-#include "include/core/SkSamplingOptions.h"
-#include "include/core/SkShader.h"
 #include "include/core/SkTileMode.h"
 #include "include/core/SkTypes.h"
 
@@ -21,6 +19,7 @@ struct SkDeserialProcs;
 class SkImage;
 class SkMatrix;
 struct SkSerialProcs;
+class SkShader;
 class SkStream;
 class SkWStream;
 
@@ -38,7 +37,6 @@ class SkWStream;
 
 class SK_API SkPicture : public SkRefCnt {
 public:
-    ~SkPicture() override;
 
     
 
@@ -91,13 +89,18 @@ public:
 
     class SK_API AbortCallback {
     public:
-        
-
-        virtual ~AbortCallback() = default;
 
         
 
 
+
+        AbortCallback() {}
+
+        
+
+        virtual ~AbortCallback() {}
+
+        
 
 
 
@@ -110,11 +113,6 @@ public:
 
 
         virtual bool abort() = 0;
-
-    protected:
-        AbortCallback() = default;
-        AbortCallback(const AbortCallback&) = delete;
-        AbortCallback& operator=(const AbortCallback&) = delete;
     };
 
     
@@ -126,13 +124,9 @@ public:
 
 
 
-
-
     virtual void playback(SkCanvas* canvas, AbortCallback* callback = nullptr) const = 0;
 
     
-
-
 
 
 
@@ -160,13 +154,9 @@ public:
 
 
 
-
-
     sk_sp<SkData> serialize(const SkSerialProcs* procs = nullptr) const;
 
     
-
-
 
 
 
@@ -188,8 +178,6 @@ public:
 
 
 
-
-
     static sk_sp<SkPicture> MakePlaceholder(SkRect cull);
 
     
@@ -199,15 +187,9 @@ public:
 
 
 
-
-
-
-
-    virtual int approximateOpCount(bool nested = false) const = 0;
+    virtual int approximateOpCount() const = 0;
 
     
-
-
 
 
 
@@ -226,13 +208,10 @@ public:
 
 
 
-
-    sk_sp<SkShader> makeShader(SkTileMode tmx, SkTileMode tmy, SkFilterMode mode,
+    sk_sp<SkShader> makeShader(SkTileMode tmx, SkTileMode tmy,
                                const SkMatrix* localMatrix, const SkRect* tileRect) const;
-
-    sk_sp<SkShader> makeShader(SkTileMode tmx, SkTileMode tmy, SkFilterMode mode) const {
-        return this->makeShader(tmx, tmy, mode, nullptr, nullptr);
-    }
+    sk_sp<SkShader> makeShader(SkTileMode tmx, SkTileMode tmy,
+                               const SkMatrix* localMatrix = nullptr) const;
 
 private:
     
@@ -240,12 +219,12 @@ private:
     friend class SkBigPicture;
     friend class SkEmptyPicture;
     friend class SkPicturePriv;
+    template <typename> friend class SkMiniPicture;
 
     void serialize(SkWStream*, const SkSerialProcs*, class SkRefCntSet* typefaces,
         bool textBlobsOnly=false) const;
-    static sk_sp<SkPicture> MakeFromStreamPriv(SkStream*, const SkDeserialProcs*,
-                                               class SkTypefacePlayback*,
-                                               int recursionLimit);
+    static sk_sp<SkPicture> MakeFromStream(SkStream*, const SkDeserialProcs*,
+                                           class SkTypefacePlayback*);
     friend class SkPictureData;
 
     
@@ -263,6 +242,8 @@ private:
     
     virtual const class SkBigPicture* asSkBigPicture() const { return nullptr; }
 
+    friend struct SkPathCounter;
+
     static bool IsValidPictInfo(const struct SkPictInfo& info);
     static sk_sp<SkPicture> Forwardport(const struct SkPictInfo&,
                                         const class SkPictureData*,
@@ -272,7 +253,6 @@ private:
     class SkPictureData* backport() const;
 
     uint32_t fUniqueID;
-    mutable std::atomic<bool> fAddedToCache{false};
 };
 
 #endif

@@ -17,11 +17,7 @@ enum SkShadowFlags {
     
     kGeometricOnly_ShadowFlag = 0x02,
     
-    kDirectionalLight_ShadowFlag = 0x04,
-    
-    kConcaveBlurOnly_ShadowFlag = 0x08,
-    
-    kAll_ShadowFlag = 0x0F
+    kAll_ShadowFlag = 0x03
 };
 
 #endif

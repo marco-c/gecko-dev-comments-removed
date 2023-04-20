@@ -15,7 +15,6 @@
 #include "include/core/SkRect.h"
 
 class SkAndroidCodec;
-class SkImage;
 class SkPicture;
 
 
@@ -35,6 +34,19 @@ public:
 
     static sk_sp<SkAnimatedImage> Make(std::unique_ptr<SkAndroidCodec>,
             const SkImageInfo& info, SkIRect cropRect, sk_sp<SkPicture> postProcess);
+
+    
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkAnimatedImage> Make(std::unique_ptr<SkAndroidCodec>,
+            SkISize scaledSize, SkIRect cropRect, sk_sp<SkPicture> postProcess);
 
     
 
@@ -75,13 +87,6 @@ public:
 
 
 
-    sk_sp<SkImage> getCurrentFrame();
-
-    
-
-
-
-
 
     int currentFrameDuration() {
         return fCurrentFrameDuration;
@@ -104,11 +109,6 @@ public:
     int getRepetitionCount() const {
         return fRepetitionCount;
     }
-
-    
-
-
-    int getFrameCount() const { return fFrameCount; }
 
 protected:
     SkRect onGetBounds() override;
@@ -138,12 +138,13 @@ private:
     };
 
     std::unique_ptr<SkAndroidCodec> fCodec;
-          SkImageInfo               fDecodeInfo;
+    const SkISize                   fScaledSize;
+    const SkImageInfo               fDecodeInfo;
     const SkIRect                   fCropRect;
     const sk_sp<SkPicture>          fPostProcess;
     const int                       fFrameCount;
-    SkMatrix                        fMatrix;
-    int                             fSampleSize;
+    const bool                      fSimple;     
+    SkMatrix                        fMatrix;     
 
     bool                            fFinished;
     int                             fCurrentFrameDuration;
@@ -153,27 +154,14 @@ private:
     int                             fRepetitionCount;
     int                             fRepetitionsCompleted;
 
-    SkAnimatedImage(std::unique_ptr<SkAndroidCodec>, const SkImageInfo& requestedInfo,
-            SkIRect cropRect, sk_sp<SkPicture> postProcess);
+    SkAnimatedImage(std::unique_ptr<SkAndroidCodec>, SkISize scaledSize,
+            SkImageInfo decodeInfo, SkIRect cropRect, sk_sp<SkPicture> postProcess);
+    SkAnimatedImage(std::unique_ptr<SkAndroidCodec>);
 
     int computeNextFrame(int current, bool* animationEnded);
     double finish();
 
-    
-
-
-    bool simple() const { return fMatrix.isIdentity() && !fPostProcess
-                                 && fCropRect == fDecodeInfo.bounds(); }
-
-    
-
-
-
-
-
-    sk_sp<SkImage> getCurrentFrameSimple();
-
-    using INHERITED = SkDrawable;
+    typedef SkDrawable INHERITED;
 };
 
 #endif 

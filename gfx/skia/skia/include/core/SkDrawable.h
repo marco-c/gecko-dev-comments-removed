@@ -9,22 +9,14 @@
 #define SkDrawable_DEFINED
 
 #include "include/core/SkFlattenable.h"
-#include "include/core/SkRefCnt.h"
+#include "include/core/SkImageInfo.h"
 #include "include/core/SkScalar.h"
-#include "include/private/base/SkAPI.h"
-
-#include <cstddef>
-#include <cstdint>
-#include <memory>
 
 class GrBackendDrawableInfo;
 class SkCanvas;
 class SkMatrix;
 class SkPicture;
-enum class GrBackendApi : unsigned int;
-struct SkDeserialProcs;
-struct SkIRect;
-struct SkImageInfo;
+enum class GrBackendApi : unsigned;
 struct SkRect;
 
 
@@ -115,12 +107,6 @@ public:
 
 
 
-    size_t approximateBytesUsed();
-
-    
-
-
-
 
     void notifyDrawingChanged();
 
@@ -146,7 +132,6 @@ protected:
     SkDrawable();
 
     virtual SkRect onGetBounds() = 0;
-    virtual size_t onApproximateBytesUsed();
     virtual void onDraw(SkCanvas*) = 0;
 
     virtual std::unique_ptr<GpuDrawHandler> onSnapGpuDrawHandler(GrBackendApi, const SkMatrix&,

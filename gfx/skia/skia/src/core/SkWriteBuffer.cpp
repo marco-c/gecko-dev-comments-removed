@@ -7,31 +7,14 @@
 
 #include "src/core/SkWriteBuffer.h"
 
-#include "include/core/SkAlphaType.h"
+#include "include/core/SkBitmap.h"
 #include "include/core/SkData.h"
-#include "include/core/SkFlattenable.h"
-#include "include/core/SkImage.h"
-#include "include/core/SkPoint.h"
-#include "include/core/SkPoint3.h"
-#include "include/core/SkRect.h"
+#include "include/core/SkStream.h"
 #include "include/core/SkTypeface.h"
-#include "include/private/base/SkAssert.h"
-#include "include/private/base/SkTFitsIn.h"
-#include "include/private/base/SkTo.h"
-#include "src/core/SkMatrixPriv.h"
-#include "src/core/SkMipmap.h"
+#include "include/private/SkTo.h"
+#include "src/core/SkImagePriv.h"
 #include "src/core/SkPaintPriv.h"
 #include "src/core/SkPtrRecorder.h"
-#include "src/image/SkImage_Base.h"
-
-#include <cstring>
-#include <utility>
-
-class SkMatrix;
-class SkPaint;
-class SkRegion;
-class SkStream;
-class SkWStream;
 
 
 
@@ -83,8 +66,8 @@ void SkBinaryWriteBuffer::writeUInt(uint32_t value) {
     fWriter.write32(value);
 }
 
-void SkBinaryWriteBuffer::writeString(std::string_view value) {
-    fWriter.writeString(value.data(), value.size());
+void SkBinaryWriteBuffer::writeString(const char* value) {
+    fWriter.writeString(value);
 }
 
 void SkBinaryWriteBuffer::writeColor(SkColor color) {
@@ -119,10 +102,6 @@ void SkBinaryWriteBuffer::writePointArray(const SkPoint* point, uint32_t count) 
     fWriter.write(point, count * sizeof(SkPoint));
 }
 
-void SkBinaryWriteBuffer::write(const SkM44& matrix) {
-    fWriter.write(SkMatrixPriv::M44ColMajor(matrix), sizeof(float) * 16);
-}
-
 void SkBinaryWriteBuffer::writeMatrix(const SkMatrix& matrix) {
     fWriter.writeMatrix(matrix);
 }
@@ -137,10 +116,6 @@ void SkBinaryWriteBuffer::writeRect(const SkRect& rect) {
 
 void SkBinaryWriteBuffer::writeRegion(const SkRegion& region) {
     fWriter.writeRegion(region);
-}
-
-void SkBinaryWriteBuffer::writeSampling(const SkSamplingOptions& sampling) {
-    fWriter.writeSampling(sampling);
 }
 
 void SkBinaryWriteBuffer::writePath(const SkPath& path) {
@@ -165,18 +140,9 @@ bool SkBinaryWriteBuffer::writeToStream(SkWStream* stream) const {
 
 
 
-
 void SkBinaryWriteBuffer::writeImage(const SkImage* image) {
-    uint32_t flags = 0;
-    const SkMipmap* mips = as_IB(image)->onPeekMips();
-    if (mips) {
-        flags |= SkWriteBufferImageFlags::kHasMipmap;
-    }
-    if (image->alphaType() == kUnpremul_SkAlphaType) {
-        flags |= SkWriteBufferImageFlags::kUnpremul;
-    }
-
-    this->write32(flags);
+    const SkIRect bounds = SkImage_getSubset(image);
+    this->writeIRect(bounds);
 
     sk_sp<SkData> data;
     if (fProcs.fImageProc) {
@@ -185,10 +151,14 @@ void SkBinaryWriteBuffer::writeImage(const SkImage* image) {
     if (!data) {
         data = image->encodeToData();
     }
-    this->writeDataAsByteArray(data.get());
 
-    if (flags & SkWriteBufferImageFlags::kHasMipmap) {
-        this->writeDataAsByteArray(mips->serialize().get());
+    size_t size = data ? data->size() : 0;
+    if (!SkTFitsIn<int32_t>(size)) {
+        size = 0;   
+    }
+    this->write32(SkToS32(size));   
+    if (size) {
+        this->writePad32(data->data(), size);
     }
 }
 
@@ -249,14 +219,14 @@ void SkBinaryWriteBuffer::writeFlattenable(const SkFlattenable* flattenable) {
 
 
 
-    if (SkFlattenable::Factory factory = flattenable->getFactory(); factory && fFactorySet) {
+    SkFlattenable::Factory factory = flattenable->getFactory();
+    SkASSERT(factory);
+
+    if (fFactorySet) {
         this->write32(fFactorySet->add(factory));
     } else {
-        const char* name = flattenable->getTypeName();
-        SkASSERT(name);
-        SkASSERT(0 != strcmp("", name));
 
-        if (uint32_t* indexPtr = fFlattenableDict.find(name)) {
+        if (uint32_t* indexPtr = fFlattenableDict.find(factory)) {
             
             
             
@@ -266,8 +236,15 @@ void SkBinaryWriteBuffer::writeFlattenable(const SkFlattenable* flattenable) {
             SkASSERT(0 == *indexPtr >> 24);
             this->write32(*indexPtr << 8);
         } else {
+            const char* name = flattenable->getTypeName();
+            SkASSERT(name);
+            
+            
+            SkASSERT(0 != strcmp("", name));
             this->writeString(name);
-            fFlattenableDict.set(name, fFlattenableDict.count() + 1);
+
+            
+            fFlattenableDict.set(factory, fFlattenableDict.count() + 1);
         }
     }
 

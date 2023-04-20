@@ -8,99 +8,55 @@
 #ifndef SKSL_EXPRESSION
 #define SKSL_EXPRESSION
 
-#include "include/core/SkTypes.h"
-#include "include/private/SkSLIRNode.h"
-#include "include/sksl/SkSLPosition.h"
 #include "src/sksl/ir/SkSLType.h"
+#include "src/sksl/ir/SkSLVariable.h"
 
-#include <cstdint>
-#include <memory>
-#include <optional>
-#include <string>
+#include <unordered_map>
 
 namespace SkSL {
 
-class AnyConstructor;
-class Context;
-enum class OperatorPrecedence : uint8_t;
+struct Expression;
+class IRGenerator;
+
+typedef std::unordered_map<const Variable*, std::unique_ptr<Expression>*> DefinitionMap;
 
 
 
 
-class Expression : public IRNode {
-public:
-    using Kind = ExpressionKind;
-
-    Expression(Position pos, Kind kind, const Type* type)
-        : INHERITED(pos, (int) kind)
-        , fType(type) {
-        SkASSERT(kind >= Kind::kFirst && kind <= Kind::kLast);
-    }
-
-    Kind kind() const {
-        return (Kind) fKind;
-    }
-
-    virtual const Type& type() const {
-        return *fType;
-    }
-
-    bool isAnyConstructor() const {
-        static_assert((int)Kind::kConstructorArray - 1 == (int)Kind::kChildCall);
-        static_assert((int)Kind::kConstructorStruct + 1 == (int)Kind::kFieldAccess);
-        return this->kind() >= Kind::kConstructorArray && this->kind() <= Kind::kConstructorStruct;
-    }
-
-    bool isIntLiteral() const {
-        return this->kind() == Kind::kLiteral && this->type().isInteger();
-    }
-
-    bool isFloatLiteral() const {
-        return this->kind() == Kind::kLiteral && this->type().isFloat();
-    }
-
-    bool isBoolLiteral() const {
-        return this->kind() == Kind::kLiteral && this->type().isBoolean();
-    }
-
-    AnyConstructor& asAnyConstructor();
-    const AnyConstructor& asAnyConstructor() const;
-
-    
-
-
-
-
-    bool isIncomplete(const Context& context) const;
-
-    
-
-
-
-
-    enum class ComparisonResult {
-        kUnknown = -1,
-        kNotEqual,
-        kEqual
+struct Expression : public IRNode {
+    enum Kind {
+        kBinary_Kind,
+        kBoolLiteral_Kind,
+        kConstructor_Kind,
+        kExternalFunctionCall_Kind,
+        kExternalValue_Kind,
+        kIntLiteral_Kind,
+        kFieldAccess_Kind,
+        kFloatLiteral_Kind,
+        kFunctionReference_Kind,
+        kFunctionCall_Kind,
+        kIndex_Kind,
+        kNullLiteral_Kind,
+        kPrefix_Kind,
+        kPostfix_Kind,
+        kSetting_Kind,
+        kSwizzle_Kind,
+        kVariableReference_Kind,
+        kTernary_Kind,
+        kTypeReference_Kind,
+        kDefined_Kind
     };
-    virtual ComparisonResult compareConstant(const Expression& other) const {
-        return ComparisonResult::kUnknown;
-    }
 
-    CoercionCost coercionCost(const Type& target) const {
-        return this->type().coercionCost(target);
-    }
+    Expression(int offset, Kind kind, const Type& type)
+    : INHERITED(offset)
+    , fKind(kind)
+    , fType(std::move(type)) {}
 
     
 
 
 
-
-
-
-
-
-    virtual bool supportsConstantValues() const {
+    virtual bool isConstant() const {
         return false;
     }
 
@@ -109,35 +65,85 @@ public:
 
 
 
-
-
-
-
-    virtual std::optional<double> getConstantValue(int n) const {
-        SkASSERT(!this->supportsConstantValues());
-        return std::nullopt;
+    virtual bool compareConstant(const Context& context, const Expression& other) const {
+        ABORT("cannot call compareConstant on this type");
     }
 
-    virtual std::unique_ptr<Expression> clone(Position pos) const = 0;
+    
+
+
+
+    virtual int64_t getConstantInt() const {
+        ABORT("not a constant int");
+    }
 
     
 
 
-    std::unique_ptr<Expression> clone() const { return this->clone(fPosition); }
+
+    virtual double getConstantFloat() const {
+        ABORT("not a constant float");
+    }
 
     
 
 
-    std::string description() const final;
-    virtual std::string description(OperatorPrecedence parentPrecedence) const = 0;
 
 
-private:
-    const Type* fType;
+    virtual bool hasSideEffects() const = 0;
 
-    using INHERITED = IRNode;
+    
+
+
+
+
+
+
+    virtual std::unique_ptr<Expression> constantPropagate(const IRGenerator& irGenerator,
+                                                          const DefinitionMap& definitions) {
+        return nullptr;
+    }
+
+    virtual int coercionCost(const Type& target) const {
+        return fType.coercionCost(target);
+    }
+
+    
+
+
+
+    virtual SKSL_FLOAT getFVecComponent(int n) const {
+        SkASSERT(false);
+        return 0;
+    }
+
+    
+
+
+
+    virtual SKSL_INT getIVecComponent(int n) const {
+        SkASSERT(false);
+        return 0;
+    }
+
+    
+
+
+
+
+    virtual SKSL_FLOAT getMatComponent(int col, int row) const {
+        SkASSERT(false);
+        return 0;
+    }
+
+    virtual std::unique_ptr<Expression> clone() const = 0;
+
+    const Kind fKind;
+    const Type& fType;
+
+    typedef IRNode INHERITED;
 };
 
-}  
+} 
 
 #endif

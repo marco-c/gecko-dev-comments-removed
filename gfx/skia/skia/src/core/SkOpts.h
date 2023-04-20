@@ -9,63 +9,11 @@
 #define SkOpts_DEFINED
 
 #include "include/core/SkTypes.h"
-#include "include/private/SkOpts_spi.h"
-#include "src/core/SkRasterPipelineOpList.h"
+#include "src/core/SkConvolver.h"
+#include "src/core/SkRasterPipeline.h"
 #include "src/core/SkXfermodePriv.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 struct SkBitmapProcState;
-struct SkRasterPipelineStage;
-namespace skvm {
-struct InterpreterInstruction;
-}
-namespace SkSL {
-class TraceHook;
-}
 
 namespace SkOpts {
     
@@ -98,7 +46,7 @@ namespace SkOpts {
                            grayA_to_rgbA;   
 
     extern void (*memset16)(uint16_t[], uint16_t, int);
-    extern void (*memset32)(uint32_t[], uint32_t, int);
+    extern void SK_API (*memset32)(uint32_t[], uint32_t, int);
     extern void (*memset64)(uint64_t[], uint64_t, int);
 
     extern void (*rect_memset16)(uint16_t[], uint16_t, int, size_t, int);
@@ -107,33 +55,36 @@ namespace SkOpts {
 
     extern float (*cubic_solver)(float, float, float, float);
 
+    
+    extern uint32_t (*hash_fn)(const void*, size_t, uint32_t seed);
     static inline uint32_t hash(const void* data, size_t bytes, uint32_t seed=0) {
-        
         return hash_fn(data, bytes, seed);
     }
 
     
+    
     extern void (*S32_alpha_D32_filter_DX)(const SkBitmapProcState&,
                                            const uint32_t* xy, int count, SkPMColor*);
-    extern void (*S32_alpha_D32_filter_DXDY)(const SkBitmapProcState&,
-                                             const uint32_t* xy, int count, SkPMColor*);
 
+#define M(st) +1
     
     
     using StageFn = void(*)(void);
-    extern StageFn ops_highp[kNumRasterPipelineHighpOps], just_return_highp;
-    extern StageFn ops_lowp [kNumRasterPipelineLowpOps ], just_return_lowp;
+    extern StageFn stages_highp[SK_RASTER_PIPELINE_STAGES(M)], just_return_highp;
+    extern StageFn stages_lowp [SK_RASTER_PIPELINE_STAGES(M)], just_return_lowp;
 
-    extern void (*start_pipeline_highp)(size_t,size_t,size_t,size_t, SkRasterPipelineStage*);
-    extern void (*start_pipeline_lowp )(size_t,size_t,size_t,size_t, SkRasterPipelineStage*);
+    extern void (*start_pipeline_highp)(size_t,size_t,size_t,size_t, void**);
+    extern void (*start_pipeline_lowp )(size_t,size_t,size_t,size_t, void**);
+#undef M
 
-    extern size_t raster_pipeline_lowp_stride;
-    extern size_t raster_pipeline_highp_stride;
+    extern void (*convolve_vertically)(const SkConvolutionFilter1D::ConvolutionFixed* filter_values,
+                                       int filter_length, unsigned char* const* source_data_rows,
+                                       int pixel_width, unsigned char* out_row, bool has_alpha);
+    extern void (*convolve_4_rows_horizontally)(const unsigned char* src_data[4],
+                                                const SkConvolutionFilter1D& filter,
+                                                unsigned char* out_row[4], size_t out_row_bytes);
+    extern void (*convolve_horizontally)(const unsigned char* src_data, const SkConvolutionFilter1D& filter,
+                                         unsigned char* out_row, bool has_alpha);
+}
 
-    extern void (*interpret_skvm)(const skvm::InterpreterInstruction insts[], int ninsts,
-                                  int nregs, int loop, const int strides[],
-                                  SkSL::TraceHook* traceHooks[], int nTraceHooks,
-                                  int nargs, int n, void* args[]);
-}  
-
-#endif 
+#endif

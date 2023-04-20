@@ -9,21 +9,10 @@
 #define SkPixmap_DEFINED
 
 #include "include/core/SkColor.h"
-#include "include/core/SkColorType.h"
+#include "include/core/SkFilterQuality.h"
 #include "include/core/SkImageInfo.h"
-#include "include/core/SkRect.h"
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkSamplingOptions.h"
-#include "include/core/SkSize.h"
-#include "include/private/base/SkAPI.h"
-#include "include/private/base/SkAssert.h"
-#include "include/private/base/SkAttributes.h"
 
-#include <cstddef>
-#include <cstdint>
-
-class SkColorSpace;
-enum SkAlphaType : int;
+class SkData;
 struct SkMask;
 
 
@@ -80,8 +69,6 @@ public:
 
 
 
-
-
     void reset();
 
     
@@ -99,13 +86,9 @@ public:
 
 
 
-
-
     void reset(const SkImageInfo& info, const void* addr, size_t rowBytes);
 
     
-
-
 
 
 
@@ -171,7 +154,21 @@ public:
 
     SkISize dimensions() const { return fInfo.dimensions(); }
 
+    
+
+
+
+
+
+
+
     SkColorType colorType() const { return fInfo.colorType(); }
+
+    
+
+
+
+
 
     SkAlphaType alphaType() const { return fInfo.alphaType(); }
 
@@ -181,7 +178,7 @@ public:
 
 
 
-    SkColorSpace* colorSpace() const;
+    SkColorSpace* colorSpace() const { return fInfo.colorSpace(); }
 
     
 
@@ -191,7 +188,7 @@ public:
 
 
 
-    sk_sp<SkColorSpace> refColorSpace() const;
+    sk_sp<SkColorSpace> refColorSpace() const { return fInfo.refColorSpace(); }
 
     
 
@@ -247,8 +244,6 @@ public:
 
 
 
-
-
     bool computeIsOpaque() const;
 
     
@@ -267,28 +262,7 @@ public:
 
 
 
-
-
     SkColor getColor(int x, int y) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    SkColor4f getColor4f(int x, int y) const;
 
     
 
@@ -399,7 +373,7 @@ public:
     const uint8_t* addr8(int x, int y) const {
         SkASSERT((unsigned)x < (unsigned)fInfo.width());
         SkASSERT((unsigned)y < (unsigned)fInfo.height());
-        return (const uint8_t*)((const char*)this->addr8() + (size_t)y * fRowBytes + (x << 0));
+        return (const uint8_t*)((const char*)this->addr8() + y * fRowBytes + (x << 0));
     }
 
     
@@ -417,7 +391,7 @@ public:
     const uint16_t* addr16(int x, int y) const {
         SkASSERT((unsigned)x < (unsigned)fInfo.width());
         SkASSERT((unsigned)y < (unsigned)fInfo.height());
-        return (const uint16_t*)((const char*)this->addr16() + (size_t)y * fRowBytes + (x << 1));
+        return (const uint16_t*)((const char*)this->addr16() + y * fRowBytes + (x << 1));
     }
 
     
@@ -435,7 +409,7 @@ public:
     const uint32_t* addr32(int x, int y) const {
         SkASSERT((unsigned)x < (unsigned)fInfo.width());
         SkASSERT((unsigned)y < (unsigned)fInfo.height());
-        return (const uint32_t*)((const char*)this->addr32() + (size_t)y * fRowBytes + (x << 2));
+        return (const uint32_t*)((const char*)this->addr32() + y * fRowBytes + (x << 2));
     }
 
     
@@ -453,7 +427,7 @@ public:
     const uint64_t* addr64(int x, int y) const {
         SkASSERT((unsigned)x < (unsigned)fInfo.width());
         SkASSERT((unsigned)y < (unsigned)fInfo.height());
-        return (const uint64_t*)((const char*)this->addr64() + (size_t)y * fRowBytes + (x << 3));
+        return (const uint64_t*)((const char*)this->addr64() + y * fRowBytes + (x << 3));
     }
 
     
@@ -689,11 +663,16 @@ public:
 
 
 
-    bool scalePixels(const SkPixmap& dst, const SkSamplingOptions&) const;
+
+
+
+
+
+
+
+    bool scalePixels(const SkPixmap& dst, SkFilterQuality filterQuality) const;
 
     
-
-
 
 
 
@@ -721,28 +700,14 @@ public:
 
 
 
-
-
-    bool erase(const SkColor4f& color, const SkIRect* subset = nullptr) const {
-        return this->erase(color, nullptr, subset);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-    bool erase(const SkColor4f& color, SkColorSpace* cs, const SkIRect* subset = nullptr) const;
+    bool erase(const SkColor4f& color, const SkIRect* subset = nullptr) const;
 
 private:
     const void*     fPixels;
     size_t          fRowBytes;
     SkImageInfo     fInfo;
+
+    friend class SkPixmapPriv;
 };
 
 #endif

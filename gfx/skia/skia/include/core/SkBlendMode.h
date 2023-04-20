@@ -10,70 +10,41 @@
 
 #include "include/core/SkTypes.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 enum class SkBlendMode {
-    kClear,         
-    kSrc,           
-    kDst,           
-    kSrcOver,       
-    kDstOver,       
-    kSrcIn,         
-    kDstIn,         
-    kSrcOut,        
-    kDstOut,        
-    kSrcATop,       
-    kDstATop,       
-    kXor,           
-    kPlus,          
-    kModulate,      
-    kScreen,        
-
-    kOverlay,       
-    kDarken,        
-    kLighten,       
-    kColorDodge,    
-    kColorBurn,     
-    kHardLight,     
-    kSoftLight,     
-    kDifference,    
-    kExclusion,     
-    kMultiply,      
-
-    kHue,           
-    kSaturation,    
-    kColor,         
-    kLuminosity,    
-
+    kClear,                           
+    kSrc,                             
+    kDst,                             
+    kSrcOver,                         
+    kDstOver,                         
+    kSrcIn,                           
+    kDstIn,                           
+    kSrcOut,                          
+    kDstOut,                          
+    kSrcATop,                         
+    kDstATop,                         
+    kXor,                             
+    kPlus,                            
+    kModulate,                        
+    kScreen,                
     kLastCoeffMode     = kScreen,     
+    kOverlay,                         
+    kDarken,                          
+    kLighten,                         
+    kColorDodge,                      
+    kColorBurn,                       
+    kHardLight,                       
+    kSoftLight,                       
+    kDifference,                      
+    kExclusion,                       
+    kMultiply,                        
     kLastSeparableMode = kMultiply,   
+    kHue,                           
+    kSaturation,                    
+    kColor,                         
+    kLuminosity,                    
     kLastMode          = kLuminosity, 
 };
 
-static constexpr int kSkBlendModeCount = static_cast<int>(SkBlendMode::kLastMode) + 1;
 
 
 
@@ -81,26 +52,8 @@ static constexpr int kSkBlendModeCount = static_cast<int>(SkBlendMode::kLastMode
 
 
 
-enum class SkBlendModeCoeff {
-    kZero, 
-    kOne,  
-    kSC,   
-    kISC,  
-    kDC,   
-    kIDC,  
-    kSA,   
-    kISA,  
-    kDA,   
-    kIDA,  
-
-    kCoeffCount
-};
 
 
-
-
-
-SK_API bool SkBlendMode_AsCoeff(SkBlendMode mode, SkBlendModeCoeff* src, SkBlendModeCoeff* dst);
 
 
 

@@ -13,7 +13,6 @@
 class SkBitmap;
 class SkCanvas;
 class SkMatrix;
-class SkSurfaceProps;
 
 
 
@@ -36,7 +35,7 @@ class SkSurfaceProps;
 
 class SK_API SkRasterHandleAllocator {
 public:
-    virtual ~SkRasterHandleAllocator() = default;
+    virtual ~SkRasterHandleAllocator() {}
 
     
     typedef void* Handle;
@@ -77,13 +76,7 @@ public:
 
 
     static std::unique_ptr<SkCanvas> MakeCanvas(std::unique_ptr<SkRasterHandleAllocator>,
-                                                const SkImageInfo&, const Rec* rec = nullptr,
-                                                const SkSurfaceProps* props = nullptr);
-
-protected:
-    SkRasterHandleAllocator() = default;
-    SkRasterHandleAllocator(const SkRasterHandleAllocator&) = delete;
-    SkRasterHandleAllocator& operator=(const SkRasterHandleAllocator&) = delete;
+                                                const SkImageInfo&, const Rec* rec = nullptr);
 
 private:
     friend class SkBitmapDevice;

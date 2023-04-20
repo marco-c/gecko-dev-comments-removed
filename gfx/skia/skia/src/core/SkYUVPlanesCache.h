@@ -8,11 +8,12 @@
 #ifndef SkYUVPlanesCache_DEFINED
 #define SkYUVPlanesCache_DEFINED
 
-#include "include/core/SkTypes.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkYUVAIndex.h"
+#include "include/core/SkYUVASizeInfo.h"
+#include "src/core/SkCachedData.h"
 
-class SkCachedData;
 class SkResourceCache;
-class SkYUVAPixmaps;
 
 class SkYUVPlanesCache {
 public:
@@ -23,15 +24,23 @@ public:
 
 
 
-    static SkCachedData* FindAndRef(uint32_t genID,
-                                    SkYUVAPixmaps* pixmaps,
+    struct Info {
+        SkYUVASizeInfo  fSizeInfo;
+        SkYUVAIndex     fYUVAIndices[SkYUVAIndex::kIndexCount];
+        SkYUVColorSpace fColorSpace;
+    };
+    
+
+
+
+
+    static SkCachedData* FindAndRef(uint32_t genID, Info* info,
                                     SkResourceCache* localCache = nullptr);
 
     
 
 
-
-    static void Add(uint32_t genID, SkCachedData* data, const SkYUVAPixmaps& pixmaps,
+    static void Add(uint32_t genID, SkCachedData* data, Info* info,
                     SkResourceCache* localCache = nullptr);
 };
 

@@ -10,6 +10,7 @@
 
 #include "include/core/SkBlendMode.h"
 #include "include/core/SkColor.h"
+#include "include/core/SkFilterQuality.h"
 #include "include/core/SkFlattenable.h"
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkMatrix.h"
@@ -17,13 +18,13 @@
 
 class SkArenaAlloc;
 class SkBitmap;
-class SkBlender;
 class SkColorFilter;
 class SkColorSpace;
 class SkImage;
 class SkPath;
 class SkPicture;
 class SkRasterPipeline;
+class GrContext;
 class GrFragmentProcessor;
 
 
@@ -57,6 +58,61 @@ public:
     }
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    enum GradientType {
+        kNone_GradientType,
+        kColor_GradientType,
+        kLinear_GradientType,
+        kRadial_GradientType,
+        kSweep_GradientType,
+        kConical_GradientType,
+        kLast_GradientType = kConical_GradientType,
+    };
+
+    struct GradientInfo {
+        int         fColorCount;    
+                                    
+                                    
+                                    
+        SkColor*    fColors;        
+        SkScalar*   fColorOffsets;  
+        SkPoint     fPoint[2];      
+        SkScalar    fRadius[2];     
+        SkTileMode  fTileMode;
+        uint32_t    fGradientFlags; 
+    };
+
+    
+    virtual GradientType asAGradient(GradientInfo* info) const;
+
+    
     
 
     
@@ -75,7 +131,7 @@ private:
     SkShader() = default;
     friend class SkShaderBase;
 
-    using INHERITED = SkFlattenable;
+    typedef SkFlattenable INHERITED;
 };
 
 class SK_API SkShaders {
@@ -83,9 +139,14 @@ public:
     static sk_sp<SkShader> Empty();
     static sk_sp<SkShader> Color(SkColor);
     static sk_sp<SkShader> Color(const SkColor4f&, sk_sp<SkColorSpace>);
-    static sk_sp<SkShader> Blend(SkBlendMode mode, sk_sp<SkShader> dst, sk_sp<SkShader> src);
-    static sk_sp<SkShader> Blend(sk_sp<SkBlender>, sk_sp<SkShader> dst, sk_sp<SkShader> src);
-    static sk_sp<SkShader> CoordClamp(sk_sp<SkShader>, const SkRect& subset);
+    static sk_sp<SkShader> Blend(SkBlendMode mode, sk_sp<SkShader> dst, sk_sp<SkShader> src,
+                                 const SkMatrix* localMatrix = nullptr);
+    static sk_sp<SkShader> Lerp(float t, sk_sp<SkShader> dst, sk_sp<SkShader> src,
+                                const SkMatrix* localMatrix = nullptr);
+
+    static sk_sp<SkShader> Lerp(sk_sp<SkShader> red, sk_sp<SkShader> dst, sk_sp<SkShader> src,
+                                const SkMatrix* localMatrix = nullptr);
+
 private:
     SkShaders() = delete;
 };

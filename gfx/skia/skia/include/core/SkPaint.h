@@ -8,28 +8,20 @@
 #ifndef SkPaint_DEFINED
 #define SkPaint_DEFINED
 
+#include "include/core/SkBlendMode.h"
 #include "include/core/SkColor.h"
+#include "include/core/SkFilterQuality.h"
 #include "include/core/SkRefCnt.h"
-#include "include/core/SkScalar.h"
-#include "include/core/SkTypes.h"
-#include "include/private/base/SkCPUTypes.h"
-#include "include/private/base/SkFloatingPoint.h"
-#include "include/private/base/SkTo.h"
-#include "include/private/base/SkTypeTraits.h"
+#include "include/private/SkTo.h"
 
-#include <cstdint>
-#include <optional>
-#include <type_traits>
-
-class SkBlender;
 class SkColorFilter;
 class SkColorSpace;
+struct SkRect;
 class SkImageFilter;
 class SkMaskFilter;
+class SkPath;
 class SkPathEffect;
 class SkShader;
-enum class SkBlendMode;
-struct SkRect;
 
 
 
@@ -45,8 +37,6 @@ class SK_API SkPaint {
 public:
 
     
-
-
 
 
 
@@ -77,13 +67,9 @@ public:
 
 
 
-
-
     SkPaint(const SkPaint& paint);
 
     
-
-
 
 
 
@@ -109,13 +95,9 @@ public:
 
 
 
-
-
     SkPaint& operator=(const SkPaint& paint);
 
     
-
-
 
 
 
@@ -154,6 +136,18 @@ public:
 
 
 
+
+
+
+
+
+
+
+    uint32_t getHash() const;
+
+    
+
+
     void reset();
 
     
@@ -187,6 +181,25 @@ public:
 
 
 
+    SkFilterQuality getFilterQuality() const {
+        return (SkFilterQuality)fBitfields.fFilterQuality;
+    }
+
+    
+
+
+
+
+
+
+    void setFilterQuality(SkFilterQuality quality);
+
+    
+
+
+
+
+
 
 
     enum Style : uint8_t {
@@ -201,6 +214,8 @@ public:
 
     
 
+
+
     Style getStyle() const { return (Style)fBitfields.fStyle; }
 
     
@@ -208,13 +223,7 @@ public:
 
 
 
-
     void setStyle(Style style);
-
-    
-
-
-    void setStroke(bool);
 
     
 
@@ -232,8 +241,6 @@ public:
     SkColor4f getColor4f() const { return fColor4f; }
 
     
-
-
 
 
 
@@ -261,9 +268,7 @@ public:
     float getAlphaf() const { return fColor4f.fA; }
 
     
-    uint8_t getAlpha() const {
-        return static_cast<uint8_t>(sk_float_round2int(this->getAlphaf() * 255));
-    }
+    uint8_t getAlpha() const { return uint8_t(sk_float_round2int(this->getAlphaf() * 255)); }
 
     
 
@@ -288,8 +293,6 @@ public:
 
 
 
-
-
     void setARGB(U8CPU a, U8CPU r, U8CPU g, U8CPU b);
 
     
@@ -305,10 +308,6 @@ public:
 
 
 
-
-
-
-
     void setStrokeWidth(SkScalar width);
 
     
@@ -318,8 +317,6 @@ public:
     SkScalar getStrokeMiter() const { return fMiterLimit; }
 
     
-
-
 
 
 
@@ -369,6 +366,8 @@ public:
 
     
 
+
+
     Cap getStrokeCap() const { return (Cap)fBitfields.fCapType; }
 
     
@@ -380,13 +379,41 @@ public:
 
     
 
+
+
     Join getStrokeJoin() const { return (Join)fBitfields.fJoinType; }
 
     
 
 
 
+
     void setStrokeJoin(Join join);
+
+    
+
+
+
+
+
+
+
+
+    bool getFillPath(const SkPath& src, SkPath* dst, const SkRect* cullRect,
+                     SkScalar resScale = 1) const;
+
+    
+
+
+
+
+
+
+
+
+    bool getFillPath(const SkPath& src, SkPath* dst) const {
+        return this->getFillPath(src, dst, nullptr, 1);
+    }
 
     
 
@@ -402,14 +429,9 @@ public:
 
 
 
-
-
     sk_sp<SkShader> refShader() const;
 
     
-
-
-
 
 
 
@@ -430,14 +452,9 @@ public:
 
 
 
-
-
     sk_sp<SkColorFilter> refColorFilter() const;
 
     
-
-
-
 
 
 
@@ -450,53 +467,21 @@ public:
 
 
 
-    std::optional<SkBlendMode> asBlendMode() const;
+
+    SkBlendMode getBlendMode() const { return (SkBlendMode)fBitfields.fBlendMode; }
 
     
 
 
 
-    SkBlendMode getBlendMode_or(SkBlendMode defaultMode) const;
-
-    
-
-
-
-    bool isSrcOver() const;
-
-    
-
-
-
-    void setBlendMode(SkBlendMode mode);
+    bool isSrcOver() const { return (SkBlendMode)fBitfields.fBlendMode == SkBlendMode::kSrcOver; }
 
     
 
 
 
 
-
-
-    SkBlender* getBlender() const { return fBlender.get(); }
-
-    
-
-
-
-
-
-
-    sk_sp<SkBlender> refBlender() const;
-
-    
-
-
-
-
-
-
-
-    void setBlender(sk_sp<SkBlender> blender);
+    void setBlendMode(SkBlendMode mode) { fBitfields.fBlendMode = (unsigned)mode; }
 
     
 
@@ -510,14 +495,9 @@ public:
 
 
 
-
-
     sk_sp<SkPathEffect> refPathEffect() const;
 
     
-
-
-
 
 
 
@@ -539,14 +519,9 @@ public:
 
 
 
-
-
     sk_sp<SkMaskFilter> refMaskFilter() const;
 
     
-
-
-
 
 
 
@@ -568,8 +543,6 @@ public:
 
 
 
-
-
     sk_sp<SkImageFilter> refImageFilter() const;
 
     
@@ -580,13 +553,9 @@ public:
 
 
 
-
-
     void setImageFilter(sk_sp<SkImageFilter> imageFilter);
 
     
-
-
 
 
 
@@ -629,7 +598,23 @@ public:
 
 
 
-    const SkRect& computeFastBounds(const SkRect& orig, SkRect* storage) const;
+    const SkRect& computeFastBounds(const SkRect& orig, SkRect* storage) const {
+        
+        SkASSERT(orig.isSorted());
+        SkPaint::Style style = this->getStyle();
+        
+        if (kFill_Style == style) {
+            uintptr_t effects = 0;
+            effects |= reinterpret_cast<uintptr_t>(this->getMaskFilter());
+            effects |= reinterpret_cast<uintptr_t>(this->getPathEffect());
+            effects |= reinterpret_cast<uintptr_t>(this->getImageFilter());
+            if (!effects) {
+                return orig;
+            }
+        }
+
+        return this->doComputeFastBounds(orig, storage, style);
+    }
 
     
 
@@ -655,15 +640,12 @@ public:
     const SkRect& doComputeFastBounds(const SkRect& orig, SkRect* storage,
                                       Style style) const;
 
-    using sk_is_trivially_relocatable = std::true_type;
-
 private:
     sk_sp<SkPathEffect>   fPathEffect;
     sk_sp<SkShader>       fShader;
     sk_sp<SkMaskFilter>   fMaskFilter;
     sk_sp<SkColorFilter>  fColorFilter;
     sk_sp<SkImageFilter>  fImageFilter;
-    sk_sp<SkBlender>      fBlender;
 
     SkColor4f       fColor4f;
     SkScalar        fWidth;
@@ -675,21 +657,12 @@ private:
             unsigned    fCapType : 2;
             unsigned    fJoinType : 2;
             unsigned    fStyle : 2;
-            unsigned    fPadding : 24;  
+            unsigned    fFilterQuality : 2;
+            unsigned    fBlendMode : 8; 
+            unsigned    fPadding : 14;  
         } fBitfields;
         uint32_t fBitfieldsUInt;
     };
-
-    static_assert(::sk_is_trivially_relocatable<decltype(fPathEffect)>::value);
-    static_assert(::sk_is_trivially_relocatable<decltype(fShader)>::value);
-    static_assert(::sk_is_trivially_relocatable<decltype(fMaskFilter)>::value);
-    static_assert(::sk_is_trivially_relocatable<decltype(fColorFilter)>::value);
-    static_assert(::sk_is_trivially_relocatable<decltype(fImageFilter)>::value);
-    static_assert(::sk_is_trivially_relocatable<decltype(fBlender)>::value);
-    static_assert(::sk_is_trivially_relocatable<decltype(fColor4f)>::value);
-    static_assert(::sk_is_trivially_relocatable<decltype(fBitfields)>::value);
-
-    friend class SkPaintPriv;
 };
 
 #endif

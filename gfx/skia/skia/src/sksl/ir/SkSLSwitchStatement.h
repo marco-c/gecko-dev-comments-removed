@@ -8,95 +8,58 @@
 #ifndef SKSL_SWITCHSTATEMENT
 #define SKSL_SWITCHSTATEMENT
 
-#include "include/private/SkSLDefines.h"
-#include "include/private/SkSLIRNode.h"
-#include "include/private/SkSLStatement.h"
-#include "include/sksl/SkSLPosition.h"
-#include "src/sksl/ir/SkSLExpression.h"
-
-#include <memory>
-#include <string>
-#include <utility>
+#include "src/sksl/ir/SkSLStatement.h"
+#include "src/sksl/ir/SkSLSwitchCase.h"
 
 namespace SkSL {
 
-class Context;
-class SwitchCase;
 class SymbolTable;
 
 
 
 
-class SwitchStatement final : public Statement {
-public:
-    inline static constexpr Kind kIRNodeKind = Kind::kSwitch;
+struct SwitchStatement : public Statement {
+    SwitchStatement(int offset, bool isStatic, std::unique_ptr<Expression> value,
+                    std::vector<std::unique_ptr<SwitchCase>> cases,
+                    const std::shared_ptr<SymbolTable> symbols)
+    : INHERITED(offset, kSwitch_Kind)
+    , fIsStatic(isStatic)
+    , fValue(std::move(value))
+    , fSymbols(std::move(symbols))
+    , fCases(std::move(cases)) {}
 
-    SwitchStatement(Position pos, std::unique_ptr<Expression> value,
-                    StatementArray cases, std::shared_ptr<SymbolTable> symbols)
-        : INHERITED(pos, kIRNodeKind)
-        , fValue(std::move(value))
-        , fCases(std::move(cases))
-        , fSymbols(std::move(symbols)) {}
-
-    
-    
-    
-    static std::unique_ptr<Statement> Convert(const Context& context,
-                                              Position pos,
-                                              std::unique_ptr<Expression> value,
-                                              ExpressionArray caseValues,
-                                              StatementArray caseStatements,
-                                              std::shared_ptr<SymbolTable> symbolTable);
-
-    
-    
-    static std::unique_ptr<Statement> Make(const Context& context,
-                                           Position pos,
-                                           std::unique_ptr<Expression> value,
-                                           StatementArray cases,
-                                           std::shared_ptr<SymbolTable> symbolTable);
-
-    
-    
-    
-    
-    
-    static std::unique_ptr<Statement> BlockForCase(StatementArray* cases,
-                                                   SwitchCase* caseToCapture,
-                                                   std::shared_ptr<SymbolTable> symbolTable);
-
-    std::unique_ptr<Expression>& value() {
-        return fValue;
+    std::unique_ptr<Statement> clone() const override {
+        std::vector<std::unique_ptr<SwitchCase>> cloned;
+        for (const auto& s : fCases) {
+            cloned.push_back(std::unique_ptr<SwitchCase>((SwitchCase*) s->clone().release()));
+        }
+        return std::unique_ptr<Statement>(new SwitchStatement(fOffset, fIsStatic, fValue->clone(),
+                                                              std::move(cloned), fSymbols));
     }
 
-    const std::unique_ptr<Expression>& value() const {
-        return fValue;
+    String description() const override {
+        String result;
+        if (fIsStatic) {
+            result += "@";
+        }
+        result += String::printf("switch (%s) {\n", fValue->description().c_str());
+        for (const auto& c : fCases) {
+            result += c->description();
+        }
+        result += "}";
+        return result;
     }
 
-    StatementArray& cases() {
-        return fCases;
-    }
-
-    const StatementArray& cases() const {
-        return fCases;
-    }
-
-    const std::shared_ptr<SymbolTable>& symbols() const {
-        return fSymbols;
-    }
-
-    std::unique_ptr<Statement> clone() const override;
-
-    std::string description() const override;
-
-private:
+    bool fIsStatic;
     std::unique_ptr<Expression> fValue;
-    StatementArray fCases;  
-    std::shared_ptr<SymbolTable> fSymbols;
+    
+    
+    const std::shared_ptr<SymbolTable> fSymbols;
+    std::vector<std::unique_ptr<SwitchCase>> fCases;
 
-    using INHERITED = Statement;
+    typedef Statement INHERITED;
 };
 
-}  
+} 
 
 #endif

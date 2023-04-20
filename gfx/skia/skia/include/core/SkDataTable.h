@@ -8,12 +8,9 @@
 #ifndef SkDataTable_DEFINED
 #define SkDataTable_DEFINED
 
-#include "include/core/SkRefCnt.h"
-#include "include/private/base/SkAPI.h"
-#include "include/private/base/SkAssert.h"
-
-#include <cstdint>
-#include <cstring>
+#include "include/core/SkData.h"
+#include "include/core/SkString.h"
+#include "include/private/SkTDArray.h"
 
 
 
@@ -112,11 +109,11 @@ private:
     SkDataTable(const void* array, size_t elemSize, int count,
                 FreeProc, void* context);
     SkDataTable(const Dir*, int count, FreeProc, void* context);
-    ~SkDataTable() override;
+    virtual ~SkDataTable();
 
     friend class SkDataTableBuilder;    
 
-    using INHERITED = SkRefCnt;
+    typedef SkRefCnt INHERITED;
 };
 
 #endif

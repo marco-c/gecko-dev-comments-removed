@@ -10,9 +10,15 @@
 
 #include "include/core/SkPaint.h"
 
+class SkFont;
 class SkReadBuffer;
 class SkWriteBuffer;
-enum SkColorType : int;
+
+enum SkReadPaintResult {
+    kFailed_ReadPaint,
+    kSuccess_JustPaint,
+    kSuccess_PaintAndFont,
+};
 
 class SkPaintPriv {
 public:
@@ -49,15 +55,20 @@ public:
     
 
 
-    static SkPaint Unflatten(SkReadBuffer& buffer);
 
-    
-    
-    
-    
-    
-    static void RemoveColorFilter(SkPaint*, SkColorSpace* dstCS);
 
+
+
+
+
+
+
+
+
+    static SkReadPaintResult Unflatten(SkPaint* paint, SkReadBuffer& buffer, SkFont* font);
+
+private:
+    static SkReadPaintResult Unflatten_PreV68(SkPaint* paint, SkReadBuffer& buffer, SkFont*);
 };
 
 #endif

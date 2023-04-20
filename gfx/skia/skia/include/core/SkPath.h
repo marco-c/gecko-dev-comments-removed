@@ -10,31 +10,15 @@
 
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPathTypes.h"
-#include "include/core/SkPoint.h"
-#include "include/core/SkRect.h"
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkScalar.h"
-#include "include/core/SkTypes.h"
-#include "include/private/base/SkDebug.h"
-#include "include/private/base/SkTo.h"
-#include "include/private/base/SkTypeTraits.h"
+#include "include/private/SkPathRef.h"
+#include "include/private/SkTo.h"
 
-#include <atomic>
-#include <cstddef>
-#include <cstdint>
 #include <initializer_list>
-#include <tuple>
-#include <type_traits>
 
+class SkAutoPathBoundsUpdate;
 class SkData;
-class SkPathRef;
 class SkRRect;
 class SkWStream;
-enum class SkPathConvexity;
-enum class SkPathFirstDirection;
-
-
-
 
 
 
@@ -56,58 +40,26 @@ enum class SkPathFirstDirection;
 
 class SK_API SkPath {
 public:
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static SkPath Make(const SkPoint[],  int pointCount,
-                       const uint8_t[],  int verbCount,
-                       const SkScalar[], int conicWeightCount,
-                       SkPathFillType, bool isVolatile = false);
-
-    static SkPath Rect(const SkRect&, SkPathDirection = SkPathDirection::kCW,
-                       unsigned startIndex = 0);
-    static SkPath Oval(const SkRect&, SkPathDirection = SkPathDirection::kCW);
-    static SkPath Oval(const SkRect&, SkPathDirection, unsigned startIndex);
-    static SkPath Circle(SkScalar center_x, SkScalar center_y, SkScalar radius,
-                         SkPathDirection dir = SkPathDirection::kCW);
-    static SkPath RRect(const SkRRect&, SkPathDirection dir = SkPathDirection::kCW);
-    static SkPath RRect(const SkRRect&, SkPathDirection, unsigned startIndex);
-    static SkPath RRect(const SkRect& bounds, SkScalar rx, SkScalar ry,
-                        SkPathDirection dir = SkPathDirection::kCW);
-
-    static SkPath Polygon(const SkPoint pts[], int count, bool isClosed,
-                          SkPathFillType = SkPathFillType::kWinding,
-                          bool isVolatile = false);
-
-    static SkPath Polygon(const std::initializer_list<SkPoint>& list, bool isClosed,
-                          SkPathFillType fillType = SkPathFillType::kWinding,
-                          bool isVolatile = false) {
-        return Polygon(list.begin(), SkToInt(list.size()), isClosed, fillType, isVolatile);
-    }
-
-    static SkPath Line(const SkPoint a, const SkPoint b) {
-        return Polygon({a, b}, false);
-    }
 
     
 
 
+
+
+
+
+
+
+
+
+
+
+    enum Direction : int {
+        kCW_Direction  = static_cast<int>(SkPathDirection::kCW),
+        kCCW_Direction = static_cast<int>(SkPathDirection::kCCW)
+    };
+
+    
 
 
 
@@ -126,19 +78,13 @@ public:
 
 
 
-
-
     SkPath(const SkPath& path);
 
     
 
-
-
     ~SkPath();
 
     
-
-
 
 
 
@@ -182,13 +128,9 @@ public:
 
 
 
-
-
     bool isInterpolatable(const SkPath& compare) const;
 
     
-
-
 
 
 
@@ -213,12 +155,33 @@ public:
 
 
 
-    SkPathFillType getFillType() const { return (SkPathFillType)fFillType; }
+
+
+
+
+
+    enum FillType {
+        kWinding_FillType        = static_cast<int>(SkPathFillType::kWinding),
+        kEvenOdd_FillType        = static_cast<int>(SkPathFillType::kEvenOdd),
+        kInverseWinding_FillType = static_cast<int>(SkPathFillType::kInverseWinding),
+        kInverseEvenOdd_FillType = static_cast<int>(SkPathFillType::kInverseEvenOdd)
+    };
 
     
 
 
-    void setFillType(SkPathFillType ft) {
+
+
+
+    FillType getFillType() const { return (FillType)fFillType; }
+
+    
+
+
+
+
+
+    void setFillType(FillType ft) {
         fFillType = SkToU8(ft);
     }
 
@@ -227,7 +190,7 @@ public:
 
 
 
-    bool isInverseFillType() const { return SkPathFillType_IsInverse(this->getFillType()); }
+    bool isInverseFillType() const { return IsInverseFillType((FillType)fFillType); }
 
     
 
@@ -238,11 +201,69 @@ public:
 
     
 
-    bool isConvex() const;
+
+
+
+
+
+
+
+
+
+
+    enum Convexity : uint8_t {
+        kUnknown_Convexity = static_cast<int>(SkPathConvexityType::kUnknown),
+        kConvex_Convexity  = static_cast<int>(SkPathConvexityType::kConvex),
+        kConcave_Convexity = static_cast<int>(SkPathConvexityType::kConcave),
+    };
 
     
 
 
+
+
+
+    Convexity getConvexity() const {
+        Convexity convexity = this->getConvexityOrUnknown();
+        if (convexity != kUnknown_Convexity) {
+            return convexity;
+        }
+        return this->internalGetConvexity();
+    }
+
+    
+
+
+
+
+    Convexity getConvexityOrUnknown() const { return fConvexity.load(std::memory_order_relaxed); }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    void setConvexity(Convexity convexity);
+
+    
+
+
+
+
+
+    bool isConvex() const {
+        return kConvex_Convexity == this->getConvexity();
+    }
+
+    
 
 
 
@@ -263,13 +284,9 @@ public:
 
 
 
-
-
     bool isRRect(SkRRect* rrect) const;
 
     
-
-
 
 
 
@@ -286,8 +303,6 @@ public:
 
 
 
-
-
     SkPath& rewind();
 
     
@@ -296,11 +311,12 @@ public:
 
 
 
-    bool isEmpty() const;
+    bool isEmpty() const {
+        SkDEBUGCODE(this->validate();)
+        return 0 == fPathRef->countVerbs();
+    }
 
     
-
-
 
 
 
@@ -314,7 +330,10 @@ public:
 
 
 
-    bool isFinite() const;
+    bool isFinite() const {
+        SkDEBUGCODE(this->validate();)
+        return fPathRef->isFinite();
+    }
 
     
 
@@ -342,15 +361,11 @@ public:
 
 
 
-
-    SkPath& setIsVolatile(bool isVolatile) {
+    void setIsVolatile(bool isVolatile) {
         fIsVolatile = isVolatile;
-        return *this;
     }
 
     
-
-
 
 
 
@@ -402,8 +417,6 @@ public:
 
 
 
-
-
     bool isLine(SkPoint line[2]) const;
 
     
@@ -411,13 +424,9 @@ public:
 
 
 
-
-
     int countPoints() const;
 
     
-
-
 
 
 
@@ -434,8 +443,6 @@ public:
 
 
 
-
-
     int getPoints(SkPoint points[], int max) const;
 
     
@@ -443,13 +450,9 @@ public:
 
 
 
-
-
     int countVerbs() const;
 
     
-
-
 
 
 
@@ -474,8 +477,6 @@ public:
 
 
 
-
-
     void swap(SkPath& other);
 
     
@@ -487,7 +488,9 @@ public:
 
 
 
-    const SkRect& getBounds() const;
+    const SkRect& getBounds() const {
+        return fPathRef->getBounds();
+    }
 
     
 
@@ -517,13 +520,9 @@ public:
 
 
 
-
-
     SkRect computeTightBounds() const;
 
     
-
-
 
 
 
@@ -542,17 +541,14 @@ public:
 
 
 
-
-
     void incReserve(int extraPtCount);
-
-#ifdef SK_HIDE_PATH_EDIT_METHODS
-private:
-#endif
 
     
 
 
+    void shrinkToFit();
+
+    
 
 
 
@@ -578,13 +574,9 @@ private:
 
 
 
-
-
     SkPath& rMoveTo(SkScalar dx, SkScalar dy);
 
     
-
-
 
 
 
@@ -621,15 +613,9 @@ private:
 
 
 
-
-
-
-
     SkPath& rLineTo(SkScalar dx, SkScalar dy);
 
     
-
-
 
 
 
@@ -662,11 +648,6 @@ private:
     }
 
     
-
-
-
-
-
 
 
 
@@ -836,15 +817,9 @@ private:
 
 
 
-
-
     SkPath& arcTo(const SkRect& oval, SkScalar startAngle, SkScalar sweepAngle, bool forceMoveTo);
 
     
-
-
-
-
 
 
 
@@ -924,7 +899,7 @@ private:
 
 
     SkPath& arcTo(SkScalar rx, SkScalar ry, SkScalar xAxisRotate, ArcSize largeArc,
-                  SkPathDirection sweep, SkScalar x, SkScalar y);
+                  Direction sweep, SkScalar x, SkScalar y);
 
     
 
@@ -949,7 +924,7 @@ private:
 
 
 
-    SkPath& arcTo(const SkPoint r, SkScalar xAxisRotate, ArcSize largeArc, SkPathDirection sweep,
+    SkPath& arcTo(const SkPoint r, SkScalar xAxisRotate, ArcSize largeArc, Direction sweep,
                const SkPoint xy) {
         return this->arcTo(r.fX, r.fY, xAxisRotate, largeArc, sweep, xy.fX, xy.fY);
     }
@@ -981,7 +956,7 @@ private:
 
 
     SkPath& rArcTo(SkScalar rx, SkScalar ry, SkScalar xAxisRotate, ArcSize largeArc,
-                   SkPathDirection sweep, SkScalar dx, SkScalar dy);
+                   Direction sweep, SkScalar dx, SkScalar dy);
 
     
 
@@ -993,13 +968,37 @@ private:
 
 
 
-
-
     SkPath& close();
 
-#ifdef SK_HIDE_PATH_EDIT_METHODS
-public:
-#endif
+    
+
+
+
+
+
+
+    static bool IsInverseFillType(FillType fill) {
+        static_assert(0 == kWinding_FillType, "fill_type_mismatch");
+        static_assert(1 == kEvenOdd_FillType, "fill_type_mismatch");
+        static_assert(2 == kInverseWinding_FillType, "fill_type_mismatch");
+        static_assert(3 == kInverseEvenOdd_FillType, "fill_type_mismatch");
+        return (fill & 2) != 0;
+    }
+
+    
+
+
+
+
+
+
+    static FillType ConvertToNonInverseFillType(FillType fill) {
+        static_assert(0 == kWinding_FillType, "fill_type_mismatch");
+        static_assert(1 == kEvenOdd_FillType, "fill_type_mismatch");
+        static_assert(2 == kInverseWinding_FillType, "fill_type_mismatch");
+        static_assert(3 == kInverseEvenOdd_FillType, "fill_type_mismatch");
+        return (FillType)(fill & 1);
+    }
 
     
 
@@ -1042,13 +1041,30 @@ public:
 
 
 
+    bool isRect(SkRect* rect, bool* isClosed = nullptr, Direction* direction = nullptr) const;
+
+    
 
 
-    bool isRect(SkRect* rect, bool* isClosed = nullptr, SkPathDirection* direction = nullptr) const;
 
-#ifdef SK_HIDE_PATH_EDIT_METHODS
-private:
-#endif
+
+
+
+
+
+    SkPath& addRect(const SkRect& rect, Direction dir = kCW_Direction);
+
+    
+
+
+
+
+
+
+
+
+
+    SkPath& addRect(const SkRect& rect, Direction dir, unsigned start);
 
     
 
@@ -1062,29 +1078,20 @@ private:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    SkPath& addRect(const SkRect& rect, SkPathDirection dir, unsigned start);
-
-    SkPath& addRect(const SkRect& rect, SkPathDirection dir = SkPathDirection::kCW) {
-        return this->addRect(rect, dir, 0);
-    }
 
     SkPath& addRect(SkScalar left, SkScalar top, SkScalar right, SkScalar bottom,
-                    SkPathDirection dir = SkPathDirection::kCW) {
-        return this->addRect({left, top, right, bottom}, dir, 0);
-    }
+                    Direction dir = kCW_Direction);
+
+    
+
+
+
+
+
+
+
+
+    SkPath& addOval(const SkRect& oval, Direction dir = kCW_Direction);
 
     
 
@@ -1096,22 +1103,7 @@ private:
 
 
 
-
-    SkPath& addOval(const SkRect& oval, SkPathDirection dir = SkPathDirection::kCW);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    SkPath& addOval(const SkRect& oval, SkPathDirection dir, unsigned start);
+    SkPath& addOval(const SkRect& oval, Direction dir, unsigned start);
 
     
 
@@ -1126,11 +1118,9 @@ private:
 
 
     SkPath& addCircle(SkScalar x, SkScalar y, SkScalar radius,
-                      SkPathDirection dir = SkPathDirection::kCW);
+                      Direction dir = kCW_Direction);
 
     
-
-
 
 
 
@@ -1165,7 +1155,7 @@ private:
 
 
     SkPath& addRoundRect(const SkRect& rect, SkScalar rx, SkScalar ry,
-                         SkPathDirection dir = SkPathDirection::kCW);
+                         Direction dir = kCW_Direction);
 
     
 
@@ -1177,7 +1167,7 @@ private:
 
 
     SkPath& addRoundRect(const SkRect& rect, const SkScalar radii[],
-                         SkPathDirection dir = SkPathDirection::kCW);
+                         Direction dir = kCW_Direction);
 
     
 
@@ -1190,9 +1180,7 @@ private:
 
 
 
-
-
-    SkPath& addRRect(const SkRRect& rrect, SkPathDirection dir = SkPathDirection::kCW);
+    SkPath& addRRect(const SkRRect& rrect, Direction dir = kCW_Direction);
 
     
 
@@ -1203,13 +1191,9 @@ private:
 
 
 
-
-
-    SkPath& addRRect(const SkRRect& rrect, SkPathDirection dir, unsigned start);
+    SkPath& addRRect(const SkRRect& rrect, Direction dir, unsigned start);
 
     
-
-
 
 
 
@@ -1237,10 +1221,6 @@ private:
     SkPath& addPoly(const std::initializer_list<SkPoint>& list, bool close) {
         return this->addPoly(list.begin(), SkToInt(list.size()), close);
     }
-
-#ifdef SK_HIDE_PATH_EDIT_METHODS
-public:
-#endif
 
     
 
@@ -1303,13 +1283,9 @@ public:
 
 
 
-
-
     SkPath& reverseAddPath(const SkPath& src);
 
     
-
-
 
 
 
@@ -1335,11 +1311,7 @@ public:
 
 
 
-
-
-
-    void transform(const SkMatrix& matrix, SkPath* dst,
-                   SkApplyPerspectiveClip pc = SkApplyPerspectiveClip::kYes) const;
+    void transform(const SkMatrix& matrix, SkPath* dst) const;
 
     
 
@@ -1347,26 +1319,11 @@ public:
 
 
 
-
-    void transform(const SkMatrix& matrix,
-                   SkApplyPerspectiveClip pc = SkApplyPerspectiveClip::kYes) {
-        this->transform(matrix, this, pc);
-    }
-
-    SkPath makeTransform(const SkMatrix& m,
-                         SkApplyPerspectiveClip pc = SkApplyPerspectiveClip::kYes) const {
-        SkPath dst;
-        this->transform(m, &dst, pc);
-        return dst;
-    }
-
-    SkPath makeScale(SkScalar sx, SkScalar sy) {
-        return this->makeTransform(SkMatrix::Scale(sx, sy), SkApplyPerspectiveClip::kNo);
+    void transform(const SkMatrix& matrix) {
+        this->transform(matrix, this);
     }
 
     
-
-
 
 
 
@@ -1375,8 +1332,6 @@ public:
     bool getLastPt(SkPoint* lastPt) const;
 
     
-
-
 
 
 
@@ -1412,7 +1367,7 @@ public:
 
 
 
-    uint32_t getSegmentMasks() const;
+    uint32_t getSegmentMasks() const { return fPathRef->getSegmentMasks(); }
 
     
 
@@ -1425,7 +1380,7 @@ public:
         kConic_Verb = static_cast<int>(SkPathVerb::kConic),
         kCubic_Verb = static_cast<int>(SkPathVerb::kCubic),
         kClose_Verb = static_cast<int>(SkPathVerb::kClose),
-        kDone_Verb  = kClose_Verb + 1
+        kDone_Verb  = static_cast<int>(SkPathVerb::kDone),
     };
 
     
@@ -1442,13 +1397,9 @@ public:
 
 
 
-
-
         Iter();
 
         
-
-
 
 
 
@@ -1465,8 +1416,6 @@ public:
 
 
 
-
-
         void setPath(const SkPath& path, bool forceClose);
 
         
@@ -1477,9 +1426,12 @@ public:
 
 
 
-
-
         Verb next(SkPoint pts[4]);
+
+        
+        Verb next(SkPoint pts[4], bool , bool  = false) {
+            return this->next(pts);
+        }
 
         
 
@@ -1507,8 +1459,6 @@ public:
 
 
 
-
-
         bool isClosedContour() const;
 
     private:
@@ -1521,86 +1471,22 @@ public:
         bool            fForceClose;
         bool            fNeedClose;
         bool            fCloseLine;
+        enum SegmentState : uint8_t {
+            
+            kEmptyContour_SegmentState,
+            
+            kAfterMove_SegmentState,
+            
+            kAfterPrimitive_SegmentState
+        };
+        SegmentState    fSegmentState;
 
+        inline const SkPoint& cons_moveTo();
         Verb autoClose(SkPoint pts[2]);
     };
 
-private:
     
 
-
-
-
-
-    class RangeIter {
-    public:
-        RangeIter() = default;
-        RangeIter(const uint8_t* verbs, const SkPoint* points, const SkScalar* weights)
-                : fVerb(verbs), fPoints(points), fWeights(weights) {
-            SkDEBUGCODE(fInitialPoints = fPoints;)
-        }
-        bool operator!=(const RangeIter& that) const {
-            return fVerb != that.fVerb;
-        }
-        bool operator==(const RangeIter& that) const {
-            return fVerb == that.fVerb;
-        }
-        RangeIter& operator++() {
-            auto verb = static_cast<SkPathVerb>(*fVerb++);
-            fPoints += pts_advance_after_verb(verb);
-            if (verb == SkPathVerb::kConic) {
-                ++fWeights;
-            }
-            return *this;
-        }
-        RangeIter operator++(int) {
-            RangeIter copy = *this;
-            this->operator++();
-            return copy;
-        }
-        SkPathVerb peekVerb() const {
-            return static_cast<SkPathVerb>(*fVerb);
-        }
-        std::tuple<SkPathVerb, const SkPoint*, const SkScalar*> operator*() const {
-            SkPathVerb verb = this->peekVerb();
-            
-            
-            
-            int backset = pts_backset_for_verb(verb);
-            SkASSERT(fPoints + backset >= fInitialPoints);
-            return {verb, fPoints + backset, fWeights};
-        }
-    private:
-        constexpr static int pts_advance_after_verb(SkPathVerb verb) {
-            switch (verb) {
-                case SkPathVerb::kMove: return 1;
-                case SkPathVerb::kLine: return 1;
-                case SkPathVerb::kQuad: return 2;
-                case SkPathVerb::kConic: return 2;
-                case SkPathVerb::kCubic: return 3;
-                case SkPathVerb::kClose: return 0;
-            }
-            SkUNREACHABLE;
-        }
-        constexpr static int pts_backset_for_verb(SkPathVerb verb) {
-            switch (verb) {
-                case SkPathVerb::kMove: return 0;
-                case SkPathVerb::kLine: return -1;
-                case SkPathVerb::kQuad: return -1;
-                case SkPathVerb::kConic: return -1;
-                case SkPathVerb::kCubic: return -1;
-                case SkPathVerb::kClose: return -1;
-            }
-            SkUNREACHABLE;
-        }
-        const uint8_t* fVerb = nullptr;
-        const SkPoint* fPoints = nullptr;
-        const SkScalar* fWeights = nullptr;
-        SkDEBUGCODE(const SkPoint* fInitialPoints = nullptr;)
-    };
-public:
-
-    
 
 
     class SK_API RawIter {
@@ -1627,7 +1513,9 @@ public:
 
 
 
-        void setPath(const SkPath&);
+        void setPath(const SkPath& path) {
+            fRawIter.setPathRef(*path.fPathRef.get());
+        }
 
         
 
@@ -1636,14 +1524,16 @@ public:
 
 
 
-        Verb next(SkPoint[4]);
+        Verb next(SkPoint pts[4]) {
+            return (Verb) fRawIter.next(pts);
+        }
 
         
 
 
 
         Verb peek() const {
-            return (fIter != fEnd) ? static_cast<Verb>(std::get<0>(*fIter)) : kDone_Verb;
+            return (Verb) fRawIter.peek();
         }
 
         
@@ -1654,20 +1544,16 @@ public:
 
 
         SkScalar conicWeight() const {
-            return fConicWeight;
+            return fRawIter.conicWeight();
         }
 
     private:
-        RangeIter fIter;
-        RangeIter fEnd;
-        SkScalar fConicWeight = 0;
+        SkPathRef::Iter fRawIter;
         friend class SkPath;
 
     };
 
     
-
-
 
 
 
@@ -1685,18 +1571,25 @@ public:
 
 
 
-    void dump(SkWStream* stream, bool dumpAsHex) const;
-
-    void dump() const { this->dump(nullptr, false); }
-    void dumpHex() const { this->dump(nullptr, true); }
-
-    
-    void dumpArrays(SkWStream* stream, bool dumpAsHex) const;
-    void dumpArrays() const { this->dumpArrays(nullptr, false); }
+    void dump(SkWStream* stream, bool forceClose, bool dumpAsHex) const;
 
     
 
 
+
+
+    void dump() const;
+
+    
+
+
+
+
+
+
+    void dumpHex() const;
+
+    
 
 
 
@@ -1720,13 +1613,9 @@ public:
 
 
 
-
-
     sk_sp<SkData> serialize() const;
 
     
-
-
 
 
 
@@ -1752,8 +1641,6 @@ public:
 
 
 
-
-
     uint32_t getGenerationID() const;
 
     
@@ -1762,22 +1649,15 @@ public:
 
 
 
-    bool isValid() const;
-
-    using sk_is_trivially_relocatable = std::true_type;
+    bool isValid() const { return this->isValidImpl() && fPathRef->isValid(); }
 
 private:
-    SkPath(sk_sp<SkPathRef>, SkPathFillType, bool isVolatile, SkPathConvexity,
-           SkPathFirstDirection firstDirection);
-
     sk_sp<SkPathRef>               fPathRef;
     int                            fLastMoveToIndex;
-    mutable std::atomic<uint8_t>   fConvexity;      
+    mutable std::atomic<Convexity> fConvexity;
     mutable std::atomic<uint8_t>   fFirstDirection; 
     uint8_t                        fFillType    : 2;
     uint8_t                        fIsVolatile  : 1;
-
-    static_assert(::sk_is_trivially_relocatable<decltype(fPathRef)>::value);
 
     
 
@@ -1815,16 +1695,14 @@ private:
 
     inline bool hasOnlyMoveTos() const;
 
-    SkPathConvexity computeConvexity() const;
+    Convexity internalGetConvexity() const;
 
-    bool isValidImpl() const;
     
 
 
-#ifdef SK_DEBUG
-    void validate() const;
-    void validateRef() const;
-#endif
+    SkDEBUGCODE(void validate() const { SkASSERT(this->isValidImpl()); } )
+    bool isValidImpl() const;
+    SkDEBUGCODE(void validateRef() const { fPathRef->validate(); } )
 
     
     bool isZeroLengthSincePoint(int startPtIndex) const;
@@ -1832,52 +1710,30 @@ private:
     
 
 
-    bool hasComputedBounds() const;
+    bool hasComputedBounds() const {
+        SkDEBUGCODE(this->validate();)
+        return fPathRef->hasComputedBounds();
+    }
+
 
     
-    void setBounds(const SkRect& rect);
+    void setBounds(const SkRect& rect) {
+        SkPathRef::Editor ed(&fPathRef);
+
+        ed.setBounds(rect);
+    }
 
     void setPt(int index, SkScalar x, SkScalar y);
 
-    SkPath& dirtyAfterEdit();
-
     
     
-    void  setConvexity(SkPathConvexity) const;
-
-    void setFirstDirection(SkPathFirstDirection) const;
-    SkPathFirstDirection getFirstDirection() const;
-
-    
-
-
-    SkPathConvexity getConvexity() const;
-
-    SkPathConvexity getConvexityOrUnknown() const;
-
-    
-    bool isConvexityAccurate() const;
-
-    
-
-
-
-
-
-    void setConvexity(SkPathConvexity convexity);
-
-    
-
-
-
-
-
-    void shrinkToFit();
+    void    setConvexity(Convexity) const;
+    void    setFirstDirection(uint8_t) const;
+    uint8_t getFirstDirection() const;
 
     friend class SkAutoPathBoundsUpdate;
     friend class SkAutoDisableOvalCheck;
     friend class SkAutoDisableDirectionCheck;
-    friend class SkPathBuilder;
     friend class SkPathEdgeIter;
     friend class SkPathWriter;
     friend class SkOpBuilder;

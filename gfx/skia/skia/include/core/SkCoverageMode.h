@@ -8,6 +8,8 @@
 #ifndef SkCoverageMode_DEFINED
 #define SkCoverageMode_DEFINED
 
+#include "include/core/SkTypes.h"
+
 
 
 

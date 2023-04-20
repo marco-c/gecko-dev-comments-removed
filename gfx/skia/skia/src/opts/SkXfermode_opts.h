@@ -8,8 +8,9 @@
 #ifndef Sk4pxXfermode_DEFINED
 #define Sk4pxXfermode_DEFINED
 
-#include "src/base/SkMSAN.h"
+#include "include/private/SkNx.h"
 #include "src/core/Sk4px.h"
+#include "src/core/SkMSAN.h"
 #include "src/core/SkXfermodePriv.h"
 
 #ifdef SK_FORCE_RASTER_PIPELINE_BLITTER
@@ -65,7 +66,7 @@ static Sk4px xfer_aa(const Sk4px& d, const Sk4px& s, const Sk4px& aa) {
 
 
 #define XFERMODE_AA(Xfermode) \
-    template <> inline Sk4px xfer_aa<Xfermode>(const Sk4px& d, const Sk4px& s, const Sk4px& aa)
+    template <> Sk4px xfer_aa<Xfermode>(const Sk4px& d, const Sk4px& s, const Sk4px& aa)
 
 
 XFERMODE_AA(Plus) {  
@@ -78,10 +79,10 @@ XFERMODE_AA(Plus) {
 
 
 template <typename Xfermode> static void mark_dst_initialized_if_safe(void*, void*) {}
-template <> inline void mark_dst_initialized_if_safe<Src>(void* dst, void* end) {
+template <> void mark_dst_initialized_if_safe<Src>(void* dst, void* end) {
     sk_msan_mark_initialized(dst, end, "Src doesn't read dst.");
 }
-template <> inline void mark_dst_initialized_if_safe<Clear>(void* dst, void* end) {
+template <> void mark_dst_initialized_if_safe<Clear>(void* dst, void* end) {
     sk_msan_mark_initialized(dst, end, "Clear doesn't read dst.");
 }
 

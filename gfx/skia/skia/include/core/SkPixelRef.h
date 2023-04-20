@@ -9,13 +9,14 @@
 #define SkPixelRef_DEFINED
 
 #include "include/core/SkBitmap.h"
+#include "include/core/SkFilterQuality.h"
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkPixmap.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSize.h"
-#include "include/private/SkIDChangeListener.h"
-#include "include/private/base/SkMutex.h"
-#include "include/private/base/SkTDArray.h"
+#include "include/core/SkString.h"
+#include "include/private/SkMutex.h"
+#include "include/private/SkTDArray.h"
 
 #include <atomic>
 
@@ -34,7 +35,6 @@ public:
     SkPixelRef(int width, int height, void* addr, size_t rowBytes);
     ~SkPixelRef() override;
 
-    SkISize dimensions() const { return {fWidth, fHeight}; }
     int width() const { return fWidth; }
     int height() const { return fHeight; }
     void* pixels() const { return fPixels; }
@@ -72,8 +72,13 @@ public:
     
     
     
+    struct GenIDChangeListener {
+        virtual ~GenIDChangeListener() {}
+        virtual void onChange() = 0;
+    };
+
     
-    void addGenIDChangeListener(sk_sp<SkIDChangeListener> listener);
+    void addGenIDChangeListener(GenIDChangeListener* listener);
 
     
     
@@ -96,7 +101,8 @@ private:
     bool genIDIsUnique() const { return SkToBool(fTaggedGenID.load() & 1); }
     mutable std::atomic<uint32_t> fTaggedGenID;
 
-    SkIDChangeListener::List fGenIDChangeListeners;
+    SkMutex                         fGenIDChangeListenersMutex;
+    SkTDArray<GenIDChangeListener*> fGenIDChangeListeners;  
 
     
     std::atomic<bool> fAddedToCache;
@@ -112,12 +118,12 @@ private:
 
     void setTemporarilyImmutable();
     void restoreMutability();
-    friend class SkSurface_Raster;  
+    friend class SkSurface_Raster;   
 
     void setImmutableWithID(uint32_t genID);
     friend void SkBitmapCache_setImmutableWithID(SkPixelRef*, uint32_t);
 
-    using INHERITED = SkRefCnt;
+    typedef SkRefCnt INHERITED;
 };
 
 #endif

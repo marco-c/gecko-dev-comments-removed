@@ -8,13 +8,9 @@
 #ifndef SkColor_DEFINED
 #define SkColor_DEFINED
 
-#include "include/core/SkAlphaType.h"
+#include "include/core/SkImageInfo.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkTypes.h"
-#include "include/private/base/SkCPUTypes.h"
-
-#include <array>
-#include <cstdint>
 
 
 
@@ -79,7 +75,7 @@ static constexpr inline SkColor SkColorSetARGB(U8CPU a, U8CPU r, U8CPU g, U8CPU 
 
 
 
-static constexpr inline SkColor SK_WARN_UNUSED_RESULT SkColorSetA(SkColor c, U8CPU a) {
+static constexpr inline SkColor SkColorSetA(SkColor c, U8CPU a) {
     return (c & 0x00FFFFFF) | (a << 24);
 }
 
@@ -235,21 +231,6 @@ enum class SkColorChannel {
 };
 
 
-enum SkColorChannelFlag : uint32_t {
-    kRed_SkColorChannelFlag    = 1 << static_cast<uint32_t>(SkColorChannel::kR),
-    kGreen_SkColorChannelFlag  = 1 << static_cast<uint32_t>(SkColorChannel::kG),
-    kBlue_SkColorChannelFlag   = 1 << static_cast<uint32_t>(SkColorChannel::kB),
-    kAlpha_SkColorChannelFlag  = 1 << static_cast<uint32_t>(SkColorChannel::kA),
-    kGray_SkColorChannelFlag   = 0x10,
-    
-    kGrayAlpha_SkColorChannelFlags = kGray_SkColorChannelFlag | kAlpha_SkColorChannelFlag,
-    kRG_SkColorChannelFlags        = kRed_SkColorChannelFlag | kGreen_SkColorChannelFlag,
-    kRGB_SkColorChannelFlags       = kRG_SkColorChannelFlags | kBlue_SkColorChannelFlag,
-    kRGBA_SkColorChannelFlags      = kRGB_SkColorChannelFlags | kAlpha_SkColorChannelFlag,
-};
-static_assert(0 == (kGray_SkColorChannelFlag & kRGBA_SkColorChannelFlags), "bitfield conflict");
-
-
 
 
 
@@ -314,9 +295,6 @@ struct SkRGBA4f {
     float* vec() { return &fR; }
 
     
-    std::array<float, 4> array() const { return {fR, fG, fB, fA}; }
-
-    
 
 
 
@@ -359,13 +337,9 @@ struct SkRGBA4f {
 
 
 
-
-
     static SkRGBA4f FromColor(SkColor color);  
 
     
-
-
 
 
 
@@ -407,11 +381,6 @@ struct SkRGBA4f {
     uint32_t toBytes_RGBA() const;
     static SkRGBA4f FromBytes_RGBA(uint32_t color);
 
-    
-
-
-
-
     SkRGBA4f makeOpaque() const {
         return { fR, fG, fB, 1.0f };
     }
@@ -427,8 +396,6 @@ using SkColor4f = SkRGBA4f<kUnpremul_SkAlphaType>;
 
 template <> SK_API SkColor4f SkColor4f::FromColor(SkColor);
 template <> SK_API SkColor   SkColor4f::toSkColor() const;
-template <> SK_API uint32_t  SkColor4f::toBytes_RGBA() const;
-template <> SK_API SkColor4f SkColor4f::FromBytes_RGBA(uint32_t color);
 
 namespace SkColors {
 constexpr SkColor4f kTransparent = {0, 0, 0, 0};

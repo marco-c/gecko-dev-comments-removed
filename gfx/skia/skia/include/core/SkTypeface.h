@@ -14,8 +14,8 @@
 #include "include/core/SkFontTypes.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkString.h"
+#include "include/private/SkOnce.h"
 #include "include/private/SkWeakRefCnt.h"
-#include "include/private/base/SkOnce.h"
 
 class SkData;
 class SkDescriptor;
@@ -29,12 +29,7 @@ struct SkAdvancedTypefaceMetrics;
 struct SkScalerContextEffects;
 struct SkScalerContextRec;
 
-using SkTypefaceID = uint32_t;
-
-
-using SkFontID = SkTypefaceID;
-
-
+typedef uint32_t SkFontID;
 
 typedef uint32_t SkFontTableTag;
 
@@ -96,13 +91,13 @@ public:
     
 
 
-    SkTypefaceID uniqueID() const { return fUniqueID; }
+    SkFontID uniqueID() const { return fUniqueID; }
 
     
 
 
 
-    static SkTypefaceID UniqueID(const SkTypeface* face);
+    static SkFontID UniqueID(const SkTypeface* face);
 
     
 
@@ -138,6 +133,11 @@ public:
 
 
     static sk_sp<SkTypeface> MakeFromData(sk_sp<SkData>, int index = 0);
+
+    
+
+
+    static sk_sp<SkTypeface> MakeFromFontData(std::unique_ptr<SkFontData>);
 
     
 
@@ -184,9 +184,6 @@ public:
 
 
     void unicharsToGlyphs(const SkUnichar uni[], int count, SkGlyphID glyphs[]) const;
-
-    int textToGlyphs(const void* text, size_t byteLength, SkTextEncoding encoding,
-                     SkGlyphID glyphs[], int maxGlyphCount) const;
 
     
 
@@ -313,13 +310,6 @@ public:
 
 
 
-    bool getPostScriptName(SkString* name) const;
-
-    
-
-
-
-
 
 
     std::unique_ptr<SkStreamAsset> openStream(int* ttcIndex) const;
@@ -327,18 +317,16 @@ public:
     
 
 
-
-
-
-
-    std::unique_ptr<SkStreamAsset> openExistingStream(int* ttcIndex) const;
+    std::unique_ptr<SkFontData> makeFontData() const;
 
     
 
 
 
+
     std::unique_ptr<SkScalerContext> createScalerContext(const SkScalerContextEffects&,
-                                                         const SkDescriptor*) const;
+                                                         const SkDescriptor*,
+                                                         bool allowFailure = false) const;
 
     
 
@@ -366,15 +354,11 @@ public:
         return this->onGetCTFontRef();
     }
 
-    
-    using FactoryId = SkFourByteTag;
-    static void Register(
-            FactoryId id,
-            sk_sp<SkTypeface> (*make)(std::unique_ptr<SkStreamAsset>, const SkFontArguments&));
-
 protected:
-    explicit SkTypeface(const SkFontStyle& style, bool isFixedPitch = false);
-    ~SkTypeface() override;
+    
+
+    SkTypeface(const SkFontStyle& style, bool isFixedPitch = false);
+    virtual ~SkTypeface();
 
     virtual sk_sp<SkTypeface> onMakeClone(const SkFontArguments&) const = 0;
 
@@ -383,9 +367,8 @@ protected:
     
     void setFontStyle(SkFontStyle style) { fStyle = style; }
 
-    
-    virtual std::unique_ptr<SkScalerContext> onCreateScalerContext(const SkScalerContextEffects&,
-                                                                   const SkDescriptor*) const = 0;
+    virtual SkScalerContext* onCreateScalerContext(const SkScalerContextEffects&,
+                                                   const SkDescriptor*) const = 0;
     virtual void onFilterRec(SkScalerContextRec*) const = 0;
     friend class SkScalerContext;  
 
@@ -402,10 +385,8 @@ protected:
     virtual void getGlyphToUnicodeMap(SkUnichar* dstArray) const = 0;
 
     virtual std::unique_ptr<SkStreamAsset> onOpenStream(int* ttcIndex) const = 0;
-
-    virtual std::unique_ptr<SkStreamAsset> onOpenExistingStream(int* ttcIndex) const;
-
-    virtual bool onGlyphMaskNeedsCurrentColor() const = 0;
+    
+    virtual std::unique_ptr<SkFontData> onMakeFontData() const;
 
     virtual int onGetVariationDesignPosition(
         SkFontArguments::VariationPosition::Coordinate coordinates[],
@@ -427,7 +408,6 @@ protected:
 
 
     virtual void onGetFamilyName(SkString* familyName) const = 0;
-    virtual bool onGetPostScriptName(SkString*) const = 0;
 
     
     virtual LocalizedStrings* onCreateFamilyNameIterator() const = 0;
@@ -443,17 +423,9 @@ protected:
 
 private:
     
-
-
-
-    bool glyphMaskNeedsCurrentColor() const;
-    friend class SkStrikeServerImpl;  
-    friend class SkTypefaceProxyPrototype;  
-
-    
     std::unique_ptr<SkAdvancedTypefaceMetrics> getAdvancedMetrics() const;
-    friend class SkRandomTypeface;   
-    friend class SkPDFFont;          
+    friend class SkRandomTypeface; 
+    friend class SkPDFFont;        
 
     
     enum Style {
@@ -467,17 +439,17 @@ private:
     static SkFontStyle FromOldStyle(Style oldStyle);
     static SkTypeface* GetDefaultTypeface(Style style = SkTypeface::kNormal);
 
-    friend class SkFontPriv;         
-    friend class SkPaintPriv;        
-    friend class SkFont;             
+    friend class SkFontPriv;       
+    friend class SkPaintPriv;      
+    friend class SkFont;           
 
 private:
-    SkTypefaceID        fUniqueID;
+    SkFontID            fUniqueID;
     SkFontStyle         fStyle;
     mutable SkRect      fBounds;
     mutable SkOnce      fBoundsOnce;
     bool                fIsFixedPitch;
 
-    using INHERITED = SkWeakRefCnt;
+    typedef SkWeakRefCnt INHERITED;
 };
 #endif

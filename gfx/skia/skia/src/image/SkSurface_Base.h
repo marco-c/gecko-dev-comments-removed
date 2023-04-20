@@ -9,69 +9,22 @@
 #define SkSurface_Base_DEFINED
 
 #include "include/core/SkCanvas.h"
-#include "include/core/SkDeferredDisplayList.h" 
-#include "include/core/SkImage.h"
-#include "include/core/SkPoint.h"
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkSamplingOptions.h"
-#include "include/core/SkScalar.h"
 #include "include/core/SkSurface.h"
-#include "include/core/SkTypes.h"
-
-#if defined(SK_GANESH)
-#include "include/gpu/GrBackendSurface.h"
-#include "include/gpu/GrTypes.h"
-#endif
-
-#include <cstdint>
-#include <memory>
-
-class GrBackendSemaphore;
-class GrRecordingContext;
-class SkCapabilities;
-class SkColorSpace;
-class SkPaint;
-class SkPixmap;
-class SkSurfaceCharacterization;
-class SkSurfaceProps;
-enum SkYUVColorSpace : int;
-namespace skgpu { class MutableTextureState; }
-namespace skgpu { namespace graphite { class Recorder; } }
-struct SkIRect;
-struct SkISize;
-struct SkImageInfo;
+#include "src/core/SkImagePriv.h"
+#include "src/core/SkSurfacePriv.h"
 
 class SkSurface_Base : public SkSurface {
 public:
     SkSurface_Base(int width, int height, const SkSurfaceProps*);
     SkSurface_Base(const SkImageInfo&, const SkSurfaceProps*);
-    ~SkSurface_Base() override;
+    virtual ~SkSurface_Base();
 
-    virtual GrRecordingContext* onGetRecordingContext();
-    virtual skgpu::graphite::Recorder* onGetRecorder();
-
-#if defined(SK_GANESH)
     virtual GrBackendTexture onGetBackendTexture(BackendHandleAccess);
     virtual GrBackendRenderTarget onGetBackendRenderTarget(BackendHandleAccess);
     virtual bool onReplaceBackendTexture(const GrBackendTexture&,
                                          GrSurfaceOrigin,
-                                         ContentChangeMode,
                                          TextureReleaseProc,
                                          ReleaseContext);
-
-    virtual void onResolveMSAA() {}
-
-    
-
-
-
-
-    virtual GrSemaphoresSubmitted onFlush(BackendSurfaceAccess access, const GrFlushInfo&,
-                                          const skgpu::MutableTextureState*) {
-        return GrSemaphoresSubmitted::kNo;
-    }
-#endif
-
     
 
 
@@ -93,24 +46,15 @@ public:
 
     virtual sk_sp<SkImage> onNewImageSnapshot(const SkIRect* subset = nullptr) { return nullptr; }
 
-#if defined(SK_GRAPHITE)
-    virtual sk_sp<SkImage> onAsImage() { return nullptr; }
-
-    virtual sk_sp<SkImage> onMakeImageCopy(const SkIRect* ,
-                                           skgpu::Mipmapped) {
-        return nullptr;
-    }
-#endif
-
     virtual void onWritePixels(const SkPixmap&, int x, int y) = 0;
 
     
 
 
     virtual void onAsyncRescaleAndReadPixels(const SkImageInfo&,
-                                             const SkIRect srcRect,
+                                             const SkIRect& srcRect,
                                              RescaleGamma,
-                                             RescaleMode,
+                                             SkFilterQuality,
                                              ReadPixelsCallback,
                                              ReadPixelsContext);
     
@@ -118,10 +62,10 @@ public:
 
     virtual void onAsyncRescaleAndReadPixelsYUV420(SkYUVColorSpace,
                                                    sk_sp<SkColorSpace> dstColorSpace,
-                                                   SkIRect srcRect,
-                                                   SkISize dstSize,
+                                                   const SkIRect& srcRect,
+                                                   const SkISize& dstSize,
                                                    RescaleGamma,
-                                                   RescaleMode,
+                                                   SkFilterQuality,
                                                    ReadPixelsCallback,
                                                    ReadPixelsContext);
 
@@ -134,7 +78,7 @@ public:
 
 
 
-    virtual void onDraw(SkCanvas*, SkScalar x, SkScalar y, const SkSamplingOptions&,const SkPaint*);
+    virtual void onDraw(SkCanvas*, SkScalar x, SkScalar y, const SkPaint*);
 
     
 
@@ -147,9 +91,7 @@ public:
 
 
 
-
-
-    virtual bool SK_WARN_UNUSED_RESULT onCopyOnWrite(ContentChangeMode) = 0;
+    virtual void onCopyOnWrite(ContentChangeMode) = 0;
 
     
 
@@ -162,23 +104,22 @@ public:
 
 
 
-    virtual bool onWait(int numSemaphores, const GrBackendSemaphore* waitSemaphores,
-                        bool deleteSemaphoresAfterWait) {
+    virtual GrSemaphoresSubmitted onFlush(BackendSurfaceAccess access, const GrFlushInfo&) {
+        return GrSemaphoresSubmitted::kNo;
+    }
+
+    
+
+
+
+
+    virtual bool onWait(int numSemaphores, const GrBackendSemaphore* waitSemaphores) {
         return false;
     }
 
     virtual bool onCharacterize(SkSurfaceCharacterization*) const { return false; }
     virtual bool onIsCompatible(const SkSurfaceCharacterization&) const { return false; }
-    virtual bool onDraw(sk_sp<const SkDeferredDisplayList>, SkIPoint offset) {
-        return false;
-    }
-
-    
-    
-    virtual sk_sp<const SkCapabilities> onCapabilities();
-
-    
-    virtual bool isGraphiteBacked() const { return false; }
+    virtual bool onDraw(const SkDeferredDisplayList*) { return false; }
 
     inline SkCanvas* getCachedCanvas();
     inline sk_sp<SkImage> refCachedImage();
@@ -192,8 +133,7 @@ private:
     std::unique_ptr<SkCanvas>   fCachedCanvas;
     sk_sp<SkImage>              fCachedImage;
 
-    
-    bool SK_WARN_UNUSED_RESULT aboutToDraw(ContentChangeMode mode);
+    void aboutToDraw(ContentChangeMode mode);
 
     
     
@@ -202,7 +142,7 @@ private:
     friend class SkCanvas;
     friend class SkSurface;
 
-    using INHERITED = SkSurface;
+    typedef SkSurface INHERITED;
 };
 
 SkCanvas* SkSurface_Base::getCachedCanvas() {
@@ -224,14 +164,6 @@ sk_sp<SkImage> SkSurface_Base::refCachedImage() {
 
     SkASSERT(!fCachedCanvas || fCachedCanvas->getSurfaceBase() == this);
     return fCachedImage;
-}
-
-static inline SkSurface_Base* asSB(SkSurface* surface) {
-    return static_cast<SkSurface_Base*>(surface);
-}
-
-static inline const SkSurface_Base* asConstSB(const SkSurface* surface) {
-    return static_cast<const SkSurface_Base*>(surface);
 }
 
 #endif

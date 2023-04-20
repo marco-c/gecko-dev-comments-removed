@@ -5,143 +5,79 @@
 
 
 
-#include "include/effects/Sk1DPathEffect.h"
 
-#include "include/core/SkFlattenable.h"
-#include "include/core/SkMatrix.h"
-#include "include/core/SkPath.h"
-#include "include/core/SkPathEffect.h"
 #include "include/core/SkPathMeasure.h"
-#include "include/core/SkPoint.h"
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkScalar.h"
 #include "include/core/SkStrokeRec.h"
-#include "include/core/SkTypes.h"
-#include "src/core/SkPathEffectBase.h"
+#include "include/effects/Sk1DPathEffect.h"
 #include "src/core/SkReadBuffer.h"
 #include "src/core/SkWriteBuffer.h"
-
-struct SkRect;
 
 
 
 #define MAX_REASONABLE_ITERATIONS   100000
 
-class Sk1DPathEffect : public SkPathEffectBase {
-public:
-protected:
-    bool onFilterPath(SkPath* dst, const SkPath& src, SkStrokeRec*, const SkRect*,
-                      const SkMatrix&) const override {
-        SkPathMeasure   meas(src, false);
-        do {
-            int governor = MAX_REASONABLE_ITERATIONS;
-            SkScalar    length = meas.getLength();
-            SkScalar    distance = this->begin(length);
-            while (distance < length && --governor >= 0) {
-                SkScalar delta = this->next(dst, distance, meas);
-                if (delta <= 0) {
-                    break;
-                }
-                distance += delta;
+bool Sk1DPathEffect::onFilterPath(SkPath* dst, const SkPath& src,
+                                  SkStrokeRec*, const SkRect*) const {
+    SkPathMeasure   meas(src, false);
+    do {
+        int governor = MAX_REASONABLE_ITERATIONS;
+        SkScalar    length = meas.getLength();
+        SkScalar    distance = this->begin(length);
+        while (distance < length && --governor >= 0) {
+            SkScalar delta = this->next(dst, distance, meas);
+            if (delta <= 0) {
+                break;
             }
-            if (governor < 0) {
-                return false;
-            }
-        } while (meas.nextContour());
-        return true;
-    }
-
-    
-
-
-    virtual SkScalar begin(SkScalar contourLength) const = 0;
-    
-
-
-
-
-    virtual SkScalar next(SkPath* dst, SkScalar dist, SkPathMeasure&) const = 0;
-
-private:
-    
-    bool computeFastBounds(SkRect*) const override { return false; }
-};
-
-
-
-class SkPath1DPathEffectImpl : public Sk1DPathEffect {
-public:
-    SkPath1DPathEffectImpl(const SkPath& path, SkScalar advance, SkScalar phase,
-                           SkPath1DPathEffect::Style style) : fPath(path) {
-        SkASSERT(advance > 0 && !path.isEmpty());
-
-        
-        fPath.updateBoundsCache();
-        (void)fPath.getGenerationID();
-
-        
-        
-        if (phase < 0) {
-            phase = -phase;
-            if (phase > advance) {
-                phase = SkScalarMod(phase, advance);
-            }
-        } else {
-            if (phase > advance) {
-                phase = SkScalarMod(phase, advance);
-            }
-            phase = advance - phase;
+            distance += delta;
         }
-        
-        if (phase >= advance) {
-            phase = 0;
+    } while (meas.nextContour());
+    return true;
+}
+
+
+
+SkPath1DPathEffect::SkPath1DPathEffect(const SkPath& path, SkScalar advance, SkScalar phase,
+                                       Style style) : fPath(path) {
+    SkASSERT(advance > 0 && !path.isEmpty());
+    SkASSERT((unsigned)style <= kMorph_Style);
+
+    
+    fPath.updateBoundsCache();
+    (void)fPath.getGenerationID();
+
+    
+    
+    if (phase < 0) {
+        phase = -phase;
+        if (phase > advance) {
+            phase = SkScalarMod(phase, advance);
         }
-        SkASSERT(phase >= 0);
-
-        fAdvance = advance;
-        fInitialOffset = phase;
-        fStyle = style;
+    } else {
+        if (phase > advance) {
+            phase = SkScalarMod(phase, advance);
+        }
+        phase = advance - phase;
     }
-
-    bool onFilterPath(SkPath* dst, const SkPath& src, SkStrokeRec* rec,
-                      const SkRect* cullRect, const SkMatrix& ctm) const override {
-        rec->setFillStyle();
-        return this->INHERITED::onFilterPath(dst, src, rec, cullRect, ctm);
+    
+    if (phase >= advance) {
+        phase = 0;
     }
+    SkASSERT(phase >= 0);
 
-    SkScalar begin(SkScalar contourLength) const override {
-        return fInitialOffset;
+    fAdvance = advance;
+    fInitialOffset = phase;
+
+    if ((unsigned)style > kMorph_Style) {
+        SkDEBUGF("SkPath1DPathEffect style enum out of range %d\n", style);
     }
+    fStyle = style;
+}
 
-    SkScalar next(SkPath*, SkScalar, SkPathMeasure&) const override;
-
-    static sk_sp<SkFlattenable> CreateProc(SkReadBuffer& buffer) {
-        SkScalar advance = buffer.readScalar();
-        SkPath path;
-        buffer.readPath(&path);
-        SkScalar phase = buffer.readScalar();
-        SkPath1DPathEffect::Style style = buffer.read32LE(SkPath1DPathEffect::kLastEnum_Style);
-        return buffer.isValid() ? SkPath1DPathEffect::Make(path, advance, phase, style) : nullptr;
-    }
-
-    void flatten(SkWriteBuffer& buffer) const override {
-        buffer.writeScalar(fAdvance);
-        buffer.writePath(fPath);
-        buffer.writeScalar(fInitialOffset);
-        buffer.writeUInt(fStyle);
-    }
-
-    Factory getFactory() const override { return CreateProc; }
-    const char* getTypeName() const override { return "SkPath1DPathEffect"; }
-
-private:
-    SkPath                      fPath;          
-    SkScalar                    fAdvance;       
-    SkScalar                    fInitialOffset; 
-    SkPath1DPathEffect::Style   fStyle;         
-
-    using INHERITED = Sk1DPathEffect;
-};
+bool SkPath1DPathEffect::onFilterPath(SkPath* dst, const SkPath& src,
+                                      SkStrokeRec* rec, const SkRect* cullRect) const {
+    rec->setFillStyle();
+    return this->INHERITED::onFilterPath(dst, src, rec, cullRect);
+}
 
 static bool morphpoints(SkPoint dst[], const SkPoint src[], int count,
                         SkPathMeasure& meas, SkScalar dist) {
@@ -191,7 +127,7 @@ static void morphpath(SkPath* dst, const SkPath& src, SkPathMeasure& meas,
                 srcP[2] = srcP[1];
                 srcP[1].set(SkScalarAve(srcP[0].fX, srcP[2].fX),
                             SkScalarAve(srcP[0].fY, srcP[2].fY));
-                [[fallthrough]];
+                
             case SkPath::kQuad_Verb:
                 if (morphpoints(dstP, &srcP[1], 2, meas, dist)) {
                     dst->quadTo(dstP[0], dstP[1]);
@@ -217,28 +153,51 @@ static void morphpath(SkPath* dst, const SkPath& src, SkPathMeasure& meas,
     }
 }
 
-SkScalar SkPath1DPathEffectImpl::next(SkPath* dst, SkScalar distance,
-                                      SkPathMeasure& meas) const {
-#if defined(SK_BUILD_FOR_FUZZER)
+SkScalar SkPath1DPathEffect::begin(SkScalar contourLength) const {
+    return fInitialOffset;
+}
+
+sk_sp<SkFlattenable> SkPath1DPathEffect::CreateProc(SkReadBuffer& buffer) {
+    SkScalar advance = buffer.readScalar();
+    SkPath path;
+    buffer.readPath(&path);
+    SkScalar phase = buffer.readScalar();
+    Style style = buffer.read32LE(kLastEnum_Style);
+    return buffer.isValid() ? SkPath1DPathEffect::Make(path, advance, phase, style) : nullptr;
+}
+
+void SkPath1DPathEffect::flatten(SkWriteBuffer& buffer) const {
+    buffer.writeScalar(fAdvance);
+    buffer.writePath(fPath);
+    buffer.writeScalar(fInitialOffset);
+    buffer.writeUInt(fStyle);
+}
+
+SkScalar SkPath1DPathEffect::next(SkPath* dst, SkScalar distance,
+                                  SkPathMeasure& meas) const {
+#if defined(IS_FUZZING_WITH_LIBFUZZER)
     if (dst->countPoints() > 100000) {
         return fAdvance;
     }
 #endif
     switch (fStyle) {
-        case SkPath1DPathEffect::kTranslate_Style: {
+        case kTranslate_Style: {
             SkPoint pos;
             if (meas.getPosTan(distance, &pos, nullptr)) {
                 dst->addPath(fPath, pos.fX, pos.fY);
             }
         } break;
-        case SkPath1DPathEffect::kRotate_Style: {
+        case kRotate_Style: {
             SkMatrix matrix;
             if (meas.getMatrix(distance, &matrix)) {
                 dst->addPath(fPath, matrix);
             }
         } break;
-        case SkPath1DPathEffect::kMorph_Style:
+        case kMorph_Style:
             morphpath(dst, fPath, meas, distance);
+            break;
+        default:
+            SkDEBUGFAIL("unknown Style enum");
             break;
     }
     return fAdvance;
@@ -251,9 +210,5 @@ sk_sp<SkPathEffect> SkPath1DPathEffect::Make(const SkPath& path, SkScalar advanc
     if (advance <= 0 || !SkScalarIsFinite(advance) || !SkScalarIsFinite(phase) || path.isEmpty()) {
         return nullptr;
     }
-    return sk_sp<SkPathEffect>(new SkPath1DPathEffectImpl(path, advance, phase, style));
-}
-
-void SkPath1DPathEffect::RegisterFlattenables() {
-    SK_REGISTER_FLATTENABLE(SkPath1DPathEffectImpl);
+    return sk_sp<SkPathEffect>(new SkPath1DPathEffect(path, advance, phase, style));
 }

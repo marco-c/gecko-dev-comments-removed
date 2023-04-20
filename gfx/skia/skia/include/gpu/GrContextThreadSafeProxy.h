@@ -8,52 +8,22 @@
 #ifndef GrContextThreadSafeProxy_DEFINED
 #define GrContextThreadSafeProxy_DEFINED
 
-#include "include/core/SkRefCnt.h"
-
-#if defined(SK_GANESH)
-
-#include "include/core/SkImageInfo.h"
-#include "include/gpu/GpuTypes.h"
-#include "include/gpu/GrContextOptions.h"
-#include "include/gpu/GrTypes.h"
-
-#include <atomic>
+#include "include/private/GrContext_Base.h"
 
 class GrBackendFormat;
-class GrCaps;
 class GrContextThreadSafeProxyPriv;
-class GrThreadSafeCache;
-class GrThreadSafePipelineBuilder;
+struct SkImageInfo;
 class SkSurfaceCharacterization;
-class SkSurfaceProps;
-enum class SkTextureCompressionType;
-
-namespace sktext::gpu { class TextBlobRedrawCoordinator; }
 
 
 
 
 
-class SK_API GrContextThreadSafeProxy final : public SkNVRefCnt<GrContextThreadSafeProxy> {
+class SK_API GrContextThreadSafeProxy : public GrContext_Base {
 public:
-    ~GrContextThreadSafeProxy();
+    ~GrContextThreadSafeProxy() override;
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -87,17 +57,13 @@ public:
 
     SkSurfaceCharacterization createCharacterization(
                                   size_t cacheMaxResourceBytes,
-                                  const SkImageInfo& ii,
-                                  const GrBackendFormat& backendFormat,
-                                  int sampleCount,
-                                  GrSurfaceOrigin origin,
+                                  const SkImageInfo& ii, const GrBackendFormat& backendFormat,
+                                  int sampleCount, GrSurfaceOrigin origin,
                                   const SkSurfaceProps& surfaceProps,
                                   bool isMipMapped,
                                   bool willUseGLFBO0 = false,
                                   bool isTextureable = true,
-                                  GrProtected isProtected = GrProtected::kNo,
-                                  bool vkRTSupportsInputAttachment = false,
-                                  bool forVulkanSecondaryCommandBuffer = false);
+                                  GrProtected isProtected = GrProtected::kNo);
 
     
 
@@ -106,29 +72,13 @@ public:
 
 
 
-    GrBackendFormat defaultBackendFormat(SkColorType ct, GrRenderable renderable) const;
-
-    
-
-
-
-
-
-
-    GrBackendFormat compressedBackendFormat(SkTextureCompressionType c) const;
-
-    
-
-
-
-
-    int maxSurfaceSampleCountForColorType(SkColorType colorType) const;
-
-    bool isValid() const { return nullptr != fCaps; }
+    GrBackendFormat defaultBackendFormat(SkColorType ct, GrRenderable renderable) const {
+        return INHERITED::defaultBackendFormat(ct, renderable);
+    }
 
     bool operator==(const GrContextThreadSafeProxy& that) const {
         
-        SkASSERT((this == &that) == (this->fContextID == that.fContextID));
+        SkASSERT((this == &that) == (this->contextID() == that.contextID()));
         return this == &that;
     }
 
@@ -136,34 +86,17 @@ public:
 
     
     GrContextThreadSafeProxyPriv priv();
-    const GrContextThreadSafeProxyPriv priv() const;  
+    const GrContextThreadSafeProxyPriv priv() const;
 
 private:
     friend class GrContextThreadSafeProxyPriv; 
 
     
-    GrContextThreadSafeProxy(GrBackendApi, const GrContextOptions&);
+    GrContextThreadSafeProxy(GrBackendApi, const GrContextOptions&, uint32_t contextID);
 
-    void abandonContext();
-    bool abandoned() const;
+    bool init(sk_sp<const GrCaps>, sk_sp<GrSkSLFPFactoryCache>) override;
 
-    
-    
-    
-    void init(sk_sp<const GrCaps>, sk_sp<GrThreadSafePipelineBuilder>);
-
-    const GrBackendApi                                      fBackend;
-    const GrContextOptions                                  fOptions;
-    const uint32_t                                          fContextID;
-    sk_sp<const GrCaps>                                     fCaps;
-    std::unique_ptr<sktext::gpu::TextBlobRedrawCoordinator> fTextBlobRedrawCoordinator;
-    std::unique_ptr<GrThreadSafeCache>                      fThreadSafeCache;
-    sk_sp<GrThreadSafePipelineBuilder>                      fPipelineBuilder;
-    std::atomic<bool>                                       fAbandoned{false};
+    typedef GrContext_Base INHERITED;
 };
-
-#else 
-class SK_API GrContextThreadSafeProxy final : public SkNVRefCnt<GrContextThreadSafeProxy> {};
-#endif
 
 #endif

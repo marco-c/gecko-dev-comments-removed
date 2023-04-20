@@ -4,19 +4,12 @@
 
 
 
-#include "src/pathops/SkPathOpsConic.h"
-
-#include "include/core/SkTypes.h"
-#include "include/private/base/SkFloatingPoint.h"
 #include "src/pathops/SkIntersections.h"
+#include "src/pathops/SkLineParameters.h"
+#include "src/pathops/SkPathOpsConic.h"
 #include "src/pathops/SkPathOpsCubic.h"
 #include "src/pathops/SkPathOpsQuad.h"
 #include "src/pathops/SkPathOpsRect.h"
-#include "src/pathops/SkPathOpsTypes.h"
-
-#include <cmath>
-
-struct SkDLine;
 
 
 static void conic_deriv_coeff(const double src[],

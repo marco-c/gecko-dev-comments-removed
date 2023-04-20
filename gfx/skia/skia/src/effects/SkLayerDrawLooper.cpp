@@ -4,10 +4,6 @@
 
 
 
-
-#include "include/core/SkTypes.h"
-
-#ifdef SK_SUPPORT_LEGACY_DRAWLOOPER
 #include "include/core/SkCanvas.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkMaskFilter.h"
@@ -15,7 +11,7 @@
 #include "include/core/SkUnPreMultiply.h"
 #include "include/effects/SkBlurDrawLooper.h"
 #include "include/effects/SkLayerDrawLooper.h"
-#include "src/base/SkArenaAlloc.h"
+#include "src/core/SkArenaAlloc.h"
 #include "src/core/SkBlendModePriv.h"
 #include "src/core/SkColorSpacePriv.h"
 #include "src/core/SkMaskFilterBase.h"
@@ -118,7 +114,7 @@ void SkLayerDrawLooper::LayerDrawLooperContext::ApplyInfo(
         dst->setColorFilter(src.refColorFilter());
     }
     if (bits & kXfermode_Bit) {
-        dst->setBlender(src.refBlender());
+        dst->setBlendMode(src.getBlendMode());
     }
 
     
@@ -217,11 +213,6 @@ void SkLayerDrawLooper::flatten(SkWriteBuffer& buffer) const {
 sk_sp<SkFlattenable> SkLayerDrawLooper::CreateProc(SkReadBuffer& buffer) {
     int count = buffer.readInt();
 
-#if defined(SK_BUILD_FOR_FUZZER)
-    if (count > 100) {
-        count = 100;
-    }
-#endif
     Builder builder;
     for (int i = 0; i < count; i++) {
         LayerInfo info;
@@ -232,7 +223,7 @@ sk_sp<SkFlattenable> SkLayerDrawLooper::CreateProc(SkReadBuffer& buffer) {
         info.fColorMode = (SkBlendMode)buffer.readInt();
         buffer.readPoint(&info.fOffset);
         info.fPostTranslate = buffer.readBool();
-        *builder.addLayerOnTop(info) = buffer.readPaint();
+        buffer.readPaint(builder.addLayerOnTop(info), nullptr);
         if (!buffer.isValid()) {
             return nullptr;
         }
@@ -335,5 +326,3 @@ sk_sp<SkDrawLooper> SkBlurDrawLooper::Make(SkColor4f color, SkColorSpace* cs,
 
     return builder.detach();
 }
-
-#endif
