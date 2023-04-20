@@ -4482,14 +4482,6 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
 
   UpdateBarredFromConstraintValidation();
 
-  
-  
-  
-  if (oldType == FormControlType::InputTel ||
-      mType == FormControlType::InputTel) {
-    RecomputeDirectionality(this, aNotify);
-  }
-
   if (oldType == FormControlType::InputImage) {
     
     
