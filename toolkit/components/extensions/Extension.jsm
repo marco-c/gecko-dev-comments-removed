@@ -1734,6 +1734,13 @@ class ExtensionData {
     return this.addonData.builtIn || this.addonData.isSystem;
   }
 
+  get isHidden() {
+    return (
+      this.addonData.locationHidden ||
+      (this.isPrivileged && this.manifest.hidden)
+    );
+  }
+
   
   
   

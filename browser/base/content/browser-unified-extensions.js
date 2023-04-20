@@ -34,8 +34,8 @@ customElements.define(
 
 
 
-    setAddon(addon) {
-      this.addon = addon;
+    setExtension(extension) {
+      this.extension = extension;
     }
 
     connectedCallback() {
@@ -90,17 +90,11 @@ customElements.define(
               event
             );
           } else if (target === this._actionButton) {
-            const extension = WebExtensionPolicy.getByID(this.addon.id)
-              ?.extension;
-            if (!extension) {
-              return;
-            }
-
             const win = event.target.ownerGlobal;
             const tab = win.gBrowser.selectedTab;
 
-            extension.tabManager.addActiveTabPermission(tab);
-            extension.tabManager.activateScripts(tab);
+            this.extension.tabManager.addActiveTabPermission(tab);
+            this.extension.tabManager.activateScripts(tab);
           }
           break;
 
@@ -125,7 +119,7 @@ customElements.define(
 
     #setStateMessage() {
       const messages = OriginControls.getStateMessageIDs({
-        policy: WebExtensionPolicy.getByID(this.addon.id),
+        policy: this.extension.policy,
         uri: this.ownerGlobal.gBrowser.currentURI,
       });
 
@@ -151,9 +145,8 @@ customElements.define(
     }
 
     #hasAction() {
-      const policy = WebExtensionPolicy.getByID(this.addon.id);
       const state = OriginControls.getState(
-        policy,
+        this.extension.policy,
         this.ownerGlobal.gBrowser.currentURI
       );
 
@@ -161,45 +154,46 @@ customElements.define(
     }
 
     render() {
-      if (!this.addon) {
+      if (!this.extension) {
         throw new Error(
-          "unified-extensions-item requires an add-on, forgot to call setAddon()?"
+          "unified-extensions-item requires an extension, forgot to call setExtension()?"
         );
       }
 
-      this.setAttribute("extension-id", this.addon.id);
+      this.setAttribute("extension-id", this.extension.id);
       this.classList.add("unified-extensions-item");
 
       
       
-      this._actionButton.dataset.extensionid = this.addon.id;
+      this._actionButton.dataset.extensionid = this.extension.id;
 
-      let policy = WebExtensionPolicy.getByID(this.addon.id);
       this.toggleAttribute(
         "attention",
-        OriginControls.getAttention(policy, this.ownerGlobal)
+        OriginControls.getAttention(this.extension.policy, this.ownerGlobal)
       );
 
       this.querySelector(
         ".unified-extensions-item-name"
-      ).textContent = this.addon.name;
+      ).textContent = this.extension.name;
 
-      const iconURL = AddonManager.getPreferredIconURL(this.addon, 32, window);
-      if (iconURL) {
-        this.querySelector(".unified-extensions-item-icon").setAttribute(
-          "src",
-          iconURL
-        );
-      }
+      AddonManager.getAddonByID(this.extension.id).then(addon => {
+        const iconURL = AddonManager.getPreferredIconURL(addon, 32, window);
+        if (iconURL) {
+          this.querySelector(".unified-extensions-item-icon").setAttribute(
+            "src",
+            iconURL
+          );
+        }
+      });
 
       this._actionButton.disabled = !this.#hasAction();
 
       
       
-      this._menuButton.dataset.extensionid = this.addon.id;
+      this._menuButton.dataset.extensionid = this.extension.id;
       this._menuButton.setAttribute(
         "data-l10n-args",
-        JSON.stringify({ extensionName: this.addon.name })
+        JSON.stringify({ extensionName: this.extension.name })
       );
 
       this.#setStateMessage();

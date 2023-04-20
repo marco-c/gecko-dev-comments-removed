@@ -1268,10 +1268,9 @@ var gUnifiedExtensions = {
   },
 
   
-  async updateAttention() {
+  updateAttention() {
     let attention = false;
-    for (let addon of await this.getActiveExtensions()) {
-      let policy = WebExtensionPolicy.getByID(addon.id);
+    for (let policy of this.getActivePolicies()) {
       let widget = this.browserActionFor(policy)?.widget;
 
       
@@ -1328,31 +1327,26 @@ var gUnifiedExtensions = {
 
 
 
-  async getActiveExtensions(all = true) {
-    
-    
-
-    
-    
-    let addons = await AddonManager.getAddonsByTypes(["extension"]);
-    addons = addons.filter(addon => {
-      if (addon.hidden || !addon.isActive) {
+  getActivePolicies(all = true) {
+    let policies = WebExtensionPolicy.getActiveExtensions();
+    policies = policies.filter(policy => {
+      let { extension } = policy;
+      if (!policy.active || extension?.type !== "extension") {
         return false;
       }
 
-      const policy = WebExtensionPolicy.getByID(addon.id);
       
       
       
-      if (!policy?.canAccessWindow(window)) {
+      if (extension.isHidden || !policy.canAccessWindow(window)) {
         return false;
       }
 
-      return all || !policy.extension.hasBrowserActionUI;
+      return all || !extension.hasBrowserActionUI;
     });
-    addons.sort((a1, a2) => a1.name.localeCompare(a2.name));
 
-    return addons;
+    policies.sort((a, b) => a.name.localeCompare(b.name));
+    return policies;
   },
 
   
@@ -1362,14 +1356,11 @@ var gUnifiedExtensions = {
 
 
 
-  async hasExtensionsInPanel() {
-    const extensions = await this.getActiveExtensions();
+  hasExtensionsInPanel() {
+    const policies = this.getActivePolicies();
 
-    return !!extensions
-      .map(extension => {
-        const policy = WebExtensionPolicy.getByID(extension.id);
-        return this.browserActionFor(policy)?.widget;
-      })
+    return !!policies
+      .map(policy => this.browserActionFor(policy)?.widget)
       .filter(widget => {
         return (
           !widget ||
@@ -1395,16 +1386,16 @@ var gUnifiedExtensions = {
     }
   },
 
-  async onPanelViewShowing(panelview) {
+  onPanelViewShowing(panelview) {
     const list = panelview.querySelector(".unified-extensions-list");
     
     
     
-    const extensions = await this.getActiveExtensions( false);
+    const policies = this.getActivePolicies( false);
 
-    for (const extension of extensions) {
+    for (const policy of policies) {
       const item = document.createElement("unified-extensions-item");
-      item.setAddon(extension);
+      item.setExtension(policy.extension);
       list.appendChild(item);
     }
   },
@@ -1467,7 +1458,7 @@ var gUnifiedExtensions = {
 
         
         
-        if (!(await this.hasExtensionsInPanel())) {
+        if (!this.hasExtensionsInPanel()) {
           await BrowserOpenAddonsMgr("addons://discover/");
           return;
         }
