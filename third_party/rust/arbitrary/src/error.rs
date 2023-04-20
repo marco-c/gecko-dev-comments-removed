@@ -37,4 +37,17 @@ impl error::Error for Error {}
 
 
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T, E = Error> = std::result::Result<T, E>;
+
+#[cfg(test)]
+mod tests {
+    
+    
+    
+    
+    
+    #[test]
+    fn can_use_custom_error_types_with_result() -> super::Result<(), String> {
+        Ok(())
+    }
+}
