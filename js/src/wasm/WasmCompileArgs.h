@@ -150,10 +150,13 @@ struct CompileArgs : ShareableBase<CompileArgs> {
   
   
   
+  
+  
 
   static SharedCompileArgs build(JSContext* cx, ScriptedCaller&& scriptedCaller,
                                  const FeatureOptions& options,
                                  CompileArgsError* error);
+  static SharedCompileArgs buildForAsmJS(ScriptedCaller&& scriptedCaller);
   static SharedCompileArgs buildAndReport(JSContext* cx,
                                           ScriptedCaller&& scriptedCaller,
                                           const FeatureOptions& options,

@@ -149,6 +149,22 @@ SharedCompileArgs CompileArgs::build(JSContext* cx,
   return target;
 }
 
+SharedCompileArgs CompileArgs::buildForAsmJS(ScriptedCaller&& scriptedCaller) {
+  CompileArgs* target = js_new<CompileArgs>(std::move(scriptedCaller));
+  if (!target) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  target->ionEnabled = true;
+  target->debugEnabled = false;
+
+  return target;
+}
+
 SharedCompileArgs CompileArgs::buildAndReport(JSContext* cx,
                                               ScriptedCaller&& scriptedCaller,
                                               const FeatureOptions& options,
