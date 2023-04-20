@@ -30,6 +30,7 @@
 #include "base/dir_reader_posix.h"
 
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Unused.h"
 
 #include "prenv.h"
 #include "prmem.h"
@@ -196,20 +197,25 @@ void CloseSuperfluousFds(void* aCtx, bool (*aShouldPreserve)(void*, int)) {
 }
 
 bool IsProcessDead(ProcessHandle handle, bool blocking) {
+  auto handleForkServer = [handle]() -> mozilla::Maybe<bool> {
 #ifdef MOZ_ENABLE_FORKSERVER
-  if (mozilla::ipc::ForkServiceChild::Get()) {
-    
-    
-    
-    
-    
-    const int r = kill(handle, 0);
-    
-    
-    
-    return r < 0 && errno == ESRCH;
-  }
+    if (errno == ECHILD && mozilla::ipc::ForkServiceChild::Get()) {
+      
+      
+      
+      
+      
+      const int r = kill(handle, 0);
+      
+      
+      
+      return mozilla::Some(r < 0 && errno == ESRCH);
+    }
+#else
+    mozilla::Unused << handle;
 #endif
+    return mozilla::Nothing();
+  };
 
 #ifdef HAVE_WAITID
 
@@ -222,6 +228,10 @@ bool IsProcessDead(ProcessHandle handle, bool blocking) {
   const int wflags = WEXITED | WNOWAIT | (blocking ? 0 : WNOHANG);
   int result = HANDLE_EINTR(waitid(P_PID, handle, &si, wflags));
   if (result == -1) {
+    if (auto forkServerReturn = handleForkServer()) {
+      return *forkServerReturn;
+    }
+
     
     
     
@@ -287,6 +297,10 @@ bool IsProcessDead(ProcessHandle handle, bool blocking) {
   int status;
   const int result = waitpid(handle, &status, blocking ? 0 : WNOHANG);
   if (result == -1) {
+    if (auto forkServerReturn = handleForkServer()) {
+      return *forkServerReturn;
+    }
+
     CHROMIUM_LOG(ERROR) << "waitpid failed pid:" << handle
                         << " errno:" << errno;
     return true;
