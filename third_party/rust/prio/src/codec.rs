@@ -9,9 +9,11 @@
 
 use byteorder::{BigEndian, ReadBytesExt};
 use std::{
+    convert::TryInto,
     error::Error,
     io::{Cursor, Read},
     mem::size_of,
+    num::TryFromIntError,
 };
 
 #[allow(missing_docs)]
@@ -304,6 +306,46 @@ pub fn decode_u24_items<P, D: ParameterizedDecode<P>>(
 }
 
 
+
+
+
+pub fn encode_u32_items<P, E: ParameterizedEncode<P>>(
+    bytes: &mut Vec<u8>,
+    encoding_parameter: &P,
+    items: &[E],
+) {
+    
+    let len_offset = bytes.len();
+    0u32.encode(bytes);
+
+    for item in items {
+        item.encode_with_param(encoding_parameter, bytes);
+    }
+
+    let len = bytes.len() - len_offset - 4;
+    let len: u32 = len.try_into().expect("Length too large");
+    for (offset, byte) in len.to_be_bytes().iter().enumerate() {
+        bytes[len_offset + offset] = *byte;
+    }
+}
+
+
+
+
+
+pub fn decode_u32_items<P, D: ParameterizedDecode<P>>(
+    decoding_parameter: &P,
+    bytes: &mut Cursor<&[u8]>,
+) -> Result<Vec<D>, CodecError> {
+    
+    let len: usize = u32::decode(bytes)?
+        .try_into()
+        .map_err(|err: TryFromIntError| CodecError::Other(err.into()))?;
+
+    decode_items(len, decoding_parameter, bytes)
+}
+
+
 fn decode_items<P, D: ParameterizedDecode<P>>(
     length: usize,
     decoding_parameter: &P,
@@ -567,6 +609,24 @@ mod tests {
         assert_eq!(bytes[0..3], [0, 0, 3 * TestMessage::encoded_length() as u8]);
 
         let decoded = decode_u24_items(&(), &mut Cursor::new(&bytes)).unwrap();
+        assert_eq!(values, decoded);
+    }
+
+    #[test]
+    fn roundtrip_variable_length_u32() {
+        let values = messages_vec();
+        let mut bytes = Vec::new();
+        encode_u32_items(&mut bytes, &(), &values);
+
+        assert_eq!(bytes.len(), 4 + 3 * TestMessage::encoded_length());
+
+        
+        assert_eq!(
+            bytes[0..4],
+            [0, 0, 0, 3 * TestMessage::encoded_length() as u8]
+        );
+
+        let decoded = decode_u32_items(&(), &mut Cursor::new(&bytes)).unwrap();
         assert_eq!(values, decoded);
     }
 
