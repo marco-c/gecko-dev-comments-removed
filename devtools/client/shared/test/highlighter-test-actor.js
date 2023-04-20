@@ -199,16 +199,16 @@ var highlighterTestSpec = protocol.generateActorSpec({
   },
 });
 
-var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
-  initialize(conn, targetActor, options) {
-    protocol.Actor.prototype.initialize.call(this, conn);
-    this.conn = conn;
+class HighlighterTestActor extends protocol.Actor {
+  constructor(conn, targetActor, options) {
+    super(conn, highlighterTestSpec);
+
     this.targetActor = targetActor;
-  },
+  }
 
   get content() {
     return this.targetActor.window;
-  },
+  }
 
   
 
@@ -255,7 +255,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
       );
     }
     return node;
-  },
+  }
 
   
 
@@ -273,7 +273,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
     }
 
     return helper.getAttributeForElement(nodeID, name);
-  },
+  }
 
   
 
@@ -291,7 +291,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
     }
 
     return helper.getElement(nodeID).computedStyle.getPropertyValue(property);
-  },
+  }
 
   
 
@@ -307,7 +307,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
       value = helper.getTextContentForElement(nodeID);
     }
     return value;
-  },
+  }
 
   
 
@@ -322,7 +322,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
       return null;
     }
     return h._highlighters.length;
-  },
+  }
 
   
 
@@ -341,7 +341,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
 
       h.currentNode.setAttribute(name, value);
     });
-  },
+  }
 
   
 
@@ -356,18 +356,18 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
     _highlighter.once("updated").then(() => this.emit("highlighter-updated"));
 
     
-  },
+  }
 
   async getNodeRect(selector) {
     const node = this._querySelector(selector);
     return getRect(this.content, node, this.content);
-  },
+  }
 
   async getTextNodeRect(parentSelector, childNodeIndex) {
     const parentNode = this._querySelector(parentSelector);
     const node = parentNode.childNodes[childNodeIndex];
     return getAdjustedQuads(this.content, node)[0].bounds;
-  },
+  }
 
   
 
@@ -376,7 +376,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
     
     
     return this.targetActor?.threadActor?._pauseOverlay;
-  },
+  }
 
   isPausedDebuggerOverlayVisible() {
     const pauseOverlay = this._getPausedDebuggerOverlay();
@@ -393,7 +393,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
       toolbar.getAttribute("hidden") !== "true" &&
       !!toolbar.getTextContent()
     );
-  },
+  }
 
   
 
@@ -412,7 +412,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
     
     
     pauseOverlay.handleEvent({ type: "mousedown", target: { id } });
-  },
+  }
 
   
 
@@ -421,7 +421,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
     const form = this.targetActor.form();
     const inspectorActor = this.conn._getOrCreateActor(form.inspectorActor);
     return inspectorActor?._eyeDropper;
-  },
+  }
 
   isEyeDropperVisible() {
     const eyeDropper = this._getEyeDropper();
@@ -430,7 +430,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
     }
 
     return eyeDropper.getElement("root").getAttribute("hidden") !== "true";
-  },
+  }
 
   getEyeDropperElementAttribute(elementId, attributeName) {
     const eyeDropper = this._getEyeDropper();
@@ -439,7 +439,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
     }
 
     return eyeDropper.getElement(elementId).getAttribute(attributeName);
-  },
+  }
 
   async getEyeDropperColorValue() {
     const eyeDropper = this._getEyeDropper();
@@ -456,7 +456,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
     }, "Couldn't get a non-empty text content for the color-value element");
 
     return color;
-  },
+  }
 
   
 
@@ -475,7 +475,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
     
     
     return accessibilityActor.walker?._tabbingOrderHighlighter;
-  },
+  }
 
   
 
@@ -510,8 +510,8 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
       }
       return `${nodeStr} : ${h.getElement("root").getTextContent()}`;
     });
-  },
-});
+  }
+}
 exports.HighlighterTestActor = HighlighterTestActor;
 
 class HighlighterTestFront extends protocol.FrontClassWithSpec(

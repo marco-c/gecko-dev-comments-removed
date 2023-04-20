@@ -32,36 +32,35 @@ const testErrorsSpec = protocol.generateActorSpec({
   },
 });
 
-const TestErrorsActor = protocol.ActorClassWithSpec(testErrorsSpec, {
-  initialize(conn) {
-    protocol.Actor.prototype.initialize.call(this, conn);
-    this.conn = conn;
-  },
+class TestErrorsActor extends protocol.Actor {
+  constructor(conn) {
+    super(conn, testErrorsSpec);
+  }
 
   throwsComponentsException() {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
-  },
+  }
 
   throwsException() {
     return this.a.b.c;
-  },
+  }
 
   throwsJSError() {
     throw new Error("JSError");
-  },
+  }
 
   throwsString() {
     
     throw "ErrorString";
-  },
+  }
 
   throwsObject() {
     
     throw {
       error: "foo",
     };
-  },
-});
+  }
+}
 exports.TestErrorsActor = TestErrorsActor;
 
 class TestErrorsFront extends protocol.FrontClassWithSpec(testErrorsSpec) {

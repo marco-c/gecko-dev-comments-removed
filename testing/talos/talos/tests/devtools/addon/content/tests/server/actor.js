@@ -4,14 +4,13 @@
 
 "use strict";
 
-const protocol = require("devtools/shared/protocol");
-
+const { Actor } = require("devtools/shared/protocol");
 const { dampTestSpec } = require("damp-test/tests/server/spec");
 
-exports.DampTestActor = protocol.ActorClassWithSpec(dampTestSpec, {
-  initialize(conn) {
-    protocol.Actor.prototype.initialize.call(this, conn);
-  },
+class DampTestActor extends Actor {
+  constructor(conn) {
+    super(conn, dampTestSpec);
+  }
 
   testMethod(arg, { option }, arraySize) {
     
@@ -19,5 +18,6 @@ exports.DampTestActor = protocol.ActorClassWithSpec(dampTestSpec, {
 
     
     return arg;
-  },
-});
+  }
+}
+exports.DampTestActor = DampTestActor;
