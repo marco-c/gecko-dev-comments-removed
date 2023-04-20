@@ -31,15 +31,8 @@ EarlyHintsService::~EarlyHintsService() = default;
 void EarlyHintsService::EarlyHint(const nsACString& aLinkHeader,
                                   nsIURI* aBaseURI, nsIChannel* aChannel) {
   mEarlyHintsCount++;
-  if (mFirstEarlyHint.isNothing()) {
+  if (!mFirstEarlyHint) {
     mFirstEarlyHint.emplace(TimeStamp::NowLoRes());
-  } else {
-    
-    
-    
-    
-    
-    return;
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
@@ -93,16 +86,18 @@ void EarlyHintsService::FinalResponse(uint32_t aResponseStatus) {
   
   
   CollectTelemetry(Some(aResponseStatus));
+  if (aResponseStatus >= 300 && aResponseStatus < 400) {
+    mOngoingEarlyHints->CancelAllOngoingPreloads();
+    mCanceled = true;
+  }
 }
 
 void EarlyHintsService::Cancel() {
-  CollectTelemetry(Nothing());
-  mOngoingEarlyHints->CancelAllOngoingPreloads();
-}
-
-void EarlyHintsService::RegisterLinksAndGetConnectArgs(
-    nsTArray<EarlyHintConnectArgs>& aOutLinks) {
-  mOngoingEarlyHints->RegisterLinksAndGetConnectArgs(aOutLinks);
+  if (!mCanceled) {
+    CollectTelemetry(Nothing());
+    mOngoingEarlyHints->CancelAllOngoingPreloads();
+    mCanceled = true;
+  }
 }
 
 void EarlyHintsService::CollectTelemetry(Maybe<uint32_t> aResponseStatus) {

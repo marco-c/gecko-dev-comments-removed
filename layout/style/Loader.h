@@ -368,13 +368,10 @@ class Loader final {
 
 
 
-
-
   Result<RefPtr<StyleSheet>, nsresult> LoadSheet(
       nsIURI* aURI, StylePreloadKind, const Encoding* aPreloadEncoding,
       nsIReferrerInfo* aReferrerInfo, nsICSSLoaderObserver* aObserver,
-      uint64_t aEarlyHintPreloaderId, CORSMode = CORS_NONE,
-      const nsAString& aIntegrity = u""_ns);
+      CORSMode = CORS_NONE, const nsAString& aIntegrity = u""_ns);
 
   
 
@@ -541,8 +538,7 @@ class Loader final {
       nsIURI* aURL, StylePreloadKind, SheetParsingMode aParsingMode,
       UseSystemPrincipal, const Encoding* aPreloadEncoding,
       nsIReferrerInfo* aReferrerInfo, nsICSSLoaderObserver* aObserver,
-      CORSMode aCORSMode, const nsAString& aIntegrity,
-      uint64_t aEarlyHintPreloaderId);
+      CORSMode aCORSMode, const nsAString& aIntegrity);
 
   RefPtr<StyleSheet> LookupInlineSheetInCache(const nsAString&);
 
@@ -560,8 +556,7 @@ class Loader final {
   
   
   enum class PendingLoad { No, Yes };
-  nsresult LoadSheet(SheetLoadData&, SheetState, uint64_t aEarlyHintPreloaderId,
-                     PendingLoad = PendingLoad::No);
+  nsresult LoadSheet(SheetLoadData&, SheetState, PendingLoad = PendingLoad::No);
 
   enum class AllowAsyncParse {
     Yes,

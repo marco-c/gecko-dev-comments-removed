@@ -267,10 +267,6 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
     newChannel->SetLoadGroup(mLoadGroup);
   }
 
-  if (RefPtr<HttpBaseChannel> httpChannel = do_QueryObject(newChannel)) {
-    httpChannel->SetEarlyHints(std::move(aArgs.earlyHints()));
-  }
-
   
   
   auto scopeExit = MakeScopeExit([&]() {

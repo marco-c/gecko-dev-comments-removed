@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { request_count_checking } = ChromeUtils.import(
+const { lax_request_count_checking } = ChromeUtils.import(
   "resource://testing-common/early_hint_preload_test_helper.jsm"
 );
 
@@ -46,11 +46,19 @@ add_task(async function test_preload_csp_imgsrc_none() {
   ).then(response => response.json());
   let expectedRequestCount = { hinted: 1, normal: 0 };
 
-  await request_count_checking(
+  
+  await lax_request_count_checking(
     "test_preload_csp_imgsrc_none",
     gotRequestCount,
     expectedRequestCount
   );
+  
+
+
+
+
+
+
 
   Services.cache2.clear();
 });

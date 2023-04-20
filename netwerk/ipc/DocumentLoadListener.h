@@ -110,7 +110,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
         mStreamFilterEndpoints;
     uint32_t mRedirectFlags;
     uint32_t mLoadFlags;
-    nsTArray<EarlyHintConnectArgs> mEarlyHints;
     RefPtr<PDocumentChannelParent::RedirectToRealChannelPromise::Private>
         mPromise;
   };
@@ -279,10 +278,10 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   
   
-  void SerializeRedirectData(
-      RedirectToRealChannelArgs& aArgs, bool aIsCrossProcess,
-      uint32_t aRedirectFlags, uint32_t aLoadFlags, dom::ContentParent* aParent,
-      nsTArray<EarlyHintConnectArgs>&& aEarlyHints) const;
+  void SerializeRedirectData(RedirectToRealChannelArgs& aArgs,
+                             bool aIsCrossProcess, uint32_t aRedirectFlags,
+                             uint32_t aLoadFlags,
+                             dom::ContentParent* aParent) const;
 
   uint64_t GetLoadIdentifier() const { return mLoadIdentifier; }
   uint32_t GetLoadType() const { return mLoadStateLoadType; }
@@ -513,8 +512,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   RefPtr<nsDOMNavigationTiming> mTiming;
-
-  net::EarlyHintsService mEarlyHintsService;
 
   
   

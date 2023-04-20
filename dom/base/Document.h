@@ -322,7 +322,6 @@ enum BFCacheStatus {
 
 namespace mozilla::net {
 class ChannelEventQueue;
-class EarlyHintConnectArgs;
 }  
 
 
@@ -1168,15 +1167,6 @@ class Document : public nsINode,
 
   void GetHeaderData(nsAtom* aHeaderField, nsAString& aData) const;
   void SetHeaderData(nsAtom* aheaderField, const nsAString& aData);
-
-  
-
-
-
-  void SetEarlyHints(nsTArray<net::EarlyHintConnectArgs>&& aEarlyHints);
-  const nsTArray<net::EarlyHintConnectArgs>& GetEarlyHints() const {
-    return mEarlyHints;
-  }
 
   
 
@@ -3014,7 +3004,7 @@ class Document : public nsINode,
                          bool aLinkPreload, const TimeStamp& aInitTimestamp);
   void PreLoadImage(nsIURI* uri, const nsAString& aCrossOriginAttr,
                     ReferrerPolicyEnum aReferrerPolicy, bool aIsImgSet,
-                    bool aLinkPreload, uint64_t aEarlyHintPreloaderId);
+                    bool aLinkPreload);
 
   
 
@@ -3030,8 +3020,7 @@ class Document : public nsINode,
                                   const nsAString& aCrossOriginAttr,
                                   ReferrerPolicyEnum aReferrerPolicy,
                                   const nsAString& aIntegrity,
-                                  css::StylePreloadKind,
-                                  uint64_t aEarlyHintPreloaderId);
+                                  css::StylePreloadKind);
 
   
 
@@ -5127,8 +5116,6 @@ class Document : public nsINode,
 
   class HeaderData;
   UniquePtr<HeaderData> mHeaderData;
-
-  nsTArray<net::EarlyHintConnectArgs> mEarlyHints;
 
   nsRevocableEventPtr<nsRunnableMethod<Document, void, false>>
       mPendingTitleChangeEvent;

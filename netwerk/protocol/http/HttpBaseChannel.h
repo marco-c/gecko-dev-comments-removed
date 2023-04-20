@@ -14,7 +14,6 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/net/DNS.h"
-#include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/PrivateBrowsingChannel.h"
 #include "nsCOMPtr.h"
@@ -344,9 +343,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
   void DoDiagnosticAssertWhenOnStopNotCalledOnDestroy() override;
 
   NS_IMETHOD SetWaitForHTTPSSVCRecord() override;
-
-  NS_IMETHOD SetEarlyHintPreloaderId(uint64_t aEarlyHintPreloaderId) override;
-  NS_IMETHOD GetEarlyHintPreloaderId(uint64_t* aEarlyHintPreloaderId) override;
 
   virtual void SetConnectionInfo(
       mozilla::net::nsHttpConnectionInfo* aCI) override;
@@ -788,21 +784,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
   uint32_t mCaps;
 
   ClassOfService mClassOfService;
-
- public:
-  void SetEarlyHints(
-      nsTArray<mozilla::net::EarlyHintConnectArgs>&& aEarlyHints);
-  nsTArray<mozilla::net::EarlyHintConnectArgs>&& TakeEarlyHints();
-
- protected:
-  
-  
-  
-  
-  nsTArray<EarlyHintConnectArgs> mEarlyHints;
-  
-  
-  uint64_t mEarlyHintPreloaderId = 0;
 
   
   MOZ_ATOMIC_BITFIELDS(mAtomicBitfields1, 32, (
