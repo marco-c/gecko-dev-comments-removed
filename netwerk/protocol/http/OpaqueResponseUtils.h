@@ -8,8 +8,7 @@
 #ifndef mozilla_net_OpaqueResponseUtils_h
 #define mozilla_net_OpaqueResponseUtils_h
 
-#include "ipc/EnumSerializer.h"
-#include "mozilla/TimeStamp.h"
+#include "mozilla/dom/JSValidatorParent.h"
 #include "nsIContentPolicy.h"
 #include "nsIStreamListener.h"
 #include "nsUnknownDecoder.h"
@@ -25,14 +24,6 @@
 
 class nsIContentSniffer;
 static mozilla::LazyLogModule gORBLog("ORB");
-
-namespace mozilla::dom {
-class JSValidatorParent;
-}
-
-namespace mozilla::ipc {
-class Shmem;
-}
 
 namespace mozilla::net {
 
@@ -79,14 +70,6 @@ class OpaqueResponseBlocker final : public nsIStreamListener {
 
   nsresult EnsureOpaqueResponseIsAllowedAfterSniff(nsIRequest* aRequest);
 
-  
-  
-  
-  
-  
-  
-  enum class ValidatorResult : uint32_t { JavaScript, JSON, Other, Failure };
-
  private:
   virtual ~OpaqueResponseBlocker() = default;
 
@@ -105,8 +88,6 @@ class OpaqueResponseBlocker final : public nsIStreamListener {
 
   State mState = State::Sniffing;
   nsresult mStatus = NS_OK;
-
-  TimeStamp mStartOfJavaScriptValidation;
 
   RefPtr<dom::JSValidatorParent> mJSValidator;
 
@@ -159,15 +140,6 @@ class nsCompressedAudioVideoImageDetector : public nsUnknownDecoder {
     }
   }
 };
-}  
-
-namespace IPC {
-template <>
-struct ParamTraits<mozilla::net::OpaqueResponseBlocker::ValidatorResult>
-    : public ContiguousEnumSerializerInclusive<
-          mozilla::net::OpaqueResponseBlocker::ValidatorResult,
-          mozilla::net::OpaqueResponseBlocker::ValidatorResult::JavaScript,
-          mozilla::net::OpaqueResponseBlocker::ValidatorResult::Failure> {};
 }  
 
 #endif  
