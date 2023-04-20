@@ -223,7 +223,7 @@ already_AddRefed<GLContext> GLContextProviderCGL::CreateForCompositorWidget(
     CompositorWidget* aCompositorWidget, bool aHardwareWebRender, bool aForceAccelerated) {
   CreateContextFlags flags = CreateContextFlags::ALLOW_OFFLINE_RENDERER;
   if (aForceAccelerated) {
-    flags |= CreateContextFlags::FORCE_ENABLE_HARDWARE;
+    flags |= CreateContextFlags::FORBID_SOFTWARE;
   }
   if (!aHardwareWebRender) {
     flags |= CreateContextFlags::REQUIRE_COMPAT_PROFILE;
@@ -252,8 +252,24 @@ static RefPtr<GLContextCGL> CreateOffscreenFBOContext(GLContextCreateDesc desc) 
     attribs.push_back(NSOpenGLPFAAllowOfflineRenderers);
   }
 
-  if (flags & CreateContextFlags::FORCE_ENABLE_HARDWARE) {
+  if (flags & CreateContextFlags::FORBID_SOFTWARE) {
+    if (flags & CreateContextFlags::FORBID_HARDWARE) {
+      NS_WARNING("Both !hardware and !software.");
+      return nullptr;
+    }
     attribs.push_back(NSOpenGLPFAAccelerated);
+  }
+  if (flags & CreateContextFlags::FORBID_HARDWARE) {
+    
+
+
+
+
+
+
+
+    attribs.push_back(NSOpenGLPFARendererID);
+    attribs.push_back(kCGLRendererGenericID);
   }
 
   if (!(flags & CreateContextFlags::REQUIRE_COMPAT_PROFILE)) {

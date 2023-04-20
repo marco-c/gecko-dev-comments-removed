@@ -22,7 +22,7 @@ enum class CreateContextFlags : uint16_t {
   NONE = 0,
   REQUIRE_COMPAT_PROFILE = 1 << 0,
   
-  FORCE_ENABLE_HARDWARE = 1 << 1,
+  FORBID_SOFTWARE = 1 << 1,
   
   ALLOW_OFFLINE_RENDERER = 1 << 2,
   
@@ -34,6 +34,8 @@ enum class CreateContextFlags : uint16_t {
   PROVOKING_VERTEX_DONT_CARE = 1 << 7,
   PREFER_EXACT_VERSION = 1 << 8,
   PREFER_MULTITHREADED = 1 << 9,
+
+  FORBID_HARDWARE = 1 << 10,
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CreateContextFlags)
 
