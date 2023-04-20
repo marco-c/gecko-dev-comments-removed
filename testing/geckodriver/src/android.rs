@@ -291,7 +291,7 @@ impl AndroidHandler {
     {
         
         
-        #[derive(Serialize, Deserialize, PartialEq, Debug)]
+        #[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
         pub struct Config {
             pub env: Mapping,
             pub args: Vec<String>,

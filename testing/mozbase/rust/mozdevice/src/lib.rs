@@ -187,7 +187,7 @@ fn read_response(stream: &mut TcpStream, has_output: bool, has_length: bool) -> 
             
             response = response.split_off(8);
 
-            let message = std::str::from_utf8(&*response).map(|s| format!("adb error: {}", s))?;
+            let message = std::str::from_utf8(&response).map(|s| format!("adb error: {}", s))?;
 
             return Err(DeviceError::Adb(message));
         }
