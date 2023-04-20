@@ -93,8 +93,18 @@ static_assert(Instance::offsetOfLastCommonJitField() < 128);
 
 
 
-const void** Instance::addressOfTypeId(const uint32_t typeIndex) const {
+const void** Instance::addressOfTypeId(uint32_t typeIndex) const {
   return (const void**)(globalData() + typeIndex * sizeof(void*));
+}
+
+const void* Instance::addressOfGlobalCell(const GlobalDesc& global) const {
+  const void* cell = globalData() + global.offset();
+  
+  
+  if (global.isIndirect()) {
+    cell = *(const void**)cell;
+  }
+  return cell;
 }
 
 FuncImportInstanceData& Instance::funcImportInstanceData(const FuncImport& fi) {
@@ -1532,7 +1542,8 @@ Instance::Instance(JSContext* cx, Handle<WasmInstanceObject*> object,
       memory_(memory),
       tables_(std::move(tables)),
       maybeDebug_(std::move(maybeDebug)),
-      debugFilter_(nullptr)
+      debugFilter_(nullptr),
+      maxInitializedGlobalsIndexPlus1_(0)
 #ifdef ENABLE_WASM_GC
       ,
       hasGcTypes_(false)
@@ -1702,7 +1713,14 @@ bool Instance::init(JSContext* cx, const JSFunctionVector& funcImports,
   
   
   
-  for (size_t i = 0; i < metadata().globals.length(); i++) {
+  
+  
+  
+  
+  
+  maxInitializedGlobalsIndexPlus1_ = 0;
+  for (size_t i = 0; i < metadata().globals.length();
+       i++, maxInitializedGlobalsIndexPlus1_ = i) {
     const GlobalDesc& global = metadata().globals[i];
 
     
@@ -1726,7 +1744,7 @@ bool Instance::init(JSContext* cx, const JSFunctionVector& funcImports,
         RootedVal val(cx);
         const InitExpr& init = global.initExpr();
         Rooted<WasmInstanceObject*> instanceObj(cx, object());
-        if (!init.evaluate(cx, globalImportValues, instanceObj, &val)) {
+        if (!init.evaluate(cx, instanceObj, &val)) {
           return false;
         }
 
@@ -1747,6 +1765,9 @@ bool Instance::init(JSContext* cx, const JSFunctionVector& funcImports,
       }
     }
   }
+
+  
+  MOZ_ASSERT(maxInitializedGlobalsIndexPlus1_ == metadata().globals.length());
 
   
   if (!passiveDataSegments_.resize(dataSegments.length())) {
@@ -2390,6 +2411,23 @@ static JSObject* GetExceptionTag(JSObject* exn) {
 void Instance::setPendingException(HandleAnyRef exn) {
   pendingException_ = exn.get().asJSObject();
   pendingExceptionTag_ = GetExceptionTag(exn.get().asJSObject());
+}
+
+void Instance::constantGlobalGet(uint32_t globalIndex,
+                                 MutableHandleVal result) {
+  MOZ_RELEASE_ASSERT(globalIndex < maxInitializedGlobalsIndexPlus1_);
+  const GlobalDesc& global = metadata().globals[globalIndex];
+
+  
+  if (global.isConstant()) {
+    
+    result.set(Val(global.constantValue()));
+    return;
+  }
+
+  
+  const void* cell = addressOfGlobalCell(global);
+  result.address()->initFromHeapLocation(global.type(), cell);
 }
 
 bool Instance::constantRefFunc(uint32_t funcIndex,

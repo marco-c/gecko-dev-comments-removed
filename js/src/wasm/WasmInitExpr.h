@@ -62,12 +62,13 @@ class InitExpr {
   
   
   static bool decodeAndValidate(Decoder& d, ModuleEnvironment* env,
-                                ValType expected, InitExpr* expr);
+                                ValType expected,
+                                uint32_t maxInitializedGlobalsIndexPlus1,
+                                InitExpr* expr);
 
   
   
-  bool evaluate(JSContext* cx, const ValVector& globalImportValues,
-                Handle<WasmInstanceObject*> instanceObj,
+  bool evaluate(JSContext* cx, Handle<WasmInstanceObject*> instanceObj,
                 MutableHandleVal result) const;
 
   bool isLiteral() const { return kind_ == InitExprKind::Literal; }

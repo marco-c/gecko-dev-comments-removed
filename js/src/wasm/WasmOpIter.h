@@ -395,6 +395,11 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   TypeAndValueStack elseParamStack_;
   ControlStack controlStack_;
   UnsetLocalsState unsetLocals_;
+  
+  
+  
+  
+  uint32_t maxInitializedGlobalsIndexPlus1_;
 
 #ifdef DEBUG
   OpBytes op_;
@@ -508,12 +513,17 @@ class MOZ_STACK_CLASS OpIter : private Policy {
       : kind_(kind),
         d_(decoder),
         env_(env),
+        maxInitializedGlobalsIndexPlus1_(0),
         op_(OpBytes(Op::Limit)),
         offsetOfLastReadOp_(0) {}
 #else
   explicit OpIter(const ModuleEnvironment& env, Decoder& decoder,
                   Kind kind = OpIter::Func)
-      : kind_(kind), d_(decoder), env_(env), offsetOfLastReadOp_(0) {}
+      : kind_(kind),
+        d_(decoder),
+        env_(env),
+        maxInitializedGlobalsIndexPlus1_(0),
+        offsetOfLastReadOp_(0) {}
 #endif
 
   
@@ -560,7 +570,8 @@ class MOZ_STACK_CLASS OpIter : private Policy {
                                    const ValTypeVector& locals);
   [[nodiscard]] bool endFunction(const uint8_t* bodyEnd);
 
-  [[nodiscard]] bool startInitExpr(ValType expected);
+  [[nodiscard]] bool startInitExpr(ValType expected,
+                                   uint32_t maxInitializedGlobalsIndexPlus1);
   [[nodiscard]] bool endInitExpr();
 
   
@@ -1187,6 +1198,7 @@ inline bool OpIter<Policy>::startFunction(uint32_t funcIndex,
   MOZ_ASSERT(valueStack_.empty());
   MOZ_ASSERT(controlStack_.empty());
   MOZ_ASSERT(op_.b0 == uint16_t(Op::Limit));
+  MOZ_ASSERT(maxInitializedGlobalsIndexPlus1_ == 0);
   BlockType type = BlockType::FuncResults(*env_.funcs[funcIndex].type);
 
   size_t numArgs = env_.funcs[funcIndex].type->args().length();
@@ -1217,12 +1229,21 @@ inline bool OpIter<Policy>::endFunction(const uint8_t* bodyEnd) {
 }
 
 template <typename Policy>
-inline bool OpIter<Policy>::startInitExpr(ValType expected) {
+inline bool OpIter<Policy>::startInitExpr(
+    ValType expected, uint32_t maxInitializedGlobalsIndexPlus1) {
   MOZ_ASSERT(kind_ == OpIter::InitExpr);
   MOZ_ASSERT(elseParamStack_.empty());
   MOZ_ASSERT(valueStack_.empty());
   MOZ_ASSERT(controlStack_.empty());
+  MOZ_ASSERT(maxInitializedGlobalsIndexPlus1_ == 0);
   MOZ_ASSERT(op_.b0 == uint16_t(Op::Limit));
+
+  
+  
+  if (env_.features.gc) {
+    maxInitializedGlobalsIndexPlus1_ = maxInitializedGlobalsIndexPlus1;
+  }
+
   BlockType type = BlockType::VoidToSingle(expected);
   return pushControl(LabelKind::Body, type);
 }
@@ -2079,7 +2100,9 @@ inline bool OpIter<Policy>::readGetGlobal(uint32_t* id) {
     return fail("global.get index out of range");
   }
 
-  if (kind_ == OpIter::InitExpr &&
+  
+  
+  if (kind_ == OpIter::InitExpr && *id >= maxInitializedGlobalsIndexPlus1_ &&
       (!env_.globals[*id].isImport() || env_.globals[*id].isMutable())) {
     return fail(
         "global.get in initializer expression must reference a global "
