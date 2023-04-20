@@ -409,14 +409,14 @@ void SVGUtils::NotifyChildrenOfSVGChange(nsIFrame* aFrame, uint32_t aFlags) {
 
 
 float SVGUtils::ComputeOpacity(const nsIFrame* aFrame, bool aHandleOpacity) {
-  const auto* styleEffects = aFrame->StyleEffects();
+  float opacity = aFrame->StyleEffects()->mOpacity;
 
-  if (!styleEffects->IsOpaque() &&
+  if (opacity != 1.0f &&
       (SVGUtils::CanOptimizeOpacity(aFrame) || !aHandleOpacity)) {
     return 1.0f;
   }
 
-  return styleEffects->mOpacity;
+  return opacity;
 }
 
 void SVGUtils::DetermineMaskUsage(const nsIFrame* aFrame, bool aHandleOpacity,
@@ -476,7 +476,7 @@ class MixModeBlender {
   }
 
   bool ShouldCreateDrawTargetForBlend() const {
-    return mFrame->StyleEffects()->HasMixBlendMode();
+    return mFrame->StyleEffects()->mMixBlendMode != StyleBlend::Normal;
   }
 
   gfxContext* CreateBlendTarget(const gfxMatrix& aTransform) {
@@ -1354,13 +1354,13 @@ void SVGUtils::MakeFillPatternFor(nsIFrame* aFrame, gfxContext* aContext,
     return;
   }
 
-  const auto* styleEffects = aFrame->StyleEffects();
+  const float opacity = aFrame->StyleEffects()->mOpacity;
 
   float fillOpacity = GetOpacity(style->mFillOpacity, aContextPaint);
-  if (!styleEffects->IsOpaque() && SVGUtils::CanOptimizeOpacity(aFrame)) {
+  if (opacity < 1.0f && SVGUtils::CanOptimizeOpacity(aFrame)) {
     
     
-    fillOpacity *= styleEffects->mOpacity;
+    fillOpacity *= opacity;
   }
 
   const DrawTarget* dt = aContext->GetDrawTarget();
@@ -1421,13 +1421,13 @@ void SVGUtils::MakeStrokePatternFor(nsIFrame* aFrame, gfxContext* aContext,
     return;
   }
 
-  const auto* styleEffects = aFrame->StyleEffects();
+  const float opacity = aFrame->StyleEffects()->mOpacity;
 
   float strokeOpacity = GetOpacity(style->mStrokeOpacity, aContextPaint);
-  if (!styleEffects->IsOpaque() && SVGUtils::CanOptimizeOpacity(aFrame)) {
+  if (opacity < 1.0f && SVGUtils::CanOptimizeOpacity(aFrame)) {
     
     
-    strokeOpacity *= styleEffects->mOpacity;
+    strokeOpacity *= opacity;
   }
 
   const DrawTarget* dt = aContext->GetDrawTarget();
