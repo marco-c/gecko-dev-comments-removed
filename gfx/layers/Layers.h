@@ -68,56 +68,7 @@ class Compositor;
 class TransformData;
 struct PropertyAnimationGroup;
 
-class Layer {
- public:
-  enum {
-    
-
-
-
-
-    CONTENT_OPAQUE = 0x01,
-    
-
-
-
-
-
-
-    CONTENT_COMPONENT_ALPHA = 0x02,
-
-    
-
-
-
-    CONTENT_EXTEND_3D_CONTEXT = 0x08,
-
-    
-
-
-
-    CONTENT_DISABLE_SUBPIXEL_AA = 0x20,
-
-    
-
-
-
-
-
-    CONTENT_DISABLE_FLATTENING = 0x40,
-
-    
-
-
-
-    CONTENT_BACKFACE_HIDDEN = 0x80,
-
-    
-
-
-    CONTENT_SNAP_TO_GRID = 0x100
-  };
-};
+class Layer {};
 
 #ifdef MOZ_DUMP_PAINTING
 void WriteSnapshotToDumpFile(Layer* aLayer, gfx::DataSourceSurface* aSurf);
