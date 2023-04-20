@@ -712,6 +712,27 @@ void MacroAssembler::branchTruncateFloat32MaybeModUint32(FloatRegister src,
   as_sll(dest, dest, 0);
 }
 
+void MacroAssembler::branchTruncateDoubleToInt32(FloatRegister src,
+                                                 Register dest, Label* fail) {
+  ScratchRegisterScope scratch(asMasm());
+  ScratchDoubleScope fpscratch(asMasm());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  as_truncld(fpscratch, src);
+  moveFromDouble(fpscratch, dest);
+
+  
+  as_sll(scratch, dest, 0);
+  ma_b(dest, scratch, fail, Assembler::NotEqual);
+}
+
 void MacroAssembler::fallibleUnboxPtr(const ValueOperand& src, Register dest,
                                       JSValueType type, Label* fail) {
   MOZ_ASSERT(type == JSVAL_TYPE_OBJECT || type == JSVAL_TYPE_STRING ||
