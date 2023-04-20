@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function dragTest() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -55,7 +55,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function dragTest1Point5Zoom() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -73,7 +73,7 @@ add_task(async function() {
 
       await helper.waitForOverlay();
 
-      await helper.dragOverlay(10, 10, 500, 500);
+      await helper.dragOverlay(300, 100, 350, 150);
 
       let clipboardChanged = helper.waitForRawClipboardChange();
 
@@ -92,7 +92,7 @@ add_task(async function() {
       info("result: " + JSON.stringify(result, null, 2));
 
       let expected = Math.floor(
-        490 * (await getContentDevicePixelRatio(browser))
+        50 * (await getContentDevicePixelRatio(browser))
       );
 
       Assert.equal(
@@ -113,7 +113,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function clickOverlayResetState() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -145,7 +145,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function overlayCancelButton() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -176,7 +176,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function preserveBoxSizeWhenMovingOutOfWindowBounds() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -250,7 +250,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function resizeAllEdges() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -368,7 +368,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function resizeAllCorners() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
