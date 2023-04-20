@@ -221,15 +221,6 @@ class EffectCompositor {
   
   
   
-  
-  
-  
-  static dom::Element* GetElementToRestyle(dom::Element* aElement,
-                                           PseudoStyleType aPseudoType);
-
-  
-  
-  
   static bool AllowCompositorAnimationsOnFrame(
       const nsIFrame* aFrame,
       AnimationPerformanceWarning::Type& aWarning );

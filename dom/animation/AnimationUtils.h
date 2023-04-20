@@ -108,6 +108,25 @@ class AnimationUtils {
     TimeDuration diff = aFirst >= aSecond ? aFirst - aSecond : aSecond - aFirst;
     return diff <= TimeDuration::FromMicroseconds(1);
   }
+
+  
+  
+  
+  
+  
+  
+  static dom::Element* GetElementForRestyle(dom::Element* aElement,
+                                            PseudoStyleType aPseudoType);
+
+  
+  
+  
+  
+  
+  
+  
+  static std::pair<const dom::Element*, PseudoStyleType> GetElementPseudoPair(
+      const dom::Element* aElementOrPseudo);
 };
 
 }  
