@@ -3692,8 +3692,7 @@ void nsWindow::CaptureMouse(bool aCapture) {
   }
 }
 
-void nsWindow::CaptureRollupEvents(nsIRollupListener* aListener,
-                                   bool aDoCapture) {
+void nsWindow::CaptureRollupEvents(bool aDoCapture) {
   LOG("CaptureRollupEvents() %i\n", int(aDoCapture));
 
   if (mIsDestroyed) {
@@ -3701,7 +3700,6 @@ void nsWindow::CaptureRollupEvents(nsIRollupListener* aListener,
   }
 
   if (aDoCapture) {
-    gRollupListener = aListener;
     
     
     if (!GdkIsWaylandDisplay() && !mIsDragPopup &&
@@ -3714,7 +3712,6 @@ void nsWindow::CaptureRollupEvents(nsIRollupListener* aListener,
     
     LOG("  remove mContainer grab [%p]\n", this);
     gtk_grab_remove(GTK_WIDGET(mContainer));
-    gRollupListener = nullptr;
   }
 }
 
@@ -7432,7 +7429,6 @@ bool nsWindow::CheckForRollup(gdouble aMouseX, gdouble aMouseY, bool aIsWheel,
     rollupWidget = rollupListener->GetRollupWidget();
   }
   if (!rollupWidget) {
-    nsBaseWidget::gRollupListener = nullptr;
     return false;
   }
 

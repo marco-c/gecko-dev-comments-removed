@@ -1413,8 +1413,7 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual void CaptureRollupEvents(nsIRollupListener* aListener,
-                                   bool aDoCapture) = 0;
+  virtual void CaptureRollupEvents(bool aDoCapture) = 0;
 
   
 

@@ -105,8 +105,6 @@ static int32_t gNumWidgets;
 #  include "nsCocoaFeatures.h"
 #endif
 
-nsIRollupListener* nsBaseWidget::gRollupListener = nullptr;
-
 using namespace mozilla::dom;
 using namespace mozilla::layers;
 using namespace mozilla::ipc;
@@ -1806,8 +1804,6 @@ const widget::SizeConstraints nsBaseWidget::GetSizeConstraints() {
 
 nsIRollupListener* nsBaseWidget::GetActiveRollupListener() {
   
-  if (gRollupListener) return gRollupListener;
-
   return nsXULPopupManager::GetInstance();
 }
 

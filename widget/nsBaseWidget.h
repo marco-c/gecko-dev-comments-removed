@@ -165,8 +165,7 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
 
   
   void CaptureMouse(bool aCapture) override {}
-  void CaptureRollupEvents(nsIRollupListener* aListener,
-                           bool aDoCapture) override {}
+  void CaptureRollupEvents(bool aDoCapture) override {}
   nsIWidgetListener* GetWidgetListener() const override;
   void SetWidgetListener(nsIWidgetListener* alistener) override;
   void Destroy() override;
@@ -729,8 +728,6 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   
   
   bool mCurrentPanGestureBelongsToSwipe;
-
-  static nsIRollupListener* gRollupListener;
 
   struct InitialZoomConstraints {
     InitialZoomConstraints(const uint32_t& aPresShellID,
