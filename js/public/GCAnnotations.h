@@ -24,6 +24,11 @@
 
 
 
+#  define JS_HAZ_GC_REF __attribute__((annotate("GC Pointer or Reference")))
+
+
+
+
 #  define JS_HAZ_ROOTED __attribute__((annotate("Rooted Pointer")))
 
 
@@ -78,6 +83,7 @@
 #  define JS_EXPECT_HAZARDS
 #  define JS_HAZ_GC_THING
 #  define JS_HAZ_GC_POINTER
+#  define JS_HAZ_GC_REF
 #  define JS_HAZ_ROOTED
 #  define JS_HAZ_GC_INVALIDATED
 #  define JS_HAZ_ROOTED_BASE

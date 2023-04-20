@@ -11,6 +11,11 @@
 var TRACING = false;
 
 
+var PTR_POINTER = 0;
+var PTR_REFERENCE = 1;
+var PTR_RVALUE_REF = 2;
+
+
 
 
 function findAllPoints(bodies, blockId, bits)
@@ -335,6 +340,11 @@ function isImmobileValue(exp) {
     return false;
 }
 
+
+function isReferenceDecl(decl) {
+    return decl.Type.Kind == "Pointer" && decl.Type.Reference != PTR_POINTER && decl.Variable.Kind != "Temp";
+}
+
 function expressionIsVariableAddress(exp, variable)
 {
     while (exp.Kind == "Fld")
@@ -462,12 +472,19 @@ function isReturningImmobileValue(edge, variable)
 
 
 
-function edgeUsesVariable(edge, variable, body)
+
+
+
+function edgeUsesVariable(edge, variable, body, liveToEnd=false)
 {
     if (ignoreEdgeUse(edge, variable, body))
         return 0;
 
-    if (variable.Kind == "Return" && body.Index[1] == edge.Index[1] && body.BlockId.Kind == "Function") {
+    if (variable.Kind == "Return") {
+        liveToEnd = true;
+    }
+
+    if (liveToEnd && body.Index[1] == edge.Index[1] && body.BlockId.Kind == "Function") {
         
         
         
@@ -543,19 +560,39 @@ function edgeUsesVariable(edge, variable, body)
     }
 }
 
+
+
+
+function maybeDereference(exp, decl) {
+    if (exp.Kind == "Drf" && exp.Exp[0].Kind == "Var") {
+        if (isReferenceDecl(decl)) {
+            return exp.Exp[0];
+        }
+    }
+    return exp;
+}
+
 function expressionIsVariable(exp, variable)
 {
     return exp.Kind == "Var" && sameVariable(exp.Variable, variable);
 }
 
-function expressionIsMethodOnVariable(exp, variable)
+
+
+
+function expressionIsDeclaredVariable(exp, decl)
+{
+    exp = maybeDereference(exp, decl);
+    return expressionIsVariable(exp, decl.Variable);
+}
+
+function expressionIsMethodOnVariableDecl(exp, decl)
 {
     
     
     while (exp.Kind == "Fld" && exp.Field.Name[0].startsWith("field:"))
         exp = exp.Exp[0];
-
-    return exp.Kind == "Var" && sameVariable(exp.Variable, variable);
+    return expressionIsDeclaredVariable(exp, decl);
 }
 
 
@@ -631,6 +668,21 @@ function edgeStartsValueLiveRange(edge, variable)
 
 
 
+function parseTypeName(typeName) {
+    const m = typeName.match(/^(((?:\w|::)+::)?(\w+))\b(\<)?/);
+    if (!m) {
+        return undefined;
+    }
+    const [, type, raw_namespace, classname, is_specialized] = m;
+    const namespace = raw_namespace === null ? "" : raw_namespace;
+    return { type, namespace, classname, is_specialized }
+}
+
+
+
+
+
+
 
 
 
@@ -673,12 +725,14 @@ function edgeEndsValueLiveRange(edge, variable, body)
         return true;
     }
 
+    const decl = lookupVariable(body, variable);
+
     if (edge.Type.Kind == 'Function' &&
         edge.Exp[0].Kind == 'Var' &&
         edge.Exp[0].Variable.Kind == 'Func' &&
         edge.Exp[0].Variable.Name[1] == 'move' &&
         edge.Exp[0].Variable.Name[0].includes('std::move(') &&
-        expressionIsVariable(edge.PEdgeCallArguments.Exp[0], variable) &&
+        expressionIsDeclaredVariable(edge.PEdgeCallArguments.Exp[0], decl) &&
         edge.Exp[1].Kind == 'Var' &&
         edge.Exp[1].Variable.Kind == 'Temp')
     {
@@ -721,16 +775,25 @@ function edgeEndsValueLiveRange(edge, variable, body)
     if (edge.Type.Kind == 'Function' &&
         edge.Type.TypeFunctionCSU &&
         edge.PEdgeCallInstance &&
-        expressionIsMethodOnVariable(edge.PEdgeCallInstance.Exp, variable))
+        expressionIsMethodOnVariableDecl(edge.PEdgeCallInstance.Exp, decl))
     {
         const typeName = edge.Type.TypeFunctionCSU.Type.Name;
-        const m = typeName.match(/^(((\w|::)+?)(\w+))</);
-        if (m) {
-            const [, type, namespace,, classname] = m;
+
+        
+        
+        
+        
+        
+        
+        
+        const parsed = parseTypeName(typeName);
+        if (parsed) {
+            const { type, namespace, classname, is_specialized } = parsed;
 
             
             
-            const ctorName = `${namespace}${classname}<T>::${classname}()`;
+            const template = is_specialized ? '<T>' : '';
+            const ctorName = `${namespace}${classname}${template}::${classname}()`;
             if (callee.Kind == 'Var' &&
                 typesWithSafeConstructors.has(type) &&
                 callee.Variable.Name[0].includes(ctorName))
@@ -769,7 +832,17 @@ function edgeEndsValueLiveRange(edge, variable, body)
     return false;
 }
 
-function edgeMovesVariable(edge, variable)
+
+function lookupVariable(body, variable) {
+    for (const decl of (body.DefineVariable || [])) {
+        if (sameVariable(decl.Variable, variable)) {
+            return decl;
+        }
+    }
+    return undefined;
+}
+
+function edgeMovesVariable(edge, variable, body)
 {
     if (edge.Kind != 'Call')
         return false;
@@ -778,10 +851,25 @@ function edgeMovesVariable(edge, variable)
         callee.Variable.Kind == 'Func')
     {
         const { Variable: { Name: [ fullname, shortname ] } } = callee;
-        const [ mangled, unmangled ] = splitFunction(fullname);
+
         
-        if (unmangled.match(/::UniquePtr<[^>]*>::UniquePtr\((\w+::)*UniquePtr<[^>]*>&&/))
-            return true;
+
+        if (!edge || !edge.PEdgeCallArguments || !edge.PEdgeCallArguments.Exp) {
+            return false;
+        }
+
+        for (const arg of edge.PEdgeCallArguments.Exp) {
+            if (arg.Kind != 'Drf') continue;
+            const val = arg.Exp[0];
+            if (val.Kind == 'Var' && sameVariable(val.Variable, variable)) {
+                
+                
+                const type = lookupVariable(body, variable).Type;
+                if (type.Kind == "Pointer" && type.Reference == PTR_RVALUE_REF) {
+                    return true;
+                }
+            }
+        }
     }
 
     return false;
@@ -802,7 +890,7 @@ function basicBlockEatsVariable(variable, body, startpoint)
         }
         const edge = edges[0];
 
-        if (edgeMovesVariable(edge, variable)) {
+        if (edgeMovesVariable(edge, variable, body)) {
             return true;
         }
 
