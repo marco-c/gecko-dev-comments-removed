@@ -174,7 +174,7 @@ class ShutdownBlocker : public nsIAsyncShutdownBlocker {
 
   NS_IMETHOD GetState(nsIPropertyBag**) override { return NS_OK; }
 
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
  protected:
   virtual ~ShutdownBlocker() = default;
 
@@ -189,7 +189,11 @@ class ShutdownBlocker : public nsIAsyncShutdownBlocker {
 
 class ShutdownBlockingTicket {
  public:
+  using ShutdownMozPromise = MozPromise<bool, bool, false>;
+
   
+
+
 
 
 
@@ -203,7 +207,9 @@ class ShutdownBlockingTicket {
   
 
 
-  virtual MediaEventSource<void>& ShutdownEvent() = 0;
+
+
+  virtual ShutdownMozPromise* ShutdownPromise() = 0;
 };
 
 

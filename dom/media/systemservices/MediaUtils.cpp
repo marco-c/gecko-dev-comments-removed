@@ -5,6 +5,8 @@
 
 
 #include "MediaUtils.h"
+
+#include "mozilla/AppShutdown.h"
 #include "mozilla/Services.h"
 
 namespace mozilla::media {
@@ -37,82 +39,91 @@ nsCOMPtr<nsIAsyncShutdownClient> MustGetShutdownBarrier() {
 NS_IMPL_ISUPPORTS(ShutdownBlocker, nsIAsyncShutdownBlocker)
 
 namespace {
-class MediaEventBlocker : public ShutdownBlocker {
+class TicketBlocker : public ShutdownBlocker {
+  using ShutdownMozPromise = ShutdownBlockingTicket::ShutdownMozPromise;
+
  public:
-  explicit MediaEventBlocker(nsString aName)
-      : ShutdownBlocker(std::move(aName)) {}
+  explicit TicketBlocker(nsString aName)
+      : ShutdownBlocker(std::move(aName)), mPromise(mHolder.Ensure(__func__)) {}
 
   NS_IMETHOD
   BlockShutdown(nsIAsyncShutdownClient* aProfileBeforeChange) override {
-    mShutdownEvent.Notify();
+    mHolder.Resolve(true, __func__);
     return NS_OK;
   }
 
-  MediaEventSource<void>& ShutdownEvent() { return mShutdownEvent; }
+  void RejectIfExists() { mHolder.RejectIfExists(false, __func__); }
+
+  ShutdownMozPromise* ShutdownPromise() { return mPromise; }
 
  private:
-  MediaEventProducer<void> mShutdownEvent;
-};
+  ~TicketBlocker() = default;
 
-class RefCountedTicket {
-  RefPtr<MediaEventBlocker> mBlocker;
-  MediaEventForwarder<void> mShutdownEventForwarder;
-
- public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RefCountedTicket)
-
-  RefCountedTicket()
-      : mShutdownEventForwarder(GetMainThreadSerialEventTarget()) {}
-
-  void AddBlocker(const nsString& aName, const nsString& aFileName,
-                  int32_t aLineNr) {
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(!mBlocker);
-    mBlocker = MakeAndAddRef<MediaEventBlocker>(aName);
-    mShutdownEventForwarder.Forward(mBlocker->ShutdownEvent());
-    GetShutdownBarrier()->AddBlocker(mBlocker.get(), aFileName, aLineNr, aName);
-  }
-
-  MediaEventSource<void>& ShutdownEvent() { return mShutdownEventForwarder; }
-
- protected:
-  virtual ~RefCountedTicket() {
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(mBlocker);
-    GetShutdownBarrier()->RemoveBlocker(mBlocker.get());
-    mShutdownEventForwarder.DisconnectAll();
-  }
+  MozPromiseHolder<ShutdownMozPromise> mHolder;
+  const RefPtr<ShutdownMozPromise> mPromise;
 };
 
 class ShutdownBlockingTicketImpl : public ShutdownBlockingTicket {
  private:
-  RefPtr<RefCountedTicket> mTicket;
+  RefPtr<TicketBlocker> mBlocker;
 
  public:
-  ShutdownBlockingTicketImpl(const nsAString& aName, const nsAString& aFileName,
-                             int32_t aLineNr)
-      : mTicket(MakeAndAddRef<RefCountedTicket>()) {
+  explicit ShutdownBlockingTicketImpl(RefPtr<TicketBlocker> aBlocker)
+      : mBlocker(std::move(aBlocker)) {}
+
+  static UniquePtr<ShutdownBlockingTicket> Create(const nsAString& aName,
+                                                  const nsAString& aFileName,
+                                                  int32_t aLineNr) {
     nsString name(aName);
-    name.AppendPrintf(" - %p", this);
+    auto blocker = MakeRefPtr<TicketBlocker>(name);
+    name.AppendPrintf(" - %p", blocker.get());
     NS_DispatchToMainThread(NS_NewRunnableFunction(
-        __func__,
-        [ticket = mTicket, name = std::move(name), file = nsString(aFileName),
-         lineNr = aLineNr] { ticket->AddBlocker(name, file, lineNr); }));
+        "ShutdownBlockingTicketImpl::AddBlocker",
+        [blocker, file = nsString(aFileName), aLineNr,
+         name = std::move(name)]() mutable {
+          MustGetShutdownBarrier()->AddBlocker(blocker, file, aLineNr, name);
+        }));
+    if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdown)) {
+      
+      
+      NS_DispatchToMainThread(NS_NewRunnableFunction(
+          "ShutdownBlockingTicketImpl::RemoveBlocker", [blocker] {
+            MustGetShutdownBarrier()->RemoveBlocker(blocker);
+            blocker->RejectIfExists();
+          }));
+      return nullptr;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return MakeUnique<ShutdownBlockingTicketImpl>(std::move(blocker));
   }
 
   ~ShutdownBlockingTicketImpl() {
-    NS_ReleaseOnMainThread(__func__, mTicket.forget(), true);
+    MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(
+        NS_NewRunnableFunction(__func__, [blocker = std::move(mBlocker)] {
+          GetShutdownBarrier()->RemoveBlocker(blocker);
+          blocker->RejectIfExists();
+        })));
   }
 
-  MediaEventSource<void>& ShutdownEvent() override {
-    return mTicket->ShutdownEvent();
+  ShutdownMozPromise* ShutdownPromise() override {
+    return mBlocker->ShutdownPromise();
   }
 };
 }  
 
 UniquePtr<ShutdownBlockingTicket> ShutdownBlockingTicket::Create(
     const nsAString& aName, const nsAString& aFileName, int32_t aLineNr) {
-  return WrapUnique(new ShutdownBlockingTicketImpl(aName, aFileName, aLineNr));
+  return ShutdownBlockingTicketImpl::Create(aName, aFileName, aLineNr);
 }
 
 }  
