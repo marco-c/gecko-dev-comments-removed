@@ -9,10 +9,12 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/EventQueue.h"
 #include "mozilla/glean/GleanMetrics.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_cookiebanners.h"
+#include "mozilla/Tuple.h"
 #include "nsCOMPtr.h"
 #include "nsCookieBannerRule.h"
 #include "nsCookieInjector.h"
@@ -23,15 +25,20 @@
 #include "nsICookieBannerRule.h"
 #include "nsICookie.h"
 #include "nsIEffectiveTLDService.h"
+#include "nsIPrincipal.h"
 #include "nsNetCID.h"
 #include "nsServiceManagerUtils.h"
 #include "nsStringFwd.h"
 #include "nsThreadUtils.h"
 #include "Cookie.h"
 
+#define OBSERVER_TOPIC_BC_ATTACHED "browsing-context-attached"
+#define OBSERVER_TOPIC_BC_DISCARDED "browsing-context-discarded"
+
 namespace mozilla {
 
-NS_IMPL_ISUPPORTS(nsCookieBannerService, nsICookieBannerService, nsIObserver)
+NS_IMPL_ISUPPORTS(nsCookieBannerService, nsICookieBannerService, nsIObserver,
+                  nsIWebProgressListener, nsISupportsWeakReference)
 
 LazyLogModule gCookieBannerLog("nsCookieBannerService");
 
@@ -144,6 +151,14 @@ nsCookieBannerService::Observe(nsISupports* aSubject, const char* aTopic,
         &nsCookieBannerService::OnPrefChange, kCookieBannerServiceModePref);
   }
 
+  if (nsCRT::strcmp(aTopic, OBSERVER_TOPIC_BC_ATTACHED) == 0) {
+    return RegisterWebProgressListener(aSubject);
+  }
+
+  if (nsCRT::strcmp(aTopic, OBSERVER_TOPIC_BC_DISCARDED) == 0) {
+    return RemoveWebProgressListener(aSubject);
+  }
+
   return NS_OK;
 }
 
@@ -188,6 +203,11 @@ nsresult nsCookieBannerService::Init() {
   
   RefPtr<nsCookieInjector> injector = nsCookieInjector::GetSingleton();
 
+  nsCOMPtr<nsIObserverService> obsSvc = mozilla::services::GetObserverService();
+  NS_ENSURE_TRUE(obsSvc, NS_ERROR_FAILURE);
+
+  obsSvc->AddObserver(this, OBSERVER_TOPIC_BC_ATTACHED, false);
+
   return NS_OK;
 }
 
@@ -208,6 +228,11 @@ nsresult nsCookieBannerService::Shutdown() {
 
   
   mRules.Clear();
+
+  nsCOMPtr<nsIObserverService> obsSvc = mozilla::services::GetObserverService();
+  NS_ENSURE_TRUE(obsSvc, NS_ERROR_FAILURE);
+
+  obsSvc->RemoveObserver(this, OBSERVER_TOPIC_BC_ATTACHED);
 
   return NS_OK;
 }
@@ -409,6 +434,12 @@ NS_IMETHODIMP
 nsCookieBannerService::GetClickRulesForDomain(
     const nsACString& aDomain, const bool aIsTopLevel,
     nsTArray<RefPtr<nsIClickRule>>& aRules) {
+  return GetClickRulesForDomainInternal(aDomain, aIsTopLevel, true, aRules);
+}
+
+nsresult nsCookieBannerService::GetClickRulesForDomainInternal(
+    const nsACString& aDomain, const bool aIsTopLevel,
+    const bool aReportTelemetry, nsTArray<RefPtr<nsIClickRule>>& aRules) {
   aRules.Clear();
 
   
@@ -422,8 +453,8 @@ nsCookieBannerService::GetClickRulesForDomain(
   
   
   nsCOMPtr<nsICookieBannerRule> ruleForDomain;
-  nsresult rv = GetRuleForDomain(aDomain, aIsTopLevel,
-                                 getter_AddRefs(ruleForDomain), true);
+  nsresult rv = GetRuleForDomain(
+      aDomain, aIsTopLevel, getter_AddRefs(ruleForDomain), aReportTelemetry);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -662,6 +693,182 @@ nsCookieBannerService::ResetDomainTelemetryRecord(const nsACString& aDomain) {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsCookieBannerService::OnStateChange(nsIWebProgress* aWebProgress,
+                                     nsIRequest* aRequest, uint32_t aStateFlags,
+                                     nsresult aStatus) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsCookieBannerService::OnProgressChange(nsIWebProgress* aWebProgress,
+                                        nsIRequest* aRequest,
+                                        int32_t aCurSelfProgress,
+                                        int32_t aMaxSelfProgress,
+                                        int32_t aCurTotalProgress,
+                                        int32_t aMaxTotalProgress) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsCookieBannerService::OnLocationChange(nsIWebProgress* aWebProgress,
+                                        nsIRequest* aRequest, nsIURI* aLocation,
+                                        uint32_t aFlags) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (!aWebProgress) {
+    return NS_OK;
+  }
+
+  RefPtr<dom::BrowsingContext> bc = aWebProgress->GetBrowsingContext();
+  if (!bc) {
+    return NS_OK;
+  }
+
+  if (!aLocation) {
+    return NS_OK;
+  }
+
+  
+  if (!aLocation->SchemeIs("http") && !aLocation->SchemeIs("https")) {
+    return NS_OK;
+  }
+
+  Maybe<Tuple<bool, bool>> telemetryData =
+      mReloadTelemetryData.MaybeGet(bc->Top()->Id());
+  if (!telemetryData) {
+    return NS_OK;
+  }
+
+  bool hasClickRuleInData;
+  bool hasCookieRuleInData;
+
+  Tie(hasClickRuleInData, hasCookieRuleInData) = telemetryData.ref();
+
+  
+  
+  if (aFlags & LOCATION_CHANGE_RELOAD) {
+    if (!bc->IsTop()) {
+      return NS_OK;
+    }
+
+    
+    
+    static bool sTelemetryEventEnabled = false;
+    if (!sTelemetryEventEnabled) {
+      sTelemetryEventEnabled = true;
+      Telemetry::SetEventRecordingEnabled("cookie_banner"_ns, true);
+    }
+
+    glean::cookie_banners::ReloadExtra extra = {
+        .hasClickRule = Some(hasClickRuleInData),
+        .hasCookieRule = Some(hasCookieRuleInData),
+        .noRule = Some(!hasClickRuleInData && !hasCookieRuleInData),
+    };
+    glean::cookie_banners::reload.Record(Some(extra));
+
+    return NS_OK;
+  }
+
+  
+  
+  
+  if (aFlags) {
+    return NS_OK;
+  }
+
+  bool hasClickRule = false;
+  bool hasCookieRule = false;
+
+  nsICookieBannerService::Modes mode;
+
+  nsresult rv = GetServiceModeForBrowsingContext(bc, &mode);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+  if (mode != nsICookieBannerService::MODE_DISABLED &&
+      mode != nsICookieBannerService::MODE_DETECT_ONLY) {
+    RefPtr<dom::WindowGlobalParent> wgp =
+        bc->Canonical()->GetCurrentWindowGlobal();
+
+    if (wgp) {
+      nsCOMPtr<nsIPrincipal> principal = wgp->DocumentPrincipal();
+
+      nsCString baseDomain;
+      rv = principal->GetBaseDomain(baseDomain);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      nsTArray<RefPtr<nsIClickRule>> clickRules;
+      rv = GetClickRulesForDomainInternal(baseDomain, bc->IsTop(), false,
+                                          clickRules);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return NS_OK;
+      }
+
+      for (auto& rule : clickRules) {
+        nsAutoCString optIn;
+        nsAutoCString optOut;
+
+        rv = rule->GetOptIn(optIn);
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        rv = rule->GetOptOut(optOut);
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        if (mode == nsICookieBannerService::MODE_REJECT_OR_ACCEPT) {
+          hasClickRule = !optIn.IsEmpty() || !optOut.IsEmpty();
+        } else {
+          hasClickRule = !optOut.IsEmpty();
+        }
+      }
+    }
+  }
+
+  
+  if (bc->IsTop()) {
+    bool usePBM = false;
+    rv = bc->GetUsePrivateBrowsing(&usePBM);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    nsTArray<RefPtr<nsICookieRule>> cookies;
+    rv = GetCookiesForURI(aLocation, usePBM, cookies);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return NS_OK;
+    }
+    hasCookieRule = cookies.Length() > 0;
+  }
+
+  hasClickRuleInData |= hasClickRule;
+  hasCookieRuleInData |= hasCookieRule;
+
+  mReloadTelemetryData.InsertOrUpdate(
+      bc->Top()->Id(), MakeTuple(hasClickRuleInData, hasCookieRuleInData));
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsCookieBannerService::OnStatusChange(nsIWebProgress* aWebProgress,
+                                      nsIRequest* aRequest, nsresult aStatus,
+                                      const char16_t* aMessage) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsCookieBannerService::OnSecurityChange(nsIWebProgress* aWebProgress,
+                                        nsIRequest* aRequest, uint32_t aState) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsCookieBannerService::OnContentBlockingEvent(nsIWebProgress* aWebProgress,
+                                              nsIRequest* aRequest,
+                                              uint32_t aEvent) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
 void nsCookieBannerService::DailyReportTelemetry() {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -684,6 +891,90 @@ void nsCookieBannerService::DailyReportTelemetry() {
     glean::cookie_banners::private_window_service_mode.Get(label).Set(
         modePBMStr.Equals(label));
   }
+}
+
+nsresult nsCookieBannerService::GetServiceModeForBrowsingContext(
+    dom::BrowsingContext* aBrowsingContext,
+    nsICookieBannerService::Modes* aMode) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  NS_ENSURE_ARG_POINTER(aBrowsingContext);
+
+  bool usePBM = false;
+  nsresult rv = aBrowsingContext->GetUsePrivateBrowsing(&usePBM);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  uint32_t mode;
+  if (usePBM) {
+    mode = StaticPrefs::cookiebanners_service_mode_privateBrowsing();
+  } else {
+    mode = StaticPrefs::cookiebanners_service_mode();
+  }
+
+  RefPtr<dom::WindowGlobalParent> topWGP =
+      aBrowsingContext->Top()->Canonical()->GetCurrentWindowGlobal();
+  NS_ENSURE_TRUE(topWGP, NS_ERROR_FAILURE);
+  nsCOMPtr<nsIURI> topURI = topWGP->GetDocumentURI();
+
+  if (mode != nsICookieBannerService::MODE_DISABLED && topURI) {
+    
+    
+
+    nsICookieBannerService::Modes domainPref;
+    nsresult rv = GetDomainPref(topURI, usePBM, &domainPref);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (domainPref != nsICookieBannerService::MODE_UNSET) {
+      mode = domainPref;
+    }
+  }
+
+  *aMode = static_cast<nsICookieBannerService::Modes>(mode);
+
+  return NS_OK;
+}
+
+nsresult nsCookieBannerService::RegisterWebProgressListener(
+    nsISupports* aSubject) {
+  NS_ENSURE_ARG_POINTER(aSubject);
+
+  RefPtr<dom::CanonicalBrowsingContext> bc =
+      static_cast<dom::BrowsingContext*>(aSubject)->Canonical();
+
+  if (!bc) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  if (!bc->IsTopContent()) {
+    return NS_OK;
+  }
+
+  mReloadTelemetryData.InsertOrUpdate(bc->Id(), MakeTuple(false, false));
+
+  return bc->GetWebProgress()->AddProgressListener(
+      this, nsIWebProgress::NOTIFY_LOCATION);
+}
+
+nsresult nsCookieBannerService::RemoveWebProgressListener(
+    nsISupports* aSubject) {
+  NS_ENSURE_ARG_POINTER(aSubject);
+
+  RefPtr<dom::CanonicalBrowsingContext> bc =
+      static_cast<dom::BrowsingContext*>(aSubject)->Canonical();
+
+  if (!bc) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (!bc->IsTopContent()) {
+    return NS_OK;
+  }
+
+  mReloadTelemetryData.Remove(bc->Id());
+
+  return bc->GetWebProgress()->RemoveProgressListener(this);
 }
 
 void nsCookieBannerService::ReportRuleLookupTelemetry(

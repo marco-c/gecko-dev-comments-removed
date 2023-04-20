@@ -11,6 +11,7 @@
 #include "nsTHashMap.h"
 #include "nsTHashSet.h"
 #include "nsIObserver.h"
+#include "nsIWebProgressListener.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
 
@@ -18,10 +19,17 @@ namespace mozilla {
 
 class CookieBannerDomainPrefService;
 
+namespace dom {
+class BrowsingContext;
+}  
+
 class nsCookieBannerService final : public nsIObserver,
-                                    public nsICookieBannerService {
+                                    public nsICookieBannerService,
+                                    public nsIWebProgressListener,
+                                    public nsSupportsWeakReference {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
+  NS_DECL_NSIWEBPROGRESSLISTENER
 
   NS_DECL_NSICOOKIEBANNERSERVICE
 
@@ -46,6 +54,12 @@ class nsCookieBannerService final : public nsIObserver,
 
   
   
+  
+  
+  nsTHashMap<uint64_t, Tuple<bool, bool>> mReloadTelemetryData;
+
+  
+  
   static void OnPrefChange(const char* aPref, void* aData);
 
   
@@ -58,6 +72,10 @@ class nsCookieBannerService final : public nsIObserver,
 
 
   [[nodiscard]] nsresult Shutdown();
+
+  nsresult GetClickRulesForDomainInternal(
+      const nsACString& aDomain, const bool aIsTopLevel,
+      const bool aReportTelemetry, nsTArray<RefPtr<nsIClickRule>>& aRules);
 
   nsresult GetRuleForDomain(const nsACString& aDomain, bool aIsTopLevel,
                             nsICookieBannerRule** aRule,
@@ -77,6 +95,13 @@ class nsCookieBannerService final : public nsIObserver,
   nsresult GetRuleForURI(nsIURI* aURI, bool aIsTopLevel,
                          nsICookieBannerRule** aRule, nsACString& aDomain,
                          bool aReportTelemetry = false);
+
+  nsresult GetServiceModeForBrowsingContext(
+      dom::BrowsingContext* aBrowsingContext,
+      nsICookieBannerService::Modes* aMode);
+
+  nsresult RegisterWebProgressListener(nsISupports* aSubject);
+  nsresult RemoveWebProgressListener(nsISupports* aSubject);
 
   void DailyReportTelemetry();
 
