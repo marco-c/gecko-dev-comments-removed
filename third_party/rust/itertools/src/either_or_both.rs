@@ -167,6 +167,33 @@ impl<A, B> EitherOrBoth<A, B> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn or(self, l: A, r: B) -> (A, B) {
+        match self {
+            Left(inner_l) => (inner_l, r),
+            Right(inner_r) => (l, inner_r),
+            Both(inner_l, inner_r) => (inner_l, inner_r),
+        }
+    }
+
+    
+    
+    
     pub fn or_default(self) -> (A, B)
     where
         A: Default,
@@ -176,6 +203,28 @@ impl<A, B> EitherOrBoth<A, B> {
             EitherOrBoth::Left(l) => (l, B::default()),
             EitherOrBoth::Right(r) => (A::default(), r),
             EitherOrBoth::Both(l, r) => (l, r),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn or_else<L: FnOnce() -> A, R: FnOnce() -> B>(self, l: L, r: R) -> (A, B) {
+        match self {
+            Left(inner_l) => (inner_l, r()),
+            Right(inner_r) => (l(), inner_r),
+            Both(inner_l, inner_r) => (inner_l, inner_r),
         }
     }
 }

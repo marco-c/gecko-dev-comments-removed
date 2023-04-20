@@ -4,6 +4,8 @@ use std::fmt;
 
 use super::adaptors::{PutBack, put_back};
 use crate::either_or_both::EitherOrBoth;
+#[cfg(doc)]
+use crate::Itertools;
 
 
 

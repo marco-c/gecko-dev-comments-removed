@@ -117,12 +117,22 @@ pub fn rev<I>(iterable: I) -> iter::Rev<I::IntoIter>
 
 
 
+
+
+
+
+#[deprecated(note="Use [std::iter::zip](https://doc.rust-lang.org/std/iter/fn.zip.html) instead", since="0.10.4")]
 pub fn zip<I, J>(i: I, j: J) -> Zip<I::IntoIter, J::IntoIter>
     where I: IntoIterator,
           J: IntoIterator
 {
     i.into_iter().zip(j)
 }
+
+
+
+
+
 
 
 

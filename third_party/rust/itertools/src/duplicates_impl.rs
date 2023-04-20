@@ -188,7 +188,6 @@ mod private {
 
 
 
-#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub type DuplicatesBy<I, V, F> = private::DuplicatesBy<I, V, private::ByFn<F>>;
 
 

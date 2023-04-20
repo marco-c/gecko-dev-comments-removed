@@ -2,6 +2,8 @@ use std::iter::Fuse;
 use alloc::collections::VecDeque;
 use crate::size_hint;
 use crate::PeekingNext;
+#[cfg(doc)]
+use crate::Itertools;
 
 
 #[derive(Clone, Debug)]
@@ -12,6 +14,8 @@ pub struct MultiPeek<I>
     buf: VecDeque<I::Item>,
     index: usize,
 }
+
+
 
 
 
@@ -67,10 +71,8 @@ impl<I> PeekingNext for MultiPeek<I>
             if let Some(r) = self.peek() {
                 if !accept(r) { return None }
             }
-        } else {
-            if let Some(r) = self.buf.get(0) {
-                if !accept(r) { return None }
-            }
+        } else if let Some(r) = self.buf.get(0) {
+            if !accept(r) { return None }
         }
         self.next()
     }

@@ -64,7 +64,7 @@ where
         
         if self.first {
             
-            return if self.indices.len() != 0 && !self.pool.get_next() {
+            return if !(self.indices.is_empty() || self.pool.get_next()) {
                 None
             
             } else {
@@ -92,7 +92,7 @@ where
                 
                 
                 for indices_index in increment_from..self.indices.len() {
-                    self.indices[indices_index] = increment_value
+                    self.indices[indices_index] = increment_value;
                 }
                 Some(self.current())
             }

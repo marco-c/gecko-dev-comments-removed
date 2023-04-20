@@ -3,6 +3,7 @@ use std::iter::FusedIterator;
 
 use crate::size_hint;
 
+#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct CoalesceBy<I, F, T>
 where
     I: Iterator,
@@ -86,7 +87,6 @@ impl<I: Iterator, F: CoalescePredicate<I::Item, T>, T> FusedIterator for Coalesc
 
 
 
-#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub type Coalesce<I, F> = CoalesceBy<I, F, <I as Iterator>::Item>;
 
 impl<F, Item, T> CoalescePredicate<Item, T> for F
@@ -113,7 +113,6 @@ where
 
 
 
-#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub type DedupBy<I, Pred> = CoalesceBy<I, DedupPred2CoalescePred<Pred>, <I as Iterator>::Item>;
 
 #[derive(Clone)]
@@ -186,7 +185,6 @@ where
 
 
 
-#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub type DedupByWithCount<I, Pred> =
     CoalesceBy<I, DedupPredWithCount2CoalescePred<Pred>, (usize, <I as Iterator>::Item)>;
 

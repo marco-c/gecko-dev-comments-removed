@@ -1,6 +1,5 @@
-
 use std::collections::HashMap;
-use std::collections::hash_map::{Entry};
+use std::collections::hash_map::Entry;
 use std::hash::Hash;
 use std::fmt;
 use std::iter::FusedIterator;
@@ -12,6 +11,8 @@ use std::iter::FusedIterator;
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct UniqueBy<I: Iterator, V, F> {
     iter: I,
+    
+    
     
     used: HashMap<V, ()>,
     f: F,

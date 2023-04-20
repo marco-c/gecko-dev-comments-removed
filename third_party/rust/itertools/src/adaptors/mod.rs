@@ -36,8 +36,6 @@ pub struct Interleave<I, J> {
 
 
 
-
-
 pub fn interleave<I, J>(i: I, j: J) -> Interleave<<I as IntoIterator>::IntoIter, <J as IntoIterator>::IntoIter>
     where I: IntoIterator,
           J: IntoIterator<Item = I::Item>
@@ -210,7 +208,7 @@ impl<I> PutBack<I>
     
     #[inline]
     pub fn put_back(&mut self, x: I::Item) {
-        self.top = Some(x)
+        self.top = Some(x);
     }
 }
 
@@ -329,12 +327,7 @@ impl<I, J> Iterator for Product<I, J>
             }
             Some(x) => x
         };
-        match self.a_cur {
-            None => None,
-            Some(ref a) => {
-                Some((a.clone(), elt_b))
-            }
-        }
+        self.a_cur.as_ref().map(|a| (a.clone(), elt_b))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -492,7 +485,6 @@ impl<T: PartialOrd> MergePredicate<T> for MergeLte {
 
 
 
-#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub type Merge<I, J> = MergeBy<I, J, MergeLte>;
 
 

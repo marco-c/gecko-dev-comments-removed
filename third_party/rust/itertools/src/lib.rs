@@ -197,6 +197,8 @@ mod combinations_with_replacement;
 mod exactly_one_err;
 mod diff;
 mod flatten_ok;
+#[cfg(feature = "use_std")]
+mod extrema_set;
 mod format;
 #[cfg(feature = "use_std")]
 mod grouping_map;
@@ -1109,7 +1111,7 @@ pub trait Itertools : Iterator {
     
     #[cfg(feature = "use_alloc")]
     fn multi_cartesian_product(self) -> MultiProduct<<Self::Item as IntoIterator>::IntoIter>
-        where Self: Iterator + Sized,
+        where Self: Sized,
               Self::Item: IntoIterator,
               <Self::Item as IntoIterator>::IntoIter: Clone,
               <Self::Item as IntoIterator>::Item: Clone
@@ -1746,12 +1748,10 @@ pub trait Itertools : Iterator {
     fn find_position<P>(&mut self, mut pred: P) -> Option<(usize, Self::Item)>
         where P: FnMut(&Self::Item) -> bool
     {
-        let mut index = 0usize;
-        for elt in self {
+        for (index, elt) in self.enumerate() {
             if pred(&elt) {
                 return Some((index, elt));
             }
-            index += 1;
         }
         None
     }
@@ -1795,7 +1795,7 @@ pub trait Itertools : Iterator {
         Some(if predicate(&first) {
             first
         } else {
-            self.find(|x| predicate(&x)).unwrap_or(first)
+            self.find(|x| predicate(x)).unwrap_or(first)
         })
     }
     
@@ -1953,7 +1953,7 @@ pub trait Itertools : Iterator {
         where F: FnMut(Self::Item),
               Self: Sized,
     {
-        self.for_each(f)
+        self.for_each(f);
     }
 
     
@@ -2692,7 +2692,6 @@ pub trait Itertools : Iterator {
     
     
     
-    
     #[cfg(feature = "use_alloc")]
     fn sorted_by_cached_key<K, F>(self, f: F) -> VecIntoIter<Self::Item>
     where
@@ -2900,6 +2899,194 @@ pub trait Itertools : Iterator {
               F: FnMut(&V) -> K
     {
         grouping_map::new(grouping_map::MapForGrouping::new(self, key_mapper))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn min_set(self) -> Vec<Self::Item>
+        where Self: Sized, Self::Item: Ord
+    {
+        extrema_set::min_set_impl(self, |_| (), |x, y, _, _| x.cmp(y))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn min_set_by<F>(self, mut compare: F) -> Vec<Self::Item>
+        where Self: Sized, F: FnMut(&Self::Item, &Self::Item) -> Ordering
+    {
+        extrema_set::min_set_impl(
+            self,
+            |_| (),
+            |x, y, _, _| compare(x, y)
+        )
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn min_set_by_key<K, F>(self, key: F) -> Vec<Self::Item>
+        where Self: Sized, K: Ord, F: FnMut(&Self::Item) -> K
+    {
+        extrema_set::min_set_impl(self, key, |_, _, kx, ky| kx.cmp(ky))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn max_set(self) -> Vec<Self::Item>
+        where Self: Sized, Self::Item: Ord
+    {
+        extrema_set::max_set_impl(self, |_| (), |x, y, _, _| x.cmp(y))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn max_set_by<F>(self, mut compare: F) -> Vec<Self::Item>
+        where Self: Sized, F: FnMut(&Self::Item, &Self::Item) -> Ordering
+    {
+        extrema_set::max_set_impl(
+            self,
+            |_| (),
+            |x, y, _, _| compare(x, y)
+        )
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn max_set_by_key<K, F>(self, key: F) -> Vec<Self::Item>
+        where Self: Sized, K: Ord, F: FnMut(&Self::Item) -> K
+    {
+        extrema_set::max_set_impl(self, key, |_, _, kx, ky| kx.cmp(ky))
     }
 
     
@@ -3484,23 +3671,12 @@ impl<T: ?Sized> Itertools for T where T: Iterator { }
 
 
 
-
 pub fn equal<I, J>(a: I, b: J) -> bool
     where I: IntoIterator,
           J: IntoIterator,
           I::Item: PartialEq<J::Item>
 {
-    let mut ia = a.into_iter();
-    let mut ib = b.into_iter();
-    loop {
-        match ia.next() {
-            Some(x) => match ib.next() {
-                Some(y) => if x != y { return false; },
-                None => return false,
-            },
-            None => return ib.next().is_none()
-        }
-    }
+    a.into_iter().eq(b)
 }
 
 
