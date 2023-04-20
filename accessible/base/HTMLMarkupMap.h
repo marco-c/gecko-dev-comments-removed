@@ -79,12 +79,12 @@ MARKUPMAP(
       }
       
       
-      StyleInfo styleInfo(aElement);
-      RefPtr<nsAtom> displayValue = styleInfo.Display();
-      if (displayValue != nsGkAtoms::block &&
-          !displayValue->Equals(u"inline-block"_ns)) {
+      nsIFrame* f = aElement->GetPrimaryFrame();
+      if (!f || !f->IsBlockFrameOrSubclass()) {
         return nullptr;
       }
+      
+      
       
       
       

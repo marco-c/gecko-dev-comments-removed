@@ -6,54 +6,13 @@
 
 #include "StyleInfo.h"
 
-#include "mozilla/dom/Element.h"
-#include "nsComputedDOMStyle.h"
-#include "nsCSSProps.h"
-#include "nsIFrame.h"
+#include "mozilla/ServoStyleConsts.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;
 
-StyleInfo::StyleInfo(dom::Element* aElement) : mElement(aElement) {
-  mComputedStyle = nsComputedDOMStyle::GetComputedStyleNoFlush(aElement);
-}
-
-already_AddRefed<nsAtom> StyleInfo::Display() {
-  nsAutoCString value;
-  mComputedStyle->GetComputedPropertyValue(eCSSProperty_display, value);
-  RefPtr<nsAtom> atomVal = NS_Atomize(value);
-  return atomVal.forget();
-}
-
-already_AddRefed<nsAtom> StyleInfo::TextAlign() {
-  nsAutoCString value;
-  mComputedStyle->GetComputedPropertyValue(eCSSProperty_text_align, value);
-  RefPtr<nsAtom> atomVal = NS_Atomize(value);
-  return atomVal.forget();
-}
-
-mozilla::LengthPercentage StyleInfo::TextIndent() {
-  return mComputedStyle->StyleText()->mTextIndent;
-}
-
-CSSCoord StyleInfo::Margin(Side aSide) {
-  MOZ_ASSERT(mElement->GetPrimaryFrame(),
-             " mElement->GetPrimaryFrame() needs to be valid pointer");
-
-  nsIFrame* frame = mElement->GetPrimaryFrame();
-
-  
-  
-  auto& margin = frame->StyleMargin()->mMargin.Get(aSide);
-  if (margin.ConvertsToLength()) {
-    return margin.AsLengthPercentage().ToLengthInCSSPixels();
-  }
-
-  nscoord coordVal = frame->GetUsedMargin().Side(aSide);
-  return CSSPixel::FromAppUnits(coordVal);
-}
-
 void StyleInfo::FormatColor(const nscolor& aValue, nsAString& aFormattedValue) {
+  
   
   aFormattedValue.AppendLiteral("rgb(");
   aFormattedValue.AppendInt(NS_GET_R(aValue));
@@ -66,6 +25,7 @@ void StyleInfo::FormatColor(const nscolor& aValue, nsAString& aFormattedValue) {
 
 already_AddRefed<nsAtom> StyleInfo::TextDecorationStyleToAtom(
     StyleTextDecorationStyle aValue) {
+  
   
   
   switch (aValue) {

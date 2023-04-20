@@ -40,6 +40,7 @@
 #include "HTMLSelectAccessible.h"
 #include "ImageAccessible.h"
 
+#include "nsComputedDOMStyle.h"
 #include "nsIDOMXULButtonElement.h"
 #include "nsIDOMXULSelectCntrlEl.h"
 #include "nsIDOMXULSelectCntrlItemEl.h"
@@ -1175,25 +1176,28 @@ already_AddRefed<AccAttributes> LocalAccessible::NativeAttributes() {
   
   
   
-  if (!mContent->GetPrimaryFrame() ||
-      mContent->IsHTMLElement(nsGkAtoms::area)) {
+  nsIFrame* f = mContent->GetPrimaryFrame();
+  if (!f || mContent->IsHTMLElement(nsGkAtoms::area)) {
     return attributes.forget();
   }
 
-  
-  nsAutoString value;
-  StyleInfo styleInfo(mContent->AsElement());
+  const ComputedStyle& style = *f->Style();
+  auto Atomize = [&](nsCSSPropertyID aId) -> RefPtr<nsAtom> {
+    nsAutoCString value;
+    style.GetComputedPropertyValue(aId, value);
+    return NS_Atomize(value);
+  };
 
   
-  RefPtr<nsAtom> displayValue = styleInfo.Display();
-  attributes->SetAttribute(nsGkAtoms::display, displayValue);
+  attributes->SetAttribute(nsGkAtoms::display, Atomize(eCSSProperty_display));
 
   
-  RefPtr<nsAtom> textAlignValue = styleInfo.TextAlign();
-  attributes->SetAttribute(nsGkAtoms::textAlign, textAlignValue);
+  attributes->SetAttribute(nsGkAtoms::textAlign,
+                           Atomize(eCSSProperty_text_align));
 
   
-  mozilla::LengthPercentage textIndent = styleInfo.TextIndent();
+  
+  const LengthPercentage& textIndent = f->StyleText()->mTextIndent;
   if (textIndent.ConvertsToLength()) {
     attributes->SetAttribute(nsGkAtoms::textIndent,
                              textIndent.ToLengthInCSSPixels());
@@ -1201,17 +1205,29 @@ already_AddRefed<AccAttributes> LocalAccessible::NativeAttributes() {
     attributes->SetAttribute(nsGkAtoms::textIndent, textIndent.ToPercentage());
   }
 
-  
-  attributes->SetAttribute(nsGkAtoms::marginLeft, styleInfo.MarginLeft());
+  auto GetMargin = [&](mozilla::Side aSide) -> CSSCoord {
+    
+    
+    auto& margin = f->StyleMargin()->mMargin.Get(aSide);
+    if (margin.ConvertsToLength()) {
+      return margin.AsLengthPercentage().ToLengthInCSSPixels();
+    }
+
+    nscoord coordVal = f->GetUsedMargin().Side(aSide);
+    return CSSPixel::FromAppUnits(coordVal);
+  };
 
   
-  attributes->SetAttribute(nsGkAtoms::marginRight, styleInfo.MarginRight());
+  attributes->SetAttribute(nsGkAtoms::marginLeft, GetMargin(eSideLeft));
 
   
-  attributes->SetAttribute(nsGkAtoms::marginTop, styleInfo.MarginTop());
+  attributes->SetAttribute(nsGkAtoms::marginRight, GetMargin(eSideRight));
 
   
-  attributes->SetAttribute(nsGkAtoms::marginBottom, styleInfo.MarginBottom());
+  attributes->SetAttribute(nsGkAtoms::marginTop, GetMargin(eSideTop));
+
+  
+  attributes->SetAttribute(nsGkAtoms::marginBottom, GetMargin(eSideBottom));
 
   
   
@@ -3892,17 +3908,23 @@ nsAtom* LocalAccessible::TagName() const {
 }
 
 already_AddRefed<nsAtom> LocalAccessible::DisplayStyle() const {
-  if (dom::Element* elm = Elm()) {
-    if (elm->IsHTMLElement(nsGkAtoms::area)) {
-      
-      
-      
-      return nullptr;
-    }
-    StyleInfo info(elm);
-    return info.Display();
+  dom::Element* elm = Elm();
+  if (!elm) {
+    return nullptr;
   }
-  return nullptr;
+  if (elm->IsHTMLElement(nsGkAtoms::area)) {
+    
+    return nullptr;
+  }
+  RefPtr<const ComputedStyle> style =
+      nsComputedDOMStyle::GetComputedStyleNoFlush(elm);
+  if (!style) {
+    
+    return nullptr;
+  }
+  nsAutoCString value;
+  style->GetComputedPropertyValue(eCSSProperty_display, value);
+  return NS_Atomize(value);
 }
 
 float LocalAccessible::Opacity() const {
