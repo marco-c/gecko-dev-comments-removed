@@ -615,8 +615,10 @@ void nsXULPopupManager::PopupMoved(nsIFrame* aFrame, nsIntPoint aPnt,
   
   
   
+  
   if (menuPopupFrame->IsAnchored() &&
-      menuPopupFrame->GetPopupLevel() == widget::PopupLevel::Parent) {
+      menuPopupFrame->GetPopupLevel() == widget::PopupLevel::Parent &&
+      !aByMoveToRect) {
     menuPopupFrame->SetPopupPosition(true);
   } else {
     CSSPoint cssPos = LayoutDeviceIntPoint::FromUnknownPoint(aPnt) /
