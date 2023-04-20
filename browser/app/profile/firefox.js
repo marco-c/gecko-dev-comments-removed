@@ -1221,12 +1221,6 @@ pref("places.forgetThisSite.clearByBaseDomain", true);
 pref("browser.places.speculativeConnect.enabled", true);
 
 
-
-
-
-pref("browser.ssl_override_behavior", 2);
-
-
 pref("browser.zoom.full", true);
 
 
