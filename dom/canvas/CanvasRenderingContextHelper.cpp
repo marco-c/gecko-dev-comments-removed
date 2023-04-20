@@ -216,7 +216,14 @@ already_AddRefed<nsISupports> CanvasRenderingContextHelper::GetOrCreateContext(
     mCurrentContext = std::move(context);
     mCurrentContextType = aContextType;
 
-    nsresult rv = UpdateContext(aCx, aContextOptions, aRv);
+    
+    
+    JS::Rooted<JS::Value> options(RootingCx(), aContextOptions);
+    if (!options.isObject()) {
+      options.setNull();
+    }
+
+    nsresult rv = UpdateContext(aCx, options, aRv);
     if (NS_FAILED(rv)) {
       
       
