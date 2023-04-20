@@ -479,9 +479,9 @@ class GypProcessor(object):
             
             
             
-            t0 = time.time()
+            t0 = time.monotonic()
             flat_list, targets, data = self._gyp_loader_future.result()
-            self.execution_time += time.time() - t0
+            self.execution_time += time.monotonic() - t0
             results = []
             for res in process_gyp_result(
                 (flat_list, targets, data),

@@ -151,10 +151,10 @@ class TreeMetadataEmitter(LoggingMixin):
                 
                 contexts[os.path.normcase(out.objdir)] = out
 
-                start = time.time()
+                start = time.monotonic()
                 
                 objs = list(emitfn(out))
-                self._emitter_time += time.time() - start
+                self._emitter_time += time.monotonic() - start
 
                 for o in emit_objs(objs):
                     yield o
@@ -164,9 +164,9 @@ class TreeMetadataEmitter(LoggingMixin):
 
         
         if self.config.substs.get("COMPILE_ENVIRONMENT"):
-            start = time.time()
+            start = time.monotonic()
             objs = list(self._emit_libs_derived(contexts))
-            self._emitter_time += time.time() - start
+            self._emitter_time += time.monotonic() - start
 
             for o in emit_objs(objs):
                 yield o
