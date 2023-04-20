@@ -216,6 +216,9 @@ class AttachmentDownloader extends Downloader {
       delete: async attachmentId => {
         return this._client.db.saveAttachment(attachmentId, null);
       },
+      prune: async excludeIds => {
+        return this._client.db.pruneAttachments(excludeIds);
+      },
     };
     Object.defineProperty(this, "cacheImpl", { value: cacheImpl });
     return cacheImpl;
@@ -309,6 +312,7 @@ class RemoteSettingsClient extends EventEmitter {
       signerName,
       filterFunc,
       localFields = [],
+      keepAttachmentsIds = [],
       lastCheckTimePref,
     } = {}
   ) {
@@ -321,6 +325,7 @@ class RemoteSettingsClient extends EventEmitter {
     this.signerName = signerName;
     this.filterFunc = filterFunc;
     this.localFields = localFields;
+    this.keepAttachmentsIds = keepAttachmentsIds;
     this._lastCheckTimePref = lastCheckTimePref;
     this._verifier = null;
     this._syncRunning = false;
@@ -752,6 +757,20 @@ class RemoteSettingsClient extends EventEmitter {
             syncResult.created = syncResult.created.concat(
               Array.from(importedById.values())
             );
+          }
+
+          
+          
+          
+          if (trigger == "timer") {
+            const deleted = await this.attachments.prune(
+              this.keepAttachmentsIds
+            );
+            if (deleted > 0) {
+              lazy.console.warn(
+                `${this.identifier} Pruned ${deleted} obsolete attachments`
+              );
+            }
           }
         }
       } catch (e) {

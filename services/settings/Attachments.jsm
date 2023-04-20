@@ -287,6 +287,15 @@ class Downloader {
 
 
 
+  async prune(excludeIds) {
+    return this.cacheImpl.prune(excludeIds);
+  }
+
+  
+
+
+
+
 
 
 
