@@ -20,7 +20,6 @@
 
 namespace webrtc {
 class AudioDecoderFactory;
-class SharedModuleThread;
 
 
 class NoTrialsConfig : public FieldTrialsView {
@@ -67,8 +66,6 @@ class SharedWebrtcState {
                     RefPtr<webrtc::AudioDecoderFactory> aAudioDecoderFactory,
                     UniquePtr<webrtc::FieldTrialsView> aTrials);
 
-  webrtc::SharedModuleThread* GetModuleThread();
-
   
   
   
@@ -89,11 +86,6 @@ class SharedWebrtcState {
 
  private:
   virtual ~SharedWebrtcState();
-
-  
-  
-  
-  rtc::scoped_refptr<webrtc::SharedModuleThread> mModuleThread;
 };
 
 
