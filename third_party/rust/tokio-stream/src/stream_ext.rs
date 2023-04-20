@@ -999,6 +999,8 @@ pub trait StreamExt: Stream {
     
     
     
+    
+    
     #[cfg(all(feature = "time"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "time")))]
     fn throttle(self, duration: Duration) -> Throttle<Self>

@@ -4,7 +4,6 @@ use crate::Stream;
 use tokio::time::{Duration, Instant, Sleep};
 
 use std::future::Future;
-use std::marker::Unpin;
 use std::pin::Pin;
 use std::task::{self, Poll};
 
@@ -41,8 +40,7 @@ pin_project! {
     }
 }
 
-
-impl<T: Unpin> Throttle<T> {
+impl<T> Throttle<T> {
     
     
     pub fn get_ref(&self) -> &T {

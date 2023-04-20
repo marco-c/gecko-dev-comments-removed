@@ -18,7 +18,7 @@ pub struct BroadcastStream<T> {
 }
 
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BroadcastStreamRecvError {
     
     

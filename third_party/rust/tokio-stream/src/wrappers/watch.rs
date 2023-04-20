@@ -47,6 +47,29 @@ use tokio::sync::watch::error::RecvError;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[cfg_attr(docsrs, doc(cfg(feature = "sync")))]
 pub struct WatchStream<T> {
     inner: ReusableBoxFuture<'static, (Result<(), RecvError>, Receiver<T>)>,
@@ -64,6 +87,13 @@ impl<T: 'static + Clone + Send + Sync> WatchStream<T> {
     pub fn new(rx: Receiver<T>) -> Self {
         Self {
             inner: ReusableBoxFuture::new(async move { (Ok(()), rx) }),
+        }
+    }
+
+    
+    pub fn from_changes(rx: Receiver<T>) -> Self {
+        Self {
+            inner: ReusableBoxFuture::new(make_future(rx)),
         }
     }
 }
