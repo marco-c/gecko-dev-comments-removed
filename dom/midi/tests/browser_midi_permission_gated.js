@@ -808,14 +808,15 @@ async function waitForNotification(notificationId) {
   return window.PopupNotifications.panel;
 }
 
+
+
+
 function getObserverTopic(aNotificationId) {
   let topic = aNotificationId;
   if (topic == "xpinstall-disabled") {
     topic = "addon-install-disabled";
   } else if (topic == "addon-progress") {
     topic = "addon-install-started";
-  } else if (topic == "addon-install-restart") {
-    topic = "addon-install-complete";
   } else if (topic == "addon-installed") {
     topic = "webextension-install-notify";
   }
