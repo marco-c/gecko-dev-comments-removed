@@ -26,6 +26,7 @@
 #include "mozilla/ComputedStyle.h"  
 #include "mozilla/ContentIterator.h"
 #include "mozilla/EditorDOMPoint.h"
+#include "mozilla/EditorForwards.h"
 #include "mozilla/InternalMutationEvent.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/OwningNonNull.h"
@@ -360,6 +361,15 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
   Result<EditorRawDOMRange, nsresult> ExtendOrShrinkRangeToDelete(
       const HTMLEditor& aHTMLEditor, const nsFrameSelection* aFrameSelection,
       const EditorDOMRangeType& aRangeToDelete) const;
+
+  
+
+
+
+
+  MOZ_NEVER_INLINE_DEBUG static EditorRawDOMRange
+  GetRangeToAvoidDeletingAllListItemsIfSelectingAllOverListElements(
+      const EditorRawDOMRange& aRangeToDelete);
 
   
 
@@ -6494,7 +6504,7 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
   if (const Element* maybeListElement =
           HTMLEditUtils::GetElementIfOnlyOneSelected(aRangeToDelete)) {
     if (HTMLEditUtils::IsAnyListElement(maybeListElement) &&
-        !HTMLEditUtils::IsEmptyNode(*maybeListElement)) {
+        !HTMLEditUtils::IsEmptyAnyListElement(*maybeListElement)) {
       EditorRawDOMRange range =
           HTMLEditUtils::GetRangeSelectingAllContentInAllListItems<
               EditorRawDOMRange>(*maybeListElement);
@@ -6536,6 +6546,14 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
           backwardScanFromStartResult.GetContent() ==
               maybeNonEditableBlockElement ||
           backwardScanFromStartResult.GetContent() == editingHost) {
+        break;
+      }
+      
+      
+      if (HTMLEditUtils::IsAnyListElement(
+              backwardScanFromStartResult.GetContent()) &&
+          !HTMLEditUtils::IsEmptyAnyListElement(
+              *backwardScanFromStartResult.ElementPtr())) {
         break;
       }
       rangeToDelete.SetStart(
@@ -6613,32 +6631,13 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
   
   
   
-  Element* selectedListElement =
-      HTMLEditUtils::GetElementIfOnlyOneSelected(rangeToDelete);
-  if (!selectedListElement ||
-      !HTMLEditUtils::IsAnyListElement(selectedListElement)) {
-    if (rangeToDelete.IsInContentNodes() && rangeToDelete.InSameContainer() &&
-        HTMLEditUtils::IsAnyListElement(
-            rangeToDelete.StartRef().ContainerAs<nsIContent>()) &&
-        rangeToDelete.StartRef().IsStartOfContainer() &&
-        rangeToDelete.EndRef().IsEndOfContainer()) {
-      selectedListElement = rangeToDelete.StartRef().ContainerAs<Element>();
-    } else {
-      selectedListElement = nullptr;
-    }
-  }
-  if (selectedListElement &&
-      !HTMLEditUtils::IsEmptyNode(*selectedListElement)) {
-    EditorRawDOMRange range =
-        HTMLEditUtils::GetRangeSelectingAllContentInAllListItems<
-            EditorRawDOMRange>(*selectedListElement);
-    if (range.IsPositioned()) {
-      if (EditorUtils::IsEditableContent(
-              *range.StartRef().ContainerAs<nsIContent>(), EditorType::HTML) &&
-          EditorUtils::IsEditableContent(
-              *range.EndRef().ContainerAs<nsIContent>(), EditorType::HTML)) {
-        return range;
-      }
+  {
+    EditorRawDOMRange rangeToDeleteListOrLeaveOneEmptyListItem =
+        AutoDeleteRangesHandler::
+            GetRangeToAvoidDeletingAllListItemsIfSelectingAllOverListElements(
+                rangeToDelete);
+    if (rangeToDeleteListOrLeaveOneEmptyListItem.IsPositioned()) {
+      rangeToDelete = std::move(rangeToDeleteListOrLeaveOneEmptyListItem);
     }
   }
 
@@ -6665,6 +6664,193 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
   }
 
   return rangeToDelete;
+}
+
+
+EditorRawDOMRange HTMLEditor::AutoDeleteRangesHandler::
+    GetRangeToAvoidDeletingAllListItemsIfSelectingAllOverListElements(
+        const EditorRawDOMRange& aRangeToDelete) {
+  MOZ_ASSERT(aRangeToDelete.IsPositionedAndValid());
+
+  auto GetDeepestEditableStartPointOfList = [](Element& aListElement) {
+    Element* const firstListItemElement =
+        HTMLEditUtils::GetFirstListItemElement(aListElement);
+    if (MOZ_UNLIKELY(!firstListItemElement)) {
+      return EditorRawDOMPoint();
+    }
+    if (MOZ_UNLIKELY(!EditorUtils::IsEditableContent(*firstListItemElement,
+                                                     EditorType::HTML))) {
+      return EditorRawDOMPoint(firstListItemElement);
+    }
+    return HTMLEditUtils::GetDeepestEditableStartPointOf<EditorRawDOMPoint>(
+        *firstListItemElement);
+  };
+
+  auto GetDeepestEditableEndPointOfList = [](Element& aListElement) {
+    Element* const lastListItemElement =
+        HTMLEditUtils::GetLastListItemElement(aListElement);
+    if (MOZ_UNLIKELY(!lastListItemElement)) {
+      return EditorRawDOMPoint();
+    }
+    if (MOZ_UNLIKELY(!EditorUtils::IsEditableContent(*lastListItemElement,
+                                                     EditorType::HTML))) {
+      return EditorRawDOMPoint::After(*lastListItemElement);
+    }
+    return HTMLEditUtils::GetDeepestEditableEndPointOf<EditorRawDOMPoint>(
+        *lastListItemElement);
+  };
+
+  Element* const startListElement =
+      aRangeToDelete.StartRef().IsInContentNode()
+          ? HTMLEditUtils::GetClosestInclusiveAncestorAnyListElement(
+                *aRangeToDelete.StartRef().ContainerAs<nsIContent>())
+          : nullptr;
+  Element* const endListElement =
+      aRangeToDelete.EndRef().IsInContentNode()
+          ? HTMLEditUtils::GetClosestInclusiveAncestorAnyListElement(
+                *aRangeToDelete.EndRef().ContainerAs<nsIContent>())
+          : nullptr;
+  if (!startListElement && !endListElement) {
+    return EditorRawDOMRange();
+  }
+
+  
+  
+  
+  if (startListElement &&
+      NS_WARN_IF(!HTMLEditUtils::IsValidListElement(
+          *startListElement, HTMLEditUtils::TreatSubListElementAs::Valid))) {
+    return EditorRawDOMRange();
+  }
+  if (endListElement && startListElement != endListElement &&
+      NS_WARN_IF(!HTMLEditUtils::IsValidListElement(
+          *endListElement, HTMLEditUtils::TreatSubListElementAs::Valid))) {
+    return EditorRawDOMRange();
+  }
+
+  const bool startListElementIsEmpty =
+      startListElement &&
+      HTMLEditUtils::IsEmptyAnyListElement(*startListElement);
+  const bool endListElementIsEmpty =
+      startListElement == endListElement
+          ? startListElementIsEmpty
+          : endListElement &&
+                HTMLEditUtils::IsEmptyAnyListElement(*endListElement);
+  
+  
+  if (startListElementIsEmpty && endListElementIsEmpty) {
+    return EditorRawDOMRange();
+  }
+
+  
+  
+  
+  EditorRawDOMPoint deepestStartPointOfStartList =
+      startListElement ? GetDeepestEditableStartPointOfList(*startListElement)
+                       : EditorRawDOMPoint();
+  EditorRawDOMPoint deepestEndPointOfEndList =
+      endListElement ? GetDeepestEditableEndPointOfList(*endListElement)
+                     : EditorRawDOMPoint();
+  if (MOZ_UNLIKELY(!deepestStartPointOfStartList.IsSet() &&
+                   !deepestEndPointOfEndList.IsSet())) {
+    
+    
+    
+    return EditorRawDOMRange();
+  }
+
+  
+  if (deepestStartPointOfStartList.IsSet()) {
+    for (nsIContent* const maybeList :
+         deepestStartPointOfStartList.GetContainer()
+             ->InclusiveAncestorsOfType<nsIContent>()) {
+      if (aRangeToDelete.StartRef().GetContainer() == maybeList) {
+        break;
+      }
+      if (HTMLEditUtils::IsAnyListElement(maybeList) &&
+          HTMLEditUtils::IsEmptyAnyListElement(*maybeList->AsElement())) {
+        deepestStartPointOfStartList.Set(maybeList);
+      }
+    }
+  }
+  if (deepestEndPointOfEndList.IsSet()) {
+    for (nsIContent* const maybeList :
+         deepestEndPointOfEndList.GetContainer()
+             ->InclusiveAncestorsOfType<nsIContent>()) {
+      if (aRangeToDelete.EndRef().GetContainer() == maybeList) {
+        break;
+      }
+      if (HTMLEditUtils::IsAnyListElement(maybeList) &&
+          HTMLEditUtils::IsEmptyAnyListElement(*maybeList->AsElement())) {
+        deepestEndPointOfEndList.SetAfter(maybeList);
+      }
+    }
+  }
+
+  const EditorRawDOMPoint deepestEndPointOfStartList =
+      startListElement ? GetDeepestEditableEndPointOfList(*startListElement)
+                       : EditorRawDOMPoint();
+  MOZ_ASSERT_IF(deepestStartPointOfStartList.IsSet(),
+                deepestEndPointOfStartList.IsSet());
+  MOZ_ASSERT_IF(!deepestStartPointOfStartList.IsSet(),
+                !deepestEndPointOfStartList.IsSet());
+
+  const bool rangeStartsFromBeginningOfStartList =
+      deepestStartPointOfStartList.IsSet() &&
+      aRangeToDelete.StartRef().EqualsOrIsBefore(deepestStartPointOfStartList);
+  const bool rangeEndsByEndingOfStartListOrLater =
+      !deepestEndPointOfStartList.IsSet() ||
+      deepestEndPointOfStartList.EqualsOrIsBefore(aRangeToDelete.EndRef());
+  const bool rangeEndsByEndingOfEndList =
+      deepestEndPointOfEndList.IsSet() &&
+      deepestEndPointOfEndList.EqualsOrIsBefore(aRangeToDelete.EndRef());
+
+  EditorRawDOMRange newRangeToDelete;
+  
+  
+  
+  if (!startListElementIsEmpty && rangeStartsFromBeginningOfStartList &&
+      rangeEndsByEndingOfStartListOrLater) {
+    newRangeToDelete.SetStart(EditorRawDOMPoint(
+        deepestStartPointOfStartList.ContainerAs<nsIContent>(), 0u));
+  }
+  
+  if (!endListElementIsEmpty && rangeEndsByEndingOfEndList) {
+    
+    
+    
+    if (aRangeToDelete.StartRef().IsBefore(
+            EditorRawDOMPoint(endListElement, 0u))) {
+      newRangeToDelete.SetEnd(EditorRawDOMPoint::After(*endListElement));
+      MOZ_ASSERT_IF(newRangeToDelete.StartRef().IsSet(),
+                    newRangeToDelete.IsPositionedAndValid());
+    }
+    
+    
+    
+    else {
+      newRangeToDelete.SetEnd(EditorRawDOMPoint::AtEndOf(
+          *deepestEndPointOfEndList.ContainerAs<nsIContent>()));
+      MOZ_ASSERT_IF(newRangeToDelete.StartRef().IsSet(),
+                    newRangeToDelete.IsPositionedAndValid());
+    }
+  }
+
+  if (!newRangeToDelete.StartRef().IsSet() &&
+      !newRangeToDelete.EndRef().IsSet()) {
+    return EditorRawDOMRange();
+  }
+
+  if (!newRangeToDelete.StartRef().IsSet()) {
+    newRangeToDelete.SetStart(aRangeToDelete.StartRef());
+    MOZ_ASSERT(newRangeToDelete.IsPositionedAndValid());
+  }
+  if (!newRangeToDelete.EndRef().IsSet()) {
+    newRangeToDelete.SetEnd(aRangeToDelete.EndRef());
+    MOZ_ASSERT(newRangeToDelete.IsPositionedAndValid());
+  }
+
+  return newRangeToDelete;
 }
 
 }  
