@@ -133,12 +133,12 @@ add_task(async function test_AWMultistage_RemovePinScreen() {
   );
 
   
-  await test_element_styles(
+  await test_screen_content(
     browser,
-    "div.steps",
+    "Step indicator doesn't render",
     
-    {
-      display: "none",
-    }
+    [],
+    
+    ["div.steps"]
   );
 });
