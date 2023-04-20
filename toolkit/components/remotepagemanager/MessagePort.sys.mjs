@@ -1,10 +1,6 @@
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["MessagePort", "MessageListener"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
@@ -12,7 +8,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PromiseUtils: "resource://gre/modules/PromiseUtils.sys.mjs",
 });
 
-class MessageListener {
+export class MessageListener {
   constructor() {
     this.listeners = new Map();
   }
@@ -57,24 +53,24 @@ class MessageListener {
   }
 }
 
-
-
-
-
-
-
-
-
-class MessagePort {
+/*
+ * A message port sits on each side of the process boundary for every remote
+ * page. Each has a port ID that is unique to the message manager it talks
+ * through.
+ *
+ * We roughly implement the same contract as nsIMessageSender and
+ * nsIMessageListenerManager
+ */
+export class MessagePort {
   constructor(messageManagerOrActor, portID) {
     this.messageManager = messageManagerOrActor;
     this.portID = portID;
     this.destroyed = false;
     this.listener = new MessageListener();
 
-    
-    
-    
+    // This is a sparse array of pending requests. The id of each request is
+    // simply its index in the array. The next id is the current length of the
+    // array (which includes the count of missing indexes).
     this.requests = [];
 
     this.message = this.message.bind(this);
@@ -118,16 +114,16 @@ class MessagePort {
     );
   }
 
-  
-  
+  // Called when the message manager used to connect to the other process has
+  // changed, i.e. when a tab is detached.
   swapMessageManager(messageManager) {
     this.removeMessageListeners();
     this.messageManager = messageManager;
     this.addMessageListeners();
   }
 
-  
-  
+  // Sends a request to the other process and returns a promise that completes
+  // once the other process has responded to the request or some error occurs.
   sendRequest(name, data = null) {
     if (this.destroyed) {
       return this.window.Promise.reject(
@@ -148,7 +144,7 @@ class MessagePort {
     return this.wrapPromise(deferred.promise);
   }
 
-  
+  // Handles an IPC message to perform a request of some kind.
   async receiveRequest({ data: messagedata }) {
     if (this.destroyed || messagedata.portID != this.portID) {
       return;
@@ -171,7 +167,7 @@ class MessagePort {
     this.messageManager.sendAsyncMessage("RemotePage:Response", data);
   }
 
-  
+  // Handles an IPC message with the response of a request.
   receiveResponse({ data: messagedata }) {
     if (this.destroyed || messagedata.portID != this.portID) {
       return;
@@ -194,7 +190,7 @@ class MessagePort {
     }
   }
 
-  
+  // Handles an IPC message containing any message.
   message({ data: messagedata }) {
     if (this.destroyed || messagedata.portID != this.portID) {
       return;
@@ -203,14 +199,14 @@ class MessagePort {
     this.handleMessage(messagedata);
   }
 
-  
-
-
-
-
-
-
-
+  /* Adds a listener for messages. Many callbacks can be registered for the
+   * same message if necessary. An attempt to register the same callback for the
+   * same message twice will be ignored. When called the callback is passed an
+   * object with these properties:
+   *   target: This message port
+   *   name:   The message name
+   *   data:   Any data sent with the message
+   */
   addMessageListener(name, callback) {
     if (this.destroyed) {
       throw new Error("Message port has been destroyed");
@@ -219,9 +215,9 @@ class MessagePort {
     this.listener.addMessageListener(name, callback);
   }
 
-  
-
-
+  /*
+   * Removes a listener for messages.
+   */
   removeMessageListener(name, callback) {
     if (this.destroyed) {
       throw new Error("Message port has been destroyed");
@@ -230,7 +226,7 @@ class MessagePort {
     this.listener.removeMessageListener(name, callback);
   }
 
-  
+  // Sends a message asynchronously to the other process
   sendAsyncMessage(name, data = null) {
     if (this.destroyed) {
       throw new Error("Message port has been destroyed");
@@ -252,10 +248,10 @@ class MessagePort {
     }
   }
 
-  
+  // Called to destroy this port
   destroy() {
     try {
-      
+      // This can fail in the child process if the tab has already been closed
       this.removeMessageListeners();
     } catch (e) {}
 
