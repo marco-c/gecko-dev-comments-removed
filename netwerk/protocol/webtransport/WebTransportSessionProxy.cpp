@@ -108,20 +108,6 @@ nsresult WebTransportSessionProxy::AsyncConnect(
     return rv;
   }
 
-  
-  
-  
-  
-  nsAutoCString serializedOrigin;
-  if (NS_FAILED(aPrincipal->GetAsciiOrigin(serializedOrigin))) {
-    return NS_ERROR_ABORT;
-  }
-
-  rv = httpChannel->SetRequestHeader("Origin"_ns, serializedOrigin, false);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   rv = mChannel->AsyncOpen(this);
   if (NS_SUCCEEDED(rv)) {
     cleanup.release();
