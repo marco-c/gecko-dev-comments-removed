@@ -353,7 +353,6 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   
   
   void NotifyThemeChanged(mozilla::widget::ThemeChangeKind);
-  void NotifyUIStateChanged(UIStateChangeType aShowFocusRings);
 
 #ifdef ACCESSIBILITY
   

@@ -70,10 +70,6 @@ class nsWindowRoot final : public nsPIWindowRoot {
   void RemoveBrowser(nsIRemoteTab* aBrowser) override;
   void EnumerateBrowsers(BrowserEnumerator aEnumFunc, void* aArg) override;
 
-  bool ShowFocusRings() override { return mShowFocusRings; }
-
-  void SetShowFocusRings(bool aEnable) override { mShowFocusRings = aEnable; }
-
  protected:
   virtual ~nsWindowRoot();
 
@@ -87,9 +83,6 @@ class nsWindowRoot final : public nsPIWindowRoot {
   
   RefPtr<mozilla::EventListenerManager> mListenerManager;  
   nsWeakPtr mPopupNode;
-
-  
-  bool mShowFocusRings;
 
   nsCOMPtr<mozilla::dom::EventTarget> mParent;
 

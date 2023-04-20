@@ -76,13 +76,6 @@ class CustomElementRegistry;
 enum class CallerType : uint32_t;
 }  
 
-enum UIStateChangeType {
-  UIStateChangeType_NoChange,
-  UIStateChangeType_Set,
-  UIStateChangeType_Clear,
-  UIStateChangeType_Invalid  
-};
-
 enum class FullscreenReason {
   
   ForFullscreenMode,
@@ -793,11 +786,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   bool IsRootOuterWindow() { return mIsRootOuterWindow; }
 
   
-
-
-  void SetInitialKeyboardIndicators(UIStateChangeType aShowFocusRings);
-
-  
   
   
   mozilla::dom::Element* GetFrameElementInternal() const;
@@ -1026,11 +1014,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
 
   virtual bool ShouldShowFocusRing() = 0;
-
-  
-
-
-  virtual void SetKeyboardIndicators(UIStateChangeType aShowFocusRings) = 0;
 
   
 

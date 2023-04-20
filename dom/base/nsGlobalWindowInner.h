@@ -1210,8 +1210,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   virtual void UpdateParentTarget() override;
 
-  void InitializeShowFocusRings();
-
   
   void ClearDocumentDependentSlots(JSContext* aCx);
 

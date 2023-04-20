@@ -2846,14 +2846,6 @@ class nsContentUtils {
 
 
 
-
-  static void SetKeyboardIndicatorsOnRemoteChildren(
-      nsPIDOMWindowOuter* aWindow, UIStateChangeType aShowFocusRings);
-
-  
-
-
-
   static nsresult DeserializeDataTransferImageContainer(
       const mozilla::dom::IPCDataTransferImageContainer& aData,
       imgIContainer** aContainer);
