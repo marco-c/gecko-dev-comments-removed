@@ -6,8 +6,11 @@
 
 
 
+ChromeUtils.defineESModuleGetters(this, {
+  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
+});
+
 XPCOMUtils.defineLazyModuleGetters(this, {
-  TestUtils: "resource://testing-common/TestUtils.jsm",
   Sanitizer: "resource:///modules/Sanitizer.jsm",
 });
 
