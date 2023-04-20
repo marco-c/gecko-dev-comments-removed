@@ -336,10 +336,17 @@ async function captureProfile(pageContext) {
   
 
 
+  let additionalInfo;
+  
+
+
   const profileCaptureResult = await Services.profiler
     .getProfileDataAsGzippedArrayBuffer()
     .then(
-      ({ profile }) => ({ type: "SUCCESS", profile }),
+      ({ profile, additionalInformation }) => {
+        additionalInfo = additionalInformation;
+        return { type: "SUCCESS", profile };
+      },
       error => {
         console.error(error);
         return { type: "ERROR", error };
@@ -347,7 +354,9 @@ async function captureProfile(pageContext) {
     );
 
   const profilerViewMode = getProfilerViewModeForCurrentPreset(pageContext);
-  const sharedLibraries = Services.profiler.sharedLibraries;
+  const sharedLibraries = additionalInfo?.sharedLibraries
+    ? additionalInfo.sharedLibraries
+    : Services.profiler.sharedLibraries;
   const objdirs = getObjdirPrefValue();
 
   const { createLocalSymbolicationService } = lazy.PerfSymbolication();
