@@ -245,9 +245,8 @@ function cleanTimeStamp(packet) {
 
 
 
-
-async function writeStubsToFile(env, fileName, packets, isNetworkMessage) {
-  const mozRepo = env.get("MOZ_DEVELOPER_REPO_DIR");
+async function writeStubsToFile(fileName, packets, isNetworkMessage) {
+  const mozRepo = Services.env.get("MOZ_DEVELOPER_REPO_DIR");
   const filePath = `${mozRepo}/${STUBS_FOLDER + fileName}`;
 
   const serializedPackets = Array.from(packets.entries()).map(
@@ -269,12 +268,12 @@ async function writeStubsToFile(env, fileName, packets, isNetworkMessage) {
 
 const {
   parsePacketsWithFronts,
-} = require("chrome://mochitests/content/browser/devtools/client/webconsole/test/browser/stub-generator-helpers");
-const { prepareMessage } = require("devtools/client/webconsole/utils/messages");
+} = require("chrome://mochitests/content/browser/devtools/client/webconsole/test/browser/stub-generator-helpers.js");
+const { prepareMessage } = require("resource://devtools/client/webconsole/utils/messages.js");
 const {
   ConsoleMessage,
   NetworkEventMessage,
-} = require("devtools/client/webconsole/types");
+} = require("resource://devtools/client/webconsole/types.js");
 
 const rawPackets = new Map();
 ${serializedPackets.join("\n\n")}
