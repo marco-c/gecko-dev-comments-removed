@@ -605,7 +605,6 @@ TrialInliningDecision TrialInliner::getInliningDecision(JSFunction* target,
   
   
   
-  
   for (size_t i = 0; i < icScript->numICEntries(); i++) {
     ICEntry& entry = icScript->icEntry(i);
     ICFallbackStub* fallback = icScript->fallbackStub(i);
