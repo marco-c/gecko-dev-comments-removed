@@ -13167,7 +13167,8 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
   
   if (isProfilerInstrumentationEnabled()) {
     
-    if (!generateCompactNativeToBytecodeMap(cx, code)) {
+    IonEntry::ScriptList scriptList;
+    if (!generateCompactNativeToBytecodeMap(cx, code, scriptList)) {
       return false;
     }
 
@@ -13176,21 +13177,15 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
     JitcodeIonTable* ionTable = (JitcodeIonTable*)ionTableAddr;
 
     
-    auto entry =
-        MakeJitcodeGlobalEntry<IonEntry>(cx, code, code->raw(), code->rawEnd());
+    auto entry = MakeJitcodeGlobalEntry<IonEntry>(
+        cx, code, code->raw(), code->rawEnd(), std::move(scriptList));
     if (!entry) {
       return false;
     }
-    if (!ionTable->finishIonEntry(cx, nativeToBytecodeScriptListLength_,
-                                  nativeToBytecodeScriptList_,
-                                  entry->asIon())) {
-      js_free(nativeToBytecodeScriptList_);
+    if (!ionTable->finishIonEntry(cx, entry->asIon())) {
       js_free(nativeToBytecodeMap_);
       return false;
     }
-
-    
-    js_free(nativeToBytecodeScriptList_);
 
     
     JitcodeGlobalTable* globalTable =
