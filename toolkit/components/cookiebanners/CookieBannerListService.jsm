@@ -156,7 +156,13 @@ class CookieBannerListService {
         rule.domain = domain;
         return rule;
       })
-      .forEach(r => Services.cookieBanners.removeRule(r));
+      .forEach(r => {
+        Services.cookieBanners.removeRule(r);
+
+        
+        
+        Services.cookieBanners.resetDomainTelemetryRecord(r.domain);
+      });
   }
 
   #importRules(rules) {
@@ -176,6 +182,12 @@ class CookieBannerListService {
       this.#importClickRule(rule, click);
 
       Services.cookieBanners.insertRule(rule);
+
+      
+      
+      
+      
+      Services.cookieBanners.resetDomainTelemetryRecord(domain);
     });
   }
 

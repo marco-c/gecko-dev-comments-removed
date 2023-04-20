@@ -126,6 +126,7 @@ nsCookieBannerService::Observe(nsISupports* aSubject, const char* aTopic,
   
   if (nsCRT::strcmp(aTopic, "idle-daily") == 0) {
     DailyReportTelemetry();
+    ResetDomainTelemetryRecord(""_ns);
     return NS_OK;
   }
 
@@ -242,7 +243,9 @@ nsCookieBannerService::ResetRules(const bool doImport) {
 }
 
 nsresult nsCookieBannerService::GetRuleForDomain(const nsACString& aDomain,
-                                                 nsICookieBannerRule** aRule) {
+                                                 bool aIsTopLevel,
+                                                 nsICookieBannerRule** aRule,
+                                                 bool aReportTelemetry) {
   NS_ENSURE_ARG_POINTER(aRule);
   *aRule = nullptr;
 
@@ -252,6 +255,12 @@ nsresult nsCookieBannerService::GetRuleForDomain(const nsACString& aDomain,
   }
 
   nsCOMPtr<nsICookieBannerRule> rule = mRules.Get(aDomain);
+
+  
+  if (aReportTelemetry) {
+    ReportRuleLookupTelemetry(aDomain, rule, aIsTopLevel);
+  }
+
   if (rule) {
     rule.forget(aRule);
   }
@@ -279,7 +288,7 @@ nsresult nsCookieBannerService::GetRuleForURI(nsIURI* aURI,
   rv = eTLDService->GetBaseDomain(aURI, 0, baseDomain);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  return GetRuleForDomain(baseDomain, aRule);
+  return GetRuleForDomain(baseDomain, true, aRule);
 }
 
 NS_IMETHODIMP
@@ -389,7 +398,7 @@ nsCookieBannerService::GetClickRulesForDomain(
   }
 
   nsCOMPtr<nsICookieBannerRule> ruleForDomain;
-  nsresult rv = GetRuleForDomain(aDomain, getter_AddRefs(ruleForDomain));
+  nsresult rv = GetRuleForDomain(aDomain, true, getter_AddRefs(ruleForDomain));
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -616,6 +625,19 @@ nsCookieBannerService::RemoveAllDomainPrefs(const bool aIsPrivate) {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsCookieBannerService::ResetDomainTelemetryRecord(const nsACString& aDomain) {
+  if (aDomain.IsEmpty()) {
+    mTelemetryReportedTopDomains.Clear();
+    mTelemetryReportedIFrameDomains.Clear();
+    return NS_OK;
+  }
+
+  mTelemetryReportedTopDomains.Remove(aDomain);
+  mTelemetryReportedIFrameDomains.Remove(aDomain);
+  return NS_OK;
+}
+
 void nsCookieBannerService::DailyReportTelemetry() {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -638,6 +660,145 @@ void nsCookieBannerService::DailyReportTelemetry() {
     glean::cookie_banners::private_window_service_mode.Get(label).Set(
         modePBMStr.Equals(label));
   }
+}
+
+void nsCookieBannerService::ReportRuleLookupTelemetry(
+    const nsACString& aDomain, nsICookieBannerRule* aRule, bool aIsTopLevel) {
+  nsTArray<nsCString> labelsToBeAdded;
+
+  nsAutoCString labelPrefix;
+  if (aIsTopLevel) {
+    labelPrefix.Assign("top_"_ns);
+  } else {
+    labelPrefix.Assign("iframe_"_ns);
+  }
+
+  
+  auto submitTelemetry = [&]() {
+    
+    for (const auto& label : labelsToBeAdded) {
+      glean::cookie_banners::rule_lookup_by_load.Get(labelPrefix + label)
+          .Add(1);
+    }
+
+    nsTHashSet<nsCStringHashKey>& reportedDomains =
+        aIsTopLevel ? mTelemetryReportedTopDomains
+                    : mTelemetryReportedIFrameDomains;
+
+    
+    if (!reportedDomains.Contains(aDomain)) {
+      for (const auto& label : labelsToBeAdded) {
+        glean::cookie_banners::rule_lookup_by_domain.Get(labelPrefix + label)
+            .Add(1);
+      }
+      reportedDomains.Insert(aDomain);
+    }
+  };
+
+  
+  if (!aRule) {
+    labelsToBeAdded.AppendElement("miss"_ns);
+    labelsToBeAdded.AppendElement("cookie_miss"_ns);
+    labelsToBeAdded.AppendElement("click_miss"_ns);
+
+    submitTelemetry();
+    return;
+  }
+
+  
+  bool hasCookieRule = false;
+  bool hasCookieOptIn = false;
+  bool hasCookieOptOut = false;
+  nsTArray<RefPtr<nsICookieRule>> cookies;
+
+  nsresult rv = aRule->GetCookiesOptIn(cookies);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  if (!cookies.IsEmpty()) {
+    labelsToBeAdded.AppendElement("cookie_hit_opt_in"_ns);
+    hasCookieRule = true;
+    hasCookieOptIn = true;
+  }
+
+  cookies.Clear();
+  rv = aRule->GetCookiesOptOut(cookies);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  if (!cookies.IsEmpty()) {
+    labelsToBeAdded.AppendElement("cookie_hit_opt_out"_ns);
+    hasCookieRule = true;
+    hasCookieOptOut = true;
+  }
+
+  if (hasCookieRule) {
+    labelsToBeAdded.AppendElement("cookie_hit"_ns);
+  } else {
+    labelsToBeAdded.AppendElement("cookie_miss"_ns);
+  }
+
+  
+  bool hasClickRule = false;
+  bool hasClickOptIn = false;
+  bool hasClickOptOut = false;
+  nsCOMPtr<nsIClickRule> clickRule;
+  rv = aRule->GetClickRule(getter_AddRefs(clickRule));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  if (clickRule) {
+    nsAutoCString clickOptIn;
+    nsAutoCString clickOptOut;
+
+    rv = clickRule->GetOptIn(clickOptIn);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return;
+    }
+
+    rv = clickRule->GetOptOut(clickOptOut);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return;
+    }
+
+    if (!clickOptIn.IsEmpty()) {
+      labelsToBeAdded.AppendElement("click_hit_opt_in"_ns);
+      hasClickRule = true;
+      hasClickOptIn = true;
+    }
+
+    if (!clickOptOut.IsEmpty()) {
+      labelsToBeAdded.AppendElement("click_hit_opt_out"_ns);
+      hasClickRule = true;
+      hasClickOptOut = true;
+    }
+
+    if (hasClickRule) {
+      labelsToBeAdded.AppendElement("click_hit"_ns);
+    } else {
+      labelsToBeAdded.AppendElement("click_miss"_ns);
+    }
+  } else {
+    labelsToBeAdded.AppendElement("click_miss"_ns);
+  }
+
+  if (hasCookieRule || hasClickRule) {
+    labelsToBeAdded.AppendElement("hit"_ns);
+    if (hasCookieOptIn || hasClickOptIn) {
+      labelsToBeAdded.AppendElement("hit_opt_in"_ns);
+    }
+
+    if (hasCookieOptOut || hasClickOptOut) {
+      labelsToBeAdded.AppendElement("hit_opt_out"_ns);
+    }
+  } else {
+    labelsToBeAdded.AppendElement("miss"_ns);
+  }
+
+  submitTelemetry();
 }
 
 }  
