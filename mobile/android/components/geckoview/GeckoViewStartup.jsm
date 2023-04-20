@@ -17,6 +17,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Preferences: "resource://gre/modules/Preferences.sys.mjs",
 });
 
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
+  PdfJs: "resource://pdf.js/PdfJs.jsm",
+});
+
 const { debug, warn } = GeckoViewUtils.initLogging("Startup");
 
 var { DelayedInit } = ChromeUtils.import(
@@ -239,6 +247,7 @@ class GeckoViewStartup {
         ]);
 
         Services.obs.addObserver(this, "browser-idle-startup-tasks-finished");
+        Services.obs.addObserver(this, "handlersvc-store-initialized");
 
         Services.obs.notifyObservers(null, "geckoview-startup-complete");
         break;
@@ -251,6 +260,17 @@ class GeckoViewStartup {
         
         
         Services.startup.trackStartupCrashEnd();
+        break;
+      }
+      case "handlersvc-store-initialized": {
+        
+        
+        
+        
+        
+        
+        
+        lazy.PdfJs.init(this._isNewProfile);
         break;
       }
     }

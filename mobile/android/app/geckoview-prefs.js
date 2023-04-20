@@ -92,3 +92,10 @@ pref("extensions.formautofill.addresses.capture.enabled", true);
 
 pref("browser.formfill.debug", false);
 pref("extensions.formautofill.loglevel", "Warn");
+
+
+
+pref("pdfjs.handleOctetStream", true);
+pref("browser.download.open_pdf_attachments_inline", true);
+pref("pdfjs.annotationEditorMode", -1);
+pref("pdfjs.disabled", true);
