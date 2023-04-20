@@ -3690,6 +3690,8 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
         StringEndsWith(outFileName, u".url"_ns,
                        nsCaseInsensitiveStringComparator) ||
         StringEndsWith(outFileName, u".scf"_ns,
+                       nsCaseInsensitiveStringComparator) ||
+        StringEndsWith(outFileName, u".desktop"_ns,
                        nsCaseInsensitiveStringComparator)) {
       outFileName.AppendLiteral(".download");
     }
