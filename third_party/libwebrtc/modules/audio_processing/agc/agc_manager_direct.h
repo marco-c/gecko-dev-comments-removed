@@ -67,11 +67,11 @@ class AgcManagerDirect final {
   
   
   
-  void AnalyzePreProcess(const AudioBuffer* audio);
+  void AnalyzePreProcess(const AudioBuffer& audio_buffer);
 
   
   
-  void Process(const AudioBuffer* audio);
+  void Process(const AudioBuffer& audio_buffer);
 
   
   
@@ -132,8 +132,6 @@ class AgcManagerDirect final {
       const AudioProcessing::Config::GainController1::AnalogGainController&
           analog_config,
       Agc* agc);
-
-  void AnalyzePreProcess(const float* const* audio, size_t samples_per_channel);
 
   void AggregateChannelLevels();
 
