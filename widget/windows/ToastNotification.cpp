@@ -356,9 +356,8 @@ ToastNotification::Observe(nsISupports* aSubject, const char* aTopic,
 
   for (auto iter = mActiveHandlers.Iter(); !iter.Done(); iter.Next()) {
     RefPtr<ToastNotificationHandler> handler = iter.UserData();
-    if (topic == "last-pb-context-exited"_ns) {
-      handler->HideIfPrivate();
-    } else if (topic == "quit-application"_ns) {
+
+    auto removeNotification = [&]() {
       
       
       iter.Remove();
@@ -366,6 +365,15 @@ ToastNotification::Observe(nsISupports* aSubject, const char* aTopic,
       
       
       handler->UnregisterHandler();
+    };
+
+    if (topic == "last-pb-context-exited"_ns) {
+      if (handler->IsPrivate()) {
+        handler->HideAlert();
+        removeNotification();
+      }
+    } else if (topic == "quit-application"_ns) {
+      removeNotification();
     }
   }
 
