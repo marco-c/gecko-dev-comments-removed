@@ -932,8 +932,7 @@ TextLeafPoint TextLeafPoint::ActualizeCaret(bool aAdjustAtEndOfLine) const {
 
 TextLeafPoint TextLeafPoint::FindBoundary(AccessibleTextBoundary aBoundaryType,
                                           nsDirection aDirection,
-                                          bool aIncludeOrigin,
-                                          bool aStopInEditable) const {
+                                          BoundaryFlags aFlags) const {
   if (IsCaret()) {
     if (aBoundaryType == nsIAccessibleText::BOUNDARY_CHAR) {
       if (IsCaretAtEndOfLine()) {
@@ -941,31 +940,40 @@ TextLeafPoint TextLeafPoint::FindBoundary(AccessibleTextBoundary aBoundaryType,
         return ActualizeCaret( false);
       }
     }
-    return ActualizeCaret().FindBoundary(aBoundaryType, aDirection,
-                                         aIncludeOrigin);
+    return ActualizeCaret().FindBoundary(
+        aBoundaryType, aDirection, aFlags & BoundaryFlags::eIncludeOrigin);
   }
 
-  bool inEditableAndStopInIt = aStopInEditable && mAcc->Parent() &&
+  bool inEditableAndStopInIt = (aFlags & BoundaryFlags::eStopInEditable) &&
+                               mAcc->Parent() &&
                                (mAcc->Parent()->State() & states::EDITABLE);
   if (aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_END) {
-    return FindLineEnd(aDirection, aIncludeOrigin, inEditableAndStopInIt);
+    return FindLineEnd(aDirection,
+                       inEditableAndStopInIt
+                           ? aFlags
+                           : (aFlags & ~BoundaryFlags::eStopInEditable));
   }
   if (aBoundaryType == nsIAccessibleText::BOUNDARY_WORD_END) {
-    return FindWordEnd(aDirection, aIncludeOrigin, inEditableAndStopInIt);
+    return FindWordEnd(aDirection,
+                       inEditableAndStopInIt
+                           ? aFlags
+                           : (aFlags & ~BoundaryFlags::eStopInEditable));
   }
   if ((aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_START ||
        aBoundaryType == nsIAccessibleText::BOUNDARY_PARAGRAPH) &&
-      aIncludeOrigin && aDirection == eDirPrevious && IsEmptyLastLine()) {
+      (aFlags & BoundaryFlags::eIncludeOrigin) && aDirection == eDirPrevious &&
+      IsEmptyLastLine()) {
     
     
     
     return *this;
   }
-  if (aBoundaryType == nsIAccessibleText::BOUNDARY_CHAR && aIncludeOrigin) {
+  if (aBoundaryType == nsIAccessibleText::BOUNDARY_CHAR &&
+      (aFlags & BoundaryFlags::eIncludeOrigin)) {
     return *this;
   }
   TextLeafPoint searchFrom = *this;
-  bool includeOrigin = aIncludeOrigin;
+  bool includeOrigin = !!(aFlags & BoundaryFlags::eIncludeOrigin);
   for (;;) {
     TextLeafPoint boundary;
     
@@ -1034,24 +1042,24 @@ TextLeafPoint TextLeafPoint::FindBoundary(AccessibleTextBoundary aBoundaryType,
 }
 
 TextLeafPoint TextLeafPoint::FindLineEnd(nsDirection aDirection,
-                                         bool aIncludeOrigin,
-                                         bool aStopInEditable) const {
+                                         BoundaryFlags aFlags) const {
   if (aDirection == eDirPrevious && IsEmptyLastLine()) {
     
     
     
     
     
-    return FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious, false,
-                        aStopInEditable);
+    return FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious,
+                        aFlags & ~BoundaryFlags::eIncludeOrigin);
   }
-  if (aIncludeOrigin && IsLineFeedChar()) {
+  if ((aFlags & BoundaryFlags::eIncludeOrigin) && IsLineFeedChar()) {
     return *this;
   }
-  if (aDirection == eDirPrevious && !aIncludeOrigin) {
+  if (aDirection == eDirPrevious && !(aFlags & BoundaryFlags::eIncludeOrigin)) {
     
-    TextLeafPoint prevChar = FindBoundary(nsIAccessibleText::BOUNDARY_CHAR,
-                                          eDirPrevious, false, aStopInEditable);
+    TextLeafPoint prevChar =
+        FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious,
+                     aFlags & ~BoundaryFlags::eIncludeOrigin);
     if (prevChar.IsLineFeedChar()) {
       return prevChar;
     }
@@ -1061,16 +1069,16 @@ TextLeafPoint TextLeafPoint::FindLineEnd(nsDirection aDirection,
     
     
     
-    searchFrom = FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirNext, false,
-                              aStopInEditable);
+    searchFrom = FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirNext,
+                              aFlags & ~BoundaryFlags::eIncludeOrigin);
   }
-  TextLeafPoint lineStart =
-      searchFrom.FindBoundary(nsIAccessibleText::BOUNDARY_LINE_START,
-                              aDirection, aIncludeOrigin, aStopInEditable);
+  TextLeafPoint lineStart = searchFrom.FindBoundary(
+      nsIAccessibleText::BOUNDARY_LINE_START, aDirection, aFlags);
   
   
-  TextLeafPoint prevChar = lineStart.FindBoundary(
-      nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious, false, aStopInEditable);
+  TextLeafPoint prevChar =
+      lineStart.FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious,
+                             aFlags & ~BoundaryFlags::eIncludeOrigin);
   if (prevChar && prevChar.IsLineFeedChar()) {
     return prevChar;
   }
@@ -1082,20 +1090,21 @@ bool TextLeafPoint::IsSpace() const {
 }
 
 TextLeafPoint TextLeafPoint::FindWordEnd(nsDirection aDirection,
-                                         bool aIncludeOrigin,
-                                         bool aStopInEditable) const {
+                                         BoundaryFlags aFlags) const {
   char16_t origChar = GetChar();
   const bool origIsSpace = GetWordBreakClass(origChar) == eWbcSpace;
   bool prevIsSpace = false;
-  if (aDirection == eDirPrevious || (aIncludeOrigin && origIsSpace) ||
-      !origChar) {
-    TextLeafPoint prev = FindBoundary(nsIAccessibleText::BOUNDARY_CHAR,
-                                      eDirPrevious, false, aStopInEditable);
+  if (aDirection == eDirPrevious ||
+      ((aFlags & BoundaryFlags::eIncludeOrigin) && origIsSpace) || !origChar) {
+    TextLeafPoint prev =
+        FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious,
+                     aFlags & ~BoundaryFlags::eIncludeOrigin);
     if (aDirection == eDirPrevious && prev == *this) {
       return *this;  
     }
     prevIsSpace = prev.IsSpace();
-    if (aIncludeOrigin && origIsSpace && !prevIsSpace) {
+    if ((aFlags & BoundaryFlags::eIncludeOrigin) && origIsSpace &&
+        !prevIsSpace) {
       
       
       return *this;
@@ -1106,13 +1115,13 @@ TextLeafPoint TextLeafPoint::FindWordEnd(nsDirection aDirection,
     
     
     boundary = FindBoundary(nsIAccessibleText::BOUNDARY_WORD_START,
-                            eDirPrevious, aIncludeOrigin, aStopInEditable);
+                            eDirPrevious, aFlags);
   } else if (aDirection == eDirNext &&
              (origIsSpace || (!origChar && prevIsSpace))) {
     
     
     boundary = FindBoundary(nsIAccessibleText::BOUNDARY_WORD_START, eDirNext,
-                            false, aStopInEditable);
+                            aFlags & ~BoundaryFlags::eIncludeOrigin);
     if (boundary.IsSpace()) {
       
       
@@ -1121,7 +1130,7 @@ TextLeafPoint TextLeafPoint::FindWordEnd(nsDirection aDirection,
   }
   if (aDirection == eDirNext) {
     boundary = boundary.FindBoundary(nsIAccessibleText::BOUNDARY_WORD_START,
-                                     eDirNext, aIncludeOrigin, aStopInEditable);
+                                     eDirNext, aFlags);
   }
   
   
@@ -1129,7 +1138,7 @@ TextLeafPoint TextLeafPoint::FindWordEnd(nsDirection aDirection,
   TextLeafPoint prev = boundary;
   for (;;) {
     prev = prev.FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious,
-                             false, aStopInEditable);
+                             aFlags & ~BoundaryFlags::eIncludeOrigin);
     if (prev == boundary) {
       break;  
     }
@@ -1600,12 +1609,10 @@ LayoutDeviceIntRect TextLeafRange::Bounds() const {
     
     
     
-    TextLeafPoint lineStartPoint =
-        currPoint.FindBoundary(nsIAccessibleText::BOUNDARY_LINE_START, eDirNext,
-                                false);
+    TextLeafPoint lineStartPoint = currPoint.FindBoundary(
+        nsIAccessibleText::BOUNDARY_LINE_START, eDirNext);
     TextLeafPoint lastPointInLine = lineStartPoint.FindBoundary(
-        nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious,
-         false);
+        nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
     if (mEnd <= lastPointInLine) {
       lastPointInLine = mEnd;
       locatedFinalLine = true;

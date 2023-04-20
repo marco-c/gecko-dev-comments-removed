@@ -89,19 +89,22 @@ class TextLeafPoint final {
 
   TextLeafPoint ActualizeCaret(bool aAdjustAtEndOfLine = true) const;
 
+  enum class BoundaryFlags : uint32_t {
+    eDefaultBoundaryFlags = 0,
+    
+    eIncludeOrigin = 1 << 0,
+    
+    eStopInEditable = 1 << 1,
+  };
+
   
 
 
 
 
-
-
-
-
-  TextLeafPoint FindBoundary(AccessibleTextBoundary aBoundaryType,
-                             nsDirection aDirection,
-                             bool aIncludeOrigin = false,
-                             bool aStopInEditable = false) const;
+  TextLeafPoint FindBoundary(
+      AccessibleTextBoundary aBoundaryType, nsDirection aDirection,
+      BoundaryFlags aFlags = BoundaryFlags::eDefaultBoundaryFlags) const;
 
   
 
@@ -203,10 +206,8 @@ class TextLeafPoint final {
   TextLeafPoint FindLineStartSameAcc(nsDirection aDirection,
                                      bool aIncludeOrigin) const;
 
-  TextLeafPoint FindLineEnd(nsDirection aDirection, bool aIncludeOrigin,
-                            bool aStopInEditable) const;
-  TextLeafPoint FindWordEnd(nsDirection aDirection, bool aIncludeOrigin,
-                            bool aStopInEditable) const;
+  TextLeafPoint FindLineEnd(nsDirection aDirection, BoundaryFlags aFlags) const;
+  TextLeafPoint FindWordEnd(nsDirection aDirection, BoundaryFlags aFlags) const;
 
   TextLeafPoint FindParagraphSameAcc(nsDirection aDirection,
                                      bool aIncludeOrigin) const;
@@ -221,6 +222,8 @@ class TextLeafPoint final {
   TextLeafPoint FindSpellingErrorSameAcc(nsDirection aDirection,
                                          bool aIncludeOrigin) const;
 };
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(TextLeafPoint::BoundaryFlags)
 
 
 
