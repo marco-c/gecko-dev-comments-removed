@@ -41,11 +41,15 @@ class AndroidWrench(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
         
         
         
-        self.wrench_dir = (
-            "/storage/emulated/0/Android/data/org.mozilla.wrench/files/wrench"
-        )
+        self.wrench_dir = "/data/data/org.mozilla.wrench/files/wrench"
 
         super(AndroidWrench, self).__init__()
+
+        
+        
+        
+        self.use_root = False
+
         if self.device_serial is None:
             
             self._is_emulator = True
