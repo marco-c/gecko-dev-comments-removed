@@ -6,12 +6,6 @@
 
 loader.lazyRequireGetter(
   this,
-  "colorUtils",
-  "resource://devtools/shared/css/color.js",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   "CssLogic",
   "resource://devtools/server/actors/inspector/css-logic.js",
   true
@@ -270,7 +264,7 @@ async function getContrastRatioFor(node, options = {}) {
       };
     }
 
-    let { r, g, b, a } = colorUtils.colorToRGBA(backgroundColor, true);
+    let { r, g, b, a } = InspectorUtils.colorToRGBA(backgroundColor);
     
     
     
