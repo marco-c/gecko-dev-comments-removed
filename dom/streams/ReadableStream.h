@@ -131,10 +131,6 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  MOZ_CAN_RUN_SCRIPT static already_AddRefed<ReadableStream> Create(
-      JSContext* aCx, nsIGlobalObject* aGlobal,
-      BodyStreamHolder* aUnderlyingSource, ErrorResult& aRv);
-
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static already_AddRefed<ReadableStream>
