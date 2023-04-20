@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 
+#include "ErrorList.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/EventForwards.h"
@@ -1989,6 +1990,13 @@ CanonicalBrowsingContext::ChangeRemoteness(
     return RemotenessPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
   }
 
+  RefPtr<BrowserParent> embedderBrowser =
+      embedderWindowGlobal->GetBrowserParent();
+  if (embedderBrowser && embedderBrowser->Manager()->IsShuttingDown()) {
+    NS_WARNING("Embedder already asked to shutdown.");
+    return RemotenessPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
+  }
+
   if (aOptions.mRemoteType.IsEmpty() && (!IsTop() || !GetEmbedderElement())) {
     NS_WARNING("Cannot load non-remote subframes");
     return RemotenessPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
@@ -2045,8 +2053,6 @@ CanonicalBrowsingContext::ChangeRemoteness(
   }
 
   
-  RefPtr<BrowserParent> embedderBrowser =
-      embedderWindowGlobal->GetBrowserParent();
   if (embedderBrowser &&
       aOptions.mRemoteType == embedderBrowser->Manager()->GetRemoteType()) {
     MOZ_DIAGNOSTIC_ASSERT(
