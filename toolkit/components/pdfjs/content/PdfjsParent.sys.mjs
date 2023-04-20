@@ -1,25 +1,19 @@
+/* Copyright 2012 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["PdfjsParent"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -51,7 +45,7 @@ let gFindTypes = [
   "finddiacriticmatchingchange",
 ];
 
-class PdfjsParent extends JSWindowActorParent {
+export class PdfjsParent extends JSWindowActorParent {
   constructor() {
     super();
     this._boundToFindbar = null;
@@ -80,9 +74,9 @@ class PdfjsParent extends JSWindowActorParent {
     return undefined;
   }
 
-  
-
-
+  /*
+   * Internal
+   */
 
   get browser() {
     return this.browsingContext.top.embedderElement;
@@ -91,19 +85,19 @@ class PdfjsParent extends JSWindowActorParent {
   _saveURL(aMsg) {
     const data = aMsg.data;
     this.browser.ownerGlobal.saveURL(
-      data.blobUrl ,
-      data.originalUrl ,
-      data.filename ,
-      null ,
-      true ,
-      false ,
-      null ,
-      null ,
-      null ,
+      data.blobUrl /* aURL */,
+      data.originalUrl /* aOriginalURL */,
+      data.filename /* aFileName */,
+      null /* aFilePickerTitleKey */,
+      true /* aShouldBypassCache */,
+      false /* aSkipPrompt */,
+      null /* aReferrerInfo */,
+      null /* aCookieJarSettings*/,
+      null /* aSourceDocument */,
       lazy.PrivateBrowsingUtils.isBrowserPrivate(
         this.browser
-      ) ,
-      Services.scriptSecurityManager.getSystemPrincipal() 
+      ) /* aIsContentWindowPrivate */,
+      Services.scriptSecurityManager.getSystemPrincipal() /* aPrincipal */
     );
   }
 
@@ -114,7 +108,7 @@ class PdfjsParent extends JSWindowActorParent {
     let tab = tabbrowser.getTabForBrowser(browser);
     tabbrowser.getFindBar(tab).then(fb => {
       if (!fb) {
-        
+        // The tab or window closed.
         return;
       }
       fb.updateControlState(data.result, data.findPrevious);
@@ -144,7 +138,7 @@ class PdfjsParent extends JSWindowActorParent {
     let tab = tabbrowser.getTabForBrowser(browser);
     tabbrowser.getFindBar(tab).then(fb => {
       if (!fb) {
-        
+        // The tab or window closed.
         return;
       }
       const matchesCount = this._requestMatchesCount(data);
@@ -170,7 +164,7 @@ class PdfjsParent extends JSWindowActorParent {
 
   handleEvent(aEvent) {
     const type = aEvent.type;
-    
+    // Handle the tab find initialized event specially:
     if (type == "TabFindInitialized") {
       let browser = aEvent.target.linkedBrowser;
       this._hookupEventListeners(browser);
@@ -191,14 +185,14 @@ class PdfjsParent extends JSWindowActorParent {
       return;
     }
 
-    
-    
+    // Ignore events findbar events which arrive while the Pdfjs document is in
+    // the BFCache.
     if (this.windowContext.isInBFCache) {
       return;
     }
 
-    
-    
+    // To avoid forwarding the message as a CPOW, create a structured cloneable
+    // version of the event for both performance, and ease of usage, reasons.
     let detail = null;
     if (type !== "findbarclose") {
       detail = {
@@ -236,17 +230,17 @@ class PdfjsParent extends JSWindowActorParent {
     this._hookupEventListeners(browser);
   }
 
-  
-
-
-
-
+  /**
+   * Either hook up all the find event listeners if a findbar exists,
+   * or listen for a find bar being created and hook up event listeners
+   * when it does get created.
+   */
   _hookupEventListeners(aBrowser) {
     let tabbrowser = aBrowser.getTabBrowser();
     let tab = tabbrowser.getTabForBrowser(aBrowser);
     let findbar = tabbrowser.getCachedFindBar(tab);
     if (findbar) {
-      
+      // And we need to start listening to find events.
       for (var i = 0; i < gFindTypes.length; i++) {
         var type = gFindTypes[i];
         findbar.addEventListener(type, this, true);
@@ -262,17 +256,17 @@ class PdfjsParent extends JSWindowActorParent {
   _removeEventListener() {
     let browser = this.browser;
 
-    
+    // make sure the listener has been removed.
     let findbar = this._boundToFindbar;
     if (findbar) {
-      
+      // No reason to listen to find events any longer.
       for (var i = 0; i < gFindTypes.length; i++) {
         var type = gFindTypes[i];
         findbar.removeEventListener(type, this, true);
       }
     } else if (browser) {
-      
-      
+      // If we registered a `TabFindInitialized` listener which never fired,
+      // make sure we remove it.
       let tabbrowser = browser.getTabBrowser();
       let tab = tabbrowser.getTabForBrowser(browser);
       tab?.removeEventListener("TabFindInitialized", this);
@@ -280,14 +274,14 @@ class PdfjsParent extends JSWindowActorParent {
 
     this._boundToFindbar = null;
 
-    
+    // Clean up any SwapDocShells event listeners.
     browser?.removeEventListener("SwapDocShells", this);
   }
 
-  
-
-
-
+  /*
+   * Display a notification warning when the renderer isn't sure
+   * a pdf displayed correctly.
+   */
   _displayWarning(aMsg) {
     let data = aMsg.data;
     let browser = this.browser;
@@ -295,13 +289,13 @@ class PdfjsParent extends JSWindowActorParent {
     let tabbrowser = browser.getTabBrowser();
     let notificationBox = tabbrowser.getNotificationBox(browser);
 
-    
-    
-    
+    // Flag so we don't send the message twice, since if the user clicks
+    // "open with different viewer" both the button callback and
+    // eventCallback will be called.
     let messageSent = false;
     let sendMessage = download => {
-      
-      
+      // Don't send a response again if we already responded when the button was
+      // clicked.
       if (messageSent) {
         return;
       }
@@ -309,8 +303,8 @@ class PdfjsParent extends JSWindowActorParent {
         this.sendAsyncMessage("PDFJS:Child:fallbackDownload", { download });
         messageSent = true;
       } catch (ex) {
-        
-        
+        // Ignore any exception if it is related to the child
+        // getting destroyed before the message can be sent.
         if (!/JSWindowActorParent cannot send at the moment/.test(ex.message)) {
           throw ex;
         }
@@ -331,8 +325,8 @@ class PdfjsParent extends JSWindowActorParent {
         label: data.message,
         priority: notificationBox.PRIORITY_INFO_MEDIUM,
         eventCallback: eventType => {
-          
-          
+          // Currently there is only one event "removed" but if there are any other
+          // added in the future we still only care about removed at the moment.
           if (eventType !== "removed") {
             return;
           }

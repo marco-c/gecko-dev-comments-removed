@@ -1,21 +1,17 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["PdfStreamConverter"];
+/* Copyright 2012 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 const PDFJS_EVENT_ID = "pdf.js.message";
 const PREF_PREFIX = "pdfjs";
@@ -25,43 +21,22 @@ const MAX_NUMBER_OF_PREFS = 50;
 const MAX_STRING_PREF_LENGTH = 128;
 const PDF_CONTENT_TYPE = "application/pdf";
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
-
 ChromeUtils.defineESModuleGetters(lazy, {
   AsyncPrefs: "resource://gre/modules/AsyncPrefs.sys.mjs",
+  NetworkManager: "resource://pdf.js/PdfJsNetwork.sys.mjs",
+  PdfJs: "resource://pdf.js/PdfJs.sys.mjs",
+  PdfJsTelemetry: "resource://pdf.js/PdfJsTelemetry.sys.mjs",
+  PdfSandbox: "resource://pdf.js/PdfSandbox.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 ChromeUtils.defineModuleGetter(
   lazy,
   "NetUtil",
   "resource://gre/modules/NetUtil.jsm"
-);
-
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "NetworkManager",
-  "resource://pdf.js/PdfJsNetwork.jsm"
-);
-
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "PdfJsTelemetry",
-  "resource://pdf.js/PdfJsTelemetry.jsm"
-);
-
-ChromeUtils.defineModuleGetter(lazy, "PdfJs", "resource://pdf.js/PdfJs.jsm");
-
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "PdfSandbox",
-  "resource://pdf.js/PdfSandbox.jsm"
 );
 
 var Svc = {};
@@ -80,7 +55,7 @@ XPCOMUtils.defineLazyServiceGetter(
 
 XPCOMUtils.defineLazyGetter(lazy, "gOurBinary", () => {
   let file = Services.dirsvc.get("XREExeF", Ci.nsIFile);
-  
+  // Make sure to get the .app on macOS
   if (AppConstants.platform == "macosx") {
     while (file) {
       if (/\.app\/?$/i.test(file.leafName)) {
@@ -130,7 +105,7 @@ function getDOMWindow(aChannel, aPrincipal) {
     ? aChannel.notificationCallbacks
     : aChannel.loadGroup.notificationCallbacks;
   var win = requestor.getInterface(Ci.nsIDOMWindow);
-  
+  // Ensure the window wasn't navigated to something that is not PDF.js.
   if (!win.document.nodePrincipal.equals(aPrincipal)) {
     return null;
   }
@@ -186,21 +161,21 @@ function isValidMatchesCount(data) {
   return true;
 }
 
-
+// PDF data storage
 function PdfDataListener(length) {
-  this.length = length; 
+  this.length = length; // less than 0, if length is unknown
   this.buffers = [];
   this.loaded = 0;
 }
 
 PdfDataListener.prototype = {
   append: function PdfDataListener_append(chunk) {
-    
-    
+    // In most of the cases we will pass data as we receive it, but at the
+    // beginning of the loading we may accumulate some data.
     this.buffers.push(chunk);
     this.loaded += chunk.length;
     if (this.length >= 0 && this.length < this.loaded) {
-      this.length = -1; 
+      this.length = -1; // reset the length, server is giving incorrect one
     }
     this.onprogress(this.loaded, this.length >= 0 ? this.length : void 0);
   },
@@ -211,8 +186,8 @@ PdfDataListener.prototype = {
     if (this.buffers.length === 1) {
       return this.buffers.pop();
     }
-    
-    
+    // There are multiple buffers that need to be combined into a single
+    // buffer.
     let combinedLength = 0;
     for (let buffer of this.buffers) {
       combinedLength += buffer.length;
@@ -256,9 +231,9 @@ PdfDataListener.prototype = {
   },
 };
 
-
-
-
+/**
+ * All the privileged actions.
+ */
 class ChromeActions {
   constructor(domWindow, contentDispositionFilename) {
     this.domWindow = domWindow;
@@ -286,8 +261,8 @@ class ChromeActions {
     try {
       this.sandbox = new lazy.PdfSandbox(this.domWindow, data);
     } catch (err) {
-      
-      
+      // If there's an error here, it means that something is really wrong
+      // on pdf.js side during sandbox initialization phase.
       console.error(err);
       return sendResp(false);
     }
@@ -356,7 +331,7 @@ class ChromeActions {
 
   getStrings() {
     try {
-      
+      // Lazy initialization of localizedStrings
       this.localizedStrings ||= getLocalizedStrings("viewer.properties");
 
       return this.localizedStrings;
@@ -367,7 +342,7 @@ class ChromeActions {
   }
 
   supportsIntegratedFind() {
-    
+    // Integrated find is only supported when we're not in a frame
     return this.domWindow.windowGlobalChild.browsingContext.parent === null;
   }
 
@@ -419,10 +394,10 @@ class ChromeActions {
     }
   }
 
-  
-
-
-
+  /**
+   * @param {Object} args - Object with `featureId` and `url` properties.
+   * @param {function} sendResponse - Callback function.
+   */
   fallback(args, sendResponse) {
     sendResponse(false);
   }
@@ -431,7 +406,7 @@ class ChromeActions {
     if (!this.supportsIntegratedFind()) {
       return;
     }
-    
+    // Verify what we're sending to the findbar.
     var result = data.result;
     var findPrevious = data.findPrevious;
     var findPreviousType = typeof findPrevious;
@@ -443,13 +418,13 @@ class ChromeActions {
     ) {
       return;
     }
-    
-    
+    // Allow the `matchesCount` property to be optional, and ensure that
+    // it's valid before including it in the data sent to the findbar.
     let matchesCount = null;
     if (isValidMatchesCount(data.matchesCount)) {
       matchesCount = data.matchesCount;
     }
-    
+    // Same for the `rawQuery` property.
     let rawQuery = null;
     if (typeof data.rawQuery === "string") {
       rawQuery = data.rawQuery;
@@ -468,7 +443,7 @@ class ChromeActions {
     if (!this.supportsIntegratedFind()) {
       return;
     }
-    
+    // Verify what we're sending to the findbar.
     if (!isValidMatchesCount(data)) {
       return;
     }
@@ -553,11 +528,11 @@ class ChromeActions {
     return result;
   }
 
-  
-
-
-
-
+  /**
+   * Set the different editor states in order to be able to update the context
+   * menu.
+   * @param {Object} details
+   */
   updateEditorStates({ details }) {
     const doc = this.domWindow.document;
     if (!doc.editorStates) {
@@ -578,9 +553,9 @@ class ChromeActions {
   }
 }
 
-
-
-
+/**
+ * This is for range requests.
+ */
 class RangedChromeActions extends ChromeActions {
   constructor(
     domWindow,
@@ -599,15 +574,15 @@ class RangedChromeActions extends ChromeActions {
     this.pdfUrl = originalRequest.URI.spec;
     this.contentLength = originalRequest.contentLength;
 
-    
+    // Pass all the headers from the original request through
     var httpHeaderVisitor = {
       headers: {},
       visitHeader(aHeader, aValue) {
         if (aHeader === "Range") {
-          
-          
-          
-          
+          // When loading the PDF from cache, firefox seems to set the Range
+          // request header to fetch only the unfetched portions of the file
+          // (e.g. 'Range: bytes=1024-'). However, we want to set this header
+          // manually to fetch the PDF in chunks.
           return;
         }
         this.headers[aHeader] = aValue;
@@ -620,10 +595,10 @@ class RangedChromeActions extends ChromeActions {
     var self = this;
     var xhr_onreadystatechange = function xhr_onreadystatechange() {
       if (this.readyState === 1) {
-        
+        // LOADING
         var netChannel = this.channel;
-        
-        
+        // override this XMLHttpRequest's OriginAttributes with our cached parent window's
+        // OriginAttributes, as we are currently running under the SystemPrincipal
         this.setOriginAttributes(self.getWindowOriginAttributes());
         if (
           "nsIPrivateBrowsingChannel" in Ci &&
@@ -645,8 +620,8 @@ class RangedChromeActions extends ChromeActions {
       getXhr,
     });
 
-    
-    
+    // If we are in range request mode, this means we manually issued xhr
+    // requests, which we need to abort when we leave the page
     domWindow.addEventListener("unload", function unload(e) {
       domWindow.removeEventListener(e.type, unload);
       self.abortLoading();
@@ -718,9 +693,9 @@ class RangedChromeActions extends ChromeActions {
     var begin = args.begin;
     var end = args.end;
     var domWindow = this.domWindow;
-    
-    
-    
+    // TODO(mack): Support error handler. We're not currently not handling
+    // errors from chrome code for non-range requests, so this doesn't
+    // seem high-pri
     this.networkManager.requestRange(begin, end, {
       onDone: function RangedChromeActions_onDone({ begin, chunk }) {
         domWindow.postMessage(
@@ -755,9 +730,9 @@ class RangedChromeActions extends ChromeActions {
   }
 }
 
-
-
-
+/**
+ * This is for a single network stream.
+ */
 class StandardChromeActions extends ChromeActions {
   constructor(
     domWindow,
@@ -814,15 +789,15 @@ class StandardChromeActions extends ChromeActions {
   }
 }
 
-
-
-
+/**
+ * Event listener to trigger chrome privileged code.
+ */
 class RequestListener {
   constructor(actions) {
     this.actions = actions;
   }
 
-  
+  // Receive an event and synchronously or asynchronously responds.
   receive(event) {
     var message = event.target;
     var doc = message.ownerDocument;
@@ -850,8 +825,8 @@ class RequestListener {
             listener.initCustomEvent("pdf.js.response", true, false, detail);
             return message.dispatchEvent(listener);
           } catch (e) {
-            
-            
+            // doc is no longer accessible because the requestor is already
+            // gone. unloaded content cannot receive the response anyway.
             return false;
           }
         };
@@ -861,7 +836,7 @@ class RequestListener {
   }
 }
 
-function PdfStreamConverter() {}
+export function PdfStreamConverter() {}
 
 PdfStreamConverter.prototype = {
   QueryInterface: ChromeUtils.generateQI([
@@ -870,37 +845,37 @@ PdfStreamConverter.prototype = {
     "nsIRequestObserver",
   ]),
 
-  
+  /*
+   * This component works as such:
+   * 1. asyncConvertData stores the listener
+   * 2. onStartRequest creates a new channel, streams the viewer
+   * 3. If range requests are supported:
+   *      3.1. Leave the request open until the viewer is ready to switch to
+   *           range requests.
+   *
+   *    If range rquests are not supported:
+   *      3.1. Read the stream as it's loaded in onDataAvailable to send
+   *           to the viewer
+   *
+   * The convert function just returns the stream, it's just the synchronous
+   * version of asyncConvertData.
+   */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
+  // nsIStreamConverter::convert
   convert(aFromStream, aFromType, aToType, aCtxt) {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   },
 
-  
+  // nsIStreamConverter::asyncConvertData
   asyncConvertData(aFromType, aToType, aListener, aCtxt) {
     if (aCtxt && aCtxt instanceof Ci.nsIChannel) {
       aCtxt.QueryInterface(Ci.nsIChannel);
     }
-    
-    
+    // We need to check if we're supposed to convert here, because not all
+    // asyncConvertData consumers will call getConvertedType first:
     this.getConvertedType(aFromType, aCtxt);
 
-    
+    // Store the listener passed to us
     this.listener = aListener;
   },
 
@@ -913,7 +888,7 @@ PdfStreamConverter.prototype = {
       return false;
     }
     preferredApplicationHandler.QueryInterface(Ci.nsILocalHandlerApp);
-    
+    // We have an app, grab the executable
     let { executable } = preferredApplicationHandler;
     if (!executable) {
       return false;
@@ -921,56 +896,56 @@ PdfStreamConverter.prototype = {
     return !executable.equals(lazy.gOurBinary);
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /*
+   * Check if the user wants to use PDF.js. Returns true if PDF.js should
+   * handle PDFs, and false if not. Will always return true on non-parent
+   * processes.
+   *
+   * If the user has selected to open PDFs with a helper app, and we are that
+   * helper app, or if the user has selected the OS default, and we are that
+   * OS default, reset the preference back to pdf.js .
+   *
+   */
   _validateAndMaybeUpdatePDFPrefs() {
     let { processType, PROCESS_TYPE_DEFAULT } = Services.appinfo;
-    
+    // If we're not in the parent, or are the default, then just say yes.
     if (processType != PROCESS_TYPE_DEFAULT || lazy.PdfJs.cachedIsDefault()) {
       return { shouldOpen: true };
     }
 
-    
-    
-    
+    // OK, PDF.js might not be the default. Find out if we've misled the user
+    // into making Firefox an external handler or if we're the OS default and
+    // Firefox is set to use the OS default:
     let mime = Svc.mime.getFromTypeAndExtension(PDF_CONTENT_TYPE, "pdf");
-    
-    
+    // The above might throw errors. We're deliberately letting those bubble
+    // back up, where they'll tell the stream converter not to use us.
 
     if (!mime) {
-      
-      
+      // This shouldn't happen, but we can't fix what isn't there. Assume
+      // we're OK to handle with PDF.js
       return { shouldOpen: true };
     }
 
     const { saveToDisk, useHelperApp, useSystemDefault } = Ci.nsIHandlerInfo;
     let { preferredAction, alwaysAskBeforeHandling } = mime;
-    
+    // return this info so getConvertedType can use it.
     let rv = { alwaysAskBeforeHandling, shouldOpen: false };
-    
-    
+    // If the user has indicated they want to be asked or want to save to
+    // disk, we shouldn't render inline immediately:
     if (alwaysAskBeforeHandling || preferredAction == saveToDisk) {
       return rv;
     }
-    
+    // If we have usable helper app info, don't use PDF.js
     if (preferredAction == useHelperApp && this._usableHandler(mime)) {
       return rv;
     }
-    
+    // If we want the OS default and that's not Firefox, don't use PDF.js
     if (preferredAction == useSystemDefault && !mime.isCurrentAppOSDefault()) {
       return rv;
     }
     rv.shouldOpen = true;
-    
-    
+    // Log that we're doing this to help debug issues if people end up being
+    // surprised by this behaviour.
     console.error("Found unusable PDF preferences. Fixing back to PDF.js");
 
     mime.preferredAction = Ci.nsIHandlerInfo.handleInternally;
@@ -982,10 +957,10 @@ PdfStreamConverter.prototype = {
   getConvertedType(aFromType, aChannel) {
     const HTML = "text/html";
     let channelURI = aChannel?.URI;
-    
-    
+    // We can be invoked for application/octet-stream; check if we want the
+    // channel first:
     if (aFromType != "application/pdf") {
-      
+      // Check if the filename has a PDF extension.
       let isPDF = false;
       try {
         isPDF = aChannel.contentDispositionFilename.endsWith(".pdf");
@@ -1011,7 +986,7 @@ PdfStreamConverter.prototype = {
           Cr.NS_ERROR_FAILURE
         );
       }
-      
+      // fall through, this appears to be a pdf.
     }
 
     let {
@@ -1022,24 +997,24 @@ PdfStreamConverter.prototype = {
     if (shouldOpen) {
       return HTML;
     }
-    
-    
+    // Hm, so normally, no pdfjs. However... if this is a file: channel there
+    // are some edge-cases.
     if (channelURI?.schemeIs("file")) {
-      
-      
+      // If we're loaded with system principal, we were likely handed the PDF
+      // by the OS or directly from the URL bar. Assume we should load it:
       let triggeringPrincipal = aChannel.loadInfo?.triggeringPrincipal;
       if (triggeringPrincipal?.isSystemPrincipal) {
         return HTML;
       }
 
-      
-      
-      
-      
-      
-      
-      
-      
+      // If we're loading from a file: link, load it in PDF.js unless the user
+      // has told us they always want to open/save PDFs.
+      // This is because handing off the choice to open in Firefox itself
+      // through the dialog doesn't work properly and making it work is
+      // non-trivial (see https://bugzilla.mozilla.org/show_bug.cgi?id=1680147#c3 )
+      // - and anyway, opening the file is what we do for *all*
+      // other file types we handle internally (and users can then use other UI
+      // to save or open it with other apps from there).
       if (triggeringPrincipal?.schemeIs("file") && alwaysAskBeforeHandling) {
         return HTML;
       }
@@ -1048,7 +1023,7 @@ PdfStreamConverter.prototype = {
     throw new Components.Exception("Can't use PDF.js", Cr.NS_ERROR_FAILURE);
   },
 
-  
+  // nsIStreamListener::onDataAvailable
   onDataAvailable(aRequest, aInputStream, aOffset, aCount) {
     if (!this.dataListener) {
       return;
@@ -1061,9 +1036,9 @@ PdfStreamConverter.prototype = {
     this.dataListener.append(new Uint8Array(chunk));
   },
 
-  
+  // nsIRequestObserver::onStartRequest
   onStartRequest(aRequest) {
-    
+    // Setup the request so we can use it below.
     var isHttpRequest = false;
     try {
       aRequest.QueryInterface(Ci.nsIHttpChannel);
@@ -1115,38 +1090,38 @@ PdfStreamConverter.prototype = {
       contentDispositionFilename += ".pdf";
     }
 
-    
+    // Change the content type so we don't get stuck in a loop.
     aRequest.setProperty("contentType", aRequest.contentType);
     aRequest.contentType = "text/html";
     if (isHttpRequest) {
-      
+      // We trust PDF viewer, using no CSP
       aRequest.setResponseHeader("Content-Security-Policy", "", false);
       aRequest.setResponseHeader(
         "Content-Security-Policy-Report-Only",
         "",
         false
       );
-      
+      // The viewer does not need to handle HTTP Refresh header.
       aRequest.setResponseHeader("Refresh", "", false);
     }
 
     lazy.PdfJsTelemetry.onViewerIsUsed();
 
-    
-    
-    
-    
-    
+    // The document will be loaded via the stream converter as html,
+    // but since we may have come here via a download or attachment
+    // that was opened directly, force the content disposition to be
+    // inline so that the html document will be loaded normally instead
+    // of going to the helper service.
     aRequest.contentDisposition = Ci.nsIChannel.DISPOSITION_FORCE_INLINE;
 
-    
+    // Creating storage for PDF data
     var contentLength = aRequest.contentLength;
     this.dataListener = new PdfDataListener(contentLength);
     this.binaryStream = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
       Ci.nsIBinaryInputStream
     );
 
-    
+    // Create a new channel that is viewer loaded as a resource.
     var channel = lazy.NetUtil.newChannel({
       uri: PDF_VIEWER_WEB_PAGE,
       loadUsingSystemPrincipal: true,
@@ -1154,10 +1129,10 @@ PdfStreamConverter.prototype = {
 
     var listener = this.listener;
     var dataListener = this.dataListener;
-    
-    
-    
-    
+    // Proxy all the request observer calls, when it gets to onStopRequest
+    // we can get the dom window.  We also intentionally pass on the original
+    // request(aRequest) below so we don't overwrite the original channel and
+    // trigger an assertion.
     var proxy = {
       onStartRequest(request) {
         listener.onStartRequest(aRequest);
@@ -1168,8 +1143,8 @@ PdfStreamConverter.prototype = {
       onStopRequest(request, statusCode) {
         var domWindow = getDOMWindow(channel, resourcePrincipal);
         if (!Components.isSuccessCode(statusCode) || !domWindow) {
-          
-          
+          // The request may have been aborted and the document may have been
+          // replaced with something that is not PDF.js, abort attaching.
           listener.onStopRequest(aRequest, statusCode);
           return;
         }
@@ -1208,20 +1183,20 @@ PdfStreamConverter.prototype = {
       },
     };
 
-    
+    // Keep the URL the same so the browser sees it as the same.
     channel.originalURI = aRequest.URI;
     channel.loadGroup = aRequest.loadGroup;
     channel.loadInfo.originAttributes = aRequest.loadInfo.originAttributes;
 
-    
-    
-    
+    // We can use the resource principal when data is fetched by the chrome,
+    // e.g. useful for NoScript. Make make sure we reuse the origin attributes
+    // from the request channel to keep isolation consistent.
     var uri = lazy.NetUtil.newURI(PDF_VIEWER_WEB_PAGE);
     var resourcePrincipal = Services.scriptSecurityManager.createContentPrincipal(
       uri,
       aRequest.loadInfo.originAttributes
     );
-    
+    // Remember the principal we would have had before we mess with it.
     let originalPrincipal = Services.scriptSecurityManager.getChannelResultPrincipal(
       aRequest
     );
@@ -1231,10 +1206,10 @@ PdfStreamConverter.prototype = {
     channel.asyncOpen(proxy);
   },
 
-  
+  // nsIRequestObserver::onStopRequest
   onStopRequest(aRequest, aStatusCode) {
     if (!this.dataListener) {
-      
+      // Do nothing
       return;
     }
 

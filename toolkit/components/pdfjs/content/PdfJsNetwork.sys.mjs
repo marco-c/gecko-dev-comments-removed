@@ -1,23 +1,19 @@
+/* Copyright 2012 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["NetworkManager"];
-
-
+// eslint-disable-next-line no-unused-vars
 function log(aMsg) {
   var msg = "PdfJsNetwork.jsm: " + (aMsg.join ? aMsg.join("") : aMsg);
   Services.console.logStringMessage(msg);
@@ -31,7 +27,7 @@ function getTypedArray(xhr) {
   return Uint8Array.from(data, ch => ch.charCodeAt(0) & 0xff);
 }
 
-var NetworkManager = (function NetworkManagerClosure() {
+export var NetworkManager = (function NetworkManagerClosure() {
   const OK_RESPONSE = 200;
   const PARTIAL_CONTENT_RESPONSE = 206;
 
@@ -115,7 +111,7 @@ var NetworkManager = (function NetworkManagerClosure() {
     onProgress(xhrId, evt) {
       var pendingRequest = this.pendingRequests[xhrId];
       if (!pendingRequest) {
-        
+        // Maybe abortRequest was called...
         return;
       }
 
@@ -128,7 +124,7 @@ var NetworkManager = (function NetworkManagerClosure() {
     onStateChange(xhrId, evt) {
       var pendingRequest = this.pendingRequests[xhrId];
       if (!pendingRequest) {
-        
+        // Maybe abortRequest was called...
         return;
       }
 
@@ -143,14 +139,14 @@ var NetworkManager = (function NetworkManagerClosure() {
       }
 
       if (!(xhrId in this.pendingRequests)) {
-        
-        
+        // The XHR request might have been aborted in onHeadersReceived()
+        // callback, in which case we should abort request
         return;
       }
 
       delete this.pendingRequests[xhrId];
 
-      
+      // success status == 0 can be on ftp, file and other protocols
       if (xhr.status === 0 && this.isHttp) {
         if (pendingRequest.onError) {
           pendingRequest.onError(xhr.status);
@@ -159,9 +155,9 @@ var NetworkManager = (function NetworkManagerClosure() {
       }
       var xhrStatus = xhr.status || OK_RESPONSE;
 
-      
-      
-      
+      // From http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35.2:
+      // "A server MAY ignore the Range header". This means it's possible to
+      // get a 200 rather than a 206 response from a range request.
       var ok_response_on_range_request =
         xhrStatus === OK_RESPONSE &&
         pendingRequest.expectedStatus === PARTIAL_CONTENT_RESPONSE;
