@@ -79,8 +79,8 @@ class PageIconProtocolHandler final : public nsIProtocolHandler,
 
   nsresult NewChannelInternal(nsIURI*, nsILoadInfo*, nsIChannel**);
 
-  nsresult GetStreams(nsIAsyncInputStream** inStream,
-                      nsIAsyncOutputStream** outStream);
+  void GetStreams(nsIAsyncInputStream** inStream,
+                  nsIAsyncOutputStream** outStream);
 
   
   static void NewSimpleChannel(nsIURI* aURI, nsILoadInfo* aLoadinfo,
