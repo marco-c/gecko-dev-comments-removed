@@ -97,6 +97,22 @@ class EnumRoleAccessible : public AccessibleWrap {
 
 
 
+template <a11y::role R>
+class EnumRoleHyperTextAccessible : public HyperTextAccessibleWrap {
+ public:
+  EnumRoleHyperTextAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : HyperTextAccessibleWrap(aContent, aDoc) {}
+
+  
+  virtual a11y::role NativeRole() const override { return R; }
+
+ protected:
+  virtual ~EnumRoleHyperTextAccessible() {}
+};
+
+
+
+
 
 class DummyAccessible : public AccessibleWrap {
  public:

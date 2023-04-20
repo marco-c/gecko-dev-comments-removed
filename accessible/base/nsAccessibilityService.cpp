@@ -1204,10 +1204,17 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       } else if (content->IsSVGElement(nsGkAtoms::text)) {
         newAcc = new HyperTextAccessibleWrap(content->AsElement(), document);
       } else if (content->IsSVGElement(nsGkAtoms::svg)) {
-        newAcc = new EnumRoleAccessible<roles::DIAGRAM>(content, document);
+        
+        
+        
+        
+        newAcc =
+            new EnumRoleHyperTextAccessible<roles::DIAGRAM>(content, document);
       } else if (content->IsSVGElement(nsGkAtoms::g) &&
                  MustSVGElementBeAccessible(content)) {
-        newAcc = new EnumRoleAccessible<roles::GROUPING>(content, document);
+        
+        newAcc =
+            new EnumRoleHyperTextAccessible<roles::GROUPING>(content, document);
       }
 
     } else if (content->IsMathMLElement()) {
