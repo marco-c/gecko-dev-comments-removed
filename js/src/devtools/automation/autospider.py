@@ -10,8 +10,6 @@ import logging
 import multiprocessing
 import os
 import platform
-import posixpath
-import re
 import shlex
 import shutil
 import subprocess
@@ -51,9 +49,6 @@ def quote(s):
 
 
 DIR = directories(os.path, os.getcwd())
-PDIR = directories(
-    posixpath, os.environ["PWD"], fixup=lambda s: re.sub(r"^(\w):", r"/\1", s)
-)
 
 AUTOMATION = env.get("AUTOMATION", False)
 
@@ -184,8 +179,6 @@ if AUTOMATION and platform.system() == "Windows":
 OBJDIR = args.objdir or os.path.join(DIR.source, "obj-spider")
 OBJDIR = os.path.abspath(OBJDIR)
 OUTDIR = os.path.join(OBJDIR, "out")
-POBJDIR = args.objdir or posixpath.join(PDIR.source, "obj-spider")
-POBJDIR = posixpath.abspath(POBJDIR)
 MAKE = env.get("MAKE", "make")
 PYTHON = sys.executable
 
@@ -465,7 +458,7 @@ with open(mozconfig, "wt") as fh:
 
 env["MOZCONFIG"] = mozconfig
 
-mach = posixpath.join(PDIR.source, "mach")
+mach = os.path.join(DIR.source, "mach")
 
 if not args.nobuild:
     
