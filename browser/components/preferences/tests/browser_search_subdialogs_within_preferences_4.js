@@ -13,6 +13,13 @@ add_task(async function() {
 
 
 add_task(async function() {
+  
+  if (
+    AppConstants.platform === "win" &&
+    Services.sysinfo.getProperty("hasWinPackageId")
+  ) {
+    return;
+  }
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });
