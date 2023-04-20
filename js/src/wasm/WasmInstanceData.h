@@ -47,6 +47,14 @@ using ExportFuncPtr = int32_t (*)(ExportArg*, Instance*);
 
 
 struct TypeDefInstanceData {
+  TypeDefInstanceData()
+      : typeDef(nullptr),
+        allocSite(nullptr),
+        shape(nullptr),
+        clasp(nullptr),
+        allocKind(gc::AllocKind::LIMIT),
+        initialHeap(gc::DefaultHeap) {}
+
   
   
   const wasm::TypeDef* typeDef;
@@ -54,7 +62,6 @@ struct TypeDefInstanceData {
   
   gc::AllocSite allocSite;
 
-  
   
   GCPtr<Shape*> shape;
   const JSClass* clasp;

@@ -112,33 +112,13 @@ class WasmGcObject : public JSObject {
                                              MutableHandleIdVector properties,
                                              bool enumerableOnly);
 
-  struct MOZ_STACK_CLASS AllocArgs {
-    explicit AllocArgs(JSContext* cx)
-        : shape(cx),
-          clasp(nullptr),
-          allocSite(nullptr),
-          allocKind(gc::AllocKind::LIMIT),
-          initialHeap(gc::DefaultHeap) {}
-    AllocArgs(JSContext* cx, wasm::TypeDefInstanceData* typeDefData)
-        : shape(cx, typeDefData->shape),
-          clasp(typeDefData->clasp),
-          allocSite(&typeDefData->allocSite),
-          allocKind(typeDefData->allocKind),
-          initialHeap(typeDefData->initialHeap) {}
-
-    static inline bool compute(JSContext* cx, const wasm::TypeDef* typeDef,
-                               AllocArgs* args);
-
-    Rooted<Shape*> shape;
-    const JSClass* clasp;
-    gc::AllocSite* allocSite;
-    gc::AllocKind allocKind;
-    gc::InitialHeap initialHeap;
-  };
-
  protected:
-  static WasmGcObject* create(JSContext* cx, const wasm::TypeDef* typeDef,
-                              const AllocArgs& args);
+  
+  
+  
+  static WasmGcObject* create(JSContext* cx,
+                              wasm::TypeDefInstanceData* typeDefData,
+                              js::gc::InitialHeap initialHeap);
 };
 
 
@@ -165,14 +145,12 @@ class WasmArrayObject : public WasmGcObject {
   
   
   
-  static WasmArrayObject* createArray(JSContext* cx,
-                                      const wasm::TypeDef* typeDef,
-                                      uint32_t numElements);
+  
   template <bool ZeroFields = true>
   static WasmArrayObject* createArray(JSContext* cx,
-                                      const wasm::TypeDef* typeDef,
-                                      uint32_t numElements,
-                                      const WasmGcObject::AllocArgs& args);
+                                      wasm::TypeDefInstanceData* typeDefData,
+                                      js::gc::InitialHeap initialHeap,
+                                      uint32_t numElements);
 
   
   static constexpr size_t offsetOfNumElements() {
@@ -239,12 +217,12 @@ class WasmStructObject : public WasmGcObject {
 
   
   
-  static WasmStructObject* createStruct(JSContext* cx,
-                                        const wasm::TypeDef* typeDef);
+  
+  
   template <bool ZeroFields = true>
   static WasmStructObject* createStruct(JSContext* cx,
-                                        const wasm::TypeDef* typeDef,
-                                        const WasmGcObject::AllocArgs& args);
+                                        wasm::TypeDefInstanceData* typeDefData,
+                                        js::gc::InitialHeap initialHeap);
 
   
   
