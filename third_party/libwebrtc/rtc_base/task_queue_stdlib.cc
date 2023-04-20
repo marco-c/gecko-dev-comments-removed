@@ -74,7 +74,13 @@ class TaskQueueStdlib final : public TaskQueueBase {
   struct NextTask {
     bool final_task = false;
     absl::AnyInvocable<void() &&> run_task;
-    int64_t sleep_time_ms = rtc::Event::kForever;
+    
+    
+    
+    
+    
+    
+    absl::optional<int64_t> sleep_time_ms;
   };
 
   static rtc::PlatformThread InitializeThread(TaskQueueStdlib* me,
@@ -246,7 +252,15 @@ void TaskQueueStdlib::ProcessTasks() {
       continue;
     }
 
-    flag_notify_.Wait(task.sleep_time_ms);
+    
+    
+    
+    
+    
+    if (task.sleep_time_ms.has_value())
+      flag_notify_.Wait(task.sleep_time_ms.value());
+    else
+      flag_notify_.Wait(rtc::Event::kForever);
   }
 }
 
