@@ -1,0 +1,46 @@
+
+
+
+
+
+
+#include "mozilla/dom/WebTransport.h"
+#include "mozilla/dom/WebTransportChild.h"
+#include "mozilla/dom/WebTransportLog.h"
+
+namespace mozilla::dom {
+
+void WebTransportChild::Shutdown() {
+  if (!CanSend()) {
+    return;
+  }
+
+  Close();
+  mTransport = nullptr;
+}
+
+void WebTransportChild::CloseAll() {
+  
+}
+
+::mozilla::ipc::IPCResult WebTransportChild::RecvCloseAll(
+    CloseAllResolver&& aResolver) {
+  CloseAll();
+  aResolver(NS_OK);
+  return IPC_OK();
+}
+
+::mozilla::ipc::IPCResult WebTransportChild::RecvIncomingBidirectionalStream(
+    const RefPtr<DataPipeReceiver>& aIncoming,
+    const RefPtr<DataPipeSender>& aOutgoing) {
+  mTransport->NewBidirectionalStream(aIncoming, aOutgoing);
+  return IPC_OK();
+}
+
+::mozilla::ipc::IPCResult WebTransportChild::RecvIncomingUnidirectionalStream(
+    const RefPtr<DataPipeReceiver>& aStream) {
+  mTransport->NewUnidirectionalStream(aStream);
+  return IPC_OK();
+}
+
+}  

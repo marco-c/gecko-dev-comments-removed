@@ -51,9 +51,27 @@ WebTransport::~WebTransport() {
   MOZ_ASSERT(mReceiveStreams.IsEmpty());
   
   
+  
+  
   if (mChild) {
     mChild->Shutdown();
   }
+}
+
+
+void WebTransport::NewBidirectionalStream(
+    const RefPtr<mozilla::ipc::DataPipeReceiver>& aIncoming,
+    const RefPtr<mozilla::ipc::DataPipeSender>& aOutgoing) {
+  
+}
+
+void WebTransport::NewUnidirectionalStream(
+    const RefPtr<mozilla::ipc::DataPipeReceiver>& aStream) {
+  
+  
+  
+  
+  
 }
 
 
@@ -165,7 +183,7 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   MOZ_ALWAYS_SUCCEEDS(
       PWebTransport::CreateEndpoints(&parentEndpoint, &childEndpoint));
 
-  RefPtr<WebTransportChild> child = new WebTransportChild();
+  RefPtr<WebTransportChild> child = new WebTransportChild(this);
   if (!childEndpoint.Bind(child)) {
     return;
   }
@@ -380,6 +398,7 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions) {
     
     
     
+    mChild->Shutdown();
     mChild = nullptr;
   }
 }

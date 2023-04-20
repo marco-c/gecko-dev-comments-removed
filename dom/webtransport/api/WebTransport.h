@@ -10,8 +10,10 @@
 #include "nsCOMPtr.h"
 #include "nsISupports.h"
 #include "nsWrapperCache.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebTransportBinding.h"
 #include "mozilla/dom/WebTransportChild.h"
+#include "mozilla/ipc/DataPipe.h"
 
 namespace mozilla::dom {
 
@@ -49,6 +51,14 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
       ErrorResult& aRv);
 
   
+  void NewBidirectionalStream(
+      const RefPtr<mozilla::ipc::DataPipeReceiver>& aIncoming,
+      const RefPtr<mozilla::ipc::DataPipeSender>& aOutgoing);
+
+  void NewUnidirectionalStream(
+      const RefPtr<mozilla::ipc::DataPipeReceiver>& aStream);
+
+  
   nsIGlobalObject* GetParentObject() const;
 
   JSObject* WrapObject(JSContext* aCx,
@@ -80,6 +90,8 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   ~WebTransport();
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
+  
+  
   RefPtr<WebTransportChild> mChild;
 
   
