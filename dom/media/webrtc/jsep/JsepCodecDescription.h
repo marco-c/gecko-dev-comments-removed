@@ -112,6 +112,9 @@ class JsepCodecDescription {
     return true;
   }
 
+  virtual void ApplyConfigToFmtp(
+      UniquePtr<SdpFmtpAttributeList::Parameters>& aFmtp) const = 0;
+
   virtual void AddToMediaSection(SdpMediaSection& msection) const {
     if (mEnabled && msection.GetMediaType() == Type()) {
       if (mDirection == sdp::kRecv) {
@@ -268,27 +271,13 @@ class JsepAudioCodecDescription : public JsepCodecDescription {
     }
 
     if (mName == "opus") {
-      SdpFmtpAttributeList::OpusParameters opusParams(
-          GetOpusParameters(mDefaultPt, msection));
-      if (mMaxPlaybackRate) {
-        opusParams.maxplaybackrate = mMaxPlaybackRate;
-      }
-      opusParams.maxAverageBitrate = mMaxAverageBitrate;
+      UniquePtr<SdpFmtpAttributeList::Parameters> opusParams =
+          MakeUnique<SdpFmtpAttributeList::OpusParameters>(
+              GetOpusParameters(mDefaultPt, msection));
 
-      if (mChannels == 2 &&
-          !Preferences::GetBool("media.peerconnection.sdp.disable_stereo_fmtp",
-                                false) &&
-          !mForceMono) {
-        
-        opusParams.stereo = 1;
-      }
-      opusParams.useInBandFec = mFECEnabled ? 1 : 0;
-      opusParams.useDTX = mDTXEnabled;
-      opusParams.frameSizeMs = mFrameSizeMs;
-      opusParams.minFrameSizeMs = mMinFrameSizeMs;
-      opusParams.maxFrameSizeMs = mMaxFrameSizeMs;
-      opusParams.useCbr = mCbrEnabled;
-      msection.SetFmtp(SdpFmtpAttributeList::Fmtp(mDefaultPt, opusParams));
+      ApplyConfigToFmtp(opusParams);
+
+      msection.SetFmtp(SdpFmtpAttributeList::Fmtp(mDefaultPt, *opusParams));
     } else if (mName == "telephone-event") {
       
       SdpFmtpAttributeList::TelephoneEventParameters teParams(
@@ -335,6 +324,41 @@ class JsepAudioCodecDescription : public JsepCodecDescription {
 
     return true;
   }
+
+  void ApplyConfigToFmtp(
+      UniquePtr<SdpFmtpAttributeList::Parameters>& aFmtp) const override {
+    if (mName == "opus") {
+      SdpFmtpAttributeList::OpusParameters opusParams;
+      if (aFmtp) {
+        MOZ_RELEASE_ASSERT(aFmtp->codec_type == SdpRtpmapAttributeList::kOpus);
+        opusParams =
+            static_cast<const SdpFmtpAttributeList::OpusParameters&>(*aFmtp);
+        opusParams.useInBandFec = mFECEnabled ? 1 : 0;
+      } else {
+        
+        
+        opusParams.useInBandFec = 1;
+      }
+      if (mMaxPlaybackRate) {
+        opusParams.maxplaybackrate = mMaxPlaybackRate;
+      }
+      opusParams.maxAverageBitrate = mMaxAverageBitrate;
+
+      if (mChannels == 2 &&
+          !Preferences::GetBool("media.peerconnection.sdp.disable_stereo_fmtp",
+                                false) &&
+          !mForceMono) {
+        
+        opusParams.stereo = 1;
+      }
+      opusParams.useDTX = mDTXEnabled;
+      opusParams.frameSizeMs = mFrameSizeMs;
+      opusParams.minFrameSizeMs = mMinFrameSizeMs;
+      opusParams.maxFrameSizeMs = mMaxFrameSizeMs;
+      opusParams.useCbr = mCbrEnabled;
+      aFmtp.reset(opusParams.Clone());
+    }
+  };
 
   uint32_t mMaxPlaybackRate;
   bool mForceMono;
@@ -433,6 +457,68 @@ class JsepVideoCodecDescription : public JsepCodecDescription {
     );
   }
 
+  void ApplyConfigToFmtp(
+      UniquePtr<SdpFmtpAttributeList::Parameters>& aFmtp) const override {
+    if (mName == "H264") {
+      SdpFmtpAttributeList::H264Parameters h264Params;
+      if (aFmtp) {
+        MOZ_RELEASE_ASSERT(aFmtp->codec_type == SdpRtpmapAttributeList::kH264);
+        h264Params =
+            static_cast<const SdpFmtpAttributeList::H264Parameters&>(*aFmtp);
+      }
+
+      if (mDirection == sdp::kSend) {
+        if (!h264Params.level_asymmetry_allowed) {
+          
+          
+          
+          h264Params.profile_level_id = mProfileLevelId;
+        }
+      } else {
+        
+        h264Params.max_mbps = mConstraints.maxMbps;
+        h264Params.max_fs = mConstraints.maxFs;
+        h264Params.max_cpb = mConstraints.maxCpb;
+        h264Params.max_dpb = mConstraints.maxDpb;
+        h264Params.max_br = mConstraints.maxBr;
+        strncpy(h264Params.sprop_parameter_sets, mSpropParameterSets.c_str(),
+                sizeof(h264Params.sprop_parameter_sets) - 1);
+        h264Params.profile_level_id = mProfileLevelId;
+      }
+
+      
+      h264Params.packetization_mode = mPacketizationMode;
+      
+      h264Params.level_asymmetry_allowed = true;
+
+      
+      h264Params.packetization_mode = mPacketizationMode;
+      
+      h264Params.level_asymmetry_allowed = true;
+      aFmtp.reset(h264Params.Clone());
+    } else if (mName == "VP8" || mName == "VP9") {
+      SdpRtpmapAttributeList::CodecType type =
+          mName == "VP8" ? SdpRtpmapAttributeList::CodecType::kVP8
+                         : SdpRtpmapAttributeList::CodecType::kVP9;
+      auto vp8Params = SdpFmtpAttributeList::VP8Parameters(type);
+
+      if (aFmtp) {
+        MOZ_RELEASE_ASSERT(aFmtp->codec_type == type);
+        vp8Params =
+            static_cast<const SdpFmtpAttributeList::VP8Parameters&>(*aFmtp);
+      }
+      
+      vp8Params.max_fs = mConstraints.maxFs;
+      if (mConstraints.maxFps.isSome()) {
+        vp8Params.max_fr =
+            static_cast<unsigned int>(std::round(*mConstraints.maxFps));
+      } else {
+        vp8Params.max_fr = 60;
+      }
+      aFmtp.reset(vp8Params.Clone());
+    }
+  }
+
   virtual void EnableTmmbr() {
     
     
@@ -492,34 +578,13 @@ class JsepVideoCodecDescription : public JsepCodecDescription {
 
   void AddFmtpsToMSection(SdpMediaSection& msection) const {
     if (mName == "H264") {
-      SdpFmtpAttributeList::H264Parameters h264Params(
-          GetH264Parameters(mDefaultPt, msection));
+      UniquePtr<SdpFmtpAttributeList::Parameters> h264Params =
+          MakeUnique<SdpFmtpAttributeList::H264Parameters>(
+              GetH264Parameters(mDefaultPt, msection));
 
-      if (mDirection == sdp::kSend) {
-        if (!h264Params.level_asymmetry_allowed) {
-          
-          
-          
-          h264Params.profile_level_id = mProfileLevelId;
-        }
-      } else {
-        
-        h264Params.max_mbps = mConstraints.maxMbps;
-        h264Params.max_fs = mConstraints.maxFs;
-        h264Params.max_cpb = mConstraints.maxCpb;
-        h264Params.max_dpb = mConstraints.maxDpb;
-        h264Params.max_br = mConstraints.maxBr;
-        strncpy(h264Params.sprop_parameter_sets, mSpropParameterSets.c_str(),
-                sizeof(h264Params.sprop_parameter_sets) - 1);
-        h264Params.profile_level_id = mProfileLevelId;
-      }
+      ApplyConfigToFmtp(h264Params);
 
-      
-      h264Params.packetization_mode = mPacketizationMode;
-      
-      h264Params.level_asymmetry_allowed = true;
-
-      msection.SetFmtp(SdpFmtpAttributeList::Fmtp(mDefaultPt, h264Params));
+      msection.SetFmtp(SdpFmtpAttributeList::Fmtp(mDefaultPt, *h264Params));
     } else if (mName == "red" && !mRedundantEncodings.empty()) {
       SdpFmtpAttributeList::RedParameters redParams(
           GetRedParameters(mDefaultPt, msection));
@@ -528,17 +593,11 @@ class JsepVideoCodecDescription : public JsepCodecDescription {
     } else if (mName == "VP8" || mName == "VP9") {
       if (mDirection == sdp::kRecv) {
         
-        SdpFmtpAttributeList::VP8Parameters vp8Params(
-            GetVP8Parameters(mDefaultPt, msection));
-
-        vp8Params.max_fs = mConstraints.maxFs;
-        if (mConstraints.maxFps.isSome()) {
-          vp8Params.max_fr =
-              static_cast<unsigned int>(std::round(*mConstraints.maxFps));
-        } else {
-          vp8Params.max_fr = 60;
-        }
-        msection.SetFmtp(SdpFmtpAttributeList::Fmtp(mDefaultPt, vp8Params));
+        UniquePtr<SdpFmtpAttributeList::Parameters> vp8Params =
+            MakeUnique<SdpFmtpAttributeList::VP8Parameters>(
+                GetVP8Parameters(mDefaultPt, msection));
+        ApplyConfigToFmtp(vp8Params);
+        msection.SetFmtp(SdpFmtpAttributeList::Fmtp(mDefaultPt, *vp8Params));
       }
     }
 
@@ -1121,6 +1180,9 @@ class JsepApplicationCodecDescription : public JsepCodecDescription {
   
   void EnsureNoDuplicatePayloadTypes(std::set<std::string>& aUsedPts) override {
   }
+
+  void ApplyConfigToFmtp(
+      UniquePtr<SdpFmtpAttributeList::Parameters>& aFmtp) const override{};
 
   uint16_t mLocalPort;
   uint32_t mLocalMaxMessageSize;
