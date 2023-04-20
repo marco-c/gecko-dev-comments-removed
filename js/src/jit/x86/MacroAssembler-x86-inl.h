@@ -267,6 +267,39 @@ void MacroAssembler::sub64(Imm64 imm, Register64 dest) {
   sbbl(imm.hi(), dest.high);
 }
 
+void MacroAssembler::mulHighUnsigned32(Imm32 imm, Register src, Register dest) {
+  
+  if (edx != dest) {
+    push(edx);
+  }
+  if (eax != dest) {
+    push(eax);
+  }
+
+  if (src != eax) {
+    
+    movl(imm, eax);
+    mull(src);
+  } else {
+    
+    movl(imm, edx);
+    mull(edx);
+  }
+
+  
+  if (edx != dest) {
+    movl(edx, dest);
+  }
+
+  
+  if (eax != dest) {
+    pop(eax);
+  }
+  if (edx != dest) {
+    pop(edx);
+  }
+}
+
 void MacroAssembler::mulPtr(Register rhs, Register srcDest) {
   imull(rhs, srcDest);
 }
