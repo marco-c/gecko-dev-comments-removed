@@ -816,22 +816,6 @@ nsresult NS_LinkRedirectChannels(uint64_t channelId,
 
 
 
-nsresult NS_MaybeOpenChannelUsingOpen(nsIChannel* aChannel,
-                                      nsIInputStream** aStream);
-
-
-
-
-
-
-nsresult NS_MaybeOpenChannelUsingAsyncOpen(nsIChannel* aChannel,
-                                           nsIStreamListener* aListener);
-
-
-
-
-
-
 
 nsILoadInfo::CrossOriginEmbedderPolicy
 NS_GetCrossOriginEmbedderPolicyFromHeader(
