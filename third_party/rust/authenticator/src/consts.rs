@@ -5,18 +5,8 @@
 
 #![allow(dead_code)]
 
-use serde::Serialize;
-
 pub const MAX_HID_RPT_SIZE: usize = 64;
-
-
-
-
-
-
-
 pub const U2FAPDUHEADER_SIZE: usize = 7;
-
 pub const CID_BROADCAST: [u8; 4] = [0xff, 0xff, 0xff, 0xff];
 pub const TYPE_MASK: u8 = 0x80;
 pub const TYPE_INIT: u8 = 0x80;
@@ -41,64 +31,12 @@ pub const U2FHID_FRAME_TIMEOUT: u32 = 500;
 pub const U2FHID_TRANS_TIMEOUT: u32 = 3000; 
 
 
-const CTAPHID_PING: u8 = TYPE_INIT | 0x01; 
-const CTAPHID_MSG: u8 = TYPE_INIT | 0x03; 
-const CTAPHID_LOCK: u8 = TYPE_INIT | 0x04; 
-const CTAPHID_INIT: u8 = TYPE_INIT | 0x06; 
-const CTAPHID_WINK: u8 = TYPE_INIT | 0x08; 
-const CTAPHID_CBOR: u8 = TYPE_INIT | 0x10; 
-const CTAPHID_CANCEL: u8 = TYPE_INIT | 0x11; 
-const CTAPHID_KEEPALIVE: u8 = TYPE_INIT | 0x3b; 
-const CTAPHID_ERROR: u8 = TYPE_INIT | 0x3f; 
-
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
-#[repr(u8)]
-pub enum HIDCmd {
-    Ping,
-    Msg,
-    Lock,
-    Init,
-    Wink,
-    Cbor,
-    Cancel,
-    Keepalive,
-    Error,
-    Unknown(u8),
-}
-
-impl Into<u8> for HIDCmd {
-    fn into(self) -> u8 {
-        match self {
-            HIDCmd::Ping => CTAPHID_PING,
-            HIDCmd::Msg => CTAPHID_MSG,
-            HIDCmd::Lock => CTAPHID_LOCK,
-            HIDCmd::Init => CTAPHID_INIT,
-            HIDCmd::Wink => CTAPHID_WINK,
-            HIDCmd::Cbor => CTAPHID_CBOR,
-            HIDCmd::Cancel => CTAPHID_CANCEL,
-            HIDCmd::Keepalive => CTAPHID_KEEPALIVE,
-            HIDCmd::Error => CTAPHID_ERROR,
-            HIDCmd::Unknown(v) => v,
-        }
-    }
-}
-
-impl From<u8> for HIDCmd {
-    fn from(v: u8) -> HIDCmd {
-        match v {
-            CTAPHID_PING => HIDCmd::Ping,
-            CTAPHID_MSG => HIDCmd::Msg,
-            CTAPHID_LOCK => HIDCmd::Lock,
-            CTAPHID_INIT => HIDCmd::Init,
-            CTAPHID_WINK => HIDCmd::Wink,
-            CTAPHID_CBOR => HIDCmd::Cbor,
-            CTAPHID_CANCEL => HIDCmd::Cancel,
-            CTAPHID_KEEPALIVE => HIDCmd::Keepalive,
-            CTAPHID_ERROR => HIDCmd::Error,
-            v => HIDCmd::Unknown(v),
-        }
-    }
-}
+pub const U2FHID_PING: u8 = TYPE_INIT | 0x01; 
+pub const U2FHID_MSG: u8 = TYPE_INIT | 0x03; 
+pub const U2FHID_LOCK: u8 = TYPE_INIT | 0x04; 
+pub const U2FHID_INIT: u8 = TYPE_INIT | 0x06; 
+pub const U2FHID_WINK: u8 = TYPE_INIT | 0x08; 
+pub const U2FHID_ERROR: u8 = TYPE_INIT | 0x3f; 
 
 
 pub const U2F_VENDOR_FIRST: u8 = TYPE_INIT | 0x40; 
@@ -119,26 +57,8 @@ pub const U2F_CHECK_IS_REGISTERED: u8 = 0x07;
 
 
 pub const INIT_NONCE_SIZE: usize = 8; 
-
-bitflags! {
-    #[derive(Serialize)]
-    pub struct Capability: u8 {
-        const WINK = 0x01;
-        const LOCK = 0x02;
-        const CBOR = 0x04;
-        const NMSG = 0x08;
-    }
-}
-
-impl Capability {
-    pub fn has_fido1(self) -> bool {
-        !self.contains(Capability::NMSG)
-    }
-
-    pub fn has_fido2(self) -> bool {
-        self.contains(Capability::CBOR)
-    }
-}
+pub const CAPFLAG_WINK: u8 = 0x01; 
+pub const CAPFLAG_LOCK: u8 = 0x02; 
 
 
 

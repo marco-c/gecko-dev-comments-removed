@@ -27,4 +27,5 @@ nsresult CBOREncodeNoneAttestationObj(const CryptoBuffer& aAuthDataBuf,
                                        CryptoBuffer& aAttestationObj);
 
 }  
+
 #endif  

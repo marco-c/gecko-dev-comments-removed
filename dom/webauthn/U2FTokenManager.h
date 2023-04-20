@@ -44,74 +44,32 @@ class U2FTokenManager final : public nsIU2FTokenManager {
   void MaybeClearTransaction(PWebAuthnTransactionParent* aParent);
   static void Initialize();
 
-  Maybe<nsString> GetCurrentOrigin() {
-    if (mPendingRegisterInfo.isSome()) {
-      return Some(mPendingRegisterInfo.value().Origin());
-    }
-
-    if (mPendingSignInfo.isSome()) {
-      return Some(mPendingSignInfo.value().Origin());
-    }
-    return Nothing();
-  }
-
-  Maybe<uint64_t> GetCurrentBrowsingCtxId() {
-    if (mPendingRegisterInfo.isSome()) {
-      return Some(mPendingRegisterInfo.value().BrowsingContextId());
-    }
-
-    if (mPendingSignInfo.isSome()) {
-      return Some(mPendingSignInfo.value().BrowsingContextId());
-    }
-    return Nothing();
-  }
-
-  uint64_t GetCurrentTransactionId() { return mLastTransactionId; }
-
-  bool CurrentTransactionIsRegister() { return mPendingRegisterInfo.isSome(); }
-
-  bool CurrentTransactionIsSign() { return mPendingSignInfo.isSome(); }
-
-  
-  template <typename... T>
-  void SendPromptNotification(const char16_t* aFormat, T... aArgs);
-  
-  void RunSendPromptNotification(const nsString& aJSON);
-
-  struct StatusUpdateResFreePolicy {
-    void operator()(rust_ctap2_status_update_res* p);
-  };
-  UniquePtr<rust_ctap2_status_update_res,
-            U2FTokenManager::StatusUpdateResFreePolicy>
-      status_update_result = nullptr;
-
  private:
   U2FTokenManager();
   ~U2FTokenManager() = default;
   RefPtr<U2FTokenTransport> GetTokenManagerImpl();
-  void AbortTransaction(const uint64_t& aTransactionId, const nsresult& aError,
-                        bool shouldCancelActiveDialog);
+  void AbortTransaction(const uint64_t& aTransactionId, const nsresult& aError);
   void AbortOngoingTransaction();
-  void ClearTransaction(bool send_cancel);
+  void ClearTransaction();
   
   void DoRegister(const WebAuthnMakeCredentialInfo& aInfo,
                   bool aForceNoneAttestation);
-  void DoSign(const WebAuthnGetAssertionInfo& aTransactionInfo);
   void MaybeConfirmRegister(const uint64_t& aTransactionId,
                             const WebAuthnMakeCredentialResult& aResult);
   void MaybeAbortRegister(const uint64_t& aTransactionId,
-                          const nsresult& aError,
-                          bool shouldCancelActiveDialog);
+                          const nsresult& aError);
   void MaybeConfirmSign(const uint64_t& aTransactionId,
                         const WebAuthnGetAssertionResult& aResult);
-  void MaybeAbortSign(const uint64_t& aTransactionId, const nsresult& aError,
-                      bool shouldCancelActiveDialog);
+  void MaybeAbortSign(const uint64_t& aTransactionId, const nsresult& aError);
   
   void RunResumeRegister(uint64_t aTransactionId, bool aForceNoneAttestation);
-  void RunResumeSign(uint64_t aTransactionId);
-  void RunResumeWithSelectedSignResult(uint64_t aTransactionId, uint64_t idx);
   
   void RunCancel(uint64_t aTransactionId);
+  
+  template <typename... T>
+  void SendPromptNotification(const char16_t* aFormat, T... aArgs);
+  
+  void RunSendPromptNotification(nsString aJSON);
   
   
   
@@ -125,9 +83,6 @@ class U2FTokenManager final : public nsIU2FTokenManager {
   uint64_t mLastTransactionId;
   
   Maybe<WebAuthnMakeCredentialInfo> mPendingRegisterInfo;
-  
-  Maybe<WebAuthnGetAssertionInfo> mPendingSignInfo;
-  nsTArray<WebAuthnGetAssertionResultWrapper> mPendingSignResults;
 };
 
 }  
