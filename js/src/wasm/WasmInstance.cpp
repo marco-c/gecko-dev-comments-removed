@@ -2378,8 +2378,6 @@ bool Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args,
       return false;
     }
     if (type.isRefRepr()) {
-      
-      MOZ_RELEASE_ASSERT(!type.isTypeRef());
       void* ptr = *reinterpret_cast<void**>(rawArgLoc);
       
       RootedAnyRef ref(cx, AnyRef::fromCompiledCode(ptr));

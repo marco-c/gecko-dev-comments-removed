@@ -487,8 +487,27 @@ using RootedValVectorN = Rooted<ValVectorN<N>>;
                                             MutableHandleFunction fun);
 
 
+[[nodiscard]] extern bool CheckAnyRefValue(JSContext* cx, HandleValue v,
+                                           MutableHandleAnyRef vp);
+
+
 [[nodiscard]] extern bool CheckEqRefValue(JSContext* cx, HandleValue v,
                                           MutableHandleAnyRef vp);
+
+
+[[nodiscard]] extern bool CheckStructRefValue(JSContext* cx, HandleValue v,
+                                              MutableHandleAnyRef vp);
+
+
+[[nodiscard]] extern bool CheckArrayRefValue(JSContext* cx, HandleValue v,
+                                             MutableHandleAnyRef vp);
+
+
+[[nodiscard]] extern bool CheckTypeRefValue(JSContext* cx,
+                                            const TypeDef* typeDef,
+                                            HandleValue v,
+                                            MutableHandleAnyRef vp);
+
 class NoDebug;
 class DebugCodegenVal;
 

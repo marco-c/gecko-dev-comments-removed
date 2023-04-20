@@ -417,22 +417,36 @@ function fuzzingSafe() {
 
 
 
+
 let WasmFuncrefValues = [
     wasmEvalText(`(module (func (export "")))`).exports[''],
 ];
-let WasmNonNullEqrefValues = [];
-let WasmEqrefValues = [];
+
+
+let WasmStructrefValues = [];
+let WasmArrayrefValues = [];
 if (wasmGcEnabled()) {
-    let { newStruct } = wasmEvalText(`
+    let { newStruct, newArray } = wasmEvalText(`
       (module
         (type $s (struct))
-        (func (export "newStruct") (result eqref)
+        (type $a (array i32))
+        (func (export "newStruct") (result anyref)
             struct.new $s)
+        (func (export "newArray") (result anyref)
+            i32.const 0
+            i32.const 0
+            array.new $a)
       )`).exports;
-    WasmNonNullEqrefValues.push(newStruct());
-    WasmEqrefValues.push(null, ...WasmNonNullEqrefValues);
+    WasmStructrefValues.push(newStruct());
+    WasmArrayrefValues.push(newArray());
 }
-let WasmNonEqrefValues = [
+
+
+let WasmEqrefValues = [...WasmStructrefValues, ...WasmArrayrefValues];
+
+
+let WasmAnyrefValues = [...WasmEqrefValues];
+let WasmNonAnyrefValues = [
     undefined,
     true,
     false,
@@ -448,9 +462,11 @@ let WasmNonEqrefValues = [
     () => 1337,
     ...WasmFuncrefValues,
 ];
+
+
 let WasmNonNullExternrefValues = [
-    ...WasmNonEqrefValues,
-    ...WasmNonNullEqrefValues
+    ...WasmNonAnyrefValues,
+    ...WasmAnyrefValues
 ];
 let WasmExternrefValues = [null, ...WasmNonNullExternrefValues];
 
