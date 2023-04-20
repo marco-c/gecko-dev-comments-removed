@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
 import itertools
@@ -21,30 +21,30 @@ from gecko_taskgraph.util.attributes import (
 from gecko_taskgraph.util.hg import find_hg_revision_push_info, get_hg_commit_message
 from gecko_taskgraph.util.platforms import platform_family
 
-
-
-
+# Some tasks show up in the target task set, but are possibly special cases,
+# uncommon tasks, or tasks running against limited hardware set that they
+# should only be selectable with --full.
 UNCOMMON_TRY_TASK_LABELS = [
-    
-    r"build-.*-gcp",  
-    r"mingwclang",  
-    r"valgrind",  
-    
+    # Platforms and/or Build types
+    r"build-.*-gcp",  # Bug 1631990
+    r"mingwclang",  # Bug 1631990
+    r"valgrind",  # Bug 1631990
+    # Android tasks
     r"android-geckoview-docs",
     r"android-hw",
-    
+    # Windows tasks
     r"windows10-64-ref-hw",
     r"windows10-aarch64-qr",
-    
-    r"linux-",  
-    r"linux1804-32",  
-    
-    r"web-platform-tests.*backlog",  
+    # Linux tasks
+    r"linux-",  # hide all linux32 tasks by default - bug 1599197
+    r"linux1804-32",  # hide linux32 tests - bug 1599197
+    # Test tasks
+    r"web-platform-tests.*backlog",  # hide wpt jobs that are not implemented yet - bug 1572820
     r"-ccov",
-    r"-profiling-",  
-    
-    
-    r"-shippable(?!.*(awsy|browsertime|marionette-headless|mochitest-devtools-chrome-fis|raptor|talos|web-platform-tests-wdspec-headless|mochitest-plain-headless))",  
+    r"-profiling-",  # talos/raptor profiling jobs are run too often
+    # Hide shippable versions of tests we have opt versions of because the non-shippable
+    # versions are faster to run. This is mostly perf tests.
+    r"-shippable(?!.*(awsy|browsertime|marionette-headless|mochitest-devtools-chrome-fis|raptor|talos|web-platform-tests-wdspec-headless|mochitest-plain-headless))",  # noqa - too long
 ]
 
 
@@ -61,7 +61,7 @@ def index_exists(index_path, reason=""):
 
 def filter_out_shipping_phase(task, parameters):
     return (
-        
+        # nightly still here because of geckodriver
         not task.attributes.get("nightly")
         and task.attributes.get("shipping_phase") in (None, "build")
     )
@@ -144,7 +144,7 @@ def filter_release_tasks(task, parameters):
         "win64-aarch64",
     ):
         if task.attributes["kind"] == "l10n":
-            
+            # This is on-change l10n
             return True
         if (
             task.attributes["build_type"] == "opt"
@@ -175,23 +175,23 @@ def filter_release_tasks(task, parameters):
     ):
         return True
 
-    
+    # code below here is intended to reduce release debug tasks
     if task.kind == "hazard" or "toolchain" in build_platform:
-        
+        # keep hazard and toolchain builds around
         return True
 
     if build_type == "debug":
         if "linux" not in build_platform:
-            
+            # filter out windows/mac/android
             return False
         if task.kind not in ["spidermonkey"] and "-qr" in test_platform:
-            
+            # filter out linux-qr tests, leave spidermonkey
             return False
         if "64" not in build_platform:
-            
+            # filter out linux32 builds
             return False
 
-    
+    # webrender-android-*-debug doesn't have attributes to find 'debug', using task.label.
     if task.kind == "webrender" and "debug" in task.label:
         return False
     return True
@@ -298,18 +298,18 @@ def _try_option_syntax(full_task_graph, parameters, graph_config):
 
     for l in target_tasks_labels:
         task = full_task_graph[l]
-        
+        # If the developer wants test jobs to be rebuilt N times we add that value here
         if options.trigger_tests > 1 and "unittest_suite" in task.attributes:
             task.attributes["task_duplicates"] = options.trigger_tests
 
-        
+        # If the developer wants test talos jobs to be rebuilt N times we add that value here
         if (
             options.talos_trigger_tests > 1
             and task.attributes.get("unittest_suite") == "talos"
         ):
             task.attributes["task_duplicates"] = options.talos_trigger_tests
 
-        
+        # If the developer wants test raptor jobs to be rebuilt N times we add that value here
         if (
             options.raptor_trigger_tests
             and options.raptor_trigger_tests > 1
@@ -319,7 +319,7 @@ def _try_option_syntax(full_task_graph, parameters, graph_config):
 
         task.attributes.update(attributes)
 
-    
+    # Add notifications here as well
     if options.notifications:
         for task in full_task_graph:
             owner = parameters.get("owner")
@@ -340,8 +340,8 @@ def target_tasks_try(full_task_graph, parameters, graph_config):
         return _try_task_config(full_task_graph, parameters, graph_config)
     if try_mode == "try_option_syntax":
         return _try_option_syntax(full_task_graph, parameters, graph_config)
-    
-    
+    # With no try mode, we schedule nothing, allowing the user to add tasks
+    # later via treeherder.
     return []
 
 
@@ -468,13 +468,13 @@ def target_tasks_mozilla_central(full_task_graph, parameters, graph_config):
             return True
 
         family = platform_family(build_platform)
-        
-        
-        
-        
-        
-        
-        
+        # We need to know whether this test is against a "regular" opt build
+        # (which is to say, not shippable, asan, tsan, or any other opt build
+        # with other properties). There's no positive test for this, so we have to
+        # do it somewhat hackily. Android doesn't have variants other than shippable
+        # so it is pretty straightforward to check for. Other platforms have many
+        # variants, but none of the regular opt builds we're looking for have a "-"
+        # in their platform name, so this works (for now).
         is_regular_opt = (
             family == "android" and not shippable
         ) or "-" not in build_platform
@@ -546,7 +546,7 @@ def target_tasks_mozilla_esr102(full_task_graph, parameters, graph_config):
 
         platform = task.attributes.get("build_platform")
 
-        
+        # Android is not built on esr102.
         if platform and "android" in platform:
             return False
 
@@ -562,7 +562,7 @@ def target_tasks_promote_desktop(full_task_graph, parameters, graph_config):
     mozilla_{beta,release} tasks, plus l10n, beetmover, balrog, etc."""
 
     def filter(task):
-        
+        # Bug 1758507 - geckoview ships in the promote phase
         if not parameters["release_type"].startswith("esr") and is_geckoview(
             task, parameters
         ):
@@ -571,7 +571,7 @@ def target_tasks_promote_desktop(full_task_graph, parameters, graph_config):
         if task.attributes.get("shipping_product") != parameters["release_product"]:
             return False
 
-        
+        # 'secondary' balrog/update verify/final verify tasks only run for RCs
         if parameters.get("release_type") != "release-rc":
             if "secondary" in task.kind:
                 return False
@@ -606,7 +606,7 @@ def target_tasks_push_desktop(full_task_graph, parameters, graph_config):
     def filter(task):
         if not filter_out_missing_signoffs(task, parameters):
             return False
-        
+        # Include promotion tasks; these will be optimized out
         if task.label in filtered_for_candidates:
             return True
 
@@ -625,15 +625,15 @@ def target_tasks_ship_desktop(full_task_graph, parameters, graph_config):
     Previous build deps will be optimized out via action task."""
     is_rc = parameters.get("release_type") == "release-rc"
     if is_rc:
-        
-        
+        # ship_firefox_rc runs after `promote` rather than `push`; include
+        # all promote tasks.
         filtered_for_candidates = target_tasks_promote_desktop(
             full_task_graph,
             parameters,
             graph_config,
         )
     else:
-        
+        # ship_firefox runs after `push`; include all push tasks.
         filtered_for_candidates = target_tasks_push_desktop(
             full_task_graph,
             parameters,
@@ -643,7 +643,7 @@ def target_tasks_ship_desktop(full_task_graph, parameters, graph_config):
     def filter(task):
         if not filter_out_missing_signoffs(task, parameters):
             return False
-        
+        # Include promotion tasks; these will be optimized out
         if task.label in filtered_for_candidates:
             return True
 
@@ -666,13 +666,13 @@ def target_tasks_pine(full_task_graph, parameters, graph_config):
 
     def filter(task):
         platform = task.attributes.get("build_platform")
-        
+        # disable mobile jobs
         if str(platform).startswith("android"):
             return False
-        
+        # disable asan
         if platform == "linux64-asan":
             return False
-        
+        # disable non-pine and tasks with a shipping phase
         if standard_filter(task, parameters) or filter_out_shipping_phase(
             task, parameters
         ):
@@ -686,7 +686,7 @@ def target_tasks_kaios(full_task_graph, parameters, graph_config):
     """The set of tasks to run for kaios integration"""
 
     def filter(task):
-        
+        # We disable everything in central, and adjust downstream.
         return False
 
     return [l for l, t in full_task_graph.tasks.items() if filter(t)]
@@ -711,8 +711,8 @@ def target_tasks_ship_geckoview(full_task_graph, parameters, graph_config):
         return []
 
     def filter(task):
-        
-        
+        # XXX Starting 69, we don't ship Fennec Nightly anymore. We just want geckoview to be
+        # uploaded
         return task.attributes.get("shipping_product") == "fennec" and task.kind in (
             "beetmover-geckoview",
             "upload-symbols",
@@ -735,17 +735,17 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
 
         try_name = attributes.get("raptor_try_name")
 
-        
+        # Completely ignore all non-shippable platforms
         if "shippable" not in platform:
             return False
 
-        
+        # ignore all windows 7 perf jobs scheduled automatically
         if "windows7" in platform or "windows10-32" in platform:
             return False
 
-        
+        # Desktop selection
         if "android" not in platform:
-            
+            # Select some browsertime tasks as desktop smoke-tests
             if "browsertime" in try_name:
                 if "chrome" in try_name:
                     return True
@@ -759,56 +759,56 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                     if "speedometer" in try_name:
                         return True
                 if "safari" and "benchmark" in try_name:
-                    
+                    # Speedometer 3 is broken on Safari, see bug 1802922
                     if "speedometer3" in try_name:
                         return False
                     return True
             else:
-                
+                # Don't run tp6 raptor tests
                 if "tp6" in try_name:
                     return False
-        
+        # Android selection
         elif accept_raptor_android_build(platform):
-            
-            
-            if (
-                "chrome-m" in try_name
-                and ("-a51" in platform or "-p2" in platform or "-p5" in platform)
-                and not ("speedometer" in try_name or "essential" in try_name)
+            if "chrome-m" in try_name and (
+                ("ebay" in try_name and "live" not in try_name)
+                or (
+                    "live" in try_name
+                    and ("facebook" in try_name or "dailymail" in try_name)
+                )
             ):
                 return False
-            
+            # Ignore all fennec tests here, we run those weekly
             if "fennec" in try_name:
                 return False
-            
+            # Only run webrender tests
             if "chrome-m" not in try_name and "-qr" not in platform:
                 return False
-            
+            # Select live site tests
             if "-live" in try_name:
                 return True
-            
+            # Select fenix resource usage tests
             if "fenix" in try_name:
-                
+                # Bug 1816421 disable fission perf tests
                 if "-fis" in try_name:
                     return False
                 if "-power" in try_name:
                     return True
-            
+            # Select geckoview resource usage tests
             if "geckoview" in try_name:
-                
+                # Bug 1816421 disable fission perf tests
                 if "-fis" in try_name:
                     return False
-                
+                # Run cpu+memory, and power tests
                 cpu_n_memory_task = "-cpu" in try_name and "-memory" in try_name
                 power_task = "-power" in try_name
-                
+                # Ignore cpu+memory+power tests
                 if power_task and cpu_n_memory_task:
                     return False
                 if cpu_n_memory_task:
                     return False
                 if power_task:
                     return "browsertime" in try_name
-            
+            # Select browsertime-specific tests
             if "browsertime" in try_name:
                 if "speedometer" in try_name:
                     return True
@@ -826,10 +826,10 @@ def make_desktop_nightly_filter(platforms):
                 filter_on_platforms(task, platforms),
                 filter_for_project(task, parameters),
                 task.attributes.get("shippable", False),
-                
+                # Tests and nightly only builds don't have `shipping_product` set
                 task.attributes.get("shipping_product")
                 in {None, "firefox", "thunderbird"},
-                task.kind not in {"l10n"},  
+                task.kind not in {"l10n"},  # no on-change l10n
             ]
         )
 
@@ -940,12 +940,12 @@ def target_tasks_nightly_desktop(full_task_graph, parameters, graph_config):
     ):
         return []
 
-    
+    # Tasks that aren't platform specific
     release_filter = make_desktop_nightly_filter({None})
     release_tasks = [
         l for l, t in full_task_graph.tasks.items() if release_filter(t, parameters)
     ]
-    
+    # Avoid duplicate tasks.
     return list(
         set(target_tasks_nightly_win32(full_task_graph, parameters, graph_config))
         | set(target_tasks_nightly_win64(full_task_graph, parameters, graph_config))
@@ -961,7 +961,7 @@ def target_tasks_nightly_desktop(full_task_graph, parameters, graph_config):
     )
 
 
-
+# Run Searchfox analysis once daily.
 @_target_task("searchfox_index")
 def target_tasks_searchfox(full_task_graph, parameters, graph_config):
     """Select tasks required for indexing Firefox for Searchfox web site each day"""
@@ -976,14 +976,14 @@ def target_tasks_searchfox(full_task_graph, parameters, graph_config):
     ]
 
 
-
+# Run build linux64-plain-clang-trunk/opt on mozilla-central/beta with perf tests
 @_target_task("linux64_clang_trunk_perf")
 def target_tasks_build_linux64_clang_trunk_perf(
     full_task_graph, parameters, graph_config
 ):
     """Select tasks required to run perf test on linux64 build with clang trunk"""
 
-    
+    # Only keep tasks generated from platform `linux1804-64-clang-trunk-qr/opt`
     def filter(task_label):
         if "linux1804-64-clang-trunk-qr/opt" in task_label:
             return True
@@ -992,7 +992,7 @@ def target_tasks_build_linux64_clang_trunk_perf(
     return [l for l, t in full_task_graph.tasks.items() if filter(t.label)]
 
 
-
+# Run Updatebot's cron job 4 times daily.
 @_target_task("updatebot_cron")
 def target_tasks_updatebot_cron(full_task_graph, parameters, graph_config):
     """Select tasks required to run Updatebot's cron job"""
@@ -1021,7 +1021,7 @@ def target_tasks_file_update(full_task_graph, parameters, graph_config):
     """Select the set of tasks required to perform nightly in-tree file updates"""
 
     def filter(task):
-        
+        # For now any task in the repo-update kind is ok
         return task.kind in ["repo-update"]
 
     return [l for l, t in full_task_graph.tasks.items() if filter(t)]
@@ -1032,7 +1032,7 @@ def target_tasks_l10n_bump(full_task_graph, parameters, graph_config):
     """Select the set of tasks required to perform l10n bumping."""
 
     def filter(task):
-        
+        # For now any task in the repo-update kind is ok
         return task.kind in ["l10n-bump"]
 
     return [l for l, t in full_task_graph.tasks.items() if filter(t)]
@@ -1043,7 +1043,7 @@ def target_tasks_merge_automation(full_task_graph, parameters, graph_config):
     """Select the set of tasks required to perform repository merges."""
 
     def filter(task):
-        
+        # For now any task in the repo-update kind is ok
         return task.kind in ["merge-automation"]
 
     return [l for l, t in full_task_graph.tasks.items() if filter(t)]
@@ -1054,7 +1054,7 @@ def target_tasks_scriptworker_canary(full_task_graph, parameters, graph_config):
     """Select the set of tasks required to run scriptworker canaries."""
 
     def filter(task):
-        
+        # For now any task in the repo-update kind is ok
         return task.kind in ["scriptworker-canary"]
 
     return [l for l, t in full_task_graph.tasks.items() if filter(t)]
@@ -1067,7 +1067,7 @@ def target_tasks_bouncer_check(full_task_graph, parameters, graph_config):
     def filter(task):
         if not filter_for_project(task, parameters):
             return False
-        
+        # For now any task in the repo-update kind is ok
         return task.kind in ["cron-bouncer-check"]
 
     return [l for l, t in full_task_graph.tasks.items() if filter(t)]
@@ -1139,11 +1139,11 @@ def target_tasks_codereview(full_task_graph, parameters, graph_config):
     """Select all code review tasks needed to produce a report"""
 
     def filter(task):
-        
+        # Ending tasks
         if task.kind in ["code-review"]:
             return True
 
-        
+        # Analyzer tasks
         if task.attributes.get("code-review") is True:
             return True
 
@@ -1185,7 +1185,7 @@ def target_tasks_daily_beta_perf(full_task_graph, parameters, graph_config):
             return False
 
         if platform and accept_raptor_android_build(platform):
-            
+            # Select browsertime & geckoview specific tests
             if "browsertime" and "geckoview" in try_name:
                 if "g5" in platform:
                     return False
@@ -1224,7 +1224,7 @@ def target_tasks_weekly_release_perf(full_task_graph, parameters, graph_config):
             return False
 
         if platform and accept_raptor_android_build(platform):
-            
+            # Select browsertime & geckoview specific tests
             if "browsertime" and "geckoview" in try_name:
                 if "g5" in platform:
                     return False
@@ -1266,7 +1266,7 @@ def target_tasks_raptor_tp6m(full_task_graph, parameters, graph_config):
             return False
         try_name = attributes.get("raptor_try_name")
         if "-cold" in try_name and "shippable" in platform:
-            
+            # Get browsertime amazon smoke tests
             if (
                 "browsertime" in try_name
                 and "amazon" in try_name
@@ -1337,7 +1337,7 @@ def target_tasks_backfill_all_browsertime(full_task_graph, parameters, graph_con
             try:
                 trigger_action(
                     action_name="backfill-all-browsertime",
-                    
+                    # This lets the action know on which push we want to add a new task
                     decision_task_id=push_decision_task_id,
                 )
             except Exception as e:
@@ -1353,7 +1353,7 @@ def target_tasks_condprof(full_task_graph, parameters, graph_config):
     """
     for name, task in full_task_graph.tasks.items():
         if task.kind == "condprof":
-            if "a51" not in name:  
+            if "a51" not in name:  # bug 1765348
                 yield name
 
 
