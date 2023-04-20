@@ -240,7 +240,7 @@ static bool SizeDependsOnIntrinsicSize(const ReflowInput& aReflowInput) {
 
 nsIFrame* NS_NewImageFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) nsImageFrame(aStyle, aPresShell->GetPresContext(),
-                                       nsImageFrame::Kind::ImageElement);
+                                       nsImageFrame::Kind::ImageLoadingContent);
 }
 
 nsIFrame* NS_NewImageFrameForContentProperty(PresShell* aPresShell,
@@ -266,7 +266,7 @@ bool nsImageFrame::ShouldShowBrokenImageIcon() const {
   
   
   
-  if (mKind != Kind::ImageElement) {
+  if (mKind != Kind::ImageLoadingContent) {
     return false;
   }
 
@@ -370,7 +370,7 @@ void nsImageFrame::DestroyFrom(nsIFrame* aDestructRoot,
 
   MOZ_ASSERT(mListener);
 
-  if (mKind == Kind::ImageElement) {
+  if (mKind == Kind::ImageLoadingContent) {
     MOZ_ASSERT(!mContentURLRequest);
     MOZ_ASSERT(!mContentURLRequestRegistered);
     nsCOMPtr<nsIImageLoadingContent> imageLoader = do_QueryInterface(mContent);
@@ -398,7 +398,7 @@ void nsImageFrame::DestroyFrom(nsIFrame* aDestructRoot,
 }
 
 void nsImageFrame::MaybeRecordContentUrlOnImageTelemetry() {
-  if (mKind != Kind::ImageElement) {
+  if (mKind != Kind::ImageLoadingContent) {
     return;
   }
   const auto& content = *StyleContent();
@@ -465,7 +465,7 @@ static bool SizeIsAvailable(imgIRequest* aRequest) {
 }
 
 const StyleImage* nsImageFrame::GetImageFromStyle() const {
-  if (mKind == Kind::ImageElement) {
+  if (mKind == Kind::ImageLoadingContent) {
     MOZ_ASSERT_UNREACHABLE("Don't call me");
     return nullptr;
   }
@@ -520,7 +520,7 @@ void nsImageFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     LoadIcons(PresContext());
   }
 
-  if (mKind == Kind::ImageElement) {
+  if (mKind == Kind::ImageLoadingContent) {
     nsCOMPtr<nsIImageLoadingContent> imageLoader = do_QueryInterface(aContent);
     MOZ_ASSERT(imageLoader);
     imageLoader->AddNativeObserver(mListener);
@@ -563,7 +563,7 @@ void nsImageFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 }
 
 void nsImageFrame::SetupForContentURLRequest() {
-  MOZ_ASSERT(mKind != Kind::ImageElement);
+  MOZ_ASSERT(mKind != Kind::ImageLoadingContent);
   if (!mContentURLRequest) {
     return;
   }
@@ -655,7 +655,7 @@ static IntrinsicSize ComputeIntrinsicSize(imgIContainer* aImage,
         }
       }
     }
-    if (aKind == nsImageFrame::Kind::ImageElement) {
+    if (aKind == nsImageFrame::Kind::ImageLoadingContent) {
       ScaleIntrinsicSizeForDensity(aImage, *aFrame.GetContent(), intrinsicSize);
     } else {
       ScaleIntrinsicSizeForDensity(intrinsicSize,
@@ -691,7 +691,7 @@ static IntrinsicSize ComputeIntrinsicSize(imgIContainer* aImage,
 
 
 bool nsImageFrame::ShouldUseMappedAspectRatio() const {
-  if (mKind != Kind::ImageElement) {
+  if (mKind != Kind::ImageLoadingContent) {
     return true;
   }
   nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest();
@@ -780,7 +780,7 @@ bool nsImageFrame::GetSourceToDestTransform(nsTransform2D& aTransform) {
 
 bool nsImageFrame::IsPendingLoad(imgIRequest* aRequest) const {
   
-  if (mKind != Kind::ImageElement) {
+  if (mKind != Kind::ImageLoadingContent) {
     MOZ_ASSERT(aRequest == mContentURLRequest);
     return false;
   }
@@ -913,7 +913,7 @@ void nsImageFrame::Notify(imgIRequest* aRequest, int32_t aType,
   }
 
   if (aType == imgINotificationObserver::IS_ANIMATED &&
-      mKind != Kind::ImageElement) {
+      mKind != Kind::ImageLoadingContent) {
     nsLayoutUtils::RegisterImageRequest(PresContext(), mContentURLRequest,
                                         &mContentURLRequestRegistered);
   }
@@ -1078,7 +1078,7 @@ void nsImageFrame::ElementStateChanged(ElementState aStates) {
   if (!(aStates & ElementState::BROKEN)) {
     return;
   }
-  if (mKind != Kind::ImageElement) {
+  if (mKind != Kind::ImageLoadingContent) {
     return;
   }
   if (!ImageOk(mContent->AsElement()->State())) {
@@ -1205,7 +1205,7 @@ nsRect nsImageFrame::PredictedDestRect(const nsRect& aFrameContentBox) {
 }
 
 bool nsImageFrame::IsForMarkerPseudo() const {
-  if (mKind == Kind::ImageElement) {
+  if (mKind == Kind::ImageLoadingContent) {
     return false;
   }
   auto* subtreeRoot = GetContent()->GetClosestNativeAnonymousSubtreeRoot();
@@ -1379,8 +1379,8 @@ void nsImageFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   }
 
   aMetrics.SetOverflowAreasToDesiredBounds();
-  bool imageOK =
-      mKind != Kind::ImageElement || ImageOk(mContent->AsElement()->State());
+  bool imageOK = mKind != Kind::ImageLoadingContent ||
+                 ImageOk(mContent->AsElement()->State());
 
   
   bool haveSize = false;
@@ -1667,8 +1667,8 @@ ImgDrawResult nsImageFrame::DisplayAltFeedback(gfxContext& aRenderingContext,
   MOZ_ASSERT(gIconLoad, "How did we succeed in Init then?");
 
   
-  bool isLoading =
-      mKind != Kind::ImageElement || ImageOk(mContent->AsElement()->State());
+  bool isLoading = mKind != Kind::ImageLoadingContent ||
+                   ImageOk(mContent->AsElement()->State());
 
   
   nsRect inner = GetContentRectRelativeToSelf() + aPt;
@@ -1822,8 +1822,8 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
   MOZ_ASSERT(gIconLoad, "How did we succeed in Init then?");
 
   
-  bool isLoading =
-      mKind != Kind::ImageElement || ImageOk(mContent->AsElement()->State());
+  bool isLoading = mKind != Kind::ImageLoadingContent ||
+                   ImageOk(mContent->AsElement()->State());
 
   
   nsRect inner = GetContentRectRelativeToSelf() + aPt;
@@ -2072,7 +2072,7 @@ static bool OldImageHasDifferentRatio(const nsImageFrame& aFrame,
 
 #ifdef DEBUG
 void nsImageFrame::AssertSyncDecodingHintIsInSync() const {
-  if (!IsForElement()) {
+  if (!IsForImageLoadingContent()) {
     return;
   }
   nsCOMPtr<nsIImageLoadingContent> imageLoader = do_QueryInterface(mContent);
@@ -2304,7 +2304,7 @@ ImgDrawResult nsImageFrame::PaintImage(gfxContext& aRenderingContext,
 }
 
 already_AddRefed<imgIRequest> nsImageFrame::GetCurrentRequest() const {
-  if (mKind != Kind::ImageElement) {
+  if (mKind != Kind::ImageLoadingContent) {
     return do_AddRef(mContentURLRequest);
   }
 
@@ -2341,15 +2341,15 @@ void nsImageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       aBuilder, this, clipFlags);
 
   if (mComputedSize.width != 0 && mComputedSize.height != 0) {
-    bool imageOK =
-        mKind != Kind::ImageElement || ImageOk(mContent->AsElement()->State());
+    bool imageOK = mKind != Kind::ImageLoadingContent ||
+                   ImageOk(mContent->AsElement()->State());
 
     nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest();
 
     
     
     
-    if ((mKind == Kind::ImageElement ||
+    if ((mKind == Kind::ImageLoadingContent ||
          GetImageFromStyle()->IsImageRequestType()) &&
         (!imageOK || !mImage || !SizeIsAvailable(currentRequest))) {
       
@@ -2374,7 +2374,7 @@ void nsImageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       if (mImage) {
         aLists.Content()->AppendNewToTop<nsDisplayImage>(aBuilder, this, mImage,
                                                          mPrevImage);
-      } else if (mKind != Kind::ImageElement) {
+      } else if (mKind != Kind::ImageLoadingContent) {
         aLists.Content()->AppendNewToTop<nsDisplayGradient>(aBuilder, this);
       }
 
@@ -2464,7 +2464,7 @@ bool nsImageFrame::GetAnchorHREFTargetAndNode(nsIURI** aHref, nsString& aTarget,
 }
 
 bool nsImageFrame::IsLeafDynamic() const {
-  if (mKind != Kind::ImageElement) {
+  if (mKind != Kind::ImageLoadingContent) {
     
     
     return true;
@@ -2616,7 +2616,7 @@ nsresult nsImageFrame::AttributeChanged(int32_t aNameSpaceID,
 
 void nsImageFrame::OnVisibilityChange(
     Visibility aNewVisibility, const Maybe<OnNonvisible>& aNonvisibleAction) {
-  if (mKind == Kind::ImageElement) {
+  if (mKind == Kind::ImageLoadingContent) {
     nsCOMPtr<nsIImageLoadingContent> imageLoader = do_QueryInterface(mContent);
     imageLoader->OnVisibilityChange(aNewVisibility, aNonvisibleAction);
   }
