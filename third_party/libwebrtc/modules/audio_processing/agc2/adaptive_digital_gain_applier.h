@@ -33,6 +33,7 @@ class AdaptiveDigitalGainApplier {
     bool speech_level_reliable;   
     float noise_rms_dbfs;         
     float headroom_db;            
+    
     float limiter_envelope_dbfs;  
   };
 
