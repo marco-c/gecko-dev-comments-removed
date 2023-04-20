@@ -4545,6 +4545,15 @@ nsresult EditorBase::DeleteSelectionByDragAsAction(bool aDispatchInputEvent) {
                                   __FUNCTION__);
   }
 
+  
+  
+  
+  
+  const RefPtr<Element> editingHost =
+      IsHTMLEditor() ? AsHTMLEditor()->ComputeEditingHost(
+                           HTMLEditor::LimitInBodyElement::Yes)
+                     : nullptr;
+
   rv = DeleteSelectionAsSubAction(nsIEditor::eNone, IsTextEditor()
                                                         ? nsIEditor::eNoStrip
                                                         : nsIEditor::eStrip);
@@ -4559,6 +4568,22 @@ nsresult EditorBase::DeleteSelectionByDragAsAction(bool aDispatchInputEvent) {
 
   if (treatAsOneTransaction.isNothing()) {
     DispatchInputEvent();
+  }
+
+  if (NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+
+  
+  
+  
+  
+  
+  if (editingHost) {
+    if (nsCOMPtr<nsIDragService> dragService =
+            do_GetService("@mozilla.org/widget/dragservice;1")) {
+      dragService->MaybeEditorDeletedSourceNode(editingHost);
+    }
   }
   return NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK;
 }

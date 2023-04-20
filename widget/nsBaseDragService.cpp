@@ -49,6 +49,7 @@
 #include "nsIMutableArray.h"
 #include "gfxContext.h"
 #include "gfxPlatform.h"
+#include "nscore.h"
 #include <algorithm>
 
 using namespace mozilla;
@@ -1018,4 +1019,17 @@ bool nsBaseDragService::RemoveAllChildProcesses() {
   }
   mChildProcesses.Clear();
   return true;
+}
+
+NS_IMETHODIMP
+nsBaseDragService::MaybeEditorDeletedSourceNode(Element* aEditingHost) {
+  
+  
+  
+  
+  
+  if (mSourceNode && !mSourceNode->IsInComposedDoc()) {
+    mSourceNode = aEditingHost;
+  }
+  return NS_OK;
 }
