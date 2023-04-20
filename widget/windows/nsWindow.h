@@ -459,12 +459,10 @@ class nsWindow final : public nsBaseWidget {
     
     
     
-    enum class ShowWindowAndFocus : bool { No, Yes };
+    enum class DoShowWindow : bool { No, Yes };
 
-    void EnsureSizeMode(nsSizeMode,
-                        ShowWindowAndFocus = ShowWindowAndFocus::Yes);
-    void EnsureFullscreenMode(bool,
-                              ShowWindowAndFocus = ShowWindowAndFocus::Yes);
+    void EnsureSizeMode(nsSizeMode, DoShowWindow = DoShowWindow::Yes);
+    void EnsureFullscreenMode(bool, DoShowWindow = DoShowWindow::Yes);
     void OnFrameChanging();
     void OnFrameChanged();
 
@@ -473,7 +471,7 @@ class nsWindow final : public nsBaseWidget {
     void CheckInvariant() const;
 
    private:
-    void SetSizeModeInternal(nsSizeMode, ShowWindowAndFocus);
+    void SetSizeModeInternal(nsSizeMode, DoShowWindow);
 
     nsSizeMode mSizeMode = nsSizeMode_Normal;
     
