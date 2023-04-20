@@ -3,7 +3,7 @@
 
 
 
-#include "lib/jxl/enc_progressive_split.h"
+#include "lib/jxl/progressive_split.h"
 
 #include <string.h>
 

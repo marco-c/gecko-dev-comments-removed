@@ -47,6 +47,7 @@ class DataParallelTest : public ::testing::Test {
 
 
 typedef int (*JxlParallelRunInit)();
+int TestInit(void* jpegxl_opaque, size_t num_threads) { return 0; }
 
 }  
 

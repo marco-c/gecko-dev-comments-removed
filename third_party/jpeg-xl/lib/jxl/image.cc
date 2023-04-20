@@ -34,6 +34,11 @@ namespace {
 
 HWY_EXPORT(GetVectorSize);  
 
+size_t VectorSize() {
+  static size_t bytes = HWY_DYNAMIC_DISPATCH(GetVectorSize)();
+  return bytes;
+}
+
 
 
 size_t BytesPerRow(const size_t xsize, const size_t sizeof_t) {
@@ -65,11 +70,6 @@ size_t BytesPerRow(const size_t xsize, const size_t sizeof_t) {
 }
 
 }  
-
-size_t VectorSize() {
-  static size_t bytes = HWY_DYNAMIC_DISPATCH(GetVectorSize)();
-  return bytes;
-}
 
 PlaneBase::PlaneBase(const size_t xsize, const size_t ysize,
                      const size_t sizeof_t)

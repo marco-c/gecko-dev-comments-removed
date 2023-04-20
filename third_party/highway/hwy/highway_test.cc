@@ -238,8 +238,8 @@ HWY_INLINE void AssertNaN(D d, VecArg<V> v, const char* file, int line) {
 struct TestNaN {
   template <class T, class D>
   HWY_NOINLINE void operator()(T , D d) {
-    const Vec<D> v1 = Set(d, static_cast<T>(Unpredictable1()));
-    const Vec<D> nan = IfThenElse(Eq(v1, Set(d, T(1))), NaN(d), v1);
+    const auto v1 = Set(d, T(Unpredictable1()));
+    const auto nan = IfThenElse(Eq(v1, Set(d, T(1))), NaN(d), v1);
     HWY_ASSERT_NAN(d, nan);
 
     
@@ -300,12 +300,15 @@ struct TestNaN {
 #endif
 
     
-#if (HWY_ARCH_X86 || HWY_ARCH_WASM) && (HWY_TARGET < HWY_EMU128)
+#if HWY_ARCH_X86 && (HWY_TARGET != HWY_SCALAR && HWY_TARGET != HWY_EMU128)
     
     HWY_ASSERT_VEC_EQ(d, v1, Min(nan, v1));
     HWY_ASSERT_VEC_EQ(d, v1, Max(nan, v1));
     HWY_ASSERT_NAN(d, Min(v1, nan));
     HWY_ASSERT_NAN(d, Max(v1, nan));
+#elif HWY_ARCH_WASM
+    
+    
 #elif HWY_TARGET == HWY_NEON && HWY_ARCH_ARM_V7
     
     HWY_ASSERT_NAN(d, Min(v1, nan));

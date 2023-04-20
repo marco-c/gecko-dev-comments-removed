@@ -72,9 +72,7 @@
 
 
 
-MATCHER_P(IsSlightlyBelow, max, "") {
-  return max * 0.75 <= arg && arg <= max * 1.0;
-}
+MATCHER_P(IsSlightlyBelow, max, "") { return max * 0.75 <= arg && arg <= max; }
 
 namespace jxl {
 namespace test {
