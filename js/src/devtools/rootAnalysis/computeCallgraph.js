@@ -160,42 +160,15 @@ function processBody(functionName, body, functionBodies)
         
         const scopeAttrs = body.attrs[edge.Index[0]] | 0;
 
-        for (const callee of getCallees(edge)) {
-            let edgeAttrs = scopeAttrs;
-
-            
-            
-            
-            
-            
-            
-            
-            const edgeInfo = callee.kind === "direct" && getCallEdgeProperties(body, edge, callee.name, functionBodies);
-            if (edgeInfo) {
-                edgeAttrs = edgeAttrs | edgeInfo.attrs;
-
-                
-                
-                
-                
-                
-                
-
-                
-                
-                
-                
-                
-                if (edgeInfo.attrs) {
-                    const block = blockIdentifier(body);
-                    addToKeyedList(gcEdges, block, { Index: edge.Index, attrs: edgeInfo.attrs });
-                }
+        for (const { callee, attrs } of getCallees(body, edge, scopeAttrs, functionBodies)) {
+            if (attrs) {
+                const block = blockIdentifier(body);
+                addToKeyedList(gcEdges, block, { Index: edge.Index, attrs });
             }
 
             
             
             
-            const attrs = edgeAttrs | callee.attrs;
             let prologue = attrs ? `/${attrs} ` : "";
             prologue += functionId(functionName) + " ";
             if (callee.kind == 'direct') {

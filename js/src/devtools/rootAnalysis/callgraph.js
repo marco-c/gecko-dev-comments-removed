@@ -106,7 +106,7 @@ function processCSU(csuName, csu)
 
 
 
-function getCallees(edge)
+function translateCallees(edge)
 {
     if (edge.Kind != "Call")
         return [];
@@ -143,14 +143,35 @@ function getCallees(edge)
     
     const callees = [];
     const field = callee.Exp[0].Field;
-    callees.push({'kind': "field", 'csu': field.FieldCSU.Type.Name,
-                  'field': field.Name[0],
-                  'isVirtual': ("FieldInstanceFunction" in field)});
-
     const staticCSU = getFieldCallInstanceCSU(edge, field);
+    callees.push({'kind': "field", 'csu': field.FieldCSU.Type.Name, staticCSU,
+                  'field': field.Name[0], 'fieldKey': fieldKey(staticCSU, field),
+                  'isVirtual': ("FieldInstanceFunction" in field)});
     callees.push({'kind': "direct", 'name': fieldKey(staticCSU, field)});
 
     return callees;
+}
+
+function getCallees(body, edge, scopeAttrs, functionBodies) {
+    const calls = [];
+
+    
+    
+    
+    
+    
+    
+    
+    for (const callee of translateCallees(edge)) {
+        if (callee.kind != "direct") {
+            calls.push({ callee, attrs: scopeAttrs });
+        } else {
+            const edgeInfo = getCallEdgeProperties(body, edge, callee.name, functionBodies);
+            calls.push({ callee, attrs: scopeAttrs | edgeInfo.attrs});
+        }
+    }
+
+    return calls;
 }
 
 function loadTypes(type_xdb_filename) {
