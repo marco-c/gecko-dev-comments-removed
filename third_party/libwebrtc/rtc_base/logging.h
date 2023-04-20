@@ -63,6 +63,9 @@
 #include "absl/base/attributes.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "api/units/timestamp.h"
+#include "rtc_base/platform_thread_types.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/inline.h"
 
@@ -110,6 +113,46 @@ enum LogErrorContext {
 
 class LogMessage;
 
+
+
+
+
+class LogLineRef {
+ public:
+  absl::string_view message() { return message_; }
+  absl::string_view filename() { return filename_; };
+  int line() { return line_; };
+  absl::optional<PlatformThreadId> thread_id() { return thread_id_; };
+  webrtc::Timestamp timestamp() { return timestamp_; };
+  absl::string_view tag() const { return tag_; };
+  LoggingSeverity severity() const { return severity_; }
+
+  std::string DefaultLogLine() const;
+
+ private:
+  friend class LogMessage;
+  void set_message(std::string message) { message_ = std::move(message); }
+  void set_filename(absl::string_view filename) { filename_ = filename; }
+  void set_line(int line) { line_ = line; }
+  void set_thread_id(absl::optional<PlatformThreadId> thread_id) {
+    thread_id_ = thread_id;
+  }
+  void set_timestamp(webrtc::Timestamp timestamp) { timestamp_ = timestamp; }
+  void set_tag(absl::string_view tag) { tag_ = tag; }
+  void set_severity(LoggingSeverity severity) { severity_ = severity; }
+
+  std::string message_;
+  absl::string_view filename_;
+  int line_ = 0;
+  absl::optional<PlatformThreadId> thread_id_;
+  webrtc::Timestamp timestamp_ = webrtc::Timestamp::MinusInfinity();
+  
+  absl::string_view tag_ = "libjingle";
+  
+  LoggingSeverity severity_;
+};
+
+
 class LogSink {
  public:
   LogSink() {}
@@ -127,6 +170,7 @@ class LogSink {
   virtual void OnLogMessage(absl::string_view message,
                             LoggingSeverity severity);
   virtual void OnLogMessage(absl::string_view message);
+  virtual void OnLogMessage(const LogLineRef& line);
 
  private:
   friend class ::rtc::LogMessage;
@@ -554,26 +598,14 @@ class LogMessage {
   
   static void UpdateMinLogSeverity();
 
-
-#if defined(WEBRTC_ANDROID)
-  static void OutputToDebug(absl::string_view msg,
-                            LoggingSeverity severity,
-                            const char* tag);
-#else
-  static void OutputToDebug(absl::string_view msg, LoggingSeverity severity);
-#endif  
+  
+  static void OutputToDebug(const LogLineRef& log_line_ref);
 
   
   
   void FinishPrintStream();
 
-  
-  LoggingSeverity severity_;
-
-#if defined(WEBRTC_ANDROID)
-  
-  const char* tag_ = "libjingle";
-#endif
+  LogLineRef log_line_;
 
   
   
@@ -589,7 +621,8 @@ class LogMessage {
   static std::atomic<bool> streams_empty_;
 
   
-  static bool thread_, timestamp_;
+  static bool log_thread_;
+  static bool log_timestamp_;
 
   
   static bool log_to_stderr_;
@@ -597,11 +630,15 @@ class LogMessage {
   
   inline static void UpdateMinLogSeverity() {}
 #if defined(WEBRTC_ANDROID)
-  inline static void OutputToDebug(absl::string_view msg,
+  inline static void OutputToDebug(absl::string_view filename,
+                                   int line,
+                                   absl::string_view msg,
                                    LoggingSeverity severity,
                                    const char* tag) {}
 #else
-  inline static void OutputToDebug(absl::string_view msg,
+  inline static void OutputToDebug(absl::string_view filename,
+                                   int line,
+                                   absl::string_view msg,
                                    LoggingSeverity severity) {}
 #endif  
   inline void FinishPrintStream() {}
