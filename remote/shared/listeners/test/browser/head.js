@@ -66,3 +66,22 @@ async function loadURL(browser, url) {
   BrowserTestUtils.loadURI(browser, url);
   return loaded;
 }
+
+
+
+
+
+
+
+
+
+
+
+function fetch(browser, url) {
+  return SpecialPowers.spawn(browser, [url], async _url => {
+    const response = await content.fetch(_url);
+    
+    
+    await response.text();
+  });
+}
