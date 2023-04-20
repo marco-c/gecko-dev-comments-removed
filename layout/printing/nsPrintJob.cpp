@@ -1328,26 +1328,8 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
   if (mPrintSettings->HasOrthogonalSheetsAndPages()) {
     std::swap(pageSize.width, pageSize.height);
   }
-
   
   
-  
-  
-  
-  if (const Maybe<StylePageSizeOrientation> maybeOrientation =
-          aPO->mDocument->GetPresShell()
-              ->StyleSet()
-              ->GetDefaultPageSizeOrientation()) {
-    if (maybeOrientation.value() == StylePageSizeOrientation::Landscape &&
-        pageSize.width < pageSize.height) {
-      
-      std::swap(pageSize.width, pageSize.height);
-    } else if (maybeOrientation.value() == StylePageSizeOrientation::Portrait &&
-               pageSize.width > pageSize.height) {
-      
-      std::swap(pageSize.width, pageSize.height);
-    }
-  }
   aPO->mPresContext->SetPageSize(pageSize);
 
   int32_t p2a = aPO->mPresContext->DeviceContext()->AppUnitsPerDevPixel();
@@ -1375,8 +1357,46 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
   MOZ_TRY(aPO->mPresShell->Initialize());
   NS_ASSERTION(aPO->mPresShell, "Presshell should still be here");
 
-  
   RefPtr<PresShell> presShell = aPO->mPresShell;
+  {
+    
+    
+    
+    const nsAtom* firstPageName = nsGkAtoms::_empty;
+    if (const Element* const rootElement = aPO->mDocument->GetRootElement()) {
+      if (const nsIFrame* const rootFrame = rootElement->GetPrimaryFrame()) {
+        firstPageName = rootFrame->ComputePageValue();
+      }
+    }
+
+    
+    
+    
+    
+    
+    if (const Maybe<StylePageSizeOrientation> maybeOrientation =
+            presShell->StyleSet()->GetDefaultPageSizeOrientation(
+                firstPageName)) {
+      switch (maybeOrientation.value()) {
+        case StylePageSizeOrientation::Landscape:
+          if (pageSize.width < pageSize.height) {
+            
+            std::swap(pageSize.width, pageSize.height);
+          }
+          break;
+        case StylePageSizeOrientation::Portrait:
+          if (pageSize.width > pageSize.height) {
+            
+            std::swap(pageSize.width, pageSize.height);
+          }
+          break;
+      }
+      mMaybeCSSPageLandscape.emplace(maybeOrientation.value() ==
+                                     StylePageSizeOrientation::Landscape);
+      aPO->mPresContext->SetPageSize(pageSize);
+    }
+  }
+  
   presShell->FlushPendingNotifications(FlushType::Layout);
 
   MOZ_TRY(UpdateSelectionAndShrinkPrintObject(aPO.get(), documentIsTopLevel));
@@ -1980,18 +2000,10 @@ nsresult nsPrintJob::FinishPrintPreview() {
 
   if (mPrintPreviewCallback) {
     const bool hasSelection = !mDisallowSelectionPrint && mSelectionRoot;
-    
-    
-    const Maybe<bool> maybeLandscape =
-        mPrintObject->mPresShell->StyleSet()
-            ->GetDefaultPageSizeOrientation()
-            .map([](StylePageSizeOrientation o) -> bool {
-              return o == StylePageSizeOrientation::Landscape;
-            });
     mPrintPreviewCallback(PrintPreviewResultInfo(
         GetPrintPreviewNumSheets(), GetRawNumPages(), GetIsEmpty(),
         hasSelection, hasSelection && mPrintObject->HasSelection(),
-        maybeLandscape));
+        mMaybeCSSPageLandscape));
     mPrintPreviewCallback = nullptr;
   }
 

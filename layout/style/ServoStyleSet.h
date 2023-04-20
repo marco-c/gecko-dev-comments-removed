@@ -258,7 +258,8 @@ class ServoStyleSet {
   
   
   
-  Maybe<StylePageSizeOrientation> GetDefaultPageSizeOrientation();
+  Maybe<StylePageSizeOrientation> GetDefaultPageSizeOrientation(
+      const nsAtom* aFirstPageName);
 
   void AppendAllNonDocumentAuthorSheets(nsTArray<StyleSheet*>& aArray) const;
 

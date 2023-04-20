@@ -8,6 +8,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/layout/RemotePrintJobChild.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 
 #include "nsCOMPtr.h"
@@ -282,6 +283,11 @@ class nsPrintJob final : public nsIWebProgressListener,
   float mScreenDPI = 115.0f;
 
   int32_t mNumPrintablePages = 0;
+
+  
+  
+  
+  mozilla::Maybe<bool> mMaybeCSSPageLandscape;
 
   
   
