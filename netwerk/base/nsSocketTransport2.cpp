@@ -2317,9 +2317,8 @@ nsSocketTransport::OpenInputStream(uint32_t flags, uint32_t segsize,
 
     
     nsCOMPtr<nsIAsyncOutputStream> pipeOut;
-    rv = NS_NewPipe2(getter_AddRefs(pipeIn), getter_AddRefs(pipeOut),
-                     !openBlocking, true, segsize, segcount);
-    if (NS_FAILED(rv)) return rv;
+    NS_NewPipe2(getter_AddRefs(pipeIn), getter_AddRefs(pipeOut), !openBlocking,
+                true, segsize, segcount);
 
     
     rv = NS_AsyncCopy(&mInput, pipeOut, mSocketTransportService,
@@ -2364,9 +2363,8 @@ nsSocketTransport::OpenOutputStream(uint32_t flags, uint32_t segsize,
 
     
     nsCOMPtr<nsIAsyncInputStream> pipeIn;
-    rv = NS_NewPipe2(getter_AddRefs(pipeIn), getter_AddRefs(pipeOut), true,
-                     !openBlocking, segsize, segcount);
-    if (NS_FAILED(rv)) return rv;
+    NS_NewPipe2(getter_AddRefs(pipeIn), getter_AddRefs(pipeOut), true,
+                !openBlocking, segsize, segcount);
 
     
     rv = NS_AsyncCopy(pipeIn, &mOutput, mSocketTransportService,

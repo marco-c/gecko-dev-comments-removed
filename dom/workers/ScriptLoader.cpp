@@ -950,14 +950,10 @@ nsresult WorkerScriptLoader::LoadScript(ScriptLoadRequest* aRequest) {
     
     loadContext->mCacheStatus = WorkerLoadContext::Cancel;
 
-    rv = NS_NewPipe(
-        getter_AddRefs(loadContext->mCacheReadStream), getter_AddRefs(writer),
-        0,
-        UINT32_MAX,    
-        true, false);  
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+    NS_NewPipe(getter_AddRefs(loadContext->mCacheReadStream),
+               getter_AddRefs(writer), 0,
+               UINT32_MAX,    
+               true, false);  
 
     nsCOMPtr<nsIStreamListenerTee> tee =
         do_CreateInstance(NS_STREAMLISTENERTEE_CONTRACTID);

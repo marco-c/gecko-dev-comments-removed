@@ -1474,17 +1474,14 @@ nsresult ReferrerInfo::ReadTailDataBeforeGecko100(
   
   
   
-  nsresult rv = NS_NewPipe(getter_AddRefs(reader), getter_AddRefs(writer));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  NS_NewPipe(getter_AddRefs(reader), getter_AddRefs(writer));
 
   nsCOMPtr<nsIBinaryOutputStream> binaryPipeWriter =
       NS_NewObjectOutputStream(writer);
 
   
   
-  rv = binaryPipeWriter->Write32(aData);
+  nsresult rv = binaryPipeWriter->Write32(aData);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

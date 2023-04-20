@@ -49,12 +49,11 @@ nsresult nsAboutCache::Channel::Init(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
   mCancel = false;
 
   nsCOMPtr<nsIInputStream> inputStream;
-  rv = NS_NewPipe(getter_AddRefs(inputStream), getter_AddRefs(mStream), 16384,
-                  (uint32_t)-1,
-                  true,  
-                  false  
+  NS_NewPipe(getter_AddRefs(inputStream), getter_AddRefs(mStream), 16384,
+             (uint32_t)-1,
+             true,  
+             false  
   );
-  if (NS_FAILED(rv)) return rv;
 
   nsAutoCString storageName;
   rv = ParseURI(aURI, storageName);

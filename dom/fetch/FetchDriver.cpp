@@ -223,17 +223,11 @@ AlternativeDataStreamListener::OnStartRequest(nsIRequest* aRequest) {
       NS_SUCCEEDED(cic->GetCacheEntryId(&mAlternativeDataCacheEntryId))) {
     MOZ_DIAGNOSTIC_ASSERT(!mPipeAlternativeInputStream);
     MOZ_DIAGNOSTIC_ASSERT(!mPipeAlternativeOutputStream);
-    nsresult rv =
-        NS_NewPipe(getter_AddRefs(mPipeAlternativeInputStream),
-                   getter_AddRefs(mPipeAlternativeOutputStream),
-                   0 , UINT32_MAX ,
-                   true ,
-                   false );
-
-    if (NS_FAILED(rv)) {
-      mFetchDriver->FailWithNetworkError(rv);
-      return rv;
-    }
+    NS_NewPipe(getter_AddRefs(mPipeAlternativeInputStream),
+               getter_AddRefs(mPipeAlternativeOutputStream),
+               0 , UINT32_MAX ,
+               true ,
+               false );
 
     MOZ_DIAGNOSTIC_ASSERT(!mCacheInfoChannel);
     mCacheInfoChannel = cic;
@@ -1144,17 +1138,11 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest) {
   
   
   nsCOMPtr<nsIInputStream> pipeInputStream;
-  rv = NS_NewPipe(getter_AddRefs(pipeInputStream),
-                  getter_AddRefs(mPipeOutputStream),
-                  0, 
-                  UINT32_MAX ,
-                  true ,
-                  false );
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    FailWithNetworkError(rv);
-    
-    return rv;
-  }
+  NS_NewPipe(getter_AddRefs(pipeInputStream), getter_AddRefs(mPipeOutputStream),
+             0, 
+             UINT32_MAX ,
+             true ,
+             false );
   response->SetBody(pipeInputStream, contentLength);
 
   

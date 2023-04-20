@@ -735,10 +735,9 @@ nsIconChannel::Open(nsIInputStream** aStream) {
   
   nsCOMPtr<nsIAsyncInputStream> inputStream;
   nsCOMPtr<nsIAsyncOutputStream> outputStream;
-  rv = NS_NewPipe2(getter_AddRefs(inputStream), getter_AddRefs(outputStream),
-                   false , false ,
-                   iconBuffer.mLen , 1 );
-  NS_ENSURE_SUCCESS(rv, rv);
+  NS_NewPipe2(getter_AddRefs(inputStream), getter_AddRefs(outputStream),
+              false , false ,
+              iconBuffer.mLen , 1 );
 
   rv = WriteByteBufToOutputStream(iconBuffer, outputStream);
 
@@ -794,10 +793,9 @@ nsresult nsIconChannel::StartAsyncOpen() {
   
   nsCOMPtr<nsIAsyncInputStream> inputStream;
   nsCOMPtr<nsIAsyncOutputStream> outputStream;
-  rv = NS_NewPipe2(getter_AddRefs(inputStream), getter_AddRefs(outputStream),
-                   true , false ,
-                   0 , UINT32_MAX );
-  NS_ENSURE_SUCCESS(rv, rv);
+  NS_NewPipe2(getter_AddRefs(inputStream), getter_AddRefs(outputStream),
+              true , false ,
+              0 , UINT32_MAX );
 
   
   

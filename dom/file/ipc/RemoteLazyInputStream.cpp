@@ -587,11 +587,7 @@ RemoteLazyInputStream::CloneWithRange(uint64_t aStart, uint64_t aLength,
     
     nsCOMPtr<nsIAsyncInputStream> pipeIn;
     nsCOMPtr<nsIAsyncOutputStream> pipeOut;
-    rv = NS_NewPipe2(getter_AddRefs(pipeIn), getter_AddRefs(pipeOut), true,
-                     true);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+    NS_NewPipe2(getter_AddRefs(pipeIn), getter_AddRefs(pipeOut), true, true);
 
     RefPtr<RemoteLazyInputStreamThread> thread =
         RemoteLazyInputStreamThread::GetOrCreate();
@@ -1083,11 +1079,7 @@ nsresult RemoteLazyInputStream::EnsureAsyncRemoteStream() {
     
     nsCOMPtr<nsIAsyncInputStream> pipeIn;
     nsCOMPtr<nsIAsyncOutputStream> pipeOut;
-    rv = NS_NewPipe2(getter_AddRefs(pipeIn), getter_AddRefs(pipeOut), true,
-                     true);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+    NS_NewPipe2(getter_AddRefs(pipeIn), getter_AddRefs(pipeOut), true, true);
 
     RefPtr<RemoteLazyInputStreamThread> thread =
         RemoteLazyInputStreamThread::GetOrCreate();
