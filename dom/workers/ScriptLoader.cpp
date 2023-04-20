@@ -1258,22 +1258,22 @@ bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
     if (mScriptLoader->CleanedUp()) {
       return true;
     }
-  }
-
-  
-  MOZ_ASSERT(
-      mScriptLoader->mSyncLoopTarget == mSyncLoopTarget,
-      "Unexpected SyncLoopTarget. Check if the sync loop was closed early");
-
-  for (const auto& requestHandle : mLoadedRequests) {
-    
-    MOZ_ASSERT(!requestHandle->IsEmpty());
 
     
-    
-    RefPtr<ScriptLoadRequest> request = requestHandle->ReleaseRequest();
+    MOZ_ASSERT(
+        mScriptLoader->mSyncLoopTarget == mSyncLoopTarget,
+        "Unexpected SyncLoopTarget. Check if the sync loop was closed early");
 
-    mScriptLoader->MaybeMoveToLoadedList(request);
+    for (const auto& requestHandle : mLoadedRequests) {
+      
+      MOZ_ASSERT(!requestHandle->IsEmpty());
+
+      
+      
+      RefPtr<ScriptLoadRequest> request = requestHandle->ReleaseRequest();
+
+      mScriptLoader->MaybeMoveToLoadedList(request);
+    }
   }
   return mScriptLoader->ProcessPendingRequests(aCx);
 }
