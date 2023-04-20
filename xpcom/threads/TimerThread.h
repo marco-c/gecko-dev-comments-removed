@@ -88,12 +88,9 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
 
   class Entry final {
    public:
-    Entry(const TimeStamp& aMinTimeout, const TimeStamp& aTimeout,
-          nsTimerImpl* aTimerImpl)
-        : mTimerImpl(aTimerImpl), mTimeout(std::max(aMinTimeout, aTimeout)) {
-      if (aTimerImpl) {
-        aTimerImpl->SetIsInTimerThread(true);
-      }
+    explicit Entry(nsTimerImpl* aTimerImpl)
+        : mTimeout(aTimerImpl->mTimeout), mTimerImpl(aTimerImpl) {
+      aTimerImpl->SetIsInTimerThread(true);
     }
 
     
@@ -141,8 +138,8 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
     const TimeStamp& Timeout() const { return mTimeout; }
 
    private:
-    RefPtr<nsTimerImpl> mTimerImpl;
     TimeStamp mTimeout;
+    RefPtr<nsTimerImpl> mTimerImpl;
   };
 
   nsTArray<Entry> mTimers MOZ_GUARDED_BY(mMonitor);
