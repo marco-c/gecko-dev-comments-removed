@@ -33,9 +33,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
 });
 
-const EXTENSION_STORAGE_ENABLED_PREF =
-  "devtools.storage.extensionStorage.enabled";
-
 const DEFAULT_VALUE = "value";
 
 loader.lazyRequireGetter(
@@ -1784,369 +1781,363 @@ exports.setupParentProcessForExtensionStorage = function({ mm, prefix }) {
 
 
 
-if (Services.prefs.getBoolPref(EXTENSION_STORAGE_ENABLED_PREF, false)) {
-  StorageActors.createActor(
-    {
-      typeName: "extensionStorage",
+StorageActors.createActor(
+  {
+    typeName: "extensionStorage",
+  },
+  {
+    initialize(storageActor) {
+      protocol.Actor.prototype.initialize.call(this, null);
+
+      this.storageActor = storageActor;
+
+      this.addonId = this.storageActor.parentActor.addonId;
+
+      
+      
+      this.extensionHostURL = this.getExtensionPolicy()
+        .getURL()
+        .slice(0, -1);
+
+      
+      
+      
+      
+      
+      this.dbConnectionForHost = new Map();
+
+      
+      
+      
+      
+      
+      this.hostVsStores = new Map();
+
+      this.onStorageChange = this.onStorageChange.bind(this);
+
+      this.setupChildProcess();
+
+      this.onWindowReady = this.onWindowReady.bind(this);
+      this.onWindowDestroyed = this.onWindowDestroyed.bind(this);
+      this.storageActor.on("window-ready", this.onWindowReady);
+      this.storageActor.on("window-destroyed", this.onWindowDestroyed);
     },
-    {
-      initialize(storageActor) {
-        protocol.Actor.prototype.initialize.call(this, null);
 
-        this.storageActor = storageActor;
+    getExtensionPolicy() {
+      return WebExtensionPolicy.getByID(this.addonId);
+    },
 
-        this.addonId = this.storageActor.parentActor.addonId;
+    destroy() {
+      extensionStorageHelpers.onChangedChildListeners.delete(
+        this.onStorageChange
+      );
 
-        
-        
-        this.extensionHostURL = this.getExtensionPolicy()
-          .getURL()
-          .slice(0, -1);
+      this.storageActor.off("window-ready", this.onWindowReady);
+      this.storageActor.off("window-destroyed", this.onWindowDestroyed);
 
-        
-        
-        
-        
-        
-        this.dbConnectionForHost = new Map();
+      this.hostVsStores.clear();
+      protocol.Actor.prototype.destroy.call(this);
 
-        
-        
-        
-        
-        
-        this.hostVsStores = new Map();
+      this.storageActor = null;
+    },
 
-        this.onStorageChange = this.onStorageChange.bind(this);
-
-        this.setupChildProcess();
-
-        this.onWindowReady = this.onWindowReady.bind(this);
-        this.onWindowDestroyed = this.onWindowDestroyed.bind(this);
-        this.storageActor.on("window-ready", this.onWindowReady);
-        this.storageActor.on("window-destroyed", this.onWindowDestroyed);
-      },
-
-      getExtensionPolicy() {
-        return WebExtensionPolicy.getByID(this.addonId);
-      },
-
-      destroy() {
-        extensionStorageHelpers.onChangedChildListeners.delete(
-          this.onStorageChange
-        );
-
-        this.storageActor.off("window-ready", this.onWindowReady);
-        this.storageActor.off("window-destroyed", this.onWindowDestroyed);
-
-        this.hostVsStores.clear();
-        protocol.Actor.prototype.destroy.call(this);
-
-        this.storageActor = null;
-      },
-
-      setupChildProcess() {
-        const ppmm = this.conn.parentMessageManager;
-        extensionStorageHelpers.setPpmm(ppmm);
-
-        
-        this.conn.setupInParent({
-          module: "devtools/server/actors/storage",
-          setupParent: "setupParentProcessForExtensionStorage",
-        });
-
-        extensionStorageHelpers.onChangedChildListeners.add(
-          this.onStorageChange
-        );
-        this.setupStorageInParent = extensionStorageHelpers.callParentProcessAsync.bind(
-          extensionStorageHelpers,
-          "setupStorageInParent"
-        );
-
-        
-        
-        ppmm.addMessageListener(
-          "debug:storage-extensionStorage-request-child",
-          extensionStorageHelpers.handleParentRequest.bind(
-            extensionStorageHelpers
-          )
-        );
-      },
+    setupChildProcess() {
+      const ppmm = this.conn.parentMessageManager;
+      extensionStorageHelpers.setPpmm(ppmm);
 
       
+      this.conn.setupInParent({
+        module: "devtools/server/actors/storage",
+        setupParent: "setupParentProcessForExtensionStorage",
+      });
 
-
-
-
-      onStorageChange({ addonId, changes }) {
-        if (addonId !== this.addonId) {
-          return;
-        }
-
-        const host = this.extensionHostURL;
-        const storeMap = this.hostVsStores.get(host);
-
-        function isStructuredCloneHolder(value) {
-          return (
-            value &&
-            typeof value === "object" &&
-            Cu.getClassName(value, true) === "StructuredCloneHolder"
-          );
-        }
-
-        for (const key in changes) {
-          const storageChange = changes[key];
-          let { newValue, oldValue } = storageChange;
-          if (isStructuredCloneHolder(newValue)) {
-            newValue = newValue.deserialize(this);
-          }
-          if (isStructuredCloneHolder(oldValue)) {
-            oldValue = oldValue.deserialize(this);
-          }
-
-          let action;
-          if (typeof newValue === "undefined") {
-            action = "deleted";
-            storeMap.delete(key);
-          } else if (typeof oldValue === "undefined") {
-            action = "added";
-            storeMap.set(key, newValue);
-          } else {
-            action = "changed";
-            storeMap.set(key, newValue);
-          }
-
-          this.storageActor.update(action, this.typeName, { [host]: [key] });
-        }
-      },
+      extensionStorageHelpers.onChangedChildListeners.add(this.onStorageChange);
+      this.setupStorageInParent = extensionStorageHelpers.callParentProcessAsync.bind(
+        extensionStorageHelpers,
+        "setupStorageInParent"
+      );
 
       
-
-
-
-
-
-      async preListStores() {
-        
-        if (!this.addonId || !WebExtensionPolicy.getByID(this.addonId)) {
-          return;
-        }
-
-        await this.populateStoresForHost(this.extensionHostURL);
-      },
-
       
+      ppmm.addMessageListener(
+        "debug:storage-extensionStorage-request-child",
+        extensionStorageHelpers.handleParentRequest.bind(
+          extensionStorageHelpers
+        )
+      );
+    },
+
+    
 
 
 
 
-      populateStoresForHosts() {},
+    onStorageChange({ addonId, changes }) {
+      if (addonId !== this.addonId) {
+        return;
+      }
 
-      
+      const host = this.extensionHostURL;
+      const storeMap = this.hostVsStores.get(host);
 
-
-
-
-      async populateStoresForHost(host) {
-        if (host !== this.extensionHostURL) {
-          return;
-        }
-
-        const extension = ExtensionProcessScript.getExtensionChild(
-          this.addonId
+      function isStructuredCloneHolder(value) {
+        return (
+          value &&
+          typeof value === "object" &&
+          Cu.getClassName(value, true) === "StructuredCloneHolder"
         );
-        if (!extension || !extension.hasPermission("storage")) {
-          return;
+      }
+
+      for (const key in changes) {
+        const storageChange = changes[key];
+        let { newValue, oldValue } = storageChange;
+        if (isStructuredCloneHolder(newValue)) {
+          newValue = newValue.deserialize(this);
+        }
+        if (isStructuredCloneHolder(oldValue)) {
+          oldValue = oldValue.deserialize(this);
         }
 
+        let action;
+        if (typeof newValue === "undefined") {
+          action = "deleted";
+          storeMap.delete(key);
+        } else if (typeof oldValue === "undefined") {
+          action = "added";
+          storeMap.set(key, newValue);
+        } else {
+          action = "changed";
+          storeMap.set(key, newValue);
+        }
+
+        this.storageActor.update(action, this.typeName, { [host]: [key] });
+      }
+    },
+
+    
+
+
+
+
+
+    async preListStores() {
+      
+      if (!this.addonId || !WebExtensionPolicy.getByID(this.addonId)) {
+        return;
+      }
+
+      await this.populateStoresForHost(this.extensionHostURL);
+    },
+
+    
+
+
+
+
+    populateStoresForHosts() {},
+
+    
+
+
+
+
+    async populateStoresForHost(host) {
+      if (host !== this.extensionHostURL) {
+        return;
+      }
+
+      const extension = ExtensionProcessScript.getExtensionChild(this.addonId);
+      if (!extension || !extension.hasPermission("storage")) {
+        return;
+      }
+
+      
+      
+      const storeMap = new Map();
+      this.hostVsStores.set(host, storeMap);
+
+      const storagePrincipal = await this.getStoragePrincipal(extension.id);
+
+      if (!storagePrincipal) {
         
         
-        const storeMap = new Map();
-        this.hostVsStores.set(host, storeMap);
+        return;
+      }
 
-        const storagePrincipal = await this.getStoragePrincipal(extension.id);
+      const db = await ExtensionStorageIDB.open(storagePrincipal);
+      this.dbConnectionForHost.set(host, db);
+      const data = await db.get();
 
-        if (!storagePrincipal) {
-          
-          
-          return;
-        }
+      for (const [key, value] of Object.entries(data)) {
+        storeMap.set(key, value);
+      }
 
-        const db = await ExtensionStorageIDB.open(storagePrincipal);
-        this.dbConnectionForHost.set(host, db);
-        const data = await db.get();
+      if (this.storageActor.parentActor.fallbackWindow) {
+        
+        
+        
+        const storageData = {};
+        storageData[host] = this.getNamesForHost(host);
+        this.storageActor.update("added", this.typeName, storageData);
+      }
+    },
 
-        for (const [key, value] of Object.entries(data)) {
-          storeMap.set(key, value);
-        }
+    async getStoragePrincipal(addonId) {
+      const {
+        backendEnabled,
+        storagePrincipal,
+      } = await this.setupStorageInParent(addonId);
 
-        if (this.storageActor.parentActor.fallbackWindow) {
-          
-          
-          
-          const storageData = {};
-          storageData[host] = this.getNamesForHost(host);
-          this.storageActor.update("added", this.typeName, storageData);
-        }
-      },
+      if (!backendEnabled) {
+        
+        return null;
+      }
+      return storagePrincipal;
+    },
 
-      async getStoragePrincipal(addonId) {
-        const {
-          backendEnabled,
-          storagePrincipal,
-        } = await this.setupStorageInParent(addonId);
+    getValuesForHost(host, name) {
+      const result = [];
 
-        if (!backendEnabled) {
-          
-          return null;
-        }
-        return storagePrincipal;
-      },
-
-      getValuesForHost(host, name) {
-        const result = [];
-
-        if (!this.hostVsStores.has(host)) {
-          return result;
-        }
-
-        if (name) {
-          return [{ name, value: this.hostVsStores.get(host).get(name) }];
-        }
-
-        for (const [key, value] of Array.from(
-          this.hostVsStores.get(host).entries()
-        )) {
-          result.push({ name: key, value });
-        }
+      if (!this.hostVsStores.has(host)) {
         return result;
-      },
+      }
+
+      if (name) {
+        return [{ name, value: this.hostVsStores.get(host).get(name) }];
+      }
+
+      for (const [key, value] of Array.from(
+        this.hostVsStores.get(host).entries()
+      )) {
+        result.push({ name: key, value });
+      }
+      return result;
+    },
+
+    
+
+
+
+
+
+
+
+
+
+    toStoreObject(item) {
+      if (!item) {
+        return null;
+      }
+
+      let { name, value } = item;
+      const isValueEditable = extensionStorageHelpers.isEditable(value);
 
       
+      
+      switch (typeof value) {
+        case "bigint":
+          value = `${value.toString()}n`;
+          break;
+        case "string":
+          break;
+        case "undefined":
+          value = "undefined";
+          break;
+        default:
+          value = JSON.stringify(value);
+          if (
+            
+            Object.prototype.toString.call(item.value) === "[object Date]"
+          ) {
+            value = JSON.parse(value);
+          }
+      }
 
+      return {
+        name,
+        value: new LongStringActor(this.conn, value),
+        area: "local", 
+        isValueEditable,
+      };
+    },
 
+    getFields() {
+      return [
+        { name: "name", editable: false },
+        { name: "value", editable: true },
+        { name: "area", editable: false },
+        { name: "isValueEditable", editable: false, private: true },
+      ];
+    },
 
+    onItemUpdated(action, host, names) {
+      this.storageActor.update(action, this.typeName, {
+        [host]: names,
+      });
+    },
 
+    async editItem({ host, field, items, oldValue }) {
+      const db = this.dbConnectionForHost.get(host);
+      if (!db) {
+        return;
+      }
 
+      const { name, value } = items;
 
-
-
-
-      toStoreObject(item) {
-        if (!item) {
-          return null;
-        }
-
-        let { name, value } = item;
-        const isValueEditable = extensionStorageHelpers.isEditable(value);
-
-        
-        
-        switch (typeof value) {
-          case "bigint":
-            value = `${value.toString()}n`;
+      let parsedValue = parseItemValue(value);
+      if (parsedValue === value) {
+        const { typesFromString } = extensionStorageHelpers;
+        for (const { test, parse } of Object.values(typesFromString)) {
+          if (test(value)) {
+            parsedValue = parse(value);
             break;
-          case "string":
-            break;
-          case "undefined":
-            value = "undefined";
-            break;
-          default:
-            value = JSON.stringify(value);
-            if (
-              
-              Object.prototype.toString.call(item.value) === "[object Date]"
-            ) {
-              value = JSON.parse(value);
-            }
-        }
-
-        return {
-          name,
-          value: new LongStringActor(this.conn, value),
-          area: "local", 
-          isValueEditable,
-        };
-      },
-
-      getFields() {
-        return [
-          { name: "name", editable: false },
-          { name: "value", editable: true },
-          { name: "area", editable: false },
-          { name: "isValueEditable", editable: false, private: true },
-        ];
-      },
-
-      onItemUpdated(action, host, names) {
-        this.storageActor.update(action, this.typeName, {
-          [host]: names,
-        });
-      },
-
-      async editItem({ host, field, items, oldValue }) {
-        const db = this.dbConnectionForHost.get(host);
-        if (!db) {
-          return;
-        }
-
-        const { name, value } = items;
-
-        let parsedValue = parseItemValue(value);
-        if (parsedValue === value) {
-          const { typesFromString } = extensionStorageHelpers;
-          for (const { test, parse } of Object.values(typesFromString)) {
-            if (test(value)) {
-              parsedValue = parse(value);
-              break;
-            }
           }
         }
-        const changes = await db.set({ [name]: parsedValue });
-        this.fireOnChangedExtensionEvent(host, changes);
+      }
+      const changes = await db.set({ [name]: parsedValue });
+      this.fireOnChangedExtensionEvent(host, changes);
 
-        this.onItemUpdated("changed", host, [name]);
-      },
+      this.onItemUpdated("changed", host, [name]);
+    },
 
-      async removeItem(host, name) {
-        const db = this.dbConnectionForHost.get(host);
-        if (!db) {
-          return;
-        }
+    async removeItem(host, name) {
+      const db = this.dbConnectionForHost.get(host);
+      if (!db) {
+        return;
+      }
 
-        const changes = await db.remove(name);
-        this.fireOnChangedExtensionEvent(host, changes);
+      const changes = await db.remove(name);
+      this.fireOnChangedExtensionEvent(host, changes);
 
-        this.onItemUpdated("deleted", host, [name]);
-      },
+      this.onItemUpdated("deleted", host, [name]);
+    },
 
-      async removeAll(host) {
-        const db = this.dbConnectionForHost.get(host);
-        if (!db) {
-          return;
-        }
+    async removeAll(host) {
+      const db = this.dbConnectionForHost.get(host);
+      if (!db) {
+        return;
+      }
 
-        const changes = await db.clear();
-        this.fireOnChangedExtensionEvent(host, changes);
+      const changes = await db.clear();
+      this.fireOnChangedExtensionEvent(host, changes);
 
-        this.onItemUpdated("cleared", host, []);
-      },
+      this.onItemUpdated("cleared", host, []);
+    },
 
+    
+
+
+
+    fireOnChangedExtensionEvent(host, changes) {
       
-
-
-
-      fireOnChangedExtensionEvent(host, changes) {
-        
-        const uuid = new URL(host).host;
-        Services.cpmm.sendAsyncMessage(
-          `Extension:StorageLocalOnChanged:${uuid}`,
-          changes
-        );
-      },
-    }
-  );
-}
+      const uuid = new URL(host).host;
+      Services.cpmm.sendAsyncMessage(
+        `Extension:StorageLocalOnChanged:${uuid}`,
+        changes
+      );
+    },
+  }
+);
 
 StorageActors.createActor(
   {

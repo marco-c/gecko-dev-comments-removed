@@ -6,9 +6,7 @@
 
 "use strict";
 
-add_task(async function set_enable_extensionStorage_pref() {
-  await pushPref("devtools.storage.extensionStorage.enabled", true);
-
+add_setup(async function() {
   
   
   await pushPref("devtools.toolbox.alwaysOnTop", false);
