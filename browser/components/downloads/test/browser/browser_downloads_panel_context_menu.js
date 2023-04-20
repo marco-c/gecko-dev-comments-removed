@@ -591,5 +591,10 @@ async function prepareDownloads(downloads, overrideExtension = null) {
     }
     ok(props.target instanceof Ci.nsIFile, "download target is a nsIFile");
   }
-  await task_addDownloads(downloads);
+  
+  
+  
+  
+  
+  await task_addDownloads(downloads.reverse());
 }
