@@ -51,8 +51,7 @@ class ImageClient : public CompositableClient {
 
 
 
-  virtual bool UpdateImage(ImageContainer* aContainer,
-                           uint32_t aContentFlags) = 0;
+  virtual bool UpdateImage(ImageContainer* aContainer) = 0;
 
   
 
@@ -89,7 +88,7 @@ class ImageClientSingle : public ImageClient {
   ImageClientSingle(CompositableForwarder* aFwd, TextureFlags aFlags,
                     CompositableType aType);
 
-  bool UpdateImage(ImageContainer* aContainer, uint32_t aContentFlag) override;
+  bool UpdateImage(ImageContainer* aContainer) override;
 
   void OnDetach() override;
 
