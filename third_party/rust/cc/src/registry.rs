@@ -14,7 +14,8 @@ use std::ops::RangeFrom;
 use std::os::raw;
 use std::os::windows::prelude::*;
 
-pub struct RegistryKey(Repr);
+
+pub(crate) struct RegistryKey(Repr);
 
 type HKEY = *mut u8;
 type DWORD = u32;
@@ -29,7 +30,8 @@ type REGSAM = u32;
 
 const ERROR_SUCCESS: DWORD = 0;
 const ERROR_NO_MORE_ITEMS: DWORD = 259;
-const HKEY_LOCAL_MACHINE: HKEY = 0x80000002 as HKEY;
+
+const HKEY_LOCAL_MACHINE: HKEY = 0x80000002u32 as i32 as isize as HKEY;
 const REG_SZ: DWORD = 1;
 const KEY_READ: DWORD = 0x20019;
 const KEY_WOW64_32KEY: DWORD = 0x200;
@@ -66,8 +68,11 @@ extern "system" {
 
 struct OwnedKey(HKEY);
 
+
 enum Repr {
-    Const(HKEY),
+    
+    LocalMachine,
+    
     Owned(OwnedKey),
 }
 
@@ -79,16 +84,17 @@ pub struct Iter<'a> {
 unsafe impl Sync for Repr {}
 unsafe impl Send for Repr {}
 
-pub static LOCAL_MACHINE: RegistryKey = RegistryKey(Repr::Const(HKEY_LOCAL_MACHINE));
+pub(crate) const LOCAL_MACHINE: RegistryKey = RegistryKey(Repr::LocalMachine);
 
 impl RegistryKey {
     fn raw(&self) -> HKEY {
         match self.0 {
-            Repr::Const(val) => val,
+            Repr::LocalMachine => HKEY_LOCAL_MACHINE,
             Repr::Owned(ref val) => val.0,
         }
     }
 
+    
     pub fn open(&self, key: &OsStr) -> io::Result<RegistryKey> {
         let key = key.encode_wide().chain(Some(0)).collect::<Vec<_>>();
         let mut ret = 0 as *mut _;
@@ -142,7 +148,11 @@ impl RegistryKey {
             
             
             
-            let mut v = Vec::with_capacity(len as usize / 2);
+            assert!(len % 2 == 0, "impossible wide string size: {} bytes", len);
+            let vlen = len as usize / 2;
+            
+            
+            let mut v = vec![0u16; vlen];
             let err = RegQueryValueExW(
                 self.raw(),
                 name.as_ptr(),
@@ -151,17 +161,34 @@ impl RegistryKey {
                 v.as_mut_ptr() as *mut _,
                 &mut len,
             );
+            
+            
+            
+            
             if err != ERROR_SUCCESS as LONG {
                 return Err(io::Error::from_raw_os_error(err as i32));
             }
-            v.set_len(len as usize / 2);
-
             
             
-            if v[v.len() - 1] == 0 {
+            assert!(len % 2 == 0, "impossible wide string size: {} bytes", len);
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let actual_len = len as usize / 2;
+            assert!(actual_len <= v.len());
+            v.truncate(actual_len);
+            
+            
+            if !v.is_empty() && v[v.len() - 1] == 0 {
                 v.pop();
             }
-            Ok(OsString::from_wide(&v))
+            return Ok(OsString::from_wide(&v));
         }
     }
 }
