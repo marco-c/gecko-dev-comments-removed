@@ -613,13 +613,15 @@ class NativeObject : public JSObject {
 
   
   
-  MOZ_ALWAYS_INLINE bool setShapeAndAddNewSlots(JSContext* cx, Shape* newShape,
+  MOZ_ALWAYS_INLINE bool setShapeAndAddNewSlots(JSContext* cx,
+                                                SharedShape* newShape,
                                                 uint32_t oldSpan,
                                                 uint32_t newSpan);
 
   
   
-  MOZ_ALWAYS_INLINE bool setShapeAndAddNewSlot(JSContext* cx, Shape* newShape,
+  MOZ_ALWAYS_INLINE bool setShapeAndAddNewSlot(JSContext* cx,
+                                               SharedShape* newShape,
                                                uint32_t slot);
   void setShapeAndRemoveLastSlot(JSContext* cx, Shape* newShape, uint32_t slot);
 
