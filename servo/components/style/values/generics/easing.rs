@@ -21,7 +21,6 @@ use crate::parser::ParserContext;
 )]
 #[value_info(ty = "TIMING_FUNCTION")]
 #[repr(u8, C)]
-/// cbindgen:private-default-tagged-enum-constructor=false
 pub enum TimingFunction<Integer, Number, LinearStops> {
     
     Keyword(TimingKeyword),

@@ -67,7 +67,6 @@ pub trait PositionComponent {
 
 
 
-/// cbindgen:private-default-tagged-enum-constructor=false
 #[derive(
     Animate,
     Clone,

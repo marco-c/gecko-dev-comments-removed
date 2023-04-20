@@ -672,7 +672,6 @@ pub fn get_normalized_vector_and_angle<T: Zero>(
 
 
 
-/// cbindgen:private-default-tagged-enum-constructor=false
 pub enum GenericRotate<Number, Angle> {
     
     None,
@@ -765,7 +764,6 @@ where
 
 
 
-/// cbindgen:private-default-tagged-enum-constructor=false
 pub enum GenericScale<Number> {
     
     None,
@@ -843,7 +841,6 @@ fn y_axis_and_z_axis_are_zero<LengthPercentage: Zero + ZeroNoPercent, Length: Ze
 
 
 
-/// cbindgen:private-default-tagged-enum-constructor=false
 pub enum GenericTranslate<LengthPercentage, Length>
 where
     LengthPercentage: Zero + ZeroNoPercent,

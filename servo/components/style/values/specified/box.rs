@@ -808,7 +808,6 @@ fn is_default<T: Default + PartialEq>(value: &T) -> bool {
 
 
 
-/// cbindgen:private-default-tagged-enum-constructor=false
 #[derive(
     Clone,
     Debug,

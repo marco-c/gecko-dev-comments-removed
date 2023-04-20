@@ -73,7 +73,6 @@ pub struct RayFunction<Angle> {
 
 
 
-/// cbindgen:private-default-tagged-enum-constructor=false
 #[derive(
     Animate,
     Clone,
