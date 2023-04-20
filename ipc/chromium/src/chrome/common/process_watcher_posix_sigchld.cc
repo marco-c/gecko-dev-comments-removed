@@ -25,7 +25,11 @@ static constexpr int kMaxWaitMs = 2000;
 
 
 
-#if defined(MOZ_ASAN) || defined(MOZ_TSAN)
+#ifdef MOZ_CODE_COVERAGE
+
+
+static constexpr int kShutdownWaitMs = 80000;
+#elif defined(MOZ_ASAN) || defined(MOZ_TSAN)
 
 static constexpr int kShutdownWaitMs = 40000;
 #else
