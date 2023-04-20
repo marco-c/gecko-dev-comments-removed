@@ -49,8 +49,8 @@ const WEBP_DATA = atob(
   "UklGRiIAAABXRUJQVlA4TBUAAAAvY8AYAAfQ/4j+B4CE8H+/ENH/VCIA"
 );
 
-const DEFAULT_INDEX_FILENAME =
-  AppConstants.platform == "win" ? "index.htm" : "index.html";
+const DEFAULT_FILENAME =
+  AppConstants.platform == "win" ? "Untitled.htm" : "Untitled.html";
 
 const PROMISE_FILENAME_TYPE = "application/x-moz-file-promise-dest-filename";
 
@@ -279,7 +279,7 @@ add_task(async function save_document() {
       
       
       
-      filename = "index_002";
+      filename = "Untitled_002";
     }
 
     let file = tmpDir.clone();
@@ -518,7 +518,7 @@ add_task(async function saveas_files() {
       
       
       let expectedFilename = expectedItems[idx].unknown
-        ? DEFAULT_INDEX_FILENAME
+        ? DEFAULT_FILENAME
         : expectedItems[idx].savepagename || expectedItems[idx].filename;
 
       
@@ -726,11 +726,11 @@ add_task(async function save_download_links() {
           " was saved with the correct name when link has download attribute"
       );
     } else {
-      if (idx == 66 && filename == "index(1)") {
+      if (idx == 66 && filename == "Untitled(1)") {
         
         
         
-        filename = "index";
+        filename = "Untitled";
       }
 
       is(
