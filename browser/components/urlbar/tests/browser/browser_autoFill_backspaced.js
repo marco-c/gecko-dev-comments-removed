@@ -58,6 +58,15 @@ add_task(async function() {
     "http://example.com/",
     "http://example.com/foo",
   ]);
+  
+  
+  let bm = await PlacesUtils.bookmarks.insert({
+    url: "http://example.com/",
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+  });
+  registerCleanupFunction(async function() {
+    await PlacesUtils.bookmarks.remove(bm);
+  });
 
   await test_autocomplete({
     desc: "DELETE the autofilled part should search",
