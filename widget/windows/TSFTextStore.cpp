@@ -30,11 +30,6 @@
 #include "nsPrintfCString.h"
 
 
-#ifndef TS_SD_INPUTPANEMANUALDISPLAYENABLE
-#  define TS_SD_INPUTPANEMANUALDISPLAYENABLE 0x40
-#endif
-
-
 
 
 
