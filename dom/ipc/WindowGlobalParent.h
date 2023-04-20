@@ -225,6 +225,12 @@ class WindowGlobalParent final : public WindowContext,
 
   void ExitTopChromeDocumentFullscreen();
 
+  void SetHasBlockedOpaqueResponse() {
+    if (IsTop()) {
+      mHasBlockedOpaqueResponse = true;
+    }
+  }
+
  protected:
   already_AddRefed<JSActor> InitJSActor(JS::Handle<JSObject*> aMaybeActor,
                                         const nsACString& aName,
@@ -407,6 +413,8 @@ class WindowGlobalParent final : public WindowContext,
 
   
   bool mFullscreen = false;
+
+  bool mHasBlockedOpaqueResponse = false;
 };
 
 }  
