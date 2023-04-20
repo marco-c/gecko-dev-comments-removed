@@ -7217,6 +7217,21 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
   nsFrameConstructorSaveState floatSaveState;
   state.MaybePushFloatContainingBlock(insertion.mParentFrame, floatSaveState);
 
+  if (state.mPresContext->IsPaginated() &&
+      StaticPrefs::layout_css_named_pages_enabled()) {
+    
+    
+    
+    
+    
+    
+    
+    state.mAutoPageNameValue = insertion.mParentFrame->GetAutoPageValue();
+#ifdef DEBUG
+    insertion.mParentFrame->mWasVisitedByAutoFrameConstructionPageName = true;
+#endif
+  }
+
   
   
   
