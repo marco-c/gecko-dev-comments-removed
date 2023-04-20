@@ -3,8 +3,8 @@
 
 "use strict";
 
-let { AboutHomeStartupCache } = ChromeUtils.import(
-  "resource:///modules/BrowserGlue.jsm"
+let { AboutHomeStartupCache } = ChromeUtils.importESModule(
+  "resource:///modules/BrowserGlue.sys.mjs"
 );
 
 
