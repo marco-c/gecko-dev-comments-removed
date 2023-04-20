@@ -9325,6 +9325,42 @@
       "}",
     ]);
 
+    
+    
+    const PRE_OBJECT_LITERAL_TOKENS = new Set([
+      "typeof",
+      "void",
+      "delete",
+      "=",
+      "in",
+      "of",
+      "...",
+      "*",
+      "/",
+      "%",
+      "++",
+      "--",
+      "+",
+      "-",
+      "~",
+      "!",
+      ">>",
+      ">>>",
+      "<<",
+      "<",
+      ">",
+      "<=",
+      ">=",
+      "instanceof",
+      "&",
+      "^",
+      "|",
+      "==",
+      "!=",
+      "===",
+      "!==",
+    ]);
+
     class PrettyFast {
       
 
@@ -9413,6 +9449,8 @@
       
       
       
+      
+      
       #stack = [];
 
       
@@ -9461,7 +9499,6 @@
           this.#lastToken.loc.end.column = token.loc.end.column;
           this.#lastToken.type = token.type;
           this.#lastToken.value = token.value;
-          this.#lastToken.isArrayLiteral = token.isArrayLiteral;
         }
 
         return { code: this.#currentCode, map: this.#sourceMapGenerator };
@@ -9643,19 +9680,23 @@
           return;
         }
 
-        token.isArrayLiteral = isArrayLiteral(token, this.#lastToken);
-
         if (belongsOnStack(token)) {
-          if (token.isArrayLiteral) {
+          let stackEntry;
+
+          if (isArrayLiteral(token, this.#lastToken)) {
             
-            if (nextToken?.type?.label === "]") {
-              this.#stack.push("[");
-            } else {
-              this.#stack.push("[\n");
-            }
+            stackEntry = nextToken?.type?.label === "]" ? "[" : "[\n";
+          } else if (isObjectLiteral(token, this.#lastToken)) {
+            
+            stackEntry = nextToken?.type?.label === "}" ? "{" : "{\n";
+          } else if (ttl == "{") {
+            
+            stackEntry = "{\n";
           } else {
-            this.#stack.push(ttl || ttk);
+            stackEntry = ttl || ttk;
           }
+
+          this.#stack.push(stackEntry);
         }
 
         this.#maybeDecrementIndent(token);
@@ -9701,9 +9742,10 @@
 
       #maybeIncrementIndent(token) {
         if (
-          token.type.label == "{" ||
           
-          (token.isArrayLiteral && this.#stack.at(-1) === "[\n") ||
+          (token.type.label == "{" && this.#stack.at(-1) === "{\n") ||
+          
+          (token.type.label == "[" && this.#stack.at(-1) === "[\n") ||
           token.type.keyword == "switch"
         ) {
           this.#indentLevel++;
@@ -9713,7 +9755,7 @@
       #shouldDecrementIndent(token) {
         const top = this.#stack.at(-1);
         const ttl = token.type.label;
-        return (ttl == "}" && top != "${") || (ttl == "]" && top == "[\n");
+        return (ttl == "}" && top == "{\n") || (ttl == "]" && top == "[\n");
       }
 
       #maybeDecrementIndent(token) {
@@ -9874,6 +9916,32 @@
         return true;
       }
       return PRE_ARRAY_LITERAL_TOKENS.has(
+        lastToken.type.keyword || lastToken.type.label
+      );
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    function isObjectLiteral(token, lastToken) {
+      if (token.type.label != "{") {
+        return false;
+      }
+      if (!lastToken) {
+        return false;
+      }
+      if (lastToken.type.isAssign) {
+        return true;
+      }
+      return PRE_OBJECT_LITERAL_TOKENS.has(
         lastToken.type.keyword || lastToken.type.label
       );
     }
@@ -10040,16 +10108,14 @@
 
 
     function isLineDelimiter(token, stack) {
-      
-      if (token.isArrayLiteral && stack.at(-1) === "[\n") {
-        return true;
-      }
-
       const ttl = token.type.label;
       const top = stack.at(-1);
       return (
         (ttl == ";" && top != "(") ||
-        ttl == "{" ||
+        
+        (ttl == "{" && top == "{\n") ||
+        
+        (ttl == "[" && top == "[\n") ||
         (ttl == "," && top != "(") ||
         (ttl == ":" && (top == "case" || top == "default"))
       );
