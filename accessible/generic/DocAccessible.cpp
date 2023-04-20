@@ -1384,6 +1384,24 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
 
     
     
+    if (frame && frame->IsHiddenByContentVisibilityOnAnyAncestor(
+                     nsIFrame::IncludeContentVisibility::Hidden)) {
+      ContentRemoved(aRoot);
+      return false;
+    }
+
+    if (!frame && nsCoreUtils::CanCreateAccessibleWithoutFrame(aRoot)) {
+      
+      
+      if (nsCoreUtils::IsHiddenNodeByContentVisibilityOnAnyAncestor(
+              aRoot, StyleContentVisibility::Hidden)) {
+        ContentRemoved(aRoot);
+        return false;
+      }
+    }
+
+    
+    
     
     
     
