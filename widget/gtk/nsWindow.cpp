@@ -4208,11 +4208,6 @@ void nsWindow::OnEnterNotifyEvent(GdkEventCrossing* aEvent) {
     return;
   }
 
-  if (aEvent->mode == GDK_CROSSING_GRAB ||
-      aEvent->mode == GDK_CROSSING_UNGRAB) {
-    return;
-  }
-
   
   
   DispatchMissedButtonReleases(aEvent);
@@ -4289,11 +4284,6 @@ void nsWindow::OnLeaveNotifyEvent(GdkEventCrossing* aEvent) {
   
   
   if (aEvent->subwindow) {
-    return;
-  }
-
-  if (aEvent->mode == GDK_CROSSING_GRAB ||
-      aEvent->mode == GDK_CROSSING_UNGRAB) {
     return;
   }
 
