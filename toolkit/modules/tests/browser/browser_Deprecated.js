@@ -11,12 +11,12 @@ const { Deprecated } = ChromeUtils.importESModule(
 
 
 function basicDeprecatedFunction() {
-  Deprecated.warning("this method is deprecated.", "http://example.com");
+  Deprecated.warning("this method is deprecated.", "https://example.com");
   return true;
 }
 
 function deprecationFunctionBogusCallstack() {
-  Deprecated.warning("this method is deprecated.", "http://example.com", {
+  Deprecated.warning("this method is deprecated.", "https://example.com", {
     caller: {},
   });
   return true;
@@ -29,7 +29,7 @@ function deprecationFunctionCustomCallstack() {
   }
   Deprecated.warning(
     "this method is deprecated.",
-    "http://example.com",
+    "https://example.com",
     getStack()
   );
   return true;
@@ -42,7 +42,7 @@ var tests = [
     expectedObservation(aMessage) {
       testAMessage(aMessage);
       ok(
-        aMessage.errorMessage.indexOf("basicDeprecatedFunction") > 0,
+        aMessage.indexOf("basicDeprecatedFunction") > 0,
         "Callstack is correctly logged."
       );
     },
@@ -55,7 +55,7 @@ var tests = [
     },
     expectedObservation(aMessage) {
       ok(
-        aMessage.errorMessage.indexOf("must provide a URL") > 0,
+        aMessage.indexOf("must provide a URL") > 0,
         "Deprecation warning logged an empty URL argument."
       );
     },
@@ -67,17 +67,10 @@ var tests = [
     expectedObservation(aMessage) {
       testAMessage(aMessage);
       ok(
-        aMessage.errorMessage.indexOf("deprecationFunctionBogusCallstack") > 0,
+        aMessage.indexOf("deprecationFunctionBogusCallstack") > 0,
         "Callstack is correctly logged."
       );
     },
-  },
-  
-  {
-    deprecatedFunction: basicDeprecatedFunction,
-    expectedObservation: null,
-    
-    logWarnings: false,
   },
   
   {
@@ -85,7 +78,7 @@ var tests = [
     expectedObservation(aMessage) {
       testAMessage(aMessage);
       ok(
-        aMessage.errorMessage.indexOf("deprecationFunctionCustomCallstack") > 0,
+        aMessage.indexOf("deprecationFunctionCustomCallstack") > 0,
         "Callstack is correctly logged."
       );
     },
@@ -95,81 +88,48 @@ var tests = [
 ];
 
 
-var idx = -1;
+function testAMessage(aMessage) {
+  ok(
+    aMessage.indexOf("DEPRECATION WARNING: this method is deprecated.") === 0,
+    "Deprecation is correctly logged."
+  );
+  ok(aMessage.indexOf("https://example.com") > 0, "URL is correctly logged.");
+}
 
-function test() {
-  waitForExplicitFinish();
+add_task(async function test_setup() {
+  Services.prefs.setBoolPref(PREF_DEPRECATION_WARNINGS, true);
 
   
   ok(Deprecated, "Deprecated object exists");
+});
 
-  nextTest();
-}
+add_task(async function test_pref_enabled() {
+  for (let [idx, test] of tests.entries()) {
+    info("Running test #" + idx);
 
-
-function testAMessage(aMessage) {
-  ok(
-    aMessage.errorMessage.indexOf(
-      "DEPRECATION WARNING: this method is deprecated."
-    ) === 0,
-    "Deprecation is correctly logged."
-  );
-  ok(
-    aMessage.errorMessage.indexOf("http://example.com") > 0,
-    "URL is correctly logged."
-  );
-}
-
-function nextTest() {
-  idx++;
-
-  if (idx == tests.length) {
-    finish();
-    return;
-  }
-
-  info("Running test #" + idx);
-  let test = tests[idx];
-
-  
-  if (typeof test.logWarnings !== "undefined") {
-    Services.prefs.setBoolPref(PREF_DEPRECATION_WARNINGS, test.logWarnings);
-  }
-
-  
-  let consoleListener = {
-    observe(aMessage) {
-      
-      if (!(aMessage instanceof Ci.nsIScriptError)) {
-        return;
-      }
-      if (
-        !aMessage.errorMessage.includes("DEPRECATION WARNING: ") &&
-        !aMessage.errorMessage.includes("must provide a URL")
-      ) {
-        return;
-      }
-      ok(
-        aMessage instanceof Ci.nsIScriptError,
-        "Deprecation log message is an instance of type nsIScriptError."
+    let promiseObserved = TestUtils.consoleMessageObserved(subject => {
+      let msg = subject.wrappedJSObject.arguments?.[0];
+      return (
+        msg.includes("DEPRECATION WARNING: ") ||
+        msg.includes("must provide a URL")
       );
-
-      if (test.expectedObservation === null) {
-        ok(false, "Deprecated warning not expected");
-      } else {
-        test.expectedObservation(aMessage);
-      }
-
-      Services.console.unregisterListener(consoleListener);
-      executeSoon(nextTest);
-    },
-  };
-  Services.console.registerListener(consoleListener);
-  test.deprecatedFunction();
-  if (test.expectedObservation === null) {
-    executeSoon(function() {
-      Services.console.unregisterListener(consoleListener);
-      executeSoon(nextTest);
     });
+
+    test.deprecatedFunction();
+
+    let msg = await promiseObserved;
+
+    test.expectedObservation(msg.wrappedJSObject.arguments?.[0]);
   }
-}
+});
+
+add_task(async function test_pref_disabled() {
+  
+  Services.prefs.setBoolPref(PREF_DEPRECATION_WARNINGS, false);
+
+  let endFn = TestUtils.listenForConsoleMessages();
+  basicDeprecatedFunction();
+
+  let messages = await endFn();
+  Assert.equal(messages.length, 0, "Should not have received any messages");
+});
