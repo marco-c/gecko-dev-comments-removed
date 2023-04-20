@@ -3,7 +3,7 @@
 from utils import mathfont
 import fontforge
 
-arrowCodePoint = 0x2192 
+arrowCodePoint = 0x2192  
 
 v = 3 * mathfont.em
 f = mathfont.create("stretchstack-bottomshiftdown%d" % v,

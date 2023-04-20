@@ -25,10 +25,10 @@ font.math.AccentBaseHeight = 0
 font.math.OverbarExtraAscender = 0
 
 
-horizontalArrow = 0x295A 
-verticalArrow = 0x295C 
+horizontalArrow = 0x295A  
+verticalArrow = 0x295C  
 
-mathfont.createSizeVariants(font, aUsePUA = True, aCenterOnBaseline = False)
+mathfont.createSizeVariants(font, aUsePUA=True, aCenterOnBaseline=False)
 
 
 mathfont.createSquareGlyph(font, horizontalArrow)
