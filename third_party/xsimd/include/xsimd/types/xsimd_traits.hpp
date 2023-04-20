@@ -16,13 +16,6 @@
 
 #include "xsimd_batch.hpp"
 
-
-
-
-
-
-
-
 namespace xsimd
 {
 
@@ -216,14 +209,7 @@ namespace xsimd
 
 
 
-
-
-
-
-    template <class T>
-    struct is_batch;
-
-    template <class T>
+    template <class V>
     struct is_batch : std::false_type
     {
     };
@@ -237,12 +223,7 @@ namespace xsimd
 
 
 
-
-
-
-
-
-    template <class T>
+    template <class V>
     struct is_batch_bool : std::false_type
     {
     };
@@ -256,12 +237,7 @@ namespace xsimd
 
 
 
-
-
-
-
-
-    template <class T>
+    template <class V>
     struct is_batch_complex : std::false_type
     {
     };
@@ -270,50 +246,6 @@ namespace xsimd
     struct is_batch_complex<batch<std::complex<T>, A>> : std::true_type
     {
     };
-
-    
-
-
-
-
-
-
-
-    template <class T>
-    struct scalar_type
-    {
-        using type = T;
-    };
-    template <class T, class A>
-    struct scalar_type<batch<T, A>>
-    {
-        using type = T;
-    };
-
-    template <class T>
-    using scalar_type_t = typename scalar_type<T>::type;
-
-    
-
-
-
-
-
-
-
-    template <class T>
-    struct mask_type
-    {
-        using type = bool;
-    };
-    template <class T, class A>
-    struct mask_type<batch<T, A>>
-    {
-        using type = typename batch<T, A>::batch_bool_type;
-    };
-
-    template <class T>
-    using mask_type_t = typename mask_type<T>::type;
 }
 
 #endif
