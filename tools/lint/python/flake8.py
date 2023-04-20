@@ -63,8 +63,8 @@ def default_bindir():
     
     if platform.system() == "Windows":
         return os.path.join(sys.prefix, "Scripts")
-    else:
-        return os.path.join(sys.prefix, "bin")
+
+    return os.path.join(sys.prefix, "bin")
 
 
 class NothingToLint(Exception):
