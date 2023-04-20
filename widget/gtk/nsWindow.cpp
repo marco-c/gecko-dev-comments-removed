@@ -4746,7 +4746,7 @@ void nsWindow::OnButtonReleaseEvent(GdkEventButton* aEvent) {
 
   
   
-  if (mIsPIPWindow && aEvent->button == 3) {
+  if (mAlwaysOnTop && aEvent->button == 3) {
     TryToShowNativeWindowMenu(aEvent);
   }
 }
