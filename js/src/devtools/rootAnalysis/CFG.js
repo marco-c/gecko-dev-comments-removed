@@ -908,22 +908,58 @@ function basicBlockEatsVariable(variable, body, startpoint)
     return false;
 }
 
-var PROP_REFCNT = 1 << 0;
+var PROP_REFCNT          = 1 << 0;
+var PROP_SHARED_PTR_DTOR = 1 << 1;
 
 function getCalleeProperties(calleeName) {
     let props = 0;
 
     if (isRefcountedDtor(calleeName)) {
-        props = props | PROP_REFCNT;
+        props |= PROP_REFCNT;
+    }
+    if (calleeName.includes("~shared_ptr()")) {
+        props |= PROP_SHARED_PTR_DTOR;
     }
     return props;
 }
 
+
+function mangle(name) {
+    return name.length + name;
+}
+
+var TriviallyDestructibleTypes = new Set([
+    
+    
+    "void", "wchar_t", "bool", "char", "short", "int", "long", "float", "double",
+    "__int64", "__int128", "__float128", "char32_t", "char16_t", "char8_t",
+    
+    
+    
+    "_IO_FILE"
+]);
+function synthesizeDestructorName(className) {
+    if (className.includes("<") || className.includes(" ") || className.includes("{")) {
+        return;
+    }
+    if (TriviallyDestructibleTypes.has(className)) {
+        return;
+    }
+    const parts = className.split("::");
+    const mangled_dtor = "_ZN" + parts.map(p => mangle(p)).join("") + "D2Ev";
+    const pretty_dtor = `void ${className}::~${parts.at(-1)}()`;
+    
+    
+    
+    return mangled_dtor + "$" + pretty_dtor;
+}
+
 function getCallEdgeProperties(body, edge, calleeName, functionBodies) {
     let attrs = 0;
+    let extraCalls = [];
 
     if (edge.Kind !== "Call") {
-        return { attrs };
+        return { attrs, extraCalls };
     }
 
     const props = getCalleeProperties(calleeName);
@@ -938,8 +974,36 @@ function getCallEdgeProperties(body, edge, calleeName, functionBodies) {
         }
     }
 
+    if (props & PROP_SHARED_PTR_DTOR) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        const m = calleeName.match(/shared_ptr<(.*?)>::~shared_ptr\(\)(?: \[with T = ([\w:]+))?/);
+        assert(m);
+        let className = m[1] == "T" ? m[2] : m[1];
+        assert(className != "");
+        
+        className = className.replace("const ", "");
+        className = className.replace("volatile ", "");
+        const dtor = synthesizeDestructorName(className);
+        if (dtor) {
+            attrs |= ATTR_REPLACED;
+            extraCalls.push({
+                attrs: ATTR_SYNTHETIC,
+                name: dtor,
+            });
+        }
+    }
+
     if ((props & PROP_REFCNT) == 0) {
-        return { attrs };
+        return { attrs, extraCalls };
     }
 
     let callee = edge.Exp[0];
@@ -950,7 +1014,7 @@ function getCallEdgeProperties(body, edge, calleeName, functionBodies) {
     const instance = edge.PEdgeCallInstance.Exp;
     if (instance.Kind !== "Var") {
         
-        return { attrs };
+        return { attrs, extraCalls };
     }
 
     
@@ -1006,7 +1070,7 @@ function getCallEdgeProperties(body, edge, calleeName, functionBodies) {
     if (edgeIsNonReleasingDtor) {
         attrs |= ATTR_GC_SUPPRESSED | ATTR_NONRELEASING;
     }
-    return { attrs };
+    return { attrs, extraCalls };
 }
 
 

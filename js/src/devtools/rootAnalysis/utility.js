@@ -16,9 +16,11 @@ var ATTR_CANSCRIPT_BOUNDED = 1 << 1;
 var ATTR_DOM_ITERATING     = 1 << 2; 
 var ATTR_NONRELEASING      = 1 << 3; 
 var ATTR_REPLACED          = 1 << 4; 
+var ATTR_SYNTHETIC         = 1 << 5; 
 
+var ATTR_LAST              = 1 << 5;
 var ATTRS_NONE             = 0;
-var ATTRS_ALL              = (ATTR_REPLACED << 1) - 1; 
+var ATTRS_ALL              = (ATTR_LAST << 1) - 1; 
 
 
 
