@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <shlobj.h>
 #include <stdio.h>
@@ -13,6 +13,9 @@
 #include <schnlsp.h>
 #include <winternl.h>
 #include <processthreadsapi.h>
+
+#include <bcrypt.h>
+#pragma comment(lib, "bcrypt.lib")
 
 #include "AssemblyPayloads.h"
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
@@ -47,7 +50,7 @@ NTSTATUS NTAPI NtMapViewOfSection(
     SECTION_INHERIT aInheritDisposition, ULONG aAllocationType,
     ULONG aProtectionFlags);
 
-
+// These pointers are disguised as PVOID to avoid pulling in obscure headers
 PVOID NTAPI LdrResolveDelayLoadedAPI(PVOID, PVOID, PVOID, PVOID, PVOID, ULONG);
 void CALLBACK ProcessCaretEvents(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD,
                                  DWORD);
@@ -60,7 +63,7 @@ BOOL WINAPI ApiSetQueryApiSetPresence(PCUNICODE_STRING, PBOOLEAN);
 BOOL WINAPI
 SetProcessMitigationPolicy(PROCESS_MITIGATION_POLICY aMitigationPolicy,
                            PVOID aBuffer, SIZE_T aBufferLen);
-#endif  
+#endif  // (_WIN32_WINNT < 0x0602)
 
 using namespace mozilla;
 
@@ -83,20 +86,20 @@ extern "C" __declspec(dllexport) __declspec(noinline) payload
   return p;
 }
 
-
-
-
+// payloadNotHooked is a target function for a test to expect a negative result.
+// We cannot use rotatePayload for that purpose because our detour cannot hook
+// a function detoured already.  Please keep this function always unhooked.
 extern "C" __declspec(dllexport) __declspec(noinline) payload
     payloadNotHooked(payload p) {
-  
+  // Do something different from rotatePayload to avoid ICF.
   p.a ^= p.b;
   p.b ^= p.c;
   p.c ^= p.a;
   return p;
 }
 
-
-
+// Declared as volatile to prevent optimizers from incorrectly eliding accesses
+// to it. (See bug 1769001 for a motivating example.)
 static volatile bool patched_func_called = false;
 
 static WindowsDllInterceptor::FuncHookType<decltype(&rotatePayload)>
@@ -110,7 +113,7 @@ static payload patched_rotatePayload(payload p) {
   return orig_rotatePayload(p);
 }
 
-
+// Invoke aFunc by taking aArg's contents and using them as aFunc's arguments
 template <typename OrigFuncT, typename... Args,
           typename ArgTuple = Tuple<Args...>, size_t... Indices>
 decltype(auto) Apply(OrigFuncT& aFunc, ArgTuple&& aArgs,
@@ -142,8 +145,8 @@ decltype(auto) Apply(OrigFuncT& aFunc, ArgTuple&& aArgs,
     return patched_func_called;                                                \
   }
 
-
-
+// C++11 allows empty arguments to macros. clang works just fine. MSVC does the
+// right thing, but it also throws up warning C4003.
 #if defined(_MSC_VER) && !defined(__clang__)
 DEFINE_TEST_FUNCTION(__cdecl)
 #else
@@ -153,9 +156,9 @@ DEFINE_TEST_FUNCTION()
 #ifdef _M_IX86
 DEFINE_TEST_FUNCTION(__stdcall)
 DEFINE_TEST_FUNCTION(__fastcall)
-#endif  
+#endif  // _M_IX86
 
-
+// Test the hooked function against the supplied predicate
 template <typename OrigFuncT, typename PredicateT, typename... Args>
 bool CheckHook(OrigFuncT& aOrigFunc, const char* aDllName,
                const char* aFuncName, PredicateT&& aPred, Args&&... aArgs) {
@@ -176,28 +179,28 @@ bool CheckHook(OrigFuncT& aOrigFunc, const char* aDllName,
 }
 
 struct InterceptorFunction {
-  static const size_t EXEC_MEMBLOCK_SIZE = 64 * 1024;  
+  static const size_t EXEC_MEMBLOCK_SIZE = 64 * 1024;  // 64K
 
   static InterceptorFunction& Create() {
-    
+    // Make sure the executable memory is allocated
     if (!sBlock) {
       Init();
     }
     MOZ_ASSERT(sBlock);
 
-    
+    // Make sure we aren't making more functions than we allocated room for
     MOZ_RELEASE_ASSERT((sNumInstances + 1) * sizeof(InterceptorFunction) <=
                        EXEC_MEMBLOCK_SIZE);
 
-    
+    // Grab the next InterceptorFunction from executable memory
     InterceptorFunction& ret = *reinterpret_cast<InterceptorFunction*>(
         sBlock + (sNumInstances++ * sizeof(InterceptorFunction)));
 
-    
+    // Set the InterceptorFunction to the code template.
     auto funcCode = &ret[0];
     memcpy(funcCode, sInterceptorTemplate, TemplateLength);
 
-    
+    // Fill in the patched_func_called pointer in the template.
     auto pfPtr =
         reinterpret_cast<volatile bool**>(&ret[PatchedFuncCalledIndex]);
     *pfPtr = &patched_func_called;
@@ -214,19 +217,19 @@ struct InterceptorFunction {
   }
 
  private:
-  
-  
-  
-  
-  
-  
-  
-  
+  // We intercept functions with short machine-code functions that set a boolean
+  // and run the stub that launches the original function.  Each entry in the
+  // array is the code for one of those interceptor functions.  We cannot
+  // free this memory until the test shuts down.
+  // The templates have spots for the address of patched_func_called
+  // and for the address of the stub function.  Their indices in the byte
+  // array are given as constants below and they appear as blocks of
+  // 0xff bytes in the templates.
 #if defined(_M_X64)
-  
-  
-  
-  
+  //  0: 48 b8 ff ff ff ff ff ff ff ff    movabs rax, &patched_func_called
+  //  a: c6 00 01                         mov    BYTE PTR [rax],0x1
+  //  d: 48 b8 ff ff ff ff ff ff ff ff    movabs rax, &stub_func_ptr
+  // 17: ff e0                            jmp    rax
   static constexpr uint8_t sInterceptorTemplate[] = {
       0x48, 0xB8, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
       0xFF, 0xC6, 0x00, 0x01, 0x48, 0xB8, 0xFF, 0xFF, 0xFF,
@@ -234,22 +237,22 @@ struct InterceptorFunction {
   static const size_t PatchedFuncCalledIndex = 0x2;
   static const size_t StubFuncIndex = 0xf;
 #elif defined(_M_IX86)
-  
-  
-  
+  // 0: c6 05 ff ff ff ff 01     mov    BYTE PTR &patched_func_called, 0x1
+  // 7: 68 ff ff ff ff           push   &stub_func_ptr
+  // c: c3                       ret
   static constexpr uint8_t sInterceptorTemplate[] = {
       0xC6, 0x05, 0xFF, 0xFF, 0xFF, 0xFF, 0x01,
       0x68, 0xFF, 0xFF, 0xFF, 0xFF, 0xC3};
   static const size_t PatchedFuncCalledIndex = 0x2;
   static const size_t StubFuncIndex = 0x8;
 #elif defined(_M_ARM64)
-  
-  
-  
-  
-  
-  
-  
+  //  0: 31 00 80 52    movz w17, #0x1
+  //  4: 90 00 00 58    ldr  x16, #16
+  //  8: 11 02 00 39    strb w17, [x16]
+  //  c: 90 00 00 58    ldr  x16, #16
+  // 10: 00 02 1F D6    br   x16
+  // 14: &patched_func_called
+  // 1c: &stub_func_ptr
   static constexpr uint8_t sInterceptorTemplate[] = {
       0x31, 0x00, 0x80, 0x52, 0x90, 0x00, 0x00, 0x58, 0x11, 0x02, 0x00, 0x39,
       0x90, 0x00, 0x00, 0x58, 0x00, 0x02, 0x1F, 0xD6, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -285,8 +288,8 @@ constexpr uint8_t InterceptorFunction::sInterceptorTemplate[];
 
 #ifdef _M_X64
 
-
-
+// To check that unwind information propagates from hooked functions to their
+// stubs, we need to find the real address where the detoured code lives.
 class RedirectionResolver : public interceptor::WindowsDllPatcherBase<
                                 interceptor::VMSharingPolicyShared> {
  public:
@@ -296,8 +299,8 @@ class RedirectionResolver : public interceptor::WindowsDllPatcherBase<
     bool isDuplicateHandle = (reinterpret_cast<void*>(aFunc) ==
                               reinterpret_cast<void*>(&::DuplicateHandle));
 
-    
-    
+    // We need to reproduce the behavior of WindowsDllInterceptor::AddDetour
+    // with respect to redirection, including the corner case for bug 1659398.
     if (isWin8 && isDuplicateHandle) {
       return reinterpret_cast<uintptr_t>(aFunc);
     }
@@ -306,9 +309,9 @@ class RedirectionResolver : public interceptor::WindowsDllPatcherBase<
   }
 };
 
-#endif  
+#endif  // _M_X64
 
-
+// Hook the function and optionally attempt calling it
 template <typename OrigFuncT, size_t N, typename PredicateT, typename... Args>
 bool TestHook(const char (&dll)[N], const char* func, PredicateT&& aPred,
               Args&&... aArgs) {
@@ -330,14 +333,14 @@ bool TestHook(const char (&dll)[N], const char* func, PredicateT&& aPred,
 
 #ifdef _M_X64
 
-  
-  
-  
-  
+  // Resolve what is the actual address of the code that will be detoured, as
+  // that's the code we want to compare with when we check for unwind
+  // information. Do that *before* detouring, although the address will only be
+  // used after detouring.
   RedirectionResolver resolver;
   auto detouredCodeAddr = resolver.ResolveRedirectedAddressForTest(funcAddr);
 
-#endif  
+#endif  // _M_X64
 
   bool successful = false;
   WindowsDllInterceptor TestIntercept;
@@ -357,8 +360,8 @@ bool TestHook(const char (&dll)[N], const char* func, PredicateT&& aPred,
 
 #ifdef _M_X64
 
-    
-    
+    // Check that unwind information has been added if and only if it was
+    // present for the original detoured code.
     uintptr_t funcImageBase = 0;
     auto funcEntry =
         RtlLookupFunctionEntry(detouredCodeAddr, &funcImageBase, nullptr);
@@ -403,7 +406,7 @@ bool TestHook(const char (&dll)[N], const char* func, PredicateT&& aPred,
       }
     }
 
-#endif  
+#endif  // _M_X64
 
     if (!aPred) {
       printf(
@@ -414,7 +417,7 @@ bool TestHook(const char (&dll)[N], const char* func, PredicateT&& aPred,
       return true;
     }
 
-    
+    // Test the DLL function we just hooked.
     return CheckHook(reinterpret_cast<OrigFuncT&>(funcAddr), dll, func,
                      std::forward<PredicateT>(aPred),
                      std::forward<Args>(aArgs)...);
@@ -425,7 +428,7 @@ bool TestHook(const char (&dll)[N], const char* func, PredicateT&& aPred,
         func, dll);
     fflush(stdout);
 
-    
+    // Print out the function's bytes so that we can easily analyze the error.
     nsModuleHandle mod(::LoadLibraryW(dllW));
     FARPROC funcAddr = ::GetProcAddress(mod, func);
     if (funcAddr) {
@@ -446,7 +449,7 @@ bool TestHook(const char (&dll)[N], const char* func, PredicateT&& aPred,
   }
 }
 
-
+// Detour the function and optionally attempt calling it
 template <typename OrigFuncT, size_t N, typename PredicateT>
 bool TestDetour(const char (&dll)[N], const char* func, PredicateT&& aPred) {
   auto orig_func(
@@ -477,7 +480,7 @@ bool TestDetour(const char (&dll)[N], const char* func, PredicateT&& aPred) {
       return true;
     }
 
-    
+    // Test the DLL function we just hooked.
     HMODULE module = ::LoadLibraryW(dllW);
     FARPROC funcAddr = ::GetProcAddress(module, func);
     if (!funcAddr) {
@@ -496,8 +499,8 @@ bool TestDetour(const char (&dll)[N], const char* func, PredicateT&& aPred) {
   }
 }
 
-
-
+// If a function pointer's type returns void*, this template converts that type
+// to return uintptr_t instead, for the purposes of predicates.
 template <typename FuncT>
 struct SubstituteForVoidPtr {
   using Type = FuncT;
@@ -518,9 +521,9 @@ template <typename... Args>
 struct SubstituteForVoidPtr<void*(__fastcall*)(Args...)> {
   using Type = uintptr_t(__fastcall*)(Args...);
 };
-#endif  
+#endif  // _M_IX86
 
-
+// Determines the function's return type
 template <typename FuncT>
 struct ReturnType;
 
@@ -539,9 +542,9 @@ template <typename R, typename... Args>
 struct ReturnType<R(__fastcall*)(Args...)> {
   using Type = R;
 };
-#endif  
+#endif  // _M_IX86
 
-
+// Predicates that may be supplied during tests
 template <typename FuncT>
 struct Predicates {
   using ArgType = typename ReturnType<FuncT>::Type;
@@ -562,8 +565,8 @@ struct Predicates {
   }
 };
 
-
-
+// Functions that return void should be ignored, so we specialize the
+// Ignore predicate for that case. Use nullptr as the value to compare against.
 template <typename... Args>
 struct Predicates<void (*)(Args...)> {
   template <nullptr_t DummyVal>
@@ -588,49 +591,49 @@ struct Predicates<void(__fastcall*)(Args...)> {
     return true;
   }
 };
-#endif  
+#endif  // _M_IX86
 
-
-
-
-
-
-
-
-
+// The standard test. Hook |func|, and then try executing it with all zero
+// arguments, using |pred| and |comp| to determine whether the call successfully
+// executed. In general, you want set pred and comp such that they return true
+// when the function is returning whatever value is expected with all-zero
+// arguments.
+//
+// Note: When |func| returns void, you must supply |Ignore| and |nullptr| as the
+// |pred| and |comp| arguments, respectively.
 #define TEST_HOOK(dll, func, pred, comp) \
   TestHook<decltype(&func)>(dll, #func,  \
                             &Predicates<decltype(&func)>::pred<comp>)
 
-
-
-
-
+// We need to special-case functions that return INVALID_HANDLE_VALUE
+// (ie, CreateFile). Our template machinery for comparing values doesn't work
+// with integer constants passed as pointers (well, it works on MSVC, but not
+// clang, because that is not standard-compliant).
 #define TEST_HOOK_FOR_INVALID_HANDLE_VALUE(dll, func)                   \
   TestHook<SubstituteForVoidPtr<decltype(&func)>::Type>(                \
       dll, #func,                                                       \
       &Predicates<SubstituteForVoidPtr<decltype(&func)>::Type>::Equals< \
           uintptr_t(-1)>)
 
-
-
-
-
+// This variant allows you to explicitly supply arguments to the hooked function
+// during testing. You want to provide arguments that produce the conditions
+// that induce the function to return a value that is accepted by your
+// predicate.
 #define TEST_HOOK_PARAMS(dll, func, pred, comp, ...) \
   TestHook<decltype(&func)>(                         \
       dll, #func, &Predicates<decltype(&func)>::pred<comp>, __VA_ARGS__)
 
-
-
+// This is for cases when we want to hook |func|, but it is unsafe to attempt
+// to execute the function in the context of a test.
 #define TEST_HOOK_SKIP_EXEC(dll, func)                                        \
   TestHook<decltype(&func)>(                                                  \
       dll, #func,                                                             \
       reinterpret_cast<bool (*)(typename ReturnType<decltype(&func)>::Type)>( \
           NULL))
 
-
-
-
+// The following three variants are identical to the previous macros,
+// however the forcibly use a Detour on 32-bit Windows. On 64-bit Windows,
+// these macros are identical to their TEST_HOOK variants.
 #define TEST_DETOUR(dll, func, pred, comp) \
   TestDetour<decltype(&func)>(dll, #func,  \
                               &Predicates<decltype(&func)>::pred<comp>)
@@ -661,7 +664,7 @@ bool MaybeTestHook(const bool cond, const char (&dll)[N], const char* func,
                              std::forward<Args>(aArgs)...);
 }
 
-
+// Like TEST_HOOK, but the test is only executed when cond is true.
 #define MAYBE_TEST_HOOK(cond, dll, func, pred, comp) \
   MaybeTestHook<decltype(&func)>(cond, dll, #func,   \
                                  &Predicates<decltype(&func)>::pred<comp>)
@@ -702,7 +705,7 @@ bool ShouldTestTipTsf() {
     return false;
   }
 
-  
+  // Leak the module so that it's loaded for the interceptor test
   return true;
 }
 
@@ -717,19 +720,19 @@ bool HasApiSetQueryApiSetPresence() {
     return false;
   }
 
-  
+  // Prepare gEmptyUnicodeString for the test
   ::RtlInitUnicodeString(&gEmptyUnicodeString, gEmptyUnicodeStringLiteral);
 
   return true;
 }
 
-
+// Set this to true to test function unhooking (currently broken).
 const bool ShouldTestUnhookFunction = false;
 
 #if defined(_M_X64) || defined(_M_ARM64)
 
-
-
+// Use VMSharingPolicyUnique for the ShortInterceptor, as it needs to
+// reserve its trampoline memory in a special location.
 using ShortInterceptor = mozilla::interceptor::WindowsDllInterceptor<
     mozilla::interceptor::VMSharingPolicyUnique<
         mozilla::interceptor::MMPolicyInProcess>>;
@@ -737,7 +740,7 @@ using ShortInterceptor = mozilla::interceptor::WindowsDllInterceptor<
 static ShortInterceptor::FuncHookType<decltype(&::NtMapViewOfSection)>
     orig_NtMapViewOfSection;
 
-#endif  
+#endif  // defined(_M_X64) || defined(_M_ARM64)
 
 bool TestShortDetour() {
 #if defined(_M_X64) || defined(_M_ARM64)
@@ -751,7 +754,7 @@ bool TestShortDetour() {
     return false;
   }
 
-  {  
+  {  // Scope for shortInterceptor
     ShortInterceptor shortInterceptor;
     shortInterceptor.TestOnlyDetourInit(
         L"ntdll.dll",
@@ -777,12 +780,12 @@ bool TestShortDetour() {
 
     if (!CheckHook(pNtMapViewOfSection, "ntdll.dll", "NtMapViewOfSection",
                    pred)) {
-      
+      // CheckHook has already printed the error message for us
       return false;
     }
   }
 
-  
+  // Now ensure that our hook cleanup worked
   if (ShouldTestUnhookFunction) {
     NTSTATUS status =
         pNtMapViewOfSection(nullptr, nullptr, nullptr, 0, 0, nullptr, nullptr,
@@ -820,24 +823,24 @@ struct TestCase {
         mPatchedOnce(false) {}
 } g_AssemblyTestCases[] = {
 #if defined(__clang__)
-
-
+// We disable these testcases because the code coverage instrumentation injects
+// code in a way that WindowsDllInterceptor doesn't understand.
 #  ifndef MOZ_CODE_COVERAGE
 #    if defined(_M_X64)
-    
-    
+    // Since we have PatchIfTargetIsRecognizedTrampoline for x64, we expect the
+    // original jump destination is returned as a stub.
     TestCase("MovPushRet", JumpDestination),
     TestCase("MovRaxJump", JumpDestination),
     TestCase("DoubleJump", JumpDestination),
 
-    
-    
+    // Passing NoStubAddressCheck as the following testcases return
+    // a trampoline address instead of the original destination.
     TestCase("NearJump", NoStubAddressCheck),
     TestCase("OpcodeFF", NoStubAddressCheck),
     TestCase("IndirectCall", NoStubAddressCheck),
     TestCase("MovImm64", NoStubAddressCheck),
 #    elif defined(_M_IX86)
-    
+    // Skip the stub address check as we always generate a trampoline for x86.
     TestCase("PushRet", NoStubAddressCheck),
     TestCase("MovEaxJump", NoStubAddressCheck),
     TestCase("DoubleJump", NoStubAddressCheck),
@@ -846,11 +849,11 @@ struct TestCase {
     TestCase("LooksLikeLockPrefix", NoStubAddressCheck),
 #    endif
 #    if !defined(DEBUG)
-    
+    // Skip on Debug build because it hits MOZ_ASSERT_UNREACHABLE.
     TestCase("UnsupportedOp", ExpectedFail),
-#    endif  
-#  endif    
-#endif      
+#    endif  // !defined(DEBUG)
+#  endif    // MOZ_CODE_COVERAGE
+#endif      // defined(__clang__)
 };
 
 template <typename InterceptorType>
@@ -862,8 +865,8 @@ bool TestAssemblyFunctions() {
 
   for (auto& testCase : g_AssemblyTestCases) {
     if (testCase.mExpectedStub == NoStubAddressCheck && testCase.mPatchedOnce) {
-      
-      
+      // For the testcases with NoStubAddressCheck, we revert a hook by
+      // jumping into the original stub, which is not detourable again.
       continue;
     }
 
@@ -893,7 +896,7 @@ bool TestAssemblyFunctions() {
             "A wrong detour errorcode was set on detour error.\n");
         return false;
       }
-#endif  
+#endif  // defined(NIGHTLY_BUILD)
       printf("TEST-PASS | WindowsDllInterceptor | %s\n",
              testCase.mFunctionName);
       continue;
@@ -940,11 +943,11 @@ bool TestAssemblyFunctions() {
 }
 
 #if defined(_M_X64) && !defined(MOZ_CODE_COVERAGE)
-
-
-
-
-
+// We want to test hooking and unhooking with unwind information, so we need:
+//  - a VMSharingPolicy such that ShouldUnhookUponDestruction() is true and
+//    Items() is implemented;
+//  - a MMPolicy such that ShouldUnhookUponDestruction() is true and
+//    kSupportsUnwindInfo is true.
 using DetouredCallInterceptor = mozilla::interceptor::WindowsDllInterceptor<
     mozilla::interceptor::VMSharingPolicyUnique<
         mozilla::interceptor::MMPolicyInProcess>>;
@@ -955,10 +958,10 @@ struct DetouredCallChunk {
   uint8_t code[gDetouredCallCodeSize];
 };
 
-
-
-
-
+// Unfortunately using RtlAddFunctionTable for static code that lives within
+// a module doesn't seem to work. Presumably it conflicts with the static
+// function tables. So we recreate gDetouredCall as dynamic code to be able to
+// associate it with unwind information.
 decltype(&DetouredCallCode) gDetouredCall =
     []() -> decltype(&DetouredCallCode) {
   auto detouredCallChunk = reinterpret_cast<DetouredCallChunk*>(
@@ -998,16 +1001,16 @@ decltype(&DetouredCallCode) gDetouredCall =
   return reinterpret_cast<decltype(&DetouredCallCode)>(detouredCallChunk->code);
 }();
 
-
-
-
+// We use our own variable instead of patched_func_called because the callee of
+// gDetouredCall could end up calling other, already hooked functions could
+// change patched_func_called.
 static volatile bool sCalledPatchedDetouredCall = false;
 static volatile bool sCalledDetouredCallCallee = false;
 static volatile bool sCouldUnwindFromDetouredCallCallee = false;
 void DetouredCallCallee() {
   sCalledDetouredCallCallee = true;
 
-  
+  // Check that we can fully unwind the stack
   CONTEXT contextRecord{};
   RtlCaptureContext(&contextRecord);
   if (!contextRecord.Rip) {
@@ -1110,7 +1113,7 @@ bool TestCallingDetouredCall(const char* aTestDescription,
   return true;
 }
 
-
+// Test that detouring a call preserves unwind information (bug 1798787).
 bool TestDetouredCallUnwindInfo() {
   if (!gDetouredCall) {
     printf(
@@ -1130,14 +1133,14 @@ bool TestDetouredCallUnwindInfo() {
     return false;
   }
 
-  
+  // We first double check that we manage to unwind when we *do not* detour
   if (!TestCallingDetouredCall("Before hooking", false)) {
     return false;
   }
 
   uintptr_t StubAddress = 0;
 
-  
+  // The real test starts here: let's detour and check if we can still unwind
   {
     DetouredCallInterceptor ExeIntercept;
     ExeIntercept.Init("TestDllInterceptor.exe");
@@ -1168,14 +1171,14 @@ bool TestDetouredCallUnwindInfo() {
     TestCallingDetouredCall("After hooking", true);
   }
 
-  
+  // Check that we can still unwind after clearing the hook.
   return TestCallingDetouredCall("After unhooking", false);
 }
-#endif  
+#endif  // defined(_M_X64) && !defined(MOZ_CODE_COVERAGE)
 
 bool TestDynamicCodePolicy() {
   if (!IsWin8Point1OrLater()) {
-    
+    // Skip if a platform does not support this policy.
     return true;
   }
 
@@ -1205,8 +1208,8 @@ bool TestDynamicCodePolicy() {
   WindowsDllInterceptor ExeIntercept;
   ExeIntercept.Init("TestDllInterceptor.exe");
 
-  
-  
+  // Make sure we fail to hook a function if ProcessDynamicCodePolicy is on
+  // because we cannot create an executable trampoline region.
   if (orig_payloadNotHooked.Set(ExeIntercept, "payloadNotHooked",
                                 &patched_rotatePayload)) {
     printf(
@@ -1227,9 +1230,9 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
   LARGE_INTEGER start;
   QueryPerformanceCounter(&start);
 
-  
-  
-  
+  // We disable this part of the test because the code coverage instrumentation
+  // injects code in rotatePayload in a way that WindowsDllInterceptor doesn't
+  // understand.
 #ifndef MOZ_CODE_COVERAGE
   payload initial = {0x12345678, 0xfc4e9d31, 0x87654321};
   payload p0, p1;
@@ -1316,17 +1319,17 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
   memset(&credHandle, 0, sizeof(CredHandle));
   OBJECT_ATTRIBUTES attributes = {};
 
-  
-  
+  // NB: These tests should be ordered such that lower-level APIs are tested
+  // before higher-level APIs.
   if (TestShortDetour() &&
-  
-  
+  // Run <ShortInterceptor> first because <WindowsDllInterceptor>
+  // does not clean up hooks.
 #if defined(_M_X64)
       TestAssemblyFunctions<ShortInterceptor>() &&
 #endif
       TestAssemblyFunctions<WindowsDllInterceptor>() &&
 #ifdef _M_IX86
-      
+      // We keep this test to hook complex code on x86. (Bug 850957)
       TEST_HOOK("ntdll.dll", NtFlushBuffersFile, NotEquals, 0) &&
 #endif
       TEST_HOOK("ntdll.dll", NtCreateFile, NotEquals, 0) &&
@@ -1349,30 +1352,30 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
                 INVALID_FILE_ATTRIBUTES) &&
 #if !defined(_M_ARM64)
 #  ifndef MOZ_ASAN
-      
-      
-      
+      // Bug 733892: toolkit/crashreporter/nsExceptionHandler.cpp
+      // This fails on ASan because the ASan runtime already hooked this
+      // function
       TEST_HOOK("kernel32.dll", SetUnhandledExceptionFilter, Ignore, nullptr) &&
 #  endif
-#endif
+#endif  // !defined(_M_ARM64)
 #ifdef _M_IX86
       TEST_HOOK_FOR_INVALID_HANDLE_VALUE("kernel32.dll", CreateFileW) &&
 #endif
 #if !defined(_M_ARM64)
       TEST_HOOK_FOR_INVALID_HANDLE_VALUE("kernel32.dll", CreateFileA) &&
-#endif  
+#endif  // !defined(_M_ARM64)
 #if !defined(_M_ARM64)
       TEST_HOOK("kernel32.dll", TlsAlloc, NotEquals, TLS_OUT_OF_INDEXES) &&
       TEST_HOOK_PARAMS("kernel32.dll", TlsFree, Equals, FALSE,
                        TLS_OUT_OF_INDEXES) &&
       TEST_HOOK("kernel32.dll", CloseHandle, Equals, FALSE) &&
       TEST_HOOK("kernel32.dll", DuplicateHandle, Equals, FALSE) &&
-#endif  
+#endif  // !defined(_M_ARM64)
       TEST_DETOUR_SKIP_EXEC("kernel32.dll", BaseThreadInitThunk) &&
 #if defined(_M_X64) || defined(_M_ARM64)
       MAYBE_TEST_HOOK(!IsWin8OrLater(), "kernel32.dll",
                       RtlInstallFunctionTableCallback, Equals, FALSE) &&
-      TEST_HOOK("user32.dll", GetKeyState, Ignore, 0) &&  
+      TEST_HOOK("user32.dll", GetKeyState, Ignore, 0) &&  // see Bug 1316415
 #endif
       TEST_HOOK("user32.dll", GetWindowInfo, Equals, FALSE) &&
       TEST_HOOK("user32.dll", TrackPopupMenu, Equals, FALSE) &&
@@ -1380,9 +1383,11 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
       TEST_HOOK("user32.dll", InSendMessageEx, Equals, ISMEX_NOSEND) &&
       TEST_HOOK("user32.dll", SendMessageTimeoutW, Equals, 0) &&
       TEST_HOOK("user32.dll", SetCursorPos, NotEquals, FALSE) &&
+      TEST_HOOK("bcrypt.dll", BCryptGenRandom, Equals,
+                static_cast<NTSTATUS>(STATUS_INVALID_HANDLE)) &&
 #if !defined(_M_ARM64)
       TEST_HOOK("imm32.dll", ImmGetContext, Equals, nullptr) &&
-#endif  
+#endif  // !defined(_M_ARM64)
       TEST_HOOK("imm32.dll", ImmGetCompositionStringW, Ignore, 0) &&
       TEST_HOOK_SKIP_EXEC("imm32.dll", ImmSetCandidateWindow) &&
       TEST_HOOK("imm32.dll", ImmNotifyIME, Equals, 0) &&
@@ -1415,9 +1420,9 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
                        SEC_E_INVALID_HANDLE, &credHandle) &&
 #if defined(_M_X64) && !defined(MOZ_CODE_COVERAGE)
       TestDetouredCallUnwindInfo() &&
-#endif  
-      
-      
+#endif  // defined(_M_X64) && !defined(MOZ_CODE_COVERAGE)
+      // Run TestDynamicCodePolicy() at the end because the policy is
+      // irreversible.
       TestDynamicCodePolicy()) {
     printf("TEST-PASS | WindowsDllInterceptor | all checks passed\n");
 

@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/RandomNum.h"
 
@@ -13,12 +13,12 @@
 
 #if defined(XP_WIN)
 
+// Microsoft doesn't "officially" support using RtlGenRandom() directly
+// anymore, and the Windows headers assume that __stdcall is
+// the default calling convention (which is true when Microsoft uses this
+// function to build their own CRT libraries).
 
-
-
-
-
-
+// We will explicitly declare it with the proper calling convention.
 
 #  include "minwindef.h"
 #  define RtlGenRandom SystemFunction036
@@ -35,11 +35,11 @@ extern "C" BOOLEAN NTAPI RtlGenRandom(PVOID RandomBuffer,
 #endif
 
 #if defined(__linux__)
-#  include <linux/random.h>  
-#  include <sys/syscall.h>   
+#  include <linux/random.h>  // For GRND_NONBLOCK.
+#  include <sys/syscall.h>   // For SYS_getrandom.
 
-
-
+// Older glibc versions don't define SYS_getrandom, so we define it here if
+// it's not available. See bug 995069.
 #  if defined(__x86_64__)
 #    define GETRANDOM_NR 318
 #  elif defined(__i386__)
@@ -64,9 +64,9 @@ extern "C" BOOLEAN NTAPI RtlGenRandom(PVOID RandomBuffer,
 #  endif
 
 #  if defined(SYS_getrandom)
-
-
-
+// We have SYS_getrandom. Use it to check GETRANDOM_NR. Only do this if we set
+// GETRANDOM_NR so tier 3 platforms with recent glibc are not forced to define
+// it for no good reason.
 #    if defined(GETRANDOM_NR)
 static_assert(GETRANDOM_NR == SYS_getrandom,
               "GETRANDOM_NR should match the actual SYS_getrandom value");
@@ -82,7 +82,7 @@ static_assert(GRND_NONBLOCK == 1,
 #    define GRND_NONBLOCK 1
 #  endif
 
-#endif  
+#endif  // defined(__linux__)
 
 namespace mozilla {
 
@@ -91,15 +91,16 @@ MFBT_API bool GenerateRandomBytesFromOS(void* aBuffer, size_t aLength) {
   MOZ_ASSERT(aLength > 0);
 
 #if defined(XP_WIN)
-
+  // Note: This function is used as a fallback for BCryptGenRandom in
+  //       WindowsBCryptInitialization(). Do not use BCryptGenRandom here!
   return !!RtlGenRandom(aBuffer, aLength);
 
-#elif defined(USE_ARC4RANDOM)  
+#elif defined(USE_ARC4RANDOM)  // defined(XP_WIN)
 
   arc4random_buf(aBuffer, aLength);
   return true;
 
-#elif defined(XP_UNIX)  
+#elif defined(XP_UNIX)  // defined(USE_ARC4RANDOM)
 
 #  if defined(__linux__)
 
@@ -109,9 +110,9 @@ MFBT_API bool GenerateRandomBytesFromOS(void* aBuffer, size_t aLength) {
     return true;
   }
 
-  
+  // Fall-through to UNIX behavior if failed
 
-#  endif  
+#  endif  // defined(__linux__)
 
   int fd = open("/dev/urandom", O_RDONLY);
   if (fd < 0) {
@@ -124,7 +125,7 @@ MFBT_API bool GenerateRandomBytesFromOS(void* aBuffer, size_t aLength) {
 
   return (static_cast<size_t>(bytesRead) == aLength);
 
-#else  
+#else  // defined(XP_UNIX)
 #  error "Platform needs to implement GenerateRandomBytesFromOS()"
 #endif
 }
@@ -144,4 +145,4 @@ MFBT_API uint64_t RandomUint64OrDie() {
   return randomNum;
 }
 
-}  
+}  // namespace mozilla

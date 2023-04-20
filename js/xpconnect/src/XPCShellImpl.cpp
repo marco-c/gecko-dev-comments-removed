@@ -60,6 +60,7 @@
 #  include "mozilla/ScopeExit.h"
 #  include "mozilla/widget/AudioSession.h"
 #  include "mozilla/WinDllServices.h"
+#  include "mozilla/WindowsBCryptInitialization.h"
 #  include <windows.h>
 #  if defined(MOZ_SANDBOX)
 #    include "XREShellData.h"
@@ -1330,7 +1331,7 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
 
     
     BrowserTabsRemoteAutostart();
-#ifdef XP_WIN
+#if defined(XP_WIN)
     
     
     AutoAudioSession audioSession;
@@ -1351,8 +1352,13 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
           "Failed to initialize broker services, sandboxed "
           "processes will fail to start.");
     }
-#  endif
-#endif
+#  endif  
+
+    {
+      DebugOnly<bool> result = WindowsBCryptInitialization();
+      MOZ_ASSERT(result);
+    }
+#endif  
 
 #ifdef MOZ_CODE_COVERAGE
     CodeCoverageHandler::Init();
