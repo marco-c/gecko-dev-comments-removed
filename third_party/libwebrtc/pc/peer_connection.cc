@@ -1949,29 +1949,6 @@ void PeerConnection::ReportFirstConnectUsageMetrics() {
                             kBundlePolicyUsageMax);
 
   
-  
-  
-  
-  
-  switch (configuration_.bundle_policy) {
-    case kBundlePolicyBalanced:
-      RTC_HISTOGRAM_COUNTS_LINEAR(
-          "WebRTC.PeerConnection.CandidatePoolUsage.Balanced",
-          configuration_.ice_candidate_pool_size, 0, 255, 256);
-      break;
-    case kBundlePolicyMaxBundle:
-      RTC_HISTOGRAM_COUNTS_LINEAR(
-          "WebRTC.PeerConnection.CandidatePoolUsage.MaxBundle",
-          configuration_.ice_candidate_pool_size, 0, 255, 256);
-      break;
-    case kBundlePolicyMaxCompat:
-      RTC_HISTOGRAM_COUNTS_LINEAR(
-          "WebRTC.PeerConnection.CandidatePoolUsage.MaxCompat",
-          configuration_.ice_candidate_pool_size, 0, 255, 256);
-      break;
-  }
-
-  
   ProvisionalAnswerUsage pranswer = kProvisionalAnswerNotUsed;
   if (local_description()->GetType() == SdpType::kPrAnswer) {
     pranswer = kProvisionalAnswerLocal;
