@@ -63,7 +63,7 @@ function run_test()
 
   var principal = res.responseXML.nodePrincipal;
   Assert.ok(principal.isContentPrincipal);
-  var requestURL = "http://localhost:4444/simple";
+  var requestURL = "http://localhost:4444/redirect";
   Assert.equal(principal.spec, requestURL);
 
   
@@ -85,7 +85,7 @@ function run_test()
 
   var principal = res.responseXML.nodePrincipal;
   Assert.ok(principal.isContentPrincipal);
-  var requestURL = "http://localhost:4444/simple";
+  var requestURL = "http://localhost:4444/redirect";
   Assert.equal(principal.spec, requestURL);
 
   httpserver2.stop(finishIfDone);
