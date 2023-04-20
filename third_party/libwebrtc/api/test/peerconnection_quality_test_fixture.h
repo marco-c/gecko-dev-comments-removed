@@ -65,21 +65,6 @@ namespace webrtc_pc_e2e {
 
 class PeerConnectionE2EQualityTestFixture {
  public:
-  using CapturingDeviceIndex = ::webrtc::webrtc_pc_e2e::CapturingDeviceIndex;
-  using ScrollingParams = ::webrtc::webrtc_pc_e2e::ScrollingParams;
-  using ScreenShareConfig = ::webrtc::webrtc_pc_e2e::ScreenShareConfig;
-  using VideoSimulcastConfig = ::webrtc::webrtc_pc_e2e::VideoSimulcastConfig;
-  using EmulatedSFUConfig = ::webrtc::webrtc_pc_e2e::EmulatedSFUConfig;
-  using VideoResolution = ::webrtc::webrtc_pc_e2e::VideoResolution;
-  using VideoDumpOptions = ::webrtc::webrtc_pc_e2e::VideoDumpOptions;
-  using VideoConfig = ::webrtc::webrtc_pc_e2e::VideoConfig;
-  using AudioConfig = ::webrtc::webrtc_pc_e2e::AudioConfig;
-  using VideoCodecConfig = ::webrtc::webrtc_pc_e2e::VideoCodecConfig;
-  using VideoSubscription = ::webrtc::webrtc_pc_e2e::VideoSubscription;
-  using EchoEmulationConfig = ::webrtc::webrtc_pc_e2e::EchoEmulationConfig;
-  using RunParams = ::webrtc::webrtc_pc_e2e::RunParams;
-  using PeerConfigurer = ::webrtc::webrtc_pc_e2e::PeerConfigurer;
-
   
   class QualityMetricsReporter : public StatsObserverInterface {
    public:
@@ -133,18 +118,7 @@ class PeerConnectionE2EQualityTestFixture {
   
   
   
-  [[deprecated("bugs.webrtc.org/14627")]] virtual PeerHandle* AddPeer(
-      const PeerNetworkDependencies& network_dependencies,
-      rtc::FunctionView<void(PeerConfigurer*)> configurer) {
-    RTC_CHECK_NOTREACHED();
-    return nullptr;
-  }
-  
-  
-  virtual PeerHandle* AddPeer(std::unique_ptr<PeerConfigurer> configurer) {
-    RTC_CHECK_NOTREACHED();
-    return nullptr;
-  }
+  virtual PeerHandle* AddPeer(std::unique_ptr<PeerConfigurer> configurer) = 0;
 
   
   
