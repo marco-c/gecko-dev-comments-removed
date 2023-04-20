@@ -35,25 +35,13 @@
 #include "zydis/Zycore/Defines.h"
 #include "zydis/Zycore/Types.h"
 
-#if !defined(ZYDIS_DISABLE_DECODER)
+#ifndef ZYDIS_DISABLE_DECODER
 #   include "zydis/Zydis/Decoder.h"
 #   include "zydis/Zydis/DecoderTypes.h"
 #endif
 
-#if !defined(ZYDIS_DISABLE_ENCODER)
-#   include "zydis/Zydis/Encoder.h"
-#endif
-
-#if !defined(ZYDIS_DISABLE_FORMATTER)
+#ifndef ZYDIS_DISABLE_FORMATTER
 #   include "zydis/Zydis/Formatter.h"
-#endif
-
-#if !defined(ZYDIS_DISABLE_SEGMENT)
-#   include "zydis/Zydis/Segment.h"
-#endif
-
-#if !defined(ZYDIS_DISABLE_DECODER) && !defined(ZYDIS_DISABLE_FORMATTER)
-#   include "zydis/Zydis/Disassembler.h"
 #endif
 
 #include "zydis/Zydis/MetaInfo.h"
@@ -78,15 +66,7 @@ extern "C" {
 
 
 
-
-
-
-
-
-
-
-
-#define ZYDIS_VERSION (ZyanU64)0x0004000000000000
+#define ZYDIS_VERSION (ZyanU64)0x0003000200010000
 
 
 
@@ -132,11 +112,9 @@ extern "C" {
 typedef enum ZydisFeature_
 {
     ZYDIS_FEATURE_DECODER,
-    ZYDIS_FEATURE_ENCODER,
     ZYDIS_FEATURE_FORMATTER,
     ZYDIS_FEATURE_AVX512,
     ZYDIS_FEATURE_KNC,
-    ZYDIS_FEATURE_SEGMENT,
 
     
 
@@ -147,6 +125,12 @@ typedef enum ZydisFeature_
 
     ZYDIS_FEATURE_REQUIRED_BITS = ZYAN_BITS_TO_REPRESENT(ZYDIS_FEATURE_MAX_VALUE)
 } ZydisFeature;
+
+
+
+
+
+
 
 
 
