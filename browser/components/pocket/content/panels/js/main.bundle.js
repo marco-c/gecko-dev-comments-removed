@@ -708,7 +708,7 @@ function TagPicker(props) {
     maxlength: "25"
   }), react.createElement("datalist", {
     id: "tag-list"
-  }, usedTags.map(item => react.createElement("option", {
+  }, usedTags.sort((a, b) => a.search(inputValue) - b.search(inputValue)).map(item => react.createElement("option", {
     key: item,
     value: item
   }))), react.createElement("button", {
