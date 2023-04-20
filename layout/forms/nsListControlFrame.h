@@ -100,7 +100,6 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void SetFocus(bool aOn = true, bool aRepaint = false) final;
 
-  mozilla::ScrollStyles GetScrollStyles() const final;
   bool ShouldPropagateComputedBSizeToScrolledContent() const final;
 
   
