@@ -113,6 +113,12 @@ class QuicSocketControl;
     }                                                \
   }
 
+enum class EchExtensionStatus {
+  kNotPresent,  
+  kGREASE,      
+  kReal         
+};
+
 class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_HTTP3SESSION_IID)
@@ -239,6 +245,8 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   void CallCertVerification(Maybe<nsCString> aEchPublicName);
   void SetSecInfo();
 
+  void EchOutcomeTelemetry();
+
   void StreamReadyToWrite(Http3StreamBase* aStream);
   void MaybeResumeSend();
 
@@ -329,6 +337,13 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   int64_t mTotalBytesRead = 0;     
   int64_t mTotalBytesWritten = 0;  
   PRIntervalTime mLastWriteTime = 0;
+
+  
+  EchExtensionStatus mEchExtensionStatus = EchExtensionStatus::kNotPresent;
+
+  
+  
+  bool mHandshakeSucceeded = false;
 
   nsCOMPtr<nsINetAddr> mNetAddr;
 
