@@ -467,11 +467,15 @@ void U2FTokenManager::Register(
   if (aTransactionInfo.Extra().isSome()) {
     const auto& extra = aTransactionInfo.Extra().ref();
 
-    AttestationConveyancePreference attestation =
-        extra.attestationConveyancePreference();
-
-    noneAttestationRequested =
-        attestation == AttestationConveyancePreference::None;
+    
+    
+    
+    const nsString& attestation = extra.attestationConveyancePreference();
+    if (attestation.EqualsLiteral("direct") ||
+        attestation.EqualsLiteral("indirect") ||
+        attestation.EqualsLiteral("enterprise")) {
+      noneAttestationRequested = false;
+    }
   }
 #endif  
 
