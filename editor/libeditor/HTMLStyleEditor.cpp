@@ -1556,21 +1556,15 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
         
         
         
-        nsresult rv =
-            CSSEditUtils::RemoveCSSEquivalentToHTMLStyleWithTransaction(
-                *this, MOZ_KnownLive(*styledElement),
-                aStyleToRemove.mHTMLProperty, aStyleToRemove.mAttribute,
-                nullptr);
-        if (rv == NS_ERROR_EDITOR_DESTROYED) {
-          NS_WARNING(
-              "CSSEditUtils::RemoveCSSEquivalentToHTMLStyleWithTransaction() "
-              "destroyed the editor");
+        nsresult rv = CSSEditUtils::RemoveCSSEquivalentToStyle(
+            WithTransaction::Yes, *this, MOZ_KnownLive(*styledElement),
+            aStyleToRemove, nullptr);
+        if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
           return Err(NS_ERROR_EDITOR_DESTROYED);
         }
         NS_WARNING_ASSERTION(
             NS_SUCCEEDED(rv),
-            "CSSEditUtils::RemoveCSSEquivalentToHTMLStyleWithTransaction() "
-            "failed, but ignored");
+            "CSSEditUtils::RemoveCSSEquivalentToStyle() failed, but ignored");
       }
       
       
