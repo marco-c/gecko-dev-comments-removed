@@ -157,6 +157,9 @@ add_task(async function test_network_markers_service_worker_register() {
 
     
     const parentStopMarkers = parentPairs.map(([_, stopMarker]) => stopMarker);
+    const serviceWorkerStopMarkers = serviceWorkerPairs.map(
+      ([_, stopMarker]) => stopMarker
+    );
 
     
     
@@ -170,6 +173,9 @@ add_task(async function test_network_markers_service_worker_register() {
         `Checking if "${expectedFile}" is present in the network markers in both processes.`
       );
       const parentMarker = parentStopMarkers.find(
+        marker => marker.data.URI === expectedFile
+      );
+      const serviceWorkerMarker = serviceWorkerStopMarkers.find(
         marker => marker.data.URI === expectedFile
       );
 
@@ -199,6 +205,7 @@ add_task(async function test_network_markers_service_worker_register() {
       };
 
       Assert.objectContains(parentMarker, expectedProperties);
+      Assert.objectContains(serviceWorkerMarker, expectedProperties);
     }
   });
 });
