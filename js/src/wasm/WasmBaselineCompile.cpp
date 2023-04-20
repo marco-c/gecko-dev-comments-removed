@@ -3153,10 +3153,14 @@ bool BaseCompiler::jumpConditionalWithResults(BranchState* b, RegRef object,
     }
     if (b->stackHeight != resultsBase) {
       Label notTaken;
+      
+      
+      needIntegerResultRegisters(b->resultType);
       branchGcObjectType(
           object, typeIndex, &notTaken,
           false,
           b->invertBranch ? onSuccess : !onSuccess);
+      freeIntegerResultRegisters(b->resultType);
 
       
       shuffleStackResultsBeforeBranch(resultsBase, b->stackHeight,
@@ -7335,15 +7339,31 @@ bool BaseCompiler::emitBrOnCastCommon(bool onSuccess) {
   Control& target = controlItem(labelRelativeDepth);
   target.bceSafeOnExit &= bceSafe_;
 
-  RegRef object = popRef();
-  pushRef(object);
-
   
   BranchState b(&target.label, target.stackHeight, InvertBranch(false),
                 labelType);
-  if (!jumpConditionalWithResults(&b, object, castTypeIndex, onSuccess)) {
+
+  
+  if (b.hasBlockResults()) {
+    needIntegerResultRegisters(b.resultType);
+  }
+
+  
+  
+  RegRef object = popRef();
+  RegRef objectCondition = needRef();
+  moveRef(object, objectCondition);
+  pushRef(object);
+
+  if (b.hasBlockResults()) {
+    freeIntegerResultRegisters(b.resultType);
+  }
+
+  if (!jumpConditionalWithResults(&b, objectCondition, castTypeIndex,
+                                  onSuccess)) {
     return false;
   }
+  freeRef(objectCondition);
 
   return true;
 }
