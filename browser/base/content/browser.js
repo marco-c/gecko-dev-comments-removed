@@ -414,10 +414,23 @@ XPCOMUtils.defineLazyGetter(this, "PopupNotifications", () => {
     
     
     
-    let shouldSuppress = () =>
-      (gURLBar.getAttribute("pageproxystate") != "valid" &&
-        (gURLBar.focused || gBrowser.selectedBrowser._awaitingSetURI)) ||
-      shouldSuppressPopupNotifications();
+    let shouldSuppress = () => {
+      
+      
+      
+      
+      
+      const urlBarEdited = isBlankPageURL(gBrowser.currentURI.spec)
+        ? gURLBar.hasAttribute("usertyping")
+        : gURLBar.getAttribute("pageproxystate") != "valid";
+      return (
+        (urlBarEdited && gURLBar.focused) ||
+        (gURLBar.getAttribute("pageproxystate") != "valid" &&
+          gBrowser.selectedBrowser._awaitingSetURI) ||
+        shouldSuppressPopupNotifications()
+      );
+    };
+
     return new PopupNotifications(
       gBrowser,
       document.getElementById("notification-popup"),
