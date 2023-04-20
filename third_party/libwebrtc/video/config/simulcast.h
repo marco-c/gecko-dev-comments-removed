@@ -8,8 +8,8 @@
 
 
 
-#ifndef MEDIA_ENGINE_SIMULCAST_H_
-#define MEDIA_ENGINE_SIMULCAST_H_
+#ifndef VIDEO_CONFIG_SIMULCAST_H_
+#define VIDEO_CONFIG_SIMULCAST_H_
 
 #include <stddef.h>
 

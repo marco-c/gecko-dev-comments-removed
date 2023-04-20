@@ -8,7 +8,7 @@
 
 
 
-#include "media/engine/simulcast.h"
+#include "video/config/simulcast.h"
 
 #include <stdint.h>
 #include <stdio.h>
