@@ -112,11 +112,10 @@ Http2PushedStream::Http2PushedStream(
     Http2PushTransactionBuffer* aTransaction, Http2Session* aSession,
     Http2StreamBase* aAssociatedStream, uint32_t aID,
     uint64_t aCurrentForegroundTabOuterContentWindowId)
-    : Http2StreamBase(
-          (aTransaction->QueryHttpTransaction())
-              ? aTransaction->QueryHttpTransaction()->TopBrowsingContextId()
-              : 0,
-          aSession, 0, aCurrentForegroundTabOuterContentWindowId),
+    : Http2StreamBase((aTransaction->QueryHttpTransaction())
+                          ? aTransaction->QueryHttpTransaction()->BrowserId()
+                          : 0,
+                      aSession, 0, aCurrentForegroundTabOuterContentWindowId),
       mAssociatedTransaction(aAssociatedStream->Transaction()),
       mBufferedPush(aTransaction),
       mTransaction(aTransaction) {
@@ -137,7 +136,7 @@ Http2PushedStream::Http2PushedStream(
   
   
   
-  mTransactionTabId = aAssociatedStream->TransactionTabId();
+  mTransactionBrowserId = aAssociatedStream->TransactionBrowserId();
 }
 
 bool Http2PushedStream::GetPushComplete() { return mPushCompleted; }
@@ -336,23 +335,23 @@ nsresult Http2PushedStream::GetBufferedData(char* buf, uint32_t count,
   return rv;
 }
 
-void Http2PushedStream::TopBrowsingContextIdChanged(uint64_t id) {
+void Http2PushedStream::CurrentBrowserIdChanged(uint64_t id) {
   if (mConsumerStream) {
     
-    mConsumerStream->TopBrowsingContextIdChanged(id);
+    mConsumerStream->CurrentBrowserIdChanged(id);
     return;
   }
 
   MOZ_ASSERT(gHttpHandler->ActiveTabPriority());
 
-  mCurrentTopBrowsingContextId = id;
+  mCurrentBrowserId = id;
   RefPtr<Http2Session> session = Session();
   if (!session->UseH2Deps()) {
     return;
   }
 
   uint32_t oldDependency = mPriorityDependency;
-  if (mTransactionTabId != mCurrentTopBrowsingContextId) {
+  if (mTransactionBrowserId != mCurrentBrowserId) {
     mPriorityDependency = Http2Session::kBackgroundGroupID;
     nsHttp::NotifyActiveTabLoadOptimization();
   } else {

@@ -161,7 +161,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   void Refused0RTT();
 
-  uint64_t TopBrowsingContextId() override { return mTopBrowsingContextId; }
+  uint64_t BrowserId() override { return mBrowserId; }
 
   void SetHttpTrailers(nsCString& aTrailers);
 
@@ -473,7 +473,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   TimeStamp mPendingTime;
   TimeDuration mPendingDurationTime;
 
-  uint64_t mTopBrowsingContextId{0};
+  uint64_t mBrowserId{0};
 
   
  public:

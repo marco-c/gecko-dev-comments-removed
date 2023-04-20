@@ -464,7 +464,7 @@ interface nsIHttpChannel : nsIIdentChannel
 
 
 
-    [must_use] attribute uint64_t topBrowsingContextId;
+    [must_use] attribute uint64_t browserId;
 
     
 

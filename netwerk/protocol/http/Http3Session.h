@@ -285,7 +285,7 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   
   nsresult mSocketError{NS_OK};
   bool mBeforeConnectedError{false};
-  uint64_t mCurrentTopBrowsingContextId;
+  uint64_t mCurrentBrowserId;
 
   
   bool mTimerActive{false};

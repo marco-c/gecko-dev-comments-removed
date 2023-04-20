@@ -55,7 +55,7 @@ class NullHttpTransaction : public nsAHttpTransaction {
   
   
   
-  uint64_t TopBrowsingContextId() override { return 0; }
+  uint64_t BrowserId() override { return 0; }
 
   TimingStruct Timings() { return mTimings; }
 
