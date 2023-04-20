@@ -109,6 +109,19 @@ interface nsIFOG : nsISupports
 
 
 
+
+
+
+
+  void setMetricsFeatureConfig(in ACString aJsonConfig);
+
+  
+
+
+
+
+
+
   [implicit_jscontext]
   Promise testFlushAllChildren();
 
