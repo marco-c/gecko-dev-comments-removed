@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_workers_WorkerLoadContext_h__
 #define mozilla_dom_workers_WorkerLoadContext_h__
 
+#include "nsIChannel.h"
 #include "nsIInputStream.h"
 #include "nsIRequest.h"
 #include "mozilla/CORSMode.h"
@@ -26,6 +27,17 @@ class WorkerPrivate;
 namespace workerinternals::loader {
 class CacheCreator;
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -102,6 +114,7 @@ class WorkerLoadContext : public JS::loader::LoadContextBase {
   bool mIsTopLevel = true;
   Kind mKind;
   Maybe<ClientInfo> mClientInfo;
+  nsCOMPtr<nsIChannel> mChannel;
 
   
   
