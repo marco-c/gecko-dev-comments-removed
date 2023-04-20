@@ -260,12 +260,12 @@ TEST(ThreadTest, DISABLED_Main) {
 }
 
 TEST(ThreadTest, CountBlockingCalls) {
+  rtc::AutoThread current;
+
   
   
   RTC_LOG_THREAD_BLOCK_COUNT();
 #if RTC_DCHECK_IS_ON
-  rtc::Thread* current = rtc::Thread::Current();
-  ASSERT_TRUE(current);
   rtc::Thread::ScopedCountBlockingCalls blocked_calls(
       [&](uint32_t actual_block, uint32_t could_block) {
         EXPECT_EQ(1u, actual_block);
@@ -280,7 +280,7 @@ TEST(ThreadTest, CountBlockingCalls) {
   
   
   
-  current->Invoke<void>(RTC_FROM_HERE, []() {});
+  current.Invoke<void>(RTC_FROM_HERE, []() {});
   EXPECT_EQ(0u, blocked_calls.GetBlockingCallCount());
   EXPECT_EQ(1u, blocked_calls.GetCouldBeBlockingCallCount());
   EXPECT_EQ(1u, blocked_calls.GetTotalBlockedCallCount());
@@ -302,22 +302,20 @@ TEST(ThreadTest, CountBlockingCalls) {
 
 #if RTC_DCHECK_IS_ON
 TEST(ThreadTest, CountBlockingCallsOneCallback) {
-  rtc::Thread* current = rtc::Thread::Current();
-  ASSERT_TRUE(current);
+  rtc::AutoThread current;
   bool was_called_back = false;
   {
     rtc::Thread::ScopedCountBlockingCalls blocked_calls(
         [&](uint32_t actual_block, uint32_t could_block) {
           was_called_back = true;
         });
-    current->Invoke<void>(RTC_FROM_HERE, []() {});
+    current.Invoke<void>(RTC_FROM_HERE, []() {});
   }
   EXPECT_TRUE(was_called_back);
 }
 
 TEST(ThreadTest, CountBlockingCallsSkipCallback) {
-  rtc::Thread* current = rtc::Thread::Current();
-  ASSERT_TRUE(current);
+  rtc::AutoThread current;
   bool was_called_back = false;
   {
     rtc::Thread::ScopedCountBlockingCalls blocked_calls(
@@ -327,7 +325,7 @@ TEST(ThreadTest, CountBlockingCallsSkipCallback) {
     
     
     blocked_calls.set_minimum_call_count_for_callback(2);
-    current->Invoke<void>(RTC_FROM_HERE, []() {});
+    current.Invoke<void>(RTC_FROM_HERE, []() {});
   }
   
   EXPECT_FALSE(was_called_back);
@@ -371,17 +369,18 @@ TEST(ThreadTest, Wrap) {
 
 #if (!defined(NDEBUG) || RTC_DCHECK_IS_ON)
 TEST(ThreadTest, InvokeToThreadAllowedReturnsTrueWithoutPolicies) {
+  rtc::AutoThread main_thread;
   
   auto thread1 = Thread::CreateWithSocketServer();
   auto thread2 = Thread::CreateWithSocketServer();
 
   thread1->PostTask(ToQueuedTask(
       [&]() { EXPECT_TRUE(thread1->IsInvokeToThreadAllowed(thread2.get())); }));
-  Thread* th_main = Thread::Current();
-  th_main->ProcessMessages(100);
+  main_thread.ProcessMessages(100);
 }
 
 TEST(ThreadTest, InvokeAllowedWhenThreadsAdded) {
+  rtc::AutoThread main_thread;
   
   auto thread1 = Thread::CreateWithSocketServer();
   auto thread2 = Thread::CreateWithSocketServer();
@@ -396,11 +395,11 @@ TEST(ThreadTest, InvokeAllowedWhenThreadsAdded) {
     EXPECT_TRUE(thread1->IsInvokeToThreadAllowed(thread3.get()));
     EXPECT_FALSE(thread1->IsInvokeToThreadAllowed(thread4.get()));
   }));
-  Thread* th_main = Thread::Current();
-  th_main->ProcessMessages(100);
+  main_thread.ProcessMessages(100);
 }
 
 TEST(ThreadTest, InvokesDisallowedWhenDisallowAllInvokes) {
+  rtc::AutoThread main_thread;
   
   auto thread1 = Thread::CreateWithSocketServer();
   auto thread2 = Thread::CreateWithSocketServer();
@@ -410,20 +409,19 @@ TEST(ThreadTest, InvokesDisallowedWhenDisallowAllInvokes) {
   thread1->PostTask(ToQueuedTask([&]() {
     EXPECT_FALSE(thread1->IsInvokeToThreadAllowed(thread2.get()));
   }));
-  Thread* th_main = Thread::Current();
-  th_main->ProcessMessages(100);
+  main_thread.ProcessMessages(100);
 }
 #endif  
 
 TEST(ThreadTest, InvokesAllowedByDefault) {
+  rtc::AutoThread main_thread;
   
   auto thread1 = Thread::CreateWithSocketServer();
   auto thread2 = Thread::CreateWithSocketServer();
 
   thread1->PostTask(ToQueuedTask(
       [&]() { EXPECT_TRUE(thread1->IsInvokeToThreadAllowed(thread2.get())); }));
-  Thread* th_main = Thread::Current();
-  th_main->ProcessMessages(100);
+  main_thread.ProcessMessages(100);
 }
 
 TEST(ThreadTest, Invoke) {
@@ -653,6 +651,7 @@ TEST_F(ThreadQueueTest, DiposeHandlerWithPostedMessagePending) {
 
 
 TEST(ThreadManager, ProcessAllMessageQueues) {
+  rtc::AutoThread main_thread;
   Event entered_process_all_message_queues(true, false);
   auto a = Thread::CreateWithSocketServer();
   auto b = Thread::CreateWithSocketServer();
@@ -678,7 +677,7 @@ TEST(ThreadManager, ProcessAllMessageQueues) {
   b->PostTask(ToQueuedTask(incrementer));
   a->PostDelayedTask(ToQueuedTask(incrementer), 0);
   b->PostDelayedTask(ToQueuedTask(incrementer), 0);
-  rtc::Thread::Current()->PostTask(ToQueuedTask(event_signaler));
+  main_thread.PostTask(ToQueuedTask(event_signaler));
 
   ThreadManager::ProcessAllMessageQueuesForTesting();
   EXPECT_EQ(4, AtomicOps::AcquireLoad(&messages_processed));
@@ -695,6 +694,7 @@ TEST(ThreadManager, ProcessAllMessageQueuesWithQuittingThread) {
 
 
 TEST(ThreadManager, ProcessAllMessageQueuesWithClearedQueue) {
+  rtc::AutoThread main_thread;
   Event entered_process_all_message_queues(true, false);
   auto t = Thread::CreateWithSocketServer();
   t->Start();
@@ -713,7 +713,7 @@ TEST(ThreadManager, ProcessAllMessageQueuesWithClearedQueue) {
 
   
   t->PostTask(clearer);
-  rtc::Thread::Current()->PostTask(event_signaler);
+  main_thread.PostTask(event_signaler);
   ThreadManager::ProcessAllMessageQueuesForTesting();
 }
 
@@ -759,6 +759,7 @@ class DEPRECATED_AsyncInvokeTest : public ::testing::Test {
   enum { kWaitTimeout = 1000 };
   DEPRECATED_AsyncInvokeTest() : int_value_(0), expected_thread_(nullptr) {}
 
+  rtc::AutoThread main_thread_;
   int int_value_;
   Thread* expected_thread_;
 };

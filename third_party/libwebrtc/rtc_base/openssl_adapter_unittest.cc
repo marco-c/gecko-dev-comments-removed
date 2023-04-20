@@ -84,6 +84,7 @@ TEST(OpenSSLAdapterTest, TestTransformAlpnProtocols) {
 
 
 TEST(OpenSSLAdapterTest, TestBeginSSLBeforeConnection) {
+  rtc::AutoThread main_thread;
   Socket* async_socket = new MockAsyncSocket();
   OpenSSLAdapter adapter(async_socket);
   EXPECT_EQ(adapter.StartSSL("webrtc.org"), 0);
@@ -91,6 +92,7 @@ TEST(OpenSSLAdapterTest, TestBeginSSLBeforeConnection) {
 
 
 TEST(OpenSSLAdapterFactoryTest, CreateSingleOpenSSLAdapter) {
+  rtc::AutoThread main_thread;
   OpenSSLAdapterFactory adapter_factory;
   Socket* async_socket = new MockAsyncSocket();
   auto simple_adapter = std::unique_ptr<OpenSSLAdapter>(
@@ -101,6 +103,7 @@ TEST(OpenSSLAdapterFactoryTest, CreateSingleOpenSSLAdapter) {
 
 
 TEST(OpenSSLAdapterFactoryTest, CreateWorksWithCustomVerifier) {
+  rtc::AutoThread main_thread;
   MockCertVerifier* mock_verifier = new MockCertVerifier();
   EXPECT_CALL(*mock_verifier, Verify(_)).WillRepeatedly(Return(true));
   auto cert_verifier = std::unique_ptr<SSLCertificateVerifier>(mock_verifier);

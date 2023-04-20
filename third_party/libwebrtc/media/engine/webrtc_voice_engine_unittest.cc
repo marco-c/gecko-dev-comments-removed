@@ -783,6 +783,7 @@ class WebRtcVoiceEngineTestFake : public ::testing::TestWithParam<bool> {
   }
 
  protected:
+  rtc::AutoThread main_thread_;
   const bool use_null_apm_;
   webrtc::test::ScopedKeyValueConfig field_trials_;
   std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
@@ -3600,6 +3601,7 @@ TEST_P(WebRtcVoiceEngineTestFake, GetSourcesWithNonExistingSsrc) {
 
 
 TEST(WebRtcVoiceEngineTest, StartupShutdown) {
+  rtc::AutoThread main_thread;
   for (bool use_null_apm : {false, true}) {
     
     
@@ -3631,6 +3633,7 @@ TEST(WebRtcVoiceEngineTest, StartupShutdown) {
 
 
 TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
+  rtc::AutoThread main_thread;
   for (bool use_null_apm : {false, true}) {
     std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory =
         webrtc::CreateDefaultTaskQueueFactory();
@@ -3720,6 +3723,7 @@ TEST(WebRtcVoiceEngineTest, HasCorrectPayloadTypeMapping) {
 
 
 TEST(WebRtcVoiceEngineTest, Has32Channels) {
+  rtc::AutoThread main_thread;
   for (bool use_null_apm : {false, true}) {
     std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory =
         webrtc::CreateDefaultTaskQueueFactory();
@@ -3762,6 +3766,7 @@ TEST(WebRtcVoiceEngineTest, Has32Channels) {
 
 
 TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
+  rtc::AutoThread main_thread;
   for (bool use_null_apm : {false, true}) {
     std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory =
         webrtc::CreateDefaultTaskQueueFactory();

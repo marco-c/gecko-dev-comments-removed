@@ -49,10 +49,12 @@ class BasicAsyncResolverFactoryTest : public ::testing::Test,
 
 
 TEST_F(BasicAsyncResolverFactoryTest, TestCreate) {
+  rtc::AutoThread main_thread;
   TestCreate();
 }
 
 TEST(WrappingAsyncDnsResolverFactoryTest, TestCreateAndResolve) {
+  rtc::AutoThread main_thread;
   WrappingAsyncDnsResolverFactory factory(
       std::make_unique<BasicAsyncResolverFactory>());
 
@@ -67,6 +69,7 @@ TEST(WrappingAsyncDnsResolverFactoryTest, TestCreateAndResolve) {
 }
 
 TEST(WrappingAsyncDnsResolverFactoryTest, WrapOtherResolver) {
+  rtc::AutoThread main_thread;
   BasicAsyncResolverFactory non_owned_factory;
   WrappingAsyncDnsResolverFactory factory(&non_owned_factory);
   std::unique_ptr<AsyncDnsResolverInterface> resolver(factory.Create());
@@ -92,11 +95,7 @@ void CallResolver(WrappingAsyncDnsResolverFactory& factory) {
 }
 
 TEST(WrappingAsyncDnsResolverFactoryDeathTest, DestroyResolverInCallback) {
-  
-  
-  
-  auto thread = rtc::Thread::CreateWithSocketServer();
-  thread->WrapCurrent();
+  rtc::AutoThread main_thread;
   
   
   WrappingAsyncDnsResolverFactory factory(
@@ -106,11 +105,6 @@ TEST(WrappingAsyncDnsResolverFactoryDeathTest, DestroyResolverInCallback) {
   
   RTC_EXPECT_DEATH(CallResolver(factory),
                    "Check failed: !within_resolve_result_");
-  
-  thread->Quit();
-  thread->Run();
-  thread->UnwrapCurrent();
-  thread = nullptr;
 }
 #endif
 

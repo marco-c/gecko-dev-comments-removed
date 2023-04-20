@@ -78,6 +78,7 @@ class Peer {
 }  
 
 TEST(DcSctpTransportTest, OpenSequence) {
+  rtc::AutoThread main_thread;
   Peer peer_a;
   peer_a.fake_packet_transport_.SetWritable(true);
 
@@ -94,6 +95,7 @@ TEST(DcSctpTransportTest, OpenSequence) {
 
 
 TEST(DcSctpTransportTest, CloseSequence) {
+  rtc::AutoThread main_thread;
   Peer peer_a;
   Peer peer_b;
   peer_a.fake_packet_transport_.SetDestination(&peer_b.fake_packet_transport_,
@@ -135,6 +137,7 @@ TEST(DcSctpTransportTest, CloseSequence) {
 
 
 TEST(DcSctpTransportTest, CloseSequenceSimultaneous) {
+  rtc::AutoThread main_thread;
   Peer peer_a;
   Peer peer_b;
   peer_a.fake_packet_transport_.SetDestination(&peer_b.fake_packet_transport_,

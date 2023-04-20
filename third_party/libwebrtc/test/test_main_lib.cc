@@ -102,62 +102,6 @@ namespace {
 
 class TestMainImpl : public TestMain {
  public:
-  
-  
-  
-  
-  class TestListener : public ::testing::EmptyTestEventListener {
-   public:
-    TestListener() = default;
-
-   private:
-    bool IsDeathTest(const char* test_case_name, const char* test_name) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (absl::EndsWith(test_case_name, "DeathTest"))
-        return true;
-
-      return absl::EndsWith(test_name, "DeathTest");
-    }
-
-    void OnTestStart(const ::testing::TestInfo& test_info) override {
-      if (!IsDeathTest(test_info.test_suite_name(), test_info.name())) {
-        
-        
-        
-        
-        
-        
-        thread_ = rtc::Thread::CreateWithSocketServer();
-        thread_->WrapCurrent();
-        RTC_DCHECK_EQ(rtc::Thread::Current(), thread_.get());
-      } else {
-        RTC_LOG(LS_INFO) << "No thread auto wrap for death test.";
-      }
-    }
-
-    void OnTestEnd(const ::testing::TestInfo& test_info) override {
-      
-      
-      
-      if (thread_) {
-        thread_->Quit();  
-        thread_->Run();   
-        thread_->UnwrapCurrent();
-        thread_ = nullptr;
-      }
-    }
-
-    std::unique_ptr<rtc::Thread> thread_;
-  };
-
   int Init(int* argc, char* argv[]) override { return Init(); }
 
   int Init() override {
@@ -190,8 +134,6 @@ class TestMainImpl : public TestMain {
     
     rtc::InitializeSSL();
     rtc::SSLStreamAdapter::EnableTimeCallbackForTesting();
-
-    ::testing::UnitTest::GetInstance()->listeners().Append(new TestListener());
 
     return 0;
   }

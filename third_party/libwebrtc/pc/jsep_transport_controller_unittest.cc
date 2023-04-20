@@ -346,6 +346,7 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
     return true;
   }
 
+  rtc::AutoThread main_thread_;
   
   cricket::IceConnectionState connection_state_ =
       cricket::kIceConnectionConnecting;
