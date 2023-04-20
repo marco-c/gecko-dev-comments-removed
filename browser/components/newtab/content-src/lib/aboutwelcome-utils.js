@@ -34,6 +34,13 @@ export const AboutWelcomeUtils = {
     };
     window.AWSendEventTelemetry?.(ping);
   },
+  sendDismissTelemetry(messageId, elementId) {
+    
+    
+    if (page !== "spotlight") {
+      this.sendActionTelemetry(messageId, elementId, "DISMISS");
+    }
+  },
   async fetchFlowParams(metricsFlowUri) {
     let flowParams;
     try {
