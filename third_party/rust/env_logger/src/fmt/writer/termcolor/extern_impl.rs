@@ -71,19 +71,19 @@ impl Formatter {
 
 pub(in crate::fmt::writer) struct BufferWriter {
     inner: termcolor::BufferWriter,
-    test_target: Option<WritableTarget>,
+    uncolored_target: Option<WritableTarget>,
 }
 
 pub(in crate::fmt) struct Buffer {
     inner: termcolor::Buffer,
-    has_test_target: bool,
+    has_uncolored_target: bool,
 }
 
 impl BufferWriter {
     pub(in crate::fmt::writer) fn stderr(is_test: bool, write_style: WriteStyle) -> Self {
         BufferWriter {
             inner: termcolor::BufferWriter::stderr(write_style.into_color_choice()),
-            test_target: if is_test {
+            uncolored_target: if is_test {
                 Some(WritableTarget::Stderr)
             } else {
                 None
@@ -94,7 +94,7 @@ impl BufferWriter {
     pub(in crate::fmt::writer) fn stdout(is_test: bool, write_style: WriteStyle) -> Self {
         BufferWriter {
             inner: termcolor::BufferWriter::stdout(write_style.into_color_choice()),
-            test_target: if is_test {
+            uncolored_target: if is_test {
                 Some(WritableTarget::Stdout)
             } else {
                 None
@@ -103,30 +103,25 @@ impl BufferWriter {
     }
 
     pub(in crate::fmt::writer) fn pipe(
-        is_test: bool,
         write_style: WriteStyle,
         pipe: Box<Mutex<dyn io::Write + Send + 'static>>,
     ) -> Self {
         BufferWriter {
             
             inner: termcolor::BufferWriter::stderr(write_style.into_color_choice()),
-            test_target: if is_test {
-                Some(WritableTarget::Pipe(pipe))
-            } else {
-                None
-            },
+            uncolored_target: Some(WritableTarget::Pipe(pipe)),
         }
     }
 
     pub(in crate::fmt::writer) fn buffer(&self) -> Buffer {
         Buffer {
             inner: self.inner.buffer(),
-            has_test_target: self.test_target.is_some(),
+            has_uncolored_target: self.uncolored_target.is_some(),
         }
     }
 
     pub(in crate::fmt::writer) fn print(&self, buf: &Buffer) -> io::Result<()> {
-        if let Some(target) = &self.test_target {
+        if let Some(target) = &self.uncolored_target {
             
             
             
@@ -164,7 +159,7 @@ impl Buffer {
 
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
         
-        if !self.has_test_target {
+        if !self.has_uncolored_target {
             self.inner.set_color(spec)
         } else {
             Ok(())
@@ -173,7 +168,7 @@ impl Buffer {
 
     fn reset(&mut self) -> io::Result<()> {
         
-        if !self.has_test_target {
+        if !self.has_uncolored_target {
             self.inner.reset()
         } else {
             Ok(())
@@ -336,6 +331,33 @@ impl Style {
     
     pub fn set_intense(&mut self, yes: bool) -> &mut Style {
         self.spec.set_intense(yes);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_dimmed(&mut self, yes: bool) -> &mut Style {
+        self.spec.set_dimmed(yes);
         self
     }
 
