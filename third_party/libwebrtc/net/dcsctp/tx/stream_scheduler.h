@@ -10,6 +10,7 @@
 #ifndef NET_DCSCTP_TX_STREAM_SCHEDULER_H_
 #define NET_DCSCTP_TX_STREAM_SCHEDULER_H_
 
+#include <algorithm>
 #include <cstdint>
 #include <deque>
 #include <map>
@@ -24,6 +25,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "api/array_view.h"
+#include "net/dcsctp/packet/chunk/idata_chunk.h"
+#include "net/dcsctp/packet/sctp_packet.h"
 #include "net/dcsctp/public/dcsctp_message.h"
 #include "net/dcsctp/public/dcsctp_socket.h"
 #include "net/dcsctp/public/types.h"
@@ -45,6 +48,18 @@ namespace dcsctp {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 class StreamScheduler {
  private:
   class VirtualTime : public webrtc::StrongAlias<class VirtualTimeTag, double> {
@@ -53,6 +68,13 @@ class StreamScheduler {
         : webrtc::StrongAlias<class VirtualTimeTag, double>(v) {}
 
     static constexpr VirtualTime Zero() { return VirtualTime(0); }
+  };
+  class InverseWeight
+      : public webrtc::StrongAlias<class InverseWeightTag, double> {
+   public:
+    constexpr explicit InverseWeight(StreamPriority priority)
+        : webrtc::StrongAlias<class InverseWeightTag, double>(
+              1.0 / std::max(static_cast<double>(*priority), 0.000001)) {}
   };
 
  public:
@@ -79,7 +101,7 @@ class StreamScheduler {
     StreamID stream_id() const { return stream_id_; }
 
     StreamPriority priority() const { return priority_; }
-    void set_priority(StreamPriority priority);
+    void SetPriority(StreamPriority priority);
 
     
     
@@ -105,13 +127,14 @@ class StreamScheduler {
         : parent_(*parent),
           producer_(*producer),
           stream_id_(stream_id),
-          priority_(priority) {}
+          priority_(priority),
+          inverse_weight_(priority) {}
 
     
     
     absl::optional<SendQueue::DataToSend> Produce(TimeMs now, size_t max_size);
 
-    void MakeActive();
+    void MakeActive(size_t bytes_to_send_next);
     void ForceMarkInactive();
 
     VirtualTime current_time() const { return current_virtual_time_; }
@@ -120,22 +143,32 @@ class StreamScheduler {
       return producer_.bytes_to_send_in_next_message();
     }
 
-    
-    VirtualTime GetNextFinishTime() const;
+    VirtualTime CalculateFinishTime(size_t bytes_to_send_next) const;
 
     StreamScheduler& parent_;
     StreamProducer& producer_;
     const StreamID stream_id_;
     StreamPriority priority_;
+    InverseWeight inverse_weight_;
     
     VirtualTime current_virtual_time_ = VirtualTime::Zero();
     VirtualTime next_finish_time_ = VirtualTime::Zero();
   };
 
+  
+  
+  explicit StreamScheduler(size_t mtu)
+      : max_payload_bytes_(mtu - SctpPacket::kHeaderSize -
+                           IDataChunk::kHeaderSize) {}
+
   std::unique_ptr<Stream> CreateStream(StreamProducer* producer,
                                        StreamID stream_id,
                                        StreamPriority priority) {
     return absl::WrapUnique(new Stream(this, producer, stream_id, priority));
+  }
+
+  void EnableMessageInterleaving(bool enabled) {
+    enable_message_interleaving_ = enabled;
   }
 
   
@@ -165,12 +198,17 @@ class StreamScheduler {
 
   bool IsConsistent() const;
 
+  const size_t max_payload_bytes_;
+
   
   VirtualTime virtual_time_ = VirtualTime::Zero();
 
   
   Stream* current_stream_ = nullptr;
 
+  bool enable_message_interleaving_ = false;
+
+  
   
   
   bool currently_sending_a_message_ = false;
