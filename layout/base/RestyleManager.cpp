@@ -3088,8 +3088,10 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
   
   presContext->RefreshDriver()->MostRecentRefresh();
 
-  
-  {
+  if (!doc->GetServoRestyleRoot()) {
+    
+    
+    
     presContext->UpdateContainerQueryStyles();
     presContext->FinishedContainerQueryUpdate();
   }
