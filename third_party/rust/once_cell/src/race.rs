@@ -24,8 +24,11 @@ use atomic_polyfill as atomic;
 #[cfg(not(feature = "critical-section"))]
 use core::sync::atomic;
 
-use atomic::{AtomicUsize, Ordering};
+use atomic::{AtomicPtr, AtomicUsize, Ordering};
+use core::cell::UnsafeCell;
+use core::marker::PhantomData;
 use core::num::NonZeroUsize;
+use core::ptr;
 
 
 #[derive(Default, Debug)]
@@ -170,6 +173,118 @@ impl OnceBool {
     fn to_usize(value: bool) -> NonZeroUsize {
         unsafe { NonZeroUsize::new_unchecked(if value { 1 } else { 2 }) }
     }
+}
+
+
+pub struct OnceRef<'a, T> {
+    inner: AtomicPtr<T>,
+    ghost: PhantomData<UnsafeCell<&'a T>>,
+}
+
+
+unsafe impl<'a, T: Sync> Sync for OnceRef<'a, T> {}
+
+impl<'a, T> core::fmt::Debug for OnceRef<'a, T> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "OnceRef({:?})", self.inner)
+    }
+}
+
+impl<'a, T> Default for OnceRef<'a, T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<'a, T> OnceRef<'a, T> {
+    
+    pub const fn new() -> OnceRef<'a, T> {
+        OnceRef { inner: AtomicPtr::new(ptr::null_mut()), ghost: PhantomData }
+    }
+
+    
+    pub fn get(&self) -> Option<&'a T> {
+        let ptr = self.inner.load(Ordering::Acquire);
+        unsafe { ptr.as_ref() }
+    }
+
+    
+    
+    
+    
+    pub fn set(&self, value: &'a T) -> Result<(), ()> {
+        let ptr = value as *const T as *mut T;
+        let exchange =
+            self.inner.compare_exchange(ptr::null_mut(), ptr, Ordering::AcqRel, Ordering::Acquire);
+        match exchange {
+            Ok(_) => Ok(()),
+            Err(_) => Err(()),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn get_or_init<F>(&self, f: F) -> &'a T
+    where
+        F: FnOnce() -> &'a T,
+    {
+        enum Void {}
+        match self.get_or_try_init(|| Ok::<&'a T, Void>(f())) {
+            Ok(val) => val,
+            Err(void) => match void {},
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn get_or_try_init<F, E>(&self, f: F) -> Result<&'a T, E>
+    where
+        F: FnOnce() -> Result<&'a T, E>,
+    {
+        let mut ptr = self.inner.load(Ordering::Acquire);
+
+        if ptr.is_null() {
+            
+            ptr = f()? as *const T as *mut T;
+            let exchange = self.inner.compare_exchange(
+                ptr::null_mut(),
+                ptr,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            );
+            if let Err(old) = exchange {
+                ptr = old;
+            }
+        }
+
+        Ok(unsafe { &*ptr })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn _dummy() {}
 }
 
 #[cfg(feature = "alloc")]

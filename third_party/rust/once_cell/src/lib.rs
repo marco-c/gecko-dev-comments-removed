@@ -327,6 +327,12 @@
 
 
 
+
+
+
+
+
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "alloc")]
@@ -448,6 +454,9 @@ pub mod unsync {
         
         #[inline]
         pub fn get(&self) -> Option<&T> {
+            
+            
+            
             
             unsafe { &*self.inner.get() }.as_ref()
         }
