@@ -14,7 +14,7 @@ add_setup(async function() {
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.bookmarks.editDialog.delayedApply.enabled", false]],
+    set: [["browser.bookmarks.editDialog.delayedApply.enabled", true]],
   });
   win = await BrowserTestUtils.openNewBrowserWindow();
 
@@ -66,19 +66,12 @@ async function checkResponse({ showToolbar, expectedFolder, reason }) {
     `Toolbar should be ${showToolbar ? "visible" : "hidden"} ${reason}.`
   );
 
+  
   let hiddenPromise = promisePopupHidden(
     win.document.getElementById("editBookmarkPanel")
   );
-  
-
-  let guid = win.gEditItemOverlay._paneInfo.itemGuid;
-  let promiseRemoved = PlacesTestUtils.waitForNotification(
-    "bookmark-removed",
-    events => events.some(e => e.guid == guid)
-  );
   win.document.getElementById("editBookmarkPanelRemoveButton").click();
   await hiddenPromise;
-  await promiseRemoved;
 }
 
 
