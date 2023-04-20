@@ -2,15 +2,13 @@
 
 
 
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-
 add_task(async function() {
   
   let editMenu = document.getElementById("edit-menu");
   let menuPopup = editMenu.menupopup;
 
   let closeMenu = function(aCallback) {
-    if (OS.Constants.Sys.Name == "Darwin") {
+    if (Services.appinfo.OS == "Darwin") {
       executeSoon(aCallback);
       return;
     }
@@ -29,7 +27,7 @@ add_task(async function() {
   };
 
   let openMenu = function(aCallback) {
-    if (OS.Constants.Sys.Name == "Darwin") {
+    if (Services.appinfo.OS == "Darwin") {
       goUpdateGlobalEditMenuItems();
       
       
