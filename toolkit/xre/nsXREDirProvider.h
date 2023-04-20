@@ -43,9 +43,7 @@ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
 
   nsXREDirProvider();
 
-  
-  nsresult Initialize(nsIFile* aXULAppDir, nsIFile* aGREDir,
-                      nsIDirectoryServiceProvider* aAppProvider = nullptr);
+  nsresult Initialize(nsIFile* aXULAppDir, nsIFile* aGREDir);
   ~nsXREDirProvider();
 
   static already_AddRefed<nsXREDirProvider> GetSingleton();
@@ -60,10 +58,6 @@ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
 
   nsresult GetLegacyInstallHash(nsAString& aPathHash);
 
-  
-  
-  
-  
   nsresult SetProfile(nsIFile* aProfileDir, nsIFile* aProfileLocalDir);
 
   void InitializeUserPrefs();
@@ -78,7 +72,6 @@ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
     return GetUserDataDirectory(aFile, true);
   }
 
-  
   static nsresult GetUserDataDirectory(nsIFile** aFile, bool aLocal);
 
   
@@ -114,10 +107,9 @@ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
 
 
 
-
   nsresult GetProfileDir(nsIFile** aResult);
 
- protected:
+ private:
   nsresult GetFilesInternal(const char* aProperty,
                             nsISimpleEnumerator** aResult);
   static nsresult GetUserDataDirectoryHome(nsIFile** aFile, bool aLocal);
@@ -137,6 +129,9 @@ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
   
   static inline nsresult AppendProfileString(nsIFile* aFile, const char* aPath);
 
+  static nsresult SetUserDataProfileDirectory(nsCOMPtr<nsIFile>& aFile,
+                                              bool aLocal);
+
 #if defined(MOZ_SANDBOX)
   
   nsresult LoadContentProcessTempDir();
@@ -144,7 +139,6 @@ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
 
   void Append(nsIFile* aDirectory);
 
-  nsCOMPtr<nsIDirectoryServiceProvider> mAppProvider;
   
   nsCOMPtr<nsIFile> mGREDir;
   
@@ -153,16 +147,12 @@ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
   nsCOMPtr<nsIFile> mXULAppDir;
   nsCOMPtr<nsIFile> mProfileDir;
   nsCOMPtr<nsIFile> mProfileLocalDir;
-  bool mProfileNotified;
+  bool mProfileNotified = false;
   bool mPrefsInitialized = false;
 #if defined(MOZ_SANDBOX)
   nsCOMPtr<nsIFile> mContentTempDir;
   nsCOMPtr<nsIFile> mContentProcessSandboxTempDir;
 #endif
-
- private:
-  static nsresult SetUserDataProfileDirectory(nsCOMPtr<nsIFile>& aFile,
-                                              bool aLocal);
 };
 
 #endif
