@@ -38,7 +38,7 @@ async function postCapabilityDelegationMessage(frame, message, origin, capabilit
 
 
 async function findOneCapabilitySupportingDelegation() {
-  const capabilities = ["fullscreen", "payment"];
+  const capabilities = ["fullscreen", "payment", "display-capture"];
 
   for (let i = 0; i < capabilities.length; i++) {
     try {
