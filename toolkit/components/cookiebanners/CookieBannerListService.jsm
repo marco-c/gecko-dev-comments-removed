@@ -278,7 +278,9 @@ class CookieBannerListService {
   }
 
   #importClickRule(rule, click) {
-    if (!click) {
+    
+    
+    if (!click || !click.presence) {
       return;
     }
 
