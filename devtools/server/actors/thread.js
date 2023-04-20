@@ -8,18 +8,16 @@
 
 
 
+const { Actor } = require("resource://devtools/shared/protocol/Actor.js");
 const { Pool } = require("resource://devtools/shared/protocol/Pool.js");
+const { threadSpec } = require("resource://devtools/shared/specs/thread.js");
+
 const {
   createValueGrip,
 } = require("resource://devtools/server/actors/object/utils.js");
-const {
-  ActorClassWithSpec,
-  Actor,
-} = require("resource://devtools/shared/protocol.js");
 const DevToolsUtils = require("resource://devtools/shared/DevToolsUtils.js");
 const Debugger = require("Debugger");
 const { assert, dumpn, reportException } = DevToolsUtils;
-const { threadSpec } = require("resource://devtools/shared/specs/thread.js");
 const {
   getAvailableEventBreakpoints,
   eventBreakpointForNotification,
@@ -165,6 +163,8 @@ const PAUSE_REASONS = {
 };
 exports.PAUSE_REASONS = PAUSE_REASONS;
 
+class ThreadActor extends Actor {
+  
 
 
 
@@ -175,21 +175,9 @@ exports.PAUSE_REASONS = PAUSE_REASONS;
 
 
 
+  constructor(parent, global) {
+    super(parent.conn, threadSpec);
 
-
-
-
-
-
-
-
-
-
-
-
-const ThreadActor = ActorClassWithSpec(threadSpec, {
-  initialize(parent, global) {
-    Actor.prototype.initialize.call(this, parent.conn);
     this._state = STATES.DETACHED;
     this._parent = parent;
     this.global = global;
@@ -251,10 +239,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     this._firstStatementBreakpoint = null;
     this._debuggerNotificationObserver = new DebuggerNotificationObserver();
-  },
+  }
 
   
-  _gripDepth: null,
+  _gripDepth = null;
 
   get dbg() {
     if (!this._dbg) {
@@ -267,7 +255,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       }
     }
     return this._dbg;
-  },
+  }
 
   
   
@@ -277,12 +265,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
   get state() {
     return this._state;
-  },
+  }
 
   
   get attached() {
     return this.state == STATES.RUNNING || this.state == STATES.PAUSED;
-  },
+  }
 
   get threadLifetimePool() {
     if (!this._threadLifetimePool) {
@@ -290,45 +278,45 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       this._threadLifetimePool.objectActors = new WeakMap();
     }
     return this._threadLifetimePool;
-  },
+  }
 
   getThreadLifetimeObject(raw) {
     return this.threadLifetimePool.objectActors.get(raw);
-  },
+  }
 
   createValueGrip(value) {
     return createValueGrip(value, this.threadLifetimePool, this.objectGrip);
-  },
+  }
 
   get sourcesManager() {
     return this._parent.sourcesManager;
-  },
+  }
 
   get breakpoints() {
     return this._parent.breakpoints;
-  },
+  }
 
   get youngestFrame() {
     if (this.state != STATES.PAUSED) {
       return null;
     }
     return this.dbg.getNewestFrame();
-  },
+  }
 
   get skipBreakpointsOption() {
     return (
       this._options.skipBreakpoints ||
       (this.insideClientEvaluation && this.insideClientEvaluation.eager)
     );
-  },
+  }
 
   isPaused() {
     return this._state === STATES.PAUSED;
-  },
+  }
 
   lastPausedPacket() {
     return this._priorPause;
-  },
+  }
 
   
 
@@ -337,7 +325,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     if (this._dbg) {
       this.dbg.removeAllDebuggees();
     }
-  },
+  }
 
   
 
@@ -379,8 +367,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this._dbg = null;
     this._state = STATES.EXITED;
 
-    Actor.prototype.destroy.call(this);
-  },
+    super.destroy();
+  }
 
   
 
@@ -388,7 +376,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
   isAttached() {
     return !!this.alreadyAttached;
-  },
+  }
 
   
   attach(options) {
@@ -438,12 +426,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       this.wrappedJSObject = this;
       Services.obs.notifyObservers(this, "devtools-thread-ready");
     }
-  },
+  }
 
   toggleEventLogging(logEventBreakpoints) {
     this._options.logEventBreakpoints = logEventBreakpoints;
     return this._options.logEventBreakpoints;
-  },
+  }
 
   get pauseOverlay() {
     if (this._pauseOverlay) {
@@ -458,7 +446,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     });
     this._pauseOverlay = highlighter;
     return highlighter;
-  },
+  }
 
   _canShowOverlay() {
     const { window } = this._parent;
@@ -477,7 +465,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     return true;
-  },
+  }
 
   async showOverlay() {
     if (
@@ -497,13 +485,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
       this.pauseOverlay.show(reason);
     }
-  },
+  }
 
   hideOverlay() {
     if (this._canShowOverlay() && this._pauseOverlay) {
       this.pauseOverlay.hide();
     }
-  },
+  }
 
   
 
@@ -514,13 +502,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
   setBreakpointOnLoad(urls) {
     this._onLoadBreakpointURLs = new Set(urls);
-  },
+  }
 
   _findXHRBreakpointIndex(p, m) {
     return this._xhrBreakpoints.findIndex(
       ({ path, method }) => path === p && method === m
     );
-  },
+  }
 
   
   
@@ -534,7 +522,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     if (where.line === location.line && where.column === location.column) {
       this._priorPause = null;
     }
-  },
+  }
 
   async setBreakpoint(location, options) {
     let actor = this.breakpointActorMap.get(location);
@@ -565,13 +553,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         await sourceActor.applyBreakpoint(actor);
       }
     }
-  },
+  }
 
   removeBreakpoint(location) {
     const actor = this.breakpointActorMap.getOrCreateBreakpointActor(location);
     this._maybeClearPriorPause(location);
     actor.delete();
-  },
+  }
 
   removeXHRBreakpoint(path, method) {
     const index = this._findXHRBreakpointIndex(path, method);
@@ -580,7 +568,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       this._xhrBreakpoints.splice(index, 1);
     }
     return this._updateNetworkObserver();
-  },
+  }
 
   setXHRBreakpoint(path, method) {
     
@@ -591,14 +579,14 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       this._xhrBreakpoints.push({ path, method });
     }
     return this._updateNetworkObserver();
-  },
+  }
 
   getAvailableEventBreakpoints() {
     return getAvailableEventBreakpoints(this._parent.window);
-  },
+  }
   getActiveEventBreakpoints() {
     return Array.from(this._activeEventBreakpoints);
-  },
+  }
 
   
 
@@ -609,7 +597,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this.setActiveEventBreakpoints(
       this.getActiveEventBreakpoints().concat(ids)
     );
-  },
+  }
 
   
 
@@ -620,7 +608,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this.setActiveEventBreakpoints(
       this.getActiveEventBreakpoints().filter(eventBp => !ids.includes(eventBp))
     );
-  },
+  }
 
   
 
@@ -658,7 +646,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       
       this._firstStatementBreakpoint.hit = null;
     }
-  },
+  }
 
   _ensureFirstStatementBreakpointInitialized() {
     if (this._firstStatementBreakpoint) {
@@ -669,7 +657,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     for (const script of this.dbg.findScripts()) {
       this._maybeTrackFirstStatementBreakpoint(script);
     }
-  },
+  }
 
   _maybeTrackFirstStatementBreakpointForNewGlobal(global) {
     if (this._firstStatementBreakpoint) {
@@ -677,7 +665,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         this._maybeTrackFirstStatementBreakpoint(script);
       }
     }
-  },
+  }
 
   _maybeTrackFirstStatementBreakpoint(script) {
     if (
@@ -712,14 +700,14 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       return;
     }
     script.setBreakpoint(meta.offset, this._firstStatementBreakpoint);
-  },
+  }
 
   _onNewDebuggee(global) {
     this._maybeTrackFirstStatementBreakpointForNewGlobal(global);
     try {
       this._debuggerNotificationObserver.connect(global.unsafeDereference());
     } catch (e) {}
-  },
+  }
 
   _updateNetworkObserver() {
     
@@ -745,7 +733,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     return true;
-  },
+  }
 
   _onOpeningRequest(subject) {
     if (this.skipBreakpointsOption) {
@@ -793,7 +781,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         this._pauseAndRespond(frame, { type: PAUSE_REASONS.XHR });
       }
     }
-  },
+  }
 
   reconfigure(options = {}) {
     if (this.state == STATES.EXITED) {
@@ -828,7 +816,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     this.maybePauseOnExceptions();
-  },
+  }
 
   _eventBreakpointListener(notification) {
     if (this._state === STATES.PAUSED || this._state === STATES.DETACHED) {
@@ -863,7 +851,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         this._pauseAndRespondEventBreakpoint(frame, eventBreakpoint);
       }
     }
-  },
+  }
 
   _makeEventBreakpointEnterFrame(eventBreakpoint) {
     return frame => {
@@ -876,7 +864,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
       return this._pauseAndRespondEventBreakpoint(frame, eventBreakpoint);
     };
-  },
+  }
 
   _pauseAndRespondEventBreakpoint(frame, eventBreakpoint) {
     if (this.skipBreakpointsOption) {
@@ -898,7 +886,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       breakpoint: eventBreakpoint,
       message: makeEventBreakpointMessage(eventBreakpoint),
     });
-  },
+  }
 
   _captureDebuggerHooks() {
     return {
@@ -906,13 +894,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       onStep: this.dbg.onStep,
       onPop: this.dbg.onPop,
     };
-  },
+  }
 
   _restoreDebuggerHooks(hooks) {
     this.dbg.onEnterFrame = hooks.onEnterFrame;
     this.dbg.onStep = hooks.onStep;
     this.dbg.onPop = hooks.onPop;
-  },
+  }
 
   
 
@@ -980,7 +968,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     return this._parentClosed ? null : undefined;
-  },
+  }
 
   _makeOnEnterFrame({ pauseAndRespond }) {
     return frame => {
@@ -1001,7 +989,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       frame.onPop = onPop;
       return undefined;
     };
-  },
+  }
 
   _makeOnPop({ pauseAndRespond, steppingType }) {
     const thread = this;
@@ -1045,7 +1033,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       thread._attachSteppingHooks(this, "next", completion);
       return undefined;
     };
-  },
+  }
 
   restartFrame(frame) {
     this._requestedFrameRestart = null;
@@ -1063,7 +1051,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     const completion = frame.callee.apply(frame.this, frame.arguments);
 
     return completion;
-  },
+  }
 
   hasMoved(frame, newType) {
     const newLocation = this.sourcesManager.getFrameLocation(frame);
@@ -1084,7 +1072,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     const { line, column } = this._priorPause.frame.where;
     return line !== newLocation.line || column !== newLocation.column;
-  },
+  }
 
   _makeOnStep({ pauseAndRespond, startFrame, steppingType, completion }) {
     const thread = this;
@@ -1097,7 +1085,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
       return undefined;
     };
-  },
+  }
 
   _validFrameStepOffset(frame, startFrame, offset) {
     const meta = frame.script.getOffsetMetadata(offset);
@@ -1118,12 +1106,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     return frame !== startFrame || meta.isStepStart;
-  },
+  }
 
   atBreakpointLocation(frame) {
     const location = this.sourcesManager.getFrameLocation(frame);
     return !!this.breakpointActorMap.get(location);
-  },
+  }
 
   createCompletionGrip(packet, completion) {
     if (!completion) {
@@ -1143,7 +1131,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     return packet;
-  },
+  }
 
   
 
@@ -1170,7 +1158,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       onPop: this._makeOnPop(steppingHookState),
       onStep: this._makeOnStep(steppingHookState),
     };
-  },
+  }
 
   
 
@@ -1213,7 +1201,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     return this._attachSteppingHooks(frame, steppingType, undefined);
-  },
+  }
 
   _attachSteppingHooks(frame, steppingType, completion) {
     
@@ -1260,7 +1248,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     return true;
-  },
+  }
 
   
 
@@ -1280,7 +1268,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         frame = frame.older;
       }
     }
-  },
+  }
 
   
 
@@ -1326,7 +1314,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
           
           error;
     }
-  },
+  }
 
   
 
@@ -1347,7 +1335,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     this.emit("resumed");
     this.hideOverlay();
-  },
+  }
 
   
 
@@ -1358,7 +1346,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     } else {
       this.dbg.onExceptionUnwind = undefined;
     }
-  },
+  }
 
   
 
@@ -1378,7 +1366,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     return stepFrame;
-  },
+  }
 
   frames(start, count) {
     if (this.state !== STATES.PAUSED) {
@@ -1448,7 +1436,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     return { frames };
-  },
+  }
 
   addAllSources() {
     
@@ -1486,7 +1474,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         this._resurrectSource(url);
       }
     }
-  },
+  }
 
   sources(request) {
     this.addAllSources();
@@ -1497,7 +1485,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
 
     return this.sourcesManager.iter().map(s => s.form());
-  },
+  }
 
   
 
@@ -1510,7 +1498,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     for (const bpActor of this.breakpointActorMap.findActors()) {
       bpActor.removeScripts();
     }
-  },
+  }
 
   removeAllWatchpoints() {
     for (const actor of this.threadLifetimePool.poolChildren()) {
@@ -1518,19 +1506,19 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         actor.removeWatchpoints();
       }
     }
-  },
+  }
 
   addWatchpoint(objActor, data) {
     this._watchpointsMap.add(objActor, data);
-  },
+  }
 
   removeWatchpoint(objActor, property) {
     this._watchpointsMap.remove(objActor, property);
-  },
+  }
 
   getWatchpoint(obj, property) {
     return this._watchpointsMap.get(obj, property);
-  },
+  }
 
   
 
@@ -1588,7 +1576,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       reportException("DBG-SERVER", e);
       return { error: "notInterrupted", message: e.toString() };
     }
-  },
+  }
 
   _paused(frame) {
     
@@ -1636,7 +1624,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     return packet;
-  },
+  }
 
   
 
@@ -1661,7 +1649,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     this._frameActors = frameList;
     this._framesPool = framesPool;
-  },
+  }
 
   _createFrameActor(frame, depth) {
     let actor = this._frameActorMap.get(frame);
@@ -1673,7 +1661,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       this._frameActorMap.set(frame, actor);
     }
     return actor;
-  },
+  }
 
   
 
@@ -1699,7 +1687,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     environment.actor = actor;
 
     return actor;
-  },
+  }
 
   
 
@@ -1746,7 +1734,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     pool.manage(actor);
     pool.objectActors.set(value, actor);
     return actor.form();
-  },
+  }
 
   
 
@@ -1760,7 +1748,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     return this.objectGrip(value, this._pausePool);
-  },
+  }
 
   
 
@@ -1771,7 +1759,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   threadObjectGrip(actor) {
     this.threadLifetimePool.manage(actor);
     this.threadLifetimePool.objectActors.set(actor.obj, actor);
-  },
+  }
 
   _onWindowReady({ isTopLevel, isBFCache, window }) {
     
@@ -1797,7 +1785,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     if (isBFCache) {
       this.addAllSources();
     }
-  },
+  }
 
   _onWillNavigate({ isTopLevel }) {
     if (!isTopLevel) {
@@ -1822,13 +1810,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this.removeAllWatchpoints();
     this.disableAllBreakpoints();
     this.dbg.onEnterFrame = undefined;
-  },
+  }
 
   _onNavigate() {
     if (this.state == STATES.RUNNING) {
       this.dbg.enable();
     }
-  },
+  }
 
   
   pauseForMutationBreakpoint(
@@ -1888,7 +1876,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         return pkt;
       }
     );
-  },
+  }
 
   
 
@@ -1915,12 +1903,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     return this._pauseAndRespond(frame, {
       type: PAUSE_REASONS.DEBUGGER_STATEMENT,
     });
-  },
+  }
 
   skipBreakpoints(skip) {
     this._options.skipBreakpoints = skip;
     return { skip };
-  },
+  }
 
   
   
@@ -1930,7 +1918,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       ignoreCaughtExceptions,
     });
     return {};
-  },
+  }
 
   
 
@@ -2010,7 +1998,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     return undefined;
-  },
+  }
 
   
 
@@ -2022,7 +2010,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this._addSource(script.source);
 
     this._maybeTrackFirstStatementBreakpoint(script);
-  },
+  }
 
   
 
@@ -2051,14 +2039,14 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         source: source.form(),
       });
     });
-  },
+  }
 
   
   
-  _shouldEmitNewSource: true,
+  _shouldEmitNewSource = true;
   disableNewSourceEvents() {
     this._shouldEmitNewSource = false;
-  },
+  }
 
   
 
@@ -2083,7 +2071,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     return true;
-  },
+  }
 
   
 
@@ -2138,7 +2126,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     this._debuggerSourcesSeen.add(source);
-  },
+  }
 
   
 
@@ -2233,7 +2221,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     } catch (e) {
       
     }
-  },
+  }
 
   dumpThread() {
     return {
@@ -2243,19 +2231,19 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       skipBreakpoints: this.skipBreakpointsOption,
       breakpoints: this.breakpointActorMap.listKeys(),
     };
-  },
+  }
 
   
   
   dumpPools() {
     return this.conn.dumpPools();
-  },
+  }
 
   logLocation(prefix, frame) {
     const loc = this.sourcesManager.getFrameLocation(frame);
     dump(`${prefix} (${loc.line}, ${loc.column})\n`);
-  },
-});
+  }
+}
 
 exports.ThreadActor = ThreadActor;
 
