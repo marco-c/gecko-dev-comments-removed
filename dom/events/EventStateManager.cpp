@@ -36,6 +36,7 @@
 #include "mozilla/dom/DragEvent.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/FrameLoaderBinding.h"
+#include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/PointerEventHandler.h"
@@ -113,7 +114,6 @@
 #include "nsIController.h"
 #include "mozilla/Services.h"
 #include "mozilla/dom/ContentParent.h"
-#include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/Record.h"
 #include "mozilla/dom/Selection.h"
 
@@ -3944,6 +3944,15 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       break;
 
     case eKeyUp:
+      
+      
+      
+      
+      
+      
+      if (aEvent->AsKeyboardEvent()->ShouldWorkAsSpaceKey()) {
+        ClearGlobalActiveContent(this);
+      }
       break;
 
     case eKeyPress: {
