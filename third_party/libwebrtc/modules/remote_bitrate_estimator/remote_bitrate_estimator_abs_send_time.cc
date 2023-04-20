@@ -396,10 +396,4 @@ DataRate RemoteBitrateEstimatorAbsSendTime::LatestEstimate() const {
   return remote_rate_.LatestEstimate();
 }
 
-void RemoteBitrateEstimatorAbsSendTime::SetMinBitrate(int min_bitrate_bps) {
-  
-  
-  MutexLock lock(&mutex_);
-  remote_rate_.SetMinBitrate(DataRate::BitsPerSec(min_bitrate_bps));
-}
 }  
