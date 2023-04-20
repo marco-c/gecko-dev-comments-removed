@@ -207,7 +207,7 @@ nsresult nsMenuBarListener::KeyUp(Event* aKeyEvent) {
       
       
       if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
-        pm->Rollup(0, false, nullptr, nullptr);
+        pm->Rollup({});
       }
       
       

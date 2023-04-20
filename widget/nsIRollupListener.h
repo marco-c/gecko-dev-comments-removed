@@ -16,6 +16,18 @@ class nsIWidget;
 
 class nsIRollupListener {
  public:
+  enum class FlushViews : bool { No, Yes };
+  struct RollupOptions {
+    
+    
+    uint32_t mCount = 0;
+    
+    FlushViews mFlush = FlushViews::No;
+    
+    
+    const mozilla::LayoutDeviceIntPoint* mPoint = nullptr;
+  };
+
   
 
 
@@ -24,18 +36,9 @@ class nsIRollupListener {
 
 
 
-
-
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual bool Rollup(uint32_t aCount, bool aFlush,
-                      const mozilla::LayoutDeviceIntPoint* aPoint,
-                      nsIContent** aLastRolledUp) = 0;
+  virtual bool Rollup(const RollupOptions&,
+                      nsIContent** aLastRolledUp = nullptr) = 0;
 
   
 
