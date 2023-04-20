@@ -265,10 +265,6 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
 
     
     
-    int target_delay_ms = 0;
-
-    
-    
     
     rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor;
 
