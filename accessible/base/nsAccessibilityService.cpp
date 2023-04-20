@@ -573,13 +573,8 @@ void nsAccessibilityService::TableLayoutGuessMaybeChanged(
   if (DocAccessible* document = GetDocAccessible(aPresShell)) {
     if (LocalAccessible* acc = document->GetAccessible(aContent)) {
       if (LocalAccessible* table = nsAccUtils::TableFor(acc)) {
-        if (!StaticPrefs::accessibility_cache_enabled_AtStartup()) {
-          
-          
-          
-          document->FireDelayedEvent(
-              nsIAccessibleEvent::EVENT_TABLE_STYLING_CHANGED, table);
-        }
+        document->FireDelayedEvent(
+            nsIAccessibleEvent::EVENT_TABLE_STYLING_CHANGED, table);
         document->QueueCacheUpdate(table, CacheDomain::Table);
       }
     }
