@@ -162,7 +162,7 @@ var ReaderMode = {
       ),
     };
     
-    webNav.loadURI(originalURL, loadURIOptions);
+    webNav.fixupAndLoadURIString(originalURL, loadURIOptions);
   },
 
   
