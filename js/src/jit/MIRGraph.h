@@ -43,6 +43,7 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
     LOOP_HEADER,
     SPLIT_EDGE,
     FAKE_LOOP_PRED,
+    INTERNAL,
     DEAD
   };
 
@@ -98,6 +99,7 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
 
   void discardResumePoint(MResumePoint* rp,
                           ReferencesType refType = RefType_Default);
+  void removeResumePoint(MResumePoint* rp);
 
   
   
@@ -129,6 +131,11 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
                                    size_t predEdgeIdx, MBasicBlock* succ);
   static MBasicBlock* NewFakeLoopPredecessor(MIRGraph& graph,
                                              MBasicBlock* header);
+
+  
+  
+  static MBasicBlock* NewInternal(MIRGraph& graph, MBasicBlock* orig,
+                                  MResumePoint* activeResumePoint);
 
   bool dominates(const MBasicBlock* other) const {
     return other->domIndex() - domIndex() < numDominated();
@@ -320,6 +327,18 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   void discardAllPhis();
   void discardAllResumePoints(bool discardEntry = true);
   void clear();
+
+  
+  
+  
+  bool wrapInstructionInFastpath(MInstruction* ins, MInstruction* fastpath,
+                                 MInstruction* condition);
+
+  void moveOuterResumePointTo(MBasicBlock* dest);
+
+  
+  
+  void moveToNewBlock(MInstruction* ins, MBasicBlock* dst);
 
   
   
@@ -564,6 +583,10 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
 
   BytecodeSite* trackedSite() const { return trackedSite_; }
   InlineScriptTree* trackedTree() const { return trackedSite_->tree(); }
+
+  
+  
+  MResumePoint* activeResumePoint(MInstruction* ins);
 
  private:
   MIRGraph& graph_;

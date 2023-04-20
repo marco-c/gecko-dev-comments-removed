@@ -8717,6 +8717,10 @@ class MResumePoint final : public MNode
   bool isDefinition() const = delete;
   bool isResumePoint() const = delete;
 
+  void setBlock(MBasicBlock* block) {
+    setBlockAndKind(block, Kind::ResumePoint);
+  }
+
  protected:
   
   
