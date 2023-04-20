@@ -297,12 +297,6 @@ let interfaceNamesInGlobalScope = [
   
   "ReadableStreamDefaultReader",
   
-  { name: "Report", nightly: true },
-  
-  { name: "ReportBody", nightly: true },
-  
-  { name: "ReportingObserver", nightly: true },
-  
   "Request",
   
   "Response",
