@@ -2771,7 +2771,7 @@ pref("browser.firefox-view.view-count", 0);
 
 
 
-pref("browser.pdfjs.feature-tour", "{\"screen\":\"FEATURE_CALLOUT_1\",\"complete\":false}");
+pref("browser.pdfjs.feature-tour", "{\"screen\":\"\",\"complete\":false}");
 
 
 
