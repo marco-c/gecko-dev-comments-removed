@@ -1684,8 +1684,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "onscroll", insecureContext: true },
   
-  { name: "onscrollend", insecureContext: true },
-  
   { name: "onsecuritypolicyviolation", insecureContext: true },
   
   { name: "onseeked", insecureContext: true },
