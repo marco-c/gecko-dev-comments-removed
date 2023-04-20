@@ -15,26 +15,29 @@ use crate::{
 };
 use std::{convert::TryFrom, ops::Index};
 
-/// The position at which an expression is, used while lowering
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ExprPos {
-    /// The expression is in the left hand side of an assignment
+    
     Lhs,
-    /// The expression is in the right hand side of an assignment
+    
     Rhs,
-    /// The expression is an array being indexed, needed to allow constant
-    /// arrays to be dynamically indexed
+    
+    
     AccessBase {
-        /// The index is a constant
+        
         constant_index: bool,
     },
 }
 
 impl ExprPos {
-    /// Returns an lhs position if the current position is lhs otherwise AccessBase
+    
     const fn maybe_access_base(&self, constant_index: bool) -> Self {
         match *self {
-            ExprPos::Lhs => *self,
+            ExprPos::Lhs
+            | ExprPos::AccessBase {
+                constant_index: false,
+            } => *self,
             _ => ExprPos::AccessBase { constant_index },
         }
     }
@@ -164,34 +167,34 @@ impl Context {
         self.symbol_table.add(name.into(), var);
     }
 
-    /// Starts the expression emitter
-    ///
-    /// # Panics
-    ///
-    /// - If called twice in a row without calling [`emit_end`][Self::emit_end].
+    
+    
+    
+    
+    
     #[inline]
     pub fn emit_start(&mut self) {
         self.emitter.start(&self.expressions)
     }
 
-    /// Emits all the expressions captured by the emitter to the passed `body`
-    ///
-    /// # Panics
-    ///
-    /// - If called before calling [`emit_start`].
-    /// - If called twice in a row without calling [`emit_start`].
-    ///
-    /// [`emit_start`]: Self::emit_start
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn emit_end(&mut self, body: &mut Block) {
         body.extend(self.emitter.finish(&self.expressions))
     }
 
-    /// Emits all the expressions captured by the emitter to the passed `body`
-    /// and starts the emitter again
-    ///
-    /// # Panics
-    ///
-    /// - If called before calling [`emit_start`][Self::emit_start].
+    
+    
+    
+    
+    
+    
     pub fn emit_restart(&mut self, body: &mut Block) {
         self.emit_end(body);
         self.emit_start()
@@ -214,10 +217,10 @@ impl Context {
         handle
     }
 
-    /// Add variable to current scope
-    ///
-    /// Returns a variable if a variable with the same name was already defined,
-    /// otherwise returns `None`
+    
+    
+    
+    
     pub fn add_local_var(
         &mut self,
         name: String,
@@ -235,7 +238,7 @@ impl Context {
         self.symbol_table.add(name, var)
     }
 
-    /// Add function argument to current scope
+    
     pub fn add_function_arg(
         &mut self,
         parser: &mut Parser,
@@ -325,20 +328,20 @@ impl Context {
         }
     }
 
-    /// Returns a [`StmtContext`](StmtContext) to be used in parsing and lowering
-    ///
-    /// # Panics
-    /// - If more than one [`StmtContext`](StmtContext) are active at the same
-    /// time or if the previous call didn't use it in lowering.
+    
+    
+    
+    
+    
     #[must_use]
     pub fn stmt_ctx(&mut self) -> StmtContext {
         self.stmt_ctx.take().unwrap()
     }
 
-    /// Lowers a [`HirExpr`](HirExpr) which might produce a [`Expression`](Expression).
-    ///
-    /// consumes a [`StmtContext`](StmtContext) returning it to the context so
-    /// that it can be used again later.
+    
+    
+    
+    
     pub fn lower(
         &mut self,
         mut stmt: StmtContext,
@@ -355,11 +358,11 @@ impl Context {
         res
     }
 
-    /// Similar to [`lower`](Self::lower) but returns an error if the expression
-    /// returns void (ie. doesn't produce a [`Expression`](Expression)).
-    ///
-    /// consumes a [`StmtContext`](StmtContext) returning it to the context so
-    /// that it can be used again later.
+    
+    
+    
+    
+    
     pub fn lower_expect(
         &mut self,
         mut stmt: StmtContext,
@@ -376,11 +379,11 @@ impl Context {
         res
     }
 
-    /// internal implementation of [`lower_expect`](Self::lower_expect)
-    ///
-    /// this method is only public because it's used in
-    /// [`function_call`](Parser::function_call), unless you know what
-    /// you're doing use [`lower_expect`](Self::lower_expect)
+    
+    
+    
+    
+    
     pub fn lower_expect_inner(
         &mut self,
         stmt: &StmtContext,
@@ -417,8 +420,8 @@ impl Context {
             pattern,
         } = self.expressions[pointer]
         {
-            // Stores to swizzled values are not directly supported,
-            // lower them as series of per-component stores.
+            
+            
             let size = match size {
                 VectorSize::Bi => 2,
                 VectorSize::Tri => 3,
@@ -465,7 +468,7 @@ impl Context {
         }
     }
 
-    /// Internal implementation of [`lower`](Self::lower)
+    
     fn lower_inner(
         &mut self,
         stmt: &StmtContext,
@@ -476,15 +479,15 @@ impl Context {
     ) -> Result<(Option<Handle<Expression>>, Span)> {
         let HirExpr { ref kind, meta } = stmt.hir_exprs[expr];
 
-        log::debug!("Lowering {:?}", expr);
+        log::debug!("Lowering {:?} (kind {:?}, pos {:?})", expr, kind, pos);
 
         let handle = match *kind {
             HirExprKind::Access { base, index } => {
                 let (index, index_meta) =
                     self.lower_expect_inner(stmt, parser, index, ExprPos::Rhs, body)?;
                 let maybe_constant_index = match pos {
-                    // Don't try to generate `AccessIndex` if in a LHS position, since it
-                    // wouldn't produce a pointer.
+                    
+                    
                     ExprPos::Lhs => None,
                     _ => parser.solve_constant(self, index, index_meta).ok(),
                 };
@@ -537,9 +540,7 @@ impl Context {
                 pointer
             }
             HirExprKind::Select { base, ref field } => {
-                let base = self
-                    .lower_expect_inner(stmt, parser, base, pos.maybe_access_base(true), body)?
-                    .0;
+                let base = self.lower_expect_inner(stmt, parser, base, pos, body)?.0;
 
                 parser.field_selection(self, pos, body, base, field, meta)?
             }
@@ -585,7 +586,7 @@ impl Context {
                             left_columns == right_columns && left_rows == right_rows
                         };
 
-                        // Check that the two arguments have the same dimensions
+                        
                         if !dimensions_ok || left_width != right_width {
                             parser.errors.push(Error {
                                 kind: ErrorKind::SemanticError(
@@ -601,12 +602,12 @@ impl Context {
 
                         match op {
                             BinaryOperator::Divide => {
-                                // Naga IR doesn't support matrix division so we need to
-                                // divide the columns individually and reassemble the matrix
+                                
+                                
                                 let mut components = Vec::with_capacity(left_columns as usize);
 
                                 for index in 0..left_columns as u32 {
-                                    // Get the column vectors
+                                    
                                     let left_vector = self.add_expression(
                                         Expression::AccessIndex { base: left, index },
                                         meta,
@@ -618,7 +619,7 @@ impl Context {
                                         body,
                                     );
 
-                                    // Divide the vectors
+                                    
                                     let column = self.expressions.append(
                                         Expression::Binary {
                                             op,
@@ -631,7 +632,7 @@ impl Context {
                                     components.push(column)
                                 }
 
-                                // Rebuild the matrix from the divided vectors
+                                
                                 self.expressions.append(
                                     Expression::Compose {
                                         ty: parser.module.types.insert(
@@ -651,11 +652,11 @@ impl Context {
                                 )
                             }
                             BinaryOperator::Equal | BinaryOperator::NotEqual => {
-                                // Naga IR doesn't support matrix comparisons so we need to
-                                // compare the columns individually and then fold them together
-                                //
-                                // The folding is done using a logical and for equality and
-                                // a logical or for inequality
+                                
+                                
+                                
+                                
+                                
                                 let equals = op == BinaryOperator::Equal;
 
                                 let (op, combine, fun) = match equals {
@@ -674,7 +675,7 @@ impl Context {
                                 let mut root = None;
 
                                 for index in 0..left_columns as u32 {
-                                    // Get the column vectors
+                                    
                                     let left_vector = self.add_expression(
                                         Expression::AccessIndex { base: left, index },
                                         meta,
@@ -695,16 +696,16 @@ impl Context {
                                         meta,
                                     );
 
-                                    // The result of comparing two vectors is a boolean vector
-                                    // so use a relational function like all to get a single
-                                    // boolean value
+                                    
+                                    
+                                    
                                     let compare = self.add_expression(
                                         Expression::Relational { fun, argument },
                                         meta,
                                         body,
                                     );
 
-                                    // Fold the result
+                                    
                                     root = Some(match root {
                                         Some(right) => self.add_expression(
                                             Expression::Binary {
@@ -817,7 +818,7 @@ impl Context {
                             width: right_width,
                         },
                     ) => {
-                        // Check that the two arguments have the same width
+                        
                         if left_width != right_width {
                             parser.errors.push(Error {
                                 kind: ErrorKind::SemanticError(
@@ -835,10 +836,10 @@ impl Context {
                             BinaryOperator::Divide
                             | BinaryOperator::Add
                             | BinaryOperator::Subtract => {
-                                // Naga IR doesn't support all matrix by scalar operations so
-                                // we need for some to turn the scalar into a vector by
-                                // splatting it and then for each column vector apply the
-                                // operation and finally reconstruct the matrix
+                                
+                                
+                                
+                                
                                 let scalar_vector = self.add_expression(
                                     Expression::Splat {
                                         size: rows,
@@ -851,15 +852,15 @@ impl Context {
                                 let mut components = Vec::with_capacity(columns as usize);
 
                                 for index in 0..columns as u32 {
-                                    // Get the column vector
+                                    
                                     let matrix_column = self.add_expression(
                                         Expression::AccessIndex { base: right, index },
                                         meta,
                                         body,
                                     );
 
-                                    // Apply the operation to the splatted vector and
-                                    // the column vector
+                                    
+                                    
                                     let column = self.expressions.append(
                                         Expression::Binary {
                                             op,
@@ -872,7 +873,7 @@ impl Context {
                                     components.push(column)
                                 }
 
-                                // Rebuild the matrix from the operation result vectors
+                                
                                 self.expressions.append(
                                     Expression::Compose {
                                         ty: parser.module.types.insert(
@@ -908,7 +909,7 @@ impl Context {
                             width: right_width, ..
                         },
                     ) => {
-                        // Check that the two arguments have the same width
+                        
                         if left_width != right_width {
                             parser.errors.push(Error {
                                 kind: ErrorKind::SemanticError(
@@ -926,10 +927,10 @@ impl Context {
                             BinaryOperator::Divide
                             | BinaryOperator::Add
                             | BinaryOperator::Subtract => {
-                                // Naga IR doesn't support all matrix by scalar operations so
-                                // we need for some to turn the scalar into a vector by
-                                // splatting it and then for each column vector apply the
-                                // operation and finally reconstruct the matrix
+                                
+                                
+                                
+                                
 
                                 let scalar_vector = self.add_expression(
                                     Expression::Splat {
@@ -943,15 +944,15 @@ impl Context {
                                 let mut components = Vec::with_capacity(columns as usize);
 
                                 for index in 0..columns as u32 {
-                                    // Get the column vector
+                                    
                                     let matrix_column = self.add_expression(
                                         Expression::AccessIndex { base: left, index },
                                         meta,
                                         body,
                                     );
 
-                                    // Apply the operation to the splatted vector and
-                                    // the column vector
+                                    
+                                    
                                     let column = self.expressions.append(
                                         Expression::Binary {
                                             op,
@@ -964,7 +965,7 @@ impl Context {
                                     components.push(column)
                                 }
 
-                                // Rebuild the matrix from the operation result vectors
+                                
                                 self.expressions.append(
                                     Expression::Compose {
                                         ty: parser.module.types.insert(
@@ -1014,9 +1015,9 @@ impl Context {
                     var.expr
                 }
                 ExprPos::AccessBase { constant_index } => {
-                    // If the index isn't constant all accesses backed by a constant base need
-                    // to be done trough a proxy local variable, since constants have a non
-                    // pointer type which is required for dynamic indexing
+                    
+                    
+                    
                     if !constant_index {
                         if let Some((constant, ty)) = var.constant {
                             let local = self.locals.append(
@@ -1056,65 +1057,65 @@ impl Context {
                 )?;
                 return Ok((maybe_expr, meta));
             }
-            // `HirExprKind::Conditional` represents the ternary operator in glsl (`:?`)
-            //
-            // The ternary operator is defined to only evaluate one of the two possible
-            // expressions which means that it's behavior is that of an `if` statement,
-            // and it's merely syntatic sugar for it.
+            
+            
+            
+            
+            
             HirExprKind::Conditional {
                 condition,
                 accept,
                 reject,
             } if ExprPos::Lhs != pos => {
-                // Given an expression `a ? b : c`, we need to produce a Naga
-                // statement roughly like:
-                //
-                //     var temp;
-                //     if a {
-                //         temp = convert(b);
-                //     } else  {
-                //         temp = convert(c);
-                //     }
-                //
-                // where `convert` stands for type conversions to bring `b` and `c` to
-                // the same type, and then use `temp` to represent the value of the whole
-                // conditional expression in subsequent code.
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
 
-                // Lower the condition first to the current bodyy
+                
                 let condition = self
                     .lower_expect_inner(stmt, parser, condition, ExprPos::Rhs, body)?
                     .0;
 
-                // Emit all expressions since we will be adding statements to
-                // other bodies next
+                
+                
                 self.emit_restart(body);
 
-                // Create the bodies for the two cases
+                
                 let mut accept_body = Block::new();
                 let mut reject_body = Block::new();
 
-                // Lower the `true` branch
+                
                 let (mut accept, accept_meta) =
                     self.lower_expect_inner(stmt, parser, accept, pos, &mut accept_body)?;
 
-                // Flush the body of the `true` branch, to start emitting on the
-                // `false` branch
+                
+                
                 self.emit_restart(&mut accept_body);
 
-                // Lower the `false` branch
+                
                 let (mut reject, reject_meta) =
                     self.lower_expect_inner(stmt, parser, reject, pos, &mut reject_body)?;
 
-                // Flush the body of the `false` branch
+                
                 self.emit_restart(&mut reject_body);
 
-                // We need to do some custom implicit conversions since the two target expressions
-                // are in different bodies
+                
+                
                 if let (
                     Some((accept_power, accept_width, accept_kind)),
                     Some((reject_power, reject_width, reject_kind)),
                 ) = (
-                    // Get the components of both branches and calculate the type power
+                    
                     self.expr_scalar_components(parser, accept, accept_meta)?
                         .and_then(|(kind, width)| Some((type_power(kind, width)?, width, kind))),
                     self.expr_scalar_components(parser, reject, reject_meta)?
@@ -1123,34 +1124,34 @@ impl Context {
                     match accept_power.cmp(&reject_power) {
                         std::cmp::Ordering::Less => {
                             self.conversion(&mut accept, accept_meta, reject_kind, reject_width)?;
-                            // The expression belongs to the `true` branch so we need to flush to
-                            // the respective body
+                            
+                            
                             self.emit_end(&mut accept_body);
                         }
-                        // Technically there's nothing to flush but later we will need to
-                        // add some expressions that must not be emitted so instead
-                        // of flushing, starting and flushing again, just make sure
-                        // everything is flushed.
+                        
+                        
+                        
+                        
                         std::cmp::Ordering::Equal => self.emit_end(body),
                         std::cmp::Ordering::Greater => {
                             self.conversion(&mut reject, reject_meta, accept_kind, accept_width)?;
-                            // The expression belongs to the `false` branch so we need to flush to
-                            // the respective body
+                            
+                            
                             self.emit_end(&mut reject_body);
                         }
                     }
                 } else {
-                    // Technically there's nothing to flush but later we will need to
-                    // add some expressions that must not be emitted.
+                    
+                    
                     self.emit_end(body)
                 }
 
-                // We need to get the type of the resulting expression to create the local,
-                // this must be done after implicit conversions to ensure both branches have
-                // the same type.
+                
+                
+                
                 let ty = parser.resolve_type_handle(self, accept, accept_meta)?;
 
-                // Add the local that will hold the result of our conditional
+                
                 let local = self.locals.append(
                     LocalVariable {
                         name: None,
@@ -1160,13 +1161,13 @@ impl Context {
                     meta,
                 );
 
-                // Note: `Expression::LocalVariable` must not be emited so it's important
-                // that at this point the emitter is flushed but not started.
+                
+                
                 let local_expr = self
                     .expressions
                     .append(Expression::LocalVariable(local), meta);
 
-                // Add to each body the store to the result variable
+                
                 accept_body.push(
                     Statement::Store {
                         pointer: local_expr,
@@ -1182,8 +1183,8 @@ impl Context {
                     reject_meta,
                 );
 
-                // Finally add the `If` to the main body with the `condition` we lowered
-                // earlier and the branches we prepared.
+                
+                
                 body.push(
                     Statement::If {
                         condition,
@@ -1193,11 +1194,11 @@ impl Context {
                     meta,
                 );
 
-                // Restart the emitter
+                
                 self.emit_start();
 
-                // Note: `Expression::Load` must be emited before it's used so make
-                // sure the emitter is active here.
+                
+                
                 self.expressions.append(
                     Expression::Load {
                         pointer: local_expr,
@@ -1290,10 +1291,10 @@ impl Context {
                 );
                 let mut right = self.add_expression(Expression::Constant(constant_1), meta, body);
 
-                // Glsl allows pre/postfixes operations on vectors and matrices, so if the
-                // target is either of them change the right side of the addition to be splatted
-                // to the same size as the target, furthermore if the target is a matrix
-                // use a composed matrix using the splatted value.
+                
+                
+                
+                
                 if let Some(size) = rows {
                     right =
                         self.add_expression(Expression::Splat { size, value: right }, meta, body);
@@ -1367,7 +1368,7 @@ impl Context {
                                 )?;
                                 array_length
                             }
-                            // let the error be handled in type checking if it's not a dynamic array
+                            
                             _ => {
                                 let mut array_length = self.add_expression(
                                     Expression::ArrayLength(lowered_array),
@@ -1568,14 +1569,14 @@ impl Index<Handle<Expression>> for Context {
     }
 }
 
-/// Helper struct passed when parsing expressions
-///
-/// This struct should only be obtained trough [`stmt_ctx`](Context::stmt_ctx)
-/// and only one of these may be active at any time per context.
+
+
+
+
 #[derive(Debug)]
 pub struct StmtContext {
-    /// A arena of high level expressions which can be lowered trough a
-    /// [`Context`](Context) to naga's [`Expression`](crate::Expression)s
+    
+    
     pub hir_exprs: Arena<HirExpr>,
 }
 
