@@ -1205,6 +1205,16 @@ var BrowserAddonUI = {
 var gUnifiedExtensions = {
   _initialized: false,
 
+  
+  
+  
+  
+  
+  
+  MESSAGE_DECK_INDEX_DEFAULT: 0,
+  MESSAGE_DECK_INDEX_HOVER: 1,
+  MESSAGE_DECK_INDEX_MENU_HOVER: 2,
+
   init() {
     if (this._initialized) {
       return;
@@ -1378,13 +1388,13 @@ var gUnifiedExtensions = {
 
   handleEvent(event) {
     switch (event.type) {
-      case "ViewShowing": {
+      case "ViewShowing":
         this.onPanelViewShowing(event.target);
         break;
-      }
-      case "ViewHiding": {
+
+      case "ViewHiding":
         this.onPanelViewHiding(event.target);
-      }
+        break;
     }
   },
 
