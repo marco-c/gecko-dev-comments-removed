@@ -9,6 +9,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/PodOperations.h"
 #include "mozilla/ScopeExit.h"
 
 #include <algorithm>
@@ -1596,6 +1597,10 @@ inline MarkStack::TaggedPtr::TaggedPtr(Tag tag, Cell* ptr)
   assertValid();
 }
 
+inline uintptr_t MarkStack::TaggedPtr::tagUnchecked() const {
+  return bits & TagMask;
+}
+
 inline MarkStack::Tag MarkStack::TaggedPtr::tag() const {
   auto tag = Tag(bits & TagMask);
   MOZ_ASSERT(tag <= LastTag);
@@ -1728,6 +1733,27 @@ bool MarkStack::hasStealableWork() const {
   return wordCountForCurrentColor() > ValueRangeWords;
 }
 
+MOZ_ALWAYS_INLINE bool MarkStack::indexIsEntryBase(size_t index) const {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT(index >= basePositionForCurrentColor() && index < position());
+  return stack()[index].tagUnchecked() != SlotsOrElementsRangeTag;
+}
+
 void MarkStack::stealWorkFrom(MarkStack& other) {
   
   
@@ -1744,7 +1770,18 @@ void MarkStack::stealWorkFrom(MarkStack& other) {
   size_t targetPos = other.position() - wordsToSteal;
   MOZ_ASSERT(other.position() >= base);
 
-  if (!ensureSpace(wordsToSteal + 1)) {
+  
+  
+  if (!other.indexIsEntryBase(targetPos)) {
+    targetPos--;
+    wordsToSteal++;
+  }
+  MOZ_ASSERT(other.indexIsEntryBase(targetPos));
+  MOZ_ASSERT(targetPos < other.position());
+  MOZ_ASSERT(targetPos > base);
+  MOZ_ASSERT(wordsToSteal == other.position() - targetPos);
+
+  if (!ensureSpace(wordsToSteal)) {
     return;
   }
 
@@ -1752,17 +1789,16 @@ void MarkStack::stealWorkFrom(MarkStack& other) {
   
   
   
-  
-  
-  
-  
-  while (other.position() > targetPos) {
-    if (other.peekTag() == MarkStack::SlotsOrElementsRangeTag) {
-      infalliblePush(other.popSlotsOrElementsRange());
-    } else {
-      infalliblePush(other.popPtr());
-    }
-  }
+
+  mozilla::PodCopy(topPtr(), other.stack().begin() + targetPos, wordsToSteal);
+  topIndex_ += wordsToSteal;
+  peekPtr().assertValid();
+
+  other.topIndex_ = targetPos;
+#ifdef DEBUG
+  other.poisonUnused();
+#endif
+  other.peekPtr().assertValid();
 }
 
 MOZ_ALWAYS_INLINE size_t MarkStack::basePositionForCurrentColor() const {
