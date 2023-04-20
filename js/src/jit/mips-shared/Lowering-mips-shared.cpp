@@ -414,6 +414,7 @@ void LIRGenerator::visitWasmLoad(MWasmLoad* ins) {
   
   
   
+  
   MOZ_ASSERT(base->type() == MIRType::Int32 || base->type() == MIRType::Int64);
 
   LAllocation ptr;
