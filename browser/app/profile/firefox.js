@@ -1852,9 +1852,6 @@ pref("media.gmp-provider.enabled", true);
 pref("network.cookie.cookieBehavior", 5 );
 
 
-pref("privacy.restrict3rdpartystorage.preferences.learnMoreURLSuffix", "total-cookie-protection");
-
-
 pref("network.cookie.cookieBehavior.pbmode", 5 );
 
 
