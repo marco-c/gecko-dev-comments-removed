@@ -446,8 +446,10 @@ class alignas(uint32_t) ImmutableScriptData final : public TrailingArray {
   uint16_t funLength = 0;
 
   
+  uint16_t propertyCountEstimate = 0;
+
   
-  uint16_t padding = 0;
+  
 
  private:
   struct Flags {
@@ -519,8 +521,8 @@ class alignas(uint32_t) ImmutableScriptData final : public TrailingArray {
   static js::UniquePtr<ImmutableScriptData> new_(
       FrontendContext* fc, uint32_t mainOffset, uint32_t nfixed,
       uint32_t nslots, GCThingIndex bodyScopeIndex, uint32_t numICEntries,
-      bool isFunction, uint16_t funLength, mozilla::Span<const jsbytecode> code,
-      mozilla::Span<const SrcNote> notes,
+      bool isFunction, uint16_t funLength, uint16_t propertyCountEstimate,
+      mozilla::Span<const jsbytecode> code, mozilla::Span<const SrcNote> notes,
       mozilla::Span<const uint32_t> resumeOffsets,
       mozilla::Span<const ScopeNote> scopeNotes,
       mozilla::Span<const TryNote> tryNotes);

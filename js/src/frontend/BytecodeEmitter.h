@@ -11,8 +11,9 @@
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
-#include "mozilla/Maybe.h"  
-#include "mozilla/Span.h"   
+#include "mozilla/Maybe.h"     
+#include "mozilla/Saturate.h"  
+#include "mozilla/Span.h"      
 
 #include <stddef.h>  
 #include <stdint.h>  
@@ -312,6 +313,11 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   
   JumpList finalYields = {};
+
+  
+  
+  
+  mozilla::SaturateUint8 propertyAdditionEstimate = {};
 
   
 

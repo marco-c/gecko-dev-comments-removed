@@ -656,6 +656,11 @@ class JSFunction : public js::NativeObject {
     MOZ_ASSERT_IF(isTenured(), kind == asTenured().getAllocKind());
     return kind;
   }
+
+  
+  
+  static bool getAllocKindForThis(JSContext* cx, js::HandleFunction func,
+                                  js::gc::AllocKind& allocKind);
 };
 
 static_assert(sizeof(JSFunction) == sizeof(JS::shadow::Function),
