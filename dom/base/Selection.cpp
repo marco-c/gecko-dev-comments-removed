@@ -8,12 +8,12 @@
 
 
 
-#include "mozilla/dom/Selection.h"
+#include "Selection.h"
 
+#include "ErrorList.h"
 #include "LayoutConstants.h"
-#include "mozilla/intl/BidiEmbeddingLevel.h"
-
 #include "mozilla/AccessibleCaretEventHub.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/AutoCopyListener.h"
@@ -27,6 +27,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/IntegerRange.h"
+#include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/Logging.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RangeBoundary.h"
@@ -1318,7 +1319,7 @@ void Selection::Clear(nsPresContext* aPresContext) {
 
   mStyledRanges.UnregisterSelection();
   for (uint32_t i = 0; i < mStyledRanges.Length(); ++i) {
-    SelectFrames(aPresContext, mStyledRanges.mRanges[i].mRange, false);
+    SelectFrames(aPresContext, *mStyledRanges.mRanges[i].mRange, false);
   }
   mStyledRanges.Clear();
 
@@ -1656,7 +1657,7 @@ void Selection::SelectFramesInAllRanges(nsPresContext* aPresContext) {
   for (size_t i = 0; i < mStyledRanges.Length(); ++i) {
     nsRange* range = mStyledRanges.mRanges[i].mRange->AsDynamicRange();
     MOZ_ASSERT(range->IsInAnySelection());
-    SelectFrames(aPresContext, range, range->IsInAnySelection());
+    SelectFrames(aPresContext, *range, range->IsInAnySelection());
   }
 }
 
@@ -1665,32 +1666,37 @@ void Selection::SelectFramesInAllRanges(nsPresContext* aPresContext) {
 
 
 nsresult Selection::SelectFrames(nsPresContext* aPresContext,
-                                 AbstractRange* aRange, bool aSelect) const {
+                                 AbstractRange& aRange, bool aSelect) const {
   if (!mFrameSelection || !aPresContext || !aPresContext->GetPresShell()) {
     
     return NS_OK;
   }
-  MOZ_ASSERT(aRange && aRange->IsPositioned());
 
-  if (aRange->IsStaticRange() && !aRange->AsStaticRange()->IsValid()) {
+  MOZ_DIAGNOSTIC_ASSERT(aRange.IsPositioned());
+
+  const Document* const document = GetDocument();
+  if (MOZ_UNLIKELY(!document ||
+                   aRange.GetComposedDocOfContainers() != document)) {
+    return NS_OK;  
+  }
+
+  if (aRange.IsStaticRange() && !aRange.AsStaticRange()->IsValid()) {
     
     return NS_OK;
   }
 
   if (mFrameSelection->IsInTableSelectionMode()) {
-    nsINode* node = aRange->GetClosestCommonInclusiveAncestor();
-    nsIFrame* frame = node->IsContent()
-                          ? node->AsContent()->GetPrimaryFrame()
-                          : aPresContext->PresShell()->GetRootFrame();
+    const nsIContent* const commonAncestorContent =
+        nsIContent::FromNodeOrNull(aRange.GetClosestCommonInclusiveAncestor());
+    nsIFrame* const frame = commonAncestorContent
+                                ? commonAncestorContent->GetPrimaryFrame()
+                                : aPresContext->PresShell()->GetRootFrame();
     if (frame) {
       if (frame->IsTextFrame()) {
-        nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
-
-        MOZ_ASSERT(node == aRange->GetStartContainer());
-        MOZ_ASSERT(node == aRange->GetEndContainer());
-        textFrame->SelectionStateChanged(aRange->StartOffset(),
-                                         aRange->EndOffset(), aSelect,
-                                         mSelectionType);
+        MOZ_ASSERT(commonAncestorContent == aRange.GetStartContainer());
+        MOZ_ASSERT(commonAncestorContent == aRange.GetEndContainer());
+        static_cast<nsTextFrame*>(frame)->SelectionStateChanged(
+            aRange.StartOffset(), aRange.EndOffset(), aSelect, mSelectionType);
       } else {
         frame->SelectionStateChanged();
       }
@@ -1701,36 +1707,36 @@ nsresult Selection::SelectFrames(nsPresContext* aPresContext,
 
   
   
-  nsINode* startNode = aRange->GetStartContainer();
-  nsIContent* startContent =
-      startNode->IsContent() ? startNode->AsContent() : nullptr;
-  if (!startContent) {
+  nsIContent* const startContent =
+      nsIContent::FromNodeOrNull(aRange.GetStartContainer());
+  if (MOZ_UNLIKELY(!startContent)) {
     
     
     
     
     return NS_ERROR_UNEXPECTED;
   }
+  MOZ_DIAGNOSTIC_ASSERT(startContent->IsInComposedDoc());
 
   
-  bool isFirstContentTextNode = startContent->IsText();
-  nsINode* endNode = aRange->GetEndContainer();
+  nsINode* const endNode = aRange.GetEndContainer();
+  if (NS_WARN_IF(!endNode)) {
+    
+    
+    return NS_ERROR_UNEXPECTED;
+  }
+  const bool isFirstContentTextNode = startContent->IsText();
   if (isFirstContentTextNode) {
-    nsIFrame* frame = startContent->GetPrimaryFrame();
-    
-    
-    if (frame) {
+    if (nsIFrame* const frame = startContent->GetPrimaryFrame()) {
+      
+      
       if (frame->IsTextFrame()) {
-        nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
-        uint32_t startOffset = aRange->StartOffset();
-        uint32_t endOffset;
-        if (endNode == startContent) {
-          endOffset = aRange->EndOffset();
-        } else {
-          endOffset = startContent->Length();
-        }
-        textFrame->SelectionStateChanged(startOffset, endOffset, aSelect,
-                                         mSelectionType);
+        const uint32_t startOffset = aRange.StartOffset();
+        const uint32_t endOffset = endNode == startContent
+                                       ? aRange.EndOffset()
+                                       : startContent->Length();
+        static_cast<nsTextFrame*>(frame)->SelectionStateChanged(
+            startOffset, endOffset, aSelect, mSelectionType);
       } else {
         frame->SelectionStateChanged();
       }
@@ -1739,8 +1745,8 @@ nsresult Selection::SelectFrames(nsPresContext* aPresContext,
 
   
   
-  if (aRange->Collapsed() ||
-      (startNode == endNode && !startNode->HasChildren())) {
+  if (aRange.Collapsed() ||
+      (startContent == endNode && !startContent->HasChildren())) {
     if (!isFirstContentTextNode) {
       SelectFramesOf(startContent, aSelect);
     }
@@ -1748,38 +1754,31 @@ nsresult Selection::SelectFrames(nsPresContext* aPresContext,
   }
 
   ContentSubtreeIterator subtreeIter;
-  subtreeIter.Init(aRange);
+  subtreeIter.Init(&aRange);
   if (isFirstContentTextNode && !subtreeIter.IsDone() &&
-      subtreeIter.GetCurrentNode() == startNode) {
+      subtreeIter.GetCurrentNode() == startContent) {
     subtreeIter.Next();  
   }
   PostContentIterator postOrderIter;
   for (; !subtreeIter.IsDone(); subtreeIter.Next()) {
-    nsINode* node = subtreeIter.GetCurrentNode();
-    MOZ_ASSERT(node);
-    nsIContent* content = node->IsContent() ? node->AsContent() : nullptr;
-    SelectFramesOfInclusiveDescendantsOfContent(postOrderIter, content,
-                                                aSelect);
+    MOZ_DIAGNOSTIC_ASSERT(subtreeIter.GetCurrentNode());
+    if (nsIContent* const content =
+            nsIContent::FromNodeOrNull(subtreeIter.GetCurrentNode())) {
+      SelectFramesOfInclusiveDescendantsOfContent(postOrderIter, content,
+                                                  aSelect);
+    }
   }
 
   
-  if (endNode != startNode) {
-    nsIContent* endContent =
-        endNode->IsContent() ? endNode->AsContent() : nullptr;
+  if (endNode == startContent || !endNode->IsText()) {
+    return NS_OK;
+  }
+
+  if (nsIFrame* const frame = endNode->AsText()->GetPrimaryFrame()) {
     
-    
-    
-    if (NS_WARN_IF(!endContent)) {
-      return NS_ERROR_UNEXPECTED;
-    }
-    if (endContent->IsText()) {
-      nsIFrame* frame = endContent->GetPrimaryFrame();
-      
-      if (frame && frame->IsTextFrame()) {
-        nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
-        textFrame->SelectionStateChanged(0, aRange->EndOffset(), aSelect,
-                                         mSelectionType);
-      }
+    if (frame->IsTextFrame()) {
+      static_cast<nsTextFrame*>(frame)->SelectionStateChanged(
+          0, aRange.EndOffset(), aSelect, mSelectionType);
     }
   }
   return NS_OK;
@@ -1909,8 +1908,9 @@ Selection::Repaint(nsPresContext* aPresContext) {
   int32_t i;
 
   for (i = 0; i < arrCount; i++) {
+    MOZ_ASSERT(mStyledRanges.mRanges[i].mRange);
     nsresult rv =
-        SelectFrames(aPresContext, mStyledRanges.mRanges[i].mRange, true);
+        SelectFrames(aPresContext, *mStyledRanges.mRanges[i].mRange, true);
 
     if (NS_FAILED(rv)) {
       return rv;
@@ -2226,7 +2226,7 @@ void Selection::AddRangeAndSelectFramesAndNotifyListenersInternal(
   }
 
   RefPtr<nsPresContext> presContext = GetPresContext();
-  SelectFrames(presContext, range, true);
+  SelectFrames(presContext, *range, true);
 
   
   NotifySelectionListeners();
@@ -2246,7 +2246,7 @@ void Selection::AddHighlightRangeAndSelectFramesAndNotifyListeners(
   }
 
   RefPtr<nsPresContext> presContext = GetPresContext();
-  SelectFrames(presContext, &aRange, true);
+  SelectFrames(presContext, aRange, true);
 
   
   NotifySelectionListeners();
@@ -2301,7 +2301,7 @@ void Selection::RemoveRangeAndUnselectFramesAndNotifyListeners(
 
   
   RefPtr<nsPresContext> presContext = GetPresContext();
-  SelectFrames(presContext, &aRange, false);
+  SelectFrames(presContext, aRange, false);
 
   
   nsTArray<AbstractRange*> affectedRanges;
@@ -2312,7 +2312,8 @@ void Selection::RemoveRangeAndUnselectFramesAndNotifyListeners(
     return;
   }
   for (uint32_t i = 0; i < affectedRanges.Length(); i++) {
-    SelectFrames(presContext, affectedRanges[i], true);
+    MOZ_ASSERT(affectedRanges[i]);
+    SelectFrames(presContext, *affectedRanges[i], true);
   }
 
   if (&aRange == mAnchorFocusRange) {
@@ -2472,7 +2473,7 @@ void Selection::CollapseInternal(InLimiter aInLimiter,
     return;
   }
   SetAnchorFocusRange(0);
-  SelectFrames(presContext, range, true);
+  SelectFrames(presContext, *range, true);
 
   RefPtr<Selection> kungFuDeathGrip{this};
   
@@ -2643,9 +2644,9 @@ void Selection::ReplaceAnchorFocusRange(nsRange* aRange) {
   NS_ENSURE_TRUE_VOID(mAnchorFocusRange);
   RefPtr<nsPresContext> presContext = GetPresContext();
   if (presContext) {
-    SelectFrames(presContext, mAnchorFocusRange, false);
+    SelectFrames(presContext, *mAnchorFocusRange, false);
     SetAnchorFocusToRange(aRange);
-    SelectFrames(presContext, mAnchorFocusRange, true);
+    SelectFrames(presContext, *mAnchorFocusRange, true);
   }
 }
 
@@ -2788,7 +2789,7 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
   
   if (shouldClearRange) {
     
-    SelectFrames(presContext, range, false);
+    SelectFrames(presContext, *range, false);
 
     res = range->CollapseTo(&aContainer, aOffset);
     if (NS_FAILED(res)) {
@@ -2818,7 +2819,7 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
         aRv.Throw(res);
         return;
       }
-      SelectFrames(presContext, difRange, true);
+      SelectFrames(presContext, *difRange, true);
       res = SetAnchorFocusToRange(range);
       if (NS_FAILED(res)) {
         aRv.Throw(res);
@@ -2832,7 +2833,7 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
       if (aRv.Failed()) {
         return;
       }
-      SelectFrames(presContext, range, true);
+      SelectFrames(presContext, *range, true);
       res = SetAnchorFocusToRange(range);
       if (NS_FAILED(res)) {
         aRv.Throw(res);
@@ -2857,10 +2858,10 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
         aRv.Throw(res);
         return;
       }
-      SelectFrames(presContext, difRange, false);  
+      SelectFrames(presContext, *difRange, false);  
       difRange->SetEnd(range->GetEndContainer(), range->EndOffset());
-      SelectFrames(presContext, difRange, true);  
-                                                  
+      SelectFrames(presContext, *difRange, true);  
+                                                   
     } else if (*anchorOldFocusOrder >= 0 &&
                *anchorNewFocusOrder <= 0) {  
       if (GetDirection() == eDirPrevious) {
@@ -2892,7 +2893,7 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
           return;
         }
         
-        SelectFrames(presContext, difRange, false);
+        SelectFrames(presContext, *difRange, false);
       } else {
         res = SetAnchorFocusToRange(range);
         if (NS_FAILED(res)) {
@@ -2901,7 +2902,7 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
         }
       }
       
-      SelectFrames(presContext, range, true);
+      SelectFrames(presContext, *range, true);
     } else if (*oldFocusNewFocusOrder <= 0 &&
                *anchorNewFocusOrder >= 0) {  
       
@@ -2922,9 +2923,9 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
         aRv.Throw(res);
         return;
       }
-      SelectFrames(presContext, difRange, false);
+      SelectFrames(presContext, *difRange, false);
       difRange->SetStart(range->GetStartContainer(), range->StartOffset());
-      SelectFrames(presContext, difRange, true);  
+      SelectFrames(presContext, *difRange, true);  
     } else if (*anchorNewFocusOrder >= 0 &&
                *anchorOldFocusOrder <= 0) {  
       if (GetDirection() == eDirNext) {
@@ -2948,7 +2949,7 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
           aRv.Throw(res);
           return;
         }
-        SelectFrames(presContext, difRange, false);
+        SelectFrames(presContext, *difRange, false);
       } else {
         res = SetAnchorFocusToRange(range);
         if (NS_FAILED(res)) {
@@ -2957,7 +2958,7 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
         }
       }
       
-      SelectFrames(presContext, range, true);
+      SelectFrames(presContext, *range, true);
     } else if (*oldFocusNewFocusOrder >= 0 &&
                *anchorOldFocusOrder >= 0) {  
       
@@ -2974,7 +2975,7 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
         return;
       }
 
-      SelectFrames(presContext, difRange, true);
+      SelectFrames(presContext, *difRange, true);
       res = SetAnchorFocusToRange(range);
       if (NS_FAILED(res)) {
         aRv.Throw(res);
