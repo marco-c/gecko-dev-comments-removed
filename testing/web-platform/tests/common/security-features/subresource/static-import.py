@@ -1,9 +1,46 @@
-import os, sys
+import os, sys, json
 from urllib.parse import unquote
 
 from wptserve.utils import isomorphic_decode
 import importlib
 subresource = importlib.import_module("common.security-features.subresource.subresource")
+
+def get_csp_value(value):
+    '''
+    Returns actual CSP header values (e.g. "worker-src 'self'") for the
+    given string used in PolicyDelivery's value (e.g. "worker-src-self").
+    '''
+
+    
+    
+    
+    
+    
+    
+    if value == 'script-src-wildcard':
+        return "script-src * 'unsafe-inline'"
+    if value == 'script-src-self':
+        return "script-src 'self' 'unsafe-inline'"
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if value == 'script-src-none':
+        return "script-src 'none'"
+
+    
+    if value == 'worker-src-wildcard':
+        return 'worker-src *'
+    if value == 'worker-src-self':
+        return "worker-src 'self'"
+    if value == 'worker-src-none':
+        return "worker-src 'none'"
+    raise Exception('Invalid delivery_value: %s' % value)
 
 def generate_payload(request):
     import_url = unquote(isomorphic_decode(request.GET[b'import_url']))
@@ -13,7 +50,12 @@ def generate_payload(request):
 
 def main(request, response):
     payload_generator = lambda _: generate_payload(request)
+    maybe_additional_headers = {}
+    if b'contentSecurityPolicy' in request.GET:
+        csp = unquote(isomorphic_decode(request.GET[b'contentSecurityPolicy']))
+        maybe_additional_headers[b'Content-Security-Policy'] = get_csp_value(csp);
     subresource.respond(request,
                         response,
                         payload_generator = payload_generator,
-                        content_type = b"application/javascript")
+                        content_type = b"application/javascript",
+                        maybe_additional_headers = maybe_additional_headers)
