@@ -245,7 +245,6 @@ add_task(async function test_add_ons_cant_unhide_fx_view() {
 
 
 add_task(async function testFirstTabFocusableWhenFxViewOpen() {
-  await SpecialPowers.pushPrefEnv({ set: [["accessibility.tabfocus", 7]] });
   await withFirefoxView({}, async browser => {
     let win = browser.ownerGlobal;
     ok(win.FirefoxViewHandler.tab.selected, "Firefox View tab is selected");
@@ -266,7 +265,6 @@ add_task(async function testFirstTabFocusableWhenFxViewOpen() {
 
 
 add_task(async function testFxViewNotMultiselect() {
-  await SpecialPowers.pushPrefEnv({ set: [["accessibility.tabfocus", 7]] });
   await withFirefoxView({ win: window }, async browser => {
     let win = browser.ownerGlobal;
     Assert.ok(

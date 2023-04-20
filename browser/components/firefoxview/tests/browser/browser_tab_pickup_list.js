@@ -537,8 +537,6 @@ add_task(async function test_tabs_sync_on_user_page_reload() {
 });
 
 add_task(async function test_keyboard_navigation() {
-  
-  await SpecialPowers.pushPrefEnv({ set: [["accessibility.tabfocus", 7]] });
   TabsSetupFlowManager.resetInternalState();
 
   const sandbox = setupRecentDeviceListMocks();
