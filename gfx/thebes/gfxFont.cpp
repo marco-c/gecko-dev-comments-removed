@@ -587,12 +587,18 @@ void gfxFontShaper::MergeFontFeatures(
     }
   }
 
+  auto disableOptionalLigatures = [&]() -> void {
+    mergedFeatures.InsertOrUpdate(HB_TAG('l', 'i', 'g', 'a'), 0);
+    mergedFeatures.InsertOrUpdate(HB_TAG('c', 'l', 'i', 'g'), 0);
+    mergedFeatures.InsertOrUpdate(HB_TAG('d', 'l', 'i', 'g'), 0);
+    mergedFeatures.InsertOrUpdate(HB_TAG('h', 'l', 'i', 'g'), 0);
+  };
+
   
   if (styleRuleFeatures.IsEmpty()) {
     
     if (aDisableLigatures) {
-      mergedFeatures.InsertOrUpdate(HB_TAG('l', 'i', 'g', 'a'), 0);
-      mergedFeatures.InsertOrUpdate(HB_TAG('c', 'l', 'i', 'g'), 0);
+      disableOptionalLigatures();
     }
   } else {
     for (const gfxFontFeature& feature : styleRuleFeatures) {
@@ -607,8 +613,7 @@ void gfxFontShaper::MergeFontFeatures(
       } else if (aDisableLigatures) {
         
         
-        mergedFeatures.InsertOrUpdate(HB_TAG('l', 'i', 'g', 'a'), 0);
-        mergedFeatures.InsertOrUpdate(HB_TAG('c', 'l', 'i', 'g'), 0);
+        disableOptionalLigatures();
       }
     }
   }
