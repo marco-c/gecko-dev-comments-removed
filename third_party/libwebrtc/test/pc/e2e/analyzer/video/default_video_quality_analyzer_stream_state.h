@@ -15,7 +15,7 @@
 
 #include "absl/types/optional.h"
 #include "api/units/timestamp.h"
-#include "test/pc/e2e/analyzer/video/multi_head_queue.h"
+#include "test/pc/e2e/analyzer/video/multi_reader_queue.h"
 
 namespace webrtc {
 
@@ -50,7 +50,7 @@ class StreamState {
   
   
   
-  void AddPeer() { frame_ids_.AddHead(GetAliveFramesQueueIndex()); }
+  void AddPeer() { frame_ids_.AddReader(GetAliveFramesQueueIndex()); }
 
   size_t GetAliveFramesCount() const {
     return frame_ids_.size(GetAliveFramesQueueIndex());
@@ -86,7 +86,7 @@ class StreamState {
   
   
   
-  MultiHeadQueue<uint16_t> frame_ids_;
+  MultiReaderQueue<uint16_t> frame_ids_;
   std::map<size_t, Timestamp> last_rendered_frame_time_;
 };
 
