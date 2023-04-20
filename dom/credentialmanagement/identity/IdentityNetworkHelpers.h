@@ -14,6 +14,9 @@
 
 namespace mozilla::dom {
 
+
+
+
 template <typename T, typename TPromise = MozPromise<T, nsresult, true>>
 RefPtr<TPromise> FetchJSONStructure(Request* aRequest) {
   MOZ_ASSERT(XRE_IsParentProcess());

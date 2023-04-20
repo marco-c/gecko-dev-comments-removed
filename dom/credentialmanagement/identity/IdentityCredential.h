@@ -15,8 +15,18 @@
 
 namespace mozilla::dom {
 
+
+
+
+
+
 class IdentityCredential final : public Credential {
  public:
+  
+  
+  
+  
+  
   typedef MozPromise<RefPtr<IdentityCredential>, nsresult, true>
       GetIdentityCredentialPromise;
   typedef MozPromise<IPCIdentityCredential, nsresult, true>
@@ -36,6 +46,7 @@ class IdentityCredential final : public Credential {
       GetAccountPromise;
   typedef MozPromise<IdentityClientMetadata, nsresult, true> GetMetadataPromise;
 
+  
   explicit IdentityCredential(nsPIDOMWindowInner* aParent);
 
  protected:
@@ -45,27 +56,66 @@ class IdentityCredential final : public Credential {
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
+  
+  
+  
+  
   void CopyValuesFrom(const IPCIdentityCredential& aOther);
 
+  
   IPCIdentityCredential MakeIPCIdentityCredential();
 
+  
   void GetToken(nsAString& aToken) const;
   void SetToken(const nsAString& aToken);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static already_AddRefed<Promise> LogoutRPs(
       GlobalObject& aGlobal,
       const Sequence<IdentityCredentialLogoutRPsRequest>& aLogoutRequests,
       ErrorResult& aRv);
 
+  
+  
+  
   static RefPtr<GetIdentityCredentialPromise> DiscoverFromExternalSource(
       nsPIDOMWindowInner* aParent, const CredentialRequestOptions& aOptions,
       bool aSameOriginWithAncestors);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static RefPtr<GetIPCIdentityCredentialPromise>
   DiscoverFromExternalSourceInMainProcess(
       nsIPrincipal* aPrincipal, CanonicalBrowsingContext* aBrowsingContext,
       const IdentityCredentialRequestOptions& aOptions);
 
+  
   
   
   
@@ -160,24 +210,84 @@ class IdentityCredential final : public Credential {
       const IdentityInternalManifest& aManifest,
       const IdentityAccount& aAccount);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static RefPtr<GetMetadataPromise> FetchMetadata(
       nsIPrincipal* aPrincipal, const IdentityProvider& aProvider,
       const IdentityInternalManifest& aManifest);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static RefPtr<GetIdentityProviderPromise> PromptUserToSelectProvider(
       BrowsingContext* aBrowsingContext,
       const Sequence<IdentityProvider>& aProviders);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static RefPtr<GetAccountPromise> PromptUserToSelectAccount(
       BrowsingContext* aBrowsingContext, const IdentityAccountList& aAccounts,
       const IdentityInternalManifest& aManifest);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static RefPtr<GetAccountPromise> PromptUserWithPolicy(
       BrowsingContext* aBrowsingContext, nsIPrincipal* aPrincipal,
       const IdentityAccount& aAccount,
       const IdentityInternalManifest& aManifest,
       const IdentityProvider& aProvider);
 
+  
+  
+  
+  
+  
+  
+  
   static void CloseUserInterface(BrowsingContext* aBrowsingContext);
 
  private:
