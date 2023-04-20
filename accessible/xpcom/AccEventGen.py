@@ -5,11 +5,11 @@
 
 
 from __future__ import absolute_import
+
 import os
 
 import buildconfig
 import mozpack.path as mozpath
-
 from xpidl import xpidl
 
 
