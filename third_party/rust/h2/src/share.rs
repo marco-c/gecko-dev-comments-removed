@@ -94,7 +94,7 @@ use std::task::{Context, Poll};
 
 
 #[derive(Debug)]
-pub struct SendStream<B: Buf> {
+pub struct SendStream<B> {
     inner: proto::StreamRef<B>,
 }
 
@@ -108,8 +108,14 @@ pub struct SendStream<B: Buf> {
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct StreamId(u32);
+
+impl From<StreamId> for u32 {
+    fn from(src: StreamId) -> Self {
+        src.0
+    }
+}
 
 
 
@@ -381,6 +387,18 @@ impl<B: Buf> SendStream<B> {
 impl StreamId {
     pub(crate) fn from_internal(id: crate::frame::StreamId) -> Self {
         StreamId(id.into())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn as_u32(&self) -> u32 {
+        (*self).into()
     }
 }
 
