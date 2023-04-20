@@ -8,6 +8,8 @@ const {
   generateActorSpec,
 } = require("resource://devtools/shared/protocol.js");
 
+
+
 const webSocketSpec = generateActorSpec({
   typeName: "webSocket",
 

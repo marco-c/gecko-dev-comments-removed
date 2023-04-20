@@ -1281,6 +1281,9 @@ loader.lazyRequireGetter(
   ResourceCommand.TYPES.ROOT_NODE,
   "resource://devtools/shared/commands/resource/legacy-listeners/root-node.js"
 );
+
+
+
 loader.lazyRequireGetter(
   LegacyListeners,
   ResourceCommand.TYPES.WEBSOCKET,

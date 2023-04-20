@@ -326,6 +326,8 @@ const Types = (exports.__TypesForTests = [
     spec: "devtools/shared/specs/webconsole",
     front: "devtools/client/fronts/webconsole",
   },
+  
+  
   {
     types: ["webSocket"],
     spec: "devtools/shared/specs/websocket",
