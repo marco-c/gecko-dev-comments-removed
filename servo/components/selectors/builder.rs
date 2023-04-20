@@ -325,7 +325,7 @@ where
                 
                 
                 specificity.class_like_selectors += 1;
-                *specificity += selector_list_specificity(nth_of_data.selectors());
+                *specificity += max_selector_list_specificity(nth_of_data.selectors());
             },
             Component::Negation(ref list) | Component::Is(ref list) | Component::Has(ref list) => {
                 
@@ -333,7 +333,7 @@ where
                 
                 
                 
-                *specificity += selector_list_specificity(list);
+                *specificity += max_selector_list_specificity(list);
             },
             Component::Where(..) |
             Component::ExplicitUniversalType |
@@ -347,7 +347,7 @@ where
     }
 
     
-    fn selector_list_specificity<Impl: SelectorImpl>(list: &[Selector<Impl>]) -> Specificity {
+    fn max_selector_list_specificity<Impl: SelectorImpl>(list: &[Selector<Impl>]) -> Specificity {
         let max = list
             .iter()
             .map(|selector| selector.specificity())
