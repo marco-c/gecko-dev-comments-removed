@@ -66,7 +66,7 @@ fn main() {
     });
 }
 
-#[cfg(feature = "emscripten")]
+#[cfg(target_os = "emscripten")]
 fn main() {
     env_logger::init();
 
@@ -116,7 +116,7 @@ fn main() {
     fill_screen(&exposed, 640, 400);
 }
 
-#[cfg(all(target_arch = "wasm32", not(feature = "emscripten")))]
+#[cfg(all(target_arch = "wasm32", not(target_os = "emscripten")))]
 fn main() {}
 
 fn fill_screen(exposed: &hal::ExposedAdapter<hal::api::Gles>, width: u32, height: u32) {

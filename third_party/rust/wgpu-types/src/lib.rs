@@ -308,6 +308,8 @@ bitflags::bitflags! {
         /// - Vulkan
         /// - DX12
         ///
+        /// This is currently unimplemented on Metal.
+        ///
         /// This is a web and native feature.
         const TIMESTAMP_QUERY = 1 << 7;
         /// Enables use of Pipeline Statistics Queries. These queries tell the count of various operations
@@ -476,6 +478,9 @@ bitflags::bitflags! {
         /// - Metal (Emulated on top of `draw_indirect` and `draw_indexed_indirect`)
         ///
         /// This is a native only feature.
+        ///
+        /// [`RenderPass::multi_draw_indirect`]: ../wgpu/struct.RenderPass.html#method.multi_draw_indirect
+        /// [`RenderPass::multi_draw_indexed_indirect`]: ../wgpu/struct.RenderPass.html#method.multi_draw_indexed_indirect
         const MULTI_DRAW_INDIRECT = 1 << 23;
         /// Allows the user to call [`RenderPass::multi_draw_indirect_count`] and [`RenderPass::multi_draw_indexed_indirect_count`].
         ///
@@ -486,6 +491,9 @@ bitflags::bitflags! {
         /// - Vulkan 1.2+ (or VK_KHR_draw_indirect_count)
         ///
         /// This is a native only feature.
+        ///
+        /// [`RenderPass::multi_draw_indirect_count`]: ../wgpu/struct.RenderPass.html#method.multi_draw_indirect_count
+        /// [`RenderPass::multi_draw_indexed_indirect_count`]: ../wgpu/struct.RenderPass.html#method.multi_draw_indexed_indirect_count
         const MULTI_DRAW_INDIRECT_COUNT = 1 << 24;
         /// Allows the use of push constants: small, fast bits of memory that can be updated
         /// inside a [`RenderPass`].
@@ -503,6 +511,10 @@ bitflags::bitflags! {
         /// - OpenGL (emulated with uniforms)
         ///
         /// This is a native only feature.
+        ///
+        /// [`RenderPass`]: ../wgpu/struct.RenderPass.html
+        /// [`PipelineLayoutDescriptor`]: ../wgpu/struct.PipelineLayoutDescriptor.html
+        /// [`RenderPass::set_push_constants`]: ../wgpu/struct.RenderPass.html#method.set_push_constants
         const PUSH_CONSTANTS = 1 << 25;
         /// Allows the use of [`AddressMode::ClampToBorder`] with a border color
         /// other than [`SamplerBorderColor::Zero`].
@@ -664,15 +676,16 @@ bitflags::bitflags! {
         ///
         /// This is a native-only feature.
         const TEXTURE_COMPRESSION_ASTC_HDR = 1 << 40;
-        /// Allows for timestamp queries inside render passes. Metal does not allow this
-        /// on Apple GPUs.
+        /// Allows for timestamp queries inside render passes.
         ///
         /// Implies [`Features::TIMESTAMP_QUERIES`] is supported.
         ///
         /// Supported platforms:
         /// - Vulkan
         /// - DX12
-        /// - Metal (Intel and AMD GPUs)
+        ///
+        /// This is currently unimplemented on Metal.
+        /// When implemented, it will be supported on Metal on AMD and Intel GPUs, but not Apple GPUs.
         const WRITE_TIMESTAMP_INSIDE_PASSES = 1 << 41;
         /// Allows shaders to use i16. Not currently supported in naga, only available through `spirv-passthrough`.
         ///
@@ -681,6 +694,13 @@ bitflags::bitflags! {
         ///
         /// This is a native-only feature.
         const SHADER_INT16 = 1 << 42;
+        /// Allows shaders to use the `early_depth_test` attribute.
+        ///
+        /// Supported platforms:
+        /// - GLES 3.1+
+        ///
+        /// This is a native-only feature.
+        const SHADER_EARLY_DEPTH_TEST = 1 << 43;
     }
 }
 
@@ -1764,32 +1784,6 @@ pub struct TextureFormatFeatures {
 }
 
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
-pub struct TextureFormatInfo {
-    
-    pub required_features: Features,
-    
-    pub sample_type: TextureSampleType,
-    
-    pub block_dimensions: (u8, u8),
-    
-    pub block_size: u8,
-    
-    pub components: u8,
-    
-    pub srgb: bool,
-    
-    pub guaranteed_format_features: TextureFormatFeatures,
-}
-
-impl TextureFormatInfo {
-    
-    pub fn is_compressed(&self) -> bool {
-        self.block_dimensions != (1, 1)
-    }
-}
-
-
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
@@ -2388,35 +2382,285 @@ impl Serialize for TextureFormat {
 
 impl TextureFormat {
     
-    pub fn describe(&self) -> TextureFormatInfo {
-        
-        let native = Features::empty();
-        let bc = Features::TEXTURE_COMPRESSION_BC;
-        let etc2 = Features::TEXTURE_COMPRESSION_ETC2;
-        let astc_ldr = Features::TEXTURE_COMPRESSION_ASTC_LDR;
-        let astc_hdr = Features::TEXTURE_COMPRESSION_ASTC_HDR;
-        let norm16bit = Features::TEXTURE_FORMAT_16BIT_NORM;
-        let d32_s8 = Features::DEPTH32FLOAT_STENCIL8;
-
-        
-        let uint = TextureSampleType::Uint;
-        let sint = TextureSampleType::Sint;
-        let nearest = TextureSampleType::Float { filterable: false };
-        let float = TextureSampleType::Float { filterable: true };
-        let depth = TextureSampleType::Depth;
-
-        enum ColorSpace {
-            Linear,
-            Corrected,
+    
+    
+    pub fn aspect_specific_format(&self, aspect: TextureAspect) -> Option<Self> {
+        match (*self, aspect) {
+            (Self::Stencil8, TextureAspect::StencilOnly) => Some(*self),
+            (
+                Self::Depth16Unorm | Self::Depth24Plus | Self::Depth32Float,
+                TextureAspect::DepthOnly,
+            ) => Some(*self),
+            (
+                Self::Depth24PlusStencil8 | Self::Depth32FloatStencil8,
+                TextureAspect::StencilOnly,
+            ) => Some(Self::Stencil8),
+            (Self::Depth24PlusStencil8, TextureAspect::DepthOnly) => Some(Self::Depth24Plus),
+            (Self::Depth32FloatStencil8, TextureAspect::DepthOnly) => Some(Self::Depth32Float),
+            (format, TextureAspect::All) => Some(format),
+            _ => None,
         }
-        let linear = ColorSpace::Linear;
-        let corrected = ColorSpace::Corrected;
+    }
 
+    
+    
+    pub fn is_depth_stencil_component(&self, combined_format: Self) -> bool {
+        match (combined_format, *self) {
+            (Self::Depth24PlusStencil8, Self::Depth24Plus | Self::Stencil8)
+            | (Self::Depth32FloatStencil8, Self::Depth32Float | Self::Stencil8) => true,
+            _ => false,
+        }
+    }
+
+    
+    
+    
+    pub fn is_depth_stencil_format(&self) -> bool {
+        match *self {
+            Self::Stencil8
+            | Self::Depth16Unorm
+            | Self::Depth24Plus
+            | Self::Depth24PlusStencil8
+            | Self::Depth32Float
+            | Self::Depth32FloatStencil8 => true,
+            _ => false,
+        }
+    }
+
+    
+    
+    
+    pub fn is_combined_depth_stencil_format(&self) -> bool {
+        match *self {
+            Self::Depth24PlusStencil8 | Self::Depth32FloatStencil8 => true,
+            _ => false,
+        }
+    }
+
+    
+    pub fn has_color_aspect(&self) -> bool {
+        !self.is_depth_stencil_format()
+    }
+
+    
+    pub fn has_depth_aspect(&self) -> bool {
+        match *self {
+            Self::Depth16Unorm
+            | Self::Depth24Plus
+            | Self::Depth24PlusStencil8
+            | Self::Depth32Float
+            | Self::Depth32FloatStencil8 => true,
+            _ => false,
+        }
+    }
+
+    
+    pub fn has_stencil_aspect(&self) -> bool {
+        match *self {
+            Self::Stencil8 | Self::Depth24PlusStencil8 | Self::Depth32FloatStencil8 => true,
+            _ => false,
+        }
+    }
+
+    
+    pub fn block_dimensions(&self) -> (u32, u32) {
+        match *self {
+            Self::R8Unorm
+            | Self::R8Snorm
+            | Self::R8Uint
+            | Self::R8Sint
+            | Self::R16Uint
+            | Self::R16Sint
+            | Self::R16Unorm
+            | Self::R16Snorm
+            | Self::R16Float
+            | Self::Rg8Unorm
+            | Self::Rg8Snorm
+            | Self::Rg8Uint
+            | Self::Rg8Sint
+            | Self::R32Uint
+            | Self::R32Sint
+            | Self::R32Float
+            | Self::Rg16Uint
+            | Self::Rg16Sint
+            | Self::Rg16Unorm
+            | Self::Rg16Snorm
+            | Self::Rg16Float
+            | Self::Rgba8Unorm
+            | Self::Rgba8UnormSrgb
+            | Self::Rgba8Snorm
+            | Self::Rgba8Uint
+            | Self::Rgba8Sint
+            | Self::Bgra8Unorm
+            | Self::Bgra8UnormSrgb
+            | Self::Rgb9e5Ufloat
+            | Self::Rgb10a2Unorm
+            | Self::Rg11b10Float
+            | Self::Rg32Uint
+            | Self::Rg32Sint
+            | Self::Rg32Float
+            | Self::Rgba16Uint
+            | Self::Rgba16Sint
+            | Self::Rgba16Unorm
+            | Self::Rgba16Snorm
+            | Self::Rgba16Float
+            | Self::Rgba32Uint
+            | Self::Rgba32Sint
+            | Self::Rgba32Float
+            | Self::Stencil8
+            | Self::Depth16Unorm
+            | Self::Depth24Plus
+            | Self::Depth24PlusStencil8
+            | Self::Depth32Float
+            | Self::Depth32FloatStencil8 => (1, 1),
+
+            Self::Bc1RgbaUnorm
+            | Self::Bc1RgbaUnormSrgb
+            | Self::Bc2RgbaUnorm
+            | Self::Bc2RgbaUnormSrgb
+            | Self::Bc3RgbaUnorm
+            | Self::Bc3RgbaUnormSrgb
+            | Self::Bc4RUnorm
+            | Self::Bc4RSnorm
+            | Self::Bc5RgUnorm
+            | Self::Bc5RgSnorm
+            | Self::Bc6hRgbUfloat
+            | Self::Bc6hRgbSfloat
+            | Self::Bc7RgbaUnorm
+            | Self::Bc7RgbaUnormSrgb => (4, 4),
+
+            Self::Etc2Rgb8Unorm
+            | Self::Etc2Rgb8UnormSrgb
+            | Self::Etc2Rgb8A1Unorm
+            | Self::Etc2Rgb8A1UnormSrgb
+            | Self::Etc2Rgba8Unorm
+            | Self::Etc2Rgba8UnormSrgb
+            | Self::EacR11Unorm
+            | Self::EacR11Snorm
+            | Self::EacRg11Unorm
+            | Self::EacRg11Snorm => (4, 4),
+
+            Self::Astc { block, .. } => match block {
+                AstcBlock::B4x4 => (4, 4),
+                AstcBlock::B5x4 => (5, 4),
+                AstcBlock::B5x5 => (5, 5),
+                AstcBlock::B6x5 => (6, 5),
+                AstcBlock::B6x6 => (6, 6),
+                AstcBlock::B8x5 => (8, 5),
+                AstcBlock::B8x6 => (8, 6),
+                AstcBlock::B8x8 => (8, 8),
+                AstcBlock::B10x5 => (10, 5),
+                AstcBlock::B10x6 => (10, 6),
+                AstcBlock::B10x8 => (10, 8),
+                AstcBlock::B10x10 => (10, 10),
+                AstcBlock::B12x10 => (12, 10),
+                AstcBlock::B12x12 => (12, 12),
+            },
+        }
+    }
+
+    
+    pub fn is_compressed(&self) -> bool {
+        self.block_dimensions() != (1, 1)
+    }
+
+    
+    pub fn required_features(&self) -> Features {
+        match *self {
+            Self::R8Unorm
+            | Self::R8Snorm
+            | Self::R8Uint
+            | Self::R8Sint
+            | Self::R16Uint
+            | Self::R16Sint
+            | Self::R16Float
+            | Self::Rg8Unorm
+            | Self::Rg8Snorm
+            | Self::Rg8Uint
+            | Self::Rg8Sint
+            | Self::R32Uint
+            | Self::R32Sint
+            | Self::R32Float
+            | Self::Rg16Uint
+            | Self::Rg16Sint
+            | Self::Rg16Float
+            | Self::Rgba8Unorm
+            | Self::Rgba8UnormSrgb
+            | Self::Rgba8Snorm
+            | Self::Rgba8Uint
+            | Self::Rgba8Sint
+            | Self::Bgra8Unorm
+            | Self::Bgra8UnormSrgb
+            | Self::Rgb9e5Ufloat
+            | Self::Rgb10a2Unorm
+            | Self::Rg11b10Float
+            | Self::Rg32Uint
+            | Self::Rg32Sint
+            | Self::Rg32Float
+            | Self::Rgba16Uint
+            | Self::Rgba16Sint
+            | Self::Rgba16Float
+            | Self::Rgba32Uint
+            | Self::Rgba32Sint
+            | Self::Rgba32Float
+            | Self::Stencil8
+            | Self::Depth16Unorm
+            | Self::Depth24Plus
+            | Self::Depth24PlusStencil8
+            | Self::Depth32Float => Features::empty(),
+
+            Self::Depth32FloatStencil8 => Features::DEPTH32FLOAT_STENCIL8,
+
+            Self::R16Unorm
+            | Self::R16Snorm
+            | Self::Rg16Unorm
+            | Self::Rg16Snorm
+            | Self::Rgba16Unorm
+            | Self::Rgba16Snorm => Features::TEXTURE_FORMAT_16BIT_NORM,
+
+            Self::Bc1RgbaUnorm
+            | Self::Bc1RgbaUnormSrgb
+            | Self::Bc2RgbaUnorm
+            | Self::Bc2RgbaUnormSrgb
+            | Self::Bc3RgbaUnorm
+            | Self::Bc3RgbaUnormSrgb
+            | Self::Bc4RUnorm
+            | Self::Bc4RSnorm
+            | Self::Bc5RgUnorm
+            | Self::Bc5RgSnorm
+            | Self::Bc6hRgbUfloat
+            | Self::Bc6hRgbSfloat
+            | Self::Bc7RgbaUnorm
+            | Self::Bc7RgbaUnormSrgb => Features::TEXTURE_COMPRESSION_BC,
+
+            Self::Etc2Rgb8Unorm
+            | Self::Etc2Rgb8UnormSrgb
+            | Self::Etc2Rgb8A1Unorm
+            | Self::Etc2Rgb8A1UnormSrgb
+            | Self::Etc2Rgba8Unorm
+            | Self::Etc2Rgba8UnormSrgb
+            | Self::EacR11Unorm
+            | Self::EacR11Snorm
+            | Self::EacRg11Unorm
+            | Self::EacRg11Snorm => Features::TEXTURE_COMPRESSION_ETC2,
+
+            Self::Astc { channel, .. } => match channel {
+                AstcChannel::Hdr => Features::TEXTURE_COMPRESSION_ASTC_HDR,
+                AstcChannel::Unorm | AstcChannel::UnormSrgb => {
+                    Features::TEXTURE_COMPRESSION_ASTC_LDR
+                }
+            },
+        }
+    }
+
+    
+    
+    
+    pub fn guaranteed_format_features(&self) -> TextureFormatFeatures {
         
         let noaa = TextureFormatFeatureFlags::empty();
         let msaa = TextureFormatFeatureFlags::MULTISAMPLE_X4;
-        let msaa_resolve = TextureFormatFeatureFlags::MULTISAMPLE_X4
-            | TextureFormatFeatureFlags::MULTISAMPLE_RESOLVE;
+        let msaa_resolve = msaa | TextureFormatFeatureFlags::MULTISAMPLE_RESOLVE;
 
         
         let basic =
@@ -2425,150 +2669,280 @@ impl TextureFormat {
         let storage = basic | TextureUsages::STORAGE_BINDING;
         let all_flags = TextureUsages::all();
 
-        
         #[rustfmt::skip] 
         let (
-            required_features,
-            sample_type,
-            color_space,
-            msaa_flags,
-            block_dimensions,
-            block_size,
+            mut flags,
             allowed_usages,
-            components,
-        ) = match self {
-            
-            Self::R8Unorm =>             (   native,   float,    linear, msaa_resolve, (1, 1),  1, attachment, 1),
-            Self::R8Snorm =>             (   native,   float,    linear,         noaa, (1, 1),  1,      basic, 1),
-            Self::R8Uint =>              (   native,    uint,    linear,         msaa, (1, 1),  1, attachment, 1),
-            Self::R8Sint =>              (   native,    sint,    linear,         msaa, (1, 1),  1, attachment, 1),
-            
-            Self::R16Uint =>             (   native,    uint,    linear,         msaa, (1, 1),  2, attachment, 1),
-            Self::R16Sint =>             (   native,    sint,    linear,         msaa, (1, 1),  2, attachment, 1),
-            Self::R16Float =>            (   native,   float,    linear, msaa_resolve, (1, 1),  2, attachment, 1),
-            Self::Rg8Unorm =>            (   native,   float,    linear, msaa_resolve, (1, 1),  2, attachment, 2),
-            Self::Rg8Snorm =>            (   native,   float,    linear,         noaa, (1, 1),  2,      basic, 2),
-            Self::Rg8Uint =>             (   native,    uint,    linear,         msaa, (1, 1),  2, attachment, 2),
-            Self::Rg8Sint =>             (   native,    sint,    linear,         msaa, (1, 1),  2, attachment, 2),
-            
-            Self::R32Uint =>             (   native,    uint,    linear,         noaa, (1, 1),  4,  all_flags, 1),
-            Self::R32Sint =>             (   native,    sint,    linear,         noaa, (1, 1),  4,  all_flags, 1),
-            Self::R32Float =>            (   native, nearest,    linear,         msaa, (1, 1),  4,  all_flags, 1),
-            Self::Rg16Uint =>            (   native,    uint,    linear,         msaa, (1, 1),  4, attachment, 2),
-            Self::Rg16Sint =>            (   native,    sint,    linear,         msaa, (1, 1),  4, attachment, 2),
-            Self::Rg16Float =>           (   native,   float,    linear, msaa_resolve, (1, 1),  4, attachment, 2),
-            Self::Rgba8Unorm =>          (   native,   float,    linear, msaa_resolve, (1, 1),  4,  all_flags, 4),
-            Self::Rgba8UnormSrgb =>      (   native,   float, corrected, msaa_resolve, (1, 1),  4, attachment, 4),
-            Self::Rgba8Snorm =>          (   native,   float,    linear,         noaa, (1, 1),  4,    storage, 4),
-            Self::Rgba8Uint =>           (   native,    uint,    linear,         msaa, (1, 1),  4,  all_flags, 4),
-            Self::Rgba8Sint =>           (   native,    sint,    linear,         msaa, (1, 1),  4,  all_flags, 4),
-            Self::Bgra8Unorm =>          (   native,   float,    linear, msaa_resolve, (1, 1),  4, attachment, 4),
-            Self::Bgra8UnormSrgb =>      (   native,   float, corrected, msaa_resolve, (1, 1),  4, attachment, 4),
-            
-            Self::Rgb10a2Unorm =>        (   native,   float,    linear, msaa_resolve, (1, 1),  4, attachment, 4),
-            Self::Rg11b10Float =>        (   native,   float,    linear,         msaa, (1, 1),  4,      basic, 3),
-            
-            Self::Rg32Uint =>            (   native,    uint,    linear,         noaa, (1, 1),  8,  all_flags, 2),
-            Self::Rg32Sint =>            (   native,    sint,    linear,         noaa, (1, 1),  8,  all_flags, 2),
-            Self::Rg32Float =>           (   native, nearest,    linear,         noaa, (1, 1),  8,  all_flags, 2),
-            Self::Rgba16Uint =>          (   native,    uint,    linear,         msaa, (1, 1),  8,  all_flags, 4),
-            Self::Rgba16Sint =>          (   native,    sint,    linear,         msaa, (1, 1),  8,  all_flags, 4),
-            Self::Rgba16Float =>         (   native,   float,    linear, msaa_resolve, (1, 1),  8,  all_flags, 4),
-            
-            Self::Rgba32Uint =>          (   native,    uint,    linear,         noaa, (1, 1), 16,  all_flags, 4),
-            Self::Rgba32Sint =>          (   native,    sint,    linear,         noaa, (1, 1), 16,  all_flags, 4),
-            Self::Rgba32Float =>         (   native, nearest,    linear,         noaa, (1, 1), 16,  all_flags, 4),
-            
-            Self::Stencil8 =>            (   native,   depth,    linear,         msaa, (1, 1),  2, attachment, 1),
-            Self::Depth16Unorm =>        (   native,   depth,    linear,         msaa, (1, 1),  2, attachment, 1),
-            Self::Depth24Plus =>         (   native,   depth,    linear,         msaa, (1, 1),  4, attachment, 1),
-            Self::Depth24PlusStencil8 => (   native,   depth,    linear,         msaa, (1, 1),  4, attachment, 2),
-            Self::Depth32Float =>        (   native,   depth,    linear,         msaa, (1, 1),  4, attachment, 1),
-            Self::Depth32FloatStencil8 =>(   d32_s8,   depth,    linear,         msaa, (1, 1),  4, attachment, 2),
-            
-            Self::Rgb9e5Ufloat =>        (   native,   float,    linear,         noaa, (1, 1),  4,      basic, 3),
-            
-            Self::R16Unorm =>            (norm16bit,   float,    linear,         msaa, (1, 1),  2,    storage, 1),
-            Self::R16Snorm =>            (norm16bit,   float,    linear,         msaa, (1, 1),  2,    storage, 1),
-            Self::Rg16Unorm =>           (norm16bit,   float,    linear,         msaa, (1, 1),  4,    storage, 2),
-            Self::Rg16Snorm =>           (norm16bit,   float,    linear,         msaa, (1, 1),  4,    storage, 2),
-            Self::Rgba16Unorm =>         (norm16bit,   float,    linear,         msaa, (1, 1),  8,    storage, 4),
-            Self::Rgba16Snorm =>         (norm16bit,   float,    linear,         msaa, (1, 1),  8,    storage, 4),
-            
-            Self::Bc1RgbaUnorm =>        (       bc,   float,    linear,         noaa, (4, 4),  8,      basic, 4),
-            Self::Bc1RgbaUnormSrgb =>    (       bc,   float, corrected,         noaa, (4, 4),  8,      basic, 4),
-            Self::Bc2RgbaUnorm =>        (       bc,   float,    linear,         noaa, (4, 4), 16,      basic, 4),
-            Self::Bc2RgbaUnormSrgb =>    (       bc,   float, corrected,         noaa, (4, 4), 16,      basic, 4),
-            Self::Bc3RgbaUnorm =>        (       bc,   float,    linear,         noaa, (4, 4), 16,      basic, 4),
-            Self::Bc3RgbaUnormSrgb =>    (       bc,   float, corrected,         noaa, (4, 4), 16,      basic, 4),
-            Self::Bc4RUnorm =>           (       bc,   float,    linear,         noaa, (4, 4),  8,      basic, 1),
-            Self::Bc4RSnorm =>           (       bc,   float,    linear,         noaa, (4, 4),  8,      basic, 1),
-            Self::Bc5RgUnorm =>          (       bc,   float,    linear,         noaa, (4, 4), 16,      basic, 2),
-            Self::Bc5RgSnorm =>          (       bc,   float,    linear,         noaa, (4, 4), 16,      basic, 2),
-            Self::Bc6hRgbUfloat =>       (       bc,   float,    linear,         noaa, (4, 4), 16,      basic, 3),
-            Self::Bc6hRgbSfloat =>       (       bc,   float,    linear,         noaa, (4, 4), 16,      basic, 3),
-            Self::Bc7RgbaUnorm =>        (       bc,   float,    linear,         noaa, (4, 4), 16,      basic, 4),
-            Self::Bc7RgbaUnormSrgb =>    (       bc,   float, corrected,         noaa, (4, 4), 16,      basic, 4),
-            
-            Self::Etc2Rgb8Unorm =>       (     etc2,   float,    linear,         noaa, (4, 4),  8,      basic, 3),
-            Self::Etc2Rgb8UnormSrgb =>   (     etc2,   float, corrected,         noaa, (4, 4),  8,      basic, 3),
-            Self::Etc2Rgb8A1Unorm =>     (     etc2,   float,    linear,         noaa, (4, 4),  8,      basic, 4),
-            Self::Etc2Rgb8A1UnormSrgb => (     etc2,   float, corrected,         noaa, (4, 4),  8,      basic, 4),
-            Self::Etc2Rgba8Unorm =>      (     etc2,   float,    linear,         noaa, (4, 4), 16,      basic, 4),
-            Self::Etc2Rgba8UnormSrgb =>  (     etc2,   float, corrected,         noaa, (4, 4), 16,      basic, 4),
-            Self::EacR11Unorm =>         (     etc2,   float,    linear,         noaa, (4, 4),  8,      basic, 1),
-            Self::EacR11Snorm =>         (     etc2,   float,    linear,         noaa, (4, 4),  8,      basic, 1),
-            Self::EacRg11Unorm =>        (     etc2,   float,    linear,         noaa, (4, 4), 16,      basic, 2),
-            Self::EacRg11Snorm =>        (     etc2,   float,    linear,         noaa, (4, 4), 16,      basic, 2),
-            
-            Self::Astc { block, channel } => {
-                let (feature, color_space) = match channel {
-                    AstcChannel::Hdr => (astc_hdr, linear),
-                    AstcChannel::Unorm => (astc_ldr, linear),
-                    AstcChannel::UnormSrgb => (astc_ldr, corrected),
-                };
-                let dimensions = match block {
-                    AstcBlock::B4x4 => (4, 4),
-                    AstcBlock::B5x4 => (5, 4),
-                    AstcBlock::B5x5 => (5, 5),
-                    AstcBlock::B6x5 => (6, 5),
-                    AstcBlock::B6x6 => (6, 6),
-                    AstcBlock::B8x5 => (8, 5),
-                    AstcBlock::B8x6 => (8, 6),
-                    AstcBlock::B8x8 => (8, 8),
-                    AstcBlock::B10x5 => (10, 5),
-                    AstcBlock::B10x6 => (10, 6),
-                    AstcBlock::B10x8 => (10, 8),
-                    AstcBlock::B10x10 => (10, 10),
-                    AstcBlock::B12x10 => (12, 10),
-                    AstcBlock::B12x12 => (12, 12),
-                };
-                (feature, float, color_space, noaa, dimensions, 16, basic, 4)
-            }
+        ) = match *self {
+            Self::R8Unorm =>              (msaa_resolve, attachment),
+            Self::R8Snorm =>              (        noaa,      basic),
+            Self::R8Uint =>               (        msaa, attachment),
+            Self::R8Sint =>               (        msaa, attachment),
+            Self::R16Uint =>              (        msaa, attachment),
+            Self::R16Sint =>              (        msaa, attachment),
+            Self::R16Float =>             (msaa_resolve, attachment),
+            Self::Rg8Unorm =>             (msaa_resolve, attachment),
+            Self::Rg8Snorm =>             (        noaa,      basic),
+            Self::Rg8Uint =>              (        msaa, attachment),
+            Self::Rg8Sint =>              (        msaa, attachment),
+            Self::R32Uint =>              (        noaa,  all_flags),
+            Self::R32Sint =>              (        noaa,  all_flags),
+            Self::R32Float =>             (        msaa,  all_flags),
+            Self::Rg16Uint =>             (        msaa, attachment),
+            Self::Rg16Sint =>             (        msaa, attachment),
+            Self::Rg16Float =>            (msaa_resolve, attachment),
+            Self::Rgba8Unorm =>           (msaa_resolve,  all_flags),
+            Self::Rgba8UnormSrgb =>       (msaa_resolve, attachment),
+            Self::Rgba8Snorm =>           (        noaa,    storage),
+            Self::Rgba8Uint =>            (        msaa,  all_flags),
+            Self::Rgba8Sint =>            (        msaa,  all_flags),
+            Self::Bgra8Unorm =>           (msaa_resolve, attachment),
+            Self::Bgra8UnormSrgb =>       (msaa_resolve, attachment),
+            Self::Rgb10a2Unorm =>         (msaa_resolve, attachment),
+            Self::Rg11b10Float =>         (        msaa,      basic),
+            Self::Rg32Uint =>             (        noaa,  all_flags),
+            Self::Rg32Sint =>             (        noaa,  all_flags),
+            Self::Rg32Float =>            (        noaa,  all_flags),
+            Self::Rgba16Uint =>           (        msaa,  all_flags),
+            Self::Rgba16Sint =>           (        msaa,  all_flags),
+            Self::Rgba16Float =>          (msaa_resolve,  all_flags),
+            Self::Rgba32Uint =>           (        noaa,  all_flags),
+            Self::Rgba32Sint =>           (        noaa,  all_flags),
+            Self::Rgba32Float =>          (        noaa,  all_flags),
+
+            Self::Stencil8 =>             (        msaa, attachment),
+            Self::Depth16Unorm =>         (        msaa, attachment),
+            Self::Depth24Plus =>          (        msaa, attachment),
+            Self::Depth24PlusStencil8 =>  (        msaa, attachment),
+            Self::Depth32Float =>         (        msaa, attachment),
+            Self::Depth32FloatStencil8 => (        msaa, attachment),
+
+            Self::R16Unorm =>             (        msaa,    storage),
+            Self::R16Snorm =>             (        msaa,    storage),
+            Self::Rg16Unorm =>            (        msaa,    storage),
+            Self::Rg16Snorm =>            (        msaa,    storage),
+            Self::Rgba16Unorm =>          (        msaa,    storage),
+            Self::Rgba16Snorm =>          (        msaa,    storage),
+
+            Self::Rgb9e5Ufloat =>         (        noaa,      basic),
+
+            Self::Bc1RgbaUnorm =>         (        noaa,      basic),
+            Self::Bc1RgbaUnormSrgb =>     (        noaa,      basic),
+            Self::Bc2RgbaUnorm =>         (        noaa,      basic),
+            Self::Bc2RgbaUnormSrgb =>     (        noaa,      basic),
+            Self::Bc3RgbaUnorm =>         (        noaa,      basic),
+            Self::Bc3RgbaUnormSrgb =>     (        noaa,      basic),
+            Self::Bc4RUnorm =>            (        noaa,      basic),
+            Self::Bc4RSnorm =>            (        noaa,      basic),
+            Self::Bc5RgUnorm =>           (        noaa,      basic),
+            Self::Bc5RgSnorm =>           (        noaa,      basic),
+            Self::Bc6hRgbUfloat =>        (        noaa,      basic),
+            Self::Bc6hRgbSfloat =>        (        noaa,      basic),
+            Self::Bc7RgbaUnorm =>         (        noaa,      basic),
+            Self::Bc7RgbaUnormSrgb =>     (        noaa,      basic),
+
+            Self::Etc2Rgb8Unorm =>        (        noaa,      basic),
+            Self::Etc2Rgb8UnormSrgb =>    (        noaa,      basic),
+            Self::Etc2Rgb8A1Unorm =>      (        noaa,      basic),
+            Self::Etc2Rgb8A1UnormSrgb =>  (        noaa,      basic),
+            Self::Etc2Rgba8Unorm =>       (        noaa,      basic),
+            Self::Etc2Rgba8UnormSrgb =>   (        noaa,      basic),
+            Self::EacR11Unorm =>          (        noaa,      basic),
+            Self::EacR11Snorm =>          (        noaa,      basic),
+            Self::EacRg11Unorm =>         (        noaa,      basic),
+            Self::EacRg11Snorm =>         (        noaa,      basic),
+
+            Self::Astc { .. } =>          (        noaa,      basic),
         };
 
-        let mut flags = msaa_flags;
-        let filterable_sample_type = sample_type == TextureSampleType::Float { filterable: true };
-        flags.set(
-            TextureFormatFeatureFlags::FILTERABLE,
-            filterable_sample_type,
-        );
-        flags.set(TextureFormatFeatureFlags::BLENDABLE, filterable_sample_type);
+        let is_filterable =
+            self.sample_type(None) == Some(TextureSampleType::Float { filterable: true });
+        flags.set(TextureFormatFeatureFlags::FILTERABLE, is_filterable);
+        flags.set(TextureFormatFeatureFlags::BLENDABLE, is_filterable);
 
-        TextureFormatInfo {
-            required_features,
-            sample_type,
-            block_dimensions,
-            block_size,
-            components,
-            srgb: match color_space {
-                ColorSpace::Linear => false,
-                ColorSpace::Corrected => true,
+        TextureFormatFeatures {
+            allowed_usages,
+            flags,
+        }
+    }
+
+    
+    
+    
+    
+    pub fn sample_type(&self, aspect: Option<TextureAspect>) -> Option<TextureSampleType> {
+        let float = TextureSampleType::Float { filterable: true };
+        let unfilterable_float = TextureSampleType::Float { filterable: false };
+        let depth = TextureSampleType::Depth;
+        let uint = TextureSampleType::Uint;
+        let sint = TextureSampleType::Sint;
+
+        match *self {
+            Self::R8Unorm
+            | Self::R8Snorm
+            | Self::Rg8Unorm
+            | Self::Rg8Snorm
+            | Self::Rgba8Unorm
+            | Self::Rgba8UnormSrgb
+            | Self::Rgba8Snorm
+            | Self::Bgra8Unorm
+            | Self::Bgra8UnormSrgb
+            | Self::R16Float
+            | Self::Rg16Float
+            | Self::Rgba16Float
+            | Self::Rgb10a2Unorm
+            | Self::Rg11b10Float => Some(float),
+
+            Self::R32Float | Self::Rg32Float | Self::Rgba32Float => Some(unfilterable_float),
+
+            Self::R8Uint
+            | Self::Rg8Uint
+            | Self::Rgba8Uint
+            | Self::R16Uint
+            | Self::Rg16Uint
+            | Self::Rgba16Uint
+            | Self::R32Uint
+            | Self::Rg32Uint
+            | Self::Rgba32Uint => Some(uint),
+
+            Self::R8Sint
+            | Self::Rg8Sint
+            | Self::Rgba8Sint
+            | Self::R16Sint
+            | Self::Rg16Sint
+            | Self::Rgba16Sint
+            | Self::R32Sint
+            | Self::Rg32Sint
+            | Self::Rgba32Sint => Some(sint),
+
+            Self::Stencil8 => Some(uint),
+            Self::Depth16Unorm | Self::Depth24Plus | Self::Depth32Float => Some(depth),
+            Self::Depth24PlusStencil8 | Self::Depth32FloatStencil8 => match aspect {
+                None | Some(TextureAspect::All) => None,
+                Some(TextureAspect::DepthOnly) => Some(depth),
+                Some(TextureAspect::StencilOnly) => Some(uint),
             },
-            guaranteed_format_features: TextureFormatFeatures {
-                allowed_usages,
-                flags,
+
+            Self::R16Unorm
+            | Self::R16Snorm
+            | Self::Rg16Unorm
+            | Self::Rg16Snorm
+            | Self::Rgba16Unorm
+            | Self::Rgba16Snorm => Some(float),
+
+            Self::Rgb9e5Ufloat => Some(float),
+
+            Self::Bc1RgbaUnorm
+            | Self::Bc1RgbaUnormSrgb
+            | Self::Bc2RgbaUnorm
+            | Self::Bc2RgbaUnormSrgb
+            | Self::Bc3RgbaUnorm
+            | Self::Bc3RgbaUnormSrgb
+            | Self::Bc4RUnorm
+            | Self::Bc4RSnorm
+            | Self::Bc5RgUnorm
+            | Self::Bc5RgSnorm
+            | Self::Bc6hRgbUfloat
+            | Self::Bc6hRgbSfloat
+            | Self::Bc7RgbaUnorm
+            | Self::Bc7RgbaUnormSrgb => Some(float),
+
+            Self::Etc2Rgb8Unorm
+            | Self::Etc2Rgb8UnormSrgb
+            | Self::Etc2Rgb8A1Unorm
+            | Self::Etc2Rgb8A1UnormSrgb
+            | Self::Etc2Rgba8Unorm
+            | Self::Etc2Rgba8UnormSrgb
+            | Self::EacR11Unorm
+            | Self::EacR11Snorm
+            | Self::EacRg11Unorm
+            | Self::EacRg11Snorm => Some(float),
+
+            Self::Astc { .. } => Some(float),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn block_size(&self, aspect: Option<TextureAspect>) -> Option<u32> {
+        match *self {
+            Self::R8Unorm | Self::R8Snorm | Self::R8Uint | Self::R8Sint => Some(1),
+
+            Self::Rg8Unorm | Self::Rg8Snorm | Self::Rg8Uint | Self::Rg8Sint => Some(2),
+            Self::R16Unorm | Self::R16Snorm | Self::R16Uint | Self::R16Sint | Self::R16Float => {
+                Some(2)
+            }
+
+            Self::Rgba8Unorm
+            | Self::Rgba8UnormSrgb
+            | Self::Rgba8Snorm
+            | Self::Rgba8Uint
+            | Self::Rgba8Sint
+            | Self::Bgra8Unorm
+            | Self::Bgra8UnormSrgb => Some(4),
+            Self::Rg16Unorm
+            | Self::Rg16Snorm
+            | Self::Rg16Uint
+            | Self::Rg16Sint
+            | Self::Rg16Float => Some(4),
+            Self::R32Uint | Self::R32Sint | Self::R32Float => Some(4),
+            Self::Rgb9e5Ufloat | Self::Rgb10a2Unorm | Self::Rg11b10Float => Some(4),
+
+            Self::Rgba16Unorm
+            | Self::Rgba16Snorm
+            | Self::Rgba16Uint
+            | Self::Rgba16Sint
+            | Self::Rgba16Float => Some(8),
+            Self::Rg32Uint | Self::Rg32Sint | Self::Rg32Float => Some(8),
+
+            Self::Rgba32Uint | Self::Rgba32Sint | Self::Rgba32Float => Some(16),
+
+            Self::Stencil8 => Some(1),
+            Self::Depth16Unorm => Some(2),
+            Self::Depth32Float => Some(4),
+            Self::Depth24Plus => None,
+            Self::Depth24PlusStencil8 => match aspect {
+                None | Some(TextureAspect::All) => None,
+                Some(TextureAspect::DepthOnly) => None,
+                Some(TextureAspect::StencilOnly) => Some(1),
             },
+            Self::Depth32FloatStencil8 => match aspect {
+                None | Some(TextureAspect::All) => None,
+                Some(TextureAspect::DepthOnly) => Some(4),
+                Some(TextureAspect::StencilOnly) => Some(1),
+            },
+
+            Self::Bc1RgbaUnorm | Self::Bc1RgbaUnormSrgb | Self::Bc4RUnorm | Self::Bc4RSnorm => {
+                Some(8)
+            }
+            Self::Bc2RgbaUnorm
+            | Self::Bc2RgbaUnormSrgb
+            | Self::Bc3RgbaUnorm
+            | Self::Bc3RgbaUnormSrgb
+            | Self::Bc5RgUnorm
+            | Self::Bc5RgSnorm
+            | Self::Bc6hRgbUfloat
+            | Self::Bc6hRgbSfloat
+            | Self::Bc7RgbaUnorm
+            | Self::Bc7RgbaUnormSrgb => Some(16),
+
+            Self::Etc2Rgb8Unorm
+            | Self::Etc2Rgb8UnormSrgb
+            | Self::Etc2Rgb8A1Unorm
+            | Self::Etc2Rgb8A1UnormSrgb
+            | Self::EacR11Unorm
+            | Self::EacR11Snorm => Some(8),
+            Self::Etc2Rgba8Unorm
+            | Self::Etc2Rgba8UnormSrgb
+            | Self::EacRg11Unorm
+            | Self::EacRg11Snorm => Some(16),
+
+            Self::Astc { .. } => Some(16),
         }
     }
 
@@ -2616,6 +2990,11 @@ impl TextureFormat {
             },
             _ => *self,
         }
+    }
+
+    
+    pub fn is_srgb(&self) -> bool {
+        *self != self.remove_srgb_suffix()
     }
 }
 
@@ -4117,6 +4496,11 @@ pub enum SurfaceStatus {
 
 
 
+
+
+
+
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PresentationTimestamp(
     
@@ -4321,9 +4705,7 @@ impl Extent3d {
     
     
     pub fn physical_size(&self, format: TextureFormat) -> Self {
-        let (block_width, block_height) = format.describe().block_dimensions;
-        let block_width = block_width as u32;
-        let block_height = block_height as u32;
+        let (block_width, block_height) = format.block_dimensions();
 
         let width = ((self.width + block_width - 1) / block_width) * block_width;
         let height = ((self.height + block_height - 1) / block_height) * block_height;
@@ -4901,8 +5283,13 @@ pub enum TextureSampleType {
     Float {
         
         
+        
+        
+        
         filterable: bool,
     },
+    
+    
     
     
     
@@ -5425,12 +5812,17 @@ impl ImageSubresourceRange {
     
     
     
-    pub fn is_full_resource(&self, mip_levels: u32, array_layers: u32) -> bool {
+    pub fn is_full_resource(
+        &self,
+        format: TextureFormat,
+        mip_levels: u32,
+        array_layers: u32,
+    ) -> bool {
         
         let mip_level_count = self.mip_level_count.unwrap_or(mip_levels);
         let array_layer_count = self.array_layer_count.unwrap_or(array_layers);
 
-        let aspect_eq = self.aspect == TextureAspect::All;
+        let aspect_eq = Some(format) == format.aspect_specific_format(self.aspect);
 
         let base_mip_level_eq = self.base_mip_level == 0;
         let mip_level_count_eq = mip_level_count == mip_levels;

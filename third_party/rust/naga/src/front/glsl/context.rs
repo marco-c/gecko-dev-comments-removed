@@ -47,8 +47,24 @@ impl ExprPos {
 pub struct Context {
     pub expressions: Arena<Expression>,
     pub locals: Arena<LocalVariable>,
+
+    
+    
+    
+    
+    
+    
+    
+    
     pub arguments: Vec<FunctionArgument>,
 
+    
+    
+    
+    
+    
+    
+    
     pub parameters: Vec<Handle<Type>>,
     pub parameters_info: Vec<ParameterInfo>,
 

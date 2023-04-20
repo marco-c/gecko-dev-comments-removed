@@ -13,6 +13,16 @@ use crate::{
 };
 use std::iter;
 
+
+struct ProxyWrite {
+    
+    target: Handle<Expression>,
+    
+    value: Handle<Expression>,
+    
+    convert: Option<(ScalarKind, crate::Bytes)>,
+}
+
 impl Frontend {
     fn add_constant_value(
         &mut self,
@@ -630,12 +640,14 @@ impl Frontend {
 
         
         
-        'outer: for overload in declaration.overloads.iter() {
+        'outer: for (overload_idx, overload) in declaration.overloads.iter().enumerate() {
             
             
             if args.len() != overload.parameters.len() {
                 continue;
             }
+
+            log::trace!("Testing overload {}", overload_idx);
 
             
             let mut exact = true;
@@ -739,13 +751,30 @@ impl Frontend {
 
                 
                 
-                if parameter_info.qualifier.is_lhs() {
+                
+                
+                
+                if let ParameterQualifier::InOut = parameter_info.qualifier {
                     continue 'outer;
                 }
 
                 
                 
-                let conversion = match conversion(overload_param_ty, call_arg_ty) {
+                
+                
+                
+                
+                
+                
+                
+                
+                let maybe_conversion = if parameter_info.qualifier.is_lhs() {
+                    conversion(call_arg_ty, overload_param_ty)
+                } else {
+                    conversion(overload_param_ty, call_arg_ty)
+                };
+
+                let conversion = match maybe_conversion {
                     Some(info) => info,
                     None => continue 'outer,
                 };
@@ -845,130 +874,37 @@ impl Frontend {
 
         let mut arguments = Vec::with_capacity(args.len());
         let mut proxy_writes = Vec::new();
+
         
-        for (parameter_info, (expr, parameter)) in parameters_info
+        for (((parameter_info, call_argument), expr), parameter) in parameters_info
             .iter()
-            .zip(raw_args.iter().zip(parameters.iter()))
+            .zip(&args)
+            .zip(raw_args)
+            .zip(&parameters)
         {
             let (mut handle, meta) =
                 ctx.lower_expect_inner(stmt, self, *expr, parameter_info.qualifier.as_pos(), body)?;
 
             if parameter_info.qualifier.is_lhs() {
-                let (ty, value) = match *self.resolve_type(ctx, handle, meta)? {
-                    
-                    
-                    
-                    TypeInner::Vector { size, kind, width } => (
-                        self.module.types.insert(
-                            Type {
-                                name: None,
-                                inner: TypeInner::Vector { size, kind, width },
-                            },
-                            Span::default(),
-                        ),
-                        handle,
-                    ),
-                    
-                    
-                    
-                    TypeInner::Pointer { base, space } if space != AddressSpace::Function => (
-                        base,
-                        ctx.add_expression(
-                            Expression::Load { pointer: handle },
-                            Span::default(),
-                            body,
-                        ),
-                    ),
-                    TypeInner::ValuePointer {
-                        size,
-                        kind,
-                        width,
-                        space,
-                    } if space != AddressSpace::Function => {
-                        let inner = match size {
-                            Some(size) => TypeInner::Vector { size, kind, width },
-                            None => TypeInner::Scalar { kind, width },
-                        };
+                self.process_lhs_argument(
+                    ctx,
+                    body,
+                    meta,
+                    *parameter,
+                    parameter_info,
+                    handle,
+                    call_argument,
+                    &mut proxy_writes,
+                    &mut arguments,
+                )?;
 
-                        (
-                            self.module
-                                .types
-                                .insert(Type { name: None, inner }, Span::default()),
-                            ctx.add_expression(
-                                Expression::Load { pointer: handle },
-                                Span::default(),
-                                body,
-                            ),
-                        )
-                    }
-                    _ => {
-                        arguments.push(handle);
-                        continue;
-                    }
-                };
-
-                let temp_var = ctx.locals.append(
-                    LocalVariable {
-                        name: None,
-                        ty,
-                        init: None,
-                    },
-                    Span::default(),
-                );
-                let temp_expr =
-                    ctx.add_expression(Expression::LocalVariable(temp_var), Span::default(), body);
-
-                body.push(
-                    Statement::Store {
-                        pointer: temp_expr,
-                        value,
-                    },
-                    Span::default(),
-                );
-
-                arguments.push(temp_expr);
-                
-                
-                if let Expression::Swizzle {
-                    size,
-                    mut vector,
-                    pattern,
-                } = ctx.expressions[value]
-                {
-                    if let Expression::Load { pointer } = ctx.expressions[vector] {
-                        vector = pointer;
-                    }
-
-                    for (i, component) in pattern.iter().take(size as usize).enumerate() {
-                        let original = ctx.add_expression(
-                            Expression::AccessIndex {
-                                base: vector,
-                                index: *component as u32,
-                            },
-                            Span::default(),
-                            body,
-                        );
-
-                        let temp = ctx.add_expression(
-                            Expression::AccessIndex {
-                                base: temp_expr,
-                                index: i as u32,
-                            },
-                            Span::default(),
-                            body,
-                        );
-
-                        proxy_writes.push((original, temp));
-                    }
-                } else {
-                    proxy_writes.push((handle, temp_expr));
-                }
                 continue;
             }
 
+            let scalar_comps = scalar_components(&self.module.types[*parameter].inner);
+
             
-            let scalar_components = scalar_components(&self.module.types[*parameter].inner);
-            if let Some((kind, width)) = scalar_components {
+            if let Some((kind, width)) = scalar_comps {
                 ctx.implicit_conversion(self, &mut handle, meta, kind, width)?;
             }
 
@@ -997,14 +933,24 @@ impl Frontend {
                 ctx.emit_start();
 
                 
-                for (original, pointer) in proxy_writes {
-                    let value = ctx.add_expression(Expression::Load { pointer }, meta, body);
+                for proxy_write in proxy_writes {
+                    let mut value = ctx.add_expression(
+                        Expression::Load {
+                            pointer: proxy_write.value,
+                        },
+                        meta,
+                        body,
+                    );
+
+                    if let Some((kind, width)) = proxy_write.convert {
+                        ctx.conversion(&mut value, meta, kind, width)?;
+                    }
 
                     ctx.emit_restart(body);
 
                     body.push(
                         Statement::Store {
-                            pointer: original,
+                            pointer: proxy_write.target,
                             value,
                         },
                         meta,
@@ -1017,6 +963,170 @@ impl Frontend {
                 builtin.call(self, ctx, body, arguments.as_mut_slice(), meta)
             }
         }
+    }
+
+    
+    
+    #[allow(clippy::too_many_arguments)]
+    fn process_lhs_argument(
+        &mut self,
+        ctx: &mut Context,
+        body: &mut Block,
+        meta: Span,
+        parameter_ty: Handle<Type>,
+        parameter_info: &ParameterInfo,
+        original: Handle<Expression>,
+        call_argument: &(Handle<Expression>, Span),
+        proxy_writes: &mut Vec<ProxyWrite>,
+        arguments: &mut Vec<Handle<Expression>>,
+    ) -> Result<()> {
+        let original_ty = self.resolve_type(ctx, original, meta)?;
+        let original_pointer_space = original_ty.pointer_space();
+
+        
+        let mut maybe_ty = match *original_ty {
+            
+            
+            
+            TypeInner::Vector { size, kind, width } => Some(self.module.types.insert(
+                Type {
+                    name: None,
+                    inner: TypeInner::Vector { size, kind, width },
+                },
+                Span::default(),
+            )),
+            
+            
+            
+            TypeInner::Pointer { base, space } if space != AddressSpace::Function => Some(base),
+            TypeInner::ValuePointer {
+                size,
+                kind,
+                width,
+                space,
+            } if space != AddressSpace::Function => {
+                let inner = match size {
+                    Some(size) => TypeInner::Vector { size, kind, width },
+                    None => TypeInner::Scalar { kind, width },
+                };
+
+                Some(
+                    self.module
+                        .types
+                        .insert(Type { name: None, inner }, Span::default()),
+                )
+            }
+            _ => None,
+        };
+
+        
+        
+        let value = if original_pointer_space.is_some() {
+            ctx.add_expression(
+                Expression::Load { pointer: original },
+                Span::default(),
+                body,
+            )
+        } else {
+            original
+        };
+
+        let call_arg_ty = self.resolve_type(ctx, call_argument.0, call_argument.1)?;
+        let overload_param_ty = &self.module.types[parameter_ty].inner;
+        let needs_conversion = call_arg_ty != overload_param_ty;
+
+        let arg_scalar_comps = scalar_components(call_arg_ty);
+
+        
+        
+        
+        if needs_conversion {
+            maybe_ty = Some(parameter_ty);
+        }
+
+        if let Some(ty) = maybe_ty {
+            
+            let spill_var = ctx.locals.append(
+                LocalVariable {
+                    name: None,
+                    ty,
+                    init: None,
+                },
+                Span::default(),
+            );
+            let spill_expr =
+                ctx.add_expression(Expression::LocalVariable(spill_var), Span::default(), body);
+
+            
+            
+            if let ParameterQualifier::InOut = parameter_info.qualifier {
+                body.push(
+                    Statement::Store {
+                        pointer: spill_expr,
+                        value,
+                    },
+                    Span::default(),
+                );
+            }
+
+            
+            arguments.push(spill_expr);
+
+            let convert = if needs_conversion {
+                arg_scalar_comps
+            } else {
+                None
+            };
+
+            
+            
+            if let Expression::Swizzle {
+                size,
+                mut vector,
+                pattern,
+            } = ctx.expressions[original]
+            {
+                if let Expression::Load { pointer } = ctx.expressions[vector] {
+                    vector = pointer;
+                }
+
+                for (i, component) in pattern.iter().take(size as usize).enumerate() {
+                    let original = ctx.add_expression(
+                        Expression::AccessIndex {
+                            base: vector,
+                            index: *component as u32,
+                        },
+                        Span::default(),
+                        body,
+                    );
+
+                    let spill_component = ctx.add_expression(
+                        Expression::AccessIndex {
+                            base: spill_expr,
+                            index: i as u32,
+                        },
+                        Span::default(),
+                        body,
+                    );
+
+                    proxy_writes.push(ProxyWrite {
+                        target: original,
+                        value: spill_component,
+                        convert,
+                    });
+                }
+            } else {
+                proxy_writes.push(ProxyWrite {
+                    target: original,
+                    value: spill_expr,
+                    convert,
+                });
+            }
+        } else {
+            arguments.push(original);
+        }
+
+        Ok(())
     }
 
     pub(crate) fn add_function(

@@ -376,7 +376,19 @@ impl crate::Adapter<super::Api> for super::Adapter {
             Some(f) => f,
             None => return Tfc::empty(),
         };
-        let no_depth_format = auxil::dxgi::conv::map_texture_format_nodepth(format);
+        let srv_uav_format = if format.is_combined_depth_stencil_format() {
+            auxil::dxgi::conv::map_texture_format_for_srv_uav(
+                format,
+                
+                crate::FormatAspects::DEPTH,
+            )
+        } else {
+            auxil::dxgi::conv::map_texture_format_for_srv_uav(
+                format,
+                crate::FormatAspects::from(format),
+            )
+        }
+        .unwrap();
 
         let mut data = d3d12::D3D12_FEATURE_DATA_FORMAT_SUPPORT {
             Format: raw_format,
@@ -393,24 +405,24 @@ impl crate::Adapter<super::Api> for super::Adapter {
 
         
         
-        let mut data_no_depth = d3d12::D3D12_FEATURE_DATA_FORMAT_SUPPORT {
-            Format: no_depth_format,
+        let mut data_srv_uav = d3d12::D3D12_FEATURE_DATA_FORMAT_SUPPORT {
+            Format: srv_uav_format,
             Support1: d3d12::D3D12_FORMAT_SUPPORT1_NONE,
             Support2: d3d12::D3D12_FORMAT_SUPPORT2_NONE,
         };
-        if raw_format != no_depth_format {
+        if raw_format != srv_uav_format {
             
             assert_eq!(winerror::S_OK, unsafe {
                 self.device.CheckFeatureSupport(
                     d3d12::D3D12_FEATURE_FORMAT_SUPPORT,
-                    ptr::addr_of_mut!(data_no_depth).cast(),
+                    ptr::addr_of_mut!(data_srv_uav).cast(),
                     DWORD::try_from(mem::size_of::<d3d12::D3D12_FEATURE_DATA_FORMAT_SUPPORT>())
                         .unwrap(),
                 )
             });
         } else {
             
-            data_no_depth = data;
+            data_srv_uav = data;
         }
 
         let mut caps = Tfc::COPY_SRC | Tfc::COPY_DST;
@@ -423,11 +435,11 @@ impl crate::Adapter<super::Api> for super::Adapter {
         
         caps.set(
             Tfc::SAMPLED,
-            is_texture && data_no_depth.Support1 & d3d12::D3D12_FORMAT_SUPPORT1_SHADER_LOAD != 0,
+            is_texture && data_srv_uav.Support1 & d3d12::D3D12_FORMAT_SUPPORT1_SHADER_LOAD != 0,
         );
         caps.set(
             Tfc::SAMPLED_LINEAR,
-            data_no_depth.Support1 & d3d12::D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE != 0,
+            data_srv_uav.Support1 & d3d12::D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE != 0,
         );
         caps.set(
             Tfc::COLOR_ATTACHMENT,
@@ -444,16 +456,16 @@ impl crate::Adapter<super::Api> for super::Adapter {
         
         caps.set(
             Tfc::STORAGE,
-            data_no_depth.Support1 & d3d12::D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW != 0,
+            data_srv_uav.Support1 & d3d12::D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW != 0,
         );
         caps.set(
             Tfc::STORAGE_READ_WRITE,
-            data_no_depth.Support2 & d3d12::D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD != 0,
+            data_srv_uav.Support2 & d3d12::D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD != 0,
         );
 
         
         let no_msaa_load = caps.contains(Tfc::SAMPLED)
-            && data_no_depth.Support1 & d3d12::D3D12_FORMAT_SUPPORT1_MULTISAMPLE_LOAD == 0;
+            && data_srv_uav.Support1 & d3d12::D3D12_FORMAT_SUPPORT1_MULTISAMPLE_LOAD == 0;
 
         let no_msaa_target = data.Support1
             & (d3d12::D3D12_FORMAT_SUPPORT1_RENDER_TARGET

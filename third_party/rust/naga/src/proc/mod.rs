@@ -279,6 +279,7 @@ impl super::MathFunction {
             Self::Transpose => 1,
             Self::Determinant => 1,
             
+            Self::CountTrailingZeros => 1,
             Self::CountLeadingZeros => 1,
             Self::CountOneBits => 1,
             Self::ReverseBits => 1,
