@@ -235,6 +235,10 @@ struct Metrics {
   
   
   SctpImplementation peer_implementation = SctpImplementation::kUnknown;
+
+  
+  
+  bool uses_message_interleaving = false;
 };
 
 
