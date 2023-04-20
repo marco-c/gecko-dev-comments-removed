@@ -201,8 +201,8 @@ bool operator!=(const rtc::VideoSinkWants& aThis,
 }
 
 
-bool operator!=(const webrtc::VideoReceiveStream::Config::Rtp& aThis,
-                const webrtc::VideoReceiveStream::Config::Rtp& aOther) {
+bool operator!=(const webrtc::VideoReceiveStreamInterface::Config::Rtp& aThis,
+                const webrtc::VideoReceiveStreamInterface::Config::Rtp& aOther) {
   return aThis.remote_ssrc != aOther.remote_ssrc ||
          aThis.local_ssrc != aOther.local_ssrc ||
          aThis.rtcp_mode != aOther.rtcp_mode ||
@@ -225,8 +225,8 @@ bool operator!=(const webrtc::VideoReceiveStream::Config::Rtp& aThis,
 
 #ifdef DEBUG
 
-bool operator==(const webrtc::VideoReceiveStream::Config::Rtp& aThis,
-                const webrtc::VideoReceiveStream::Config::Rtp& aOther) {
+bool operator==(const webrtc::VideoReceiveStreamInterface::Config::Rtp& aThis,
+                const webrtc::VideoReceiveStreamInterface::Config::Rtp& aOther) {
   return !(aThis != aOther);
 }
 #endif
@@ -423,7 +423,7 @@ void WebrtcVideoConduit::OnControlConfigChange() {
     mControl.mConfiguredRecvCodecs = codecConfigList;
     mControl.mConfiguredRecvRtpRtcpConfig = rtpRtcpConfig;
 
-    webrtc::VideoReceiveStream::Config::Rtp newRtp(mRecvStreamConfig.rtp);
+    webrtc::VideoReceiveStreamInterface::Config::Rtp newRtp(mRecvStreamConfig.rtp);
     MOZ_ASSERT(newRtp == mRecvStreamConfig.rtp);
     newRtp.rtx_associated_payload_types.clear();
     newRtp.rtcp_mode = rtpRtcpConfig->GetRtcpMode();
@@ -436,7 +436,7 @@ void WebrtcVideoConduit::OnControlConfigChange() {
     newRtp.red_payload_type = kNullPayloadType;
     bool use_fec = false;
     bool configuredH264 = false;
-    std::vector<webrtc::VideoReceiveStream::Decoder> recv_codecs;
+    std::vector<webrtc::VideoReceiveStreamInterface::Decoder> recv_codecs;
 
     
     
@@ -1051,7 +1051,7 @@ Maybe<Ssrc> WebrtcVideoConduit::GetRemoteSSRC() const {
              : Some(mRecvStreamConfig.rtp.remote_ssrc);
 }
 
-Maybe<webrtc::VideoReceiveStream::Stats> WebrtcVideoConduit::GetReceiverStats()
+Maybe<webrtc::VideoReceiveStreamInterface::Stats> WebrtcVideoConduit::GetReceiverStats()
     const {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
   if (!mRecvStream) {
@@ -1394,7 +1394,7 @@ void WebrtcVideoConduit::OnRtpReceived(MediaPacket&& aPacket,
       
       
       
-      const webrtc::VideoReceiveStream::Config::Rtp& rtp =
+      const webrtc::VideoReceiveStreamInterface::Config::Rtp& rtp =
           mRecvStreamConfig.rtp;
       switchRequired =
           rtp.rtx_associated_payload_types.find(aHeader.payloadType) ==
@@ -1736,7 +1736,7 @@ void WebrtcVideoConduit::CollectTelemetryData() {
     mSendFramerate.Push(stats.encode_frame_rate);
   }
   if (mEngineReceiving) {
-    webrtc::VideoReceiveStream::Stats stats = mRecvStream->GetStats();
+    webrtc::VideoReceiveStreamInterface::Stats stats = mRecvStream->GetStats();
     mRecvBitrate.Push(stats.total_bitrate_bps);
     mRecvFramerate.Push(stats.decode_frame_rate);
   }

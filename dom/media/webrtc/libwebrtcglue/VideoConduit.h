@@ -171,7 +171,7 @@ class WebrtcVideoConduit
   
   void EnsureRemoteSSRC();
 
-  Maybe<webrtc::VideoReceiveStream::Stats> GetReceiverStats() const override;
+  Maybe<webrtc::VideoReceiveStreamInterface::Stats> GetReceiverStats() const override;
   Maybe<webrtc::VideoSendStream::Stats> GetSenderStats() const override;
   Maybe<webrtc::CallBasicStats> GetCallStats() const override;
 
@@ -369,7 +369,7 @@ class WebrtcVideoConduit
   
   
   
-  webrtc::VideoReceiveStream* mRecvStream = nullptr;
+  webrtc::VideoReceiveStreamInterface* mRecvStream = nullptr;
 
   
   webrtc::VideoSendStream* mSendStream = nullptr;
@@ -444,7 +444,7 @@ class WebrtcVideoConduit
       mVideoStreamFactory;
 
   
-  webrtc::VideoReceiveStream::Config mRecvStreamConfig;
+  webrtc::VideoReceiveStreamInterface::Config mRecvStreamConfig;
 
   
   
