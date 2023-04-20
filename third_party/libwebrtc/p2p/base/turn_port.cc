@@ -1206,6 +1206,12 @@ bool TurnPort::CreateOrRefreshEntry(const rtc::SocketAddress& addr,
   return CreateOrRefreshEntry(addr, channel_number, "");
 }
 
+bool TurnPort::CreateOrRefreshEntry(Connection* conn, int channel_number) {
+  return CreateOrRefreshEntry(conn->remote_candidate().address(),
+                              channel_number,
+                              conn->remote_candidate().username());
+}
+
 bool TurnPort::CreateOrRefreshEntry(const rtc::SocketAddress& addr,
                                     int channel_number,
                                     absl::string_view remote_ufrag) {
@@ -1214,33 +1220,34 @@ bool TurnPort::CreateOrRefreshEntry(const rtc::SocketAddress& addr,
     entry = new TurnEntry(this, channel_number, addr, remote_ufrag);
     entries_.push_back(entry);
     return true;
-  } else {
-    if (entry->destruction_timestamp()) {
-      
-      
-      
-      RTC_DCHECK(!GetConnection(addr));
-      
-      
-      
-      
-      entry->reset_destruction_timestamp();
-    } else {
-      
-      
-      RTC_DCHECK(GetConnection(addr));
-    }
+  }
 
-    if (field_trials().IsEnabled("WebRTC-TurnAddMultiMapping")) {
-      if (entry->get_remote_ufrag() != remote_ufrag) {
-        RTC_LOG(LS_INFO) << ToString()
-                         << ": remote ufrag updated."
-                            " Sending new permission request";
-        entry->set_remote_ufrag(remote_ufrag);
-        entry->SendCreatePermissionRequest(0);
-      }
+  if (entry->destruction_timestamp()) {
+    
+    
+    
+    RTC_DCHECK(!GetConnection(addr));
+    
+    
+    
+    
+    entry->reset_destruction_timestamp();
+  } else {
+    
+    
+    RTC_DCHECK(GetConnection(addr));
+  }
+
+  if (field_trials().IsEnabled("WebRTC-TurnAddMultiMapping")) {
+    if (entry->get_remote_ufrag() != remote_ufrag) {
+      RTC_LOG(LS_INFO) << ToString()
+                       << ": remote ufrag updated."
+                          " Sending new permission request";
+      entry->set_remote_ufrag(remote_ufrag);
+      entry->SendCreatePermissionRequest(0);
     }
   }
+
   return false;
 }
 
