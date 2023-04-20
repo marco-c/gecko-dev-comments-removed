@@ -11,29 +11,15 @@ const {
 const SEARCH_WORKER_URL =
   "resource://devtools/client/netmonitor/src/workers/search/worker.js";
 
-let dispatcher;
-
-function getDispatcher() {
-  if (!dispatcher) {
-    dispatcher = new WorkerDispatcher(SEARCH_WORKER_URL);
+class SearchDispatcher extends WorkerDispatcher {
+  constructor() {
+    super(SEARCH_WORKER_URL);
   }
-  return dispatcher;
-}
 
-function stop() {
-  if (dispatcher) {
-    dispatcher.stop();
-    dispatcher = null;
-  }
+  
+  
+  searchInResource = this.task("searchInResource");
 }
 
 
-
-function searchInResource(...args) {
-  return getDispatcher().invoke("searchInResource", ...args);
-}
-
-module.exports = {
-  stop,
-  searchInResource,
-};
+module.exports = new SearchDispatcher();
