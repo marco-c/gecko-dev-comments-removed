@@ -455,14 +455,18 @@ nsDocShellTreeOwner::SizeShellTo(nsIDocShellTreeItem* aShellItem, int32_t aCX,
       
       
       
-      
       nsCOMPtr<nsIBaseWindow> shellAsWin(do_QueryInterface(aShellItem));
       NS_ENSURE_TRUE(shellAsWin, NS_ERROR_FAILURE);
 
-      int32_t width = 0;
-      int32_t height = 0;
-      shellAsWin->GetSize(&width, &height);
-      return browserChild->RemoteSizeShellTo(aCX, aCY, width, height);
+      LayoutDeviceIntSize shellSize;
+      shellAsWin->GetSize(&shellSize.width, &shellSize.height);
+      LayoutDeviceIntSize deltaSize = LayoutDeviceIntSize(aCX, aCY) - shellSize;
+
+      LayoutDeviceIntSize currentSize;
+      GetSize(&currentSize.width, &currentSize.height);
+
+      LayoutDeviceIntSize newSize = currentSize + deltaSize;
+      return SetSize(newSize.width, newSize.height, true);
     }
     
     
