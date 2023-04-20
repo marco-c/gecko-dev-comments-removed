@@ -132,12 +132,21 @@ class MozconfigLoader(object):
         
         
         shell = "sh"
+        env = dict(os.environ)
+        env["PYTHONIOENCODING"] = "utf-8"
+
         if "MOZILLABUILD" in os.environ:
             mozillabuild = os.environ["MOZILLABUILD"]
             if (Path(mozillabuild) / "msys2").exists():
                 shell = mozillabuild + "/msys2/usr/bin/sh"
             else:
                 shell = mozillabuild + "/msys/bin/sh"
+            prefer_mozillabuild_path = [
+                os.path.dirname(shell),
+                str(Path(mozillabuild) / "bin"),
+                env["PATH"],
+            ]
+            env["PATH"] = os.pathsep.join(prefer_mozillabuild_path)
         if sys.platform == "win32":
             shell = shell + ".exe"
 
@@ -151,8 +160,6 @@ class MozconfigLoader(object):
         ]
 
         try:
-            env = dict(os.environ)
-            env["PYTHONIOENCODING"] = "utf-8"
             
             
             output = six.ensure_text(
