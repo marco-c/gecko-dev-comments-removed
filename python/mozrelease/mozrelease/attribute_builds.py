@@ -112,6 +112,7 @@ def validate_attribution_code(attribution):
             "experiment",
             "variation",
             "ua",
+            "dlsource",
         ):
             log.error("Invalid key %s" % key)
             return_code = False
@@ -126,11 +127,22 @@ def validate_attribution_code(attribution):
         
 
     
-    for key in ("source", "medium", "campaign", "content"):
-        if key not in used_keys:
-            log.error("key '%s' must be set, use '(not set)' if not needed" % key)
-            return_code = False
+    
+    
+    
+    
+    
+    
+    
+    if "dlsource" not in used_keys:
+        for key in ("source", "medium", "campaign", "content"):
+            if key not in used_keys:
+                return_code = False
 
+    if return_code is False:
+        log.error(
+            "Either 'dlsource' must be provided, or all of: 'source', 'medium', 'campaign', and 'content'. Use '(not set)' if one of the latter is not needed."
+        )
     return return_code
 
 
