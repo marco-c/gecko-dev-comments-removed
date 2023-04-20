@@ -1286,16 +1286,19 @@ StructuredCloneHolder::CustomReadTransferHandler(
     VideoFrame::TransferredData* data =
         static_cast<VideoFrame::TransferredData*>(aContent);
     nsCOMPtr<nsIGlobalObject> global = mGlobal;
-    RefPtr<VideoFrame> frame = VideoFrame::FromTransferred(global.get(), data);
-    delete data;
-
-    JS::Rooted<JS::Value> value(aCx);
-    if (!GetOrCreateDOMReflector(aCx, frame, &value)) {
-      JS_ClearPendingException(aCx);
-      return false;
+    
+    
+    if (RefPtr<VideoFrame> frame =
+            VideoFrame::FromTransferred(global.get(), data)) {
+      delete data;
+      JS::Rooted<JS::Value> value(aCx);
+      if (!GetOrCreateDOMReflector(aCx, frame, &value)) {
+        JS_ClearPendingException(aCx);
+        return false;
+      }
+      aReturnObject.set(&value.toObject());
+      return true;
     }
-    aReturnObject.set(&value.toObject());
-    return true;
   }
 
   return false;
