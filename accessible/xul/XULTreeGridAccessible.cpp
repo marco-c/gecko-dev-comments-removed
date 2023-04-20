@@ -3,7 +3,7 @@
 
 
 
-#include "XULTreeGridAccessibleWrap.h"
+#include "XULTreeGridAccessible.h"
 
 #include "AccAttributes.h"
 #include "LocalAccessible-inl.h"
@@ -307,7 +307,7 @@ XULTreeGridCellAccessible* XULTreeGridRowAccessible::GetCellAccessible(
   XULTreeGridCellAccessible* cachedCell = mAccessibleCache.GetWeak(key);
   if (cachedCell) return cachedCell;
 
-  RefPtr<XULTreeGridCellAccessible> cell = new XULTreeGridCellAccessibleWrap(
+  RefPtr<XULTreeGridCellAccessible> cell = new XULTreeGridCellAccessible(
       mContent, mDoc, const_cast<XULTreeGridRowAccessible*>(this), mTree,
       mTreeView, mRow, aColumn);
   mAccessibleCache.InsertOrUpdate(key, RefPtr{cell});
