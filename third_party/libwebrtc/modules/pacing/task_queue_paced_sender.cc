@@ -298,13 +298,22 @@ void TaskQueuePacedSender::MaybeProcessPackets(
             ? TaskQueueBase::DelayPrecision::kLow
             : TaskQueueBase::DelayPrecision::kHigh;
     
-    
-    if (precision == TaskQueueBase::DelayPrecision::kLow &&
-        slacked_pacer_flags_.max_low_precision_expected_queue_time &&
-        pacing_controller_.ExpectedQueueTime() >=
-            slacked_pacer_flags_.max_low_precision_expected_queue_time
-                .Value()) {
-      precision = TaskQueueBase::DelayPrecision::kHigh;
+    if (precision == TaskQueueBase::DelayPrecision::kLow) {
+      auto& packets_per_type =
+          pacing_controller_.SizeInPacketsPerRtpPacketMediaType();
+      bool audio_or_retransmission_packets_in_queue =
+          packets_per_type[static_cast<size_t>(RtpPacketMediaType::kAudio)] >
+              0 ||
+          packets_per_type[static_cast<size_t>(
+              RtpPacketMediaType::kRetransmission)] > 0;
+      bool queue_time_too_large =
+          slacked_pacer_flags_.max_low_precision_expected_queue_time &&
+          pacing_controller_.ExpectedQueueTime() >=
+              slacked_pacer_flags_.max_low_precision_expected_queue_time
+                  .Value();
+      if (audio_or_retransmission_packets_in_queue || queue_time_too_large) {
+        precision = TaskQueueBase::DelayPrecision::kHigh;
+      }
     }
 
     task_queue_.PostDelayedTaskWithPrecision(

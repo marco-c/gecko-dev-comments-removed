@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <array>
 #include <atomic>
 #include <memory>
 #include <vector>
@@ -67,6 +68,11 @@ class PacingController {
     virtual int SizeInPackets() const = 0;
     bool Empty() const { return SizeInPackets() == 0; }
     virtual DataSize SizeInPayloadBytes() const = 0;
+
+    
+    
+    virtual const std::array<int, kNumMediaTypes>&
+    SizeInPacketsPerRtpPacketMediaType() const = 0;
 
     
     
@@ -159,6 +165,10 @@ class PacingController {
 
   
   size_t QueueSizePackets() const;
+  
+  
+  const std::array<int, kNumMediaTypes>& SizeInPacketsPerRtpPacketMediaType()
+      const;
   
   DataSize QueueSizeData() const;
 

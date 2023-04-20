@@ -37,6 +37,8 @@ class PrioritizedPacketQueue : public PacingController::PacketQueue {
   std::unique_ptr<RtpPacketToSend> Pop() override;
   int SizeInPackets() const override;
   DataSize SizeInPayloadBytes() const override;
+  const std::array<int, kNumMediaTypes>& SizeInPacketsPerRtpPacketMediaType()
+      const override;
   Timestamp LeadingAudioPacketEnqueueTime() const override;
   Timestamp OldestEnqueueTime() const override;
   TimeDelta AverageQueueTime() const override;
@@ -88,6 +90,8 @@ class PrioritizedPacketQueue : public PacingController::PacketQueue {
   TimeDelta pause_time_sum_;
   
   int size_packets_;
+  
+  std::array<int, kNumMediaTypes> size_packets_per_media_type_;
   
   DataSize size_payload_;
   

@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "api/units/time_delta.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/checks.h"
 #include "test/gmock.h"
@@ -228,6 +229,63 @@ TEST(PrioritizedPacketQueue, ReportsLeadingAudioEnqueueTime) {
 
   queue.Pop();  
   EXPECT_EQ(queue.LeadingAudioPacketEnqueueTime(), Timestamp::MinusInfinity());
+}
+
+TEST(PrioritizedPacketQueue,
+     PushAndPopUpdatesSizeInPacketsPerRtpPacketMediaType) {
+  Timestamp now = Timestamp::Zero();
+  PrioritizedPacketQueue queue(now);
+
+  
+  for (size_t i = 0; i < kNumMediaTypes; ++i) {
+    EXPECT_EQ(queue.SizeInPacketsPerRtpPacketMediaType()[i], 0);
+  }
+
+  
+  queue.Push(now, CreatePacket(RtpPacketMediaType::kAudio, 1));
+  EXPECT_EQ(queue.SizeInPacketsPerRtpPacketMediaType()[static_cast<size_t>(
+                RtpPacketMediaType::kAudio)],
+            1);
+
+  queue.Push(now, CreatePacket(RtpPacketMediaType::kVideo, 2));
+  EXPECT_EQ(queue.SizeInPacketsPerRtpPacketMediaType()[static_cast<size_t>(
+                RtpPacketMediaType::kVideo)],
+            1);
+
+  queue.Push(now, CreatePacket(RtpPacketMediaType::kRetransmission, 3));
+  EXPECT_EQ(queue.SizeInPacketsPerRtpPacketMediaType()[static_cast<size_t>(
+                RtpPacketMediaType::kRetransmission)],
+            1);
+
+  queue.Push(now, CreatePacket(RtpPacketMediaType::kForwardErrorCorrection, 4));
+  EXPECT_EQ(queue.SizeInPacketsPerRtpPacketMediaType()[static_cast<size_t>(
+                RtpPacketMediaType::kForwardErrorCorrection)],
+            1);
+
+  queue.Push(now, CreatePacket(RtpPacketMediaType::kPadding, 5));
+  EXPECT_EQ(queue.SizeInPacketsPerRtpPacketMediaType()[static_cast<size_t>(
+                RtpPacketMediaType::kPadding)],
+            1);
+
+  
+  for (size_t i = 0; i < kNumMediaTypes; ++i) {
+    EXPECT_EQ(queue.SizeInPacketsPerRtpPacketMediaType()[i], 1);
+  }
+
+  
+  
+  
+  for (size_t i = 0; i < kNumMediaTypes; ++i) {
+    auto popped_packet = queue.Pop();
+    EXPECT_EQ(queue.SizeInPacketsPerRtpPacketMediaType()[static_cast<size_t>(
+                  popped_packet->packet_type().value())],
+              0);
+  }
+
+  
+  for (size_t i = 0; i < kNumMediaTypes; ++i) {
+    EXPECT_EQ(queue.SizeInPacketsPerRtpPacketMediaType()[i], 0);
+  }
 }
 
 }  
