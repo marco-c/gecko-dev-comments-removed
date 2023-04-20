@@ -349,6 +349,7 @@ class ScriptLoadRequest
 
   
   
+  
   nsAutoCString mURL;
 
   
