@@ -1187,10 +1187,13 @@ static ItemActivity IsItemProbablyActive(
         
         
         
-        int32_t largeish = 512;
+        const int32_t largeish = 512;
 
-        if (aHasActivePrecedingSibling || bounds.width > largeish ||
-            bounds.height > largeish) {
+        float width = bounds.width * aSc.GetInheritedScale().xScale;
+        float height = bounds.height * aSc.GetInheritedScale().yScale;
+
+        if (aHasActivePrecedingSibling || width > largeish ||
+            height > largeish) {
           return ItemActivity::Should;
         }
 
