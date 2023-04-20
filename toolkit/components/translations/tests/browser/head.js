@@ -33,20 +33,10 @@ const { TranslationsParent } = ChromeUtils.importESModule(
 
 
 
-
-
-
-
-
-
-
-
 async function openAboutTranslations({
   dataForContent,
   disabled,
   runInPage,
-  detectedLanguageConfidence,
-  detectedLanguageLabel,
   languagePairs,
   prefs,
 }) {
@@ -80,13 +70,7 @@ async function openAboutTranslations({
 
   
   if (languagePairs) {
-    TranslationsParent.mockLanguagePairs(languagePairs);
-  }
-  if (detectedLanguageLabel && detectedLanguageConfidence) {
-    TranslationsParent.mockLanguageIdentification(
-      detectedLanguageLabel,
-      detectedLanguageConfidence
-    );
+    TranslationsParent.mock(languagePairs);
   }
 
   
@@ -100,10 +84,7 @@ async function openAboutTranslations({
   );
 
   if (languagePairs) {
-    TranslationsParent.mockLanguagePairs(null);
-  }
-  if (detectedLanguageLabel && detectedLanguageConfidence) {
-    TranslationsParent.mockLanguageIdentification(null, null);
+    TranslationsParent.mock(null);
   }
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
