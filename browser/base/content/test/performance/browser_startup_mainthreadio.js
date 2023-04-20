@@ -218,12 +218,14 @@ const startupPhases = {
       
       path: "ProfD:",
       condition: WIN,
+      ignoreIfUnused: true, 
       stat: 1,
     },
     {
       
       path: "ProfD:cookies.sqlite-journal",
       condition: !LINUX,
+      ignoreIfUnused: true, 
       stat: 3,
       write: 4,
     },
@@ -231,6 +233,7 @@ const startupPhases = {
       
       path: "ProfD:cookies.sqlite",
       condition: !LINUX,
+      ignoreIfUnused: true, 
       stat: 2,
       read: 3,
       write: 1,
@@ -238,6 +241,7 @@ const startupPhases = {
     {
       
       path: "ProfD:cookies.sqlite-wal",
+      ignoreIfUnused: true, 
       condition: WIN,
       stat: 2,
     },
@@ -295,6 +299,12 @@ const startupPhases = {
       close: 1,
     },
     {
+      path: "XREAppFeat:webcompat@mozilla.org.xpi",
+      condition: LINUX,
+      ignoreIfUnused: true, 
+      close: 1,
+    },
+    {
       
       path: "XREAppDist:distribution.ini",
       condition: WIN,
@@ -339,6 +349,37 @@ const startupPhases = {
       path: "GreD:EventArtifactDefinitions.json",
       condition: WIN && !AppConstants.MOZILLA_OFFICIAL,
       stat: 1,
+    },
+    {
+      
+      path: "ProfD:",
+      condition: WIN,
+      ignoreIfUnused: true, 
+      stat: 1,
+    },
+    {
+      
+      path: "ProfD:cookies.sqlite-journal",
+      condition: WIN,
+      ignoreIfUnused: true, 
+      stat: 3,
+      write: 4,
+    },
+    {
+      
+      path: "ProfD:cookies.sqlite",
+      condition: WIN,
+      ignoreIfUnused: true, 
+      stat: 2,
+      read: 3,
+      write: 1,
+    },
+    {
+      
+      path: "ProfD:cookies.sqlite-wal",
+      condition: WIN,
+      ignoreIfUnused: true, 
+      stat: 2,
     },
   ],
 
