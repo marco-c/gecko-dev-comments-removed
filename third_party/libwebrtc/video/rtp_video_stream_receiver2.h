@@ -64,6 +64,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
                                 public RecoveredPacketReceiver,
                                 public RtpPacketSinkInterface,
                                 public KeyFrameRequestSender,
+                                public NackSender,
                                 public OnDecryptedFrameCallback,
                                 public OnDecryptionStatusChangeCallback,
                                 public RtpVideoFrameReceiver {
@@ -91,7 +92,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
       RtcpCnameCallback* rtcp_cname_callback,
       NackPeriodicProcessor* nack_periodic_processor,
       VCMReceiveStatisticsCallback* vcm_receive_statistics,
-      NackSender* nack_sender,
       
       
       OnCompleteFrameCallback* complete_frame_callback,
@@ -140,6 +140,10 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   void RequestKeyFrame() override;
 
   
+  void SendNack(const std::vector<uint16_t>& sequence_numbers,
+                bool buffering_allowed) override;
+
+  
   void SendLossNotification(uint16_t last_decoded_seq_num,
                             uint16_t last_received_seq_num,
                             bool decodability_flag,
@@ -152,12 +156,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   
   
   bool IsDecryptable() const;
-
-  
-  
-  
-  
-  void RequestPacketRetransmit(const std::vector<uint16_t>& sequence_numbers);
 
   
   void OnDecryptedFrame(std::unique_ptr<RtpFrameObject> frame) override;
