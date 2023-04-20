@@ -853,9 +853,7 @@ PresShell::PresShell(Document* aDocument)
       mForceUseLegacyNonPrimaryDispatch(false),
       mInitializedWithClickEventDispatchingBlacklist(false),
       mMouseLocationWasSetBySynthesizedMouseEventForTests(false),
-      mHasTriedFastUnsuppress(false),
-      mProcessingReflowCommands(false),
-      mPendingDidDoReflow(false) {
+      mHasTriedFastUnsuppress(false) {
   MOZ_LOG(gLog, LogLevel::Debug, ("PresShell::PresShell this=%p", this));
   MOZ_ASSERT(aDocument);
 
@@ -2153,7 +2151,6 @@ bool PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
   
   
 
-  mPendingDidDoReflow = true;
   DidDoReflow(true);
 
   
@@ -4203,7 +4200,10 @@ void PresShell::HandlePostedReflowCallbacks(bool aInterruptible) {
 
   FlushType flushType =
       aInterruptible ? FlushType::InterruptibleLayout : FlushType::Layout;
-  if (shouldFlush && !mIsDestroying) {
+  if (shouldFlush && !mIsDestroying && nsContentUtils::IsSafeToRunScript()) {
+    
+    
+    
     FlushPendingNotifications(flushType);
   }
 }
@@ -9485,22 +9485,9 @@ void PresShell::WillDoReflow() {
 }
 
 void PresShell::DidDoReflow(bool aInterruptible) {
-  MOZ_ASSERT(mPendingDidDoReflow);
-  if (!nsContentUtils::IsSafeToRunScript()) {
-    
-    
-    
-    SetNeedLayoutFlush();
-    return;
-  }
-
-  auto clearPendingDidDoReflow =
-      MakeScopeExit([&] { mPendingDidDoReflow = false; });
-
   mHiddenContentInForcedLayout.Clear();
 
   HandlePostedReflowCallbacks(aInterruptible);
-
   if (mIsDestroying) {
     return;
   }
@@ -9838,18 +9825,12 @@ void PresShell::DoVerifyReflow() {
 #define NS_LONG_REFLOW_TIME_MS 5000
 
 bool PresShell::ProcessReflowCommands(bool aInterruptible) {
-  if (mDirtyRoots.IsEmpty() && !mShouldUnsuppressPainting &&
-      !mPendingDidDoReflow) {
+  if (mDirtyRoots.IsEmpty() && !mShouldUnsuppressPainting) {
     
     return true;
   }
 
-  const bool wasProcessingReflowCommands = mProcessingReflowCommands;
-  auto restoreProcessingReflowCommands = MakeScopeExit(
-      [&] { mProcessingReflowCommands = wasProcessingReflowCommands; });
-  mProcessingReflowCommands = true;
-
-  auto timerStart = mozilla::TimeStamp::Now();
+  mozilla::TimeStamp timerStart = mozilla::TimeStamp::Now();
   bool interrupted = false;
   if (!mDirtyRoots.IsEmpty()) {
 #ifdef DEBUG
@@ -9865,68 +9846,68 @@ bool PresShell::ProcessReflowCommands(bool aInterruptible) {
             : (PRIntervalTime)0;
 
     
-    nsAutoScriptBlocker scriptBlocker;
-    WillDoReflow();
-    AUTO_LAYOUT_PHASE_ENTRY_POINT(GetPresContext(), Reflow);
-    nsViewManager::AutoDisableRefresh refreshBlocker(mViewManager);
+    {
+      nsAutoScriptBlocker scriptBlocker;
+      WillDoReflow();
+      AUTO_LAYOUT_PHASE_ENTRY_POINT(GetPresContext(), Reflow);
+      nsViewManager::AutoDisableRefresh refreshBlocker(mViewManager);
 
-    OverflowChangedTracker overflowTracker;
+      OverflowChangedTracker overflowTracker;
 
-    do {
-      
-      nsIFrame* target = mDirtyRoots.PopShallowestRoot();
+      do {
+        
+        nsIFrame* target = mDirtyRoots.PopShallowestRoot();
 
-      if (!target->IsSubtreeDirty()) {
+        if (!target->IsSubtreeDirty()) {
+          
+          
+          
+          continue;
+        }
+
+        interrupted = !DoReflow(target, aInterruptible, &overflowTracker);
+
         
         
+      } while (!interrupted && !mDirtyRoots.IsEmpty() &&
+               (!aInterruptible || PR_IntervalNow() < deadline));
+
+      interrupted = !mDirtyRoots.IsEmpty();
+
+      overflowTracker.Flush();
+
+      if (!interrupted) {
         
-        continue;
+        
+        FlushPendingScrollAnchorAdjustments();
       }
-
-      interrupted = !DoReflow(target, aInterruptible, &overflowTracker);
-
-      
-      
-    } while (!interrupted && !mDirtyRoots.IsEmpty() &&
-             (!aInterruptible || PR_IntervalNow() < deadline));
-
-    interrupted = !mDirtyRoots.IsEmpty();
-
-    overflowTracker.Flush();
-
-    if (!interrupted) {
-      
-      
-      FlushPendingScrollAnchorAdjustments();
     }
-    mPendingDidDoReflow = true;
-  }
 
-  
-  
-  if (!mIsDestroying && mPendingDidDoReflow && !wasProcessingReflowCommands) {
-    DidDoReflow(aInterruptible);
-  }
+    
+    if (!mIsDestroying) {
+      DidDoReflow(aInterruptible);
+    }
 
-  
-  if (!mIsDestroying) {
+    
+    if (!mIsDestroying) {
 #ifdef DEBUG
-    if (VerifyReflowFlags::DumpCommands & gVerifyReflowFlags) {
-      printf("\nPresShell::ProcessReflowCommands() finished: this=%p\n",
-             (void*)this);
-    }
-    DoVerifyReflow();
+      if (VerifyReflowFlags::DumpCommands & gVerifyReflowFlags) {
+        printf("\nPresShell::ProcessReflowCommands() finished: this=%p\n",
+               (void*)this);
+      }
+      DoVerifyReflow();
 #endif
 
-    
-    
-    
-    
-    
-    if (!mDirtyRoots.IsEmpty()) {
-      MaybeScheduleReflow();
       
-      SetNeedLayoutFlush();
+      
+      
+      
+      
+      if (!mDirtyRoots.IsEmpty()) {
+        MaybeScheduleReflow();
+        
+        SetNeedLayoutFlush();
+      }
     }
   }
 
