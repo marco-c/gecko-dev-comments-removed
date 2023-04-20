@@ -7326,8 +7326,6 @@ void nsContentUtils::GetSelectionInTextControl(Selection* aSelection,
   
   MOZ_ASSERT_IF(firstChild, firstChild->IsText() || firstChild->IsElement());
 #endif
-  
-  
   if (!firstChild || firstChild->IsElement()) {
     
     startOffset = endOffset = 0;

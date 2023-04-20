@@ -389,24 +389,6 @@ class nsINode : public mozilla::dom::EventTarget {
 
   virtual ~nsINode();
 
-  
-
-
-  enum {
-    
-    eHTML_FORM_CONTROL = 1 << 6,
-  };
-
-  
-
-
-
-
-
-
-
-  virtual bool IsNodeOfType(uint32_t aFlags) const = 0;
-
   bool IsContainerNode() const {
     return IsElement() || IsDocument() || IsDocumentFragment();
   }
@@ -440,6 +422,8 @@ class nsINode : public mozilla::dom::EventTarget {
   bool IsDocumentFragment() const {
     return NodeType() == DOCUMENT_FRAGMENT_NODE;
   }
+
+  virtual bool IsHTMLFormControlElement() const { return false; }
 
   
 
