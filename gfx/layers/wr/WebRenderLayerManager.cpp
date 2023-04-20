@@ -257,8 +257,13 @@ bool WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags) {
   
   mAnimationReadyTime = TimeStamp::Now();
 
-  mLatestTransactionId =
-      mTransactionIdAllocator->GetTransactionId( true);
+#if MOZ_WIDGET_GTK
+  
+  const bool throttle = mWidget->IsMapped();
+#else
+  const bool throttle = true;
+#endif
+  mLatestTransactionId = mTransactionIdAllocator->GetTransactionId(throttle);
 
   if (aFlags & EndTransactionFlags::END_NO_COMPOSITE &&
       !mWebRenderCommandBuilder.NeedsEmptyTransaction()) {
@@ -406,8 +411,13 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
     nsLayoutUtils::NotifyPaintSkipTransaction(update);
   }
 
-  mLatestTransactionId =
-      mTransactionIdAllocator->GetTransactionId( true);
+#if MOZ_WIDGET_GTK
+  
+  const bool throttle = mWidget->IsMapped();
+#else
+  const bool throttle = true;
+#endif
+  mLatestTransactionId = mTransactionIdAllocator->GetTransactionId(throttle);
 
   
   
