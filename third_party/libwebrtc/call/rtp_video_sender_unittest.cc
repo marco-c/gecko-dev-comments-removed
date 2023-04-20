@@ -208,7 +208,7 @@ class RtpVideoSenderTestFixture {
   
   
   void RunOnTransportQueue(absl::AnyInvocable<void() &&> task) {
-    transport_controller_.GetWorkerQueue()->PostTask(std::move(task));
+    transport_controller_.GetWorkerQueue()->RunOrPost(std::move(task));
     AdvanceTime(TimeDelta::Zero());
   }
 
