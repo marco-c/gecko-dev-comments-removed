@@ -201,7 +201,8 @@ static bool TestDeleteOnClose(nsIFile* aBase, const char* aName, int32_t aFlags,
 }
 
 
-static bool TestRemove(nsIFile* aBase, const char* aName, bool aRecursive) {
+static bool TestRemove(nsIFile* aBase, const char* aName, bool aRecursive,
+                       uint32_t aExpectedRemoveCount = 1) {
   nsCOMPtr<nsIFile> file = NewFile(aBase);
   if (!file) return false;
 
@@ -217,8 +218,10 @@ static bool TestRemove(nsIFile* aBase, const char* aName, bool aRecursive) {
     return false;
   }
 
-  rv = file->Remove(aRecursive);
+  uint32_t removeCount = 0;
+  rv = file->Remove(aRecursive, &removeCount);
   if (!VerifyResult(rv, "Remove")) return false;
+  EXPECT_EQ(removeCount, aExpectedRemoveCount) << "Removal count was wrong";
 
   rv = file->Exists(&exists);
   if (!VerifyResult(rv, "Exists (after)")) return false;
@@ -498,7 +501,7 @@ static void SetupAndTestFunctions(const nsAString& aDirName,
   }
 
   
-  ASSERT_TRUE(TestRemove(base, "subdir", true));
+  ASSERT_TRUE(TestRemove(base, "subdir", true, 2));
 
   if (aTestCreateUnique) {
     ASSERT_TRUE(TestCreateUnique(base, "foo", nsIFile::NORMAL_FILE_TYPE, 0600));

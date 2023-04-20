@@ -234,7 +234,11 @@ interface nsIFile : nsISupports
 
 
 
-    void remove(in boolean recursive);
+
+
+
+
+    void remove(in boolean recursive, [optional] inout uint32_t removeCount);
 
     
 

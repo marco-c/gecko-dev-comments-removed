@@ -2287,7 +2287,7 @@ nsLocalFile::Load(PRLibrary** aResult) {
 }
 
 NS_IMETHODIMP
-nsLocalFile::Remove(bool aRecursive) {
+nsLocalFile::Remove(bool aRecursive, uint32_t* aRemoveCount) {
   
   
   
@@ -2340,9 +2340,11 @@ nsLocalFile::Remove(bool aRecursive) {
         return rv;
       }
 
+      
+      
       nsCOMPtr<nsIFile> file;
       while (NS_SUCCEEDED(dirEnum->GetNextFile(getter_AddRefs(file))) && file) {
-        file->Remove(aRecursive);
+        file->Remove(aRecursive, aRemoveCount);
       }
     }
     if (RemoveDirectoryW(mWorkingPath.get()) == 0) {
@@ -2352,6 +2354,10 @@ nsLocalFile::Remove(bool aRecursive) {
     if (DeleteFileW(mWorkingPath.get()) == 0) {
       return ConvertWinError(GetLastError());
     }
+  }
+
+  if (aRemoveCount) {
+    *aRemoveCount += 1;
   }
 
   MakeDirty();
