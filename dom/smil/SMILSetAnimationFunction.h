@@ -33,9 +33,8 @@ class SMILSetAnimationFunction : public SMILAnimationFunction {
 
 
 
-  virtual bool SetAttr(nsAtom* aAttribute, const nsAString& aValue,
-                       nsAttrValue& aResult,
-                       nsresult* aParseResult = nullptr) override;
+  bool SetAttr(nsAtom* aAttribute, const nsAString& aValue,
+               nsAttrValue& aResult, nsresult* aParseResult = nullptr) override;
 
   
 
@@ -43,21 +42,21 @@ class SMILSetAnimationFunction : public SMILAnimationFunction {
 
 
 
-  virtual bool UnsetAttr(nsAtom* aAttribute) override;
+  bool UnsetAttr(nsAtom* aAttribute) override;
 
  protected:
   
   
   
   
-  virtual bool IsToAnimation() const override { return false; }
+  bool IsToAnimation() const override { return false; }
 
   
-  virtual bool IsValueFixedForSimpleDuration() const override { return true; }
-  virtual bool HasAttr(nsAtom* aAttName) const override;
-  virtual const nsAttrValue* GetAttr(nsAtom* aAttName) const override;
-  virtual bool GetAttr(nsAtom* aAttName, nsAString& aResult) const override;
-  virtual bool WillReplace() const override;
+  bool IsValueFixedForSimpleDuration() const override { return true; }
+  bool HasAttr(nsAtom* aAttName) const override;
+  const nsAttrValue* GetAttr(nsAtom* aAttName) const override;
+  bool GetAttr(nsAtom* aAttName, nsAString& aResult) const override;
+  bool WillReplace() const override;
 
   bool IsDisallowedAttribute(const nsAtom* aAttribute) const;
 };
