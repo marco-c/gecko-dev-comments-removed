@@ -979,10 +979,7 @@ bool Http3Session::AddStream(nsAHttpTransaction* aHttpTransaction,
 }
 
 bool Http3Session::CanReuse() {
-  
-  
-  return CanSandData() && !(mGoawayReceived || mShouldClose) &&
-         !mConnInfo->GetWebTransport();
+  return CanSandData() && !(mGoawayReceived || mShouldClose);
 }
 
 void Http3Session::QueueStream(Http3StreamBase* stream) {
