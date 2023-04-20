@@ -761,6 +761,13 @@ const ASRouterTriggerListeners = new Map([
       
       _triggerDelay: 2000,
       _triggerTimeout: null,
+      
+      
+      
+      
+      
+      _wakeDelay: 1000,
+      _lastWakeTime: null,
       _listenedEvents: ["visibilitychange", "TabClose", "TabAttrModified"],
       
       
@@ -835,24 +842,40 @@ const ASRouterTriggerListeners = new Map([
             idleTime: this._idleService.idleTime,
             idleSince: this._idleSince,
             quietSince: this._quietSince,
+            lastWakeTime: this._lastWakeTime,
           });
           switch (topic) {
             case "idle":
-              this._idleSince = Date.now() - subject.idleTime;
+              const now = Date.now();
+              
+              
+              
+              const isImmediatelyAfterWake =
+                this._lastWakeTime &&
+                now - this._lastWakeTime < this._wakeDelay;
+              if (!isImmediatelyAfterWake) {
+                this._idleSince = now - subject.idleTime;
+              }
               break;
             case "active":
               
               if (this._isVisible) {
                 this._onActive();
                 this._idleSince = null;
+                this._lastWakeTime = null;
               } else if (this._idleSince) {
                 
                 
                 this._awaitingVisibilityChange = true;
               }
               break;
+            
+            case "wake_notification":
+            case "resume_process_notification":
+            case "mac_app_activate":
+              this._lastWakeTime = Date.now();
+            
             default:
-              
               this._idleSince = null;
           }
         }
@@ -864,6 +887,7 @@ const ASRouterTriggerListeners = new Map([
               if (this._awaitingVisibilityChange && this._isVisible) {
                 this._onActive();
                 this._idleSince = null;
+                this._lastWakeTime = null;
                 this._awaitingVisibilityChange = false;
               }
               break;
@@ -894,6 +918,7 @@ const ASRouterTriggerListeners = new Map([
           idleTime: this._idleService.idleTime,
           idleSince: this._idleSince,
           quietSince: this._quietSince,
+          lastWakeTime: this._lastWakeTime,
         });
         if (this._idleSince && this._quietSince) {
           const win = Services.wm.getMostRecentBrowserWindow();
@@ -924,6 +949,8 @@ const ASRouterTriggerListeners = new Map([
           this._triggerHandler = null;
           this._idleSince = null;
           this._quietSince = null;
+          this._lastWakeTime = null;
+          this._awaitingVisibilityChange = false;
           this.log("Uninitialized");
         }
       },
