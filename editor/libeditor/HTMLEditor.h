@@ -1240,8 +1240,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
   using InitializeInsertingElement =
       std::function<nsresult(HTMLEditor& aHTMLEditor, Element& aNewElement,
                              const EditorDOMPoint& aPointToInsert)>;
