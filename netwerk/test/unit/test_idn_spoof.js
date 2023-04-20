@@ -81,18 +81,18 @@ let testCases = [
   ["xn---123-kbjl2j0bl2k.in", "\u0939\u093f\u0928\u094d\u0926\u0940-123.in", kSafe],
 
   
-  ["xn--1-xcc.com", "1\u0577.com", kUnsafe],
+  ["xn--1-xcc.com", "1\u0577.com", kUnsafe, "DISABLED"],
 
   
   ["xn--0-6ee.com", "\u0a680.com", kUnsafe],
   
   ["xn--47b6w.com", "\u09ea\u0a68.com", kUnsafe],
   
-  ["xn--qccaa.com", "\u0a68\u0a68\u0a68.com", kUnsafe],
+  ["xn--qccaa.com", "\u0a68\u0a68\u0a68.com", kUnsafe, "DISABLED"],
 
   
   
-  ["xn--4000-pfr.com", "\u10eb4000.com", kUnsafe],
+  ["xn--4000-pfr.com", "\u10eb4000.com", kUnsafe, "DISABLED"],
 
   
   
@@ -126,7 +126,7 @@ let testCases = [
   
   ["xn--ggl-tdd6ba.r", "g\u043e\u043egl\u0435.r", kUnsafe],
   
-  ["xn--hllo-bpa7979ih5m.cn", "h\u00e9llo\u4e2d\u56fd.cn", kUnsafe],
+  ["xn--hllo-bpa7979ih5m.cn", "h\u00e9llo\u4e2d\u56fd.cn", kUnsafe, "DISABLED"],
   
   ["xn--2xa6t2b.r", "\u03c1\u0430\u0443.r", kUnsafe],
   
@@ -136,7 +136,7 @@ let testCases = [
   
   ["xn--han-or0kq92gkm3c.xn--3e0b707e", "\ud55c\uae00han\u97d3.\ud55c\uad6d", kSafe],
   
-  ["xn--caf-dma9024xvpg.kr", "caf\u00e9\uce74\ud398.kr", kUnsafe],
+  ["xn--caf-dma9024xvpg.kr", "caf\u00e9\uce74\ud398.kr", kUnsafe, "DISABLED"],
   
   ["xn--y9j3b9855e.kr", "\ud55c\u3072\u3089.kr", kUnsafe],
   
@@ -194,20 +194,20 @@ let testCases = [
   
   ["xn--a-xbba.com", "a\u0301\u0301.com", kInvalid],
   
-  ["xn--1ca20i.com", "\u00e1\u0301.com", kUnsafe],
+  ["xn--1ca20i.com", "\u00e1\u0301.com", kUnsafe, "DISABLED"],
   
   ["xn--abc-fdc.jp", "\u0300abc.jp", kInvalid],
 
   
   
   
-  ["xn--pixel-8fd.com", "pi\u0307xel.com", kUnsafe],
+  ["xn--pixel-8fd.com", "pi\u0307xel.com", kUnsafe, "DISABLED"],
   
   ["xn--pxel-lza43z.com", "p\u0131\u0307xel.com", kUnsafe],
   
-  ["xn--jack-qwc.com", "j\u0307ack.com", kUnsafe],
+  ["xn--jack-qwc.com", "j\u0307ack.com", kUnsafe, "DISABLED"],
   
-  ["xn--lace-qwc.com", "l\u0307ace.com", kUnsafe],
+  ["xn--lace-qwc.com", "l\u0307ace.com", kUnsafe, "DISABLED"],
 
   
   ["xn--pxel-lza29y.com", "p\u0131\u0300xel.com", kUnsafe],
@@ -221,7 +221,7 @@ let testCases = [
   
   ["xn--o-ybcg0cu0cq.com", "o\u0580\u0574\u0578\u0582\u0566\u0568.com", kUnsafe],
   
-  ["xn--49jxi3as0d0fpc.com", "\u30e2\u30d2\u30fc\u30c8\u3078\u30d6\u30f3.com", kUnsafe],
+  ["xn--49jxi3as0d0fpc.com", "\u30e2\u30d2\u30fc\u30c8\u3078\u30d6\u30f3.com", kUnsafe, "DISABLED"],
 
   
   
@@ -229,13 +229,13 @@ let testCases = [
   
   ["xn--u8j5tr47nw5ya.jp", "\u304b\u30fc\u91ce\u7403.jp", kSafe],
   
-  ["xn--weka801xo02a.com", "\u30fc\u52d5\u753b\u30fc.com", kUnsafe],
+  ["xn--weka801xo02a.com", "\u30fc\u52d5\u753b\u30fc.com", kUnsafe, "DISABLED"],
   
-  ["xn--wekz60nb2ay85atj0b.jp", "\u65e5\u672c\u30fc\u91ce\u7403.jp", kUnsafe],
+  ["xn--wekz60nb2ay85atj0b.jp", "\u65e5\u672c\u30fc\u91ce\u7403.jp", kUnsafe, "DISABLED"],
   
-  ["xn--wek060nb2a.jp", "\u30fc\u65e5\u672c.jp", kUnsafe],
+  ["xn--wek060nb2a.jp", "\u30fc\u65e5\u672c.jp", kUnsafe, "DISABLED"],
   
-  ["xn--abcdef-r64e.jp", "abc\u30fcdef.jp", kUnsafe],
+  ["xn--abcdef-r64e.jp", "abc\u30fcdef.jp", kUnsafe, "DISABLED"],
 
   
   
@@ -243,40 +243,40 @@ let testCases = [
   
   ["xn--vek160nb2ay85atj0b.jp", "\u65e5\u672c\u30fb\u91ce\u7403.jp", kSafe],
   
-  ["xn--abcdef-k64e.jp", "abc\u30fbdef.jp", kUnsafe],
+  ["xn--abcdef-k64e.jp", "abc\u30fbdef.jp", kUnsafe, "DISABLED"],
   
-  ["xn--abc-os4b.jp", "\u30fbabc.jp", kUnsafe],
+  ["xn--abc-os4b.jp", "\u30fbabc.jp", kUnsafe, "DISABLED"],
 
   
   
   ["xn--lck2i.jp", "\u30ab\u30fd.jp", kSafe],
   
-  ["xn--u8j7t.jp", "\u304b\u30fd.jp", kUnsafe],
+  ["xn--u8j7t.jp", "\u304b\u30fd.jp", kUnsafe, "DISABLED"],
   
-  ["xn--xek368f.jp", "\u4e00\u30fd.jp", kUnsafe],
-  ["xn--a-mju.jp", "a\u30fd.jp", kUnsafe],
-  ["xn--a1-bo4a.jp", "a1\u30fd.jp", kUnsafe],
+  ["xn--xek368f.jp", "\u4e00\u30fd.jp", kUnsafe, "DISABLED"],
+  ["xn--a-mju.jp", "a\u30fd.jp", kUnsafe, "DISABLED"],
+  ["xn--a1-bo4a.jp", "a1\u30fd.jp", kUnsafe, "DISABLED"],
 
   
   
   ["xn--lck4i.jp", "\u30ab\u30fe.jp", kSafe],
   
-  ["xn--u8j9t.jp", "\u304b\u30fe.jp", kUnsafe],
+  ["xn--u8j9t.jp", "\u304b\u30fe.jp", kUnsafe, "DISABLED"],
   
-  ["xn--yek168f.jp", "\u4e00\u30fe.jp", kUnsafe],
-  ["xn--a-oju.jp", "a\u30fe.jp", kUnsafe],
-  ["xn--a1-eo4a.jp", "a1\u30fe.jp", kUnsafe],
+  ["xn--yek168f.jp", "\u4e00\u30fe.jp", kUnsafe, "DISABLED"],
+  ["xn--a-oju.jp", "a\u30fe.jp", kUnsafe, "DISABLED"],
+  ["xn--a1-eo4a.jp", "a1\u30fe.jp", kUnsafe, "DISABLED"],
 
   
   
-  ["xn--e1argc3h.com", "\u0455\u0441\u043e\u0440\u0435.com", kUnsafe],
+  ["xn--e1argc3h.com", "\u0455\u0441\u043e\u0440\u0435.com", kUnsafe, "DISABLED"],
   
-  ["xn--123-qdd8bmf3n.com", "\u0455\u0441\u043e\u0440\u0435123.com", kUnsafe],
+  ["xn--123-qdd8bmf3n.com", "\u0455\u0441\u043e\u0440\u0435123.com", kUnsafe, "DISABLED"],
   
-  ["xn----8sbn9akccw8m.com",     "\u0455\u0441\u043e\u0440\u0435-\u0440\u0430\u0443.com", kUnsafe],
+  ["xn----8sbn9akccw8m.com",     "\u0455\u0441\u043e\u0440\u0435-\u0440\u0430\u0443.com", kUnsafe, "DISABLED"],
   
   
-  ["xn--1-8sbn9akccw8m.com",     "\u0455\u0441\u043e\u0440\u0435\u0031\u0440\u0430\u0443.com", kUnsafe],
+  ["xn--1-8sbn9akccw8m.com",     "\u0455\u0441\u043e\u0440\u0435\u0031\u0440\u0430\u0443.com", kUnsafe, "DISABLED"],
 
   
   
@@ -302,23 +302,23 @@ let testCases = [
 
   
   
-  ["xn----8sbn9akccw8m.xn--3e0b707e", "xn----8sbn9akccw8m.\ud55c\uad6d", kSafe],
+  ["xn----8sbn9akccw8m.xn--3e0b707e", "xn----8sbn9akccw8m.\ud55c\uad6d", kSafe, "DISABLED"],
 
   
   ["xn--e1adhj9a.com", "\u043c\u0443\u0437\u0435\u0439.com", kSafe],
 
   
-  ["xn--e1ari3f61c.com", "\u0455\u0441\u043e\u0517\u0435.com", kUnsafe],
+  ["xn--e1ari3f61c.com", "\u0455\u0441\u043e\u0517\u0435.com", kUnsafe, "DISABLED"],
 
   
   ["xn--n1az74c.com", "\u044b\u043e\u050d.com", kUnsafe],
 
   
-  ["xn--q1a0a.com", "\u0441\u044e.com", kUnsafe],
+  ["xn--q1a0a.com", "\u0441\u044e.com", kUnsafe, "DISABLED"],
 
   
   
-  ["xn--80a8a6a.com", "\u0430\u044c\u0441.com", kUnsafe],
+  ["xn--80a8a6a.com", "\u0430\u044c\u0441.com", kUnsafe, "DISABLED"],
 
   
   
@@ -326,35 +326,35 @@ let testCases = [
   ["xn--googl-3we.xn--3e0b707e", "xn--googl-3we.\ud55c\uad6d", kSafe],
 
   
-  ["xn--rsa2568fvxya.com", "\ud55c\u0307\uae00.com", kUnsafe],  
-  ["xn--rsa0336bjom.com", "\u6f22\u0307\u5b57.com", kUnsafe],  
+  ["xn--rsa2568fvxya.com", "\ud55c\u0307\uae00.com", kUnsafe, "DISABLED"],  
+  ["xn--rsa0336bjom.com", "\u6f22\u0307\u5b57.com", kUnsafe, "DISABLED"],  
   
-  ["xn--lsa922apb7a6do.com", "\u0928\u093e\u0917\u0930\u0940\u0301.com", kUnsafe],
+  ["xn--lsa922apb7a6do.com", "\u0928\u093e\u0917\u0930\u0940\u0301.com", kUnsafe, "DISABLED"],
 
   
   
   
-  ["xn--igklmo68-kcb.com", "\u0111igklmo68.com", kUnsafe],
+  ["xn--igklmo68-kcb.com", "\u0111igklmo68.com", kUnsafe, "DISABLED"],
   
-  ["www.xn--igklmo68-kcb.com", "www.\u0111igklmo68.com", kUnsafe],
+  ["www.xn--igklmo68-kcb.com", "www.\u0111igklmo68.com", kUnsafe, "DISABLED"],
   
-  ["foo.bar.xn--igklmo68-kcb.com", "foo.bar.\u0111igklmo68.com", kUnsafe],
+  ["foo.bar.xn--igklmo68-kcb.com", "foo.bar.\u0111igklmo68.com", kUnsafe, "DISABLED"],
   
-  ["xn--igklmo68-kcb.co.uk", "\u0111igklmo68.co.uk", kUnsafe],
+  ["xn--igklmo68-kcb.co.uk", "\u0111igklmo68.co.uk", kUnsafe, "DISABLED"],
   
-  ["mail.xn--igklmo68-kcb.co.uk", "mail.\u0111igklmo68.co.uk", kUnsafe],
+  ["mail.xn--igklmo68-kcb.co.uk", "mail.\u0111igklmo68.co.uk", kUnsafe, "DISABLED"],
   
-  ["xn--digklmo68-6jf.com", "di\u0307gklmo68.com", kUnsafe],
+  ["xn--digklmo68-6jf.com", "di\u0307gklmo68.com", kUnsafe, "DISABLED"],
   
-  ["xn--digklmo68-7vf.com", "dig\u0331klmo68.com", kUnsafe],
+  ["xn--digklmo68-7vf.com", "dig\u0331klmo68.com", kUnsafe, "DISABLED"],
   
   ["xn--diglmo68-omb.com", "dig\u0138lmo68.com", kUnsafe],
   
-  ["xn--digkmo68-9ob.com", "digk\u0142mo68.com", kUnsafe],
+  ["xn--digkmo68-9ob.com", "digk\u0142mo68.com", kUnsafe, "DISABLED"],
   
-  ["xn--digklo68-l89c.com", "digkl\u1e43o68.com", kUnsafe],
+  ["xn--digklo68-l89c.com", "digkl\u1e43o68.com", kUnsafe, "DISABLED"],
   
-  ["xn--digklm68-b5a.com", "digklm\u00f868.com", kUnsafe],
+  ["xn--digklm68-b5a.com", "digklm\u00f868.com", kUnsafe, "DISABLED"],
   
   ["xn--digklmo8-h7g.com", "digklmo\u04318.com", kUnsafe],
   
@@ -362,7 +362,7 @@ let testCases = [
 
   
   
-  ["xn--123-bed4a4a6hh40i.com",     "\u0456\u0455\u04cf\u043a\u0440\u0445123.com", kUnsafe],
+  ["xn--123-bed4a4a6hh40i.com",     "\u0456\u0455\u04cf\u043a\u0440\u0445123.com", kUnsafe, "DISABLED"],
 
   
   
@@ -370,117 +370,117 @@ let testCases = [
   
   
   
-  ["xn--07be.com", "\u09e6\u09e8.com", kUnsafe],
-  ["xn--27be.com", "\u09e8\u09ea.com", kUnsafe],
-  ["xn--77ba.com", "\u09ed\u09ed.com", kUnsafe],
+  ["xn--07be.com", "\u09e6\u09e8.com", kUnsafe, "DISABLED"],
+  ["xn--27be.com", "\u09e8\u09ea.com", kUnsafe, "DISABLED"],
+  ["xn--77ba.com", "\u09ed\u09ed.com", kUnsafe, "DISABLED"],
   
-  ["xn--qcce.com", "\u0a68\u0a6a.com", kUnsafe],
-  ["xn--occe.com", "\u0a66\u0a68.com", kUnsafe],
-  ["xn--rccd.com", "\u0a6b\u0a69.com", kUnsafe],
-  ["xn--pcca.com", "\u0a67\u0a67.com", kUnsafe],
+  ["xn--qcce.com", "\u0a68\u0a6a.com", kUnsafe, "DISABLED"],
+  ["xn--occe.com", "\u0a66\u0a68.com", kUnsafe, "DISABLED"],
+  ["xn--rccd.com", "\u0a6b\u0a69.com", kUnsafe, "DISABLED"],
+  ["xn--pcca.com", "\u0a67\u0a67.com", kUnsafe, "DISABLED"],
   
-  ["xn--drcb.com", "\u0c69\u0c68.com", kUnsafe],
+  ["xn--drcb.com", "\u0c69\u0c68.com", kUnsafe, "DISABLED"],
   
-  ["xn--d4be.com", "\u0966\u0968.com", kUnsafe],
+  ["xn--d4be.com", "\u0966\u0968.com", kUnsafe, "DISABLED"],
   
-  ["xn--yucg.com", "\u0ce6\u0ce9.com", kUnsafe],
-  ["xn--yuco.com", "\u0ce6\u0ced.com", kUnsafe],
+  ["xn--yucg.com", "\u0ce6\u0ce9.com", kUnsafe, "DISABLED"],
+  ["xn--yuco.com", "\u0ce6\u0ced.com", kUnsafe, "DISABLED"],
   
-  ["xn--1jcf.com", "\u0b6b\u0b68.com", kUnsafe],
-  ["xn--zjca.com", "\u0b66\u0b66.com", kUnsafe],
+  ["xn--1jcf.com", "\u0b6b\u0b68.com", kUnsafe, "DISABLED"],
+  ["xn--zjca.com", "\u0b66\u0b66.com", kUnsafe, "DISABLED"],
   
-  ["xn--cgce.com", "\u0ae6\u0ae8.com", kUnsafe],
-  ["xn--fgci.com", "\u0ae9\u0aed.com", kUnsafe],
-  ["xn--dgca.com", "\u0ae7\u0ae7.com", kUnsafe],
+  ["xn--cgce.com", "\u0ae6\u0ae8.com", kUnsafe, "DISABLED"],
+  ["xn--fgci.com", "\u0ae9\u0aed.com", kUnsafe, "DISABLED"],
+  ["xn--dgca.com", "\u0ae7\u0ae7.com", kUnsafe, "DISABLED"],
 
   
-  ["xn--l1acpvx.com", "\u0448\u043c\u043d\u0442\u044c.com", kUnsafe],
+  ["xn--l1acpvx.com", "\u0448\u043c\u043d\u0442\u044c.com", kUnsafe, "DISABLED"],
   
-  ["xn--l1acpzs.com", "\u0449\u043c\u043d\u0442\u044c.com", kUnsafe],
+  ["xn--l1acpzs.com", "\u0449\u043c\u043d\u0442\u044c.com", kUnsafe, "DISABLED"],
   
-  ["xn--b1atdu1a.com", "\u0448\u043c\u043d\u0442\u0432.com", kUnsafe],
+  ["xn--b1atdu1a.com", "\u0448\u043c\u043d\u0442\u0432.com", kUnsafe, "DISABLED"],
   
   ["xn--b1atsw09g.com", "\u0448\u043c\u050b\u0442\u0432.com", kUnsafe],
   
-  ["xn--b1atsw03i.com", "\u0448\u043c\u0527\u0442\u0432.com", kUnsafe],
+  ["xn--b1atsw03i.com", "\u0448\u043c\u0527\u0442\u0432.com", kUnsafe, "DISABLED"],
   
   ["xn--b1at9a12dua.com", "\u0448\u043c\u050b\u050f\u0432.com", kUnsafe],
   
-  ["xn--345-jtke.com", "\u0d20\u0d1f345.com", kUnsafe],
+  ["xn--345-jtke.com", "\u0d20\u0d1f345.com", kUnsafe, "DISABLED"],
 
   
   
   
   
-  ["xn--mxar4bh6w.com", "\u03fc\u03ba\u03b1\u03c9\u03c7.com", kUnsafe],
+  ["xn--mxar4bh6w.com", "\u03fc\u03ba\u03b1\u03c9\u03c7.com", kUnsafe, "DISABLED"],
   
   ["xn--vda6f3b2kpf.com", "\u00fe\u0127\u0138\u0167\u0185.com", kUnsafe],
   
-  ["xn--hktb-9ra.com", "\u00fehktb.com", kUnsafe],
+  ["xn--hktb-9ra.com", "\u00fehktb.com", kUnsafe, "DISABLED"],
   
-  ["xn--pktb-5xa.com", "p\u0127ktb.com", kUnsafe],
+  ["xn--pktb-5xa.com", "p\u0127ktb.com", kUnsafe, "DISABLED"],
   
   ["xn--phtb-m0a.com", "ph\u0138tb.com", kUnsafe],
   
-  ["xn--phkb-d7a.com", "phk\u0167b.com", kUnsafe],
+  ["xn--phkb-d7a.com", "phk\u0167b.com", kUnsafe, "DISABLED"],
   
   ["xn--phkt-ocb.com", "phkt\u0185.com", kUnsafe],
   
-  ["xn--j1afq4bxw.com", "\u048f\u043d\u043a\u0442\u044c.com", kUnsafe],
+  ["xn--j1afq4bxw.com", "\u048f\u043d\u043a\u0442\u044c.com", kUnsafe, "DISABLED"],
   
-  ["xn--j1aq4a7cvo.com", "\u048f\u045b\u043a\u0442\u044c.com", kUnsafe],
+  ["xn--j1aq4a7cvo.com", "\u048f\u045b\u043a\u0442\u044c.com", kUnsafe, "DISABLED"],
   
-  ["xn--j1aq4azund.com", "\u048f\u04a3\u043a\u0442\u044c.com", kUnsafe],
+  ["xn--j1aq4azund.com", "\u048f\u04a3\u043a\u0442\u044c.com", kUnsafe, "DISABLED"],
   
-  ["xn--j1aq4azuxd.com", "\u048f\u04a5\u043a\u0442\u044c.com", kUnsafe],
+  ["xn--j1aq4azuxd.com", "\u048f\u04a5\u043a\u0442\u044c.com", kUnsafe, "DISABLED"],
   
-  ["xn--j1aq4azuyj.com", "\u048f\u04c8\u043a\u0442\u044c.com", kUnsafe],
+  ["xn--j1aq4azuyj.com", "\u048f\u04c8\u043a\u0442\u044c.com", kUnsafe, "DISABLED"],
   
-  ["xn--j1aq4azu9z.com", "\u048f\u0527\u043a\u0442\u044c.com", kUnsafe],
+  ["xn--j1aq4azu9z.com", "\u048f\u0527\u043a\u0442\u044c.com", kUnsafe, "DISABLED"],
   
-  ["xn--j1aq4azuq0a.com", "\u048f\u0529\u043a\u0442\u044c.com", kUnsafe],
+  ["xn--j1aq4azuq0a.com", "\u048f\u0529\u043a\u0442\u044c.com", kUnsafe, "DISABLED"],
   
-  ["xn--m1ak4azu6b.com", "\u048f\u043d\u049b\u0442\u044c.com", kUnsafe],
+  ["xn--m1ak4azu6b.com", "\u048f\u043d\u049b\u0442\u044c.com", kUnsafe, "DISABLED"],
   
-  ["xn--m1ak4azunc.com", "\u048f\u043d\u049d\u0442\u044c.com", kUnsafe],
+  ["xn--m1ak4azunc.com", "\u048f\u043d\u049d\u0442\u044c.com", kUnsafe, "DISABLED"],
   
-  ["xn--m1ak4azuxc.com", "\u048f\u043d\u049f\u0442\u044c.com", kUnsafe],
+  ["xn--m1ak4azuxc.com", "\u048f\u043d\u049f\u0442\u044c.com", kUnsafe, "DISABLED"],
   
-  ["xn--m1ak4azu7c.com", "\u048f\u043d\u04a1\u0442\u044c.com", kUnsafe],
+  ["xn--m1ak4azu7c.com", "\u048f\u043d\u04a1\u0442\u044c.com", kUnsafe, "DISABLED"],
   
-  ["xn--m1ak4azu8i.com", "\u048f\u043d\u04c4\u0442\u044c.com", kUnsafe],
+  ["xn--m1ak4azu8i.com", "\u048f\u043d\u04c4\u0442\u044c.com", kUnsafe, "DISABLED"],
   
-  ["xn--m1ak4azuzy.com", "\u048f\u043d\u051f\u0442\u044c.com", kUnsafe],
+  ["xn--m1ak4azuzy.com", "\u048f\u043d\u051f\u0442\u044c.com", kUnsafe, "DISABLED"],
   
-  ["xn--m1a4a4nnery.com", "\u048f\u043d\u051f\u04ad\u044c.com", kUnsafe],
+  ["xn--m1a4a4nnery.com", "\u048f\u043d\u051f\u04ad\u044c.com", kUnsafe, "DISABLED"],
   
-  ["xn--m1a4ne5jry.com", "\u048f\u043d\u051f\u04ad\u048d.com", kUnsafe],
+  ["xn--m1a4ne5jry.com", "\u048f\u043d\u051f\u04ad\u048d.com", kUnsafe, "DISABLED"],
   
-  ["xn--b1av9v8dry.com", "\u048f\u043d\u051f\u04ad\u0432.com", kUnsafe],
+  ["xn--b1av9v8dry.com", "\u048f\u043d\u051f\u04ad\u0432.com", kUnsafe, "DISABLED"],
   
-  ["xn--b1a9p8c1e8r.com", "\u048f\u04ca\u051f\u04ad\u0432.com", kUnsafe],
+  ["xn--b1a9p8c1e8r.com", "\u048f\u04ca\u051f\u04ad\u0432.com", kUnsafe, "DISABLED"],
   
-  ["xn--wmr-jxa.com", "wm\u014br.com", kUnsafe],
+  ["xn--wmr-jxa.com", "wm\u014br.com", kUnsafe, "DISABLED"],
   
-  ["xn--l1agz80a.com", "\u0448\u043c\u043f\u0491.com", kUnsafe],
+  ["xn--l1agz80a.com", "\u0448\u043c\u043f\u0491.com", kUnsafe, "DISABLED"],
   
-  ["xn--l1ag2a0y.com", "\u0449\u043c\u043f\u0491.com", kUnsafe],
+  ["xn--l1ag2a0y.com", "\u0449\u043c\u043f\u0491.com", kUnsafe, "DISABLED"],
   
-  ["xn--o1at1tsi.com", "\u0449\u04ce\u043f\u0491.com", kUnsafe],
+  ["xn--o1at1tsi.com", "\u0449\u04ce\u043f\u0491.com", kUnsafe, "DISABLED"],
   
-  ["xn--03ae.com", "\u0491\u0493.com", kUnsafe],
+  ["xn--03ae.com", "\u0491\u0493.com", kUnsafe, "DISABLED"],
   
-  ["xn--03a6s.com", "\u0491\u04fb.com", kUnsafe],
+  ["xn--03a6s.com", "\u0491\u04fb.com", kUnsafe, "DISABLED"],
   
-  ["xn--r4amg4b.com", "\u04ab\u04b1\u04b3\u04bd.com", kUnsafe],
+  ["xn--r4amg4b.com", "\u04ab\u04b1\u04b3\u04bd.com", kUnsafe, "DISABLED"],
   
-  ["xn--r4am0b8r.com", "\u04ab\u04b1\u04fd\u04bd.com", kUnsafe],
+  ["xn--r4am0b8r.com", "\u04ab\u04b1\u04fd\u04bd.com", kUnsafe, "DISABLED"],
   
-  ["xn--r4am0b3s.com", "\u04ab\u04b1\u04ff\u04bd.com", kUnsafe],
+  ["xn--r4am0b3s.com", "\u04ab\u04b1\u04ff\u04bd.com", kUnsafe, "DISABLED"],
   
-  ["xn--r4am6b4p.com", "\u04ab\u04b1\u04ff\u04bf.com", kUnsafe],
+  ["xn--r4am6b4p.com", "\u04ab\u04b1\u04ff\u04bf.com", kUnsafe, "DISABLED"],
   
-  ["xn--91a7osa62a.com", "\u04ab\u04b1\u04ff\u0454.com", kUnsafe],
+  ["xn--91a7osa62a.com", "\u04ab\u04b1\u04ff\u0454.com", kUnsafe, "DISABLED"],
   
   ["xn--s5a8h4a.com", "\u04cf\u0503\u050d.com", kUnsafe],
 
@@ -495,83 +495,83 @@ let testCases = [
   ["xn--s5a8h3a.com", "\u04cf\u050d\u0503.com", kUnsafe],
 
   
-  ["xn--134567890-gnk.com", "1\u057734567890.com", kUnsafe],
+  ["xn--134567890-gnk.com", "1\u057734567890.com", kUnsafe, "DISABLED"],
   
   ["xn--23457890-e7g93622b.com", "\ua4f22345\u04317890.com", kUnsafe],
   
   ["xn--13457890-e7g0943b.com", "1\u14bf345\u04317890.com", kUnsafe],
   
-  ["xn--124567890-10h.com", "12\u04374567890.com", kUnsafe],
+  ["xn--124567890-10h.com", "12\u04374567890.com", kUnsafe, "DISABLED"],
   
-  ["xn--124567890-1ti.com", "12\u04994567890.com", kUnsafe],
+  ["xn--124567890-1ti.com", "12\u04994567890.com", kUnsafe, "DISABLED"],
   
-  ["xn--124567890-mfj.com", "12\u04e14567890.com", kUnsafe],
+  ["xn--124567890-mfj.com", "12\u04e14567890.com", kUnsafe, "DISABLED"],
   
-  ["xn--124567890-m3r.com", "12\u09094567890.com", kUnsafe],
+  ["xn--124567890-m3r.com", "12\u09094567890.com", kUnsafe, "DISABLED"],
   
-  ["xn--124567890-17s.com", "12\u09934567890.com", kUnsafe],
+  ["xn--124567890-17s.com", "12\u09934567890.com", kUnsafe, "DISABLED"],
   
-  ["xn--124567890-hfu.com", "12\u0a244567890.com", kUnsafe],
+  ["xn--124567890-hfu.com", "12\u0a244567890.com", kUnsafe, "DISABLED"],
   
-  ["xn--124567890-6s6a.com", "12\u10124567890.com", kUnsafe],
+  ["xn--124567890-6s6a.com", "12\u10124567890.com", kUnsafe, "DISABLED"],
   
-  ["xn--124567890-we8a.com", "12\u10D54567890.com", kUnsafe],
+  ["xn--124567890-we8a.com", "12\u10D54567890.com", kUnsafe, "DISABLED"],
   
-  ["xn--124567890-hh8a.com", "12\u10DE4567890.com", kUnsafe],
+  ["xn--124567890-hh8a.com", "12\u10DE4567890.com", kUnsafe, "DISABLED"],
   
-  ["xn--123567890-dr5h.com", "123ㄐ567890.com", kUnsafe],
+  ["xn--123567890-dr5h.com", "123ㄐ567890.com", kUnsafe, "DISABLED"],
   
   ["xn--123567890-dm4b.com", "123\u13ce567890.com", kUnsafe],
   
-  ["xn--123457890-fzh.com", "12345\u04317890.com", kUnsafe],
+  ["xn--123457890-fzh.com", "12345\u04317890.com", kUnsafe, "DISABLED"],
   
-  ["xn--123457890-fmk.com", "12345ճ7890.com", kUnsafe],
+  ["xn--123457890-fmk.com", "12345ճ7890.com", kUnsafe, "DISABLED"],
   
   ["xn--123456790-6od.com", "1234567\u022390.com", kUnsafe],
   
   ["xn--123456780-71w.com", "12345678\u0b680.com", kUnsafe],
   
-  ["xn--123456789-ohw.com", "123456789\u0b20.com", kUnsafe],
+  ["xn--123456789-ohw.com", "123456789\u0b20.com", kUnsafe, "DISABLED"],
   
   ["xn--123456789-tx75a.com", "123456789\ua4f3.com", kUnsafe],
 
   
-  ["xn--ae-fsa.com", "ae\u0153.com", kUnsafe],
+  ["xn--ae-fsa.com", "ae\u0153.com", kUnsafe, "DISABLED"],
   
-  ["xn--ce-0ia.com", "\u00e6ce.com", kUnsafe],
+  ["xn--ce-0ia.com", "\u00e6ce.com", kUnsafe, "DISABLED"],
   
-  ["xn--6ca2t.com", "\u00e6\u0153.com", kUnsafe],
+  ["xn--6ca2t.com", "\u00e6\u0153.com", kUnsafe, "DISABLED"],
   
-  ["xn--y5a4n.com", "\u04d5\u0525.com", kUnsafe],
+  ["xn--y5a4n.com", "\u04d5\u0525.com", kUnsafe, "DISABLED"],
 
   
-  ["xn--ridq5c9hnd.com", "\u1004\u1054\u100c\u1042\u101d.com", kUnsafe],
-
-  
-  
-  ["xn--w3calb.com", "\u0e1f\u0e23\u0e1f\u0e23.com", kUnsafe],
-  
-  ["xn--r3chp.com", "\u0e1e\u0e23\u0e1a.com", kUnsafe],
-  
-  ["xn--r3cjm.com", "\u0e1f\u0e23\u0e1a.com", kUnsafe],
+  ["xn--ridq5c9hnd.com", "\u1004\u1054\u100c\u1042\u101d.com", kUnsafe, "DISABLED"],
 
   
   
-  ["xn--f7chp.com", "\u0e9e\u0ea3\u0e9a.com", kUnsafe],
+  ["xn--w3calb.com", "\u0e1f\u0e23\u0e1f\u0e23.com", kUnsafe, "DISABLED"],
   
-  ["xn--f7cjm.com", "\u0e9f\u0ea3\u0e9a.com", kUnsafe],
+  ["xn--r3chp.com", "\u0e1e\u0e23\u0e1a.com", kUnsafe, "DISABLED"],
   
-  ["xn--f7cj9b.com", "\u0e9f\u0eae\u0e9a.com", kUnsafe],
-  
-  ["xn--f7cj9b5h.com", "\u0e9f\u0eae\u0ed0\u0e9a.com", kUnsafe],
+  ["xn--r3cjm.com", "\u0e1f\u0e23\u0e1a.com", kUnsafe, "DISABLED"],
 
   
   
-  ["xn--11-lqi.com", "\u0e0111.com", kUnsafe],
+  ["xn--f7chp.com", "\u0e9e\u0ea3\u0e9a.com", kUnsafe, "DISABLED"],
+  
+  ["xn--f7cjm.com", "\u0e9f\u0ea3\u0e9a.com", kUnsafe, "DISABLED"],
+  
+  ["xn--f7cj9b.com", "\u0e9f\u0eae\u0e9a.com", kUnsafe, "DISABLED"],
+  
+  ["xn--f7cj9b5h.com", "\u0e9f\u0eae\u0ed0\u0e9a.com", kUnsafe, "DISABLED"],
 
   
   
-  ["xn--wder-qqa.com", "w\u00f3der.com", kUnsafe],
+  ["xn--11-lqi.com", "\u0e0111.com", kUnsafe, "DISABLED"],
+
+  
+  
+  ["xn--wder-qqa.com", "w\u00f3der.com", kUnsafe, "DISABLED"],
 
   
   
@@ -584,7 +584,7 @@ let testCases = [
   ["xn--e4b0x.co.in", "\u0967\u09e7.co.in", kUnsafe],
   
   
-  ["xn--d12-s18d.cn", "d12\u4e00.cn", kUnsafe],
+  ["xn--d12-s18d.cn", "d12\u4e00.cn", kUnsafe, "DISABLED"],
   
   ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", kSafe],
 
@@ -644,7 +644,7 @@ let testCases = [
   
   ["xn--svgy16dha.jp", "\u30a1\u2027\u30a3.jp", kUnsafe],
   
-  ["xn--5db6bh9b.il", "\u05e9\u05d1\u05f4\u05e6.il", kSafe],
+  ["xn--5db6bh9b.il", "\u05e9\u05d1\u05f4\u05e6.il", kSafe, "DISABLED"],
   
   
   ["xn--ab-yod.com", "a\u05f4b.com", kInvalid],
@@ -655,7 +655,7 @@ let testCases = [
   
   ["xn--com-lum.test.pl", "com\u0f8c.test.pl", kUnsafe],
   
-  ["xn--fgb.com", "\u0620.com", kUnsafe],
+  ["xn--fgb.com", "\u0620.com", kUnsafe, "DISABLED"],
 
 
   
@@ -708,9 +708,9 @@ let testCases = [
 
   
   
-  ["xn--ab-8nb.com", "a\u02bbb.com", kUnsafe],
+  ["xn--ab-8nb.com", "a\u02bbb.com", kUnsafe, "DISABLED"],
   
-  ["xn--ab-cob.com", "a\u02bcb.com", kUnsafe],
+  ["xn--ab-cob.com", "a\u02bcb.com", kUnsafe, "DISABLED"],
   
   ["xn--ab-jom.com", "a\u144ab.com", kUnsafe],
   ["xn--xcec9s.com", "\u1401\u144a\u1402.com", kUnsafe],
@@ -719,12 +719,12 @@ let testCases = [
   
   ["google.xn--com-oh4ba.evil.jp", "google.com\u309a\u309a.evil.jp", kUnsafe],
   
-  ["google.xn--comevil-v04f.jp", "google.com\u30ceevil.jp", kUnsafe],
+  ["google.xn--comevil-v04f.jp", "google.com\u30ceevil.jp", kUnsafe, "DISABLED"],
   
   
   ["xn--ldk.jp", "\u30ce.jp", kSafe],
   
-  ["xn--5eb.il", "\u05f4.il", kSafe],
+  ["xn--5eb.il", "\u05f4.il", kSafe, "DISABLED"],
 
   
   ["xn--foog-ycg.com", "foog\u0650.com", kUnsafe],    
@@ -738,9 +738,9 @@ let testCases = [
   
   
   
-  ["xn--fu-hia.de", "fu\u00df.de", kUnsafe],
+  ["xn--fu-hia.de", "fu\u00df.de", kUnsafe, "DISABLED"],
   
-  ["xn--mxac2c.gr", "\u03b1\u03b2\u03c2.gr", kUnsafe],
+  ["xn--mxac2c.gr", "\u03b1\u03b2\u03c2.gr", kUnsafe, "DISABLED"],
   
   ["xn--h2by8byc123p.in", "\u0924\u094d\u200c\u0930\u093f.in", kUnsafe],
   
@@ -782,13 +782,13 @@ let testCases = [
 
   
   
-  ["xn--nion-unb.com", "\u01d4nion.com", kUnsafe],
+  ["xn--nion-unb.com", "\u01d4nion.com", kUnsafe, "DISABLED"],
   
   ["xn--ase-7z0b.com", "\u2c74ase.com", kUnsafe],
   
   ["xn--ode-ut3l.com", "\ua774ode.com", kUnsafe],
   
-  ["xn--ily-n3y.com", "\u1e37ily.com", kUnsafe],
+  ["xn--ily-n3y.com", "\u1e37ily.com", kUnsafe, "DISABLED"],
   
   ["xn--ove-8y6l.com", "\uab3aove.com", kUnsafe],
   
@@ -807,10 +807,10 @@ let testCases = [
   
   
   
-  ["xn--tst-bma.net", "t\u00e9st.net", kUnsafe],
+  ["xn--tst-bma.net", "t\u00e9st.net", kUnsafe, "DISABLED"],
   
   
-  ["some.xn--tst-bma.net", "some.t\u00e9st.net", kUnsafe],
+  ["some.xn--tst-bma.net", "some.t\u00e9st.net", kUnsafe, "DISABLED"],
   
   
   
@@ -823,19 +823,19 @@ let testCases = [
   ["some.xn--atst-cpa.net", "some.at\u00e9st.net", kSafe],
 
   
-  ["xn--wwwtest-2be.com", "www\u02ectest.com", kUnsafe],
+  ["xn--wwwtest-2be.com", "www\u02ectest.com", kUnsafe, "DISABLED"],
 
   
   ["xn--o-tka.com", "o\u0138.com", kUnsafe],
 
   
-  ["xn--ipaddress-w75n.com", "ip\u4e00address.com", kUnsafe],
-  ["xn--ipaddress-wx5h.com", "ip\u3127address.com", kUnsafe],
+  ["xn--ipaddress-w75n.com", "ip\u4e00address.com", kUnsafe, "DISABLED"],
+  ["xn--ipaddress-wx5h.com", "ip\u3127address.com", kUnsafe, "DISABLED"],
   
-  ["xn--google-gg5e.com", "google\u3127.com", kUnsafe],
-  ["xn--google-9f5e.com", "\u3127google.com", kUnsafe],
-  ["xn--google-gn7i.com", "google\u4e00.com", kUnsafe],
-  ["xn--google-9m7i.com", "\u4e00google.com", kUnsafe],
+  ["xn--google-gg5e.com", "google\u3127.com", kUnsafe, "DISABLED"],
+  ["xn--google-9f5e.com", "\u3127google.com", kUnsafe, "DISABLED"],
+  ["xn--google-gn7i.com", "google\u4e00.com", kUnsafe, "DISABLED"],
+  ["xn--google-9m7i.com", "\u4e00google.com", kUnsafe, "DISABLED"],
   
   
   ["xn--gamer-fg1hz05u.com", "\u4e00\u751fgamer.com", kSafe],
@@ -849,10 +849,10 @@ let testCases = [
 
   
   
-  ["example.xn--comtest-k63k", "example.com\u4e36test", kUnsafe],
-  ["example.xn--comtest-u83k", "example.com\u4e40test", kUnsafe],
-  ["example.xn--comtest-283k", "example.com\u4e41test", kUnsafe],
-  ["example.xn--comtest-m83k", "example.com\u4e3ftest", kUnsafe],
+  ["example.xn--comtest-k63k", "example.com\u4e36test", kUnsafe, "DISABLED"],
+  ["example.xn--comtest-u83k", "example.com\u4e40test", kUnsafe, "DISABLED"],
+  ["example.xn--comtest-283k", "example.com\u4e41test", kUnsafe, "DISABLED"],
+  ["example.xn--comtest-m83k", "example.com\u4e3ftest", kUnsafe, "DISABLED"],
   
   
   ["xn--oiqsace.com", "\u4e36\u4e40\u4e41\u4e3f.com", kSafe],
@@ -862,132 +862,132 @@ let testCases = [
   ["xn--google-8m4e.com", "google\u309A.com", kUnsafe],
 
   
-  ["xn--123456789-yzg.com", "123456789\u03b8.com", kUnsafe],
+  ["xn--123456789-yzg.com", "123456789\u03b8.com", kUnsafe, "DISABLED"],
 
-  ["xn--est-118d.net", "\u4e03est.net", kUnsafe],
-  ["xn--est-918d.net", "\u4e05est.net", kUnsafe],
-  ["xn--est-e28d.net", "\u4e06est.net", kUnsafe],
-  ["xn--est-t18d.net", "\u4e01est.net", kUnsafe],
-  ["xn--3-cq6a.com", "\u4e293.com", kUnsafe],
-  ["xn--cxe-n68d.com", "c\u4e2bxe.com", kUnsafe],
-  ["xn--cye-b98d.com", "cy\u4e42e.com", kUnsafe],
-
-  
-  ["xn--ceba.com", "\u05d7\u05d7.com", kUnsafe],
+  ["xn--est-118d.net", "\u4e03est.net", kUnsafe, "DISABLED"],
+  ["xn--est-918d.net", "\u4e05est.net", kUnsafe, "DISABLED"],
+  ["xn--est-e28d.net", "\u4e06est.net", kUnsafe, "DISABLED"],
+  ["xn--est-t18d.net", "\u4e01est.net", kUnsafe, "DISABLED"],
+  ["xn--3-cq6a.com", "\u4e293.com", kUnsafe, "DISABLED"],
+  ["xn--cxe-n68d.com", "c\u4e2bxe.com", kUnsafe, "DISABLED"],
+  ["xn--cye-b98d.com", "cy\u4e42e.com", kUnsafe, "DISABLED"],
 
   
-  ["xn--acdef-wva.com", "a\u00fecdef.com", kUnsafe],
-  ["xn--mnpqr-jta.com", "mn\u00f0pqr.com", kUnsafe],
+  ["xn--ceba.com", "\u05d7\u05d7.com", kUnsafe, "DISABLED"],
+
+  
+  ["xn--acdef-wva.com", "a\u00fecdef.com", kUnsafe, "DISABLED"],
+  ["xn--mnpqr-jta.com", "mn\u00f0pqr.com", kUnsafe, "DISABLED"],
   ["xn--acdef-wva.is", "a\u00fecdef.is", kSafe],
   ["xn--mnpqr-jta.is", "mn\u00f0pqr.is", kSafe],
 
   
-  ["xn--xample-vyc.com", "\u0259xample.com", kUnsafe],
+  ["xn--xample-vyc.com", "\u0259xample.com", kUnsafe, "DISABLED"],
   ["xn--xample-vyc.az", "\u0259xample.az", kSafe],
 
   
-  ["xn--googlecom-5pa.com", "google\u00b7com.com", kUnsafe],
-  ["xn--ll-0ea.com", "l\u00b7l.com", kUnsafe],
+  ["xn--googlecom-5pa.com", "google\u00b7com.com", kUnsafe, "DISABLED"],
+  ["xn--ll-0ea.com", "l\u00b7l.com", kUnsafe, "DISABLED"],
   ["xn--ll-0ea.cat", "l\u00b7l.cat", kSafe],
-  ["xn--al-0ea.cat", "a\u00b7l.cat", kUnsafe],
-  ["xn--la-0ea.cat", "l\u00b7a.cat", kUnsafe],
-  ["xn--l-fda.cat", "\u00b7l.cat", kUnsafe],
-  ["xn--l-gda.cat", "l\u00b7.cat", kUnsafe],
+  ["xn--al-0ea.cat", "a\u00b7l.cat", kUnsafe, "DISABLED"],
+  ["xn--la-0ea.cat", "l\u00b7a.cat", kUnsafe, "DISABLED"],
+  ["xn--l-fda.cat", "\u00b7l.cat", kUnsafe, "DISABLED"],
+  ["xn--l-gda.cat", "l\u00b7.cat", kUnsafe, "DISABLED"],
 
-  ["xn--googlecom-gk6n.com", "google\u4e28com.com", kUnsafe],
-  ["xn--googlecom-0y6n.com", "google\u4e5bcom.com", kUnsafe],
-  ["xn--googlecom-v85n.com", "google\u4e03com.com", kUnsafe],
-  ["xn--googlecom-g95n.com", "google\u4e05com.com", kUnsafe],
-  ["xn--googlecom-go6n.com", "google\u4e36com.com", kUnsafe],
-  ["xn--googlecom-b76o.com", "google\u5341com.com", kUnsafe],
-  ["xn--googlecom-ql3h.com", "google\u3007com.com", kUnsafe],
-  ["xn--googlecom-0r5h.com", "google\u3112com.com", kUnsafe],
-  ["xn--googlecom-bu5h.com", "google\u311acom.com", kUnsafe],
-  ["xn--googlecom-qv5h.com", "google\u311fcom.com", kUnsafe],
-  ["xn--googlecom-0x5h.com", "google\u3127com.com", kUnsafe],
-  ["xn--googlecom-by5h.com", "google\u3128com.com", kUnsafe],
-  ["xn--googlecom-ly5h.com", "google\u3129com.com", kUnsafe],
-  ["xn--googlecom-5o5h.com", "google\u3108com.com", kUnsafe],
-  ["xn--googlecom-075n.com", "google\u4e00com.com", kUnsafe],
-  ["xn--googlecom-046h.com", "google\u31bacom.com", kUnsafe],
-  ["xn--googlecom-026h.com", "google\u31b3com.com", kUnsafe],
-  ["xn--googlecom-lg9q.com", "google\u5de5com.com", kUnsafe],
-  ["xn--googlecom-g040a.com", "google\u8ba0com.com", kUnsafe],
-  ["xn--googlecom-b85n.com", "google\u4e01com.com", kUnsafe],
+  ["xn--googlecom-gk6n.com", "google\u4e28com.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-0y6n.com", "google\u4e5bcom.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-v85n.com", "google\u4e03com.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-g95n.com", "google\u4e05com.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-go6n.com", "google\u4e36com.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-b76o.com", "google\u5341com.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-ql3h.com", "google\u3007com.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-0r5h.com", "google\u3112com.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-bu5h.com", "google\u311acom.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-qv5h.com", "google\u311fcom.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-0x5h.com", "google\u3127com.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-by5h.com", "google\u3128com.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-ly5h.com", "google\u3129com.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-5o5h.com", "google\u3108com.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-075n.com", "google\u4e00com.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-046h.com", "google\u31bacom.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-026h.com", "google\u31b3com.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-lg9q.com", "google\u5de5com.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-g040a.com", "google\u8ba0com.com", kUnsafe, "DISABLED"],
+  ["xn--googlecom-b85n.com", "google\u4e01com.com", kUnsafe, "DISABLED"],
 
   
   
   
-  ["xn--mbbkpm.com", "\u0578\u057d\u0582\u0585.com", kUnsafe],
+  ["xn--mbbkpm.com", "\u0578\u057d\u0582\u0585.com", kUnsafe, "DISABLED"],
   ["xn--mbbkpm.am", "\u0578\u057d\u0582\u0585.am", kSafe],
   ["xn--mbbkpm.xn--y9a3aq", "\u0578\u057d\u0582\u0585.\u0570\u0561\u0575", kSafe],
   
-  ["xn--6xd66aa62c.com", "\u1220\u12d0\u12d0\u1350.com", kUnsafe],
+  ["xn--6xd66aa62c.com", "\u1220\u12d0\u12d0\u1350.com", kUnsafe, "DISABLED"],
   ["xn--6xd66aa62c.et", "\u1220\u12d0\u12d0\u1350.et", kSafe],
   ["xn--6xd66aa62c.xn--m0d3gwjla96a",     "\u1220\u12d0\u12d0\u1350.\u12a2\u1275\u12ee\u1335\u12eb", kSafe],
   
-  ["xn--mxapd.com", "\u03b9\u03ba\u03b1.com", kUnsafe],
+  ["xn--mxapd.com", "\u03b9\u03ba\u03b1.com", kUnsafe, "DISABLED"],
   ["xn--mxapd.gr", "\u03b9\u03ba\u03b1.gr", kSafe],
   ["xn--mxapd.xn--qxam", "\u03b9\u03ba\u03b1.\u03b5\u03bb", kSafe],
   
-  ["xn--gpd3ag.com", "\u10fd\u10ff\u10ee.com", kUnsafe],
+  ["xn--gpd3ag.com", "\u10fd\u10ff\u10ee.com", kUnsafe, "DISABLED"],
   ["xn--gpd3ag.ge", "\u10fd\u10ff\u10ee.ge", kSafe],
   ["xn--gpd3ag.xn--node", "\u10fd\u10ff\u10ee.\u10d2\u10d4", kSafe],
   
-  ["xn--7dbh4a.com", "\u05d7\u05e1\u05d3.com", kUnsafe],
+  ["xn--7dbh4a.com", "\u05d7\u05e1\u05d3.com", kUnsafe, "DISABLED"],
   ["xn--7dbh4a.il", "\u05d7\u05e1\u05d3.il", kSafe],
   ["xn--9dbq2a.xn--7dbh4a", "\u05e7\u05d5\u05dd.\u05d7\u05e1\u05d3", kSafe],
   
-  ["xn--oidbbf41a.com", "\u1004\u1040\u1002\u1001\u1002.com", kUnsafe],
+  ["xn--oidbbf41a.com", "\u1004\u1040\u1002\u1001\u1002.com", kUnsafe, "DISABLED"],
   ["xn--oidbbf41a.mm", "\u1004\u1040\u1002\u1001\u1002.mm", kSafe],
   ["xn--oidbbf41a.xn--7idjb0f4ck",     "\u1004\u1040\u1002\u1001\u1002.\u1019\u103c\u1014\u103a\u1019\u102c", kSafe],
   
-  ["xn--rmdcmef.com", "\u1090\u1091\u1095\u1096\u1097.com", kUnsafe],
+  ["xn--rmdcmef.com", "\u1090\u1091\u1095\u1096\u1097.com", kUnsafe, "DISABLED"],
   ["xn--rmdcmef.mm", "\u1090\u1091\u1095\u1096\u1097.mm", kSafe],
   ["xn--rmdcmef.xn--7idjb0f4ck",     "\u1090\u1091\u1095\u1096\u1097.\u1019\u103c\u1014\u103a\u1019\u102c", kSafe],
 
 
-  ["xn--o3cedqz2c.com", "\u0e17\u0e19\u0e1a\u0e1e\u0e23\u0e2b.com", kUnsafe],
+  ["xn--o3cedqz2c.com", "\u0e17\u0e19\u0e1a\u0e1e\u0e23\u0e2b.com", kUnsafe, "DISABLED"],
   ["xn--o3cedqz2c.th", "\u0e17\u0e19\u0e1a\u0e1e\u0e23\u0e2b.th", kSafe],
   ["xn--o3cedqz2c.xn--o3cw4h",     "\u0e17\u0e19\u0e1a\u0e1e\u0e23\u0e2b.\u0e44\u0e17\u0e22", kSafe],
 
-  ["xn--r3ch7hsc.com", "\u0e1e\u0e1a\u0e40\u0e50.com", kUnsafe],
+  ["xn--r3ch7hsc.com", "\u0e1e\u0e1a\u0e40\u0e50.com", kUnsafe, "DISABLED"],
   ["xn--r3ch7hsc.th", "\u0e1e\u0e1a\u0e40\u0e50.th", kSafe],
   ["xn--r3ch7hsc.xn--o3cw4h", "\u0e1e\u0e1a\u0e40\u0e50.\u0e44\u0e17\u0e22", kSafe],
 
 
   
   
-  ["xn--07baub.com", "\u09e6\u09ed\u09e6\u09ed.com", kUnsafe],
+  ["xn--07baub.com", "\u09e6\u09ed\u09e6\u09ed.com", kUnsafe, "DISABLED"],
   
-  ["xn--62ba6j.com", "\u093d\u0966\u093d.com", kUnsafe],
+  ["xn--62ba6j.com", "\u093d\u0966\u093d.com", kUnsafe, "DISABLED"],
   
-  ["xn--becd.com", "\u0aa1\u0a9f.com", kUnsafe],
+  ["xn--becd.com", "\u0aa1\u0a9f.com", kUnsafe, "DISABLED"],
   
-  ["xn--occacb.com", "\u0a66\u0a67\u0a66\u0a67.com", kUnsafe],
+  ["xn--occacb.com", "\u0a66\u0a67\u0a66\u0a67.com", kUnsafe, "DISABLED"],
   
-  ["xn--stca6jf.com", "\u0cbd\u0ce6\u0cbd\u0ce7.com", kUnsafe],
+  ["xn--stca6jf.com", "\u0cbd\u0ce6\u0cbd\u0ce7.com", kUnsafe, "DISABLED"],
   
-  ["xn--lwccv.com", "\u0d1f\u0d20\u0d27.com", kUnsafe],
+  ["xn--lwccv.com", "\u0d1f\u0d20\u0d27.com", kUnsafe, "DISABLED"],
   
-  ["xn--zhca6ub.com", "\u0b6e\u0b20\u0b6e\u0b20.com", kUnsafe],
+  ["xn--zhca6ub.com", "\u0b6e\u0b20\u0b6e\u0b20.com", kUnsafe, "DISABLED"],
   
-  ["xn--mlca6ab.com", "\u0b9f\u0baa\u0b9f\u0baa.com", kUnsafe],
+  ["xn--mlca6ab.com", "\u0b9f\u0baa\u0b9f\u0baa.com", kUnsafe, "DISABLED"],
   
-  ["xn--brcaabbb.com", "\u0c67\u0c66\u0c67\u0c66\u0c67\u0c66.com", kUnsafe],
+  ["xn--brcaabbb.com", "\u0c67\u0c66\u0c67\u0c66\u0c67\u0c66.com", kUnsafe, "DISABLED"],
 
   
-  ["xn--fo-5ja.com", "f\u00f3o.com", kUnsafe],
+  ["xn--fo-5ja.com", "f\u00f3o.com", kUnsafe, "DISABLED"],
 
   
   ["xn--xample-9ua.test.net", "\u00e9xample.test.net", kSafe],
   
   
-  ["xn--xample-9ua.test.xn--nt-bja", "\u00e9xample.test.n\u00e9t", kUnsafe],
+  ["xn--xample-9ua.test.xn--nt-bja", "\u00e9xample.test.n\u00e9t", kUnsafe, "DISABLED"],
 
   
   
-  ["xn--16-1ik.com", "16\u10d9.com", kUnsafe],
+  ["xn--16-1ik.com", "16\u10d9.com", kUnsafe, "DISABLED"],
 
   
   
@@ -995,7 +995,7 @@ let testCases = [
 
   
   
-  ["xn--16-ogg.com", "16\u0a5c.com", kUnsafe],
+  ["xn--16-ogg.com", "16\u0a5c.com", kUnsafe, "DISABLED"],
 
   
   
