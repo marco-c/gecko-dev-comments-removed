@@ -114,8 +114,6 @@ TOLERATED_DUPES = {
     
     "time": 2,
     "tokio": 2,
-    
-    "nix": 2,
 }
 
 

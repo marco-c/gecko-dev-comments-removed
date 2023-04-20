@@ -275,9 +275,29 @@ CrashGenerationServer::ClientEvent(short revents)
   
   
   
+  InternalCrashContext oxidized_crash_context;
+  memcpy(&oxidized_crash_context.context,
+         crash_context + offsetof(google_breakpad::ExceptionHandler::CrashContext, context),
+         sizeof(oxidized_crash_context.context));
+  memcpy(&oxidized_crash_context.float_state,
+         crash_context + offsetof(google_breakpad::ExceptionHandler::CrashContext, float_state),
+         sizeof(oxidized_crash_context.float_state));
+  memcpy(&oxidized_crash_context.siginfo,
+         crash_context + offsetof(google_breakpad::ExceptionHandler::CrashContext, siginfo),
+         sizeof(oxidized_crash_context.siginfo));
+  oxidized_crash_context.pid = crashing_pid;
+  memcpy(&oxidized_crash_context.tid,
+         crash_context + offsetof(google_breakpad::ExceptionHandler::CrashContext, tid),
+         sizeof(oxidized_crash_context.tid));
+
+  
+  
+  
   nsCString error_msg;
   bool res = write_minidump_linux_with_context(minidump_filename.c_str(),
-                                    crashing_pid, crash_context, &error_msg);
+                                               crashing_pid,
+                                               &oxidized_crash_context,
+                                               &error_msg);
 #else
   if (!google_breakpad::WriteMinidump(minidump_filename.c_str(),
                                       crashing_pid, crash_context,
