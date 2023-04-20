@@ -141,16 +141,8 @@ nsHtml5TreeOpExecutor::~nsHtml5TreeOpExecutor() {
       }
     }
   }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  MOZ_ASSERT(NS_FAILED(mBroken) || mOpQueue.IsEmpty(),
+             "Somehow there's stuff in the op queue.");
 }
 
 
@@ -180,6 +172,13 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated) {
 
   MOZ_RELEASE_ASSERT(!IsInDocUpdate(),
                      "DidBuildModel from inside a doc update.");
+
+  RefPtr<nsHtml5TreeOpExecutor> pin(this);
+  auto queueClearer = MakeScopeExit([&] {
+    if (aTerminated && (mFlushState == eNotFlushing)) {
+      ClearOpQueue();  
+    }
+  });
 
   
   
