@@ -64,6 +64,8 @@ union Utf8Unit;
 
 namespace JS {
 
+class JS_PUBLIC_API AutoStableStringChars;
+
 namespace detail {
 
 MOZ_COLD extern JS_PUBLIC_API void ReportSourceTooLong(JSContext* cx);
@@ -218,6 +220,16 @@ class SourceText final {
                           size_t dataLength) {
     return init(cx, data.release(), dataLength, SourceOwnership::TakeOwnership);
   }
+
+  
+
+
+
+
+
+
+  [[nodiscard]] bool initMaybeBorrowed(JSContext* cx,
+                                       AutoStableStringChars& linearChars);
 
   
 
