@@ -13,22 +13,17 @@ use serde::{Deserialize, Serialize};
 
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Deserialize, Serialize, Default)]
 #[repr(i32)] 
 #[serde(rename_all = "lowercase")]
 pub enum Lifetime {
     
+    #[default]
     Ping,
     
     Application,
     
     User,
-}
-
-impl Default for Lifetime {
-    fn default() -> Self {
-        Lifetime::Ping
-    }
 }
 
 impl Lifetime {

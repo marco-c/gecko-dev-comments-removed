@@ -52,6 +52,15 @@ pub fn rkv_new(path: &Path) -> std::result::Result<Rkv, rkv::StoreError> {
             
             Rkv::new::<rkv::backend::SafeMode>(path)
         }
+        
+        
+        
+        
+        
+        
+        
+        
+        
         other => other,
     }
 }
