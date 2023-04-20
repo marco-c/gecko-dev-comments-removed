@@ -31,6 +31,10 @@ namespace webrtc {
 
 class PacketArrivalTimeMap {
  public:
+  struct PacketArrivalTime {
+    Timestamp arrival_time;
+    int64_t sequence_number;
+  };
   
   
   static constexpr int kMaxNumberOfPackets = (1 << 15);
@@ -61,6 +65,21 @@ class PacketArrivalTimeMap {
     RTC_DCHECK_GE(sequence_number, begin_sequence_number());
     RTC_DCHECK_LT(sequence_number, end_sequence_number());
     return arrival_times_[Index(sequence_number)];
+  }
+
+  
+  
+  
+  PacketArrivalTime FindNextAtOrAfter(int64_t sequence_number) const {
+    RTC_DCHECK_GE(sequence_number, begin_sequence_number());
+    RTC_DCHECK_LT(sequence_number, end_sequence_number());
+    while (true) {
+      Timestamp t = arrival_times_[Index(sequence_number)];
+      if (t >= Timestamp::Zero()) {
+        return {.arrival_time = t, .sequence_number = sequence_number};
+      }
+      ++sequence_number;
+    }
   }
 
   
