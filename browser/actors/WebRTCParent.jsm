@@ -736,6 +736,7 @@ function prompt(aActor, aBrowser, aRequest) {
         aTopic == "removed"
       ) {
         let video = doc.getElementById("webRTC-previewVideo");
+        video.deviceId = null; 
         if (video.stream) {
           video.stream.getTracks().forEach(t => t.stop());
           video.stream = null;
