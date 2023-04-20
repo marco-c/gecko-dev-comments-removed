@@ -891,11 +891,6 @@ class ScrollFrameHelper : public nsIReflowCallback {
                          UniquePtr<ScrollSnapTargetIds> aSnapTargetIds);
 
   
-  
-  bool CanApzScrollInTheseDirections(
-      mozilla::layers::ScrollDirections aDirections);
-
-  
   void RemoveObservers();
 
  private:
