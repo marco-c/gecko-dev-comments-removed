@@ -99,10 +99,15 @@ std::string MergeFieldTrialsStrings(absl::string_view first,
                                     absl::string_view second);
 
 
-class ScopedGlobalFieldTrialsForTesting {
+
+
+
+
+
+class FieldTrialsAllowedInScopeForTesting {
  public:
-  explicit ScopedGlobalFieldTrialsForTesting(flat_set<std::string> keys);
-  ~ScopedGlobalFieldTrialsForTesting();
+  explicit FieldTrialsAllowedInScopeForTesting(flat_set<std::string> keys);
+  ~FieldTrialsAllowedInScopeForTesting();
 };
 
 }  
