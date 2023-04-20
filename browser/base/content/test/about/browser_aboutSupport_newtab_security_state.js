@@ -2,7 +2,7 @@
 
 
 add_task(async function checkIdentityOfAboutSupport() {
-  let tab = gBrowser.loadOneTab("about:support", {
+  let tab = gBrowser.addTab("about:support", {
     referrerURI: null,
     inBackground: false,
     allowThirdPartyFixup: false,

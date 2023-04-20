@@ -1529,13 +1529,13 @@ class nsContextMenu {
       
       
       
-      if (!tabBrowser || !tabBrowser.loadOneTab || !window.toolbar.visible) {
+      if (!tabBrowser || !tabBrowser.addTab || !window.toolbar.visible) {
         
         let browserWindow = BrowserWindowTracker.getTopWindow();
         tabBrowser = browserWindow.gBrowser;
       }
       let relatedToCurrent = gBrowser && gBrowser.selectedBrowser == browser;
-      let tab = tabBrowser.loadOneTab("about:blank", {
+      let tab = tabBrowser.addTab("about:blank", {
         relatedToCurrent,
         inBackground: inNewWindow,
         skipAnimation: inNewWindow,
