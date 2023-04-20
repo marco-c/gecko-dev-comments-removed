@@ -1637,13 +1637,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   
-  
-  
-  
-  
-  
-  
-  bool mAutoplaying = true;
+  bool mCanAutoplayFlag = true;
 
   
   

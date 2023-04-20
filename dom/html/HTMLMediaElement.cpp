@@ -2283,7 +2283,7 @@ void HTMLMediaElement::AbortExistingLoads() {
   mCurrentPlayRangeStart = -1.0;
   mPlayed = new TimeRanges(ToSupports(OwnerDoc()));
   mLoadedDataFired = false;
-  mAutoplaying = true;
+  mCanAutoplayFlag = true;
   mIsLoadingFromSourceChildren = false;
   mSuspendedAfterFirstFrame = false;
   mAllowSuspendAfterFirstFrame = true;
@@ -3343,7 +3343,10 @@ void HTMLMediaElement::PauseInternal() {
   }
   bool oldPaused = mPaused;
   mPaused = true;
-  mAutoplaying = false;
+  
+  
+  mCanAutoplayFlag = false;
+  
   
   AddRemoveSelfReference();
   UpdateSrcMediaStreamPlaying();
@@ -4505,7 +4508,9 @@ void HTMLMediaElement::PlayInternal(bool aHandlingUserInput) {
 
   const bool oldPaused = mPaused;
   mPaused = false;
-  mAutoplaying = false;
+  
+  
+  mCanAutoplayFlag = false;
 
   
   
@@ -5530,7 +5535,7 @@ void HTMLMediaElement::PlaybackEnded() {
   if (mSrcStream) {
     
     
-    mAutoplaying = true;
+    mCanAutoplayFlag = true;
   }
 
   if (StaticPrefs::media_mediacontrol_stopcontrol_aftermediaends()) {
@@ -6033,7 +6038,7 @@ bool HTMLMediaElement::CanActivateAutoplay() {
     return false;
   }
 
-  if (!mAutoplaying) {
+  if (!mCanAutoplayFlag) {
     return false;
   }
 
