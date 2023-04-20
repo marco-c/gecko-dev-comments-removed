@@ -55,9 +55,8 @@ const SPECIALVALUES = new Set([
 
 
 
-function CssColor(colorValue, supportsCssColor4ColorFunction = false) {
+function CssColor(colorValue) {
   this.newColor(colorValue);
-  this.cssColor4 = supportsCssColor4ColorFunction;
 }
 
 module.exports.colorUtils = {
@@ -93,9 +92,6 @@ CssColor.prototype = {
   authored: null,
   
   lowerCased: null,
-
-  
-  cssColor4: false,
 
   _setColorUnitUppercase(color) {
     
@@ -675,10 +671,8 @@ function roundTo(number, digits) {
 
 
 
-
-
-function setAlpha(colorValue, alpha, useCssColor4ColorFunction = false) {
-  const color = new CssColor(colorValue, useCssColor4ColorFunction);
+function setAlpha(colorValue, alpha) {
+  const color = new CssColor(colorValue);
 
   
   if (!color.valid) {

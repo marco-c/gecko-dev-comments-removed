@@ -82,10 +82,8 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
-
-
 class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
-  constructor(document, inspector, { supportsCssColor4ColorFunction }) {
+  constructor(document, inspector) {
     super(document);
     this.inspector = inspector;
 
@@ -96,7 +94,6 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
     this._openEyeDropper = this._openEyeDropper.bind(this);
     this._openDocLink = this._openDocLink.bind(this);
     this._onTooltipKeydown = this._onTooltipKeydown.bind(this);
-    this.cssColor4 = supportsCssColor4ColorFunction();
 
     
     
@@ -326,14 +323,14 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
   }
 
   _colorToRgba(color) {
-    color = new colorUtils.CssColor(color, this.cssColor4);
+    color = new colorUtils.CssColor(color);
     const rgba = color.getRGBATuple();
     return [rgba.r, rgba.g, rgba.b, rgba.a];
   }
 
   _toDefaultType(color) {
     const colorObj = new colorUtils.CssColor(color);
-    colorObj.setAuthoredUnitFromColor(this._originalColor, this.cssColor4);
+    colorObj.setAuthoredUnitFromColor(this._originalColor);
     return colorObj.toString();
   }
 

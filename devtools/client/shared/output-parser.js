@@ -101,12 +101,7 @@ const TRUNCATE_NODE_CLASSNAME = "propertyvalue-long-text";
 
 
 
-
-
-function OutputParser(
-  document,
-  { supportsType, supportsCssColor4ColorFunction }
-) {
+function OutputParser(document, { supportsType }) {
   this.parsed = [];
   this.doc = document;
   this.supportsType = supportsType;
@@ -114,8 +109,6 @@ function OutputParser(
   this.angleSwatches = new WeakMap();
   this._onColorSwatchMouseDown = this._onColorSwatchMouseDown.bind(this);
   this._onAngleSwatchMouseDown = this._onAngleSwatchMouseDown.bind(this);
-
-  this.cssColor4 = supportsCssColor4ColorFunction();
 }
 
 OutputParser.prototype = {
@@ -1508,7 +1501,7 @@ OutputParser.prototype = {
 
 
   _appendColor(color, options = {}) {
-    const colorObj = new colorUtils.CssColor(color, this.cssColor4);
+    const colorObj = new colorUtils.CssColor(color);
 
     if (this._isValidColor(colorObj)) {
       const container = this._createNode("span", {

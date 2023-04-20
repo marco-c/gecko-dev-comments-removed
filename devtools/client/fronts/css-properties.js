@@ -83,18 +83,9 @@ function CssProperties(db) {
   this.properties = db.properties;
   this.pseudoElements = db.pseudoElements;
 
-  
-  this.cssColor4ColorFunction = hasFeature(
-    db.supportedFeature,
-    "css-color-4-color-function"
-  );
-
   this.isKnown = this.isKnown.bind(this);
   this.isInherited = this.isInherited.bind(this);
   this.supportsType = this.supportsType.bind(this);
-  this.supportsCssColor4ColorFunction = this.supportsCssColor4ColorFunction.bind(
-    this
-  );
 }
 
 CssProperties.prototype = {
@@ -179,15 +170,6 @@ CssProperties.prototype = {
     }
     return [];
   },
-
-  
-
-
-
-
-  supportsCssColor4ColorFunction() {
-    return this.cssColor4ColorFunction;
-  },
 };
 
 
@@ -198,20 +180,6 @@ CssProperties.prototype = {
 
 function isCssVariable(input) {
   return !!input.match(IS_VARIABLE_TOKEN);
-}
-
-
-
-
-
-
-
-
-function hasFeature(featureSet, feature) {
-  if (feature in featureSet) {
-    return featureSet[feature];
-  }
-  return false;
 }
 
 
@@ -279,11 +247,6 @@ function normalizeCssData(db) {
   }
 
   reattachCssColorValues(db);
-
-  
-  if (!db.supportedFeature) {
-    db.supportedFeature = {};
-  }
 
   return db;
 }
