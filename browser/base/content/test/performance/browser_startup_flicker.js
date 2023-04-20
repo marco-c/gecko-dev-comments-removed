@@ -8,6 +8,16 @@
 
 
 
+function rectInElement(element, r) {
+  let el = element.getBoundingClientRect();
+  return (
+    el.x <= r.x1 &&
+    el.y <= r.y1 &&
+    el.x + el.width >= r.x2 &&
+    el.y + el.height >= r.y2
+  );
+}
+
 add_task(async function() {
   let startupRecorder = Cc["@mozilla.org/test/startuprecorder;1"].getService()
     .wrappedJSObject;
@@ -17,6 +27,8 @@ add_task(async function() {
   
   let frames = Cu.cloneInto(startupRecorder.data.frames, {});
   ok(!!frames.length, "Should have captured some frames.");
+
+  let firefoxViewButton = document.getElementById("firefox-view-button");
 
   let unexpectedRects = 0;
   let alreadyFocused = false;
@@ -48,6 +60,14 @@ add_task(async function() {
         
 
 
+        {
+          condition(r) {
+            
+            return (
+              r.w == 16 && r.h == 16 && rectInElement(firefoxViewButton, r)
+            );
+          },
+        },
       ];
 
       let rectText = `${rect.toSource()}, window width: ${width}`;
