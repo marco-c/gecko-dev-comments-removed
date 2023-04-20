@@ -35,6 +35,21 @@ def search_path(paths, path):
 
 
 
+def filter_preprocessor(cmd):
+    prev = None
+    for arg in cmd:
+        if arg == "-Xclang":
+            prev = arg
+            continue
+        if not arg.startswith("-std="):
+            if prev:
+                yield prev
+            yield arg
+        prev = None
+
+
+
+
 
 
 def preprocess(base, input, flags):
@@ -50,11 +65,11 @@ def preprocess(base, input, flags):
     parser.add_argument("-acf")
     args, remainder = parser.parse_known_args(flags)
     preprocessor = (
-        [buildconfig.substs["_CXX"]]
+        list(filter_preprocessor(buildconfig.substs["CXXCPP"]))
         
         
         
-        + ["-E", "-D__midl=801"]
+        + ["-D__midl=801"]
         + [f"-D{d}" for d in args.D or ()]
         + [f"-I{i}" for i in args.I or ()]
     )
