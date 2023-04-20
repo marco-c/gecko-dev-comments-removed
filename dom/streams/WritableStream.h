@@ -39,16 +39,8 @@ class WritableStream : public nsISupports, public nsWrapperCache {
   virtual void LastRelease() {}
 
  public:
-  
-  
-  
-  
-  
-  enum class HoldDropJSObjectsCaller { Implicit, Explicit };
-  explicit WritableStream(const GlobalObject& aGlobal,
-                          HoldDropJSObjectsCaller aHoldDropCaller);
-  explicit WritableStream(nsIGlobalObject* aGlobal,
-                          HoldDropJSObjectsCaller aHoldDropCaller);
+  explicit WritableStream(const GlobalObject& aGlobal);
+  explicit WritableStream(nsIGlobalObject* aGlobal);
 
   enum class WriterState { Writable, Closed, Erroring, Errored };
 
@@ -196,7 +188,6 @@ class WritableStream : public nsISupports, public nsWrapperCache {
   nsTArray<RefPtr<Promise>> mWriteRequests;
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
-  HoldDropJSObjectsCaller mHoldDropCaller;
 };
 
 MOZ_CAN_RUN_SCRIPT already_AddRefed<WritableStream> CreateWritableStream(
