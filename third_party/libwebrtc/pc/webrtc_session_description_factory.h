@@ -28,50 +28,18 @@
 #include "rtc_base/message_handler.h"
 #include "rtc_base/rtc_certificate.h"
 #include "rtc_base/rtc_certificate_generator.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_message.h"
 #include "rtc_base/unique_id_generator.h"
+#include "rtc_base/weak_ptr.h"
 
 namespace webrtc {
 
 
-class WebRtcCertificateGeneratorCallback
-    : public rtc::RTCCertificateGeneratorCallback {
- public:
-  
-  void OnSuccess(
-      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) override;
-  void OnFailure() override;
-
-  sigslot::signal0<> SignalRequestFailed;
-  sigslot::signal1<const rtc::scoped_refptr<rtc::RTCCertificate>&>
-      SignalCertificateReady;
-};
-
-struct CreateSessionDescriptionRequest {
-  enum Type {
-    kOffer,
-    kAnswer,
-  };
-
-  CreateSessionDescriptionRequest(Type type,
-                                  CreateSessionDescriptionObserver* observer,
-                                  const cricket::MediaSessionOptions& options)
-      : type(type), observer(observer), options(options) {}
-
-  Type type;
-  rtc::scoped_refptr<CreateSessionDescriptionObserver> observer;
-  cricket::MediaSessionOptions options;
-};
 
 
 
-
-
-
-class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
-                                        public sigslot::has_slots<> {
+class WebRtcSessionDescriptionFactory : public rtc::MessageHandler {
  public:
   
   
@@ -131,6 +99,25 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
   };
 
   
+  class WebRtcCertificateGeneratorCallback;
+
+  struct CreateSessionDescriptionRequest {
+    enum Type {
+      kOffer,
+      kAnswer,
+    };
+
+    CreateSessionDescriptionRequest(Type type,
+                                    CreateSessionDescriptionObserver* observer,
+                                    const cricket::MediaSessionOptions& options)
+        : type(type), observer(observer), options(options) {}
+
+    Type type;
+    rtc::scoped_refptr<CreateSessionDescriptionObserver> observer;
+    cricket::MediaSessionOptions options;
+  };
+
+  
   virtual void OnMessage(rtc::Message* msg);
 
   void InternalCreateOffer(CreateSessionDescriptionRequest request);
@@ -161,6 +148,7 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
 
   std::function<void(const rtc::scoped_refptr<rtc::RTCCertificate>&)>
       on_certificate_ready_;
+  rtc::WeakPtrFactory<WebRtcSessionDescriptionFactory> weak_factory_{this};
 };
 }  
 
