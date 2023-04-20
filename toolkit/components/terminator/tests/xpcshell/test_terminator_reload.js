@@ -5,9 +5,7 @@
 
 
 
-var PATH;
-
-var HISTOGRAMS = {
+const HISTOGRAMS = {
   "quit-application": "SHUTDOWN_PHASE_DURATION_TICKS_QUIT_APPLICATION",
   "profile-change-net-teardown":
     "SHUTDOWN_PHASE_DURATION_TICKS_PROFILE_CHANGE_NET_TEARDOWN",
@@ -21,7 +19,9 @@ var HISTOGRAMS = {
   "xpcom-shutdown": "SHUTDOWN_PHASE_DURATION_TICKS_XPCOM_SHUTDOWN",
 };
 
-add_task(async function init() {
+let PATH;
+
+add_setup(async function init() {
   do_get_profile();
   PATH = PathUtils.join(PathUtils.localProfileDir, "ShutdownDuration.json");
 });
@@ -43,6 +43,11 @@ add_task(async function test_reload() {
       "Histogram " + id + " is empty"
     );
   }
+
+  
+  data["xpcom-shutdown-threads"] = 123;
+  data.XPCOMShutdownFinal = 456;
+  data.CCPostLastCycleCollection = 789;
 
   await IOUtils.writeJSON(PATH, data);
 
