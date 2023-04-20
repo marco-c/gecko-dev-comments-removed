@@ -605,7 +605,7 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
     }
   }
 
-  if (mozilla::IsDevelopmentBuild()) {
+  if (!mozilla::IsPackagedBuild()) {
     
     
     
@@ -857,7 +857,7 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
     }
   }
 
-  if (mozilla::IsDevelopmentBuild()) {
+  if (!mozilla::IsPackagedBuild()) {
     
     
     

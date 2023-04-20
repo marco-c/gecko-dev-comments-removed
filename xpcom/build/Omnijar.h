@@ -162,8 +162,8 @@ class Omnijar {
 
 
 
-inline bool IsDevelopmentBuild() {
-  return !Omnijar::HasOmnijar(mozilla::Omnijar::GRE);
+inline bool IsPackagedBuild() {
+  return Omnijar::HasOmnijar(mozilla::Omnijar::GRE);
 }
 
 } 

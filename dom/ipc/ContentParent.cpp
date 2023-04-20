@@ -2567,7 +2567,7 @@ static void CacheSandboxParams(std::vector<std::string>& aCachedParams) {
   
   
   nsresult rv;
-  if (mozilla::IsDevelopmentBuild()) {
+  if (!mozilla::IsPackagedBuild()) {
     
     nsCOMPtr<nsIFile> repoDir;
     rv = nsMacUtilsImpl::GetRepoDir(getter_AddRefs(repoDir));

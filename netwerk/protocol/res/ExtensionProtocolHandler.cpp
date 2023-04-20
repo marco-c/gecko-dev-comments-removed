@@ -636,7 +636,7 @@ Result<bool, nsresult> ExtensionProtocolHandler::AllowExternalResource(
   
   return false;
 #else
-  if (!mozilla::IsDevelopmentBuild()) {
+  if (mozilla::IsPackagedBuild()) {
     return false;
   }
 
@@ -666,7 +666,7 @@ Result<bool, nsresult> ExtensionProtocolHandler::AllowExternalResource(
 
 Result<bool, nsresult> ExtensionProtocolHandler::DevRepoContains(
     nsIFile* aRequestedFile) {
-  MOZ_ASSERT(mozilla::IsDevelopmentBuild());
+  MOZ_ASSERT(!mozilla::IsPackagedBuild());
   MOZ_ASSERT(!IsNeckoChild());
 
   
@@ -691,7 +691,7 @@ Result<bool, nsresult> ExtensionProtocolHandler::DevRepoContains(
 #if !defined(XP_WIN)
 Result<bool, nsresult> ExtensionProtocolHandler::AppDirContains(
     nsIFile* aExtensionDir) {
-  MOZ_ASSERT(mozilla::IsDevelopmentBuild());
+  MOZ_ASSERT(!mozilla::IsPackagedBuild());
   MOZ_ASSERT(!IsNeckoChild());
 
   

@@ -58,11 +58,11 @@ bool JOG::EnsureRuntimeMetricsRegistered(bool aForce) {
 
   MOZ_LOG(sLog, LogLevel::Debug, ("Determining whether there's JOG for you."));
 
-  if (!mozilla::IsDevelopmentBuild()) {
+  if (mozilla::IsPackagedBuild()) {
     
     
     
-    MOZ_LOG(sLog, LogLevel::Debug, ("!IsDevelopmentBuild. No JOG for you."));
+    MOZ_LOG(sLog, LogLevel::Debug, ("IsPackagedBuild. No JOG for you."));
     return false;
   }
   
