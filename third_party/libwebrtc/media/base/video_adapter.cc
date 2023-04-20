@@ -192,16 +192,6 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
           max_pixel_count, *output_format_request_.max_portrait_pixel_count);
   }
 
-  if (scale_) {
-    
-    
-    
-    
-    
-    int scaled_pixel_count = (in_width*in_height/scale_resolution_by_)/scale_resolution_by_;
-    max_pixel_count = std::min(max_pixel_count, scaled_pixel_count);
-  }
-
   int target_pixel_count =
       std::min(resolution_request_target_pixel_count_, max_pixel_count);
 
@@ -261,7 +251,7 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
   if (scale.numerator != scale.denominator)
     ++frames_scaled_;
 
-  if ((previous_width_ || scale_) &&
+  if (previous_width_ &&
       (previous_width_ != *out_width || previous_height_ != *out_height)) {
     ++adaption_changes_;
     RTC_LOG(LS_INFO) << "Frame size changed: scaled " << frames_scaled_
@@ -473,14 +463,6 @@ std::string VideoAdapter::OutputFormatRequest::ToString() const {
   }
   oss << " ]";
   return oss.Release();
-}
-
-void VideoAdapter::OnScaleResolutionBy(
-    absl::optional<float> scale_resolution_by) {
-  webrtc::MutexLock lock(&mutex_);
-  scale_resolution_by_ = scale_resolution_by.value_or(1.0);
-  RTC_DCHECK_GE(scale_resolution_by_, 1.0);
-  scale_ = static_cast<bool>(scale_resolution_by);
 }
 
 }  

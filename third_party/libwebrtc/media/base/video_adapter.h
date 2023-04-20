@@ -110,10 +110,6 @@ class RTC_EXPORT VideoAdapter {
   
   float GetMaxFramerate() const;
 
-  
-  
-  virtual void OnScaleResolutionBy(absl::optional<float> scale_resolution_by);
-
  private:
   
   bool DropFrame(int64_t in_timestamp_ns) RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
@@ -153,8 +149,6 @@ class RTC_EXPORT VideoAdapter {
   int resolution_request_target_pixel_count_ RTC_GUARDED_BY(mutex_);
   int resolution_request_max_pixel_count_ RTC_GUARDED_BY(mutex_);
   int max_framerate_request_ RTC_GUARDED_BY(mutex_);
-  float scale_resolution_by_ RTC_GUARDED_BY(mutex_);
-  bool scale_ RTC_GUARDED_BY(mutex_);
 
   
   
