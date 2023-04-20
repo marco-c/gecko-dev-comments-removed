@@ -59,6 +59,15 @@ enum class PortalKind {
 bool ShouldUsePortal(PortalKind);
 
 
+
+
+
+
+
+const nsCString& GetDesktopEnvironmentIdentifier();
+bool IsGnomeDesktopEnvironment();
+
+
 nsTArray<nsCString> ParseTextURIList(const nsACString& data);
 
 using FocusRequestPromise = MozPromise<nsCString, bool, false>;

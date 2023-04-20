@@ -521,15 +521,10 @@ RefPtr<nsIScreen> ScreenGetterWayland::GetScreenForWindow(nsWindow* aWindow) {
   return mScreenList[monitor];
 }
 
-static bool IsGNOMECompositor() {
-  const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
-  return currentDesktop && strstr(currentDesktop, "GNOME") != nullptr;
-}
-#endif
-
 RefPtr<nsIScreen> ScreenHelperGTK::GetScreenForWindow(nsWindow* aWindow) {
   return gScreenGetter->GetScreenForWindow(aWindow);
 }
+#endif
 
 gint ScreenHelperGTK::GetGTKMonitorScaleFactor(gint aMonitorNum) {
   GdkScreen* screen = gdk_screen_get_default();
@@ -542,7 +537,7 @@ ScreenHelperGTK::ScreenHelperGTK() {
   
   
   
-  if (GdkIsWaylandDisplay() && IsGNOMECompositor()) {
+  if (GdkIsWaylandDisplay() && IsGnomeDesktopEnvironment()) {
     gScreenGetter = MakeUnique<ScreenGetterWayland>();
   }
 #endif

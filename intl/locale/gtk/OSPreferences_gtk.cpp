@@ -11,6 +11,7 @@
 #include "nsServiceManagerUtils.h"
 #include "nsIGSettingsService.h"
 
+using namespace mozilla;
 using namespace mozilla::intl;
 
 OSPreferences::OSPreferences() = default;
@@ -50,41 +51,29 @@ bool OSPreferences::ReadRegionalPrefsLocales(nsTArray<nsCString>& aLocaleList) {
 
 
 
-
 static int HourCycle() {
-  int rval = 0;
-
-  
-  
-  nsAutoCString schema;
-  nsAutoCString key;
-  const char* env = getenv("XDG_CURRENT_DESKTOP");
-  if (env && strcmp(env, "Unity") == 0) {
-    schema = "com.canonical.indicator.datetime";
-    key = "time-format";
-  } else {
-    schema = "org.gnome.desktop.interface";
-    key = "clock-format";
-  }
-
   nsCOMPtr<nsIGSettingsService> gsettings =
       do_GetService(NS_GSETTINGSSERVICE_CONTRACTID);
-  nsCOMPtr<nsIGSettingsCollection> desktop_settings;
-
-  if (gsettings) {
-    gsettings->GetCollectionForSchema(schema, getter_AddRefs(desktop_settings));
-    if (desktop_settings) {
-      nsAutoCString result;
-      desktop_settings->GetString(key, result);
-      if (result == "12h") {
-        rval = 12;
-      } else if (result == "24h") {
-        rval = 24;
-      }
-    }
+  if (!gsettings) {
+    return 0;
   }
 
-  return rval;
+  nsCOMPtr<nsIGSettingsCollection> desktop_settings;
+  gsettings->GetCollectionForSchema("org.gnome.desktop.interface"_ns,
+                                    getter_AddRefs(desktop_settings));
+  if (!desktop_settings) {
+    return 0;
+  }
+
+  nsAutoCString result;
+  desktop_settings->GetString("clock-format"_ns, result);
+  if (result == "12h") {
+    return 12;
+  }
+  if (result == "24h") {
+    return 24;
+  }
+  return 0;
 }
 
 
