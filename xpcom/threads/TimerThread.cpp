@@ -627,10 +627,52 @@ size_t TimerThread::ComputeTimerInsertionIndex(const TimeStamp& timeout) const {
 TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
   mMonitor.AssertCurrentThreadOwns();
 
-  MOZ_RELEASE_ASSERT(!mTimers.IsEmpty());
-  MOZ_RELEASE_ASSERT(mTimers[0].Value());
+  
+  
+  MOZ_ASSERT(!mTimers.IsEmpty());
+  MOZ_ASSERT(mTimers[0].Value());
 
-  return mTimers[0].Timeout();
+  
+  
+  
+
+  
+  
+  
+  TimeStamp bundleWakeup = mTimers[0].Timeout();
+
+  
+  
+  const TimeDuration minTimerDelay = TimeDuration::FromMilliseconds(
+      StaticPrefs::timer_minimum_firing_delay_tolerance_ms());
+  const TimeDuration maxTimerDelay = TimeDuration::FromMilliseconds(
+      StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
+  const TimeStamp cutoffTime =
+      bundleWakeup + ComputeAcceptableFiringDelay(minTimerDelay, maxTimerDelay);
+
+  const size_t timerCount = mTimers.Length();
+  for (size_t entryIndex = 1; entryIndex < timerCount; ++entryIndex) {
+    const Entry& curEntry = mTimers[entryIndex];
+    const nsTimerImpl* curTimer = curEntry.Value();
+    if (!curTimer) {
+      
+      continue;
+    }
+
+    const TimeStamp curTimerDue = curEntry.Timeout();
+    if (curTimerDue > cutoffTime) {
+      
+      break;
+    }
+
+    
+    bundleWakeup = curTimerDue;
+    MOZ_ASSERT(bundleWakeup <= cutoffTime);
+  }
+
+  MOZ_ASSERT(bundleWakeup - mTimers[0].Timeout() <=
+             ComputeAcceptableFiringDelay(minTimerDelay, maxTimerDelay));
+  return bundleWakeup;
 }
 
 constexpr TimeDuration TimerThread::ComputeAcceptableFiringDelay(
