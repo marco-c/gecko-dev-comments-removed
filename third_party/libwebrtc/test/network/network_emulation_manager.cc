@@ -310,7 +310,24 @@ void NetworkEmulationManagerImpl::GetStats(
       
       
       auto endpoint_impl = static_cast<EmulatedEndpointImpl*>(endpoint);
-      stats_builder.AddEmulatedNetworkStats(*endpoint_impl->stats());
+      stats_builder.AddEmulatedNetworkStats(endpoint_impl->stats());
+    }
+    stats_callback(
+        std::make_unique<EmulatedNetworkStats>(stats_builder.Build()));
+  });
+}
+
+void NetworkEmulationManagerImpl::GetStats(
+    rtc::ArrayView<EmulatedEndpoint* const> endpoints,
+    std::function<void(EmulatedNetworkStats)> stats_callback) {
+  task_queue_.PostTask([endpoints, stats_callback]() {
+    EmulatedNetworkStatsBuilder stats_builder;
+    for (auto* endpoint : endpoints) {
+      
+      
+      
+      auto endpoint_impl = static_cast<EmulatedEndpointImpl*>(endpoint);
+      stats_builder.AddEmulatedNetworkStats(endpoint_impl->stats());
     }
     stats_callback(stats_builder.Build());
   });

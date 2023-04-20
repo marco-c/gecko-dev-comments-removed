@@ -62,140 +62,174 @@ class EmulatedNetworkReceiverInterface {
   virtual void OnPacketReceived(EmulatedIpPacket packet) = 0;
 };
 
-class EmulatedNetworkOutgoingStats {
- public:
-  virtual ~EmulatedNetworkOutgoingStats() = default;
+struct EmulatedNetworkOutgoingStats {
+  int64_t packets_sent = 0;
 
-  virtual int64_t PacketsSent() const = 0;
-
-  virtual DataSize BytesSent() const = 0;
+  DataSize bytes_sent = DataSize::Zero();
 
   
   
-  
-  
-  virtual const SamplesStatsCounter& SentPacketsSizeCounter() const = 0;
+  SamplesStatsCounter sent_packets_size;
 
-  virtual DataSize FirstSentPacketSize() const = 0;
+  DataSize first_sent_packet_size = DataSize::Zero();
 
   
-  
-  virtual Timestamp FirstPacketSentTime() const = 0;
+  Timestamp first_packet_sent_time = Timestamp::PlusInfinity();
 
   
-  
-  virtual Timestamp LastPacketSentTime() const = 0;
+  Timestamp last_packet_sent_time = Timestamp::MinusInfinity();
 
   
-  virtual DataRate AverageSendRate() const = 0;
+  DataRate AverageSendRate() const;
 };
 
-class EmulatedNetworkIncomingStats {
- public:
-  virtual ~EmulatedNetworkIncomingStats() = default;
+struct EmulatedNetworkIncomingStats {
+  
+  int64_t packets_received = 0;
 
   
-  virtual int64_t PacketsReceived() const = 0;
-  
-  virtual DataSize BytesReceived() const = 0;
-  
-  
-  
-  
-  virtual const SamplesStatsCounter& ReceivedPacketsSizeCounter() const = 0;
-  
-  virtual int64_t PacketsDropped() const = 0;
-  
-  virtual DataSize BytesDropped() const = 0;
-  
-  
-  
-  
-  
-  virtual const SamplesStatsCounter& DroppedPacketsSizeCounter() const = 0;
-
-  virtual DataSize FirstReceivedPacketSize() const = 0;
+  DataSize bytes_received = DataSize::Zero();
 
   
   
-  virtual Timestamp FirstPacketReceivedTime() const = 0;
+  
+  SamplesStatsCounter received_packets_size;
+
+  
+  int64_t packets_discarded_no_receiver = 0;
+
+  
+  DataSize bytes_discarded_no_receiver = DataSize::Zero();
 
   
   
-  virtual Timestamp LastPacketReceivedTime() const = 0;
+  
+  SamplesStatsCounter packets_discarded_no_receiver_size;
 
-  virtual DataRate AverageReceiveRate() const = 0;
+  DataSize first_received_packet_size = DataSize::Zero();
+
+  
+  
+  Timestamp first_packet_received_time = Timestamp::PlusInfinity();
+
+  
+  
+  Timestamp last_packet_received_time = Timestamp::MinusInfinity();
+
+  DataRate AverageReceiveRate() const;
 };
 
-class EmulatedNetworkStats {
- public:
-  virtual ~EmulatedNetworkStats() = default;
+struct EmulatedNetworkStats {
+  int64_t PacketsSent() const { return overall_outgoing_stats.packets_sent; }
+
+  DataSize BytesSent() const { return overall_outgoing_stats.bytes_sent; }
 
   
   
-  virtual std::vector<rtc::IPAddress> LocalAddresses() const = 0;
+  
+  
+  const SamplesStatsCounter& SentPacketsSizeCounter() const {
+    return overall_outgoing_stats.sent_packets_size;
+  }
 
-  virtual int64_t PacketsSent() const = 0;
+  DataSize FirstSentPacketSize() const {
+    return overall_outgoing_stats.first_sent_packet_size;
+  }
 
-  virtual DataSize BytesSent() const = 0;
   
   
-  
-  
-  virtual const SamplesStatsCounter& SentPacketsSizeCounter() const = 0;
-  
-  
-  
-  
-  
-  virtual const SamplesStatsCounter& SentPacketsQueueWaitTimeUs() const = 0;
+  Timestamp FirstPacketSentTime() const {
+    return overall_outgoing_stats.first_packet_sent_time;
+  }
 
-  virtual DataSize FirstSentPacketSize() const = 0;
   
   
-  virtual Timestamp FirstPacketSentTime() const = 0;
-  
-  
-  virtual Timestamp LastPacketSentTime() const = 0;
+  Timestamp LastPacketSentTime() const {
+    return overall_outgoing_stats.last_packet_sent_time;
+  }
 
-  virtual DataRate AverageSendRate() const = 0;
-  
-  virtual int64_t PacketsReceived() const = 0;
-  
-  virtual DataSize BytesReceived() const = 0;
-  
-  
-  
-  
-  virtual const SamplesStatsCounter& ReceivedPacketsSizeCounter() const = 0;
-  
-  virtual int64_t PacketsDropped() const = 0;
-  
-  virtual DataSize BytesDropped() const = 0;
-  
-  
-  
-  
-  
-  virtual const SamplesStatsCounter& DroppedPacketsSizeCounter() const = 0;
+  DataRate AverageSendRate() const {
+    return overall_outgoing_stats.AverageSendRate();
+  }
 
-  virtual DataSize FirstReceivedPacketSize() const = 0;
   
-  
-  virtual Timestamp FirstPacketReceivedTime() const = 0;
-  
-  
-  virtual Timestamp LastPacketReceivedTime() const = 0;
+  int64_t PacketsReceived() const {
+    return overall_incoming_stats.packets_received;
+  }
 
-  virtual DataRate AverageReceiveRate() const = 0;
+  
+  DataSize BytesReceived() const {
+    return overall_incoming_stats.bytes_received;
+  }
 
-  virtual std::map<rtc::IPAddress,
-                   std::unique_ptr<EmulatedNetworkOutgoingStats>>
-  OutgoingStatsPerDestination() const = 0;
+  
+  
+  
+  
+  const SamplesStatsCounter& ReceivedPacketsSizeCounter() const {
+    return overall_incoming_stats.received_packets_size;
+  }
 
-  virtual std::map<rtc::IPAddress,
-                   std::unique_ptr<EmulatedNetworkIncomingStats>>
-  IncomingStatsPerSource() const = 0;
+  
+  int64_t PacketsDiscardedNoReceiver() const {
+    return overall_incoming_stats.packets_discarded_no_receiver;
+  }
+
+  
+  DataSize BytesDiscardedNoReceiver() const {
+    return overall_incoming_stats.bytes_discarded_no_receiver;
+  }
+
+  
+  
+  
+  
+  
+  const SamplesStatsCounter& PacketsDiscardedNoReceiverSizeCounter() const {
+    return overall_incoming_stats.packets_discarded_no_receiver_size;
+  }
+
+  DataSize FirstReceivedPacketSize() const {
+    return overall_incoming_stats.first_received_packet_size;
+  }
+
+  
+  
+  Timestamp FirstPacketReceivedTime() const {
+    return overall_incoming_stats.first_packet_received_time;
+  }
+
+  
+  
+  Timestamp LastPacketReceivedTime() const {
+    return overall_incoming_stats.last_packet_received_time;
+  }
+
+  DataRate AverageReceiveRate() const {
+    return overall_incoming_stats.AverageReceiveRate();
+  }
+
+  
+  
+  std::vector<rtc::IPAddress> local_addresses;
+
+  
+  EmulatedNetworkOutgoingStats overall_outgoing_stats;
+
+  
+  
+  EmulatedNetworkIncomingStats overall_incoming_stats;
+
+  std::map<rtc::IPAddress, EmulatedNetworkOutgoingStats>
+      outgoing_stats_per_destination;
+  std::map<rtc::IPAddress, EmulatedNetworkIncomingStats>
+      incoming_stats_per_source;
+
+  
+  
+  
+  
+  SamplesStatsCounter sent_packets_queue_wait_time_us;
 };
 
 
