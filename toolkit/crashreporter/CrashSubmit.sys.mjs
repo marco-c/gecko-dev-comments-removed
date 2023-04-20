@@ -1,12 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-const { FileUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/FileUtils.sys.mjs"
-);
-
-var EXPORTED_SYMBOLS = ["CrashSubmit"];
+import { FileUtils } from "resource://gre/modules/FileUtils.sys.mjs";
 
 const SUCCESS = "success";
 const FAILED = "failed";
@@ -15,7 +11,7 @@ const SUBMITTING = "submitting";
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SUBMISSION_REGEX = /^bp-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-
+// TODO: this is still synchronous; need an async INI parser to make it async
 function parseINIStrings(path) {
   let file = new FileUtils.File(path);
   let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(
@@ -29,8 +25,8 @@ function parseINIStrings(path) {
   return obj;
 }
 
-
-
+// Since we're basically re-implementing (with async) part of the crashreporter
+// client here, we'll just steal the strings we need from crashreporter.ini
 async function getL10nStrings() {
   let path = PathUtils.join(
     Services.dirsvc.get("GreD", Ci.nsIFile).path,
@@ -39,7 +35,7 @@ async function getL10nStrings() {
   let pathExists = await IOUtils.exists(path);
 
   if (!pathExists) {
-    
+    // we if we're on a mac
     let parentDir = PathUtils.parent(path);
     path = PathUtils.join(
       parentDir,
@@ -53,9 +49,9 @@ async function getL10nStrings() {
     let pathExists = await IOUtils.exists(path);
 
     if (!pathExists) {
-      
-      
-      
+      // This happens on Android where everything is in an APK.
+      // Android users can't see the contents of the submitted files
+      // anyway, so just hardcode some fallback strings.
       return {
         crashid: "Crash ID: %s",
         reporturl: "You can view details of this crash at %s",
@@ -121,14 +117,14 @@ async function writeSubmittedReportAsync(crashID, viewURL) {
   await writeFileAsync("submitted", `${crashID}.txt`, data);
 }
 
-
+// the Submitter class represents an individual submission.
 function Submitter(id, recordSubmission, noThrottle, extraExtraKeyVals) {
   this.id = id;
   this.recordSubmission = recordSubmission;
   this.noThrottle = noThrottle;
   this.additionalDumps = [];
   this.extraKeyVals = extraExtraKeyVals;
-  
+  // mimic deferred Promise behavior
   this.submitStatusPromise = new Promise((resolve, reject) => {
     this.resolveSubmitStatusPromise = resolve;
     this.rejectSubmitStatusPromise = reject;
@@ -137,7 +133,7 @@ function Submitter(id, recordSubmission, noThrottle, extraExtraKeyVals) {
 
 Submitter.prototype = {
   submitSuccess: async function Submitter_submitSuccess(ret) {
-    
+    // Write out the details file to submitted
     await writeSubmittedReportAsync(ret.CrashID, ret.ViewURL);
 
     try {
@@ -165,13 +161,13 @@ Submitter.prototype = {
   },
 
   cleanup: function Submitter_cleanup() {
-    
+    // drop some references just to be nice
     this.iframe = null;
     this.dump = null;
     this.extra = null;
     this.memory = null;
     this.additionalDumps = null;
-    
+    // remove this object from the list of active submissions
     let idx = CrashSubmit._activeSubmissions.indexOf(this);
     if (idx != -1) {
       CrashSubmit._activeSubmissions.splice(idx, 1);
@@ -204,7 +200,7 @@ Submitter.prototype = {
     let serverURL = this.extraKeyVals.ServerURL;
     delete this.extraKeyVals.ServerURL;
 
-    
+    // Override the submission URL from the environment
     let envOverride = Services.env.get("MOZ_CRASHREPORTER_URL");
     if (envOverride != "") {
       serverURL = envOverride;
@@ -215,17 +211,17 @@ Submitter.prototype = {
 
     let formData = new FormData();
 
-    
+    // tell the server not to throttle this if requested
     this.extraKeyVals.Throttleable = this.noThrottle ? "0" : "1";
 
-    
+    // add the data
     let payload = Object.assign({}, this.extraKeyVals);
     let json = new Blob([JSON.stringify(payload)], {
       type: "application/json",
     });
     formData.append("extra", json);
 
-    
+    // add the minidumps
     let promises = [
       File.createFromFileName(this.dump, {
         type: "application/octet-stream",
@@ -335,13 +331,13 @@ Submitter.prototype = {
         this.rejectSubmitStatusPromise(FAILED);
         break;
       default:
-      
+      // no callbacks invoked.
     }
   },
 
   readAnnotations: async function Submitter_readAnnotations(extra) {
-    
-    
+    // These annotations are used only by the crash reporter client and should
+    // not be submitted to Socorro.
     const strippedAnnotations = [
       "StackTraces",
       "TelemetryClientId",
@@ -384,7 +380,7 @@ Submitter.prototype = {
       let names = this.extraKeyVals.additional_minidumps.split(",");
 
       for (let name of names) {
-        let [dump ] = getPendingMinidump(
+        let [dump /* , extra, memory */] = getPendingMinidump(
           this.id + "-" + name
         );
 
@@ -414,42 +410,42 @@ Submitter.prototype = {
   },
 };
 
-
-
-var CrashSubmit = {
-  
+// ===================================
+// External API goes here
+export var CrashSubmit = {
+  // A set of strings representing how a user subnmitted a given crash
   SUBMITTED_FROM_AUTO: "Auto",
   SUBMITTED_FROM_INFOBAR: "Infobar",
   SUBMITTED_FROM_ABOUT_CRASHES: "AboutCrashes",
   SUBMITTED_FROM_CRASH_TAB: "CrashedTab",
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Submit the crash report named id.dmp from the "pending" directory.
+   *
+   * @param id
+   *        Filename (minus .dmp extension) of the minidump to submit.
+   * @param submittedFrom
+   *        One of the SUBMITTED_FROM_* constants representing how the
+   *        user submitted this crash.
+   * @param params
+   *        An object containing any of the following optional parameters:
+   *        - recordSubmission
+   *          If true, a submission event is recorded in CrashManager.
+   *        - noThrottle
+   *          If true, this crash report should be submitted with
+   *          the Throttleable annotation set to "0" indicating that
+   *          it should be processed right away. This should be set
+   *          when the report is being submitted and the user expects
+   *          to see the results immediately. Defaults to false.
+   *        - extraExtraKeyVals
+   *          An object whose key-value pairs will be merged with the data from
+   *          the ".extra" file submitted with the report.  The properties of
+   *          this object will override properties of the same name in the
+   *          .extra file.
+   *
+   *  @return a Promise that is fulfilled with the server crash ID when the
+   *          submission succeeds and rejected otherwise.
+   */
   submit: function CrashSubmit_submit(id, submittedFrom, params) {
     params = params || {};
     let recordSubmission = false;
@@ -480,15 +476,15 @@ var CrashSubmit = {
     return submitter.submit();
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Delete the minidup from the "pending" directory.
+   *
+   * @param id
+   *        Filename (minus .dmp extension) of the minidump to delete.
+   *
+   * @return a Promise that is fulfilled when the minidump is deleted and
+   *         rejected otherwise
+   */
   delete: async function CrashSubmit_delete(id) {
     await Promise.all(
       getPendingMinidump(id).map(path => {
@@ -497,30 +493,30 @@ var CrashSubmit = {
     );
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Add a .dmg.ignore file along side the .dmp file to indicate that the user
+   * shouldn't be prompted to submit this crash report again.
+   *
+   * @param id
+   *        Filename (minus .dmp extension) of the report to ignore
+   *
+   * @return a Promise that is fulfilled when (if) the .dmg.ignore is created
+   *         and rejected otherwise.
+   */
   ignore: async function CrashSubmit_ignore(id) {
-    let [dump ] = getPendingMinidump(id);
+    let [dump /* , extra, memory */] = getPendingMinidump(id);
     const ignorePath = `${dump}.ignore`;
     await IOUtils.writeUTF8(ignorePath, "", { mode: "create" });
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Get the list of pending crash IDs, excluding those marked to be ignored
+   * @param minFileDate
+   *     A Date object. Any files last modified before that date will be ignored
+   *
+   * @return a Promise that is fulfilled with an array of string, each
+   *         being an ID as expected to be passed to submit() or ignore()
+   */
   pendingIDs: async function CrashSubmit_pendingIDs(minFileDate) {
     let ids = [];
     let pendingDir = getDir("pending");
@@ -554,7 +550,7 @@ var CrashSubmit = {
               entries[id] = info;
             }
           } else {
-            
+            // maybe it's a .ignore file
             const matchesIgnore = name.match(/(.+)\.dmp.ignore$/);
             if (matchesIgnore) {
               const id = matchesIgnore[1];
@@ -581,12 +577,12 @@ var CrashSubmit = {
     return ids;
   },
 
-  
-
-
-
-
-
+  /**
+   * Prune the saved dumps.
+   *
+   * @return a Promise that is fulfilled when the daved dumps are deleted and
+   *         rejected otherwise
+   */
   pruneSavedDumps: async function CrashSubmit_pruneSavedDumps() {
     const KEEP = 10;
 
@@ -663,6 +659,6 @@ var CrashSubmit = {
     }
   },
 
-  
+  // List of currently active submit objects
   _activeSubmissions: [],
 };

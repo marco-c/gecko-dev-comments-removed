@@ -1,10 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-var EXPORTED_SYMBOLS = ["CrashReports"];
-
-var CrashReports = {
+export var CrashReports = {
   pendingDir: null,
   reportsDir: null,
   submittedDir: null,
@@ -12,7 +10,7 @@ var CrashReports = {
     let reports = [];
 
     try {
-      
+      // Ignore any non http/https urls
       if (!/^https?:/i.test(Services.prefs.getCharPref("breakpad.reportURL"))) {
         return reports;
       }
@@ -52,7 +50,7 @@ var CrashReports = {
       }
     }
 
-    
+    // Sort reports descending by date
     return reports.sort((a, b) => b.date - a.date);
   },
 };

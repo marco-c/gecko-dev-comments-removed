@@ -1,17 +1,15 @@
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-
-
-var EXPORTED_SYMBOLS = ["CrashTestUtils"];
-
-var CrashTestUtils = {
-  
+export var CrashTestUtils = {
+  // These will be defined using ctypes APIs below.
   crash: null,
   dumpHasStream: null,
   dumpHasInstructionPointerMemory: null,
   dumpWin64CFITestSymbols: null,
 
-  
-  
+  // Constants for crash()
+  // Keep these in sync with nsTestCrasher.cpp!
   CRASH_INVALID_POINTER_DEREF: 0,
   CRASH_PURE_VIRTUAL_CALL: 1,
   CRASH_RUNTIMEABORT: 2,
@@ -38,13 +36,13 @@ var CrashTestUtils = {
   CRASH_EXC_GUARD: 25,
   CRASH_STACK_OVERFLOW: 26,
 
-  
-  
+  // Constants for dumpHasStream()
+  // From google_breakpad/common/minidump_format.h
   MD_THREAD_LIST_STREAM: 3,
   MD_MEMORY_INFO_LIST_STREAM: 16,
 };
 
-
+// Grab APIs from the testcrasher shared library
 const { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
 var dir = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
 var file = dir.clone();
