@@ -2356,6 +2356,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
   if (!aDocElement->HasServoData()) {
     mPresShell->StyleSet()->StyleNewSubtree(aDocElement);
   }
+  aDocElement->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES | NODE_NEEDS_FRAME);
 
   
   
@@ -6376,9 +6377,12 @@ nsCSSFrameConstructor::GetRangeInsertionPoint(nsIContent* aStartChild,
                                               nsIContent* aEndChild,
                                               InsertionKind aInsertionKind) {
   MOZ_ASSERT(aStartChild);
-  MOZ_ASSERT(aStartChild->GetParent());
 
   nsIContent* parent = aStartChild->GetParent();
+  if (!parent) {
+    IssueSingleInsertNofications(aStartChild, aEndChild, aInsertionKind);
+    return {};
+  }
 
   
   
@@ -6868,13 +6872,17 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
     MOZ_ASSERT(isSingleInsert,
                "root node insertion should be a single insertion");
     Element* docElement = mDocument->GetRootElement();
-
     if (aStartChild != docElement) {
       
       return;
     }
 
     MOZ_ASSERT(!mRootElementFrame, "root element frame already created");
+    if (aInsertionKind == InsertionKind::Async) {
+      docElement->SetFlags(NODE_NEEDS_FRAME);
+      LazilyStyleNewChildRange(docElement, nullptr);
+      return;
+    }
 
     
     if (ConstructDocElementFrame(docElement)) {
