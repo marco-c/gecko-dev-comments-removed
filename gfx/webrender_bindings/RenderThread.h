@@ -170,8 +170,8 @@ class RenderThread final {
   
   
   
-  void HandleFrameOneDoc(wr::WindowId aWindowId, bool aRender,
-                         bool aTrackedFrame);
+  void PostHandleFrameOneDoc(wr::WindowId aWindowId, bool aRender,
+                             bool aTrackedFrame);
 
   
   void SetClearColor(wr::WindowId aWindowId, wr::ColorF aColor);
@@ -184,7 +184,7 @@ class RenderThread final {
                            float aWidth, float aHeight);
 
   
-  void RunEvent(wr::WindowId aWindowId, UniquePtr<RendererEvent> aEvent);
+  void PostEvent(wr::WindowId aWindowId, UniquePtr<RendererEvent> aEvent);
 
   
   void UpdateAndRender(wr::WindowId aWindowId, const VsyncId& aStartId,
@@ -315,6 +315,9 @@ class RenderThread final {
   void DeferredRenderTextureHostDestroy();
   void ShutDownTask();
   void InitDeviceTask();
+  void HandleFrameOneDoc(wr::WindowId aWindowId, bool aRender,
+                         bool aTrackedFrame);
+  void RunEvent(wr::WindowId aWindowId, UniquePtr<RendererEvent> aEvent);
   void PostRunnable(already_AddRefed<nsIRunnable> aRunnable);
 
   void DoAccumulateMemoryReport(MemoryReport,
