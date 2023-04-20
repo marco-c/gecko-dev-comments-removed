@@ -11,193 +11,46 @@ add_setup(clickTestSetup);
 
 
 
-async function runEventTest({ mode, openPageOptions = {} }) {
-  await SpecialPowers.pushPrefEnv({
-    set: [["cookiebanners.service.mode", mode]],
-  });
-
-  
-  if (Services.cookieBanners.isEnabled) {
-    insertTestClickRules();
-  }
-
-  let expectEventDetected = mode != Ci.nsICookieBannerService.MODE_DISABLED;
-  let expectEventHandled =
-    mode == Ci.nsICookieBannerService.MODE_REJECT ||
-    mode == Ci.nsICookieBannerService.MODE_REJECT_OR_ACCEPT;
-
-  let eventObservedDetected = false;
-  let eventObservedHandled = false;
-
-  
-  
-  let promiseEventDetected = BrowserTestUtils.waitForEvent(
-    window,
-    "cookiebannerdetected",
-    false,
-    () => {
-      eventObservedDetected = true;
-      return true;
+async function runTest({ mode, openPageOptions = {} }) {
+  let initFn = () => {
+    
+    if (Services.cookieBanners.isEnabled) {
+      insertTestClickRules();
     }
-  );
-  let promiseEventHandled = BrowserTestUtils.waitForEvent(
-    window,
-    "cookiebannerhandled",
-    false,
-    () => {
-      eventObservedHandled = true;
-      return true;
-    }
-  );
-
-  
-  let firstEventPromise;
-  if (expectEventDetected || expectEventHandled) {
-    firstEventPromise = Promise.race([
-      promiseEventHandled,
-      promiseEventDetected,
-    ]);
-  }
+  };
 
   let shouldHandleBanner = mode == Ci.nsICookieBannerService.MODE_REJECT;
   let testURL = openPageOptions.testURL || TEST_PAGE_A;
-
-  await openPageAndVerify({
-    win: window,
-    domain: TEST_DOMAIN_A,
-    testURL,
-    visible: !shouldHandleBanner,
-    expected: shouldHandleBanner ? "OptOut" : "NoClick",
-    keepTabOpen: true,
-    ...openPageOptions, 
-  });
-
-  
-  
-  
-
-  let eventDetected;
-  if (expectEventDetected) {
-    eventDetected = await promiseEventDetected;
-
-    is(
-      eventDetected.type,
-      "cookiebannerdetected",
-      "Should dispatch cookiebannerdetected event."
-    );
-  }
-
-  let eventHandled;
-  if (expectEventHandled) {
-    eventHandled = await promiseEventHandled;
-    is(
-      eventHandled.type,
-      "cookiebannerhandled",
-      "Should dispatch cookiebannerhandled event."
-    );
-  }
-
-  
-  
-  let eventsToTest = [eventDetected, eventHandled].filter(event => !!event);
-
-  for (let event of eventsToTest) {
-    info(`Testing properties of event ${event.type}`);
-
-    let { windowContext } = event.detail;
-    ok(
-      windowContext,
-      `Event ${event.type} detail should contain a WindowContext`
-    );
-
-    let browser = windowContext.browsingContext.top.embedderElement;
-    ok(
-      browser,
-      "WindowContext should have an associated top embedder element."
-    );
-    is(
-      browser.tagName,
-      "browser",
-      "The top embedder element should be a browser"
-    );
-    let chromeWin = browser.ownerGlobal;
-    is(
-      chromeWin,
-      window,
-      "The chrome window associated with the browser should match the window where the cookie banner was handled."
-    );
-    is(
-      chromeWin.gBrowser.selectedBrowser,
-      browser,
-      "The browser associated with the event should be the selected browser."
-    );
-    is(
-      browser.currentURI.spec,
+  let triggerFn = async () => {
+    await openPageAndVerify({
+      win: window,
+      domain: TEST_DOMAIN_A,
       testURL,
-      "The browser's URI spec should match the cookie banner test page."
-    );
-  }
+      visible: !shouldHandleBanner,
+      expected: shouldHandleBanner ? "OptOut" : "NoClick",
+      keepTabOpen: true,
+      ...openPageOptions, 
+    });
+  };
 
-  let firstEvent = await firstEventPromise;
-  is(
-    expectEventDetected || expectEventHandled,
-    !!firstEvent,
-    "Should have observed the first event if banner clicking is enabled."
-  );
-
-  if (expectEventDetected || expectEventHandled) {
-    is(
-      firstEvent.type,
-      "cookiebannerdetected",
-      "Detected event should be dispatched first"
-    );
-  }
-
-  is(
-    eventObservedDetected,
-    expectEventDetected,
-    `Should ${
-      expectEventDetected ? "" : "not "
-    }have observed 'cookiebannerdetected' event for mode ${mode}`
-  );
-  is(
-    eventObservedHandled,
-    expectEventHandled,
-    `Should ${
-      expectEventHandled ? "" : "not "
-    }have observed 'cookiebannerhandled' event for mode ${mode}`
-  );
+  await runEventTest({ mode, initFn, triggerFn, testURL });
 
   
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-
-  
-  
-  
-  for (let eventType of ["cookiebannerdetected", "cookiebannerhandled"]) {
-    let event = new CustomEvent(eventType, {
-      bubbles: true,
-      cancelable: false,
-    });
-    window.windowUtils.dispatchEventToChromeOnly(window, event);
-  }
-
-  await promiseEventDetected;
-  await promiseEventHandled;
 }
 
 
 
 
 add_task(async function test_events_mode_reject() {
-  await runEventTest({ mode: Ci.nsICookieBannerService.MODE_REJECT });
+  await runTest({ mode: Ci.nsICookieBannerService.MODE_REJECT });
 });
 
 
 
 
 add_task(async function test_events_mode_detect_only() {
-  await runEventTest({ mode: Ci.nsICookieBannerService.MODE_DETECT_ONLY });
+  await runTest({ mode: Ci.nsICookieBannerService.MODE_DETECT_ONLY });
 });
 
 
@@ -205,7 +58,7 @@ add_task(async function test_events_mode_detect_only() {
 
 
 add_task(async function test_events_mode_detect_only_opt_in_rule() {
-  await runEventTest({
+  await runTest({
     mode: Ci.nsICookieBannerService.MODE_DETECT_ONLY,
     openPageOptions: {
       
@@ -222,5 +75,5 @@ add_task(async function test_events_mode_detect_only_opt_in_rule() {
 
 
 add_task(async function test_events_mode_disabled() {
-  await runEventTest({ mode: Ci.nsICookieBannerService.MODE_DISABLED });
+  await runTest({ mode: Ci.nsICookieBannerService.MODE_DISABLED });
 });
