@@ -379,12 +379,10 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   
   
   
-  task_queue_->SendTask(
-      [&stats_poller]() {
-        
-        stats_poller.PollStatsAndNotifyObservers();
-      },
-      RTC_FROM_HERE);
+  task_queue_->SendTask([&stats_poller]() {
+    
+    stats_poller.PollStatsAndNotifyObservers();
+  });
   
   
   alice_->DetachAecDump();
