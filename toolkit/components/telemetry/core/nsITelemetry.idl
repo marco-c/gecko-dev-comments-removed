@@ -671,32 +671,4 @@ interface nsITelemetry : nsISupports
 
   [implicit_jscontext]
   Promise gatherMemory();
-
-  
-
-
-
-
-
-
-
-
-
-  [implicit_jscontext]
-  jsval getOriginSnapshot([optional] in boolean aClear);
-
-  
-
-
-
-
-
-
-  [implicit_jscontext]
-  Promise getEncodedOriginSnapshot([optional] in boolean aClear);
-
-  
-
-
-  void clearOrigins();
 };

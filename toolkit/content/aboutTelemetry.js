@@ -414,10 +414,6 @@ var PingPicker = {
       }
     }
 
-    
-    const originSnapshot = Telemetry.getOriginSnapshot(false );
-    ping.payload.origins = originSnapshot;
-
     displayPingData(ping, true);
   },
 
@@ -1959,34 +1955,6 @@ var Events = {
   },
 };
 
-var Origins = {
-  render(aOrigins) {
-    let originSection = document.getElementById("origins");
-    removeAllChildNodes(originSection);
-
-    const headings = [
-      "about-telemetry-origin-origin",
-      "about-telemetry-origin-count",
-    ];
-
-    let hasData = false;
-    for (let [metric, origins] of Object.entries(aOrigins || {})) {
-      if (!Object.entries(origins).length) {
-        continue;
-      }
-      hasData = true;
-      const metricHeader = document.createElement("caption");
-      metricHeader.appendChild(document.createTextNode(metric));
-
-      const table = GenericTable.render(Object.entries(origins), headings);
-      table.appendChild(metricHeader);
-      originSection.appendChild(table);
-    }
-
-    setHasData("origin-telemetry-section", hasData);
-  },
-};
-
 
 
 
@@ -2643,9 +2611,6 @@ function displayRichPingData(ping, updatePayloadList) {
   Events.render(payload);
 
   LateWritesSingleton.renderLateWrites(payload.lateWrites);
-
-  
-  Origins.render(payload.origins);
 
   
   SimpleMeasurements.render(payload);
