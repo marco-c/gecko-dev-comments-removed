@@ -642,14 +642,21 @@ nsSize nsPageFrame::ComputePageSize() const {
           ? this
           : static_cast<nsPageFrame*>(FirstContinuation());
   const StylePageSize& pageSize = frame->PageContentFrame()->StylePage()->mSize;
-
+  nsSize size = PresContext()->GetPageSize();
   if (pageSize.IsSize()) {
     
-    return nsSize{pageSize.AsSize().width.ToAppUnits(),
-                  pageSize.AsSize().height.ToAppUnits()};
+    
+    
+    
+    nscoord cssPageWidth = pageSize.AsSize().width.ToAppUnits();
+    nscoord cssPageHeight = pageSize.AsSize().height.ToAppUnits();
+    if (cssPageWidth > 0 && cssPageHeight > 0) {
+      return nsSize{cssPageWidth, cssPageHeight};
+    }
+    
+    return size;
   }
 
-  nsSize size = PresContext()->GetPageSize();
   if (pageSize.IsOrientation()) {
     
     if (pageSize.AsOrientation() == StylePageSizeOrientation::Portrait) {
