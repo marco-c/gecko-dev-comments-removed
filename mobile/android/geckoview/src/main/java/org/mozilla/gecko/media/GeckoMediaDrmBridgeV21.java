@@ -106,6 +106,7 @@ public class GeckoMediaDrmBridgeV21 implements GeckoMediaDrm {
     mDrm.setPropertyString("securityLevel", "L3");
     
     if (mSchemeUUID.equals(WIDEVINE_SCHEME_UUID)) {
+      mDrm.setPropertyString("privacyMode", "enable");
       mDrm.setPropertyString("sessionSharing", "enable");
     }
   }
