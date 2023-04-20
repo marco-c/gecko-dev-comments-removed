@@ -258,8 +258,8 @@ static ProfileBufferBlockIndex AddMarkerWithOptionalStackToBuffer(
 
 
 
-using OptionalBacktraceCaptureFunction = bool (*)(ProfileChunkedBuffer&,
-                                                  StackCaptureOptions);
+using BacktraceCaptureFunction = bool (*)(ProfileChunkedBuffer&,
+                                          StackCaptureOptions);
 
 
 
@@ -276,8 +276,7 @@ template <typename MarkerType, typename... Ts>
 ProfileBufferBlockIndex AddMarkerToBuffer(
     ProfileChunkedBuffer& aBuffer, const ProfilerString8View& aName,
     const MarkerCategory& aCategory, MarkerOptions&& aOptions,
-    OptionalBacktraceCaptureFunction aOptionalBacktraceCaptureFunction,
-    const Ts&... aTs) {
+    BacktraceCaptureFunction aBacktraceCaptureFunction, const Ts&... aTs) {
   if (aOptions.ThreadId().IsUnspecified()) {
     
     aOptions.Set(MarkerThreadId::CurrentThread());
@@ -289,17 +288,14 @@ ProfileBufferBlockIndex AddMarkerToBuffer(
   }
 
   StackCaptureOptions captureOptions = aOptions.Stack().CaptureOptions();
-  if (captureOptions != StackCaptureOptions::NoStack &&
-      
-      
-      aOptionalBacktraceCaptureFunction != nullptr) {
+  if (captureOptions != StackCaptureOptions::NoStack) {
     
     
     
     
     auto CaptureStackAndAddMarker = [&](ProfileChunkedBuffer& aChunkedBuffer) {
       aOptions.StackRef().UseRequestedBacktrace(
-          aOptionalBacktraceCaptureFunction(aChunkedBuffer, captureOptions)
+          aBacktraceCaptureFunction(aChunkedBuffer, captureOptions)
               ? &aChunkedBuffer
               : nullptr);
       

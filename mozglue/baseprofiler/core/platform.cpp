@@ -1127,12 +1127,6 @@ bool RacyFeatures::IsActiveWithFeature(uint32_t aFeature) {
 }
 
 
-bool RacyFeatures::IsActiveWithoutFeature(uint32_t aFeature) {
-  uint32_t af = sActiveAndFeatures;  
-  return (af & Active) && !(af & aFeature);
-}
-
-
 bool RacyFeatures::IsActiveAndUnpaused() {
   uint32_t af = sActiveAndFeatures;  
   return (af & Active) && !(af & Paused);
@@ -3423,15 +3417,6 @@ bool profiler_feature_active(uint32_t aFeature) {
   return RacyFeatures::IsActiveWithFeature(aFeature);
 }
 
-bool profiler_active_without_feature(uint32_t aFeature) {
-  
-
-  MOZ_RELEASE_ASSERT(CorePS::Exists());
-
-  
-  return RacyFeatures::IsActiveWithoutFeature(aFeature);
-}
-
 void profiler_add_sampled_counter(BaseProfilerCount* aCounter) {
   DEBUG_LOG("profiler_add_sampled_counter(%s)", aCounter->mLabel);
   PSAutoLock lock;
@@ -3686,8 +3671,7 @@ UniquePtr<ProfileChunkedBuffer> profiler_capture_backtrace() {
                            PROFILER);
 
   
-  
-  if (!profiler_active_without_feature(ProfilerFeature::NoMarkerStacks)) {
+  if (!profiler_is_active()) {
     return nullptr;
   }
 

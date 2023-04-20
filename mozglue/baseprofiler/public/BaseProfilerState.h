@@ -181,8 +181,8 @@ class MOZ_RAII AutoProfilerStats {
     MACRO(4, "fileioall", FileIOAll,                                         \
           "Add file I/O from all threads, implies fileio")                   \
                                                                              \
-    MACRO(5, "nomarkerstacks", NoMarkerStacks,                               \
-          "Markers do not capture stacks, to reduce overhead")               \
+    MACRO(5, "noiostacks", NoIOStacks,                                       \
+          "File I/O markers do not capture stacks, to reduce overhead")      \
                                                                              \
     MACRO(6, "screenshots", Screenshots,                                     \
           "Take a snapshot of the window on every composition")              \
@@ -277,19 +277,9 @@ class RacyFeatures {
 
   MFBT_API static void SetSamplingUnpaused();
 
-  [[nodiscard]] MFBT_API static mozilla::Maybe<uint32_t> FeaturesIfActive() {
-    if (uint32_t af = sActiveAndFeatures; af & Active) {
-      
-      return Some(af & ~(Active | Paused | SamplingPaused));
-    }
-    return Nothing();
-  }
-
   [[nodiscard]] MFBT_API static bool IsActive();
 
   [[nodiscard]] MFBT_API static bool IsActiveWithFeature(uint32_t aFeature);
-
-  [[nodiscard]] MFBT_API static bool IsActiveWithoutFeature(uint32_t aFeature);
 
   
   
@@ -377,20 +367,8 @@ MFBT_API bool IsThreadBeingProfiled();
 
 
 
-[[nodiscard]] inline mozilla::Maybe<uint32_t> profiler_features_if_active() {
-  return baseprofiler::detail::RacyFeatures::FeaturesIfActive();
-}
-
-
-
-
 
 [[nodiscard]] MFBT_API bool profiler_feature_active(uint32_t aFeature);
-
-
-
-
-[[nodiscard]] MFBT_API bool profiler_active_without_feature(uint32_t aFeature);
 
 
 

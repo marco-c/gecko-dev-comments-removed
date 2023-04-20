@@ -91,6 +91,7 @@ void ProfilerIOInterposeObserver::Observe(Observation& aObservation) {
   }
 
   AUTO_PROFILER_LABEL("ProfilerIOInterposeObserver", PROFILER);
+  const bool doCaptureStack = !(features & ProfilerFeature::NoIOStacks);
   if (IsMainThread()) {
     
     
@@ -108,7 +109,7 @@ void ProfilerIOInterposeObserver::Observe(Observation& aObservation) {
         type, OTHER,
         MarkerOptions(
             MarkerTiming::Interval(aObservation.Start(), aObservation.End()),
-            MarkerStack::Capture()),
+            MarkerStack::MaybeCapture(doCaptureStack)),
         FileIOMarker,
         
         ProfilerString8View::WrapNullTerminatedString(
@@ -134,7 +135,8 @@ void ProfilerIOInterposeObserver::Observe(Observation& aObservation) {
 
     
     
-    UniquePtr<ProfileChunkedBuffer> backtrace = profiler_capture_backtrace();
+    UniquePtr<ProfileChunkedBuffer> backtrace =
+        doCaptureStack ? profiler_capture_backtrace() : nullptr;
 
     
     PROFILER_MARKER(
@@ -199,7 +201,7 @@ void ProfilerIOInterposeObserver::Observe(Observation& aObservation) {
         type, OTHER,
         MarkerOptions(
             MarkerTiming::Interval(aObservation.Start(), aObservation.End()),
-            MarkerStack::Capture(),
+            doCaptureStack ? MarkerStack::Capture() : MarkerStack::NoStack(),
             
             MarkerThreadId::MainThread()),
         FileIOMarker,

@@ -61,8 +61,8 @@
   MACRO(4, "fileioall", FileIOAll,                                         \
         "Add file I/O from all threads, implies fileio")                   \
                                                                            \
-  MACRO(5, "nomarkerstacks", NoMarkerStacks,                               \
-        "Markers do not capture stacks, to reduce overhead")               \
+  MACRO(5, "noiostacks", NoIOStacks,                                       \
+        "File I/O markers do not capture stacks, to reduce overhead")      \
                                                                            \
   MACRO(6, "screenshots", Screenshots,                                     \
         "Take a snapshot of the window on every composition")              \
@@ -266,11 +266,6 @@ class RacyFeatures {
     return (af & Active) && (af & aFeature);
   }
 
-  [[nodiscard]] static bool IsActiveWithoutFeature(uint32_t aFeature) {
-    uint32_t af = sActiveAndFeatures;  
-    return (af & Active) && !(af & aFeature);
-  }
-
   
   
   
@@ -371,11 +366,6 @@ profiler_features_if_active_and_unpaused() {
 
 
 [[nodiscard]] bool profiler_feature_active(uint32_t aFeature);
-
-
-
-
-[[nodiscard]] bool profiler_active_without_feature(uint32_t aFeature);
 
 
 

@@ -346,9 +346,7 @@ void gecko_profiler_add_marker(
 
   mozilla::StackCaptureOptions captureOptions =
       markerOptions.Stack().CaptureOptions();
-  if (captureOptions != mozilla::StackCaptureOptions::NoStack &&
-      
-      profiler_active_without_feature(ProfilerFeature::NoMarkerStacks)) {
+  if (captureOptions != mozilla::StackCaptureOptions::NoStack) {
     
     
     
