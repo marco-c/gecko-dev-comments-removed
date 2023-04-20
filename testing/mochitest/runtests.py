@@ -2442,7 +2442,7 @@ toolbar#nav-bar {
             "browser.tabs.remote.autostart": options.e10s,
             
             
-            "marionette.log.level": "Trace",
+            "remote.log.level": "Trace",
             
             
             

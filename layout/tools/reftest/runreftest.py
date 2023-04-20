@@ -510,7 +510,7 @@ class RefTest(object):
 
         
         
-        prefs["marionette.log.level"] = "Trace"
+        prefs["remote.log.level"] = "Trace"
 
         
         for v in options.extraPrefs:
