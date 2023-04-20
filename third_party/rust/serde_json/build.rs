@@ -3,6 +3,8 @@ use std::process::Command;
 use std::str::{self, FromStr};
 
 fn main() {
+    println!("cargo:rerun-if-changed=build.rs");
+
     
     
     let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
