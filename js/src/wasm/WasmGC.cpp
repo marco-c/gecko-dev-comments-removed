@@ -222,7 +222,11 @@ void wasm::EmitWasmPreBarrierCall(MacroAssembler& masm, Register instance,
                                   size_t valueOffset) {
   MOZ_ASSERT(valueAddr == PreBarrierReg);
 
-  masm.loadPtr(Address(instance, Instance::offsetOfPreBarrierCode()), scratch);
+  
+  if (valueOffset != 0) {
+    masm.addPtr(Imm32(valueOffset), valueAddr);
+  }
+
 #if defined(DEBUG) && defined(JS_CODEGEN_ARM64)
   
   Label ok;
@@ -231,7 +235,16 @@ void wasm::EmitWasmPreBarrierCall(MacroAssembler& masm, Register instance,
   masm.breakpoint();
   masm.bind(&ok);
 #endif
+
+  
+  
+  masm.loadPtr(Address(instance, Instance::offsetOfPreBarrierCode()), scratch);
   masm.call(scratch);
+
+  
+  if (valueOffset != 0) {
+    masm.subPtr(Imm32(valueOffset), valueAddr);
+  }
 }
 
 void wasm::EmitWasmPostBarrierGuard(MacroAssembler& masm,
