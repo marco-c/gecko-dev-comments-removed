@@ -33,6 +33,7 @@ from .retry import retry_always
 from .retry import retry_any  
 from .retry import retry_if_exception  
 from .retry import retry_if_exception_type  
+from .retry import retry_if_exception_cause_type  
 from .retry import retry_if_not_exception_type  
 from .retry import retry_if_not_result  
 from .retry import retry_if_result  
@@ -63,6 +64,7 @@ from .wait import wait_none
 from .wait import wait_random  
 from .wait import wait_random_exponential  
 from .wait import wait_random_exponential as wait_full_jitter  
+from .wait import wait_exponential_jitter  
 
 
 from .before import before_log  

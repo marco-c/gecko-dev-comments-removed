@@ -7,29 +7,46 @@ and eventually drop this after all usages are changed.
 """
 
 import os
+import sys
 from typing import List
 
-from pip._vendor import appdirs as _appdirs
+from pip._vendor import platformdirs as _appdirs
 
 
 def user_cache_dir(appname: str) -> str:
     return _appdirs.user_cache_dir(appname, appauthor=False)
 
 
+def _macos_user_config_dir(appname: str, roaming: bool = True) -> str:
+    
+    path = _appdirs.user_data_dir(appname, appauthor=False, roaming=roaming)
+    if os.path.isdir(path):
+        return path
+
+    
+    linux_like_path = "~/.config/"
+    if appname:
+        linux_like_path = os.path.join(linux_like_path, appname)
+
+    return os.path.expanduser(linux_like_path)
+
+
 def user_config_dir(appname: str, roaming: bool = True) -> str:
-    path = _appdirs.user_config_dir(appname, appauthor=False, roaming=roaming)
-    if _appdirs.system == "darwin" and not os.path.isdir(path):
-        path = os.path.expanduser("~/.config/")
-        if appname:
-            path = os.path.join(path, appname)
-    return path
+    if sys.platform == "darwin":
+        return _macos_user_config_dir(appname, roaming)
+
+    return _appdirs.user_config_dir(appname, appauthor=False, roaming=roaming)
 
 
 
 
 def site_config_dirs(appname: str) -> List[str]:
+    if sys.platform == "darwin":
+        return [_appdirs.site_data_dir(appname, appauthor=False, multipath=True)]
+
     dirval = _appdirs.site_config_dir(appname, appauthor=False, multipath=True)
-    if _appdirs.system not in ["win32", "darwin"]:
-        
-        return dirval.split(os.pathsep) + ["/etc"]
-    return [dirval]
+    if sys.platform == "win32":
+        return [dirval]
+
+    
+    return dirval.split(os.pathsep) + ["/etc"]

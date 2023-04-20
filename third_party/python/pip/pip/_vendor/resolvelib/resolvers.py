@@ -4,7 +4,6 @@ import operator
 from .providers import AbstractResolver
 from .structs import DirectedGraph, IteratorMapping, build_iter_view
 
-
 RequirementInformation = collections.namedtuple(
     "RequirementInformation", ["requirement", "parent"]
 )
@@ -99,7 +98,7 @@ class ResolutionTooDeep(ResolutionError):
 
 
 
-State = collections.namedtuple("State", "mapping criteria")
+State = collections.namedtuple("State", "mapping criteria backtrack_causes")
 
 
 class Resolution(object):
@@ -131,6 +130,7 @@ class Resolution(object):
         state = State(
             mapping=base.mapping.copy(),
             criteria=base.criteria.copy(),
+            backtrack_causes=base.backtrack_causes[:],
         )
         self._states.append(state)
 
@@ -185,6 +185,7 @@ class Resolution(object):
                 self.state.criteria,
                 operator.attrgetter("information"),
             ),
+            backtrack_causes=self.state.backtrack_causes,
         )
 
     def _is_current_pin_satisfying(self, name, criterion):
@@ -335,7 +336,13 @@ class Resolution(object):
         self._r.starting()
 
         
-        self._states = [State(mapping=collections.OrderedDict(), criteria={})]
+        self._states = [
+            State(
+                mapping=collections.OrderedDict(),
+                criteria={},
+                backtrack_causes=[],
+            )
+        ]
         for r in requirements:
             try:
                 self._add_to_criteria(self.state.criteria, r, parent=None)
@@ -366,14 +373,16 @@ class Resolution(object):
             failure_causes = self._attempt_to_pin_criterion(name)
 
             if failure_causes:
+                causes = [i for c in failure_causes for i in c.information]
                 
                 
+                self._r.resolving_conflicts(causes=causes)
                 success = self._backtrack()
+                self.state.backtrack_causes[:] = causes
 
                 
                 if not success:
-                    causes = [i for c in failure_causes for i in c.information]
-                    raise ResolutionImpossible(causes)
+                    raise ResolutionImpossible(self.state.backtrack_causes)
             else:
                 
                 self._push_new_state()

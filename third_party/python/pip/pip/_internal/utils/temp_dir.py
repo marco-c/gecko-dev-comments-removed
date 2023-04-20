@@ -4,7 +4,7 @@ import logging
 import os.path
 import tempfile
 from contextlib import ExitStack, contextmanager
-from typing import Any, Dict, Iterator, Optional, TypeVar, Union
+from typing import Any, Dict, Generator, Optional, TypeVar, Union
 
 from pip._internal.utils.misc import enum, rmtree
 
@@ -22,12 +22,11 @@ tempdir_kinds = enum(
 )
 
 
-_tempdir_manager = None  
+_tempdir_manager: Optional[ExitStack] = None
 
 
 @contextmanager
-def global_tempdir_manager():
-    
+def global_tempdir_manager() -> Generator[None, None, None]:
     global _tempdir_manager
     with ExitStack() as stack:
         old_tempdir_manager, _tempdir_manager = _tempdir_manager, stack
@@ -40,31 +39,27 @@ def global_tempdir_manager():
 class TempDirectoryTypeRegistry:
     """Manages temp directory behavior"""
 
-    def __init__(self):
-        
-        self._should_delete = {}  
+    def __init__(self) -> None:
+        self._should_delete: Dict[str, bool] = {}
 
-    def set_delete(self, kind, value):
-        
+    def set_delete(self, kind: str, value: bool) -> None:
         """Indicate whether a TempDirectory of the given kind should be
         auto-deleted.
         """
         self._should_delete[kind] = value
 
-    def get_delete(self, kind):
-        
+    def get_delete(self, kind: str) -> bool:
         """Get configured auto-delete flag for a given TempDirectory type,
         default True.
         """
         return self._should_delete.get(kind, True)
 
 
-_tempdir_registry = None  
+_tempdir_registry: Optional[TempDirectoryTypeRegistry] = None
 
 
 @contextmanager
-def tempdir_registry():
-    
+def tempdir_registry() -> Generator[TempDirectoryTypeRegistry, None, None]:
     """Provides a scoped global tempdir registry that can be used to dictate
     whether directories should be deleted.
     """
@@ -107,10 +102,10 @@ class TempDirectory:
 
     def __init__(
         self,
-        path=None,  
-        delete=_default,  
-        kind="temp",  
-        globally_managed=False,  
+        path: Optional[str] = None,
+        delete: Union[bool, None, _Default] = _default,
+        kind: str = "temp",
+        globally_managed: bool = False,
     ):
         super().__init__()
 
@@ -139,21 +134,17 @@ class TempDirectory:
             _tempdir_manager.enter_context(self)
 
     @property
-    def path(self):
-        
+    def path(self) -> str:
         assert not self._deleted, f"Attempted to access deleted path: {self._path}"
         return self._path
 
-    def __repr__(self):
-        
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__} {self.path!r}>"
 
-    def __enter__(self):
-        
+    def __enter__(self: _T) -> _T:
         return self
 
-    def __exit__(self, exc, value, tb):
-        
+    def __exit__(self, exc: Any, value: Any, tb: Any) -> None:
         if self.delete is not None:
             delete = self.delete
         elif _tempdir_registry:
@@ -164,8 +155,7 @@ class TempDirectory:
         if delete:
             self.cleanup()
 
-    def _create(self, kind):
-        
+    def _create(self, kind: str) -> str:
         """Create a temporary directory and store its path in self.path"""
         
         
@@ -175,8 +165,7 @@ class TempDirectory:
         logger.debug("Created temporary directory: %s", path)
         return path
 
-    def cleanup(self):
-        
+    def cleanup(self) -> None:
         """Remove the temporary directory created and reset state"""
         self._deleted = True
         if not os.path.exists(self._path):
@@ -206,14 +195,12 @@ class AdjacentTempDirectory(TempDirectory):
     
     LEADING_CHARS = "-~.=%0123456789"
 
-    def __init__(self, original, delete=None):
-        
+    def __init__(self, original: str, delete: Optional[bool] = None) -> None:
         self.original = original.rstrip("/\\")
         super().__init__(delete=delete)
 
     @classmethod
-    def _generate_names(cls, name):
-        
+    def _generate_names(cls, name: str) -> Generator[str, None, None]:
         """Generates a series of temporary names.
 
         The algorithm replaces the leading characters in the name
@@ -238,8 +225,7 @@ class AdjacentTempDirectory(TempDirectory):
                 if new_name != name:
                     yield new_name
 
-    def _create(self, kind):
-        
+    def _create(self, kind: str) -> str:
         root, name = os.path.split(self.original)
         for candidate in self._generate_names(name):
             path = os.path.join(root, candidate)

@@ -188,6 +188,7 @@ def _cert_array_from_pem(pem_bundle):
         
         
         CoreFoundation.CFRelease(cert_array)
+        raise
 
     return cert_array
 

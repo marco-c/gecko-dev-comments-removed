@@ -1,3 +1,7 @@
+
+
+
+
 import base64
 import io
 import json
@@ -17,24 +21,18 @@ def _b64_decode_str(s):
     return _b64_decode_bytes(s).decode("utf8")
 
 
-class Serializer(object):
+_default_body_read = object()
 
+
+class Serializer(object):
     def dumps(self, request, response, body=None):
         response_headers = CaseInsensitiveDict(response.headers)
 
         if body is None:
+            
+            
+            
             body = response.read(decode_content=False)
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
             response._fp = io.BytesIO(body)
 
         
@@ -46,7 +44,7 @@ class Serializer(object):
         
         data = {
             u"response": {
-                u"body": body,
+                u"body": body,  
                 u"headers": dict(
                     (text_type(k), text_type(v)) for k, v in response.headers.items()
                 ),
@@ -71,7 +69,7 @@ class Serializer(object):
 
         return b",".join([b"cc=4", msgpack.dumps(data, use_bin_type=True)])
 
-    def loads(self, request, data):
+    def loads(self, request, data, body_file=None):
         
         if not data:
             return
@@ -94,14 +92,14 @@ class Serializer(object):
 
         
         try:
-            return getattr(self, "_loads_v{}".format(ver))(request, data)
+            return getattr(self, "_loads_v{}".format(ver))(request, data, body_file)
 
         except AttributeError:
             
             
             return
 
-    def prepare_response(self, request, cached):
+    def prepare_response(self, request, cached, body_file=None):
         """Verify our vary headers match and construct a real urllib3
         HTTPResponse object.
         """
@@ -127,7 +125,10 @@ class Serializer(object):
         cached["response"]["headers"] = headers
 
         try:
-            body = io.BytesIO(body_raw)
+            if body_file is None:
+                body = io.BytesIO(body_raw)
+            else:
+                body = body_file
         except TypeError:
             
             
@@ -139,21 +140,22 @@ class Serializer(object):
 
         return HTTPResponse(body=body, preload_content=False, **cached["response"])
 
-    def _loads_v0(self, request, data):
+    def _loads_v0(self, request, data, body_file=None):
         
         
         
         return
 
-    def _loads_v1(self, request, data):
+    def _loads_v1(self, request, data, body_file=None):
         try:
             cached = pickle.loads(data)
         except ValueError:
             return
 
-        return self.prepare_response(request, cached)
+        return self.prepare_response(request, cached, body_file)
 
-    def _loads_v2(self, request, data):
+    def _loads_v2(self, request, data, body_file=None):
+        assert body_file is None
         try:
             cached = json.loads(zlib.decompress(data).decode("utf8"))
         except (ValueError, zlib.error):
@@ -171,18 +173,18 @@ class Serializer(object):
             for k, v in cached["vary"].items()
         )
 
-        return self.prepare_response(request, cached)
+        return self.prepare_response(request, cached, body_file)
 
-    def _loads_v3(self, request, data):
+    def _loads_v3(self, request, data, body_file):
         
         
         
         return
 
-    def _loads_v4(self, request, data):
+    def _loads_v4(self, request, data, body_file=None):
         try:
             cached = msgpack.loads(data, raw=False)
         except ValueError:
             return
 
-        return self.prepare_response(request, cached)
+        return self.prepare_response(request, cached, body_file)

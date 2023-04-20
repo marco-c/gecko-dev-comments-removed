@@ -9,8 +9,13 @@ class SelectionPreferences:
     and installing files.
     """
 
-    __slots__ = ['allow_yanked', 'allow_all_prereleases', 'format_control',
-                 'prefer_binary', 'ignore_requires_python']
+    __slots__ = [
+        "allow_yanked",
+        "allow_all_prereleases",
+        "format_control",
+        "prefer_binary",
+        "ignore_requires_python",
+    ]
 
     
     

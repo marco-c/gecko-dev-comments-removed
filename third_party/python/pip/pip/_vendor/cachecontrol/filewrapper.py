@@ -1,4 +1,9 @@
-from io import BytesIO
+
+
+
+
+from tempfile import NamedTemporaryFile
+import mmap
 
 
 class CallbackFileWrapper(object):
@@ -11,10 +16,17 @@ class CallbackFileWrapper(object):
 
     This class uses members with a double underscore (__) leading prefix so as
     not to accidentally shadow an attribute.
+
+    The data is stored in a temporary file until it is all available.  As long
+    as the temporary files directory is disk-based (sometimes it's a
+    memory-backed-``tmpfs`` on Linux), data will be unloaded to disk if memory
+    pressure is high.  For small files the disk usually won't be used at all,
+    it'll all be in the filesystem memory cache, so there should be no
+    performance impact.
     """
 
     def __init__(self, fp, callback):
-        self.__buf = BytesIO()
+        self.__buf = NamedTemporaryFile("rb+", delete=True)
         self.__fp = fp
         self.__callback = callback
 
@@ -49,7 +61,19 @@ class CallbackFileWrapper(object):
 
     def _close(self):
         if self.__callback:
-            self.__callback(self.__buf.getvalue())
+            if self.__buf.tell() == 0:
+                
+                result = b""
+            else:
+                
+                
+                
+                
+                self.__buf.seek(0, 0)
+                result = memoryview(
+                    mmap.mmap(self.__buf.fileno(), 0, access=mmap.ACCESS_READ)
+                )
+            self.__callback(result)
 
         
         
@@ -58,9 +82,16 @@ class CallbackFileWrapper(object):
         
         self.__callback = None
 
+        
+        
+        self.__buf.close()
+
     def read(self, amt=None):
         data = self.__fp.read(amt)
-        self.__buf.write(data)
+        if data:
+            
+            
+            self.__buf.write(data)
         if self.__is_fp_closed():
             self._close()
 

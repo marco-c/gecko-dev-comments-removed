@@ -1,6 +1,11 @@
-"""A lil' TOML parser."""
+
+
+
 
 __all__ = ("loads", "load", "TOMLDecodeError")
-__version__ = "1.0.3"  
+__version__ = "2.0.1"  
 
-from pip._vendor.tomli._parser import TOMLDecodeError, load, loads
+from ._parser import TOMLDecodeError, load, loads
+
+
+TOMLDecodeError.__module__ = __name__

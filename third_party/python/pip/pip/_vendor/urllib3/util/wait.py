@@ -42,7 +42,6 @@ if sys.version_info >= (3, 5):
     def _retry_on_intr(fn, timeout):
         return fn(timeout)
 
-
 else:
     
     def _retry_on_intr(fn, timeout):

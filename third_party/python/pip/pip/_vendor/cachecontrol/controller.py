@@ -1,3 +1,7 @@
+
+
+
+
 """
 The httplib2 algorithms ported for use with requests.
 """
@@ -9,7 +13,7 @@ from email.utils import parsedate_tz
 
 from pip._vendor.requests.structures import CaseInsensitiveDict
 
-from .cache import DictCache
+from .cache import DictCache, SeparateBodyBaseCache
 from .serialize import Serializer
 
 
@@ -17,19 +21,20 @@ logger = logging.getLogger(__name__)
 
 URI = re.compile(r"^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?")
 
+PERMANENT_REDIRECT_STATUSES = (301, 308)
+
 
 def parse_uri(uri):
     """Parses a URI using the regex given in Appendix B of RFC 3986.
 
-        (scheme, authority, path, query, fragment) = parse_uri(uri)
+    (scheme, authority, path, query, fragment) = parse_uri(uri)
     """
     groups = URI.match(uri).groups()
     return (groups[1], groups[3], groups[4], groups[6], groups[8])
 
 
 class CacheController(object):
-    """An interface to see if request should cached or not.
-    """
+    """An interface to see if request should cached or not."""
 
     def __init__(
         self, cache=None, cache_etags=True, serializer=None, status_codes=None
@@ -37,7 +42,7 @@ class CacheController(object):
         self.cache = DictCache() if cache is None else cache
         self.cache_etags = cache_etags
         self.serializer = serializer or Serializer()
-        self.cacheable_status_codes = status_codes or (200, 203, 300, 301)
+        self.cacheable_status_codes = status_codes or (200, 203, 300, 301, 308)
 
     @classmethod
     def _urlnorm(cls, uri):
@@ -141,8 +146,13 @@ class CacheController(object):
             logger.debug("No cache entry available")
             return False
 
+        if isinstance(self.cache, SeparateBodyBaseCache):
+            body_file = self.cache.get_body(cache_url)
+        else:
+            body_file = None
+
         
-        resp = self.serializer.loads(request, cache_data)
+        resp = self.serializer.loads(request, cache_data, body_file)
         if not resp:
             logger.warning("Cache entry deserialization failed, entry ignored")
             return False
@@ -155,9 +165,10 @@ class CacheController(object):
         
         
         
-        if resp.status == 301:
+        
+        if int(resp.status) in PERMANENT_REDIRECT_STATUSES:
             msg = (
-                'Returning cached "301 Moved Permanently" response '
+                "Returning cached permanent redirect response "
                 "(ignoring date and etag information)"
             )
             logger.debug(msg)
@@ -244,6 +255,26 @@ class CacheController(object):
 
         return new_headers
 
+    def _cache_set(self, cache_url, request, response, body=None, expires_time=None):
+        """
+        Store the data in the cache.
+        """
+        if isinstance(self.cache, SeparateBodyBaseCache):
+            
+            
+            self.cache.set(
+                cache_url,
+                self.serializer.dumps(request, response, b""),
+                expires=expires_time,
+            )
+            self.cache.set_body(cache_url, body)
+        else:
+            self.cache.set(
+                cache_url,
+                self.serializer.dumps(request, response, body),
+                expires=expires_time,
+            )
+
     def cache_response(self, request, response, body=None, status_codes=None):
         """
         Algorithm for caching requests.
@@ -260,6 +291,11 @@ class CacheController(object):
             return
 
         response_headers = CaseInsensitiveDict(response.headers)
+
+        if "date" in response_headers:
+            date = calendar.timegm(parsedate_tz(response_headers["date"]))
+        else:
+            date = 0
 
         
         
@@ -304,35 +340,62 @@ class CacheController(object):
 
         
         if self.cache_etags and "etag" in response_headers:
+            expires_time = 0
+            if response_headers.get("expires"):
+                expires = parsedate_tz(response_headers["expires"])
+                if expires is not None:
+                    expires_time = calendar.timegm(expires) - date
+
+            expires_time = max(expires_time, 14 * 86400)
+
+            logger.debug("etag object cached for {0} seconds".format(expires_time))
             logger.debug("Caching due to etag")
-            self.cache.set(
-                cache_url, self.serializer.dumps(request, response, body=body)
-            )
+            self._cache_set(cache_url, request, response, body, expires_time)
 
         
         
-        elif response.status == 301:
-            logger.debug("Caching permanant redirect")
-            self.cache.set(cache_url, self.serializer.dumps(request, response))
+        elif int(response.status) in PERMANENT_REDIRECT_STATUSES:
+            logger.debug("Caching permanent redirect")
+            self._cache_set(cache_url, request, response, b"")
 
         
         
         
         elif "date" in response_headers:
+            date = calendar.timegm(parsedate_tz(response_headers["date"]))
             
             if "max-age" in cc and cc["max-age"] > 0:
                 logger.debug("Caching b/c date exists and max-age > 0")
-                self.cache.set(
-                    cache_url, self.serializer.dumps(request, response, body=body)
+                expires_time = cc["max-age"]
+                self._cache_set(
+                    cache_url,
+                    request,
+                    response,
+                    body,
+                    expires_time,
                 )
 
             
             
             elif "expires" in response_headers:
                 if response_headers["expires"]:
-                    logger.debug("Caching b/c of expires header")
-                    self.cache.set(
-                        cache_url, self.serializer.dumps(request, response, body=body)
+                    expires = parsedate_tz(response_headers["expires"])
+                    if expires is not None:
+                        expires_time = calendar.timegm(expires) - date
+                    else:
+                        expires_time = None
+
+                    logger.debug(
+                        "Caching b/c of expires header. expires in {0} seconds".format(
+                            expires_time
+                        )
+                    )
+                    self._cache_set(
+                        cache_url,
+                        request,
+                        response,
+                        body,
+                        expires_time,
                     )
 
     def update_cached_response(self, request, response):
@@ -371,6 +434,6 @@ class CacheController(object):
         cached_response.status = 200
 
         
-        self.cache.set(cache_url, self.serializer.dumps(request, cached_response))
+        self._cache_set(cache_url, request, cached_response)
 
         return cached_response

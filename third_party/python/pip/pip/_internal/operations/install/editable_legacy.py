@@ -12,22 +12,21 @@ logger = logging.getLogger(__name__)
 
 
 def install_editable(
-    install_options,  
-    global_options,  
-    prefix,  
-    home,  
-    use_user_site,  
-    name,  
-    setup_py_path,  
-    isolated,  
-    build_env,  
-    unpacked_source_directory,  
-):
-    
+    install_options: List[str],
+    global_options: Sequence[str],
+    prefix: Optional[str],
+    home: Optional[str],
+    use_user_site: bool,
+    name: str,
+    setup_py_path: str,
+    isolated: bool,
+    build_env: BuildEnvironment,
+    unpacked_source_directory: str,
+) -> None:
     """Install a package in editable mode. Most arguments are pass-through
     to setuptools.
     """
-    logger.info('Running setup.py develop for %s', name)
+    logger.info("Running setup.py develop for %s", name)
 
     args = make_setuptools_develop_args(
         setup_py_path,
@@ -43,5 +42,6 @@ def install_editable(
         with build_env:
             call_subprocess(
                 args,
+                command_desc="python setup.py develop",
                 cwd=unpacked_source_directory,
             )

@@ -8,10 +8,9 @@ import logging
 import mimetypes
 import os
 import shutil
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional
 
 from pip._vendor.packaging.utils import canonicalize_name
-from pip._vendor.pkg_resources import Distribution
 
 from pip._internal.distributions import make_distribution_for_install_requirement
 from pip._internal.distributions.installed import InstalledDistribution
@@ -20,11 +19,14 @@ from pip._internal.exceptions import (
     HashMismatch,
     HashUnpinned,
     InstallationError,
+    MetadataInconsistent,
     NetworkConnectionError,
     PreviousBuildDirError,
     VcsHashUnsupported,
 )
 from pip._internal.index.package_finder import PackageFinder
+from pip._internal.metadata import BaseDistribution, get_metadata_distribution
+from pip._internal.models.direct_url import ArchiveInfo
 from pip._internal.models.link import Link
 from pip._internal.models.wheel import Wheel
 from pip._internal.network.download import BatchDownloader, Downloader
@@ -33,13 +35,20 @@ from pip._internal.network.lazy_wheel import (
     dist_from_wheel_url,
 )
 from pip._internal.network.session import PipSession
+from pip._internal.operations.build.build_tracker import BuildTracker
 from pip._internal.req.req_install import InstallRequirement
-from pip._internal.req.req_tracker import RequirementTracker
-from pip._internal.utils.deprecation import deprecated
-from pip._internal.utils.filesystem import copy2_fixed
+from pip._internal.utils.direct_url_helpers import (
+    direct_url_for_editable,
+    direct_url_from_link,
+)
 from pip._internal.utils.hashes import Hashes, MissingHashes
 from pip._internal.utils.logging import indent_log
-from pip._internal.utils.misc import display_path, hide_url, is_installable_dir, rmtree
+from pip._internal.utils.misc import (
+    display_path,
+    hash_file,
+    hide_url,
+    is_installable_dir,
+)
 from pip._internal.utils.temp_dir import TempDirectory
 from pip._internal.utils.unpacking import unpack_file
 from pip._internal.vcs import vcs
@@ -48,30 +57,29 @@ logger = logging.getLogger(__name__)
 
 
 def _get_prepared_distribution(
-    req,  
-    req_tracker,  
-    finder,  
-    build_isolation,  
-):
-    
+    req: InstallRequirement,
+    build_tracker: BuildTracker,
+    finder: PackageFinder,
+    build_isolation: bool,
+    check_build_deps: bool,
+) -> BaseDistribution:
     """Prepare a distribution for installation."""
     abstract_dist = make_distribution_for_install_requirement(req)
-    with req_tracker.track(req):
-        abstract_dist.prepare_distribution_metadata(finder, build_isolation)
-    return abstract_dist.get_pkg_resources_distribution()
+    with build_tracker.track(req):
+        abstract_dist.prepare_distribution_metadata(
+            finder, build_isolation, check_build_deps
+        )
+    return abstract_dist.get_metadata_distribution()
 
 
-def unpack_vcs_link(link, location):
-    
+def unpack_vcs_link(link: Link, location: str, verbosity: int) -> None:
     vcs_backend = vcs.get_backend_for_scheme(link.scheme)
     assert vcs_backend is not None
-    vcs_backend.unpack(location, url=hide_url(link.url))
+    vcs_backend.unpack(location, url=hide_url(link.url), verbosity=verbosity)
 
 
 class File:
-
-    def __init__(self, path, content_type):
-        
+    def __init__(self, path: str, content_type: Optional[str]) -> None:
         self.path = path
         if content_type is None:
             self.content_type = mimetypes.guess_type(path)[0]
@@ -80,19 +88,16 @@ class File:
 
 
 def get_http_url(
-    link,  
-    download,  
-    download_dir=None,  
-    hashes=None,  
-):
-    
+    link: Link,
+    download: Downloader,
+    download_dir: Optional[str] = None,
+    hashes: Optional[Hashes] = None,
+) -> File:
     temp_dir = TempDirectory(kind="unpack", globally_managed=True)
     
     already_downloaded_path = None
     if download_dir:
-        already_downloaded_path = _check_download_dir(
-            link, download_dir, hashes
-        )
+        already_downloaded_path = _check_download_dir(link, download_dir, hashes)
 
     if already_downloaded_path:
         from_path = already_downloaded_path
@@ -106,72 +111,14 @@ def get_http_url(
     return File(from_path, content_type)
 
 
-def _copy2_ignoring_special_files(src, dest):
-    
-    """Copying special files is not supported, but as a convenience to users
-    we skip errors copying them. This supports tools that may create e.g.
-    socket files in the project source directory.
-    """
-    try:
-        copy2_fixed(src, dest)
-    except shutil.SpecialFileError as e:
-        
-        
-        
-        
-        logger.warning(
-            "Ignoring special file error '%s' encountered copying %s to %s.",
-            str(e),
-            src,
-            dest,
-        )
-
-
-def _copy_source_tree(source, target):
-    
-    target_abspath = os.path.abspath(target)
-    target_basename = os.path.basename(target_abspath)
-    target_dirname = os.path.dirname(target_abspath)
-
-    def ignore(d, names):
-        
-        skipped = []  
-        if d == source:
-            
-            
-            
-            
-            skipped += ['.tox', '.nox']
-        if os.path.abspath(d) == target_dirname:
-            
-            
-            
-            skipped += [target_basename]
-        return skipped
-
-    shutil.copytree(
-        source,
-        target,
-        ignore=ignore,
-        symlinks=True,
-        copy_function=_copy2_ignoring_special_files,
-    )
-
-
 def get_file_url(
-    link,  
-    download_dir=None,  
-    hashes=None  
-):
-    
-    """Get file and optionally check its hash.
-    """
+    link: Link, download_dir: Optional[str] = None, hashes: Optional[Hashes] = None
+) -> File:
+    """Get file and optionally check its hash."""
     
     already_downloaded_path = None
     if download_dir:
-        already_downloaded_path = _check_download_dir(
-            link, download_dir, hashes
-        )
+        already_downloaded_path = _check_download_dir(link, download_dir, hashes)
 
     if already_downloaded_path:
         from_path = already_downloaded_path
@@ -189,13 +136,13 @@ def get_file_url(
 
 
 def unpack_url(
-    link,  
-    location,  
-    download,  
-    download_dir=None,  
-    hashes=None,  
-):
-    
+    link: Link,
+    location: str,
+    download: Downloader,
+    verbosity: int,
+    download_dir: Optional[str] = None,
+    hashes: Optional[Hashes] = None,
+) -> Optional[File]:
     """Unpack link into location, downloading if required.
 
     :param hashes: A Hashes object, one of whose embedded hashes must match,
@@ -205,30 +152,10 @@ def unpack_url(
     """
     
     if link.is_vcs:
-        unpack_vcs_link(link, location)
+        unpack_vcs_link(link, location, verbosity=verbosity)
         return None
 
-    
-    
-    
-    
-    
-    
-    if link.is_existing_dir():
-        deprecated(
-            "A future pip version will change local packages to be built "
-            "in-place without first copying to a temporary directory. "
-            "We recommend you use --use-feature=in-tree-build to test "
-            "your packages with this new behavior before it becomes the "
-            "default.\n",
-            replacement=None,
-            gone_in="21.3",
-            issue=7555
-        )
-        if os.path.isdir(location):
-            rmtree(location)
-        _copy_source_tree(link.file_path, location)
-        return None
+    assert not link.is_existing_dir()
 
     
     if link.is_file:
@@ -251,10 +178,11 @@ def unpack_url(
     return file
 
 
-def _check_download_dir(link, download_dir, hashes):
-    
-    """ Check download_dir for previously downloaded file with correct hash
-        If a correct file is found return its path else None
+def _check_download_dir(
+    link: Link, download_dir: str, hashes: Optional[Hashes]
+) -> Optional[str]:
+    """Check download_dir for previously downloaded file with correct hash
+    If a correct file is found return its path else None
     """
     download_path = os.path.join(download_dir, link.filename)
 
@@ -262,15 +190,14 @@ def _check_download_dir(link, download_dir, hashes):
         return None
 
     
-    logger.info('File was already downloaded %s', download_path)
+    logger.info("File was already downloaded %s", download_path)
     if hashes:
         try:
             hashes.check_against_path(download_path)
         except HashMismatch:
             logger.warning(
-                'Previously-downloaded file %s has bad hash. '
-                'Re-downloading.',
-                download_path
+                "Previously-downloaded file %s has bad hash. Re-downloading.",
+                download_path,
             )
             os.unlink(download_path)
             return None
@@ -278,30 +205,29 @@ def _check_download_dir(link, download_dir, hashes):
 
 
 class RequirementPreparer:
-    """Prepares a Requirement
-    """
+    """Prepares a Requirement"""
 
     def __init__(
         self,
-        build_dir,  
-        download_dir,  
-        src_dir,  
-        build_isolation,  
-        req_tracker,  
-        session,  
-        progress_bar,  
-        finder,  
-        require_hashes,  
-        use_user_site,  
-        lazy_wheel,  
-        in_tree_build,  
-    ):
-        
+        build_dir: str,
+        download_dir: Optional[str],
+        src_dir: str,
+        build_isolation: bool,
+        check_build_deps: bool,
+        build_tracker: BuildTracker,
+        session: PipSession,
+        progress_bar: str,
+        finder: PackageFinder,
+        require_hashes: bool,
+        use_user_site: bool,
+        lazy_wheel: bool,
+        verbosity: int,
+    ) -> None:
         super().__init__()
 
         self.src_dir = src_dir
         self.build_dir = build_dir
-        self.req_tracker = req_tracker
+        self.build_tracker = build_tracker
         self._session = session
         self._download = Downloader(session, progress_bar)
         self._batch_download = BatchDownloader(session, progress_bar)
@@ -315,6 +241,9 @@ class RequirementPreparer:
         self.build_isolation = build_isolation
 
         
+        self.check_build_deps = check_build_deps
+
+        
         self.require_hashes = require_hashes
 
         
@@ -324,16 +253,15 @@ class RequirementPreparer:
         self.use_lazy_wheel = lazy_wheel
 
         
-        self.in_tree_build = in_tree_build
+        self.verbosity = verbosity
 
         
-        self._downloaded = {}  
+        self._downloaded: Dict[str, str] = {}
 
         
         self._previous_requirement_header = ("", "")
 
-    def _log_preparing_link(self, req):
-        
+    def _log_preparing_link(self, req: InstallRequirement) -> None:
         """Provide context for the requirement being prepared."""
         if req.link.is_file and not req.original_link_is_in_wheel_cache:
             message = "Processing %s"
@@ -350,8 +278,9 @@ class RequirementPreparer:
             with indent_log():
                 logger.info("Using cached %s", req.link.filename)
 
-    def _ensure_link_req_src_dir(self, req, parallel_builds):
-        
+    def _ensure_link_req_src_dir(
+        self, req: InstallRequirement, parallel_builds: bool
+    ) -> None:
         """Ensure source_dir of a linked InstallRequirement."""
         
         if req.link.is_wheel:
@@ -359,7 +288,7 @@ class RequirementPreparer:
             
             return
         assert req.source_dir is None
-        if req.link.is_existing_dir() and self.in_tree_build:
+        if req.link.is_existing_dir():
             
             req.source_dir = req.link.file_path
             return
@@ -376,6 +305,7 @@ class RequirementPreparer:
         
         
         
+        
         if is_installable_dir(req.source_dir):
             raise PreviousBuildDirError(
                 "pip can't proceed with requirements '{}' due to a"
@@ -385,8 +315,7 @@ class RequirementPreparer:
                 "Please delete it and try again.".format(req, req.source_dir)
             )
 
-    def _get_linked_req_hashes(self, req):
-        
+    def _get_linked_req_hashes(self, req: InstallRequirement) -> Hashes:
         
         
         
@@ -418,18 +347,72 @@ class RequirementPreparer:
         
         return req.hashes(trust_internet=False) or MissingHashes()
 
-    def _fetch_metadata_using_lazy_wheel(self, link):
-        
-        """Fetch metadata using lazy wheel, if possible."""
-        if not self.use_lazy_wheel:
-            return None
+    def _fetch_metadata_only(
+        self,
+        req: InstallRequirement,
+    ) -> Optional[BaseDistribution]:
         if self.require_hashes:
-            logger.debug('Lazy wheel is not used as hash checking is required')
+            logger.debug(
+                "Metadata-only fetching is not used as hash checking is required",
+            )
+            return None
+        
+        return self._fetch_metadata_using_link_data_attr(
+            req
+        ) or self._fetch_metadata_using_lazy_wheel(req.link)
+
+    def _fetch_metadata_using_link_data_attr(
+        self,
+        req: InstallRequirement,
+    ) -> Optional[BaseDistribution]:
+        """Fetch metadata from the data-dist-info-metadata attribute, if possible."""
+        
+        metadata_link = req.link.metadata_link()
+        if metadata_link is None:
+            return None
+        assert req.req is not None
+        logger.info(
+            "Obtaining dependency information for %s from %s",
+            req.req,
+            metadata_link,
+        )
+        
+        metadata_file = get_http_url(
+            metadata_link,
+            self._download,
+            hashes=metadata_link.as_hashes(),
+        )
+        with open(metadata_file.path, "rb") as f:
+            metadata_contents = f.read()
+        
+        metadata_dist = get_metadata_distribution(
+            metadata_contents,
+            req.link.filename,
+            req.req.name,
+        )
+        
+        
+        
+        
+        
+        
+        if metadata_dist.raw_name != req.req.name:
+            raise MetadataInconsistent(
+                req, "Name", req.req.name, metadata_dist.raw_name
+            )
+        return metadata_dist
+
+    def _fetch_metadata_using_lazy_wheel(
+        self,
+        link: Link,
+    ) -> Optional[BaseDistribution]:
+        """Fetch metadata using lazy wheel, if possible."""
+        
+        if not self.use_lazy_wheel:
             return None
         if link.is_file or not link.is_wheel:
             logger.debug(
-                'Lazy wheel is not used as '
-                '%r does not points to a remote wheel',
+                "Lazy wheel is not used as %r does not point to a remote wheel",
                 link,
             )
             return None
@@ -437,22 +420,22 @@ class RequirementPreparer:
         wheel = Wheel(link.filename)
         name = canonicalize_name(wheel.name)
         logger.info(
-            'Obtaining dependency information from %s %s',
-            name, wheel.version,
+            "Obtaining dependency information from %s %s",
+            name,
+            wheel.version,
         )
-        url = link.url.split('#', 1)[0]
+        url = link.url.split("#", 1)[0]
         try:
             return dist_from_wheel_url(name, url, self._session)
         except HTTPRangeRequestUnsupported:
-            logger.debug('%s does not support range requests', url)
+            logger.debug("%s does not support range requests", url)
             return None
 
     def _complete_partial_requirements(
         self,
-        partially_downloaded_reqs,  
-        parallel_builds=False,      
-    ):
-        
+        partially_downloaded_reqs: Iterable[InstallRequirement],
+        parallel_builds: bool = False,
+    ) -> None:
         """Download any requirements which were only fetched by metadata."""
         
         
@@ -461,7 +444,7 @@ class RequirementPreparer:
         
         
         
-        links_to_fully_download = {}  
+        links_to_fully_download: Dict[Link, InstallRequirement] = {}
         for req in partially_downloaded_reqs:
             assert req.link
             links_to_fully_download[req.link] = req
@@ -480,35 +463,36 @@ class RequirementPreparer:
         for req in partially_downloaded_reqs:
             self._prepare_linked_requirement(req, parallel_builds)
 
-    def prepare_linked_requirement(self, req, parallel_builds=False):
-        
+    def prepare_linked_requirement(
+        self, req: InstallRequirement, parallel_builds: bool = False
+    ) -> BaseDistribution:
         """Prepare a requirement to be obtained from req.link."""
         assert req.link
-        link = req.link
         self._log_preparing_link(req)
         with indent_log():
             
             
             file_path = None
-            if self.download_dir is not None and link.is_wheel:
+            if self.download_dir is not None and req.link.is_wheel:
                 hashes = self._get_linked_req_hashes(req)
                 file_path = _check_download_dir(req.link, self.download_dir, hashes)
 
             if file_path is not None:
                 
-                self._downloaded[req.link.url] = file_path, None
+                self._downloaded[req.link.url] = file_path
             else:
                 
-                wheel_dist = self._fetch_metadata_using_lazy_wheel(link)
-                if wheel_dist is not None:
+                metadata_dist = self._fetch_metadata_only(req)
+                if metadata_dist is not None:
                     req.needs_more_preparation = True
-                    return wheel_dist
+                    return metadata_dist
 
             
             return self._prepare_linked_requirement(req, parallel_builds)
 
-    def prepare_linked_requirements_more(self, reqs, parallel_builds=False):
-        
+    def prepare_linked_requirements_more(
+        self, reqs: Iterable[InstallRequirement], parallel_builds: bool = False
+    ) -> None:
         """Prepare linked requirements more, if needed."""
         reqs = [req for req in reqs if req.needs_more_preparation]
         for req in reqs:
@@ -517,12 +501,12 @@ class RequirementPreparer:
                 hashes = self._get_linked_req_hashes(req)
                 file_path = _check_download_dir(req.link, self.download_dir, hashes)
                 if file_path is not None:
-                    self._downloaded[req.link.url] = file_path, None
+                    self._downloaded[req.link.url] = file_path
                     req.needs_more_preparation = False
 
         
         
-        partially_downloaded_reqs = []  
+        partially_downloaded_reqs: List[InstallRequirement] = []
         for req in reqs:
             if req.needs_more_preparation:
                 partially_downloaded_reqs.append(req)
@@ -532,35 +516,58 @@ class RequirementPreparer:
         
         
         self._complete_partial_requirements(
-            partially_downloaded_reqs, parallel_builds=parallel_builds,
+            partially_downloaded_reqs,
+            parallel_builds=parallel_builds,
         )
 
-    def _prepare_linked_requirement(self, req, parallel_builds):
-        
+    def _prepare_linked_requirement(
+        self, req: InstallRequirement, parallel_builds: bool
+    ) -> BaseDistribution:
         assert req.link
         link = req.link
 
         self._ensure_link_req_src_dir(req, parallel_builds)
         hashes = self._get_linked_req_hashes(req)
 
-        if link.is_existing_dir() and self.in_tree_build:
+        if link.is_existing_dir():
             local_file = None
         elif link.url not in self._downloaded:
             try:
                 local_file = unpack_url(
-                    link, req.source_dir, self._download,
-                    self.download_dir, hashes
+                    link,
+                    req.source_dir,
+                    self._download,
+                    self.verbosity,
+                    self.download_dir,
+                    hashes,
                 )
             except NetworkConnectionError as exc:
                 raise InstallationError(
-                    'Could not install requirement {} because of HTTP '
-                    'error {} for URL {}'.format(req, exc, link)
+                    "Could not install requirement {} because of HTTP "
+                    "error {} for URL {}".format(req, exc, link)
                 )
         else:
-            file_path, content_type = self._downloaded[link.url]
+            file_path = self._downloaded[link.url]
             if hashes:
                 hashes.check_against_path(file_path)
-            local_file = File(file_path, content_type)
+            local_file = File(file_path, content_type=None)
+
+        
+        if req.download_info is None:
+            
+            
+            assert not req.editable
+            req.download_info = direct_url_from_link(link, req.source_dir)
+            
+            
+            
+            if (
+                isinstance(req.download_info.info, ArchiveInfo)
+                and not req.download_info.info.hash
+                and local_file
+            ):
+                hash = hash_file(local_file.path)[0].hexdigest()
+                req.download_info.info.hash = f"sha256={hash}"
 
         
         
@@ -568,12 +575,15 @@ class RequirementPreparer:
             req.local_file_path = local_file.path
 
         dist = _get_prepared_distribution(
-            req, self.req_tracker, self.finder, self.build_isolation,
+            req,
+            self.build_tracker,
+            self.finder,
+            self.build_isolation,
+            self.check_build_deps,
         )
         return dist
 
-    def save_linked_requirement(self, req):
-        
+    def save_linked_requirement(self, req: InstallRequirement) -> None:
         assert self.download_dir is not None
         assert req.link is not None
         link = req.link
@@ -584,8 +594,9 @@ class RequirementPreparer:
 
         if link.is_existing_dir():
             logger.debug(
-                'Not copying link to destination directory '
-                'since it is a directory: %s', link,
+                "Not copying link to destination directory "
+                "since it is a directory: %s",
+                link,
             )
             return
         if req.local_file_path is None:
@@ -596,31 +607,35 @@ class RequirementPreparer:
         if not os.path.exists(download_location):
             shutil.copy(req.local_file_path, download_location)
             download_path = display_path(download_location)
-            logger.info('Saved %s', download_path)
+            logger.info("Saved %s", download_path)
 
     def prepare_editable_requirement(
         self,
-        req,  
-    ):
-        
-        """Prepare an editable requirement
-        """
+        req: InstallRequirement,
+    ) -> BaseDistribution:
+        """Prepare an editable requirement."""
         assert req.editable, "cannot prepare a non-editable req as editable"
 
-        logger.info('Obtaining %s', req)
+        logger.info("Obtaining %s", req)
 
         with indent_log():
             if self.require_hashes:
                 raise InstallationError(
-                    'The editable requirement {} cannot be installed when '
-                    'requiring hashes, because there is no single file to '
-                    'hash.'.format(req)
+                    "The editable requirement {} cannot be installed when "
+                    "requiring hashes, because there is no single file to "
+                    "hash.".format(req)
                 )
             req.ensure_has_source_dir(self.src_dir)
             req.update_editable()
+            assert req.source_dir
+            req.download_info = direct_url_for_editable(req.unpacked_source_directory)
 
             dist = _get_prepared_distribution(
-                req, self.req_tracker, self.finder, self.build_isolation,
+                req,
+                self.build_tracker,
+                self.finder,
+                self.build_isolation,
+                self.check_build_deps,
             )
 
             req.check_if_exists(self.use_user_site)
@@ -629,27 +644,24 @@ class RequirementPreparer:
 
     def prepare_installed_requirement(
         self,
-        req,  
-        skip_reason  
-    ):
-        
-        """Prepare an already-installed requirement
-        """
+        req: InstallRequirement,
+        skip_reason: str,
+    ) -> BaseDistribution:
+        """Prepare an already-installed requirement."""
         assert req.satisfied_by, "req should have been satisfied but isn't"
         assert skip_reason is not None, (
             "did not get skip reason skipped but req.satisfied_by "
             "is set to {}".format(req.satisfied_by)
         )
         logger.info(
-            'Requirement %s: %s (%s)',
-            skip_reason, req, req.satisfied_by.version
+            "Requirement %s: %s (%s)", skip_reason, req, req.satisfied_by.version
         )
         with indent_log():
             if self.require_hashes:
                 logger.debug(
-                    'Since it is already installed, we are trusting this '
-                    'package without checking its hash. To ensure a '
-                    'completely repeatable environment, install into an '
-                    'empty virtualenv.'
+                    "Since it is already installed, we are trusting this "
+                    "package without checking its hash. To ensure a "
+                    "completely repeatable environment, install into an "
+                    "empty virtualenv."
                 )
-            return InstalledDistribution(req).get_pkg_resources_distribution()
+            return InstalledDistribution(req).get_metadata_distribution()

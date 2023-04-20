@@ -1,3 +1,4 @@
+import importlib.util
 import os
 from collections import namedtuple
 from typing import Any, List, Optional
@@ -5,34 +6,29 @@ from typing import Any, List, Optional
 from pip._vendor import tomli
 from pip._vendor.packaging.requirements import InvalidRequirement, Requirement
 
-from pip._internal.exceptions import InstallationError
+from pip._internal.exceptions import (
+    InstallationError,
+    InvalidPyProjectBuildRequires,
+    MissingPyProjectBuildRequires,
+)
 
 
-def _is_list_of_str(obj):
-    
-    return (
-        isinstance(obj, list) and
-        all(isinstance(item, str) for item in obj)
-    )
+def _is_list_of_str(obj: Any) -> bool:
+    return isinstance(obj, list) and all(isinstance(item, str) for item in obj)
 
 
-def make_pyproject_path(unpacked_source_directory):
-    
-    return os.path.join(unpacked_source_directory, 'pyproject.toml')
+def make_pyproject_path(unpacked_source_directory: str) -> str:
+    return os.path.join(unpacked_source_directory, "pyproject.toml")
 
 
-BuildSystemDetails = namedtuple('BuildSystemDetails', [
-    'requires', 'backend', 'check', 'backend_path'
-])
+BuildSystemDetails = namedtuple(
+    "BuildSystemDetails", ["requires", "backend", "check", "backend_path"]
+)
 
 
 def load_pyproject_toml(
-    use_pep517,  
-    pyproject_toml,  
-    setup_py,  
-    req_name  
-):
-    
+    use_pep517: Optional[bool], pyproject_toml: str, setup_py: str, req_name: str
+) -> Optional[BuildSystemDetails]:
     """Load the pyproject.toml file.
 
     Parameters:
@@ -57,9 +53,15 @@ def load_pyproject_toml(
     has_pyproject = os.path.isfile(pyproject_toml)
     has_setup = os.path.isfile(setup_py)
 
+    if not has_pyproject and not has_setup:
+        raise InstallationError(
+            f"{req_name} does not appear to be a Python project: "
+            f"neither 'setup.py' nor 'pyproject.toml' found."
+        )
+
     if has_pyproject:
         with open(pyproject_toml, encoding="utf-8") as f:
-            pp_toml = tomli.load(f)
+            pp_toml = tomli.loads(f.read())
         build_system = pp_toml.get("build-system")
     else:
         build_system = None
@@ -82,17 +84,21 @@ def load_pyproject_toml(
             raise InstallationError(
                 "Disabling PEP 517 processing is invalid: "
                 "project specifies a build backend of {} "
-                "in pyproject.toml".format(
-                    build_system["build-backend"]
-                )
+                "in pyproject.toml".format(build_system["build-backend"])
             )
         use_pep517 = True
 
     
     
     
+    
+
+    
+    
+    
+    
     elif use_pep517 is None:
-        use_pep517 = has_pyproject
+        use_pep517 = has_pyproject or not importlib.util.find_spec("setuptools")
 
     
     assert use_pep517 is not None
@@ -124,46 +130,32 @@ def load_pyproject_toml(
 
     
     
-    error_template = (
-        "{package} has a pyproject.toml file that does not comply "
-        "with PEP 518: {reason}"
-    )
 
     
     if "requires" not in build_system:
-        raise InstallationError(
-            error_template.format(package=req_name, reason=(
-                "it has a 'build-system' table but not "
-                "'build-system.requires' which is mandatory in the table"
-            ))
-        )
+        raise MissingPyProjectBuildRequires(package=req_name)
 
     
     requires = build_system["requires"]
     if not _is_list_of_str(requires):
-        raise InstallationError(error_template.format(
+        raise InvalidPyProjectBuildRequires(
             package=req_name,
-            reason="'build-system.requires' is not a list of strings.",
-        ))
+            reason="It is not a list of strings.",
+        )
 
     
     for requirement in requires:
         try:
             Requirement(requirement)
-        except InvalidRequirement:
-            raise InstallationError(
-                error_template.format(
-                    package=req_name,
-                    reason=(
-                        "'build-system.requires' contains an invalid "
-                        "requirement: {!r}".format(requirement)
-                    ),
-                )
-            )
+        except InvalidRequirement as error:
+            raise InvalidPyProjectBuildRequires(
+                package=req_name,
+                reason=f"It contains an invalid requirement: {requirement!r}",
+            ) from error
 
     backend = build_system.get("build-backend")
     backend_path = build_system.get("backend-path", [])
-    check = []  
+    check: List[str] = []
     if backend is None:
         
         
@@ -176,8 +168,7 @@ def load_pyproject_toml(
         
         
         
-        
         backend = "setuptools.build_meta:__legacy__"
-        check = ["setuptools>=40.8.0", "wheel"]
+        check = ["setuptools>=40.8.0"]
 
     return BuildSystemDetails(requires, backend, check, backend_path)

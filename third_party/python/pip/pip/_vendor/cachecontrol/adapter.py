@@ -1,16 +1,20 @@
+
+
+
+
 import types
 import functools
 import zlib
 
 from pip._vendor.requests.adapters import HTTPAdapter
 
-from .controller import CacheController
+from .controller import CacheController, PERMANENT_REDIRECT_STATUSES
 from .cache import DictCache
 from .filewrapper import CallbackFileWrapper
 
 
 class CacheControlAdapter(HTTPAdapter):
-    invalidating_methods = {"PUT", "DELETE"}
+    invalidating_methods = {"PUT", "PATCH", "DELETE"}
 
     def __init__(
         self,
@@ -93,7 +97,7 @@ class CacheControlAdapter(HTTPAdapter):
                 response = cached_response
 
             
-            elif response.status == 301:
+            elif int(response.status) in PERMANENT_REDIRECT_STATUSES:
                 self.controller.cache_response(request, response)
             else:
                 

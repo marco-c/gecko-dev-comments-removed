@@ -10,8 +10,7 @@ old to handle TLSv1.2.
 import sys
 
 
-def inject_securetransport():
-    
+def inject_securetransport() -> None:
     
     if sys.platform != "darwin":
         return

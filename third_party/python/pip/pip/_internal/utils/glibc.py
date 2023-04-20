@@ -6,14 +6,12 @@ import sys
 from typing import Optional, Tuple
 
 
-def glibc_version_string():
-    
+def glibc_version_string() -> Optional[str]:
     "Returns glibc version string, or None if not using glibc."
     return glibc_version_string_confstr() or glibc_version_string_ctypes()
 
 
-def glibc_version_string_confstr():
-    
+def glibc_version_string_confstr() -> Optional[str]:
     "Primary implementation of glibc_version_string using os.confstr."
     
     
@@ -30,8 +28,7 @@ def glibc_version_string_confstr():
     return version
 
 
-def glibc_version_string_ctypes():
-    
+def glibc_version_string_ctypes() -> Optional[str]:
     "Fallback implementation of glibc_version_string using ctypes."
 
     try:
@@ -78,8 +75,7 @@ def glibc_version_string_ctypes():
 
 
 
-def libc_ver():
-    
+def libc_ver() -> Tuple[str, str]:
     """Try to determine the glibc version
 
     Returns a tuple of strings (lib, version) which default to empty strings

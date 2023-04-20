@@ -1,34 +1,20 @@
-# -*- coding: utf-8 -*-
-
 """
 certifi.py
 ~~~~~~~~~~
 
 This module returns the installation location of cacert.pem or its contents.
 """
-import os
+import sys
 
 
-class _PipPatchedCertificate(Exception):
-    pass
+if sys.version_info >= (3, 11):
 
-
-try:
-    
-    
-    
-    _PIP_STANDALONE_CERT = os.environ.get("_PIP_STANDALONE_CERT")
-    if _PIP_STANDALONE_CERT:
-        def where():
-            return _PIP_STANDALONE_CERT
-        raise _PipPatchedCertificate()
-
-    from importlib.resources import path as get_path, read_text
+    from importlib.resources import as_file, files
 
     _CACERT_CTX = None
     _CACERT_PATH = None
 
-    def where():
+    def where() -> str:
         
         
         
@@ -47,30 +33,76 @@ try:
             
             
             
+            _CACERT_CTX = as_file(files("pip._vendor.certifi").joinpath("cacert.pem"))
+            _CACERT_PATH = str(_CACERT_CTX.__enter__())
+
+        return _CACERT_PATH
+
+    def contents() -> str:
+        return files("pip._vendor.certifi").joinpath("cacert.pem").read_text(encoding="ascii")
+
+elif sys.version_info >= (3, 7):
+
+    from importlib.resources import path as get_path, read_text
+
+    _CACERT_CTX = None
+    _CACERT_PATH = None
+
+    def where() -> str:
+        
+        
+        
+        
+        
+        global _CACERT_CTX
+        global _CACERT_PATH
+        if _CACERT_PATH is None:
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             _CACERT_CTX = get_path("pip._vendor.certifi", "cacert.pem")
             _CACERT_PATH = str(_CACERT_CTX.__enter__())
 
         return _CACERT_PATH
 
-except _PipPatchedCertificate:
-    pass
+    def contents() -> str:
+        return read_text("pip._vendor.certifi", "cacert.pem", encoding="ascii")
 
-except ImportError:
+else:
+    import os
+    import types
+    from typing import Union
+
+    Package = Union[types.ModuleType, str]
+    Resource = Union[str, "os.PathLike"]
+
     
     
     
     
-    def read_text(_module, _path, encoding="ascii"):
-        with open(where(), "r", encoding=encoding) as data:
+    def read_text(
+        package: Package,
+        resource: Resource,
+        encoding: str = 'utf-8',
+        errors: str = 'strict'
+    ) -> str:
+        with open(where(), encoding=encoding) as data:
             return data.read()
 
     
     
-    def where():
+    def where() -> str:
         f = os.path.dirname(__file__)
 
         return os.path.join(f, "cacert.pem")
 
-
-def contents():
-    return read_text("certifi", "cacert.pem", encoding="ascii")
+    def contents() -> str:
+        return read_text("pip._vendor.certifi", "cacert.pem", encoding="ascii")
