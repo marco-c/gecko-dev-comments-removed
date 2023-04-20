@@ -37,7 +37,6 @@ Pattern({
           global:         { count: Pattern.NATURAL },
 
           
-          Environment:    { count: Pattern.NATURAL },
           Memory:         { count: Pattern.NATURAL },
           Frame:          { count: Pattern.NATURAL }
         })
