@@ -342,7 +342,7 @@ class GCMarker {
   
 
   
-  template <uint32_t = gc::MarkingOptions::None, typename T>
+  template <uint32_t, typename T>
   void markAndTraverse(T* thing);
 
   template <typename T>
@@ -363,23 +363,24 @@ class GCMarker {
   bool hasBlackEntries() const { return stack.hasBlackEntries(); }
   bool hasGrayEntries() const { return stack.hasGrayEntries(); }
 
+  template <uint32_t markingOptions>
   void processMarkStackTop(SliceBudget& budget);
   friend class gc::GCRuntime;
 
   
   
-  template <typename S>
+  template <uint32_t markingOptions, typename S>
   void markAndTraverseObjectEdge(S source, JSObject* target) {
-    markAndTraverseEdge(source, target);
+    markAndTraverseEdge<markingOptions>(source, target);
   }
-  template <typename S>
+  template <uint32_t markingOptions, typename S>
   void markAndTraverseStringEdge(S source, JSString* target) {
-    markAndTraverseEdge(source, target);
+    markAndTraverseEdge<markingOptions>(source, target);
   }
 
-  template <typename S, typename T>
+  template <uint32_t markingOptions, typename S, typename T>
   void markAndTraverseEdge(S source, T* target);
-  template <typename S, typename T>
+  template <uint32_t markingOptions, typename S, typename T>
   void markAndTraverseEdge(S source, const T& target);
 
   template <typename S, typename T>
@@ -387,34 +388,42 @@ class GCMarker {
 
   
   
-  template <typename T>
+  template <uint32_t markingOptions, typename T>
   [[nodiscard]] bool mark(T* thing);
 
   
   
   
-#define DEFINE_TRAVERSE_METHOD(_1, Type, _2, _3) void traverse(Type* thing);
+#define DEFINE_TRAVERSE_METHOD(_1, Type, _2, _3) \
+  template <uint32_t>                            \
+  void traverse(Type* thing);
   JS_FOR_EACH_TRACEKIND(DEFINE_TRAVERSE_METHOD)
 #undef DEFINE_TRAVERSE_METHOD
 
   
-  template <typename T>
+  template <uint32_t markingOptions, typename T>
   void traceChildren(T* thing);
 
   
   
-  template <typename T>
+  template <uint32_t markingOptions, typename T>
   void scanChildren(T* thing);
 
   
-  template <typename T>
+  template <uint32_t markingOptions, typename T>
   void pushThing(T* thing);
 
+  template <uint32_t markingOptions>
   void eagerlyMarkChildren(JSLinearString* str);
+  template <uint32_t markingOptions>
   void eagerlyMarkChildren(JSRope* rope);
+  template <uint32_t markingOptions>
   void eagerlyMarkChildren(JSString* str);
+  template <uint32_t markingOptions>
   void eagerlyMarkChildren(Shape* shape);
+  template <uint32_t markingOptions>
   void eagerlyMarkChildren(PropMap* map);
+  template <uint32_t markingOptions>
   void eagerlyMarkChildren(Scope* scope);
 
   template <typename T>
@@ -442,6 +451,9 @@ class GCMarker {
 #else
   void checkZone(void* p) {}
 #endif
+
+  template <uint32_t markingOptions>
+  bool doMarking(SliceBudget& budget, ShouldReportMarkTime reportTime);
 
   void delayMarkingChildrenOnOOM(gc::Cell* cell);
   void delayMarkingChildren(gc::Cell* cell);

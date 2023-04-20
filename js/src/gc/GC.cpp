@@ -2933,7 +2933,7 @@ GCRuntime::MarkQueueProgress GCRuntime::processTestMarkQueue() {
 
       
       size_t oldPosition = marker.stack.position();
-      marker.markAndTraverse(obj);
+      marker.markAndTraverse<MarkingOptions::None>(obj);
 
       
       
@@ -2944,7 +2944,7 @@ GCRuntime::MarkQueueProgress GCRuntime::processTestMarkQueue() {
       }
 
       SliceBudget unlimited = SliceBudget::unlimited();
-      marker.processMarkStackTop(unlimited);
+      marker.processMarkStackTop<MarkingOptions::None>(unlimited);
     } else if (val.isString()) {
       JSLinearString* str = &val.toString()->asLinear();
       if (js::StringEqualsLiteral(str, "yield") && isIncrementalGc()) {
