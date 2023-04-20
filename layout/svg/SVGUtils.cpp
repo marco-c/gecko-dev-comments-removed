@@ -506,9 +506,10 @@ class MixModeBlender {
     
     
     
-    gfxContextAutoSaveRestore saver(mSourceCtx);
+    gfxContextAutoSaveRestore saver;
 
     if (!mFrame->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
+      saver.SetContext(mSourceCtx);
       
       
       gfxContextMatrixAutoSaveRestore matrixAutoSaveRestore(mSourceCtx);
