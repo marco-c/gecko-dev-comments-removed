@@ -4884,8 +4884,6 @@ class Document : public nsINode,
   
   bool mShouldResistFingerprinting : 1;
 
-  uint8_t mPendingFullscreenRequests;
-
   uint8_t mXMLDeclarationBits;
 
   
