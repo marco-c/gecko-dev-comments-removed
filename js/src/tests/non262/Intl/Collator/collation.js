@@ -41,6 +41,7 @@
   
   
   
+  
   let c1 = new Intl.Collator("sv", {usage: "sort"});
   let c2 = new Intl.Collator("sv-u-co-reformed", {usage: "sort"});
   let c3 = new Intl.Collator("sv-u-co-standard", {usage: "sort"});
@@ -48,13 +49,13 @@
   let c5 = new Intl.Collator("en", {usage: "sort"});
 
   assertEq(c1.resolvedOptions().locale, "sv");
-  assertEq(c2.resolvedOptions().locale, "sv-u-co-reformed");
+  assertEq(c2.resolvedOptions().locale, "sv");
   assertEq(c3.resolvedOptions().locale, "sv");
   assertEq(c4.resolvedOptions().locale, "sv");
   assertEq(c5.resolvedOptions().locale, "en");
 
   assertEq(c1.resolvedOptions().collation, "default");
-  assertEq(c2.resolvedOptions().collation, "reformed");
+  assertEq(c2.resolvedOptions().collation, "default");
   assertEq(c3.resolvedOptions().collation, "default");
   assertEq(c4.resolvedOptions().collation, "default");
   assertEq(c5.resolvedOptions().collation, "default");
