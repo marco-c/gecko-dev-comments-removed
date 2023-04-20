@@ -17,7 +17,7 @@
 
 
 
-use crate::parser::{Combinator, Component, Selector, SelectorImpl};
+use crate::parser::{Combinator, Component, RelativeSelector, Selector, SelectorImpl};
 use crate::sink::Push;
 use servo_arc::{Arc, HeaderWithLength, ThinArc};
 use smallvec::{self, SmallVec};
@@ -331,23 +331,27 @@ where
                 
                 
                 specificity.class_like_selectors += 1;
-                let sf = selector_list_specificity_and_flags(nth_of_data.selectors());
+                let sf = selector_list_specificity_and_flags(nth_of_data.selectors().iter());
                 *specificity += Specificity::from(sf.specificity);
                 flags.insert(sf.flags);
             },
+            
+            
+            
+            
+            
             Component::Where(ref list) |
             Component::Negation(ref list) |
-            Component::Is(ref list) |
-            Component::Has(ref list) => {
-                
-                
-                
-                
-                
-                let sf = selector_list_specificity_and_flags(list);
+            Component::Is(ref list) => {
+                let sf = selector_list_specificity_and_flags(list.iter());
                 if !matches!(*simple_selector, Component::Where(..)) {
                     *specificity += Specificity::from(sf.specificity);
                 }
+                flags.insert(sf.flags);
+            },
+            Component::Has(ref relative_selectors) => {
+                let sf = relative_selector_list_specificity_and_flags(relative_selectors);
+                *specificity += Specificity::from(sf.specificity);
                 flags.insert(sf.flags);
             },
             Component::ExplicitUniversalType |
@@ -373,16 +377,23 @@ where
 }
 
 
-pub(crate) fn selector_list_specificity_and_flags<Impl: SelectorImpl>(
-    list: &[Selector<Impl>],
-) -> SpecificityAndFlags {
+pub(crate) fn selector_list_specificity_and_flags<'a, Impl: SelectorImpl>(
+    itr: impl Iterator<Item = &'a Selector<Impl>>,
+) -> SpecificityAndFlags
+{
     let mut specificity = 0;
     let mut flags = SelectorFlags::empty();
-    for selector in list.iter() {
+    for selector in itr {
         specificity = std::cmp::max(specificity, selector.specificity());
         if selector.has_parent_selector() {
             flags.insert(SelectorFlags::HAS_PARENT);
         }
     }
     SpecificityAndFlags { specificity, flags }
+}
+
+pub(crate) fn relative_selector_list_specificity_and_flags<Impl: SelectorImpl>(
+    list: &[RelativeSelector<Impl>],
+) -> SpecificityAndFlags {
+    selector_list_specificity_and_flags(list.iter().map(|rel| &rel.selector))
 }
