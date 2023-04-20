@@ -734,7 +734,7 @@ bool PropertyEnumerator::snapshot(JSContext* cx) {
   } while (obj_ != nullptr);
 
 #ifdef DEBUG
-  if (js::SupportDifferentialTesting()) {
+  if (js::SupportDifferentialTesting() && !supportsIndices()) {
     
 
 
