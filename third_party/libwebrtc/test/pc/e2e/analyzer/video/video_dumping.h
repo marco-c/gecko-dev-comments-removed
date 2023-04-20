@@ -15,8 +15,7 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "api/test/peerconnection_quality_test_fixture.h"
+#include "api/test/video/video_frame_writer.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "test/testsupport/video_frame_writer.h"
@@ -47,10 +46,9 @@ class VideoWriter final : public rtc::VideoSinkInterface<VideoFrame> {
 
 
 
-std::unique_ptr<test::VideoFrameWriter> CreateVideoFrameWriter(
-    absl::string_view file_name,
-    absl::optional<std::string> frame_ids_dump_file_name,
-    const PeerConnectionE2EQualityTestFixture::VideoResolution& resolution);
+std::unique_ptr<test::VideoFrameWriter> CreateVideoFrameWithIdsWriter(
+    std::unique_ptr<test::VideoFrameWriter> video_writer_delegate,
+    absl::string_view frame_ids_dump_file_name);
 
 }  
 }  
