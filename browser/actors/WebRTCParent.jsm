@@ -602,14 +602,17 @@ function prompt(aActor, aBrowser, aRequest) {
     "privacy.webrtc.allowSilencingNotifications"
   );
 
-  const isNotNowLabelEnabled = allowedOrActiveCameraOrMicrophone(aBrowser);
+  const isNotNowLabelEnabled =
+    reqAudioOutput || allowedOrActiveCameraOrMicrophone(aBrowser);
   let secondaryActions = [];
-  if (notificationSilencingEnabled && sharingScreen) {
+  if (reqAudioOutput || (notificationSilencingEnabled && sharingScreen)) {
     
     
     
     
 
+    let permissionName = reqAudioOutput ? "speaker" : "screen";
+    
     
     
     const id = isNotNowLabelEnabled
@@ -623,7 +626,7 @@ function prompt(aActor, aBrowser, aRequest) {
           if (!isNotNowLabelEnabled) {
             lazy.SitePermissions.setForPrincipal(
               principal,
-              "screen",
+              permissionName,
               lazy.SitePermissions.BLOCK,
               lazy.SitePermissions.SCOPE_TEMPORARY,
               notification.browser
@@ -636,7 +639,7 @@ function prompt(aActor, aBrowser, aRequest) {
           aActor.denyRequest(aRequest);
           lazy.SitePermissions.setForPrincipal(
             principal,
-            "screen",
+            permissionName,
             lazy.SitePermissions.BLOCK,
             lazy.SitePermissions.SCOPE_PERSISTENT,
             notification.browser
@@ -1220,7 +1223,6 @@ function prompt(aActor, aBrowser, aRequest) {
       return false;
     }
 
-    
     
     if (reqAudioOutput) {
       return false;
