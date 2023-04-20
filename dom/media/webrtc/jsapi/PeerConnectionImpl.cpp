@@ -478,6 +478,11 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
   mForceProxy = ShouldForceProxy();
 
   
+  
+  mAllowOldSetParameters = Preferences::GetBool(
+      "media.peerconnection.allow_old_setParameters", false);
+
+  
   InitLocalAddrs();
 
   mSignalHandler = MakeUnique<SignalHandler>(this, mTransportHandler.get());
@@ -2079,6 +2084,12 @@ void PeerConnectionImpl::StampTimecard(const char* aEvent) {
   STAMP_TIMECARD(mTimeCard, aEvent);
 }
 
+void PeerConnectionImpl::SendWarningToConsole(const nsCString& aWarning) {
+  nsAutoString msg = NS_ConvertASCIItoUTF16(aWarning);
+  nsContentUtils::ReportToConsoleByWindowID(msg, nsIScriptError::warningFlag,
+                                            "WebRTC"_ns, mWindow->WindowID());
+}
+
 nsresult PeerConnectionImpl::CalculateFingerprint(
     const std::string& algorithm, std::vector<uint8_t>* fingerprint) const {
   DtlsDigest digest(algorithm);
@@ -2372,6 +2383,7 @@ nsresult PeerConnectionImpl::SetConfiguration(
 
   
   StoreConfigurationForAboutWebrtc(aConfiguration);
+
   return NS_OK;
 }
 
