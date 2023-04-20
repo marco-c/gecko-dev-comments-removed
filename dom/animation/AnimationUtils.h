@@ -31,7 +31,7 @@ class AnimationUtils {
   using Document = dom::Document;
 
   static dom::Nullable<double> TimeDurationToDouble(
-      const dom::Nullable<TimeDuration>& aTime) {
+      const dom::Nullable<TimeDuration>& aTime, RTPCallerType aRTPCallerType) {
     dom::Nullable<double> result;
 
     if (!aTime.IsNull()) {
@@ -40,7 +40,7 @@ class AnimationUtils {
       
       
       result.SetValue(nsRFPService::ReduceTimePrecisionAsMSecsRFPOnly(
-          aTime.Value().ToMilliseconds(), 0));
+          aTime.Value().ToMilliseconds(), 0, aRTPCallerType));
     }
 
     return result;
