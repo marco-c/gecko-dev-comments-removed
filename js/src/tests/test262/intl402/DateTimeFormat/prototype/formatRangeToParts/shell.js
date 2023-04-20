@@ -369,7 +369,12 @@ assert.deepEqual._compare = (function () {
 
 
 
+
 function isConstructor(f) {
+    if (typeof f !== "function") {
+      throw new Test262Error("isConstructor invoked with a non-function value");
+    }
+
     try {
         Reflect.construct(function(){}, [], f);
     } catch (e) {

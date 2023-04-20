@@ -13,6 +13,7 @@
 
 
 
+
 $DONOTEVALUATE();
 ({
   async foo (arguments) { }

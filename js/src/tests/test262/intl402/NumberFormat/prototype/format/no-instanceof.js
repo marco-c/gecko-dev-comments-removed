@@ -9,12 +9,18 @@
 
 
 
-const nf = new Intl.NumberFormat();
+
+
+
+
+
+
+const nf = Object.create(Intl.NumberFormat.prototype);
 
 Object.defineProperty(Intl.NumberFormat, Symbol.hasInstance, {
     get() { throw new Test262Error(); }
 });
 
-nf.format;
+assert.throws(TypeError, () => nf.format);
 
 reportCompare(0, 0);

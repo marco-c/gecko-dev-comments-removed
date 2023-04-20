@@ -23,46 +23,53 @@
 
 
 
+const calls = [];
+const duration = Temporal.Duration.from({ days: 1 });
 
-
-class StopExecution extends Error {}
-
-const stopAt = 1000;
-
-
-let count = 0;
-
-
-let tz = new class extends Temporal.TimeZone {
-  getPossibleInstantsFor(dt) {
+function createRelativeTo(count) {
+  const dayLengthNs = 86400000000000n;
+  const dayInstant = new Temporal.Instant(dayLengthNs);
+  const substitutions = [];
+  const timeZone = new Temporal.TimeZone("UTC");
+  
+  TemporalHelpers.substituteMethod(
+    timeZone,
+    "getPossibleInstantsFor",
+    substitutions
+  );
+  substitutions.length = count;
+  let i = 0;
+  for (i = 0; i < substitutions.length; i++) {
     
-    count += 1;
-    if (count === stopAt) {
-      throw new StopExecution();
-    }
-
-    if (count < 4) {
-      
-      TemporalHelpers.assertPlainDateTime(dt, 1970, 1, "M01", 2, 0, 0, 0, 0, 0, 0);
-    } else {
-      
-      TemporalHelpers.assertPlainDateTime(dt, 1970, 1, "M01", 3, 0, 0, 0, 0, 0, 0);
-    }
-
-    
-    
-    return [new Temporal.Instant(86400000000000n)];
+    substitutions[i] = [dayInstant];
   }
-}("UTC");
+  
+  TemporalHelpers.observeMethod(calls, timeZone, "getPossibleInstantsFor");
+  return new Temporal.ZonedDateTime(0n, timeZone);
+}
 
-let zdt = new Temporal.ZonedDateTime(0n, tz);
-let duration = Temporal.Duration.from({days: 1});
-let options = {
+let zdt = createRelativeTo(200);
+calls.splice(0); 
+duration.round({
   smallestUnit: "days",
   relativeTo: zdt,
-};
+});
+assert.sameValue(
+  calls.length,
+  200 + 1,
+  "Expected duration.round to call getPossibleInstantsFor correct number of times"
+);
 
-assert.throws(StopExecution, () => duration.round(options));
-assert.sameValue(count, stopAt);
+zdt = createRelativeTo(300);
+calls.splice(0); 
+duration.round({
+  smallestUnit: "days",
+  relativeTo: zdt,
+});
+assert.sameValue(
+  calls.length,
+  300 + 1,
+  "Expected duration.round to call getPossibleInstantsFor correct number of times"
+);
 
 reportCompare(0, 0);

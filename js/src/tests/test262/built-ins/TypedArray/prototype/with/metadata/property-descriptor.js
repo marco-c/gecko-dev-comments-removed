@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof TypedArray.prototype.with, "function", "typeof");
+
+verifyProperty(TypedArray.prototype, "with", {
+  value: TypedArray.prototype.with,
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

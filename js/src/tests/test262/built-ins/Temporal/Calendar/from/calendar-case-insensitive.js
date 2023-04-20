@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+const arg = "iSo8601";
+
+const result = Temporal.Calendar.from(arg);
+assert.sameValue(result.id, "iso8601", "Calendar is case-insensitive");
+
+reportCompare(0, 0);

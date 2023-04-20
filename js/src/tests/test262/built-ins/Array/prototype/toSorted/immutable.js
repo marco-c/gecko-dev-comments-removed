@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var arr = [2, 0, 1];
+arr.toSorted();
+
+assert.compareArray(arr, [2, 0, 1]);
+assert.notSameValue(arr.toSorted(), arr);
+
+reportCompare(0, 0);

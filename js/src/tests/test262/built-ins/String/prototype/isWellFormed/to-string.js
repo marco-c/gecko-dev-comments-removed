@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+    toString: function () {
+        throw new Test262Error('calls ToString');
+    }
+};
+
+assert.throws(
+    Test262Error,
+    function () { String.prototype.isWellFormed.call(obj); },
+    'coerces the receiver to a string'
+);
+
+reportCompare(0, 0);

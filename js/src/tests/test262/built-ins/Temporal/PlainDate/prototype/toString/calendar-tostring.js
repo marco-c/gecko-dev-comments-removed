@@ -19,13 +19,14 @@ const date = new Temporal.PlainDate(2000, 5, 2, customCalendar);
 [
   ["always", "2000-05-02[u-ca=custom]", 1],
   ["auto", "2000-05-02[u-ca=custom]", 1],
+  ["critical", "2000-05-02[!u-ca=custom]", 1],
   ["never", "2000-05-02", 0],
   [undefined, "2000-05-02[u-ca=custom]", 1],
 ].forEach(([calendarName, expectedResult, expectedCalls]) => {
   calls = 0;
   const result = date.toString({ calendarName });
-  assert.sameValue(result, expectedResult, `calendarName = ${calendarName}: expected ${expectedResult}`);
-  assert.sameValue(calls, expectedCalls, `calendarName = ${calendarName}: expected ${expectedCalls} call(s) to 'toString'`);
+  assert.sameValue(result, expectedResult, `toString output for calendarName = ${calendarName}`);
+  assert.sameValue(calls, expectedCalls, `calls to toString for calendarName = ${calendarName}`);
 });
 
 reportCompare(0, 0);

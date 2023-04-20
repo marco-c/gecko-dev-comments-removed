@@ -37,7 +37,7 @@ const ym6 = new Temporal.PlainYearMonth(2000, 1, new CustomCalendar("e"), 1);
 assert.sameValue(ym5.equals(ym6), false);
 assert.compareArray(actual, ["d", "e"], "order of operations");
 
-actual.splice(0, actual.length); 
+actual.splice(0); 
 const ym7 = new Temporal.PlainYearMonth(2000, 1, new CustomCalendar("f"), 1);
 const ym8 = new Temporal.PlainYearMonth(2000, 1, new CustomCalendar("f"), 1);
 assert.sameValue(ym7.equals(ym8), true);

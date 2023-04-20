@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.compareArray(Array.prototype.toSorted.call({ length: -2 }), []);
+assert.compareArray(Array.prototype.toSorted.call({ length: "dog" }), []);
+assert.compareArray(Array.prototype.toSorted.call({ length: NaN }), []);
+
+reportCompare(0, 0);

@@ -31,6 +31,10 @@ UNSUPPORTED_FEATURES = set(
         "regexp-v-flag",
         "decorators",
         "regexp-duplicate-named-groups",
+        "String.prototype.isWellFormed",  
+        "String.prototype.toWellFormed",  
+        "symbols-as-weakmap-keys",  
+        "Array.fromAsync",  
     ]
 )
 FEATURE_CHECK_NEEDED = {

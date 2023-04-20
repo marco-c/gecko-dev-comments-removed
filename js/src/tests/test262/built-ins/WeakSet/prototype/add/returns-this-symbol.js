@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = new WeakSet();
+
+assert.sameValue(s.add(Symbol('description')), s, '`s.add(Symbol("description"))` returns `s`');
+
+reportCompare(0, 0);

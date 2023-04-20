@@ -7,6 +7,7 @@
 
 
 
+
 var obj = {
   async method() {}
 }

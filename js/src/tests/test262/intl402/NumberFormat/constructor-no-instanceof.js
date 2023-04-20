@@ -9,6 +9,13 @@
 
 
 
+
+
+
+
+
+
+
 Object.defineProperty(Intl.NumberFormat, Symbol.hasInstance, {
     get() { throw new Test262Error(); }
 });

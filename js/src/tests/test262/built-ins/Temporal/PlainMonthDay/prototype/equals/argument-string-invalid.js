@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+const instance = new Temporal.PlainMonthDay(11, 18);
+
+for (const arg of TemporalHelpers.ISO.plainMonthDayStringsInvalid()) {
+  assert.throws(RangeError, () => instance.equals(arg), `"${arg}" is not a valid PlainMonthDay string`);
+}
+
+reportCompare(0, 0);

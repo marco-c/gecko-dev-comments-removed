@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  [].groupToMap(null)
+}, "null callback throws TypeError");
+
+assert.throws(TypeError, function() {
+  [].groupToMap(undefined)
+}, "undefined callback throws TypeError");
+
+assert.throws(TypeError, function() {
+  [].groupToMap({})
+}, "object callback throws TypeError");
+
+reportCompare(0, 0);

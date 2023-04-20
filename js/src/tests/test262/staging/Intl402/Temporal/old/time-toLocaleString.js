@@ -8,15 +8,23 @@
 
 
 
+
+
+
+const usDayPeriodSpace =
+  new Intl.DateTimeFormat("en-US", { timeStyle: "short" })
+    .formatToParts(0)
+    .find((part, i, parts) => part.type === "literal" && parts[i + 1].type === "dayPeriod")?.value || "";
+
 var time = Temporal.PlainTime.from("1976-11-18T15:23:30");
-assert.sameValue(`${ time.toLocaleString("en", { timeZone: "America/New_York" }) }`, "3:23:30 PM")
-assert.sameValue(`${ time.toLocaleString("de", { timeZone: "Europe/Vienna" }) }`, "15:23:30")
+assert.sameValue(`${time.toLocaleString("en-US", { timeZone: "America/New_York" })}`, `3:23:30${usDayPeriodSpace}PM`);
+assert.sameValue(`${time.toLocaleString("de-AT", { timeZone: "Europe/Vienna" })}`, "15:23:30");
 
 
-assert.sameValue(time.toLocaleString("en", { timeZoneName: "long" }), "3:23:30 PM");
-assert.sameValue(time.toLocaleString("en", { year: "numeric" }), "3:23:30 PM");
-assert.sameValue(time.toLocaleString("en", { month: "numeric" }), "3:23:30 PM");
-assert.sameValue(time.toLocaleString("en", { day: "numeric" }), "3:23:30 PM");
-assert.sameValue(time.toLocaleString("en", { weekday: "long" }), "3:23:30 PM");
+assert.sameValue(time.toLocaleString("en-US", { timeZoneName: "long" }), `3:23:30${usDayPeriodSpace}PM`);
+assert.sameValue(time.toLocaleString("en-US", { year: "numeric" }), `3:23:30${usDayPeriodSpace}PM`);
+assert.sameValue(time.toLocaleString("en-US", { month: "numeric" }), `3:23:30${usDayPeriodSpace}PM`);
+assert.sameValue(time.toLocaleString("en-US", { day: "numeric" }), `3:23:30${usDayPeriodSpace}PM`);
+assert.sameValue(time.toLocaleString("en-US", { weekday: "long" }), `3:23:30${usDayPeriodSpace}PM`);
 
 reportCompare(0, 0);

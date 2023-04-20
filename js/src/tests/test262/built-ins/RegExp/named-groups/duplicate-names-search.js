@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue("xab".search(/(?<x>a)|(?<x>b)/), 1);
+assert.sameValue("xba".search(/(?<x>a)|(?<x>b)/), 1);
+
+reportCompare(0, 0);

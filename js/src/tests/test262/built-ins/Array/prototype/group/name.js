@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Array.prototype.group, "name", {
+  value: "group",
+  enumerable: false,
+  writable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

@@ -8,31 +8,11 @@
 
 
 
-var desc = Object.getOwnPropertyDescriptor(Object, "defineProperties");
 
-var propertyAreCorrect = (desc.writable === true && desc.enumerable === false && desc.configurable === true);
-
-var temp = Object.defineProperties;
-
-Object.defineProperties = "2010";
-
-var isWritable = (Object.defineProperties === "2010");
-
-var isEnumerable = false;
-
-for (var prop in Object) {
-  if (prop === "defineProperties") {
-    isEnumerable = true;
-  }
-}
-
-delete Object.defineProperties;
-
-var isConfigurable = !Object.hasOwnProperty("defineProperties");
-
-assert(propertyAreCorrect, 'propertyAreCorrect !== true');
-assert(isWritable, 'isWritable !== true');
-assert.sameValue(isEnumerable, false, 'isEnumerable');
-assert(isConfigurable, 'isConfigurable !== true');
+verifyProperty(Object, "defineProperties", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

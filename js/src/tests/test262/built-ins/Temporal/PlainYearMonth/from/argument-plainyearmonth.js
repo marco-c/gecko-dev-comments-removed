@@ -19,6 +19,8 @@ TemporalHelpers.assertPlainYearMonth(
    undefined,  undefined,  7
 );
 
+assert.sameValue(result.calendar, orig.calendar, "Calendar is copied");
+
 assert.notSameValue(
   result,
   orig,

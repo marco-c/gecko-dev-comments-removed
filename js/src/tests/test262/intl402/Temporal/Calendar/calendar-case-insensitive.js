@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+const result = new Temporal.Calendar("jApAnEsE");
+assert.sameValue(result.toString(), "japanese", "Calendar is case-insensitive");
+
+reportCompare(0, 0);

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+const timeZone = 'eTc/gMt+1';
+const result = Temporal.TimeZone.from(timeZone);
+assert.sameValue(result.id, 'Etc/GMT+1', `Time zone created from string "${timeZone}"`);
+
+reportCompare(0, 0);

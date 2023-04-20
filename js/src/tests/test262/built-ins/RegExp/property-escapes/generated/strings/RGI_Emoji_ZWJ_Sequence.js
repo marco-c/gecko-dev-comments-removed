@@ -1361,6 +1361,7 @@ testPropertyOfStrings({
     "\u{1F3F4}\u200D\u2620\uFE0F",
     "\u{1F408}\u200D\u2B1B",
     "\u{1F415}\u200D\u{1F9BA}",
+    "\u{1F426}\u200D\u2B1B",
     "\u{1F43B}\u200D\u2744\uFE0F",
     "\u{1F441}\uFE0F\u200D\u{1F5E8}\uFE0F",
     "\u{1F62E}\u200D\u{1F4A8}",

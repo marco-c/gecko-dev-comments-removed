@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(String.prototype.toWellFormed, 'length', {
+  configurable: true,
+  enumerable: false,
+  writable: false,
+  value: 0
+});
+
+reportCompare(0, 0);

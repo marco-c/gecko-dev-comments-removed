@@ -33,7 +33,7 @@ assert.compareArray(actual, expected1, "operations");
 
 
 
-actual.splice(0, actual.length); 
+actual.splice(0); 
 const expected2 = [
   "call dateUntil",
   "call dateUntil",

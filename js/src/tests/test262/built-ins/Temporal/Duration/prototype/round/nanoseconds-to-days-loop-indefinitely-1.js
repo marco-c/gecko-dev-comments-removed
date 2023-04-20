@@ -19,57 +19,43 @@
 
 
 
+const calls = [];
+const duration = Temporal.Duration.from({ days: 1 });
 
-
-class StopExecution extends Error {}
-
-const stopAt = 1000;
-
-
-
-let twoDays = Temporal.Duration.from({days: 2});
-
-
-let count = 0;
-
-let cal = new class extends Temporal.Calendar {
+function createRelativeTo(count) {
+  const tz = new Temporal.TimeZone("UTC");
   
-  dateUntil(start, end, options) {
-    return Temporal.Duration.from({days: Number.MAX_VALUE});
-  }
+  TemporalHelpers.observeMethod(calls, tz, "getPossibleInstantsFor");
+  const cal = new Temporal.Calendar("iso8601");
+  
+  TemporalHelpers.substituteMethod(cal, "dateUntil", [
+    Temporal.Duration.from({ days: count }),
+  ]);
+  return new Temporal.ZonedDateTime(0n, tz, cal);
+}
 
-  dateAdd(date, duration, options) {
-    
-    count += 1;
-    if (count === stopAt) {
-      throw new StopExecution();
-    }
-
-    if (count === 1) {
-      return Temporal.Calendar.prototype.dateAdd.call(this, date, duration, options);
-    }
-
-    TemporalHelpers.assertPlainDate(date, 1970, 1, "M01", 1);
-
-    TemporalHelpers.assertDuration(
-      duration,
-      0, 0, 0, Number.MAX_VALUE,
-      0, 0, 0,
-      0, 0, 0,
-    );
-
-    return Temporal.Calendar.prototype.dateAdd.call(this, date, twoDays, options);
-  }
-}("iso8601");
-
-let zdt = new Temporal.ZonedDateTime(0n, "UTC", cal);
-let duration = Temporal.Duration.from({days: 1});
-let options = {
+let zdt = createRelativeTo(200);
+calls.splice(0); 
+duration.round({
   largestUnit: "days",
   relativeTo: zdt,
-};
+});
+assert.sameValue(
+  calls.length,
+  200 + 2,
+  "Expected duration.round to call getPossibleInstantsFor correct number of times"
+);
 
-assert.throws(StopExecution, () => duration.round(options));
-assert.sameValue(count, stopAt);
+zdt = createRelativeTo(300);
+calls.splice(0); 
+duration.round({
+  largestUnit: "days",
+  relativeTo: zdt,
+});
+assert.sameValue(
+  calls.length,
+  300 + 2,
+  "Expected duration.round to call getPossibleInstantsFor correct number of times"
+);
 
 reportCompare(0, 0);

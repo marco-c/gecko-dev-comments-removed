@@ -67,7 +67,12 @@ var end_of_time = 8.64e15;
 
 
 
+
 function isConstructor(f) {
+    if (typeof f !== "function") {
+      throw new Test262Error("isConstructor invoked with a non-function value");
+    }
+
     try {
         Reflect.construct(function(){}, [], f);
     } catch (e) {

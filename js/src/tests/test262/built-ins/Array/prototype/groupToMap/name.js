@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Array.prototype.groupToMap, "name", {
+  value: "groupToMap",
+  enumerable: false,
+  writable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

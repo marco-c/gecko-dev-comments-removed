@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var result = ["first", "second", "third"].toSpliced(undefined);
+
+assert.compareArray(result, []);
+
+reportCompare(0, 0);

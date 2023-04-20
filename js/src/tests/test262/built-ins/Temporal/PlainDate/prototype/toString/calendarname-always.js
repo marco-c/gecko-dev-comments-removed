@@ -8,19 +8,18 @@
 
 
 
-const customCalendar = {
-  toString() { return "custom"; }
-};
-const customISOCalendar = {
-  toString() { return "iso8601"; }
-};
-[
-  [new Temporal.PlainDate(2000, 5, 2), "2000-05-02[u-ca=iso8601]"],
-  [new Temporal.PlainDate(2000, 5, 2, customCalendar), "2000-05-02[u-ca=custom]"],
-  [new Temporal.PlainDate(2000, 5, 2, customISOCalendar), "2000-05-02[u-ca=iso8601]"],
-].forEach(([date, expected]) => {
+const tests = [
+  [[], "2000-05-02[u-ca=iso8601]", "built-in ISO"],
+  [[{ toString() { return "custom"; } }], "2000-05-02[u-ca=custom]", "custom"],
+  [[{ toString() { return "iso8601"; } }], "2000-05-02[u-ca=iso8601]", "custom with iso8601 toString"],
+  [[{ toString() { return "ISO8601"; } }], "2000-05-02[u-ca=ISO8601]", "custom with caps toString"],
+  [[{ toString() { return "\u0131so8601"; } }], "2000-05-02[u-ca=\u0131so8601]", "custom with dotless i toString"],
+];
+
+for (const [args, expected, description] of tests) {
+  const date = new Temporal.PlainDate(2000, 5, 2, ...args);
   const result = date.toString({ calendarName: "always" });
-  assert.sameValue(result, expected, "expected " + expected);
-});
+  assert.sameValue(result, expected, `${description} calendar for calendarName = always`);
+}
 
 reportCompare(0, 0);

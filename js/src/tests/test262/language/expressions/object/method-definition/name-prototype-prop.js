@@ -9,6 +9,9 @@
 
 var method = { method() {} }.method;
 
-assert.sameValue(Object.hasOwnProperty.call(method, 'prototype'), false);
+assert(
+  !Object.prototype.hasOwnProperty.call(method, 'prototype'),
+  "Functions declared as methods do not define a 'prototype' property"
+);
 
 reportCompare(0, 0);

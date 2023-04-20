@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(TypedArray.prototype.toSorted),
+  false,
+  'isConstructor(TypedArray.prototype.toSorted) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new TypedArray.prototype.toSorted();
+}, '`new TypedArray.prototype.toSorted()` throws TypeError');
+
+
+reportCompare(0, 0);

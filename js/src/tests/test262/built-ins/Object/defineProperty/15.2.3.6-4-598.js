@@ -8,31 +8,11 @@
 
 
 
-var desc = Object.getOwnPropertyDescriptor(Object, "getPrototypeOf");
 
-var propertyAreCorrect = (desc.writable === true && desc.enumerable === false && desc.configurable === true);
-
-var temp = Object.getPrototypeOf;
-
-Object.getPrototypeOf = "2010";
-
-var isWritable = (Object.getPrototypeOf === "2010");
-
-var isEnumerable = false;
-
-for (var prop in Object) {
-  if (prop === "getPrototypeOf") {
-    isEnumerable = true;
-  }
-}
-
-delete Object.getPrototypeOf;
-
-var isConfigurable = !Object.hasOwnProperty("getPrototypeOf");
-
-assert(propertyAreCorrect, 'propertyAreCorrect !== true');
-assert(isWritable, 'isWritable !== true');
-assert.sameValue(isEnumerable, false, 'isEnumerable');
-assert(isConfigurable, 'isConfigurable !== true');
+verifyProperty(Object, "getPrototypeOf", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

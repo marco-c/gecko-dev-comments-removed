@@ -662,7 +662,17 @@ testPropertyOfStrings({
     "\u{1FAF6}\u{1F3FC}",
     "\u{1FAF6}\u{1F3FD}",
     "\u{1FAF6}\u{1F3FE}",
-    "\u{1FAF6}\u{1F3FF}"
+    "\u{1FAF6}\u{1F3FF}",
+    "\u{1FAF7}\u{1F3FB}",
+    "\u{1FAF7}\u{1F3FC}",
+    "\u{1FAF7}\u{1F3FD}",
+    "\u{1FAF7}\u{1F3FE}",
+    "\u{1FAF7}\u{1F3FF}",
+    "\u{1FAF8}\u{1F3FB}",
+    "\u{1FAF8}\u{1F3FC}",
+    "\u{1FAF8}\u{1F3FD}",
+    "\u{1FAF8}\u{1F3FE}",
+    "\u{1FAF8}\u{1F3FF}"
   ],
   nonMatchStrings: [
     "\u{1F3FB}",

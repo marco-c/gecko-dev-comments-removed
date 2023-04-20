@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var foo = {};
+var map = new WeakMap();
+
+map.set(foo, 1);
+assert.sameValue(map.has(foo), true);
+
+reportCompare(0, 0);

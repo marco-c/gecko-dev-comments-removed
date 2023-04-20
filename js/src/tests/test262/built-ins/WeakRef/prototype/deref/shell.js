@@ -52,6 +52,7 @@ function resolveAsyncGC(err) {
   if (err === asyncGC.notCollected) {
     
     $DONE();
+    return;
   }
 
   $DONE(err);

@@ -11,6 +11,7 @@
 
 
 
+
 $DONOTEVALUATE();
 ({
   async foo () { super() }

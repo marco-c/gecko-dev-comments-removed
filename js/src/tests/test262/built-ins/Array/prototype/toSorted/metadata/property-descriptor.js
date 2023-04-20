@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Array.prototype.toSorted, "function", "typeof");
+
+verifyProperty(Array.prototype, "toSorted", {
+  value: Array.prototype.toSorted,
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

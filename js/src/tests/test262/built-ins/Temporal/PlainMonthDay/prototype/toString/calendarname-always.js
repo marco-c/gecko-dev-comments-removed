@@ -9,17 +9,17 @@
 
 
 const tests = [
-  [[], "1972-05-02[u-ca=iso8601]"],
-  [[{ toString() { return "custom"; } }], "1972-05-02[u-ca=custom]"],
-  [[{ toString() { return "iso8601"; } }], "1972-05-02[u-ca=iso8601]"],
-  [[{ toString() { return "ISO8601"; } }], "1972-05-02[u-ca=ISO8601]"],
-  [[{ toString() { return "\u0131so8601"; } }], "1972-05-02[u-ca=\u0131so8601]"], 
+  [[], "1972-05-02[u-ca=iso8601]", "built-in ISO"],
+  [[{ toString() { return "custom"; } }], "1972-05-02[u-ca=custom]", "custom"],
+  [[{ toString() { return "iso8601"; } }], "1972-05-02[u-ca=iso8601]", "custom with iso8601 toString"],
+  [[{ toString() { return "ISO8601"; } }], "1972-05-02[u-ca=ISO8601]", "custom with caps toString"],
+  [[{ toString() { return "\u0131so8601"; } }], "1972-05-02[u-ca=\u0131so8601]", "custom with dotless i toString"],
 ];
 
-for (const [args, expected] of tests) {
+for (const [args, expected, description] of tests) {
   const monthday = new Temporal.PlainMonthDay(5, 2, ...args);
   const result = monthday.toString({ calendarName: "always" });
-  assert.sameValue(result, expected);
+  assert.sameValue(result, expected, `${description} calendar for calendarName = always`);
 }
 
 reportCompare(0, 0);

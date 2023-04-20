@@ -9,25 +9,35 @@
 
 
 
-var calendar = new Intl.DateTimeFormat("en").resolvedOptions().calendar;
+
+
+
+const deMonthDayRangeSeparator = new Intl.DateTimeFormat("de-AT", { month: "numeric", day: "numeric" })
+  .formatRangeToParts(1 * 86400 * 1000, 90 * 86400 * 1000)
+  .find((part) => part.type === "literal" && part.source === "shared").value;
+const deMonthYearSeparator = new Intl.DateTimeFormat("de-AT", { year: "numeric", month: "numeric" })
+  .formatToParts(0)
+  .find((part) => part.type === "literal").value;
+
+var calendar = new Intl.DateTimeFormat("en-US").resolvedOptions().calendar;
 var yearmonth = Temporal.PlainYearMonth.from({
   year: 1976,
   month: 11,
   calendar
 });
-assert.sameValue(`${ yearmonth.toLocaleString("en", { timeZone: "America/New_York" }) }`, "11/1976")
-assert.sameValue(`${ yearmonth.toLocaleString("de", {
-  timeZone: "Europe/Vienna",
-  calendar
-}) }`, "11.1976")
+assert.sameValue(`${yearmonth.toLocaleString("en-US", { timeZone: "America/New_York" })}`, "11/1976");
+assert.sameValue(
+  `${yearmonth.toLocaleString("de-AT", { timeZone: "Europe/Vienna", calendar })}`,
+  `11${deMonthYearSeparator}1976`
+);
 
 
-assert.sameValue(yearmonth.toLocaleString("en", { timeZoneName: "long" }), "11/1976");
-assert.sameValue(yearmonth.toLocaleString("en", { day: "numeric" }), "11/1976");
-assert.sameValue(yearmonth.toLocaleString("en", { hour: "numeric" }), "11/1976");
-assert.sameValue(yearmonth.toLocaleString("en", { minute: "numeric" }), "11/1976");
-assert.sameValue(yearmonth.toLocaleString("en", { second: "numeric" }), "11/1976");
-assert.sameValue(yearmonth.toLocaleString("en", { weekday: "long" }), "11/1976");
+assert.sameValue(yearmonth.toLocaleString("en-US", { timeZoneName: "long" }), "11/1976");
+assert.sameValue(yearmonth.toLocaleString("en-US", { day: "numeric" }), "11/1976");
+assert.sameValue(yearmonth.toLocaleString("en-US", { hour: "numeric" }), "11/1976");
+assert.sameValue(yearmonth.toLocaleString("en-US", { minute: "numeric" }), "11/1976");
+assert.sameValue(yearmonth.toLocaleString("en-US", { second: "numeric" }), "11/1976");
+assert.sameValue(yearmonth.toLocaleString("en-US", { weekday: "long" }), "11/1976");
 
 
 var ym = Temporal.PlainYearMonth.from({

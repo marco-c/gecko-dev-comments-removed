@@ -9,12 +9,17 @@
 
 
 
-const dtf = new Intl.DateTimeFormat();
+
+
+
+
+
+const dtf = Object.create(Intl.DateTimeFormat.prototype);
 
 Object.defineProperty(Intl.DateTimeFormat, Symbol.hasInstance, {
     get() { throw new Test262Error(); }
 });
 
-dtf.resolvedOptions();
+assert.throws(TypeError, () => dtf.resolvedOptions());
 
 reportCompare(0, 0);

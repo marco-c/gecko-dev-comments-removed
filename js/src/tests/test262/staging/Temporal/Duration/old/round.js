@@ -8,6 +8,7 @@
 
 
 
+
 var d = new Temporal.Duration(5, 5, 5, 5, 5, 5, 5, 5, 5, 5);
 var d2 = new Temporal.Duration(0, 0, 0, 5, 5, 5, 5, 5, 5, 5);
 var relativeTo = Temporal.PlainDate.from("2020-01-01");
@@ -27,18 +28,19 @@ assert.sameValue(`${ hours25.round({
 }) }`, "P1DT1H");
 
 
-var relativeTo = Temporal.ZonedDateTime.from("2017-01-01T00:00[America/Montevideo]");
+var relativeTo = Temporal.ZonedDateTime.from("2017-01-01T00:00[+04:30]");
 assert.sameValue(`${ hours25.round({
   largestUnit: "days",
   relativeTo
 }) }`, "P1DT1H");
-var skippedHourDay = Temporal.ZonedDateTime.from("2019-03-10T00:00[America/Vancouver]");
-var repeatedHourDay = Temporal.ZonedDateTime.from("2019-11-03T00:00[America/Vancouver]");
-var inRepeatedHour = Temporal.ZonedDateTime.from("2019-11-03T01:00-07:00[America/Vancouver]");
+
+
+var timeZone = TemporalHelpers.springForwardFallBackTimeZone();
+var skippedHourDay = Temporal.PlainDateTime.from("2000-04-02").toZonedDateTime(timeZone);
+var repeatedHourDay = Temporal.PlainDateTime.from("2000-10-29").toZonedDateTime(timeZone);
+var inRepeatedHour = new Temporal.ZonedDateTime(972806400_000_000_000n, timeZone);
 var oneDay = new Temporal.Duration(0, 0, 0, 1);
 var hours12 = new Temporal.Duration(0, 0, 0, 0, 12);
-
-
 
 
 assert.sameValue(`${ hours25.round({
@@ -51,7 +53,7 @@ assert.sameValue(`${ oneDay.round({
 }) }`, "PT25H");
 
 
-var relativeTo = Temporal.ZonedDateTime.from("2019-11-04T01:00[America/Vancouver]");
+var relativeTo = Temporal.PlainDateTime.from("2000-10-30T01:00").toZonedDateTime(timeZone);
 assert.sameValue(`${ hours25.negated().round({
   largestUnit: "days",
   relativeTo
@@ -78,7 +80,7 @@ assert.sameValue(`${ Temporal.Duration.from({
 }) }`, "PT3026H");
 
 
-var relativeTo = Temporal.ZonedDateTime.from("2019-03-09T02:30[America/Vancouver]");
+var relativeTo = Temporal.PlainDateTime.from("2000-04-01T02:30").toZonedDateTime(timeZone);
 assert.sameValue(`${ hours25.round({
   largestUnit: "days",
   relativeTo
@@ -99,7 +101,7 @@ assert.sameValue(`${ oneDay.round({
 }) }`, "PT23H");
 
 
-var relativeTo = Temporal.ZonedDateTime.from("2019-03-11T00:00[America/Vancouver]");
+var relativeTo = Temporal.PlainDateTime.from("2000-04-03T00:00").toZonedDateTime(timeZone);
 assert.sameValue(`${ hours25.negated().round({
   largestUnit: "days",
   relativeTo
@@ -116,7 +118,7 @@ assert.sameValue(`${ hours12.round({
 }) }`, "PT12H");
 
 
-var relativeTo = Temporal.ZonedDateTime.from("2019-03-10T12:00[America/Vancouver]");
+var relativeTo = Temporal.PlainDateTime.from("2000-04-02T12:00").toZonedDateTime(timeZone);
 assert.sameValue(`${ hours12.negated().round({
   largestUnit: "days",
   relativeTo
@@ -133,7 +135,7 @@ assert.sameValue(`${ oneDay.round({
 }) }`, "PT25H");
 
 
-var relativeTo = Temporal.ZonedDateTime.from("2019-11-04T00:00[America/Vancouver]");
+var relativeTo = Temporal.PlainDateTime.from("2000-10-30T00:00").toZonedDateTime(timeZone);
 assert.sameValue(`${ hours25.negated().round({
   largestUnit: "days",
   relativeTo
@@ -150,14 +152,15 @@ assert.sameValue(`${ hours12.round({
 }) }`, "PT12H");
 
 
-var relativeTo = Temporal.ZonedDateTime.from("2019-11-03T12:00[America/Vancouver]");
+var relativeTo = Temporal.PlainDateTime.from("2000-10-29T12:00").toZonedDateTime(timeZone);
 assert.sameValue(`${ hours12.negated().round({
   largestUnit: "days",
   relativeTo
 }) }`, "-PT12H");
 
 
-var relativeTo = Temporal.ZonedDateTime.from("2011-12-29T12:00-10:00[Pacific/Apia]");
+var fakeSamoa = TemporalHelpers.crossDateLineTimeZone();
+var relativeTo = Temporal.PlainDateTime.from("2011-12-29T12:00").toZonedDateTime(fakeSamoa);
 assert.sameValue(`${ hours25.round({
   largestUnit: "days",
   relativeTo
@@ -170,15 +173,11 @@ assert.sameValue(`${ Temporal.Duration.from({ hours: 48 }).round({
 
 assert.sameValue(`${ hours25.round({
   largestUnit: "days",
-  relativeTo: "2019-11-03T00:00[America/Vancouver]"
-}) }`, "P1D");
-assert.sameValue(`${ hours25.round({
-  largestUnit: "days",
   relativeTo: {
-    year: 2019,
-    month: 11,
-    day: 3,
-    timeZone: "America/Vancouver"
+    year: 2000,
+    month: 10,
+    day: 29,
+    timeZone
   }
 }) }`, "P1D");
 
@@ -216,13 +215,13 @@ assert.sameValue(`${ hours25.round({
 
 assert.throws(RangeError, () => d.round({
   smallestUnit: "seconds",
-  relativeTo: "1971-01-01T00:00+02:00[Africa/Monrovia]"
+  relativeTo: "1971-01-01T00:00+02:00[-00:44:30]"
 }));
 
 
 assert.sameValue(`${ d.round({
   smallestUnit: "seconds",
-  relativeTo: "1971-01-01T00:00-00:45[Africa/Monrovia]"
+  relativeTo: "1971-01-01T00:00-00:45[-00:44:30]"
 }) }`, "P5Y5M5W5DT5H5M5S");
 
 
@@ -233,7 +232,7 @@ assert.throws(RangeError, () => d.round({
     month: 1,
     day: 1,
     offset: "-00:45",
-    timeZone: "Africa/Monrovia"
+    timeZone: "-00:44:30"
   }
 }));
 
@@ -424,36 +423,6 @@ for (var [largestUnit, entry] of Object.entries(balanceLosePrecisionResults)) {
         relativeTo
       }) }`.startsWith("PT174373505.005"));
   }
-}
-var roundingModeResults = {
-  halfExpand: [
-    "P6Y",
-    "-P6Y"
-  ],
-  ceil: [
-    "P6Y",
-    "-P5Y"
-  ],
-  floor: [
-    "P5Y",
-    "-P6Y"
-  ],
-  trunc: [
-    "P5Y",
-    "-P5Y"
-  ]
-};
-for (var [roundingMode, [posResult, negResult]] of Object.entries(roundingModeResults)) {
-    assert.sameValue(`${ d.round({
-      smallestUnit: "years",
-      relativeTo,
-      roundingMode
-    }) }`, posResult);
-    assert.sameValue(`${ d.negated().round({
-      smallestUnit: "years",
-      relativeTo,
-      roundingMode
-    }) }`, negResult);
 }
 
 

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+const validStrings = TemporalHelpers.ISO.plainYearMonthStringsValid().concat(TemporalHelpers.ISO.plainYearMonthStringsValidNegativeYear());
+
+for (const arg of validStrings) {
+  assert.sameValue(
+    Temporal.PlainYearMonth.compare(arg, arg),
+    0,
+    `"${arg}" is a valid PlainYearMonth string`
+  );
+}
+
+reportCompare(0, 0);

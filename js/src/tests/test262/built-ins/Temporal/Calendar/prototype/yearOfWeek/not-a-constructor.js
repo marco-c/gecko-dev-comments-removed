@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.Calendar.prototype.yearOfWeek();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.Calendar.prototype.yearOfWeek), false,
+  "isConstructor(Temporal.Calendar.prototype.yearOfWeek)");
+
+reportCompare(0, 0);

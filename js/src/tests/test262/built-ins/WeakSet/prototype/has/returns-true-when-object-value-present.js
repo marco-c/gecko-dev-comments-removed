@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var foo = {};
+var s = new WeakSet();
+
+s.add(foo);
+assert.sameValue(s.has(foo), true);
+
+reportCompare(0, 0);

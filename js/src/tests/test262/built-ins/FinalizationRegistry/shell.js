@@ -52,6 +52,7 @@ function resolveAsyncGC(err) {
   if (err === asyncGC.notCollected) {
     
     $DONE();
+    return;
   }
 
   $DONE(err);
@@ -67,7 +68,12 @@ function resolveAsyncGC(err) {
 
 
 
+
 function isConstructor(f) {
+    if (typeof f !== "function") {
+      throw new Test262Error("isConstructor invoked with a non-function value");
+    }
+
     try {
         Reflect.construct(function(){}, [], f);
     } catch (e) {

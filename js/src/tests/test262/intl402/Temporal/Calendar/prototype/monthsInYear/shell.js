@@ -9,6 +9,24 @@
 
 
 
+function formatPropertyName(propertyKey, objectName = "") {
+  switch (typeof propertyKey) {
+    case "symbol":
+      if (Symbol.keyFor(propertyKey) !== undefined) {
+        return `${objectName}[Symbol.for('${Symbol.keyFor(propertyKey)}')]`;
+      } else if (propertyKey.description.startsWith('Symbol.')) {
+        return `${objectName}[${propertyKey.description}]`;
+      } else {
+        return `${objectName}[Symbol('${propertyKey.description}')]`
+      }
+    case "number":
+      return `${objectName}[${propertyKey}]`;
+    default:
+      return objectName ? `${objectName}.${propertyKey}` : propertyKey;
+  }
+}
+const SKIP_SYMBOL = Symbol("Skip");
+
 var TemporalHelpers = {
   
 
@@ -237,7 +255,7 @@ var TemporalHelpers = {
     Object.entries(expectedLargestUnitCalls).forEach(([largestUnit, expected], index) => {
       func(calendar, largestUnit, index);
       assert.compareArray(actual, expected, `largestUnit passed to calendar.dateUntil() for largestUnit ${largestUnit}`);
-      actual.splice(0, actual.length); 
+      actual.splice(0); 
     });
   },
 
@@ -264,15 +282,15 @@ var TemporalHelpers = {
     ["year", "month", "monthCode", "day", "hour", "minute", "second", "millisecond", "microsecond", "nanosecond"].forEach((property) => {
       Object.defineProperty(datetime, property, {
         get() {
-          actual.push(`get ${property}`);
+          actual.push(`get ${formatPropertyName(property)}`);
           const value = prototypeDescrs[property].get.call(this);
           return {
             toString() {
-              actual.push(`toString ${property}`);
+              actual.push(`toString ${formatPropertyName(property)}`);
               return value.toString();
             },
             valueOf() {
-              actual.push(`valueOf ${property}`);
+              actual.push(`valueOf ${formatPropertyName(property)}`);
               return value;
             },
           };
@@ -872,7 +890,7 @@ var TemporalHelpers = {
     ["year", "month", "monthCode", "day"].forEach((property) => {
       Object.defineProperty(date, property, {
         get() {
-          actual.push(`get ${property}`);
+          actual.push(`get ${formatPropertyName(property)}`);
           const value = prototypeDescrs[property].get.call(this);
           return TemporalHelpers.toPrimitiveObserver(actual, value, property);
         },
@@ -881,7 +899,7 @@ var TemporalHelpers = {
     ["hour", "minute", "second", "millisecond", "microsecond", "nanosecond"].forEach((property) => {
       Object.defineProperty(date, property, {
         get() {
-          actual.push(`get ${property}`);
+          actual.push(`get ${formatPropertyName(property)}`);
           return undefined;
         },
       });
@@ -1294,25 +1312,212 @@ var TemporalHelpers = {
 
 
 
-  observeProperty(calls, object, propertyName, value) {
-    let displayName = propertyName;
-    if (typeof propertyName === 'symbol') {
-      if (Symbol.keyFor(propertyName) !== undefined) {
-        displayName = `[Symbol.for('${Symbol.keyFor(propertyName)}')]`;
-      } else if (propertyName.description.startsWith('Symbol.')) {
-        displayName = `[${propertyName.description}]`;
-      } else {
-        displayName = `[Symbol('${propertyName.description}')]`
+
+
+
+
+
+
+
+  crossDateLineTimeZone() {
+    const { compare } = Temporal.PlainDateTime;
+    const skippedDay = new Temporal.PlainDate(2011, 12, 30);
+    const transitionEpoch = 1325239200_000_000_000n;
+    const beforeOffset = new Temporal.TimeZone("-10:00");
+    const afterOffset = new Temporal.TimeZone("+14:00");
+
+    class CrossDateLineTimeZone extends Temporal.TimeZone {
+      constructor() {
+        super("+14:00");
+      }
+
+      getOffsetNanosecondsFor(instant) {
+        if (instant.epochNanoseconds < transitionEpoch) {
+          return beforeOffset.getOffsetNanosecondsFor(instant);
+        }
+        return afterOffset.getOffsetNanosecondsFor(instant);
+      }
+
+      getPossibleInstantsFor(datetime) {
+        const comparison = Temporal.PlainDate.compare(datetime.toPlainDate(), skippedDay);
+        if (comparison === 0) {
+          return [];
+        }
+        if (comparison < 0) {
+          return [beforeOffset.getInstantFor(datetime)];
+        }
+        return [afterOffset.getInstantFor(datetime)];
+      }
+
+      getPreviousTransition(instant) {
+        if (instant.epochNanoseconds > transitionEpoch) return new Temporal.Instant(transitionEpoch);
+        return null;
+      }
+
+      getNextTransition(instant) {
+        if (instant.epochNanoseconds < transitionEpoch) return new Temporal.Instant(transitionEpoch);
+        return null;
+      }
+
+      toString() {
+        return "Custom/Date_Line";
       }
     }
+    return new CrossDateLineTimeZone();
+  },
+
+  
+
+
+
+
+
+  observeProperty(calls, object, propertyName, value, objectName = "") {
     Object.defineProperty(object, propertyName, {
       get() {
-        calls.push(`get ${displayName}`);
+        calls.push(`get ${formatPropertyName(propertyName, objectName)}`);
         return value;
       },
       set(v) {
-        calls.push(`set ${displayName}`);
+        calls.push(`set ${formatPropertyName(propertyName, objectName)}`);
       }
+    });
+  },
+
+  
+
+
+
+
+
+  observeMethod(calls, object, propertyName, objectName = "") {
+    const method = object[propertyName];
+    object[propertyName] = function () {
+      calls.push(`call ${formatPropertyName(propertyName, objectName)}`);
+      return method.apply(object, arguments);
+    };
+  },
+
+  
+
+
+
+  SUBSTITUTE_SKIP: SKIP_SYMBOL,
+
+  
+
+
+
+
+
+
+
+
+
+
+  substituteMethod(object, propertyName, values) {
+    let calls = 0;
+    const method = object[propertyName];
+    object[propertyName] = function () {
+      if (calls >= values.length) {
+        return method.apply(object, arguments);
+      } else if (values[calls] === SKIP_SYMBOL) {
+        calls++;
+        return method.apply(object, arguments);
+      } else {
+        return values[calls++];
+      }
+    };
+  },
+
+  
+
+
+
+
+
+
+
+  calendarObserver(calls, objectName, methodOverrides = {}) {
+    const iso8601 = new Temporal.Calendar("iso8601");
+    const trackingMethods = {
+      dateFromFields(...args) {
+        calls.push(`call ${objectName}.dateFromFields`);
+        if ('dateFromFields' in methodOverrides) {
+          const value = methodOverrides.dateFromFields;
+          return typeof value === "function" ? value(...args) : value;
+        }
+        const originalResult = iso8601.dateFromFields(...args);
+        
+        const {isoYear, isoMonth, isoDay} = originalResult.getISOFields();
+        const result = new Temporal.PlainDate(isoYear, isoMonth, isoDay, this);
+        
+        assert.sameValue(calls.pop(), `has ${objectName}.calendar`);
+        return result;
+      },
+      yearMonthFromFields(...args) {
+        calls.push(`call ${objectName}.yearMonthFromFields`);
+        if ('yearMonthFromFields' in methodOverrides) {
+          const value = methodOverrides.yearMonthFromFields;
+          return typeof value === "function" ? value(...args) : value;
+        }
+        const originalResult = iso8601.yearMonthFromFields(...args);
+        
+        const {isoYear, isoMonth, isoDay} = originalResult.getISOFields();
+        const result = new Temporal.PlainYearMonth(isoYear, isoMonth, this, isoDay);
+        
+        assert.sameValue(calls.pop(), `has ${objectName}.calendar`);
+        return result;
+      },
+      monthDayFromFields(...args) {
+        calls.push(`call ${objectName}.monthDayFromFields`);
+        if ('monthDayFromFields' in methodOverrides) {
+          const value = methodOverrides.monthDayFromFields;
+          return typeof value === "function" ? value(...args) : value;
+        }
+        const originalResult = iso8601.monthDayFromFields(...args);
+        
+        const {isoYear, isoMonth, isoDay} = originalResult.getISOFields();
+        const result = new Temporal.PlainMonthDay(isoMonth, isoDay, this, isoYear);
+        
+        assert.sameValue(calls.pop(), `has ${objectName}.calendar`);
+        return result;
+      },
+      dateAdd(...args) {
+        calls.push(`call ${objectName}.dateAdd`);
+        if ('dateAdd' in methodOverrides) {
+          const value = methodOverrides.dateAdd;
+          return typeof value === "function" ? value(...args) : value;
+        }
+        const originalResult = iso8601.dateAdd(...args);
+        const {isoYear, isoMonth, isoDay} = originalResult.getISOFields();
+        const result = new Temporal.PlainDate(isoYear, isoMonth, isoDay, this);
+        
+        assert.sameValue(calls.pop(), `has ${objectName}.calendar`);
+        return result;
+      }
+    };
+    
+    ["toString", "dateUntil", "era", "eraYear", "year", "month", "monthCode", "day", "daysInMonth", "fields", "mergeFields"].forEach((methodName) => {
+      trackingMethods[methodName] = function (...args) {
+        actual.push(`call ${formatPropertyName(methodName, objectName)}`);
+        if (methodName in methodOverrides) {
+          const value = methodOverrides[methodName];
+          return typeof value === "function" ? value(...args) : value;
+        }
+        return iso8601[methodName](...args);
+      };
+    });
+    return new Proxy(trackingMethods, {
+      get(target, key, receiver) {
+        const result = Reflect.get(target, key, receiver);
+        actual.push(`get ${formatPropertyName(key, objectName)}`);
+        return result;
+      },
+      has(target, key) {
+        actual.push(`has ${formatPropertyName(key, objectName)}`);
+        return Reflect.has(target, key);
+      },
     });
   },
 
@@ -1450,6 +1655,45 @@ var TemporalHelpers = {
 
 
 
+  propertyBagObserver(calls, propertyBag, objectName) {
+    return new Proxy(propertyBag, {
+      ownKeys(target) {
+        calls.push(`ownKeys ${objectName}`);
+        return Reflect.ownKeys(target);
+      },
+      getOwnPropertyDescriptor(target, key) {
+        calls.push(`getOwnPropertyDescriptor ${formatPropertyName(key, objectName)}`);
+        return Reflect.getOwnPropertyDescriptor(target, key);
+      },
+      get(target, key, receiver) {
+        calls.push(`get ${formatPropertyName(key, objectName)}`);
+        const result = Reflect.get(target, key, receiver);
+        if (result === undefined) {
+          return undefined;
+        }
+        if (typeof result === "object") {
+          return result;
+        }
+        return TemporalHelpers.toPrimitiveObserver(calls, result, `${formatPropertyName(key, objectName)}`);
+      },
+      has(target, key) {
+        calls.push(`has ${formatPropertyName(key, objectName)}`);
+        return Reflect.has(target, key);
+      },
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
   specificOffsetTimeZone(offsetValue) {
     class SpecificOffsetTimeZone extends Temporal.TimeZone {
       constructor(offsetValue) {
@@ -1540,6 +1784,44 @@ var TemporalHelpers = {
 
 
 
+
+
+
+
+
+
+  timeZoneObserver(calls, objectName, methodOverrides = {}) {
+    const utc = new Temporal.TimeZone("UTC");
+    const trackingMethods = {};
+    
+    ["getOffsetNanosecondsFor", "getPossibleInstantsFor", "toString"].forEach((methodName) => {
+      trackingMethods[methodName] = function (...args) {
+        actual.push(`call ${formatPropertyName(methodName, objectName)}`);
+        if (methodName in methodOverrides) {
+          const value = methodOverrides[methodName];
+          return typeof value === "function" ? value(...args) : value;
+        }
+        return utc[methodName](...args);
+      };
+    });
+    return new Proxy(trackingMethods, {
+      get(target, key, receiver) {
+        const result = Reflect.get(target, key, receiver);
+        actual.push(`get ${formatPropertyName(key, objectName)}`);
+        return result;
+      },
+      has(target, key) {
+        actual.push(`has ${formatPropertyName(key, objectName)}`);
+        return Reflect.has(target, key);
+      },
+    });
+  },
+
+  
+
+
+
+
   toPrimitiveObserver(calls, primitiveValue, propertyName) {
     return {
       get valueOf() {
@@ -1568,15 +1850,58 @@ var TemporalHelpers = {
     
 
 
+    plainMonthDayStringsInvalid() {
+      return [
+        "11-18junk",
+      ];
+    },
+
+    
+
+
+    plainMonthDayStringsValid() {
+      return [
+        "10-01",
+        "1001",
+        "1965-10-01",
+        "1976-10-01T152330.1+00:00",
+        "19761001T15:23:30.1+00:00",
+        "1976-10-01T15:23:30.1+0000",
+        "1976-10-01T152330.1+0000",
+        "19761001T15:23:30.1+0000",
+        "19761001T152330.1+00:00",
+        "19761001T152330.1+0000",
+        "+001976-10-01T152330.1+00:00",
+        "+0019761001T15:23:30.1+00:00",
+        "+001976-10-01T15:23:30.1+0000",
+        "+001976-10-01T152330.1+0000",
+        "+0019761001T15:23:30.1+0000",
+        "+0019761001T152330.1+00:00",
+        "+0019761001T152330.1+0000",
+        "1976-10-01T15:23:00",
+        "1976-10-01T15:23",
+        "1976-10-01T15",
+        "1976-10-01",
+        "--10-01",
+        "--1001",
+      ];
+    },
+
+    
+
+
 
     plainTimeStringsAmbiguous() {
       const ambiguousStrings = [
         "2021-12",  
+        "2021-12[-12:00]",  
         "1214",     
         "0229",     
         "1130",     
         "12-14",    
+        "12-14[-14:00]",  
         "202112",   
+        "202112[UTC]",  
       ];
       
       
@@ -1606,9 +1931,59 @@ var TemporalHelpers = {
         "0631",             
         "0000",             
         "00-00",            
-        "2021-12[-12:00]",  
-        "202112[UTC]",      
       ];
-    }
+    },
+
+    
+
+
+    plainYearMonthStringsInvalid() {
+      return [
+        "2020-13",
+      ];
+    },
+
+    
+
+
+
+    plainYearMonthStringsValid() {
+      return [
+        "1976-11",
+        "1976-11-10",
+        "1976-11-01T09:00:00+00:00",
+        "1976-11-01T00:00:00+05:00",
+        "197611",
+        "+00197611",
+        "1976-11-18T15:23:30.1\u221202:00",
+        "1976-11-18T152330.1+00:00",
+        "19761118T15:23:30.1+00:00",
+        "1976-11-18T15:23:30.1+0000",
+        "1976-11-18T152330.1+0000",
+        "19761118T15:23:30.1+0000",
+        "19761118T152330.1+00:00",
+        "19761118T152330.1+0000",
+        "+001976-11-18T152330.1+00:00",
+        "+0019761118T15:23:30.1+00:00",
+        "+001976-11-18T15:23:30.1+0000",
+        "+001976-11-18T152330.1+0000",
+        "+0019761118T15:23:30.1+0000",
+        "+0019761118T152330.1+00:00",
+        "+0019761118T152330.1+0000",
+        "1976-11-18T15:23",
+        "1976-11-18T15",
+        "1976-11-18",
+      ];
+    },
+
+    
+
+
+
+    plainYearMonthStringsValidNegativeYear() {
+      return [
+        "\u2212009999-11",
+      ];
+    },
   }
 };

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+const timeZone = 'uTc';
+const result = new Temporal.ZonedDateTime(0n, timeZone);
+assert.sameValue(result.timeZone.id, 'UTC', `Time zone created from string "${timeZone}"`);
+
+reportCompare(0, 0);

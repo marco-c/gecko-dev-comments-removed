@@ -8,6 +8,7 @@
 
 
 
+
 var arrObj = [0, 1];
 Object.defineProperty(arrObj, "1", {
   value: 1,
@@ -20,12 +21,11 @@ assert.throws(TypeError, function() {
   });
 });
 
-var desc = Object.getOwnPropertyDescriptor(arrObj, "length");
-
-assert(Object.hasOwnProperty.call(arrObj, "length"), 'Object.hasOwnProperty.call(arrObj, "length")');
-assert.sameValue(desc.value, 2, 'desc.value');
-assert.sameValue(desc.writable, true, 'desc.writable');
-assert.sameValue(desc.configurable, false, 'desc.configurable');
-assert.sameValue(desc.enumerable, false, 'desc.enumerable');
+verifyProperty(arrObj, "length", {
+  value: 2,
+  writable: true,
+  configurable: false,
+  enumerable: false,
+});
 
 reportCompare(0, 0);

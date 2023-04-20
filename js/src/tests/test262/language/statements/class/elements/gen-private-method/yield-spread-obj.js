@@ -44,9 +44,18 @@ class C {
 const c = new C();
 
 
-assert.sameValue(Object.hasOwnProperty.call(C.prototype, "#gen"), false, 'Object.hasOwnProperty.call(C.prototype, "#gen")');
-assert.sameValue(Object.hasOwnProperty.call(C, "#gen"), false, 'Object.hasOwnProperty.call(C, "#gen")');
-assert.sameValue(Object.hasOwnProperty.call(c, "#gen"), false, 'Object.hasOwnProperty.call(c, "#gen")');
+assert(
+  !Object.prototype.hasOwnProperty.call(C.prototype, "#gen"),
+  "Private field '#gen' does not appear as an own property on C prototype"
+);
+assert(
+  !Object.prototype.hasOwnProperty.call(C, "#gen"),
+  "Private field '#gen' does not appear as an own property on C constructor"
+);
+assert(
+  !Object.prototype.hasOwnProperty.call(c, "#gen"),
+  "Private field '#gen' does not appear as an own property on C instance"
+);
 
 var iter = c.gen();
 
@@ -63,8 +72,17 @@ assert.sameValue(item.done, false);
 assert.sameValue(callCount, 1);
 
 
-assert.sameValue(Object.hasOwnProperty.call(C.prototype, "#gen"), false, 'Object.hasOwnProperty.call(C.prototype, "#gen")');
-assert.sameValue(Object.hasOwnProperty.call(C, "#gen"), false, 'Object.hasOwnProperty.call(C, "#gen")');
-assert.sameValue(Object.hasOwnProperty.call(c, "#gen"), false, 'Object.hasOwnProperty.call(c, "#gen")');
+assert(
+  !Object.prototype.hasOwnProperty.call(C.prototype, "#gen"),
+  "Private field '#gen' does not appear as an own property on C prototype"
+);
+assert(
+  !Object.prototype.hasOwnProperty.call(C, "#gen"),
+  "Private field '#gen' does not appear as an own property on C constructor"
+);
+assert(
+  !Object.prototype.hasOwnProperty.call(c, "#gen"),
+  "Private field '#gen' does not appear as an own property on C instance"
+);
 
 reportCompare(0, 0);

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Array.prototype.toReversed, "function", "typeof");
+
+verifyProperty(Array.prototype, "toReversed", {
+  value: Array.prototype.toReversed,
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);
