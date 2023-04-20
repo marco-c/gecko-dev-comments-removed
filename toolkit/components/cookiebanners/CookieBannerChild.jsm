@@ -74,6 +74,8 @@ class CookieBannerChild extends JSWindowActorChild {
     failReason: null,
     bannerVisibilityFail: false,
   };
+  
+  #gleanBannerHandlingTimer = null;
 
   handleEvent(event) {
     if (!this.#isEnabled) {
@@ -172,6 +174,12 @@ class CookieBannerChild extends JSWindowActorChild {
 
     this.#clickRules = rules;
 
+    if (!this.#isDetectOnly) {
+      
+      
+      this.#gleanBannerHandlingTimer = Glean.cookieBannersClick.handleDuration.start();
+    }
+
     let {
       bannerHandled,
       bannerDetected,
@@ -190,7 +198,22 @@ class CookieBannerChild extends JSWindowActorChild {
         url: this.document?.location.href,
         rule: matchedRule,
       });
+
+      
+      lazy.logConsole.debug(
+        "Telemetry timer: stop and accumulate",
+        this.#gleanBannerHandlingTimer
+      );
+      Glean.cookieBannersClick.handleDuration.stopAndAccumulate(
+        this.#gleanBannerHandlingTimer
+      );
+
       this.sendAsyncMessage("CookieBanner::HandledBanner");
+    } else if (!this.#isDetectOnly) {
+      
+      Glean.cookieBannersClick.handleDuration.cancel(
+        this.#gleanBannerHandlingTimer
+      );
     }
 
     this.#maybeSendTestMessage();
