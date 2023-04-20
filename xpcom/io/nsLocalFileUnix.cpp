@@ -1774,10 +1774,15 @@ nsLocalFile::IsExecutable(bool* aResult) {
 
     
     static const char* const executableExts[] = {
+#ifdef MOZ_WIDGET_COCOA
+        "afploc",  
+#endif
         "air",  
 #ifdef MOZ_WIDGET_COCOA
+        "atloc",    
         "fileloc",  
                     
+        "ftploc",   
         "inetloc",  
                     
 #endif

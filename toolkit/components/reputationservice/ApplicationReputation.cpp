@@ -146,10 +146,13 @@ mozilla::LazyLogModule ApplicationReputationService::prlog(
 
 
 const char* const ApplicationReputationService::kNonBinaryExecutables[] = {
+    
     ".ad",
+    ".afploc",
     ".air",
-    ".fileloc",
-    ".inetloc",
+    ".atloc",
+    ".ftploc",
+    
 };
 
 
