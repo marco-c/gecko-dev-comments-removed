@@ -32,8 +32,7 @@ class RemoteBitrateObserver;
 
 
 
-class ReceiveSideCongestionController : public CallStatsObserver,
-                                        public Module {
+class ReceiveSideCongestionController : public CallStatsObserver {
  public:
   ReceiveSideCongestionController(
       Clock* clock,
@@ -65,9 +64,12 @@ class ReceiveSideCongestionController : public CallStatsObserver,
 
   void SetTransportOverhead(DataSize overhead_per_packet);
 
+  [[deprecated]] int64_t TimeUntilNextProcess();
+  [[deprecated]] void Process();
+
   
-  int64_t TimeUntilNextProcess() override;
-  void Process() override;
+  
+  TimeDelta MaybeProcess();
 
  private:
   class WrappingBitrateEstimator : public RemoteBitrateEstimator {
