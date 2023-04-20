@@ -13173,19 +13173,16 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
     }
 
     uint8_t* ionTableAddr =
-        ((uint8_t*)nativeToBytecodeMap_) + nativeToBytecodeTableOffset_;
+        ((uint8_t*)nativeToBytecodeMap_.get()) + nativeToBytecodeTableOffset_;
     JitcodeIonTable* ionTable = (JitcodeIonTable*)ionTableAddr;
 
     
     auto entry = MakeJitcodeGlobalEntry<IonEntry>(
-        cx, code, code->raw(), code->rawEnd(), std::move(scriptList));
+        cx, code, code->raw(), code->rawEnd(), std::move(scriptList), ionTable);
     if (!entry) {
       return false;
     }
-    if (!ionTable->finishIonEntry(cx, entry->asIon())) {
-      js_free(nativeToBytecodeMap_);
-      return false;
-    }
+    (void)nativeToBytecodeMap_.release();  
 
     
     JitcodeGlobalTable* globalTable =
