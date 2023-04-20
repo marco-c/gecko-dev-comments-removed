@@ -38,6 +38,8 @@ using VideoConfig =
     ::webrtc::webrtc_pc_e2e::PeerConnectionE2EQualityTestFixture::VideoConfig;
 using EchoEmulationConfig = ::webrtc::webrtc_pc_e2e::
     PeerConnectionE2EQualityTestFixture::EchoEmulationConfig;
+using EmulatedSFUConfigMap =
+    ::webrtc::webrtc_pc_e2e::QualityAnalyzingVideoEncoder::EmulatedSFUConfigMap;
 
 constexpr int16_t kGeneratedAudioMaxAmplitude = 32000;
 constexpr int kDefaultSamplingFrequencyInHz = 48000;
@@ -76,26 +78,20 @@ void SetMandatoryEntities(InjectableComponents* components,
 
 
 
-
-std::map<std::string, absl::optional<int>>
-CalculateRequiredSpatialIndexPerStream(
+EmulatedSFUConfigMap CalculateRequiredSpatialIndexPerStream(
     const std::vector<VideoConfig>& video_configs) {
-  std::map<std::string, absl::optional<int>> out;
+  EmulatedSFUConfigMap result;
   for (auto& video_config : video_configs) {
     
     RTC_DCHECK(video_config.stream_label);
-    absl::optional<int> spatial_index;
-    if (video_config.simulcast_config) {
-      spatial_index = video_config.simulcast_config->target_spatial_index;
-      if (!spatial_index) {
-        spatial_index = kAnalyzeAnySpatialStream;
-      }
-    }
-    bool res = out.insert({*video_config.stream_label, spatial_index}).second;
+    bool res = result
+                   .insert({*video_config.stream_label,
+                            video_config.emulated_sfu_config})
+                   .second;
     RTC_DCHECK(res) << "Duplicate video_config.stream_label="
                     << *video_config.stream_label;
   }
-  return out;
+  return result;
 }
 
 std::unique_ptr<TestAudioDeviceModule::Renderer> CreateAudioRenderer(
@@ -187,7 +183,7 @@ std::unique_ptr<cricket::MediaEngineInterface> CreateMediaEngine(
 void WrapVideoEncoderFactory(
     absl::string_view peer_name,
     double bitrate_multiplier,
-    std::map<std::string, absl::optional<int>> stream_required_spatial_index,
+    EmulatedSFUConfigMap stream_to_sfu_config,
     PeerConnectionFactoryComponents* pcf_dependencies,
     VideoQualityAnalyzerInjectionHelper* video_analyzer_helper) {
   std::unique_ptr<VideoEncoderFactory> video_encoder_factory;
@@ -199,7 +195,7 @@ void WrapVideoEncoderFactory(
   pcf_dependencies->video_encoder_factory =
       video_analyzer_helper->WrapVideoEncoderFactory(
           peer_name, std::move(video_encoder_factory), bitrate_multiplier,
-          std::move(stream_required_spatial_index));
+          std::move(stream_to_sfu_config));
 }
 
 void WrapVideoDecoderFactory(

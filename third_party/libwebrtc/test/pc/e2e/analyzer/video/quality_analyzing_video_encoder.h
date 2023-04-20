@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "api/test/peerconnection_quality_test_fixture.h"
 #include "api/test/video_quality_analyzer_interface.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/sdp_video_format.h"
@@ -28,11 +29,6 @@
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
-
-
-
-
-constexpr int kAnalyzeAnySpatialStream = -1;
 
 
 
@@ -54,13 +50,16 @@ constexpr int kAnalyzeAnySpatialStream = -1;
 class QualityAnalyzingVideoEncoder : public VideoEncoder,
                                      public EncodedImageCallback {
  public:
-  QualityAnalyzingVideoEncoder(
-      absl::string_view peer_name,
-      std::unique_ptr<VideoEncoder> delegate,
-      double bitrate_multiplier,
-      std::map<std::string, absl::optional<int>> stream_required_spatial_index,
-      EncodedImageDataInjector* injector,
-      VideoQualityAnalyzerInterface* analyzer);
+  using EmulatedSFUConfigMap = std::map<
+      std::string,
+      absl::optional<PeerConnectionE2EQualityTestFixture::EmulatedSFUConfig>>;
+
+  QualityAnalyzingVideoEncoder(absl::string_view peer_name,
+                               std::unique_ptr<VideoEncoder> delegate,
+                               double bitrate_multiplier,
+                               EmulatedSFUConfigMap stream_to_sfu_config,
+                               EncodedImageDataInjector* injector,
+                               VideoQualityAnalyzerInterface* analyzer);
   ~QualityAnalyzingVideoEncoder() override;
 
   
@@ -142,8 +141,7 @@ class QualityAnalyzingVideoEncoder : public VideoEncoder,
   
   
   
-  
-  std::map<std::string, absl::optional<int>> stream_required_spatial_index_;
+  EmulatedSFUConfigMap stream_to_sfu_config_;
   EncodedImageDataInjector* const injector_;
   VideoQualityAnalyzerInterface* const analyzer_;
 
@@ -169,7 +167,7 @@ class QualityAnalyzingVideoEncoderFactory : public VideoEncoderFactory {
       absl::string_view peer_name,
       std::unique_ptr<VideoEncoderFactory> delegate,
       double bitrate_multiplier,
-      std::map<std::string, absl::optional<int>> stream_required_spatial_index,
+      QualityAnalyzingVideoEncoder::EmulatedSFUConfigMap stream_to_sfu_config,
       EncodedImageDataInjector* injector,
       VideoQualityAnalyzerInterface* analyzer);
   ~QualityAnalyzingVideoEncoderFactory() override;
@@ -183,7 +181,7 @@ class QualityAnalyzingVideoEncoderFactory : public VideoEncoderFactory {
   const std::string peer_name_;
   std::unique_ptr<VideoEncoderFactory> delegate_;
   const double bitrate_multiplier_;
-  std::map<std::string, absl::optional<int>> stream_required_spatial_index_;
+  QualityAnalyzingVideoEncoder::EmulatedSFUConfigMap stream_to_sfu_config_;
   EncodedImageDataInjector* const injector_;
   VideoQualityAnalyzerInterface* const analyzer_;
 };

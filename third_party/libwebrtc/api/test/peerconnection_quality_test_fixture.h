@@ -149,17 +149,39 @@ class PeerConnectionE2EQualityTestFixture {
         : simulcast_streams_count(simulcast_streams_count) {
       RTC_CHECK_GT(simulcast_streams_count, 1);
     }
-    VideoSimulcastConfig(int simulcast_streams_count, int target_spatial_index)
-        : simulcast_streams_count(simulcast_streams_count),
-          target_spatial_index(target_spatial_index) {
-      RTC_CHECK_GT(simulcast_streams_count, 1);
-      RTC_CHECK_GE(target_spatial_index, 0);
-      RTC_CHECK_LT(target_spatial_index, simulcast_streams_count);
-    }
 
     
     
     int simulcast_streams_count;
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  struct EmulatedSFUConfig {
+    EmulatedSFUConfig() {}
+    explicit EmulatedSFUConfig(int target_layer_index)
+        : target_layer_index(target_layer_index) {
+      RTC_CHECK_GE(target_layer_index, 0);
+    }
+
+    EmulatedSFUConfig(absl::optional<int> target_layer_index,
+                      absl::optional<int> target_temporal_index)
+        : target_layer_index(target_layer_index),
+          target_temporal_index(target_temporal_index) {
+      RTC_CHECK_GE(target_temporal_index.value_or(0), 0);
+      if (target_temporal_index)
+        RTC_CHECK_GE(*target_temporal_index, 0);
+    }
+
     
     
     
@@ -173,7 +195,12 @@ class PeerConnectionE2EQualityTestFixture {
     
     
     
-    absl::optional<int> target_spatial_index;
+    absl::optional<int> target_layer_index;
+    
+    
+    
+    
+    absl::optional<int> target_temporal_index;
   };
 
   class VideoResolution {
@@ -308,6 +335,8 @@ class PeerConnectionE2EQualityTestFixture {
     
     
     absl::optional<VideoSimulcastConfig> simulcast_config;
+    
+    absl::optional<EmulatedSFUConfig> emulated_sfu_config;
     
     
     
