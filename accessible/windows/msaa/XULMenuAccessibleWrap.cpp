@@ -16,19 +16,3 @@ using namespace mozilla::a11y;
 XULMenuitemAccessibleWrap::XULMenuitemAccessibleWrap(nsIContent* aContent,
                                                      DocAccessible* aDoc)
     : XULMenuitemAccessible(aContent, aDoc) {}
-
-ENameValueFlag XULMenuitemAccessibleWrap::Name(nsString& aName) const {
-  
-  
-  XULMenuitemAccessible::Name(aName);
-  if (aName.IsEmpty()) return eNameOK;
-
-  nsAutoString accel;
-  if (mContent->IsElement()) {
-    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::acceltext,
-                                   accel);
-  }
-  if (!accel.IsEmpty()) aName += u"\t"_ns + accel;
-
-  return eNameOK;
-}

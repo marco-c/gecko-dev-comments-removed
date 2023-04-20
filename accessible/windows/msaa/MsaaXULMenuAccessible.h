@@ -16,6 +16,9 @@ class MsaaXULMenuitemAccessible : public MsaaAccessible {
   virtual  HRESULT STDMETHODCALLTYPE get_accKeyboardShortcut(
        VARIANT varChild,
        BSTR __RPC_FAR* pszKeyboardShortcut) override;
+  virtual  HRESULT STDMETHODCALLTYPE get_accName(
+       VARIANT varChild,
+       BSTR __RPC_FAR* pszName) override;
 
  protected:
   using MsaaAccessible::MsaaAccessible;
