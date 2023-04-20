@@ -51,6 +51,7 @@
 #include "vm/GeckoProfiler.h"
 #include "vm/JSScript.h"
 #include "vm/OffThreadPromiseRuntimeState.h"  
+#include "vm/SharedImmutableStringsCache.h"
 #include "vm/SharedStencil.h"  
 #include "vm/Stack.h"
 #include "wasm/WasmTypeDecls.h"
@@ -108,6 +109,7 @@ class Simulator;
 namespace frontend {
 struct CompilationInput;
 struct CompilationStencil;
+class WellKnownParserAtoms;
 }  
 
 
@@ -784,6 +786,26 @@ struct JSRuntime {
 #endif
 
  private:
+  mozilla::Maybe<js::SharedImmutableStringsCache> sharedImmutableStrings_;
+
+ public:
+  
+  
+  js::SharedImmutableStringsCache* maybeThisRuntimeSharedImmutableStrings() {
+    return sharedImmutableStrings_.isSome() ? &*sharedImmutableStrings_
+                                            : nullptr;
+  }
+
+  
+  
+  js::SharedImmutableStringsCache& sharedImmutableStrings() {
+    MOZ_ASSERT_IF(parentRuntime, !sharedImmutableStrings_);
+    MOZ_ASSERT_IF(!parentRuntime, sharedImmutableStrings_);
+    return parentRuntime ? parentRuntime->sharedImmutableStrings()
+                         : *sharedImmutableStrings_;
+  }
+
+ private:
   js::WriteOnceData<bool> beingDestroyed_;
 
  public:
@@ -810,7 +832,9 @@ struct JSRuntime {
 
  public:
   bool initializeAtoms(JSContext* cx);
+  bool initializeParserAtoms(JSContext* cx);
   void finishAtoms();
+  void finishParserAtoms();
   bool atomsAreFinished() const { return !atoms_; }
 
   js::AtomsTable* atomsForSweeping() {
@@ -849,6 +873,7 @@ struct JSRuntime {
 
   
   js::WriteOnceData<JSAtomState*> commonNames;
+  js::WriteOnceData<js::frontend::WellKnownParserAtoms*> commonParserNames;
 
   
   
