@@ -210,7 +210,6 @@ void GfxInfo::GetData() {
   nsCString adapterRam;
 
   nsCString drmRenderDevice;
-  nsCString isVAAPISupported;
 
   nsCString ddxDriver;
 

@@ -24,15 +24,15 @@
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <getopt.h>
+#include <vector>
+#include <stdint.h>
+#include <string.h>
+#include <stdarg.h>
 
 #if defined(MOZ_ASAN) || defined(FUZZING)
 #  include <signal.h>
 #endif
-
-#include "mozilla/Unused.h"
-#include "nsAppRunner.h"  
-#include "stdint.h"
-#include "nsExceptionHandler.h"
 
 #ifdef __SUNPRO_CC
 #  include <stdio.h>
@@ -44,16 +44,9 @@
 #  include <X11/extensions/Xrandr.h>
 #endif
 
-#ifdef MOZ_WAYLAND
-#  include "mozilla/widget/mozwayland.h"
-#  include "prlink.h"
-#endif
-
 #include <vector>
 #include <sys/wait.h>
-#include "nsString.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/Sprintf.h"
 
 #ifdef MOZ_X11
 
@@ -173,6 +166,19 @@ typedef struct _drmDevice {
 
 #define EXIT_FAILURE_BUFFER_TOO_SMALL 2
 
+
+
+#define MOZ_UNUSED(expr) \
+  do {                   \
+    if (expr) {          \
+      (void)0;           \
+    }                    \
+  } while (0)
+
+
+#define OUTPUT_PIPE 1
+#define LOG_PIPE 2
+
 namespace mozilla {
 namespace widget {
 
@@ -183,14 +189,9 @@ extern pid_t glxtest_pid;
 }  
 
 
-static int write_end_of_the_pipe = -1;
-
-
 static char* glxtest_buf = nullptr;
 static int glxtest_bufsize = 0;
 static int glxtest_length = 0;
-
-static char* glxtest_render_device_path = nullptr;
 
 
 
@@ -231,14 +232,9 @@ static void record_warning(const char* str) {
 }
 
 static void record_flush() {
-  mozilla::Unused << write(write_end_of_the_pipe, glxtest_buf, glxtest_length);
-  if (auto* debugFile = getenv("MOZ_GFX_DEBUG_FILE")) {
-    auto fd = open(debugFile, O_CREAT | O_WRONLY | O_TRUNC,
-                   S_IRUSR | S_IRGRP | S_IROTH);
-    if (fd != -1) {
-      mozilla::Unused << write(fd, glxtest_buf, glxtest_length);
-      close(fd);
-    }
+  MOZ_UNUSED(write(OUTPUT_PIPE, glxtest_buf, glxtest_length));
+  if (getenv("MOZ_GFX_DEBUG")) {
+    MOZ_UNUSED(write(LOG_PIPE, glxtest_buf, glxtest_length));
   }
 }
 
@@ -259,24 +255,6 @@ static int x_error_handler(Display*, XErrorEvent* ev) {
 
 extern "C" {
 
-static void close_logging() {
-  
-  
-  
-  
-  int fd = open("/dev/null", O_WRONLY);
-  for (int i = 1; i < fd; i++) {
-    dup2(fd, i);
-  }
-  close(fd);
-
-  if (getenv("MOZ_AVOID_OPENGL_ALTOGETHER")) {
-    const char* msg = "ERROR\nMOZ_AVOID_OPENGL_ALTOGETHER envvar set";
-    mozilla::Unused << write(write_end_of_the_pipe, msg, strlen(msg));
-    exit(EXIT_FAILURE);
-  }
-}
-
 #define PCI_FILL_IDENT 0x0001
 #define PCI_FILL_CLASS 0x0020
 #define PCI_BASE_CLASS_DISPLAY 0x03
@@ -296,6 +274,7 @@ static void get_pci_status() {
     record_warning("libpci missing");
     return;
   }
+  auto release = mozilla::MakeScopeExit([&] { dlclose(libpci); });
 
   typedef struct pci_dev {
     struct pci_dev* next;
@@ -344,7 +323,6 @@ static void get_pci_status() {
 
   pci_access* pacc = pci_alloc();
   if (!pacc) {
-    dlclose(libpci);
     record_warning("libpci alloc failed");
     return;
   }
@@ -362,13 +340,11 @@ static void get_pci_status() {
   }
 
   pci_cleanup(pacc);
-  dlclose(libpci);
 }
 
 #ifdef MOZ_WAYLAND
 static void set_render_device_path(const char* render_device_path) {
   record_value("DRM_RENDERDEVICE\n%s\n", render_device_path);
-  glxtest_render_device_path = strdup(render_device_path);
 }
 
 static bool device_has_name(const drmDevice* device, const char* name) {
@@ -389,6 +365,7 @@ static bool get_render_name(const char* name) {
     record_warning("Failed to open libdrm");
     return false;
   }
+  auto release = mozilla::MakeScopeExit([&] { dlclose(libdrm); });
 
   typedef int (*DRMGETDEVICES2)(uint32_t, drmDevicePtr*, int);
   DRMGETDEVICES2 drmGetDevices2 =
@@ -401,7 +378,6 @@ static bool get_render_name(const char* name) {
   if (!drmGetDevices2 || !drmFreeDevice) {
     record_warning(
         "libdrm missing methods for drmGetDevices2 or drmFreeDevice");
-    dlclose(libdrm);
     return false;
   }
 
@@ -409,20 +385,17 @@ static bool get_render_name(const char* name) {
   int devices_len = drmGetDevices2(flags, nullptr, 0);
   if (devices_len < 0) {
     record_warning("drmGetDevices2 failed");
-    dlclose(libdrm);
     return false;
   }
   drmDevice** devices = (drmDevice**)calloc(devices_len, sizeof(drmDevice*));
   if (!devices) {
     record_warning("Allocation error");
-    dlclose(libdrm);
     return false;
   }
   devices_len = drmGetDevices2(flags, devices, devices_len);
   if (devices_len < 0) {
     free(devices);
     record_warning("drmGetDevices2 failed");
-    dlclose(libdrm);
     return false;
   }
 
@@ -474,8 +447,6 @@ static bool get_render_name(const char* name) {
     drmFreeDevice(&devices[i]);
   }
   free(devices);
-
-  dlclose(libdrm);
   return result;
 }
 #endif
@@ -498,6 +469,11 @@ static bool get_egl_gl_status(EGLDisplay dpy,
   PFNEGLCREATECONTEXTPROC eglCreateContext =
       cast<PFNEGLCREATECONTEXTPROC>(eglGetProcAddress("eglCreateContext"));
 
+  typedef EGLBoolean (*PFNEGLDESTROYCONTEXTPROC)(EGLDisplay dpy,
+                                                 EGLContext ctx);
+  PFNEGLDESTROYCONTEXTPROC eglDestroyContext =
+      cast<PFNEGLDESTROYCONTEXTPROC>(eglGetProcAddress("eglDestroyContext"));
+
   typedef EGLBoolean (*PFNEGLMAKECURRENTPROC)(
       EGLDisplay dpy, EGLSurface draw, EGLSurface read, EGLContext context);
   PFNEGLMAKECURRENTPROC eglMakeCurrent =
@@ -515,8 +491,8 @@ static bool get_egl_gl_status(EGLDisplay dpy,
       cast<PFNEGLQUERYDISPLAYATTRIBEXTPROC>(
           eglGetProcAddress("eglQueryDisplayAttribEXT"));
 
-  if (!eglChooseConfig || !eglCreateContext || !eglMakeCurrent ||
-      !eglQueryDeviceStringEXT) {
+  if (!eglChooseConfig || !eglCreateContext || !eglDestroyContext ||
+      !eglMakeCurrent || !eglQueryDeviceStringEXT) {
     record_warning("libEGL missing methods for GL test");
     return false;
   }
@@ -570,9 +546,11 @@ static bool get_egl_gl_status(EGLDisplay dpy,
   }
 
   if (eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, ectx) == EGL_FALSE) {
+    eglDestroyContext(dpy, ectx);
     record_warning("eglMakeCurrent returned an error");
     return false;
   }
+  eglDestroyContext(dpy, ectx);
 
   
   
@@ -595,6 +573,11 @@ static bool get_egl_gl_status(EGLDisplay dpy,
       return false;
     }
   }
+  auto release = mozilla::MakeScopeExit([&] {
+    if (libgl) {
+      dlclose(libgl);
+    }
+  });
 
   const GLubyte* versionString = glGetString(GL_VERSION);
   const GLubyte* vendorString = glGetString(GL_VENDOR);
@@ -605,9 +588,6 @@ static bool get_egl_gl_status(EGLDisplay dpy,
                  vendorString, rendererString, versionString);
   } else {
     record_warning("EGL glGetString returned null");
-    if (libgl) {
-      dlclose(libgl);
-    }
     return false;
   }
 
@@ -633,25 +613,34 @@ static bool get_egl_gl_status(EGLDisplay dpy,
 #endif
     }
   }
-
-  if (libgl) {
-    dlclose(libgl);
-  }
   return true;
 }
 
 static bool get_egl_status(EGLNativeDisplayType native_dpy) {
+  EGLDisplay dpy = nullptr;
+
+  typedef EGLBoolean (*PFNEGLTERMINATEPROC)(EGLDisplay dpy);
+  PFNEGLTERMINATEPROC eglTerminate = nullptr;
+
   void* libegl = dlopen(LIBEGL_FILENAME, RTLD_LAZY);
   if (!libegl) {
     record_warning("libEGL missing");
     return false;
   }
+  auto release = mozilla::MakeScopeExit([&] {
+    if (dpy) {
+      eglTerminate(dpy);
+    }
+    
+    
+    
+    
+  });
 
   PFNEGLGETPROCADDRESS eglGetProcAddress =
       cast<PFNEGLGETPROCADDRESS>(dlsym(libegl, "eglGetProcAddress"));
 
   if (!eglGetProcAddress) {
-    dlclose(libegl);
     record_warning("no eglGetProcAddress");
     return false;
   }
@@ -664,27 +653,21 @@ static bool get_egl_status(EGLNativeDisplayType native_dpy) {
                                              EGLint * minor);
   PFNEGLINITIALIZEPROC eglInitialize =
       cast<PFNEGLINITIALIZEPROC>(eglGetProcAddress("eglInitialize"));
-
-  typedef EGLBoolean (*PFNEGLTERMINATEPROC)(EGLDisplay dpy);
-  PFNEGLTERMINATEPROC eglTerminate =
-      cast<PFNEGLTERMINATEPROC>(eglGetProcAddress("eglTerminate"));
+  eglTerminate = cast<PFNEGLTERMINATEPROC>(eglGetProcAddress("eglTerminate"));
 
   if (!eglGetDisplay || !eglInitialize || !eglTerminate) {
-    dlclose(libegl);
     record_warning("libEGL missing methods");
     return false;
   }
 
-  EGLDisplay dpy = eglGetDisplay(native_dpy);
+  dpy = eglGetDisplay(native_dpy);
   if (!dpy) {
-    dlclose(libegl);
     record_warning("libEGL no display");
     return false;
   }
 
   EGLint major, minor;
   if (!eglInitialize(dpy, &major, &minor)) {
-    dlclose(libegl);
     record_warning("libEGL initialize failed");
     return false;
   }
@@ -700,15 +683,7 @@ static bool get_egl_status(EGLNativeDisplayType native_dpy) {
     }
   }
 
-  if (!get_egl_gl_status(dpy, eglGetProcAddress)) {
-    eglTerminate(dpy);
-    dlclose(libegl);
-    return false;
-  }
-
-  eglTerminate(dpy);
-  dlclose(libegl);
-  return true;
+  return get_egl_gl_status(dpy, eglGetProcAddress);
 }
 
 #ifdef MOZ_X11
@@ -725,22 +700,49 @@ static void get_xrandr_info(Display* dpy) {
 
   Window root = RootWindow(dpy, DefaultScreen(dpy));
   XRRProviderResources* pr = XRRGetProviderResources(dpy, root);
+  if (!pr) {
+    return;
+  }
   XRRScreenResources* res = XRRGetScreenResourcesCurrent(dpy, root);
+  if (!res) {
+    XRRFreeProviderResources(pr);
+    return;
+  }
   if (pr->nproviders != 0) {
     record_value("DDX_DRIVER\n");
     for (int i = 0; i < pr->nproviders; i++) {
       XRRProviderInfo* info = XRRGetProviderInfo(dpy, res, pr->providers[i]);
-      record_value("%s%s", info->name, i == pr->nproviders - 1 ? ";\n" : ";");
+      if (info) {
+        record_value("%s%s", info->name, i == pr->nproviders - 1 ? ";\n" : ";");
+        XRRFreeProviderInfo(info);
+      }
     }
   }
+  XRRFreeScreenResources(res);
+  XRRFreeProviderResources(pr);
 }
 
-static void glxtest() {
+void glxtest() {
+  Display* dpy = nullptr;
   void* libgl = dlopen(LIBGL_FILENAME, RTLD_LAZY);
   if (!libgl) {
     record_error(LIBGL_FILENAME " missing");
     return;
   }
+  auto release = mozilla::MakeScopeExit([&] {
+    if (dpy) {
+#  ifdef MOZ_ASAN
+      XCloseDisplay(dpy);
+#  else
+      
+      
+      
+      
+      XSync(dpy, False);
+#  endif
+    }
+    dlclose(libgl);
+  });
 
   typedef void* (*PFNGLXGETPROCADDRESS)(const char*);
   PFNGLXGETPROCADDRESS glXGetProcAddress =
@@ -788,7 +790,7 @@ static void glxtest() {
   }
 
   
-  Display* dpy = XOpenDisplay(nullptr);
+  dpy = XOpenDisplay(nullptr);
   if (!dpy) {
     record_error("Unable to open a connection to the X server");
     return;
@@ -903,28 +905,24 @@ static void glxtest() {
   glXDestroyContext(dpy, context);
   XDestroyWindow(dpy, window);
   XFreeColormap(dpy, swa.colormap);
-
-#  ifdef NS_FREE_PERMANENT_DATA  
-                                 
-  XCloseDisplay(dpy);
-#  else
-  
-  
-  
-  
-  XSync(dpy, False);
-#  endif
-
-  dlclose(libgl);
+  XFree(vInfo);
 
   record_value("TEST_TYPE\nGLX\n");
 }
 
-static bool x11_egltest() {
+bool x11_egltest() {
   Display* dpy = XOpenDisplay(nullptr);
   if (!dpy) {
     return false;
   }
+#  ifdef MOZ_ASAN
+  auto release = mozilla::MakeScopeExit([&] {
+    
+    
+    XCloseDisplay(dpy);
+  });
+#  endif
+
   XSetErrorHandler(x_error_handler);
 
   if (!get_egl_status(dpy)) {
@@ -943,20 +941,28 @@ static bool x11_egltest() {
   
   get_xrandr_info(dpy);
 
-  
-  
-  
-
   record_value("TEST_TYPE\nEGL\n");
   return true;
 }
 #endif
 
 #ifdef MOZ_WAYLAND
-static void wayland_egltest() {
+void wayland_egltest() {
+  static auto sWlDisplayConnect = (struct wl_display * (*)(const char*))
+      dlsym(RTLD_DEFAULT, "wl_display_connect");
+  static auto sWlDisplayRoundtrip =
+      (int (*)(struct wl_display*))dlsym(RTLD_DEFAULT, "wl_display_roundtrip");
+  static auto sWlDisplayDisconnect = (void (*)(struct wl_display*))dlsym(
+      RTLD_DEFAULT, "wl_display_disconnect");
+
+  if (!sWlDisplayConnect || !sWlDisplayRoundtrip || !sWlDisplayDisconnect) {
+    record_error("Missing Wayland libraries");
+    return;
+  }
+
   
   
-  struct wl_display* dpy = wl_display_connect(nullptr);
+  struct wl_display* dpy = sWlDisplayConnect(nullptr);
   if (!dpy) {
     record_error("Could not connect to wayland socket");
     return;
@@ -968,14 +974,14 @@ static void wayland_egltest() {
 
   
   
-  wl_display_roundtrip(dpy);
+  sWlDisplayRoundtrip(dpy);
 
-  wl_display_disconnect(dpy);
+  sWlDisplayDisconnect(dpy);
   record_value("TEST_TYPE\nEGL\n");
 }
 #endif
 
-int childgltest() {
+int childgltest(bool aWayland) {
   enum { bufsize = 2048 };
   char buf[bufsize];
 
@@ -988,19 +994,18 @@ int childgltest() {
   get_pci_status();
 
 #ifdef MOZ_WAYLAND
-  if (IsWaylandEnabled()) {
+  if (aWayland) {
     wayland_egltest();
-  } else
+  }
 #endif
-  {
 #ifdef MOZ_X11
+  if (!aWayland) {
     
     if (!x11_egltest()) {
       glxtest();
     }
-#endif
   }
-
+#endif
   
   record_flush();
 
@@ -1014,44 +1019,48 @@ int childgltest() {
 
 }  
 
+static void PrintUsage() {
+  printf(
+      "Firefox OpenGL probe utility\n"
+      "\n"
+      "usage: glxtest [options]\n"
+      "\n"
+      "Options:\n"
+      "\n"
+      "  -h --help                 show this message\n"
+      "  -w --wayland              probe OpenGL/EGL on Wayland (default is "
+      "X11)\n"
+      "\n");
+}
 
-bool fire_glxtest_process() {
-  int pfd[2];
-  if (pipe(pfd) == -1) {
-    perror("pipe");
-    return false;
-  }
-  pid_t pid = fork();
-  if (pid < 0) {
-    perror("fork");
-    close(pfd[0]);
-    close(pfd[1]);
-    return false;
-  }
-  
-  
-  if (pid == 0) {
-    close(pfd[0]);
-    write_end_of_the_pipe = pfd[1];
-    close_logging();
-    
-    
-    
-    if (CrashReporter::GetEnabled()) {
-      CrashReporter::UnsetExceptionHandler();
+int main(int argc, char** argv) {
+  struct option longOptions[] = {{"help", no_argument, NULL, 'h'},
+                                 {"wayland", no_argument, NULL, 'w'},
+                                 {NULL, 0, NULL, 0}};
+  const char* shortOptions = "hw";
+  int c;
+  bool wayland = false;
+  while ((c = getopt_long(argc, argv, shortOptions, longOptions, NULL)) != -1) {
+    switch (c) {
+      case 'w':
+        wayland = true;
+        break;
+      case 'h':
+        PrintUsage();
+        return 0;
+      default:
+        break;
     }
-#if defined(MOZ_ASAN) || defined(FUZZING)
-    
-    
-    signal(SIGSEGV, SIG_DFL);
-#endif
-    int rv = childgltest();
-    close(pfd[1]);
-    _exit(rv);
   }
-
-  close(pfd[1]);
-  mozilla::widget::glxtest_pipe = pfd[0];
-  mozilla::widget::glxtest_pid = pid;
-  return false;
+  if (getenv("MOZ_AVOID_OPENGL_ALTOGETHER")) {
+    const char* msg = "ERROR\nMOZ_AVOID_OPENGL_ALTOGETHER envvar set";
+    MOZ_UNUSED(write(OUTPUT_PIPE, msg, strlen(msg)));
+    exit(EXIT_FAILURE);
+  }
+#if defined(MOZ_ASAN) || defined(FUZZING)
+  
+  
+  signal(SIGSEGV, SIG_DFL);
+#endif
+  return childgltest(wayland);
 }
