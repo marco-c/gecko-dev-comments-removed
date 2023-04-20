@@ -307,14 +307,16 @@ struct CodeSizes {
 struct GCSizes {
   
   
-#define FOR_EACH_SIZE(MACRO)                   \
-  MACRO(_, MallocHeap, marker)                 \
-  MACRO(_, NonHeap, nurseryCommitted)          \
-  MACRO(_, MallocHeap, nurseryMallocedBuffers) \
-  MACRO(_, MallocHeap, storeBufferVals)        \
-  MACRO(_, MallocHeap, storeBufferCells)       \
-  MACRO(_, MallocHeap, storeBufferSlots)       \
-  MACRO(_, MallocHeap, storeBufferWholeCells)  \
+#define FOR_EACH_SIZE(MACRO)                      \
+  MACRO(_, MallocHeap, marker)                    \
+  MACRO(_, NonHeap, nurseryCommitted)             \
+  MACRO(_, MallocHeap, nurseryMallocedBuffers)    \
+  MACRO(_, MallocHeap, nurseryMallocedBlockCache) \
+  MACRO(_, MallocHeap, nurseryTrailerBlockSets)   \
+  MACRO(_, MallocHeap, storeBufferVals)           \
+  MACRO(_, MallocHeap, storeBufferCells)          \
+  MACRO(_, MallocHeap, storeBufferSlots)          \
+  MACRO(_, MallocHeap, storeBufferWholeCells)     \
   MACRO(_, MallocHeap, storeBufferGenerics)
 
   GCSizes() = default;

@@ -14,6 +14,7 @@
 
 #include "gc/GCParallelTask.h"
 #include "gc/Heap.h"
+#include "gc/MallocedBlockCache.h"
 #include "js/AllocPolicy.h"
 #include "js/Class.h"
 #include "js/GCAPI.h"
@@ -40,6 +41,7 @@
   _(Sweep, "sweep")                           \
   _(UpdateJitActivations, "updtIn")           \
   _(FreeMallocedBuffers, "frSlts")            \
+  _(FreeTrailerBlocks, "frTrBs")              \
   _(ClearStoreBuffer, "clrSB")                \
   _(ClearNursery, "clear")                    \
   _(PurgeStringToAtomCache, "pStoA")          \
@@ -286,6 +288,63 @@ class Nursery {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  [[nodiscard]] bool registerTrailer(PointerAndUint7 blockAndListID,
+                                     size_t nBytes) {
+    MOZ_ASSERT(trailersAdded_.length() == trailersRemoved_.length());
+    MOZ_ASSERT(nBytes > 0);
+    if (MOZ_UNLIKELY(!trailersAdded_.append(blockAndListID))) {
+      return false;
+    }
+    if (MOZ_UNLIKELY(!trailersRemoved_.append(nullptr))) {
+      return false;
+    }
+
+    
+    
+    
+    trailerBytes_ += nBytes;
+    if (MOZ_UNLIKELY(trailerBytes_ > capacity() * 8)) {
+      requestMinorGC(JS::GCReason::NURSERY_TRAILERS);
+    }
+    return true;
+  }
+
+  void unregisterTrailer(void* block) {
+    MOZ_ASSERT(trailersRemovedUsed_ < trailersRemoved_.length());
+    trailersRemoved_[trailersRemovedUsed_] = block;
+    trailersRemovedUsed_++;
+  }
+
+  size_t sizeOfTrailerBlockSets(mozilla::MallocSizeOf mallocSizeOf) const {
+    return trailersAdded_.sizeOfExcludingThis(mallocSizeOf) +
+           trailersRemoved_.sizeOfExcludingThis(mallocSizeOf);
+  }
+
+  
+  
+  
+  
   size_t spaceToEnd(unsigned chunkCount) const;
 
   size_t capacity() const { return capacity_; }
@@ -379,6 +438,12 @@ class Nursery {
 
   
   static size_t roundSize(size_t size);
+
+  
+  gc::MallocedBlockCache& mallocedBlockCache() { return mallocedBlockCache_; }
+  size_t sizeOfMallocedBlockCache(mozilla::MallocSizeOf mallocSizeOf) const {
+    return mallocedBlockCache_.sizeOfExcludingThis(mallocSizeOf);
+  }
 
  private:
   gc::GCRuntime* const gc;
@@ -494,6 +559,15 @@ class Nursery {
 
   
   
+  Vector<PointerAndUint7, 0, SystemAllocPolicy> trailersAdded_;
+  Vector<void*, 0, SystemAllocPolicy> trailersRemoved_;
+  size_t trailersRemovedUsed_ = 0;
+  size_t trailerBytes_ = 0;
+
+  void freeTrailerBlocks();
+
+  
+  
   
   
   
@@ -581,6 +655,15 @@ class Nursery {
 
   NurseryDecommitTask decommitTask;
 
+  
+  
+  
+  
+  
+  
+  
+  gc::MallocedBlockCache mallocedBlockCache_;
+
 #ifdef JS_GC_ZEAL
   struct Canary;
   Canary* lastCanary_;
@@ -633,7 +716,7 @@ class Nursery {
     size_t tenuredBytes;
     size_t tenuredCells;
   };
-  CollectionResult doCollection(JS::GCReason reason);
+  CollectionResult doCollection(JS::GCOptions options, JS::GCReason reason);
   void traceRoots(gc::AutoGCSession& session, TenuringTracer& mover);
 
   size_t doPretenuring(JSRuntime* rt, JS::GCReason reason,

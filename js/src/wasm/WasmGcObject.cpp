@@ -50,6 +50,116 @@ using namespace wasm;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 bool WasmGcObject::lookupProperty(JSContext* cx, Handle<WasmGcObject*> object,
                                   jsid id, PropOffset* offset,
                                   FieldType* type) {
@@ -411,10 +521,11 @@ WasmArrayObject* WasmArrayObject::createArray(
   
   
   
-  uint8_t* outlineData = nullptr;
+  Nursery& nursery = cx->nursery();
+  PointerAndUint7 outlineData(nullptr, 0);
   if (outlineBytes.value() > 0) {
-    outlineData = (uint8_t*)js_malloc(outlineBytes.value());
-    if (!outlineData) {
+    outlineData = nursery.mallocedBlockCache().alloc(outlineBytes.value());
+    if (!outlineData.pointer()) {
       ReportOutOfMemory(cx);
       return nullptr;
     }
@@ -428,25 +539,24 @@ WasmArrayObject* WasmArrayObject::createArray(
       (WasmArrayObject*)WasmGcObject::create(cx, typeDefData, initialHeap);
   if (!arrayObj) {
     ReportOutOfMemory(cx);
-    if (outlineData) {
-      js_free(outlineData);
+    if (outlineData.pointer()) {
+      nursery.mallocedBlockCache().free(outlineData);
     }
     return nullptr;
   }
 
   arrayObj->numElements_ = numElements;
-  arrayObj->data_ = outlineData;
-  if (arrayObj->data_) {
+  arrayObj->data_ = (uint8_t*)outlineData.pointer();
+  if (outlineData.pointer()) {
     if constexpr (ZeroFields) {
-      memset(arrayObj->data_, 0, outlineBytes.value());
+      memset(outlineData.pointer(), 0, outlineBytes.value());
     }
     if (js::gc::IsInsideNursery(arrayObj)) {
       
       
       
-      if (!cx->nursery().registerMallocedBuffer(arrayObj->data_,
-                                                outlineBytes.value())) {
-        js_free(arrayObj->data_);
+      if (!nursery.registerTrailer(outlineData, outlineBytes.value())) {
+        nursery.mallocedBlockCache().free(outlineData);
         return nullptr;
       }
     }
@@ -506,7 +616,7 @@ size_t WasmArrayObject::obj_moved(JSObject* obj, JSObject* old) {
     WasmArrayObject& arrayObj = obj->as<WasmArrayObject>();
     if (arrayObj.data_) {
       Nursery& nursery = obj->runtimeFromMainThread()->gc.nursery();
-      nursery.removeMallocedBufferDuringMinorGC(arrayObj.data_);
+      nursery.unregisterTrailer(arrayObj.data_);
     }
   }
   return 0;
@@ -603,10 +713,11 @@ WasmStructObject* WasmStructObject::createStruct(
 
   
   
-  uint8_t* outlineData = nullptr;
+  Nursery& nursery = cx->nursery();
+  PointerAndUint7 outlineData(nullptr, 0);
   if (outlineBytes > 0) {
-    outlineData = (uint8_t*)js_malloc(outlineBytes);
-    if (!outlineData) {
+    outlineData = nursery.mallocedBlockCache().alloc(outlineBytes);
+    if (!outlineData.pointer()) {
       ReportOutOfMemory(cx);
       return nullptr;
     }
@@ -618,27 +729,26 @@ WasmStructObject* WasmStructObject::createStruct(
       (WasmStructObject*)WasmGcObject::create(cx, typeDefData, initialHeap);
   if (!structObj) {
     ReportOutOfMemory(cx);
-    if (outlineData) {
-      js_free(outlineData);
+    if (outlineData.pointer()) {
+      nursery.mallocedBlockCache().free(outlineData);
     }
     return nullptr;
   }
 
   
-  structObj->outlineData_ = outlineData;
+  structObj->outlineData_ = (uint8_t*)outlineData.pointer();
 
   if constexpr (ZeroFields) {
     memset(&(structObj->inlineData_[0]), 0, inlineBytes);
   }
   if (outlineBytes > 0) {
     if constexpr (ZeroFields) {
-      memset(structObj->outlineData_, 0, outlineBytes);
+      memset(outlineData.pointer(), 0, outlineBytes);
     }
-    
     if (js::gc::IsInsideNursery(structObj)) {
-      if (!cx->nursery().registerMallocedBuffer(structObj->outlineData_,
-                                                outlineBytes)) {
-        js_free(structObj->outlineData_);
+      
+      if (!nursery.registerTrailer(outlineData, outlineBytes)) {
+        nursery.mallocedBlockCache().free(outlineData);
         return nullptr;
       }
     }
@@ -692,7 +802,7 @@ size_t WasmStructObject::obj_moved(JSObject* obj, JSObject* old) {
     
     MOZ_ASSERT(structObj.outlineData_);
     Nursery& nursery = obj->runtimeFromMainThread()->gc.nursery();
-    nursery.removeMallocedBufferDuringMinorGC(structObj.outlineData_);
+    nursery.unregisterTrailer(structObj.outlineData_);
   }
   return 0;
 }
