@@ -5,10 +5,6 @@
 
 #include "nsBidiUtils.h"
 
-namespace mozilla {
-static const uint32_t kMinRTLChar = 0x0590;
-}  
-
 #define ARABIC_TO_HINDI_DIGIT_INCREMENT \
   (START_HINDI_DIGITS - START_ARABIC_DIGITS)
 #define PERSIAN_TO_HINDI_DIGIT_INCREMENT \
