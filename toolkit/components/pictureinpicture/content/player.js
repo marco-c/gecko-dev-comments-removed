@@ -86,10 +86,6 @@ function hideSubtitlesButton() {
   Player.hideSubtitlesButton();
 }
 
-function setScrubberPosition(position) {
-  Player.setScrubberPosition(position);
-}
-
 
 
 
@@ -153,9 +149,6 @@ let Player = {
   init(id, wgp, videoRef) {
     this.id = id;
 
-    
-    this.scrubbing = false;
-
     let holder = document.querySelector(".player-holder");
     let browser = document.getElementById("browser");
     browser.remove();
@@ -202,13 +195,6 @@ let Player = {
       this.onMouseEnter();
     });
 
-    this.scrubber.addEventListener("input", event => {
-      this.handleScrubbing(event);
-    });
-    this.scrubber.addEventListener("change", event => {
-      this.handleScrubbingDone(event);
-    });
-
     for (let radio of document.querySelectorAll(
       'input[type=radio][name="cc-size"]'
     )) {
@@ -247,8 +233,6 @@ let Player = {
       const seekForwardButton = document.getElementById("seekForward");
       seekForwardButton.hidden = false;
       seekForwardButton.previousElementSibling.hidden = false;
-
-      this.scrubber.hidden = false;
     }
 
     this.resizeDebouncer = new DeferredTask(() => {
@@ -313,7 +297,6 @@ let Player = {
             isFullscreen: this.isFullscreen,
             isVideoControlsShowing: true,
             playerBottomControlsDOMRect: this.controlsBottom.getBoundingClientRect(),
-            isScrubberShowing: !this.scrubber.hidden,
           });
         } else if (event.keyCode == KeyEvent.DOM_VK_ESCAPE) {
           event.preventDefault();
@@ -418,64 +401,6 @@ let Player = {
         break;
       }
     }
-  },
-
-  
-
-
-
-
-
-
-  handleScrubbing(event) {
-    
-    
-    
-    if (this.preventNextInputEvent) {
-      this.preventNextInputEvent = false;
-      return;
-    }
-    if (!this.scrubbing) {
-      this.wasPlaying = this.isPlaying;
-      if (this.isPlaying) {
-        this.actor.sendAsyncMessage("PictureInPicture:Pause");
-      }
-      this.scrubbing = true;
-    }
-    let scrubberPosition = this.getScrubberPositionFromEvent(event);
-    this.setVideoTime(scrubberPosition);
-  },
-
-  
-
-
-
-
-  handleScrubbingDone(event) {
-    if (!this.scrubbing) {
-      return;
-    }
-    this.scrubbing = false;
-    let scrubberPosition = this.getScrubberPositionFromEvent(event);
-    this.setVideoTime(scrubberPosition);
-    if (this.wasPlaying) {
-      this.actor.sendAsyncMessage("PictureInPicture:Play");
-    }
-  },
-
-  getScrubberPositionFromEvent(event) {
-    return event.target.value;
-  },
-
-  setVideoTime(scrubberPosition) {
-    this.setScrubberPosition(scrubberPosition);
-    this.actor.sendAsyncMessage("PictureInPicture:SetVideoTime", {
-      scrubberPosition,
-    });
-  },
-
-  setScrubberPosition(value) {
-    this.scrubber.value = value;
   },
 
   closePipWindow(closeData) {
@@ -598,46 +523,13 @@ let Player = {
     ) {
       return;
     }
-
-    let eventKeys = {
+    this.actor.sendAsyncMessage("PictureInPicture:KeyDown", {
       altKey: event.altKey,
       shiftKey: event.shiftKey,
       metaKey: event.metaKey,
       ctrlKey: event.ctrlKey,
       keyCode: event.keyCode,
-    };
-
-    
-    
-    
-    if (
-      event.target.id === "scrubber" &&
-      event.keyCode === window.KeyEvent.DOM_VK_UP
-    ) {
-      eventKeys.keyCode = window.KeyEvent.DOM_VK_RIGHT;
-    } else if (
-      event.target.id === "scrubber" &&
-      event.keyCode === window.KeyEvent.DOM_VK_DOWN
-    ) {
-      eventKeys.keyCode = window.KeyEvent.DOM_VK_LEFT;
-    }
-
-    
-    
-    
-    if (
-      event.target.id === "scrubber" &&
-      [
-        window.KeyEvent.DOM_VK_LEFT,
-        window.KeyEvent.DOM_VK_RIGHT,
-        window.KeyEvent.DOM_VK_UP,
-        window.KeyEvent.DOM_VK_DOWN,
-      ].includes(event.keyCode)
-    ) {
-      this.preventNextInputEvent = true;
-    }
-
-    this.actor.sendAsyncMessage("PictureInPicture:KeyDown", eventKeys);
+    });
   },
 
   onSubtitleChange(size) {
@@ -852,7 +744,6 @@ let Player = {
         isFullscreen: this.isFullscreen,
         isVideoControlsShowing: true,
         playerBottomControlsDOMRect: this.controlsBottom.getBoundingClientRect(),
-        isScrubberShowing: !this.scrubber.hidden,
       });
     }
   },
@@ -918,11 +809,6 @@ let Player = {
   get controls() {
     delete this.controls;
     return (this.controls = document.getElementById("controls"));
-  },
-
-  get scrubber() {
-    delete this.scrubber;
-    return (this.scrubber = document.getElementById("scrubber"));
   },
 
   get controlsBottom() {
@@ -1029,7 +915,6 @@ let Player = {
         isFullscreen: false,
         isVideoControlsShowing: true,
         playerBottomControlsDOMRect: this.controlsBottom.getBoundingClientRect(),
-        isScrubberShowing: !this.scrubber.hidden,
       });
     }
 
