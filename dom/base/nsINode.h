@@ -502,6 +502,12 @@ class nsINode : public mozilla::dom::EventTarget {
 
   MOZ_CAN_RUN_SCRIPT mozilla::dom::Element* GetParentFlexElement();
 
+  
+
+
+
+  mozilla::dom::Element* GetNearestInclusiveOpenPopover();
+
   bool IsNode() const final { return true; }
 
   NS_IMPL_FROMEVENTTARGET_HELPER(nsINode, IsNode())
