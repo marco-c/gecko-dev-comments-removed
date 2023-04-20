@@ -33,6 +33,11 @@ struct BitrateProberConfig {
   FieldTrialParameter<TimeDelta> min_probe_delta;
   
   FieldTrialParameter<TimeDelta> max_probe_delay;
+  
+  
+  
+  
+  FieldTrialParameter<DataSize> min_packet_size;
 };
 
 
