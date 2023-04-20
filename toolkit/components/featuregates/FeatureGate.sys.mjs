@@ -1,23 +1,15 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
-
-
-"use strict";
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
 const lazy = {};
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "FeatureGateImplementation",
-  "resource://featuregates/FeatureGateImplementation.jsm"
-);
-
-var EXPORTED_SYMBOLS = ["FeatureGate"];
+ChromeUtils.defineESModuleGetters(lazy, {
+  FeatureGateImplementation:
+    "resource://featuregates/FeatureGateImplementation.sys.mjs",
+});
 
 XPCOMUtils.defineLazyGetter(lazy, "gFeatureDefinitionsPromise", async () => {
   const url = "resource://featuregates/feature_definitions.json";
@@ -43,31 +35,31 @@ let featureGatePrefObserver = {
   onChange() {
     FeatureGate.annotateCrashReporter();
   },
-  
+  // Ignore onEnable and onDisable since onChange is called in both cases.
   onEnable() {},
   onDisable() {},
 };
 
 const kFeatureGateCache = new Map();
 
-
-class FeatureGate {
-  
-
-
-
-
+/** A high level control for turning features on and off. */
+export class FeatureGate {
+  /*
+   * This is structured as a class with static methods to that sphinx-js can
+   * easily document it. This constructor is required for sphinx-js to detect
+   * this class for documentation.
+   */
 
   constructor() {}
 
-  
-
-
-
-
-
-
-
+  /**
+   * Constructs a feature gate object that is defined in ``Features.toml``.
+   * This is the primary way to create a ``FeatureGate``.
+   *
+   * @param {string} id The ID of the feature's definition in `Features.toml`.
+   * @param {string} testDefinitionsUrl A URL from which definitions can be fetched. Only use this in tests.
+   * @throws If the ``id`` passed is not defined in ``Features.toml``.
+   */
   static async fromId(id, testDefinitionsUrl = undefined) {
     let featureDefinitions;
     if (testDefinitionsUrl) {
@@ -82,14 +74,14 @@ class FeatureGate {
       );
     }
 
-    
+    // Make a copy of the definition, since we are about to modify it
     return buildFeatureGateImplementation({ ...featureDefinitions.get(id) });
   }
 
-  
-
-
-
+  /**
+   * Constructs feature gate objects for each of the definitions in ``Features.toml``.
+   * @param {string} testDefinitionsUrl A URL from which definitions can be fetched. Only use this in tests.
+   */
   static async all(testDefinitionsUrl = undefined) {
     let featureDefinitions;
     if (testDefinitionsUrl) {
@@ -100,7 +92,7 @@ class FeatureGate {
 
     let definitions = [];
     for (let definition of featureDefinitions.values()) {
-      
+      // Make a copy of the definition, since we are about to modify it
       definitions[definitions.length] = buildFeatureGateImplementation(
         Object.assign({}, definition)
       );
@@ -139,24 +131,24 @@ class FeatureGate {
     );
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Add an observer for a feature gate by ID. If the feature is of type
+   * boolean and currently enabled, `onEnable` will be called.
+   *
+   * The underlying feature gate instance will be shared with all other callers
+   * of this function, and share an observer.
+   *
+   * @param {string} id The ID of the feature's definition in `Features.toml`.
+   * @param {object} observer Functions to be called when the feature changes.
+   *        All observer functions are optional.
+   * @param {Function()} [observer.onEnable] Called when the feature becomes enabled.
+   * @param {Function()} [observer.onDisable] Called when the feature becomes disabled.
+   * @param {Function(newValue)} [observer.onChange] Called when the
+   *        feature's state changes to any value. The new value will be passed to the
+   *        function.
+   * @param {string} testDefinitionsUrl A URL from which definitions can be fetched. Only use this in tests.
+   * @returns {Promise<boolean>} The current value of the feature.
+   */
   static async addObserver(id, observer, testDefinitionsUrl = undefined) {
     if (!kFeatureGateCache.has(id)) {
       kFeatureGateCache.set(
@@ -168,11 +160,11 @@ class FeatureGate {
     return feature.addObserver(observer);
   }
 
-  
-
-
-
-
+  /**
+   * Remove an observer of changes from this feature
+   * @param {string} id The ID of the feature's definition in `Features.toml`.
+   * @param observer Then observer that was passed to addObserver to remove.
+   */
   static async removeObserver(id, observer) {
     let feature = kFeatureGateCache.get(id);
     if (!feature) {
@@ -184,16 +176,16 @@ class FeatureGate {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Get the current value of this feature gate. Implementors should avoid
+   * storing the result to avoid missing changes to the feature's value.
+   * Consider using :func:`addObserver` if it is necessary to store the value
+   * of the feature.
+   *
+   * @async
+   * @param {string} id The ID of the feature's definition in `Features.toml`.
+   * @returns {Promise<boolean>} A promise for the value associated with this feature.
+   */
   static async getValue(id, testDefinitionsUrl = undefined) {
     let feature = kFeatureGateCache.get(id);
     if (!feature) {
@@ -202,14 +194,14 @@ class FeatureGate {
     return feature.getValue();
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * An alias of `getValue` for boolean typed feature gates.
+   *
+   * @async
+   * @param {string} id The ID of the feature's definition in `Features.toml`.
+   * @returns {Promise<boolean>} A promise for the value associated with this feature.
+   * @throws {Error} If the feature is not a boolean.
+   */
   static async isEnabled(id, testDefinitionsUrl = undefined) {
     let feature = kFeatureGateCache.get(id);
     if (!feature) {
@@ -234,35 +226,35 @@ class FeatureGate {
     ["thunderbird", AppConstants.MOZ_APP_NAME === "thunderbird"],
   ]);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Take a map of conditions to values, and return the value who's conditions
+   * match this browser, or the default value in the map.
+   *
+   * @example
+   *   Calling the function as
+   *
+   *       evaluateTargetedValue({"default": false, "nightly,linux": true})
+   *
+   *   would return true on Nightly on Linux, and false otherwise.
+   *
+   * @param {Object} targetedValue
+   *   An object mapping string conditions to values. The conditions are comma
+   *   separated values specified in `targetingFacts`. A condition "default" is
+   *   required, as the fallback valued. All conditions must be true.
+   *
+   *   If multiple values have conditions that match, then an arbitrary one will
+   *   be returned. Specifically, the one returned first in an `Object.entries`
+   *   iteration of the targetedValue.
+   *
+   * @param {Map} [targetingFacts]
+   *   A map of target facts to use. Defaults to facts about the current browser.
+   *
+   * @param {boolean} [options.mergeFactsWithDefault]
+   *   If set to true, the value passed for `targetingFacts` will be merged with
+   *   the default facts.
+   *
+   * @returns A value from `targetedValue`.
+   */
   static evaluateTargetedValue(
     targetedValue,
     targetingFacts = FeatureGate.targetingFacts,
