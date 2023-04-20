@@ -166,6 +166,35 @@ const getMatmulPrecisionTolerance = (resources) => {
 
 
 
+const getAveragePool2dPrecisionTolerance = (resources) => {
+  const inputShape = resources.inputs[Object.keys(resources.inputs)[0]].shape;
+  let height;
+  let width;
+  const options = {...resources.options};
+  if (options.windowDimensions) {
+    height = options.windowDimensions[0];
+    width = options.windowDimensions[1];
+  } else {
+    
+    if (options.layout && options.layout === 'nhwc') {
+      height = inputShape[1];
+      width = inputShape[2];
+    } else {
+      
+      height = inputShape[2];
+      width = inputShape[3];
+    }
+  }
+
+  const tolerance = height * width + 2;
+  return tolerance;
+};
+
+
+
+
+
+
 const getSoftmaxPrecisionTolerance = (resources) => {
   
   const inputShape = resources.inputs[Object.keys(resources.inputs)[0]].shape;
@@ -202,6 +231,10 @@ const PrecisionMetrics = {
   gemm: {ULP: {float32: getGemmPrecisionTolerance, float16: getGemmPrecisionTolerance}},
   leakyRelu: {ULP: {float32: 1, float16: 1}},
   matmul: {ULP: {float32: getMatmulPrecisionTolerance, float16: getMatmulPrecisionTolerance}},
+  
+  averagePool2d: {ULP: {float32: getAveragePool2dPrecisionTolerance, float16: getAveragePool2dPrecisionTolerance}},
+  maxPool2d: {ULP: {float32: 0, float16: 0}},
+  
   relu: {ULP: {float32: 0, float16: 0}},
   reshape: {ULP: {float32: 0, float16: 0}},
   sigmoid: {ULP: {float32: 32+2, float16: 3}}, 

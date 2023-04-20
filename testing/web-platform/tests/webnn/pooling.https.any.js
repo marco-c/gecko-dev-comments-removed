@@ -1,0 +1,10 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation(['averagePool2d', 'maxPool2d'], buildOperationWithSingleInput);
