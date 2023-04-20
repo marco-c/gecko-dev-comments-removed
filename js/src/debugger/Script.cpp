@@ -2245,15 +2245,25 @@ class DebuggerScript::IsInCatchScopeMatcher {
       return false;
     }
 
+    MOZ_ASSERT(!isInCatch_);
     for (const TryNote& tn : script->trynotes()) {
-      if (tn.start <= offset_ && offset_ < tn.start + tn.length &&
-          tn.kind() == TryNoteKind::Catch) {
+      bool inRange = tn.start <= offset_ && offset_ < tn.start + tn.length;
+      if (inRange && tn.kind() == TryNoteKind::Catch) {
         isInCatch_ = true;
+      } else if (isInCatch_) {
+        
+        
+        
+        
+        
+        if (inRange && tn.kind() == TryNoteKind::ForOf) {
+          isInCatch_ = false;
+          continue;
+        }
         return true;
       }
     }
 
-    isInCatch_ = false;
     return true;
   }
   ReturnType match(Handle<WasmInstanceObject*> instance) {
