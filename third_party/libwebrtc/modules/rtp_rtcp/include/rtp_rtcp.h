@@ -18,8 +18,7 @@
 
 namespace webrtc {
 
-
-class RtpRtcp : public RtpRtcpInterface {
+class ABSL_DEPRECATED("") RtpRtcp : public RtpRtcpInterface {
  public:
   
   static std::unique_ptr<RtpRtcp> ABSL_DEPRECATED("")
