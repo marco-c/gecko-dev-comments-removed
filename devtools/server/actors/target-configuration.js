@@ -153,6 +153,16 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
 
     
     
+    if (this._browsingContext?.browserId === browsingContext.browserId) {
+      
+      
+      
+      
+      this._restoreParentProcessConfiguration();
+    }
+
+    
+    
     this._browsingContext = browsingContext;
 
     
