@@ -94,9 +94,7 @@ class MFMediaEngineStream
 
   
   
-  
-  
-  virtual already_AddRefed<MediaData> OutputData() { return nullptr; }
+  virtual already_AddRefed<MediaData> OutputData() = 0;
 
   virtual MediaDataDecoder::ConversionRequired NeedsConversion() const {
     return MediaDataDecoder::ConversionRequired::kNeedNone;
@@ -182,12 +180,9 @@ class MFMediaEngineStreamWrapper : public MediaDataDecoder {
   MFMediaEngineStreamWrapper(MFMediaEngineStream* aStream,
                              TaskQueue* aTaskQueue,
                              const CreateDecoderParams& aParams)
-      : mStream(aStream),
-        mTaskQueue(aTaskQueue),
-        mFakeDataCreator(new FakeDecodedDataCreator(aParams)) {
+      : mStream(aStream), mTaskQueue(aTaskQueue) {
     MOZ_ASSERT(mStream);
     MOZ_ASSERT(mTaskQueue);
-    MOZ_ASSERT(mFakeDataCreator);
   }
 
   
@@ -202,25 +197,7 @@ class MFMediaEngineStreamWrapper : public MediaDataDecoder {
 
  private:
   Microsoft::WRL::ComPtr<MFMediaEngineStream> mStream;
-  
-  
-  
-  class FakeDecodedDataCreator final {
-   public:
-    explicit FakeDecodedDataCreator(const CreateDecoderParams& aParams);
-    RefPtr<MediaDataDecoder::DecodePromise> Decode(MediaRawData* aSample) {
-      return mDummyDecoder->Decode(aSample);
-    }
-    void Flush() { Unused << mDummyDecoder->Flush(); }
-
-    TrackInfo::TrackType Type() const { return mType; }
-
-   private:
-    RefPtr<MediaDataDecoder> mDummyDecoder;
-    TrackInfo::TrackType mType;
-  };
   RefPtr<TaskQueue> mTaskQueue;
-  UniquePtr<FakeDecodedDataCreator> mFakeDataCreator;
 };
 
 }  
