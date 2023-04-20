@@ -139,7 +139,12 @@ try:
                 
                 
                 mangled, _ = splitfunc(gcFunction)
-                key = mangled2full[mangled]
+
+                
+                
+                
+                
+                key = mangled2full.get(mangled, mangled)
 
             if key in gcExplanations:
                 print(gcHazards[index] + gcExplanations[key], file=hazards)

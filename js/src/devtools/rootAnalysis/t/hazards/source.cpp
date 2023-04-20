@@ -405,6 +405,12 @@ void safevals() {
     subp->cannotScriptThis();
     use(safe18);
   }
+  {
+    Cell* unsafe19 = &cell;
+    void (*f)() = GC;
+    f();
+    use(unsafe19);
+  }
 }
 
 
