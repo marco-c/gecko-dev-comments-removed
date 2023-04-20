@@ -133,7 +133,8 @@ parent:
 
 
 
-  async Cache(CacheUpdateType aUpdateType, CacheData[] aData, bool aFinal);
+
+  async Cache(CacheUpdateType aUpdateType, CacheData[] aData, bool aDispatchShowEvent);
 
   
 
