@@ -426,42 +426,45 @@ const CurlUtils = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    const encapsChars = '"';
     return (
-      '"' +
+      encapsChars +
       str
-        .replaceAll("`", "``")
-        .replaceAll("$", "`$")
-        .replaceAll('"', '""')
-        .replaceAll("%", '"%"')
+
+        
+        
         .replace(/\\/g, "\\\\")
-        .replace(/[\r\n]{1,2}/g, '"^$&$&"') +
-      '"'
+
+        
+        
+        .replace(/"/g, '""')
+
+        
+        .replace(/[`$]/g, "\\$&")
+
+        
+        
+        .replace(/[^a-zA-Z0-9\s_\-:=+~\/.',?;()*\$&\\{}\"`]/g, "^$&")
+
+        
+        
+        
+        
+        
+        
+        
+        .replace(/%(?=[a-zA-Z0-9_])/g, "%^")
+
+        
+        
+        .replace(/\r\n?/g, "\n")
+
+        
+        
+        
+        
+        .replace(/\n/g, '"^\r\n\r\n"') +
+      encapsChars
     );
   },
 };
