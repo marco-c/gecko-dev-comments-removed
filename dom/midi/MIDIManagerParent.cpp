@@ -9,9 +9,7 @@
 
 namespace mozilla::dom {
 
-void MIDIManagerParent::ActorDestroy(ActorDestroyReason aWhy) {}
-
-void MIDIManagerParent::Teardown() {
+void MIDIManagerParent::ActorDestroy(ActorDestroyReason aWhy) {
   if (MIDIPlatformService::IsRunning()) {
     MIDIPlatformService::Get()->RemoveManager(this);
   }
@@ -23,7 +21,12 @@ mozilla::ipc::IPCResult MIDIManagerParent::RecvRefresh() {
 }
 
 mozilla::ipc::IPCResult MIDIManagerParent::RecvShutdown() {
-  Teardown();
+  
+  
+  
+  
+  
+  
   Unused << Send__delete__(this);
   return IPC_OK();
 }

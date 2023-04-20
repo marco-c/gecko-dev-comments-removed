@@ -22,13 +22,6 @@ mozilla::ipc::IPCResult MIDIManagerChild::RecvMIDIPortListUpdate(
   return IPC_OK();
 }
 
-void MIDIManagerChild::SetActorAlive() {
-  
-  
-  
-  AddRef();
-}
-
 void MIDIManagerChild::Shutdown() {
   MOZ_ASSERT(!mShutdown);
   mShutdown = true;
