@@ -33,10 +33,6 @@ struct SelfHostedLazyScript;
 
 using Native = JSNative;
 
-static constexpr uint32_t BoundFunctionEnvTargetSlot = 2;
-static constexpr uint32_t BoundFunctionEnvThisSlot = 3;
-static constexpr uint32_t BoundFunctionEnvArgsSlot = 4;
-
 static constexpr std::string_view FunctionConstructorMedialSigils = ") {\n";
 static constexpr std::string_view FunctionConstructorFinalBrace = "\n}";
 
@@ -100,15 +96,6 @@ class JSFunction : public js::NativeObject {
 
     NativeJitInfoOrInterpretedScriptSlot,
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -209,12 +196,8 @@ class JSFunction : public js::NativeObject {
   bool hasJitEntry() const { return flags().hasJitEntry(); }
 
   
-  bool isBoundFunction() const { return flags().isBoundFunction(); }
   bool hasInferredName() const { return flags().hasInferredName(); }
   bool hasGuessedAtom() const { return flags().hasGuessedAtom(); }
-  bool hasBoundFunctionNamePrefix() const {
-    return flags().hasBoundFunctionNamePrefix();
-  }
 
   bool isLambda() const { return flags().isLambda(); }
 
@@ -287,7 +270,7 @@ class JSFunction : public js::NativeObject {
   bool constructorNeedsUninitializedThis() const {
     MOZ_ASSERT(isConstructor());
     MOZ_ASSERT(isInterpreted());
-    return isBoundFunction() || isDerivedClassConstructor();
+    return isDerivedClassConstructor();
   }
 
   
@@ -314,7 +297,6 @@ class JSFunction : public js::NativeObject {
     slot.unbarrieredSet(JS::PrivateUint32Value(flagsAndArgCount));
   }
 
-  void setIsBoundFunction() { setFlags(flags().setIsBoundFunction()); }
   void setIsSelfHostedBuiltin() { setFlags(flags().setIsSelfHostedBuiltin()); }
   void setIsIntrinsic() { setFlags(flags().setIsIntrinsic()); }
 
@@ -322,15 +304,12 @@ class JSFunction : public js::NativeObject {
   void setResolvedName() { setFlags(flags().setResolvedName()); }
 
   static bool getUnresolvedLength(JSContext* cx, js::HandleFunction fun,
-                                  js::MutableHandleValue v);
+                                  uint16_t* length);
 
   JSAtom* infallibleGetUnresolvedName(JSContext* cx);
 
   static bool getUnresolvedName(JSContext* cx, js::HandleFunction fun,
                                 js::MutableHandleValue v);
-
-  static JSLinearString* getBoundFunctionName(JSContext* cx,
-                                              js::HandleFunction fun);
 
   JSAtom* explicitName() const {
     return (hasInferredName() || hasGuessedAtom()) ? nullptr : rawAtom();
@@ -378,16 +357,8 @@ class JSFunction : public js::NativeObject {
     MOZ_ASSERT(atom);
     MOZ_ASSERT(!hasInferredName());
     MOZ_ASSERT(!hasGuessedAtom());
-    MOZ_ASSERT(!isBoundFunction());
     setAtom(atom);
     setFlags(flags().setGuessedAtom());
-  }
-
-  void setPrefixedBoundFunctionName(JSAtom* atom) {
-    MOZ_ASSERT(!hasBoundFunctionNamePrefix());
-    MOZ_ASSERT(atom);
-    setFlags(flags().setPrefixedBoundFunctionName());
-    setAtom(atom);
   }
 
   
@@ -446,9 +417,8 @@ class JSFunction : public js::NativeObject {
     }
 
     MOZ_ASSERT(fun->hasBaseScript());
-    JS::Rooted<js::BaseScript*> script(cx, fun->baseScript());
 
-    if (!script->hasBytecode()) {
+    if (!fun->baseScript()->hasBytecode()) {
       if (!delazifyLazilyInterpretedFunction(cx, fun)) {
         return nullptr;
       }
@@ -658,21 +628,6 @@ class JSFunction : public js::NativeObject {
 
   inline void trace(JSTracer* trc);
 
-  
-
-  JSObject* getBoundFunctionTarget() const;
-  const js::Value& getBoundFunctionThis() const;
-  const js::Value& getBoundFunctionArgument(unsigned which) const;
-  size_t getBoundFunctionArgumentCount() const;
-
-  
-
-
-
-  static bool finishBoundFunctionInit(JSContext* cx, js::HandleFunction bound,
-                                      js::HandleObject targetObj,
-                                      int32_t argCount);
-
  public:
   inline bool isExtended() const {
     bool extended = flags().isExtended();
@@ -815,10 +770,6 @@ class FunctionExtended : public JSFunction {
 
   
   
-  static const uint32_t BOUND_FUNCTION_LENGTH_SLOT = 1;
-
-  
-  
   
   static const uint32_t WASM_FUNC_UNCHECKED_ENTRY_SLOT = 0;
 
@@ -838,9 +789,6 @@ class FunctionExtended : public JSFunction {
   }
   static inline size_t offsetOfMethodHomeObjectSlot() {
     return offsetOfExtendedSlot(METHOD_HOMEOBJECT_SLOT);
-  }
-  static inline size_t offsetOfBoundFunctionLengthSlot() {
-    return offsetOfExtendedSlot(BOUND_FUNCTION_LENGTH_SLOT);
   }
 
  private:

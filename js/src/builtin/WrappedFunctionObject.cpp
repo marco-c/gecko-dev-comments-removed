@@ -153,13 +153,13 @@ static bool CopyNameAndLength(JSContext* cx, HandleObject fun,
   
   if (target->is<JSFunction>() &&
       !target->as<JSFunction>().hasResolvedLength()) {
-    Rooted<Value> targetLen(cx);
+    uint16_t targetLen;
     if (!JSFunction::getUnresolvedLength(cx, target.as<JSFunction>(),
                                          &targetLen)) {
       return false;
     }
 
-    length = std::max(0.0, targetLen.toNumber() - argCount);
+    length = std::max(0.0, double(targetLen) - argCount);
   } else {
     Rooted<jsid> lengthId(cx, NameToId(cx->names().length));
 

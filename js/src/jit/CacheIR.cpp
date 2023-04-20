@@ -2212,23 +2212,9 @@ AttachDecision GetPropIRGenerator::tryAttachFunction(HandleObject obj,
     if (!fun->hasBytecode()) {
       return AttachDecision::NoAction;
     }
-
-    
-    if (fun->isBoundFunction()) {
-      constexpr auto lengthSlot = FunctionExtended::BOUND_FUNCTION_LENGTH_SLOT;
-      if (!fun->getExtendedSlot(lengthSlot).isInt32()) {
-        return AttachDecision::NoAction;
-      }
-    }
   } else {
     
     if (fun->hasResolvedName()) {
-      return AttachDecision::NoAction;
-    }
-
-    
-    
-    if (fun->isBoundFunction() && !fun->hasBoundFunctionNamePrefix()) {
       return AttachDecision::NoAction;
     }
   }
@@ -5142,11 +5128,6 @@ AttachDecision InstanceOfIRGenerator::tryAttachStub() {
   }
 
   HandleFunction fun = rhsObj_.as<JSFunction>();
-
-  if (fun->isBoundFunction()) {
-    trackAttached(IRGenerator::NotAttached);
-    return AttachDecision::NoAction;
-  }
 
   
   
@@ -10723,6 +10704,12 @@ AttachDecision CallIRGenerator::tryAttachCallHook(HandleObject calleeObj) {
 
   
   if (isSpread) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  
+  if (isConstructing && calleeObj->is<BoundFunctionObject>()) {
     return AttachDecision::NoAction;
   }
 

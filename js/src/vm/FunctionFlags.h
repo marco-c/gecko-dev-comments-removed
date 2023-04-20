@@ -61,7 +61,6 @@ class FunctionFlags {
     CONSTRUCTOR = 1 << 7,
 
     
-    BOUND_FUN = 1 << 8,
 
     
     
@@ -76,10 +75,7 @@ class FunctionFlags {
     HAS_INFERRED_NAME = 1 << 11,
 
     
-    
-    ATOM_EXTRA_FLAG = 1 << 12,
-    HAS_GUESSED_ATOM = ATOM_EXTRA_FLAG,
-    HAS_BOUND_FUNCTION_NAME_PREFIX = ATOM_EXTRA_FLAG,
+    HAS_GUESSED_ATOM = 1 << 12,
 
     
     RESOLVED_NAME = 1 << 13,
@@ -217,22 +213,8 @@ class FunctionFlags {
   }
 
   
-  bool isBoundFunction() const { return hasFlags(BOUND_FUN); }
   bool hasInferredName() const { return hasFlags(HAS_INFERRED_NAME); }
-  bool hasGuessedAtom() const {
-    static_assert(HAS_GUESSED_ATOM == HAS_BOUND_FUNCTION_NAME_PREFIX,
-                  "HAS_GUESSED_ATOM is unused for bound functions");
-    bool hasGuessedAtom = hasFlags(HAS_GUESSED_ATOM);
-    bool boundFun = hasFlags(BOUND_FUN);
-    return hasGuessedAtom && !boundFun;
-  }
-  bool hasBoundFunctionNamePrefix() const {
-    static_assert(
-        HAS_BOUND_FUNCTION_NAME_PREFIX == HAS_GUESSED_ATOM,
-        "HAS_BOUND_FUNCTION_NAME_PREFIX is only used for bound functions");
-    MOZ_ASSERT(isBoundFunction());
-    return hasFlags(HAS_BOUND_FUNCTION_NAME_PREFIX);
-  }
+  bool hasGuessedAtom() const { return hasFlags(HAS_GUESSED_ATOM); }
   bool isLambda() const { return hasFlags(LAMBDA); }
 
   bool isNamedLambda(bool hasName) const {
@@ -285,11 +267,6 @@ class FunctionFlags {
     return setFlags(CONSTRUCTOR);
   }
 
-  FunctionFlags& setIsBoundFunction() {
-    MOZ_ASSERT(!isBoundFunction());
-    return setFlags(BOUND_FUN);
-  }
-
   FunctionFlags& setIsSelfHostedBuiltin() {
     MOZ_ASSERT(isInterpreted());
     MOZ_ASSERT(!isSelfHostedBuiltin());
@@ -309,10 +286,6 @@ class FunctionFlags {
   FunctionFlags& setInferredName() { return setFlags(HAS_INFERRED_NAME); }
 
   FunctionFlags& setGuessedAtom() { return setFlags(HAS_GUESSED_ATOM); }
-
-  FunctionFlags& setPrefixedBoundFunctionName() {
-    return setFlags(HAS_BOUND_FUNCTION_NAME_PREFIX);
-  }
 
   FunctionFlags& setSelfHostedLazy() { return setFlags(SELFHOSTLAZY); }
   FunctionFlags& clearSelfHostedLazy() { return clearFlags(SELFHOSTLAZY); }

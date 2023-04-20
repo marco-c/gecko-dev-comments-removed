@@ -747,12 +747,10 @@ JS_PUBLIC_API Realm* JS::GetFunctionRealm(JSContext* cx, HandleObject objArg) {
     
     
     if (obj->is<JSFunction>()) {
-      JSFunction* fun = &obj->as<JSFunction>();
-      if (!fun->isBoundFunction()) {
-        return fun->realm();
-      }
-
-      obj = fun->getBoundFunctionTarget();
+      return obj->as<JSFunction>().realm();
+    }
+    if (obj->is<BoundFunctionObject>()) {
+      obj = obj->as<BoundFunctionObject>().getTarget();
       continue;
     }
 
