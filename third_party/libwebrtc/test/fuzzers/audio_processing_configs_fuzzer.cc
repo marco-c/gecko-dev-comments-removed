@@ -40,27 +40,21 @@ rtc::scoped_refptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
                                               rtc::TaskQueue* worker_queue) {
   
   
-  static_cast<void>(fuzz_data->ReadOrDefaultValue(true));
   bool use_ts = fuzz_data->ReadOrDefaultValue(true);
-  static_cast<void>(fuzz_data->ReadOrDefaultValue(true));
-  static_cast<void>(fuzz_data->ReadOrDefaultValue(true));
-  static_cast<void>(fuzz_data->ReadOrDefaultValue(true));
   bool use_red = fuzz_data->ReadOrDefaultValue(true);
   bool use_hpf = fuzz_data->ReadOrDefaultValue(true);
   bool use_aec3 = fuzz_data->ReadOrDefaultValue(true);
-
   bool use_aec = fuzz_data->ReadOrDefaultValue(true);
   bool use_aecm = fuzz_data->ReadOrDefaultValue(true);
   bool use_agc = fuzz_data->ReadOrDefaultValue(true);
   bool use_ns = fuzz_data->ReadOrDefaultValue(true);
-  static_cast<void>(fuzz_data->ReadOrDefaultValue(true));
-  static_cast<void>(fuzz_data->ReadOrDefaultValue(true));
   bool use_agc_limiter = fuzz_data->ReadOrDefaultValue(true);
   bool use_agc2 = fuzz_data->ReadOrDefaultValue(true);
+  bool use_agc2_adaptive_digital = fuzz_data->ReadOrDefaultValue(true);
 
   
   const float gain_controller2_gain_db =
-      rtc::SafeClamp<int>(fuzz_data->ReadOrDefaultValue<int8_t>(0), -40, 40);
+      fuzz_data->ReadOrDefaultValue<uint8_t>(0) % 50;
 
   constexpr size_t kNumFieldTrials = arraysize(kFieldTrialNames);
   
@@ -75,10 +69,6 @@ rtc::scoped_refptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
     }
   }
   field_trial::InitFieldTrialsFromString(field_trial_string->c_str());
-
-  bool use_agc2_adaptive_digital = fuzz_data->ReadOrDefaultValue(true);
-  static_cast<void>(fuzz_data->ReadOrDefaultValue(true));
-  static_cast<void>(fuzz_data->ReadOrDefaultValue(true));
 
   
   
