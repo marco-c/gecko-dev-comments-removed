@@ -106,9 +106,10 @@ already_AddRefed<Document> DOMParser::ParseFromSafeString(const nsAString& aStr,
   
   
   
+  
   nsCOMPtr<nsIPrincipal> docPrincipal = mPrincipal;
-  if (!mPrincipal->IsSystemPrincipal()) {
-    mPrincipal = SystemPrincipal::Create();
+  if (mOwner && mOwner->PrincipalOrNull()) {
+    mPrincipal = mOwner->PrincipalOrNull();
   }
 
   RefPtr<Document> ret = ParseFromString(aStr, aType, aRv);
