@@ -219,10 +219,6 @@ static mozilla::LauncherVoidResult DeleteAllRegstryValues() {
   return DeleteRegistryValueData(gTelemetryValue);
 }
 
-bool GetInstallHash(const char16_t*, mozilla::UniquePtr<NS_tchar[]>& result) {
-  return true;
-}
-
 static mozilla::LauncherVoidResult SetupEnabledScenario() {
   
   

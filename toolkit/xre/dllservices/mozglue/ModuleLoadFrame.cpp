@@ -28,8 +28,9 @@ nt::LoaderAPI* ModuleLoadFrame::sLoaderAPI;
 using GetNtLoaderAPIFn = decltype(&mozilla::GetNtLoaderAPI);
 
 
-void ModuleLoadFrame::StaticInit(nt::LoaderObserver* aNewObserver,
-                                 nt::WinLauncherServices* aOutWinLauncher) {
+void ModuleLoadFrame::StaticInit(
+    nt::LoaderObserver* aNewObserver,
+    nt::WinLauncherFunctions* aOutWinLauncherFunctions) {
   const auto pGetNtLoaderAPI = reinterpret_cast<GetNtLoaderAPIFn>(
       ::GetProcAddress(::GetModuleHandleW(nullptr), "GetNtLoaderAPI"));
   if (!pGetNtLoaderAPI) {
@@ -38,9 +39,9 @@ void ModuleLoadFrame::StaticInit(nt::LoaderObserver* aNewObserver,
     gFallbackLoaderAPI.SetObserver(aNewObserver);
     sLoaderAPI = &gFallbackLoaderAPI;
 
-    if (aOutWinLauncher) {
-      aOutWinLauncher->mHandleLauncherError = [](const mozilla::LauncherError&,
-                                                 const char*) {};
+    if (aOutWinLauncherFunctions) {
+      aOutWinLauncherFunctions->mHandleLauncherError =
+          [](const mozilla::LauncherError&, const char*) {};
       
       
     }
@@ -50,11 +51,11 @@ void ModuleLoadFrame::StaticInit(nt::LoaderObserver* aNewObserver,
   sLoaderAPI = pGetNtLoaderAPI(aNewObserver);
   MOZ_ASSERT(sLoaderAPI);
 
-  if (aOutWinLauncher) {
-    aOutWinLauncher->mInitDllBlocklistOOP = sLoaderAPI->GetDllBlocklistInitFn();
-    aOutWinLauncher->mHandleLauncherError =
+  if (aOutWinLauncherFunctions) {
+    aOutWinLauncherFunctions->mInitDllBlocklistOOP =
+        sLoaderAPI->GetDllBlocklistInitFn();
+    aOutWinLauncherFunctions->mHandleLauncherError =
         sLoaderAPI->GetHandleLauncherErrorFn();
-    aOutWinLauncher->mSharedSection = sLoaderAPI->GetSharedSection();
   }
 }
 

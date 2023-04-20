@@ -7,47 +7,41 @@
 #ifndef mozilla_freestanding_SharedSection_h
 #define mozilla_freestanding_SharedSection_h
 
-#include "mozilla/DynamicBlocklist.h"
-#include "mozilla/glue/SharedSection.h"
 #include "mozilla/NativeNt.h"
 #include "mozilla/interceptor/MMPolicies.h"
 
-
-#define MOZ_LITERAL_UNICODE_STRING(s)                                        \
-  {                                                                          \
-    /* Length of the string in bytes, less the null terminator */            \
-    sizeof(s) - sizeof(wchar_t),                                             \
-    /* Length of the string in bytes, including the null terminator */       \
-    sizeof(s),                                                               \
-    /* Pointer to the buffer */                                              \
-    const_cast<wchar_t*>(s)                                                  \
-  }
-
-
 namespace mozilla {
 namespace freestanding {
-class SharedSectionTestHelper;
-
-struct DllBlockInfoComparator {
-  explicit DllBlockInfoComparator(const UNICODE_STRING& aTarget)
-      : mTarget(&aTarget) {}
-
-  int operator()(const DllBlockInfo& aVal) const {
-    return static_cast<int>(
-        ::RtlCompareUnicodeString(mTarget, &aVal.mName, TRUE));
-  }
-
-  PCUNICODE_STRING mTarget;
-};
 
 
 
 
 
-struct MOZ_TRIVIAL_CTOR_DTOR Kernel32ExportsSolver final
-    : interceptor::MMPolicyInProcessEarlyStage::Kernel32Exports {
+class MOZ_TRIVIAL_CTOR_DTOR Kernel32ExportsSolver final
+    : public interceptor::MMPolicyInProcessEarlyStage::Kernel32Exports {
+  enum class State {
+    Uninitialized,
+    Initialized,
+    Resolved,
+  } mState;
+
+  static ULONG NTAPI ResolveOnce(PRTL_RUN_ONCE aRunOnce, PVOID aParameter,
+                                 PVOID*);
+  void ResolveInternal();
+
+ public:
+  Kernel32ExportsSolver() = default;
+
+  Kernel32ExportsSolver(const Kernel32ExportsSolver&) = delete;
+  Kernel32ExportsSolver(Kernel32ExportsSolver&&) = delete;
+  Kernel32ExportsSolver& operator=(const Kernel32ExportsSolver&) = delete;
+  Kernel32ExportsSolver& operator=(Kernel32ExportsSolver&&) = delete;
+
+  bool IsInitialized() const;
+  bool IsResolved() const;
+
   void Init();
-  bool Resolve();
+  void Resolve(RTL_RUN_ONCE& aRunOnce);
 };
 
 
@@ -73,75 +67,7 @@ struct MOZ_TRIVIAL_CTOR_DTOR Kernel32ExportsSolver final
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MOZ_TRIVIAL_CTOR_DTOR SharedSection final : public nt::SharedSection {
-  struct Layout final {
-    enum class State {
-      kUninitialized,
-      kInitialized,
-      kLoadedDynamicBlocklistEntries,
-      kResolved,
-    } mState;
-
-    Kernel32ExportsSolver mK32Exports;
-    
-    
-    
-    
-    
-    uint32_t mBlocklistIsDisabled;
-    
-    
-    
-    
-    
-    
-    
-    uint32_t mDependentModulePathArrayStart;
-    
-    uint32_t mNumBlockEntries;
-    DllBlockInfo mFirstBlockEntry[1];
-
-    Span<DllBlockInfo> GetModulePathArray() {
-      return Span<DllBlockInfo>(
-          mFirstBlockEntry,
-          (kSharedViewSize - (reinterpret_cast<uintptr_t>(mFirstBlockEntry) -
-                              reinterpret_cast<uintptr_t>(this))) /
-              sizeof(DllBlockInfo));
-    }
-    
-    
-    static constexpr uint32_t GetMaxNumBlockEntries() {
-      return (kSharedViewSize - (offsetof(Layout, mFirstBlockEntry))) /
-             sizeof(DllBlockInfo);
-    }
-    Layout() = delete;  
-    bool Resolve();
-    bool IsDisabled() const;
-    const DllBlockInfo* SearchBlocklist(const UNICODE_STRING& aLeafName) const;
-    Span<wchar_t> GetDependentModules();
-  };
-
+class MOZ_TRIVIAL_CTOR_DTOR SharedSection final {
   
   
   
@@ -149,41 +75,33 @@ class MOZ_TRIVIAL_CTOR_DTOR SharedSection final : public nt::SharedSection {
   
   
   static HANDLE sSectionHandle;
-  static Layout* sWriteCopyView;
-  static RTL_RUN_ONCE sEnsureOnce;
-
-  static ULONG NTAPI EnsureWriteCopyViewOnce(PRTL_RUN_ONCE, PVOID, PVOID*);
-  static Layout* EnsureWriteCopyView(bool requireKernel32Exports = false);
+  static void* sWriteCopyView;
 
   static constexpr size_t kSharedViewSize = 0x1000;
 
-  
-  friend class SharedSectionTestHelper;
-
  public:
+  struct Layout final {
+    Kernel32ExportsSolver mK32Exports;
+    wchar_t mModulePathArray[1];
+
+    Layout() = delete;  
+  };
+
   
-  static void Reset(HANDLE aNewSectionObject = sSectionHandle);
+  static void Reset(HANDLE aNewSecionObject = sSectionHandle);
 
   
   static void ConvertToReadOnly();
 
   
   
-  static LauncherVoidResult Init();
+  static LauncherVoidResult Init(const nt::PEHeaders& aPEHeaders);
 
   
-  static LauncherVoidResult AddDependentModule(PCUNICODE_STRING aNtPath);
-  static LauncherVoidResult SetBlocklist(const DynamicBlockList& aBlocklist,
-                                         bool isDisabled);
+  static LauncherVoidResult AddDepenentModule(PCUNICODE_STRING aNtPath);
 
   
-  
-  Kernel32ExportsSolver* GetKernel32Exports();
-  Span<const wchar_t> GetDependentModules() final override;
-  Span<const DllBlockInfo> GetDynamicBlocklist() final override;
-
-  static bool IsDisabled();
-  static const DllBlockInfo* SearchBlocklist(const UNICODE_STRING& aLeafName);
+  static LauncherResult<Layout*> GetView();
 
   
   static LauncherVoidResult TransferHandle(
@@ -192,6 +110,7 @@ class MOZ_TRIVIAL_CTOR_DTOR SharedSection final : public nt::SharedSection {
 };
 
 extern SharedSection gSharedSection;
+extern RTL_RUN_ONCE gK32ExportsResolveOnce;
 
 }  
 }  
