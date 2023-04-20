@@ -1349,18 +1349,14 @@ void gfxFontEntry::GetVariationsForStyle(nsTArray<gfxFontVariation>& aResult,
     
     
     aResult.AppendElement(gfxFontVariation{HB_TAG('i', 't', 'a', 'l'), 1.0f});
-  } else if (HasSlantVariation()) {
+  } else if (aStyle.style != StyleFontStyle::NORMAL && HasSlantVariation()) {
     
     
-    float angle = aStyle.style.IsNormal() ? 0.0f
-                  : aStyle.style.IsItalic()
-                      ? FontSlantStyle::DEFAULT_OBLIQUE_DEGREES
-                      : aStyle.style.ObliqueAngle();
+    float angle = aStyle.style.SlantAngle();
     
     
     if (!(IsUserFont() && (mRangeFlags & RangeFlags::eAutoSlantStyle))) {
-      angle =
-          SlantStyle().Clamp(FontSlantStyle::FromFloat(angle)).ObliqueAngle();
+      angle = SlantStyle().Clamp(FontSlantStyle::FromFloat(angle)).SlantAngle();
     }
     
     

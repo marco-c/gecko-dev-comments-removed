@@ -181,8 +181,9 @@ class gfxFontEntry {
   bool IsItalic() const { return SlantStyle().Min().IsItalic(); }
   bool IsOblique() const { return SlantStyle().Min().IsOblique(); }
   bool IsUpright() const { return SlantStyle().Min().IsNormal(); }
-  inline bool SupportsItalic();
-  inline bool SupportsBold();  
+  inline bool SupportsItalic();  
+  inline bool SupportsBold();
+  inline bool MayUseSyntheticSlant();
   bool IgnoreGDEF() const { return mIgnoreGDEF; }
   bool IgnoreGSUB() const { return mIgnoreGSUB; }
 
@@ -832,6 +833,22 @@ inline bool gfxFontEntry::SupportsBold() {
   return Weight().Max().IsBold() ||
          ((mRangeFlags & RangeFlags::eAutoWeight) == RangeFlags::eAutoWeight &&
           HasBoldVariableWeight());
+}
+
+inline bool gfxFontEntry::MayUseSyntheticSlant() {
+  if (!IsUpright()) {
+    return false;  
+  }
+  if (HasSlantVariation()) {
+    if (mRangeFlags & RangeFlags::eAutoSlantStyle) {
+      return false;
+    }
+    if (!SlantStyle().IsSingle()) {
+      return false;  
+                     
+    }
+  }
+  return true;
 }
 
 

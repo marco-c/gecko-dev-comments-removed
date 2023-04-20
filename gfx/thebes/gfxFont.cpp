@@ -871,10 +871,14 @@ void gfxShapedText::AdjustAdvancesForSyntheticBold(float aSynBoldOffset,
 
 float gfxFont::AngleForSyntheticOblique() const {
   
-  
-  if (mStyle.style == FontSlantStyle::NORMAL || !mStyle.allowSyntheticStyle ||
-      !mFontEntry->IsUpright() || mFontEntry->HasSlantVariation()) {
-    return 0.0f;
+  if (mStyle.style == FontSlantStyle::NORMAL) {
+    return 0.0f;  
+  }
+  if (!mStyle.allowSyntheticStyle) {
+    return 0.0f;  
+  }
+  if (!mFontEntry->MayUseSyntheticSlant()) {
+    return 0.0f;  
   }
 
   
