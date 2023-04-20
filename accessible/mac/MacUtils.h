@@ -44,6 +44,15 @@ NSString* LocalizedString(const nsString& aString);
 
 
 NSString* GetAccAttr(mozAccessible* aNativeAccessible, nsAtom* aAttrName);
+
+
+
+
+
+bool DocumentExists(Accessible* aDoc, uintptr_t aDocPtr);
+
+NSDictionary* StringAttributesFromAccAttributes(AccAttributes* aAttributes,
+                                                Accessible* aContainer);
 }  
 }  
 }  
