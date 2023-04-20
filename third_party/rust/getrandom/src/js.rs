@@ -10,15 +10,16 @@ use crate::Error;
 extern crate std;
 use std::thread_local;
 
-use js_sys::{global, Uint8Array};
+use js_sys::{global, Function, Uint8Array};
 use wasm_bindgen::{prelude::wasm_bindgen, JsCast, JsValue};
 
 
-const BROWSER_CRYPTO_BUFFER_SIZE: usize = 256;
+
+const WEB_CRYPTO_BUFFER_SIZE: usize = 256;
 
 enum RngSource {
     Node(NodeCrypto),
-    Browser(BrowserCrypto, Uint8Array),
+    Web(WebCrypto, Uint8Array),
 }
 
 
@@ -37,10 +38,10 @@ pub(crate) fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
                     return Err(Error::NODE_RANDOM_FILL_SYNC);
                 }
             }
-            RngSource::Browser(crypto, buf) => {
+            RngSource::Web(crypto, buf) => {
                 
                 
-                for chunk in dest.chunks_mut(BROWSER_CRYPTO_BUFFER_SIZE) {
+                for chunk in dest.chunks_mut(WEB_CRYPTO_BUFFER_SIZE) {
                     
                     
                     let sub_buf = buf.subarray(0, chunk.len() as u32);
@@ -58,25 +59,33 @@ pub(crate) fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
 
 fn getrandom_init() -> Result<RngSource, Error> {
     let global: Global = global().unchecked_into();
-    if is_node(&global) {
-        let crypto = NODE_MODULE
-            .require("crypto")
-            .map_err(|_| Error::NODE_CRYPTO)?;
-        return Ok(RngSource::Node(crypto));
-    }
 
     
     
     
-    
-    let crypto = match (global.crypto(), global.ms_crypto()) {
-        (c, _) if c.is_object() => c,
-        (_, c) if c.is_object() => c,
-        _ => return Err(Error::WEB_CRYPTO),
+    let crypto = match global.crypto() {
+        
+        c if c.is_object() => c,
+        
+        _ if is_node(&global) => {
+            
+            match Module::require_fn().and_then(JsCast::dyn_into::<Function>) {
+                Ok(require_fn) => match require_fn.call1(&global, &JsValue::from_str("crypto")) {
+                    Ok(n) => return Ok(RngSource::Node(n.unchecked_into())),
+                    Err(_) => return Err(Error::NODE_CRYPTO),
+                },
+                Err(_) => return Err(Error::NODE_ES_MODULE),
+            }
+        }
+        
+        _ => match global.ms_crypto() {
+            c if c.is_object() => c,
+            _ => return Err(Error::WEB_CRYPTO),
+        },
     };
 
-    let buf = Uint8Array::new_with_length(BROWSER_CRYPTO_BUFFER_SIZE as u32);
-    Ok(RngSource::Browser(crypto, buf))
+    let buf = Uint8Array::new_with_length(WEB_CRYPTO_BUFFER_SIZE as u32);
+    Ok(RngSource::Web(crypto, buf))
 }
 
 
@@ -93,29 +102,35 @@ fn is_node(global: &Global) -> bool {
 
 #[wasm_bindgen]
 extern "C" {
-    type Global; 
+    
+    type Global;
 
     
-    #[wasm_bindgen(method, getter, js_name = "msCrypto")]
-    fn ms_crypto(this: &Global) -> BrowserCrypto;
+    type WebCrypto;
+    
     #[wasm_bindgen(method, getter)]
-    fn crypto(this: &Global) -> BrowserCrypto;
-    type BrowserCrypto;
+    fn crypto(this: &Global) -> WebCrypto;
+    #[wasm_bindgen(method, getter, js_name = msCrypto)]
+    fn ms_crypto(this: &Global) -> WebCrypto;
+    
     #[wasm_bindgen(method, js_name = getRandomValues, catch)]
-    fn get_random_values(this: &BrowserCrypto, buf: &Uint8Array) -> Result<(), JsValue>;
+    fn get_random_values(this: &WebCrypto, buf: &Uint8Array) -> Result<(), JsValue>;
 
     
-    
-    
-    type NodeModule;
-    #[wasm_bindgen(js_name = module)]
-    static NODE_MODULE: NodeModule;
-    
-    #[wasm_bindgen(method, catch)]
-    fn require(this: &NodeModule, s: &str) -> Result<NodeCrypto, JsValue>;
     type NodeCrypto;
+    
     #[wasm_bindgen(method, js_name = randomFillSync, catch)]
     fn random_fill_sync(this: &NodeCrypto, buf: &mut [u8]) -> Result<(), JsValue>;
+
+    
+    
+    
+    
+    
+    
+    type Module;
+    #[wasm_bindgen(getter, static_method_of = Module, js_class = module, js_name = require, catch)]
+    fn require_fn() -> Result<JsValue, JsValue>;
 
     
     #[wasm_bindgen(method, getter)]

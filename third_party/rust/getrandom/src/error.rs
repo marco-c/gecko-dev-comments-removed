@@ -53,6 +53,9 @@ impl Error {
     pub const NODE_CRYPTO: Error = internal_error(12);
     
     pub const NODE_RANDOM_FILL_SYNC: Error = internal_error(13);
+    
+    
+    pub const NODE_ES_MODULE: Error = internal_error(14);
 
     
     
@@ -166,10 +169,11 @@ fn internal_desc(error: Error) -> Option<&'static str> {
         Error::FAILED_RDRAND => Some("RDRAND: failed multiple times: CPU issue likely"),
         Error::NO_RDRAND => Some("RDRAND: instruction not supported"),
         Error::WEB_CRYPTO => Some("Web Crypto API is unavailable"),
-        Error::WEB_GET_RANDOM_VALUES => Some("Web API crypto.getRandomValues is unavailable"),
+        Error::WEB_GET_RANDOM_VALUES => Some("Calling Web API crypto.getRandomValues failed"),
         Error::VXWORKS_RAND_SECURE => Some("randSecure: VxWorks RNG module is not initialized"),
-        Error::NODE_CRYPTO => Some("Node.js crypto module is unavailable"),
-        Error::NODE_RANDOM_FILL_SYNC => Some("Node.js API crypto.randomFillSync is unavailable"),
+        Error::NODE_CRYPTO => Some("Node.js crypto CommonJS module is unavailable"),
+        Error::NODE_RANDOM_FILL_SYNC => Some("Calling Node.js API crypto.randomFillSync failed"),
+        Error::NODE_ES_MODULE => Some("Node.js ES modules are not directly supported, see https://docs.rs/getrandom#nodejs-es-module-support"),
         _ => None,
     }
 }
