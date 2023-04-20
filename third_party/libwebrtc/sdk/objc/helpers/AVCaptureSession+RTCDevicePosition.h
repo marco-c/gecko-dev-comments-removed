@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+#import <AVFoundation/AVFoundation.h>
+#import <CoreMedia/CoreMedia.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface AVCaptureSession (RTCDevicePosition)
+
+
++ (AVCaptureDevicePosition)rtc_devicePositionForSampleBuffer:(CMSampleBufferRef)sampleBuffer;
+
+@end
+
+NS_ASSUME_NONNULL_END

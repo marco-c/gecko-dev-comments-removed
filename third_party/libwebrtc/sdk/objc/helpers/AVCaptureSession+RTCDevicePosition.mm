@@ -8,7 +8,7 @@
 
 
 
-#import "AVCaptureSession+DevicePosition.h"
+#import "AVCaptureSession+RTCDevicePosition.h"
 
 BOOL CFStringContainsString(CFStringRef theString, CFStringRef stringToFind) {
   return CFStringFindWithOptions(theString,
@@ -18,9 +18,9 @@ BOOL CFStringContainsString(CFStringRef theString, CFStringRef stringToFind) {
                                  nil);
 }
 
-@implementation AVCaptureSession (DevicePosition)
+@implementation AVCaptureSession (RTCDevicePosition)
 
-+ (AVCaptureDevicePosition)devicePositionForSampleBuffer:(CMSampleBufferRef)sampleBuffer {
++ (AVCaptureDevicePosition)rtc_devicePositionForSampleBuffer:(CMSampleBufferRef)sampleBuffer {
   
   AVCaptureDevicePosition cameraPosition = AVCaptureDevicePositionUnspecified;
   CFDictionaryRef attachments = CMCopyDictionaryOfAttachments(

@@ -15,7 +15,7 @@
 #include "test/ios/test_support.h"
 #include "test/testsupport/perf_test.h"
 
-#import "sdk/objc/helpers/NSString+StdString.h"
+#import "sdk/objc/helpers/NSString+RTCStdString.h"
 
 
 
@@ -97,7 +97,7 @@ static absl::optional<std::vector<std::string>> g_metrics_to_plot;
     if ([outputDirectories count] != 0) {
       NSString *outputPath = [outputDirectories[0] stringByAppendingPathComponent:fileName];
 
-      if (!webrtc::test::WritePerfResults([NSString stdStringForString:outputPath])) {
+      if (!webrtc::test::WritePerfResults([NSString rtc_stdStringForString:outputPath])) {
         return 1;
       }
     }
