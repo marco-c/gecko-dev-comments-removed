@@ -4,6 +4,8 @@
 
 
 use cfg_if::cfg_if;
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+use std::convert::TryFrom;
 use std::ffi;
 use std::iter::Iterator;
 use std::mem;
@@ -42,12 +44,52 @@ cfg_if! {
     }
 }
 
+
+
+
+
+
+
+
+
+
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+unsafe fn workaround_xnu_bug(info: &libc::ifaddrs) -> Option<SockaddrStorage> {
+    let src_sock = info.ifa_netmask;
+    if src_sock.is_null() {
+        return None;
+    }
+
+    let mut dst_sock = mem::MaybeUninit::<libc::sockaddr_storage>::zeroed();
+
+    
+    std::ptr::copy_nonoverlapping(
+        src_sock as *const u8,
+        dst_sock.as_mut_ptr() as *mut u8,
+        (*src_sock).sa_len.into(),
+    );
+
+    
+    (*dst_sock.as_mut_ptr()).ss_len =
+        u8::try_from(mem::size_of::<libc::sockaddr_storage>()).unwrap();
+    let dst_sock = dst_sock.assume_init();
+
+    let dst_sock_ptr =
+        &dst_sock as *const libc::sockaddr_storage as *const libc::sockaddr;
+
+    SockaddrStorage::from_raw(dst_sock_ptr, None)
+}
+
 impl InterfaceAddress {
     
     fn from_libc_ifaddrs(info: &libc::ifaddrs) -> InterfaceAddress {
         let ifname = unsafe { ffi::CStr::from_ptr(info.ifa_name) };
         let address = unsafe { SockaddrStorage::from_raw(info.ifa_addr, None) };
-        let netmask = unsafe { SockaddrStorage::from_raw(info.ifa_netmask, None) };
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        let netmask = unsafe { workaround_xnu_bug(info) };
+        #[cfg(not(any(target_os = "ios", target_os = "macos")))]
+        let netmask =
+            unsafe { SockaddrStorage::from_raw(info.ifa_netmask, None) };
         let mut addr = InterfaceAddress {
             interface_name: ifname.to_string_lossy().to_string(),
             flags: InterfaceFlags::from_bits_truncate(info.ifa_flags as i32),
@@ -143,5 +185,29 @@ mod tests {
     #[test]
     fn test_getifaddrs() {
         let _ = getifaddrs();
+    }
+
+    
+    
+    #[test]
+    fn test_getifaddrs_netmask_correct() {
+        let addrs = getifaddrs().unwrap();
+        for iface in addrs {
+            let sock = if let Some(sock) = iface.netmask {
+                sock
+            } else {
+                continue;
+            };
+            if sock.family() == Some(crate::sys::socket::AddressFamily::Inet) {
+                let _ = sock.as_sockaddr_in().unwrap();
+                return;
+            } else if sock.family()
+                == Some(crate::sys::socket::AddressFamily::Inet6)
+            {
+                let _ = sock.as_sockaddr_in6().unwrap();
+                return;
+            }
+        }
+        panic!("No address?");
     }
 }

@@ -208,6 +208,8 @@ pub enum Type {
 impl Entry {
     
     #[allow(clippy::useless_conversion)]    
+    
+    #[allow(clippy::unnecessary_cast)]
     pub fn ino(&self) -> u64 {
         cfg_if! {
             if #[cfg(any(target_os = "android",

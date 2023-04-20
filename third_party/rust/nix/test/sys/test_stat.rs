@@ -1,3 +1,5 @@
+
+#[allow(clippy::useless_conversion)]
 #[cfg(target_os = "freebsd")]
 #[test]
 fn test_chflags() {
