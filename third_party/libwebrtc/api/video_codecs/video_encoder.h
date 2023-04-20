@@ -66,6 +66,10 @@ class RTC_EXPORT EncodedImageCallback {
   
   
   
+  
+  
+  
+  
   enum class DropReason : uint8_t {
     kDroppedByMediaOptimizations,
     kDroppedByEncoder
@@ -96,8 +100,6 @@ class RTC_EXPORT VideoEncoder {
     struct KOff {};
 
    public:
-    
-    
     
     
     

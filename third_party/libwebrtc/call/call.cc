@@ -1541,12 +1541,6 @@ void Call::NotifyBweOfReceivedPacket(const RtpPacketReceived& packet,
 
   if (!use_send_side_bwe && header.extension.hasTransportSequenceNumber) {
     
-    
-    
-    
-    
-    
-    
     return;
   }
   

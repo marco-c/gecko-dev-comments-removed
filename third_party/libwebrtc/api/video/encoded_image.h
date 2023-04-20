@@ -80,7 +80,6 @@ class RTC_EXPORT EncodedImage {
 
   
   
-  
   void SetTimestamp(uint32_t timestamp) { timestamp_rtp_ = timestamp; }
 
   

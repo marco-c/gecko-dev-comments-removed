@@ -167,18 +167,14 @@ class RTC_EXPORT VideoFrame {
   void set_timestamp_us(int64_t timestamp_us) { timestamp_us_ = timestamp_us; }
 
   
-  
-  
-
-  
   void set_timestamp(uint32_t timestamp) { timestamp_rtp_ = timestamp; }
 
   
   uint32_t timestamp() const { return timestamp_rtp_; }
 
-  
-  
-  uint32_t transport_frame_id() const { return timestamp(); }
+  [[deprecated("Use timestamp()")]] uint32_t transport_frame_id() const {
+    return timestamp();
+  }
 
   
   void set_ntp_time_ms(int64_t ntp_time_ms) { ntp_time_ms_ = ntp_time_ms; }
@@ -219,7 +215,6 @@ class RTC_EXPORT VideoFrame {
   }
 
   
-  
   int64_t render_time_ms() const;
 
   
@@ -229,7 +224,6 @@ class RTC_EXPORT VideoFrame {
   void set_video_frame_buffer(
       const rtc::scoped_refptr<VideoFrameBuffer>& buffer);
 
-  
   
   bool is_texture() const {
     return video_frame_buffer()->type() == VideoFrameBuffer::Type::kNative;

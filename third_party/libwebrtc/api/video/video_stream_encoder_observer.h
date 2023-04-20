@@ -53,7 +53,6 @@ class VideoStreamEncoderObserver : public CpuOveruseMetricsObserver {
     bool framerate_scaling_enabled;
   };
 
-  
   enum class DropReason {
     kSource,
     kEncoderQueue,
