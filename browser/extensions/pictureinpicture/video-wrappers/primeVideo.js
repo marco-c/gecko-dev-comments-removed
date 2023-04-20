@@ -5,8 +5,53 @@
 "use strict";
 
 class PictureInPictureVideoWrapper {
+  
+
+
+
+
+
+
+  play(video) {
+    video.play().catch(() => {
+      video.play();
+    });
+  }
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  setCurrentTime(video, position, wasPlaying) {
+    if (wasPlaying === undefined) {
+      this.wasPlaying = !video.paused;
+    }
+    video.currentTime = position;
+    if (video.readyState < video.HAVE_CURRENT_DATA) {
+      video
+        .play()
+        .then(() => {
+          if (!wasPlaying) {
+            video.pause();
+          }
+        })
+        .catch(() => {
+          if (wasPlaying) {
+            this.play(video);
+          }
+        });
+    }
+  }
   setCaptionContainerObserver(video, updateCaptionsFunction) {
-    let container = document.querySelector("#dv-web-player");
+    let container = document?.querySelector("#dv-web-player");
 
     if (container) {
       updateCaptionsFunction("");
