@@ -1822,6 +1822,13 @@ static MOZ_ALWAYS_INLINE int StringMatch(const TextChar* text, uint32_t textLen,
   }
 
   
+  
+  
+  if (sizeof(TextChar) == 1 && sizeof(PatChar) > 1 && pat[1] > 0xff) {
+    return -1;
+  }
+
+  
 
 
 
