@@ -108,6 +108,9 @@ class StreamStatisticianImpl : public StreamStatisticianImplInterface {
   
   int32_t last_report_cumulative_loss_;
   int64_t last_report_seq_max_;
+
+  
+  int last_payload_type_frequency_;
 };
 
 
