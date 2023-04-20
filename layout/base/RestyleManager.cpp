@@ -1046,7 +1046,8 @@ static nsIFrame* ContainingBlockForFrame(nsIFrame* aFrame) {
   
   
   
-  if (aFrame->IsComboboxControlFrame() || aFrame->IsHTMLButtonControlFrame()) {
+  if (aFrame->IsComboboxControlFrame() || aFrame->IsHTMLButtonControlFrame() ||
+      aFrame->IsTableCellFrame()) {
     return aFrame;
   }
   return nullptr;
