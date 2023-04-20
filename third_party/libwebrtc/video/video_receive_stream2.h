@@ -335,11 +335,6 @@ class VideoReceiveStream2
       RTC_GUARDED_BY(decode_queue_);
 
   
-  
-  
-  FieldTrialParameter<int> maximum_pre_stream_decoders_;
-
-  
   rtc::TaskQueue decode_queue_;
 
   
