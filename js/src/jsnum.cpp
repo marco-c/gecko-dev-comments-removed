@@ -481,8 +481,6 @@ static bool num_parseFloat(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-
-
 template <typename CharT>
 static bool ParseIntImpl(JSContext* cx, const CharT* chars, size_t length,
                          bool stripPrefix, int32_t radix, double* res) {
@@ -526,54 +524,6 @@ static bool ParseIntImpl(JSContext* cx, const CharT* chars, size_t length,
 }
 
 
-
-bool js::NumberParseInt(JSContext* cx, HandleString str, int32_t radix,
-                        MutableHandleValue result) {
-  
-  bool stripPrefix = true;
-
-  
-  if (radix != 0) {
-    if (radix < 2 || radix > 36) {
-      result.setNaN();
-      return true;
-    }
-
-    if (radix != 16) {
-      stripPrefix = false;
-    }
-  } else {
-    radix = 10;
-  }
-  MOZ_ASSERT(2 <= radix && radix <= 36);
-
-  JSLinearString* linear = str->ensureLinear(cx);
-  if (!linear) {
-    return false;
-  }
-
-  
-  AutoCheckCannotGC nogc;
-  size_t length = linear->length();
-  double number;
-  if (linear->hasLatin1Chars()) {
-    if (!ParseIntImpl(cx, linear->latin1Chars(nogc), length, stripPrefix, radix,
-                      &number)) {
-      return false;
-    }
-  } else {
-    if (!ParseIntImpl(cx, linear->twoByteChars(nogc), length, stripPrefix,
-                      radix, &number)) {
-      return false;
-    }
-  }
-
-  result.setNumber(number);
-  return true;
-}
-
-
-
 static bool num_parseInt(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -603,13 +553,11 @@ static bool num_parseInt(JSContext* cx, unsigned argc, Value* vp) {
 
     if (args[0].isDouble()) {
       double d = args[0].toDouble();
-      if (DOUBLE_DECIMAL_IN_SHORTEST_LOW <= d &&
-          d < DOUBLE_DECIMAL_IN_SHORTEST_HIGH) {
+      if (1.0e-6 < d && d < 1.0e21) {
         args.rval().setNumber(floor(d));
         return true;
       }
-      if (-DOUBLE_DECIMAL_IN_SHORTEST_HIGH < d &&
-          d <= -DOUBLE_DECIMAL_IN_SHORTEST_LOW) {
+      if (-1.0e21 < d && d < -1.0e-6) {
         args.rval().setNumber(-floor(-d));
         return true;
       }
@@ -633,17 +581,52 @@ static bool num_parseInt(JSContext* cx, unsigned argc, Value* vp) {
   if (!inputString) {
     return false;
   }
+  args[0].setString(inputString);
 
   
-  int32_t radix = 0;
-  if (args.hasDefined(1)) {
+  bool stripPrefix = true;
+  int32_t radix;
+  if (!args.hasDefined(1)) {
+    radix = 10;
+  } else {
     if (!ToInt32(cx, args[1], &radix)) {
+      return false;
+    }
+    if (radix == 0) {
+      radix = 10;
+    } else {
+      if (radix < 2 || radix > 36) {
+        args.rval().setNaN();
+        return true;
+      }
+      if (radix != 16) {
+        stripPrefix = false;
+      }
+    }
+  }
+
+  JSLinearString* linear = inputString->ensureLinear(cx);
+  if (!linear) {
+    return false;
+  }
+
+  AutoCheckCannotGC nogc;
+  size_t length = inputString->length();
+  double number;
+  if (linear->hasLatin1Chars()) {
+    if (!ParseIntImpl(cx, linear->latin1Chars(nogc), length, stripPrefix, radix,
+                      &number)) {
+      return false;
+    }
+  } else {
+    if (!ParseIntImpl(cx, linear->twoByteChars(nogc), length, stripPrefix,
+                      radix, &number)) {
       return false;
     }
   }
 
-  
-  return NumberParseInt(cx, inputString, radix, args.rval());
+  args.rval().setNumber(number);
+  return true;
 }
 
 static const JSFunctionSpec number_functions[] = {
@@ -1542,8 +1525,6 @@ static bool NumberClassFinish(JSContext* cx, HandleObject ctor,
   if (!parseInt) {
     return false;
   }
-  parseInt->setJitInfo(&jit::JitInfo_NumberParseInt);
-
   RootedValue parseIntValue(cx, ObjectValue(*parseInt));
   if (!DefineDataProperty(cx, ctor, parseIntId, parseIntValue, 0)) {
     return false;
@@ -1585,8 +1566,7 @@ static bool NumberClassFinish(JSContext* cx, HandleObject ctor,
 }
 
 const ClassSpec NumberObject::classSpec_ = {
-    GenericCreateConstructor<Number, 1, gc::AllocKind::FUNCTION,
-                             &jit::JitInfo_Number>,
+    GenericCreateConstructor<Number, 1, gc::AllocKind::FUNCTION>,
     NumberObject::createPrototype,
     number_static_methods,
     number_static_properties,
@@ -1866,10 +1846,6 @@ JSLinearString* js::IndexToString(JSContext* cx, uint32_t index) {
 
   realm->dtoaCache.cache(10, index, str);
   return str;
-}
-
-JSString* js::Int32ToStringWithBase(JSContext* cx, int32_t i, int32_t base) {
-  return NumberToStringWithBase<CanGC>(cx, double(i), base);
 }
 
 bool js::NumberValueToStringBuffer(const Value& v, StringBuffer& sb) {

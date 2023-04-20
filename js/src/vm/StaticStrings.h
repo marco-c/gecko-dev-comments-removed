@@ -34,10 +34,6 @@ class WellKnownParserAtoms;
 struct CompilationAtomCache;
 }  
 
-namespace jit {
-class MacroAssembler;
-}  
-
 class StaticStrings {
   
   
@@ -45,8 +41,6 @@ class StaticStrings {
   friend class js::frontend::TaggedParserAtomIndex;
   friend class js::frontend::WellKnownParserAtoms;
   friend struct js::frontend::CompilationAtomCache;
-
-  friend class js::jit::MacroAssembler;
 
  private:
   

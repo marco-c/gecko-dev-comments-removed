@@ -6664,13 +6664,9 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectHasPrototype() {
   return AttachDecision::Attach;
 }
 
-static bool CanConvertToString(const Value& v) {
-  return v.isString() || v.isNumber() || v.isBoolean() || v.isNullOrUndefined();
-}
-
 AttachDecision InlinableNativeIRGenerator::tryAttachString() {
   
-  if (argc_ != 1 || !CanConvertToString(args_[0])) {
+  if (argc_ != 1 || !(args_[0].isString() || args_[0].isNumber())) {
     return AttachDecision::NoAction;
   }
 
@@ -6694,7 +6690,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachString() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringConstructor() {
   
-  if (argc_ != 1 || !CanConvertToString(args_[0])) {
+  if (argc_ != 1 || !(args_[0].isString() || args_[0].isNumber())) {
     return AttachDecision::NoAction;
   }
 
@@ -7712,120 +7708,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathFunction(
   return AttachDecision::Attach;
 }
 
-AttachDecision InlinableNativeIRGenerator::tryAttachNumber() {
-  
-  if (argc_ != 1 || !args_[0].isString()) {
-    return AttachDecision::NoAction;
-  }
-
-  double num;
-  if (!StringToNumber(cx_, args_[0].toString(), &num)) {
-    cx_->recoverFromOutOfMemory();
-    return AttachDecision::NoAction;
-  }
-
-  
-  initializeInputOperand();
-
-  
-  emitNativeCalleeGuard();
-
-  
-  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
-  StringOperandId strId = writer.guardToString(argId);
-
-  
-  int32_t unused;
-  if (mozilla::NumberIsInt32(num, &unused)) {
-    Int32OperandId resultId = writer.guardStringToInt32(strId);
-    writer.loadInt32Result(resultId);
-  } else {
-    NumberOperandId resultId = writer.guardStringToNumber(strId);
-    writer.loadDoubleResult(resultId);
-  }
-  writer.returnFromIC();
-
-  trackAttached("Number");
-  return AttachDecision::Attach;
-}
-
-AttachDecision InlinableNativeIRGenerator::tryAttachNumberParseInt() {
-  
-  if (argc_ < 1 || argc_ > 2) {
-    return AttachDecision::NoAction;
-  }
-  if (!args_[0].isString() && !args_[0].isNumber()) {
-    return AttachDecision::NoAction;
-  }
-  if (args_[0].isDouble()) {
-    double d = args_[0].toDouble();
-
-    
-    
-    bool canTruncateToInt32 =
-        (DOUBLE_DECIMAL_IN_SHORTEST_LOW <= d && d <= double(INT32_MAX)) ||
-        (double(INT32_MIN) <= d && d <= -1.0) || (d == 0.0);
-    if (!canTruncateToInt32) {
-      return AttachDecision::NoAction;
-    }
-  }
-  if (argc_ > 1 && !args_[1].isInt32(10)) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  initializeInputOperand();
-
-  
-  emitNativeCalleeGuard();
-
-  auto guardRadix = [&]() {
-    ValOperandId radixId =
-        writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
-    Int32OperandId intRadixId = writer.guardToInt32(radixId);
-    writer.guardSpecificInt32(intRadixId, 10);
-    return intRadixId;
-  };
-
-  ValOperandId inputId =
-      writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
-
-  if (args_[0].isString()) {
-    StringOperandId strId = writer.guardToString(inputId);
-
-    Int32OperandId intRadixId;
-    if (argc_ > 1) {
-      intRadixId = guardRadix();
-    } else {
-      intRadixId = writer.loadInt32Constant(0);
-    }
-
-    writer.numberParseIntResult(strId, intRadixId);
-  } else if (args_[0].isInt32()) {
-    Int32OperandId intId = writer.guardToInt32(inputId);
-    if (argc_ > 1) {
-      guardRadix();
-    }
-    writer.loadInt32Result(intId);
-  } else {
-    MOZ_ASSERT(args_[0].isDouble());
-
-    NumberOperandId numId = writer.guardIsNumber(inputId);
-    if (argc_ > 1) {
-      guardRadix();
-    }
-    writer.doubleParseIntResult(numId);
-  }
-
-  writer.returnFromIC();
-
-  trackAttached("NumberParseInt");
-  return AttachDecision::Attach;
-}
-
 StringOperandId IRGenerator::emitToStringGuard(ValOperandId id,
                                                const Value& v) {
-  MOZ_ASSERT(CanConvertToString(v));
   if (v.isString()) {
     return writer.guardToString(id);
   }
@@ -7854,10 +7738,7 @@ StringOperandId IRGenerator::emitToStringGuard(ValOperandId id,
 
 AttachDecision InlinableNativeIRGenerator::tryAttachNumberToString() {
   
-  if (argc_ > 1) {
-    return AttachDecision::NoAction;
-  }
-  if (argc_ == 1 && !args_[0].isInt32()) {
+  if (argc_ != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -7865,21 +7746,6 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberToString() {
   if (!thisval_.isNumber()) {
     return AttachDecision::NoAction;
   }
-
-  
-  int32_t base = 10;
-  if (argc_ > 0) {
-    base = args_[0].toInt32();
-    if (base < 2 || base > 36) {
-      return AttachDecision::NoAction;
-    }
-
-    
-    if (base != 10 && !thisval_.isInt32()) {
-      return AttachDecision::NoAction;
-    }
-  }
-  MOZ_ASSERT(2 <= base && base <= 36);
 
   
   initializeInputOperand();
@@ -7892,37 +7758,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberToString() {
       writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
 
   
-  if (base == 10) {
-    
-    if (argc_ > 0) {
-      
-      ValOperandId baseId =
-          writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
-      Int32OperandId intBaseId = writer.guardToInt32(baseId);
+  StringOperandId strId = emitToStringGuard(thisValId, thisval_);
 
-      
-      writer.guardSpecificInt32(intBaseId, 10);
-    }
-
-    StringOperandId strId = emitToStringGuard(thisValId, thisval_);
-
-    
-    writer.loadStringResult(strId);
-  } else {
-    MOZ_ASSERT(argc_ > 0);
-
-    
-    Int32OperandId thisIntId = writer.guardToInt32(thisValId);
-
-    
-    ValOperandId baseId =
-        writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
-    Int32OperandId intBaseId = writer.guardToInt32(baseId);
-
-    
-    writer.int32ToStringWithBaseResult(thisIntId, intBaseId);
-  }
-
+  
+  writer.loadStringResult(strId);
   writer.returnFromIC();
 
   trackAttached("NumberToString");
@@ -10308,10 +10147,6 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachGetNextMapSetEntryForIterator( true);
 
     
-    case InlinableNative::Number:
-      return tryAttachNumber();
-    case InlinableNative::NumberParseInt:
-      return tryAttachNumberParseInt();
     case InlinableNative::NumberToString:
       return tryAttachNumberToString();
 
@@ -12167,8 +12002,12 @@ AttachDecision BinaryArithIRGenerator::tryAttachStringConcat() {
 
   
   
-  if (!(lhs_.isString() && CanConvertToString(rhs_)) &&
-      !(CanConvertToString(lhs_) && rhs_.isString())) {
+  auto canConvertToString = [](const Value& v) {
+    return v.isString() || v.isNumber() || v.isBoolean() ||
+           v.isNullOrUndefined();
+  };
+  if (!(lhs_.isString() && canConvertToString(rhs_)) &&
+      !(canConvertToString(lhs_) && rhs_.isString())) {
     return AttachDecision::NoAction;
   }
 

@@ -16,7 +16,6 @@
 #include "jit/JitRuntime.h"
 #include "jit/MIR.h"
 #include "jit/MIRGraph.h"
-#include "jit/ReciprocalMulConstants.h"
 #include "vm/JSContext.h"
 #include "vm/Realm.h"
 #include "vm/Shape.h"
@@ -607,7 +606,8 @@ void CodeGenerator::visitDivConstantI(LDivConstantI* ins) {
 
   
   
-  auto rmc = ReciprocalMulConstants::computeSignedDivisionConstants(Abs(d));
+  ReciprocalMulConstants rmc =
+      computeDivisionConstants(Abs(d),  31);
 
   
   masm.Mov(const32, int32_t(rmc.multiplier));
@@ -695,7 +695,7 @@ void CodeGenerator::visitUDivConstantI(LUDivConstantI* ins) {
   
   MOZ_ASSERT((d & (d - 1)) != 0);
 
-  auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(d);
+  ReciprocalMulConstants rmc = computeDivisionConstants(d,  32);
 
   
   masm.Mov(const32, int32_t(rmc.multiplier));
