@@ -1,8 +1,9 @@
+
+
+
 "use strict";
 
-const PAGE =
-  
-  "http://example.com/browser/browser/base/content/test/general/page_style_sample.html";
+const PAGE = WEB_ROOT + "page_style_sample.html";
 
 
 
@@ -16,7 +17,7 @@ add_task(async function() {
   );
   let browser = tab.linkedBrowser;
   BrowserTestUtils.loadURIString(browser, PAGE);
-  await promiseStylesheetsLoaded(tab, 18);
+  await promiseStylesheetsLoaded(browser, 18);
 
   let menupopup = document.getElementById("pageStyleMenu").menupopup;
   gPageStyleMenu.fillPopup(menupopup);
