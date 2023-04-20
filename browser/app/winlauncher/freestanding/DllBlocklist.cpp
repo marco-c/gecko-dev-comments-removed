@@ -405,30 +405,40 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
   nt::GetLeafName(&leafOnStack, sectionFileName);
 
   bool isDependent = false;
-  Kernel32ExportsSolver* k32Exports = gSharedSection.GetKernel32Exports();
-  
-  
-  if (k32Exports && !ModuleLoadFrame::ExistsTopFrame()) {
-    isDependent = IsDependentModule(leafOnStack, *k32Exports);
-  }
-
+  const UNICODE_STRING k32Name = MOZ_LITERAL_UNICODE_STRING(L"kernel32.dll");
+  Kernel32ExportsSolver* k32Exports = nullptr;
   BlockAction blockAction;
-  if (isDependent) {
-    
-    
-    
-    
-    Unused << gSharedSection.AddDependentModule(sectionFileName);
-
-    
-    
-    mozilla::nt::PEHeaders headers(*aBaseAddress);
-    blockAction = RedirectToNoOpEntryPoint(headers, *k32Exports)
-                      ? BlockAction::NoOpEntryPoint
-                      : BlockAction::Allow;
+  
+  
+  
+  if (::RtlCompareUnicodeString(&k32Name, &leafOnStack, TRUE) == 0) {
+    blockAction = BlockAction::Allow;
   } else {
+    k32Exports = gSharedSection.GetKernel32Exports();
     
-    blockAction = DetermineBlockAction(leafOnStack, *aBaseAddress, k32Exports);
+    
+    if (k32Exports && !ModuleLoadFrame::ExistsTopFrame()) {
+      isDependent = IsDependentModule(leafOnStack, *k32Exports);
+    }
+
+    if (isDependent) {
+      
+      
+      
+      
+      Unused << gSharedSection.AddDependentModule(sectionFileName);
+
+      
+      
+      mozilla::nt::PEHeaders headers(*aBaseAddress);
+      blockAction = RedirectToNoOpEntryPoint(headers, *k32Exports)
+                        ? BlockAction::NoOpEntryPoint
+                        : BlockAction::Allow;
+    } else {
+      
+      blockAction =
+          DetermineBlockAction(leafOnStack, *aBaseAddress, k32Exports);
+    }
   }
 
   ModuleLoadInfo::Status loadStatus = ModuleLoadInfo::Status::Blocked;
