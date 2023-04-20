@@ -380,8 +380,7 @@ nsFocusManager::GetActiveBrowsingContext(BrowsingContext** aBrowsingContext) {
 void nsFocusManager::FocusWindow(nsPIDOMWindowOuter* aWindow,
                                  CallerType aCallerType) {
   if (RefPtr<nsFocusManager> fm = sInstance) {
-    fm->SetFocusedWindowWithCallerType(aWindow, aCallerType,
-                                       sInstance->GenerateFocusActionId());
+    fm->SetFocusedWindowWithCallerType(aWindow, aCallerType);
   }
 }
 
@@ -402,19 +401,19 @@ nsFocusManager::GetFocusedContentBrowsingContext(
 }
 
 nsresult nsFocusManager::SetFocusedWindowWithCallerType(
-    mozIDOMWindowProxy* aWindowToFocus, CallerType aCallerType,
-    uint64_t aActionId) {
-  LOGFOCUS(("<<SetFocusedWindow begin actionid: %" PRIu64 ">>", aActionId));
+    mozIDOMWindowProxy* aWindowToFocus, CallerType aCallerType) {
+  LOGFOCUS(("<<SetFocusedWindow begin>>"));
 
   nsCOMPtr<nsPIDOMWindowOuter> windowToFocus =
       nsPIDOMWindowOuter::From(aWindowToFocus);
   NS_ENSURE_TRUE(windowToFocus, NS_ERROR_FAILURE);
 
   nsCOMPtr<Element> frameElement = windowToFocus->GetFrameElementInternal();
+  Maybe<uint64_t> actionIdFromSetFocusInner;
   if (frameElement) {
     
     
-    SetFocusInner(frameElement, 0, false, true, aActionId);
+    actionIdFromSetFocusInner = SetFocusInner(frameElement, 0, false, true);
   } else {
     
     
@@ -428,19 +427,21 @@ nsresult nsFocusManager::SetFocusedWindowWithCallerType(
   }
 
   nsCOMPtr<nsPIDOMWindowOuter> rootWindow = windowToFocus->GetPrivateRoot();
+  const uint64_t actionId = actionIdFromSetFocusInner.isSome()
+                                ? actionIdFromSetFocusInner.value()
+                                : sInstance->GenerateFocusActionId();
   if (rootWindow) {
-    RaiseWindow(rootWindow, aCallerType, aActionId);
+    RaiseWindow(rootWindow, aCallerType, actionId);
   }
 
-  LOGFOCUS(("<<SetFocusedWindow end actionid: %" PRIu64 ">>", aActionId));
+  LOGFOCUS(("<<SetFocusedWindow end actionid: %" PRIu64 ">>", actionId));
 
   return NS_OK;
 }
 
 NS_IMETHODIMP nsFocusManager::SetFocusedWindow(
     mozIDOMWindowProxy* aWindowToFocus) {
-  return SetFocusedWindowWithCallerType(aWindowToFocus, CallerType::System,
-                                        GenerateFocusActionId());
+  return SetFocusedWindowWithCallerType(aWindowToFocus, CallerType::System);
 }
 
 NS_IMETHODIMP
@@ -470,7 +471,7 @@ nsFocusManager::SetFocus(Element* aElement, uint32_t aFlags) {
 
   NS_ENSURE_ARG(aElement);
 
-  SetFocusInner(aElement, aFlags, true, true, GenerateFocusActionId());
+  SetFocusInner(aElement, aFlags, true, true);
 
   LOGFOCUS(("<<SetFocus end>>"));
 
@@ -543,7 +544,7 @@ nsFocusManager::MoveFocus(mozIDOMWindowProxy* aWindow, Element* aStartElement,
     
     
     SetFocusInner(MOZ_KnownLive(newFocus->AsElement()), aFlags,
-                  aType != MOVEFOCUS_CARET, true, GenerateFocusActionId());
+                  aType != MOVEFOCUS_CARET, true);
     *aElement = do_AddRef(newFocus->AsElement()).take();
   } else if (aType == MOVEFOCUS_ROOT || aType == MOVEFOCUS_CARET) {
     
@@ -1472,14 +1473,15 @@ static bool IsEmeddededInNoautofocusPopup(BrowsingContext& aBc) {
       .GetXULBoolAttr(nsGkAtoms::noautofocus);
 }
 
-void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
-                                   bool aFocusChanged, bool aAdjustWidget,
-                                   uint64_t aActionId) {
+Maybe<uint64_t> nsFocusManager::SetFocusInner(Element* aNewContent,
+                                              int32_t aFlags,
+                                              bool aFocusChanged,
+                                              bool aAdjustWidget) {
   
   RefPtr<Element> elementToFocus =
       FlushAndCheckIfFocusable(aNewContent, aFlags);
   if (!elementToFocus) {
-    return;
+    return Nothing();
   }
 
   const RefPtr<BrowsingContext> focusedBrowsingContext =
@@ -1515,7 +1517,7 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
   
   if (!newWindow || (newBrowsingContext == GetFocusedBrowsingContext() &&
                      elementToFocus == mFocusedElement)) {
-    return;
+    return Nothing();
   }
 
   MOZ_ASSERT(newBrowsingContext);
@@ -1532,7 +1534,7 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
       BrowsingContext* walk = focusedBrowsingContext;
       while (walk) {
         if (walk == bc) {
-          return;
+          return Nothing();
         }
         walk = walk->GetParent();
       }
@@ -1549,13 +1551,13 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
     bool inUnload;
     docShell->GetIsInUnload(&inUnload);
     if (inUnload) {
-      return;
+      return Nothing();
     }
 
     bool beingDestroyed;
     docShell->IsBeingDestroyed(&beingDestroyed);
     if (beingDestroyed) {
-      return;
+      return Nothing();
     }
 
     BrowsingContext* bc = docShell->GetBrowsingContext();
@@ -1570,7 +1572,7 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
       do {
         bc = bc->GetParent();
         if (bc && bc->IsDiscarded()) {
-          return;
+          return Nothing();
         }
       } while (bc && !bc->IsInProcess());
       if (bc) {
@@ -1616,12 +1618,12 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
     }
 
     if (!focusedPrincipal || !newPrincipal) {
-      return;
+      return Nothing();
     }
 
     if (!focusedPrincipal->Subsumes(newPrincipal)) {
       NS_WARNING("Not allowed to focus the new window!");
-      return;
+      return Nothing();
     }
   }
 
@@ -1728,11 +1730,12 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
   LOGFOCUS((" Flags: %x Current Window: %p New Window: %p Current Element: %p",
             aFlags, mFocusedWindow.get(), newWindow.get(),
             mFocusedElement.get()));
+  const uint64_t actionId = GenerateFocusActionId();
   LOGFOCUS(
       (" In Active Window: %d Moves to different BrowsingContext: %d "
        "SendFocus: %d actionid: %" PRIu64,
        isElementInActiveWindow, focusMovesToDifferentBC, sendFocusEvent,
-       aActionId));
+       actionId));
 
   if (sendFocusEvent) {
     Maybe<BlurredElementInfo> blurredInfo;
@@ -1785,19 +1788,19 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
                                   ? focusedBrowsingContext.get()
                                   : nullptr),
                 commonAncestor, focusMovesToDifferentBC, aAdjustWidget,
-                remainActive, aActionId, elementToFocus)) {
-        return;
+                remainActive, actionId, elementToFocus)) {
+        return Some(actionId);
       }
     }
 
     Focus(newWindow, elementToFocus, aFlags, focusMovesToDifferentBC,
-          aFocusChanged, false, aAdjustWidget, aActionId, blurredInfo);
+          aFocusChanged, false, aAdjustWidget, actionId, blurredInfo);
   } else {
     
     
     if (allowFrameSwitch) {
       AdjustWindowFocus(newBrowsingContext, true, IsWindowVisible(newWindow),
-                        aActionId);
+                        actionId);
     }
 
     
@@ -1829,7 +1832,7 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
           RaiseWindow(outerWindow,
                       aFlags & FLAG_NONSYSTEMCALLER ? CallerType::NonSystem
                                                     : CallerType::System,
-                      aActionId);
+                      actionId);
         } else {
           mozilla::dom::ContentChild* contentChild =
               mozilla::dom::ContentChild::GetSingleton();
@@ -1838,11 +1841,12 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
                                         aFlags & FLAG_NONSYSTEMCALLER
                                             ? CallerType::NonSystem
                                             : CallerType::System,
-                                        aActionId);
+                                        actionId);
         }
       }
     }
   }
+  return Some(actionId);
 }
 
 static already_AddRefed<BrowsingContext> GetParentIgnoreChromeBoundary(
