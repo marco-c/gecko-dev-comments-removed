@@ -1530,6 +1530,11 @@ static bool XrayResolveAttribute(
 
   cacheOnHolder = true;
 
+  JS::Rooted<jsid> getterId(cx);
+  if (!JS::ToGetterId(cx, id, &getterId)) {
+    return false;
+  }
+
   
   
   
@@ -1537,16 +1542,21 @@ static bool XrayResolveAttribute(
   
   JS::Rooted<JSObject*> getter(
       cx, XrayCreateFunction(cx, wrapper, attrSpec.u.accessors.getter.native, 0,
-                             id));
+                             getterId));
   if (!getter) {
     return false;
   }
 
   JS::Rooted<JSObject*> setter(cx);
   if (attrSpec.u.accessors.setter.native.op) {
+    JS::Rooted<jsid> setterId(cx);
+    if (!JS::ToSetterId(cx, id, &setterId)) {
+      return false;
+    }
+
     
     setter = XrayCreateFunction(cx, wrapper, attrSpec.u.accessors.setter.native,
-                                1, id);
+                                1, setterId);
     if (!setter) {
       return false;
     }
