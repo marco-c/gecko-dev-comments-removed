@@ -657,7 +657,7 @@ void DocAccessible::HandleScroll(nsINode* aTarget) {
   if (!targetAcc && target->IsInNativeAnonymousSubtree()) {
     
     
-    target = target->GetClosestNativeAnonymousSubtreeRootParent();
+    target = target->GetClosestNativeAnonymousSubtreeRootParentOrHost();
     targetAcc = GetAccessible(target);
   }
   

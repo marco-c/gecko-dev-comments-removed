@@ -4344,9 +4344,9 @@ nsresult EditorBase::HandleDropEvent(DragEvent* aDropEvent) {
       
       
       if (sourceNode->IsInNativeAnonymousSubtree()) {
-        if (RefPtr<TextControlElement> textControlElement =
-                TextControlElement::FromNodeOrNull(
-                    sourceNode->GetClosestNativeAnonymousSubtreeRootParent())) {
+        if (RefPtr textControlElement = TextControlElement::FromNodeOrNull(
+                sourceNode
+                    ->GetClosestNativeAnonymousSubtreeRootParentOrHost())) {
           editorToDeleteSelection = textControlElement->GetTextEditor();
         }
       }
@@ -5296,7 +5296,7 @@ Element* EditorBase::GetExposedRoot() const {
     return rootElement;
   }
   return Element::FromNodeOrNull(
-      rootElement->GetClosestNativeAnonymousSubtreeRootParent());
+      rootElement->GetClosestNativeAnonymousSubtreeRootParentOrHost());
 }
 
 nsresult EditorBase::DetermineCurrentDirection() {

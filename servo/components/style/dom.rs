@@ -391,7 +391,7 @@ pub trait TElement:
     
     
     
-    fn matches_user_and_author_rules(&self) -> bool {
+    fn matches_user_and_content_rules(&self) -> bool {
         true
     }
 
@@ -652,11 +652,6 @@ pub trait TElement:
     }
 
     
-    fn is_in_native_anonymous_subtree(&self) -> bool {
-        false
-    }
-
-    
     
     
     
@@ -791,11 +786,8 @@ pub trait TElement:
         use crate::rule_collector::containing_shadow_ignoring_svg_use;
 
         let target = self.rule_hash_target();
-        if !target.matches_user_and_author_rules() {
-            return false;
-        }
-
-        let mut doc_rules_apply = true;
+        let matches_user_and_content_rules = target.matches_user_and_content_rules();
+        let mut doc_rules_apply = matches_user_and_content_rules;
 
         
         
@@ -845,7 +837,7 @@ pub trait TElement:
                             
                             
                             
-                            doc_rules_apply = true;
+                            doc_rules_apply = matches_user_and_content_rules;
                             break;
                         },
                     }

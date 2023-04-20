@@ -92,7 +92,7 @@ nsNumberControlFrame* nsNumberControlFrame::GetNumberControlFrameForSpinButton(
   
   
   nsIContent* content = aFrame->GetContent();
-  auto* nacHost = content->GetClosestNativeAnonymousSubtreeRootParent();
+  auto* nacHost = content->GetClosestNativeAnonymousSubtreeRootParentOrHost();
   if (!nacHost) {
     return nullptr;
   }

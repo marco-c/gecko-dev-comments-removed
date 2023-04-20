@@ -219,7 +219,7 @@ where
     ) -> PrimaryStyle {
         
         
-        let may_reuse = !self.element.is_in_native_anonymous_subtree() &&
+        let may_reuse = self.element.matches_user_and_content_rules() &&
             parent_style.is_some() &&
             inputs.rules.is_some();
 

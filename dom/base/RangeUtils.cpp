@@ -47,7 +47,8 @@ nsINode* RangeUtils::ComputeRootNode(nsINode* aNode) {
     }
 
     
-    if (nsINode* root = content->GetClosestNativeAnonymousSubtreeRootParent()) {
+    if (nsINode* root =
+            content->GetClosestNativeAnonymousSubtreeRootParentOrHost()) {
       return root;
     }
   }

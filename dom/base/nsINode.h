@@ -115,7 +115,7 @@ enum class CallerType : uint32_t;
 #define NODE_FLAG_BIT(n_) \
   (nsWrapperCache::FlagsType(1U) << (WRAPPER_CACHE_FLAGS_BITS_USED + (n_)))
 
-enum {
+enum : uint32_t {
   
   NODE_HAS_LISTENERMANAGER = NODE_FLAG_BIT(0),
 
@@ -1034,7 +1034,19 @@ class nsINode : public mozilla::dom::EventTarget {
 
   nsINode* GetParentNode() const { return mParent; }
 
-  nsINode* GetParentOrShadowHostNode() const;
+ private:
+  nsIContent* DoGetShadowHost() const;
+
+ public:
+  nsINode* GetParentOrShadowHostNode() const {
+    if (MOZ_LIKELY(mParent)) {
+      return mParent;
+    }
+    
+    
+    return IsInShadowTree() ? reinterpret_cast<nsINode*>(DoGetShadowHost())
+                            : nullptr;
+  }
 
   enum FlattenedParentType { eNotForStyle, eForStyle };
 
@@ -1418,14 +1430,22 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  nsIContent* GetClosestNativeAnonymousSubtreeRootParent() const {
-    const nsIContent* root = GetClosestNativeAnonymousSubtreeRoot();
+
+  nsIContent* GetClosestNativeAnonymousSubtreeRootParentOrHost() const {
+    
+    
+    const auto* root = reinterpret_cast<const nsINode*>(
+        GetClosestNativeAnonymousSubtreeRoot());
     if (!root) {
       return nullptr;
     }
-    
-    
-    return reinterpret_cast<const nsINode*>(root)->GetParent();
+    if (nsIContent* parent = root->GetParent()) {
+      return parent;
+    }
+    if (MOZ_UNLIKELY(root->IsInShadowTree())) {
+      return root->DoGetShadowHost();
+    }
+    return nullptr;
   }
 
   
@@ -1456,20 +1476,10 @@ class nsINode : public mozilla::dom::EventTarget {
 
   
   
-  bool ChromeOnlyAccess() const {
-    return HasFlag(NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE |
-                   NODE_HAS_BEEN_IN_UA_WIDGET);
-  }
+  bool ChromeOnlyAccess() const { return IsInNativeAnonymousSubtree(); }
 
   const nsIContent* GetChromeOnlyAccessSubtreeRootParent() const {
-    if (!ChromeOnlyAccess()) {
-      return nullptr;
-    }
-    
-    if (IsInNativeAnonymousSubtree()) {
-      return GetClosestNativeAnonymousSubtreeRootParent();
-    }
-    return GetContainingShadowHost();
+    return GetClosestNativeAnonymousSubtreeRootParentOrHost();
   }
 
   bool IsInShadowTree() const { return HasFlag(NODE_IS_IN_SHADOW_TREE); }
@@ -1487,11 +1497,9 @@ class nsINode : public mozilla::dom::EventTarget {
   }
 
   
-  inline bool IsUAWidget() const;
-  
-  inline bool IsInUAWidget() const;
-  
-  inline bool IsRootOfChromeAccessOnlySubtree() const;
+  bool IsRootOfChromeAccessOnlySubtree() const {
+    return IsRootOfNativeAnonymousSubtree();
+  }
 
   
 

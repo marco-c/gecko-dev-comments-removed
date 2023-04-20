@@ -10,6 +10,7 @@
 #include "mozilla/dom/DocumentFragment.h"
 #include "ChildIterator.h"
 #include "nsContentUtils.h"
+#include "nsINode.h"
 #include "nsWindowSizes.h"
 #include "mozilla/dom/DirectionalityUtils.h"
 #include "mozilla/dom/Element.h"
@@ -68,6 +69,17 @@ ShadowRoot::ShadowRoot(Element* aElement, ShadowRootMode aMode,
   ClearSubtreeRootPointer();
 
   SetFlags(NODE_IS_IN_SHADOW_TREE);
+  if (Host()->IsInNativeAnonymousSubtree()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    SetIsNativeAnonymousRoot();
+  }
   Bind();
 
   ExtendedDOMSlots()->mContainingShadow = this;
@@ -115,6 +127,10 @@ void ShadowRoot::NodeInfoChanged(Document* aOldDoc) {
 }
 
 void ShadowRoot::CloneInternalDataFrom(ShadowRoot* aOther) {
+  if (aOther->IsRootOfNativeAnonymousSubtree()) {
+    SetIsNativeAnonymousRoot();
+  }
+
   if (aOther->IsUAWidget()) {
     SetIsUAWidget();
   }
@@ -747,7 +763,7 @@ nsINode* ShadowRoot::ImportNodeAndAppendChildAt(nsINode& aParentNode,
                                                 mozilla::ErrorResult& rv) {
   MOZ_ASSERT(IsUAWidget());
 
-  if (!aParentNode.IsInUAWidget()) {
+  if (aParentNode.SubtreeRoot() != this) {
     rv.Throw(NS_ERROR_INVALID_ARG);
     return nullptr;
   }
@@ -765,7 +781,7 @@ nsINode* ShadowRoot::CreateElementAndAppendChildAt(nsINode& aParentNode,
                                                    mozilla::ErrorResult& rv) {
   MOZ_ASSERT(IsUAWidget());
 
-  if (!aParentNode.IsInUAWidget()) {
+  if (aParentNode.SubtreeRoot() != this) {
     rv.Throw(NS_ERROR_INVALID_ARG);
     return nullptr;
   }
