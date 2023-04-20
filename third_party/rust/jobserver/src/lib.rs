@@ -282,6 +282,19 @@ impl Client {
     
     
     
+    pub fn available(&self) -> io::Result<usize> {
+        self.inner.available()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -290,13 +303,41 @@ impl Client {
     
     
     pub fn configure(&self, cmd: &mut Command) {
+        cmd.env("CARGO_MAKEFLAGS", &self.mflags_env());
+        self.inner.configure(cmd);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn configure_make(&self, cmd: &mut Command) {
+        let value = self.mflags_env();
+        cmd.env("CARGO_MAKEFLAGS", &value);
+        cmd.env("MAKEFLAGS", &value);
+        cmd.env("MFLAGS", &value);
+        self.inner.configure(cmd);
+    }
+
+    fn mflags_env(&self) -> String {
         let arg = self.inner.string_arg();
         
         
         
-        let value = format!("-j --jobserver-fds={0} --jobserver-auth={0}", arg);
-        cmd.env("CARGO_MAKEFLAGS", &value);
-        self.inner.configure(cmd);
+        format!("-j --jobserver-fds={0} --jobserver-auth={0}", arg)
     }
 
     
