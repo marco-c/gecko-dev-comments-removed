@@ -53,6 +53,9 @@ class MFMediaEngineChild final : public PMFMediaEngineChild {
  private:
   ~MFMediaEngineChild() = default;
 
+  uint64_t GetUpdatedRenderedFrames(const StatisticData& aData);
+  uint64_t GetUpdatedDroppedFrames(const StatisticData& aData);
+
   
   MFMediaEngineWrapper* MOZ_NON_OWNING_REF mOwner;
 
@@ -73,6 +76,13 @@ class MFMediaEngineChild final : public PMFMediaEngineChild {
   NotNull<FrameStatistics*> const MOZ_NON_OWNING_REF mFrameStats;
 
   bool mShutdown = false;
+
+  
+  
+  
+  
+  Maybe<uint64_t> mAccumulatedPresentedFramesFromPrevEngine;
+  Maybe<uint64_t> mAccumulatedDroppedFramesFromPrevEngine;
 };
 
 
