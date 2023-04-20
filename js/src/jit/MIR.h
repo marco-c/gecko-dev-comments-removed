@@ -415,10 +415,13 @@ class AliasSet {
     
     WasmArrayDataArea = 1 << 25,
 
-    Last = WasmArrayDataArea,
+    
+    GlobalGenerationCounter = 1 << 26,
+
+    Last = GlobalGenerationCounter,
 
     Any = Last | (Last - 1),
-    NumCategories = 26,
+    NumCategories = 27,
 
     
     Store_ = 1 << 31
