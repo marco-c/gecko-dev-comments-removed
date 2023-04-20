@@ -54,6 +54,11 @@ struct SendOptions {
   
   
   absl::optional<size_t> max_retransmissions = absl::nullopt;
+
+  
+  
+  
+  LifecycleId lifecycle_id = LifecycleId::NotSet();
 };
 
 enum class ErrorKind {
@@ -389,6 +394,91 @@ class DcSctpSocketCallbacks {
   
   
   virtual void OnTotalBufferedAmountLow() {}
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void OnLifecycleMessageFullySent(LifecycleId lifecycle_id) {}
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void OnLifecycleMessageExpired(LifecycleId lifecycle_id,
+                                         bool maybe_delivered) {}
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void OnLifecycleMessageDelivered(LifecycleId lifecycle_id) {}
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void OnLifecycleEnd(LifecycleId lifecycle_id) {}
 };
 
 
