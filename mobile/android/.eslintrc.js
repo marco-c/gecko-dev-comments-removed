@@ -4,16 +4,25 @@
 
 "use strict";
 
+const {
+  globals,
+} = require("../../toolkit/components/extensions/parent/.eslintrc.js");
+
 module.exports = {
   overrides: [
     {
-      files: [
+      files: ["components/extensions/ext-*.js"],
+      excludedFiles: ["components/extensions/ext-c-*.js"],
+      globals: {
+        ...globals,
         
-        "components/extensions/**",
-      ],
-      rules: {
-        "no-unused-vars": "off",
-        "no-undef": "off",
+        
+        EventDispatcher: true,
+        ExtensionError: true,
+        makeGlobalEvent: true,
+        TabContext: true,
+        tabTracker: true,
+        windowTracker: true,
       },
     },
     {

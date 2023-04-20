@@ -6,9 +6,6 @@
 
 "use strict";
 
-
-
-
 XPCOMUtils.defineLazyModuleGetters(this, {
   GeckoViewWebExtension: "resource://gre/modules/GeckoViewWebExtension.jsm",
   ExtensionActionHelper: "resource://gre/modules/GeckoViewWebExtension.jsm",
