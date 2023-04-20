@@ -26,6 +26,7 @@ static void dump(const T& data) {
 
 BEGIN_TEST(testParseScript) {
   CHECK(testCompile());
+  CHECK(testPrepareForInstantiate());
 
   return true;
 }
@@ -79,6 +80,43 @@ bool testCompile() {
     CHECK(stencilInput);
   }
 
+  
+
+  return true;
+}
+
+
+
+
+bool testPrepareForInstantiate() {
+  static constexpr std::u16string_view src_16 =
+      u"function f() { return {'field': 42};}; f()['field']\n";
+
+  JS::CompileOptions options(cx);
+
+  JS::SourceText<char16_t> buf16;
+  CHECK(buf16.init(cx, src_16.data(), src_16.length(),
+                   JS::SourceOwnership::Borrowed));
+
+  JS::FrontendContext* fc = JS::NewFrontendContext();
+  auto destroyFc =
+      mozilla::MakeScopeExit([fc] { JS::DestroyFrontendContext(fc); });
+
+  js::UniquePtr<js::frontend::CompilationInput> stencilInput;
+  RefPtr<JS::Stencil> stencil = ParseGlobalScript(
+      fc, options, cx->stackLimitForCurrentPrincipal(), buf16, stencilInput);
+  CHECK(stencil);
+  CHECK(stencil->scriptData.size() == 2);
+  CHECK(stencil->scopeData.size() == 1);       
+  CHECK(stencil->parserAtomData.size() == 1);  
+  CHECK(stencilInput);
+  CHECK(stencilInput->atomCache.empty());
+
+  JS::InstantiationStorage storage;
+  CHECK(JS::PrepareForInstantiate(fc, *stencilInput, *stencil, storage));
+  CHECK(stencilInput->atomCache.size() == 1);  
+  CHECK(storage.isValid());
+  
   
 
   return true;
