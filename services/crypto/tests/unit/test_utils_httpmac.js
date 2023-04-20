@@ -1,8 +1,8 @@
 
 
 
-const { CryptoUtils } = ChromeUtils.import(
-  "resource://services-crypto/utils.js"
+const { CryptoUtils } = ChromeUtils.importESModule(
+  "resource://services-crypto/utils.sys.mjs"
 );
 
 add_test(function setup() {

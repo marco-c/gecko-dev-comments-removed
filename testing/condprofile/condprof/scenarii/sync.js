@@ -2,8 +2,8 @@
 
 
 
-const { triggerSync } = ChromeUtils.import(
-  "resource://gre/modules/services-automation/ServicesAutomation.jsm"
+const { triggerSync } = ChromeUtils.importESModule(
+  "resource://gre/modules/services-automation/ServicesAutomation.sys.mjs"
 );
 
 let resolve = arguments[3]; 
