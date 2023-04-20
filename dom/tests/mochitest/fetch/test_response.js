@@ -97,35 +97,59 @@ function testClone() {
     });
 }
 
-function testCloneUnfiltered() {
+function testCloneUnfiltered(orbEnabled) {
   var url =
     "http://example.com/tests/dom/security/test/cors/file_CrossSiteXHR_server.sjs?status=200";
-  return fetch(url, { mode: "no-cors" }).then(function(response) {
-    
-    is(response.type, "opaque", "response should be opaque");
-    is(
-      response.cloneUnfiltered,
-      undefined,
-      "response.cloneUnfiltered should be undefined"
-    );
 
+  
+  
+  
+  
+  var isORBEnabled;
+  if (orbEnabled !== undefined) {
     
+    isORBEnabled = orbEnabled;
+  } else {
     
-    if (typeof SpecialPowers !== "object") {
-      return;
-    }
+    const params = new URLSearchParams(location.search);
+    isORBEnabled = params.has("orbEnabled");
+  }
 
-    
-    var chromeResponse = SpecialPowers.wrap(response);
-    is(
-      typeof chromeResponse.cloneUnfiltered,
-      "function",
-      "chromeResponse.cloneFiltered should be a function"
-    );
-    var unfiltered = chromeResponse.cloneUnfiltered();
-    is(unfiltered.type, "default", "unfiltered response should be default");
-    is(unfiltered.status, 200, "unfiltered response should have 200 status");
-  });
+  return fetch(url, { mode: "no-cors" })
+    .then(function(response) {
+      
+      ok(!isORBEnabled, "This request should be blocked when ORB is enabled");
+      is(response.type, "opaque", "response should be opaque");
+      is(
+        response.cloneUnfiltered,
+        undefined,
+        "response.cloneUnfiltered should be undefined"
+      );
+
+      
+      
+      if (typeof SpecialPowers !== "object") {
+        return;
+      }
+
+      
+      var chromeResponse = SpecialPowers.wrap(response);
+      is(
+        typeof chromeResponse.cloneUnfiltered,
+        "function",
+        "chromeResponse.cloneFiltered should be a function"
+      );
+      var unfiltered = chromeResponse.cloneUnfiltered();
+      is(unfiltered.type, "default", "unfiltered response should be default");
+      is(unfiltered.status, 200, "unfiltered response should have 200 status");
+    })
+    .catch(function(e) {
+      ok(
+        isORBEnabled,
+        "This request should not be blocked when ORB is disabled"
+      );
+      is(e.name, "TypeError", "ORB should throw TypeError");
+    });
 }
 
 function testError() {
@@ -336,7 +360,33 @@ function runTest() {
       .then(testBodyUsed)
       .then(testBodyExtraction)
       .then(testClone)
-      .then(testCloneUnfiltered)
+      .then(async function() {
+        const inWindowContext = typeof SpecialPowers === "object";
+        
+        
+        if (inWindowContext) {
+          return SpecialPowers.pushPrefEnv({
+            set: [
+              ["browser.opaqueResponseBlocking", true],
+              ["browser.opaqueResponseBlocking.javascriptValidator", true],
+            ],
+          })
+            .then(function() {
+              return testCloneUnfiltered(true);
+            })
+            .then(function() {
+              return SpecialPowers.pushPrefEnv({
+                set: [["browser.opaqueResponseBlocking", false]],
+              });
+            })
+            .then(function() {
+              return testCloneUnfiltered(false);
+            });
+        }
+        
+        
+        return testCloneUnfiltered();
+      })
       
       .catch(function(e) {
         dump("### ### " + e + "\n");
