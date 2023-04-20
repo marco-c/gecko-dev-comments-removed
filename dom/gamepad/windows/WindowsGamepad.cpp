@@ -24,6 +24,8 @@
 
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/dom/GamepadPlatformService.h"
+#include "mozilla/dom/GamepadRemapping.h"
+#include "Gamepad.h"
 
 namespace {
 
@@ -34,12 +36,10 @@ using mozilla::ArrayLength;
 
 const uint32_t kAxisMinimumUsageNumber = 0x30;
 
-const uint32_t kDpadMinimumUsageNumber = 0x39;
 const uint32_t kAxesLengthCap = 16;
 
 
 const uint32_t kDesktopUsagePage = 0x1;
-const uint32_t kGameControlsUsagePage = 0x5;
 const uint32_t kButtonUsagePage = 0x9;
 
 
