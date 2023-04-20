@@ -114,7 +114,14 @@ impl ToComputedValue for Angle {
 
     #[inline]
     fn to_computed_value(&self, _context: &Context) -> Self::ComputedValue {
-        ComputedAngle::from_degrees(crate::values::normalize(self.degrees()))
+        let degrees = self.degrees();
+
+        
+        ComputedAngle::from_degrees(if degrees.is_finite() {
+            degrees
+        } else {
+            0.0
+        })
     }
 
     #[inline]
