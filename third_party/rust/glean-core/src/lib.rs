@@ -21,10 +21,14 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
 
-use metrics::MetricsDisabledConfig;
+use crossbeam_channel::unbounded;
 use once_cell::sync::{Lazy, OnceCell};
 use uuid::Uuid;
+
+use metrics::MetricsDisabledConfig;
 
 mod common_metric_data;
 mod core;
@@ -224,7 +228,7 @@ pub trait OnGleanEvents: Send {
     
     
     
-    fn on_initialize_finished(&self);
+    fn initialize_finished(&self);
 
     
     
@@ -237,6 +241,17 @@ pub trait OnGleanEvents: Send {
 
     
     fn cancel_uploads(&self) -> Result<(), CallbackError>;
+
+    
+    
+    
+    
+    
+    
+    fn shutdown(&self) -> Result<(), CallbackError> {
+        
+        Ok(())
+    }
 }
 
 
@@ -446,7 +461,7 @@ fn initialize_inner(
             }
 
             let state = global_state().lock().unwrap();
-            state.callbacks.on_initialize_finished();
+            state.callbacks.initialize_finished();
         })
         .expect("Failed to spawn Glean's init thread");
 
@@ -470,6 +485,54 @@ pub fn join_init() {
     let mut handles = INIT_HANDLES.lock().unwrap();
     for handle in handles.drain(..) {
         handle.join().unwrap();
+    }
+}
+
+
+
+
+
+
+
+
+fn uploader_shutdown() {
+    let timer_id = core::with_glean(|glean| glean.additional_metrics.shutdown_wait.start_sync());
+    let (tx, rx) = unbounded();
+
+    let handle = thread::Builder::new()
+        .name("glean.shutdown".to_string())
+        .spawn(move || {
+            let state = global_state().lock().unwrap();
+            if let Err(e) = state.callbacks.shutdown() {
+                log::error!("Shutdown callback failed: {e:?}");
+            }
+
+            
+            let _ = tx.send(()).ok();
+        })
+        .expect("Unable to spawn thread to wait on shutdown");
+
+    
+    
+    
+    
+    
+    
+    
+    let result = rx.recv_timeout(Duration::from_secs(30));
+
+    let stop_time = time::precise_time_ns();
+    core::with_glean(|glean| {
+        glean
+            .additional_metrics
+            .shutdown_wait
+            .set_stop_and_accumulate(glean, timer_id, stop_time);
+    });
+
+    if result.is_err() {
+        log::warn!("Waiting for upload failed. We're shutting down.");
+    } else {
+        let _ = handle.join().ok();
     }
 }
 
@@ -499,6 +562,8 @@ pub fn shutdown() {
     if let Err(e) = dispatcher::shutdown() {
         log::error!("Can't shutdown dispatcher thread: {:?}", e);
     }
+
+    uploader_shutdown();
 
     
     core::with_glean(|glean| {
@@ -573,7 +638,7 @@ pub extern "C" fn glean_enable_logging() {
                 .build();
             android_logger::init_once(
                 android_logger::Config::default()
-                    .with_min_level(log::Level::Debug)
+                    .with_max_level(log::LevelFilter::Debug)
                     .with_filter(filter)
                     .with_tag("libglean_ffi"),
             );
@@ -894,6 +959,14 @@ pub fn glean_test_destroy_glean(clear_stores: bool, data_path: Option<String>) {
         join_init();
 
         dispatcher::reset_dispatcher();
+
+        
+        
+        let has_storage =
+            core::with_opt_glean(|glean| glean.storage_opt().is_some()).unwrap_or(false);
+        if has_storage {
+            uploader_shutdown();
+        }
 
         if core::global_glean().is_some() {
             core::with_glean_mut(|glean| {
