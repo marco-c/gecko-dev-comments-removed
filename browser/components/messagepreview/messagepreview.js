@@ -1,0 +1,24 @@
+
+
+
+
+
+
+"use strict";
+
+function decodeMessageFromUrl() {
+  const url = new URL(document.location.href);
+
+  if (url.searchParams.has("json")) {
+    const encodedMessage = url.searchParams.get("json");
+
+    return atob(encodedMessage);
+  }
+  return null;
+}
+
+const message = decodeMessageFromUrl();
+
+if (message) {
+  MPShowMessage(message);
+}
