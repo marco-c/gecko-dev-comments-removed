@@ -640,8 +640,19 @@ var gXPInstallObserver = {
           progressNotification.remove();
         }
 
+        
+        
+        
+        let isSitePermissionAddon = installInfo.installs.every(
+          ({ addon }) => addon?.type === lazy.SITEPERMS_ADDON_TYPE
+        );
         let hasHost = !!options.displayURI;
-        if (hasHost) {
+
+        if (isSitePermissionAddon) {
+          messageString = gNavigatorBundle.getString(
+            "sitePermissionInstallFirstPrompt.header"
+          );
+        } else if (hasHost) {
           messageString = gNavigatorBundle.getFormattedString(
             "xpinstallPromptMessage.header",
             ["<>"]
@@ -667,17 +678,9 @@ var gXPInstallObserver = {
             message.firstChild.remove();
           }
 
-          
-          
-          
-          let isSitePermissionAddon = installInfo.installs.every(
-            ({ addon }) => addon?.type === lazy.SITEPERMS_ADDON_TYPE
-          );
-
           if (isSitePermissionAddon) {
-            message.textContent = gNavigatorBundle.getFormattedString(
-              "sitePermissionsInstallPromptMessage.message",
-              [options.name]
+            message.textContent = gNavigatorBundle.getString(
+              "sitePermissionInstallFirstPrompt.message"
             );
           } else if (hasHost) {
             let text = gNavigatorBundle.getString(
