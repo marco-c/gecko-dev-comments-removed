@@ -5270,6 +5270,11 @@ class OverflowableToolbar {
   
 
 
+  #hiddenOverflowedNodes = new WeakSet();
+
+  
+
+
 
 
 
@@ -5668,6 +5673,13 @@ class OverflowableToolbar {
 
       if (child.getAttribute("overflows") != "false") {
         this.#overflowedInfo.set(child.id, targetContentWidth);
+        let { width: childWidth } = win.windowUtils.getBoundsWithoutFlushing(
+          child
+        );
+        if (!childWidth) {
+          this.#hiddenOverflowedNodes.add(child);
+        }
+
         child.setAttribute("overflowedItem", true);
         CustomizableUIInternal.ensureButtonContextMenu(
           child,
@@ -5693,7 +5705,7 @@ class OverflowableToolbar {
             child,
             this.#defaultList.firstElementChild
           );
-          if (!CustomizableUI.isSpecialWidget(child.id)) {
+          if (!CustomizableUI.isSpecialWidget(child.id) && childWidth) {
             this.#toolbar.setAttribute("overflowing", "true");
           }
         }
@@ -5889,8 +5901,13 @@ class OverflowableToolbar {
     win.UpdateUrlbarSearchSplitterState();
 
     let defaultListItems = Array.from(this.#defaultList.children);
-    let collapsedWidgetIds = defaultListItems.map(item => item.id);
-    if (collapsedWidgetIds.every(w => CustomizableUI.isSpecialWidget(w))) {
+    if (
+      defaultListItems.every(
+        item =>
+          CustomizableUI.isSpecialWidget(item.id) ||
+          this.#hiddenOverflowedNodes.has(item)
+      )
+    ) {
       this.#toolbar.removeAttribute("overflowing");
     }
   }
