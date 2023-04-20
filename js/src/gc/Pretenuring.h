@@ -55,8 +55,9 @@ class AllocSite {
   static_assert((AllocSite::LONG_LIVED_BIT & int32_t(State::ShortLived)) == 0);
 
  private:
-  JS::Zone* const zone_;
+  JS::Zone* zone_;
 
+  
   
   
   
@@ -79,8 +80,13 @@ class AllocSite {
 
   static AllocSite* const EndSentinel;
 
+  
+  static JSScript* const WasmScript;
+
   friend class PretenuringZone;
   friend class PretenuringNursery;
+
+  uintptr_t rawScript() const { return scriptAndState & ~STATE_MASK; }
 
  public:
   
@@ -89,17 +95,33 @@ class AllocSite {
 
   
   AllocSite(JS::Zone* zone, JSScript* script) : AllocSite(zone) {
+    MOZ_ASSERT(script != WasmScript);
     setScript(script);
+  }
+
+  
+  void initWasm(JS::Zone* zone) {
+    MOZ_ASSERT(!zone_ && !scriptAndState);
+    zone_ = zone;
+    nurseryTenuredCount = 0;
+    invalidationCount = 0;
+    setScript(WasmScript);
   }
 
   JS::Zone* zone() const { return zone_; }
 
   State state() const { return State(scriptAndState & STATE_MASK); }
 
+  
+  
+  bool hasScript() const { return rawScript() != uintptr_t(WasmScript); }
   JSScript* script() const {
-    return reinterpret_cast<JSScript*>(scriptAndState & ~STATE_MASK);
+    MOZ_ASSERT(hasScript());
+    return reinterpret_cast<JSScript*>(rawScript());
   }
-  bool hasScript() const { return script(); }
+
+  
+  bool isNormal() const { return rawScript() != 0; }
 
   enum class Kind : uint32_t { Normal, Unknown, Optimized };
   Kind kind() const;
@@ -167,7 +189,7 @@ class AllocSite {
 
   void setState(State newState) {
     MOZ_ASSERT((uintptr_t(newState) & ~STATE_MASK) == 0);
-    scriptAndState = uintptr_t(script()) | uintptr_t(newState);
+    scriptAndState = rawScript() | uintptr_t(newState);
   }
 
   const char* stateName() const;

@@ -24,6 +24,7 @@
 #include "NamespaceImports.h"
 
 #include "gc/Allocator.h"
+#include "gc/Pretenuring.h"
 #include "js/Utility.h"
 #include "wasm/WasmInstance.h"
 #include "wasm/WasmTypeDecls.h"
@@ -49,6 +50,9 @@ struct TypeDefInstanceData {
   
   
   const wasm::TypeDef* typeDef;
+
+  
+  gc::AllocSite allocSite;
 
   
   
