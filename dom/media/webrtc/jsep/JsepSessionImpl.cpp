@@ -1634,7 +1634,7 @@ JsepTransceiver* JsepSessionImpl::GetTransceiverForRemote(
   RefPtr<JsepTransceiver> newTransceiver(new JsepTransceiver(
       msection.GetMediaType(), *mUuidGen, SdpDirectionAttribute::kRecvonly));
   newTransceiver->SetLevel(level);
-  newTransceiver->SetCreatedBySetRemote();
+  newTransceiver->SetOnlyExistsBecauseOfSetRemote(true);
   AddTransceiver(newTransceiver);
   return newTransceiver.get();
 }
@@ -1752,9 +1752,6 @@ void JsepSessionImpl::RollbackRemoteOffer() {
     }
 
     
-    bool shouldRemove = !transceiver->HasAddTrackMagic() &&
-                        transceiver->WasCreatedBySetRemote();
-
     
     
     RefPtr<JsepTransceiver> temp(
@@ -1762,7 +1759,7 @@ void JsepSessionImpl::RollbackRemoteOffer() {
     InitTransceiver(*temp);
     transceiver->Rollback(*temp, true);
 
-    if (shouldRemove) {
+    if (transceiver->OnlyExistsBecauseOfSetRemote()) {
       transceiver->Stop();
       transceiver->SetRemoved();
     }

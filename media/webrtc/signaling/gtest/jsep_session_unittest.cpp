@@ -306,6 +306,7 @@ class JsepSessionTest : public JsepSessionTestBase,
       RefPtr<JsepTransceiver> suitableTransceiver;
       size_t i;
       if (magic == ADDTRACK_MAGIC) {
+        
         for (i = 0; i < side.GetTransceivers().size(); ++i) {
           auto transceiver = side.GetTransceivers()[i];
           if (transceiver->mSendTrack.GetMediaType() != type) {
@@ -324,12 +325,13 @@ class JsepSessionTest : public JsepSessionTestBase,
         i = side.GetTransceivers().size();
         suitableTransceiver = new JsepTransceiver(type, mUuidGen);
         side.AddTransceiver(suitableTransceiver);
+        if (magic == ADDTRACK_MAGIC) {
+          suitableTransceiver->SetAddTrackMagic();
+        }
       }
 
       std::cerr << "Updating send track for transceiver " << i << std::endl;
-      if (magic == ADDTRACK_MAGIC) {
-        suitableTransceiver->SetAddTrackMagic();
-      }
+      suitableTransceiver->SetOnlyExistsBecauseOfSetRemote(false);
       suitableTransceiver->mJsDirection |=
           SdpDirectionAttribute::Direction::kSendonly;
       suitableTransceiver->mSendTrack.UpdateStreamIds(
@@ -6470,8 +6472,6 @@ TEST_F(JsepSessionTest, AnswerWithoutVP8) {
 
 
 
-
-
 TEST_F(JsepSessionTest, OffererNoAddTrackMagic) {
   types = BuildTypes("audio,video");
   AddTracks(*mSessionOff, NO_ADDTRACK_MAGIC);
@@ -6885,9 +6885,7 @@ TEST_F(JsepSessionTest, NoAddTrackMagicReplaceTrack) {
   ASSERT_TRUE(mSessionAns->GetTransceivers()[3]->IsAssociated());
 }
 
-
-
-TEST_F(JsepSessionTest, AddTrackMakesTransceiverMagical) {
+TEST_F(JsepSessionTest, AddTrackDoesNotMakeTransceiverMagical) {
   types = BuildTypes("audio,video");
   AddTracks(*mSessionOff);
   AddTracks(*mSessionAns);
@@ -6913,6 +6911,8 @@ TEST_F(JsepSessionTest, AddTrackMakesTransceiverMagical) {
   ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->HasAddTrackMagic());
 
   
+  
+  
   AddTracks(*mSessionAns, "audio");
 
   ASSERT_EQ(3U, mSessionAns->GetTransceivers().size());
@@ -6925,21 +6925,26 @@ TEST_F(JsepSessionTest, AddTrackMakesTransceiverMagical) {
   ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->HasLevel());
   ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->IsStopped());
   ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->IsAssociated());
-  ASSERT_TRUE(mSessionAns->GetTransceivers()[2]->HasAddTrackMagic());
+  ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->HasAddTrackMagic());
 
   OfferAnswer(CHECK_SUCCESS);
 
-  ASSERT_EQ(3U, mSessionAns->GetTransceivers().size());
+  
+  ASSERT_EQ(4U, mSessionAns->GetTransceivers().size());
   ASSERT_EQ(0U, mSessionAns->GetTransceivers()[0]->GetLevel());
   ASSERT_FALSE(mSessionAns->GetTransceivers()[0]->IsStopped());
   ASSERT_TRUE(mSessionAns->GetTransceivers()[0]->IsAssociated());
   ASSERT_EQ(1U, mSessionAns->GetTransceivers()[1]->GetLevel());
   ASSERT_FALSE(mSessionAns->GetTransceivers()[1]->IsStopped());
   ASSERT_TRUE(mSessionAns->GetTransceivers()[1]->IsAssociated());
-  ASSERT_EQ(2U, mSessionAns->GetTransceivers()[2]->GetLevel());
+  ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->HasLevel());
   ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->IsStopped());
-  ASSERT_TRUE(mSessionAns->GetTransceivers()[2]->IsAssociated());
-  ASSERT_TRUE(mSessionAns->GetTransceivers()[2]->HasAddTrackMagic());
+  ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->IsAssociated());
+  ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->HasAddTrackMagic());
+  ASSERT_EQ(2U, mSessionAns->GetTransceivers()[3]->GetLevel());
+  ASSERT_FALSE(mSessionAns->GetTransceivers()[3]->IsStopped());
+  ASSERT_TRUE(mSessionAns->GetTransceivers()[3]->IsAssociated());
+  ASSERT_FALSE(mSessionAns->GetTransceivers()[3]->HasAddTrackMagic());
 }
 
 TEST_F(JsepSessionTest, ComplicatedRemoteRollback) {
@@ -6958,41 +6963,47 @@ TEST_F(JsepSessionTest, ComplicatedRemoteRollback) {
   ASSERT_FALSE(mSessionAns->GetTransceivers()[0]->IsStopped());
   ASSERT_TRUE(mSessionAns->GetTransceivers()[0]->IsAssociated());
   ASSERT_TRUE(mSessionAns->GetTransceivers()[0]->HasAddTrackMagic());
-  ASSERT_FALSE(mSessionAns->GetTransceivers()[0]->WasCreatedBySetRemote());
+  ASSERT_FALSE(
+      mSessionAns->GetTransceivers()[0]->OnlyExistsBecauseOfSetRemote());
 
   
   ASSERT_FALSE(mSessionAns->GetTransceivers()[1]->HasLevel());
   ASSERT_FALSE(mSessionAns->GetTransceivers()[1]->IsStopped());
   ASSERT_FALSE(mSessionAns->GetTransceivers()[1]->IsAssociated());
   ASSERT_TRUE(mSessionAns->GetTransceivers()[1]->HasAddTrackMagic());
-  ASSERT_FALSE(mSessionAns->GetTransceivers()[1]->WasCreatedBySetRemote());
+  ASSERT_FALSE(
+      mSessionAns->GetTransceivers()[1]->OnlyExistsBecauseOfSetRemote());
 
   
   ASSERT_EQ(0U, mSessionAns->GetTransceivers()[2]->GetLevel());
   ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->IsStopped());
   ASSERT_TRUE(mSessionAns->GetTransceivers()[2]->IsAssociated());
   ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->HasAddTrackMagic());
-  ASSERT_TRUE(mSessionAns->GetTransceivers()[2]->WasCreatedBySetRemote());
+  ASSERT_TRUE(
+      mSessionAns->GetTransceivers()[2]->OnlyExistsBecauseOfSetRemote());
 
   
   ASSERT_EQ(1U, mSessionAns->GetTransceivers()[3]->GetLevel());
   ASSERT_FALSE(mSessionAns->GetTransceivers()[3]->IsStopped());
   ASSERT_TRUE(mSessionAns->GetTransceivers()[3]->IsAssociated());
   ASSERT_FALSE(mSessionAns->GetTransceivers()[3]->HasAddTrackMagic());
-  ASSERT_TRUE(mSessionAns->GetTransceivers()[3]->WasCreatedBySetRemote());
+  ASSERT_TRUE(
+      mSessionAns->GetTransceivers()[3]->OnlyExistsBecauseOfSetRemote());
 
   
   ASSERT_EQ(2U, mSessionAns->GetTransceivers()[4]->GetLevel());
   ASSERT_FALSE(mSessionAns->GetTransceivers()[4]->IsStopped());
   ASSERT_TRUE(mSessionAns->GetTransceivers()[4]->IsAssociated());
   ASSERT_FALSE(mSessionAns->GetTransceivers()[4]->HasAddTrackMagic());
-  ASSERT_TRUE(mSessionAns->GetTransceivers()[4]->WasCreatedBySetRemote());
+  ASSERT_TRUE(
+      mSessionAns->GetTransceivers()[4]->OnlyExistsBecauseOfSetRemote());
 
   
   
-  
   AddTracks(*mSessionAns, "audio");
-  ASSERT_TRUE(mSessionAns->GetTransceivers()[2]->HasAddTrackMagic());
+  ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->HasAddTrackMagic());
+  ASSERT_FALSE(
+      mSessionAns->GetTransceivers()[2]->OnlyExistsBecauseOfSetRemote());
   mSessionAns->GetTransceivers()[2]->mSendTrack.ClearStreamIds();
   mSessionAns->GetTransceivers()[2]->mJsDirection =
       SdpDirectionAttribute::Direction::kRecvonly;
@@ -7037,7 +7048,9 @@ TEST_F(JsepSessionTest, ComplicatedRemoteRollback) {
   ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->HasLevel());
   ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->IsStopped());
   ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->IsAssociated());
-  ASSERT_TRUE(mSessionAns->GetTransceivers()[2]->HasAddTrackMagic());
+  ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->HasAddTrackMagic());
+  ASSERT_FALSE(
+      mSessionAns->GetTransceivers()[2]->OnlyExistsBecauseOfSetRemote());
   ASSERT_TRUE(IsNull(mSessionAns->GetTransceivers()[2]->mSendTrack));
   ASSERT_FALSE(mSessionAns->GetTransceivers()[2]->IsRemoved());
 

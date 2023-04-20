@@ -1144,6 +1144,12 @@ void RTCRtpSender::SetTrack(const RefPtr<MediaStreamTrack>& aTrack) {
   
   mSenderTrack = aTrack;
   SeamlessTrackSwitch(aTrack);
+  if (aTrack) {
+    
+    
+    
+    GetJsepTransceiver().SetOnlyExistsBecauseOfSetRemote(false);
+  }
 }
 
 bool RTCRtpSender::SetSenderTrackWithClosedCheck(

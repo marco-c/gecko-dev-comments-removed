@@ -41,7 +41,7 @@ class JsepTransceiver {
         mLevel(SIZE_MAX),
         mBundleLevel(SIZE_MAX),
         mAddTrackMagic(false),
-        mWasCreatedBySetRemote(false),
+        mOnlyExistsBecauseOfSetRemote(false),
         mStopped(false),
         mRemoved(false),
         mNegotiated(false),
@@ -62,7 +62,7 @@ class JsepTransceiver {
         mLevel(orig.mLevel),
         mBundleLevel(orig.mBundleLevel),
         mAddTrackMagic(orig.mAddTrackMagic),
-        mWasCreatedBySetRemote(orig.mWasCreatedBySetRemote),
+        mOnlyExistsBecauseOfSetRemote(orig.mOnlyExistsBecauseOfSetRemote),
         mStopped(orig.mStopped),
         mRemoved(orig.mRemoved),
         mNegotiated(orig.mNegotiated),
@@ -162,9 +162,13 @@ class JsepTransceiver {
 
   bool HasAddTrackMagic() const { return mAddTrackMagic; }
 
-  void SetCreatedBySetRemote() { mWasCreatedBySetRemote = true; }
+  void SetOnlyExistsBecauseOfSetRemote(bool aValue) {
+    mOnlyExistsBecauseOfSetRemote = aValue;
+  }
 
-  bool WasCreatedBySetRemote() const { return mWasCreatedBySetRemote; }
+  bool OnlyExistsBecauseOfSetRemote() const {
+    return mOnlyExistsBecauseOfSetRemote;
+  }
 
   void SetNegotiated() {
     MOZ_ASSERT(IsAssociated());
@@ -216,8 +220,9 @@ class JsepTransceiver {
   size_t mBundleLevel;  
   
   
+  
   bool mAddTrackMagic;
-  bool mWasCreatedBySetRemote;
+  bool mOnlyExistsBecauseOfSetRemote;
   bool mStopped;
   bool mRemoved;
   bool mNegotiated;

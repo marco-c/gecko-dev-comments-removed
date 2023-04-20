@@ -586,8 +586,6 @@ void RTCRtpTransceiver::SetDirectionInternal(
 void RTCRtpTransceiver::SetAddTrackMagic() {
   
   
-  
-  
   GetJsepTransceiver()->SetAddTrackMagic();
 }
 
