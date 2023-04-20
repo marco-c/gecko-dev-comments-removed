@@ -548,7 +548,8 @@ function getMatches(query, text, modifiers) {
 
       matchedLocations.push({
         line: i,
-        ch: singleMatch.index
+        ch: singleMatch.index,
+        match: singleMatch[0]
       }); 
       
       
@@ -757,7 +758,8 @@ function findSourceMatches(sourceId, content, queryText, modifiers) {
   const lines = text.split("\n");
   return (0, _getMatches.default)(queryText, text, modifiers).map(({
     line,
-    ch
+    ch,
+    match
   }) => {
     const {
       value,
@@ -768,7 +770,7 @@ function findSourceMatches(sourceId, content, queryText, modifiers) {
       line: line + 1,
       column: ch,
       matchIndex,
-      match: queryText,
+      match,
       value
     };
   });
@@ -777,7 +779,8 @@ function findSourceMatches(sourceId, content, queryText, modifiers) {
 
 const startRegex = /([ !@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/g; 
 
-const endRegex = new RegExp(["([ !@#$%^&*()_+-=[]{};':\"\\|,.<>/?])", '[^ !@#$%^&*()_+-=[]{};\':"\\|,.<>/?]*$"/'].join(""));
+const endRegex = new RegExp(["([ !@#$%^&*()_+-=[]{};':\"\\|,.<>/?])", '[^ !@#$%^&*()_+-=[]{};\':"\\|,.<>/?]*$"/'].join("")); 
+
 
 function truncateLine(text, column) {
   if (text.length < 100) {

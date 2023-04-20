@@ -14,14 +14,14 @@ export function findSourceMatches(sourceId, content, queryText, modifiers) {
   const text = content.value;
   const lines = text.split("\n");
 
-  return getMatches(queryText, text, modifiers).map(({ line, ch }) => {
+  return getMatches(queryText, text, modifiers).map(({ line, ch, match }) => {
     const { value, matchIndex } = truncateLine(lines[line], ch);
     return {
       sourceId,
       line: line + 1,
       column: ch,
       matchIndex,
-      match: queryText,
+      match,
       value,
     };
   });
@@ -36,6 +36,7 @@ const endRegex = new RegExp(
     '[^ !@#$%^&*()_+-=[]{};\':"\\|,.<>/?]*$"/',
   ].join("")
 );
+
 
 function truncateLine(text, column) {
   if (text.length < 100) {

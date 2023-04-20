@@ -23,7 +23,11 @@ export default function getMatches(query, text, modifiers) {
         throw new Error("no singleMatch");
       }
 
-      matchedLocations.push({ line: i, ch: singleMatch.index });
+      matchedLocations.push({
+        line: i,
+        ch: singleMatch.index,
+        match: singleMatch[0],
+      });
 
       
       
