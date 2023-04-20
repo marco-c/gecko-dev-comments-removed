@@ -5,7 +5,17 @@
 
 
 #include "mozilla/dom/JSValidatorChild.h"
+#include "js/JSON.h"
+#include "mozilla/dom/JSOracleChild.h"
+
 #include "mozilla/ipc/Endpoint.h"
+
+#include "js/experimental/JSStencil.h"
+#include "js/SourceText.h"
+#include "js/Exception.h"
+#include "js/GlobalObject.h"
+#include "js/CompileOptions.h"
+#include "js/RealmOptions.h"
 
 using namespace mozilla::dom;
 
@@ -74,14 +84,40 @@ void JSValidatorChild::Resolve(ValidatorResult aResult) {
 JSValidatorChild::ValidatorResult JSValidatorChild::ShouldAllowJS() const {
   
   
-  
-
-  
-  
   if (mSourceBytes.IsEmpty()) {
     return ValidatorResult::JavaScript;
   }
 
+  JSContext* cx = JSOracleChild::JSContext();
+  if (!cx) {
+    return ValidatorResult::Failure;
+  }
+
+  JSObject* global = JSOracleChild::JSObject();
+  if (!global) {
+    return ValidatorResult::Failure;
+  }
+
+  JS::SourceText<Utf8Unit> srcBuf;
+  if (!srcBuf.init(cx, mSourceBytes.BeginReading(), mSourceBytes.Length(),
+                   JS::SourceOwnership::Borrowed)) {
+    JS_ClearPendingException(cx);
+    return ValidatorResult::Failure;
+  }
+
+  JSAutoRealm ar(cx, global);
+
+  
+  RefPtr<JS::Stencil> stencil =
+      CompileGlobalScriptToStencil(cx, JS::CompileOptions(cx), srcBuf);
+
+  if (!stencil) {
+    JS_ClearPendingException(cx);
+    return ValidatorResult::Other;
+  }
+
+  
+  
   if (StringBeginsWith(NS_ConvertUTF8toUTF16(mSourceBytes), u"{"_ns)) {
     return ValidatorResult::JSON;
   }
