@@ -3573,8 +3573,13 @@ void nsWindow::CaptureRollupEvents(bool aDoCapture) {
     
     
     
+    
+    
+    
+    
     const auto& desktop = GetDesktopEnvironmentIdentifier();
-    return desktop.EqualsLiteral("twm") || desktop.EqualsLiteral("sawfish");
+    return desktop.EqualsLiteral("twm") || desktop.EqualsLiteral("sawfish") ||
+           StringBeginsWith(desktop, "fvwm"_ns);
   }();
 
   const bool grabPointer = [] {
