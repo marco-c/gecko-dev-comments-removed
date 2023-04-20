@@ -419,6 +419,10 @@ typedef struct SPEED_FEATURES {
 
   
   
+  int prune_single_mode_based_on_mv_diff_mode_rate;
+
+  
+  
   
   
   
