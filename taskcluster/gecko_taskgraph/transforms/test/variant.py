@@ -1,6 +1,8 @@
 
 
 
+import copy
+
 import jsone
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import Schema, validate_schema
@@ -9,7 +11,6 @@ from taskgraph.util.yaml import load_yaml
 from voluptuous import Any, Optional, Required
 
 import gecko_taskgraph
-from gecko_taskgraph.util.copy_task import copy_task
 from gecko_taskgraph.util.templates import merge
 
 transforms = TransformSequence()
@@ -69,12 +70,12 @@ def split_variants(config, tasks):
         variants = task.pop("variants", [])
 
         if task.pop("run-without-variant"):
-            yield copy_task(task)
+            yield copy.deepcopy(task)
 
         for name in variants:
             
             parts = name.split("+")
-            taskv = copy_task(task)
+            taskv = copy.deepcopy(task)
             for part in parts:
                 variant = TEST_VARIANTS[part]
 

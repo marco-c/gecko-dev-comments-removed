@@ -3,6 +3,7 @@
 
 
 
+import copy
 import json
 import logging
 import os
@@ -10,8 +11,6 @@ import re
 
 from taskgraph.util.parameterization import resolve_task_references
 from taskgraph.util.taskcluster import get_artifact, get_task_definition, list_artifacts
-
-from gecko_taskgraph.util.copy_task import copy_task
 
 from .registry import register_callback_action
 from .util import add_args_to_command, create_task_from_def, fetch_graph_and_labels
@@ -125,7 +124,7 @@ def create_isolate_failure_tasks(task_definition, failures, level, times):
     logger.info(f"Isolate task:\n{json.dumps(task_definition, indent=2)}")
 
     
-    task_definition = copy_task(task_definition)
+    task_definition = copy.deepcopy(task_definition)
 
     task_name = task_definition["metadata"]["name"]
     repeatable_task = False
@@ -151,7 +150,7 @@ def create_isolate_failure_tasks(task_definition, failures, level, times):
     
     
 
-    command = copy_task(task_definition["payload"]["command"])
+    command = copy.deepcopy(task_definition["payload"]["command"])
 
     th_dict["groupSymbol"] = th_dict["groupSymbol"] + "-I"
     th_dict["tier"] = 3
