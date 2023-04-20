@@ -73,23 +73,16 @@ struct DisplayPortMargins {
 
   
   
-  CSSToScreenScale2D mScale;
-
-  
-  
   static DisplayPortMargins FromAPZ(const ScreenMargin& aMargins,
                                     const CSSPoint& aVisualOffset,
-                                    const CSSPoint& aLayoutOffset,
-                                    const CSSToScreenScale2D& aScale);
+                                    const CSSPoint& aLayoutOffset);
 
   
   
   
   
-  
-  static DisplayPortMargins ForScrollFrame(
-      nsIScrollableFrame* aScrollFrame, const ScreenMargin& aMargins,
-      const Maybe<CSSToScreenScale2D>& aScale = Nothing());
+  static DisplayPortMargins ForScrollFrame(nsIScrollableFrame* aScrollFrame,
+                                           const ScreenMargin& aMargins);
 
   
   static DisplayPortMargins ForContent(nsIContent* aContent,

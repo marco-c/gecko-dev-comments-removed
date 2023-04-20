@@ -178,9 +178,8 @@ static DisplayPortMargins ScrollFrame(nsIContent* aContent,
   
   sf = nsLayoutUtils::FindScrollableFrameFor(aRequest.GetScrollId());
   bool scrollUpdated = false;
-  auto displayPortMargins = DisplayPortMargins::ForScrollFrame(
-      sf, aRequest.GetDisplayPortMargins(),
-      Some(aRequest.DisplayportPixelsPerCSSPixel()));
+  auto displayPortMargins =
+      DisplayPortMargins::ForScrollFrame(sf, aRequest.GetDisplayPortMargins());
   CSSPoint apzScrollOffset = aRequest.GetVisualScrollOffset();
   CSSPoint actualScrollOffset = ScrollFrameTo(sf, aRequest, scrollUpdated);
   CSSPoint scrollDelta = apzScrollOffset - actualScrollOffset;
@@ -199,9 +198,9 @@ static DisplayPortMargins ScrollFrame(nsIContent* aContent,
     } else {
       
       
-      displayPortMargins = DisplayPortMargins::FromAPZ(
-          aRequest.GetDisplayPortMargins(), apzScrollOffset, actualScrollOffset,
-          aRequest.DisplayportPixelsPerCSSPixel());
+      displayPortMargins =
+          DisplayPortMargins::FromAPZ(aRequest.GetDisplayPortMargins(),
+                                      apzScrollOffset, actualScrollOffset);
     }
   } else if (aRequest.IsRootContent() &&
              apzScrollOffset != aRequest.GetLayoutScrollOffset()) {
@@ -213,8 +212,7 @@ static DisplayPortMargins ScrollFrame(nsIContent* aContent,
     
     
     displayPortMargins = DisplayPortMargins::FromAPZ(
-        aRequest.GetDisplayPortMargins(), apzScrollOffset, actualScrollOffset,
-        aRequest.DisplayportPixelsPerCSSPixel());
+        aRequest.GetDisplayPortMargins(), apzScrollOffset, actualScrollOffset);
   } else {
     
     
@@ -223,8 +221,7 @@ static DisplayPortMargins ScrollFrame(nsIContent* aContent,
     
     
     displayPortMargins = DisplayPortMargins::ForScrollFrame(
-        sf, RecenterDisplayPort(aRequest.GetDisplayPortMargins()),
-        Some(aRequest.DisplayportPixelsPerCSSPixel()));
+        sf, RecenterDisplayPort(aRequest.GetDisplayPortMargins()));
   }
 
   
