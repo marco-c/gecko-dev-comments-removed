@@ -2439,7 +2439,7 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::UpdateSendState() {
     }
     
     
-    stream_->UpdateActiveSimulcastLayers(active_layers);
+    stream_->StartPerRtpStream(active_layers);
   } else {
     if (stream_ != nullptr) {
       stream_->Stop();

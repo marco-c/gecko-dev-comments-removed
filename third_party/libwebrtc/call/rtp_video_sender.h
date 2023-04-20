@@ -97,11 +97,9 @@ class RtpVideoSender : public RtpVideoSenderInterface,
 
   
   
-  void SetActive(bool active) RTC_LOCKS_EXCLUDED(mutex_) override;
-  
-  
-  void SetActiveModules(std::vector<bool> active_modules)
+  void SetActiveModules(const std::vector<bool>& active_modules)
       RTC_LOCKS_EXCLUDED(mutex_) override;
+  void Stop() RTC_LOCKS_EXCLUDED(mutex_) override;
   bool IsActive() RTC_LOCKS_EXCLUDED(mutex_) override;
 
   void OnNetworkAvailability(bool network_available)
@@ -157,7 +155,7 @@ class RtpVideoSender : public RtpVideoSenderInterface,
 
  private:
   bool IsActiveLocked() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
-  void SetActiveModulesLocked(std::vector<bool> active_modules)
+  void SetActiveModulesLocked(const std::vector<bool>& active_modules)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   void UpdateModuleSendingState() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   void ConfigureProtection();

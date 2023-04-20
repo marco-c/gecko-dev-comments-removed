@@ -209,8 +209,12 @@ VideoSendStream::~VideoSendStream() {
   transport_->DestroyRtpVideoSender(rtp_video_sender_);
 }
 
-void VideoSendStream::UpdateActiveSimulcastLayers(
-    const std::vector<bool> active_layers) {
+void VideoSendStream::Start() {
+  const std::vector<bool> active_layers(config_.rtp.ssrcs.size(), true);
+  StartPerRtpStream(active_layers);
+}
+
+void VideoSendStream::StartPerRtpStream(const std::vector<bool> active_layers) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
 
   
@@ -232,33 +236,14 @@ void VideoSendStream::UpdateActiveSimulcastLayers(
     }
   }
   active_layers_string << "}";
-  RTC_LOG(LS_INFO) << "UpdateActiveSimulcastLayers: "
-                   << active_layers_string.str();
+  RTC_LOG(LS_INFO) << "StartPerRtpStream: " << active_layers_string.str();
 
   rtp_transport_queue_->RunOrPost(
       SafeTask(transport_queue_safety_, [this, active_layers] {
-        send_stream_.UpdateActiveSimulcastLayers(active_layers);
+        send_stream_.StartPerRtpStream(active_layers);
       }));
 
   running_ = running;
-}
-
-void VideoSendStream::Start() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  RTC_DLOG(LS_INFO) << "VideoSendStream::Start";
-  if (running_)
-    return;
-
-  running_ = true;
-
-  
-  
-  
-  
-  rtp_transport_queue_->RunSynchronous([this] {
-    transport_queue_safety_->SetAlive();
-    send_stream_.Start();
-  });
 }
 
 void VideoSendStream::Stop() {
