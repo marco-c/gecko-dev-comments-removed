@@ -4193,8 +4193,9 @@ TEST_F(WebRtcVideoChannelFlexfecRecvTest, SetDefaultRecvCodecsWithSsrc) {
 
 
 
+
 TEST_F(WebRtcVideoChannelFlexfecRecvTest,
-       EnablingFlexfecRecreatesVideoReceiveStream) {
+       EnablingFlexfecDoesNotRecreateVideoReceiveStream) {
   cricket::VideoRecvParameters recv_parameters;
   recv_parameters.codecs.push_back(GetEngineCodec("VP8"));
   ASSERT_TRUE(channel_->SetRecvParameters(recv_parameters));
@@ -4217,11 +4218,11 @@ TEST_F(WebRtcVideoChannelFlexfecRecvTest,
 
   
   
-  EXPECT_EQ(3, fake_call_->GetNumCreatedReceiveStreams())
-      << "Enabling FlexFEC should create FlexfecReceiveStream.";
-
+  
+  EXPECT_EQ(2, fake_call_->GetNumCreatedReceiveStreams())
+      << "Enabling FlexFEC should not create VideoReceiveStreamInterface (1).";
   EXPECT_EQ(1U, fake_call_->GetVideoReceiveStreams().size())
-      << "Enabling FlexFEC should not create VideoReceiveStreamInterface.";
+      << "Enabling FlexFEC should not create VideoReceiveStreamInterface (2).";
   EXPECT_EQ(1U, fake_call_->GetFlexfecReceiveStreams().size())
       << "Enabling FlexFEC should create a single FlexfecReceiveStream.";
   video_stream = video_streams.front();

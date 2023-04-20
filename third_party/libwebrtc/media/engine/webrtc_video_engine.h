@@ -508,8 +508,7 @@ class WebRtcVideoChannel : public VideoMediaChannel,
     
     
     
-    
-    void SetFlexFecPayload(int payload_type, bool& flexfec_needs_recreation);
+    void SetFlexFecPayload(int payload_type);
 
     void RecreateReceiveStream();
 

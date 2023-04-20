@@ -3044,8 +3044,7 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetFeedbackParameters(
 }
 
 void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetFlexFecPayload(
-    int payload_type,
-    bool& flexfec_needs_recreation) {
+    int payload_type) {
   
   
   
@@ -3067,9 +3066,8 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetFlexFecPayload(
   } else if (payload_type != -1) {
     flexfec_config_.payload_type = payload_type;
     if (flexfec_config_.IsCompleteAndEnabled()) {
-      
-      
-      flexfec_needs_recreation = true;
+      flexfec_stream_ = call_->CreateFlexfecReceiveStream(flexfec_config_);
+      stream_->SetFlexFecProtection(flexfec_stream_);
     }
   } else {
     
@@ -3082,7 +3080,6 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetRecvParameters(
     const ChangedRecvParameters& params) {
   RTC_DCHECK(stream_);
   bool video_needs_recreation = false;
-  bool flexfec_needs_recreation = false;
   if (params.codec_settings) {
     video_needs_recreation = ConfigureCodecs(*params.codec_settings);
   }
@@ -3102,12 +3099,9 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetRecvParameters(
   }
 
   if (params.flexfec_payload_type)
-    SetFlexFecPayload(*params.flexfec_payload_type, flexfec_needs_recreation);
+    SetFlexFecPayload(*params.flexfec_payload_type);
 
-  
-  
-  
-  if (video_needs_recreation || flexfec_needs_recreation) {
+  if (video_needs_recreation) {
     RecreateReceiveStream();
   } else {
     RTC_DLOG_F(LS_INFO) << "No receive stream recreate needed.";
