@@ -351,16 +351,23 @@
         await this._translationReady;
       }
 
-      
-      
-      
-      
-      
-      
-      Services.tm.dispatchDirectTaskToCurrentThread(() => {
+      let finalStep = () => {
         this._sizeToPreferredSize();
         this._snapCursorToDefaultButtonIfNeeded();
-      });
+      };
+      
+      
+      
+      
+      
+      
+      
+      
+      if (Services.appinfo.OS == "Darwin") {
+        finalStep();
+      } else {
+        Services.tm.dispatchDirectTaskToCurrentThread(finalStep);
+      }
     }
 
     
