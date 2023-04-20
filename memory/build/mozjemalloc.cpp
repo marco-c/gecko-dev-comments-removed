@@ -207,8 +207,16 @@ using namespace mozilla;
 
 
 
+#ifdef MOZ_DEBUG
+#  define MALLOC_RUNTIME_CONFIG
+#endif
 
-#ifndef MOZ_DEBUG
+
+
+
+
+
+#ifndef MALLOC_RUNTIME_CONFIG
 #  if !defined(__ia64__) && !defined(__sparc__) && !defined(__mips__) &&       \
       !defined(__aarch64__) && !defined(__powerpc__) && !defined(XP_MACOSX) && \
       !defined(__loongarch__)
@@ -1384,7 +1392,7 @@ static detail::ThreadLocal<arena_t*, detail::ThreadLocalKeyStorage>
 const uint8_t kAllocJunk = 0xe4;
 const uint8_t kAllocPoison = 0xe5;
 
-#ifdef MOZ_DEBUG
+#ifdef MALLOC_RUNTIME_CONFIG
 static bool opt_junk = true;
 static bool opt_poison = true;
 static bool opt_zero = false;
@@ -4226,7 +4234,7 @@ static bool malloc_init_hard() {
               opt_dirty_max <<= 1;
             }
             break;
-#ifdef MOZ_DEBUG
+#ifdef MALLOC_RUNTIME_CONFIG
           case 'j':
             opt_junk = false;
             break;
