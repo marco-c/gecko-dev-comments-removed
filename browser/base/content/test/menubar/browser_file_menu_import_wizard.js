@@ -1,19 +1,3 @@
-
-
-
-"use strict";
-
-add_setup(async () => {
-  
-  
-  
-  
-  
-  let browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.loadURIString(browser, "https://example.com");
-  await BrowserTestUtils.browserLoaded(browser);
-});
-
 add_task(async function file_menu_import_wizard() {
   
   
@@ -21,7 +5,15 @@ add_task(async function file_menu_import_wizard() {
     document.getElementById("menu_importFromAnotherBrowser").doCommand()
   );
 
-  let wizard = await BrowserTestUtils.waitForMigrationWizard(window);
-  ok(wizard, "Migrator window opened");
-  await BrowserTestUtils.closeMigrationWizard(wizard);
+  await TestUtils.waitForCondition(() => {
+    let win = Services.wm.getMostRecentWindow("Browser:MigrationWizard");
+    return win && win.document && win.document.readyState == "complete";
+  }, "Migrator window loaded");
+
+  let migratorWindow = Services.wm.getMostRecentWindow(
+    "Browser:MigrationWizard"
+  );
+  ok(migratorWindow, "Migrator window opened");
+
+  await BrowserTestUtils.closeWindow(migratorWindow);
 });
