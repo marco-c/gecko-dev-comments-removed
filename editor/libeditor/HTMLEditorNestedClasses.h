@@ -65,6 +65,16 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInlineStyleSetter final
 
 
 
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  InvertStyleIfApplied(HTMLEditor& aHTMLEditor, Element& aElement);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitRangeOffFromNodeResult, nsresult>
+  InvertStyleIfApplied(HTMLEditor& aHTMLEditor, Text& aTextNode,
+                       uint32_t aStartOffset, uint32_t aEndOffset);
+
+  
+
+
+
   Result<EditorRawDOMRange, nsresult> ExtendOrShrinkRangeToApplyTheStyle(
       const HTMLEditor& aHTMLEditor, const EditorDOMRange& aRange) const;
 
