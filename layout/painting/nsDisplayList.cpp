@@ -19,6 +19,7 @@
 #include "gfxContext.h"
 #include "gfxUtils.h"
 #include "mozilla/DisplayPortUtils.h"
+#include "mozilla/Likely.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/dom/RemoteBrowser.h"
@@ -3093,6 +3094,34 @@ static nsDisplayBackgroundColor* CreateBackgroundColor(
                                                    aBgSC, aColor);
 }
 
+static void DealWithWindowsAppearanceHacks(nsIFrame* aFrame,
+                                           nsDisplayListBuilder* aBuilder) {
+  const auto& disp = *aFrame->StyleDisplay();
+
+  
+  
+  const auto defaultAppearance = disp.mDefaultAppearance;
+  if (MOZ_LIKELY(defaultAppearance == StyleAppearance::None)) {
+    return;
+  }
+
+  if (defaultAppearance == StyleAppearance::MozWinExcludeGlass) {
+    
+    
+    aBuilder->AddWindowExcludeGlassRegion(
+        aFrame, nsRect(aBuilder->ToReferenceFrame(aFrame), aFrame->GetSize()));
+  }
+
+  if (auto type = disp.GetWindowButtonType()) {
+    if (auto* widget = aFrame->GetNearestWidget()) {
+      auto rect = LayoutDevicePixel::FromAppUnitsToNearest(
+          nsRect(aBuilder->ToReferenceFrame(aFrame), aFrame->GetSize()),
+          aFrame->PresContext()->AppUnitsPerDevPixel());
+      widget->SetWindowButtonRect(*type, rect);
+    }
+  }
+}
+
 
 AppendedBackgroundType nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
@@ -3108,9 +3137,9 @@ AppendedBackgroundType nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
   if (!aBackgroundOriginRect.IsEmpty()) {
     bgOriginRect = aBackgroundOriginRect;
   }
-  const auto appearance = aFrame->StyleDisplay()->EffectiveAppearance();
-  const bool isThemed =
-      appearance != StyleAppearance::None && aFrame->IsThemed();
+  const bool isThemed = aFrame->IsThemed();
+  DealWithWindowsAppearanceHacks(aFrame, aBuilder);
+
   nsIFrame* dependentFrame = nullptr;
   if (!isThemed) {
     if (!bgSC) {
@@ -3204,30 +3233,21 @@ AppendedBackgroundType nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
     }
   }
 
-  
-  
-  if (appearance != StyleAppearance::None) {
-    if (appearance == StyleAppearance::MozWinExcludeGlass) {
-      aBuilder->AddWindowExcludeGlassRegion(
-          aFrame,
-          nsRect(aBuilder->ToReferenceFrame(aFrame), aFrame->GetSize()));
+  if (isThemed) {
+    nsDisplayThemedBackground* bgItem = CreateThemedBackground(
+        aBuilder, aFrame, aSecondaryReferenceFrame, bgRect);
+
+    if (bgItem) {
+      bgItem->Init(aBuilder);
+      bgItemList.AppendToTop(bgItem);
     }
-    if (isThemed) {
-      nsDisplayThemedBackground* bgItem = CreateThemedBackground(
-          aBuilder, aFrame, aSecondaryReferenceFrame, bgRect);
 
-      if (bgItem) {
-        bgItem->Init(aBuilder);
-        bgItemList.AppendToTop(bgItem);
-      }
-
-      if (!bgItemList.IsEmpty()) {
-        aList->AppendToTop(&bgItemList);
-        return AppendedBackgroundType::ThemedBackground;
-      }
-
-      return AppendedBackgroundType::None;
+    if (!bgItemList.IsEmpty()) {
+      aList->AppendToTop(&bgItemList);
+      return AppendedBackgroundType::ThemedBackground;
     }
+
+    return AppendedBackgroundType::None;
   }
 
   if (!bg || !drawBackgroundImage) {

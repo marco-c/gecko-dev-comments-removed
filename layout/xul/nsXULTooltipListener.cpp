@@ -537,8 +537,10 @@ nsresult nsXULTooltipListener::FindTooltip(nsIContent* aTarget,
 
   
 #ifdef XP_WIN
-  if (aTarget->AsElement()->HasAttr(nsGkAtoms::titlebar_button)) {
-    return NS_OK;
+  if (nsIFrame* f = aTarget->GetPrimaryFrame()) {
+    if (f->StyleDisplay()->GetWindowButtonType()) {
+      return NS_OK;
+    }
   }
 #endif
 
