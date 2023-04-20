@@ -206,8 +206,6 @@ pref("browser.helperApps.neverAsk.openFile", "");
 pref("browser.helperApps.deleteTempFileOnExit", false);
 
 
-pref("browser.chrome.toolbar_tips",         true);
-
 
 pref("browser.chrome.image_icons.max_size", 1024);
 

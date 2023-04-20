@@ -44,6 +44,7 @@
 #include "nsServiceManagerUtils.h"
 #include "nsViewManager.h"
 #include "nsView.h"
+#include "nsXULTooltipListener.h"
 #include "nsIConstraintValidation.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventListenerManager.h"
@@ -1066,21 +1067,14 @@ ChromeTooltipListener::AddChromeListeners() {
 NS_IMETHODIMP
 ChromeTooltipListener::AddTooltipListener() {
   if (mEventTarget) {
-    nsresult rv = NS_OK;
-#ifndef XP_WIN
-    rv =
-        mEventTarget->AddSystemEventListener(u"keydown"_ns, this, false, false);
-    NS_ENSURE_SUCCESS(rv, rv);
-#endif
-    rv = mEventTarget->AddSystemEventListener(u"mousedown"_ns, this, false,
-                                              false);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = mEventTarget->AddSystemEventListener(u"mouseout"_ns, this, false,
-                                              false);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = mEventTarget->AddSystemEventListener(u"mousemove"_ns, this, false,
-                                              false);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(mEventTarget->AddSystemEventListener(u"keydown"_ns, this, false,
+                                                 false));
+    MOZ_TRY(mEventTarget->AddSystemEventListener(u"mousedown"_ns, this, false,
+                                                 false));
+    MOZ_TRY(mEventTarget->AddSystemEventListener(u"mouseout"_ns, this, false,
+                                                 false));
+    MOZ_TRY(mEventTarget->AddSystemEventListener(u"mousemove"_ns, this, false,
+                                                 false));
 
     mTooltipListenerInstalled = true;
   }
@@ -1107,9 +1101,7 @@ ChromeTooltipListener::RemoveChromeListeners() {
 NS_IMETHODIMP
 ChromeTooltipListener::RemoveTooltipListener() {
   if (mEventTarget) {
-#ifndef XP_WIN
     mEventTarget->RemoveSystemEventListener(u"keydown"_ns, this, false);
-#endif
     mEventTarget->RemoveSystemEventListener(u"mousedown"_ns, this, false);
     mEventTarget->RemoveSystemEventListener(u"mouseout"_ns, this, false);
     mEventTarget->RemoveSystemEventListener(u"mousemove"_ns, this, false);
@@ -1128,10 +1120,9 @@ ChromeTooltipListener::HandleEvent(Event* aEvent) {
     return HideTooltip();
   } else if (eventType.EqualsLiteral("keydown")) {
     WidgetKeyboardEvent* keyEvent = aEvent->WidgetEventPtr()->AsKeyboardEvent();
-    if (!keyEvent->IsModifierKeyEvent()) {
+    if (nsXULTooltipListener::KeyEventHidesTooltip(*keyEvent)) {
       return HideTooltip();
     }
-
     return NS_OK;
   } else if (eventType.EqualsLiteral("mouseout")) {
     
@@ -1148,6 +1139,10 @@ ChromeTooltipListener::HandleEvent(Event* aEvent) {
 
 
 nsresult ChromeTooltipListener::MouseMove(Event* aMouseEvent) {
+  if (!nsXULTooltipListener::ShowTooltips()) {
+    return NS_OK;
+  }
+
   MouseEvent* mouseEvent = aMouseEvent->AsMouseEvent();
   if (!mouseEvent) {
     return NS_OK;
