@@ -34,13 +34,24 @@ async function testTextRange(accDoc, browser, id, start, end) {
         
         let isEmbeddedElement = false;
         if (element.length == undefined) {
-          if (!element.firstChild) {
-            continue;
-          } else {
+          let potentialTextContainer = element;
+          while (
+            potentialTextContainer &&
+            potentialTextContainer.length == undefined
+          ) {
+            potentialTextContainer = element.firstChild;
+          }
+          if (potentialTextContainer && potentialTextContainer.length) {
+            
+            
+            
+            element = potentialTextContainer;
+          } else if (element.firstChild) {
             isEmbeddedElement = true;
+          } else {
+            continue;
           }
         }
-
         if (element.length + traversed < _start) {
           
           
@@ -430,6 +441,68 @@ addAccessibleTask(
   },
   { chrome: true, topLevel: !isWinNoCache }
 );
+
+
+
+
+addAccessibleTask(
+  `
+  <style>
+    @font-face {
+      font-family: Ahem;
+      src: url(${CURRENT_CONTENT_DIR}e10s/fonts/Ahem.sjs);
+    }
+    pre {
+      font: 20px/20px Ahem;
+    }
+  </style>
+  <pre id="t"><code>XX
+XXX
+XX
+X</pre>`,
+  async function(browser, docAcc) {
+    await testChar(docAcc, browser, "t", 0);
+    await testChar(docAcc, browser, "t", 3);
+    await testChar(docAcc, browser, "t", 7);
+    await testChar(docAcc, browser, "t", 10);
+  },
+  {
+    chrome: true,
+    topLevel: !isWinNoCache,
+    iframe: !isWinNoCache,
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
