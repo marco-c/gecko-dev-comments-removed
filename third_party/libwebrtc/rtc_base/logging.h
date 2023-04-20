@@ -41,6 +41,10 @@
 
 
 
+
+
+
+
 #ifndef RTC_BASE_LOGGING_H_
 #define RTC_BASE_LOGGING_H_
 
@@ -669,6 +673,10 @@ class LogMessage {
   !rtc::LogMessage::IsNoop<::rtc::sev>() && \
       RTC_LOG_FILE_LINE(::rtc::sev, __FILE__, __LINE__)
 
+#define RTC_LOG_IF(sev, condition)                         \
+  !rtc::LogMessage::IsNoop<::rtc::sev>() && (condition) && \
+      RTC_LOG_FILE_LINE(::rtc::sev, __FILE__, __LINE__)
+
 
 #define RTC_LOG_V(sev) \
   !rtc::LogMessage::IsNoop(sev) && RTC_LOG_FILE_LINE(sev, __FILE__, __LINE__)
@@ -676,10 +684,14 @@ class LogMessage {
 
 #if (defined(__GNUC__) && !defined(NDEBUG)) || defined(WANT_PRETTY_LOG_F)
 #define RTC_LOG_F(sev) RTC_LOG(sev) << __PRETTY_FUNCTION__ << ": "
+#define RTC_LOG_IF_F(sev, condition) \
+  RTC_LOG_IF(sev, condition) << __PRETTY_FUNCTION__ << ": "
 #define RTC_LOG_T_F(sev) \
   RTC_LOG(sev) << this << ": " << __PRETTY_FUNCTION__ << ": "
 #else
 #define RTC_LOG_F(sev) RTC_LOG(sev) << __FUNCTION__ << ": "
+#define RTC_LOG_IF_F(sev, condition) \
+  RTC_LOG_IF(sev, condition) << __FUNCTION__ << ": "
 #define RTC_LOG_T_F(sev) RTC_LOG(sev) << this << ": " << __FUNCTION__ << ": "
 #endif
 
@@ -747,16 +759,20 @@ inline const char* AdaptString(const std::string& str) {
 
 #if RTC_DLOG_IS_ON
 #define RTC_DLOG(sev) RTC_LOG(sev)
+#define RTC_DLOG_IF(sev, condition) RTC_LOG_IF(sev, condition)
 #define RTC_DLOG_V(sev) RTC_LOG_V(sev)
 #define RTC_DLOG_F(sev) RTC_LOG_F(sev)
+#define RTC_DLOG_IF_F(sev, condition) RTC_LOG_IF_F(sev, condition)
 #else
 #define RTC_DLOG_EAT_STREAM_PARAMS()                \
   while (false)                                     \
   ::rtc::webrtc_logging_impl::LogMessageVoidify() & \
       (::rtc::webrtc_logging_impl::LogStreamer<>())
 #define RTC_DLOG(sev) RTC_DLOG_EAT_STREAM_PARAMS()
+#define RTC_DLOG_IF(sev, condition) RTC_DLOG_EAT_STREAM_PARAMS()
 #define RTC_DLOG_V(sev) RTC_DLOG_EAT_STREAM_PARAMS()
 #define RTC_DLOG_F(sev) RTC_DLOG_EAT_STREAM_PARAMS()
+#define RTC_DLOG_IF_F(sev, condition) RTC_DLOG_EAT_STREAM_PARAMS()
 #endif
 
 }  
