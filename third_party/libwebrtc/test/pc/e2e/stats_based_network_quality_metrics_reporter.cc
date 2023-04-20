@@ -373,8 +373,7 @@ void StatsBasedNetworkQualityMetricsReporter::ReportStats(
   
   std::map<std::string, std::string> metric_metadata{
       {MetricMetadataKey::kPeerMetadataKey, pc_label},
-      {MetricMetadataKey::kExperimentalTestNameMetadataKey,
-       GetCurrentTestName()}};
+      {MetricMetadataKey::kExperimentalTestNameMetadataKey, test_case_name_}};
   metrics_logger_->LogSingleValueMetric(
       "bytes_discarded_no_receiver", GetTestCaseName(pc_label),
       network_layer_stats.endpoints_stats.overall_incoming_stats
@@ -444,8 +443,7 @@ void StatsBasedNetworkQualityMetricsReporter::LogNetworkLayerStats(
   
   std::map<std::string, std::string> metric_metadata{
       {MetricMetadataKey::kPeerMetadataKey, peer_name},
-      {MetricMetadataKey::kExperimentalTestNameMetadataKey,
-       GetCurrentTestName()}};
+      {MetricMetadataKey::kExperimentalTestNameMetadataKey, test_case_name_}};
   rtc::StringBuilder log;
   log << "Raw network layer statistic for [" << peer_name << "]:\n"
       << "Local IPs:\n";

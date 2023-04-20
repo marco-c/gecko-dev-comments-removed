@@ -139,8 +139,7 @@ void VideoQualityMetricsReporter::ReportVideoBweResults(
   
   std::map<std::string, std::string> metric_metadata{
       {MetricMetadataKey::kPeerMetadataKey, peer_name},
-      {MetricMetadataKey::kExperimentalTestNameMetadataKey,
-       GetCurrentTestName()}};
+      {MetricMetadataKey::kExperimentalTestNameMetadataKey, test_case_name_}};
 
   metrics_logger_->LogMetric(
       "available_send_bandwidth", test_case_name,
