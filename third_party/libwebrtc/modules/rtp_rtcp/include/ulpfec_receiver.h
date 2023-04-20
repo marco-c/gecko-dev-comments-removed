@@ -49,7 +49,7 @@ class UlpfecReceiver {
 
   
   
-  virtual int32_t ProcessReceivedFec() = 0;
+  virtual void ProcessReceivedFec() = 0;
 
   
   virtual FecPacketCounter GetPacketCounter() const = 0;
