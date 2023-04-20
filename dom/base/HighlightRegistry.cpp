@@ -172,14 +172,20 @@ void HighlightRegistry::Clear(ErrorResult& aRv) {
     return;
   }
   auto frameSelection = GetFrameSelection();
+  AutoFrameSelectionBatcher batcher(__FUNCTION__);
+  batcher.AddFrameSelection(frameSelection);
   for (auto const& iter : mHighlightsOrdered) {
-    const RefPtr<const nsAtom> highlightName = iter.first();
+    const RefPtr<const nsAtom>& highlightName = iter.first();
     const RefPtr<Highlight>& highlight = iter.second();
     highlight->RemoveFromHighlightRegistry(*this, *highlightName);
     if (frameSelection) {
-      frameSelection->RemoveHighlightSelection(highlightName);
+      
+      
+      
+      frameSelection->RemoveHighlightSelection(MOZ_KnownLive(highlightName));
     }
   }
+
   mHighlightsOrdered.Clear();
 }
 
