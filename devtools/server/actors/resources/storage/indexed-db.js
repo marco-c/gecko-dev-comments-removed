@@ -198,6 +198,32 @@ class IndexedDBStorageActor extends BaseStorageActor {
   }
 
   
+  async populateStoresForHosts() {
+    for (const host of await this.getHosts()) {
+      await this.populateStoresForHost(host);
+    }
+  }
+
+  async populateStoresForHost(host) {
+    const storeMap = new Map();
+
+    const win = this.storageActor.getWindowFromHost(host);
+    const principal = this.getPrincipal(win);
+
+    const { names } = await this.getDBNamesForHost(host, principal);
+
+    for (const { name, storage } of names) {
+      let metadata = await this.getDBMetaData(host, principal, name, storage);
+
+      metadata = this.patchMetadataMapsAndProtos(metadata);
+
+      storeMap.set(`${name} (${storage})`, metadata);
+    }
+
+    this.hostVsStores.set(host, storeMap);
+  }
+
+  
 
 
 
@@ -251,13 +277,6 @@ class IndexedDBStorageActor extends BaseStorageActor {
     const principal = win.document.effectiveStoragePrincipal;
     this.removeDBRecord(host, principal, db, store, id);
   }
-
-  
-
-
-
-
-  populateStoresForHosts() {}
 
   getNamesForHost(host) {
     const storesForHost = this.hostVsStores.get(host);
@@ -330,38 +349,6 @@ class IndexedDBStorageActor extends BaseStorageActor {
       }
     }
     return 0;
-  }
-
-  
-
-
-
-
-
-  async preListStores() {
-    this.hostVsStores = new Map();
-    for (const host of await this.getHosts()) {
-      await this.populateStoresForHost(host);
-    }
-  }
-
-  async populateStoresForHost(host) {
-    const storeMap = new Map();
-
-    const win = this.storageActor.getWindowFromHost(host);
-    const principal = this.getPrincipal(win);
-
-    const { names } = await this.getDBNamesForHost(host, principal);
-
-    for (const { name, storage } of names) {
-      let metadata = await this.getDBMetaData(host, principal, name, storage);
-
-      metadata = this.patchMetadataMapsAndProtos(metadata);
-
-      storeMap.set(`${name} (${storage})`, metadata);
-    }
-
-    this.hostVsStores.set(host, storeMap);
   }
 
   

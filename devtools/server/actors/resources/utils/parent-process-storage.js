@@ -136,15 +136,13 @@ class ParentProcessStorage {
     this.actor = new this.ActorConstructor(storageActor);
 
     
-    if (typeof this.actor.preListStores === "function") {
-      try {
-        await this.actor.preListStores();
-      } catch (e) {
-        
-        
-        if (this.actor) {
-          throw e;
-        }
+    try {
+      await this.actor.populateStoresForHosts();
+    } catch (e) {
+      
+      
+      if (this.actor) {
+        throw e;
       }
     }
 

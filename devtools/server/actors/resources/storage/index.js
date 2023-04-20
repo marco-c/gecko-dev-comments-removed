@@ -57,7 +57,12 @@ class BaseStorageActor extends Actor {
 
     this.storageActor = storageActor;
 
-    this.populateStoresForHosts();
+    
+    
+    
+    
+    
+    this.hostVsStores = new Map();
 
     this.onWindowReady = this.onWindowReady.bind(this);
     this.onWindowDestroyed = this.onWindowDestroyed.bind(this);
@@ -144,6 +149,15 @@ class BaseStorageActor extends Actor {
       default:
         
         return `${location.protocol}//${location.host}`;
+    }
+  }
+
+  
+
+
+  async populateStoresForHosts() {
+    for (const host of this.hosts) {
+      await this.populateStoresForHost(host);
     }
   }
 
@@ -244,16 +258,6 @@ class BaseStorageActor extends Actor {
       supportsRemoveAllSessionCookies:
         typeof this.removeAllSessionCookies === "function",
     };
-  }
-
-  
-
-
-  populateStoresForHosts() {
-    this.hostVsStores = new Map();
-    for (const host of this.hosts) {
-      this.populateStoresForHost(host);
-    }
   }
 
   

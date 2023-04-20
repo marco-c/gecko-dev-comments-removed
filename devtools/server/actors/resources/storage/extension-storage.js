@@ -48,13 +48,6 @@ class ExtensionStorageActor extends BaseStorageActor {
     
     this.dbConnectionForHost = new Map();
 
-    
-    
-    
-    
-    
-    this.hostVsStores = new Map();
-
     this.onExtensionStartup = this.onExtensionStartup.bind(this);
 
     this.onStorageChange = this.onStorageChange.bind(this);
@@ -78,52 +71,7 @@ class ExtensionStorageActor extends BaseStorageActor {
 
 
 
-
-  onStorageChange(changes) {
-    const host = this.extensionHostURL;
-    const storeMap = this.hostVsStores.get(host);
-
-    function isStructuredCloneHolder(value) {
-      return (
-        value &&
-        typeof value === "object" &&
-        Cu.getClassName(value, true) === "StructuredCloneHolder"
-      );
-    }
-
-    for (const key in changes) {
-      const storageChange = changes[key];
-      let { newValue, oldValue } = storageChange;
-      if (isStructuredCloneHolder(newValue)) {
-        newValue = newValue.deserialize(this);
-      }
-      if (isStructuredCloneHolder(oldValue)) {
-        oldValue = oldValue.deserialize(this);
-      }
-
-      let action;
-      if (typeof newValue === "undefined") {
-        action = "deleted";
-        storeMap.delete(key);
-      } else if (typeof oldValue === "undefined") {
-        action = "added";
-        storeMap.set(key, newValue);
-      } else {
-        action = "changed";
-        storeMap.set(key, newValue);
-      }
-
-      this.storageActor.update(action, this.typeName, { [host]: [key] });
-    }
-  }
-
-  
-
-
-
-
-
-  async preListStores() {
+  async populateStoresForHosts() {
     
     if (!this.addonId || !this.getExtensionPolicy()) {
       return;
@@ -177,13 +125,6 @@ class ExtensionStorageActor extends BaseStorageActor {
 
 
 
-  populateStoresForHosts() {}
-
-  
-
-
-
-
   async populateStoresForHost(host) {
     if (host !== this.extensionHostURL) {
       return;
@@ -222,6 +163,48 @@ class ExtensionStorageActor extends BaseStorageActor {
       const storageData = {};
       storageData[host] = this.getNamesForHost(host);
       this.storageActor.update("added", this.typeName, storageData);
+    }
+  }
+  
+
+
+
+
+  onStorageChange(changes) {
+    const host = this.extensionHostURL;
+    const storeMap = this.hostVsStores.get(host);
+
+    function isStructuredCloneHolder(value) {
+      return (
+        value &&
+        typeof value === "object" &&
+        Cu.getClassName(value, true) === "StructuredCloneHolder"
+      );
+    }
+
+    for (const key in changes) {
+      const storageChange = changes[key];
+      let { newValue, oldValue } = storageChange;
+      if (isStructuredCloneHolder(newValue)) {
+        newValue = newValue.deserialize(this);
+      }
+      if (isStructuredCloneHolder(oldValue)) {
+        oldValue = oldValue.deserialize(this);
+      }
+
+      let action;
+      if (typeof newValue === "undefined") {
+        action = "deleted";
+        storeMap.delete(key);
+      } else if (typeof oldValue === "undefined") {
+        action = "added";
+        storeMap.set(key, newValue);
+      } else {
+        action = "changed";
+        storeMap.set(key, newValue);
+      }
+
+      this.storageActor.update(action, this.typeName, { [host]: [key] });
     }
   }
 

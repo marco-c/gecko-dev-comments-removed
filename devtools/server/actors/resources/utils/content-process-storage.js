@@ -50,9 +50,7 @@ class ContentProcessStorage {
     this.actor = new this.ActorConstructor(storageActor);
 
     
-    if (typeof this.actor.preListStores === "function") {
-      await this.actor.preListStores();
-    }
+    await this.actor.populateStoresForHosts();
 
     
     
