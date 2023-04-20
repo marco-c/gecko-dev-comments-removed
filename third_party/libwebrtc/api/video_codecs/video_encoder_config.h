@@ -158,6 +158,9 @@ class VideoEncoderConfig {
   VideoCodecType codec_type;
   SdpVideoFormat video_format;
 
+  
+  
+  
   rtc::scoped_refptr<VideoStreamFactoryInterface> video_stream_factory;
   std::vector<SpatialLayer> spatial_layers;
   ContentType content_type;
@@ -188,6 +191,11 @@ class VideoEncoderConfig {
 
   
   bool is_quality_scaling_allowed;
+
+  
+  
+  
+  int max_qp;
 
  private:
   
