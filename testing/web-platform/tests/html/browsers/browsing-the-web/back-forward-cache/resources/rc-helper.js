@@ -28,9 +28,59 @@ async function assert_implements_bfcache(remoteContextHelper) {
 
 
 
-async function assert_not_bfcached(remoteContextHelper) {
+
+
+
+
+
+
+
+
+
+async function assert_not_bfcached(
+    remoteContextHelper, notRestoredReasons) {
   var beforeBFCache = await getBeforeBFCache(remoteContextHelper);
   assert_equals(beforeBFCache, undefined);
+
+  
+  
+  if (notRestoredReasons === undefined) {
+    return;
+  }
+
+  let isFeatureEnabled = await remoteContextHelper.executeScript(() => {
+    return 'notRestoredReasons' in performance.getEntriesByType('navigation')[0];
+  });
+
+  
+  if (!isFeatureEnabled) {
+    return;
+  }
+
+  let result = await remoteContextHelper.executeScript(() => {
+    return performance.getEntriesByType('navigation')[0].notRestoredReasons;
+  });
+
+  let expectedNotRestoredReasonsSet = new Set(notRestoredReasons);
+  let notRestoredReasonsSet = new Set();
+
+  
+  const collectReason = (node) => {
+    for (let reason of node.reasons) {
+      notRestoredReasonsSet.add(reason);
+    }
+    for (let child of node.children) {
+      collectReason(child);
+    }
+  }
+  collectReason(result);
+
+  assert_equals(notRestoredReasonsSet.length,
+      expectedNotRestoredReasonsSet.length);
+
+  for (let reason of expectedNotRestoredReasonsSet) {
+    assert_true(notRestoredReasonsSet.has(reason));
+  }
 }
 
 

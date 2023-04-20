@@ -27,5 +27,8 @@ promise_test(async t => {
   await createIndexedDBForTesting(rc2, 'test_idb_2', 2);
   await rc2.historyBack();
   
-  await assert_not_bfcached(rc1);
+  
+  
+  
+  await assert_not_bfcached(rc1, ['Internal error']);
 });
