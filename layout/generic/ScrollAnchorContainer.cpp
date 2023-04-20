@@ -673,10 +673,8 @@ nsIFrame* ScrollAnchorContainer::FindAnchorIn(nsIFrame* aFrame) const {
     
     
     
-    if (listID == FrameChildListID::kAbsoluteList ||
-        listID == FrameChildListID::kFixedList ||
-        listID == FrameChildListID::kFloatList ||
-        listID == FrameChildListID::kOverflowOutOfFlowList) {
+    if (listID == kAbsoluteList || listID == kFixedList ||
+        listID == kFloatList || listID == kOverflowOutOfFlowList) {
       continue;
     }
 
@@ -694,8 +692,7 @@ nsIFrame* ScrollAnchorContainer::FindAnchorIn(nsIFrame* aFrame) const {
   
   
   
-  const nsFrameList& absPosList =
-      aFrame->GetChildList(FrameChildListID::kAbsoluteList);
+  const nsFrameList& absPosList = aFrame->GetChildList(kAbsoluteList);
   if (nsIFrame* anchor = FindAnchorInList(absPosList)) {
     return anchor;
   }

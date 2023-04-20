@@ -1574,27 +1574,6 @@ void nsIFrame::CreateView() {
 }
 
 
-
-
-#ifndef _MSC_VER
-
-const nsIFrame::ChildListID nsIFrame::kPrincipalList;
-const nsIFrame::ChildListID nsIFrame::kAbsoluteList;
-const nsIFrame::ChildListID nsIFrame::kBulletList;
-const nsIFrame::ChildListID nsIFrame::kCaptionList;
-const nsIFrame::ChildListID nsIFrame::kColGroupList;
-const nsIFrame::ChildListID nsIFrame::kExcessOverflowContainersList;
-const nsIFrame::ChildListID nsIFrame::kFixedList;
-const nsIFrame::ChildListID nsIFrame::kFloatList;
-const nsIFrame::ChildListID nsIFrame::kOverflowContainersList;
-const nsIFrame::ChildListID nsIFrame::kOverflowList;
-const nsIFrame::ChildListID nsIFrame::kOverflowOutOfFlowList;
-const nsIFrame::ChildListID nsIFrame::kPopupList;
-const nsIFrame::ChildListID nsIFrame::kPushedFloatsList;
-const nsIFrame::ChildListID nsIFrame::kNoReflowPrincipalList;
-#endif
-
-
 nsMargin nsIFrame::GetUsedMargin() const {
   nsMargin margin(0, 0, 0, 0);
   if (((mState & NS_FRAME_FIRST_REFLOW) && !(mState & NS_FRAME_IN_REFLOW)) ||
@@ -2136,7 +2115,7 @@ AutoTArray<nsIFrame::ChildList, 4> nsIFrame::CrossDocChildLists() {
     if (root) {
       childLists.EmplaceBack(
           nsFrameList(root, nsLayoutUtils::GetLastSibling(root)),
-          nsIFrame::kPrincipalList);
+          kPrincipalList);
     }
   }
 
@@ -9593,9 +9572,8 @@ static nsRect ComputeOutlineInnerRect(
 
   
   
-  const nsIFrame::ChildListIDs skip = {
-      nsIFrame::kPopupList, nsIFrame::kAbsoluteList, nsIFrame::kFixedList,
-      nsIFrame::kFloatList, nsIFrame::kOverflowList};
+  const FrameChildListIDs skip = {kPopupList, kAbsoluteList, kFixedList,
+                                  kFloatList, kOverflowList};
   for (const auto& [list, listID] : aFrame->ChildLists()) {
     if (skip.contains(listID)) {
       continue;
