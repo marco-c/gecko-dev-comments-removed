@@ -82,6 +82,11 @@ class RTC_EXPORT DesktopCapturer {
     
     
     std::string title;
+
+#if defined(CHROMEOS)
+    
+    WindowId in_process_id = kNullWindowId;
+#endif
   };
 
   typedef std::vector<Source> SourceList;
