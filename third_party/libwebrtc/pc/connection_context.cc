@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "api/task_queue/to_queued_task.h"
 #include "api/transport/field_trial_based_config.h"
 #include "media/base/media_engine.h"
 #include "media/sctp/sctp_transport_factory.h"
@@ -120,7 +119,7 @@ ConnectionContext::ConnectionContext(
     
     
     
-    network_thread_->PostTask(ToQueuedTask(
+    network_thread_->PostTask(
         [thread = network_thread_, worker_thread = worker_thread_.get()] {
           thread->DisallowBlockingCalls();
           thread->DisallowAllInvokes();
@@ -128,7 +127,7 @@ ConnectionContext::ConnectionContext(
             
             thread->AllowInvokesToThread(thread);
           }
-        }));
+        });
   }
 
   rtc::InitRandom(rtc::Time32());

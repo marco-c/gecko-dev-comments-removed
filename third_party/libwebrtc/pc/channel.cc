@@ -20,7 +20,6 @@
 #include "api/rtp_parameters.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
-#include "api/task_queue/to_queued_task.h"
 #include "api/units/timestamp.h"
 #include "media/base/codec.h"
 #include "media/base/rid_description.h"
@@ -43,7 +42,6 @@ using ::rtc::StringFormat;
 using ::rtc::UniqueRandomIdGenerator;
 using ::webrtc::PendingTaskSafetyFlag;
 using ::webrtc::SdpType;
-using ::webrtc::ToQueuedTask;
 
 
 
@@ -197,7 +195,7 @@ bool BaseChannel::SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) {
   if (rtp_transport_) {
     DisconnectFromRtpTransport_n();
     
-    worker_thread_->PostTask(ToQueuedTask(alive_, [this] {
+    worker_thread_->PostTask(SafeTask(alive_, [this] {
       RTC_DCHECK_RUN_ON(worker_thread());
       rtp_header_extensions_.clear();
     }));
@@ -237,7 +235,7 @@ void BaseChannel::Enable(bool enable) {
 
   enabled_s_ = enable;
 
-  worker_thread_->PostTask(ToQueuedTask(alive_, [this, enable] {
+  worker_thread_->PostTask(SafeTask(alive_, [this, enable] {
     RTC_DCHECK_RUN_ON(worker_thread());
     
     
@@ -552,7 +550,7 @@ void BaseChannel::ChannelWritable_n() {
   
   
   if (!was_ever_writable_n_) {
-    worker_thread_->PostTask(ToQueuedTask(alive_, [this] {
+    worker_thread_->PostTask(SafeTask(alive_, [this] {
       RTC_DCHECK_RUN_ON(worker_thread());
       was_ever_writable_ = true;
       UpdateMediaSendRecvState_w();
