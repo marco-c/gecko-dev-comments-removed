@@ -15,7 +15,9 @@
 #include <utility>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "p2p/base/connection.h"
+#include "p2p/base/ice_switch_reason.h"
 #include "p2p/base/ice_transport_internal.h"
 
 namespace cricket {
@@ -23,6 +25,7 @@ namespace cricket {
 struct IceFieldTrials;  
 
 struct IceControllerEvent {
+  
   enum Type {
     REMOTE_CANDIDATE_GENERATION_CHANGE,
     NETWORK_PREFERENCE_CHANGE,
@@ -39,10 +42,22 @@ struct IceControllerEvent {
     ICE_CONTROLLER_RECHECK,
   };
 
-  IceControllerEvent(const Type& _type)  
-      : type(_type) {}
+  IceControllerEvent(IceSwitchReason _reason, int _recheck_delay_ms)
+      : reason(_reason),
+        type(FromIceSwitchReason(_reason)),
+        recheck_delay_ms(_recheck_delay_ms) {}
+
+  [[deprecated("bugs.webrtc.org/14125")]] IceControllerEvent(
+      const Type& _type)  
+      : reason(FromType(_type)), type(_type) {}
+
+  static Type FromIceSwitchReason(IceSwitchReason reason);
+  static IceSwitchReason FromType(Type type);
+
   std::string ToString() const;
 
+  IceSwitchReason reason;
+  
   Type type;
   int recheck_delay_ms = 0;
 };
@@ -136,11 +151,27 @@ class IceControllerInterface {
   
   
   
-  virtual SwitchResult ShouldSwitchConnection(IceControllerEvent reason,
-                                              const Connection* connection) = 0;
+  
+  virtual SwitchResult ShouldSwitchConnection(IceSwitchReason reason,
+                                              const Connection* connection) {
+    return {absl::nullopt, absl::nullopt};
+  }
+  [[deprecated("bugs.webrtc.org/14125")]] virtual SwitchResult
+  ShouldSwitchConnection(IceControllerEvent reason,
+                         const Connection* connection) {
+    return ShouldSwitchConnection(IceControllerEvent::FromType(reason.type),
+                                  connection);
+  }
 
   
-  virtual SwitchResult SortAndSwitchConnection(IceControllerEvent reason) = 0;
+  
+  virtual SwitchResult SortAndSwitchConnection(IceSwitchReason reason) {
+    return {absl::nullopt, absl::nullopt};
+  }
+  [[deprecated("bugs.webrtc.org/14125")]] virtual SwitchResult
+  SortAndSwitchConnection(IceControllerEvent reason) {
+    return SortAndSwitchConnection(IceControllerEvent::FromType(reason.type));
+  }
 
   
   virtual std::vector<const Connection*> PruneConnections() = 0;
