@@ -195,6 +195,13 @@ bool gfxScriptItemizer::Next(uint32_t& aRunStart, uint32_t& aRunLimit,
       }
     }
 
+    
+    
+    
+    if (sc == Script::HIRAGANA) {
+      sc = Script::KATAKANA;
+    }
+
     if (SameScript(scriptCode, sc, ch)) {
       if (scriptCode == Script::COMMON) {
         
