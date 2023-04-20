@@ -570,7 +570,8 @@ class HttpBaseChannel : public nsHashPropertyBag,
       nsIURI*, nsIChannel*, bool preserveMethod, uint32_t redirectFlags);
 
   
-  virtual bool ShouldTaintReplacementChannelOrigin(nsIURI* aNewURI);
+  virtual bool ShouldTaintReplacementChannelOrigin(nsIChannel* aNewChannel,
+                                                   uint32_t aRedirectFlags);
 
   
   inline void CallOnModifyRequestObservers() {

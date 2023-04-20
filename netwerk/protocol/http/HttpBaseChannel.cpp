@@ -4787,7 +4787,7 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
       realChannel->SetTopWindowURI(mTopWindowURI);
 
       realChannel->StoreTaintedOriginFlag(
-          ShouldTaintReplacementChannelOrigin(newURI));
+          ShouldTaintReplacementChannelOrigin(newChannel, redirectFlags));
     }
 
     
@@ -4864,16 +4864,25 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
   return NS_OK;
 }
 
-bool HttpBaseChannel::ShouldTaintReplacementChannelOrigin(nsIURI* aNewURI) {
+bool HttpBaseChannel::ShouldTaintReplacementChannelOrigin(
+    nsIChannel* aNewChannel, uint32_t aRedirectFlags) {
   if (LoadTaintedOriginFlag()) {
     return true;
+  }
+
+  if (NS_IsInternalSameURIRedirect(this, aNewChannel, aRedirectFlags) ||
+      NS_IsHSTSUpgradeRedirect(this, aNewChannel, aRedirectFlags)) {
+    return false;
   }
 
   nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
   if (!ssm) {
     return true;
   }
-  nsresult rv = ssm->CheckSameOriginURI(aNewURI, mURI, false, false);
+
+  nsCOMPtr<nsIURI> newURI;
+  NS_GetFinalChannelURI(aNewChannel, getter_AddRefs(newURI));
+  nsresult rv = ssm->CheckSameOriginURI(newURI, mURI, false, false);
   if (NS_SUCCEEDED(rv)) {
     return false;
   }

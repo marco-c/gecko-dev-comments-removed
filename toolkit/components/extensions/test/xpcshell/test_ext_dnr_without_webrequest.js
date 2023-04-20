@@ -257,10 +257,8 @@ add_task(async function upgradeScheme_declarativeNetRequestWithHostAccess() {
   
   Assert.equal(
     (await contentFetch("http://dummy/", "http://redir/never_reached")).url,
-    
-    
-    undefined, 
-    "TODO 1800990: upgradeScheme + host access should upgrade (cross-origin request)"
+    "http://dummy/cors_202?from_https",
+    "upgradeScheme + host access should upgrade (cross-origin request)"
   );
 
   
