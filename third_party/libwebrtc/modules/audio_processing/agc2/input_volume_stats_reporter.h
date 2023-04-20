@@ -19,48 +19,46 @@ namespace webrtc {
 
 
 
-class AnalogGainStatsReporter {
+class InputVolumeStatsReporter {
  public:
-  AnalogGainStatsReporter();
-  AnalogGainStatsReporter(const AnalogGainStatsReporter&) = delete;
-  AnalogGainStatsReporter operator=(const AnalogGainStatsReporter&) = delete;
-  ~AnalogGainStatsReporter();
+  InputVolumeStatsReporter();
+  InputVolumeStatsReporter(const InputVolumeStatsReporter&) = delete;
+  InputVolumeStatsReporter operator=(const InputVolumeStatsReporter&) = delete;
+  ~InputVolumeStatsReporter();
 
   
   
-  void UpdateStatistics(int analog_mic_level);
+  void UpdateStatistics(int input_volume);
 
  private:
-  FRIEND_TEST_ALL_PREFIXES(AnalogGainStatsReporterTest,
-                           CheckLevelUpdateStatsForEmptyStats);
-  FRIEND_TEST_ALL_PREFIXES(AnalogGainStatsReporterTest,
-                           CheckLevelUpdateStatsAfterNoGainChange);
-  FRIEND_TEST_ALL_PREFIXES(AnalogGainStatsReporterTest,
-                           CheckLevelUpdateStatsAfterGainIncrease);
-  FRIEND_TEST_ALL_PREFIXES(AnalogGainStatsReporterTest,
-                           CheckLevelUpdateStatsAfterGainDecrease);
-  FRIEND_TEST_ALL_PREFIXES(AnalogGainStatsReporterTest,
-                           CheckLevelUpdateStatsAfterReset);
+  FRIEND_TEST_ALL_PREFIXES(InputVolumeStatsReporterTest,
+                           CheckVolumeUpdateStatsForEmptyStats);
+  FRIEND_TEST_ALL_PREFIXES(InputVolumeStatsReporterTest,
+                           CheckVolumeUpdateStatsAfterNoVolumeChange);
+  FRIEND_TEST_ALL_PREFIXES(InputVolumeStatsReporterTest,
+                           CheckVolumeUpdateStatsAfterVolumeIncrease);
+  FRIEND_TEST_ALL_PREFIXES(InputVolumeStatsReporterTest,
+                           CheckVolumeUpdateStatsAfterVolumeDecrease);
+  FRIEND_TEST_ALL_PREFIXES(InputVolumeStatsReporterTest,
+                           CheckVolumeUpdateStatsAfterReset);
 
   
   
-  struct LevelUpdateStats {
+  struct VolumeUpdateStats {
     int num_decreases = 0;
     int num_increases = 0;
     int sum_decreases = 0;
     int sum_increases = 0;
-  } level_update_stats_;
+  } volume_update_stats_;
 
   
-  const LevelUpdateStats level_update_stats() const {
-    return level_update_stats_;
-  }
+  VolumeUpdateStats volume_update_stats() const { return volume_update_stats_; }
 
   
-  void LogLevelUpdateStats() const;
+  void LogVolumeUpdateStats() const;
 
-  int log_level_update_stats_counter_ = 0;
-  absl::optional<int> previous_analog_mic_level_ = absl::nullopt;
+  int log_volume_update_stats_counter_ = 0;
+  absl::optional<int> previous_input_volume_ = absl::nullopt;
 };
 }  
 

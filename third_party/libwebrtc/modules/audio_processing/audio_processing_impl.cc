@@ -1131,8 +1131,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   }
 
   if (capture_.applied_input_volume.has_value()) {
-    
-    input_volume_stats_reporter_.UpdateStatistics(
+    applied_input_volume_stats_reporter_.UpdateStatistics(
         *capture_.applied_input_volume);
   }
 
