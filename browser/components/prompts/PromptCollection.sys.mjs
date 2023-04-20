@@ -1,26 +1,20 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["PromptCollection"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
-
-
-
-
-class PromptCollection {
+/**
+ * Implements nsIPromptCollection
+ * @class PromptCollection
+ */
+export class PromptCollection {
   confirmRepost(browsingContext) {
     let brandName;
     try {
       brandName = this.stringBundles.brand.GetStringFromName("brandShortName");
     } catch (exception) {
-      
+      // That's ok, we'll use a generic version of the prompt
     }
 
     let message;
@@ -32,7 +26,7 @@ class PromptCollection {
           [brandName]
         );
       } else {
-        
+        // Use a generic version of this prompt.
         message = this.stringBundles.app.GetStringFromName(
           "confirmRepostPrompt"
         );
@@ -120,9 +114,9 @@ class PromptCollection {
       null,
       null,
       false,
-      
-      
-      
+      // Tell the prompt service that this is a permit unload prompt
+      // so that it can set the appropriate flag on the detail object
+      // of the events it dispatches.
       { inPermitUnload: true }
     );
 
