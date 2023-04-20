@@ -3309,11 +3309,6 @@ void SVGTextFrame::ReflowSVG() {
   nsRect overflow = nsRect(nsPoint(0, 0), mRect.Size());
   OverflowAreas overflowAreas(overflow, overflow);
   FinishAndStoreOverflow(overflowAreas, mRect.Size());
-
-  
-  
-  
-  SVGDisplayContainerFrame::ReflowSVG();
 }
 
 
