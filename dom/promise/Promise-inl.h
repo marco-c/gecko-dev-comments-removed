@@ -192,8 +192,10 @@ class NativeThenHandler<ResolveCallback, RejectCallback, std::tuple<Args...>,
 
   
   
+  
   template <typename T>
-  static JS::Handle<T> GetJSArgHandle(JS::Heap<T>& aArg) {
+  static JS::Handle<T> GetJSArgHandleForCall(JS::Heap<T>& aArg) {
+    aArg.exposeToActiveJS();
     return JS::Handle<T>::fromMarkedLocation(aArg.address());
   }
 
@@ -203,7 +205,7 @@ class NativeThenHandler<ResolveCallback, RejectCallback, std::tuple<Args...>,
       ErrorResult& aRv, std::index_sequence<Indices...>,
       std::index_sequence<JSIndices...>) {
     return aHandler(aCx, aValue, aRv, ArgType(std::get<Indices>(mArgs))...,
-                    GetJSArgHandle(std::get<JSIndices>(mJSArgs))...);
+                    GetJSArgHandleForCall(std::get<JSIndices>(mJSArgs))...);
   }
 
   template <typename TCallback>
