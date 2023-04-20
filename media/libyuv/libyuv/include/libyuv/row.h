@@ -177,8 +177,9 @@ extern "C" {
 
 
 
-#if defined(__x86_64__) || !defined(__pic__) || defined(__clang__) || \
-    defined(_MSC_VER)
+#if !defined(MOZ_PROFILING) && \
+     (defined(__x86_64__) || !defined(__pic__) || defined(__clang__) || \
+      defined(_MSC_VER))
 
 
 #define HAS_I422ALPHATOARGBROW_SSSE3
@@ -247,8 +248,9 @@ extern "C" {
 #define HAS_ARGBATTENUATEROW_AVX2
 #endif
 
-#if defined(__x86_64__) || !defined(__pic__) || defined(__clang__) || \
-    defined(_MSC_VER)
+#if !defined(MOZ_PROFILING) && \
+  (defined(__x86_64__) || !defined(__pic__) || defined(__clang__) || \
+   defined(_MSC_VER))
 
 
 #define HAS_I422ALPHATOARGBROW_AVX2
