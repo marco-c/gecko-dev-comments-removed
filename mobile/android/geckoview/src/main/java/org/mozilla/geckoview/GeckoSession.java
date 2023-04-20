@@ -506,8 +506,6 @@ public class GeckoSession {
             "GeckoView:FirstContentfulPaint",
             "GeckoView:PaintStatusReset",
             "GeckoView:PreviewImage",
-            "GeckoView:CookieBannerEvent:Detected",
-            "GeckoView:CookieBannerEvent:Handled",
           }) {
         @Override
         public void handleMessage(
@@ -564,10 +562,6 @@ public class GeckoSession {
             delegate.onPaintStatusReset(GeckoSession.this);
           } else if ("GeckoView:PreviewImage".equals(event)) {
             delegate.onPreviewImage(GeckoSession.this, message.getString("previewImageUrl"));
-          } else if ("GeckoView:CookieBannerEvent:Detected".equals(event)) {
-            delegate.onCookieBannerDetected(GeckoSession.this);
-          } else if ("GeckoView:CookieBannerEvent:Handled".equals(event)) {
-            delegate.onCookieBannerHandled(GeckoSession.this);
           }
         }
       };
@@ -3447,29 +3441,6 @@ public class GeckoSession {
 
     @UiThread
     default void onShowDynamicToolbar(@NonNull final GeckoSession geckoSession) {}
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    @AnyThread
-    default void onCookieBannerDetected(@NonNull final GeckoSession session) {}
-
-    
-
-
-
-
-    @AnyThread
-    default void onCookieBannerHandled(@NonNull final GeckoSession session) {}
   }
 
   public interface SelectionActionDelegate {
