@@ -40,11 +40,11 @@ constexpr int kClippedLevelStep = 15;
 constexpr float kClippedRatioThreshold = 0.1f;
 constexpr int kClippedWaitFrames = 300;
 
-constexpr AudioProcessing::Config::GainController1::AnalogGainController
-    kDefaultAnalogConfig{};
-
+using AnalogAgcConfig =
+    AudioProcessing::Config::GainController1::AnalogGainController;
 using ClippingPredictorConfig = AudioProcessing::Config::GainController1::
     AnalogGainController::ClippingPredictor;
+constexpr AnalogAgcConfig kDefaultAnalogConfig{};
 
 class MockGainControl : public GainControl {
  public:
@@ -68,28 +68,24 @@ class MockGainControl : public GainControl {
   MOCK_METHOD(bool, stream_is_saturated, (), (const, override));
 };
 
-std::unique_ptr<AgcManagerDirect> CreateAgcManagerDirect(
-    int startup_min_level,
-    int clipped_level_step,
-    float clipped_ratio_threshold,
-    int clipped_wait_frames) {
-  return std::make_unique<AgcManagerDirect>(
-      1, startup_min_level, kClippedMin,
-      true, clipped_level_step,
-      clipped_ratio_threshold, clipped_wait_frames,
-      kDefaultAnalogConfig.clipping_predictor);
-}
+
 
 std::unique_ptr<AgcManagerDirect> CreateAgcManagerDirect(
-    int startup_min_level,
+    int startup_min_volume,
     int clipped_level_step,
     float clipped_ratio_threshold,
     int clipped_wait_frames,
-    const ClippingPredictorConfig& clipping_cfg) {
-  return std::make_unique<AgcManagerDirect>(
-      1, startup_min_level, kClippedMin,
-      true, clipped_level_step,
-      clipped_ratio_threshold, clipped_wait_frames, clipping_cfg);
+    const ClippingPredictorConfig& clipping_predictor_config =
+        kDefaultAnalogConfig.clipping_predictor) {
+  AnalogAgcConfig config;
+  config.startup_min_volume = startup_min_volume;
+  config.clipped_level_min = kClippedMin;
+  config.enable_digital_adaptive = false;
+  config.clipped_level_step = clipped_level_step;
+  config.clipped_ratio_threshold = clipped_ratio_threshold;
+  config.clipped_wait_frames = clipped_wait_frames;
+  config.clipping_predictor = clipping_predictor_config;
+  return std::make_unique<AgcManagerDirect>(1, config);
 }
 
 
@@ -185,6 +181,20 @@ void CallPreProcessAndProcess(int num_calls,
 
 }  
 
+
+
+constexpr AnalogAgcConfig GetAnalogAgcTestConfig() {
+  AnalogAgcConfig config;
+  config.startup_min_volume = kInitialVolume;
+  config.clipped_level_min = kClippedMin;
+  config.enable_digital_adaptive = true;
+  config.clipped_level_step = kClippedLevelStep;
+  config.clipped_ratio_threshold = kClippedRatioThreshold;
+  config.clipped_wait_frames = kClippedWaitFrames;
+  config.clipping_predictor = kDefaultAnalogConfig.clipping_predictor;
+  return config;
+};
+
 class AgcManagerDirectTestHelper {
  public:
   AgcManagerDirectTestHelper()
@@ -197,16 +207,10 @@ class AgcManagerDirectTestHelper {
         audio(kNumChannels),
         audio_data(kNumChannels * kSamplesPerChannel, 0.0f),
         mock_agc(new MockAgc()),
-        manager(mock_agc,
-                kInitialVolume,
-                kClippedMin,
-                kClippedLevelStep,
-                kClippedRatioThreshold,
-                kClippedWaitFrames,
-                kDefaultAnalogConfig.clipping_predictor) {
+        manager(GetAnalogAgcTestConfig(), mock_agc) {
     ExpectInitialize();
     manager.Initialize();
-    manager.SetupDigitalGainControl(&mock_gain_control);
+    manager.SetupDigitalGainControl(mock_gain_control);
     for (size_t ch = 0; ch < kNumChannels; ++ch) {
       audio[ch] = &audio_data[ch * kSamplesPerChannel];
     }
@@ -947,11 +951,11 @@ TEST(AgcManagerDirectTest, DisableDigitalDisablesDigital) {
   EXPECT_CALL(mock_gain_control, set_compression_gain_db(0));
   EXPECT_CALL(mock_gain_control, enable_limiter(false));
 
-  std::unique_ptr<AgcManagerDirect> manager =
-      CreateAgcManagerDirect(kInitialVolume, kClippedLevelStep,
-                             kClippedRatioThreshold, kClippedWaitFrames);
+  AnalogAgcConfig config;
+  config.enable_digital_adaptive = false;
+  auto manager = std::make_unique<AgcManagerDirect>(kNumChannels, config);
   manager->Initialize();
-  manager->SetupDigitalGainControl(&mock_gain_control);
+  manager->SetupDigitalGainControl(mock_gain_control);
 }
 
 TEST(AgcManagerDirectTest, AgcMinMicLevelExperimentDefault) {
@@ -1075,12 +1079,14 @@ TEST(AgcManagerDirectTest,
   const auto factory = []() {
     
     
-    auto controller = std::make_unique<AgcManagerDirect>(
-        1, kInitialVolume,
-        kDefaultAnalogConfig.clipped_level_min,
-        true, 64,
-        kClippedRatioThreshold, kClippedWaitFrames,
-        kDefaultAnalogConfig.clipping_predictor);
+    AnalogAgcConfig config = kDefaultAnalogConfig;
+    config.startup_min_volume = kInitialVolume;
+    config.enable_digital_adaptive = false;
+    config.clipped_level_step = 64;
+    config.clipped_ratio_threshold = kClippedRatioThreshold;
+    config.clipped_wait_frames = kClippedWaitFrames;
+    auto controller =
+        std::make_unique<AgcManagerDirect>(1, config);
     controller->Initialize();
     controller->set_stream_analog_level(kInitialVolume);
     return controller;
@@ -1181,11 +1187,9 @@ TEST(AgcManagerDirectTest, DisableClippingPredictorDoesNotLowerVolume) {
   AudioBuffer audio_buffer(kSampleRateHz, kNumChannels, kSampleRateHz,
                            kNumChannels, kSampleRateHz, kNumChannels);
 
-  
-  constexpr ClippingPredictorConfig kConfig{false};
-  AgcManagerDirect manager(new ::testing::NiceMock<MockAgc>(), kInitialVolume,
-                           kClippedMin, kClippedLevelStep,
-                           kClippedRatioThreshold, kClippedWaitFrames, kConfig);
+  AnalogAgcConfig config = GetAnalogAgcTestConfig();
+  config.clipping_predictor.enabled = false;
+  AgcManagerDirect manager(config, new ::testing::NiceMock<MockAgc>());
   manager.Initialize();
   manager.set_stream_analog_level(255);
   EXPECT_FALSE(manager.clipping_predictor_enabled());
@@ -1204,20 +1208,15 @@ TEST(AgcManagerDirectTest, UsedClippingPredictionsProduceLowerAnalogLevels) {
   AudioBuffer audio_buffer(kSampleRateHz, kNumChannels, kSampleRateHz,
                            kNumChannels, kSampleRateHz, kNumChannels);
 
-  
-  ClippingPredictorConfig config_with_prediction;
-  config_with_prediction.enabled = true;
-  config_with_prediction.use_predicted_step = true;
-  ClippingPredictorConfig config_without_prediction;
-  config_without_prediction.enabled = false;
-  AgcManagerDirect manager_with_prediction(
-      new ::testing::NiceMock<MockAgc>(), kInitialVolume, kClippedMin,
-      kClippedLevelStep, kClippedRatioThreshold, kClippedWaitFrames,
-      config_with_prediction);
+  AnalogAgcConfig config_with_prediction = GetAnalogAgcTestConfig();
+  config_with_prediction.clipping_predictor.enabled = true;
+  config_with_prediction.clipping_predictor.use_predicted_step = true;
+  AnalogAgcConfig config_without_prediction = GetAnalogAgcTestConfig();
+  config_without_prediction.clipping_predictor.enabled = false;
+  AgcManagerDirect manager_with_prediction(config_with_prediction,
+                                           new ::testing::NiceMock<MockAgc>());
   AgcManagerDirect manager_without_prediction(
-      new ::testing::NiceMock<MockAgc>(), kInitialVolume, kClippedMin,
-      kClippedLevelStep, kClippedRatioThreshold, kClippedWaitFrames,
-      config_without_prediction);
+      config_without_prediction, new ::testing::NiceMock<MockAgc>());
 
   manager_with_prediction.Initialize();
   manager_without_prediction.Initialize();
@@ -1307,20 +1306,15 @@ TEST(AgcManagerDirectTest, UnusedClippingPredictionsProduceEqualAnalogLevels) {
   AudioBuffer audio_buffer(kSampleRateHz, kNumChannels, kSampleRateHz,
                            kNumChannels, kSampleRateHz, kNumChannels);
 
-  
-  ClippingPredictorConfig config_with_prediction;
-  config_with_prediction.enabled = true;
-  config_with_prediction.use_predicted_step = false;
-  ClippingPredictorConfig config_without_prediction;
-  config_without_prediction.enabled = false;
-  AgcManagerDirect manager_with_prediction(
-      new ::testing::NiceMock<MockAgc>(), kInitialVolume, kClippedMin,
-      kClippedLevelStep, kClippedRatioThreshold, kClippedWaitFrames,
-      config_with_prediction);
+  AnalogAgcConfig config_with_prediction = GetAnalogAgcTestConfig();
+  config_with_prediction.clipping_predictor.enabled = true;
+  config_with_prediction.clipping_predictor.use_predicted_step = false;
+  AnalogAgcConfig config_without_prediction = GetAnalogAgcTestConfig();
+  config_without_prediction.clipping_predictor.enabled = false;
+  AgcManagerDirect manager_with_prediction(config_with_prediction,
+                                           new ::testing::NiceMock<MockAgc>());
   AgcManagerDirect manager_without_prediction(
-      new ::testing::NiceMock<MockAgc>(), kInitialVolume, kClippedMin,
-      kClippedLevelStep, kClippedRatioThreshold, kClippedWaitFrames,
-      config_without_prediction);
+      config_without_prediction, new ::testing::NiceMock<MockAgc>());
 
   constexpr int kInitialLevel = 255;
   constexpr float kClippingPeakRatio = 1.0f;

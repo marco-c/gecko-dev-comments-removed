@@ -285,10 +285,12 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
       
       struct AnalogGainController {
         bool enabled = true;
+        
         int startup_min_volume = kAgcStartupMinVolume;
         
         
         int clipped_level_min = kClippedLevelMin;
+        
         bool enable_digital_adaptive = true;
         
         

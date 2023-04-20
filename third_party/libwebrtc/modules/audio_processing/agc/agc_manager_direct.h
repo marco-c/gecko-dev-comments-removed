@@ -20,6 +20,7 @@
 #include "modules/audio_processing/agc/clipping_predictor.h"
 #include "modules/audio_processing/agc/clipping_predictor_evaluator.h"
 #include "modules/audio_processing/audio_buffer.h"
+#include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/gtest_prod_util.h"
 
@@ -33,47 +34,54 @@ class GainControl;
 
 
 
+
 class AgcManagerDirect final {
  public:
   
   
   
-  
-  
-  
-  
-  
-  
   AgcManagerDirect(
       int num_capture_channels,
-      int startup_min_level,
-      int clipped_level_min,
-      bool disable_digital_adaptive,
-      int clipped_level_step,
-      float clipped_ratio_threshold,
-      int clipped_wait_frames,
-      const AudioProcessing::Config::GainController1::AnalogGainController::
-          ClippingPredictor& clipping_config);
+      const AudioProcessing::Config::GainController1::AnalogGainController&
+          analog_config);
 
   ~AgcManagerDirect();
   AgcManagerDirect(const AgcManagerDirect&) = delete;
   AgcManagerDirect& operator=(const AgcManagerDirect&) = delete;
 
   void Initialize();
-  void SetupDigitalGainControl(GainControl* gain_control) const;
 
+  
+  
+  
+  void SetupDigitalGainControl(GainControl& gain_control) const;
+
+  
+  
+  
+  
   void AnalyzePreProcess(const AudioBuffer* audio);
+
+  
+  
+  
   void Process(const AudioBuffer* audio);
 
   
   
   void HandleCaptureOutputUsedChange(bool capture_output_used);
+
   float voice_probability() const;
 
+  
   int stream_analog_level() const { return stream_analog_level_; }
+
+  
   void set_stream_analog_level(int level);
+
   int num_channels() const { return num_capture_channels_; }
 
+  
   
   absl::optional<int> GetDigitalComressionGain();
 
@@ -112,14 +120,9 @@ class AgcManagerDirect final {
   
   
   AgcManagerDirect(
-      Agc* agc,
-      int startup_min_level,
-      int clipped_level_min,
-      int clipped_level_step,
-      float clipped_ratio_threshold,
-      int clipped_wait_frames,
-      const AudioProcessing::Config::GainController1::AnalogGainController::
-          ClippingPredictor& clipping_config);
+      const AudioProcessing::Config::GainController1::AnalogGainController&
+          analog_config,
+      Agc* agc);
 
   void AnalyzePreProcess(const float* const* audio, size_t samples_per_channel);
 
