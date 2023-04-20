@@ -17,6 +17,7 @@
 #include "nsPrintfCString.h"
 #include "nsNavHistory.h"
 #include "mozilla/Likely.h"
+#include "mozilla/Services.h"
 #include "mozilla/Utf8.h"
 #include "nsURLHelper.h"
 #include "nsVariant.h"
@@ -1238,7 +1239,24 @@ SetShouldStartFrecencyRecalculationFunction::OnFunctionCall(
   MOZ_ASSERT(NS_SUCCEEDED(aArgs->GetNumEntries(&numArgs)) && numArgs == 0);
 #endif
 
-  nsNavHistory::sShouldStartFrecencyRecalculation = true;
+  
+  
+  
+  
+  
+  
+  
+  if (!nsNavHistory::sShouldStartFrecencyRecalculation.exchange(true)) {
+    mozilla::Unused << NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "SetShouldStartFrecencyRecalculationFunction::Notify", [] {
+          nsCOMPtr<nsIObserverService> os = services::GetObserverService();
+          if (os) {
+            mozilla::Unused << os->NotifyObservers(
+                nullptr, "frecency-recalculation-needed", nullptr);
+          }
+        }));
+  }
+
   RefPtr<nsVariant> result = new nsVariant();
   nsresult rv = result->SetAsBool(true);
   NS_ENSURE_SUCCESS(rv, rv);
