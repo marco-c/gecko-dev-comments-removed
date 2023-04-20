@@ -353,7 +353,7 @@ let interfaceNamesInGlobalScope = [
   
   "WebSocket",
   
-  { name: "WebTransport", desktop: true, nightlyAndroid: true },
+  { name: "WebTransport", nightly: true },
   
   {
     name: "WebTransportBidirectionalStream",
