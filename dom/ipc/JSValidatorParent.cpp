@@ -39,6 +39,9 @@ void JSValidatorParent::IsOpaqueResponseAllowed(
               Tie(data, result) = aResult.ResolveValue();
               aCallback(std::move(data), result);
             } else {
+              
+              
+              
               aCallback(Nothing(), ValidatorResult::Failure);
             }
           });
