@@ -2938,8 +2938,15 @@ static bool ShouldSecureUpgradeNoHSTS(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
   }
 
   
-  if (nsHTTPSOnlyUtils::ShouldUpgradeRequest(aURI, aLoadInfo) ||
-      nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(aURI, aLoadInfo)) {
+  if (nsHTTPSOnlyUtils::ShouldUpgradeRequest(aURI, aLoadInfo)) {
+    Telemetry::AccumulateCategorical(
+        Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::HTTPSOnly);
+    return true;
+  }
+  
+  if (nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(aURI, aLoadInfo)) {
+    Telemetry::AccumulateCategorical(
+        Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::HTTPSFirst);
     return true;
   }
   return false;
