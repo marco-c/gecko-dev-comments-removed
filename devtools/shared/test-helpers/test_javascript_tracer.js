@@ -13,6 +13,9 @@
 const { traceAllJSCalls } = ChromeUtils.importESModule(
   "resource://devtools/shared/test-helpers/thread-helpers.sys.mjs"
 );
+
+
+
 const { setTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
 );

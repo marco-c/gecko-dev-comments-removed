@@ -1,8 +1,12 @@
 "use strict";
 
-let { AddonManager } = ChromeUtils.import(
-  "resource://gre/modules/AddonManager.jsm"
-);
+
+
+
+
+
+
+
 let { ExtensionTestCommon } = ChromeUtils.import(
   "resource://testing-common/ExtensionTestCommon.jsm"
 );

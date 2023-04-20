@@ -12,7 +12,12 @@ const { ClientEnvironment } = ChromeUtils.import(
 const { Heartbeat } = ChromeUtils.import(
   "resource://normandy/lib/Heartbeat.jsm"
 );
+
+
+
+
 const { Storage } = ChromeUtils.import("resource://normandy/lib/Storage.jsm");
+
 const { Uptake } = ChromeUtils.import("resource://normandy/lib/Uptake.jsm");
 const { NormandyTestUtils } = ChromeUtils.import(
   "resource://testing-common/NormandyTestUtils.jsm"
