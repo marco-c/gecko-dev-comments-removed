@@ -4237,6 +4237,7 @@ static bool IsBogusLeaveNotifyEvent(GdkWindow* aWindow,
     const auto& desktopEnv = GetDesktopEnvironmentIdentifier();
     return desktopEnv.EqualsLiteral("fluxbox") ||   
            desktopEnv.EqualsLiteral("blackbox") ||  
+           desktopEnv.EqualsLiteral("lg3d") ||      
            StringBeginsWith(desktopEnv, "fvwm"_ns);
   }();
 
