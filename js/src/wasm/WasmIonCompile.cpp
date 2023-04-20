@@ -3881,6 +3881,8 @@ class FunctionCompiler {
     }
 
     
+    
+    
     MDefinition* arrayObject;
     MDefinition* callArgs[3] = {numElements, arrayRtt, nullptr};
     if (!emitInstanceCall(lineOrBytecode, SASigArrayNew, callArgs,
@@ -6629,6 +6631,9 @@ static bool EmitStructNew(FunctionCompiler& f) {
   
   for (uint32_t fieldIndex = 0; fieldIndex < structType.fields_.length();
        fieldIndex++) {
+    if (!f.mirGen().ensureBallast()) {
+      return false;
+    }
     const StructField& field = structType.fields_[fieldIndex];
     if (!f.writeValueToStructField(lineOrBytecode, field, structObject,
                                    args[fieldIndex])) {
@@ -6711,6 +6716,8 @@ static bool EmitArrayNew(FunctionCompiler& f) {
     return true;
   }
 
+  
+  
   MDefinition* arrayObject = f.createArrayNewCallAndLoop(
       lineOrBytecode, typeIndex, numElements, fillValue);
   if (!arrayObject) {
@@ -6784,14 +6791,22 @@ static bool EmitArrayNewFixed(FunctionCompiler& f) {
   
   const ArrayType& arrayType = (*f.moduleEnv().types)[typeIndex].arrayType();
   FieldType elemFieldType = arrayType.elementType_;
-  uint64_t elemSize = elemFieldType.size();
+  uint32_t elemSize = elemFieldType.size();
+
+  
+  
+  
+  
+  
+  
+  static_assert(16  * MaxFunctionBytes <=
+                MaxArrayPayloadBytes);
+  MOZ_RELEASE_ASSERT(numElements <= MaxFunctionBytes);
 
   for (uint32_t i = 0; i < numElements; i++) {
     if (!f.mirGen().ensureBallast()) {
       return false;
     }
-    
-    
     
     if (!f.writeGcValueAtBasePlusOffset(
             lineOrBytecode, elemFieldType, arrayObject,
@@ -6835,6 +6850,8 @@ static bool EmitArrayNewData(FunctionCompiler& f) {
   
   
   
+  
+  
   MDefinition* arrayObject;
   MDefinition* callArgs[5] = {segByteOffset, numElements, arrayRtt, segIndexM,
                               nullptr};
@@ -6874,6 +6891,8 @@ static bool EmitArrayNewElem(FunctionCompiler& f) {
     return false;
   }
 
+  
+  
   
   
   

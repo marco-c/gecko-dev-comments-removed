@@ -1022,7 +1022,7 @@ static const unsigned MaxTableLength = 10000000;
 static const unsigned MaxLocals = 50000;
 static const unsigned MaxParams = 1000;
 static const unsigned MaxResults = 1000;
-static const unsigned MaxStructFields = 1000;
+static const unsigned MaxStructFields = 2000;
 static const uint64_t MaxMemory32LimitField = uint64_t(1) << 16;
 static const uint64_t MaxMemory64LimitField = uint64_t(1) << 48;
 static const unsigned MaxStringBytes = 100000;
@@ -1042,6 +1042,15 @@ static const unsigned MaxTypeIndex = 15000;
 
 static const unsigned MaxRecGroups = 1000000;
 static const unsigned MaxTags = 1000000;
+
+
+
+
+
+
+static const unsigned MaxArrayPayloadBytes = 1987654321;
+static_assert(uint64_t(MaxArrayPayloadBytes) <
+              (uint64_t(1) << (8 * sizeof(uint32_t))));
 
 
 

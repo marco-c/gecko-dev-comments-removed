@@ -529,9 +529,11 @@ WasmArrayObject* WasmArrayObject::createArray(JSContext* cx,
 
   
   
+  
   CheckedUint32 outlineBytes = rtt->typeDef().arrayType().elementType_.size();
   outlineBytes *= numElements;
-  if (!outlineBytes.isValid()) {
+  if (!outlineBytes.isValid() ||
+      outlineBytes.value() > uint32_t(MaxArrayPayloadBytes)) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                              JSMSG_WASM_ARRAY_IMP_LIMIT);
     return nullptr;

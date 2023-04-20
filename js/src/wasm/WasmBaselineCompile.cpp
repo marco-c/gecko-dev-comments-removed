@@ -6890,6 +6890,13 @@ bool BaseCompiler::emitArrayNewFixed() {
   
   
   
+  static_assert(16  * MaxFunctionBytes <=
+                MaxArrayPayloadBytes);
+  MOZ_RELEASE_ASSERT(numElements <= MaxFunctionBytes);
+
+  
+  
+  
   for (uint32_t forwardIndex = 0; forwardIndex < numElements; forwardIndex++) {
     uint32_t reverseIndex = numElements - forwardIndex - 1;
     if (avoidPreBarrierReg) {
