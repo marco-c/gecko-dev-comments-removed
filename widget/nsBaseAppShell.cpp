@@ -26,10 +26,8 @@ nsBaseAppShell::nsBaseAppShell()
     : mSuspendNativeCount(0),
       mEventloopNestingLevel(0),
       mBlockedWait(nullptr),
-      mFavorPerf(0),
       mNativeEventPending(false),
-      mStarvationDelay(0),
-      mSwitchTime(0),
+      mGeckoTaskBurstStartTime(0),
       mLastNativeEventTime(0),
       mEventloopNestingState(eEventloopNone),
       mRunning(false),
@@ -165,14 +163,9 @@ nsBaseAppShell::Exit(void) {
 }
 
 NS_IMETHODIMP
-nsBaseAppShell::FavorPerformanceHint(bool favorPerfOverStarvation,
-                                     uint32_t starvationDelay) {
-  mStarvationDelay = PR_MillisecondsToInterval(starvationDelay);
-  if (favorPerfOverStarvation) {
-    ++mFavorPerf;
-  } else {
-    --mFavorPerf;
-    mSwitchTime = PR_IntervalNow();
+nsBaseAppShell::GeckoTaskBurst() {
+  if (mGeckoTaskBurstStartTime == 0) {
+    mGeckoTaskBurstStartTime = PR_IntervalNow();
   }
   return NS_OK;
 }
@@ -246,7 +239,9 @@ nsBaseAppShell::OnProcessNextEvent(nsIThreadInternal* thr, bool mayWait) {
   
   mProcessedGeckoEvents = false;
 
-  if (mFavorPerf <= 0 && start > mSwitchTime + mStarvationDelay) {
+  
+  if (!XRE_IsContentProcess() && (start > (mGeckoTaskBurstStartTime + limit))) {
+    mGeckoTaskBurstStartTime = 0;
     
     PRIntervalTime now = start;
     bool keepGoing;

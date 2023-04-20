@@ -39,18 +39,7 @@ interface nsIAppShell : nsISupports
 
 
 
-
-
-
-
-
-
-
-
-
-
-  void favorPerformanceHint(in boolean favorPerfOverStarvation,
-                            in unsigned long starvationDelay);
+  void geckoTaskBurst();
 
   
 
