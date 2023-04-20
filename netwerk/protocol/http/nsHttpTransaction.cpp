@@ -241,9 +241,6 @@ nsresult nsHttpTransaction::Init(
 
   mConnInfo = cinfo;
   mCallbacks = callbacks;
-  
-  
-  mEarlyHintObserver = do_QueryInterface(eventsink);
   mConsumerTarget = target;
   mCaps = caps;
 
@@ -431,6 +428,9 @@ nsresult nsHttpTransaction::AsyncRead(nsIStreamListener* listener,
   NS_ENSURE_SUCCESS(rv, rv);
 
   transactionPump.forget(pump);
+  MutexAutoLock lock(mLock);
+  mEarlyHintObserver = do_QueryInterface(listener);
+
   RefPtr<nsHttpChannel> httpChannel = do_QueryObject(listener);
   if (httpChannel) {
     mWebTransportSessionEventListener =
