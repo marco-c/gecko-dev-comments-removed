@@ -310,6 +310,10 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
   
   virtual void SetFlexFecProtection(RtpPacketSinkInterface* flexfec_sink) = 0;
 
+  
+  
+  virtual void SetLossNotificationEnabled(bool enabled) = 0;
+
  protected:
   virtual ~VideoReceiveStreamInterface() {}
 };
