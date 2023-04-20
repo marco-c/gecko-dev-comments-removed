@@ -50,6 +50,7 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     private boolean useStereoOutput;
     private AudioAttributes audioAttributes;
     private boolean useLowLatency;
+    private boolean enableVolumeLogger;
 
     private Builder(Context context) {
       this.context = context;
@@ -57,6 +58,7 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
       this.inputSampleRate = WebRtcAudioManager.getSampleRate(audioManager);
       this.outputSampleRate = WebRtcAudioManager.getSampleRate(audioManager);
       this.useLowLatency = false;
+      this.enableVolumeLogger = true;
     }
 
     public Builder setScheduler(ScheduledExecutorService scheduler) {
@@ -214,6 +216,12 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     }
 
     
+    public Builder setEnableVolumeLogger(boolean enableVolumeLogger) {
+      this.enableVolumeLogger = enableVolumeLogger;
+      return this;
+    }
+
+    
 
 
 
@@ -248,8 +256,9 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
       final WebRtcAudioRecord audioInput = new WebRtcAudioRecord(context, executor, audioManager,
           audioSource, audioFormat, audioRecordErrorCallback, audioRecordStateCallback,
           samplesReadyCallback, useHardwareAcousticEchoCanceler, useHardwareNoiseSuppressor);
-      final WebRtcAudioTrack audioOutput = new WebRtcAudioTrack(context, audioManager,
-          audioAttributes, audioTrackErrorCallback, audioTrackStateCallback, useLowLatency);
+      final WebRtcAudioTrack audioOutput =
+          new WebRtcAudioTrack(context, audioManager, audioAttributes, audioTrackErrorCallback,
+              audioTrackStateCallback, useLowLatency, enableVolumeLogger);
       return new JavaAudioDeviceModule(context, audioManager, audioInput, audioOutput,
           inputSampleRate, outputSampleRate, useStereoInput, useStereoOutput);
     }
