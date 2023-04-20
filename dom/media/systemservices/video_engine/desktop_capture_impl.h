@@ -27,6 +27,7 @@
 
 #include "desktop_device_info.h"
 #include "mozilla/DataMutex.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
 #include "PerformanceRecorder.h"
@@ -227,7 +228,7 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
   nsCOMPtr<nsITimer> mCaptureTimer;
   
   
-  mozilla::TimeDuration mRequestedCaptureInterval;
+  mozilla::Maybe<mozilla::TimeDuration> mRequestedCaptureInterval;
   
   
   webrtc::Timestamp mNextFrameMinimumTime;
