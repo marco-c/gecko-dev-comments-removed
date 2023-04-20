@@ -16,10 +16,9 @@
 #include <memory>
 
 #include "api/sequence_checker.h"
+#include "api/task_queue/task_queue_base.h"
 #include "modules/audio_device/android/aaudio_wrapper.h"
 #include "modules/audio_device/include/audio_device_defines.h"
-#include "rtc_base/message_handler.h"
-#include "rtc_base/thread.h"
 
 namespace webrtc {
 
@@ -41,8 +40,7 @@ class AudioManager;
 
 
 
-class AAudioRecorder : public AAudioObserverInterface,
-                       public rtc::MessageHandler {
+class AAudioRecorder : public AAudioObserverInterface {
  public:
   explicit AAudioRecorder(AudioManager* audio_manager);
   ~AAudioRecorder();
@@ -79,9 +77,6 @@ class AAudioRecorder : public AAudioObserverInterface,
   
   void OnErrorCallback(aaudio_result_t error) override;
 
-  
-  void OnMessage(rtc::Message* msg) override;
-
  private:
   
   void HandleStreamDisconnected();
@@ -96,7 +91,7 @@ class AAudioRecorder : public AAudioObserverInterface,
   SequenceChecker thread_checker_aaudio_;
 
   
-  rtc::Thread* main_thread_;
+  TaskQueueBase* main_thread_;
 
   
   

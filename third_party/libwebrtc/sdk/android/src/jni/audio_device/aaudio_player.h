@@ -17,10 +17,9 @@
 
 #include "absl/types/optional.h"
 #include "api/sequence_checker.h"
+#include "api/task_queue/task_queue_base.h"
 #include "modules/audio_device/audio_device_buffer.h"
 #include "modules/audio_device/include/audio_device_defines.h"
-#include "rtc_base/message_handler.h"
-#include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 #include "sdk/android/src/jni/audio_device/aaudio_wrapper.h"
 #include "sdk/android/src/jni/audio_device/audio_device_module.h"
@@ -52,9 +51,7 @@ namespace jni {
 
 
 
-class AAudioPlayer final : public AudioOutput,
-                           public AAudioObserverInterface,
-                           public rtc::MessageHandler {
+class AAudioPlayer final : public AudioOutput, public AAudioObserverInterface {
  public:
   explicit AAudioPlayer(const AudioParameters& audio_parameters);
   ~AAudioPlayer() override;
@@ -90,11 +87,10 @@ class AAudioPlayer final : public AudioOutput,
   
   void OnErrorCallback(aaudio_result_t error) override;
 
-  
-  
-  void OnMessage(rtc::Message* msg) override;
-
  private:
+  
+  int GetPlayoutUnderrunCount() override { return 0; }
+
   
   void HandleStreamDisconnected();
 
@@ -108,7 +104,7 @@ class AAudioPlayer final : public AudioOutput,
   SequenceChecker thread_checker_aaudio_;
 
   
-  rtc::Thread* main_thread_;
+  TaskQueueBase* main_thread_;
 
   
   
