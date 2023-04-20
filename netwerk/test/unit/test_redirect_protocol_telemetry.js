@@ -14,6 +14,9 @@ add_task(async function check_protocols() {
     true
   );
 
+  
+  Services.prefs.setBoolPref("network.allow_redirect_to_data", true);
+
   let httpserv = new HttpServer();
   httpserv.registerPathHandler("/redirect", redirectHandler);
   httpserv.registerPathHandler("/content", contentHandler);
