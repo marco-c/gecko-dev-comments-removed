@@ -317,6 +317,10 @@ class WebRtcVideoChannel : public VideoMediaChannel,
       const std::vector<VideoCodecSettings>& codecs);
 
   
+  
+  void SetReceiverReportSsrc(uint32_t ssrc) RTC_RUN_ON(&thread_checker_);
+
+  
   class WebRtcVideoSendStream {
    public:
     WebRtcVideoSendStream(
@@ -438,6 +442,10 @@ class WebRtcVideoChannel : public VideoMediaChannel,
         const webrtc::FlexfecReceiveStream::Config& flexfec_config);
     ~WebRtcVideoReceiveStream();
 
+    webrtc::VideoReceiveStream& stream();
+    
+    webrtc::FlexfecReceiveStream* flexfec_stream();
+
     const std::vector<uint32_t>& GetSsrcs() const;
 
     std::vector<webrtc::RtpSource> GetSources();
@@ -445,7 +453,6 @@ class WebRtcVideoChannel : public VideoMediaChannel,
     
     webrtc::RtpParameters GetRtpParameters() const;
 
-    void SetLocalSsrc(uint32_t local_ssrc);
     
     void SetFeedbackParameters(bool lntf_enabled,
                                bool nack_enabled,
@@ -477,8 +484,10 @@ class WebRtcVideoChannel : public VideoMediaChannel,
         rtc::scoped_refptr<webrtc::FrameTransformerInterface>
             frame_transformer);
 
+    void SetLocalSsrc(uint32_t local_ssrc);
+
    private:
-    void RecreateWebRtcVideoStream();
+    void RecreateReceiveStream();
 
     
     
