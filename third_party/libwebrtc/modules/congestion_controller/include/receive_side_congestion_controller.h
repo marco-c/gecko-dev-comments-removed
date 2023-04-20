@@ -48,9 +48,10 @@ class ReceiveSideCongestionController : public CallStatsObserver {
 
   void SetSendPeriodicFeedback(bool send_periodic_feedback);
   
-  virtual RemoteBitrateEstimator* GetRemoteBitrateEstimator(bool send_side_bwe);
-  virtual const RemoteBitrateEstimator* GetRemoteBitrateEstimator(
-      bool send_side_bwe) const;
+  [[deprecated]] virtual RemoteBitrateEstimator* GetRemoteBitrateEstimator(
+      bool send_side_bwe);
+  [[deprecated]] virtual const RemoteBitrateEstimator*
+  GetRemoteBitrateEstimator(bool send_side_bwe) const;
 
   
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
@@ -63,6 +64,14 @@ class ReceiveSideCongestionController : public CallStatsObserver {
   void SetMaxDesiredReceiveBitrate(DataRate bitrate);
 
   void SetTransportOverhead(DataSize overhead_per_packet);
+
+  
+  
+  DataRate LatestReceiveSideEstimate() const;
+
+  
+  
+  void RemoveStream(uint32_t ssrc);
 
   [[deprecated]] int64_t TimeUntilNextProcess();
   [[deprecated]] void Process();
