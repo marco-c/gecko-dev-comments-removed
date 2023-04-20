@@ -583,9 +583,9 @@ class nsTableFrame : public nsContainerFrame {
   
   
   
-  nsresult SetupHeaderFooterChild(const TableReflowInput& aReflowInput,
-                                  nsTableRowGroupFrame* aFrame,
-                                  nscoord* aDesiredHeight);
+  
+  nscoord SetupHeaderFooterChild(const TableReflowInput& aReflowInput,
+                                 nsTableRowGroupFrame* aFrame);
 
   void ReflowChildren(TableReflowInput& aReflowInput, nsReflowStatus& aStatus,
                       nsIFrame*& aLastChildReflowed,
