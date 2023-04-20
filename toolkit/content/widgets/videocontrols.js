@@ -1276,26 +1276,11 @@ this.VideoControlsImplWidget = class {
           "videocontrols-position-and-duration-labels",
           { position, duration }
         );
-
-        
-        
-        
-        
-        
-        let positionDurationMarkup = this.l10n.formatValueSync(
-          "videocontrols-position-and-duration-labels",
+        this.l10n.setAttributes(
+          this.scrubber,
+          "videocontrols-scrubber-position-and-duration",
           { position, duration }
         );
-
-        
-        
-        let parser = new this.window.DOMParser();
-        let positionDurationString = parser.parseFromString(
-          positionDurationMarkup,
-          "text/html"
-        ).body.textContent;
-
-        this.scrubber.setAttribute("aria-valuetext", positionDurationString);
       },
 
       showBuffered() {
@@ -2887,7 +2872,7 @@ this.VideoControlsImplWidget = class {
                     <progress id="progressBar" class="progressBar" value="0" max="100" aria-hidden="true"></progress>
                   </div>
                 </div>
-                <input type="range" id="scrubber" class="scrubber" tabindex="-1" data-l10n-id="videocontrols-scrubber"/>
+                <input type="range" id="scrubber" class="scrubber" tabindex="-1" data-l10n-attrs="aria-valuetext"/>
               </div>
               <bdi id="positionLabel" class="positionLabel" role="presentation"></bdi>
               <bdi id="durationLabel" class="durationLabel" role="presentation"></bdi>
