@@ -392,7 +392,6 @@ var PanelMultiView = class extends AssociatedToNode {
   constructor(node) {
     super(node);
     this._openPopupPromise = Promise.resolve(false);
-    this._openPopupCancelCallback = () => {};
   }
 
   connect() {
@@ -508,6 +507,11 @@ var PanelMultiView = class extends AssociatedToNode {
         canCancel = false;
         this.dispatchCustomEvent("popuphidden");
       }
+      if (cancelCallback == this._openPopupCancelCallback) {
+        
+        
+        delete this._openPopupCancelCallback;
+      }
     });
 
     
@@ -529,6 +533,11 @@ var PanelMultiView = class extends AssociatedToNode {
       
       
       if (wasShown && ["open", "showing"].includes(this._panel.state)) {
+        if (cancelCallback == this._openPopupCancelCallback) {
+          
+          
+          delete this._openPopupCancelCallback;
+        }
         return true;
       }
       try {
@@ -554,6 +563,11 @@ var PanelMultiView = class extends AssociatedToNode {
       try {
         canCancel = false;
         this._panel.openPopup(anchor, options, ...args);
+        if (cancelCallback == this._openPopupCancelCallback) {
+          
+          
+          delete this._openPopupCancelCallback;
+        }
         
         
         
@@ -617,7 +631,7 @@ var PanelMultiView = class extends AssociatedToNode {
     if (["open", "showing"].includes(this._panel.state)) {
       this._panel.hidePopup(animate);
     } else {
-      this._openPopupCancelCallback();
+      this._openPopupCancelCallback?.();
     }
 
     
