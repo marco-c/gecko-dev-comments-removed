@@ -608,8 +608,7 @@ async function testAboutProcessesWithConfig({ showAllFrames, showThreads }) {
         row.process.type == "utility" &&
         row.classList.contains("process") &&
         row.nextSibling &&
-        row.nextSibling.classList.contains("actor") &&
-        row.nextSibling.actor.actorName === "audioDecoder_Generic",
+        row.nextSibling.classList.contains("actor"),
     },
   ];
   for (let finder of processesToBeFound) {
