@@ -67,7 +67,9 @@ MenuBarListener::MenuBarListener(XULMenuBarElement& aElement)
 
   
   RefPtr<EventTarget> top = nsContentUtils::GetWindowRoot(mEventTarget);
-  top->AddSystemEventListener(u"deactivate"_ns, this, true);
+  if (!NS_WARN_IF(!top)) {
+    top->AddSystemEventListener(u"deactivate"_ns, this, true);
+  }
 }
 
 
