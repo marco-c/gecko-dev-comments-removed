@@ -16,6 +16,7 @@
 #include "mozilla/Casting.h"
 #include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Span.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/Telemetry.h"
@@ -564,11 +565,32 @@ class PK11PasswordPromptRunnable : public SyncRunnableBase {
   virtual void RunOnTargetThread() override;
 
  private:
+  static bool mRunning;
+
   PK11SlotInfo* mSlot;
   nsIInterfaceRequestor* mIR;
 };
 
+bool PK11PasswordPromptRunnable::mRunning = false;
+
 void PK11PasswordPromptRunnable::RunOnTargetThread() {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!NS_IsMainThread()) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (mRunning) {
+    return;
+  }
+  mRunning = true;
+  auto setRunningToFalseOnExit = MakeScopeExit([&]() { mRunning = false; });
+
   nsresult rv;
   nsCOMPtr<nsIPrompt> prompt;
   if (!mIR) {
