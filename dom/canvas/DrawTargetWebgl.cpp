@@ -3213,11 +3213,34 @@ bool DrawTargetWebgl::StrokeLineAccel(const Point& aStart, const Point& aEnd,
     
     Point start = aStart;
     Point dirX = aEnd - aStart;
-    float scale = aStrokeOptions.mLineWidth / dirX.Length();
-    Point dirY = Point(-dirX.y, dirX.x) * scale;
-    if (aStrokeOptions.mLineCap == CapStyle::SQUARE) {
-      start -= (dirX * scale) * 0.5f;
-      dirX += dirX * scale;
+    Point dirY;
+    float dirLen = dirX.Length();
+    float scale = aStrokeOptions.mLineWidth;
+    if (dirLen == 0.0f) {
+      
+      switch (aStrokeOptions.mLineCap) {
+        case CapStyle::BUTT:
+          
+          return true;
+        case CapStyle::ROUND:
+        case CapStyle::SQUARE:
+          
+          dirX = Point(scale, 0.0f);
+          dirY = Point(0.0f, scale);
+          
+          start.x -= 0.5f * scale;
+          break;
+      }
+    } else {
+      
+      scale /= dirLen;
+      dirY = Point(-dirX.y, dirX.x) * scale;
+      if (aStrokeOptions.mLineCap == CapStyle::SQUARE) {
+        
+        start -= (dirX * scale) * 0.5f;
+        
+        dirX += dirX * scale;
+      }
     }
     Matrix lineXform(dirX.x, dirX.y, dirY.x, dirY.y, start.x - 0.5f * dirY.x,
                      start.y - 0.5f * dirY.y);
