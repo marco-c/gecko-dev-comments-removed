@@ -8,20 +8,20 @@
 #include <stdio.h>   
 #include <string.h>  
 
-#include "AutoRangeArray.h"              
-#include "ChangeAttributeTransaction.h"  
-#include "CompositionTransaction.h"      
-#include "DeleteNodeTransaction.h"       
-#include "DeleteRangeTransaction.h"      
-#include "DeleteTextTransaction.h"       
-#include "EditAction.h"                  
-#include "EditAggregateTransaction.h"    
-#include "EditorDOMPoint.h"              
-#include "EditorUtils.h"                 
-#include "EditTransactionBase.h"         
-#include "EditTransactionBase.h"         
-#include "EditorEventListener.h"         
-#include "HTMLEditor.h"                  
+#include "AutoRangeArray.h"  
+#include "ChangeAttributeTransaction.h"
+#include "CompositionTransaction.h"
+#include "DeleteContentTransactionBase.h"
+#include "DeleteMultipleRangesTransaction.h"
+#include "DeleteNodeTransaction.h"
+#include "DeleteRangeTransaction.h"
+#include "DeleteTextTransaction.h"
+#include "EditAction.h"           
+#include "EditorDOMPoint.h"       
+#include "EditorUtils.h"          
+#include "EditTransactionBase.h"  
+#include "EditorEventListener.h"  
+#include "HTMLEditor.h"           
 #include "HTMLEditorInlines.h"
 #include "HTMLEditUtils.h"           
 #include "InsertNodeTransaction.h"   
@@ -3733,7 +3733,7 @@ void EditorBase::DoAfterRedoTransaction() {
   MOZ_ALWAYS_SUCCEEDS(IncrementModificationCount(1));
 }
 
-already_AddRefed<EditAggregateTransaction>
+already_AddRefed<DeleteMultipleRangesTransaction>
 EditorBase::CreateTransactionForDeleteSelection(
     HowToHandleCollapsedRange aHowToHandleCollapsedRange,
     const AutoRangeArray& aRangesToDelete) {
@@ -3748,8 +3748,8 @@ EditorBase::CreateTransactionForDeleteSelection(
   }
 
   
-  RefPtr<EditAggregateTransaction> aggregateTransaction =
-      EditAggregateTransaction::Create();
+  RefPtr<DeleteMultipleRangesTransaction> transaction =
+      DeleteMultipleRangesTransaction::Create();
   for (const OwningNonNull<nsRange>& range : aRangesToDelete.Ranges()) {
     
     
@@ -3757,11 +3757,7 @@ EditorBase::CreateTransactionForDeleteSelection(
       RefPtr<DeleteRangeTransaction> deleteRangeTransaction =
           DeleteRangeTransaction::Create(*this, range);
       
-      DebugOnly<nsresult> rvIgnored =
-          aggregateTransaction->AppendChild(deleteRangeTransaction);
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rvIgnored),
-          "EditAggregationTransaction::AppendChild() failed, but ignored");
+      transaction->AppendChild(*deleteRangeTransaction);
       continue;
     }
 
@@ -3770,7 +3766,7 @@ EditorBase::CreateTransactionForDeleteSelection(
     }
 
     
-    RefPtr<EditTransactionBase> deleteNodeOrTextTransaction =
+    RefPtr<DeleteContentTransactionBase> deleteNodeOrTextTransaction =
         CreateTransactionForCollapsedRange(range, aHowToHandleCollapsedRange);
     
     
@@ -3779,19 +3775,15 @@ EditorBase::CreateTransactionForDeleteSelection(
       NS_WARNING("EditorBase::CreateTransactionForCollapsedRange() failed");
       return nullptr;
     }
-    DebugOnly<nsresult> rvIgnored =
-        aggregateTransaction->AppendChild(deleteNodeOrTextTransaction);
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rvIgnored),
-        "EditAggregationTransaction::AppendChild() failed, but ignored");
+    transaction->AppendChild(*deleteNodeOrTextTransaction);
   }
 
-  return aggregateTransaction.forget();
+  return transaction.forget();
 }
 
 
 
-already_AddRefed<EditTransactionBase>
+already_AddRefed<DeleteContentTransactionBase>
 EditorBase::CreateTransactionForCollapsedRange(
     const nsRange& aCollapsedRange,
     HowToHandleCollapsedRange aHowToHandleCollapsedRange) {
@@ -4651,7 +4643,7 @@ nsresult EditorBase::DeleteRangesWithTransaction(
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<EditAggregateTransaction> deleteSelectionTransaction =
+  RefPtr<DeleteMultipleRangesTransaction> deleteSelectionTransaction =
       CreateTransactionForDeleteSelection(howToHandleCollapsedRange,
                                           aRangesToDelete);
   if (!deleteSelectionTransaction) {

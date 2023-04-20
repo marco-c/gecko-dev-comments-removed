@@ -2562,10 +2562,7 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-
-  already_AddRefed<EditAggregateTransaction>
+  already_AddRefed<DeleteMultipleRangesTransaction>
   CreateTransactionForDeleteSelection(
       HowToHandleCollapsedRange aHowToHandleCollapsedRange,
       const AutoRangeArray& aRangesToDelete);
@@ -2581,10 +2578,8 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-
-  already_AddRefed<EditTransactionBase> CreateTransactionForCollapsedRange(
+  already_AddRefed<DeleteContentTransactionBase>
+  CreateTransactionForCollapsedRange(
       const nsRange& aCollapsedRange,
       HowToHandleCollapsedRange aHowToHandleCollapsedRange);
 
