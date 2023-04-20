@@ -82,7 +82,6 @@ add_task(async function test_bookmarks() {
   
   Assert.ok(bs.bookmarksMenuFolder > 0);
   Assert.ok(bs.tagsFolder > 0);
-  Assert.ok(bs.toolbarFolder > 0);
 
   
   
