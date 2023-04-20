@@ -169,12 +169,12 @@ async function prettyPrintHtmlFile({
     
     
     
-    const previousLineBreakIndexInHtmlText =
+    const indexAfterPreviousLineBreakInHtml =
       sourceInfo.sourceStartLine > 1
-        ? allLineBreaks[sourceInfo.sourceStartLine - 2].index
+        ? allLineBreaks[sourceInfo.sourceStartLine - 2].index + 1
         : 0;
     const startIndex =
-      previousLineBreakIndexInHtmlText + sourceInfo.sourceStartColumn + 1;
+      indexAfterPreviousLineBreakInHtml + sourceInfo.sourceStartColumn;
     const endIndex = startIndex + sourceInfo.sourceLength;
     const scriptText = htmlFileText.substring(startIndex, endIndex);
     DevToolsUtils.assert(
