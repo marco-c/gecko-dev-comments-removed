@@ -85,6 +85,12 @@ class InputVolumeStatsReporter {
   int log_volume_update_stats_counter_ = 0;
   absl::optional<int> previous_input_volume_ = absl::nullopt;
 };
+
+
+
+
+void UpdateHistogramOnRecommendedInputVolumeChangeToMatchTarget(int volume);
+
 }  
 
 #endif  
