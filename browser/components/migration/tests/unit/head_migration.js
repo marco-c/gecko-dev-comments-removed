@@ -42,6 +42,21 @@ updateAppInfo();
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function promiseMigration(
   migrator,
   resourceType,
@@ -71,6 +86,15 @@ async function promiseMigration(
 
   return Promise.all(promises);
 }
+
+
+
+
+
+
+
+
+
 
 
 
