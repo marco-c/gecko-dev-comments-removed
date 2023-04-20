@@ -442,6 +442,7 @@ void MediaDecoder::OnPlaybackErrorEvent(const MediaResult& aError) {
   
   
   
+  
   MOZ_ASSERT(aError == NS_ERROR_DOM_MEDIA_EXTERNAL_ENGINE_NOT_SUPPORTED_ERR);
   RefPtr<MediaDecoderStateMachineBase> discardStateMachine =
       mDecoderStateMachine;
@@ -1369,6 +1370,16 @@ bool MediaDecoder::CanPlayThrough() {
 
 RefPtr<SetCDMPromise> MediaDecoder::SetCDMProxy(CDMProxy* aProxy) {
   MOZ_ASSERT(NS_IsMainThread());
+#ifdef MOZ_WMF_MEDIA_ENGINE
+  
+  
+  if (GetStateMachine()->IsExternalStateMachine() &&
+      !StaticPrefs::media_wmf_media_engine_drm_playback()) {
+    LOG("Disable external state machine due to DRM playback not allowed");
+    OnPlaybackErrorEvent(
+        MediaResult{NS_ERROR_DOM_MEDIA_EXTERNAL_ENGINE_NOT_SUPPORTED_ERR});
+  }
+#endif
   return GetStateMachine()->SetCDMProxy(aProxy);
 }
 

@@ -35,7 +35,7 @@ class MediaDataDemuxer : public DecoderDoctorLifeLogger<MediaDataDemuxer> {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDataDemuxer)
 
-  typedef MozPromise<MediaResult, MediaResult,  true>
+  typedef MozPromise<MediaResult, MediaResult,  false>
       InitPromise;
 
   
