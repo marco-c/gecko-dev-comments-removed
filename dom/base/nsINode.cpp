@@ -436,8 +436,6 @@ Element* nsINode::GetAnonymousRootElementOfTextEditor(
     return nullptr;
   }
 
-  MOZ_ASSERT(!textEditor->IsHTMLEditor(),
-             "If it were an HTML editor, needs to use GetRootElement()");
   Element* rootElement = textEditor->GetRoot();
   if (aTextEditor) {
     textEditor.forget(aTextEditor);
@@ -558,10 +556,16 @@ nsIContent* nsINode::GetSelectionRootContent(PresShell* aPresShell) {
     return nullptr;
   }
 
-  if (AsContent()->HasIndependentSelection()) {
+  if (AsContent()->HasIndependentSelection() || IsInNativeAnonymousSubtree()) {
     
-    Element* anonymousDivElement = GetAnonymousRootElementOfTextEditor();
-    if (anonymousDivElement) {
+    
+    
+    
+    
+    
+    
+    
+    if (Element* anonymousDivElement = GetAnonymousRootElementOfTextEditor()) {
       return anonymousDivElement;
     }
   }
