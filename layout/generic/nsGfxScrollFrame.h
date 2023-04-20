@@ -203,7 +203,6 @@ class ScrollFrameHelper : public nsIReflowCallback {
     return pt;
   }
   nsRect GetLayoutScrollRange() const;
-  nsRect GetUnsnappedLayoutScrollRange() const;
   
   nsRect GetScrollRange(nscoord aWidth, nscoord aHeight) const;
   nsSize GetVisualViewportSize() const;
@@ -382,8 +381,8 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
 
 
-  nsRect GetUnsnappedScrolledRectInternal(const nsRect& aScrolledOverflowArea,
-                                          const nsSize& aScrollPortSize) const;
+  nsRect GetScrolledRectInternal(const nsRect& aScrolledOverflowArea,
+                                 const nsSize& aScrollPortSize) const;
 
   layers::ScrollDirections GetAvailableScrollingDirectionsForUserInputEvents()
       const;
