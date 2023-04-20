@@ -304,11 +304,12 @@ already_AddRefed<SourceSurface> SVGPatternFrame::PaintPattern(
 
   
   
-  gfxSize scaledSize = bbox.Size() * MaxExpansion(patternTransform);
+  gfxRect transformedBBox =
+      ThebesRect(patternTransform.TransformBounds(ToRect(bbox)));
 
   bool resultOverflows;
   IntSize surfaceSize =
-      SVGUtils::ConvertToSurfaceSize(scaledSize, &resultOverflows);
+      SVGUtils::ConvertToSurfaceSize(transformedBBox.Size(), &resultOverflows);
 
   
   if (surfaceSize.width <= 0 || surfaceSize.height <= 0) {
@@ -321,8 +322,9 @@ already_AddRefed<SourceSurface> SVGPatternFrame::PaintPattern(
   if (resultOverflows || patternWidth != surfaceSize.width ||
       patternHeight != surfaceSize.height) {
     
-    patternWithChildren->mCTM->PreScale(surfaceSize.width / patternWidth,
-                                        surfaceSize.height / patternHeight);
+    gfxMatrix tempTM = gfxMatrix(surfaceSize.width / patternWidth, 0.0, 0.0,
+                                 surfaceSize.height / patternHeight, 0.0, 0.0);
+    patternWithChildren->mCTM->PreMultiply(tempTM);
 
     
     patternMatrix->PreScale(patternWidth / surfaceSize.width,
