@@ -725,13 +725,20 @@ add_task(async function test_save_and_load_dynamic_rules() {
   });
   await extension.awaitMessage("bgpage:ready");
 
-  await callTestMessageHandler(extension, "assertGetDynamicRules", {
-    expectedRules: getSchemaNormalizedRules(extension, updatedRules),
-  });
-
-  let ruleManager = ExtensionDNR.getRuleManager(
-    extension.extension,
-     false
+  
+  
+  
+  
+  
+  
+  
+  let ruleManager = await TestUtils.waitForCondition(
+    () =>
+      ExtensionDNR.getRuleManager(
+        extension.extension,
+         false
+      ),
+    "Wait for the test extension RuleManager to have neem created"
   );
   Assert.ok(ruleManager, "Rule manager exists before unload");
   Assert.deepEqual(
@@ -750,6 +757,9 @@ add_task(async function test_save_and_load_dynamic_rules() {
 
   await extension.addon.enable();
   await extension.awaitMessage("bgpage:ready");
+  await callTestMessageHandler(extension, "assertGetDynamicRules", {
+    expectedRules: getSchemaNormalizedRules(extension, updatedRules),
+  });
 
   info("Verify dynamic rules updates after corrupted storage");
 
@@ -758,9 +768,16 @@ add_task(async function test_save_and_load_dynamic_rules() {
     asyncWriteStoreFile,
     expectedCorruptFile,
   }) {
-    info(`Tempering DNR store data: ${name}`);
+    info(`Tampering DNR store data: ${name}`);
 
     await extension.addon.disable();
+    Assert.ok(
+      !ExtensionDNR.getRuleManager(
+        extension.extension,
+         false
+      ),
+      "Rule manager erased after unload"
+    );
 
     ok(
       !dnrStore._dataPromises.has(extUUID),
