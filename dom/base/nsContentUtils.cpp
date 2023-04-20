@@ -4610,8 +4610,6 @@ nsresult nsContentUtils::DispatchEvent(Document* aDoc, nsISupports* aTarget,
 
   nsCOMPtr<EventTarget> target(do_QueryInterface(aTarget));
 
-  aEvent.mTime = PR_Now();
-
   aEvent.mSpecifiedEventType = GetEventTypeFromMessage(aEventMessage);
   aEvent.SetDefaultComposed();
   aEvent.SetDefaultComposedInNativeAnonymousContent();
@@ -4686,9 +4684,6 @@ nsresult nsContentUtils::DispatchInputEvent(
     widgetEvent.mSpecifiedEventType = nsGkAtoms::oninput;
     widgetEvent.mFlags.mCancelable = false;
     widgetEvent.mFlags.mComposed = true;
-    
-    
-    widgetEvent.mTime = PR_Now();
     (new AsyncEventDispatcher(aEventTargetElement, widgetEvent))
         ->RunDOMEventWhenSafe();
     return NS_OK;
@@ -4733,10 +4728,6 @@ nsresult nsContentUtils::DispatchInputEvent(
       !aOptions.mNeverCancelable && aEventMessage == eEditorBeforeInput &&
       IsCancelableBeforeInputEvent(aEditorInputType);
   MOZ_ASSERT(!inputEvent.mFlags.mCancelable || aEventStatus);
-
-  
-  
-  inputEvent.mTime = static_cast<uint64_t>(PR_Now() / 1000);
 
   
   
@@ -8477,7 +8468,6 @@ nsresult nsContentUtils::SendMouseEvent(
   event.mPressure = aPressure;
   event.mInputSource = aInputSourceArg;
   event.mClickCount = aClickCount;
-  event.mTime = PR_IntervalNow();
   event.mFlags.mIsSynthesizedForTests = aIsDOMEventSynthesized;
   event.mExitFrom = exitFrom;
 

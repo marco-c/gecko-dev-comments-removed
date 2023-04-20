@@ -600,9 +600,6 @@ class IMContextWrapper final : public TextEventDispatcherListener {
                       uint32_t aNChars);
 
   
-  void InitEvent(WidgetGUIEvent& aEvent);
-
-  
   void PrepareToDestroyContext(GtkIMContext* aContext);
 
   

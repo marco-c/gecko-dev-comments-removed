@@ -1460,13 +1460,6 @@ class nsIWidget : public nsISupports {
   virtual bool ShowsResizeIndicator(LayoutDeviceIntRect* aResizerRect) = 0;
 
   
-
-
-  [[nodiscard]] virtual nsresult BeginResizeDrag(
-      mozilla::WidgetGUIEvent* aEvent, int32_t aHorizontal,
-      int32_t aVertical) = 0;
-
-  
   
   enum Modifiers : uint32_t {
     NO_MODIFIERS = 0x00000000,

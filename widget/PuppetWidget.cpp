@@ -265,7 +265,6 @@ void PuppetWidget::InitEvent(WidgetGUIEvent& aEvent,
     
     aEvent.mRefPoint = *aPoint;
   }
-  aEvent.mTime = PR_Now() / 1000;
 }
 
 nsresult PuppetWidget::DispatchEvent(WidgetGUIEvent* aEvent,

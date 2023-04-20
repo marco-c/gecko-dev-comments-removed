@@ -78,12 +78,6 @@ class InputData {
   InputType mInputType;
   
   
-  
-  
-  
-  uint32_t mTime;
-  
-  
   TimeStamp mTimeStamp;
   
   
@@ -108,8 +102,7 @@ class InputData {
   explicit InputData(InputType aInputType);
 
  protected:
-  InputData(InputType aInputType, uint32_t aTime, TimeStamp aTimeStamp,
-            Modifiers aModifiers);
+  InputData(InputType aInputType, TimeStamp aTimeStamp, Modifiers aModifiers);
 };
 
 
@@ -293,8 +286,8 @@ class MouseInput : public InputData {
   
 
   MouseInput(MouseType aType, ButtonType aButtonType, uint16_t aInputSource,
-             int16_t aButtons, const ScreenPoint& aPoint, uint32_t aTime,
-             TimeStamp aTimeStamp, Modifiers aModifiers);
+             int16_t aButtons, const ScreenPoint& aPoint, TimeStamp aTimeStamp,
+             Modifiers aModifiers);
   explicit MouseInput(const WidgetMouseEventBase& aMouseEvent);
 
   bool IsLeftButton() const;
@@ -396,12 +389,12 @@ class PanGestureInput : public InputData {
   ));
   
 
-  PanGestureInput(PanGestureType aType, uint32_t aTime, TimeStamp aTimeStamp,
+  PanGestureInput(PanGestureType aType, TimeStamp aTimeStamp,
                   const ScreenPoint& aPanStartPoint,
                   const ScreenPoint& aPanDisplacement, Modifiers aModifiers);
 
   enum class IsEligibleForSwipe : bool { No, Yes };
-  PanGestureInput(PanGestureType aType, uint32_t aTime, TimeStamp aTimeStamp,
+  PanGestureInput(PanGestureType aType, TimeStamp aTimeStamp,
                   const ScreenPoint& aPanStartPoint,
                   const ScreenPoint& aPanDisplacement, Modifiers aModifiers,
                   IsEligibleForSwipe aIsEligibleForSwipe);
@@ -540,8 +533,7 @@ class PinchGestureInput : public InputData {
 
   
   PinchGestureInput(PinchGestureType aType, PinchGestureSource aSource,
-                    uint32_t aTime, TimeStamp aTimeStamp,
-                    const ExternalPoint& aScreenOffset,
+                    TimeStamp aTimeStamp, const ExternalPoint& aScreenOffset,
                     const ScreenPoint& aFocusPoint, ScreenCoord aCurrentSpan,
                     ScreenCoord aPreviousSpan, Modifiers aModifiers);
 
@@ -637,12 +629,12 @@ class TapGestureInput : public InputData {
 
   
   
-  TapGestureInput(TapGestureType aType, uint32_t aTime, TimeStamp aTimeStamp,
+  TapGestureInput(TapGestureType aType, TimeStamp aTimeStamp,
                   const ScreenIntPoint& aPoint, Modifiers aModifiers);
 
   
   
-  TapGestureInput(TapGestureType aType, uint32_t aTime, TimeStamp aTimeStamp,
+  TapGestureInput(TapGestureType aType, TimeStamp aTimeStamp,
                   const ParentLayerPoint& aLocalPoint, Modifiers aModifiers);
 
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
@@ -692,7 +684,7 @@ class ScrollWheelInput : public InputData {
   );
   
 
-  ScrollWheelInput(uint32_t aTime, TimeStamp aTimeStamp, Modifiers aModifiers,
+  ScrollWheelInput(TimeStamp aTimeStamp, Modifiers aModifiers,
                    ScrollMode aScrollMode, ScrollDeltaType aDeltaType,
                    const ScreenPoint& aOrigin, double aDeltaX, double aDeltaY,
                    bool aAllowToOverrideSystemScrollSpeed,

@@ -53,7 +53,7 @@ static bool IsOptionInteractivelySelectable(HTMLSelectElement& aSelect,
 namespace mozilla {
 
 static StaticAutoPtr<nsString> sIncrementalString;
-static DOMTimeStamp gLastKeyTime = 0;
+static TimeStamp gLastKeyTime;
 static uintptr_t sLastKeyListener = 0;
 static constexpr int32_t kNothingSelected = -1;
 
@@ -72,6 +72,11 @@ class MOZ_RAII AutoIncrementalSearchHandler {
     if (sLastKeyListener != uintptr_t(&aListener)) {
       sLastKeyListener = uintptr_t(&aListener);
       GetIncrementalString().Truncate();
+      
+      
+      gLastKeyTime = TimeStamp::Now() -
+                     TimeDuration::FromMilliseconds(
+                         StaticPrefs::ui_menu_incremental_search_timeout() * 2);
     }
   }
   ~AutoIncrementalSearchHandler() {
@@ -556,7 +561,7 @@ nsresult HTMLSelectEventListener::KeyPress(dom::Event* aKeyEvent) {
   
   
   
-  if (keyEvent->mTime - gLastKeyTime >
+  if ((keyEvent->mTimeStamp - gLastKeyTime).ToMilliseconds() >
       StaticPrefs::ui_menu_incremental_search_timeout()) {
     
     
@@ -572,7 +577,7 @@ nsresult HTMLSelectEventListener::KeyPress(dom::Event* aKeyEvent) {
     GetIncrementalString().Truncate();
   }
 
-  gLastKeyTime = keyEvent->mTime;
+  gLastKeyTime = keyEvent->mTimeStamp;
 
   
   char16_t uniChar = ToLowerCase(static_cast<char16_t>(keyEvent->mCharCode));
@@ -677,7 +682,7 @@ nsresult HTMLSelectEventListener::KeyDown(dom::Event* aKeyEvent) {
   dropDownMenuOnSpace = mIsCombobox && !mElement->OpenInParentProcess();
 #endif
   bool withinIncrementalSearchTime =
-      keyEvent->mTime - gLastKeyTime <=
+      (keyEvent->mTimeStamp - gLastKeyTime).ToMilliseconds() <=
       StaticPrefs::ui_menu_incremental_search_timeout();
   if ((dropDownMenuOnUpDown &&
        (keyEvent->mKeyCode == NS_VK_UP || keyEvent->mKeyCode == NS_VK_DOWN)) ||

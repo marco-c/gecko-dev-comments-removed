@@ -364,7 +364,7 @@ nsresult nsMenuFrame::HandleEvent(nsPresContext* aPresContext,
       
       
       if (keyEvent->mCharCode != ' ' ||
-          !nsMenuPopupFrame::IsWithinIncrementalTime(keyEvent->mTime)) {
+          !nsMenuPopupFrame::IsWithinIncrementalTime(keyEvent->mTimeStamp)) {
         *aEventStatus = nsEventStatus_eConsumeNoDefault;
         OpenMenu(false);
       }

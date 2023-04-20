@@ -402,7 +402,6 @@ static void InitKeyEvent(WidgetKeyboardEvent& aEvent, int32_t aAction,
 
   aEvent.mLocation =
       WidgetKeyboardEvent::ComputeLocationFromCodeValue(aEvent.mCodeNameIndex);
-  aEvent.mTime = aTime;
   aEvent.mTimeStamp = nsWindow::GetEventTimeStamp(aTime);
 }
 
@@ -560,7 +559,6 @@ void GeckoEditableSupport::SendIMEDummyKeyEvent(nsIWidget* aWidget,
   MOZ_ASSERT(mDispatcher);
 
   WidgetKeyboardEvent event(true, msg, aWidget);
-  event.mTime = PR_Now() / 1000;
   
   
   
@@ -1013,7 +1011,6 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
     }
   } else if (performDeletion) {
     WidgetContentCommandEvent event(true, eContentCommandDelete, widget);
-    event.mTime = PR_Now() / 1000;
     widget->DispatchEvent(&event, status);
     if (!mDispatcher || widget->Destroyed()) {
       return false;

@@ -213,8 +213,7 @@ PreventDefaultResult APZEventState::FireContextmenuEvents(
   
   
   APZCCallbackHelper::DispatchSynthesizedMouseEvent(
-      eMouseMove, 0 , aPoint * aScale, aModifiers, 0 ,
-      aWidget);
+      eMouseMove, aPoint * aScale, aModifiers, 0 , aWidget);
 
   
   
@@ -238,7 +237,7 @@ PreventDefaultResult APZEventState::FireContextmenuEvents(
   } else {
     
     nsEventStatus status = APZCCallbackHelper::DispatchSynthesizedMouseEvent(
-        eMouseLongTap,  0, aPoint * aScale, aModifiers,
+        eMouseLongTap, aPoint * aScale, aModifiers,
          1, aWidget);
     if (status == nsEventStatus_eConsumeNoDefault) {
       
@@ -275,8 +274,7 @@ void APZEventState::ProcessLongTap(PresShell* aPresShell,
   
   
   nsEventStatus status = APZCCallbackHelper::DispatchSynthesizedMouseEvent(
-      eMouseLongTap,  0, aPoint * aScale, aModifiers,  1,
-      widget);
+      eMouseLongTap, aPoint * aScale, aModifiers,  1, widget);
 
   PreventDefaultResult preventDefaultResult =
       (status == nsEventStatus_eConsumeNoDefault)
