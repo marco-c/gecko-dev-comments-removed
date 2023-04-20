@@ -244,9 +244,7 @@ MATCHER_P2(HasSpatialAndTemporalLayers,
 }
 
 TEST_P(SvcTest, ScalabilityModeSupported) {
-  
-  
-  std::string trials = "WebRTC-VideoFrameTrackingIdAdvertised/Enabled/";
+  std::string trials;
   if (UseDependencyDescriptor()) {
     trials += "WebRTC-DependencyDescriptorAdvertised/Enabled/";
   }
