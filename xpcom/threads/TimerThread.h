@@ -94,6 +94,10 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
     }
 
     
+    explicit Entry(TimeStamp aTimeout)
+        : mTimeout(std::move(aTimeout)), mTimerImpl(nullptr) {}
+
+    
     Entry(const Entry&) = delete;
     Entry& operator=(const Entry&) = delete;
 

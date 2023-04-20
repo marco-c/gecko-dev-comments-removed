@@ -773,22 +773,72 @@ bool TimerThread::AddTimerInternal(nsTimerImpl* aTimer) {
 
   LogTimerEvent::LogDispatch(aTimer);
 
-  Entry entry{aTimer};
   const size_t insertionIndex = mTimers.IndexOfFirstElementGt(aTimer->mTimeout);
-  if (insertionIndex < mTimers.Length()) {
-    if (!mTimers[insertionIndex].Value()) {
-      AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_overwrite);
-      mTimers[insertionIndex] = std::move(entry);
-      return true;
-    }
-    if (insertionIndex != 0 && !mTimers[insertionIndex - 1].Value()) {
-      AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_overwrite_before);
-      mTimers[insertionIndex - 1] = std::move(entry);
-      return true;
+
+  if (insertionIndex != 0 && !mTimers[insertionIndex - 1].Value()) {
+    
+    
+    AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_overwrite_before);
+    mTimers[insertionIndex - 1] = Entry{aTimer};
+    return true;
+  }
+
+  const size_t length = mTimers.Length();
+  if (insertionIndex == length) {
+    
+    
+    AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_append);
+    return mTimers.AppendElement(Entry{aTimer}, mozilla::fallible);
+  }
+
+  if (!mTimers[insertionIndex].Value()) {
+    
+    AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_overwrite);
+    mTimers[insertionIndex] = Entry{aTimer};
+    return true;
+  }
+
+  
+  AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_insert);
+  
+  
+  if (length == mTimers.Capacity() && mTimers[length - 1].Value()) {
+    
+    
+    
+    
+    
+    
+    
+    AUTO_TIMERS_STATS(TimerThread_AddTimerInternal_insert_expand);
+    if (!mTimers.AppendElement(
+            Entry{mTimers[length - 1].Timeout() +
+                  TimeDuration::FromSeconds(365.0 * 24.0 * 60.0 * 60.0)},
+            mozilla::fallible)) {
+      return false;
     }
   }
-  return mTimers.InsertElementAt(insertionIndex, std::move(entry),
-                                 mozilla::fallible);
+  
+  
+  Entry extractedEntry = std::exchange(mTimers[insertionIndex], Entry{aTimer});
+  
+  for (size_t i = insertionIndex + 1; i < length; ++i) {
+    Entry& entryRef = mTimers[i];
+    if (!entryRef.Value()) {
+      
+      COUNT_TIMERS_STATS(TimerThread_AddTimerInternal_insert_overwrite);
+      entryRef = std::move(extractedEntry);
+      return true;
+    }
+    
+    COUNT_TIMERS_STATS(TimerThread_AddTimerInternal_insert_shifts);
+    std::swap(entryRef, extractedEntry);
+  }
+  
+  
+  COUNT_TIMERS_STATS(TimerThread_AddTimerInternal_insert_append);
+  mTimers.AppendElement(std::move(extractedEntry));
+  return true;
 }
 
 
