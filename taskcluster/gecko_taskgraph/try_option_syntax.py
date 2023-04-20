@@ -473,8 +473,7 @@ class TryOptionSyntax:
                     entry["platforms"] = list(all_entry["platforms"])
                 results.append(entry)
             return self.parse_test_chunks(all_tests, results)
-        else:
-            return self.parse_test_chunks(all_tests, tests)
+        return self.parse_test_chunks(all_tests, tests)
 
     def parse_test_opts(self, input_str, all_platforms):
         """
@@ -641,7 +640,7 @@ class TryOptionSyntax:
                 and attr("build_platform") not in self.platforms
             ):
                 return False
-            elif not check_run_on_projects():
+            if not check_run_on_projects():
                 run_by_default = False
 
             if try_spec is None:
@@ -664,7 +663,7 @@ class TryOptionSyntax:
                 platform = attr("test_platform", "").split("/")[0]
                 
                 return platform in test["platforms"]
-            elif tier != 1:
+            if tier != 1:
                 
                 
                 build_task = self.full_task_graph.tasks[task.dependencies["build"]]
@@ -681,7 +680,7 @@ class TryOptionSyntax:
                         )
                     )
                     return True
-                elif 1 not in test_tiers:
+                if 1 not in test_tiers:
                     logger.debug(
                         "not skipping tier {} test {} without explicit inclusion; "
                         "it is configured to run on tiers {}".format(
@@ -689,18 +688,16 @@ class TryOptionSyntax:
                         )
                     )
                     return True
-                else:
-                    logger.debug(
-                        "skipping tier {} test {} because build task {} is "
-                        "tier {} and there is a higher-tier test of the same name".format(
-                            tier, task.label, build_task.label, build_task_tier
-                        )
+                logger.debug(
+                    "skipping tier {} test {} because build task {} is "
+                    "tier {} and there is a higher-tier test of the same name".format(
+                        tier, task.label, build_task.label, build_task_tier
                     )
-                    return False
-            elif run_by_default:
-                return check_run_on_projects()
-            else:
+                )
                 return False
+            if run_by_default:
+                return check_run_on_projects()
+            return False
 
         if attr("job_try_name"):
             
@@ -717,24 +714,22 @@ class TryOptionSyntax:
                 return False  
             
             return check_run_on_projects()
-        elif attr("kind") == "test":
+        if attr("kind") == "test":
             return (
                 match_test(self.unittests, "unittest_try_name")
                 or match_test(self.talos, "talos_try_name")
                 or match_test(self.raptor, "raptor_try_name")
             )
-        elif attr("kind") in BUILD_KINDS:
+        if attr("kind") in BUILD_KINDS:
             if attr("build_type") not in self.build_types:
                 return False
-            elif self.platforms is None:
+            if self.platforms is None:
                 
                 return check_run_on_projects()
-            else:
-                if attr("build_platform") not in self.platforms:
-                    return False
+            if attr("build_platform") not in self.platforms:
+                return False
             return True
-        else:
-            return False
+        return False
 
     def __str__(self):
         def none_for_all(list):

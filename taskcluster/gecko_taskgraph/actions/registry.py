@@ -144,6 +144,8 @@ def register_callback_action(
     if not callable(context):
         context_value = context
 
+        
+        
         def context(params):
             return context_value  
 
