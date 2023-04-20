@@ -131,15 +131,26 @@ async function waitForTestMigration(
 
 
 
-function selectResourceTypesAndStartMigration(wizard, selectedResourceTypes) {
+async function selectResourceTypesAndStartMigration(
+  wizard,
+  selectedResourceTypes
+) {
   let shadow = wizard.openOrClosedShadowRoot;
 
   
   let selector = shadow.querySelector("#browser-profile-selector");
-  selector.value = InternalTestingProfileMigrator.key;
-  
-  
-  selector.dispatchEvent(new CustomEvent("change", { bubbles: true }));
+  selector.click();
+
+  await new Promise(resolve => {
+    wizard
+      .querySelector("panel-list")
+      .addEventListener("shown", resolve, { once: true });
+  });
+
+  let panelItem = wizard.querySelector(
+    `panel-item[key="${InternalTestingProfileMigrator.key}"]`
+  );
+  panelItem.click();
 
   
   let resourceTypeList = shadow.querySelector("#resource-type-list");
