@@ -19,6 +19,7 @@
 #include "mozilla/Variant.h"  
 
 #include "ds/LifoAlloc.h"
+#include "frontend/FrontendContext.h"    
 #include "frontend/NameAnalysisTypes.h"  
 #include "frontend/ParserAtom.h"   
 #include "frontend/ScriptIndex.h"  
@@ -33,7 +34,6 @@
 #include "js/UniquePtr.h"  
 #include "js/Vector.h"
 #include "js/WasmModule.h"
-#include "vm/ErrorContext.h"  
 #include "vm/GlobalObject.h"  
 #include "vm/JSContext.h"
 #include "vm/JSFunction.h"  

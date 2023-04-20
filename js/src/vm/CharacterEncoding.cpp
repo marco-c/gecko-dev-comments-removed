@@ -16,10 +16,10 @@
 #include <limits>
 #include <type_traits>
 
+#include "frontend/FrontendContext.h"
 #include "js/friend/ErrorMessages.h"  
 #include "util/StringBuffer.h"
 #include "util/Unicode.h"  
-#include "vm/ErrorContext.h"
 #include "vm/JSContext.h"
 
 using mozilla::AsChars;

@@ -4,7 +4,7 @@
 
 
 
-#include "vm/ErrorContext.h"
+#include "frontend/FrontendContext.h"
 
 #include "gc/GC.h"
 #include "js/AllocPolicy.h"         

@@ -20,12 +20,12 @@
 #ifdef JS_ENABLE_SMOOSH
 #  include "frontend/Frontend2.h"  
 #endif
+#include "frontend/FrontendContext.h"  
 #include "frontend/ModuleSharedContext.h"
 #include "js/experimental/JSStencil.h"
 #include "js/SourceText.h"
 #include "js/Stack.h"  
 #include "js/UniquePtr.h"
-#include "vm/ErrorContext.h"           
 #include "vm/FunctionFlags.h"          
 #include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/HelperThreads.h"  

@@ -18,12 +18,12 @@
 #include <type_traits>  
 #include <utility>      
 
+#include "frontend/FrontendContext.h"  
 #include "js/Transcoding.h"  
-#include "js/UniquePtr.h"     
-#include "js/Utility.h"       
-#include "vm/ErrorContext.h"  
-#include "vm/JSContext.h"     
-#include "vm/StringType.h"    
+#include "js/UniquePtr.h"   
+#include "js/Utility.h"     
+#include "vm/JSContext.h"   
+#include "vm/StringType.h"  
 
 using namespace js;
 

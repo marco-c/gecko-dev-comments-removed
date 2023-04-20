@@ -23,7 +23,6 @@
 
 #include "builtin/Array.h"
 #include "builtin/BigInt.h"
-#include "vm/ErrorContext.h"  
 #ifdef JS_HAS_INTL_API
 #  include "builtin/intl/Collator.h"
 #  include "builtin/intl/DateTimeFormat.h"
@@ -47,6 +46,7 @@
 #endif
 #include "frontend/BytecodeCompilation.h"  
 #include "frontend/CompilationStencil.h"   
+#include "frontend/FrontendContext.h"      
 #include "jit/AtomicOperations.h"
 #include "jit/InlinableNatives.h"
 #include "js/CompilationAndEvaluation.h"

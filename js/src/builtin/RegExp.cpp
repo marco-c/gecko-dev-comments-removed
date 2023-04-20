@@ -12,6 +12,7 @@
 
 #include "jsapi.h"
 
+#include "frontend/FrontendContext.h"  
 #include "frontend/TokenStream.h"
 #include "irregexp/RegExpAPI.h"
 #include "js/friend/ErrorMessages.h"  
@@ -19,7 +20,6 @@
 #include "js/RegExpFlags.h"  
 #include "util/StringBuffer.h"
 #include "util/Unicode.h"
-#include "vm/ErrorContext.h"  
 #include "vm/JSContext.h"
 #include "vm/RegExpObject.h"
 #include "vm/RegExpStatics.h"

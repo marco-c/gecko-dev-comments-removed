@@ -1,45 +1,45 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "debugger/Source.h"
 
-#include "mozilla/Assertions.h"  // for AssertionConditionType, MOZ_ASSERT
-#include "mozilla/Maybe.h"       // for Some, Maybe, Nothing
-#include "mozilla/Variant.h"     // for AsVariant, Variant
+#include "mozilla/Assertions.h"  
+#include "mozilla/Maybe.h"       
+#include "mozilla/Variant.h"     
 
-#include <stdint.h>  // for uint32_t
-#include <string.h>  // for memcpy
-#include <utility>   // for move
+#include <stdint.h>  
+#include <string.h>  
+#include <utility>   
 
-#include "debugger/Debugger.h"  // for DebuggerSourceReferent, Debugger
-#include "debugger/Script.h"    // for DebuggerScript
-#include "gc/Tracer.h"  // for TraceManuallyBarrieredCrossCompartmentEdge
-#include "js/CompilationAndEvaluation.h"  // for Compile
-#include "js/ErrorReport.h"  // for JS_ReportErrorASCII,  JS_ReportErrorNumberASCII
-#include "js/experimental/TypedData.h"  // for JS_NewUint8Array
-#include "js/friend/ErrorMessages.h"    // for GetErrorMessage, JSMSG_*
-#include "js/GCVariant.h"               // for GCVariant
-#include "js/SourceText.h"              // for JS::SourceOwnership
-#include "js/String.h"                  // for JS_CopyStringCharsZ
-#include "vm/BytecodeUtil.h"            // for JSDVG_SEARCH_STACK
-#include "vm/ErrorContext.h"            // for AutoReportFrontendContext
-#include "vm/JSContext.h"               // for JSContext (ptr only)
-#include "vm/JSObject.h"                // for JSObject, RequireObject
-#include "vm/JSScript.h"                // for ScriptSource, ScriptSourceObject
-#include "vm/StringType.h"        // for NewStringCopyZ, JSString (ptr only)
-#include "vm/TypedArrayObject.h"  // for TypedArrayObject, JSObject::is
-#include "wasm/WasmCode.h"        // for Metadata
-#include "wasm/WasmDebug.h"       // for DebugState
-#include "wasm/WasmInstance.h"    // for Instance
-#include "wasm/WasmJS.h"          // for WasmInstanceObject
-#include "wasm/WasmTypeDecls.h"   // for Bytes, Rooted<WasmInstanceObject*>
+#include "debugger/Debugger.h"         
+#include "debugger/Script.h"           
+#include "frontend/FrontendContext.h"  
+#include "gc/Tracer.h"  
+#include "js/CompilationAndEvaluation.h"  
+#include "js/ErrorReport.h"  
+#include "js/experimental/TypedData.h"  
+#include "js/friend/ErrorMessages.h"    
+#include "js/GCVariant.h"               
+#include "js/SourceText.h"              
+#include "js/String.h"                  
+#include "vm/BytecodeUtil.h"            
+#include "vm/JSContext.h"               
+#include "vm/JSObject.h"                
+#include "vm/JSScript.h"                
+#include "vm/StringType.h"        
+#include "vm/TypedArrayObject.h"  
+#include "wasm/WasmCode.h"        
+#include "wasm/WasmDebug.h"       
+#include "wasm/WasmInstance.h"    
+#include "wasm/WasmJS.h"          
+#include "wasm/WasmTypeDecls.h"   
 
-#include "debugger/Debugger-inl.h"  // for Debugger::fromJSObject
-#include "vm/JSObject-inl.h"        // for InitClass
-#include "vm/NativeObject-inl.h"    // for NewTenuredObjectWithGivenProto
+#include "debugger/Debugger-inl.h"  
+#include "vm/JSObject-inl.h"        
+#include "vm/NativeObject-inl.h"    
 #include "wasm/WasmInstance-inl.h"
 
 namespace js {
@@ -54,22 +54,22 @@ using mozilla::Nothing;
 using mozilla::Some;
 
 const JSClassOps DebuggerSource::classOps_ = {
-    nullptr,                          // addProperty
-    nullptr,                          // delProperty
-    nullptr,                          // enumerate
-    nullptr,                          // newEnumerate
-    nullptr,                          // resolve
-    nullptr,                          // mayResolve
-    nullptr,                          // finalize
-    nullptr,                          // call
-    nullptr,                          // construct
-    CallTraceMethod<DebuggerSource>,  // trace
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    CallTraceMethod<DebuggerSource>,  
 };
 
 const JSClass DebuggerSource::class_ = {
     "Source", JSCLASS_HAS_RESERVED_SLOTS(RESERVED_SLOTS), &classOps_};
 
-/* static */
+
 NativeObject* DebuggerSource::initClass(JSContext* cx,
                                         Handle<GlobalObject*> global,
                                         HandleObject debugCtor) {
@@ -77,7 +77,7 @@ NativeObject* DebuggerSource::initClass(JSContext* cx,
                    methods_, nullptr, nullptr);
 }
 
-/* static */
+
 DebuggerSource* DebuggerSource::create(JSContext* cx, HandleObject proto,
                                        Handle<DebuggerSourceReferent> referent,
                                        Handle<NativeObject*> debugger) {
@@ -100,7 +100,7 @@ Debugger* DebuggerSource::owner() const {
   return Debugger::fromJSObject(dbgobj);
 }
 
-// For internal use only.
+
 NativeObject* DebuggerSource::getReferentRawObject() const {
   return maybePtrFromReservedSlot<NativeObject>(SOURCE_SLOT);
 }
@@ -116,8 +116,8 @@ DebuggerSourceReferent DebuggerSource::getReferent() const {
 }
 
 void DebuggerSource::trace(JSTracer* trc) {
-  // There is a barrier on private pointers, so the Unbarriered marking
-  // is okay.
+  
+  
   if (JSObject* referent = getReferentRawObject()) {
     TraceManuallyBarrieredCrossCompartmentEdge(trc, this, &referent,
                                                "Debugger.Source referent");
@@ -127,14 +127,14 @@ void DebuggerSource::trace(JSTracer* trc) {
   }
 }
 
-/* static */
+
 bool DebuggerSource::construct(JSContext* cx, unsigned argc, Value* vp) {
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_NO_CONSTRUCTOR,
                             "Debugger.Source");
   return false;
 }
 
-/* static */
+
 DebuggerSource* DebuggerSource::check(JSContext* cx, HandleValue thisv) {
   JSObject* thisobj = RequireObject(cx, thisv);
   if (!thisobj) {
@@ -190,7 +190,7 @@ struct MOZ_STACK_CLASS DebuggerSource::CallData {
 };
 
 template <DebuggerSource::CallData::Method MyMethod>
-/* static */
+
 bool DebuggerSource::CallData::ToNative(JSContext* cx, unsigned argc,
                                         Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -450,9 +450,9 @@ bool DebuggerSource::CallData::getIntroductionScript() {
 struct DebuggerGetIntroductionOffsetMatcher {
   using ReturnType = Value;
   ReturnType match(Handle<ScriptSourceObject*> sourceObject) {
-    // Regardless of what's recorded in the ScriptSourceObject and
-    // ScriptSource, only hand out the introduction offset if we also have
-    // the script within which it applies.
+    
+    
+    
     ScriptSource* ss = sourceObject->source();
     if (ss->hasIntroductionOffset() &&
         sourceObject->unwrappedIntroductionScript()) {

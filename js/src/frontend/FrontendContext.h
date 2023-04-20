@@ -4,14 +4,22 @@
 
 
 
-#ifndef vm_ErrorContext_h
-#define vm_ErrorContext_h
+#ifndef frontend_FrontendContext_h
+#define frontend_FrontendContext_h
 
+#include "mozilla/Assertions.h" 
+#include "mozilla/Attributes.h" 
 #include "mozilla/Maybe.h"  
 
-#include "js/ErrorReport.h"
-#include "vm/ErrorReporting.h"
-#include "vm/MallocProvider.h"
+#include <stddef.h> 
+
+#include "js/AllocPolicy.h"  
+#include "js/ErrorReport.h" 
+#include "js/Vector.h"  
+#include "vm/ErrorReporting.h" 
+#include "vm/MallocProvider.h" 
+
+struct JSContext;
 
 namespace js {
 

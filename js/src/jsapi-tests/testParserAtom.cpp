@@ -9,10 +9,10 @@
 #include <utility>  
 #include <vector>   
 
+#include "frontend/FrontendContext.h"  
 #include "frontend/ParserAtom.h"  
 #include "js/TypeDecls.h"  
 #include "jsapi-tests/tests.h"
-#include "vm/ErrorContext.h"  
 
 
 BEGIN_TEST(testParserAtom_empty) {

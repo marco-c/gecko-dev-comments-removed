@@ -10,9 +10,9 @@
 
 #include "frontend/AbstractScopePtr.h"    
 #include "frontend/CompilationStencil.h"  
+#include "frontend/FrontendContext.h"     
 #include "frontend/SharedContext.h"       
 #include "vm/BytecodeUtil.h"              
-#include "vm/ErrorContext.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"     
 #include "vm/RegExpObject.h"  

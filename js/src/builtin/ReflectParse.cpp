@@ -15,6 +15,7 @@
 
 #include "builtin/Array.h"
 #include "frontend/CompilationStencil.h"
+#include "frontend/FrontendContext.h"  
 #include "frontend/ModuleSharedContext.h"
 #include "frontend/ParseNode.h"
 #include "frontend/Parser.h"
@@ -22,7 +23,6 @@
 #include "js/friend/StackLimits.h"    
 #include "js/PropertyAndElement.h"    
 #include "js/StableStringChars.h"
-#include "vm/ErrorContext.h"   
 #include "vm/FunctionFlags.h"  
 #include "vm/Interpreter.h"
 #include "vm/JSAtom.h"

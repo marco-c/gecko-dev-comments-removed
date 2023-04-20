@@ -20,6 +20,7 @@
 #include "frontend/BytecodeCompilation.h"  
 #include "frontend/BytecodeCompiler.h"     
 #include "frontend/CompilationStencil.h"  
+#include "frontend/FrontendContext.h"     
 #include "frontend/Parser.h"       
 #include "js/CharacterEncoding.h"  
 #include "js/experimental/JSStencil.h"  
@@ -32,9 +33,8 @@
 #include "util/CompleteFile.h"     
 #include "util/StringBuffer.h"     
 #include "vm/EnvironmentObject.h"  
-#include "vm/ErrorContext.h"  
-#include "vm/Interpreter.h"  
-#include "vm/JSContext.h"    
+#include "vm/Interpreter.h"        
+#include "vm/JSContext.h"          
 
 #include "vm/JSContext-inl.h"  
 

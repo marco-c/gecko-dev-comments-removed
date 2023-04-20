@@ -17,6 +17,7 @@
 #include "frontend/AbstractScopePtr.h"  
 #include "frontend/BytecodeOffset.h"    
 #include "frontend/CompilationStencil.h"  
+#include "frontend/FrontendContext.h"  
 #include "frontend/JumpList.h"         
 #include "frontend/NameCollections.h"  
 #include "frontend/ParseNode.h"        
@@ -25,9 +26,8 @@
 #include "frontend/Stencil.h"      
 #include "js/TypeDecls.h"          
 #include "js/Vector.h"             
-#include "vm/ErrorContext.h"
-#include "vm/SharedStencil.h"  
-#include "vm/StencilEnums.h"   
+#include "vm/SharedStencil.h"      
+#include "vm/StencilEnums.h"       
 
 namespace js {
 namespace frontend {
