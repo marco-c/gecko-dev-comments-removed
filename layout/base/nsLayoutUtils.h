@@ -116,8 +116,10 @@ class Image;
 class StackingContextHelper;
 class Layer;
 class WebRenderLayerManager;
-
 }  
+namespace widget {
+enum class TransparencyMode : uint8_t;
+}
 }  
 
 
@@ -2066,8 +2068,9 @@ class nsLayoutUtils {
 
 
 
-  static nsTransparencyMode GetFrameTransparency(nsIFrame* aBackgroundFrame,
-                                                 nsIFrame* aCSSRootFrame);
+  using TransparencyMode = mozilla::widget::TransparencyMode;
+  static TransparencyMode GetFrameTransparency(nsIFrame* aBackgroundFrame,
+                                               nsIFrame* aCSSRootFrame);
 
   
 

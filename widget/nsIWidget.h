@@ -40,7 +40,7 @@
 #include "nsStringFwd.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"
-#include "nsWidgetInitData.h"
+#include "mozilla/widget/InitData.h"
 #include "nsXULAppAPI.h"
 
 
@@ -163,15 +163,19 @@ typedef void* nsNativeWidget;
 
 
 
-enum nsTransparencyMode {
-  eTransparencyOpaque = 0,      
-  eTransparencyTransparent,     
-  eTransparencyBorderlessGlass  
-                                
-                                
+namespace mozilla::widget {
+
+enum class TransparencyMode : uint8_t {
+  Opaque = 0,       
+  Transparent,      
+  BorderlessGlass,  
+                    
+                    
   
   
 };
+
+}
 
 
 
@@ -393,6 +397,13 @@ class nsIWidget : public nsISupports {
   typedef mozilla::CSSPoint CSSPoint;
   typedef mozilla::CSSRect CSSRect;
 
+  using InitData = mozilla::widget::InitData;
+  using WindowType = mozilla::widget::WindowType;
+  using PopupType = mozilla::widget::PopupType;
+  using PopupLevel = mozilla::widget::PopupLevel;
+  using BorderStyle = mozilla::widget::BorderStyle;
+  using TransparencyMode = mozilla::widget::TransparencyMode;
+
   
   struct ThemeGeometry {
     
@@ -412,7 +423,7 @@ class nsIWidget : public nsISupports {
       : mLastChild(nullptr),
         mPrevSibling(nullptr),
         mOnDestroyCalled(false),
-        mWindowType(eWindowType_child),
+        mWindowType(WindowType::Child),
         mZIndex(0)
 
   {
@@ -450,10 +461,10 @@ class nsIWidget : public nsISupports {
 
 
 
-  [[nodiscard]] virtual nsresult Create(
-      nsIWidget* aParent, nsNativeWidget aNativeParent,
-      const LayoutDeviceIntRect& aRect,
-      nsWidgetInitData* aInitData = nullptr) = 0;
+  [[nodiscard]] virtual nsresult Create(nsIWidget* aParent,
+                                        nsNativeWidget aNativeParent,
+                                        const LayoutDeviceIntRect& aRect,
+                                        InitData* = nullptr) = 0;
 
   
 
@@ -466,7 +477,7 @@ class nsIWidget : public nsISupports {
   [[nodiscard]] virtual nsresult Create(nsIWidget* aParent,
                                         nsNativeWidget aNativeParent,
                                         const DesktopIntRect& aRect,
-                                        nsWidgetInitData* aInitData = nullptr) {
+                                        InitData* aInitData = nullptr) {
     LayoutDeviceIntRect devPixRect =
         RoundedToInt(aRect * GetDesktopToDeviceScale());
     return Create(aParent, aNativeParent, devPixRect, aInitData);
@@ -489,7 +500,7 @@ class nsIWidget : public nsISupports {
 
 
   virtual already_AddRefed<nsIWidget> CreateChild(
-      const LayoutDeviceIntRect& aRect, nsWidgetInitData* aInitData = nullptr,
+      const LayoutDeviceIntRect& aRect, InitData* = nullptr,
       bool aForceUseIWidgetParent = false) = 0;
 
   
@@ -1019,7 +1030,7 @@ class nsIWidget : public nsISupports {
   
 
 
-  nsWindowType WindowType() { return mWindowType; }
+  WindowType GetWindowType() const { return mWindowType; }
 
   
 
@@ -1038,13 +1049,13 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual void SetTransparencyMode(nsTransparencyMode aMode) = 0;
+  virtual void SetTransparencyMode(TransparencyMode aMode) = 0;
 
   
 
 
 
-  virtual nsTransparencyMode GetTransparencyMode() = 0;
+  virtual TransparencyMode GetTransparencyMode() = 0;
 
   
 
@@ -2130,7 +2141,7 @@ class nsIWidget : public nsISupports {
   nsIWidget* MOZ_NON_OWNING_REF mPrevSibling;
   
   bool mOnDestroyCalled;
-  nsWindowType mWindowType;
+  WindowType mWindowType;
   int32_t mZIndex;
 };
 

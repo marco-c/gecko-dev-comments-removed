@@ -116,7 +116,8 @@ MsaaDocAccessible::get_accParent(
       nsIFrame* frame = docAcc->GetFrame();
       if (frame) {
         nsIWidget* widget = frame->GetNearestWidget();
-        if (widget->WindowType() == eWindowType_child && !widget->GetParent()) {
+        if (widget->GetWindowType() == widget::WindowType::Child &&
+            !widget->GetParent()) {
           
           
           

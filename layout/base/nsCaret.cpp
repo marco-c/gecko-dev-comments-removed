@@ -888,7 +888,7 @@ bool nsCaret::IsMenuPopupHidingCaret() {
       return false;
     }
 
-    if (popupFrame->PopupType() == ePopupTypeMenu &&
+    if (popupFrame->GetPopupType() == widget::PopupType::Menu &&
         !popupFrame->IsContextMenu()) {
       
       

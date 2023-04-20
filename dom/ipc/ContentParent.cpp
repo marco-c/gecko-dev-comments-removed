@@ -1224,11 +1224,6 @@ already_AddRefed<ContentParent> ContentParent::GetNewOrUsedJSPluginProcess(
   return p.forget();
 }
 
-#if defined(XP_WIN)
-
-void ContentParent::SendAsyncUpdate(nsIWidget* aWidget) {}
-#endif  
-
 static nsIDocShell* GetOpenerDocShellHelper(Element* aFrameElement) {
   
   

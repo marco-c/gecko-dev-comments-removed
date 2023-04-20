@@ -325,17 +325,6 @@ class ContentParent final : public PContentParent,
   
   static void NotifyUpdatedFonts(bool aFullRebuild);
 
-#if defined(XP_WIN)
-  
-
-
-
-
-
-
-  static void SendAsyncUpdate(nsIWidget* aWidget);
-#endif
-
   mozilla::ipc::IPCResult RecvCreateGMPService();
 
   mozilla::ipc::IPCResult RecvRemovePermission(

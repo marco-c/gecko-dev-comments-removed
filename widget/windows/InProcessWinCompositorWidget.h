@@ -11,8 +11,7 @@
 class nsWindow;
 class gfxASurface;
 
-namespace mozilla {
-namespace widget {
+namespace mozilla::widget {
 
 
 
@@ -47,7 +46,7 @@ class InProcessWinCompositorWidget final
   void OnDestroyWindow() override;
   bool OnWindowResize(const LayoutDeviceIntSize& aSize) override;
   void OnWindowModeChange(nsSizeMode aSizeMode) override;
-  void UpdateTransparency(nsTransparencyMode aMode) override;
+  void UpdateTransparency(TransparencyMode aMode) override;
   void NotifyVisibilityUpdated(nsSizeMode aSizeMode,
                                bool aIsFullyOccluded) override;
   void ClearTransparentWindow() override;
@@ -89,8 +88,11 @@ class InProcessWinCompositorWidget final
 
   
   mozilla::Mutex mTransparentSurfaceLock MOZ_UNANNOTATED;
-  mozilla::Atomic<nsTransparencyMode, MemoryOrdering::Relaxed>
-      mTransparencyMode;
+  mozilla::Atomic<uint32_t, MemoryOrdering::Relaxed> mTransparencyMode;
+
+  bool TransparencyModeIs(TransparencyMode aMode) const {
+    return TransparencyMode(uint32_t(mTransparencyMode)) == aMode;
+  }
 
   
   mozilla::Atomic<nsSizeMode, MemoryOrdering::Relaxed> mSizeMode;
@@ -106,7 +108,6 @@ class InProcessWinCompositorWidget final
   bool mNotDeferEndRemoteDrawing;
 };
 
-}  
 }  
 
 #endif  

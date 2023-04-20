@@ -374,8 +374,12 @@ static BOOL FrameIsInActiveWindow(nsIFrame* aFrame) {
 
   
   
-  if (topLevelWidget->WindowType() == eWindowType_popup) return YES;
-  if ([win isSheet]) return [win isKeyWindow];
+  if (topLevelWidget->GetWindowType() == widget::WindowType::Popup) {
+    return YES;
+  }
+  if ([win isSheet]) {
+    return [win isKeyWindow];
+  }
   return [win isMainWindow] && ![win attachedSheet];
 }
 

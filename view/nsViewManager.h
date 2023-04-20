@@ -62,7 +62,7 @@ class nsViewManager final {
 
 
   nsView* CreateView(const nsRect& aBounds, nsView* aParent,
-                     nsViewVisibility aVisibilityFlag = nsViewVisibility_kShow);
+                     ViewVisibility aVisibilityFlag = ViewVisibility::Show);
 
   
 
@@ -198,7 +198,7 @@ class nsViewManager final {
 
 
 
-  void SetViewVisibility(nsView* aView, nsViewVisibility aVisible);
+  void SetViewVisibility(nsView* aView, ViewVisibility aVisible);
 
   
 

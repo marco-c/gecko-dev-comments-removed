@@ -254,7 +254,7 @@ nsChildView::~nsChildView() {
 }
 
 nsresult nsChildView::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
-                             const LayoutDeviceIntRect& aRect, nsWidgetInitData* aInitData) {
+                             const LayoutDeviceIntRect& aRect, widget::InitData* aInitData) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   
@@ -1257,7 +1257,7 @@ nsresult nsChildView::DispatchEvent(WidgetGUIEvent* event, nsEventStatus& aStatu
   
   nsCOMPtr<nsIWidget> parentWidget = mParentWidget;
   if (!listener && parentWidget) {
-    if (parentWidget->WindowType() == eWindowType_popup) {
+    if (parentWidget->GetWindowType() == WindowType::Popup) {
       
       if (event->mWidget) {
         listener = event->mWidget->GetWidgetListener();
@@ -1276,7 +1276,7 @@ nsresult nsChildView::DispatchEvent(WidgetGUIEvent* event, nsEventStatus& aStatu
 
 nsIWidget* nsChildView::GetWidgetForListenerEvents() {
   
-  if (!mWidgetListener && mParentWidget && mParentWidget->WindowType() == eWindowType_popup) {
+  if (!mWidgetListener && mParentWidget && mParentWidget->GetWindowType() == WindowType::Popup) {
     return mParentWidget;
   }
 
@@ -4883,21 +4883,21 @@ BOOL ChildViewMouseTracker::WindowAcceptsEvent(NSWindow* aWindow, NSEvent* aEven
 
   NSWindow* topLevelWindow = nil;
 
-  switch (windowWidget->WindowType()) {
-    case eWindowType_popup:
+  switch (windowWidget->GetWindowType()) {
+    case WindowType::Popup:
       
       
       
       
       return WindowAcceptsEvent([aWindow parentWindow], aEvent, aView, aIsClickThrough);
 
-    case eWindowType_toplevel:
-    case eWindowType_dialog:
+    case WindowType::TopLevel:
+    case WindowType::Dialog:
       if ([aWindow attachedSheet]) return NO;
 
       topLevelWindow = aWindow;
       break;
-    case eWindowType_sheet: {
+    case WindowType::Sheet: {
       nsIWidget* parentWidget = windowWidget->GetSheetWindowParent();
       if (!parentWidget) return YES;
 

@@ -197,7 +197,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
   mLastPaintBounds = mBounds;
 
   if (!aDC && (renderer->GetBackendType() == LayersBackend::LAYERS_NONE) &&
-      (eTransparencyTransparent == mTransparencyMode)) {
+      (TransparencyMode::Transparent == mTransparencyMode)) {
     
     
     
@@ -216,7 +216,8 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
   HDC hDC = aDC ? aDC : (::BeginPaint(mWnd, &ps));
   mPaintDC = hDC;
 
-  bool forceRepaint = aDC || (eTransparencyTransparent == mTransparencyMode);
+  bool forceRepaint =
+      aDC || (TransparencyMode::Transparent == mTransparencyMode);
   LayoutDeviceIntRegion region = GetRegionToPaint(forceRepaint, ps, hDC);
 
   if (knowsCompositor && layerManager) {
@@ -258,7 +259,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
         RefPtr<gfxASurface> targetSurface;
 
         
-        if (eTransparencyTransparent == mTransparencyMode) {
+        if (TransparencyMode::Transparent == mTransparencyMode) {
           
           
           MutexAutoLock lock(mBasicLayersSurface->GetTransparentSurfaceLock());
@@ -267,7 +268,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
 
         RefPtr<gfxWindowsSurface> targetSurfaceWin;
         if (!targetSurface) {
-          uint32_t flags = (mTransparencyMode == eTransparencyOpaque)
+          uint32_t flags = (mTransparencyMode == TransparencyMode::Opaque)
                                ? 0
                                : gfxWindowsSurface::FLAG_IS_TRANSPARENT;
           targetSurfaceWin = new gfxWindowsSurface(hDC, flags);
@@ -293,12 +294,12 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
         
         BufferMode doubleBuffering = mozilla::layers::BufferMode::BUFFER_NONE;
         switch (mTransparencyMode) {
-          case eTransparencyBorderlessGlass:
+          case TransparencyMode::BorderlessGlass:
           default:
             
             doubleBuffering = mozilla::layers::BufferMode::BUFFERED;
             break;
-          case eTransparencyTransparent:
+          case TransparencyMode::Transparent:
             
             
             dt->ClearRect(
@@ -315,7 +316,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
           result = listener->PaintWindow(this, region);
         }
 
-        if (eTransparencyTransparent == mTransparencyMode) {
+        if (TransparencyMode::Transparent == mTransparencyMode) {
           
           
           
@@ -360,7 +361,7 @@ bool nsWindow::NeedsToTrackWindowOcclusionState() {
     return false;
   }
 
-  if (mCompositorSession && mWindowType == eWindowType_toplevel) {
+  if (mCompositorSession && mWindowType == WindowType::TopLevel) {
     return true;
   }
 

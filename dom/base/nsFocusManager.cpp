@@ -3480,7 +3480,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
       
       nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
       if (pm) {
-        popupFrame = pm->GetTopPopup(ePopupTypePanel);
+        popupFrame = pm->GetTopPopup(PopupType::Panel);
       }
     }
     if (popupFrame) {

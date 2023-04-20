@@ -182,8 +182,8 @@ nsCocoaWindow::~nsCocoaWindow() {
   
   
   for (nsIWidget* kid = mLastChild; kid;) {
-    nsWindowType kidType = kid->WindowType();
-    if (kidType == eWindowType_child) {
+    WindowType kidType = kid->GetWindowType();
+    if (kidType == WindowType::Child) {
       nsChildView* childView = static_cast<nsChildView*>(kid);
       kid = kid->GetPrevSibling();
       childView->ResetParent();
@@ -280,7 +280,7 @@ DesktopToLayoutDeviceScale ParentBackingScaleFactor(nsIWidget* aParent, NSView* 
 static DesktopRect GetWidgetScreenRectForChildren(nsIWidget* aWidget, NSView* aView) {
   if (aWidget) {
     mozilla::DesktopToLayoutDeviceScale scale = aWidget->GetDesktopToDeviceScale();
-    if (aWidget->WindowType() == eWindowType_child) {
+    if (aWidget->GetWindowType() == WindowType::Child) {
       return aWidget->GetScreenBounds() / scale;
     }
     return aWidget->GetClientBounds() / scale;
@@ -307,7 +307,7 @@ static DesktopRect GetWidgetScreenRectForChildren(nsIWidget* aWidget, NSView* aV
 
 
 nsresult nsCocoaWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
-                               const DesktopIntRect& aRect, nsWidgetInitData* aInitData) {
+                               const DesktopIntRect& aRect, widget::InitData* aInitData) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   
@@ -318,8 +318,8 @@ nsresult nsCocoaWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   FitRectToVisibleAreaForScreen(newBounds, nullptr);
 
   
-  mWindowType = eWindowType_toplevel;
-  mBorderStyle = eBorderStyle_default;
+  mWindowType = WindowType::TopLevel;
+  mBorderStyle = BorderStyle::Default;
 
   
   nsToolkit::GetToolkit();
@@ -347,7 +347,7 @@ nsresult nsCocoaWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       CreateNativeWindow(nsCocoaUtils::GeckoRectToCocoaRect(widgetRect), mBorderStyle, false);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (mWindowType == eWindowType_popup) {
+  if (mWindowType == WindowType::Popup) {
     
     
     LayoutDeviceIntRect devRect = RoundedToInt(newBounds * GetDesktopToDeviceScale());
@@ -362,22 +362,22 @@ nsresult nsCocoaWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 }
 
 nsresult nsCocoaWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
-                               const LayoutDeviceIntRect& aRect, nsWidgetInitData* aInitData) {
+                               const LayoutDeviceIntRect& aRect, widget::InitData* aInitData) {
   DesktopIntRect desktopRect =
       RoundedToInt(aRect / ParentBackingScaleFactor(aParent, (NSView*)aNativeParent));
   return Create(aParent, aNativeParent, desktopRect, aInitData);
 }
 
-static unsigned int WindowMaskForBorderStyle(nsBorderStyle aBorderStyle) {
-  bool allOrDefault = (aBorderStyle == eBorderStyle_all || aBorderStyle == eBorderStyle_default);
+static unsigned int WindowMaskForBorderStyle(BorderStyle aBorderStyle) {
+  bool allOrDefault = (aBorderStyle == BorderStyle::All || aBorderStyle == BorderStyle::Default);
 
   
 
 
 
 
-  if (!allOrDefault && !(aBorderStyle & eBorderStyle_title)) {
-    if (aBorderStyle & eBorderStyle_minimize) {
+  if (!allOrDefault && !(aBorderStyle & BorderStyle::Title)) {
+    if (aBorderStyle & BorderStyle::Minimize) {
       
 
 
@@ -389,13 +389,13 @@ static unsigned int WindowMaskForBorderStyle(nsBorderStyle aBorderStyle) {
   }
 
   unsigned int mask = NSWindowStyleMaskTitled;
-  if (allOrDefault || aBorderStyle & eBorderStyle_close) {
+  if (allOrDefault || aBorderStyle & BorderStyle::Close) {
     mask |= NSWindowStyleMaskClosable;
   }
-  if (allOrDefault || aBorderStyle & eBorderStyle_minimize) {
+  if (allOrDefault || aBorderStyle & BorderStyle::Minimize) {
     mask |= NSWindowStyleMaskMiniaturizable;
   }
-  if (allOrDefault || aBorderStyle & eBorderStyle_resizeh) {
+  if (allOrDefault || aBorderStyle & BorderStyle::ResizeH) {
     mask |= NSWindowStyleMaskResizable;
   }
 
@@ -406,7 +406,7 @@ static unsigned int WindowMaskForBorderStyle(nsBorderStyle aBorderStyle) {
 
 
 
-nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, nsBorderStyle aBorderStyle,
+nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, BorderStyle aBorderStyle,
                                            bool aRectIsFrameRect) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
@@ -415,23 +415,24 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, nsBorderStyle aB
 
   
   switch (mWindowType) {
-    case eWindowType_invisible:
-    case eWindowType_child:
+    case WindowType::Invisible:
+    case WindowType::Child:
       break;
-    case eWindowType_popup:
-      if (aBorderStyle != eBorderStyle_default && mBorderStyle & eBorderStyle_title) {
+    case WindowType::Popup:
+      if (aBorderStyle != BorderStyle::Default && mBorderStyle & BorderStyle::Title) {
         features |= NSWindowStyleMaskTitled;
-        if (aBorderStyle & eBorderStyle_close) {
+        if (aBorderStyle & BorderStyle::Close) {
           features |= NSWindowStyleMaskClosable;
         }
       }
       break;
-    case eWindowType_toplevel:
-    case eWindowType_dialog:
+    case WindowType::TopLevel:
+    case WindowType::Dialog:
       features = WindowMaskForBorderStyle(aBorderStyle);
       break;
-    case eWindowType_sheet:
-      if (mParent->WindowType() != eWindowType_invisible && aBorderStyle & eBorderStyle_resizeh) {
+    case WindowType::Sheet:
+      if (mParent->GetWindowType() != WindowType::Invisible &&
+          aBorderStyle & BorderStyle::ResizeH) {
         features = NSWindowStyleMaskResizable;
       } else {
         features = NSWindowStyleMaskMiniaturizable;
@@ -473,7 +474,7 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, nsBorderStyle aB
     contentRect = aRect;
     contentRect.origin.y -= (newWindowFrame.size.height - aRect.size.height);
 
-    if (mWindowType != eWindowType_popup) contentRect.origin.y -= [[NSApp mainMenu] menuBarHeight];
+    if (mWindowType != WindowType::Popup) contentRect.origin.y -= [[NSApp mainMenu] menuBarHeight];
   }
 
   
@@ -484,11 +485,11 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, nsBorderStyle aB
   
   
   
-  if ((mWindowType == eWindowType_toplevel || mWindowType == eWindowType_dialog) &&
+  if ((mWindowType == WindowType::TopLevel || mWindowType == WindowType::Dialog) &&
       (features & NSWindowStyleMaskTitled))
     windowClass = [ToolbarWindow class];
   
-  else if (mWindowType == eWindowType_popup)
+  else if (mWindowType == WindowType::Popup)
     windowClass = [PopupWindow class];
   
   
@@ -518,11 +519,11 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, nsBorderStyle aB
   }
   UpdateBounds();
 
-  if (mWindowType == eWindowType_invisible) {
+  if (mWindowType == WindowType::Invisible) {
     [mWindow setLevel:kCGDesktopWindowLevelKey];
   }
 
-  if (mWindowType == eWindowType_popup) {
+  if (mWindowType == WindowType::Popup) {
     SetPopupWindowLevel();
     [mWindow setBackgroundColor:[NSColor clearColor]];
     [mWindow setOpaque:NO];
@@ -574,7 +575,7 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, nsBorderStyle aB
 }
 
 nsresult nsCocoaWindow::CreatePopupContentView(const LayoutDeviceIntRect& aRect,
-                                               nsWidgetInitData* aInitData) {
+                                               widget::InitData* aInitData) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   
@@ -647,9 +648,9 @@ void nsCocoaWindow::Destroy() {
 }
 
 nsIWidget* nsCocoaWindow::GetSheetWindowParent(void) {
-  if (mWindowType != eWindowType_sheet) return nullptr;
+  if (mWindowType != WindowType::Sheet) return nullptr;
   nsCocoaWindow* parent = static_cast<nsCocoaWindow*>(mParent);
-  while (parent && (parent->mWindowType == eWindowType_sheet))
+  while (parent && (parent->mWindowType == WindowType::Sheet))
     parent = static_cast<nsCocoaWindow*>(parent->mParent);
   return parent;
 }
@@ -731,11 +732,11 @@ void nsCocoaWindow::SetModal(bool aState) {
     
     
     
-    if (mWindowType != eWindowType_sheet) {
+    if (mWindowType != WindowType::Sheet) {
       while (ancestor) {
         if (ancestor->mNumModalDescendents++ == 0) {
           NSWindow* aWindow = ancestor->GetCocoaWindow();
-          if (ancestor->mWindowType != eWindowType_invisible) {
+          if (ancestor->mWindowType != WindowType::Invisible) {
             [[aWindow standardWindowButton:NSWindowCloseButton] setEnabled:NO];
             [[aWindow standardWindowButton:NSWindowMiniaturizeButton] setEnabled:NO];
             [[aWindow standardWindowButton:NSWindowZoomButton] setEnabled:NO];
@@ -754,11 +755,11 @@ void nsCocoaWindow::SetModal(bool aState) {
   } else {
     --gXULModalLevel;
     NS_ASSERTION(gXULModalLevel >= 0, "Mismatched call to nsCocoaWindow::SetModal(false)!");
-    if (mWindowType != eWindowType_sheet) {
+    if (mWindowType != WindowType::Sheet) {
       while (ancestor) {
         if (--ancestor->mNumModalDescendents == 0) {
           NSWindow* aWindow = ancestor->GetCocoaWindow();
-          if (ancestor->mWindowType != eWindowType_invisible) {
+          if (ancestor->mWindowType != WindowType::Invisible) {
             [[aWindow standardWindowButton:NSWindowCloseButton] setEnabled:YES];
             [[aWindow standardWindowButton:NSWindowMiniaturizeButton] setEnabled:YES];
             [[aWindow standardWindowButton:NSWindowZoomButton] setEnabled:YES];
@@ -774,7 +775,7 @@ void nsCocoaWindow::SetModal(bool aState) {
         gGeckoAppModalWindowList = gGeckoAppModalWindowList->prev;
         delete saved;  
       }
-      if (mWindowType == eWindowType_popup)
+      if (mWindowType == WindowType::Popup)
         SetPopupWindowLevel();
       else
         [mWindow setLevel:NSNormalWindowLevel];
@@ -824,7 +825,7 @@ void nsCocoaWindow::Show(bool bState) {
     }
 
     
-    if (mWindowType == eWindowType_popup && nativeParentWindow) {
+    if (mWindowType == WindowType::Popup && nativeParentWindow) {
       if (![nativeParentWindow isVisible] || [nativeParentWindow isMiniaturized]) {
         return;
       }
@@ -835,7 +836,7 @@ void nsCocoaWindow::Show(bool bState) {
       mPopupContentView->Show(true);
     }
 
-    if (mWindowType == eWindowType_sheet) {
+    if (mWindowType == WindowType::Sheet) {
       
       if (!nativeParentWindow || !piParentWidget) return;
 
@@ -905,7 +906,7 @@ void nsCocoaWindow::Show(bool bState) {
         
         mSheetNeedsShow = true;
       }
-    } else if (mWindowType == eWindowType_popup) {
+    } else if (mWindowType == WindowType::Popup) {
       
       
       
@@ -930,11 +931,11 @@ void nsCocoaWindow::Show(bool bState) {
       
       
       
-      if (nativeParentWindow && mPopupLevel == ePopupLevelParent)
+      if (nativeParentWindow && mPopupLevel == PopupLevel::Parent)
         [nativeParentWindow addChildWindow:mWindow ordered:NSWindowAbove];
     } else {
       NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
-      if (mWindowType == eWindowType_toplevel &&
+      if (mWindowType == WindowType::TopLevel &&
           [mWindow respondsToSelector:@selector(setAnimationBehavior:)]) {
         NSWindowAnimationBehavior behavior;
         if (mIsAnimationSuppressed) {
@@ -967,10 +968,10 @@ void nsCocoaWindow::Show(bool bState) {
     }
   } else {
     
-    if (mWindowType == eWindowType_toplevel || mWindowType == eWindowType_dialog) RollUpPopups();
+    if (mWindowType == WindowType::TopLevel || mWindowType == WindowType::Dialog) RollUpPopups();
 
     
-    if (mWindowType == eWindowType_sheet) {
+    if (mWindowType == WindowType::Sheet) {
       if (mSheetNeedsShow) {
         
         
@@ -1061,7 +1062,7 @@ void nsCocoaWindow::Show(bool bState) {
       
       
       
-      if (mWindowType == eWindowType_popup && nativeParentWindow)
+      if (mWindowType == WindowType::Popup && nativeParentWindow)
         [nativeParentWindow removeChildWindow:mWindow];
 
       [mWindow orderOut:nil];
@@ -1089,7 +1090,7 @@ void nsCocoaWindow::Show(bool bState) {
 bool nsCocoaWindow::NeedsRecreateToReshow() {
   
   
-  return (mWindowType == eWindowType_popup) && mWasShown && ([[NSScreen screens] count] > 1);
+  return (mWindowType == WindowType::Popup) && mWasShown && ([[NSScreen screens] count] > 1);
 }
 
 WindowRenderer* nsCocoaWindow::GetWindowRenderer() {
@@ -1099,24 +1100,25 @@ WindowRenderer* nsCocoaWindow::GetWindowRenderer() {
   return nullptr;
 }
 
-nsTransparencyMode nsCocoaWindow::GetTransparencyMode() {
+TransparencyMode nsCocoaWindow::GetTransparencyMode() {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  return (!mWindow || [mWindow isOpaque]) ? eTransparencyOpaque : eTransparencyTransparent;
+  return (!mWindow || [mWindow isOpaque]) ? TransparencyMode::Opaque
+                                          : TransparencyMode::Transparent;
 
-  NS_OBJC_END_TRY_BLOCK_RETURN(eTransparencyOpaque);
+  NS_OBJC_END_TRY_BLOCK_RETURN(TransparencyMode::Opaque);
 }
 
 
-void nsCocoaWindow::SetTransparencyMode(nsTransparencyMode aMode) {
+void nsCocoaWindow::SetTransparencyMode(TransparencyMode aMode) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   
-  if (!mWindow || mWindowType != eWindowType_popup) {
+  if (!mWindow || mWindowType != WindowType::Popup) {
     return;
   }
 
-  BOOL isTransparent = aMode == eTransparencyTransparent;
+  BOOL isTransparent = aMode == TransparencyMode::Transparent;
   BOOL currentTransparency = ![mWindow isOpaque];
   if (isTransparent != currentTransparency) {
     [mWindow setOpaque:!isTransparent];
@@ -1193,7 +1195,7 @@ void nsCocoaWindow::SetSizeConstraints(const SizeConstraints& aConstraints) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   
-  NSRect rect = (mWindowType == eWindowType_popup) ? NSZeroRect : NSMakeRect(0.0, 0.0, 32, 32);
+  NSRect rect = (mWindowType == WindowType::Popup) ? NSZeroRect : NSMakeRect(0.0, 0.0, 32, 32);
   rect = [mWindow frameRectForChildViewRect:rect];
 
   SizeConstraints c = aConstraints;
@@ -1469,7 +1471,7 @@ void nsCocoaWindow::HideWindowChrome(bool aShouldHide) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mWindow || !mWindowMadeHere ||
-      (mWindowType != eWindowType_toplevel && mWindowType != eWindowType_dialog))
+      (mWindowType != WindowType::TopLevel && mWindowType != WindowType::Dialog))
     return;
 
   BOOL isVisible = [mWindow isVisible];
@@ -1495,7 +1497,7 @@ void nsCocoaWindow::HideWindowChrome(bool aShouldHide) {
   
   NSRect frameRect = [mWindow frame];
   DestroyNativeWindow();
-  nsresult rv = CreateNativeWindow(frameRect, aShouldHide ? eBorderStyle_none : mBorderStyle, true);
+  nsresult rv = CreateNativeWindow(frameRect, aShouldHide ? BorderStyle::None : mBorderStyle, true);
   NS_ENSURE_SUCCESS_VOID(rv);
 
   
@@ -1999,7 +2001,7 @@ NS_IMETHODIMP nsCocoaWindow::GetChildSheet(bool aShown, nsIWidget** _retval) {
   nsIWidget* child = GetFirstChild();
 
   while (child) {
-    if (child->WindowType() == eWindowType_sheet) {
+    if (child->GetWindowType() == WindowType::Sheet) {
       
       nsCocoaWindow* cocoaWindow = static_cast<nsCocoaWindow*>(child);
       if (cocoaWindow->mWindow && ((aShown && [cocoaWindow->mWindow isVisible]) ||
@@ -2023,7 +2025,7 @@ NS_IMETHODIMP nsCocoaWindow::GetRealParent(nsIWidget** parent) {
 }
 
 NS_IMETHODIMP nsCocoaWindow::GetIsSheet(bool* isSheet) {
-  mWindowType == eWindowType_sheet ? * isSheet = true : * isSheet = false;
+  mWindowType == WindowType::Sheet ? * isSheet = true : * isSheet = false;
   return NS_OK;
 }
 
@@ -2277,13 +2279,13 @@ void nsCocoaWindow::CaptureRollupEvents(bool aDoCapture) {
     
     
     
-    if (mWindow && (mWindowType == eWindowType_popup)) SetPopupWindowLevel();
+    if (mWindow && (mWindowType == WindowType::Popup)) SetPopupWindowLevel();
   } else {
     nsToolkit::GetToolkit()->StopMonitoringAllProcessMouseEvents();
 
     
     
-    if (mWindow && (mWindowType == eWindowType_popup)) [mWindow setLevel:NSModalPanelWindowLevel];
+    if (mWindow && (mWindowType == WindowType::Popup)) [mWindow setLevel:NSModalPanelWindowLevel];
   }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
@@ -2305,7 +2307,7 @@ void nsCocoaWindow::SetWindowShadowStyle(StyleWindowShadow aStyle) {
 
   mShadowStyle = aStyle;
 
-  if (!mWindow || mWindowType != eWindowType_popup) {
+  if (!mWindow || mWindowType != WindowType::Popup) {
     return;
   }
 
@@ -2418,7 +2420,7 @@ void nsCocoaWindow::SetWindowTransform(const gfx::Matrix& aTransform) {
 }
 
 void nsCocoaWindow::SetInputRegion(const InputRegion& aInputRegion) {
-  MOZ_ASSERT(mWindowType == eWindowType_popup, "This should only be called on popup windows.");
+  MOZ_ASSERT(mWindowType == WindowType::Popup, "This should only be called on popup windows.");
   
   if (aInputRegion.mFullyTransparent) {
     [mWindow setIgnoresMouseEvents:YES];
@@ -2562,7 +2564,7 @@ void nsCocoaWindow::SetPopupWindowLevel() {
 
   
   
-  if (mPopupLevel == ePopupLevelFloating) {
+  if (mPopupLevel == PopupLevel::Floating) {
     [mWindow setLevel:NSFloatingWindowLevel];
     [mWindow setHidesOnDeactivate:YES];
   } else {

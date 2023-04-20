@@ -733,7 +733,7 @@ static bool IsCloaked(HWND hwnd) {
 
 
 nsWindow::nsWindow(bool aIsChildWindow)
-    : nsBaseWidget(eBorderStyle_default),
+    : nsBaseWidget(BorderStyle::Default),
       mBrush(::CreateSolidBrush(NSRGB_2_COLOREF(::GetSysColor(COLOR_BTNFACE)))),
       mFrameState(std::in_place, this),
       mIsChildWindow(aIsChildWindow),
@@ -741,7 +741,7 @@ nsWindow::nsWindow(bool aIsChildWindow)
       mCachedHitTestTime(TimeStamp::Now()),
       mSizeConstraintsScale(GetDefaultScale().scale),
       mDesktopId("DesktopIdMutex") {
-  MOZ_ASSERT(mWindowType == eWindowType_child);
+  MOZ_ASSERT(mWindowType == WindowType::Child);
 
   if (!gInitializedVirtualDesktopManager) {
     TaskController::Get()->AddTask(
@@ -825,11 +825,11 @@ nsWindow::~nsWindow() {
 
 int32_t nsWindow::GetHeight(int32_t aProposedHeight) { return aProposedHeight; }
 
-static bool ShouldCacheTitleBarInfo(nsWindowType aWindowType,
-                                    nsBorderStyle aBorderStyle) {
-  return (aWindowType == eWindowType_toplevel) &&
-         (aBorderStyle == eBorderStyle_default ||
-          aBorderStyle == eBorderStyle_all) &&
+static bool ShouldCacheTitleBarInfo(WindowType aWindowType,
+                                    BorderStyle aBorderStyle) {
+  return (aWindowType == WindowType::TopLevel) &&
+         (aBorderStyle == BorderStyle::Default ||
+          aBorderStyle == BorderStyle::All) &&
          (!nsUXThemeData::sTitlebarInfoPopulatedThemed ||
           !nsUXThemeData::sTitlebarInfoPopulatedAero);
 }
@@ -887,7 +887,7 @@ void nsWindow::SendAnAPZEvent(InputData& aEvent) {
 void nsWindow::RecreateDirectManipulationIfNeeded() {
   DestroyDirectManipulation();
 
-  if (mWindowType != eWindowType_toplevel && mWindowType != eWindowType_popup) {
+  if (mWindowType != WindowType::TopLevel && mWindowType != WindowType::Popup) {
     return;
   }
 
@@ -929,19 +929,19 @@ void nsWindow::DestroyDirectManipulation() {
 
 nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
                           const LayoutDeviceIntRect& aRect,
-                          nsWidgetInitData* aInitData) {
+                          widget::InitData* aInitData) {
   
   
   
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsWidgetInitData defaultInitData;
+  widget::InitData defaultInitData;
   if (!aInitData) aInitData = &defaultInitData;
 
   nsIWidget* baseParent =
-      aInitData->mWindowType == eWindowType_dialog ||
-              aInitData->mWindowType == eWindowType_toplevel ||
-              aInitData->mWindowType == eWindowType_invisible
+      aInitData->mWindowType == WindowType::Dialog ||
+              aInitData->mWindowType == WindowType::TopLevel ||
+              aInitData->mWindowType == WindowType::Invisible
           ? nullptr
           : aParent;
 
@@ -981,7 +981,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     extendedStyle |= WS_EX_COMPOSITED;
   }
 
-  if (mWindowType == eWindowType_popup) {
+  if (mWindowType == WindowType::Popup) {
     if (!aParent) {
       parent = nullptr;
     }
@@ -990,7 +990,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
         ShouldUseOffMainThreadCompositing()) {
       extendedStyle |= WS_EX_COMPOSITED;
     }
-  } else if (mWindowType == eWindowType_invisible) {
+  } else if (mWindowType == WindowType::Invisible) {
     
     style &= ~0x40000000;  
   } else {
@@ -1009,7 +1009,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
   
   static bool sFirstTopLevelWindowCreated = false;
-  if (aInitData->mWindowType == eWindowType_toplevel && !aParent &&
+  if (aInitData->mWindowType == WindowType::TopLevel && !aParent &&
       !sFirstTopLevelWindowCreated) {
     sFirstTopLevelWindowCreated = true;
     mWnd = ConsumePreXULSkeletonUIHandle();
@@ -1159,7 +1159,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
   }
 
-  if (mWindowType != eWindowType_invisible &&
+  if (mWindowType != WindowType::Invisible &&
       MouseScrollHandler::Device::IsFakeScrollableWindowNeeded()) {
     
     
@@ -1226,7 +1226,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   }
 
   static bool a11yPrimed = false;
-  if (!a11yPrimed && mWindowType == eWindowType_toplevel) {
+  if (!a11yPrimed && mWindowType == WindowType::TopLevel) {
     a11yPrimed = true;
     if (Preferences::GetInt("accessibility.force_disabled", 0) == -1) {
       ::PostMessage(mWnd, MOZ_WM_STARTA11Y, 0, 0);
@@ -1337,15 +1337,15 @@ const wchar_t* nsWindow::RegisterWindowClass(const wchar_t* aClassName,
 static LPWSTR const gStockApplicationIcon = MAKEINTRESOURCEW(32512);
 
 
-const wchar_t* nsWindow::ChooseWindowClass(nsWindowType aWindowType,
+const wchar_t* nsWindow::ChooseWindowClass(WindowType aWindowType,
                                            bool aForMenupopupFrame) {
-  MOZ_ASSERT_IF(aForMenupopupFrame, aWindowType == eWindowType_popup);
+  MOZ_ASSERT_IF(aForMenupopupFrame, aWindowType == WindowType::Popup);
   switch (aWindowType) {
-    case eWindowType_invisible:
+    case WindowType::Invisible:
       return RegisterWindowClass(kClassNameHidden, 0, gStockApplicationIcon);
-    case eWindowType_dialog:
+    case WindowType::Dialog:
       return RegisterWindowClass(kClassNameDialog, 0, 0);
-    case eWindowType_popup:
+    case WindowType::Popup:
       if (aForMenupopupFrame) {
         return RegisterWindowClass(kClassNameDropShadow, CS_DROPSHADOW,
                                    gStockApplicationIcon);
@@ -1370,18 +1370,18 @@ DWORD nsWindow::WindowStyle() {
   DWORD style;
 
   switch (mWindowType) {
-    case eWindowType_child:
+    case WindowType::Child:
       style = WS_OVERLAPPED;
       break;
 
-    case eWindowType_dialog:
+    case WindowType::Dialog:
       style = WS_OVERLAPPED | WS_BORDER | WS_DLGFRAME | WS_SYSMENU | DS_3DLOOK |
               DS_MODALFRAME | WS_CLIPCHILDREN;
-      if (mBorderStyle != eBorderStyle_default)
+      if (mBorderStyle != BorderStyle::Default)
         style |= WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
       break;
 
-    case eWindowType_popup:
+    case WindowType::Popup:
       style = WS_POPUP;
       if (!HasGlass()) {
         style |= WS_OVERLAPPED;
@@ -1392,55 +1392,55 @@ DWORD nsWindow::WindowStyle() {
       NS_ERROR("unknown border style");
       [[fallthrough]];
 
-    case eWindowType_toplevel:
-    case eWindowType_invisible:
+    case WindowType::TopLevel:
+    case WindowType::Invisible:
       style = WS_OVERLAPPED | WS_BORDER | WS_DLGFRAME | WS_SYSMENU |
               WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CLIPCHILDREN;
       break;
   }
 
-  if (mBorderStyle != eBorderStyle_default &&
-      mBorderStyle != eBorderStyle_all) {
-    if (mBorderStyle == eBorderStyle_none ||
-        !(mBorderStyle & eBorderStyle_border))
+  if (mBorderStyle != BorderStyle::Default &&
+      mBorderStyle != BorderStyle::All) {
+    if (mBorderStyle == BorderStyle::None ||
+        !(mBorderStyle & BorderStyle::Border))
       style &= ~WS_BORDER;
 
-    if (mBorderStyle == eBorderStyle_none ||
-        !(mBorderStyle & eBorderStyle_title)) {
+    if (mBorderStyle == BorderStyle::None ||
+        !(mBorderStyle & BorderStyle::Title)) {
       style &= ~WS_DLGFRAME;
       style |= WS_POPUP;
       style &= ~WS_CHILD;
     }
 
-    if (mBorderStyle == eBorderStyle_none ||
-        !(mBorderStyle & eBorderStyle_close))
+    if (mBorderStyle == BorderStyle::None ||
+        !(mBorderStyle & BorderStyle::Close))
       style &= ~0;
     
     
 
-    if (mBorderStyle == eBorderStyle_none ||
-        !(mBorderStyle & (eBorderStyle_menu | eBorderStyle_close)))
+    if (mBorderStyle == BorderStyle::None ||
+        !(mBorderStyle & (BorderStyle::Menu | BorderStyle::Close)))
       style &= ~WS_SYSMENU;
     
     
     
     
 
-    if (mBorderStyle == eBorderStyle_none ||
-        !(mBorderStyle & eBorderStyle_resizeh))
+    if (mBorderStyle == BorderStyle::None ||
+        !(mBorderStyle & BorderStyle::ResizeH))
       style &= ~WS_THICKFRAME;
 
-    if (mBorderStyle == eBorderStyle_none ||
-        !(mBorderStyle & eBorderStyle_minimize))
+    if (mBorderStyle == BorderStyle::None ||
+        !(mBorderStyle & BorderStyle::Minimize))
       style &= ~WS_MINIMIZEBOX;
 
-    if (mBorderStyle == eBorderStyle_none ||
-        !(mBorderStyle & eBorderStyle_maximize))
+    if (mBorderStyle == BorderStyle::None ||
+        !(mBorderStyle & BorderStyle::Maximize))
       style &= ~WS_MAXIMIZEBOX;
 
     if (IsPopupWithTitleBar()) {
       style |= WS_CAPTION;
-      if (mBorderStyle & eBorderStyle_close) {
+      if (mBorderStyle & BorderStyle::Close) {
         style |= WS_SYSMENU;
       }
     }
@@ -1460,23 +1460,23 @@ DWORD nsWindow::WindowStyle() {
 
 DWORD nsWindow::WindowExStyle() {
   switch (mWindowType) {
-    case eWindowType_child:
+    case WindowType::Child:
       return 0;
 
-    case eWindowType_dialog:
+    case WindowType::Dialog:
       return WS_EX_WINDOWEDGE | WS_EX_DLGMODALFRAME;
 
-    case eWindowType_popup: {
+    case WindowType::Popup: {
       DWORD extendedStyle = WS_EX_TOOLWINDOW;
-      if (mPopupLevel == ePopupLevelTop) extendedStyle |= WS_EX_TOPMOST;
+      if (mPopupLevel == PopupLevel::Top) extendedStyle |= WS_EX_TOPMOST;
       return extendedStyle;
     }
     default:
       NS_ERROR("unknown border style");
       [[fallthrough]];
 
-    case eWindowType_toplevel:
-    case eWindowType_invisible:
+    case WindowType::TopLevel:
+    case WindowType::Invisible:
       return WS_EX_WINDOWEDGE;
   }
 }
@@ -1579,7 +1579,7 @@ void nsWindow::ReparentNativeWidget(nsIWidget* aNewParent) {
   MOZ_ASSERT(aNewParent, "null widget");
 
   mParent = aNewParent;
-  if (mWindowType == eWindowType_popup) {
+  if (mWindowType == WindowType::Popup) {
     return;
   }
   HWND newParent = (HWND)aNewParent->GetNativeData(NS_NATIVE_WINDOW);
@@ -1701,7 +1701,7 @@ void nsWindow::Show(bool bState) {
     MOZ_ASSERT(ChooseWindowClass(mWindowType, mForMenupopupFrame) ==
                kClassNameDropShadow);
     const bool shouldUseDropShadow = [&] {
-      if (mTransparencyMode == eTransparencyTransparent) {
+      if (mTransparencyMode == TransparencyMode::Transparent) {
         return false;
       }
       if (HasBogusPopupsDropShadowOnMultiMonitor() &&
@@ -1747,7 +1747,7 @@ void nsWindow::Show(bool bState) {
 
   if (mWnd) {
     if (bState) {
-      if (!wasVisible && mWindowType == eWindowType_toplevel) {
+      if (!wasVisible && mWindowType == WindowType::TopLevel) {
         
         
         syncInvalidate = true;
@@ -1783,7 +1783,7 @@ void nsWindow::Show(bool bState) {
         if (wasVisible) flags |= SWP_NOZORDER;
         if (mAlwaysOnTop) flags |= SWP_NOACTIVATE;
 
-        if (mWindowType == eWindowType_popup) {
+        if (mWindowType == WindowType::Popup) {
           
           
           
@@ -1794,7 +1794,7 @@ void nsWindow::Show(bool bState) {
             
             
             
-            if (PopupLevel() != ePopupLevelTop) {
+            if (mPopupLevel != PopupLevel::Top) {
               ::SetWindowPos(mWnd, owner, 0, 0, 0, 0, flags);
               ::SetWindowPos(owner, mWnd, 0, 0, 0, 0,
                              SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
@@ -1805,7 +1805,7 @@ void nsWindow::Show(bool bState) {
             ::SetWindowPos(mWnd, HWND_TOPMOST, 0, 0, 0, 0, flags);
           }
         } else {
-          if (mWindowType == eWindowType_dialog && !CanTakeFocus())
+          if (mWindowType == WindowType::Dialog && !CanTakeFocus())
             flags |= SWP_NOACTIVATE;
 
           ::SetWindowPos(mWnd, HWND_TOP, 0, 0, 0, 0, flags);
@@ -1814,12 +1814,12 @@ void nsWindow::Show(bool bState) {
     } else {
       
       
-      if (wasVisible && mTransparencyMode == eTransparencyTransparent) {
+      if (wasVisible && mTransparencyMode == TransparencyMode::Transparent) {
         if (mCompositorWidgetDelegate) {
           mCompositorWidgetDelegate->ClearTransparentWindow();
         }
       }
-      if (mWindowType != eWindowType_dialog) {
+      if (mWindowType != WindowType::Dialog) {
         ::ShowWindow(mWnd, SW_HIDE);
       } else {
         ::SetWindowPos(mWnd, 0, 0, 0, 0, 0,
@@ -1869,8 +1869,8 @@ bool nsWindow::IsVisible() const { return mIsVisible; }
 
 void nsWindow::ClearThemeRegion() {
   if (!HasGlass() &&
-      (mWindowType == eWindowType_popup && !IsPopupWithTitleBar() &&
-       (mPopupType == ePopupTypeTooltip || mPopupType == ePopupTypePanel))) {
+      (mWindowType == WindowType::Popup && !IsPopupWithTitleBar() &&
+       (mPopupType == PopupType::Tooltip || mPopupType == PopupType::Panel))) {
     SetWindowRgn(mWnd, nullptr, false);
   }
 }
@@ -1935,7 +1935,7 @@ void nsWindow::SetInputRegion(const InputRegion& aInputRegion) {
 void nsWindow::SetSizeConstraints(const SizeConstraints& aConstraints) {
   SizeConstraints c = aConstraints;
 
-  if (mWindowType != eWindowType_popup && mResizable) {
+  if (mWindowType != WindowType::Popup && mResizable) {
     c.mMinSize.width =
         std::max(int32_t(::GetSystemMetrics(SM_CXMINTRACK)), c.mMinSize.width);
     c.mMinSize.height =
@@ -1979,8 +1979,8 @@ const SizeConstraints nsWindow::GetSizeConstraints() {
 
 
 void nsWindow::Move(double aX, double aY) {
-  if (mWindowType == eWindowType_toplevel ||
-      mWindowType == eWindowType_dialog) {
+  if (mWindowType == WindowType::TopLevel ||
+      mWindowType == WindowType::Dialog) {
     SetSizeMode(nsSizeMode_Normal);
   }
 
@@ -1999,7 +1999,7 @@ void nsWindow::Move(double aX, double aY) {
   
   
   
-  if (mWindowType != eWindowType_popup && mBounds.IsEqualXY(x, y)) {
+  if (mWindowType != WindowType::Popup && mBounds.IsEqualXY(x, y)) {
     
     return;
   }
@@ -2536,7 +2536,7 @@ LayoutDeviceIntRect nsWindow::GetBounds() {
 
   
   
-  if (mWindowType == eWindowType_popup) {
+  if (mWindowType == WindowType::Popup) {
     rect.MoveTo(r.left, r.top);
     return rect;
   }
@@ -2788,8 +2788,9 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
 
   const nsSizeMode sizeMode = mFrameState->GetSizeMode();
 
-  bool hasCaption = (mBorderStyle & (eBorderStyle_all | eBorderStyle_title |
-                                     eBorderStyle_menu | eBorderStyle_default));
+  bool hasCaption =
+      bool(mBorderStyle & (BorderStyle::All | BorderStyle::Title |
+                           BorderStyle::Menu | BorderStyle::Default));
 
   float dpi = GetDPI();
 
@@ -2962,7 +2963,7 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
 }
 
 nsresult nsWindow::SetNonClientMargins(LayoutDeviceIntMargin& margins) {
-  if (!mIsTopWidgetWindow || mBorderStyle == eBorderStyle_none)
+  if (!mIsTopWidgetWindow || mBorderStyle == BorderStyle::None)
     return NS_ERROR_INVALID_ARG;
 
   if (mHideChrome) {
@@ -3274,11 +3275,11 @@ void nsWindow::SetCursor(const Cursor& aCursor) {
 
 
 
-nsTransparencyMode nsWindow::GetTransparencyMode() {
+TransparencyMode nsWindow::GetTransparencyMode() {
   return GetTopLevelWindow(true)->GetWindowTranslucencyInner();
 }
 
-void nsWindow::SetTransparencyMode(nsTransparencyMode aMode) {
+void nsWindow::SetTransparencyMode(TransparencyMode aMode) {
   nsWindow* window = GetTopLevelWindow(true);
   MOZ_ASSERT(window);
 
@@ -3286,7 +3287,7 @@ void nsWindow::SetTransparencyMode(nsTransparencyMode aMode) {
     return;
   }
 
-  if (nsWindowType::eWindowType_toplevel == window->mWindowType &&
+  if (WindowType::TopLevel == window->mWindowType &&
       mTransparencyMode != aMode &&
       !gfxWindowsPlatform::GetPlatform()->DwmCompositionEnabled()) {
     NS_WARNING("Cannot set transparency mode on top-level windows.");
@@ -3351,7 +3352,7 @@ void nsWindow::UpdateGlass() {
   
   DWMNCRENDERINGPOLICY policy = DWMNCRP_USEWINDOWSTYLE;
   switch (mTransparencyMode) {
-    case eTransparencyBorderlessGlass:
+    case TransparencyMode::BorderlessGlass:
       
       if (margins.cxLeftWidth >= 0) {
         margins.cxLeftWidth += kGlassMarginAdjustment;
@@ -3868,7 +3869,7 @@ LayoutDeviceIntPoint nsWindow::WidgetToScreenOffset() {
 
 LayoutDeviceIntSize nsWindow::ClientToWindowSize(
     const LayoutDeviceIntSize& aClientSize) {
-  if (mWindowType == eWindowType_popup && !IsPopupWithTitleBar())
+  if (mWindowType == WindowType::Popup && !IsPopupWithTitleBar())
     return aClientSize;
 
   
@@ -4460,7 +4461,7 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
   
   if (MouseEvent_Binding::MOZ_SOURCE_PEN == aInputSource
       
-      && nsWindowType::eWindowType_toplevel == mWindowType
+      && WindowType::TopLevel == mWindowType
       
       && InkCollector::sInkCollector) {
     InkCollector::sInkCollector->SetTarget(mWnd);
@@ -4651,8 +4652,8 @@ HWND nsWindow::GetTopLevelForFocus(HWND aCurWnd) {
     toplevelWnd = aCurWnd;
     nsWindow* win = WinUtils::GetNSWindowPtr(aCurWnd);
     if (win) {
-      if (win->mWindowType == eWindowType_toplevel ||
-          win->mWindowType == eWindowType_dialog) {
+      if (win->mWindowType == WindowType::TopLevel ||
+          win->mWindowType == WindowType::Dialog) {
         break;
       }
     }
@@ -5243,7 +5244,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       
       
       
-      if (mWindowType != eWindowType_invisible) {
+      if (mWindowType != WindowType::Invisible) {
         break;
       }
 
@@ -5297,7 +5298,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
         
         
         
-        if (mWindowType == eWindowType_invisible) {
+        if (mWindowType == WindowType::Invisible) {
           if (!wcscmp(lParamString, L"UserInteractionMode") ||
               !wcscmp(lParamString, L"ConvertibleSlateMode") ||
               !wcscmp(lParamString, L"SystemDockMode")) {
@@ -6282,7 +6283,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       break;
 
     case WM_GESTURENOTIFY: {
-      if (mWindowType != eWindowType_invisible) {
+      if (mWindowType != WindowType::Invisible) {
         
         
         
@@ -6465,7 +6466,7 @@ int32_t nsWindow::ClientMarginHitTestPoint(int32_t aX, int32_t aY) {
   const bool isResizable =
       sizeMode != nsSizeMode_Maximized &&
       (mBorderStyle &
-       (eBorderStyle_all | eBorderStyle_resizeh | eBorderStyle_default));
+       (BorderStyle::All | BorderStyle::ResizeH | BorderStyle::Default));
 
   
   
@@ -7033,14 +7034,14 @@ void nsWindow::OnWindowPosChanging(WINDOWPOS* info) {
     }
   }
   
-  if (mWindowType == eWindowType_invisible) info->flags &= ~SWP_SHOWWINDOW;
+  if (mWindowType == WindowType::Invisible) info->flags &= ~SWP_SHOWWINDOW;
 
   
   
   
   static bool sDWMUnhidesPopups = IsWin10Sep2018UpdateOrLater();
   if (sDWMUnhidesPopups && (info->flags & SWP_SHOWWINDOW) &&
-      mWindowType == eWindowType_popup && mWidgetListener &&
+      mWindowType == WindowType::Popup && mWidgetListener &&
       mWidgetListener->ShouldNotBeVisible()) {
     info->flags &= ~SWP_SHOWWINDOW;
   }
@@ -7500,16 +7501,16 @@ bool nsWindow::OnHotKey(WPARAM wParam, LPARAM lParam) { return true; }
 
 bool nsWindow::AutoErase(HDC dc) { return false; }
 
-bool nsWindow::IsPopup() { return mWindowType == eWindowType_popup; }
+bool nsWindow::IsPopup() { return mWindowType == WindowType::Popup; }
 
 bool nsWindow::ShouldUseOffMainThreadCompositing() {
-  if (mWindowType == eWindowType_popup && mPopupType == ePopupTypeTooltip) {
+  if (mWindowType == WindowType::Popup && mPopupType == PopupType::Tooltip) {
     return false;
   }
 
   
   
-  if (mWindowType == eWindowType_popup && !mIsChildWindow) {
+  if (mWindowType == WindowType::Popup && !mIsChildWindow) {
     MOZ_ASSERT(!mParent);
     return false;
   }
@@ -7563,7 +7564,7 @@ void nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width,
                             int32_t height) {
   
   
-  if (mWindowType == eWindowType_popup) {
+  if (mWindowType == WindowType::Popup) {
     return;
   }
   if (StaticPrefs::layout_css_devPixelsPerPx() > 0.0) {
@@ -7722,7 +7723,7 @@ a11y::LocalAccessible* nsWindow::GetAccessible() {
   if (a11y::PlatformDisabledState() == a11y::ePlatformIsDisabled)
     return nullptr;
 
-  if (mInDtor || mOnDestroyCalled || mWindowType == eWindowType_invisible) {
+  if (mInDtor || mOnDestroyCalled || mWindowType == WindowType::Invisible) {
     return nullptr;
   }
 
@@ -7761,7 +7762,7 @@ a11y::LocalAccessible* nsWindow::GetAccessible() {
 
 
 
-void nsWindow::SetWindowTranslucencyInner(nsTransparencyMode aMode) {
+void nsWindow::SetWindowTranslucencyInner(TransparencyMode aMode) {
   if (aMode == mTransparencyMode) return;
 
   
@@ -7778,11 +7779,12 @@ void nsWindow::SetWindowTranslucencyInner(nsTransparencyMode aMode) {
         "Setting SetWindowTranslucencyInner on a parent this is not us!");
   }
 
-  if (aMode == eTransparencyTransparent) {
+  if (aMode == TransparencyMode::Transparent) {
     
     
     HideWindowChrome(true);
-  } else if (mHideChrome && mTransparencyMode == eTransparencyTransparent) {
+  } else if (mHideChrome &&
+             mTransparencyMode == TransparencyMode::Transparent) {
     
     HideWindowChrome(false);
   }
@@ -7799,7 +7801,7 @@ void nsWindow::SetWindowTranslucencyInner(nsTransparencyMode aMode) {
     }
   }
 
-  if (aMode == eTransparencyTransparent)
+  if (aMode == TransparencyMode::Transparent)
     exStyle |= WS_EX_LAYERED;
   else
     exStyle &= ~WS_EX_LAYERED;
@@ -8468,8 +8470,8 @@ nsWindow* nsWindow::GetTopLevelWindow(bool aStopOnDialogOrPopup) {
   while (true) {
     if (aStopOnDialogOrPopup) {
       switch (curWindow->mWindowType) {
-        case eWindowType_dialog:
-        case eWindowType_popup:
+        case WindowType::Dialog:
+        case WindowType::Popup:
           return curWindow;
         default:
           break;
@@ -8637,7 +8639,7 @@ bool nsWindow::WidgetTypeSupportsAcceleration() {
   
   
   
-  return mTransparencyMode != eTransparencyTransparent &&
+  return mTransparencyMode != TransparencyMode::Transparent &&
          !(IsPopup() && DeviceManagerDx::Get()->IsWARP());
 }
 

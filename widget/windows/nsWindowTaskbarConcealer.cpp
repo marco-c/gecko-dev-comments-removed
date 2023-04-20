@@ -118,7 +118,7 @@ nsWindow::TaskbarConcealer::GetWindowState(HWND aWnd) {
 
   
   
-  if (pWin->mWindowType != eWindowType_toplevel) {
+  if (pWin->mWindowType != WindowType::TopLevel) {
     return Nothing();
   }
 

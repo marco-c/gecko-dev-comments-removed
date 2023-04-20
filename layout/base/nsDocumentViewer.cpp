@@ -2273,11 +2273,11 @@ nsresult nsDocumentViewer::MakeWindow(const nsSize& aSize,
     
     
     
-    nsWidgetInitData initData;
-    nsWidgetInitData* initDataPtr;
+    widget::InitData initData;
+    widget::InitData* initDataPtr;
     if (!mParentWidget) {
       initDataPtr = &initData;
-      initData.mWindowType = eWindowType_invisible;
+      initData.mWindowType = widget::WindowType::Invisible;
     } else {
       initDataPtr = nullptr;
     }
@@ -3250,9 +3250,10 @@ bool nsDocumentViewer::ShouldAttachToTopLevel() {
 
   
   
-  nsWindowType winType = mParentWidget->WindowType();
-  if ((winType == eWindowType_toplevel || winType == eWindowType_dialog ||
-       winType == eWindowType_invisible) &&
+  auto winType = mParentWidget->GetWindowType();
+  if ((winType == widget::WindowType::TopLevel ||
+       winType == widget::WindowType::Dialog ||
+       winType == widget::WindowType::Invisible) &&
       mPresContext->IsChrome()) {
     return true;
   }

@@ -67,7 +67,7 @@ LayoutDeviceIntRegion CompositorWidget::GetTransparentRegion() {
   
   
   auto* widget = RealWidget();
-  if (!widget || widget->GetTransparencyMode() != eTransparencyOpaque ||
+  if (!widget || widget->GetTransparencyMode() != TransparencyMode::Opaque ||
       widget->WidgetPaintsBackground()) {
     return LayoutDeviceIntRect(LayoutDeviceIntPoint(0, 0), GetClientSize());
   }

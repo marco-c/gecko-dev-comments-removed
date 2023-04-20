@@ -12,7 +12,6 @@
 #include "nsRegion.h"
 #include "nsCRT.h"
 #include "nsCOMPtr.h"
-#include "nsWidgetInitData.h"  
 #include "nsIWidgetListener.h"
 #include "Units.h"
 #include "mozilla/Attributes.h"
@@ -25,6 +24,10 @@ class nsIFrame;
 
 namespace mozilla {
 class PresShell;
+namespace widget {
+struct InitData;
+enum class WindowType : uint8_t;
+}  
 }  
 
 
@@ -90,10 +93,7 @@ class PresShell;
 
 
 
-enum nsViewVisibility {
-  nsViewVisibility_kHide = 0,
-  nsViewVisibility_kShow = 1
-};
+enum class ViewVisibility : uint8_t { Hide = 0, Show = 1 };
 
 
 
@@ -228,7 +228,7 @@ class nsView final : public nsIWidgetListener {
 
 
 
-  nsViewVisibility GetVisibility() const { return mVis; }
+  ViewVisibility GetVisibility() const { return mVis; }
 
   
 
@@ -289,7 +289,7 @@ class nsView final : public nsIWidgetListener {
 
 
 
-  nsresult CreateWidget(nsWidgetInitData* aWidgetInitData = nullptr,
+  nsresult CreateWidget(mozilla::widget::InitData* aWidgetInitData = nullptr,
                         bool aEnableDragDrop = true,
                         bool aResetVisibility = true);
 
@@ -299,7 +299,7 @@ class nsView final : public nsIWidgetListener {
 
 
   nsresult CreateWidgetForParent(nsIWidget* aParentWidget,
-                                 nsWidgetInitData* aWidgetInitData = nullptr,
+                                 mozilla::widget::InitData* = nullptr,
                                  bool aEnableDragDrop = true,
                                  bool aResetVisibility = true);
 
@@ -310,7 +310,7 @@ class nsView final : public nsIWidgetListener {
 
 
 
-  nsresult CreateWidgetForPopup(nsWidgetInitData* aWidgetInitData,
+  nsresult CreateWidgetForPopup(mozilla::widget::InitData*,
                                 nsIWidget* aParentWidget = nullptr,
                                 bool aEnableDragDrop = true,
                                 bool aResetVisibility = true);
@@ -395,7 +395,7 @@ class nsView final : public nsIWidgetListener {
 
   bool IsRoot() const;
 
-  LayoutDeviceIntRect CalcWidgetBounds(nsWindowType aType);
+  LayoutDeviceIntRect CalcWidgetBounds(mozilla::widget::WindowType);
 
   
   
@@ -481,8 +481,8 @@ class nsView final : public nsIWidgetListener {
   bool IsPrimaryFramePaintSuppressed();
 
  private:
-  explicit nsView(nsViewManager* aViewManager = nullptr,
-                  nsViewVisibility aVisibility = nsViewVisibility_kShow);
+  explicit nsView(nsViewManager* = nullptr,
+                  ViewVisibility = ViewVisibility::Show);
 
   bool ForcedRepaint() { return mForcedRepaint; }
 
@@ -507,7 +507,7 @@ class nsView final : public nsIWidgetListener {
 
 
 
-  void SetVisibility(nsViewVisibility visibility);
+  void SetVisibility(ViewVisibility visibility);
 
   
 
@@ -550,7 +550,7 @@ class nsView final : public nsIWidgetListener {
   nsIFrame* mFrame;
   mozilla::UniquePtr<nsRegion> mDirtyRegion;
   int32_t mZIndex;
-  nsViewVisibility mVis;
+  ViewVisibility mVis;
   
   nscoord mPosX, mPosY;
   

@@ -12,6 +12,7 @@
 #define nsXULPopupManager_h__
 
 #include "mozilla/Logging.h"
+#include "mozilla/widget/InitData.h"
 #include "nsHashtablesFwd.h"
 #include "nsIContent.h"
 #include "nsIRollupListener.h"
@@ -25,7 +26,6 @@
 #include "nsThreadUtils.h"
 #include "nsPresContext.h"
 #include "nsStyleConsts.h"
-#include "nsWidgetInitData.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/widget/NativeMenu.h"
 #include "Units.h"
@@ -213,9 +213,10 @@ struct PendingPopup {
 
 
 class nsMenuChainItem {
- private:
+  using PopupType = mozilla::widget::PopupType;
+
   nsMenuPopupFrame* mFrame;  
-  nsPopupType mPopupType;    
+  PopupType mPopupType;      
   bool mNoAutoHide;          
   bool mIsContext;           
   bool mOnMenuBar;           
@@ -234,7 +235,7 @@ class nsMenuChainItem {
 
  public:
   nsMenuChainItem(nsMenuPopupFrame* aFrame, bool aNoAutoHide, bool aIsContext,
-                  nsPopupType aPopupType)
+                  PopupType aPopupType)
       : mFrame(aFrame),
         mPopupType(aPopupType),
         mNoAutoHide(aNoAutoHide),
@@ -250,10 +251,10 @@ class nsMenuChainItem {
 
   nsIContent* Content();
   nsMenuPopupFrame* Frame() { return mFrame; }
-  nsPopupType PopupType() { return mPopupType; }
+  PopupType GetPopupType() { return mPopupType; }
   bool IsNoAutoHide() { return mNoAutoHide; }
   void SetNoAutoHide(bool aNoAutoHide) { mNoAutoHide = aNoAutoHide; }
-  bool IsMenu() { return mPopupType == ePopupTypeMenu; }
+  bool IsMenu() { return mPopupType == PopupType::Menu; }
   bool IsContextMenu() { return mIsContext; }
   nsIgnoreKeys IgnoreKeys() { return mIgnoreKeys; }
   void SetIgnoreKeys(nsIgnoreKeys aIgnoreKeys) { mIgnoreKeys = aIgnoreKeys; }
@@ -274,9 +275,11 @@ class nsMenuChainItem {
 
 
 class nsXULPopupHidingEvent : public mozilla::Runnable {
+  using PopupType = mozilla::widget::PopupType;
+
  public:
   nsXULPopupHidingEvent(nsIContent* aPopup, nsIContent* aNextPopup,
-                        nsIContent* aLastPopup, nsPopupType aPopupType,
+                        nsIContent* aLastPopup, PopupType aPopupType,
                         bool aDeselectMenu, bool aIsCancel)
       : mozilla::Runnable("nsXULPopupHidingEvent"),
         mPopup(aPopup),
@@ -296,7 +299,7 @@ class nsXULPopupHidingEvent : public mozilla::Runnable {
   nsCOMPtr<nsIContent> mPopup;
   nsCOMPtr<nsIContent> mNextPopup;
   nsCOMPtr<nsIContent> mLastPopup;
-  nsPopupType mPopupType;
+  PopupType mPopupType;
   bool mDeselectMenu;
   bool mIsRollup;
 };
@@ -363,6 +366,8 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   friend class nsXULPopupPositionedEvent;
   friend class nsXULMenuCommandEvent;
   friend class TransitionEnder;
+
+  using PopupType = mozilla::widget::PopupType;
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
@@ -579,7 +584,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  nsIFrame* GetTopPopup(nsPopupType aType);
+  nsIFrame* GetTopPopup(PopupType aType);
 
   
 
@@ -747,7 +752,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
                                             bool aSelectFirstItem);
   MOZ_CAN_RUN_SCRIPT void HidePopupCallback(
       nsIContent* aPopup, nsMenuPopupFrame* aPopupFrame, nsIContent* aNextPopup,
-      nsIContent* aLastPopup, nsPopupType aPopupType, bool aDeselectMenu);
+      nsIContent* aLastPopup, PopupType aPopupType, bool aDeselectMenu);
 
   
 
@@ -785,7 +790,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void FirePopupHidingEvent(nsIContent* aPopup, nsIContent* aNextPopup,
                             nsIContent* aLastPopup, nsPresContext* aPresContext,
-                            nsPopupType aPopupType, bool aDeselectMenu,
+                            PopupType aPopupType, bool aDeselectMenu,
                             bool aIsCancel);
 
   

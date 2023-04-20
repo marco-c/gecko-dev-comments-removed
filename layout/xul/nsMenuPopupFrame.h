@@ -35,6 +35,9 @@ class KeyboardEvent;
 class XULButtonElement;
 class XULPopupElement;
 }  
+namespace widget {
+enum class PopupLevel : uint8_t;
+}
 }  
 
 enum ConsumeOutsideClicksResult {
@@ -128,6 +131,9 @@ class nsXULPopupShownEvent final : public mozilla::Runnable,
 };
 
 class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
+  using PopupLevel = mozilla::widget::PopupLevel;
+  using PopupType = mozilla::widget::PopupType;
+
  public:
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(nsMenuPopupFrame)
@@ -189,7 +195,7 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
   
   bool IsNoAutoHide() const;
 
-  nsPopupLevel PopupLevel() const { return PopupLevel(IsNoAutoHide()); }
+  PopupLevel GetPopupLevel() const { return GetPopupLevel(IsNoAutoHide()); }
 
   
   
@@ -231,7 +237,7 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
   mozilla::dom::XULButtonElement* GetCurrentMenuItem() const;
   nsIFrame* GetCurrentMenuItemFrame() const;
 
-  nsPopupType PopupType() const { return mPopupType; }
+  PopupType GetPopupType() const { return mPopupType; }
   bool IsContextMenu() const { return mIsContextMenu; }
 
   bool IsOpen() const {
@@ -335,7 +341,7 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
   mozilla::LayoutDeviceIntRect GetConstraintRect(
       const mozilla::LayoutDeviceIntRect& aAnchorRect,
       const mozilla::LayoutDeviceIntRect& aRootScreenRect,
-      nsPopupLevel aPopupLevel);
+      PopupLevel aPopupLevel);
 
   
   
@@ -401,7 +407,7 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
 
  protected:
   
-  nsPopupLevel PopupLevel(bool aIsNoAutoHide) const;
+  PopupLevel GetPopupLevel(bool aIsNoAutoHide) const;
 
   void ConstrainSizeForWayland(nsSize&) const;
 
@@ -566,7 +572,7 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
   
   mozilla::LayoutDeviceIntPoint mLastClientOffset;
 
-  nsPopupType mPopupType;    
+  PopupType mPopupType;      
   nsPopupState mPopupState;  
 
   
