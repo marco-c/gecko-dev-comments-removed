@@ -357,8 +357,22 @@ class MediaPipelineReceive : public MediaPipeline {
   
   virtual void SetPrivatePrincipal(PrincipalHandle aHandle) = 0;
 
+  void Shutdown() override;
+  void OnRtpPacketReceived() override;
+
+  MediaEventSource<void>& UnmuteEvent() { return mUnmuteEvent; }
+
  protected:
   ~MediaPipelineReceive();
+
+  virtual void UpdateListener() = 0;
+
+ private:
+  void UpdateMaybeTrackNeedsUnmute();
+
+  WatchManager<MediaPipelineReceive> mWatchManager;
+  MediaEventProducer<void> mUnmuteEvent;
+  Atomic<bool> mMaybeTrackNeedsUnmute;
 };
 
 
@@ -381,16 +395,13 @@ class MediaPipelineReceiveAudio : public MediaPipelineReceive {
   void OnPrivacyRequested_s() override;
   void SetPrivatePrincipal(PrincipalHandle aHandle) override;
 
-  void OnRtpPacketReceived() override;
-
  private:
-  void UpdateListener();
+  void UpdateListener() override;
 
   
   class PipelineListener;
 
   const RefPtr<PipelineListener> mListener;
-  WatchManager<MediaPipelineReceiveAudio> mWatchManager;
 };
 
 
@@ -413,10 +424,8 @@ class MediaPipelineReceiveVideo : public MediaPipelineReceive {
   void OnPrivacyRequested_s() override;
   void SetPrivatePrincipal(PrincipalHandle aHandle) override;
 
-  void OnRtpPacketReceived() override;
-
  private:
-  void UpdateListener();
+  void UpdateListener() override;
 
   class PipelineRenderer;
   friend class PipelineRenderer;
@@ -426,7 +435,6 @@ class MediaPipelineReceiveVideo : public MediaPipelineReceive {
 
   const RefPtr<PipelineRenderer> mRenderer;
   const RefPtr<PipelineListener> mListener;
-  WatchManager<MediaPipelineReceiveVideo> mWatchManager;
 };
 
 }  
