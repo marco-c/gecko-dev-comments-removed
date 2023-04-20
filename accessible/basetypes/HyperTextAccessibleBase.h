@@ -203,6 +203,22 @@ class HyperTextAccessibleBase {
   virtual bool SelectionBoundsAt(int32_t aSelectionNum, int32_t* aStartOffset,
                                  int32_t* aEndOffset);
 
+  
+
+
+
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual bool SetSelectionBoundsAt(
+      int32_t aSelectionNum, int32_t aStartOffset, int32_t aEndOffset);
+
+  
+
+
+
+  bool AddToSelection(int32_t aStartOffset, int32_t aEndOffset) {
+    return SetSelectionBoundsAt(-1, aStartOffset, aEndOffset);
+  }
+
  protected:
   virtual const Accessible* Acc() const = 0;
   Accessible* Acc() {

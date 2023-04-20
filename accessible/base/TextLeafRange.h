@@ -256,6 +256,14 @@ class TextLeafRange final {
 
   LayoutDeviceIntRect Bounds() const;
 
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT bool SetSelection(int32_t aSelectionNum) const;
+
  private:
   TextLeafPoint mStart;
   TextLeafPoint mEnd;

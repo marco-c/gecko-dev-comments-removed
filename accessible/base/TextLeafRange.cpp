@@ -20,6 +20,7 @@
 #include "mozilla/intl/Segmenter.h"
 #include "mozilla/intl/WordBreaker.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/TextEditor.h"
 #include "nsAccessibilityService.h"
 #include "nsAccUtils.h"
 #include "nsBlockFrame.h"
@@ -57,8 +58,9 @@ static int32_t RenderedToContentOffset(LocalAccessible* aAcc,
                                        uint32_t aRenderedOffset) {
   nsTextFrame* frame = do_QueryFrame(aAcc->GetFrame());
   if (!frame) {
-    MOZ_ASSERT(!aAcc->HasOwnContent(),
-               "No text frame because this is a XUL label[value] text leaf.");
+    MOZ_ASSERT(!aAcc->HasOwnContent() || aAcc->IsHTMLBr(),
+               "No text frame because this is a XUL label[value] text leaf or "
+               "a BR element.");
     return static_cast<int32_t>(aRenderedOffset);
   }
 
@@ -466,6 +468,95 @@ static nsTArray<nsRange*> FindDOMSpellingErrors(LocalAccessible* aAcc,
   domSel->GetRangesForIntervalArray(node, contentStart, node, contentEnd,
                                     aAllowAdjacent, &domRanges);
   return domRanges;
+}
+
+
+
+
+
+static dom::Selection* GetDOMSelection(const nsIContent* aStartContent,
+                                       const nsIContent* aEndContent) {
+  nsIFrame* startFrame = aStartContent->GetPrimaryFrame();
+  const nsFrameSelection* startFrameSel =
+      startFrame ? startFrame->GetConstFrameSelection() : nullptr;
+  nsIFrame* endFrame = aEndContent->GetPrimaryFrame();
+  const nsFrameSelection* endFrameSel =
+      endFrame ? endFrame->GetConstFrameSelection() : nullptr;
+
+  if (startFrameSel != endFrameSel) {
+    
+    
+    return nullptr;
+  }
+
+  return startFrameSel ? startFrameSel->GetSelection(SelectionType::eNormal)
+                       : nullptr;
+}
+
+
+
+
+
+MOZ_CAN_RUN_SCRIPT static std::pair<nsIContent*, int32_t> DOMPointForSelection(
+    const TextLeafPoint& aPoint) {
+  if (!aPoint || !aPoint.mAcc->IsLocal()) {
+    MOZ_ASSERT_UNREACHABLE("Invalid point");
+    return {nullptr, 0};
+  }
+
+  nsIContent* content = aPoint.mAcc->AsLocal()->GetContent();
+  nsIFrame* frame = content ? content->GetPrimaryFrame() : nullptr;
+  MOZ_ASSERT(frame);
+
+  if (frame && frame->IsGeneratedContentFrame()) {
+    
+    
+    auto generatedElement = content->IsGeneratedContentContainerForMarker()
+                                ? content
+                                : content->GetParentElement();
+    auto parent = generatedElement ? generatedElement->GetParent() : nullptr;
+    MOZ_ASSERT(parent);
+    if (parent) {
+      if (generatedElement->IsGeneratedContentContainerForAfter()) {
+        
+        
+        return {parent, parent->GetChildCount()};
+      }
+
+      if (generatedElement->IsGeneratedContentContainerForBefore() ||
+          generatedElement->IsGeneratedContentContainerForMarker()) {
+        
+        
+        return {parent, 0};
+      }
+
+      MOZ_ASSERT_UNREACHABLE("Unknown generated content type!");
+    }
+  }
+
+  if (!aPoint.mAcc->IsTextLeaf() && !aPoint.mAcc->IsHTMLBr() &&
+      !aPoint.mAcc->HasChildren()) {
+    
+    
+    MOZ_ASSERT(aPoint.mOffset == 0);
+
+    if (RefPtr<TextControlElement> textControlElement =
+            TextControlElement::FromNodeOrNull(content)) {
+      
+      if (RefPtr<TextEditor> textEditor = textControlElement->GetTextEditor()) {
+        if (textEditor->IsEmpty()) {
+          MOZ_ASSERT(aPoint.mOffset == 0);
+          return {textEditor->GetRoot(), 0};
+        }
+      }
+    }
+
+    MOZ_ASSERT(aPoint.mAcc->IsDoc() || content->HasFlag(NODE_IS_EDITABLE));
+    return {content, 0};
+  }
+
+  return {content,
+          RenderedToContentOffset(aPoint.mAcc->AsLocal(), aPoint.mOffset)};
 }
 
 
@@ -1528,6 +1619,71 @@ LayoutDeviceIntRect TextLeafRange::Bounds() const {
   }
 
   return result;
+}
+
+bool TextLeafRange::SetSelection(int32_t aSelectionNum) const {
+  if (!mStart || !mEnd || mStart.mAcc->IsLocal() != mEnd.mAcc->IsLocal()) {
+    return false;
+  }
+
+  if (mStart.mAcc->IsRemote()) {
+    DocAccessibleParent* doc = mStart.mAcc->AsRemote()->Document();
+    if (doc != mEnd.mAcc->AsRemote()->Document()) {
+      return false;
+    }
+
+    Unused << doc->SendSetTextSelection(mStart.mAcc->ID(), mStart.mOffset,
+                                        mEnd.mAcc->ID(), mEnd.mOffset,
+                                        aSelectionNum);
+    return true;
+  }
+
+  bool reversed = mEnd < mStart;
+  auto [startContent, startContentOffset] =
+      DOMPointForSelection(!reversed ? mStart : mEnd);
+  auto [endContent, endContentOffset] =
+      DOMPointForSelection(!reversed ? mEnd : mStart);
+
+  if (!startContent || !endContent) {
+    return false;
+  }
+
+  RefPtr<dom::Selection> domSel = GetDOMSelection(startContent, endContent);
+  if (!domSel) {
+    return false;
+  }
+
+  uint32_t rangeCount = domSel->RangeCount();
+  RefPtr<nsRange> domRange = nullptr;
+  if (aSelectionNum == static_cast<int32_t>(rangeCount) || aSelectionNum < 0) {
+    domRange = nsRange::Create(startContent);
+  } else {
+    domRange = domSel->GetRangeAt(AssertedCast<uint32_t>(aSelectionNum));
+  }
+  if (!domRange) {
+    return false;
+  }
+
+  domRange->SetStart(startContent, startContentOffset);
+  domRange->SetEnd(endContent, endContentOffset);
+
+  
+  
+  if (aSelectionNum != static_cast<int32_t>(rangeCount)) {
+    domSel->RemoveRangeAndUnselectFramesAndNotifyListeners(*domRange,
+                                                           IgnoreErrors());
+  }
+
+  IgnoredErrorResult err;
+  domSel->AddRangeAndSelectFramesAndNotifyListeners(*domRange, err);
+  if (!err.Failed()) {
+    
+    
+    domSel->SetDirection(reversed ? eDirPrevious : eDirNext);
+    return true;
+  }
+
+  return false;
 }
 
 TextLeafRange::Iterator TextLeafRange::Iterator::BeginIterator(

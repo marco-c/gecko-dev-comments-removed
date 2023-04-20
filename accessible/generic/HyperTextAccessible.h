@@ -225,21 +225,6 @@ class HyperTextAccessible : public AccessibleWrap,
 
 
   
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool SetSelectionBoundsAt(int32_t aSelectionNum,
-                                                        int32_t aStartOffset,
-                                                        int32_t aEndOffset);
-
-  
-
-
-
-  bool AddToSelection(int32_t aStartOffset, int32_t aEndOffset);
-
-  
-
-
-
-  
   MOZ_CAN_RUN_SCRIPT_BOUNDARY bool RemoveFromSelection(int32_t aSelectionNum);
 
   
