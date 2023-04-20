@@ -34,7 +34,6 @@ UNSUPPORTED_FEATURES = set(
         "String.prototype.isWellFormed",  
         "String.prototype.toWellFormed",  
         "symbols-as-weakmap-keys",  
-        "Array.fromAsync",  
     ]
 )
 FEATURE_CHECK_NEEDED = {
@@ -55,6 +54,7 @@ SHELL_OPTIONS = {
     "ShadowRealm": "--enable-shadow-realms",
     "array-grouping": "--enable-array-grouping",
     "change-array-by-copy": "--enable-change-array-by-copy",
+    "Array.fromAsync": "--enable-array-from-async",
 }
 
 
