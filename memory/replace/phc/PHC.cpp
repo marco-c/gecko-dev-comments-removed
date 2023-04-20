@@ -304,7 +304,7 @@ static const size_t kPageSize =
 
 
 
-static const size_t kNumAllocPages = 64;
+static const size_t kNumAllocPages = kPageSize == 4096 ? 4096 : 1024;
 static const size_t kNumAllPages = kNumAllocPages * 2 + 1;
 
 
@@ -327,7 +327,7 @@ static const Time kMaxTime = ~(Time(0));
 
 
 
-static const Delay kAvgFirstAllocDelay = 512 * 1024;
+static const Delay kAvgFirstAllocDelay = 64 * 1024;
 
 
 
