@@ -8,6 +8,7 @@
 #include "js/JSON.h"
 #include "mozilla/dom/JSOracleChild.h"
 
+#include "mozilla/Encoding.h"
 #include "mozilla/ipc/Endpoint.h"
 
 #include "js/experimental/JSStencil.h"
@@ -18,6 +19,7 @@
 #include "js/RealmOptions.h"
 
 using namespace mozilla::dom;
+using Encoding = mozilla::Encoding;
 
 mozilla::ipc::IPCResult JSValidatorChild::RecvIsOpaqueResponseAllowed(
     IsOpaqueResponseAllowedResolver&& aResolver) {
@@ -116,11 +118,38 @@ JSValidatorChild::ValidatorResult JSValidatorChild::ShouldAllowJS() const {
     return ValidatorResult::Other;
   }
 
+  MOZ_ASSERT(!mSourceBytes.IsEmpty());
+
   
-  
-  if (StringBeginsWith(NS_ConvertUTF8toUTF16(mSourceBytes), u"{"_ns)) {
-    return ValidatorResult::JSON;
+  JS::Rooted<JS::Value> json(cx);
+  if (IsAscii(mSourceBytes)) {
+    
+    if (JS_ParseJSON(cx,
+                     reinterpret_cast<const JS::Latin1Char*>(
+                         mSourceBytes.BeginReading()),
+                     mSourceBytes.Length(), &json)) {
+      return ValidatorResult::JSON;
+    }
+  } else {
+    
+    nsString decoded;
+    nsresult rv = UTF_8_ENCODING->DecodeWithBOMRemoval(
+        Span(reinterpret_cast<const uint8_t*>(mSourceBytes.BeginReading()),
+             mSourceBytes.Length()),
+        decoded);
+    if (NS_FAILED(rv)) {
+      return ValidatorResult::Failure;
+    }
+
+    if (JS_ParseJSON(cx, decoded.BeginReading(), decoded.Length(), &json)) {
+      return ValidatorResult::JSON;
+    }
   }
 
+  
+  
+  if (JS_IsExceptionPending(cx)) {
+    JS_ClearPendingException(cx);
+  }
   return ValidatorResult::JavaScript;
 }
