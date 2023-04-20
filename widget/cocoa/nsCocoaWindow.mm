@@ -343,8 +343,8 @@ nsresult nsCocoaWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
   DesktopIntRect widgetRect = aRect + parentOrigin;
 
-  nsresult rv =
-      CreateNativeWindow(nsCocoaUtils::GeckoRectToCocoaRect(widgetRect), mBorderStyle, false);
+  nsresult rv = CreateNativeWindow(nsCocoaUtils::GeckoRectToCocoaRect(widgetRect), mBorderStyle,
+                                   false, aInitData->mIsPrivateBrowsing);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (mWindowType == WindowType::Popup) {
@@ -407,7 +407,7 @@ static unsigned int WindowMaskForBorderStyle(BorderStyle aBorderStyle) {
 
 
 nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, BorderStyle aBorderStyle,
-                                           bool aRectIsFrameRect) {
+                                           bool aRectIsFrameRect, bool aIsPrivateBrowsing) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   
@@ -504,8 +504,10 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, BorderStyle aBor
 
   
   
-  [mWindow setRestorable:NO];
-  [mWindow disableSnapshotRestoration];
+  [mWindow setRestorable:!aIsPrivateBrowsing];
+  if (aIsPrivateBrowsing) {
+    [mWindow disableSnapshotRestoration];
+  }
 
   
   mDelegate = [[WindowDelegate alloc] initWithGeckoWindow:this];
@@ -1497,7 +1499,8 @@ void nsCocoaWindow::HideWindowChrome(bool aShouldHide) {
   
   NSRect frameRect = [mWindow frame];
   DestroyNativeWindow();
-  nsresult rv = CreateNativeWindow(frameRect, aShouldHide ? BorderStyle::None : mBorderStyle, true);
+  nsresult rv = CreateNativeWindow(frameRect, aShouldHide ? BorderStyle::None : mBorderStyle, true,
+                                   mWindow.restorable);
   NS_ENSURE_SUCCESS_VOID(rv);
 
   
