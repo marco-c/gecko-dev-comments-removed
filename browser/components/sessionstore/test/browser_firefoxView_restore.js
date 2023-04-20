@@ -8,28 +8,32 @@ const CLOSED_URI = "https://www.example.com/";
 add_task(async function test_TODO() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, CLOSED_URI);
 
+  Assert.equal(gBrowser.tabs[0].linkedBrowser.currentURI.filePath, "blank");
+
+  Assert.equal(gBrowser.tabs[1].linkedBrowser.currentURI.spec, CLOSED_URI);
+
+  Assert.ok(gBrowser.selectedTab == tab);
+
   let state = ss.getCurrentState(true);
 
-  is(state.windows[0].selected, 2, "The selected tab is the second tab");
+  
+  Assert.equal(state.windows[0].selected, 2);
 
-  window.FirefoxViewHandler.openTab();
-
-  state = ss.getCurrentState(true);
-
-  is(
-    state.windows[0].selected,
-    3,
-    "The selected tab is Firefox view tab which is the third tab"
+  await EventUtils.synthesizeMouseAtCenter(
+    window.document.getElementById("firefox-view-button"),
+    { type: "mousedown" },
+    window
   );
+  Assert.ok(window.FirefoxViewHandler.tab.selected);
 
-  gBrowser.selectedTab = tab;
+  Assert.equal(gBrowser.tabs[2], window.FirefoxViewHandler.tab);
 
   state = ss.getCurrentState(true);
 
   
   
-  is(state.windows[0].selected, 1, "The selected tab is the first tab");
+  Assert.equal(state.windows[0].selected, 1);
 
   gBrowser.removeTab(window.FirefoxViewHandler.tab);
-  gBrowser.removeTab(gBrowser.selectedTab);
+  gBrowser.removeTab(tab);
 });
