@@ -70,6 +70,7 @@ class ConnectionContext final
   }
 
   cricket::ChannelManager* channel_manager() const;
+  cricket::MediaEngineInterface* media_engine() const;
 
   rtc::Thread* signaling_thread() { return signaling_thread_; }
   const rtc::Thread* signaling_thread() const { return signaling_thread_; }
@@ -121,6 +122,13 @@ class ConnectionContext final
   
   
   std::unique_ptr<cricket::ChannelManager> channel_manager_;
+  const std::unique_ptr<cricket::MediaEngineInterface> media_engine_;
+
+  
+  
+  
+  
+  rtc::UniqueRandomIdGenerator ssrc_generator_;
   std::unique_ptr<rtc::NetworkMonitorFactory> const network_monitor_factory_
       RTC_GUARDED_BY(signaling_thread_);
   std::unique_ptr<rtc::BasicNetworkManager> default_network_manager_

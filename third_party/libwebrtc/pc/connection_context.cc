@@ -99,6 +99,7 @@ ConnectionContext::ConnectionContext(
                                         wraps_current_thread_)),
       trials_(dependencies->trials ? std::move(dependencies->trials)
                                    : std::make_unique<FieldTrialBasedConfig>()),
+      media_engine_(std::move(dependencies->media_engine)),
       network_monitor_factory_(
           std::move(dependencies->network_monitor_factory)),
       call_factory_(std::move(dependencies->call_factory)),
@@ -144,8 +145,9 @@ ConnectionContext::ConnectionContext(
   default_socket_factory_ =
       std::make_unique<rtc::BasicPacketSocketFactory>(socket_factory);
 
+  
   channel_manager_ = cricket::ChannelManager::Create(
-      std::move(dependencies->media_engine),
+      media_engine_.get(), &ssrc_generator_,
       true, worker_thread(), network_thread());
 
   
@@ -161,6 +163,15 @@ ConnectionContext::ConnectionContext(
 ConnectionContext::~ConnectionContext() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
   channel_manager_.reset(nullptr);
+  worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+    RTC_DCHECK_RUN_ON(worker_thread());
+    
+    
+    
+    
+    const_cast<std::unique_ptr<cricket::MediaEngineInterface>&>(media_engine_)
+        .reset();
+  });
 
   
   

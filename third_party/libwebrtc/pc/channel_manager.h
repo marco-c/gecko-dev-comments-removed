@@ -50,7 +50,8 @@ class ChannelManager : public ChannelFactoryInterface {
   
   
   static std::unique_ptr<ChannelManager> Create(
-      std::unique_ptr<MediaEngineInterface> media_engine,
+      MediaEngineInterface* media_engine,
+      rtc::UniqueRandomIdGenerator* ssrc_generator,
       bool enable_rtx,
       rtc::Thread* worker_thread,
       rtc::Thread* network_thread);
@@ -60,8 +61,8 @@ class ChannelManager : public ChannelFactoryInterface {
 
   rtc::Thread* worker_thread() const { return worker_thread_; }
   rtc::Thread* network_thread() const { return network_thread_; }
-  MediaEngineInterface* media_engine() { return media_engine_.get(); }
-  rtc::UniqueRandomIdGenerator& ssrc_generator() { return ssrc_generator_; }
+  MediaEngineInterface* media_engine() { return media_engine_; }
+  rtc::UniqueRandomIdGenerator& ssrc_generator() { return *ssrc_generator_; }
 
   
   
@@ -97,28 +98,18 @@ class ChannelManager : public ChannelFactoryInterface {
       override;
 
  protected:
-  ChannelManager(std::unique_ptr<MediaEngineInterface> media_engine,
+  ChannelManager(MediaEngineInterface* media_engine,
+                 rtc::UniqueRandomIdGenerator* ssrc_generator_,
                  bool enable_rtx,
                  rtc::Thread* worker_thread,
                  rtc::Thread* network_thread);
 
-  
-  void DestroyVoiceChannel(VoiceChannel* voice_channel);
-
-  
-  void DestroyVideoChannel(VideoChannel* video_channel);
-
  private:
-  const std::unique_ptr<MediaEngineInterface> media_engine_;  
+  MediaEngineInterface* media_engine_;  
+  rtc::UniqueRandomIdGenerator* ssrc_generator_;
   rtc::Thread* const signaling_thread_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
-
-  
-  
-  
-  
-  rtc::UniqueRandomIdGenerator ssrc_generator_;
 
   const bool enable_rtx_;
 };
