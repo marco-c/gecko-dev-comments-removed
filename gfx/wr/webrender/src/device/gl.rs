@@ -4305,7 +4305,7 @@ impl UploadPBOPool {
     
     
     
-    fn get_pbo(&mut self, device: &mut Device, min_size: usize) -> Result<UploadPBO, ()> {
+    fn get_pbo(&mut self, device: &mut Device, min_size: usize) -> Result<UploadPBO, String> {
 
         
         
@@ -4335,9 +4335,9 @@ impl UploadPBOPool {
                             gl::MAP_WRITE_BIT | gl::MAP_UNSYNCHRONIZED_BIT,
                         ) as *mut _;
 
-                        let ptr = ptr::NonNull::new(ptr).ok_or_else(|| {
-                            error!("Failed to transiently map PBO of size {} bytes", buffer.pbo.reserved_size);
-                        })?;
+                        let ptr = ptr::NonNull::new(ptr).ok_or_else(
+                            || format!("Failed to transiently map PBO of size {} bytes", buffer.pbo.reserved_size)
+                        )?;
 
                         buffer.mapping = PBOMapping::Transient(ptr);
                     }
@@ -4380,9 +4380,9 @@ impl UploadPBOPool {
                 gl::MAP_WRITE_BIT | gl::MAP_PERSISTENT_BIT | gl::MAP_FLUSH_EXPLICIT_BIT,
             ) as *mut _;
 
-            let ptr = ptr::NonNull::new(ptr).ok_or_else(|| {
-                error!("Failed to persistently map PBO of size {} bytes", pbo.reserved_size);
-            })?;
+            let ptr = ptr::NonNull::new(ptr).ok_or_else(
+                || format!("Failed to transiently map PBO of size {} bytes", pbo.reserved_size)
+            )?;
 
             PBOMapping::Persistent(ptr)
         } else {
@@ -4401,9 +4401,9 @@ impl UploadPBOPool {
                 gl::MAP_WRITE_BIT,
             ) as *mut _;
 
-            let ptr = ptr::NonNull::new(ptr).ok_or_else(|| {
-                error!("Failed to transiently map PBO of size {} bytes", pbo.reserved_size);
-            })?;
+            let ptr = ptr::NonNull::new(ptr).ok_or_else(
+                || format!("Failed to transiently map PBO of size {} bytes", pbo.reserved_size)
+            )?;
 
             PBOMapping::Transient(ptr)
         };
@@ -4542,7 +4542,7 @@ impl<'a> TextureUploader<'a> {
         device: &mut Device,
         format: ImageFormat,
         size: DeviceIntSize,
-    ) -> Result<UploadStagingBuffer<'a>, ()> {
+    ) -> Result<UploadStagingBuffer<'a>, String> {
         assert!(matches!(device.upload_method, UploadMethod::PixelBuffer(_)), "Texture uploads should only be staged when using pixel buffers.");
 
         
