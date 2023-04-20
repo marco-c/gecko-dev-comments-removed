@@ -3871,8 +3871,18 @@ class HTMLEditor final : public EditorBase,
   SetFontSizeOfFontElementChildren(nsIContent& aContent,
                                    FontSize aIncrementOrDecrement);
 
-  nsresult PromoteInlineRange(nsRange& aRange);
-  nsresult PromoteRangeIfStartsOrEndsInNamedAnchor(nsRange& aRange);
+  
+
+
+
+  EditorRawDOMRange GetExtendedRangeWrappingEntirelySelectedElements(
+      const EditorRawDOMRange& aRange) const;
+
+  
+
+
+  EditorRawDOMRange GetExtendedRangeWrappingNamedAnchor(
+      const EditorRawDOMRange& aRange) const;
 
   
   class AutoInlineStyleSetter;
@@ -3912,15 +3922,6 @@ class HTMLEditor final : public EditorBase,
   MOZ_CAN_RUN_SCRIPT Result<bool, nsresult>
   IsRemovableParentStyleWithNewSpanElement(
       nsIContent& aContent, const EditorInlineStyle& aStyle) const;
-
-  
-
-
-
-  bool IsStartOfContainerOrBeforeFirstEditableChild(
-      const EditorRawDOMPoint& aPoint) const;
-  bool IsEndOfContainerOrEqualsOrAfterLastEditableChild(
-      const EditorRawDOMPoint& aPoint) const;
 
   
 
