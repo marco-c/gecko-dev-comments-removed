@@ -16,7 +16,6 @@ const {
 const {
   createContext,
   findSource,
-  getCM,
   hoverOnToken,
   openDebuggerAndLog,
   pauseDebugger,
@@ -214,11 +213,6 @@ async function testPrettyPrint(toolbox) {
   const dbg = await createContext(panel);
 
   
-  const state = dbg.getState();
-  const tabURLs = dbg.selectors.getSourcesForTabs(state).map(t => t.url);
-  await dbg.actions.closeTabs(dbg.selectors.getContext(state), tabURLs);
-
-  
   await dbg.actions.toggleSourceMapsEnabled(false);
 
   const fileUrl = `${IFRAME_BASE_URL}custom/debugger/static/js/main.js`;
@@ -226,21 +220,13 @@ async function testPrettyPrint(toolbox) {
 
   dump("Select minified file\n");
   await selectSource(dbg, fileUrl);
-
-  dump("Wait until CodeMirror highlighting is done\n");
-  const cm = getCM(dbg);
-  
-  
-  
-  
-  await waitUntil(() => cm.doc.highlightFrontier === 2);
-
   const prettyPrintButton = await waitUntil(() => {
     return dbg.win.document.querySelector(".source-footer .prettyPrint.active");
   });
 
-  dump("Click pretty-print button\n");
   const test = runTest("custom.jsdebugger.pretty-print.DAMP");
+
+  dump("Click pretty-print button\n");
   prettyPrintButton.click();
   await waitForSource(dbg, formattedFileUrl);
   await waitForText(dbg, "!function (n) {\n");
