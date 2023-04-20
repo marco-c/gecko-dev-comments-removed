@@ -71,6 +71,10 @@ int64_t SystemTimeNanos() {
 #elif defined(WINUWP)
   ticks = WinUwpSystemTimeNanos();
 #elif defined(WEBRTC_WIN)
+  
+  
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-volatile"
   static volatile LONG last_timegettime = 0;
   static volatile int64_t num_wrap_timegettime = 0;
   volatile LONG* last_timegettime_ptr = &last_timegettime;
@@ -89,6 +93,7 @@ int64_t SystemTimeNanos() {
   
   
   ticks = ticks * kNumNanosecsPerMillisec;
+#pragma clang diagnostic pop
 #else
 #error Unsupported platform.
 #endif
