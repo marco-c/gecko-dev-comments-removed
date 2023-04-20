@@ -3,7 +3,6 @@
 
 
 import lzma
-import shutil
 import struct
 
 
@@ -52,10 +51,3 @@ class Pbzx(object):
                 
                 result += self.read(None if length is None else length - len(result))
             return result
-
-
-def extract_pbzx(pbzx_path):
-    with open(pbzx_path, "rb") as f:
-        pbzx = Pbzx(f)
-        with open(pbzx_path + ".cpio", "wb") as out:
-            shutil.copyfileobj(pbzx, out)
