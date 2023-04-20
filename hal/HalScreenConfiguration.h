@@ -10,6 +10,9 @@
 #include "mozilla/Observer.h"
 #include "mozilla/TypedEnumBits.h"
 
+
+#undef None
+
 namespace mozilla::hal {
 
 
