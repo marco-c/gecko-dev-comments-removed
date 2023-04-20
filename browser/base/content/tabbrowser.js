@@ -7221,6 +7221,10 @@
 } 
 
 var StatusPanel = {
+  
+  
+  _frozen: false,
+
   get panel() {
     delete this.panel;
     this.panel = document.getElementById("statuspanel");
@@ -7240,7 +7244,7 @@ var StatusPanel = {
   },
 
   update() {
-    if (BrowserHandler.kiosk) {
+    if (BrowserHandler.kiosk || this._frozen) {
       return;
     }
     let text;
@@ -7352,6 +7356,9 @@ var StatusPanel = {
   },
 
   _mirror() {
+    if (this._frozen) {
+      return;
+    }
     if (this.panel.hasAttribute("mirror")) {
       this.panel.removeAttribute("mirror");
     } else {
