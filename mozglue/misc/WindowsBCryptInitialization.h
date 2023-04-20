@@ -1,0 +1,31 @@
+
+
+
+
+
+
+#ifndef mozilla_WindowsBCryptInitialization_h
+#define mozilla_WindowsBCryptInitialization_h
+
+#include "mozilla/Types.h"
+
+namespace mozilla {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MFBT_API bool WindowsBCryptInitialization();
+
+}  
+
+#endif  
