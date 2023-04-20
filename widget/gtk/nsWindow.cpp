@@ -573,15 +573,9 @@ void nsWindow::DestroyChildWindows() {
 }
 
 void nsWindow::Destroy() {
-  
-  
-  if (mIsDestroyed) {
-    return;
-  }
-
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
 
-  if (!mCreated) {
+  if (mIsDestroyed || !mCreated) {
     return;
   }
 
