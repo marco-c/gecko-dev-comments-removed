@@ -493,6 +493,13 @@ nsresult nsGenericHTMLElement::BindToTree(BindContext& aContext,
 
 void nsGenericHTMLElement::UnbindFromTree(bool aNullParent) {
   if (IsInComposedDoc()) {
+    
+    
+    
+    
+    if (GetPopoverData()) {
+      HidePopoverWithoutRunningScript();
+    }
     RegUnRegAccessKey(false);
   }
 
@@ -677,7 +684,8 @@ nsresult nsGenericHTMLElement::AfterSetAttr(
       PopoverState oldState = GetPopoverState();
       if (newState != oldState) {
         if (oldState != PopoverState::None) {
-          HidePopoverInternal( false, IgnoreErrors());
+          HidePopoverInternal( true,
+                               false, IgnoreErrors());
         }
         if (newState != PopoverState::None) {
           EnsurePopoverData().SetPopoverState(newState);
@@ -3229,14 +3237,21 @@ void nsGenericHTMLElement::ShowPopover(ErrorResult& aRv) {
   
 }
 
-
-void nsGenericHTMLElement::HidePopover(ErrorResult& aRv) {
-  HidePopoverInternal(true, aRv);
+void nsGenericHTMLElement::HidePopoverWithoutRunningScript() {
+  HidePopoverInternal( false,
+                       false, IgnoreErrors());
 }
 
-void nsGenericHTMLElement::HidePopoverInternal(bool aFireEvents,
+
+void nsGenericHTMLElement::HidePopover(ErrorResult& aRv) {
+  HidePopoverInternal( true,
+                       true, aRv);
+}
+
+void nsGenericHTMLElement::HidePopoverInternal(bool aFocusPreviousElement,
+                                               bool aFireEvents,
                                                ErrorResult& aRv) {
-  OwnerDoc()->HidePopover(*this, true, aFireEvents, aRv);
+  OwnerDoc()->HidePopover(*this, aFocusPreviousElement, aFireEvents, aRv);
 }
 
 
