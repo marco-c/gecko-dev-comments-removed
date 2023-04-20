@@ -6,9 +6,6 @@
 
 
 add_task(async function test_new_submitted_card_is_normalized() {
-  await SpecialPowers.pushPrefEnv({
-    set: [[CREDITCARDS_USED_STATUS_PREF, 0]],
-  });
   const testCard = {
     "cc-name": "Test User",
     "cc-number": "5038146897157463",
@@ -60,9 +57,6 @@ add_task(async function test_new_submitted_card_is_normalized() {
 });
 
 add_task(async function test_updated_card_is_normalized() {
-  await SpecialPowers.pushPrefEnv({
-    set: [[CREDITCARDS_USED_STATUS_PREF, 0]],
-  });
   const testCard = {
     "cc-name": "Test User",
     "cc-number": "5038146897157463",

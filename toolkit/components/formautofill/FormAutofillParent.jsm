@@ -610,26 +610,10 @@ class FormAutofillParent extends JSWindowActorParent {
   async _onCreditCardSubmit(creditCard, browser, timeStartedFillingMS) {
     
     
-    let setUsedStatus = status => {
-      if (FormAutofill.AutofillCreditCardsUsedStatus < status) {
-        Services.prefs.setIntPref(
-          FormAutofill.CREDITCARDS_USED_STATUS_PREF,
-          status
-        );
-      }
-    };
-
-    
-    
-    
-    
     delete creditCard.record["cc-type"];
 
     
     if (creditCard.guid) {
-      
-      setUsedStatus(3);
-
       let originalCCData = await lazy.gFormAutofillStorage.creditCards.get(
         creditCard.guid
       );
@@ -694,18 +678,11 @@ class FormAutofillParent extends JSWindowActorParent {
         }
 
         if (recordUnchanged) {
-          
-          
-          
-          setUsedStatus(1);
           lazy.gFormAutofillStorage.creditCards.notifyUsed(creditCard.guid);
           return false;
         }
       }
     }
-
-    
-    setUsedStatus(2);
 
     return async () => {
       
