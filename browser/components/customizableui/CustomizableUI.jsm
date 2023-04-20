@@ -50,7 +50,6 @@ const kPrefProtonToolbarVersion = "browser.proton.toolbar.version";
 const kPrefHomeButtonUsed = "browser.engagement.home-button.has-used";
 const kPrefLibraryButtonUsed = "browser.engagement.library-button.has-used";
 const kPrefSidebarButtonUsed = "browser.engagement.sidebar-button.has-used";
-const kPrefUnifiedExtensionsEnabled = "extensions.unifiedExtensions.enabled";
 
 const kExpectedWindowURL = AppConstants.BROWSER_CHROME_URL;
 
@@ -194,13 +193,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
       lazy.log.maxLogLevel = newVal ? "all" : "log";
     }
   }
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "gUnifiedExtensionsEnabled",
-  kPrefUnifiedExtensionsEnabled,
-  false
 );
 
 XPCOMUtils.defineLazyGetter(lazy, "log", () => {
@@ -444,6 +436,7 @@ var CustomizableUIInternal = {
         "fullscreen-button",
         "find-button",
         "preferences-button",
+        
         "add-ons-button",
         "sync-button",
       ];
@@ -707,47 +700,34 @@ var CustomizableUIInternal = {
     let addonsPlacements =
       gSavedState.placements[CustomizableUI.AREA_ADDONS] || [];
 
-    if (lazy.gUnifiedExtensionsEnabled) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      let extWidgets = [];
-      let builtInWidgets = [];
-      for (let widgetId of overflowPlacements) {
-        if (CustomizableUI.isWebExtensionWidget(widgetId)) {
-          extWidgets.push(widgetId);
-        } else {
-          builtInWidgets.push(widgetId);
-        }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let extWidgets = [];
+    let builtInWidgets = [];
+    for (let widgetId of overflowPlacements) {
+      if (CustomizableUI.isWebExtensionWidget(widgetId)) {
+        extWidgets.push(widgetId);
+      } else {
+        builtInWidgets.push(widgetId);
       }
-      gSavedState.placements[
-        CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
-      ] = builtInWidgets;
-      gSavedState.placements[CustomizableUI.AREA_ADDONS] = [
-        ...extWidgets,
-        ...addonsPlacements,
-      ];
-    } else {
-      
-      
-      
-      
-      
-      gSavedState.placements[CustomizableUI.AREA_FIXED_OVERFLOW_PANEL] = [
-        ...overflowPlacements,
-        ...addonsPlacements,
-      ];
-      delete gSavedState.placements[CustomizableUI.AREA_ADDONS];
     }
+    gSavedState.placements[
+      CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
+    ] = builtInWidgets;
+    gSavedState.placements[CustomizableUI.AREA_ADDONS] = [
+      ...extWidgets,
+      ...addonsPlacements,
+    ];
   },
 
   
@@ -1293,7 +1273,6 @@ var CustomizableUIInternal = {
     let contextMenuForPlace;
 
     if (
-      lazy.gUnifiedExtensionsEnabled &&
       CustomizableUI.isWebExtensionWidget(aNode.id) &&
       (aAreaNode?.id == CustomizableUI.AREA_ADDONS ||
         aNode.getAttribute("overflowedItem") == "true")
@@ -2920,7 +2899,6 @@ var CustomizableUIInternal = {
         
         
         if (
-          lazy.gUnifiedExtensionsEnabled &&
           !widget.currentArea &&
           CustomizableUI.isWebExtensionWidget(widget.id)
         ) {
@@ -3327,14 +3305,12 @@ var CustomizableUIInternal = {
     
     gPlacements.set(CustomizableUI.AREA_ADDONS, []);
 
-    if (lazy.gUnifiedExtensionsEnabled) {
-      for (let [widgetId] of gPalette) {
-        if (
-          CustomizableUI.isWebExtensionWidget(widgetId) &&
-          !oldAddonPlacements.includes(widgetId)
-        ) {
-          this.addWidgetToArea(widgetId, CustomizableUI.AREA_ADDONS);
-        }
+    for (let [widgetId] of gPalette) {
+      if (
+        CustomizableUI.isWebExtensionWidget(widgetId) &&
+        !oldAddonPlacements.includes(widgetId)
+      ) {
+        this.addWidgetToArea(widgetId, CustomizableUI.AREA_ADDONS);
       }
     }
   },
@@ -3500,10 +3476,7 @@ var CustomizableUIInternal = {
       return false;
     }
 
-    if (
-      lazy.gUnifiedExtensionsEnabled &&
-      CustomizableUI.isWebExtensionWidget(aWidgetId)
-    ) {
+    if (CustomizableUI.isWebExtensionWidget(aWidgetId)) {
       
       if (aArea == CustomizableUI.AREA_NO_AREA) {
         return false;
@@ -5697,11 +5670,7 @@ class OverflowableToolbar {
           this.#target
         );
 
-        if (
-          lazy.gUnifiedExtensionsEnabled &&
-          webExtList &&
-          CustomizableUI.isWebExtensionWidget(child.id)
-        ) {
+        if (webExtList && CustomizableUI.isWebExtensionWidget(child.id)) {
           child.setAttribute("cui-anchorid", webExtButtonID);
           webExtList.insertBefore(child, webExtList.firstElementChild);
         } else {

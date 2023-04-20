@@ -65,7 +65,7 @@ async function waitForProgressNotification(
   aPanelOpen = false,
   aExpectedCount = 1,
   wantDisabled = true,
-  expectedAnchorID = "addons-notification-icon",
+  expectedAnchorID = "unified-extensions-button",
   win = window
 ) {
   let notificationId = PROGRESS_NOTIFICATION;
@@ -220,7 +220,7 @@ function acceptAppMenuNotificationWhenShown(
 async function waitForNotification(
   aId,
   aExpectedCount = 1,
-  expectedAnchorID = "addons-notification-icon",
+  expectedAnchorID = "unified-extensions-button",
   win = window
 ) {
   info("Waiting for " + aId + " notification");
@@ -1187,7 +1187,7 @@ var TESTS = [
 
     let notification = panel.childNodes[0];
     
-    let anchor = document.getElementById("addons-notification-icon");
+    let anchor = document.getElementById("unified-extensions-button");
     anchor.click();
     
     anchor.click();
@@ -1468,10 +1468,7 @@ var TESTS = [
 
   async function test_blockedInstallDomain_with_unified_extensions() {
     await SpecialPowers.pushPrefEnv({
-      set: [
-        ["extensions.unifiedExtensions.enabled", true],
-        ["extensions.install_origins.enabled", true],
-      ],
+      set: [["extensions.install_origins.enabled", true]],
     });
 
     let win = await BrowserTestUtils.openNewBrowserWindow();
@@ -1509,7 +1506,6 @@ var TESTS = [
   async function test_mv3_installOrigins_disallowed_with_unified_extensions() {
     await SpecialPowers.pushPrefEnv({
       set: [
-        ["extensions.unifiedExtensions.enabled", true],
         
         ["xpinstall.signatures.required", false],
         ["extensions.install_origins.enabled", true],
@@ -1544,7 +1540,6 @@ var TESTS = [
   async function test_mv3_installOrigins_allowed_with_unified_extensions() {
     await SpecialPowers.pushPrefEnv({
       set: [
-        ["extensions.unifiedExtensions.enabled", true],
         
         ["xpinstall.signatures.required", false],
         
@@ -1616,10 +1611,6 @@ add_task(async function() {
       ["extensions.InstallTriggerImpl.enabled", true],
       
       ["xpinstall.userActivation.required", false],
-      
-      
-      
-      ["extensions.unifiedExtensions.enabled", false],
     ],
   });
 

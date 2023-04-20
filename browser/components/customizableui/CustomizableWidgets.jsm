@@ -625,16 +625,3 @@ if (PrivateBrowsingUtils.enabled) {
     },
   });
 }
-
-
-if (!Services.prefs.getBoolPref("extensions.unifiedExtensions.enabled")) {
-  CustomizableWidgets.push({
-    id: "add-ons-button",
-    shortcutId: "key_openAddons",
-    l10nId: "toolbar-addons-themes-button",
-    onCommand(aEvent) {
-      let win = aEvent.target.ownerGlobal;
-      win.BrowserOpenAddonsMgr();
-    },
-  });
-}

@@ -13,21 +13,8 @@
 
 
 
-
 const promiseEnableUnifiedExtensions = async (options = {}) => {
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.unifiedExtensions.enabled", true]],
-  });
-
   return BrowserTestUtils.openNewBrowserWindow(options);
-};
-
-const promiseDisableUnifiedExtensions = async () => {
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.unifiedExtensions.enabled", false]],
-  });
-
-  return BrowserTestUtils.openNewBrowserWindow();
 };
 
 const getListView = win => {
