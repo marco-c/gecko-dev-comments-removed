@@ -119,12 +119,11 @@ void RRSendQueue::ThresholdWatcher::SetLowThreshold(size_t low_threshold) {
 }
 
 void RRSendQueue::OutgoingStream::Add(DcSctpMessage message,
-                                      TimeMs expires_at,
-                                      const SendOptions& send_options) {
+                                      MessageAttributes attributes) {
   bool was_active = bytes_to_send_in_next_message() > 0;
   buffered_amount_.Increase(message.payload().size());
   parent_.total_buffered_amount_.Increase(message.payload().size());
-  items_.emplace_back(std::move(message), expires_at, send_options);
+  items_.emplace_back(std::move(message), std::move(attributes));
 
   if (!was_active) {
     scheduler_stream_->MaybeMakeActive();
@@ -146,19 +145,18 @@ absl::optional<SendQueue::DataToSend> RRSendQueue::OutgoingStream::Produce(
     
     if (!item.message_id.has_value()) {
       
-      if (item.expires_at <= now) {
-        buffered_amount_.Decrease(item.remaining_size);
-        parent_.total_buffered_amount_.Decrease(item.remaining_size);
+      if (item.attributes.expires_at <= now) {
+        HandleMessageExpired(item);
         items_.pop_front();
         continue;
       }
 
       MID& mid =
-          item.send_options.unordered ? next_unordered_mid_ : next_ordered_mid_;
+          item.attributes.unordered ? next_unordered_mid_ : next_ordered_mid_;
       item.message_id = mid;
       mid = MID(*mid + 1);
     }
-    if (!item.send_options.unordered && !item.ssn.has_value()) {
+    if (!item.attributes.unordered && !item.ssn.has_value()) {
       item.ssn = next_ssn_;
       next_ssn_ = SSN(*next_ssn_ + 1);
     }
@@ -189,16 +187,11 @@ absl::optional<SendQueue::DataToSend> RRSendQueue::OutgoingStream::Produce(
     SendQueue::DataToSend chunk(Data(stream_id, item.ssn.value_or(SSN(0)),
                                      item.message_id.value(), fsn, ppid,
                                      std::move(payload), is_beginning, is_end,
-                                     item.send_options.unordered));
-    if (item.send_options.max_retransmissions.has_value() &&
-        *item.send_options.max_retransmissions >=
-            std::numeric_limits<MaxRetransmits::UnderlyingType>::min() &&
-        *item.send_options.max_retransmissions <=
-            std::numeric_limits<MaxRetransmits::UnderlyingType>::max()) {
-      chunk.max_retransmissions =
-          MaxRetransmits(*item.send_options.max_retransmissions);
-    }
-    chunk.expires_at = item.expires_at;
+                                     item.attributes.unordered));
+    chunk.max_retransmissions = item.attributes.max_retransmissions;
+    chunk.expires_at = item.attributes.expires_at;
+    chunk.lifecycle_id =
+        is_end ? item.attributes.lifecycle_id : LifecycleId::NotSet();
 
     if (is_end) {
       
@@ -224,15 +217,28 @@ absl::optional<SendQueue::DataToSend> RRSendQueue::OutgoingStream::Produce(
   return absl::nullopt;
 }
 
+void RRSendQueue::OutgoingStream::HandleMessageExpired(
+    OutgoingStream::Item& item) {
+  buffered_amount_.Decrease(item.remaining_size);
+  parent_.total_buffered_amount_.Decrease(item.remaining_size);
+  if (item.attributes.lifecycle_id.IsSet()) {
+    RTC_DLOG(LS_VERBOSE) << "Triggering OnLifecycleMessageExpired("
+                         << item.attributes.lifecycle_id.value() << ", false)";
+
+    parent_.callbacks_.OnLifecycleMessageExpired(item.attributes.lifecycle_id,
+                                                 false);
+    parent_.callbacks_.OnLifecycleEnd(item.attributes.lifecycle_id);
+  }
+}
+
 bool RRSendQueue::OutgoingStream::Discard(IsUnordered unordered,
                                           MID message_id) {
   bool result = false;
   if (!items_.empty()) {
     Item& item = items_.front();
-    if (item.send_options.unordered == unordered &&
-        item.message_id.has_value() && *item.message_id == message_id) {
-      buffered_amount_.Decrease(item.remaining_size);
-      parent_.total_buffered_amount_.Decrease(item.remaining_size);
+    if (item.attributes.unordered == unordered && item.message_id.has_value() &&
+        *item.message_id == message_id) {
+      HandleMessageExpired(item);
       items_.pop_front();
 
       
@@ -277,8 +283,7 @@ void RRSendQueue::OutgoingStream::Pause() {
   
   for (auto it = items_.begin(); it != items_.end();) {
     if (it->remaining_offset == 0) {
-      buffered_amount_.Decrease(it->remaining_size);
-      parent_.total_buffered_amount_.Decrease(it->remaining_size);
+      HandleMessageExpired(*it);
       it = items_.erase(it);
     } else {
       ++it;
@@ -348,15 +353,23 @@ void RRSendQueue::Add(TimeMs now,
   RTC_DCHECK(!message.payload().empty());
   
   
-  TimeMs expires_at = TimeMs::InfiniteFuture();
-  if (send_options.lifetime.has_value()) {
-    
-    
-    
-    expires_at = now + *send_options.lifetime + DurationMs(1);
-  }
+
+  
+  
+  
+  MessageAttributes attributes = {
+      .unordered = send_options.unordered,
+      .max_retransmissions =
+          send_options.max_retransmissions.has_value()
+              ? MaxRetransmits(send_options.max_retransmissions.value())
+              : MaxRetransmits::NoLimit(),
+      .expires_at = send_options.lifetime.has_value()
+                        ? now + *send_options.lifetime + DurationMs(1)
+                        : TimeMs::InfiniteFuture(),
+      .lifecycle_id = send_options.lifecycle_id,
+  };
   GetOrCreateStreamInfo(message.stream_id())
-      .Add(std::move(message), expires_at, send_options);
+      .Add(std::move(message), std::move(attributes));
   RTC_DCHECK(IsConsistent());
 }
 

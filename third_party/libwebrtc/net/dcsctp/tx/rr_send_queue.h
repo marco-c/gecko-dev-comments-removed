@@ -45,6 +45,12 @@ namespace dcsctp {
 
 
 
+
+
+
+
+
+
 class RRSendQueue : public SendQueue {
  public:
   RRSendQueue(absl::string_view log_prefix,
@@ -96,6 +102,13 @@ class RRSendQueue : public SendQueue {
   void RestoreFromState(const DcSctpSocketHandoverState& state);
 
  private:
+  struct MessageAttributes {
+    IsUnordered unordered;
+    MaxRetransmits max_retransmissions;
+    TimeMs expires_at;
+    LifecycleId lifecycle_id;
+  };
+
   
   
   
@@ -139,9 +152,7 @@ class RRSendQueue : public SendQueue {
     StreamID stream_id() const { return scheduler_stream_->stream_id(); }
 
     
-    void Add(DcSctpMessage message,
-             TimeMs expires_at,
-             const SendOptions& send_options);
+    void Add(DcSctpMessage message, MessageAttributes attributes);
 
     
     absl::optional<SendQueue::DataToSend> Produce(TimeMs now,
@@ -208,17 +219,13 @@ class RRSendQueue : public SendQueue {
 
     
     struct Item {
-      explicit Item(DcSctpMessage msg,
-                    TimeMs expires_at,
-                    const SendOptions& send_options)
+      explicit Item(DcSctpMessage msg, MessageAttributes attributes)
           : message(std::move(msg)),
-            expires_at(expires_at),
-            send_options(send_options),
+            attributes(std::move(attributes)),
             remaining_offset(0),
             remaining_size(message.payload().size()) {}
       DcSctpMessage message;
-      TimeMs expires_at;
-      SendOptions send_options;
+      MessageAttributes attributes;
       
       
       size_t remaining_offset;
@@ -232,6 +239,7 @@ class RRSendQueue : public SendQueue {
     };
 
     bool IsConsistent() const;
+    void HandleMessageExpired(OutgoingStream::Item& item);
 
     RRSendQueue& parent_;
 

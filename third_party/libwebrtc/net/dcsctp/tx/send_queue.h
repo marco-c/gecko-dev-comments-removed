@@ -34,6 +34,10 @@ class SendQueue {
     
     MaxRetransmits max_retransmissions = MaxRetransmits::NoLimit();
     TimeMs expires_at = TimeMs::InfiniteFuture();
+
+    
+    
+    LifecycleId lifecycle_id = LifecycleId::NotSet();
   };
 
   virtual ~SendQueue() = default;
