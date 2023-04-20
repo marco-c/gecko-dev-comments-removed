@@ -142,9 +142,7 @@ ParentToParentFetchEventRespondWithResult ToParentToParent(
   
   
   
-  Maybe<ParentToParentInternalResponse> preloadResponse;
-  Maybe<ResponseEndArgs> preloadResponseEndArgs;
-  Tie(preloadResponse, preloadResponseEndArgs) =
+  auto [preloadResponse, preloadResponseEndArgs] =
       actor->mReal->OnStart(WrapNotNull(actor));
   if (copyArgs.preloadResponse().isNothing() && preloadResponse.isSome()) {
     copyArgs.preloadResponse() = Some(ToParentToChild(

@@ -81,7 +81,7 @@ class VectorImage final : public ImageResource, public nsIStreamListener {
 
 
 
-  Tuple<RefPtr<gfx::SourceSurface>, gfx::IntSize> LookupCachedSurface(
+  std::tuple<RefPtr<gfx::SourceSurface>, gfx::IntSize> LookupCachedSurface(
       const gfx::IntSize& aSize, const SVGImageContext& aSVGContext,
       uint32_t aFlags);
 
