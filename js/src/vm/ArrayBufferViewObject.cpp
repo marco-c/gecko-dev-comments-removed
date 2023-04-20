@@ -87,7 +87,7 @@ bool ArrayBufferViewObject::init(JSContext* cx,
   MOZ_ASSERT(byteOffset + length <= ArrayBufferObject::MaxByteLength);
 
   MOZ_ASSERT_IF(is<TypedArrayObject>(),
-                length <= TypedArrayObject::maxByteLength() / bytesPerElement);
+                length <= TypedArrayObject::MaxByteLength / bytesPerElement);
 
   
   
