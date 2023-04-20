@@ -9,7 +9,6 @@ use api::{PrimitiveKeyKind, FillRule, POLYGON_CLIP_VERTEX_MAX};
 use api::units::*;
 use euclid::{SideOffsets2D, Size2D};
 use malloc_size_of::MallocSizeOf;
-use crate::command_buffer::PrimitiveCommand;
 use crate::clip::ClipLeafId;
 use crate::segment::EdgeAaSegmentMask;
 use crate::border::BorderSegmentCacheKey;
@@ -1213,9 +1212,6 @@ pub struct PrimitiveScratchBuffer {
 
     
     pub required_sub_graphs: FastHashSet<PictureIndex>,
-
-    
-    pub prim_cmds: Vec<PrimitiveCommand>,
 }
 
 impl Default for PrimitiveScratchBuffer {
@@ -1230,7 +1226,6 @@ impl Default for PrimitiveScratchBuffer {
             debug_items: Vec::new(),
             messages: Vec::new(),
             required_sub_graphs: FastHashSet::default(),
-            prim_cmds: Vec::new(),
         }
     }
 }
@@ -1244,12 +1239,9 @@ impl PrimitiveScratchBuffer {
         self.segment_instances.recycle(recycler);
         self.gradient_tiles.recycle(recycler);
         recycler.recycle_vec(&mut self.debug_items);
-        recycler.recycle_vec(&mut self.prim_cmds);
     }
 
     pub fn begin_frame(&mut self) {
-        assert!(self.prim_cmds.is_empty());
-
         
         
         
@@ -1448,7 +1440,7 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<PrimitiveInstance>(), 104, "PrimitiveInstance size changed");
+    assert_eq!(mem::size_of::<PrimitiveInstance>(), 88, "PrimitiveInstance size changed");
     assert_eq!(mem::size_of::<PrimitiveInstanceKind>(), 24, "PrimitiveInstanceKind size changed");
     assert_eq!(mem::size_of::<PrimitiveTemplate>(), 56, "PrimitiveTemplate size changed");
     assert_eq!(mem::size_of::<PrimitiveTemplateKind>(), 28, "PrimitiveTemplateKind size changed");
