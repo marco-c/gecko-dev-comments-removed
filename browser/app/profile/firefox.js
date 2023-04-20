@@ -2184,8 +2184,7 @@ pref("signon.management.page.os-auth.enabled", true);
 
 
 
-
-pref("signon.firefoxRelay.feature", "not available");
+pref("signon.firefoxRelay.feature", "available");
 #else
 pref("signon.management.page.os-auth.enabled", false);
 pref("signon.firefoxRelay.feature", "not available");
