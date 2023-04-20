@@ -21,6 +21,7 @@
 #include "api/sequence_checker.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/win/wgc_capture_source.h"
+#include "rtc_base/event.h"
 
 namespace webrtc {
 
@@ -48,6 +49,12 @@ class WgcCaptureSession final {
     return is_capture_started_;
   }
 
+  
+  
+  
+  
+  static constexpr int kNumBuffers = 2;
+
  private:
   
   
@@ -63,6 +70,24 @@ class WgcCaptureSession final {
   HRESULT OnItemClosed(
       ABI::Windows::Graphics::Capture::IGraphicsCaptureItem* sender,
       IInspectable* event_args);
+
+  
+  HRESULT OnFrameArrived(
+      ABI::Windows::Graphics::Capture::IDirect3D11CaptureFramePool* sender,
+      IInspectable* event_args);
+
+  void RemoveEventHandlers();
+
+  
+  
+  rtc::Event wait_for_frame_event_;
+  int frames_in_pool_;
+
+  
+  bool first_frame_ = true;
+
+  std::unique_ptr<EventRegistrationToken> frame_arrived_token_;
+  std::unique_ptr<EventRegistrationToken> item_closed_token_;
 
   
   

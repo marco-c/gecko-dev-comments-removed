@@ -11,6 +11,7 @@
 #ifndef MODULES_DESKTOP_CAPTURE_WIN_WGC_CAPTURER_WIN_H_
 #define MODULES_DESKTOP_CAPTURE_WIN_WGC_CAPTURER_WIN_H_
 
+#include <DispatcherQueue.h>
 #include <d3d11.h>
 #include <wrl/client.h>
 
@@ -109,6 +110,23 @@ class WgcCapturerWin : public DesktopCapturer {
   bool IsSourceBeingCaptured(SourceId id);
 
  private:
+  typedef HRESULT(WINAPI* CreateDispatcherQueueControllerFunc)(
+      DispatcherQueueOptions,
+      ABI::Windows::System::IDispatcherQueueController**);
+
+  
+  
+  
+  
+  
+  bool dispatcher_queue_created_ = false;
+
+  
+  
+  HMODULE core_messaging_library_ = NULL;
+  CreateDispatcherQueueControllerFunc create_dispatcher_queue_controller_func_ =
+      nullptr;
+
   
   
   std::unique_ptr<WgcCaptureSourceFactory> source_factory_;

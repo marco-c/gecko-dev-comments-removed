@@ -10,6 +10,7 @@
 
 #include "modules/desktop_capture/win/wgc_capturer_win.h"
 
+#include <DispatcherQueue.h>
 #include <windows.foundation.metadata.h>
 #include <windows.graphics.capture.h>
 
@@ -32,10 +33,12 @@ namespace webrtc {
 
 namespace {
 
-const wchar_t kWgcSessionType[] =
+constexpr wchar_t kCoreMessagingDll[] = L"CoreMessaging.dll";
+
+constexpr wchar_t kWgcSessionType[] =
     L"Windows.Graphics.Capture.GraphicsCaptureSession";
-const wchar_t kApiContract[] = L"Windows.Foundation.UniversalApiContract";
-const UINT16 kRequiredApiContractVersion = 8;
+constexpr wchar_t kApiContract[] = L"Windows.Foundation.UniversalApiContract";
+constexpr UINT16 kRequiredApiContractVersion = 8;
 
 enum class WgcCapturerResult {
   kSuccess = 0,
@@ -45,7 +48,8 @@ enum class WgcCapturerResult {
   kSessionStartFailure = 4,
   kGetFrameFailure = 5,
   kFrameDropped = 6,
-  kMaxValue = kFrameDropped
+  kCreateDispatcherQueueFailure = 7,
+  kMaxValue = kCreateDispatcherQueueFailure
 };
 
 void RecordWgcCapturerResult(WgcCapturerResult error) {
@@ -57,20 +61,34 @@ void RecordWgcCapturerResult(WgcCapturerResult error) {
 }  
 
 bool IsWgcSupported(CaptureType capture_type) {
-  if (capture_type == CaptureType::kScreen) {
+  if (!HasActiveDisplay()) {
     
-    if (rtc::rtc_win::GetVersion() < rtc::rtc_win::Version::VERSION_WIN10_20H1)
+    
+    
+    if (capture_type == CaptureType::kScreen)
       return false;
 
     
     
-    if (!HasActiveDisplay())
+    
+    if (rtc::rtc_win::GetVersion() < rtc::rtc_win::Version::VERSION_WIN11)
       return false;
+  }
+
+  
+  
+  
+  
+  if (capture_type == CaptureType::kScreen &&
+      rtc::rtc_win::GetVersion() < rtc::rtc_win::Version::VERSION_WIN10_20H1) {
+    return false;
   }
 
   if (!ResolveCoreWinRTDelayload())
     return false;
 
+  
+  
   ComPtr<ABI::Windows::Foundation::Metadata::IApiInformationStatics>
       api_info_statics;
   HRESULT hr = GetActivationFactory<
@@ -104,6 +122,7 @@ bool IsWgcSupported(CaptureType capture_type) {
   if (FAILED(hr) || !is_type_present)
     return false;
 
+  
   ComPtr<WGC::IGraphicsCaptureSessionStatics> capture_session_statics;
   hr = GetActivationFactory<
       WGC::IGraphicsCaptureSessionStatics,
@@ -126,8 +145,21 @@ WgcCapturerWin::WgcCapturerWin(
     bool allow_delayed_capturable_check)
     : source_factory_(std::move(source_factory)),
       source_enumerator_(std::move(source_enumerator)),
-      allow_delayed_capturable_check_(allow_delayed_capturable_check) {}
-WgcCapturerWin::~WgcCapturerWin() = default;
+      allow_delayed_capturable_check_(allow_delayed_capturable_check) {
+  if (!core_messaging_library_)
+    core_messaging_library_ = LoadLibraryW(kCoreMessagingDll);
+
+  if (core_messaging_library_) {
+    create_dispatcher_queue_controller_func_ =
+        reinterpret_cast<CreateDispatcherQueueControllerFunc>(GetProcAddress(
+            core_messaging_library_, "CreateDispatcherQueueController"));
+  }
+}
+
+WgcCapturerWin::~WgcCapturerWin() {
+  if (core_messaging_library_)
+    FreeLibrary(core_messaging_library_);
+}
 
 
 std::unique_ptr<DesktopCapturer> WgcCapturerWin::CreateRawWindowCapturer(
@@ -224,9 +256,32 @@ void WgcCapturerWin::CaptureFrame() {
     return;
   }
 
+  HRESULT hr;
+  if (!dispatcher_queue_created_) {
+    
+    
+    DispatcherQueueOptions options{
+        sizeof(DispatcherQueueOptions),
+        DISPATCHERQUEUE_THREAD_TYPE::DQTYPE_THREAD_CURRENT,
+        DISPATCHERQUEUE_THREAD_APARTMENTTYPE::DQTAT_COM_NONE};
+    ComPtr<ABI::Windows::System::IDispatcherQueueController> queue_controller;
+    hr = create_dispatcher_queue_controller_func_(options, &queue_controller);
+
+    
+    
+    
+    
+    if (FAILED(hr) && hr != RPC_E_WRONG_THREAD) {
+      RecordWgcCapturerResult(WgcCapturerResult::kCreateDispatcherQueueFailure);
+      callback_->OnCaptureResult(DesktopCapturer::Result::ERROR_PERMANENT,
+                                 nullptr);
+    } else {
+      dispatcher_queue_created_ = true;
+    }
+  }
+
   int64_t capture_start_time_nanos = rtc::TimeNanos();
 
-  HRESULT hr;
   WgcCaptureSession* capture_session = nullptr;
   std::map<SourceId, WgcCaptureSession>::iterator session_iter =
       ongoing_captures_.find(capture_source_->GetSourceId());
