@@ -17,6 +17,7 @@
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/CSSAlignUtils.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/dom/Grid.h"
 #include "mozilla/dom/GridBinding.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Maybe.h"
@@ -8918,6 +8919,13 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
     
     
     
+
+    
+    
+    
+    if (mozilla::dom::Grid* grid = TakeProperty(GridFragmentInfo())) {
+      grid->ForgetFrame();
+    }
 
     
     
