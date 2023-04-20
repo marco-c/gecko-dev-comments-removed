@@ -5,6 +5,15 @@
 
 from FrameClass import DYNAMIC_LEAF, LEAF, NOT_LEAF, AbstractFrame, Frame
 
+
+
+
+
+
+
+
+
+
 FRAME_CLASSES = [
     Frame("BRFrame", "Br", LEAF),
     Frame("nsBCTableCellFrame", "TableCell", NOT_LEAF),
@@ -20,7 +29,7 @@ FRAME_CLASSES = [
     Frame("nsContinuingTextFrame", "Text", LEAF),
     Frame("nsDateTimeControlFrame", "DateTimeControl", NOT_LEAF),
     Frame("nsFieldSetFrame", "FieldSet", NOT_LEAF),
-    Frame("nsFileControlFrame", "FileControl", LEAF),
+    Frame("nsFileControlFrame", "Block", LEAF),
     Frame("FileControlLabelFrame", "Block", NOT_LEAF),
     Frame("nsFirstLetterFrame", "Letter", NOT_LEAF),
     Frame("nsFirstLineFrame", "Line", NOT_LEAF),
