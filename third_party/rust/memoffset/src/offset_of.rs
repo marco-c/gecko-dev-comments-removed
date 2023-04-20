@@ -86,6 +86,16 @@ macro_rules! _memoffset_offset_from_unsafe {
 
 
 
+
+
+
+
+
+
+
+
+
+
 #[macro_export(local_inner_macros)]
 macro_rules! offset_of {
     ($parent:path, $field:tt) => {{
@@ -116,6 +126,39 @@ macro_rules! offset_of_tuple {
         _memoffset__let_base_ptr!(base_ptr, $parent);
         // Get field pointer.
         let field_ptr = raw_field_tuple!(base_ptr, $parent, $field);
+        // Compute offset.
+        _memoffset_offset_from_unsafe!(field_ptr, base_ptr)
+    }};
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[macro_export(local_inner_macros)]
+macro_rules! offset_of_union {
+    ($parent:path, $field:tt) => {{
+        // Get a base pointer (non-dangling if rustc supports `MaybeUninit`).
+        _memoffset__let_base_ptr!(base_ptr, $parent);
+        // Get field pointer.
+        let field_ptr = raw_field_union!(base_ptr, $parent, $field);
         // Compute offset.
         _memoffset_offset_from_unsafe!(field_ptr, base_ptr)
     }};
@@ -159,6 +202,21 @@ mod tests {
 
         assert_eq!(offset_of!(Tup, 0), 0);
         assert_eq!(offset_of!(Tup, 1), 4);
+    }
+
+    #[test]
+    fn offset_union() {
+        
+        #[repr(C)]
+        union Foo {
+            a: u32,
+            b: [u8; 2],
+            c: i64,
+        }
+
+        assert_eq!(offset_of_union!(Foo, a), 0);
+        assert_eq!(offset_of_union!(Foo, b), 0);
+        assert_eq!(offset_of_union!(Foo, c), 0);
     }
 
     #[test]
@@ -236,6 +294,22 @@ mod tests {
             &t.2 as *const _ as usize - t_addr,
             raw_field_tuple!(t_ptr, (u32, u8, bool), 2) as usize - t_addr
         );
+    }
+
+    #[test]
+    fn test_raw_field_union() {
+        #[repr(C)]
+        union Foo {
+            a: u32,
+            b: [u8; 2],
+            c: i64,
+        }
+
+        let f = Foo { a: 0 };
+        let f_ptr = &f as *const _;
+        assert_eq!(f_ptr as usize + 0, raw_field_union!(f_ptr, Foo, a) as usize);
+        assert_eq!(f_ptr as usize + 0, raw_field_union!(f_ptr, Foo, b) as usize);
+        assert_eq!(f_ptr as usize + 0, raw_field_union!(f_ptr, Foo, c) as usize);
     }
 
     #[cfg(feature = "unstable_const")]
