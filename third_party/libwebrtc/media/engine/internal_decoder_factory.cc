@@ -92,7 +92,7 @@ std::unique_ptr<VideoDecoder> InternalDecoderFactory::CreateVideoDecoder(
     return H264Decoder::Create();
 
   if (absl::EqualsIgnoreCase(format.name, cricket::kAv1CodecName) &&
-      kDav1dIsIncluded && field_trial::IsEnabled(kDav1dFieldTrial)) {
+      kDav1dIsIncluded && !field_trial::IsDisabled(kDav1dFieldTrial)) {
     return CreateDav1dDecoder();
   }
 
