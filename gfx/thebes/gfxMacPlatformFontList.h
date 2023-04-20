@@ -186,12 +186,7 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
   void InitAliasesForSingleFaceList() MOZ_REQUIRES(mLock);
 
   
-  
-  static void InitSystemFontNames();
-
-  
-  
-  void CreateSystemFontFamily() MOZ_REQUIRES(mLock);
+  void InitSystemFontNames() MOZ_REQUIRES(mLock);
 
   
   gfxFontFamily* FindSystemFontFamily(const nsACString& aFamily)
@@ -256,11 +251,9 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
   
   
   
-  
-  
-  static bool sUseSizeSensitiveSystemFont;
-  static nsCString sSystemTextFontFamilyName;
-  static nsCString sSystemDisplayFontFamilyName;  
+  bool mUseSizeSensitiveSystemFont;
+  nsCString mSystemTextFontFamilyName;
+  nsCString mSystemDisplayFontFamilyName;  
 
   nsTArray<nsCString> mSingleFaceFonts;
   nsTArray<nsCString> mPreloadFonts;
