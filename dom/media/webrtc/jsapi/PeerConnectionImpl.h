@@ -768,6 +768,9 @@ class PeerConnectionImpl final
 
   void BreakCycles();
 
+  bool HasPendingSetParameters() const;
+  void InvalidateLastReturnedParameters();
+
   RefPtr<WebrtcCallWrapper> mCall;
 
   
