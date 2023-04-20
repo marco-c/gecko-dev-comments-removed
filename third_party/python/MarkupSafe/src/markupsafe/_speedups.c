@@ -1,22 +1,4 @@
-
-
-
-
-
-
-
-
-
-
 #include <Python.h>
-
-#if PY_MAJOR_VERSION < 3
-#define ESCAPED_CHARS_TABLE_SIZE 63
-#define UNICHR(x) (PyUnicode_AS_UNICODE((PyUnicodeObject*)PyUnicode_DecodeASCII(x, strlen(x), NULL)));
-
-static Py_ssize_t escaped_chars_delta_len[ESCAPED_CHARS_TABLE_SIZE];
-static Py_UNICODE *escaped_chars_repl[ESCAPED_CHARS_TABLE_SIZE];
-#endif
 
 static PyObject* markup;
 
@@ -24,21 +6,6 @@ static int
 init_constants(void)
 {
 	PyObject *module;
-
-#if PY_MAJOR_VERSION < 3
-	
-	escaped_chars_repl['"'] = UNICHR("&#34;");
-	escaped_chars_repl['\''] = UNICHR("&#39;");
-	escaped_chars_repl['&'] = UNICHR("&amp;");
-	escaped_chars_repl['<'] = UNICHR("&lt;");
-	escaped_chars_repl['>'] = UNICHR("&gt;");
-
-	
-	memset(escaped_chars_delta_len, 0, sizeof (escaped_chars_delta_len));
-	escaped_chars_delta_len['"'] = escaped_chars_delta_len['\''] = \
-		escaped_chars_delta_len['&'] = 4;
-	escaped_chars_delta_len['<'] = escaped_chars_delta_len['>'] = 3;
-#endif
 
 	
 	module = PyImport_ImportModule("markupsafe");
@@ -50,137 +17,74 @@ init_constants(void)
 	return 1;
 }
 
-#if PY_MAJOR_VERSION < 3
-static PyObject*
-escape_unicode(PyUnicodeObject *in)
-{
-	PyUnicodeObject *out;
-	Py_UNICODE *inp = PyUnicode_AS_UNICODE(in);
-	const Py_UNICODE *inp_end = PyUnicode_AS_UNICODE(in) + PyUnicode_GET_SIZE(in);
-	Py_UNICODE *next_escp;
-	Py_UNICODE *outp;
-	Py_ssize_t delta=0, erepl=0, delta_len=0;
-
-	
-	while (*(inp) || inp < inp_end) {
-		if (*inp < ESCAPED_CHARS_TABLE_SIZE) {
-			delta += escaped_chars_delta_len[*inp];
-			erepl += !!escaped_chars_delta_len[*inp];
-		}
-		++inp;
-	}
-
-	
-	if (!erepl) {
-		Py_INCREF(in);
-		return (PyObject*)in;
-	}
-
-	out = (PyUnicodeObject*)PyUnicode_FromUnicode(NULL, PyUnicode_GET_SIZE(in) + delta);
-	if (!out)
-		return NULL;
-
-	outp = PyUnicode_AS_UNICODE(out);
-	inp = PyUnicode_AS_UNICODE(in);
-	while (erepl-- > 0) {
-		
-		next_escp = inp;
-		while (next_escp < inp_end) {
-			if (*next_escp < ESCAPED_CHARS_TABLE_SIZE &&
-			    (delta_len = escaped_chars_delta_len[*next_escp])) {
-				++delta_len;
-				break;
-			}
-			++next_escp;
-		}
-
-		if (next_escp > inp) {
-			
-			Py_UNICODE_COPY(outp, inp, next_escp-inp);
-			outp += next_escp - inp;
-		}
-
-		
-		Py_UNICODE_COPY(outp, escaped_chars_repl[*next_escp], delta_len);
-		outp += delta_len;
-
-		inp = next_escp + 1;
-	}
-	if (inp < inp_end)
-		Py_UNICODE_COPY(outp, inp, PyUnicode_GET_SIZE(in) - (inp - PyUnicode_AS_UNICODE(in)));
-
-	return (PyObject*)out;
-}
-#else 
-
 #define GET_DELTA(inp, inp_end, delta) \
-	while (inp < inp_end) {	 \
-		switch (*inp++) {	   \
-		case '"':			   \
-		case '\'':			  \
-		case '&':			   \
-			delta += 4;		 \
-			break;			  \
-		case '<':			   \
-		case '>':			   \
-			delta += 3;		 \
-			break;			  \
-		}					   \
+	while (inp < inp_end) { \
+		switch (*inp++) { \
+		case '"': \
+		case '\'': \
+		case '&': \
+			delta += 4; \
+			break; \
+		case '<': \
+		case '>': \
+			delta += 3; \
+			break; \
+		} \
 	}
 
 #define DO_ESCAPE(inp, inp_end, outp) \
-	{  \
-		Py_ssize_t ncopy = 0;  \
-		while (inp < inp_end) {  \
-			switch (*inp) {  \
-			case '"':  \
+	{ \
+		Py_ssize_t ncopy = 0; \
+		while (inp < inp_end) { \
+			switch (*inp) { \
+			case '"': \
 				memcpy(outp, inp-ncopy, sizeof(*outp)*ncopy); \
 				outp += ncopy; ncopy = 0; \
-				*outp++ = '&';  \
-				*outp++ = '#';  \
-				*outp++ = '3';  \
-				*outp++ = '4';  \
-				*outp++ = ';';  \
-				break;  \
-			case '\'':  \
+				*outp++ = '&'; \
+				*outp++ = '#'; \
+				*outp++ = '3'; \
+				*outp++ = '4'; \
+				*outp++ = ';'; \
+				break; \
+			case '\'': \
 				memcpy(outp, inp-ncopy, sizeof(*outp)*ncopy); \
 				outp += ncopy; ncopy = 0; \
-				*outp++ = '&';  \
-				*outp++ = '#';  \
-				*outp++ = '3';  \
-				*outp++ = '9';  \
-				*outp++ = ';';  \
-				break;  \
-			case '&':  \
+				*outp++ = '&'; \
+				*outp++ = '#'; \
+				*outp++ = '3'; \
+				*outp++ = '9'; \
+				*outp++ = ';'; \
+				break; \
+			case '&': \
 				memcpy(outp, inp-ncopy, sizeof(*outp)*ncopy); \
 				outp += ncopy; ncopy = 0; \
-				*outp++ = '&';  \
-				*outp++ = 'a';  \
-				*outp++ = 'm';  \
-				*outp++ = 'p';  \
-				*outp++ = ';';  \
-				break;  \
-			case '<':  \
+				*outp++ = '&'; \
+				*outp++ = 'a'; \
+				*outp++ = 'm'; \
+				*outp++ = 'p'; \
+				*outp++ = ';'; \
+				break; \
+			case '<': \
 				memcpy(outp, inp-ncopy, sizeof(*outp)*ncopy); \
 				outp += ncopy; ncopy = 0; \
-				*outp++ = '&';  \
-				*outp++ = 'l';  \
-				*outp++ = 't';  \
-				*outp++ = ';';  \
-				break;  \
-			case '>':  \
+				*outp++ = '&'; \
+				*outp++ = 'l'; \
+				*outp++ = 't'; \
+				*outp++ = ';'; \
+				break; \
+			case '>': \
 				memcpy(outp, inp-ncopy, sizeof(*outp)*ncopy); \
 				outp += ncopy; ncopy = 0; \
-				*outp++ = '&';  \
-				*outp++ = 'g';  \
-				*outp++ = 't';  \
-				*outp++ = ';';  \
-				break;  \
-			default:  \
+				*outp++ = '&'; \
+				*outp++ = 'g'; \
+				*outp++ = 't'; \
+				*outp++ = ';'; \
+				break; \
+			default: \
 				ncopy++; \
-			}  \
-            inp++; \
-		}  \
+			} \
+			inp++; \
+		} \
 		memcpy(outp, inp-ncopy, sizeof(*outp)*ncopy); \
 	}
 
@@ -278,7 +182,6 @@ escape_unicode(PyUnicodeObject *in)
 	assert(0);  
 	return NULL;
 }
-#endif 
 
 static PyObject*
 escape(PyObject *self, PyObject *text)
@@ -287,11 +190,7 @@ escape(PyObject *self, PyObject *text)
 	PyObject *s = NULL, *rv = NULL, *html;
 
 	if (id_html == NULL) {
-#if PY_MAJOR_VERSION < 3
-		id_html = PyString_InternFromString("__html__");
-#else
 		id_html = PyUnicode_InternFromString("__html__");
-#endif
 		if (id_html == NULL) {
 			return NULL;
 		}
@@ -299,11 +198,8 @@ escape(PyObject *self, PyObject *text)
 
 	
 	if (PyLong_CheckExact(text) ||
-#if PY_MAJOR_VERSION < 3
-	    PyInt_CheckExact(text) ||
-#endif
-	    PyFloat_CheckExact(text) || PyBool_Check(text) ||
-	    text == Py_None)
+		PyFloat_CheckExact(text) || PyBool_Check(text) ||
+		text == Py_None)
 		return PyObject_CallFunctionObjArgs(markup, text, NULL);
 
 	
@@ -323,11 +219,7 @@ escape(PyObject *self, PyObject *text)
 	
 	PyErr_Clear();
 	if (!PyUnicode_Check(text)) {
-#if PY_MAJOR_VERSION < 3
-		PyObject *unicode = PyObject_Unicode(text);
-#else
 		PyObject *unicode = PyObject_Str(text);
-#endif
 		if (!unicode)
 			return NULL;
 		s = escape_unicode((PyUnicodeObject*)unicode);
@@ -353,54 +245,80 @@ escape_silent(PyObject *self, PyObject *text)
 
 
 static PyObject*
-soft_unicode(PyObject *self, PyObject *s)
+soft_str(PyObject *self, PyObject *s)
 {
 	if (!PyUnicode_Check(s))
-#if PY_MAJOR_VERSION < 3
-		return PyObject_Unicode(s);
-#else
 		return PyObject_Str(s);
-#endif
 	Py_INCREF(s);
 	return s;
 }
 
 
-static PyMethodDef module_methods[] = {
-	{"escape", (PyCFunction)escape, METH_O,
-	 "escape(s) -> markup\n\n"
-	 "Convert the characters &, <, >, ', and \" in string s to HTML-safe\n"
-	 "sequences.  Use this if you need to display text that might contain\n"
-	 "such characters in HTML.  Marks return value as markup string."},
-	{"escape_silent", (PyCFunction)escape_silent, METH_O,
-	 "escape_silent(s) -> markup\n\n"
-	 "Like escape but converts None to an empty string."},
-	{"soft_unicode", (PyCFunction)soft_unicode, METH_O,
-	 "soft_unicode(object) -> string\n\n"
-         "Make a string unicode if it isn't already.  That way a markup\n"
-         "string is not converted back to unicode."},
-	{NULL, NULL, 0, NULL}		
-};
-
-
-#if PY_MAJOR_VERSION < 3
-
-#ifndef PyMODINIT_FUNC	
-#define PyMODINIT_FUNC void
-#endif
-PyMODINIT_FUNC
-init_speedups(void)
+static PyObject*
+soft_unicode(PyObject *self, PyObject *s)
 {
-	if (!init_constants())
-		return;
-
-	Py_InitModule3("markupsafe._speedups", module_methods, "");
+	PyErr_WarnEx(
+		PyExc_DeprecationWarning,
+		"'soft_unicode' has been renamed to 'soft_str'. The old name"
+		" will be removed in MarkupSafe 2.1.",
+		2
+	);
+	return soft_str(self, s);
 }
 
-#else 
+
+static PyMethodDef module_methods[] = {
+	{
+		"escape",
+		(PyCFunction)escape,
+		METH_O,
+		"Replace the characters ``&``, ``<``, ``>``, ``'``, and ``\"`` in"
+		" the string with HTML-safe sequences. Use this if you need to display"
+		" text that might contain such characters in HTML.\n\n"
+		"If the object has an ``__html__`` method, it is called and the"
+		" return value is assumed to already be safe for HTML.\n\n"
+		":param s: An object to be converted to a string and escaped.\n"
+		":return: A :class:`Markup` string with the escaped text.\n"
+	},
+	{
+		"escape_silent",
+		(PyCFunction)escape_silent,
+		METH_O,
+		"Like :func:`escape` but treats ``None`` as the empty string."
+		" Useful with optional values, as otherwise you get the string"
+		" ``'None'`` when the value is ``None``.\n\n"
+		">>> escape(None)\n"
+		"Markup('None')\n"
+		">>> escape_silent(None)\n"
+		"Markup('')\n"
+	},
+	{
+		"soft_str",
+		(PyCFunction)soft_str,
+		METH_O,
+		"Convert an object to a string if it isn't already. This preserves"
+		" a :class:`Markup` string rather than converting it back to a basic"
+		" string, so it will still be marked as safe and won't be escaped"
+		" again.\n\n"
+		">>> value = escape(\"<User 1>\")\n"
+		">>> value\n"
+		"Markup('&lt;User 1&gt;')\n"
+		">>> escape(str(value))\n"
+		"Markup('&amp;lt;User 1&amp;gt;')\n"
+		">>> escape(soft_str(value))\n"
+		"Markup('&lt;User 1&gt;')\n"
+	},
+	{
+		"soft_unicode",
+		(PyCFunction)soft_unicode,
+		METH_O,
+		""
+	},
+	{NULL, NULL, 0, NULL}  
+};
 
 static struct PyModuleDef module_definition = {
-        PyModuleDef_HEAD_INIT,
+	PyModuleDef_HEAD_INIT,
 	"markupsafe._speedups",
 	NULL,
 	-1,
@@ -419,5 +337,3 @@ PyInit__speedups(void)
 
 	return PyModule_Create(&module_definition);
 }
-
-#endif
