@@ -41,7 +41,7 @@ add_task(async function getOrCreate() {
   
   let nonNormalizedDir = await makeDatabaseDir("non-normalized");
   nonNormalizedDir = [nonNormalizedDir, "..", ".", "non-normalized"].join(
-    Services.appinfo.os === "WINNT" ? "\\" : "/"
+    Services.appinfo.OS === "WINNT" ? "\\" : "/"
   );
   Assert.ok(await KeyValueService.getOrCreate(nonNormalizedDir, "db"));
 });
