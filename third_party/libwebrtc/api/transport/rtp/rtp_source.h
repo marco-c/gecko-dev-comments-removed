@@ -33,19 +33,6 @@ class RtpSource {
 
   RtpSource() = delete;
 
-  
-  
-  RtpSource(int64_t timestamp_ms,
-            uint32_t source_id,
-            RtpSourceType source_type,
-            absl::optional<uint8_t> audio_level,
-            uint32_t rtp_timestamp)
-      : RtpSource(timestamp_ms,
-                  source_id,
-                  source_type,
-                  rtp_timestamp,
-                  {audio_level, absl::nullopt}) {}
-
   RtpSource(int64_t timestamp_ms,
             uint32_t source_id,
             RtpSourceType source_type,
