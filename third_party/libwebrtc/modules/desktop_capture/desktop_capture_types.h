@@ -22,7 +22,7 @@ typedef int pid_t;
 
 namespace webrtc {
 
-enum class CaptureType { kWindow, kScreen };
+enum class CaptureType { kWindow, kScreen, kAnyScreenContent };
 
 
 

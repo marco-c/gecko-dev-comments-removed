@@ -272,6 +272,17 @@ void DesktopDeviceInfoImpl::CleanUpWindowList() {
 void DesktopDeviceInfoImpl::InitializeWindowList() {
   DesktopCaptureOptions options;
 
+
+
+
+#if defined(WEBRTC_USE_PIPEWIRE)
+  if (mozilla::StaticPrefs::media_webrtc_capture_allow_pipewire() &&
+      webrtc::DesktopCapturer::IsRunningUnderWayland()) {
+    return;
+  }
+#endif
+
+
 #ifdef MOZ_X11
   MOZ_ALWAYS_SUCCEEDS(mozilla::SyncRunnable::DispatchToThread(
       mozilla::GetMainThreadSerialEventTarget(),
@@ -388,8 +399,40 @@ void DesktopDeviceInfoImpl::CleanUpScreenList() {
   mDesktopDisplayList.clear();
 }
 
+
+
+
+
+
+#define PIPEWIRE_ID 0xaffffff
+#define PIPEWIRE_NAME "####_PIPEWIRE_PORTAL_####"
+
 void DesktopDeviceInfoImpl::InitializeScreenList() {
   DesktopCaptureOptions options;
+
+
+
+
+#if defined(WEBRTC_USE_PIPEWIRE)
+  if (mozilla::StaticPrefs::media_webrtc_capture_allow_pipewire() &&
+      webrtc::DesktopCapturer::IsRunningUnderWayland()) {
+    DesktopDisplayDevice* screenDevice = new DesktopDisplayDevice;
+    if (!screenDevice) {
+      return;
+    }
+
+    screenDevice->setScreenId(PIPEWIRE_ID);
+    screenDevice->setDeviceName(PIPEWIRE_NAME);
+
+    char idStr[BUFSIZ];
+    SprintfLiteral(idStr, "%ld",
+                   static_cast<long>(screenDevice->getScreenId()));
+    screenDevice->setUniqueIdName(idStr);
+    mDesktopDisplayList[screenDevice->getScreenId()] = screenDevice;
+    return;
+  }
+#endif
+
 
 #ifdef MOZ_X11
   MOZ_ALWAYS_SUCCEEDS(mozilla::SyncRunnable::DispatchToThread(

@@ -144,15 +144,6 @@ void BaseCapturerPipeWire::CaptureFrame() {
   callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
 }
 
-
-
-
-
-
-
-#define PIPEWIRE_ID   0xaffffff
-#define PIPEWIRE_NAME "####_PIPEWIRE_PORTAL_####"
-
 bool BaseCapturerPipeWire::GetSourceList(SourceList* sources) {
   RTC_DCHECK(sources->size() == 0);
   
@@ -169,7 +160,7 @@ bool BaseCapturerPipeWire::GetSourceList(SourceList* sources) {
 bool BaseCapturerPipeWire::SelectSource(SourceId id) {
   
   selected_source_id_ = id;
-  return id == PIPEWIRE_ID;
+  return true;
 }
 
 DelegatedSourceListController*

@@ -862,8 +862,30 @@ function prompt(aActor, aBrowser, aRequest) {
           let device = devices[i];
           let type = device.mediaSource;
           let name;
-          
-          if (type == "screen") {
+          if (device.canRequestOsLevelPrompt) {
+            
+            
+            
+            
+            
+
+            isPipeWire = true;
+            let item = addDeviceToList(
+              menupopup,
+              localization.formatValueSync("webrtc-share-pipe-wire-portal"),
+              i,
+              type
+            );
+            item.deviceId = device.rawId;
+            item.mediaSource = type;
+
+            
+            
+            menupopup.parentNode.selectedItem = item;
+            menupopup.parentNode.disabled = true;
+            break;
+          } else if (type == "screen") {
+            
             if (device.name == "Primary Monitor") {
               name = localization.formatValueSync("webrtc-share-entire-screen");
             } else {
@@ -874,28 +896,7 @@ function prompt(aActor, aBrowser, aRequest) {
             }
           } else {
             name = device.name;
-            
-            
-            
-            
-            
-            if (device.canRequestOsLevelPrompt) {
-              isPipeWire = true;
-              let item = addDeviceToList(
-                menupopup,
-                localization.formatValueSync("webrtc-share-pipe-wire-portal"),
-                i,
-                type
-              );
-              item.deviceId = device.rawId;
-              item.mediaSource = type;
 
-              
-              
-              menupopup.parentNode.selectedItem = item;
-              menupopup.parentNode.disabled = true;
-              break;
-            }
             if (type == "application") {
               
               
