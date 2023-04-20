@@ -151,8 +151,6 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     rtp_rtcp_module_->SetStartTimestamp(111111);
 
     
-    
-    
     rtp_rtcp_module_->SetRemoteSSRC(kTestSsrc);
 
     rtp_rtcp_module_->SetRtxSendPayloadType(kRtxPayloadType, kPayloadType);

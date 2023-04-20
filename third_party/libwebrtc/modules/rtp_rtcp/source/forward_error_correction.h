@@ -75,9 +75,6 @@ class ForwardErrorCorrection {
   };
 
   
-  
-  
-  
   class ReceivedPacket : public SortablePacket {
    public:
     ReceivedPacket();

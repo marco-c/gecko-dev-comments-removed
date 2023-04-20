@@ -156,7 +156,6 @@ bool HasAnyRtxCodec(const std::vector<cricket::VideoCodec>& codecs) {
   return false;
 }
 
-
 const int* FindKeyByValue(const std::map<int, int>& m, int v) {
   for (const auto& kv : m) {
     if (kv.second == v)
