@@ -144,7 +144,7 @@ class InputVolumeController final {
   const int num_capture_channels_;
 
   
-  const absl::optional<int> min_mic_level_override_;
+  const int min_input_volume_;
 
   
   
@@ -220,7 +220,7 @@ class MonoInputVolumeController {
   int clipped_level_min() const { return clipped_level_min_; }
 
   
-  int min_mic_level() const { return min_mic_level_; }
+  int min_input_volume() const { return min_input_volume_; }
 
  private:
   
@@ -238,7 +238,7 @@ class MonoInputVolumeController {
   
   void UpdateInputVolume(int rms_error_dbfs);
 
-  const int min_mic_level_;
+  const int min_input_volume_;
 
   int level_ = 0;
   int max_level_;
