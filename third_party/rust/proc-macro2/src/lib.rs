@@ -86,7 +86,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.49")]
+#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.51")]
 #![cfg_attr(
     any(proc_macro_span, super_unstable),
     feature(proc_macro_span, proc_macro_span_shrink)
@@ -139,6 +139,9 @@ use crate::fallback as imp;
 #[cfg(wrap_proc_macro)]
 mod imp;
 
+#[cfg(span_locations)]
+mod location;
+
 use crate::marker::Marker;
 use core::cmp::Ordering;
 use core::fmt::{self, Debug, Display};
@@ -149,6 +152,9 @@ use core::str::FromStr;
 use std::error::Error;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::PathBuf;
+
+#[cfg(span_locations)]
+pub use crate::location::LineColumn;
 
 
 
@@ -225,14 +231,14 @@ impl FromStr for TokenStream {
 
 #[cfg(use_proc_macro)]
 impl From<proc_macro::TokenStream> for TokenStream {
-    fn from(inner: proc_macro::TokenStream) -> TokenStream {
+    fn from(inner: proc_macro::TokenStream) -> Self {
         TokenStream::_new(inner.into())
     }
 }
 
 #[cfg(use_proc_macro)]
 impl From<TokenStream> for proc_macro::TokenStream {
-    fn from(inner: TokenStream) -> proc_macro::TokenStream {
+    fn from(inner: TokenStream) -> Self {
         inner.inner.into()
     }
 }
@@ -357,37 +363,6 @@ impl Debug for SourceFile {
 }
 
 
-
-
-#[cfg(span_locations)]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct LineColumn {
-    
-    
-    pub line: usize,
-    
-    
-    pub column: usize,
-}
-
-#[cfg(span_locations)]
-impl Ord for LineColumn {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.line
-            .cmp(&other.line)
-            .then(self.column.cmp(&other.column))
-    }
-}
-
-#[cfg(span_locations)]
-impl PartialOrd for LineColumn {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-
 #[derive(Copy, Clone)]
 pub struct Span {
     inner: imp::Span,
@@ -492,8 +467,7 @@ impl Span {
     #[cfg(span_locations)]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
     pub fn start(&self) -> LineColumn {
-        let imp::LineColumn { line, column } = self.inner.start();
-        LineColumn { line, column }
+        self.inner.start()
     }
 
     
@@ -508,8 +482,7 @@ impl Span {
     #[cfg(span_locations)]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
     pub fn end(&self) -> LineColumn {
-        let imp::LineColumn { line, column } = self.inner.end();
-        LineColumn { line, column }
+        self.inner.end()
     }
 
     
@@ -601,25 +574,25 @@ impl TokenTree {
 }
 
 impl From<Group> for TokenTree {
-    fn from(g: Group) -> TokenTree {
+    fn from(g: Group) -> Self {
         TokenTree::Group(g)
     }
 }
 
 impl From<Ident> for TokenTree {
-    fn from(g: Ident) -> TokenTree {
+    fn from(g: Ident) -> Self {
         TokenTree::Ident(g)
     }
 }
 
 impl From<Punct> for TokenTree {
-    fn from(g: Punct) -> TokenTree {
+    fn from(g: Punct) -> Self {
         TokenTree::Punct(g)
     }
 }
 
 impl From<Literal> for TokenTree {
-    fn from(g: Literal) -> TokenTree {
+    fn from(g: Literal) -> Self {
         TokenTree::Literal(g)
     }
 }
