@@ -177,6 +177,20 @@ class SymbolPolicy final : public TypePolicy {
 
 
 template <unsigned Op>
+class BooleanPolicy final : public TypePolicy {
+ public:
+  constexpr BooleanPolicy() = default;
+  EMPTY_DATA_;
+  [[nodiscard]] static bool staticAdjustInputs(TempAllocator& alloc,
+                                               MInstruction* def);
+  [[nodiscard]] bool adjustInputs(TempAllocator& alloc,
+                                  MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
+};
+
+
+template <unsigned Op>
 class StringPolicy final : public TypePolicy {
  public:
   constexpr StringPolicy() = default;

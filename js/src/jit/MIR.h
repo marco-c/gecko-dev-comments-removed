@@ -3806,49 +3806,6 @@ class MToNumberInt32 : public MUnaryInstruction, public ToInt32Policy::Data {
 
 
 
-
-
-
-
-
-
-
-class MToIntegerInt32 : public MUnaryInstruction, public ToInt32Policy::Data {
-  explicit MToIntegerInt32(MDefinition* def)
-      : MUnaryInstruction(classOpcode, def) {
-    setResultType(MIRType::Int32);
-    setMovable();
-
-    
-    if (!def->definitelyType({MIRType::Undefined, MIRType::Null,
-                              MIRType::Boolean, MIRType::Int32, MIRType::Double,
-                              MIRType::Float32, MIRType::String})) {
-      setGuard();
-    }
-  }
-
- public:
-  INSTRUCTION_HEADER(ToIntegerInt32)
-  TRIVIAL_NEW_WRAPPERS
-
-  MDefinition* foldsTo(TempAllocator& alloc) override;
-
-  bool congruentTo(const MDefinition* ins) const override {
-    return congruentIfOperandsEqual(ins);
-  }
-
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
-  void computeRange(TempAllocator& alloc) override;
-
-#ifdef DEBUG
-  bool isConsistentFloat32Use(MUse* use) const override { return true; }
-#endif
-
-  ALLOW_CLONE(MToIntegerInt32)
-};
-
-
-
 class MTruncateToInt32 : public MUnaryInstruction, public ToInt32Policy::Data {
   wasm::BytecodeOffset bytecodeOffset_;
 
