@@ -141,6 +141,7 @@ var gSearchPane = {
     let updateCheckboxEnabled = () => {
       checkbox.disabled = searchBarPref.value;
     };
+    searchBarPref.on("change", updateCheckboxEnabled);
 
     
     onNimbus();

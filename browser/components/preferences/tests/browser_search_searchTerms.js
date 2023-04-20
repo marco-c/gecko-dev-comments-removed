@@ -134,7 +134,8 @@ add_task(async function showSearchTerms_checkbox() {
 
 
 
-add_task(async function showSearchTerms_and_searchBar_preference() {
+
+add_task(async function showSearchTerms_and_searchBar_preference_load() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -145,24 +146,47 @@ add_task(async function showSearchTerms_and_searchBar_preference() {
 
   await openPreferencesViaOpenPreferencesAPI("search", { leaveOpen: true });
   let doc = gBrowser.selectedBrowser.contentDocument;
-  doc.getElementById(GROUP_ID).scrollIntoView();
 
-  
-  await BrowserTestUtils.synthesizeMouseAtCenter(
-    "#" + CHECKBOX_ID,
-    {},
-    gBrowser.selectedBrowser
-  );
-  Assert.equal(
-    Services.prefs.getBoolPref(PREF_SEARCHTERMS),
-    true,
-    "Preference should not be clickable when disabled."
+  let checkbox = doc.getElementById(CHECKBOX_ID);
+  Assert.ok(
+    checkbox.disabled,
+    "showSearchTerms checkbox should be disabled when search bar is enabled."
   );
 
   
-  Services.prefs.clearUserPref(PREF_SEARCHTERMS);
-  Services.prefs.clearUserPref("browser.search.widget.inNavBar");
   gBrowser.removeCurrentTab();
   await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+
+
+add_task(async function showSearchTerms_and_searchBar_preference_change() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [[PREF_FEATUREGATE, true]],
+  });
+
+  await openPreferencesViaOpenPreferencesAPI("search", { leaveOpen: true });
+  let doc = gBrowser.selectedBrowser.contentDocument;
+
+  let checkbox = doc.getElementById(CHECKBOX_ID);
+  Assert.ok(!checkbox.disabled, "showSearchTerms checkbox should be enabled.");
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.search.widget.inNavBar", true]],
+  });
+  Assert.ok(
+    checkbox.disabled,
+    "showSearchTerms checkbox should be disabled when search bar is enabled."
+  );
+
+  
+  await SpecialPowers.popPrefEnv();
+  Assert.ok(!checkbox.disabled, "showSearchTerms checkbox should be enabled.");
+
+  gBrowser.removeCurrentTab();
   await SpecialPowers.popPrefEnv();
 });
