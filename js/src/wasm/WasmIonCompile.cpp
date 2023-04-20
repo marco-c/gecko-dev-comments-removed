@@ -1823,6 +1823,9 @@ class FunctionCompiler {
         MWasmInterruptCheck::New(alloc(), instancePointer_, bytecodeOffset()));
   }
 
+  
+  
+  
   [[nodiscard]] bool postBarrierPrecise(uint32_t lineOrBytecode,
                                         MDefinition* valueAddr,
                                         MDefinition* value) {
@@ -1830,6 +1833,9 @@ class FunctionCompiler {
                              value);
   }
 
+  
+  
+  
   [[nodiscard]] bool postBarrierPreciseWithOffset(uint32_t lineOrBytecode,
                                                   MDefinition* valueBase,
                                                   uint32_t valueOffset,
@@ -1840,6 +1846,23 @@ class FunctionCompiler {
     }
     return emitInstanceCall3(lineOrBytecode, SASigPostBarrierPreciseWithOffset,
                              valueBase, valueOffsetDef, value);
+  }
+
+  
+  
+  
+  
+  
+  [[nodiscard]] bool postBarrier(uint32_t lineOrBytecode, MDefinition* object,
+                                 MDefinition* valueBase, uint32_t valueOffset,
+                                 MDefinition* newValue) {
+    auto* barrier = MWasmPostWriteBarrier::New(
+        alloc(), instancePointer_, object, valueBase, valueOffset, newValue);
+    if (!barrier) {
+      return false;
+    }
+    curBlock_->add(barrier);
+    return true;
   }
 
   
@@ -3281,26 +3304,16 @@ class FunctionCompiler {
       }
 
       
-      auto* prevValue = MWasmLoadFieldKA::New(
-          alloc(), exception, data, offset, type.toMIRType(), MWideningOp::None,
-          AliasSet::Load(AliasSet::Any));
-      if (!prevValue) {
-        return false;
-      }
-      curBlock_->add(prevValue);
-
-      
       auto* store = MWasmStoreFieldRefKA::New(
           alloc(), instancePointer_, exception, data, offset, argValues[i],
-          AliasSet::Store(AliasSet::Any), WasmPreBarrierKind::None);
+          AliasSet::Store(AliasSet::Any), Nothing(), WasmPreBarrierKind::None);
       if (!store) {
         return false;
       }
       curBlock_->add(store);
 
       
-      if (!postBarrierPreciseWithOffset(bytecodeOffset, data, offset,
-                                        prevValue)) {
+      if (!postBarrier(bytecodeOffset, exception, data, offset, argValues[i])) {
         return false;
       }
     }
@@ -3581,27 +3594,18 @@ class FunctionCompiler {
     MOZ_ASSERT(narrowingOp == MNarrowingOp::None);
     MOZ_ASSERT(fieldType.widenToValType() == fieldType.valType());
 
-    auto* prevValue = MWasmLoadFieldKA::New(
-        alloc(), keepAlive, base, offset, fieldType.valType().toMIRType(),
-        MWideningOp::None, AliasSet::Load(aliasBitset),
-        mozilla::Some(getTrapSiteInfo()));
-    if (!prevValue) {
-      return false;
-    }
-    curBlock_->add(prevValue);
-
     
     auto* store = MWasmStoreFieldRefKA::New(
         alloc(), instancePointer_, keepAlive, base, offset, value,
-        AliasSet::Store(aliasBitset), preBarrierKind);
+        AliasSet::Store(aliasBitset), mozilla::Some(getTrapSiteInfo()),
+        preBarrierKind);
     if (!store) {
       return false;
     }
     curBlock_->add(store);
 
     
-    return postBarrierPreciseWithOffset(lineOrBytecode, base, offset,
-                                        prevValue);
+    return postBarrier(lineOrBytecode, keepAlive, base, offset, value);
   }
 
   

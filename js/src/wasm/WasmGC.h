@@ -39,6 +39,7 @@ class MacroAssembler;
 namespace wasm {
 
 class ArgTypeVector;
+class BytecodeOffset;
 
 using jit::Label;
 using jit::MIRType;
@@ -447,9 +448,15 @@ wasm::StackMap* ConvertStackMapBoolVectorToStackMap(
 
 
 
+
+
+
+
+
 void EmitWasmPreBarrierGuard(jit::MacroAssembler& masm, Register instance,
                              Register scratch, Register valueAddr,
-                             size_t valueOffset, Label* skipBarrier);
+                             size_t valueOffset, Label* skipBarrier,
+                             BytecodeOffset* trapOffset);
 
 
 
