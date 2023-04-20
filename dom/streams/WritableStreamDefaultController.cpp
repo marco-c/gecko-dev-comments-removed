@@ -161,7 +161,7 @@ void SetUpWritableStreamDefaultController(
   
   
   
-  aController->SetAlgorithms(aAlgorithms);
+  aController->SetAlgorithms(*aAlgorithms);
 
   
   

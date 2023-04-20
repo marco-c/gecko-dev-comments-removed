@@ -43,6 +43,10 @@ class UnderlyingSinkAlgorithmsBase : public nsISupports {
       JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
       ErrorResult& aRv) = 0;
 
+  
+  
+  virtual void ReleaseObjects() {}
+
  protected:
   virtual ~UnderlyingSinkAlgorithmsBase() = default;
 };

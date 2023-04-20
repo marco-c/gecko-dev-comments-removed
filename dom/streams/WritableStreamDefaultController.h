@@ -85,8 +85,8 @@ class WritableStreamDefaultController final : public nsISupports,
   }
 
   UnderlyingSinkAlgorithmsBase* GetAlgorithms() { return mAlgorithms; }
-  void SetAlgorithms(UnderlyingSinkAlgorithmsBase* aAlgorithms) {
-    mAlgorithms = aAlgorithms;
+  void SetAlgorithms(UnderlyingSinkAlgorithmsBase& aAlgorithms) {
+    mAlgorithms = &aAlgorithms;
   }
 
   WritableStream* Stream() { return mStream; }
@@ -111,7 +111,12 @@ class WritableStreamDefaultController final : public nsISupports,
     
     
     
-    mAlgorithms = nullptr;
+    
+    
+    if (RefPtr<UnderlyingSinkAlgorithmsBase> algorithms =
+            mAlgorithms.forget()) {
+      algorithms->ReleaseObjects();
+    }
 
     
     mStrategySizeAlgorithm = nullptr;
