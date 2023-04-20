@@ -1549,10 +1549,11 @@ void DcSctpSocket::HandleReconfig(
     
     
     MaybeSendResetStreamsRequest();
+
+    
+    
+    tcb_->SendBufferedPackets(now);
   }
-  
-  
-  tcb_->SendBufferedPackets(now);
 }
 
 void DcSctpSocket::HandleShutdown(
