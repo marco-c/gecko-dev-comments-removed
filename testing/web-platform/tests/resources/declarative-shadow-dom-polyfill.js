@@ -5,9 +5,17 @@
 
 
 
+
+
+
+
+
+
 function polyfill_declarative_shadow_dom(root) {
-  root.querySelectorAll("template[shadowroot]").forEach(template => {
-    const mode = template.getAttribute("shadowroot");
+  if (HTMLTemplateElement.prototype.hasOwnProperty('shadowRootMode'))
+    return;
+  root.querySelectorAll("template[shadowrootmode]").forEach(template => {
+    const mode = template.getAttribute("shadowrootmode");
     const shadowRoot = template.parentNode.attachShadow({ mode });
     shadowRoot.appendChild(template.content);
     template.remove();
