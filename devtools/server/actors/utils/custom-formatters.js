@@ -51,6 +51,7 @@ class FormatterError extends Error {
 
 
 
+
 function customFormatterHeader(objectActor) {
   const rawValue = objectActor.rawValue();
   const globalWrapper = Cu.getGlobalForObject(rawValue);
@@ -99,7 +100,6 @@ function customFormatterHeader(objectActor) {
       
       try {
         const rv = processFormatterForHeader({
-          customFormatterIndex,
           customFormatterObjectTagDepth,
           valueDbgObj,
           configDbgObj,
@@ -159,10 +159,7 @@ exports.customFormatterHeader = customFormatterHeader;
 
 
 
-
-
 function processFormatterForHeader({
-  customFormatterIndex,
   customFormatterObjectTagDepth,
   formatter,
   valueDbgObj,
@@ -251,9 +248,9 @@ function processFormatterForHeader({
 
   return {
     useCustomFormatter: true,
-    customFormatterIndex,
     header: sanitizedHeader,
     hasBody: !!hasBody?.return,
+    formatter,
   };
 }
 
@@ -266,10 +263,13 @@ function processFormatterForHeader({
 
 
 
-async function customFormatterBody(objectActor, customFormatterIndex) {
+
+async function customFormatterBody(objectActor, formatter) {
   const rawValue = objectActor.rawValue();
   const globalWrapper = Cu.getGlobalForObject(rawValue);
   const global = globalWrapper?.wrappedJSObject;
+
+  const customFormatterIndex = global.devtoolsFormatters.indexOf(formatter);
 
   
   
@@ -282,8 +282,6 @@ async function customFormatterBody(objectActor, customFormatterIndex) {
     } = objectActor.hooks;
 
     const dbgGlobal = dbg.makeGlobalObjectReference(global);
-    const formatter = global.devtoolsFormatters[customFormatterIndex];
-
     if (_invalidCustomFormatterHooks.has(formatter)) {
       return {
         customFormatterBody: null,
