@@ -63,8 +63,6 @@ class MediaDrmCDMProxy : public CDMProxy {
 
   void Terminated() override;
 
-  const nsCString& GetNodeId() const override;
-
   void OnSetSessionId(uint32_t aCreateSessionToken,
                       const nsAString& aSessionId) override;
 
@@ -97,11 +95,6 @@ class MediaDrmCDMProxy : public CDMProxy {
   
   
   void ResolvePromise(PromiseId aId) override;
-
-  
-  const nsString& KeySystem() const override;
-
-  DataMutex<CDMCaps>& Capabilites() override;
 
   void OnKeyStatusesChange(const nsAString& aSessionId) override;
 
