@@ -610,6 +610,8 @@ void BrowsingContext::SetDocShell(nsIDocShell* aDocShell) {
   if (mChildSessionHistory) {
     mChildSessionHistory->SetIsInProcess(true);
   }
+
+  RecomputeCanExecuteScripts();
 }
 
 

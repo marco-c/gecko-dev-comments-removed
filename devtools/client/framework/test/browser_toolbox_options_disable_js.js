@@ -22,6 +22,13 @@ add_task(async function() {
   await testJSDisabledIframe();
 
   
+  for (let i = 0; i < 10; i++) {
+    await navigateTo(`${TEST_URI}?nocache=${i}`);
+    await testJSDisabled();
+    await testJSDisabledIframe();
+  }
+
+  
   await toggleJS(toolbox);
 
   await testJSEnabled();
