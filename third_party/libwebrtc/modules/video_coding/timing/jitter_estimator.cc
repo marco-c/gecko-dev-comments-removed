@@ -265,9 +265,6 @@ void JitterEstimator::UpdateEstimate(TimeDelta frame_delay,
   if (abs_delay_is_not_outlier || size_is_positive_outlier) {
     
     
-    EstimateRandomJitter(delay_deviation_ms);
-    
-    
     
     
     
@@ -276,14 +273,25 @@ void JitterEstimator::UpdateEstimate(TimeDelta frame_delay,
         config_.MaxFrameSizePercentileEnabled()
             ? max_frame_size_bytes_percentile_.GetFilteredValue()
             : max_frame_size_bytes_;
-    if (delta_frame_bytes >
-        GetCongestionRejectionFactor() * filtered_max_frame_size_bytes) {
+    bool is_not_congested =
+        delta_frame_bytes >
+        GetCongestionRejectionFactor() * filtered_max_frame_size_bytes;
+
+    if (is_not_congested || config_.estimate_noise_when_congested) {
+      
+      
+      EstimateRandomJitter(delay_deviation_ms);
+    }
+    if (is_not_congested) {
+      
       
       kalman_filter_.PredictAndUpdate(frame_delay.ms(), delta_frame_bytes,
                                       filtered_max_frame_size_bytes,
                                       var_noise_ms2_);
     }
   } else {
+    
+    
     double num_stddev = (delay_deviation_ms >= 0) ? num_stddev_delay_outlier
                                                   : -num_stddev_delay_outlier;
     EstimateRandomJitter(num_stddev * sqrt(var_noise_ms2_));

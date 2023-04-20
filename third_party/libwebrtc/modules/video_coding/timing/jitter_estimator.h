@@ -51,7 +51,8 @@ class JitterEstimator {
           "num_stddev_delay_clamp", &num_stddev_delay_clamp,
           "num_stddev_delay_outlier", &num_stddev_delay_outlier,
           "num_stddev_size_outlier", &num_stddev_size_outlier,
-          "congestion_rejection_factor", &congestion_rejection_factor);
+          "congestion_rejection_factor", &congestion_rejection_factor,
+          "estimate_noise_when_congested", &estimate_noise_when_congested);
       
     }
 
@@ -96,6 +97,12 @@ class JitterEstimator {
     
     
     absl::optional<double> congestion_rejection_factor = absl::nullopt;
+
+    
+    
+    
+    
+    bool estimate_noise_when_congested = true;
   };
 
   JitterEstimator(Clock* clock, const FieldTrialsView& field_trials);
