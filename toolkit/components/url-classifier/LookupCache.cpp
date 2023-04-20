@@ -20,6 +20,10 @@
 #include "nsUrlClassifierUtils.h"
 #include "nsUrlClassifierDBService.h"
 
+#ifdef DEBUG
+#  include "nsPrintfCString.h"
+#endif
+
 
 
 
