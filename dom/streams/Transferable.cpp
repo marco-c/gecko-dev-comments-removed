@@ -863,7 +863,8 @@ ReadableStream::ReceiveTransferImpl(JSContext* aCx, nsIGlobalObject* aGlobal,
   
 
   
-  RefPtr<ReadableStream> readable = new ReadableStream(aGlobal);
+  RefPtr<ReadableStream> readable =
+      new ReadableStream(aGlobal, HoldDropJSObjectsCaller::Implicit);
   ErrorResult rv;
   SetUpCrossRealmTransformReadable(readable, &aPort, rv);
   if (rv.MaybeSetPendingException(aCx)) {
@@ -910,7 +911,8 @@ bool WritableStream::Transfer(JSContext* aCx, UniqueMessagePortId& aPortId) {
   }
 
   
-  RefPtr<ReadableStream> readable = new ReadableStream(mGlobal);
+  RefPtr<ReadableStream> readable = new ReadableStream(
+      mGlobal, ReadableStream::HoldDropJSObjectsCaller::Implicit);
 
   
   

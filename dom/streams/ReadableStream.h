@@ -53,8 +53,17 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
 
-  explicit ReadableStream(const GlobalObject& aGlobal);
-  explicit ReadableStream(nsIGlobalObject* aGlobal);
+  
+  
+  
+  
+  
+  enum class HoldDropJSObjectsCaller { Implicit, Explicit };
+
+  explicit ReadableStream(const GlobalObject& aGlobal,
+                          HoldDropJSObjectsCaller aHoldDropCaller);
+  explicit ReadableStream(nsIGlobalObject* aGlobal,
+                          HoldDropJSObjectsCaller aHoldDropCaller);
 
  public:
   
@@ -229,6 +238,8 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
   RefPtr<ReadableStreamGenericReader> mReader;
   ReaderState mState = ReaderState::Readable;
   JS::Heap<JS::Value> mStoredError;
+
+  HoldDropJSObjectsCaller mHoldDropCaller;
 };
 
 namespace streams_abstract {
