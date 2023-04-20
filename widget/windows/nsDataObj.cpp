@@ -1103,45 +1103,39 @@ static void ValidateFilename(nsString& aFilename) {
 
 
 
-static bool CreateFilenameFromTextA(nsString& aText, const char* aExtension,
-                                    char* aFilename, uint32_t aFilenameLen) {
-  ValidateFilename(aText);
-  if (aText.IsEmpty()) return false;
-
-  
-  
-  
-  
-  
-  int maxUsableFilenameLen =
-      aFilenameLen - strlen(aExtension) - 1;  
-  int currLen, textLen = (int)std::min<uint32_t>(aText.Length(), aFilenameLen);
-  char defaultChar = '_';
-  do {
-    currLen = WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK | WC_DEFAULTCHAR,
-                                  aText.get(), textLen--, aFilename,
-                                  maxUsableFilenameLen, &defaultChar, nullptr);
-  } while (currLen == 0 && textLen > 0 &&
-           GetLastError() == ERROR_INSUFFICIENT_BUFFER);
-  if (currLen > 0 && textLen > 0) {
-    strcpy(&aFilename[currLen], aExtension);
-    return true;
-  } else {
-    
+static bool CreateURLFilenameFromTextA(nsAutoString& aText, char* aFilename) {
+  if (aText.IsEmpty()) {
     return false;
   }
+  aText.AppendLiteral(".url");
+  ValidateFilename(aText);
+  if (aText.IsEmpty()) {
+    return false;
+  }
+
+  
+  
+  
+  char defaultChar = '_';
+  int currLen = WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK | WC_DEFAULTCHAR,
+                                    aText.get(), -1, aFilename, MAX_PATH,
+                                    &defaultChar, nullptr);
+  return currLen != 0;
 }
 
-static bool CreateFilenameFromTextW(nsString& aText, const wchar_t* aExtension,
-                                    wchar_t* aFilename, uint32_t aFilenameLen) {
-  ValidateFilename(aText);
-  if (aText.IsEmpty()) return false;
 
-  const int extensionLen = wcslen(aExtension);
-  if (aText.Length() + extensionLen + 1 > aFilenameLen)
-    aText.Truncate(aFilenameLen - extensionLen - 1);
+static bool CreateURLFilenameFromTextW(nsAutoString& aText,
+                                       wchar_t* aFilename) {
+  if (aText.IsEmpty()) {
+    return false;
+  }
+  aText.AppendLiteral(".url");
+  ValidateFilename(aText);
+  if (aText.IsEmpty() || aText.Length() >= MAX_PATH) {
+    return false;
+  }
+
   wcscpy(&aFilename[0], aText.get());
-  wcscpy(&aFilename[aText.Length()], aExtension);
   return true;
 }
 
@@ -1188,12 +1182,11 @@ nsDataObj ::GetFileDescriptorInternetShortcutA(FORMATETC& aFE,
 
   
   
-  if (!CreateFilenameFromTextA(title, ".url", fileGroupDescA->fgd[0].cFileName,
-                               MAX_PATH)) {
+  if (!CreateURLFilenameFromTextA(title, fileGroupDescA->fgd[0].cFileName)) {
     nsAutoString untitled;
     if (!GetLocalizedString("noPageTitle", untitled) ||
-        !CreateFilenameFromTextA(untitled, ".url",
-                                 fileGroupDescA->fgd[0].cFileName, MAX_PATH)) {
+        !CreateURLFilenameFromTextA(untitled,
+                                    fileGroupDescA->fgd[0].cFileName)) {
       strcpy(fileGroupDescA->fgd[0].cFileName, "Untitled.url");
     }
   }
@@ -1230,12 +1223,11 @@ nsDataObj ::GetFileDescriptorInternetShortcutW(FORMATETC& aFE,
 
   
   
-  if (!CreateFilenameFromTextW(title, L".url", fileGroupDescW->fgd[0].cFileName,
-                               MAX_PATH)) {
+  if (!CreateURLFilenameFromTextW(title, fileGroupDescW->fgd[0].cFileName)) {
     nsAutoString untitled;
     if (!GetLocalizedString("noPageTitle", untitled) ||
-        !CreateFilenameFromTextW(untitled, L".url",
-                                 fileGroupDescW->fgd[0].cFileName, MAX_PATH)) {
+        !CreateURLFilenameFromTextW(untitled,
+                                    fileGroupDescW->fgd[0].cFileName)) {
       wcscpy(fileGroupDescW->fgd[0].cFileName, L"Untitled.url");
     }
   }
