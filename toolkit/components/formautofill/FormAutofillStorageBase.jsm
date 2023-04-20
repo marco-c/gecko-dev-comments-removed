@@ -160,20 +160,12 @@ const CryptoHash = Components.Constructor(
 );
 
 const STORAGE_SCHEMA_VERSION = 1;
-
-
-
-
-
 const ADDRESS_SCHEMA_VERSION = 1;
 
 
 
 
-
-
-
-const CREDIT_CARD_SCHEMA_VERSION = 3;
+const CREDIT_CARD_SCHEMA_VERSION = 4;
 
 const VALID_ADDRESS_FIELDS = [
   "given-name",
@@ -216,10 +208,10 @@ const VALID_CREDIT_CARD_FIELDS = [
   "cc-number",
   "cc-exp-month",
   "cc-exp-year",
-  "cc-type",
 ];
 
 const VALID_CREDIT_CARD_COMPUTED_FIELDS = [
+  "cc-type",
   "cc-given-name",
   "cc-additional-name",
   "cc-family-name",
@@ -979,30 +971,6 @@ class AutofillRecords {
 
     let forkedGUID = null;
 
-    
-    
-    let requiresForceUpdate =
-      localRecord.version != remoteRecord.version && remoteRecord.version == 4;
-
-    if (requiresForceUpdate) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      remoteRecord = await this._computeMigratedRecord(remoteRecord);
-    }
     if (sync.changeCounter === 0) {
       
       await this._replaceRecordAt(localIndex, remoteRecord, {
@@ -1033,18 +1001,6 @@ class AutofillRecords {
           keepSyncMetadata: false,
         });
       }
-    }
-
-    if (requiresForceUpdate) {
-      
-      
-      
-      let indexToUpdate = this._findIndexByGUID(remoteRecord.guid);
-      let toUpdate = this._data[indexToUpdate];
-      this._getSyncMetaData(toUpdate, true).changeCounter += 1;
-      this.log.info(
-        `Flagging record ${toUpdate.guid} for re-upload after record version downgrade`
-      );
     }
 
     this._store.saveSoon();
@@ -1358,7 +1314,7 @@ class AutofillRecords {
       record.version = 0;
     }
 
-    if (this._isMigrationNeeded(record.version)) {
+    if (record.version < this.version) {
       hasChanges = true;
 
       record = await this._computeMigratedRecord(record);
@@ -1447,10 +1403,6 @@ class AutofillRecords {
       "formautofill-storage-changed",
       "removeAll"
     );
-  }
-
-  _isMigrationNeeded(recordVersion) {
-    return recordVersion < this.version;
   }
 
   
@@ -1807,13 +1759,6 @@ class CreditCardsBase extends AutofillRecords {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
 
-  _isMigrationNeeded(recordVersion) {
-    return (
-      
-      recordVersion == 4 || recordVersion < this.version
-    );
-  }
-
   async _computeMigratedRecord(creditCard) {
     if (creditCard.version <= 2) {
       if (creditCard["cc-number-encrypted"]) {
@@ -1844,15 +1789,9 @@ class CreditCardsBase extends AutofillRecords {
       }
     }
 
-    
-    
-    if (creditCard.version == 4) {
-      
-      
-      
-      let existingSync = this._getSyncMetaData(creditCard);
-      if (existingSync) {
-        existingSync.changeCounter++;
+    if (creditCard.version <= 3) {
+      if (creditCard["cc-type"]) {
+        delete creditCard["cc-type"];
       }
     }
 
@@ -1946,11 +1885,7 @@ class CreditCardsBase extends AutofillRecords {
       );
     }
 
-    if (record.version == 4) {
-      
-      
-      return true;
-    } else if (record.version < this.version) {
+    if (record.version < this.version) {
       switch (record.version) {
         case 1:
         case 2:
