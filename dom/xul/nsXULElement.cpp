@@ -1007,16 +1007,22 @@ nsresult nsXULElement::PreHandleEvent(EventChainVisitor& aVisitor) {
 
 nsChangeHint nsXULElement::GetAttributeChangeHint(const nsAtom* aAttribute,
                                                   int32_t aModType) const {
-  if (aAttribute == nsGkAtoms::value &&
-      (aModType == MutationEvent_Binding::REMOVAL ||
-       aModType == MutationEvent_Binding::ADDITION) &&
-      IsAnyOfXULElements(nsGkAtoms::label, nsGkAtoms::description)) {
-    
-    
-    
-    
-    
-    return nsChangeHint_ReconstructFrame;
+  if (IsAnyOfXULElements(nsGkAtoms::label, nsGkAtoms::description)) {
+    if (aAttribute == nsGkAtoms::value &&
+        (aModType == MutationEvent_Binding::REMOVAL ||
+         aModType == MutationEvent_Binding::ADDITION)) {
+      
+      
+      
+      
+      
+      return nsChangeHint_ReconstructFrame;
+    }
+    if ((aAttribute == nsGkAtoms::crop || aAttribute == nsGkAtoms::accesskey) &&
+        HasAttr(nsGkAtoms::value)) {
+      
+      return nsChangeHint_ReconstructFrame;
+    }
   }
 
   if (aAttribute == nsGkAtoms::type &&

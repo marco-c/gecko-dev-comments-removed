@@ -2724,12 +2724,9 @@ nsresult nsXULPopupManager::KeyDown(KeyboardEvent* aKeyEvent) {
     aKeyEvent->StopPropagation();
   }
 
-  int32_t menuAccessKey = -1;
-
   
   
-
-  nsMenuBarListener::GetMenuAccessKey(&menuAccessKey);
+  int32_t menuAccessKey = nsMenuBarListener::GetMenuAccessKey();
   if (menuAccessKey) {
     uint32_t theChar = aKeyEvent->KeyCode();
 

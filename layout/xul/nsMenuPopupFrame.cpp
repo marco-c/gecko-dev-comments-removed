@@ -2196,8 +2196,7 @@ nsMenuFrame* nsMenuPopupFrame::FindMenuWithShortcut(KeyboardEvent* aKeyEvent,
       nsXULPopupManager::GetNextMenuItem(immediateParent, nullptr, true, false);
   nsIFrame* currFrame = firstMenuItem;
 
-  int32_t menuAccessKey = -1;
-  nsMenuBarListener::GetMenuAccessKey(&menuAccessKey);
+  int32_t menuAccessKey = nsMenuBarListener::GetMenuAccessKey();
 
   
   

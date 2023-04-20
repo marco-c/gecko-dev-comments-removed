@@ -443,7 +443,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
   already_AddRefed<nsIContent> CreateGenConTextNode(
-      nsFrameConstructorState& aState, const nsString& aString,
+      nsFrameConstructorState& aState, const nsAString& aString,
       mozilla::UniquePtr<nsGenConInitializer> aInitializer);
 
   
@@ -454,9 +454,11 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
 
-  already_AddRefed<nsIContent> CreateGeneratedContent(
+
+  void CreateGeneratedContent(
       nsFrameConstructorState& aState, Element& aOriginatingElement,
-      ComputedStyle& aComputedStyle, uint32_t aContentIndex);
+      ComputedStyle& aPseudoStyle, uint32_t aContentIndex,
+      const mozilla::FunctionRef<void(nsIContent*)> aAddChild);
 
   
 

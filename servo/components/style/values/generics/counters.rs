@@ -272,6 +272,11 @@ pub enum GenericContentItem<I> {
     #[cfg(feature = "gecko")]
     MozAltContent,
     
+    
+    
+    #[cfg(feature = "gecko")]
+    MozLabelContent,
+    
     #[cfg(any(feature = "gecko", feature = "servo-layout-2020"))]
     Attr(Attr),
     

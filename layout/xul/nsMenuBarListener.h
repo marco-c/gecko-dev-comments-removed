@@ -50,7 +50,7 @@ class nsMenuBarListener final : public nsIDOMEventListener {
 
 
 
-  static nsresult GetMenuAccessKey(int32_t* aAccessKey);
+  static int32_t GetMenuAccessKey();
 
   
 
