@@ -52,9 +52,10 @@ bool testCompile() {
     CHECK(buf16.init(cx, src_16.data(), src_16.length(),
                      JS::SourceOwnership::Borrowed));
 
-    js::UniquePtr<js::frontend::CompilationInput> stencilInput;
+    JS::CompilationStorage compileStorage;
     RefPtr<JS::Stencil> stencil = CompileGlobalScriptToStencil(
-        fc, options, cx->stackLimitForCurrentPrincipal(), buf16, stencilInput);
+        fc, options, cx->stackLimitForCurrentPrincipal(), buf16,
+        compileStorage);
     CHECK(stencil);
     CHECK(stencil->scriptExtra.size() == 1);
     CHECK(stencil->scriptExtra[0].extent.sourceStart == 0);
@@ -62,7 +63,7 @@ bool testCompile() {
     CHECK(stencil->scriptData.size() == 1);
     CHECK(stencil->scriptData[0].hasSharedData());  
     CHECK(stencil->scriptData[0].gcThingsLength == 1);
-    CHECK(stencilInput);
+    CHECK(compileStorage.hasInput());
   }
 
   {  
@@ -70,9 +71,9 @@ bool testCompile() {
     CHECK(
         buf8.init(cx, src.data(), src.length(), JS::SourceOwnership::Borrowed));
 
-    js::UniquePtr<js::frontend::CompilationInput> stencilInput;
+    JS::CompilationStorage compileStorage;
     RefPtr<JS::Stencil> stencil = CompileGlobalScriptToStencil(
-        fc, options, cx->stackLimitForCurrentPrincipal(), buf8, stencilInput);
+        fc, options, cx->stackLimitForCurrentPrincipal(), buf8, compileStorage);
     CHECK(stencil);
     CHECK(stencil->scriptExtra.size() == 1);
     CHECK(stencil->scriptExtra[0].extent.sourceStart == 0);
@@ -80,7 +81,7 @@ bool testCompile() {
     CHECK(stencil->scriptData.size() == 1);
     CHECK(stencil->scriptData[0].hasSharedData());  
     CHECK(stencil->scriptData[0].gcThingsLength == 1);
-    CHECK(stencilInput);
+    CHECK(compileStorage.hasInput());
   }
 
   {  
@@ -89,9 +90,10 @@ bool testCompile() {
     CHECK(srcBuf.init(cx, badSrc.data(), badSrc.length(),
                       JS::SourceOwnership::Borrowed));
 
-    js::UniquePtr<js::frontend::CompilationInput> stencilInput;
+    JS::CompilationStorage compileStorage;
     RefPtr<JS::Stencil> stencil = CompileGlobalScriptToStencil(
-        fc, options, cx->stackLimitForCurrentPrincipal(), srcBuf, stencilInput);
+        fc, options, cx->stackLimitForCurrentPrincipal(), srcBuf,
+        compileStorage);
     CHECK(!stencil);
     CHECK(fc->maybeError().isSome());
     const js::CompileError& error = fc->maybeError().ref();
@@ -119,10 +121,9 @@ bool testNonsyntacticCompile() {
   auto destroyFc =
       mozilla::MakeScopeExit([fc] { JS::DestroyFrontendContext(fc); });
 
-  JS::Rooted<js::UniquePtr<js::frontend::CompilationInput>> stencilInput(cx);
+  JS::CompilationStorage compileStorage;
   RefPtr<JS::Stencil> stencil = CompileGlobalScriptToStencil(
-      fc, options, cx->stackLimitForCurrentPrincipal(), srcBuf,
-      stencilInput.get());
+      fc, options, cx->stackLimitForCurrentPrincipal(), srcBuf, compileStorage);
   CHECK(stencil);
 
   JS::InstantiateOptions instantiateOptions(options);
@@ -153,9 +154,10 @@ bool testCompileModule() {
     CHECK(buf16.init(cx, src_16.data(), src_16.length(),
                      JS::SourceOwnership::Borrowed));
 
-    js::UniquePtr<js::frontend::CompilationInput> stencilInput;
+    JS::CompilationStorage compileStorage;
     RefPtr<JS::Stencil> stencil = CompileModuleScriptToStencil(
-        fc, options, cx->stackLimitForCurrentPrincipal(), buf16, stencilInput);
+        fc, options, cx->stackLimitForCurrentPrincipal(), buf16,
+        compileStorage);
     CHECK(stencil);
     CHECK(stencil->isModule());
     CHECK(stencil->scriptExtra.size() == 1);
@@ -164,7 +166,7 @@ bool testCompileModule() {
     CHECK(stencil->scriptData.size() == 1);
     CHECK(stencil->scriptData[0].hasSharedData());  
     CHECK(stencil->scriptData[0].gcThingsLength == 1);
-    CHECK(stencilInput);
+    CHECK(compileStorage.hasInput());
   }
 
   {  
@@ -172,9 +174,9 @@ bool testCompileModule() {
     CHECK(
         buf8.init(cx, src.data(), src.length(), JS::SourceOwnership::Borrowed));
 
-    js::UniquePtr<js::frontend::CompilationInput> stencilInput;
+    JS::CompilationStorage compileStorage;
     RefPtr<JS::Stencil> stencil = CompileModuleScriptToStencil(
-        fc, options, cx->stackLimitForCurrentPrincipal(), buf8, stencilInput);
+        fc, options, cx->stackLimitForCurrentPrincipal(), buf8, compileStorage);
     CHECK(stencil);
     CHECK(stencil->scriptExtra.size() == 1);
     CHECK(stencil->scriptExtra[0].extent.sourceStart == 0);
@@ -182,7 +184,7 @@ bool testCompileModule() {
     CHECK(stencil->scriptData.size() == 1);
     CHECK(stencil->scriptData[0].hasSharedData());  
     CHECK(stencil->scriptData[0].gcThingsLength == 1);
-    CHECK(stencilInput);
+    CHECK(compileStorage.hasInput());
   }
 
   {  
@@ -191,9 +193,10 @@ bool testCompileModule() {
     CHECK(srcBuf.init(cx, badSrc.data(), badSrc.length(),
                       JS::SourceOwnership::Borrowed));
 
-    js::UniquePtr<js::frontend::CompilationInput> stencilInput;
+    JS::CompilationStorage compileStorage;
     RefPtr<JS::Stencil> stencil = CompileModuleScriptToStencil(
-        fc, options, cx->stackLimitForCurrentPrincipal(), srcBuf, stencilInput);
+        fc, options, cx->stackLimitForCurrentPrincipal(), srcBuf,
+        compileStorage);
     CHECK(!stencil);
     CHECK(fc->maybeError().isSome());
     const js::CompileError& error = fc->maybeError().ref();
@@ -220,19 +223,19 @@ bool testPrepareForInstantiate() {
   auto destroyFc =
       mozilla::MakeScopeExit([fc] { JS::DestroyFrontendContext(fc); });
 
-  js::UniquePtr<js::frontend::CompilationInput> stencilInput;
+  JS::CompilationStorage compileStorage;
   RefPtr<JS::Stencil> stencil = CompileGlobalScriptToStencil(
-      fc, options, cx->stackLimitForCurrentPrincipal(), buf16, stencilInput);
+      fc, options, cx->stackLimitForCurrentPrincipal(), buf16, compileStorage);
   CHECK(stencil);
   CHECK(stencil->scriptData.size() == 2);
   CHECK(stencil->scopeData.size() == 1);       
   CHECK(stencil->parserAtomData.size() == 1);  
-  CHECK(stencilInput);
-  CHECK(stencilInput->atomCache.empty());
+  CHECK(compileStorage.hasInput());
+  CHECK(compileStorage.getInput().atomCache.empty());
 
   JS::InstantiationStorage storage;
-  CHECK(JS::PrepareForInstantiate(fc, *stencilInput, *stencil, storage));
-  CHECK(stencilInput->atomCache.size() == 1);  
+  CHECK(JS::PrepareForInstantiate(fc, compileStorage, *stencil, storage));
+  CHECK(compileStorage.getInput().atomCache.size() == 1);  
   CHECK(storage.isValid());
   
   
