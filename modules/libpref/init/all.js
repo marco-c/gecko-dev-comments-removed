@@ -3781,6 +3781,8 @@ pref("browser.sanitizer.loglevel", "Warn");
 
 pref("browser.translations.enable", false);
 
+
+
 pref("browser.translations.logLevel", "Error");
 
 
