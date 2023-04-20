@@ -352,11 +352,8 @@ class AppUpdater {
       }
 
       if (!result.succeeded) {
-        
-        
-        
-        LOG("AppUpdater:check - Update check failed; NO_UPDATES_FOUND");
-        this.#setStatus(AppUpdater.STATUS.NO_UPDATES_FOUND);
+        LOG("AppUpdater:check - Update check failed; CHECKING_FAILED");
+        this.#setStatus(AppUpdater.STATUS.CHECKING_FAILED);
         return;
       }
 
@@ -874,6 +871,9 @@ AppUpdater.STATUS = {
   
   
   INTERNAL_ERROR: 13,
+
+  
+  CHECKING_FAILED: 14,
 
   
 
