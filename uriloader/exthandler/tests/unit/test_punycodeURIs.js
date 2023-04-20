@@ -99,22 +99,18 @@ function run_test() {
   outFile.append(kOutputFile);
 
   
-  var envSvc = Cc["@mozilla.org/process/environment;1"].getService(
-    Ci.nsIEnvironment
-  );
-
   
   
   
   var greDir = Services.dirsvc.get("GreD", Ci.nsIFile);
 
-  envSvc.set("DYLD_LIBRARY_PATH", greDir.path);
+  Services.env.set("DYLD_LIBRARY_PATH", greDir.path);
   
-  envSvc.set("LD_LIBRARY_PATH", greDir.path);
+  Services.env.set("LD_LIBRARY_PATH", greDir.path);
   
 
   
-  envSvc.set("WRITE_ARGUMENT_FILE", outFile.path);
+  Services.env.set("WRITE_ARGUMENT_FILE", outFile.path);
 
   var uri = ioService.newURI(kTestURI);
 
