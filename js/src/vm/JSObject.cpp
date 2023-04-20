@@ -3295,11 +3295,8 @@ js::gc::AllocKind JSObject::allocKindForTenure(
   
   if (is<WasmStructObject>()) {
     
-    
-    
-    RttValue& descr = as<WasmStructObject>().rttValue();
-    MOZ_ASSERT(!IsInsideNursery(&descr));
-    return WasmStructObject::allocKindForRttValue(&descr);
+    const wasm::TypeDef* typeDef = &as<WasmStructObject>().typeDef();
+    return WasmStructObject::allocKindForTypeDef(typeDef);
   }
 
   if (is<WasmArrayObject>()) {

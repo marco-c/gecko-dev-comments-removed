@@ -6304,13 +6304,13 @@ void BaseCompiler::emitBarrieredClear(RegPtr valueAddr) {
 
 #ifdef ENABLE_WASM_GC
 
-void BaseCompiler::emitGcCanon(uint32_t typeIndex) {
-  RegRef rp = needRef();
+RegPtr BaseCompiler::loadTypeDef(uint32_t typeIndex) {
+  RegPtr rp = needPtr();
 #  ifndef RABALDR_PIN_INSTANCE
   fr.loadInstancePtr(InstanceReg);
 #  endif
   masm.loadWasmGlobalPtr(moduleEnv_.offsetOfTypeId(typeIndex), rp);
-  pushRef(rp);
+  return rp;
 }
 
 
@@ -6577,7 +6577,7 @@ bool BaseCompiler::emitStructNew() {
 
   
   
-  emitGcCanon(typeIndex);
+  pushPtr(loadTypeDef(typeIndex));
   if (!emitInstanceCall(SASigStructNew)) {
     return false;
   }
@@ -6664,7 +6664,7 @@ bool BaseCompiler::emitStructNewDefault() {
 
   
   
-  emitGcCanon(typeIndex);
+  pushPtr(loadTypeDef(typeIndex));
   return emitInstanceCall(SASigStructNew);
 }
 
@@ -6793,7 +6793,7 @@ bool BaseCompiler::emitArrayNew() {
 
   
   
-  emitGcCanon(typeIndex);
+  pushPtr(loadTypeDef(typeIndex));
   if (!emitInstanceCall(SASigArrayNew)) {
     return false;
   }
@@ -6864,7 +6864,7 @@ bool BaseCompiler::emitArrayNewFixed() {
   
   
   pushI32(numElements);
-  emitGcCanon(typeIndex);
+  pushPtr(loadTypeDef(typeIndex));
   if (!emitInstanceCall(SASigArrayNew)) {
     return false;
   }
@@ -6934,7 +6934,7 @@ bool BaseCompiler::emitArrayNewDefault() {
 
   
   
-  emitGcCanon(typeIndex);
+  pushPtr(loadTypeDef(typeIndex));
   return emitInstanceCall(SASigArrayNew);
 }
 
@@ -6949,7 +6949,7 @@ bool BaseCompiler::emitArrayNewData() {
     return true;
   }
 
-  emitGcCanon(typeIndex);
+  pushPtr(loadTypeDef(typeIndex));
   pushI32(int32_t(segIndex));
 
   
@@ -6969,7 +6969,7 @@ bool BaseCompiler::emitArrayNewElem() {
     return true;
   }
 
-  emitGcCanon(typeIndex);
+  pushPtr(loadTypeDef(typeIndex));
   pushI32(int32_t(segIndex));
 
   
@@ -7158,7 +7158,7 @@ bool BaseCompiler::emitRefTest() {
     return true;
   }
 
-  emitGcCanon(typeIndex);
+  pushPtr(loadTypeDef(typeIndex));
   return emitInstanceCall(SASigRefTest);
 }
 
@@ -7180,7 +7180,7 @@ bool BaseCompiler::emitRefCast() {
   moveRef(refPtr, castedPtr);
   pushRef(castedPtr);
   pushRef(refPtr);
-  emitGcCanon(typeIndex);
+  pushPtr(loadTypeDef(typeIndex));
 
   
   if (!emitInstanceCall(SASigRefTest)) {
@@ -7226,7 +7226,7 @@ bool BaseCompiler::emitBrOnCastCommon(bool onSuccess) {
   moveRef(refPtr, castedPtr);
   pushRef(castedPtr);
   pushRef(refPtr);
-  emitGcCanon(castTypeIndex);
+  pushPtr(loadTypeDef(castTypeIndex));
 
   
   if (!emitInstanceCall(SASigRefTest)) {

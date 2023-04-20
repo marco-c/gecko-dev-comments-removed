@@ -244,20 +244,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadOrGCTaskData<js::gc::EphemeronEdgeTable>
       gcNurseryEphemeronEdges_;
 
-  
-  
-  
-  
-  
-  
-  
-  using RttValueObjectSet =
-      js::GCHashSet<js::HeapPtr<JSObject*>,
-                    js::MovableCellHasher<js::HeapPtr<JSObject*>>,
-                    js::SystemAllocPolicy>;
-
-  js::MainThreadData<JS::WeakCache<RttValueObjectSet>> rttValueObjects_;
-
   js::MainThreadData<js::UniquePtr<js::RegExpZone>> regExps_;
 
   
@@ -518,12 +504,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   void clearSweepGroupEdges() { gcSweepGroupEdges().clear(); }
 
   js::RegExpZone& regExps() { return *regExps_.ref(); }
-
-  JS::WeakCache<RttValueObjectSet>& rttValueObjects() {
-    return rttValueObjects_.ref();
-  }
-
-  bool addRttValueObject(JSContext* cx, HandleObject obj);
 
   js::SparseBitmap& markedAtoms() { return markedAtoms_.ref(); }
 

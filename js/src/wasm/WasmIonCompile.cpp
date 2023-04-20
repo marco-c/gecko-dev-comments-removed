@@ -3738,11 +3738,11 @@ class FunctionCompiler {
   
 
   
-  [[nodiscard]] MDefinition* loadGcCanon(uint32_t typeIndex) {
+  [[nodiscard]] MDefinition* loadTypeDef(uint32_t typeIndex) {
     uint32_t typeIdOffset = moduleEnv().offsetOfTypeId(typeIndex);
 
     auto* load =
-        MWasmLoadGlobalVar::New(alloc(), MIRType::RefOrNull, typeIdOffset,
+        MWasmLoadGlobalVar::New(alloc(), MIRType::Pointer, typeIdOffset,
                                 true, instancePointer_);
     if (!load) {
       return nullptr;
@@ -3984,8 +3984,8 @@ class FunctionCompiler {
   [[nodiscard]] MDefinition* createDefaultInitializedArrayObject(
       uint32_t lineOrBytecode, uint32_t typeIndex, MDefinition* numElements) {
     
-    MDefinition* arrayRtt = loadGcCanon(typeIndex);
-    if (!arrayRtt) {
+    MDefinition* arrayTypeDef = loadTypeDef(typeIndex);
+    if (!arrayTypeDef) {
       return nullptr;
     }
 
@@ -3993,7 +3993,7 @@ class FunctionCompiler {
     
     
     MDefinition* arrayObject;
-    if (!emitInstanceCall2(lineOrBytecode, SASigArrayNew, numElements, arrayRtt,
+    if (!emitInstanceCall2(lineOrBytecode, SASigArrayNew, numElements, arrayTypeDef,
                            &arrayObject)) {
       return nullptr;
     }
@@ -4223,10 +4223,10 @@ class FunctionCompiler {
   
   
   [[nodiscard]] bool refCast(uint32_t lineOrBytecode, MDefinition* ref,
-                             MDefinition* castToRTT) {
+                             MDefinition* castToTypeDef) {
     
     MDefinition* success;
-    if (!emitInstanceCall2(lineOrBytecode, SASigRefTest, ref, castToRTT,
+    if (!emitInstanceCall2(lineOrBytecode, SASigRefTest, ref, castToTypeDef,
                            &success)) {
       return false;
     }
@@ -4239,10 +4239,10 @@ class FunctionCompiler {
   
   
   [[nodiscard]] MDefinition* refTest(uint32_t lineOrBytecode, MDefinition* ref,
-                                     MDefinition* castToRTT) {
+                                     MDefinition* castToTypeDef) {
     
     MDefinition* success;
-    if (!emitInstanceCall2(lineOrBytecode, SASigRefTest, ref, castToRTT,
+    if (!emitInstanceCall2(lineOrBytecode, SASigRefTest, ref, castToTypeDef,
                            &success)) {
       return nullptr;
     }
@@ -4266,8 +4266,8 @@ class FunctionCompiler {
       return false;
     }
 
-    MDefinition* castToRTT = loadGcCanon(castTypeIndex);
-    if (!castToRTT) {
+    MDefinition* castToTypeDef = loadTypeDef(castTypeIndex);
+    if (!castToTypeDef) {
       return false;
     }
 
@@ -4285,7 +4285,7 @@ class FunctionCompiler {
 
     
     MDefinition* success;
-    if (!emitInstanceCall2(lineOrBytecode, SASigRefTest, ref, castToRTT,
+    if (!emitInstanceCall2(lineOrBytecode, SASigRefTest, ref, castToTypeDef,
                            &success)) {
       return false;
     }
@@ -6537,14 +6537,14 @@ static bool EmitStructNew(FunctionCompiler& f) {
 
   
   
-  MDefinition* structRTT = f.loadGcCanon(typeIndex);
-  if (!structRTT) {
+  MDefinition* structTypeDef = f.loadTypeDef(typeIndex);
+  if (!structTypeDef) {
     return false;
   }
 
   
   MDefinition* structObject;
-  if (!f.emitInstanceCall1(lineOrBytecode, SASigStructNew, structRTT,
+  if (!f.emitInstanceCall1(lineOrBytecode, SASigStructNew, structTypeDef,
                            &structObject)) {
     return false;
   }
@@ -6580,14 +6580,14 @@ static bool EmitStructNewDefault(FunctionCompiler& f) {
 
   
   
-  MDefinition* structRTT = f.loadGcCanon(typeIndex);
-  if (!structRTT) {
+  MDefinition* structTypeDef = f.loadTypeDef(typeIndex);
+  if (!structTypeDef) {
     return false;
   }
 
   
   MDefinition* structObject;
-  if (!f.emitInstanceCall1(lineOrBytecode, SASigStructNew, structRTT,
+  if (!f.emitInstanceCall1(lineOrBytecode, SASigStructNew, structTypeDef,
                            &structObject)) {
     return false;
   }
@@ -6780,8 +6780,8 @@ static bool EmitArrayNewData(FunctionCompiler& f) {
   }
 
   
-  MDefinition* arrayRtt = f.loadGcCanon(typeIndex);
-  if (!arrayRtt) {
+  MDefinition* arrayTypeDef = f.loadTypeDef(typeIndex);
+  if (!arrayTypeDef) {
     return false;
   }
 
@@ -6798,7 +6798,7 @@ static bool EmitArrayNewData(FunctionCompiler& f) {
   
   MDefinition* arrayObject;
   if (!f.emitInstanceCall4(lineOrBytecode, SASigArrayNewData, segByteOffset,
-                           numElements, arrayRtt, segIndexM, &arrayObject)) {
+                           numElements, arrayTypeDef, segIndexM, &arrayObject)) {
     return false;
   }
 
@@ -6822,8 +6822,8 @@ static bool EmitArrayNewElem(FunctionCompiler& f) {
   }
 
   
-  MDefinition* arrayRtt = f.loadGcCanon(typeIndex);
-  if (!arrayRtt) {
+  MDefinition* arrayTypeDef = f.loadTypeDef(typeIndex);
+  if (!arrayTypeDef) {
     return false;
   }
 
@@ -6840,7 +6840,7 @@ static bool EmitArrayNewElem(FunctionCompiler& f) {
   
   MDefinition* arrayObject;
   if (!f.emitInstanceCall4(lineOrBytecode, SASigArrayNewElem, segElemIndex,
-                           numElements, arrayRtt, segIndexM, &arrayObject)) {
+                           numElements, arrayTypeDef, segIndexM, &arrayObject)) {
     return false;
   }
 
@@ -7001,12 +7001,12 @@ static bool EmitRefTest(FunctionCompiler& f) {
     return true;
   }
 
-  MDefinition* castToRTT = f.loadGcCanon(typeIndex);
-  if (!castToRTT) {
+  MDefinition* castToTypeDef = f.loadTypeDef(typeIndex);
+  if (!castToTypeDef) {
     return false;
   }
 
-  MDefinition* success = f.refTest(lineOrBytecode, ref, castToRTT);
+  MDefinition* success = f.refTest(lineOrBytecode, ref, castToTypeDef);
   if (!success) {
     return false;
   }
@@ -7028,12 +7028,12 @@ static bool EmitRefCast(FunctionCompiler& f) {
     return true;
   }
 
-  MDefinition* castToRTT = f.loadGcCanon(typeIndex);
-  if (!castToRTT) {
+  MDefinition* castToTypeDef = f.loadTypeDef(typeIndex);
+  if (!castToTypeDef) {
     return false;
   }
 
-  if (!f.refCast(lineOrBytecode, ref, castToRTT)) {
+  if (!f.refCast(lineOrBytecode, ref, castToTypeDef)) {
     return false;
   }
 

@@ -650,26 +650,6 @@ static AllocKinds ForegroundUpdateKinds(AllocKinds kinds) {
   return result;
 }
 
-void GCRuntime::updateRttValueObjects(MovingTracer* trc, Zone* zone) {
-  
-  
-  
-  
-
-  zone->rttValueObjects().traceWeak(trc, nullptr);
-
-  for (auto r = zone->rttValueObjects().all(); !r.empty(); r.popFront()) {
-    RttValue* obj = &MaybeForwardedObjectAs<RttValue>(r.front());
-    UpdateCellPointers(trc, obj);
-    for (size_t i = 0; i < RttValue::SlotCount; i++) {
-      Value value = obj->getSlot(i);
-      if (value.isObject()) {
-        UpdateCellPointers(trc, &value.toObject());
-      }
-    }
-  }
-}
-
 void GCRuntime::updateCellPointers(Zone* zone, AllocKinds kinds) {
   AllocKinds fgKinds = ForegroundUpdateKinds(kinds);
   AllocKinds bgKinds = kinds - fgKinds;
@@ -756,10 +736,6 @@ static constexpr AllocKinds UpdatePhaseThree{AllocKind::FUNCTION,
 
 void GCRuntime::updateAllCellPointers(MovingTracer* trc, Zone* zone) {
   updateCellPointers(zone, UpdatePhaseOne);
-
-  
-  
-  updateRttValueObjects(trc, zone);
 
   updateCellPointers(zone, UpdatePhaseThree);
 }
