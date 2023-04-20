@@ -64,7 +64,12 @@ where
     };
 
     
-    let cap = first.remaining() + second.remaining() + body.size_hint().lower() as usize;
+    let rest = (body.size_hint().lower() as usize).min(1024 * 16);
+    let cap = first
+        .remaining()
+        .saturating_add(second.remaining())
+        .saturating_add(rest);
+    
     let mut vec = Vec::with_capacity(cap);
     vec.put(first);
     vec.put(second);

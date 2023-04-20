@@ -748,6 +748,12 @@ where
 
     
     pub(super) fn poll_drain_or_close_read(&mut self, cx: &mut task::Context<'_>) {
+        if let Reading::Continue(ref decoder) = self.state.reading {
+            
+            
+            self.state.reading = Reading::Body(decoder.clone());
+        }
+
         let _ = self.poll_read_body(cx);
 
         

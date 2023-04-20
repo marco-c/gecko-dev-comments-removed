@@ -428,6 +428,16 @@ impl<I, E> Builder<I, E> {
     
     
     
+    #[cfg(feature = "http2")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "http2")))]
+    pub fn http2_max_header_list_size(mut self, max: u32) -> Self {
+        self.protocol.http2_max_header_list_size(max);
+        self
+    }
+
+    
+    
+    
     
     
     
