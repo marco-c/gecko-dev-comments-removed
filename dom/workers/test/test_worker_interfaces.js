@@ -194,6 +194,16 @@ let interfaceNamesInGlobalScope = [
   
   { name: "FileReaderSync", insecureContext: true },
   
+  { name: "FileSystemDirectoryHandle", nightly: true },
+  
+  { name: "FileSystemFileHandle", nightly: true },
+  
+  { name: "FileSystemHandle", nightly: true },
+  
+  { name: "FileSystemSyncAccessHandle", nightly: true },
+  
+  { name: "FileSystemWritableFileStream", nightly: true },
+  
   { name: "FontFace", insecureContext: true },
   
   { name: "FontFaceSet", insecureContext: true },
