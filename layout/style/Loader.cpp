@@ -1840,8 +1840,23 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadStyleLink(
 
   nsINode* requestingNode =
       aInfo.mContent ? static_cast<nsINode*>(aInfo.mContent) : mDocument;
-  const bool syncLoad = aInfo.mContent && aInfo.mContent->IsInUAWidget() &&
-                        IsPrivilegedURI(aInfo.mURI);
+  const bool syncLoad = [&] {
+    if (!aInfo.mContent) {
+      return false;
+    }
+    const bool privilegedShadowTree = aInfo.mContent->IsInUAWidget() ||
+                                      (aInfo.mContent->IsInShadowTree() &&
+                                       aInfo.mContent->IsInChromeDocument());
+    if (!privilegedShadowTree) {
+      return false;
+    }
+    if (!IsPrivilegedURI(aInfo.mURI)) {
+      return false;
+    }
+    
+    
+    return true;
+  }();
   LOG(("  Link sync load: '%s'", syncLoad ? "true" : "false"));
   MOZ_ASSERT_IF(syncLoad, !aObserver);
 
