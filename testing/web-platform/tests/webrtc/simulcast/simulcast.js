@@ -20,8 +20,7 @@ function ridToMid(description, rids) {
   const rtpParameters = SDPUtils.parseRtpParameters(sections[1]);
   const setupValue = description.sdp.match(/a=setup:(.*)/)[1];
   const directionValue =
-    description.sdp.match(/a=sendrecv|a=sendonly|a=recvonly|a=inactive/) ||
-    "a=sendrecv";
+    sections[1].match(/a=sendrecv|a=sendonly|a=recvonly|a=inactive/)[0];
   const mline = SDPUtils.parseMLine(sections[1]);
 
   
@@ -64,8 +63,7 @@ function midToRid(description, localDescription, rids) {
   const rtpParameters = SDPUtils.parseRtpParameters(sections[1]);
   const setupValue = description.sdp.match(/a=setup:(.*)/)[1];
   const directionValue =
-    description.sdp.match(/a=sendrecv|a=sendonly|a=recvonly|a=inactive/) ||
-    "a=sendrecv";
+    sections[1].match(/a=sendrecv|a=sendonly|a=recvonly|a=inactive/)[0];
   const mline = SDPUtils.parseMLine(sections[1]);
 
   
