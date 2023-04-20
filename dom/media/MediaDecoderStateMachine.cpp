@@ -4404,7 +4404,7 @@ RefPtr<GenericPromise> MediaDecoderStateMachine::SetSink(
   MOZ_ASSERT(OnTaskQueue());
   if (mIsMediaSinkSuspended) {
     
-    return GenericPromise::CreateAndReject(NS_ERROR_ABORT, __func__);
+    return GenericPromise::CreateAndResolve(false, __func__);
   }
 
   if (mOutputCaptureState != MediaDecoder::OutputCaptureState::None) {
