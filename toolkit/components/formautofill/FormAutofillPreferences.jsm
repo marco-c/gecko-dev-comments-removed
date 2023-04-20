@@ -1,22 +1,32 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/**
- * Injects the form autofill section into about:preferences.
- */
 
-// Add addresses enabled flag in telemetry environment for recording the number of
-// users who disable/enable the address autofill feature.
+
+
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["FormAutofillPreferences"];
+
+
+
 const BUNDLE_URI = "chrome://formautofill/locale/formautofill.properties";
 const MANAGE_ADDRESSES_URL =
   "chrome://formautofill/content/manageAddresses.xhtml";
 const MANAGE_CREDITCARDS_URL =
   "chrome://formautofill/content/manageCreditCards.xhtml";
 
-import { FormAutofill } from "resource://autofill/FormAutofill.sys.mjs";
-import { FormAutofillUtils } from "resource://autofill/FormAutofillUtils.sys.mjs";
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+const { FormAutofill } = ChromeUtils.import(
+  "resource://autofill/FormAutofill.jsm"
+);
+const { FormAutofillUtils } = ChromeUtils.import(
+  "resource://autofill/FormAutofillUtils.jsm"
+);
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -34,22 +44,22 @@ const {
   MANAGE_CREDITCARDS_L10N_IDS,
   EDIT_CREDITCARD_L10N_IDS,
 } = FormAutofillUtils;
-// Add credit card enabled flag in telemetry environment for recording the number of
-// users who disable/enable the credit card autofill feature.
+
+
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 
-export function FormAutofillPreferences() {
+function FormAutofillPreferences() {
   this.bundle = Services.strings.createBundle(BUNDLE_URI);
 }
 
 FormAutofillPreferences.prototype = {
-  /**
-   * Create the Form Autofill preference group.
-   *
-   * @param   {HTMLDocument} document
-   * @returns {XULElement}
-   */
+  
+
+
+
+
+
   init(document) {
     this.createPreferenceGroup(document);
     this.attachEventListeners();
@@ -57,19 +67,19 @@ FormAutofillPreferences.prototype = {
     return this.refs.formAutofillFragment;
   },
 
-  /**
-   * Remove event listeners and the preference group.
-   */
+  
+
+
   uninit() {
     this.detachEventListeners();
     this.refs.formAutofillGroup.remove();
   },
 
-  /**
-   * Create Form Autofill preference group
-   *
-   * @param  {HTMLDocument} document
-   */
+  
+
+
+
+
   createPreferenceGroup(document) {
     let formAutofillFragment = document.createDocumentFragment();
     let formAutofillGroupBoxLabel = document.createXULElement("label");
@@ -78,9 +88,9 @@ FormAutofillPreferences.prototype = {
       "h2"
     );
     let formAutofillGroup = document.createXULElement("vbox");
-    // Wrappers are used to properly compute the search tooltip positions
-    // let savedAddressesBtnWrapper = document.createXULElement("hbox");
-    // let savedCreditCardsBtnWrapper = document.createXULElement("hbox");
+    
+    
+    
     this.refs = {};
     this.refs.formAutofillGroup = formAutofillGroup;
     this.refs.formAutofillFragment = formAutofillFragment;
@@ -127,8 +137,8 @@ FormAutofillPreferences.prototype = {
         "label",
         this.bundle.GetStringFromName("savedAddressesBtnLabel")
       );
-      // Align the start to keep the savedAddressesBtn as original size
-      // when addressAutofillCheckboxGroup's height is changed by a longer l10n string
+      
+      
       savedAddressesBtnWrapper.setAttribute("align", "start");
 
       addressAutofillLearnMore.setAttribute(
@@ -136,13 +146,13 @@ FormAutofillPreferences.prototype = {
         "autofill-card-address"
       );
 
-      // Add preferences search support
+      
       savedAddressesBtn.setAttribute(
         "search-l10n-ids",
         MANAGE_ADDRESSES_L10N_IDS.concat(EDIT_ADDRESS_L10N_IDS).join(",")
       );
 
-      // Manually set the checked state
+      
       if (FormAutofill.isAutofillAddressesEnabled) {
         addressAutofillCheckbox.setAttribute("checked", true);
       }
@@ -195,8 +205,8 @@ FormAutofillPreferences.prototype = {
         "label",
         this.bundle.GetStringFromName("savedCreditCardsBtnLabel")
       );
-      // Align the start to keep the savedCreditCardsBtn as original size
-      // when creditCardAutofillCheckboxGroup's height is changed by a longer l10n string
+      
+      
       savedCreditCardsBtnWrapper.setAttribute("align", "start");
 
       creditCardAutofillLearnMore.setAttribute(
@@ -204,13 +214,13 @@ FormAutofillPreferences.prototype = {
         "credit-card-autofill"
       );
 
-      // Add preferences search support
+      
       savedCreditCardsBtn.setAttribute(
         "search-l10n-ids",
         MANAGE_CREDITCARDS_L10N_IDS.concat(EDIT_CREDITCARD_L10N_IDS).join(",")
       );
 
-      // Manually set the checked state
+      
       if (FormAutofill.isAutofillCreditCardsEnabled) {
         creditCardAutofillCheckbox.setAttribute("checked", true);
       }
@@ -250,8 +260,8 @@ FormAutofillPreferences.prototype = {
         reauth.setAttribute("data-subcategory", "reauth-credit-card-autofill");
 
         let autofillReauthCheckboxLabel = "autofillReauthCheckbox";
-        // We reuse the if/else order from wizard markup to increase
-        // odds of consistent behavior.
+        
+        
         if (AppConstants.platform == "macosx") {
           autofillReauthCheckboxLabel += "Mac";
         } else if (AppConstants.platform == "linux") {
@@ -269,7 +279,7 @@ FormAutofillPreferences.prototype = {
           "credit-card-autofill#w_require-authentication-for-autofill"
         );
 
-        // Manually set the checked state
+        
         if (FormAutofillUtils._reauthEnabledByUser) {
           reauthCheckbox.setAttribute("checked", true);
         }
@@ -286,18 +296,18 @@ FormAutofillPreferences.prototype = {
     }
   },
 
-  /**
-   * Handle events
-   *
-   * @param  {DOMEvent} event
-   */
+  
+
+
+
+
   async handleEvent(event) {
     switch (event.type) {
       case "command": {
         let target = event.target;
 
         if (target == this.refs.addressAutofillCheckbox) {
-          // Set preference directly instead of relying on <Preference>
+          
           Services.prefs.setBoolPref(
             ENABLED_AUTOFILL_ADDRESSES_PREF,
             target.checked
@@ -316,8 +326,8 @@ FormAutofillPreferences.prototype = {
           }
 
           let messageTextId = "autofillReauthOSDialog";
-          // We reuse the if/else order from wizard markup to increase
-          // odds of consistent behavior.
+          
+          
           if (AppConstants.platform == "macosx") {
             messageTextId += "Mac";
           } else if (AppConstants.platform == "linux") {
@@ -372,17 +382,17 @@ FormAutofillPreferences.prototype = {
     }
   },
 
-  /**
-   * Attach event listener
-   */
+  
+
+
   attachEventListeners() {
     this.refs.formAutofillGroup.addEventListener("command", this);
     this.refs.formAutofillGroup.addEventListener("click", this);
   },
 
-  /**
-   * Remove event listener
-   */
+  
+
+
   detachEventListeners() {
     this.refs.formAutofillGroup.removeEventListener("command", this);
     this.refs.formAutofillGroup.removeEventListener("click", this);

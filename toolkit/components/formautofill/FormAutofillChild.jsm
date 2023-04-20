@@ -1,21 +1,31 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["FormAutofillChild"];
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AutoCompleteChild: "resource://gre/actors/AutoCompleteChild.sys.mjs",
-  FormAutofill: "resource://autofill/FormAutofill.sys.mjs",
-  FormAutofillContent: "resource://autofill/FormAutofillContent.sys.mjs",
-  FormAutofillUtils: "resource://autofill/FormAutofillUtils.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
-/**
- * Handles content's interactions for the frame.
- */
-export class FormAutofillChild extends JSWindowActorChild {
+XPCOMUtils.defineLazyModuleGetters(lazy, {
+  FormAutofill: "resource://autofill/FormAutofill.jsm",
+  FormAutofillContent: "resource://autofill/FormAutofillContent.jsm",
+  FormAutofillUtils: "resource://autofill/FormAutofillUtils.jsm",
+});
+
+
+
+
+class FormAutofillChild extends JSWindowActorChild {
   constructor() {
     super();
 
@@ -82,8 +92,8 @@ export class FormAutofillChild extends JSWindowActorChild {
       lazy.FormAutofillContent.identifyAutofillFields(this._nextHandleElement);
       this._hasPendingTask = false;
       this._nextHandleElement = null;
-      // This is for testing purpose only which sends a notification to indicate that the
-      // form has been identified, and ready to open popup.
+      
+      
       this.sendAsyncMessage("FormAutofill:FieldsIdentified");
       lazy.FormAutofillContent.updateActiveInput();
     });
@@ -155,11 +165,11 @@ export class FormAutofillChild extends JSWindowActorChild {
     this._doIdentifyAutofillFields();
   }
 
-  /**
-   * Handle the DOMFormBeforeSubmit event.
-   *
-   * @param {Event} evt
-   */
+  
+
+
+
+
   onDOMFormBeforeSubmit(evt) {
     let formElement = evt.target;
 
