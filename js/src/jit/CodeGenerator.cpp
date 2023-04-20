@@ -11171,6 +11171,7 @@ void JitRuntime::generateLazyLinkStub(MacroAssembler& masm) {
   masm.pushReturnAddress();
 #endif
   masm.Push(FramePointer);
+  masm.moveStackPtrTo(FramePointer);
 
   AllocatableGeneralRegisterSet regs(GeneralRegisterSet::Volatile());
   Register temp0 = regs.takeAny();
@@ -11189,7 +11190,8 @@ void JitRuntime::generateLazyLinkStub(MacroAssembler& masm) {
       MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
   
-  masm.leaveExitFrame(sizeof(void*));
+  masm.leaveExitFrame(0);
+  masm.pop(FramePointer);
 
 #ifdef JS_USE_LINK_REGISTER
   
@@ -11208,6 +11210,7 @@ void JitRuntime::generateInterpreterStub(MacroAssembler& masm) {
   masm.pushReturnAddress();
 #endif
   masm.Push(FramePointer);
+  masm.moveStackPtrTo(FramePointer);
 
   AllocatableGeneralRegisterSet regs(GeneralRegisterSet::Volatile());
   Register temp0 = regs.takeAny();
@@ -11228,7 +11231,8 @@ void JitRuntime::generateInterpreterStub(MacroAssembler& masm) {
   masm.branchIfFalseBool(ReturnReg, masm.failureLabel());
 
   
-  masm.leaveExitFrame(sizeof(void*));
+  masm.leaveExitFrame(0);
+  masm.pop(FramePointer);
 
   
   

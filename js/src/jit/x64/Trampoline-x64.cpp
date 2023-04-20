@@ -681,6 +681,7 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   
   
   masm.Push(FramePointer);
+  masm.moveStackPtrTo(FramePointer);
   masm.loadJSContext(cxreg);
   masm.enterExitFrame(cxreg, regs.getAny(), &f);
 
@@ -820,7 +821,8 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   }
 
   
-  masm.leaveExitFrame(sizeof(void*));
+  masm.leaveExitFrame(0);
+  masm.pop(FramePointer);
 
   
   masm.retn(Imm32(sizeof(ExitFrameLayout) - sizeof(void*) +
