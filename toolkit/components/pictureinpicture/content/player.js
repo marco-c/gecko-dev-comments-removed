@@ -80,6 +80,25 @@ function setIsMutedState(isMuted) {
   Player.isMuted = isMuted;
 }
 
+
+
+
+
+
+
+function resizeToVideo(rect) {
+  Player.resizeToVideo(rect);
+}
+
+
+
+
+
+
+function getDeferredResize() {
+  return Player.deferredResize;
+}
+
 function enableSubtitlesButton() {
   Player.enableSubtitlesButton();
 }
@@ -144,6 +163,12 @@ let Player = {
 
 
   isCurrentHover: false,
+
+  
+
+
+
+  deferredResize: null,
 
   
 
@@ -381,6 +406,13 @@ let Player = {
         });
 
         
+        
+        if (this.deferredResize && event.type === "MozDOMFullscreen:Exited") {
+          this.resizeToVideo(this.deferredResize);
+          this.deferredResize = null;
+        }
+
+        
         const fullscreenButton = document.getElementById("fullscreen");
         let strId = this.isFullscreen
           ? `pictureinpicture-exit-fullscreen-btn`
@@ -616,7 +648,25 @@ let Player = {
     if (this.isFullscreen) {
       document.exitFullscreen();
     } else {
+      this.deferredResize = {
+        left: window.screenX,
+        top: window.screenY,
+        width: window.innerWidth,
+        height: window.innerHeight,
+      };
       document.body.requestFullscreen();
+    }
+  },
+
+  resizeToVideo(rect) {
+    if (this.isFullscreen) {
+      
+      
+      this.deferredResize = rect;
+    } else {
+      let { left, top, width, height } = rect;
+      window.resizeTo(width, height);
+      window.moveTo(left, top);
     }
   },
 

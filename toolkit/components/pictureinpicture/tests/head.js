@@ -29,6 +29,9 @@ const HAS_USED_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.has-used";
 const SHARED_DATA_KEY = "PictureInPicture:SiteOverrides";
 
+const PLAYER_URI = "chrome://global/content/pictureinpicture/player.xhtml";
+const ACCEPTABLE_DIFFERENCE = 2;
+
 
 
 
@@ -951,4 +954,25 @@ async function waitForNextCue(browser, videoID, textTrackIndex = 0) {
       ok(video.paused, "Video is paused");
     }
   );
+}
+
+
+
+
+
+
+function clearSavedPosition() {
+  let xulStore = Services.xulStore;
+  xulStore.setValue(PLAYER_URI, "picture-in-picture", "left", NaN);
+  xulStore.setValue(PLAYER_URI, "picture-in-picture", "top", NaN);
+  xulStore.setValue(PLAYER_URI, "picture-in-picture", "width", NaN);
+  xulStore.setValue(PLAYER_URI, "picture-in-picture", "height", NaN);
+}
+
+function overrideSavedPosition(left, top, width, height) {
+  let xulStore = Services.xulStore;
+  xulStore.setValue(PLAYER_URI, "picture-in-picture", "left", left);
+  xulStore.setValue(PLAYER_URI, "picture-in-picture", "top", top);
+  xulStore.setValue(PLAYER_URI, "picture-in-picture", "width", width);
+  xulStore.setValue(PLAYER_URI, "picture-in-picture", "height", height);
 }
