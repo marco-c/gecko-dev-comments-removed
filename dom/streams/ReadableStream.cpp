@@ -135,13 +135,6 @@ bool ReadableStreamHasDefaultReader(ReadableStream* aStream) {
   return reader->IsDefault();
 }
 
-void ReadableStream::ReleaseObjectsFromBodyStream() {
-  
-  
-  
-  mController->ClearAlgorithmsWithoutRelease();
-}
-
 
 
 already_AddRefed<ReadableStream> ReadableStream::Constructor(

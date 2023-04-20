@@ -96,10 +96,6 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
 
   
   
-  void ReleaseObjectsFromBodyStream();
-
-  
-  
   MOZ_CAN_RUN_SCRIPT bool Transfer(JSContext* aCx,
                                    UniqueMessagePortId& aPortId);
   

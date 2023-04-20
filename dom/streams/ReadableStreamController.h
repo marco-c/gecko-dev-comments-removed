@@ -53,11 +53,6 @@ class ReadableStreamController : public nsISupports {
     mAlgorithms = nullptr;
   }
 
-  
-  
-  
-  void ClearAlgorithmsWithoutRelease() { mAlgorithms = nullptr; }
-
  protected:
   nsCOMPtr<nsIGlobalObject> mGlobal;
 
