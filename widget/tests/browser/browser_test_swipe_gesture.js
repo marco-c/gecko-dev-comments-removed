@@ -1062,6 +1062,7 @@ add_task(async () => {
       ["widget.swipe.velocity-twitch-tolerance", 0.0000001],
       ["widget.swipe.success-velocity-contribution", 0.5],
       ["apz.overscroll.enabled", true],
+      ["apz.overscroll.damping", 5.0],
       ["apz.content_response_timeout", 0],
     ],
   });
@@ -1108,7 +1109,24 @@ add_task(async () => {
   await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
     
     
-    await content.wrappedJSObject.promiseTopic("APZ:TransformEnd");
+    
+    
+    await new Promise((resolve, reject) => {
+      SpecialPowers.Services.obs.addObserver(function observer(
+        subject,
+        topic,
+        data
+      ) {
+        try {
+          SpecialPowers.Services.obs.removeObserver(observer, topic);
+          resolve([subject, data]);
+        } catch (ex) {
+          SpecialPowers.Services.obs.removeObserver(observer, topic);
+          reject(ex);
+        }
+      },
+      "APZ:TransformEnd");
+    });
   });
 
   BrowserTestUtils.removeTab(tab);
