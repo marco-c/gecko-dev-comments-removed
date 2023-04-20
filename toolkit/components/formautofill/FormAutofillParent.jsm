@@ -475,7 +475,7 @@ class FormAutofillParent extends JSWindowActorParent {
     return records;
   }
 
-  async _onAddressSubmit(address, browser, timeStartedFillingMS) {
+  async _onAddressSubmit(address, browser) {
     let showDoorhanger = null;
 
     
@@ -501,12 +501,6 @@ class FormAutofillParent extends JSWindowActorParent {
           true
         ))
       ) {
-        this._recordFormFillingTime(
-          "address",
-          "autofill-update",
-          timeStartedFillingMS
-        );
-
         showDoorhanger = async () => {
           const description = FormAutofillUtils.getAddressLabel(address.record);
           const state = await lazy.FormAutofillPrompter.promptToSaveAddress(
@@ -546,11 +540,6 @@ class FormAutofillParent extends JSWindowActorParent {
           );
         };
       } else {
-        this._recordFormFillingTime(
-          "address",
-          "autofill",
-          timeStartedFillingMS
-        );
         lazy.gFormAutofillStorage.addresses.notifyUsed(address.guid);
       }
     } else {
@@ -565,7 +554,6 @@ class FormAutofillParent extends JSWindowActorParent {
       changedGUIDs.forEach(guid =>
         lazy.gFormAutofillStorage.addresses.notifyUsed(guid)
       );
-      this._recordFormFillingTime("address", "manual", timeStartedFillingMS);
 
       
       if (FormAutofill.isAutofillAddressesFirstTimeUse) {
@@ -591,7 +579,7 @@ class FormAutofillParent extends JSWindowActorParent {
     return showDoorhanger;
   }
 
-  async _onCreditCardSubmit(creditCard, browser, timeStartedFillingMS) {
+  async _onCreditCardSubmit(creditCard, browser) {
     
     
     delete creditCard.record["cc-type"];
@@ -618,21 +606,9 @@ class FormAutofillParent extends JSWindowActorParent {
 
       if (recordUnchanged) {
         lazy.gFormAutofillStorage.creditCards.notifyUsed(creditCard.guid);
-        this._recordFormFillingTime(
-          "creditCard",
-          "autofill",
-          timeStartedFillingMS
-        );
         return false;
       }
-      this._recordFormFillingTime(
-        "creditCard",
-        "autofill-update",
-        timeStartedFillingMS
-      );
     } else {
-      this._recordFormFillingTime("creditCard", "manual", timeStartedFillingMS);
-
       let existingGuid = await lazy.gFormAutofillStorage.creditCards.getDuplicateGuid(
         creditCard.record
       );
@@ -683,19 +659,7 @@ class FormAutofillParent extends JSWindowActorParent {
   }
 
   async _onFormSubmit(data) {
-    let {
-      profile: { address, creditCard },
-      timeStartedFillingMS,
-    } = data;
-
-    
-    
-    
-    
-    
-    if (address.length > 1 || creditCard.length > 1) {
-      timeStartedFillingMS = null;
-    }
+    let { address, creditCard } = data;
 
     let browser = this.manager.browsingContext.top.embedderElement;
 
@@ -704,13 +668,11 @@ class FormAutofillParent extends JSWindowActorParent {
     await Promise.all(
       [
         await Promise.all(
-          address.map(addrRecord =>
-            this._onAddressSubmit(addrRecord, browser, timeStartedFillingMS)
-          )
+          address.map(addrRecord => this._onAddressSubmit(addrRecord, browser))
         ),
         await Promise.all(
           creditCard.map(ccRecord =>
-            this._onCreditCardSubmit(ccRecord, browser, timeStartedFillingMS)
+            this._onCreditCardSubmit(ccRecord, browser)
           )
         ),
       ]
@@ -728,26 +690,5 @@ class FormAutofillParent extends JSWindowActorParent {
           })()
         )
     );
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  _recordFormFillingTime(formType, fillingType, startedFillingMS) {
-    if (!startedFillingMS) {
-      return;
-    }
-    let histogram = Services.telemetry.getKeyedHistogramById(
-      "FORM_FILLING_REQUIRED_TIME_MS"
-    );
-    histogram.add(`${formType}-${fillingType}`, Date.now() - startedFillingMS);
   }
 }

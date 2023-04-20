@@ -1462,11 +1462,6 @@ class FormAutofillHandler {
     
 
 
-    this.timeStartedFillingMS = null;
-
-    
-
-
 
     this.onFormSubmitted = () => {
       onFormSubmitted(this.form, this.window, this);
@@ -1597,14 +1592,6 @@ class FormAutofillHandler {
       allValidDetails.push(...section.fieldDetails);
     }
 
-    for (let detail of allValidDetails) {
-      let input = detail.elementWeakRef.get();
-      if (!input) {
-        continue;
-      }
-      input.addEventListener("input", this, { mozSystemGroup: true });
-    }
-
     this.fieldDetails = allValidDetails;
     return allValidDetails;
   }
@@ -1653,25 +1640,6 @@ class FormAutofillHandler {
       this.form.rootElement.addEventListener("reset", onChangeHandler, {
         mozSystemGroup: true,
       });
-    }
-  }
-
-  handleEvent(event) {
-    switch (event.type) {
-      case "input":
-        if (!event.isTrusted) {
-          return;
-        }
-
-        for (let detail of this.fieldDetails) {
-          let input = detail.elementWeakRef.get();
-          if (!input) {
-            continue;
-          }
-          input.removeEventListener("input", this, { mozSystemGroup: true });
-        }
-        this.timeStartedFillingMS = Date.now();
-        break;
     }
   }
 
