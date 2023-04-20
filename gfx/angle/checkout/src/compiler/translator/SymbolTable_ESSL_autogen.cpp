@@ -9,6 +9,8 @@
 
 
 
+#include <cmath>
+
 #include "compiler/translator/SymbolTable.h"
 
 #include "angle_gl.h"
