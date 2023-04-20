@@ -78,6 +78,8 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   IntRect mClipBounds;
   RefPtr<DrawTargetSkia> mSkia;
   
+  RefPtr<DrawTargetSkia> mSkiaNoClip;
+  
   mozilla::ipc::Shmem mShmem;
   
   RefPtr<DataSourceSurface> mSnapshot;

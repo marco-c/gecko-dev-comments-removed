@@ -1667,10 +1667,9 @@ DrawTargetSkia::CreateSourceSurfaceFromNativeSurface(
   return nullptr;
 }
 
-void DrawTargetSkia::BlendSurface(SourceSurface* aSurface,
-                                  const IntRect& aSourceRect,
-                                  const IntPoint& aDestination,
-                                  CompositionOp aOperator) {
+void DrawTargetSkia::CopySurface(SourceSurface* aSurface,
+                                 const IntRect& aSourceRect,
+                                 const IntPoint& aDestination) {
   MarkChanged();
 
   Maybe<MutexAutoLock> lock;
@@ -1679,31 +1678,28 @@ void DrawTargetSkia::BlendSurface(SourceSurface* aSurface,
     return;
   }
 
-  mCanvas->save();
-  mCanvas->setMatrix(SkMatrix::MakeTrans(SkIntToScalar(aDestination.x),
-                                         SkIntToScalar(aDestination.y)));
-  mCanvas->clipRect(SkRect::MakeIWH(aSourceRect.Width(), aSourceRect.Height()),
-                    SkClipOp::kReplace_deprecated);
-
-  SkPaint paint;
-  if (aOperator == CompositionOp::OP_SOURCE) {
-    if (!image->isOpaque()) {
-      
-      
-      paint.setBlendMode(SkBlendMode::kSrc);
-    }
-    
-    
-    if (image->isAlphaOnly()) {
-      mCanvas->clear(SK_ColorTRANSPARENT);
-    }
-  } else {
-    paint.setBlendMode(GfxOpToSkiaOp(aOperator));
+  SkPixmap srcPixmap;
+  if (!image->peekPixels(&srcPixmap)) {
+    return;
   }
 
-  mCanvas->drawImage(image, -SkIntToScalar(aSourceRect.X()),
-                     -SkIntToScalar(aSourceRect.Y()), &paint);
-  mCanvas->restore();
+  
+  IntRect srcRect = aSourceRect.Intersect(SkIRectToIntRect(srcPixmap.bounds()));
+  
+  IntPoint dstOffset =
+      aDestination + (srcRect.TopLeft() - aSourceRect.TopLeft());
+  
+  IntRect dstRect = IntRect(dstOffset, srcRect.Size()).Intersect(GetRect());
+  
+  srcRect += dstRect.TopLeft() - dstOffset;
+  srcRect.SizeTo(dstRect.Size());
+
+  if (!srcPixmap.extractSubset(&srcPixmap, IntRectToSkIRect(srcRect))) {
+    return;
+  }
+
+  mCanvas->writePixels(srcPixmap.info(), srcPixmap.addr(), srcPixmap.rowBytes(),
+                       dstRect.x, dstRect.y);
 }
 
 static inline SkPixelGeometry GetSkPixelGeometry() {
@@ -1858,17 +1854,11 @@ already_AddRefed<PathBuilder> DrawTargetSkia::CreatePathBuilder(
   return MakeAndAddRef<PathBuilderSkia>(aFillRule);
 }
 
-void DrawTargetSkia::Clear(const Rect& aRect, bool aClipped) {
+void DrawTargetSkia::ClearRect(const Rect& aRect) {
   MarkChanged();
   mCanvas->save();
-  if (aClipped) {
-    
-    mCanvas->clipRect(RectToSkRect(aRect), SkClipOp::kIntersect, true);
-  } else {
-    
-    mCanvas->resetMatrix();
-    mCanvas->clipRect(RectToSkRect(aRect), SkClipOp::kReplace_deprecated);
-  }
+  
+  mCanvas->clipRect(RectToSkRect(aRect), SkClipOp::kIntersect, true);
   SkColor clearColor = (mFormat == SurfaceFormat::B8G8R8X8)
                            ? SK_ColorBLACK
                            : SK_ColorTRANSPARENT;
