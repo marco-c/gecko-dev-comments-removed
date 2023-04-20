@@ -23,12 +23,12 @@
 
 namespace webrtc {
 
-class VCMDecoderDataBase {
+class VCMDecoderDatabase {
  public:
-  VCMDecoderDataBase();
-  VCMDecoderDataBase(const VCMDecoderDataBase&) = delete;
-  VCMDecoderDataBase& operator=(const VCMDecoderDataBase&) = delete;
-  ~VCMDecoderDataBase() = default;
+  VCMDecoderDatabase();
+  VCMDecoderDatabase(const VCMDecoderDatabase&) = delete;
+  VCMDecoderDatabase& operator=(const VCMDecoderDatabase&) = delete;
+  ~VCMDecoderDatabase() = default;
 
   
   

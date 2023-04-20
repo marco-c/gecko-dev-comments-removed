@@ -63,7 +63,7 @@ class VideoReceiver2 {
   
   
   
-  VCMDecoderDataBase codec_database_;
+  VCMDecoderDatabase codec_database_;
 };
 
 }  
