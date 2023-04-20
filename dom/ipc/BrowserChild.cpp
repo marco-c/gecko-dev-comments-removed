@@ -3294,6 +3294,19 @@ void BrowserChild::PaintWhileInterruptingJS(
   RecvRenderLayers(true , aEpoch);
 }
 
+void BrowserChild::UnloadLayersWhileInterruptingJS(
+    const layers::LayersObserverEpoch& aEpoch) {
+  if (!IPCOpen() || !mPuppetWidget || !mPuppetWidget->HasWindowRenderer()) {
+    
+    
+    return;
+  }
+
+  MOZ_DIAGNOSTIC_ASSERT(nsContentUtils::IsSafeToRunScript());
+  nsAutoScriptBlocker scriptBlocker;
+  RecvRenderLayers(false , aEpoch);
+}
+
 nsresult BrowserChild::CanCancelContentJS(
     nsIRemoteTab::NavigationType aNavigationType, int32_t aNavigationIndex,
     nsIURI* aNavigationURI, int32_t aEpoch, bool* aCanCancel) {

@@ -3494,6 +3494,8 @@ void BrowserParent::SetRenderLayersInternal(bool aEnabled) {
   
   if (aEnabled) {
     Manager()->PaintTabWhileInterruptingJS(this, mLayerTreeEpoch);
+  } else {
+    Manager()->UnloadLayersWhileInterruptingJS(this, mLayerTreeEpoch);
   }
 }
 
