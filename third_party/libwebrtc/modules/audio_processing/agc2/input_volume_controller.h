@@ -11,7 +11,6 @@
 #ifndef MODULES_AUDIO_PROCESSING_AGC2_INPUT_VOLUME_CONTROLLER_H_
 #define MODULES_AUDIO_PROCESSING_AGC2_INPUT_VOLUME_CONTROLLER_H_
 
-#include <atomic>
 #include <memory>
 #include <vector>
 
@@ -25,7 +24,6 @@
 namespace webrtc {
 
 class MonoInputVolumeController;
-
 
 
 
@@ -77,7 +75,6 @@ class InputVolumeController final {
   InputVolumeController& operator=(const InputVolumeController&) = delete;
 
   
-  
   void Initialize();
 
   
@@ -108,19 +105,14 @@ class InputVolumeController final {
 
   
   
+  
   void HandleCaptureOutputUsedChange(bool capture_output_used);
 
-  float voice_probability() const;
-
-  int num_channels() const { return num_capture_channels_; }
-
   
-  
-  absl::optional<int> GetDigitalComressionGain();
-
   
   bool clipping_predictor_enabled() const { return !!clipping_predictor_; }
 
+  
   
   bool use_clipping_predictor_step() const {
     return use_clipping_predictor_step_;
@@ -129,8 +121,6 @@ class InputVolumeController final {
  private:
   friend class InputVolumeControllerTestHelper;
 
-  FRIEND_TEST_ALL_PREFIXES(InputVolumeControllerTest,
-                           DisableDigitalDisablesDigital);
   FRIEND_TEST_ALL_PREFIXES(InputVolumeControllerTest,
                            AgcMinMicLevelExperimentDefault);
   FRIEND_TEST_ALL_PREFIXES(InputVolumeControllerTest,
@@ -141,29 +131,19 @@ class InputVolumeController final {
                            AgcMinMicLevelExperimentOutOfRangeBelow);
   FRIEND_TEST_ALL_PREFIXES(InputVolumeControllerTest,
                            AgcMinMicLevelExperimentEnabled50);
-  FRIEND_TEST_ALL_PREFIXES(InputVolumeControllerTest,
-                           AgcMinMicLevelExperimentEnabledAboveStartupLevel);
   FRIEND_TEST_ALL_PREFIXES(InputVolumeControllerParametrizedTest,
                            ClippingParametersVerified);
-  FRIEND_TEST_ALL_PREFIXES(InputVolumeControllerParametrizedTest,
-                           DisableClippingPredictorDoesNotLowerVolume);
-  FRIEND_TEST_ALL_PREFIXES(InputVolumeControllerParametrizedTest,
-                           UsedClippingPredictionsProduceLowerAnalogLevels);
-  FRIEND_TEST_ALL_PREFIXES(InputVolumeControllerParametrizedTest,
-                           UnusedClippingPredictionsProduceEqualAnalogLevels);
-  FRIEND_TEST_ALL_PREFIXES(InputVolumeControllerParametrizedTest,
-                           EmptyRmsErrorHasNoEffect);
 
   void AggregateChannelLevels();
 
   const bool analog_controller_enabled_;
 
-  const absl::optional<int> min_mic_level_override_;
-  static std::atomic<int> instance_counter_;
-  const bool use_min_channel_level_;
   const int num_capture_channels_;
 
-  int frames_since_clipped_;
+  
+  const absl::optional<int> min_mic_level_override_;
+
+  const bool use_min_channel_level_;
 
   
   
@@ -176,18 +156,16 @@ class InputVolumeController final {
   int recommended_input_volume_ = 0;
 
   bool capture_output_used_;
-  int channel_controlling_gain_ = 0;
 
+  
   const int clipped_level_step_;
   const float clipped_ratio_threshold_;
   const int clipped_wait_frames_;
-
-  std::vector<std::unique_ptr<MonoInputVolumeController>> channel_controllers_;
-
   const std::unique_ptr<ClippingPredictor> clipping_predictor_;
   const bool use_clipping_predictor_step_;
-  float clipping_rate_log_;
+  int frames_since_clipped_;
   int clipping_rate_log_counter_;
+  float clipping_rate_log_;
 
   
   
@@ -195,6 +173,10 @@ class InputVolumeController final {
   
   const int target_range_max_dbfs_;
   const int target_range_min_dbfs_;
+
+  
+  std::vector<std::unique_ptr<MonoInputVolumeController>> channel_controllers_;
+  int channel_controlling_gain_ = 0;
 };
 
 
