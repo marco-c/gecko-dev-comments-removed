@@ -867,7 +867,19 @@ void DataChannelConnection::CompleteConnect() {
       } else {
         
         
-        paddrparams.spp_pathmtu = 1200;  
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        paddrparams.spp_pathmtu = 1179;
         paddrparams.spp_flags &= ~SPP_PMTUD_ENABLE;
         paddrparams.spp_flags |= SPP_PMTUD_DISABLE;
         opt_len = (socklen_t)sizeof(struct sctp_paddrparams);
