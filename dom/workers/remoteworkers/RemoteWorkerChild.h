@@ -15,7 +15,6 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ThreadBound.h"
-#include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/dom/PRemoteWorkerChild.h"
 #include "mozilla/dom/ServiceWorkerOpArgs.h"
 
@@ -27,6 +26,7 @@ namespace mozilla::dom {
 class ErrorValue;
 class FetchEventOpProxyChild;
 class RemoteWorkerData;
+class RemoteWorkerServiceKeepAlive;
 class ServiceWorkerOp;
 class UniqueMessagePortId;
 class WeakWorkerRef;
@@ -40,9 +40,7 @@ class WorkerPrivate;
 
 
 
-class RemoteWorkerChild final
-    : public SupportsThreadSafeWeakPtr<RemoteWorkerChild>,
-      public PRemoteWorkerChild {
+class RemoteWorkerChild final : public PRemoteWorkerChild {
   friend class FetchEventOpProxyChild;
   friend class PRemoteWorkerChild;
   friend class ServiceWorkerOp;
@@ -50,11 +48,12 @@ class RemoteWorkerChild final
   ~RemoteWorkerChild();
 
  public:
-  NS_INLINE_DECL_REFCOUNTING(RemoteWorkerChild, final)
+  
+  
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteWorkerChild, final)
 
   explicit RemoteWorkerChild(const RemoteWorkerData& aData);
-
-  nsISerialEventTarget* GetOwningEventTarget() const;
 
   void ExecWorker(const RemoteWorkerData& aData);
 
@@ -85,22 +84,61 @@ class RemoteWorkerChild final
     RefPtr<WorkerPrivate> mWorkerPrivate;
   };
 
+  
+  
+  
+  
   struct Pending : WorkerPrivateAccessibleState {
     nsTArray<RefPtr<Op>> mPendingOps;
   };
 
-  struct PendingTerminated {};
+  
+  
+  
+  
+  
+  
+  
+  
+  struct Running : WorkerPrivateAccessibleState {};
 
-  struct Running : WorkerPrivateAccessibleState {
-    ~Running();
-    RefPtr<WeakWorkerRef> mWorkerRef;
-  };
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  struct Canceled {};
 
-  struct Terminated {};
+  
+  
+  
+  
+  
+  
+  struct Killed {};
 
-  using State = Variant<Pending, Running, PendingTerminated, Terminated>;
+  using State = Variant<Pending, Running, Canceled, Killed>;
 
+  
+  
+  
+  
   DataMutex<State> mState;
+
+  const RefPtr<RemoteWorkerServiceKeepAlive> mServiceKeepAlive;
 
   class Op {
    public:
@@ -109,6 +147,8 @@ class RemoteWorkerChild final
     virtual ~Op() = default;
 
     virtual bool MaybeStart(RemoteWorkerChild* aOwner, State& aState) = 0;
+
+    virtual void StartOnMainThread(RefPtr<RemoteWorkerChild>& aOwner) = 0;
 
     virtual void Cancel() = 0;
   };
@@ -129,9 +169,11 @@ class RemoteWorkerChild final
 
   nsresult ExecWorkerOnMainThread(RemoteWorkerData&& aData);
 
-  void InitializeOnWorker();
+  void ExceptionalErrorTransitionDuringExecWorker();
 
-  void ShutdownOnWorker();
+  void RequestWorkerCancellation();
+
+  void InitializeOnWorker();
 
   void CreationSucceededOnAnyThread();
 
@@ -139,16 +181,31 @@ class RemoteWorkerChild final
 
   void CreationSucceededOrFailedOnAnyThread(bool aDidCreationSucceed);
 
-  void CloseWorkerOnMainThread(State& aState);
+  
+  
+  
+  void CloseWorkerOnMainThread();
 
   void ErrorPropagation(const ErrorValue& aValue);
 
   void ErrorPropagationDispatch(nsresult aError);
 
-  void TransitionStateToPendingTerminated(State& aState);
+  
+  
+  
+  
+  
+  
+  
+  void OnWorkerCancellationTransitionStateFromPendingOrRunningToCanceled();
+  
+  
+  
+  
+  void TransitionStateFromPendingToCanceled(State& aState);
+  void TransitionStateFromCanceledToKilled();
 
-  void TransitionStateToRunning(already_AddRefed<WorkerPrivate> aWorkerPrivate,
-                                already_AddRefed<WeakWorkerRef> aWorkerRef);
+  void TransitionStateToRunning();
 
   void TransitionStateToTerminated();
 
@@ -159,14 +216,15 @@ class RemoteWorkerChild final
   void MaybeStartOp(RefPtr<Op>&& aOp);
 
   const bool mIsServiceWorker;
-  const nsCOMPtr<nsISerialEventTarget> mOwningEventTarget;
 
   
   nsTArray<uint64_t> mWindowIDs;
 
   struct LauncherBoundData {
-    bool mIPCActive = true;
     MozPromiseHolder<GenericNonExclusivePromise> mTerminationPromise;
+    
+    
+    bool mDidSendCreated = false;
   };
 
   ThreadBound<LauncherBoundData> mLauncherData;

@@ -37,6 +37,95 @@ StaticRefPtr<RemoteWorkerService> sRemoteWorkerService;
 }  
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class RemoteWorkerServiceShutdownBlocker final
+    : public nsIAsyncShutdownBlocker {
+  ~RemoteWorkerServiceShutdownBlocker() = default;
+
+ public:
+  RemoteWorkerServiceShutdownBlocker(RemoteWorkerService* aService,
+                                     nsIAsyncShutdownClient* aShutdownClient)
+      : mService(aService), mShutdownClient(aShutdownClient) {
+    nsAutoString blockerName;
+    MOZ_ALWAYS_SUCCEEDS(GetName(blockerName));
+
+    MOZ_ALWAYS_SUCCEEDS(mShutdownClient->AddBlocker(
+        this, NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__, blockerName));
+  }
+
+  void RemoteWorkersAllGoneAllowShutdown() {
+    mShutdownClient->RemoveBlocker(this);
+    mShutdownClient = nullptr;
+
+    mService->FinishShutdown();
+    mService = nullptr;
+  }
+
+  NS_IMETHOD
+  GetName(nsAString& aNameOut) override {
+    aNameOut = nsLiteralString(
+        u"RemoteWorkerService: waiting for RemoteWorkers to shutdown");
+    return NS_OK;
+  }
+
+  NS_IMETHOD
+  BlockShutdown(nsIAsyncShutdownClient* aClient) override {
+    mService->BeginShutdown();
+    return NS_OK;
+  }
+
+  NS_IMETHOD
+  GetState(nsIPropertyBag**) override { return NS_OK; }
+
+  NS_DECL_ISUPPORTS
+
+  RefPtr<RemoteWorkerService> mService;
+  nsCOMPtr<nsIAsyncShutdownClient> mShutdownClient;
+};
+
+NS_IMPL_ISUPPORTS(RemoteWorkerServiceShutdownBlocker, nsIAsyncShutdownBlocker)
+
+RemoteWorkerServiceKeepAlive::RemoteWorkerServiceKeepAlive(
+    RemoteWorkerServiceShutdownBlocker* aBlocker)
+    : mBlocker(aBlocker) {
+  MOZ_ASSERT(NS_IsMainThread());
+}
+
+RemoteWorkerServiceKeepAlive::~RemoteWorkerServiceKeepAlive() {
+  
+  
+  
+  
+  nsCOMPtr<nsIRunnable> r =
+      NS_NewRunnableFunction(__func__, [blocker = std::move(mBlocker)] {
+        blocker->RemoteWorkersAllGoneAllowShutdown();
+      });
+  MOZ_ALWAYS_SUCCEEDS(
+      SchedulerGroup::Dispatch(TaskCategory::Other, r.forget()));
+}
+
+
 void RemoteWorkerService::Initialize() {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -45,15 +134,64 @@ void RemoteWorkerService::Initialize() {
 
   RefPtr<RemoteWorkerService> service = new RemoteWorkerService();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (!XRE_IsParentProcess()) {
-    nsresult rv = service->InitializeOnMainThread();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
-
     sRemoteWorkerService = service;
+
+    nsCOMPtr<nsIRunnable> r =
+        NS_NewRunnableFunction(__func__, [initService = std::move(service)] {
+          nsresult rv = initService->InitializeOnMainThread();
+          Unused << NS_WARN_IF(NS_FAILED(rv));
+        });
+    MOZ_ALWAYS_SUCCEEDS(
+        SchedulerGroup::Dispatch(TaskCategory::Other, r.forget()));
     return;
   }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
   if (NS_WARN_IF(!obs)) {
@@ -76,6 +214,24 @@ nsIThread* RemoteWorkerService::Thread() {
   return sRemoteWorkerService->mThread;
 }
 
+
+already_AddRefed<RemoteWorkerServiceKeepAlive>
+RemoteWorkerService::MaybeGetKeepAlive() {
+  StaticMutexAutoLock lock(sRemoteWorkerServiceMutex);
+  
+  
+  
+  MOZ_ASSERT(sRemoteWorkerService);
+  if (!sRemoteWorkerService) {
+    return nullptr;
+  }
+
+  
+  auto lockedKeepAlive = sRemoteWorkerService->mKeepAlive.Lock();
+  RefPtr<RemoteWorkerServiceKeepAlive> extraRef = *lockedKeepAlive;
+  return extraRef.forget();
+}
+
 nsresult RemoteWorkerService::InitializeOnMainThread() {
   
   
@@ -84,14 +240,37 @@ nsresult RemoteWorkerService::InitializeOnMainThread() {
     return rv;
   }
 
-  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
-  if (NS_WARN_IF(!obs)) {
+  nsCOMPtr<nsIAsyncShutdownService> shutdownSvc =
+      services::GetAsyncShutdownService();
+  if (NS_WARN_IF(!shutdownSvc)) {
     return NS_ERROR_FAILURE;
   }
 
-  rv = obs->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  nsCOMPtr<nsIAsyncShutdownClient> phase;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ALWAYS_SUCCEEDS(shutdownSvc->GetXpcomWillShutdown(getter_AddRefs(phase)));
+  if (NS_WARN_IF(!phase)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  RefPtr<RemoteWorkerServiceShutdownBlocker> blocker =
+      new RemoteWorkerServiceShutdownBlocker(this, phase);
+
+  {
+    RefPtr<RemoteWorkerServiceKeepAlive> keepAlive =
+        new RemoteWorkerServiceKeepAlive(blocker);
+
+    auto lockedKeepAlive = mKeepAlive.Lock();
+    *lockedKeepAlive = std::move(keepAlive);
   }
 
   RefPtr<RemoteWorkerService> self = this;
@@ -106,7 +285,10 @@ nsresult RemoteWorkerService::InitializeOnMainThread() {
   return NS_OK;
 }
 
-RemoteWorkerService::RemoteWorkerService() { MOZ_ASSERT(NS_IsMainThread()); }
+RemoteWorkerService::RemoteWorkerService()
+    : mKeepAlive(nullptr, "RemoteWorkerService::mKeepAlive") {
+  MOZ_ASSERT(NS_IsMainThread());
+}
 
 RemoteWorkerService::~RemoteWorkerService() = default;
 
@@ -146,34 +328,6 @@ void RemoteWorkerService::CloseActorOnTargetThread() {
 NS_IMETHODIMP
 RemoteWorkerService::Observe(nsISupports* aSubject, const char* aTopic,
                              const char16_t* aData) {
-  if (!strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)) {
-    MOZ_ASSERT(mThread);
-
-    nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
-    if (obs) {
-      obs->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID);
-    }
-
-    RefPtr<RemoteWorkerService> self = this;
-    nsCOMPtr<nsIRunnable> r =
-        NS_NewRunnableFunction("RemoteWorkerService::CloseActorOnTargetThread",
-                               [self]() { self->CloseActorOnTargetThread(); });
-
-    mThread->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
-
-    
-    
-    
-    
-    
-    mThread->Shutdown();
-    mThread = nullptr;
-
-    StaticMutexAutoLock lock(sRemoteWorkerServiceMutex);
-    sRemoteWorkerService = nullptr;
-    return NS_OK;
-  }
-
   MOZ_ASSERT(!strcmp(aTopic, "profile-after-change"));
   MOZ_ASSERT(XRE_IsParentProcess());
 
@@ -183,6 +337,42 @@ RemoteWorkerService::Observe(nsISupports* aSubject, const char* aTopic,
   }
 
   return InitializeOnMainThread();
+}
+
+void RemoteWorkerService::BeginShutdown() {
+  
+  
+  auto lockedKeepAlive = mKeepAlive.Lock();
+  *lockedKeepAlive = nullptr;
+}
+
+void RemoteWorkerService::FinishShutdown() {
+  
+  
+  
+  
+  
+  
+  
+  {
+    StaticMutexAutoLock lock(sRemoteWorkerServiceMutex);
+    sRemoteWorkerService = nullptr;
+  }
+
+  RefPtr<RemoteWorkerService> self = this;
+  nsCOMPtr<nsIRunnable> r =
+      NS_NewRunnableFunction("RemoteWorkerService::CloseActorOnTargetThread",
+                             [self]() { self->CloseActorOnTargetThread(); });
+
+  mThread->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
+
+  
+  
+  
+  
+  
+  mThread->Shutdown();
+  mThread = nullptr;
 }
 
 NS_IMPL_ISUPPORTS(RemoteWorkerService, nsIObserver)

@@ -130,6 +130,78 @@ class WorkerPrivate final
     : public RelativeTimeline,
       public SupportsCheckedUnsafePtr<CheckIf<DiagnosticAssertEnabled>> {
  public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using CancellationCallback = std::function<void(bool aEverRan)>;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using TerminationCallback = std::function<void(void)>;
+
   struct LocationInfo {
     nsCString mHref;
     nsCString mProtocol;
@@ -149,13 +221,9 @@ class WorkerPrivate final
       WorkerKind aWorkerKind, RequestCredentials aRequestCredentials,
       const WorkerType aWorkerType, const nsAString& aWorkerName,
       const nsACString& aServiceWorkerScope, WorkerLoadInfo* aLoadInfo,
-      ErrorResult& aRv, nsString aId = u""_ns);
-
-  static already_AddRefed<WorkerPrivate> Constructor(
-      JSContext* aCx, const nsAString& aScriptURL, bool aIsChromeWorker,
-      WorkerKind aWorkerKind, const nsAString& aWorkerName,
-      const nsACString& aServiceWorkerScope, WorkerLoadInfo* aLoadInfo,
-      ErrorResult& aRv, nsString aId = u""_ns);
+      ErrorResult& aRv, nsString aId = u""_ns,
+      CancellationCallback&& aCancellationCallback = {},
+      TerminationCallback&& aTerminationCallback = {});
 
   enum LoadGroupBehavior { InheritLoadGroup, OverrideLoadGroup };
 
@@ -171,6 +239,12 @@ class WorkerPrivate final
   void ClearSelfAndParentEventTargetRef() {
     AssertIsOnParentThread();
     MOZ_ASSERT(mSelfRef);
+
+    if (mTerminationCallback) {
+      mTerminationCallback();
+      mTerminationCallback = nullptr;
+    }
+
     mParentEventTargetRef = nullptr;
     mSelfRef = nullptr;
   }
@@ -910,11 +984,6 @@ class WorkerPrivate final
 
   void SetRemoteWorkerController(RemoteWorkerChild* aController);
 
-  void SetRemoteWorkerControllerWeakRef(
-      ThreadSafeWeakPtr<RemoteWorkerChild> aWeakRef);
-
-  ThreadSafeWeakPtr<RemoteWorkerChild> GetRemoteWorkerControllerWeakRef();
-
   RefPtr<GenericPromise> SetServiceWorkerSkipWaitingFlag();
 
   
@@ -1068,7 +1137,9 @@ class WorkerPrivate final
       enum WorkerType aWorkerType, const nsAString& aWorkerName,
       const nsACString& aServiceWorkerScope, WorkerLoadInfo& aLoadInfo,
       nsString&& aId, const nsID& aAgentClusterId,
-      const nsILoadInfo::CrossOriginOpenerPolicy aAgentClusterOpenerPolicy);
+      const nsILoadInfo::CrossOriginOpenerPolicy aAgentClusterOpenerPolicy,
+      CancellationCallback&& aCancellationCallback,
+      TerminationCallback&& aTerminationCallback);
 
   ~WorkerPrivate();
 
@@ -1239,6 +1310,13 @@ class WorkerPrivate final
   RefPtr<Worker> mParentEventTargetRef;
   RefPtr<WorkerPrivate> mSelfRef;
 
+  CancellationCallback mCancellationCallback;
+
+  
+  
+  
+  TerminationCallback mTerminationCallback;
+
   
   
   WorkerLoadInfo mLoadInfo;
@@ -1303,10 +1381,8 @@ class WorkerPrivate final
   nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables MOZ_GUARDED_BY(mMutex);
 
   
-  RefPtr<RemoteWorkerChild> mRemoteWorkerController;
-
   
-  ThreadSafeWeakPtr<RemoteWorkerChild> mRemoteWorkerControllerWeakRef;
+  RefPtr<RemoteWorkerChild> mRemoteWorkerController;
 
   JS::UniqueChars mDefaultLocale;  
   TimeStamp mKillTime;

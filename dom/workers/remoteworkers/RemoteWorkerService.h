@@ -7,14 +7,42 @@
 #ifndef mozilla_dom_RemoteWorkerService_h
 #define mozilla_dom_RemoteWorkerService_h
 
+#include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/DataMutex.h"
 #include "nsCOMPtr.h"
 #include "nsIObserver.h"
+#include "nsISupportsImpl.h"
 
 class nsIThread;
 
 namespace mozilla::dom {
 
+class RemoteWorkerService;
 class RemoteWorkerServiceChild;
+class RemoteWorkerServiceShutdownBlocker;
+
+
+
+
+
+
+
+
+
+
+
+class RemoteWorkerServiceKeepAlive {
+ public:
+  explicit RemoteWorkerServiceKeepAlive(
+      RemoteWorkerServiceShutdownBlocker* aBlocker);
+
+ private:
+  ~RemoteWorkerServiceKeepAlive();
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteWorkerServiceKeepAlive);
+
+  RefPtr<RemoteWorkerServiceShutdownBlocker> mBlocker;
+};
 
 
 
@@ -31,6 +59,9 @@ class RemoteWorkerServiceChild;
 
 
 class RemoteWorkerService final : public nsIObserver {
+  friend class RemoteWorkerServiceShutdownBlocker;
+  friend class RemoteWorkerServiceKeepAlive;
+
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
@@ -39,6 +70,22 @@ class RemoteWorkerService final : public nsIObserver {
   static void Initialize();
 
   static nsIThread* Thread();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static already_AddRefed<RemoteWorkerServiceKeepAlive> MaybeGetKeepAlive();
 
  private:
   RemoteWorkerService();
@@ -50,8 +97,22 @@ class RemoteWorkerService final : public nsIObserver {
 
   void CloseActorOnTargetThread();
 
+  
+  
+  void BeginShutdown();
+
+  
+  
+  void FinishShutdown();
+
   nsCOMPtr<nsIThread> mThread;
   RefPtr<RemoteWorkerServiceChild> mActor;
+  
+  
+  
+  
+  
+  DataMutex<RefPtr<RemoteWorkerServiceKeepAlive>> mKeepAlive;
 };
 
 }  
