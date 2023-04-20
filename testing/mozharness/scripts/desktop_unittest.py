@@ -524,6 +524,12 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
         if self.symbols_url:
             return self.symbols_url
 
+        
+        
+        
+        
+        
+        
         symbols_url = None
         self.info("finding symbols_url based upon self.installer_url")
         if self.installer_url:
