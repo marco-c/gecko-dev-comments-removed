@@ -37,10 +37,17 @@
 
 
 
-use std::borrow::Cow;
-use std::fmt;
-use std::slice;
-use std::str;
+#![no_std]
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
+#[cfg(feature = "alloc")]
+use alloc::{
+    borrow::{Cow, ToOwned},
+    string::String,
+    vec::Vec,
+};
+use core::{fmt, mem, slice, str};
 
 
 
@@ -63,7 +70,7 @@ type Chunk = u32;
 
 const ASCII_RANGE_LEN: usize = 0x80;
 
-const BITS_PER_CHUNK: usize = 8 * std::mem::size_of::<Chunk>();
+const BITS_PER_CHUNK: usize = 8 * mem::size_of::<Chunk>();
 
 impl AsciiSet {
     
@@ -109,7 +116,7 @@ macro_rules! static_assert {
     ($( $bool: expr, )+) => {
         fn _static_assert() {
             $(
-                let _ = std::mem::transmute::<[u8; $bool as usize], u8>;
+                let _ = mem::transmute::<[u8; $bool as usize], u8>;
             )+
         }
     }
@@ -252,6 +259,8 @@ impl<'a> Iterator for PercentEncode<'a> {
                 self.bytes = remaining;
                 Some(percent_encode_byte(first_byte))
             } else {
+                
+                
                 for (i, &byte) in remaining.iter().enumerate() {
                     if self.ascii_set.should_percent_encode(byte) {
                         
@@ -279,7 +288,7 @@ impl<'a> Iterator for PercentEncode<'a> {
 }
 
 impl<'a> fmt::Display for PercentEncode<'a> {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         for c in (*self).clone() {
             formatter.write_str(c)?
         }
@@ -287,6 +296,7 @@ impl<'a> fmt::Display for PercentEncode<'a> {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<'a> From<PercentEncode<'a>> for Cow<'a, str> {
     fn from(mut iter: PercentEncode<'a>) -> Self {
         match iter.next() {
@@ -310,7 +320,7 @@ impl<'a> From<PercentEncode<'a>> for Cow<'a, str> {
 
 
 #[inline]
-pub fn percent_decode_str(input: &str) -> PercentDecode {
+pub fn percent_decode_str(input: &str) -> PercentDecode<'_> {
     percent_decode(input.as_bytes())
 }
 
@@ -333,7 +343,7 @@ pub fn percent_decode_str(input: &str) -> PercentDecode {
 
 
 #[inline]
-pub fn percent_decode(input: &[u8]) -> PercentDecode {
+pub fn percent_decode(input: &[u8]) -> PercentDecode<'_> {
     PercentDecode {
         bytes: input.iter(),
     }
@@ -345,7 +355,7 @@ pub struct PercentDecode<'a> {
     bytes: slice::Iter<'a, u8>,
 }
 
-fn after_percent_sign(iter: &mut slice::Iter<u8>) -> Option<u8> {
+fn after_percent_sign(iter: &mut slice::Iter<'_, u8>) -> Option<u8> {
     let mut cloned_iter = iter.clone();
     let h = char::from(*cloned_iter.next()?).to_digit(16)?;
     let l = char::from(*cloned_iter.next()?).to_digit(16)?;
@@ -368,10 +378,11 @@ impl<'a> Iterator for PercentDecode<'a> {
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         let bytes = self.bytes.len();
-        (bytes / 3, Some(bytes))
+        ((bytes + 2) / 3, Some(bytes))
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<'a> From<PercentDecode<'a>> for Cow<'a, [u8]> {
     fn from(iter: PercentDecode<'a>) -> Self {
         match iter.if_any() {
@@ -383,6 +394,7 @@ impl<'a> From<PercentDecode<'a>> for Cow<'a, [u8]> {
 
 impl<'a> PercentDecode<'a> {
     
+    #[cfg(feature = "alloc")]
     fn if_any(&self) -> Option<Vec<u8>> {
         let mut bytes_iter = self.bytes.clone();
         while bytes_iter.any(|&b| b == b'%') {
@@ -402,6 +414,7 @@ impl<'a> PercentDecode<'a> {
     
     
     
+    #[cfg(feature = "alloc")]
     pub fn decode_utf8(self) -> Result<Cow<'a, str>, str::Utf8Error> {
         match self.clone().into() {
             Cow::Borrowed(bytes) => match str::from_utf8(bytes) {
@@ -419,24 +432,37 @@ impl<'a> PercentDecode<'a> {
     
     
     
+    #[cfg(feature = "alloc")]
     pub fn decode_utf8_lossy(self) -> Cow<'a, str> {
         decode_utf8_lossy(self.clone().into())
     }
 }
 
-fn decode_utf8_lossy(input: Cow<[u8]>) -> Cow<str> {
+#[cfg(feature = "alloc")]
+fn decode_utf8_lossy(input: Cow<'_, [u8]>) -> Cow<'_, str> {
+    
     match input {
         Cow::Borrowed(bytes) => String::from_utf8_lossy(bytes),
         Cow::Owned(bytes) => {
-            let raw_utf8: *const [u8];
             match String::from_utf8_lossy(&bytes) {
-                Cow::Borrowed(utf8) => raw_utf8 = utf8.as_bytes(),
-                Cow::Owned(s) => return s.into(),
+                Cow::Borrowed(utf8) => {
+                    
+                    
+                    
+                    
+                    
+
+                    
+                    let raw_utf8: *const [u8] = utf8.as_bytes();
+                    debug_assert!(raw_utf8 == &*bytes as *const [u8]);
+
+                    
+                    
+                    
+                    Cow::Owned(unsafe { String::from_utf8_unchecked(bytes) })
+                }
+                Cow::Owned(s) => Cow::Owned(s),
             }
-            
-            debug_assert!(raw_utf8 == &*bytes as *const [u8]);
-            
-            unsafe { String::from_utf8_unchecked(bytes) }.into()
         }
     }
 }
