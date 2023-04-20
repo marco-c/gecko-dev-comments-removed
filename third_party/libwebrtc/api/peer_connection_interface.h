@@ -809,6 +809,16 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
   
   
   
+  virtual RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrack(
+      rtc::scoped_refptr<MediaStreamTrackInterface> track,
+      const std::vector<std::string>& stream_ids,
+      const std::vector<RtpEncodingParameters>& init_send_encodings) = 0;
+
+  
+  
+  
+  
+  
   
   
   

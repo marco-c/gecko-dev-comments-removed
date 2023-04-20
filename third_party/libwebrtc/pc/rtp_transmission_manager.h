@@ -95,7 +95,8 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
   
   RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrack(
       rtc::scoped_refptr<MediaStreamTrackInterface> track,
-      const std::vector<std::string>& stream_ids);
+      const std::vector<std::string>& stream_ids,
+      const std::vector<RtpEncodingParameters>* init_send_encodings);
 
   
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>
@@ -121,7 +122,8 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
   
   rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
   FindFirstTransceiverForAddedTrack(
-      rtc::scoped_refptr<MediaStreamTrackInterface> track);
+      rtc::scoped_refptr<MediaStreamTrackInterface> track,
+      const std::vector<RtpEncodingParameters>* init_send_encodings);
 
   
   
@@ -220,11 +222,13 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
   
   RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrackUnifiedPlan(
       rtc::scoped_refptr<MediaStreamTrackInterface> track,
-      const std::vector<std::string>& stream_ids);
+      const std::vector<std::string>& stream_ids,
+      const std::vector<RtpEncodingParameters>* init_send_encodings);
   
   RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrackPlanB(
       rtc::scoped_refptr<MediaStreamTrackInterface> track,
-      const std::vector<std::string>& stream_ids);
+      const std::vector<std::string>& stream_ids,
+      const std::vector<RtpEncodingParameters>* init_send_encodings);
 
   
   void CreateAudioReceiver(MediaStreamInterface* stream,
