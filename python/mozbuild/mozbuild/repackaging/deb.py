@@ -129,22 +129,8 @@ def repackage_deb(infile, output, template_dir, arch, version, build_number):
             mozpath.join(extract_dir, app_name.lower(), "distribution"),
         )
 
-        if _is_chroot_available(arch):
-            subprocess.check_call(
-                [
-                    "chroot",
-                    f"/srv/{_DEB_DIST}-{deb_arch}",
-                    "bash",
-                    "-c",
-                    f"cd /tmp/*/source; dpkg-buildpackage -us -uc -b -a{deb_arch}",
-                ]
-            )
-        else:
-            
-            subprocess.check_call(
-                ["dpkg-buildpackage", "-us", "-uc", "-b", f"-a{deb_arch}"],
-                cwd=extract_dir,
-            )
+        command = _get_command(arch)
+        subprocess.check_call(command, cwd=extract_dir)
 
         deb_file_name = (
             f"{defines['DEB_PKG_NAME']}_{defines['DEB_PKG_VERSION']}_{deb_arch}.deb"
@@ -162,6 +148,36 @@ def repackage_deb(infile, output, template_dir, arch, version, build_number):
 
     finally:
         shutil.rmtree(tmpdir)
+
+
+def _get_command(arch):
+    deb_arch = _DEB_ARCH[arch]
+    command = [
+        "dpkg-buildpackage",
+        
+        
+        
+        
+        
+        
+        
+        "-us",  
+        "-uc",  
+        "-b",  
+        f"--host-arch={deb_arch}",
+    ]
+
+    if _is_chroot_available(arch):
+        flattened_command = " ".join(command)
+        command = [
+            "chroot",
+            f"/srv/{_DEB_DIST}-{deb_arch}",
+            "bash",
+            "-c",
+            f"cd /tmp/*/source; {flattened_command}",
+        ]
+
+    return command
 
 
 def _is_chroot_available(arch):
