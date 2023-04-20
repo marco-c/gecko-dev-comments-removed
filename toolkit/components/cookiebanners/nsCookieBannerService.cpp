@@ -60,8 +60,6 @@ nsCString ConvertModeToStringForTelemetry(uint32_t aModes) {
       return "reject"_ns;
     case nsICookieBannerService::MODE_REJECT_OR_ACCEPT:
       return "reject_or_accept"_ns;
-    case nsICookieBannerService::MODE_DETECT_ONLY:
-      return "detect_only"_ns;
     default:
       
       
@@ -357,7 +355,7 @@ nsCookieBannerService::GetCookiesForURI(
   
   
   if (mode != nsICookieBannerService::MODE_DISABLED &&
-      mode != nsICookieBannerService::MODE_DETECT_ONLY) {
+      !StaticPrefs::cookiebanners_service_detectOnly()) {
     
     
     
@@ -374,7 +372,7 @@ nsCookieBannerService::GetCookiesForURI(
   
   
   if (mode == nsICookieBannerService::MODE_DISABLED ||
-      mode == nsICookieBannerService::MODE_DETECT_ONLY) {
+      StaticPrefs::cookiebanners_service_detectOnly()) {
     MOZ_LOG(gCookieBannerLog, LogLevel::Debug,
             ("%s. Returning empty array. Got MODE_DISABLED for "
              "aIsPrivateBrowsing: %d.",
@@ -637,7 +635,7 @@ nsresult nsCookieBannerService::HasRuleForBrowsingContextInternal(
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (mode == nsICookieBannerService::MODE_DISABLED ||
-      mode == nsICookieBannerService::MODE_DETECT_ONLY) {
+      StaticPrefs::cookiebanners_service_detectOnly()) {
     return NS_OK;
   }
 
@@ -719,7 +717,7 @@ nsresult nsCookieBannerService::GetCookieRulesForDomainInternal(
   
   
   if (aMode == nsICookieBannerService::MODE_DISABLED ||
-      aMode == nsICookieBannerService::MODE_DETECT_ONLY) {
+      StaticPrefs::cookiebanners_service_detectOnly()) {
     return NS_OK;
   }
 
@@ -1023,8 +1021,10 @@ void nsCookieBannerService::DailyReportTelemetry() {
   nsCString modePBMStr = ConvertModeToStringForTelemetry(modePBM);
 
   nsTArray<nsCString> serviceModeLabels = {
-      "disabled"_ns,    "reject"_ns,  "reject_or_accept"_ns,
-      "detect_only"_ns, "invalid"_ns,
+      "disabled"_ns,
+      "reject"_ns,
+      "reject_or_accept"_ns,
+      "invalid"_ns,
   };
 
   
