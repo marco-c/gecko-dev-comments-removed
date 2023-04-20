@@ -78,6 +78,11 @@ impl<'data, E: Endian> LoadCommandData<'data, E> {
     }
 
     
+    pub fn raw_data(&self) -> &'data [u8] {
+        self.data.0
+    }
+
+    
     
     
     

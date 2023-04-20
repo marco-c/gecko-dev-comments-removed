@@ -9,6 +9,9 @@ use crate::pod::Pod;
 pub const MAGIC: [u8; 8] = *b"!<arch>\n";
 
 
+pub const AIX_BIG_MAGIC: [u8; 8] = *b"<bigaf>\n";
+
+
 
 
 pub const THIN_MAGIC: [u8; 8] = *b"!<thin>\n";
@@ -36,4 +39,53 @@ pub struct Header {
     pub terminator: [u8; 2],
 }
 
-unsafe_impl_pod!(Header);
+
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+pub struct AixHeader {
+    
+    pub size: [u8; 20],
+    
+    pub nxtmem: [u8; 20],
+    
+    pub prvmem: [u8; 20],
+    
+    pub date: [u8; 12],
+    
+    pub uid: [u8; 12],
+    
+    pub gid: [u8; 12],
+    
+    pub mode: [u8; 12],
+    
+    pub namlen: [u8; 4],
+}
+
+
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+pub struct AixFileHeader {
+    
+    pub magic: [u8; 8],
+    
+    pub memoff: [u8; 20],
+    
+    pub gstoff: [u8; 20],
+    
+    pub gst64off: [u8; 20],
+    
+    pub fstmoff: [u8; 20],
+    
+    pub lstmoff: [u8; 20],
+    
+    pub freeoff: [u8; 20],
+}
+
+
+
+
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+pub struct AixMemberOffset(pub [u8; 20]);
+
+unsafe_impl_pod!(Header, AixHeader, AixFileHeader, AixMemberOffset,);

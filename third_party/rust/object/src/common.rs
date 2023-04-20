@@ -24,6 +24,7 @@ pub enum Architecture {
     S390x,
     Sparc64,
     Wasm32,
+    Xtensa,
 }
 
 impl Architecture {
@@ -52,6 +53,7 @@ impl Architecture {
             Architecture::S390x => Some(AddressSize::U64),
             Architecture::Sparc64 => Some(AddressSize::U64),
             Architecture::Wasm32 => Some(AddressSize::U32),
+            Architecture::Xtensa => Some(AddressSize::U32),
         }
     }
 }
@@ -88,6 +90,7 @@ pub enum BinaryFormat {
     MachO,
     Pe,
     Wasm,
+    Xcoff,
 }
 
 
@@ -305,6 +308,8 @@ pub enum RelocationKind {
     },
     
     Coff(u16),
+    
+    Xcoff(u8),
 }
 
 
@@ -343,6 +348,11 @@ pub enum RelocationEncoding {
     
     
     AArch64Call,
+
+    
+    
+    
+    LoongArchBranch,
 }
 
 
@@ -353,6 +363,10 @@ pub enum FileFlags {
     None,
     
     Elf {
+        
+        os_abi: u8,
+        
+        abi_version: u8,
         
         e_flags: u32,
     },
@@ -365,6 +379,11 @@ pub enum FileFlags {
     Coff {
         
         characteristics: u16,
+    },
+    
+    Xcoff {
+        
+        f_flags: u16,
     },
 }
 
@@ -415,6 +434,11 @@ pub enum SectionFlags {
     Coff {
         
         characteristics: u32,
+    },
+    
+    Xcoff {
+        
+        s_flags: u32,
     },
 }
 

@@ -3,7 +3,7 @@
 use core::convert::TryInto;
 
 use crate::archive;
-use crate::read::{self, Error, ReadError, ReadRef};
+use crate::read::{self, Bytes, Error, ReadError, ReadRef};
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -23,15 +23,28 @@ pub enum ArchiveKind {
     Bsd64,
     
     Coff,
+    
+    AixBig,
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
+enum Members<'data> {
+    Common {
+        offset: u64,
+        end_offset: u64,
+    },
+    AixBig {
+        index: &'data [archive::AixMemberOffset],
+    },
+}
+
+
+#[derive(Debug, Clone, Copy)]
 pub struct ArchiveFile<'data, R: ReadRef<'data> = &'data [u8]> {
     data: R,
-    len: u64,
-    offset: u64,
     kind: ArchiveKind,
+    members: Members<'data>,
     symbols: (u64, u64),
     names: &'data [u8],
 }
@@ -44,15 +57,23 @@ impl<'data, R: ReadRef<'data>> ArchiveFile<'data, R> {
         let magic = data
             .read_bytes(&mut tail, archive::MAGIC.len() as u64)
             .read_error("Invalid archive size")?;
-        if magic != &archive::MAGIC[..] {
+
+        if magic == archive::AIX_BIG_MAGIC {
+            return Self::parse_aixbig(data);
+        } else if magic != archive::MAGIC {
             return Err(Error("Unsupported archive identifier"));
         }
 
+        let mut members_offset = tail;
+        let members_end_offset = len;
+
         let mut file = ArchiveFile {
             data,
-            offset: tail,
-            len,
             kind: ArchiveKind::Unknown,
+            members: Members::Common {
+                offset: 0,
+                end_offset: 0,
+            },
             symbols: (0, 0),
             names: &[],
         };
@@ -77,7 +98,7 @@ impl<'data, R: ReadRef<'data>> ArchiveFile<'data, R> {
                 
                 file.kind = ArchiveKind::Gnu;
                 file.symbols = member.file_range();
-                file.offset = tail;
+                members_offset = tail;
 
                 if tail < len {
                     let member = ArchiveMember::parse(data, &mut tail, &[])?;
@@ -85,55 +106,125 @@ impl<'data, R: ReadRef<'data>> ArchiveFile<'data, R> {
                         
                         file.kind = ArchiveKind::Coff;
                         file.symbols = member.file_range();
-                        file.offset = tail;
+                        members_offset = tail;
 
                         if tail < len {
                             let member = ArchiveMember::parse(data, &mut tail, &[])?;
                             if member.name == b"//" {
                                 
                                 file.names = member.data(data)?;
-                                file.offset = tail;
+                                members_offset = tail;
                             }
                         }
                     } else if member.name == b"//" {
                         
                         file.names = member.data(data)?;
-                        file.offset = tail;
+                        members_offset = tail;
                     }
                 }
             } else if member.name == b"/SYM64/" {
                 
                 file.kind = ArchiveKind::Gnu64;
                 file.symbols = member.file_range();
-                file.offset = tail;
+                members_offset = tail;
 
                 if tail < len {
                     let member = ArchiveMember::parse(data, &mut tail, &[])?;
                     if member.name == b"//" {
                         
                         file.names = member.data(data)?;
-                        file.offset = tail;
+                        members_offset = tail;
                     }
                 }
             } else if member.name == b"//" {
                 
                 file.kind = ArchiveKind::Gnu;
                 file.names = member.data(data)?;
-                file.offset = tail;
+                members_offset = tail;
             } else if member.name == b"__.SYMDEF" || member.name == b"__.SYMDEF SORTED" {
                 
                 file.kind = ArchiveKind::Bsd;
                 file.symbols = member.file_range();
-                file.offset = tail;
+                members_offset = tail;
             } else if member.name == b"__.SYMDEF_64" || member.name == b"__.SYMDEF_64 SORTED" {
                 
                 file.kind = ArchiveKind::Bsd64;
                 file.symbols = member.file_range();
-                file.offset = tail;
+                members_offset = tail;
             } else {
                 
             }
         }
+        file.members = Members::Common {
+            offset: members_offset,
+            end_offset: members_end_offset,
+        };
+        Ok(file)
+    }
+
+    fn parse_aixbig(data: R) -> read::Result<Self> {
+        let mut tail = 0;
+
+        let file_header = data
+            .read::<archive::AixFileHeader>(&mut tail)
+            .read_error("Invalid AIX big archive file header")?;
+        
+        debug_assert_eq!(file_header.magic, archive::AIX_BIG_MAGIC);
+
+        let mut file = ArchiveFile {
+            data,
+            kind: ArchiveKind::AixBig,
+            members: Members::AixBig { index: &[] },
+            symbols: (0, 0),
+            names: &[],
+        };
+
+        
+        let symtbl64 = parse_u64_digits(&file_header.gst64off, 10)
+            .read_error("Invalid offset to 64-bit symbol table in AIX big archive")?;
+        if symtbl64 > 0 {
+            
+            let member = ArchiveMember::parse_aixbig(data, symtbl64)?;
+            file.symbols = member.file_range();
+        } else {
+            let symtbl = parse_u64_digits(&file_header.gstoff, 10)
+                .read_error("Invalid offset to symbol table in AIX big archive")?;
+            if symtbl > 0 {
+                
+                let member = ArchiveMember::parse_aixbig(data, symtbl)?;
+                file.symbols = member.file_range();
+            }
+        }
+
+        
+        
+        
+        let member_table_offset = parse_u64_digits(&file_header.memoff, 10)
+            .read_error("Invalid offset for member table of AIX big archive")?;
+        if member_table_offset == 0 {
+            
+            return Ok(file);
+        }
+
+        
+        let member = ArchiveMember::parse_aixbig(data, member_table_offset)?;
+        let mut member_data = Bytes(member.data(data)?);
+
+        
+        
+        
+        
+        let members_count_bytes = member_data
+            .read_slice::<u8>(20)
+            .read_error("Missing member count in AIX big archive")?;
+        let members_count = parse_u64_digits(members_count_bytes, 10)
+            .and_then(|size| size.try_into().ok())
+            .read_error("Invalid member count in AIX big archive")?;
+        let index = member_data
+            .read_slice::<archive::AixMemberOffset>(members_count)
+            .read_error("Member count overflow in AIX big archive")?;
+        file.members = Members::AixBig { index };
+
         Ok(file)
     }
 
@@ -150,8 +241,7 @@ impl<'data, R: ReadRef<'data>> ArchiveFile<'data, R> {
     pub fn members(&self) -> ArchiveMemberIterator<'data, R> {
         ArchiveMemberIterator {
             data: self.data,
-            offset: self.offset,
-            len: self.len,
+            members: self.members,
             names: self.names,
         }
     }
@@ -161,8 +251,7 @@ impl<'data, R: ReadRef<'data>> ArchiveFile<'data, R> {
 #[derive(Debug)]
 pub struct ArchiveMemberIterator<'data, R: ReadRef<'data> = &'data [u8]> {
     data: R,
-    offset: u64,
-    len: u64,
+    members: Members<'data>,
     names: &'data [u8],
 }
 
@@ -170,21 +259,48 @@ impl<'data, R: ReadRef<'data>> Iterator for ArchiveMemberIterator<'data, R> {
     type Item = read::Result<ArchiveMember<'data>>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.offset >= self.len {
-            return None;
+        match &mut self.members {
+            Members::Common {
+                ref mut offset,
+                ref mut end_offset,
+            } => {
+                if *offset >= *end_offset {
+                    return None;
+                }
+                let member = ArchiveMember::parse(self.data, offset, self.names);
+                if member.is_err() {
+                    *offset = *end_offset;
+                }
+                Some(member)
+            }
+            Members::AixBig { ref mut index } => match **index {
+                [] => None,
+                [ref first, ref rest @ ..] => {
+                    *index = rest;
+                    let member = ArchiveMember::parse_aixbig_index(self.data, first);
+                    if member.is_err() {
+                        *index = &[];
+                    }
+                    Some(member)
+                }
+            },
         }
-        let member = ArchiveMember::parse(self.data, &mut self.offset, self.names);
-        if member.is_err() {
-            self.offset = self.len;
-        }
-        Some(member)
     }
+}
+
+
+#[derive(Debug, Clone, Copy)]
+enum MemberHeader<'data> {
+    
+    Common(&'data archive::Header),
+    
+    AixBig(&'data archive::AixHeader),
 }
 
 
 #[derive(Debug)]
 pub struct ArchiveMember<'data> {
-    header: &'data archive::Header,
+    header: MemberHeader<'data>,
     name: &'data [u8],
     offset: u64,
     size: u64,
@@ -217,11 +333,11 @@ impl<'data> ArchiveMember<'data> {
             *offset = offset.saturating_add(1);
         }
 
-        let name = if header.name[0] == b'/' && (header.name[1] as char).is_digit(10) {
+        let name = if header.name[0] == b'/' && (header.name[1] as char).is_ascii_digit() {
             
             parse_sysv_extended_name(&header.name[1..], names)
                 .read_error("Invalid archive extended name offset")?
-        } else if &header.name[..3] == b"#1/" && (header.name[3] as char).is_digit(10) {
+        } else if &header.name[..3] == b"#1/" && (header.name[3] as char).is_ascii_digit() {
             
             parse_bsd_extended_name(&header.name[3..], data, &mut file_offset, &mut file_size)
                 .read_error("Invalid archive extended name length")?
@@ -236,7 +352,7 @@ impl<'data> ArchiveMember<'data> {
         };
 
         Ok(ArchiveMember {
-            header,
+            header: MemberHeader::Common(header),
             name,
             offset: file_offset,
             size: file_size,
@@ -244,9 +360,73 @@ impl<'data> ArchiveMember<'data> {
     }
 
     
+    
+    fn parse_aixbig_index<R: ReadRef<'data>>(
+        data: R,
+        index: &archive::AixMemberOffset,
+    ) -> read::Result<Self> {
+        let offset = parse_u64_digits(&index.0, 10)
+            .read_error("Invalid AIX big archive file member offset")?;
+        Self::parse_aixbig(data, offset)
+    }
+
+    
+    fn parse_aixbig<R: ReadRef<'data>>(data: R, mut offset: u64) -> read::Result<Self> {
+        
+        
+        let header = data
+            .read::<archive::AixHeader>(&mut offset)
+            .read_error("Invalid AIX big archive member header")?;
+        let name_length = parse_u64_digits(&header.namlen, 10)
+            .read_error("Invalid AIX big archive member name length")?;
+        let name = data
+            .read_bytes(&mut offset, name_length)
+            .read_error("Invalid AIX big archive member name")?;
+
+        
+        
+        
+        if offset & 1 != 0 {
+            offset = offset.saturating_add(1);
+        }
+        
+        let terminator = data
+            .read_bytes(&mut offset, 2)
+            .read_error("Invalid AIX big archive terminator")?;
+        if terminator != archive::TERMINATOR {
+            return Err(Error("Invalid AIX big archive terminator"));
+        }
+
+        let size = parse_u64_digits(&header.size, 10)
+            .read_error("Invalid archive member size in AIX big archive")?;
+        Ok(ArchiveMember {
+            header: MemberHeader::AixBig(header),
+            name,
+            offset,
+            size,
+        })
+    }
+
+    
+    
+    
     #[inline]
-    pub fn header(&self) -> &'data archive::Header {
-        self.header
+    pub fn header(&self) -> Option<&'data archive::Header> {
+        match self.header {
+            MemberHeader::Common(header) => Some(header),
+            _ => None,
+        }
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn aix_header(&self) -> Option<&'data archive::AixHeader> {
+        match self.header {
+            MemberHeader::AixBig(header) => Some(header),
+            _ => None,
+        }
     }
 
     
@@ -260,25 +440,37 @@ impl<'data> ArchiveMember<'data> {
     
     #[inline]
     pub fn date(&self) -> Option<u64> {
-        parse_u64_digits(&self.header.date, 10)
+        match &self.header {
+            MemberHeader::Common(header) => parse_u64_digits(&header.date, 10),
+            MemberHeader::AixBig(header) => parse_u64_digits(&header.date, 10),
+        }
     }
 
     
     #[inline]
     pub fn uid(&self) -> Option<u64> {
-        parse_u64_digits(&self.header.uid, 10)
+        match &self.header {
+            MemberHeader::Common(header) => parse_u64_digits(&header.uid, 10),
+            MemberHeader::AixBig(header) => parse_u64_digits(&header.uid, 10),
+        }
     }
 
     
     #[inline]
     pub fn gid(&self) -> Option<u64> {
-        parse_u64_digits(&self.header.gid, 10)
+        match &self.header {
+            MemberHeader::Common(header) => parse_u64_digits(&header.gid, 10),
+            MemberHeader::AixBig(header) => parse_u64_digits(&header.gid, 10),
+        }
     }
 
     
     #[inline]
     pub fn mode(&self) -> Option<u64> {
-        parse_u64_digits(&self.header.mode, 8)
+        match &self.header {
+            MemberHeader::Common(header) => parse_u64_digits(&header.mode, 8),
+            MemberHeader::AixBig(header) => parse_u64_digits(&header.mode, 8),
+        }
     }
 
     
@@ -442,6 +634,19 @@ mod tests {
             0000";
         let archive = ArchiveFile::parse(&data[..]).unwrap();
         assert_eq!(archive.kind(), ArchiveKind::Coff);
+
+        let data = b"\
+            <bigaf>\n\
+            0                   0                   \
+            0                   0                   \
+            0                   128                 \
+            6                   0                   \
+            0                   \0\0\0\0\0\0\0\0\0\0\0\0\
+            \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+            \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+            \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+        let archive = ArchiveFile::parse(&data[..]).unwrap();
+        assert_eq!(archive.kind(), ArchiveKind::AixBig);
     }
 
     #[test]
@@ -496,6 +701,38 @@ mod tests {
         let member = members.next().unwrap().unwrap();
         assert_eq!(member.name(), b"0123456789abcdef");
         assert_eq!(member.data(data).unwrap(), &b"even"[..]);
+
+        assert!(members.next().is_none());
+    }
+
+    #[test]
+    fn aix_names() {
+        let data = b"\
+            <bigaf>\n\
+            396                 0                   0                   \
+            128                 262                 0                   \
+            4                   262                 0                   \
+            1662610370  223         1           644         16  \
+            0123456789abcdef`\nord\n\
+            4                   396                 128                 \
+            1662610374  223         1           644         16  \
+            fedcba9876543210`\nrev\n\
+            94                  0                   262                 \
+            0           0           0           0           0   \
+            `\n2                   128                 \
+            262                 0123456789abcdef\0fedcba9876543210\0";
+        let data = &data[..];
+        let archive = ArchiveFile::parse(data).unwrap();
+        assert_eq!(archive.kind(), ArchiveKind::AixBig);
+        let mut members = archive.members();
+
+        let member = members.next().unwrap().unwrap();
+        assert_eq!(member.name(), b"0123456789abcdef");
+        assert_eq!(member.data(data).unwrap(), &b"ord\n"[..]);
+
+        let member = members.next().unwrap().unwrap();
+        assert_eq!(member.name(), b"fedcba9876543210");
+        assert_eq!(member.data(data).unwrap(), &b"rev\n"[..]);
 
         assert!(members.next().is_none());
     }
