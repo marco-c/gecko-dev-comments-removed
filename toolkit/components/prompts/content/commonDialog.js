@@ -2,8 +2,8 @@
 
 
 
-const { CommonDialog } = ChromeUtils.import(
-  "resource://gre/modules/CommonDialog.jsm"
+const { CommonDialog } = ChromeUtils.importESModule(
+  "resource://gre/modules/CommonDialog.sys.mjs"
 );
 
 

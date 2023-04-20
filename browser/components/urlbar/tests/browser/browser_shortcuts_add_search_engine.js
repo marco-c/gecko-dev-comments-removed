@@ -7,8 +7,8 @@
 
 
 
-const { PromptTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PromptTestUtils.jsm"
+const { PromptTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromptTestUtils.sys.mjs"
 );
 const BASE_URL =
   "http://mochi.test:8888/browser/browser/components/urlbar/tests/browser/";
