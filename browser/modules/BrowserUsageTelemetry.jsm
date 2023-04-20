@@ -1158,7 +1158,7 @@ let BrowserUsageTelemetry = {
       
       fileData = { version: "1", profileTelemetryIds: [] };
       if (!(ex.name == "NotFoundError")) {
-        Cu.reportError(ex);
+        console.error(ex);
         
         
         
@@ -1184,7 +1184,7 @@ let BrowserUsageTelemetry = {
           JSON.stringify(fileData)
         );
       } catch (ex) {
-        Cu.reportError(ex);
+        console.error(ex);
         writeError = true;
       }
     }

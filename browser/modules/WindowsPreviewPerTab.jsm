@@ -233,7 +233,7 @@ PreviewController.prototype = {
       {
         fullScale: aFullScale,
       }
-    ).catch(e => Cu.reportError(e));
+    ).catch(console.error);
     
     
   },
