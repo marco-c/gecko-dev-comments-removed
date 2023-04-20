@@ -1036,15 +1036,20 @@ nsTArray<uint8_t> gfxWindowsPlatform::GetPlatformCMSOutputProfileData() {
     return result;
   }
 
-  if (!mCachedOutputColorProfile.IsEmpty()) {
-    return mCachedOutputColorProfile.Clone();
-  }
+  return GetPlatformCMSOutputProfileData_Impl();
+}
 
-  mCachedOutputColorProfile = [&] {
-    nsTArray<uint8_t> prefProfileData = GetPrefCMSOutputProfileData();
+nsTArray<uint8_t> gfxWindowsPlatform::GetPlatformCMSOutputProfileData_Impl() {
+  static nsTArray<uint8_t> sCached = [&] {
+    
+    nsTArray<uint8_t> prefProfileData =
+        gfxPlatform::GetPrefCMSOutputProfileData();
     if (!prefProfileData.IsEmpty()) {
       return prefProfileData;
     }
+
+    
+    
 
     HDC dc = ::GetDC(nullptr);
     if (!dc) {
@@ -1078,7 +1083,7 @@ nsTArray<uint8_t> gfxWindowsPlatform::GetPlatformCMSOutputProfileData() {
     return result;
   }();
 
-  return mCachedOutputColorProfile.Clone();
+  return sCached.Clone();
 }
 
 void gfxWindowsPlatform::GetDLLVersion(char16ptr_t aDLLPath,
