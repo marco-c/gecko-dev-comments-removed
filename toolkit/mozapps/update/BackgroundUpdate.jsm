@@ -649,7 +649,23 @@ var BackgroundUpdate = {
         lazy.log.debug(
           `${SLUG}: preparing to write Firefox Messaging System targeting information to ${path}`
         );
-        snapshot.data = await lazy.ASRouterTargeting.getEnvironmentSnapshot();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let latestData = await lazy.ASRouterTargeting.getEnvironmentSnapshot();
+        
+        if (snapshot?.data?.environment) {
+          Object.assign(snapshot.data.environment, latestData.environment);
+        } else {
+          snapshot.data = latestData;
+        }
       },
       path,
     });

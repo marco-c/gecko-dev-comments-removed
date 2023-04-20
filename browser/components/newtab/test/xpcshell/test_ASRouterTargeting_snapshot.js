@@ -22,3 +22,33 @@ add_task(async function should_ignore_rejections() {
   let snapshot = await ASRouterTargeting.getEnvironmentSnapshot(target);
   deepEqual(snapshot, { environment: { foo: 1 }, version: 1 });
 });
+
+add_task(async function should_ignore_rejections() {
+  
+  
+  
+  
+  let target = {
+    get foo() {
+      return new Promise(resolve => resolve(1));
+    },
+
+    get bar() {
+      return new Promise(resolve => {
+        
+        Services.startup.advanceShutdownPhase(
+          Services.startup.SHUTDOWN_PHASE_APPSHUTDOWN
+        );
+        resolve(2);
+      });
+    },
+
+    get baz() {
+      return new Promise(resolve => resolve(3));
+    },
+  };
+
+  let snapshot = await ASRouterTargeting.getEnvironmentSnapshot(target);
+  
+  deepEqual(snapshot, { environment: { foo: 1, bar: 2 }, version: 1 });
+});

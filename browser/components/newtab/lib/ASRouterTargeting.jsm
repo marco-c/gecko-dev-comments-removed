@@ -840,10 +840,13 @@ const ASRouterTargeting = {
 
   async getEnvironmentSnapshot(target = ASRouterTargeting.Environment) {
     
-    let promises = Object.keys(target).map(async name => [
-      name,
-      await target[name],
-    ]);
+    let promises = Object.keys(target).map(async name => {
+      
+      if (Services.startup.shuttingDown) {
+        throw new Error("shutting down, so not querying targeting environment");
+      }
+      return [name, await target[name]];
+    });
 
     
     let results = await Promise.allSettled(promises);
