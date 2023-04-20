@@ -91,7 +91,9 @@ class FrameDelayDeltaKalmanFilter {
   double estimate_[2];
   double estimate_cov_[2][2];  
 
-  double process_noise_cov_[2][2];  
+  
+  
+  double process_noise_cov_diag_[2];
 };
 
 }  

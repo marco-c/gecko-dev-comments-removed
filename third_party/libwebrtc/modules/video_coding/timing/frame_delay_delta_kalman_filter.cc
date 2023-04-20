@@ -30,11 +30,8 @@ FrameDelayDeltaKalmanFilter::FrameDelayDeltaKalmanFilter() {
   estimate_cov_[0][1] = estimate_cov_[1][0] = 0;
 
   
-  process_noise_cov_[0][0] = 2.5e-10;  
-  process_noise_cov_[1][1] = 1e-10;    
-  
-  
-  process_noise_cov_[0][1] = process_noise_cov_[1][0] = 0;
+  process_noise_cov_diag_[0] = 2.5e-10;  
+  process_noise_cov_diag_[1] = 1e-10;    
 }
 
 void FrameDelayDeltaKalmanFilter::PredictAndUpdate(
@@ -48,10 +45,8 @@ void FrameDelayDeltaKalmanFilter::PredictAndUpdate(
   
   
   
-  estimate_cov_[0][0] += process_noise_cov_[0][0];
-  estimate_cov_[0][1] += process_noise_cov_[0][1];  
-  estimate_cov_[1][0] += process_noise_cov_[1][0];
-  estimate_cov_[1][1] += process_noise_cov_[1][1];  
+  estimate_cov_[0][0] += process_noise_cov_diag_[0];
+  estimate_cov_[1][1] += process_noise_cov_diag_[1];
 
   
   
