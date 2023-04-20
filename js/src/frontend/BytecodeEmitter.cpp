@@ -11746,9 +11746,7 @@ bool BytecodeEmitter::intoScriptStencil(ScriptIndex scriptIndex) {
     return false;
   }
 
-  
-  if (!compilationState.sharedData.addAndShare(cx, fc, scriptIndex,
-                                               sharedData)) {
+  if (!compilationState.sharedData.add(scriptIndex, sharedData)) {
     return false;
   }
 

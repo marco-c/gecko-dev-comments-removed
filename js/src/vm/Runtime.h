@@ -898,6 +898,10 @@ struct JSRuntime {
   
   void destroyRuntime();
 
+ private:
+  void releaseScriptDataTable();
+
+ public:
   bool init(JSContext* cx, uint32_t maxbytes);
 
   JSRuntime* thisFromCtor() { return this; }
