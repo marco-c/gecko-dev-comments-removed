@@ -58,13 +58,14 @@ async function startTests(testFun, name) {
           
           
           if (window.fullScreen) {
-            info("still in fullscreen, wait again");
-            await waitForFullscreenState(document, false, true);
+            info("widget is still in fullscreen, wait again");
+            await waitWidgetFullscreenEvent(window, false, true);
           }
 
           
+          ok(!window.fullScreen, "The widget should not be in fullscreen");
           ok(
-            !window.fullScreen,
+            !document.documentElement.hasAttribute("inFullscreen"),
             "The chrome window should not be in fullscreen"
           );
           ok(
