@@ -366,6 +366,11 @@ PeerConnectionImpl::PeerConnectionImpl(const GlobalObject* aGlobal)
         !HostnameInPref("media.peerconnection.video.use_rtx.blocklist",
                         mWindow->GetDocumentURI());
   }
+
+  if (!mUuidGen->Generate(&mHandle)) {
+    MOZ_CRASH();
+  }
+
   CSFLogInfo(LOGTAG, "%s: PeerConnectionImpl constructor for %s", __FUNCTION__,
              mHandle.c_str());
   STAMP_TIMECARD(mTimeCard, "Constructor Completed");
@@ -434,7 +439,8 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
 
   PRTime timestamp = PR_Now();
   
-  char temp[128];
+  
+  char temp[256];
 
   nsAutoCString locationCStr;
 
@@ -444,11 +450,6 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
   NS_ENSURE_SUCCESS(res, res);
 
   CopyUTF16toUTF8(locationAStr, locationCStr);
-
-  if (!mUuidGen->Generate(&mHandle)) {
-    MOZ_CRASH();
-    return NS_ERROR_UNEXPECTED;
-  }
 
   SprintfLiteral(temp, "%s %" PRIu64 " (id=%" PRIu64 " url=%s)",
                  mHandle.c_str(), static_cast<uint64_t>(timestamp),
