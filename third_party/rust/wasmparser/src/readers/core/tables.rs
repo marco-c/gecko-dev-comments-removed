@@ -13,81 +13,30 @@
 
 
 
-use crate::{
-    BinaryReader, Result, SectionIteratorLimited, SectionReader, SectionWithLimitedItems, TableType,
-};
-use std::ops::Range;
+use crate::{BinaryReader, FromReader, Result, SectionLimited, TableType};
 
 
-#[derive(Clone)]
-pub struct TableSectionReader<'a> {
-    reader: BinaryReader<'a>,
-    count: u32,
-}
+pub type TableSectionReader<'a> = SectionLimited<'a, TableType>;
 
-impl<'a> TableSectionReader<'a> {
-    
-    pub fn new(data: &'a [u8], offset: usize) -> Result<TableSectionReader<'a>> {
-        let mut reader = BinaryReader::new_with_offset(data, offset);
-        let count = reader.read_var_u32()?;
-        Ok(TableSectionReader { reader, count })
-    }
-
-    
-    pub fn original_position(&self) -> usize {
-        self.reader.original_position()
-    }
-
-    
-    pub fn get_count(&self) -> u32 {
-        self.count
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn read(&mut self) -> Result<TableType> {
-        self.reader.read_table_type()
-    }
-}
-
-impl<'a> SectionReader for TableSectionReader<'a> {
-    type Item = TableType;
-    fn read(&mut self) -> Result<Self::Item> {
-        TableSectionReader::read(self)
-    }
-    fn eof(&self) -> bool {
-        self.reader.eof()
-    }
-    fn original_position(&self) -> usize {
-        TableSectionReader::original_position(self)
-    }
-    fn range(&self) -> Range<usize> {
-        self.reader.range()
-    }
-}
-
-impl<'a> SectionWithLimitedItems for TableSectionReader<'a> {
-    fn get_count(&self) -> u32 {
-        TableSectionReader::get_count(self)
-    }
-}
-
-impl<'a> IntoIterator for TableSectionReader<'a> {
-    type Item = Result<TableType>;
-    type IntoIter = SectionIteratorLimited<TableSectionReader<'a>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        SectionIteratorLimited::new(self)
+impl<'a> FromReader<'a> for TableType {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        let element_type = reader.read()?;
+        let has_max = match reader.read_u8()? {
+            0x00 => false,
+            0x01 => true,
+            _ => {
+                bail!(
+                    reader.original_position() - 1,
+                    "invalid table resizable limits flags",
+                )
+            }
+        };
+        let initial = reader.read()?;
+        let maximum = if has_max { Some(reader.read()?) } else { None };
+        Ok(TableType {
+            element_type,
+            initial,
+            maximum,
+        })
     }
 }

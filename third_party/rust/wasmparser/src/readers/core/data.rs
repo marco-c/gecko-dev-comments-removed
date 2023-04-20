@@ -13,10 +13,7 @@
 
 
 
-use crate::{
-    BinaryReader, BinaryReaderError, ConstExpr, Result, SectionIteratorLimited, SectionReader,
-    SectionWithLimitedItems,
-};
+use crate::{BinaryReader, BinaryReaderError, ConstExpr, FromReader, Result, SectionLimited};
 use std::ops::Range;
 
 
@@ -45,63 +42,11 @@ pub enum DataKind<'a> {
 }
 
 
-#[derive(Clone)]
-pub struct DataSectionReader<'a> {
-    reader: BinaryReader<'a>,
-    count: u32,
-}
+pub type DataSectionReader<'a> = SectionLimited<'a, Data<'a>>;
 
-impl<'a> DataSectionReader<'a> {
-    
-    pub fn new(data: &'a [u8], offset: usize) -> Result<DataSectionReader<'a>> {
-        let mut reader = BinaryReader::new_with_offset(data, offset);
-        let count = reader.read_var_u32()?;
-        Ok(DataSectionReader { reader, count })
-    }
-
-    
-    pub fn original_position(&self) -> usize {
-        self.reader.original_position()
-    }
-
-    
-    pub fn get_count(&self) -> u32 {
-        self.count
-    }
-
-    fn verify_data_end(&self, end: usize) -> Result<()> {
-        if self.reader.buffer.len() < end {
-            return Err(BinaryReaderError::new(
-                "unexpected end of section or function: data segment extends past end of the data section",
-                self.reader.original_offset + self.reader.buffer.len(),
-            ));
-        }
-        Ok(())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn read<'b>(&mut self) -> Result<Data<'b>>
-    where
-        'a: 'b,
-    {
-        let segment_start = self.reader.original_position();
+impl<'a> FromReader<'a> for Data<'a> {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        let segment_start = reader.original_position();
 
         
         
@@ -116,21 +61,16 @@ impl<'a> DataSectionReader<'a> {
         
         
         
-        let flags = self.reader.read_var_u32()?;
+        let flags = reader.read_var_u32()?;
         let kind = match flags {
             1 => DataKind::Passive,
             0 | 2 => {
                 let memory_index = if flags == 0 {
                     0
                 } else {
-                    self.reader.read_var_u32()?
+                    reader.read_var_u32()?
                 };
-                let offset_expr = {
-                    let expr_offset = self.reader.position;
-                    self.reader.skip_const_expr()?;
-                    let data = &self.reader.buffer[expr_offset..self.reader.position];
-                    ConstExpr::new(data, self.reader.original_offset + expr_offset)
-                };
+                let offset_expr = reader.read()?;
                 DataKind::Active {
                     memory_index,
                     offset_expr,
@@ -139,51 +79,18 @@ impl<'a> DataSectionReader<'a> {
             _ => {
                 return Err(BinaryReaderError::new(
                     "invalid flags byte in data segment",
-                    self.reader.original_position() - 1,
+                    segment_start,
                 ));
             }
         };
 
-        let data_len = self.reader.read_var_u32()? as usize;
-        let data_end = self.reader.position + data_len;
-        self.verify_data_end(data_end)?;
-        let data = &self.reader.buffer[self.reader.position..data_end];
-        self.reader.skip_to(data_end);
-
-        let segment_end = self.reader.original_position();
-        let range = segment_start..segment_end;
-
-        Ok(Data { kind, data, range })
-    }
-}
-
-impl<'a> SectionReader for DataSectionReader<'a> {
-    type Item = Data<'a>;
-    fn read(&mut self) -> Result<Self::Item> {
-        DataSectionReader::read(self)
-    }
-    fn eof(&self) -> bool {
-        self.reader.eof()
-    }
-    fn original_position(&self) -> usize {
-        DataSectionReader::original_position(self)
-    }
-    fn range(&self) -> Range<usize> {
-        self.reader.range()
-    }
-}
-
-impl<'a> SectionWithLimitedItems for DataSectionReader<'a> {
-    fn get_count(&self) -> u32 {
-        DataSectionReader::get_count(self)
-    }
-}
-
-impl<'a> IntoIterator for DataSectionReader<'a> {
-    type Item = Result<Data<'a>>;
-    type IntoIter = SectionIteratorLimited<DataSectionReader<'a>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        SectionIteratorLimited::new(self)
+        let data = reader.read_reader(
+            "unexpected end of section or function: data segment extends past end of the section",
+        )?;
+        Ok(Data {
+            kind,
+            data: data.remaining_buffer(),
+            range: segment_start..data.range().end,
+        })
     }
 }

@@ -5,28 +5,23 @@ use crate::{encode_section, Encode, Section, SectionId};
 
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(u8)]
 pub enum ExportKind {
     
-    Func,
+    Func = CORE_FUNCTION_SORT,
     
-    Table,
+    Table = CORE_TABLE_SORT,
     
-    Memory,
+    Memory = CORE_MEMORY_SORT,
     
-    Global,
+    Global = CORE_GLOBAL_SORT,
     
-    Tag,
+    Tag = CORE_TAG_SORT,
 }
 
 impl Encode for ExportKind {
     fn encode(&self, sink: &mut Vec<u8>) {
-        sink.push(match self {
-            Self::Func => CORE_FUNCTION_SORT,
-            Self::Table => CORE_TABLE_SORT,
-            Self::Memory => CORE_MEMORY_SORT,
-            Self::Global => CORE_GLOBAL_SORT,
-            Self::Tag => CORE_TAG_SORT,
-        });
+        sink.push(*self as u8);
     }
 }
 

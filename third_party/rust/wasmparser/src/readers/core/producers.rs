@@ -13,8 +13,52 @@
 
 
 
-use crate::{BinaryReader, Result, SectionIteratorLimited, SectionReader, SectionWithLimitedItems};
-use std::ops::Range;
+use crate::{BinaryReader, FromReader, Result, SectionLimited};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub type ProducersSectionReader<'a> = SectionLimited<'a, ProducersField<'a>>;
+
+
+#[derive(Debug, Clone)]
+pub struct ProducersField<'a> {
+    
+    pub name: &'a str,
+    
+    pub values: SectionLimited<'a, ProducersFieldValue<'a>>,
+}
+
+impl<'a> FromReader<'a> for ProducersField<'a> {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        let name = reader.read_string()?;
+        let values = reader.skip(|reader| {
+            
+            for _ in 0..reader.read_var_u32()? {
+                reader.skip_string()?;
+                reader.skip_string()?;
+            }
+            Ok(())
+        })?;
+        Ok(ProducersField {
+            name,
+            values: SectionLimited::new(values.remaining_buffer(), values.original_position())?,
+        })
+    }
+}
 
 
 #[derive(Debug, Copy, Clone)]
@@ -25,187 +69,10 @@ pub struct ProducersFieldValue<'a> {
     pub version: &'a str,
 }
 
-
-pub struct ProducersFieldValuesReader<'a> {
-    reader: BinaryReader<'a>,
-    count: u32,
-}
-
-impl<'a> ProducersFieldValuesReader<'a> {
-    
-    pub fn get_count(&self) -> u32 {
-        self.count
-    }
-
-    
-    pub fn original_position(&self) -> usize {
-        self.reader.original_position()
-    }
-
-    fn skip(reader: &mut BinaryReader, values_count: u32) -> Result<()> {
-        for _ in 0..values_count {
-            reader.skip_string()?;
-            reader.skip_string()?;
-        }
-        Ok(())
-    }
-
-    
-    pub fn read<'b>(&mut self) -> Result<ProducersFieldValue<'b>>
-    where
-        'a: 'b,
-    {
-        let name = self.reader.read_string()?;
-        let version = self.reader.read_string()?;
+impl<'a> FromReader<'a> for ProducersFieldValue<'a> {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        let name = reader.read_string()?;
+        let version = reader.read_string()?;
         Ok(ProducersFieldValue { name, version })
-    }
-}
-
-impl<'a> IntoIterator for ProducersFieldValuesReader<'a> {
-    type Item = Result<ProducersFieldValue<'a>>;
-    type IntoIter = ProducersFieldValuesIterator<'a>;
-    fn into_iter(self) -> Self::IntoIter {
-        let count = self.count;
-        ProducersFieldValuesIterator {
-            reader: self,
-            left: count,
-            err: false,
-        }
-    }
-}
-
-
-pub struct ProducersFieldValuesIterator<'a> {
-    reader: ProducersFieldValuesReader<'a>,
-    left: u32,
-    err: bool,
-}
-
-impl<'a> Iterator for ProducersFieldValuesIterator<'a> {
-    type Item = Result<ProducersFieldValue<'a>>;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.err || self.left == 0 {
-            return None;
-        }
-        let result = self.reader.read();
-        self.err = result.is_err();
-        self.left -= 1;
-        Some(result)
-    }
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let count = self.reader.get_count() as usize;
-        (count, Some(count))
-    }
-}
-
-
-#[derive(Debug, Copy, Clone)]
-pub struct ProducersField<'a> {
-    
-    pub name: &'a str,
-    values_count: u32,
-    values_data: &'a [u8],
-    values_offset: usize,
-}
-
-impl<'a> ProducersField<'a> {
-    
-    pub fn get_producer_field_values_reader<'b>(&self) -> Result<ProducersFieldValuesReader<'b>>
-    where
-        'a: 'b,
-    {
-        Ok(ProducersFieldValuesReader {
-            reader: BinaryReader::new_with_offset(self.values_data, self.values_offset),
-            count: self.values_count,
-        })
-    }
-}
-
-
-pub struct ProducersSectionReader<'a> {
-    reader: BinaryReader<'a>,
-    count: u32,
-}
-
-impl<'a> ProducersSectionReader<'a> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn new(data: &'a [u8], offset: usize) -> Result<ProducersSectionReader<'a>> {
-        let mut reader = BinaryReader::new_with_offset(data, offset);
-        let count = reader.read_var_u32()?;
-        Ok(ProducersSectionReader { reader, count })
-    }
-
-    
-    pub fn original_position(&self) -> usize {
-        self.reader.original_position()
-    }
-
-    
-    pub fn get_count(&self) -> u32 {
-        self.count
-    }
-
-    
-    pub fn read<'b>(&mut self) -> Result<ProducersField<'b>>
-    where
-        'a: 'b,
-    {
-        let name = self.reader.read_string()?;
-        let values_count = self.reader.read_var_u32()?;
-        let values_start = self.reader.position;
-        ProducersFieldValuesReader::skip(&mut self.reader, values_count)?;
-        let values_end = self.reader.position;
-        Ok(ProducersField {
-            name,
-            values_count,
-            values_data: &self.reader.buffer[values_start..values_end],
-            values_offset: self.reader.original_offset + values_start,
-        })
-    }
-}
-
-impl<'a> SectionReader for ProducersSectionReader<'a> {
-    type Item = ProducersField<'a>;
-    fn read(&mut self) -> Result<Self::Item> {
-        ProducersSectionReader::read(self)
-    }
-    fn eof(&self) -> bool {
-        self.reader.eof()
-    }
-    fn original_position(&self) -> usize {
-        ProducersSectionReader::original_position(self)
-    }
-    fn range(&self) -> Range<usize> {
-        self.reader.range()
-    }
-}
-
-impl<'a> SectionWithLimitedItems for ProducersSectionReader<'a> {
-    fn get_count(&self) -> u32 {
-        ProducersSectionReader::get_count(self)
-    }
-}
-
-impl<'a> IntoIterator for ProducersSectionReader<'a> {
-    type Item = Result<ProducersField<'a>>;
-    type IntoIter = SectionIteratorLimited<ProducersSectionReader<'a>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        SectionIteratorLimited::new(self)
     }
 }

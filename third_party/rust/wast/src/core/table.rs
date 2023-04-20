@@ -30,7 +30,12 @@ pub enum TableKind<'a> {
     },
 
     
-    Normal(TableType<'a>),
+    Normal {
+        
+        ty: TableType<'a>,
+        
+        init_expr: Option<Expression<'a>>,
+    },
 
     
     Inline {
@@ -68,7 +73,14 @@ impl<'a> Parse<'a> for Table<'a> {
             })?;
             TableKind::Inline { elem, payload }
         } else if l.peek::<u32>() {
-            TableKind::Normal(parser.parse()?)
+            TableKind::Normal {
+                ty: parser.parse()?,
+                init_expr: if parser.peek::<LParen>() {
+                    Some(parser.parse::<Expression>()?)
+                } else {
+                    None
+                },
+            }
         } else if let Some(import) = parser.parse()? {
             TableKind::Import {
                 import,

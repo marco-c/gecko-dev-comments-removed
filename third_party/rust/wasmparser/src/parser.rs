@@ -1,21 +1,26 @@
 use crate::CoreTypeSectionReader;
 use crate::{
-    limits::MAX_WASM_MODULE_SIZE, BinaryReader, BinaryReaderError, ComponentAliasSectionReader,
-    ComponentCanonicalSectionReader, ComponentExportSectionReader, ComponentImportSectionReader,
-    ComponentInstanceSectionReader, ComponentStartSectionReader, ComponentTypeSectionReader,
-    CustomSectionReader, DataSectionReader, ElementSectionReader, ExportSectionReader,
-    FunctionBody, FunctionSectionReader, GlobalSectionReader, ImportSectionReader,
-    InstanceSectionReader, MemorySectionReader, Result, SectionReader, TableSectionReader,
-    TagSectionReader, TypeSectionReader,
+    limits::MAX_WASM_MODULE_SIZE, BinaryReader, BinaryReaderError, ComponentCanonicalSectionReader,
+    ComponentExportSectionReader, ComponentImportSectionReader, ComponentInstanceSectionReader,
+    ComponentStartFunction, ComponentTypeSectionReader, CustomSectionReader, DataSectionReader,
+    ElementSectionReader, ExportSectionReader, FromReader, FunctionBody, FunctionSectionReader,
+    GlobalSectionReader, ImportSectionReader, InstanceSectionReader, MemorySectionReader, Result,
+    SectionLimited, TableSectionReader, TagSectionReader, TypeSectionReader,
 };
 use std::convert::TryInto;
 use std::fmt;
 use std::iter;
 use std::ops::Range;
 
-pub(crate) const WASM_EXPERIMENTAL_VERSION: u32 = 0xd;
-pub(crate) const WASM_MODULE_VERSION: u32 = 0x1;
-pub(crate) const WASM_COMPONENT_VERSION: u32 = 0x0001000a;
+pub(crate) const WASM_MODULE_VERSION: u16 = 0x1;
+
+
+
+
+
+
+
+pub(crate) const WASM_COMPONENT_VERSION: u16 = 0xc;
 
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -96,7 +101,7 @@ pub enum Payload<'a> {
     
     Version {
         
-        num: u32,
+        num: u16,
         
         encoding: Encoding,
         
@@ -238,7 +243,7 @@ pub enum Payload<'a> {
     ComponentInstanceSection(ComponentInstanceSectionReader<'a>),
     
     
-    ComponentAliasSection(ComponentAliasSectionReader<'a>),
+    ComponentAliasSection(SectionLimited<'a, crate::ComponentAlias<'a>>),
     
     
     ComponentTypeSection(ComponentTypeSectionReader<'a>),
@@ -246,8 +251,12 @@ pub enum Payload<'a> {
     
     ComponentCanonicalSection(ComponentCanonicalSectionReader<'a>),
     
-    
-    ComponentStartSection(ComponentStartSectionReader<'a>),
+    ComponentStartSection {
+        
+        start: ComponentStartFunction,
+        
+        range: Range<usize>,
+    },
     
     
     ComponentImportSection(ComponentImportSectionReader<'a>),
@@ -511,18 +520,17 @@ impl Parser {
 
         match self.state {
             State::Header => {
+                const KIND_MODULE: u16 = 0x00;
+                const KIND_COMPONENT: u16 = 0x01;
+
                 let start = reader.original_position();
-                let num = reader.read_header_version()?;
-                self.encoding = match num {
-                    WASM_EXPERIMENTAL_VERSION | WASM_MODULE_VERSION => Encoding::Module,
-                    WASM_COMPONENT_VERSION => Encoding::Component,
-                    _ => {
-                        return Err(BinaryReaderError::new(
-                            "unknown binary version",
-                            reader.original_position() - 4,
-                        ))
-                    }
+                let header_version = reader.read_header_version()?;
+                self.encoding = match (header_version >> 16) as u16 {
+                    KIND_MODULE => Encoding::Module,
+                    KIND_COMPONENT => Encoding::Component,
+                    _ => bail!(start + 4, "unknown binary version: {header_version:#10x}"),
                 };
+                let num = header_version as u16;
                 self.state = State::SectionStart;
                 Ok(Version {
                     num,
@@ -543,7 +551,7 @@ impl Parser {
                 if id & 0x80 != 0 {
                     return Err(BinaryReaderError::new("malformed section id", id_pos));
                 }
-                let len_pos = reader.position;
+                let len_pos = reader.original_position();
                 let mut len = reader.read_var_u32()?;
 
                 
@@ -559,9 +567,6 @@ impl Parser {
                 if section_overflow {
                     return Err(BinaryReaderError::new("section too large", len_pos));
                 }
-
-                
-                if id == 0 {}
 
                 match (self.encoding, id) {
                     
@@ -590,7 +595,7 @@ impl Parser {
                         section(reader, len, ExportSectionReader::new, ExportSection)
                     }
                     (Encoding::Module, START_SECTION) => {
-                        let (func, range) = single_u32(reader, len, "start")?;
+                        let (func, range) = single_item(reader, len, "start")?;
                         Ok(StartSection { func, range })
                     }
                     (Encoding::Module, ELEMENT_SECTION) => {
@@ -614,7 +619,7 @@ impl Parser {
                         section(reader, len, DataSectionReader::new, DataSection)
                     }
                     (Encoding::Module, DATA_COUNT_SECTION) => {
-                        let (count, range) = single_u32(reader, len, "data count")?;
+                        let (count, range) = single_item(reader, len, "data count")?;
                         Ok(DataCountSection { count, range })
                     }
                     (Encoding::Module, TAG_SECTION) => {
@@ -657,12 +662,9 @@ impl Parser {
                         ComponentInstanceSectionReader::new,
                         ComponentInstanceSection,
                     ),
-                    (Encoding::Component, COMPONENT_ALIAS_SECTION) => section(
-                        reader,
-                        len,
-                        ComponentAliasSectionReader::new,
-                        ComponentAliasSection,
-                    ),
+                    (Encoding::Component, COMPONENT_ALIAS_SECTION) => {
+                        section(reader, len, SectionLimited::new, ComponentAliasSection)
+                    }
                     (Encoding::Component, COMPONENT_TYPE_SECTION) => section(
                         reader,
                         len,
@@ -675,12 +677,10 @@ impl Parser {
                         ComponentCanonicalSectionReader::new,
                         ComponentCanonicalSection,
                     ),
-                    (Encoding::Component, COMPONENT_START_SECTION) => section(
-                        reader,
-                        len,
-                        ComponentStartSectionReader::new,
-                        ComponentStartSection,
-                    ),
+                    (Encoding::Component, COMPONENT_START_SECTION) => {
+                        let (start, range) = single_item(reader, len, "component start")?;
+                        Ok(ComponentStartSection { start, range })
+                    }
                     (Encoding::Component, COMPONENT_IMPORT_SECTION) => section(
                         reader,
                         len,
@@ -896,35 +896,27 @@ fn section<'a, T>(
 }
 
 
-
-
-
-
-fn subreader<'a>(reader: &mut BinaryReader<'a>, len: u32) -> Result<BinaryReader<'a>> {
-    let offset = reader.original_position();
-    let payload = reader.read_bytes(len as usize)?;
-    Ok(BinaryReader::new_with_offset(payload, offset))
-}
-
-
-fn single_u32<'a>(
+fn single_item<'a, T>(
     reader: &mut BinaryReader<'a>,
     len: u32,
     desc: &str,
-) -> Result<(u32, Range<usize>)> {
+) -> Result<(T, Range<usize>)>
+where
+    T: FromReader<'a>,
+{
     let range = reader.original_position()..reader.original_position() + len as usize;
-    let mut content = subreader(reader, len)?;
+    let mut content = BinaryReader::new_with_offset(reader.read_bytes(len as usize)?, range.start);
     
     
     
-    let index = content.read_var_u32().map_err(clear_hint)?;
+    let ret = content.read().map_err(clear_hint)?;
     if !content.eof() {
         bail!(
             content.original_position(),
             "unexpected content in the {desc} section",
         );
     }
-    Ok((index, range))
+    Ok((ret, range))
 }
 
 
@@ -999,7 +991,7 @@ impl Payload<'_> {
             ComponentAliasSection(s) => Some((COMPONENT_ALIAS_SECTION, s.range())),
             ComponentTypeSection(s) => Some((COMPONENT_TYPE_SECTION, s.range())),
             ComponentCanonicalSection(s) => Some((COMPONENT_CANONICAL_SECTION, s.range())),
-            ComponentStartSection(s) => Some((COMPONENT_START_SECTION, s.range())),
+            ComponentStartSection { range, .. } => Some((COMPONENT_START_SECTION, range.clone())),
             ComponentImportSection(s) => Some((COMPONENT_IMPORT_SECTION, s.range())),
             ComponentExportSection(s) => Some((COMPONENT_EXPORT_SECTION, s.range())),
 
@@ -1080,7 +1072,7 @@ impl fmt::Debug for Payload<'_> {
                 .debug_tuple("ComponentCanonicalSection")
                 .field(&"...")
                 .finish(),
-            ComponentStartSection(_) => f
+            ComponentStartSection { .. } => f
                 .debug_tuple("ComponentStartSection")
                 .field(&"...")
                 .finish(),
@@ -1175,7 +1167,7 @@ mod tests {
     fn parser_after_component_header() -> Parser {
         let mut p = Parser::default();
         assert_matches!(
-            p.parse(b"\0asm\x0a\0\x01\0", false),
+            p.parse(b"\0asm\x0c\0\x01\0", false),
             Ok(Chunk::Parsed {
                 consumed: 8,
                 payload: Payload::Version {

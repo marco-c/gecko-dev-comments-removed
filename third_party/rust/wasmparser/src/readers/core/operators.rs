@@ -129,13 +129,8 @@ pub struct OperatorsReader<'a> {
 }
 
 impl<'a> OperatorsReader<'a> {
-    pub(crate) fn new<'b>(data: &'a [u8], offset: usize) -> OperatorsReader<'b>
-    where
-        'a: 'b,
-    {
-        OperatorsReader {
-            reader: BinaryReader::new_with_offset(data, offset),
-        }
+    pub(crate) fn new(reader: BinaryReader<'a>) -> OperatorsReader<'a> {
+        OperatorsReader { reader }
     }
 
     
@@ -171,18 +166,12 @@ impl<'a> OperatorsReader<'a> {
     }
 
     
-    pub fn read<'b>(&mut self) -> Result<Operator<'b>>
-    where
-        'a: 'b,
-    {
+    pub fn read(&mut self) -> Result<Operator<'a>> {
         self.reader.read_operator()
     }
 
     
-    pub fn into_iter_with_offsets<'b>(self) -> OperatorsIteratorWithOffsets<'b>
-    where
-        'a: 'b,
-    {
+    pub fn into_iter_with_offsets(self) -> OperatorsIteratorWithOffsets<'a> {
         OperatorsIteratorWithOffsets {
             reader: self,
             err: false,
@@ -190,10 +179,7 @@ impl<'a> OperatorsReader<'a> {
     }
 
     
-    pub fn read_with_offset<'b>(&mut self) -> Result<(Operator<'b>, usize)>
-    where
-        'a: 'b,
-    {
+    pub fn read_with_offset(&mut self) -> Result<(Operator<'a>, usize)> {
         let pos = self.reader.original_position();
         Ok((self.read()?, pos))
     }
@@ -339,4 +325,30 @@ pub trait VisitOperator<'a> {
     }
 
     for_each_operator!(define_visit_operator);
+}
+
+macro_rules! define_visit_operator_delegate {
+    ($(@$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident)*) => {
+        $(
+            fn $visit(&mut self $($(,$arg: $argty)*)?) -> Self::Output {
+                V::$visit(&mut *self, $($($arg),*)?)
+            }
+        )*
+    }
+}
+
+impl<'a, 'b, V: VisitOperator<'a> + ?Sized> VisitOperator<'a> for &'b mut V {
+    type Output = V::Output;
+    fn visit_operator(&mut self, op: &Operator<'a>) -> Self::Output {
+        V::visit_operator(*self, op)
+    }
+    for_each_operator!(define_visit_operator_delegate);
+}
+
+impl<'a, V: VisitOperator<'a> + ?Sized> VisitOperator<'a> for Box<V> {
+    type Output = V::Output;
+    fn visit_operator(&mut self, op: &Operator<'a>) -> Self::Output {
+        V::visit_operator(&mut *self, op)
+    }
+    for_each_operator!(define_visit_operator_delegate);
 }

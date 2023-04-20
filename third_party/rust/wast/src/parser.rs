@@ -763,10 +763,12 @@ impl<'a> Parser<'a> {
     
     
     pub fn error(self, msg: impl fmt::Display) -> Error {
-        self.error_at(self.cursor().cur_span(), &msg)
+        self.error_at(self.cursor().cur_span(), msg)
     }
 
-    fn error_at(self, span: Span, msg: &dyn fmt::Display) -> Error {
+    
+    
+    pub fn error_at(self, span: Span, msg: impl fmt::Display) -> Error {
         Error::parse(span, self.buf.input, msg.to_string())
     }
 
@@ -961,7 +963,7 @@ impl<'a> Cursor<'a> {
     
     
     pub fn error(&self, msg: impl fmt::Display) -> Error {
-        self.parser.error_at(self.cur_span(), &msg)
+        self.parser.error_at(self.cur_span(), msg)
     }
 
     

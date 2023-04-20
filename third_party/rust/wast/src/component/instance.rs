@@ -168,7 +168,7 @@ pub struct Instance<'a> {
     pub name: Option<NameAnnotation<'a>>,
     
     
-    pub exports: core::InlineExport<'a>,
+    pub exports: InlineExport<'a>,
     
     pub kind: InstanceKind<'a>,
 }

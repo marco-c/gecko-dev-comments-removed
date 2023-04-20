@@ -13,80 +13,20 @@
 
 
 
-use crate::{
-    BinaryReader, Result, SectionIteratorLimited, SectionReader, SectionWithLimitedItems, TagType,
-};
-use std::ops::Range;
+use crate::{BinaryReader, FromReader, Result, SectionLimited, TagKind, TagType};
 
 
-#[derive(Clone)]
-pub struct TagSectionReader<'a> {
-    reader: BinaryReader<'a>,
-    count: u32,
-}
+pub type TagSectionReader<'a> = SectionLimited<'a, TagType>;
 
-impl<'a> TagSectionReader<'a> {
-    
-    pub fn new(data: &'a [u8], offset: usize) -> Result<TagSectionReader<'a>> {
-        let mut reader = BinaryReader::new_with_offset(data, offset);
-        let count = reader.read_var_u32()?;
-        Ok(TagSectionReader { reader, count })
-    }
-
-    
-    pub fn original_position(&self) -> usize {
-        self.reader.original_position()
-    }
-
-    
-    pub fn get_count(&self) -> u32 {
-        self.count
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn read(&mut self) -> Result<TagType> {
-        self.reader.read_tag_type()
-    }
-}
-
-impl<'a> SectionReader for TagSectionReader<'a> {
-    type Item = TagType;
-    fn read(&mut self) -> Result<Self::Item> {
-        TagSectionReader::read(self)
-    }
-    fn eof(&self) -> bool {
-        self.reader.eof()
-    }
-    fn original_position(&self) -> usize {
-        TagSectionReader::original_position(self)
-    }
-    fn range(&self) -> Range<usize> {
-        self.reader.range()
-    }
-}
-
-impl<'a> SectionWithLimitedItems for TagSectionReader<'a> {
-    fn get_count(&self) -> u32 {
-        TagSectionReader::get_count(self)
-    }
-}
-
-impl<'a> IntoIterator for TagSectionReader<'a> {
-    type Item = Result<TagType>;
-    type IntoIter = SectionIteratorLimited<TagSectionReader<'a>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        SectionIteratorLimited::new(self)
+impl<'a> FromReader<'a> for TagType {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        let attribute = reader.read_u8()?;
+        if attribute != 0 {
+            bail!(reader.original_position() - 1, "invalid tag attributes");
+        }
+        Ok(TagType {
+            kind: TagKind::Exception,
+            func_type_idx: reader.read_var_u32()?,
+        })
     }
 }

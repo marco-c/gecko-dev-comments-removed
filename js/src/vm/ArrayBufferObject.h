@@ -464,6 +464,8 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
       wasm::IndexType t, wasm::Pages newPages,
       Handle<ArrayBufferObject*> oldBuf,
       MutableHandle<ArrayBufferObject*> newBuf, JSContext* cx);
+  static void wasmDiscard(Handle<ArrayBufferObject*> buf, uint64_t byteOffset,
+                          uint64_t byteLength);
 
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 
@@ -615,6 +617,11 @@ class WasmArrayRawBuffer {
         dataPtr - sizeof(WasmArrayRawBuffer));
   }
 
+  static WasmArrayRawBuffer* fromDataPtr(uint8_t* dataPtr) {
+    return reinterpret_cast<WasmArrayRawBuffer*>(dataPtr -
+                                                 sizeof(WasmArrayRawBuffer));
+  }
+
   wasm::IndexType indexType() const { return indexType_; }
 
   uint8_t* basePointer() { return dataPointer() - gc::SystemPageSize(); }
@@ -638,6 +645,11 @@ class WasmArrayRawBuffer {
   
   
   void tryGrowMaxPagesInPlace(wasm::Pages deltaMaxPages);
+
+  
+  
+  
+  void discard(size_t byteOffset, size_t byteLen);
 };
 
 }  

@@ -1,7 +1,7 @@
 use super::CORE_TYPE_SORT;
 use crate::{
-    encode_section, ComponentOuterAliasKind, ComponentSection, ComponentSectionId,
-    ComponentTypeRef, Encode, EntityType, ValType,
+    encode_section, Alias, ComponentExportKind, ComponentOuterAliasKind, ComponentSection,
+    ComponentSectionId, ComponentTypeRef, Encode, EntityType, ValType,
 };
 
 
@@ -221,44 +221,54 @@ impl ComponentType {
     }
 
     
-    pub fn alias_outer_core_type(&mut self, count: u32, index: u32) -> &mut Self {
+    
+    pub fn alias(&mut self, alias: Alias<'_>) -> &mut Self {
         self.bytes.push(0x02);
-        ComponentOuterAliasKind::CoreType.encode(&mut self.bytes);
-        self.bytes.push(0x02);
-        count.encode(&mut self.bytes);
-        index.encode(&mut self.bytes);
+        alias.encode(&mut self.bytes);
         self.num_added += 1;
-        self.core_types_added += 1;
+        match &alias {
+            Alias::InstanceExport {
+                kind: ComponentExportKind::Type,
+                ..
+            }
+            | Alias::Outer {
+                kind: ComponentOuterAliasKind::Type,
+                ..
+            } => self.types_added += 1,
+            Alias::Outer {
+                kind: ComponentOuterAliasKind::CoreType,
+                ..
+            } => self.core_types_added += 1,
+            _ => {}
+        }
         self
     }
 
     
-    pub fn alias_outer_type(&mut self, count: u32, index: u32) -> &mut Self {
-        self.bytes.push(0x02);
-        ComponentOuterAliasKind::Type.encode(&mut self.bytes);
-        self.bytes.push(0x02);
-        count.encode(&mut self.bytes);
-        index.encode(&mut self.bytes);
-        self.num_added += 1;
-        self.types_added += 1;
-        self
-    }
-
-    
-    pub fn import(&mut self, name: &str, ty: ComponentTypeRef) -> &mut Self {
+    pub fn import(&mut self, name: &str, url: &str, ty: ComponentTypeRef) -> &mut Self {
         self.bytes.push(0x03);
         name.encode(&mut self.bytes);
+        url.encode(&mut self.bytes);
         ty.encode(&mut self.bytes);
         self.num_added += 1;
+        match ty {
+            ComponentTypeRef::Type(..) => self.types_added += 1,
+            _ => {}
+        }
         self
     }
 
     
-    pub fn export(&mut self, name: &str, ty: ComponentTypeRef) -> &mut Self {
+    pub fn export(&mut self, name: &str, url: &str, ty: ComponentTypeRef) -> &mut Self {
         self.bytes.push(0x04);
         name.encode(&mut self.bytes);
+        url.encode(&mut self.bytes);
         ty.encode(&mut self.bytes);
         self.num_added += 1;
+        match ty {
+            ComponentTypeRef::Type(..) => self.types_added += 1,
+            _ => {}
+        }
         self
     }
 
@@ -283,12 +293,7 @@ impl Encode for ComponentType {
 
 
 #[derive(Debug, Clone, Default)]
-pub struct InstanceType {
-    bytes: Vec<u8>,
-    num_added: u32,
-    core_types_added: u32,
-    types_added: u32,
-}
+pub struct InstanceType(ComponentType);
 
 impl InstanceType {
     
@@ -301,10 +306,7 @@ impl InstanceType {
     
     #[must_use = "the encoder must be used to encode the type"]
     pub fn core_type(&mut self) -> CoreTypeEncoder {
-        self.bytes.push(0x00);
-        self.num_added += 1;
-        self.core_types_added += 1;
-        CoreTypeEncoder(&mut self.bytes)
+        self.0.core_type()
     }
 
     
@@ -312,61 +314,47 @@ impl InstanceType {
     
     #[must_use = "the encoder must be used to encode the type"]
     pub fn ty(&mut self) -> ComponentTypeEncoder {
-        self.bytes.push(0x01);
-        self.num_added += 1;
-        self.types_added += 1;
-        ComponentTypeEncoder(&mut self.bytes)
+        self.0.ty()
     }
 
     
-    pub fn alias_outer_core_type(&mut self, count: u32, index: u32) -> &mut Self {
-        self.bytes.push(0x02);
-        ComponentOuterAliasKind::CoreType.encode(&mut self.bytes);
-        self.bytes.push(0x02);
-        count.encode(&mut self.bytes);
-        index.encode(&mut self.bytes);
-        self.num_added += 1;
-        self.core_types_added += 1;
+    pub fn alias(&mut self, alias: Alias<'_>) -> &mut Self {
+        self.0.alias(alias);
         self
     }
 
     
-    pub fn alias_outer_type(&mut self, count: u32, index: u32) -> &mut Self {
-        self.bytes.push(0x02);
-        ComponentOuterAliasKind::Type.encode(&mut self.bytes);
-        self.bytes.push(0x02);
-        count.encode(&mut self.bytes);
-        index.encode(&mut self.bytes);
-        self.num_added += 1;
-        self.types_added += 1;
-        self
-    }
-
-    
-    pub fn export(&mut self, name: &str, ty: ComponentTypeRef) -> &mut Self {
-        self.bytes.push(0x04);
-        name.encode(&mut self.bytes);
-        ty.encode(&mut self.bytes);
-        self.num_added += 1;
+    pub fn export(&mut self, name: &str, url: &str, ty: ComponentTypeRef) -> &mut Self {
+        self.0.export(name, url, ty);
         self
     }
 
     
     pub fn core_type_count(&self) -> u32 {
-        self.core_types_added
+        self.0.core_types_added
     }
 
     
     pub fn type_count(&self) -> u32 {
-        self.types_added
+        self.0.types_added
+    }
+
+    
+    pub fn is_empty(&self) -> bool {
+        self.0.num_added == 0
+    }
+
+    
+    pub fn len(&self) -> u32 {
+        self.0.num_added
     }
 }
 
 impl Encode for InstanceType {
     fn encode(&self, sink: &mut Vec<u8>) {
         sink.push(0x42);
-        self.num_added.encode(sink);
-        sink.extend(&self.bytes);
+        self.0.num_added.encode(sink);
+        sink.extend(&self.0.bytes);
     }
 }
 

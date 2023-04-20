@@ -1,5 +1,4 @@
 use crate::component::*;
-use crate::core;
 use crate::kw;
 use crate::parser::{Parse, Parser, Result};
 use crate::token::{Id, Index, LParen, NameAnnotation, Span};
@@ -80,7 +79,7 @@ pub struct Func<'a> {
     pub name: Option<NameAnnotation<'a>>,
     
     
-    pub exports: core::InlineExport<'a>,
+    pub exports: InlineExport<'a>,
     
     pub kind: FuncKind<'a>,
 }

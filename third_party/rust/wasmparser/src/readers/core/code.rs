@@ -13,27 +13,23 @@
 
 
 
-use crate::{
-    BinaryReader, BinaryReaderError, OperatorsReader, Result, SectionIteratorLimited,
-    SectionReader, SectionWithLimitedItems, ValType,
-};
+use crate::{BinaryReader, FromReader, OperatorsReader, Result, SectionLimited, ValType};
 use std::ops::Range;
 
 
-#[derive(Debug, Clone, Copy)]
+pub type CodeSectionReader<'a> = SectionLimited<'a, FunctionBody<'a>>;
+
+
+#[derive(Debug, Clone)]
 pub struct FunctionBody<'a> {
-    offset: usize,
-    data: &'a [u8],
-    allow_memarg64: bool,
+    reader: BinaryReader<'a>,
 }
 
 impl<'a> FunctionBody<'a> {
     
     pub fn new(offset: usize, data: &'a [u8]) -> Self {
         Self {
-            offset,
-            data,
-            allow_memarg64: false,
+            reader: BinaryReader::new_with_offset(data, offset),
         }
     }
 
@@ -43,17 +39,12 @@ impl<'a> FunctionBody<'a> {
     
     
     pub fn allow_memarg64(&mut self, allow: bool) {
-        self.allow_memarg64 = allow;
+        self.reader.allow_memarg64(allow);
     }
 
     
-    pub fn get_binary_reader<'b>(&self) -> BinaryReader<'b>
-    where
-        'a: 'b,
-    {
-        let mut reader = BinaryReader::new_with_offset(self.data, self.offset);
-        reader.allow_memarg64(self.allow_memarg64);
-        reader
+    pub fn get_binary_reader(&self) -> BinaryReader<'a> {
+        self.reader.clone()
     }
 
     fn skip_locals(reader: &mut BinaryReader) -> Result<()> {
@@ -66,31 +57,29 @@ impl<'a> FunctionBody<'a> {
     }
 
     
-    pub fn get_locals_reader<'b>(&self) -> Result<LocalsReader<'b>>
-    where
-        'a: 'b,
-    {
-        let mut reader = BinaryReader::new_with_offset(self.data, self.offset);
+    pub fn get_locals_reader(&self) -> Result<LocalsReader<'a>> {
+        let mut reader = self.reader.clone();
         let count = reader.read_var_u32()?;
         Ok(LocalsReader { reader, count })
     }
 
     
-    pub fn get_operators_reader<'b>(&self) -> Result<OperatorsReader<'b>>
-    where
-        'a: 'b,
-    {
-        let mut reader = BinaryReader::new_with_offset(self.data, self.offset);
+    pub fn get_operators_reader(&self) -> Result<OperatorsReader<'a>> {
+        let mut reader = self.reader.clone();
         Self::skip_locals(&mut reader)?;
-        let pos = reader.position;
-        let mut reader = OperatorsReader::new(&self.data[pos..], self.offset + pos);
-        reader.allow_memarg64(self.allow_memarg64);
-        Ok(reader)
+        Ok(OperatorsReader::new(reader))
     }
 
     
     pub fn range(&self) -> Range<usize> {
-        self.offset..self.offset + self.data.len()
+        self.reader.range()
+    }
+}
+
+impl<'a> FromReader<'a> for FunctionBody<'a> {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        let reader = reader.read_reader("function body extends past end of the code section")?;
+        Ok(FunctionBody { reader })
     }
 }
 
@@ -113,8 +102,8 @@ impl<'a> LocalsReader<'a> {
 
     
     pub fn read(&mut self) -> Result<(u32, ValType)> {
-        let count = self.reader.read_var_u32()?;
-        let value_type = self.reader.read_val_type()?;
+        let count = self.reader.read()?;
+        let value_type = self.reader.read()?;
         Ok((count, value_type))
     }
 }
@@ -153,118 +142,5 @@ impl<'a> Iterator for LocalsIterator<'a> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         let count = self.reader.get_count() as usize;
         (count, Some(count))
-    }
-}
-
-
-pub struct CodeSectionReader<'a> {
-    reader: BinaryReader<'a>,
-    count: u32,
-}
-
-impl<'a> CodeSectionReader<'a> {
-    
-    pub fn new(data: &'a [u8], offset: usize) -> Result<CodeSectionReader<'a>> {
-        let mut reader = BinaryReader::new_with_offset(data, offset);
-        let count = reader.read_var_u32()?;
-        Ok(CodeSectionReader { reader, count })
-    }
-
-    
-    pub fn original_position(&self) -> usize {
-        self.reader.original_position()
-    }
-
-    
-    pub fn get_count(&self) -> u32 {
-        self.count
-    }
-
-    fn verify_body_end(&self, end: usize) -> Result<()> {
-        if self.reader.buffer.len() < end {
-            return Err(BinaryReaderError::new(
-                "function body extends past end of the code section",
-                self.reader.original_offset + self.reader.buffer.len(),
-            ));
-        }
-        Ok(())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn read<'b>(&mut self) -> Result<FunctionBody<'b>>
-    where
-        'a: 'b,
-    {
-        let size = self.reader.read_var_u32()? as usize;
-        let body_start = self.reader.position;
-        let body_end = body_start + size;
-        self.verify_body_end(body_end)?;
-        self.reader.skip_to(body_end);
-        Ok(FunctionBody {
-            offset: self.reader.original_offset + body_start,
-            data: &self.reader.buffer[body_start..body_end],
-            allow_memarg64: false,
-        })
-    }
-}
-
-impl<'a> SectionReader for CodeSectionReader<'a> {
-    type Item = FunctionBody<'a>;
-    fn read(&mut self) -> Result<Self::Item> {
-        CodeSectionReader::read(self)
-    }
-    fn eof(&self) -> bool {
-        self.reader.eof()
-    }
-    fn original_position(&self) -> usize {
-        CodeSectionReader::original_position(self)
-    }
-    fn range(&self) -> Range<usize> {
-        self.reader.range()
-    }
-}
-
-impl<'a> SectionWithLimitedItems for CodeSectionReader<'a> {
-    fn get_count(&self) -> u32 {
-        CodeSectionReader::get_count(self)
-    }
-}
-
-impl<'a> IntoIterator for CodeSectionReader<'a> {
-    type Item = Result<FunctionBody<'a>>;
-    type IntoIter = SectionIteratorLimited<CodeSectionReader<'a>>;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn into_iter(self) -> Self::IntoIter {
-        SectionIteratorLimited::new(self)
     }
 }

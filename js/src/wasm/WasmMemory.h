@@ -201,6 +201,25 @@ static const size_t GuardSize = PageSize;
 
 static const size_t NullPtrGuardSize = 4096;
 
+
+
+
+static inline bool MemoryBoundsCheck(uint32_t offset, uint32_t len,
+                                     size_t memLen) {
+  uint64_t offsetLimit = uint64_t(offset) + uint64_t(len);
+  return offsetLimit <= memLen;
+}
+
+
+
+static inline bool MemoryBoundsCheck(uint64_t offset, uint64_t len,
+                                     size_t memLen) {
+  uint64_t offsetLimit = offset + len;
+  bool didOverflow = offsetLimit < offset;
+  bool tooLong = memLen < offsetLimit;
+  return !didOverflow && !tooLong;
+}
+
 }  
 }  
 

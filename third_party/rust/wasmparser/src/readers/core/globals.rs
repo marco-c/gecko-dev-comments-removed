@@ -13,11 +13,7 @@
 
 
 
-use crate::{
-    BinaryReader, ConstExpr, GlobalType, Result, SectionIteratorLimited, SectionReader,
-    SectionWithLimitedItems,
-};
-use std::ops::Range;
+use crate::{BinaryReader, ConstExpr, FromReader, GlobalType, Result, SectionLimited};
 
 
 #[derive(Debug, Copy, Clone)]
@@ -29,82 +25,25 @@ pub struct Global<'a> {
 }
 
 
-#[derive(Clone)]
-pub struct GlobalSectionReader<'a> {
-    reader: BinaryReader<'a>,
-    count: u32,
-}
+pub type GlobalSectionReader<'a> = SectionLimited<'a, Global<'a>>;
 
-impl<'a> GlobalSectionReader<'a> {
-    
-    pub fn new(data: &'a [u8], offset: usize) -> Result<GlobalSectionReader<'a>> {
-        let mut reader = BinaryReader::new_with_offset(data, offset);
-        let count = reader.read_var_u32()?;
-        Ok(GlobalSectionReader { reader, count })
-    }
-
-    
-    pub fn original_position(&self) -> usize {
-        self.reader.original_position()
-    }
-
-    
-    pub fn get_count(&self) -> u32 {
-        self.count
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn read<'b>(&mut self) -> Result<Global<'b>>
-    where
-        'a: 'b,
-    {
-        let ty = self.reader.read_global_type()?;
-        let init_expr = self.reader.read_const_expr()?;
+impl<'a> FromReader<'a> for Global<'a> {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        let ty = reader.read()?;
+        let init_expr = reader.read()?;
         Ok(Global { ty, init_expr })
     }
 }
 
-impl<'a> SectionReader for GlobalSectionReader<'a> {
-    type Item = Global<'a>;
-    fn read(&mut self) -> Result<Self::Item> {
-        GlobalSectionReader::read(self)
-    }
-    fn eof(&self) -> bool {
-        self.reader.eof()
-    }
-    fn original_position(&self) -> usize {
-        GlobalSectionReader::original_position(self)
-    }
-    fn range(&self) -> Range<usize> {
-        self.reader.range()
-    }
-}
-
-impl<'a> SectionWithLimitedItems for GlobalSectionReader<'a> {
-    fn get_count(&self) -> u32 {
-        GlobalSectionReader::get_count(self)
-    }
-}
-
-impl<'a> IntoIterator for GlobalSectionReader<'a> {
-    type Item = Result<Global<'a>>;
-    type IntoIter = SectionIteratorLimited<GlobalSectionReader<'a>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        SectionIteratorLimited::new(self)
+impl<'a> FromReader<'a> for GlobalType {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        Ok(GlobalType {
+            content_type: reader.read()?,
+            mutable: match reader.read_u8()? {
+                0x00 => false,
+                0x01 => true,
+                _ => bail!(reader.original_position() - 1, "malformed mutability",),
+            },
+        })
     }
 }

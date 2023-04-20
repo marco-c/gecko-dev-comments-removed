@@ -1,6 +1,5 @@
 use crate::annotation;
 use crate::component::*;
-use crate::core;
 use crate::kw;
 use crate::parser::{Parse, Parser, Result};
 use crate::token::Index;
@@ -261,7 +260,7 @@ pub struct NestedComponent<'a> {
     pub name: Option<NameAnnotation<'a>>,
     
     
-    pub exports: core::InlineExport<'a>,
+    pub exports: InlineExport<'a>,
     
     pub kind: NestedComponentKind<'a>,
 }

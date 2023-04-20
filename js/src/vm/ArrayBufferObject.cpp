@@ -48,6 +48,7 @@
 #include "vm/Warnings.h"  
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmLog.h"
+#include "wasm/WasmMemory.h"
 #include "wasm/WasmModuleTypes.h"
 #include "wasm/WasmProcess.h"
 
@@ -681,6 +682,51 @@ void WasmArrayRawBuffer::tryGrowMaxPagesInPlace(Pages deltaMaxPages) {
   clampedMaxPages_ = newMaxPages;
 }
 
+void WasmArrayRawBuffer::discard(size_t byteOffset, size_t byteLen) {
+  uint8_t* memBase = dataPointer();
+
+  
+  
+  MOZ_ASSERT(byteOffset % wasm::PageSize == 0);
+  MOZ_ASSERT(byteLen % wasm::PageSize == 0);
+  MOZ_ASSERT(wasm::MemoryBoundsCheck(uint64_t(byteOffset), uint64_t(byteLen),
+                                     byteLength()));
+
+  
+  if (byteLen == 0) {
+    return;
+  }
+
+  void* addr = memBase + uintptr_t(byteOffset);
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+#ifdef XP_WIN
+  if (!VirtualFree(addr, byteLen, MEM_DECOMMIT)) {
+    MOZ_CRASH("wasm discard: failed to decommit memory");
+  }
+  if (!VirtualAlloc(addr, byteLen, MEM_COMMIT, PAGE_READWRITE)) {
+    MOZ_CRASH("wasm discard: decommitted memory but failed to recommit");
+  };
+#elif defined(__wasi__)
+  memset(addr, 0, byteLen);
+#else  
+  void* data = MozTaggedAnonymousMmap(addr, byteLen, PROT_READ | PROT_WRITE,
+                                      MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0,
+                                      "wasm-reserved");
+  if (data == MAP_FAILED) {
+    MOZ_CRASH("failed to discard wasm memory; memory mappings may be broken");
+  }
+#endif
+}
+
 
 WasmArrayRawBuffer* WasmArrayRawBuffer::AllocateWasm(
     IndexType indexType, Pages initialPages, Pages clampedMaxPages,
@@ -1204,6 +1250,13 @@ bool ArrayBufferObject::wasmMovingGrowToPages(
   memcpy(newBuf->dataPointer(), oldBuf->dataPointer(), oldBuf->byteLength());
   ArrayBufferObject::detach(cx, oldBuf);
   return true;
+}
+
+
+void ArrayBufferObject::wasmDiscard(HandleArrayBufferObject buf,
+                                    uint64_t byteOffset, uint64_t byteLen) {
+  MOZ_ASSERT(buf->isWasm());
+  buf->contents().wasmBuffer()->discard(byteOffset, byteLen);
 }
 
 uint32_t ArrayBufferObject::flags() const {

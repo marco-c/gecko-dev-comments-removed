@@ -1,8 +1,8 @@
+use crate::limits::{MAX_WASM_INSTANTIATION_ARGS, MAX_WASM_INSTANTIATION_EXPORTS};
 use crate::{
-    BinaryReader, ComponentExport, ComponentExternalKind, Export, Result, SectionIteratorLimited,
-    SectionReader, SectionWithLimitedItems,
+    BinaryReader, ComponentExport, ComponentExternalKind, Export, FromReader, Result,
+    SectionLimited,
 };
-use std::ops::Range;
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -37,91 +37,54 @@ pub enum Instance<'a> {
 }
 
 
-#[derive(Clone)]
-pub struct InstanceSectionReader<'a> {
-    reader: BinaryReader<'a>,
-    count: u32,
-}
 
-impl<'a> InstanceSectionReader<'a> {
-    
-    pub fn new(data: &'a [u8], offset: usize) -> Result<Self> {
-        let mut reader = BinaryReader::new_with_offset(data, offset);
-        let count = reader.read_var_u32()?;
-        Ok(Self { reader, count })
-    }
 
-    
-    pub fn original_position(&self) -> usize {
-        self.reader.original_position()
-    }
 
-    
-    pub fn get_count(&self) -> u32 {
-        self.count
-    }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn read(&mut self) -> Result<Instance<'a>> {
-        self.reader.read_instance()
+
+
+
+
+
+
+
+pub type InstanceSectionReader<'a> = SectionLimited<'a, Instance<'a>>;
+
+impl<'a> FromReader<'a> for Instance<'a> {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        Ok(match reader.read_u8()? {
+            0x00 => Instance::Instantiate {
+                module_index: reader.read_var_u32()?,
+                args: reader
+                    .read_iter(MAX_WASM_INSTANTIATION_ARGS, "core instantiation arguments")?
+                    .collect::<Result<_>>()?,
+            },
+            0x01 => Instance::FromExports(
+                reader
+                    .read_iter(MAX_WASM_INSTANTIATION_ARGS, "core instantiation arguments")?
+                    .collect::<Result<_>>()?,
+            ),
+            x => return reader.invalid_leading_byte(x, "core instance"),
+        })
     }
 }
 
-impl<'a> SectionReader for InstanceSectionReader<'a> {
-    type Item = Instance<'a>;
-
-    fn read(&mut self) -> Result<Self::Item> {
-        Self::read(self)
-    }
-
-    fn eof(&self) -> bool {
-        self.reader.eof()
-    }
-
-    fn original_position(&self) -> usize {
-        Self::original_position(self)
-    }
-
-    fn range(&self) -> Range<usize> {
-        self.reader.range()
+impl<'a> FromReader<'a> for InstantiationArg<'a> {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        Ok(InstantiationArg {
+            name: reader.read()?,
+            kind: reader.read()?,
+            index: reader.read()?,
+        })
     }
 }
 
-impl<'a> SectionWithLimitedItems for InstanceSectionReader<'a> {
-    fn get_count(&self) -> u32 {
-        Self::get_count(self)
-    }
-}
-
-impl<'a> IntoIterator for InstanceSectionReader<'a> {
-    type Item = Result<Instance<'a>>;
-    type IntoIter = SectionIteratorLimited<Self>;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn into_iter(self) -> Self::IntoIter {
-        SectionIteratorLimited::new(self)
+impl<'a> FromReader<'a> for InstantiationArgKind {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        Ok(match reader.read_u8()? {
+            0x12 => InstantiationArgKind::Instance,
+            x => return reader.invalid_leading_byte(x, "instantiation arg kind"),
+        })
     }
 }
 
@@ -151,90 +114,51 @@ pub enum ComponentInstance<'a> {
 }
 
 
-#[derive(Clone)]
-pub struct ComponentInstanceSectionReader<'a> {
-    reader: BinaryReader<'a>,
-    count: u32,
-}
 
-impl<'a> ComponentInstanceSectionReader<'a> {
-    
-    pub fn new(data: &'a [u8], offset: usize) -> Result<Self> {
-        let mut reader = BinaryReader::new_with_offset(data, offset);
-        let count = reader.read_var_u32()?;
-        Ok(Self { reader, count })
-    }
 
-    
-    pub fn original_position(&self) -> usize {
-        self.reader.original_position()
-    }
 
-    
-    pub fn get_count(&self) -> u32 {
-        self.count
-    }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn read(&mut self) -> Result<ComponentInstance<'a>> {
-        self.reader.read_component_instance()
-    }
-}
 
-impl<'a> SectionReader for ComponentInstanceSectionReader<'a> {
-    type Item = ComponentInstance<'a>;
 
-    fn read(&mut self) -> Result<Self::Item> {
-        Self::read(self)
-    }
 
-    fn eof(&self) -> bool {
-        self.reader.eof()
-    }
 
-    fn original_position(&self) -> usize {
-        Self::original_position(self)
-    }
 
-    fn range(&self) -> Range<usize> {
-        self.reader.range()
+
+
+pub type ComponentInstanceSectionReader<'a> = SectionLimited<'a, ComponentInstance<'a>>;
+
+impl<'a> FromReader<'a> for ComponentInstance<'a> {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        Ok(match reader.read_u8()? {
+            0x00 => ComponentInstance::Instantiate {
+                component_index: reader.read_var_u32()?,
+                args: reader
+                    .read_iter(MAX_WASM_INSTANTIATION_ARGS, "instantiation arguments")?
+                    .collect::<Result<_>>()?,
+            },
+            0x01 => ComponentInstance::FromExports(
+                (0..reader.read_size(MAX_WASM_INSTANTIATION_EXPORTS, "instantiation exports")?)
+                    .map(|_| {
+                        Ok(ComponentExport {
+                            name: reader.read()?,
+                            url: "",
+                            kind: reader.read()?,
+                            index: reader.read()?,
+                            ty: None,
+                        })
+                    })
+                    .collect::<Result<_>>()?,
+            ),
+            x => return reader.invalid_leading_byte(x, "instance"),
+        })
     }
 }
-
-impl<'a> SectionWithLimitedItems for ComponentInstanceSectionReader<'a> {
-    fn get_count(&self) -> u32 {
-        Self::get_count(self)
-    }
-}
-
-impl<'a> IntoIterator for ComponentInstanceSectionReader<'a> {
-    type Item = Result<ComponentInstance<'a>>;
-    type IntoIter = SectionIteratorLimited<Self>;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn into_iter(self) -> Self::IntoIter {
-        SectionIteratorLimited::new(self)
+impl<'a> FromReader<'a> for ComponentInstantiationArg<'a> {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        Ok(ComponentInstantiationArg {
+            name: reader.read()?,
+            kind: reader.read()?,
+            index: reader.read()?,
+        })
     }
 }

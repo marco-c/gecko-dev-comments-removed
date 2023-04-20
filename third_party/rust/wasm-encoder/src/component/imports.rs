@@ -129,8 +129,9 @@ impl ComponentImportSection {
     }
 
     
-    pub fn import(&mut self, name: &str, ty: ComponentTypeRef) -> &mut Self {
+    pub fn import(&mut self, name: &str, url: &str, ty: ComponentTypeRef) -> &mut Self {
         name.encode(&mut self.bytes);
+        url.encode(&mut self.bytes);
         ty.encode(&mut self.bytes);
         self.num_added += 1;
         self

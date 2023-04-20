@@ -38,7 +38,7 @@ pub struct Alias<'a> {
 
 impl<'a> Alias<'a> {
     
-    pub fn parse_outer_type_alias(parser: Parser<'a>, core_prefix_assumed: bool) -> Result<Self> {
+    pub fn parse_outer_core_type_alias(parser: Parser<'a>) -> Result<Self> {
         let span = parser.parse::<kw::alias>()?.0;
         parser.parse::<kw::outer>()?;
         let outer = parser.parse()?;
@@ -47,14 +47,11 @@ impl<'a> Alias<'a> {
         let (kind, id, name) = parser.parens(|parser| {
             let mut kind: ComponentOuterAliasKind = parser.parse()?;
             match kind {
-                ComponentOuterAliasKind::CoreType | ComponentOuterAliasKind::Type => {
-                    if core_prefix_assumed {
-                        
-                        if kind == ComponentOuterAliasKind::CoreType {
-                            return Err(parser.error("expected type for outer alias"));
-                        }
-                        kind = ComponentOuterAliasKind::CoreType;
-                    }
+                ComponentOuterAliasKind::CoreType => {
+                    return Err(parser.error("expected type for outer alias"))
+                }
+                ComponentOuterAliasKind::Type => {
+                    kind = ComponentOuterAliasKind::CoreType;
                 }
                 _ => return Err(parser.error("expected core type or type for outer alias")),
             }

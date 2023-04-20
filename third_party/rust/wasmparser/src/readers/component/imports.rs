@@ -1,14 +1,21 @@
 use crate::{
-    BinaryReader, ComponentValType, Result, SectionIteratorLimited, SectionReader,
-    SectionWithLimitedItems,
+    BinaryReader, ComponentExternalKind, ComponentValType, FromReader, Result, SectionLimited,
 };
-use std::ops::Range;
 
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TypeBounds {
     
     Eq,
+}
+
+impl<'a> FromReader<'a> for TypeBounds {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        Ok(match reader.read_u8()? {
+            0x00 => TypeBounds::Eq,
+            x => return reader.invalid_leading_byte(x, "type bound"),
+        })
+    }
 }
 
 
@@ -38,88 +45,65 @@ pub enum ComponentTypeRef {
     Component(u32),
 }
 
+impl ComponentTypeRef {
+    
+    pub fn kind(&self) -> ComponentExternalKind {
+        match self {
+            ComponentTypeRef::Module(_) => ComponentExternalKind::Module,
+            ComponentTypeRef::Func(_) => ComponentExternalKind::Func,
+            ComponentTypeRef::Value(_) => ComponentExternalKind::Value,
+            ComponentTypeRef::Type(..) => ComponentExternalKind::Type,
+            ComponentTypeRef::Instance(_) => ComponentExternalKind::Instance,
+            ComponentTypeRef::Component(_) => ComponentExternalKind::Component,
+        }
+    }
+}
+
+impl<'a> FromReader<'a> for ComponentTypeRef {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        Ok(match reader.read()? {
+            ComponentExternalKind::Module => ComponentTypeRef::Module(reader.read()?),
+            ComponentExternalKind::Func => ComponentTypeRef::Func(reader.read()?),
+            ComponentExternalKind::Value => ComponentTypeRef::Value(reader.read()?),
+            ComponentExternalKind::Type => ComponentTypeRef::Type(reader.read()?, reader.read()?),
+            ComponentExternalKind::Instance => ComponentTypeRef::Instance(reader.read()?),
+            ComponentExternalKind::Component => ComponentTypeRef::Component(reader.read()?),
+        })
+    }
+}
+
 
 #[derive(Debug, Copy, Clone)]
 pub struct ComponentImport<'a> {
     
     pub name: &'a str,
     
+    pub url: &'a str,
+    
     pub ty: ComponentTypeRef,
 }
 
-
-#[derive(Clone)]
-pub struct ComponentImportSectionReader<'a> {
-    reader: BinaryReader<'a>,
-    count: u32,
-}
-
-impl<'a> ComponentImportSectionReader<'a> {
-    
-    pub fn new(data: &'a [u8], offset: usize) -> Result<Self> {
-        let mut reader = BinaryReader::new_with_offset(data, offset);
-        let count = reader.read_var_u32()?;
-        Ok(Self { reader, count })
-    }
-
-    
-    pub fn original_position(&self) -> usize {
-        self.reader.original_position()
-    }
-
-    
-    pub fn get_count(&self) -> u32 {
-        self.count
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn read(&mut self) -> Result<ComponentImport<'a>> {
-        self.reader.read_component_import()
+impl<'a> FromReader<'a> for ComponentImport<'a> {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        Ok(ComponentImport {
+            name: reader.read()?,
+            url: reader.read()?,
+            ty: reader.read()?,
+        })
     }
 }
 
-impl<'a> SectionReader for ComponentImportSectionReader<'a> {
-    type Item = ComponentImport<'a>;
 
-    fn read(&mut self) -> Result<Self::Item> {
-        Self::read(self)
-    }
 
-    fn eof(&self) -> bool {
-        self.reader.eof()
-    }
 
-    fn original_position(&self) -> usize {
-        Self::original_position(self)
-    }
 
-    fn range(&self) -> Range<usize> {
-        self.reader.range()
-    }
-}
 
-impl<'a> SectionWithLimitedItems for ComponentImportSectionReader<'a> {
-    fn get_count(&self) -> u32 {
-        Self::get_count(self)
-    }
-}
 
-impl<'a> IntoIterator for ComponentImportSectionReader<'a> {
-    type Item = Result<ComponentImport<'a>>;
-    type IntoIter = SectionIteratorLimited<Self>;
 
-    fn into_iter(self) -> Self::IntoIter {
-        SectionIteratorLimited::new(self)
-    }
-}
+
+
+
+
+
+
+pub type ComponentImportSectionReader<'a> = SectionLimited<'a, ComponentImport<'a>>;
