@@ -91,24 +91,6 @@ bool nsStyleDisplay::HasPerspective(const nsIFrame* aContextFrame) const {
          aContextFrame->IsFrameOfType(nsIFrame::eSupportsCSSTransforms);
 }
 
-bool nsStyleDisplay::IsFixedPosContainingBlockForNonSVGTextFrames(
-    const mozilla::ComputedStyle& aStyle) const {
-  
-  
-  NS_ASSERTION(aStyle.StyleDisplay() == this, "unexpected aStyle");
-
-  if (aStyle.IsRootElementStyle()) {
-    return false;
-  }
-
-  if (mWillChange.bits & mozilla::StyleWillChangeBits::FIXPOS_CB_NON_SVG) {
-    return true;
-  }
-
-  return aStyle.StyleEffects()->HasFilters() ||
-         aStyle.StyleEffects()->HasBackdropFilters();
-}
-
 bool nsStyleDisplay::
     IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() const {
   return IsContainPaint() || IsContainLayout() ||
@@ -121,42 +103,6 @@ bool nsStyleDisplay::IsFixedPosContainingBlockForTransformSupportingFrames()
   
   return HasTransformStyle() || HasPerspectiveStyle() ||
          mWillChange.bits & mozilla::StyleWillChangeBits::PERSPECTIVE;
-}
-
-bool nsStyleDisplay::IsFixedPosContainingBlock(
-    const nsIFrame* aContextFrame) const {
-  const auto* style = aContextFrame->Style();
-  NS_ASSERTION(style->StyleDisplay() == this, "unexpected aContextFrame");
-  
-  
-  if (mozilla::SVGUtils::IsInSVGTextSubtree(aContextFrame)) {
-    return false;
-  }
-  if (IsFixedPosContainingBlockForNonSVGTextFrames(*style)) {
-    return true;
-  }
-  if (IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() &&
-      aContextFrame->IsFrameOfType(nsIFrame::eSupportsContainLayoutAndPaint)) {
-    return true;
-  }
-  if (IsFixedPosContainingBlockForTransformSupportingFrames() &&
-      aContextFrame->IsFrameOfType(nsIFrame::eSupportsCSSTransforms)) {
-    return true;
-  }
-  return false;
-}
-
-bool nsStyleDisplay::IsAbsPosContainingBlock(
-    const nsIFrame* aContextFrame) const {
-  NS_ASSERTION(aContextFrame->StyleDisplay() == this,
-               "unexpected aContextFrame");
-  if (IsFixedPosContainingBlock(aContextFrame)) {
-    return true;
-  }
-  
-  
-  return IsPositionedStyle() &&
-         !mozilla::SVGUtils::IsInSVGTextSubtree(aContextFrame);
 }
 
 bool nsStyleDisplay::IsRelativelyOrStickyPositioned(

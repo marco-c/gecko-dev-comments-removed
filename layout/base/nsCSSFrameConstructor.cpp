@@ -2080,11 +2080,10 @@ nsIFrame* nsCSSFrameConstructor::ConstructTable(nsFrameConstructorState& aState,
 
   
   nsFrameConstructorSaveState absoluteSaveState;
-  const nsStyleDisplay* display = outerComputedStyle->StyleDisplay();
 
   
   newFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
-  if (display->IsAbsPosContainingBlock(newFrame)) {
+  if (newFrame->IsAbsPosContainingBlock()) {
     aState.PushAbsoluteContainingBlock(newFrame, newFrame, absoluteSaveState);
   }
 
@@ -2117,21 +2116,14 @@ nsIFrame* nsCSSFrameConstructor::ConstructTable(nsFrameConstructorState& aState,
   return newFrame;
 }
 
-static void MakeTablePartAbsoluteContainingBlockIfNeeded(
-    nsFrameConstructorState& aState, const nsStyleDisplay* aDisplay,
-    nsFrameConstructorSaveState& aAbsSaveState, nsContainerFrame* aFrame) {
+static void MakeTablePartAbsoluteContainingBlock(
+    nsFrameConstructorState& aState, nsFrameConstructorSaveState& aAbsSaveState,
+    nsContainerFrame* aFrame) {
   
   
-  
-  
-  
-  
-  
-  
-  if (aDisplay->IsAbsPosContainingBlock(aFrame)) {
-    aFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
+  aFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
+  if (aFrame->IsAbsPosContainingBlock()) {
     aState.PushAbsoluteContainingBlock(aFrame, aFrame, aAbsSaveState);
-    nsTableFrame::RegisterPositionedTablePart(aFrame);
   }
 }
 
@@ -2162,8 +2154,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructTableRowOrRowGroup(
   InitAndRestoreFrame(aState, content, aParentFrame, newFrame);
 
   nsFrameConstructorSaveState absoluteSaveState;
-  MakeTablePartAbsoluteContainingBlockIfNeeded(aState, aDisplay,
-                                               absoluteSaveState, newFrame);
+  MakeTablePartAbsoluteContainingBlock(aState, absoluteSaveState, newFrame);
 
   nsFrameConstructorSaveState floatSaveState;
   aState.MaybePushFloatContainingBlock(newFrame, floatSaveState);
@@ -2262,8 +2253,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructTableCell(
   InitAndRestoreFrame(aState, content, newFrame, cellInnerFrame);
 
   nsFrameConstructorSaveState absoluteSaveState;
-  MakeTablePartAbsoluteContainingBlockIfNeeded(aState, aDisplay,
-                                               absoluteSaveState, newFrame);
+  MakeTablePartAbsoluteContainingBlock(aState, absoluteSaveState, newFrame);
 
   nsFrameConstructorSaveState floatSaveState;
   aState.MaybePushFloatContainingBlock(cellInnerFrame, floatSaveState);
@@ -2519,7 +2509,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
     processChildren = true;
 
     contentFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
-    if (display->IsAbsPosContainingBlock(contentFrame)) {
+    if (contentFrame->IsAbsPosContainingBlock()) {
       state.PushAbsoluteContainingBlock(contentFrame, contentFrame,
                                         absoluteSaveState);
     }
@@ -2556,8 +2546,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
         state, aDocElement,
         state.GetGeometricParent(*display, mDocElementContainingBlock),
         mDocElementContainingBlock, computedStyle, &contentFrame, frameList,
-        display->IsAbsPosContainingBlock(contentFrame) ? contentFrame
-                                                       : nullptr);
+        contentFrame->IsAbsPosContainingBlock() ? contentFrame : nullptr);
   }
 
   MOZ_ASSERT(frameList.FirstChild());
@@ -3306,7 +3295,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructBlockRubyFrame(
 
   nsFrameConstructorSaveState absoluteSaveState;
   blockFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
-  if (aStyleDisplay->IsAbsPosContainingBlock(newFrame)) {
+  if (newFrame->IsAbsPosContainingBlock()) {
     aState.PushAbsoluteContainingBlock(blockFrame, blockFrame,
                                        absoluteSaveState);
   }
@@ -3839,8 +3828,7 @@ void nsCSSFrameConstructor::ConstructFrameFromItemInternal(
 
       
       
-      auto outerDisplay = outerStyle->StyleDisplay();
-      if (outerDisplay->IsAbsPosContainingBlock(outerFrame)) {
+      if (outerFrame->IsAbsPosContainingBlock()) {
         maybeAbsoluteContainingBlock = outerFrame;
         maybeAbsoluteContainingBlockStyleFrame = outerFrame;
         innerFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
@@ -4582,10 +4570,9 @@ nsIFrame* nsCSSFrameConstructor::ConstructScrollableBlock(
   aState.AddChild(newFrame, aFrameList, content, aParentFrame);
 
   nsFrameList blockList;
-  ConstructBlock(
-      aState, content, newFrame, newFrame, scrolledContentStyle, &scrolledFrame,
-      blockList,
-      aDisplay->IsAbsPosContainingBlock(newFrame) ? newFrame : nullptr);
+  ConstructBlock(aState, content, newFrame, newFrame, scrolledContentStyle,
+                 &scrolledFrame, blockList,
+                 newFrame->IsAbsPosContainingBlock() ? newFrame : nullptr);
 
   MOZ_ASSERT(blockList.OnlyChild() == scrolledFrame,
              "Scrollframe's frameList should be exactly the scrolled frame!");
@@ -4619,11 +4606,10 @@ nsIFrame* nsCSSFrameConstructor::ConstructNonScrollableBlock(
 
   nsContainerFrame* newFrame = NS_NewBlockFrame(mPresShell, computedStyle);
   newFrame->AddStateBits(flags);
-  ConstructBlock(
-      aState, aItem.mContent,
-      aState.GetGeometricParent(*aDisplay, aParentFrame), aParentFrame,
-      computedStyle, &newFrame, aFrameList,
-      aDisplay->IsAbsPosContainingBlock(newFrame) ? newFrame : nullptr);
+  ConstructBlock(aState, aItem.mContent,
+                 aState.GetGeometricParent(*aDisplay, aParentFrame),
+                 aParentFrame, computedStyle, &newFrame, aFrameList,
+                 newFrame->IsAbsPosContainingBlock() ? newFrame : nullptr);
   return newFrame;
 }
 
@@ -7894,9 +7880,8 @@ nsIFrame* nsCSSFrameConstructor::CreateContinuingTableFrame(
       headerFooterFrame->Init(headerFooter, newFrame, nullptr);
 
       nsFrameConstructorSaveState absoluteSaveState;
-      MakeTablePartAbsoluteContainingBlockIfNeeded(
-          state, headerFooterComputedStyle->StyleDisplay(), absoluteSaveState,
-          headerFooterFrame);
+      MakeTablePartAbsoluteContainingBlock(state, absoluteSaveState,
+                                           headerFooterFrame);
 
       nsFrameConstructorSaveState floatSaveState;
       state.MaybePushFloatContainingBlock(headerFooterFrame, floatSaveState);
@@ -7969,16 +7954,10 @@ nsIFrame* nsCSSFrameConstructor::CreateContinuingFrame(
   } else if (LayoutFrameType::TableRowGroup == frameType) {
     newFrame = NS_NewTableRowGroupFrame(mPresShell, computedStyle);
     newFrame->Init(content, aParentFrame, aFrame);
-    if (newFrame->HasAnyStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN)) {
-      nsTableFrame::RegisterPositionedTablePart(newFrame);
-    }
   } else if (LayoutFrameType::TableRow == frameType) {
     nsTableRowFrame* rowFrame = NS_NewTableRowFrame(mPresShell, computedStyle);
 
     rowFrame->Init(content, aParentFrame, aFrame);
-    if (rowFrame->HasAnyStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN)) {
-      nsTableFrame::RegisterPositionedTablePart(rowFrame);
-    }
 
     
     nsFrameList newChildList;
@@ -8007,9 +7986,6 @@ nsIFrame* nsCSSFrameConstructor::CreateContinuingFrame(
         NS_NewTableCellFrame(mPresShell, computedStyle, tableFrame);
 
     cellFrame->Init(content, aParentFrame, aFrame);
-    if (cellFrame->HasAnyStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN)) {
-      nsTableFrame::RegisterPositionedTablePart(cellFrame);
-    }
 
     
     nsIFrame* blockFrame = aFrame->PrincipalChildList().FirstChild();

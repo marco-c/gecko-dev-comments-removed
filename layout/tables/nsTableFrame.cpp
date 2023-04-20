@@ -18,6 +18,7 @@
 #include "gfxContext.h"
 #include "nsCOMPtr.h"
 #include "mozilla/ComputedStyle.h"
+#include "nsIFrameInlines.h"
 #include "nsFrameList.h"
 #include "nsStyleConsts.h"
 #include "nsIContent.h"
@@ -250,7 +251,16 @@ bool nsTableFrame::PageBreakAfter(nsIFrame* aSourceFrame,
 }
 
 
-void nsTableFrame::RegisterPositionedTablePart(nsIFrame* aFrame) {
+void nsTableFrame::PositionedTablePartMaybeChanged(nsIFrame* aFrame,
+                                                   ComputedStyle* aOldStyle) {
+  const bool wasPositioned =
+      aOldStyle && aOldStyle->IsAbsPosContainingBlock(aFrame);
+  const bool isPositioned = aFrame->IsAbsPosContainingBlock();
+  MOZ_ASSERT(isPositioned == aFrame->Style()->IsAbsPosContainingBlock(aFrame));
+  if (wasPositioned == isPositioned) {
+    return;
+  }
+
   nsTableFrame* tableFrame = nsTableFrame::GetTableFrame(aFrame);
   MOZ_ASSERT(tableFrame, "Should have a table frame here");
   tableFrame = static_cast<nsTableFrame*>(tableFrame->FirstContinuation());
@@ -265,13 +275,20 @@ void nsTableFrame::RegisterPositionedTablePart(nsIFrame* aFrame) {
     tableFrame->SetProperty(PositionedTablePartArray(), positionedParts);
   }
 
-  
-  positionedParts->AppendElement(aFrame);
+  if (isPositioned) {
+    
+    positionedParts->AppendElement(aFrame);
+  } else {
+    positionedParts->RemoveElement(aFrame);
+  }
 }
 
 
-void nsTableFrame::UnregisterPositionedTablePart(nsIFrame* aFrame,
-                                                 nsIFrame* aDestructRoot) {
+void nsTableFrame::MaybeUnregisterPositionedTablePart(nsIFrame* aFrame,
+                                                      nsIFrame* aDestructRoot) {
+  if (!aFrame->IsAbsPosContainingBlock()) {
+    return;
+  }
   
   bool didPassThrough;
   nsTableFrame* tableFrame =
