@@ -3,10 +3,6 @@
 
 "use strict";
 
-const { CustomizableUI } = ChromeUtils.import(
-  "resource:///modules/CustomizableUI.jsm"
-);
-
 do_get_profile();
 
 

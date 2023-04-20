@@ -2,10 +2,6 @@
 
 
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
 ChromeUtils.defineESModuleGetters(this, {
   PageDataSchema: "resource:///modules/pagedata/PageDataSchema.sys.mjs",
   PageDataService: "resource:///modules/pagedata/PageDataService.sys.mjs",

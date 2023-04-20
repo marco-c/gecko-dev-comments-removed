@@ -1,10 +1,6 @@
 
 
 
-const { TabsSetupFlowManager } = ChromeUtils.importESModule(
-  "resource:///modules/firefox-view-tabs-setup-manager.sys.mjs"
-);
-
 XPCOMUtils.defineLazyModuleGetters(globalThis, {
   SyncedTabs: "resource://services-sync/SyncedTabs.jsm",
 });

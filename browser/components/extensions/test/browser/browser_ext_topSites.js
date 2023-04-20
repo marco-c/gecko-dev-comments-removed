@@ -2,15 +2,10 @@
 
 "use strict";
 
-const { AboutNewTab } = ChromeUtils.import(
-  "resource:///modules/AboutNewTab.jsm"
-);
 const { PlacesTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PlacesTestUtils.sys.mjs"
 );
-const { PlacesUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/PlacesUtils.sys.mjs"
-);
+
 const {
   ExtensionUtils: { makeDataURI },
 } = ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");

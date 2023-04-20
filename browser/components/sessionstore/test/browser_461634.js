@@ -2,10 +2,6 @@
 
 
 
-const { SessionStore } = ChromeUtils.importESModule(
-  "resource:///modules/sessionstore/SessionStore.sys.mjs"
-);
-
 add_task(async function testClosedTabData() {
   
 

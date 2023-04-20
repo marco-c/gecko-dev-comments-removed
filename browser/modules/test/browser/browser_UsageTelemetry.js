@@ -22,10 +22,6 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/BrowserUsageTelemetry.jsm"
 );
 
-const { SessionStore } = ChromeUtils.importESModule(
-  "resource:///modules/sessionstore/SessionStore.sys.mjs"
-);
-
 
 Services.obs.notifyObservers(null, TELEMETRY_SUBSESSION_TOPIC);
 

@@ -6,10 +6,6 @@
 
 
 
-const { ShellService } = ChromeUtils.import(
-  "resource:///modules/ShellService.jsm"
-);
-
 add_task(async function() {
   await BrowserTestUtils.withNewTab(
     {

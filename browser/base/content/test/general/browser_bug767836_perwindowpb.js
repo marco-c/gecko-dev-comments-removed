@@ -3,10 +3,6 @@
 
 "use strict";
 
-const { AboutNewTab } = ChromeUtils.import(
-  "resource:///modules/AboutNewTab.jsm"
-);
-
 async function doTest(isPrivate) {
   let win = await BrowserTestUtils.openNewBrowserWindow({ private: isPrivate });
   let defaultURL = AboutNewTab.newTabURL;

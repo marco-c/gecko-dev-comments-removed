@@ -1,9 +1,6 @@
 
 
 
-const { Sanitizer } = ChromeUtils.importESModule(
-  "resource:///modules/Sanitizer.sys.mjs"
-);
 const { SiteDataTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/SiteDataTestUtils.sys.mjs"
 );

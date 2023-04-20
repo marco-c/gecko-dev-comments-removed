@@ -7,10 +7,6 @@ var gTestTab;
 var gContentAPI;
 add_task(setup_UITourTest);
 
-const { AddonManager } = ChromeUtils.import(
-  "resource://gre/modules/AddonManager.jsm"
-);
-
 
 const { BuiltInThemes } = ChromeUtils.importESModule(
   "resource:///modules/BuiltInThemes.sys.mjs"

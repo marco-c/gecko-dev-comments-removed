@@ -26,9 +26,6 @@
 
 
 
-const { SessionStartup } = ChromeUtils.importESModule(
-  "resource:///modules/sessionstore/SessionStartup.sys.mjs"
-);
 
 
 

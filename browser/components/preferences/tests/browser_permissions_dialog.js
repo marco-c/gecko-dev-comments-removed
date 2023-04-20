@@ -4,10 +4,6 @@
 
 
 
-var { SitePermissions } = ChromeUtils.import(
-  "resource:///modules/SitePermissions.jsm"
-);
-
 const PERMISSIONS_URL =
   "chrome://browser/content/preferences/dialogs/sitePermissions.xhtml";
 const URL = "http://www.example.com";

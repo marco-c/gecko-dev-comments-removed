@@ -7,10 +7,6 @@
 
 
 
-const { PanelMultiView } = ChromeUtils.import(
-  "resource:///modules/PanelMultiView.jsm"
-);
-
 const PANELS_COUNT = 2;
 let gPanelAnchors = [];
 let gPanels = [];

@@ -4,7 +4,7 @@
 
 
 
-const { Translation, TranslationParent } = ChromeUtils.import(
+const { TranslationParent } = ChromeUtils.import(
   "resource:///modules/translation/TranslationParent.jsm"
 );
 

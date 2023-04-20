@@ -2,8 +2,6 @@
 
 
 
-const { webrtcUI } = ChromeUtils.import("resource:///modules/webrtcUI.jsm");
-
 const ORIGIN = "https://example.com";
 
 async function tryPeerConnection(browser, expectedError = null) {

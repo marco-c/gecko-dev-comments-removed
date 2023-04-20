@@ -1,7 +1,3 @@
-var { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
 
 const PHISH_TABLE = "moztest-phish-simple";
 const PHISH_URL = "https://www.itisatrap.org/firefox/its-a-trap.html";
