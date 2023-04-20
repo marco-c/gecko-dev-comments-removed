@@ -3580,32 +3580,6 @@ class NormalTransactionOp : public TransactionDatabaseOperationBase,
       const PreprocessResponse& aResponse) final;
 };
 
-}  
-
-Maybe<CipherKey> IndexedDBCipherKeyManager::Get(const nsACString& aKeyId) {
-  auto lockedCipherKeys = mCipherKeys.Lock();
-
-  return lockedCipherKeys->MaybeGet(aKeyId);
-}
-
-CipherKey IndexedDBCipherKeyManager::Ensure(const nsACString& aKeyId) {
-  auto lockedCipherKeys = mCipherKeys.Lock();
-
-  return lockedCipherKeys->LookupOrInsertWith(aKeyId, [] {
-    
-    
-
-    QM_TRY_RETURN(IndexedDBCipherStrategy::GenerateKey(), [](const auto&) {
-      
-      MOZ_RELEASE_ASSERT(false);
-
-      return CipherKey{};
-    })
-  });
-}
-
-namespace {
-
 class ObjectStoreAddOrPutRequestOp final : public NormalTransactionOp {
   friend class TransactionBase;
 
