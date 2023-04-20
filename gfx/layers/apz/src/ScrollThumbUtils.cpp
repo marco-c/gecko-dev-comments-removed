@@ -103,77 +103,150 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
     return;
   }
 
-  const CSSRect visualViewportRect = mApzc->GetCurrentAsyncVisualViewport(
-      AsyncPanZoomController::eForCompositing);
-  const CSSCoord visualViewportLength = aAxis.GetRectLength(visualViewportRect);
+  OuterCSSCoord translation;
+  float scale = 1.0;
 
-  const CSSCoord maxMinPosDifference =
-      CSSCoord(aAxis.GetRectLength(mMetrics.GetScrollableRect()).Truncated()) -
-      visualViewportLength;
-
-  OuterCSSCoord effectiveThumbLength = mScrollbarData.mThumbLength;
-
-  if (haveAsyncZoom) {
+  bool recalcMode = StaticPrefs::apz_scrollthumb_recalc();
+  if (recalcMode) {
     
     
     
     
-    
-    const CSSCoord pageIncrementMin =
-        static_cast<int>(visualViewportLength * 0.8);
-    CSSCoord pageIncrement;
 
-    CSSToLayoutDeviceScale deviceScale = mMetrics.GetDevPixelsPerCSSPixel();
-    if (*mScrollbarData.mDirection == ScrollDirection::eVertical) {
-      const CSSCoord lineScrollAmount =
-          (mApzc->GetScrollMetadata().GetLineScrollAmount() / deviceScale)
-              .height;
-      const double kScrollMultiplier =
-          StaticPrefs::toolkit_scrollbox_verticalScrollDistance();
-      CSSCoord increment = lineScrollAmount * kScrollMultiplier;
+    const CSSRect visualViewportRect = mApzc->GetCurrentAsyncVisualViewport(
+        AsyncPanZoomController::eForCompositing);
+    const CSSCoord visualViewportLength =
+        aAxis.GetRectLength(visualViewportRect);
 
-      pageIncrement =
-          std::max(visualViewportLength - increment, pageIncrementMin);
-    } else {
-      pageIncrement = pageIncrementMin;
+    const CSSCoord maxMinPosDifference =
+        CSSCoord(
+            aAxis.GetRectLength(mMetrics.GetScrollableRect()).Truncated()) -
+        visualViewportLength;
+
+    OuterCSSCoord effectiveThumbLength = mScrollbarData.mThumbLength;
+
+    if (haveAsyncZoom) {
+      
+      
+      
+      
+      
+      const CSSCoord pageIncrementMin =
+          static_cast<int>(visualViewportLength * 0.8);
+      CSSCoord pageIncrement;
+
+      CSSToLayoutDeviceScale deviceScale = mMetrics.GetDevPixelsPerCSSPixel();
+      if (*mScrollbarData.mDirection == ScrollDirection::eVertical) {
+        const CSSCoord lineScrollAmount =
+            (mApzc->GetScrollMetadata().GetLineScrollAmount() / deviceScale)
+                .height;
+        const double kScrollMultiplier =
+            StaticPrefs::toolkit_scrollbox_verticalScrollDistance();
+        CSSCoord increment = lineScrollAmount * kScrollMultiplier;
+
+        pageIncrement =
+            std::max(visualViewportLength - increment, pageIncrementMin);
+      } else {
+        pageIncrement = pageIncrementMin;
+      }
+
+      float ratio = pageIncrement / (maxMinPosDifference + pageIncrement);
+
+      OuterCSSCoord desiredThumbLength{
+          std::max(mScrollbarData.mThumbMinLength,
+                   mScrollbarData.mScrollTrackLength * ratio)};
+
+      
+      
+      auto outerDeviceScale = ViewAs<OuterCSSToLayoutDeviceScale>(
+          deviceScale, PixelCastJustification::CSSPixelsOfSurroundingContent);
+      desiredThumbLength =
+          LayoutDeviceCoord((desiredThumbLength * outerDeviceScale).Rounded()) /
+          outerDeviceScale;
+
+      effectiveThumbLength = desiredThumbLength;
+
+      scale = desiredThumbLength / mScrollbarData.mThumbLength;
     }
 
-    float ratio = pageIncrement / (maxMinPosDifference + pageIncrement);
-
-    OuterCSSCoord desiredThumbLength{
-        std::max(mScrollbarData.mThumbMinLength,
-                 mScrollbarData.mScrollTrackLength * ratio)};
-
     
     
-    auto outerDeviceScale = ViewAs<OuterCSSToLayoutDeviceScale>(
-        deviceScale, PixelCastJustification::CSSPixelsOfSurroundingContent);
-    desiredThumbLength =
-        LayoutDeviceCoord((desiredThumbLength * outerDeviceScale).Rounded()) /
-        outerDeviceScale;
+    const CSSCoord curPos = aAxis.GetRectOffset(visualViewportRect) -
+                            aAxis.GetRectOffset(mMetrics.GetScrollableRect());
 
-    effectiveThumbLength = desiredThumbLength;
+    const CSSToOuterCSSScale thumbPosRatio(
+        (maxMinPosDifference != 0)
+            ? float((mScrollbarData.mScrollTrackLength - effectiveThumbLength) /
+                    maxMinPosDifference)
+            : 1.f);
 
-    const float scale = desiredThumbLength / mScrollbarData.mThumbLength;
+    const OuterCSSCoord desiredThumbPos = curPos * thumbPosRatio;
 
+    translation = desiredThumbPos - mScrollbarData.mThumbStart;
+  } else {
     
     
     
-    ScaleThumbBy(aAxis, scale, ScrollThumbExtent::Start);
+    
+
+    ParentLayerCoord asyncScroll =
+        aAxis.GetTransformTranslation(mAsyncTransform);
+
+    
+    
+    
+    scale = 1.f / asyncZoom;
+
+    
+    CSSToParentLayerScale effectiveZoom =
+        CSSToParentLayerScale(mMetrics.GetZoom().scale * asyncZoom);
+
+    if (gfxPlatform::UseDesktopZoomingScrollbars()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      asyncScroll -= aAxis.GetPointOffset((mMetrics.GetLayoutScrollOffset() -
+                                           mMetrics.GetVisualScrollOffset()) *
+                                          effectiveZoom);
+    }
+
+    
+    
+    
+    float unitlessThumbRatio = mScrollbarData.mThumbRatio /
+                               (mMetrics.GetPresShellResolution() * asyncZoom);
+
+    
+    
+    
+    ParentLayerCoord translation = -asyncScroll * unitlessThumbRatio;
+
+    
+    
+    
+    
+    
+    
+    translation /= (mMetrics.GetCumulativeResolution().scale /
+                    mMetrics.GetPresShellResolution());
   }
 
   
   
-  const CSSCoord curPos = aAxis.GetRectOffset(visualViewportRect) -
-                          aAxis.GetRectOffset(mMetrics.GetScrollableRect());
-
-  const CSSToOuterCSSScale thumbPosRatio(
-      (maxMinPosDifference != 0)
-          ? float((mScrollbarData.mScrollTrackLength - effectiveThumbLength) /
-                  maxMinPosDifference)
-          : 1.f);
-
-  const OuterCSSCoord desiredThumbPos = curPos * thumbPosRatio;
+  
+  if (haveAsyncZoom) {
+    ScaleThumbBy(aAxis, scale, ScrollThumbExtent::Start);
+  }
 
   
   
@@ -190,7 +263,7 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
         overscroll < 0 ? ScrollThumbExtent::Start : ScrollThumbExtent::End);
   }
 
-  TranslateThumb(aAxis, desiredThumbPos - mScrollbarData.mThumbStart);
+  TranslateThumb(aAxis, translation);
 }
 
 LayerToParentLayerMatrix4x4 AsyncScrollThumbTransformer::ComputeTransform() {
