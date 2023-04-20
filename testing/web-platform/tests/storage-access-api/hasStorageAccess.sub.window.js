@@ -1,48 +1,23 @@
 
 'use strict';
 
-
-
-let expectAccessAllowed = true;
-
-
-
-let testPrefix = "top-level-context";
-
-
-
-let topLevelDocument = true;
-
-
-
-let queryParams = window.location.search.substring(1).split("&");
-queryParams.forEach(function (param, index) {
-  if (param.toLowerCase() == "allowed=false") {
-    expectAccessAllowed = false;
-  } else if (param.toLowerCase() == "rootdocument=false") {
-    topLevelDocument = false;
-  } else if (param.split("=")[0].toLowerCase() == "testcase") {
-    testPrefix = param.split("=")[1];
-  }
-});
+const {expectAccessAllowed, testPrefix, topLevelDocument} = processQueryParams();
 
 
 test(() => {
   assert_not_equals(document.hasStorageAccess, undefined);
 }, "[" + testPrefix + "] document.hasStorageAccess() should be supported on the document interface");
 
-promise_test(() => {
-  return document.hasStorageAccess().then(hasAccess => {
-    assert_equals(hasAccess, expectAccessAllowed, "Access should be granted by default: " + expectAccessAllowed);
-  });
-}, "[" + testPrefix + "] document.hasStorageAccess() should be allowed by default: " + expectAccessAllowed);
+promise_test(async () => {
+  const hasAccess = await document.hasStorageAccess();
+  assert_false(hasAccess, "Access should be disallowed in insecure contexts");
+}, "[" + testPrefix + "] document.hasStorageAccess() should be disallowed in insecure contexts");
 
-promise_test(() => {
-  let createdDocument = document.implementation.createDocument("", null);
+promise_test(async () => {
+  const createdDocument = document.implementation.createDocument("", null);
 
-  return createdDocument.hasStorageAccess().then(hasAccess => {
-    assert_false(hasAccess, "Access should be denied to a generated document not part of the DOM.");
-  });
+  const hasAccess = await createdDocument.hasStorageAccess();
+  assert_false(hasAccess, "Access should be denied to a generated document not part of the DOM.");
 }, "[" + testPrefix + "] document.hasStorageAccess() should work on a document object.");
 
 

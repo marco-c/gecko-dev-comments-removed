@@ -1,0 +1,42 @@
+
+'use strict';
+
+const {expectAccessAllowed, testPrefix, topLevelDocument} = processQueryParams();
+
+
+test(() => {
+  assert_not_equals(document.hasStorageAccess, undefined);
+}, "[" + testPrefix + "] document.hasStorageAccess() should exist on the document interface");
+
+promise_test(async () => {
+  const hasAccess = await document.hasStorageAccess();
+  assert_equals(hasAccess, expectAccessAllowed, "Access should be granted by default: " + expectAccessAllowed);
+}, "[" + testPrefix + "] document.hasStorageAccess() should be allowed by default: " + expectAccessAllowed);
+
+promise_test(async () => {
+  const createdDocument = document.implementation.createDocument("", null);
+
+  const hasAccess = await createdDocument.hasStorageAccess();
+  assert_false(hasAccess, "Access should be denied to a generated document not part of the DOM.");
+}, "[" + testPrefix + "] document.hasStorageAccess() should work on a document object.");
+
+
+if (topLevelDocument) {
+  
+  
+  
+
+  
+  RunTestsInIFrame("resources/hasStorageAccess-iframe.https.html?testCase=same-origin-frame&rootdocument=false");
+
+  
+  RunTestsInIFrame("https://{{domains[www]}}:{{ports[https][0]}}/storage-access-api/resources/hasStorageAccess-iframe.https.html?testCase=cross-origin-frame&rootdocument=false");
+
+  
+  
+  RunTestsInNestedIFrame("resources/hasStorageAccess-iframe.https.html?testCase=nested-same-origin-frame&rootdocument=false");
+
+  
+  
+  RunTestsInNestedIFrame("https://{{domains[www]}}:{{ports[https][0]}}/storage-access-api/resources/hasStorageAccess-iframe.https.html?testCase=nested-cross-origin-frame&rootdocument=false");
+}
