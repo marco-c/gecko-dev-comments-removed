@@ -30,7 +30,7 @@ inline bool JS::Realm::hasLiveGlobal() const {
   
   
   MOZ_ASSERT_IF(global_, !js::gc::IsAboutToBeFinalized(global_));
-  return bool(global_);
+  return bool(global_) && !initializingGlobal_;
 }
 
 inline bool JS::Realm::marked() const {
