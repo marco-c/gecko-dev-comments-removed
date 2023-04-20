@@ -65,6 +65,7 @@ add_task(function makeResultGroups_true() {
         
         {
           group: UrlbarUtils.RESULT_GROUP.OMNIBOX,
+          availableSpan: UrlbarUtils.MAX_OMNIBOX_RESULT_COUNT - 1,
         },
         
         {
@@ -161,6 +162,7 @@ add_task(function makeResultGroups_false() {
         
         {
           group: UrlbarUtils.RESULT_GROUP.OMNIBOX,
+          availableSpan: UrlbarUtils.MAX_OMNIBOX_RESULT_COUNT - 1,
         },
         
         {
