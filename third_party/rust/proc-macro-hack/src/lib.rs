@@ -145,7 +145,15 @@
 
 
 #![recursion_limit = "512"]
-#![allow(clippy::needless_doctest_main, clippy::toplevel_ref_arg)]
+#![allow(
+    clippy::doc_markdown,
+    clippy::manual_strip,
+    clippy::module_name_repetitions,
+    clippy::needless_doctest_main,
+    clippy::needless_pass_by_value,
+    clippy::too_many_lines,
+    clippy::toplevel_ref_arg
+)]
 
 extern crate proc_macro;
 
@@ -286,9 +294,9 @@ fn expand_export(export: Export, args: ExportArgs) -> TokenStream {
     let mut export_call_site = TokenStream::new();
     let mut macro_rules = TokenStream::new();
     for Macro { name, export_as } in &export.macros {
-        let hacked = hacked_proc_macro_name(&name);
-        let dispatch = dispatch_macro_name(&name);
-        let call_site = call_site_macro_name(&name);
+        let hacked = hacked_proc_macro_name(name);
+        let dispatch = dispatch_macro_name(name);
+        let call_site = call_site_macro_name(name);
 
         if !actual_names.is_empty() {
             actual_names.extend(quote!(,));
@@ -395,7 +403,7 @@ fn expand_export_nohack(export: Export) -> TokenStream {
     let mut names = TokenStream::new();
 
     for Macro { name, export_as } in &export.macros {
-        let pub_name = pub_proc_macro_name(&name);
+        let pub_name = pub_proc_macro_name(name);
         if !names.is_empty() {
             names.extend(quote!(,));
         }
