@@ -86,8 +86,8 @@ test32('(i32.or (i32.const 0) (get_local 1))',
         8b c1   mov %ecx, %eax`,
        1234,5678, 5678);
 test64('(i64.or (i64.const 0) (get_local 1))',
-       `48 8b ..   mov %r.., %rcx
-        48 8b c1   mov %rcx, %rax`,
+       `48 89 ..   mov %r.., %rcx
+        48 89 c8   mov %rcx, %rax`,
        1234n,5678n, 5678n);
 
 test32('(i32.xor (i32.const 0) (get_local 1))',
@@ -95,8 +95,8 @@ test32('(i32.xor (i32.const 0) (get_local 1))',
         8b c1   mov %ecx, %eax`,
        1234,5678, 5678);
 test64('(i64.xor (i64.const 0) (get_local 1))',
-       `48 8b ..   mov %r.., %rcx
-        48 8b c1   mov %rcx, %rax`,
+       `48 89 ..   mov %r.., %rcx
+        48 89 c8   mov %rcx, %rax`,
        1234n,5678n, 5678n);
 
 
@@ -114,7 +114,7 @@ test32('(i32.or (get_local 0) (i32.const 0))',
        1234,5678, 1234, {no_prefix: true}); 
 test64('(i64.or (get_local 0) (i64.const 0))',
      
-       `48 8b c1   mov %rcx, %rax`,
+       `48 89 c8   mov %rcx, %rax`,
        1234n,5678n, 1234n, {no_prefix: true});
 
 test32('(i32.xor (get_local 0) (i32.const 0))',
@@ -123,7 +123,7 @@ test32('(i32.xor (get_local 0) (i32.const 0))',
        1234,5678, 1234, {no_prefix: true});
 test64('(i64.xor (get_local 0) (i64.const 0))',
      
-       `48 8b c1   mov %rcx, %rax`,
+       `48 89 c8   mov %rcx, %rax`,
        1234n,5678n, 1234n, {no_prefix: true});
 
 
@@ -133,8 +133,8 @@ test32('(i32.and (i32.const 0xffffffff) (get_local 1))',
         8b c1   mov %ecx, %eax`,
        1234,5678, 5678);
 test64('(i64.and (i64.const 0xffffffffffffffff) (get_local 1))',
-       `48 8b ..   mov %r.., %rcx
-        48 8b c1   mov %rcx, %rax`,
+       `48 89 ..   mov %r.., %rcx
+        48 89 c8   mov %rcx, %rax`,
        1234n,5678n, 5678n);
 
 test32('(i32.or (i32.const 0xffffffff) (get_local 1))',
@@ -150,8 +150,8 @@ test32('(i32.xor (i32.const 0xffffffff) (get_local 1))',
         f7 d0   not %eax`,
        1234,5678, -5679);
 test64('(i64.xor (i64.const 0xffffffffffffffff) (get_local 1))',
-       `48 8b ..   mov %r.., %rcx
-        48 8b c1   mov %rcx, %rax
+       `48 89 ..   mov %r.., %rcx
+        48 89 c8   mov %rcx, %rax
         48 f7 d0   not %rax`,
        1234n,5678n, -5679n);
 
@@ -163,7 +163,7 @@ test32('(i32.and (get_local 0) (i32.const 0xffffffff))',
        1234,5678, 1234, {no_prefix: true}); 
 test64('(i64.and (get_local 0) (i64.const 0xffffffffffffffff))',
      
-       `48 8b c1   mov %rcx, %rax`,
+       `48 89 c8   mov %rcx, %rax`,
        1234n,5678n, 1234n, {no_prefix: true});
 
 test32('(i32.or (get_local 0) (i32.const 0xffffffff))',
@@ -180,7 +180,7 @@ test32('(i32.xor (get_local 0) (i32.const 0xffffffff))',
        1234,5678, -1235, {no_prefix: true});
 test64('(i64.xor (get_local 0) (i64.const 0xffffffffffffffff))',
      
-       `48 8b c1   mov %rcx, %rax
+       `48 89 c8   mov %rcx, %rax
         48 f7 d0   not %rax`,
        1234n,5678n, -1235n, {no_prefix: true});
 
@@ -192,7 +192,7 @@ test32('(i32.and (get_local 0) (get_local 0))',
        1234,5678, 1234, {no_prefix: true});
 test64('(i64.and (get_local 0) (get_local 0))',
      
-       `48 8b c1   mov %rcx, %rax`,
+       `48 89 c8   mov %rcx, %rax`,
        1234n,5678n, 1234n, {no_prefix: true});
 
 test32('(i32.or (get_local 0) (get_local 0))',
@@ -201,7 +201,7 @@ test32('(i32.or (get_local 0) (get_local 0))',
        1234,5678, 1234, {no_prefix: true});
 test64('(i64.or (get_local 0) (get_local 0))',
      
-       `48 8b c1   mov %rcx, %rax`,
+       `48 89 c8   mov %rcx, %rax`,
        1234n,5678n, 1234n, {no_prefix: true});
 
 test32('(i32.xor (get_local 0) (get_local 0))',
