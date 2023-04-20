@@ -1041,6 +1041,7 @@ static const unsigned MaxTypeIndex = 15000;
 #endif
 
 static const unsigned MaxRecGroups = 1000000;
+static const unsigned MaxSubTypingDepth = 31;
 static const unsigned MaxTags = 1000000;
 
 

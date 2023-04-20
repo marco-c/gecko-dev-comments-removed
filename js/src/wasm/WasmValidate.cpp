@@ -1725,10 +1725,18 @@ static bool DecodeTypeSection(Decoder& d, ModuleEnvironment* env) {
           return d.fail("expected type form");
       }
 
-      
-      
-      if (superTypeDef && !typeDef->trySetSuperTypeDef(superTypeDef)) {
-        return d.fail("incompatible super type");
+      if (superTypeDef) {
+        
+        if (!TypeDef::canBeSubTypeOf(typeDef, superTypeDef)) {
+          return d.fail("incompatible super type");
+        }
+
+        
+        if (superTypeDef->subTypingDepth() >= MaxSubTypingDepth) {
+          return d.fail("type is too deep");
+        }
+
+        typeDef->setSuperTypeDef(superTypeDef);
       }
     }
 

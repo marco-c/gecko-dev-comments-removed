@@ -51,6 +51,13 @@ static const uint32_t MaxInlineMemoryCopyLength = 0;
 static const uint32_t MaxInlineMemoryFillLength = 0;
 #endif
 
+
+
+
+
+
+static const uint32_t MinSuperTypeVectorLength = 3;
+
 }  
 }  
 

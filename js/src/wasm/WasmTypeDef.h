@@ -444,6 +444,81 @@ using ArrayTypeVector = Vector<ArrayType, 0, SystemAllocPolicy>;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct SuperTypeVector {
+  
+  
+  
+  [[nodiscard]] static const SuperTypeVector* createMultipleForRecGroup(
+      RecGroup* recGroup);
+
+  
+  static size_t lengthForTypeDef(const TypeDef& typeDef);
+  
+  static size_t byteSizeForTypeDef(const TypeDef& typeDef);
+
+  static size_t offsetOfLength() { return offsetof(SuperTypeVector, length); }
+  static size_t offsetOfTypeDefInVector(uint32_t typeDefDepth);
+
+  
+  uint32_t length;
+
+  
+  
+  const TypeDef* types[0];
+};
+
+
+
+
 enum class TypeDefKind : uint8_t {
   None = 0,
   Func,
@@ -452,8 +527,10 @@ enum class TypeDefKind : uint8_t {
 };
 
 class TypeDef {
-  const TypeDef* superTypeDef_;
   uint32_t offsetToRecGroup_;
+  const SuperTypeVector* superTypeVector_;
+  const TypeDef* superTypeDef_;
+  uint16_t subTypingDepth_;
   TypeDefKind kind_;
   union {
     FuncType funcType_;
@@ -471,7 +548,11 @@ class TypeDef {
 
  public:
   explicit TypeDef(RecGroup* recGroup)
-      : superTypeDef_(nullptr), offsetToRecGroup_(0), kind_(TypeDefKind::None) {
+      : offsetToRecGroup_(0),
+        superTypeVector_(nullptr),
+        superTypeDef_(nullptr),
+        subTypingDepth_(0),
+        kind_(TypeDefKind::None) {
     setRecGroup(recGroup);
   }
 
@@ -512,7 +593,19 @@ class TypeDef {
     return *this;
   }
 
+  const SuperTypeVector* superTypeVector() const { return superTypeVector_; }
+
+  void setSuperTypeVector(const SuperTypeVector* superTypeVector) {
+    superTypeVector_ = superTypeVector;
+  }
+
+  static size_t offsetOfSuperTypeVector() {
+    return offsetof(TypeDef, superTypeVector_);
+  }
+
   const TypeDef* superTypeDef() const { return superTypeDef_; }
+
+  uint16_t subTypingDepth() const { return subTypingDepth_; }
 
   const RecGroup& recGroup() const {
     uintptr_t typeDefAddr = (uintptr_t)this;
@@ -633,25 +726,41 @@ class TypeDef {
     return false;
   }
 
-  
-  
-  [[nodiscard]] bool trySetSuperTypeDef(const TypeDef* superTypeDef) {
-    if (!TypeDef::canBeSubTypeOf(this, superTypeDef)) {
-      return false;
-    }
+  void setSuperTypeDef(const TypeDef* superTypeDef) {
     superTypeDef_ = superTypeDef;
-    return true;
+    subTypingDepth_ = superTypeDef_->subTypingDepth_ + 1;
   }
 
   
   static bool isSubTypeOf(const TypeDef* subType, const TypeDef* superType) {
-    while (subType) {
-      if (subType == superType) {
-        return true;
-      }
-      subType = subType->superTypeDef();
+    
+    if (MOZ_LIKELY(subType == superType)) {
+      return true;
     }
-    return false;
+    const SuperTypeVector* subSuperTypes = subType->superTypeVector();
+
+    
+    
+    
+    if (!subSuperTypes) {
+      while (subType) {
+        if (subType == superType) {
+          return true;
+        }
+        subType = subType->superTypeDef();
+      }
+      return false;
+    }
+
+    
+    
+    
+    
+    uint32_t subTypingDepth = superType->subTypingDepth();
+    if (subTypingDepth >= subSuperTypes->length) {
+      return false;
+    }
+    return subSuperTypes->types[subTypingDepth] == superType;
   }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
@@ -689,12 +798,15 @@ class RecGroup : public AtomicRefCounted<RecGroup> {
   
   uint32_t numTypes_;
   
+  
+  const SuperTypeVector* vectors_;
+  
   TypeDef types_[0];
 
   friend class TypeContext;
 
   explicit RecGroup(uint32_t numTypes)
-      : finalizedTypes_(false), numTypes_(numTypes) {}
+      : finalizedTypes_(false), numTypes_(numTypes), vectors_(nullptr) {}
 
   
   
@@ -724,10 +836,20 @@ class RecGroup : public AtomicRefCounted<RecGroup> {
 
   
   
-  void finalizeDefinitions() {
+  [[nodiscard]] bool finalizeDefinitions() {
     MOZ_ASSERT(!finalizedTypes_);
-    finalizedTypes_ = true;
+    
+    
+    
+#ifdef ENABLE_WASM_GC
+    vectors_ = SuperTypeVector::createMultipleForRecGroup(this);
+    if (!vectors_) {
+      return false;
+    }
+#endif
     visitReferencedGroups([](const RecGroup* recGroup) { recGroup->AddRef(); });
+    finalizedTypes_ = true;
+    return true;
   }
 
   
@@ -791,6 +913,11 @@ class RecGroup : public AtomicRefCounted<RecGroup> {
       finalizedTypes_ = false;
       visitReferencedGroups(
           [](const RecGroup* recGroup) { recGroup->Release(); });
+    }
+
+    if (vectors_) {
+      js_free((void*)vectors_);
+      vectors_ = nullptr;
     }
 
     
@@ -924,7 +1051,9 @@ class TypeContext : public AtomicRefCounted<TypeContext> {
     pendingRecGroup_ = nullptr;
 
     
-    recGroup->finalizeDefinitions();
+    if (!recGroup->finalizeDefinitions()) {
+      return false;
+    }
 
     
     SharedRecGroup canonicalRecGroup = canonicalizeGroup(recGroup);
