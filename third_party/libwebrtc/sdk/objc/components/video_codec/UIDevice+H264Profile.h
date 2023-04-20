@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+#import <UIKit/UIKit.h>
+
+#include "api/video_codecs/h264_profile_level_id.h"
+
+@interface UIDevice (H264Profile)
+
++ (absl::optional<webrtc::H264ProfileLevelId>)maxSupportedH264Profile;
+
+@end
