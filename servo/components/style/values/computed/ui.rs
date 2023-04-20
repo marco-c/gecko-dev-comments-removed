@@ -23,16 +23,3 @@ pub type ScrollbarColor = generics::GenericScrollbarColor<Color>;
 
 
 pub type ViewTimelineInset = generics::GenericViewTimelineInset<LengthPercentage>;
-
-impl ViewTimelineInset {
-    
-    #[inline]
-    pub fn zero() -> Self {
-        use crate::Zero;
-
-        Self {
-            start: Zero::zero(),
-            end: Zero::zero(),
-        }
-    }
-}
