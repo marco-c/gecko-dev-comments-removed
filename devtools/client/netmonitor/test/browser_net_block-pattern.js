@@ -27,17 +27,8 @@ add_task(async function() {
   store.dispatch(Actions.toggleRequestBlockingPanel());
 
   
-  await waitUntil(() => {
-    return document.querySelector(
-      "#network-action-bar-blocked-panel .request-blocking-add-form input.devtools-searchinput:focus"
-    );
-  });
-
-  
-  typeInNetmonitor("test1", monitor);
-  EventUtils.synthesizeKey("KEY_Enter");
-  typeInNetmonitor("test/*/test3", monitor);
-  EventUtils.synthesizeKey("KEY_Enter");
+  await addBlockedRequest("test1", monitor);
+  await addBlockedRequest("test/*/test3", monitor);
 
   
   store.dispatch(Actions.toggleRequestBlockingPanel());
@@ -113,7 +104,3 @@ add_task(async function() {
 
   await teardown(monitor);
 });
-
-function checkRequestListItemBlocked(item) {
-  return item.className.includes("blocked");
-}

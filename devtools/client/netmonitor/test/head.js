@@ -1395,6 +1395,48 @@ const clickOnSidebarTab = (doc, name) => {
 
 
 
+async function addBlockedRequest(pattern, monitor) {
+  info("Add a blocked request for the URL pattern " + pattern);
+  const doc = monitor.panelWin.document;
+
+  const addRequestForm = await waitFor(() =>
+    doc.querySelector(
+      "#network-action-bar-blocked-panel .request-blocking-add-form"
+    )
+  );
+  ok(!!addRequestForm, "The request blocking side panel is not available");
+
+  info("Wait for the add input to get focus");
+  await waitFor(() =>
+    addRequestForm.querySelector("input.devtools-searchinput:focus")
+  );
+
+  typeInNetmonitor(pattern, monitor);
+  EventUtils.synthesizeKey("KEY_Enter");
+}
+
+
+
+
+
+
+
+
+
+
+function checkRequestListItemBlocked(item) {
+  return item.className.includes("blocked");
+}
+
+
+
+
+
+
+
+
+
+
 function typeInNetmonitor(string, monitor) {
   for (const ch of string) {
     EventUtils.synthesizeKey(ch, {}, monitor.panelWin);
