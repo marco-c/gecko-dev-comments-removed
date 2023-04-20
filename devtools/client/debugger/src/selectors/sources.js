@@ -112,10 +112,6 @@ export function getPrettySource(state, id) {
   return getOriginalSourceByURL(state, getPrettySourceURL(source.url));
 }
 
-export function hasPrettySource(state, id) {
-  return !!getPrettySource(state, id);
-}
-
 
 export function getSourcesMap(state) {
   return state.sources.sources;
