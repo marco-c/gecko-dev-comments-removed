@@ -78,11 +78,11 @@ describe("RemoteL10n", () => {
       
       assert.equal(args.length, 2);
       assert.deepEqual(args[0], [
-        "browser/newtab/asrouter.ftl",
-        "toolkit/branding/brandings.ftl",
-        "browser/branding/sync-brand.ftl",
         "branding/brand.ftl",
         "browser/defaultBrowserNotification.ftl",
+        "browser/newtab/asrouter.ftl",
+        "toolkit/branding/accounts.ftl",
+        "toolkit/branding/brandings.ftl",
       ]);
       assert.isFalse(args[1]);
       assert.calledOnce(l10nRegInstance.hasSource);
@@ -100,11 +100,11 @@ describe("RemoteL10n", () => {
       
       assert.equal(args.length, 2);
       assert.deepEqual(args[0], [
-        "browser/newtab/asrouter.ftl",
-        "toolkit/branding/brandings.ftl",
-        "browser/branding/sync-brand.ftl",
         "branding/brand.ftl",
         "browser/defaultBrowserNotification.ftl",
+        "browser/newtab/asrouter.ftl",
+        "toolkit/branding/accounts.ftl",
+        "toolkit/branding/brandings.ftl",
       ]);
       assert.isFalse(args[1]);
       assert.calledOnce(l10nRegInstance.hasSource);
