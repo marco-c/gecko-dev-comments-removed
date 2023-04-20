@@ -17,7 +17,7 @@ while True:
         
         try:
             os.remove(FILE)
-        except:
+        except Exception:
             pass
 
         
