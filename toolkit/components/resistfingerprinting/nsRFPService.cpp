@@ -267,7 +267,6 @@ void nsRFPService::UpdateRFPPref() {
     nsJSUtils::ResetTimeZone();
   }
 
-
   
   
   if (resistFingerprinting || sInitialized) {
