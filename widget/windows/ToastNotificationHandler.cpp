@@ -233,6 +233,10 @@ Result<nsString, nsresult> ToastNotificationHandler::GetLaunchArgument() {
   if (!mLaunchUrl.IsEmpty()) {
     launchArg +=
         u"\n"_ns + nsDependentString(kLaunchArgUrl) + u"\n"_ns + mLaunchUrl;
+  } else if (!mHostPort.IsEmpty()) {
+    
+    launchArg +=
+        u"\n"_ns + nsDependentString(kLaunchArgUrl) + u"\n"_ns + mHostPort;
   }
 
   if (mIsSystemPrincipal && !mName.IsEmpty()) {
