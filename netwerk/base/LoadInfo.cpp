@@ -1541,14 +1541,11 @@ LoadInfo::AppendRedirectHistoryEntry(nsIChannel* aChannel,
     if (referrerInfo) {
       referrer = referrerInfo->GetComputedReferrer();
     }
-  }
 
-  
-  
-  
-  nsCOMPtr<nsIHttpChannelInternal> intChannel(do_QueryInterface(aChannel));
-  if (intChannel) {
-    Unused << intChannel->GetRemoteAddress(remoteAddress);
+    nsCOMPtr<nsIHttpChannelInternal> intChannel(do_QueryInterface(aChannel));
+    if (intChannel) {
+      Unused << intChannel->GetRemoteAddress(remoteAddress);
+    }
   }
 
   nsCOMPtr<nsIPrincipal> truncatedPrincipal =
