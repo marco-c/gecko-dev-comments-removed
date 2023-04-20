@@ -4,16 +4,14 @@
 
 "use strict";
 
-const {
-  Actor,
-  ActorClassWithSpec,
-} = require("resource://devtools/shared/protocol.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
 const {
   flexboxSpec,
   flexItemSpec,
   gridSpec,
   layoutSpec,
 } = require("resource://devtools/shared/specs/layout.js");
+
 const {
   getStringifiableFragments,
 } = require("resource://devtools/server/actors/utils/css-grid-utils.js");
@@ -67,26 +65,26 @@ loader.lazyRequireGetter(
 
 
 
-const FlexboxActor = ActorClassWithSpec(flexboxSpec, {
+class FlexboxActor extends Actor {
   
 
 
 
 
 
-  initialize(layoutActor, containerEl) {
-    Actor.prototype.initialize.call(this, layoutActor.conn);
+  constructor(layoutActor, containerEl) {
+    super(layoutActor.conn, flexboxSpec);
 
     this.containerEl = containerEl;
     this.walker = layoutActor.walker;
-  },
+  }
 
   destroy() {
-    Actor.prototype.destroy.call(this);
+    super.destroy();
 
     this.containerEl = null;
     this.walker = null;
-  },
+  }
 
   form() {
     const styles = CssLogic.getComputedStyle(this.containerEl);
@@ -111,7 +109,7 @@ const FlexboxActor = ActorClassWithSpec(flexboxSpec, {
     }
 
     return form;
-  },
+  }
 
   
 
@@ -153,13 +151,13 @@ const FlexboxActor = ActorClassWithSpec(flexboxSpec, {
     }
 
     return flexItemActors;
-  },
-});
+  }
+}
 
 
 
 
-const FlexItemActor = ActorClassWithSpec(flexItemSpec, {
+class FlexItemActor extends Actor {
   
 
 
@@ -168,23 +166,23 @@ const FlexItemActor = ActorClassWithSpec(flexItemSpec, {
 
 
 
-  initialize(flexboxActor, element, flexItemSizing) {
-    Actor.prototype.initialize.call(this, flexboxActor.conn);
+  constructor(flexboxActor, element, flexItemSizing) {
+    super(flexboxActor.conn, flexItemSpec);
 
     this.containerEl = flexboxActor.containerEl;
     this.element = element;
     this.flexItemSizing = flexItemSizing;
     this.walker = flexboxActor.walker;
-  },
+  }
 
   destroy() {
-    Actor.prototype.destroy.call(this);
+    super.destroy();
 
     this.containerEl = null;
     this.element = null;
     this.flexItemSizing = null;
     this.walker = null;
-  },
+  }
 
   form() {
     const { mainAxisDirection } = this.flexItemSizing;
@@ -285,33 +283,33 @@ const FlexItemActor = ActorClassWithSpec(flexItemSpec, {
     }
 
     return form;
-  },
-});
+  }
+}
 
 
 
 
-const GridActor = ActorClassWithSpec(gridSpec, {
+class GridActor extends Actor {
   
 
 
 
 
 
-  initialize(layoutActor, containerEl) {
-    Actor.prototype.initialize.call(this, layoutActor.conn);
+  constructor(layoutActor, containerEl) {
+    super(layoutActor.conn, gridSpec);
 
     this.containerEl = containerEl;
     this.walker = layoutActor.walker;
-  },
+  }
 
   destroy() {
-    Actor.prototype.destroy.call(this);
+    super.destroy();
 
     this.containerEl = null;
     this.gridFragments = null;
     this.walker = null;
-  },
+  }
 
   form() {
     
@@ -346,26 +344,26 @@ const GridActor = ActorClassWithSpec(gridSpec, {
       gridTemplateColumns.startsWith("subgrid");
 
     return form;
-  },
-});
+  }
+}
 
 
 
 
-const LayoutActor = ActorClassWithSpec(layoutSpec, {
-  initialize(conn, targetActor, walker) {
-    Actor.prototype.initialize.call(this, conn);
+class LayoutActor extends Actor {
+  constructor(conn, targetActor, walker) {
+    super(conn, layoutSpec);
 
     this.targetActor = targetActor;
     this.walker = walker;
-  },
+  }
 
   destroy() {
-    Actor.prototype.destroy.call(this);
+    super.destroy();
 
     this.targetActor = null;
     this.walker = null;
-  },
+  }
 
   
 
@@ -435,7 +433,7 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
     }
 
     return null;
-  },
+  }
 
   
 
@@ -451,7 +449,7 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
 
   getCurrentGrid(node) {
     return this.getCurrentDisplay(node, "grid");
-  },
+  }
 
   
 
@@ -469,7 +467,7 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
 
   getCurrentFlexbox(node, onlyLookAtParents) {
     return this.getCurrentDisplay(node, "flex", onlyLookAtParents);
-  },
+  }
 
   
 
@@ -511,8 +509,8 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
     }
 
     return gridActors;
-  },
-});
+  }
+}
 
 function isNodeDead(node) {
   return !node || (node.rawNode && Cu.isDeadWrapper(node.rawNode));

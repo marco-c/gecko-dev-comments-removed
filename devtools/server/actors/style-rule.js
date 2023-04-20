@@ -4,7 +4,11 @@
 
 "use strict";
 
-const protocol = require("resource://devtools/shared/protocol.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
+const {
+  styleRuleSpec,
+} = require("resource://devtools/shared/specs/style-rule.js");
+
 const { getCSSLexer } = require("resource://devtools/shared/css/lexer.js");
 const InspectorUtils = require("InspectorUtils");
 const TrackChangeEmitter = require("resource://devtools/server/actors/utils/track-change-emitter.js");
@@ -13,9 +17,6 @@ const {
   getTextAtLineColumn,
 } = require("resource://devtools/server/actors/utils/style-utils.js");
 
-const {
-  styleRuleSpec,
-} = require("resource://devtools/shared/specs/style-rule.js");
 const {
   style: { ELEMENT_STYLE },
 } = require("resource://devtools/shared/constants.js");
@@ -80,9 +81,9 @@ const SUPPORTED_RULE_TYPES = [
 
 
 
-const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
-  initialize(pageStyle, item) {
-    protocol.Actor.prototype.initialize.call(this, null);
+class StyleRuleActor extends Actor {
+  constructor(pageStyle, item) {
+    super(null, styleRuleSpec);
     this.pageStyle = pageStyle;
     this.rawStyle = item.style;
     this._parentSheet = null;
@@ -116,29 +117,29 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         },
       };
     }
-  },
+  }
 
   get conn() {
     return this.pageStyle.conn;
-  },
+  }
 
   destroy() {
     if (!this.rawStyle) {
       return;
     }
-    protocol.Actor.prototype.destroy.call(this);
+    super.destroy();
     this.rawStyle = null;
     this.pageStyle = null;
     this.rawNode = null;
     this.rawRule = null;
     this._declarations = null;
-  },
+  }
 
   
   
   get marshallPool() {
     return this.pageStyle;
-  },
+  }
 
   
   
@@ -155,7 +156,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         this._parentSheet.href !== "about:PreferenceStyleSheet")
     );
-  },
+  }
 
   
 
@@ -174,7 +175,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     }
 
     return ancestors;
-  },
+  }
 
   
 
@@ -264,7 +265,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     }
 
     return data;
-  },
+  }
 
   getDocument(sheet) {
     if (!sheet.associatedDocument) {
@@ -273,11 +274,11 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       );
     }
     return sheet.associatedDocument;
-  },
+  }
 
   toString() {
     return "[StyleRuleActor for " + this.rawRule + "]";
-  },
+  }
 
   
   form() {
@@ -461,7 +462,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     }
 
     return form;
-  },
+  }
 
   
 
@@ -472,7 +473,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
   _notifyLocationChanged(line, column) {
     this.emit("location-changed", line, column);
-  },
+  }
 
   
 
@@ -510,7 +511,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     }
 
     this._ruleIndex = result;
-  },
+  }
 
   
 
@@ -531,7 +532,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       }
     }
     return currentRule;
-  },
+  }
 
   
 
@@ -563,7 +564,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       this.line = line;
       this.column = column;
     }
-  },
+  }
 
   
 
@@ -596,7 +597,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     
     this.authoredText = text;
     return this.authoredText;
-  },
+  }
 
   
 
@@ -657,7 +658,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
     const { result } = prettifyCSS(text);
     return Promise.resolve(result);
-  },
+  }
 
   
 
@@ -720,7 +721,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     
     
     return this;
-  },
+  }
 
   
 
@@ -780,7 +781,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     this._pendingDeclarationChanges.push(...modifications);
 
     return this;
-  },
+  }
 
   
 
@@ -857,7 +858,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     }
 
     return this._getRuleFromIndex(parentStyleSheet);
-  },
+  }
 
   
 
@@ -947,7 +948,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     }
 
     TrackChangeEmitter.trackChange(data);
-  },
+  }
 
   
 
@@ -974,7 +975,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       remove: null,
       selector: newSelector,
     });
-  },
+  }
 
   
 
@@ -1043,7 +1044,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
       return { ruleProps, isMatching };
     });
-  },
+  }
 
   
 
@@ -1084,7 +1085,7 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       inlineSize: computedStyle.inlineSize,
       blockSize: computedStyle.blockSize,
     };
-  },
+  }
 
   
 
@@ -1120,8 +1121,8 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       
       this.emit("rule-updated", this);
     }
-  },
-});
+  }
+}
 exports.StyleRuleActor = StyleRuleActor;
 
 

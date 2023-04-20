@@ -3,17 +3,14 @@
 
 "use strict";
 
-const {
-  ActorClassWithSpec,
-  Actor,
-} = require("resource://devtools/shared/protocol.js");
-const {
-  createValueGrip,
-} = require("resource://devtools/server/actors/object/utils.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
 const {
   environmentSpec,
 } = require("resource://devtools/shared/specs/environment.js");
 
+const {
+  createValueGrip,
+} = require("resource://devtools/server/actors/object/utils.js");
 
 
 
@@ -24,13 +21,14 @@ const {
 
 
 
-const EnvironmentActor = ActorClassWithSpec(environmentSpec, {
-  initialize(environment, threadActor) {
-    Actor.prototype.initialize.call(this, threadActor.conn);
+
+class EnvironmentActor extends Actor {
+  constructor(environment, threadActor) {
+    super(threadActor.conn, environmentSpec);
 
     this.obj = environment;
     this.threadActor = threadActor;
-  },
+  }
 
   
 
@@ -39,8 +37,8 @@ const EnvironmentActor = ActorClassWithSpec(environmentSpec, {
 
   destroy() {
     this.obj.actor = null;
-    Actor.prototype.destroy.call(this);
-  },
+    super.destroy();
+  }
 
   
 
@@ -88,7 +86,7 @@ const EnvironmentActor = ActorClassWithSpec(environmentSpec, {
     }
 
     return form;
-  },
+  }
 
   
 
@@ -202,7 +200,7 @@ const EnvironmentActor = ActorClassWithSpec(environmentSpec, {
     }
 
     return bindings;
-  },
-});
+  }
+}
 
 exports.EnvironmentActor = EnvironmentActor;

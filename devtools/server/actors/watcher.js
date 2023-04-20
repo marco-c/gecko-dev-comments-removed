@@ -3,7 +3,7 @@
 
 
 "use strict";
-const protocol = require("resource://devtools/shared/protocol.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
 const { watcherSpec } = require("resource://devtools/shared/specs/watcher.js");
 
 const Resources = require("resource://devtools/server/actors/resources/index.js");
@@ -71,7 +71,7 @@ loader.lazyRequireGetter(
   true
 );
 
-exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
+exports.WatcherActor = class WatcherActor extends Actor {
   
 
 
@@ -95,8 +95,8 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-  initialize(conn, sessionContext) {
-    protocol.Actor.prototype.initialize.call(this, conn);
+  constructor(conn, sessionContext) {
+    super(conn, watcherSpec);
     this._sessionContext = sessionContext;
     if (sessionContext.type == "browser-element") {
       
@@ -129,11 +129,11 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     
     
     this._currentWindowGlobalTargets = new Map();
-  },
+  }
 
   get sessionContext() {
     return this._sessionContext;
-  },
+  }
 
   
 
@@ -145,11 +145,11 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
   get browserElement() {
     return this._browserElement;
-  },
+  }
 
   getAllBrowsingContexts(options) {
     return getAllBrowsingContextsForContext(this.sessionContext, options);
-  },
+  }
 
   
 
@@ -165,7 +165,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     throw new Error(
       "Unsupported session context type: " + this.sessionContext.type
     );
-  },
+  }
 
   destroy() {
     
@@ -178,8 +178,8 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     WatcherRegistry.unregisterWatcher(this);
 
     
-    protocol.Actor.prototype.destroy.call(this);
-  },
+    super.destroy();
+  }
 
   
 
@@ -189,7 +189,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
   get sessionData() {
     return WatcherRegistry.getSessionData(this);
-  },
+  }
 
   form() {
     return {
@@ -201,7 +201,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
         resources: this.sessionContext.supportedResources,
       },
     };
-  },
+  }
 
   
 
@@ -222,7 +222,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     const targetHelperModule = TARGET_HELPERS[targetType];
     
     await targetHelperModule.createTargets(this);
-  },
+  }
 
   
 
@@ -252,7 +252,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     if (!options.isModeSwitching) {
       WatcherRegistry.maybeUnregisteringJSWindowActor();
     }
-  },
+  }
 
   
 
@@ -264,7 +264,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       const actor = this._earlyIframeTargets[topInnerWindowID].shift();
       this.emit("target-available-form", actor);
     }
-  },
+  }
 
   
 
@@ -301,7 +301,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       
       this._earlyIframeTargets[actor.topInnerWindowId] = [actor];
     }
-  },
+  }
 
   
 
@@ -364,7 +364,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       await documentEventWatcher.onceWillNavigateIsEmitted(actor.innerWindowId);
     }
     this.emit("target-destroyed-form", actor, options);
-  },
+  }
 
   
 
@@ -392,7 +392,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       return browsingContext.embedderWindowGlobal.browsingContext.id;
     }
     return null;
-  },
+  }
 
   
 
@@ -414,7 +414,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     }
 
     this.emit(`resource-${updateType}-form`, resources);
-  },
+  }
 
   
 
@@ -429,7 +429,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     resources.forEach(resource => {
       resource.browsingContextID = this.sessionContext.addonBrowsingContextID;
     });
-  },
+  }
 
   
 
@@ -446,7 +446,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       this.sessionContext,
       this.conn.prefix
     );
-  },
+  }
 
   
 
@@ -529,7 +529,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
         targetActorResourceTypes
       );
     }
-  },
+  }
 
   
 
@@ -600,7 +600,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
     
     WatcherRegistry.maybeUnregisteringJSWindowActor();
-  },
+  }
 
   clearResources(resourceTypes) {
     
@@ -610,7 +610,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       this,
       Resources.getParentProcessResourceTypes(resourceTypes)
     );
-  },
+  }
 
   
 
@@ -624,7 +624,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     }
 
     return this._networkParentActor;
-  },
+  }
 
   
 
@@ -638,7 +638,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     }
 
     return this._blackboxingActor;
-  },
+  }
 
   
 
@@ -652,7 +652,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     }
 
     return this._breakpointListActor;
-  },
+  }
 
   
 
@@ -665,7 +665,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       this._targetConfigurationListActor = new TargetConfigurationActor(this);
     }
     return this._targetConfigurationListActor;
-  },
+  }
 
   
 
@@ -678,7 +678,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       this._threadConfigurationListActor = new ThreadConfigurationActor(this);
     }
     return this._threadConfigurationListActor;
-  },
+  }
 
   
 
@@ -720,7 +720,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     if (targetActor) {
       await targetActor.addSessionDataEntry(type, entries);
     }
-  },
+  }
 
   
 
@@ -756,7 +756,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     if (targetActor) {
       targetActor.removeSessionDataEntry(type, entries);
     }
-  },
+  }
 
   
 
@@ -766,5 +766,5 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
   getSessionDataForType(type) {
     return this.sessionData?.[type];
-  },
-});
+  }
+};

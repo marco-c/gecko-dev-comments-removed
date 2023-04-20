@@ -3,12 +3,12 @@
 
 "use strict";
 
-const protocol = require("resource://devtools/shared/protocol.js");
-const { ActorClassWithSpec, Actor } = protocol;
+const { Actor } = require("resource://devtools/shared/protocol.js");
+const { perfSpec } = require("resource://devtools/shared/specs/perf.js");
+
 const {
   actorBridgeWithSpec,
 } = require("resource://devtools/server/actors/common.js");
-const { perfSpec } = require("resource://devtools/shared/specs/perf.js");
 const {
   ActorReadyGeckoProfilerInterface,
 } = require("resource://devtools/shared/performance-new/gecko-profiler-interface.js");
@@ -27,29 +27,29 @@ function _bridgeEvents(actor, names) {
 
 
 
-exports.PerfActor = ActorClassWithSpec(perfSpec, {
-  initialize(conn, targetActor) {
-    Actor.prototype.initialize.call(this, conn);
+exports.PerfActor = class PerfActor extends Actor {
+  constructor(conn, targetActor) {
+    super(conn, perfSpec);
     
     
     this.bridge = new ActorReadyGeckoProfilerInterface();
 
     _bridgeEvents(this, ["profiler-started", "profiler-stopped"]);
-  },
+  }
 
-  destroy(conn) {
-    Actor.prototype.destroy.call(this, conn);
+  destroy() {
+    super.destroy();
     this.bridge.destroy();
-  },
+  }
 
   
-  startProfiler: actorBridgeWithSpec("startProfiler"),
-  stopProfilerAndDiscardProfile: actorBridgeWithSpec(
+  startProfiler = actorBridgeWithSpec("startProfiler");
+  stopProfilerAndDiscardProfile = actorBridgeWithSpec(
     "stopProfilerAndDiscardProfile"
-  ),
-  getSymbolTable: actorBridgeWithSpec("getSymbolTable"),
-  getProfileAndStopProfiler: actorBridgeWithSpec("getProfileAndStopProfiler"),
-  isActive: actorBridgeWithSpec("isActive"),
-  isSupportedPlatform: actorBridgeWithSpec("isSupportedPlatform"),
-  getSupportedFeatures: actorBridgeWithSpec("getSupportedFeatures"),
-});
+  );
+  getSymbolTable = actorBridgeWithSpec("getSymbolTable");
+  getProfileAndStopProfiler = actorBridgeWithSpec("getProfileAndStopProfiler");
+  isActive = actorBridgeWithSpec("isActive");
+  isSupportedPlatform = actorBridgeWithSpec("isSupportedPlatform");
+  getSupportedFeatures = actorBridgeWithSpec("getSupportedFeatures");
+};

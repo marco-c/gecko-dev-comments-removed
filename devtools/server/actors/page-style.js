@@ -4,7 +4,11 @@
 
 "use strict";
 
-const protocol = require("resource://devtools/shared/protocol.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
+const {
+  pageStyleSpec,
+} = require("resource://devtools/shared/specs/page-style.js");
+
 const { getCSSLexer } = require("resource://devtools/shared/css/lexer.js");
 const {
   LongStringActor,
@@ -12,9 +16,6 @@ const {
 const InspectorUtils = require("InspectorUtils");
 const TrackChangeEmitter = require("resource://devtools/server/actors/utils/track-change-emitter.js");
 
-const {
-  pageStyleSpec,
-} = require("resource://devtools/shared/specs/page-style.js");
 const {
   style: { ELEMENT_STYLE },
 } = require("resource://devtools/shared/constants.js");
@@ -69,7 +70,7 @@ const BOLD_FONT_WEIGHT = 700;
 
 
 
-var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
+class PageStyleActor extends Actor {
   
 
 
@@ -78,8 +79,8 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  initialize(inspector) {
-    protocol.Actor.prototype.initialize.call(this, null);
+  constructor(inspector) {
+    super(null, pageStyleSpec);
     this.inspector = inspector;
     if (!this.inspector.walker) {
       throw Error(
@@ -110,13 +111,13 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
     this._onStylesheetUpdated = this._onStylesheetUpdated.bind(this);
     this.styleSheetsManager.on("stylesheet-updated", this._onStylesheetUpdated);
-  },
+  }
 
   destroy() {
     if (!this.walker) {
       return;
     }
-    protocol.Actor.prototype.destroy.call(this);
+    super.destroy();
     this.inspector.targetActor.off("will-navigate", this.onFrameUnload);
     this.inspector = null;
     this.walker = null;
@@ -126,15 +127,15 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     this.styleElements = null;
 
     this._observedRules = [];
-  },
+  }
 
   get conn() {
     return this.inspector.conn;
-  },
+  }
 
   get ownerWindow() {
     return this.inspector.targetActor.window;
-  },
+  }
 
   form() {
     
@@ -159,7 +160,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
           CSS.supports("font-weight: 1") && CSS.supports("font-stretch: 100%"),
       },
     };
-  },
+  }
 
   
 
@@ -171,7 +172,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     if (kind === UPDATE_GENERAL) {
       this.emit("stylesheet-updated");
     }
-  },
+  }
 
   
 
@@ -186,7 +187,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     this.refMap.set(item, actor);
 
     return actor;
-  },
+  }
 
   
 
@@ -201,7 +202,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
   updateStyleRef(oldItem, item, actor) {
     this.refMap.delete(oldItem);
     this.refMap.set(item, actor);
-  },
+  }
 
   
 
@@ -221,7 +222,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     }
 
     return match;
-  },
+  }
 
   
 
@@ -281,7 +282,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     }
 
     return ret;
-  },
+  }
 
   
 
@@ -306,7 +307,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     }
 
     return fontsList;
-  },
+  }
 
   
 
@@ -419,7 +420,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     });
 
     return fontsArray;
-  },
+  }
 
   
 
@@ -488,7 +489,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
       matched,
       rules: [...rules],
     };
-  },
+  }
 
   
   
@@ -504,7 +505,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
       result += ".style";
     }
     return result;
-  },
+  }
 
   
 
@@ -552,13 +553,13 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     this._observedRules = result.rules;
 
     return result;
-  },
+  }
 
   _hasInheritedProps(style) {
     return Array.prototype.some.call(style, prop => {
       return InspectorUtils.isInheritedProperty(prop);
     });
-  },
+  }
 
   async isPositionEditable(node) {
     if (!node || node.rawNode.nodeType !== node.rawNode.ELEMENT_NODE) {
@@ -575,7 +576,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
       props.has("left") ||
       props.has("bottom")
     );
-  },
+  }
 
   
 
@@ -655,7 +656,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     }
 
     return rules;
-  },
+  }
 
   _nodeIsTextfieldLike(node) {
     if (node.nodeName == "TEXTAREA") {
@@ -665,7 +666,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
       node.mozIsTextField &&
       (node.mozIsTextField(false) || node.type == "number")
     );
-  },
+  }
 
   _nodeIsButtonLike(node) {
     if (node.nodeName == "BUTTON") {
@@ -675,13 +676,13 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
       node.nodeName == "INPUT" &&
       ["submit", "color", "button"].includes(node.type)
     );
-  },
+  }
 
   _nodeIsListItem(node) {
     const display = CssLogic.getComputedStyle(node).getPropertyValue("display");
     
     return display.split(" ").includes("list-item");
-  },
+  }
 
   
   _pseudoIsRelevant(node, pseudo) {
@@ -718,7 +719,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
       default:
         throw Error("Unhandled pseudo-element " + pseudo);
     }
-  },
+  }
 
   
 
@@ -777,7 +778,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
       });
     }
     return rules;
-  },
+  }
 
   
 
@@ -802,7 +803,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     }
 
     return entries.filter(entry => entry.rule.rawRule === filterRule);
-  },
+  }
 
   
 
@@ -901,7 +902,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
       entries,
       rules: [...rules],
     };
-  },
+  }
 
   
 
@@ -916,7 +917,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
         }
       }
     }
-  },
+  }
 
   
 
@@ -983,7 +984,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     }
 
     return layout;
-  },
+  }
 
   
 
@@ -1000,14 +1001,14 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     }
 
     return margins;
-  },
+  }
 
   
 
 
   onFrameUnload() {
     this.styleElements = new WeakMap();
-  },
+  }
 
   _onStylesheetUpdated({ resourceId, updateKind, updates = {} }) {
     if (updateKind != "style-applied") {
@@ -1029,7 +1030,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
       }
     }
     this._styleApplied(kind);
-  },
+  }
 
   
 
@@ -1043,7 +1044,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     return this.getAppliedProps(node, [{ rule: ruleActor }], {
       matchedSelectors: true,
     });
-  },
+  }
 
   
 
@@ -1101,7 +1102,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     });
 
     return this.getNewAppliedProps(node, cssRule);
-  },
+  }
 
   
 
@@ -1121,7 +1122,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     for (const rule of this._observedRules) {
       rule.refresh();
     }
-  },
+  }
 
   
 
@@ -1162,7 +1163,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     );
 
     return Array.from(result).sort();
-  },
+  }
 
   
 
@@ -1211,7 +1212,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
         result.add(value);
       }
     }
-  },
+  }
 
   
 
@@ -1240,7 +1241,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
         this._collectAttributesFromRule(result, rule, search, attributeType);
       }
     }
-  },
+  }
 
   
 
@@ -1292,6 +1293,6 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
         }
       }
     }
-  },
-});
+  }
+}
 exports.PageStyleActor = PageStyleActor;

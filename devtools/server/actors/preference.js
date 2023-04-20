@@ -4,7 +4,7 @@
 
 "use strict";
 
-const protocol = require("resource://devtools/shared/protocol.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
 const {
   preferenceSpec,
 } = require("resource://devtools/shared/specs/preference.js");
@@ -28,29 +28,32 @@ function ensurePrefType(name, expectedType) {
 
 
 
-var PreferenceActor = protocol.ActorClassWithSpec(preferenceSpec, {
+class PreferenceActor extends Actor {
+  constructor(conn) {
+    super(conn, preferenceSpec);
+  }
   getTraits() {
     
     
     
     
     return {};
-  },
+  }
 
   getBoolPref(name) {
     ensurePrefType(name, PREF_BOOL);
     return Services.prefs.getBoolPref(name);
-  },
+  }
 
   getCharPref(name) {
     ensurePrefType(name, PREF_STRING);
     return Services.prefs.getCharPref(name);
-  },
+  }
 
   getIntPref(name) {
     ensurePrefType(name, PREF_INT);
     return Services.prefs.getIntPref(name);
-  },
+  }
 
   getAllPrefs() {
     const prefs = {};
@@ -79,27 +82,27 @@ var PreferenceActor = protocol.ActorClassWithSpec(preferenceSpec, {
       }
     });
     return prefs;
-  },
+  }
 
   setBoolPref(name, value) {
     Services.prefs.setBoolPref(name, value);
     Services.prefs.savePrefFile(null);
-  },
+  }
 
   setCharPref(name, value) {
     Services.prefs.setCharPref(name, value);
     Services.prefs.savePrefFile(null);
-  },
+  }
 
   setIntPref(name, value) {
     Services.prefs.setIntPref(name, value);
     Services.prefs.savePrefFile(null);
-  },
+  }
 
   clearUserPref(name) {
     Services.prefs.clearUserPref(name);
     Services.prefs.savePrefFile(null);
-  },
-});
+  }
+}
 
 exports.PreferenceActor = PreferenceActor;
