@@ -2,9 +2,8 @@
 
 
 
-import prettyFast from "pretty-fast";
-
 import { workerHandler } from "devtools/client/shared/worker-utils";
+import { prettyFast } from "./pretty-fast";
 
 function prettyPrint({ url, indent, sourceText }) {
   const prettified = prettyFast(sourceText, {
