@@ -330,6 +330,65 @@ double RemoteAccessibleBase<Derived>::Step() const {
 }
 
 template <class Derived>
+bool RemoteAccessibleBase<Derived>::ContainsPoint(int32_t aX, int32_t aY) {
+  if (!Bounds().Contains(aX, aY)) {
+    return false;
+  }
+  if (!IsTextLeaf()) {
+    return true;
+  }
+  
+  
+  
+  
+  auto lines = GetCachedTextLines();
+  if (!lines) {
+    
+    
+    
+    return true;
+  }
+  uint32_t length = lines->Length();
+  MOZ_ASSERT(length > 0,
+             "Line starts shouldn't be in cache if there aren't any");
+  if (length == 0 || (length == 1 && (*lines)[0] == 0)) {
+    
+    
+    return true;
+  }
+  
+  
+  
+  int32_t lineStart = 0;
+  for (uint32_t index = 0; index <= length; ++index) {
+    int32_t lineEnd;
+    if (index < length) {
+      int32_t nextLineStart = (*lines)[index];
+      if (nextLineStart == 0) {
+        
+        
+        MOZ_ASSERT(index == 0);
+        continue;
+      }
+      lineEnd = nextLineStart - 1;
+    } else {
+      
+      lineEnd = static_cast<int32_t>(nsAccUtils::TextLength(this)) - 1;
+    }
+    MOZ_ASSERT(lineEnd >= lineStart);
+    nsRect lineRect = GetCachedCharRect(lineStart);
+    if (lineEnd > lineStart) {
+      lineRect.UnionRect(lineRect, GetCachedCharRect(lineEnd));
+    }
+    if (BoundsWithOffset(Some(lineRect)).Contains(aX, aY)) {
+      return true;
+    }
+    lineStart = lineEnd + 1;
+  }
+  return false;
+}
+
+template <class Derived>
 Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
     int32_t aX, int32_t aY, LocalAccessible::EWhichChildAtPoint aWhichChild) {
   if (IsOuterDoc() && aWhichChild == EWhichChildAtPoint::DirectChild) {
@@ -399,7 +458,7 @@ Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
           break;
         }
 
-        if (acc->Bounds().Contains(aX, aY)) {
+        if (acc->ContainsPoint(aX, aY)) {
           
           
           
