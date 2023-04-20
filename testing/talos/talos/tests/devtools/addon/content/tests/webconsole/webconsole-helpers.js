@@ -21,20 +21,15 @@ const {
 
 
 exports.reloadConsoleAndLog = async function(label, toolbox, expectedMessages) {
-  const webConsole = toolbox.getPanel("webconsole");
-  const onWebConsoleReload = webConsole.once("reloaded");
   const onReload = async function() {
-    const { hud } = webConsole;
+    const { hud } = toolbox.getPanel("webconsole");
+
     const expected =
       typeof expectedMessages === "number"
         ? [{ text: "", count: expectedMessages }]
         : expectedMessages;
 
     let logMissingMessagesTimeoutId;
-
-    
-    
-    await onWebConsoleReload;
 
     await waitForConsoleOutputChildListChange(hud, consoleOutputEl => {
       if (logMissingMessagesTimeoutId) {
