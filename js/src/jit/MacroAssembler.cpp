@@ -3845,6 +3845,16 @@ void MacroAssembler::branchTestObjShapeList(
   Label* onMatch = cond == Assembler::Equal ? label : &done;
 
   
+  
+  
+#ifdef JS_PUNBOX64
+  loadPtr(Address(obj, JSObject::offsetOfShape()), endScratch);
+  tagValue(JSVAL_TYPE_PRIVATE_GCTHING, endScratch, ValueOperand(shapeScratch));
+#else
+  loadPtr(Address(obj, JSObject::offsetOfShape()), shapeScratch);
+#endif
+
+  
   Address lengthAddr(shapeElements,
                      ObjectElements::offsetOfInitializedLength());
   load32(lengthAddr, endScratch);
@@ -3856,14 +3866,14 @@ void MacroAssembler::branchTestObjShapeList(
 
   
   
-  unboxNonDouble(Address(shapeElements, 0), shapeScratch,
-                 JSVAL_TYPE_PRIVATE_GCTHING);
+  
+  
   if (needSpectreMitigations) {
-    branchTestObjShape(Assembler::Equal, obj, shapeScratch, spectreScratch, obj,
-                       onMatch);
-  } else {
-    branchTestObjShapeNoSpectreMitigations(Assembler::Equal, obj, shapeScratch,
-                                           onMatch);
+    move32(Imm32(0), spectreScratch);
+  }
+  branchPtr(Assembler::Equal, Address(shapeElements, 0), shapeScratch, onMatch);
+  if (needSpectreMitigations) {
+    spectreMovePtr(Assembler::Equal, spectreScratch, obj);
   }
 
   
