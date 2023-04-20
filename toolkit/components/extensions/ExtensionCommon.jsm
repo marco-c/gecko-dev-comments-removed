@@ -41,6 +41,12 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIStyleSheetService"
 );
 
+const ScriptError = Components.Constructor(
+  "@mozilla.org/scripterror;1",
+  "nsIScriptError",
+  "initWithWindowID"
+);
+
 const { ExtensionUtils } = ChromeUtils.import(
   "resource://gre/modules/ExtensionUtils.jsm"
 );
@@ -70,12 +76,16 @@ function runSafeSyncWithoutClone(f, ...args) {
   try {
     return f(...args);
   } catch (e) {
+    
+    
+    
+    
     dump(
-      `Extension error: ${e} ${e.fileName} ${
-        e.lineNumber
-      }\n[[Exception stack\n${filterStack(e)}Current stack\n${filterStack(
-        Error()
-      )}]]\n`
+      `Extension error: ${e} ${e?.fileName} ${
+        e?.lineNumber
+      }\n[[Exception stack\n${
+        e?.stack ? filterStack(e) : undefined
+      }Current stack\n${filterStack(Error())}]]\n`
     );
     Cu.reportError(e);
   }
@@ -461,6 +471,10 @@ class BaseContext {
     this.cloneScopePromise = null;
   }
 
+  get isProxyContextParent() {
+    return false;
+  }
+
   get Error() {
     
     
@@ -626,13 +640,91 @@ class BaseContext {
       try {
         return Reflect.apply(callback, null, args);
       } catch (e) {
+        
+        
+        
+        const isError = e instanceof this.Error;
+        let message;
+        let fileName;
+        let lineNumber;
+        let columnNumber;
+
+        if (isError) {
+          message = `${e.name}: ${e.message}`;
+          lineNumber = e.lineNumber;
+          columnNumber = e.columnNumber;
+          fileName = e.fileName;
+        } else {
+          message = `uncaught exception: ${e}`;
+
+          try {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            const cbLoc = Cu.getFunctionSourceLocation(callback);
+            fileName = cbLoc.filename;
+            lineNumber = cbLoc.lineNumber ?? lineNumber;
+
+            const extBaseUrl = this.extension.baseURI.resolve("/");
+            if (fileName.startsWith(extBaseUrl)) {
+              fileName = cbLoc.filename;
+              lineNumber = cbLoc.lineNumber ?? lineNumber;
+            } else {
+              fileName = this.contentWindow?.location?.href;
+              if (!fileName || !fileName.startsWith(extBaseUrl)) {
+                fileName = extBaseUrl;
+              }
+            }
+          } catch {
+            
+          }
+        }
+
         dump(
-          `Extension error: ${e} ${e.fileName} ${
-            e.lineNumber
-          }\n[[Exception stack\n${filterStack(e)}Current stack\n${filterStack(
-            Error()
-          )}]]\n`
+          `Extension error: ${message} ${fileName} ${lineNumber}\n[[Exception stack\n${
+            isError ? filterStack(e) : undefined
+          }Current stack\n${filterStack(Error())}]]\n`
         );
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!this.isProxyContextParent && this.contentWindow) {
+          Services.console.logMessage(
+            new ScriptError(
+              message,
+              fileName,
+              null,
+              lineNumber,
+              columnNumber,
+              Ci.nsIScriptError.errorFlag,
+              "content javascript",
+              this.innerWindowID
+            )
+          );
+        }
+        
+        
         Cu.reportError(e);
       }
     }
