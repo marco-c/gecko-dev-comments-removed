@@ -188,8 +188,8 @@ nsStaticAtom* nsLanguageAtomService::GetUncachedLanguageGroup(
       langStr.Truncate(start.get() - langStr.BeginReading());
     }
 
-    Locale loc;
-    auto result = LocaleParser::TryParse(langStr, loc);
+    intl::Locale loc;
+    auto result = intl::LocaleParser::TryParse(langStr, loc);
     if (!result.isOk()) {
       
       
@@ -198,7 +198,7 @@ nsStaticAtom* nsLanguageAtomService::GetUncachedLanguageGroup(
 
         
         loc = {};
-        result = LocaleParser::TryParse(langStr, loc);
+        result = intl::LocaleParser::TryParse(langStr, loc);
       }
     }
     if (result.isOk() && loc.Canonicalize().isOk()) {
