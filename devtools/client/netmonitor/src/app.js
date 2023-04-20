@@ -25,7 +25,7 @@ const {
   getDisplayedRequestById,
 } = require("resource://devtools/client/netmonitor/src/selectors/index.js");
 
-const SearchWorker = require("resource://devtools/client/netmonitor/src/workers/search/index.js");
+const SearchDispatcher = require("resource://devtools/client/netmonitor/src/workers/search/index.js");
 
 
 
@@ -82,7 +82,7 @@ NetMonitorApp.prototype = {
   destroy() {
     unmountComponentAtNode(this.mount);
 
-    SearchWorker.stop();
+    SearchDispatcher.stop();
 
     
     
