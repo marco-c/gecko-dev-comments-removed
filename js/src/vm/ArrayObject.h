@@ -44,7 +44,7 @@ class ArrayObject : public NativeObject {
   
   static MOZ_ALWAYS_INLINE ArrayObject* create(
       JSContext* cx, gc::AllocKind kind, gc::InitialHeap heap,
-      Handle<Shape*> shape, uint32_t length, uint32_t slotSpan,
+      Handle<SharedShape*> shape, uint32_t length, uint32_t slotSpan,
       AutoSetNewObjectMetadata& metadata, gc::AllocSite* site = nullptr);
 };
 

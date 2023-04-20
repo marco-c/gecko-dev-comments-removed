@@ -188,7 +188,7 @@ class GlobalObjectData {
   HeapPtr<PropertyIteratorObject*> emptyIterator;
 
   
-  HeapPtr<Shape*> arrayShapeWithDefaultProto;
+  HeapPtr<SharedShape*> arrayShapeWithDefaultProto;
 
   
   
@@ -1011,18 +1011,18 @@ class GlobalObject : public NativeObject {
     data().sourceURLsHolder.unbarrieredSet(nullptr);
   }
 
-  Shape* maybeArrayShapeWithDefaultProto() const {
+  SharedShape* maybeArrayShapeWithDefaultProto() const {
     return data().arrayShapeWithDefaultProto;
   }
 
-  static Shape* getArrayShapeWithDefaultProto(JSContext* cx) {
-    if (Shape* shape = cx->global()->data().arrayShapeWithDefaultProto;
+  static SharedShape* getArrayShapeWithDefaultProto(JSContext* cx) {
+    if (SharedShape* shape = cx->global()->data().arrayShapeWithDefaultProto;
         MOZ_LIKELY(shape)) {
       return shape;
     }
     return createArrayShapeWithDefaultProto(cx);
   }
-  static Shape* createArrayShapeWithDefaultProto(JSContext* cx);
+  static SharedShape* createArrayShapeWithDefaultProto(JSContext* cx);
 
   static Shape* getPlainObjectShapeWithDefaultProto(JSContext* cx,
                                                     gc::AllocKind kind) {
