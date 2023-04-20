@@ -1726,7 +1726,6 @@ pub enum Appearance {
     
     Searchfield,
     
-    #[parse(aliases = "textfield-multiline")]
     Textarea,
     
     Checkbox,
@@ -1737,10 +1736,8 @@ pub enum Appearance {
     
     Listbox,
     
-    #[parse(aliases = "meterbar")]
     Meter,
     
-    #[parse(aliases = "progressbar")]
     ProgressBar,
     
     Button,
