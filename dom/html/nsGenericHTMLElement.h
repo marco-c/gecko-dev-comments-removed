@@ -1252,6 +1252,11 @@ class nsGenericHTMLFormControlElementWithState
   
 
 
+  MOZ_CAN_RUN_SCRIPT void HandlePopoverTargetAction();
+
+  
+
+
 
   mozilla::PresState* GetPrimaryPresState();
 

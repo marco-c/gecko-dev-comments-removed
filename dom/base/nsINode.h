@@ -40,6 +40,7 @@ class nsAttrChildContentList;
 template <typename T>
 class nsCOMArray;
 class nsDOMAttributeMap;
+class nsGenericHTMLElement;
 class nsIAnimationObserver;
 class nsIContent;
 class nsIContentSecurityPolicy;
@@ -516,7 +517,7 @@ class nsINode : public mozilla::dom::EventTarget {
   
 
 
-  mozilla::dom::Element* GetEffectivePopoverTargetElement() const;
+  nsGenericHTMLElement* GetEffectivePopoverTargetElement() const;
 
   
 
