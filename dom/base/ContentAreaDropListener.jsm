@@ -248,15 +248,15 @@ ContentAreaDropListener.prototype = {
     }
 
     
-    let sourceWC = dataTransfer.sourceWindowContext;
-    if (!sourceWC) {
+    let sourceTopWC = dataTransfer.sourceTopWindowContext;
+    if (!sourceTopWC) {
       return true;
     }
 
     
     let eventWC =
       aEvent.originalTarget.ownerGlobal.browsingContext.currentWindowContext;
-    if (eventWC && sourceWC.topWindowContext == eventWC.topWindowContext) {
+    if (eventWC && sourceTopWC == eventWC.topWindowContext) {
       return false;
     }
 

@@ -628,7 +628,8 @@ parent:
                             LayoutDeviceIntRect dragRect,
                             nsIPrincipal principal, nsIContentSecurityPolicy csp,
                             CookieJarSettingsArgs cookieJarSettings,
-                            MaybeDiscardedWindowContext sourceWindowContext);
+                            MaybeDiscardedWindowContext sourceWindowContext,
+                            MaybeDiscardedWindowContext sourceTopWindowContext);
 
     
     

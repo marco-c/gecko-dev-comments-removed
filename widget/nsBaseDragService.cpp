@@ -157,6 +157,29 @@ nsBaseDragService::SetSourceWindowContext(WindowContext* aSourceWindowContext) {
 
 
 NS_IMETHODIMP
+nsBaseDragService::GetSourceTopWindowContext(
+    WindowContext** aSourceTopWindowContext) {
+  *aSourceTopWindowContext = mSourceTopWindowContext.get();
+  NS_IF_ADDREF(*aSourceTopWindowContext);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsBaseDragService::SetSourceTopWindowContext(
+    WindowContext* aSourceTopWindowContext) {
+  
+  MOZ_ASSERT(!XRE_IsParentProcess());
+  mSourceTopWindowContext = aSourceTopWindowContext;
+  return NS_OK;
+}
+
+
+
+
+
+
+
+NS_IMETHODIMP
 nsBaseDragService::GetSourceNode(nsINode** aSourceNode) {
   *aSourceNode = do_AddRef(mSourceNode).take();
   return NS_OK;
@@ -393,6 +416,8 @@ nsBaseDragService::InvokeDragSessionWithImage(
   mDragStartData = nullptr;
   mSourceWindowContext =
       aDOMNode ? aDOMNode->OwnerDoc()->GetWindowContext() : nullptr;
+  mSourceTopWindowContext =
+      mSourceWindowContext ? mSourceWindowContext->TopWindowContext() : nullptr;
 
   mScreenPosition = aDragEvent->ScreenPoint(CallerType::System);
   mInputSource = aDragEvent->MozInputSource();
@@ -441,6 +466,7 @@ nsBaseDragService::InvokeDragSessionWithRemoteImage(
   mDragStartData = aDragStartData;
   mImageOffset = CSSIntPoint(0, 0);
   mSourceWindowContext = mDragStartData->GetSourceWindowContext();
+  mSourceTopWindowContext = mDragStartData->GetSourceTopWindowContext();
 
   mScreenPosition = aDragEvent->ScreenPoint(CallerType::System);
   mInputSource = aDragEvent->MozInputSource();
@@ -482,6 +508,8 @@ nsBaseDragService::InvokeDragSessionWithSelection(
   
   nsCOMPtr<nsINode> node = aSelection->GetFocusNode();
   mSourceWindowContext = node ? node->OwnerDoc()->GetWindowContext() : nullptr;
+  mSourceTopWindowContext =
+      mSourceWindowContext ? mSourceWindowContext->TopWindowContext() : nullptr;
 
   return InvokeDragSession(node, aPrincipal, aCsp, aCookieJarSettings,
                            aTransferableArray, aActionType,
