@@ -57,7 +57,7 @@ export class MockFederatedAuthRequest {
   
   
   
-  async requestToken(provider, idRequest) {
+  async requestToken(idp_get_params) {
     if (this.returnPending_) {
       this.pendingPromise_ = new Promise((resolve, reject) => {
         this.pendingPromiseResolve_ = resolve;
