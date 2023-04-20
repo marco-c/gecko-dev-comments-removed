@@ -67,6 +67,10 @@ class AnalyzingVideoSink : public rtc::VideoSinkInterface<VideoFrame> {
   };
 
   
+  
+  
+  void AnalyzeFrame(const VideoFrame& frame);
+  
   SinksDescriptor* PopulateSinks(absl::string_view stream_label);
 
   const std::string peer_name_;

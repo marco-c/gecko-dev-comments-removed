@@ -142,6 +142,8 @@ struct StreamStats {
   SamplesStatsCounter freeze_time_ms;
   
   SamplesStatsCounter time_between_freezes_ms;
+  SamplesStatsCounter resolution_of_decoded_frame;
+  
   SamplesStatsCounter resolution_of_rendered_frame;
   SamplesStatsCounter target_encode_bitrate;
 
