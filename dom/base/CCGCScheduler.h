@@ -476,7 +476,7 @@ class CCGCScheduler {
 
   
   
-  mozilla::Atomic<bool> mInterruptRequested;
+  js::SliceBudget::InterruptRequestFlag mInterruptRequested;
 
   
   

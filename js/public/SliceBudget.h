@@ -48,7 +48,7 @@ struct UnlimitedBudget {};
 
 class JS_PUBLIC_API SliceBudget {
  public:
-  using InterruptRequestFlag = mozilla::Atomic<bool>;
+  using InterruptRequestFlag = mozilla::Atomic<bool, mozilla::Relaxed>;
 
   
   
