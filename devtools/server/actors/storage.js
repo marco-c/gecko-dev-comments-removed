@@ -3517,7 +3517,7 @@ const StorageActor = protocol.ActorClassWithSpec(specs.storageSpec, {
     
     
     const isAddonTarget = !!this.parentActor.addonId;
-    const isWatcherEnabled = !isAddonTarget && !this.parentActor.isRootActor;
+    const isWatcherEnabled = true;
     const shallUseLegacyActors = Services.prefs.getBoolPref(
       "devtools.storage.test.forceLegacyActors",
       false

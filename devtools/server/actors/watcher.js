@@ -439,7 +439,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-  _getTargetActorInParentProcess() {
+  getTargetActorInParentProcess() {
     
     
     return TargetActorRegistry.getTopLevelTargetActorForContext(
@@ -518,7 +518,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-    const targetActor = this._getTargetActorInParentProcess();
+    const targetActor = this.getTargetActorInParentProcess();
     if (targetActor) {
       const targetActorResourceTypes = Resources.getResourceTypesForTargetType(
         resourceTypes,
@@ -589,7 +589,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     }
 
     
-    const targetActor = this._getTargetActorInParentProcess();
+    const targetActor = this.getTargetActorInParentProcess();
     if (targetActor) {
       const targetActorResourceTypes = Resources.getResourceTypesForTargetType(
         resourceTypes,
@@ -716,7 +716,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     );
 
     
-    const targetActor = this._getTargetActorInParentProcess();
+    const targetActor = this.getTargetActorInParentProcess();
     if (targetActor) {
       await targetActor.addSessionDataEntry(type, entries);
     }
@@ -752,7 +752,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       });
 
     
-    const targetActor = this._getTargetActorInParentProcess();
+    const targetActor = this.getTargetActorInParentProcess();
     if (targetActor) {
       targetActor.removeSessionDataEntry(type, entries);
     }
