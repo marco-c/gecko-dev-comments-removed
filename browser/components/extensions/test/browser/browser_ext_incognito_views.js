@@ -29,25 +29,26 @@ add_task(async function testIncognitoViews() {
           resolveMessage(msg);
         }
       });
-
-      let awaitPopup = windowId => {
+      let promisePopupDetails = () => {
         return new Promise(resolve => {
           resolveMessage = resolve;
-        }).then(msg => {
-          browser.test.assertEq(
-            windowId,
-            msg.windowId,
-            "Got popup message from correct window"
-          );
-          return msg;
         });
       };
 
       let testWindow = async window => {
-        browser.test.sendMessage("click-browserAction");
+        let popupDetailsPromise = promisePopupDetails();
 
-        let msg = await awaitPopup(window.id);
+        await browser.browserAction.openPopup({
+          windowId: window.id,
+        });
+
+        let msg = await popupDetailsPromise;
         browser.test.assertEq(
+          window.id,
+          msg.windowId,
+          "Got popup message from correct window"
+        );
+        browser.test.assertDeepEq(
           window.incognito,
           msg.incognito,
           "Correct incognito status in browserAction popup"
@@ -68,11 +69,20 @@ add_task(async function testIncognitoViews() {
         });
       });
 
+      function getNonPrivateViewCount() {
+        
+        
+        return browser.extension.getViews({ type: "popup" }).length;
+      }
+
       try {
         {
           let window = await browser.windows.getCurrent();
 
           await testWindow(window);
+
+          browser.test.assertEq(1, getNonPrivateViewCount(), "popup is open");
+          
         }
 
         {
@@ -83,6 +93,17 @@ add_task(async function testIncognitoViews() {
           await windowReady;
 
           await testWindow(window);
+
+          browser.test.assertEq(
+            0,
+            getNonPrivateViewCount(),
+            "First popup should have been closed when a new window was opened"
+          );
+
+          await browser.windows.remove(window.id);
+          
+          
+          
         }
 
         browser.test.notifyPass("incognito-views");
@@ -162,24 +183,19 @@ add_task(async function testIncognitoViews() {
           windowId: win.id,
           incognito: browser.extension.inIncognitoContext,
         });
+
+        
+        
+        
+        
+        if (browser.extension.inIncognitoContext) {
+          window.close();
+        }
       },
     },
   });
 
-  let win;
-  let promiseBrowserActionOpened;
-  extension.onMessage("click-browserAction", () => {
-    win = Services.wm.getMostRecentWindow("navigator:browser");
-    promiseBrowserActionOpened = openBrowserActionPanel(extension, win, true);
-  });
-
   await extension.startup();
   await extension.awaitFinish("incognito-views");
-  
-  
-  
-  await promiseBrowserActionOpened;
-  await closeBrowserAction(extension, win);
   await extension.unload();
-  await BrowserTestUtils.closeWindow(win);
 });
