@@ -9,6 +9,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Decimal.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/TextControlElement.h"
 #include "mozilla/TextControlState.h"
 #include "mozilla/UniquePtr.h"
@@ -858,6 +859,9 @@ class HTMLInputElement final : public TextControlElement,
 
   bool IsValueEmpty() const;
 
+  
+  static mozilla::Maybe<nscolor> ParseSimpleColor(const nsAString& aColor);
+
  protected:
   MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual ~HTMLInputElement();
 
@@ -1383,6 +1387,11 @@ class HTMLInputElement final : public TextControlElement,
 
 
   nsresult MaybeInitPickers(EventChainPostVisitor& aVisitor);
+
+  
+
+
+  nsTArray<nsString> GetColorsFromList();
 
   enum FilePickerType { FILE_PICKER_FILE, FILE_PICKER_DIRECTORY };
   nsresult InitFilePicker(FilePickerType aType);

@@ -436,7 +436,7 @@ parent:
 
 
 
-    async PColorPicker(nsString title, nsString initialColor);
+    async PColorPicker(nsString title, nsString initialColor, nsString[] defaultColors);
 
     async PFilePicker(nsString aTitle, int16_t aMode);
 
