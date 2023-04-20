@@ -2460,12 +2460,17 @@ void DocAccessible::PutChildrenBack(
 }
 
 void DocAccessible::TrackMovedAccessible(LocalAccessible* aAcc) {
+  MOZ_ASSERT(aAcc->mDoc == this);
   
   
   if (!mInsertedAccessibles.Contains(aAcc)) {
     mMovedAccessibles.EnsureInserted(aAcc);
   }
   
+  if (aAcc->IsOuterDoc()) {
+    
+    return;
+  }
   for (uint32_t c = 0, count = aAcc->ContentChildCount(); c < count; ++c) {
     TrackMovedAccessible(aAcc->ContentChildAt(c));
   }
