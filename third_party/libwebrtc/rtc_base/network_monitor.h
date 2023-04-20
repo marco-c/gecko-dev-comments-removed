@@ -73,18 +73,38 @@ class NetworkBinderInterface {
 
 class NetworkMonitorInterface {
  public:
+  struct InterfaceInfo {
+    
+    AdapterType adapter_type;
+
+    
+    AdapterType underlying_type_for_vpn = ADAPTER_TYPE_UNKNOWN;
+
+    
+    NetworkPreference network_preference = NetworkPreference::NEUTRAL;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool available = true;
+  };
+
   NetworkMonitorInterface();
   virtual ~NetworkMonitorInterface();
 
   virtual void Start() = 0;
   virtual void Stop() = 0;
 
-  virtual AdapterType GetAdapterType(absl::string_view interface_name) = 0;
-  virtual AdapterType GetVpnUnderlyingAdapterType(
-      absl::string_view interface_name) = 0;
-
-  virtual NetworkPreference GetNetworkPreference(
-      absl::string_view interface_name) = 0;
+  
+  
+  
+  virtual InterfaceInfo GetInterfaceInfo(absl::string_view interface_name) = 0;
 
   
   
@@ -97,19 +117,6 @@ class NetworkMonitorInterface {
       const IPAddress& address,
       absl::string_view interface_name) {
     return NetworkBindingResult::NOT_IMPLEMENTED;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual bool IsAdapterAvailable(absl::string_view interface_name) {
-    return true;
   }
 
   void SetNetworksChangedCallback(std::function<void()> callback) {
