@@ -137,13 +137,12 @@ export function getSelectedLocation(state) {
 
 export const getSelectedSource = createSelector(
   getSelectedLocation,
-  getSourcesMap,
-  (selectedLocation, sourcesMap) => {
+  selectedLocation => {
     if (!selectedLocation) {
       return undefined;
     }
 
-    return sourcesMap.get(selectedLocation.sourceId);
+    return selectedLocation.source;
   }
 );
 

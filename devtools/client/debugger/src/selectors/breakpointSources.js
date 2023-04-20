@@ -3,62 +3,11 @@
 
 
 import { createSelector } from "reselect";
-import { getSelectedSource, getSourcesMap } from "./sources";
+import { getSelectedSource } from "./sources";
 import { getBreakpointsList } from "./breakpoints";
 import { getBlackBoxRanges } from "./source-blackbox";
 import { getFilename } from "../utils/source";
 import { getSelectedLocation } from "../utils/selected-location";
-import { sortSelectedBreakpoints } from "../utils/breakpoint";
-
-
-
-
-function _getBreakpointsForSource(visibleBreakpoints, source, selectedSource) {
-  return visibleBreakpoints.filter(
-    bp => getSelectedLocation(bp, selectedSource).sourceId == source.id
-  );
-}
-
-
-
-const _getSourcesForBreakpoints = (
-  breakpoints,
-  sourcesMap,
-  selectedSource,
-  blackBoxRanges
-) => {
-  const breakpointSourceIds = breakpoints.map(
-    breakpoint => getSelectedLocation(breakpoint, selectedSource).sourceId
-  );
-
-  const sources = [];
-  
-  
-  for (const sourceId of [...new Set(breakpointSourceIds)]) {
-    const source = sourcesMap.get(sourceId);
-
-    
-    
-    if (!source || blackBoxRanges[source.url]) {
-      continue;
-    }
-
-    const bps = _getBreakpointsForSource(breakpoints, source, selectedSource);
-
-    
-    if (bps.length === 0) {
-      continue;
-    }
-
-    sources.push({
-      source,
-      breakpoints: bps,
-      filename: getFilename(source),
-    });
-  }
-
-  return sources.sort((a, b) => a.filename.localeCompare(b.filename));
-};
 
 
 
@@ -68,26 +17,43 @@ const _getSourcesForBreakpoints = (
 
 export const getBreakpointSources = createSelector(
   getBreakpointsList,
-  getSourcesMap,
   getSelectedSource,
   getBlackBoxRanges,
-  (breakpoints, sourcesMap, selectedSource, blackBoxRanges) => {
+  (breakpoints, selectedSource, blackBoxRanges) => {
     const visibleBreakpoints = breakpoints.filter(
       bp =>
         !bp.options.hidden &&
         (bp.text || bp.originalText || bp.options.condition || bp.disabled)
     );
 
-    const sortedVisibleBreakpoints = sortSelectedBreakpoints(
-      visibleBreakpoints,
-      selectedSource
-    );
+    const sources = new Map();
+    for (const breakpoint of visibleBreakpoints) {
+      
+      
+      const location = getSelectedLocation(breakpoint, selectedSource);
+      const { source } = location;
 
-    return _getSourcesForBreakpoints(
-      sortedVisibleBreakpoints,
-      sourcesMap,
-      selectedSource,
-      blackBoxRanges
+      
+      if (blackBoxRanges[source.url]) {
+        continue;
+      }
+
+      
+      
+      if (!sources.has(source)) {
+        sources.set(source, {
+          source,
+          breakpoints: [breakpoint],
+          filename: getFilename(source),
+        });
+      } else {
+        sources.get(source).breakpoints.push(breakpoint);
+      }
+    }
+
+    
+    return [...sources.values()].sort((a, b) =>
+      a.filename.localeCompare(b.filename)
     );
   }
 );
