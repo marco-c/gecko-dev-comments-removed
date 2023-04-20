@@ -71,7 +71,7 @@ add_setup(async () => {
   
   
   Services.prefs.setBoolPref(
-    "browser.pinebuild.snapshots.relevancy.enabled",
+    "browser.places.snapshots.relevancy.enabled",
     false
   );
 
