@@ -171,42 +171,21 @@ add_task(async function dnr_feedback_apis_disabled_by_default() {
   });
 });
 
-
-add_task(async function dnr_restricted_to_mv3() {
-  let { messages } = await promiseConsoleOutput(async () => {
-    
-    
-    
-    ExtensionTestUtils.failOnSchemaWarnings(false);
-    await testAvailability({
-      allowDNRFeedback: true,
-      testExpectations: {
-        declarativeNetRequest_available: false,
-      },
-      manifest: {
-        manifest_version: 2,
-        permissions: [
-          "declarativeNetRequest",
-          "declarativeNetRequestFeedback",
-          "declarativeNetRequestWithHostAccess",
-        ],
-      },
-    });
-    ExtensionTestUtils.failOnSchemaWarnings(true);
-  });
-
-  AddonTestUtils.checkMessages(messages, {
-    expected: [
-      {
-        message: /Warning processing permissions: Error processing permissions.0: Value "declarativeNetRequest"/,
-      },
-      {
-        message: /Warning processing permissions: Error processing permissions.1: Value "declarativeNetRequestFeedback"/,
-      },
-      {
-        message: /Warning processing permissions: Error processing permissions.2: Value "declarativeNetRequestWithHostAccess"/,
-      },
-    ],
+add_task(async function dnr_available_in_mv2() {
+  await testAvailability({
+    allowDNRFeedback: true,
+    testExpectations: {
+      declarativeNetRequest_available: true,
+      testMatchOutcome_available: true,
+    },
+    manifest: {
+      manifest_version: 2,
+      permissions: [
+        "declarativeNetRequest",
+        "declarativeNetRequestFeedback",
+        "declarativeNetRequestWithHostAccess",
+      ],
+    },
   });
 });
 
