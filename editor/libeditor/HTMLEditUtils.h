@@ -1228,6 +1228,15 @@ class HTMLEditUtils final {
   
 
 
+
+
+  template <typename EditorDOMPointType>
+  static nsIContent* GetContentToPreserveInlineStyles(
+      const EditorDOMPointType& aPoint, const Element& aEditingHost);
+
+  
+
+
   enum class InvisibleWhiteSpaces {
     Ignore,    
                
