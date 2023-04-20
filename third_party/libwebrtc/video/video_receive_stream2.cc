@@ -665,11 +665,20 @@ int VideoReceiveStream2::GetBaseMinimumPlayoutDelayMs() const {
 }
 
 void VideoReceiveStream2::OnFrame(const VideoFrame& video_frame) {
+  source_tracker_.OnFrameDelivered(video_frame.packet_infos());
+  config_.renderer->OnFrame(video_frame);
+
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
   VideoFrameMetaData frame_meta(video_frame, clock_->CurrentTime());
-
-  
-  
-
   call_->worker_thread()->PostTask(
       SafeTask(task_safety_.flag(), [frame_meta, this]() {
         RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
@@ -685,8 +694,6 @@ void VideoReceiveStream2::OnFrame(const VideoFrame& video_frame) {
         stats_proxy_.OnRenderedFrame(frame_meta);
       }));
 
-  source_tracker_.OnFrameDelivered(video_frame.packet_infos());
-  config_.renderer->OnFrame(video_frame);
   webrtc::MutexLock lock(&pending_resolution_mutex_);
   if (pending_resolution_.has_value()) {
     if (!pending_resolution_->empty() &&
