@@ -517,10 +517,7 @@ void TransformStream::SetBackpressure(bool aBackpressure, ErrorResult& aRv) {
   }
 
   
-  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aRv);
-  if (aRv.Failed()) {
-    return;
-  }
+  RefPtr<Promise> promise = Promise::CreateInfallible(GetParentObject());
   mBackpressureChangePromise = promise;
 
   
@@ -657,10 +654,7 @@ already_AddRefed<TransformStream> TransformStream::Constructor(
 
   
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
-  RefPtr<Promise> startPromise = Promise::Create(global, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
+  RefPtr<Promise> startPromise = Promise::CreateInfallible(global);
 
   
   

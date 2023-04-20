@@ -255,10 +255,7 @@ already_AddRefed<Promise> ReadableStreamBYOBReader::Read(
   }
 
   
-  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
+  RefPtr<Promise> promise = Promise::CreateInfallible(GetParentObject());
 
   
   

@@ -941,10 +941,8 @@ already_AddRefed<Promise> ReadableStreamPipeTo(
   
 
   
-  RefPtr<Promise> promise = Promise::Create(aSource->GetParentObject(), aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
+  RefPtr<Promise> promise =
+      Promise::CreateInfallible(aSource->GetParentObject());
 
   
   RefPtr<PipeToPump> pump = new PipeToPump(
