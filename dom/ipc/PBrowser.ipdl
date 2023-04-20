@@ -171,6 +171,10 @@ struct PrintPreviewResultInfo
   
   
   bool? printLandscape;
+  
+  float? pageWidth;
+  
+  float? pageHeight;
 };
 
 

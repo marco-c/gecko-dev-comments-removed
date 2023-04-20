@@ -291,6 +291,10 @@ class nsPrintJob final : public nsIWebProgressListener,
 
   
   
+  mozilla::Maybe<nsSize> mMaybeCSSPageSize;
+
+  
+  
   
   bool mPreparingForPrint = false;
 

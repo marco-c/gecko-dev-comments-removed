@@ -264,6 +264,11 @@ interface nsIPrintSettings : nsISupports
   
 
 
+  [infallible] attribute boolean usePageRuleSizeAsPaperSize;
+
+  
+
+
 
 
 

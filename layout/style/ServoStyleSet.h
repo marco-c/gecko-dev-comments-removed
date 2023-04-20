@@ -26,6 +26,7 @@
 #include "nsIMemoryReporter.h"
 #include "nsTArray.h"
 #include "nsIMemoryReporter.h"
+#include "nsSize.h"
 
 namespace mozilla {
 enum class MediaFeatureChangeReason : uint16_t;
@@ -273,6 +274,11 @@ class ServoStyleSet {
   
   Maybe<StylePageSizeOrientation> GetDefaultPageSizeOrientation(
       const nsAtom* aFirstPageName);
+
+  
+  
+  
+  Maybe<nsSize> GetPageSizeForPageName(const nsAtom* aPageName);
 
   void AppendAllNonDocumentAuthorSheets(nsTArray<StyleSheet*>& aArray) const;
 
