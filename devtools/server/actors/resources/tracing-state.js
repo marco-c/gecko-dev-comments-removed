@@ -8,6 +8,14 @@ const {
   TYPES: { TRACING_STATE },
 } = require("resource://devtools/server/actors/resources/index.js");
 
+
+
+
+const {
+  addTracingListener,
+  removeTracingListener,
+} = require("resource://devtools/server/tracer/tracer.jsm");
+
 class TracingStateWatcher {
   
 
@@ -20,27 +28,28 @@ class TracingStateWatcher {
 
 
   async watch(targetActor, { onAvailable }) {
+    this.targetActor = targetActor;
     this.onAvailable = onAvailable;
 
-    
-    const tracerActor = targetActor.getTargetScopedActor("tracer");
-    if (!tracerActor || !tracerActor.isTracing()) {
-      return;
-    }
-
-    this.onTracingToggled(true, tracerActor.getLogMethod());
+    this.tracingListener = {
+      onTracingToggled: this.onTracingToggled.bind(this),
+    };
+    addTracingListener(this.tracingListener);
   }
 
   
 
 
-  destroy() {}
+  destroy() {
+    removeTracingListener(this.tracingListener);
+  }
 
   
   
   
-  
-  onTracingToggled(enabled, logMethod) {
+  onTracingToggled(enabled) {
+    const tracerActor = this.targetActor.getTargetScopedActor("tracer");
+    const logMethod = tracerActor?.getLogMethod() | "stdout";
     this.onAvailable([
       {
         resourceType: TRACING_STATE,

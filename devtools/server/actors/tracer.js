@@ -4,6 +4,16 @@
 
 "use strict";
 
+
+
+
+const {
+  startTracing,
+  stopTracing,
+  addTracingListener,
+  removeTracingListener,
+} = require("resource://devtools/server/tracer/tracer.jsm");
+
 const { Actor } = require("resource://devtools/shared/protocol.js");
 const { tracerSpec } = require("resource://devtools/shared/specs/tracer.js");
 
@@ -38,8 +48,6 @@ class TracerActor extends Actor {
       this.targetActor.actorID
     );
 
-    this.onEnterFrame = this.onEnterFrame.bind(this);
-
     this.throttledConsoleMessages = [];
     this.throttleLogMessages = throttle(
       this.flushConsoleMessages.bind(this),
@@ -47,8 +55,8 @@ class TracerActor extends Actor {
     );
   }
 
-  isTracing() {
-    return !!this.dbg;
+  destroy() {
+    this.stopTracing();
   }
 
   getLogMethod() {
@@ -57,120 +65,98 @@ class TracerActor extends Actor {
 
   startTracing(logMethod = LOG_METHODS.STDOUT) {
     this.logMethod = logMethod;
-
-    
-    
-    if (!this.isTracing()) {
-      
-      
-      this.dbg = this.targetActor.makeDebugger();
-
-      this.depth = 0;
-
-      if (this.logMethod == LOG_METHODS.STDOUT) {
-        dump("Start tracing JavaScript\n");
-      }
-      this.dbg.onEnterFrame = this.onEnterFrame;
-      this.dbg.enable();
-    }
-
-    const tracingStateWatcher = getResourceWatcher(
-      this.targetActor,
-      TYPES.TRACING_STATE
-    );
-    if (tracingStateWatcher) {
-      tracingStateWatcher.onTracingToggled(true, logMethod);
-    }
+    this.tracingListener = {
+      onTracingFrame: this.onTracingFrame.bind(this),
+      onTracingInfiniteLoop: this.onTracingInfiniteLoop.bind(this),
+    };
+    addTracingListener(this.tracingListener);
+    startTracing({
+      global: this.targetActor.window || this.targetActor.workerGlobal,
+    });
   }
 
   stopTracing() {
-    if (!this.isTracing()) {
+    if (!this.tracingListener) {
       return;
     }
-    if (this.logMethod == LOG_METHODS.STDOUT) {
-      dump("Stop tracing JavaScript\n");
-    }
-
-    this.dbg.onEnterFrame = undefined;
-    this.dbg.disable();
-    this.dbg = null;
-    this.depth = 0;
-
-    const tracingStateWatcher = getResourceWatcher(
-      this.targetActor,
-      TYPES.TRACING_STATE
-    );
-    if (tracingStateWatcher) {
-      tracingStateWatcher.onTracingToggled(false);
-    }
+    stopTracing();
+    removeTracingListener(this.tracingListener);
+    this.logMethod = null;
+    this.tracingListener = null;
   }
 
-  onEnterFrame(frame) {
+  onTracingInfiniteLoop() {
+    if (this.logMethod == LOG_METHODS.STDOUT) {
+      return true;
+    }
+    const consoleMessageWatcher = getResourceWatcher(
+      this.targetActor,
+      TYPES.CONSOLE_MESSAGE
+    );
+    if (!consoleMessageWatcher) {
+      return true;
+    }
+
+    const message =
+      "Looks like an infinite recursion? We stopped the JavaScript tracer, but code may still be running!";
+    consoleMessageWatcher.emitMessages([
+      {
+        arguments: [message],
+        styles: [],
+        level: "logTrace",
+        chromeContext: this.isChromeContext,
+        timeStamp: ChromeUtils.dateNow(),
+      },
+    ]);
+
+    return false;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  onTracingFrame({ frame, depth, formatedDisplayName, prefix }) {
+    if (this.logMethod == LOG_METHODS.STDOUT) {
+      
+      return true;
+    }
+
+    const { script } = frame;
+    const { lineNumber, columnNumber } = script.getOffsetMetadata(frame.offset);
+
+    const args = [
+      prefix + "—".repeat(depth + 1),
+      frame.implementation,
+      "⟶",
+      formatedDisplayName,
+    ];
+
     
-    if (!this.dbg) {
-      return;
-    }
-    try {
-      if (this.depth == 100) {
-        const message =
-          "Looks like an infinite recursion? We stopped the JavaScript tracer, but code may still be running!";
-        if (this.logMethod == LOG_METHODS.STDOUT) {
-          dump(message + "\n");
-        } else if (this.logMethod == LOG_METHODS.CONSOLE) {
-          this.throttledConsoleMessages.push({
-            arguments: [message],
-            styles: [],
-            level: "logTrace",
-            chromeContext: this.isChromeContext,
-            timeStamp: ChromeUtils.dateNow(),
-          });
-          this.throttleLogMessages();
-        }
-        this.stopTracing();
-        return;
-      }
+    this.throttledConsoleMessages.push({
+      filename: script.source.url,
+      lineNumber,
+      columnNumber,
+      arguments: args,
+      styles: CONSOLE_ARGS_STYLES,
+      level: "logTrace",
+      chromeContext: this.isChromeContext,
+      sourceId: script.source.id,
+      timeStamp: ChromeUtils.dateNow(),
+    });
+    this.throttleLogMessages();
 
-      const { script } = frame;
-      const { lineNumber, columnNumber } = script.getOffsetMetadata(
-        frame.offset
-      );
-
-      if (this.logMethod == LOG_METHODS.STDOUT) {
-        const padding = "—".repeat(this.depth + 1);
-        const message = `${padding}[${frame.implementation}]—> ${
-          script.source.url
-        } @ ${lineNumber}:${columnNumber} - ${formatDisplayName(frame)}`;
-        dump(message + "\n");
-      } else if (this.logMethod == LOG_METHODS.CONSOLE) {
-        const args = [
-          "—".repeat(this.depth + 1),
-          frame.implementation,
-          "⟶",
-          formatDisplayName(frame),
-        ];
-
-        
-        this.throttledConsoleMessages.push({
-          filename: script.source.url,
-          lineNumber,
-          columnNumber,
-          arguments: args,
-          styles: CONSOLE_ARGS_STYLES,
-          level: "logTrace",
-          chromeContext: this.isChromeContext,
-          timeStamp: ChromeUtils.dateNow(),
-          sourceId: script.source.id,
-        });
-        this.throttleLogMessages();
-      }
-
-      this.depth++;
-      frame.onPop = () => {
-        this.depth--;
-      };
-    } catch (e) {
-      console.error("Exception while tracing javascript", e);
-    }
+    return false;
   }
 
   
@@ -193,21 +179,3 @@ class TracerActor extends Actor {
   }
 }
 exports.TracerActor = TracerActor;
-
-
-
-
-
-
-
-
-
-function formatDisplayName(frame) {
-  if (frame.type === "call") {
-    const callee = frame.callee;
-    
-    return "λ " + (callee.name || callee.displayName || "anonymous");
-  }
-
-  return `(${frame.type})`;
-}
