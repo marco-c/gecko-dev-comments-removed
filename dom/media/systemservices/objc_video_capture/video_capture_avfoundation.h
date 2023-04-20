@@ -11,13 +11,21 @@
 
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
+#include "MediaEventSource.h"
 #include "modules/video_capture/video_capture_impl.h"
 #include "mozilla/Maybe.h"
 #include "PerformanceRecorder.h"
 
-@class VideoCaptureAdapter;
+@interface VideoCaptureAdapter : NSObject <RTCVideoCapturerDelegate> {
+ @public
+  mozilla::MediaEventProducerExc<__strong RTCVideoFrame* _Nullable> frameEvent;
+}
+@end
 
 namespace webrtc::videocapturemodule {
+
+
+
 
 
 
@@ -34,19 +42,16 @@ class VideoCaptureAvFoundation : public VideoCaptureImpl {
 
   
   
-  int32_t StartCapture(const VideoCaptureCapability& aCapability) MOZ_EXCLUDES(api_lock_) override;
+  int32_t StartCapture(const VideoCaptureCapability& aCapability) override;
   
-  int32_t StopCapture() MOZ_EXCLUDES(api_lock_) override;
-  bool CaptureStarted() MOZ_EXCLUDES(api_lock_) override;
+  int32_t StopCapture() override;
+  bool CaptureStarted() override;
   int32_t CaptureSettings(VideoCaptureCapability& aSettings) override;
 
   
-  int32_t OnFrame(__strong RTCVideoFrame* _Nonnull aFrame) MOZ_EXCLUDES(api_lock_);
+  void OnFrame(__strong RTCVideoFrame* _Nonnull aFrame);
 
-  void SetTrackingId(uint32_t aTrackingIdProcId) MOZ_EXCLUDES(api_lock_) override;
-
-  
-  void MaybeRegisterCallbackThread();
+  void SetTrackingId(uint32_t aTrackingIdProcId) override;
 
  private:
   
@@ -55,25 +60,20 @@ class VideoCaptureAvFoundation : public VideoCaptureImpl {
   VideoCaptureAdapter* _Nonnull const mAdapter RTC_GUARDED_BY(mChecker);
   RTCCameraVideoCapturer* _Nonnull const mCapturer RTC_GUARDED_BY(mChecker);
   
+  mozilla::Maybe<VideoCaptureCapability> mCapability RTC_GUARDED_BY(mChecker);
   
-  mozilla::Maybe<VideoCaptureCapability> mCapability MOZ_GUARDED_BY(api_lock_);
+  mozilla::Maybe<mozilla::CaptureStage::ImageType> mImageType RTC_GUARDED_BY(mChecker);
   
-  mozilla::Maybe<mozilla::CaptureStage::ImageType> mImageType MOZ_GUARDED_BY(api_lock_);
+  mozilla::Maybe<mozilla::TrackingId> mTrackingId RTC_GUARDED_BY(mChecker);
   
-  mozilla::Maybe<mozilla::TrackingId> mTrackingId MOZ_GUARDED_BY(api_lock_);
+  mozilla::MediaEventListener mFrameListener RTC_GUARDED_BY(mChecker);
   
-  mozilla::PerformanceRecorderMulti<mozilla::CaptureStage> mCaptureRecorder;
-  mozilla::PerformanceRecorderMulti<mozilla::CopyVideoStage> mConversionRecorder;
-  std::atomic<ProfilerThreadId> mCallbackThreadId;
+  mozilla::PerformanceRecorderMulti<mozilla::CaptureStage> mCaptureRecorder
+      RTC_GUARDED_BY(mChecker);
+  mozilla::PerformanceRecorderMulti<mozilla::CopyVideoStage> mConversionRecorder
+      RTC_GUARDED_BY(mChecker);
 };
 
 }  
-
-@interface VideoCaptureAdapter : NSObject <RTCVideoCapturerDelegate> {
-  webrtc::Mutex _mutex;
-  webrtc::videocapturemodule::VideoCaptureAvFoundation* _Nullable _capturer RTC_GUARDED_BY(_mutex);
-}
-- (void)setCapturer:(webrtc::videocapturemodule::VideoCaptureAvFoundation* _Nullable)capturer;
-@end
 
 #endif
