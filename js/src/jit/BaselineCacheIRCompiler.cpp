@@ -2004,6 +2004,8 @@ static ICStubSpace* StubSpaceForStub(bool makesGCCalls, JSScript* script,
   return script->zone()->jitZone()->optimizedStubSpace();
 }
 
+static const uint32_t MaxFoldedShapes = 16;
+
 bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
                               JSScript* script, ICScript* icScript) {
   ICEntry* icEntry = icScript->icEntryForStub(fallback);
@@ -2171,6 +2173,104 @@ bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
     return false;
   }
   MOZ_ASSERT(result == ICAttachResult::Attached);
+
+  fallback->setHasFoldedStub();
+  return true;
+}
+
+static bool AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
+                            ICScript* icScript, ICFallbackStub* fallback) {
+  ICEntry* icEntry = icScript->icEntryForStub(fallback);
+  ICStub* entryStub = icEntry->firstStub();
+
+  
+  if (entryStub == fallback) {
+    return false;
+  }
+  ICCacheIRStub* stub = entryStub->toCacheIRStub();
+  if (!stub->next()->isFallback()) {
+    return false;
+  }
+
+  const CacheIRStubInfo* stubInfo = stub->stubInfo();
+  const uint8_t* stubData = stub->stubDataStart();
+
+  Maybe<uint32_t> shapeFieldOffset;
+  RootedValue newShape(cx);
+  Rooted<ListObject*> foldedShapes(cx);
+
+  CacheIRReader stubReader(stubInfo);
+  CacheIRReader newReader(writer);
+  while (newReader.more() && stubReader.more()) {
+    CacheOp newOp = newReader.readOp();
+    CacheOp stubOp = stubReader.readOp();
+    switch (stubOp) {
+      case CacheOp::GuardMultipleShapes: {
+        
+        if (newOp != CacheOp::GuardShape) {
+          return false;
+        }
+
+        
+        if (newReader.objOperandId() != stubReader.objOperandId()) {
+          return false;
+        }
+
+        
+        uint32_t newShapeOffset = newReader.stubOffset();
+        uint32_t stubShapesOffset = stubReader.stubOffset();
+        if (newShapeOffset != stubShapesOffset) {
+          return false;
+        }
+        MOZ_ASSERT(shapeFieldOffset.isNothing());
+        shapeFieldOffset.emplace(newShapeOffset);
+
+        
+        StubField shapeField =
+            writer.readStubField(newShapeOffset, StubField::Type::Shape);
+        newShape =
+            PrivateGCThingValue(reinterpret_cast<Shape*>(shapeField.asWord()));
+
+        
+        JSObject* shapeList =
+            stubInfo->getStubField<JSObject*>(stub, stubShapesOffset);
+        foldedShapes = &shapeList->as<ListObject>();
+        break;
+      }
+      default: {
+        
+        if (newOp != stubOp) {
+          return false;
+        }
+
+        
+        uint32_t argLength = CacheIROpInfos[size_t(newOp)].argLength;
+        for (uint32_t i = 0; i < argLength; i++) {
+          if (newReader.readByte() != stubReader.readByte()) {
+            return false;
+          }
+        }
+      }
+    }
+  }
+
+  MOZ_ASSERT(shapeFieldOffset.isSome());
+
+  
+  if (!writer.stubDataEqualsIgnoring(stubData, *shapeFieldOffset)) {
+    return false;
+  }
+
+  
+  if (foldedShapes->length() == MaxFoldedShapes) {
+    return false;
+  }
+
+  if (!foldedShapes->append(cx, newShape)) {
+    cx->recoverFromOutOfMemory();
+    return false;
+  }
+
   return true;
 }
 
@@ -2269,6 +2369,18 @@ ICAttachResult js::jit::AttachBaselineCacheIRStub(
             outerScript->filename(), outerScript->lineno(),
             outerScript->column());
     return ICAttachResult::DuplicateStub;
+  }
+
+  
+  if (stub->hasFoldedStub() && AddToFoldedStub(cx, writer, icScript, stub)) {
+    
+    
+    
+    
+    
+    
+    stub->resetEnteredCount();
+    return ICAttachResult::Attached;
   }
 
   
