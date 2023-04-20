@@ -21,6 +21,7 @@ from wptserve.utils import isomorphic_decode, isomorphic_encode
 
 
 
+
 def main(request, response):
     
     
@@ -60,6 +61,24 @@ def main(request, response):
             else:
                 server_state["trackedRequests"].append(request.url)
 
+            stash.put(uuid, server_state)
+            return simple_response(request, response, 200, b"OK", b"")
+
+        
+        
+        
+        if dispatch == b"track_post":
+            contentType = request.headers.get(b"Content-Type", b"missing")
+            if request.method != "POST":
+                server_state["errors"].append(
+                    request.url + " has wrong method: " + request.method)
+            elif not contentType.startswith(b"text/plain"):
+                server_state["errors"].append(
+                    request.url + " has wrong Content-Type: " +
+                    contentType.decode("utf-8"))
+            else:
+                server_state["trackedRequests"].append(
+                    request.url + ", body: " + request.body.decode("utf-8"))
             stash.put(uuid, server_state)
             return simple_response(request, response, 200, b"OK", b"")
 

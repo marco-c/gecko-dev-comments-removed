@@ -32,6 +32,17 @@ function createSellerReportUrl(uuid, id = '1') {
 
 
 
+function createBidderBeaconUrl(uuid, id = '1') {
+  return createTrackerUrl(window.location.origin, uuid, `track_post`,
+                          `bidder_beacon_${id}`);
+}
+function createSellerBeaconUrl(uuid, id = '1') {
+  return createTrackerUrl(window.location.origin, uuid, `track_post`,
+                          `seller_beacon_${id}`);
+}
+
+
+
 
 function generateUuid(test) {
   let uuid = token();
@@ -43,6 +54,9 @@ function generateUuid(test) {
   });
   return uuid;
 }
+
+
+
 
 
 
@@ -130,8 +144,11 @@ function createDecisionScriptUrl(uuid, params = {}) {
 
 
 
-function createRenderUrl(uuid) {
-  let url = new URL(`${BASE_URL}resources/fenced_frame.sub.html`);
+
+function createRenderUrl(uuid, script) {
+  let url = new URL(`${BASE_URL}resources/fenced-frame.sub.py`);
+  if (script)
+    url.searchParams.append('script', script);
   url.searchParams.append('uuid', uuid);
   return url.toString();
 }
@@ -234,9 +251,12 @@ async function runBasicFledgeTestExpectingNoWinner(test, testConfig = {}) {
 
 
 
+
+
+
 async function runReportTest(test, uuid, reportResultSuccessCondition,
                              reportResult, reportWinSuccessCondition, reportWin,
-                             expectedReportUrls) {
+                             expectedReportUrls, renderUrlOverride) {
   if (reportResultSuccessCondition) {
     reportResult = `if (!(${reportResultSuccessCondition})) {
                       sendReportTo('${createSellerReportUrl(uuid, 'error')}');
@@ -265,6 +285,8 @@ async function runReportTest(test, uuid, reportResultSuccessCondition,
 
   let interestGroupOverrides =
       { biddingLogicUrl: createBiddingScriptUrl(biddingScriptUrlParams) };
+  if (renderUrlOverride)
+    interestGroupOverrides.ads = [{renderUrl: renderUrlOverride}]
 
   await joinInterestGroup(test, uuid, interestGroupOverrides);
   await runBasicFledgeAuctionAndNavigate(
