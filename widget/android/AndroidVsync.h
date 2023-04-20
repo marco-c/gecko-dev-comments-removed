@@ -35,6 +35,10 @@ class AndroidVsync final : public SupportsThreadSafeWeakPtr<AndroidVsync> {
    public:
     
     virtual void OnVsync(const TimeStamp& aTimeStamp) = 0;
+    
+    
+    virtual void Dispose() {}
+    virtual ~Observer() = default;
   };
 
   

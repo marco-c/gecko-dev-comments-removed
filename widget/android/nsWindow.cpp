@@ -186,8 +186,7 @@ using WindowPtr = jni::NativeWeakPtr<GeckoViewSupport>;
 
 
 class NPZCSupport final
-    : public java::PanZoomController::NativeProvider::Natives<NPZCSupport>,
-      public AndroidVsync::Observer {
+    : public java::PanZoomController::NativeProvider::Natives<NPZCSupport> {
   WindowPtr mWindow;
   java::PanZoomController::NativeProvider::WeakRef mNPZC;
 
@@ -253,6 +252,38 @@ class NPZCSupport final
     bool IsUIEvent() const override { return true; }
   };
 
+  class MOZ_HEAP_CLASS Observer final : public AndroidVsync::Observer {
+   public:
+    static Observer* Create(jni::NativeWeakPtr<NPZCSupport>&& aNPZCSupport) {
+      return new Observer(std::move(aNPZCSupport));
+    }
+
+   private:
+    
+    
+    explicit Observer(jni::NativeWeakPtr<NPZCSupport>&& aNPZCSupport)
+        : mNPZCSupport(std::move(aNPZCSupport)) {}
+
+    void OnVsync(const TimeStamp& aTimeStamp) override {
+      auto accessor = mNPZCSupport.Access();
+
+      if (!accessor) {
+        return;
+      }
+
+      accessor->mTouchResampler.NotifyFrame(
+          aTimeStamp -
+          TimeDuration::FromMilliseconds(kTouchResampleVsyncAdjustMs));
+      accessor->ConsumeMotionEventsFromResampler();
+    }
+
+    void Dispose() override { delete this; }
+
+    jni::NativeWeakPtr<NPZCSupport> mNPZCSupport;
+  };
+
+  Observer* mObserver = nullptr;
+
   template <typename Lambda>
   void PostInputEvent(Lambda&& aLambda) {
     
@@ -281,7 +312,7 @@ class NPZCSupport final
   ~NPZCSupport() {
     if (mListeningToVsync) {
       MOZ_RELEASE_ASSERT(mAndroidVsync);
-      mAndroidVsync->UnregisterObserver(this, AndroidVsync::INPUT);
+      mAndroidVsync->UnregisterObserver(mObserver, AndroidVsync::INPUT);
       mListeningToVsync = false;
     }
   }
@@ -769,17 +800,21 @@ class NPZCSupport final
   void RegisterOrUnregisterForVsync(bool aNeedVsync) {
     MOZ_RELEASE_ASSERT(mAndroidVsync);
     if (aNeedVsync && !mListeningToVsync) {
-      mAndroidVsync->RegisterObserver(this, AndroidVsync::INPUT);
+      MOZ_ASSERT(!mObserver);
+      auto win = mWindow.Access();
+      if (!win) {
+        return;
+      }
+      nsWindow* gkWindow = win->GetNsWindow();
+      jni::NativeWeakPtr<NPZCSupport> weakPtrToThis =
+          gkWindow->GetNPZCSupportWeakPtr();
+      mObserver = Observer::Create(std::move(weakPtrToThis));
+      mAndroidVsync->RegisterObserver(mObserver, AndroidVsync::INPUT);
     } else if (!aNeedVsync && mListeningToVsync) {
-      mAndroidVsync->UnregisterObserver(this, AndroidVsync::INPUT);
+      mAndroidVsync->UnregisterObserver(mObserver, AndroidVsync::INPUT);
+      mObserver = nullptr;
     }
     mListeningToVsync = aNeedVsync;
-  }
-
-  void OnVsync(const TimeStamp& aTimeStamp) override {
-    mTouchResampler.NotifyFrame(aTimeStamp - TimeDuration::FromMilliseconds(
-                                                 kTouchResampleVsyncAdjustMs));
-    ConsumeMotionEventsFromResampler();
   }
 
   void ConsumeMotionEventsFromResampler() {
@@ -887,6 +922,7 @@ class LayerViewSupport final
   int32_t mY;
   int32_t mWidth;
   int32_t mHeight;
+  
   
   
   RefPtr<UiCompositorControllerChild> mUiCompositorControllerChild;
@@ -1038,6 +1074,7 @@ class LayerViewSupport final
     mUiCompositorControllerChild = nullptr;
 
     if (mSurfaceControl) {
+      
       
       
       mSurface = nullptr;
@@ -1467,8 +1504,8 @@ class LayerViewSupport final
         } else {
           result->CompleteExceptionally(
               java::sdk::IllegalStateException::New(
-                  "Failed to create flipped snapshot surface (probably out of "
-                  "memory)")
+                  "Failed to create flipped snapshot surface (probably out "
+                  "of memory)")
                   .Cast<jni::Throwable>());
         }
       } else {
@@ -2925,6 +2962,10 @@ void nsWindow::UpdateSafeAreaInsets(const ScreenIntMargin& aSafeAreaInsets) {
   if (mAttachedWidgetListener) {
     mAttachedWidgetListener->SafeAreaInsetsChanged(aSafeAreaInsets);
   }
+}
+
+jni::NativeWeakPtr<NPZCSupport> nsWindow::GetNPZCSupportWeakPtr() {
+  return mNPZCSupport;
 }
 
 already_AddRefed<nsIWidget> nsIWidget::CreateTopLevelWindow() {
