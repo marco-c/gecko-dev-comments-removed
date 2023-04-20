@@ -221,6 +221,11 @@ class StunMessage {
   IntegrityStatus ValidateMessageIntegrity(const std::string& password);
 
   
+  
+  
+  IntegrityStatus RevalidateMessageIntegrity(const std::string& password);
+
+  
   IntegrityStatus integrity() const { return integrity_; }
 
   

@@ -107,11 +107,30 @@ bool StunRequestManager::CheckResponse(StunMessage* msg) {
   
   
   
-  bool skip_integrity_checking = false;
-  if (request->msg()->integrity() == StunMessage::IntegrityStatus::kNotSet) {
-    skip_integrity_checking = true;
+  bool skip_integrity_checking =
+      (request->msg()->integrity() == StunMessage::IntegrityStatus::kNotSet);
+  if (skip_integrity_checking) {
+    
+    
+    RTC_DLOG(LS_ERROR)
+        << "CheckResponse called on a passwordless request. Fix test!";
   } else {
-    msg->ValidateMessageIntegrity(request->msg()->password());
+    if (msg->integrity() == StunMessage::IntegrityStatus::kNotSet) {
+      
+      msg->ValidateMessageIntegrity(request->msg()->password());
+    } else if (msg->integrity() == StunMessage::IntegrityStatus::kIntegrityOk &&
+               msg->password() == request->msg()->password()) {
+      
+      
+    } else if (msg->integrity() ==
+               StunMessage::IntegrityStatus::kIntegrityBad) {
+      
+      
+      
+      msg->RevalidateMessageIntegrity(request->msg()->password());
+    } else {
+      RTC_CHECK_NOTREACHED();
+    }
   }
 
   bool success = true;
