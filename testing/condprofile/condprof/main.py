@@ -3,8 +3,6 @@
 
 """ Script that launches profiles creation.
 """
-from __future__ import absolute_import
-
 import argparse
 import os
 import sys

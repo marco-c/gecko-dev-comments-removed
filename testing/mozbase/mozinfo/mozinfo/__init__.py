@@ -3,8 +3,6 @@
 
 
 
-from __future__ import absolute_import
-
 """
 interface to transform introspected system information to a format palatable to
 Mozilla

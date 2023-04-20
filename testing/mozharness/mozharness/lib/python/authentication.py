@@ -5,8 +5,6 @@
 
 
 """module for http authentication operations"""
-from __future__ import absolute_import, print_function
-
 import getpass
 import os
 

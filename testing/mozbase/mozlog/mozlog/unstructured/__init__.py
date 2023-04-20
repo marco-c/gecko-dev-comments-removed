@@ -3,8 +3,6 @@
 
 
 
-from __future__ import absolute_import
-
 from .logger import *
 from .loggingmixin import LoggingMixin
 from .loglistener import LogMessageServer

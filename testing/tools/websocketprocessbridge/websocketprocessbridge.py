@@ -3,8 +3,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 from twisted.internet import protocol, reactor
 from twisted.internet.task import LoopingCall
 from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory

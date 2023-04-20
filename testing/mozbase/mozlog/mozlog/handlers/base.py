@@ -3,8 +3,6 @@
 
 
 
-from __future__ import absolute_import
-
 import codecs
 import locale
 from threading import Lock

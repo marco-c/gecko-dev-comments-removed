@@ -1,8 +1,6 @@
 
 
 
-from __future__ import absolute_import
-
 from mozperftest.test.browsertime import add_options
 from mozperftest.test.browsertime.runner import NodeException
 

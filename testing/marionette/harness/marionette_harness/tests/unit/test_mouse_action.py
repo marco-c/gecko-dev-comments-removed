@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, division
-
 from six.moves.urllib.parse import quote
 
 from marionette_driver import By, errors, Wait

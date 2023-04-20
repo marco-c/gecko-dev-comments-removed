@@ -3,8 +3,6 @@
 
 
 
-from __future__ import absolute_import
-
 import os
 from collections.abc import Iterable
 from distutils.util import strtobool

@@ -3,8 +3,6 @@
 
 
 
-from __future__ import absolute_import
-
 import mozrunner.base
 import mozrunner.devices
 import mozrunner.utils

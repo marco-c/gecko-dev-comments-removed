@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 from mozproxy.backends.mitm.android import MitmproxyAndroid
 from mozproxy.backends.mitm.desktop import MitmproxyDesktop
 

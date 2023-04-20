@@ -3,7 +3,5 @@
 
 
 
-from __future__ import absolute_import
-
 from .android import WebExtensionAndroid
 from .desktop import WebExtensionDesktopChrome, WebExtensionFirefox

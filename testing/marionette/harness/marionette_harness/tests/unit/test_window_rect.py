@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 from marionette_driver.errors import InvalidArgumentException
 from marionette_harness import MarionetteTestCase
 

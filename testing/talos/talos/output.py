@@ -3,8 +3,6 @@
 
 
 """output formats for Talos"""
-from __future__ import absolute_import, division
-
 
 import simplejson as json
 from mozlog import get_proxy_logger

@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 
 class MessageHandler(object):
     """A message handler providing message handling facilities to

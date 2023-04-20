@@ -3,8 +3,6 @@
 
 
 
-from __future__ import absolute_import
-
 from .browser import BlinkRuntimeRunner, GeckoRuntimeRunner
 from .device import DeviceRunner, FennecRunner
 from .runner import BaseRunner

@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 import contextlib
 
 from tempfile import NamedTemporaryFile as tempfile
@@ -18,7 +16,7 @@ from marionette_harness import MarionetteTestCase, skip
 
 single = "data:text/html,{}".format(quote("<input type=file>"))
 multiple = "data:text/html,{}".format(quote("<input type=file multiple>"))
-upload = lambda url: "data:text/html,{}".format(
+def upload(url): return "data:text/html,{}".format(
     quote(
         """
     <form action='{}' method=post enctype='multipart/form-data'>

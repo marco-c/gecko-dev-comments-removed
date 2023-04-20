@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, division
-
 import functools
 from collections import deque
 from functools import reduce

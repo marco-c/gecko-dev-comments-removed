@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 from mozrunner.devices import emulator_battery, emulator_geo, emulator_screen
 
 from .base import Device

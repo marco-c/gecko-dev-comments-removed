@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 from marionette_driver import errors
 from marionette_driver.wait import Wait
 from marionette_harness import (

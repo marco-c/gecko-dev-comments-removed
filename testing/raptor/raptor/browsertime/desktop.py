@@ -4,8 +4,6 @@
 
 
 
-from __future__ import absolute_import
-
 from logger.logger import RaptorLogger
 from perftest import PerftestDesktop
 

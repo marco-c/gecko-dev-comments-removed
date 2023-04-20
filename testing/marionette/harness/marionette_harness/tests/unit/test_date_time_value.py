@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 from datetime import datetime
 
 from six.moves.urllib.parse import quote

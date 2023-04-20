@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 import os
 import posixpath
 from abc import ABCMeta, abstractmethod

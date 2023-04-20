@@ -1,8 +1,6 @@
 
 
 
-from __future__ import absolute_import
-
 import pprint
 import signal
 import subprocess

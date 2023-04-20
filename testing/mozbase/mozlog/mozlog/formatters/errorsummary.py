@@ -3,8 +3,6 @@
 
 
 
-from __future__ import absolute_import
-
 import json
 from collections import defaultdict
 

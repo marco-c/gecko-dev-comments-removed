@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 from .errorsummary import ErrorSummaryFormatter
 from .grouping import GroupingFormatter
 from .html import HTMLFormatter

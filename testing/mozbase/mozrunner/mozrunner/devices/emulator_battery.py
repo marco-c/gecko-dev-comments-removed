@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, division
-
 
 class EmulatorBattery(object):
     def __init__(self, emulator):

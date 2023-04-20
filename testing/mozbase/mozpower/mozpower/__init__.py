@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 from .intel_power_gadget import (
     IPGEmptyFileError,
     IPGMissingOutputFileError,

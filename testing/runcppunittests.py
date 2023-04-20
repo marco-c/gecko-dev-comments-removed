@@ -4,8 +4,6 @@
 
 
 
-from __future__ import absolute_import, print_function, with_statement
-
 import os
 import sys
 from optparse import OptionParser

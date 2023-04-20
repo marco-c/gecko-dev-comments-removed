@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 from threading import Thread
 
 from .structuredlog import StructuredLogger, get_default_logger

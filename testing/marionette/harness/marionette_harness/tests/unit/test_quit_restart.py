@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 import sys
 import unittest
 from urllib.parse import quote

@@ -2,6 +2,4 @@
 
 
 
-from __future__ import absolute_import
-
 from firefox_ui_harness.arguments.base import FirefoxUIArguments

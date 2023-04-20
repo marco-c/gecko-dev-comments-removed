@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 from mozlog.handlers.messagehandler import MessageHandler
 
 from ..reader import LogHandler

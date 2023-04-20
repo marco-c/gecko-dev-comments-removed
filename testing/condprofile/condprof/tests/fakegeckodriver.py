@@ -1,6 +1,4 @@
 
-from __future__ import absolute_import
-
 import argparse
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer

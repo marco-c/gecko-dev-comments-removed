@@ -5,8 +5,6 @@
 
 
 
-from __future__ import absolute_import, division
-
 import re
 from operator import itemgetter
 

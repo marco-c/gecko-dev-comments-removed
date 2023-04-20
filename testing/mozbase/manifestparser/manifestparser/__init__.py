@@ -3,8 +3,6 @@
 
 
 
-from __future__ import absolute_import
-
 from .expression import *
 from .ini import *
 from .manifestparser import *
