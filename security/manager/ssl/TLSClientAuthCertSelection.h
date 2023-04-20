@@ -7,9 +7,10 @@
 #ifndef SECURITY_MANAGER_SSL_TLSCLIENTAUTHCERTSELECTION_H_
 #define SECURITY_MANAGER_SSL_TLSCLIENTAUTHCERTSELECTION_H_
 
+#include "NSSSocketControl.h"
 #include "nsIX509Cert.h"
-#include "ssl.h"
 #include "nsNSSIOLayer.h"
+#include "ssl.h"
 
 
 
@@ -41,13 +42,13 @@ class ClientAuthCertificateSelectedBase : public mozilla::Runnable {
 
 class ClientAuthCertificateSelected : public ClientAuthCertificateSelectedBase {
  public:
-  explicit ClientAuthCertificateSelected(nsNSSSocketInfo* socketInfo)
+  explicit ClientAuthCertificateSelected(NSSSocketControl* socketInfo)
       : mSocketInfo(socketInfo) {}
 
   NS_IMETHOD Run() override;
 
  private:
-  RefPtr<nsNSSSocketInfo> mSocketInfo;
+  RefPtr<NSSSocketControl> mSocketInfo;
 };
 
 #endif  
