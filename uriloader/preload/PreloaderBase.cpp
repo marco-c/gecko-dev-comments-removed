@@ -8,11 +8,10 @@
 #include "mozilla/Telemetry.h"
 #include "nsContentUtils.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
-#include "nsIHttpChannel.h"
+#include "nsIChannel.h"
 #include "nsILoadGroup.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIRedirectResultListener.h"
-#include "nsNetUtil.h"
 
 
 
