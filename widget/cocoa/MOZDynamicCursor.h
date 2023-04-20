@@ -2,14 +2,20 @@
 
 
 
-#ifndef nsCursorManager_h_
-#define nsCursorManager_h_
+#ifndef MOZDynamicCursor_h_
+#define MOZDynamicCursor_h_
 
 #import <Cocoa/Cocoa.h>
 
 #include "nsIWidget.h"
 
-@interface nsCursorManager : NSObject {
+
+
+
+
+
+
+@interface MOZDynamicCursor : NSCursor {
  @private
   NSMutableDictionary* mCursors;
   NSCursor* mCurrentCursor;
@@ -25,13 +31,7 @@
 
 - (void)setNonCustomCursor:(const nsIWidget::Cursor&)aCursor;
 
-+ (nsCursorManager*)sharedInstance;
-@end
-
-@interface NSCursor (Undocumented)
-
-
-+ (NSCursor*)busyButClickableCursor;
++ (MOZDynamicCursor*)sharedInstance;
 @end
 
 #endif  
