@@ -81,42 +81,53 @@ static const Float BOX_BORDER_OPACITY = 0.5;
 
 #ifndef MOZ_GFX_OPTIMIZE_MOBILE
 
-static RefPtr<DrawTarget> gGlyphDrawTarget;
-static RefPtr<SourceSurface> gGlyphMask;
-static RefPtr<SourceSurface> gGlyphAtlas;
-static DeviceColor gGlyphColor;
+class GlyphAtlas {
+ public:
+  GlyphAtlas(RefPtr<SourceSurface>&& aSurface, const DeviceColor& aColor)
+      : mSurface(std::move(aSurface)), mColor(aColor) {}
+  ~GlyphAtlas() = default;
 
-
-
-
-static bool MakeGlyphAtlas(const DeviceColor& aColor) {
-  gGlyphAtlas = nullptr;
-  if (!gGlyphDrawTarget) {
-    gGlyphDrawTarget =
-        gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
-            IntSize(MINIFONT_WIDTH * 16, MINIFONT_HEIGHT),
-            SurfaceFormat::B8G8R8A8);
-    if (!gGlyphDrawTarget) {
-      return false;
-    }
+  already_AddRefed<SourceSurface> Surface() const {
+    RefPtr surface = mSurface;
+    return surface.forget();
   }
-  if (!gGlyphMask) {
-    gGlyphMask = gGlyphDrawTarget->CreateSourceSurfaceFromData(
-        const_cast<uint8_t*>(gMiniFontData),
-        IntSize(MINIFONT_WIDTH * 16, MINIFONT_HEIGHT), MINIFONT_WIDTH * 16,
-        SurfaceFormat::A8);
-    if (!gGlyphMask) {
-      return false;
-    }
+  DeviceColor Color() const { return mColor; }
+
+ private:
+  RefPtr<SourceSurface> mSurface;
+  DeviceColor mColor;
+};
+
+
+
+static std::atomic<GlyphAtlas*> gGlyphAtlas;
+
+
+
+
+static GlyphAtlas* MakeGlyphAtlas(const DeviceColor& aColor) {
+  RefPtr<DrawTarget> glyphDrawTarget =
+      gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
+          IntSize(MINIFONT_WIDTH * 16, MINIFONT_HEIGHT),
+          SurfaceFormat::B8G8R8A8);
+  if (!glyphDrawTarget) {
+    return nullptr;
   }
-  gGlyphDrawTarget->MaskSurface(ColorPattern(aColor), gGlyphMask, Point(0, 0),
-                                DrawOptions(1.0f, CompositionOp::OP_SOURCE));
-  gGlyphAtlas = gGlyphDrawTarget->Snapshot();
-  if (!gGlyphAtlas) {
-    return false;
+  RefPtr<SourceSurface> glyphMask =
+      glyphDrawTarget->CreateSourceSurfaceFromData(
+          const_cast<uint8_t*>(gMiniFontData),
+          IntSize(MINIFONT_WIDTH * 16, MINIFONT_HEIGHT), MINIFONT_WIDTH * 16,
+          SurfaceFormat::A8);
+  if (!glyphMask) {
+    return nullptr;
   }
-  gGlyphColor = aColor;
-  return true;
+  glyphDrawTarget->MaskSurface(ColorPattern(aColor), glyphMask, Point(0, 0),
+                               DrawOptions(1.0f, CompositionOp::OP_SOURCE));
+  RefPtr<SourceSurface> surface = glyphDrawTarget->Snapshot();
+  if (!surface) {
+    return nullptr;
+  }
+  return new GlyphAtlas(std::move(surface), aColor);
 }
 
 
@@ -128,20 +139,35 @@ static inline already_AddRefed<SourceSurface> GetGlyphAtlas(
   
   
   DeviceColor color(aColor.r, aColor.g, aColor.b);
-  if ((gGlyphAtlas && gGlyphColor == color) || MakeGlyphAtlas(color)) {
-    return do_AddRef(gGlyphAtlas);
+
+  
+  
+  
+  
+  GlyphAtlas* currAtlas = gGlyphAtlas.exchange(nullptr);
+
+  if (currAtlas && currAtlas->Color() == color) {
+    
+    RefPtr<SourceSurface> surface = currAtlas->Surface();
+    
+    
+    delete gGlyphAtlas.exchange(currAtlas);
+    return surface.forget();
   }
-  return nullptr;
+
+  
+  GlyphAtlas* atlas = MakeGlyphAtlas(color);
+  RefPtr<SourceSurface> surface = atlas ? atlas->Surface() : nullptr;
+
+  
+  delete gGlyphAtlas.exchange(atlas);
+  return surface.forget();
 }
 
 
 
 
-static void PurgeGlyphAtlas() {
-  gGlyphAtlas = nullptr;
-  gGlyphDrawTarget = nullptr;
-  gGlyphMask = nullptr;
-}
+static void PurgeGlyphAtlas() { delete gGlyphAtlas.exchange(nullptr); }
 
 
 
