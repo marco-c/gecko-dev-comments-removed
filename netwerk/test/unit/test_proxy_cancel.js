@@ -6,6 +6,14 @@
 
 
 
+add_setup(async function setup() {
+  
+  Services.prefs.setBoolPref("network.ssl_tokens_cache_use_only_once", false);
+  registerCleanupFunction(async () =>
+    Services.prefs.clearUserPref("network.ssl_tokens_cache_use_only_once")
+  );
+});
+
 function makeChan(uri) {
   let chan = NetUtil.newChannel({
     uri,
