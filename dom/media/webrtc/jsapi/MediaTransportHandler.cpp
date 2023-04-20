@@ -695,8 +695,9 @@ void MediaTransportHandlerSTS::Destroy() {
   CSFLogDebug(LOGTAG, "%s %p", __func__, this);
   
   if (!NS_IsMainThread()) {
-    GetMainThreadSerialEventTarget()->Dispatch(NewNonOwningRunnableMethod(
-        __func__, this, &MediaTransportHandlerSTS::Destroy));
+    GetMainThreadSerialEventTarget()->Dispatch(
+        NewNonOwningRunnableMethod("MediaTransportHandlerSTS::Destroy", this,
+                                   &MediaTransportHandlerSTS::Destroy));
     return;
   }
 
@@ -710,8 +711,9 @@ void MediaTransportHandlerSTS::Destroy() {
   
   
   
-  nsresult rv = mStsThread->Dispatch(NewNonOwningRunnableMethod(
-      __func__, this, &MediaTransportHandlerSTS::Destroy_s));
+  nsresult rv = mStsThread->Dispatch(
+      NewNonOwningRunnableMethod("MediaTransportHandlerSTS::Destroy_s", this,
+                                 &MediaTransportHandlerSTS::Destroy_s));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     CSFLogError(LOGTAG,
                 "Unable to dispatch to STS: why has the XPCOM shutdown handler "

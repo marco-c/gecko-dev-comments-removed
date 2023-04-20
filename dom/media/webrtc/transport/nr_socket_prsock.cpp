@@ -1096,8 +1096,8 @@ void NrUdpSocketIpc::Destroy() {
   
   
   
-  io_thread_->Dispatch(
-      NewNonOwningRunnableMethod(__func__, this, &NrUdpSocketIpc::destroy_i));
+  io_thread_->Dispatch(NewNonOwningRunnableMethod(
+      "NrUdpSocketIpc::Destroy", this, &NrUdpSocketIpc::destroy_i));
 #endif
 }
 
