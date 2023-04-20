@@ -202,27 +202,29 @@ class MarkStack {
 
 } 
 
-enum MarkingState : uint8_t {
-  
-  NotActive,
-
-  
-  
-  
-  RegularMarking,
-
-  
-  
-  
-  
-  WeakMarking,
-
-  
-  
-  IterativeMarking
-};
-
 class GCMarker final : public GenericTracerImpl<GCMarker> {
+  enum MarkingState : uint8_t {
+    
+    NotActive,
+
+    
+    
+    
+    
+    RegularMarking,
+
+    
+    
+    
+    
+    
+    WeakMarking,
+
+    
+    
+    IterativeMarking
+  };
+
  public:
   explicit GCMarker(JSRuntime* rt);
   [[nodiscard]] bool init();
@@ -231,7 +233,7 @@ class GCMarker final : public GenericTracerImpl<GCMarker> {
   void setMaxCapacity(size_t maxCap) { stack.setMaxCapacity(maxCap); }
 #endif
 
-  bool isActive() const { return state != MarkingState::NotActive; }
+  bool isActive() const { return state != NotActive; }
 
   void start();
   void stop();
@@ -294,10 +296,10 @@ class GCMarker final : public GenericTracerImpl<GCMarker> {
   
   
   void abortLinearWeakMarking() {
-    if (state == MarkingState::WeakMarking) {
+    if (state == WeakMarking) {
       leaveWeakMarkingMode();
     }
-    state = MarkingState::IterativeMarking;
+    state = IterativeMarking;
   }
 
   void delayMarkingChildrenOnOOM(gc::Cell* cell);
@@ -338,10 +340,8 @@ class GCMarker final : public GenericTracerImpl<GCMarker> {
   template <typename T>
   void markImplicitEdges(T* oldThing);
 
-  bool isRegularMarking() const {
-    return state == MarkingState::RegularMarking;
-  }
-  bool isWeakMarking() const { return state == MarkingState::WeakMarking; }
+  bool isRegularMarking() const { return state == RegularMarking; }
+  bool isWeakMarking() const { return state == WeakMarking; }
 
   bool isMarkStackEmpty() { return stack.isEmpty(); }
 
