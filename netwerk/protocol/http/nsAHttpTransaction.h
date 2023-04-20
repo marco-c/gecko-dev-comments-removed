@@ -7,8 +7,6 @@
 
 #include "nsTArray.h"
 #include "nsWeakReference.h"
-#include "nsIRequest.h"
-#include "nsITRRSkipReason.h"
 
 #ifdef Status
 
@@ -183,8 +181,6 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   virtual void ReuseConnectionOnRestartOK(bool) {}
   virtual void SetIsHttp2Websocket(bool) {}
   virtual bool IsHttp2Websocket() { return false; }
-  virtual void SetTRRInfo(nsIRequest::TRRMode aMode,
-                          TRRSkippedReason aSkipReason){};
 
   
   
