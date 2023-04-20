@@ -88,6 +88,9 @@ function run_test() {
   testSuccess('max-age=100; unrelated="quoted \\"thingy\\""', 100, false);
 
   
+  testSuccess("max-age=4294967296", 60 * 60 * 24 * 365 * 100, false);
+
+  
   
   testFailure("max-age");
   testFailure("max-age ");

@@ -557,6 +557,9 @@ static uint32_t ParseSSSHeaders(const nsCString& aHeader,
   return nsISiteSecurityService::Success;
 }
 
+
+const uint64_t sMaxMaxAgeInSeconds = UINT64_C(60 * 60 * 24 * 365 * 100);
+
 nsresult nsSiteSecurityService::ProcessSTSHeader(
     nsIURI* aSourceURI, const nsCString& aHeader,
     const OriginAttributes& aOriginAttributes, uint64_t* aMaxAge,
@@ -588,6 +591,11 @@ nsresult nsSiteSecurityService::ProcessSTSHeader(
       *aFailureResult = nsISiteSecurityService::ERROR_NO_MAX_AGE;
     }
     return NS_ERROR_FAILURE;
+  }
+
+  
+  if (maxAge > sMaxMaxAgeInSeconds) {
+    maxAge = sMaxMaxAgeInSeconds;
   }
 
   nsAutoCString hostname;

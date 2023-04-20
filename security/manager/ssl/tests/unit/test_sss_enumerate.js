@@ -5,7 +5,7 @@
 
 do_get_profile(); 
 
-const SECS_IN_A_WEEK = 7 * 24 * 60 * 60 * 1000;
+const SECS_IN_A_WEEK = 7 * 24 * 60 * 60;
 const TESTCASES = [
   {
     hostname: "a.pinning.example.com",
