@@ -23,6 +23,18 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
+  "getOriginalLocation",
+  "resource://devtools/client/debugger/src/utils/source-maps.js",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "createLocation",
+  "resource://devtools/client/debugger/src/utils/location.js",
+  true
+);
+loader.lazyRequireGetter(
+  this,
   "registerStoreObserver",
   "resource://devtools/client/shared/redux/subscriber.js",
   true
@@ -209,6 +221,81 @@ class DebuggerPanel {
     return this._actions.selectSourceURL(cx, url, { line, column });
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async openSourceInDebugger({
+    generatedURL,
+    generatedLine,
+    generatedColumn,
+    sourceActorId,
+    reason,
+  }) {
+    const generatedSource = sourceActorId
+      ? this._selectors.getSourceByActorId(this._getState(), sourceActorId)
+      : this._selectors.getSourceByURL(this._getState(), generatedURL);
+    
+    
+    if (
+      !generatedSource ||
+      
+      
+      !this._selectors.getSourceActorsForSource(
+        this._getState(),
+        generatedSource.id
+      ).length
+    ) {
+      return false;
+    }
+
+    const generatedLocation = createLocation({
+      sourceId: generatedSource.id,
+      line: generatedLine,
+      column: generatedColumn,
+    });
+
+    
+    
+    
+    const originalLocation = await getOriginalLocation(
+      generatedLocation,
+      this.toolbox.sourceMapLoader
+    );
+
+    
+    
+    
+    
+    
+    
+    await this.toolbox.selectTool("jsdebugger", reason);
+
+    const cx = this._selectors.getContext(this._getState());
+    await this._actions.selectSpecificLocation(cx, originalLocation);
+
+    
+    if (this._selectors.hasLogpoint(this._getState(), originalLocation)) {
+      this._actions.openConditionalPanel(originalLocation, true);
+    }
+
+    return true;
+  }
+
   async selectWorker(workerDescriptorFront) {
     const threadActorID = workerDescriptorFront.threadFront?.actorID;
 
@@ -232,48 +319,22 @@ class DebuggerPanel {
     this.selectThread(threadActorID);
 
     
-    const source = this.getSourceByURL(workerDescriptorFront._url);
+    const source = this._selectors.getSourceByURL(
+      this._getState(),
+      workerDescriptorFront._url
+    );
     const sourceActor = this._selectors.getFirstSourceActorForGeneratedSource(
       this._getState(),
       source.id,
       threadActorID
     );
-    await this.selectSource(source.id, sourceActor.actor, 1, 1);
+    const cx = this._selectors.getContext(this._getState());
+    await this._actions.selectSource(cx, source.id, sourceActor.id);
   }
 
   selectThread(threadActorID) {
     const cx = this._selectors.getContext(this._getState());
     this._actions.selectThread(cx, threadActorID);
-  }
-
-  async selectSource(sourceId, sourceActorId, line, column) {
-    const cx = this._selectors.getContext(this._getState());
-    const location = { sourceId, line, column };
-
-    await this._actions.selectSource(cx, sourceId, sourceActorId, location);
-    if (this._selectors.hasLogpoint(this._getState(), location)) {
-      this._actions.openConditionalPanel(location, true);
-    }
-  }
-
-  getSourceActorsForSource(sourceId) {
-    return this._selectors.getSourceActorsForSource(this._getState(), sourceId);
-  }
-
-  getSourceByActorId(sourceId) {
-    return this._selectors.getSourceByActorId(this._getState(), sourceId);
-  }
-
-  getSourceByURL(sourceURL) {
-    return this._selectors.getSourceByURL(this._getState(), sourceURL);
-  }
-
-  getSource(sourceId) {
-    return this._selectors.getSource(this._getState(), sourceId);
-  }
-
-  getLocationSource(location) {
-    return this._selectors.getLocationSource(this._getState(), location);
   }
 
   destroy() {
