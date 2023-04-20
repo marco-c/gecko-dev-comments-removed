@@ -33,6 +33,9 @@ async function testSetup() {
     set: [
       
       ["cookiebanners.listService.logLevel", "Debug"],
+      
+      
+      ["cookiebanners.listService.testSkipRemoteSettings", true],
     ],
   });
 

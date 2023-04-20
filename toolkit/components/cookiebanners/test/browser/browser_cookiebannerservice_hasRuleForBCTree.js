@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { SiteDataTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/SiteDataTestUtils.sys.mjs"
+);
+
 let testRules = [
   
   {
@@ -75,6 +79,11 @@ add_setup(async function() {
 
   
   Services.cookieBanners.resetRules();
+
+  
+  registerCleanupFunction(async () => {
+    await SiteDataTestUtils.clear();
+  });
 });
 
 add_task(async function test_unsupported() {
@@ -210,5 +219,75 @@ add_task(async function test_hasRuleForBCTree() {
       Services.cookieBanners.hasRuleForBrowsingContextTree(bcChildC),
       "Should have rule when called with child BC for C, because C rule for nested iframe C applies."
     );
+  });
+});
+
+
+
+
+
+add_task(async function test_hasRuleForBCTree_ignoreDomainPrefs() {
+  info("Test with top level A");
+  await BrowserTestUtils.withNewTab(TEST_ORIGIN_A, async browser => {
+    let bcTop = browser.browsingContext;
+
+    ok(
+      Services.cookieBanners.hasRuleForBrowsingContextTree(bcTop),
+      "Should have rule when called with top BC for A"
+    );
+
+    
+    Services.cookieBanners.setDomainPref(
+      browser.currentURI,
+      Ci.nsICookieBannerService.MODE_DISABLED,
+      false
+    );
+    ok(
+      Services.cookieBanners.hasRuleForBrowsingContextTree(bcTop),
+      "Should have rule when called with top BC for A, even if mechanism is disabled for A."
+    );
+
+    
+    Services.cookieBanners.setDomainPref(
+      browser.currentURI,
+      Ci.nsICookieBannerService.MODE_REJECT,
+      false
+    );
+    ok(
+      Services.cookieBanners.hasRuleForBrowsingContextTree(bcTop),
+      "Should still have rule when called with top BC for A, even with custom mode for A"
+    );
+
+    
+    Services.cookieBanners.removeAllDomainPrefs(false);
+  });
+
+  info("Test with top level B");
+  await BrowserTestUtils.withNewTab(TEST_ORIGIN_B, async browser => {
+    let bcTop = browser.browsingContext;
+
+    ok(
+      Services.cookieBanners.hasRuleForBrowsingContextTree(bcTop),
+      "Should have rule when called with top BC for B"
+    );
+
+    
+    Services.cookieBanners.setDomainPref(
+      browser.currentURI,
+      Ci.nsICookieBannerService.MODE_REJECT,
+      false
+    );
+    
+    
+    
+    
+    
+    ok(
+      Services.cookieBanners.hasRuleForBrowsingContextTree(bcTop),
+      "Should still have rule when called with top BC for B, even with custom mode for B"
+    );
+
+    
+    Services.cookieBanners.removeAllDomainPrefs(false);
   });
 });
