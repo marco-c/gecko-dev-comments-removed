@@ -451,6 +451,39 @@ function parseAboutPageURL(url) {
   return ret;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function getAutofillRecords(data) {
+  let actor;
+  try {
+    const win = Services.wm.getMostRecentBrowserWindow();
+    actor = win.gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
+      "FormAutofill"
+    );
+  } catch (error) {
+    
+    
+    
+    return 0;
+  }
+  let records = await actor?.receiveMessage({
+    name: "FormAutofill:GetRecords",
+    data,
+  });
+  return records?.length ?? 0;
+}
+
 const TargetingGetters = {
   get locale() {
     return Services.locale.appLocaleAsBCP47;
@@ -868,33 +901,11 @@ const TargetingGetters = {
   },
 
   get creditCardsSaved() {
-    return (
-      Services.wm
-        .getMostRecentBrowserWindow()
-        ?.gBrowser?.selectedBrowser?.browsingContext.currentWindowGlobal.getActor(
-          "FormAutofill"
-        )
-        ?.receiveMessage({
-          name: "FormAutofill:GetRecords",
-          data: { collectionName: "creditCards" },
-        })
-        .then(cards => cards?.length ?? 0) ?? 0
-    );
+    return getAutofillRecords({ collectionName: "creditCards" });
   },
 
   get addressesSaved() {
-    return (
-      Services.wm
-        .getMostRecentBrowserWindow()
-        ?.gBrowser?.selectedBrowser?.browsingContext.currentWindowGlobal.getActor(
-          "FormAutofill"
-        )
-        ?.receiveMessage({
-          name: "FormAutofill:GetRecords",
-          data: { collectionName: "addresses" },
-        })
-        .then(addresses => addresses?.length ?? 0) ?? 0
-    );
+    return getAutofillRecords({ collectionName: "addresses" });
   },
 
   
