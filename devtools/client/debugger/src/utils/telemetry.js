@@ -60,22 +60,7 @@ export function setToolboxTelemetry(toolboxTelemetry) {
 
 
 export function recordEvent(eventName, fields = {}) {
-  let sessionId = -1;
-
-  if (typeof window !== "object") {
-    return;
-  }
-
-  if (window.parent.frameElement) {
-    sessionId = window.parent.frameElement.getAttribute("session_id");
-  }
-
-  
-  telemetry.recordEvent(eventName, "debugger", null, {
-    session_id: sessionId,
-    ...fields,
-  });
-  
+  telemetry.recordEvent(eventName, "debugger", null, fields);
 
   if (isNode()) {
     const { events } = window.dbg._telemetry;
