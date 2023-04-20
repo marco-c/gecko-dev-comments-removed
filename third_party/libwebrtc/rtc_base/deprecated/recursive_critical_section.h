@@ -11,6 +11,8 @@
 #ifndef RTC_BASE_DEPRECATED_RECURSIVE_CRITICAL_SECTION_H_
 #define RTC_BASE_DEPRECATED_RECURSIVE_CRITICAL_SECTION_H_
 
+#include <atomic>
+
 #include "rtc_base/platform_thread_types.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -68,7 +70,7 @@ class RTC_LOCKABLE RecursiveCriticalSection {
   
   
   
-  mutable volatile int lock_queue_;
+  mutable std::atomic<int> lock_queue_;
   
   
   mutable int recursion_;

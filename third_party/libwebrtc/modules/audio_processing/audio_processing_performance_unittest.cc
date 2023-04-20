@@ -10,6 +10,7 @@
 #include <math.h>
 
 #include <algorithm>
+#include <atomic>
 #include <memory>
 #include <vector>
 
@@ -17,7 +18,6 @@
 #include "modules/audio_processing/audio_processing_impl.h"
 #include "modules/audio_processing/test/audio_processing_builder_for_testing.h"
 #include "modules/audio_processing/test/test_utils.h"
-#include "rtc_base/atomic_ops.h"
 #include "rtc_base/event.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/platform_thread.h"
@@ -134,16 +134,16 @@ struct SimulationConfig {
 
 class FrameCounters {
  public:
-  void IncreaseRenderCounter() { rtc::AtomicOps::Increment(&render_count_); }
+  void IncreaseRenderCounter() { render_count_.fetch_add(1); }
 
-  void IncreaseCaptureCounter() { rtc::AtomicOps::Increment(&capture_count_); }
+  void IncreaseCaptureCounter() { capture_count_.fetch_add(1); }
 
   int CaptureMinusRenderCounters() const {
     
     
     
-    return rtc::AtomicOps::AcquireLoad(&capture_count_) -
-           rtc::AtomicOps::AcquireLoad(&render_count_);
+    return capture_count_.load(std::memory_order_acquire) -
+           render_count_.load(std::memory_order_acquire);
   }
 
   int RenderMinusCaptureCounters() const {
@@ -153,28 +153,31 @@ class FrameCounters {
   bool BothCountersExceedeThreshold(int threshold) const {
     
     
-    const int capture_count = rtc::AtomicOps::AcquireLoad(&capture_count_);
-    const int render_count = rtc::AtomicOps::AcquireLoad(&render_count_);
+    const int capture_count = capture_count_.load(std::memory_order_acquire);
+    const int render_count = render_count_.load(std::memory_order_acquire);
     return (render_count > threshold && capture_count > threshold);
   }
 
  private:
-  int render_count_ = 0;
-  int capture_count_ = 0;
+  std::atomic<int> render_count_{0};
+  std::atomic<int> capture_count_{0};
 };
 
 
 class LockedFlag {
  public:
-  bool get_flag() const { return rtc::AtomicOps::AcquireLoad(&flag_); }
+  bool get_flag() const { return flag_.load(std::memory_order_acquire); }
 
   void set_flag() {
-    if (!get_flag())  
-      rtc::AtomicOps::CompareAndSwap(&flag_, 0, 1);
+    if (!get_flag()) {
+      
+      int zero = 0;
+      flag_.compare_exchange_strong(zero, 1);
+    }
   }
 
  private:
-  int flag_ = 0;
+  std::atomic<int> flag_{0};
 };
 
 

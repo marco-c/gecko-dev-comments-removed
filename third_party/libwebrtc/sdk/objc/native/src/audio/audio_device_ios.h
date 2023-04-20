@@ -11,6 +11,7 @@
 #ifndef SDK_OBJC_NATIVE_SRC_AUDIO_AUDIO_DEVICE_IOS_H_
 #define SDK_OBJC_NATIVE_SRC_AUDIO_AUDIO_DEVICE_IOS_H_
 
+#include <atomic>
 #include <memory>
 
 #include "api/sequence_checker.h"
@@ -266,10 +267,10 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   rtc::BufferT<int16_t> record_audio_buffer_;
 
   
-  volatile int recording_;
+  std::atomic<int> recording_;
 
   
-  volatile int playing_;
+  std::atomic<int> playing_;
 
   
   bool initialized_ RTC_GUARDED_BY(thread_checker_);
