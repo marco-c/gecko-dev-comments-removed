@@ -1787,25 +1787,14 @@ TEST_P(PeerConnectionIntegrationTest, IceStatesReachCompletion) {
                  callee()->ice_connection_state(), kDefaultTimeout);
 }
 
-#if !defined(THREAD_SANITIZER)
-
-
 constexpr int kOnlyLocalPorts = cricket::PORTALLOCATOR_DISABLE_STUN |
                                 cricket::PORTALLOCATOR_DISABLE_RELAY |
                                 cricket::PORTALLOCATOR_DISABLE_TCP;
 
 
 
-
-#if defined(WEBRTC_WIN)
-#define MAYBE_IceStatesReachCompletionWithRemoteHostname \
-  DISABLED_IceStatesReachCompletionWithRemoteHostname
-#else
-#define MAYBE_IceStatesReachCompletionWithRemoteHostname \
-  IceStatesReachCompletionWithRemoteHostname
-#endif
 TEST_P(PeerConnectionIntegrationTest,
-       MAYBE_IceStatesReachCompletionWithRemoteHostname) {
+       IceStatesReachCompletionWithRemoteHostname) {
   auto caller_resolver_factory =
       std::make_unique<NiceMock<webrtc::MockAsyncResolverFactory>>();
   auto callee_resolver_factory =
@@ -1858,8 +1847,6 @@ TEST_P(PeerConnectionIntegrationTest,
                           webrtc::kIceCandidatePairHostNameHostName));
   DestroyPeerConnections();
 }
-
-#endif  
 
 
 
