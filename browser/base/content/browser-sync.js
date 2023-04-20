@@ -151,7 +151,7 @@ this.SyncedTabsPanelList = class SyncedTabsPanelList {
         for (let client of clients) {
           
           if (fragment.lastElementChild) {
-            let separator = document.createXULElement("menuseparator");
+            let separator = document.createXULElement("toolbarseparator");
             fragment.appendChild(separator);
           }
           

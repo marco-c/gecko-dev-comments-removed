@@ -344,7 +344,7 @@ add_task(async function() {
 
   
   node = currentClient.nextElementSibling;
-  is(node.nodeName, "menuseparator");
+  is(node.nodeName, "toolbarseparator");
 
   
   node = node.nextElementSibling;
@@ -364,7 +364,7 @@ add_task(async function() {
 
   
   node = currentClient.nextElementSibling;
-  is(node.nodeName, "menuseparator");
+  is(node.nodeName, "toolbarseparator");
 
   
   node = node.nextElementSibling;
