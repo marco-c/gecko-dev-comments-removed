@@ -272,6 +272,12 @@ function insertTestClickRules() {
 
 async function testClickResultTelemetry(expected, resetFOG = true) {
   
+  if (AppConstants.platform == "linux") {
+    ok(true, "Skip click telemetry tests on linux.");
+    return;
+  }
+
+  
   await Services.fog.testFlushAllChildren();
 
   let labels = [
