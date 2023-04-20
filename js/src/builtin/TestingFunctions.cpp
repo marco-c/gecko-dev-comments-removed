@@ -77,8 +77,8 @@
 #include "js/CompileOptions.h"
 #include "js/Date.h"
 #include "js/experimental/CodeCoverage.h"  
-#include "js/experimental/JSStencil.h"     
-#include "js/experimental/ParseScript.h"  
+#include "js/experimental/CompileScript.h"  
+#include "js/experimental/JSStencil.h"         
 #include "js/experimental/PCCountProfiling.h"  
 #include "js/experimental/TypedData.h"         
 #include "js/friend/DumpFunctions.h"  
@@ -6370,9 +6370,9 @@ static bool CompileToStencil(JSContext* cx, uint32_t argc, Value* vp) {
   if (isModule) {
     stencil = JS::CompileModuleScriptToStencil(cx, options, srcBuf);
   } else {
-    stencil =
-        JS::ParseGlobalScript(&fc, options, cx->stackLimitForCurrentPrincipal(),
-                              srcBuf, stencilInput);
+    stencil = JS::CompileGlobalScriptToStencil(
+        &fc, options, cx->stackLimitForCurrentPrincipal(), srcBuf,
+        stencilInput);
   }
   if (!stencil) {
     return false;
