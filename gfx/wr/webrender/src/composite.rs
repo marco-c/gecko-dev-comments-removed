@@ -15,6 +15,7 @@ use crate::prim_store::DeferredResolve;
 use crate::resource_cache::{ImageRequest, ResourceCache};
 use crate::util::{Preallocator, ScaleOffset};
 use crate::tile_cache::PictureCacheDebugInfo;
+use crate::device::Device;
 use std::{ops, u64, os::raw::c_void};
 
 
@@ -1081,6 +1082,7 @@ pub trait Compositor {
     
     fn create_surface(
         &mut self,
+        device: &mut Device,
         id: NativeSurfaceId,
         virtual_offset: DeviceIntPoint,
         tile_size: DeviceIntSize,
@@ -1093,6 +1095,7 @@ pub trait Compositor {
     
     fn create_external_surface(
         &mut self,
+        device: &mut Device,
         id: NativeSurfaceId,
         is_opaque: bool,
     );
@@ -1100,6 +1103,7 @@ pub trait Compositor {
     
     fn create_backdrop_surface(
         &mut self,
+        device: &mut Device,
         id: NativeSurfaceId,
         color: ColorF,
     );
@@ -1112,18 +1116,21 @@ pub trait Compositor {
     
     fn destroy_surface(
         &mut self,
+        device: &mut Device,
         id: NativeSurfaceId,
     );
 
     
     fn create_tile(
         &mut self,
+        device: &mut Device,
         id: NativeTileId,
     );
 
     
     fn destroy_tile(
         &mut self,
+        device: &mut Device,
         id: NativeTileId,
     );
 
@@ -1133,6 +1140,7 @@ pub trait Compositor {
     
     fn attach_external_image(
         &mut self,
+        device: &mut Device,
         id: NativeSurfaceId,
         external_image: ExternalImageId
     );
@@ -1143,6 +1151,7 @@ pub trait Compositor {
     
     fn invalidate_tile(
         &mut self,
+        _device: &mut Device,
         _id: NativeTileId,
         _valid_rect: DeviceIntRect
     ) {}
@@ -1160,6 +1169,7 @@ pub trait Compositor {
     
     fn bind(
         &mut self,
+        device: &mut Device,
         id: NativeTileId,
         dirty_rect: DeviceIntRect,
         valid_rect: DeviceIntRect,
@@ -1169,10 +1179,11 @@ pub trait Compositor {
     
     fn unbind(
         &mut self,
+        device: &mut Device,
     );
 
     
-    fn begin_frame(&mut self);
+    fn begin_frame(&mut self, device: &mut Device);
 
     
     
@@ -1185,6 +1196,7 @@ pub trait Compositor {
     
     fn add_surface(
         &mut self,
+        device: &mut Device,
         id: NativeSurfaceId,
         transform: CompositorSurfaceTransform,
         clip_rect: DeviceIntRect,
@@ -1199,6 +1211,7 @@ pub trait Compositor {
     
     fn start_compositing(
         &mut self,
+        _device: &mut Device,
         _clear_color: ColorF,
         _dirty_rects: &[DeviceIntRect],
         _opaque_rects: &[DeviceIntRect],
@@ -1207,20 +1220,20 @@ pub trait Compositor {
     
     
     
-    fn end_frame(&mut self);
+    fn end_frame(&mut self, device: &mut Device);
 
     
-    fn enable_native_compositor(&mut self, enable: bool);
+    fn enable_native_compositor(&mut self, device: &mut Device, enable: bool);
 
     
-    fn deinit(&mut self);
+    fn deinit(&mut self, device: &mut Device);
 
     
     
     
-    fn get_capabilities(&self) -> CompositorCapabilities;
+    fn get_capabilities(&self, device: &mut Device) -> CompositorCapabilities;
 
-    fn get_window_visibility(&self) -> WindowVisibility;
+    fn get_window_visibility(&self, device: &mut Device) -> WindowVisibility;
 }
 
 
@@ -1255,6 +1268,7 @@ pub trait MappableCompositor: Compositor {
     
     fn map_tile(
         &mut self,
+        device: &mut Device,
         id: NativeTileId,
         dirty_rect: DeviceIntRect,
         valid_rect: DeviceIntRect,
@@ -1262,15 +1276,16 @@ pub trait MappableCompositor: Compositor {
 
     
     
-    fn unmap_tile(&mut self);
+    fn unmap_tile(&mut self, device: &mut Device);
 
     fn lock_composite_surface(
         &mut self,
+        device: &mut Device,
         ctx: *mut c_void,
         external_image_id: ExternalImageId,
         composite_info: *mut SWGLCompositeSurfaceInfo,
     ) -> bool;
-    fn unlock_composite_surface(&mut self, ctx: *mut c_void, external_image_id: ExternalImageId);
+    fn unlock_composite_surface(&mut self, device: &mut Device, ctx: *mut c_void, external_image_id: ExternalImageId);
 }
 
 
