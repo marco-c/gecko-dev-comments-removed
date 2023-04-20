@@ -1505,17 +1505,26 @@ ContentEventHandler::GetFirstFrameInRangeForTextRect(
       break;
     }
 
-    if (!node->IsContent()) {
+    auto* content = nsIContent::FromNode(node);
+    if (MOZ_UNLIKELY(!content)) {
       continue;
     }
 
-    if (node->IsText()) {
+    
+    
+    
+    if (!content->GetPrimaryFrame()) {
+      continue;
+    }
+
+    if (auto* textNode = Text::FromNode(content)) {
       
       
-      const uint32_t offsetInNode =
-          node == aRawRange.GetStartContainer() ? aRawRange.StartOffset() : 0u;
-      if (offsetInNode < node->Length()) {
-        nodePosition = {node, offsetInNode};
+      const uint32_t offsetInNode = textNode == aRawRange.GetStartContainer()
+                                        ? aRawRange.StartOffset()
+                                        : 0u;
+      if (offsetInNode < textNode->TextDataLength()) {
+        nodePosition = {textNode, offsetInNode};
         break;
       }
       continue;
@@ -1523,9 +1532,9 @@ ContentEventHandler::GetFirstFrameInRangeForTextRect(
 
     
     
-    if (ShouldBreakLineBefore(*node->AsContent(), mRootElement) ||
-        IsPaddingBR(*node->AsContent())) {
-      nodePosition = {node, 0u};
+    if (ShouldBreakLineBefore(*content, mRootElement) ||
+        IsPaddingBR(*content)) {
+      nodePosition = {content, 0u};
     }
   }
 
@@ -1592,14 +1601,26 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(const RawRange& aRawRange) {
       break;
     }
 
-    if (!node->IsContent() || node == nextNodeOfRangeEnd) {
+    if (node == nextNodeOfRangeEnd) {
       continue;
     }
 
-    if (node->IsText()) {
-      nodePosition = {node, node == aRawRange.GetEndContainer()
-                                ? aRawRange.EndOffset()
-                                : node->Length()};
+    auto* content = nsIContent::FromNode(node);
+    if (MOZ_UNLIKELY(!content)) {
+      continue;
+    }
+
+    
+    
+    
+    if (!content->GetPrimaryFrame()) {
+      continue;
+    }
+
+    if (auto* textNode = Text::FromNode(node)) {
+      nodePosition = {textNode, textNode == aRawRange.GetEndContainer()
+                                    ? aRawRange.EndOffset()
+                                    : textNode->TextDataLength()};
 
       
       
@@ -1612,9 +1633,9 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(const RawRange& aRawRange) {
       break;
     }
 
-    if (ShouldBreakLineBefore(*node->AsContent(), mRootElement) ||
-        IsPaddingBR(*node->AsContent())) {
-      nodePosition = {node, 0u};
+    if (ShouldBreakLineBefore(*content, mRootElement) ||
+        IsPaddingBR(*content)) {
+      nodePosition = {content, 0u};
       break;
     }
   }
