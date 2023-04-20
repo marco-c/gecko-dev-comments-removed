@@ -106,11 +106,15 @@ class TokenTaskQueue : public TaskQueueBase {
   using CurrentTaskQueueSetter = TaskQueueBase::CurrentTaskQueueSetter;
 
   void Delete() override { RTC_DCHECK_NOTREACHED(); }
-  void PostTask(std::unique_ptr<QueuedTask> ) override {
+  void PostTask(absl::AnyInvocable<void() &&> ) override {
     RTC_DCHECK_NOTREACHED();
   }
-  void PostDelayedTask(std::unique_ptr<QueuedTask> ,
-                       uint32_t ) override {
+  void PostDelayedTask(absl::AnyInvocable<void() &&> ,
+                       TimeDelta ) override {
+    RTC_DCHECK_NOTREACHED();
+  }
+  void PostDelayedHighPrecisionTask(absl::AnyInvocable<void() &&> ,
+                                    TimeDelta ) override {
     RTC_DCHECK_NOTREACHED();
   }
 };

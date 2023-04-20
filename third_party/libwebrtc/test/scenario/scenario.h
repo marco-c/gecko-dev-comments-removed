@@ -14,9 +14,10 @@
 #include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/test/time_controller.h"
 #include "rtc_base/fake_clock.h"
-#include "rtc_base/task_queue.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "test/gtest.h"
 #include "test/logging/log_writer.h"
@@ -102,17 +103,17 @@ class Scenario {
 
   
   
-  void Every(TimeDelta interval, std::function<void(TimeDelta)> function);
-  void Every(TimeDelta interval, std::function<void()> function);
+  void Every(TimeDelta interval, absl::AnyInvocable<void(TimeDelta)> function);
+  void Every(TimeDelta interval, absl::AnyInvocable<void()> function);
 
   
   
-  void Post(std::function<void()> function);
+  void Post(absl::AnyInvocable<void() &&> function);
 
   
   
   
-  void At(TimeDelta offset, std::function<void()> function);
+  void At(TimeDelta offset, absl::AnyInvocable<void() &&> function);
 
   
   void NetworkDelayedAction(std::vector<EmulatedNetworkNode*> over_nodes,
@@ -179,7 +180,7 @@ class Scenario {
 
   Timestamp start_time_ = Timestamp::PlusInfinity();
   
-  rtc::TaskQueue task_queue_;
+  std::unique_ptr<TaskQueueBase, TaskQueueDeleter> task_queue_;
 };
 }  
 }  

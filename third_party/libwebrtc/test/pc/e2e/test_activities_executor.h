@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/synchronization/mutex.h"
@@ -33,7 +34,8 @@ class TestActivitiesExecutor {
   
   
   
-  void Start(TaskQueueForTest* task_queue);
+  void Start(TaskQueueForTest* task_queue) { Start(task_queue->Get()); }
+  void Start(TaskQueueBase* task_queue);
   void Stop();
 
   
@@ -61,7 +63,7 @@ class TestActivitiesExecutor {
 
   Clock* const clock_;
 
-  TaskQueueForTest* task_queue_;
+  TaskQueueBase* task_queue_;
 
   Mutex lock_;
   
