@@ -30,86 +30,107 @@ add_task(async function bookmark() {
   
   
   let url = "http://example.com/browser_page_action_menu";
-  await BrowserTestUtils.withNewTab(url, async () => {
-    
-    
-    let bookmarkButton = BrowserPageActions.urlbarButtonNodeForActionID(
-      "bookmark"
-    );
-    let tooltipText = bookmarkButton.getAttribute("tooltiptext");
-    Assert.ok(
-      tooltipText.startsWith("Bookmark this page"),
-      `Expecting the tooltip text to be updated. Tooltip text: ${tooltipText}`
-    );
-    Assert.ok(!bookmarkButton.hasAttribute("starred"));
 
-    info("Click the button.");
-    
-    
-    await TestUtils.waitForCondition(
-      () => BookmarkingUI.status != BookmarkingUI.STATUS_UPDATING
-    );
-    let onItemAddedPromise = PlacesTestUtils.waitForNotification(
-      "bookmark-added",
-      events => events.some(event => event.url == url)
-    );
-    let promise = BrowserTestUtils.waitForPopupEvent(StarUI.panel, "shown");
-    EventUtils.synthesizeMouseAtCenter(bookmarkButton, {});
-    await promise;
-    await onItemAddedPromise;
-
-    Assert.equal(
-      BookmarkingUI.starBox.getAttribute("open"),
-      "true",
-      "Star has open attribute"
-    );
-    
-    
-    tooltipText = bookmarkButton.getAttribute("tooltiptext");
-    Assert.ok(
-      tooltipText.startsWith("Edit this bookmark"),
-      `Expecting the tooltip text to be updated. Tooltip text: ${tooltipText}`
-    );
-    Assert.equal(bookmarkButton.firstChild.getAttribute("starred"), "true");
-
-    StarUI.panel.hidePopup();
-    Assert.ok(
-      !BookmarkingUI.starBox.hasAttribute("open"),
-      "Star no longer has open attribute"
-    );
-
-    info("Click it again.");
-    
-    
-    await TestUtils.waitForCondition(
-      () => BookmarkingUI.status != BookmarkingUI.STATUS_UPDATING
-    );
-    promise = BrowserTestUtils.waitForPopupEvent(StarUI.panel, "shown");
-    EventUtils.synthesizeMouseAtCenter(bookmarkButton, {});
-    await promise;
-
-    let onItemRemovedPromise = PlacesTestUtils.waitForNotification(
-      "bookmark-removed",
-      events => events.some(event => event.url == url)
-    );
-    
-    StarUI._element("editBookmarkPanelRemoveButton").click();
-    
-    await onItemRemovedPromise;
-
-    
-    let contextMenuPromise = promisePopupNotShown("pageActionContextMenu");
-    
-    
-    await TestUtils.waitForCondition(
-      () => BookmarkingUI.status != BookmarkingUI.STATUS_UPDATING
-    );
-    EventUtils.synthesizeMouseAtCenter(bookmarkButton, {
-      type: "contextmenu",
-      button: 2,
-    });
-    await contextMenuPromise;
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.bookmarks.editDialog.delayedApply.enabled", false]],
   });
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  registerCleanupFunction(async () => {
+    await BrowserTestUtils.closeWindow(win);
+  });
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser: win.gBrowser, url },
+    async () => {
+      
+      
+      let bookmarkButton = win.BrowserPageActions.urlbarButtonNodeForActionID(
+        "bookmark"
+      );
+      let tooltipText = bookmarkButton.getAttribute("tooltiptext");
+      Assert.ok(
+        tooltipText.startsWith("Bookmark this page"),
+        `Expecting the tooltip text to be updated. Tooltip text: ${tooltipText}`
+      );
+      Assert.ok(!bookmarkButton.hasAttribute("starred"));
+
+      info("Click the button.");
+      
+      
+      await TestUtils.waitForCondition(
+        () => win.BookmarkingUI.status != win.BookmarkingUI.STATUS_UPDATING
+      );
+      let onItemAddedPromise = PlacesTestUtils.waitForNotification(
+        "bookmark-added",
+        events => events.some(event => event.url == url)
+      );
+      let promise = BrowserTestUtils.waitForPopupEvent(
+        win.StarUI.panel,
+        "shown"
+      );
+      EventUtils.synthesizeMouseAtCenter(bookmarkButton, {}, win);
+      await promise;
+      await onItemAddedPromise;
+
+      Assert.equal(
+        win.BookmarkingUI.starBox.getAttribute("open"),
+        "true",
+        "Star has open attribute"
+      );
+      
+      
+      tooltipText = bookmarkButton.getAttribute("tooltiptext");
+      Assert.ok(
+        tooltipText.startsWith("Edit this bookmark"),
+        `Expecting the tooltip text to be updated. Tooltip text: ${tooltipText}`
+      );
+      Assert.equal(bookmarkButton.firstChild.getAttribute("starred"), "true");
+
+      win.StarUI.panel.hidePopup();
+      Assert.ok(
+        !win.BookmarkingUI.starBox.hasAttribute("open"),
+        "Star no longer has open attribute"
+      );
+
+      info("Click it again.");
+      
+      
+      await TestUtils.waitForCondition(
+        () => win.BookmarkingUI.status != win.BookmarkingUI.STATUS_UPDATING
+      );
+      promise = BrowserTestUtils.waitForPopupEvent(win.StarUI.panel, "shown");
+      EventUtils.synthesizeMouseAtCenter(bookmarkButton, {}, win);
+      await promise;
+
+      let onItemRemovedPromise = PlacesTestUtils.waitForNotification(
+        "bookmark-removed",
+        events => events.some(event => event.url == url)
+      );
+      
+      win.StarUI._element("editBookmarkPanelRemoveButton").click();
+      
+      await onItemRemovedPromise;
+
+      
+      let contextMenuPromise = promisePopupNotShown("pageActionContextMenu");
+      
+      
+      await TestUtils.waitForCondition(
+        () => win.BookmarkingUI.status != win.BookmarkingUI.STATUS_UPDATING
+      );
+      EventUtils.synthesizeMouseAtCenter(
+        bookmarkButton,
+        {
+          type: "contextmenu",
+          button: 2,
+        },
+        win
+      );
+      await contextMenuPromise;
+    }
+  );
 });
 
 add_task(async function bookmarkDelayedApply() {
