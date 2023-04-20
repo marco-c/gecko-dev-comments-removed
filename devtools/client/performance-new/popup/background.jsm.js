@@ -451,6 +451,7 @@ function getPrefPostfix(pageContext) {
   switch (pageContext) {
     case "devtools":
     case "aboutprofiling":
+    case "aboutlogging":
       
       return "";
     case "devtools-remote":
