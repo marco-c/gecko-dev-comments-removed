@@ -30,9 +30,14 @@ constexpr int kMaximalNumberOfSamplesPerChannel = 480;
 constexpr float kLimiterThresholdForAgcGainDbfs = -1.0f;
 
 
+constexpr int kVadResetPeriodMs = 1500;
 
 
 constexpr float kVadConfidenceThreshold = 0.95f;
+
+
+
+constexpr int kAdjacentSpeechFramesThreshold = 12;
 
 
 
