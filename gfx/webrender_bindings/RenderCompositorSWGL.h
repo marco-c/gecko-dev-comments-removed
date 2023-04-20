@@ -63,16 +63,10 @@ class RenderCompositorSWGL : public RenderCompositor {
   void* mContext = nullptr;
   RefPtr<gfx::DrawTarget> mDT;
   LayoutDeviceIntRegion mDirtyRegion;
-  
-  
-  Maybe<LayoutDeviceIntSize> mRenderWidgetSize;
   RefPtr<gfx::DataSourceSurface> mSurface;
   uint8_t* mMappedData = nullptr;
   int32_t mMappedStride = 0;
 #ifdef MOZ_WAYLAND
-  
-  
-  LayoutDeviceIntSize mLastRenderWidgetSize;
   bool mRequestFullRender = false;
 #endif
 
