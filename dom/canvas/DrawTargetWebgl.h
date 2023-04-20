@@ -84,9 +84,13 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   
   RefPtr<DataSourceSurface> mSnapshot;
   
+  bool mIsClear = true;
+  
   bool mSkiaValid = false;
   
   bool mSkiaLayer = false;
+  
+  bool mSkiaLayerClear = false;
   
   bool mWebglValid = true;
   
@@ -297,11 +301,13 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
         const IntRect& aRect, TextureHandle* aHandle = nullptr);
 
     already_AddRefed<WebGLTextureJS> GetCompatibleSnapshot(
-        SourceSurface* aSurface);
+        SourceSurface* aSurface) const;
+    bool IsCompatibleSurface(SourceSurface* aSurface) const;
 
     bool UploadSurface(DataSourceSurface* aData, SurfaceFormat aFormat,
                        const IntRect& aSrcRect, const IntPoint& aDstOffset,
-                       bool aInit, bool aZero = false);
+                       bool aInit, bool aZero = false,
+                       const RefPtr<WebGLTextureJS>& aTex = nullptr);
     bool DrawRectAccel(const Rect& aRect, const Pattern& aPattern,
                        const DrawOptions& aOptions,
                        Maybe<DeviceColor> aMaskColor = Nothing(),
@@ -504,6 +510,8 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
                 bool aAccelOnly = false, bool aForceUpdate = false,
                 const StrokeOptions* aStrokeOptions = nullptr);
 
+  ColorPattern GetClearPattern() const;
+
   bool ShouldAccelPath(const DrawOptions& aOptions,
                        const StrokeOptions* aStrokeOptions);
   void DrawPath(const Path* aPath, const Pattern& aPattern,
@@ -522,14 +530,18 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     }
   }
 
-  void MarkSkiaChanged() {
+  void MarkSkiaChanged(bool aOverwrite = false) {
     WaitForShmem();
-    if (!mSkiaValid) {
+    if (aOverwrite) {
+      mSkiaValid = true;
+      mSkiaLayer = false;
+    } else if (!mSkiaValid) {
       ReadIntoSkia();
     } else if (mSkiaLayer) {
       FlattenSkia();
     }
     mWebglValid = false;
+    mIsClear = false;
   }
 
   void MarkSkiaChanged(const DrawOptions& aOptions);
