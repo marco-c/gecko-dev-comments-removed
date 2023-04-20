@@ -32,6 +32,14 @@
 
 
 
+#if defined(_WIN32)
+
+
+#if !defined(_CRT_RAND_S) && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
+#define _CRT_RAND_S
+#endif
+#endif
+
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
