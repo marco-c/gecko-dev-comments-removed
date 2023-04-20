@@ -3198,6 +3198,13 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
   DOMHighResTimeStamp now = mTimestampMaker.GetNow();
 
   nsTArray<dom::RTCCodecStats> codecStats = GetCodecStats(now);
+  std::set<std::string> transportIds;
+
+  if (!aSelector) {
+    
+    
+    transportIds.insert("");
+  }
 
   nsTArray<
       std::tuple<RTCRtpTransceiver*, RefPtr<RTCStatsPromise::AllPromiseType>>>
@@ -3208,19 +3215,24 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
     if (!sendSelected && !recvSelected) {
       continue;
     }
+
+    if (aSelector) {
+      transportIds.insert(transceiver->GetTransportId());
+    }
+
     nsTArray<RefPtr<RTCStatsPromise>> rtpStreamPromises;
+    
+    
     
     
     
     if (sendSelected) {
       rtpStreamPromises.AppendElements(
-          transceiver->Sender()->GetStatsInternal());
+          transceiver->Sender()->GetStatsInternal(true));
     }
     if (recvSelected) {
-      
-      
       rtpStreamPromises.AppendElements(
-          transceiver->Receiver()->GetStatsInternal());
+          transceiver->Receiver()->GetStatsInternal(true));
     }
     transceiverStatsPromises.AppendElement(
         std::make_tuple(transceiver.get(),
@@ -3231,17 +3243,8 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
   promises.AppendElement(RTCRtpTransceiver::ApplyCodecStats(
       std::move(codecStats), std::move(transceiverStatsPromises)));
 
-  
-  
-  
-  
-  if (aSelector) {
-    std::string transportId = GetTransportIdMatchingSendTrack(*aSelector);
-    if (!transportId.empty()) {
-      promises.AppendElement(mTransportHandler->GetIceStats(transportId, now));
-    }
-  } else {
-    promises.AppendElement(mTransportHandler->GetIceStats("", now));
+  for (const auto& transportId : transportIds) {
+    promises.AppendElement(mTransportHandler->GetIceStats(transportId, now));
   }
 
   promises.AppendElement(GetDataChannelStats(mDataConnection, now));
