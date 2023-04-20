@@ -101,42 +101,6 @@ function addWebBundleElementAndWaitForError(url, resources, options) {
   return addElementAndWaitForError(element);
 }
 
-function changeWebBundleUrlInPlace(element, new_url) {
-  if (window.TEST_WEB_BUNDLE_ELEMENT_TYPE != 'link') {
-    throw new Error(
-        'Changing the URL of web bundle is not supported for : ' +
-        window.TEST_WEB_BUNDLE_ELEMENT_TYPE);
-  }
-  element.href= new_url;
-}
-
-function changeWebBundleScopesInPlace(element, scopes) {
-  if (window.TEST_WEB_BUNDLE_ELEMENT_TYPE != 'link') {
-    throw new Error(
-        'Changing the scopes of web bundle is not supported for : ' +
-        window.TEST_WEB_BUNDLE_ELEMENT_TYPE);
-  }
-  element.scopes = '';
-  for (const scope of scopes) {
-    element.scopes.add(scope);
-  }
-}
-
-function changeWebBundleResourcesInPlace(element, resources) {
-  if (window.TEST_WEB_BUNDLE_ELEMENT_TYPE != 'link') {
-    throw new Error(
-        'Changing the resources of web bundle is not supported for : ' +
-        window.TEST_WEB_BUNDLE_ELEMENT_TYPE);
-  }
-  element.resources = '';
-  for (const url of resources) {
-    element.resources.add(url);
-  }
-}
-
-
-
-
 
 
 
@@ -144,26 +108,15 @@ function changeWebBundleResourcesInPlace(element, resources) {
 
 
 function createNewWebBundleElementWithUpdatedRule(element, new_rule) {
-  if (window.TEST_WEB_BUNDLE_ELEMENT_TYPE == 'link') {
-    if (element.resources && !new_rule.resources)
-      new_rule.resources = Array.from(element.resources);
-    if (element.scopes && !new_rule.scopes)
-      new_rule.scopes = Array.from(element.scopes);
-    if (element.crossOrigin && !new_rule.crossOrigin)
-      new_rule.crossOrigin = element.crossOrigin;
-    if (!new_rule.url)
-      new_rule.url = element.href;
-  } else {
-    const rule = JSON.parse(element.textContent);
-    if (rule.resources && !new_rule.resources)
-      new_rule.resources = rule.resources;
-    if (rule.scopes && !new_rule.scopes)
-      new_rule.scopes = rule.scopes;
-    if (rule.credentials && !new_rule.credentials)
-      new_rule.credentials = rule.credentials;
-    if (!new_rule.url)
-      new_rule.url = rule.source;
-  }
+  const rule = JSON.parse(element.textContent);
+  if (rule.resources && !new_rule.resources)
+    new_rule.resources = rule.resources;
+  if (rule.scopes && !new_rule.scopes)
+    new_rule.scopes = rule.scopes;
+  if (rule.credentials && !new_rule.credentials)
+    new_rule.credentials = rule.credentials;
+  if (!new_rule.url)
+    new_rule.url = rule.source;
 
   return createWebBundleElement(new_rule.url, new_rule.resources, new_rule);
 }
