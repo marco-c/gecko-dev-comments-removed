@@ -199,3 +199,11 @@ pub extern "C" fn fog_set_metrics_feature_config(config_json: &nsACString) {
     }
     glean::glean_set_metrics_disabled_config(config_json.to_string());
 }
+
+
+
+
+#[no_mangle]
+pub extern "C" fn fog_internal_glean_handle_client_inactive() {
+    glean::handle_client_inactive();
+}
