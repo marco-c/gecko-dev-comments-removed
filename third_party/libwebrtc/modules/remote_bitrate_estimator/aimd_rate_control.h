@@ -100,7 +100,6 @@ class AimdRateControl {
   bool in_alr_;
   TimeDelta rtt_;
   const bool send_side_;
-  const bool in_experiment_;
   
   
   const bool no_bitrate_increase_in_alr_;
