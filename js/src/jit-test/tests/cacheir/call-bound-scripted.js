@@ -71,3 +71,14 @@ function testCrossRealmTarget() {
     }
 }
 testCrossRealmTarget();
+
+
+function testReturnsItself() {
+    var fun = function() { return boundFun; };
+    var boundFun = fun.bind(null);
+    for (var i = 0; i < 20; i++) {
+        assertEq(boundFun(), boundFun);
+        assertEq(new boundFun(), boundFun);
+    }
+}
+testReturnsItself();

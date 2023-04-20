@@ -486,8 +486,14 @@ MOZ_ALWAYS_INLINE bool CallJSNativeConstructor(JSContext* cx, Native native,
 
 
 
+
+
+
+
+
   MOZ_ASSERT(args.rval().isObject());
   MOZ_ASSERT_IF(!JS_IsNativeFunction(callee, obj_construct) &&
+                    !callee->is<BoundFunctionObject>() &&
                     !cx->insideDebuggerEvaluationWithOnNativeCallHook,
                 args.rval() != ObjectValue(*callee));
 
