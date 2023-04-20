@@ -996,6 +996,24 @@ gfxPlatformMac::CreateGlobalHardwareVsyncSource() {
   return osxVsyncSource.forget();
 }
 
+bool gfxPlatformMac::SupportsHDR() {
+  
+  
+  
+  
+  if (GetScreenDepth() <= 24) {
+    return false;
+  }
+  
+#ifdef EARLY_BETA_OR_EARLIER
+  
+  return nsCocoaFeatures::OnCatalinaOrLater();
+#endif
+
+  
+  return nsCocoaFeatures::OnBigSurOrLater();
+}
+
 nsTArray<uint8_t> gfxPlatformMac::GetPlatformCMSOutputProfileData() {
   nsTArray<uint8_t> prefProfileData = GetPrefCMSOutputProfileData();
   if (!prefProfileData.IsEmpty()) {
