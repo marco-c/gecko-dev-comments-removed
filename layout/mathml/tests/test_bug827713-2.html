@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=553917
+-->
 <html>
   <head>
     <title>Test for error handling aspect of Bug 827713</title>
@@ -18,10 +18,9 @@
       
       var g_errorInfo = {
         InvalidChild: {
-          status : [false, false, false, false, false, false],
+          status : [false, false, false],
           args : [["mprescripts", "msubsup"], ["mprescripts", "msubsup"],
-                 ["mprescripts", "msub"], ["none", "msub"], ["none","msup"],
-                 ["none","msubsup"]]
+                 ["mprescripts", "msub"]]
         },
 
         MMultiscriptsErrors: {
@@ -82,7 +81,7 @@
   <body onload="SpecialPowers.postConsoleSentinel();">
     <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=827713">Mozilla Bug 827713</a>
     
-    
+    <!-- InvalidChild -->
     <math>
       <msubsup>
         <mprescripts/>
@@ -105,38 +104,13 @@
       </msub>
     </math>
 
-    <math>
-      <msub>
-        <mtext>a</mtext>
-        <none/>
-      </msub>
-    </math>
-
-    <math>
-      <msup>
-        <mtext>a</mtext>
-        <none/>
-      </msup>
-    </math>
-
-    <math>
-      <msubsup>
-        <mtext>a</mtext>
-        <mtext>b</mtext>
-        <none/>
-      </msubsup>
-    </math>
-
-    
+    <!-- NoBase -->
     <math>
       <mmultiscripts>
-        <none/>
-        <mtext>b</mtext>
-        <mtext>c</mtext>
       </mmultiscripts>
     </math>
 
-    
+    <!-- SubSupMismatch -->
     <math>
       <mmultiscripts>
         <mtext>b</mtext>

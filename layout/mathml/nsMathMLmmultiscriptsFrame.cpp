@@ -281,7 +281,6 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
   aDesiredSize.Width() = aDesiredSize.Height() = 0;
 
   int32_t count = 0;
-  bool foundNoneTag = false;
 
   
   
@@ -315,18 +314,6 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
       firstPrescriptsPair = true;
     } else if (0 == count) {
       
-
-      if (childFrame->GetContent()->IsMathMLElement(nsGkAtoms::none)) {
-        if (tag == nsGkAtoms::mmultiscripts_) {
-          if (aPlaceOrigin) {
-            aFrame->ReportErrorToConsole("NoBase");
-          }
-          return aFrame->PlaceForError(aDrawTarget, aPlaceOrigin, aDesiredSize);
-        } else {
-          
-          foundNoneTag = true;
-        }
-      }
       baseFrame = childFrame;
       GetReflowAndBoundingMetricsFor(baseFrame, baseSize, bmBase);
 
@@ -347,10 +334,6 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
       boundingMetrics.leftBearing = bmBase.leftBearing;  
     } else {
       
-      if (childFrame->GetContent()->IsMathMLElement(nsGkAtoms::none)) {
-        foundNoneTag = true;
-      }
-
       if (isSubScript) {
         
         subScriptFrame = childFrame;
@@ -496,7 +479,6 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
   
   if ((count != 2 && (tag == nsGkAtoms::msup_ || tag == nsGkAtoms::msub_)) ||
       (count != 3 && tag == nsGkAtoms::msubsup_) || !baseFrame ||
-      (foundNoneTag && tag != nsGkAtoms::mmultiscripts_) ||
       (!isSubScript && tag == nsGkAtoms::mmultiscripts_)) {
     
     if (aPlaceOrigin) {
@@ -504,8 +486,6 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
            (tag == nsGkAtoms::msup_ || tag == nsGkAtoms::msub_)) ||
           (count != 3 && tag == nsGkAtoms::msubsup_)) {
         aFrame->ReportChildCountError();
-      } else if (foundNoneTag && tag != nsGkAtoms::mmultiscripts_) {
-        aFrame->ReportInvalidChildError(nsGkAtoms::none);
       } else if (!baseFrame) {
         aFrame->ReportErrorToConsole("NoBase");
       } else {
