@@ -17,7 +17,18 @@ const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 
 const matchCurrentScreenTargeting = (prefName, screenId) => {
-  return `'${prefName}' | preferenceValue | regExpMatch('(?<=screen\"\:)"(.*)(?=",)')[1] == '${screenId}' && '${prefName}' | preferenceValue | regExpMatch('(?<=complete\"\:)(.*)(?=})')[1] != "true"`;
+  const prefVal = `'${prefName}' | preferenceValue`;
+  
+  const screenRegEx = '(?<=screen":)"(.*)(?=",)';
+  const completeRegEx = '(?<=complete":)(.*)(?=})';
+
+  const screenMatch = `${prefVal}  | regExpMatch('${screenRegEx}')`;
+  const completeMatch = `${prefVal}  | regExpMatch('${completeRegEx}')`;
+  
+  const screenVal = `(${screenMatch}) ? (${screenMatch}[1] == '${screenId}') : false`;
+  const completeVal = `(${completeMatch}) ? (${completeMatch}[1] != "true") : false`;
+
+  return `(${screenVal}) && (${completeVal})`;
 };
 
 
