@@ -15,6 +15,7 @@
 
 
 
+
 setup(() => {
   
   assert_true(window.isSecureContext);
@@ -269,3 +270,66 @@ subsetTestByKey("from-public", promise_test, t => fetchTest(t, {
   expected: FetchTestResult.SUCCESS,
 }), "public to public: no preflight required.");
 
+
+
+
+
+subsetTestByKey("from-treat-as-public", promise_test, t => fetchTest(t, {
+  source: {
+    server: Server.HTTPS_LOCAL,
+    treatAsPublic: true,
+  },
+  target: { server: Server.HTTPS_LOCAL },
+  expected: FetchTestResult.FAILURE,
+}), "treat-as-public-address to local: failed preflight.");
+
+subsetTestByKey("from-treat-as-public", promise_test, t => fetchTest(t, {
+  source: {
+    server: Server.HTTPS_LOCAL,
+    treatAsPublic: true,
+  },
+  target: {
+    server: Server.HTTPS_LOCAL,
+    behavior: {
+      preflight: PreflightBehavior.success(token()),
+      
+    },
+  },
+  expected: FetchTestResult.SUCCESS,
+}), "treat-as-public-address to local: success.");
+
+subsetTestByKey("from-treat-as-public", promise_test, t => fetchTest(t, {
+  source: {
+    server: Server.HTTPS_LOCAL,
+    treatAsPublic: true,
+  },
+  target: { server: Server.HTTPS_PRIVATE },
+  expected: FetchTestResult.FAILURE,
+}), "treat-as-public-address to private: failed preflight.");
+
+subsetTestByKey("from-treat-as-public", promise_test, t => fetchTest(t, {
+  source: {
+    server: Server.HTTPS_LOCAL,
+    treatAsPublic: true,
+  },
+  target: {
+    server: Server.HTTPS_PRIVATE,
+    behavior: {
+      preflight: PreflightBehavior.success(token()),
+      response: ResponseBehavior.allowCrossOrigin(),
+    },
+  },
+  expected: FetchTestResult.SUCCESS,
+}), "treat-as-public-address to private: success.");
+
+subsetTestByKey("from-treat-as-public", promise_test, t => fetchTest(t, {
+  source: {
+    server: Server.HTTPS_LOCAL,
+    treatAsPublic: true,
+  },
+  target: {
+    server: Server.HTTPS_PUBLIC,
+    behavior: { response: ResponseBehavior.allowCrossOrigin() },
+  },
+  expected: FetchTestResult.SUCCESS,
+}), "treat-as-public-address to public: no preflight required.");

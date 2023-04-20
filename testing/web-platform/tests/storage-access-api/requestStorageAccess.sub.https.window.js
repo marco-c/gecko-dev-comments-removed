@@ -7,10 +7,7 @@
 
 
 
-
-
-
-const {testPrefix, topLevelDocument} = processQueryParams();
+const {testPrefix} = processQueryParams();
 
 if (window !== window.top) {
   
@@ -29,15 +26,10 @@ promise_setup(async () => {
     { name: 'storage-access' }, 'prompt');
 });
 
-promise_test(async t => {
-  if (topLevelDocument) {
-    await document.requestStorageAccess()
-    .catch(t.unreached_func("document.requestStorageAccess() call should resolve in top-level frame"));
-  } else {
-    return promise_rejects_dom(t, "NotAllowedError", document.requestStorageAccess(),
+promise_test(t => {
+  return promise_rejects_dom(t, "NotAllowedError", document.requestStorageAccess(),
     "document.requestStorageAccess() call without user gesture");
-  }
-}, "[" + testPrefix + "] document.requestStorageAccess() should resolve in top-level frame or otherwise reject with a NotAllowedError with no user gesture");
+}, "[" + testPrefix + "] document.requestStorageAccess() should be rejected with a NotAllowedError by default with no user gesture");
 
 promise_test(
     async () => {

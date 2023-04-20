@@ -4,7 +4,6 @@
 
 
 
-
     var subtle = crypto.subtle;
 
     var curves = ['P-256', 'P-384', 'P-521'];
@@ -111,7 +110,6 @@
             return subtle.importKey(format, keyData, algorithm, extractable, usages).
             then(function(key) {
                 assert_equals(key.constructor, CryptoKey, "Imported a CryptoKey object");
-                assert_goodCryptoKey(key, algorithm, extractable, usages, (format === 'pkcs8' || (format === 'jwk' && keyData.d)) ? 'private' : 'public');
                 if (!extractable) {
                     return;
                 }

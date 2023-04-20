@@ -175,18 +175,6 @@ promise_test_parallel(t => iframeTest(t, {
   expected: IframeTestResult.SUCCESS,
 }), "treat-as-public-address to public: no preflight required.");
 
-promise_test_parallel(t => iframeTest(t, {
-  source: {
-    server: Server.HTTPS_LOCAL,
-    treatAsPublic: true,
-  },
-  target: {
-    server: Server.HTTPS_PUBLIC,
-    behavior: { preflight: PreflightBehavior.optionalSuccess(token()) }
-  },
-  expected: IframeTestResult.SUCCESS,
-}), "treat-as-public-address to local: optional preflight");
-
 
 
 
