@@ -130,7 +130,7 @@ async function DeleteCookieInFrame(frame, name, params) {
 
 
 
-async function CanFrameWriteCookies(frame) {
+async function CanFrameWriteCookies(frame, keep_after_writing = false) {
   const cookie_suffix = "Secure;SameSite=None;Path=/";
   await DeleteCookieInFrame(frame, "cookie", cookie_suffix);
   await DeleteCookieInFrame(frame, "foo", cookie_suffix);
@@ -142,8 +142,10 @@ async function CanFrameWriteCookies(frame) {
   const can_write = cookieStringHasCookie("cookie", "monster", cookies) &&
       cookieStringHasCookie("foo", "bar", cookies);
 
-  await DeleteCookieInFrame(frame, "cookie", cookie_suffix);
-  await DeleteCookieInFrame(frame, "foo", cookie_suffix);
+  if (!keep_after_writing) {
+    await DeleteCookieInFrame(frame, "cookie", cookie_suffix);
+    await DeleteCookieInFrame(frame, "foo", cookie_suffix);
+  }
 
   return can_write;
 }
