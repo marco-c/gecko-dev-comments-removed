@@ -14,6 +14,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/net/DNS.h"
+#include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/PrivateBrowsingChannel.h"
 #include "nsCOMPtr.h"
@@ -784,6 +785,18 @@ class HttpBaseChannel : public nsHashPropertyBag,
   uint32_t mCaps;
 
   ClassOfService mClassOfService;
+
+ public:
+  void SetEarlyHints(
+      nsTArray<mozilla::net::EarlyHintConnectArgs>&& aEarlyHints);
+  nsTArray<mozilla::net::EarlyHintConnectArgs>&& TakeEarlyHints();
+
+ protected:
+  
+  
+  
+  
+  nsTArray<EarlyHintConnectArgs> mEarlyHints;
 
   
   MOZ_ATOMIC_BITFIELDS(mAtomicBitfields1, 32, (

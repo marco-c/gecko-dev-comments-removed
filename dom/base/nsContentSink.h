@@ -125,7 +125,9 @@ class nsContentSink : public nsICSSLoaderObserver,
                 nsIChannel* aChannel);
 
   nsresult ProcessHTTPHeaders(nsIChannel* aChannel);
-  nsresult ProcessLinkFromHeader(const mozilla::net::LinkHeader& aHeader);
+  
+  nsresult ProcessLinkFromHeader(const mozilla::net::LinkHeader& aHeader,
+                                 uint64_t aEarlyHintPreloaderId);
 
   virtual nsresult ProcessStyleLinkFromHeader(
       const nsAString& aHref, bool aAlternate, const nsAString& aTitle,
@@ -138,7 +140,8 @@ class nsContentSink : public nsICSSLoaderObserver,
                    const nsAString& aType, const nsAString& aMedia,
                    const nsAString& aIntegrity, const nsAString& aSrcset,
                    const nsAString& aSizes, const nsAString& aCORS,
-                   const nsAString& aReferrerPolicy);
+                   const nsAString& aReferrerPolicy,
+                   uint64_t aEarlyHintPreloaderId);
 
   
   
