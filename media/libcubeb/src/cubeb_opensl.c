@@ -1655,6 +1655,16 @@ opensl_stream_destroy(cubeb_stream * stm)
 {
   assert(stm->draining || stm->shutdown);
 
+  
+  
+  if (stm->draining) {
+    opensl_stream_stop(stm);
+  }
+  
+  
+  
+  usleep(10 * 1000);
+
   if (stm->playerObj) {
     (*stm->playerObj)->Destroy(stm->playerObj);
     stm->playerObj = NULL;
