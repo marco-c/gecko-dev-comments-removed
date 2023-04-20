@@ -1,8 +1,6 @@
-
-
-
-
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const FRAME_SCRIPT_URL = "chrome://gfxsanity/content/gfxFrameScript.js";
 
@@ -13,8 +11,8 @@ const LEFT_EDGE = 8;
 const TOP_EDGE = 8;
 const CANVAS_WIDTH = 32;
 const CANVAS_HEIGHT = 64;
-
-
+// If those values are ever changed, make sure to update
+// WMFVideoMFTManager::CanUseDXVA accordingly.
 const VIDEO_WIDTH = 132;
 const VIDEO_HEIGHT = 132;
 const DRIVER_PREF = "sanity-test.driver-version";
@@ -26,14 +24,14 @@ const TIMEOUT_SEC = 20;
 
 const MEDIA_ENGINE_PREF = "media.wmf.media-engine.enabled";
 
-
+// GRAPHICS_SANITY_TEST histogram enumeration values
 const TEST_PASSED = 0;
 const TEST_FAILED_RENDER = 1;
 const TEST_FAILED_VIDEO = 2;
 const TEST_CRASHED = 3;
 const TEST_TIMEOUT = 4;
 
-
+// GRAPHICS_SANITY_TEST_REASON enumeration values.
 const REASON_FIRST_RUN = 0;
 const REASON_FIREFOX_CHANGED = 1;
 const REASON_DEVICE_CHANGED = 2;
@@ -88,9 +86,9 @@ function setTimeout(aMs, aCallback) {
 }
 
 function takeWindowSnapshot(win, ctx) {
-  
-  
-  
+  // TODO: drawWindow reads back from the gpu's backbuffer, which won't catch issues with presenting
+  // the front buffer via the window manager. Ideally we'd use an OS level API for reading back
+  // from the desktop itself to get a more accurate test.
   var flags =
     ctx.DRAWWINDOW_DRAW_CARET |
     ctx.DRAWWINDOW_DRAW_VIEW |
@@ -106,18 +104,18 @@ function takeWindowSnapshot(win, ctx) {
   );
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+// Verify that all the 4 coloured squares of the video
+// render as expected (with a tolerance of 64 to allow for
+// yuv->rgb differences between platforms).
+//
+// The video is VIDEO_WIDTH*VIDEO_HEIGHT, and is split into quadrants of
+// different colours. The top left of the video is LEFT_EDGE,TOP_EDGE+CANVAS_HEIGHT
+// and we test a pixel into the middle of each quadrant to avoid
+// blending differences at the edges.
+//
+// We allow massive amounts of fuzz for the colours since
+// it can depend hugely on the yuv -> rgb conversion, and
+// we don't want to fail unnecessarily.
 function verifyVideoRendering(ctx) {
   return (
     testPixel(
@@ -163,11 +161,11 @@ function verifyVideoRendering(ctx) {
   );
 }
 
-
-
-
-
-
+// Verify that the middle of the layers test is the color we expect.
+// It's a red CANVAS_WIDTHxCANVAS_HEIGHT square, test a pixel deep into the
+// square to prevent fuzzing, and another outside the expected limit of the
+// square to check that scaling occurred properly. The square is drawn LEFT_EDGE
+// pixels from the window's left edge and TOP_EDGE from the window's top edge.
 function verifyLayersRendering(ctx) {
   return (
     testPixel(
@@ -244,8 +242,8 @@ var listener = {
     this.canvas.setAttribute("height", PAGE_HEIGHT);
     this.ctx = this.canvas.getContext("2d");
 
-    
-    
+    // Perform the compositor backbuffer test, which currently we use for
+    // actually deciding whether to enable hardware media decoding.
     testCompositor(this, this.win, this.ctx);
 
     this.endTest();
@@ -260,8 +258,8 @@ var listener = {
   },
 
   onWindowLoaded() {
-    
-    
+    // Disable media engine pref if it's enabled because it doesn't support
+    // capturing image to canvas.
     if (Services.prefs.getBoolPref(MEDIA_ENGINE_PREF, false)) {
       Services.prefs.setBoolPref(MEDIA_ENGINE_PREF, false);
       this.disabledPrefs.push(MEDIA_ENGINE_PREF);
@@ -278,7 +276,7 @@ var listener = {
     browser.style.height = PAGE_HEIGHT + "px";
 
     this.win.document.documentElement.appendChild(browser);
-    
+    // Have to set the mm after we append the child
     this.mm = browser.messageManager;
 
     this.messages.forEach(msgName => {
@@ -300,7 +298,7 @@ var listener = {
     this.ctx = null;
 
     if (this.mm) {
-      
+      // We don't have a MessageManager if onWindowLoaded never fired.
       this.messages.forEach(msgName => {
         this.mm.removeMessageListener(msgName, this);
       });
@@ -313,13 +311,13 @@ var listener = {
     }
     this.disabledPrefs = null;
 
-    
-    
+    // Remove the annotation after we've cleaned everything up, to catch any
+    // incidental crashes from having performed the sanity test.
     removeCrashReportAnnotation();
   },
 };
 
-function SanityTest() {}
+export function SanityTest() {}
 SanityTest.prototype = {
   classID: Components.ID("{f3a8ca4d-4c83-456b-aee2-6a2cbf11e9bd}"),
   QueryInterface: ChromeUtils.generateQI([
@@ -328,8 +326,8 @@ SanityTest.prototype = {
   ]),
 
   shouldRunTest() {
-    
-    
+    // Only test gfx features if firefox has updated, or if the user has a new
+    // gpu or drivers.
     var buildId = Services.appinfo.platformBuildID;
     var gfxinfo = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo);
 
@@ -372,7 +370,7 @@ SanityTest.prototype = {
       return true;
     }
 
-    
+    // TODO: Handle dual GPU setups
     if (
       checkPref(
         DRIVER_PREF,
@@ -385,14 +383,14 @@ SanityTest.prototype = {
       return false;
     }
 
-    
-    
+    // Enable hardware decoding so we can test again
+    // and record the driver version to detect if the driver changes.
     Services.prefs.setBoolPref(DISABLE_VIDEO_PREF, false);
     Services.prefs.setStringPref(DRIVER_PREF, gfxinfo.adapterDriverVersion);
     Services.prefs.setStringPref(DEVICE_PREF, gfxinfo.adapterDeviceID);
     Services.prefs.setStringPref(VERSION_PREF, buildId);
 
-    
+    // Update the prefs so that this test doesn't run again until the next update.
     Services.prefs.setBoolPref(RUNNING_PREF, true);
     Services.prefs.savePrefFile(null);
     return true;
@@ -406,8 +404,8 @@ SanityTest.prototype = {
       return;
     }
 
-    
-    
+    // profile-after-change fires only at startup, so we won't need
+    // to use the listener again.
     let tester = listener;
     listener = null;
 
@@ -417,7 +415,7 @@ SanityTest.prototype = {
 
     annotateCrashReport();
 
-    
+    // Open a tiny window to render our test page, and notify us when it's loaded
     var sanityTest = Services.ww.openWindow(
       null,
       "chrome://gfxsanity/content/sanityparent.html",
@@ -434,18 +432,16 @@ SanityTest.prototype = {
       .QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIAppWindow);
 
-    
-    
+    // Request fast snapshot at RenderCompositor of WebRender.
+    // Since readback of Windows DirectComposition is very slow.
     appWin.needFastSnaphot();
 
-    
-    
+    // There's no clean way to have an invisible window and ensure it's always painted.
+    // Instead, move the window far offscreen so it doesn't show up during launch.
     sanityTest.moveTo(100000000, 1000000000);
-    
-    
+    // In multi-screens with different dpi setup, the window may have been
+    // incorrectly resized.
     sanityTest.resizeTo(PAGE_WIDTH, PAGE_HEIGHT);
     tester.scheduleTest(sanityTest);
   },
 };
-
-var EXPORTED_SYMBOLS = ["SanityTest"];
