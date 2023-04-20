@@ -147,6 +147,12 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
     
     struct RTC_EXPORT Pipeline {
       
+      enum class DownmixMethod {
+        kAverageChannels,  
+        kUseFirstChannel   
+      };
+
+      
       
       int maximum_internal_processing_rate = 48000;
       
@@ -154,6 +160,9 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
       
       
       bool multi_channel_capture = false;
+      
+      
+      DownmixMethod capture_downmix_method = DownmixMethod::kAverageChannels;
     } pipeline;
 
     
