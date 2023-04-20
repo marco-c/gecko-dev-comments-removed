@@ -12,6 +12,7 @@
 #include "mozilla/ComputedStyle.h"
 #include "nsCSSRendering.h"
 #include "nsNameSpaceManager.h"
+#include "nsIFrameInlines.h"
 #include "nsViewManager.h"
 #include "nsWidgetsCID.h"
 #include "nsMenuFrame.h"
@@ -152,33 +153,10 @@ bool nsMenuPopupFrame::ShouldCreateWidgetUpfront() const {
     
     return mContent->AsElement()->HasAttr(nsGkAtoms::type);
   }
-  
-  
-  
-  
-  
-  
-  
-  
-  nsIContent* parentContent = mContent->GetParent();
-  if (!parentContent) {
-    return true;
-  }
 
-  if (parentContent->IsXULElement(nsGkAtoms::menulist)) {
-    Element* parent = parentContent->AsElement();
-    nsAutoString sizedToPopup;
-    if (!parent->GetAttr(nsGkAtoms::sizetopopup, sizedToPopup)) {
-      
-      
-      return true;
-    }
-    
-    return !sizedToPopup.EqualsLiteral("none");
-  }
-
-  return parentContent->IsElement() &&
-         parentContent->AsElement()->HasAttr(nsGkAtoms::sizetopopup);
+  
+  
+  return ShouldExpandToInflowParentOrAnchor();
 }
 
 void nsMenuPopupFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
@@ -552,7 +530,7 @@ void nsMenuPopupFrame::Reflow(nsPresContext* aPresContext,
 
   nsBoxLayoutState state(aPresContext, aReflowInput.mRenderingContext,
                          &aReflowInput, aReflowInput.mReflowDepth);
-  LayoutPopup(state, nullptr, false);
+  LayoutPopup(state);
 
   const auto wm = GetWritingMode();
   LogicalSize boxSize = GetLogicalSize(wm);
@@ -562,13 +540,10 @@ void nsMenuPopupFrame::Reflow(nsPresContext* aPresContext,
   FinishAndStoreOverflow(&aDesiredSize, aReflowInput.mStyleDisplay);
 }
 
-void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState,
-                                   nsIFrame* aParentMenu, bool aSizedToPopup) {
+void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState) {
   if (IsNativeMenu()) {
     return;
   }
-
-  mSizedToPopup = aSizedToPopup;
 
   SchedulePaint();
 
@@ -586,11 +561,19 @@ void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState,
 
   bool isOpen = IsOpen();
   if (!isOpen) {
-    
-    
     shouldPosition =
-        (mPopupState == ePopupShowing || mPopupState == ePopupPositioning);
-    if (!shouldPosition && !aSizedToPopup) {
+        mPopupState == ePopupShowing || mPopupState == ePopupPositioning;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    const bool needsLayout = shouldPosition || IsMenuList();
+    if (!needsLayout) {
       RemoveStateBits(NS_FRAME_FIRST_REFLOW);
       return;
     }
@@ -616,9 +599,20 @@ void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState,
   nsSize prefSize = GetXULPrefSize(aState);
   nsSize minSize = GetXULMinSize(aState);
   nsSize maxSize = GetXULMaxSize(aState);
-
-  if (aSizedToPopup) {
-    prefSize.width = aParentMenu->GetRect().width;
+  if (ShouldExpandToInflowParentOrAnchor()) {
+    nscoord menuListOrAnchorWidth = 0;
+    if (nsIFrame* menuList = GetInFlowParent()) {
+      menuListOrAnchorWidth = menuList->GetRect().width;
+    }
+    if (mAnchorType == MenuPopupAnchorType_Rect) {
+      menuListOrAnchorWidth =
+          std::max(menuListOrAnchorWidth, mScreenRect.width);
+    }
+    
+    
+    menuListOrAnchorWidth +=
+        2 * StyleUIReset()->mMozWindowInputRegionMargin.ToAppUnits();
+    prefSize.width = std::max(prefSize.width, menuListOrAnchorWidth);
   }
 
   prefSize = XULBoundsCheck(minSize, prefSize, maxSize);
@@ -636,7 +630,7 @@ void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState,
 
   bool needCallback = false;
   if (shouldPosition) {
-    SetPopupPosition(aParentMenu, false, aSizedToPopup);
+    SetPopupPosition(false);
     needCallback = true;
   }
 
@@ -648,21 +642,19 @@ void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState,
   
   
   bool rePosition = shouldPosition && (mPosition == POPUPPOSITION_SELECTION);
-  if (!aParentMenu) {
-    nsSize newsize = GetSize();
-    if (newsize.width > bounds.width || newsize.height > bounds.height) {
-      
-      
-      mPrefSize = newsize;
-      if (isOpen) {
-        rePosition = true;
-        needCallback = true;
-      }
+  nsSize newsize = GetSize();
+  if (newsize.width > bounds.width || newsize.height > bounds.height) {
+    
+    
+    mPrefSize = newsize;
+    if (isOpen) {
+      rePosition = true;
+      needCallback = true;
     }
   }
 
   if (rePosition) {
-    SetPopupPosition(aParentMenu, false, aSizedToPopup);
+    SetPopupPosition(false);
   }
 
   nsPresContext* pc = PresContext();
@@ -722,29 +714,35 @@ void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState,
 
   if (needCallback && !mReflowCallbackData.mPosted) {
     pc->PresShell()->PostReflowCallback(this);
-    mReflowCallbackData.MarkPosted(aParentMenu, openChanged);
+    mReflowCallbackData.MarkPosted(openChanged);
   }
 }
 
 bool nsMenuPopupFrame::ReflowFinished() {
-  SetPopupPosition(mReflowCallbackData.mAnchor, false, mSizedToPopup);
+  SetPopupPosition(false);
   mReflowCallbackData.Clear();
   return false;
 }
 
 void nsMenuPopupFrame::ReflowCallbackCanceled() { mReflowCallbackData.Clear(); }
 
-bool nsMenuPopupFrame::IsMenuList() {
-  nsIFrame* parentMenu = GetParent();
-  return (parentMenu && parentMenu->GetContent() &&
-          parentMenu->GetContent()->IsXULElement(nsGkAtoms::menulist));
+bool nsMenuPopupFrame::IsMenuList() const {
+  return mContent->GetParent() &&
+         mContent->GetParent()->IsXULElement(nsGkAtoms::menulist);
+}
+
+bool nsMenuPopupFrame::ShouldExpandToInflowParentOrAnchor() const {
+  return IsMenuList() && !mContent->GetParent()->AsElement()->AttrValueIs(
+                             kNameSpaceID_None, nsGkAtoms::sizetopopup,
+                             nsGkAtoms::none, eCaseMatters);
 }
 
 nsIContent* nsMenuPopupFrame::GetTriggerContent(
     nsMenuPopupFrame* aMenuPopupFrame) {
   while (aMenuPopupFrame) {
-    if (aMenuPopupFrame->mTriggerContent)
+    if (aMenuPopupFrame->mTriggerContent) {
       return aMenuPopupFrame->mTriggerContent;
+    }
 
     
     nsMenuFrame* menuFrame = do_QueryFrame(aMenuPopupFrame->GetParent());
@@ -1437,8 +1435,7 @@ static nsIFrame* MaybeDelegatedAnchorFrame(nsIFrame* aFrame) {
   return aFrame;
 }
 
-nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
-                                            bool aIsMove, bool aSizedToPopup) {
+nsresult nsMenuPopupFrame::SetPopupPosition(bool aIsMove) {
   
   
   if (aIsMove && (mPrefSize.width == -1 || mPrefSize.height == -1)) {
@@ -1456,7 +1453,7 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
   nsRect anchorRect;
 
   bool anchored = IsAnchored();
-  if (anchored || aSizedToPopup) {
+  if (anchored) {
     
     nsPresContext* rootPresContext = presContext->GetRootPresContext();
 
@@ -1474,19 +1471,15 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
       
       
       
-      if (aAnchorFrame) {
-        aAnchorFrame = MaybeDelegatedAnchorFrame(aAnchorFrame);
-      } else {
-        aAnchorFrame = GetAnchorFrame();
-        if (!aAnchorFrame) {
-          aAnchorFrame = rootFrame;
-          if (!aAnchorFrame) {
-            return NS_OK;
-          }
+      nsIFrame* anchorFrame = GetAnchorFrame();
+      if (!anchorFrame) {
+        anchorFrame = rootFrame;
+        if (!anchorFrame) {
+          return NS_OK;
         }
       }
 
-      anchorRect = ComputeAnchorRect(rootPresContext, aAnchorFrame);
+      anchorRect = ComputeAnchorRect(rootPresContext, anchorFrame);
     }
   }
 
@@ -1497,23 +1490,7 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
   {
     NS_ASSERTION(mPrefSize.width >= 0 || mPrefSize.height >= 0,
                  "preferred size of popup not set");
-    nsSize newSize = mPrefSize;
-    if (aSizedToPopup) {
-      
-      
-      const nscoord inputMargin =
-          StyleUIReset()->mMozWindowInputRegionMargin.ToAppUnits();
-      newSize.width = anchorRect.width + 2 * inputMargin;
-      
-      
-      if (mAnchorType == MenuPopupAnchorType_Rect) {
-        newSize.width = std::max(newSize.width, mPrefSize.width);
-      }
-
-      
-      ConstrainSizeForWayland(newSize);
-    }
-    mRect.SizeTo(newSize);
+    mRect.SizeTo(mPrefSize);
   }
 
   
@@ -1739,12 +1716,6 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
 
   
   nsBoxFrame::SetPosition(viewPoint - GetParent()->GetOffsetTo(rootFrame));
-
-  if (aSizedToPopup) {
-    nsBoxLayoutState state(PresContext());
-    
-    SetXULBounds(state, mRect);
-  }
 
   
   
@@ -2448,7 +2419,7 @@ void nsMenuPopupFrame::MoveTo(const CSSPoint& aPos, bool aUpdateAttrs,
     mAnchorType = MenuPopupAnchorType_Point;
   }
 
-  SetPopupPosition(nullptr, true, mSizedToPopup);
+  SetPopupPosition(true);
 
   RefPtr<Element> popup = mContent->AsElement();
   if (aUpdateAttrs &&
@@ -2473,7 +2444,7 @@ void nsMenuPopupFrame::MoveToAnchor(nsIContent* aAnchorContent,
   mPopupState = oldstate;
 
   
-  SetPopupPosition(nullptr, false, false);
+  SetPopupPosition(false);
 }
 
 int8_t nsMenuPopupFrame::GetAlignmentPosition() const {
@@ -2664,7 +2635,7 @@ void nsMenuPopupFrame::CheckForAnchorChange(nsRect& aRect) {
   
   if (!anchorRect.IsEqualEdges(aRect)) {
     aRect = anchorRect;
-    SetPopupPosition(nullptr, true, false);
+    SetPopupPosition(true);
   }
 }
 

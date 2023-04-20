@@ -187,7 +187,7 @@ void XULPopupElement::SizeTo(int32_t aWidth, int32_t aHeight) {
   
   nsMenuPopupFrame* menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
   if (menuPopupFrame && menuPopupFrame->PopupState() == ePopupShown) {
-    menuPopupFrame->SetPopupPosition(nullptr, false, false);
+    menuPopupFrame->SetPopupPosition(false);
   }
 }
 
