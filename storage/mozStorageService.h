@@ -131,7 +131,6 @@ class Service : public mozIStorageService,
   
   AutoVFSRegistration mTelemetrySqliteVFS;
   AutoVFSRegistration mTelemetryExclSqliteVFS;
-  AutoVFSRegistration mQuotaSqliteVFS;
   AutoVFSRegistration mObfuscatingSqliteVFS;
   AutoVFSRegistration mReadOnlyNoLockSqliteVFS;
 
