@@ -6,27 +6,76 @@
 var EXPORTED_SYMBOLS = ["PageStyleParent"];
 
 class PageStyleParent extends JSWindowActorParent {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  #styleSheetInfo = null;
+
   receiveMessage(msg) {
     
     let browser = this.browsingContext.top.embedderElement;
-    if (!browser) {
+    if (!browser || browser.ownerGlobal.closed) {
       return;
     }
 
-    let permanentKey = browser.permanentKey;
-    let window = browser.ownerGlobal;
-    let styleMenu = window.gPageStyleMenu;
-    if (window.closed || !styleMenu) {
-      return;
-    }
-
+    
+    let actor = this.browsingContext.top.currentWindowGlobal.getActor(
+      "PageStyle"
+    );
     switch (msg.name) {
       case "PageStyle:Add":
-        styleMenu.addBrowserStyleSheets(msg.data, permanentKey);
+        actor.addSheetInfo(msg.data);
         break;
       case "PageStyle:Clear":
-        styleMenu.clearBrowserStyleSheets(permanentKey);
+        if (actor == this) {
+          this.#styleSheetInfo = null;
+        }
         break;
     }
+  }
+
+  
+
+
+
+
+
+  addSheetInfo(newSheetData) {
+    let info = this.getSheetInfo();
+    info.filteredStyleSheets.push(...newSheetData.filteredStyleSheets);
+    info.preferredStyleSheetSet ||= newSheetData.preferredStyleSheetSet;
+  }
+
+  getSheetInfo() {
+    if (!this.#styleSheetInfo) {
+      this.#styleSheetInfo = {
+        filteredStyleSheets: [],
+        authorStyleDisabled: false,
+        preferredStyleSheetSet: true,
+      };
+    }
+    return this.#styleSheetInfo;
   }
 }
