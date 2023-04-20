@@ -6,20 +6,31 @@
 
 #include "mozilla/dom/WebTransportStreams.h"
 
+#include "mozilla/dom/WebTransportLog.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/WebTransport.h"
+#include "mozilla/dom/WebTransportBidirectionalStream.h"
+#include "mozilla/dom/WebTransportReceiveStream.h"
+#include "mozilla/dom/WebTransportSendStream.h"
 #include "mozilla/Result.h"
+
+using namespace mozilla::ipc;
 
 namespace mozilla::dom {
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(WebTransportIncomingStreamsAlgorithms,
-                                   UnderlyingSourceAlgorithmsWrapper, mStream)
+                                   UnderlyingSourceAlgorithmsWrapper,
+                                   mTransport, mCallback)
 NS_IMPL_ADDREF_INHERITED(WebTransportIncomingStreamsAlgorithms,
                          UnderlyingSourceAlgorithmsWrapper)
 NS_IMPL_RELEASE_INHERITED(WebTransportIncomingStreamsAlgorithms,
                           UnderlyingSourceAlgorithmsWrapper)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(WebTransportIncomingStreamsAlgorithms)
 NS_INTERFACE_MAP_END_INHERITING(UnderlyingSourceAlgorithmsWrapper)
+
+WebTransportIncomingStreamsAlgorithms::WebTransportIncomingStreamsAlgorithms(
+    StreamType aUnidirectional, WebTransport* aTransport)
+    : mUnidirectional(aUnidirectional), mTransport(aTransport) {}
 
 WebTransportIncomingStreamsAlgorithms::
     ~WebTransportIncomingStreamsAlgorithms() = default;
@@ -29,6 +40,8 @@ WebTransportIncomingStreamsAlgorithms::PullCallbackImpl(
     JSContext* aCx, ReadableStreamController& aController, ErrorResult& aRv) {
   
   
+
+  
   
   
 
@@ -36,35 +49,125 @@ WebTransportIncomingStreamsAlgorithms::PullCallbackImpl(
   
   
   
-  RefPtr<Promise> promise = Promise::Create(mStream->GetParentObject(), aRv);
+  
+  RefPtr<Promise> promise =
+      Promise::CreateInfallible(mTransport->GetParentObject());
   RefPtr<WebTransportIncomingStreamsAlgorithms> self(this);
   
   
-  
-  Result<RefPtr<Promise>, nsresult> returnResult =
-      mIncomingStreamPromise->ThenWithCycleCollectedArgs(
-          [](JSContext* aCx, JS::Handle<JS::Value>, ErrorResult& aRv,
-             const RefPtr<WebTransportIncomingStreamsAlgorithms>& self,
-             RefPtr<Promise> newPromise) {
-            Unused << self->mUnidirectional;
-            
-            
-            
-            
-            
-            
-            
-            newPromise->MaybeResolveWithUndefined();
-            return newPromise.forget();
-          },
-          self, promise);
-  if (returnResult.isErr()) {
+  if (mTransport->mUnidirectionalStreams.GetSize() == 0) {
     
-    aRv.Throw(returnResult.unwrapErr());
-    return nullptr;
+    
+    
+    
+    MOZ_ASSERT(!mCallback);
+    mCallback = promise;
+
+    LOG(("Incoming%sDirectionalStreams Pull waiting for a stream",
+         mUnidirectional == StreamType::Unidirectional ? "Uni" : "Bi"));
+    Result<RefPtr<Promise>, nsresult> returnResult =
+        promise->ThenWithCycleCollectedArgs(
+            [](JSContext* aCx, JS::Handle<JS::Value>, ErrorResult& aRv,
+               RefPtr<WebTransportIncomingStreamsAlgorithms> self,
+               RefPtr<Promise> aPromise) -> already_AddRefed<Promise> {
+              self->BuildStream(aCx, aRv);
+              return nullptr;
+            },
+            self, promise);
+    if (returnResult.isErr()) {
+      
+      aRv.Throw(returnResult.unwrapErr());
+      return nullptr;
+    }
+    
+    return returnResult.unwrap().forget();
+  }
+  self->BuildStream(aCx, aRv);
+  
+  return promise.forget();
+}
+
+void WebTransportIncomingStreamsAlgorithms::BuildStream(JSContext* aCx,
+                                                        ErrorResult& aRv) {
+  
+  
+  LOG(("Incoming%sDirectionalStreams Pull building a stream",
+       mUnidirectional == StreamType::Unidirectional ? "Uni" : "Bi"));
+  if (mUnidirectional == StreamType::Unidirectional) {
+    
+    
+    RefPtr<DataPipeReceiver> pipe = mTransport->mUnidirectionalStreams.Pop();
+
+    
+    
+    RefPtr<WebTransportReceiveStream> readableStream =
+        WebTransportReceiveStream::Create(mTransport, mTransport->mGlobal, pipe,
+                                          aRv);
+    if (MOZ_UNLIKELY(!readableStream)) {
+      aRv.ThrowUnknownError("Internal error");
+      return;
+    }
+    
+    JS::Rooted<JS::Value> jsStream(aCx);
+    if (MOZ_UNLIKELY(!ToJSValue(aCx, readableStream, &jsStream))) {
+      aRv.ThrowUnknownError("Internal error");
+      return;
+    }
+    
+    RefPtr<ReadableStream> incomingStream =
+        mTransport->mIncomingUnidirectionalStreams;
+    incomingStream->EnqueueNative(aCx, jsStream, aRv);
+    if (MOZ_UNLIKELY(aRv.Failed())) {
+      aRv.ThrowUnknownError("Internal error");
+      return;
+    }
+  } else {
+    
+    
+    UniquePtr<Tuple<RefPtr<DataPipeReceiver>, RefPtr<DataPipeSender>>> pipes(
+        mTransport->mBidirectionalStreams.Pop());
+
+    
+    
+
+    
+    
+    
   }
   
-  return returnResult.unwrap().forget();
+}
+
+void WebTransportIncomingStreamsAlgorithms::NotifyIncomingStream() {
+  if (mUnidirectional == StreamType::Unidirectional) {
+    LOG(("NotifyIncomingStream: %zu Unidirectional ",
+         mTransport->mUnidirectionalStreams.GetSize()));
+    auto number = mTransport->mUnidirectionalStreams.GetSize();
+    MOZ_ASSERT(number > 0);
+#endif
+    RefPtr<Promise> promise = mCallback.forget();
+    if (promise) {
+      promise->MaybeResolveWithUndefined();
+    }
+  } else {
+    LOG(("NotifyIncomingStream: %zu Bidirectional ",
+         mTransport->mBidirectionalStreams.GetSize()));
+    auto number = mTransport->mBidirectionalStreams.GetSize();
+    MOZ_ASSERT(number > 0);
+#endif
+    RefPtr<Promise> promise = mCallback.forget();
+    if (promise) {
+      promise->MaybeResolveWithUndefined();
+    }
+  }
+}
+
+void WebTransportIncomingStreamsAlgorithms::NotifyRejectAll() {
+  
+  LOG(("Cancel all WebTransport Pulls"));
+  
+  if (RefPtr<Promise> promise = mCallback.forget()) {
+    promise->MaybeReject(NS_ERROR_FAILURE);
+  }
 }
 
 }  

@@ -8,11 +8,15 @@
 #define DOM_WEBTRANSPORT_API_WEBTRANSPORT__H_
 
 #include "nsCOMPtr.h"
+#include "nsDeque.h"
 #include "nsISupports.h"
 #include "nsWrapperCache.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebTransportBinding.h"
 #include "mozilla/dom/WebTransportChild.h"
+#include "mozilla/dom/WebTransportSendStream.h"
+#include "mozilla/dom/WebTransportReceiveStream.h"
+#include "mozilla/dom/WebTransportStreams.h"
 #include "mozilla/ipc/DataPipe.h"
 
 namespace mozilla::dom {
@@ -25,6 +29,9 @@ class WritableStream;
 
 class WebTransport final : public nsISupports, public nsWrapperCache {
   friend class WebTransportIncomingStreamsAlgorithms;
+  
+  friend class WebTransportSendStream;
+  friend class WebTransportReceiveStream;
 
  public:
   explicit WebTransport(nsIGlobalObject* aGlobal);
@@ -107,14 +114,22 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   
   
   
-  nsTArray<RefPtr<WritableStream>> mSendStreams;
-  nsTArray<RefPtr<ReadableStream>> mReceiveStreams;
+  nsTArray<RefPtr<WebTransportSendStream>> mSendStreams;
+  nsTArray<RefPtr<WebTransportReceiveStream>> mReceiveStreams;
 
   WebTransportState mState;
   RefPtr<Promise> mReady;
-  RefPtr<Promise> mIncomingUnidirectionalPromise;
-  RefPtr<Promise> mIncomingBidirectionalPromise;
+  
+  RefPtr<WebTransportIncomingStreamsAlgorithms> mIncomingBidirectionalAlgorithm;
+  RefPtr<WebTransportIncomingStreamsAlgorithms>
+      mIncomingUnidirectionalAlgorithm;
   WebTransportReliabilityMode mReliability;
+  
+  nsRefPtrDeque<mozilla::ipc::DataPipeReceiver> mUnidirectionalStreams;
+  nsDeque<Tuple<RefPtr<mozilla::ipc::DataPipeReceiver>,
+                RefPtr<mozilla::ipc::DataPipeSender>>>
+      mBidirectionalStreams;
+
   
   RefPtr<ReadableStream> mIncomingUnidirectionalStreams;
   RefPtr<ReadableStream> mIncomingBidirectionalStreams;
