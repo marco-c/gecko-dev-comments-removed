@@ -123,22 +123,16 @@ async function _commandsFromURL(client, id, type) {
       throw new Error(`commandsFromURL, worker with id '${id}' doesn't exist`);
     }
   } else if (type == "process") {
-    try {
-      id = parseInt(id, 10);
-      if (isNaN(id)) {
-        id = 0;
-      }
-      
-      DevToolsServer.allowChromeProcess = true;
-      commands = await CommandsFactory.forProcess(id, { client });
-    } catch (ex) {
-      if (ex.error == "noProcess") {
-        throw new Error(
-          `commandsFromURL, process with id '${id}' doesn't exist`
-        );
-      }
-      throw ex;
+    
+    
+    if (id) {
+      throw new Error(
+        `commandsFromURL, id attribute for process is no longer supported. Only support debugging the parent process.`
+      );
     }
+    
+    DevToolsServer.allowChromeProcess = true;
+    commands = await CommandsFactory.forMainProcess({ client });
   } else {
     throw new Error(`commandsFromURL, unsupported type '${type}' parameter`);
   }
