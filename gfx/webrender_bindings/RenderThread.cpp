@@ -1267,8 +1267,7 @@ static already_AddRefed<gl::GLContext> CreateGLContextANGLE(
   
   
 
-  auto gl = gl::GLContextEGL::CreateEGLPBufferOffscreenContext(egl, {flags},
-                                                               &failureId);
+  auto gl = gl::GLContextEGL::CreateWithoutSurface(egl, {flags}, &failureId);
   if (!gl || !gl->IsANGLE()) {
     aError.Assign(nsPrintfCString("RcANGLE(create GL context failed: %p, %s)",
                                   gl.get(), failureId.get()));
