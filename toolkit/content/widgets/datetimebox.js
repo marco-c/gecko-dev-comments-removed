@@ -694,6 +694,7 @@ this.DateTimeBoxWidget = class {
         aEvent.preventDefault();
         break;
       }
+      case "Delete":
       case "Backspace": {
         if (aEvent.originalTarget == this.mCalendarButton) {
           
@@ -703,9 +704,16 @@ this.DateTimeBoxWidget = class {
         if (this.isEditable()) {
           
           
-          let targetField = aEvent.originalTarget;
-          this.clearFieldValue(targetField);
-          this.setInputValueFromFields();
+          
+          
+          if (aEvent.getModifierState("Accel")) {
+            
+            this.clearInputFields(false);
+          } else {
+            let targetField = aEvent.originalTarget;
+            this.clearFieldValue(targetField);
+            this.setInputValueFromFields();
+          }
           aEvent.preventDefault();
         }
         break;
