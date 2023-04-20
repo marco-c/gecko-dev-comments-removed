@@ -355,6 +355,18 @@ function run_test() {
   }, "setup");
 
   
+  testVectors.forEach(function(vector) {
+      var algorithm = {name: vector.algorithmName};
+      promise_test(async() => {
+          let key = await subtle.generateKey(algorithm, false, ["sign", "verify"]);
+          let signature = await subtle.sign(algorithm, key.privateKey, vector.data);
+          let isVerified = await subtle.verify(algorithm, key.publicKey, signature, vector.data);
+          assert_true(isVerified, "Verificaton failed.");
+      }, "Sign and verify using generated " + vector.algorithmName + " keys.");
+  });
+
+
+  
   
   
   
