@@ -83,6 +83,12 @@ class nsIHTMLContentSink : public nsIContentSink {
 
 
   NS_IMETHOD CloseContainer(ElementType aTag) = 0;
+
+  
+
+
+
+  virtual bool WaitForPendingSheets() = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIHTMLContentSink, NS_IHTML_CONTENT_SINK_IID)

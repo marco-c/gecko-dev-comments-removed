@@ -93,6 +93,12 @@ class nsIContentSink : public nsISupports {
 
 
 
+  virtual nsIContentSink* AsExecutor() { return nullptr; }
+
+  
+
+
+
 
 
   NS_IMETHOD SetParser(nsParserBase* aParser) = 0;

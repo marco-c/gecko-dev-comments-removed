@@ -381,6 +381,7 @@
 #include "nsIX509Cert.h"
 #include "nsIX509CertValidity.h"
 #include "nsIXMLContentSink.h"
+#include "nsIHTMLContentSink.h"
 #include "nsIXULRuntime.h"
 #include "nsImageLoadingContent.h"
 #include "nsImportModule.h"
@@ -12790,6 +12791,27 @@ void Document::FlushAutoFocusCandidates() {
       iter.Remove();
       continue;
     }
+
+    nsCOMPtr<nsIContentSink> sink =
+        do_QueryInterface(autoFocusElementDoc->GetCurrentContentSink());
+    if (sink) {
+      nsHtml5TreeOpExecutor* executor =
+          static_cast<nsHtml5TreeOpExecutor*>(sink->AsExecutor());
+      if (executor) {
+        
+        MOZ_ASSERT(autoFocusElementDoc->IsHTMLDocument());
+        
+        
+        if (executor->WaitForPendingSheets()) {
+          
+          
+          
+          ScheduleFlushAutoFocusCandidates();
+          return;
+        }
+      }
+    }
+
     
     
     if (bc->Top()->GetDocument() != this) {
