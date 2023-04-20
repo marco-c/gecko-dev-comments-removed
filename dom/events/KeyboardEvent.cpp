@@ -383,9 +383,9 @@ bool KeyboardEvent::ShouldResistFingerprinting(CallerType aCallerType) {
   
   
   
-  
-  if (!nsContentUtils::ShouldResistFingerprinting() || mInitializedByJS ||
-      aCallerType == CallerType::System || mEvent->mFlags.mInSystemGroup ||
+  if (!nsContentUtils::ShouldResistFingerprinting("Efficiency Check") ||
+      mInitializedByJS || aCallerType == CallerType::System ||
+      mEvent->mFlags.mInSystemGroup ||
       mEvent->AsKeyboardEvent()->mLocation ==
           KeyboardEvent_Binding::DOM_KEY_LOCATION_NUMPAD) {
     return false;
