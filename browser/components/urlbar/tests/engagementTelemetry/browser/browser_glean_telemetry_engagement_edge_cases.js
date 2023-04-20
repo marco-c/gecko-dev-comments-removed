@@ -181,3 +181,38 @@ add_task(async function engagement_after_closing_results() {
     });
   }
 });
+
+add_task(async function enter_to_reload_current_url() {
+  await doTest(async browser => {
+    
+    await openPopup("https://example.com");
+    await doEnter();
+
+    
+    EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
+    await BrowserTestUtils.waitForCondition(
+      () => window.document.activeElement === gURLBar.inputField
+    );
+    await UrlbarTestUtils.promiseSearchComplete(window);
+
+    
+    await doEnter();
+
+    assertEngagementTelemetry([
+      {
+        selected_result: "url",
+        selected_result_subtype: "",
+        provider: "HeuristicFallback",
+        results: "url",
+        groups: "heuristic",
+      },
+      {
+        selected_result: "input_field",
+        selected_result_subtype: "",
+        provider: undefined,
+        results: "action",
+        groups: "suggested_index",
+      },
+    ]);
+  });
+});
