@@ -526,6 +526,8 @@ this.DateTimeBoxWidget = class {
         break;
       }
       case "MozSetDateTimePickerState": {
+        
+        this.oldFocus = this.window.document.activeElement;
         this.setPickerState(aEvent.detail);
         break;
       }
@@ -585,6 +587,13 @@ this.DateTimeBoxWidget = class {
         " rt: " +
         aEvent.relatedTarget
     );
+
+    
+    
+    if (this.document.activeElement === this.oldFocus) {
+      return;
+    }
+    this.oldFocus = null;
 
     let target = aEvent.originalTarget;
     target.setAttribute("typeBuffer", "");
