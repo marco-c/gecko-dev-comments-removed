@@ -3,13 +3,12 @@
 
 "use strict";
 
-
-
-
-
-
-
-
+const {
+  assertFirefoxViewTab,
+  closeFirefoxViewTab,
+} = ChromeUtils.importESModule(
+  "resource://testing-common/FirefoxViewTestUtils.sys.mjs"
+);
 
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
@@ -31,24 +30,6 @@ add_setup(async () => {
   });
 });
 
-function assertFirefoxViewTab(w = window) {
-  ok(w.FirefoxViewHandler.tab, "Firefox View tab exists");
-  ok(w.FirefoxViewHandler.tab?.hidden, "Firefox View tab is hidden");
-  is(
-    w.gBrowser.visibleTabs.indexOf(w.FirefoxViewHandler.tab),
-    -1,
-    "Firefox View tab is not in the list of visible tabs"
-  );
-}
-
-function closeFirefoxViewTab(w = window) {
-  w.gBrowser.removeTab(w.FirefoxViewHandler.tab);
-  ok(
-    !w.FirefoxViewHandler.tab,
-    "Reference to Firefox View tab got removed when closing the tab"
-  );
-}
-
 add_task(async function test_open_firefox_view() {
   
   let newTabOpened = BrowserTestUtils.waitForEvent(
@@ -63,8 +44,8 @@ add_task(async function test_open_firefox_view() {
 
   
   await newTabOpened;
-  assertFirefoxViewTab();
+  assertFirefoxViewTab(window);
 
   
-  closeFirefoxViewTab();
+  closeFirefoxViewTab(window);
 });
