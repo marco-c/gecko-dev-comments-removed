@@ -1604,4 +1604,14 @@ public class GeckoAppShell {
 
   @WrapForJNI
   public static native GeckoResult<Boolean> isGpuProcessEnabled();
+
+  @SuppressLint("NewApi")
+  public static boolean isIsolatedProcess() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+      return false;
+    }
+    
+    
+    return android.os.Process.isIsolated();
+  }
 }
