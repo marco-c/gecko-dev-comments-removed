@@ -342,6 +342,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                 "install",
                 "stage-files",
                 "run-tests",
+                "uninstall",
             ],
             require_config_file=require_config_file,
             config={"require_test_zip": True},
@@ -1284,6 +1285,16 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
         else:
             self.debug("There were no suites to run for %s" % suite_category)
         return True
+
+    def uninstall(self):
+        
+        
+        
+        
+        if "WindowsApps" in self.binary_path:
+            self.uninstall_app(self.binary_path)
+        else:
+            self.log("Skipping uninstall for non-MSIX test")
 
 
 
