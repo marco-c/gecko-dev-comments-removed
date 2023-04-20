@@ -2820,7 +2820,16 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
 }
 
 - (NSRect)windowWillUseStandardFrame:(NSWindow*)window defaultFrame:(NSRect)newFrame {
-  return newFrame;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return window.screen.frame;
 }
 
 void nsCocoaWindow::CocoaSendToplevelActivateEvents() {
