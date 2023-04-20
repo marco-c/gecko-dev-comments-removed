@@ -454,6 +454,14 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     const doc = this.getRawAccessibleFor(this.rootDoc);
+
+    
+    
+    if (!doc && !this.rootWin.windowGlobalChild.isProcessRoot) {
+      
+      return null;
+    }
+
     if (!doc || isStale(doc)) {
       return this.once("document-ready").then(docAcc => this.addRef(docAcc));
     }
@@ -505,6 +513,10 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       return [];
     }
     const doc = await this.getDocument();
+    if (!doc) {
+      return [];
+    }
+
     const ancestry = [];
     if (accessible === doc) {
       return ancestry;
@@ -540,6 +552,10 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
   async audit(options) {
     const doc = await this.getDocument();
+    if (!doc) {
+      return [];
+    }
+
     const report = new Map();
     this._auditProgress = new AuditProgress(this);
     getAudit(doc, options, report, this._auditProgress);
@@ -592,8 +608,10 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       .catch(() => this.emit("audit-event", { type: "error" }))
       .finally(() => {
         this._auditing = null;
-        this._auditProgress.destroy();
-        this._auditProgress = null;
+        if (this._auditProgress) {
+          this._auditProgress.destroy();
+          this._auditProgress = null;
+        }
       });
   },
 
