@@ -1205,7 +1205,7 @@ void DocumentLoadListener::Disconnect(bool aContinueNavigating) {
   
   
   if (!aContinueNavigating) {
-    mEarlyHintsService.Cancel();
+    mEarlyHintsService.Cancel("DocumentLoadListener::Disconnect"_ns);
   }
 
   if (auto* ctx = GetDocumentBrowsingContext()) {
@@ -2545,7 +2545,8 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
     Unused << httpChannel->GetResponseStatus(&responseStatus);
     mEarlyHintsService.FinalResponse(responseStatus);
   } else {
-    mEarlyHintsService.Cancel();
+    mEarlyHintsService.Cancel(
+        "DocumentLoadListener::OnStartRequest: no httpChannel"_ns);
   }
 
   
@@ -2774,7 +2775,8 @@ DocumentLoadListener::AsyncOnChannelRedirect(
   nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
   nsresult rv = ssm->CheckSameOriginURI(oldURI, uri, false, false);
   if (NS_FAILED(rv)) {
-    mEarlyHintsService.Cancel();
+    mEarlyHintsService.Cancel(
+        "DocumentLoadListener::AsyncOnChannelRedirect: cors redirect"_ns);
   }
 
   if (GetDocumentBrowsingContext()) {
