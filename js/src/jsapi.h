@@ -319,10 +319,28 @@ extern JS_PUBLIC_API bool GetFirstArgumentAsTypeHint(JSContext* cx,
 
 } 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API JSObject* JS_InitClass(
-    JSContext* cx, JS::HandleObject obj, JS::HandleObject parent_proto,
-    const JSClass* clasp, JSNative constructor, unsigned nargs,
-    const JSPropertySpec* ps, const JSFunctionSpec* fs,
+    JSContext* cx, JS::HandleObject obj, const JSClass* protoClass,
+    JS::HandleObject protoProto, const char* name, JSNative constructor,
+    unsigned nargs, const JSPropertySpec* ps, const JSFunctionSpec* fs,
     const JSPropertySpec* static_ps, const JSFunctionSpec* static_fs);
 
 
@@ -821,7 +839,8 @@ extern JS_PUBLIC_API void JS_SetOffthreadIonCompilationEnabled(JSContext* cx,
   Register(WASM_FOLD_OFFSETS, "wasm.fold-offsets") \
   Register(WASM_DELAY_TIER2, "wasm.delay-tier2") \
   Register(WASM_JIT_BASELINE, "wasm.baseline") \
-  Register(WASM_JIT_OPTIMIZING, "wasm.optimizing")  // clang-format on
+  Register(WASM_JIT_OPTIMIZING, "wasm.optimizing")
+
 
 typedef enum JSJitCompilerOption {
 #define JIT_COMPILER_DECLARE(key, str) JSJITCOMPILER_##key,
