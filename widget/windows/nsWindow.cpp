@@ -9299,14 +9299,9 @@ void nsWindow::FrameState::OnFrameChanging() {
     return;
   }
 
-  
-  
-  
-  
-  
   const nsSizeMode newSizeMode =
       GetSizeModeForWindowFrame(mWindow->mWnd, mFullscreenMode);
-  EnsureSizeMode(newSizeMode, ShowWindowAndFocus::No);
+  EnsureSizeMode(newSizeMode);
 }
 
 void nsWindow::FrameState::OnFrameChanged() {
@@ -9314,14 +9309,20 @@ void nsWindow::FrameState::OnFrameChanged() {
     return;
   }
 
-  const auto newSizeMode =
-      GetSizeModeForWindowFrame(mWindow->mWnd, mFullscreenMode);
-  EnsureSizeMode(newSizeMode);
+  const auto oldSizeMode = mSizeMode;
 
   
   
   
-  if (mSizeMode == nsSizeMode_Normal) {
+  
+  
+  const auto newSizeMode =
+      GetSizeModeForWindowFrame(mWindow->mWnd, mFullscreenMode);
+  EnsureSizeMode(newSizeMode, ShowWindowAndFocus::No);
+
+  
+  
+  if (oldSizeMode != mSizeMode && mSizeMode == nsSizeMode_Normal) {
     mWindow->DispatchFocusToTopLevelWindow(true);
   }
 }
