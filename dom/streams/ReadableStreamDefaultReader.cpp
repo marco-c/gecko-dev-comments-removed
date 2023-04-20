@@ -285,7 +285,7 @@ void ReadableStreamReaderGenericRelease(ReadableStreamGenericReader* aReader,
 
   
   
-  if (aReader->GetStream()->State() == ReadableStream::ReaderState::Readable) {
+  if (stream->State() == ReadableStream::ReaderState::Readable) {
     aReader->ClosedPromise()->MaybeRejectWithTypeError(
         "Releasing lock on readable stream");
   } else {
