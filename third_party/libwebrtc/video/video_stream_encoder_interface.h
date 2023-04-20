@@ -15,7 +15,9 @@
 
 #include "api/adaptation/resource.h"
 #include "api/fec_controller_override.h"
+#include "api/rtc_error.h"
 #include "api/rtp_parameters.h"  
+#include "api/rtp_sender_interface.h"
 #include "api/scoped_refptr.h"
 #include "api/units/data_rate.h"
 #include "api/video/video_bitrate_allocator.h"
@@ -131,6 +133,9 @@ class VideoStreamEncoderInterface {
   
   virtual void ConfigureEncoder(VideoEncoderConfig config,
                                 size_t max_data_payload_length) = 0;
+  virtual void ConfigureEncoder(VideoEncoderConfig config,
+                                size_t max_data_payload_length,
+                                SetParametersCallback callback) = 0;
 
   
   

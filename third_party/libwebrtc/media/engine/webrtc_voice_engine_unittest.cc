@@ -3207,10 +3207,10 @@ TEST_P(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
 
   
   parameters.encodings[0].network_priority = webrtc::Priority::kHigh;
-  ASSERT_TRUE(channel->SetRtpSendParameters(kSsrcZ, parameters).ok());
+  ASSERT_TRUE(channel->SetRtpSendParameters(kSsrcZ, parameters, nullptr).ok());
   EXPECT_EQ(rtc::DSCP_EF, network_interface.dscp());
   parameters.encodings[0].network_priority = webrtc::Priority::kVeryLow;
-  ASSERT_TRUE(channel->SetRtpSendParameters(kSsrcZ, parameters).ok());
+  ASSERT_TRUE(channel->SetRtpSendParameters(kSsrcZ, parameters, nullptr).ok());
   EXPECT_EQ(rtc::DSCP_CS1, network_interface.dscp());
 
   

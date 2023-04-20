@@ -25,6 +25,7 @@
 #include "api/crypto/frame_encryptor_interface.h"
 #include "api/frame_transformer_interface.h"
 #include "api/rtp_parameters.h"
+#include "api/rtp_sender_interface.h"
 #include "api/scoped_refptr.h"
 #include "call/audio_sender.h"
 #include "call/rtp_config.h"
@@ -175,7 +176,8 @@ class AudioSendStream : public AudioSender {
   virtual const webrtc::AudioSendStream::Config& GetConfig() const = 0;
 
   
-  virtual void Reconfigure(const Config& config) = 0;
+  virtual void Reconfigure(const Config& config,
+                           SetParametersCallback callback) = 0;
 
   
   
