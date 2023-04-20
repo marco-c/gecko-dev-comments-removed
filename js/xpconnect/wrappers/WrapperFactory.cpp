@@ -30,6 +30,13 @@ using namespace mozilla;
 
 namespace xpc {
 
+#ifndef MOZ_UNIFIED_BUILD
+extern template class FilteringWrapper<js::CrossCompartmentSecurityWrapper,
+                                       Opaque>;
+extern template class FilteringWrapper<js::CrossCompartmentSecurityWrapper,
+                                       OpaqueWithCall>;
+#endif
+
 
 
 
