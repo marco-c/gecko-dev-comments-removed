@@ -16,7 +16,6 @@
 #include "mozilla/LoadInfo.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/StaticPrefs_privacy.h"
 #include "nsICSSDeclaration.h"
 #include "nsObjectLoadingContent.h"
 #include "nsRect.h"
@@ -48,7 +47,9 @@
 
 
 static bool IsSiteSpecific() {
-  return !mozilla::StaticPrefs::privacy_resistFingerprinting() &&
+  return !nsContentUtils::ShouldResistFingerprinting(
+             "This needs to read the global pref as long as "
+             "browser-fullZoom.js also does so.") &&
          mozilla::Preferences::GetBool("browser.zoom.siteSpecific", false);
 }
 
@@ -554,8 +555,9 @@ void ImageDocument::UpdateRemoteStyle(StyleImageRendering aImageRendering) {
   
   if (!nsContentUtils::IsSafeToRunScript()) {
     return nsContentUtils::AddScriptRunner(
-        NewRunnableMethod<StyleImageRendering>("UpdateRemoteStyle", this,
-                          &ImageDocument::UpdateRemoteStyle, aImageRendering));
+        NewRunnableMethod<StyleImageRendering>(
+            "UpdateRemoteStyle", this, &ImageDocument::UpdateRemoteStyle,
+            aImageRendering));
   }
 
   nsCOMPtr<nsICSSDeclaration> style = mImageContent->Style();

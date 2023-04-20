@@ -42,8 +42,9 @@
 #include "mozilla/XorShift128PlusRNG.h"
 
 #include "nsBaseHashtable.h"
-#include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
+#include "nsCOMPtr.h"
+#include "nsContentUtils.h"
 #include "nsCoord.h"
 #include "nsTHashMap.h"
 #include "nsDebug.h"
@@ -668,8 +669,7 @@ nsresult nsRFPService::Init() {
 void nsRFPService::UpdateRFPPref() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  bool privacyResistFingerprinting =
-      StaticPrefs::privacy_resistFingerprinting();
+  bool resistFingerprinting = nsContentUtils::ShouldResistFingerprinting();
 
   JS::SetReduceMicrosecondTimePrecisionCallback(
       nsRFPService::ReduceTimePrecisionAsUSecsWrapper);
@@ -677,9 +677,9 @@ void nsRFPService::UpdateRFPPref() {
   
   JS::SetUseFdlibmForSinCosTan(
       StaticPrefs::javascript_options_use_fdlibm_for_sin_cos_tan() ||
-      privacyResistFingerprinting);
+      resistFingerprinting);
 
-  if (privacyResistFingerprinting) {
+  if (resistFingerprinting) {
     PR_SetEnv("TZ=UTC");
   } else if (sInitialized) {
     
@@ -714,7 +714,7 @@ void nsRFPService::UpdateRFPPref() {
 
   
   
-  if (privacyResistFingerprinting || sInitialized) {
+  if (resistFingerprinting || sInitialized) {
     
     
 #if defined(XP_WIN)
