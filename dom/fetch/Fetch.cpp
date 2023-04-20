@@ -1194,7 +1194,7 @@ void FetchBody<Derived>::SetBodyUsed(JSContext* aCx, ErrorResult& aRv) {
   
   
   if (mReadableStreamBody) {
-    if (mReadableStreamBody->HasNativeUnderlyingSource()) {
+    if (mReadableStreamBody->GetBodyStreamHolder()) {
       LockStream(aCx, mReadableStreamBody, aRv);
       if (NS_WARN_IF(aRv.Failed())) {
         return;
@@ -1500,7 +1500,7 @@ void FetchBody<Derived>::MaybeTeeReadableStreamBody(
   
   
   
-  if (mReadableStreamBody->HasNativeUnderlyingSource()) {
+  if (mReadableStreamBody->GetBodyStreamHolder()) {
     *aBodyOut = nullptr;
     return;
   }

@@ -86,11 +86,13 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
     mStoredError = aStoredError;
   }
 
-  void SetNativeUnderlyingSource(BodyStreamHolder* aUnderlyingSource);
-  BodyStreamHolder* GetNativeUnderlyingSource() {
-    return mNativeUnderlyingSource;
+  BodyStreamHolder* GetBodyStreamHolder() {
+    if (UnderlyingSourceAlgorithmsBase* algorithms =
+            Controller()->GetAlgorithms()) {
+      return algorithms->GetBodyStreamHolder();
+    }
+    return nullptr;
   }
-  bool HasNativeUnderlyingSource() { return mNativeUnderlyingSource; }
 
   
   
@@ -168,23 +170,6 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
   RefPtr<ReadableStreamGenericReader> mReader;
   ReaderState mState = ReaderState::Readable;
   JS::Heap<JS::Value> mStoredError;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<BodyStreamHolder> mNativeUnderlyingSource;
 };
 
 bool IsReadableStreamLocked(ReadableStream* aStream);

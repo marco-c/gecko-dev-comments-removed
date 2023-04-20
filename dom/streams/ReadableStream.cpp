@@ -71,8 +71,7 @@ namespace mozilla::dom {
 
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WITH_JS_MEMBERS(
-    ReadableStream, (mGlobal, mController, mReader, mNativeUnderlyingSource),
-    (mStoredError))
+    ReadableStream, (mGlobal, mController, mReader), (mStoredError))
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(ReadableStream)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(ReadableStream)
@@ -136,14 +135,7 @@ bool ReadableStreamHasDefaultReader(ReadableStream* aStream) {
   return reader->IsDefault();
 }
 
-void ReadableStream::SetNativeUnderlyingSource(
-    BodyStreamHolder* aUnderlyingSource) {
-  mNativeUnderlyingSource = aUnderlyingSource;
-}
-
 void ReadableStream::ReleaseObjectsFromBodyStream() {
-  SetNativeUnderlyingSource(nullptr);
-
   
   
   
@@ -1023,8 +1015,6 @@ already_AddRefed<ReadableStream> ReadableStream::Create(
     JSContext* aCx, nsIGlobalObject* aGlobal,
     BodyStreamHolder* aUnderlyingSource, ErrorResult& aRv) {
   RefPtr<ReadableStream> stream = new ReadableStream(aGlobal);
-
-  stream->SetNativeUnderlyingSource(aUnderlyingSource);
 
   SetUpReadableByteStreamControllerFromBodyStreamUnderlyingSource(
       aCx, stream, aUnderlyingSource, aRv);

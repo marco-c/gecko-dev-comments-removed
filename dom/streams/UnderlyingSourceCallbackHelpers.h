@@ -52,6 +52,9 @@ class UnderlyingSourceAlgorithmsBase : public nsISupports {
   
   virtual void ReleaseObjects() {}
 
+  
+  virtual BodyStreamHolder* GetBodyStreamHolder() { return nullptr; }
+
  protected:
   virtual ~UnderlyingSourceAlgorithmsBase() = default;
 };

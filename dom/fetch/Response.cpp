@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Response.h"
 
@@ -79,7 +79,7 @@ Response::Response(nsIGlobalObject* aGlobal,
 
 Response::~Response() { mozilla::DropJSObjects(this); }
 
-
+/* static */
 already_AddRefed<Response> Response::Error(const GlobalObject& aGlobal) {
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
   RefPtr<Response> r = new Response(
@@ -87,7 +87,7 @@ already_AddRefed<Response> Response::Error(const GlobalObject& aGlobal) {
   return r.forget();
 }
 
-
+/* static */
 already_AddRefed<Response> Response::Redirect(const GlobalObject& aGlobal,
                                               const nsAString& aUrl,
                                               uint16_t aStatus,
@@ -102,7 +102,7 @@ already_AddRefed<Response> Response::Redirect(const GlobalObject& aGlobal,
     if (doc) {
       baseURI = doc->GetBaseURI();
     }
-    
+    // Don't use NS_ConvertUTF16toUTF8 because that doesn't let us handle OOM.
     nsAutoCString url;
     if (!AppendUTF16toUTF8(aUrl, url, fallible)) {
       aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
@@ -145,9 +145,9 @@ already_AddRefed<Response> Response::Redirect(const GlobalObject& aGlobal,
     return nullptr;
   }
 
-  
-  
-  
+  // We can't just pass nullptr for our null-valued Nullable, because the
+  // fetch::ResponseBodyInit is a non-temporary type due to the MOZ_RAII
+  // annotations on some of its members.
   Nullable<fetch::ResponseBodyInit> body;
   ResponseInit init;
   init.mStatus = aStatus;
@@ -168,7 +168,7 @@ already_AddRefed<Response> Response::Redirect(const GlobalObject& aGlobal,
   return r.forget();
 }
 
-
+/*static*/
 already_AddRefed<Response> Response::Constructor(
     const GlobalObject& aGlobal, const Nullable<fetch::ResponseBodyInit>& aBody,
     const ResponseInit& aInit, ErrorResult& aRv) {
@@ -184,7 +184,7 @@ already_AddRefed<Response> Response::Constructor(
     return nullptr;
   }
 
-  
+  // Check if the status text contains illegal characters
   nsACString::const_iterator start, end;
   aInit.mStatusText.BeginReading(start);
   aInit.mStatusText.EndReading(end);
@@ -192,7 +192,7 @@ already_AddRefed<Response> Response::Constructor(
     aRv.ThrowTypeError<MSG_RESPONSE_INVALID_STATUSTEXT_ERROR>();
     return nullptr;
   }
-  
+  // Reset iterator since FindCharInReadable advances it.
   aInit.mStatusText.BeginReading(start);
   if (FindCharInReadable('\n', start, end)) {
     aRv.ThrowTypeError<MSG_RESPONSE_INVALID_STATUSTEXT_ERROR>();
@@ -204,8 +204,8 @@ already_AddRefed<Response> Response::Constructor(
 
   UniquePtr<mozilla::ipc::PrincipalInfo> principalInfo;
 
-  
-  
+  // Grab a valid channel info from the global so this response is 'valid' for
+  // interception.
   if (NS_IsMainThread()) {
     ChannelInfo info;
     nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(global);
@@ -229,14 +229,14 @@ already_AddRefed<Response> Response::Constructor(
       internalResponse->InitChannelInfo(info);
     }
 
-    
-
-
-
-
-
-
-
+    /**
+     * The channel info is left uninitialized if neither the above `if` nor
+     * `else if` statements are executed; this could be because we're in a
+     * WebExtensions content script, where the global (i.e. `global`) is a
+     * wrapper, and the principal is an expanded principal. In this case,
+     * as far as I can tell, there's no way to get the security info, but we'd
+     * like the `Response` to be successfully constructed.
+     */
   } else {
     WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
     MOZ_ASSERT(worker);
@@ -253,8 +253,8 @@ already_AddRefed<Response> Response::Constructor(
   if (aInit.mHeaders.WasPassed()) {
     internalResponse->Headers()->Clear();
 
-    
-    
+    // Instead of using Fill, create an object to allow the constructor to
+    // unwrap the HeadersInit.
     RefPtr<Headers> headers =
         Headers::Create(global, aInit.mHeaders.Value(), aRv);
     if (aRv.Failed()) {
@@ -291,13 +291,10 @@ already_AddRefed<Response> Response::Constructor(
 
       r->SetReadableStreamBody(cx, &readableStream);
 
-      
-      
-      if (readableStream.HasNativeUnderlyingSource()) {
-        BodyStreamHolder* underlyingSource =
-            readableStream.GetNativeUnderlyingSource();
-        MOZ_ASSERT(underlyingSource);
-
+      // If this is a DOM generated ReadableStream, we can extract the
+      // inputStream directly.
+      if (BodyStreamHolder* underlyingSource =
+              readableStream.GetBodyStreamHolder()) {
         aRv = BodyStream::RetrieveInputStream(underlyingSource,
                                               getter_AddRefs(bodyStream));
 
@@ -305,8 +302,8 @@ already_AddRefed<Response> Response::Constructor(
           return nullptr;
         }
       } else {
-        
-        
+        // If this is a JS-created ReadableStream, let's create a
+        // FetchStreamReader.
         aRv = FetchStreamReader::Create(aGlobal.Context(), global,
                                         getter_AddRefs(r->mFetchStreamReader),
                                         getter_AddRefs(bodyStream));
@@ -329,7 +326,7 @@ already_AddRefed<Response> Response::Constructor(
 
     if (!contentTypeWithCharset.IsVoid() &&
         !internalResponse->Headers()->Has("Content-Type"_ns, aRv)) {
-      
+      // Ignore Append() failing here.
       ErrorResult error;
       internalResponse->Headers()->Append("Content-Type"_ns,
                                           contentTypeWithCharset, error);
@@ -382,10 +379,10 @@ already_AddRefed<Response> Response::Clone(JSContext* aCx, ErrorResult& aRv) {
       new Response(mOwner, ir.clonePtr(), GetSignalImpl());
 
   if (body) {
-    
-    
-    
-    
+    // Maybe we have a body, but we receive null from MaybeTeeReadableStreamBody
+    // if this body is a native stream.   In this case the InternalResponse will
+    // have a clone of the native body and the ReadableStream will be created
+    // lazily if needed.
     response->SetReadableStreamBody(aCx, body);
     response->mFetchStreamReader = streamReader;
     ir->SetBody(inputStream, InternalResponse::UNKNOWN_BODY_SIZE);
@@ -423,10 +420,10 @@ already_AddRefed<Response> Response::CloneUnfiltered(JSContext* aCx,
   RefPtr<Response> ref = new Response(mOwner, ir.clonePtr(), GetSignalImpl());
 
   if (body) {
-    
-    
-    
-    
+    // Maybe we have a body, but we receive null from MaybeTeeReadableStreamBody
+    // if this body is a native stream.   In this case the InternalResponse will
+    // have a clone of the native body and the ReadableStream will be created
+    // lazily if needed.
     ref->SetReadableStreamBody(aCx, body);
     ref->mFetchStreamReader = streamReader;
     ir->SetBody(inputStream, InternalResponse::UNKNOWN_BODY_SIZE);
@@ -452,4 +449,4 @@ Headers* Response::Headers_() {
   return mHeaders;
 }
 
-}  
+}  // namespace mozilla::dom
