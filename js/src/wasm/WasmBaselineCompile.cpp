@@ -8797,16 +8797,18 @@ bool BaseCompiler::emitBody() {
     CHECK(iter_.readOp(&op));
 
     
-    
-    if (compilerEnv_.debugEnabled() && op.b0 != (uint16_t)Op::End) {
-      
-      
-      
-      sync();
+    if (compilerEnv_.debugEnabled() && op.shouldHaveBreakpoint()) {
+      if (previousBreakablePoint_ != masm.currentOffset()) {
+        
+        
+        
+        sync();
 
-      insertBreakablePoint(CallSiteDesc::Breakpoint);
-      if (!createStackMap("debug: per-insn breakpoint")) {
-        return false;
+        insertBreakablePoint(CallSiteDesc::Breakpoint);
+        if (!createStackMap("debug: per-insn breakpoint")) {
+          return false;
+        }
+        previousBreakablePoint_ = masm.currentOffset();
       }
     }
 
@@ -10655,6 +10657,7 @@ BaseCompiler::BaseCompiler(const ModuleEnvironment& moduleEnv,
       compilerEnv_(compilerEnv),
       func_(func),
       locals_(locals),
+      previousBreakablePoint_(UINT32_MAX),
       stkSource_(stkSource),
       
       alloc_(alloc->fallible()),

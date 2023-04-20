@@ -116,6 +116,6 @@ wasmRunWithDebugger(
       
       
       
-      assertEq(onStepCalled.length, 166);
+      assertEq(onStepCalled.length, 85);
   }
 );

@@ -99,7 +99,7 @@ add_task(async function() {
   
   
   
-  const virtualBinaryLine = 0x118;
+  const virtualBinaryLine = 0x11a;
   is(
     "0x" + virtualBinaryLine.toString(16),
     "0x" + generatedLine.toString(16),
