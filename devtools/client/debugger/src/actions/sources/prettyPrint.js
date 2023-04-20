@@ -154,18 +154,10 @@ async function prettyPrintHtmlFile({
   
   const replacements = [];
 
-  const seenLocations = new Set();
-
   for (const sourceInfo of actors) {
-    
-    
-    
-    
-    const location = `${sourceInfo.sourceStartLine}:${sourceInfo.sourceStartColumn}`;
-    if (!sourceInfo.sourceLength || seenLocations.has(location)) {
+    if (!sourceInfo.sourceLength) {
       continue;
     }
-    seenLocations.add(location);
     
     
     
