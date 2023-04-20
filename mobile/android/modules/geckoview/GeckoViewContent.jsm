@@ -95,6 +95,12 @@ class GeckoViewContent extends GeckoViewModule {
     return this.getActor("GeckoViewContent");
   }
 
+  get isPdfJs() {
+    return (
+      this.browser.contentPrincipal.spec === "resource://pdf.js/web/viewer.html"
+    );
+  }
+
   
   
   
@@ -129,15 +135,21 @@ class GeckoViewContent extends GeckoViewModule {
         this.browser.ownerDocument.exitFullscreen();
         break;
       case "GeckoView:ClearMatches": {
-        this._clearMatches();
+        if (!this.isPdfJs) {
+          this._clearMatches();
+        }
         break;
       }
       case "GeckoView:DisplayMatches": {
-        this._displayMatches(aData);
+        if (!this.isPdfJs) {
+          this._displayMatches(aData);
+        }
         break;
       }
       case "GeckoView:FindInPage": {
-        this._findInPage(aData, aCallback);
+        if (!this.isPdfJs) {
+          this._findInPage(aData, aCallback);
+        }
         break;
       }
       case "GeckoView:ZoomToInput":
