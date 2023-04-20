@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
 #include "logging/rtc_event_log/encoder/bit_writer.h"
 #include "logging/rtc_event_log/encoder/var_int.h"
 #include "rtc_base/bit_buffer.h"
@@ -554,7 +555,7 @@ class FixedLengthDeltaDecoder final {
   
   
   
-  static bool IsSuitableDecoderFor(const std::string& input);
+  static bool IsSuitableDecoderFor(absl::string_view input);
 
   
   
@@ -562,7 +563,7 @@ class FixedLengthDeltaDecoder final {
   
   
   static std::vector<absl::optional<uint64_t>> DecodeDeltas(
-      const std::string& input,
+      absl::string_view input,
       absl::optional<uint64_t> base,
       size_t num_of_deltas);
 
@@ -579,7 +580,7 @@ class FixedLengthDeltaDecoder final {
   
   
   static std::unique_ptr<FixedLengthDeltaDecoder> Create(
-      const std::string& input,
+      absl::string_view input,
       absl::optional<uint64_t> base,
       size_t num_of_deltas);
 
@@ -624,7 +625,7 @@ class FixedLengthDeltaDecoder final {
   const size_t num_of_deltas_;
 };
 
-bool FixedLengthDeltaDecoder::IsSuitableDecoderFor(const std::string& input) {
+bool FixedLengthDeltaDecoder::IsSuitableDecoderFor(absl::string_view input) {
   BitstreamReader reader(input);
   uint64_t encoding_type_bits = reader.ReadBits(kBitsInHeaderForEncodingType);
   if (!reader.Ok()) {
@@ -639,7 +640,7 @@ bool FixedLengthDeltaDecoder::IsSuitableDecoderFor(const std::string& input) {
 }
 
 std::vector<absl::optional<uint64_t>> FixedLengthDeltaDecoder::DecodeDeltas(
-    const std::string& input,
+    absl::string_view input,
     absl::optional<uint64_t> base,
     size_t num_of_deltas) {
   auto decoder = FixedLengthDeltaDecoder::Create(input, base, num_of_deltas);
@@ -651,7 +652,7 @@ std::vector<absl::optional<uint64_t>> FixedLengthDeltaDecoder::DecodeDeltas(
 }
 
 std::unique_ptr<FixedLengthDeltaDecoder> FixedLengthDeltaDecoder::Create(
-    const std::string& input,
+    absl::string_view input,
     absl::optional<uint64_t> base,
     size_t num_of_deltas) {
   BitstreamReader reader(input);
@@ -804,7 +805,7 @@ std::string EncodeDeltas(absl::optional<uint64_t> base,
 }
 
 std::vector<absl::optional<uint64_t>> DecodeDeltas(
-    const std::string& input,
+    absl::string_view input,
     absl::optional<uint64_t> base,
     size_t num_of_deltas) {
   RTC_DCHECK_GT(num_of_deltas, 0);  

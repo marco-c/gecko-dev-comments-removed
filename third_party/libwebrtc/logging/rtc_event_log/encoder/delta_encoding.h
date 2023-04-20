@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 namespace webrtc {
@@ -39,7 +40,7 @@ std::string EncodeDeltas(absl::optional<uint64_t> base,
 
 
 std::vector<absl::optional<uint64_t>> DecodeDeltas(
-    const std::string& input,
+    absl::string_view input,
     absl::optional<uint64_t> base,
     size_t num_of_deltas);
 
