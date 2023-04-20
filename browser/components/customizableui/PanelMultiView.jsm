@@ -1058,51 +1058,43 @@ var PanelMultiView = class extends AssociatedToNode {
       this._panel.removeAttribute("mainviewshowing");
     }
 
-    
-    if (
-      this.window.matchMedia("(prefers-reduced-motion: no-preference)").matches
-    ) {
-      this._viewStack.style.transform =
-        "translateX(" + (moveToLeft ? "" : "-") + deltaX + "px)";
+    this._viewStack.style.transform =
+      "translateX(" + (moveToLeft ? "" : "-") + deltaX + "px)";
 
-      await new Promise(resolve => {
-        details.resolve = resolve;
-        this._viewContainer.addEventListener(
-          "transitionend",
-          (details.listener = ev => {
-            
-            
-            
-            if (
-              ev.target != this._viewStack ||
-              ev.propertyName != "transform"
-            ) {
-              return;
-            }
-            this._viewContainer.removeEventListener(
-              "transitionend",
-              details.listener
-            );
-            delete details.listener;
-            resolve();
-          })
-        );
-        this._viewContainer.addEventListener(
-          "transitioncancel",
-          (details.cancelListener = ev => {
-            if (ev.target != this._viewStack) {
-              return;
-            }
-            this._viewContainer.removeEventListener(
-              "transitioncancel",
-              details.cancelListener
-            );
-            delete details.cancelListener;
-            resolve();
-          })
-        );
-      });
-    }
+    await new Promise(resolve => {
+      details.resolve = resolve;
+      this._viewContainer.addEventListener(
+        "transitionend",
+        (details.listener = ev => {
+          
+          
+          
+          if (ev.target != this._viewStack || ev.propertyName != "transform") {
+            return;
+          }
+          this._viewContainer.removeEventListener(
+            "transitionend",
+            details.listener
+          );
+          delete details.listener;
+          resolve();
+        })
+      );
+      this._viewContainer.addEventListener(
+        "transitioncancel",
+        (details.cancelListener = ev => {
+          if (ev.target != this._viewStack) {
+            return;
+          }
+          this._viewContainer.removeEventListener(
+            "transitioncancel",
+            details.cancelListener
+          );
+          delete details.cancelListener;
+          resolve();
+        })
+      );
+    });
 
     
     if (!nextPanelView.isOpenIn(this)) {
