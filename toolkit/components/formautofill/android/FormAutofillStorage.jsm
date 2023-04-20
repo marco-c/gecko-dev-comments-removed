@@ -94,12 +94,14 @@ class Addresses extends AddressesBase {
 
 
 
+
   async get(guid, { rawData = false } = {}) {
     await this._store.updateAddresses();
     return super.get(guid, { rawData });
   }
 
   
+
 
 
 
@@ -166,12 +168,14 @@ class CreditCards extends CreditCardsBase {
 
 
 
+
   async get(guid, { rawData = false } = {}) {
     await this._store.updateCreditCards();
     return super.get(guid, { rawData });
   }
 
   
+
 
 
 
@@ -197,6 +201,7 @@ class CreditCards extends CreditCardsBase {
   }
 
   
+
 
 
 
@@ -258,6 +263,7 @@ class FormAutofillStorage extends FormAutofillStorageBase {
   }
 
   
+
 
 
 

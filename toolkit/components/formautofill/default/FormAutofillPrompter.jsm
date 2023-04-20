@@ -265,6 +265,7 @@ let FormAutofillPrompter = {
 
 
 
+
   _appendPrivacyPanelLink(content, message, link) {
     let chromeDoc = content.ownerDocument;
     let privacyLinkElement = chromeDoc.createXULElement("label", {
@@ -280,6 +281,7 @@ let FormAutofillPrompter = {
   },
 
   
+
 
 
 
@@ -323,6 +325,7 @@ let FormAutofillPrompter = {
   },
 
   
+
 
 
 
@@ -478,6 +481,7 @@ let FormAutofillPrompter = {
   },
 
   
+
 
 
 

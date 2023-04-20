@@ -106,6 +106,7 @@ class ProfileAutoCompleteResult {
 
 
 
+
   _getSecondaryLabel(focusedFieldName, allFieldNames, profile) {
     return "";
   }
@@ -142,12 +143,14 @@ class ProfileAutoCompleteResult {
 
 
 
+
   getCommentAt(index) {
     this._checkIndexBounds(index);
     return JSON.stringify(this._matchingProfiles[index]);
   }
 
   
+
 
 
 
@@ -169,12 +172,14 @@ class ProfileAutoCompleteResult {
 
 
 
+
   getImageAt(index) {
     this._checkIndexBounds(index);
     return "";
   }
 
   
+
 
 
 
@@ -188,11 +193,13 @@ class ProfileAutoCompleteResult {
 
 
 
+
   isRemovableAt(index) {
     return true;
   }
 
   
+
 
 
 

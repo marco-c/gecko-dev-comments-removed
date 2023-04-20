@@ -833,6 +833,7 @@ class FormAutofillAddressSection extends FormAutofillSection {
 
 
 
+
   telTransformer(profile) {
     if (!profile.tel || !profile["tel-national"]) {
       return;
@@ -1439,6 +1440,7 @@ class FormAutofillHandler {
 
 
 
+
   constructor(form, onFormSubmitted = () => {}) {
     this._updateForm(form);
 
@@ -1490,6 +1492,7 @@ class FormAutofillHandler {
 
 
 
+
   updateFormIfNeeded(element) {
     
     
@@ -1528,6 +1531,7 @@ class FormAutofillHandler {
   }
 
   
+
 
 
 

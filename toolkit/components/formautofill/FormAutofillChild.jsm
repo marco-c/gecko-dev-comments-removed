@@ -169,6 +169,7 @@ class FormAutofillChild extends JSWindowActorChild {
 
 
 
+
   onDOMFormBeforeSubmit(evt) {
     let formElement = evt.target;
 

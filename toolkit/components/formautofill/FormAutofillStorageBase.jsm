@@ -328,11 +328,13 @@ class AutofillRecords {
 
 
 
+
   initialize() {
     return this._initializePromise;
   }
 
   
+
 
 
 
@@ -561,6 +563,7 @@ class AutofillRecords {
 
 
 
+
   remove(guid, { sourceSync = false } = {}) {
     this.log.debug("remove:", guid);
 
@@ -621,6 +624,7 @@ class AutofillRecords {
 
 
 
+
   async get(guid, { rawData = false } = {}) {
     this.log.debug(`get: ${guid}`);
 
@@ -640,6 +644,7 @@ class AutofillRecords {
   }
 
   
+
 
 
 
@@ -814,6 +819,7 @@ class AutofillRecords {
   }
 
   
+
 
 
 
@@ -1330,6 +1336,7 @@ class AutofillRecords {
 
 
 
+
   async mergeToStorage(targetRecord, strict = false) {
     let mergedGUIDs = [];
     for (let record of this._data) {
@@ -1366,6 +1373,7 @@ class AutofillRecords {
   }
 
   
+
 
 
 
@@ -1901,6 +1909,7 @@ class CreditCardsBase extends AutofillRecords {
 
 
 
+
   async getDuplicateGuid(targetCreditCard) {
     let clonedTargetCreditCard = this._clone(targetCreditCard);
     this._normalizeRecord(clonedTargetCreditCard);
@@ -1980,7 +1989,6 @@ class FormAutofillStorageBase {
   }
 
   
-
 
 
 

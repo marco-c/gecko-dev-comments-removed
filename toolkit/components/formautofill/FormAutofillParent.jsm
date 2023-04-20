@@ -309,6 +309,7 @@ class FormAutofillParent extends JSWindowActorParent {
 
 
 
+
   async receiveMessage({ name, data }) {
     switch (name) {
       case "FormAutofill:InitStorage": {
@@ -407,6 +408,7 @@ class FormAutofillParent extends JSWindowActorParent {
   }
 
   
+
 
 
 

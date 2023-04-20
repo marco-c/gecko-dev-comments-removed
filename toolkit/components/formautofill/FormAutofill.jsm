@@ -120,6 +120,7 @@ var FormAutofill = {
 
 
 
+
   get isAutofillCreditCardsAvailable() {
     return this._isSupportedRegion(
       FormAutofill._isAutofillCreditCardsAvailable,
@@ -127,6 +128,7 @@ var FormAutofill = {
     );
   },
   
+
 
 
 
@@ -141,6 +143,7 @@ var FormAutofill = {
 
 
 
+
   get isAutofillCreditCardsEnabled() {
     return (
       this.isAutofillCreditCardsAvailable &&
@@ -151,10 +154,12 @@ var FormAutofill = {
 
 
 
+
   get isAutofillCreditCardsLocked() {
     return Services.prefs.prefIsLocked(ENABLED_AUTOFILL_CREDITCARDS_PREF);
   },
   
+
 
 
 
@@ -165,6 +170,7 @@ var FormAutofill = {
     );
   },
   
+
 
 
 

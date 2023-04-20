@@ -263,6 +263,7 @@ class FormAutofillStorage extends FormAutofillStorageBase {
 
 
 
+
   _initializeStore() {
     return new lazy.JSONFile({
       path: this._path,

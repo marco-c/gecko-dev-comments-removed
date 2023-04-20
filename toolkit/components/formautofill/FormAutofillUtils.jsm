@@ -94,6 +94,7 @@ let AddressDataLoader = {
 
 
 
+
   _loadScripts(path) {
     let sandbox = {};
     let extSandbox = {};
@@ -123,6 +124,7 @@ let AddressDataLoader = {
   },
 
   
+
 
 
 
@@ -168,6 +170,7 @@ let AddressDataLoader = {
 
 
 
+
   _loadData(country, level1 = null) {
     
     if (!this._dataLoaded.country) {
@@ -190,6 +193,7 @@ let AddressDataLoader = {
   },
 
   
+
 
 
 
@@ -373,6 +377,7 @@ FormAutofillUtils = {
 
 
 
+
   _toStreetAddressParts(address, delimiter = "\n") {
     let array = typeof address == "string" ? address.split(delimiter) : address;
 
@@ -383,6 +388,7 @@ FormAutofillUtils = {
   },
 
   
+
 
 
 
@@ -401,6 +407,7 @@ FormAutofillUtils = {
 
 
 
+
   compareStreetAddress(a, b, collators, delimiter = "\n") {
     let oneLineA = this._toStreetAddressParts(a, delimiter)
       .map(p => p.replace(/\s/g, ""))
@@ -412,6 +419,7 @@ FormAutofillUtils = {
   },
 
   
+
 
 
 
@@ -456,6 +464,7 @@ FormAutofillUtils = {
   },
 
   
+
 
 
 
@@ -518,6 +527,7 @@ FormAutofillUtils = {
 
 
 
+
   getCountryAddressRawData(
     country = FormAutofill.DEFAULT_REGION,
     level1 = null
@@ -550,6 +560,7 @@ FormAutofillUtils = {
 
 
 
+
   getCountryAddressData(country, level1) {
     let metadata = this.getCountryAddressRawData(country, level1);
     return metadata && metadata.defaultLocale;
@@ -565,12 +576,14 @@ FormAutofillUtils = {
 
 
 
+
   getCountryAddressDataWithLocales(country, level1) {
     let metadata = this.getCountryAddressRawData(country, level1);
     return metadata && [metadata.defaultLocale, ...metadata.locales];
   },
 
   
+
 
 
 
@@ -708,6 +721,7 @@ FormAutofillUtils = {
 
 
 
+
   identifyCountryCode(countryName, countrySpecified) {
     let countries = countrySpecified
       ? [countrySpecified]
@@ -773,6 +787,7 @@ FormAutofillUtils = {
 
 
 
+
   getAbbreviatedSubregionName(subregionValues, country) {
     let values = Array.isArray(subregionValues)
       ? subregionValues
@@ -826,6 +841,7 @@ FormAutofillUtils = {
   },
 
   
+
 
 
 
@@ -1026,6 +1042,7 @@ FormAutofillUtils = {
 
 
 
+
   identifyValue(keys, names, value, collators) {
     let resultKey = keys.find(key => this.strCompare(value, key, collators));
     if (resultKey) {
@@ -1049,6 +1066,7 @@ FormAutofillUtils = {
 
 
 
+
   strCompare(a = "", b = "", collators) {
     return collators.some(collator => !collator.compare(a, b));
   },
@@ -1059,11 +1077,13 @@ FormAutofillUtils = {
 
 
 
+
   escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   },
 
   
+
 
 
 
@@ -1131,6 +1151,7 @@ FormAutofillUtils = {
   },
 
   
+
 
 
 
