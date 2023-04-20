@@ -544,12 +544,6 @@ bool BackgroundParentImpl::DeallocPRemoteWorkerParent(
 dom::PRemoteWorkerControllerParent*
 BackgroundParentImpl::AllocPRemoteWorkerControllerParent(
     const dom::RemoteWorkerData& aRemoteWorkerData) {
-  
-  
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
-    return nullptr;
-  }
-
   RefPtr<dom::RemoteWorkerControllerParent> actor =
       new dom::RemoteWorkerControllerParent(aRemoteWorkerData);
   return actor.forget().take();
