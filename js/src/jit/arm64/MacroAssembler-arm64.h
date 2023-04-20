@@ -594,14 +594,10 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
         B(&done, Assembler::Zero);  
 
         
-        vixl::UseScratchRegisterScope temps(this);
-        const ARMFPRegister scratch64 = temps.AcquireD();
-        MOZ_ASSERT(!scratch64.Is(fsrc64));
 
         
         
-        Fmov(scratch64, xzr);
-        Fcmp(scratch64, fsrc64);
+        Fcmp(fsrc64, 0.0);
         B(fail, Assembler::NotEqual);  
 
         bind(&done);
