@@ -122,6 +122,11 @@ class SvcTest : public testing::TestWithParam<SvcTestParameters> {
   VideoCodecConfig video_codec_config;
 };
 
+std::string SvcTestNameGenerator(
+    const testing::TestParamInfo<SvcTest::ParamType>& info) {
+  return info.param.scalability_mode;
+}
+
 }  
 
 
@@ -275,7 +280,8 @@ INSTANTIATE_TEST_SUITE_P(
     SvcTest,
     Values(SvcTestParameters{cricket::kVp8CodecName, "L1T1", 1, 1},
            SvcTestParameters{cricket::kVp8CodecName, "L1T2", 1, 2},
-           SvcTestParameters{cricket::kVp8CodecName, "L1T3", 1, 3}));
+           SvcTestParameters{cricket::kVp8CodecName, "L1T3", 1, 3}),
+    SvcTestNameGenerator);
 #if RTC_ENABLE_VP9
 INSTANTIATE_TEST_SUITE_P(
     SvcTestVP9,
@@ -291,7 +297,8 @@ INSTANTIATE_TEST_SUITE_P(
            SvcTestParameters{cricket::kVp9CodecName, "L2T2_KEY_SHIFT", 2, 2},
            SvcTestParameters{cricket::kVp9CodecName, "L2T3_KEY", 2, 3},
            SvcTestParameters{cricket::kVp9CodecName, "L3T1", 3, 1},
-           SvcTestParameters{cricket::kVp9CodecName, "L3T3", 3, 3}));
+           SvcTestParameters{cricket::kVp9CodecName, "L3T3", 3, 3}),
+    SvcTestNameGenerator);
 
 
 
