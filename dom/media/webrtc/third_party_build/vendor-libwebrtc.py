@@ -34,6 +34,16 @@ LIBWEBRTC_UNUSED_IN_FIREFOX = [
     "style-guide.md",
     
     
+    "sdk/android/AndroidManifest.xml",
+    "sdk/android/BUILD.gn",
+    "sdk/android/OWNERS",
+    "sdk/android/README",
+    "sdk/android/api/org/webrtc/OWNERS",
+    "sdk/android/instrumentationtests",
+    "sdk/android/src/jni",
+    "sdk/android/native_api",
+    "sdk/android/native_unittests",
+    "sdk/android/tests",
     "sdk/android/api/org/webrtc/CandidatePairChangeEvent.java",
     "sdk/android/api/org/webrtc/DefaultVideoEncoderFactory.java",
     "sdk/android/api/org/webrtc/HardwareVideoEncoderFactory.java",
@@ -207,7 +217,10 @@ def unpack(target):
         
         for path in LIBWEBRTC_UNUSED_IN_FIREFOX:
             try:
-                os.remove(os.path.join(LIBWEBRTC_DIR, path))
+                if os.path.isdir(os.path.join(LIBWEBRTC_DIR, path)):
+                    shutil.rmtree(os.path.join(LIBWEBRTC_DIR, path))
+                else:
+                    os.remove(os.path.join(LIBWEBRTC_DIR, path))
             except OSError:
                 
                 pass
