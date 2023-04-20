@@ -42,7 +42,7 @@ class VideoCaptureAvFoundation : public VideoCaptureImpl {
   
   int32_t OnFrame(webrtc::VideoFrame& aFrame) MOZ_EXCLUDES(api_lock_);
 
-  void SetTrackingId(const char* _Nonnull aTrackingId) MOZ_EXCLUDES(api_lock_) override;
+  void SetTrackingId(uint32_t aTrackingIdProcId) MOZ_EXCLUDES(api_lock_) override;
 
   
   
@@ -60,7 +60,7 @@ class VideoCaptureAvFoundation : public VideoCaptureImpl {
   
   mozilla::Maybe<VideoCaptureCapability> mCapability MOZ_GUARDED_BY(api_lock_);
   
-  mozilla::Maybe<nsCString> mTrackingId MOZ_GUARDED_BY(api_lock_);
+  mozilla::Maybe<mozilla::TrackingId> mTrackingId MOZ_GUARDED_BY(api_lock_);
   
   mozilla::PerformanceRecorderMulti<mozilla::CaptureStage> mPerformanceRecorder;
   std::atomic<ProfilerThreadId> mCallbackThreadId;
