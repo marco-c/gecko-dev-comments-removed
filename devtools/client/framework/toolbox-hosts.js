@@ -255,10 +255,7 @@ WindowHost.prototype = {
       
       
       
-      
-      
-      const owner =
-        this.hostTab?.ownerGlobal || this.options?.browserContentToolboxOpener;
+      const owner = this.hostTab?.ownerGlobal;
       if (owner && lazy.PrivateBrowsingUtils.isWindowPrivate(owner)) {
         flags += ",private";
       }

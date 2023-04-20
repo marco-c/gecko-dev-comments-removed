@@ -62,17 +62,6 @@ loader.lazyRequireGetter(
   "resource://devtools/client/framework/enable-devtools-popup.js",
   true
 );
-loader.lazyRequireGetter(
-  this,
-  "CommandsFactory",
-  "resource://devtools/shared/commands/commands-factory.js",
-  true
-);
-
-const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
-const L10N = new LocalizationHelper(
-  "devtools/client/locales/toolbox.properties"
-);
 
 const BROWSER_STYLESHEET_URL = "chrome://devtools/skin/devtools-browser.css";
 
@@ -142,16 +131,11 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     );
     const remoteEnabled = chromeEnabled && devtoolsRemoteEnabled;
     toggleMenuItem("menu_browserToolbox", remoteEnabled);
-    toggleMenuItem(
-      "menu_browserContentToolbox",
-      remoteEnabled && win.gMultiProcessBrowser
-    );
 
     if (Services.prefs.getBoolPref("devtools.policy.disabled", false)) {
       toggleMenuItem("menu_devToolbox", false);
       toggleMenuItem("menu_devtools_remotedebugging", false);
       toggleMenuItem("menu_browserToolbox", false);
-      toggleMenuItem("menu_browserContentToolbox", false);
       toggleMenuItem("menu_browserConsole", false);
       toggleMenuItem("menu_responsiveUI", false);
       toggleMenuItem("menu_eyedropper", false);
@@ -346,61 +330,6 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
   openAboutDebugging(gBrowser, hash) {
     const url = "about:debugging" + (hash ? "#" + hash : "");
     gBrowser.selectedTab = gBrowser.addTrustedTab(url);
-  },
-
-  
-
-
-
-
-
-
-  async openContentProcessToolbox(gBrowser) {
-    const { childCount } = Services.ppmm;
-    
-    const mm = gBrowser.selectedBrowser.messageManager.processMessageManager;
-    let processId = null;
-    for (let i = 1; i < childCount; i++) {
-      const child = Services.ppmm.getChildAt(i);
-      if (child == mm) {
-        processId = mm.osPid;
-        break;
-      }
-    }
-    if (processId) {
-      try {
-        const commands = await CommandsFactory.forProcess(processId);
-        
-        const toolbox = await gDevTools.showToolbox(commands, {
-          hostType: Toolbox.HostType.WINDOW,
-          hostOptions: {
-            
-            
-            browserContentToolboxOpener: gBrowser.ownerGlobal,
-          },
-        });
-
-        
-        
-        
-        toolbox.target.on("target-destroyed", () => {
-          toolbox.commands.client.close();
-        });
-
-        return toolbox;
-      } catch (e) {
-        console.error(
-          "Exception while opening the browser content toolbox:",
-          e
-        );
-      }
-    } else {
-      const msg = L10N.getStr("toolbox.noContentProcessForTab.message");
-      Services.prompt.alert(null, "", msg);
-      throw new Error(msg);
-    }
-
-    return null;
   },
 
   
