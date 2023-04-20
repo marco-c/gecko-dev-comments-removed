@@ -30,21 +30,7 @@ namespace webrtc {
 
 class RTC_EXPORT Metronome {
  public:
-  
-  
-  class RTC_EXPORT TickListener {
-   public:
-    virtual ~TickListener() = default;
-    virtual void OnTick() = 0;
-    virtual TaskQueueBase* OnTickTaskQueue() = 0;
-  };
-
   virtual ~Metronome() = default;
-
-  
-  
-  virtual void AddListener(TickListener* listener);
-  virtual void RemoveListener(TickListener* listener);
 
   
   

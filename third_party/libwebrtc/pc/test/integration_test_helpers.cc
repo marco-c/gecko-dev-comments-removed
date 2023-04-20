@@ -57,27 +57,36 @@ int FindFirstMediaStatsIndexByKind(
 }
 
 TaskQueueMetronome::TaskQueueMetronome(TimeDelta tick_period)
-    : tick_period_(tick_period) {}
+    : tick_period_(tick_period) {
+  sequence_checker_.Detach();
+}
 
+TaskQueueMetronome::~TaskQueueMetronome() {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+}
 void TaskQueueMetronome::RequestCallOnNextTick(
     absl::AnyInvocable<void() &&> callback) {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
   callbacks_.push_back(std::move(callback));
   
   
   
   if (callbacks_.size() == 1) {
     TaskQueueBase::Current()->PostDelayedTask(
-        [this] {
-          std::vector<absl::AnyInvocable<void() &&>> callbacks;
-          callbacks_.swap(callbacks);
-          for (auto& callback : callbacks)
-            std::move(callback)();
-        },
+        SafeTask(safety_.flag(),
+                 [this] {
+                   RTC_DCHECK_RUN_ON(&sequence_checker_);
+                   std::vector<absl::AnyInvocable<void() &&>> callbacks;
+                   callbacks_.swap(callbacks);
+                   for (auto& callback : callbacks)
+                     std::move(callback)();
+                 }),
         tick_period_);
   }
 }
 
 TimeDelta TaskQueueMetronome::TickPeriod() const {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
   return tick_period_;
 }
 
