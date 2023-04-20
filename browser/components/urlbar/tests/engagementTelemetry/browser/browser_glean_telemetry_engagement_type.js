@@ -88,6 +88,18 @@ add_task(async function engagement_type_dismiss() {
       );
 
       assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
+
+      
+      
+      Assert.ok(
+        gURLBar.view.isOpen,
+        "View should remain open after dismissing result"
+      );
+      await doClick();
+      assertEngagementTelemetry([
+        { engagement_type: "dismiss" },
+        { engagement_type: "click", interaction: "typed" },
+      ]);
     });
 
     await doTest(async browser => {
