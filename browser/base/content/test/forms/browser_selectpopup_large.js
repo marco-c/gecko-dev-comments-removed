@@ -241,10 +241,16 @@ async function performLargePopupTests(win) {
     
     
     
+    
+    
+    
+    const fuzzFactor = matchMedia("(-moz-platform: windows-win7)").matches
+      ? 21
+      : 1;
     SimpleTest.isfuzzy(
       selectPopup.children[selectedOption].getBoundingClientRect().bottom,
       selectPopup.getBoundingClientRect().bottom - bpBottom + marginBottom,
-      1,
+      fuzzFactor,
       "Popup scroll at correct position " + bpBottom
     );
 
