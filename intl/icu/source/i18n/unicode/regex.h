@@ -361,7 +361,7 @@ private:
 
 
     RegexMatcher *matcher(const char16_t *input,
-        UErrorCode          &status) const;
+        UErrorCode          &status) const = delete;
 public:
 
 
@@ -749,7 +749,7 @@ private:
 
 
     RegexMatcher(const UnicodeString &regexp, const char16_t *input,
-        uint32_t flags, UErrorCode &status);
+        uint32_t flags, UErrorCode &status) = delete;
 public:
 
 
@@ -1157,7 +1157,7 @@ private:
 
 
 
-    RegexMatcher &reset(const char16_t *input);
+    RegexMatcher &reset(const char16_t *input) = delete;
 public:
 
    
@@ -1751,10 +1751,10 @@ public:
 private:
     
     
-    RegexMatcher();                  
+    RegexMatcher() = delete;                  
     RegexMatcher(const RegexPattern *pat);
-    RegexMatcher(const RegexMatcher &other);
-    RegexMatcher &operator =(const RegexMatcher &rhs);
+    RegexMatcher(const RegexMatcher &other) = delete;
+    RegexMatcher &operator =(const RegexMatcher &rhs) = delete;
     void init(UErrorCode &status);                      
     void init2(UText *t, UErrorCode &e);  
 

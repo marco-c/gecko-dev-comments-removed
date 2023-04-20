@@ -129,8 +129,8 @@ public:
 private:
     friend class ::BytesTrieTest;
 
-    BytesTrieBuilder(const BytesTrieBuilder &other);  
-    BytesTrieBuilder &operator=(const BytesTrieBuilder &other);  
+    BytesTrieBuilder(const BytesTrieBuilder &other) = delete;  
+    BytesTrieBuilder &operator=(const BytesTrieBuilder &other) = delete;  
 
     void buildBytes(UStringTrieBuildOption buildOption, UErrorCode &errorCode);
 

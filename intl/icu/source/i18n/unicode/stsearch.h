@@ -482,7 +482,7 @@ protected:
     virtual int32_t handlePrev(int32_t position, UErrorCode &status) override;
     
 private :
-    StringSearch(); 
+    StringSearch() = delete; 
 
     
 

@@ -90,7 +90,7 @@ namespace {
 
 class SortKeyLevel : public UMemory {
 public:
-    SortKeyLevel() : len(0), ok(TRUE) {}
+    SortKeyLevel() : len(0), ok(true) {}
     ~SortKeyLevel() {}
 
     
@@ -182,7 +182,7 @@ SortKeyLevel::appendReverseWeight16(uint32_t w) {
 
 UBool SortKeyLevel::ensureCapacity(int32_t appendCapacity) {
     if(!ok) {
-        return FALSE;
+        return false;
     }
     int32_t newCapacity = 2 * buffer.getCapacity();
     int32_t altCapacity = len + 2 * appendCapacity;
@@ -193,9 +193,9 @@ UBool SortKeyLevel::ensureCapacity(int32_t appendCapacity) {
         newCapacity = 200;
     }
     if(buffer.resize(newCapacity, len)==NULL) {
-        return ok = FALSE;
+        return ok = false;
     }
-    return TRUE;
+    return true;
 }
 
 }  
@@ -203,7 +203,7 @@ UBool SortKeyLevel::ensureCapacity(int32_t appendCapacity) {
 CollationKeys::LevelCallback::~LevelCallback() {}
 
 UBool
-CollationKeys::LevelCallback::needToWrite(Collation::Level ) { return TRUE; }
+CollationKeys::LevelCallback::needToWrite(Collation::Level ) { return true; }
 
 
 
@@ -619,7 +619,7 @@ CollationKeys::writeSortKeyUpToQuaternary(CollationIterator &iter,
     if(U_FAILURE(errorCode)) { return; }
 
     
-    UBool ok = TRUE;
+    UBool ok = true;
     if((levels & Collation::SECONDARY_LEVEL_FLAG) != 0) {
         if(!callback.needToWrite(Collation::SECONDARY_LEVEL)) { return; }
         ok &= secondaries.isOk();

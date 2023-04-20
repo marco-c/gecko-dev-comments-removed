@@ -478,7 +478,7 @@ private:
 
     static UnicodeString& dtos(double value, UnicodeString& string);
 
-    ChoiceFormat(); 
+    ChoiceFormat() = delete; 
 
     
 

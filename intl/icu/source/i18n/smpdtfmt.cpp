@@ -161,7 +161,7 @@ static const int8_t kTimeFieldsCount = 10;
 
 static const UChar gDefaultPattern[] =
 {
-    0x79, 0x79, 0x79, 0x79, 0x4D, 0x4D, 0x64, 0x64, 0x20, 0x68, 0x68, 0x3A, 0x6D, 0x6D, 0x20, 0x61, 0
+    0x79, 0x4D, 0x4D, 0x64, 0x64, 0x20, 0x68, 0x68, 0x3A, 0x6D, 0x6D, 0x20, 0x61, 0
 };  
 
 
@@ -263,12 +263,12 @@ void SimpleDateFormat::NSOverride::free() {
 
 
 static void fixNumberFormatForDates(NumberFormat &nf) {
-    nf.setGroupingUsed(FALSE);
+    nf.setGroupingUsed(false);
     DecimalFormat* decfmt = dynamic_cast<DecimalFormat*>(&nf);
     if (decfmt != NULL) {
-        decfmt->setDecimalSeparatorAlwaysShown(FALSE);
+        decfmt->setDecimalSeparatorAlwaysShown(false);
     }
-    nf.setParseIntegerOnly(TRUE);
+    nf.setParseIntegerOnly(true);
     nf.setMinimumFractionDigits(0); 
 }
 
@@ -701,7 +701,7 @@ void SimpleDateFormat::construct(EStyle timeStyle,
     LocalUResourceBundlePointer bundle(ures_open(NULL, locale.getBaseName(), &status));
     if (U_FAILURE(status)) return;
 
-    UBool cTypeIsGregorian = TRUE;
+    UBool cTypeIsGregorian = true;
     LocalUResourceBundlePointer dateTimePatterns;
     if (cType != NULL && uprv_strcmp(cType, "gregorian") != 0) {
         CharString resourcePath("calendar/", status);
@@ -709,7 +709,7 @@ void SimpleDateFormat::construct(EStyle timeStyle,
         dateTimePatterns.adoptInstead(
             ures_getByKeyWithFallback(bundle.getAlias(), resourcePath.data(),
                                       (UResourceBundle*)NULL, &status));
-        cTypeIsGregorian = FALSE;
+        cTypeIsGregorian = false;
     }
 
     
@@ -776,7 +776,7 @@ void SimpleDateFormat::construct(EStyle timeStyle,
                     
                     LocalPointer<DateTimePatternGenerator> dtpg(DateTimePatternGenerator::createInstanceNoStdPat(locale, useStatus));
                     if (U_SUCCESS(useStatus)) {
-                        UnicodeString timeSkeleton(TRUE, timeSkeletons[timeStyle], -1);
+                        UnicodeString timeSkeleton(true, timeSkeletons[timeStyle], -1);
                         timePattern = dtpg->getBestPattern(timeSkeleton, useStatus);
                     }
                 }
@@ -805,7 +805,7 @@ void SimpleDateFormat::construct(EStyle timeStyle,
                 case URES_ARRAY: {
                    resStr = ures_getStringByIndex(currentBundle.getAlias(), 0, &resStrLen, &status);
                    ovrStr = ures_getStringByIndex(currentBundle.getAlias(), 1, &ovrStrLen, &status);
-                   fTimeOverride.setTo(TRUE, ovrStr, ovrStrLen);
+                   fTimeOverride.setTo(true, ovrStr, ovrStrLen);
                    break;
                 }
                 default: {
@@ -814,7 +814,7 @@ void SimpleDateFormat::construct(EStyle timeStyle,
                 }
             }
 
-            tempus1.setTo(TRUE, resStr, resStrLen);
+            tempus1.setTo(true, resStr, resStrLen);
         }
 
         currentBundle.adoptInstead(
@@ -831,7 +831,7 @@ void SimpleDateFormat::construct(EStyle timeStyle,
             case URES_ARRAY: {
                resStr = ures_getStringByIndex(currentBundle.getAlias(), 0, &resStrLen, &status);
                ovrStr = ures_getStringByIndex(currentBundle.getAlias(), 1, &ovrStrLen, &status);
-               fDateOverride.setTo(TRUE, ovrStr, ovrStrLen);
+               fDateOverride.setTo(true, ovrStr, ovrStrLen);
                break;
             }
             default: {
@@ -840,17 +840,40 @@ void SimpleDateFormat::construct(EStyle timeStyle,
             }
         }
 
-        UnicodeString tempus2(TRUE, resStr, resStrLen);
+        UnicodeString tempus2(true, resStr, resStrLen);
 
-        int32_t glueIndex = kDateTime;
-        int32_t patternsSize = ures_getSize(dateTimePatterns.getAlias());
-        if (patternsSize >= (kDateTimeOffset + kShort + 1)) {
-            
-            glueIndex = (int32_t)(kDateTimeOffset + (dateStyle - kDateOffset));
+        
+        
+        
+        LocalUResourceBundlePointer dateAtTimePatterns;
+        if (!cTypeIsGregorian) {
+            CharString resourcePath("calendar/", status);
+            resourcePath.append(cType, status).append("/DateTimePatterns%atTime", status);
+            dateAtTimePatterns.adoptInstead(
+                ures_getByKeyWithFallback(bundle.getAlias(), resourcePath.data(),
+                                          nullptr, &status));
         }
+        if (cTypeIsGregorian || status == U_MISSING_RESOURCE_ERROR) {
+            status = U_ZERO_ERROR;
+            dateAtTimePatterns.adoptInstead(
+                ures_getByKeyWithFallback(bundle.getAlias(),
+                                          "calendar/gregorian/DateTimePatterns%atTime",
+                                          nullptr, &status));
+        }
+        if (U_SUCCESS(status) && ures_getSize(dateAtTimePatterns.getAlias()) >= 4) {
+            resStr = ures_getStringByIndex(dateAtTimePatterns.getAlias(), dateStyle - kDateOffset, &resStrLen, &status);
+        } else {
+            status = U_ZERO_ERROR;
+            int32_t glueIndex = kDateTime;
+            int32_t patternsSize = ures_getSize(dateTimePatterns.getAlias());
+            if (patternsSize >= (kDateTimeOffset + kShort + 1)) {
+                
+                glueIndex = (int32_t)(kDateTimeOffset + (dateStyle - kDateOffset));
+            }
 
-        resStr = ures_getStringByIndex(dateTimePatterns.getAlias(), glueIndex, &resStrLen, &status);
-        SimpleFormatter(UnicodeString(TRUE, resStr, resStrLen), 2, 2, status).
+            resStr = ures_getStringByIndex(dateTimePatterns.getAlias(), glueIndex, &resStrLen, &status);
+        }
+        SimpleFormatter(UnicodeString(true, resStr, resStrLen), 2, 2, status).
                 format(tempus1, tempus2, fPattern, status);
     }
     
@@ -873,7 +896,7 @@ void SimpleDateFormat::construct(EStyle timeStyle,
                 case URES_ARRAY: {
                    resStr = ures_getStringByIndex(currentBundle.getAlias(), 0, &resStrLen, &status);
                    ovrStr = ures_getStringByIndex(currentBundle.getAlias(), 1, &ovrStrLen, &status);
-                   fDateOverride.setTo(TRUE, ovrStr, ovrStrLen);
+                   fDateOverride.setTo(true, ovrStr, ovrStrLen);
                    break;
                 }
                 default: {
@@ -881,7 +904,7 @@ void SimpleDateFormat::construct(EStyle timeStyle,
                    return;
                 }
             }
-            fPattern.setTo(TRUE, resStr, resStrLen);
+            fPattern.setTo(true, resStr, resStrLen);
         }
     }
     else if (dateStyle != kNone) {
@@ -899,7 +922,7 @@ void SimpleDateFormat::construct(EStyle timeStyle,
             case URES_ARRAY: {
                resStr = ures_getStringByIndex(currentBundle.getAlias(), 0, &resStrLen, &status);
                ovrStr = ures_getStringByIndex(currentBundle.getAlias(), 1, &ovrStrLen, &status);
-               fDateOverride.setTo(TRUE, ovrStr, ovrStrLen);
+               fDateOverride.setTo(true, ovrStr, ovrStrLen);
                break;
             }
             default: {
@@ -907,7 +930,7 @@ void SimpleDateFormat::construct(EStyle timeStyle,
                return;
             }
         }
-        fPattern.setTo(TRUE, resStr, resStrLen);
+        fPattern.setTo(true, resStr, resStrLen);
     }
 
     
@@ -1010,7 +1033,7 @@ void SimpleDateFormat::parseAmbiguousDatesAsAfter(UDate startDate, UErrorCode& s
 
     fCalendar->setTime(startDate, status);
     if(U_SUCCESS(status)) {
-        fHaveDefaultCentury = TRUE;
+        fHaveDefaultCentury = true;
         fDefaultCenturyStart = startDate;
         fDefaultCenturyStartYear = fCalendar->get(UCAL_YEAR, status);
     }
@@ -1063,7 +1086,7 @@ SimpleDateFormat::_format(Calendar& cal, UnicodeString& appendTo,
         }
     }
 
-    UBool inQuote = FALSE;
+    UBool inQuote = false;
     UChar prevCh = 0;
     int32_t count = 0;
     int32_t fieldNum = 0;
@@ -1169,45 +1192,45 @@ int32_t SimpleDateFormat::getLevelFromChar(UChar ch) {
 UBool SimpleDateFormat::isSyntaxChar(UChar ch) {
     static const UBool mapCharToIsSyntax[] = {
         
-        FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
+        false, false, false, false, false, false, false, false,
         
-        FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
+        false, false, false, false, false, false, false, false,
         
-        FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
+        false, false, false, false, false, false, false, false,
         
-        FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
+        false, false, false, false, false, false, false, false,
         
-        FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
+        false, false, false, false, false, false, false, false,
         
-        FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
+        false, false, false, false, false, false, false, false,
         
-        FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
+        false, false, false, false, false, false, false, false,
 #if UDAT_HAS_PATTERN_CHAR_FOR_TIME_SEPARATOR
         
-        FALSE, FALSE,  TRUE, FALSE, FALSE, FALSE, FALSE, FALSE,
+        false, false,  true, false, false, false, false, false,
 #else
         
-        FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
+        false, false, false, false, false, false, false, false,
 #endif
         
-        FALSE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,
+        false,  true,  true,  true,  true,  true,  true,  true,
         
-         TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,
+         true,  true,  true,  true,  true,  true,  true,  true,
         
-         TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,
+         true,  true,  true,  true,  true,  true,  true,  true,
         
-         TRUE,  TRUE,  TRUE, FALSE, FALSE, FALSE, FALSE, FALSE,
+         true,  true,  true, false, false, false, false, false,
         
-        FALSE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,
+        false,  true,  true,  true,  true,  true,  true,  true,
         
-         TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,
+         true,  true,  true,  true,  true,  true,  true,  true,
         
-         TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,
+         true,  true,  true,  true,  true,  true,  true,  true,
         
-         TRUE,  TRUE,  TRUE, FALSE, FALSE, FALSE, FALSE, FALSE
+         true,  true,  true, false, false, false, false, false
     };
 
-    return ch < UPRV_LENGTHOF(mapCharToIsSyntax) ? mapCharToIsSyntax[ch] : FALSE;
+    return ch < UPRV_LENGTHOF(mapCharToIsSyntax) ? mapCharToIsSyntax[ch] : false;
 }
 
 
@@ -1376,13 +1399,13 @@ SimpleDateFormat::processOverrideString(const Locale &locale, const UnicodeStrin
     int32_t len;
     UnicodeString nsName;
     UnicodeString ovrField;
-    UBool moreToProcess = TRUE;
+    UBool moreToProcess = true;
     NSOverride *overrideList = NULL;
 
     while (moreToProcess) {
         int32_t delimiterPosition = str.indexOf((UChar)ULOC_KEYWORD_ITEM_SEPARATOR_UNICODE,start);
         if (delimiterPosition == -1) {
-            moreToProcess = FALSE;
+            moreToProcess = false;
             len = str.length() - start;
         } else {
             len = delimiterPosition - start;
@@ -1401,11 +1424,11 @@ SimpleDateFormat::processOverrideString(const Locale &locale, const UnicodeStrin
         
         NSOverride *curr = overrideList;
         const SharedNumberFormat *snf = NULL;
-        UBool found = FALSE;
+        UBool found = false;
         while ( curr && !found ) {
             if ( curr->hash == nsNameHash ) {
                 snf = curr->snf;
-                found = TRUE;
+                found = true;
             }
             curr = curr->next;
         }
@@ -2062,10 +2085,10 @@ SimpleDateFormat::subFormat(UnicodeString &appendTo,
     
     if (fieldNum == 0 && fCapitalizationBrkIter != NULL && appendTo.length() > beginOffset &&
             u_islower(appendTo.char32At(beginOffset))) {
-        UBool titlecase = FALSE;
+        UBool titlecase = false;
         switch (capitalizationContext) {
             case UDISPCTX_CAPITALIZATION_FOR_BEGINNING_OF_SENTENCE:
-                titlecase = TRUE;
+                titlecase = true;
                 break;
             case UDISPCTX_CAPITALIZATION_FOR_UI_LIST_OR_MENU:
                 titlecase = fSymbols->fCapitalization[capContextUsageType][0];
@@ -2228,13 +2251,13 @@ UBool
 SimpleDateFormat::isAtNumericField(const UnicodeString &pattern, int32_t patternOffset) {
     if (patternOffset >= pattern.length()) {
         
-        return FALSE;
+        return false;
     }
     UChar ch = pattern.charAt(patternOffset);
     UDateFormatField f = DateFormatSymbols::getPatternCharIndex(ch);
     if (f == UDAT_FIELD_COUNT) {
         
-        return FALSE;
+        return false;
     }
     int32_t i = patternOffset;
     while (pattern.charAt(++i) == ch) {}
@@ -2245,13 +2268,13 @@ UBool
 SimpleDateFormat::isAfterNonNumericField(const UnicodeString &pattern, int32_t patternOffset) {
     if (patternOffset <= 0) {
         
-        return FALSE;
+        return false;
     }
     UChar ch = pattern.charAt(--patternOffset);
     UDateFormatField f = DateFormatSymbols::getPatternCharIndex(ch);
     if (f == UDAT_FIELD_COUNT) {
         
-        return FALSE;
+        return false;
     }
     int32_t i = patternOffset;
     while (pattern.charAt(--i) == ch) {}
@@ -2273,7 +2296,7 @@ SimpleDateFormat::parse(const UnicodeString& text, Calendar& cal, ParsePosition&
     
     int32_t dayPeriodInt = -1;
 
-    UBool ambiguousYear[] = { FALSE };
+    UBool ambiguousYear[] = { false };
     int32_t saveHebrewMonth = -1;
     int32_t count = 0;
     UTimeZoneFormatTimeType tzTimeType = UTZFMT_TIME_TYPE_UNKNOWN;
@@ -2286,7 +2309,7 @@ SimpleDateFormat::parse(const UnicodeString& text, Calendar& cal, ParsePosition&
     int32_t abutPat = -1; 
     int32_t abutStart = 0;
     int32_t abutPass = 0;
-    UBool inQuote = FALSE;
+    UBool inQuote = false;
 
     MessageFormat * numericLeapMonthFormatter = NULL;
 
@@ -2370,7 +2393,7 @@ SimpleDateFormat::parse(const UnicodeString& text, Calendar& cal, ParsePosition&
                 }
 
                 pos = subParse(text, pos, ch, count,
-                               TRUE, FALSE, ambiguousYear, saveHebrewMonth, *workCal, i, numericLeapMonthFormatter, &tzTimeType);
+                               true, false, ambiguousYear, saveHebrewMonth, *workCal, i, numericLeapMonthFormatter, &tzTimeType);
 
                 
                 
@@ -2385,7 +2408,7 @@ SimpleDateFormat::parse(const UnicodeString& text, Calendar& cal, ParsePosition&
             
             else if (ch != 0x6C) { 
                 int32_t s = subParse(text, pos, ch, count,
-                               FALSE, TRUE, ambiguousYear, saveHebrewMonth, *workCal, i, numericLeapMonthFormatter, &tzTimeType, &dayPeriodInt);
+                               false, true, ambiguousYear, saveHebrewMonth, *workCal, i, numericLeapMonthFormatter, &tzTimeType, &dayPeriodInt);
 
                 if (s == -pos-1) {
                     
@@ -2594,7 +2617,7 @@ SimpleDateFormat::parse(const UnicodeString& text, Calendar& cal, ParsePosition&
             } else {
                 
                 
-                tz.getOffset(localMillis, TRUE, raw, dst, status);
+                tz.getOffset(localMillis, true, raw, dst, status);
             }
 
             
@@ -2617,7 +2640,7 @@ SimpleDateFormat::parse(const UnicodeString& text, Calendar& cal, ParsePosition&
 
                         
                         while (time < limit) {
-                            trsAvail = btz->getNextTransition(time, FALSE, trs);
+                            trsAvail = btz->getNextTransition(time, false, trs);
                             if (!trsAvail) {
                                 break;
                             }
@@ -2634,7 +2657,7 @@ SimpleDateFormat::parse(const UnicodeString& text, Calendar& cal, ParsePosition&
                             time = baseTime;
                             limit = baseTime - MAX_DAYLIGHT_DETECTION_RANGE;
                             while (time > limit) {
-                                trsAvail = btz->getPreviousTransition(time, TRUE, trs);
+                                trsAvail = btz->getPreviousTransition(time, true, trs);
                                 if (!trsAvail) {
                                     break;
                                 }
@@ -2759,7 +2782,7 @@ UBool SimpleDateFormat::matchLiterals(const UnicodeString &pattern,
                                       UBool partialMatchLenient,
                                       UBool oldLeniency)
 {
-    UBool inQuote = FALSE;
+    UBool inQuote = false;
     UnicodeString literal;
     int32_t i = patternOffset;
 
@@ -2801,10 +2824,10 @@ UBool SimpleDateFormat::matchLiterals(const UnicodeString &pattern,
     }
 
     for (p = 0; p < literal.length() && t < text.length();) {
-        UBool needWhitespace = FALSE;
+        UBool needWhitespace = false;
 
         while (p < literal.length() && PatternProps::isWhiteSpace(literal.charAt(p))) {
-            needWhitespace = TRUE;
+            needWhitespace = true;
             p += 1;
         }
 
@@ -2827,7 +2850,7 @@ UBool SimpleDateFormat::matchLiterals(const UnicodeString &pattern,
             if (!whitespaceLenient && t == tStart) {
                 
                 
-                return FALSE;
+                return false;
             }
 
             
@@ -2861,7 +2884,7 @@ UBool SimpleDateFormat::matchLiterals(const UnicodeString &pattern,
                 break;
             }
 
-            return FALSE;
+            return false;
         }
         ++p;
         ++t;
@@ -2892,7 +2915,50 @@ UBool SimpleDateFormat::matchLiterals(const UnicodeString &pattern,
     patternOffset = i - 1;
     textOffset = t;
 
-    return TRUE;
+    return true;
+}
+
+
+
+
+
+
+int32_t SimpleDateFormat::matchAlphaMonthStrings(const UnicodeString& text,
+                              int32_t start,
+                              const UnicodeString* wideData,
+                              const UnicodeString* shortData,
+                              int32_t dataCount,
+                              Calendar& cal) const
+{
+    int32_t i;
+    int32_t bestMatchLength = 0, bestMatch = -1;
+
+    for (i = 0; i < dataCount; ++i) {
+        int32_t matchLen = 0;
+        if ((matchLen = matchStringWithOptionalDot(text, start, wideData[i])) > bestMatchLength) {
+            bestMatch = i;
+            bestMatchLength = matchLen;
+        }
+    }
+    for (i = 0; i < dataCount; ++i) {
+        int32_t matchLen = 0;
+        if ((matchLen = matchStringWithOptionalDot(text, start, shortData[i])) > bestMatchLength) {
+            bestMatch = i;
+            bestMatchLength = matchLen;
+        }
+    }
+
+    if (bestMatch >= 0) { 
+        
+        if (!strcmp(cal.getType(),"hebrew") && bestMatch==13) {
+            cal.set(UCAL_MONTH,6);
+        } else {
+            cal.set(UCAL_MONTH, bestMatch);
+        }
+        return start + bestMatchLength;
+    }
+
+    return -start;
 }
 
 
@@ -2910,6 +2976,8 @@ int32_t SimpleDateFormat::matchString(const UnicodeString& text,
 
     if (field == UCAL_DAY_OF_WEEK) i = 1;
 
+    
+    
     
     
     
@@ -3011,7 +3079,7 @@ int32_t SimpleDateFormat::subParse(const UnicodeString& text, int32_t& start, UC
     UDateFormatField patternCharIndex = DateFormatSymbols::getPatternCharIndex(ch);
     const NumberFormat *currentNumberFormat;
     UnicodeString temp;
-    UBool gotNumber = FALSE;
+    UBool gotNumber = false;
 
 #if defined (U_DEBUG_CAL)
     
@@ -3072,12 +3140,12 @@ int32_t SimpleDateFormat::subParse(const UnicodeString& text, int32_t& start, UC
         
         const UnicodeString* src;
 
-        UBool parsedNumericLeapMonth = FALSE;
+        UBool parsedNumericLeapMonth = false;
         if (numericLeapMonthFormatter != NULL && (patternCharIndex == UDAT_MONTH_FIELD || patternCharIndex == UDAT_STANDALONE_MONTH_FIELD)) {
             int32_t argCount;
             Formattable * args = numericLeapMonthFormatter->parse(text, pos, argCount);
             if (args != NULL && argCount == 1 && pos.getIndex() > parseStart && args[0].isNumeric()) {
-                parsedNumericLeapMonth = TRUE;
+                parsedNumericLeapMonth = true;
                 number.setLong(args[0].getLong());
                 cal.set(UCAL_IS_LEAP_MONTH, 1);
                 delete[] args;
@@ -3106,17 +3174,17 @@ int32_t SimpleDateFormat::subParse(const UnicodeString& text, int32_t& start, UC
 
         if (txtLoc > parseStart) {
             value = number.getLong();
-            gotNumber = TRUE;
+            gotNumber = true;
 
             
             if (value < 0 ) {
-                txtLoc = checkIntSuffix(text, txtLoc, patLoc+1, TRUE);
+                txtLoc = checkIntSuffix(text, txtLoc, patLoc+1, true);
                 if (txtLoc != pos.getIndex()) {
                     value *= -1;
                 }
             }
             else {
-                txtLoc = checkIntSuffix(text, txtLoc, patLoc+1, FALSE);
+                txtLoc = checkIntSuffix(text, txtLoc, patLoc+1, false);
             }
 
             if (!getBooleanAttribute(UDAT_PARSE_ALLOW_WHITESPACE, status)) {
@@ -3304,6 +3372,14 @@ int32_t SimpleDateFormat::subParse(const UnicodeString& text, int32_t& start, UC
             }
             int32_t newStart = 0;
             if (patternCharIndex==UDAT_MONTH_FIELD) {
+                if(getBooleanAttribute(UDAT_PARSE_MULTIPLE_PATTERNS_FOR_MATCH, status) && count>=3 && count <=4 &&
+                        fSymbols->fLeapMonthPatterns==nullptr && fSymbols->fMonthsCount==fSymbols->fShortMonthsCount) {
+                    
+                    newStart = matchAlphaMonthStrings(text, start, fSymbols->fMonths, fSymbols->fShortMonths, fSymbols->fMonthsCount, cal); 
+                    if (newStart > 0) {
+                        return newStart;
+                    }
+                }
                 if(getBooleanAttribute(UDAT_PARSE_MULTIPLE_PATTERNS_FOR_MATCH, status) || count == 4) {
                     newStart = matchString(text, start, UCAL_MONTH, fSymbols->fMonths, fSymbols->fMonthsCount, wideMonthPat, cal); 
                     if (newStart > 0) {
@@ -3314,6 +3390,14 @@ int32_t SimpleDateFormat::subParse(const UnicodeString& text, int32_t& start, UC
                     newStart = matchString(text, start, UCAL_MONTH, fSymbols->fShortMonths, fSymbols->fShortMonthsCount, shortMonthPat, cal); 
                 }
             } else {
+                if(getBooleanAttribute(UDAT_PARSE_MULTIPLE_PATTERNS_FOR_MATCH, status) && count>=3 && count <=4 &&
+                        fSymbols->fLeapMonthPatterns==nullptr && fSymbols->fStandaloneMonthsCount==fSymbols->fStandaloneShortMonthsCount) {
+                    
+                    newStart = matchAlphaMonthStrings(text, start, fSymbols->fStandaloneMonths, fSymbols->fStandaloneShortMonths, fSymbols->fStandaloneMonthsCount, cal); 
+                    if (newStart > 0) {
+                        return newStart;
+                    }
+                }
                 if(getBooleanAttribute(UDAT_PARSE_MULTIPLE_PATTERNS_FOR_MATCH, status) || count == 4) {
                     newStart = matchString(text, start, UCAL_MONTH, fSymbols->fStandaloneMonths, fSymbols->fStandaloneMonthsCount, wideMonthPat, cal); 
                     if (newStart > 0) {
@@ -3884,7 +3968,7 @@ void SimpleDateFormat::parseInt(const UnicodeString& text,
             
             return;
         }
-        df->setNegativePrefix(UnicodeString(TRUE, SUPPRESS_NEGATIVE_PREFIX, -1));
+        df->setNegativePrefix(UnicodeString(true, SUPPRESS_NEGATIVE_PREFIX, -1));
         fmt = df.getAlias();
     }
     int32_t oldPos = pos.getIndex();
@@ -3939,16 +4023,16 @@ void SimpleDateFormat::translatePattern(const UnicodeString& originalPattern,
     }
 
     translatedPattern.remove();
-    UBool inQuote = FALSE;
+    UBool inQuote = false;
     for (int32_t i = 0; i < originalPattern.length(); ++i) {
         UChar c = originalPattern[i];
         if (inQuote) {
             if (c == QUOTE) {
-                inQuote = FALSE;
+                inQuote = false;
             }
         } else {
             if (c == QUOTE) {
-                inQuote = TRUE;
+                inQuote = true;
             } else if (isSyntaxChar(c)) {
                 int32_t ci = from.indexOf(c);
                 if (ci == -1) {
@@ -4157,7 +4241,7 @@ SimpleDateFormat::isFieldUnitIgnored(const UnicodeString& pattern,
     int32_t fieldLevel = fgCalendarFieldToLevel[field];
     int32_t level;
     UChar ch;
-    UBool inQuote = FALSE;
+    UBool inQuote = false;
     UChar prevCh = 0;
     int32_t count = 0;
 
@@ -4167,7 +4251,7 @@ SimpleDateFormat::isFieldUnitIgnored(const UnicodeString& pattern,
             level = getLevelFromChar(prevCh);
             
             if (fieldLevel <= level) {
-                return FALSE;
+                return false;
             }
             count = 0;
         }
@@ -4187,10 +4271,10 @@ SimpleDateFormat::isFieldUnitIgnored(const UnicodeString& pattern,
         
         level = getLevelFromChar(prevCh);
         if (fieldLevel <= level) {
-            return FALSE;
+            return false;
         }
     }
-    return TRUE;
+    return true;
 }
 
 
@@ -4274,10 +4358,10 @@ SimpleDateFormat::compareSimpleAffix(const UnicodeString& affix,
             
             
             
-            UBool literalMatch = FALSE;
+            UBool literalMatch = false;
             while (pos < input.length() &&
                    input.char32At(pos) == c) {
-                literalMatch = TRUE;
+                literalMatch = true;
                 i += len;
                 pos += len;
                 if (i == affix.length()) {
@@ -4355,26 +4439,26 @@ SimpleDateFormat::tzFormat(UErrorCode &status) const {
 }
 
 void SimpleDateFormat::parsePattern() {
-    fHasMinute = FALSE;
-    fHasSecond = FALSE;
-    fHasHanYearChar = FALSE;
+    fHasMinute = false;
+    fHasSecond = false;
+    fHasHanYearChar = false;
 
     int len = fPattern.length();
-    UBool inQuote = FALSE;
+    UBool inQuote = false;
     for (int32_t i = 0; i < len; ++i) {
         UChar ch = fPattern[i];
         if (ch == QUOTE) {
             inQuote = !inQuote;
         }
         if (ch == 0x5E74) { 
-            fHasHanYearChar = TRUE;
+            fHasHanYearChar = true;
         }
         if (!inQuote) {
             if (ch == 0x6D) {  
-                fHasMinute = TRUE;
+                fHasMinute = true;
             }
             if (ch == 0x73) {  
-                fHasSecond = TRUE;
+                fHasSecond = true;
             }
         }
     }

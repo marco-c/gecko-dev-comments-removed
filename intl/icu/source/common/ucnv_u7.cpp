@@ -286,7 +286,7 @@ directMode:
             } else  {
                 
                 nextSourceIndex=++sourceIndex;
-                inDirectMode=FALSE;
+                inDirectMode=false;
                 byteIndex=0;
                 bits=0;
                 base64Counter=-1;
@@ -329,7 +329,7 @@ unicodeMode:
 
 
 
-                    inDirectMode=TRUE;
+                    inDirectMode=true;
                     if(base64Counter==-1) {
                         
                         
@@ -411,7 +411,7 @@ unicodeMode:
                     }
                 } else  {
                     
-                    inDirectMode=TRUE;
+                    inDirectMode=true;
                     if(base64Counter==-1) {
                         
                         *target++=PLUS;
@@ -541,7 +541,7 @@ directMode:
                 if(offsets!=NULL) {
                     *offsets++=sourceIndex;
                 }
-                inDirectMode=FALSE;
+                inDirectMode=false;
                 base64Counter=0;
                 goto unicodeMode;
             }
@@ -558,7 +558,7 @@ unicodeMode:
                 c=*source++;
                 if(c<=127 && encodeDirectly[c]) {
                     
-                    inDirectMode=TRUE;
+                    inDirectMode=true;
 
                     
                     --source;
@@ -778,7 +778,7 @@ static const UConverterStaticData _UTF7StaticData={
     UCNV_IBM, UCNV_UTF7,
     1, 4,
     { 0x3f, 0, 0, 0 }, 1, 
-    FALSE, FALSE,
+    false, false,
     0,
     0,
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } 
@@ -971,7 +971,7 @@ directMode:
             } else  {
                 
                 nextSourceIndex=++sourceIndex;
-                inDirectMode=FALSE;
+                inDirectMode=false;
                 byteIndex=0;
                 bits=0;
                 base64Counter=-1;
@@ -1002,7 +1002,7 @@ unicodeMode:
                 ++nextSourceIndex;
                 if(b>0x7e) {
                     
-                    inDirectMode=TRUE;
+                    inDirectMode=true;
                     *pErrorCode=U_ILLEGAL_CHAR_FOUND;
                     break;
                 } else if((base64Value=FROM_BASE64_IMAP(b))>=0) {
@@ -1024,7 +1024,7 @@ unicodeMode:
                         c=(UChar)((bits<<4)|(base64Value>>2));
                         if(isLegalIMAP(c)) {
                             
-                            inDirectMode=TRUE;
+                            inDirectMode=true;
                             *pErrorCode=U_ILLEGAL_CHAR_FOUND;
                             goto endloop;
                         }
@@ -1042,7 +1042,7 @@ unicodeMode:
                         c=(UChar)((bits<<2)|(base64Value>>4));
                         if(isLegalIMAP(c)) {
                             
-                            inDirectMode=TRUE;
+                            inDirectMode=true;
                             *pErrorCode=U_ILLEGAL_CHAR_FOUND;
                             goto endloop;
                         }
@@ -1060,7 +1060,7 @@ unicodeMode:
                         c=(UChar)((bits<<6)|base64Value);
                         if(isLegalIMAP(c)) {
                             
-                            inDirectMode=TRUE;
+                            inDirectMode=true;
                             *pErrorCode=U_ILLEGAL_CHAR_FOUND;
                             goto endloop;
                         }
@@ -1079,7 +1079,7 @@ unicodeMode:
                     }
                 } else if(base64Value==-2) {
                     
-                    inDirectMode=TRUE;
+                    inDirectMode=true;
                     if(base64Counter==-1) {
                         
                         *target++=AMPERSAND;
@@ -1109,7 +1109,7 @@ unicodeMode:
                     
                     
                     
-                    inDirectMode=TRUE;
+                    inDirectMode=true;
                     *pErrorCode=U_ILLEGAL_CHAR_FOUND;
                     break;
                 }
@@ -1144,7 +1144,7 @@ endloop:
         }
         
 
-        inDirectMode=TRUE; 
+        inDirectMode=true; 
         *pErrorCode=U_TRUNCATED_CHAR_FOUND;
     }
 
@@ -1240,7 +1240,7 @@ directMode:
                 if(offsets!=NULL) {
                     *offsets++=sourceIndex;
                 }
-                inDirectMode=FALSE;
+                inDirectMode=false;
                 base64Counter=0;
                 goto unicodeMode;
             }
@@ -1257,7 +1257,7 @@ unicodeMode:
                 c=*source++;
                 if(isLegalIMAP(c)) {
                     
-                    inDirectMode=TRUE;
+                    inDirectMode=true;
 
                     
                     --source;
@@ -1479,7 +1479,7 @@ static const UConverterStaticData _IMAPStaticData={
     UCNV_IBM, UCNV_IMAP_MAILBOX,
     1, 4,
     { 0x3f, 0, 0, 0 }, 1, 
-    FALSE, FALSE,
+    false, false,
     0,
     0,
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } 

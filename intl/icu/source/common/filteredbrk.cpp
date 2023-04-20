@@ -58,7 +58,7 @@ static int32_t U_CALLCONV compareUnicodeString(UElement t1, UElement t2) {
 
 
 
-class U_COMMON_API UStringSet : public UVector {
+class UStringSet : public UVector {
  public:
   UStringSet(UErrorCode &status) : UVector(uprv_deleteUObject,
                                            uhash_compareUnicodeString,
@@ -482,7 +482,7 @@ SimpleFilteredSentenceBreakIterator::last(void) {
 
 
 
-class U_COMMON_API SimpleFilteredBreakIteratorBuilder : public FilteredBreakIteratorBuilder {
+class SimpleFilteredBreakIteratorBuilder : public FilteredBreakIteratorBuilder {
 public:
   virtual ~SimpleFilteredBreakIteratorBuilder();
   SimpleFilteredBreakIteratorBuilder(const Locale &fromLocale, UErrorCode &status);
@@ -614,11 +614,11 @@ SimpleFilteredBreakIteratorBuilder::build(BreakIterator* adoptBreakIterator, UEr
         i++) {
     const UnicodeString *abbr = fSet.getStringAt(i);
     if(abbr) {
-      FB_TRACE("build",abbr,TRUE,i);
+      FB_TRACE("build",abbr,true,i);
       ustrs[n] = *abbr; 
-      FB_TRACE("ustrs[n]",&ustrs[n],TRUE,i);
+      FB_TRACE("ustrs[n]",&ustrs[n],true,i);
     } else {
-      FB_TRACE("build",abbr,FALSE,i);
+      FB_TRACE("build",abbr,false,i);
       status = U_MEMORY_ALLOCATION_ERROR;
       return NULL;
     }
@@ -629,37 +629,37 @@ SimpleFilteredBreakIteratorBuilder::build(BreakIterator* adoptBreakIterator, UEr
   for(int i=0;i<subCount;i++) {
     int nn = ustrs[i].indexOf(kFULLSTOP); 
     if(nn>-1 && (nn+1)!=ustrs[i].length()) {
-      FB_TRACE("partial",&ustrs[i],FALSE,i);
+      FB_TRACE("partial",&ustrs[i],false,i);
       
       
       int sameAs = -1;
       for(int j=0;j<subCount;j++) {
         if(j==i) continue;
         if(ustrs[i].compare(0,nn+1,ustrs[j],0,nn+1)==0) {
-          FB_TRACE("prefix",&ustrs[j],FALSE,nn+1);
+          FB_TRACE("prefix",&ustrs[j],false,nn+1);
           
           if(partials[j]==0) { 
             partials[j] = kSuppressInReverse | kAddToForward;
-            FB_TRACE("suppressing",&ustrs[j],FALSE,j);
+            FB_TRACE("suppressing",&ustrs[j],false,j);
           } else if(partials[j] & kSuppressInReverse) {
             sameAs = j; 
           }
         }
       }
-      FB_TRACE("for partial same-",&ustrs[i],FALSE,sameAs);
-      FB_TRACE(" == partial #",&ustrs[i],FALSE,partials[i]);
+      FB_TRACE("for partial same-",&ustrs[i],false,sameAs);
+      FB_TRACE(" == partial #",&ustrs[i],false,partials[i]);
       UnicodeString prefix(ustrs[i], 0, nn+1);
       if(sameAs == -1 && partials[i] == 0) {
         
         prefix.reverse();
         builder->add(prefix, kPARTIAL, status);
         revCount++;
-        FB_TRACE("Added partial",&prefix,FALSE, i);
-        FB_TRACE(u_errorName(status),&ustrs[i],FALSE,i);
+        FB_TRACE("Added partial",&prefix,false, i);
+        FB_TRACE(u_errorName(status),&ustrs[i],false,i);
         partials[i] = kSuppressInReverse | kAddToForward;
       } else {
-        FB_TRACE("NOT adding partial",&prefix,FALSE, i);
-        FB_TRACE(u_errorName(status),&ustrs[i],FALSE,i);
+        FB_TRACE("NOT adding partial",&prefix,false, i);
+        FB_TRACE(u_errorName(status),&ustrs[i],false,i);
       }
     }
   }
@@ -668,9 +668,9 @@ SimpleFilteredBreakIteratorBuilder::build(BreakIterator* adoptBreakIterator, UEr
       ustrs[i].reverse();
       builder->add(ustrs[i], kMATCH, status);
       revCount++;
-      FB_TRACE(u_errorName(status), &ustrs[i], FALSE, i);
+      FB_TRACE(u_errorName(status), &ustrs[i], false, i);
     } else {
-      FB_TRACE("Adding fwd",&ustrs[i], FALSE, i);
+      FB_TRACE("Adding fwd",&ustrs[i], false, i);
 
       
       
@@ -682,12 +682,12 @@ SimpleFilteredBreakIteratorBuilder::build(BreakIterator* adoptBreakIterator, UEr
       
     }
   }
-  FB_TRACE("AbbrCount",NULL,FALSE, subCount);
+  FB_TRACE("AbbrCount",NULL,false, subCount);
 
   if(revCount>0) {
     backwardsTrie.adoptInstead(builder->build(USTRINGTRIE_BUILD_FAST, status));
     if(U_FAILURE(status)) {
-      FB_TRACE(u_errorName(status),NULL,FALSE, -1);
+      FB_TRACE(u_errorName(status),NULL,false, -1);
       return NULL;
     }
   }
@@ -695,7 +695,7 @@ SimpleFilteredBreakIteratorBuilder::build(BreakIterator* adoptBreakIterator, UEr
   if(fwdCount>0) {
     forwardsPartialTrie.adoptInstead(builder2->build(USTRINGTRIE_BUILD_FAST, status));
     if(U_FAILURE(status)) {
-      FB_TRACE(u_errorName(status),NULL,FALSE, -1);
+      FB_TRACE(u_errorName(status),NULL,false, -1);
       return NULL;
     }
   }
@@ -733,4 +733,4 @@ FilteredBreakIteratorBuilder::createEmptyInstance(UErrorCode& status) {
 
 U_NAMESPACE_END
 
-#endif
+#endif 

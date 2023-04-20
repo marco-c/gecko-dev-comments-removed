@@ -61,7 +61,7 @@ UOBJECT_DEFINE_RTTI_IMPLEMENTATION(NumsysNameEnumeration)
 
 NumberingSystem::NumberingSystem() {
      radix = 10;
-     algorithmic = FALSE;
+     algorithmic = false;
      UnicodeString defaultDigits = DEFAULT_DIGITS;
      desc.setTo(defaultDigits);
      uprv_strcpy(name,gLatn);
@@ -116,8 +116,8 @@ NumberingSystem::createInstance(const Locale & inLocale, UErrorCode& status) {
         return nullptr;
     }
 
-    UBool nsResolved = TRUE;
-    UBool usingFallback = FALSE;
+    UBool nsResolved = true;
+    UBool usingFallback = false;
     char buffer[ULOC_KEYWORDS_CAPACITY] = "";
     int32_t count = inLocale.getKeywordValue("numbers", buffer, sizeof(buffer), status);
     if (U_FAILURE(status) || status == U_STRING_NOT_TERMINATED_WARNING) {
@@ -130,11 +130,11 @@ NumberingSystem::createInstance(const Locale & inLocale, UErrorCode& status) {
         buffer[count] = '\0'; 
         if ( !uprv_strcmp(buffer,gDefault) || !uprv_strcmp(buffer,gNative) || 
              !uprv_strcmp(buffer,gTraditional) || !uprv_strcmp(buffer,gFinance)) {
-            nsResolved = FALSE;
+            nsResolved = false;
         }
     } else {
         uprv_strcpy(buffer, gDefault);
-        nsResolved = FALSE;
+        nsResolved = false;
     }
 
     if (!nsResolved) { 
@@ -158,7 +158,7 @@ NumberingSystem::createInstance(const Locale & inLocale, UErrorCode& status) {
             if ( count > 0 && count < ULOC_KEYWORDS_CAPACITY ) { 
                 u_UCharsToChars(nsName, buffer, count);
                 buffer[count] = '\0'; 
-                nsResolved = TRUE;
+                nsResolved = true;
             } 
 
             if (!nsResolved) { 
@@ -167,8 +167,8 @@ NumberingSystem::createInstance(const Locale & inLocale, UErrorCode& status) {
                 } else if (!uprv_strcmp(buffer,gTraditional)) {
                     uprv_strcpy(buffer,gNative);
                 } else { 
-                    usingFallback = TRUE;
-                    nsResolved = TRUE;
+                    usingFallback = true;
+                    nsResolved = true;
                 }
             }
         }
@@ -271,7 +271,7 @@ UBool NumberingSystem::isAlgorithmic() const {
 namespace {
 
 UVector* gNumsysNames = nullptr;
-UInitOnce gNumSysInitOnce = U_INITONCE_INITIALIZER;
+UInitOnce gNumSysInitOnce {};
 
 U_CFUNC UBool U_CALLCONV numSysCleanup() {
     delete gNumsysNames;

@@ -20,8 +20,6 @@
 
 #include "unicode/uobject.h"
 
-#ifndef UCNV_H
-
 
 
 
@@ -42,8 +40,6 @@ typedef struct IZRule IZRule;
 
 struct AZRule;
 typedef struct AZRule AZRule;
-
-#endif
 
 
 

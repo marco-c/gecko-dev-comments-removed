@@ -277,44 +277,46 @@ checkAlias(const char *itemName,
 
 
 
-static void
+static UBool
 ures_enumDependencies(const char *itemName,
                       const ResourceData *pResData,
                       Resource res, const char *inKey, const char *parentKey, int32_t depth,
                       CheckDependency check, void *context,
                       Package *pkg,
                       UErrorCode *pErrorCode) {
+    UBool doCheckParent = true;  
     switch(res_getPublicType(res)) {
     case URES_STRING:
-        {
-            UBool useResSuffix = TRUE;
+        if(depth==1 && inKey!=NULL &&
+                (0==strcmp(inKey, "%%ALIAS") || 0==strcmp(inKey, "%%Parent"))) {
             
-            if(depth==1 && inKey!=NULL) {
-                if(0!=strcmp(inKey, "%%ALIAS")) {
-                    break;
-                }
-            }
             
-            else if(depth==2 && parentKey!=NULL) {
-                if(0!=strcmp(parentKey, "%%DEPENDENCY")) {
-                    break;
-                }
-                useResSuffix = FALSE;
-            } else {
-                
-                break;
-            }
+            
+            
+            
+            doCheckParent = false;
+            
             int32_t length;
-            
             const UChar *alias=res_getStringNoTrace(pResData, res, &length);
-            checkAlias(itemName, res, alias, length, useResSuffix, check, context, pErrorCode);
+            checkAlias(itemName, res, alias, length,  true,
+                       check, context, pErrorCode);
+            
+        } else if(depth==2 && parentKey!=NULL && 0==strcmp(parentKey, "%%DEPENDENCY")) {
+            
+            
+            
+            int32_t length;
+            const UChar *alias=res_getStringNoTrace(pResData, res, &length);
+            checkAlias(itemName, res, alias, length,  false,
+                       check, context, pErrorCode);
         }
+        
         break;
     case URES_ALIAS:
         {
             int32_t length;
             const UChar *alias=res_getAlias(pResData, res, &length);
-            checkAlias(itemName, res, alias, length, TRUE, check, context, pErrorCode);
+            checkAlias(itemName, res, alias, length, true, check, context, pErrorCode);
         }
         break;
     case URES_TABLE:
@@ -324,7 +326,9 @@ ures_enumDependencies(const char *itemName,
             for(int32_t i=0; i<count; ++i) {
                 const char *itemKey;
                 Resource item=res_getTableItemByIndex(pResData, res, i, &itemKey);
-                ures_enumDependencies(
+                
+                
+                doCheckParent &= ures_enumDependencies(
                         itemName, pResData,
                         item, itemKey,
                         inKey, depth+1,
@@ -363,6 +367,7 @@ ures_enumDependencies(const char *itemName,
     default:
         break;
     }
+    return doCheckParent;
 }
 
 static void
@@ -378,17 +383,6 @@ ures_enumDependencies(const char *itemName, const UDataInfo *pInfo,
         fprintf(stderr, "icupkg: .res format version %02x.%02x not supported, or bundle malformed\n",
                         pInfo->formatVersion[0], pInfo->formatVersion[1]);
         exit(U_UNSUPPORTED_ERROR);
-    }
-
-    
-
-
-
-    if(pInfo->formatVersion[0]>1 || (pInfo->formatVersion[0]==1 && pInfo->formatVersion[1]>=1)) {
-        if(!resData.noFallback) {
-            
-            checkParent(itemName, check, context, pErrorCode);
-        }
     }
 
     icu::NativeItem nativePool;
@@ -431,12 +425,26 @@ ures_enumDependencies(const char *itemName, const UDataInfo *pInfo,
         }
     }
 
-    ures_enumDependencies(
+    UBool doCheckParent = ures_enumDependencies(
         itemName, &resData,
         resData.rootRes, NULL, NULL, 0,
         check, context,
         pkg,
         pErrorCode);
+    if(!doCheckParent) {
+        return;
+    }
+
+    
+
+
+
+    if(pInfo->formatVersion[0]>1 || (pInfo->formatVersion[0]==1 && pInfo->formatVersion[1]>=1)) {
+        if(!resData.noFallback) {
+            
+            checkParent(itemName, check, context, pErrorCode);
+        }
+    }
 }
 
 

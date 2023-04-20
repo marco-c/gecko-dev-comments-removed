@@ -285,7 +285,7 @@ public:
   virtual const char * getType() const override;
 
 private:
-  IndianCalendar(); 
+  IndianCalendar() = delete; 
 
   
 protected:

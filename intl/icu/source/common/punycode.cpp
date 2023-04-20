@@ -573,7 +573,7 @@ u_strFromPunycode(const UChar *src, int32_t srcLength,
                 
                 caseFlags[codeUnitIndex]=IS_BASIC_UPPERCASE(src[in-1]);
                 if(cpLength==2) {
-                    caseFlags[codeUnitIndex+1]=FALSE;
+                    caseFlags[codeUnitIndex+1]=false;
                 }
             }
         }

@@ -55,7 +55,7 @@
 
 
 
-extern "C" U_EXPORT const uint8_t
+U_CAPI const uint8_t
 utf8_countTrailBytes[256]={
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -214,7 +214,7 @@ utf8_appendCharSafeBody(uint8_t *s, int32_t i, int32_t length, UChar32 c, UBool 
     }
     
     if(pIsError!=NULL) {
-        *pIsError=TRUE;
+        *pIsError=true;
     } else {
         length-=i;
         if(length>0) {

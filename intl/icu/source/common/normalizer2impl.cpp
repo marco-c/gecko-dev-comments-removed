@@ -185,7 +185,7 @@ UBool ReorderingBuffer::init(int32_t destCapacity, UErrorCode &errorCode) {
     if(start==NULL) {
         
         errorCode=U_MEMORY_ALLOCATION_ERROR;
-        return FALSE;
+        return false;
     }
     limit=start+length;
     remainingCapacity=str.getCapacity()-length;
@@ -201,7 +201,7 @@ UBool ReorderingBuffer::init(int32_t destCapacity, UErrorCode &errorCode) {
         }
         reorderStart=codePointLimit;
     }
-    return TRUE;
+    return true;
 }
 
 UBool ReorderingBuffer::equals(const UChar *otherStart, const UChar *otherLimit) const {
@@ -217,7 +217,7 @@ UBool ReorderingBuffer::equals(const uint8_t *otherStart, const uint8_t *otherLi
     int32_t otherLength = (int32_t)(otherLimit - otherStart);
     
     if (otherLength < length || (otherLength / 3) > length) {
-        return FALSE;
+        return false;
     }
     
     
@@ -225,21 +225,21 @@ UBool ReorderingBuffer::equals(const uint8_t *otherStart, const uint8_t *otherLi
         if (i >= length) {
             return j >= otherLength;
         } else if (j >= otherLength) {
-            return FALSE;
+            return false;
         }
         
         UChar32 c, other;
         U16_NEXT_UNSAFE(start, i, c);
         U8_NEXT_UNSAFE(otherStart, j, other);
         if (c != other) {
-            return FALSE;
+            return false;
         }
     }
 }
 
 UBool ReorderingBuffer::appendSupplementary(UChar32 c, uint8_t cc, UErrorCode &errorCode) {
     if(remainingCapacity<2 && !resize(2, errorCode)) {
-        return FALSE;
+        return false;
     }
     if(lastCC<=cc || cc==0) {
         limit[0]=U16_LEAD(c);
@@ -253,17 +253,17 @@ UBool ReorderingBuffer::appendSupplementary(UChar32 c, uint8_t cc, UErrorCode &e
         insert(c, cc);
     }
     remainingCapacity-=2;
-    return TRUE;
+    return true;
 }
 
 UBool ReorderingBuffer::append(const UChar *s, int32_t length, UBool isNFD,
                                uint8_t leadCC, uint8_t trailCC,
                                UErrorCode &errorCode) {
     if(length==0) {
-        return TRUE;
+        return true;
     }
     if(remainingCapacity<length && !resize(length, errorCode)) {
-        return FALSE;
+        return false;
     }
     remainingCapacity-=length;
     if(lastCC<=leadCC || leadCC==0) {
@@ -294,13 +294,13 @@ UBool ReorderingBuffer::append(const UChar *s, int32_t length, UBool isNFD,
             append(c, leadCC, errorCode);
         }
     }
-    return TRUE;
+    return true;
 }
 
 UBool ReorderingBuffer::appendZeroCC(UChar32 c, UErrorCode &errorCode) {
     int32_t cpLength=U16_LENGTH(c);
     if(remainingCapacity<cpLength && !resize(cpLength, errorCode)) {
-        return FALSE;
+        return false;
     }
     remainingCapacity-=cpLength;
     if(cpLength==1) {
@@ -312,23 +312,23 @@ UBool ReorderingBuffer::appendZeroCC(UChar32 c, UErrorCode &errorCode) {
     }
     lastCC=0;
     reorderStart=limit;
-    return TRUE;
+    return true;
 }
 
 UBool ReorderingBuffer::appendZeroCC(const UChar *s, const UChar *sLimit, UErrorCode &errorCode) {
     if(s==sLimit) {
-        return TRUE;
+        return true;
     }
     int32_t length=(int32_t)(sLimit-s);
     if(remainingCapacity<length && !resize(length, errorCode)) {
-        return FALSE;
+        return false;
     }
     u_memcpy(limit, s, length);
     limit+=length;
     remainingCapacity-=length;
     lastCC=0;
     reorderStart=limit;
-    return TRUE;
+    return true;
 }
 
 void ReorderingBuffer::remove() {
@@ -365,12 +365,12 @@ UBool ReorderingBuffer::resize(int32_t appendLength, UErrorCode &errorCode) {
     if(start==NULL) {
         
         errorCode=U_MEMORY_ALLOCATION_ERROR;
-        return FALSE;
+        return false;
     }
     reorderStart=start+reorderStartIndex;
     limit=start+length;
     remainingCapacity=str.getCapacity()-length;
-    return TRUE;
+    return true;
 }
 
 void ReorderingBuffer::skipPrevious() {
@@ -728,7 +728,7 @@ UBool Normalizer2Impl::decompose(UChar32 c, uint16_t norm16,
     } else {
         leadCC=0;
     }
-    return buffer.append((const UChar *)mapping+1, length, TRUE, leadCC, trailCC, errorCode);
+    return buffer.append((const UChar *)mapping+1, length, true, leadCC, trailCC, errorCode);
 }
 
 
@@ -820,11 +820,11 @@ Normalizer2Impl::decomposeUTF8(uint32_t options,
         if (U_FAILURE(errorCode)) {
             break;
         }
-        decomposeShort(prevBoundary, src, STOP_AT_LIMIT, FALSE ,
+        decomposeShort(prevBoundary, src, STOP_AT_LIMIT, false ,
                        buffer, errorCode);
         
         if (buffer.getLastCC() > 1) {
-            src = decomposeShort(src, limit, STOP_AT_DECOMP_BOUNDARY, FALSE ,
+            src = decomposeShort(src, limit, STOP_AT_DECOMP_BOUNDARY, false ,
                                  buffer, errorCode);
         }
         if (U_FAILURE(errorCode)) {
@@ -931,7 +931,7 @@ Normalizer2Impl::decomposeShort(const uint8_t *src, const uint8_t *limit,
             if (leadCC == 0 && stopAt == STOP_AT_DECOMP_BOUNDARY) {
                 return prevSrc;
             }
-            if (!buffer.append((const char16_t *)mapping+1, length, TRUE, leadCC, trailCC, errorCode)) {
+            if (!buffer.append((const char16_t *)mapping+1, length, true, leadCC, trailCC, errorCode)) {
                 return nullptr;
             }
         }
@@ -1052,7 +1052,7 @@ void Normalizer2Impl::decomposeAndAppend(const UChar *src, const UChar *limit,
         limit=u_strchr(p, 0);
     }
 
-    if (buffer.append(src, (int32_t)(p - src), FALSE, firstCC, prevCC, errorCode)) {
+    if (buffer.append(src, (int32_t)(p - src), false, firstCC, prevCC, errorCode)) {
         buffer.appendZeroCC(p, limit, errorCode);
     }
 }
@@ -1064,7 +1064,7 @@ UBool Normalizer2Impl::hasDecompBoundaryBefore(UChar32 c) const {
 
 UBool Normalizer2Impl::norm16HasDecompBoundaryBefore(uint16_t norm16) const {
     if (norm16 < minNoNoCompNoMaybeCC) {
-        return TRUE;
+        return true;
     }
     if (norm16 >= limitNoNo) {
         return norm16 <= MIN_NORMAL_MAYBE_YES || norm16 == JAMO_VT;
@@ -1078,17 +1078,17 @@ UBool Normalizer2Impl::norm16HasDecompBoundaryBefore(uint16_t norm16) const {
 
 UBool Normalizer2Impl::hasDecompBoundaryAfter(UChar32 c) const {
     if (c < minDecompNoCP) {
-        return TRUE;
+        return true;
     }
     if (c <= 0xffff && !singleLeadMightHaveNonZeroFCD16(c)) {
-        return TRUE;
+        return true;
     }
     return norm16HasDecompBoundaryAfter(getNorm16(c));
 }
 
 UBool Normalizer2Impl::norm16HasDecompBoundaryAfter(uint16_t norm16) const {
     if(norm16 <= minYesNo || isHangulLVT(norm16)) {
-        return TRUE;
+        return true;
     }
     if (norm16 >= limitNoNo) {
         if (isMaybeOrNonZeroCC(norm16)) {
@@ -1103,10 +1103,10 @@ UBool Normalizer2Impl::norm16HasDecompBoundaryAfter(uint16_t norm16) const {
     
     
     if(firstUnit>0x1ff) {
-        return FALSE;  
+        return false;  
     }
     if(firstUnit<=0xff) {
-        return TRUE;  
+        return true;  
     }
     
     
@@ -1235,7 +1235,7 @@ void Normalizer2Impl::recompose(ReorderingBuffer &buffer, int32_t recomposeStart
     
     compositionsList=NULL;  
     starter=NULL;
-    starterIsSupplementary=FALSE;
+    starterIsSupplementary=false;
     prevCC=0;
 
     for(;;) {
@@ -1301,7 +1301,7 @@ void Normalizer2Impl::recompose(ReorderingBuffer &buffer, int32_t recomposeStart
                         *starter=(UChar)composite;
                         
                         
-                        starterIsSupplementary=FALSE;
+                        starterIsSupplementary=false;
                         q=starter+1;
                         r=q+1;
                         while(r<pRemove) {
@@ -1312,7 +1312,7 @@ void Normalizer2Impl::recompose(ReorderingBuffer &buffer, int32_t recomposeStart
                 } else if(U_IS_SUPPLEMENTARY(composite)) {
                     
                     
-                    starterIsSupplementary=TRUE;
+                    starterIsSupplementary=true;
                     ++starter;  
                     q=pRemove;
                     r=++pRemove;
@@ -1366,10 +1366,10 @@ void Normalizer2Impl::recompose(ReorderingBuffer &buffer, int32_t recomposeStart
             if((compositionsList=getCompositionsListForDecompYes(norm16))!=NULL) {
                 
                 if(U_IS_BMP(c)) {
-                    starterIsSupplementary=FALSE;
+                    starterIsSupplementary=false;
                     starter=p-1;
                 } else {
-                    starterIsSupplementary=TRUE;
+                    starterIsSupplementary=true;
                     starter=p-2;
                 }
             }
@@ -1447,7 +1447,7 @@ Normalizer2Impl::compose(const UChar *src, const UChar *limit,
                                            doCompose ? &buffer : NULL,
                                            errorCode);
         if(U_FAILURE(errorCode)) {
-            return FALSE;
+            return false;
         }
         limit=u_strchr(src, 0);
         if (prevBoundary != src) {
@@ -1471,7 +1471,7 @@ Normalizer2Impl::compose(const UChar *src, const UChar *limit,
                 if (prevBoundary != limit && doCompose) {
                     buffer.appendZeroCC(prevBoundary, limit, errorCode);
                 }
-                return TRUE;
+                return true;
             }
             if( (c=*src)<minNoMaybeCP ||
                 isCompYesAndZeroCC(norm16=UCPTRIE_FAST_BMP_GET(normTrie, UCPTRIE_16, c))
@@ -1503,7 +1503,7 @@ Normalizer2Impl::compose(const UChar *src, const UChar *limit,
         
         if (!isMaybeOrNonZeroCC(norm16)) {  
             if (!doCompose) {
-                return FALSE;
+                return false;
             }
             
             
@@ -1559,7 +1559,7 @@ Normalizer2Impl::compose(const UChar *src, const UChar *limit,
                 UChar l = (UChar)(prev-Hangul::JAMO_L_BASE);
                 if(l<Hangul::JAMO_L_COUNT) {
                     if (!doCompose) {
-                        return FALSE;
+                        return false;
                     }
                     int32_t t;
                     if (src != limit &&
@@ -1599,7 +1599,7 @@ Normalizer2Impl::compose(const UChar *src, const UChar *limit,
                 
                 
                 if (!doCompose) {
-                    return FALSE;
+                    return false;
                 }
                 UChar32 syllable = prev + c - Hangul::JAMO_T_BASE;
                 --prevSrc;  
@@ -1622,7 +1622,7 @@ Normalizer2Impl::compose(const UChar *src, const UChar *limit,
             if (onlyContiguous  && getPreviousTrailCC(prevBoundary, prevSrc) > cc) {
                 
                 if (!doCompose) {
-                    return FALSE;
+                    return false;
                 }
             } else {
                 
@@ -1634,7 +1634,7 @@ Normalizer2Impl::compose(const UChar *src, const UChar *limit,
                         if (doCompose) {
                             buffer.appendZeroCC(prevBoundary, limit, errorCode);
                         }
-                        return TRUE;
+                        return true;
                     }
                     uint8_t prevCC = cc;
                     nextSrc = src;
@@ -1643,7 +1643,7 @@ Normalizer2Impl::compose(const UChar *src, const UChar *limit,
                         cc = getCCFromNormalYesOrMaybe(n16);
                         if (prevCC > cc) {
                             if (!doCompose) {
-                                return FALSE;
+                                return false;
                             }
                             break;
                         }
@@ -1678,28 +1678,28 @@ Normalizer2Impl::compose(const UChar *src, const UChar *limit,
         }
         int32_t recomposeStartIndex=buffer.length();
         
-        decomposeShort(prevSrc, src, FALSE , onlyContiguous,
+        decomposeShort(prevSrc, src, false , onlyContiguous,
                        buffer, errorCode);
         
-        src = decomposeShort(src, limit, TRUE , onlyContiguous,
+        src = decomposeShort(src, limit, true , onlyContiguous,
                              buffer, errorCode);
         if (U_FAILURE(errorCode)) {
             break;
         }
         if ((src - prevSrc) > INT32_MAX) {  
             errorCode = U_INDEX_OUTOFBOUNDS_ERROR;
-            return TRUE;
+            return true;
         }
         recompose(buffer, recomposeStartIndex, onlyContiguous);
         if(!doCompose) {
             if(!buffer.equals(prevSrc, src)) {
-                return FALSE;
+                return false;
             }
             buffer.remove();
         }
         prevBoundary=src;
     }
-    return TRUE;
+    return true;
 }
 
 
@@ -1846,7 +1846,7 @@ void Normalizer2Impl::composeAndAppend(const UChar *src, const UChar *limit,
             middle.append(src, (int32_t)(firstStarterInSrc-src));
             const UChar *middleStart=middle.getBuffer();
             compose(middleStart, middleStart+middle.length(), onlyContiguous,
-                    TRUE, buffer, errorCode);
+                    true, buffer, errorCode);
             if(U_FAILURE(errorCode)) {
                 return;
             }
@@ -1854,7 +1854,7 @@ void Normalizer2Impl::composeAndAppend(const UChar *src, const UChar *limit,
         }
     }
     if(doCompose) {
-        compose(src, limit, onlyContiguous, TRUE, buffer, errorCode);
+        compose(src, limit, onlyContiguous, true, buffer, errorCode);
     } else {
         if(limit==NULL) {  
             limit=u_strchr(src, 0);
@@ -1883,7 +1883,7 @@ Normalizer2Impl::composeUTF8(uint32_t options, UBool onlyContiguous,
                     ByteSinkUtil::appendUnchanged(prevBoundary, limit,
                                                   *sink, options, edits, errorCode);
                 }
-                return TRUE;
+                return true;
             }
             if (*src < minNoMaybeLead) {
                 ++src;
@@ -1904,7 +1904,7 @@ Normalizer2Impl::composeUTF8(uint32_t options, UBool onlyContiguous,
         
         if (!isMaybeOrNonZeroCC(norm16)) {  
             if (sink == nullptr) {
-                return FALSE;
+                return false;
             }
             
             
@@ -1972,7 +1972,7 @@ Normalizer2Impl::composeUTF8(uint32_t options, UBool onlyContiguous,
                 UChar32 l = prev - Hangul::JAMO_L_BASE;
                 if ((uint32_t)l < Hangul::JAMO_L_COUNT) {
                     if (sink == nullptr) {
-                        return FALSE;
+                        return false;
                     }
                     int32_t t = getJamoTMinusBase(src, limit);
                     if (t >= 0) {
@@ -2008,7 +2008,7 @@ Normalizer2Impl::composeUTF8(uint32_t options, UBool onlyContiguous,
                 
                 
                 if (sink == nullptr) {
-                    return FALSE;
+                    return false;
                 }
                 UChar32 syllable = prev + getJamoTMinusBase(prevSrc, src);
                 prevSrc -= 3;  
@@ -2031,7 +2031,7 @@ Normalizer2Impl::composeUTF8(uint32_t options, UBool onlyContiguous,
             if (onlyContiguous  && getPreviousTrailCC(prevBoundary, prevSrc) > cc) {
                 
                 if (sink == nullptr) {
-                    return FALSE;
+                    return false;
                 }
             } else {
                 
@@ -2044,7 +2044,7 @@ Normalizer2Impl::composeUTF8(uint32_t options, UBool onlyContiguous,
                             ByteSinkUtil::appendUnchanged(prevBoundary, limit,
                                                           *sink, options, edits, errorCode);
                         }
-                        return TRUE;
+                        return true;
                     }
                     uint8_t prevCC = cc;
                     nextSrc = src;
@@ -2053,7 +2053,7 @@ Normalizer2Impl::composeUTF8(uint32_t options, UBool onlyContiguous,
                         cc = getCCFromNormalYesOrMaybe(n16);
                         if (prevCC > cc) {
                             if (sink == nullptr) {
-                                return FALSE;
+                                return false;
                             }
                             break;
                         }
@@ -2098,12 +2098,12 @@ Normalizer2Impl::composeUTF8(uint32_t options, UBool onlyContiguous,
         }
         if ((src - prevSrc) > INT32_MAX) {  
             errorCode = U_INDEX_OUTOFBOUNDS_ERROR;
-            return TRUE;
+            return true;
         }
         recompose(buffer, 0, onlyContiguous);
         if (!buffer.equals(prevSrc, src)) {
             if (sink == nullptr) {
-                return FALSE;
+                return false;
             }
             if (prevBoundary != prevSrc &&
                     !ByteSinkUtil::appendUnchanged(prevBoundary, prevSrc,
@@ -2117,12 +2117,12 @@ Normalizer2Impl::composeUTF8(uint32_t options, UBool onlyContiguous,
             prevBoundary = src;
         }
     }
-    return TRUE;
+    return true;
 }
 
 UBool Normalizer2Impl::hasCompBoundaryBefore(const UChar *src, const UChar *limit) const {
     if (src == limit || *src < minCompNoMaybeCP) {
-        return TRUE;
+        return true;
     }
     UChar32 c;
     uint16_t norm16;
@@ -2132,7 +2132,7 @@ UBool Normalizer2Impl::hasCompBoundaryBefore(const UChar *src, const UChar *limi
 
 UBool Normalizer2Impl::hasCompBoundaryBefore(const uint8_t *src, const uint8_t *limit) const {
     if (src == limit) {
-        return TRUE;
+        return true;
     }
     uint16_t norm16;
     UCPTRIE_FAST_U8_NEXT(normTrie, UCPTRIE_16, src, limit, norm16);
@@ -2142,7 +2142,7 @@ UBool Normalizer2Impl::hasCompBoundaryBefore(const uint8_t *src, const uint8_t *
 UBool Normalizer2Impl::hasCompBoundaryAfter(const UChar *start, const UChar *p,
                                             UBool onlyContiguous) const {
     if (start == p) {
-        return TRUE;
+        return true;
     }
     UChar32 c;
     uint16_t norm16;
@@ -2153,7 +2153,7 @@ UBool Normalizer2Impl::hasCompBoundaryAfter(const UChar *start, const UChar *p,
 UBool Normalizer2Impl::hasCompBoundaryAfter(const uint8_t *start, const uint8_t *p,
                                             UBool onlyContiguous) const {
     if (start == p) {
-        return TRUE;
+        return true;
     }
     uint16_t norm16;
     UCPTRIE_FAST_U8_PREV(normTrie, UCPTRIE_16, start, p, norm16);
@@ -2399,7 +2399,7 @@ Normalizer2Impl::makeFCD(const UChar *src, const UChar *limit,
 
 
 
-            decomposeShort(prevBoundary, src, FALSE, FALSE, *buffer, errorCode);
+            decomposeShort(prevBoundary, src, false, false, *buffer, errorCode);
             if (U_FAILURE(errorCode)) {
                 break;
             }
@@ -2665,7 +2665,7 @@ UBool Normalizer2Impl::isCanonSegmentStarter(UChar32 c) const {
 UBool Normalizer2Impl::getCanonStartSet(UChar32 c, UnicodeSet &set) const {
     int32_t canonValue=getCanonValue(c)&~CANON_NOT_SEGMENT_STARTER;
     if(canonValue==0) {
-        return FALSE;
+        return false;
     }
     set.clear();
     int32_t value=canonValue&CANON_VALUE_MASK;
@@ -2684,7 +2684,7 @@ UBool Normalizer2Impl::getCanonStartSet(UChar32 c, UnicodeSet &set) const {
             addComposites(getCompositionsList(norm16), set);
         }
     }
-    return TRUE;
+    return true;
 }
 
 U_NAMESPACE_END

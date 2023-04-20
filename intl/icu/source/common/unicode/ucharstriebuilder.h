@@ -133,8 +133,8 @@ public:
     }
 
 private:
-    UCharsTrieBuilder(const UCharsTrieBuilder &other);  
-    UCharsTrieBuilder &operator=(const UCharsTrieBuilder &other);  
+    UCharsTrieBuilder(const UCharsTrieBuilder &other) = delete;  
+    UCharsTrieBuilder &operator=(const UCharsTrieBuilder &other) = delete;  
 
     void buildUChars(UStringTrieBuildOption buildOption, UErrorCode &errorCode);
 

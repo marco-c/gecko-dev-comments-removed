@@ -49,14 +49,14 @@ utext_moveIndex32(UText *ut, int32_t delta) {
     UChar32  c;
     if (delta > 0) {
         do {
-            if(ut->chunkOffset>=ut->chunkLength && !utext_access(ut, ut->chunkNativeLimit, TRUE)) {
-                return FALSE;
+            if(ut->chunkOffset>=ut->chunkLength && !utext_access(ut, ut->chunkNativeLimit, true)) {
+                return false;
             }
             c = ut->chunkContents[ut->chunkOffset];
             if (U16_IS_SURROGATE(c)) {
                 c = utext_next32(ut);
                 if (c == U_SENTINEL) {
-                    return FALSE;
+                    return false;
                 }
             } else {
                 ut->chunkOffset++;
@@ -65,14 +65,14 @@ utext_moveIndex32(UText *ut, int32_t delta) {
 
     } else if (delta<0) {
         do {
-            if(ut->chunkOffset<=0 && !utext_access(ut, ut->chunkNativeStart, FALSE)) {
-                return FALSE;
+            if(ut->chunkOffset<=0 && !utext_access(ut, ut->chunkNativeStart, false)) {
+                return false;
             }
             c = ut->chunkContents[ut->chunkOffset-1];
             if (U16_IS_SURROGATE(c)) {
                 c = utext_previous32(ut);
                 if (c == U_SENTINEL) {
-                    return FALSE;
+                    return false;
                 }
             } else {
                 ut->chunkOffset--;
@@ -80,7 +80,7 @@ utext_moveIndex32(UText *ut, int32_t delta) {
         } while(++delta<0);
     }
 
-    return TRUE;
+    return true;
 }
 
 
@@ -114,7 +114,7 @@ utext_setNativeIndex(UText *ut, int64_t index) {
         
         
         
-        ut->pFuncs->access(ut, index, TRUE);
+        ut->pFuncs->access(ut, index, true);
     } else if((int32_t)(index - ut->chunkNativeStart) <= ut->nativeIndexingLimit) {
         
         ut->chunkOffset=(int32_t)(index-ut->chunkNativeStart);
@@ -127,7 +127,7 @@ utext_setNativeIndex(UText *ut, int64_t index) {
         UChar c= ut->chunkContents[ut->chunkOffset];
         if (U16_IS_TRAIL(c)) {
             if (ut->chunkOffset==0) {
-                ut->pFuncs->access(ut, ut->chunkNativeStart, FALSE);
+                ut->pFuncs->access(ut, ut->chunkNativeStart, false);
             }
             if (ut->chunkOffset>0) {
                 UChar lead = ut->chunkContents[ut->chunkOffset-1];
@@ -152,7 +152,7 @@ utext_getPreviousNativeIndex(UText *ut) {
     int64_t result;
     if (i >= 0) {
         UChar c = ut->chunkContents[i];
-        if (U16_IS_TRAIL(c) == FALSE) {
+        if (U16_IS_TRAIL(c) == false) {
             if (i <= ut->nativeIndexingLimit) {
                 result = ut->chunkNativeStart + i;
             } else {
@@ -189,14 +189,14 @@ utext_current32(UText *ut) {
     UChar32  c;
     if (ut->chunkOffset==ut->chunkLength) {
         
-        if (ut->pFuncs->access(ut, ut->chunkNativeLimit, TRUE) == FALSE) {
+        if (ut->pFuncs->access(ut, ut->chunkNativeLimit, true) == false) {
             
             return U_SENTINEL;
         }
     }
 
     c = ut->chunkContents[ut->chunkOffset];
-    if (U16_IS_LEAD(c) == FALSE) {
+    if (U16_IS_LEAD(c) == false) {
         
         return c;
     }
@@ -219,11 +219,11 @@ utext_current32(UText *ut) {
         
         int64_t  nativePosition = ut->chunkNativeLimit;
         int32_t  originalOffset = ut->chunkOffset;
-        if (ut->pFuncs->access(ut, nativePosition, TRUE)) {
+        if (ut->pFuncs->access(ut, nativePosition, true)) {
             trail = ut->chunkContents[ut->chunkOffset];
         }
-        UBool r = ut->pFuncs->access(ut, nativePosition, FALSE);  
-        U_ASSERT(r==TRUE);
+        UBool r = ut->pFuncs->access(ut, nativePosition, false);  
+        U_ASSERT(r);
         ut->chunkOffset = originalOffset;
         if(!r) {
             return U_SENTINEL;
@@ -246,7 +246,7 @@ utext_char32At(UText *ut, int64_t nativeIndex) {
     if (nativeIndex>=ut->chunkNativeStart && nativeIndex < ut->chunkNativeStart + ut->nativeIndexingLimit) {
         ut->chunkOffset = (int32_t)(nativeIndex - ut->chunkNativeStart);
         c = ut->chunkContents[ut->chunkOffset];
-        if (U16_IS_SURROGATE(c) == FALSE) {
+        if (U16_IS_SURROGATE(c) == false) {
             return c;
         }
     }
@@ -270,13 +270,13 @@ utext_next32(UText *ut) {
     UChar32       c;
 
     if (ut->chunkOffset >= ut->chunkLength) {
-        if (ut->pFuncs->access(ut, ut->chunkNativeLimit, TRUE) == FALSE) {
+        if (ut->pFuncs->access(ut, ut->chunkNativeLimit, true) == false) {
             return U_SENTINEL;
         }
     }
 
     c = ut->chunkContents[ut->chunkOffset++];
-    if (U16_IS_LEAD(c) == FALSE) {
+    if (U16_IS_LEAD(c) == false) {
         
         
         
@@ -284,14 +284,14 @@ utext_next32(UText *ut) {
     }
 
     if (ut->chunkOffset >= ut->chunkLength) {
-        if (ut->pFuncs->access(ut, ut->chunkNativeLimit, TRUE) == FALSE) {
+        if (ut->pFuncs->access(ut, ut->chunkNativeLimit, true) == false) {
             
             
             return c;
         }
     }
     UChar32 trail = ut->chunkContents[ut->chunkOffset];
-    if (U16_IS_TRAIL(trail) == FALSE) {
+    if (U16_IS_TRAIL(trail) == false) {
         
         
         
@@ -310,13 +310,13 @@ utext_previous32(UText *ut) {
     UChar32       c;
 
     if (ut->chunkOffset <= 0) {
-        if (ut->pFuncs->access(ut, ut->chunkNativeStart, FALSE) == FALSE) {
+        if (ut->pFuncs->access(ut, ut->chunkNativeStart, false) == false) {
             return U_SENTINEL;
         }
     }
     ut->chunkOffset--;
     c = ut->chunkContents[ut->chunkOffset];
-    if (U16_IS_TRAIL(c) == FALSE) {
+    if (U16_IS_TRAIL(c) == false) {
         
         
         
@@ -324,7 +324,7 @@ utext_previous32(UText *ut) {
     }
 
     if (ut->chunkOffset <= 0) {
-        if (ut->pFuncs->access(ut, ut->chunkNativeStart, FALSE) == FALSE) {
+        if (ut->pFuncs->access(ut, ut->chunkNativeStart, false) == false) {
             
             
             return c;
@@ -332,7 +332,7 @@ utext_previous32(UText *ut) {
     }
 
     UChar32 lead = ut->chunkContents[ut->chunkOffset-1];
-    if (U16_IS_LEAD(lead) == FALSE) {
+    if (U16_IS_LEAD(lead) == false) {
         
         
         return c;
@@ -351,7 +351,7 @@ utext_next32From(UText *ut, int64_t index) {
 
     if(index<ut->chunkNativeStart || index>=ut->chunkNativeLimit) {
         
-        if(!ut->pFuncs->access(ut, index, TRUE)) {
+        if(!ut->pFuncs->access(ut, index, true)) {
             
             return U_SENTINEL;
         }
@@ -391,7 +391,7 @@ utext_previous32From(UText *ut, int64_t index) {
     
     if(index<=ut->chunkNativeStart || index>ut->chunkNativeLimit) {
         
-        if(!ut->pFuncs->access(ut, index, FALSE)) {
+        if(!ut->pFuncs->access(ut, index, false)) {
             
             return U_SENTINEL;
         }
@@ -400,7 +400,7 @@ utext_previous32From(UText *ut, int64_t index) {
         ut->chunkOffset = (int32_t)(index - ut->chunkNativeStart);
     } else {
         ut->chunkOffset=ut->pFuncs->mapNativeIndexToUTF16(ut, index);
-        if (ut->chunkOffset==0 && !ut->pFuncs->access(ut, index, FALSE)) {
+        if (ut->chunkOffset==0 && !ut->pFuncs->access(ut, index, false)) {
             
             return U_SENTINEL;
         }
@@ -438,24 +438,24 @@ utext_equals(const UText *a, const UText *b) {
         a->magic != UTEXT_MAGIC ||
         b->magic != UTEXT_MAGIC) {
             
-            return FALSE;
+            return false;
     }
 
     if (a->pFuncs != b->pFuncs) {
         
-        return FALSE;
+        return false;
     }
 
     if (a->context != b->context) {
         
-        return FALSE;
+        return false;
     }
     if (utext_getNativeIndex(a) != utext_getNativeIndex(b)) {
         
-        return FALSE;
+        return false;
     }
 
-    return TRUE;
+    return true;
 }
 
 U_CAPI UBool U_EXPORT2
@@ -987,7 +987,7 @@ utf8TextAccess(UText *ut, int64_t index, UBool forward) {
                 
                 
                 ut->chunkOffset = ut->chunkLength;
-                return FALSE;
+                return false;
             } else {
                 
                 
@@ -1016,7 +1016,7 @@ utf8TextAccess(UText *ut, int64_t index, UBool forward) {
                     
                     
                     ut->chunkOffset = ut->chunkLength;
-                    return FALSE;
+                    return false;
                 }
                 if (ix == u8b->bufNativeLimit) {
                     
@@ -1038,7 +1038,7 @@ utf8TextAccess(UText *ut, int64_t index, UBool forward) {
             mapIndex = ix - u8b->toUCharsMapStart;
             U_ASSERT(mapIndex < (int32_t)sizeof(UTF8Buf::mapToUChars));
             ut->chunkOffset = u8b->mapToUChars[mapIndex] - u8b->bufStartIdx;
-            return TRUE;
+            return true;
 
         }
     }
@@ -1055,7 +1055,7 @@ utf8TextAccess(UText *ut, int64_t index, UBool forward) {
             
             
             ut->chunkOffset = 0;
-            return FALSE;
+            return false;
         } else {
             
             
@@ -1108,9 +1108,9 @@ utf8TextAccess(UText *ut, int64_t index, UBool forward) {
         
         
         
-        return FALSE;
+        return false;
     } else {
-        return TRUE;
+        return true;
     }
 
 
@@ -1139,7 +1139,7 @@ swapBuffers:
         U_ASSERT(mapIndex<(int32_t)sizeof(u8b->mapToUChars));
         ut->chunkOffset = u8b->mapToUChars[mapIndex] - u8b->bufStartIdx;
 
-        return TRUE;
+        return true;
     }
 
 
@@ -1170,7 +1170,7 @@ swapBuffers:
         ut->chunkOffset = 0;
         U_ASSERT(ix == u8b->bufNativeStart);
     }
-    return FALSE;
+    return false;
 
 makeStubBuffer:
     
@@ -1203,10 +1203,10 @@ fillForward:
         ut->p = u8b_swap;
 
         int32_t strLen = ut->b;
-        UBool   nulTerminated = FALSE;
+        UBool   nulTerminated = false;
         if (strLen < 0) {
             strLen = 0x7fffffff;
-            nulTerminated = TRUE;
+            nulTerminated = true;
         }
 
         UChar   *buf = u8b_swap->buf;
@@ -1214,7 +1214,7 @@ fillForward:
         uint8_t *mapToUChars  = u8b_swap->mapToUChars;
         int32_t  destIx       = 0;
         int32_t  srcIx        = ix;
-        UBool    seenNonAscii = FALSE;
+        UBool    seenNonAscii = false;
         UChar32  c = 0;
 
         
@@ -1230,8 +1230,8 @@ fillForward:
                 destIx++;
             } else {
                 
-                if (seenNonAscii == FALSE) {
-                    seenNonAscii = TRUE;
+                if (seenNonAscii == false) {
+                    seenNonAscii = true;
                     u8b_swap->bufNILimit = destIx;
                 }
 
@@ -1269,7 +1269,7 @@ fillForward:
         u8b_swap->bufNativeLimit     = srcIx;
         u8b_swap->bufStartIdx        = 0;
         u8b_swap->bufLimitIdx        = destIx;
-        if (seenNonAscii == FALSE) {
+        if (seenNonAscii == false) {
             u8b_swap->bufNILimit     = destIx;
         }
         u8b_swap->toUCharsMapStart   = u8b_swap->bufNativeStart;
@@ -1293,7 +1293,7 @@ fillForward:
                 ut->providerProperties &= ~I32_FLAG(UTEXT_PROVIDER_LENGTH_IS_EXPENSIVE);
             }
         }
-        return TRUE;
+        return true;
     }
 
 
@@ -1402,7 +1402,7 @@ fillReverse:
         ut->chunkNativeStart    = u8b_swap->bufNativeStart;
         ut->chunkNativeLimit    = u8b_swap->bufNativeLimit;
         ut->nativeIndexingLimit = u8b_swap->bufNILimit;
-        return TRUE;
+        return true;
     }
 
 }
@@ -1526,7 +1526,7 @@ utf8TextExtract(UText *ut,
     utext_strFromUTF8(dest, destCapacity, &destLength,
                     (const char *)ut->context+start32, limit32-start32,
                     pErrorCode);
-    utf8TextAccess(ut, limit32, TRUE);
+    utf8TextAccess(ut, limit32, true);
     return destLength;
 }
 
@@ -1760,13 +1760,13 @@ repTextAccess(UText *ut, int64_t index, UBool forward) {
         if (index32>=ut->chunkNativeStart && index32<ut->chunkNativeLimit) {
             
             ut->chunkOffset = (int32_t)(index - ut->chunkNativeStart);
-            return TRUE;
+            return true;
         }
         if (index32>=length && ut->chunkNativeLimit==length) {
             
             
             ut->chunkOffset = length - (int32_t)ut->chunkNativeStart;
-            return FALSE;
+            return false;
         }
 
         ut->chunkNativeLimit = index + REP_TEXT_CHUNK_SIZE - 1;
@@ -1787,13 +1787,13 @@ repTextAccess(UText *ut, int64_t index, UBool forward) {
         if (index32>ut->chunkNativeStart && index32<=ut->chunkNativeLimit) {
             
             ut->chunkOffset = index32 - (int32_t)ut->chunkNativeStart;
-            return TRUE;
+            return true;
         }
         if (index32==0 && ut->chunkNativeStart==0) {
             
             
             ut->chunkOffset = 0;
-            return FALSE;
+            return false;
         }
 
         
@@ -1849,7 +1849,7 @@ repTextAccess(UText *ut, int64_t index, UBool forward) {
     
     ut->nativeIndexingLimit = ut->chunkLength;
 
-    return TRUE;
+    return true;
 }
 
 
@@ -1892,7 +1892,7 @@ repTextExtract(UText *ut,
     }
     UnicodeString buffer(dest, 0, destCapacity); 
     rep->extractBetween(start32, limit32, buffer);
-    repTextAccess(ut, limit32, TRUE);
+    repTextAccess(ut, limit32, true);
 
     return u_terminateUChars(dest, destCapacity, length, status);
 }
@@ -1948,7 +1948,7 @@ repTextReplace(UText *ut,
 
     
     int32_t newIndexPos = limit32 + lengthDelta;
-    repTextAccess(ut, newIndexPos, TRUE);
+    repTextAccess(ut, newIndexPos, true);
 
     return lengthDelta;
 }
@@ -2012,7 +2012,7 @@ repTextCopy(UText *ut,
     }
 
     
-    repTextAccess(ut, nativeIterIndex, TRUE);
+    repTextAccess(ut, nativeIterIndex, true);
 }
 
 static const struct UTextFuncs repFuncs =
@@ -2254,7 +2254,7 @@ unistrTextCopy(UText *ut,
 
     
     ut->chunkContents = us->getBuffer();
-    if (move==FALSE) {
+    if (move==false) {
         
         ut->chunkLength += limit32-start32;
         ut->chunkNativeLimit = ut->chunkLength;
@@ -2525,7 +2525,7 @@ ucstrTextExtract(UText *ut,
     
     
     
-    ucstrTextAccess(ut, start, TRUE);
+    ucstrTextAccess(ut, start, true);
     const UChar *s=ut->chunkContents;
     start32 = ut->chunkOffset;
 
@@ -2579,7 +2579,7 @@ ucstrTextExtract(UText *ut,
     if (si <= ut->chunkNativeLimit) {
         ut->chunkOffset = si;
     } else {
-        ucstrTextAccess(ut, si, TRUE);
+        ucstrTextAccess(ut, si, true);
     }
 
     
@@ -2698,11 +2698,11 @@ charIterTextAccess(UText *ut, int64_t index, UBool  forward) {
     neededIndex -= neededIndex % CIBufSize;
 
     UChar *buf = NULL;
-    UBool  needChunkSetup = TRUE;
+    UBool  needChunkSetup = true;
     int    i;
     if (ut->chunkNativeStart == neededIndex) {
         
-        needChunkSetup = FALSE;
+        needChunkSetup = false;
     } else if (ut->b == neededIndex) {
         
         buf = (UChar *)ut->p;
@@ -2809,7 +2809,7 @@ charIterTextExtract(UText *ut,
         srci += len;
     }
 
-    charIterTextAccess(ut, copyLimit, TRUE);
+    charIterTextAccess(ut, copyLimit, true);
 
     u_terminateUChars(dest, destCapacity, desti, status);
     return desti;

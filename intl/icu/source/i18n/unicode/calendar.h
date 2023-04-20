@@ -962,16 +962,6 @@ public:
 
     UCalendarWallTimeOption getSkippedWallTimeOption(void) const;
 
-#ifndef U_HIDE_DEPRECATED_API
-    
-
-
-
-
-
-    void setFirstDayOfWeek(EDaysOfWeek value);
-#endif  
-
     
 
 
@@ -1143,26 +1133,6 @@ public:
 
     virtual int32_t getActualMinimum(UCalendarDateFields field, UErrorCode& status) const;
 
-#ifndef U_HIDE_DEPRECATED_API
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    int32_t getActualMaximum(EDateFields field, UErrorCode& status) const;
-#endif  
-
     
 
 
@@ -1181,23 +1151,6 @@ public:
 
     virtual int32_t getActualMaximum(UCalendarDateFields field, UErrorCode& status) const;
 
-#ifndef U_HIDE_DEPRECATED_API
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    int32_t get(EDateFields field, UErrorCode& status) const;
-#endif  
-
     
 
 
@@ -1213,18 +1166,6 @@ public:
 
     int32_t get(UCalendarDateFields field, UErrorCode& status) const;
 
-#ifndef U_HIDE_DEPRECATED_API
-    
-
-
-
-
-
-
-
-    UBool isSet(EDateFields field) const;
-#endif  
-
     
 
 
@@ -1234,17 +1175,6 @@ public:
 
 
     UBool isSet(UCalendarDateFields field) const;
-
-#ifndef U_HIDE_DEPRECATED_API
-    
-
-
-
-
-
-
-    void set(EDateFields field, int32_t value);
-#endif  
 
     
 
@@ -1303,18 +1233,6 @@ public:
 
 
     void clear(void);
-
-#ifndef U_HIDE_DEPRECATED_API
-    
-
-
-
-
-
-
-
-    void clear(EDateFields field);
-#endif  
 
     
 
@@ -1770,12 +1688,18 @@ protected:
 
 
 
-    enum {
-      
-      kResolveSTOP = -1,
-      
-      kResolveRemap = 32
-    };
+
+    static constexpr int32_t kResolveSTOP = -1;
+    
+
+
+
+
+
+
+
+
+    static constexpr int32_t kResolveRemap = 32;
 
     
 

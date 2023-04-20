@@ -219,8 +219,8 @@ public:
     ~RBBIStateDescriptor();
 
 private:
-    RBBIStateDescriptor(const RBBIStateDescriptor &other); 
-    RBBIStateDescriptor &operator=(const RBBIStateDescriptor &other); 
+    RBBIStateDescriptor(const RBBIStateDescriptor &other) = delete; 
+    RBBIStateDescriptor &operator=(const RBBIStateDescriptor &other) = delete; 
 };
 
 

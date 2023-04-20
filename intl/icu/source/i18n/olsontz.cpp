@@ -53,13 +53,13 @@ static void debug_tz_msg(const char *pat, ...)
 
 static UBool arrayEqual(const void *a1, const void *a2, int32_t size) {
     if (a1 == NULL && a2 == NULL) {
-        return TRUE;
+        return true;
     }
     if ((a1 != NULL && a2 == NULL) || (a1 == NULL && a2 != NULL)) {
-        return FALSE;
+        return false;
     }
     if (a1 == a2) {
-        return TRUE;
+        return true;
     }
 
     return (uprv_memcmp(a1, a2, size) == 0);
@@ -204,7 +204,7 @@ OlsonTimeZone::OlsonTimeZone(const UResourceBundle* top,
             ures_getByKey(res, kFINALYEAR, r.getAlias(), &ec);
             int32_t ruleYear = ures_getInt(r.getAlias(), &ec);
             if (U_SUCCESS(ec)) {
-                UnicodeString ruleID(TRUE, ruleIdUStr, len);
+                UnicodeString ruleID(true, ruleIdUStr, len);
                 UResourceBundle *rule = TimeZone::loadRule(top, ruleID, NULL, ec);
                 const int32_t *ruleData = ures_getIntVector(rule, &len, &ec); 
                 if (U_SUCCESS(ec) && len == 11) {
@@ -381,7 +381,7 @@ int32_t OlsonTimeZone::getOffset(uint8_t era, int32_t year, int32_t month,
     
     UDate date = (UDate)(Grego::fieldsToDay(year, month, dom) * U_MILLIS_PER_DAY + millis);
     int32_t rawoff, dstoff;
-    getHistoricalOffset(date, TRUE, kDaylight, kStandard, rawoff, dstoff);
+    getHistoricalOffset(date, true, kDaylight, kStandard, rawoff, dstoff);
     return rawoff + dstoff;
 }
 
@@ -409,7 +409,7 @@ void OlsonTimeZone::getOffsetFromLocal(UDate date, UTimeZoneLocalOption nonExist
     if (finalZone != NULL && date >= finalStartMillis) {
         finalZone->getOffsetFromLocal(date, nonExistingTimeOpt, duplicatedTimeOpt, rawoff, dstoff, ec);
     } else {
-        getHistoricalOffset(date, TRUE, nonExistingTimeOpt, duplicatedTimeOpt, rawoff, dstoff);
+        getHistoricalOffset(date, true, nonExistingTimeOpt, duplicatedTimeOpt, rawoff, dstoff);
     }
 }
 
@@ -430,8 +430,7 @@ void OlsonTimeZone::setRawOffset(int32_t ) {
 int32_t OlsonTimeZone::getRawOffset() const {
     UErrorCode ec = U_ZERO_ERROR;
     int32_t raw, dst;
-    getOffset((double) uprv_getUTCtime() * U_MILLIS_PER_SECOND,
-              FALSE, raw, dst, ec);
+    getOffset(uprv_getUTCtime(), false, raw, dst, ec);
     return raw;
 }
 
@@ -585,10 +584,10 @@ UBool OlsonTimeZone::useDaylightTime() const {
         }
         if ((transition >= start && dstOffsetAt(i) != 0)
                 || (transition > start && dstOffsetAt(i - 1) != 0)) {
-            return TRUE;
+            return true;
         }
     }
-    return FALSE;
+    return false;
 }
 int32_t 
 OlsonTimeZone::getDSTSavings() const{
@@ -602,25 +601,25 @@ OlsonTimeZone::getDSTSavings() const{
 
 UBool OlsonTimeZone::inDaylightTime(UDate date, UErrorCode& ec) const {
     int32_t raw, dst;
-    getOffset(date, FALSE, raw, dst, ec);
+    getOffset(date, false, raw, dst, ec);
     return dst != 0;
 }
 
 UBool
 OlsonTimeZone::hasSameRules(const TimeZone &other) const {
     if (this == &other) {
-        return TRUE;
+        return true;
     }
     const OlsonTimeZone* z = dynamic_cast<const OlsonTimeZone*>(&other);
     if (z == NULL) {
-        return FALSE;
+        return false;
     }
 
     
     
     
     if (typeMapData == z->typeMapData) {
-        return TRUE;
+        return true;
     }
     
     
@@ -628,19 +627,19 @@ OlsonTimeZone::hasSameRules(const TimeZone &other) const {
     if ((finalZone == NULL && z->finalZone != NULL)
         || (finalZone != NULL && z->finalZone == NULL)
         || (finalZone != NULL && z->finalZone != NULL && *finalZone != *z->finalZone)) {
-        return FALSE;
+        return false;
     }
 
     if (finalZone != NULL) {
         if (finalStartYear != z->finalStartYear || finalStartMillis != z->finalStartMillis) {
-            return FALSE;
+            return false;
         }
     }
     if (typeCount != z->typeCount
         || transitionCountPre32 != z->transitionCountPre32
         || transitionCount32 != z->transitionCount32
         || transitionCountPost32 != z->transitionCountPost32) {
-        return FALSE;
+        return false;
     }
 
     return
@@ -882,20 +881,20 @@ OlsonTimeZone::getNextTransition(UDate base, UBool inclusive, TimeZoneTransition
     UErrorCode status = U_ZERO_ERROR;
     checkTransitionRules(status);
     if (U_FAILURE(status)) {
-        return FALSE;
+        return false;
     }
 
     if (finalZone != NULL) {
         if (inclusive && base == firstFinalTZTransition->getTime()) {
             result = *firstFinalTZTransition;
-            return TRUE;
+            return true;
         } else if (base >= firstFinalTZTransition->getTime()) {
             if (finalZone->useDaylightTime()) {
                 
                 return finalZoneWithStartYear->getNextTransition(base, inclusive, result);
             } else {
                 
-                return FALSE;
+                return false;
             }
         }
     }
@@ -912,13 +911,13 @@ OlsonTimeZone::getNextTransition(UDate base, UBool inclusive, TimeZoneTransition
         if (ttidx == transCount - 1)  {
             if (firstFinalTZTransition != NULL) {
                 result = *firstFinalTZTransition;
-                return TRUE;
+                return true;
             } else {
-                return FALSE;
+                return false;
             }
         } else if (ttidx < firstTZTransitionIdx) {
             result = *firstTZTransition;
-            return TRUE;
+            return true;
         } else {
             
             TimeZoneRule *to = historicRules[typeMapData[ttidx + 1]];
@@ -936,10 +935,10 @@ OlsonTimeZone::getNextTransition(UDate base, UBool inclusive, TimeZoneTransition
             result.setTime(startTime);
             result.adoptFrom(from->clone());
             result.adoptTo(to->clone());
-            return TRUE;
+            return true;
         }
     }
-    return FALSE;
+    return false;
 }
 
 UBool
@@ -947,20 +946,20 @@ OlsonTimeZone::getPreviousTransition(UDate base, UBool inclusive, TimeZoneTransi
     UErrorCode status = U_ZERO_ERROR;
     checkTransitionRules(status);
     if (U_FAILURE(status)) {
-        return FALSE;
+        return false;
     }
 
     if (finalZone != NULL) {
         if (inclusive && base == firstFinalTZTransition->getTime()) {
             result = *firstFinalTZTransition;
-            return TRUE;
+            return true;
         } else if (base > firstFinalTZTransition->getTime()) {
             if (finalZone->useDaylightTime()) {
                 
                 return finalZoneWithStartYear->getPreviousTransition(base, inclusive, result);
             } else {
                 result = *firstFinalTZTransition;
-                return TRUE;
+                return true;
             }
         }
     }
@@ -976,10 +975,10 @@ OlsonTimeZone::getPreviousTransition(UDate base, UBool inclusive, TimeZoneTransi
         }
         if (ttidx < firstTZTransitionIdx) {
             
-            return FALSE;
+            return false;
         } else if (ttidx == firstTZTransitionIdx) {
             result = *firstTZTransition;
-            return TRUE;
+            return true;
         } else {
             
             TimeZoneRule *to = historicRules[typeMapData[ttidx]];
@@ -997,10 +996,10 @@ OlsonTimeZone::getPreviousTransition(UDate base, UBool inclusive, TimeZoneTransi
             result.setTime(startTime);
             result.adoptFrom(from->clone());
             result.adoptTo(to->clone());
-            return TRUE;
+            return true;
         }
     }
-    return FALSE;
+    return false;
 }
 
 int32_t

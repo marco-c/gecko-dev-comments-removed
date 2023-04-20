@@ -30,6 +30,9 @@ enum Constants {
     CONSTANT_LB2KG,      
     CONSTANT_GLUCOSE_MOLAR_MASS,
     CONSTANT_ITEM_PER_MOLE,
+    CONSTANT_METERS_PER_AU,
+    CONSTANT_SEC_PER_JULIAN_YEAR,
+    CONSTANT_SPEED_OF_LIGHT_METERS_PER_SECOND,
 
     
     CONSTANTS_COUNT
@@ -49,6 +52,9 @@ static const double constantsValues[CONSTANTS_COUNT] = {
     0.45359237,                
     180.1557,                  
     6.02214076E+23,            
+    149597870700,              
+    31557600,                  
+    299792458,                 
 };
 
 typedef enum Signum {

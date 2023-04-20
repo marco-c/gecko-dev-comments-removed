@@ -131,7 +131,7 @@ private:
     
 
 
-    DateInterval();
+    DateInterval() = delete;
 
     UDate fromDate;
     UDate toDate;

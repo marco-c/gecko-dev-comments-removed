@@ -401,7 +401,7 @@ DateIntervalInfo::initializeData(const Locale& locale, UErrorCode& status)
     char         localeWithCalendarKey[ULOC_LOCALE_IDENTIFIER_CAPACITY];
     
     (void)ures_getFunctionalEquivalent(localeWithCalendarKey, ULOC_LOCALE_IDENTIFIER_CAPACITY, nullptr,
-                                     "calendar", "calendar", locName, nullptr, FALSE, &status);
+                                     "calendar", "calendar", locName, nullptr, false, &status);
     localeWithCalendarKey[ULOC_LOCALE_IDENTIFIER_CAPACITY-1] = 0; 
     
     int32_t calendarTypeLen = uloc_getKeywordValue(localeWithCalendarKey, "calendar", calendarType,
@@ -437,7 +437,7 @@ DateIntervalInfo::initializeData(const Locale& locale, UErrorCode& status)
         }
 
         if ( U_SUCCESS(status) && (resStr != nullptr)) {
-            UnicodeString pattern = UnicodeString(TRUE, resStr, resStrLen);
+            UnicodeString pattern = UnicodeString(true, resStr, resStrLen);
             setFallbackIntervalPattern(pattern, status);
         }
         ures_close(itvDtPtnResource);
@@ -449,7 +449,7 @@ DateIntervalInfo::initializeData(const Locale& locale, UErrorCode& status)
         const UnicodeString &calendarTypeToUseUString = sink.getNextCalendarType();
 
         
-        Hashtable loadedCalendarTypes(FALSE, status);
+        Hashtable loadedCalendarTypes(false, status);
 
         if (U_SUCCESS(status)) {
             while (!calendarTypeToUseUString.isBogus()) {
@@ -504,7 +504,7 @@ DateIntervalInfo::setIntervalPatternInternally(const UnicodeString& skeleton,
     }
 
     patternsOfOneSkeleton[index] = intervalPattern;
-    if ( emptyHash == TRUE ) {
+    if ( emptyHash ) {
         fIntervalPatterns->put(skeleton, patternsOfOneSkeleton, status);
     }
 }
@@ -746,9 +746,9 @@ static UBool
 U_CALLCONV dtitvinfHashTableValueComparator(UHashTok val1, UHashTok val2) {
     const UnicodeString* pattern1 = (UnicodeString*)val1.pointer;
     const UnicodeString* pattern2 = (UnicodeString*)val2.pointer;
-    UBool ret = TRUE;
+    UBool ret = true;
     int8_t i;
-    for ( i = 0; i < DateIntervalInfo::kMaxIntervalPatternIndex && ret == TRUE; ++i ) {
+    for ( i = 0; i < DateIntervalInfo::kMaxIntervalPatternIndex && ret ; ++i ) {
         ret = (pattern1[i] == pattern2[i]);
     }
     return ret;
@@ -763,7 +763,7 @@ DateIntervalInfo::initHash(UErrorCode& status) {
         return nullptr;
     }
     Hashtable* hTable;
-    if ( (hTable = new Hashtable(FALSE, status)) == nullptr ) {
+    if ( (hTable = new Hashtable(false, status)) == nullptr ) {
         status = U_MEMORY_ALLOCATION_ERROR;
         return nullptr;
     }

@@ -320,10 +320,10 @@ URestrictionLevel SpoofImpl::getRestrictionLevel(const UnicodeString& input, UEr
     
     
     
-    UBool allASCII = TRUE;
+    UBool allASCII = true;
     for (int32_t i=0, length=input.length(); i<length; i++) {
         if (input.charAt(i) > 0x7f) {
-            allASCII = FALSE;
+            allASCII = false;
             break;
         }
     }
@@ -495,9 +495,9 @@ UBool SpoofData::validateDataVersion(UErrorCode &status) const {
         fRawData->fFormatVersion[2] != 0 ||
         fRawData->fFormatVersion[3] != 0) {
             status = U_INVALID_FORMAT_ERROR;
-            return FALSE;
+            return false;
     }
-    return TRUE;
+    return true;
 }
 
 static UBool U_CALLCONV
@@ -518,9 +518,9 @@ spoofDataIsAcceptable(void *context,
         if(version != NULL) {
             uprv_memcpy(version, pInfo->dataVersion, 4);
         }
-        return TRUE;
+        return true;
     } else {
-        return FALSE;
+        return false;
     }
 }
 
@@ -538,7 +538,7 @@ spoofDataIsAcceptable(void *context,
 
 
 
-static UInitOnce gSpoofInitDefaultOnce = U_INITONCE_INITIALIZER;
+static UInitOnce gSpoofInitDefaultOnce {};
 static SpoofData* gDefaultSpoofData;
 
 static UBool U_CALLCONV
@@ -549,7 +549,7 @@ uspoof_cleanupDefaultData(void) {
         gDefaultSpoofData = nullptr;
         gSpoofInitDefaultOnce.reset();
     }
-    return TRUE;
+    return true;
 }
 
 static void U_CALLCONV uspoof_loadDefaultData(UErrorCode& status) {
@@ -655,7 +655,7 @@ SpoofData::SpoofData(UErrorCode &status) {
 
 void SpoofData::reset() {
    fRawData = NULL;
-   fDataOwned = FALSE;
+   fDataOwned = false;
    fUDM      = NULL;
    fMemLimit = 0;
    fRefCount = 1;

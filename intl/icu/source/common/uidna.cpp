@@ -58,15 +58,15 @@ toASCIILower(UChar ch){
 inline static UBool 
 startsWithPrefix(const UChar* src , int32_t srcLength){
     if(srcLength < ACE_PREFIX_LENGTH){
-        return FALSE;
+        return false;
     }
 
     for(int8_t i=0; i< ACE_PREFIX_LENGTH; i++){
         if(toASCIILower(src[i]) != ACE_PREFIX[i]){
-            return FALSE;
+            return false;
         }
     }
-    return TRUE;
+    return true;
 }
 
 
@@ -132,9 +132,9 @@ static inline UBool isLabelSeparator(UChar ch){
         case 0x3002:
         case 0xFF0E:
         case 0xFF61:
-            return TRUE;
+            return true;
         default:
-            return FALSE;           
+            return false;           
     }
 }
 
@@ -149,7 +149,7 @@ getNextSeparator(UChar *src, int32_t srcLength,
         for(i=0 ; ;i++){
             if(src[i] == 0){
                 *limit = src + i; 
-                *done = TRUE;
+                *done = true;
                 return i;
             }
             if(isLabelSeparator(src[i])){
@@ -169,7 +169,7 @@ getNextSeparator(UChar *src, int32_t srcLength,
         
         
         *limit = src+srcLength;
-        *done = TRUE;
+        *done = true;
 
         return i;
     }
@@ -177,7 +177,7 @@ getNextSeparator(UChar *src, int32_t srcLength,
 static inline UBool isLDHChar(UChar ch){
     
     if(ch>0x007A){
-        return FALSE;
+        return false;
     }
     
     if( (ch==0x002D) || 
@@ -185,9 +185,9 @@ static inline UBool isLDHChar(UChar ch){
         (0x0041 <= ch && ch <= 0x005A) ||
         (0x0061 <= ch && ch <= 0x007A)
       ){
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 static int32_t 
@@ -212,9 +212,9 @@ _internal_toASCII(const UChar* src, int32_t srcLength,
     UBool* caseFlags = NULL;
     
     
-    UBool srcIsASCII  = TRUE;
+    UBool srcIsASCII  = true;
     
-    UBool srcIsLDH = TRUE; 
+    UBool srcIsLDH = true; 
 
     int32_t j=0;
 
@@ -239,13 +239,13 @@ _internal_toASCII(const UChar* src, int32_t srcLength,
     
     for( j=0;j<srcLength;j++){
         if(src[j] > 0x7F){
-            srcIsASCII = FALSE;
+            srcIsASCII = false;
         }
         b1[b1Len++] = src[j];
     }
     
     
-    if(srcIsASCII == FALSE){
+    if(srcIsASCII == false){
         
         
         b1Len = usprep_prepare(nameprep, src, srcLength, b1, b1Capacity, namePrepOptions, parseError, status);
@@ -277,29 +277,29 @@ _internal_toASCII(const UChar* src, int32_t srcLength,
     }
 
     
-    srcIsASCII = TRUE;
+    srcIsASCII = true;
     for( j=0;j<b1Len;j++){
         
         if(b1[j] > 0x7F){
-            srcIsASCII = FALSE;
-        }else if(isLDHChar(b1[j])==FALSE){  
-            srcIsLDH = FALSE;
+            srcIsASCII = false;
+        }else if(isLDHChar(b1[j])==false){  
+            srcIsLDH = false;
             failPos = j;
         }
     }
-    if(useSTD3ASCIIRules == TRUE){
+    if(useSTD3ASCIIRules){
         
         
         
         
         
         
-        if( srcIsLDH == FALSE 
+        if( srcIsLDH == false 
             || b1[0] ==  HYPHEN || b1[b1Len-1] == HYPHEN){
             *status = U_IDNA_STD3_ASCII_RULES_ERROR;
 
             
-            if(srcIsLDH==FALSE){
+            if(srcIsLDH==false){
                 
                 uprv_syntaxError(b1,failPos, b1Len,parseError);
             }else if(b1[0] == HYPHEN){
@@ -416,7 +416,7 @@ _internal_toUnicode(const UChar* src, int32_t srcLength,
 
     UBool* caseFlags = NULL;
 
-    UBool srcIsASCII = TRUE;
+    UBool srcIsASCII = true;
     
 
 
@@ -425,7 +425,7 @@ _internal_toUnicode(const UChar* src, int32_t srcLength,
         srcLength = 0;
         for(;src[srcLength]!=0;){
             if(src[srcLength]> 0x7f){
-                srcIsASCII = FALSE;
+                srcIsASCII = false;
             }
 
 
@@ -438,7 +438,7 @@ _internal_toUnicode(const UChar* src, int32_t srcLength,
     }else if(srcLength > 0){
         for(int32_t j=0; j<srcLength; j++){
             if(src[j]> 0x7f){
-                srcIsASCII = FALSE;
+                srcIsASCII = false;
                 break;
             }
 
@@ -452,7 +452,7 @@ _internal_toUnicode(const UChar* src, int32_t srcLength,
         return 0;
     }
     
-    if(srcIsASCII == FALSE){
+    if(srcIsASCII == false){
         
         b1Len = usprep_prepare(nameprep, src, srcLength, b1, b1Capacity, namePrepOptions, parseError, status);
         if(*status == U_BUFFER_OVERFLOW_ERROR){
@@ -695,7 +695,7 @@ uidna_IDNToASCII(  const UChar *src, int32_t srcLength,
     int32_t remainingLen = srcLength;
     int32_t remainingDestCapacity = destCapacity;
     int32_t labelLen = 0, labelReqLength = 0;
-    UBool done = FALSE;
+    UBool done = false;
 
 
     for(;;){
@@ -731,7 +731,7 @@ uidna_IDNToASCII(  const UChar *src, int32_t srcLength,
             remainingDestCapacity = 0;
         }
 
-        if(done == TRUE){
+        if(done){
             break;
         }
 
@@ -788,7 +788,7 @@ uidna_IDNToUnicode(  const UChar* src, int32_t srcLength,
     int32_t remainingLen = srcLength;
     int32_t remainingDestCapacity = destCapacity;
     int32_t labelLen = 0, labelReqLength = 0;
-    UBool done = FALSE;
+    UBool done = false;
 
     for(;;){
 
@@ -829,7 +829,7 @@ uidna_IDNToUnicode(  const UChar* src, int32_t srcLength,
             remainingDestCapacity = 0;
         }
 
-        if(done == TRUE){
+        if(done){
             break;
         }
 
