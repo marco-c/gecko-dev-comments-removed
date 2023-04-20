@@ -1,13 +1,11 @@
-
-
-
-
-var EXPORTED_SYMBOLS = ["UITourChild"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const PREF_TEST_WHITELIST = "browser.uitour.testingOrigins";
 const UITOUR_PERMISSION = "uitour";
 
-class UITourChild extends JSWindowActorChild {
+export class UITourChild extends JSWindowActorChild {
   handleEvent(event) {
     if (!Services.prefs.getBoolPref("browser.uitour.enabled")) {
       return;
@@ -31,7 +29,7 @@ class UITourChild extends JSWindowActorChild {
       return false;
     }
 
-    
+    // Add any testing origins (comma-seperated) to the whitelist for the session.
     for (let origin of Services.prefs
       .getCharPref(PREF_TEST_WHITELIST)
       .split(",")) {
@@ -47,7 +45,7 @@ class UITourChild extends JSWindowActorChild {
     return false;
   }
 
-  
+  // This function is copied from UITour.sys.mjs.
   isSafeScheme(aURI) {
     let allowedSchemes = new Set(["https", "about"]);
     if (!Services.prefs.getBoolPref("browser.uitour.requireSecure")) {
@@ -88,8 +86,8 @@ class UITourChild extends JSWindowActorChild {
       return true;
     }
 
-    
-    
+    // Bug 1557153: To allow Skyline messaging, workaround for UNKNOWN_ACTION
+    // overriding browser/app/permissions default
     return uri.host == "www.mozilla.org" || this.isTestingOrigin(uri);
   }
 

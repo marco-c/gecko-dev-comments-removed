@@ -3,11 +3,9 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "UITour",
-  "resource:///modules/UITour.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  UITour: "resource:///modules/UITour.sys.mjs",
+});
 
 const { PermissionTestUtils } = ChromeUtils.import(
   "resource://testing-common/PermissionTestUtils.jsm"

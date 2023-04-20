@@ -1,15 +1,10 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-
-
-var EXPORTED_SYMBOLS = ["UITour"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 
@@ -36,8 +31,8 @@ XPCOMUtils.defineLazyGetter(lazy, "fxAccounts", () => {
   ).getFxAccountsSingleton();
 });
 
-
-
+// See LOG_LEVELS in Console.sys.mjs. Common examples: "All", "Info", "Warn", &
+// "Error".
 const PREF_LOG_LEVEL = "browser.uitour.loglevel";
 
 const BACKGROUND_PAGE_ACTIONS_ALLOWED = new Set([
@@ -54,7 +49,7 @@ const BACKGROUND_PAGE_ACTIONS_ALLOWED = new Set([
 ]);
 const MAX_BUTTONS = 4;
 
-
+// Array of which colorway/theme ids can be activated.
 XPCOMUtils.defineLazyGetter(lazy, "COLORWAY_IDS", () =>
   [...lazy.BuiltInThemes.builtInThemeMap.keys()].filter(
     id =>
@@ -63,10 +58,10 @@ XPCOMUtils.defineLazyGetter(lazy, "COLORWAY_IDS", () =>
   )
 );
 
-
+// Prefix for any target matching a search engine.
 const TARGET_SEARCHENGINE_PREFIX = "searchEngine-";
 
-
+// Create a new instance of the ConsoleAPI so we can control the maxLogLevel with a pref.
 XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   let { ConsoleAPI } = ChromeUtils.importESModule(
     "resource://gre/modules/Console.sys.mjs"
@@ -78,11 +73,11 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   return new ConsoleAPI(consoleOptions);
 });
 
-var UITour = {
+export var UITour = {
   url: null,
-  
+  /* Map from browser chrome windows to a Set of <browser>s in which a tour is open (both visible and hidden) */
   tourBrowsersByWindow: new WeakMap(),
-  
+  // Menus opened by api users explictly through `Mozilla.UITour.showMenu` call
   noautohideMenus: new Set(),
   availableTargetsCache: new WeakMap(),
   clearAvailableTargetsCache() {
@@ -97,8 +92,8 @@ var UITour = {
       "accountStatus",
       {
         query: "#appMenu-fxa-label2",
-        
-        
+        // This is a fake widgetName starting with the "appMenu-" prefix so we know
+        // to automatically open the appMenu when annotating this target.
         widgetName: "appMenu-fxa-label2",
       },
     ],
@@ -203,8 +198,8 @@ var UITour = {
       "pageAction-bookmark",
       {
         query: aDocument => {
-          
-          
+          // The bookmark's urlbar page action button is pre-defined in the DOM.
+          // It would be hidden if toggled off from the urlbar.
           let node = aDocument.getElementById("star-button-box");
           return node && !node.hidden ? node : null;
         },
@@ -214,14 +209,14 @@ var UITour = {
 
   init() {
     lazy.log.debug("Initializing UITour");
-    
-    
+    // Lazy getter is initialized here so it can be replicated any time
+    // in a test.
     delete this.url;
     XPCOMUtils.defineLazyGetter(this, "url", function() {
       return Services.urlFormatter.formatURLPref("browser.uitour.url");
     });
 
-    
+    // Clear the availableTargetsCache on widget changes.
     let listenerMethods = [
       "onWidgetAdded",
       "onWidgetMoved",
@@ -249,11 +244,11 @@ var UITour = {
     let browser = aBrowser;
     let window = browser.ownerGlobal;
 
-    
-    
+    // Does the window have tabs? We need to make sure since windowless browsers do
+    // not have tabs.
     if (!window.gBrowser) {
-      
-      
+      // When using windowless browsers we don't have a valid |window|. If that's the case,
+      // use the most recent window as a target for UITour functions (see Bug 1111022).
       window = Services.wm.getMostRecentWindow("navigator:browser");
     }
 
@@ -481,14 +476,14 @@ var UITour = {
               return;
             }
             const url = new URL(uri);
-            
+            // Call our helper to validate extraURLParams and populate URLSearchParams
             if (!this._populateURLParams(url, data.extraURLParams)) {
               lazy.log.warn(
                 "showFirefoxAccounts: invalid campaign args specified"
               );
               return;
             }
-            
+            // We want to replace the current tab.
             browser.loadURI(url.URI, {
               triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
                 {}
@@ -503,7 +498,7 @@ var UITour = {
           .promiseConnectDeviceURI(data.entrypoint || "uitour")
           .then(uri => {
             const url = new URL(uri);
-            
+            // Call our helper to validate extraURLParams and populate URLSearchParams
             if (!this._populateURLParams(url, data.extraURLParams)) {
               lazy.log.warn(
                 "showConnectAnotherDevice: invalid campaign args specified"
@@ -511,7 +506,7 @@ var UITour = {
               return;
             }
 
-            
+            // We want to replace the current tab.
             browser.loadURI(url.URI, {
               triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
                 {}
@@ -522,7 +517,7 @@ var UITour = {
       }
 
       case "resetFirefox": {
-        
+        // Open a reset profile dialog window.
         if (lazy.ResetProfile.resetSupported()) {
           lazy.ResetProfile.openConfirmationDialog(window);
         }
@@ -530,7 +525,7 @@ var UITour = {
       }
 
       case "addNavBarWidget": {
-        
+        // Add a widget to the toolbar
         let targetPromise = this.getTarget(window, data.name);
         targetPromise
           .then(target => {
@@ -550,7 +545,7 @@ var UITour = {
         let name = data.name;
         let value = data.value;
         Services.prefs.setStringPref("browser.uitour.treatment." + name, value);
-        
+        // The notification is only meant to be used in tests.
         UITourHealthReport.recordTreatmentTag(name, value).then(() =>
           this.notify("TreatmentTag:TelemetrySent")
         );
@@ -628,10 +623,10 @@ var UITour = {
       }
 
       case "closeTab": {
-        
-        
-        
-        
+        // Find the <tabbrowser> element of the <browser> for which the event
+        // was generated originally. If the browser where the UI tour is loaded
+        // is windowless, just ignore the request to close the tab. The request
+        // is also ignored if this is the only tab in the window.
         let tabBrowser = browser.ownerGlobal.gBrowser;
         if (tabBrowser && tabBrowser.browsers.length > 1) {
           tabBrowser.removeTab(tabBrowser.getTabForBrowser(browser));
@@ -645,10 +640,10 @@ var UITour = {
       }
     }
 
-    
-    
-    
-    
+    // For performance reasons, only call initForBrowser if we did something
+    // that will require a teardownTourForBrowser call later.
+    // getConfiguration (called from about:home) doesn't require any future
+    // uninitialization.
     if (action != "getConfiguration") {
       this.initForBrowser(browser, window);
     }
@@ -679,7 +674,7 @@ var UITour = {
       case "TabSelect": {
         let window = aEvent.target.ownerGlobal;
 
-        
+        // Teardown the browser of the tab we just switched away from.
         if (aEvent.detail && aEvent.detail.previousTab) {
           let previousTab = aEvent.detail.previousTab;
           let openTourWindows = this.tourBrowsersByWindow.get(window);
@@ -706,8 +701,8 @@ var UITour = {
   observe(aSubject, aTopic, aData) {
     lazy.log.debug("observe: aTopic =", aTopic);
     switch (aTopic) {
-      
-      
+      // The browser message manager is disconnected when the <browser> is
+      // destroyed and we want to teardown at that point.
       case "message-manager-close": {
         for (let window of Services.wm.getEnumerator("navigator:browser")) {
           if (window.closed) {
@@ -731,18 +726,18 @@ var UITour = {
     }
   },
 
-  
-  
-  
-  
-  
+  // Given a string that is a JSONified represenation of an object with
+  // additional "flow_id", "flow_begin_time", "device_id", utm_* URL params
+  // that should be appended, validate and append them to the passed URL object.
+  // Returns true if the params were validated and appended, and false if the
+  // request should be ignored.
   _populateURLParams(url, extraURLParams) {
     const FLOW_ID_LENGTH = 64;
     const FLOW_BEGIN_TIME_LENGTH = 13;
 
-    
+    // We are extra paranoid about what params we allow to be appended.
     if (typeof extraURLParams == "undefined") {
-      
+      // no params, so it's all good.
       return true;
     }
     if (typeof extraURLParams != "string") {
@@ -765,11 +760,11 @@ var UITour = {
       return false;
     }
     if (urlParams) {
-      
-      
-      
-      
-      
+      // Expected to JSON parse the following for FxA flow parameters:
+      //
+      // {String} flow_id - Flow Id, such as '5445b28b8b7ba6cf71e345f8fff4bc59b2a514f78f3e2cc99b696449427fd445'
+      // {Number} flow_begin_time - Flow begin timestamp, such as 1590780440325
+      // {String} device_id - Device Id, such as '7e450f3337d3479b8582ea1c9bb5ba6c'
       if (
         (urlParams.flow_begin_time &&
           urlParams.flow_begin_time.toString().length !==
@@ -782,8 +777,8 @@ var UITour = {
         return false;
       }
 
-      
-      
+      // The regex that the name of each param must match - there's no
+      // character restriction on the value - they will be escaped as necessary.
       let reSimpleString = /^[-_a-zA-Z0-9]*$/;
       for (let name in urlParams) {
         let value = urlParams[name];
@@ -807,9 +802,9 @@ var UITour = {
     }
     return true;
   },
-  
-
-
+  /**
+   * Tear down a tour from a tab e.g. upon switching/closing tabs.
+   */
   async teardownTourForBrowser(aWindow, aBrowser, aTourPageClosing = false) {
     lazy.log.debug(
       "teardownTourForBrowser: aBrowser = ",
@@ -829,15 +824,15 @@ var UITour = {
 
     this.noautohideMenus.clear();
 
-    
+    // If there are no more tour tabs left in the window, teardown the tour for the whole window.
     if (!openTourBrowsers || openTourBrowsers.size == 0) {
       this.teardownTourForWindow(aWindow);
     }
   },
 
-  
-
-
+  /**
+   * Remove the listeners to a panel when tearing the tour down.
+   */
   async removePanelListeners(aWindow) {
     let panels = [
       {
@@ -851,7 +846,7 @@ var UITour = {
       },
     ];
     for (let panel of panels) {
-      
+      // Ensure the menu panel is hidden and clean up panel listeners after calling hideMenu.
       if (panel.node.state != "closed") {
         await new Promise(resolve => {
           panel.node.addEventListener("popuphidden", resolve, { once: true });
@@ -864,9 +859,9 @@ var UITour = {
     }
   },
 
-  
-
-
+  /**
+   * Tear down all tours for a ChromeWindow.
+   */
   teardownTourForWindow(aWindow) {
     lazy.log.debug("teardownTourForWindow");
     aWindow.gBrowser.tabContainer.removeEventListener("TabSelect", this);
@@ -875,7 +870,7 @@ var UITour = {
     this.tourBrowsersByWindow.delete(aWindow);
   },
 
-  
+  // This function is copied to UITourListener.
   isSafeScheme(aURI) {
     let allowedSchemes = new Set(["https", "about"]);
     if (!Services.prefs.getBoolPref("browser.uitour.requireSecure")) {
@@ -973,7 +968,7 @@ var UITour = {
 
   targetIsInAppMenu(aTarget) {
     let targetElement = aTarget.node;
-    
+    // Use the widget for filtering if it exists since the target may be the icon inside.
     if (aTarget.widgetName) {
       let doc = aTarget.node.ownerGlobal.document;
       targetElement =
@@ -984,14 +979,14 @@ var UITour = {
     return targetElement.id.startsWith("appMenu-");
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Called before opening or after closing a highlight or an info tooltip to see if
+   * we need to open or close the menu to see the annotation's anchor.
+   *
+   * @param {ChromeWindow} aWindow the chrome window
+   * @param {bool} aShouldOpen true means we should open the menu, otherwise false
+   * @param {Object} aOptions Extra config arguments, example `autohide: true`.
+   */
   _setMenuStateForAnnotation(aWindow, aShouldOpen, aOptions = {}) {
     lazy.log.debug(
       "_setMenuStateForAnnotation: Menu is expected to be:",
@@ -999,7 +994,7 @@ var UITour = {
     );
     let menu = aWindow.PanelUI.panel;
 
-    
+    // If the panel is in the desired state, we're done.
     let panelIsOpen = menu.state != "closed";
     if (aShouldOpen == panelIsOpen) {
       lazy.log.debug(
@@ -1008,7 +1003,7 @@ var UITour = {
       return Promise.resolve();
     }
 
-    
+    // Actually show or hide the menu
     let promise = null;
     if (aShouldOpen) {
       lazy.log.debug("_setMenuStateForAnnotation: Opening the menu");
@@ -1016,9 +1011,9 @@ var UITour = {
         this.showMenu(aWindow, "appMenu", resolve, aOptions);
       });
     } else if (!this.noautohideMenus.has("appMenu")) {
-      
-      
-      
+      // If the menu was opened explictly by api user through `Mozilla.UITour.showMenu`,
+      // it should be closed explictly by api user through `Mozilla.UITour.hideMenu`.
+      // So we shouldn't get to here to close it for the highlight/info annotation.
       lazy.log.debug("_setMenuStateForAnnotation: Closing the menu");
       promise = new Promise(resolve => {
         menu.addEventListener("popuphidden", resolve, { once: true });
@@ -1028,21 +1023,21 @@ var UITour = {
     return promise;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Ensure the target's visibility and the open/close states of menus for the target.
+   *
+   * @param {ChromeWindow} aChromeWindow The chrome window
+   * @param {Object} aTarget The target on which we show highlight or show info.
+   * @param {Object} options Extra config arguments, example `autohide: true`.
+   */
   async _ensureTarget(aChromeWindow, aTarget, aOptions = {}) {
     let shouldOpenAppMenu = false;
     if (this.targetIsInAppMenu(aTarget)) {
       shouldOpenAppMenu = true;
     }
 
-    
-    
+    // Prevent showing a panel at an undefined position, but when it's tucked
+    // away inside a panel, we skip this check.
     if (
       !aTarget.node.closest("panelview") &&
       !this.isElementVisible(aTarget.node)
@@ -1068,26 +1063,26 @@ var UITour = {
     return promise;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * The node to which a highlight or notification(-popup) is anchored is sometimes
+   * obscured because it may be inside an overflow menu. This function should figure
+   * that out and offer the overflow chevron as an alternative.
+   *
+   * @param {ChromeWindow} aChromeWindow The chrome window
+   * @param {Object} aTarget The target object whose node is supposed to be the anchor
+   * @type {Node}
+   */
   async _correctAnchor(aChromeWindow, aTarget) {
-    
-    
-    
-    
+    // PanelMultiView's like the AppMenu might shuffle the DOM, which might result
+    // in our anchor being invalidated if it was anonymous content (since the XBL
+    // binding it belonged to got destroyed). We work around this by re-querying for
+    // the node and stuffing it into the old anchor structure.
     let refreshedTarget = await this.getTarget(
       aChromeWindow,
       aTarget.targetName
     );
     let node = (aTarget.node = refreshedTarget.node);
-    
+    // If the target is in the overflow panel, just return the overflow button.
     if (node.closest("#widget-overflow-mainView")) {
       return lazy.CustomizableUI.getWidget(node.id).forWindow(aChromeWindow)
         .anchor;
@@ -1095,30 +1090,30 @@ var UITour = {
     return node;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * @param aChromeWindow The chrome window that the highlight is in. Necessary since some targets
+   *                      are in a sub-frame so the defaultView is not the same as the chrome
+   *                      window.
+   * @param aTarget    The element to highlight.
+   * @param aEffect    (optional) The effect to use from UITour.highlightEffects or "none".
+   * @param aOptions   (optional) Extra config arguments, example `autohide: true`.
+   * @see UITour.highlightEffects
+   */
   async showHighlight(aChromeWindow, aTarget, aEffect = "none", aOptions = {}) {
     let showHighlightElement = aAnchorEl => {
       let highlighter = this.getHighlightAndMaybeCreate(aChromeWindow.document);
 
       let effect = aEffect;
       if (effect == "random") {
-        
+        // Exclude "random" from the randomly selected effects.
         let randomEffect =
           1 + Math.floor(Math.random() * (this.highlightEffects.length - 1));
         if (randomEffect == this.highlightEffects.length) {
           randomEffect--;
-        } 
+        } // On the order of 1 in 2^62 chance of this happening.
         effect = this.highlightEffects[randomEffect];
       }
-      
+      // Toggle the effect attribute to "none" and flush layout before setting it so the effect plays.
       highlighter.setAttribute("active", "none");
       aChromeWindow.getComputedStyle(highlighter).animationName;
       highlighter.setAttribute("active", effect);
@@ -1140,16 +1135,16 @@ var UITour = {
         highlightAnchor.getAttribute("cui-areatype") === "toolbar" &&
         highlightAnchor.getAttribute("overflowedItem") !== "true"
       ) {
-        
-        
-        
+        // A toolbar button in navbar has its clickable area an
+        // inner-contained square while the button component itself is a tall
+        // rectangle. We adjust the highlight area to a square as well.
         highlightHeight = highlightWidth;
       }
 
       highlighter.style.height = highlightHeight + "px";
       highlighter.style.width = highlightWidth + "px";
 
-      
+      // Close a previous highlight so we can relocate the panel.
       if (
         highlighter.parentElement.state == "showing" ||
         highlighter.parentElement.state == "open"
@@ -1157,8 +1152,8 @@ var UITour = {
         lazy.log.debug("showHighlight: Closing previous highlight first");
         highlighter.parentElement.hidePopup();
       }
-      
-
+      /* The "overlap" position anchors from the top-left but we want to centre highlights at their
+         minimum size. */
       let highlightWindow = aChromeWindow;
       let highlightStyle = highlightWindow.getComputedStyle(highlighter);
       let highlightHeightWithMin = Math.max(
@@ -1201,19 +1196,19 @@ var UITour = {
     this._setMenuStateForAnnotation(aWindow, false);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Show an info panel.
+   *
+   * @param {ChromeWindow} aChromeWindow
+   * @param {Node}     aAnchor
+   * @param {String}   [aTitle=""]
+   * @param {String}   [aDescription=""]
+   * @param {String}   [aIconURL=""]
+   * @param {Object[]} [aButtons=[]]
+   * @param {Object}   [aOptions={}]
+   * @param {String}   [aOptions.closeButtonCallback]
+   * @param {String}   [aOptions.targetCallback]
+   */
   async showInfo(
     aChromeWindow,
     aAnchor,
@@ -1264,8 +1259,8 @@ var UITour = {
             el.setAttribute("class", "button-primary");
           }
 
-          
-          
+          // Don't close the popup or call the callback for style=text as they
+          // aren't links/buttons.
           let callback = button.callback;
           el.addEventListener("command", event => {
             tooltip.hidePopup();
@@ -1425,7 +1420,7 @@ var UITour = {
       if (!aOptions.autohide) {
         menu.node.setAttribute("noautohide", "true");
       }
-      
+      // If the popup is already opened, don't recreate the widget as it may cause a flicker.
       if (menu.node.state != "open") {
         this.recreatePopup(menu.node);
       }
@@ -1457,11 +1452,11 @@ var UITour = {
         });
       }
       urlbar.focus();
-      
-      
-      
-      
-      
+      // To demonstrate the ability of searching, we type "Firefox" in advance
+      // for URLBar's dropdown. To limit the search results on browser-related
+      // items, we use "Firefox" hard-coded rather than l10n brandShortName
+      // entity to avoid unrelated or unpredicted results for, like, Nightly
+      // or translated entites.
       const SEARCH_STRING = "Firefox";
       urlbar.value = SEARCH_STRING;
       urlbar.select();
@@ -1521,12 +1516,12 @@ var UITour = {
       hideHighlightMethod = aWin => this.hideHighlight(aWin);
       hideInfoMethod = aWin => this.hideInfo(aWin);
     } else {
-      
+      // Don't have to close panel, let's only hide annotation elements
       hideHighlightMethod = aWin => this._hideHighlightElement(aWin);
       hideInfoMethod = aWin => this._hideInfoElement(aWin);
     }
     let annotationElements = new Map([
-      
+      // [annotationElement (panel), method to hide the annotation]
       [
         this.getHighlightContainerAndMaybeCreate(win.document),
         hideHighlightMethod,
@@ -1538,8 +1533,8 @@ var UITour = {
         let targetName = annotationElement.getAttribute("targetName");
         UITour.getTarget(win, targetName)
           .then(aTarget => {
-            
-            
+            // Since getTarget is async, we need to make sure that the target hasn't
+            // changed since it may have just moved to somewhere outside of the app menu.
             if (
               annotationElement.getAttribute("targetName") !=
                 aTarget.targetName ||
@@ -1570,16 +1565,16 @@ var UITour = {
   },
 
   recreatePopup(aPanel) {
-    
-    
+    // After changing popup attributes that relate to how the native widget is created
+    // (e.g. @noautohide) we need to re-create the frame/widget for it to take effect.
     if (aPanel.hidden) {
-      
-      
-      aPanel.clientWidth; 
+      // If the panel is already hidden, we don't need to recreate it but flush
+      // in case someone just hid it.
+      aPanel.clientWidth; // flush
       return;
     }
     aPanel.hidden = true;
-    aPanel.clientWidth; 
+    aPanel.clientWidth; // flush
     aPanel.hidden = false;
   },
 
@@ -1620,9 +1615,9 @@ var UITour = {
         this.getFxAConnections(aBrowser, aCallbackID);
         break;
 
-      
-      
-      
+      // NOTE: 'sync' is deprecated and should be removed in Firefox 73 (because
+      // by then, all consumers will have upgraded to use 'fxa' in that version
+      // and later.)
       case "sync":
         this.sendPageCallback(aBrowser, aCallbackID, {
           setup: Services.prefs.prefHasUserValue("services.sync.username"),
@@ -1658,8 +1653,8 @@ var UITour = {
   async setConfiguration(aWindow, aConfiguration, aValue) {
     switch (aConfiguration) {
       case "defaultBrowser":
-        
-        
+        // Ignore aValue in this case because the default browser can only
+        // be set, not unset.
         try {
           let shell = aWindow.getShellService();
           if (shell) {
@@ -1668,12 +1663,12 @@ var UITour = {
         } catch (e) {}
         break;
       case "colorway":
-        
+        // Potentially revert to a previous theme.
         let toEnable = this._prevTheme;
 
-        
+        // Activate the allowed colorway.
         if (lazy.COLORWAY_IDS.includes(aValue)) {
-          
+          // Save the previous theme if this is the first activation.
           if (!this._prevTheme) {
             this._prevTheme = (
               await lazy.AddonManager.getAddonsByTypes(["theme"])
@@ -1691,9 +1686,9 @@ var UITour = {
     }
   },
 
-  
-  
-  
+  // Get data about the local FxA account. This should be a low-latency request
+  // - everything returned here can be obtained locally without hitting any
+  // remote servers. See also `getFxAConnections()`
   getFxA(aBrowser, aCallbackID) {
     (async () => {
       let setup = !!(await lazy.fxAccounts.getSignedInUser());
@@ -1702,13 +1697,13 @@ var UITour = {
         this.sendPageCallback(aBrowser, aCallbackID, result);
         return;
       }
-      
-      
+      // We are signed in so need to build a richer result.
+      // Each of the "browser services" - currently only "sync" is supported
       result.browserServices = {};
       let hasSync = Services.prefs.prefHasUserValue("services.sync.username");
       if (hasSync) {
         result.browserServices.sync = {
-          
+          // We always include 'setup' for b/w compatibility.
           setup: true,
           desktopDevices: Services.prefs.getIntPref(
             "services.sync.clients.devices.desktop",
@@ -1724,7 +1719,7 @@ var UITour = {
           ),
         };
       }
-      
+      // And the account state.
       result.accountStateOK = await lazy.fxAccounts.hasLocalSession();
       this.sendPageCallback(aBrowser, aCallbackID, result);
     })().catch(err => {
@@ -1733,9 +1728,9 @@ var UITour = {
     });
   },
 
-  
-  
-  
+  // Get data about the FxA account "connections" (ie, other devices, other
+  // apps, etc. Note that this is likely to be a high-latency request - we will
+  // usually hit the FxA servers to obtain this info.
   getFxAConnections(aBrowser, aCallbackID) {
     (async () => {
       let setup = !!(await lazy.fxAccounts.getSignedInUser());
@@ -1744,10 +1739,10 @@ var UITour = {
         this.sendPageCallback(aBrowser, aCallbackID, result);
         return;
       }
-      
+      // We are signed in so need to build a richer result.
       let devices = lazy.fxAccounts.device.recentDeviceList;
-      
-      
+      // A recent device list is fine, but if we don't even have that we should
+      // wait for it to be fetched.
       if (!devices) {
         try {
           await lazy.fxAccounts.device.refreshDeviceList();
@@ -1757,9 +1752,9 @@ var UITour = {
         devices = lazy.fxAccounts.device.recentDeviceList;
       }
       if (devices) {
-        
-        
-        
+        // A falsey `devices` should be impossible, so we omit `devices` from
+        // the result object so the consuming page can try to differentiate
+        // between "no additional devices" and "something's wrong"
         result.numOtherDevices = Math.max(0, devices.length - 1);
         result.numDevicesByType = devices
           .filter(d => !d.isCurrentDevice)
@@ -1771,7 +1766,7 @@ var UITour = {
       }
 
       try {
-        
+        // Each of the "account services", which we turn into a map keyed by ID.
         let attachedClients = await lazy.fxAccounts.listAttachedOAuthClients();
         result.accountServices = attachedClients
           .filter(c => !!c.id)
@@ -1798,17 +1793,17 @@ var UITour = {
     (async () => {
       let appinfo = { version: Services.appinfo.version };
 
-      
-      
-      
+      // Identifier of the partner repack, as stored in preference "distribution.id"
+      // and included in Firefox and other update pings. Note this is not the same as
+      // Services.appinfo.distributionID (value of MOZ_DISTRIBUTION_ID is set at build time).
       let distribution = Services.prefs
         .getDefaultBranch("distribution.")
         .getCharPref("id", "default");
       appinfo.distribution = distribution;
 
-      
+      // Update channel, in a way that preserves 'beta' for RC beta builds:
       appinfo.defaultUpdateChannel = lazy.UpdateUtils.getUpdateChannel(
-        false 
+        false /* no partner ID */
       );
 
       let isDefaultBrowser = null;
@@ -1827,7 +1822,7 @@ var UITour = {
       ) {
         canSetDefaultBrowserInBackground = false;
       } else if (AppConstants.platform == "linux") {
-        
+        // The ShellService may not exist on some versions of Linux.
         try {
           aWindow.getShellService();
         } catch (e) {
@@ -1837,7 +1832,7 @@ var UITour = {
 
       appinfo.canSetDefaultBrowserInBackground = canSetDefaultBrowserInBackground;
 
-      
+      // Expose Profile creation and last reset dates in weeks.
       const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
       let profileAge = await lazy.ProfileAge();
       let createdDate = await profileAge.created;
@@ -1958,14 +1953,14 @@ var UITour = {
     }
   },
 
-  
-
-
-
-
+  /**
+   * Workaround for Ubuntu panel craziness in bug 970788 where incorrect sizes get passed to
+   * nsXULPopupManager::PopupResized and lead to incorrect width and height attributes getting
+   * set on the panel.
+   */
   _annotationMutationCallback(aMutations) {
     for (let mutation of aMutations) {
-      
+      // Remove both attributes at once and ignore remaining mutations to be proccessed.
       mutation.target.removeAttribute("width");
       mutation.target.removeAttribute("height");
       return;
@@ -2015,12 +2010,12 @@ var UITour = {
 
 UITour.init();
 
-
-
-
-
-
-
+/**
+ * UITour Health Report
+ */
+/**
+ * Public API to be called by the UITour code
+ */
 const UITourHealthReport = {
   recordTreatmentTag(tag, value) {
     return lazy.TelemetryController.submitExternalPing(
