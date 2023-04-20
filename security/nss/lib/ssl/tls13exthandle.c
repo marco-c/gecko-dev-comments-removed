@@ -154,6 +154,29 @@ tls13_ClientSendKeyShareXtn(const sslSocket *ss, TLSExtensionData *xtnData,
             return SECFailure;
         }
     }
+
+    
+
+
+
+
+
+
+
+    if (ss->opt.enableGrease) {
+        rv = sslBuffer_AppendNumber(buf, ss->ssl3.hs.grease->idx[grease_group], 2);
+        if (rv != SECSuccess)
+            return rv;
+        
+        rv = sslBuffer_AppendNumber(buf, 2, 2);
+        if (rv != SECSuccess)
+            return rv;
+        
+        rv = sslBuffer_AppendNumber(buf, 0xCD, 2);
+        if (rv != SECSuccess)
+            return rv;
+    }
+
     rv = sslBuffer_InsertLength(buf, lengthOffset, 2);
     if (rv != SECSuccess) {
         return SECFailure;
@@ -877,6 +900,16 @@ tls13_ClientSendSupportedVersionsXtn(const sslSocket *ss, TLSExtensionData *xtnD
         }
     }
 
+    
+
+
+    if (ss->opt.enableGrease) {
+        rv = sslBuffer_AppendNumber(buf, ss->ssl3.hs.grease->idx[grease_version], 2);
+        if (rv != SECSuccess) {
+            return SECFailure;
+        }
+    }
+
     rv = sslBuffer_InsertLength(buf, lengthOffset, 1);
     if (rv != SECSuccess) {
         return SECFailure;
@@ -1045,7 +1078,6 @@ SECStatus
 tls13_ClientSendPskModesXtn(const sslSocket *ss, TLSExtensionData *xtnData,
                             sslBuffer *buf, PRBool *added)
 {
-    static const PRUint8 ke_modes[] = { tls13_psk_dh_ke };
     SECStatus rv;
 
     if (ss->vrange.max < SSL_LIBRARY_VERSION_TLS_1_3 ||
@@ -1056,7 +1088,15 @@ tls13_ClientSendPskModesXtn(const sslSocket *ss, TLSExtensionData *xtnData,
     SSL_TRC(3, ("%d: TLS13[%d]: send psk key exchange modes extension",
                 SSL_GETPID(), ss->fd));
 
-    rv = sslBuffer_AppendVariable(buf, ke_modes, sizeof(ke_modes), 1);
+    
+
+
+
+    if (ss->opt.enableGrease) {
+        rv = sslBuffer_AppendVariable(buf, (PRUint8[]){ tls13_psk_dh_ke, ss->ssl3.hs.grease->pskKem }, 2, 1);
+    } else {
+        rv = sslBuffer_AppendVariable(buf, (PRUint8[]){ tls13_psk_dh_ke }, 1, 1);
+    }
     if (rv != SECSuccess) {
         return SECFailure;
     }
@@ -1174,6 +1214,15 @@ loser:
     PORT_FreeArena(arena, PR_FALSE);
     xtnData->certReqAuthorities.arena = NULL;
     return SECFailure;
+}
+
+SECStatus
+tls13_ServerHandleCertAuthoritiesXtn(const sslSocket *ss, TLSExtensionData *xtnData, SECItem *data)
+{
+    SSL_TRC(3, ("%d: TLS13[%d]: ignore certificate_authorities extension",
+                SSL_GETPID(), ss->fd));
+    
+    return SECSuccess;
 }
 
 SECStatus
@@ -1341,7 +1390,8 @@ tls13_ClientSendDelegatedCredentialsXtn(const sslSocket *ss,
         return SECSuccess;
     }
 
-    rv = ssl3_EncodeFilteredSigAlgs(ss, filtered, filteredCount, buf);
+    rv = ssl3_EncodeFilteredSigAlgs(ss, filtered, filteredCount,
+                                    PR_FALSE , buf);
     if (rv != SECSuccess) {
         return SECFailure;
     }
@@ -1714,4 +1764,39 @@ alert_loser:
     ssl3_ExtSendAlert(ss, alert_fatal, decode_error);
     PORT_SetError(SSL_ERROR_RX_MALFORMED_ECH_EXTENSION);
     return SECFailure;
+}
+
+SECStatus
+tls13_SendEmptyGreaseXtn(const sslSocket *ss,
+                         TLSExtensionData *xtnData,
+                         sslBuffer *buf, PRBool *added)
+{
+    if (!ss->opt.enableGrease ||
+        (!ss->sec.isServer && ss->vrange.max < SSL_LIBRARY_VERSION_TLS_1_3) ||
+        (ss->sec.isServer && ss->version < SSL_LIBRARY_VERSION_TLS_1_3)) {
+        return SECSuccess;
+    }
+
+    *added = PR_TRUE;
+    return SECSuccess;
+}
+
+SECStatus
+tls13_SendGreaseXtn(const sslSocket *ss,
+                    TLSExtensionData *xtnData,
+                    sslBuffer *buf, PRBool *added)
+{
+    if (!ss->opt.enableGrease ||
+        (!ss->sec.isServer && ss->vrange.max < SSL_LIBRARY_VERSION_TLS_1_3) ||
+        (ss->sec.isServer && ss->version < SSL_LIBRARY_VERSION_TLS_1_3)) {
+        return SECSuccess;
+    }
+
+    SECStatus rv = sslBuffer_AppendVariable(buf, (PRUint8[]){ 0x00 }, 1, 2);
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
+
+    *added = PR_TRUE;
+    return SECSuccess;
 }

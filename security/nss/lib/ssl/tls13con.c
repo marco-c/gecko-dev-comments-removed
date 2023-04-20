@@ -454,6 +454,11 @@ tls13_SetupClientHello(sslSocket *ss, sslClientHelloType chType)
         return SECSuccess;
     }
 
+    rv = tls13_ClientGreaseSetup(ss);
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
+
     
 
 
@@ -1563,6 +1568,9 @@ tls13_NegotiateKeyExchange(sslSocket *ss,
                         missing_extension);
             return SECFailure;
         }
+        
+
+
         if (!memchr(ss->xtnData.psk_ke_modes.data, tls13_psk_dh_ke,
                     ss->xtnData.psk_ke_modes.len)) {
             SSL_TRC(3, ("%d: TLS13[%d]: client offered PSK without DH",
@@ -5294,6 +5302,7 @@ tls13_SendNewSessionTicket(sslSocket *ss, const PRUint8 *appToken,
     SECStatus rv;
     NewSessionTicket ticket = { 0 };
     PRUint32 max_early_data_size_len = 0;
+    PRUint32 greaseLen = 0;
     PRUint8 ticketNonce[sizeof(ss->ssl3.hs.ticketNonce)];
     sslBuffer ticketNonceBuf = SSL_BUFFER(ticketNonce);
 
@@ -5306,6 +5315,10 @@ tls13_SendNewSessionTicket(sslSocket *ss, const PRUint8 *appToken,
         max_early_data_size_len = 8; 
     }
     ticket.ticket_lifetime_hint = ssl_ticket_lifetime;
+
+    if (ss->opt.enableGrease) {
+        greaseLen = 4; 
+    }
 
     
     rv = PK11_GenerateRandom((PRUint8 *)&ticket.ticket_age_add,
@@ -5338,11 +5351,13 @@ tls13_SendNewSessionTicket(sslSocket *ss, const PRUint8 *appToken,
         goto loser;
 
     message_length =
-        4 +                           
-        4 +                           
-        1 + sizeof(ticketNonce) +     
-        2 + max_early_data_size_len + 
-        2 +                           
+        4 +                       
+        4 +                       
+        1 + sizeof(ticketNonce) + 
+        2 +                       
+        max_early_data_size_len + 
+        greaseLen +               
+        2 +                       
         ticket_data.len;
 
     rv = ssl3_AppendHandshakeHeader(ss, ssl_hs_new_session_ticket,
@@ -5371,10 +5386,32 @@ tls13_SendNewSessionTicket(sslSocket *ss, const PRUint8 *appToken,
         goto loser;
 
     
-    rv = ssl3_AppendHandshakeNumber(ss, max_early_data_size_len, 2);
+    rv = ssl3_AppendHandshakeNumber(ss, max_early_data_size_len + greaseLen, 2);
     if (rv != SECSuccess)
         goto loser;
 
+    
+
+
+
+    if (ss->opt.enableGrease) {
+        PR_ASSERT(ss->version >= SSL_LIBRARY_VERSION_TLS_1_3);
+
+        PRUint16 grease;
+        rv = tls13_RandomGreaseValue(&grease);
+        if (rv != SECSuccess)
+            goto loser;
+        
+        rv = ssl3_AppendHandshakeNumber(ss, grease, 2);
+        if (rv != SECSuccess)
+            goto loser;
+        
+        rv = ssl3_AppendHandshakeNumber(ss, 0, 2);
+        if (rv != SECSuccess)
+            goto loser;
+    }
+
+    
     if (max_early_data_size_len) {
         rv = ssl3_AppendHandshakeNumber(
             ss, ssl_tls13_early_data_xtn, 2);
@@ -5617,7 +5654,7 @@ static const struct {
                                certificate) },
     { ssl_delegated_credentials_xtn, _M2(client_hello, certificate) },
     { ssl_tls13_cookie_xtn, _M2(client_hello, hello_retry_request) },
-    { ssl_tls13_certificate_authorities_xtn, _M1(certificate_request) },
+    { ssl_tls13_certificate_authorities_xtn, _M2(client_hello, certificate_request) },
     { ssl_tls13_supported_versions_xtn, _M3(client_hello, server_hello,
                                             hello_retry_request) },
     { ssl_record_size_limit_xtn, _M2(client_hello, encrypted_extensions) },
@@ -6415,4 +6452,117 @@ tls13_MaybeTls13(sslSocket *ss)
     }
 
     return PR_FALSE;
+}
+
+
+
+SECStatus
+tls13_ClientGreaseSetup(sslSocket *ss)
+{
+    if (!ss->opt.enableGrease) {
+        return SECSuccess;
+    }
+
+    PORT_Assert(ss->vrange.max >= SSL_LIBRARY_VERSION_TLS_1_3);
+
+    if (ss->ssl3.hs.grease) {
+        return SECFailure;
+    }
+    ss->ssl3.hs.grease = PORT_Alloc(sizeof(tls13ClientGrease));
+    if (!ss->ssl3.hs.grease) {
+        return SECFailure;
+    }
+
+    tls13ClientGrease *grease = ss->ssl3.hs.grease;
+    
+    PRUint8 random[8];
+
+    
+    if (PK11_GenerateRandom(random, sizeof(random)) != SECSuccess) {
+        return SECFailure;
+    }
+    for (size_t i = 0; i < PR_ARRAY_SIZE(grease->idx); i++) {
+        random[i] = ((random[i] & 0xf0) | 0x0a);
+        grease->idx[i] = ((random[i] << 8) | random[i]);
+    }
+    
+    grease->pskKem = 0x0b + ((random[8 - 1] >> 5) * 0x1f);
+
+    
+    if (grease->idx[grease_extension1] == grease->idx[grease_extension2]) {
+        grease->idx[grease_extension2] ^= 0x1010;
+    }
+
+    return SECSuccess;
+}
+
+
+void
+tls13_ClientGreaseDestroy(sslSocket *ss)
+{
+    if (ss->ssl3.hs.grease) {
+        PORT_Free(ss->ssl3.hs.grease);
+        ss->ssl3.hs.grease = NULL;
+    }
+}
+
+
+
+SECStatus
+tls13_RandomGreaseValue(PRUint16 *out)
+{
+    PRUint8 random;
+
+    if (PK11_GenerateRandom(&random, sizeof(random)) != SECSuccess) {
+        return SECFailure;
+    }
+
+    random = ((random & 0xf0) | 0x0a);
+    *out = ((random << 8) | random);
+
+    return SECSuccess;
+}
+
+
+SECStatus
+tls13_MaybeGreaseExtensionType(const sslSocket *ss,
+                               const SSLHandshakeType message,
+                               PRUint16 *exType)
+{
+    if (*exType != ssl_tls13_grease_xtn) {
+        return SECSuccess;
+    }
+
+    PR_ASSERT(ss->opt.enableGrease);
+    PR_ASSERT(message == ssl_hs_client_hello ||
+              message == ssl_hs_certificate_request);
+
+    
+
+
+
+    if (message == ssl_hs_client_hello) {
+        PR_ASSERT(ss->vrange.max >= SSL_LIBRARY_VERSION_TLS_1_3);
+        
+        if (!ssl3_ExtensionAdvertised(ss, ss->ssl3.hs.grease->idx[grease_extension1])) {
+            *exType = ss->ssl3.hs.grease->idx[grease_extension1];
+        } else {
+            *exType = ss->ssl3.hs.grease->idx[grease_extension2];
+        }
+    }
+    
+
+
+
+
+    else if (message == ssl_hs_certificate_request) {
+        PR_ASSERT(ss->version >= SSL_LIBRARY_VERSION_TLS_1_3);
+        
+        SECStatus rv = tls13_RandomGreaseValue(exType);
+        if (rv != SECSuccess) {
+            return SECFailure;
+        }
+    }
+
+    return SECSuccess;
 }

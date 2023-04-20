@@ -551,6 +551,8 @@ typedef enum {
     ssl_tls13_post_handshake_auth_xtn = 49,
     ssl_signature_algorithms_cert_xtn = 50,
     ssl_tls13_key_share_xtn = 51,
+    
+    ssl_tls13_grease_xtn = 0x0a0a,
     ssl_next_proto_nego_xtn = 13172, 
     ssl_renegotiation_info_xtn = 0xff01,
     ssl_tls13_short_header_xtn = 0xff03, 
