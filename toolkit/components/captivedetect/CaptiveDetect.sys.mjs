@@ -1,11 +1,9 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-"use strict";
-
-const DEBUG = false; 
+const DEBUG = false; // set to true to show debug messages
 
 const kCAPTIVEPORTALDETECTOR_CID = Components.ID(
   "{d9cd00ba-aa4d-47b1-8792-b1fe0cd35060}"
@@ -20,35 +18,35 @@ function URLFetcher(url, timeout) {
   let self = this;
   let xhr = new XMLHttpRequest();
   xhr.open("GET", url, true);
-  
+  // Prevent the request from reading from the cache.
   xhr.channel.loadFlags |= Ci.nsIRequest.LOAD_BYPASS_CACHE;
-  
+  // Prevent the request from writing to the cache.
   xhr.channel.loadFlags |= Ci.nsIRequest.INHIBIT_CACHING;
-  
+  // Prevent privacy leaks
   xhr.channel.loadFlags |= Ci.nsIRequest.LOAD_ANONYMOUS;
-  
+  // Use the system's resolver for this check
   xhr.channel.setTRRMode(Ci.nsIRequest.TRR_DISABLED_MODE);
-  
+  // We except this from being classified
   xhr.channel.loadFlags |= Ci.nsIChannel.LOAD_BYPASS_URL_CLASSIFIER;
-  
+  // Prevent HTTPS-Only Mode from upgrading the request.
   xhr.channel.loadInfo.httpsOnlyStatus |= Ci.nsILoadInfo.HTTPS_ONLY_EXEMPT;
-  
+  // Allow deprecated HTTP request from SystemPrincipal
   xhr.channel.loadInfo.allowDeprecatedSystemRequests = true;
 
-  
+  // We don't want to follow _any_ redirects
   xhr.channel.QueryInterface(Ci.nsIHttpChannel).redirectionLimit = 0;
 
-  
-  
-  
+  // bug 1666072 - firefox.com returns a HSTS header triggering a https upgrade
+  // but the upgrade triggers an internal redirect causing an incorrect locked
+  // portal notification. We exclude CP detection from STS.
   xhr.channel.QueryInterface(Ci.nsIHttpChannel).allowSTS = false;
 
-  
-  
-  
+  // The Cache-Control header is only interpreted by proxies and the
+  // final destination. It does not help if a resource is already
+  // cached locally.
   xhr.setRequestHeader("Cache-Control", "no-cache");
-  
-  
+  // HTTP/1.0 servers might not implement Cache-Control and
+  // might only implement Pragma: no-cache
   xhr.setRequestHeader("Pragma", "no-cache");
 
   xhr.timeout = timeout;
@@ -71,10 +69,10 @@ function URLFetcher(url, timeout) {
         xhr.channel &&
         xhr.channel.status == Cr.NS_ERROR_REDIRECT_LOOP
       ) {
-        
-        
+        // For some redirects we don't get a status, so we need to check it
+        // this way. This only works because we set the redirectionLimit to 0.
         self.onredirectorerror(300);
-        
+        // No need to invoke the onerror callback, we handled it here.
         xhr.onerror = null;
       }
     }
@@ -96,11 +94,11 @@ URLFetcher.prototype = {
 };
 
 function LoginObserver(captivePortalDetector) {
-  const LOGIN_OBSERVER_STATE_DETACHED = 0; 
-  const LOGIN_OBSERVER_STATE_IDLE = 1; 
-  const LOGIN_OBSERVER_STATE_BURST = 2; 
-  const LOGIN_OBSERVER_STATE_VERIFY_NEEDED = 3; 
-  const LOGIN_OBSERVER_STATE_VERIFYING = 4; 
+  const LOGIN_OBSERVER_STATE_DETACHED = 0; /* Should not monitor network activity since no ongoing login procedure */
+  const LOGIN_OBSERVER_STATE_IDLE = 1; /* No network activity currently, waiting for a longer enough idle period */
+  const LOGIN_OBSERVER_STATE_BURST = 2; /* Network activity is detected, probably caused by a login procedure */
+  const LOGIN_OBSERVER_STATE_VERIFY_NEEDED = 3; /* Verifing network accessiblity is required after a long enough idle */
+  const LOGIN_OBSERVER_STATE_VERIFYING = 4; /* LoginObserver is probing if public network is available */
 
   let state = LOGIN_OBSERVER_STATE_DETACHED;
 
@@ -113,8 +111,8 @@ function LoginObserver(captivePortalDetector) {
   let pageCheckingDone = function pageCheckingDone() {
     if (state === LOGIN_OBSERVER_STATE_VERIFYING) {
       urlFetcher = null;
-      
-      
+      // Finish polling the canonical site, switch back to idle state and
+      // waiting for next burst
       state = LOGIN_OBSERVER_STATE_IDLE;
       timer.initWithCallback(
         observer,
@@ -144,7 +142,7 @@ function LoginObserver(captivePortalDetector) {
     urlFetcher.onredirectorerror = pageCheckingDone;
   };
 
-  
+  // Public interface of LoginObserver
   let observer = {
     QueryInterface: ChromeUtils.generateQI([
       "nsIHttpActivityObserver",
@@ -177,9 +175,9 @@ function LoginObserver(captivePortalDetector) {
       }
     },
 
-    
-
-
+    /*
+     * Treat all HTTP transactions as captive portal login activities.
+     */
     observeActivity: function observeActivity(
       aHttpChannel,
       aActivityType,
@@ -205,19 +203,19 @@ function LoginObserver(captivePortalDetector) {
       }
     },
 
-    
-
-
+    /*
+     * Check if login activity is finished according to HTTP burst.
+     */
     notify: function notify() {
       switch (state) {
         case LOGIN_OBSERVER_STATE_BURST:
-          
+          // Wait while network stays idle for a short period
           state = LOGIN_OBSERVER_STATE_VERIFY_NEEDED;
-        
+        // Fall through to start polling timer
         case LOGIN_OBSERVER_STATE_IDLE:
-        
+        // Just fall through to perform a captive portal check.
         case LOGIN_OBSERVER_STATE_VERIFY_NEEDED:
-          
+          // Polling the canonical website since network stays idle for a while
           state = LOGIN_OBSERVER_STATE_VERIFYING;
           checkPageContent();
           break;
@@ -231,8 +229,8 @@ function LoginObserver(captivePortalDetector) {
   return observer;
 }
 
-function CaptivePortalDetector() {
-  
+export function CaptivePortalDetector() {
+  // Load preference
   this._canonicalSiteURL = null;
   this._canonicalSiteExpectedContent = null;
 
@@ -266,13 +264,13 @@ function CaptivePortalDetector() {
       "}"
   );
 
-  
+  // Create HttpObserver for monitoring the login procedure
   this._loginObserver = LoginObserver(this);
 
   this._nextRequestId = 0;
   this._runningRequest = null;
-  this._requestQueue = []; 
-  this._interfaceNames = {}; 
+  this._requestQueue = []; // Maintain a progress table, store callbacks and the ongoing XHR
+  this._interfaceNames = {}; // Maintain names of the requested network interfaces
 
   debug(
     "CaptiveProtalDetector initiated, waiting for network connection established"
@@ -283,13 +281,13 @@ CaptivePortalDetector.prototype = {
   classID: kCAPTIVEPORTALDETECTOR_CID,
   QueryInterface: ChromeUtils.generateQI(["nsICaptivePortalDetector"]),
 
-  
+  // nsICaptivePortalDetector
   checkCaptivePortal: function checkCaptivePortal(aInterfaceName, aCallback) {
     if (!this._canonicalSiteURL) {
       throw Components.Exception("No canonical URL set up.");
     }
 
-    
+    // Prevent multiple requests on a single network interface
     if (this._interfaceNames[aInterfaceName]) {
       throw Components.Exception(
         "Do not allow multiple request on one interface: " + aInterfaceName
@@ -327,7 +325,7 @@ CaptivePortalDetector.prototype = {
 
   cancelLogin: function cancelLogin(eventId) {
     debug('login canceled by user for request "' + eventId + '"');
-    
+    // Captive portal login procedure is canceled by user
     if (
       this._runningRequest &&
       this._runningRequest.hasOwnProperty("eventId")
@@ -342,7 +340,7 @@ CaptivePortalDetector.prototype = {
   _applyDetection: function _applyDetection() {
     debug("enter applyDetection(" + this._runningRequest.interfaceName + ")");
 
-    
+    // Execute network interface preparation
     if (this._runningRequest.hasOwnProperty("callback")) {
       this._runningRequest.callback.prepare();
     } else {
@@ -375,16 +373,16 @@ CaptivePortalDetector.prototype = {
       if (self.validateContent(content)) {
         self.executeCallback(true);
       } else {
-        
+        // Content of the canonical website has been overwrite
         self._startLogin();
       }
     };
     urlFetcher.onredirectorerror = function(status) {
       if (status >= 300 && status <= 399) {
-        
+        // The canonical website has been redirected to an unknown location
         self._startLogin();
       } else if (status === 511) {
-        
+        // Got a RFC 6585 "Network Authentication Required" error page
         self._startLogin();
       } else {
         mayRetry();
@@ -430,8 +428,8 @@ CaptivePortalDetector.prototype = {
         this._runningRequest.callback.complete(success);
       }
 
-      
-      
+      // Only when the request has a event id and |success| is true
+      // do we need to notify the login-success event.
       if (this._runningRequest.hasOwnProperty("eventId") && success) {
         let details = {
           type: kCaptivePortalLoginSuccessEvent,
@@ -440,7 +438,7 @@ CaptivePortalDetector.prototype = {
         this._sendEvent(kCaptivePortalLoginSuccessEvent, details);
       }
 
-      
+      // Continue the following request
       this._runningRequest.complete = true;
       this._removeRequest(this._runningRequest.interfaceName);
     }
@@ -454,8 +452,8 @@ CaptivePortalDetector.prototype = {
   validateContent: function validateContent(content) {
     debug("received content: " + content);
     let valid = content === this._canonicalSiteExpectedContent;
-    
-    
+    // We need a way to indicate that a check has been performed, and if we are
+    // still in a captive portal.
     this._sendEvent(kCaptivePortalCheckComplete, !valid);
     return valid;
   },
@@ -495,7 +493,7 @@ CaptivePortalDetector.prototype = {
       this._loginObserver.detach();
 
       if (!this._runningRequest.complete) {
-        
+        // Abort the user login procedure
         if (this._runningRequest.hasOwnProperty("eventId")) {
           let details = {
             type: kAbortCaptivePortalLoginEvent,
@@ -504,7 +502,7 @@ CaptivePortalDetector.prototype = {
           this._sendEvent(kAbortCaptivePortalLoginEvent, details);
         }
 
-        
+        // Abort the ongoing HTTP request
         if (this._runningRequest.hasOwnProperty("urlFetcher")) {
           this._runningRequest.urlFetcher.abort();
         }
@@ -513,12 +511,12 @@ CaptivePortalDetector.prototype = {
       debug("remove running request");
       this._runningRequest = null;
 
-      
+      // Continue next pending reqeust if the ongoing one has been aborted
       this._runNextRequest();
       return;
     }
 
-    
+    // Check if a pending request has been aborted
     for (let i = 0; i < this._requestQueue.length; i++) {
       if (this._requestQueue[i].interfaceName == aInterfaceName) {
         this._requestQueue.splice(i, 1);
@@ -537,13 +535,11 @@ CaptivePortalDetector.prototype = {
 
 var debug;
 if (DEBUG) {
-  
+  // eslint-disable-next-line no-global-assign
   debug = function(s) {
     dump("-*- CaptivePortalDetector component: " + s + "\n");
   };
 } else {
-  
+  // eslint-disable-next-line no-global-assign
   debug = function(s) {};
 }
-
-var EXPORTED_SYMBOLS = ["CaptivePortalDetector"];
