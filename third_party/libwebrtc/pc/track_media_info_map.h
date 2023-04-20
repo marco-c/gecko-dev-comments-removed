@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/array_view.h"
 #include "api/media_stream_interface.h"
 #include "api/scoped_refptr.h"
 #include "media/base/media_channel.h"
@@ -50,12 +51,14 @@ class TrackMediaInfoMap {
  public:
   TrackMediaInfoMap();
 
+  
+  
+  
   void Initialize(
       absl::optional<cricket::VoiceMediaInfo> voice_media_info,
       absl::optional<cricket::VideoMediaInfo> video_media_info,
-      const std::vector<rtc::scoped_refptr<RtpSenderInternal>>& rtp_senders,
-      const std::vector<rtc::scoped_refptr<RtpReceiverInternal>>&
-          rtp_receivers);
+      rtc::ArrayView<rtc::scoped_refptr<RtpSenderInternal>> rtp_senders,
+      rtc::ArrayView<rtc::scoped_refptr<RtpReceiverInternal>> rtp_receivers);
 
   const absl::optional<cricket::VoiceMediaInfo>& voice_media_info() const {
     RTC_DCHECK(is_initialized_);
@@ -104,6 +107,8 @@ class TrackMediaInfoMap {
   absl::optional<cricket::VideoMediaInfo> video_media_info_;
   
   
+  
+  
   std::map<const AudioTrackInterface*, std::vector<cricket::VoiceSenderInfo*>>
       voice_infos_by_local_track_;
   std::map<const AudioTrackInterface*, cricket::VoiceReceiverInfo*>
@@ -112,6 +117,7 @@ class TrackMediaInfoMap {
       video_infos_by_local_track_;
   std::map<const VideoTrackInterface*, cricket::VideoReceiverInfo*>
       video_info_by_remote_track_;
+  
   
   
   
