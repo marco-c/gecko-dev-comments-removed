@@ -58,11 +58,6 @@ static bool IsLegacyBox(const nsIFrame* aFlexContainer) {
       NS_STATE_FLEX_IS_EMULATING_LEGACY_WEBKIT_BOX);
 }
 
-static bool IsLegacyMozBox(const nsFlexContainerFrame* aFlexContainer) {
-  return aFlexContainer->HasAnyStateBits(
-      NS_STATE_FLEX_IS_EMULATING_LEGACY_MOZ_BOX);
-}
-
 
 
 
@@ -3970,7 +3965,8 @@ void nsFlexContainerFrame::GenerateFlexLines(
                        iter.ItemsAreAlreadyInOrder());
 
   bool prevItemRequestedBreakAfter = false;
-  const bool useMozBoxCollapseBehavior = IsLegacyMozBox(this);
+  const bool useMozBoxCollapseBehavior =
+      StyleVisibility()->UseLegacyCollapseBehavior();
 
   for (; !iter.AtEnd(); iter.Next()) {
     nsIFrame* childFrame = *iter;
@@ -4668,7 +4664,8 @@ void nsFlexContainerFrame::UnionInFlowChildOverflow(
   nsRect itemMarginBoxes;
   
   nsRect relPosItemMarginBoxes;
-  const bool useMozBoxCollapseBehavior = IsLegacyMozBox(this);
+  const bool useMozBoxCollapseBehavior =
+      StyleVisibility()->UseLegacyCollapseBehavior();
   for (nsIFrame* f : mFrames) {
     if (useMozBoxCollapseBehavior && f->StyleVisibility()->IsCollapse()) {
       continue;
@@ -5096,7 +5093,8 @@ nsFlexContainerFrame::FlexLayoutResult nsFlexContainerFrame::DoFlexLayout(
   
   
   
-  if (aStruts.IsEmpty() && !IsLegacyMozBox(this) && flr.mHasCollapsedItems) {
+  if (aStruts.IsEmpty() && flr.mHasCollapsedItems &&
+      !StyleVisibility()->UseLegacyCollapseBehavior()) {
     BuildStrutInfoFromCollapsedItems(flr.mLines, aStruts);
     if (!aStruts.IsEmpty()) {
       
@@ -5617,7 +5615,8 @@ nscoord nsFlexContainerFrame::IntrinsicISize(gfxContext* aRenderingContext,
                                                     NS_UNCONSTRAINEDSIZE);
   }
 
-  const bool useMozBoxCollapseBehavior = IsLegacyMozBox(this);
+  const bool useMozBoxCollapseBehavior =
+      StyleVisibility()->UseLegacyCollapseBehavior();
 
   
   

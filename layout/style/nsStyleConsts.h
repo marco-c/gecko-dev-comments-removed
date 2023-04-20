@@ -520,6 +520,13 @@ enum class StyleMozBoxLayout : uint8_t {
 };
 
 
+
+enum class StyleMozBoxCollapse : uint8_t {
+  Flex,
+  Legacy,
+};
+
+
 enum class StyleTextCombineUpright : uint8_t {
   None,
   All,
