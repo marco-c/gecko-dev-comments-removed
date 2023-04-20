@@ -848,6 +848,19 @@ VectorImage::GetImageProvider(WindowRenderer* aRenderer,
       return ImgDrawResult::TEMPORARY_ERROR;
     }
 
+    if (!SurfaceCache::IsLegalSize(aSize) ||
+        !Factory::AllowedSurfaceSize(aSize)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      return ImgDrawResult::NOT_SUPPORTED;
+    }
+
     
     float animTime =
         mHaveAnimations ? mSVGDocumentWrapper->GetCurrentTimeAsFloat() : 0.0f;
