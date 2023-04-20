@@ -35,6 +35,7 @@ const CL_EXPECT_LATE_FAILURE = 0x20;
 const CL_FROM_CACHE = 0x40; 
 const CL_NOT_FROM_CACHE = 0x80; 
 const CL_IGNORE_CL = 0x100; 
+const CL_IGNORE_DELAYS = 0x200; 
 
 const SUSPEND_DELAY = 3000;
 
@@ -162,6 +163,7 @@ ChannelListener.prototype = {
       }
 
       if (
+        !(this._flags & CL_IGNORE_DELAYS) &&
         current - this._lastEvent >= SUSPEND_DELAY &&
         !(this._flags & CL_EXPECT_3S_DELAY)
       ) {
@@ -495,10 +497,10 @@ function check_http_info(request, expected_httpVersion, expected_proxy) {
 }
 
 function makeHTTPChannel(url, with_proxy) {
-  function createPrincipal(url) {
+  function createPrincipal(uri) {
     var ssm = Services.scriptSecurityManager;
     try {
-      return ssm.createContentPrincipal(Services.io.newURI(url), {});
+      return ssm.createContentPrincipal(Services.io.newURI(uri), {});
     } catch (e) {
       return null;
     }
