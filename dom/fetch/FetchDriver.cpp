@@ -4,7 +4,6 @@
 
 
 
-#include "js/Value.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/dom/FetchDriver.h"
 
@@ -932,8 +931,7 @@ void FetchDriver::FailWithNetworkError(nsresult rv) {
 
   
   if (mObserver) {
-    mObserver->OnResponseEnd(FetchDriverObserver::eByNetworking,
-                             JS::UndefinedHandleValue);
+    mObserver->OnResponseEnd(FetchDriverObserver::eByNetworking);
     mObserver = nullptr;
   }
 
@@ -1462,8 +1460,7 @@ void FetchDriver::FinishOnStopRequest(
   }
 
   if (mObserver) {
-    mObserver->OnResponseEnd(FetchDriverObserver::eByNetworking,
-                             JS::UndefinedHandleValue);
+    mObserver->OnResponseEnd(FetchDriverObserver::eByNetworking);
     mObserver = nullptr;
   }
 
@@ -1637,8 +1634,7 @@ void FetchDriver::RunAbortAlgorithm() {
 #ifdef DEBUG
     mResponseAvailableCalled = true;
 #endif
-    JS::Rooted<JS::Value> reason(RootingCx(), Signal()->RawReason());
-    mObserver->OnResponseEnd(FetchDriverObserver::eAborted, reason);
+    mObserver->OnResponseEnd(FetchDriverObserver::eAborted);
     mObserver = nullptr;
   }
 
