@@ -18,6 +18,7 @@
 #include "api/neteq/tick_timer.h"
 #include "modules/audio_coding/neteq/buffer_level_filter.h"
 #include "modules/audio_coding/neteq/delay_manager.h"
+#include "modules/audio_coding/neteq/packet_arrival_history.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 
 namespace webrtc {
@@ -25,10 +26,6 @@ namespace webrtc {
 
 class DecisionLogic : public NetEqController {
  public:
-  static const int kReinitAfterExpands = 100;
-  static const int kMaxWaitForPacket = 10;
-
-  
   DecisionLogic(NetEqController::Config config);
   DecisionLogic(NetEqController::Config config,
                 std::unique_ptr<DelayManager> delay_manager,
@@ -40,7 +37,7 @@ class DecisionLogic : public NetEqController {
   DecisionLogic& operator=(const DecisionLogic&) = delete;
 
   
-  void Reset() override;
+  void Reset() override {}
 
   
   void SoftReset() override;
@@ -73,7 +70,7 @@ class DecisionLogic : public NetEqController {
   
   void AddSampleMemory(int32_t value) override { sample_memory_ += value; }
 
-  int TargetLevelMs() const override { return delay_manager_->TargetDelayMs(); }
+  int TargetLevelMs() const override;
 
   absl::optional<int> PacketArrived(int fs_hz,
                                     bool should_update_stats,
@@ -97,9 +94,7 @@ class DecisionLogic : public NetEqController {
   }
   bool PeakFound() const override { return false; }
 
-  int GetFilteredBufferLevel() const override {
-    return buffer_level_filter_->filtered_current_level();
-  }
+  int GetFilteredBufferLevel() const override;
 
   
   void set_sample_memory(int32_t value) override { sample_memory_ = value; }
@@ -124,30 +119,20 @@ class DecisionLogic : public NetEqController {
 
   
   
-  virtual NetEq::Operation CngOperation(NetEq::Mode prev_mode,
-                                        uint32_t target_timestamp,
-                                        uint32_t available_timestamp,
-                                        size_t generated_noise_samples);
+  virtual NetEq::Operation CngOperation(NetEqController::NetEqStatus status);
 
   
   
-  virtual NetEq::Operation NoPacket(bool play_dtmf);
+  virtual NetEq::Operation NoPacket(NetEqController::NetEqStatus status);
 
   
-  virtual NetEq::Operation ExpectedPacketAvailable(NetEq::Mode prev_mode,
-                                                   bool play_dtmf);
+  virtual NetEq::Operation ExpectedPacketAvailable(
+      NetEqController::NetEqStatus status);
 
   
   
   virtual NetEq::Operation FuturePacketAvailable(
-      size_t decoder_frame_length,
-      NetEq::Mode prev_mode,
-      uint32_t target_timestamp,
-      uint32_t available_timestamp,
-      bool play_dtmf,
-      size_t generated_noise_samples,
-      size_t span_samples_in_packet_buffer,
-      size_t num_packets_in_packet_buffer);
+      NetEqController::NetEqStatus status);
 
   
   
@@ -167,13 +152,34 @@ class DecisionLogic : public NetEqController {
   
   bool PacketTooEarly(uint32_t timestamp_leap) const;
 
-  
   bool MaxWaitForPacket() const;
 
+  bool ShouldContinueExpand(NetEqController::NetEqStatus status) const;
+
+  int GetNextPacketDelayMs(NetEqController::NetEqStatus status) const;
+  int GetPlayoutDelayMs(NetEqController::NetEqStatus status) const;
+
+  int LowThreshold() const;
+  int HighThreshold() const;
+  int LowThresholdCng() const;
+  int HighThresholdCng() const;
+
+  
+  
+  struct Config {
+    Config();
+
+    bool enable_stable_playout_delay = false;
+    int reinit_after_expands = 100;
+    int deceleration_target_level_offset_ms = 85;
+    int packet_history_size_ms = 2000;
+  };
+  Config config_;
   std::unique_ptr<DelayManager> delay_manager_;
   std::unique_ptr<BufferLevelFilter> buffer_level_filter_;
+  PacketArrivalHistory packet_arrival_history_;
   const TickTimer* tick_timer_;
-  int sample_rate_;
+  int sample_rate_khz_;
   size_t output_size_samples_;
   CngState cng_state_ = kCngOff;  
                                   
@@ -187,7 +193,7 @@ class DecisionLogic : public NetEqController {
   int time_stretched_cn_samples_ = 0;
   bool last_pack_cng_or_dtmf_ = true;
   bool buffer_flush_ = false;
-  FieldTrialConstrained<int> target_level_window_ms_;
+  int last_playout_delay_ms_ = 0;
 };
 
 }  
