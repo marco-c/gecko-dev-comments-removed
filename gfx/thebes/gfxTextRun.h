@@ -982,8 +982,20 @@ class gfxFontGroup final : public gfxTextRunFactory {
 
 
 
-  template <typename T>
-  already_AddRefed<gfxTextRun> MakeTextRun(const T* aString, uint32_t aLength,
+  already_AddRefed<gfxTextRun> MakeTextRun(const char16_t* aString,
+                                           uint32_t aLength,
+                                           const Parameters* aParams,
+                                           mozilla::gfx::ShapedTextFlags aFlags,
+                                           nsTextFrameUtils::Flags aFlags2,
+                                           gfxMissingFontRecorder* aMFR);
+  
+
+
+
+
+
+  already_AddRefed<gfxTextRun> MakeTextRun(const uint8_t* aString,
+                                           uint32_t aLength,
                                            const Parameters* aParams,
                                            mozilla::gfx::ShapedTextFlags aFlags,
                                            nsTextFrameUtils::Flags aFlags2,
