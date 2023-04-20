@@ -13,7 +13,6 @@
 #include "HttpLog.h"
 #include "HTTPSRecordResolver.h"
 #include "NSSErrorsService.h"
-#include "Http2ConnectTransaction.h"
 #include "base/basictypes.h"
 #include "mozilla/Components.h"
 #include "mozilla/net/SSLTokensCache.h"
@@ -190,9 +189,6 @@ nsHttpTransaction::~nsHttpTransaction() {
   nsTArray<nsCOMPtr<nsISupports>> arrayToRelease;
   if (mConnection) {
     arrayToRelease.AppendElement(mConnection.forget());
-  }
-  if (mH2WSTransaction) {
-    arrayToRelease.AppendElement(mH2WSTransaction.forget());
   }
 
   if (!arrayToRelease.IsEmpty()) {
@@ -457,14 +453,6 @@ void nsHttpTransaction::SetH2WSConnRefTaken() {
                           &nsHttpTransaction::SetH2WSConnRefTaken);
     gSocketTransportService->Dispatch(event, NS_DISPATCH_NORMAL);
     return;
-  }
-
-  if (mH2WSTransaction) {
-    
-    
-    
-    mH2WSTransaction->SetConnRefTaken();
-    mH2WSTransaction = nullptr;
   }
 }
 
@@ -2297,8 +2285,9 @@ nsresult nsHttpTransaction::HandleContentStart() {
       mNoContent = true;
     }
 
-    if (mResponseHead->Status() == 200 && mH2WSTransaction) {
-      
+    
+    if (mIsHttp2Websocket && mResponseHead->Status() == 200) {
+      LOG(("nsHttpTransaction::HandleContentStart websocket upgrade resp 200"));
       mNoContent = true;
     }
 
@@ -3065,13 +3054,6 @@ bool nsHttpTransaction::IsWebsocketUpgrade() {
     }
   }
   return false;
-}
-
-void nsHttpTransaction::SetH2WSTransaction(
-    Http2ConnectTransaction* aH2WSTransaction) {
-  MOZ_ASSERT(OnSocketThread());
-
-  mH2WSTransaction = aH2WSTransaction;
 }
 
 void nsHttpTransaction::OnProxyConnectComplete(int32_t aResponseCode) {

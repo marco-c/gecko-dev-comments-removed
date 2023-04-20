@@ -108,7 +108,9 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   virtual bool NoClientCertAuth() const { return true; }
 
   
-  virtual bool CanAcceptWebsocket() { return false; }
+  virtual WebSocketSupport GetWebSocketSupport() {
+    return WebSocketSupport::NO_SUPPORT;
+  }
 
   void GetConnectionInfo(nsHttpConnectionInfo** ci) {
     *ci = do_AddRef(mConnInfo).take();

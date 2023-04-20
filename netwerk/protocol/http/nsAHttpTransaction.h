@@ -33,7 +33,8 @@ class nsHttpTransaction;
 class nsHttpRequestHead;
 class nsHttpConnectionInfo;
 class NullHttpTransaction;
-class Http2ConnectTransaction;
+
+enum class WebSocketSupport { UNSURE, NO_SUPPORT, SUPPORTED };
 
 
 
@@ -151,13 +152,6 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   virtual nsHttpTransaction* QueryHttpTransaction() { return nullptr; }
 
   
-  
-  
-  virtual Http2ConnectTransaction* QueryHttp2ConnectTransaction() {
-    return nullptr;
-  }
-
-  
   virtual nsIRequestContext* RequestContext() { return nullptr; }
 
   
@@ -183,7 +177,10 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   virtual void DisableHttp2ForProxy() {}
   virtual void DisableHttp3(bool aAllowRetryHTTPSRR) {}
   virtual void MakeNonSticky() {}
+  virtual void MakeRestartable() {}
   virtual void ReuseConnectionOnRestartOK(bool) {}
+  virtual void SetIsHttp2Websocket(bool) {}
+  virtual bool IsHttp2Websocket() { return false; }
 
   
   

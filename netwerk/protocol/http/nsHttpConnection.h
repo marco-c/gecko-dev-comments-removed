@@ -154,8 +154,7 @@ class nsHttpConnection final : public HttpConnectionBase,
 
   int64_t ContentBytesWritten() { return mContentBytesWritten; }
 
-  void SetupSecondaryTLS(
-      nsAHttpTransaction* aHttp2ConnectTransaction = nullptr);
+  void SetupSecondaryTLS();
   void SetInSpdyTunnel();
 
   
@@ -175,7 +174,7 @@ class nsHttpConnection final : public HttpConnectionBase,
   
   bool NoClientCertAuth() const override;
 
-  bool CanAcceptWebsocket() override;
+  WebSocketSupport GetWebSocketSupport() override;
 
   int64_t BytesWritten() override { return mTotalBytesWritten; }
 
@@ -197,7 +196,8 @@ class nsHttpConnection final : public HttpConnectionBase,
                                                uint32_t*);
 
   nsresult CreateTunnelStream(nsAHttpTransaction* httpTransaction,
-                              nsHttpConnection** aHttpConnection);
+                              nsHttpConnection** aHttpConnection,
+                              bool aIsWebSocket = false);
 
   bool RequestDone() { return mRequestDone; }
 
@@ -220,6 +220,7 @@ class nsHttpConnection final : public HttpConnectionBase,
   void HandleWebSocketResponse(nsHttpRequestHead* requestHead,
                                nsHttpResponseHead* responseHead,
                                uint16_t responseStatus);
+  void ResetTransaction(RefPtr<nsAHttpTransaction>&& trans);
 
   
   enum TCPKeepaliveConfig {
@@ -262,6 +263,8 @@ class nsHttpConnection final : public HttpConnectionBase,
   void HandshakeDoneInternal();
   uint32_t TransactionCaps() const { return mTransactionCaps; }
 
+  void MarkAsDontReuse();
+
  private:
   
   
@@ -274,8 +277,6 @@ class nsHttpConnection final : public HttpConnectionBase,
 
   nsresult mSocketInCondition{NS_ERROR_NOT_INITIALIZED};
   nsresult mSocketOutCondition{NS_ERROR_NOT_INITIALIZED};
-
-  nsWeakPtr mWeakTrans;  
 
   RefPtr<nsHttpHandler> mHttpHandler;  
 
@@ -326,6 +327,7 @@ class nsHttpConnection final : public HttpConnectionBase,
   SpdyVersion mUsingSpdyVersion{SpdyVersion::NONE};
 
   RefPtr<ASpdySession> mSpdySession;
+  RefPtr<ASpdySession> mWebSocketHttp2Session;
   int32_t mPriority{nsISupportsPriority::PRIORITY_NORMAL};
   bool mReportedSpdy{false};
 

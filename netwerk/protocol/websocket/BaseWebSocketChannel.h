@@ -123,8 +123,8 @@ class BaseWebSocketChannel : public nsIWebSocketChannel,
   bool mPingForced;
   bool mIsServerSide;
 
-  uint32_t mPingInterval;        
-  uint32_t mPingResponseTimeout; 
+  Atomic<uint32_t> mPingInterval; 
+  uint32_t mPingResponseTimeout;  
 
   uint32_t mSerial;
 
