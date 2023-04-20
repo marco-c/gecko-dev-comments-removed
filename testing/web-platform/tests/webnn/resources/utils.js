@@ -62,6 +62,7 @@ const getExpectedData = (resources, outputName) => {
 
 
 const PrecisionMetrics = {
+  clamp: {ULP: {float32: 0, float16: 0}},
   concat: {ULP: {float32: 0, float16: 0}},
 };
 
@@ -194,8 +195,38 @@ const checkResults = (operationName, namedOutputOperands, outputs, resources) =>
 
 
 
-const buildGraph = (builder, resources, buildFunc) => {
-  const namedOperands = buildFunc(builder, resources);
+const createSingleInputOperand = (builder, resources, inputOperandName) => {
+  inputOperandName = inputOperandName ? inputOperandName : Object.keys(resources.inputs)[0];
+  const inputResources = resources.inputs[inputOperandName];
+  return builder.input(inputOperandName, {type: inputResources.type, dimensions: inputResources.shape});
+};
+
+
+
+
+
+
+
+
+const buildOperationWithSingleInput = (operationName, builder, resources) => {
+  const namedOutputOperand = {};
+  const inputOperand = createSingleInputOperand(builder, resources);
+  const outputOperand = resources.options ?
+      builder[operationName](inputOperand, resources.options) : builder[operationName](inputOperand);
+  namedOutputOperand[resources.expected.name] = outputOperand;
+  return namedOutputOperand;
+};
+
+
+
+
+
+
+
+
+
+const buildGraph = (operationName, builder, resources, buildFunc) => {
+  const namedOperands = buildFunc(operationName, builder, resources);
   let inputs = {};
   if (Array.isArray(resources.inputs)) {
     
@@ -233,7 +264,7 @@ const buildGraph = (builder, resources, buildFunc) => {
 
 const runSync = (operationName, context, builder, resources, buildFunc) => {
   
-  const [namedOutputOperands, inputs, outputs] = buildGraph(builder, resources, buildFunc);
+  const [namedOutputOperands, inputs, outputs] = buildGraph(operationName, builder, resources, buildFunc);
   
   const graph = builder.buildSync(namedOutputOperands);
   
@@ -251,7 +282,7 @@ const runSync = (operationName, context, builder, resources, buildFunc) => {
 
 const run = async (operationName, context, builder, resources, buildFunc) => {
   
-  const [namedOutputOperands, inputs, outputs] = buildGraph(builder, resources, buildFunc);
+  const [namedOutputOperands, inputs, outputs] = buildGraph(operationName, builder, resources, buildFunc);
   
   const graph = await builder.build(namedOutputOperands);
   
