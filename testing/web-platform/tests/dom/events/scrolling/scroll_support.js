@@ -18,6 +18,23 @@ async function waitForPointercancelEvent(test, target, timeoutMs = 500) {
   return waitForEvent("pointercancel", test, target, timeoutMs);
 }
 
+
+
+async function waitForScrollReset(test, scroller, timeoutMs = 500) {
+  return new Promise(resolve => {
+    if (scroller.scrollTop == 0 &&
+        scroller.scrollLeft == 0) {
+      resolve();
+    } else {
+      const eventTarget =
+        scroller == document.scrollingElement ? document : scroller;
+      scroller.scrollTop = 0;
+      scroller.scrollLeft = 0;
+      waitForScrollendEvent(test, eventTarget, timeoutMs).then(resolve);
+    }
+  });
+}
+
 async function createScrollendPromiseForTarget(test,
                                                target_div,
                                                timeoutMs = 500) {
