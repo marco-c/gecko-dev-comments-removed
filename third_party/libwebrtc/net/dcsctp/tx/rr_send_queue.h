@@ -41,15 +41,18 @@ namespace dcsctp {
 
 
 
+
+
+
+
 class RRSendQueue : public SendQueue {
  public:
   RRSendQueue(absl::string_view log_prefix,
+              DcSctpSocketCallbacks* callbacks,
               size_t buffer_size,
               size_t mtu,
               StreamPriority default_priority,
-              std::function<void(StreamID)> on_buffered_amount_low,
-              size_t total_buffered_amount_low_threshold,
-              std::function<void()> on_total_buffered_amount_low);
+              size_t total_buffered_amount_low_threshold);
 
   
   
@@ -255,17 +258,10 @@ class RRSendQueue : public SendQueue {
       size_t max_size);
 
   const std::string log_prefix_;
+  DcSctpSocketCallbacks& callbacks_;
   const size_t buffer_size_;
   const StreamPriority default_priority_;
   StreamScheduler scheduler_;
-
-  
-  
-  const std::function<void(StreamID)> on_buffered_amount_low_;
-
-  
-  
-  const std::function<void()> on_total_buffered_amount_low_;
 
   
   ThresholdWatcher total_buffered_amount_;
