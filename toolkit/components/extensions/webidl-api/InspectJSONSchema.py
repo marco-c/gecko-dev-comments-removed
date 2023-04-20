@@ -3,7 +3,6 @@
 
 
 import argparse
-import os
 import sys
 
 
@@ -19,11 +18,6 @@ except ModuleNotFoundError or AttributeError:
         file=sys.stderr,
     )
     sys.exit(1)
-
-
-
-module_dir = os.path.dirname(__file__)
-sys.path.append(module_dir)
 
 from GenerateWebIDLBindings import load_and_parse_JSONSchema, set_logging_level
 
