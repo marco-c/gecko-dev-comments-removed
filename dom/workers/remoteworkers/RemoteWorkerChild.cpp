@@ -59,6 +59,7 @@ namespace dom {
 
 using workerinternals::ChannelFromScriptURLMainThread;
 
+
 class SelfHolder {
  public:
   MOZ_IMPLICIT SelfHolder(RemoteWorkerChild* aSelf) : mSelf(aSelf) {
