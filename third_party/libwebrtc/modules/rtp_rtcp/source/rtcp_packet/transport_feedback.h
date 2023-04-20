@@ -14,12 +14,16 @@
 #include <memory>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
 
 namespace webrtc {
 namespace rtcp {
 class CommonHeader;
+
+
 
 class TransportFeedback : public Rtpfb {
  public:
@@ -36,6 +40,7 @@ class TransportFeedback : public Rtpfb {
 
     uint16_t sequence_number() const { return sequence_number_; }
     int16_t delta_ticks() const { return delta_ticks_; }
+    
     int32_t delta_us() const { return delta_ticks_ * kDeltaScaleFactor; }
     TimeDelta delta() const { return TimeDelta::Micros(delta_us()); }
     bool received() const { return received_; }
@@ -48,7 +53,9 @@ class TransportFeedback : public Rtpfb {
   
   static constexpr uint8_t kFeedbackMessageType = 15;
   
+  
   static constexpr int kDeltaScaleFactor = 250;
+  static constexpr TimeDelta kDeltaTick = TimeDelta::Micros(250);
   
   static constexpr size_t kMaxReportedPackets = 0xffff;
 
@@ -63,11 +70,21 @@ class TransportFeedback : public Rtpfb {
 
   ~TransportFeedback() override;
 
+  
   void SetBase(uint16_t base_sequence,     
                int64_t ref_timestamp_us);  
+  void SetBase(uint16_t base_sequence,     
+               Timestamp ref_timestamp) {  
+    SetBase(base_sequence, ref_timestamp.us());
+  }
+
   void SetFeedbackSequenceNumber(uint8_t feedback_sequence);
   
+  
   bool AddReceivedPacket(uint16_t sequence_number, int64_t timestamp_us);
+  bool AddReceivedPacket(uint16_t sequence_number, Timestamp timestamp) {
+    return AddReceivedPacket(sequence_number, timestamp.us());
+  }
   const std::vector<ReceivedPacket>& GetReceivedPackets() const;
   const std::vector<ReceivedPacket>& GetAllPackets() const;
 
@@ -77,12 +94,18 @@ class TransportFeedback : public Rtpfb {
   size_t GetPacketStatusCount() const { return num_seq_no_; }
 
   
+  
   int64_t GetBaseTimeUs() const;
-  TimeDelta GetBaseTime() const;
+  
+  TimeDelta GetBaseTime() const { return BaseTime() - Timestamp::Zero(); }
+  Timestamp BaseTime() const;
 
   
+  
   int64_t GetBaseDeltaUs(int64_t prev_timestamp_us) const;
+  
   TimeDelta GetBaseDelta(TimeDelta prev_timestamp) const;
+  TimeDelta GetBaseDelta(Timestamp prev_timestamp) const;
 
   
   bool IncludeTimestamps() const { return include_timestamps_; }
@@ -162,7 +185,7 @@ class TransportFeedback : public Rtpfb {
   const bool include_lost_;
   uint16_t base_seq_no_;
   uint16_t num_seq_no_;
-  int32_t base_time_ticks_;
+  uint32_t base_time_ticks_;
   uint8_t feedback_seq_;
   bool include_timestamps_;
 
