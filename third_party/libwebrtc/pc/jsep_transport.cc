@@ -420,21 +420,9 @@ webrtc::RTCError JsepTransport::SetNegotiatedDtlsParameters(
     absl::optional<rtc::SSLRole> dtls_role,
     rtc::SSLFingerprint* remote_fingerprint) {
   RTC_DCHECK(dtls_transport);
-  
-  
-  if (dtls_role && !dtls_transport->SetDtlsRole(*dtls_role)) {
-    return webrtc::RTCError(webrtc::RTCErrorType::INVALID_PARAMETER,
-                            "Failed to set SSL role for the transport.");
-  }
-  
-  if (!remote_fingerprint ||
-      !dtls_transport->SetRemoteFingerprint(
-          remote_fingerprint->algorithm, remote_fingerprint->digest.cdata(),
-          remote_fingerprint->digest.size())) {
-    return webrtc::RTCError(webrtc::RTCErrorType::INVALID_PARAMETER,
-                            "Failed to apply remote fingerprint.");
-  }
-  return webrtc::RTCError::OK();
+  return dtls_transport->SetRemoteParameters(
+      remote_fingerprint->algorithm, remote_fingerprint->digest.cdata(),
+      remote_fingerprint->digest.size(), dtls_role);
 }
 
 bool JsepTransport::SetRtcpMux(bool enable,

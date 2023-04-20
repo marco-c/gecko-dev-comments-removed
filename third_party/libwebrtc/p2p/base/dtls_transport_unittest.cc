@@ -56,11 +56,15 @@ void SetRemoteFingerprintFromCert(
   if (modify_digest) {
     ++fingerprint->digest.MutableData()[0];
   }
+
   
-  EXPECT_TRUE(transport->SetRemoteFingerprint(
-      fingerprint->algorithm,
-      reinterpret_cast<const uint8_t*>(fingerprint->digest.data()),
-      fingerprint->digest.size()));
+  EXPECT_TRUE(
+      transport
+          ->SetRemoteParameters(
+              fingerprint->algorithm,
+              reinterpret_cast<const uint8_t*>(fingerprint->digest.data()),
+              fingerprint->digest.size(), absl::nullopt)
+          .ok());
 }
 
 class DtlsTestClient : public sigslot::has_slots<> {

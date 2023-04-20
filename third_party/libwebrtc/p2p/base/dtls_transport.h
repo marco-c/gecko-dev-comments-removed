@@ -141,6 +141,13 @@ class DtlsTransport : public DtlsTransportInternal {
                             size_t digest_len) override;
 
   
+  webrtc::RTCError SetRemoteParameters(
+      absl::string_view digest_alg,
+      const uint8_t* digest,
+      size_t digest_len,
+      absl::optional<rtc::SSLRole> role) override;
+
+  
   int SendPacket(const char* data,
                  size_t size,
                  const rtc::PacketOptions& options,
