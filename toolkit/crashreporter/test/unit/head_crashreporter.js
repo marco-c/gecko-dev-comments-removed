@@ -139,12 +139,21 @@ async function handleMinidump(callback) {
   let memoryfile = minidump.clone();
   memoryfile.leafName = memoryfile.leafName.slice(0, -4) + ".memory.json.gz";
 
-  let cleanup = function() {
-    [minidump, extrafile, memoryfile].forEach(file => {
+  let cleanup = async function() {
+    for (let file of [minidump, extrafile, memoryfile]) {
       if (file.exists()) {
-        file.remove(false);
+        let file_removed = false;
+        while (!file_removed) {
+          try {
+            file.remove(false);
+            file_removed = true;
+          } catch (e) {
+            
+            await new Promise(resolve => do_timeout(50, resolve));
+          }
+        }
       }
-    });
+    }
   };
 
   
@@ -157,7 +166,7 @@ async function handleMinidump(callback) {
     await callback(minidump, extra, extrafile, memoryfile);
   }
 
-  cleanup();
+  await cleanup();
 }
 
 function spinEventLoop() {
