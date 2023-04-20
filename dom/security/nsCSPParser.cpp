@@ -925,6 +925,15 @@ nsCSPDirective* nsCSPParser::directiveName() {
 
   
   if (directive == nsIContentSecurityPolicy::BLOCK_ALL_MIXED_CONTENT) {
+    
+    if (mozilla::StaticPrefs::
+            security_mixed_content_upgrade_display_content()) {
+      
+      
+      AutoTArray<nsString, 1> params = {mCurToken};
+      logWarningErrorToConsole(nsIScriptError::warningFlag,
+                               "obsoleteBlockAllMixedContent", params);
+    }
     return new nsBlockAllMixedContentDirective(directive);
   }
 
