@@ -38,6 +38,9 @@ namespace mozilla {
 namespace dom {
 enum class ScreenColorGamut : uint8_t;
 }  
+namespace hal {
+enum class ScreenOrientation : uint32_t;
+}  
 namespace widget {
 class Screen;
 }  
@@ -131,6 +134,18 @@ class nsDeviceContext final {
 
 
   mozilla::dom::ScreenColorGamut GetColorGamut();
+
+  
+
+
+
+  mozilla::hal::ScreenOrientation GetScreenOrientationType();
+
+  
+
+
+
+  uint16_t GetScreenOrientationAngle();
 
   
 
