@@ -1,5 +1,8 @@
 
 
+
+
+
 var conf = getBuildConfiguration();
 
 var bin = wasmTextToBinary(

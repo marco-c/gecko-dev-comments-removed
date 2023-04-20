@@ -253,17 +253,13 @@ bool wasm::IonDisabledByFeatures(JSContext* cx, bool* isDisabled,
                                  JSStringBuilder* reason) {
   
   bool debug = WasmDebuggerActive(cx);
-  bool gc = WasmGcFlag(cx);
   if (reason) {
     char sep = 0;
     if (debug && !Append(reason, "debug", &sep)) {
       return false;
     }
-    if (gc && !Append(reason, "gc", &sep)) {
-      return false;
-    }
   }
-  *isDisabled = debug || gc;
+  *isDisabled = debug;
   return true;
 }
 
