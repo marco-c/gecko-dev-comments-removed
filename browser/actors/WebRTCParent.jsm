@@ -33,14 +33,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIOSPermissionRequest"
 );
 
-
-
-
-
-
-const PIPEWIRE_PORTAL_NAME = "####_PIPEWIRE_PORTAL_####";
-const PIPEWIRE_ID = 0xaffffff;
-
 class WebRTCParent extends JSWindowActorParent {
   didDestroy() {
     
@@ -885,7 +877,7 @@ function prompt(aActor, aBrowser, aRequest) {
             
             
             
-            if (name == PIPEWIRE_PORTAL_NAME && device.rawId == PIPEWIRE_ID) {
+            if (device.canRequestOsLevelPrompt) {
               isPipeWire = true;
               let item = addDeviceToList(
                 menupopup,

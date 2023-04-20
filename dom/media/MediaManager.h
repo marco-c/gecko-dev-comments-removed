@@ -77,9 +77,16 @@ class MediaDevice final {
 
 
   enum class IsScary { No, Yes };
+
+  
+
+
+  enum class OsPromptable { No, Yes };
+
   MediaDevice(MediaEngine* aEngine, dom::MediaSourceEnum aMediaSource,
               const nsString& aRawName, const nsString& aRawID,
-              const nsString& aRawGroupID, IsScary aIsScary);
+              const nsString& aRawGroupID, IsScary aIsScary,
+              const OsPromptable canRequestOsLevelPrompt);
 
   MediaDevice(MediaEngine* aEngine,
               const RefPtr<AudioDeviceInfo>& aAudioDeviceInfo,
@@ -99,6 +106,7 @@ class MediaDevice final {
   const dom::MediaSourceEnum mMediaSource;
   const dom::MediaDeviceKind mKind;
   const bool mScary;
+  const bool mCanRequestOsLevelPrompt;
   const bool mIsFake;
   const nsString mType;
   const nsString mRawID;
