@@ -121,6 +121,9 @@ class ZeroHertzAdapterMode : public AdapterMode {
   void UpdateFrameRate() override {}
 
   
+  void OnDiscardedFrame();
+
+  
   
   void ProcessKeyFrameRequest();
 
@@ -182,6 +185,10 @@ class ZeroHertzAdapterMode : public AdapterMode {
   
   TimeDelta RepeatDuration(bool idle_repeat) const
       RTC_RUN_ON(sequence_checker_);
+  
+  
+  
+  void MaybeStartRefreshFrameRequester() RTC_RUN_ON(sequence_checker_);
 
   TaskQueueBase* const queue_;
   Clock* const clock_;
@@ -233,7 +240,7 @@ class FrameCadenceAdapterImpl : public FrameCadenceAdapterInterface {
 
   
   void OnFrame(const VideoFrame& frame) override;
-  void OnDiscardedFrame() override { callback_->OnDiscardedFrame(); }
+  void OnDiscardedFrame() override;
   void OnConstraintsChanged(
       const VideoTrackSourceConstraints& constraints) override;
 
@@ -301,12 +308,7 @@ ZeroHertzAdapterMode::ZeroHertzAdapterMode(
     double max_fps)
     : queue_(queue), clock_(clock), callback_(callback), max_fps_(max_fps) {
   sequence_checker_.Detach();
-  refresh_frame_requester_ = RepeatingTaskHandle::Start(queue_, [this] {
-    RTC_DLOG(LS_VERBOSE) << __func__ << " RequestRefreshFrame";
-    if (callback_)
-      callback_->RequestRefreshFrame();
-    return frame_delay_;
-  });
+  MaybeStartRefreshFrameRequester();
 }
 
 void ZeroHertzAdapterMode::ReconfigureParameters(
@@ -382,6 +384,17 @@ void ZeroHertzAdapterMode::OnFrame(Timestamp post_time,
                      ProcessOnDelayedCadence();
                    }),
       frame_delay_.ms());
+}
+
+void ZeroHertzAdapterMode::OnDiscardedFrame() {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  RTC_DLOG(LS_VERBOSE) << "ZeroHertzAdapterMode::" << __func__;
+
+  
+  
+  
+  
+  MaybeStartRefreshFrameRequester();
 }
 
 absl::optional<uint32_t> ZeroHertzAdapterMode::GetInputFrameRateFps() {
@@ -552,6 +565,23 @@ TimeDelta ZeroHertzAdapterMode::RepeatDuration(bool idle_repeat) const {
              : frame_delay_;
 }
 
+
+void ZeroHertzAdapterMode::MaybeStartRefreshFrameRequester() {
+  RTC_DLOG(LS_VERBOSE) << __func__;
+  if (!refresh_frame_requester_.Running()) {
+    refresh_frame_requester_ = RepeatingTaskHandle::DelayedStart(
+        queue_,
+        FrameCadenceAdapterInterface::kOnDiscardedFrameRefreshFramePeriod *
+            frame_delay_,
+        [this] {
+          RTC_DLOG(LS_VERBOSE) << __func__ << " RequestRefreshFrame";
+          if (callback_)
+            callback_->RequestRefreshFrame();
+          return frame_delay_;
+        });
+  }
+}
+
 FrameCadenceAdapterImpl::FrameCadenceAdapterImpl(
     Clock* clock,
     TaskQueueBase* queue,
@@ -641,6 +671,16 @@ void FrameCadenceAdapterImpl::OnFrame(const VideoFrame& frame) {
     OnFrameOnMainQueue(post_time, frames_scheduled_for_processing,
                        std::move(frame));
     MaybeReportFrameRateConstraintUmas();
+  }));
+}
+
+void FrameCadenceAdapterImpl::OnDiscardedFrame() {
+  callback_->OnDiscardedFrame();
+  queue_->PostTask(ToQueuedTask(safety_.flag(), [this] {
+    RTC_DCHECK_RUN_ON(queue_);
+    if (zero_hertz_adapter_) {
+      zero_hertz_adapter_->OnDiscardedFrame();
+    }
   }));
 }
 

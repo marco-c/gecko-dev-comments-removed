@@ -368,9 +368,13 @@ TEST(FrameCadenceAdapterTest, RequestsRefreshFrameOnKeyFrameRequestWhenNew) {
   adapter->Initialize(&callback);
   adapter->SetZeroHertzModeEnabled(
       FrameCadenceAdapterInterface::ZeroHertzModeParams{});
-  adapter->OnConstraintsChanged(VideoTrackSourceConstraints{0, 10});
+  constexpr int kMaxFps = 10;
+  adapter->OnConstraintsChanged(VideoTrackSourceConstraints{0, kMaxFps});
   EXPECT_CALL(callback, RequestRefreshFrame);
-  time_controller.AdvanceTime(TimeDelta::Zero());
+  time_controller.AdvanceTime(
+      TimeDelta::Seconds(1) *
+      FrameCadenceAdapterInterface::kOnDiscardedFrameRefreshFramePeriod /
+      kMaxFps);
   adapter->ProcessKeyFrameRequest();
 }
 
@@ -403,12 +407,95 @@ TEST(FrameCadenceAdapterTest, RequestsRefreshFramesUntilArrival) {
   
   
   
-  EXPECT_CALL(callback, RequestRefreshFrame).Times(kMaxFps + 1);
+  
+  
+  EXPECT_CALL(callback, RequestRefreshFrame)
+      .Times(kMaxFps + 1 -
+             FrameCadenceAdapterInterface::kOnDiscardedFrameRefreshFramePeriod);
   time_controller.AdvanceTime(TimeDelta::Seconds(1));
   Mock::VerifyAndClearExpectations(&callback);
   adapter->OnFrame(CreateFrame());
   EXPECT_CALL(callback, RequestRefreshFrame).Times(0);
   time_controller.AdvanceTime(TimeDelta::Seconds(1));
+}
+
+TEST(FrameCadenceAdapterTest, RequestsRefreshAfterFrameDrop) {
+  ZeroHertzFieldTrialEnabler enabler;
+  MockCallback callback;
+  GlobalSimulatedTimeController time_controller(Timestamp::Millis(0));
+  auto adapter = CreateAdapter(enabler, time_controller.GetClock());
+  adapter->Initialize(&callback);
+  adapter->SetZeroHertzModeEnabled(
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
+  constexpr int kMaxFps = 10;
+  adapter->OnConstraintsChanged(VideoTrackSourceConstraints{0, kMaxFps});
+
+  EXPECT_CALL(callback, RequestRefreshFrame).Times(0);
+
+  
+  
+  adapter->OnFrame(CreateFrame());
+  time_controller.AdvanceTime(TimeDelta::Seconds(1));
+  Mock::VerifyAndClearExpectations(&callback);
+
+  
+  
+  
+  adapter->OnDiscardedFrame();
+  EXPECT_CALL(callback, RequestRefreshFrame);
+  time_controller.AdvanceTime(
+      TimeDelta::Seconds(1) *
+      FrameCadenceAdapterInterface::kOnDiscardedFrameRefreshFramePeriod /
+      kMaxFps);
+  Mock::VerifyAndClearExpectations(&callback);
+
+  
+  EXPECT_CALL(callback, RequestRefreshFrame).Times(kMaxFps);
+  time_controller.AdvanceTime(TimeDelta::Seconds(1));
+  Mock::VerifyAndClearExpectations(&callback);
+
+  
+  EXPECT_CALL(callback, RequestRefreshFrame).Times(0);
+  adapter->OnFrame(CreateFrame());
+  time_controller.AdvanceTime(TimeDelta::Seconds(1));
+}
+
+TEST(FrameCadenceAdapterTest, OmitsRefreshAfterFrameDropWithTimelyFrameEntry) {
+  ZeroHertzFieldTrialEnabler enabler;
+  MockCallback callback;
+  GlobalSimulatedTimeController time_controller(Timestamp::Millis(0));
+  auto adapter = CreateAdapter(enabler, time_controller.GetClock());
+  adapter->Initialize(&callback);
+  adapter->SetZeroHertzModeEnabled(
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
+  constexpr int kMaxFps = 10;
+  adapter->OnConstraintsChanged(VideoTrackSourceConstraints{0, kMaxFps});
+
+  
+  
+  EXPECT_CALL(callback, RequestRefreshFrame).Times(0);
+  adapter->OnFrame(CreateFrame());
+  time_controller.AdvanceTime(TimeDelta::Seconds(1));
+  Mock::VerifyAndClearExpectations(&callback);
+
+  
+  
+  
+  EXPECT_CALL(callback, RequestRefreshFrame).Times(0);
+  adapter->OnDiscardedFrame();
+  time_controller.AdvanceTime(
+      TimeDelta::Seconds(1) *
+          FrameCadenceAdapterInterface::kOnDiscardedFrameRefreshFramePeriod /
+          kMaxFps -
+      TimeDelta::Micros(1));
+  Mock::VerifyAndClearExpectations(&callback);
+
+  
+  
+  EXPECT_CALL(callback, RequestRefreshFrame).Times(0);
+  adapter->OnFrame(CreateFrame());
+  time_controller.AdvanceTime(TimeDelta::Seconds(1));
+  Mock::VerifyAndClearExpectations(&callback);
 }
 
 class FrameCadenceAdapterSimulcastLayersParamTest

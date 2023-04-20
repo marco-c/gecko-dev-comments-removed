@@ -45,6 +45,8 @@ class RTC_EXPORT AdaptedVideoTrackSource
   
   
   void OnFrame(const webrtc::VideoFrame& frame);
+  
+  void OnFrameDropped();
 
   
   

@@ -41,6 +41,9 @@ class FrameCadenceAdapterInterface
   
   static constexpr TimeDelta kZeroHertzIdleRepeatRatePeriod =
       TimeDelta::Millis(1000);
+  
+  
+  static constexpr int kOnDiscardedFrameRefreshFramePeriod = 3;
 
   struct ZeroHertzModeParams {
     
