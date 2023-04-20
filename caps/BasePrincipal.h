@@ -216,9 +216,14 @@ class BasePrincipal : public nsJSPrincipals {
   
   
   
+  
+  
+  
+  
 
   static already_AddRefed<BasePrincipal> CreateContentPrincipal(
-      nsIURI* aURI, const OriginAttributes& aAttrs);
+      nsIURI* aURI, const OriginAttributes& aAttrs,
+      nsIURI* aInitialDomain = nullptr);
 
   const OriginAttributes& OriginAttributesRef() final {
     return mOriginAttributes;
@@ -343,7 +348,7 @@ class BasePrincipal : public nsJSPrincipals {
  private:
   static already_AddRefed<BasePrincipal> CreateContentPrincipal(
       nsIURI* aURI, const OriginAttributes& aAttrs,
-      const nsACString& aOriginNoSuffix);
+      const nsACString& aOriginNoSuffix, nsIURI* aInitialDomain);
 
   bool FastSubsumesIgnoringFPD(nsIPrincipal* aOther,
                                DocumentDomainConsideration aConsideration);

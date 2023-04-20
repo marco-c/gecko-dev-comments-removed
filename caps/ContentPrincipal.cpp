@@ -53,9 +53,16 @@ NS_IMPL_CI_INTERFACE_GETTER(ContentPrincipal, nsIPrincipal)
 
 ContentPrincipal::ContentPrincipal(nsIURI* aURI,
                                    const OriginAttributes& aOriginAttributes,
-                                   const nsACString& aOriginNoSuffix)
+                                   const nsACString& aOriginNoSuffix,
+                                   nsIURI* aInitialDomain)
     : BasePrincipal(eContentPrincipal, aOriginNoSuffix, aOriginAttributes),
-      mURI(aURI) {
+      mURI(aURI),
+      mDomain(aInitialDomain) {
+  if (mDomain) {
+    
+    SetHasExplicitDomain();
+  }
+
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   
   
@@ -600,18 +607,8 @@ ContentPrincipal::Deserializer::Read(nsIObjectInputStream* aStream) {
   rv = GenerateOriginNoSuffixFromURI(principalURI, originNoSuffix);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  RefPtr<ContentPrincipal> principal =
-      new ContentPrincipal(principalURI, attrs, originNoSuffix);
-
-  
-  
-  if (domain) {
-    MutexAutoLock lock(principal->mMutex);
-    principal->mDomain = domain;
-    principal->SetHasExplicitDomain();
-  }
-
-  mPrincipal = principal.forget();
+  mPrincipal =
+      new ContentPrincipal(principalURI, attrs, originNoSuffix, domain);
   return NS_OK;
 }
 
@@ -713,13 +710,7 @@ already_AddRefed<BasePrincipal> ContentPrincipal::FromProperties(
   }
 
   RefPtr<ContentPrincipal> principal =
-      new ContentPrincipal(principalURI, attrs, originNoSuffix);
-
-  if (domain) {
-    MutexAutoLock lock(principal->mMutex);
-    principal->mDomain = domain;
-    principal->SetHasExplicitDomain();
-  }
+      new ContentPrincipal(principalURI, attrs, originNoSuffix, domain);
 
   return principal.forget();
 }
