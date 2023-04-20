@@ -17,6 +17,7 @@
 #include "mozilla/dom/CharacterData.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLInputElement.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/intl/Segmenter.h"
 #include "mozilla/intl/WordBreaker.h"
 #include "mozilla/StaticPrefs_layout.h"
@@ -1462,6 +1463,55 @@ TextLeafPoint TextLeafPoint::NeighborLeafPoint(
                : 0);
 }
 
+LayoutDeviceIntRect TextLeafPoint::ComputeBoundsFromFrame() const {
+  LocalAccessible* local = mAcc->AsLocal();
+  MOZ_ASSERT(local, "Can't compute bounds in frame from non-local acc");
+  nsIFrame* frame = local->GetFrame();
+  MOZ_ASSERT(frame, "No frame found for acc!");
+
+  if (!frame->IsTextFrame()) {
+    return local->Bounds();
+  }
+
+  
+  MOZ_ASSERT(frame->IsPrimaryFrame(),
+             "Cannot compute content offset on non-primary frame");
+  nsIFrame::RenderedText text = frame->GetRenderedText(
+      mOffset, mOffset + 1, nsIFrame::TextOffsetType::OffsetsInRenderedText,
+      nsIFrame::TrailingWhitespace::DontTrim);
+  int32_t contentOffset = text.mOffsetWithinNodeText;
+  int32_t contentOffsetInFrame;
+  
+  
+  nsresult rv = frame->GetChildFrameContainingOffset(
+      contentOffset, false, &contentOffsetInFrame, &frame);
+  NS_ENSURE_SUCCESS(rv, LayoutDeviceIntRect());
+
+  
+  
+  nsRect frameScreenRect = frame->GetScreenRectInAppUnits();
+
+  
+  nsPoint frameTextStartPoint;
+  rv = frame->GetPointFromOffset(contentOffset, &frameTextStartPoint);
+  NS_ENSURE_SUCCESS(rv, LayoutDeviceIntRect());
+
+  
+  
+  nsPoint frameTextEndPoint;
+  rv = frame->GetPointFromOffset(contentOffset + 1, &frameTextEndPoint);
+  NS_ENSURE_SUCCESS(rv, LayoutDeviceIntRect());
+
+  frameScreenRect.SetRectX(
+      frameScreenRect.X() +
+          std::min(frameTextStartPoint.x, frameTextEndPoint.x),
+      mozilla::Abs(frameTextStartPoint.x - frameTextEndPoint.x));
+
+  nsPresContext* presContext = local->Document()->PresContext();
+  return LayoutDeviceIntRect::FromAppUnitsToNearest(
+      frameScreenRect, presContext->AppUnitsPerDevPixel());
+}
+
 
 nsTArray<int32_t> TextLeafPoint::GetSpellingErrorOffsets(
     LocalAccessible* aAcc) {
@@ -1660,11 +1710,32 @@ LayoutDeviceIntRect TextLeafPoint::CharBounds() {
   }
 
   if (LocalAccessible* local = mAcc->AsLocal()) {
-    HyperTextAccessible* ht = HyperTextFor(local);
-    MOZ_ASSERT(ht, "Could not find hypertext for text acc?");
-    return ht->CharBounds(
-        static_cast<int32_t>(ht->TransformOffset(local, mOffset, true)),
-        nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE);
+    if (!local->IsTextLeaf() || nsAccUtils::TextLength(local) == 0) {
+      
+      return local->Bounds();
+    }
+
+    if (mOffset >= 0 &&
+        static_cast<uint32_t>(mOffset) > nsAccUtils::TextLength(local)) {
+      NS_ERROR("Wrong in offset");
+      return LayoutDeviceIntRect();
+    }
+
+    LayoutDeviceIntRect bounds = ComputeBoundsFromFrame();
+
+    
+    
+    
+    nsPresContext* presContext = local->Document()->PresContext();
+    nsIFrame* rootFrame = presContext->PresShell()->GetRootFrame();
+    LayoutDeviceIntRect orgRectPixels =
+        LayoutDeviceIntRect::FromAppUnitsToNearest(
+            rootFrame->GetScreenRectInAppUnits(),
+            presContext->AppUnitsPerDevPixel());
+    bounds.MoveBy(-orgRectPixels.X(), -orgRectPixels.Y());
+    bounds.ScaleRoundOut(presContext->PresShell()->GetResolution());
+    bounds.MoveBy(orgRectPixels.X(), orgRectPixels.Y());
+    return bounds;
   }
 
   RemoteAccessible* remote = mAcc->AsRemote();

@@ -236,6 +236,15 @@ class TextLeafPoint final {
   
   TextLeafPoint NeighborLeafPoint(nsDirection aDirection, bool aIsEditable,
                                   bool aIgnoreListItemMarker) const;
+
+  
+
+
+
+
+
+
+  LayoutDeviceIntRect ComputeBoundsFromFrame() const;
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(TextLeafPoint::BoundaryFlags)
