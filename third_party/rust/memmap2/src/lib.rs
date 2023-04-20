@@ -627,7 +627,19 @@ impl Mmap {
     
     #[cfg(unix)]
     pub fn advise(&self, advice: Advice) -> Result<()> {
-        self.inner.advise(advice)
+        self.inner.advise(advice, 0, self.inner.len())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(unix)]
+    pub fn advise_range(&self, advice: Advice, offset: usize, len: usize) -> Result<()> {
+        self.inner.advise(advice, offset, len)
     }
 
     
@@ -806,7 +818,19 @@ impl MmapRaw {
     
     #[cfg(unix)]
     pub fn advise(&self, advice: Advice) -> Result<()> {
-        self.inner.advise(advice)
+        self.inner.advise(advice, 0, self.inner.len())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(unix)]
+    pub fn advise_range(&self, advice: Advice, offset: usize, len: usize) -> Result<()> {
+        self.inner.advise(advice, offset, len)
     }
 
     
@@ -832,6 +856,18 @@ impl fmt::Debug for MmapRaw {
             .field("ptr", &self.as_ptr())
             .field("len", &self.len())
             .finish()
+    }
+}
+
+impl From<Mmap> for MmapRaw {
+    fn from(value: Mmap) -> Self {
+        Self { inner: value.inner }
+    }
+}
+
+impl From<MmapMut> for MmapRaw {
+    fn from(value: MmapMut) -> Self {
+        Self { inner: value.inner }
     }
 }
 
@@ -1050,7 +1086,19 @@ impl MmapMut {
     
     #[cfg(unix)]
     pub fn advise(&self, advice: Advice) -> Result<()> {
-        self.inner.advise(advice)
+        self.inner.advise(advice, 0, self.inner.len())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(unix)]
+    pub fn advise_range(&self, advice: Advice, offset: usize, len: usize) -> Result<()> {
+        self.inner.advise(advice, offset, len)
     }
 
     
@@ -1632,6 +1680,9 @@ mod test {
 
         
         assert_eq!(&zeros[..], &mmap[..]);
+
+        mmap.advise_range(Advice::Sequential, 0, mmap.len())
+            .expect("mmap advising should be supported on unix");
 
         
         (&mut mmap[..]).write_all(&incr[..]).unwrap();
