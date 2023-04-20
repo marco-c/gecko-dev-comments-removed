@@ -78,12 +78,26 @@ constexpr ScalableVideoController::StreamLayersConfig kConfigL2T2 = {
     {1, 1},
     {2, 1}};
 
+constexpr ScalableVideoController::StreamLayersConfig kConfigL2T2h = {
+    2,
+    2,
+    true,
+    {2, 1},
+    {3, 1}};
+
 constexpr ScalableVideoController::StreamLayersConfig kConfigL2T3 = {
     2,
     3,
     true,
     {1, 1},
     {2, 1}};
+
+constexpr ScalableVideoController::StreamLayersConfig kConfigL2T3h = {
+    2,
+    3,
+    true,
+    {2, 1},
+    {3, 1}};
 
 constexpr ScalableVideoController::StreamLayersConfig kConfigL3T1 = {
     3,
@@ -92,6 +106,13 @@ constexpr ScalableVideoController::StreamLayersConfig kConfigL3T1 = {
     {1, 1, 1},
     {4, 2, 1}};
 
+constexpr ScalableVideoController::StreamLayersConfig kConfigL3T1h = {
+    3,
+    1,
+    true,
+    {4, 2, 1},
+    {9, 3, 1}};
+
 constexpr ScalableVideoController::StreamLayersConfig kConfigL3T2 = {
     3,
     2,
@@ -99,12 +120,26 @@ constexpr ScalableVideoController::StreamLayersConfig kConfigL3T2 = {
     {1, 1, 1},
     {4, 2, 1}};
 
+constexpr ScalableVideoController::StreamLayersConfig kConfigL3T2h = {
+    3,
+    2,
+    true,
+    {4, 2, 1},
+    {9, 3, 1}};
+
 constexpr ScalableVideoController::StreamLayersConfig kConfigL3T3 = {
     3,
     3,
     true,
     {1, 1, 1},
     {4, 2, 1}};
+
+constexpr ScalableVideoController::StreamLayersConfig kConfigL3T3h = {
+    3,
+    3,
+    true,
+    {4, 2, 1},
+    {9, 3, 1}};
 
 constexpr ScalableVideoController::StreamLayersConfig kConfigS2T1 = {
     2,
@@ -158,20 +193,25 @@ constexpr NamedStructureFactory kFactories[] = {
     {ScalabilityMode::kL2T1_KEY, Create<ScalabilityStructureL2T1Key>,
      kConfigL2T1},
     {ScalabilityMode::kL2T2, Create<ScalabilityStructureL2T2>, kConfigL2T2},
+    {ScalabilityMode::kL2T2h, CreateH<ScalabilityStructureL2T2>, kConfigL2T2h},
     {ScalabilityMode::kL2T2_KEY, Create<ScalabilityStructureL2T2Key>,
      kConfigL2T2},
     {ScalabilityMode::kL2T2_KEY_SHIFT, Create<ScalabilityStructureL2T2KeyShift>,
      kConfigL2T2},
     {ScalabilityMode::kL2T3, Create<ScalabilityStructureL2T3>, kConfigL2T3},
+    {ScalabilityMode::kL2T3h, CreateH<ScalabilityStructureL2T3>, kConfigL2T3h},
     {ScalabilityMode::kL2T3_KEY, Create<ScalabilityStructureL2T3Key>,
      kConfigL2T3},
     {ScalabilityMode::kL3T1, Create<ScalabilityStructureL3T1>, kConfigL3T1},
+    {ScalabilityMode::kL3T1h, CreateH<ScalabilityStructureL3T1>, kConfigL3T1h},
     {ScalabilityMode::kL3T1_KEY, Create<ScalabilityStructureL3T1Key>,
      kConfigL3T1},
     {ScalabilityMode::kL3T2, Create<ScalabilityStructureL3T2>, kConfigL3T2},
+    {ScalabilityMode::kL3T2h, CreateH<ScalabilityStructureL3T2>, kConfigL3T2h},
     {ScalabilityMode::kL3T2_KEY, Create<ScalabilityStructureL3T2Key>,
      kConfigL3T2},
     {ScalabilityMode::kL3T3, Create<ScalabilityStructureL3T3>, kConfigL3T3},
+    {ScalabilityMode::kL3T3h, CreateH<ScalabilityStructureL3T3>, kConfigL3T3h},
     {ScalabilityMode::kL3T3_KEY, Create<ScalabilityStructureL3T3Key>,
      kConfigL3T3},
     {ScalabilityMode::kS2T1, Create<ScalabilityStructureS2T1>, kConfigS2T1},
