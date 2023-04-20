@@ -10,6 +10,7 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ContentIterator.h"
 #include "mozilla/IMEStateManager.h"
+#include "mozilla/IntegerRange.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RangeUtils.h"
@@ -1853,13 +1854,19 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
   bool isVertical = false;
   LayoutDeviceIntRect rect;
   uint32_t offset = aEvent->mInput.mOffset;
-  const uint32_t kEndOffset = offset + aEvent->mInput.mLength;
+  const uint32_t kEndOffset = aEvent->mInput.EndOffset();
   bool wasLineBreaker = false;
   
   
   nsRect lastCharRect;
   
+  
+  
+  
+  
   nsIFrame* lastFrame = nullptr;
+  nsAutoString flattenedAllText;
+  flattenedAllText.SetIsVoid(true);
   while (offset < kEndOffset) {
     RefPtr<Text> lastTextNode;
     RawRange rawRange;
@@ -1869,6 +1876,10 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
+
+    
+    
+    
 
     
     
@@ -1883,20 +1894,54 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
     
     
     if (!firstFrame.IsValid()) {
-      nsAutoString allText;
-      rv = GenerateFlatTextContent(mRootElement, allText, lineBreakType);
-      
-      
-      
-      
-      
-      
-      if (NS_WARN_IF(NS_FAILED(rv)) || offset < allText.Length()) {
-        return NS_ERROR_FAILURE;
+      if (flattenedAllText.IsVoid()) {
+        flattenedAllText.SetIsVoid(false);
+        if (NS_WARN_IF(NS_FAILED(GenerateFlatTextContent(
+                mRootElement, flattenedAllText, lineBreakType)))) {
+          NS_WARNING("ContentEventHandler::GenerateFlatTextContent() failed");
+          return NS_ERROR_FAILURE;
+        }
       }
       
       
-      break;
+      if (offset >= flattenedAllText.Length()) {
+        break;
+      }
+      
+      
+      
+      
+      const uint32_t remainingLengthInCurrentRange = [&]() {
+        if (lastTextNode) {
+          if (rawRange.GetStartContainer() == lastTextNode) {
+            if (rawRange.StartOffset() < lastTextNode->TextDataLength()) {
+              return lastTextNode->TextDataLength() - rawRange.StartOffset();
+            }
+            return 0u;
+          }
+          
+          
+          
+          return lastTextNode->TextDataLength();
+        }
+        if (rawRange.GetStartContainer() &&
+            rawRange.GetStartContainer()->IsContent() &&
+            ShouldBreakLineBefore(*rawRange.GetStartContainer()->AsContent(),
+                                  mRootElement)) {
+          if (kBRLength != 1u && offset - aEvent->mInput.mOffset < kBRLength) {
+            
+            
+            
+            
+            
+            return 1u;
+          }
+          return kBRLength;
+        }
+        return 0u;
+      }();
+      offset += std::max(1u, remainingLengthInCurrentRange);
+      continue;
     }
 
     nsIContent* firstContent = firstFrame.mFrame->GetContent();
@@ -1983,7 +2028,7 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
       
       
       
-      if (!firstFrame->IsBrFrame() && aEvent->mInput.mOffset != offset) {
+      if (!firstFrame->IsBrFrame() && !aEvent->mReply->mRectArray.IsEmpty()) {
         baseFrame = lastFrame;
         brRect = lastCharRect;
         if (!wasLineBreaker) {
@@ -2081,6 +2126,29 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
       
       EnsureNonEmptyRect(rect);
 
+      
+      
+      
+      
+      
+      if (i == 0u && MOZ_LIKELY(offset > aEvent->mInput.mOffset)) {
+        const uint32_t offsetInRange =
+            offset - CheckedInt<uint32_t>(aEvent->mInput.mOffset).value();
+        if (offsetInRange > aEvent->mReply->mRectArray.Length()) {
+          LayoutDeviceIntRect caretRectBefore = rect;
+          if (isVertical) {
+            caretRectBefore.height = 1;
+          } else {
+            caretRectBefore.width = 1;
+          }
+          for ([[maybe_unused]] uint32_t index : IntegerRange<uint32_t>(
+                   offsetInRange - aEvent->mReply->mRectArray.Length())) {
+            aEvent->mReply->mRectArray.AppendElement(caretRectBefore);
+          }
+          MOZ_ASSERT(aEvent->mReply->mRectArray.Length() == offsetInRange);
+        }
+      }
+
       aEvent->mReply->mRectArray.AppendElement(rect);
       offset++;
 
@@ -2112,6 +2180,31 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
       
       aEvent->mReply->mRectArray.AppendElement(rect);
       offset++;
+    }
+  }
+
+  
+  
+  if (!aEvent->mReply->mRectArray.IsEmpty()) {
+    const uint32_t offsetInRange =
+        offset - CheckedInt<uint32_t>(aEvent->mInput.mOffset).value();
+    if (offsetInRange > aEvent->mReply->mRectArray.Length()) {
+      LayoutDeviceIntRect caretRectAfter =
+          aEvent->mReply->mRectArray.LastElement();
+      if (isVertical) {
+        caretRectAfter.y = caretRectAfter.YMost() + 1;
+        caretRectAfter.height = 1;
+        MOZ_ASSERT(caretRectAfter.width);
+      } else {
+        caretRectAfter.x = caretRectAfter.XMost() + 1;
+        caretRectAfter.width = 1;
+        MOZ_ASSERT(caretRectAfter.height);
+      }
+      for ([[maybe_unused]] uint32_t index : IntegerRange<uint32_t>(
+               offsetInRange - aEvent->mReply->mRectArray.Length())) {
+        aEvent->mReply->mRectArray.AppendElement(caretRectAfter);
+      }
+      MOZ_ASSERT(aEvent->mReply->mRectArray.Length() == offsetInRange);
     }
   }
 
