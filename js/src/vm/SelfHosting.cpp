@@ -2424,7 +2424,7 @@ bool JSRuntime::initSelfHostingStencil(JSContext* cx,
 
   
   bool decodeOk = false;
-  AutoPrintSelfHostingFrontendContext ec(cx);
+  AutoPrintSelfHostingFrontendContext fc(cx);
   if (xdrCache.Length() > 0) {
     
     
@@ -2445,7 +2445,7 @@ bool JSRuntime::initSelfHostingStencil(JSContext* cx,
     if (!stencil) {
       return false;
     }
-    if (!stencil->deserializeStencils(cx, &ec, *input, xdrCache, &decodeOk)) {
+    if (!stencil->deserializeStencils(cx, &fc, *input, xdrCache, &decodeOk)) {
       return false;
     }
 
@@ -2488,7 +2488,7 @@ bool JSRuntime::initSelfHostingStencil(JSContext* cx,
   frontend::NoScopeBindingCache scopeCache;
   RefPtr<frontend::CompilationStencil> stencil =
       frontend::CompileGlobalScriptToStencil(
-          cx, &ec, cx->stackLimitForCurrentPrincipal(), cx->tempLifoAlloc(),
+          cx, &fc, cx->stackLimitForCurrentPrincipal(), cx->tempLifoAlloc(),
           *input, &scopeCache, srcBuf, ScopeKind::Global);
   if (!stencil) {
     return false;
@@ -2596,8 +2596,8 @@ ScriptSourceObject* GlobalObject::getOrCreateSelfHostingScriptSourceObject(
 
   Rooted<ScriptSourceObject*> sourceObject(cx);
   {
-    AutoReportFrontendContext ec(cx);
-    if (!source->initFromOptions(cx, &ec, options)) {
+    AutoReportFrontendContext fc(cx);
+    if (!source->initFromOptions(cx, &fc, options)) {
       return nullptr;
     }
 

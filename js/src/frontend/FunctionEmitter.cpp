@@ -282,7 +282,7 @@ bool FunctionEmitter::emitTopLevelFunction(GCThingIndex index) {
     
     
     return bce_->sc->asModuleContext()->builder.noteFunctionDeclaration(
-        bce_->ec, index);
+        bce_->fc, index);
   }
 
   MOZ_ASSERT(bce_->sc->isGlobalContext() || bce_->sc->isEvalContext());

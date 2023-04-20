@@ -1,52 +1,52 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sw=2 et tw=0 ft=c:
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "frontend/ObjLiteral.h"
 
-#include "mozilla/DebugOnly.h"  
-#include "mozilla/HashTable.h"  
+#include "mozilla/DebugOnly.h"  // mozilla::DebugOnly
+#include "mozilla/HashTable.h"  // mozilla::HashSet
 
-#include "NamespaceImports.h"  
+#include "NamespaceImports.h"  // ValueVector
 
-#include "builtin/Array.h"  
-#include "frontend/CompilationStencil.h"  
-#include "frontend/ParserAtom.h"                   
-#include "frontend/TaggedParserAtomIndexHasher.h"  
-#include "gc/AllocKind.h"                          
-#include "js/Id.h"                                 
-#include "js/RootingAPI.h"                         
-#include "js/TypeDecls.h"                          
-#include "vm/JSObject.h"                           
-#include "vm/JSONPrinter.h"                        
-#include "vm/NativeObject.h"                       
-#include "vm/PlainObject.h"                        
-#include "vm/Printer.h"                            
+#include "builtin/Array.h"  // NewDenseCopiedArray
+#include "frontend/CompilationStencil.h"  // frontend::{CompilationStencil, CompilationAtomCache}
+#include "frontend/ParserAtom.h"                   // frontend::ParserAtomTable
+#include "frontend/TaggedParserAtomIndexHasher.h"  // TaggedParserAtomIndexHasher
+#include "gc/AllocKind.h"                          // gc::AllocKind
+#include "js/Id.h"                                 // INT_TO_JSID
+#include "js/RootingAPI.h"                         // Rooted
+#include "js/TypeDecls.h"                          // RootedId, RootedValue
+#include "vm/JSObject.h"                           // TenuredObject
+#include "vm/JSONPrinter.h"                        // js::JSONPrinter
+#include "vm/NativeObject.h"                       // NativeDefineDataProperty
+#include "vm/PlainObject.h"                        // PlainObject
+#include "vm/Printer.h"                            // js::Fprinter
 
-#include "gc/ObjectKind-inl.h"    
-#include "vm/JSAtom-inl.h"        
-#include "vm/JSObject-inl.h"      
-#include "vm/NativeObject-inl.h"  
+#include "gc/ObjectKind-inl.h"    // gc::GetGCObjectKind
+#include "vm/JSAtom-inl.h"        // AtomToId
+#include "vm/JSObject-inl.h"      // NewBuiltinClassInstance
+#include "vm/NativeObject-inl.h"  // AddDataPropertyNonDelegate
 
 namespace js {
 
-bool ObjLiteralWriter::checkForDuplicatedNames(FrontendContext* ec) {
+bool ObjLiteralWriter::checkForDuplicatedNames(FrontendContext* fc) {
   if (!mightContainDuplicatePropertyNames_) {
     return true;
   }
 
-  
-  
+  // If possible duplicate property names are detected by bloom-filter,
+  // check again with hash-set.
 
   mozilla::HashSet<frontend::TaggedParserAtomIndex,
                    frontend::TaggedParserAtomIndexHasher>
       propNameSet;
 
   if (!propNameSet.reserve(propertyCount_)) {
-    js::ReportOutOfMemory(ec);
+    js::ReportOutOfMemory(fc);
     return false;
   }
 
@@ -70,7 +70,7 @@ bool ObjLiteralWriter::checkForDuplicatedNames(FrontendContext* ec) {
       break;
     }
 
-    
+    // Already reserved above and doesn't fail.
     MOZ_ALWAYS_TRUE(propNameSet.add(p, propName));
   }
 
@@ -122,7 +122,7 @@ bool InterpretObjLiteralObj(JSContext* cx, Handle<PlainObject*> obj,
   RootedId propId(cx);
   RootedValue propVal(cx);
   while (true) {
-    
+    // Make sure `insn` doesn't live across GC.
     ObjLiteralInsn insn;
     if (!reader.readInsn(&insn)) {
       break;
@@ -157,9 +157,9 @@ bool InterpretObjLiteralObj(JSContext* cx, Handle<PlainObject*> obj,
 }
 
 static gc::AllocKind AllocKindForObjectLiteral(uint32_t propCount) {
-  
-  
-  
+  // Use NewObjectGCKind for empty object literals to reserve some fixed slots
+  // for new properties. This improves performance for common patterns such as
+  // |Object.assign({}, ...)|.
   return (propCount == 0) ? NewObjectGCKind() : gc::GetGCObjectKind(propCount);
 }
 
@@ -212,20 +212,20 @@ static JSObject* InterpretObjLiteralArray(
                              NewObjectKind::TenuredObject);
 }
 
-
-
-
-
-
-
+// ES2023 draft rev ee74c9cb74dbfa23e62b486f5226102c345c678e
+//
+// GetTemplateObject ( templateLiteral )
+// https://tc39.es/ecma262/#sec-gettemplateobject
+//
+// Steps 8-16.
 static JSObject* InterpretObjLiteralCallSiteObj(
     JSContext* cx, const frontend::CompilationAtomCache& atomCache,
     const mozilla::Span<const uint8_t> literalInsns, uint32_t propertyCount) {
   ObjLiteralReader reader(literalInsns);
   ObjLiteralInsn insn;
 
-  
-  
+  // We have to read elements for two arrays. The 'cooked' values are followed
+  // by the 'raw' values. Both arrays have the same length.
   MOZ_ASSERT((propertyCount % 2) == 0);
   uint32_t count = propertyCount / 2;
 
@@ -248,7 +248,7 @@ static JSObject* InterpretObjLiteralCallSiteObj(
     }
   };
 
-  
+  // Create cooked array.
   readElements(count);
   Rooted<ArrayObject*> cso(
       cx, NewDenseCopiedArray(cx, elements.length(), elements.begin(),
@@ -258,7 +258,7 @@ static JSObject* InterpretObjLiteralCallSiteObj(
   }
   elements.clear();
 
-  
+  // Create raw array.
   readElements(count);
   Rooted<ArrayObject*> raw(
       cx, NewDenseCopiedArray(cx, elements.length(), elements.begin(),
@@ -267,7 +267,7 @@ static JSObject* InterpretObjLiteralCallSiteObj(
     return nullptr;
   }
 
-  
+  // Define .raw property and freeze both arrays.
   RootedValue rawValue(cx, ObjectValue(*raw));
   if (!DefineDataProperty(cx, cso, cx->names().raw, rawValue, 0)) {
     return nullptr;
@@ -296,7 +296,7 @@ Shape* InterpretObjLiteralShape(JSContext* cx,
   uint32_t slot = 0;
   RootedId propId(cx);
   while (true) {
-    
+    // Make sure `insn` doesn't live across GC.
     ObjLiteralInsn insn;
     if (!reader.readInsn(&insn)) {
       break;
@@ -310,7 +310,7 @@ Shape* InterpretObjLiteralShape(JSContext* cx,
     MOZ_ASSERT(jsatom);
     propId = AtomToId(jsatom);
 
-    
+    // Assert or check property names are unique.
     if constexpr (kind == PropertySetKind::UniqueNames) {
       mozilla::DebugOnly<uint32_t> index;
       MOZ_ASSERT_IF(map, !map->lookupPure(mapLength, propId, &index));
@@ -532,6 +532,6 @@ void ObjLiteralStencil::dumpFields(
   DumpObjLiteral(json, stencil, code_, kind(), flags(), propertyCount_);
 }
 
-#endif  
+#endif  // defined(DEBUG) || defined(JS_JITSPEW)
 
-}  
+}  // namespace js

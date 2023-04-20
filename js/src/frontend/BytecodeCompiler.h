@@ -119,11 +119,11 @@ class TaggedParserAtomIndex;
 class ScopeBindingCache;
 
 
-ModuleObject* CompileModule(JSContext* cx, FrontendContext* ec,
+ModuleObject* CompileModule(JSContext* cx, FrontendContext* fc,
                             JS::NativeStackLimit stackLimit,
                             const JS::ReadOnlyCompileOptions& options,
                             JS::SourceText<char16_t>& srcBuf);
-ModuleObject* CompileModule(JSContext* cx, FrontendContext* ec,
+ModuleObject* CompileModule(JSContext* cx, FrontendContext* fc,
                             JS::NativeStackLimit stackLimit,
                             const JS::ReadOnlyCompileOptions& options,
                             JS::SourceText<mozilla::Utf8Unit>& srcBuf);
@@ -131,20 +131,20 @@ ModuleObject* CompileModule(JSContext* cx, FrontendContext* ec,
 
 
 already_AddRefed<CompilationStencil> ParseModuleToStencil(
-    JSContext* cx, FrontendContext* ec, JS::NativeStackLimit stackLimit,
+    JSContext* cx, FrontendContext* fc, JS::NativeStackLimit stackLimit,
     CompilationInput& input, ScopeBindingCache* scopeCache,
     JS::SourceText<char16_t>& srcBuf);
 already_AddRefed<CompilationStencil> ParseModuleToStencil(
-    JSContext* cx, FrontendContext* ec, JS::NativeStackLimit stackLimit,
+    JSContext* cx, FrontendContext* fc, JS::NativeStackLimit stackLimit,
     CompilationInput& input, ScopeBindingCache* scopeCache,
     JS::SourceText<mozilla::Utf8Unit>& srcBuf);
 
 UniquePtr<ExtensibleCompilationStencil> ParseModuleToExtensibleStencil(
-    JSContext* cx, FrontendContext* ec, JS::NativeStackLimit stackLimit,
+    JSContext* cx, FrontendContext* fc, JS::NativeStackLimit stackLimit,
     CompilationInput& input, ScopeBindingCache* scopeCache,
     JS::SourceText<char16_t>& srcBuf);
 UniquePtr<ExtensibleCompilationStencil> ParseModuleToExtensibleStencil(
-    JSContext* cx, FrontendContext* ec, JS::NativeStackLimit stackLimit,
+    JSContext* cx, FrontendContext* fc, JS::NativeStackLimit stackLimit,
     CompilationInput& input, ScopeBindingCache* scopeCache,
     JS::SourceText<mozilla::Utf8Unit>& srcBuf);
 

@@ -209,7 +209,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   SharedContext* const sc = nullptr;
 
   JSContext* const cx = nullptr;
-  FrontendContext* const ec = nullptr;
+  FrontendContext* const fc = nullptr;
 
   JS::NativeStackLimit stackLimit;
 
@@ -322,7 +322,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
  private:
   
-  BytecodeEmitter(BytecodeEmitter* parent, FrontendContext* ec,
+  BytecodeEmitter(BytecodeEmitter* parent, FrontendContext* fc,
                   JS::NativeStackLimit stackLimit, SharedContext* sc,
                   const ErrorReporter& errorReporter,
                   CompilationState& compilationState, EmitterMode emitterMode);
@@ -332,17 +332,17 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   void initFromBodyPosition(TokenPos bodyPosition);
 
  public:
-  BytecodeEmitter(FrontendContext* ec, JS::NativeStackLimit stackLimit,
+  BytecodeEmitter(FrontendContext* fc, JS::NativeStackLimit stackLimit,
                   const EitherParser& parser, SharedContext* sc,
                   CompilationState& compilationState,
                   EmitterMode emitterMode = Normal);
 
   template <typename Unit>
-  BytecodeEmitter(FrontendContext* ec, JS::NativeStackLimit stackLimit,
+  BytecodeEmitter(FrontendContext* fc, JS::NativeStackLimit stackLimit,
                   Parser<FullParseHandler, Unit>* parser, SharedContext* sc,
                   CompilationState& compilationState,
                   EmitterMode emitterMode = Normal)
-      : BytecodeEmitter(ec, stackLimit, EitherParser(parser), sc,
+      : BytecodeEmitter(fc, stackLimit, EitherParser(parser), sc,
                         compilationState, emitterMode) {}
 
   [[nodiscard]] bool init();
@@ -412,7 +412,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
     
     
     if (!perScriptData().atomIndices()->add(p, atom, index.index)) {
-      ReportOutOfMemory(ec);
+      ReportOutOfMemory(fc);
       return false;
     }
 

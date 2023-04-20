@@ -246,7 +246,7 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
   
   
   
-  Vector<BytecodeOffset, 4> forOfIterCloseScopeStarts(bce_->ec);
+  Vector<BytecodeOffset, 4> forOfIterCloseScopeStarts(bce_->fc);
 
   
   

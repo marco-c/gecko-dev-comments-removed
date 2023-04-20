@@ -1,27 +1,27 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef frontend_NameCollections_h
 #define frontend_NameCollections_h
 
-#include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
+#include "mozilla/Assertions.h"  // MOZ_ASSERT
+#include "mozilla/Attributes.h"  // MOZ_IMPLICIT
 
-#include <stddef.h>     
-#include <stdint.h>     
-#include <type_traits>  
-#include <utility>      
+#include <stddef.h>     // size_t
+#include <stdint.h>     // uint32_t, uint64_t
+#include <type_traits>  // std::{true_type, false_type, is_trivial_v, is_trivially_copyable_v, is_trivially_destructible_v}
+#include <utility>      // std::forward
 
-#include "ds/InlineTable.h"              
-#include "frontend/NameAnalysisTypes.h"  
-#include "frontend/ParserAtom.h"  
-#include "frontend/TaggedParserAtomIndexHasher.h"  
-#include "js/AllocPolicy.h"  
-#include "js/Utility.h"      
-#include "js/Vector.h"       
+#include "ds/InlineTable.h"              // InlineMap, DefaultKeyPolicy
+#include "frontend/NameAnalysisTypes.h"  // AtomVector, FunctionBoxVector
+#include "frontend/ParserAtom.h"  // TaggedParserAtomIndex, TrivialTaggedParserAtomIndex
+#include "frontend/TaggedParserAtomIndexHasher.h"  // TrivialTaggedParserAtomIndexHasher
+#include "js/AllocPolicy.h"  // SystemAllocPolicy, ReportOutOfMemory
+#include "js/Utility.h"      // js_new, js_delete
+#include "js/Vector.h"       // Vector
 
 struct JSContext;
 
@@ -29,8 +29,8 @@ namespace js {
 
 namespace detail {
 
-
-
+// For InlineMap<TrivialTaggedParserAtomIndex>.
+// See DefaultKeyPolicy definition in InlineTable.h for more details.
 template <>
 class DefaultKeyPolicy<frontend::TrivialTaggedParserAtomIndex> {
  public:
@@ -45,16 +45,16 @@ class DefaultKeyPolicy<frontend::TrivialTaggedParserAtomIndex> {
   }
 };
 
-}  
+}  // namespace detail
 
 namespace frontend {
 
 class FunctionBox;
 
-
-
-
-
+// A pool of recyclable containers for use in the frontend. The Parser and
+// BytecodeEmitter create many maps for name analysis that are short-lived
+// (i.e., for the duration of parsing or emitting a lexical scope). Making
+// them recyclable cuts down significantly on allocator churn.
 template <typename RepresentativeCollection, typename ConcreteCollectionPool>
 class CollectionPool {
   using RecyclableCollections = Vector<void*, 32, SystemAllocPolicy>;
@@ -92,16 +92,16 @@ class CollectionPool {
     recyclable_.clearAndFree();
   }
 
-  
+  // Fallibly aquire one of the supported collection types from the pool.
   template <typename Collection>
-  Collection* acquire(FrontendContext* ec) {
+  Collection* acquire(FrontendContext* fc) {
     ConcreteCollectionPool::template assertInvariants<Collection>();
 
     RepresentativeCollection* collection;
     if (recyclable_.empty()) {
       collection = allocate();
       if (!collection) {
-        ReportOutOfMemory(ec);
+        ReportOutOfMemory(fc);
       }
     } else {
       collection = asRepresentative(recyclable_.popCopy());
@@ -110,7 +110,7 @@ class CollectionPool {
     return reinterpret_cast<Collection*>(collection);
   }
 
-  
+  // Release a collection back to the pool.
   template <typename Collection>
   void release(Collection** collection) {
     ConcreteCollectionPool::template assertInvariants<Collection>();
@@ -118,7 +118,7 @@ class CollectionPool {
 
 #ifdef DEBUG
     bool ok = false;
-    
+    // Make sure the collection is in |all_| but not already in |recyclable_|.
     for (void** it = all_.begin(); it != all_.end(); ++it) {
       if (*it == *collection) {
         ok = true;
@@ -132,7 +132,7 @@ class CollectionPool {
 #endif
 
     MOZ_ASSERT(recyclable_.length() < all_.length());
-    
+    // Reserved in allocateFresh.
     recyclable_.infallibleAppend(*collection);
     *collection = nullptr;
   }
@@ -173,7 +173,7 @@ using RecyclableNameMapBase =
               RecyclableAtomMapValueWrapper<MapValue>, 24,
               TrivialTaggedParserAtomIndexHasher, SystemAllocPolicy>;
 
-
+// Define wrapper methods to accept TaggedParserAtomIndex.
 template <typename MapValue>
 class RecyclableNameMap : public RecyclableNameMapBase<MapValue> {
   using Base = RecyclableNameMapBase<MapValue>;
@@ -200,7 +200,7 @@ class RecyclableNameMap : public RecyclableNameMapBase<MapValue> {
 
 using DeclaredNameMap = RecyclableNameMap<DeclaredNameInfo>;
 using NameLocationMap = RecyclableNameMap<NameLocation>;
-
+// Cannot use GCThingIndex here because it's not trivial type.
 using AtomIndexMap = RecyclableNameMap<uint32_t>;
 
 template <typename RepresentativeTable>
@@ -232,11 +232,11 @@ class InlineTablePool
 
     using WrappedType = typename ValueType::WrappedType;
 
-    
-    
-    
-    
-    
+    // We can't directly check |std::is_trivial<EntryType>|, because neither
+    // mozilla::HashMapEntry nor IsRecyclableAtomMapValueWrapper are trivially
+    // default constructible. Instead we check that the key and the unwrapped
+    // value are trivial and additionally ensure that the entry itself is
+    // trivially copyable and destructible.
 
     static_assert(std::is_trivial_v<KeyType>,
                   "Only tables with trivial keys are usable in the pool.");
@@ -301,9 +301,9 @@ class NameCollectionPool {
   }
 
   template <typename Map>
-  Map* acquireMap(FrontendContext* ec) {
+  Map* acquireMap(FrontendContext* fc) {
     MOZ_ASSERT(hasActiveCompilation());
-    return mapPool_.acquire<Map>(ec);
+    return mapPool_.acquire<Map>(fc);
   }
 
   template <typename Map>
@@ -316,7 +316,7 @@ class NameCollectionPool {
   }
 
   template <typename Vector>
-  inline Vector* acquireVector(FrontendContext* ec);
+  inline Vector* acquireVector(FrontendContext* fc);
 
   template <typename Vector>
   inline void releaseVector(Vector** vec);
@@ -332,9 +332,9 @@ class NameCollectionPool {
 
 template <>
 inline AtomVector* NameCollectionPool::acquireVector<AtomVector>(
-    FrontendContext* ec) {
+    FrontendContext* fc) {
   MOZ_ASSERT(hasActiveCompilation());
-  return atomVectorPool_.acquire<AtomVector>(ec);
+  return atomVectorPool_.acquire<AtomVector>(fc);
 }
 
 template <>
@@ -348,9 +348,9 @@ inline void NameCollectionPool::releaseVector<AtomVector>(AtomVector** vec) {
 
 template <>
 inline FunctionBoxVector* NameCollectionPool::acquireVector<FunctionBoxVector>(
-    FrontendContext* ec) {
+    FrontendContext* fc) {
   MOZ_ASSERT(hasActiveCompilation());
-  return functionBoxVectorPool_.acquire<FunctionBoxVector>(ec);
+  return functionBoxVectorPool_.acquire<FunctionBoxVector>(fc);
 }
 
 template <>
@@ -384,9 +384,9 @@ class PooledCollectionPtr {
  public:
   explicit PooledCollectionPtr(NameCollectionPool& pool) : pool_(pool) {}
 
-  bool acquire(FrontendContext* ec) {
+  bool acquire(FrontendContext* fc) {
     MOZ_ASSERT(!collection_);
-    collection_ = Impl<T>::acquireCollection(ec, pool_);
+    collection_ = Impl<T>::acquireCollection(fc, pool_);
     return !!collection_;
   }
 
@@ -405,8 +405,8 @@ template <typename Map>
 class PooledMapPtr : public PooledCollectionPtr<Map, PooledMapPtr> {
   friend class PooledCollectionPtr<Map, PooledMapPtr>;
 
-  static Map* acquireCollection(FrontendContext* ec, NameCollectionPool& pool) {
-    return pool.acquireMap<Map>(ec);
+  static Map* acquireCollection(FrontendContext* fc, NameCollectionPool& pool) {
+    return pool.acquireMap<Map>(fc);
   }
 
   static void releaseCollection(NameCollectionPool& pool, Map** ptr) {
@@ -425,9 +425,9 @@ template <typename Vector>
 class PooledVectorPtr : public PooledCollectionPtr<Vector, PooledVectorPtr> {
   friend class PooledCollectionPtr<Vector, PooledVectorPtr>;
 
-  static Vector* acquireCollection(FrontendContext* ec,
+  static Vector* acquireCollection(FrontendContext* fc,
                                    NameCollectionPool& pool) {
-    return pool.acquireVector<Vector>(ec);
+    return pool.acquireVector<Vector>(fc);
   }
 
   static void releaseCollection(NameCollectionPool& pool, Vector** ptr) {
@@ -451,7 +451,7 @@ class PooledVectorPtr : public PooledCollectionPtr<Vector, PooledVectorPtr> {
   }
 };
 
-}  
-}  
+}  // namespace frontend
+}  // namespace js
 
-#endif  
+#endif  // frontend_NameCollections_h

@@ -529,7 +529,7 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
   UniquePtr<frontend::CompilationGCOutput> gcOutput_;
 
   
-  FrontendContext ec_;
+  FrontendContext fc_;
 
   ParseTask(ParseTaskKind kind, JSContext* cx,
             JS::OffThreadCompileCallback callback, void* callbackData);
@@ -542,7 +542,7 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
   void activate(JSRuntime* rt);
   void deactivate(JSRuntime* rt);
 
-  virtual void parse(JSContext* cx, FrontendContext* ec) = 0;
+  virtual void parse(JSContext* cx, FrontendContext* fc) = 0;
 
   bool runtimeMatches(JSRuntime* rt) { return runtime == rt; }
 
@@ -595,7 +595,7 @@ struct DelazifyStrategy {
   
   
   
-  [[nodiscard]] bool add(FrontendContext* ec,
+  [[nodiscard]] bool add(FrontendContext* fc,
                          const frontend::CompilationStencil& stencil,
                          ScriptIndex index);
 };
@@ -665,7 +665,7 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
   frontend::CompilationStencilMerger merger;
 
   
-  FrontendContext ec_;
+  FrontendContext fc_;
 
   
   
