@@ -722,6 +722,23 @@ public class GeckoSession {
         }
       };
 
+  private final GeckoSessionHandler<PrintDelegate> mPrintHandler =
+      new GeckoSessionHandler<PrintDelegate>(
+          "GeckoViewPrint", this, new String[] {"GeckoView:DotPrintRequest"}) {
+        @Override
+        public void handleMessage(
+            final PrintDelegate delegate,
+            final String event,
+            final GeckoBundle message,
+            final EventCallback callback) {
+
+          if ("GeckoView:DotPrintRequest".equals(event)) {
+            
+            Log.w(LOGTAG, "Event GeckoView:DotPrintRequest is not implemented.");
+          }
+        }
+      };
+
   private final GeckoSessionHandler<ContentDelegate> mProcessHangHandler =
       new GeckoSessionHandler<ContentDelegate>(
           "GeckoViewProcessHangMonitor", this, new String[] {"GeckoView:HangReport"}) {
@@ -1018,10 +1035,18 @@ public class GeckoSession {
 
   private final GeckoSessionHandler<?>[] mSessionHandlers =
       new GeckoSessionHandler<?>[] {
-        mContentHandler, mHistoryHandler, mMediaHandler,
-        mNavigationHandler, mPermissionHandler, mProcessHangHandler,
-        mProgressHandler, mScrollHandler, mSelectionActionDelegate,
-        mContentBlockingHandler, mMediaSessionHandler
+        mContentHandler,
+        mHistoryHandler,
+        mMediaHandler,
+        mNavigationHandler,
+        mPermissionHandler,
+        mPrintHandler,
+        mProcessHangHandler,
+        mProgressHandler,
+        mScrollHandler,
+        mSelectionActionDelegate,
+        mContentBlockingHandler,
+        mMediaSessionHandler
       };
 
   private static class PermissionCallback
@@ -6682,6 +6707,17 @@ public class GeckoSession {
     return geckoResult;
   }
 
+  
+  @AnyThread
+  public void printPageContent() {
+    final PrintDelegate delegate = getPrintDelegate();
+    if (delegate != null) {
+      delegate.onPrint(this);
+    } else {
+      Log.w(LOGTAG, "Print delegate required for printing.");
+    }
+  }
+
   private static String rgbaToArgb(final String color) {
     
     if (color.length() != 9 || !color.startsWith("#")) {
@@ -6719,6 +6755,48 @@ public class GeckoSession {
     }
 
     return request.mUri.length() <= DATA_URI_MAX_LENGTH;
+  }
+
+  
+
+
+
+
+
+  @AnyThread
+  public interface PrintDelegate {
+    
+
+
+
+
+    default void onPrint(@NonNull final GeckoSession session) {}
+    
+
+
+
+
+    default void onPrint(@NonNull final InputStream pdfInputStream) {}
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public @Nullable PrintDelegate getPrintDelegate() {
+    return mPrintHandler.getDelegate();
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public void setPrintDelegate(final @Nullable PrintDelegate delegate) {
+    mPrintHandler.setDelegate(delegate, this);
   }
 
   
