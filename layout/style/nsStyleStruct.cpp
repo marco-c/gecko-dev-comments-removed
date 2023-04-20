@@ -3732,6 +3732,13 @@ ContainSizeAxes nsStyleDisplay::GetContainSizeAxes(
   
   
   
+  if (aFrame.HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
+    return ContainSizeAxes(false, false);
+  }
+
+  
+  
+  
   if (MOZ_LIKELY(!(mEffectiveContainment & StyleContain::SIZE)) &&
       MOZ_UNLIKELY(aFrame.HidesContent())) {
     return ContainSizeAxes(true, true);
