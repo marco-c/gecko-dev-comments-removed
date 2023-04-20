@@ -233,6 +233,7 @@ using mozilla::Variant;
 
 bool InitOptionParser(OptionParser& op);
 bool SetGlobalOptionsPreJSInit(const OptionParser& op);
+bool SetGlobalOptionsPostJSInit(const OptionParser& op);
 
 #ifdef FUZZING_JS_FUZZILLI
 #  define REPRL_CRFD 100
@@ -11609,116 +11610,27 @@ int main(int argc, char** argv) {
 
   auto shutdownEngine = MakeScopeExit([] { JS_ShutDown(); });
 
-  
-  
-  
-  if (op.getStringOption("telemetry-dir")) {
-    if (!telemetryLock) {
-      telemetryLock = js_new<Mutex>(mutexid::ShellTelemetry);
-      if (!telemetryLock) {
-        return EXIT_FAILURE;
-      }
-    }
+  if (!SetGlobalOptionsPostJSInit(op)) {
+    return EXIT_FAILURE;
   }
+
+  
+  
+  
   auto writeTelemetryResults = MakeScopeExit([&op] {
-    if (const char* dir = op.getStringOption("telemetry-dir")) {
+    if (telemetryLock) {
+      const char* dir = op.getStringOption("telemetry-dir");
       WriteTelemetryDataToDisk(dir);
       js_free(telemetryLock);
       telemetryLock = nullptr;
     }
   });
 
-  
-
-
-
-#ifdef XP_LINUX
-  if (op.getBoolOption("fuzzing-safe")) {
-    prctl(PR_SET_DUMPABLE, 1);
-  }
-#endif
-
-#ifdef DEBUG
-  
-
-
-
-  OOM_printAllocationCount = op.getBoolOption('O');
-#endif
-
-  if (op.getBoolOption("no-threads")) {
-    js::DisableExtraThreads();
-  }
-
-  enableCodeCoverage = op.getBoolOption("code-coverage");
-  if (enableCodeCoverage) {
-    js::EnableCodeCoverage();
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (coverage::IsLCovEnabled()) {
-    defaultDelazificationMode =
-        JS::DelazificationOption::ParseEverythingEagerly;
-  }
-
-  if (const char* xdr = op.getStringOption("selfhosted-xdr-path")) {
-    shell::selfHostedXDRPath = xdr;
-  }
-  if (const char* opt = op.getStringOption("selfhosted-xdr-mode")) {
-    if (strcmp(opt, "encode") == 0) {
-      shell::encodeSelfHostedCode = true;
-    } else if (strcmp(opt, "decode") == 0) {
-      shell::encodeSelfHostedCode = false;
-    } else if (strcmp(opt, "off") == 0) {
-      shell::selfHostedXDRPath = nullptr;
-    } else {
-      MOZ_CRASH(
-          "invalid option value for --selfhosted-xdr-mode, must be "
-          "encode/decode");
-    }
-  }
-
-#ifdef JS_WITHOUT_NSPR
-  if (!op.getMultiStringOption("dll").empty()) {
-    fprintf(stderr, "Error: --dll requires NSPR support!\n");
-    return EXIT_FAILURE;
-  }
-#else
-  AutoLibraryLoader loader;
-  MultiStringRange dllPaths = op.getMultiStringOption("dll");
-  while (!dllPaths.empty()) {
-    char* path = dllPaths.front();
-    loader.load(path);
-    dllPaths.popFront();
-  }
-#endif
-
-  if (op.getBoolOption("suppress-minidump")) {
-    js::NoteIntentionalCrash();
-  }
-
   if (!InitSharedObjectMailbox()) {
-    return 1;
+    return EXIT_FAILURE;
   }
 
   JS::SetProcessBuildIdOp(ShellBuildId);
-
-  
-  
-  int32_t cpuCount = op.getIntOption("cpu-count");  
-  if (cpuCount < 0) {
-    cpuCount = op.getIntOption("thread-count");  
-  }
-  if (cpuCount >= 0 && !SetFakeCPUCount(cpuCount)) {
-    return 1;
-  }
 
   
   JSContext* const cx = JS_NewContext(JS::DefaultHeapMaxBytes);
@@ -12485,6 +12397,102 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
     }
   }
 #endif
+
+  return true;
+}
+
+bool SetGlobalOptionsPostJSInit(const OptionParser& op) {
+  if (op.getStringOption("telemetry-dir")) {
+    MOZ_ASSERT(!telemetryLock);
+    telemetryLock = js_new<Mutex>(mutexid::ShellTelemetry);
+    if (!telemetryLock) {
+      return false;
+    }
+  }
+
+  
+  
+#ifdef XP_LINUX
+  if (op.getBoolOption("fuzzing-safe")) {
+    prctl(PR_SET_DUMPABLE, 1);
+  }
+#endif
+
+#ifdef DEBUG
+  
+
+
+
+  OOM_printAllocationCount = op.getBoolOption('O');
+#endif
+
+  if (op.getBoolOption("no-threads")) {
+    js::DisableExtraThreads();
+  }
+
+  enableCodeCoverage = op.getBoolOption("code-coverage");
+  if (enableCodeCoverage) {
+    js::EnableCodeCoverage();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (coverage::IsLCovEnabled()) {
+    defaultDelazificationMode =
+        JS::DelazificationOption::ParseEverythingEagerly;
+  }
+
+  if (const char* xdr = op.getStringOption("selfhosted-xdr-path")) {
+    shell::selfHostedXDRPath = xdr;
+  }
+  if (const char* opt = op.getStringOption("selfhosted-xdr-mode")) {
+    if (strcmp(opt, "encode") == 0) {
+      shell::encodeSelfHostedCode = true;
+    } else if (strcmp(opt, "decode") == 0) {
+      shell::encodeSelfHostedCode = false;
+    } else if (strcmp(opt, "off") == 0) {
+      shell::selfHostedXDRPath = nullptr;
+    } else {
+      MOZ_CRASH(
+          "invalid option value for --selfhosted-xdr-mode, must be "
+          "encode/decode");
+    }
+  }
+
+#ifdef JS_WITHOUT_NSPR
+  if (!op.getMultiStringOption("dll").empty()) {
+    fprintf(stderr, "Error: --dll requires NSPR support!\n");
+    return false;
+  }
+#else
+  AutoLibraryLoader loader;
+  MultiStringRange dllPaths = op.getMultiStringOption("dll");
+  while (!dllPaths.empty()) {
+    char* path = dllPaths.front();
+    loader.load(path);
+    dllPaths.popFront();
+  }
+#endif
+
+  if (op.getBoolOption("suppress-minidump")) {
+    js::NoteIntentionalCrash();
+  }
+
+  
+  
+  int32_t cpuCount = op.getIntOption("cpu-count");  
+  if (cpuCount < 0) {
+    cpuCount = op.getIntOption("thread-count");  
+  }
+  if (cpuCount >= 0 && !SetFakeCPUCount(cpuCount)) {
+    return false;
+  }
 
   return true;
 }
