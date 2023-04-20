@@ -151,11 +151,6 @@ class BodyStream final : public nsIInputStreamCallback,
     eWriting,
 
     
-    
-    
-    eChecking,
-
-    
     eClosed,
   };
 
