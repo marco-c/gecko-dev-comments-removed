@@ -139,7 +139,9 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     const FieldTrialsView& field_trials)
     : signaling_thread_(context->signaling_thread()),
       transport_desc_factory_(field_trials),
-      session_desc_factory_(context->channel_manager(),
+      session_desc_factory_(context->media_engine(),
+                            context->use_rtx(),
+                            context->ssrc_generator(),
                             &transport_desc_factory_),
       
       

@@ -59,18 +59,6 @@ class ChannelManager : public ChannelFactoryInterface {
   ChannelManager() = delete;
   ~ChannelManager() override;
 
-  rtc::Thread* worker_thread() const { return worker_thread_; }
-  rtc::Thread* network_thread() const { return network_thread_; }
-  MediaEngineInterface* media_engine() { return media_engine_; }
-  rtc::UniqueRandomIdGenerator& ssrc_generator() { return *ssrc_generator_; }
-
-  
-  
-  void GetSupportedAudioSendCodecs(std::vector<AudioCodec>* codecs) const;
-  void GetSupportedAudioReceiveCodecs(std::vector<AudioCodec>* codecs) const;
-  void GetSupportedVideoSendCodecs(std::vector<VideoCodec>* codecs) const;
-  void GetSupportedVideoReceiveCodecs(std::vector<VideoCodec>* codecs) const;
-
   
   
   
@@ -110,8 +98,6 @@ class ChannelManager : public ChannelFactoryInterface {
   rtc::Thread* const signaling_thread_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
-
-  const bool enable_rtx_;
 };
 
 }  

@@ -145,6 +145,17 @@ bool HasRtxCodec(const std::vector<cricket::VideoCodec>& codecs,
 }
 
 
+
+bool HasAnyRtxCodec(const std::vector<cricket::VideoCodec>& codecs) {
+  for (const cricket::VideoCodec& codec : codecs) {
+    if (absl::EqualsIgnoreCase(codec.name.c_str(), "rtx")) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
 const int* FindKeyByValue(const std::map<int, int>& m, int v) {
   for (const auto& kv : m) {
     if (kv.second == v)
@@ -1371,6 +1382,24 @@ TEST_F(WebRtcVideoEngineTest, DISABLED_RecreatesEncoderOnContentTypeChange) {
   
   EXPECT_TRUE(channel->RemoveSendStream(kSsrc));
   EXPECT_EQ(0u, encoder_factory_->encoders().size());
+}
+
+TEST_F(WebRtcVideoEngineTest, SetVideoRtxEnabled) {
+  AddSupportedVideoCodecType("VP8");
+  std::vector<VideoCodec> send_codecs;
+  std::vector<VideoCodec> recv_codecs;
+
+  
+  send_codecs = engine_.send_codecs(false);
+  EXPECT_FALSE(HasAnyRtxCodec(send_codecs));
+  recv_codecs = engine_.recv_codecs(false);
+  EXPECT_FALSE(HasAnyRtxCodec(recv_codecs));
+
+  
+  send_codecs = engine_.send_codecs(true);
+  EXPECT_TRUE(HasAnyRtxCodec(send_codecs));
+  recv_codecs = engine_.recv_codecs(true);
+  EXPECT_TRUE(HasAnyRtxCodec(recv_codecs));
 }
 
 class WebRtcVideoChannelEncodedFrameCallbackTest : public ::testing::Test {

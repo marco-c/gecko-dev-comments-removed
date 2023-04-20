@@ -46,6 +46,7 @@ class ConnectionContext;
 namespace cricket {
 
 class ChannelManager;
+class MediaEngineInterface;
 
 
 const char kDefaultRtcpCname[] = "DefaultRtcpCname";
@@ -148,7 +149,9 @@ class MediaSessionDescriptionFactory {
                                  rtc::UniqueRandomIdGenerator* ssrc_generator);
   
   
-  MediaSessionDescriptionFactory(ChannelManager* cmanager,
+  MediaSessionDescriptionFactory(cricket::MediaEngineInterface* media_engine,
+                                 bool rtx_enabled,
+                                 rtc::UniqueRandomIdGenerator* ssrc_generator,
                                  const TransportDescriptionFactory* factory);
 
   const AudioCodecs& audio_sendrecv_codecs() const;

@@ -114,8 +114,20 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
       webrtc::VideoBitrateAllocatorFactory*
           video_bitrate_allocator_factory) = 0;
 
+  
   virtual std::vector<VideoCodec> send_codecs() const = 0;
   virtual std::vector<VideoCodec> recv_codecs() const = 0;
+  
+  
+  
+  virtual std::vector<VideoCodec> send_codecs(bool include_rtx) const {
+    RTC_DCHECK(include_rtx);
+    return send_codecs();
+  }
+  virtual std::vector<VideoCodec> recv_codecs(bool include_rtx) const {
+    RTC_DCHECK(include_rtx);
+    return recv_codecs();
+  }
 };
 
 

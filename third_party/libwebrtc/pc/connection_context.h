@@ -39,6 +39,7 @@ class ChannelManager;
 namespace rtc {
 class BasicNetworkManager;
 class BasicPacketSocketFactory;
+class UniqueRandomIdGenerator;
 }  
 
 namespace webrtc {
@@ -70,7 +71,9 @@ class ConnectionContext final
   }
 
   cricket::ChannelManager* channel_manager() const;
-  cricket::MediaEngineInterface* media_engine() const;
+  cricket::MediaEngineInterface* media_engine() const {
+    return media_engine_.get();
+  }
 
   rtc::Thread* signaling_thread() { return signaling_thread_; }
   const rtc::Thread* signaling_thread() const { return signaling_thread_; }
@@ -98,6 +101,12 @@ class ConnectionContext final
     RTC_DCHECK_RUN_ON(worker_thread());
     return call_factory_.get();
   }
+  rtc::UniqueRandomIdGenerator* ssrc_generator() { return &ssrc_generator_; }
+  
+  
+  
+  
+  bool use_rtx() { return true; }
 
  protected:
   explicit ConnectionContext(PeerConnectionFactoryDependencies* dependencies);

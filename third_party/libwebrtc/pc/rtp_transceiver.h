@@ -34,6 +34,7 @@
 #include "api/video/video_bitrate_allocator_factory.h"
 #include "media/base/media_channel.h"
 #include "pc/channel_interface.h"
+#include "pc/connection_context.h"
 #include "pc/proxy.h"
 #include "pc/rtp_receiver.h"
 #include "pc/rtp_receiver_proxy.h"
@@ -47,6 +48,7 @@
 
 namespace cricket {
 class ChannelManager;
+class MediaEngineInterface;
 }
 
 namespace webrtc {
@@ -88,8 +90,7 @@ class RtpTransceiver : public RtpTransceiverInterface,
   
   
   
-  RtpTransceiver(cricket::MediaType media_type,
-                 cricket::ChannelManager* channel_manager);
+  RtpTransceiver(cricket::MediaType media_type, ConnectionContext* context);
   
   
   
@@ -99,10 +100,16 @@ class RtpTransceiver : public RtpTransceiverInterface,
       rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender,
       rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
           receiver,
-      cricket::ChannelManager* channel_manager,
+      ConnectionContext* context,
       std::vector<RtpHeaderExtensionCapability> HeaderExtensionsToOffer,
       std::function<void()> on_negotiation_needed);
   ~RtpTransceiver() override;
+
+  
+  RtpTransceiver(const RtpTransceiver&) = delete;
+  RtpTransceiver& operator=(const RtpTransceiver&) = delete;
+  
+  RtpTransceiver& operator=(RtpTransceiver&&) = delete;
 
   
   
@@ -293,6 +300,13 @@ class RtpTransceiver : public RtpTransceiverInterface,
                            const cricket::MediaContentDescription* content);
 
  private:
+  cricket::MediaEngineInterface* media_engine() const {
+    return context_->media_engine();
+  }
+  cricket::ChannelManager* channel_manager() const {
+    return context_->channel_manager();
+  }
+  ConnectionContext* context() const { return context_; }
   void OnFirstPacketReceived();
   void StopSendingAndReceiving();
   
@@ -327,7 +341,7 @@ class RtpTransceiver : public RtpTransceiverInterface,
   
   
   std::unique_ptr<cricket::ChannelInterface> channel_ = nullptr;
-  cricket::ChannelManager* channel_manager_ = nullptr;
+  ConnectionContext* const context_;
   std::vector<RtpCodecCapability> codec_preferences_;
   std::vector<RtpHeaderExtensionCapability> header_extensions_to_offer_;
 
