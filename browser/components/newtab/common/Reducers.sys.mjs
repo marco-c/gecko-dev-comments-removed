@@ -1,39 +1,34 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { actionTypes as at } from "resource://activity-stream/common/Actions.sys.mjs";
+import { Dedupe } from "resource://activity-stream/common/Dedupe.sys.mjs";
 
-
-"use strict";
-
-const { actionTypes: at } = ChromeUtils.importESModule(
-  "resource://activity-stream/common/Actions.sys.mjs"
-);
-const { Dedupe } = ChromeUtils.importESModule(
-  "resource://activity-stream/common/Dedupe.sys.mjs"
-);
-
-const TOP_SITES_DEFAULT_ROWS = 1;
-const TOP_SITES_MAX_SITES_PER_ROW = 8;
+export const TOP_SITES_DEFAULT_ROWS = 1;
+export const TOP_SITES_MAX_SITES_PER_ROW = 8;
 const PREF_COLLECTION_DISMISSIBLE = "discoverystream.isCollectionDismissible";
 
 const dedupe = new Dedupe(site => site && site.url);
 
-const INITIAL_STATE = {
+export const INITIAL_STATE = {
   App: {
-    
+    // Have we received real data from the app yet?
     initialized: false,
     locale: "",
   },
   ASRouter: { initialized: false },
   Snippets: { initialized: false },
   TopSites: {
-    
+    // Have we received real data from history yet?
     initialized: false,
-    
+    // The history (and possibly default) links
     rows: [],
-    
+    // Used in content only to dispatch action to TopSiteForm.
     editForm: null,
-    
+    // Used in content only to open the SearchShortcutsForm modal.
     showSearchShortcutsForm: false,
-    
+    // The list of available search shortcuts.
     searchShortcuts: [],
   },
   Prefs: {
@@ -50,9 +45,9 @@ const INITIAL_STATE = {
     pocketCta: {},
     waitingForSpoc: true,
   },
-  
+  // This is the new pocket configurable layout state.
   DiscoveryStream: {
-    
+    // This is a JSON-parsed copy of the discoverystream.config pref value.
     config: { enabled: false, layout_endpoint: "" },
     layout: [],
     lastUpdated: null,
@@ -60,7 +55,7 @@ const INITIAL_STATE = {
     isCollectionDismissible: false,
     feeds: {
       data: {
-        
+        // "https://foo.com/feed1": {lastUpdated: 123, data: []}
       },
       loaded: false,
     },
@@ -68,8 +63,8 @@ const INITIAL_STATE = {
       spocs_endpoint: "",
       lastUpdated: null,
       data: {
-        
-        
+        // "spocs": {title: "", context: "", items: []},
+        // "placement1": {title: "", context: "", items: []},
       },
       loaded: false,
       frequency_caps: [],
@@ -90,12 +85,12 @@ const INITIAL_STATE = {
     initialized: false,
   },
   Search: {
-    
-    
-    
-    
+    // When search hand-off is enabled, we render a big button that is styled to
+    // look like a search textbox. If the button is clicked, we style
+    // the button as if it was a focused search box and show a fake cursor but
+    // really focus the awesomebar without the focus styles ("hidden focus").
     fakeFocus: false,
-    
+    // Hide the search box after handing off to AwesomeBar and user starts typing.
     hide: false,
   },
 };
@@ -120,15 +115,15 @@ function ASRouter(prevState = INITIAL_STATE.ASRouter, action) {
   }
 }
 
-
-
-
-
-
-
-
-function insertPinned(links, pinned) {
-  
+/**
+ * insertPinned - Inserts pinned links in their specified slots
+ *
+ * @param {array} a list of links
+ * @param {array} a list of pinned links
+ * @return {array} resulting list of links with pinned links inserted
+ */
+export function insertPinned(links, pinned) {
+  // Remove any pinned links
   const pinnedUrls = pinned.map(link => link && link.url);
   let newLinks = links.filter(link =>
     link ? !pinnedUrls.includes(link.url) : false
@@ -141,7 +136,7 @@ function insertPinned(links, pinned) {
     return link;
   });
 
-  
+  // Then insert them in their specified location
   pinned.forEach((val, index) => {
     if (!val) {
       return;
@@ -317,7 +312,7 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
     case at.SECTION_DEREGISTER:
       return prevState.filter(section => section.id !== action.data);
     case at.SECTION_REGISTER:
-      
+      // If section exists in prevState, update it
       newState = prevState.map(section => {
         if (section && section.id === action.data.id) {
           hasMatch = true;
@@ -325,7 +320,7 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
         }
         return section;
       });
-      
+      // Otherwise, append it
       if (!hasMatch) {
         const initialized = !!(action.data.rows && !!action.data.rows.length);
         const section = Object.assign(
@@ -339,12 +334,12 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
     case at.SECTION_UPDATE:
       newState = prevState.map(section => {
         if (section && section.id === action.data.id) {
-          
-          
+          // If the action is updating rows, we should consider initialized to be true.
+          // This can be overridden if initialized is defined in the action.data
           const initialized = action.data.rows ? { initialized: true } : {};
 
-          
-          
+          // Make sure pinned cards stay at their current position when rows are updated.
+          // Disabling a section (SECTION_UPDATE with empty rows) does not retain pinned cards.
           if (
             action.data.rows &&
             !!action.data.rows.length &&
@@ -353,7 +348,7 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
             const rows = Array.from(action.data.rows);
             section.rows.forEach((card, index) => {
               if (card.pinned) {
-                
+                // Only add it if it's not already there.
                 if (rows[index].guid !== card.guid) {
                   rows.splice(index, 0, card);
                 }
@@ -418,7 +413,7 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
       return prevState.map(section =>
         Object.assign({}, section, {
           rows: section.rows.map(item => {
-            
+            // find the item within the rows that is attempted to be bookmarked
             if (item.url === action.data.url) {
               const { bookmarkGuid, bookmarkTitle, dateAdded } = action.data;
               return Object.assign({}, item, {
@@ -458,7 +453,7 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
       return prevState.map(section =>
         Object.assign({}, section, {
           rows: section.rows.map(item => {
-            
+            // find the bookmark within the rows that is attempted to be removed
             if (action.data.urls.includes(item.url)) {
               const newSite = Object.assign({}, item);
               delete newSite.bookmarkGuid;
@@ -564,9 +559,9 @@ function Personalization(prevState = INITIAL_STATE.Personalization, action) {
   }
 }
 
-
+// eslint-disable-next-line complexity
 function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
-  
+  // Return if action data is empty, or spocs or feeds data is not loaded
   const isNotReady = () =>
     !action.data || !prevState.spocs.loaded || !prevState.feeds.loaded;
 
@@ -626,7 +621,7 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
 
   switch (action.type) {
     case at.DISCOVERY_STREAM_CONFIG_CHANGE:
-    
+    // Fall through to a separate action is so it doesn't trigger a listener update on init
     case at.DISCOVERY_STREAM_CONFIG_SETUP:
       return { ...prevState, config: action.data || {} };
     case at.DISCOVERY_STREAM_EXPERIMENT_DATA:
@@ -838,7 +833,7 @@ function Search(prevState = INITIAL_STATE.Search, action) {
   }
 }
 
-const reducers = {
+export const reducers = {
   TopSites,
   App,
   ASRouter,
@@ -851,11 +846,3 @@ const reducers = {
   DiscoveryStream,
   Search,
 };
-
-const EXPORTED_SYMBOLS = [
-  "reducers",
-  "INITIAL_STATE",
-  "insertPinned",
-  "TOP_SITES_DEFAULT_ROWS",
-  "TOP_SITES_MAX_SITES_PER_ROW",
-];
