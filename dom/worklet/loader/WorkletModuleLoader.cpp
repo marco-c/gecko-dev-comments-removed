@@ -51,7 +51,25 @@ WorkletModuleLoader::WorkletModuleLoader(WorkletScriptLoader* aScriptLoader,
 
 already_AddRefed<ModuleLoadRequest> WorkletModuleLoader::CreateStaticImport(
     nsIURI* aURI, ModuleLoadRequest* aParent) {
-  return nullptr;
+  const nsMainThreadPtrHandle<WorkletFetchHandler>& handlerRef =
+      aParent->GetWorkletLoadContext()->GetHandlerRef();
+  RefPtr<WorkletLoadContext> loadContext = new WorkletLoadContext(handlerRef);
+
+  
+  
+  
+  
+  
+  
+  nsIURI* referrer = aParent->mURI;
+  RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
+      aURI, aParent->mFetchOptions, SRIMetadata(), referrer, loadContext,
+      false, 
+      false, 
+      this, aParent->mVisitedSet, aParent->GetRootModule());
+
+  request->mURL = request->mURI->GetSpecOrDefault();
+  return request.forget();
 }
 
 already_AddRefed<ModuleLoadRequest> WorkletModuleLoader::CreateDynamicImport(
