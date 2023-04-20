@@ -63,7 +63,7 @@ NetMonitorApp.prototype = {
     };
 
     
-    SearchWorker.start(SEARCH_WORKER_URL, win);
+    SearchWorker.start(SEARCH_WORKER_URL);
 
     const { actions, connector, store } = this.api;
 
