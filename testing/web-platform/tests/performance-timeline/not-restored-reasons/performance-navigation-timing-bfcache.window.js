@@ -14,14 +14,14 @@ promise_test(async t => {
   
   const rc1 = await rcHelper.addWindow(
        null,  {features: 'noopener'});
-  prepareForBFCache(rc1);
+  await prepareForBFCache(rc1);
 
   
   const rc2 = await rc1.navigateToNew();
 
   
   await rc2.historyBack();
-  assert_implements_bfcache(rc1);
+  await assert_implements_bfcache(rc1);
 
   
   assert_true(await rc1.executeScript(() => {
