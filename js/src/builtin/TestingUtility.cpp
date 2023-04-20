@@ -1,22 +1,22 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "builtin/TestingUtility.h"
 
-#include <stdint.h>  
+#include <stdint.h>  // uint32_t
 
-#include "jsapi.h"                 
-#include "js/CharacterEncoding.h"  
-#include "js/CompileOptions.h"     
-#include "js/Conversions.h"  
-#include "js/PropertyAndElement.h"  
-#include "js/PropertyDescriptor.h"  
-#include "js/RootingAPI.h"          
-#include "js/Utility.h"             
-#include "js/Value.h"               
+#include "jsapi.h"                 // JS_NewPlainObject, JS_WrapValue
+#include "js/CharacterEncoding.h"  // JS_EncodeStringToLatin1
+#include "js/CompileOptions.h"     // JS::CompileOptions
+#include "js/Conversions.h"  // JS::ToBoolean, JS::ToString, JS::ToUint32, JS::ToInt32
+#include "js/PropertyAndElement.h"  // JS_GetProperty, JS_DefineProperty
+#include "js/PropertyDescriptor.h"  // JSPROP_ENUMERATE
+#include "js/RootingAPI.h"          // JS::Rooted, JS::Handle
+#include "js/Utility.h"             // JS::UniqueChars
+#include "js/Value.h"               // JS::Value, JS::StringValue
 #include "vm/JSScript.h"
 
 bool js::ParseCompileOptions(JSContext* cx, JS::CompileOptions& options,
@@ -191,7 +191,7 @@ bool js::SetSourceOptions(JSContext* cx, ErrorContext* ec, ScriptSource* source,
     if (!chars) {
       return false;
     }
-    if (!source->setSourceMapURL(cx, ec, std::move(chars))) {
+    if (!source->setSourceMapURL(ec, std::move(chars))) {
       return false;
     }
   }
@@ -200,7 +200,7 @@ bool js::SetSourceOptions(JSContext* cx, ErrorContext* ec, ScriptSource* source,
 }
 
 JSObject* js::CreateScriptPrivate(JSContext* cx,
-                                  JS::Handle<JSString*> path ) {
+                                  JS::Handle<JSString*> path /* = nullptr */) {
   JS::Rooted<JSObject*> info(cx, JS_NewPlainObject(cx));
   if (!info) {
     return nullptr;
