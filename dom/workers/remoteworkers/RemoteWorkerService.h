@@ -113,6 +113,9 @@ class RemoteWorkerService final : public nsIObserver {
   
   
   DataMutex<RefPtr<RemoteWorkerServiceKeepAlive>> mKeepAlive;
+  
+  
+  RefPtr<RemoteWorkerServiceShutdownBlocker> mShutdownBlocker;
 };
 
 }  
