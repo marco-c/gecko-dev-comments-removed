@@ -2584,7 +2584,8 @@ NS_IMETHODIMP PermissionManager::Observe(nsISupports* aSubject,
                                          const char16_t* someData) {
   ENSURE_NOT_CHILD_PROCESS;
 
-  if (!nsCRT::strcmp(aTopic, "profile-do-change")) {
+  if (!nsCRT::strcmp(aTopic, "profile-do-change") && !mPermissionsFile) {
+    
     
     InitDB(false);
   } else if (!nsCRT::strcmp(aTopic, "testonly-reload-permissions-from-disk")) {
