@@ -3,23 +3,21 @@
 
 
 const path = require("path");
-var fs = require("fs");
-const rimraf = require("rimraf");
+const { rollup } = require("rollup");
+const nodeResolve = require("@rollup/plugin-node-resolve");
+const commonjs = require("@rollup/plugin-commonjs");
+const injectProcessEnv = require("rollup-plugin-inject-process-env");
+const nodePolyfills = require("rollup-plugin-node-polyfills");
+
 const webpack = require("webpack");
 
 const projectPath = path.resolve(__dirname, "..");
 const bundlePath = path.join(projectPath, "./dist");
-const clientPath = path.join(projectPath, "../");
 
 process.env.NODE_ENV = "production";
 
-function moveFile(src, dest) {
-  if (!fs.existsSync(src)) {
-    return;
-  }
-
-  fs.copyFileSync(src, dest);
-  rimraf.sync(src);
+function getEntry(filename) {
+  return path.join(__dirname, "..", filename);
 }
 
 
@@ -32,6 +30,74 @@ function moveFile(src, dest) {
 
 
 (async function bundle() {
+  const rollupSucceeded = await bundleRollup();
+  const webpackSucceeded = await bundleWebpack();
+  const failed = !rollupSucceeded || !webpackSucceeded;
+  process.exit(failed ? 1 : 0);
+})();
+
+
+
+
+async function bundleRollup() {
+  console.log(`[bundle|rollup] Start bundling…`);
+
+  let success = true;
+
+  
+  const entries = {
+    "parser-worker": getEntry("src/workers/parser/worker.js"),
+    "pretty-print-worker": getEntry("src/workers/pretty-print/worker.js"),
+    "search-worker": getEntry("src/workers/search/worker.js"),
+  };
+
+  for (const [entryName, input] of Object.entries(entries)) {
+    let bundle;
+    try {
+      
+      bundle = await rollup({
+        input: {
+          [entryName]: input,
+        },
+        plugins: [
+          commonjs({
+            transformMixedEsModules: true,
+          }),
+          injectProcessEnv({ NODE_ENV: "production" }),
+          nodeResolve(),
+          
+          
+          
+          nodePolyfills({ exclude: [/read-wasm\.js/] }),
+        ],
+      });
+      await bundle.write({
+        dir: bundlePath,
+        entryFileNames: "[name].js",
+        format: "umd",
+      });
+    } catch (error) {
+      success = false;
+      
+      console.error("[bundle|rollup] Something went wrong.", error);
+    }
+    if (bundle) {
+      
+      await bundle.close();
+    }
+  }
+
+  console.log(`[bundle|rollup] Done bundling`);
+  return success;
+}
+
+
+
+
+
+async function bundleWebpack() {
+  let success = true;
+  console.log(`[bundle|webpack] Start bundling…`);
   process.env.TARGET = "firefox-panel";
   process.env.OUTPUT_PATH = bundlePath;
 
@@ -43,16 +109,17 @@ function moveFile(src, dest) {
   });
 
   if (result?.hasErrors()) {
+    success = false;
     console.log(
-      "[bundle] Something went wrong. The error was written to assets-error.log"
+      "[bundle|webpack] Something went wrong. The error was written to assets-error.log"
     );
 
     fs.writeFileSync(
       "assets-error.log",
       JSON.stringify(result.toJson("verbose"), null, 2)
     );
-    return;
   }
 
-  console.log(`[bundle] Done bundling.`);
-})();
+  console.log(`[bundle|webpack] Done bundling`);
+  return success;
+}

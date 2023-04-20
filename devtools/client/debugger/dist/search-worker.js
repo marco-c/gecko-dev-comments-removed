@@ -1,849 +1,397 @@
-
-
-
-
-(function webpackUniversalModuleDefinition(root, factory) {
-	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory();
-	else if(typeof define === 'function' && define.amd)
-		define([], factory);
-	else {
-		var a = factory();
-		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
-	}
-})(typeof self !== 'undefined' ? self : this, function() {
-return  (function(modules) { 
- 	
- 	var installedModules = {};
-
- 	
- 	function __webpack_require__(moduleId) {
-
- 		
- 		if(installedModules[moduleId]) {
- 			return installedModules[moduleId].exports;
- 		}
- 		
- 		var module = installedModules[moduleId] = {
- 			i: moduleId,
- 			l: false,
- 			exports: {}
- 		};
-
- 		
- 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-
- 		
- 		module.l = true;
-
- 		
- 		return module.exports;
- 	}
-
-
- 	
- 	__webpack_require__.m = modules;
-
- 	
- 	__webpack_require__.c = installedModules;
-
- 	
- 	__webpack_require__.d = function(exports, name, getter) {
- 		if(!__webpack_require__.o(exports, name)) {
- 			Object.defineProperty(exports, name, {
- 				configurable: false,
- 				enumerable: true,
- 				get: getter
- 			});
- 		}
- 	};
-
- 	
- 	__webpack_require__.n = function(module) {
- 		var getter = module && module.__esModule ?
- 			function getDefault() { return module['default']; } :
- 			function getModuleExports() { return module; };
- 		__webpack_require__.d(getter, 'a', getter);
- 		return getter;
- 	};
-
- 	
- 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
-
- 	
- 	__webpack_require__.p = "/assets/build";
-
- 	
- 	return __webpack_require__(__webpack_require__.s = 904);
- })
-
- ({
-
- 1059:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-
-
-
-function _classPrivateFieldInitSpec(obj, privateMap, value) { _checkPrivateRedeclaration(obj, privateMap); privateMap.set(obj, value); }
-
-function _checkPrivateRedeclaration(obj, privateCollection) { if (privateCollection.has(obj)) { throw new TypeError("Cannot initialize the same private elements twice on an object"); } }
-
-function _classPrivateFieldGet(receiver, privateMap) { var descriptor = _classExtractFieldDescriptor(receiver, privateMap, "get"); return _classApplyDescriptorGet(receiver, descriptor); }
-
-function _classApplyDescriptorGet(receiver, descriptor) { if (descriptor.get) { return descriptor.get.call(receiver); } return descriptor.value; }
-
-function _classPrivateFieldSet(receiver, privateMap, value) { var descriptor = _classExtractFieldDescriptor(receiver, privateMap, "set"); _classApplyDescriptorSet(receiver, descriptor, value); return value; }
-
-function _classExtractFieldDescriptor(receiver, privateMap, action) { if (!privateMap.has(receiver)) { throw new TypeError("attempted to " + action + " private field on non-instance"); } return privateMap.get(receiver); }
-
-function _classApplyDescriptorSet(receiver, descriptor, value) { if (descriptor.set) { descriptor.set.call(receiver, value); } else { if (!descriptor.writable) { throw new TypeError("attempted to set read only private field"); } descriptor.value = value; } }
-
-var _msgId = new WeakMap();
-
-var _worker = new WeakMap();
-
-var _pendingCalls = new WeakMap();
-
-var _url = new WeakMap();
-
-var _onMessage = new WeakMap();
-
-class WorkerDispatcher {
-  
-  constructor(url) {
-    _classPrivateFieldInitSpec(this, _msgId, {
-      writable: true,
-      value: 1
-    });
-
-    _classPrivateFieldInitSpec(this, _worker, {
-      writable: true,
-      value: null
-    });
-
-    _classPrivateFieldInitSpec(this, _pendingCalls, {
-      writable: true,
-      value: new Map()
-    });
-
-    _classPrivateFieldInitSpec(this, _url, {
-      writable: true,
-      value: ""
-    });
-
-    _classPrivateFieldInitSpec(this, _onMessage, {
-      writable: true,
-      value: ({
-        data: result
-      }) => {
-        const items = _classPrivateFieldGet(this, _pendingCalls).get(result.id);
-
-        _classPrivateFieldGet(this, _pendingCalls).delete(result.id);
-
-        if (!items) {
-          return;
-        }
-
-        if (!_classPrivateFieldGet(this, _worker)) {
-          return;
-        }
-
-        result.results.forEach((resultData, i) => {
-          const {
-            resolve,
-            reject
-          } = items[i];
-
-          if (resultData.error) {
-            const err = new Error(resultData.message);
-            err.metadata = resultData.metadata;
-            reject(err);
-          } else {
-            resolve(resultData.response);
-          }
-        });
-      }
-    });
-
-    _classPrivateFieldSet(this, _url, url);
-  }
-
-  start() {
-    
-    if (typeof ChromeWorker == "function") {
-      _classPrivateFieldSet(this, _worker, new ChromeWorker(_classPrivateFieldGet(this, _url)));
-    } else {
-      _classPrivateFieldSet(this, _worker, new Worker(_classPrivateFieldGet(this, _url)));
-    }
-
-    _classPrivateFieldGet(this, _worker).onerror = err => {
-      console.error(`Error in worker ${_classPrivateFieldGet(this, _url)}`, err.message);
-    };
-
-    _classPrivateFieldGet(this, _worker).addEventListener("message", _classPrivateFieldGet(this, _onMessage));
-  }
-
-  stop() {
-    if (!_classPrivateFieldGet(this, _worker)) {
-      return;
-    }
-
-    _classPrivateFieldGet(this, _worker).removeEventListener("message", _classPrivateFieldGet(this, _onMessage));
-
-    _classPrivateFieldGet(this, _worker).terminate();
-
-    _classPrivateFieldSet(this, _worker, null);
-
-    _classPrivateFieldGet(this, _pendingCalls).clear();
-  }
-
-  task(method, {
-    queue = false
-  } = {}) {
-    const calls = [];
-
-    const push = args => {
-      return new Promise((resolve, reject) => {
-        if (queue && calls.length === 0) {
-          Promise.resolve().then(flush);
-        }
-
-        calls.push({
-          args,
-          resolve,
-          reject
-        });
-
-        if (!queue) {
-          flush();
-        }
-      });
-    };
-
-    const flush = () => {
-      var _this$msgId;
-
-      const items = calls.slice();
-      calls.length = 0;
-
-      if (!_classPrivateFieldGet(this, _worker)) {
-        this.start();
-      }
-
-      const id = (_classPrivateFieldSet(this, _msgId, (_this$msgId = +_classPrivateFieldGet(this, _msgId)) + 1), _this$msgId);
-
-      _classPrivateFieldGet(this, _worker).postMessage({
-        id,
-        method,
-        calls: items.map(item => item.args)
-      });
-
-      _classPrivateFieldGet(this, _pendingCalls).set(id, items);
-    };
-
-    return (...args) => push(args);
-  }
-
-  invoke(method, ...args) {
-    return this.task(method)(...args);
-  }
-
-}
-
-function workerHandler(publicInterface) {
-  return function (msg) {
-    const {
-      id,
-      method,
-      calls
-    } = msg.data;
-    Promise.all(calls.map(args => {
-      try {
-        const response = publicInterface[method].apply(undefined, args);
-
-        if (response instanceof Promise) {
-          return response.then(val => ({
-            response: val
-          }), err => asErrorMessage(err));
-        }
-
-        return {
-          response
-        };
-      } catch (error) {
-        return asErrorMessage(error);
-      }
-    })).then(results => {
-      globalThis.postMessage({
-        id,
-        results
-      });
-    });
-  };
-}
-
-function asErrorMessage(error) {
-  if (typeof error === "object" && error && "message" in error) {
-    
-    
-    return {
-      error: true,
-      message: error.message,
-      metadata: error.metadata
-    };
-  }
-
-  return {
-    error: true,
-    message: error == null ? error : error.toString(),
-    metadata: undefined
-  };
-} 
-
-
-if (true) {
-  module.exports = {
-    WorkerDispatcher,
-    workerHandler
-  };
-}
-
- }),
-
- 607:
- (function(module, exports) {
-
-
-var process = module.exports = {};
-
-
-
-
-
-
-var cachedSetTimeout;
-var cachedClearTimeout;
-
-function defaultSetTimout() {
-    throw new Error('setTimeout has not been defined');
-}
-function defaultClearTimeout () {
-    throw new Error('clearTimeout has not been defined');
-}
-(function () {
-    try {
-        if (typeof setTimeout === 'function') {
-            cachedSetTimeout = setTimeout;
-        } else {
-            cachedSetTimeout = defaultSetTimout;
-        }
-    } catch (e) {
-        cachedSetTimeout = defaultSetTimout;
-    }
-    try {
-        if (typeof clearTimeout === 'function') {
-            cachedClearTimeout = clearTimeout;
-        } else {
-            cachedClearTimeout = defaultClearTimeout;
-        }
-    } catch (e) {
-        cachedClearTimeout = defaultClearTimeout;
-    }
-} ())
-function runTimeout(fun) {
-    if (cachedSetTimeout === setTimeout) {
-        
-        return setTimeout(fun, 0);
-    }
-    
-    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
-        cachedSetTimeout = setTimeout;
-        return setTimeout(fun, 0);
-    }
-    try {
-        
-        return cachedSetTimeout(fun, 0);
-    } catch(e){
+(function (factory) {
+    typeof define === 'function' && define.amd ? define(factory) :
+    factory();
+})((function () { 'use strict';
+
+    (function() {
+        const env = {"NODE_ENV":"production"};
         try {
-            
-            return cachedSetTimeout.call(null, fun, 0);
-        } catch(e){
-            
-            return cachedSetTimeout.call(this, fun, 0);
-        }
-    }
-
-
-}
-function runClearTimeout(marker) {
-    if (cachedClearTimeout === clearTimeout) {
-        
-        return clearTimeout(marker);
-    }
-    
-    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
-        cachedClearTimeout = clearTimeout;
-        return clearTimeout(marker);
-    }
-    try {
-        
-        return cachedClearTimeout(marker);
-    } catch (e){
-        try {
-            
-            return cachedClearTimeout.call(null, marker);
-        } catch (e){
-            
-            
-            return cachedClearTimeout.call(this, marker);
-        }
-    }
-
-
-
-}
-var queue = [];
-var draining = false;
-var currentQueue;
-var queueIndex = -1;
-
-function cleanUpNextTick() {
-    if (!draining || !currentQueue) {
-        return;
-    }
-    draining = false;
-    if (currentQueue.length) {
-        queue = currentQueue.concat(queue);
-    } else {
-        queueIndex = -1;
-    }
-    if (queue.length) {
-        drainQueue();
-    }
-}
-
-function drainQueue() {
-    if (draining) {
-        return;
-    }
-    var timeout = runTimeout(cleanUpNextTick);
-    draining = true;
-
-    var len = queue.length;
-    while(len) {
-        currentQueue = queue;
-        queue = [];
-        while (++queueIndex < len) {
-            if (currentQueue) {
-                currentQueue[queueIndex].run();
+            if (process) {
+                process.env = Object.assign({}, process.env);
+                Object.assign(process.env, env);
+                return;
             }
-        }
-        queueIndex = -1;
-        len = queue.length;
-    }
-    currentQueue = null;
-    draining = false;
-    runClearTimeout(timeout);
-}
+        } catch (e) {} 
+        globalThis.process = { env:env };
+    })();
 
-process.nextTick = function (fun) {
-    var args = new Array(arguments.length - 1);
-    if (arguments.length > 1) {
-        for (var i = 1; i < arguments.length; i++) {
-            args[i - 1] = arguments[i];
-        }
-    }
-    queue.push(new Item(fun, args));
-    if (queue.length === 1 && !draining) {
-        runTimeout(drainQueue);
-    }
-};
-
-
-function Item(fun, array) {
-    this.fun = fun;
-    this.array = array;
-}
-Item.prototype.run = function () {
-    this.fun.apply(null, this.array);
-};
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-process.version = ''; 
-process.versions = {};
-
-function noop() {}
-
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
-process.prependListener = noop;
-process.prependOnceListener = noop;
-
-process.listeners = function (name) { return [] }
-
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-};
-
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
-process.umask = function() { return 0; };
-
-
- }),
-
- 701:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = getMatches;
-
-var _assert = _interopRequireDefault(__webpack_require__(906));
-
-var _buildQuery = _interopRequireDefault(__webpack_require__(907));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+    
 
 
 
-
-function getMatches(query, text, options) {
-  if (!query || !text || !options) {
-    return [];
-  }
-
-  const regexQuery = (0, _buildQuery.default)(query, options, {
-    isGlobal: true
-  });
-  const matchedLocations = [];
-  const lines = text.split("\n");
-
-  for (let i = 0; i < lines.length; i++) {
-    let singleMatch;
-    const line = lines[i];
-
-    while ((singleMatch = regexQuery.exec(line)) !== null) {
-      
-      if (!singleMatch) {
-        throw new Error("no singleMatch");
-      }
-
-      matchedLocations.push({
-        line: i,
-        ch: singleMatch.index,
-        match: singleMatch[0]
-      }); 
-      
-      
-
-      if (singleMatch[0] === "") {
-        (0, _assert.default)(!regexQuery.unicode, "lastIndex++ can cause issues in unicode mode");
-        regexQuery.lastIndex++;
+    function isNode() {
+      try {
+        return process.release.name == "node";
+      } catch (e) {
+        return false;
       }
     }
-  }
 
-  return matchedLocations;
-}
-
- }),
-
- 904:
- (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(905);
-
-
- }),
-
- 905:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _getMatches = _interopRequireDefault(__webpack_require__(701));
-
-var _projectSearch = __webpack_require__(909);
-
-var _workerUtils = __webpack_require__(1059);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-
-
-
-self.onmessage = (0, _workerUtils.workerHandler)({
-  getMatches: _getMatches.default,
-  findSourceMatches: _projectSearch.findSourceMatches
-});
-
- }),
-
- 906:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _environment = __webpack_require__(968);
-
-
-
-
-let assert; 
-
-
-
-
-if ((0, _environment.isNodeTest)()) {
-  assert = function (condition, message) {
-    if (!condition) {
-      throw new Error(`Assertion failure: ${message}`);
+    function isNodeTest() {
+      return isNode() && process.env.NODE_ENV != "production";
     }
-  };
-} else {
-  assert = function () {};
-}
 
-var _default = assert;
-exports.default = _default;
-
- }),
-
- 907:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = buildQuery;
-
-
-
-
-function escapeRegExp(str) {
-  const reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
-  return str.replace(reRegExpChar, "\\$&");
-}
-
-
-
-
-
-
-
-
-function ignoreWhiteSpace(str) {
-  return /^\s{0,2}$/.test(str) ? "(?!\\s*.*)" : str;
-}
-
-function wholeMatch(query, wholeWord) {
-  if (query === "" || !wholeWord) {
-    return query;
-  }
-
-  return `\\b${query}\\b`;
-}
-
-function buildFlags(caseSensitive, isGlobal) {
-  if (caseSensitive && isGlobal) {
-    return "g";
-  }
-
-  if (!caseSensitive && isGlobal) {
-    return "gi";
-  }
-
-  if (!caseSensitive && !isGlobal) {
-    return "i";
-  }
-
-  return null;
-}
-
-function buildQuery(originalQuery, modifiers, {
-  isGlobal = false,
-  ignoreSpaces = false
-}) {
-  const {
-    caseSensitive,
-    regexMatch,
-    wholeWord
-  } = modifiers;
-
-  if (originalQuery === "") {
-    return new RegExp(originalQuery);
-  } 
-  
-
-
-  let query = originalQuery.replace(/\\$/, ""); 
-  
-
-  if (!regexMatch) {
-    query = escapeRegExp(query);
-  } 
-  
-  
-
-
-  if (ignoreSpaces) {
-    query = ignoreWhiteSpace(query);
-  }
-
-  query = wholeMatch(query, wholeWord);
-  const flags = buildFlags(caseSensitive, isGlobal);
-
-  if (flags) {
-    return new RegExp(query, flags);
-  }
-
-  return new RegExp(query);
-}
-
- }),
-
- 909:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.findSourceMatches = findSourceMatches;
-
-var _getMatches = _interopRequireDefault(__webpack_require__(701));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-
-
-
-
-function findSourceMatches(content, queryText, options) {
-  if (queryText == "") {
-    return [];
-  }
-
-  const text = content.value;
-  const lines = text.split("\n");
-  return (0, _getMatches.default)(queryText, text, options).map(({
-    line,
-    ch,
-    match
-  }) => {
-    const {
-      value,
-      matchIndex
-    } = truncateLine(lines[line], ch);
-    return {
-      line: line + 1,
-      column: ch,
-      matchIndex,
-      match,
-      value
-    };
-  });
-} 
-
-
-const startRegex = /([ !@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/g; 
-
-const endRegex = new RegExp(["([ !@#$%^&*()_+-=[]{};':\"\\|,.<>/?])", '[^ !@#$%^&*()_+-=[]{};\':"\\|,.<>/?]*$"/'].join("")); 
-
-
-function truncateLine(text, column) {
-  if (text.length < 100) {
-    return {
-      matchIndex: column,
-      value: text
-    };
-  } 
-
-
-  const offset = Math.max(column - 40, 0); 
-
-  const truncStr = text.slice(offset, column + 400);
-  let start = truncStr.search(startRegex);
-  let end = truncStr.search(endRegex);
-
-  if (start > column) {
+    let assert;
     
     
-    start = -1;
-  }
+    
+    
 
-  if (end < column) {
-    end = truncStr.length;
-  }
+    if (isNodeTest()) {
+      assert = function(condition, message) {
+        if (!condition) {
+          throw new Error(`Assertion failure: ${message}`);
+        }
+      };
+    } else {
+      assert = function() {};
+    }
+    var assert$1 = assert;
 
-  const value = truncStr.slice(start + 1, end);
-  return {
-    matchIndex: column - start - offset - 1,
-    value
-  };
-}
+    
 
- }),
 
- 968:
- (function(module, exports, __webpack_require__) {
 
-"use strict";
-(function(process) {
+    function escapeRegExp(str) {
+      const reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
+      return str.replace(reRegExpChar, "\\$&");
+    }
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.isNode = isNode;
-exports.isNodeTest = isNodeTest;
+    
 
 
 
 
-function isNode() {
-  try {
-    return process.release.name == "node";
-  } catch (e) {
-    return false;
-  }
-}
 
-function isNodeTest() {
-  return isNode() && "production" != "production";
-}
-}.call(exports, __webpack_require__(607)))
+    function ignoreWhiteSpace(str) {
+      return /^\s{0,2}$/.test(str) ? "(?!\\s*.*)" : str;
+    }
 
- })
+    function wholeMatch(query, wholeWord) {
+      if (query === "" || !wholeWord) {
+        return query;
+      }
 
- });
-});
+      return `\\b${query}\\b`;
+    }
+
+    function buildFlags(caseSensitive, isGlobal) {
+      if (caseSensitive && isGlobal) {
+        return "g";
+      }
+
+      if (!caseSensitive && isGlobal) {
+        return "gi";
+      }
+
+      if (!caseSensitive && !isGlobal) {
+        return "i";
+      }
+
+      return null;
+    }
+
+    function buildQuery(
+      originalQuery,
+      modifiers,
+      { isGlobal = false, ignoreSpaces = false }
+    ) {
+      const { caseSensitive, regexMatch, wholeWord } = modifiers;
+
+      if (originalQuery === "") {
+        return new RegExp(originalQuery);
+      }
+
+      
+      
+      let query = originalQuery.replace(/\\$/, "");
+
+      
+      
+      if (!regexMatch) {
+        query = escapeRegExp(query);
+      }
+
+      
+      
+      
+      if (ignoreSpaces) {
+        query = ignoreWhiteSpace(query);
+      }
+
+      query = wholeMatch(query, wholeWord);
+      const flags = buildFlags(caseSensitive, isGlobal);
+
+      if (flags) {
+        return new RegExp(query, flags);
+      }
+
+      return new RegExp(query);
+    }
+
+    function getMatches(query, text, options) {
+      if (!query || !text || !options) {
+        return [];
+      }
+      const regexQuery = buildQuery(query, options, {
+        isGlobal: true,
+      });
+      const matchedLocations = [];
+      const lines = text.split("\n");
+      for (let i = 0; i < lines.length; i++) {
+        let singleMatch;
+        const line = lines[i];
+        while ((singleMatch = regexQuery.exec(line)) !== null) {
+          
+          if (!singleMatch) {
+            throw new Error("no singleMatch");
+          }
+
+          matchedLocations.push({
+            line: i,
+            ch: singleMatch.index,
+            match: singleMatch[0],
+          });
+
+          
+          
+          
+          if (singleMatch[0] === "") {
+            assert$1(
+              !regexQuery.unicode,
+              "lastIndex++ can cause issues in unicode mode"
+            );
+            regexQuery.lastIndex++;
+          }
+        }
+      }
+      return matchedLocations;
+    }
+
+    function findSourceMatches(content, queryText, options) {
+      if (queryText == "") {
+        return [];
+      }
+
+      const text = content.value;
+      const lines = text.split("\n");
+
+      return getMatches(queryText, text, options).map(({ line, ch, match }) => {
+        const { value, matchIndex } = truncateLine(lines[line], ch);
+        return {
+          line: line + 1,
+          column: ch,
+
+          matchIndex,
+          match,
+          value,
+        };
+      });
+    }
+
+    
+    const startRegex = /([ !@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/g;
+    
+    const endRegex = new RegExp(
+      [
+        "([ !@#$%^&*()_+-=[]{};':\"\\|,.<>/?])",
+        '[^ !@#$%^&*()_+-=[]{};\':"\\|,.<>/?]*$"/',
+      ].join("")
+    );
+    
+    
+    function truncateLine(text, column) {
+      if (text.length < 100) {
+        return {
+          matchIndex: column,
+          value: text,
+        };
+      }
+
+      
+      const offset = Math.max(column - 40, 0);
+      
+      const truncStr = text.slice(offset, column + 400);
+      let start = truncStr.search(startRegex);
+      let end = truncStr.search(endRegex);
+
+      if (start > column) {
+        
+        
+        start = -1;
+      }
+      if (end < column) {
+        end = truncStr.length;
+      }
+      const value = truncStr.slice(start + 1, end);
+
+      return {
+        matchIndex: column - start - offset - 1,
+        value,
+      };
+    }
+
+    var workerUtilsExports = {};
+    var workerUtils = {
+      get exports(){ return workerUtilsExports; },
+      set exports(v){ workerUtilsExports = v; },
+    };
+
+    (function (module) {
+
+    	class WorkerDispatcher {
+    	  #msgId = 1;
+    	  #worker = null;
+    	  
+    	  #pendingCalls = new Map();
+    	  #url = "";
+
+    	  constructor(url) {
+    	    this.#url = url;
+    	  }
+
+    	  start() {
+    	    
+    	    if (typeof ChromeWorker == "function") {
+    	      this.#worker = new ChromeWorker(this.#url);
+    	    } else {
+    	      this.#worker = new Worker(this.#url);
+    	    }
+    	    this.#worker.onerror = err => {
+    	      console.error(`Error in worker ${this.#url}`, err.message);
+    	    };
+    	    this.#worker.addEventListener("message", this.#onMessage);
+    	  }
+
+    	  stop() {
+    	    if (!this.#worker) {
+    	      return;
+    	    }
+
+    	    this.#worker.removeEventListener("message", this.#onMessage);
+    	    this.#worker.terminate();
+    	    this.#worker = null;
+    	    this.#pendingCalls.clear();
+    	  }
+
+    	  task(method, { queue = false } = {}) {
+    	    const calls = [];
+    	    const push = args => {
+    	      return new Promise((resolve, reject) => {
+    	        if (queue && calls.length === 0) {
+    	          Promise.resolve().then(flush);
+    	        }
+
+    	        calls.push({ args, resolve, reject });
+
+    	        if (!queue) {
+    	          flush();
+    	        }
+    	      });
+    	    };
+
+    	    const flush = () => {
+    	      const items = calls.slice();
+    	      calls.length = 0;
+
+    	      if (!this.#worker) {
+    	        this.start();
+    	      }
+
+    	      const id = this.#msgId++;
+    	      this.#worker.postMessage({
+    	        id,
+    	        method,
+    	        calls: items.map(item => item.args),
+    	      });
+
+    	      this.#pendingCalls.set(id, items);
+    	    };
+
+    	    return (...args) => push(args);
+    	  }
+
+    	  invoke(method, ...args) {
+    	    return this.task(method)(...args);
+    	  }
+
+    	  #onMessage = ({ data: result }) => {
+    	    const items = this.#pendingCalls.get(result.id);
+    	    this.#pendingCalls.delete(result.id);
+    	    if (!items) {
+    	      return;
+    	    }
+
+    	    if (!this.#worker) {
+    	      return;
+    	    }
+
+    	    result.results.forEach((resultData, i) => {
+    	      const { resolve, reject } = items[i];
+
+    	      if (resultData.error) {
+    	        const err = new Error(resultData.message);
+    	        err.metadata = resultData.metadata;
+    	        reject(err);
+    	      } else {
+    	        resolve(resultData.response);
+    	      }
+    	    });
+    	  };
+    	}
+
+    	function workerHandler(publicInterface) {
+    	  return function(msg) {
+    	    const { id, method, calls } = msg.data;
+
+    	    Promise.all(
+    	      calls.map(args => {
+    	        try {
+    	          const response = publicInterface[method].apply(undefined, args);
+    	          if (response instanceof Promise) {
+    	            return response.then(
+    	              val => ({ response: val }),
+    	              err => asErrorMessage(err)
+    	            );
+    	          }
+    	          return { response };
+    	        } catch (error) {
+    	          return asErrorMessage(error);
+    	        }
+    	      })
+    	    ).then(results => {
+    	      globalThis.postMessage({ id, results });
+    	    });
+    	  };
+    	}
+
+    	function asErrorMessage(error) {
+    	  if (typeof error === "object" && error && "message" in error) {
+    	    // Error can't be sent via postMessage, so be sure to convert to
+    	    // string.
+    	    return {
+    	      error: true,
+    	      message: error.message,
+    	      metadata: error.metadata,
+    	    };
+    	  }
+
+    	  return {
+    	    error: true,
+    	    message: error == null ? error : error.toString(),
+    	    metadata: undefined,
+    	  };
+    	}
+
+    	// Might be loaded within a worker thread where `module` isn't available.
+    	{
+    	  module.exports = {
+    	    WorkerDispatcher,
+    	    workerHandler,
+    	  };
+    	}
+    } (workerUtils));
+
+    self.onmessage = workerUtilsExports.workerHandler({ getMatches, findSourceMatches });
+
+}));
