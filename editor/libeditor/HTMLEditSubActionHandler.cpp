@@ -6,6 +6,7 @@
 
 #include "HTMLEditor.h"
 #include "HTMLEditorInlines.h"
+#include "HTMLEditorNestedClasses.h"
 
 #include <algorithm>
 #include <utility>
@@ -6161,20 +6162,25 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::CreateStyleForInsertText(
     }
 
     while (pendingStyle) {
+      AutoInlineStyleSetter inlineStyleSetter(
+          pendingStyle->GetAttribute()
+              ? EditorInlineStyleAndValue(
+                    *pendingStyle->GetTag(), *pendingStyle->GetAttribute(),
+                    pendingStyle->AttributeValueOrCSSValueRef())
+              : EditorInlineStyleAndValue(*pendingStyle->GetTag()));
       
       
-      
-      
-      Result<EditorDOMPoint, nsresult> setStyleResult = SetInlinePropertyOnNode(
-          MOZ_KnownLive(*pointToPutCaret.ContainerAs<nsIContent>()),
-          pendingStyle->ToInlineStyleAndValue());
+      Result<CaretPoint, nsresult> setStyleResult =
+          inlineStyleSetter.ApplyStyleToNodeOrChildrenAndRemoveNestedSameStyle(
+              *this, MOZ_KnownLive(*pointToPutCaret.ContainerAs<nsIContent>()));
       if (MOZ_UNLIKELY(setStyleResult.isErr())) {
         NS_WARNING("HTMLEditor::SetInlinePropertyOnNode() failed");
-        return Err(setStyleResult.unwrapErr());
+        return setStyleResult.propagateErr();
       }
       
       
       MOZ_ASSERT(pointToPutCaret.IsSet());
+      setStyleResult.unwrap().IgnoreCaretPointSuggestion();
       pendingStyle = mPendingStylesToApplyToNewContent->TakePreservedStyle();
     }
   }

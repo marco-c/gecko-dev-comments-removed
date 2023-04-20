@@ -2078,7 +2078,8 @@ bool HTMLEditUtils::IsInlineStyleSetByElement(
 
 
 size_t HTMLEditUtils::CollectChildren(
-    nsINode& aNode, nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
+    const nsINode& aNode,
+    nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
     size_t aIndexToInsertChildren, const CollectChildrenOptions& aOptions) {
   
   
@@ -2095,12 +2096,20 @@ size_t HTMLEditUtils::CollectChildren(
       numberOfFoundChildren += HTMLEditUtils::CollectChildren(
           *content, aOutArrayOfContents,
           aIndexToInsertChildren + numberOfFoundChildren, aOptions);
-    } else if (!aOptions.contains(
-                   CollectChildrenOption::IgnoreNonEditableChildren) ||
-               EditorUtils::IsEditableContent(*content, EditorType::HTML)) {
-      aOutArrayOfContents.InsertElementAt(
-          aIndexToInsertChildren + numberOfFoundChildren++, *content);
+      continue;
     }
+
+    if (aOptions.contains(CollectChildrenOption::IgnoreNonEditableChildren) &&
+        !EditorUtils::IsEditableContent(*content, EditorType::HTML)) {
+      continue;
+    }
+    if (aOptions.contains(CollectChildrenOption::IgnoreInvisibleTextNodes) &&
+        content->IsText() &&
+        !HTMLEditUtils::IsVisibleTextNode(*content->AsText())) {
+      continue;
+    }
+    aOutArrayOfContents.InsertElementAt(
+        aIndexToInsertChildren + numberOfFoundChildren++, *content);
   }
   return numberOfFoundChildren;
 }
@@ -2136,6 +2145,33 @@ size_t HTMLEditUtils::CollectEmptyInlineContainerDescendants(
     }
   }
   return numberOfFoundElements;
+}
+
+
+bool HTMLEditUtils::ElementHasAttributeExcept(const Element& aElement,
+                                              const nsAtom& aAttribute) {
+  
+  
+  for (auto i : IntegerRange<uint32_t>(aElement.GetAttrCount())) {
+    const nsAttrName* name = aElement.GetAttrNameAt(i);
+    if (!name->NamespaceEquals(kNameSpaceID_None)) {
+      return true;
+    }
+
+    if (name->LocalName() == &aAttribute) {
+      continue;  
+    }
+
+    
+    nsAutoString attrString;
+    name->LocalName()->ToString(attrString);
+    if (!StringBeginsWith(attrString, u"_moz"_ns)) {
+      return true;
+    }
+  }
+  
+  
+  return false;
 }
 
 

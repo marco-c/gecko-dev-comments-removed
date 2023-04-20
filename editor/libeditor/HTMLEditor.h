@@ -852,13 +852,6 @@ class HTMLEditor final : public EditorBase,
   SetFontSizeOnTextNode(Text& aTextNode, uint32_t aStartOffset,
                         uint32_t aEndOffset, FontSize aIncrementOrDecrement);
 
-  
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
-  SetInlinePropertyOnNode(nsIContent& aContent,
-                          const EditorInlineStyleAndValue& aStyleToSet);
-
   enum class SplitAtEdges {
     
     
@@ -3878,22 +3871,11 @@ class HTMLEditor final : public EditorBase,
   SetFontSizeOfFontElementChildren(nsIContent& aContent,
                                    FontSize aIncrementOrDecrement);
 
-  
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitRangeOffFromNodeResult, nsresult>
-  SetInlinePropertyOnTextNode(Text& aText, uint32_t aStartOffset,
-                              uint32_t aEndOffset,
-                              const EditorInlineStyleAndValue& aStyleToSet);
-
   nsresult PromoteInlineRange(nsRange& aRange);
   nsresult PromoteRangeIfStartsOrEndsInNamedAnchor(nsRange& aRange);
+
+  
+  class AutoInlineStyleSetter;
 
   
 
@@ -3939,8 +3921,6 @@ class HTMLEditor final : public EditorBase,
       const EditorRawDOMPoint& aPoint) const;
   bool IsEndOfContainerOrEqualsOrAfterLastEditableChild(
       const EditorRawDOMPoint& aPoint) const;
-
-  bool IsOnlyAttribute(const Element* aElement, nsAtom* aAttribute);
 
   
 
@@ -4191,23 +4171,6 @@ class HTMLEditor final : public EditorBase,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   RefreshInlineTableEditingUIInternal();
-
-  
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<bool, nsresult>
-  ElementIsGoodContainerForTheStyle(
-      Element& aElement, const EditorInlineStyleAndValue& aStyleAndValue);
-
-  
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
-  SetInlinePropertyOnNodeImpl(nsIContent& aContent,
-                              const EditorInlineStyleAndValue& aStyleToSet);
 
   typedef enum { eInserted, eAppended } InsertedOrAppended;
   MOZ_CAN_RUN_SCRIPT void DoContentInserted(

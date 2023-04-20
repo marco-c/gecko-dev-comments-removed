@@ -44,6 +44,8 @@ enum class CollectChildrenOption {
   
   IgnoreNonEditableChildren,
   
+  IgnoreInvisibleTextNodes,
+  
   CollectListChildren,
   
   CollectTableChildren,
@@ -2055,7 +2057,15 @@ class HTMLEditUtils final {
 
 
   static size_t CollectChildren(
-      nsINode& aNode, nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
+      const nsINode& aNode,
+      nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
+      const CollectChildrenOptions& aOptions) {
+    return HTMLEditUtils::CollectChildren(aNode, aOutArrayOfContents, 0u,
+                                          aOptions);
+  }
+  static size_t CollectChildren(
+      const nsINode& aNode,
+      nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
       size_t aIndexToInsertChildren, const CollectChildrenOptions& aOptions);
 
   
@@ -2075,6 +2085,13 @@ class HTMLEditUtils final {
       const nsINode& aNode,
       nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
       const EmptyCheckOptions& aOptions);
+
+  
+
+
+
+  [[nodiscard]] static bool ElementHasAttributeExcept(const Element& aElement,
+                                                      const nsAtom& aAttribute);
 
  private:
   static bool CanNodeContain(nsHTMLTag aParentTagId, nsHTMLTag aChildTagId);
