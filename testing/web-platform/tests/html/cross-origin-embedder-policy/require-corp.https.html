@@ -4,7 +4,7 @@
 <script src=/resources/testharness.js></script>
 <script src=/resources/testharnessreport.js></script>
 <script src="/common/get-host-info.sub.js"></script>
-<script src="/common/utils.js"></script> 
+<script src="/common/utils.js"></script> <!-- Use token() to allow running tests in parallel -->
 <div id=log></div>
 <script>
 const HOST = get_host_info();
@@ -120,7 +120,7 @@ async_test(t => {
 });
 
 promise_test(async t => {
-  const response = await fetch(get_host_info().HTTPS_REMOTE_ORIGIN+"/html/cross-origin-embedder-policy/resources/nothing-cross-origin-corp.txt", {mode: "no-cors"});
+  const response = await fetch(get_host_info().HTTPS_REMOTE_ORIGIN+"/html/cross-origin-embedder-policy/resources/nothing-cross-origin-corp.js", {mode: "no-cors"});
   assert_equals(response.type, "opaque");
 }, `"require-corp" top-level: fetch() to CORP: cross-origin response should succeed`);
 
