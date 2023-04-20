@@ -207,6 +207,10 @@ class RTC_EXPORT PortAllocatorSession : public sigslot::has_slots<> {
   bool pooled() const { return pooled_; }
 
   
+  void set_ice_tiebreaker(uint64_t tiebreaker) { tiebreaker_ = tiebreaker; }
+  uint64_t ice_tiebreaker() const { return tiebreaker_; }
+
+  
   
   
   
@@ -323,6 +327,9 @@ class RTC_EXPORT PortAllocatorSession : public sigslot::has_slots<> {
   bool pooled_ = false;
 
   
+  uint64_t tiebreaker_;
+
+  
   
   friend class PortAllocator;
 };
@@ -373,6 +380,9 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
                         webrtc::TurnCustomizer* turn_customizer = nullptr,
                         const absl::optional<int>&
                             stun_candidate_keepalive_interval = absl::nullopt);
+
+  void SetIceTiebreaker(uint64_t tiebreaker);
+  uint64_t IceTiebreaker() const { return tiebreaker_; }
 
   const ServerAddresses& stun_servers() const {
     CheckRunOnValidThreadIfInitialized();
@@ -665,6 +675,9 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
   
   std::vector<std::unique_ptr<PortAllocatorSession>>::const_iterator
   FindPooledSession(const IceParameters* ice_credentials = nullptr) const;
+
+  
+  uint64_t tiebreaker_;
 };
 
 }  

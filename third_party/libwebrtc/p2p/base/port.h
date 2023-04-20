@@ -386,10 +386,10 @@ class Port : public PortInterface, public sigslot::has_slots<> {
   
   
   
-  static std::string ComputeFoundation(absl::string_view type,
-                                       absl::string_view protocol,
-                                       absl::string_view relay_protocol,
-                                       const rtc::SocketAddress& base_address);
+  std::string ComputeFoundation(absl::string_view type,
+                                absl::string_view protocol,
+                                absl::string_view relay_protocol,
+                                const rtc::SocketAddress& base_address);
 
  protected:
   virtual void UpdateNetworkCost();
