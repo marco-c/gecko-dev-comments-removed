@@ -157,14 +157,7 @@ export function makeSourceId(sourceResource) {
   
   
   if (sourceResource.url) {
-    
-    
-    if (sourceResource.targetFront.isTopLevel) {
-      return `source-${sourceResource.url}`;
-    }
-    const threadActorID = sourceResource.targetFront.getCachedFront("thread")
-      .actorID;
-    return `source-${threadActorID}-${sourceResource.url}`;
+    return `source-url-${sourceResource.url}`;
   }
 
   
@@ -173,7 +166,7 @@ export function makeSourceId(sourceResource) {
   
   
   
-  return `source-${sourceResource.actor}`;
+  return `source-actor-${sourceResource.actor}`;
 }
 
 
