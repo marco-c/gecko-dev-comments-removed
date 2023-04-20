@@ -212,7 +212,8 @@ bool operator==(const rtc::VideoSinkWants& aThis,
   
   
   return aThis.max_pixel_count == aOther.max_pixel_count &&
-         aThis.max_framerate_fps == aOther.max_framerate_fps;
+         aThis.max_framerate_fps == aOther.max_framerate_fps &&
+         aThis.resolution_alignment == aOther.resolution_alignment;
 }
 
 

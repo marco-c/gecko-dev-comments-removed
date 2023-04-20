@@ -282,6 +282,10 @@ gfx::IntSize VideoStreamFactory::CalculateScaledResolution(
   }
 
   
+  width -= width % mWants.resolution_alignment;
+  height -= height % mWants.resolution_alignment;
+
+  
   const int minSize = 1;
   if (width < minSize || height < minSize) {
     width = minSize;
