@@ -91,7 +91,6 @@ TOLERATED_DUPES = {
     "crossbeam-epoch": 2,
     "crossbeam-utils": 3,
     "futures": 2,
-    "libloading": 2,
     "memoffset": 2,
     "mio": 2,
     
