@@ -955,28 +955,24 @@ bool js::ModuleInitializeEnvironment(JSContext* cx,
   Rooted<ModuleEnvironmentObject*> env(cx, &module->initialEnvironment());
 
   
-  Rooted<ArrayObject*> importEntries(cx, &module->importEntries());
-  Rooted<ImportEntryObject*> in(cx);
   Rooted<ModuleRequestObject*> moduleRequest(cx);
   Rooted<ModuleObject*> importedModule(cx);
   Rooted<JSAtom*> importName(cx);
   Rooted<JSAtom*> localName(cx);
   Rooted<ModuleObject*> sourceModule(cx);
   Rooted<JSAtom*> bindingName(cx);
-  for (uint32_t i = 0; i != importEntries->length(); i++) {
-    in = &importEntries->getDenseElement(i).toObject().as<ImportEntryObject>();
-
+  for (const ImportEntry& in : module->importEntries()) {
     
     
-    moduleRequest = in->moduleRequest();
+    moduleRequest = in.moduleRequest();
     importedModule = HostResolveImportedModule(cx, module, moduleRequest,
                                                ModuleStatus::Linking);
     if (!importedModule) {
       return false;
     }
 
-    localName = in->localName();
-    importName = in->importName();
+    localName = in.localName();
+    importName = in.importName();
 
     
     if (!importName) {
@@ -1005,7 +1001,7 @@ bool js::ModuleInitializeEnvironment(JSContext* cx,
       
       if (!IsResolvedBinding(cx, resolution)) {
         ThrowResolutionError(cx, module, resolution, true, importName,
-                             in->lineNumber(), in->columnNumber());
+                             in.lineNumber(), in.columnNumber());
         return false;
       }
 
