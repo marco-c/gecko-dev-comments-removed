@@ -37,7 +37,6 @@ Pattern({
           global:         { count: Pattern.NATURAL },
 
           
-          Source:         { count: Pattern.NATURAL },
           Environment:    { count: Pattern.NATURAL },
           Script:         { count: Pattern.NATURAL },
           Memory:         { count: Pattern.NATURAL },
