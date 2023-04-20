@@ -459,6 +459,16 @@ void DrawTargetRecording::PushClip(const Path* aPath) {
     return;
   }
 
+  
+  
+  
+  
+  auto rect = aPath->AsRect();
+  if (rect.isSome()) {
+    PushClipRect(rect.value());
+    return;
+  }
+
   RefPtr<PathRecording> pathRecording = EnsurePathStored(aPath);
 
   mRecorder->RecordEvent(RecordedPushClip(this, pathRecording));
