@@ -13,7 +13,13 @@
 
 namespace webrtc {
 
-static const int kGainMapSize = 256;
+static constexpr int kGainMapSize = 256;
+
+
+
+
+
+
 
 static const int kGainMap[kGainMapSize] = {
     -56, -54, -52, -50, -48, -47, -45, -43, -42, -40, -38, -37, -35, -34, -33,
