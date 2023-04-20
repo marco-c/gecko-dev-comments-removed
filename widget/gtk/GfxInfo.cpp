@@ -723,6 +723,13 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         "FEATURE_FAILURE_WEBRENDER_OLD_NVIDIA", "460.82.0");
 
     
+    APPEND_TO_DRIVER_BLOCKLIST(
+        OperatingSystem::Linux, DeviceFamily::NvidiaWebRenderBlocked,
+        nsIGfxInfo::FEATURE_WEBRENDER, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
+        DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0),
+        "NVIDIA_EARLY_TESLA_AND_C67_C68", "");
+
+    
     
     
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
