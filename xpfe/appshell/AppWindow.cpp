@@ -2213,18 +2213,11 @@ nsresult AppWindow::SetRootShellSize(int32_t aWidth, int32_t aHeight) {
 
 NS_IMETHODIMP AppWindow::SizeShellTo(nsIDocShellTreeItem* aShellItem,
                                      int32_t aCX, int32_t aCY) {
-  MOZ_ASSERT(aShellItem == mDocShell || aShellItem == mPrimaryContentShell);
-  if (aShellItem == mDocShell) {
-    auto newSize =
-        LayoutDeviceIntSize(aCX, aCY) + GetOuterToInnerSizeDifference(mWindow);
-    SetSize(newSize.width, newSize.height,  true);
-    return NS_OK;
-  }
+  
+  
+  
+  
 
-  
-  
-  
-  
   nsCOMPtr<nsIBaseWindow> shellAsWin(do_QueryInterface(aShellItem));
   NS_ENSURE_TRUE(shellAsWin, NS_ERROR_FAILURE);
 
@@ -2613,6 +2606,11 @@ void AppWindow::IntrinsicallySizeShell(const CSSIntSize& aWindowDiff,
     return;
   }
   RefPtr<nsDocShell> docShell = mDocShell;
+  nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
+  docShell->GetTreeOwner(getter_AddRefs(treeOwner));
+  if (!treeOwner) {
+    return;
+  }
 
   CSSIntCoord maxWidth = 0;
   CSSIntCoord maxHeight = 0;
@@ -2641,7 +2639,7 @@ void AppWindow::IntrinsicallySizeShell(const CSSIntSize& aWindowDiff,
 
   int32_t width = pc->CSSPixelsToDevPixels(size->width);
   int32_t height = pc->CSSPixelsToDevPixels(size->height);
-  SizeShellTo(docShell, width, height);
+  treeOwner->SizeShellTo(docShell, width, height);
 
   
   aSpecWidth = size->width + aWindowDiff.width;
