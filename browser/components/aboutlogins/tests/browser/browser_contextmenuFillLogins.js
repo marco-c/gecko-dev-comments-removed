@@ -90,9 +90,16 @@ async function openContextMenuForPasswordInput(browser) {
   let passwordInputCoords = await SpecialPowers.spawn(browser, [], async () => {
     let loginItem = Cu.waiveXrays(content.document.querySelector("login-item"));
 
+    
+    
     let passwordInput = loginItem.shadowRoot.querySelector(
+      "input[type='password']"
+    );
+    passwordInput.focus();
+    passwordInput = loginItem.shadowRoot.querySelector(
       "input[name='password']"
     );
+
     passwordInput.focus();
     let passwordRect = passwordInput.getBoundingClientRect();
 
