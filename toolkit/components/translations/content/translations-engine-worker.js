@@ -107,7 +107,6 @@ async function handleInitializationMessage({ data }) {
     handleMessages(engine);
     postMessage({ type: "initialization-success" });
   } catch (error) {
-    
     console.error(error);
     postMessage({ type: "initialization-error", error: error?.message });
   }
