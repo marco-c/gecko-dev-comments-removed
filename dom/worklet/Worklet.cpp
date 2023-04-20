@@ -261,7 +261,11 @@ class WorkletFetchHandler final : public PromiseNativeHandler,
   virtual void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
                                 ErrorResult& aRv) override {
     MOZ_ASSERT(NS_IsMainThread());
-    RejectPromises(NS_ERROR_DOM_NETWORK_ERR);
+
+    
+    
+    
+    RejectPromises(NS_ERROR_DOM_ABORT_ERR);
   }
 
   const nsCString& URL() const { return mURL; }
