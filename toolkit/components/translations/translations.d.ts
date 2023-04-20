@@ -250,3 +250,11 @@ interface LanguageIdEngineMockedPayload {
 
 
 export type NodeVisibility = "in-viewport" | "out-of-viewport" | "hidden";
+
+
+
+
+export interface LangTags {
+  appLangTag: string,
+  docLangTag: string,
+}
