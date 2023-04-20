@@ -771,6 +771,9 @@ class nsTextFrame : public nsIFrame {
   
   nsTextFrame* FindContinuationForOffset(int32_t aOffset);
 
+  void SetHangableISize(nscoord aISize);
+  nscoord GetHangableISize() const;
+
  protected:
   virtual ~nsTextFrame();
 
@@ -807,6 +810,11 @@ class nsTextFrame : public nsIFrame {
 
   
   bool mHasContinuationsProperty = false;
+
+  
+  
+  
+  bool mHasHangableWS = false;
 
   
 
