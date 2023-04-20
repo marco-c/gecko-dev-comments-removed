@@ -637,9 +637,11 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowColumns(
       kidReflowInput.mFlags.mMustReflowPlaceholders = !changingBSize;
 
       COLUMN_SET_LOG(
-          "%s: Reflowing child #%d %p: availSize=(%d,%d), kidCBSize=(%d,%d)",
+          "%s: Reflowing child #%d %p: availSize=(%d,%d), kidCBSize=(%d,%d), "
+          "child's mIsTopOfPage=%d",
           __func__, colData.mColCount, child, availSize.ISize(wm),
-          availSize.BSize(wm), kidCBSize.ISize(wm), kidCBSize.BSize(wm));
+          availSize.BSize(wm), kidCBSize.ISize(wm), kidCBSize.BSize(wm),
+          kidReflowInput.mFlags.mIsTopOfPage);
 
       
       
@@ -1146,6 +1148,7 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
     
     
     
+    COLUMN_SET_LOG("%s: Last attempt to call ReflowColumns", __func__);
     const bool forceUnboundedLastColumn =
         aReflowInput.mParentReflowInput->AvailableBSize() ==
         NS_UNCONSTRAINEDSIZE;
@@ -1183,6 +1186,11 @@ void nsColumnSetFrame::Reflow(nsPresContext* aPresContext,
       "child list!");
 
   
+
+  COLUMN_SET_LOG("%s: Begin Reflow: this=%p, is nested multicol=%d", __func__,
+                 this,
+                 aReflowInput.mParentReflowInput->mFrame->HasAnyStateBits(
+                     NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR));
 
   
   
@@ -1225,6 +1233,8 @@ void nsColumnSetFrame::Reflow(nsPresContext* aPresContext,
   MOZ_ASSERT(!HasAbsolutelyPositionedChildren(),
              "ColumnSetWrapperFrame should be the abs.pos container!");
   FinishAndStoreOverflow(&aDesiredSize, aReflowInput.mStyleDisplay);
+
+  COLUMN_SET_LOG("%s: End Reflow: this=%p", __func__, this);
 }
 
 void nsColumnSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
