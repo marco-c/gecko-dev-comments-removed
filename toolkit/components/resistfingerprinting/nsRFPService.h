@@ -12,6 +12,7 @@
 #include "mozilla/BasicEvents.h"
 #include "nsContentUtils.h"
 #include "nsHashtablesFwd.h"
+#include "nsID.h"
 #include "nsIGlobalObject.h"
 #include "nsIObserver.h"
 #include "nsISupports.h"
@@ -227,6 +228,11 @@ class nsRFPService final : public nsIObserver {
                                 const WidgetKeyboardEvent* aKeyboardEvent,
                                 uint32_t& aOut);
 
+  
+  
+  static Maybe<nsTArray<uint8_t>> GenerateKey(nsIURI* aTopLevelURI,
+                                              bool aIsPrivate);
+
  private:
   nsresult Init();
 
@@ -261,7 +267,24 @@ class nsRFPService final : public nsIObserver {
 
   static void TypeToText(TimerPrecisionType aType, nsACString& aText);
 
+  
+  nsresult EnsureSessionKey(bool aIsPrivate);
+  void ClearSessionKey(bool aIsPrivate);
+
   nsCString mInitialTZValue;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<nsID> mBrowsingSessionKey;
+  Maybe<nsID> mPrivateBrowsingSessionKey;
 };
 
 }  
