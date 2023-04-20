@@ -19,21 +19,22 @@ from operator import itemgetter
 UNSUPPORTED_FEATURES = set(
     [
         "tail-call-optimization",
-        "Intl.DateTimeFormat-quarter",
-        "Intl.Segmenter",
-        "Intl.Locale-info",
-        "Intl.DurationFormat",
-        "Atomics.waitAsync",
-        "legacy-regexp",
-        "json-modules",
-        "resizable-arraybuffer",
-        "Temporal",
-        "regexp-v-flag",
-        "decorators",
-        "regexp-duplicate-named-groups",
+        "Intl.Segmenter",  
+        "Intl.Locale-info",  
+        "Intl.DurationFormat",  
+        "Atomics.waitAsync",  
+        "legacy-regexp",  
+        "json-modules",  
+        "resizable-arraybuffer",  
+        "Temporal",  
+        "regexp-v-flag",  
+        "decorators",  
+        "regexp-duplicate-named-groups",  
         "String.prototype.isWellFormed",  
         "String.prototype.toWellFormed",  
         "symbols-as-weakmap-keys",  
+        "arraybuffer-transfer",  
+        "json-parse-with-source",  
     ]
 )
 FEATURE_CHECK_NEEDED = {
@@ -41,13 +42,13 @@ FEATURE_CHECK_NEEDED = {
     "FinalizationRegistry": "!this.hasOwnProperty('FinalizationRegistry')",
     "SharedArrayBuffer": "!this.hasOwnProperty('SharedArrayBuffer')",
     "WeakRef": "!this.hasOwnProperty('WeakRef')",
-    "array-grouping": "!Array.prototype.group",
-    "change-array-by-copy": "!Array.prototype.with",
-    "Array.fromAsync": "!Array.fromAsync",
+    "array-grouping": "!Array.prototype.group",  
+    "change-array-by-copy": "!Array.prototype.with",  
+    "Array.fromAsync": "!Array.fromAsync",  
 }
 RELEASE_OR_BETA = set(
     [
-        "Intl.NumberFormat-v3",
+        "Intl.NumberFormat-v3",  
     ]
 )
 SHELL_OPTIONS = {
@@ -301,9 +302,15 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
     
     
     
-    assert b"$DONE" not in testSource or isAsync or isNegative, (
-        "Missing async attribute in: %s" % testName
-    )
+    
+    
+    
+    assert (
+        (b"$DONE" not in testSource and b"asyncTest" not in testSource)
+        or isAsync
+        or isNegative
+        or testName.split(os.path.sep)[0] == "harness"
+    ), ("Missing async attribute in: %s" % testName)
 
     
     isModule = "module" in testRec
