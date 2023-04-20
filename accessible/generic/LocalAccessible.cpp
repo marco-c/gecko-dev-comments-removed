@@ -1441,7 +1441,7 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
   }
 
   if (aAttribute == nsGkAtoms::slot &&
-      !mContent->GetFlattenedTreeParentNode()) {
+      !mContent->GetFlattenedTreeParentNode() && this != mDoc) {
     
     mDoc->ContentRemoved(this);
   }
