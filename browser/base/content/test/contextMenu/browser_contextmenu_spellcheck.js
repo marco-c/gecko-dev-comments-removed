@@ -8,6 +8,7 @@ let contextMenu;
 const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
 const example_base =
+  
   "http://example.com/browser/browser/base/content/test/contextMenu/";
 const MAIN_URL = example_base + "subtst_contextmenu_input.html";
 

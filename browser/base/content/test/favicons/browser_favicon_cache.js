@@ -1,7 +1,9 @@
 add_task(async () => {
   const testPath =
+    
     "http://example.com/browser/browser/base/content/test/favicons/cookie_favicon.html";
   const resetPath =
+    
     "http://example.com/browser/browser/base/content/test/favicons/cookie_favicon.sjs?reset";
 
   let tab = BrowserTestUtils.addTab(gBrowser, testPath);

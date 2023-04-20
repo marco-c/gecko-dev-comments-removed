@@ -33,26 +33,31 @@ const fullscreenTarget = "D";
 
 const frameTree = {
   name: "TOP",
+  
   url: `http://example.com${fullscreenPath}`,
   allow_fullscreen: true,
   children: [
     {
       name: "A",
+      
       url: `http://example.org${fullscreenPath}`,
       allow_fullscreen: true,
       children: [
         {
           name: "C",
+          
           url: `http://example.com${fullscreenPath}`,
           allow_fullscreen: true,
           children: [
             {
               name: "D",
+              
               url: `http://example.com${fullscreenPath}?different-uri=1`,
               allow_fullscreen: true,
               children: [
                 {
                   name: "E",
+                  
                   url: `http://example.org${fullscreenPath}`,
                   allow_fullscreen: true,
                   children: [],
@@ -65,6 +70,7 @@ const frameTree = {
     },
     {
       name: "B",
+      
       url: `http://example.net${fullscreenPath}`,
       allow_fullscreen: true,
       children: [],

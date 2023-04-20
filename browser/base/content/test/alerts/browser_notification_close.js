@@ -9,6 +9,7 @@ const { PermissionTestUtils } = ChromeUtils.import(
 );
 
 let notificationURL =
+  
   "http://example.org/browser/browser/base/content/test/alerts/file_dom_notifications.html";
 let oldShowFavicons;
 

@@ -1,4 +1,5 @@
 const TEST_PATH =
+  
   "http://example.com/browser/browser/base/content/test/favicons/";
 
 function waitForAttributeChange(tab, attr) {
@@ -77,6 +78,7 @@ add_task(async () => {
     { gBrowser, url: TEST_PATH + "blank.html" },
     async browser => {
       let icon = await iconAvailable;
+      
       is(icon.iconURL, "http://example.com/favicon.ico");
 
       let tab = gBrowser.getTabForBrowser(browser);

@@ -162,6 +162,7 @@ add_task(async function checkDomainCorrection() {
   info("Try loading a URI that should result in an error page");
   BrowserTestUtils.openNewForegroundTab(
     gBrowser,
+    
     "http://example/example2/",
     false
   );

@@ -1,6 +1,8 @@
 add_task(async () => {
   const testPath =
+    
     "http://example.com/browser/browser/base/content/test/favicons/blank.html";
+  
   const expectedIcon = "http://example.com/favicon.ico";
 
   let tab = BrowserTestUtils.addTab(gBrowser, testPath);

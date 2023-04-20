@@ -3,7 +3,9 @@
 
 add_task(async () => {
   const testPath =
+    
     "http://example.com/browser/browser/base/content/test/favicons/";
+  
   const expectedIcon = "http://example.com/favicon.ico";
 
   await BrowserTestUtils.withNewTab(
