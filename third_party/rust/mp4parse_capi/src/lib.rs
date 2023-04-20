@@ -34,12 +34,6 @@
 
 
 
-
-extern crate byteorder;
-extern crate log;
-extern crate mp4parse;
-extern crate num_traits;
-
 use byteorder::WriteBytesExt;
 use std::convert::TryFrom;
 use std::convert::TryInto;
@@ -51,6 +45,7 @@ use mp4parse::serialize_opus_header;
 use mp4parse::unstable::{
     create_sample_table, media_time_to_us, track_time_to_us, CheckedInteger, Indice, Microseconds,
 };
+use mp4parse::AV1ConfigBox;
 use mp4parse::AudioCodecSpecific;
 use mp4parse::AvifContext;
 use mp4parse::CodecType;
@@ -59,6 +54,7 @@ use mp4parse::MediaContext;
 pub use mp4parse::ParseStrictness;
 use mp4parse::SampleEntry;
 pub use mp4parse::Status as Mp4parseStatus;
+use mp4parse::Track;
 use mp4parse::TrackType;
 use mp4parse::TryBox;
 use mp4parse::TryHashMap;
@@ -76,11 +72,13 @@ struct HashMap;
 struct String;
 
 #[repr(C)]
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum Mp4parseTrackType {
     Video = 0,
-    Audio = 1,
-    Metadata = 2,
+    Picture = 1,
+    AuxiliaryVideo = 2,
+    Audio = 3,
+    Metadata = 4,
 }
 
 impl Default for Mp4parseTrackType {
@@ -91,7 +89,7 @@ impl Default for Mp4parseTrackType {
 
 #[allow(non_camel_case_types, clippy::upper_case_acronyms)]
 #[repr(C)]
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum Mp4parseCodec {
     Unknown,
     Aac,
@@ -120,7 +118,7 @@ impl Default for Mp4parseCodec {
 }
 
 #[repr(C)]
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum Mp4ParseEncryptionSchemeType {
     None,
     Cenc,
@@ -202,7 +200,7 @@ pub struct Mp4parsePsshInfo {
 }
 
 #[repr(u8)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum OptionalFourCc {
     None,
     Some([u8; 4]),
@@ -316,15 +314,10 @@ pub struct Mp4parseParser {
 
 #[repr(C)]
 #[derive(Debug)]
-pub struct Mp4parseAvifImageItem {
-    pub coded_data: Mp4parseByteData,
-    pub bits_per_channel: Mp4parseByteData,
-}
-
-#[repr(C)]
-#[derive(Debug)]
-pub struct Mp4parseAvifImage {
-    pub primary_image: Mp4parseAvifImageItem,
+pub struct Mp4parseAvifInfo {
+    pub premultiplied_alpha: bool,
+    pub major_brand: [u8; 4],
+    pub unsupported_features_bitfield: u32,
     
     pub spatial_extents: *const mp4parse::ImageSpatialExtentsProperty,
     pub nclx_colour_information: *const mp4parse::NclxColourInformation,
@@ -332,12 +325,33 @@ pub struct Mp4parseAvifImage {
     pub image_rotation: mp4parse::ImageRotation,
     pub image_mirror: *const mp4parse::ImageMirror,
     pub pixel_aspect_ratio: *const mp4parse::PixelAspectRatio,
+
     
-    pub alpha_image: Mp4parseAvifImageItem,
-    pub premultiplied_alpha: bool,
-    pub major_brand: [u8; 4],
+    pub has_primary_item: bool,
+    
+    pub primary_item_bit_depth: u8,
+    
+    
+    pub has_alpha_item: bool,
+    
+    pub alpha_item_bit_depth: u8,
+
+    
     pub has_sequence: bool,
-    pub unsupported_features_bitfield: u32,
+    
+    pub color_track_id: u32,
+    pub color_track_bit_depth: u8,
+    
+    pub alpha_track_id: u32,
+    pub alpha_track_bit_depth: u8,
+}
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct Mp4parseAvifImage {
+    pub primary_image: Mp4parseByteData,
+    
+    pub alpha_image: Mp4parseByteData,
 }
 
 
@@ -381,8 +395,10 @@ impl ContextParser for Mp4parseParser {
     }
 }
 
+#[derive(Default)]
 pub struct Mp4parseAvifParser {
     context: AvifContext,
+    sample_table: TryHashMap<u32, TryVec<Indice>>,
 }
 
 impl Mp4parseAvifParser {
@@ -395,7 +411,10 @@ impl ContextParser for Mp4parseAvifParser {
     type Context = AvifContext;
 
     fn with_context(context: Self::Context) -> Self {
-        Self { context }
+        Self {
+            context,
+            ..Default::default()
+        }
     }
 
     fn read<T: Read>(io: &mut T, strictness: ParseStrictness) -> mp4parse::Result<Self::Context> {
@@ -601,6 +620,8 @@ pub unsafe extern "C" fn mp4parse_get_track_info(
 
     info.track_type = match context.tracks[track_index].track_type {
         TrackType::Video => Mp4parseTrackType::Video,
+        TrackType::Picture => Mp4parseTrackType::Picture,
+        TrackType::AuxiliaryVideo => Mp4parseTrackType::AuxiliaryVideo,
         TrackType::Audio => Mp4parseTrackType::Audio,
         TrackType::Metadata => Mp4parseTrackType::Metadata,
         TrackType::Unknown => return Mp4parseStatus::Unsupported,
@@ -1037,6 +1058,158 @@ fn mp4parse_get_track_video_info_safe(
 
 
 #[no_mangle]
+pub unsafe extern "C" fn mp4parse_avif_get_info(
+    parser: *const Mp4parseAvifParser,
+    avif_info: *mut Mp4parseAvifInfo,
+) -> Mp4parseStatus {
+    if parser.is_null() || avif_info.is_null() {
+        return Mp4parseStatus::BadArg;
+    }
+
+    if let Ok(info) = mp4parse_avif_get_info_safe((*parser).context()) {
+        *avif_info = info;
+        Mp4parseStatus::Ok
+    } else {
+        Mp4parseStatus::Invalid
+    }
+}
+
+fn mp4parse_avif_get_info_safe(context: &AvifContext) -> mp4parse::Result<Mp4parseAvifInfo> {
+    let info = Mp4parseAvifInfo {
+        premultiplied_alpha: context.premultiplied_alpha,
+        major_brand: context.major_brand.value,
+        unsupported_features_bitfield: context.unsupported_features.into_bitfield(),
+        spatial_extents: context.spatial_extents_ptr()?,
+        nclx_colour_information: context
+            .nclx_colour_information_ptr()
+            .unwrap_or(Ok(std::ptr::null()))?,
+        icc_colour_information: Mp4parseByteData::with_data(
+            context.icc_colour_information().unwrap_or(Ok(&[]))?,
+        ),
+        image_rotation: context.image_rotation()?,
+        image_mirror: context.image_mirror_ptr()?,
+        pixel_aspect_ratio: context.pixel_aspect_ratio_ptr()?,
+
+        has_primary_item: context.primary_item_is_present(),
+        primary_item_bit_depth: 0,
+        has_alpha_item: context.alpha_item_is_present(),
+        alpha_item_bit_depth: 0,
+
+        has_sequence: false,
+        color_track_id: 0,
+        color_track_bit_depth: 0,
+        alpha_track_id: 0,
+        alpha_track_bit_depth: 0,
+    };
+
+    fn get_bit_depth(data: &[u8]) -> u8 {
+        if !data.is_empty() && data.iter().all(|v| *v == data[0]) {
+            data[0]
+        } else {
+            0
+        }
+    }
+    let primary_item_bit_depth =
+        get_bit_depth(context.primary_item_bits_per_channel().unwrap_or(Ok(&[]))?);
+    let alpha_item_bit_depth =
+        get_bit_depth(context.primary_item_bits_per_channel().unwrap_or(Ok(&[]))?);
+
+    if let Some(sequence) = &context.sequence {
+        
+        fn get_track<T>(tracks: &TryVec<Track>, pred: T) -> Option<&Track>
+        where
+            T: Fn(&Track) -> bool,
+        {
+            tracks.iter().find(|track| {
+                if track.track_id.is_none() {
+                    return false;
+                }
+                match &track.stsc {
+                    Some(stsc) => {
+                        if stsc.samples.is_empty() {
+                            return false;
+                        }
+                        if !pred(track) {
+                            return false;
+                        }
+                        stsc.samples.iter().any(|chunk| chunk.samples_per_chunk > 0)
+                    }
+                    _ => false,
+                }
+            })
+        }
+
+        
+        let color_track = match get_track(&sequence.tracks, |_| true) {
+            Some(v) => v,
+            _ => return Ok(info),
+        };
+
+        
+        let alpha_track = get_track(&sequence.tracks, |track| match &track.tref {
+            Some(tref) => tref.has_auxl_reference(color_track.track_id.unwrap()),
+            _ => false,
+        });
+
+        fn get_av1c(track: &Track) -> Option<&AV1ConfigBox> {
+            if let Some(stsd) = &track.stsd {
+                for entry in &stsd.descriptions {
+                    if let SampleEntry::Video(video_entry) = entry {
+                        if let VideoCodecSpecific::AV1Config(av1c) = &video_entry.codec_specific {
+                            return Some(av1c);
+                        }
+                    }
+                }
+            }
+
+            None
+        }
+
+        let color_track_id = color_track.track_id.unwrap();
+        let color_track_bit_depth = match get_av1c(color_track) {
+            Some(av1c) => av1c.bit_depth,
+            _ => return Ok(info),
+        };
+
+        let (alpha_track_id, alpha_track_bit_depth) = match alpha_track {
+            Some(track) => (
+                track.track_id.unwrap(),
+                match get_av1c(track) {
+                    Some(av1c) => av1c.bit_depth,
+                    _ => return Ok(info),
+                },
+            ),
+            _ => (0, 0),
+        };
+
+        return Ok(Mp4parseAvifInfo {
+            primary_item_bit_depth,
+            alpha_item_bit_depth,
+            has_sequence: true,
+            color_track_id,
+            color_track_bit_depth,
+            alpha_track_id,
+            alpha_track_bit_depth,
+            ..info
+        });
+    }
+
+    Ok(info)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[no_mangle]
 pub unsafe extern "C" fn mp4parse_avif_get_image(
     parser: *const Mp4parseAvifParser,
     avif_image: *mut Mp4parseAvifImage,
@@ -1057,39 +1230,11 @@ pub fn mp4parse_avif_get_image_safe(
     parser: &Mp4parseAvifParser,
 ) -> mp4parse::Result<Mp4parseAvifImage> {
     let context = parser.context();
-
-    let primary_image = Mp4parseAvifImageItem {
-        coded_data: Mp4parseByteData::with_data(context.primary_item_coded_data().unwrap_or(&[])),
-        bits_per_channel: Mp4parseByteData::with_data(
-            context.primary_item_bits_per_channel().unwrap_or(Ok(&[]))?,
-        ),
-    };
-
-    
-    let alpha_image = Mp4parseAvifImageItem {
-        coded_data: Mp4parseByteData::with_data(context.alpha_item_coded_data().unwrap_or(&[])),
-        bits_per_channel: Mp4parseByteData::with_data(
-            context.alpha_item_bits_per_channel().unwrap_or(Ok(&[]))?,
-        ),
-    };
-
     Ok(Mp4parseAvifImage {
-        primary_image,
-        spatial_extents: context.spatial_extents_ptr()?,
-        nclx_colour_information: context
-            .nclx_colour_information_ptr()
-            .unwrap_or(Ok(std::ptr::null()))?,
-        icc_colour_information: Mp4parseByteData::with_data(
-            context.icc_colour_information().unwrap_or(Ok(&[]))?,
+        primary_image: Mp4parseByteData::with_data(
+            context.primary_item_coded_data().unwrap_or(&[]),
         ),
-        image_rotation: context.image_rotation()?,
-        image_mirror: context.image_mirror_ptr()?,
-        pixel_aspect_ratio: context.pixel_aspect_ratio_ptr()?,
-        alpha_image,
-        premultiplied_alpha: context.premultiplied_alpha,
-        major_brand: context.major_brand.value,
-        has_sequence: context.has_sequence,
-        unsupported_features_bitfield: context.unsupported_features.into_bitfield(),
+        alpha_image: Mp4parseByteData::with_data(context.alpha_item_coded_data().unwrap_or(&[])),
     })
 }
 
@@ -1114,26 +1259,66 @@ pub unsafe extern "C" fn mp4parse_get_indice_table(
     
     *indices = Default::default();
 
-    get_indice_table(&mut *parser, track_id, &mut *indices).into()
+    get_indice_table(
+        &(*parser).context,
+        &mut (*parser).sample_table,
+        track_id,
+        &mut *indices,
+    )
+    .into()
+}
+
+
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn mp4parse_avif_get_indice_table(
+    parser: *mut Mp4parseAvifParser,
+    track_id: u32,
+    indices: *mut Mp4parseByteData,
+) -> Mp4parseStatus {
+    if parser.is_null() {
+        return Mp4parseStatus::BadArg;
+    }
+
+    if indices.is_null() {
+        return Mp4parseStatus::BadArg;
+    }
+
+    
+    *indices = Default::default();
+
+    if let Some(sequence) = &(*parser).context.sequence {
+        return get_indice_table(
+            sequence,
+            &mut (*parser).sample_table,
+            track_id,
+            &mut *indices,
+        )
+        .into();
+    }
+
+    Mp4parseStatus::BadArg
 }
 
 fn get_indice_table(
-    parser: &mut Mp4parseParser,
+    context: &MediaContext,
+    sample_table_cache: &mut TryHashMap<u32, TryVec<Indice>>,
     track_id: u32,
     indices: &mut Mp4parseByteData,
 ) -> Result<(), Mp4parseStatus> {
-    let Mp4parseParser {
-        context,
-        sample_table: index_table,
-        ..
-    } = parser;
     let tracks = &context.tracks;
     let track = match tracks.iter().find(|track| track.track_id == Some(track_id)) {
         Some(t) => t,
         _ => return Err(Mp4parseStatus::Invalid),
     };
 
-    if let Some(v) = index_table.get(&track_id) {
+    if let Some(v) = sample_table_cache.get(&track_id) {
         indices.set_indices(v);
         return Ok(());
     }
@@ -1165,7 +1350,7 @@ fn get_indice_table(
 
     if let Some(v) = create_sample_table(track, offset_time) {
         indices.set_indices(&v);
-        index_table.insert(track_id, v)?;
+        sample_table_cache.insert(track_id, v)?;
         return Ok(());
     }
 
