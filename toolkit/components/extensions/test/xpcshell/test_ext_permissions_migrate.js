@@ -29,7 +29,7 @@ add_task(async function setup() {
   AddonTestUtils.usePrivilegedSignatures = false;
 });
 
-add_task(async function test_migrated_permission_to_optional() {
+async function test_migrated_permission_to_optional({ manifest_version }) {
   let id = "permission-upgrade@test";
   let extensionData = {
     manifest: {
@@ -67,9 +67,16 @@ add_task(async function test_migrated_permission_to_optional() {
   await extension.startup();
   checkPermissions();
 
+  extensionData.manifest.manifest_version = manifest_version;
+
   
   extensionData.manifest.version = "2.0";
-  extensionData.manifest.permissions = ["tabs", "http://example.net/*"];
+  extensionData.manifest.permissions = ["tabs"];
+
+  
+  
+  extensionData.manifest.host_permissions = ["http://example.net/*"];
+
   extensionData.manifest.optional_permissions = [
     "webRequest",
     "http://example.com/*",
@@ -85,6 +92,15 @@ add_task(async function test_migrated_permission_to_optional() {
   checkPermissions();
 
   await extension.unload();
+}
+
+add_task(function test_migrated_permission_to_optional_mv2() {
+  return test_migrated_permission_to_optional({ manifest_version: 2 });
+});
+
+
+add_task(function test_migrated_permission_to_optional_mv3() {
+  return test_migrated_permission_to_optional({ manifest_version: 3 });
 });
 
 
