@@ -6519,9 +6519,9 @@ uint64_t QuotaManager::LockedCollectOriginsForEviction(
 }
 
 void QuotaManager::LockedRemoveQuotaForOrigin(
-    PersistenceType aPersistenceType, const OriginMetadata& aOriginMetadata) {
+    const OriginMetadata& aOriginMetadata) {
   mQuotaMutex.AssertCurrentThreadOwns();
-  MOZ_ASSERT(aPersistenceType != PERSISTENCE_TYPE_PERSISTENT);
+  MOZ_ASSERT(aOriginMetadata.mPersistenceType != PERSISTENCE_TYPE_PERSISTENT);
 
   GroupInfoPair* pair;
   if (!mGroupInfoPairs.Get(aOriginMetadata.mGroup, &pair)) {
@@ -6531,11 +6531,11 @@ void QuotaManager::LockedRemoveQuotaForOrigin(
   MOZ_ASSERT(pair);
 
   if (RefPtr<GroupInfo> groupInfo =
-          pair->LockedGetGroupInfo(aPersistenceType)) {
+          pair->LockedGetGroupInfo(aOriginMetadata.mPersistenceType)) {
     groupInfo->LockedRemoveOriginInfo(aOriginMetadata.mOrigin);
 
     if (!groupInfo->LockedHasOriginInfos()) {
-      pair->LockedClearGroupInfo(aPersistenceType);
+      pair->LockedClearGroupInfo(aOriginMetadata.mPersistenceType);
 
       if (!pair->LockedHasGroupInfos()) {
         mGroupInfoPairs.Remove(aOriginMetadata.mGroup);
@@ -6706,6 +6706,17 @@ void QuotaManager::ClearOrigins(
   AssertIsOnIOThread();
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<OriginMetadata> clearedOrigins;
+
+  
   for (const auto& doomedOriginInfo :
        Flatten<OriginInfosFlatTraversable::value_type>(aDoomedOriginInfos)) {
 #ifdef DEBUG
@@ -6715,31 +6726,27 @@ void QuotaManager::ClearOrigins(
     }
 #endif
 
+    
+    
+    
+    
+    
+    
+    if (QuotaManager::IsShuttingDown()) {
+      break;
+    }
+
     DeleteFilesForOrigin(doomedOriginInfo->mGroupInfo->mPersistenceType,
                          doomedOriginInfo->mOrigin);
+
+    clearedOrigins.AppendElement(doomedOriginInfo->FlattenToOriginMetadata());
   }
-
-  struct OriginParams {
-    nsCString mOrigin;
-    PersistenceType mPersistenceType;
-  };
-
-  nsTArray<OriginParams> clearedOrigins;
 
   {
     MutexAutoLock lock(mQuotaMutex);
 
-    for (const auto& doomedOriginInfo :
-         Flatten<OriginInfosFlatTraversable::value_type>(aDoomedOriginInfos)) {
-      
-      
-      
-      clearedOrigins.AppendElement(
-          OriginParams{doomedOriginInfo->mOrigin,
-                       doomedOriginInfo->mGroupInfo->mPersistenceType});
-
-      LockedRemoveQuotaForOrigin(doomedOriginInfo->mGroupInfo->mPersistenceType,
-                                 doomedOriginInfo->FlattenToOriginMetadata());
+    for (const auto& clearedOrigin : clearedOrigins) {
+      LockedRemoveQuotaForOrigin(clearedOrigin);
     }
   }
 

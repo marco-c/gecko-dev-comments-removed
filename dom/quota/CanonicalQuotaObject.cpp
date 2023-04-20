@@ -243,8 +243,7 @@ bool CanonicalQuotaObject::LockedMaybeUpdateSize(int64_t aSize,
                    lock->Origin() == mOriginInfo->mOrigin),
                  "Deleted itself!");
 
-      quotaManager->LockedRemoveQuotaForOrigin(lock->GetPersistenceType(),
-                                               lock->OriginMetadata());
+      quotaManager->LockedRemoveQuotaForOrigin(lock->OriginMetadata());
     }
 
     
