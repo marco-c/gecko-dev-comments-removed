@@ -678,15 +678,15 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
 
   
   mShutdownBlockers.WaitUntilClear(10 * 1000 )
-      ->Then(GetCurrentSerialEventTarget(), __func__, [this]() {
-        if (mProfilerController) {
-          mProfilerController->Shutdown();
-          mProfilerController = nullptr;
+      ->Then(GetCurrentSerialEventTarget(), __func__, [self = RefPtr{this}]() {
+        if (self->mProfilerController) {
+          self->mProfilerController->Shutdown();
+          self->mProfilerController = nullptr;
         }
 
-        if (mVsyncBridge) {
-          mVsyncBridge->Shutdown();
-          mVsyncBridge = nullptr;
+        if (self->mVsyncBridge) {
+          self->mVsyncBridge->Shutdown();
+          self->mVsyncBridge = nullptr;
         }
         VideoBridgeParent::Shutdown();
         
