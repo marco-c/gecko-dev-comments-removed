@@ -2,20 +2,21 @@
 
 
 
-#ifndef _REMOTE_TRACK_SOURCE_H_
-#define _REMOTE_TRACK_SOURCE_H_
+
+
+#ifndef DOM_MEDIA_WEBRTC_JSAPI_REMOTETRACKSOURCE_H_
+#define DOM_MEDIA_WEBRTC_JSAPI_REMOTETRACKSOURCE_H_
 
 #include "MediaStreamTrack.h"
-#include "MediaStreamError.h"
 
 namespace mozilla {
+
+class SourceMediaTrack;
 
 class RemoteTrackSource : public dom::MediaStreamTrackSource {
  public:
   RemoteTrackSource(SourceMediaTrack* aStream, nsIPrincipal* aPrincipal,
-                    const nsString& aLabel, TrackingId aTrackingId)
-      : dom::MediaStreamTrackSource(aPrincipal, aLabel, std::move(aTrackingId)),
-        mStream(aStream) {}
+                    const nsString& aLabel, TrackingId aTrackingId);
 
   dom::MediaSourceEnum GetMediaSource() const override {
     return dom::MediaSourceEnum::Other;
@@ -23,12 +24,7 @@ class RemoteTrackSource : public dom::MediaStreamTrackSource {
 
   RefPtr<ApplyConstraintsPromise> ApplyConstraints(
       const dom::MediaTrackConstraints& aConstraints,
-      dom::CallerType aCallerType) override {
-    return ApplyConstraintsPromise::CreateAndReject(
-        MakeRefPtr<MediaMgrError>(
-            dom::MediaStreamError::Name::OverconstrainedError, ""),
-        __func__);
-  }
+      dom::CallerType aCallerType) override;
 
   void Stop() override {
     
@@ -39,20 +35,14 @@ class RemoteTrackSource : public dom::MediaStreamTrackSource {
 
   void Enable() override {}
 
-  void SetPrincipal(nsIPrincipal* aPrincipal) {
-    mPrincipal = aPrincipal;
-    PrincipalChanged();
-  }
-  void SetMuted(bool aMuted) { MutedChanged(aMuted); }
-  void ForceEnded() { OverrideEnded(); }
+  void SetPrincipal(nsIPrincipal* aPrincipal);
+  void SetMuted(bool aMuted);
+  void ForceEnded();
 
   const RefPtr<SourceMediaTrack> mStream;
 
- protected:
-  virtual ~RemoteTrackSource() {
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(mStream->IsDestroyed());
-  }
+ private:
+  virtual ~RemoteTrackSource();
 };
 
 }  
