@@ -477,6 +477,9 @@ class FormAutofillParent extends JSWindowActorParent {
 
   async _onAddressSubmit(address, browser, timeStartedFillingMS) {
     let showDoorhanger = null;
+
+    
+    
     if (!FormAutofill.isAutofillAddressesCaptureEnabled) {
       return showDoorhanger;
     }
@@ -508,9 +511,11 @@ class FormAutofillParent extends JSWindowActorParent {
           const description = FormAutofillUtils.getAddressLabel(address.record);
           const state = await lazy.FormAutofillPrompter.promptToSaveAddress(
             browser,
-            "updateAddress",
+            address,
             description
           );
+
+          
           let changedGUIDs = await lazy.gFormAutofillStorage.addresses.mergeToStorage(
             address.record,
             true
@@ -582,7 +587,7 @@ class FormAutofillParent extends JSWindowActorParent {
           const description = FormAutofillUtils.getAddressLabel(address.record);
           const state = await lazy.FormAutofillPrompter.promptToSaveAddress(
             browser,
-            "firstTimeUse",
+            address,
             description
           );
           if (state !== "open-pref") {
