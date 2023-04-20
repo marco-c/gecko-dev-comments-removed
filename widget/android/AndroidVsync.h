@@ -36,6 +36,8 @@ class AndroidVsync final : public SupportsThreadSafeWeakPtr<AndroidVsync> {
     
     virtual void OnVsync(const TimeStamp& aTimeStamp) = 0;
     
+    virtual void OnMaybeUpdateRefreshRate() {}
+    
     
     virtual void Dispose() {}
     virtual ~Observer() = default;
@@ -45,6 +47,8 @@ class AndroidVsync final : public SupportsThreadSafeWeakPtr<AndroidVsync> {
   enum ObserverType { INPUT, RENDER };
   void RegisterObserver(Observer* aObserver, ObserverType aType);
   void UnregisterObserver(Observer* aObserver, ObserverType aType);
+
+  void OnMaybeUpdateRefreshRate();
 
  private:
   friend class AndroidVsyncSupport;

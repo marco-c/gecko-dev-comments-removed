@@ -130,5 +130,18 @@ void AndroidVsync::NotifyVsync(int64_t aFrameTimeNanos) {
   }
 }
 
+void AndroidVsync::OnMaybeUpdateRefreshRate() {
+  
+  nsTArray<Observer*> observers;
+  {
+    auto impl = mImpl.Lock();
+    observers.AppendElements(impl->mInputObservers);
+    observers.AppendElements(impl->mRenderObservers);
+  }
+  for (Observer* observer : observers) {
+    observer->OnMaybeUpdateRefreshRate();
+  }
+}
+
 }  
 }  
