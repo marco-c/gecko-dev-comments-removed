@@ -197,6 +197,7 @@ class UntrustedModulesData final {
  public:
   
   
+  
   static constexpr size_t kMaxEvents = 50;
 
   UntrustedModulesData()
@@ -204,7 +205,9 @@ class UntrustedModulesData final {
         mPid(::GetCurrentProcessId()),
         mNumEvents(0),
         mSanitizationFailures(0),
-        mTrustTestFailures(0) {}
+        mTrustTestFailures(0) {
+    MOZ_ASSERT(kMaxEvents == mStacks.GetMaxStacksCount());
+  }
 
   UntrustedModulesData(UntrustedModulesData&&) = default;
   UntrustedModulesData& operator=(UntrustedModulesData&&) = default;
@@ -225,7 +228,7 @@ class UntrustedModulesData final {
   void Swap(UntrustedModulesData& aOther);
 
   
-  void Truncate();
+  void Truncate(bool aDropCallstackData);
 
   GeckoProcessType mProcessType;
   DWORD mPid;
