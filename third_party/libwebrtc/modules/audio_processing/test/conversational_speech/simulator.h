@@ -16,6 +16,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/strings/string_view.h"
 #include "modules/audio_processing/test/conversational_speech/multiend_call.h"
 
 namespace webrtc {
@@ -23,8 +24,8 @@ namespace test {
 namespace conversational_speech {
 
 struct SpeakerOutputFilePaths {
-  SpeakerOutputFilePaths(const std::string& new_near_end,
-                         const std::string& new_far_end)
+  SpeakerOutputFilePaths(absl::string_view new_near_end,
+                         absl::string_view new_far_end)
       : near_end(new_near_end), far_end(new_far_end) {}
   
   const std::string near_end;
@@ -34,7 +35,7 @@ struct SpeakerOutputFilePaths {
 
 std::unique_ptr<std::map<std::string, SpeakerOutputFilePaths>> Simulate(
     const MultiEndCall& multiend_call,
-    const std::string& output_path);
+    absl::string_view output_path);
 
 }  
 }  

@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "common_audio/channel_buffer.h"
 #include "common_audio/wav_file.h"
 #include "modules/audio_processing/include/audio_processing.h"
@@ -112,7 +113,7 @@ class ChannelBufferVectorWriter final {
 };
 
 
-FILE* OpenFile(const std::string& filename, const char* mode);
+FILE* OpenFile(absl::string_view filename, absl::string_view mode);
 
 void SetFrameSampleRate(Int16FrameData* frame, int sample_rate_hz);
 
@@ -151,10 +152,11 @@ float ComputeSNR(const T* ref, const T* test, size_t length, float* variance) {
 
 
 template <typename T>
-std::vector<T> ParseList(const std::string& to_parse) {
+std::vector<T> ParseList(absl::string_view to_parse) {
   std::vector<T> values;
 
-  std::istringstream str(to_parse);
+  std::istringstream str(  
+      std::string{to_parse});
   std::copy(
       std::istream_iterator<T>(str),  
       std::istream_iterator<T>(),     
