@@ -214,6 +214,35 @@ pub trait CryptoRng {}
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait CryptoRngCore: CryptoRng + RngCore {
+    
+    fn as_rngcore(&mut self) -> &mut dyn RngCore;
+}
+
+impl<T: CryptoRng + RngCore> CryptoRngCore for T {
+    fn as_rngcore(&mut self) -> &mut dyn RngCore {
+        self
+    }
+}
+
+
+
+
+
+
+
 pub trait SeedableRng: Sized {
     
     
