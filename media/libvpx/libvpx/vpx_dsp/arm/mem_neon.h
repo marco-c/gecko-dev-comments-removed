@@ -127,6 +127,20 @@ static INLINE uint8x8_t load_unaligned_u8(const uint8_t *buf,
 }
 
 
+static INLINE uint16x8_t load_unaligned_u16q(const uint16_t *buf,
+                                             ptrdiff_t stride) {
+  uint64_t a;
+  uint64x2_t a_u64;
+  if (stride == 4) return vld1q_u16(buf);
+  memcpy(&a, buf, 8);
+  buf += stride;
+  a_u64 = vdupq_n_u64(a);
+  memcpy(&a, buf, 8);
+  a_u64 = vsetq_lane_u64(a, a_u64, 1);
+  return vreinterpretq_u16_u64(a_u64);
+}
+
+
 static INLINE void store_unaligned_u8(uint8_t *buf, ptrdiff_t stride,
                                       const uint8x8_t a) {
   const uint32x2_t a_u32 = vreinterpret_u32_u8(a);

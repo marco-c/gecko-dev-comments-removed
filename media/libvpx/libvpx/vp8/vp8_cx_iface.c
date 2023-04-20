@@ -947,19 +947,10 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
     if (img != NULL) {
       res = image2yuvconfig(img, &sd);
 
-      if (sd.y_width != ctx->cfg.g_w || sd.y_height != ctx->cfg.g_h) {
-        
-
-
-
-        ctx->base.err_detail = "Invalid input frame resolution";
-        res = VPX_CODEC_INVALID_PARAM;
-      } else {
-        if (vp8_receive_raw_frame(ctx->cpi, ctx->next_frame_flag | lib_flags,
-                                  &sd, dst_time_stamp, dst_end_time_stamp)) {
-          VP8_COMP *cpi = (VP8_COMP *)ctx->cpi;
-          res = update_error_state(ctx, &cpi->common.error);
-        }
+      if (vp8_receive_raw_frame(ctx->cpi, ctx->next_frame_flag | lib_flags, &sd,
+                                dst_time_stamp, dst_end_time_stamp)) {
+        VP8_COMP *cpi = (VP8_COMP *)ctx->cpi;
+        res = update_error_state(ctx, &cpi->common.error);
       }
 
       
@@ -1233,8 +1224,8 @@ static vpx_codec_err_t vp8e_set_scalemode(vpx_codec_alg_priv_t *ctx,
   if (data) {
     int res;
     vpx_scaling_mode_t scalemode = *(vpx_scaling_mode_t *)data;
-    res = vp8_set_internal_size(ctx->cpi, (VPX_SCALING)scalemode.h_scaling_mode,
-                                (VPX_SCALING)scalemode.v_scaling_mode);
+    res = vp8_set_internal_size(ctx->cpi, scalemode.h_scaling_mode,
+                                scalemode.v_scaling_mode);
 
     if (!res) {
       

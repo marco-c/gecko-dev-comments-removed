@@ -2990,8 +2990,8 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     }
 
     
-    cpi->common.horiz_scale = NORMAL;
-    cpi->common.vert_scale = NORMAL;
+    cpi->common.horiz_scale = VP8E_NORMAL;
+    cpi->common.vert_scale = VP8E_NORMAL;
 
     
     av_bits_per_frame = cpi->oxcf.target_bandwidth /
