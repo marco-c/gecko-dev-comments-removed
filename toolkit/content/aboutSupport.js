@@ -1101,7 +1101,7 @@ var snapshotFormatters = {
     insertEnumerateDatabase();
 
     
-    if (["win", "macosx", "linux"].includes(AppConstants.platform)) {
+    if (["win", "macosx", "linux", "android"].includes(AppConstants.platform)) {
       insertBasicInfo("media-codec-support-info", data.codecSupportInfo);
     }
   },
