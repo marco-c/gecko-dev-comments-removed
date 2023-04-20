@@ -343,6 +343,49 @@ class LiveRange : public TempObject {
 
 
 
+
+
+class LiveRangePlus {
+  
+  LiveRange* liveRange_;
+  
+  CodePosition from_;
+  CodePosition to_;
+
+ public:
+  explicit LiveRangePlus(LiveRange* lr)
+      : liveRange_(lr), from_(lr->from()), to_(lr->to()) {}
+  LiveRangePlus() : liveRange_(nullptr) {}
+  ~LiveRangePlus() {
+    MOZ_ASSERT(liveRange_ ? from_ == liveRange_->from()
+                          : from_ == CodePosition());
+    MOZ_ASSERT(liveRange_ ? to_ == liveRange_->to() : to_ == CodePosition());
+  }
+
+  LiveRange* liveRange() const { return liveRange_; }
+
+  
+  static int compare(const LiveRangePlus& lrp0, const LiveRangePlus& lrp1) {
+    
+    if (lrp0.to_ <= lrp1.from_) {
+      return -1;
+    }
+    if (lrp0.from_ >= lrp1.to_) {
+      return 1;
+    }
+    return 0;
+  }
+};
+
+
+
+static_assert(sizeof(LiveRangePlus) ==
+              sizeof(LiveRange*) + 2 * sizeof(CodePosition));
+
+
+
+
+
 class SpillSet : public TempObject {
   
   
@@ -563,11 +606,14 @@ class BacktrackingAllocator : protected RegisterAllocator {
   using LiveRangeSet = AvlTree<LiveRange*, LiveRange>;
 
   
+  using LiveRangePlusSet = AvlTree<LiveRangePlus, LiveRangePlus>;
+
+  
   
   struct PhysicalRegister {
     bool allocatable;
     AnyRegister reg;
-    LiveRangeSet allocations;
+    LiveRangePlusSet allocations;
 
     PhysicalRegister() : allocatable(false) {}
   };
@@ -603,7 +649,7 @@ class BacktrackingAllocator : protected RegisterAllocator {
   struct SpillSlot : public TempObject,
                      public InlineForwardListNode<SpillSlot> {
     LStackSlot alloc;
-    LiveRangeSet allocated;
+    LiveRangePlusSet allocated;
 
     SpillSlot(uint32_t slot, LifoAlloc* alloc)
         : alloc(slot), allocated(alloc) {}
@@ -756,7 +802,7 @@ class BacktrackingAllocator : protected RegisterAllocator {
   tryAllocatingRegistersForSpillBundles();
 
   
-  [[nodiscard]] bool insertAllRanges(LiveRangeSet& set, LiveBundle* bundle);
+  [[nodiscard]] bool insertAllRanges(LiveRangePlusSet& set, LiveBundle* bundle);
   [[nodiscard]] bool pickStackSlot(SpillSet* spill);
   [[nodiscard]] AVOID_INLINE_FOR_DEBUGGING bool pickStackSlots();
   [[nodiscard]] bool moveAtEdge(LBlock* predecessor, LBlock* successor,

@@ -77,6 +77,10 @@ namespace js {
 
 
 
+
+
+
+
 template <class T, class C>
 class AvlTreeImpl {
   
@@ -96,13 +100,20 @@ class AvlTreeImpl {
 
   
   
+  
+  
+  
+  
+  
+  
+  
   struct Node {
+    T item;
     Node* left;
     Node* right;
     Tag tag;
-    T item;
     explicit Node(const T& item)
-        : left(nullptr), right(nullptr), tag(Tag::None), item(item) {}
+        : item(item), left(nullptr), right(nullptr), tag(Tag::None) {}
   };
 
   
