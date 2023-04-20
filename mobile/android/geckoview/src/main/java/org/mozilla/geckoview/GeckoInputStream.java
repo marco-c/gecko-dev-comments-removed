@@ -173,6 +173,16 @@ import org.mozilla.gecko.mozglue.JNIObject;
 
 
 
+  @WrapForJNI(calledFrom = "gecko")
+   synchronized boolean isStreamClosed() {
+    return mClosed || mEOF;
+  }
+
+  
+
+
+
+
 
   @WrapForJNI(exceptionMode = "nsresult", calledFrom = "gecko")
    synchronized void appendBuffer(final byte[] buf) throws IOException {
