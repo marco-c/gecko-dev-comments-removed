@@ -6887,7 +6887,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringCharAt() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringFromCharCode() {
   
-  if (argc_ != 1 || !args_[0].isInt32()) {
+  if (argc_ != 1 || !args_[0].isNumber()) {
     return AttachDecision::NoAction;
   }
 
@@ -6899,7 +6899,14 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringFromCharCode() {
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
-  Int32OperandId codeId = writer.guardToInt32(argId);
+  Int32OperandId codeId;
+  if (args_[0].isInt32()) {
+    codeId = writer.guardToInt32(argId);
+  } else {
+    
+    
+    codeId = writer.guardToInt32ModUint32(argId);
+  }
 
   
   writer.stringFromCharCodeResult(codeId);
