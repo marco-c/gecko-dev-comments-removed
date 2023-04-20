@@ -17,7 +17,6 @@
 #include "api/sequence_checker.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_decoder.h"
-#include "modules/utility/include/process_thread.h"
 #include "modules/video_coding/decoder_database.h"
 #include "modules/video_coding/encoded_frame.h"
 #include "modules/video_coding/generic_decoder.h"
@@ -103,27 +102,6 @@ void VideoReceiver::Process() {
   }
 }
 
-void VideoReceiver::ProcessThreadAttached(ProcessThread* process_thread) {
-  RTC_DCHECK_RUN_ON(&construction_thread_checker_);
-  if (process_thread) {
-    is_attached_to_process_thread_ = true;
-    RTC_DCHECK(!process_thread_ || process_thread_ == process_thread);
-    process_thread_ = process_thread;
-  } else {
-    is_attached_to_process_thread_ = false;
-  }
-}
-
-int64_t VideoReceiver::TimeUntilNextProcess() {
-  RTC_DCHECK_RUN_ON(&module_thread_checker_);
-  int64_t timeUntilNextProcess = _retransmissionTimer.TimeUntilProcess();
-
-  timeUntilNextProcess =
-      VCM_MIN(timeUntilNextProcess, _keyRequestTimer.TimeUntilProcess());
-
-  return timeUntilNextProcess;
-}
-
 
 
 int32_t VideoReceiver::RegisterReceiveCallback(
@@ -150,7 +128,6 @@ void VideoReceiver::RegisterExternalDecoder(VideoDecoder* externalDecoder,
 int32_t VideoReceiver::RegisterFrameTypeCallback(
     VCMFrameTypeCallback* frameTypeCallback) {
   RTC_DCHECK_RUN_ON(&construction_thread_checker_);
-  RTC_DCHECK(!is_attached_to_process_thread_);
   
   
   
@@ -162,7 +139,6 @@ int32_t VideoReceiver::RegisterFrameTypeCallback(
 int32_t VideoReceiver::RegisterPacketRequestCallback(
     VCMPacketRequestCallback* callback) {
   RTC_DCHECK_RUN_ON(&construction_thread_checker_);
-  RTC_DCHECK(!is_attached_to_process_thread_);
   
   
   
@@ -189,10 +165,6 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
       if (frame->FrameType() != VideoFrameType::kVideoFrameKey) {
         drop_frame = true;
         _scheduleKeyRequest = true;
-        
-        
-        
-        process_thread_->WakeUp(this);
       } else {
         drop_frames_until_keyframe_ = false;
       }
