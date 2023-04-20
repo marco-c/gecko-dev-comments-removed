@@ -670,7 +670,7 @@ SDPUtils.writeSctpDescription = function(media, sctp) {
 
 
 SDPUtils.generateSessionId = function() {
-  return Math.random().toString().substr(2, 21);
+  return Math.floor((Math.random() * 4294967296) + 1);
 };
 
 
