@@ -1268,6 +1268,13 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
 
       
 
+      if (currentSchemaVersion < 72) {
+        rv = MigrateV72Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
       
       
       
@@ -2467,6 +2474,16 @@ nsresult Database::MigrateV71Up() {
       "DROP TABLE IF EXISTS moz_session_metadata"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  return NS_OK;
+}
+
+nsresult Database::MigrateV72Up() {
+  
+  nsresult rv = mMainConn->ExecuteSimpleSQL(
+      "UPDATE moz_places "
+      "SET recalc_frecency = 1 "
+      "WHERE foreign_count > 0 AND visit_count = 0"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
   return NS_OK;
 }
 
