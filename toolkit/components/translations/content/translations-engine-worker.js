@@ -505,10 +505,14 @@ class MockedEngine {
 
 
 
-  translate(messageBatch) {
-    return messageBatch.map(
-      message =>
-        `${message.toUpperCase()} [${this.fromLanguage} to ${this.toLanguage}]`
-    );
+
+  translate(messageBatch, isHTML) {
+    return messageBatch.map(message => {
+      
+      let html = isHTML ? ", html" : "";
+      message = message.toUpperCase();
+
+      return `${message} [${this.fromLanguage} to ${this.toLanguage}${html}]`;
+    });
   }
 }

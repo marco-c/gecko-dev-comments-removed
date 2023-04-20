@@ -30,17 +30,22 @@ const { TranslationsParent } = ChromeUtils.importESModule(
 
 
 
+
+
+
 async function openAboutTranslations({
   dataForContent,
   disabled,
   runInPage,
   languagePairs,
+  prefs,
 }) {
   await SpecialPowers.pushPrefEnv({
     set: [
       
       ["browser.translations.enable", !disabled],
       ["browser.translations.logLevel", "All"],
+      ...(prefs ?? []),
     ],
   });
 

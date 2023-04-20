@@ -3799,6 +3799,10 @@ pref("browser.translations.logLevel", "Error");
 
 
 
+pref("browser.translations.useHTML", false);
+
+
+
 
 
 
