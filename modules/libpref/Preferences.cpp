@@ -6030,7 +6030,14 @@ struct PrefListEntry {
 };
 
 
-static const PrefListEntry sParentOnlyPrefBranchList[] = {
+
+
+
+
+
+
+
+static const PrefListEntry sRestrictFromWebContentProcesses[] = {
     
     PREF_LIST_ENTRY("datareporting.policy."),
     PREF_LIST_ENTRY("browser.download.lastDir"),
@@ -6168,7 +6175,7 @@ static bool ShouldSanitizePreference(const Pref* const aPref) {
   
   
   
-  for (const auto& entry : sParentOnlyPrefBranchList) {
+  for (const auto& entry : sRestrictFromWebContentProcesses) {
     if (strncmp(entry.mPrefBranch, prefName, entry.mLen) == 0) {
       const auto* p = prefName;  
       return !(strncmp("services.settings.clock_skew_seconds", p, 36) == 0 ||

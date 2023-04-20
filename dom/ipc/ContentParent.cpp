@@ -3978,6 +3978,30 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
 
     Preferences::GetPreference(&pref, GeckoProcessType_Content,
                                GetRemoteType());
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (pref.isSanitized()) {
+      return NS_OK;
+    }
+
     if (IsInitialized()) {
       MOZ_ASSERT(mQueuedPrefs.IsEmpty());
       if (!SendPreferenceUpdate(pref)) {
@@ -3987,6 +4011,8 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
       MOZ_ASSERT(!IsDead());
       mQueuedPrefs.AppendElement(pref);
     }
+
+    return NS_OK;
   }
 
   if (!IsAlive()) {
