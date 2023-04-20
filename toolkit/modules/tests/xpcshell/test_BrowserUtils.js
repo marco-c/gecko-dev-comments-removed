@@ -206,6 +206,22 @@ add_task(async function test_shouldShowRelayPromo() {
   Preferences.reset("identity.fxaccounts.autoconfig.uri");
 });
 
+add_task(async function test_shouldShowCookieBannersPromo() {
+  Preferences.set("browser.promo.cookiebanners.enabled", true);
+  
+  Assert.ok(
+    BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.COOKIE_BANNERS)
+  );
+
+  
+  Preferences.set("browser.promo.cookiebanners.enabled", false);
+  Assert.ok(
+    !BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.COOKIE_BANNERS)
+  );
+
+  Preferences.resetBranch("browser.promo.cookiebanners");
+});
+
 add_task(function test_isShareableURL() {
   
   if (!Preferences.get("services.sync.engine.tabs.filteredSchemes")) {
