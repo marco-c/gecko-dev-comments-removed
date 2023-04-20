@@ -29,6 +29,7 @@
 #include "nsXULAppAPI.h"
 #include "SharedFontList-impl.h"
 #include "StandardFonts-linux.inc"
+#include "mozilla/intl/Locale.h"
 
 #include "mozilla/gfx/HelpersCairo.h"
 
@@ -60,6 +61,7 @@
 using namespace mozilla;
 using namespace mozilla::gfx;
 using namespace mozilla::unicode;
+using namespace mozilla::intl;
 
 #ifndef FC_POSTSCRIPT_NAME
 #  define FC_POSTSCRIPT_NAME "postscriptname" /* String */
@@ -2087,6 +2089,12 @@ gfxFontEntry* gfxFcPlatformFontList::MakePlatformFont(
                                     std::move(face));
 }
 
+static bool UseCustomFontconfigLookupsForLocale(const Locale& aLocale) {
+  return aLocale.Script().EqualTo("Hans") || aLocale.Script().EqualTo("Hant") ||
+         aLocale.Script().EqualTo("Jpan") || aLocale.Script().EqualTo("Kore") ||
+         aLocale.Script().EqualTo("Arab");
+}
+
 bool gfxFcPlatformFontList::FindAndAddFamiliesLocked(
     nsPresContext* aPresContext, StyleGenericFontFamily aGeneric,
     const nsACString& aFamily, nsTArray<FamilyAndGeneric>* aOutput,
@@ -2137,13 +2145,27 @@ bool gfxFcPlatformFontList::FindAndAddFamiliesLocked(
 
   
   
-  
-  
   nsAutoCString lang;
   GetSampleLangForGroup(aLanguage, lang);
-  nsAutoCString cacheKey(lang);
-  ToLowerCase(cacheKey);
-  cacheKey.Append(':');
+  ToLowerCase(lang);
+  nsAutoCString cacheKey;
+
+  
+  
+  
+  
+  
+  
+  
+  Locale locale;
+  if (LocaleParser::TryParse(lang, locale).isOk() &&
+      locale.AddLikelySubtags().isOk()) {
+    if (UseCustomFontconfigLookupsForLocale(locale)) {
+      cacheKey = lang;
+      cacheKey.Append(':');
+    }
+  }
+
   cacheKey.Append(familyName);
   if (const auto& cached = mFcSubstituteCache.Lookup(cacheKey)) {
     if (cached->IsEmpty()) {
@@ -2379,15 +2401,32 @@ gfxPlatformFontList::PrefFontList* gfxFcPlatformFontList::FindGenericFamilies(
   GetSampleLangForGroup(aLanguage, fcLang);
   ToLowerCase(fcLang);
 
-  nsAutoCString genericLang(aGeneric);
+  nsAutoCString cacheKey(aGeneric);
   if (fcLang.Length() > 0) {
-    genericLang.Append('-');
+    cacheKey.Append('-');
+    
+    
+    
+    
+    
+    
+    
+    Locale locale;
+    if (LocaleParser::TryParse(fcLang, locale).isOk() &&
+        locale.AddLikelySubtags().isOk()) {
+      if (UseCustomFontconfigLookupsForLocale(locale)) {
+        cacheKey.Append(fcLang);
+      } else {
+        cacheKey.Append(locale.Script().Span());
+      }
+    } else {
+      cacheKey.Append(fcLang);
+    }
   }
-  genericLang.Append(fcLang);
 
   
   return mGenericMappings.WithEntryHandle(
-      genericLang, [&](auto&& entry) -> PrefFontList* {
+      cacheKey, [&](auto&& entry) -> PrefFontList* {
         if (!entry) {
           
           RefPtr<FcPattern> genericPattern = dont_AddRef(FcPatternCreate());
