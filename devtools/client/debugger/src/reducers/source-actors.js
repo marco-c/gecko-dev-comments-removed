@@ -11,78 +11,91 @@ import { asyncActionAsValue } from "../actions/utils/middleware/promise";
 
 
 
+function initialSourceActorsState() {
+  return {
+    
+    
+    mutableSourceActors: new Map(),
 
+    
+    
+    
+    mutableBreakableLines: new Map(),
+  };
+}
 
+export const initial = initialSourceActorsState();
 
-export const initial = new Map();
-
-export default function update(state = initial, action) {
+export default function update(state = initialSourceActorsState(), action) {
   switch (action.type) {
     case "INSERT_SOURCE_ACTORS": {
-      const { items } = action;
-      
-      state = new Map(state);
-      for (const sourceActor of items) {
-        state.set(sourceActor.id, {
-          ...sourceActor,
-          breakableLines: null,
-        });
+      for (const sourceActor of action.sourceActors) {
+        state.mutableSourceActors.set(sourceActor.id, sourceActor);
       }
-      break;
+      return {
+        ...state,
+      };
     }
 
     case "NAVIGATE": {
-      state = initial;
+      state = initialSourceActorsState();
       break;
     }
 
     case "REMOVE_THREAD": {
-      state = new Map(state);
-      for (const sourceActor of state.values()) {
+      for (const sourceActor of state.mutableSourceActors.values()) {
         if (sourceActor.thread == action.threadActorID) {
-          state.delete(sourceActor.id);
+          state.mutableSourceActors.delete(sourceActor.id);
         }
       }
-      break;
+      return {
+        ...state,
+      };
     }
 
     case "SET_SOURCE_ACTOR_BREAKABLE_LINES":
-      state = updateBreakableLines(state, action);
-      break;
+      return updateBreakableLines(state, action);
 
     case "CLEAR_SOURCE_ACTOR_MAP_URL":
-      state = clearSourceActorMapURL(state, action.id);
-      break;
+      return clearSourceActorMapURL(state, action.sourceActorId);
   }
 
   return state;
 }
 
-function clearSourceActorMapURL(state, id) {
-  if (!state.has(id)) {
+function clearSourceActorMapURL(state, sourceActorId) {
+  const existingSourceActor = state.mutableSourceActors.get(sourceActorId);
+  if (!existingSourceActor) {
     return state;
   }
 
-  const newMap = new Map(state);
-  newMap.set(id, {
-    ...state.get(id),
+  
+  
+  
+  
+  
+  
+  state.mutableSourceActors.set(sourceActorId, {
+    ...existingSourceActor,
     sourceMapURL: "",
   });
-  return newMap;
+
+  return {
+    ...state,
+  };
 }
 
 function updateBreakableLines(state, action) {
   const value = asyncActionAsValue(action);
-  const { sourceId } = action;
+  const { sourceActorId } = action;
 
-  if (!state.has(sourceId)) {
+  
+  if (!state.mutableSourceActors.has(sourceActorId)) {
     return state;
   }
 
-  const newMap = new Map(state);
-  newMap.set(sourceId, {
-    ...state.get(sourceId),
-    breakableLines: value,
-  });
-  return newMap;
+  state.mutableBreakableLines.set(sourceActorId, value);
+  return {
+    ...state,
+  };
 }

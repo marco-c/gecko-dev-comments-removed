@@ -12,8 +12,8 @@ import { asSettled } from "../utils/async-value";
 
 
 
-export function hasSourceActor(state, id) {
-  return state.sourceActors.has(id);
+export function hasSourceActor(state, sourceActorId) {
+  return state.sourceActors.mutableSourceActors.has(sourceActorId);
 }
 
 
@@ -25,8 +25,8 @@ export function hasSourceActor(state, id) {
 
 
 
-export function getSourceActor(state, id) {
-  return state.sourceActors.get(id);
+export function getSourceActor(state, sourceActorId) {
+  return state.sourceActors.mutableSourceActors.get(sourceActorId);
 }
 
 
@@ -38,13 +38,13 @@ export function getSourceActor(state, id) {
 
 
 
-export function getSourceActorsForThread(state, ids) {
-  if (!Array.isArray(ids)) {
-    ids = [ids];
+export function getSourceActorsForThread(state, threadActorIDs) {
+  if (!Array.isArray(threadActorIDs)) {
+    threadActorIDs = [threadActorIDs];
   }
   const actors = [];
-  for (const sourceActor of state.sourceActors.values()) {
-    if (ids.includes(sourceActor.thread)) {
+  for (const sourceActor of state.sourceActors.mutableSourceActors.values()) {
+    if (threadActorIDs.includes(sourceActor.thread)) {
       actors.push(sourceActor);
     }
   }
@@ -60,10 +60,8 @@ export function getSourceActorsForThread(state, ids) {
 
 
 
-export function getSourceActorBreakableLines(state, id) {
-  const { breakableLines } = getSourceActor(state, id);
-
-  return asSettled(breakableLines);
+export function getSourceActorBreakableLines(state, sourceActorId) {
+  return asSettled(state.sourceActors.mutableBreakableLines.get(sourceActorId));
 }
 
 
@@ -84,10 +82,16 @@ export function getSourceActorBreakableLines(state, id) {
 
 
 
-export function getBreakableLinesForSourceActors(state, ids, isHTML) {
+export function getBreakableLinesForSourceActors(
+  state,
+  sourceActorIDs,
+  isHTML
+) {
   const allBreakableLines = [];
-  for (const id of ids) {
-    const { breakableLines } = getSourceActor(state, id);
+  for (const sourceActorId of sourceActorIDs) {
+    const breakableLines = state.sourceActors.mutableBreakableLines.get(
+      sourceActorId
+    );
     if (breakableLines && breakableLines.state == "fulfilled") {
       if (isHTML) {
         allBreakableLines.push(...breakableLines.value);
