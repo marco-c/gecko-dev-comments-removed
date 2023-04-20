@@ -1,3 +1,30 @@
+# vim: set fileencoding=utf-8 :
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import sys, os, glob
 from jsmin import JavascriptMinify
 
