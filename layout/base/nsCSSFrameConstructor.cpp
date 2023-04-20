@@ -9517,9 +9517,16 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
 
   
   
+  
+  
+  
+  
+  
+  
+  
   if (aState.mPresContext->IsPaginated() &&
       StaticPrefs::layout_css_named_pages_enabled() &&
-      aParentFrame->IsBlockFrameOrSubclass()) {
+      aParentFrame->IsBlockFrame()) {
     
     
     
@@ -9604,7 +9611,7 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
       
       for (nsContainerFrame* ancestorFrame = aParentFrame;
            (startPageValue || endPageValue) && ancestorFrame &&
-           ancestorFrame->IsBlockFrameOrSubclass();
+           ancestorFrame->IsBlockFrame();
            ancestorFrame = ancestorFrame->GetParent()) {
         MOZ_ASSERT(!ancestorFrame->GetPrevInFlow(),
                    "Should not have fragmentation yet");
