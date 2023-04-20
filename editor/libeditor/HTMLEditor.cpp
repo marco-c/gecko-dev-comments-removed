@@ -723,14 +723,6 @@ Element* HTMLEditor::FindSelectionRoot(const nsINode& aNode) const {
     return GetDocument()->GetRootElement();
   }
 
-  
-  
-  
-  if (IsReadonly()) {
-    
-    return GetRoot();
-  }
-
   nsIContent* content = const_cast<nsIContent*>(aNode.AsContent());
   if (!content->HasFlag(NODE_IS_EDITABLE)) {
     
@@ -1900,6 +1892,10 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
     return NS_ERROR_INVALID_ARG;
   }
 
+  if (IsReadonly()) {
+    return NS_OK;
+  }
+
   AutoEditActionDataSetter editActionData(
       *this, HTMLEditUtils::GetEditActionForInsert(*aElement), aPrincipal);
   nsresult rv = editActionData.CanHandleAndMaybeDispatchBeforeInputEvent();
@@ -1912,11 +1908,6 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
   DebugOnly<nsresult> rvIgnored = CommitComposition();
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "EditorBase::CommitComposition() failed, but ignored");
-
-  
-  if (IsReadonly()) {
-    return NS_OK;
-  }
 
   {
     Result<EditActionResult, nsresult> result = CanHandleHTMLEditSubAction();

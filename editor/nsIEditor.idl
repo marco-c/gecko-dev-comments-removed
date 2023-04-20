@@ -57,6 +57,11 @@ interface nsIEditor  : nsISupports
   
   
   
+  
+  
+  
+  
+  
   const long eEditorReadonlyMask        = 0x0008;
   
   
