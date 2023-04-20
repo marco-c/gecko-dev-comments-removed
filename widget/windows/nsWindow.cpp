@@ -3662,6 +3662,10 @@ void nsWindow::OnFullscreenWillChange(bool aFullScreen) {
 void nsWindow::OnFullscreenChanged(nsSizeMode aOldSizeMode, bool aFullScreen) {
   
   
+  UpdateNonClientMargins( !aFullScreen);
+
+  
+  
   
   
   
@@ -3671,6 +3675,15 @@ void nsWindow::OnFullscreenChanged(nsSizeMode aOldSizeMode, bool aFullScreen) {
   if (!toOrFromMinimized) {
     InfallibleMakeFullScreen(aFullScreen);
   }
+
+  if (mIsVisible && !aFullScreen &&
+      mFrameState->GetSizeMode() == nsSizeMode_Normal) {
+    
+    
+    DispatchFocusToTopLevelWindow(true);
+  }
+
+  OnSizeModeChange();
 
   if (mWidgetListener) {
     mWidgetListener->FullscreenChanged(aFullScreen);
@@ -6791,6 +6804,28 @@ nsresult nsWindow::SynthesizeNativeTouchpadPan(TouchpadGesturePhase aEventPhase,
   return NS_OK;
 }
 
+static void MaybeLogSizeMode(nsSizeMode aMode) {
+#ifdef WINSTATE_DEBUG_OUTPUT
+  switch (aMode) {
+    case nsSizeMode_Normal:
+      MOZ_LOG(gWindowsLog, LogLevel::Info,
+              ("*** SizeMode: nsSizeMode_Normal\n"));
+      break;
+    case nsSizeMode_Minimized:
+      MOZ_LOG(gWindowsLog, LogLevel::Info,
+              ("*** SizeMode: nsSizeMode_Minimized\n"));
+      break;
+    case nsSizeMode_Maximized:
+      MOZ_LOG(gWindowsLog, LogLevel::Info,
+              ("*** SizeMode: nsSizeMode_Maximized\n"));
+      break;
+    default:
+      MOZ_LOG(gWindowsLog, LogLevel::Info, ("*** SizeMode: ??????\n"));
+      break;
+  }
+#endif
+}
+
 static void MaybeLogPosChanged(HWND aWnd, WINDOWPOS* wp) {
 #ifdef WINSTATE_DEBUG_OUTPUT
   if (aWnd == WinUtils::GetTopLevelHWND(aWnd)) {
@@ -7470,8 +7505,6 @@ void nsWindow::OnSizeModeChange() {
 
   MOZ_LOG(gWindowsLog, LogLevel::Info,
           ("nsWindow::OnSizeModeChange() sizeMode %d", mode));
-
-  UpdateNonClientMargins(false);
 
   if (NeedsToTrackWindowOcclusionState()) {
     WinWindowOcclusionTracker::Get()->OnWindowVisibilityChanged(
@@ -9259,28 +9292,26 @@ void nsWindow::FrameState::ConsumePreXULSkeletonState(bool aWasMaximized) {
   mSizeMode = aWasMaximized ? nsSizeMode_Maximized : nsSizeMode_Normal;
 }
 
-void nsWindow::FrameState::EnsureSizeMode(
-    nsSizeMode aMode, ShowWindowAndFocus aShowWindowAndFocus) {
+void nsWindow::FrameState::EnsureSizeMode(nsSizeMode aMode) {
   if (mSizeMode == aMode) {
     return;
   }
 
   if (aMode == nsSizeMode_Fullscreen) {
-    EnsureFullscreenMode(true, aShowWindowAndFocus);
+    EnsureFullscreenMode(true);
     MOZ_ASSERT(mSizeMode == nsSizeMode_Fullscreen);
   } else if (mSizeMode == nsSizeMode_Fullscreen && aMode == nsSizeMode_Normal) {
     
     
     
     
-    EnsureFullscreenMode(false, aShowWindowAndFocus);
+    EnsureFullscreenMode(false);
   } else {
-    SetSizeModeInternal(aMode, aShowWindowAndFocus);
+    SetSizeModeInternal(aMode);
   }
 }
 
-void nsWindow::FrameState::EnsureFullscreenMode(
-    bool aFullScreen, ShowWindowAndFocus aShowWindowAndFocus) {
+void nsWindow::FrameState::EnsureFullscreenMode(bool aFullScreen) {
   const bool changed = aFullScreen != mFullscreenMode;
   if (changed && aFullScreen) {
     
@@ -9293,9 +9324,8 @@ void nsWindow::FrameState::EnsureFullscreenMode(
     
     
     
-    SetSizeModeInternal(
-        aFullScreen ? nsSizeMode_Fullscreen : mPreFullscreenSizeMode,
-        aShowWindowAndFocus);
+    SetSizeModeInternal(aFullScreen ? nsSizeMode_Fullscreen
+                                    : mPreFullscreenSizeMode);
   }
 }
 
@@ -9307,6 +9337,7 @@ void nsWindow::FrameState::OnFrameChanging() {
   const nsSizeMode newSizeMode =
       GetSizeModeForWindowFrame(mWindow->mWnd, mFullscreenMode);
   EnsureSizeMode(newSizeMode);
+  mWindow->OnSizeModeChange();
   mWindow->UpdateNonClientMargins(false);
 }
 
@@ -9315,37 +9346,38 @@ void nsWindow::FrameState::OnFrameChanged() {
     return;
   }
 
-  
-  
-  
-  
-  
-  const auto newSizeMode =
-      GetSizeModeForWindowFrame(mWindow->mWnd, mFullscreenMode);
-  EnsureSizeMode(newSizeMode, ShowWindowAndFocus::No);
+  const nsSizeMode previousSizeMode = mSizeMode;
 
   
   
-  if (mWindow->mIsVisible && mLastSizeMode != mSizeMode &&
-      mSizeMode == nsSizeMode_Normal) {
-    mWindow->DispatchFocusToTopLevelWindow(true);
+  
+  
+  
+  
+  mSizeMode = GetSizeModeForWindowFrame(mWindow->mWnd, mFullscreenMode);
+
+  MaybeLogSizeMode(mSizeMode);
+
+  if (mSizeMode != previousSizeMode) {
+    mWindow->OnSizeModeChange();
   }
-  mLastSizeMode = mSizeMode;
+
+  
+  
+  
+  if (mLastSizeMode != mSizeMode) {
+    if (mSizeMode == nsSizeMode_Normal) {
+      mWindow->DispatchFocusToTopLevelWindow(true);
+    }
+    mLastSizeMode = mSizeMode;
+  }
 }
 
-static void MaybeLogSizeMode(nsSizeMode aMode) {
-#ifdef WINSTATE_DEBUG_OUTPUT
-  MOZ_LOG(gWindowsLog, LogLevel::Info, ("*** SizeMode: %d\n", int(aMode)));
-#endif
-}
-
-void nsWindow::FrameState::SetSizeModeInternal(
-    nsSizeMode aMode, ShowWindowAndFocus aShowWindowAndFocus) {
+void nsWindow::FrameState::SetSizeModeInternal(nsSizeMode aMode) {
   if (mSizeMode == aMode) {
     return;
   }
 
-  const auto oldSizeMode = mSizeMode;
   const bool fullscreenChange =
       mSizeMode == nsSizeMode_Fullscreen || aMode == nsSizeMode_Fullscreen;
   const bool fullscreen = aMode == nsSizeMode_Fullscreen;
@@ -9354,22 +9386,19 @@ void nsWindow::FrameState::SetSizeModeInternal(
     mWindow->OnFullscreenWillChange(fullscreen);
   }
 
-  mLastSizeMode = mSizeMode;
+  const auto oldSizeMode = mSizeMode;
+  mLastSizeMode = oldSizeMode;
   mSizeMode = aMode;
 
-  MaybeLogSizeMode(mSizeMode);
-
-  if (bool(aShowWindowAndFocus) && mWindow->mIsVisible) {
+  if (mWindow->mIsVisible) {
     ShowWindowWithMode(mWindow->mWnd, aMode);
-    
-    
-    if (mWindow->mIsVisible &&
-        (aMode == nsSizeMode_Maximized || aMode == nsSizeMode_Fullscreen)) {
-      mWindow->DispatchFocusToTopLevelWindow(true);
-    }
   }
 
-  mWindow->OnSizeModeChange();
+  
+  if (mWindow->mIsVisible &&
+      (aMode == nsSizeMode_Maximized || aMode == nsSizeMode_Fullscreen)) {
+    mWindow->DispatchFocusToTopLevelWindow(true);
+  }
 
   if (fullscreenChange) {
     mWindow->OnFullscreenChanged(oldSizeMode, fullscreen);
