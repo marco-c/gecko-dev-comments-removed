@@ -1710,8 +1710,6 @@ ContentEventHandler::GetLineBreakerRectBefore(nsIFrame* aFrame) {
   
   
 
-  FrameRelativeRect result(aFrame);
-
   RefPtr<nsFontMetrics> fontMetrics =
       nsLayoutUtils::GetInflatedFontMetricsForFrame(frameForFontMetrics);
   if (NS_WARN_IF(!fontMetrics)) {
@@ -1719,18 +1717,10 @@ ContentEventHandler::GetLineBreakerRectBefore(nsIFrame* aFrame) {
   }
 
   const WritingMode kWritingMode = frameForFontMetrics->GetWritingMode();
-  nscoord baseline = aFrame->GetCaretBaseline();
-  if (kWritingMode.IsVertical()) {
-    if (kWritingMode.IsLineInverted()) {
-      result.mRect.x = baseline - fontMetrics->MaxDescent();
-    } else {
-      result.mRect.x = baseline - fontMetrics->MaxAscent();
-    }
-    result.mRect.width = fontMetrics->MaxHeight();
-  } else {
-    result.mRect.y = baseline - fontMetrics->MaxAscent();
-    result.mRect.height = fontMetrics->MaxHeight();
-  }
+
+  auto caretBlockAxisMetrics =
+      aFrame->GetCaretBlockAxisMetrics(kWritingMode, *fontMetrics);
+  nscoord inlineOffset = 0;
 
   
   
@@ -1747,20 +1737,26 @@ ContentEventHandler::GetLineBreakerRectBefore(nsIFrame* aFrame) {
   
   
   if (!aFrame->IsBrFrame()) {
-    if (kWritingMode.IsVertical()) {
-      if (kWritingMode.IsLineInverted()) {
-        
-        result.mRect.x = 0;
-      } else {
-        
-        result.mRect.x = aFrame->GetRect().XMost() - result.mRect.width;
-      }
-      result.mRect.y = -aFrame->PresContext()->AppUnitsPerDevPixel();
+    if (kWritingMode.IsVertical() && !kWritingMode.IsLineInverted()) {
+      
+      caretBlockAxisMetrics.mOffset =
+          aFrame->GetRect().XMost() - caretBlockAxisMetrics.mExtent;
     } else {
       
-      result.mRect.x = -aFrame->PresContext()->AppUnitsPerDevPixel();
-      result.mRect.y = 0;
+      
+      caretBlockAxisMetrics.mOffset = 0;
     }
+    inlineOffset = -aFrame->PresContext()->AppUnitsPerDevPixel();
+  }
+  FrameRelativeRect result(aFrame);
+  if (kWritingMode.IsVertical()) {
+    result.mRect.x = caretBlockAxisMetrics.mOffset;
+    result.mRect.y = inlineOffset;
+    result.mRect.width = caretBlockAxisMetrics.mExtent;
+  } else {
+    result.mRect.x = inlineOffset;
+    result.mRect.y = caretBlockAxisMetrics.mOffset;
+    result.mRect.height = caretBlockAxisMetrics.mExtent;
   }
   return result;
 }

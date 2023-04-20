@@ -1542,16 +1542,17 @@ class nsIFrame : public nsQueryFrame {
     return Nothing{};
   }
 
+  struct CaretBlockAxisMetrics {
+    nscoord mOffset = 0;
+    nscoord mExtent = 0;
+  };
   
 
 
 
 
-
-  virtual nscoord GetCaretBaseline() const {
-    return GetLogicalBaseline(GetWritingMode());
-  }
-
+  CaretBlockAxisMetrics GetCaretBlockAxisMetrics(mozilla::WritingMode,
+                                                 const nsFontMetrics&) const;
   
   
   const nsAtom* ComputePageValue() const MOZ_NONNULL_RETURN;
@@ -1584,6 +1585,16 @@ class nsIFrame : public nsQueryFrame {
   NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(VisibilityStateProperty, uint32_t);
 
  protected:
+  
+
+
+
+
+
+  virtual nscoord GetCaretBaseline() const {
+    return GetLogicalBaseline(GetWritingMode());
+  }
+
   
 
 
