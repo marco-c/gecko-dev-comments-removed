@@ -1146,7 +1146,12 @@ already_AddRefed<AccAttributes> LocalAccessible::NativeAttributes() {
 
   
   
-  if (!mContent->GetPrimaryFrame()) return attributes.forget();
+  
+  
+  if (!mContent->GetPrimaryFrame() ||
+      mContent->IsHTMLElement(nsGkAtoms::area)) {
+    return attributes.forget();
+  }
 
   
   nsAutoString value;
