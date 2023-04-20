@@ -340,10 +340,23 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
         return !(*this == rhs);
       }
 
+      
       bool enabled = false;
-      struct FixedDigital {
-        float gain_db = 0.0f;
-      } fixed_digital;
+
+      
+      
+      
+      struct InputVolumeController {
+        bool operator==(const InputVolumeController& rhs) const;
+        bool operator!=(const InputVolumeController& rhs) const {
+          return !(*this == rhs);
+        }
+        bool enabled = false;
+      } input_volume_controller;
+
+      
+      
+      
       struct RTC_EXPORT AdaptiveDigital {
         bool operator==(const AdaptiveDigital& rhs) const;
         bool operator!=(const AdaptiveDigital& rhs) const {
@@ -353,26 +366,29 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
         bool enabled = false;
         
         
+        
         bool dry_run = false;
         float headroom_db = 6.0f;
         
         
         float max_gain_db = 30.0f;
         float initial_gain_db = 8.0f;
+        
         int vad_reset_period_ms = 1500;
+        
         int adjacent_speech_frames_threshold = 12;
         float max_gain_change_db_per_second = 3.0f;
         float max_output_noise_level_dbfs = -50.0f;
       } adaptive_digital;
 
       
-      struct InputVolumeController {
-        bool operator==(const InputVolumeController& rhs) const;
-        bool operator!=(const InputVolumeController& rhs) const {
-          return !(*this == rhs);
-        }
-        bool enabled = false;
-      } input_volume_controller;
+      
+      
+      struct FixedDigital {
+        
+        
+        float gain_db = 0.0f;
+      } fixed_digital;
     } gain_controller2;
 
     std::string ToString() const;
