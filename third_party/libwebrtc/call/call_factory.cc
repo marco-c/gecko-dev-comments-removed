@@ -169,7 +169,6 @@ Call* CallFactory::CreateCall(const Call::Config& config) {
 
 
 
-
   }
 
   if (!module_thread_) {
@@ -183,7 +182,6 @@ Call* CallFactory::CreateCall(const Call::Config& config) {
   RTC_CHECK(false);
   return nullptr;
   
-
 
 
 
