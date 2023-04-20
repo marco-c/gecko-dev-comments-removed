@@ -21,9 +21,10 @@ const {
 
 
 exports.reloadConsoleAndLog = async function(label, toolbox, expectedMessages) {
+  const webConsole = toolbox.getPanel("webconsole");
+  const onWebConsoleReload = webConsole.once("reloaded");
   const onReload = async function() {
-    const { hud } = toolbox.getPanel("webconsole");
-
+    const { hud } = webConsole;
     const expected =
       typeof expectedMessages === "number"
         ? [{ text: "", count: expectedMessages }]
@@ -31,7 +32,11 @@ exports.reloadConsoleAndLog = async function(label, toolbox, expectedMessages) {
 
     let logMissingMessagesTimeoutId;
 
-    await waitForConsoleOutputChildListChange(hud, consoleOutputEl => {
+    
+    
+    await onWebConsoleReload;
+
+    const checkMessages = consoleOutputEl => {
       if (logMissingMessagesTimeoutId) {
         clearTimeout(logMissingMessagesTimeoutId);
         logMissingMessagesTimeoutId = null;
@@ -78,7 +83,14 @@ exports.reloadConsoleAndLog = async function(label, toolbox, expectedMessages) {
         }, 3000);
       }
       return foundAllMessages;
-    });
+    };
+
+    
+    if (checkMessages(getConsoleOutputElement(hud))) {
+      return;
+    }
+    
+    await waitForConsoleOutputChildListChange(hud, checkMessages);
   };
   await reloadPageAndLog(label + ".webconsole", toolbox, onReload);
 };
@@ -94,8 +106,7 @@ exports.reloadConsoleAndLog = async function(label, toolbox, expectedMessages) {
 
 
 async function waitForConsoleOutputChildListChange(hud, predicate) {
-  const { document } = hud.ui;
-  const webConsoleOutputEl = document.querySelector(".webconsole-output");
+  const webConsoleOutputEl = getConsoleOutputElement(hud);
 
   await waitForDOMPredicate(
     webConsoleOutputEl,
@@ -104,3 +115,13 @@ async function waitForConsoleOutputChildListChange(hud, predicate) {
   );
 }
 exports.waitForConsoleOutputChildListChange = waitForConsoleOutputChildListChange;
+
+
+
+
+
+
+
+function getConsoleOutputElement(hud) {
+  return hud.ui.document.querySelector(".webconsole-output");
+}
