@@ -172,6 +172,14 @@ class NetworkEventWatcher {
     return this.listener.getBlockedUrls();
   }
 
+  override(url, path) {
+    this.listener.override(url, path);
+  }
+
+  removeOverride(url) {
+    this.listener.removeOverride(url);
+  }
+
   
 
 

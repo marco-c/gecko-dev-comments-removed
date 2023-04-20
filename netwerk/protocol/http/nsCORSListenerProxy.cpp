@@ -915,6 +915,12 @@ nsresult nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
 
   
+  
+  if (loadInfo->GetAllowInsecureRedirectToDataURI() && uri->SchemeIs("data")) {
+    return NS_OK;
+  }
+
+  
   if (aAllowDataURI == DataURIHandling::Allow && originalURI == uri) {
     if (uri->SchemeIs("data")) {
       return NS_OK;
