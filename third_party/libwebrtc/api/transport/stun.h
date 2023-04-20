@@ -284,28 +284,26 @@ class StunMessage {
                        std::function<bool(int type)> attribute_type_mask) const;
 
   
-  static bool ValidateMessageIntegrityForTesting(const char* data,
-                                                 size_t size,
-                                                 const std::string& password) {
-    return ValidateMessageIntegrity(data, size, password);
-  }
   
-  static bool ValidateMessageIntegrity32ForTesting(
+  
+  
+  [[deprecated("Use member function")]] static bool ValidateMessageIntegrity(
       const char* data,
       size_t size,
-      const std::string& password) {
-    return ValidateMessageIntegrity32(data, size, password);
-  }
+      const std::string& password);
+  [[deprecated("Use member function")]] static bool ValidateMessageIntegrity32(
+      const char* data,
+      size_t size,
+      const std::string& password);
+
   
+  static bool ValidateMessageIntegrityForTesting(const char* data,
+                                                 size_t size,
+                                                 const std::string& password);
   
-  
-  
-  static bool ValidateMessageIntegrity(const char* data,
-                                       size_t size,
-                                       const std::string& password);
-  static bool ValidateMessageIntegrity32(const char* data,
-                                         size_t size,
-                                         const std::string& password);
+  static bool ValidateMessageIntegrity32ForTesting(const char* data,
+                                                   size_t size,
+                                                   const std::string& password);
 
  protected:
   

@@ -327,6 +327,25 @@ StunMessage::IntegrityStatus StunMessage::ValidateMessageIntegrity(
   return integrity_;
 }
 
+bool StunMessage::ValidateMessageIntegrityForTesting(
+    const char* data,
+    size_t size,
+    const std::string& password) {
+  return ValidateMessageIntegrityOfType(STUN_ATTR_MESSAGE_INTEGRITY,
+                                        kStunMessageIntegritySize, data, size,
+                                        password);
+}
+
+bool StunMessage::ValidateMessageIntegrity32ForTesting(
+    const char* data,
+    size_t size,
+    const std::string& password) {
+  return ValidateMessageIntegrityOfType(STUN_ATTR_GOOG_MESSAGE_INTEGRITY_32,
+                                        kStunMessageIntegrity32Size, data, size,
+                                        password);
+}
+
+
 bool StunMessage::ValidateMessageIntegrity(const char* data,
                                            size_t size,
                                            const std::string& password) {
@@ -334,6 +353,7 @@ bool StunMessage::ValidateMessageIntegrity(const char* data,
                                         kStunMessageIntegritySize, data, size,
                                         password);
 }
+
 
 bool StunMessage::ValidateMessageIntegrity32(const char* data,
                                              size_t size,
