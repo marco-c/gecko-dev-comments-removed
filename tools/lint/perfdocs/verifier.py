@@ -553,7 +553,7 @@ class Verifier(object):
         if not valid:
             logger.warning(  
                 "Cannot find a '{documentation}' entry in the given index file",
-                rst_path
+                rst_path,
             )
 
         return valid
