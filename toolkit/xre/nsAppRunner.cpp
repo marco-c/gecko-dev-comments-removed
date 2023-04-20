@@ -5345,6 +5345,16 @@ nsresult XREMain::XRE_mainRun() {
     
     mDirProvider.FinishInitializingUserPrefs();
 
+#if defined(MOZ_SANDBOX) && defined(XP_WIN)
+    
+    
+    
+    
+    
+    
+    mozilla::SandboxBroker::GeckoDependentInitialize();
+#endif
+
     nsCOMPtr<nsIFile> workingDir;
     rv = NS_GetSpecialDirectory(NS_OS_CURRENT_WORKING_DIR,
                                 getter_AddRefs(workingDir));
