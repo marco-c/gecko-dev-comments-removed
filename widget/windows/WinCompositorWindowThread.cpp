@@ -62,6 +62,10 @@ WinCompositorWindowThread::WinCompositorWindowThread(base::Thread* aThread)
 
 
 WinCompositorWindowThread* WinCompositorWindowThread::Get() {
+  if (!sWinCompositorWindowThread ||
+      sWinCompositorWindowThread->mHasAttemptedShutdown) {
+    return nullptr;
+  }
   return sWinCompositorWindowThread;
 }
 
@@ -78,6 +82,7 @@ void WinCompositorWindowThread::Start() {
     sWinCompositorWindowThread->mThread->Stop();
     if (sWinCompositorWindowThread->mThread->StartWithOptions(options)) {
       
+      sWinCompositorWindowThread->mHasAttemptedShutdown = false;
       return;
     }
     
@@ -100,25 +105,43 @@ void WinCompositorWindowThread::ShutDown() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(sWinCompositorWindowThread);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  static const TimeDuration TIMEOUT = TimeDuration::FromSeconds(2.0);
-  RefPtr<Runnable> runnable =
-      NewRunnableMethod("WinCompositorWindowThread::ShutDownTask",
-                        sWinCompositorWindowThread.get(),
-                        &WinCompositorWindowThread::ShutDownTask);
-  Loop()->PostTask(runnable.forget());
+  sWinCompositorWindowThread->mHasAttemptedShutdown = true;
 
+  
+  
+  
+  
+  
+  
+  
+  
   CVStatus status;
   {
+    
+    
+    
+    
     MonitorAutoLock lock(sWinCompositorWindowThread->mMonitor);
-    status = sWinCompositorWindowThread->mMonitor.Wait(TIMEOUT);
+
+    static const TimeDuration TIMEOUT = TimeDuration::FromSeconds(2.0);
+    RefPtr<Runnable> runnable =
+        NewRunnableMethod("WinCompositorWindowThread::ShutDownTask",
+                          sWinCompositorWindowThread.get(),
+                          &WinCompositorWindowThread::ShutDownTask);
+    Loop()->PostTask(runnable.forget());
+
+    
+    
+    
+    
+    
+    
+    
+    TimeStamp timeStart = TimeStamp::NowLoRes();
+    do {
+      status = sWinCompositorWindowThread->mMonitor.Wait(TIMEOUT);
+    } while ((status == CVStatus::Timeout) &&
+             ((TimeStamp::NowLoRes() - timeStart) < TIMEOUT));
   }
 
   if (status == CVStatus::NoTimeout) {

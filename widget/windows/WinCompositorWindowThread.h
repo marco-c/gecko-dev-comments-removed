@@ -55,6 +55,10 @@ class WinCompositorWindowThread final {
 
   UniquePtr<base::Thread> const mThread;
   Monitor mMonitor;
+
+  
+  
+  bool mHasAttemptedShutdown = false;
 };
 
 }  
