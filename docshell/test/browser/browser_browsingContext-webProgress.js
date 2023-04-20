@@ -212,6 +212,8 @@ function waitForNextLocationChange(webProgress, onlyTopLevel = false) {
         });
       },
     };
+    
+    resolve.wpl = wpl;
     webProgress.addProgressListener(wpl, Ci.nsIWebProgress.NOTIFY_ALL);
   });
 }
@@ -233,6 +235,8 @@ function waitForNextDocumentStart(webProgress) {
         }
       },
     };
+    
+    resolve.wpl = wpl;
     webProgress.addProgressListener(wpl, Ci.nsIWebProgress.NOTIFY_ALL);
   });
 }
