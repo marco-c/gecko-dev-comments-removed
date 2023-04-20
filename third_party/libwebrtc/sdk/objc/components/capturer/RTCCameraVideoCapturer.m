@@ -476,9 +476,16 @@ const int64_t kNanosecondsPerSecond = 1000000000;
 
   if (mediaSubType != _outputPixelFormat) {
     _outputPixelFormat = mediaSubType;
-    _videoDataOutput.videoSettings =
-        @{ (NSString *)kCVPixelBufferPixelFormatTypeKey : @(mediaSubType) };
   }
+
+  
+  
+  CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
+  _videoDataOutput.videoSettings = @{
+    (id)kCVPixelBufferWidthKey : @(dimensions.width),
+    (id)kCVPixelBufferHeightKey : @(dimensions.height),
+    (id)kCVPixelBufferPixelFormatTypeKey : @(_outputPixelFormat),
+  };
 }
 
 #pragma mark - Private, called inside capture queue
