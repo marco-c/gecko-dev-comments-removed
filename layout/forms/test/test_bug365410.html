@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=365410
+-->
 <title>Test for Bug 365410</title>
 <script src="/tests/SimpleTest/SimpleTest.js"></script>
 <script src="/tests/SimpleTest/EventUtils.js"></script>
@@ -124,10 +124,7 @@ function runTest() {
 }
 
 SimpleTest.waitForExplicitFinish();
-// Turn off spatial nav so that it does not hijack the up and down events.
-SimpleTest.waitForFocus(function() {
-  SpecialPowers.pushPrefEnv({"set":[["snav.enabled", false]]}, runTest);
-});
+SimpleTest.waitForFocus(runTest);
 
 </script>
 </pre>

@@ -526,9 +526,6 @@ pref("gfx.canvas.azure.backends", "skia");
 pref("browser.ui.linkify.phone", false);
 
 
-pref("snav.enabled", true);
-
-
 
 
 pref("home.sync.updateMode", 0);

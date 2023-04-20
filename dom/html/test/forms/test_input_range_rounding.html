@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=853525
+-->
 <head>
   <title>Test key events for range</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -26,12 +26,9 @@
  * ugly rounding errors.
  **/
 SimpleTest.waitForExplicitFinish();
-// Turn off Spatial Navigation because it hijacks arrow keydown events:
 SimpleTest.waitForFocus(function() {
-  SpecialPowers.pushPrefEnv({"set":[["snav.enabled", false]]}, function() {
-    test();
-    SimpleTest.finish();
-  });
+  test();
+  SimpleTest.finish();
 });
 
 /**

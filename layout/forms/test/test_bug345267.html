@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=345267
+-->
 <head>
   <title>Test for Bug 345267</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -29,8 +29,7 @@
 
 /** Test for Bug 345267 **/
 SimpleTest.waitForExplicitFinish();
-// Turn off Spatial Navigation to stop if from hijacking "left" keypress event.
-SpecialPowers.pushPrefEnv({"set":[['snav.enabled', false]]}, runTest);
+runTest();
 
 function runTest() {
   is($("d1").value, "abcde",

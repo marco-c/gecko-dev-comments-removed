@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=291082
+-->
 <head>
 <meta charset="utf-8">
 <title>Test for Bug 291082</title>
@@ -17,11 +17,6 @@
 
   function preventDefault(event) {
     event.preventDefault();
-  }
-
-  function test() {
-    // Turn off Spatial Navigation because it hijacks arrow keydown events.
-    SpecialPowers.pushPrefEnv({"set":[["snav.enabled", false]]}, runTest);
   }
 
   function runTest() {
@@ -60,7 +55,7 @@
   }
 </script>
 </head>
-<body onload="test();">
+<body onload="runTest();">
 <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=291082">Mozilla Bug 291082</a>
 <div>
   <ul>
