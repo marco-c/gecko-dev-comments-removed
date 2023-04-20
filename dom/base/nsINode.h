@@ -516,6 +516,11 @@ class nsINode : public mozilla::dom::EventTarget {
   
 
 
+  mozilla::dom::Element* GetEffectivePopoverTargetElement() const;
+
+  
+
+
   mozilla::dom::Element* GetTopmostClickedPopover() const;
 
   bool IsNode() const final { return true; }

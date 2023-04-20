@@ -179,6 +179,11 @@ class nsIFormControl : public nsISupports {
   
 
 
+  inline bool IsConceptButton() const;
+
+  
+
+
 
   inline bool AllowDraggableChildren() const;
 
@@ -256,6 +261,10 @@ bool nsIFormControl::IsSubmittableControl() const {
   return type == FormControlType::Object || type == FormControlType::Textarea ||
          type == FormControlType::Select || IsButtonElement(type) ||
          IsInputElement(type);
+}
+
+bool nsIFormControl::IsConceptButton() const {
+  return IsSubmitControl() || IsButtonElement(ControlType());
 }
 
 bool nsIFormControl::AllowDraggableChildren() const {
