@@ -1069,6 +1069,11 @@ bool GCRuntime::setParameter(JSGCParamKey key, uint32_t value,
       updateHelperThreadCount();
       updateMarkersVector();
       break;
+    case JSGC_MARKING_THREAD_COUNT: {
+      markingThreadCount = value;
+      updateMarkersVector();
+      break;
+    }
     case JSGC_MIN_EMPTY_CHUNK_COUNT:
       setMinEmptyChunkCount(value, lock);
       break;
@@ -1136,6 +1141,11 @@ void GCRuntime::resetParameter(JSGCParamKey key, AutoLockGC& lock) {
       updateHelperThreadCount();
       updateMarkersVector();
       break;
+    case JSGC_MARKING_THREAD_COUNT: {
+      markingThreadCount = 0;
+      updateMarkersVector();
+      break;
+    }
     case JSGC_MIN_EMPTY_CHUNK_COUNT:
       setMinEmptyChunkCount(TuningDefaults::MinEmptyChunkCount, lock);
       break;
@@ -1310,8 +1320,12 @@ size_t GCRuntime::markingWorkerCount() const {
     return 1;
   }
 
+  if (markingThreadCount) {
+    return markingThreadCount;
+  }
+
   
-  return std::min(GetHelperThreadCount(), size_t(2));
+  return 2;
 }
 
 #ifdef DEBUG
@@ -1329,7 +1343,10 @@ bool GCRuntime::updateMarkersVector() {
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
   assertNoMarkingWork();
 
-  size_t targetCount = markingWorkerCount();
+  
+  
+  size_t targetCount = std::min(markingWorkerCount(),
+                                HelperThreadState().getGCParallelThreadCount());
 
   if (markers.length() > targetCount) {
     return markers.resize(targetCount);
@@ -2918,6 +2935,17 @@ void GCRuntime::updateSchedulingStateOnGCStart() {
   }
 }
 
+inline bool GCRuntime::canMarkInParallel() const {
+#if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
+  
+  if (oom::simulator.targetThread() == THREAD_TYPE_GCPARALLEL) {
+    return false;
+  }
+#endif
+
+  return markers.length() > 1;
+}
+
 IncrementalProgress GCRuntime::markUntilBudgetExhausted(
     SliceBudget& sliceBudget, ParallelMarking allowParallelMarking,
     ShouldReportMarkTime reportTime) {
@@ -2929,7 +2957,8 @@ IncrementalProgress GCRuntime::markUntilBudgetExhausted(
     return NotFinished;
   }
 
-  if (allowParallelMarking && parallelMarkingEnabled) {
+  if (allowParallelMarking && canMarkInParallel()) {
+    MOZ_ASSERT(parallelMarkingEnabled);
     MOZ_ASSERT(reportTime);
     MOZ_ASSERT(!isBackgroundMarking());
 
