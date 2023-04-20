@@ -25,11 +25,9 @@ XPCOMUtils.defineLazyPreferenceGetter(
   30 * 1000 
 );
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "AsyncShutdown",
-  "resource://gre/modules/AsyncShutdown.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
+});
 
 ChromeUtils.defineModuleGetter(
   lazy,

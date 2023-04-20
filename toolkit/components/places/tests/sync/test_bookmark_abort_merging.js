@@ -1,8 +1,8 @@
 
 
 
-var { AsyncShutdown } = ChromeUtils.import(
-  "resource://gre/modules/AsyncShutdown.jsm"
+var { AsyncShutdown } = ChromeUtils.importESModule(
+  "resource://gre/modules/AsyncShutdown.sys.mjs"
 );
 
 add_task(async function test_transaction_in_progress() {

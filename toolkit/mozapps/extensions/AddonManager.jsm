@@ -76,8 +76,8 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 );
 
 
-var { AsyncShutdown } = ChromeUtils.import(
-  "resource://gre/modules/AsyncShutdown.jsm"
+var { AsyncShutdown } = ChromeUtils.importESModule(
+  "resource://gre/modules/AsyncShutdown.sys.mjs"
 );
 const { PromiseUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/PromiseUtils.sys.mjs"
