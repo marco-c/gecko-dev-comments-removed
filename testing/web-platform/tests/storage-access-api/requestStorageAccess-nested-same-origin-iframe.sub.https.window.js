@@ -1,0 +1,8 @@
+
+
+
+'use strict';
+
+
+
+RunTestsInNestedIFrame('resources/requestStorageAccess-iframe.https.html?testCase=nested-same-origin-frame&rootdocument=false');
