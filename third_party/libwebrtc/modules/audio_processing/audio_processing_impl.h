@@ -248,12 +248,13 @@ class AudioProcessingImpl : public AudioProcessing {
   
   
   
-  int MaybeInitializeRender(const ProcessingConfig& processing_config)
+  void MaybeInitializeRender(const StreamConfig& input_config,
+                             const StreamConfig& output_config)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_render_);
   
   
-  int MaybeInitializeCapture(const StreamConfig& input_config,
-                             const StreamConfig& output_config);
+  void MaybeInitializeCapture(const StreamConfig& input_config,
+                              const StreamConfig& output_config);
 
   
   
@@ -262,7 +263,7 @@ class AudioProcessingImpl : public AudioProcessing {
 
   
   
-  int InitializeLocked(const ProcessingConfig& config)
+  void InitializeLocked(const ProcessingConfig& config)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_render_, mutex_capture_);
   void InitializeResidualEchoDetector()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_render_, mutex_capture_);
@@ -319,7 +320,6 @@ class AudioProcessingImpl : public AudioProcessing {
   
   int ProcessCaptureStreamLocked() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_capture_);
 
-  
   
   
   int AnalyzeReverseStreamLocked(const float* const* src,

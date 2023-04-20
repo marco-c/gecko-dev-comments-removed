@@ -127,8 +127,6 @@ class CustomProcessing;
 
 
 
-
-
 class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
  public:
   
