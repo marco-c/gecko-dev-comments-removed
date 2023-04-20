@@ -90,7 +90,7 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
 
   
   
-  auto KnownLiveBase = anyOf(
+  auto KnownLiveBaseExceptRef = anyOf(
       
       KnownLiveSmartPtr,
       
@@ -101,6 +101,49 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
       KnownLiveMemberOfParam,
       
       declRefExpr(to(varDecl(isConstexpr()))));
+
+  
+  
+  auto RefToKnownLivePtr = ignoreTrivials(declRefExpr(to(varDecl(
+      hasAutomaticStorageDuration(), hasType(referenceType()),
+      hasInitializer(anyOf(
+          KnownLiveSmartPtr, KnownLiveParam, KnownLiveMemberOfParam,
+          conditionalOperator(
+              hasFalseExpression(ignoreTrivials(anyOf(
+                  KnownLiveSmartPtr, KnownLiveParam, KnownLiveMemberOfParam,
+                  declRefExpr(to(varDecl(isConstexpr()))),
+                  
+                  cxxOperatorCallExpr(
+                      hasOverloadedOperatorName("*"),
+                      hasAnyArgument(
+                          anyOf(KnownLiveBaseExceptRef,
+                                ignoreTrivials(KnownLiveMemberOfParam))),
+                      argumentCountIs(1)),
+                  
+                  unaryOperator(unaryDereferenceOperator(),
+                                hasUnaryOperand(
+                                    ignoreTrivials(KnownLiveBaseExceptRef)))))),
+              hasTrueExpression(ignoreTrivials(anyOf(
+                  KnownLiveSmartPtr, KnownLiveParam, KnownLiveMemberOfParam,
+                  declRefExpr(to(varDecl(isConstexpr()))),
+                  
+                  cxxOperatorCallExpr(
+                      hasOverloadedOperatorName("*"),
+                      hasAnyArgument(
+                          anyOf(KnownLiveBaseExceptRef,
+                                ignoreTrivials(KnownLiveMemberOfParam))),
+                      argumentCountIs(1)),
+                  
+                  unaryOperator(unaryDereferenceOperator(),
+                                hasUnaryOperand(ignoreTrivials(
+                                    KnownLiveBaseExceptRef)))))))))))));
+
+  
+  
+  auto KnownLiveBase =
+      anyOf(KnownLiveBaseExceptRef,
+            
+            RefToKnownLivePtr);
 
   
   
@@ -119,8 +162,7 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
                    KnownLiveMemberOfParam))),
       
       cxxOperatorCallExpr(
-          anyOf(hasOverloadedOperatorName("*"),
-                hasOverloadedOperatorName("->")),
+          hasAnyOverloadedOperatorName("*", "->"),
           hasAnyArgument(
               anyOf(KnownLiveBase, ignoreTrivials(KnownLiveMemberOfParam))),
           argumentCountIs(1)),
