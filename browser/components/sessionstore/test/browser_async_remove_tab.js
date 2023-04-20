@@ -83,7 +83,7 @@ add_task(async function save_worthy_tabs_remote_final() {
 
   
   let entryReplaced = promiseOnHistoryReplaceEntry(browser);
-  browser.loadURI("https://example.com/", {
+  browser.loadURI(Services.io.newURI("https://example.com/"), {
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
   });
   await entryReplaced;
@@ -141,7 +141,7 @@ add_task(async function dont_save_empty_tabs_final() {
 
   
   
-  browser.loadURI("about:blank", {
+  browser.loadURI(Services.io.newURI("about:blank"), {
     loadFlags:
       Ci.nsIWebNavigation.LOAD_FLAGS_STOP_CONTENT |
       Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY,
