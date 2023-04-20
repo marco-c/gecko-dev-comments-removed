@@ -3871,7 +3871,10 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
       StringEndsWith(spec, "aboutLicense.css"_ns) ||
       
       StringEndsWith(spec, "aboutNetError.css"_ns) ||
+      StringEndsWith(spec, "aboutHttpsOnlyError.css"_ns) ||
       StringEndsWith(spec, "error-pages.css"_ns) ||
+      
+      StringEndsWith(spec, "/popup.css"_ns) ||
       
       StringBeginsWith(spec, "resource://android/assets/web_extensions/"_ns)) {
     return;
