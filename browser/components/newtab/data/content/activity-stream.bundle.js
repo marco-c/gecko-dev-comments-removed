@@ -11879,14 +11879,12 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       };
     } else if (link.customScreenshotURL) {
       
-      
-      const spocImgURL = link.type === SPOC_TYPE ? link.customScreenshotURL : "";
       imageClassName = "top-site-icon rich-icon";
       imageStyle = {
         backgroundColor: link.backgroundColor,
-        backgroundImage: hasScreenshotImage ? `url(${this.state.screenshotImage.url})` : `url('${spocImgURL}')`
+        backgroundImage: hasScreenshotImage ? `url(${this.state.screenshotImage.url})` : ""
       };
-    } else if (tippyTopIcon || faviconSize >= MIN_RICH_FAVICON_SIZE) {
+    } else if (tippyTopIcon || link.type === SPOC_TYPE || faviconSize >= MIN_RICH_FAVICON_SIZE) {
       
       imageClassName = "top-site-icon rich-icon";
       imageStyle = {

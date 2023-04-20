@@ -689,9 +689,10 @@ class TopSitesFeed {
           
           
           
-          return `https://img-getpocket.cdn.mozilla.net/${width}x${height}/filters:format(jpeg):quality(60):no_upscale():strip_exif()/${encodeURIComponent(
+          
+          return `'https://img-getpocket.cdn.mozilla.net/${width}x${height}/filters:format(jpeg):quality(60):no_upscale():strip_exif()/${encodeURIComponent(
             url
-          )}`;
+          )}'`;
         }
 
         
@@ -706,7 +707,7 @@ class TopSitesFeed {
           const positionIndex = discoveryStreamSpocPositions[i].index;
           const spoc = discoveryStreamSpocs[i];
           const link = {
-            customScreenshotURL: reformatImageURL(spoc.raw_image_src, 40, 40),
+            favicon: reformatImageURL(spoc.raw_image_src, 40, 40),
             type: "SPOC",
             label: spoc.title || spoc.sponsor,
             title: spoc.title || spoc.sponsor,
