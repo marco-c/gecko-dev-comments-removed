@@ -460,6 +460,12 @@ MediaSourceTrackDemuxer::DoGetSamples(int32_t aNumSamples) {
   samples->AppendSample(sample);
   {
     MonitorAutoLock mon(mMonitor);  
+    
+    MOZ_DIAGNOSTIC_ASSERT(sample, "Invalid sample pointer found!");
+    MOZ_DIAGNOSTIC_ASSERT(sample->HasValidTime(), "Invalid sample time found!");
+    if (!sample) {
+      return SamplesPromise::CreateAndReject(NS_ERROR_NULL_POINTER, __func__);
+    }
     if (mNextRandomAccessPoint <= sample->mTime) {
       mNextRandomAccessPoint = mManager->GetNextRandomAccessPoint(
           mType, MediaSourceDemuxer::EOS_FUZZ);
