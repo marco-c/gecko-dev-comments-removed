@@ -1437,61 +1437,6 @@ nsDOMNavigationTiming* nsDocShell::GetNavigationTiming() const {
   return mTiming;
 }
 
-
-
-
-
-
-
-
-
-
-
-bool nsDocShell::ValidateOrigin(BrowsingContext* aOrigin,
-                                BrowsingContext* aTarget) {
-  nsIDocShell* originDocShell = aOrigin->GetDocShell();
-  MOZ_ASSERT(originDocShell, "originDocShell must not be null");
-  Document* originDocument = originDocShell->GetDocument();
-  NS_ENSURE_TRUE(originDocument, false);
-
-  nsIDocShell* targetDocShell = aTarget->GetDocShell();
-  MOZ_ASSERT(targetDocShell, "targetDocShell must not be null");
-  Document* targetDocument = targetDocShell->GetDocument();
-  NS_ENSURE_TRUE(targetDocument, false);
-
-  bool equal;
-  nsresult rv = originDocument->NodePrincipal()->Equals(
-      targetDocument->NodePrincipal(), &equal);
-  if (NS_SUCCEEDED(rv) && equal) {
-    return true;
-  }
-  
-  nsCOMPtr<nsIURI> originURI;
-  nsCOMPtr<nsIURI> targetURI;
-  nsCOMPtr<nsIURI> innerOriginURI;
-  nsCOMPtr<nsIURI> innerTargetURI;
-
-  
-  auto* originDocumentBasePrincipal =
-      BasePrincipal::Cast(originDocument->NodePrincipal());
-
-  rv = originDocumentBasePrincipal->GetURI(getter_AddRefs(originURI));
-  if (NS_SUCCEEDED(rv) && originURI) {
-    innerOriginURI = NS_GetInnermostURI(originURI);
-  }
-
-  auto* targetDocumentBasePrincipal =
-      BasePrincipal::Cast(targetDocument->NodePrincipal());
-
-  rv = targetDocumentBasePrincipal->GetURI(getter_AddRefs(targetURI));
-  if (NS_SUCCEEDED(rv) && targetURI) {
-    innerTargetURI = NS_GetInnermostURI(targetURI);
-  }
-
-  return innerOriginURI && innerTargetURI && SchemeIsFile(innerOriginURI) &&
-         SchemeIsFile(innerTargetURI);
-}
-
 nsPresContext* nsDocShell::GetEldestPresContext() {
   nsIContentViewer* viewer = mContentViewer;
   while (viewer) {
@@ -8486,7 +8431,11 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
       aLoadState->Target().LowerCaseEqualsLiteral("_self") ||
       aLoadState->Target().LowerCaseEqualsLiteral("_parent") ||
       aLoadState->Target().LowerCaseEqualsLiteral("_top")) {
-    targetContext = mBrowsingContext->FindWithName(
+    Document* document = GetDocument();
+    NS_ENSURE_TRUE(document, NS_ERROR_FAILURE);
+    WindowGlobalChild* wgc = document->GetWindowGlobalChild();
+    NS_ENSURE_TRUE(wgc, NS_ERROR_FAILURE);
+    targetContext = wgc->FindBrowsingContextWithName(
         aLoadState->Target(),  false);
   }
 

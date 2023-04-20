@@ -1194,104 +1194,15 @@ void BrowsingContext::GetAllBrowsingContextsInSubtree(
   });
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-BrowsingContext* BrowsingContext::FindWithName(
-    const nsAString& aName, bool aUseEntryGlobalForAccessCheck) {
-  RefPtr<BrowsingContext> requestingContext = this;
-  if (aUseEntryGlobalForAccessCheck) {
-    if (nsGlobalWindowInner* caller = nsContentUtils::EntryInnerWindow()) {
-      if (caller->GetBrowsingContextGroup() == Group()) {
-        requestingContext = caller->GetBrowsingContext();
-      } else {
-        MOZ_RELEASE_ASSERT(caller->GetPrincipal()->IsSystemPrincipal(),
-                           "caller must be either same-group or system");
-      }
-    }
-  }
-  MOZ_ASSERT(requestingContext, "must have a requestingContext");
-
-  BrowsingContext* found = nullptr;
-  if (aName.IsEmpty()) {
-    
-    found = nullptr;
-  } else if (aName.LowerCaseEqualsLiteral("_blank")) {
-    
-    
-    found = nullptr;
-  } else if (nsContentUtils::IsSpecialName(aName)) {
-    found = FindWithSpecialName(aName, *requestingContext);
-  } else if (BrowsingContext* child =
-                 FindWithNameInSubtree(aName, *requestingContext)) {
-    found = child;
-  } else {
-    BrowsingContext* current = this;
-
-    do {
-      Span<RefPtr<BrowsingContext>> siblings;
-      BrowsingContext* parent = current->GetParent();
-
-      if (!parent) {
-        
-        
-        siblings = mGroup->Toplevels();
-      } else if (parent->NameEquals(aName) &&
-                 requestingContext->CanAccess(parent) &&
-                 parent->IsTargetable()) {
-        found = parent;
-        break;
-      } else {
-        siblings = parent->NonSyntheticChildren();
-      }
-
-      for (BrowsingContext* sibling : siblings) {
-        if (sibling == current) {
-          continue;
-        }
-
-        if (BrowsingContext* relative =
-                sibling->FindWithNameInSubtree(aName, *requestingContext)) {
-          found = relative;
-          
-          parent = nullptr;
-          break;
-        }
-      }
-
-      current = parent;
-    } while (current);
-  }
-
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(!found || requestingContext->CanAccess(found));
-
-  return found;
-}
-
 BrowsingContext* BrowsingContext::FindChildWithName(
-    const nsAString& aName, BrowsingContext& aRequestingContext) {
+    const nsAString& aName, WindowGlobalChild& aRequestingWindow) {
   if (aName.IsEmpty()) {
     
     return nullptr;
   }
 
   for (BrowsingContext* child : NonSyntheticChildren()) {
-    if (child->NameEquals(aName) && aRequestingContext.CanAccess(child) &&
+    if (child->NameEquals(aName) && aRequestingWindow.CanNavigate(child) &&
         child->IsTargetable()) {
       return child;
     }
@@ -1301,7 +1212,7 @@ BrowsingContext* BrowsingContext::FindChildWithName(
 }
 
 BrowsingContext* BrowsingContext::FindWithSpecialName(
-    const nsAString& aName, BrowsingContext& aRequestingContext) {
+    const nsAString& aName, WindowGlobalChild& aRequestingWindow) {
   
   
   
@@ -1311,7 +1222,7 @@ BrowsingContext* BrowsingContext::FindWithSpecialName(
 
   if (aName.LowerCaseEqualsLiteral("_parent")) {
     if (BrowsingContext* parent = GetParent()) {
-      return aRequestingContext.CanAccess(parent) ? parent : nullptr;
+      return aRequestingWindow.CanNavigate(parent) ? parent : nullptr;
     }
     return this;
   }
@@ -1319,71 +1230,30 @@ BrowsingContext* BrowsingContext::FindWithSpecialName(
   if (aName.LowerCaseEqualsLiteral("_top")) {
     BrowsingContext* top = Top();
 
-    return aRequestingContext.CanAccess(top) ? top : nullptr;
+    return aRequestingWindow.CanNavigate(top) ? top : nullptr;
   }
 
   return nullptr;
 }
 
 BrowsingContext* BrowsingContext::FindWithNameInSubtree(
-    const nsAString& aName, BrowsingContext& aRequestingContext) {
+    const nsAString& aName, WindowGlobalChild* aRequestingWindow) {
   MOZ_DIAGNOSTIC_ASSERT(!aName.IsEmpty());
 
-  if (NameEquals(aName) && aRequestingContext.CanAccess(this) &&
+  if (NameEquals(aName) &&
+      (!aRequestingWindow || aRequestingWindow->CanNavigate(this)) &&
       IsTargetable()) {
     return this;
   }
 
   for (BrowsingContext* child : NonSyntheticChildren()) {
     if (BrowsingContext* found =
-            child->FindWithNameInSubtree(aName, aRequestingContext)) {
+            child->FindWithNameInSubtree(aName, aRequestingWindow)) {
       return found;
     }
   }
 
   return nullptr;
-}
-
-
-
-
-
-
-
-
-
-bool BrowsingContext::CanAccess(BrowsingContext* aTarget,
-                                bool aConsiderOpener) {
-  MOZ_ASSERT(
-      mDocShell,
-      "CanAccess() may only be called in the process of the accessing window");
-  MOZ_ASSERT(aTarget, "Must have a target");
-
-  MOZ_DIAGNOSTIC_ASSERT(
-      Group() == aTarget->Group(),
-      "A BrowsingContext should never see a context from a different group");
-
-  
-  if (aTarget == this || aTarget == Top()) {
-    return true;
-  }
-
-  
-  for (BrowsingContext* bc = aTarget; bc; bc = bc->GetParent()) {
-    if (bc->mDocShell && nsDocShell::ValidateOrigin(this, bc)) {
-      return true;
-    }
-  }
-
-  
-  
-  if (aConsiderOpener && !aTarget->GetParent()) {
-    if (RefPtr<BrowsingContext> opener = aTarget->GetOpener()) {
-      return CanAccess(opener, false);
-    }
-  }
-
-  return false;
 }
 
 bool BrowsingContext::IsSandboxedFrom(BrowsingContext* aTarget) {
@@ -2070,13 +1940,12 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
 
   MOZ_DIAGNOSTIC_ASSERT(!sourceBC || sourceBC->Group() == Group());
   if (sourceBC && sourceBC->IsInProcess()) {
-    if (!sourceBC->CanAccess(this)) {
-      return NS_ERROR_DOM_PROP_ACCESS_DENIED;
-    }
-
     nsCOMPtr<nsPIDOMWindowOuter> win(sourceBC->GetDOMWindow());
     if (WindowGlobalChild* wgc =
             win->GetCurrentInnerWindow()->GetWindowGlobalChild()) {
+      if (!wgc->CanNavigate(this)) {
+        return NS_ERROR_DOM_PROP_ACCESS_DENIED;
+      }
       wgc->SendLoadURI(this, aLoadState, aSetNavigating);
     }
   } else if (XRE_IsParentProcess()) {
@@ -2175,15 +2044,14 @@ nsresult BrowsingContext::InternalLoad(nsDocShellLoadState* aLoadState) {
     MOZ_DIAGNOSTIC_ASSERT(sourceBC);
     MOZ_DIAGNOSTIC_ASSERT(sourceBC->Group() == Group());
 
-    if (!sourceBC->CanAccess(this)) {
-      return NS_ERROR_DOM_PROP_ACCESS_DENIED;
-    }
-
     nsCOMPtr<nsPIDOMWindowOuter> win(sourceBC->GetDOMWindow());
     WindowGlobalChild* wgc =
         win->GetCurrentInnerWindow()->GetWindowGlobalChild();
     if (!wgc || !wgc->CanSend()) {
       return NS_ERROR_FAILURE;
+    }
+    if (!wgc->CanNavigate(this)) {
+      return NS_ERROR_DOM_PROP_ACCESS_DENIED;
     }
 
     MOZ_ALWAYS_SUCCEEDS(

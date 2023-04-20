@@ -56,13 +56,6 @@ class nsWindowWatcher : public nsIWindowWatcher,
                                        uint32_t aChromeFlags,
                                        bool aCalledFromJS, bool aIsForPrinting);
 
-  
-  
-  
-  already_AddRefed<mozilla::dom::BrowsingContext> GetBrowsingContextByName(
-      const nsAString& aName, bool aForceNoOpener,
-      mozilla::dom::BrowsingContext* aCurrentContext);
-
   static bool HaveSpecifiedSize(const mozilla::dom::WindowFeatures& features);
 
  protected:
