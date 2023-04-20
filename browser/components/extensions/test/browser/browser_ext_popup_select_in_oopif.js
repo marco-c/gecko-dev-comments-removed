@@ -95,6 +95,13 @@ add_task(async function testPopupSelectPopup() {
   let popupMarginLeft = parseFloat(getComputedStyle(selectPopup).marginLeft);
   let popupMarginTop = parseFloat(getComputedStyle(selectPopup).marginTop);
 
+  const offsetToSelectedItem =
+    selectPopup.querySelector("menuitem[selected]").getBoundingClientRect()
+      .top - selectPopup.getBoundingClientRect().top;
+  info(
+    `Browser is at ${browserForPopup.screenY}, popup is at ${popupRect.top} with ${offsetToSelectedItem} to the selected item`
+  );
+
   is(
     Math.floor(browserForPopup.screenX + selectRect.left),
     popupRect.left - popupMarginLeft,
@@ -103,7 +110,7 @@ add_task(async function testPopupSelectPopup() {
 
   
   let expectedY = navigator.platform.includes("Mac")
-    ? Math.floor(browserForPopup.screenY)
+    ? Math.floor(browserForPopup.screenY - offsetToSelectedItem)
     : Math.floor(browserForPopup.screenY + selectRect.bottom);
   is(
     expectedY,
