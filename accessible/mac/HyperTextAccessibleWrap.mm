@@ -727,11 +727,14 @@ TextPoint HyperTextAccessibleWrap::FindTextPoint(
     }
   }
 
-  PeekOffsetStruct pos(
-      aAmount, aDirection, innerContentOffset, nsPoint(0, 0),
-      {PeekOffsetOption::JumpLines, PeekOffsetOption::IsKeyboardSelect,
-       PeekOffsetOption::PreserveSpaces},
-      aWordMovementType);
+  const bool kIsJumpLinesOk = true;       
+  const bool kIsScrollViewAStop = false;  
+  const bool kIsKeyboardSelect = true;    
+  const bool kIsVisualBidi = false;       
+  nsPeekOffsetStruct pos(
+      aAmount, aDirection, innerContentOffset, nsPoint(0, 0), kIsJumpLinesOk,
+      kIsScrollViewAStop, kIsKeyboardSelect, kIsVisualBidi, false,
+      nsPeekOffsetStruct::ForceEditableRegion::No, aWordMovementType, false);
   nsresult rv = frameAtOffset->PeekOffset(&pos);
 
   
