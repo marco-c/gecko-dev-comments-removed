@@ -138,6 +138,7 @@ void BaseCapturerPipeWire::CaptureFrame() {
   
   
 
+  frame->set_capturer_id(DesktopCapturerId::kWaylandCapturerLinux);
   callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
 }
 
