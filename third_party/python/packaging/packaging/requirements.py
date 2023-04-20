@@ -1,11 +1,11 @@
 
 
 
+from __future__ import absolute_import, division, print_function
 
 import re
 import string
-import urllib.parse
-from typing import List, Optional as TOptional, Set
+import sys
 
 from pyparsing import (  
     Combine,
@@ -20,8 +20,18 @@ from pyparsing import (
     stringStart,
 )
 
+from ._typing import TYPE_CHECKING
 from .markers import MARKER_EXPR, Marker
 from .specifiers import LegacySpecifier, Specifier, SpecifierSet
+
+if sys.version_info[0] >= 3:
+    from urllib import parse as urlparse  
+else:  
+    import urlparse
+
+
+if TYPE_CHECKING:  
+    from typing import List, Optional as TOptional, Set
 
 
 class InvalidRequirement(ValueError):
@@ -60,7 +70,7 @@ VERSION_ONE = VERSION_PEP440 ^ VERSION_LEGACY
 VERSION_MANY = Combine(
     VERSION_ONE + ZeroOrMore(COMMA + VERSION_ONE), joinString=",", adjacent=False
 )("_raw_spec")
-_VERSION_SPEC = Optional((LPAREN + VERSION_MANY + RPAREN) | VERSION_MANY)
+_VERSION_SPEC = Optional(((LPAREN + VERSION_MANY + RPAREN) | VERSION_MANY))
 _VERSION_SPEC.setParseAction(lambda s, l, t: t._raw_spec or "")
 
 VERSION_SPEC = originalTextFor(_VERSION_SPEC)("specifier")
@@ -84,7 +94,7 @@ REQUIREMENT = stringStart + NAMED_REQUIREMENT + stringEnd
 REQUIREMENT.parseString("x[]")
 
 
-class Requirement:
+class Requirement(object):
     """Parse a requirement.
 
     Parse a given requirement string into its parts, such as name, specifier,
@@ -97,50 +107,54 @@ class Requirement:
     
     
 
-    def __init__(self, requirement_string: str) -> None:
+    def __init__(self, requirement_string):
+        
         try:
             req = REQUIREMENT.parseString(requirement_string)
         except ParseException as e:
             raise InvalidRequirement(
-                f'Parse error at "{ requirement_string[e.loc : e.loc + 8]!r}": {e.msg}'
+                'Parse error at "{0!r}": {1}'.format(
+                    requirement_string[e.loc : e.loc + 8], e.msg
+                )
             )
 
-        self.name: str = req.name
+        self.name = req.name  
         if req.url:
-            parsed_url = urllib.parse.urlparse(req.url)
+            parsed_url = urlparse.urlparse(req.url)
             if parsed_url.scheme == "file":
-                if urllib.parse.urlunparse(parsed_url) != req.url:
+                if urlparse.urlunparse(parsed_url) != req.url:
                     raise InvalidRequirement("Invalid URL given")
             elif not (parsed_url.scheme and parsed_url.netloc) or (
                 not parsed_url.scheme and not parsed_url.netloc
             ):
-                raise InvalidRequirement(f"Invalid URL: {req.url}")
-            self.url: TOptional[str] = req.url
+                raise InvalidRequirement("Invalid URL: {0}".format(req.url))
+            self.url = req.url  
         else:
             self.url = None
-        self.extras: Set[str] = set(req.extras.asList() if req.extras else [])
-        self.specifier: SpecifierSet = SpecifierSet(req.specifier)
-        self.marker: TOptional[Marker] = req.marker if req.marker else None
+        self.extras = set(req.extras.asList() if req.extras else [])  
+        self.specifier = SpecifierSet(req.specifier)  
+        self.marker = req.marker if req.marker else None  
 
-    def __str__(self) -> str:
-        parts: List[str] = [self.name]
+    def __str__(self):
+        
+        parts = [self.name]  
 
         if self.extras:
-            formatted_extras = ",".join(sorted(self.extras))
-            parts.append(f"[{formatted_extras}]")
+            parts.append("[{0}]".format(",".join(sorted(self.extras))))
 
         if self.specifier:
             parts.append(str(self.specifier))
 
         if self.url:
-            parts.append(f"@ {self.url}")
+            parts.append("@ {0}".format(self.url))
             if self.marker:
                 parts.append(" ")
 
         if self.marker:
-            parts.append(f"; {self.marker}")
+            parts.append("; {0}".format(self.marker))
 
         return "".join(parts)
 
-    def __repr__(self) -> str:
-        return f"<Requirement('{self}')>"
+    def __repr__(self):
+        
+        return "<Requirement({0!r})>".format(str(self))
