@@ -482,6 +482,13 @@ typedef enum JSGCParamKey {
 
 
   JSGC_MARKING_THREAD_COUNT = 49,
+
+  
+
+
+
+
+  JSGC_PARALLEL_MARKING_THRESHOLD_KB = 50,
 } JSGCParamKey;
 
 

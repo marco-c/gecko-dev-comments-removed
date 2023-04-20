@@ -24,3 +24,6 @@ for (const name of ["gczeal",
     }
     hasFunction[name] = present;
 }
+
+
+gcparam('parallelMarkingThresholdKB', 0);
