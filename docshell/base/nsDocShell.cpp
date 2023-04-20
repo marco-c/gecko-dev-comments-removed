@@ -5708,7 +5708,7 @@ static bool IsFollowupPartOfMultipart(nsIRequest* aRequest) {
 nsresult nsDocShell::Embed(nsIContentViewer* aContentViewer,
                            WindowGlobalChild* aWindowActor,
                            bool aIsTransientAboutBlank, bool aPersist,
-                           nsIRequest* aRequest) {
+                           nsIRequest* aRequest, nsIURI* aPreviousURI) {
   
   
   PersistLayoutHistoryState();
@@ -5759,7 +5759,7 @@ nsresult nsDocShell::Embed(nsIContentViewer* aContentViewer,
     }
 
     MOZ_LOG(gSHLog, LogLevel::Debug, ("document %p Embed", this));
-    MoveLoadingToActiveEntry(aPersist, expired, cacheKey);
+    MoveLoadingToActiveEntry(aPersist, expired, cacheKey, aPreviousURI);
   }
 
   bool updateHistory = true;
@@ -6812,7 +6812,7 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
       
       if (viewer) {
         viewer->SetContainer(this);
-        rv = Embed(viewer, aActor, true, false, nullptr);
+        rv = Embed(viewer, aActor, true, false, nullptr, mCurrentURI);
         NS_ENSURE_SUCCESS(rv, rv);
 
         SetCurrentURI(blankDoc->GetDocumentURI(), nullptr,
@@ -7899,6 +7899,11 @@ nsresult nsDocShell::CreateContentViewer(const nsACString& aContentType,
   if (aOpenedChannel) {
     aOpenedChannel->GetURI(getter_AddRefs(mLoadingURI));
   }
+
+  
+  
+  nsCOMPtr<nsIURI> previousURI = mCurrentURI;
+
   FirePageHideNotification(!mSavingOldViewer);
   if (mIsBeingDestroyed) {
     
@@ -8076,7 +8081,7 @@ nsresult nsDocShell::CreateContentViewer(const nsACString& aContentType,
 
   NS_ENSURE_SUCCESS(Embed(viewer, nullptr, false,
                           ShouldAddToSessionHistory(finalURI, aOpenedChannel),
-                          aOpenedChannel),
+                          aOpenedChannel, previousURI),
                     NS_ERROR_FAILURE);
 
   if (!mBrowsingContext->GetHasLoadedNonInitialDocument()) {
@@ -13725,7 +13730,8 @@ void nsDocShell::SetLoadingSessionHistoryInfo(
 }
 
 void nsDocShell::MoveLoadingToActiveEntry(bool aPersist, bool aExpired,
-                                          uint32_t aCacheKey) {
+                                          uint32_t aCacheKey,
+                                          nsIURI* aPreviousURI) {
   MOZ_ASSERT(mozilla::SessionHistoryInParent());
 
   MOZ_LOG(gSHLog, LogLevel::Debug,
@@ -13768,8 +13774,8 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aPersist, bool aExpired,
       
       
       mBrowsingContext->SessionHistoryCommit(
-          *loadingEntry, loadType, mCurrentURI, hadActiveEntry, aPersist, false,
-          aExpired, aCacheKey);
+          *loadingEntry, loadType, aPreviousURI, hadActiveEntry, aPersist,
+          false, aExpired, aCacheKey);
     }
   }
 }
