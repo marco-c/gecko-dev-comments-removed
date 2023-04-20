@@ -1378,7 +1378,7 @@
           return;
         }
 
-        if (!window.fullScreen || newTab.isEmpty) {
+        function selectURL() {
           if (this._asyncTabSwitching) {
             
             
@@ -1404,6 +1404,20 @@
           } else {
             gURLBar.select();
           }
+        }
+
+        if (!window.fullScreen) {
+          selectURL();
+          return;
+        }
+
+        if (newTab.isEmpty) {
+          
+          
+          window.addEventListener("MozDOMFullscreen:Exited", selectURL, {
+            once: true,
+            wantsUntrusted: false,
+          });
           return;
         }
       }
