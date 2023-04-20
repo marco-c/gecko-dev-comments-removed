@@ -83,7 +83,9 @@ class MFCDMSession final {
   
   Maybe<nsString> mSessionId;
 
-  double mExpiredTimeMilliSecondsSinceEpoch = 0.0;
+  
+  
+  double mExpiredTimeMilliSecondsSinceEpoch;
 };
 
 }  
