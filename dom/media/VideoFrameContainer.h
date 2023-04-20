@@ -90,7 +90,7 @@ class VideoFrameContainer {
     return mImageContainer->GetDroppedImageCount();
   }
 
-  gfx::IntSize CurrentIntrinsicSize() {
+  Maybe<gfx::IntSize> CurrentIntrinsicSize() {
     MutexAutoLock lock(mMutex);
     return mIntrinsicSize;
   }
@@ -113,13 +113,13 @@ class VideoFrameContainer {
     
     bool mImageSizeChanged = false;
     
-    gfx::IntSize mIntrinsicSize;
     
     
     
     
     
-    bool mIntrinsicSizeChanged = false;
+    
+    Maybe<gfx::IntSize> mNewIntrinsicSize;
   } mMainThreadState;
 
   Mutex mMutex;
@@ -128,7 +128,7 @@ class VideoFrameContainer {
   
   
   
-  gfx::IntSize mIntrinsicSize MOZ_GUARDED_BY(mMutex);
+  Maybe<gfx::IntSize> mIntrinsicSize MOZ_GUARDED_BY(mMutex);
   
   
   ImageContainer::FrameID mFrameID;
