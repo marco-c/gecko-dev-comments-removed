@@ -4,6 +4,8 @@
 
 
 
+
+
 ChromeUtils.defineESModuleGetters(this, {
   ContentTaskUtils: "resource://testing-common/ContentTaskUtils.sys.mjs",
 });
@@ -18,6 +20,13 @@ Services.prefs.setBoolPref(
 );
 
 const IS_OOP = Services.prefs.getBoolPref("extensions.webextensions.remote");
+
+
+
+
+
+
+const IS_ANDROID_BUILD = AppConstants.platform === "android";
 
 const WEBEXT_EVENTPAGE_RUNNING_TIME_MS = "WEBEXT_EVENTPAGE_RUNNING_TIME_MS";
 const WEBEXT_EVENTPAGE_RUNNING_TIME_MS_BY_ADDONID =
@@ -169,4 +178,89 @@ function assertHistogramCategoryNotEmpty(
     },
     message
   );
+}
+
+function setupTelemetryForTests() {
+  
+  do_get_profile();
+  
+  Services.fog.initializeFOG();
+}
+
+function resetTelemetryData() {
+  if (IS_ANDROID_BUILD) {
+    info("Skip testResetFOG on android builds");
+    return;
+  }
+  Services.fog.testResetFOG();
+}
+
+function assertDNRTelemetryMetricsDefined(metrics) {
+  const metricsFound = Object.keys(Glean.extensionsApisDnr);
+  const metricsNotFound = metrics.filter(
+    metric => !metricsFound.includes(metric)
+  );
+  Assert.deepEqual(
+    metricsNotFound,
+    [],
+    `All expected extensionsApisDnr Glean metrics should be found in ${metricsFound}`
+  );
+}
+
+function assertDNRTelemetryMetricsNoSamples(metrics, msg) {
+  assertDNRTelemetryMetricsDefined(metrics);
+  for (const metric of metrics) {
+    if (IS_ANDROID_BUILD) {
+      info(
+        `Skip assertions on collected samples for extensionsApisDnr.${metric} on android builds`
+      );
+      return;
+    }
+    const gleanData = Glean.extensionsApisDnr[metric].testGetValue();
+    Assert.deepEqual(
+      gleanData,
+      undefined,
+      `Expect no sample for Glean metric extensionApisDnr.${metric} (${msg}): ${gleanData}`
+    );
+  }
+}
+
+function assertDNRTelemetryMetricsSamplesCount(
+  metrics,
+  expectedSamplesCount,
+  msg
+) {
+  assertDNRTelemetryMetricsDefined(metrics);
+  for (const metric of metrics) {
+    if (IS_ANDROID_BUILD) {
+      info(
+        `Skip assertions on collected samples for extensionsApisDnr.${metric} on android builds`
+      );
+      return;
+    }
+    const gleanData = Glean.extensionsApisDnr[metric].testGetValue();
+    Assert.notEqual(
+      gleanData,
+      undefined,
+      `Got some sample for Glean metric extensionApisDnr.${metric}: ${gleanData &&
+        JSON.stringify(gleanData)}`
+    );
+    const toBucketSum = (acc, bucket) => {
+      acc += gleanData.values[bucket];
+      return acc;
+    };
+    Assert.equal(
+      Object.keys(gleanData.values).reduce(toBucketSum, 0),
+      expectedSamplesCount,
+      `Got the expected number of samples for Glean metric extensionsApisDnr.${metric} (${msg})`
+    );
+    
+    
+    
+    
+    Assert.ok(
+      !gleanData.values["0"],
+      `No sample for Glean metric extensionsApisDnr.${metric} should be collected for the bucket "0"`
+    );
+  }
 }
