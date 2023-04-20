@@ -470,7 +470,7 @@ MediaConduitErrorCode WebrtcAudioConduit::GetAudioFrame(
   
   
   
-  auto info = static_cast<webrtc::internal::AudioReceiveStream*>(mRecvStream)
+  auto info = static_cast<webrtc::AudioReceiveStreamImpl*>(mRecvStream)
                   ->GetAudioFrameWithInfo(samplingFreqHz, frame);
 
   if (info == webrtc::AudioMixer::Source::AudioFrameInfo::kError) {
