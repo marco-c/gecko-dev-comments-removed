@@ -635,6 +635,11 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowColumns(
             aReflowInput.mParentReflowInput->mFrame->HasAnyStateBits(
                 NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);
         if (isNestedMulticol) {
+          if (aConfig.mForceAuto) {
+            
+            
+            return true;
+          }
           if (aReflowInput.mFlags.mIsTopOfPage) {
             
             
