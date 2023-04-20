@@ -3138,6 +3138,33 @@ bool BaseCompiler::jumpConditionalWithResults(BranchState* b, Cond cond,
   return true;
 }
 
+bool BaseCompiler::jumpConditionalWithResults(BranchState* b, RegRef object,
+                                              uint32_t typeIndex,
+                                              bool onSuccess) {
+  if (b->hasBlockResults()) {
+    StackHeight resultsBase(0);
+    if (!topBranchParams(b->resultType, &resultsBase)) {
+      return false;
+    }
+    if (b->stackHeight != resultsBase) {
+      Label notTaken;
+      branchGcObjectType(object, typeIndex, &notTaken,
+                         b->invertBranch ? onSuccess : !onSuccess);
+
+      
+      shuffleStackResultsBeforeBranch(resultsBase, b->stackHeight,
+                                      b->resultType);
+      masm.jump(b->label);
+      masm.bind(&notTaken);
+      return true;
+    }
+  }
+
+  branchGcObjectType(object, typeIndex, b->label,
+                     b->invertBranch ? !onSuccess : onSuccess);
+  return true;
+}
+
 
 
 
@@ -6330,6 +6357,37 @@ void BaseCompiler::SignalNullCheck::emitTrapSite(BaseCompiler* bc) {
               wasm::TrapSite(masm.currentOffset(), trapOffset));
 }
 
+void BaseCompiler::branchGcObjectType(RegRef object, uint32_t typeIndex,
+                                      Label* label, bool onSuccess) {
+  const TypeDef& castTypeDef = (*moduleEnv_.types)[typeIndex];
+  RegPtr superTypeDef = loadTypeDef(typeIndex);
+  RegPtr subTypeDef = needPtr();
+  RegI32 length;
+  if (castTypeDef.subTypingDepth() >= MinSuperTypeVectorLength) {
+    length = needI32();
+  }
+
+  if (onSuccess) {
+    Label failed;
+    masm.branchTestPtr(Assembler::Zero, object, object, &failed);
+    masm.loadPtr(Address(object, WasmGcObject::offsetOfTypeDef()), subTypeDef);
+    masm.branchWasmTypeDefIsSubtype(subTypeDef, superTypeDef, length,
+                                    castTypeDef.subTypingDepth(), label, true);
+    masm.bind(&failed);
+  } else {
+    masm.branchTestPtr(Assembler::Zero, object, object, label);
+    masm.loadPtr(Address(object, WasmGcObject::offsetOfTypeDef()), subTypeDef);
+    masm.branchWasmTypeDefIsSubtype(subTypeDef, superTypeDef, length,
+                                    castTypeDef.subTypingDepth(), label, false);
+  }
+
+  if (castTypeDef.subTypingDepth() >= MinSuperTypeVectorLength) {
+    freeI32(length);
+  }
+  freePtr(subTypeDef);
+  freePtr(superTypeDef);
+}
+
 RegPtr BaseCompiler::emitGcArrayGetData(RegRef rp) {
   
   
@@ -7158,8 +7216,22 @@ bool BaseCompiler::emitRefTest() {
     return true;
   }
 
-  pushPtr(loadTypeDef(typeIndex));
-  return emitInstanceCall(SASigRefTest);
+  Label success;
+  Label join;
+  RegRef object = popRef();
+  RegI32 result = needI32();
+
+  branchGcObjectType(object, typeIndex, &success, true);
+  masm.xor32(result, result);
+  masm.jump(&join);
+  masm.bind(&success);
+  masm.move32(Imm32(1), result);
+  masm.bind(&join);
+
+  pushI32(result);
+  freeRef(object);
+
+  return true;
 }
 
 bool BaseCompiler::emitRefCast() {
@@ -7173,27 +7245,13 @@ bool BaseCompiler::emitRefCast() {
     return true;
   }
 
-  RegRef refPtr = popRef();
+  RegRef object = popRef();
 
-  
-  RegRef castedPtr = needRef();
-  moveRef(refPtr, castedPtr);
-  pushRef(castedPtr);
-  pushRef(refPtr);
-  pushPtr(loadTypeDef(typeIndex));
-
-  
-  if (!emitInstanceCall(SASigRefTest)) {
-    return false;
-  }
-
-  
-  RegI32 result = popI32();
-  Label nonZero;
-  masm.branchTest32(Assembler::NonZero, result, result, &nonZero);
+  Label success;
+  branchGcObjectType(object, typeIndex, &success, true);
   masm.wasmTrap(Trap::BadCast, bytecodeOffset());
-  masm.bind(&nonZero);
-  freeI32(result);
+  masm.bind(&success);
+  pushRef(object);
 
   return true;
 }
@@ -7219,36 +7277,15 @@ bool BaseCompiler::emitBrOnCastCommon(bool onSuccess) {
   Control& target = controlItem(labelRelativeDepth);
   target.bceSafeOnExit &= bceSafe_;
 
-  RegRef refPtr = popRef();
-
-  
-  RegRef castedPtr = needRef();
-  moveRef(refPtr, castedPtr);
-  pushRef(castedPtr);
-  pushRef(refPtr);
-  pushPtr(loadTypeDef(castTypeIndex));
-
-  
-  if (!emitInstanceCall(SASigRefTest)) {
-    return false;
-  }
+  RegRef object = popRef();
+  pushRef(object);
 
   
   BranchState b(&target.label, target.stackHeight, InvertBranch(false),
                 labelType);
-  if (b.hasBlockResults()) {
-    needResultRegisters(b.resultType);
-  }
-  RegI32 condition = popI32();
-  if (b.hasBlockResults()) {
-    freeResultRegisters(b.resultType);
-  }
-  if (!jumpConditionalWithResults(
-          &b, (onSuccess ? Assembler::NotEqual : Assembler::Equal), condition,
-          Imm32(0))) {
+  if (!jumpConditionalWithResults(&b, object, castTypeIndex, onSuccess)) {
     return false;
   }
-  freeI32(condition);
 
   return true;
 }

@@ -3797,6 +3797,19 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
+  
+  
+  
+  
+  void branchWasmTypeDefIsSubtype(Register subTypeDef, Register superTypeDef,
+                                  Register scratch, uint32_t subTypeDepth,
+                                  Label* label, bool onSuccess);
+
+  
+  
+  
+  
+  
   void shiftIndex32AndAdd(Register indexTemp32, int shift,
                           Register pointer) PER_SHARED_ARCH;
 

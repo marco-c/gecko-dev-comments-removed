@@ -1322,9 +1322,16 @@ struct BaseCompiler final {
   void setLatentEqz(ValType operandType);
   bool hasLatentOp() const;
   void resetLatentOp();
+  
+  
   template <typename Cond, typename Lhs, typename Rhs>
   [[nodiscard]] bool jumpConditionalWithResults(BranchState* b, Cond cond,
                                                 Lhs lhs, Rhs rhs);
+  
+  
+  [[nodiscard]] bool jumpConditionalWithResults(BranchState* b, RegRef object,
+                                                uint32_t typeIndex,
+                                                bool onSuccess);
   template <typename Cond>
   [[nodiscard]] bool sniffConditionalControlCmp(Cond compareOp,
                                                 ValType operandType);
@@ -1645,6 +1652,10 @@ struct BaseCompiler final {
   };
 
   RegPtr loadTypeDef(uint32_t typeIndex);
+  
+  
+  void branchGcObjectType(RegRef object, uint32_t typeIndex, Label* label,
+                          bool onSuccess);
   RegPtr emitGcArrayGetData(RegRef rp);
   template <typename NullCheckPolicy>
   RegI32 emitGcArrayGetNumElements(RegRef rp);
