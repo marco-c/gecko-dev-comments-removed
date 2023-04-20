@@ -568,7 +568,7 @@ add_task(
       persisted: true,
     });
 
-    info(`test onStartup filed after restart`);
+    info(`test onStartup after restart`);
     await promiseRestartManager();
 
     

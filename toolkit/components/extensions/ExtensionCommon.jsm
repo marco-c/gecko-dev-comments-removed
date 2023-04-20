@@ -2351,6 +2351,25 @@ class EventManager {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static _initPersistentListeners(extension) {
     if (extension.persistentListeners) {
       return !!extension.persistentListeners.size;
@@ -2365,14 +2384,62 @@ class EventManager {
     }
 
     let found = false;
-    for (let [module, entry] of Object.entries(persistentListeners)) {
-      for (let [event, paramlists] of Object.entries(entry)) {
-        for (let paramlist of paramlists) {
-          let key = uneval(paramlist);
-          listeners
-            .get(module)
-            .get(event)
-            .set(key, { params: paramlist });
+    for (let [module, savedModuleEntry] of Object.entries(
+      persistentListeners
+    )) {
+      for (let [event, savedEventEntry] of Object.entries(savedModuleEntry)) {
+        for (let paramList of savedEventEntry) {
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          let key = uneval(paramList);
+          const eventEntry = listeners.get(module).get(event);
+
+          if (eventEntry.has(key)) {
+            const keyEntry = eventEntry.get(key);
+            let primeId = keyEntry.nextPrimeId;
+            keyEntry.listeners.push({ primeId });
+            keyEntry.nextPrimeId++;
+          } else {
+            eventEntry.set(key, {
+              params: paramList,
+              nextPrimeId: 1,
+              listeners: [{ primeId: 0 }],
+            });
+          }
           found = true;
         }
       }
@@ -2388,10 +2455,27 @@ class EventManager {
     for (let [module, moduleEntry] of extension.persistentListeners) {
       startupListeners[module] = {};
       for (let [event, eventEntry] of moduleEntry) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         startupListeners[module][event] = Array.from(
-          eventEntry.values(),
-          listener => listener.params
-        );
+          eventEntry.values()
+        ).flatMap(keyEntry => keyEntry.listeners.map(() => keyEntry.params));
       }
     }
 
@@ -2428,69 +2512,83 @@ class EventManager {
         EventManager._writePersistentListeners(extension);
         continue;
       }
-      for (let [event, listeners] of moduleEntry) {
-        for (let [key, listener] of listeners) {
-          let primed = { pendingEvents: [] };
+      for (let [event, eventEntry] of moduleEntry) {
+        for (let [key, { params, listeners }] of eventEntry) {
+          for (let listener of listeners) {
+            
+            
+            
+            const listenerWasAdded = listener.added;
+            listener.added = false;
+            listener.params = params;
+            let primed = { pendingEvents: [] };
 
-          let fireEvent = (...args) =>
-            new Promise((resolve, reject) => {
-              if (!listener.primed) {
-                reject(
-                  new Error(
-                    `primed listener ${module}.${event} not re-registered`
-                  )
-                );
-                return;
+            let fireEvent = (...args) =>
+              new Promise((resolve, reject) => {
+                if (!listener.primed) {
+                  reject(
+                    new Error(
+                      `primed listener ${module}.${event} not re-registered`
+                    )
+                  );
+                  return;
+                }
+                primed.pendingEvents.push({ args, resolve, reject });
+                extension.emit("background-script-event");
+              });
+
+            let fire = {
+              wakeup: () => extension.wakeupBackground(),
+              sync: fireEvent,
+              async: fireEvent,
+              
+              raw: fireEvent,
+            };
+
+            try {
+              let handler = api.primeListener(
+                event,
+                fire,
+                listener.params,
+                isInStartup
+              );
+              if (handler) {
+                listener.primed = primed;
+                Object.assign(primed, handler);
               }
-              primed.pendingEvents.push({ args, resolve, reject });
-              extension.emit("background-script-event");
-            });
-
-          let fire = {
-            wakeup: () => extension.wakeupBackground(),
-            sync: fireEvent,
-            async: fireEvent,
-            
-            raw: fireEvent,
-          };
-
-          try {
-            let handler = api.primeListener(
-              event,
-              fire,
-              listener.params,
-              isInStartup
-            );
-            if (handler) {
-              listener.primed = primed;
-              Object.assign(primed, handler);
+            } catch (e) {
+              Cu.reportError(
+                `Error priming listener ${module}.${event}: ${e} :: ${e.stack}`
+              );
+              
+              listener.error = true;
             }
-          } catch (e) {
-            Cu.reportError(
-              `Error priming listener ${module}.${event}: ${e} :: ${e.stack}`
-            );
-            
-            listener.error = true;
-          }
 
-          
-          
-          
-          
-          
-          
-          
-          
-          if (
-            listener.error ||
-            (!isInStartup &&
-              !(
-                (`${module}.${event}` === "runtime.onStartup" &&
-                  listener.added) ||
-                listener.primed
-              ))
-          ) {
-            EventManager.clearPersistentListener(extension, module, event, key);
+            
+            
+            
+            
+            
+            
+            
+            
+            if (
+              listener.error ||
+              (!isInStartup &&
+                !(
+                  (`${module}.${event}` === "runtime.onStartup" &&
+                    listenerWasAdded) ||
+                  listener.primed
+                ))
+            ) {
+              EventManager.clearPersistentListener(
+                extension,
+                module,
+                event,
+                key,
+                listener.primeId
+              );
+            }
           }
         }
       }
@@ -2516,33 +2614,41 @@ class EventManager {
     }
 
     for (let [module, moduleEntry] of extension.persistentListeners) {
-      for (let [event, listeners] of moduleEntry) {
-        for (let [key, listener] of listeners) {
-          let { primed, added } = listener;
-          
-          
-          
-          if (added) {
-            continue;
-          }
-
-          if (primed) {
+      for (let [event, eventEntry] of moduleEntry) {
+        for (let [key, { listeners }] of eventEntry) {
+          for (let listener of listeners) {
+            let { primed, added, primeId } = listener;
             
             
             
-            
-            listener.primed = null;
-
-            for (let evt of primed.pendingEvents) {
-              evt.reject(new Error("listener not re-registered"));
+            if (added) {
+              continue;
             }
-            primed.unregister();
-          }
 
-          
-          
-          if (clearPersistent) {
-            EventManager.clearPersistentListener(extension, module, event, key);
+            if (primed) {
+              
+              
+              
+              
+              listener.primed = null;
+
+              for (let evt of primed.pendingEvents) {
+                evt.reject(new Error("listener not re-registered"));
+              }
+              primed.unregister();
+            }
+
+            
+            
+            if (clearPersistent) {
+              EventManager.clearPersistentListener(
+                extension,
+                module,
+                event,
+                key,
+                primeId
+              );
+            }
           }
         }
       }
@@ -2555,26 +2661,56 @@ class EventManager {
   static savePersistentListener(extension, module, event, args = []) {
     EventManager._initPersistentListeners(extension);
     let key = uneval(args);
-    extension.persistentListeners
-      .get(module)
-      .get(event)
+    const eventEntry = extension.persistentListeners.get(module).get(event);
+
+    let primeId;
+    if (!eventEntry.has(key)) {
       
-      .set(key, { params: args, added: true });
+      primeId = 0;
+      eventEntry.set(key, {
+        params: args,
+        listeners: [{ added: true, primeId }],
+        nextPrimeId: 1,
+      });
+    } else {
+      const keyEntry = eventEntry.get(key);
+      primeId = keyEntry.nextPrimeId;
+      keyEntry.listeners.push({ added: true, primeId });
+      keyEntry.nextPrimeId = primeId + 1;
+    }
+
     EventManager._writePersistentListeners(extension);
+    return [module, event, key, primeId];
   }
 
   
   
   
-  static clearPersistentListener(extension, module, event, key = uneval([])) {
-    let listeners = extension.persistentListeners.get(module).get(event);
-    listeners.delete(key);
+  static clearPersistentListener(
+    extension,
+    module,
+    event,
+    key = uneval([]),
+    primeId = undefined
+  ) {
+    let eventEntry = extension.persistentListeners.get(module).get(event);
 
-    if (listeners.size == 0) {
-      let moduleEntry = extension.persistentListeners.get(module);
-      moduleEntry.delete(event);
-      if (moduleEntry.size == 0) {
-        extension.persistentListeners.delete(module);
+    let keyEntry = eventEntry.get(key);
+
+    if (primeId != undefined && keyEntry) {
+      keyEntry.listeners = keyEntry.listeners.filter(
+        listener => listener.primeId !== primeId
+      );
+    }
+
+    if (primeId == undefined || keyEntry?.listeners.length === 0) {
+      eventEntry.delete(key);
+      if (eventEntry.size == 0) {
+        let moduleEntry = extension.persistentListeners.get(module);
+        moduleEntry.delete(event);
+        if (moduleEntry.size == 0) {
+          extension.persistentListeners.delete(module);
+        }
       }
     }
 
@@ -2664,11 +2800,18 @@ class EventManager {
 
       let key = uneval(args);
       EventManager._initPersistentListeners(extension);
-      let listener = extension.persistentListeners
+      let keyEntry = extension.persistentListeners
         .get(module)
         .get(event)
         .get(key);
 
+      
+      
+      
+      
+      
+      
+      let listener = keyEntry?.listeners.find(listener => !listener.added);
       if (listener) {
         
         
@@ -2691,7 +2834,8 @@ class EventManager {
             extension,
             module,
             event,
-            uneval(args)
+            uneval(args),
+            listener.primeId
           );
         });
       }
@@ -2707,13 +2851,19 @@ class EventManager {
     
     
     if (recordStartupData) {
-      EventManager.savePersistentListener(extension, module, event, args);
+      const [
+        ,
+        ,
+        ,
+           primeId,
+      ] = EventManager.savePersistentListener(extension, module, event, args);
       this.remove.set(callback, () => {
         EventManager.clearPersistentListener(
           extension,
           module,
           event,
-          uneval(args)
+          uneval(args),
+          primeId
         );
       });
     }
