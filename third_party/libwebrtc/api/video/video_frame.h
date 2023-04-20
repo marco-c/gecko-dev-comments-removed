@@ -81,6 +81,21 @@ class RTC_EXPORT VideoFrame {
     Timestamp finish;
   };
 
+  struct RTC_EXPORT RenderParameters {
+    bool use_low_latency_rendering = false;
+    absl::optional<int32_t> max_composition_delay_in_frames;
+
+    bool operator==(const RenderParameters& other) const {
+      return other.use_low_latency_rendering == use_low_latency_rendering &&
+             other.max_composition_delay_in_frames ==
+                 max_composition_delay_in_frames;
+    }
+
+    bool operator!=(const RenderParameters& other) const {
+      return !(*this == other);
+    }
+  };
+
   
   class RTC_EXPORT Builder {
    public:
@@ -109,6 +124,7 @@ class RTC_EXPORT VideoFrame {
     int64_t ntp_time_ms_ = 0;
     VideoRotation rotation_ = kVideoRotation_0;
     absl::optional<ColorSpace> color_space_;
+    RenderParameters render_parameters_;
     absl::optional<UpdateRect> update_rect_;
     RtpPacketInfos packet_infos_;
   };
@@ -189,14 +205,17 @@ class RTC_EXPORT VideoFrame {
     color_space_ = color_space;
   }
 
-  
-  
-  absl::optional<int32_t> max_composition_delay_in_frames() const {
-    return max_composition_delay_in_frames_;
+  RenderParameters render_parameters() const { return render_parameters_; }
+  void set_render_parameters(const RenderParameters& render_parameters) {
+    render_parameters_ = render_parameters;
   }
-  void set_max_composition_delay_in_frames(
-      absl::optional<int32_t> max_composition_delay_in_frames) {
-    max_composition_delay_in_frames_ = max_composition_delay_in_frames;
+
+  
+  
+  
+  [[deprecated("Use render_parameters() instead.")]] absl::optional<int32_t>
+  max_composition_delay_in_frames() const {
+    return render_parameters_.max_composition_delay_in_frames;
   }
 
   
@@ -257,6 +276,7 @@ class RTC_EXPORT VideoFrame {
              int64_t ntp_time_ms,
              VideoRotation rotation,
              const absl::optional<ColorSpace>& color_space,
+             const RenderParameters& render_parameters,
              const absl::optional<UpdateRect>& update_rect,
              RtpPacketInfos packet_infos);
 
@@ -268,7 +288,8 @@ class RTC_EXPORT VideoFrame {
   int64_t timestamp_us_;
   VideoRotation rotation_;
   absl::optional<ColorSpace> color_space_;
-  absl::optional<int32_t> max_composition_delay_in_frames_;
+  
+  RenderParameters render_parameters_;
   
   
   
