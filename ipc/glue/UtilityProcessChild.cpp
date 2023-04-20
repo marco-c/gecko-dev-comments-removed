@@ -301,6 +301,12 @@ void UtilityProcessChild::ActorDestroy(ActorDestroyReason aWhy) {
     timeout = 10 * 1000;
   }
 
+  mJSOracleInstance = nullptr;
+
+#  ifdef XP_WIN
+  mWindowsUtilsInstance = nullptr;
+#  endif
+
   
   
   
