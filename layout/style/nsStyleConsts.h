@@ -515,8 +515,8 @@ enum class StyleTextOrientation : uint8_t {
 
 
 enum class StyleMozBoxLayout : uint8_t {
-  Legacy,
   Flex,
+  Legacy,
 };
 
 
