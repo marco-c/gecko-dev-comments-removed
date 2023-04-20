@@ -331,7 +331,7 @@ double RemoteAccessibleBase<Derived>::Step() const {
 
 template <class Derived>
 bool RemoteAccessibleBase<Derived>::ContainsPoint(int32_t aX, int32_t aY) {
-  if (!Bounds().Contains(aX, aY)) {
+  if (!BoundsWithOffset(Nothing(), true).Contains(aX, aY)) {
     return false;
   }
   if (!IsTextLeaf()) {
@@ -380,7 +380,7 @@ bool RemoteAccessibleBase<Derived>::ContainsPoint(int32_t aX, int32_t aY) {
     if (lineEnd > lineStart) {
       lineRect.UnionRect(lineRect, GetCachedCharRect(lineEnd));
     }
-    if (BoundsWithOffset(Some(lineRect)).Contains(aX, aY)) {
+    if (BoundsWithOffset(Some(lineRect), true).Contains(aX, aY)) {
       return true;
     }
     lineStart = lineEnd + 1;
@@ -391,10 +391,16 @@ bool RemoteAccessibleBase<Derived>::ContainsPoint(int32_t aX, int32_t aY) {
 template <class Derived>
 Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
     int32_t aX, int32_t aY, LocalAccessible::EWhichChildAtPoint aWhichChild) {
+  
+  
+  
+  
+  const bool hitTesting = true;
+
   if (IsOuterDoc() && aWhichChild == EWhichChildAtPoint::DirectChild) {
     
     
-    if (Bounds().Contains(aX, aY)) {
+    if (BoundsWithOffset(Nothing(), hitTesting).Contains(aX, aY)) {
       return RemoteFirstChild();
     }
     return nullptr;
@@ -429,7 +435,7 @@ Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
 
         if (acc->IsOuterDoc() &&
             aWhichChild == EWhichChildAtPoint::DeepestChild &&
-            acc->Bounds().Contains(aX, aY)) {
+            acc->BoundsWithOffset(Nothing(), hitTesting).Contains(aX, aY)) {
           
           
           RemoteAccessible* innerDoc = acc->RemoteFirstChild();
@@ -492,7 +498,7 @@ Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
     lastMatch = nullptr;
   }
 
-  if (!lastMatch && Bounds().Contains(aX, aY)) {
+  if (!lastMatch && BoundsWithOffset(Nothing(), hitTesting).Contains(aX, aY)) {
     
     
     return this;
@@ -572,12 +578,12 @@ bool RemoteAccessibleBase<Derived>::ApplyTransform(
 }
 
 template <class Derived>
-void RemoteAccessibleBase<Derived>::ApplyScrollOffset(nsRect& aBounds) const {
+bool RemoteAccessibleBase<Derived>::ApplyScrollOffset(nsRect& aBounds) const {
   Maybe<const nsTArray<int32_t>&> maybeScrollPosition =
       mCachedFields->GetAttribute<nsTArray<int32_t>>(nsGkAtoms::scrollPosition);
 
   if (!maybeScrollPosition || maybeScrollPosition->Length() != 2) {
-    return;
+    return false;
   }
   
   
@@ -589,6 +595,11 @@ void RemoteAccessibleBase<Derived>::ApplyScrollOffset(nsRect& aBounds) const {
   nsPoint scrollOffset(-scrollPosition[0], -scrollPosition[1]);
 
   aBounds.MoveBy(scrollOffset.x, scrollOffset.y);
+
+  
+  
+  
+  return true;
 }
 
 template <class Derived>
@@ -620,7 +631,7 @@ bool RemoteAccessibleBase<Derived>::IsFixedPos() const {
 
 template <class Derived>
 LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
-    Maybe<nsRect> aOffset) const {
+    Maybe<nsRect> aOffset, bool aBoundsAreForHittesting) const {
   Maybe<nsRect> maybeBounds = RetrieveCachedBounds();
   if (maybeBounds) {
     nsRect bounds = *maybeBounds;
@@ -647,6 +658,12 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
     const Accessible* acc = Parent();
     bool encounteredFixedContainer = IsFixedPos();
     while (acc && acc->IsRemote()) {
+      
+      
+      if (aBoundsAreForHittesting && bounds.IsEmpty()) {
+        return LayoutDeviceIntRect{};
+      }
+
       RemoteAccessible* remoteAcc = const_cast<Accessible*>(acc)->AsRemote();
 
       if (Maybe<nsRect> maybeRemoteBounds = remoteAcc->RetrieveCachedBounds()) {
@@ -682,7 +699,18 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
           
           
           
-          remoteAcc->ApplyScrollOffset(remoteBounds);
+          const bool hasScrollArea = remoteAcc->ApplyScrollOffset(bounds);
+
+          
+          
+          
+          
+          
+          if (aBoundsAreForHittesting && hasScrollArea) {
+            nsRect selfRelativeScrollBounds(0, 0, remoteBounds.width,
+                                            remoteBounds.height);
+            bounds = bounds.SafeIntersect(selfRelativeScrollBounds);
+          }
         }
         if (remoteAcc->IsDoc()) {
           
