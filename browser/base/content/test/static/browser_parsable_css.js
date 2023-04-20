@@ -141,7 +141,6 @@ let propNameWhitelist = [
   
   { propName: "--bezier-diagonal-color", isFromDevTools: true },
   { propName: "--bezier-grid-color", isFromDevTools: true },
-  { propName: "--page-border", isFromDevTools: false },
 
   
   { propName: "--icon-url", isFromDevTools: false },
