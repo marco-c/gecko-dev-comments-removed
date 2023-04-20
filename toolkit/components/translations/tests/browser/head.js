@@ -79,15 +79,16 @@ async function openAboutTranslations({
   );
 
   
-  if (languagePairs) {
-    TranslationsParent.mockLanguagePairs(languagePairs);
-  }
-  if (detectedLanguageLabel && detectedLanguageConfidence) {
-    TranslationsParent.mockLanguageIdentification(
-      detectedLanguageLabel,
-      detectedLanguageConfidence
+  if (!languagePairs) {
+    throw new Error(
+      "Expected language pairs for mocking the translations engine."
     );
   }
+  TranslationsParent.mockLanguagePairs(languagePairs);
+  TranslationsParent.mockLanguageIdentification(
+    detectedLanguageLabel ?? "en",
+    detectedLanguageConfidence ?? "0.5"
+  );
 
   
   BrowserTestUtils.loadURIString(tab.linkedBrowser, "about:translations");
