@@ -99,6 +99,7 @@
 #include "CryptoTask.h"
 #include "ExtendedValidation.h"
 #include "NSSCertDBTrustDomain.h"
+#include "NSSSocketControl.h"
 #include "PSMRunnable.h"
 #include "RootCertificateTelemetryUtils.h"
 #include "ScopedNSSTypes.h"
@@ -382,7 +383,7 @@ static nsresult OverrideAllowedForHost(
 
 
 static SECStatus BlockServerCertChangeForSpdy(
-    nsNSSSocketInfo* infoObject, const UniqueCERTCertificate& serverCert) {
+    NSSSocketControl* infoObject, const UniqueCERTCertificate& serverCert) {
   if (!infoObject->IsHandshakeCompleted()) {
     
     
@@ -890,7 +891,7 @@ SECStatus AuthCertificateHook(void* arg, PRFileDesc* fd, PRBool checkSig,
   
   MOZ_ASSERT(!isServer, "AuthCertificateHook: isServer unexpectedly true");
 
-  nsNSSSocketInfo* socketInfo = static_cast<nsNSSSocketInfo*>(arg);
+  NSSSocketControl* socketInfo = static_cast<NSSSocketControl*>(arg);
 
   UniqueCERTCertificate serverCert(SSL_PeerCertificate(fd));
 
