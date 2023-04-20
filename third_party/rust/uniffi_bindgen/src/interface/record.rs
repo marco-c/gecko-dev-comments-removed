@@ -45,7 +45,6 @@
 
 
 use anyhow::{bail, Result};
-use uniffi_meta::Checksum;
 
 use super::types::{Type, TypeIterator};
 use super::{
@@ -59,7 +58,7 @@ use super::{APIConverter, ComponentInterface};
 
 
 
-#[derive(Debug, Clone, Checksum)]
+#[derive(Debug, Clone, Hash)]
 pub struct Record {
     pub(super) name: String,
     pub(super) fields: Vec<Field>,
@@ -110,7 +109,7 @@ impl APIConverter<Record> for weedle::DictionaryDefinition<'_> {
 }
 
 
-#[derive(Debug, Clone, Checksum)]
+#[derive(Debug, Clone, Hash)]
 pub struct Field {
     pub(super) name: String,
     pub(super) type_: Type,

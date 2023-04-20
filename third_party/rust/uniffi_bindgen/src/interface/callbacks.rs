@@ -33,25 +33,19 @@
 
 
 
+use std::hash::{Hash, Hasher};
+
 use anyhow::{bail, Result};
-use uniffi_meta::Checksum;
 
 use super::ffi::{FFIArgument, FFIFunction, FFIType};
 use super::object::Method;
 use super::types::{Type, TypeIterator};
 use super::{APIConverter, ComponentInterface};
 
-#[derive(Debug, Clone, Checksum)]
+#[derive(Debug, Clone)]
 pub struct CallbackInterface {
     pub(super) name: String,
     pub(super) methods: Vec<Method>,
-    
-    
-    
-    
-    
-    
-    #[checksum_ignore]
     pub(super) ffi_init_callback: FFIFunction,
 }
 
@@ -91,6 +85,19 @@ impl CallbackInterface {
 
     pub fn iter_types(&self) -> TypeIterator<'_> {
         Box::new(self.methods.iter().flat_map(Method::iter_types))
+    }
+}
+
+impl Hash for CallbackInterface {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        
+        
+        
+        
+        
+        
+        self.name.hash(state);
+        self.methods.hash(state);
     }
 }
 
