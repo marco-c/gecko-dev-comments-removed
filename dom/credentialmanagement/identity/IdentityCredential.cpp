@@ -81,79 +81,34 @@ IdentityCredential::DiscoverFromExternalSource(
         NS_ERROR_FAILURE, __func__);
   }
 
-  RefPtr<IdentityCredential::GetIdentityCredentialPromise::Private> result =
-      new IdentityCredential::GetIdentityCredentialPromise::Private(__func__);
-
-  if (StaticPrefs::
-          dom_security_credentialmanagement_identity_reject_delay_enabled()) {
-    
-    
-    
-    RefPtr<IdentityCredential::GetIdentityCredentialPromise::Private>
-        forCallbackResult = result;
-
-    RefPtr<nsITimer> timeout;
-    nsresult rv = NS_NewTimerWithFuncCallback(
-        getter_AddRefs(timeout),
-        [](nsITimer* aTimer, void* aClosure) -> void {
-          auto* promise = static_cast<
-              IdentityCredential::GetIdentityCredentialPromise::Private*>(
-              aClosure);
-          if (!promise->IsResolved()) {
-            promise->Reject(NS_ERROR_DOM_NETWORK_ERR, __func__);
-          }
-          
-          
-          
-          NS_RELEASE(promise);
-          NS_RELEASE(aTimer);
-        },
-        do_AddRef(forCallbackResult).take(),
-        StaticPrefs::
-            dom_security_credentialmanagement_identity_reject_delay_duration_ms(),
-        nsITimer::TYPE_ONE_SHOT, "IdentityCredentialTimeoutCallback");
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      result->Reject(NS_ERROR_FAILURE, __func__);
-      return result.forget();
-    }
-
-    
-    
-    Unused << timeout.forget();
-  }
-
   
   
   MOZ_ASSERT(aOptions.mIdentity.WasPassed());
   RefPtr<WindowGlobalChild> wgc = aParent->GetWindowGlobalChild();
   MOZ_ASSERT(wgc);
   RefPtr<IdentityCredential> credential = new IdentityCredential(aParent);
-  wgc->SendDiscoverIdentityCredentialFromExternalSource(
-         aOptions.mIdentity.Value())
+  return wgc
+      ->SendDiscoverIdentityCredentialFromExternalSource(
+          aOptions.mIdentity.Value())
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [result,
-           credential](const WindowGlobalChild::
+          [credential](const WindowGlobalChild::
                            DiscoverIdentityCredentialFromExternalSourcePromise::
                                ResolveValueType& aResult) {
             if (aResult.isSome()) {
               credential->CopyValuesFrom(aResult.value());
-              result->Resolve(credential, __func__);
-            } else if (
-                !StaticPrefs::
-                    dom_security_credentialmanagement_identity_reject_delay_enabled()) {
-              result->Reject(NS_ERROR_DOM_UNKNOWN_ERR, __func__);
+              return IdentityCredential::GetIdentityCredentialPromise::
+                  CreateAndResolve(credential, __func__);
             }
+            return IdentityCredential::GetIdentityCredentialPromise::
+                CreateAndReject(NS_ERROR_DOM_UNKNOWN_ERR, __func__);
           },
-          [result](const WindowGlobalChild::
-                       DiscoverIdentityCredentialFromExternalSourcePromise::
-                           RejectValueType& aResult) {
-            if (!StaticPrefs::
-                    dom_security_credentialmanagement_identity_reject_delay_enabled()) {
-              result->Reject(NS_ERROR_DOM_UNKNOWN_ERR, __func__);
-            }
+          [](const WindowGlobalChild::
+                 DiscoverIdentityCredentialFromExternalSourcePromise::
+                     RejectValueType& aResult) {
+            return IdentityCredential::GetIdentityCredentialPromise::
+                CreateAndReject(NS_ERROR_DOM_UNKNOWN_ERR, __func__);
           });
-  return result.forget();
 }
 
 
@@ -172,12 +127,34 @@ IdentityCredential::DiscoverFromExternalSourceInMainProcess(
         NS_ERROR_DOM_NOT_ALLOWED_ERR, __func__);
   }
 
+  RefPtr<IdentityCredential::GetIPCIdentityCredentialPromise::Private> result =
+      new IdentityCredential::GetIPCIdentityCredentialPromise::Private(
+          __func__);
+
+  RefPtr<nsITimer> timeout;
+  if (StaticPrefs::
+          dom_security_credentialmanagement_identity_reject_delay_enabled()) {
+    nsresult rv = NS_NewTimerWithCallback(
+        getter_AddRefs(timeout),
+        [=](auto) {
+          if (!result->IsResolved()) {
+            result->Reject(NS_ERROR_DOM_NETWORK_ERR, __func__);
+          }
+        },
+        StaticPrefs::
+            dom_security_credentialmanagement_identity_reject_delay_duration_ms(),
+        nsITimer::TYPE_ONE_SHOT, "IdentityCredentialTimeoutCallback");
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      result->Reject(NS_ERROR_FAILURE, __func__);
+      return result.forget();
+    }
+  }
+
   nsCOMPtr<nsIPrincipal> principal(aPrincipal);
   RefPtr<CanonicalBrowsingContext> browsingContext(aBrowsingContext);
 
   
-  return PromptUserToSelectProvider(aBrowsingContext,
-                                    aOptions.mProviders.Value())
+  PromptUserToSelectProvider(aBrowsingContext, aOptions.mProviders.Value())
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [principal, browsingContext](const IdentityProvider& provider) {
@@ -187,7 +164,25 @@ IdentityCredential::DiscoverFromExternalSourceInMainProcess(
           [](nsresult error) {
             return IdentityCredential::GetIPCIdentityCredentialPromise::
                 CreateAndReject(error, __func__);
+          })
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [result, timeout = std::move(timeout)](
+              const IdentityCredential::GetIPCIdentityCredentialPromise::
+                  ResolveOrRejectValue&& value) {
+            
+            result->ResolveOrReject(value, __func__);
+
+            
+            
+            if (timeout &&
+                StaticPrefs::
+                    dom_security_credentialmanagement_identity_reject_delay_enabled()) {
+              timeout->Cancel();
+            }
           });
+
+  return result.forget();
 }
 
 
