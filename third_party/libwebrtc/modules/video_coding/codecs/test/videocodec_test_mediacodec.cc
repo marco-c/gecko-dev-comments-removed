@@ -17,6 +17,7 @@
 #include "media/base/media_constants.h"
 #include "modules/video_coding/codecs/test/android_codec_factory_helper.h"
 #include "modules/video_coding/codecs/test/videocodec_test_fixture_impl.h"
+#include "rtc_base/strings/string_builder.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 
@@ -27,34 +28,48 @@ namespace {
 const int kForemanNumFrames = 300;
 const int kForemanFramerateFps = 30;
 
+struct RateProfileData {
+  std::string name;
+  std::vector<webrtc::test::RateProfile> rate_profile;
+};
+
 const size_t kConstRateIntervalSec = 10;
-const std::vector<webrtc::test::RateProfile> kBitRateHighLowHigh = {
-    {3000, 30, 0},
-    {1500, 30, 300},
-    {750, 30, 600},
-    {1500, 30, 900},
-    {3000, 30, 1200}};
 
-const std::vector<webrtc::test::RateProfile> kBitRateLowHighLow = {
-    {750, 30, 0},
-    {1500, 30, 300},
-    {3000, 30, 600},
-    {1500, 30, 900},
-    {720, 30, 1200}};
+const RateProfileData kBitRateHighLowHigh = {
+    "BitRateHighLowHigh",
+    {
+        {3000, 30, 0},
+        {1500, 30, 300},
+        {750, 30, 600},
+        {1500, 30, 900},
+        {3000, 30, 1200}}};
 
-const std::vector<webrtc::test::RateProfile> kFrameRateHighLowHigh = {
-    {2000, 30, 0},
-    {2000, 15, 300},
-    {2000, 7.5, 450},
-    {2000, 15, 525},
-    {2000, 30, 675}};
+const RateProfileData kBitRateLowHighLow = {
+    "BitRateLowHighLow",
+    {
+        {750, 30, 0},
+        {1500, 30, 300},
+        {3000, 30, 600},
+        {1500, 30, 900},
+        {750, 30, 1200}}};
 
-const std::vector<webrtc::test::RateProfile> kFrameRateLowHighLow = {
-    {2000, 7.5, 0},
-    {2000, 15, 75},
-    {2000, 30, 225},
-    {2000, 15, 525},
-    {2000, 7.5, 775}};
+const RateProfileData kFrameRateHighLowHigh = {
+    "FrameRateHighLowHigh",
+    {
+        {2000, 30, 0},
+        {2000, 15, 300},
+        {2000, 7.5, 450},
+        {2000, 15, 525},
+        {2000, 30, 675}}};
+
+const RateProfileData kFrameRateLowHighLow = {
+    "FrameRateLowHighLow",
+    {
+        {2000, 7.5, 0},
+        {2000, 15, 75},
+        {2000, 30, 225},
+        {2000, 15, 525},
+        {2000, 7.5, 775}}};
 
 VideoCodecTestFixture::Config CreateConfig() {
   VideoCodecTestFixture::Config config;
@@ -175,11 +190,21 @@ TEST(VideoCodecTestMediaCodec, ForemanMixedRes100kbpsVp8H264) {
 
 class VideoCodecTestMediaCodecRateAdaptation
     : public ::testing::TestWithParam<
-          std::tuple<std::vector<webrtc::test::RateProfile>, std::string>> {};
+          std::tuple<RateProfileData, std::string>> {
+ public:
+  static std::string ParamInfoToStr(
+      const ::testing::TestParamInfo<
+          VideoCodecTestMediaCodecRateAdaptation::ParamType>& info) {
+    char buf[512];
+    rtc::SimpleStringBuilder ss(buf);
+    ss << std::get<0>(info.param).name << "_" << std::get<1>(info.param);
+    return ss.str();
+  }
+};
 
 TEST_P(VideoCodecTestMediaCodecRateAdaptation, DISABLED_RateAdaptation) {
   const std::vector<webrtc::test::RateProfile> rate_profile =
-      std::get<0>(GetParam());
+      std::get<0>(GetParam()).rate_profile;
   const std::string codec_name = std::get<1>(GetParam());
 
   VideoCodecTestFixture::Config config;
@@ -235,7 +260,8 @@ INSTANTIATE_TEST_SUITE_P(
                                          kFrameRateHighLowHigh),
                        ::testing::Values(cricket::kVp8CodecName,
                                          cricket::kVp9CodecName,
-                                         cricket::kH264CodecName)));
+                                         cricket::kH264CodecName)),
+    VideoCodecTestMediaCodecRateAdaptation::ParamInfoToStr);
 
 }  
 }  
