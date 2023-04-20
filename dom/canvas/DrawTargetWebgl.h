@@ -177,7 +177,9 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     
     uint32_t mPathMaxComplexity = 0;
     
-    bool mPathAccelStroke = false;
+    bool mPathAAStroke = true;
+    
+    bool mPathWGRStroke = false;
     RefPtr<WebGLProgramJS> mSolidProgram;
     RefPtr<WebGLUniformLocationJS> mSolidProgramViewport;
     RefPtr<WebGLUniformLocationJS> mSolidProgramAA;
