@@ -48,7 +48,8 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   
   
   Nullable<double> GetCurrentTimeAsDouble() const {
-    return AnimationUtils::TimeDurationToDouble(GetCurrentTimeAsDuration());
+    return AnimationUtils::TimeDurationToDouble(GetCurrentTimeAsDuration(),
+                                                mRTPCallerType);
   }
 
   TimeStamp GetCurrentTimeAsTimeStamp() const {
