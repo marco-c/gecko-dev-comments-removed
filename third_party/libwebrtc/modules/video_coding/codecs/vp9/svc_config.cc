@@ -172,22 +172,27 @@ std::vector<SpatialLayer> GetVp9SvcConfig(VideoCodec& codec) {
   absl::optional<ScalabilityMode> scalability_mode = codec.GetScalabilityMode();
   RTC_DCHECK(scalability_mode.has_value());
 
+  
+  int limited_num_spatial_layers =
+      GetLimitedNumSpatialLayers(codec.width, codec.height);
+  if (limited_num_spatial_layers <
+      ScalabilityModeToNumSpatialLayers(*scalability_mode)) {
+    ScalabilityMode limited_scalability_mode =
+        LimitNumSpatialLayers(*scalability_mode, limited_num_spatial_layers);
+    RTC_LOG(LS_WARNING)
+        << "Reducing number of spatial layers due to low input resolution: "
+        << ScalabilityModeToString(*scalability_mode) << " to "
+        << ScalabilityModeToString(limited_scalability_mode);
+    scalability_mode = limited_scalability_mode;
+    codec.SetScalabilityMode(limited_scalability_mode);
+  }
+
   absl::optional<ScalableVideoController::StreamLayersConfig> info =
       ScalabilityStructureConfig(*scalability_mode);
   if (!info.has_value()) {
     RTC_LOG(LS_WARNING) << "Failed to create structure "
                         << ScalabilityModeToString(*scalability_mode);
     return {};
-  }
-
-  if (static_cast<int>(GetLimitedNumSpatialLayers(codec.width, codec.height)) <
-      info->num_spatial_layers) {
-    
-    
-    
-    codec.UnsetScalabilityMode();
-    codec.VP9()->interLayerPred =
-        ScalabilityModeToInterLayerPredMode(*scalability_mode);
   }
 
   
