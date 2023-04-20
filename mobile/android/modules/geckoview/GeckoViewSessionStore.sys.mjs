@@ -1,15 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewSessionStore"];
-
-const { GeckoViewUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewUtils.sys.mjs"
-);
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
 
 const lazy = {};
 
@@ -39,11 +32,11 @@ class SHistoryListener {
   }
 
   collect(
-    permanentKey, 
-    browsingContext, 
+    permanentKey, // eslint-disable-line no-shadow
+    browsingContext, // eslint-disable-line no-shadow
     { collectFull = true, writeToCache = false }
   ) {
-    
+    // Don't bother doing anything if we haven't seen any navigations.
     if (!collectFull && this._fromIndex === kNoIndex) {
       return null;
     }
@@ -53,7 +46,7 @@ class SHistoryListener {
 
     const historychange = lazy.SessionHistory.collectFromParent(
       browsingContext.currentURI?.spec,
-      true, 
+      true, // Bug 1704574
       browsingContext.sessionHistory,
       fromIndex
     );
@@ -73,14 +66,14 @@ class SHistoryListener {
 
   collectFrom(index) {
     if (this._fromIndex <= index) {
-      
-      
-      
-      
-      
-      
-      
-      
+      // If we already know that we need to update history from index N we
+      // can ignore any changes that happened with an element with index
+      // larger than N.
+      //
+      // Note: initially we use kNoIndex which is MAX_SAFE_INTEGER which
+      // means we don't ignore anything here, and in case of navigation in
+      // the history back and forth cases we use kLastIndex which ignores
+      // only the subsequent navigations, but not any new elements added.
       return;
     }
 
@@ -88,16 +81,16 @@ class SHistoryListener {
     if (bc?.embedderElement?.frameLoader) {
       this._fromIndex = index;
 
-      
-      
+      // Queue a tab state update on the |browser.sessionstore.interval|
+      // timer. We'll call this.collect() when we receive the update.
       bc.embedderElement.frameLoader.requestSHistoryUpdate();
     }
   }
 
   OnHistoryNewEntry(newURI, oldIndex) {
-    
-    
-    
+    // We use oldIndex - 1 to collect the current entry as well. This makes
+    // sure to collect any changes that were made to the entry while the
+    // document was active.
     this.collectFrom(oldIndex == -1 ? oldIndex : oldIndex - 1);
   }
   OnHistoryGotoIndex() {
@@ -115,8 +108,8 @@ class SHistoryListener {
   }
 }
 
-var GeckoViewSessionStore = {
-  
+export var GeckoViewSessionStore = {
+  // For each <browser> element, records the SHistoryListener.
   _browserSHistoryListener: new WeakMap(),
 
   observe(aSubject, aTopic, aData) {

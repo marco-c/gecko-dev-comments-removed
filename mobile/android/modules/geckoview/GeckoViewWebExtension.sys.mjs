@@ -1,26 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = [
-  "ExtensionActionHelper",
-  "GeckoViewConnection",
-  "GeckoViewWebExtension",
-  "mobileWindowTracker",
-  "DownloadTracker",
-];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { GeckoViewUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewUtils.sys.mjs"
-);
-const { EventEmitter } = ChromeUtils.importESModule(
-  "resource://gre/modules/EventEmitter.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
+import { EventEmitter } from "resource://gre/modules/EventEmitter.sys.mjs";
 
 const PRIVATE_BROWSING_PERMISSION = {
   permissions: ["internal:privateBrowsingAllowed"],
@@ -52,13 +36,11 @@ XPCOMUtils.defineLazyServiceGetter(
 
 const { debug, warn } = GeckoViewUtils.initLogging("Console");
 
-const DOWNLOAD_CHANGED_MESSAGE = "GeckoView:WebExtension:DownloadChanged";
-
-var DownloadTracker = new (class extends EventEmitter {
+export var DownloadTracker = new (class extends EventEmitter {
   constructor() {
     super();
 
-    
+    // maps numeric IDs to DownloadItem objects
     this._downloads = new Map();
   }
 
@@ -87,19 +69,19 @@ var DownloadTracker = new (class extends EventEmitter {
     this._downloads.set(item.id, item);
   }
 
-  
-
-
-
-
-
+  /**
+   * Finds and returns a DownloadItem with a certain numeric ID
+   *
+   * @param {number} id
+   * @returns {DownloadItem} download item
+   */
   getDownloadItemById(id) {
     return this._downloads.get(id);
   }
 })();
 
-
-class ExtensionActionHelper {
+/** Provides common logic between page and browser actions */
+export class ExtensionActionHelper {
   constructor({
     tabTracker,
     windowTracker,
@@ -203,7 +185,7 @@ class EmbedderPort {
   }
 }
 
-class GeckoViewConnection {
+export class GeckoViewConnection {
   constructor(sender, target, nativeApp, allowContentMessaging) {
     this.sender = sender;
     this.target = target;
@@ -217,8 +199,8 @@ class GeckoViewConnection {
 
   get dispatcher() {
     if (this.sender.envType === "addon_child") {
-      
-      
+      // If this is a WebExtension Page we will have a GeckoSession associated
+      // to it and thus a dispatcher.
       const dispatcher = GeckoViewUtils.getDispatcherForWindow(
         this.target.ownerGlobal
       );
@@ -226,16 +208,16 @@ class GeckoViewConnection {
         return dispatcher;
       }
 
-      
-      
+      // No dispatcher means this message is coming from a background script,
+      // use the global event handler
       return lazy.EventDispatcher.instance;
     } else if (
       this.sender.envType === "content_child" &&
       this.allowContentMessaging
     ) {
-      
-      
-      
+      // If this message came from a content script, send the message to
+      // the corresponding tab messenger so that GeckoSession can pick it
+      // up.
       return GeckoViewUtils.getDispatcherForWindow(this.target.ownerGlobal);
     }
 
@@ -289,7 +271,7 @@ async function filterPromptPermissions(aPermissions) {
   return promptPermissions;
 }
 
-
+// Keep in sync with WebExtension.java
 const FLAG_NONE = 0;
 const FLAG_ALLOW_CONTENT_MESSAGING = 1 << 0;
 
@@ -306,7 +288,7 @@ function exportFlags(aPolicy) {
 }
 
 async function exportExtension(aAddon, aPermissions, aSourceURI) {
-  
+  // First, let's make sure the policy is ready if present
   let policy = WebExtensionPolicy.getByID(aAddon.id);
   if (policy?.readyPromise) {
     policy = await policy.readyPromise;
@@ -413,7 +395,7 @@ class ExtensionInstallListener {
           this.install.cancel();
           cancelled = true;
         } catch (_) {
-          
+          // install may have already failed or been cancelled
         }
         aCallback.onSuccess({ cancelled });
         break;
@@ -422,8 +404,8 @@ class ExtensionInstallListener {
   }
 
   onDownloadCancelled(aInstall) {
-    
-    
+    // Do not resolve we were told to CancelInstall,
+    // to prevent racing with that handler.
     if (!this.cancelling) {
       const { error: installError, state } = aInstall;
       this.resolve({ installError, state });
@@ -436,12 +418,12 @@ class ExtensionInstallListener {
   }
 
   onDownloadEnded() {
-    
+    // Nothing to do
   }
 
   onInstallCancelled(aInstall) {
-    
-    
+    // Do not resolve we were told to CancelInstall,
+    // to prevent racing with that handler.
     if (!this.cancelling) {
       const { error: installError, state } = aInstall;
       this.resolve({ installError, state });
@@ -469,7 +451,7 @@ class ExtensionInstallListener {
         sourceURI
       );
       this.resolve({ extension });
-      return; 
+      return; // we don't want to wait until extension is enabled, so return early.
     }
 
     const onReady = async (name, { id }) => {
@@ -551,7 +533,7 @@ class AddonManagerListener {
     const extension = await exportExtension(
       aAddon,
       aAddon.userPermissions,
-       null
+      /* aSourceURI */ null
     );
     lazy.EventDispatcher.instance.sendRequest({
       type: "GeckoView:WebExtension:OnDisabled",
@@ -565,7 +547,7 @@ class AddonManagerListener {
     const extension = await exportExtension(
       aAddon,
       aAddon.userPermissions,
-       null
+      /* aSourceURI */ null
     );
     lazy.EventDispatcher.instance.sendRequest({
       type: "GeckoView:WebExtension:OnEnabled",
@@ -579,7 +561,7 @@ class AddonManagerListener {
     const extension = await exportExtension(
       aAddon,
       aAddon.userPermissions,
-       null
+      /* aSourceURI */ null
     );
     lazy.EventDispatcher.instance.sendRequest({
       type: "GeckoView:WebExtension:OnUninstalled",
@@ -631,12 +613,12 @@ class MobileWindowTracker extends EventEmitter {
   }
 }
 
-var mobileWindowTracker = new MobileWindowTracker();
+export var mobileWindowTracker = new MobileWindowTracker();
 
 async function updatePromptHandler(aInfo) {
   const oldPerms = aInfo.existingAddon.userPermissions;
   if (!oldPerms) {
-    
+    // Updating from a legacy add-on, let it proceed
     return;
   }
 
@@ -644,11 +626,11 @@ async function updatePromptHandler(aInfo) {
 
   const difference = lazy.Extension.comparePermissions(oldPerms, newPerms);
 
-  
+  // We only care about permissions that we can prompt the user for
   const newPermissions = await filterPromptPermissions(difference.permissions);
   const { origins: newOrigins } = difference;
 
-  
+  // If there are no new permissions, just proceed
   if (!newOrigins.length && !newPermissions.length) {
     return;
   }
@@ -671,16 +653,16 @@ async function updatePromptHandler(aInfo) {
   }
 }
 
-var GeckoViewWebExtension = {
+export var GeckoViewWebExtension = {
   observe(aSubject, aTopic, aData) {
     debug`observe ${aTopic}`;
 
     switch (aTopic) {
       case "testing-installed-addon":
       case "testing-uninstalled-addon": {
-        
-        
-        
+        // We pretend devtools installed/uninstalled this addon so we don't
+        // have to add an API just for internal testing.
+        // TODO: assert this is under a test
         lazy.EventDispatcher.instance.sendRequest({
           type: "GeckoView:WebExtension:DebuggerListUpdated",
         });
@@ -707,9 +689,9 @@ var GeckoViewWebExtension = {
 
   async ensureBuiltIn(aUri, aId) {
     await lazy.AddonManager.readyPromise;
-    
-    
-    
+    // Although the add-on is privileged in practice due to it being installed
+    // as a built-in extension, we pass isPrivileged=false since the exact flag
+    // doesn't matter as we are only using ExtensionData to read the version.
     const extensionData = new lazy.ExtensionData(aUri, false);
     const [extensionVersion, extension] = await Promise.all([
       extensionData.getExtensionVersionWithoutValidation(),
@@ -766,14 +748,14 @@ var GeckoViewWebExtension = {
       await lazy.ExtensionPermissions.remove(aId, PRIVATE_BROWSING_PERMISSION);
     }
 
-    
-    
+    // Reload the extension if it is already enabled.  This ensures any change
+    // on the private browsing permission is properly handled.
     const addon = await this.extensionById(aId);
     if (addon.isActive) {
       await addon.reload();
     }
 
-    return exportExtension(addon, addon.userPermissions,  null);
+    return exportExtension(addon, addon.userPermissions, /* aSourceURI */ null);
   },
 
   async uninstallWebExtension(aId) {
@@ -824,7 +806,7 @@ var GeckoViewWebExtension = {
 
     const browserAction = this.browserActions.get(extension);
     if (browserAction) {
-      
+      // Send information about this action to the delegate
       browserAction.updateOnChange(null);
     }
 
@@ -844,7 +826,7 @@ var GeckoViewWebExtension = {
     return exportExtension(
       extension,
       extension.userPermissions,
-       null
+      /* aSourceURI */ null
     );
   },
 
@@ -858,14 +840,14 @@ var GeckoViewWebExtension = {
     return exportExtension(
       extension,
       extension.userPermissions,
-       null
+      /* aSourceURI */ null
     );
   },
 
-  
-
-
-
+  /**
+   * @return A promise resolved with either an AddonInstall object if an update
+   * is available or null if no update is found.
+   */
   checkForUpdate(aAddon) {
     return new Promise(resolve => {
       const listener = {
@@ -922,7 +904,7 @@ var GeckoViewWebExtension = {
     return uri;
   },
 
-  
+  /* eslint-disable complexity */
   async onEvent(aEvent, aData, aCallback) {
     debug`onEvent ${aEvent} ${aData}`;
 
@@ -968,7 +950,7 @@ var GeckoViewWebExtension = {
           extension: await exportExtension(
             extension,
             extension.userPermissions,
-             null
+            /* aSourceURI */ null
           ),
         });
         break;
@@ -1144,7 +1126,7 @@ var GeckoViewWebExtension = {
   },
 };
 
-
+// WeakMap[Extension -> BrowserAction]
 GeckoViewWebExtension.browserActions = new WeakMap();
-
+// WeakMap[Extension -> PageAction]
 GeckoViewWebExtension.pageActions = new WeakMap();

@@ -1,17 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewRemoteDebugger"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { GeckoViewUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
 
 const lazy = {};
 
@@ -34,7 +26,7 @@ XPCOMUtils.defineLazyGetter(lazy, "SocketListener", () => {
 
 const { debug, warn } = GeckoViewUtils.initLogging("RemoteDebugger");
 
-var GeckoViewRemoteDebugger = {
+export var GeckoViewRemoteDebugger = {
   observe(aSubject, aTopic, aData) {
     if (aTopic !== "nsPref:changed") {
       return;
@@ -67,15 +59,15 @@ var GeckoViewRemoteDebugger = {
     lazy.DevToolsServer.setRootActor(createRootActor);
     lazy.DevToolsServer.allowChromeProcess = true;
     lazy.DevToolsServer.chromeWindowType = "navigator:geckoview";
-    
+    // Force the Server to stay alive even if there are no connections at the moment.
     lazy.DevToolsServer.keepAlive = true;
 
-    
-    
-    
-    
-    
-    
+    // Socket address for USB remote debugger expects
+    // @ANDROID_PACKAGE_NAME/firefox-debugger-socket.
+    // In /proc/net/unix, it will be outputed as
+    // @org.mozilla.geckoview_example/firefox-debugger-socket
+    //
+    // If package name isn't available, it will be "@firefox-debugger-socket".
 
     let packageName = Services.env.get("MOZ_ANDROID_PACKAGE_NAME");
     if (packageName) {

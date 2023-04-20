@@ -1,17 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewConsole"];
-
-const { GeckoViewUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewUtils.sys.mjs"
-);
+import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
 
 const { debug, warn } = GeckoViewUtils.initLogging("Console");
 
-var GeckoViewConsole = {
+export var GeckoViewConsole = {
   _isEnabled: false,
 
   get enabled() {
@@ -127,7 +122,7 @@ var GeckoViewConsole = {
     } else if (
       ["group", "groupCollapsed", "groupEnd"].includes(aMessage.level)
     ) {
-      
+      // Do nothing yet
     } else {
       Services.console.logStringMessage(joinedArguments);
     }
@@ -166,18 +161,18 @@ var GeckoViewConsole = {
   },
 
   abbreviateSourceURL(aSourceURL) {
-    
+    // Remove any query parameters.
     const hookIndex = aSourceURL.indexOf("?");
     if (hookIndex > -1) {
       aSourceURL = aSourceURL.substring(0, hookIndex);
     }
 
-    
+    // Remove a trailing "/".
     if (aSourceURL[aSourceURL.length - 1] == "/") {
       aSourceURL = aSourceURL.substring(0, aSourceURL.length - 1);
     }
 
-    
+    // Remove all but the last path component.
     const slashIndex = aSourceURL.lastIndexOf("/");
     if (slashIndex > -1) {
       aSourceURL = aSourceURL.substring(slashIndex + 1);

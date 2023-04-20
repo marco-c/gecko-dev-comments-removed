@@ -1,17 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["ChildCrashHandler"];
-
-const { GeckoViewUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 
@@ -34,8 +26,8 @@ function getPendingMinidump(id) {
   });
 }
 
-var ChildCrashHandler = {
-  
+export var ChildCrashHandler = {
+  // The event listener for this is hooked up in GeckoViewStartup.jsm
   observe(aSubject, aTopic, aData) {
     if (
       aTopic !== "ipc:content-shutdown" &&
@@ -56,8 +48,8 @@ var ChildCrashHandler = {
       return;
     }
 
-    
-    
+    // If dumpID is empty the process was likely killed by the system and we therefore do not want
+    // to report the crash.
     const dumpID = aSubject.get("dumpID");
     if (!dumpID) {
       Services.telemetry
@@ -69,7 +61,7 @@ var ChildCrashHandler = {
     debug`Notifying child process crash, dump ID ${dumpID}`;
     const [minidumpPath, extrasPath] = getPendingMinidump(dumpID);
 
-    
+    // Report GPU process crashes as occuring in a background process, and others as foreground.
     const processType =
       aTopic === "compositor:process-aborted"
         ? "BACKGROUND_CHILD"
