@@ -6964,7 +6964,7 @@ void nsBlockFrame::RecoverFloatsFor(nsIFrame* aFrame,
     
     
 
-    LogicalRect rect(aWM, block->GetNormalRect(), aContainerSize);
+    const LogicalRect rect = block->GetLogicalNormalRect(aWM, aContainerSize);
     nscoord lineLeft = rect.LineLeft(aWM, aContainerSize);
     nscoord blockStart = rect.BStart(aWM);
     aFloatManager.Translate(lineLeft, blockStart);

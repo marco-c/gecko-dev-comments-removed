@@ -3016,7 +3016,8 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
       }
     } else {  
       aReflowInput.mBCoord += cellSpacingB;
-      LogicalRect kidRect(wm, kidFrame->GetNormalRect(), containerSize);
+      const LogicalRect kidRect =
+          kidFrame->GetLogicalNormalRect(wm, containerSize);
       if (kidRect.BStart(wm) != aReflowInput.mBCoord) {
         
         kidFrame->InvalidateFrameSubtree();
@@ -3202,7 +3203,8 @@ void nsTableFrame::DistributeBSizeToRows(const ReflowInput& aReflowInput,
     nsTableRowGroupFrame* rgFrame = rowGroups[rgIdx];
     nscoord amountUsedByRG = 0;
     nscoord bOriginRow = 0;
-    LogicalRect rgNormalRect(wm, rgFrame->GetNormalRect(), containerSize);
+    const LogicalRect rgNormalRect =
+        rgFrame->GetLogicalNormalRect(wm, containerSize);
     if (!rgFrame->HasStyleBSize()) {
       nsTableRowFrame* rowFrame = rgFrame->GetFirstRow();
       while (rowFrame) {
@@ -3210,8 +3212,8 @@ void nsTableFrame::DistributeBSizeToRows(const ReflowInput& aReflowInput,
         
         
         const nsSize dummyContainerSize;
-        LogicalRect rowNormalRect(wm, rowFrame->GetNormalRect(),
-                                  dummyContainerSize);
+        const LogicalRect rowNormalRect =
+            rowFrame->GetLogicalNormalRect(wm, dummyContainerSize);
         nscoord cellSpacingB = GetRowSpacing(rowFrame->GetRowIndex());
         if ((amountUsed < aAmount) && rowFrame->HasPctBSize()) {
           nscoord pctBSize = rowFrame->GetInitialBSize(pctBasis);
@@ -3345,7 +3347,8 @@ void nsTableFrame::DistributeBSizeToRows(const ReflowInput& aReflowInput,
     nsTableRowGroupFrame* rgFrame = rowGroups[rgIdx];
     nscoord amountUsedByRG = 0;
     nscoord bOriginRow = 0;
-    LogicalRect rgNormalRect(wm, rgFrame->GetNormalRect(), containerSize);
+    const LogicalRect rgNormalRect =
+        rgFrame->GetLogicalNormalRect(wm, containerSize);
     nsRect rgInkOverflow = rgFrame->InkOverflowRect();
     
     if (!firstUnStyledRG || !rgFrame->HasStyleBSize() || !eligibleRows) {
@@ -3356,8 +3359,8 @@ void nsTableFrame::DistributeBSizeToRows(const ReflowInput& aReflowInput,
         
         
         const nsSize dummyContainerSize;
-        LogicalRect rowNormalRect(wm, rowFrame->GetNormalRect(),
-                                  dummyContainerSize);
+        const LogicalRect rowNormalRect =
+            rowFrame->GetLogicalNormalRect(wm, dummyContainerSize);
         nsRect rowInkOverflow = rowFrame->InkOverflowRect();
         
         if (!firstUnStyledRow || !rowFrame->HasStyleBSize() || !eligibleRows) {
@@ -3551,11 +3554,10 @@ Maybe<nscoord> nsTableFrame::GetNaturalBaselineBOffset(
   auto TableBaseline = [aWM, containerSize](
                            nsTableRowGroupFrame* aRowGroup,
                            nsTableRowFrame* aRow) -> Maybe<nscoord> {
-    nscoord rgBStart =
-        LogicalRect(aWM, aRowGroup->GetNormalRect(), containerSize).BStart(aWM);
-    nscoord rowBStart =
-        LogicalRect(aWM, aRow->GetNormalRect(), aRowGroup->GetSize())
-            .BStart(aWM);
+    const nscoord rgBStart =
+        aRowGroup->GetLogicalNormalRect(aWM, containerSize).BStart(aWM);
+    const nscoord rowBStart =
+        aRow->GetLogicalNormalRect(aWM, aRowGroup->GetSize()).BStart(aWM);
     return aRow->GetRowBaseline(aWM).map(
         [rgBStart, rowBStart](nscoord aBaseline) {
           return rgBStart + rowBStart + aBaseline;
