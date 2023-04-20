@@ -525,20 +525,38 @@ const tests = [
     EventUtils.synthesizeKey("VK_RETURN", {}, win);
     await promise;
 
-    return {
-      category: "urlbar",
-      method: "engagement",
-      object: "enter",
-      value: "typed",
-      extra: {
-        elapsed: val => parseInt(val) > 0,
-        numChars: "3",
-        numWords: "1",
-        selIndex: "0",
-        selType: "searchengine",
-        provider: "HeuristicFallback",
+    return [
+      
+      {
+        category: "urlbar",
+        method: "engagement",
+        object: "enter",
+        value: "typed",
+        extra: {
+          elapsed: val => parseInt(val) > 0,
+          numChars: "1",
+          numWords: "1",
+          selIndex: "6",
+          selType: "searchengine",
+          provider: "TokenAliasEngines",
+        },
       },
-    };
+      
+      {
+        category: "urlbar",
+        method: "engagement",
+        object: "enter",
+        value: "typed",
+        extra: {
+          elapsed: val => parseInt(val) > 0,
+          numChars: "3",
+          numWords: "1",
+          selIndex: "0",
+          selType: "searchengine",
+          provider: "HeuristicFallback",
+        },
+      },
+    ];
   },
 
   async function(win) {
@@ -976,20 +994,38 @@ const tests = [
     await PlacesUtils.history.clear();
     await SpecialPowers.popPrefEnv();
 
-    return {
-      category: "urlbar",
-      method: "engagement",
-      object: "enter",
-      value: "typed",
-      extra: {
-        elapsed: val => parseInt(val) > 0,
-        numChars: "3",
-        numWords: "1",
-        selIndex: "0",
-        selType: "searchengine",
-        provider: "HeuristicFallback",
+    return [
+      
+      {
+        category: "urlbar",
+        method: "engagement",
+        object: "enter",
+        value: "typed",
+        extra: {
+          elapsed: val => parseInt(val) > 0,
+          numChars: "4",
+          numWords: "1",
+          selIndex: "1",
+          selType: "tabtosearch",
+          provider: "TabToSearch",
+        },
       },
-    };
+      
+      {
+        category: "urlbar",
+        method: "engagement",
+        object: "enter",
+        value: "typed",
+        extra: {
+          elapsed: val => parseInt(val) > 0,
+          numChars: "3",
+          numWords: "1",
+          selIndex: "0",
+          selType: "searchengine",
+          provider: "HeuristicFallback",
+        },
+      },
+    ];
   },
 
   async function(win) {

@@ -121,12 +121,9 @@ async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
   });
   UrlbarProvidersManager.registerProvider(provider);
 
-  
-  
-  let pickedPromise =
-    !buttonUrl && !helpUrl
-      ? new Promise(resolve => (provider.pickResult = resolve))
-      : null;
+  let onEngagementPromise = new Promise(
+    resolve => (provider.onEngagement = resolve)
+  );
 
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -153,21 +150,24 @@ async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
 
   
   
-  await Promise.all([
-    pickedPromise || BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser),
-    UrlbarTestUtils.promisePopupClose(window, () => {
-      if (helpUrl && UrlbarPrefs.get("resultMenu")) {
-        UrlbarTestUtils.openResultMenuAndPressAccesskey(window, "h", {
-          openByMouse: click,
-          resultIndex: 0,
-        });
-      } else if (click) {
-        EventUtils.synthesizeMouseAtCenter(target, {});
-      } else {
-        EventUtils.synthesizeKey("KEY_Enter");
-      }
-    }),
-  ]);
+  let loadPromise;
+  if (buttonUrl || helpUrl) {
+    loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  }
+  await UrlbarTestUtils.promisePopupClose(window, () => {
+    if (helpUrl && UrlbarPrefs.get("resultMenu")) {
+      UrlbarTestUtils.openResultMenuAndPressAccesskey(window, "h", {
+        openByMouse: click,
+        resultIndex: 0,
+      });
+    } else if (click) {
+      EventUtils.synthesizeMouseAtCenter(target, {});
+    } else {
+      EventUtils.synthesizeKey("KEY_Enter");
+    }
+  });
+  await onEngagementPromise;
+  await loadPromise;
 
   
   let scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);

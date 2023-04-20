@@ -122,17 +122,35 @@ const tests = [
       win.gURLBar.blur();
     });
 
-    return {
-      category: "urlbar",
-      method: "abandonment",
-      object: "blur",
-      value: "typed",
-      extra: {
-        elapsed: val => parseInt(val) > 0,
-        numChars: "0",
-        numWords: "0",
+    return [
+      
+      {
+        category: "urlbar",
+        method: "engagement",
+        object: "click",
+        value: "topsites",
+        extra: {
+          elapsed: val => parseInt(val) > 0,
+          numChars: "0",
+          numWords: "0",
+          selIndex: "0",
+          selType: "searchengine",
+          provider: "UrlbarProviderTopSites",
+        },
       },
-    };
+      
+      {
+        category: "urlbar",
+        method: "abandonment",
+        object: "blur",
+        value: "topsites",
+        extra: {
+          elapsed: val => parseInt(val) > 0,
+          numChars: "0",
+          numWords: "0",
+        },
+      },
+    ];
   },
 
   async function(win) {
@@ -179,17 +197,35 @@ const tests = [
     await PlacesUtils.history.clear();
     await SpecialPowers.popPrefEnv();
 
-    return {
-      category: "urlbar",
-      method: "abandonment",
-      object: "blur",
-      value: "typed",
-      extra: {
-        elapsed: val => parseInt(val) > 0,
-        numChars: "0",
-        numWords: "0",
+    return [
+      
+      {
+        category: "urlbar",
+        method: "engagement",
+        object: "enter",
+        value: "typed",
+        extra: {
+          elapsed: val => parseInt(val) > 0,
+          numChars: "4",
+          numWords: "1",
+          selIndex: "1",
+          selType: "tabtosearch",
+          provider: "TabToSearch",
+        },
       },
-    };
+      
+      {
+        category: "urlbar",
+        method: "abandonment",
+        object: "blur",
+        value: "typed",
+        extra: {
+          elapsed: val => parseInt(val) > 0,
+          numChars: "0",
+          numWords: "0",
+        },
+      },
+    ];
   },
 
   async function(win) {

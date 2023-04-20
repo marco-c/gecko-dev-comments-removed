@@ -79,6 +79,7 @@ add_task(async function caretNotAtEndOfSearchString() {
     value: "exam",
     selectionStart: "exa".length,
     selectionEnd: "exa".length,
+    fireInputEvent: false,
   });
 
   

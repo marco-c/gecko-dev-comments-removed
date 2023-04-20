@@ -490,9 +490,7 @@ add_task(async function clickInInput_persist() {
     await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.PERSIST, false);
 
     
-    
-    
-    await UrlbarTestUtils.promisePopupOpen(window, () => {
+    await UrlbarTestUtils.promisePopupClose(window, () => {
       EventUtils.synthesizeMouseAtCenter(gURLBar.textbox.parentNode, {});
     });
     gURLBar.blur();
@@ -511,9 +509,6 @@ add_task(async function clickInInput_persist() {
     `${UrlbarProviderSearchTips.TIP_TYPE.PERSIST}-picked`,
     1
   );
-  
-  
-  
   TelemetryTestUtils.assertEvents(
     [
       {
@@ -521,12 +516,6 @@ add_task(async function clickInInput_persist() {
         method: "engagement",
         object: "click",
         value: "typed",
-      },
-      {
-        category: "urlbar",
-        method: "abandonment",
-        object: "blur",
-        value: "returned",
       },
     ],
     { category: "urlbar" }

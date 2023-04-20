@@ -482,6 +482,8 @@ add_task(async function closeView() {
 
 
 add_task(async function onEngagement() {
+  gURLBar.blur();
+
   
   Services.prefs.setBoolPref("browser.urlbar.eventTelemetry.enabled", true);
 

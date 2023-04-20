@@ -368,22 +368,21 @@ add_task(async function buttons() {
   });
 
   
-  
-  let blockResultCallCount = 0;
-  provider.blockResult = () => {
-    blockResultCallCount++;
-    return true;
+  let onEngagementCallCount = 0;
+  provider.onEngagement = (isPrivate, state, queryContext, details) => {
+    onEngagementCallCount++;
+    queryContext.view.controller.removeResult(details.result);
   };
 
   UrlbarProvidersManager.registerProvider(provider);
 
   let assertBlockResultCalled = () => {
     Assert.equal(
-      blockResultCallCount,
+      onEngagementCallCount,
       1,
       "blockResult() should have been called once"
     );
-    blockResultCallCount = 0;
+    onEngagementCallCount = 0;
 
     let rowUrls = [];
     let rows = UrlbarTestUtils.getResultsContainer(window).children;

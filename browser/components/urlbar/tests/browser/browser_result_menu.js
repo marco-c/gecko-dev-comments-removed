@@ -208,11 +208,10 @@ add_task(async function firefoxSuggest() {
   });
 
   
-  
-  let blockResultCallCount = 0;
-  provider.blockResult = () => {
-    blockResultCallCount++;
-    return true;
+  let onEngagementCallCount = 0;
+  provider.onEngagement = (isPrivate, state, queryContext, details) => {
+    onEngagementCallCount++;
+    queryContext.view.controller.removeResult(details.result);
   };
 
   UrlbarProvidersManager.registerProvider(provider);
@@ -251,10 +250,10 @@ add_task(async function firefoxSuggest() {
     resultIndex: 0,
   });
 
-  Assert.equal(
-    blockResultCallCount,
-    1,
-    "blockResult() should have been called once"
+  Assert.greater(
+    onEngagementCallCount,
+    0,
+    "onEngagement() should have been called"
   );
   Assert.equal(
     UrlbarTestUtils.getResultCount(window),

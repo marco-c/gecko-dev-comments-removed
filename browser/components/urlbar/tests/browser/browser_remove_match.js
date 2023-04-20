@@ -240,11 +240,10 @@ add_task(async function blockButton() {
   });
 
   
-  
-  let blockResultCallCount = 0;
-  provider.blockResult = () => {
-    blockResultCallCount++;
-    return true;
+  let onEngagementCallCount = 0;
+  provider.onEngagement = (isPrivate, state, queryContext, details) => {
+    onEngagementCallCount++;
+    queryContext.view.controller.removeResult(details.result);
   };
 
   UrlbarProvidersManager.registerProvider(provider);
@@ -283,9 +282,9 @@ add_task(async function blockButton() {
   EventUtils.synthesizeKey("KEY_Enter");
 
   Assert.equal(
-    blockResultCallCount,
+    onEngagementCallCount,
     1,
-    "blockResult() should have been called once"
+    "onEngagement() should have been called once"
   );
   Assert.equal(
     UrlbarTestUtils.getResultCount(window),

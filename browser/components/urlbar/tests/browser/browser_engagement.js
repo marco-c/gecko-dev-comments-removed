@@ -19,16 +19,21 @@ add_task(async function engagement() {
     await doTest({
       expectedEndState: "engagement",
       endEngagement: async () => {
+        let result, element;
         await UrlbarTestUtils.promisePopupClose(window, () => {
           EventUtils.synthesizeKey("KEY_ArrowDown");
+          result = gURLBar.view.selectedResult;
+          element = gURLBar.view.selectedElement;
           EventUtils.synthesizeKey("KEY_Enter");
         });
+        return { result, element };
       },
       expectedEndDetails: {
         selIndex: 0,
         selType: "history",
         provider: "",
         searchSource: "urlbar",
+        isSessionOngoing: false,
       },
     });
   });
@@ -54,20 +59,27 @@ add_task(async function privateWindow_engagement() {
     expectedEndState: "engagement",
     expectedIsPrivate: true,
     endEngagement: async () => {
+      let result, element;
       await UrlbarTestUtils.promisePopupClose(win, () => {
         EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
+        result = win.gURLBar.view.selectedResult;
+        element = win.gURLBar.view.selectedElement;
         EventUtils.synthesizeKey("KEY_Enter", {}, win);
       });
+      return { result, element };
     },
     expectedEndDetails: {
       selIndex: 0,
       selType: "history",
       provider: "",
       searchSource: "urlbar",
+      isSessionOngoing: false,
     },
   });
   await BrowserTestUtils.closeWindow(win);
 });
+
+
 
 
 
@@ -117,7 +129,7 @@ async function doTest({
   
 
   let endPromise = provider.promiseEngagement();
-  await endEngagement();
+  let { result, element } = (await endEngagement()) ?? {};
 
   [isPrivate, state, queryContext, details] = await endPromise;
   Assert.equal(isPrivate, expectedIsPrivate, "End isPrivate");
@@ -129,11 +141,30 @@ async function doTest({
     "End queryContext.isPrivate"
   );
 
-  let detailsDefaults = { searchString: "test", searchSource: "urlbar" };
+  let detailsDefaults = {
+    searchString: "test",
+    searchSource: "urlbar",
+    provider: undefined,
+    selIndex: -1,
+  };
   if ("provider" in expectedEndDetails) {
     detailsDefaults.provider = provider.name;
     delete expectedEndDetails.provider;
   }
+
+  if (expectedEndState == "engagement") {
+    Assert.ok(
+      result,
+      "endEngagement() should have returned the expected engaged result"
+    );
+    Assert.ok(
+      element,
+      "endEngagement() should have returned the expected engaged element"
+    );
+    expectedEndDetails.result = result;
+    expectedEndDetails.element = element;
+  }
+
   Assert.deepEqual(
     details,
     Object.assign(detailsDefaults, expectedEndDetails),
