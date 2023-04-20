@@ -481,6 +481,68 @@ void NotificationController::ProcessMutationEvents() {
   
   for (AccTreeMutationEvent* event = mFirstMutationEvent; event;
        event = event->NextEvent()) {
+    LocalAccessible* acc = event->GetAccessible();
+    acc->SetShowEventTarget(false);
+    acc->SetHideEventTarget(false);
+    acc->SetReorderEventTarget(false);
+    
+    
+    event->SetPrevEvent(nullptr);
+  }
+  
+  RefPtr<AccTreeMutationEvent> firstEvent = mFirstMutationEvent;
+  mFirstMutationEvent = mLastMutationEvent = nullptr;
+  mMutationMap.Clear();
+  mEventGeneration = 0;
+
+  
+  nsTHashMap<nsPtrHashKey<LocalAccessible>, nsTArray<AccTreeMutationEvent*>>
+      showEvents;
+  for (AccTreeMutationEvent* event = firstEvent; event;
+       event = event->NextEvent()) {
+    if (event->GetEventType() != nsIAccessibleEvent::EVENT_SHOW) {
+      continue;
+    }
+
+    LocalAccessible* parent = event->GetAccessible()->LocalParent();
+    showEvents.LookupOrInsert(parent).AppendElement(event);
+  }
+
+  
+  
+  
+  
+  
+  for (auto iter = showEvents.Iter(); !iter.Done(); iter.Next()) {
+    struct AccIdxComparator {
+      bool LessThan(const AccTreeMutationEvent* a,
+                    const AccTreeMutationEvent* b) const {
+        int32_t aIdx = a->GetAccessible()->IndexInParent();
+        int32_t bIdx = b->GetAccessible()->IndexInParent();
+        MOZ_ASSERT(aIdx >= 0 && bIdx >= 0 && aIdx != bIdx);
+        return aIdx < bIdx;
+      }
+      bool Equals(const AccTreeMutationEvent* a,
+                  const AccTreeMutationEvent* b) const {
+        DebugOnly<int32_t> aIdx = a->GetAccessible()->IndexInParent();
+        DebugOnly<int32_t> bIdx = b->GetAccessible()->IndexInParent();
+        MOZ_ASSERT(aIdx >= 0 && bIdx >= 0 && aIdx != bIdx);
+        return false;
+      }
+    };
+
+    nsTArray<AccTreeMutationEvent*>& events = iter.Data();
+    events.Sort(AccIdxComparator());
+  }
+
+  
+  
+  
+  
+  
+  
+  for (AccTreeMutationEvent* event = firstEvent; event;
+       event = event->NextEvent()) {
     if (event->GetEventType() != nsIAccessibleEvent::EVENT_HIDE) {
       continue;
     }
@@ -522,41 +584,8 @@ void NotificationController::ProcessMutationEvents() {
   }
 
   
-  nsTHashMap<nsPtrHashKey<LocalAccessible>, nsTArray<AccTreeMutationEvent*>>
-      showEvents;
-  for (AccTreeMutationEvent* event = mFirstMutationEvent; event;
-       event = event->NextEvent()) {
-    if (event->GetEventType() != nsIAccessibleEvent::EVENT_SHOW) {
-      continue;
-    }
-
-    LocalAccessible* parent = event->GetAccessible()->LocalParent();
-    showEvents.LookupOrInsert(parent).AppendElement(event);
-  }
-
-  
-  
-  
   for (auto iter = showEvents.Iter(); !iter.Done(); iter.Next()) {
-    struct AccIdxComparator {
-      bool LessThan(const AccTreeMutationEvent* a,
-                    const AccTreeMutationEvent* b) const {
-        int32_t aIdx = a->GetAccessible()->IndexInParent();
-        int32_t bIdx = b->GetAccessible()->IndexInParent();
-        MOZ_ASSERT(aIdx >= 0 && bIdx >= 0 && aIdx != bIdx);
-        return aIdx < bIdx;
-      }
-      bool Equals(const AccTreeMutationEvent* a,
-                  const AccTreeMutationEvent* b) const {
-        DebugOnly<int32_t> aIdx = a->GetAccessible()->IndexInParent();
-        DebugOnly<int32_t> bIdx = b->GetAccessible()->IndexInParent();
-        MOZ_ASSERT(aIdx >= 0 && bIdx >= 0 && aIdx != bIdx);
-        return false;
-      }
-    };
-
     nsTArray<AccTreeMutationEvent*>& events = iter.Data();
-    events.Sort(AccIdxComparator());
     for (AccTreeMutationEvent* event : events) {
       nsEventShell::FireEvent(event);
       if (!mDocument) {
@@ -576,7 +605,7 @@ void NotificationController::ProcessMutationEvents() {
   
   for (const uint32_t reorderType : {nsIAccessibleEvent::EVENT_INNER_REORDER,
                                      nsIAccessibleEvent::EVENT_REORDER}) {
-    for (AccTreeMutationEvent* event = mFirstMutationEvent; event;
+    for (AccTreeMutationEvent* event = firstEvent; event;
          event = event->NextEvent()) {
       if (event->GetEventType() != reorderType) {
         continue;
@@ -902,38 +931,6 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
   
   if (IPCAccessibilityActive() && mDocument) {
     mDocument->ProcessQueuedCacheUpdates();
-  }
-
-  mEventGeneration = 0;
-
-  
-  RefPtr<AccTreeMutationEvent> mutEvent = std::move(mFirstMutationEvent);
-  mLastMutationEvent = nullptr;
-  mFirstMutationEvent = nullptr;
-  while (mutEvent) {
-    RefPtr<AccTreeMutationEvent> nextEvent = mutEvent->NextEvent();
-    LocalAccessible* target = mutEvent->GetAccessible();
-
-    
-    
-    
-    
-    if (mutEvent->GetEventType() == nsIAccessibleEvent::EVENT_SHOW) {
-      target->SetShowEventTarget(false);
-    }
-
-    if (mutEvent->GetEventType() == nsIAccessibleEvent::EVENT_HIDE) {
-      target->SetHideEventTarget(false);
-    }
-
-    
-    
-    target->SetReorderEventTarget(false);
-
-    mutEvent->SetPrevEvent(nullptr);
-    mutEvent->SetNextEvent(nullptr);
-    mMutationMap.RemoveEvent(mutEvent);
-    mutEvent = nextEvent;
   }
 
   if (mDocument) {
