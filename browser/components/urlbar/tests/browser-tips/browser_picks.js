@@ -105,6 +105,14 @@ add_task(async function mouse_insideTipButNotOnButtons() {
 
 
 async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
+  if (UrlbarPrefs.get("resultMenu") && helpUrl) {
+    todo(
+      false,
+      "help telemetry for the result menu to be implemented in bug 1790020"
+    );
+    return;
+  }
+
   
   let tab;
   if (buttonUrl || helpUrl) {
