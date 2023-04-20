@@ -426,14 +426,7 @@ var ExtensionPermissions = {
 };
 
 var OriginControls = {
-  
-
-
-
-
-
-
-
+  allDomains: new MatchPattern("*://*/*"),
 
   
 
@@ -442,8 +435,25 @@ var OriginControls = {
 
 
 
-  getState(policy, uri) {
-    let allDomains = new MatchPattern("*://*/*");
+
+
+
+  
+
+
+
+
+
+
+  getState(policy, nativeTab) {
+    
+    let tab = policy?.extension?.tabManager.getWrapper(nativeTab);
+    let temporaryAccess = tab?.hasActiveTabPermission;
+    let uri = tab?.browser.currentURI;
+
+    if (!uri) {
+      return { noAccess: true };
+    }
 
     
     
@@ -460,7 +470,7 @@ var OriginControls = {
     }
 
     if (
-      !allDomains.matches(uri) ||
+      !this.allDomains.matches(uri) ||
       WebExtensionPolicy.isRestrictedURI(uri) ||
       (!couldRequest && !hasAccess && !activeTab)
     ) {
@@ -468,15 +478,16 @@ var OriginControls = {
     }
 
     if (!couldRequest && !hasAccess && activeTab) {
-      return { whenClicked: true };
+      return { whenClicked: true, temporaryAccess };
     }
-    if (policy.allowedOrigins.subsumes(allDomains)) {
+    if (policy.allowedOrigins.subsumes(this.allDomains)) {
       return { allDomains: true, hasAccess };
     }
 
     return {
       whenClicked: true,
       alwaysOn: true,
+      temporaryAccess,
       hasAccess,
     };
   },
@@ -484,8 +495,8 @@ var OriginControls = {
   
   getAttention(policy, window) {
     if (policy?.manifestVersion >= 3) {
-      let state = this.getState(policy, window.gBrowser.currentURI);
-      return !!state.whenClicked && !state.hasAccess;
+      let state = this.getState(policy, window.gBrowser.selectedTab);
+      return !!state.whenClicked && !state.hasAccess && !state.temporaryAccess;
     }
     return false;
   },
@@ -535,10 +546,8 @@ var OriginControls = {
 
 
 
-  getStateMessageIDs({ policy, uri, isAction = false, hasPopup = false }) {
-    const state = this.getState(policy, uri);
-
-    
+  getStateMessageIDs({ policy, tab, isAction = false, hasPopup = false }) {
+    const state = this.getState(policy, tab);
 
     const onHoverForAction = hasPopup
       ? "origin-controls-state-runnable-hover-open"
@@ -560,7 +569,9 @@ var OriginControls = {
 
     if (state.whenClicked) {
       return {
-        default: "origin-controls-state-when-clicked",
+        default: state.temporaryAccess
+          ? "origin-controls-state-temporary-access"
+          : "origin-controls-state-when-clicked",
         onHover: "origin-controls-state-hover-run-visit-only",
       };
     }
