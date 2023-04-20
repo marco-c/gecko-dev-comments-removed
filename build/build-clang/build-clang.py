@@ -661,7 +661,11 @@ def main():
         extra_cflags2 = []
         extra_cxxflags2 = []
         extra_asmflags = []
+        
+        
+        
         extra_ldflags = [
+            "-fuse-ld=lld",
             "-Wl,-dead_strip",
         ]
     elif is_linux(target):
