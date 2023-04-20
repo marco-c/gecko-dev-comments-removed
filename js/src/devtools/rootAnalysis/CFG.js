@@ -908,7 +908,7 @@ function basicBlockEatsVariable(variable, body, startpoint)
     return false;
 }
 
-function edgeIsNonReleasingDtor(body, edge, calleeName, functionBodies) {
+function isSpecialEdge(body, edge, calleeName, functionBodies) {
     if (edge.Kind !== "Call") {
         return false;
     }
@@ -973,10 +973,14 @@ function edgeIsNonReleasingDtor(body, edge, calleeName, functionBodies) {
     
     
     
-    return !BFS_upwards(
+    const edgeIsNonReleasingDtor = !BFS_upwards(
         body, edge.Index[0], functionBodies, visitor, "start",
         true 
     );
+    if (!edgeIsNonReleasingDtor) {
+        return false;
+    }
+    return { attrs : ATTR_GC_SUPPRESSED | ATTR_NONRELEASING };
 }
 
 

@@ -158,14 +158,27 @@ function processBody(functionName, body, functionBodies)
         
         
         
-        var edgeAttrs = body.attrs[edge.Index[0]] | 0;
+        const scopeAttrs = body.attrs[edge.Index[0]] | 0;
 
         for (var callee of getCallees(edge)) {
+            let edgeAttrs = scopeAttrs;
+
             
             
-            if (callee.kind === "direct" && edgeIsNonReleasingDtor(body, edge, callee.name, functionBodies)) {
-                const block = blockIdentifier(body);
-                addToKeyedList(gcEdges, block, { Index: edge.Index, attrs: ATTR_GC_SUPPRESSED | ATTR_NONRELEASING });
+            
+            
+            const edgeInfo = callee.kind === "direct" && isSpecialEdge(body, edge, callee.name, functionBodies);
+            if (edgeInfo) {
+                edgeAttrs = edgeAttrs | edgeInfo.attrs;
+
+                
+                
+                
+                
+                if (edgeInfo.attrs & ATTR_NONRELEASING) {
+                    const block = blockIdentifier(body);
+                    addToKeyedList(gcEdges, block, { Index: edge.Index, attrs: ATTR_GC_SUPPRESSED | ATTR_NONRELEASING });
+                }
             }
 
             

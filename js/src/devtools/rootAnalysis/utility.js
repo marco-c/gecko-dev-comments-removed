@@ -11,13 +11,14 @@ loadRelativeToScript('dumpCFG.js');
 
 
 
-var ATTR_GC_SUPPRESSED     = 1;
-var ATTR_CANSCRIPT_BOUNDED = 2; 
-var ATTR_DOM_ITERATING     = 4; 
-var ATTR_NONRELEASING      = 8; 
+var ATTR_GC_SUPPRESSED     = 1 << 0;
+var ATTR_CANSCRIPT_BOUNDED = 1 << 1; 
+var ATTR_DOM_ITERATING     = 1 << 2; 
+var ATTR_NONRELEASING      = 1 << 3; 
+var ATTR_REPLACED          = 1 << 4; 
 
 var ATTRS_NONE             = 0;
-var ATTRS_ALL              = 7; 
+var ATTRS_ALL              = (ATTR_REPLACED << 1) - 1; 
 
 
 
