@@ -79,22 +79,19 @@ already_AddRefed<nsCookieInjector> nsCookieInjector::GetSingleton() {
 
 
 bool nsCookieInjector::IsEnabledForCurrentPrefState() {
-  if (!StaticPrefs::cookiebanners_cookieInjector_enabled()) {
+  
+  
+  if (!StaticPrefs::cookiebanners_cookieInjector_enabled() ||
+      StaticPrefs::cookiebanners_service_detectOnly()) {
     return false;
   }
 
-  auto shouldInitForMode = [](uint32_t mode) {
-    return mode != nsICookieBannerService::MODE_DISABLED &&
-           mode != nsICookieBannerService::MODE_DETECT_ONLY;
-  };
-
   
   
-  
-  
-  return shouldInitForMode(StaticPrefs::cookiebanners_service_mode()) ||
-         shouldInitForMode(
-             StaticPrefs::cookiebanners_service_mode_privateBrowsing());
+  return StaticPrefs::cookiebanners_service_mode() !=
+             nsICookieBannerService::MODE_DISABLED &&
+         StaticPrefs::cookiebanners_service_mode_privateBrowsing() !=
+             nsICookieBannerService::MODE_DISABLED;
 }
 
 

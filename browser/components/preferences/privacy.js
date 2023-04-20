@@ -197,6 +197,7 @@ Preferences.addAll([
   
   { id: "cookiebanners.ui.desktop.enabled", type: "bool" },
   { id: "cookiebanners.service.mode", type: "int" },
+  { id: "cookiebanners.service.detectOnly", type: "bool" },
 ]);
 
 
@@ -2007,6 +2008,7 @@ var gPrivacyPane = {
 
 
 
+
   initCookieBannerHandling() {
     this._initCookieBannerHandlingLearnMore();
 
@@ -2036,13 +2038,13 @@ var gPrivacyPane = {
 
 
   readCookieBannerMode() {
-    let mode = Preferences.get("cookiebanners.service.mode").value;
-    let disabledModes = [
-      Ci.nsICookieBannerService.MODE_DISABLED,
-      Ci.nsICookieBannerService.MODE_DETECT_ONLY,
-    ];
-    let isEnabled = !disabledModes.includes(mode);
-    return isEnabled;
+    if (Preferences.get("cookiebanners.service.detectOnly").value) {
+      return false;
+    }
+    return (
+      Preferences.get("cookiebanners.service.mode").value !=
+      Ci.nsICookieBannerService.MODE_DISABLED
+    );
   },
 
   
