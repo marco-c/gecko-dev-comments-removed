@@ -1888,6 +1888,8 @@ void CacheOutputCloseListener::OnOutputClosed() {
   
   
   
+  
+  
 
   if (NS_IsMainThread()) {
     
@@ -1896,14 +1898,21 @@ void CacheOutputCloseListener::OnOutputClosed() {
     
     
     
-    MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(do_AddRef(this)));
+
+    nsCOMPtr<nsIThread> thread;
+    nsresult rv = NS_GetMainThread(getter_AddRefs(thread));
+    if (NS_SUCCEEDED(rv)) {
+      MOZ_ALWAYS_SUCCEEDS(thread->Dispatch(do_AddRef(this)));
+    }
     return;
   }
 
   nsCOMPtr<nsIEventTarget> sts =
       do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
   MOZ_DIAGNOSTIC_ASSERT(sts);
-  MOZ_ALWAYS_SUCCEEDS(sts->Dispatch(do_AddRef(this)));
+  if (sts) {
+    MOZ_ALWAYS_SUCCEEDS(sts->Dispatch(do_AddRef(this)));
+  }
 }
 
 NS_IMETHODIMP CacheOutputCloseListener::Run() {
