@@ -971,7 +971,7 @@ Label* CodeGeneratorShared::getJumpLabelForBranch(MBasicBlock* block) {
 
 
 #if !defined(JS_CODEGEN_MIPS32) && !defined(JS_CODEGEN_MIPS64) && \
-    !defined(JS_CODEGEN_LOONG64)
+    !defined(JS_CODEGEN_LOONG64) && !defined(JS_CODEGEN_RISCV64)
 void CodeGeneratorShared::jumpToBlock(MBasicBlock* mir,
                                       Assembler::Condition cond) {
   
