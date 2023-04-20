@@ -24,6 +24,7 @@
 #include "modules/video_coding/timing/frame_delay_variation_kalman_filter.h"
 #include "modules/video_coding/timing/rtt_filter.h"
 #include "rtc_base/experiments/struct_parameters_parser.h"
+#include "rtc_base/numerics/moving_median_filter.h"
 #include "rtc_base/numerics/percentile_filter.h"
 #include "rtc_base/rolling_accumulator.h"
 
@@ -45,12 +46,15 @@ class JitterEstimator {
     }
 
     std::unique_ptr<StructParametersParser> Parser() {
+      
       return StructParametersParser::Create(
+          "avg_frame_size_median", &avg_frame_size_median,
           "max_frame_size_percentile", &max_frame_size_percentile,
-          "max_frame_size_window", &max_frame_size_window,
+          "frame_size_window", &frame_size_window,
           "num_stddev_delay_outlier", &num_stddev_delay_outlier,
           "num_stddev_size_outlier", &num_stddev_size_outlier,
           "congestion_rejection_factor", &congestion_rejection_factor);
+      
     }
 
     bool MaxFrameSizePercentileEnabled() const {
@@ -59,31 +63,35 @@ class JitterEstimator {
 
     
     
-    absl::optional<double> max_frame_size_percentile;
-
-    
-    absl::optional<int> max_frame_size_window;
+    bool avg_frame_size_median = false;
 
     
     
+    absl::optional<double> max_frame_size_percentile = absl::nullopt;
+
     
-    
-    
-    absl::optional<double> num_stddev_delay_outlier;
+    absl::optional<int> frame_size_window = absl::nullopt;
 
     
     
     
     
     
-    absl::optional<double> num_stddev_size_outlier;
+    absl::optional<double> num_stddev_delay_outlier = absl::nullopt;
 
     
     
     
     
     
-    absl::optional<double> congestion_rejection_factor;
+    absl::optional<double> num_stddev_size_outlier = absl::nullopt;
+
+    
+    
+    
+    
+    
+    absl::optional<double> congestion_rejection_factor = absl::nullopt;
   };
 
   JitterEstimator(Clock* clock, const FieldTrialsView& field_trials);
@@ -166,6 +174,9 @@ class JitterEstimator {
   
   
   double max_frame_size_bytes_;
+  
+  MovingMedianFilter<int64_t> avg_frame_size_median_bytes_;
+  
   
   PercentileFilter<int64_t> max_frame_size_bytes_percentile_;
   std::queue<int64_t> frame_sizes_in_percentile_filter_;
