@@ -1169,10 +1169,13 @@ HashNumber MConstant::valueHash() const {
   return ConstantValueHash(type(), payload_.asBits);
 }
 
-
-
 HashNumber MConstantProto::valueHash() const {
-  return protoObject()->valueHash();
+  HashNumber hash = protoObject()->valueHash();
+  const MDefinition* receiverObject = getReceiverObject();
+  if (receiverObject) {
+    hash = addU32ToHash(hash, receiverObject->id());
+  }
+  return hash;
 }
 
 bool MConstant::congruentTo(const MDefinition* ins) const {

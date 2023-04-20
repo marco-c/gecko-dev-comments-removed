@@ -9210,9 +9210,10 @@ class MConstantProto : public MUnaryInstruction,
   
   
   
-  MDefinition* receiverObject_;
+  const MDefinition* receiverObject_;
 
-  explicit MConstantProto(MDefinition* protoObject, MDefinition* receiverObject)
+  explicit MConstantProto(MDefinition* protoObject,
+                          const MDefinition* receiverObject)
       : MUnaryInstruction(classOpcode, protoObject),
         receiverObject_(receiverObject) {
     MOZ_ASSERT(protoObject->isConstant());
@@ -9244,7 +9245,7 @@ class MConstantProto : public MUnaryInstruction,
     if (receiverObject_->isDiscarded()) {
       return nullptr;
     }
-    return receiverObject_->skipObjectGuards();
+    return receiverObject_;
   }
 };
 
