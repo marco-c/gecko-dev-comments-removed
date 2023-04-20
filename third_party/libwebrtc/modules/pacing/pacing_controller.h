@@ -126,7 +126,10 @@ class PacingController {
   
   void EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet);
 
+  
   void CreateProbeCluster(DataRate bitrate, int cluster_id);
+  void CreateProbeClusters(
+      rtc::ArrayView<const ProbeClusterConfig> probe_cluster_configs);
 
   void Pause();   
   void Resume();  

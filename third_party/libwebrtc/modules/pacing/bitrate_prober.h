@@ -30,16 +30,9 @@ struct BitrateProberConfig {
   ~BitrateProberConfig() = default;
 
   
-  FieldTrialParameter<int> min_probe_packets_sent;
-  
   FieldTrialParameter<TimeDelta> min_probe_delta;
   
-  FieldTrialParameter<TimeDelta> min_probe_duration;
-  
   FieldTrialParameter<TimeDelta> max_probe_delay;
-  
-  
-  FieldTrialParameter<bool> abort_delayed_probes;
 };
 
 
@@ -62,9 +55,7 @@ class BitrateProber {
   void OnIncomingPacket(DataSize packet_size);
 
   
-  
-  void CreateProbeCluster(DataRate bitrate, Timestamp now, int cluster_id);
-
+  void CreateProbeCluster(const ProbeClusterConfig& cluster_config);
   
   
   
@@ -104,7 +95,7 @@ class BitrateProber {
 
     int sent_probes = 0;
     int sent_bytes = 0;
-    Timestamp created_at = Timestamp::MinusInfinity();
+    Timestamp requested_at = Timestamp::MinusInfinity();
     Timestamp started_at = Timestamp::MinusInfinity();
     int retries = 0;
   };

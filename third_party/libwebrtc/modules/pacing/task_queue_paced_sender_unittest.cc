@@ -380,7 +380,12 @@ TEST(TaskQueuePacedSenderTest, ProbingOverridesCoalescingWindow) {
   
   
   EXPECT_CALL(packet_router, SendPacket).Times(AtLeast(1));
-  pacer.CreateProbeCluster(kPacingDataRate * 2, 17);
+  pacer.CreateProbeClusters(
+      {{.at_time = time_controller.GetClock()->CurrentTime(),
+        .target_data_rate = kPacingDataRate * 2,
+        .target_duration = TimeDelta::Millis(15),
+        .target_probe_count = 5,
+        .id = 17}});
   pacer.EnqueuePackets(GeneratePackets(RtpPacketMediaType::kVideo, 10));
   time_controller.AdvanceTime(TimeDelta::Zero());
   ::testing::Mock::VerifyAndClearExpectations(&packet_router);
@@ -428,7 +433,12 @@ TEST(TaskQueuePacedSenderTest, SchedulesProbeAtSentTime) {
   
   const DataRate kProbeRate = 2 * kPacingDataRate;
   const int kProbeClusterId = 1;
-  pacer.CreateProbeCluster(kProbeRate, kProbeClusterId);
+  pacer.CreateProbeClusters(
+      {{.at_time = time_controller.GetClock()->CurrentTime(),
+        .target_data_rate = kProbeRate,
+        .target_duration = TimeDelta::Millis(15),
+        .target_probe_count = 4,
+        .id = kProbeClusterId}});
 
   
   
@@ -485,7 +495,13 @@ TEST(TaskQueuePacedSenderTest, NoMinSleepTimeWhenProbing) {
   
   const int kProbeClusterId = 1;
   DataRate kProbingRate = kPacingDataRate * 10;
-  pacer.CreateProbeCluster(kProbingRate, kProbeClusterId);
+
+  pacer.CreateProbeClusters(
+      {{.at_time = time_controller.GetClock()->CurrentTime(),
+        .target_data_rate = kProbingRate,
+        .target_duration = TimeDelta::Millis(15),
+        .target_probe_count = 5,
+        .id = kProbeClusterId}});
 
   
   
@@ -640,7 +656,13 @@ TEST(TaskQueuePacedSenderTest, ProbingStopDuringSendLoop) {
   
   const int kProbeClusterId = 1;
   const DataRate kProbingRate = kPacingDataRate;
-  pacer.CreateProbeCluster(kProbingRate, kProbeClusterId);
+
+  pacer.CreateProbeClusters(
+      {{.at_time = time_controller.GetClock()->CurrentTime(),
+        .target_data_rate = kProbingRate,
+        .target_duration = TimeDelta::Millis(15),
+        .target_probe_count = 4,
+        .id = kProbeClusterId}});
 
   const int kPacketsToSend = 100;
   const TimeDelta kPacketsPacedTime =
@@ -762,7 +784,12 @@ TEST(TaskQueuePacedSenderTest, HighPrecisionPacingWhenSlackIsDisabled) {
   EXPECT_GT(task_queue_factory.delayed_high_precision_count(), 0);
 
   
-  pacer.CreateProbeCluster(kPacingRate, 123);
+  pacer.CreateProbeClusters(
+      {{.at_time = time_controller.GetClock()->CurrentTime(),
+        .target_data_rate = kPacingRate,
+        .target_duration = TimeDelta::Millis(15),
+        .target_probe_count = 4,
+        .id = 123}});
   pacer.EnqueuePackets(GeneratePackets(RtpPacketMediaType::kVideo, 1));
   time_controller.AdvanceTime(TimeDelta::Seconds(1));
   EXPECT_EQ(task_queue_factory.delayed_low_precision_count(), 0);
@@ -807,7 +834,12 @@ TEST(TaskQueuePacedSenderTest, LowPrecisionPacingWhenSlackIsEnabled) {
 
   
   
-  pacer.CreateProbeCluster(kPacingRate, 123);
+  pacer.CreateProbeClusters(
+      {{.at_time = time_controller.GetClock()->CurrentTime(),
+        .target_data_rate = kPacingRate,
+        .target_duration = TimeDelta::Millis(15),
+        .target_probe_count = 4,
+        .id = 123}});
   pacer.EnqueuePackets(GeneratePackets(RtpPacketMediaType::kVideo, 1));
   time_controller.AdvanceTime(TimeDelta::Seconds(1));
   EXPECT_GT(task_queue_factory.delayed_high_precision_count(), 0);

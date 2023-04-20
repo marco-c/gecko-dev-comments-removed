@@ -51,6 +51,11 @@ struct ProbeControllerConfig {
   FieldTrialOptional<double> second_allocation_probe_scale;
   FieldTrialFlag allocation_allow_further_probing;
   FieldTrialParameter<DataRate> allocation_probe_max;
+
+  
+  FieldTrialParameter<int> min_probe_packets_sent;
+  
+  FieldTrialParameter<TimeDelta> min_probe_duration;
 };
 
 

@@ -17,7 +17,9 @@
 #include <utility>
 #include <vector>
 
+#include "api/transport/network_types.h"
 #include "api/units/data_rate.h"
+#include "api/units/time_delta.h"
 #include "modules/pacing/packet_router.h"
 #include "system_wrappers/include/clock.h"
 #include "test/explicit_key_value_config.h"
@@ -218,8 +220,17 @@ class PacingControllerTest : public ::testing::Test {
   }
 
   void Init() {
-    pacer_->CreateProbeCluster(kFirstClusterRate, 0);
-    pacer_->CreateProbeCluster(kSecondClusterRate, 1);
+    pacer_->CreateProbeClusters(std::vector<ProbeClusterConfig>(
+        {{.at_time = clock_.CurrentTime(),
+          .target_data_rate = kFirstClusterRate,
+          .target_duration = TimeDelta::Millis(15),
+          .target_probe_count = 5,
+          .id = 0},
+         {.at_time = clock_.CurrentTime(),
+          .target_data_rate = kSecondClusterRate,
+          .target_duration = TimeDelta::Millis(15),
+          .target_probe_count = 5,
+          .id = 1}}));
     
     
     
@@ -1130,10 +1141,18 @@ TEST_F(PacingControllerTest, ProbingWithInsertedPackets) {
 
   PacingControllerProbing packet_sender;
   pacer_ = std::make_unique<PacingController>(&clock_, &packet_sender, trials_);
-  pacer_->CreateProbeCluster(kFirstClusterRate,
-                             0);
-  pacer_->CreateProbeCluster(kSecondClusterRate,
-                             1);
+  std::vector<ProbeClusterConfig> probe_clusters = {
+      {.at_time = clock_.CurrentTime(),
+       .target_data_rate = kFirstClusterRate,
+       .target_duration = TimeDelta::Millis(15),
+       .target_probe_count = 5,
+       .id = 0},
+      {.at_time = clock_.CurrentTime(),
+       .target_data_rate = kSecondClusterRate,
+       .target_duration = TimeDelta::Millis(15),
+       .target_probe_count = 5,
+       .id = 1}};
+  pacer_->CreateProbeClusters(probe_clusters);
   pacer_->SetPacingRates(
       DataRate::BitsPerSec(kInitialBitrateBps * kPaceMultiplier),
       DataRate::Zero());
@@ -1176,18 +1195,12 @@ TEST_F(PacingControllerTest, SkipsProbesWhenProcessIntervalTooLarge) {
   const uint32_t ssrc = 12346;
   const int kProbeClusterId = 3;
 
-  
-  
-  for (bool abort_delayed_probes : {false, true}) {
     uint16_t sequence_number = 1234;
 
     PacingControllerProbing packet_sender;
 
     const test::ExplicitKeyValueConfig trials(
-        abort_delayed_probes ? "WebRTC-Bwe-ProbingBehavior/"
-                               "abort_delayed_probes:1,max_probe_delay:2ms/"
-                             : "WebRTC-Bwe-ProbingBehavior/"
-                               "abort_delayed_probes:0,max_probe_delay:2ms/");
+        "WebRTC-Bwe-ProbingBehavior/max_probe_delay:2ms/");
     pacer_ =
         std::make_unique<PacingController>(&clock_, &packet_sender, trials);
     pacer_->SetPacingRates(
@@ -1201,8 +1214,14 @@ TEST_F(PacingControllerTest, SkipsProbesWhenProcessIntervalTooLarge) {
     ProcessUntilEmpty();
 
     
-    pacer_->CreateProbeCluster(DataRate::KilobitsPerSec(10000),  
-                               kProbeClusterId);
+    std::vector<ProbeClusterConfig> probe_clusters = {
+        {.at_time = clock_.CurrentTime(),
+         .target_data_rate = DataRate::KilobitsPerSec(10000),  
+         .target_duration = TimeDelta::Millis(15),
+         .target_probe_count = 5,
+         .id = kProbeClusterId}};
+    pacer_->CreateProbeClusters(probe_clusters);
+
     
     Send(RtpPacketMediaType::kVideo, ssrc, sequence_number++,
          clock_.TimeInMilliseconds(), kPacketSize);
@@ -1240,42 +1259,17 @@ TEST_F(PacingControllerTest, SkipsProbesWhenProcessIntervalTooLarge) {
     clock_.AdvanceTime(TimeDelta::Micros(1));
 
     int packets_sent_before_timeout = packet_sender.total_packets_sent();
-    if (abort_delayed_probes) {
-      
-      
-      EXPECT_EQ(pacer_->NextSendTime(), probe_time);
-      pacer_->ProcessPackets();
-      EXPECT_EQ(packet_sender.total_packets_sent(),
-                packets_sent_before_timeout);
+    
+    
+    EXPECT_EQ(pacer_->NextSendTime(), probe_time);
+    pacer_->ProcessPackets();
+    EXPECT_EQ(packet_sender.total_packets_sent(), packets_sent_before_timeout);
 
-      
-      AdvanceTimeAndProcess();
-      const int expected_probe_id = PacedPacketInfo::kNotAProbe;
-      EXPECT_EQ(packet_sender.last_pacing_info().probe_cluster_id,
-                expected_probe_id);
-    } else {
-      
-      
-      
-      EXPECT_GT(pacer_->NextSendTime(), probe_time);
-      AdvanceTimeAndProcess();
-      EXPECT_GT(packet_sender.total_packets_sent(),
-                packets_sent_before_timeout);
-      const int expected_probe_id = last_pacing_info.probe_cluster_id;
-      EXPECT_EQ(packet_sender.last_pacing_info().probe_cluster_id,
-                expected_probe_id);
-
-      
-      
-      Timestamp a = clock_.CurrentTime();
-      AdvanceTimeAndProcess();
-      EXPECT_GT(packet_sender.total_packets_sent(),
-                packets_sent_before_timeout);
-      EXPECT_EQ(packet_sender.last_pacing_info().probe_cluster_id,
-                expected_probe_id);
-      EXPECT_GT(clock_.CurrentTime() - a, time_between_probes);
-    }
-  }
+    
+    AdvanceTimeAndProcess();
+    const int expected_probe_id = PacedPacketInfo::kNotAProbe;
+    EXPECT_EQ(packet_sender.last_pacing_info().probe_cluster_id,
+              expected_probe_id);
 }
 
 TEST_F(PacingControllerTest, ProbingWithPaddingSupport) {
@@ -1286,8 +1280,14 @@ TEST_F(PacingControllerTest, ProbingWithPaddingSupport) {
 
   PacingControllerProbing packet_sender;
   pacer_ = std::make_unique<PacingController>(&clock_, &packet_sender, trials_);
-  pacer_->CreateProbeCluster(kFirstClusterRate,
-                             0);
+  std::vector<ProbeClusterConfig> probe_clusters = {
+      {.at_time = clock_.CurrentTime(),
+       .target_data_rate = kFirstClusterRate,
+       .target_duration = TimeDelta::Millis(15),
+       .target_probe_count = 5,
+       .id = 0}};
+  pacer_->CreateProbeClusters(probe_clusters);
+
   pacer_->SetPacingRates(
       DataRate::BitsPerSec(kInitialBitrateBps * kPaceMultiplier),
       DataRate::Zero());
@@ -1442,7 +1442,14 @@ TEST_F(PacingControllerTest, OwnedPacketPrioritizedOnType) {
 TEST_F(PacingControllerTest, SmallFirstProbePacket) {
   MockPacketSender callback;
   pacer_ = std::make_unique<PacingController>(&clock_, &callback, trials_);
-  pacer_->CreateProbeCluster(kFirstClusterRate, 0);
+  std::vector<ProbeClusterConfig> probe_clusters = {
+      {.at_time = clock_.CurrentTime(),
+       .target_data_rate = kFirstClusterRate,
+       .target_duration = TimeDelta::Millis(15),
+       .target_probe_count = 5,
+       .id = 0}};
+  pacer_->CreateProbeClusters(probe_clusters);
+
   pacer_->SetPacingRates(kTargetRate * kPaceMultiplier, DataRate::Zero());
 
   
@@ -1528,8 +1535,13 @@ TEST_F(PacingControllerTest, NoProbingWhilePaused) {
   ProcessUntilEmpty();
 
   
-  pacer_->CreateProbeCluster(DataRate::KilobitsPerSec(10000),  
-                             3);
+  std::vector<ProbeClusterConfig> probe_clusters = {
+      {.at_time = clock_.CurrentTime(),
+       .target_data_rate = DataRate::KilobitsPerSec(10000),  
+       .target_duration = TimeDelta::Millis(15),
+       .target_probe_count = 5,
+       .id = 3}};
+  pacer_->CreateProbeClusters(probe_clusters);
 
   
   EXPECT_LT(pacer_->NextSendTime() - clock_.CurrentTime(),
