@@ -8,7 +8,12 @@
 
 
 
-use prio::codec::{decode_u16_items, encode_u16_items, CodecError, Decode, Encode};
+
+
+use prio::codec::{
+    decode_u16_items, decode_u32_items, encode_u16_items, encode_u32_items, CodecError, Decode,
+    Encode,
+};
 use std::io::{Cursor, Read};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -49,6 +54,18 @@ impl Decode for Time {
 impl Encode for Time {
     fn encode(&self, bytes: &mut Vec<u8>) {
         u64::encode(&self.0, bytes);
+    }
+}
+
+impl Time {
+    
+    pub fn generate(time_precision: u64) -> Time {
+        let now_secs = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Failed to get time.")
+            .as_secs();
+        let timestamp = (now_secs / time_precision) * time_precision;
+        Time(timestamp)
     }
 }
 
@@ -120,6 +137,18 @@ impl Encode for HpkeConfigId {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub struct HpkeConfig {
     pub id: HpkeConfigId,
@@ -169,7 +198,7 @@ impl Decode for HpkeCiphertext {
     fn decode(bytes: &mut Cursor<&[u8]>) -> Result<Self, CodecError> {
         let config_id = HpkeConfigId::decode(bytes)?;
         let enc: Vec<u8> = decode_u16_items(&(), bytes)?;
-        let payload: Vec<u8> = decode_u16_items(&(), bytes)?;
+        let payload: Vec<u8> = decode_u32_items(&(), bytes)?;
 
         Ok(HpkeCiphertext {
             config_id,
@@ -183,51 +212,67 @@ impl Encode for HpkeCiphertext {
     fn encode(&self, bytes: &mut Vec<u8>) {
         self.config_id.encode(bytes);
         encode_u16_items(bytes, &(), &self.enc);
-        encode_u16_items(bytes, &(), &self.payload);
+        encode_u32_items(bytes, &(), &self.payload);
     }
 }
 
 
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct ReportID(pub [u8; 16]);
 
-
-
-
-
-#[derive(PartialEq, Eq, Debug)]
-pub struct Nonce {
-    pub time: Time,
-    pub rand: [u8; 16],
-}
-
-impl Decode for Nonce {
+impl Decode for ReportID {
     fn decode(bytes: &mut Cursor<&[u8]>) -> Result<Self, CodecError> {
-        let time = Time::decode(bytes)?;
-        let mut data = [0; 16];
+        let mut data: [u8; 16] = [0; 16];
         bytes.read_exact(&mut data)?;
-
-        Ok(Nonce { time, rand: data })
+        Ok(ReportID(data))
     }
 }
 
-impl Encode for Nonce {
+impl Encode for ReportID {
     fn encode(&self, bytes: &mut Vec<u8>) {
-        self.time.encode(bytes);
-        bytes.extend_from_slice(&self.rand);
+        bytes.extend_from_slice(&self.0);
     }
 }
 
-impl Nonce {
-    pub fn generate(time_precision: u64) -> Nonce {
-        let now_secs = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("Failed to get time.")
-            .as_secs();
-        let timestamp = (now_secs / time_precision) * time_precision;
-        Nonce {
-            time: Time(timestamp),
-            rand: rand::thread_rng().gen(),
-        }
+impl ReportID {
+    pub fn generate() -> ReportID {
+        ReportID(rand::thread_rng().gen())
+    }
+}
+
+
+
+
+
+
+
+#[derive(Debug, PartialEq)]
+pub struct ReportMetadata {
+    pub report_id: ReportID,
+    pub time: Time,
+    pub extensions: Vec<Extension>,
+}
+
+impl Decode for ReportMetadata {
+    fn decode(bytes: &mut Cursor<&[u8]>) -> Result<Self, CodecError> {
+        let report_id = ReportID::decode(bytes)?;
+        let time = Time::decode(bytes)?;
+        let extensions = decode_u16_items(&(), bytes)?;
+
+        Ok(ReportMetadata {
+            report_id,
+            time,
+            extensions,
+        })
+    }
+}
+
+impl Encode for ReportMetadata {
+    fn encode(&self, bytes: &mut Vec<u8>) {
+        self.report_id.encode(bytes);
+        self.time.encode(bytes);
+        encode_u16_items(bytes, &(), &self.extensions);
     }
 }
 
@@ -241,17 +286,22 @@ impl Nonce {
 #[derive(Debug, PartialEq)]
 pub struct Report {
     pub task_id: TaskID,
-    pub nonce: Nonce,
-    pub extensions: Vec<Extension>,
+    pub metadata: ReportMetadata,
+    pub public_share: Vec<u8>,
     pub encrypted_input_shares: Vec<HpkeCiphertext>,
 }
 
 impl Report {
+    
     pub fn new_dummy() -> Self {
         Report {
             task_id: TaskID([0x12; 32]),
-            nonce: Nonce::generate(1),
-            extensions: vec![],
+            metadata: ReportMetadata {
+                report_id: ReportID::generate(),
+                time: Time::generate(1),
+                extensions: vec![],
+            },
+            public_share: vec![],
             encrypted_input_shares: vec![],
         }
     }
@@ -260,16 +310,16 @@ impl Report {
 impl Decode for Report {
     fn decode(bytes: &mut Cursor<&[u8]>) -> Result<Self, CodecError> {
         let task_id = TaskID::decode(bytes)?;
-        let nonce = Nonce::decode(bytes)?;
-        let extensions = decode_u16_items(&(), bytes)?;
-        let encrypted_input_shares: Vec<HpkeCiphertext> = decode_u16_items(&(), bytes)?;
+        let metadata = ReportMetadata::decode(bytes)?;
+        let public_share: Vec<u8> = decode_u32_items(&(), bytes)?;
+        let encrypted_input_shares: Vec<HpkeCiphertext> = decode_u32_items(&(), bytes)?;
 
         let remaining_bytes = bytes.get_ref().len() - (bytes.position() as usize);
         if remaining_bytes == 0 {
             Ok(Report {
                 task_id,
-                nonce,
-                extensions,
+                metadata,
+                public_share,
                 encrypted_input_shares,
             })
         } else {
@@ -281,8 +331,8 @@ impl Decode for Report {
 impl Encode for Report {
     fn encode(&self, bytes: &mut Vec<u8>) {
         self.task_id.encode(bytes);
-        self.nonce.encode(bytes);
-        encode_u16_items(bytes, &(), &self.extensions);
-        encode_u16_items(bytes, &(), &self.encrypted_input_shares);
+        self.metadata.encode(bytes);
+        encode_u32_items(bytes, &(), &self.public_share);
+        encode_u32_items(bytes, &(), &self.encrypted_input_shares);
     }
 }
