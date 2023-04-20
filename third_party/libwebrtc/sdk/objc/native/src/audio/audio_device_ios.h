@@ -14,7 +14,9 @@
 #include <atomic>
 #include <memory>
 
+#include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
+#include "api/task_queue/pending_task_safety_flag.h"
 #include "audio_session_observer.h"
 #include "modules/audio_device/audio_device_generic.h"
 #include "rtc_base/buffer.h"
@@ -46,8 +48,7 @@ namespace ios_adm {
 
 class AudioDeviceIOS : public AudioDeviceGeneric,
                        public AudioSessionObserver,
-                       public VoiceProcessingAudioUnitObserver,
-                       public rtc::MessageHandler {
+                       public VoiceProcessingAudioUnitObserver {
  public:
   explicit AudioDeviceIOS(bool bypass_voice_processing);
   ~AudioDeviceIOS() override;
@@ -159,9 +160,6 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
                             UInt32 num_frames,
                             AudioBufferList* io_data) override;
 
-  
-  void OnMessage(rtc::Message* msg) override;
-
   bool IsInterrupted();
 
  private:
@@ -212,10 +210,6 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
   
   const bool bypass_voice_processing_;
-
-  
-  
-  SequenceChecker thread_checker_;
 
   
   SequenceChecker io_thread_checker_;
@@ -273,7 +267,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   std::atomic<int> playing_;
 
   
-  bool initialized_ RTC_GUARDED_BY(thread_checker_);
+  bool initialized_ RTC_GUARDED_BY(thread_);
 
   
   
@@ -284,13 +278,13 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
   
   RTCNativeAudioSessionDelegateAdapter* audio_session_observer_
-      RTC_GUARDED_BY(thread_checker_);
+      RTC_GUARDED_BY(thread_);
 
   
-  bool has_configured_session_ RTC_GUARDED_BY(thread_checker_);
+  bool has_configured_session_ RTC_GUARDED_BY(thread_);
 
   
-  int64_t num_detected_playout_glitches_ RTC_GUARDED_BY(thread_checker_);
+  int64_t num_detected_playout_glitches_ RTC_GUARDED_BY(thread_);
   int64_t last_playout_time_ RTC_GUARDED_BY(io_thread_checker_);
 
   
@@ -300,7 +294,11 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   int64_t num_playout_callbacks_;
 
   
-  int64_t last_output_volume_change_time_ RTC_GUARDED_BY(thread_checker_);
+  int64_t last_output_volume_change_time_ RTC_GUARDED_BY(thread_);
+
+  
+  rtc::scoped_refptr<PendingTaskSafetyFlag> safety_ =
+      PendingTaskSafetyFlag::Create();
 };
 }  
 }  
