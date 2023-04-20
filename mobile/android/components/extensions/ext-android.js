@@ -225,10 +225,10 @@ class TabTracker extends TabTrackerBase {
     });
 
     windowTracker.addCloseListener(window => {
-      const { tab, browser } = window;
+      const { tab: nativeTab, browser } = window;
       const { windowId, tabId } = this.getBrowserData(browser);
       this.emit("tab-removed", {
-        tab,
+        nativeTab,
         tabId,
         windowId,
         
