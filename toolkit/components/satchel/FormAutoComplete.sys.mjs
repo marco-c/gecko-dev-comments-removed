@@ -1,9 +1,7 @@
-
-
-
-
-
-"use strict";
+/* vim: set ts=4 sts=4 sw=4 et tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 function isAutocompleteDisabled(aField) {
   if (aField.autocomplete !== "") {
@@ -13,27 +11,27 @@ function isAutocompleteDisabled(aField) {
   return aField.form && aField.form.autocomplete === "off";
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * An abstraction to talk with the FormHistory database over
+ * the message layer. FormHistoryClient will take care of
+ * figuring out the most appropriate message manager to use,
+ * and what things to send.
+ *
+ * It is assumed that nsFormAutoComplete will only ever use
+ * one instance at a time, and will not attempt to perform more
+ * than one search request with the same instance at a time.
+ * However, nsFormAutoComplete might call remove() any number of
+ * times with the same instance of the client.
+ *
+ * @param {object} clientInfo
+ *        Info required to build the FormHistoryClient
+ * @param {Node} clientInfo.formField
+ *        A DOM node that we're requesting form history for.
+ * @param {string} clientInfo.inputName
+ *        The name of the input to do the FormHistory look-up with.
+ *        If this is searchbar-history, then formField needs to be null,
+ *        otherwise constructing will throw.
+ */
 function FormHistoryClient({ formField, inputName }) {
   if (formField && inputName != this.SEARCHBAR_ID) {
     let window = formField.ownerGlobal;
@@ -65,25 +63,25 @@ FormHistoryClient.prototype = {
     return null;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Query FormHistory for some results.
+   *
+   * @param {string} searchString
+   *        The string to search FormHistory for. See
+   *        FormHistory.getAutoCompleteResults.
+   * @param {object} params
+   *        An Object with search properties. See
+   *        FormHistory.getAutoCompleteResults.
+   * @param {Function} callback
+   *        A callback function that will take a single
+   *        argument (the found entries).
+   */
   requestAutoCompleteResults(searchString, params, callback) {
     this.cancelled = false;
 
-    
-    
-    
+    // Use the actor if possible, otherwise for the searchbar,
+    // use the more roundabout per-process message manager which has
+    // no sendQuery method.
     let actor = this.getActor();
     if (actor) {
       actor
@@ -125,11 +123,11 @@ FormHistoryClient.prototype = {
     this.cancel();
   },
 
-  
-
-
-
-
+  /**
+   * Cancel an in-flight results request. This ensures that the
+   * callback that requestAutoCompleteResults was passed is never
+   * called from this FormHistoryClient.
+   */
   cancel() {
     if (this.callback) {
       Services.cpmm.removeMessageListener(
@@ -141,18 +139,18 @@ FormHistoryClient.prototype = {
     this.cancelled = true;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Remove an item from FormHistory.
+   *
+   * @param {string} value
+   *
+   *        The value to remove for this particular
+   *        field.
+   *
+   * @param {string} guid
+   *
+   *        The guid for the item being removed.
+   */
   remove(value, guid) {
     let actor = this.getActor() || Services.cpmm;
     actor.sendAsyncMessage("FormHistory:RemoveEntry", {
@@ -172,13 +170,13 @@ FormHistoryClient.prototype = {
 
 FormHistoryClient.nextRequestID = 1;
 
-function FormAutoComplete() {
+export function FormAutoComplete() {
   this.init();
 }
 
-
-
-
+/**
+ * Implements the nsIFormAutoComplete interface in the main process.
+ */
 FormAutoComplete.prototype = {
   classID: Components.ID("{c11c21b2-71c9-4f87-a0f8-5e13f50495fd}"),
   QueryInterface: ChromeUtils.generateQI([
@@ -186,15 +184,15 @@ FormAutoComplete.prototype = {
     "nsISupportsWeakReference",
   ]),
 
-  
-  
-  
-  
-  
+  // Only one query via FormHistoryClient is performed at a time, and the
+  // most recent FormHistoryClient which will be stored in _pendingClient
+  // while the query is being performed. It will be cleared when the query
+  // finishes, is cancelled, or an error occurs. If a new query occurs while
+  // one is already pending, the existing one is cancelled.
   _pendingClient: null,
 
   init() {
-    
+    // Preferences. Add observer so we get notified of changes.
     this._prefBranch = Services.prefs.getBranch("browser.formfill.");
     this._prefBranch.addObserver("", this.observer, true);
     this.observer._self = this;
@@ -230,18 +228,18 @@ FormAutoComplete.prototype = {
     },
   },
 
-  
-  
+  // AutoCompleteE10S needs to be able to call autoCompleteSearchAsync without
+  // going through IDL in order to pass a mock DOM object field.
   get wrappedJSObject() {
     return this;
   },
 
-  
-
-
-
-
-
+  /*
+   * log
+   *
+   * Internal function for logging debug messages to the Error Console
+   * window
+   */
   log(message) {
     if (!this._debug) {
       return;
@@ -250,20 +248,20 @@ FormAutoComplete.prototype = {
     Services.console.logStringMessage("FormAutoComplete: " + message);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /*
+   * autoCompleteSearchAsync
+   *
+   * aInputName -- |name| or |id| attribute value from the form input being
+   *               autocompleted
+   * aUntrimmedSearchString -- current value of the input
+   * aField -- HTMLInputElement being autocompleted (may be null if from chrome)
+   * aPreviousResult -- previous search result, if any.
+   * aDatalistResult -- results from list=datalist for aField.
+   * aListener -- nsIFormAutoCompleteObserver that listens for the nsIAutoCompleteResult
+   *              that may be returned asynchronously.
+   *  options -- an optional nsIPropertyBag2 containing additional search
+   *             parameters.
+   */
   autoCompleteSearchAsync(
     aInputName,
     aUntrimmedSearchString,
@@ -273,7 +271,7 @@ FormAutoComplete.prototype = {
     aListener,
     aOptions
   ) {
-    
+    // Guard against void DOM strings filtering into this code.
     if (typeof aInputName === "object") {
       aInputName = "";
     }
@@ -303,7 +301,7 @@ FormAutoComplete.prototype = {
       }
     }
 
-    
+    // If we have datalist results, they become our "empty" result.
     let emptyResult =
       aDatalistResult ||
       new FormAutoCompleteResult(
@@ -317,8 +315,8 @@ FormAutoComplete.prototype = {
       return;
     }
 
-    
-    
+    // Don't allow form inputs (aField != null) to get results from
+    // search bar history.
     if (aInputName == "searchbar-history" && aField) {
       this.log(
         'autoCompleteSearch for input name "' + aInputName + '" is denied'
@@ -338,9 +336,9 @@ FormAutoComplete.prototype = {
     );
     let searchString = aUntrimmedSearchString.trim().toLowerCase();
 
-    
-    
-    
+    // reuse previous results if:
+    // a) length greater than one character (others searches are special cases) AND
+    // b) the the new results will be a subset of the previous results
     if (
       aPreviousResult &&
       aPreviousResult.searchString.trim().length > 1 &&
@@ -351,23 +349,23 @@ FormAutoComplete.prototype = {
       let wrappedResult = result.wrappedJSObject;
       wrappedResult.searchString = aUntrimmedSearchString;
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // Leaky abstraction alert: it would be great to be able to split
+      // this code between nsInputListAutoComplete and here but because of
+      // the way we abuse the formfill autocomplete API in e10s, we have
+      // to deal with the <datalist> results here as well (and down below
+      // in mergeResults).
+      // If there were datalist results result is a FormAutoCompleteResult
+      // as defined in nsFormAutoCompleteResult.jsm with the entire list
+      // of results in wrappedResult._items and only the results from
+      // form history in wrappedResult.entries.
+      // First, grab the entire list of old results.
       let allResults = wrappedResult._items;
       let datalistItems;
       if (allResults) {
-        
-        
-        
-        
+        // We have datalist results, extract them from the values array.
+        // Both allResults and values arrays are in the form of:
+        // |--wR.entries--|
+        // <history entries><datalist entries>
         let oldItems = allResults.slice(wrappedResult.entries.length);
 
         datalistItems = [];
@@ -384,14 +382,14 @@ FormAutoComplete.prototype = {
       }
 
       let searchTokens = searchString.split(/\s+/);
-      
-      
+      // We have a list of results for a shorter search string, so just
+      // filter them further based on the new search string and add to a new array.
       let entries = wrappedResult.entries;
       let filteredEntries = [];
       for (let i = 0; i < entries.length; i++) {
         let entry = entries[i];
-        
-        
+        // Remove results that do not contain the token
+        // XXX bug 394604 -- .toLowerCase can be wrong for some intl chars
         if (searchTokens.some(tok => !entry.textLowerCase.includes(tok))) {
           continue;
         }
@@ -410,13 +408,13 @@ FormAutoComplete.prototype = {
       filteredEntries.sort((a, b) => b.totalScore - a.totalScore);
       wrappedResult.entries = filteredEntries;
 
-      
-      
+      // If we had datalistResults, re-merge them back into the filtered
+      // entries.
       if (datalistItems?.length) {
         filteredEntries = filteredEntries.map(elt => ({
           value: elt.text,
-          
-          
+          // History entries don't have labels (their labels would be read
+          // from their values).
           label: "",
           comment: "",
           removable: true,
@@ -431,7 +429,7 @@ FormAutoComplete.prototype = {
     } else {
       this.log("Creating new autocomplete search result.");
 
-      
+      // Start with an empty list.
       let result = aDatalistResult
         ? new FormAutoCompleteResult(
             client,
@@ -470,8 +468,8 @@ FormAutoComplete.prototype = {
   mergeResults(historyResult, datalistResult) {
     let items = datalistResult.wrappedJSObject._items;
 
-    
-    
+    // historyResult will be null if form autocomplete is disabled. We
+    // still want the list values to display.
     let entries = historyResult.wrappedJSObject.entries;
     let historyResults = entries.map(entry => ({
       value: entry.text,
@@ -483,30 +481,30 @@ FormAutoComplete.prototype = {
     const isInArray = (value, arr, key) =>
       arr.find(item => item[key].toUpperCase() === value.toUpperCase());
 
-    
-    
-    
+    // Remove items from history list that are already present in data list.
+    // We do this rather than the opposite ( i.e. remove items from data list)
+    // to reflect the order that is specified in the data list.
     const dedupedHistoryResults = historyResults.filter(
       historyRes => !isInArray(historyRes.value, items, "value")
     );
 
-    
-    
-    
+    // Now put the history results above the datalist suggestions.
+    // Note that we don't need to worry about deduplication of elements inside
+    // the datalist suggestions because the datalist is user-provided.
     const finalItems = dedupedHistoryResults.concat(items);
 
     historyResult.wrappedJSObject.entries = historyResult.wrappedJSObject.entries.filter(
       entry => !isInArray(entry.text, items, "value")
     );
 
-    
-    
-    
-    
-    
-    
-    let { FormAutoCompleteResult } = ChromeUtils.import(
-      "resource://gre/modules/nsFormAutoCompleteResult.jsm"
+    // This is ugly: there are two FormAutoCompleteResult classes in the
+    // tree, one in a module and one in this file. Datalist results need to
+    // use the one defined in the module but the rest of this file assumes
+    // that we use the one defined here. To get around that, we explicitly
+    // import the module here, out of the way of the other uses of
+    // FormAutoCompleteResult.
+    let { FormAutoCompleteResult } = ChromeUtils.importESModule(
+      "resource://gre/modules/nsFormAutoCompleteResult.sys.mjs"
     );
     return new FormAutoCompleteResult(
       datalistResult.searchString,
@@ -525,17 +523,17 @@ FormAutoComplete.prototype = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /*
+   * Get the values for an autocomplete list given a search string.
+   *
+   *  client - a FormHistoryClient instance to perform the search with
+   *  fieldName - fieldname field within form history (the form input name)
+   *  searchString - string to search for
+   *  params - object containing additional properties to query autocomplete.
+   *  callback - called when the values are available. Passed an array of objects,
+   *             containing properties for each result. The callback is only called
+   *             when successful.
+   */
   getAutoCompleteValues(client, fieldName, searchString, params, callback) {
     params = Object.assign(
       {
@@ -552,18 +550,18 @@ FormAutoComplete.prototype = {
     this._pendingClient = client;
   },
 
-  
-
-
-
-
-
-
-
-
+  /*
+   * _calculateScore
+   *
+   * entry    -- an nsIAutoCompleteResult entry
+   * aSearchString -- current value of the input (lowercase)
+   * searchTokens -- array of tokens of the search string
+   *
+   * Returns: an int
+   */
   _calculateScore(entry, aSearchString, searchTokens) {
     let boundaryCalc = 0;
-    
+    // for each word, calculate word boundary weights
     for (let token of searchTokens) {
       if (entry.textLowerCase.startsWith(token)) {
         boundaryCalc++;
@@ -573,16 +571,16 @@ FormAutoComplete.prototype = {
       }
     }
     boundaryCalc = boundaryCalc * this._boundaryWeight;
-    
-    
+    // now add more weight if we have a traditional prefix match and
+    // multiply boundary bonuses by boundary weight
     if (entry.textLowerCase.startsWith(aSearchString)) {
       boundaryCalc += this._prefixWeight;
     }
     entry.totalScore = Math.round(entry.frecency * Math.max(1, boundaryCalc));
   },
-}; 
+}; // end of FormAutoComplete implementation
 
-
+// nsIAutoCompleteResult implementation
 function FormAutoCompleteResult(client, entries, fieldName, searchString) {
   this.client = client;
   this.entries = entries;
@@ -596,7 +594,7 @@ FormAutoCompleteResult.prototype = {
     "nsISupportsWeakReference",
   ]),
 
-  
+  // private
   client: null,
   entries: null,
   fieldName: null,
@@ -610,13 +608,13 @@ FormAutoCompleteResult.prototype = {
     }
   },
 
-  
-  
+  // Allow autoCompleteSearch to get at the JS object so it can
+  // modify some readonly properties for internal use.
   get wrappedJSObject() {
     return this;
   },
 
-  
+  // Interfaces from idl...
   searchString: "",
   errorDescription: "",
   get defaultIndex() {
@@ -675,5 +673,3 @@ FormAutoCompleteResult.prototype = {
     this.client.remove(removedEntry.text, removedEntry.guid);
   },
 };
-
-var EXPORTED_SYMBOLS = ["FormAutoComplete"];

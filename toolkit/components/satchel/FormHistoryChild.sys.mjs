@@ -1,14 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["FormHistoryChild"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -38,7 +32,7 @@ function log(message) {
   Services.console.logStringMessage("satchelFormListener: " + message);
 }
 
-class FormHistoryChild extends JSWindowActorChild {
+export class FormHistoryChild extends JSWindowActorChild {
   handleEvent(event) {
     switch (event.type) {
       case "DOMFormBeforeSubmit": {
@@ -75,24 +69,24 @@ class FormHistoryChild extends JSWindowActorChild {
         continue;
       }
 
-      
+      // Only use inputs that hold text values (not including type="password")
       if (!input.mozIsTextField(true)) {
         continue;
       }
 
-      
-      
+      // Don't save fields that were previously type=password such as on sites
+      // that allow the user to toggle password visibility.
       if (input.hasBeenTypePassword) {
         continue;
       }
 
-      
-      
+      // Bug 1780571, Bug 394612: If Login Manager marked this input, don't save it.
+      // The login manager will deal with remembering it.
       if (lazy.gFormFillService.isLoginManagerField(input)) {
         continue;
       }
 
-      
+      // Don't save values when @autocomplete is "off" or has a sensitive field name.
       let autocompleteInfo = input.getAutocompleteInfo();
       if (autocompleteInfo && !autocompleteInfo.canAutomaticallyPersist) {
         continue;
@@ -100,19 +94,19 @@ class FormHistoryChild extends JSWindowActorChild {
 
       const value = input.lastInteractiveValue?.trim();
 
-      
-      
-      
+      // Only save user entered values even if they match the default value.
+      // Any script input is ignored.
+      // See Bug 1642570 for details.
       if (!value) {
         continue;
       }
 
-      
+      // Save only when user input was last.
       if (value != input.value.trim()) {
         continue;
       }
 
-      
+      // Don't save credit card numbers.
       if (lazy.CreditCard.isValidNumber(value)) {
         log("skipping saving a credit card number");
         continue;
@@ -128,13 +122,13 @@ class FormHistoryChild extends JSWindowActorChild {
         continue;
       }
 
-      
+      // Limit stored data to 200 characters.
       if (name.length > 200 || value.length > 200) {
         log("skipping input that has a name/value too large");
         continue;
       }
 
-      
+      // Limit number of fields stored per form.
       if (entries.length >= 100) {
         log("not saving any more entries for this form.");
         break;

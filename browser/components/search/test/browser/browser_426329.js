@@ -1,6 +1,7 @@
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  FormHistoryTestUtils: "resource://testing-common/FormHistoryTestUtils.jsm",
+ChromeUtils.defineESModuleGetters(this, {
+  FormHistoryTestUtils:
+    "resource://testing-common/FormHistoryTestUtils.sys.mjs",
 });
 
 function expectedURL(aSearchTerms) {

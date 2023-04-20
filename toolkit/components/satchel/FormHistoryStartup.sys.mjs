@@ -1,16 +1,14 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "FormHistory",
-  "resource://gre/modules/FormHistory.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
+});
 
-function FormHistoryStartup() {}
+export function FormHistoryStartup() {}
 
 FormHistoryStartup.prototype = {
   classID: Components.ID("{3A0012EB-007F-4BB8-AA81-A07385F77A25}"),
@@ -40,7 +38,7 @@ FormHistoryStartup.prototype = {
     }
     this.inited = true;
 
-    
+    // triggers needed service cleanup and db shutdown
     Services.obs.addObserver(this, "idle-daily", true);
     Services.obs.addObserver(this, "formhistory-expire-now", true);
 
@@ -54,9 +52,9 @@ FormHistoryStartup.prototype = {
   receiveMessage(message) {
     switch (message.name) {
       case "FormHistory:AutoCompleteSearchAsync": {
-        
-        
-        
+        // This case is only used for the search field. There is a
+        // similar algorithm in FormHistoryParent.jsm that uses
+        // sendQuery for other form fields.
 
         let { id, searchString, params } = message.data;
 
@@ -96,5 +94,3 @@ FormHistoryStartup.prototype = {
     }
   },
 };
-
-var EXPORTED_SYMBOLS = ["FormHistoryStartup"];

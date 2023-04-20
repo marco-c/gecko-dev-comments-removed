@@ -2,8 +2,8 @@
 
 
 
-var { FormHistory } = ChromeUtils.import(
-  "resource://gre/modules/FormHistory.jsm"
+var { FormHistory } = ChromeUtils.importESModule(
+  "resource://gre/modules/FormHistory.sys.mjs"
 );
 
 
