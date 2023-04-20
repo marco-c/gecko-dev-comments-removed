@@ -732,7 +732,7 @@ function TagPicker(props) {
     value: item
   }))), react.createElement("button", {
     className: "stp_tag_picker_button",
-    disabled: !inputValue?.length,
+    disabled: !inputValue?.length && !tags.length,
     "data-l10n-id": "pocket-panel-saved-save-tags",
     onClick: () => submitTags()
   }))), react.createElement("div", {
