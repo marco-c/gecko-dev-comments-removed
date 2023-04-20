@@ -12,6 +12,20 @@ export var LayoutUtils = {
     let rect = aElement.getBoundingClientRect();
     let win = aElement.ownerGlobal;
 
+    const { x, y, width, height } = this._rectToClientRect(win, rect);
+    return win.windowUtils.toScreenRectInCSSUnits(x, y, width, height);
+  },
+
+  
+
+
+
+  rectToScreenRect(win, rect) {
+    const { x, y, width, height } = this._rectToClientRect(win, rect);
+    return win.ownerGlobal.windowUtils.toScreenRect(x, y, width, height);
+  },
+
+  _rectToClientRect(win, rect) {
     let x = rect.left;
     let y = rect.top;
 
@@ -35,11 +49,11 @@ export var LayoutUtils = {
       parentFrame = win.browsingContext?.embedderElement;
     }
 
-    return aElement.ownerGlobal.windowUtils.toScreenRectInCSSUnits(
+    return {
       x,
       y,
-      rect.width,
-      rect.height
-    );
+      width: rect.width,
+      height: rect.height,
+    };
   },
 };
