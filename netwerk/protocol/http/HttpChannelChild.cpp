@@ -35,6 +35,7 @@
 #include "nsStringStream.h"
 #include "nsHttpChannel.h"
 #include "nsHttpHandler.h"
+#include "nsQueryObject.h"
 #include "nsNetUtil.h"
 #include "nsSerializationHelper.h"
 #include "mozilla/Attributes.h"
@@ -1462,6 +1463,36 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvRedirect3Complete() {
 
         self->Redirect3Complete();
       }));
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult HttpChannelChild::RecvRedirectFailed(
+    const nsresult& status) {
+  LOG(("HttpChannelChild::RecvRedirectFailed this=%p status=%X\n", this,
+       static_cast<uint32_t>(status)));
+  mEventQ->RunOrEnqueue(new NeckoTargetChannelFunctionEvent(
+      this, [self = UnsafePtr<HttpChannelChild>(this), status]() {
+        nsCOMPtr<nsIRedirectResultListener> vetoHook;
+        self->GetCallback(vetoHook);
+        if (vetoHook) {
+          vetoHook->OnRedirectResult(status);
+        }
+
+        if (RefPtr<HttpChannelChild> httpChannelChild =
+                do_QueryObject(self->mRedirectChannelChild)) {
+          
+          
+          Unused << httpChannelChild->CancelWithReason(
+              status, "HttpChannelChild RecvRedirectFailed"_ns);
+
+          
+          
+          
+          
+          httpChannelChild->DoNotifyListener();
+        }
+      }));
+
   return IPC_OK();
 }
 
