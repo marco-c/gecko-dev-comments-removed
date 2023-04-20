@@ -3,40 +3,62 @@
 
 
 
-
-function trusted_click(test, callback, container)
-{
+function trusted_click(container = document.body) {
     var document = container.ownerDocument;
     var button = document.createElement("button");
     button.textContent = "click to continue test";
     button.style.display = "block";
     button.style.fontSize = "20px";
     button.style.padding = "10px";
-    button.onclick = test.step_func(function()
-    {
-        callback();
-        container.removeChild(button);
+    button.addEventListener("click", () => {
+        button.remove();
     });
     container.appendChild(button);
+    
+    return Promise.race([
+        test_driver.click(button),
+        new Promise((resolve) => {
+            button.addEventListener("click", resolve);
+        }),
+    ]);
 }
 
 
-function trusted_request(test, element, container)
-{
-    trusted_click(test, () => {
-        var promise = element.requestFullscreen();
-        if (promise) {
-            
-            
-            promise.then(() => {}, () => {});
-        }
-    }, container || element.parentNode);
+async function trusted_request(element = document.body, whereToCreateButton = null) {
+    await trusted_click(whereToCreateButton ?? element.parentNode ?? element);
+    return element.requestFullscreen();
 }
 
 
-function trusted_request_with_promise(test, element, container, resolve, reject)
-{
-    trusted_click(test, () => {
-        element.requestFullscreen().then(resolve, reject);
-    }, container || element.parentNode);
+
+
+
+
+
+function fullScreenChange(target = document) {
+    return new Promise((resolve) =>
+        target.addEventListener("fullscreenchange", resolve, { once: true })
+    );
+}
+
+
+
+
+
+
+
+
+function promiseMessage(iframe) {
+    return new Promise((resolve) => {
+        window.addEventListener(
+            "message",
+            (e) => {
+                if (e.data?.report.api === "fullscreen") {
+                    resolve(e.data);
+                }
+            },
+            { once: true }
+        );
+        iframe.contentWindow.postMessage({ action: "report" }, "*");
+    });
 }
