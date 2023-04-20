@@ -1,0 +1,10 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation('tanh', '/webnn/resources/test_data/tanh.json', buildOperationWithSingleInput);
