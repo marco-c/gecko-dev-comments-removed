@@ -50,6 +50,7 @@ firefox_desktop_metrics = [
 
 
 background_update_metrics = [
+    "toolkit/components/crashes/metrics.yaml",
     "toolkit/mozapps/update/metrics.yaml",
 ]
 
@@ -57,6 +58,7 @@ background_update_metrics = [
 
 background_tasks_metrics = [
     "toolkit/components/backgroundtasks/metrics.yaml",
+    "toolkit/components/crashes/metrics.yaml",
 ]
 
 
@@ -95,6 +97,7 @@ firefox_desktop_pings = [
 
 
 background_update_pings = [
+    "toolkit/components/crashes/pings.yaml",
     "toolkit/mozapps/update/pings.yaml",
 ]
 
@@ -102,6 +105,7 @@ background_update_pings = [
 
 background_tasks_pings = [
     "toolkit/components/backgroundtasks/pings.yaml",
+    "toolkit/components/crashes/pings.yaml",
 ]
 
 
