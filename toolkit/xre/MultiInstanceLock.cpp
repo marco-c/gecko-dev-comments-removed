@@ -10,6 +10,7 @@
 #include "mozilla/UniquePtr.h"
 #include "nsPrintfCString.h"
 #include "nsPromiseFlatString.h"
+#include "nsXULAppAPI.h"
 #include "updatedefines.h"  
 
 #ifdef XP_WIN

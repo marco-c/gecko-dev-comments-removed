@@ -1137,9 +1137,12 @@ nsresult nsXREDirProvider::GetUpdateRootDir(nsIFile** aResult,
   nsAutoString updatePathStr;
   updatePathStr.Assign(updatePath.get());
   updRoot->InitWithPath(updatePathStr);
-#endif  
   updRoot.forget(aResult);
   return NS_OK;
+#else
+  updRoot.forget(aResult);
+  return NS_OK;
+#endif  
 }
 
 nsresult nsXREDirProvider::GetProfileStartupDir(nsIFile** aResult) {

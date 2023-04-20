@@ -10,6 +10,7 @@
 #ifdef XP_WIN
 #  include <windows.h>
 #endif
+#include "nsIFile.h"
 
 
 

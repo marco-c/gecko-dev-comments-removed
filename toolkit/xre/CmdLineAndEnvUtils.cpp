@@ -4,8 +4,13 @@
 
 
 #include "nsCOMPtr.h"
+#include "nsIFile.h"
 #include "nsDependentString.h"
 #include "prenv.h"
+
+#ifdef XP_WIN
+#  include <windows.h>
+#endif
 
 namespace mozilla {
 
