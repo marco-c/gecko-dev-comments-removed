@@ -1427,6 +1427,57 @@ var gKeywordURIFixup = {
   },
 };
 
+function serializeInputStream(aStream) {
+  let data = {
+    content: NetUtil.readInputStreamToString(aStream, aStream.available()),
+  };
+
+  if (aStream instanceof Ci.nsIMIMEInputStream) {
+    data.headers = new Map();
+    aStream.visitHeaders((name, value) => {
+      data.headers.set(name, value);
+    });
+  }
+
+  return data;
+}
+
+
+
+
+
+
+
+
+
+function handleUriInChrome(aBrowser, aUri) {
+  if (aUri.scheme == "file") {
+    try {
+      let mimeType = Cc["@mozilla.org/mime;1"]
+        .getService(Ci.nsIMIMEService)
+        .getTypeFromURI(aUri);
+      if (mimeType == "application/x-xpinstall") {
+        let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+        AddonManager.getInstallForURL(aUri.spec, {
+          telemetryInfo: { source: "file-url" },
+        }).then(install => {
+          AddonManager.installAddonFromWebpage(
+            mimeType,
+            aBrowser,
+            systemPrincipal,
+            install
+          );
+        });
+        return true;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
+  return false;
+}
+
 
 
 function _createNullPrincipalFromTabUserContextId(tab = gBrowser.selectedTab) {
@@ -1437,6 +1488,104 @@ function _createNullPrincipalFromTabUserContextId(tab = gBrowser.selectedTab) {
   return Services.scriptSecurityManager.createNullPrincipal({
     userContextId,
   });
+}
+
+
+
+function _loadURI(browser, uri, params = {}) {
+  if (!uri) {
+    uri = "about:blank";
+  }
+
+  let {
+    triggeringPrincipal,
+    referrerInfo,
+    postData,
+    userContextId,
+    csp,
+    remoteTypeOverride,
+    hasValidUserGestureActivation,
+    globalHistoryOptions,
+  } = params || {};
+  let loadFlags =
+    params.loadFlags || params.flags || Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
+  hasValidUserGestureActivation ??=
+    document.hasValidTransientUserGestureActivation;
+
+  if (!triggeringPrincipal) {
+    throw new Error("Must load with a triggering Principal");
+  }
+
+  if (userContextId && userContextId != browser.getAttribute("usercontextid")) {
+    throw new Error("Cannot load with mismatched userContextId");
+  }
+
+  
+  let fixupFlags = Ci.nsIURIFixup.FIXUP_FLAG_NONE;
+  if (loadFlags & Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP) {
+    fixupFlags |= Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
+  }
+  if (loadFlags & Ci.nsIWebNavigation.LOAD_FLAGS_FIXUP_SCHEME_TYPOS) {
+    fixupFlags |= Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS;
+  }
+  if (PrivateBrowsingUtils.isBrowserPrivate(browser)) {
+    fixupFlags |= Ci.nsIURIFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
+  }
+
+  try {
+    let uriObject = Services.uriFixup.getFixupURIInfo(uri, fixupFlags)
+      .preferredURI;
+    if (uriObject && handleUriInChrome(browser, uriObject)) {
+      
+      return;
+    }
+  } catch (e) {
+    
+  }
+
+  
+  browser.isNavigating = true;
+
+  if (globalHistoryOptions?.triggeringSearchEngine) {
+    browser.setAttribute(
+      "triggeringSearchEngine",
+      globalHistoryOptions.triggeringSearchEngine
+    );
+    browser.setAttribute("triggeringSearchEngineURL", uri);
+  } else {
+    browser.removeAttribute("triggeringSearchEngine");
+    browser.removeAttribute("triggeringSearchEngineURL");
+  }
+
+  if (globalHistoryOptions?.triggeringSponsoredURL) {
+    try {
+      
+      
+      const triggeringSponsoredURL = Services.uriFixup.getFixupURIInfo(
+        globalHistoryOptions.triggeringSponsoredURL,
+        fixupFlags
+      ).fixedURI.spec;
+      browser.setAttribute("triggeringSponsoredURL", triggeringSponsoredURL);
+      const time =
+        globalHistoryOptions.triggeringSponsoredURLVisitTimeMS || Date.now();
+      browser.setAttribute("triggeringSponsoredURLVisitTimeMS", time);
+    } catch (e) {}
+  }
+
+  let loadURIOptions = {
+    triggeringPrincipal,
+    csp,
+    loadFlags,
+    referrerInfo,
+    postData,
+    hasValidUserGestureActivation,
+    remoteTypeOverride,
+  };
+  try {
+    browser.webNavigation.loadURI(uri, loadURIOptions);
+  } finally {
+    browser.isNavigating = false;
+  }
 }
 
 let _resolveDelayedStartup;
@@ -3267,10 +3416,7 @@ var BrowserOnClick = {
     
     
     
-    
-    
-    
-    browsingContext.fixupAndLoadURIString(blockedInfo.uri, {
+    browsingContext.loadURI(blockedInfo.uri, {
       triggeringPrincipal,
       flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
     });
@@ -3361,7 +3507,7 @@ var BrowserOnClick = {
 
 
 function getMeOutOfHere(browsingContext) {
-  browsingContext.top.fixupAndLoadURIString(getDefaultHomePage(), {
+  browsingContext.top.loadURI(getDefaultHomePage(), {
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(), 
   });
 }
@@ -3392,13 +3538,12 @@ function BrowserReloadWithFlags(reloadFlags) {
 
   for (let tab of gBrowser.selectedTabs) {
     let browser = tab.linkedBrowser;
-    let url = browser.currentURI;
-    let urlSpec = url.spec;
+    let url = browser.currentURI.spec;
     
     
     
     let principal = tab.linkedBrowser.contentPrincipal;
-    if (gBrowser.updateBrowserRemotenessByURL(browser, urlSpec)) {
+    if (gBrowser.updateBrowserRemotenessByURL(browser, url)) {
       
       
       
@@ -6252,11 +6397,7 @@ nsBrowserAccess.prototype = {
             
             loadFlags |= Ci.nsIWebNavigation.LOAD_FLAGS_FIRST_LOAD;
           }
-          
-          
-          
-          
-          gBrowser.fixupAndLoadURIString(aURI.spec, {
+          gBrowser.loadURI(aURI.spec, {
             triggeringPrincipal: aTriggeringPrincipal,
             csp: aCsp,
             loadFlags,
@@ -8595,7 +8736,7 @@ function switchToTabHavingURI(aURI, aOpenNew, aOpenParams = {}) {
         }
 
         if (ignoreFragment == "whenComparingAndReplace" || replaceQueryString) {
-          browser.loadURI(aURI, {
+          browser.loadURI(aURI.spec, {
             triggeringPrincipal:
               aOpenParams.triggeringPrincipal ||
               _createNullPrincipalFromTabUserContextId(),

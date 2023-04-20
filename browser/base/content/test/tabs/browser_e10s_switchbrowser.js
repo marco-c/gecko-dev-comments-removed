@@ -82,18 +82,15 @@ function clear_history() {
 }
 
 
-var waitForLoad = async function(uriString) {
-  info("Loading " + uriString);
+var waitForLoad = async function(uri) {
+  info("Loading " + uri);
   
   let loadURIOptions = {
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
   };
-  gBrowser.selectedBrowser.webNavigation.loadURI(
-    Services.io.newURI(uriString),
-    loadURIOptions
-  );
+  gBrowser.selectedBrowser.webNavigation.loadURI(uri, loadURIOptions);
 
-  await BrowserTestUtils.browserStopped(gBrowser, uriString);
+  await BrowserTestUtils.browserStopped(gBrowser, uri);
 
   
   
@@ -114,16 +111,16 @@ var waitForLoad = async function(uriString) {
 
 
 var waitForLoadWithFlags = async function(
-  uriString,
+  uri,
   flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE
 ) {
-  info("Loading " + uriString + " flags = " + flags);
-  gBrowser.selectedBrowser.loadURI(Services.io.newURI(uriString), {
+  info("Loading " + uri + " flags = " + flags);
+  gBrowser.selectedBrowser.loadURI(uri, {
     flags,
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
   });
 
-  await BrowserTestUtils.browserStopped(gBrowser, uriString);
+  await BrowserTestUtils.browserStopped(gBrowser, uri);
   if (!(flags & Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY)) {
     if (flags & Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY) {
       gExpectedHistory.entries.pop();

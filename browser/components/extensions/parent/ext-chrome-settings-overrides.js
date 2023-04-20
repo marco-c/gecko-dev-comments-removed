@@ -66,7 +66,7 @@ XPCOMUtils.defineLazyGetter(this, "homepagePopup", () => {
       
       let gBrowser = win.gBrowser;
       let tab = gBrowser.selectedTab;
-      await replaceUrlInTab(gBrowser, tab, Services.io.newURI("about:blank"));
+      await replaceUrlInTab(gBrowser, tab, "about:blank");
       Services.prefs.addObserver(HOMEPAGE_PREF, async function prefObserver() {
         Services.prefs.removeObserver(HOMEPAGE_PREF, prefObserver);
         let loaded = waitForTabLoaded(tab);

@@ -127,9 +127,9 @@ global.waitForTabLoaded = (tab, url) => {
   });
 };
 
-global.replaceUrlInTab = (gBrowser, tab, uri) => {
-  let loaded = waitForTabLoaded(tab, uri.spec);
-  gBrowser.loadURI(uri, {
+global.replaceUrlInTab = (gBrowser, tab, url) => {
+  let loaded = waitForTabLoaded(tab, url);
+  gBrowser.loadURI(url, {
     flags: Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY,
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(), 
   });

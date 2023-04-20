@@ -74,18 +74,29 @@ class RemoteWebNavigation {
     );
     this._browser.browsingContext.goToIndex(aIndex, cancelContentJSEpoch, true);
   }
-
-  _speculativeConnect(uri, loadURIOptions) {
+  loadURI(aURI, aLoadURIOptions) {
+    let uri;
     try {
+      let fixupFlags = Services.uriFixup.webNavigationFlagsToFixupFlags(
+        aURI,
+        aLoadURIOptions.loadFlags
+      );
+      let isBrowserPrivate = lazy.PrivateBrowsingUtils.isBrowserPrivate(
+        this._browser
+      );
+      if (isBrowserPrivate) {
+        fixupFlags |= Services.uriFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
+      }
+
+      uri = Services.uriFixup.getFixupURIInfo(aURI, fixupFlags).preferredURI;
+
+      
       
       
       
       
       if (uri.schemeIs("http") || uri.schemeIs("https")) {
-        let isBrowserPrivate = lazy.PrivateBrowsingUtils.isBrowserPrivate(
-          this._browser
-        );
-        let principal = loadURIOptions.triggeringPrincipal;
+        let principal = aLoadURIOptions.triggeringPrincipal;
         
         
         
@@ -105,58 +116,16 @@ class RemoteWebNavigation {
       
       
     }
-  }
 
-  loadURI(uri, loadURIOptions) {
-    this._speculativeConnect(uri, loadURIOptions);
     let cancelContentJSEpoch = this.maybeCancelContentJSExecution(
       Ci.nsIRemoteTab.NAVIGATE_URL,
       { uri }
     );
-    this._browser.browsingContext.loadURI(uri, {
-      ...loadURIOptions,
+    this._browser.browsingContext.loadURI(aURI, {
+      ...aLoadURIOptions,
       cancelContentJSEpoch,
     });
   }
-
-  fixupAndLoadURIString(uriString, loadURIOptions) {
-    let uri;
-    try {
-      let fixupFlags = Services.uriFixup.webNavigationFlagsToFixupFlags(
-        uriString,
-        loadURIOptions.loadFlags
-      );
-      let isBrowserPrivate = lazy.PrivateBrowsingUtils.isBrowserPrivate(
-        this._browser
-      );
-      if (isBrowserPrivate) {
-        fixupFlags |= Services.uriFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
-      }
-
-      uri = Services.uriFixup.getFixupURIInfo(uriString, fixupFlags)
-        .preferredURI;
-    } catch (ex) {
-      
-      
-      
-    }
-    if (uri) {
-      this._speculativeConnect(uri, loadURIOptions);
-    }
-
-    
-    
-    
-    let cancelContentJSEpoch = this.maybeCancelContentJSExecution(
-      Ci.nsIRemoteTab.NAVIGATE_URL,
-      { uri: null }
-    );
-    this._browser.browsingContext.fixupAndLoadURIString(uriString, {
-      ...loadURIOptions,
-      cancelContentJSEpoch,
-    });
-  }
-
   reload(aReloadFlags) {
     this._browser.browsingContext.reload(aReloadFlags);
   }

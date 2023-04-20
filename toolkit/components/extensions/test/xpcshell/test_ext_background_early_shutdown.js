@@ -147,8 +147,8 @@ add_task(async function test_unload_extension_during_background_page_startup() {
     
     Management.once("extension-browser-inserted", (eventName, browser) => {
       
-      let browserFixupAndLoadURIString = browser.fixupAndLoadURIString;
-      browser.fixupAndLoadURIString = function() {
+      let browserLoadURI = browser.loadURI;
+      browser.loadURI = function() {
         Assert.equal(++backgroundLoadCount, 1, "loadURI should be called once");
         Assert.equal(
           arguments[0],
@@ -157,7 +157,7 @@ add_task(async function test_unload_extension_during_background_page_startup() {
         );
         
         arguments[0] = "about:blank";
-        browserFixupAndLoadURIString.apply(this, arguments);
+        browserLoadURI.apply(this, arguments);
 
         
         if (browser.isRemote) {

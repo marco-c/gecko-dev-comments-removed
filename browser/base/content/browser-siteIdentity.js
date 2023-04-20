@@ -553,7 +553,7 @@ var gIdentityHandler = {
     
     
     if (this._isAboutHttpsOnlyErrorPage) {
-      gBrowser.loadURI(newURI, {
+      gBrowser.loadURI(newURI.spec, {
         triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
         loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY,
       });

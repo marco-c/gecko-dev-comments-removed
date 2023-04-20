@@ -57,7 +57,7 @@ var gTime = -1;
 var gStartTime = -1;
 var gReference = -1;
 
-var gBrowser;
+var content;
 
 
 var TEST_DOES_OWN_TIMING = 1;
@@ -222,9 +222,7 @@ async function plInit() {
     browserWindow.resizeTo(winWidth, winHeight);
     browserWindow.moveTo(0, 0);
     browserWindow.focus();
-    
-    
-    gBrowser = browserWindow.gBrowser;
+    content = browserWindow.gBrowser;
 
     
     
@@ -240,7 +238,7 @@ async function plInit() {
     
     
     
-    let tab = gBrowser.selectedTab;
+    let tab = content.selectedTab;
     tab.addEventListener("TabRemotenessChange", function(evt) {
       loadFrameScripts(tab.linkedBrowser);
     });
@@ -292,14 +290,14 @@ function plLoadPage() {
     );
   }
 
-  var pageURL = pages[pageIndex].url;
+  var pageName = pages[pageIndex].url.spec;
 
   if (removeLastAddedMsgListener) {
     removeLastAddedMsgListener();
     removeLastAddedMsgListener = null;
   }
 
-  let tab = gBrowser.selectedTab;
+  let tab = content.selectedTab;
   tab.addEventListener("TabRemotenessChange", evt => {
     addMsgListeners(tab.linkedBrowser);
   });
@@ -317,7 +315,7 @@ function plLoadPage() {
     isPDFPaintPending = true;
   }
 
-  startAndLoadURI(pageURL);
+  startAndLoadURI(pageName);
 }
 
 function addMsgListeners(browser) {
@@ -380,22 +378,22 @@ function loadFrameScripts(browser) {
   }
 }
 
-function startAndLoadURI(pageURL) {
+function startAndLoadURI(pageName) {
   if (!(plPageFlags() & TEST_DOES_OWN_TIMING)) {
     
     
     
-    TalosParentProfiler.resume("Starting to load URI " + pageURL.spec);
+    TalosParentProfiler.resume("Starting to load URI " + pageName);
   }
 
   start_time = window.performance.now();
   if (loadNoCache) {
-    gBrowser.loadURI(pageURL, {
+    content.loadURI(pageName, {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE,
     });
   } else {
-    gBrowser.loadURI(pageURL, {
+    content.loadURI(pageName, {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     });
   }
@@ -459,10 +457,10 @@ function loadFail() {
     );
     
     pageCycle--;
-    gBrowser.removeEventListener("load", plLoadHandler, true);
-    gBrowser.removeEventListener("load", plLoadHandlerCapturing, true);
-    gBrowser.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
-    gBrowser.removeEventListener("MozAfterPaint", plPainted, true);
+    content.removeEventListener("load", plLoadHandler, true);
+    content.removeEventListener("load", plLoadHandlerCapturing, true);
+    content.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
+    content.removeEventListener("MozAfterPaint", plPainted, true);
     gPaintWindow.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
     gPaintWindow.removeEventListener("MozAfterPaint", plPainted, true);
     removeLastAddedMsgListener = null;
@@ -644,7 +642,7 @@ function plLoadHandlerCapturing(evt) {
   }
 
   
-  gBrowser.contentWindow.wrappedJSObject.tpRecordTime = function(
+  content.contentWindow.wrappedJSObject.tpRecordTime = function(
     time,
     startTime,
     testName
@@ -655,11 +653,11 @@ function plLoadHandlerCapturing(evt) {
     setTimeout(plWaitForPaintingCapturing, 0);
   };
 
-  gBrowser.contentWindow.wrappedJSObject.plGarbageCollect = function() {
+  content.contentWindow.wrappedJSObject.plGarbageCollect = function() {
     window.windowUtils.garbageCollect();
   };
 
-  gBrowser.removeEventListener("load", plLoadHandlerCapturing, true);
+  content.removeEventListener("load", plLoadHandlerCapturing, true);
 
   setTimeout(plWaitForPaintingCapturing, 0);
 }
@@ -675,7 +673,7 @@ function sendScroll() {
     stepSize: SCROLL_TEST_STEP_PX,
     opt_numSteps: SCROLL_TEST_NUM_STEPS,
   };
-  let mm = gBrowser.selectedBrowser.messageManager;
+  let mm = content.selectedBrowser.messageManager;
   mm.sendAsyncMessage("PageLoader:ScrollTest", { details });
 }
 
@@ -740,7 +738,7 @@ function plLoadHandler(evt) {
     return;
   }
 
-  gBrowser.removeEventListener("load", plLoadHandler, true);
+  content.removeEventListener("load", plLoadHandler, true);
   setTimeout(waitForPainted, 0);
 }
 
@@ -899,16 +897,16 @@ function plStopAll(force) {
     dumpLine(e);
   }
 
-  if (gBrowser) {
-    gBrowser.removeEventListener("load", plLoadHandlerCapturing, true);
-    gBrowser.removeEventListener("load", plLoadHandler, true);
+  if (content) {
+    content.removeEventListener("load", plLoadHandlerCapturing, true);
+    content.removeEventListener("load", plLoadHandler, true);
 
     if (useMozAfterPaint) {
-      gBrowser.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
-      gBrowser.removeEventListener("MozAfterPaint", plPainted, true);
+      content.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
+      content.removeEventListener("MozAfterPaint", plPainted, true);
     }
 
-    let mm = gBrowser.selectedBrowser.messageManager;
+    let mm = content.selectedBrowser.messageManager;
     mm.removeMessageListener("PageLoader:LoadEvent", ContentListener);
     mm.removeMessageListener("PageLoader:RecordTime", ContentListener);
     mm.removeMessageListener("PageLoader:Error", ContentListener);

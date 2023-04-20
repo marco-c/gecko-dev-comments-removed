@@ -99,7 +99,7 @@ add_task(async function test() {
         
         
         await promiseLoaded(TEST_PAGE, () => {
-          browser.loadURI(Services.io.newURI(TEST_PAGE), {
+          browser.loadURI(TEST_PAGE, {
             triggeringPrincipal: document.nodePrincipal,
           });
         });

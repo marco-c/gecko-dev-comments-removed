@@ -264,7 +264,7 @@ class GeckoViewNavigation extends GeckoViewModule {
         
         
         
-        this.browser.fixupAndLoadURIString(uri, {
+        this.browser.loadURI(uri, {
           flags: navFlags,
           referrerInfo,
           triggeringPrincipal,
@@ -505,7 +505,7 @@ class GeckoViewNavigation extends GeckoViewModule {
     }
 
     
-    browser.loadURI(uri, {
+    browser.loadURI(uri.spec, {
       triggeringPrincipal,
       csp,
       referrerInfo,

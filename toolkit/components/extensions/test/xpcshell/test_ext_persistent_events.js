@@ -539,7 +539,7 @@ add_task(async function test_shutdown_before_background_loaded() {
   let bgAbortedPromise = new Promise(resolve => {
     let Management = ExtensionParent.apiManager;
     Management.once("extension-browser-inserted", (eventName, browser) => {
-      browser.fixupAndLoadURIString = async () => {
+      browser.loadURI = async () => {
         
         
         fire = (await primeListenerPromise)[0].fire;

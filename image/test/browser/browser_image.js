@@ -61,7 +61,7 @@ function testBFCache() {
     is(chances > 0, true, "Must have animated a few frames so far");
 
     
-    gBrowser.loadURI(Services.io.newURI("about:blank"));
+    gBrowser.loadURI("about:blank");
 
     
     
