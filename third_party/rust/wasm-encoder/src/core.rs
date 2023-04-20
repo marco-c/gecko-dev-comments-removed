@@ -48,6 +48,12 @@ pub(crate) const CORE_TAG_SORT: u8 = 0x04;
 pub trait Section: Encode {
     
     fn id(&self) -> u8;
+
+    
+    fn append_to(&self, dst: &mut Vec<u8>) {
+        dst.push(self.id());
+        self.encode(dst);
+    }
 }
 
 
@@ -112,14 +118,18 @@ pub struct Module {
 impl Module {
     
     #[rustfmt::skip]
+    pub const HEADER: [u8; 8] = [
+        
+        0x00, 0x61, 0x73, 0x6D,
+        
+        0x01, 0x00, 0x00, 0x00,
+    ];
+
+    
+    #[rustfmt::skip]
     pub fn new() -> Self {
         Module {
-            bytes: vec![
-                // Magic
-                0x00, 0x61, 0x73, 0x6D,
-                // Version
-                0x01, 0x00, 0x00, 0x00,
-            ],
+            bytes: Self::HEADER.to_vec(),
         }
     }
 

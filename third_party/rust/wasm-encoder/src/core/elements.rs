@@ -1,4 +1,4 @@
-use crate::{encode_section, ConstExpr, Encode, Section, SectionId, ValType};
+use crate::{encode_section, ConstExpr, Encode, RefType, Section, SectionId};
 
 
 
@@ -80,7 +80,7 @@ pub struct ElementSegment<'a> {
     
     pub mode: ElementMode<'a>,
     
-    pub element_type: ValType,
+    pub element_type: RefType,
     
     pub elements: Elements<'a>,
 }
@@ -171,7 +171,7 @@ impl ElementSection {
         &mut self,
         table_index: Option<u32>,
         offset: &ConstExpr,
-        element_type: ValType,
+        element_type: RefType,
         elements: Elements<'_>,
     ) -> &mut Self {
         self.segment(ElementSegment {
@@ -187,7 +187,7 @@ impl ElementSection {
     
     
     
-    pub fn passive<'a>(&mut self, element_type: ValType, elements: Elements<'a>) -> &mut Self {
+    pub fn passive<'a>(&mut self, element_type: RefType, elements: Elements<'a>) -> &mut Self {
         self.segment(ElementSegment {
             mode: ElementMode::Passive,
             element_type,
@@ -198,7 +198,7 @@ impl ElementSection {
     
     
     
-    pub fn declared<'a>(&mut self, element_type: ValType, elements: Elements<'a>) -> &mut Self {
+    pub fn declared<'a>(&mut self, element_type: RefType, elements: Elements<'a>) -> &mut Self {
         self.segment(ElementSegment {
             mode: ElementMode::Declared,
             element_type,

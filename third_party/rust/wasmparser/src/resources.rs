@@ -13,7 +13,10 @@
 
 
 
-use crate::{FuncType, GlobalType, MemoryType, TableType, ValType};
+use crate::{
+    BinaryReaderError, FuncType, GlobalType, HeapType, MemoryType, RefType, TableType, ValType,
+    WasmFeatures,
+};
 use std::ops::Range;
 
 
@@ -209,9 +212,43 @@ pub trait WasmModuleResources {
     
     fn func_type_at(&self, type_idx: u32) -> Option<&Self::FuncType>;
     
+    
+    fn type_index_of_function(&self, func_idx: u32) -> Option<u32>;
+    
     fn type_of_function(&self, func_idx: u32) -> Option<&Self::FuncType>;
     
-    fn element_type_at(&self, at: u32) -> Option<ValType>;
+    fn element_type_at(&self, at: u32) -> Option<RefType>;
+    
+    
+    fn matches(&self, t1: ValType, t2: ValType) -> bool;
+    
+    fn check_value_type(
+        &self,
+        t: ValType,
+        features: &WasmFeatures,
+        offset: usize,
+    ) -> Result<(), BinaryReaderError>;
+
+    
+    
+    fn check_heap_type(
+        &self,
+        heap_type: HeapType,
+        features: &WasmFeatures,
+        offset: usize,
+    ) -> Result<(), BinaryReaderError> {
+        
+        
+        self.check_value_type(
+            RefType {
+                nullable: true,
+                heap_type,
+            }
+            .into(),
+            features,
+            offset,
+        )
+    }
 
     
     fn element_count(&self) -> u32;
@@ -243,11 +280,25 @@ where
     fn func_type_at(&self, at: u32) -> Option<&Self::FuncType> {
         T::func_type_at(self, at)
     }
+    fn type_index_of_function(&self, func_idx: u32) -> Option<u32> {
+        T::type_index_of_function(self, func_idx)
+    }
     fn type_of_function(&self, func_idx: u32) -> Option<&Self::FuncType> {
         T::type_of_function(self, func_idx)
     }
-    fn element_type_at(&self, at: u32) -> Option<ValType> {
+    fn check_value_type(
+        &self,
+        t: ValType,
+        features: &WasmFeatures,
+        offset: usize,
+    ) -> Result<(), BinaryReaderError> {
+        T::check_value_type(self, t, features, offset)
+    }
+    fn element_type_at(&self, at: u32) -> Option<RefType> {
         T::element_type_at(self, at)
+    }
+    fn matches(&self, t1: ValType, t2: ValType) -> bool {
+        T::matches(self, t1, t2)
     }
 
     fn element_count(&self) -> u32 {
@@ -287,12 +338,29 @@ where
         T::func_type_at(self, type_idx)
     }
 
+    fn type_index_of_function(&self, func_idx: u32) -> Option<u32> {
+        T::type_index_of_function(self, func_idx)
+    }
+
     fn type_of_function(&self, func_idx: u32) -> Option<&Self::FuncType> {
         T::type_of_function(self, func_idx)
     }
 
-    fn element_type_at(&self, at: u32) -> Option<ValType> {
+    fn check_value_type(
+        &self,
+        t: ValType,
+        features: &WasmFeatures,
+        offset: usize,
+    ) -> Result<(), BinaryReaderError> {
+        T::check_value_type(self, t, features, offset)
+    }
+
+    fn element_type_at(&self, at: u32) -> Option<RefType> {
         T::element_type_at(self, at)
+    }
+
+    fn matches(&self, t1: ValType, t2: ValType) -> bool {
+        T::matches(self, t1, t2)
     }
 
     fn element_count(&self) -> u32 {

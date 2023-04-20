@@ -1,4 +1,4 @@
-use crate::{encode_section, Encode, Section, SectionId, ValType};
+use crate::{encode_section, ConstExpr, Encode, RefType, Section, SectionId};
 
 
 
@@ -49,6 +49,18 @@ impl TableSection {
         self.num_added += 1;
         self
     }
+
+    
+    
+    
+    pub fn table_with_init(&mut self, table_type: TableType, init: &ConstExpr) -> &mut Self {
+        self.bytes.push(0x40);
+        self.bytes.push(0x00);
+        table_type.encode(&mut self.bytes);
+        init.encode(&mut self.bytes);
+        self.num_added += 1;
+        self
+    }
 }
 
 impl Encode for TableSection {
@@ -67,7 +79,7 @@ impl Section for TableSection {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct TableType {
     
-    pub element_type: ValType,
+    pub element_type: RefType,
     
     pub minimum: u32,
     
