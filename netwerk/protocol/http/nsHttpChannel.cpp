@@ -1528,7 +1528,9 @@ nsresult nsHttpChannel::CallOnStartRequest() {
   
   
   
-  if (EnsureOpaqueResponseIsAllowed() == OpaqueResponseAllowed::No) {
+  bool compressedMediaAndImageDetectorStarted = false;
+  if (EnsureOpaqueResponseIsAllowed(compressedMediaAndImageDetectorStarted) ==
+      OpaqueResponseAllowed::No) {
     mChannelBlockedByOpaqueResponse = true;
     return NS_ERROR_FAILURE;
   }
@@ -1583,7 +1585,7 @@ nsresult nsHttpChannel::CallOnStartRequest() {
 
   
   
-  if (!unknownDecoderStarted) {
+  if (!unknownDecoderStarted && !compressedMediaAndImageDetectorStarted) {
     auto isAllowedOrErr = EnsureOpaqueResponseIsAllowedAfterSniff();
     if (isAllowedOrErr.isErr() ||
         isAllowedOrErr.inspect() == OpaqueResponseAllowed::No) {
