@@ -31,18 +31,18 @@ const AREAS = [
 
 
 
-function assertInteractionScalars(expectedAreas) {
+
+function assertInteractionScalars(expectedAreas, expectedOther = {}) {
   let processScalars =
     Services.telemetry.getSnapshotForKeyedScalars("main", true)?.parent ?? {};
 
-  for (let source of AREAS) {
+  let compareSourceWithExpectations = (source, expected = {}) => {
     let scalars = processScalars?.[`browser.ui.interaction.${source}`] ?? {};
-
-    let expected = expectedAreas[source] ?? {};
 
     let expectedKeys = new Set(
       Object.keys(scalars).concat(Object.keys(expected))
     );
+
     for (let key of expectedKeys) {
       Assert.equal(
         scalars[key],
@@ -50,6 +50,14 @@ function assertInteractionScalars(expectedAreas) {
         `Expected to see the correct value for ${key} in ${source}.`
       );
     }
+  };
+
+  for (let source of AREAS) {
+    compareSourceWithExpectations(source, expectedAreas[source]);
+  }
+
+  for (let source in expectedOther) {
+    compareSourceWithExpectations(source, expectedOther[source]);
   }
 }
 
@@ -147,20 +155,27 @@ add_task(async function toolbarButtons() {
 
     click(customButton);
 
-    assertInteractionScalars({
-      nav_bar: {
-        "stop-reload-button": 1,
-        "back-button": 2,
-        "12foo": 1,
+    assertInteractionScalars(
+      {
+        nav_bar: {
+          "stop-reload-button": 1,
+          "back-button": 2,
+          "12foo": 1,
+        },
+        tabs_bar: {
+          "alltabs-button": 1,
+          "tab-close-button": 1,
+        },
+        bookmarks_bar: {
+          "bookmark-item": 1,
+        },
       },
-      tabs_bar: {
-        "alltabs-button": 1,
-        "tab-close-button": 1,
-      },
-      bookmarks_bar: {
-        "bookmark-item": 1,
-      },
-    });
+      {
+        all_tabs_panel_entrypoint: {
+          "alltabs-button": 1,
+        },
+      }
+    );
     CustomizableUI.destroyWidget("12foo");
   });
 });
@@ -217,6 +232,78 @@ add_task(async function contextMenu() {
     
     gBrowser.clearMultiSelectedTabs();
   });
+});
+
+add_task(async function contextMenu_entrypoints() {
+  
+
+
+
+
+
+
+
+
+
+  let openAndCloseTabContextMenu = async triggerNode => {
+    let contextMenu = document.getElementById("tabContextMenu");
+    let popupShown = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
+    EventUtils.synthesizeMouseAtCenter(triggerNode, {
+      type: "contextmenu",
+      button: 2,
+    });
+    await popupShown;
+
+    let popupHidden = BrowserTestUtils.waitForEvent(contextMenu, "popuphidden");
+    let menuitem = document.getElementById("context_reloadTab");
+    contextMenu.activateItem(menuitem);
+    await popupHidden;
+  };
+
+  const TAB_CONTEXTMENU_ENTRYPOINT_SCALAR =
+    "browser.ui.interaction.tabs_context_entrypoint";
+  Services.telemetry.clearScalars();
+
+  let scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
+  TelemetryTestUtils.assertScalarUnset(
+    scalars,
+    TAB_CONTEXTMENU_ENTRYPOINT_SCALAR
+  );
+
+  await openAndCloseTabContextMenu(gBrowser.selectedTab);
+  scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
+  TelemetryTestUtils.assertKeyedScalar(
+    scalars,
+    TAB_CONTEXTMENU_ENTRYPOINT_SCALAR,
+    "tabs-bar",
+    1
+  );
+
+  gTabsPanel.initElements();
+  let allTabsView = document.getElementById("allTabsMenu-allTabsView");
+  let allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(
+    allTabsView,
+    "ViewShown"
+  );
+  gTabsPanel.showAllTabsPanel(null);
+  await allTabsPopupShownPromise;
+
+  let firstTabItem = gTabsPanel.allTabsViewTabs.children[0];
+  await openAndCloseTabContextMenu(firstTabItem);
+  scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
+  TelemetryTestUtils.assertKeyedScalar(
+    scalars,
+    TAB_CONTEXTMENU_ENTRYPOINT_SCALAR,
+    "alltabs-menu",
+    1
+  );
+
+  let allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(
+    allTabsView.panelMultiView,
+    "PanelMultiViewHidden"
+  );
+  gTabsPanel.hideAllTabsPanel();
+  await allTabsPopupHiddenPromise;
 });
 
 add_task(async function appMenu() {
