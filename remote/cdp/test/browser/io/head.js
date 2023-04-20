@@ -14,9 +14,13 @@ const { streamRegistry } = ChromeUtils.importESModule(
   "chrome://remote/content/cdp/domains/parent/IO.sys.mjs"
 );
 
-async function registerFileStream(contents, options) {
-  const stream = await createFileStream(contents, options);
-  const handle = streamRegistry.add(stream);
+async function registerFileStream(contents, options = {}) {
+  
+  
+  options.remove = false;
 
-  return { handle, stream };
+  const { file, path } = await createFile(contents, options);
+  const handle = streamRegistry.add(file);
+
+  return { handle, path };
 }
