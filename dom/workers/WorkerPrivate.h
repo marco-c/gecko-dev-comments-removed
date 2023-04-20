@@ -891,10 +891,6 @@ class WorkerPrivate final
     return mLoadInfo.mServiceWorkersTestingInWindow;
   }
 
-  bool ShouldResistFingerprinting() const {
-    return mLoadInfo.mShouldResistFingerprinting;
-  }
-
   
   bool IsThirdPartyContextToTopWindow() const {
     return mLoadInfo.mIsThirdPartyContextToTopWindow;
