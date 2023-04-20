@@ -739,12 +739,15 @@ double AudioContext::CurrentTime() {
 
   double rawTime = track->TrackTimeToSeconds(track->GetCurrentTime());
 
+  RTPCallerType callerType = GetParentObject()->AsGlobal()->GetRTPCallerType();
+
   
   
   
   
   
-  if ((128 / mSampleRate) * 1000.0 > nsRFPService::TimerResolution() / 1000.0) {
+  if ((128 / mSampleRate) * 1000.0 >
+      nsRFPService::TimerResolution(callerType) / 1000.0) {
     return rawTime;
   }
 
@@ -753,9 +756,7 @@ double AudioContext::CurrentTime() {
   
   
   return nsRFPService::ReduceTimePrecisionAsSecs(
-      rawTime, GetRandomTimelineSeed(),
-       false,
-      GetParentObject()->AsGlobal()->CrossOriginIsolated());
+      rawTime, GetRandomTimelineSeed(), callerType);
 }
 
 nsISerialEventTarget* AudioContext::GetMainThread() const {
