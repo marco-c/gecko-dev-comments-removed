@@ -2619,7 +2619,7 @@
         userContextId,
         csp,
         skipLoad = createLazyBrowser,
-        batchInsertingTabs,
+        insertTab = true,
         globalHistoryOptions,
         triggeringRemoteType,
       } = {}
@@ -2701,8 +2701,7 @@
           noInitialLabel,
           skipBackgroundNotify,
         });
-        if (!batchInsertingTabs) {
-          
+        if (insertTab) {
           
           this._insertTabAtIndex(t, {
             index,
@@ -2748,7 +2747,8 @@
           
           
           
-          if (!batchInsertingTabs) {
+          
+          if (insertTab) {
             SessionStore.setTabState(t, {
               entries: [
                 {
@@ -2788,7 +2788,7 @@
         return null;
       }
 
-      if (!batchInsertingTabs) {
+      if (insertTab) {
         
         this._fireTabOpen(t, eventDetail);
 
@@ -3119,7 +3119,7 @@
       }
     },
 
-    addMultipleTabs(restoreTabsLazily, selectTab, aPropertiesTabs) {
+    createTabsForSessionRestore(restoreTabsLazily, selectTab, tabDataList) {
       let tabs = [];
       let tabsFragment = document.createDocumentFragment();
       let tabToSelect = null;
@@ -3130,8 +3130,8 @@
       
       
       
-      for (var i = 0; i < aPropertiesTabs.length; i++) {
-        let tabData = aPropertiesTabs[i];
+      for (var i = 0; i < tabDataList.length; i++) {
+        let tabData = tabDataList[i];
 
         let userContextId = tabData.userContextId;
         let select = i == selectTab - 1;
@@ -3191,7 +3191,7 @@
             userContextId,
             skipBackgroundNotify: true,
             bulkOrderedOpen: true,
-            batchInsertingTabs: true,
+            insertTab: false,
             skipLoad: true,
             preferredRemoteType,
           });
