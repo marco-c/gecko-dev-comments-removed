@@ -13,7 +13,6 @@ import android.graphics.Rect;
 import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
-import android.view.WindowManager;
 import java.util.ArrayList;
 import java.util.List;
 import org.mozilla.gecko.util.ThreadUtils;
@@ -105,14 +104,15 @@ public class GeckoScreenOrientation {
 
 
   public boolean update() {
+    
     final Context appContext = GeckoAppShell.getApplicationContext();
     if (appContext == null) {
       return false;
     }
-    final WindowManager windowManager =
-        (WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE);
-    final Display display = windowManager.getDefaultDisplay();
-    return update(getScreenOrientation(display));
+    final Rect rect = GeckoAppShell.getScreenSizeIgnoreOverride();
+    final int orientation =
+        rect.width() >= rect.height() ? ORIENTATION_LANDSCAPE : ORIENTATION_PORTRAIT;
+    return update(getScreenOrientation(orientation, getRotation()));
   }
 
   
@@ -268,12 +268,6 @@ public class GeckoScreenOrientation {
 
 
   private int getRotation() {
-    final Context appContext = GeckoAppShell.getApplicationContext();
-    if (appContext == null) {
-      return DEFAULT_ROTATION;
-    }
-    final WindowManager windowManager =
-        (WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE);
-    return windowManager.getDefaultDisplay().getRotation();
+    return GeckoAppShell.getRotation();
   }
 }
