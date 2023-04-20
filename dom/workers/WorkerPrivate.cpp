@@ -2364,8 +2364,10 @@ WorkerPrivate::WorkerPrivate(
       
       
       bool clampAndJitterTime = !usesSystemPrincipal;
-      chromeRealmBehaviors.setClampAndJitterTime(clampAndJitterTime);
-      contentRealmBehaviors.setClampAndJitterTime(clampAndJitterTime);
+      chromeRealmBehaviors.setClampAndJitterTime(clampAndJitterTime)
+          .setShouldResistFingerprinting(false);
+      contentRealmBehaviors.setClampAndJitterTime(clampAndJitterTime)
+          .setShouldResistFingerprinting(mLoadInfo.mShouldResistFingerprinting);
 
       JS::RealmCreationOptions& chromeCreationOptions =
           chromeRealmOptions.creationOptions();
