@@ -399,10 +399,7 @@ fn main() -> std::io::Result<()> {
             _ => {
                 emit_build_error!(
                     out,
-                    format!(
-                        "Certificate {} in certdata.txt has no CKA_SUBJECT attribute.",
-                        i
-                    )
+                    format!("Certificate {i} in certdata.txt has no CKA_SUBJECT attribute.")
                 );
                 return Ok(());
             }
@@ -422,13 +419,55 @@ fn main() -> std::io::Result<()> {
 
     
     
+    
+    
     for (i, cert) in certs.iter().enumerate() {
-        let comment = match attr(cert, "COMMENT") {
-            Ck::Empty => &Ck::Comment(""),
-            comment => comment,
+        
+        match attr(cert, "COMMENT") {
+            Ck::Empty => (),
+            comment => write!(out, "{comment}")?,
         };
+
         let der = attr(cert, "CKA_VALUE");
-        writeln!(out, "{comment}static ROOT_{i}: &[u8] = {der};")?;
+        writeln!(out, "static ROOT_{i}: &[u8] = {der};")?;
+
+        
+        
+        let der_data = match der {
+            Ck::MultilineOctal(x) => octal_block_to_vec_u8(x),
+            _ => unreachable!(),
+        };
+        let serial_data = match attr(cert, "CKA_SERIAL_NUMBER") {
+            Ck::MultilineOctal(x) => octal_block_to_vec_u8(x),
+            _ => unreachable!(),
+        };
+        let subject_data = match attr(cert, "CKA_SUBJECT") {
+            Ck::MultilineOctal(x) => octal_block_to_vec_u8(x),
+            _ => unreachable!(),
+        };
+
+        let serial_len = serial_data.len();
+        if let Some(serial_offset) = &der_data.windows(serial_len).position(|s| s == serial_data) {
+            writeln!(out, "static SERIAL_{i}: &[u8] = unsafe {{ slice::from_raw_parts(ROOT_{i}.as_ptr().offset({serial_offset}), {serial_len}) }};")?;
+        } else {
+            emit_build_error!(
+                out,
+                format!("Certificate {i} in certdata.txt has a CKA_SERIAL_NUMBER that does not match its CKA_VALUE.")
+            );
+        }
+
+        let subject_len = subject_data.len();
+        if let Some(subject_offset) = &der_data
+            .windows(subject_len)
+            .position(|s| s == subject_data)
+        {
+            writeln!(out, "static SUBJECT_{i}: &[u8] = unsafe {{ slice::from_raw_parts(ROOT_{i}.as_ptr().offset({subject_offset}), {subject_len}) }};")?;
+        } else {
+            emit_build_error!(
+                out,
+                format!("Certificate {i} in certdata.txt has a CKA_SUBJECT that does not match its CKA_VALUE.")
+            );
+        }
     }
 
     writeln!(out, "pub static BUILTINS: &[Root] = &[")?;
@@ -446,7 +485,6 @@ fn main() -> std::io::Result<()> {
             )?;
             return Ok(());
         }
-        let serial = attr(cert, "CKA_SERIAL_NUMBER");
         let mozpol = attr(cert, "CKA_NSS_MOZILLA_CA_POLICY");
         let server_distrust = attr(cert, "CKA_NSS_SERVER_DISTRUST_AFTER");
         let email_distrust = attr(cert, "CKA_NSS_EMAIL_DISTRUST_AFTER");
@@ -469,14 +507,12 @@ fn main() -> std::io::Result<()> {
         let server = attr(trust, "CKA_TRUST_SERVER_AUTH");
         let email = attr(trust, "CKA_TRUST_EMAIL_PROTECTION");
 
-        
-        
         writeln!(
             out,
             "        Root {{
             label: {label},
-            der_name: {subject},
-            der_serial: {serial},
+            der_name: SUBJECT_{i},
+            der_serial: SERIAL_{i},
             der_cert: ROOT_{i},
             mozilla_ca_policy: {mozpol},
             server_distrust_after: {server_distrust},

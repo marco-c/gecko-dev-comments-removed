@@ -5,6 +5,7 @@
 
 use pkcs11_bindings::nss::*;
 use pkcs11_bindings::*;
+use std::slice;
 
 
 
