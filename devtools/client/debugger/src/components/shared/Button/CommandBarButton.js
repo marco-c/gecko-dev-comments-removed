@@ -2,12 +2,11 @@
 
 
 
+import classnames from "classnames";
 import React from "react";
 import PropTypes from "prop-types";
 
 import AccessibleImage from "../AccessibleImage";
-
-const classnames = require("devtools/client/shared/classnames");
 
 import "./styles/CommandBarButton.css";
 
