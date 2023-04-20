@@ -31,7 +31,9 @@
 #include "rtc_base/strings/string_builder.h"
 
 namespace cricket {
+
 using ::webrtc::SafeTask;
+using ::webrtc::TaskQueueBase;
 using ::webrtc::TimeDelta;
 
 
@@ -210,7 +212,7 @@ class TurnEntry : public sigslot::has_slots<> {
   std::string remote_ufrag_;
 };
 
-TurnPort::TurnPort(rtc::Thread* thread,
+TurnPort::TurnPort(TaskQueueBase* thread,
                    rtc::PacketSocketFactory* factory,
                    const rtc::Network* network,
                    rtc::AsyncPacketSocket* socket,
@@ -250,7 +252,7 @@ TurnPort::TurnPort(rtc::Thread* thread,
       allocate_mismatch_retries_(0),
       turn_customizer_(customizer) {}
 
-TurnPort::TurnPort(rtc::Thread* thread,
+TurnPort::TurnPort(TaskQueueBase* thread,
                    rtc::PacketSocketFactory* factory,
                    const rtc::Network* network,
                    uint16_t min_port,
@@ -894,7 +896,8 @@ void TurnPort::OnAllocateError(int error_code, absl::string_view reason) {
   
   
   
-  thread()->Post(RTC_FROM_HERE, this, MSG_ALLOCATE_ERROR);
+  thread()->PostTask(
+      SafeTask(task_safety_.flag(), [this] { SignalPortError(this); }));
   std::string address = GetLocalAddress().HostAsSensitiveURIString();
   int port = GetLocalAddress().port();
   if (server_address_.proto == PROTO_TCP &&
@@ -911,7 +914,8 @@ void TurnPort::OnRefreshError() {
   
   
   
-  thread()->Post(RTC_FROM_HERE, this, MSG_REFRESH_ERROR);
+  thread()->PostTask(
+      SafeTask(task_safety_.flag(), [this] { HandleRefreshError(); }));
 }
 
 void TurnPort::HandleRefreshError() {
@@ -967,39 +971,21 @@ bool TurnPort::AllowedTurnPort(int port,
   return false;
 }
 
-void TurnPort::OnMessage(rtc::Message* message) {
-  switch (message->message_id) {
-    case MSG_ALLOCATE_ERROR:
-      SignalPortError(this);
-      break;
-    case MSG_ALLOCATE_MISMATCH:
-      OnAllocateMismatch();
-      break;
-    case MSG_REFRESH_ERROR:
-      HandleRefreshError();
-      break;
-    case MSG_TRY_ALTERNATE_SERVER:
-      if (server_address().proto == PROTO_UDP) {
-        
-        
-        SendRequest(new TurnAllocateRequest(this), 0);
-      } else {
-        
-        
-        
-        RTC_DCHECK(server_address().proto == PROTO_TCP ||
-                   server_address().proto == PROTO_TLS);
-        RTC_DCHECK(!SharedSocket());
-        delete socket_;
-        socket_ = NULL;
-        PrepareAddress();
-      }
-      break;
-    case MSG_ALLOCATION_RELEASED:
-      Close();
-      break;
-    default:
-      Port::OnMessage(message);
+void TurnPort::TryAlternateServer() {
+  if (server_address().proto == PROTO_UDP) {
+    
+    
+    SendRequest(new TurnAllocateRequest(this), 0);
+  } else {
+    
+    
+    
+    RTC_DCHECK(server_address().proto == PROTO_TCP ||
+               server_address().proto == PROTO_TLS);
+    RTC_DCHECK(!SharedSocket());
+    delete socket_;
+    socket_ = nullptr;
+    PrepareAddress();
   }
 }
 
@@ -1449,12 +1435,13 @@ void TurnAllocateRequest::OnErrorResponse(StunMessage* response) {
     case STUN_ERROR_TRY_ALTERNATE:
       OnTryAlternate(response, error_code);
       break;
-    case STUN_ERROR_ALLOCATION_MISMATCH:
+    case STUN_ERROR_ALLOCATION_MISMATCH: {
       
       
-      port_->thread()->Post(RTC_FROM_HERE, port_,
-                            TurnPort::MSG_ALLOCATE_MISMATCH);
-      break;
+      TurnPort* port = port_;
+      port->thread()->PostTask(SafeTask(
+          port->task_safety_.flag(), [port] { port->OnAllocateMismatch(); }));
+    } break;
     default:
       RTC_LOG(LS_WARNING) << port_->ToString()
                           << ": Received TURN allocate error response, id="
@@ -1551,8 +1538,9 @@ void TurnAllocateRequest::OnTryAlternate(StunMessage* response, int code) {
   
   
   
-  port_->thread()->Post(RTC_FROM_HERE, port_,
-                        TurnPort::MSG_TRY_ALTERNATE_SERVER);
+  TurnPort* port = port_;
+  port->thread()->PostTask(SafeTask(port->task_safety_.flag(),
+                                    [port] { port->TryAlternateServer(); }));
 }
 
 TurnRefreshRequest::TurnRefreshRequest(TurnPort* port, int lifetime )
@@ -1602,8 +1590,9 @@ void TurnRefreshRequest::OnResponse(StunMessage* response) {
   } else {
     
     
-    port_->thread()->Post(RTC_FROM_HERE, port_,
-                          TurnPort::MSG_ALLOCATION_RELEASED);
+    TurnPort* port = port_;
+    port->thread()->PostTask(
+        SafeTask(port->task_safety_.flag(), [port] { port->Close(); }));
   }
 
   port_->SignalTurnRefreshResult(port_, TURN_SUCCESS_RESULT_CODE);
