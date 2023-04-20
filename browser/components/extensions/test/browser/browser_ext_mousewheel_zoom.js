@@ -35,6 +35,9 @@ async function test_mousewheel_zoom(test) {
   info(`Starting test of ${test} extension.`);
   let browser;
 
+  
+  SpecialPowers.pushPrefEnv({ set: [["mousewheel.with_control.action", 3]] });
+
   function contentScript() {
     
     document.addEventListener("mousedown", e => {

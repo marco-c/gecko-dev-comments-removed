@@ -973,16 +973,7 @@ pref("browser.history_swipe_animation.disabled", false);
   
   pref("mousewheel.with_shift.action", 1);
   pref("mousewheel.with_alt.action", 2);
-  
-  
-  
-  
-  pref("mousewheel.with_meta.action", 3); 
-  
-  
-  
-  pref("mousewheel.with_control.action.override_x", 0);
-  pref("mousewheel.with_meta.action.override_x", 0);
+  pref("mousewheel.with_control.action", 1);
 #else
   
   
@@ -992,9 +983,8 @@ pref("browser.history_swipe_animation.disabled", false);
   
   pref("mousewheel.with_shift.action", 4);
   pref("mousewheel.with_alt.action", 2);
-  pref("mousewheel.with_meta.action", 1); 
 #endif
-pref("mousewheel.with_control.action",3);
+
 pref("mousewheel.with_win.action", 1);
 
 pref("browser.xul.error_pages.expert_bad_cert", false);
