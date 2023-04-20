@@ -77,7 +77,7 @@ const load = {
     return load.stylesheet_with_attrs(path, undefined);
   },
 
-  iframe_with_attrs: async (path, attribute_map, validator) => {
+  iframe_with_attrs: async (path, attribute_map, validator, skip_wait_for_navigation) => {
     const frame = document.createElement("iframe");
     if (attribute_map instanceof Object) {
       for (const [key, value] of Object.entries(attribute_map)) {
@@ -89,11 +89,17 @@ const load = {
     });
     frame.src = load.cache_bust(path);
     document.body.appendChild(frame);
-    await loaded;
+    if ( !skip_wait_for_navigation ) {
+      await loaded;
+    }
     if (validator instanceof Function) {
       validator(frame);
     }
-    document.body.removeChild(frame);
+    
+    
+    if ( !skip_wait_for_navigation ) {
+      document.body.removeChild(frame);
+    }
   },
 
   
