@@ -265,6 +265,17 @@ void LoadAllScripts(WorkerPrivate* aWorkerPrivate,
     return;
   }
 
+  if (aIsMainScript) {
+    
+    RefPtr<JS::loader::ScriptLoadRequest> mainScript = loader->GetMainScript();
+    if (mainScript && mainScript->IsModuleRequest()) {
+      if (NS_FAILED(mainScript->AsModuleRequest()->StartModuleLoad())) {
+        return;
+      }
+      syncLoop.Run();
+      return;
+    }
+  }
   if (loader->DispatchLoadScripts()) {
     syncLoop.Run();
   }
@@ -371,6 +382,10 @@ class ScriptExecutorRunnable final : public MainThreadWorkerSyncRunnable {
 
   virtual bool PreRun(WorkerPrivate* aWorkerPrivate) override;
 
+  bool ProcessModuleScript(JSContext* aCx, WorkerPrivate* aWorkerPrivate);
+
+  bool ProcessClassicScripts(JSContext* aCx, WorkerPrivate* aWorkerPrivate);
+
   virtual bool WorkerRun(JSContext* aCx,
                          WorkerPrivate* aWorkerPrivate) override;
 
@@ -424,6 +439,15 @@ WorkerScriptLoader::WorkerScriptLoader(
   }
 }
 
+ScriptLoadRequest* WorkerScriptLoader::GetMainScript() {
+  mWorkerRef->Private()->AssertIsOnWorkerThread();
+  ScriptLoadRequest* request = mLoadingRequests.getFirst();
+  if (request->GetWorkerLoadContext()->IsTopLevel()) {
+    return request;
+  }
+  return nullptr;
+}
+
 void WorkerScriptLoader::InitModuleLoader() {
   mWorkerRef->Private()->AssertIsOnWorkerThread();
   RefPtr<WorkerModuleLoader> moduleLoader =
@@ -435,14 +459,15 @@ void WorkerScriptLoader::InitModuleLoader() {
 bool WorkerScriptLoader::CreateScriptRequests(
     const nsTArray<nsString>& aScriptURLs,
     const mozilla::Encoding* aDocumentEncoding, bool aIsMainScript) {
-  
-  
-  
-  
-  
-  
-  if (!aIsMainScript &&
-      mWorkerRef->Private()->WorkerType() == WorkerType::Module) {
+  mWorkerRef->Private()->AssertIsOnWorkerThread();
+  if (mWorkerRef->Private()->WorkerType() == WorkerType::Module &&
+      !aIsMainScript) {
+    
+    
+    
+    
+    
+    
     mRv.ThrowTypeError(
         "Using `ImportScripts` inside a Module Worker is "
         "disallowed.");
@@ -472,6 +497,7 @@ nsTArray<RefPtr<ThreadSafeRequestHandle>> WorkerScriptLoader::GetLoadingList() {
 already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
     const nsString& aScriptURL, const mozilla::Encoding* aDocumentEncoding,
     bool aIsMainScript) {
+  mWorkerRef->Private()->AssertIsOnWorkerThread();
   WorkerLoadContext::Kind kind =
       WorkerLoadContext::GetKind(aIsMainScript, IsDebuggerScript());
 
@@ -497,13 +523,33 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
     loadContext->mLoadResult = rv;
   }
 
-  RefPtr<ScriptFetchOptions> fetchOptions =
-      new ScriptFetchOptions(CORSMode::CORS_NONE, referrerPolicy, nullptr);
+  RefPtr<ScriptLoadRequest> request;
+  if (mWorkerRef->Private()->WorkerType() == WorkerType::Classic) {
+    RefPtr<ScriptFetchOptions> fetchOptions =
+        new ScriptFetchOptions(CORSMode::CORS_NONE, referrerPolicy, nullptr);
 
-  RefPtr<ScriptLoadRequest> request =
-      new ScriptLoadRequest(ScriptKind::eClassic, uri, fetchOptions,
-                            SRIMetadata(), nullptr, 
-                            loadContext);
+    request = new ScriptLoadRequest(ScriptKind::eClassic, uri, fetchOptions,
+                                    SRIMetadata(), nullptr, 
+                                    loadContext);
+  } else {
+    
+    
+    
+
+    
+    RefPtr<ScriptFetchOptions> fetchOptions =
+        new ScriptFetchOptions(CORSMode::CORS_NONE, referrerPolicy, nullptr);
+
+    
+    RefPtr<WorkerModuleLoader::ModuleLoaderBase> moduleLoader =
+        static_cast<WorkerGlobalScopeBase*>(GetGlobal())->GetModuleLoader();
+    request = new ModuleLoadRequest(
+        uri, fetchOptions, SRIMetadata(), nullptr, loadContext,
+        true,  
+        false, 
+        moduleLoader, ModuleLoadRequest::NewVisitedSetForTopLevelImport(uri),
+        nullptr);
+  }
 
   
   request->mURL = NS_ConvertUTF16toUTF8(aScriptURL);
@@ -595,7 +641,11 @@ nsIGlobalObject* WorkerScriptLoader::GetGlobal() {
 
 void WorkerScriptLoader::MaybeMoveToLoadedList(ScriptLoadRequest* aRequest) {
   mWorkerRef->Private()->AssertIsOnWorkerThread();
-  aRequest->SetReady();
+  
+  
+  if (!aRequest->IsModuleRequest()) {
+    aRequest->SetReady();
+  }
 
   
   MOZ_RELEASE_ASSERT(aRequest->isInList());
@@ -892,6 +942,25 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
       mWorkerRef->Private()->GlobalScope()->Control(mController.ref());
     }
     mWorkerRef->Private()->ExecutionReady();
+  }
+
+  if (aRequest->IsModuleRequest()) {
+    
+    
+    
+    MOZ_ASSERT(aRequest->IsTopLevel());
+    ModuleLoadRequest* request = aRequest->AsModuleRequest();
+    if (!request->mModuleScript) {
+      return false;
+    }
+    
+    
+    if (!request->InstantiateModuleGraph()) {
+      return false;
+    }
+
+    nsresult rv = request->EvaluateModule();
+    return NS_SUCCEEDED(rv);
   }
 
   JS::CompileOptions options(aCx);
@@ -1282,10 +1351,48 @@ bool ScriptExecutorRunnable::PreRun(WorkerPrivate* aWorkerPrivate) {
   return mScriptLoader->StoreCSP();
 }
 
-bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
-                                       WorkerPrivate* aWorkerPrivate) {
-  aWorkerPrivate->AssertIsOnWorkerThread();
+bool ScriptExecutorRunnable::ProcessModuleScript(
+    JSContext* aCx, WorkerPrivate* aWorkerPrivate) {
+  
+  MOZ_ASSERT(mLoadedRequests.Length() == 1);
+  RefPtr<ScriptLoadRequest> request;
+  {
+    
+    
+    MutexAutoLock lock(mScriptLoader->CleanUpLock());
+    if (mScriptLoader->CleanedUp()) {
+      return true;
+    }
 
+    const auto& requestHandle = mLoadedRequests.begin()->get();
+    
+    MOZ_ASSERT(!requestHandle->IsEmpty());
+
+    
+    
+    request = requestHandle->ReleaseRequest();
+
+    
+  }
+
+  MOZ_ASSERT(request->IsModuleRequest());
+
+  WorkerLoadContext* loadContext = request->GetWorkerLoadContext();
+  ModuleLoadRequest* moduleRequest = request->AsModuleRequest();
+  if (NS_FAILED(loadContext->mLoadResult)) {
+    if (!moduleRequest->IsTopLevel()) {
+      moduleRequest->Cancel();
+    } else {
+      moduleRequest->LoadFailed();
+    }
+  }
+
+  moduleRequest->OnFetchComplete(loadContext->mLoadResult);
+  return true;
+}
+
+bool ScriptExecutorRunnable::ProcessClassicScripts(
+    JSContext* aCx, WorkerPrivate* aWorkerPrivate) {
   
   
   {
@@ -1294,11 +1401,6 @@ bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
       return true;
     }
 
-    
-    MOZ_ASSERT(
-        mScriptLoader->mSyncLoopTarget == mSyncLoopTarget,
-        "Unexpected SyncLoopTarget. Check if the sync loop was closed early");
-
     for (const auto& requestHandle : mLoadedRequests) {
       
       MOZ_ASSERT(!requestHandle->IsEmpty());
@@ -1306,11 +1408,26 @@ bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
       
       
       RefPtr<ScriptLoadRequest> request = requestHandle->ReleaseRequest();
-
       mScriptLoader->MaybeMoveToLoadedList(request);
     }
   }
   return mScriptLoader->ProcessPendingRequests(aCx);
+}
+
+bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
+                                       WorkerPrivate* aWorkerPrivate) {
+  aWorkerPrivate->AssertIsOnWorkerThread();
+
+  
+  MOZ_ASSERT(
+      mScriptLoader->mSyncLoopTarget == mSyncLoopTarget,
+      "Unexpected SyncLoopTarget. Check if the sync loop was closed early");
+
+  if (aWorkerPrivate->WorkerType() == WorkerType::Module) {
+    return ProcessModuleScript(aCx, aWorkerPrivate);
+  }
+
+  return ProcessClassicScripts(aCx, aWorkerPrivate);
 }
 
 nsresult ScriptExecutorRunnable::Cancel() {
