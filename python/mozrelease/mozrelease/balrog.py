@@ -3,8 +3,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 
 def _generate_show_url(context, entry):
     url = entry["url"]

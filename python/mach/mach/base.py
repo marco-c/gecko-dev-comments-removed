@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, unicode_literals
-
 
 class CommandContext(object):
     """Holds run-time state so it can easily be passed to command providers."""

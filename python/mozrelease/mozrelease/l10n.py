@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 
 def getPlatformLocales(shipped_locales, platform):
     platform_locales = []

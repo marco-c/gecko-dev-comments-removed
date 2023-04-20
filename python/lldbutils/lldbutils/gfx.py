@@ -1,8 +1,6 @@
 
 
 
-from __future__ import absolute_import
-
 
 def summarize_nscolor(valobj, internal_dict):
     colors = {

@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from mozpack.errors import ErrorMessage, errors
 from mozpack.files import (
     AbsoluteSymlinkFile,

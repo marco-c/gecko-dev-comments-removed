@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 """
 This file contains functions used for telemetry.
 """

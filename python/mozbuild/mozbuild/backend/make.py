@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import mozpack.path as mozpath
 
 from mozbuild.frontend.data import GeneratedFile

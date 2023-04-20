@@ -7,8 +7,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 """
 Problem:
     ./mach vendor needs to be able to add or remove files from moz.build files automatically to

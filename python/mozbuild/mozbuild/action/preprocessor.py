@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 import sys
 
 from mozbuild.action.util import log_build_task

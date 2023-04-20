@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 import mozunit
 
 from mozversioncontrol import get_repository_object

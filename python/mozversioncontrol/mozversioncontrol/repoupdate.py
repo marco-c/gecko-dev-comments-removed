@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, unicode_literals
-
 import subprocess
 from pathlib import Path
 from typing import Union

@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 import abc
 import re
 from pathlib import Path

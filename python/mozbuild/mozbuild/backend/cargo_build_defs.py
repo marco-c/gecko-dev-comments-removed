@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 cargo_extra_outputs = {
     "bindgen": ["tests.rs", "host-target.txt"],
     "cssparser": ["tokenizer.rs"],

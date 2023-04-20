@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, unicode_literals
-
 from .terminal import Terminal
 
 DEFAULT = "\x1b(B\x1b[m"

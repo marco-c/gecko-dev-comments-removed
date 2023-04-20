@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import time
 from cProfile import Profile
 from pathlib import Path

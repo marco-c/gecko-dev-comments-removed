@@ -3,7 +3,6 @@
 
 
 
-from __future__ import absolute_import
 import fluent.syntax.ast as FTL
 from fluent.migrate.helpers import transforms_from, VARIABLE_REFERENCE
 from fluent.migrate import REPLACE, COPY

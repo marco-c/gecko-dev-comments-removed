@@ -1,8 +1,6 @@
 
 
 
-from __future__ import absolute_import
-
 
 def frametree(debugger, command, result, dict):
     """Dumps the frame tree containing the given nsIFrame*."""

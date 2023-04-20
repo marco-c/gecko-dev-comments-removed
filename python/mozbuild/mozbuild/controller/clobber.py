@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 r"""This module contains code for managing clobbering of the tree."""
 
 import errno

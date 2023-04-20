@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, unicode_literals
-
 import unittest
 from io import StringIO
 from pathlib import Path

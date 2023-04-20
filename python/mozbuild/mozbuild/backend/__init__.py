@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 backends = {
     "Clangd": "mozbuild.backend.clangd",
     "ChromeMap": "mozbuild.codecoverage.chrome_map",

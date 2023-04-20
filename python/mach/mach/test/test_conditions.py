@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, unicode_literals
-
 from pathlib import Path
 
 from buildconfig import topsrcdir
