@@ -1459,7 +1459,7 @@ struct MOZ_RAII CompilationState : public ExtensibleCompilationStencil {
 
   
   
-  bool allocateGCThingsUninitialized(JSContext* cx, FrontendContext* fc,
+  bool allocateGCThingsUninitialized(FrontendContext* fc,
                                      ScriptIndex scriptIndex, size_t length,
                                      TaggedScriptThingIndex** cursor);
 
