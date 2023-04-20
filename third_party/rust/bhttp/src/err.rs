@@ -1,64 +1,32 @@
-#[derive(Debug)]
+use thiserror::Error;
+
+#[derive(Error, Debug)]
 pub enum Error {
-    
+    #[error("a request used the CONNECT method")]
     ConnectUnsupported,
-    
-    CharacterEncoding(std::string::FromUtf8Error),
-    
-    IntRange(std::num::TryFromIntError),
-    
+    #[error("a field contained invalid Unicode: {0}")]
+    CharacterEncoding(#[from] std::string::FromUtf8Error),
+    #[error("a field contained an integer value that was out of range: {0}")]
+    IntRange(#[from] std::num::TryFromIntError),
+    #[error("the mode of the message was invalid")]
     InvalidMode,
-    
-    Io(std::io::Error),
-    
+    #[error("IO error {0}")]
+    Io(#[from] std::io::Error),
+    #[error("a field or line was missing a necessary character 0x{0:x}")]
     Missing(u8),
-    
+    #[error("a URL was missing a key component")]
     MissingUrlComponent,
-    
+    #[error("an obs-fold line was the first line of a field section")]
     ObsFold,
-    
-    ParseInt(std::num::ParseIntError),
-    
+    #[error("a field contained a non-integer value: {0}")]
+    ParseInt(#[from] std::num::ParseIntError),
+    #[error("a field was truncated")]
     Truncated,
-    
+    #[error("a message included the Upgrade field")]
     UpgradeUnsupported,
-    
-    UrlParse(url::ParseError),
-}
-
-macro_rules! forward_errors {
-    {$($(#[$a:meta])* $t:path => $v:ident),* $(,)?} => {
-        $(
-            impl From<$t> for Error {
-                fn from(e: $t) -> Self {
-                    Self::$v(e)
-                }
-            }
-        )*
-
-        impl std::error::Error for Error {
-            fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-                match self {
-                    $( $(#[$a])* Self::$v(e) => Some(e), )*
-                    _ => None,
-                }
-            }
-        }
-    };
-}
-
-forward_errors! {
-    std::io::Error => Io,
-    std::string::FromUtf8Error => CharacterEncoding,
-    std::num::ParseIntError => ParseInt,
-    std::num::TryFromIntError => IntRange,
-    url::ParseError => UrlParse,
-}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(f, "{:?}", self)
-    }
+    #[error("a URL could not be parsed into components: {0}")]
+    #[cfg(feature = "read-http")]
+    UrlParse(#[from] url::ParseError),
 }
 
 #[cfg(any(

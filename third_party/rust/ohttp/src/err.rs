@@ -1,75 +1,39 @@
-#[derive(Debug)]
+use thiserror::Error;
+
+#[derive(Error, Debug)]
 pub enum Error {
-    
     #[cfg(feature = "rust-hpke")]
-    Aead(aead::Error),
-    
+    #[error("a problem occurred with the AEAD")]
+    Aead(#[from] aead::Error),
     #[cfg(feature = "nss")]
-    Crypto(crate::nss::Error),
-    
+    #[error("a problem occurred during cryptographic processing: {0}")]
+    Crypto(#[from] crate::nss::Error),
+    #[error("an error was found in the format")]
     Format,
-    
+    #[error("a problem occurred with HPKE: {0}")]
     #[cfg(feature = "rust-hpke")]
-    Hpke(::hpke::HpkeError),
-    
+    Hpke(#[from] ::hpke::HpkeError),
+    #[error("an internal error occurred")]
     Internal,
-    
+    #[error("the wrong type of key was provided for the selected KEM")]
     InvalidKeyType,
-    
+    #[error("the wrong KEM was specified")]
     InvalidKem,
-    
-    Io(std::io::Error),
-    
+    #[error("io error: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("the key ID was invalid")]
     KeyId,
-    
+    #[error("a field was truncated")]
     Truncated,
-    
+    #[error("the configuration was not supported")]
     Unsupported,
-    
+    #[error("the configuration contained too many symmetric suites")]
     TooManySymmetricSuites,
-}
-
-macro_rules! forward_errors {
-    {$($(#[$m:meta])* $t:path => $v:ident),* $(,)?} => {
-        $(
-            $(#[$m])*
-            impl From<$t> for Error {
-                fn from(e: $t) -> Self {
-                    Self::$v(e)
-                }
-            }
-        )*
-
-        impl std::error::Error for Error {
-            fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-                match self {
-                    $( $(#[$m])* Self::$v(e) => Some(e), )*
-                    _ => None,
-                }
-            }
-        }
-    };
-}
-
-forward_errors! {
-    #[cfg(feature = "rust-hpke")]
-    aead::Error => Aead,
-    #[cfg(feature = "nss")]
-    crate::nss::Error => Crypto,
-    #[cfg(feature = "rust-hpke")]
-    ::hpke::HpkeError => Hpke,
-    std::io::Error => Io,
 }
 
 impl From<std::num::TryFromIntError> for Error {
     fn from(_v: std::num::TryFromIntError) -> Self {
         Self::TooManySymmetricSuites
-    }
-}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(f, "{:?}", self)
     }
 }
 
