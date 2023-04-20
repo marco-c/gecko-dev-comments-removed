@@ -31,25 +31,27 @@ class IdentityCredential final : public Credential {
       GetIdentityCredentialPromise;
   typedef MozPromise<IPCIdentityCredential, nsresult, true>
       GetIPCIdentityCredentialPromise;
-  typedef MozPromise<IdentityProvider, nsresult, true>
-      GetIdentityProviderPromise;
+  typedef MozPromise<IdentityProviderConfig, nsresult, true>
+      GetIdentityProviderConfigPromise;
   typedef MozPromise<bool, nsresult, true> ValidationPromise;
-  typedef MozPromise<IdentityInternalManifest, nsresult, true>
+  typedef MozPromise<IdentityProviderAPIConfig, nsresult, true>
       GetManifestPromise;
-  typedef Tuple<IdentityProvider, IdentityInternalManifest>
-      IdentityProviderWithManifest;
-  typedef MozPromise<IdentityProviderWithManifest, nsresult, true>
-      GetIdentityProviderWithManifestPromise;
-  typedef MozPromise<Tuple<IdentityInternalManifest, IdentityAccountList>,
-                     nsresult, true>
+  typedef Tuple<IdentityProviderConfig, IdentityProviderAPIConfig>
+      IdentityProviderConfigWithManifest;
+  typedef MozPromise<IdentityProviderConfigWithManifest, nsresult, true>
+      GetIdentityProviderConfigWithManifestPromise;
+  typedef MozPromise<
+      Tuple<IdentityProviderAPIConfig, IdentityProviderAccountList>, nsresult,
+      true>
       GetAccountListPromise;
-  typedef MozPromise<Tuple<IdentityProviderToken, IdentityAccount>, nsresult,
-                     true>
+  typedef MozPromise<Tuple<IdentityProviderToken, IdentityProviderAccount>,
+                     nsresult, true>
       GetTokenPromise;
-  typedef MozPromise<Tuple<IdentityInternalManifest, IdentityAccount>, nsresult,
-                     true>
+  typedef MozPromise<Tuple<IdentityProviderAPIConfig, IdentityProviderAccount>,
+                     nsresult, true>
       GetAccountPromise;
-  typedef MozPromise<IdentityClientMetadata, nsresult, true> GetMetadataPromise;
+  typedef MozPromise<IdentityProviderClientMetadata, nsresult, true>
+      GetMetadataPromise;
 
   
   explicit IdentityCredential(nsPIDOMWindowInner* aParent);
@@ -138,8 +140,8 @@ class IdentityCredential final : public Credential {
   
   static RefPtr<GetIPCIdentityCredentialPromise> CreateCredential(
       nsIPrincipal* aPrincipal, BrowsingContext* aBrowsingContext,
-      const IdentityProvider& aProvider,
-      const IdentityInternalManifest& aManifest);
+      const IdentityProviderConfig& aProvider,
+      const IdentityProviderAPIConfig& aManifest);
 
   
   
@@ -156,7 +158,7 @@ class IdentityCredential final : public Credential {
   
   
   static RefPtr<ValidationPromise> CheckRootManifest(
-      nsIPrincipal* aPrincipal, const IdentityProvider& aProvider);
+      nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider);
 
   
   
@@ -172,7 +174,7 @@ class IdentityCredential final : public Credential {
   
   
   static RefPtr<GetManifestPromise> FetchInternalManifest(
-      nsIPrincipal* aPrincipal, const IdentityProvider& aProvider);
+      nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider);
 
   
   
@@ -191,8 +193,8 @@ class IdentityCredential final : public Credential {
   
   
   static RefPtr<GetAccountListPromise> FetchAccountList(
-      nsIPrincipal* aPrincipal, const IdentityProvider& aProvider,
-      const IdentityInternalManifest& aManifest);
+      nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider,
+      const IdentityProviderAPIConfig& aManifest);
 
   
   
@@ -213,9 +215,9 @@ class IdentityCredential final : public Credential {
   
   
   static RefPtr<GetTokenPromise> FetchToken(
-      nsIPrincipal* aPrincipal, const IdentityProvider& aProvider,
-      const IdentityInternalManifest& aManifest,
-      const IdentityAccount& aAccount);
+      nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider,
+      const IdentityProviderAPIConfig& aManifest,
+      const IdentityProviderAccount& aAccount);
 
   
   
@@ -232,8 +234,8 @@ class IdentityCredential final : public Credential {
   
   
   static RefPtr<GetMetadataPromise> FetchMetadata(
-      nsIPrincipal* aPrincipal, const IdentityProvider& aProvider,
-      const IdentityInternalManifest& aManifest);
+      nsIPrincipal* aPrincipal, const IdentityProviderConfig& aProvider,
+      const IdentityProviderAPIConfig& aManifest);
 
   
   
@@ -247,10 +249,10 @@ class IdentityCredential final : public Credential {
   
   
   
-  static RefPtr<GetIdentityProviderWithManifestPromise>
+  static RefPtr<GetIdentityProviderConfigWithManifestPromise>
   PromptUserToSelectProvider(
       BrowsingContext* aBrowsingContext,
-      const Sequence<IdentityProvider>& aProviders,
+      const Sequence<IdentityProviderConfig>& aProviders,
       const Sequence<GetManifestPromise::ResolveOrRejectValue>& aManifests);
 
   
@@ -267,9 +269,10 @@ class IdentityCredential final : public Credential {
   
   
   static RefPtr<GetAccountPromise> PromptUserToSelectAccount(
-      BrowsingContext* aBrowsingContext, const IdentityAccountList& aAccounts,
-      const IdentityProvider& aProvider,
-      const IdentityInternalManifest& aManifest);
+      BrowsingContext* aBrowsingContext,
+      const IdentityProviderAccountList& aAccounts,
+      const IdentityProviderConfig& aProvider,
+      const IdentityProviderAPIConfig& aManifest);
 
   
   
@@ -289,9 +292,9 @@ class IdentityCredential final : public Credential {
   
   static RefPtr<GetAccountPromise> PromptUserWithPolicy(
       BrowsingContext* aBrowsingContext, nsIPrincipal* aPrincipal,
-      const IdentityAccount& aAccount,
-      const IdentityInternalManifest& aManifest,
-      const IdentityProvider& aProvider);
+      const IdentityProviderAccount& aAccount,
+      const IdentityProviderAPIConfig& aManifest,
+      const IdentityProviderConfig& aProvider);
 
   
   
