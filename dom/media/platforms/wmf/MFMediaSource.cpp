@@ -79,7 +79,6 @@ HRESULT MFMediaSource::RuntimeClassInitialize(
 
 IFACEMETHODIMP MFMediaSource::GetCharacteristics(DWORD* aCharacteristics) {
   
-  MOZ_ASSERT(!mTaskQueue->IsCurrentThreadIn());
   {
     MutexAutoLock lock(mMutex);
     if (mState == State::Shutdowned) {
@@ -534,9 +533,7 @@ void MFMediaSource::AssertOnMFThreadPool() const {
   
   
   
-  
-  MOZ_ASSERT(!mTaskQueue->IsCurrentThreadIn() &&
-             !mManagerThread->IsOnCurrentThread());
+  MOZ_ASSERT(!mManagerThread->IsOnCurrentThread());
 }
 
 #undef LOG
