@@ -9,6 +9,8 @@ from a source repo using best practices to ensure optimal clone
 times and storage efficiency.
 """
 
+from __future__ import absolute_import
+
 import contextlib
 import json
 import os
@@ -39,7 +41,7 @@ from mercurial import (
 
 EXIT_PURGE_CACHE = 72
 
-testedwith = b"4.5 4.6 4.7 4.8 4.9 5.0 5.1 5.2 5.3 5.4 5.5 5.6 5.7 5.8"
+testedwith = b"4.5 4.6 4.7 4.8 4.9 5.0 5.1 5.2 5.3 5.4 5.5 5.6 5.7 5.8 5.9"
 minimumhgversion = b"4.5"
 
 cmdtable = {}
@@ -59,12 +61,8 @@ def getsparse():
 
 
 def peerlookup(remote, v):
-    
-    if util.safehasattr(remote, "commandexecutor"):
-        with remote.commandexecutor() as e:
-            return e.callcommand(b"lookup", {b"key": v}).result()
-    else:
-        return remote.lookup(v)
+    with remote.commandexecutor() as e:
+        return e.callcommand(b"lookup", {b"key": v}).result()
 
 
 @command(
@@ -179,6 +177,8 @@ def robustcheckout(
     
     
     ui.setconfig(b"worker", b"backgroundclose", False)
+    
+    ui.setconfig(b"http", b"timeout", 600)
 
     
     
@@ -509,6 +509,10 @@ def _docheckout(
                         pycompat.bytestr(str(e.reason)),
                     )
                 )
+        elif isinstance(e, socket.timeout):
+            ui.warn(b"socket timeout\n")
+            handlenetworkfailure()
+            return True
         else:
             ui.warn(
                 b"unhandled exception during network operation; type: %s; "
@@ -529,7 +533,12 @@ def _docheckout(
         rootnode = peerlookup(clonepeer, b"0")
     except error.RepoLookupError:
         raise error.Abort(b"unable to resolve root revision from clone " b"source")
-    except (error.Abort, ssl.SSLError, urllibcompat.urlerr.urlerror) as e:
+    except (
+        error.Abort,
+        ssl.SSLError,
+        urllibcompat.urlerr.urlerror,
+        socket.timeout,
+    ) as e:
         if handlepullerror(e):
             return callself()
         raise
@@ -568,6 +577,11 @@ def _docheckout(
 
     if storevfs.exists(b".hg/requires"):
         requires = set(storevfs.read(b".hg/requires").splitlines())
+        
+        
+        
+        if b"share-safe" in requires:
+            requires |= set(storevfs.read(b".hg/store/requires").splitlines())
         
         
         required = {b"dotencode", b"fncache"}
@@ -617,7 +631,12 @@ def _docheckout(
                     shareopts=shareopts,
                     stream=True,
                 )
-        except (error.Abort, ssl.SSLError, urllibcompat.urlerr.urlerror) as e:
+        except (
+            error.Abort,
+            ssl.SSLError,
+            urllibcompat.urlerr.urlerror,
+            socket.timeout,
+        ) as e:
             if handlepullerror(e):
                 return callself()
             raise
@@ -685,7 +704,12 @@ def _docheckout(
                     pullop = exchange.pull(repo, remote, heads=pullrevs)
                     if not pullop.rheads:
                         raise error.Abort(b"unable to pull requested revision")
-        except (error.Abort, ssl.SSLError, urllibcompat.urlerr.urlerror) as e:
+        except (
+            error.Abort,
+            ssl.SSLError,
+            urllibcompat.urlerr.urlerror,
+            socket.timeout,
+        ) as e:
             if handlepullerror(e):
                 return callself()
             raise
@@ -721,14 +745,7 @@ def _docheckout(
         try:
             old_sparse_fn = getattr(repo.dirstate, "_sparsematchfn", None)
             if old_sparse_fn is not None:
-                
-                
-                if util.versiontuple(n=2) >= (5, 0):
-                    repo.dirstate._sparsematchfn = lambda: matchmod.always()
-                else:
-                    repo.dirstate._sparsematchfn = lambda: matchmod.always(
-                        repo.root, ""
-                    )
+                repo.dirstate._sparsematchfn = lambda: matchmod.always()
 
             with timeit("purge", "purge"):
                 if purge(
@@ -765,13 +782,9 @@ def _docheckout(
                 b"%s" % (sparse_profile, checkoutrevision)
             )
 
-        
-        if util.versiontuple(n=2) >= (4, 8):
-            old_config = sparsemod.parseconfig(
-                repo.ui, repo.vfs.tryread(b"sparse"), b"sparse"
-            )
-        else:
-            old_config = sparsemod.parseconfig(repo.ui, repo.vfs.tryread(b"sparse"))
+        old_config = sparsemod.parseconfig(
+            repo.ui, repo.vfs.tryread(b"sparse"), b"sparse"
+        )
 
         old_includes, old_excludes, old_profiles = old_config
 
@@ -793,7 +806,9 @@ def _docheckout(
             
             
             
-            with repo.wlock(), timeit("sparse_update_config", "sparse-update-config"):
+            with repo.wlock(), repo.dirstate.parentchange(), timeit(
+                "sparse_update_config", "sparse-update-config"
+            ):
                 
                 fcounts = list(
                     map(
