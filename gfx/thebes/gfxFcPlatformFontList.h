@@ -94,7 +94,7 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
   nsresult ReadCMAP(FontInfoData* aFontInfoData = nullptr) override;
   bool TestCharacterMap(uint32_t aCh) override;
 
-  const RefPtr<mozilla::gfx::SharedFTFace>& GetFTFace();
+  mozilla::gfx::SharedFTFace* GetFTFace();
   FTUserFontData* GetUserFontData();
 
   FT_MM_Var* GetMMVar() override;
@@ -121,8 +121,11 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
   RefPtr<FcPattern> mFontPattern;
 
   
-  RefPtr<mozilla::gfx::SharedFTFace> mFTFace;
-  bool mFTFaceInitialized;
+  
+  
+  
+  mozilla::Atomic<mozilla::gfx::SharedFTFace*> mFTFace;
+  mozilla::Atomic<bool> mFTFaceInitialized;
 
   
   
