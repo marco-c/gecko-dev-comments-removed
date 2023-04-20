@@ -63,6 +63,9 @@ class SVGImageFrame final : public SVGGeometryFrame, public nsIReflowCallback {
   SVGBBox GetBBoxContribution(const Matrix& aToBBoxUserspace,
                               uint32_t aFlags) override;
 
+  void BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                        const nsDisplayListSet& aLists) override;
+
   
   uint16_t GetHitTestFlags() override;
 
