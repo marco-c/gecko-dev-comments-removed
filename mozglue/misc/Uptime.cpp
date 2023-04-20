@@ -75,7 +75,7 @@ Maybe<uint64_t> NowIncludingSuspendMs() {
   return Some(interrupt_time / kHNSperMS);
 }
 
-#elif defined(XP_LINUX)  
+#elif defined(XP_UNIX)  
 #  include <time.h>
 
 
@@ -88,7 +88,11 @@ uint64_t TimespecToMilliseconds(struct timespec aTs) {
 Maybe<uint64_t> NowExcludingSuspendMs() {
   struct timespec ts = {0};
 
+#  ifdef XP_OPENBSD
+  if (clock_gettime(CLOCK_UPTIME, &ts)) {
+#  else
   if (clock_gettime(CLOCK_MONOTONIC, &ts)) {
+#  endif
     return Nothing();
   }
   return Some(TimespecToMilliseconds(ts));
