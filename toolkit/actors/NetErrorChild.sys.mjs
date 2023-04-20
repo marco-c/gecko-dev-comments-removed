@@ -1,9 +1,7 @@
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["NetErrorChild"];
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
@@ -15,12 +13,12 @@ const { RemotePageChild } = ChromeUtils.import(
   "resource://gre/actors/RemotePageChild.jsm"
 );
 
-class NetErrorChild extends RemotePageChild {
+export class NetErrorChild extends RemotePageChild {
   actorCreated() {
     super.actorCreated();
 
-    
-    
+    // If you add a new function, remember to add it to RemotePageAccessManager.sys.mjs
+    // to allow content-privileged about:neterror or about:certerror to use it.
     const exportableFunctions = [
       "RPMGetAppBuildID",
       "RPMGetInnerMostURI",
@@ -48,14 +46,14 @@ class NetErrorChild extends RemotePageChild {
   }
 
   handleEvent(aEvent) {
-    
+    // Documents have a null ownerDocument.
     let doc = aEvent.originalTarget.ownerDocument || aEvent.originalTarget;
 
     switch (aEvent.type) {
       case "click":
         let elem = aEvent.originalTarget;
         if (elem.id == "viewCertificate") {
-          
+          // Call through the superclass to avoid the security check.
           this.sendAsyncMessage("Browser:CertExceptionError", {
             location: doc.location.href,
             elementId: elem.id,
@@ -90,8 +88,8 @@ class NetErrorChild extends RemotePageChild {
   RPMCheckAlternateHostAvailable() {
     const host = this.contentWindow.location.host.trim();
 
-    
-    
+    // Adapted from UrlbarUtils::looksLikeSingleWordHost
+    // https://searchfox.org/mozilla-central/rev/a26af613a476fafe6c3eba05a81bef63dff3c9f1/browser/components/urlbar/UrlbarUtils.sys.mjs#893
     const REGEXP_SINGLE_WORD = /^[^\s@:/?#]+(:\d+)?$/;
     if (!REGEXP_SINGLE_WORD.test(host)) {
       return;
@@ -142,8 +140,8 @@ class NetErrorChild extends RemotePageChild {
     );
   }
 
-  
-  
+  // Get the header from the http response of the failed channel. This function
+  // is used in the 'about:neterror' page.
   RPMGetHttpResponseHeader(responseHeader) {
     let channel = this.contentWindow.docShell.failedChannel;
     if (!channel) {
@@ -163,7 +161,7 @@ class NetErrorChild extends RemotePageChild {
   }
 
   RPMIsTRROnlyFailure() {
-    
+    // We will only show this in Firefox because the options may direct users to settings only available on Firefox Desktop
     let channel = this.contentWindow?.docShell?.failedChannel?.QueryInterface(
       Ci.nsIHttpChannelInternal
     );
