@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <deque>
 #include <map>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -25,6 +26,7 @@
 #include "net/dcsctp/public/dcsctp_socket.h"
 #include "net/dcsctp/public/types.h"
 #include "net/dcsctp/tx/send_queue.h"
+#include "net/dcsctp/tx/stream_scheduler.h"
 
 namespace dcsctp {
 
@@ -111,23 +113,23 @@ class RRSendQueue : public SendQueue {
   };
 
   
-  class OutgoingStream {
+  class OutgoingStream : public StreamScheduler::StreamProducer {
    public:
     OutgoingStream(
+        StreamScheduler* scheduler,
         StreamID stream_id,
         StreamPriority priority,
         std::function<void()> on_buffered_amount_low,
         ThresholdWatcher& total_buffered_amount,
         const DcSctpSocketHandoverState::OutgoingStream* state = nullptr)
-        : stream_id_(stream_id),
-          priority_(priority),
+        : scheduler_stream_(scheduler->CreateStream(this, stream_id, priority)),
           next_unordered_mid_(MID(state ? state->next_unordered_mid : 0)),
           next_ordered_mid_(MID(state ? state->next_ordered_mid : 0)),
           next_ssn_(SSN(state ? state->next_ssn : 0)),
           buffered_amount_(std::move(on_buffered_amount_low)),
           total_buffered_amount_(total_buffered_amount) {}
 
-    StreamID stream_id() const { return stream_id_; }
+    StreamID stream_id() const { return scheduler_stream_->stream_id(); }
 
     
     void Add(DcSctpMessage message,
@@ -135,8 +137,9 @@ class RRSendQueue : public SendQueue {
              const SendOptions& send_options);
 
     
-    
-    absl::optional<DataToSend> Produce(TimeMs now, size_t max_size);
+    absl::optional<SendQueue::DataToSend> Produce(TimeMs now,
+                                                  size_t max_size) override;
+    size_t bytes_to_send_in_next_message() const override;
 
     const ThresholdWatcher& buffered_amount() const { return buffered_amount_; }
     ThresholdWatcher& buffered_amount() { return buffered_amount_; }
@@ -167,12 +170,10 @@ class RRSendQueue : public SendQueue {
     
     bool has_partially_sent_message() const;
 
-    
-    
-    bool HasDataToSend() const;
-
-    void set_priority(StreamPriority priority) { priority_ = priority; }
-    StreamPriority priority() const { return priority_; }
+    StreamPriority priority() const { return scheduler_stream_->priority(); }
+    void set_priority(StreamPriority priority) {
+      scheduler_stream_->set_priority(priority);
+    }
 
     void AddHandoverState(
         DcSctpSocketHandoverState::OutgoingStream& state) const;
@@ -225,8 +226,8 @@ class RRSendQueue : public SendQueue {
 
     bool IsConsistent() const;
 
-    const StreamID stream_id_;
-    StreamPriority priority_;
+    const std::unique_ptr<StreamScheduler::Stream> scheduler_stream_;
+
     PauseState pause_state_ = PauseState::kNotPaused;
     
     MID next_unordered_mid_;
@@ -251,12 +252,10 @@ class RRSendQueue : public SendQueue {
       TimeMs now,
       size_t max_size);
 
-  
-  std::map<StreamID, OutgoingStream>::iterator GetNextStream();
-
   const std::string log_prefix_;
   const size_t buffer_size_;
   const StreamPriority default_priority_;
+  StreamScheduler scheduler_;
 
   
   
@@ -268,15 +267,6 @@ class RRSendQueue : public SendQueue {
 
   
   ThresholdWatcher total_buffered_amount_;
-
-  
-  
-  
-  
-  bool previous_message_has_ended_ = true;
-
-  
-  StreamID current_stream_id_ = StreamID(0);
 
   
   std::map<StreamID, OutgoingStream> streams_;
