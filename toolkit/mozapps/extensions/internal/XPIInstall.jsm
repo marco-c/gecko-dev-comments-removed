@@ -4718,7 +4718,8 @@ var XPIInstall = {
         aAddon.location.removeAddon(aAddon.id);
         AddonManagerPrivate.callAddonListeners("onUninstalled", wrapper);
 
-        if (existing) {
+        
+        if (existing && !existing.isBuiltinColorwayTheme) {
           lazy.XPIDatabase.makeAddonVisible(existing);
           AddonManagerPrivate.callAddonListeners(
             "onInstalling",
@@ -4732,7 +4733,8 @@ var XPIInstall = {
         }
       };
 
-      if (existing) {
+      
+      if (existing && !existing.isBuiltinColorwayTheme) {
         await bootstrap.update(existing, !existing.disabled, uninstall);
 
         AddonManagerPrivate.callAddonListeners("onInstalled", existing.wrapper);
