@@ -2003,6 +2003,15 @@ var gPrivacyPane = {
       mode = Ci.nsICookieBannerService.MODE_DISABLED;
     }
 
+    
+
+
+
+
+    Services.prefs.setIntPref(
+      "cookiebanners.service.mode.privateBrowsing",
+      mode
+    );
     return mode;
   },
 
