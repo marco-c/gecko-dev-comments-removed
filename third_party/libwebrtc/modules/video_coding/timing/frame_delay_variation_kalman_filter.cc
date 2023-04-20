@@ -8,7 +8,7 @@
 
 
 
-#include "modules/video_coding/timing/frame_delay_delta_kalman_filter.h"
+#include "modules/video_coding/timing/frame_delay_variation_kalman_filter.h"
 
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
@@ -18,9 +18,9 @@ namespace webrtc {
 namespace {
 
 constexpr double kMaxBandwidth = 0.000001;  
-}
+}  
 
-FrameDelayDeltaKalmanFilter::FrameDelayDeltaKalmanFilter() {
+FrameDelayVariationKalmanFilter::FrameDelayVariationKalmanFilter() {
   
   estimate_[0] = 1 / (512e3 / 8);  
   estimate_[1] = 0;                
@@ -35,7 +35,7 @@ FrameDelayDeltaKalmanFilter::FrameDelayDeltaKalmanFilter() {
   process_noise_cov_diag_[1] = 1e-10;    
 }
 
-void FrameDelayDeltaKalmanFilter::PredictAndUpdate(
+void FrameDelayVariationKalmanFilter::PredictAndUpdate(
     double frame_delay_variation_ms,
     double frame_size_variation_bytes,
     double max_frame_size_bytes,
@@ -131,13 +131,13 @@ void FrameDelayDeltaKalmanFilter::PredictAndUpdate(
              estimate_cov_[0][0] >= 0);
 }
 
-double FrameDelayDeltaKalmanFilter::GetFrameDelayVariationEstimateSizeBased(
+double FrameDelayVariationKalmanFilter::GetFrameDelayVariationEstimateSizeBased(
     double frame_size_variation_bytes) const {
   
   return estimate_[0] * frame_size_variation_bytes;
 }
 
-double FrameDelayDeltaKalmanFilter::GetFrameDelayVariationEstimateTotal(
+double FrameDelayVariationKalmanFilter::GetFrameDelayVariationEstimateTotal(
     double frame_size_variation_bytes) const {
   double frame_transmission_delay_ms =
       GetFrameDelayVariationEstimateSizeBased(frame_size_variation_bytes);

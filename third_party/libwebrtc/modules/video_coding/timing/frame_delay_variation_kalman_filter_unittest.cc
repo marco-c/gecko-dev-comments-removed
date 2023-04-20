@@ -8,7 +8,7 @@
 
 
 
-#include "modules/video_coding/timing/frame_delay_delta_kalman_filter.h"
+#include "modules/video_coding/timing/frame_delay_variation_kalman_filter.h"
 
 #include "test/gtest.h"
 
@@ -18,9 +18,9 @@ namespace {
 
 
 
-TEST(FrameDelayDeltaKalmanFilterTest,
+TEST(FrameDelayVariationKalmanFilterTest,
      InitializedFilterWithZeroSizeFrameTakesNoTimeToPropagate) {
-  FrameDelayDeltaKalmanFilter filter;
+  FrameDelayVariationKalmanFilter filter;
 
   
   double frame_size_variation_bytes = 0.0;
@@ -38,9 +38,9 @@ TEST(FrameDelayDeltaKalmanFilterTest,
 
 
 
-TEST(FrameDelayDeltaKalmanFilterTest,
+TEST(FrameDelayVariationKalmanFilterTest,
      InitializedFilterWithSmallSizeFrameTakesFixedTimeToPropagate) {
-  FrameDelayDeltaKalmanFilter filter;
+  FrameDelayVariationKalmanFilter filter;
 
   
   double frame_size_variation_bytes = 1000.0;
@@ -55,9 +55,9 @@ TEST(FrameDelayDeltaKalmanFilterTest,
       expected_frame_delay_variation_estimate_ms);
 }
 
-TEST(FrameDelayDeltaKalmanFilterTest,
+TEST(FrameDelayVariationKalmanFilterTest,
      NegativeNoiseVarianceDoesNotUpdateFilter) {
-  FrameDelayDeltaKalmanFilter filter;
+  FrameDelayVariationKalmanFilter filter;
 
   
   double var_noise = -0.1;
@@ -82,9 +82,9 @@ TEST(FrameDelayDeltaKalmanFilterTest,
             0.0);
 }
 
-TEST(FrameDelayDeltaKalmanFilterTest,
+TEST(FrameDelayVariationKalmanFilterTest,
      VerifyConvergenceWithAlternatingDeviations) {
-  FrameDelayDeltaKalmanFilter filter;
+  FrameDelayVariationKalmanFilter filter;
 
   
   int framerate_fps = 30;
