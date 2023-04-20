@@ -68,24 +68,20 @@ async function do_crash(setup, callback, canReturnZero) {
   }
   args.push("-f", tailfile.path);
 
-  let env = Cc["@mozilla.org/process/environment;1"].getService(
-    Ci.nsIEnvironment
-  );
-
   let crashD = do_get_tempdir();
   crashD.append("crash-events");
   if (!crashD.exists()) {
     crashD.create(crashD.DIRECTORY_TYPE, 0o700);
   }
 
-  env.set("CRASHES_EVENTS_DIR", crashD.path);
+  Services.env.set("CRASHES_EVENTS_DIR", crashD.path);
 
   try {
     process.run(true, args, args.length);
   } catch (ex) {
     
   } finally {
-    env.set("CRASHES_EVENTS_DIR", "");
+    Services.env.set("CRASHES_EVENTS_DIR", "");
   }
 
   if (!canReturnZero) {
@@ -307,17 +303,13 @@ async function do_backgroundtask_crash(
     args.push(value);
   }
 
-  let env = Cc["@mozilla.org/process/environment;1"].getService(
-    Ci.nsIEnvironment
-  );
-
   let crashD = do_get_tempdir();
   crashD.append("crash-events");
   if (!crashD.exists()) {
     crashD.create(crashD.DIRECTORY_TYPE, 0o700);
   }
 
-  env.set("CRASHES_EVENTS_DIR", crashD.path);
+  Services.env.set("CRASHES_EVENTS_DIR", crashD.path);
 
   
   let protocolHandler = Services.io
@@ -328,15 +320,15 @@ async function do_backgroundtask_crash(
   Assert.ok(uri, "resource://testing-common is not substituted");
 
   
-  env.set("XPCSHELL_TESTING_MODULES_URI", uri.spec);
+  Services.env.set("XPCSHELL_TESTING_MODULES_URI", uri.spec);
 
   try {
     process.run(true, args, args.length);
   } catch (ex) {
     
   } finally {
-    env.set("CRASHES_EVENTS_DIR", "");
-    env.set("XPCSHELL_TESTING_MODULES_URI", "");
+    Services.env.set("CRASHES_EVENTS_DIR", "");
+    Services.env.set("XPCSHELL_TESTING_MODULES_URI", "");
   }
 
   if (!canReturnZero) {

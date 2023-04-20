@@ -127,10 +127,7 @@ const gUpdateElevationDialog = {
 
     
     if (Services.appinfo.inSafeMode) {
-      let env = Cc["@mozilla.org/process/environment;1"].getService(
-        Ci.nsIEnvironment
-      );
-      env.set("MOZ_SAFE_MODE_RESTART", "1");
+      Services.env.set("MOZ_SAFE_MODE_RESTART", "1");
     }
 
     

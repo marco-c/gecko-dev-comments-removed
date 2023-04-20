@@ -149,10 +149,7 @@ add_task(async function test_addCrash_shutdownOnCrash() {
   await setup(crashId);
 
   
-  let env = Cc["@mozilla.org/process/environment;1"].getService(
-    Ci.nsIEnvironment
-  );
-  env.set("MOZ_CRASHREPORTER_SHUTDOWN", "1");
+  Services.env.set("MOZ_CRASHREPORTER_SHUTDOWN", "1");
 
   await addCrash(crashId);
 
@@ -164,7 +161,7 @@ add_task(async function test_addCrash_shutdownOnCrash() {
       "analyzer did not start.\n"
   );
 
-  env.set("MOZ_CRASHREPORTER_SHUTDOWN", ""); 
+  Services.env.set("MOZ_CRASHREPORTER_SHUTDOWN", ""); 
   await teardown();
 });
 

@@ -13,15 +13,11 @@ const ProcessTools = Cc["@mozilla.org/processtools-service;1"].getService(
   Ci.nsIProcessToolsService
 );
 
-const env = Cc["@mozilla.org/process/environment;1"].getService(
-  Ci.nsIEnvironment
-);
-
 let PYTHON;
 
 
 add_task(async function setup() {
-  PYTHON = await Subprocess.pathSearch(env.get("PYTHON"));
+  PYTHON = await Subprocess.pathSearch(Services.env.get("PYTHON"));
 });
 
 
