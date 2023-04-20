@@ -43,6 +43,12 @@ class Screen final : public nsIScreen {
     return mScreenOrientation;
   }
 
+  
+
+
+
+  hal::ScreenOrientation GetDefaultOrientationType() const;
+
   float GetDPI() const { return mDPI; }
 
   const LayoutDeviceIntRect& GetRect() const { return mRect; }
