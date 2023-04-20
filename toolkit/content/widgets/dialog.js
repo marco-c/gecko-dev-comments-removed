@@ -12,6 +12,17 @@
   );
 
   class MozDialog extends MozXULElement {
+    constructor() {
+      super();
+
+      
+
+
+
+
+      this._l10nButtons = [];
+    }
+
     static get observedAttributes() {
       return super.observedAttributes.concat("subdialog");
     }
@@ -94,13 +105,6 @@
         MozXULElement.parseXULToFragment(this._markup)
       );
       this.initializeAttributeInheritance();
-
-      
-
-
-
-
-      this._l10nButtons = [];
 
       this._configureButtons(this.buttons);
 
