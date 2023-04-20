@@ -90,7 +90,7 @@ class ClippedTime {
 
   double toDouble() const { return t; }
 
-  bool isValid() const { return !mozilla::IsNaN(t); }
+  bool isValid() const { return !std::isnan(t); }
 };
 
 

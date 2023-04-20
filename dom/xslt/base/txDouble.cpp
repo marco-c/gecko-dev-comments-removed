@@ -116,7 +116,7 @@ double txDouble::toDouble(const nsAString& aSrc) {
 void txDouble::toString(double aValue, nsAString& aDest) {
   
 
-  if (mozilla::IsNaN(aValue)) {
+  if (std::isnan(aValue)) {
     aDest.AppendLiteral("NaN");
     return;
   }

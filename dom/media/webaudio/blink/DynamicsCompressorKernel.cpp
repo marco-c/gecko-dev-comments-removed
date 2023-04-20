@@ -37,7 +37,6 @@
 
 using namespace mozilla::dom;  
 using mozilla::IsInfinite;
-using mozilla::IsNaN;
 using mozilla::MakeUnique;
 using mozilla::PositiveInfinity;
 
@@ -293,7 +292,7 @@ void DynamicsCompressorKernel::process(
     
 
     
-    if (IsNaN(m_detectorAverage)) m_detectorAverage = 1;
+    if (std::isnan(m_detectorAverage)) m_detectorAverage = 1;
     if (IsInfinite(m_detectorAverage)) m_detectorAverage = 1;
 
     float desiredGain = m_detectorAverage;
@@ -327,7 +326,7 @@ void DynamicsCompressorKernel::process(
       m_maxAttackCompressionDiffDb = -1;
 
       
-      if (IsNaN(compressionDiffDb)) compressionDiffDb = -1;
+      if (std::isnan(compressionDiffDb)) compressionDiffDb = -1;
       if (IsInfinite(compressionDiffDb)) compressionDiffDb = -1;
 
       
@@ -355,7 +354,7 @@ void DynamicsCompressorKernel::process(
       
 
       
-      if (IsNaN(compressionDiffDb)) compressionDiffDb = 1;
+      if (std::isnan(compressionDiffDb)) compressionDiffDb = 1;
       if (IsInfinite(compressionDiffDb)) compressionDiffDb = 1;
 
       
@@ -427,7 +426,7 @@ void DynamicsCompressorKernel::process(
         detectorAverage = std::min(1.0f, detectorAverage);
 
         
-        if (IsNaN(detectorAverage)) detectorAverage = 1;
+        if (std::isnan(detectorAverage)) detectorAverage = 1;
         if (IsInfinite(detectorAverage)) detectorAverage = 1;
 
         

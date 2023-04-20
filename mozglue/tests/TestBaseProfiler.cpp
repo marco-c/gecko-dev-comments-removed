@@ -835,7 +835,7 @@ void TestProportionValue() {
   }
 
   
-  MOZ_RELEASE_ASSERT(mozilla::IsNaN(ProportionValue::MakeInvalid().ToDouble()));
+  MOZ_RELEASE_ASSERT(std::isnan(ProportionValue::MakeInvalid().ToDouble()));
 
   using namespace mozilla::literals::ProportionValue_literals;
 

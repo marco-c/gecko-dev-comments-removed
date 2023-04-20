@@ -4195,7 +4195,7 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
   
   
   if (aMaxWidth.WasPassed() &&
-      (aMaxWidth.Value() <= 0 || IsNaN(aMaxWidth.Value()))) {
+      (aMaxWidth.Value() <= 0 || std::isnan(aMaxWidth.Value()))) {
     textToDraw.Truncate();
   }
 

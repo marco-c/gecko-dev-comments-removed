@@ -11,7 +11,6 @@
 #include "mozilla/dom/GeolocationPositionBinding.h"
 
 using mozilla::EqualOrBothNaN;
-using mozilla::IsNaN;
 
 
 inline double NaN() { return mozilla::UnspecifiedNaN<double>(); }
@@ -28,7 +27,7 @@ nsGeoPositionCoords::nsGeoPositionCoords(double aLat, double aLong, double aAlt,
       mHError((aHError >= 0) ? aHError : 0)
       
       ,
-      mVError((aVError >= 0 && !IsNaN(aAlt)) ? aVError : NaN())
+      mVError((aVError >= 0 && !std::isnan(aAlt)) ? aVError : NaN())
       
       
       
