@@ -248,11 +248,12 @@ class FileSystemWritableFileStream::CloseHandler {
 };
 
 FileSystemWritableFileStream::FileSystemWritableFileStream(
-    nsIGlobalObject* aGlobal, RefPtr<FileSystemManager>& aManager,
+    const nsCOMPtr<nsIGlobalObject>& aGlobal,
+    RefPtr<FileSystemManager>& aManager,
     RefPtr<FileSystemWritableFileStreamChild> aActor,
     already_AddRefed<TaskQueue> aTaskQueue,
     nsCOMPtr<nsIRandomAccessStream> aStream,
-    const fs::FileSystemEntryMetadata& aMetadata)
+    fs::FileSystemEntryMetadata&& aMetadata)
     : WritableStream(aGlobal, HoldDropJSObjectsCaller::Explicit),
       mManager(aManager),
       mActor(std::move(aActor)),
@@ -260,7 +261,7 @@ FileSystemWritableFileStream::FileSystemWritableFileStream(
       mStreamOwner(MakeAndAddRef<fs::FileSystemThreadSafeStreamOwner>(
           std::move(aStream))),
       mWorkerRef(),
-      mMetadata(aMetadata),
+      mMetadata(std::move(aMetadata)),
       mCloseHandler(MakeAndAddRef<CloseHandler>()) {
   LOG(("Created WritableFileStream %p for fd %p", this, mStreamOwner.get()));
 
@@ -286,82 +287,118 @@ FileSystemWritableFileStream::~FileSystemWritableFileStream() {
 
 
 
-MOZ_CAN_RUN_SCRIPT_BOUNDARY already_AddRefed<FileSystemWritableFileStream>
+MOZ_CAN_RUN_SCRIPT_BOUNDARY RefPtr<FileSystemWritableFileStream::CreatePromise>
 FileSystemWritableFileStream::Create(
-    nsIGlobalObject* aGlobal, RefPtr<FileSystemManager>& aManager,
+    const nsCOMPtr<nsIGlobalObject>& aGlobal,
+    RefPtr<FileSystemManager>& aManager,
     RefPtr<FileSystemWritableFileStreamChild> aActor,
-    mozilla::ipc::RandomAccessStreamParams aStreamParams,
-    const fs::FileSystemEntryMetadata& aMetadata) {
-  AutoJSAPI jsapi;
-  if (!jsapi.Init(aGlobal)) {
-    return nullptr;
-  }
-  JSContext* cx = jsapi.cx();
+    mozilla::ipc::RandomAccessStreamParams&& aStreamParams,
+    fs::FileSystemEntryMetadata&& aMetadata) {
+  using StreamPromise = MozPromise<NotNull<nsCOMPtr<nsIRandomAccessStream>>,
+                                   nsresult,  true>;
 
-  
-  
-  QM_TRY_UNWRAP(
-      MovingNotNull<nsCOMPtr<nsIRandomAccessStream>> inputOutputStream,
-      mozilla::ipc::DeserializeRandomAccessStream(aStreamParams), nullptr);
+  MOZ_ASSERT(aGlobal);
 
   QM_TRY_UNWRAP(auto streamTransportService,
                 MOZ_TO_RESULT_GET_TYPED(nsCOMPtr<nsIEventTarget>,
                                         MOZ_SELECT_OVERLOAD(do_GetService),
                                         NS_STREAMTRANSPORTSERVICE_CONTRACTID),
-                nullptr);
+                [](const nsresult aRv) {
+                  return CreatePromise::CreateAndReject(aRv, __func__);
+                });
+
   RefPtr<TaskQueue> taskQueue =
       TaskQueue::Create(streamTransportService.forget(), "WritableStreamQueue");
   MOZ_ASSERT(taskQueue);
 
-  
-  
-  RefPtr<FileSystemWritableFileStream> stream =
-      new FileSystemWritableFileStream(aGlobal, aManager, std::move(aActor),
-                                       taskQueue.forget(),
-                                       std::move(inputOutputStream), aMetadata);
+  auto streamSetup =
+      [aGlobal, aManager, actor = std::move(aActor), taskQueue,
+       metadata =
+           std::move(aMetadata)](StreamPromise::ResolveOrRejectValue&& aValue)
+          MOZ_CAN_RUN_SCRIPT mutable {
+            auto rejectAndReturn = [](const nsresult aRv) {
+              return CreatePromise::CreateAndReject(aRv, __func__);
+            };
 
-  auto autoClose = MakeScopeExit([stream] {
-    stream->mCloseHandler->Close();
-    stream->mActor->SendClose();
-  });
+            if (!aValue.IsResolve()) {
+              if (aValue.IsReject()) {
+                return rejectAndReturn(aValue.RejectValue());
+              }
 
-  WorkerPrivate* const workerPrivate = GetCurrentThreadWorkerPrivate();
-  if (workerPrivate) {
-    RefPtr<StrongWorkerRef> workerRef = StrongWorkerRef::Create(
-        workerPrivate, "FileSystemWritableFileStream", [stream]() {
-          if (stream->IsOpen()) {
+              return rejectAndReturn(NS_ERROR_DOM_UNKNOWN_ERR);
+            }
+
+            AutoJSAPI jsapi;
+            if (!jsapi.Init(aGlobal)) {
+              return rejectAndReturn(NS_ERROR_FAILURE);
+            }
+            JSContext* cx = jsapi.cx();
+
             
-            Unused << stream->BeginClose();
-          }
-        });
+            
+            nsCOMPtr<nsIRandomAccessStream> inputOutputStream =
+                aValue.ResolveValue();
+            RefPtr<FileSystemWritableFileStream> stream =
+                new FileSystemWritableFileStream(
+                    aGlobal, aManager, std::move(actor), taskQueue.forget(),
+                     inputOutputStream,
+                    std::move(metadata));
 
-    stream->mWorkerRef = std::move(workerRef);
-  }
+            auto autoClose = MakeScopeExit([stream] {
+              stream->mCloseHandler->Close();
+              stream->mActor->SendClose();
+            });
 
-  
-  auto algorithms =
-      MakeRefPtr<WritableFileStreamUnderlyingSinkAlgorithms>(*stream);
+            
+            auto algorithms =
+                MakeRefPtr<WritableFileStreamUnderlyingSinkAlgorithms>(*stream);
 
-  
-  
-  
-  IgnoredErrorResult rv;
-  stream->SetUpNative(
-      cx, *algorithms,
-      
-      Some(1),
-      
-      
-      nullptr, rv);
-  if (rv.Failed()) {
-    return nullptr;
-  }
+            
+            
+            
+            
+            IgnoredErrorResult rv;
+            stream->SetUpNative(cx, *algorithms,
+                                
+                                Some(1),
+                                
+                                
+                                
+                                nullptr, rv);
+            if (rv.Failed()) {
+              return CreatePromise::CreateAndReject(rv.StealNSResult(),
+                                                    __func__);
+            }
 
-  autoClose.release();
-  stream->mCloseHandler->Open();
+            autoClose.release();
+            stream->mCloseHandler->Open();
 
-  
-  return stream.forget();
+            
+            return CreatePromise::CreateAndResolve(stream.forget(), __func__);
+          };
+
+  return InvokeAsync(taskQueue, __func__,
+                     [streamParams = std::move(aStreamParams)]() mutable {
+                       
+                       
+                       
+                       mozilla::ipc::RandomAccessStreamParams params(
+                           std::move(streamParams));
+                       QM_TRY_UNWRAP(
+                           MovingNotNull<nsCOMPtr<nsIRandomAccessStream>>
+                               inputOutputStream,
+                           mozilla::ipc::DeserializeRandomAccessStream(params),
+                           [](const bool) {
+                             return StreamPromise::CreateAndReject(
+                                 NS_ERROR_DOM_UNKNOWN_ERR, __func__);
+                           });
+
+                       NotNull<nsCOMPtr<nsIRandomAccessStream>> unwrapped(
+                           std::move(inputOutputStream).unwrap());
+                       return StreamPromise::CreateAndResolve(unwrapped,
+                                                              __func__);
+                     })
+      ->Then(GetCurrentSerialEventTarget(), __func__, std::move(streamSetup));
 }
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(FileSystemWritableFileStream,
@@ -433,6 +470,11 @@ RefPtr<BoolPromise> FileSystemWritableFileStream::BeginClose() {
   }
 
   return mCloseHandler->GetClosePromise();
+}
+
+void FileSystemWritableFileStream::SetWorkerRef(
+    RefPtr<StrongWorkerRef>&& aWorkerRef) {
+  mWorkerRef = std::move(aWorkerRef);
 }
 
 already_AddRefed<Promise> FileSystemWritableFileStream::Write(
