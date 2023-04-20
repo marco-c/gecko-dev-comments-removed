@@ -5,6 +5,7 @@
 
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/TextUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_security.h"
@@ -975,7 +976,7 @@ void nsCSPParser::directive() {
 
   
   
-  if (mCurDir.Length() < 1) {
+  if (mCurDir.Length() == 0) {
     AutoTArray<nsString, 1> params = {u"directive missing"_ns};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
                              "failedToParseUnrecognizedSource", params);
@@ -1141,6 +1142,24 @@ nsCSPPolicy* nsCSPParser::policy() {
 
   mPolicy = new nsCSPPolicy();
   for (uint32_t i = 0; i < mTokens.Length(); i++) {
+    
+    
+    
+    
+    bool isAscii = true;
+    for (const auto& token : mTokens[i]) {
+      if (!IsAscii(token)) {
+        AutoTArray<nsString, 1> params = {mTokens[i][0], token};
+        logWarningErrorToConsole(nsIScriptError::warningFlag,
+                                 "ignoringNonAsciiToken", params);
+        isAscii = false;
+        break;
+      }
+    }
+    if (!isAscii) {
+      continue;
+    }
+
     
     
     
