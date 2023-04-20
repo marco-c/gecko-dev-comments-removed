@@ -67,7 +67,7 @@ UtilityAudioDecoderParent::~UtilityAudioDecoderParent() {
 
 
 void UtilityAudioDecoderParent::GenericPreloadForSandbox() {
-#if defined(MOZ_SANDBOX) && defined(OS_WIN)
+#if defined(MOZ_SANDBOX) && defined(XP_WIN) && defined(MOZ_FFVPX)
   
   
   UtilityProcessImpl::LoadLibraryOrCrash(L"mozavcodec.dll");
