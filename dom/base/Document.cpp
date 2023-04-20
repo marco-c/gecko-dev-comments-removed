@@ -15847,6 +15847,9 @@ ResizeObserver& Document::EnsureLastRememberedSizeObserver() {
 }
 
 void Document::ObserveForLastRememberedSize(Element& aElement) {
+  if (NS_WARN_IF(!IsActive())) {
+    return;
+  }
   
   
   static ResizeObserverOptions options;
