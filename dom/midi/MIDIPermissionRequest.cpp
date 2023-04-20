@@ -178,10 +178,14 @@ MIDIPermissionRequest::Run() {
 
 
 
+
+
+
 void MIDIPermissionRequest::CancelWithRandomizedDelay() {
   MOZ_ASSERT(NS_IsMainThread());
   uint32_t baseDelayMS = 3 * 1000;
-  uint32_t randomDelayMS = RandomUint64OrDie() % (10 * 1000);
+  uint32_t randomDelayMS =
+      xpc::IsInAutomation() ? 0 : RandomUint64OrDie() % (10 * 1000);
   auto delay = TimeDuration::FromMilliseconds(baseDelayMS + randomDelayMS);
   RefPtr<MIDIPermissionRequest> self = this;
   NS_NewTimerWithCallback(
