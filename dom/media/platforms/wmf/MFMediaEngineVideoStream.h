@@ -35,20 +35,11 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
     return TrackInfo::TrackType::kVideoTrack;
   }
 
-  void SetKnowsCompositor(layers::KnowsCompositor* aKnowsCompositor) {
-    MutexAutoLock lock(mMutex);
-    mKnowsCompositor = aKnowsCompositor;
-  }
+  void SetKnowsCompositor(layers::KnowsCompositor* aKnowsCompositor);
 
-  HANDLE GetDcompSurfaceHandle() {
-    MutexAutoLock lock(mMutex);
-    return mDCompSurfaceHandle;
-  }
   void SetDCompSurfaceHandle(HANDLE aDCompSurfaceHandle);
 
   MFMediaEngineVideoStream* AsVideoStream() override { return this; }
-
-  already_AddRefed<MediaData> OutputData() override;
 
   MediaDataDecoder::ConversionRequired NeedsConversion() const override;
 
@@ -56,6 +47,8 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
   
   
   void SetConfig(const TrackInfo& aConfig);
+
+  RefPtr<MediaDataDecoder::DecodePromise> Drain() override;
 
  private:
   HRESULT
@@ -65,11 +58,20 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
 
   void UpdateConfig(const VideoInfo& aInfo);
 
-  Mutex mMutex{"MFMediaEngineVideoStream"};
+  already_AddRefed<MediaData> OutputDataInternal() override;
 
-  HANDLE mDCompSurfaceHandle MOZ_GUARDED_BY(mMutex);
-  bool mNeedRecreateImage MOZ_GUARDED_BY(mMutex);
-  RefPtr<layers::KnowsCompositor> mKnowsCompositor MOZ_GUARDED_BY(mMutex);
+  bool IsDCompImageReady();
+
+  void ResolvePendingDrainPromiseIfNeeded();
+
+  void ShutdownCleanUpOnTaskQueue() override;
+
+  
+  HANDLE mDCompSurfaceHandle;
+  bool mNeedRecreateImage;
+  RefPtr<layers::KnowsCompositor> mKnowsCompositor;
+
+  Mutex mMutex{"MFMediaEngineVideoStream"};
   gfx::IntSize mDisplay MOZ_GUARDED_BY(mMutex);
 
   
@@ -83,6 +85,12 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
   
   
   bool mHasReceivedInitialCreateDecoderConfig;
+
+  
+  
+  
+  
+  MozPromiseHolder<MediaDataDecoder::DecodePromise> mPendingDrainPromise;
 };
 
 }  

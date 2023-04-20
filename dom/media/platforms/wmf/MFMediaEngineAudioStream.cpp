@@ -75,12 +75,11 @@ bool MFMediaEngineAudioStream::HasEnoughRawData() const {
   return mRawDataQueueForFeedingEngine.Duration() >= AMPLE_AUDIO_USECS;
 }
 
-already_AddRefed<MediaData> MFMediaEngineAudioStream::OutputData() {
+already_AddRefed<MediaData> MFMediaEngineAudioStream::OutputDataInternal() {
+  AssertOnTaskQueue();
   if (mRawDataQueueForGeneratingOutput.GetSize() == 0) {
-    LOGV("Hasn't got raw data for generating output yet");
     return nullptr;
   }
-
   
   
   

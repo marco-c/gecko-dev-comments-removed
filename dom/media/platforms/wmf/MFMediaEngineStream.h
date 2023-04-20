@@ -92,9 +92,9 @@ class MFMediaEngineStream
 
   virtual MFMediaEngineVideoStream* AsVideoStream() { return nullptr; }
 
-  
-  
-  virtual already_AddRefed<MediaData> OutputData() = 0;
+  RefPtr<MediaDataDecoder::DecodePromise> OutputData();
+
+  virtual RefPtr<MediaDataDecoder::DecodePromise> Drain();
 
   virtual MediaDataDecoder::ConversionRequired NeedsConversion() const {
     return MediaDataDecoder::ConversionRequired::kNeedNone;
@@ -119,6 +119,16 @@ class MFMediaEngineStream
   void NotifyEndOfStreamInternal();
 
   bool IsEnded() const;
+
+  
+  
+  virtual void ShutdownCleanUpOnTaskQueue(){};
+
+  
+  
+  virtual already_AddRefed<MediaData> OutputDataInternal() = 0;
+
+  void SendRequestSampleEvent(bool aIsEnough);
 
   void AssertOnTaskQueue() const;
   void AssertOnMFThreadPool() const;
