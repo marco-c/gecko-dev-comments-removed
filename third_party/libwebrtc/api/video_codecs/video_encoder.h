@@ -174,7 +174,7 @@ class RTC_EXPORT VideoEncoder {
     
     
     
-    int requested_resolution_alignment;
+    uint32_t requested_resolution_alignment;
 
     
     
