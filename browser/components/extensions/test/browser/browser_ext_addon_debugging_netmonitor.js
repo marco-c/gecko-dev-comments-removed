@@ -7,18 +7,9 @@ const { require } = ChromeUtils.importESModule(
 );
 
 const { gDevTools } = require("devtools/client/framework/devtools");
-const { Toolbox } = require("devtools/client/framework/toolbox");
-const {
-  CommandsFactory,
-} = require("devtools/shared/commands/commands-factory");
 
 async function setupToolboxTest(extensionId) {
-  const commands = await CommandsFactory.forAddon(extensionId);
-  await commands.targetCommand.startListening();
-
-  const toolbox = await gDevTools.showToolbox(commands, {
-    hostType: Toolbox.HostType.WINDOW,
-  });
+  const toolbox = await gDevTools.showToolboxForWebExtension(extensionId);
 
   async function waitFor(condition) {
     while (!condition()) {
@@ -70,11 +61,6 @@ async function setupToolboxTest(extensionId) {
   );
 
   await toolbox.destroy();
-
-  
-  
-  
-  await commands.destroy();
 }
 
 add_task(async function test_addon_debugging_netmonitor_panel() {
