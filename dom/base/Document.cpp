@@ -1980,12 +1980,6 @@ static uint32_t ConvertToUnsignedFromDouble(double aNumber) {
 
 void Document::RecordPageLoadEventTelemetry(
     glean::perf::PageLoadExtra& aEventTelemetryData) {
-  static bool sTelemetryEventEnabled = false;
-  if (!sTelemetryEventEnabled) {
-    sTelemetryEventEnabled = true;
-    Telemetry::SetEventRecordingEnabled("page_load"_ns, true);
-  }
-
   
   
   if (!aEventTelemetryData.loadTime) {
