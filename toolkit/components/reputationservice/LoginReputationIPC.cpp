@@ -6,6 +6,7 @@
 
 
 #include "LoginReputationIPC.h"
+#include "LoginReputation.h"
 #include "mozilla/Components.h"
 #include "mozilla/Unused.h"
 
