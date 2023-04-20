@@ -6,6 +6,8 @@
 
 #include "nsExceptionHandlerUtils.h"
 
+#include <algorithm>
+
 #include "double-conversion/double-conversion.h"
 
 
@@ -31,7 +33,7 @@ bool SimpleNoCLibDtoA(double aValue, char* aBuffer, int aBufferLength) {
     
     
     aBuffer[length + 1] = '\0';
-    for (i = length; i > point; i -= 1) {
+    for (i = length; i > std::max(point, 0); i -= 1) {
       aBuffer[i] = aBuffer[i - 1];
     }
     aBuffer[i] = '.';  
