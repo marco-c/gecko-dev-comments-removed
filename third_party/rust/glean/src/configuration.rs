@@ -30,8 +30,4 @@ pub struct Configuration {
     pub uploader: Option<Box<dyn PingUploader + 'static>>,
     
     pub use_core_mps: bool,
-    
-    
-    
-    pub trim_data_to_registered_pings: bool,
 }

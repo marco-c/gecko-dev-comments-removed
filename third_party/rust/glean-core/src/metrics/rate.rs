@@ -2,7 +2,6 @@
 
 
 
-use crate::common_metric_data::CommonMetricDataInternal;
 use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
 use crate::metrics::Metric;
 use crate::metrics::MetricType;
@@ -37,11 +36,11 @@ impl From<(i32, i32)> for Rate {
 
 #[derive(Clone, Debug)]
 pub struct RateMetric {
-    meta: CommonMetricDataInternal,
+    meta: CommonMetricData,
 }
 
 impl MetricType for RateMetric {
-    fn meta(&self) -> &CommonMetricDataInternal {
+    fn meta(&self) -> &CommonMetricData {
         &self.meta
     }
 }
@@ -53,7 +52,7 @@ impl MetricType for RateMetric {
 impl RateMetric {
     
     pub fn new(meta: CommonMetricData) -> Self {
-        Self { meta: meta.into() }
+        Self { meta }
     }
 
     
@@ -155,13 +154,13 @@ impl RateMetric {
     ) -> Option<Rate> {
         let queried_ping_name = ping_name
             .into()
-            .unwrap_or_else(|| &self.meta().inner.send_in_pings[0]);
+            .unwrap_or_else(|| &self.meta().send_in_pings[0]);
 
         match StorageManager.snapshot_metric_for_test(
             glean.storage(),
             queried_ping_name,
             &self.meta.identifier(glean),
-            self.meta.inner.lifetime,
+            self.meta.lifetime,
         ) {
             Some(Metric::Rate(n, d)) => Some((n, d).into()),
             _ => None,

@@ -217,13 +217,7 @@ impl EnvironmentImpl {
         if fs::metadata(&path)?.is_dir() {
             path.to_mut().push(DEFAULT_DB_FILENAME);
         };
-
-        
-        let tmp_path = path.with_extension("tmp");
-        fs::write(&tmp_path, self.serialize()?)?;
-
-        
-        fs::rename(tmp_path, path)?;
+        fs::write(&path, self.serialize()?)?;
         Ok(())
     }
 

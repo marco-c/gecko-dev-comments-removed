@@ -5,7 +5,6 @@
 
 
 use std::collections::HashMap;
-use std::sync::atomic::Ordering;
 
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
@@ -21,7 +20,6 @@ mod experiment;
 pub(crate) mod labeled;
 mod memory_distribution;
 mod memory_unit;
-mod metrics_disabled_config;
 mod numerator;
 mod ping;
 mod quantity;
@@ -36,11 +34,11 @@ mod timing_distribution;
 mod url;
 mod uuid;
 
-use crate::common_metric_data::CommonMetricDataInternal;
 pub use crate::event_database::RecordedEvent;
 use crate::histogram::{Functional, Histogram, PrecomputedExponential, PrecomputedLinear};
 pub use crate::metrics::datetime::Datetime;
 use crate::util::get_iso_time_string;
+use crate::CommonMetricData;
 use crate::Glean;
 
 pub use self::boolean::BooleanMetric;
@@ -68,8 +66,6 @@ pub use self::url::UrlMetric;
 pub use self::uuid::UuidMetric;
 pub use crate::histogram::HistogramType;
 pub use recorded_experiment::RecordedExperiment;
-
-pub use self::metrics_disabled_config::MetricsDisabledConfig;
 
 
 
@@ -146,7 +142,7 @@ pub enum Metric {
 
 pub trait MetricType {
     
-    fn meta(&self) -> &CommonMetricDataInternal;
+    fn meta(&self) -> &CommonMetricData;
 
     
     fn with_name(&self, _name: String) -> Self
@@ -169,57 +165,7 @@ pub trait MetricType {
     
     
     fn should_record(&self, glean: &Glean) -> bool {
-        if !glean.is_upload_enabled() {
-            return false;
-        }
-
-        
-        
-        
-        
-        
-        
-
-        
-        
-        let disabled_field = self.meta().disabled.load(Ordering::Relaxed);
-        
-        let epoch = disabled_field >> 4;
-        
-        let disabled = disabled_field & 0xF;
-        
-        
-        let remote_settings_epoch = glean.remote_settings_epoch.load(Ordering::Acquire);
-        if epoch == remote_settings_epoch {
-            return disabled == 0;
-        }
-        
-        
-        let metrics_disabled = &glean
-            .remote_settings_metrics_config
-            .lock()
-            .unwrap()
-            .metrics_disabled;
-        
-        let current_disabled = {
-            let base_id = self.meta().base_identifier();
-            let identifier = base_id
-                .split_once('/')
-                .map(|split| split.0)
-                .unwrap_or(&base_id);
-            if let Some(is_disabled) = metrics_disabled.get(identifier) {
-                u8::from(*is_disabled)
-            } else {
-                u8::from(self.meta().inner.disabled)
-            }
-        };
-
-        
-        let new_disabled = (remote_settings_epoch << 4) | (current_disabled & 0xF);
-        self.meta().disabled.store(new_disabled, Ordering::Relaxed);
-
-        
-        current_disabled == 0
+        glean.is_upload_enabled() && self.meta().should_record()
     }
 }
 

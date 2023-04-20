@@ -15,7 +15,6 @@
 use std::convert::TryFrom;
 use std::fmt::Display;
 
-use crate::common_metric_data::CommonMetricDataInternal;
 use crate::error::{Error, ErrorKind};
 use crate::metrics::labeled::{combine_base_identifier_and_label, strip_label};
 use crate::metrics::CounterMetric;
@@ -28,7 +27,6 @@ use crate::Lifetime;
 
 
 
-#[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ErrorType {
     
@@ -89,14 +87,14 @@ impl TryFrom<i32> for ErrorType {
 }
 
 
-fn get_error_metric_for_metric(meta: &CommonMetricDataInternal, error: ErrorType) -> CounterMetric {
+fn get_error_metric_for_metric(meta: &CommonMetricData, error: ErrorType) -> CounterMetric {
     
     
     let identifier = meta.base_identifier();
     let name = strip_label(&identifier);
 
     
-    let mut send_in_pings = meta.inner.send_in_pings.clone();
+    let mut send_in_pings = meta.send_in_pings.clone();
     let ping_name = "metrics".to_string();
     if !send_in_pings.contains(&ping_name) {
         send_in_pings.push(ping_name);
@@ -129,7 +127,7 @@ fn get_error_metric_for_metric(meta: &CommonMetricDataInternal, error: ErrorType
 
 pub fn record_error<O: Into<Option<i32>>>(
     glean: &Glean,
-    meta: &CommonMetricDataInternal,
+    meta: &CommonMetricData,
     error: ErrorType,
     message: impl Display,
     num_errors: O,
@@ -157,7 +155,7 @@ pub fn record_error<O: Into<Option<i32>>>(
 
 pub fn test_get_num_recorded_errors(
     glean: &Glean,
-    meta: &CommonMetricDataInternal,
+    meta: &CommonMetricData,
     error: ErrorType,
 ) -> Result<i32, String> {
     let metric = get_error_metric_for_metric(meta, error);
