@@ -20,7 +20,28 @@
 #include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+#define DATE_TIME_FORMAT_REPLACE_SPECIAL_SPACES 1
+
 namespace mozilla::intl {
+
+#if DATE_TIME_FORMAT_REPLACE_SPECIAL_SPACES
+static inline bool IsSpecialSpace(char16_t c) {
+  
+  return c == 0x202F || c == 0x2009;
+}
+#endif
 
 class Calendar;
 
@@ -329,6 +350,14 @@ class DateTimeFormat final {
         return result;
       }
 
+#if DATE_TIME_FORMAT_REPLACE_SPECIAL_SPACES
+      for (auto& c : u16Vec) {
+        if (IsSpecialSpace(c)) {
+          c = ' ';
+        }
+      }
+#endif
+
       if (!FillBuffer(u16Vec, aBuffer)) {
         return Err(ICUError::OutOfMemory);
       }
@@ -337,11 +366,24 @@ class DateTimeFormat final {
       static_assert(std::is_same_v<typename B::CharType, char16_t>);
 
       
-      return FillBufferWithICUCall(
+      auto result = FillBufferWithICUCall(
           aBuffer, [&](UChar* target, int32_t length, UErrorCode* status) {
             return udat_format(mDateFormat, aUnixEpoch, target, length, nullptr,
                                status);
           });
+      if (result.isErr()) {
+        return result;
+      }
+
+#if DATE_TIME_FORMAT_REPLACE_SPECIAL_SPACES
+      for (auto& c : Span(aBuffer.data(), aBuffer.length())) {
+        if (IsSpecialSpace(c)) {
+          c = ' ';
+        }
+      }
+#endif
+
+      return Ok{};
     }
   };
 
@@ -379,6 +421,14 @@ class DateTimeFormat final {
       ufieldpositer_close(fpositer);
       return result.propagateErr();
     }
+
+#if DATE_TIME_FORMAT_REPLACE_SPECIAL_SPACES
+    for (auto& c : Span(aBuffer.data(), aBuffer.length())) {
+      if (IsSpecialSpace(c)) {
+        c = ' ';
+      }
+    }
+#endif
 
     return TryFormatToParts(fpositer, aBuffer.length(), aParts);
   }

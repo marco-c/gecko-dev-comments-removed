@@ -2,6 +2,7 @@
 
 
 
+#include "DateTimeFormat.h"  
 #include "DateTimeFormatUtils.h"
 #include "ScopedICUObject.h"
 
@@ -70,6 +71,26 @@ DateIntervalFormat::~DateIntervalFormat() {
   udtitvfmt_close(mDateIntervalFormat.GetMut());
 }
 
+#if DATE_TIME_FORMAT_REPLACE_SPECIAL_SPACES
+
+
+
+static void ReplaceSpecialSpaces(const UFormattedValue* aValue) {
+  UErrorCode status = U_ZERO_ERROR;
+  int32_t len;
+  const UChar* str = ufmtval_getString(aValue, &len, &status);
+  if (U_FAILURE(status)) {
+    return;
+  }
+
+  for (const auto& c : Span(str, len)) {
+    if (IsSpecialSpace(c)) {
+      const_cast<UChar&>(c) = ' ';
+    }
+  }
+}
+#endif
+
 ICUResult DateIntervalFormat::TryFormatCalendar(
     const Calendar& aStart, const Calendar& aEnd,
     AutoFormattedDateInterval& aFormatted, bool* aPracticallyEqual) const {
@@ -83,6 +104,10 @@ ICUResult DateIntervalFormat::TryFormatCalendar(
   if (U_FAILURE(status)) {
     return Err(ToICUError(status));
   }
+
+#if DATE_TIME_FORMAT_REPLACE_SPECIAL_SPACES
+  ReplaceSpecialSpaces(aFormatted.Value());
+#endif
 
   MOZ_TRY(DateFieldsPracticallyEqual(aFormatted.Value(), aPracticallyEqual));
   return Ok();
@@ -99,6 +124,10 @@ ICUResult DateIntervalFormat::TryFormatDateTime(
   if (U_FAILURE(status)) {
     return Err(ToICUError(status));
   }
+
+#if DATE_TIME_FORMAT_REPLACE_SPECIAL_SPACES
+  ReplaceSpecialSpaces(aFormatted.Value());
+#endif
 
   MOZ_TRY(DateFieldsPracticallyEqual(aFormatted.Value(), aPracticallyEqual));
   return Ok();
