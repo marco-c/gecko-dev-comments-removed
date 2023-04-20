@@ -46,13 +46,24 @@ static bool ProxySetOnExpando(JSContext* cx, HandleObject proxy, HandleId id,
 
   
   
-  MOZ_ASSERT(expando);
+  
+  
+  
+  if (!expando) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_SET_MISSING_PRIVATE);
+    return false;
+  }
 
   Rooted<mozilla::Maybe<PropertyDescriptor>> ownDesc(cx);
   if (!GetOwnPropertyDescriptor(cx, expando, id, &ownDesc)) {
     return false;
   }
-  MOZ_ASSERT(ownDesc.isSome());
+  if (ownDesc.isNothing()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_SET_MISSING_PRIVATE);
+    return false;
+  }
 
   RootedValue expandoValue(cx, proxy->as<ProxyObject>().expando());
   return SetPropertyIgnoringNamedGetter(cx, expando, id, v, expandoValue,
@@ -79,7 +90,11 @@ static bool ProxyGetOnExpando(JSContext* cx, HandleObject proxy,
 
   
   
-  MOZ_ASSERT(expando);
+  if (!expando) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_GET_MISSING_PRIVATE);
+    return false;
+  }
 
   
   
@@ -89,7 +104,11 @@ static bool ProxyGetOnExpando(JSContext* cx, HandleObject proxy,
     return false;
   }
   
-  MOZ_ASSERT(desc.isSome());
+  if (desc.isNothing()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_SET_MISSING_PRIVATE);
+    return false;
+  }
 
   
   if (desc->hasGetter()) {
