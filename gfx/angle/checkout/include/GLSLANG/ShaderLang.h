@@ -202,6 +202,11 @@ struct ShCompileOptions
     
     
     
+    uint64_t initGLPointSize : 1;
+
+    
+    
+    
     
     uint64_t unfoldShortCircuit : 1;
 
