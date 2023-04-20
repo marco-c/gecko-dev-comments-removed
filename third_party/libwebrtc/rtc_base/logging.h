@@ -512,14 +512,6 @@ class LogMessage {
   LogMessage(const char* file, int line, LoggingSeverity sev, const char* tag) {
   }
 #endif
-  
-  
-  
-  ABSL_DEPRECATED("Use RTC_LOG macros instead of accessing this class directly")
-  LogMessage(const char* file,
-             int line,
-             LoggingSeverity sev,
-             absl::string_view tag) {}
   ~LogMessage() = default;
 
   inline void AddTag(const char* tag) {}
@@ -543,9 +535,9 @@ class LogMessage {
   static constexpr bool IsNoop() {
     return IsNoop(S);
   }
-#endif
+#endif  
 
-
+  
   static void set_aec_debug(bool enable) { aec_debug_ = enable; }
   static void set_aec_debug_size(uint32_t size) { aec_debug_size_ = size; }
   static bool aec_debug() { return aec_debug_; }
