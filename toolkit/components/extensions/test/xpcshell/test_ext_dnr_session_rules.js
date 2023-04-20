@@ -504,6 +504,7 @@ add_task(async function validate_domains() {
   });
 });
 
+
 add_task(async function validate_urlFilter() {
   await runAsDNRExtension({
     background: async dnrTestUtils => {
@@ -575,10 +576,11 @@ add_task(async function validate_urlFilter() {
   });
 });
 
+
 add_task(async function validate_regexFilter() {
   await runAsDNRExtension({
     background: async dnrTestUtils => {
-      const { testInvalidCondition } = dnrTestUtils;
+      const { testInvalidCondition, testValidCondition } = dnrTestUtils;
 
       
       await testInvalidCondition(
@@ -596,10 +598,13 @@ add_task(async function validate_regexFilter() {
         { regexFilter: "" },
         "regexFilter should not be an empty string"
       );
-      
       await testInvalidCondition(
+        { regexFilter: "*" },
+        "regexFilter is not a valid regular expression"
+      );
+      await testValidCondition(
         { regexFilter: "^https://example\\.com\\/" },
-        "regexFilter is not supported yet"
+        "regexFilter with valid regexp should be accepted"
       );
 
       browser.test.notifyPass();
@@ -610,7 +615,11 @@ add_task(async function validate_regexFilter() {
 add_task(async function validate_actions() {
   await runAsDNRExtension({
     background: async dnrTestUtils => {
-      const { testInvalidAction, testValidAction } = dnrTestUtils;
+      const {
+        testInvalidAction,
+        testValidAction,
+        testValidRule,
+      } = dnrTestUtils;
 
       await testValidAction({ type: "allow" });
       
@@ -629,11 +638,37 @@ add_task(async function validate_actions() {
       );
       await testInvalidAction(
         { type: "redirect", redirect: { extensionPath: "/", url: "http://a" } },
-        "redirect.extensionPath and redirect.url are mutually exclusive"
+        "redirect.url, redirect.extensionPath, redirect.transform and redirect.regexSubstitution are mutually exclusive"
       );
       await testInvalidAction(
         { type: "redirect", redirect: { extensionPath: "", url: "http://a" } },
-        "redirect.extensionPath and redirect.url are mutually exclusive"
+        "redirect.url, redirect.extensionPath, redirect.transform and redirect.regexSubstitution are mutually exclusive"
+      );
+      await testInvalidAction(
+        {
+          type: "redirect",
+          redirect: { regexSubstitution: "", transform: {} },
+        },
+        "redirect.url, redirect.extensionPath, redirect.transform and redirect.regexSubstitution are mutually exclusive"
+      );
+      await testInvalidAction(
+        {
+          type: "redirect",
+          redirect: { regexSubstitution: "x", transform: {}, url: "http://a" },
+        },
+        "redirect.url, redirect.extensionPath, redirect.transform and redirect.regexSubstitution are mutually exclusive"
+      );
+      await testInvalidAction(
+        {
+          type: "redirect",
+          redirect: {
+            url: "http://a",
+            extensionPath: "/",
+            transform: {},
+            regexSubstitution: "http://a",
+          },
+        },
+        "redirect.url, redirect.extensionPath, redirect.transform and redirect.regexSubstitution are mutually exclusive"
       );
       await testInvalidAction(
         { type: "redirect", redirect: { extensionPath: "" } },
@@ -667,6 +702,10 @@ add_task(async function validate_actions() {
         /Access denied for URL data:,/,
          true
       );
+      await testInvalidAction(
+        { type: "redirect", redirect: { regexSubstitution: "http:///" } },
+        "redirect.regexSubstitution requires the regexFilter condition to be specified"
+      );
 
       
       await testValidAction({
@@ -684,6 +723,15 @@ add_task(async function validate_actions() {
       await testValidAction({
         type: "redirect",
         redirect: { transform: {} },
+      });
+      
+      await testValidRule({
+        id: 1,
+        condition: { regexFilter: ".+" },
+        action: {
+          type: "redirect",
+          redirect: { regexSubstitution: "http://example.com/" },
+        },
       });
       
 

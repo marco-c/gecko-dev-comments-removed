@@ -787,7 +787,7 @@ add_task(async function match_urlFilter() {
       await dnr.updateSessionRules({
         addRules: [
           
-          { id: 1, condition: { urlFilter: "*" }, action },
+          { id: 1, condition: { urlFilter: "." }, action },
           { id: 2, condition: { urlFilter: "^" }, action },
           { id: 3, condition: { urlFilter: "|" }, action },
           
@@ -817,6 +817,57 @@ add_task(async function match_urlFilter() {
         { url: "https://example.com/file.txt", type: "font" },
         [1, 2, 3, 4, 5],
         "urlFilter should match when needed, and correctly with requestDomains"
+      );
+
+      browser.test.notifyPass();
+    },
+  });
+});
+
+
+
+add_task(async function match_regexFilter() {
+  await runAsDNRExtension({
+    background: async dnrTestUtils => {
+      const dnr = browser.declarativeNetRequest;
+      const { makeDummyAction, testMatchesRequest } = dnrTestUtils;
+
+      
+      const action = makeDummyAction("modifyHeaders");
+
+      await dnr.updateSessionRules({
+        addRules: [
+          
+          { id: 1, condition: { regexFilter: ".*" }, action },
+          { id: 2, condition: { regexFilter: "^" }, action },
+          
+          { id: 3, condition: { regexFilter: "https://.xample\\." }, action },
+          { id: 4, condition: { regexFilter: "https://example.com" }, action },
+          {
+            
+            id: 5,
+            condition: { regexFilter: "$", requestDomains: ["example.com"] },
+            action,
+          },
+          {
+            
+            id: 6,
+            condition: { regexFilter: "$", requestDomains: ["notexample.com"] },
+            action,
+          },
+          {
+            
+            id: 7,
+            condition: { regexFilter: "notm", requestDomains: ["example.com"] },
+            action,
+          },
+        ],
+      });
+
+      await testMatchesRequest(
+        { url: "https://example.com/file.txt", type: "font" },
+        [1, 2, 3, 4, 5],
+        "regexFilter should match when needed, and correctly with requestDomains"
       );
 
       browser.test.notifyPass();
