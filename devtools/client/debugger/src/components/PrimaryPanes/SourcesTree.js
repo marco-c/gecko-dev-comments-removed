@@ -5,7 +5,6 @@
 
 import React, { Component } from "react";
 import PropTypes from "prop-types";
-import classnames from "classnames";
 import { connect } from "../../utils/connect";
 
 
@@ -31,6 +30,8 @@ import ManagedTree from "../shared/ManagedTree";
 
 import { getRawSourceURL } from "../../utils/source";
 import { createLocation } from "../../utils/location";
+
+const classnames = require("devtools/client/shared/classnames");
 
 function shouldAutoExpand(item, mainThreadHost) {
   
