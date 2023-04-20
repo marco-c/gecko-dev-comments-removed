@@ -9,28 +9,23 @@ add_setup(clickTestSetup);
 
 
 add_task(async function test_cookie_banner_service_disabled() {
-  for (let mode of [
-    Ci.nsICookieBannerService.MODE_DISABLED,
-    Ci.nsICookieBannerService.MODE_DETECT_ONLY,
-  ]) {
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        ["cookiebanners.service.mode", mode],
-        [
-          "cookiebanners.service.mode.privateBrowsing",
-          Ci.nsICookieBannerService.MODE_DISABLED,
-        ],
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["cookiebanners.service.mode", Ci.nsICookieBannerService.MODE_DISABLED],
+      [
+        "cookiebanners.service.mode.privateBrowsing",
+        Ci.nsICookieBannerService.MODE_DISABLED,
       ],
-    });
+    ],
+  });
 
-    await openPageAndVerify({
-      win: window,
-      domain: TEST_DOMAIN_A,
-      testURL: TEST_PAGE_A,
-      visible: true,
-      expected: "NoClick",
-    });
-  }
+  await openPageAndVerify({
+    win: window,
+    domain: TEST_DOMAIN_A,
+    testURL: TEST_PAGE_A,
+    visible: true,
+    expected: "NoClick",
+  });
 });
 
 

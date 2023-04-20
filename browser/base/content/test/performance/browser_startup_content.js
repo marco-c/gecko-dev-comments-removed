@@ -80,7 +80,6 @@ const intermittently_loaded_scripts = {
 
     
     "resource://gre/actors/CookieBannerChild.jsm",
-    "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 
     
     "chrome://remote/content/marionette/actors/MarionetteEventsChild.sys.mjs",

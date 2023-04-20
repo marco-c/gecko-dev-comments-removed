@@ -120,8 +120,6 @@ async function verifyBannerState(bc, visible, expected, bannerId = "banner") {
 
 
 
-
-
 async function openPageAndVerify({
   win = window,
   domain,
@@ -129,7 +127,6 @@ async function openPageAndVerify({
   visible,
   expected,
   bannerId = "banner",
-  keepTabOpen = false,
 }) {
   info(`Opening ${testURL}`);
 
@@ -141,9 +138,7 @@ async function openPageAndVerify({
 
   await verifyBannerState(tab.linkedBrowser, visible, expected, bannerId);
 
-  if (!keepTabOpen) {
-    BrowserTestUtils.removeTab(tab);
-  }
+  BrowserTestUtils.removeTab(tab);
 }
 
 

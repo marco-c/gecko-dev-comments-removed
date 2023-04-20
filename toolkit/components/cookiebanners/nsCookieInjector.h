@@ -30,10 +30,6 @@ class nsCookieInjector final : public nsIObserver {
   bool mIsInitialized = false;
 
   
-  
-  static bool IsEnabledForCurrentPrefState();
-
-  
   static void OnPrefChange(const char* aPref, void* aData);
 
   
