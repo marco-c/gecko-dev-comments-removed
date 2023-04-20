@@ -209,3 +209,16 @@ promise_test(t => {
 
   return rs.pipeTo(ws, null);
 }, 'pipeTo() promise should resolve if null is passed');
+
+promise_test(async t => {
+  
+  var con;
+  let synchronous = false;
+  new ReadableStream({ start(c) { con = c }}, { highWaterMark: 0 }).pipeTo(
+    new WritableStream({ write() { synchronous = true; } })
+  )
+  
+  await Promise.resolve();
+  con.enqueue();
+  assert_false(synchronous, 'write algorithm must not run synchronously');
+}, "enqueue() must not synchronously call write algorithm");
