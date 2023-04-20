@@ -21,7 +21,6 @@
 #include "nsCOMPtr.h"
 #include "nsIGlobalObject.h"
 #include "nsPIDOMWindow.h"  
-#include "nsContentUtils.h"
 #include "nsWrapperCache.h"
 #include "prtime.h"  
 
@@ -64,7 +63,7 @@ class RTCStatsTimestampMaker {
 
   const uint64_t mRandomTimelineSeed;
   const TimeStamp mStartRealtime;
-  const RTPCallerType mRTPCallerType;
+  const bool mCrossOriginIsolated;
   const DOMHighResTimeStamp mStartWallClockRaw;
 };
 

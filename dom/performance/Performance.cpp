@@ -57,8 +57,8 @@ already_AddRefed<Performance> Performance::CreateForMainThread(
   MOZ_ASSERT(NS_IsMainThread());
 
   MOZ_ASSERT(aWindow->AsGlobal());
-  RefPtr<Performance> performance =
-      new PerformanceMainThread(aWindow, aDOMTiming, aChannel);
+  RefPtr<Performance> performance = new PerformanceMainThread(
+      aWindow, aDOMTiming, aChannel, aPrincipal->IsSystemPrincipal());
   return performance.forget();
 }
 
@@ -93,23 +93,21 @@ already_AddRefed<Performance> Performance::Get(JSContext* aCx,
   return performance.forget();
 }
 
-Performance::Performance(nsIGlobalObject* aGlobal)
+Performance::Performance(nsIGlobalObject* aGlobal, bool aSystemPrincipal)
     : DOMEventTargetHelper(aGlobal),
       mResourceTimingBufferSize(kDefaultResourceTimingBufferSize),
       mPendingNotificationObserversTask(false),
       mPendingResourceTimingBufferFullEvent(false),
-      mRTPCallerType(
-          RTPCallerType::Normal ) {
+      mSystemPrincipal(aSystemPrincipal) {
   MOZ_ASSERT(!NS_IsMainThread());
 }
 
-Performance::Performance(nsPIDOMWindowInner* aWindow)
+Performance::Performance(nsPIDOMWindowInner* aWindow, bool aSystemPrincipal)
     : DOMEventTargetHelper(aWindow),
       mResourceTimingBufferSize(kDefaultResourceTimingBufferSize),
       mPendingNotificationObserversTask(false),
       mPendingResourceTimingBufferFullEvent(false),
-      mRTPCallerType(
-          RTPCallerType::Normal ) {
+      mSystemPrincipal(aSystemPrincipal) {
   MOZ_ASSERT(NS_IsMainThread());
 }
 
@@ -118,12 +116,14 @@ Performance::~Performance() = default;
 DOMHighResTimeStamp Performance::TimeStampToDOMHighResForRendering(
     TimeStamp aTimeStamp) const {
   DOMHighResTimeStamp stamp = GetDOMTiming()->TimeStampToDOMHighRes(aTimeStamp);
-  
-  
-  
-  
-  return nsRFPService::ReduceTimePrecisionAsMSecsRFPOnly(stamp, 0,
-                                                         mRTPCallerType);
+  if (!IsSystemPrincipal()) {
+    
+    
+    
+    
+    return nsRFPService::ReduceTimePrecisionAsMSecsRFPOnly(stamp, 0);
+  }
+  return stamp;
 }
 
 DOMHighResTimeStamp Performance::Now() {
@@ -131,14 +131,13 @@ DOMHighResTimeStamp Performance::Now() {
 
   
   
-  
-  
-  if (mRTPCallerType == RTPCallerType::SystemPrincipal) {
+  if (mSystemPrincipal) {
     return rawTime;
   }
 
   return nsRFPService::ReduceTimePrecisionAsMSecs(
-      rawTime, GetRandomTimelineSeed(), mRTPCallerType);
+      rawTime, GetRandomTimelineSeed(), mSystemPrincipal,
+      CrossOriginIsolated());
 }
 
 DOMHighResTimeStamp Performance::NowUnclamped() const {
@@ -155,8 +154,8 @@ DOMHighResTimeStamp Performance::TimeOrigin() {
   DOMHighResTimeStamp rawTimeOrigin =
       mPerformanceService->TimeOrigin(CreationTimeStamp());
   
-  return nsRFPService::ReduceTimePrecisionAsMSecs(rawTimeOrigin, 0,
-                                                  mRTPCallerType);
+  return nsRFPService::ReduceTimePrecisionAsMSecs(
+      rawTimeOrigin, 0, mSystemPrincipal, CrossOriginIsolated());
 }
 
 JSObject* Performance::WrapObject(JSContext* aCx,

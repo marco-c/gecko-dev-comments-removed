@@ -227,8 +227,8 @@ void CSSAnimation::QueueEvents(const StickyTimeDuration& aActiveTime) {
       
       
       
-      elapsedTime = nsRFPService::ReduceTimePrecisionAsSecsRFPOnly(
-          elapsedTime, 0, mRTPCallerType);
+      elapsedTime =
+          nsRFPService::ReduceTimePrecisionAsSecsRFPOnly(elapsedTime, 0);
     }
     events.AppendElement(
         AnimationEventInfo(mAnimationName, mOwningElement.Target(), aMessage,

@@ -189,9 +189,7 @@ JS_PUBLIC_API double DayWithinYear(double time, double year);
 
 
 
-
-using ReduceMicrosecondTimePrecisionCallback = double (*)(double, bool,
-                                                          JSContext*);
+using ReduceMicrosecondTimePrecisionCallback = double (*)(double, JSContext*);
 
 
 
