@@ -268,7 +268,7 @@
         if (tab) {
           gBrowser.removeTab(tab, {
             animate: true,
-            byMouse: event.mozInputSource == MouseEvent.MOZ_SOURCE_MOUSE,
+            triggeringEvent: event,
           });
         } else if (event.originalTarget.closest("scrollbox")) {
           

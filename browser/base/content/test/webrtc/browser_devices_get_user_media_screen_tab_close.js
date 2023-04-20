@@ -52,7 +52,7 @@ add_task(async function testScreenSharingTabClose() {
   );
 
   
-  BrowserTestUtils.removeTab(tab, { animate: true, byMouse: true });
+  BrowserTestUtils.removeTab(tab, { animate: true });
 
   
   await recordingEndedPromise;
