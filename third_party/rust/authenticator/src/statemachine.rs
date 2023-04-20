@@ -308,6 +308,7 @@ impl StateMachineCtap2 {
         info: DeviceBuildParameters,
         selector: &Sender<DeviceSelectorEvent>,
         ctap2_only: bool,
+        keep_alive: &dyn Fn() -> bool,
     ) -> Option<Device> {
         
         let mut dev = match Device::new(info) {
@@ -350,8 +351,15 @@ impl StateMachineCtap2 {
             .ok()?;
 
         
+        
+        
+        let keep_blinking = || {
+            keep_alive() && !matches!(rx.try_recv(), Ok(DeviceCommand::Cancel))
+        };
+
+        
         match rx.recv() {
-            Ok(DeviceCommand::Blink) => match dev.block_and_blink() {
+            Ok(DeviceCommand::Blink) => match dev.block_and_blink(&keep_blinking) {
                 BlinkResult::DeviceSelected => {
                     
                     
@@ -364,6 +372,10 @@ impl StateMachineCtap2 {
                     return None;
                 }
             },
+            Ok(DeviceCommand::Cancel) => {
+                info!("Device {:?} was not selected", dev.id());
+                return None;
+            }
             Ok(DeviceCommand::Removed) => {
                 info!("Device {:?} was removed", dev.id());
                 return None;
@@ -448,8 +460,8 @@ impl StateMachineCtap2 {
             timeout,
             cbc.clone(),
             status,
-            move |info, selector, status, _alive| {
-                let mut dev = match Self::init_and_select(info, &selector, false) {
+            move |info, selector, status, alive| {
+                let mut dev = match Self::init_and_select(info, &selector, false, alive) {
                     None => {
                         return;
                     }
@@ -505,7 +517,7 @@ impl StateMachineCtap2 {
                 debug!("------------------------------------------------------------------");
                 debug!("{:?}", makecred);
                 debug!("------------------------------------------------------------------");
-                let resp = dev.send_msg(&makecred);
+                let resp = dev.send_msg_cancellable(&makecred, alive);
                 if resp.is_ok() {
                     send_status(
                         &status,
@@ -557,8 +569,8 @@ impl StateMachineCtap2 {
             timeout,
             callback.clone(),
             status,
-            move |info, selector, status, _alive| {
-                let mut dev = match Self::init_and_select(info, &selector, false) {
+            move |info, selector, status, alive| {
+                let mut dev = match Self::init_and_select(info, &selector, false, alive) {
                     None => {
                         return;
                     }
@@ -607,14 +619,17 @@ impl StateMachineCtap2 {
                 debug!("{:?}", getassertion);
                 debug!("------------------------------------------------------------------");
 
-                let mut resp = dev.send_msg(&getassertion);
+                let mut resp = dev.send_msg_cancellable(&getassertion, alive);
                 if resp.is_err() {
                     
                     
                     if let Some(alternate_rp_id) = getassertion.alternate_rp_id {
-                        getassertion.rp = RelyingPartyWrapper::Data(RelyingParty{id: alternate_rp_id, ..Default::default()});
+                        getassertion.rp = RelyingPartyWrapper::Data(RelyingParty {
+                            id: alternate_rp_id,
+                            ..Default::default()
+                        });
                         getassertion.alternate_rp_id = None;
-                        resp = dev.send_msg(&getassertion);
+                        resp = dev.send_msg_cancellable(&getassertion, alive);
                     }
                 }
                 if resp.is_ok() {
@@ -682,9 +697,9 @@ impl StateMachineCtap2 {
             timeout,
             callback.clone(),
             status,
-            move |info, selector, status, _alive| {
+            move |info, selector, status, alive| {
                 let reset = Reset {};
-                let mut dev = match Self::init_and_select(info, &selector, true) {
+                let mut dev = match Self::init_and_select(info, &selector, true, alive) {
                     None => {
                         return;
                     }
@@ -696,7 +711,7 @@ impl StateMachineCtap2 {
                 debug!("{:?}", reset);
                 debug!("------------------------------------------------------------------");
 
-                let resp = dev.send_cbor(&reset);
+                let resp = dev.send_cbor_cancellable(&reset, alive);
                 if resp.is_ok() {
                     send_status(
                         &status,
@@ -745,8 +760,8 @@ impl StateMachineCtap2 {
             timeout,
             callback.clone(),
             status,
-            move |info, selector, status, _alive| {
-                let mut dev = match Self::init_and_select(info, &selector, true) {
+            move |info, selector, status, alive| {
+                let mut dev = match Self::init_and_select(info, &selector, true, alive) {
                     None => {
                         return;
                     }
@@ -793,7 +808,7 @@ impl StateMachineCtap2 {
                             &new_pin,
                         )
                         .map_err(HIDError::Command)
-                        .and_then(|msg| dev.send_cbor(&msg))
+                        .and_then(|msg| dev.send_cbor_cancellable(&msg, alive))
                         .map_err(AuthenticatorError::HIDError)
                         .map_err(|e| repackage_pin_errors(&mut dev, e));
 
@@ -819,7 +834,7 @@ impl StateMachineCtap2 {
                 } else {
                     SetNewPin::new(&authinfo, &shared_secret, &new_pin)
                         .map_err(HIDError::Command)
-                        .and_then(|msg| dev.send_cbor(&msg))
+                        .and_then(|msg| dev.send_cbor_cancellable(&msg, alive))
                         .map_err(AuthenticatorError::HIDError)
                 };
                 callback.call(res);
