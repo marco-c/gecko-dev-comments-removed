@@ -7,7 +7,6 @@
 #include "nsLocalHandlerApp.h"
 #include "nsIURI.h"
 #include "nsIProcess.h"
-#include "nsComponentManagerUtils.h"
 
 
 

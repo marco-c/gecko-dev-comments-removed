@@ -52,6 +52,18 @@ static base::ThreadLocalPointer<MessageLoop>& get_tls_ptr() {
 
 
 
+
+
+static const int kTaskRunEvent = 0x1;
+static const int kTimerEvent = 0x2;
+
+
+static const int kLeastNonZeroMessageId = 1;
+static const int kMaxMessageId = 1099;
+static const int kNumberOfDistinctMessagesDisplayed = 1100;
+
+
+
 #if defined(OS_WIN)
 
 

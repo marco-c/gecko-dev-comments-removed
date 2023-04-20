@@ -32,9 +32,7 @@
 
 using mozilla::LogLevel;
 
-#ifdef DEBUG
 static mozilla::LazyLogModule gWin32SoundLog("nsSound");
-#endif
 
 
 

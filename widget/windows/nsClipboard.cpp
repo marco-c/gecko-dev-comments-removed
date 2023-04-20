@@ -21,8 +21,6 @@
 #include "mozilla/Logging.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_clipboard.h"
-#include "mozilla/StaticPrefs_widget.h"
-#include "mozilla/WindowsVersion.h"
 #include "SpecialSystemDirectory.h"
 
 #include "nsArrayUtils.h"
@@ -46,7 +44,6 @@
 #include "nsIObserverService.h"
 #include "nsMimeTypes.h"
 #include "imgITools.h"
-#include "imgIContainer.h"
 
 using mozilla::LogLevel;
 
@@ -301,8 +298,7 @@ nsresult nsClipboard::SetupNativeDataObject(
     }
   }
 
-  if (!mozilla::StaticPrefs::
-          clipboard_copyPrivateDataToClipboardCloudOrHistory()) {
+  if (!StaticPrefs::clipboard_copyPrivateDataToClipboardCloudOrHistory()) {
     
     
     
@@ -487,7 +483,7 @@ NS_IMETHODIMP nsClipboard::SetNativeClipboardData(int32_t aWhichClipboard) {
   }
 
 #ifdef ACCESSIBILITY
-  mozilla::a11y::Compatibility::SuppressA11yForClipboardCopy();
+  a11y::Compatibility::SuppressA11yForClipboardCopy();
 #endif
 
   RefPtr<IDataObject> dataObj;
@@ -498,7 +494,7 @@ NS_IMETHODIMP nsClipboard::SetNativeClipboardData(int32_t aWhichClipboard) {
     RepeatedlyTryOleSetClipboard(dataObj);
 
     const bool doFlush = [&] {
-      switch (mozilla::StaticPrefs::widget_windows_sync_clipboard_flush()) {
+      switch (StaticPrefs::widget_windows_sync_clipboard_flush()) {
         case 0:
           return false;
         case 1:
@@ -512,7 +508,7 @@ NS_IMETHODIMP nsClipboard::SetNativeClipboardData(int32_t aWhichClipboard) {
           
           
           return mightNeedToFlush == MightNeedToFlush::Yes &&
-                 mozilla::NeedsWindows11SuggestedActionsWorkaround();
+                 NeedsWindows11SuggestedActionsWorkaround();
       }
     }();
     if (doFlush) {
@@ -1405,8 +1401,7 @@ nsresult nsClipboard::SaveStorageOrStream(IDataObject* aDataObject, UINT aIndex,
     return NS_ERROR_FAILURE;
   }
 
-  auto releaseMediumGuard =
-      mozilla::MakeScopeExit([&] { ReleaseStgMedium(&stm); });
+  auto releaseMediumGuard = MakeScopeExit([&] { ReleaseStgMedium(&stm); });
 
   
   

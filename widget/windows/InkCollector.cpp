@@ -6,14 +6,12 @@
 
 
 #include "InkCollector.h"
-#include "nsDebug.h"
-#include "nsISupportsUtils.h"
 
 
 
 #include <msinkaut_i.c>
 
-mozilla::StaticAutoPtr<InkCollector> InkCollector::sInkCollector;
+StaticAutoPtr<InkCollector> InkCollector::sInkCollector;
 
 InkCollector::~InkCollector() {
   Shutdown();
