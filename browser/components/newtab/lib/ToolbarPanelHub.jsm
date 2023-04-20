@@ -589,11 +589,7 @@ class _ToolbarPanelHub {
 
 
 
-
   forceShowMessage(browser, messages) {
-    if (!browser) {
-      return;
-    }
     const win = browser.ownerGlobal;
     const doc = browser.ownerDocument;
     this.removeMessages(win, WHATS_NEW_PANEL_SELECTOR);

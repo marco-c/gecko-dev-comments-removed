@@ -925,9 +925,6 @@ const CFRPageActions = {
 
 
   async forceRecommendation(browser, recommendation, dispatchCFRAction) {
-    if (!browser) {
-      return false;
-    }
     
     const win = browser.ownerGlobal;
     const { id, content } = recommendation;
@@ -963,9 +960,6 @@ const CFRPageActions = {
 
 
   async addRecommendation(browser, host, recommendation, dispatchCFRAction) {
-    if (!browser) {
-      return false;
-    }
     const win = browser.ownerGlobal;
     if (lazy.PrivateBrowsingUtils.isWindowPrivate(win)) {
       return false;

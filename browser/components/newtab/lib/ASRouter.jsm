@@ -926,26 +926,7 @@ class _ASRouter {
       await this.setState(this._removePreviewEndpoint(newState));
       await this.cleanupImpressions();
     }
-
-    await this._fireMessagesLoadedTrigger();
-
     return this.state;
-  }
-
-  async _fireMessagesLoadedTrigger() {
-    const win = Services.wm.getMostRecentBrowserWindow() ?? null;
-    const browser = win?.gBrowser?.selectedBrowser ?? null;
-    
-    
-    
-    await this.sendTriggerMessage(
-      {
-        id: "messagesLoaded",
-        browser,
-        context: { browser, browserWindow: win },
-      },
-      true
-    );
   }
 
   async _maybeUpdateL10nAttachment() {
@@ -1955,31 +1936,9 @@ class _ASRouter {
     );
   }
 
-  
+  async sendTriggerMessage({ tabId, browser, ...trigger }) {
+    await this.loadMessagesFromAllProviders();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async sendTriggerMessage(
-    { tabId, browser, ...trigger },
-    skipLoadingMessages = false
-  ) {
-    if (!skipLoadingMessages) {
-      await this.loadMessagesFromAllProviders();
-    }
     const telemetryObject = { tabId };
     TelemetryStopwatch.start("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
     
