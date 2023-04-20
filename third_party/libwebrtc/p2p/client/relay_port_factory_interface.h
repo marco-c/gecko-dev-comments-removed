@@ -45,6 +45,10 @@ struct CreateRelayPortArgs {
   std::string password;
   webrtc::TurnCustomizer* turn_customizer = nullptr;
   const webrtc::FieldTrialsView* field_trials = nullptr;
+  
+  
+  
+  int relative_priority = 0;
 };
 
 

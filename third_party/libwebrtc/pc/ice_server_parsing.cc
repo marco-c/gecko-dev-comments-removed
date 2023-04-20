@@ -338,13 +338,6 @@ RTCError ParseIceServersOrError(
                            "ICE server parsing failed: Empty uri.");
     }
   }
-  
-  
-  int priority = static_cast<int>(turn_servers->size() - 1);
-  for (cricket::RelayServerConfig& turn_server : *turn_servers) {
-    
-    turn_server.priority = priority--;
-  }
   return RTCError::OK();
 }
 
