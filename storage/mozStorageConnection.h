@@ -317,6 +317,25 @@ class Connection final : public mozIStorageConnection,
 
   void RecordQueryStatus(int srv);
 
+  
+
+
+
+
+
+
+
+
+
+
+  int32_t RemovablePagesInFreeList(const nsACString& aSchemaName);
+
+  
+
+
+
+  Atomic<bool> mIsStatementOnHelperThreadInterruptible;
+
  private:
   ~Connection();
   nsresult initializeInternal();
@@ -483,6 +502,11 @@ class Connection final : public mozIStorageConnection,
 
 
   bool mConnectionClosed;
+
+  
+
+
+  Atomic<int32_t> mGrowthChunkSize;
 };
 
 
