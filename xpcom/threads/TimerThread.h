@@ -134,15 +134,27 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
 
     const TimeStamp& Timeout() const { return mTimeout; }
 
-    
-    bool operator==(const TimeStamp& aRHS) const { return Timeout() == aRHS; }
-    bool operator<(const TimeStamp& aRHS) const { return Timeout() < aRHS; }
-
    private:
     TimeStamp mTimeout;
     RefPtr<nsTimerImpl> mTimerImpl;
   };
 
+  
+  
+  size_t ComputeTimerInsertionIndex(const TimeStamp& timeout) const
+      MOZ_REQUIRES(mMonitor);
+
+#ifdef DEBUG
+  
+  
+  
+  void VerifyTimerListConsistency() const MOZ_REQUIRES(mMonitor);
+#endif
+
+  
+  
+  
+  
   nsTArray<Entry> mTimers MOZ_GUARDED_BY(mMonitor);
   
   uint32_t mAllowedEarlyFiringMicroseconds MOZ_GUARDED_BY(mMonitor);
