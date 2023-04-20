@@ -345,3 +345,23 @@ async function loadBadCertPage(url) {
   });
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 }
+
+
+
+
+
+
+
+
+
+
+async function promiseStylesheetsLoaded(tab, styleSheetCount) {
+  let styleMenu = tab.ownerGlobal.gPageStyleMenu;
+  let permanentKey = tab.permanentKey;
+
+  await TestUtils.waitForCondition(() => {
+    let menu = styleMenu._pageStyleSheets.get(permanentKey);
+    info(`waiting for sheets: ${menu && menu.filteredStyleSheets.length}`);
+    return menu && menu.filteredStyleSheets.length >= styleSheetCount;
+  }, "waiting for style sheets to load");
+}

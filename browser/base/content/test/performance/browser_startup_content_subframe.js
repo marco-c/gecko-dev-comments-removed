@@ -45,6 +45,9 @@ const known_scripts = {
     "resource://gre/modules/Log.sys.mjs",
 
     
+    "resource:///actors/PageStyleChild.jsm",
+
+    
     "resource://gre/modules/TelemetryControllerBase.sys.mjs", 
     "resource://gre/modules/TelemetryControllerContent.sys.mjs", 
 
