@@ -1423,25 +1423,6 @@ Toolbox.prototype = {
                 });
             };
 
-          case "applySourceMap":
-            return (generatedId, url, code, mappings) => {
-              return target
-                .applySourceMap(generatedId, url, code, mappings)
-                .then(async result => {
-                  
-                  
-                  
-                  
-                  
-                  if (this._sourceMapURLService) {
-                    await this._sourceMapURLService.newSourceMapCreated(
-                      generatedId
-                    );
-                  }
-                  return result;
-                });
-            };
-
           default:
             return target[name];
         }
@@ -4103,6 +4084,8 @@ Toolbox.prototype = {
 
     if (this._sourceMapService) {
       this._sourceMapService.stopSourceMapWorker();
+      
+      this._sourceMapService.clearEvents();
       this._sourceMapService = null;
     }
 

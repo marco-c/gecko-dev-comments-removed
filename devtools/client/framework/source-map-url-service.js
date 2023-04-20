@@ -34,6 +34,16 @@ class SourceMapURLService {
     this._clearAllState = this._clearAllState.bind(this);
 
     Services.prefs.addObserver(SOURCE_MAP_PREF, this._syncPrevValue);
+
+    
+    
+    
+    
+    
+    this._sourceMapService.on(
+      "source-map-applied",
+      this.newSourceMapCreated.bind(this)
+    );
   }
 
   destroy() {
