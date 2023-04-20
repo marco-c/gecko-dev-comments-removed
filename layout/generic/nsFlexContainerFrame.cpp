@@ -840,9 +840,7 @@ class nsFlexContainerFrame::FlexItem final {
   nsBlockFrame* BlockFrame() const;
 
  protected:
-  
-  void CheckForMinSizeAuto(const ReflowInput& aFlexItemReflowInput,
-                           const FlexboxAxisTracker& aAxisTracker);
+  bool IsMinSizeAutoResolutionNeeded() const;
 
   uint32_t NumAutoMarginsInAxis(LogicalAxis aAxis) const;
 
@@ -918,6 +916,11 @@ class nsFlexContainerFrame::FlexItem final {
   
   bool mIsInlineAxisMainAxis = true;
 
+  
+  
+  
+  
+  
   
   bool mNeedsMinSizeAutoResolution = false;
 
@@ -2082,8 +2085,8 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
       mCrossMinSize(aCrossMinSize),
       mCrossMaxSize(aCrossMaxSize),
       mCrossSize(aTentativeCrossSize),
-      mIsInlineAxisMainAxis(aAxisTracker.IsInlineAxisMainAxis(mWM))
-
+      mIsInlineAxisMainAxis(aAxisTracker.IsInlineAxisMainAxis(mWM)),
+      mNeedsMinSizeAutoResolution(IsMinSizeAutoResolutionNeeded())
 
 {
   MOZ_ASSERT(mFrame, "expecting a non-null child frame");
@@ -2165,7 +2168,6 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
   }
 
   SetFlexBaseSizeAndMainSize(aFlexBaseSize);
-  CheckForMinSizeAuto(aFlexItemReflowInput, aAxisTracker);
 
   const nsStyleMargin* styleMargin = aFlexItemReflowInput.mStyleMargin;
   mHasAnyAutoMargin = styleMargin->HasInlineAxisAuto(mCBWM) ||
@@ -2227,28 +2229,18 @@ FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
              "out-of-flow frames should not be treated as flex items");
 }
 
-void FlexItem::CheckForMinSizeAuto(const ReflowInput& aFlexItemReflowInput,
-                                   const FlexboxAxisTracker& aAxisTracker) {
-  const nsStylePosition* pos = aFlexItemReflowInput.mStylePosition;
-  const nsStyleDisplay* disp = aFlexItemReflowInput.mStyleDisplay;
+bool FlexItem::IsMinSizeAutoResolutionNeeded() const {
+  
+  
+  
+  
+  
+  
+  const auto& mainMinSize =
+      Frame()->StylePosition()->MinSize(MainAxis(), ContainingBlockWM());
 
-  
-  
-  
-  
-  
-  
-  const auto& mainMinSize = aAxisTracker.IsRowOriented()
-                                ? pos->MinISize(aAxisTracker.GetWritingMode())
-                                : pos->MinBSize(aAxisTracker.GetWritingMode());
-
-  
-  
-  
-  
-  mNeedsMinSizeAutoResolution =
-      IsAutoOrEnumOnBSize(mainMinSize, IsInlineAxisMainAxis()) &&
-      !disp->IsScrollableOverflow();
+  return IsAutoOrEnumOnBSize(mainMinSize, IsInlineAxisMainAxis()) &&
+         !Frame()->StyleDisplay()->IsScrollableOverflow();
 }
 
 nscoord FlexItem::BaselineOffsetFromOuterCrossEdge(
