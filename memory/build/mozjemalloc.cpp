@@ -164,6 +164,10 @@
 #include "Mutex.h"
 #include "Utils.h"
 
+#if defined(XP_WIN)
+#  include "mozmemory_utils.h"
+#endif
+
 
 #if defined(XP_WIN) && !defined(JS_STANDALONE)
 #  include "mozilla/ProcessType.h"
@@ -1473,60 +1477,6 @@ static inline void ApplyZeroOrJunk(void* aPtr, size_t aSize) {
 
 
 #ifdef XP_WIN
-
-namespace mozilla {
-
-namespace detail {
-
-template <typename T>
-constexpr bool is_std_optional = false;
-template <typename T>
-constexpr bool is_std_optional<std::optional<T>> = true;
-}  
-
-struct StallSpecs {
-  
-  size_t maxAttempts;
-  
-  size_t delayMs;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  template <typename DelayFunc, typename OpFunc>
-  auto StallAndRetry(DelayFunc&& aDelayFunc, OpFunc&& aOperation) const
-      -> decltype(aOperation()) {
-    {
-      
-      using detail::is_std_optional;
-      static_assert(is_std_optional<decltype(aOperation())>,
-                    "aOperation() must return std::optional");
-
-      
-    }
-
-    for (size_t i = 0; i < maxAttempts; ++i) {
-      aDelayFunc(delayMs);
-      if (const auto opt = aOperation()) {
-        return opt;
-      }
-    }
-    return std::nullopt;
-  }
-};
-
-}  
 
 
 namespace MozAllocRetries {
