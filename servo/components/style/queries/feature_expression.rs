@@ -664,7 +664,7 @@ pub enum QueryExpressionValue {
     
     Length(Length),
     
-    Integer(i32),
+    Integer(u32),
     
     Float(CSSFloat),
     
@@ -705,12 +705,12 @@ impl QueryExpressionValue {
     ) -> Result<QueryExpressionValue, ParseError<'i>> {
         Ok(match for_feature.evaluator {
             Evaluator::OptionalLength(..) | Evaluator::Length(..) => {
-                let length = Length::parse(context, input)?;
+                let length = Length::parse_non_negative(context, input)?;
                 QueryExpressionValue::Length(length)
             },
             Evaluator::Integer(..) => {
-                let integer = Integer::parse(context, input)?;
-                QueryExpressionValue::Integer(integer.value())
+                let integer = Integer::parse_non_negative(context, input)?;
+                QueryExpressionValue::Integer(integer.value() as u32)
             },
             Evaluator::BoolInteger(..) => {
                 let integer = Integer::parse_non_negative(context, input)?;

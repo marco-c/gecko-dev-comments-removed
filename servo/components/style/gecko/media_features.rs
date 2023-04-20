@@ -126,18 +126,18 @@ fn eval_scan(_: &Context, _: Option<Scan>) -> bool {
 }
 
 
-fn eval_color(context: &Context) -> i32 {
+fn eval_color(context: &Context) -> u32 {
     unsafe { bindings::Gecko_MediaFeatures_GetColorDepth(context.device().document()) }
 }
 
 
-fn eval_color_index(_: &Context) -> i32 {
+fn eval_color_index(_: &Context) -> u32 {
     
     0
 }
 
 
-fn eval_monochrome(context: &Context) -> i32 {
+fn eval_monochrome(context: &Context) -> u32 {
     
     unsafe { bindings::Gecko_MediaFeatures_GetMonochromeBitsPerPixel(context.device().document()) }
 }
