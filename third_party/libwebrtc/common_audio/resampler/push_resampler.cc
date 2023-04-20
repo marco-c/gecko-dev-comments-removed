@@ -20,42 +20,6 @@
 #include "rtc_base/checks.h"
 
 namespace webrtc {
-namespace {
-
-
-
-
-
-
-void CheckValidInitParams(int src_sample_rate_hz,
-                          int dst_sample_rate_hz,
-                          size_t num_channels) {
-
-
-#if !defined(WEBRTC_WIN) && defined(__clang__)
-  RTC_DCHECK_GT(src_sample_rate_hz, 0);
-  RTC_DCHECK_GT(dst_sample_rate_hz, 0);
-  RTC_DCHECK_GT(num_channels, 0);
-#endif
-}
-
-void CheckExpectedBufferSizes(size_t src_length,
-                              size_t dst_capacity,
-                              size_t num_channels,
-                              int src_sample_rate,
-                              int dst_sample_rate) {
-
-
-
-
-#if !defined(WEBRTC_WIN) && defined(__clang__)
-  const size_t src_size_10ms = (src_sample_rate / 100) * num_channels;
-  const size_t dst_size_10ms = (dst_sample_rate / 100) * num_channels;
-  RTC_DCHECK_EQ(src_length, src_size_10ms);
-  RTC_DCHECK_GE(dst_capacity, dst_size_10ms);
-#endif
-}
-}  
 
 template <typename T>
 PushResampler<T>::PushResampler()
@@ -68,7 +32,11 @@ template <typename T>
 int PushResampler<T>::InitializeIfNeeded(int src_sample_rate_hz,
                                          int dst_sample_rate_hz,
                                          size_t num_channels) {
-  CheckValidInitParams(src_sample_rate_hz, dst_sample_rate_hz, num_channels);
+  
+  
+  RTC_DCHECK_GT(src_sample_rate_hz, 0);
+  RTC_DCHECK_GT(dst_sample_rate_hz, 0);
+  RTC_DCHECK_GT(num_channels, 0);
 
   if (src_sample_rate_hz == src_sample_rate_hz_ &&
       dst_sample_rate_hz == dst_sample_rate_hz_ &&
@@ -109,8 +77,12 @@ int PushResampler<T>::Resample(const T* src,
                                size_t src_length,
                                T* dst,
                                size_t dst_capacity) {
-  CheckExpectedBufferSizes(src_length, dst_capacity, num_channels_,
-                           src_sample_rate_hz_, dst_sample_rate_hz_);
+  
+  
+  const size_t src_size_10ms = (src_sample_rate_hz_ / 100) * num_channels_;
+  const size_t dst_size_10ms = (dst_sample_rate_hz_ / 100) * num_channels_;
+  RTC_DCHECK_EQ(src_length, src_size_10ms);
+  RTC_DCHECK_GE(dst_capacity, dst_size_10ms);
 
   if (src_sample_rate_hz_ == dst_sample_rate_hz_) {
     
