@@ -99,7 +99,7 @@ TEST(GainController2SpeechLevelEstimator, IsNotConfident) {
                      level_estimator.level_rms_dbfs,
                      level_estimator.level_peak_dbfs, kMaxSpeechProbability,
                      *level_estimator.estimator);
-  EXPECT_FALSE(level_estimator.estimator->IsConfident());
+  EXPECT_FALSE(level_estimator.estimator->is_confident());
 }
 
 
@@ -110,7 +110,7 @@ TEST(GainController2SpeechLevelEstimator, IsConfident) {
                      level_estimator.level_rms_dbfs,
                      level_estimator.level_peak_dbfs, kMaxSpeechProbability,
                      *level_estimator.estimator);
-  EXPECT_TRUE(level_estimator.estimator->IsConfident());
+  EXPECT_TRUE(level_estimator.estimator->is_confident());
 }
 
 
@@ -156,7 +156,7 @@ TEST(GainController2SpeechLevelEstimator, ConvergenceSpeedAfterConfidence) {
   
   ASSERT_FLOAT_EQ(level_estimator.estimator->level_dbfs(),
                   level_estimator.initial_speech_level_dbfs);
-  ASSERT_TRUE(level_estimator.estimator->IsConfident());
+  ASSERT_TRUE(level_estimator.estimator->is_confident());
   
   constexpr float kConvergenceTimeAfterConfidenceNumFrames = 600;  
   static_assert(
