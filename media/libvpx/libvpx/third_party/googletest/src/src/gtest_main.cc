@@ -28,15 +28,14 @@
 
 
 #include <cstdio>
+
 #include "gtest/gtest.h"
 
 #if GTEST_OS_ESP8266 || GTEST_OS_ESP32
 #if GTEST_OS_ESP8266
 extern "C" {
 #endif
-void setup() {
-  testing::InitGoogleTest();
-}
+void setup() { testing::InitGoogleTest(); }
 
 void loop() { RUN_ALL_TESTS(); }
 

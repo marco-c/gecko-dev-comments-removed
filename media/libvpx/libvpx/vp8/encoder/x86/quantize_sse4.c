@@ -13,8 +13,11 @@
 #include "./vp8_rtcd.h"
 #include "vp8/encoder/block.h"
 #include "vpx_ports/bitops.h" 
+#include "vpx_ports/compiler_attributes.h"
 
-void vp8_regular_quantize_b_sse4_1(BLOCK *b, BLOCKD *d) {
+
+VPX_NO_UNSIGNED_SHIFT_CHECK void vp8_regular_quantize_b_sse4_1(BLOCK *b,
+                                                               BLOCKD *d) {
   int eob = -1;
   short *zbin_boost_ptr = b->zrun_zbin_boost;
   __m128i zbin_boost0 = _mm_load_si128((__m128i *)(zbin_boost_ptr));

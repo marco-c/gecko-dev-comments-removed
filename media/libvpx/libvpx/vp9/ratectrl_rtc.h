@@ -58,6 +58,13 @@ struct VP9FrameParamsQpRTC {
   int temporal_layer_id;
 };
 
+struct VP9SegmentationData {
+  const uint8_t *segmentation_map;
+  size_t segmentation_map_size;
+  const int *delta_q;
+  size_t delta_q_size;
+};
+
 
 
 
@@ -110,8 +117,7 @@ class VP9RateControlRTC {
   
   int GetQP() const;
   int GetLoopfilterLevel() const;
-  signed char *GetCyclicRefreshMap() const;
-  int *GetDeltaQ() const;
+  bool GetSegmentationData(VP9SegmentationData *segmentation_data) const;
   void ComputeQP(const VP9FrameParamsQpRTC &frame_params);
   
   void PostEncodeUpdate(uint64_t encoded_frame_size);

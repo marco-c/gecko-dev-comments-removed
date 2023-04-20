@@ -2113,11 +2113,10 @@ static int64_t calculate_total_gf_group_bits(VP9_COMP *cpi,
   }
 
   
-  total_group_bits = (total_group_bits < 0)
-                         ? 0
-                         : (total_group_bits > twopass->kf_group_bits)
-                               ? twopass->kf_group_bits
-                               : total_group_bits;
+  total_group_bits = (total_group_bits < 0) ? 0
+                     : (total_group_bits > twopass->kf_group_bits)
+                         ? twopass->kf_group_bits
+                         : total_group_bits;
 
   
   if (total_group_bits > (int64_t)max_bits * gop_frames)

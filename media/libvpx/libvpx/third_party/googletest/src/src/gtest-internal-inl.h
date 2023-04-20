@@ -35,7 +35,7 @@
 #define GOOGLETEST_SRC_GTEST_INTERNAL_INL_H_
 
 #ifndef _WIN32_WCE
-# include <errno.h>
+#include <errno.h>
 #endif  
 #include <stddef.h>
 #include <stdlib.h>  
@@ -50,21 +50,19 @@
 #include "gtest/internal/gtest-port.h"
 
 #if GTEST_CAN_STREAM_RESULTS_
-# include <arpa/inet.h>  
-# include <netdb.h>  
+#include <arpa/inet.h>  
+#include <netdb.h>      
 #endif
 
 #if GTEST_OS_WINDOWS
-# include <windows.h>  
-#endif  
+#include <windows.h>  
+#endif                
 
-#include "gtest/gtest.h"
 #include "gtest/gtest-spi.h"
+#include "gtest/gtest.h"
 
 GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 )
-
-namespace testing {
 
 
 
@@ -73,31 +71,12 @@ namespace testing {
 
 GTEST_DECLARE_bool_(death_test_use_fork);
 
+namespace testing {
 namespace internal {
 
 
 
 GTEST_API_ extern const TypeId kTestTypeIdInGoogleTest;
-
-
-const char kAlsoRunDisabledTestsFlag[] = "also_run_disabled_tests";
-const char kBreakOnFailureFlag[] = "break_on_failure";
-const char kCatchExceptionsFlag[] = "catch_exceptions";
-const char kColorFlag[] = "color";
-const char kFailFast[] = "fail_fast";
-const char kFilterFlag[] = "filter";
-const char kListTestsFlag[] = "list_tests";
-const char kOutputFlag[] = "output";
-const char kBriefFlag[] = "brief";
-const char kPrintTimeFlag[] = "print_time";
-const char kPrintUTF8Flag[] = "print_utf8";
-const char kRandomSeedFlag[] = "random_seed";
-const char kRepeatFlag[] = "repeat";
-const char kShuffleFlag[] = "shuffle";
-const char kStackTraceDepthFlag[] = "stack_trace_depth";
-const char kStreamResultToFlag[] = "stream_result_to";
-const char kThrowOnFailureFlag[] = "throw_on_failure";
-const char kFlagfileFlag[] = "flagfile";
 
 
 const int kMaxRandomSeed = 99999;
@@ -125,21 +104,21 @@ GTEST_API_ std::string FormatEpochTimeInMillisAsIso8601(TimeInMillis ms);
 
 
 
-GTEST_API_ bool ParseInt32Flag(
-    const char* str, const char* flag, int32_t* value);
+GTEST_API_ bool ParseFlag(const char* str, const char* flag, int32_t* value);
 
 
 
 inline int GetRandomSeedFromFlag(int32_t random_seed_flag) {
-  const unsigned int raw_seed = (random_seed_flag == 0) ?
-      static_cast<unsigned int>(GetTimeInMillis()) :
-      static_cast<unsigned int>(random_seed_flag);
+  const unsigned int raw_seed =
+      (random_seed_flag == 0) ? static_cast<unsigned int>(GetTimeInMillis())
+                              : static_cast<unsigned int>(random_seed_flag);
 
   
   
   const int normalized_seed =
       static_cast<int>((raw_seed - 1U) %
-                       static_cast<unsigned int>(kMaxRandomSeed)) + 1;
+                       static_cast<unsigned int>(kMaxRandomSeed)) +
+      1;
   return normalized_seed;
 }
 
@@ -160,50 +139,54 @@ class GTestFlagSaver {
  public:
   
   GTestFlagSaver() {
-    also_run_disabled_tests_ = GTEST_FLAG(also_run_disabled_tests);
-    break_on_failure_ = GTEST_FLAG(break_on_failure);
-    catch_exceptions_ = GTEST_FLAG(catch_exceptions);
-    color_ = GTEST_FLAG(color);
-    death_test_style_ = GTEST_FLAG(death_test_style);
-    death_test_use_fork_ = GTEST_FLAG(death_test_use_fork);
-    fail_fast_ = GTEST_FLAG(fail_fast);
-    filter_ = GTEST_FLAG(filter);
-    internal_run_death_test_ = GTEST_FLAG(internal_run_death_test);
-    list_tests_ = GTEST_FLAG(list_tests);
-    output_ = GTEST_FLAG(output);
-    brief_ = GTEST_FLAG(brief);
-    print_time_ = GTEST_FLAG(print_time);
-    print_utf8_ = GTEST_FLAG(print_utf8);
-    random_seed_ = GTEST_FLAG(random_seed);
-    repeat_ = GTEST_FLAG(repeat);
-    shuffle_ = GTEST_FLAG(shuffle);
-    stack_trace_depth_ = GTEST_FLAG(stack_trace_depth);
-    stream_result_to_ = GTEST_FLAG(stream_result_to);
-    throw_on_failure_ = GTEST_FLAG(throw_on_failure);
+    also_run_disabled_tests_ = GTEST_FLAG_GET(also_run_disabled_tests);
+    break_on_failure_ = GTEST_FLAG_GET(break_on_failure);
+    catch_exceptions_ = GTEST_FLAG_GET(catch_exceptions);
+    color_ = GTEST_FLAG_GET(color);
+    death_test_style_ = GTEST_FLAG_GET(death_test_style);
+    death_test_use_fork_ = GTEST_FLAG_GET(death_test_use_fork);
+    fail_fast_ = GTEST_FLAG_GET(fail_fast);
+    filter_ = GTEST_FLAG_GET(filter);
+    internal_run_death_test_ = GTEST_FLAG_GET(internal_run_death_test);
+    list_tests_ = GTEST_FLAG_GET(list_tests);
+    output_ = GTEST_FLAG_GET(output);
+    brief_ = GTEST_FLAG_GET(brief);
+    print_time_ = GTEST_FLAG_GET(print_time);
+    print_utf8_ = GTEST_FLAG_GET(print_utf8);
+    random_seed_ = GTEST_FLAG_GET(random_seed);
+    repeat_ = GTEST_FLAG_GET(repeat);
+    recreate_environments_when_repeating_ =
+        GTEST_FLAG_GET(recreate_environments_when_repeating);
+    shuffle_ = GTEST_FLAG_GET(shuffle);
+    stack_trace_depth_ = GTEST_FLAG_GET(stack_trace_depth);
+    stream_result_to_ = GTEST_FLAG_GET(stream_result_to);
+    throw_on_failure_ = GTEST_FLAG_GET(throw_on_failure);
   }
 
   
   ~GTestFlagSaver() {
-    GTEST_FLAG(also_run_disabled_tests) = also_run_disabled_tests_;
-    GTEST_FLAG(break_on_failure) = break_on_failure_;
-    GTEST_FLAG(catch_exceptions) = catch_exceptions_;
-    GTEST_FLAG(color) = color_;
-    GTEST_FLAG(death_test_style) = death_test_style_;
-    GTEST_FLAG(death_test_use_fork) = death_test_use_fork_;
-    GTEST_FLAG(filter) = filter_;
-    GTEST_FLAG(fail_fast) = fail_fast_;
-    GTEST_FLAG(internal_run_death_test) = internal_run_death_test_;
-    GTEST_FLAG(list_tests) = list_tests_;
-    GTEST_FLAG(output) = output_;
-    GTEST_FLAG(brief) = brief_;
-    GTEST_FLAG(print_time) = print_time_;
-    GTEST_FLAG(print_utf8) = print_utf8_;
-    GTEST_FLAG(random_seed) = random_seed_;
-    GTEST_FLAG(repeat) = repeat_;
-    GTEST_FLAG(shuffle) = shuffle_;
-    GTEST_FLAG(stack_trace_depth) = stack_trace_depth_;
-    GTEST_FLAG(stream_result_to) = stream_result_to_;
-    GTEST_FLAG(throw_on_failure) = throw_on_failure_;
+    GTEST_FLAG_SET(also_run_disabled_tests, also_run_disabled_tests_);
+    GTEST_FLAG_SET(break_on_failure, break_on_failure_);
+    GTEST_FLAG_SET(catch_exceptions, catch_exceptions_);
+    GTEST_FLAG_SET(color, color_);
+    GTEST_FLAG_SET(death_test_style, death_test_style_);
+    GTEST_FLAG_SET(death_test_use_fork, death_test_use_fork_);
+    GTEST_FLAG_SET(filter, filter_);
+    GTEST_FLAG_SET(fail_fast, fail_fast_);
+    GTEST_FLAG_SET(internal_run_death_test, internal_run_death_test_);
+    GTEST_FLAG_SET(list_tests, list_tests_);
+    GTEST_FLAG_SET(output, output_);
+    GTEST_FLAG_SET(brief, brief_);
+    GTEST_FLAG_SET(print_time, print_time_);
+    GTEST_FLAG_SET(print_utf8, print_utf8_);
+    GTEST_FLAG_SET(random_seed, random_seed_);
+    GTEST_FLAG_SET(repeat, repeat_);
+    GTEST_FLAG_SET(recreate_environments_when_repeating,
+                   recreate_environments_when_repeating_);
+    GTEST_FLAG_SET(shuffle, shuffle_);
+    GTEST_FLAG_SET(stack_trace_depth, stack_trace_depth_);
+    GTEST_FLAG_SET(stream_result_to, stream_result_to_);
+    GTEST_FLAG_SET(throw_on_failure, throw_on_failure_);
   }
 
  private:
@@ -224,6 +207,7 @@ class GTestFlagSaver {
   bool print_utf8_;
   int32_t random_seed_;
   int32_t repeat_;
+  bool recreate_environments_when_repeating_;
   bool shuffle_;
   int32_t stack_trace_depth_;
   std::string stream_result_to_;
@@ -278,8 +262,8 @@ GTEST_API_ int32_t Int32FromEnvOrDie(const char* env_var, int32_t default_val);
 
 
 
-GTEST_API_ bool ShouldRunTestOnShard(
-    int total_shards, int shard_index, int test_id);
+GTEST_API_ bool ShouldRunTestOnShard(int total_shards, int shard_index,
+                                     int test_id);
 
 
 
@@ -290,9 +274,8 @@ inline int CountIf(const Container& c, Predicate predicate) {
   
   
   int count = 0;
-  for (typename Container::const_iterator it = c.begin(); it != c.end(); ++it) {
-    if (predicate(*it))
-      ++count;
+  for (auto it = c.begin(); it != c.end(); ++it) {
+    if (predicate(*it)) ++count;
   }
   return count;
 }
@@ -441,7 +424,9 @@ class OsStackTraceGetterInterface {
   static const char* const kElidedFramesMarker;
 
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(OsStackTraceGetterInterface);
+  OsStackTraceGetterInterface(const OsStackTraceGetterInterface&) = delete;
+  OsStackTraceGetterInterface& operator=(const OsStackTraceGetterInterface&) =
+      delete;
 };
 
 
@@ -463,7 +448,8 @@ class OsStackTraceGetter : public OsStackTraceGetterInterface {
   void* caller_frame_ = nullptr;
 #endif  
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(OsStackTraceGetter);
+  OsStackTraceGetter(const OsStackTraceGetter&) = delete;
+  OsStackTraceGetter& operator=(const OsStackTraceGetter&) = delete;
 };
 
 
@@ -476,7 +462,7 @@ struct TraceInfo {
 
 
 class DefaultGlobalTestPartResultReporter
-  : public TestPartResultReporterInterface {
+    : public TestPartResultReporterInterface {
  public:
   explicit DefaultGlobalTestPartResultReporter(UnitTestImpl* unit_test);
   
@@ -486,7 +472,10 @@ class DefaultGlobalTestPartResultReporter
  private:
   UnitTestImpl* const unit_test_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(DefaultGlobalTestPartResultReporter);
+  DefaultGlobalTestPartResultReporter(
+      const DefaultGlobalTestPartResultReporter&) = delete;
+  DefaultGlobalTestPartResultReporter& operator=(
+      const DefaultGlobalTestPartResultReporter&) = delete;
 };
 
 
@@ -502,7 +491,10 @@ class DefaultPerThreadTestPartResultReporter
  private:
   UnitTestImpl* const unit_test_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(DefaultPerThreadTestPartResultReporter);
+  DefaultPerThreadTestPartResultReporter(
+      const DefaultPerThreadTestPartResultReporter&) = delete;
+  DefaultPerThreadTestPartResultReporter& operator=(
+      const DefaultPerThreadTestPartResultReporter&) = delete;
 };
 
 
@@ -640,7 +632,8 @@ class GTEST_API_ UnitTestImpl {
   
   
   
-  std::string CurrentOsStackTraceExceptTop(int skip_count) GTEST_NO_INLINE_;
+  std::string CurrentOsStackTraceExceptTop(int skip_count)
+      GTEST_NO_INLINE_ GTEST_NO_TAIL_CALL_;
 
   
   
@@ -744,9 +737,7 @@ class GTEST_API_ UnitTestImpl {
   }
 
   
-  void ClearAdHocTestResult() {
-    ad_hoc_test_result_.Clear();
-  }
+  void ClearAdHocTestResult() { ad_hoc_test_result_.Clear(); }
 
   
   
@@ -754,10 +745,7 @@ class GTEST_API_ UnitTestImpl {
   
   void RecordProperty(const TestProperty& test_property);
 
-  enum ReactionToSharding {
-    HONOR_SHARDING_PROTOCOL,
-    IGNORE_SHARDING_PROTOCOL
-  };
+  enum ReactionToSharding { HONOR_SHARDING_PROTOCOL, IGNORE_SHARDING_PROTOCOL };
 
   
   
@@ -963,7 +951,8 @@ class GTEST_API_ UnitTestImpl {
   
   bool catch_exceptions_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(UnitTestImpl);
+  UnitTestImpl(const UnitTestImpl&) = delete;
+  UnitTestImpl& operator=(const UnitTestImpl&) = delete;
 };  
 
 
@@ -986,8 +975,9 @@ GTEST_API_ bool IsValidEscape(char ch);
 GTEST_API_ bool AtomMatchesChar(bool escaped, char pattern, char ch);
 GTEST_API_ bool ValidateRegex(const char* regex);
 GTEST_API_ bool MatchRegexAtHead(const char* regex, const char* str);
-GTEST_API_ bool MatchRepetitionAndRegexAtHead(
-    bool escaped, char ch, char repeat, const char* regex, const char* str);
+GTEST_API_ bool MatchRepetitionAndRegexAtHead(bool escaped, char ch,
+                                              char repeat, const char* regex,
+                                              const char* str);
 GTEST_API_ bool MatchRegexAnywhere(const char* regex, const char* str);
 
 #endif  
@@ -1089,8 +1079,7 @@ class StreamingListener : public EmptyTestEventListener {
     }
 
     ~SocketWriter() override {
-      if (sockfd_ != -1)
-        CloseConnection();
+      if (sockfd_ != -1) CloseConnection();
     }
 
     
@@ -1100,9 +1089,8 @@ class StreamingListener : public EmptyTestEventListener {
 
       const auto len = static_cast<size_t>(message.length());
       if (write(sockfd_, message.c_str(), len) != static_cast<ssize_t>(len)) {
-        GTEST_LOG_(WARNING)
-            << "stream_result_to: failed to stream to "
-            << host_name_ << ":" << port_num_;
+        GTEST_LOG_(WARNING) << "stream_result_to: failed to stream to "
+                            << host_name_ << ":" << port_num_;
       }
     }
 
@@ -1123,7 +1111,8 @@ class StreamingListener : public EmptyTestEventListener {
     const std::string host_name_;
     const std::string port_num_;
 
-    GTEST_DISALLOW_COPY_AND_ASSIGN_(SocketWriter);
+    SocketWriter(const SocketWriter&) = delete;
+    SocketWriter& operator=(const SocketWriter&) = delete;
   };  
 
   
@@ -1135,7 +1124,9 @@ class StreamingListener : public EmptyTestEventListener {
   }
 
   explicit StreamingListener(AbstractSocketWriter* socket_writer)
-      : socket_writer_(socket_writer) { Start(); }
+      : socket_writer_(socket_writer) {
+    Start();
+  }
 
   void OnTestProgramStart(const UnitTest& ) override {
     SendLn("event=TestProgramStart");
@@ -1158,22 +1149,22 @@ class StreamingListener : public EmptyTestEventListener {
 
   void OnTestIterationEnd(const UnitTest& unit_test,
                           int ) override {
-    SendLn("event=TestIterationEnd&passed=" +
-           FormatBool(unit_test.Passed()) + "&elapsed_time=" +
-           StreamableToString(unit_test.elapsed_time()) + "ms");
+    SendLn("event=TestIterationEnd&passed=" + FormatBool(unit_test.Passed()) +
+           "&elapsed_time=" + StreamableToString(unit_test.elapsed_time()) +
+           "ms");
   }
 
   
   
-  void OnTestCaseStart(const TestCase& test_case) override {
-    SendLn(std::string("event=TestCaseStart&name=") + test_case.name());
+  void OnTestSuiteStart(const TestSuite& test_suite) override {
+    SendLn(std::string("event=TestCaseStart&name=") + test_suite.name());
   }
 
   
   
-  void OnTestCaseEnd(const TestCase& test_case) override {
-    SendLn("event=TestCaseEnd&passed=" + FormatBool(test_case.Passed()) +
-           "&elapsed_time=" + StreamableToString(test_case.elapsed_time()) +
+  void OnTestSuiteEnd(const TestSuite& test_suite) override {
+    SendLn("event=TestCaseEnd&passed=" + FormatBool(test_suite.Passed()) +
+           "&elapsed_time=" + StreamableToString(test_suite.elapsed_time()) +
            "ms");
   }
 
@@ -1183,8 +1174,7 @@ class StreamingListener : public EmptyTestEventListener {
 
   void OnTestEnd(const TestInfo& test_info) override {
     SendLn("event=TestEnd&passed=" +
-           FormatBool((test_info.result())->Passed()) +
-           "&elapsed_time=" +
+           FormatBool((test_info.result())->Passed()) + "&elapsed_time=" +
            StreamableToString((test_info.result())->elapsed_time()) + "ms");
   }
 
@@ -1208,7 +1198,8 @@ class StreamingListener : public EmptyTestEventListener {
 
   const std::unique_ptr<AbstractSocketWriter> socket_writer_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(StreamingListener);
+  StreamingListener(const StreamingListener&) = delete;
+  StreamingListener& operator=(const StreamingListener&) = delete;
 };  
 
 #endif  

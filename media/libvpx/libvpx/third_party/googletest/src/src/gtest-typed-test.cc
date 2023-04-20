@@ -27,7 +27,6 @@
 
 
 
-
 #include "gtest/gtest-typed-test.h"
 
 #include "gtest/gtest.h"
@@ -38,8 +37,7 @@ namespace internal {
 
 
 static const char* SkipSpaces(const char* str) {
-  while (IsSpace(*str))
-    str++;
+  while (IsSpace(*str)) str++;
   return str;
 }
 
@@ -85,8 +83,7 @@ const char* TypedTestSuitePState::VerifyRegisteredTestNames(
   }
 
   for (RegisteredTestIter it = registered_tests_.begin();
-       it != registered_tests_.end();
-       ++it) {
+       it != registered_tests_.end(); ++it) {
     if (tests.count(it->first) == 0) {
       errors << "You forgot to list test " << it->first << ".\n";
     }

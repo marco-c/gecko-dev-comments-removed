@@ -115,14 +115,14 @@ typedef int64_t vpx_codec_pts_t;
 
 
 typedef uint32_t vpx_codec_frame_flags_t;
-#define VPX_FRAME_IS_KEY 0x1 /**< frame is the start of a GOP */
+#define VPX_FRAME_IS_KEY 0x1u /**< frame is the start of a GOP */
 
 
-#define VPX_FRAME_IS_DROPPABLE 0x2
+#define VPX_FRAME_IS_DROPPABLE 0x2u
 
-#define VPX_FRAME_IS_INVISIBLE 0x4
+#define VPX_FRAME_IS_INVISIBLE 0x4u
 
-#define VPX_FRAME_IS_FRAGMENT 0x8
+#define VPX_FRAME_IS_FRAGMENT 0x8u
 
 
 
@@ -132,12 +132,13 @@ typedef uint32_t vpx_codec_frame_flags_t;
 
 typedef uint32_t vpx_codec_er_flags_t;
 
-#define VPX_ERROR_RESILIENT_DEFAULT 0x1
+#define VPX_ERROR_RESILIENT_DEFAULT 0x1u
 
 
 
 
-#define VPX_ERROR_RESILIENT_PARTITIONS 0x2
+
+#define VPX_ERROR_RESILIENT_PARTITIONS 0x2u
 
 
 

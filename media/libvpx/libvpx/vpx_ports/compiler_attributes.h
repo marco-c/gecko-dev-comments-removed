@@ -29,12 +29,22 @@
 #endif  
 
 #if defined(__clang__) && __has_attribute(no_sanitize)
+
+
+
 #define VPX_NO_UNSIGNED_OVERFLOW_CHECK \
   __attribute__((no_sanitize("unsigned-integer-overflow")))
-#endif
+#if __clang_major__ >= 12
+#define VPX_NO_UNSIGNED_SHIFT_CHECK \
+  __attribute__((no_sanitize("unsigned-shift-base")))
+#endif  
+#endif  
 
 #ifndef VPX_NO_UNSIGNED_OVERFLOW_CHECK
 #define VPX_NO_UNSIGNED_OVERFLOW_CHECK
+#endif
+#ifndef VPX_NO_UNSIGNED_SHIFT_CHECK
+#define VPX_NO_UNSIGNED_SHIFT_CHECK
 #endif
 
 

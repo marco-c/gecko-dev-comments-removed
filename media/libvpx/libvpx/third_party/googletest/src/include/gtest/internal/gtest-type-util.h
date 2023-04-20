@@ -32,6 +32,8 @@
 
 
 
+
+
 #ifndef GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_TYPE_UTIL_H_
 #define GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_TYPE_UTIL_H_
 
@@ -39,11 +41,11 @@
 
 
 
-# if GTEST_HAS_CXXABI_H_
-#  include <cxxabi.h>
-# elif defined(__HP_aCC)
-#  include <acxx_demangle.h>
-# endif  
+#if GTEST_HAS_CXXABI_H_
+#include <cxxabi.h>
+#elif defined(__HP_aCC)
+#include <acxx_demangle.h>
+#endif  
 
 namespace testing {
 namespace internal {
@@ -101,7 +103,9 @@ std::string GetTypeName() {
 
 struct None {};
 
-# define GTEST_TEMPLATE_ template <typename T> class
+#define GTEST_TEMPLATE_ \
+  template <typename T> \
+  class
 
 
 
@@ -119,8 +123,7 @@ struct TemplateSel {
   };
 };
 
-# define GTEST_BIND_(TmplSel, T) \
-  TmplSel::template Bind<T>::type
+#define GTEST_BIND_(TmplSel, T) TmplSel::template Bind<T>::type
 
 template <GTEST_TEMPLATE_ Head_, GTEST_TEMPLATE_... Tail_>
 struct Templates {
