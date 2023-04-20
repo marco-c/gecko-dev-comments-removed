@@ -1057,6 +1057,7 @@ JsepSession::Result JsepSessionImpl::SetRemoteDescription(
         
         
         transceiver->ClearLevel();
+        transceiver->mSendTrack.ClearRids();
       }
     }
   }
@@ -1564,6 +1565,7 @@ JsepTransceiver* JsepSessionImpl::GetTransceiverForLocal(size_t level) {
       if (newTransceiver) {
         newTransceiver->SetLevel(level);
         transceiver->ClearLevel();
+        transceiver->mSendTrack.ClearRids();
         return newTransceiver;
       }
     }
@@ -1602,6 +1604,7 @@ JsepTransceiver* JsepSessionImpl::GetTransceiverForRemote(
     }
     transceiver->Disassociate();
     transceiver->ClearLevel();
+    transceiver->mSendTrack.ClearRids();
   }
 
   
@@ -1669,6 +1672,8 @@ nsresult JsepSessionImpl::UpdateTransceiversFromRemoteDescription(
       continue;
     }
 
+    transceiver->mSendTrack.SendTrackSetRemote(mSsrcGenerator, msection);
+
     
     
     
@@ -1678,7 +1683,7 @@ nsresult JsepSessionImpl::UpdateTransceiversFromRemoteDescription(
     
     
     
-    transceiver->mRecvTrack.UpdateRecvTrack(remote, msection);
+    transceiver->mRecvTrack.RecvTrackSetRemote(remote, msection);
   }
 
   return NS_OK;
