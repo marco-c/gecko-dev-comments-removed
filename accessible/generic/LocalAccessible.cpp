@@ -3427,7 +3427,6 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
   }
 
   if (aCacheDomain & CacheDomain::TransformMatrix) {
-    bool transformed = false;
     if (frame && frame->IsTransformed()) {
       
       
@@ -3437,22 +3436,14 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       
       
       
-      gfx::Matrix4x4Flagged mtx = nsLayoutUtils::GetTransformToAncestor(
-          RelativeTo{frame}, RelativeTo{boundingFrame}, nsIFrame::IN_CSS_UNITS);
-      
-      
-      
-      
-      
-      
-      transformed = !mtx.IsIdentity();
-      if (transformed) {
-        UniquePtr<gfx::Matrix4x4> ptr =
-            MakeUnique<gfx::Matrix4x4>(mtx.GetMatrix());
-        fields->SetAttribute(nsGkAtoms::transform, std::move(ptr));
-      }
-    }
-    if (!transformed && aUpdateType == CacheUpdateType::Update) {
+      gfx::Matrix4x4 mtx = nsLayoutUtils::GetTransformToAncestor(
+                               RelativeTo{frame}, RelativeTo{boundingFrame},
+                               nsIFrame::IN_CSS_UNITS)
+                               .GetMatrix();
+
+      UniquePtr<gfx::Matrix4x4> ptr = MakeUnique<gfx::Matrix4x4>(mtx);
+      fields->SetAttribute(nsGkAtoms::transform, std::move(ptr));
+    } else if (aUpdateType == CacheUpdateType::Update) {
       
       
       
