@@ -245,19 +245,13 @@ class GCMarker {
     
     
     
-    
     RegularMarking,
 
     
     
     
     
-    
     WeakMarking,
-
-    
-    
-    IterativeMarking
   };
 
  public:
@@ -470,6 +464,9 @@ class GCMarker {
 
   
   MainThreadOrGCTaskData<bool> delayedMarkingWorkAdded;
+
+  
+  MainThreadOrGCTaskData<bool> haveAllImplicitEdges;
 
   
   MainThreadOrGCTaskData<MarkingState> state;
