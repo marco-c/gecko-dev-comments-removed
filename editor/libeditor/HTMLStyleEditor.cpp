@@ -1601,8 +1601,6 @@ EditorRawDOMPoint HTMLEditor::AutoInlineStyleSetter::
     return startPoint;
   }
 
-  const bool useCSS = aHTMLEditor.IsCSSEnabled();
-  const bool isFontElementStyle = IsStyleOfFontElement();
   Element* mostDistantStartParentHavingStyle = nullptr;
   for (Element* parent :
        startPoint.GetContainer()->InclusiveAncestorsOfType<Element>()) {
@@ -1612,12 +1610,6 @@ EditorRawDOMPoint HTMLEditor::AutoInlineStyleSetter::
       break;
     }
     if (ContentIsElementSettingTheStyle(aHTMLEditor, *parent)) {
-      mostDistantStartParentHavingStyle = parent;
-    }
-    
-    
-    else if (!useCSS && isFontElementStyle &&
-             parent->IsHTMLElement(nsGkAtoms::font)) {
       mostDistantStartParentHavingStyle = parent;
     }
     if (parent->GetPreviousSibling()) {
@@ -1641,8 +1633,6 @@ EditorRawDOMPoint HTMLEditor::AutoInlineStyleSetter::
     return endPoint;
   }
 
-  const bool useCSS = aHTMLEditor.IsCSSEnabled();
-  const bool isFontElementStyle = IsStyleOfFontElement();
   Element* mostDistantEndParentHavingStyle = nullptr;
   for (Element* parent :
        endPoint.GetContainer()->InclusiveAncestorsOfType<Element>()) {
@@ -1652,12 +1642,6 @@ EditorRawDOMPoint HTMLEditor::AutoInlineStyleSetter::
       break;
     }
     if (ContentIsElementSettingTheStyle(aHTMLEditor, *parent)) {
-      mostDistantEndParentHavingStyle = parent;
-    }
-    
-    
-    else if (!useCSS && isFontElementStyle &&
-             parent->IsHTMLElement(nsGkAtoms::font)) {
       mostDistantEndParentHavingStyle = parent;
     }
     if (parent->GetNextSibling()) {
