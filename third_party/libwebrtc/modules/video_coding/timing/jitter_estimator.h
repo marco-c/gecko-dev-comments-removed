@@ -48,6 +48,7 @@ class JitterEstimator {
           "avg_frame_size_median", &avg_frame_size_median,
           "max_frame_size_percentile", &max_frame_size_percentile,
           "frame_size_window", &frame_size_window,
+          "num_stddev_delay_clamp", &num_stddev_delay_clamp,
           "num_stddev_delay_outlier", &num_stddev_delay_outlier,
           "num_stddev_size_outlier", &num_stddev_size_outlier,
           "congestion_rejection_factor", &congestion_rejection_factor);
@@ -68,6 +69,12 @@ class JitterEstimator {
 
     
     absl::optional<int> frame_size_window = absl::nullopt;
+
+    
+    
+    
+    
+    absl::optional<double> num_stddev_delay_clamp = absl::nullopt;
 
     
     
