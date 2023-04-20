@@ -23,6 +23,7 @@
 #include "api/ref_counted_base.h"
 #include "api/scoped_refptr.h"
 #include "api/stats/rtc_stats.h"
+#include "api/units/timestamp.h"
 
 
 #include "rtc_base/ref_counted_object.h"
@@ -61,13 +62,19 @@ class RTC_EXPORT RTCStatsReport final
 
   
   
+  
   static rtc::scoped_refptr<RTCStatsReport> Create(int64_t timestamp_us = 0);
+  static rtc::scoped_refptr<RTCStatsReport> Create(Timestamp timestamp);
 
+  
   explicit RTCStatsReport(int64_t timestamp_us);
+  explicit RTCStatsReport(Timestamp timestamp);
+
   RTCStatsReport(const RTCStatsReport& other) = delete;
   rtc::scoped_refptr<RTCStatsReport> Copy() const;
 
-  int64_t timestamp_us() const { return timestamp_us_; }
+  int64_t timestamp_us() const { return timestamp_.us_or(-1); }
+  Timestamp timestamp() const { return timestamp_; }
   void AddStats(std::unique_ptr<const RTCStats> stats);
   
   
@@ -128,7 +135,7 @@ class RTC_EXPORT RTCStatsReport final
   ~RTCStatsReport() = default;
 
  private:
-  int64_t timestamp_us_;
+  Timestamp timestamp_;
   StatsMap stats_;
 };
 
