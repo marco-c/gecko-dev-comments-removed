@@ -570,11 +570,9 @@ public class Autofill {
 
 
 
-
-    @Deprecated
-    @DeprecationSchedule(id = "autofill-fission", version = 112) 
     @AnyThread
-    public @NonNull Rect getDimensions() {
+     @NonNull
+    Rect getDimensions() {
       return mDimens;
     }
 
