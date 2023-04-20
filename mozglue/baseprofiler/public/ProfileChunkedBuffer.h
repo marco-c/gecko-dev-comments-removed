@@ -1108,6 +1108,12 @@ class ProfileChunkedBuffer {
           MOZ_ASSERT(maybeEntryWriter->RemainingBytes() == blockBytes);
           mRangeEnd += blockBytes;
           mPushedBlockCount += aBlockCount;
+        } else if (blockBytes >= current->BufferBytes()) {
+          
+          
+          
+          
+          mFailedPutBytes += blockBytes;
         } else {
           
           
