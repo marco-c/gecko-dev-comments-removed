@@ -13675,17 +13675,9 @@ void CodeGenerator::visitAddAndStoreSlot(LAddAndStoreSlot* ins) {
   const Register maybeTemp = ToTempRegisterOrInvalid(ins->temp0());
 
   Shape* shape = ins->mir()->shape();
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  masm.storeObjShape(shape, obj,
-                     [](MacroAssembler& masm, const Address& addr) {});
+  masm.storeObjShape(shape, obj, [](MacroAssembler& masm, const Address& addr) {
+    EmitPreBarrier(masm, addr, MIRType::Shape);
+  });
 
   
   
