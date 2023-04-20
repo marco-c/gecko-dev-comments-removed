@@ -24,6 +24,10 @@ class nsISupports;
 
 namespace mozilla {
 template <class T>
+class MovingNotNull;
+template <class T>
+class NotNull;
+template <class T>
 class OwningNonNull;
 template <class T>
 class StaticLocalRefPtr;
@@ -144,6 +148,22 @@ class MOZ_IS_REFPTR RefPtr {
   
   {}
 
+  template <typename I,
+            typename = std::enable_if_t<!std::is_same_v<I, RefPtr<T>> &&
+                                        std::is_convertible_v<I, RefPtr<T>>>>
+  MOZ_IMPLICIT RefPtr(const mozilla::NotNull<I>& aSmartPtr)
+      : mRawPtr(RefPtr<T>(aSmartPtr.get()).forget().take())
+  
+  {}
+
+  template <typename I,
+            typename = std::enable_if_t<!std::is_same_v<I, RefPtr<T>> &&
+                                        std::is_convertible_v<I, RefPtr<T>>>>
+  MOZ_IMPLICIT RefPtr(mozilla::MovingNotNull<I>&& aSmartPtr)
+      : mRawPtr(RefPtr<T>(std::move(aSmartPtr).unwrapBasePtr()).forget().take())
+  
+  {}
+
   MOZ_IMPLICIT RefPtr(const nsQueryReferent& aHelper);
   MOZ_IMPLICIT RefPtr(const nsCOMPtr_helper& aHelper);
 #if defined(XP_WIN)
@@ -217,6 +237,25 @@ class MOZ_IS_REFPTR RefPtr {
             typename = std::enable_if_t<std::is_convertible_v<I*, T*>>>
   RefPtr<T>& operator=(RefPtr<I>&& aRefPtr) {
     assign_assuming_AddRef(aRefPtr.forget().take());
+    return *this;
+  }
+
+  template <typename I,
+            typename = std::enable_if_t<std::is_convertible_v<I, RefPtr<T>>>>
+  RefPtr<T>& operator=(const mozilla::NotNull<I>& aSmartPtr)
+  
+  {
+    assign_assuming_AddRef(RefPtr<T>(aSmartPtr.get()).forget().take());
+    return *this;
+  }
+
+  template <typename I,
+            typename = std::enable_if_t<std::is_convertible_v<I, RefPtr<T>>>>
+  RefPtr<T>& operator=(mozilla::MovingNotNull<I>&& aSmartPtr)
+  
+  {
+    assign_assuming_AddRef(
+        RefPtr<T>(std::move(aSmartPtr).unwrapBasePtr()).forget().take());
     return *this;
   }
 
