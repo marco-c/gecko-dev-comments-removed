@@ -382,7 +382,10 @@ already_AddRefed<Promise> FileSystemWritableFileStream::Write(
   RefPtr<Promise> promise = writer->Write(cx, val, aError);
 
   
-  writer->ReleaseLock(cx);
+  {
+    IgnoredErrorResult error;
+    writer->ReleaseLock(cx, error);
+  }
 
   
   return promise.forget();
@@ -420,7 +423,10 @@ already_AddRefed<Promise> FileSystemWritableFileStream::Seek(
   RefPtr<Promise> promise = writer->Write(cx, val, aError);
 
   
-  writer->ReleaseLock(cx);
+  {
+    IgnoredErrorResult error;
+    writer->ReleaseLock(cx, error);
+  }
 
   
   return promise.forget();
@@ -458,7 +464,10 @@ already_AddRefed<Promise> FileSystemWritableFileStream::Truncate(
   RefPtr<Promise> promise = writer->Write(cx, val, aError);
 
   
-  writer->ReleaseLock(cx);
+  {
+    IgnoredErrorResult error;
+    writer->ReleaseLock(cx, error);
+  }
 
   
   return promise.forget();

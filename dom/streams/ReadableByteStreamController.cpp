@@ -1895,8 +1895,10 @@ void SetUpReadableByteStreamController(
   }
 
   
-  RefPtr<Promise> startPromise =
-      Promise::CreateInfallible(GetIncumbentGlobal());
+  RefPtr<Promise> startPromise = Promise::Create(GetIncumbentGlobal(), aRv);
+  if (aRv.Failed()) {
+    return;
+  }
   startPromise->MaybeResolve(startResult);
 
   

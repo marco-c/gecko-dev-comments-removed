@@ -331,8 +331,11 @@ already_AddRefed<Promise> ReadableStreamCancel(JSContext* aCx,
 
   
   if (aStream->State() == ReadableStream::ReaderState::Closed) {
-    RefPtr<Promise> promise =
-        Promise::CreateInfallible(aStream->GetParentObject());
+    RefPtr<Promise> promise = Promise::Create(aStream->GetParentObject(), aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+
     promise->MaybeResolveWithUndefined();
     return promise.forget();
   }
@@ -384,7 +387,10 @@ already_AddRefed<Promise> ReadableStreamCancel(JSContext* aCx,
 
   
   RefPtr<Promise> promise =
-      Promise::CreateInfallible(sourceCancelPromise->GetParentObject());
+      Promise::Create(sourceCancelPromise->GetParentObject(), aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
 
   
   
@@ -888,7 +894,10 @@ already_AddRefed<Promise> ReadableStream::GetNextIterationResult(
   MOZ_ASSERT(reader->GetStream());
 
   
-  RefPtr<Promise> promise = Promise::CreateInfallible(GetParentObject());
+  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
 
   
   RefPtr<ReadRequest> request = new IteratorReadRequest(promise, reader);

@@ -538,7 +538,9 @@ void PipeToPump::Finalize(JSContext* aCx,
                           JS::Handle<mozilla::Maybe<JS::Value>> aError) {
   IgnoredErrorResult rv;
   
-  WritableStreamDefaultWriterRelease(aCx, mWriter);
+  WritableStreamDefaultWriterRelease(aCx, mWriter, rv);
+  NS_WARNING_ASSERTION(!rv.Failed(),
+                       "WritableStreamDefaultWriterRelease should not fail.");
 
   
   
@@ -939,8 +941,10 @@ already_AddRefed<Promise> ReadableStreamPipeTo(
   
 
   
-  RefPtr<Promise> promise =
-      Promise::CreateInfallible(aSource->GetParentObject());
+  RefPtr<Promise> promise = Promise::Create(aSource->GetParentObject(), aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
 
   
   RefPtr<PipeToPump> pump = new PipeToPump(

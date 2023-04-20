@@ -168,7 +168,10 @@ void SetUpWritableStreamDefaultController(
   bool backpressure = aController->GetBackpressure();
 
   
-  aStream->UpdateBackpressure(backpressure);
+  aStream->UpdateBackpressure(backpressure, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
 
   
   
@@ -181,7 +184,10 @@ void SetUpWritableStreamDefaultController(
 
   
   RefPtr<Promise> startPromise =
-      Promise::CreateInfallible(aStream->GetParentObject());
+      Promise::Create(aStream->GetParentObject(), aRv);
+  if (aRv.Failed()) {
+    return;
+  }
   startPromise->MaybeResolve(startResult);
 
   
@@ -339,7 +345,10 @@ MOZ_CAN_RUN_SCRIPT static void WritableStreamDefaultControllerProcessWrite(
               bool backpressure = aController->GetBackpressure();
               
               
-              stream->UpdateBackpressure(backpressure);
+              stream->UpdateBackpressure(backpressure, aRv);
+              if (aRv.Failed()) {
+                return;
+              }
             }
 
             
@@ -477,7 +486,10 @@ void WritableStreamDefaultControllerWrite(
 
     
     
-    stream->UpdateBackpressure(backpressure);
+    stream->UpdateBackpressure(backpressure, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
   }
 
   

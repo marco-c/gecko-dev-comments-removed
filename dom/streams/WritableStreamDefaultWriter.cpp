@@ -206,7 +206,8 @@ already_AddRefed<Promise> WritableStreamDefaultWriter::Close(JSContext* aCx,
 
 
 void WritableStreamDefaultWriterRelease(JSContext* aCx,
-                                        WritableStreamDefaultWriter* aWriter) {
+                                        WritableStreamDefaultWriter* aWriter,
+                                        ErrorResult& aRv) {
   
   RefPtr<WritableStream> stream = aWriter->GetStream();
 
@@ -228,13 +229,20 @@ void WritableStreamDefaultWriterRelease(JSContext* aCx,
   
   
   
-  WritableStreamDefaultWriterEnsureReadyPromiseRejected(aWriter, releasedError);
+  WritableStreamDefaultWriterEnsureReadyPromiseRejected(aWriter, releasedError,
+                                                        aRv);
+  if (aRv.Failed()) {
+    return;
+  }
 
   
   
   
-  WritableStreamDefaultWriterEnsureClosedPromiseRejected(aWriter,
-                                                         releasedError);
+  WritableStreamDefaultWriterEnsureClosedPromiseRejected(aWriter, releasedError,
+                                                         aRv);
+  if (aRv.Failed()) {
+    return;
+  }
 
   
   stream->SetWriter(nullptr);
@@ -244,7 +252,8 @@ void WritableStreamDefaultWriterRelease(JSContext* aCx,
 }
 
 
-void WritableStreamDefaultWriter::ReleaseLock(JSContext* aCx) {
+void WritableStreamDefaultWriter::ReleaseLock(JSContext* aCx,
+                                              ErrorResult& aRv) {
   
   RefPtr<WritableStream> stream = mStream;
 
@@ -258,7 +267,7 @@ void WritableStreamDefaultWriter::ReleaseLock(JSContext* aCx) {
 
   
   RefPtr<WritableStreamDefaultWriter> thisRefPtr = this;
-  return WritableStreamDefaultWriterRelease(aCx, thisRefPtr);
+  return WritableStreamDefaultWriterRelease(aCx, thisRefPtr, aRv);
 }
 
 
@@ -320,7 +329,10 @@ already_AddRefed<Promise> WritableStreamDefaultWriterWrite(
   MOZ_ASSERT(state == WritableStream::WriterState::Writable);
 
   
-  RefPtr<Promise> promise = WritableStreamAddWriteRequest(stream);
+  RefPtr<Promise> promise = WritableStreamAddWriteRequest(stream, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
 
   
   
@@ -370,7 +382,10 @@ void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
   
   if (state == WritableStream::WriterState::Writable) {
     RefPtr<Promise> readyPromise =
-        Promise::CreateInfallible(aWriter->GetParentObject());
+        Promise::Create(aWriter->GetParentObject(), aRv);
+    if (aRv.Failed()) {
+      return;
+    }
 
     
     
@@ -386,7 +401,10 @@ void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
 
     
     RefPtr<Promise> closedPromise =
-        Promise::CreateInfallible(aWriter->GetParentObject());
+        Promise::Create(aWriter->GetParentObject(), aRv);
+    if (aRv.Failed()) {
+      return;
+    }
     aWriter->SetClosedPromise(closedPromise);
   } else if (state == WritableStream::WriterState::Erroring) {
     
@@ -395,7 +413,10 @@ void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
     
     JS::Rooted<JS::Value> storedError(RootingCx(), aStream->StoredError());
     RefPtr<Promise> readyPromise =
-        Promise::CreateInfallible(aWriter->GetParentObject());
+        Promise::Create(aWriter->GetParentObject(), aRv);
+    if (aRv.Failed()) {
+      return;
+    }
     readyPromise->MaybeReject(storedError);
     aWriter->SetReadyPromise(readyPromise);
 
@@ -404,7 +425,10 @@ void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
 
     
     RefPtr<Promise> closedPromise =
-        Promise::CreateInfallible(aWriter->GetParentObject());
+        Promise::Create(aWriter->GetParentObject(), aRv);
+    if (aRv.Failed()) {
+      return;
+    }
     aWriter->SetClosedPromise(closedPromise);
   } else if (state == WritableStream::WriterState::Closed) {
     
@@ -436,7 +460,10 @@ void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
     
     
     RefPtr<Promise> readyPromise =
-        Promise::CreateInfallible(aWriter->GetParentObject());
+        Promise::Create(aWriter->GetParentObject(), aRv);
+    if (aRv.Failed()) {
+      return;
+    }
     readyPromise->MaybeReject(storedError);
     aWriter->SetReadyPromise(readyPromise);
 
@@ -446,7 +473,10 @@ void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
     
     
     RefPtr<Promise> closedPromise =
-        Promise::CreateInfallible(aWriter->GetParentObject());
+        Promise::Create(aWriter->GetParentObject(), aRv);
+    if (aRv.Failed()) {
+      return;
+    }
     closedPromise->MaybeReject(storedError);
     aWriter->SetClosedPromise(closedPromise);
 
@@ -457,7 +487,8 @@ void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
 
 
 void WritableStreamDefaultWriterEnsureClosedPromiseRejected(
-    WritableStreamDefaultWriter* aWriter, JS::Handle<JS::Value> aError) {
+    WritableStreamDefaultWriter* aWriter, JS::Handle<JS::Value> aError,
+    ErrorResult& aRv) {
   RefPtr<Promise> closedPromise = aWriter->ClosedPromise();
   
   
@@ -466,7 +497,10 @@ void WritableStreamDefaultWriterEnsureClosedPromiseRejected(
   } else {
     
     
-    closedPromise = Promise::CreateInfallible(aWriter->GetParentObject());
+    closedPromise = Promise::Create(aWriter->GetParentObject(), aRv);
+    if (aRv.Failed()) {
+      return;
+    }
     closedPromise->MaybeReject(aError);
     aWriter->SetClosedPromise(closedPromise);
   }
@@ -477,7 +511,8 @@ void WritableStreamDefaultWriterEnsureClosedPromiseRejected(
 
 
 void WritableStreamDefaultWriterEnsureReadyPromiseRejected(
-    WritableStreamDefaultWriter* aWriter, JS::Handle<JS::Value> aError) {
+    WritableStreamDefaultWriter* aWriter, JS::Handle<JS::Value> aError,
+    ErrorResult& aRv) {
   RefPtr<Promise> readyPromise = aWriter->ReadyPromise();
   
   
@@ -486,7 +521,10 @@ void WritableStreamDefaultWriterEnsureReadyPromiseRejected(
   } else {
     
     
-    readyPromise = Promise::CreateInfallible(aWriter->GetParentObject());
+    readyPromise = Promise::Create(aWriter->GetParentObject(), aRv);
+    if (aRv.Failed()) {
+      return;
+    }
     readyPromise->MaybeReject(aError);
     aWriter->SetReadyPromise(readyPromise);
   }

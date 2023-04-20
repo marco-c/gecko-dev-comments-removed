@@ -69,21 +69,11 @@ class Promise : public SupportsWeakPtr {
           eDontPropagateUserInteraction);
 
   
-  
-  
-  
-  
-  
-  static already_AddRefed<Promise> CreateInfallible(
-      nsIGlobalObject* aGlobal,
-      PropagateUserInteraction aPropagateUserInteraction =
-          eDontPropagateUserInteraction);
-
-  
   static void ReportRejectedPromise(JSContext* aCx,
                                     JS::Handle<JSObject*> aPromise);
 
-  using MaybeFunc = void (Promise::*)(JSContext*, JS::Handle<JS::Value>);
+  typedef void (Promise::*MaybeFunc)(JSContext* aCx,
+                                     JS::Handle<JS::Value> aValue);
 
   
   
@@ -329,8 +319,6 @@ class Promise : public SupportsWeakPtr {
                                           RejectCallback&& aOnReject,
                                           Args&&... aArgs);
 
-  
-  
   JSObject* PromiseObj() const { return mPromiseObj; }
 
   void AppendNativeHandler(PromiseNativeHandler* aRunnable);

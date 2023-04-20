@@ -59,15 +59,18 @@ JSObject* ReadableStreamDefaultReader::WrapObject(
 
 
 bool ReadableStreamReaderGenericInitialize(ReadableStreamGenericReader* aReader,
-                                           ReadableStream* aStream) {
+                                           ReadableStream* aStream,
+                                           ErrorResult& aRv) {
   
   aReader->SetStream(aStream);
 
   
   aStream->SetReader(aReader);
 
-  aReader->SetClosedPromise(
-      Promise::CreateInfallible(aReader->GetParentObject()));
+  aReader->SetClosedPromise(Promise::Create(aReader->GetParentObject(), aRv));
+  if (aRv.Failed()) {
+    return false;
+  }
 
   switch (aStream->State()) {
       
@@ -120,7 +123,7 @@ ReadableStreamDefaultReader::Constructor(const GlobalObject& aGlobal,
 
   
   RefPtr<ReadableStream> streamPtr = &aStream;
-  if (!ReadableStreamReaderGenericInitialize(reader, streamPtr)) {
+  if (!ReadableStreamReaderGenericInitialize(reader, streamPtr, aRv)) {
     return nullptr;
   }
 
@@ -244,7 +247,7 @@ already_AddRefed<Promise> ReadableStreamDefaultReader::Read(ErrorResult& aRv) {
   }
 
   
-  RefPtr<Promise> promise = Promise::CreateInfallible(GetParentObject());
+  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aRv);
 
   
   RefPtr<ReadRequest> request = new Read_ReadRequest(promise);
@@ -406,7 +409,7 @@ void SetUpReadableStreamDefaultReader(ReadableStreamDefaultReader* aReader,
   }
 
   
-  if (!ReadableStreamReaderGenericInitialize(aReader, aStream)) {
+  if (!ReadableStreamReaderGenericInitialize(aReader, aStream, aRv)) {
     return;
   }
 

@@ -177,9 +177,8 @@ class SetUpTransformWritableMessageEventListener final
   
   Promise* BackpressurePromise() { return mBackpressurePromise; }
 
-  void CreateBackpressurePromise() {
-    mBackpressurePromise =
-        Promise::CreateInfallible(mController->GetParentObject());
+  void CreateBackpressurePromise(ErrorResult& aRv) {
+    mBackpressurePromise = Promise::Create(mController->GetParentObject(), aRv);
   }
 
  private:
@@ -317,7 +316,10 @@ class CrossRealmWritableUnderlyingSinkAlgorithms final
     
     
     if (!mListener->BackpressurePromise()) {
-      mListener->CreateBackpressurePromise();
+      mListener->CreateBackpressurePromise(aRv);
+      if (aRv.Failed()) {
+        return nullptr;
+      }
       mListener->BackpressurePromise()->MaybeResolveWithUndefined();
     }
 
@@ -330,7 +332,11 @@ class CrossRealmWritableUnderlyingSinkAlgorithms final
                MessagePort* aPort,
                JS::Handle<JS::Value> aChunk) -> already_AddRefed<Promise> {
               
-              aListener->CreateBackpressurePromise();
+              aListener->CreateBackpressurePromise(aRv);
+              if (aRv.Failed()) {
+                aPort->Close();
+                return nullptr;
+              }
 
               
               
@@ -443,7 +449,10 @@ MOZ_CAN_RUN_SCRIPT static void SetUpCrossRealmTransformWritable(
 
   
   RefPtr<Promise> backpressurePromise =
-      Promise::CreateInfallible(aWritable->GetParentObject());
+      Promise::Create(aWritable->GetParentObject(), aRv);
+  if (aRv.Failed()) {
+    return;
+  }
 
   
   auto listener = MakeRefPtr<SetUpTransformWritableMessageEventListener>(
