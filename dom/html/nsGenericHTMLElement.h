@@ -273,11 +273,6 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
     return false;
   }
 
-  bool Autofocus() const { return GetBoolAttr(nsGkAtoms::autofocus); }
-  void SetAutofocus(bool aVal, ErrorResult& aRv) {
-    SetHTMLBoolAttr(nsGkAtoms::autofocus, aVal, aRv);
-  }
-
  protected:
   virtual ~nsGenericHTMLElement() = default;
 
@@ -1176,6 +1171,12 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
   void UpdateRequiredState(bool aIsRequired, bool aNotify);
 
   bool IsAutocapitalizeInheriting() const;
+
+  
+
+
+
+  inline bool IsAutofocusable() const;
 
   
 
