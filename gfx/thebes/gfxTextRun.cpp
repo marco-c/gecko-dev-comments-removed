@@ -924,7 +924,7 @@ void gfxTextRun::ClassifyAutoHyphenations(uint32_t aStart, Range aRange,
 uint32_t gfxTextRun::BreakAndMeasureText(
     uint32_t aStart, uint32_t aMaxLength, bool aLineBreakBefore,
     gfxFloat aWidth, PropertyProvider* aProvider, SuppressBreak aSuppressBreak,
-    gfxFloat* aTrimWhitespace, bool aWhitespaceCanHang, Metrics* aMetrics,
+    gfxFloat* aTrimmableWhitespace, Metrics* aMetrics,
     gfxFont::BoundingBoxType aBoundingBoxType, DrawTarget* aRefDrawTarget,
     bool* aUsedHyphenation, uint32_t* aLastBreak, bool aCanWordWrap,
     bool aCanWhitespaceWrap, gfxBreakPriority* aBreakPriority) {
@@ -1126,7 +1126,7 @@ uint32_t gfxTextRun::BreakAndMeasureText(
     }
 
     advance += charAdvance;
-    if (aTrimWhitespace || aWhitespaceCanHang) {
+    if (aTrimmableWhitespace) {
       if (mCharacterGlyphs[i].CharIsSpace()) {
         ++trimmableChars;
         trimmableAdvance += charAdvance;
@@ -1173,22 +1173,9 @@ uint32_t gfxTextRun::BreakAndMeasureText(
     
     *aMetrics = MeasureText(Range(aStart, fitEnd), aBoundingBoxType,
                             aRefDrawTarget, aProvider);
-    if (aTrimWhitespace || aWhitespaceCanHang) {
-      
-      Metrics trimOrHangMetrics =
-          MeasureText(Range(fitEnd - trimmableChars, fitEnd), aBoundingBoxType,
-                      aRefDrawTarget, aProvider);
-      if (aTrimWhitespace) {
-        aMetrics->mAdvanceWidth -= trimOrHangMetrics.mAdvanceWidth;
-      } else if (aMetrics->mAdvanceWidth > aWidth) {
-        
-        aMetrics->mAdvanceWidth = std::max(
-            aWidth, aMetrics->mAdvanceWidth - trimOrHangMetrics.mAdvanceWidth);
-      }
-    }
   }
-  if (aTrimWhitespace) {
-    *aTrimWhitespace = trimmableAdvance;
+  if (aTrimmableWhitespace) {
+    *aTrimmableWhitespace = trimmableAdvance;
   }
   if (aUsedHyphenation) {
     *aUsedHyphenation = usedHyphenation;

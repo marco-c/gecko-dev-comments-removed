@@ -450,20 +450,14 @@ class gfxTextRun : public gfxShapedText {
 
 
 
-
-
-
-  uint32_t BreakAndMeasureText(uint32_t aStart, uint32_t aMaxLength,
-                               bool aLineBreakBefore, gfxFloat aWidth,
-                               PropertyProvider* aProvider,
-                               SuppressBreak aSuppressBreak,
-                               gfxFloat* aTrimWhitespace, bool aHangWhitespace,
-                               Metrics* aMetrics,
-                               gfxFont::BoundingBoxType aBoundingBoxType,
-                               DrawTarget* aDrawTargetForTightBoundingBox,
-                               bool* aUsedHyphenation, uint32_t* aLastBreak,
-                               bool aCanWordWrap, bool aCanWhitespaceWrap,
-                               gfxBreakPriority* aBreakPriority);
+  uint32_t BreakAndMeasureText(
+      uint32_t aStart, uint32_t aMaxLength, bool aLineBreakBefore,
+      gfxFloat aWidth, PropertyProvider* aProvider,
+      SuppressBreak aSuppressBreak, gfxFloat* aTrimmableWhitespace,
+      Metrics* aMetrics, gfxFont::BoundingBoxType aBoundingBoxType,
+      DrawTarget* aDrawTargetForTightBoundingBox, bool* aUsedHyphenation,
+      uint32_t* aLastBreak, bool aCanWordWrap, bool aCanWhitespaceWrap,
+      gfxBreakPriority* aBreakPriority);
 
   
 

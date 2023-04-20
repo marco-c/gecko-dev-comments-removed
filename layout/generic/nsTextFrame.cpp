@@ -9140,7 +9140,7 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
   }
   uint32_t transformedLastBreak = 0;
   bool usedHyphenation;
-  gfxFloat trimmedWidth = 0;
+  gfxFloat trimmableWidth = 0;
   gfxFloat availWidth = aAvailableWidth;
   if (Style()->IsTextCombined()) {
     
@@ -9164,7 +9164,8 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
   uint32_t transformedCharsFit = mTextRun->BreakAndMeasureText(
       transformedOffset, transformedLength, HasAnyStateBits(TEXT_START_OF_LINE),
       availWidth, &provider, suppressBreak,
-      canTrimTrailingWhitespace ? &trimmedWidth : nullptr, whitespaceCanHang,
+      canTrimTrailingWhitespace || whitespaceCanHang ? &trimmableWidth
+                                                     : nullptr,
       &textMetrics, boundingBoxType, aDrawTarget, &usedHyphenation,
       &transformedLastBreak, textStyle->WordCanWrap(this), isBreakSpaces,
       &breakPriority);
@@ -9224,31 +9225,27 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
     AddStateBits(TEXT_NO_RENDERED_GLYPHS);
   }
 
-  gfxFloat trimmableWidth = 0;
   bool brokeText = forceBreak >= 0 || transformedCharsFit < transformedLength;
-  if (canTrimTrailingWhitespace) {
-    
-    
-    
-    
-    
-    
-    if (brokeText || HasAnyStateBits(TEXT_IS_IN_TOKEN_MATHML)) {
+  if (trimmableWidth > 0.0) {
+    if (canTrimTrailingWhitespace) {
       
       
-      AddStateBits(TEXT_TRIMMED_TRAILING_WHITESPACE);
-    } else if (!HasAnyStateBits(TEXT_IS_IN_TOKEN_MATHML)) {
-      
-      
-      
-      
-      textMetrics.mAdvanceWidth += trimmedWidth;
-      trimmableWidth = trimmedWidth;
-      if (mTextRun->IsRightToLeft()) {
+      if (brokeText || HasAnyStateBits(TEXT_IS_IN_TOKEN_MATHML)) {
         
         
-        textMetrics.mBoundingBox.MoveBy(gfxPoint(trimmedWidth, 0));
+        AddStateBits(TEXT_TRIMMED_TRAILING_WHITESPACE);
+        textMetrics.mAdvanceWidth -= trimmableWidth;
+        trimmableWidth = 0.0;
       }
+    } else if (whitespaceCanHang) {
+      
+      
+      
+      gfxFloat hang =
+          std::min(std::max(0.0, textMetrics.mAdvanceWidth - availWidth),
+                   trimmableWidth);
+      textMetrics.mAdvanceWidth -= hang;
+      trimmableWidth = 0.0;
     }
   }
 
