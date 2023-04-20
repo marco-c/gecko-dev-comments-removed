@@ -1120,6 +1120,30 @@ struct nsFlexContainerFrame::SharedFlexData final {
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(Prop, SharedFlexData)
 };
 
+
+
+
+
+
+
+struct nsFlexContainerFrame::PerFragmentFlexData final {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nscoord mSumOfChildrenBSize = 0;
+
+  
+  
+  
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(Prop, PerFragmentFlexData)
+};
+
 static void BuildStrutInfoFromCollapsedItems(const nsTArray<FlexLine>& aLines,
                                              nsTArray<StrutInfo>& aStruts) {
   MOZ_ASSERT(aStruts.IsEmpty(),
@@ -2697,20 +2721,6 @@ NS_QUERYFRAME_HEAD(nsFlexContainerFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 
 NS_IMPL_FRAMEARENA_HELPERS(nsFlexContainerFrame)
-
-
-
-
-
-
-
-
-
-
-
-
-
-NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(SumOfChildrenBlockSizeProperty, nscoord)
 
 nsContainerFrame* NS_NewFlexContainerFrame(PresShell* aPresShell,
                                            ComputedStyle* aStyle) {
@@ -4459,6 +4469,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   ComputedFlexContainerInfo* containerInfo = CreateOrClearFlexContainerInfo();
 
   FlexLayoutResult flr;
+  PerFragmentFlexData fragmentData;
   const nsIFrame* prevInFlow = GetPrevInFlow();
   if (!prevInFlow) {
     const LogicalSize tentativeContentBoxSize = aReflowInput.ComputedSize();
@@ -4502,6 +4513,11 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     }
   } else {
     flr = GenerateFlexLayoutResult();
+    auto* fragmentDataProp =
+        prevInFlow->GetProperty(PerFragmentFlexData::Prop());
+    MOZ_ASSERT(fragmentDataProp,
+               "PerFragmentFlexData should be set in our prev-in-flow!");
+    fragmentData = *fragmentDataProp;
   }
 
   const LogicalSize contentBoxSize =
@@ -4546,22 +4562,17 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
 
   OverflowAreas ocBounds;
   nsReflowStatus ocStatus;
-  nscoord sumOfChildrenBlockSize;
   if (prevInFlow) {
     ReflowOverflowContainerChildren(
         aPresContext, aReflowInput, ocBounds, ReflowChildFlags::Default,
         ocStatus, MergeSortedFrameListsFor, Some(containerSize));
-    sumOfChildrenBlockSize =
-        prevInFlow->GetProperty(SumOfChildrenBlockSizeProperty());
-  } else {
-    sumOfChildrenBlockSize = 0;
   }
 
   const LogicalSize availableSizeForItems =
       ComputeAvailableSizeForItems(aReflowInput, borderPadding);
   const auto [maxBlockEndEdgeOfChildren, anyChildIncomplete] =
       ReflowChildren(aReflowInput, containerSize, availableSizeForItems,
-                     borderPadding, sumOfChildrenBlockSize, axisTracker, flr);
+                     borderPadding, axisTracker, flr, fragmentData);
 
   if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE) {
     
@@ -4570,7 +4581,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     
     
     
-    sumOfChildrenBlockSize +=
+    fragmentData.mSumOfChildrenBSize +=
         std::max(maxBlockEndEdgeOfChildren - borderPadding.BStart(wm),
                  availableSizeForItems.BSize(wm));
   }
@@ -4621,8 +4632,6 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
         SetProperty(SharedFlexData::Prop(), sharedData);
       }
       sharedData->Update(std::move(flr));
-
-      SetProperty(SumOfChildrenBlockSizeProperty(), sumOfChildrenBlockSize);
     } else if (sharedData && !GetNextInFlow()) {
       
       
@@ -4630,10 +4639,21 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
       
       
       RemoveProperty(SharedFlexData::Prop());
-      RemoveProperty(SumOfChildrenBlockSizeProperty());
     }
-  } else {
-    SetProperty(SumOfChildrenBlockSizeProperty(), sumOfChildrenBlockSize);
+  }
+
+  PerFragmentFlexData* fragmentDataProp =
+      GetProperty(PerFragmentFlexData::Prop());
+  if (!aStatus.IsFullyComplete()) {
+    if (!fragmentDataProp) {
+      fragmentDataProp = new PerFragmentFlexData;
+      SetProperty(PerFragmentFlexData::Prop(), fragmentDataProp);
+    }
+    *fragmentDataProp = fragmentData;
+  } else if (fragmentDataProp && !GetNextInFlow()) {
+    
+    
+    RemoveProperty(PerFragmentFlexData::Prop());
   }
 }
 
@@ -5152,9 +5172,8 @@ nsFlexContainerFrame::FlexLayoutResult nsFlexContainerFrame::DoFlexLayout(
 std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
     const ReflowInput& aReflowInput, const nsSize& aContainerSize,
     const LogicalSize& aAvailableSizeForItems,
-    const LogicalMargin& aBorderPadding,
-    const nscoord aSumOfPrevInFlowsChildrenBlockSize,
-    const FlexboxAxisTracker& aAxisTracker, FlexLayoutResult& aFlr) {
+    const LogicalMargin& aBorderPadding, const FlexboxAxisTracker& aAxisTracker,
+    FlexLayoutResult& aFlr, PerFragmentFlexData& aFragmentData) {
   if (HidesContentForLayout()) {
     return {0, false};
   }
@@ -5193,7 +5212,7 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
       } else if (GetPrevInFlow()) {
         
         
-        framePos.B(flexWM) -= aSumOfPrevInFlowsChildrenBlockSize;
+        framePos.B(flexWM) -= aFragmentData.mSumOfChildrenBSize;
       }
 
       

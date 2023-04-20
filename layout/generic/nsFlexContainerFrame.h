@@ -137,6 +137,7 @@ class nsFlexContainerFrame final : public nsContainerFrame,
   class CachedBAxisMeasurement;
   class CachedFlexItemData;
   struct SharedFlexData;
+  struct PerFragmentFlexData;
   class FlexItemIterator;
 
   
@@ -574,12 +575,17 @@ class nsFlexContainerFrame final : public nsContainerFrame,
 
 
 
+
+
+
+
+
   std::tuple<nscoord, bool> ReflowChildren(
       const ReflowInput& aReflowInput, const nsSize& aContainerSize,
       const mozilla::LogicalSize& aAvailableSizeForItems,
       const mozilla::LogicalMargin& aBorderPadding,
-      const nscoord aSumOfPrevInFlowsChildrenBlockSize,
-      const FlexboxAxisTracker& aAxisTracker, FlexLayoutResult& aFlr);
+      const FlexboxAxisTracker& aAxisTracker, FlexLayoutResult& aFlr,
+      PerFragmentFlexData& aFragmentData);
 
   
 
