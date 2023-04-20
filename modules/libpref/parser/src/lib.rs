@@ -136,7 +136,7 @@ type ErrorFn = unsafe extern "C" fn(msg: *const c_char);
 
 
 #[no_mangle]
-pub extern "C" fn prefs_parser_parse(
+pub unsafe extern "C" fn prefs_parser_parse(
     path: *const c_char,
     kind: PrefValueKind,
     buf: *const c_char,
