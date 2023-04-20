@@ -449,8 +449,6 @@ enum class BailoutReason {
 MethodStatus BaselineCompile(JSContext* cx, JSScript* script,
                              bool forceDebugInstrumentation = false);
 
-static const unsigned BASELINE_MAX_ARGS_LENGTH = 20000;
-
 
 class BaselineInterpreter {
  public:

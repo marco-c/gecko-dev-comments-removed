@@ -65,15 +65,7 @@ static EnterJitStatus JS_HAZ_JSNATIVE_CALLER EnterJit(JSContext* cx,
 
     if (TooManyActualArguments(numActualArgs)) {
       
-      
-      if (numActualArgs > BASELINE_MAX_ARGS_LENGTH) {
-        return EnterJitStatus::NotEntered;
-      }
-      if (script->hasBaselineScript()) {
-        code = script->baselineScript()->method()->raw();
-      } else {
-        code = cx->runtime()->jitRuntime()->baselineInterpreter().codeRaw();
-      }
+      return EnterJitStatus::NotEntered;
     }
 
     constructing = state.asInvoke()->constructing();
