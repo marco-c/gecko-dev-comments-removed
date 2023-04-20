@@ -544,12 +544,6 @@ var gMainPane = {
       fxtranslationRow.hidden = false;
     }
 
-    let drmInfoURL =
-      Services.urlFormatter.formatURLPref("app.support.baseURL") +
-      "drm-content";
-    document
-      .getElementById("playDRMContentLink")
-      .setAttribute("href", drmInfoURL);
     let emeUIEnabled = Services.prefs.getBoolPref("browser.eme.ui.enabled");
     
     if (navigator.platform.toLowerCase().startsWith("win")) {
