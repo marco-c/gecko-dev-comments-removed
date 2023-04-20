@@ -9,16 +9,23 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "base/eintr_wrapper.h"
 #include "base/message_loop.h"
 #include "base/process_util.h"
+#include "prenv.h"
 
 #include "chrome/common/process_watcher.h"
 
 
 
-static const int kMaxWaitMs = 2000;
+static constexpr int kMaxWaitMs = 2000;
+
+
+
+
+static constexpr int kShutdownWaitMs = 8000;
 
 namespace {
 
@@ -129,13 +136,18 @@ class ChildLaxReaper : public ChildReaper,
 
   virtual void WillDestroyCurrentMessageLoop() override {
     DCHECK(process_);
+    if (!process_) {
+      return;
+    }
 
-#ifdef NS_FREE_PERMANENT_DATA
-    printf_stderr("Waiting in WillDestroyCurrentMessageLoop for pid %d\n",
-                  process_);
-#endif
-    WaitForChildExit();
-    process_ = 0;
+    
+    if (!PR_GetEnv("MOZ_TEST_CHILD_EXIT_HANG")) {
+      CrashProcessIfHanging();
+    }
+    if (process_) {
+      WaitForChildExit();
+      process_ = 0;
+    }
 
     
     
@@ -145,6 +157,50 @@ class ChildLaxReaper : public ChildReaper,
 
  private:
   ChildLaxReaper(const ChildLaxReaper&) = delete;
+
+  void CrashProcessIfHanging() {
+    if (base::IsProcessDead(process_)) {
+      process_ = 0;
+      return;
+    }
+
+    
+    
+    
+    
+    
+    
+    static int sWaitMs = kShutdownWaitMs;
+    if (sWaitMs > 0) {
+      CHROMIUM_LOG(WARNING)
+          << "Process " << process_
+          << " may be hanging at shutdown; will wait for up to " << sWaitMs
+          << "ms";
+    }
+    
+    
+    
+    while (sWaitMs > 0) {
+      static constexpr int kWaitTickMs = 200;
+      struct timespec ts = {kWaitTickMs / 1000, (kWaitTickMs % 1000) * 1000000};
+      HANDLE_EINTR(nanosleep(&ts, &ts));
+      sWaitMs -= kWaitTickMs;
+
+      if (base::IsProcessDead(process_)) {
+        process_ = 0;
+        return;
+      }
+    }
+
+    
+    
+    
+    CHROMIUM_LOG(ERROR)
+        << "Process " << process_
+        << " hanging at shutdown; attempting crash report (fatal error).";
+
+    kill(process_, SIGABRT);
+  }
 
   const ChildLaxReaper& operator=(const ChildLaxReaper&) = delete;
 };

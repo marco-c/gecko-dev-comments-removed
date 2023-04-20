@@ -6,14 +6,26 @@
 
 #include "chrome/common/process_watcher.h"
 
+#include <algorithm>
 #include <processthreadsapi.h>
+#include <synchapi.h>
 #include "base/message_loop.h"
 #include "base/object_watcher.h"
+#include "prenv.h"
 
 
-static const int kWaitInterval = 2000;
+static constexpr int kWaitInterval = 2000;
+
+
+
+
+static constexpr DWORD kShutdownWaitMs = 8000;
 
 namespace {
+
+static bool IsProcessDead(base::ProcessHandle process) {
+  return WaitForSingleObject(process, 0) == WAIT_OBJECT_0;
+}
 
 class ChildReaper : public mozilla::Runnable,
                     public base::ObjectWatcher::Delegate,
@@ -36,10 +48,10 @@ class ChildReaper : public mozilla::Runnable,
   virtual void WillDestroyCurrentMessageLoop() {
     MOZ_ASSERT(!force_);
     if (process_) {
-#ifdef NS_FREE_PERMANENT_DATA
-      printf_stderr("Waiting in WillDestroyCurrentMessageLoop for pid %lu\n",
-                    GetProcessId(process_));
-#endif
+      
+      if (!PR_GetEnv("MOZ_TEST_CHILD_EXIT_HANG")) {
+        CrashProcessIfHanging();
+      }
       WaitForSingleObject(process_, INFINITE);
       base::CloseProcessHandle(process_);
       process_ = 0;
@@ -89,6 +101,114 @@ class ChildReaper : public mozilla::Runnable,
     OnObjectSignaled(process_);
   }
 
+  void CrashProcessIfHanging() {
+    if (IsProcessDead(process_)) {
+      return;
+    }
+    DWORD pid = GetProcessId(process_);
+    DCHECK(pid != 0);
+
+    
+    
+    
+    
+    
+    
+    static DWORD sWaitMs = kShutdownWaitMs;
+    if (sWaitMs > 0) {
+      CHROMIUM_LOG(WARNING)
+          << "Process " << pid
+          << " may be hanging at shutdown; will wait for up to " << sWaitMs
+          << "ms";
+    }
+    const auto beforeWait = mozilla::TimeStamp::NowLoRes();
+    const DWORD waitStatus = WaitForSingleObject(process_, sWaitMs);
+
+    const double elapsed =
+        (mozilla::TimeStamp::NowLoRes() - beforeWait).ToMilliseconds();
+    sWaitMs -= static_cast<DWORD>(
+        std::clamp(elapsed, 0.0, static_cast<double>(sWaitMs)));
+
+    switch (waitStatus) {
+      case WAIT_TIMEOUT:
+        
+        break;
+      case WAIT_OBJECT_0:
+        
+        return;
+      case WAIT_FAILED:
+        CHROMIUM_LOG(ERROR) << "Waiting for process " << pid
+                            << " failed; error " << GetLastError();
+        DCHECK(false) << "WaitForSingleObject failed";
+        
+        return;
+      default:
+        DCHECK(false) << "WaitForSingleObject returned " << waitStatus;
+        
+        return;
+    }
+
+    
+    
+    
+    CHROMIUM_LOG(ERROR)
+        << "Process " << pid
+        << " hanging at shutdown; attempting crash report (fatal error)";
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    static constexpr uint64_t kIpcMagic = 0x43504900435049;
+
+    const HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
+    if (!ntdll) {
+      CHROMIUM_LOG(ERROR) << "couldn't find ntdll.dll: error "
+                          << GetLastError();
+      return;
+    }
+    const auto dbgBreak = reinterpret_cast<LPTHREAD_START_ROUTINE>(
+        GetProcAddress(ntdll, "DbgBreakPoint"));
+    if (!dbgBreak) {
+      CHROMIUM_LOG(ERROR) << "couldn't find DbgBreakPoint: error "
+                          << GetLastError();
+      return;
+    }
+
+    const DWORD rights = PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION |
+                         PROCESS_VM_OPERATION | PROCESS_VM_WRITE |
+                         PROCESS_VM_READ;
+    HANDLE process_priv = nullptr;
+    if (!DuplicateHandle(GetCurrentProcess(), process_, GetCurrentProcess(),
+                         &process_priv, rights,  FALSE,
+                          0)) {
+      const auto error = GetLastError();
+      CHROMIUM_LOG(ERROR) << "OpenProcess: error " << error;
+    } else {
+      DCHECK(process_priv);
+      HANDLE thread =
+          CreateRemoteThread(process_priv,  nullptr,
+                              0, dbgBreak, (LPVOID)kIpcMagic,
+                              0, nullptr);
+      if (!thread) {
+        const auto error = GetLastError();
+        CHROMIUM_LOG(ERROR) << "CreateRemoteThread: error " << error;
+      } else {
+        CloseHandle(thread);
+      }
+      CloseHandle(process_priv);
+    }
+  }
+
   
   base::ProcessHandle process_;
 
@@ -107,7 +227,7 @@ void ProcessWatcher::EnsureProcessTerminated(base::ProcessHandle process,
   DCHECK(process != GetCurrentProcess());
 
   
-  if (WaitForSingleObject(process, 0) == WAIT_OBJECT_0) {
+  if (IsProcessDead(process)) {
     base::CloseProcessHandle(process);
     return;
   }
