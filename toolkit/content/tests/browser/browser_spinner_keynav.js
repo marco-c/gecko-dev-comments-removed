@@ -16,8 +16,20 @@ const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
 
 let helper = new DateTimeTestHelper();
 
-registerCleanupFunction(() => {
-  helper.cleanup();
+add_setup(async function setPrefsReducedMotion() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.prefersReducedMotion", 1]],
+  });
+  Assert.ok(
+    matchMedia("(prefers-reduced-motion: reduce)").matches,
+    "The reduce motion mode is active"
+  );
+
+  registerCleanupFunction(() => {
+    helper.cleanup();
+  });
 });
 
 
@@ -27,12 +39,11 @@ add_task(async function test_spinner_month_keyboard_arrows() {
   info("Ensure the month spinner follows arrow key bindings appropriately.");
 
   const inputValue = "2022-12-10";
-  const nextMonth = "2022-01-01";
+  const nextMonthValue = "2022-01-01";
 
   await helper.openPicker(
     `data:text/html, <input type="date" value="${inputValue}">`
   );
-  let browser = helper.tab.linkedBrowser;
   let pickerDoc = helper.panel.querySelector("#dateTimePopupFrame")
     .contentDocument;
 
@@ -45,13 +56,14 @@ add_task(async function test_spinner_month_keyboard_arrows() {
   );
 
   
-  EventUtils.synthesizeKey("KEY_Tab", {});
-  EventUtils.synthesizeKey("KEY_Tab", {});
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
   
   EventUtils.synthesizeKey(" ", {});
 
   const spinnerMonthBtn = helper.getElement(SPINNER_MONTH).children[1];
   const spinnerYearBtn = helper.getElement(SPINNER_YEAR).children[1];
+
+  let monthYearEl = helper.getElement(MONTH_YEAR);
 
   Assert.equal(
     helper.getElement(BTN_MONTH_YEAR).getAttribute("aria-expanded"),
@@ -87,8 +99,18 @@ add_task(async function test_spinner_month_keyboard_arrows() {
   info("Testing Up/Down Arrow keys behavior of the Month Spinner");
 
   
-  EventUtils.synthesizeKey("VK_DOWN", {});
-  await BrowserTestUtils.waitForContentEvent(browser, "input");
+  EventUtils.synthesizeKey("KEY_ArrowDown", {});
+
+  await BrowserTestUtils.waitForMutationCondition(
+    monthYearEl,
+    { childList: true },
+    () => {
+      return monthYearEl.textContent == DATE_FORMAT(new Date(nextMonthValue));
+    },
+    `Should change to January 2022, instead got ${
+      helper.getElement(MONTH_YEAR).textContent
+    }`
+  );
 
   Assert.equal(
     spinnerMonthBtn.getAttribute("aria-valuenow"),
@@ -102,13 +124,23 @@ add_task(async function test_spinner_month_keyboard_arrows() {
   );
   Assert.equal(
     helper.getElement(BTN_MONTH_YEAR).textContent,
-    DATE_FORMAT(new Date(nextMonth)),
+    DATE_FORMAT(new Date(nextMonthValue)),
     "Down Arrow updates the month-year button to the next month"
   );
 
   
-  await EventUtils.synthesizeKey("VK_UP", {});
-  await BrowserTestUtils.waitForContentEvent(browser, "input");
+  EventUtils.synthesizeKey("KEY_ArrowUp", {});
+
+  await BrowserTestUtils.waitForMutationCondition(
+    monthYearEl,
+    { childList: true },
+    () => {
+      return monthYearEl.textContent == DATE_FORMAT(new Date(inputValue));
+    },
+    `Should change to December 2022, instead got ${
+      helper.getElement(MONTH_YEAR).textContent
+    }`
+  );
 
   Assert.equal(
     spinnerMonthBtn.getAttribute("aria-valuenow"),
@@ -132,31 +164,211 @@ add_task(async function test_spinner_month_keyboard_arrows() {
 
 
 
+add_task(async function test_spinner_month_keyboard_pageup_pagedown() {
+  info(
+    "Ensure the month spinner follows Page Up/Down key bindings appropriately."
+  );
+
+  const inputValue = "2022-12-10";
+  const nextFifthMonthValue = "2022-05-10";
+
+  await helper.openPicker(
+    `data:text/html, <input type="date" value="${inputValue}">`
+  );
+  
+  
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
+  
+  EventUtils.synthesizeKey(" ", {});
+
+  const spinnerMonthBtn = helper.getElement(SPINNER_MONTH).children[1];
+  const spinnerYearBtn = helper.getElement(SPINNER_YEAR).children[1];
+
+  let monthYearEl = helper.getElement(MONTH_YEAR);
+
+  
+  EventUtils.synthesizeKey("KEY_Tab", {});
+
+  
+  EventUtils.synthesizeKey("KEY_PageDown", {});
+
+  await BrowserTestUtils.waitForMutationCondition(
+    monthYearEl,
+    { childList: true },
+    () => {
+      return (
+        monthYearEl.textContent == DATE_FORMAT(new Date(nextFifthMonthValue))
+      );
+    },
+    `Should change to May 2022, instead got ${
+      helper.getElement(MONTH_YEAR).textContent
+    }`
+  );
+
+  Assert.equal(
+    spinnerMonthBtn.getAttribute("aria-valuenow"),
+    "4",
+    "Page Down selects the fifth later month"
+  );
+  Assert.equal(
+    spinnerYearBtn.getAttribute("aria-valuenow"),
+    "2022",
+    "Page Down on a month spinner does not update the year"
+  );
+  Assert.equal(
+    helper.getElement(BTN_MONTH_YEAR).textContent,
+    DATE_FORMAT(new Date(nextFifthMonthValue)),
+    "Page Down updates the month-year button to the fifth later month"
+  );
+
+  
+  EventUtils.synthesizeKey("KEY_PageUp", {});
+
+  await BrowserTestUtils.waitForMutationCondition(
+    monthYearEl,
+    { childList: true },
+    () => {
+      return monthYearEl.textContent == DATE_FORMAT(new Date(inputValue));
+    },
+    `Should change to December 2022, instead got ${
+      helper.getElement(MONTH_YEAR).textContent
+    }`
+  );
+
+  Assert.equal(
+    spinnerMonthBtn.getAttribute("aria-valuenow"),
+    "11",
+    "Page Up selects the fifth earlier month"
+  );
+  Assert.equal(
+    spinnerYearBtn.getAttribute("aria-valuenow"),
+    "2022",
+    "Page Up on a month spinner does not update the year"
+  );
+  Assert.equal(
+    helper.getElement(BTN_MONTH_YEAR).textContent,
+    DATE_FORMAT(new Date(inputValue)),
+    "Page Up updates the month-year button to the fifth earlier month"
+  );
+
+  await helper.tearDown();
+});
+
+
+
+
+add_task(async function test_spinner_month_keyboard_home_end() {
+  info("Ensure the month spinner follows Home/End key bindings appropriately.");
+
+  const inputValue = "2022-12-11";
+  const firstMonthValue = "2022-01-11";
+
+  await helper.openPicker(
+    `data:text/html, <input type="date" value="${inputValue}">`
+  );
+  
+  
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
+  
+  EventUtils.synthesizeKey(" ", {});
+
+  const spinnerMonthBtn = helper.getElement(SPINNER_MONTH).children[1];
+  const spinnerYearBtn = helper.getElement(SPINNER_YEAR).children[1];
+
+  let monthYearEl = helper.getElement(MONTH_YEAR);
+
+  
+  EventUtils.synthesizeKey("KEY_Tab", {});
+
+  
+  EventUtils.synthesizeKey("KEY_Home", {});
+
+  await BrowserTestUtils.waitForMutationCondition(
+    monthYearEl,
+    { childList: true },
+    () => {
+      return monthYearEl.textContent == DATE_FORMAT(new Date(firstMonthValue));
+    },
+    `Should change to January 2022, instead got ${
+      helper.getElement(MONTH_YEAR).textContent
+    }`
+  );
+
+  Assert.equal(
+    spinnerMonthBtn.getAttribute("aria-valuenow"),
+    "0",
+    "Home key selects the first month of the year (min value)"
+  );
+  Assert.equal(
+    spinnerYearBtn.getAttribute("aria-valuenow"),
+    "2022",
+    "Home key does not update the year value"
+  );
+  Assert.equal(
+    helper.getElement(BTN_MONTH_YEAR).textContent,
+    DATE_FORMAT(new Date(firstMonthValue)),
+    "Home key updates the month-year button to the first month of the same year (min value)"
+  );
+
+  
+  EventUtils.synthesizeKey("KEY_End", {});
+
+  await BrowserTestUtils.waitForMutationCondition(
+    monthYearEl,
+    { childList: true },
+    () => {
+      return monthYearEl.textContent == DATE_FORMAT(new Date(inputValue));
+    },
+    `Should change to December 2022, instead got ${
+      helper.getElement(MONTH_YEAR).textContent
+    }`
+  );
+
+  Assert.equal(
+    spinnerMonthBtn.getAttribute("aria-valuenow"),
+    "11",
+    "End key selects the last month of the year (max value)"
+  );
+  Assert.equal(
+    spinnerYearBtn.getAttribute("aria-valuenow"),
+    "2022",
+    "End key does not update the year value"
+  );
+  Assert.equal(
+    helper.getElement(BTN_MONTH_YEAR).textContent,
+    DATE_FORMAT(new Date(inputValue)),
+    "End key updates the month-year button to the last month of the same year (max value)"
+  );
+
+  await helper.tearDown();
+});
+
+
 
 
 add_task(async function test_spinner_year_keyboard_arrows() {
   info("Ensure the year spinner follows arrow key bindings appropriately.");
 
   const inputValue = "2022-12-10";
-  const nextYear = "2023-12-01";
+  const nextYearValue = "2023-12-01";
 
   await helper.openPicker(
     `data:text/html, <input type="date" value="${inputValue}">`
   );
-  let browser = helper.tab.linkedBrowser;
   let pickerDoc = helper.panel.querySelector("#dateTimePopupFrame")
     .contentDocument;
 
   info("Testing general keyboard navigation");
 
   
-  EventUtils.synthesizeKey("KEY_Tab", {});
-  EventUtils.synthesizeKey("KEY_Tab", {});
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
   
   EventUtils.synthesizeKey(" ", {});
 
   const spinnerMonthBtn = helper.getElement(SPINNER_MONTH).children[1];
   const spinnerYearBtn = helper.getElement(SPINNER_YEAR).children[1];
+
+  let monthYearEl = helper.getElement(MONTH_YEAR);
 
   
   Assert.equal(
@@ -166,8 +378,7 @@ add_task(async function test_spinner_year_keyboard_arrows() {
   );
 
   
-  EventUtils.synthesizeKey("KEY_Tab", {});
-  EventUtils.synthesizeKey("KEY_Tab", {});
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
 
   Assert.equal(
     pickerDoc.activeElement.getAttribute("aria-valuenow"),
@@ -178,8 +389,18 @@ add_task(async function test_spinner_year_keyboard_arrows() {
   info("Testing Up/Down Arrow keys behavior of the Year Spinner");
 
   
-  EventUtils.synthesizeKey("VK_DOWN", {});
-  await BrowserTestUtils.waitForContentEvent(browser, "input");
+  EventUtils.synthesizeKey("KEY_ArrowDown", {});
+
+  await BrowserTestUtils.waitForMutationCondition(
+    monthYearEl,
+    { childList: true },
+    () => {
+      return monthYearEl.textContent == DATE_FORMAT(new Date(nextYearValue));
+    },
+    `Should change to December 2023, instead got ${
+      helper.getElement(MONTH_YEAR).textContent
+    }`
+  );
 
   Assert.equal(
     spinnerMonthBtn.getAttribute("aria-valuenow"),
@@ -193,13 +414,23 @@ add_task(async function test_spinner_year_keyboard_arrows() {
   );
   Assert.equal(
     helper.getElement(BTN_MONTH_YEAR).textContent,
-    DATE_FORMAT(new Date(nextYear)),
+    DATE_FORMAT(new Date(nextYearValue)),
     "Down Arrow updates the month-year button to the next year"
   );
 
   
-  EventUtils.synthesizeKey("VK_UP", {});
-  await BrowserTestUtils.waitForContentEvent(browser, "input");
+  EventUtils.synthesizeKey("KEY_ArrowUp", {});
+
+  await BrowserTestUtils.waitForMutationCondition(
+    monthYearEl,
+    { childList: true },
+    () => {
+      return monthYearEl.textContent == DATE_FORMAT(new Date(inputValue));
+    },
+    `Should change to December 2022, instead got ${
+      helper.getElement(MONTH_YEAR).textContent
+    }`
+  );
 
   Assert.equal(
     spinnerMonthBtn.getAttribute("aria-valuenow"),
@@ -221,3 +452,185 @@ add_task(async function test_spinner_year_keyboard_arrows() {
 });
 
 
+
+
+add_task(async function test_spinner_year_keyboard_pageup_pagedown() {
+  info(
+    "Ensure the year spinner follows Page Up/Down key bindings appropriately."
+  );
+
+  const inputValue = "2022-12-10";
+  const nextFifthYearValue = "2027-12-10";
+
+  await helper.openPicker(
+    `data:text/html, <input type="date" value="${inputValue}">`
+  );
+  
+  
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
+  
+  EventUtils.synthesizeKey(" ", {});
+
+  const spinnerMonthBtn = helper.getElement(SPINNER_MONTH).children[1];
+  const spinnerYearBtn = helper.getElement(SPINNER_YEAR).children[1];
+
+  let monthYearEl = helper.getElement(MONTH_YEAR);
+
+  
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
+
+  
+  EventUtils.synthesizeKey("KEY_PageDown", {});
+
+  await BrowserTestUtils.waitForMutationCondition(
+    monthYearEl,
+    { childList: true },
+    () => {
+      return (
+        monthYearEl.textContent == DATE_FORMAT(new Date(nextFifthYearValue))
+      );
+    },
+    `Should change to December 2027, instead got ${
+      helper.getElement(MONTH_YEAR).textContent
+    }`
+  );
+
+  Assert.equal(
+    spinnerMonthBtn.getAttribute("aria-valuenow"),
+    "11",
+    "Page Down on the year spinner does not change the month"
+  );
+  Assert.equal(
+    spinnerYearBtn.getAttribute("aria-valuenow"),
+    "2027",
+    "Page Down selects the fifth later year"
+  );
+  Assert.equal(
+    helper.getElement(BTN_MONTH_YEAR).textContent,
+    DATE_FORMAT(new Date(nextFifthYearValue)),
+    "Page Down updates the month-year button to the fifth later year"
+  );
+
+  
+  EventUtils.synthesizeKey("KEY_PageUp", {});
+
+  await BrowserTestUtils.waitForMutationCondition(
+    monthYearEl,
+    { childList: true },
+    () => {
+      return monthYearEl.textContent == DATE_FORMAT(new Date(inputValue));
+    },
+    `Should change to December 2022, instead got ${
+      helper.getElement(MONTH_YEAR).textContent
+    }`
+  );
+
+  Assert.equal(
+    spinnerMonthBtn.getAttribute("aria-valuenow"),
+    "11",
+    "Page Up on the year spinner does not change the month"
+  );
+  Assert.equal(
+    spinnerYearBtn.getAttribute("aria-valuenow"),
+    "2022",
+    "Page Up selects the fifth earlier year"
+  );
+  Assert.equal(
+    helper.getElement(BTN_MONTH_YEAR).textContent,
+    DATE_FORMAT(new Date(inputValue)),
+    "Page Up updates the month-year button to the fifth earlier year"
+  );
+
+  await helper.tearDown();
+});
+
+
+
+
+add_task(async function test_spinner_year_keyboard_home_end() {
+  info("Ensure the year spinner follows Home/End key bindings appropriately.");
+
+  const inputValue = "2022-12-10";
+  const minValue = "2020-10-10";
+  const maxValue = "2030-12-31";
+  const minYearValue = "2020-12-10";
+  const maxYearValue = "2030-12-10";
+
+  await helper.openPicker(
+    `data:text/html, <input type="date" value="${inputValue}"  min="${minValue}" max="${maxValue}">`
+  );
+
+  
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
+  
+  EventUtils.synthesizeKey(" ", {});
+
+  const spinnerMonthBtn = helper.getElement(SPINNER_MONTH).children[1];
+  const spinnerYearBtn = helper.getElement(SPINNER_YEAR).children[1];
+
+  let monthYearEl = helper.getElement(MONTH_YEAR);
+
+  
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
+
+  
+  EventUtils.synthesizeKey("KEY_Home", {});
+  await BrowserTestUtils.waitForMutationCondition(
+    monthYearEl,
+    { childList: true },
+    () => {
+      return monthYearEl.textContent == DATE_FORMAT(new Date(minYearValue));
+    },
+    `Should change to December 2020, instead got ${
+      helper.getElement(MONTH_YEAR).textContent
+    }`
+  );
+
+  Assert.equal(
+    spinnerMonthBtn.getAttribute("aria-valuenow"),
+    "11",
+    "Home key on the year spinner does not change the month"
+  );
+  Assert.equal(
+    spinnerYearBtn.getAttribute("aria-valuenow"),
+    "2020",
+    "Home key selects the min year value"
+  );
+  Assert.equal(
+    helper.getElement(BTN_MONTH_YEAR).textContent,
+    DATE_FORMAT(new Date(minYearValue)),
+    "Home key updates the month-year button to the min year value"
+  );
+
+  
+  EventUtils.synthesizeKey("KEY_End", {});
+
+  await BrowserTestUtils.waitForMutationCondition(
+    monthYearEl,
+    { childList: true },
+    () => {
+      return monthYearEl.textContent == DATE_FORMAT(new Date(maxYearValue));
+    },
+    `Should change to December 2030, instead got ${
+      helper.getElement(MONTH_YEAR).textContent
+    }`
+  );
+
+  Assert.equal(
+    spinnerMonthBtn.getAttribute("aria-valuenow"),
+    "11",
+    "End key on the year spinner does not change the month"
+  );
+  Assert.equal(
+    spinnerYearBtn.getAttribute("aria-valuenow"),
+    "2030",
+    "End key selects the max year value"
+  );
+  Assert.equal(
+    helper.getElement(BTN_MONTH_YEAR).textContent,
+    DATE_FORMAT(new Date(maxYearValue)),
+    "End key updates the month-year button to the max year value"
+  );
+
+  await helper.tearDown();
+});
