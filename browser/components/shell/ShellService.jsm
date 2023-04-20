@@ -184,6 +184,41 @@ let ShellServiceInternal = {
       return true;
     }
 
+    const handler = this.getDefaultPDFHandler();
+    if (handler === null) {
+      
+      
+      lazy.log.warn(
+        "Could not determine default PDF handler: not setting Firefox as " +
+          "default PDF handler!"
+      );
+      return false;
+    }
+
+    if (!handler.registered) {
+      lazy.log.debug(
+        "Current default PDF handler has no registered association; " +
+          "should set as default PDF handler."
+      );
+      return true;
+    }
+
+    if (handler.knownBrowser) {
+      lazy.log.debug(
+        "Current default PDF handler progID matches known browser; should " +
+          "set as default PDF handler."
+      );
+      return true;
+    }
+
+    lazy.log.debug(
+      "Current default PDF handler progID does not match known browser " +
+        "prefix; should not set as default PDF handler."
+    );
+    return false;
+  },
+
+  getDefaultPDFHandler() {
     const knownBrowserPrefixes = [
       "AppXq0fevzme2pys62n3e0fbqa7peapykr8v", 
       "Brave", 
@@ -194,6 +229,7 @@ let ShellServiceInternal = {
       "Opera", 
       "Yandex", 
     ];
+
     let currentProgID = "";
     try {
       
@@ -203,37 +239,26 @@ let ShellServiceInternal = {
     } catch (e) {
       
       
-      lazy.log.warn(
-        "Failed to queryCurrentDefaultHandlerFor: " +
-          "not setting Firefox as default PDF handler!"
-      );
-      return false;
+      lazy.log.warn("Failed to queryCurrentDefaultHandlerFor:");
+      return null;
     }
 
     if (currentProgID == "") {
-      lazy.log.debug(
-        `Current default PDF handler has no registered association; ` +
-          `should set as default PDF handler.`
-      );
-      return true;
+      return { registered: false, knownBrowser: false };
     }
 
-    let knownBrowserPrefix = knownBrowserPrefixes.find(it =>
+    const knownBrowserPrefix = knownBrowserPrefixes.find(it =>
       currentProgID.startsWith(it)
     );
+
     if (knownBrowserPrefix) {
-      lazy.log.debug(
-        `Current default PDF handler progID matches known browser prefix: ` +
-          `'${knownBrowserPrefix}'; should set as default PDF handler.`
-      );
-      return true;
+      lazy.log.debug(`Found known browser prefix: ${knownBrowserPrefix}`);
     }
 
-    lazy.log.debug(
-      `Current default PDF handler progID does not match known browser prefix; ` +
-        `should not set as default PDF handler.`
-    );
-    return false;
+    return {
+      registered: true,
+      knownBrowser: !!knownBrowserPrefix,
+    };
   },
 
   
