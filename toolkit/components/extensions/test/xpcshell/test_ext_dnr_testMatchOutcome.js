@@ -47,33 +47,6 @@ function makeDnrTestUtils() {
       description
     );
   }
-  async function testCanMatchAnyBlock({ matchedRequests, nonMatchedRequests }) {
-    await dnr.updateSessionRules({
-      addRules: [
-        {
-          
-          id: 1,
-          condition: { excludedResourceTypes: [] },
-          action: { type: "block" },
-        },
-      ],
-    });
-    for (let request of matchedRequests) {
-      await testMatchesRequest(
-        request,
-        [1],
-        `${JSON.stringify(request)} - should match wildcard DNR block rule`
-      );
-    }
-    for (let request of nonMatchedRequests) {
-      await testMatchesRequest(
-        request,
-        [],
-        `${JSON.stringify(request)} - should not match any DNR rule`
-      );
-    }
-    await dnr.updateSessionRules({ removeRuleIds: [1] });
-  }
   async function testCanUseAction(type, canUse) {
     await dnr.updateSessionRules({ addRules: [makeDummyRule(1, type)] });
     await testMatchesRequest(
@@ -88,7 +61,6 @@ function makeDnrTestUtils() {
     makeDummyRequest,
     makeDummyRule,
     testMatchesRequest,
-    testCanMatchAnyBlock,
     testCanUseAction,
   });
   return dnrTestUtils;
@@ -172,96 +144,6 @@ add_task(async function resource_type_validation() {
           { matchedRules: [] },
           await testMatchOutcome({ url, type }),
           `testMatchOutcome for type=${type} is allowed`
-        );
-      }
-
-      browser.test.notifyPass();
-    },
-  });
-});
-
-add_task(async function url_validation() {
-  await runAsDNRExtension({
-    background: async dnrTestUtils => {
-      const dnr = browser.declarativeNetRequest;
-      const { testMatchesRequest } = dnrTestUtils;
-
-      const type = "other"; 
-      await dnr.updateSessionRules({
-        addRules: [{ id: 1, condition: {}, action: { type: "block" } }],
-      });
-
-      const supportedUrls = [
-        
-        "http://example.com/",
-        "https://example.com/",
-        
-        
-        
-      ];
-      const supportedInitiators = [
-        
-        ...supportedUrls,
-        
-        `moz-extension://${location.host}`,
-        "file:///tmp/",
-        
-        "data:text/plain,",
-      ];
-      const disallowedUrlsOrInitiators = [
-        
-        "about:config",
-        
-        "about:logo",
-        "chrome://extensions/content/dummy.xhtml",
-        "resource://pdf.js/web/viewer.html",
-        
-        "view-source:http://example.com/",
-        "view-source:about:config",
-        
-        
-        
-        
-        
-        
-        URL.createObjectURL(new Blob([])),
-      ];
-      const disallowedUrls = [
-        ...disallowedUrlsOrInitiators,
-        
-        
-        
-        "data:text/plain,",
-      ];
-      const disallowedInitiator = [
-        ...disallowedUrlsOrInitiators,
-        
-        
-        "about:blank",
-        
-        
-        "about:srcdoc",
-        "moz-extension://someone-elses-extension-here",
-      ];
-
-      for (let url of supportedUrls) {
-        await testMatchesRequest({ url, type }, [1], `Supported url: ${url}`);
-      }
-      for (let initiator of supportedInitiators) {
-        await testMatchesRequest(
-          { url: "http://example.com/", type, initiator },
-          [1],
-          `Supported initiator: ${initiator}`
-        );
-      }
-      for (let url of disallowedUrls) {
-        await testMatchesRequest({ type, url }, [], `Disallowed url: ${url}`);
-      }
-      for (let initiator of disallowedInitiator) {
-        await testMatchesRequest(
-          { url: "http://example.com/", type, initiator },
-          [],
-          `Disallowed initiator: ${initiator}`
         );
       }
 
@@ -373,7 +255,7 @@ add_task(async function rule_priority_and_action_type_precedence() {
 add_task(async function declarativeNetRequest_and_host_permissions() {
   await runAsDNRExtension({
     background: async dnrTestUtils => {
-      const { testCanUseAction, testCanMatchAnyBlock } = dnrTestUtils;
+      const { testCanUseAction } = dnrTestUtils;
 
       
       await testCanUseAction("allow", true);
@@ -383,19 +265,6 @@ add_task(async function declarativeNetRequest_and_host_permissions() {
       
       await testCanUseAction("redirect", true);
       await testCanUseAction("modifyHeaders", true);
-
-      const url = "https://example.com/";
-      await testCanMatchAnyBlock({
-        matchedRequests: [
-          { url, type: "other" },
-          { url, type: "main_frame" },
-          { url, type: "sub_frame" },
-          { url, initiator: url, type: "other" },
-          { url, initiator: url, type: "main_frame" },
-          { url, initiator: url, type: "sub_frame" },
-        ],
-        nonMatchedRequests: [],
-      });
 
       browser.test.notifyPass();
     },
@@ -408,7 +277,7 @@ add_task(async function declarativeNetRequest_permission_only() {
       host_permissions: [],
     },
     background: async dnrTestUtils => {
-      const { testCanUseAction, testCanMatchAnyBlock } = dnrTestUtils;
+      const { testCanUseAction } = dnrTestUtils;
 
       
       await testCanUseAction("allow", true);
@@ -418,19 +287,6 @@ add_task(async function declarativeNetRequest_permission_only() {
       
       await testCanUseAction("redirect", false);
       await testCanUseAction("modifyHeaders", false);
-
-      const url = "https://example.com/";
-      await testCanMatchAnyBlock({
-        matchedRequests: [
-          { url, type: "other" },
-          { url, type: "main_frame" },
-          { url, type: "sub_frame" },
-          { url, initiator: url, type: "other" },
-          { url, initiator: url, type: "main_frame" },
-          { url, initiator: url, type: "sub_frame" },
-        ],
-        nonMatchedRequests: [],
-      });
 
       browser.test.notifyPass();
     },
@@ -463,7 +319,7 @@ add_task(async function declarativeNetRequestWithHostAccess_only() {
   });
 });
 
-add_task(async function declarativeNetRequestWithHostAccess_and_host_perm() {
+add_task(async function declarativeNetRequestWithHostAccess_only() {
   await runAsDNRExtension({
     manifest: {
       permissions: [
@@ -474,7 +330,7 @@ add_task(async function declarativeNetRequestWithHostAccess_and_host_perm() {
       host_permissions: ["https://example.com/"],
     },
     background: async dnrTestUtils => {
-      const { testCanUseAction, testCanMatchAnyBlock } = dnrTestUtils;
+      const { testCanUseAction } = dnrTestUtils;
 
       
       await testCanUseAction("allow", true);
@@ -483,25 +339,6 @@ add_task(async function declarativeNetRequestWithHostAccess_and_host_perm() {
       await testCanUseAction("upgradeScheme", true);
       await testCanUseAction("redirect", true);
       await testCanUseAction("modifyHeaders", true);
-
-      const url = "https://example.com/";
-      const urlNoPerm = "https://example.net/?not_in:host_permissions";
-      await testCanMatchAnyBlock({
-        matchedRequests: [
-          { url, type: "other" },
-          { url, type: "main_frame" },
-          { url, type: "sub_frame" },
-          
-          { url, initiator: urlNoPerm, type: "main_frame" },
-          { url, initiator: urlNoPerm, type: "sub_frame" },
-        ],
-        nonMatchedRequests: [
-          
-          { url: urlNoPerm, type: "other" },
-          
-          { url, initiator: urlNoPerm, type: "other" },
-        ],
-      });
 
       browser.test.notifyPass();
     },

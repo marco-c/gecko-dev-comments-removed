@@ -526,9 +526,6 @@ add_task(async function allowAllRequests_initiatorDomains_dnrWithHostAccess() {
     {
       id: 1,
       condition: {
-        
-        
-        
         initiatorDomains: ["example.net"], 
         resourceTypes: ["sub_frame"],
       },
@@ -542,45 +539,26 @@ add_task(async function allowAllRequests_initiatorDomains_dnrWithHostAccess() {
   ];
 
   const extension = await loadExtensionWithDNRRules(rules, {
-    host_permissions: ["*://example.org/*"],
+    host_permissions: ["*://example.com/*", "*://example.org/*"],
     permissions: ["declarativeNetRequestWithHostAccess"],
   });
 
-  const testCanFetch = async () => {
-    
-    
-    
-    
-    return (await fetch("http://example.org/allowed")).text();
-  };
-
   await testLoadInFrame({
-    description:
-      "frame URL in host_permissions despite initiator not in host_permissions",
+    description: "sub_frame loaded by initiator not in host_permissions",
     domains: ["example.com", "example.net", "example.org"],
-    jsForFrame: testCanFetch,
+    jsForFrame: async () => {
+      try {
+        await (await fetch("http://example.com/allowed")).text();
+        return true; 
+      } catch (e) {
+        return false; 
+      }
+    },
     
     
     
     
-    
-    
-    
-    
-    expectedResult: "fetchAllowed",
-  });
-
-  await testLoadInFrame({
-    description: "frame URL and initiator not in host_permissions",
-    domains: ["example.net", "example.com", "example.org"],
-    jsForFrame: testCanFetch,
-    
-    
-    
-    
-    
-    
-    expectedError: FETCH_BLOCKED,
+    expectedResult: false,
   });
 
   await extension.unload();
