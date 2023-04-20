@@ -12,19 +12,22 @@ let { ContentTaskUtils } = ChromeUtils.import(
 const { Assert: AssertCls } = ChromeUtils.import(
   "resource://testing-common/Assert.jsm"
 );
+const { setTimeout } = ChromeUtils.importESModule(
+  "resource://gre/modules/Timer.sys.mjs"
+);
 
 
 
 
 
-var EventUtils = {};
-
-EventUtils.window = {};
-EventUtils.parent = EventUtils.window;
-EventUtils._EU_Ci = Ci;
-EventUtils._EU_Cc = Cc;
-EventUtils.KeyboardEvent = content.KeyboardEvent;
-EventUtils.navigator = content.navigator;
+var EventUtils = {
+  _EU_Ci: Ci,
+  _EU_Cc: Cc,
+  KeyboardEvent: content.KeyboardEvent,
+  navigator: content.navigator,
+  setTimeout,
+  window: {},
+};
 
 EventUtils.synthesizeClick = element =>
   new Promise(resolve => {

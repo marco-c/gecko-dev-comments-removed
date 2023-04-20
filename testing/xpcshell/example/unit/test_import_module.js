@@ -9,13 +9,11 @@
 
 
 
-
-
 function run_test() {
   Assert.ok(typeof this.MODULE_IMPORTED == "undefined");
   Assert.ok(typeof this.MODULE_URI == "undefined");
-  let uri = "resource://test/import_module.jsm";
-  let exports = ChromeUtils.import(uri);
+  let uri = "resource://test/import_module.sys.mjs";
+  let exports = ChromeUtils.importESModule(uri);
   Assert.ok(exports.MODULE_URI == uri);
   Assert.ok(exports.MODULE_IMPORTED);
 }

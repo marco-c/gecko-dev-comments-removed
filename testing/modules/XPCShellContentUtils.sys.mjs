@@ -1,24 +1,19 @@
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["XPCShellContentUtils"];
+/* -*- Mode: indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* vim: set sts=2 sw=2 et tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { ExtensionUtils } = ChromeUtils.import(
   "resource://gre/modules/ExtensionUtils.jsm"
 );
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-
+// Windowless browsers can create documents that rely on XUL Custom Elements:
 ChromeUtils.import("resource://gre/modules/CustomElementsListener.jsm");
 
-
-
+// Need to import ActorManagerParent.sys.mjs so that the actors are initialized
+// before running extension XPCShell tests.
 ChromeUtils.importESModule("resource://gre/modules/ActorManagerParent.sys.mjs");
 
 const lazy = {};
@@ -47,20 +42,20 @@ function frameScript() {
     "resource://testing-common/MessageChannel.jsm"
   );
 
-  
-  
+  // We need to make sure that the ExtensionPolicy service has been initialized
+  // as it sets up the observers that inject extension content scripts.
   Cc["@mozilla.org/addons/policy-service;1"].getService();
 
   const messageListener = {
     async receiveMessage({ target, messageName, recipient, data, name }) {
-      
+      /* globals content */
       let resp = await content.fetch(data.url, data.options);
       return resp.text();
     },
   };
   MessageChannel.addListener(this, "Test:Fetch", messageListener);
 
-  
+  // eslint-disable-next-line mozilla/balanced-listeners, no-undef
   addEventListener(
     "MozHeapMinimize",
     () => {
@@ -101,9 +96,9 @@ function promiseBrowserLoaded(browser, url, redirectUrl) {
       },
     };
 
-    
-    
-    
+    // addProgressListener only supports weak references, so we need to
+    // use one. But we also need to make sure it stays alive until we're
+    // done with it, so thunk away a strong reference to keep it alive.
     kungFuDeathGrip.add(listener);
     browser.addProgressListener(
       listener,
@@ -122,9 +117,9 @@ class ContentPage {
   ) {
     this.remote = remote;
 
-    
-    
-    
+    // If an extension has been passed, overwrite remote
+    // with extension.remote to be sure that the ContentPage
+    // will have the same remoteness of the extension.
     if (extension) {
       this.remote = extension.remote;
     }
@@ -190,8 +185,8 @@ class ContentPage {
       browser.setAttribute("remoteType", "extension");
     }
 
-    
-    
+    // Ensure that the extension is loaded into the correct
+    // BrowsingContextGroupID by default.
     if (this.extension) {
       browser.setAttribute(
         "initialBrowsingContextGroupId",
@@ -213,8 +208,8 @@ class ContentPage {
 
     chromeDoc.documentElement.appendChild(browser);
 
-    
-    
+    // Forcibly flush layout so that we get a pres shell soon enough, see
+    // bug 1274775.
     browser.getBoundingClientRect();
 
     await awaitFrameLoader;
@@ -249,8 +244,8 @@ class ContentPage {
   }
 
   didChangeBrowserRemoteness(event) {
-    
-    
+    // XXX: Tests can load their own additional frame scripts, so we may need to
+    // track all scripts that have been loaded, and reload them here?
     this.loadFrameScript(frameScript);
   }
 
@@ -292,19 +287,19 @@ class ContentPage {
   }
 }
 
-var XPCShellContentUtils = {
+export var XPCShellContentUtils = {
   currentScope: null,
   fetchScopes: new Map(),
 
   initCommon(scope) {
     this.currentScope = scope;
 
-    
-    
-    
-    
-    
-    
+    // We need to load at least one frame script into every message
+    // manager to ensure that the scriptable wrapper for its global gets
+    // created before we try to access it externally. If we don't, we
+    // fail sanity checks on debug builds the first time we try to
+    // create a wrapper, because we should never have a global without a
+    // cached wrapper.
     Services.mm.loadFrameScript("data:text/javascript,//", true, true);
 
     scope.registerCleanupFunction(() => {
@@ -319,7 +314,7 @@ var XPCShellContentUtils = {
   },
 
   init(scope) {
-    
+    // QuotaManager crashes if it doesn't have a profile.
     scope.do_get_profile();
 
     this.initCommon(scope);
@@ -339,23 +334,23 @@ var XPCShellContentUtils = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Creates a new HttpServer for testing, and begins listening on the
+   * specified port. Automatically shuts down the server when the test
+   * unit ends.
+   *
+   * @param {object} [options = {}]
+   *        The options object.
+   * @param {integer} [options.port = -1]
+   *        The port to listen on. If omitted, listen on a random
+   *        port. The latter is the preferred behavior.
+   * @param {sequence<string>?} [options.hosts = null]
+   *        A set of hosts to accept connections to. Support for this is
+   *        implemented using a proxy filter.
+   *
+   * @returns {HttpServer}
+   *        The HTTP server instance.
+   */
   createHttpServer({ port = -1, hosts } = {}) {
     let server = new lazy.HttpServer();
     server.start(port);
@@ -431,27 +426,27 @@ var XPCShellContentUtils = {
     return fetchScope.sendMessage("Test:Fetch", { url, options });
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Loads a content page into a hidden docShell.
+   *
+   * @param {string} url
+   *        The URL to load.
+   * @param {object} [options = {}]
+   * @param {ExtensionWrapper} [options.extension]
+   *        If passed, load the URL as an extension page for the given
+   *        extension.
+   * @param {boolean} [options.remote]
+   *        If true, load the URL in a content process. If false, load
+   *        it in the parent process.
+   * @param {boolean} [options.remoteSubframes]
+   *        If true, load cross-origin frames in separate content processes.
+   *        This is ignored if |options.remote| is false.
+   * @param {string} [options.redirectUrl]
+   *        An optional URL that the initial page is expected to
+   *        redirect to.
+   *
+   * @returns {ContentPage}
+   */
   loadContentPage(
     url,
     {

@@ -1,33 +1,29 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["makeFakeAppDir"];
-
-
+/* global OS */
 Cc["@mozilla.org/net/osfileconstantsservice;1"]
   .getService(Ci.nsIOSFileConstantsService)
   .init();
 
-
+// Reference needed in order for fake app dir provider to be active.
 var gFakeAppDirectoryProvider;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-var makeFakeAppDir = function() {
+/**
+ * Installs a fake UAppData directory.
+ *
+ * This is needed by tests because a UAppData directory typically isn't
+ * present in the test environment.
+ *
+ * We create the new UAppData directory under the profile's directory
+ * because the profile directory is automatically cleaned as part of
+ * test shutdown.
+ *
+ * This returns a promise that will be resolved once the new directory
+ * is created and installed.
+ */
+export var makeFakeAppDir = function() {
   let dirMode = OS.Constants.libc.S_IRWXU;
   let baseFile = Services.dirsvc.get("ProfD", Ci.nsIFile);
   let appD = baseFile.clone();
@@ -82,10 +78,10 @@ var makeFakeAppDir = function() {
     },
   };
 
-  
+  // Register the new provider.
   Services.dirsvc.registerProvider(provider);
 
-  
+  // And undefine the old one.
   try {
     Services.dirsvc.undefine("UAppData");
   } catch (ex) {}

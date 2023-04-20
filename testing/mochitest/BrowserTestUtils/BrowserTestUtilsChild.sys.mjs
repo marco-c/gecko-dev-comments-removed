@@ -1,10 +1,7 @@
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["BrowserTestUtilsChild"];
+/* vim: set ts=2 sw=2 sts=2 et tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -48,10 +45,10 @@ class BrowserTestUtilsChildObserver {
   }
 
   observeTopic(topic, count, filterFn, callbackResolver) {
-    
-    
-    
-    
+    // If the topic is in the list already, assume that it came from a
+    // startObservingTopics call. If it isn't in the list already, assume
+    // that it isn't within a start/stop set and the observer has to be
+    // removed afterwards.
     let removeObserver = false;
     let index = this.observerItems.findIndex(item => item.topic == topic);
     if (index == -1) {
@@ -91,7 +88,7 @@ class BrowserTestUtilsChildObserver {
       }
     }
 
-    
+    // Otherwise, if the observer doesn't match, fail.
     console.log(
       "Failed: Observer topic " + aTopic + " not expected in content process"
     );
@@ -104,22 +101,22 @@ BrowserTestUtilsChildObserver.prototype.QueryInterface = ChromeUtils.generateQI(
   ["nsIObserver", "nsISupportsWeakReference"]
 );
 
-class BrowserTestUtilsChild extends JSWindowActorChild {
+export class BrowserTestUtilsChild extends JSWindowActorChild {
   actorCreated() {
     this._EventUtils = null;
   }
 
   get EventUtils() {
     if (!this._EventUtils) {
-      
-      
-      
+      // Set up a dummy environment so that EventUtils works. We need to be careful to
+      // pass a window object into each EventUtils method we call rather than having
+      // it rely on the |window| global.
       let win = this.contentWindow;
       let EventUtils = {
         get KeyboardEvent() {
           return win.KeyboardEvent;
         },
-        
+        // EventUtils' `sendChar` function relies on the navigator to synthetize events.
         get navigator() {
           return win.navigator;
         },
@@ -195,7 +192,7 @@ class BrowserTestUtilsChild extends JSWindowActorChild {
         return new Promise(resolve => {
           let filterFn;
           if (aMessage.data.filterFunctionSource) {
-            
+            /* eslint-disable-next-line no-eval */
             filterFn = eval(
               `(() => (${aMessage.data.filterFunctionSource}))()`
             );
@@ -212,10 +209,10 @@ class BrowserTestUtilsChild extends JSWindowActorChild {
       }
 
       case "BrowserTestUtils:CrashFrame": {
-        
-        
-        
-        
+        // This is to intentionally crash the frame.
+        // We crash by using js-ctypes. The crash
+        // should happen immediately
+        // upon loading this frame script.
 
         const { ctypes } = ChromeUtils.import(
           "resource://gre/modules/ctypes.jsm"
@@ -233,9 +230,9 @@ class BrowserTestUtilsChild extends JSWindowActorChild {
               debug.crashWithOOM();
               break;
             }
-            case "CRASH_INVALID_POINTER_DEREF": 
+            case "CRASH_INVALID_POINTER_DEREF": // Fallthrough
             default: {
-              
+              // Dereference a bad pointer.
               let zero = new ctypes.intptr_t(8);
               let badptr = ctypes.cast(
                 zero,
@@ -250,7 +247,7 @@ class BrowserTestUtilsChild extends JSWindowActorChild {
           let { setTimeout } = ChromeUtils.importESModule(
             "resource://gre/modules/Timer.sys.mjs"
           );
-          
+          // Get out of the stack.
           setTimeout(dies, 0);
         } else {
           dies();
@@ -285,19 +282,19 @@ class BrowserTestUtilsChild extends JSWindowActorChild {
         (() => {
           return (${data.targetFn});
         })();`;
-      
+      /* eslint-disable no-eval */
       target = eval(runnablestr)();
-      
+      /* eslint-enable no-eval */
     }
 
     let left = data.x;
     let top = data.y;
     if (target) {
       if (target.ownerDocument !== this.document) {
-        
+        // Account for nodes found in iframes.
         let cur = target;
         do {
-          
+          // eslint-disable-next-line mozilla/use-ownerGlobal
           let frame = cur.ownerDocument.defaultView.frameElement;
           let rect = frame.getBoundingClientRect();
 
@@ -307,7 +304,7 @@ class BrowserTestUtilsChild extends JSWindowActorChild {
           cur = frame;
         } while (cur && cur.ownerDocument !== this.document);
 
-        
+        // node must be in this document tree.
         if (!cur) {
           throw new Error("target must be in the main document tree");
         }
@@ -350,20 +347,20 @@ class BrowserTestUtilsChild extends JSWindowActorChild {
         (() => {
           return (${data.targetFn});
         })();`;
-      
+      /* eslint-disable no-eval */
       target = eval(runnablestr)();
-      
+      /* eslint-enable no-eval */
     }
 
     if (target) {
       if (target.ownerDocument !== this.document) {
-        
+        // Account for nodes found in iframes.
         let cur = target;
         do {
           cur = cur.ownerGlobal.frameElement;
         } while (cur && cur.ownerDocument !== this.document);
 
-        
+        // node must be in this document tree.
         if (!cur) {
           throw new Error("target must be in the main document tree");
         }

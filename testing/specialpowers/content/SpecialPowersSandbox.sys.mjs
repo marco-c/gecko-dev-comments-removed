@@ -1,16 +1,14 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["SpecialPowersSandbox"];
+/**
+ * This modules handles creating and provisioning Sandboxes for
+ * executing cross-process code from SpecialPowers. This allows all such
+ * sandboxes to have a similar environment, and in particular allows
+ * them to run test assertions in the target process and propagate
+ * results back to the caller.
+ */
 
 const lazy = {};
 
@@ -20,9 +18,9 @@ ChromeUtils.defineModuleGetter(
   "resource://testing-common/Assert.jsm"
 );
 
-
-
-
+// Note: When updating the set of globals exposed to sandboxes by
+// default, please also update the ESLint plugin rule defined in
+// import-content-task-globals.js.
 const SANDBOX_GLOBALS = [
   "Blob",
   "ChromeUtils",
@@ -45,7 +43,7 @@ function expectingFail(fn) {
   }
 }
 
-class SpecialPowersSandbox {
+export class SpecialPowersSandbox {
   constructor(name, reportCallback, opts = {}) {
     this.name = name;
     this.reportCallback = reportCallback;
@@ -78,9 +76,9 @@ class SpecialPowersSandbox {
       ChromeUtils.defineModuleGetter(this.sandbox, symbol, url);
     }
 
-    
-    
-    
+    // Note: When updating the set of globals exposed to sandboxes by
+    // default, please also update the ESLint plugin rule defined in
+    // import-content-task-globals.js.
     Object.assign(this.sandbox, {
       BrowsingContext,
       InspectorUtils,

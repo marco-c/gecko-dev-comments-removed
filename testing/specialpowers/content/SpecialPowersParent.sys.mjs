@@ -1,17 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["SpecialPowersParent"];
-
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-var { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -43,8 +35,8 @@ const PREF_TYPES = {
   string: "CHAR",
 };
 
-
-
+// We share a single preference environment stack between all
+// SpecialPowers instances, across all processes.
 let prefUndoStack = [];
 let inPrefEnvOp = false;
 
@@ -113,15 +105,15 @@ async function createWindowlessBrowser({ isPrivate = false } = {}) {
   return { windowlessBrowser, browser };
 }
 
-
-
+// Supplies the unique IDs for tasks created by SpecialPowers.spawn(),
+// used to bounce assertion messages back down to the correct child.
 let nextTaskID = 1;
 
-
-
+// The default actor to send assertions to if a task originated in a
+// window without a test harness.
 let defaultAssertHandler;
 
-class SpecialPowersParent extends JSWindowActorParent {
+export class SpecialPowersParent extends JSWindowActorParent {
   constructor() {
     super();
 
@@ -145,7 +137,7 @@ class SpecialPowersParent extends JSWindowActorParent {
         var msg = { aData };
         switch (aTopic) {
           case "csp-on-violate-policy":
-            
+            // the subject is either an nsIURI or an nsISupportsCString
             let subject = null;
             if (aSubject instanceof Ci.nsIURI) {
               subject = aSubject.asciiSpec;
@@ -191,14 +183,14 @@ class SpecialPowersParent extends JSWindowActorParent {
   init() {
     Services.obs.addObserver(this._observer, "http-on-modify-request");
 
-    
-    
-    
-    
-    
-    
-    
-    
+    // We would like to check that tests don't leave service workers around
+    // after they finish, but that information lives in the parent process.
+    // Ideally, we'd be able to tell the child processes whenever service
+    // workers are registered or unregistered so they would know at all times,
+    // but service worker lifetimes are complicated enough to make that
+    // difficult. For the time being, let the child process know when a test
+    // registers a service worker so it can ask, synchronously, at the end if
+    // the service worker had unregister called on it.
     let swm = Cc["@mozilla.org/serviceworkers/manager;1"].getService(
       Ci.nsIServiceWorkerManager
     );
@@ -209,7 +201,7 @@ class SpecialPowersParent extends JSWindowActorParent {
       },
 
       onUnregister() {
-        
+        // no-op
       },
     };
     swm.addListener(this._serviceWorkerListener);
@@ -257,7 +249,7 @@ class SpecialPowersParent extends JSWindowActorParent {
       case "ipc:content-shutdown":
         aSubject = aSubject.QueryInterface(Ci.nsIPropertyBag2);
         if (!aSubject.hasKey("abnormal")) {
-          return; 
+          return; // This is a normal shutdown, ignore it
         }
 
         var message = { type: "crash-observed", dumpIDs: [] };
@@ -365,7 +357,7 @@ class SpecialPowersParent extends JSWindowActorParent {
   _notifyCategoryAndObservers(subject, topic, data) {
     const serviceMarker = "service,";
 
-    
+    // First create observers from the category manager.
 
     let observers = [];
 
@@ -389,7 +381,7 @@ class SpecialPowersParent extends JSWindowActorParent {
       } catch (e) {}
     }
 
-    
+    // Next enumerate the registered observers.
     for (let observer of Services.obs.enumerateObservers(topic)) {
       if (observer instanceof Ci.nsIObserver && !observers.includes(observer)) {
         observers.push(observer);
@@ -403,18 +395,18 @@ class SpecialPowersParent extends JSWindowActorParent {
     });
   }
 
-  
+  /*
+    Iterate through one atomic set of pref actions and perform sets/clears as appropriate.
+    All actions performed must modify the relevant pref.
 
-
-
-
-
-
-
+    Returns whether we need to wait for a refresh driver tick for the pref to
+    have effect. This is only needed for ui. and font. prefs, which affect the
+    look and feel code and have some change-coalescing going on.
+  */
   _applyPrefs(actions) {
     let requiresRefresh = false;
     for (let pref of actions) {
-      
+      // This logic should match PrefRequiresRefresh in reftest.jsm
       requiresRefresh =
         requiresRefresh ||
         pref.name == "layout.css.prefers-color-scheme.content-override" ||
@@ -430,29 +422,29 @@ class SpecialPowersParent extends JSWindowActorParent {
     return requiresRefresh;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Take in a list of pref changes to make, pushes their current values
+   * onto the restore stack, and makes the changes.  When the test
+   * finishes, these changes are reverted.
+   *
+   * |inPrefs| must be an object with up to two properties: "set" and "clear".
+   * pushPrefEnv will set prefs as indicated in |inPrefs.set| and will unset
+   * the prefs indicated in |inPrefs.clear|.
+   *
+   * For example, you might pass |inPrefs| as:
+   *
+   *  inPrefs = {'set': [['foo.bar', 2], ['magic.pref', 'baz']],
+   *             'clear': [['clear.this'], ['also.this']] };
+   *
+   * Notice that |set| and |clear| are both an array of arrays.  In |set|, each
+   * of the inner arrays must have the form [pref_name, value] or [pref_name,
+   * value, iid].  (The latter form is used for prefs with "complex" values.)
+   *
+   * In |clear|, each inner array should have the form [pref_name].
+   *
+   * If you set the same pref more than once (or both set and clear a pref),
+   * the behavior of this method is undefined.
+   */
   pushPrefEnv(inPrefs) {
     return doPrefEnvOp(() => {
       let pendingActions = [];
@@ -473,7 +465,7 @@ class SpecialPowersParent extends JSWindowActorParent {
             value = pref[1];
           }
 
-          
+          /* If pref is not found or invalid it doesn't exist. */
           if (type !== "INVALID") {
             if (
               (Services.prefs.prefHasUserValue(name) && action == "clear") ||
@@ -482,7 +474,7 @@ class SpecialPowersParent extends JSWindowActorParent {
               originalValue = this._getPref(name, type);
             }
           } else if (action == "set") {
-            
+            /* name doesn't exist, so 'clear' is pointless */
             if (iid) {
               type = "COMPLEX";
             }
@@ -497,7 +489,7 @@ class SpecialPowersParent extends JSWindowActorParent {
 
           pendingActions.push({ action, type, name, value, iid });
 
-          
+          /* Push original preference value or clear into cleanup array */
           var cleanupTodo = { type, name, value: originalValue, iid };
           if (originalValue == null) {
             cleanupTodo.action = "clear";
@@ -633,7 +625,7 @@ class SpecialPowersParent extends JSWindowActorParent {
         value: perm,
         principal,
         expireType:
-          typeof permission.expireType === "number" ? permission.expireType : 0, 
+          typeof permission.expireType === "number" ? permission.expireType : 0, // default: EXPIRE_NEVER
         expireTime:
           typeof permission.expireTime === "number" ? permission.expireTime : 0,
       };
@@ -700,19 +692,19 @@ class SpecialPowersParent extends JSWindowActorParent {
     return sb.execute(task, args, caller);
   }
 
-  
-
-
-
-  
+  /**
+   * messageManager callback function
+   * This will get requests from our API in the window and process them in chrome for it
+   **/
+  // eslint-disable-next-line complexity
   async receiveMessage(aMessage) {
     let startTime = Cu.now();
-    
-    
+    // Try block so we can use a finally statement to add a profiler marker
+    // despite all the return statements.
     try {
-      
-      
-      
+      // We explicitly return values in the below code so that this function
+      // doesn't trigger a flurry of warnings about "does not always return
+      // a value".
       switch (aMessage.name) {
         case "SPToggleMuteAudio":
           return this._toggleMuteAudio(aMessage.data.mute);
@@ -745,11 +737,11 @@ class SpecialPowersParent extends JSWindowActorParent {
 
         case "EnsureFocus":
           let bc = aMessage.data.browsingContext;
-          
-          
-          
-          
-          
+          // Send a message to the child telling it to focus the window.
+          // If the message responds with a browsing context, then
+          // a child browsing context in a subframe should be focused.
+          // Iterate until nothing is returned and we get to the most
+          // deeply nested subframe that should be focused.
           do {
             let spParent = bc.currentWindowGlobal.getActor("SpecialPowers");
             if (spParent) {
@@ -788,7 +780,7 @@ class SpecialPowersParent extends JSWindowActorParent {
               ].createInstance(Ci.nsIFileOutputStream);
               outStream.init(
                 testFile,
-                0x02 | 0x08 | 0x20, 
+                0x02 | 0x08 | 0x20, // PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE
                 filePerms,
                 0
               );
@@ -861,7 +853,7 @@ class SpecialPowersParent extends JSWindowActorParent {
               );
             }
 
-            
+            // return null if the pref doesn't exist
             if (
               defaultValue === undefined &&
               prefs.getPrefType(prefName) == prefs.PREF_INVALID
@@ -889,7 +881,7 @@ class SpecialPowersParent extends JSWindowActorParent {
             throw new SpecialPowersError("Invalid operation for SPPrefService");
           }
 
-          return undefined; 
+          return undefined; // See comment at the beginning of this function.
         }
 
         case "SPProcessCrashService": {
@@ -913,7 +905,7 @@ class SpecialPowersParent extends JSWindowActorParent {
                 "Invalid operation for SPProcessCrashService"
               );
           }
-          return undefined; 
+          return undefined; // See comment at the beginning of this function.
         }
 
         case "SPProcessCrashManagerWait": {
@@ -947,7 +939,7 @@ class SpecialPowersParent extends JSWindowActorParent {
                 "Invalid operation for SPPermissionManager"
               );
           }
-          return undefined; 
+          return undefined; // See comment at the beginning of this function.
         }
 
         case "SPObserverService": {
@@ -965,7 +957,7 @@ class SpecialPowersParent extends JSWindowActorParent {
                 "Invalid operation for SPObserverervice"
               );
           }
-          return undefined; 
+          return undefined; // See comment at the beginning of this function.
         }
 
         case "SPLoadChromeScript": {
@@ -983,9 +975,9 @@ class SpecialPowersParent extends JSWindowActorParent {
             throw new SpecialPowersError("SPLoadChromeScript: Invalid script");
           }
 
-          
-          
-          
+          // Setup a chrome sandbox that has access to sendAsyncMessage
+          // and {add,remove}MessageListener in order to communicate with
+          // the mochitest.
           let sb = new lazy.SpecialPowersSandbox(
             scriptName,
             data => {
@@ -1019,7 +1011,7 @@ class SpecialPowersParent extends JSWindowActorParent {
             actorParent: this.manager,
           });
 
-          
+          // Evaluate the chrome script
           try {
             Cu.evalInSandbox(jsScript, sb.sandbox, "1.8", scriptName, 1);
           } catch (e) {
@@ -1034,7 +1026,7 @@ class SpecialPowersParent extends JSWindowActorParent {
                 e.lineNumber
             );
           }
-          return undefined; 
+          return undefined; // See comment at the beginning of this function.
         }
 
         case "SPChromeScriptMessage": {
@@ -1085,7 +1077,7 @@ class SpecialPowersParent extends JSWindowActorParent {
           );
           let regs = swm.getAllRegistrations();
 
-          
+          // XXX This code is shared with specialpowers.js.
           let workers = new Array(regs.length);
           for (let i = 0; i < regs.length; ++i) {
             let { scope, scriptSpec } = regs.queryElementAt(
@@ -1101,16 +1093,16 @@ class SpecialPowersParent extends JSWindowActorParent {
           let id = aMessage.data.id;
           let ext = aMessage.data.ext;
           if (AppConstants.platform === "android") {
-            
-            
-            
-            
-            
+            // Some extension APIs are partially implemented in Java, and the
+            // interface between the JS and Java side (GeckoViewWebExtension)
+            // expects extensions to be registered with the AddonManager.
+            //
+            // For simplicity, default to using an Addon Manager (if not null).
             if (ext.useAddonManager === undefined) {
               ext.useAddonManager = "android-only";
             }
           }
-          
+          // delayedStartup is only supported in xpcshell
           if (ext.delayedStartup !== undefined) {
             throw new Error(
               `delayedStartup is only supported in xpcshell, use "useAddonManager".`
@@ -1136,7 +1128,7 @@ class SpecialPowersParent extends JSWindowActorParent {
             });
           };
 
-          
+          // Register pass/fail handlers.
           extension.on("test-result", resultListener);
           extension.on("test-eq", resultListener);
           extension.on("test-log", resultListener);
@@ -1150,16 +1142,16 @@ class SpecialPowersParent extends JSWindowActorParent {
 
         case "SPStartupExtension": {
           let id = aMessage.data.id;
-          
+          // This is either an Extension, or (if useAddonManager is set) a MockExtension.
           let extension = this._extensions.get(id);
           extension.on("startup", (eventName, ext) => {
             if (AppConstants.platform === "android") {
-              
-              
+              // We need a way to notify the embedding layer that a new extension
+              // has been installed, so that the java layer can be updated too.
               Services.obs.notifyObservers(null, "testing-installed-addon", id);
             }
-            
-            
+            // ext is always the "real" Extension object, even when "extension"
+            // is a MockExtension.
             this.sendAsyncMessage("SPExtensionMessage", {
               id,
               type: "extensionSetId",
@@ -1167,9 +1159,9 @@ class SpecialPowersParent extends JSWindowActorParent {
             });
           });
 
-          
-          
-          
+          // Make sure the extension passes the packaging checks when
+          // they're run on a bare archive rather than a running instance,
+          // as the add-on manager runs them.
           let extensionData = new lazy.ExtensionData(extension.rootURI);
           return extensionData
             .loadManifest()
@@ -1185,14 +1177,14 @@ class SpecialPowersParent extends JSWindowActorParent {
                 });
               },
               () => {
-                
-                
-                
+                // loadManifest() will throw if we're loading an embedded
+                // extension, so don't worry about locale errors in that
+                // case.
               }
             )
             .then(async () => {
-              
-              
+              // browser tests do not call startup in ExtensionXPCShellUtils or MockExtension,
+              // in that case we have an ID here and we need to set the override.
               if (extension.id) {
                 await lazy.ExtensionTestCommon.setIncognitoOverride(extension);
               }
@@ -1247,9 +1239,9 @@ class SpecialPowersParent extends JSWindowActorParent {
         }
 
         case "Spawn": {
-          
-          
-          
+          // Use a different variable for the profiler marker start time
+          // so that a marker isn't added when we return, but instead when
+          // our promise resolves.
           let spawnStartTime = startTime;
           startTime = undefined;
           let {
@@ -1338,7 +1330,7 @@ class SpecialPowersParent extends JSWindowActorParent {
         }
 
         case "SPGenerateMediaControlKeyTestEvent": {
-          
+          // eslint-disable-next-line no-undef
           MediaControlService.generateMediaControlKey(aMessage.data.event);
           return undefined;
         }
@@ -1348,8 +1340,8 @@ class SpecialPowersParent extends JSWindowActorParent {
             `Unrecognized Special Powers API: ${aMessage.name}`
           );
       }
-      
-      
+      // This should be unreachable. If it ever becomes reachable, ESLint
+      // will produce an error about inconsistent return values.
     } finally {
       if (startTime) {
         ChromeUtils.addProfilerMarker(

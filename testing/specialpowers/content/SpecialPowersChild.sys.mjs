@@ -1,12 +1,8 @@
-
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["SpecialPowersChild"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* This code is loaded in every child process that is started by mochitest.
+ */
 
 const { ExtensionUtils } = ChromeUtils.import(
   "resource://gre/modules/ExtensionUtils.jsm"
@@ -47,9 +43,8 @@ ChromeUtils.defineModuleGetter(
   "NetUtil",
   "resource://gre/modules/NetUtil.jsm"
 );
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+
 ChromeUtils.defineModuleGetter(
   lazy,
   "PerTestCoverageUtils",
@@ -73,14 +68,14 @@ function defineSpecialPowers(sp) {
   if (window === window.wrappedJSObject) {
     return;
   }
-  
-  
+  // We can't use a generic |defineLazyGetter| because it does not
+  // allow customizing the re-definition behavior.
   Object.defineProperty(window.wrappedJSObject, "SpecialPowers", {
     get() {
       let value = lazy.WrapPrivileged.wrap(sp, window);
-      
-      
-      
+      // If we bind |window.wrappedJSObject| when defining the getter
+      // and use it here, it might become a dead wrapper.
+      // We have to retrieve |wrappedJSObject| again.
       Object.defineProperty(window.wrappedJSObject, "SpecialPowers", {
         configurable: true,
         enumerable: true,
@@ -94,18 +89,18 @@ function defineSpecialPowers(sp) {
   });
 }
 
-
-
-
-
+// SPConsoleListener reflects nsIConsoleMessage objects into JS in a
+// tidy, XPCOM-hiding way.  Messages that are nsIScriptError objects
+// have their properties exposed in detail.  It also auto-unregisters
+// itself when it receives a "sentinel" message.
 function SPConsoleListener(callback, contentWindow) {
   this.callback = callback;
   this.contentWindow = contentWindow;
 }
 
 SPConsoleListener.prototype = {
-  
-  
+  // Overload the observe method for both nsIConsoleListener and nsIObserver.
+  // The topic will be null for nsIConsoleListener.
   observe(msg, topic) {
     let m = {
       message: msg.message,
@@ -137,8 +132,8 @@ SPConsoleListener.prototype = {
 
     Object.freeze(m);
 
-    
-    
+    // Run in a separate runnable since console listeners aren't
+    // supposed to touch content and this one might.
     Services.tm.dispatchToMainThread(() => {
       this.callback.call(undefined, Cu.cloneInto(m, this.contentWindow));
     });
@@ -151,7 +146,7 @@ SPConsoleListener.prototype = {
   QueryInterface: ChromeUtils.generateQI(["nsIConsoleListener", "nsIObserver"]),
 };
 
-class SpecialPowersChild extends JSWindowActorChild {
+export class SpecialPowersChild extends JSWindowActorChild {
   constructor() {
     super();
 
@@ -201,8 +196,8 @@ class SpecialPowersChild extends JSWindowActorChild {
   }
 
   observe(aSubject, aTopic, aData) {
-    
-    
+    // Ignore the "{chrome/content}-document-global-created" event. It
+    // is only observed to force creation of the actor.
   }
 
   actorCreated() {
@@ -211,7 +206,7 @@ class SpecialPowersChild extends JSWindowActorChild {
 
   attachToWindow() {
     let window = this.contentWindow;
-    
+    // We should not invoke the getter.
     if (!("SpecialPowers" in window.wrappedJSObject)) {
       this._windowID = window.windowGlobalChild.innerWindowId;
 
@@ -223,7 +218,7 @@ class SpecialPowersChild extends JSWindowActorChild {
     return this.contentWindow;
   }
 
-  
+  // Hack around devtools sometimes trying to JSON stringify us.
   toJSON() {
     return {};
   }
@@ -294,16 +289,16 @@ class SpecialPowersChild extends JSWindowActorChild {
         return this._spawnTask(task, args, caller, taskId, imports);
 
       case "EnsureFocus":
-        
-        
-        
+        // Ensure that the focus is in this child document. Returns a browsing
+        // context of a child frame if a subframe should be focused or undefined
+        // otherwise.
 
-        
-        
-        
-        
-        
-        
+        // If a subframe node is focused, then the focus will actually
+        // be within that subframe's document. If blurSubframe is true,
+        // then blur the subframe so that this parent document is focused
+        // instead. If blurSubframe is false, then return the browsing
+        // context for that subframe. The parent process will then call back
+        // into this same code but in the process for that subframe.
         let focusedNode = this.document.activeElement;
         let subframeFocused =
           ChromeUtils.getClassName(focusedNode) == "HTMLIFrameElement" ||
@@ -320,8 +315,8 @@ class SpecialPowersChild extends JSWindowActorChild {
           }
         }
 
-        
-        
+        // A subframe is not focused, so if this document is
+        // not focused, focus it and wait for the focus event.
         if (!this.document.hasFocus()) {
           return new Promise(resolve => {
             this.document.addEventListener(
@@ -346,7 +341,7 @@ class SpecialPowersChild extends JSWindowActorChild {
             break;
           }
 
-          
+          // An assertion has been done in a mochitest chrome script
           let { name, passed, stack, diag, expectFail } = message.data;
 
           let { SimpleTest } = this;
@@ -354,7 +349,7 @@ class SpecialPowersChild extends JSWindowActorChild {
             let expected = expectFail ? "fail" : "pass";
             SimpleTest.record(passed, name, diag, stack, expected);
           } else {
-            
+            // Well, this is unexpected.
             dump(name + "\n");
           }
         }
@@ -373,34 +368,34 @@ class SpecialPowersChild extends JSWindowActorChild {
     });
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /*
+   * Privileged object wrapping API
+   *
+   * Usage:
+   *   var wrapper = SpecialPowers.wrap(obj);
+   *   wrapper.privilegedMethod(); wrapper.privilegedProperty;
+   *   obj === SpecialPowers.unwrap(wrapper);
+   *
+   * These functions provide transparent access to privileged objects using
+   * various pieces of deep SpiderMagic. Conceptually, a wrapper is just an
+   * object containing a reference to the underlying object, where all method
+   * calls and property accesses are transparently performed with the System
+   * Principal. Moreover, objects obtained from the wrapper (including properties
+   * and method return values) are wrapped automatically. Thus, after a single
+   * call to SpecialPowers.wrap(), the wrapper layer is transitively maintained.
+   *
+   * Known Issues:
+   *
+   *  - The wrapping function does not preserve identity, so
+   *    SpecialPowers.wrap(foo) !== SpecialPowers.wrap(foo). See bug 718543.
+   *
+   *  - The wrapper cannot see expando properties on unprivileged DOM objects.
+   *    That is to say, the wrapper uses Xray delegation.
+   *
+   *  - The wrapper sometimes guesses certain ES5 attributes for returned
+   *    properties. This is explained in a comment in the wrapper code above,
+   *    and shouldn't be a problem.
+   */
   wrap(obj) {
     return obj;
   }
@@ -411,20 +406,20 @@ class SpecialPowersChild extends JSWindowActorChild {
     return lazy.WrapPrivileged.isWrapper(val);
   }
 
-  
-
-
+  /*
+   * Wrap objects on a specified global.
+   */
   wrapFor(obj, win) {
     return lazy.WrapPrivileged.wrap(obj, win);
   }
 
-  
-
-
-
-
-
-
+  /*
+   * When content needs to pass a callback or a callback object to an API
+   * accessed over SpecialPowers, that API may sometimes receive arguments for
+   * whom it is forbidden to create a wrapper in content scopes. As such, we
+   * need a layer to wrap the values in SpecialPowers wrappers before they ever
+   * reach content.
+   */
   wrapCallback(func) {
     return lazy.WrapPrivileged.wrapCallback(func, this.contentWindow);
   }
@@ -432,10 +427,10 @@ class SpecialPowersChild extends JSWindowActorChild {
     return lazy.WrapPrivileged.wrapCallbackObject(obj, this.contentWindow);
   }
 
-  
-
-
-
+  /*
+   * Used for assigning a property to a SpecialPowers wrapper, without unwrapping
+   * the value that is assigned.
+   */
   setWrapped(obj, prop, val) {
     if (!lazy.WrapPrivileged.isWrapper(obj)) {
       throw new Error(
@@ -447,20 +442,20 @@ class SpecialPowersChild extends JSWindowActorChild {
     return Reflect.set(obj, prop, val);
   }
 
-  
-
-
+  /*
+   * Create blank privileged objects to use as out-params for privileged functions.
+   */
   createBlankObject() {
     return {};
   }
 
-  
-
-
-
-
-
-
+  /*
+   * Because SpecialPowers wrappers don't preserve identity, comparing with ==
+   * can be hazardous. Sometimes we can just unwrap to compare, but sometimes
+   * wrapping the underlying object into a content scope is forbidden. This
+   * function strips any wrappers if they exist and compare the underlying
+   * values.
+   */
   compare(a, b) {
     return lazy.WrapPrivileged.unwrap(a) === lazy.WrapPrivileged.unwrap(b);
   }
@@ -481,10 +476,10 @@ class SpecialPowersChild extends JSWindowActorChild {
     this.sendAsyncMessage("SpecialPowers.Quit", {});
   }
 
-  
-  
-  
-  
+  // fileRequests is an array of file requests. Each file request is an object.
+  // A request must have a field |name|, which gives the base of the name of the
+  // file to be created in the profile directory. If the request has a |data| field
+  // then that data will be written to the file.
   createFiles(fileRequests, onCreation, onError) {
     return this.sendQuery("SpecialPowers.CreateFiles", fileRequests).then(
       files => onCreation(Cu.cloneInto(files, this.contentWindow)),
@@ -492,8 +487,8 @@ class SpecialPowersChild extends JSWindowActorChild {
     );
   }
 
-  
-  
+  // Remove the files that were created using |SpecialPowers.createFiles()|.
+  // This will be automatically called by |SimpleTest.finish()|.
   removeFiles() {
     this.sendAsyncMessage("SpecialPowers.RemoveFiles", {});
   }
@@ -503,12 +498,12 @@ class SpecialPowersChild extends JSWindowActorChild {
   }
 
   async registeredServiceWorkers() {
-    
-    
+    // Please see the comment in SpecialPowersObserver.jsm above
+    // this._serviceWorkerListener's assignment for what this returns.
     if (this._serviceWorkerRegistered) {
-      
-      
-      
+      // This test registered at least one service worker. Send a synchronous
+      // call to the parent to make sure that it called unregister on all of its
+      // service workers.
       let { workers } = await this.sendQuery("SPCheckServiceWorkers");
       return workers;
     }
@@ -516,10 +511,10 @@ class SpecialPowersChild extends JSWindowActorChild {
     return [];
   }
 
-  
-
-
-
+  /*
+   * Load a privileged script that runs same-process. This is different from
+   * |loadChromeScript|, which will run in the parent process in e10s mode.
+   */
   loadPrivilegedScript(aFunction) {
     var str = "(" + aFunction.toString() + ")();";
     let gGlobalObject = Cu.getGlobalForObject(this);
@@ -535,8 +530,8 @@ class SpecialPowersChild extends JSWindowActorChild {
   }
 
   _readUrlAsString(aUrl) {
-    
-    
+    // Fetch script content as we can't use scriptloader's loadSubScript
+    // to evaluate http:// urls...
     var scriptableStream = Cc[
       "@mozilla.org/scriptableinputstream;1"
     ].getService(Ci.nsIScriptableInputStream);
@@ -577,10 +572,10 @@ class SpecialPowersChild extends JSWindowActorChild {
   }
 
   loadChromeScript(urlOrFunction, sandboxOptions) {
-    
+    // Create a unique id for this chrome script
     let id = Services.uuid.generateUUID().toString();
 
-    
+    // Tells chrome code to evaluate this chrome script
     let scriptArgs = { id, sandboxOptions };
     if (typeof urlOrFunction == "function") {
       scriptArgs.function = {
@@ -588,11 +583,11 @@ class SpecialPowersChild extends JSWindowActorChild {
         name: urlOrFunction.name,
       };
     } else {
-      
-      
-      
-      
-      
+      // Note: We need to do this in the child since, even though
+      // `_readUrlAsString` pretends to be synchronous, its channel
+      // winds up spinning the event loop when loading HTTP URLs. That
+      // leads to unexpected out-of-order operations if the child sends
+      // a message immediately after loading the script.
       scriptArgs.function = {
         body: this._readUrlAsString(urlOrFunction),
       };
@@ -600,8 +595,8 @@ class SpecialPowersChild extends JSWindowActorChild {
     }
     this.sendAsyncMessage("SPLoadChromeScript", scriptArgs);
 
-    
-    
+    // Returns a MessageManager like API in order to be
+    // able to communicate with this chrome script
     let listeners = [];
     let chromeScript = {
       addMessageListener: (name, listener) => {
@@ -644,7 +639,7 @@ class SpecialPowersChild extends JSWindowActorChild {
             this.contentWindow
           );
         }
-        
+        // Ignore message from other chrome script
         if (messageId != id) {
           return null;
         }
@@ -677,9 +672,9 @@ class SpecialPowersChild extends JSWindowActorChild {
     return Services;
   }
 
-  
-
-
+  /*
+   * Convenient shortcuts to the standard Components abbreviations.
+   */
   get Cc() {
     return Cc;
   }
@@ -724,12 +719,12 @@ class SpecialPowersChild extends JSWindowActorChild {
     return actor.sendQuery("SPToggleMuteAudio", { mute: aMuted });
   }
 
-  
-
-
+  /*
+   * A method to get a DOMParser that can't parse XUL.
+   */
   getNoXULDOMParser() {
-    
-    
+    // If we create it with a system subject principal (so it gets a
+    // nullprincipal), it won't be able to parse XUL by default.
     return new DOMParser();
   }
 
@@ -751,7 +746,7 @@ class SpecialPowersChild extends JSWindowActorChild {
         return filename.length === 40 && filename.endsWith(".dmp");
       })
       .map(id => {
-        return id.slice(0, -4); 
+        return id.slice(0, -4); // Strip the .dmp extension to get the ID
       });
 
     await this.sendQuery("SPProcessCrashManagerWait", {
@@ -795,11 +790,11 @@ class SpecialPowersChild extends JSWindowActorChild {
   }
 
   _setTimeout(callback, delay = 0) {
-    
+    // for mochitest-browser
     if (typeof this.chromeWindow != "undefined") {
       this.chromeWindow.setTimeout(callback, delay);
     }
-    
+    // for mochitest-plain
     else {
       this.contentWindow.setTimeout(callback, delay);
     }
@@ -814,10 +809,10 @@ class SpecialPowersChild extends JSWindowActorChild {
   _delayCallbackTwice(callback) {
     let delayedCallback = () => {
       let delayAgain = aCallback => {
-        
-        
-        
-        
+        // Using this._setTimeout doesn't work here
+        // It causes failures in mochtests that use
+        // multiple pushPrefEnv calls
+        // For chrome/browser-chrome mochitests
         this._setTimeout(aCallback);
       };
       delayAgain(delayAgain.bind(this, callback));
@@ -825,15 +820,15 @@ class SpecialPowersChild extends JSWindowActorChild {
     return delayedCallback;
   }
 
-  
+  /* apply permissions to the system and when the test case is finished (SimpleTest.finish())
+     we will revert the permission back to the original.
 
+     inPermissions is an array of objects where each object has a type, action, context, ex:
+     [{'type': 'SystemXHR', 'allow': 1, 'context': document},
+      {'type': 'SystemXHR', 'allow': Ci.nsIPermissionManager.PROMPT_ACTION, 'context': document}]
 
-
-
-
-
-
-
+     Allow can be a boolean value of true/false or ALLOW_ACTION/DENY_ACTION/PROMPT_ACTION/UNKNOWN_ACTION
+  */
   async pushPermissions(inPermissions, callback) {
     let permissions = [];
     for (let perm of inPermissions) {
@@ -859,20 +854,20 @@ class SpecialPowersChild extends JSWindowActorChild {
     await this.promiseTimeout(0);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /*
+   * This function should be used when specialpowers is in content process but
+   * it want to get the notification from chrome space.
+   *
+   * This function will call Services.obs.addObserver in SpecialPowersObserver
+   * (that is in chrome process) and forward the data received to SpecialPowers
+   * via messageManager.
+   * You can use this._addMessageListener("specialpowers-YOUR_TOPIC") to fire
+   * the callback.
+   *
+   * To get the expected data, you should modify
+   * SpecialPowersObserver.prototype._registerObservers.observe. Or the message
+   * you received from messageManager will only contain 'aData' from Service.obs.
+   */
   registerObservers(topic) {
     var msg = {
       op: "add",
@@ -913,11 +908,11 @@ class SpecialPowersChild extends JSWindowActorChild {
 
   _promiseEarlyRefresh() {
     return new Promise(r => {
-      
+      // for mochitest-browser
       if (typeof this.chromeWindow != "undefined") {
         this.chromeWindow.requestAnimationFrame(r);
       }
-      
+      // for mochitest-plain
       else {
         this.contentWindow.requestAnimationFrame(r);
       }
@@ -942,7 +937,7 @@ class SpecialPowersChild extends JSWindowActorChild {
   }
 
   addObserver(obs, notification, weak) {
-    
+    // Make sure the parent side exists, or we won't get any notifications.
     this.sendAsyncMessage("Wakeup");
 
     this._addObserverProxy(notification);
@@ -966,15 +961,15 @@ class SpecialPowersChild extends JSWindowActorChild {
     Services.obs.notifyObservers(subject, topic, data);
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * An async observer is useful if you're listening for a
+   * notification that normally is only used by C++ code or chrome
+   * code (so it runs in the SystemGroup), but we need to know about
+   * it for a test (which runs as web content). If we used
+   * addObserver, we would assert when trying to enter web content
+   * from a runnabled labeled by the SystemGroup. An async observer
+   * avoids this problem.
+   */
   addAsyncObserver(obs, notification, weak) {
     obs = Cu.waiveXrays(obs);
     if (
@@ -1016,18 +1011,18 @@ class SpecialPowersChild extends JSWindowActorChild {
     return obj1 instanceof obj2;
   }
 
-  
-  
-  
-  
-  
-  
-  
+  // Returns a privileged getter from an object. GetOwnPropertyDescriptor does
+  // not work here because xray wrappers don't properly implement it.
+  //
+  // This terribleness is used by dom/base/test/test_object.html because
+  // <object> and <embed> tags will spawn plugins if their prototype is touched,
+  // so we need to get and cache the getter of |hasRunningPlugin| if we want to
+  // call it without paradoxically spawning the plugin.
   do_lookupGetter(obj, name) {
     return Object.prototype.__lookupGetter__.call(obj, name);
   }
 
-  
+  // Mimic the get*Pref API
   getBoolPref(...args) {
     return Services.prefs.getBoolPref(...args);
   }
@@ -1051,7 +1046,7 @@ class SpecialPowersChild extends JSWindowActorChild {
     return this._getParentPref(prefName, "CHAR", { defaultValue });
   }
 
-  
+  // Mimic the set*Pref API
   setBoolPref(prefName, value) {
     return this._setPref(prefName, "BOOL", value);
   }
@@ -1065,7 +1060,7 @@ class SpecialPowersChild extends JSWindowActorChild {
     return this._setPref(prefName, "COMPLEX", value, iid);
   }
 
-  
+  // Mimic the clearUserPref API
   clearUserPref(prefName) {
     let msg = {
       op: "clear",
@@ -1075,14 +1070,14 @@ class SpecialPowersChild extends JSWindowActorChild {
     return this.sendQuery("SPPrefService", msg);
   }
 
-  
+  // Private pref functions to communicate to chrome
   async _getParentPref(prefName, prefType, { defaultValue, iid }) {
     let msg = {
       op: "get",
       prefName,
       prefType,
-      iid, 
-      defaultValue, 
+      iid, // Only used with complex prefs
+      defaultValue, // Optional default value
     };
     let val = await this.sendQuery("SPPrefService", msg);
     if (val == null) {
@@ -1106,7 +1101,7 @@ class SpecialPowersChild extends JSWindowActorChild {
       op: "set",
       prefName,
       prefType,
-      iid, 
+      iid, // Only used with complex prefs
       prefValue,
     };
     return this.sendQuery("SPPrefService", msg);
@@ -1115,8 +1110,8 @@ class SpecialPowersChild extends JSWindowActorChild {
   _getMUDV(window) {
     return window.docShell.contentViewer;
   }
-  
-  
+  // XXX: these APIs really ought to be removed, they're not e10s-safe.
+  // (also they're pretty Firefox-specific)
   _getTopChromeWindow(window) {
     return window.browsingContext.topChromeWindow;
   }
@@ -1150,7 +1145,7 @@ class SpecialPowersChild extends JSWindowActorChild {
       .document.getElementById("Browser:Back")
       .hasAttribute("disabled");
   }
-  
+  // XXX end of problematic APIs
 
   addChromeEventListener(type, listener, capture, allowUntrusted) {
     this.docShell.chromeEventHandler.addEventListener(
@@ -1172,12 +1167,12 @@ class SpecialPowersChild extends JSWindowActorChild {
     await this.sendQuery("SPGenerateMediaControlKeyTestEvent", { event });
   }
 
-  
-  
-  
-  
-  
-  
+  // Note: each call to registerConsoleListener MUST be paired with a
+  // call to postConsoleSentinel; when the callback receives the
+  // sentinel it will unregister itself (_after_ calling the
+  // callback).  SimpleTest.expectConsoleMessages does this for you.
+  // If you register more than one console listener, a call to
+  // postConsoleSentinel will zap all of them.
   registerConsoleListener(callback) {
     let listener = new SPConsoleListener(callback, this.contentWindow);
     Services.console.registerListener(listener);
@@ -1214,11 +1209,11 @@ class SpecialPowersChild extends JSWindowActorChild {
     BrowsingContext.getFromWindow(window).top.mediumOverride = "";
   }
 
-  
-  
-  
-  
-  
+  // Takes a snapshot of the given window and returns a <canvas>
+  // containing the image. When the window is same-process, the canvas
+  // is returned synchronously. When it is out-of-process (or when a
+  // BrowsingContext or FrameLoaderOwner is passed instead of a Window),
+  // a promise which resolves to such a canvas is returned instead.
   snapshotWindowWithOptions(content, rect, bgcolor, options) {
     function getImageData(rect, bgcolor, options) {
       let el = content.document.createElementNS(
@@ -1279,21 +1274,21 @@ class SpecialPowersChild extends JSWindowActorChild {
     };
 
     if (!Cu.isRemoteProxy(content) && Window.isInstance(content)) {
-      
-      
+      // Hack around tests that try to snapshot 0 width or height
+      // elements.
       if (rect && !(rect.width && rect.height)) {
         return toCanvas(rect);
       }
 
-      
+      // This is an in-process window. Snapshot it synchronously.
       return toCanvas(getImageData(rect, bgcolor, options));
     }
 
-    
-    
-    
-    
-    
+    // This is a remote window or frame. Snapshot it asynchronously and
+    // return a promise for the result. Alas, consumers expect us to
+    // return a <canvas> element rather than an ImageData object, so we
+    // need to convert the result from the remote snapshot to a local
+    // canvas.
     let promise = this.spawn(
       content,
       [rect, bgcolor, options],
@@ -1341,11 +1336,11 @@ class SpecialPowersChild extends JSWindowActorChild {
     Cu.ccSlice(budget);
   }
 
-  
-  
-  
-  
-  
+  // Due to various dependencies between JS objects and C++ objects, an ordinary
+  // forceGC doesn't necessarily clear all unused objects, thus the GC and CC
+  // needs to run several times and when no other JS is running.
+  // The current number of iterations has been determined according to massive
+  // cross platform testing.
   exactGC(callback) {
     let count = 0;
 
@@ -1409,11 +1404,11 @@ class SpecialPowersChild extends JSWindowActorChild {
     return this._xpcomabi;
   }
 
-  
-  
-  
+  // The optional aWin parameter allows the caller to specify a given window in
+  // whose scope the runnable should be dispatched. If aFun throws, the
+  // exception will be reported to aWin.
   executeSoon(aFun, aWin) {
-    
+    // Create the runnable in the scope of aWin to avoid running into COWs.
     var runnable = {};
     if (aWin) {
       runnable = Cu.createObjectIn(aWin);
@@ -1442,11 +1437,11 @@ class SpecialPowersChild extends JSWindowActorChild {
     Services.els.removeSystemEventListener(target, type, listener, useCapture);
   }
 
-  
-  
+  // helper method to check if the event is consumed by either default group's
+  // event listener or system group's event listener.
   defaultPreventedInAnyGroup(event) {
-    
-    
+    // FYI: Event.defaultPrevented returns false in content context if the
+    //      event is consumed only by system group's event listeners.
     return event.defaultPrevented;
   }
 
@@ -1480,15 +1475,15 @@ class SpecialPowersChild extends JSWindowActorChild {
   openDialog(win, args) {
     return win.openDialog.apply(win, args);
   }
-  
+  // This is a blocking call which creates and spins a native event loop
   spinEventLoop(win) {
-    
+    // simply do a sync XHR back to our windows location.
     var syncXHR = new win.XMLHttpRequest();
     syncXHR.open("GET", win.location, false);
     syncXHR.send();
   }
 
-  
+  // :jdm gets credit for this.  ex: getPrivilegedProps(window, 'location.href');
   getPrivilegedProps(obj, props) {
     var parts = props.split(".");
     for (var i = 0; i < parts.length; i++) {
@@ -1524,43 +1519,43 @@ class SpecialPowersChild extends JSWindowActorChild {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Runs a task in the context of the given frame, and returns a
+   * promise which resolves to the return value of that task.
+   *
+   * The given frame may be in-process or out-of-process. Either way,
+   * the task will run asynchronously, in a sandbox with access to the
+   * frame's content window via its `content` global. Any arguments
+   * passed will be copied via structured clone, as will its return
+   * value.
+   *
+   * The sandbox also has access to an Assert object, as provided by
+   * Assert.jsm. Any assertion methods called before the task resolves
+   * will be relayed back to the test environment of the caller.
+   *
+   * @param {BrowsingContext or FrameLoaderOwner or WindowProxy} target
+   *        The target in which to run the task. This may be any element
+   *        which implements the FrameLoaderOwner interface (including
+   *        HTML <iframe> elements and XUL <browser> elements) or a
+   *        WindowProxy (either in-process or remote).
+   * @param {Array<any>} args
+   *        An array of arguments to pass to the task. All arguments
+   *        must be structured clone compatible, and will be cloned
+   *        before being passed to the task.
+   * @param {function} task
+   *        The function to run in the context of the target. The
+   *        function will be stringified and re-evaluated in the context
+   *        of the target's content window. It may return any structured
+   *        clone compatible value, or a Promise which resolves to the
+   *        same, which will be returned to the caller.
+   *
+   * @returns {Promise<any>}
+   *        A promise which resolves to the return value of the task, or
+   *        which rejects if the task raises an exception. As this is
+   *        being written, the rejection value will always be undefined
+   *        in the cases where the task throws an error, though that may
+   *        change in the future.
+   */
   spawn(target, args, task) {
     let browsingContext = this._browsingContextForTarget(target);
 
@@ -1574,12 +1569,12 @@ class SpecialPowersChild extends JSWindowActorChild {
     });
   }
 
-  
-
-
-
-
-
+  /**
+   * Like `spawn`, but spawns a chrome task in the parent process,
+   * instead. The task additionally has access to `windowGlobalParent`
+   * and `browsingContext` globals corresponding to the window from
+   * which the task was spawned.
+   */
   spawnChrome(args, task) {
     return this.sendQuery("SpawnChrome", {
       args,
@@ -1636,10 +1631,10 @@ class SpecialPowersChild extends JSWindowActorChild {
     return sb.execute(task, args, caller);
   }
 
-  
-
-
-
+  /**
+   * Automatically imports the given symbol from the given JSM for any
+   * task spawned by this SpecialPowers instance.
+   */
   addTaskImport(symbol, url) {
     this._spawnTaskImports[symbol] = url;
   }
@@ -1659,10 +1654,10 @@ class SpecialPowersChild extends JSWindowActorChild {
     }
   }
 
-  
-
-
-
+  /**
+   * Sets this actor as the default assertion result handler for tasks
+   * which originate in a window without a test harness.
+   */
   setAsDefaultAssertHandler() {
     this.sendAsyncMessage("SetAsDefaultAssertHandler");
   }
@@ -1690,8 +1685,8 @@ class SpecialPowersChild extends JSWindowActorChild {
   }
 
   focus(aWindow) {
-    
-    
+    // This is called inside TestRunner._makeIframe without aWindow, because of assertions in oop mochitests
+    // With aWindow, it is called in SimpleTest.waitForFocus to allow popup window opener focus switching
     if (aWindow) {
       aWindow.focus();
     }
@@ -1764,7 +1759,7 @@ class SpecialPowersChild extends JSWindowActorChild {
       cid = Services.uuid.generateUUID();
     }
 
-    
+    // Restore the original factory.
     componentRegistrar.registerFactory(cid, "", contractID, newFactory);
     return { originalCID: currentCID };
   }
@@ -1787,23 +1782,23 @@ class SpecialPowersChild extends JSWindowActorChild {
     return debugsvc.assertionCount;
   }
 
-  
-
-
-
-
-
+  /**
+   * @param arg one of the following:
+   *            - A URI string.
+   *            - A document node.
+   *            - A dictionary including a URL (`url`) and origin attributes (`attr`).
+   */
   _getPrincipalFromArg(arg) {
     arg = lazy.WrapPrivileged.unwrap(Cu.unwaiveXrays(arg));
 
     if (arg.nodePrincipal) {
-      
+      // It's a document.
       return arg.nodePrincipal;
     }
 
     let secMan = Services.scriptSecurityManager;
     if (typeof arg == "string") {
-      
+      // It's a URL.
       let uri = Services.io.newURI(arg);
       return secMan.createContentPrincipal(uri, {});
     }
@@ -1816,7 +1811,7 @@ class SpecialPowersChild extends JSWindowActorChild {
   async addPermission(type, allow, arg, expireType, expireTime) {
     let principal = this._getPrincipalFromArg(arg);
     if (principal.isSystemPrincipal) {
-      return; 
+      return; // nothing to do
     }
 
     let permission = allow;
@@ -1837,17 +1832,17 @@ class SpecialPowersChild extends JSWindowActorChild {
     await this.sendQuery("SPPermissionManager", msg);
   }
 
-  
-
-
-
-
-
-
+  /**
+   * @param type see nsIPermissionsManager::testPermissionFromPrincipal.
+   * @param arg one of the following:
+   *            - A URI string.
+   *            - A document node.
+   *            - A dictionary including a URL (`url`) and origin attributes (`attr`).
+   */
   async removePermission(type, arg) {
     let principal = this._getPrincipalFromArg(arg);
     if (principal.isSystemPrincipal) {
-      return; 
+      return; // nothing to do
     }
 
     var msg = {
@@ -1862,7 +1857,7 @@ class SpecialPowersChild extends JSWindowActorChild {
   async hasPermission(type, arg) {
     let principal = this._getPrincipalFromArg(arg);
     if (principal.isSystemPrincipal) {
-      return true; 
+      return true; // system principals have all permissions
     }
 
     var msg = {
@@ -1877,7 +1872,7 @@ class SpecialPowersChild extends JSWindowActorChild {
   async testPermission(type, value, arg) {
     let principal = this._getPrincipalFromArg(arg);
     if (principal.isSystemPrincipal) {
-      return true; 
+      return true; // system principals have all permissions
     }
 
     var msg = {
@@ -1922,7 +1917,7 @@ class SpecialPowersChild extends JSWindowActorChild {
   }
 
   async requestDumpCoverageCounters(cb) {
-    
+    // We want to avoid a roundtrip between child and parent.
     if (!lazy.PerTestCoverageUtils.enabled) {
       return;
     }
@@ -1931,7 +1926,7 @@ class SpecialPowersChild extends JSWindowActorChild {
   }
 
   async requestResetCoverageCounters(cb) {
-    
+    // We want to avoid a roundtrip between child and parent.
     if (!lazy.PerTestCoverageUtils.enabled) {
       return;
     }
@@ -1953,9 +1948,9 @@ class SpecialPowersChild extends JSWindowActorChild {
       });
     }
 
-    
-    
-    
+    // Note, this is not the addon is as used by the AddonManager etc,
+    // this is just an identifier used for specialpowers messaging
+    // between this content process and the chrome process.
     let id = this._nextExtensionID++;
 
     handler = Cu.waiveXrays(handler);
@@ -2066,8 +2061,8 @@ class SpecialPowersChild extends JSWindowActorChild {
         },
 
         onStopRequest(request, status) {
-          
-
+          /* testing here that the redirect was not followed. If it was followed
+            we would see a http status of 200 and status of NS_OK */
 
           let httpStatus = this.httpStatus;
           resolve({ status, httpStatus });
@@ -2089,7 +2084,7 @@ class SpecialPowersChild extends JSWindowActorChild {
     }
 
     let pu = Cc["@mozilla.org/parserutils;1"].getService(Ci.nsIParserUtils);
-    
+    // We need to create and return our own wrapper.
     this._pu = {
       sanitize(src, flags) {
         return pu.sanitize(src, flags);
@@ -2137,11 +2132,11 @@ class SpecialPowersChild extends JSWindowActorChild {
     });
   }
 
-  
-
-
-
-
+  /**
+   * Which commands are available can be determined by checking which commands
+   * are registered. See \ref
+   * nsIControllerCommandTable.registerCommand(in String, in nsIControllerCommand).
+   */
   doCommand(window, cmd, param) {
     switch (cmd) {
       case "cmd_align":
@@ -2165,21 +2160,21 @@ class SpecialPowersChild extends JSWindowActorChild {
     return window.docShell.isCommandEnabled(cmd);
   }
 
-  
-
-
+  /**
+   * See \ref nsIContentViewerEdit.setCommandNode(in Node).
+   */
   setCommandNode(window, node) {
     return window.docShell.contentViewer
       .QueryInterface(Ci.nsIContentViewerEdit)
       .setCommandNode(node);
   }
 
-  
-
-
-
-
-
+  /* Bug 1339006 Runnables of nsIURIClassifier.classify may be labeled by
+   * SystemGroup, but some test cases may run as web content. That would assert
+   * when trying to enter web content from a runnable labeled by the
+   * SystemGroup. To avoid that, we run classify from SpecialPowers which is
+   * chrome-privileged and allowed to run inside SystemGroup
+   */
 
   doUrlClassify(principal, callback) {
     let classifierService = Cc[
@@ -2202,7 +2197,7 @@ class SpecialPowersChild extends JSWindowActorChild {
     );
   }
 
-  
+  // TODO: Bug 1353701 - Supports custom event target for labelling.
   doUrlClassifyLocal(uri, tables, callback) {
     let classifierService = Cc[
       "@mozilla.org/url-classifier/dbservice;1"
@@ -2234,18 +2229,18 @@ class SpecialPowersChild extends JSWindowActorChild {
     );
   }
 
-  
-
-
-
-
-
+  /* Content processes asynchronously receive child-to-parent transformations
+   * when they are launched.  Until they are received, screen coordinates
+   * reported to JS are wrong.  This is generally ok.  It behaves as if the
+   * user repositioned the window.  But if we want to test screen coordinates,
+   * we need to wait for the updated data.
+   */
   contentTransformsReceived(win) {
     while (win) {
       try {
         return win.docShell.browserChild.contentTransformsReceived();
       } catch (ex) {
-        
+        // browserChild getter throws on non-e10s rather than returning null.
       }
       if (win == win.parent) {
         break;
@@ -2276,7 +2271,7 @@ SpecialPowersChild.prototype._proxiedObservers = {
     try {
       subject = Services.io.newURI(aMessage.data.subject);
     } catch (ex) {
-      
+      // if it's not a valid URI it must be an nsISupportsCString
       subject = Cc["@mozilla.org/supports-cstring;1"].createInstance(
         Ci.nsISupportsCString
       );

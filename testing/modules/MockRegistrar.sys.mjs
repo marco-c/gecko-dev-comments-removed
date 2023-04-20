@@ -1,40 +1,35 @@
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["MockRegistrar"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const Cm = Components.manager;
 
-const { Log } = ChromeUtils.importESModule(
-  "resource://gre/modules/Log.sys.mjs"
-);
+import { Log } from "resource://gre/modules/Log.sys.mjs";
+
 var logger = Log.repository.getLogger("MockRegistrar");
 
-var MockRegistrar = Object.freeze({
+export var MockRegistrar = Object.freeze({
   _registeredComponents: new Map(),
   _originalCIDs: new Map(),
   get registrar() {
     return Cm.QueryInterface(Ci.nsIComponentRegistrar);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Register a mock to override target interfaces.
+   * The target interface may be accessed through _genuine property of the mock.
+   * If you register multiple mocks to the same contract ID, you have to call
+   * unregister in reverse order. Otherwise the previous factory will not be
+   * restored.
+   *
+   * @param contractID The contract ID of the interface which is overridden by
+                       the mock.
+   *                   e.g. "@mozilla.org/file/directory_service;1"
+   * @param mock       An object which implements interfaces for the contract ID.
+   * @param args       An array which is passed in the constructor of mock.
+   *
+   * @return           The CID of the mock.
+   */
   register(contractID, mock, args) {
     let originalCID;
     let originalFactory;
@@ -47,8 +42,8 @@ var MockRegistrar = Object.freeze({
 
       originalFactory = Cm.getClassObject(originalCID, Ci.nsIFactory);
     } catch (e) {
-      
-      
+      // There's no original factory. Ignore and just register the new
+      // one.
     }
 
     let cid = Services.uuid.generateUUID();
@@ -102,11 +97,11 @@ var MockRegistrar = Object.freeze({
     });
   },
 
-  
-
-
-
-
+  /**
+   * Unregister the mock.
+   *
+   * @param cid The CID of the mock.
+   */
   unregister(cid) {
     let component = this._registeredComponents.get(cid);
     if (!component) {
@@ -115,8 +110,8 @@ var MockRegistrar = Object.freeze({
 
     this.registrar.unregisterFactory(cid, component.factory);
     if (component.originalCID) {
-      
-      
+      // Passing `null` for the factory re-maps the contract ID to the
+      // entry for its original CID.
       this.registrar.registerFactory(
         component.originalCID,
         "",
@@ -128,9 +123,9 @@ var MockRegistrar = Object.freeze({
     this._registeredComponents.delete(cid);
   },
 
-  
-
-
+  /**
+   * Unregister all registered mocks.
+   */
   unregisterAll() {
     for (let cid of this._registeredComponents.keys()) {
       this.unregister(cid);

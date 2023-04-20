@@ -1,8 +1,6 @@
-
-
-
-
-var EXPORTED_SYMBOLS = ["MockFilePicker"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
@@ -20,8 +18,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
 });
 
-
-if (__URI__.includes("specialpowers")) {
+if (import.meta.url.includes("specialpowers")) {
   Cu.crashIfNotInAutomation();
 }
 
@@ -37,7 +34,7 @@ var newFactory = function(window) {
   };
 };
 
-var MockFilePicker = {
+export var MockFilePicker = {
   returnOK: Ci.nsIFilePicker.returnOK,
   returnCancel: Ci.nsIFilePicker.returnCancel,
   returnReplace: Ci.nsIFilePicker.returnReplace,
@@ -109,7 +106,7 @@ var MockFilePicker = {
         domFile => domFile,
         () => null
       )
-      
+      // domFile can be null.
       .then(domFile => {
         this.returnData = [this.internalFileData({ nsIFile: file, domFile })];
       })
@@ -117,7 +114,7 @@ var MockFilePicker = {
 
     this.pendingPromises = [promise];
 
-    
+    // We return a promise in order to support some existing mochitests.
     return promise;
   },
 
@@ -202,7 +199,7 @@ MockFilePickerInstance.prototype = {
     return null;
   },
 
-  
+  // We don't support directories here.
   get domFileOrDirectory() {
     if (MockFilePicker.returnData.length < 1) {
       return null;
@@ -248,7 +245,7 @@ MockFilePickerInstance.prototype = {
   open(aFilePickerShownCallback) {
     MockFilePicker.showing = true;
     Services.tm.dispatchToMainThread(() => {
-      
+      // Maybe all the pending promises are already resolved, but we want to be sure.
       Promise.all(MockFilePicker.pendingPromises)
         .then(
           () => {
@@ -259,7 +256,7 @@ MockFilePickerInstance.prototype = {
           }
         )
         .then(result => {
-          
+          // Nothing else has to be done.
           MockFilePicker.pendingPromises = [];
 
           if (result == Ci.nsIFilePicker.returnCancel) {
@@ -294,8 +291,8 @@ MockFilePickerInstance.prototype = {
           return MockFilePicker.returnValue;
         })
         .then(result => {
-          
-          
+          // Some additional result file can be set by the callback. Let's
+          // resolve the pending promises again.
           return Promise.all(MockFilePicker.pendingPromises).then(
             () => {
               return result;

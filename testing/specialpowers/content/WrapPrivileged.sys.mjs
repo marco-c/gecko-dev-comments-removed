@@ -1,23 +1,20 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * This module handles wrapping privileged objects so that they can be exposed
+ * to unprivileged contexts. It is only to be used in automated tests.
+ *
+ * Its exact semantics are also liable to change at any time, so any callers
+ * relying on undocumented behavior or subtle platform features should expect
+ * breakage. Those callers should, wherever possible, migrate to fully
+ * chrome-privileged scripts when they need to interact with privileged APIs.
+ */
 
-
-"use strict";
-
-
-
-
-
-
-
-
-
-
-
-
+/* globals XPCNativeWrapper */
 
 Cu.crashIfNotInAutomation();
-
-var EXPORTED_SYMBOLS = ["WrapPrivileged"];
 
 let wrappedObjects = new WeakMap();
 let perWindowInfo = new WeakMap();
@@ -34,9 +31,9 @@ function isWrapper(x) {
   try {
     return isWrappable(x) && wrappedObjects.has(x);
   } catch (e) {
-    
-    
-    
+    // If `x` is a remote object proxy, trying to access an unexpected property
+    // on it will throw a security error, even though we're chrome privileged.
+    // However, remote proxies are not SpecialPowers wrappers, so:
     return false;
   }
 }
@@ -70,25 +67,25 @@ function isObjectOrArray(obj) {
   return arrayClasses.includes(className);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// In general, we want Xray wrappers for content DOM objects, because waiving
+// Xray gives us Xray waiver wrappers that clamp the principal when we cross
+// compartment boundaries. However, there are some exceptions where we want
+// to use a waiver:
+//
+// * Xray adds some gunk to toString(), which has the potential to confuse
+//   consumers that aren't expecting Xray wrappers. Since toString() is a
+//   non-privileged method that returns only strings, we can just waive Xray
+//   for that case.
+//
+// * We implement Xrays to pure JS [[Object]] and [[Array]] instances that
+//   filter out tricky things like callables. This is the right thing for
+//   security in general, but tends to break tests that try to pass object
+//   literals into SpecialPowers. So we waive [[Object]] and [[Array]]
+//   instances before inspecting properties.
+//
+// * When we don't have meaningful Xray semantics, we create an Opaque
+//   XrayWrapper for security reasons. For test code, we generally want to see
+//   through that sort of thing.
 function waiveXraysIfAppropriate(obj, propName) {
   if (
     propName == "toString" ||
@@ -100,42 +97,42 @@ function waiveXraysIfAppropriate(obj, propName) {
   return obj;
 }
 
-
-
+// We can't call apply() directy on Xray-wrapped functions, so we have to be
+// clever.
 function doApply(fun, invocant, args) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // We implement Xrays to pure JS [[Object]] instances that filter out tricky
+  // things like callables. This is the right thing for security in general,
+  // but tends to break tests that try to pass object literals into
+  // SpecialPowers. So we waive [[Object]] instances when they're passed to a
+  // SpecialPowers-wrapped callable.
+  //
+  // Note that the transitive nature of Xray waivers means that any property
+  // pulled off such an object will also be waived, and so we'll get principal
+  // clamping for Xrayed DOM objects reached from literals, so passing things
+  // like {l : xoWin.location} won't work. Hopefully the rabbit hole doesn't
+  // go that deep.
   args = args.map(x => (isObjectOrArray(x) ? Cu.waiveXrays(x) : x));
   return Reflect.apply(fun, invocant, args);
 }
 
 function wrapPrivileged(obj, win) {
-  
+  // Primitives pass straight through.
   if (!isWrappable(obj)) {
     return obj;
   }
 
-  
+  // No double wrapping.
   if (isWrapper(obj)) {
     throw new Error("Trying to double-wrap object!");
   }
 
   let { windowID, proxies, handler } = perWindowInfo.get(win) || {};
-  
-  
+  // |windowUtils| is undefined if |win| is a non-window object
+  // such as a sandbox.
   let currentID = win.windowGlobalChild
     ? win.windowGlobalChild.innerWindowId
     : 0;
-  
+  // Values are dead objects if the inner window is changed.
   if (windowID !== currentID) {
     windowID = currentID;
     proxies = new WeakMap();
@@ -152,8 +149,8 @@ function wrapPrivileged(obj, win) {
 
   let className = Cu.getClassName(obj, true);
   if (className === "ArrayBuffer") {
-    
-    
+    // Since |new Uint8Array(<proxy>)| doesn't work as expected, we have to
+    // return a real ArrayBuffer.
     return obj instanceof win.ArrayBuffer ? obj : Cu.cloneInto(obj, win);
   }
 
@@ -169,12 +166,12 @@ function wrapPrivileged(obj, win) {
   wrappedObjects.set(proxy, obj);
   switch (className) {
     case "AnonymousContent":
-      
+      // Caching anonymous content will cause crashes (bug 1636015).
       break;
     case "CSS2Properties":
     case "CSSStyleRule":
     case "CSSStyleSheet":
-      
+      // Caching these classes will cause memory leaks.
       break;
     default:
       proxies.set(obj, { proxy });
@@ -184,20 +181,20 @@ function wrapPrivileged(obj, win) {
 }
 
 function unwrapPrivileged(x) {
-  
-  
-  
-  
+  // We don't wrap primitives, so sometimes we have a primitive where we'd
+  // expect to have a wrapper. The proxy pretends to be the type that it's
+  // emulating, so we can just as easily check isWrappable() on a proxy as
+  // we can on an unwrapped object.
   if (!isWrappable(x)) {
     return x;
   }
 
-  
+  // If we have a wrappable type, make sure it's wrapped.
   if (!isWrapper(x)) {
     throw new Error("Trying to unwrap a non-wrapped object!");
   }
 
-  
+  // unwrapped.
   return wrappedObjects.get(x);
 }
 
@@ -211,13 +208,13 @@ function wrapExceptions(global, fn) {
 
 let SpecialPowersHandler = {
   construct(target, args) {
-    
+    // The arguments may or may not be wrappers. Unwrap them if necessary.
     var unwrappedArgs = Array.from(Cu.waiveXrays(args), x =>
       unwrapIfWrapped(Cu.unwaiveXrays(x))
     );
 
-    
-    
+    // We want to invoke "obj" as a constructor, but using unwrappedArgs as
+    // the arguments.
     let global = Cu.getGlobalForObject(this);
     return wrapExceptions(global, () =>
       wrapIfUnwrapped(
@@ -230,8 +227,8 @@ let SpecialPowersHandler = {
   apply(target, thisValue, args) {
     let wrappedObject = this.wrapped.get(target).obj;
     let global = Cu.getGlobalForObject(this);
-    
-    
+    // The invocant and arguments may or may not be wrappers. Unwrap
+    // them if necessary.
     var invocant = unwrapIfWrapped(thisValue);
 
     return wrapExceptions(global, () => {
@@ -296,7 +293,7 @@ let SpecialPowersHandler = {
         return undefined;
       }
 
-      
+      // Transitively maintain the wrapper membrane.
       let wrapIfExists = key => {
         if (key in desc) {
           desc[key] = wrapIfUnwrapped(desc[key], global);
@@ -307,8 +304,8 @@ let SpecialPowersHandler = {
       wrapIfExists("get");
       wrapIfExists("set");
 
-      
-      
+      // A trapping proxy's properties must always be configurable, but sometimes
+      // we come across non-configurable properties. Tell a white lie.
       desc.configurable = true;
 
       return wrapIfUnwrapped(desc, global);
@@ -318,12 +315,12 @@ let SpecialPowersHandler = {
   ownKeys(target) {
     let props = [];
 
-    
+    // Do the normal thing.
     let wrappedObject = this.wrapped.get(target).obj;
     let flt = a => !props.includes(a);
     props = props.concat(Reflect.ownKeys(wrappedObject).filter(flt));
 
-    
+    // If we've got an Xray wrapper, include the expandos as well.
     if ("wrappedJSObject" in wrappedObject) {
       props = props.concat(
         Reflect.ownKeys(wrappedObject.wrappedJSObject).filter(flt)
@@ -341,7 +338,7 @@ let SpecialPowersHandler = {
 };
 
 function wrapCallback(cb, win) {
-  
+  // Do not wrap if it is already privileged.
   if (!isWrappable(cb) || Cu.getObjectPrincipal(cb).isSystemPrincipal) {
     return cb;
   }
@@ -353,7 +350,7 @@ function wrapCallback(cb, win) {
 }
 
 function wrapCallbackObject(obj, win) {
-  
+  // Do not wrap if it is already privileged.
   if (!isWrappable(obj) || Cu.getObjectPrincipal(obj).isSystemPrincipal) {
     return obj;
   }
@@ -373,7 +370,7 @@ function disableAutoWrap(...objs) {
   objs.forEach(x => noAutoWrap.add(x));
 }
 
-var WrapPrivileged = {
+export var WrapPrivileged = {
   wrap: wrapIfUnwrapped,
   unwrap: unwrapIfWrapped,
 

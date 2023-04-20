@@ -1,23 +1,17 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["AppTestDelegateParent"];
-
-var { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
-
+// Each app needs to implement this
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   AppUiTestDelegate: "resource://testing-common/AppUiTestDelegate.jsm",
 });
 
-class AppTestDelegateParent extends JSWindowActorParent {
+export class AppTestDelegateParent extends JSWindowActorParent {
   constructor() {
     super();
     this._tabs = new Map();
@@ -60,17 +54,17 @@ class AppTestDelegateParent extends JSWindowActorParent {
           extensionId
         );
       case "awaitExtensionPanel":
-        
-        
-        
+        // The desktop delegate returns a <browser>, but that cannot be sent
+        // over IPC, so just ignore it. The promise resolves when the panel and
+        // its content is fully loaded.
         await lazy.AppUiTestDelegate.awaitExtensionPanel(
           this.window,
           extensionId
         );
         return null;
       case "openNewForegroundTab": {
-        
-        
+        // We cannot send the tab object across process so let's store it with
+        // a unique ID here.
         const uuid = Services.uuid.generateUUID().toString();
         const tab = await lazy.AppUiTestDelegate.openNewForegroundTab(
           this.window,

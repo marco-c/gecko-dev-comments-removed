@@ -1,9 +1,5 @@
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["AppTestDelegate"];
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 class Delegate {
   actor(window) {
@@ -53,4 +49,4 @@ class Delegate {
   }
 }
 
-var AppTestDelegate = new Delegate();
+export var AppTestDelegate = new Delegate();

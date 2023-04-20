@@ -1,63 +1,59 @@
-
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["ContentTask"];
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80 filetype=javascript: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const FRAME_SCRIPT = "resource://testing-common/content-task.js";
 
-
-
-
+/**
+ * Keeps track of whether the frame script was already loaded.
+ */
 var gFrameScriptLoaded = false;
 
-
-
-
+/**
+ * Mapping from message id to associated promise.
+ */
 var gPromises = new Map();
 
-
-
-
+/**
+ * Incrementing integer to generate unique message id.
+ */
 var gMessageID = 1;
 
-
-
-
-var ContentTask = {
-  
-
-
-
-
-
-
+/**
+ * This object provides the public module functions.
+ */
+export var ContentTask = {
+  /**
+   * _testScope saves the current testScope from
+   * browser-test.js. This is used to implement SimpleTest functions
+   * like ok() and is() in the content process. The scope is only
+   * valid for tasks spawned in the current test, so we keep track of
+   * the ID of the first task spawned in this test (_scopeValidId).
+   */
   _testScope: null,
   _scopeValidId: 0,
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Creates and starts a new task in a browser's content.
+   *
+   * @param browser A xul:browser
+   * @param arg A single serializable argument that will be passed to the
+   *             task when executed on the content process.
+   * @param task
+   *        - A generator or function which will be serialized and sent to
+   *          the remote browser to be executed. Unlike Task.spawn, this
+   *          argument may not be an iterator as it will be serialized and
+   *          sent to the remote browser.
+   * @return A promise object where you can register completion callbacks to be
+   *         called when the task terminates.
+   * @resolves With the final returned value of the task if it executes
+   *           successfully.
+   * @rejects An error message if execution fails.
+   */
   spawn: function ContentTask_spawn(browser, arg, task) {
-    
+    // Load the frame script if needed.
     if (!gFrameScriptLoaded) {
       Services.mm.loadFrameScript(FRAME_SCRIPT, true);
       gFrameScriptLoaded = true;
