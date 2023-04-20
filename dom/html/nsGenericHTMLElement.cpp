@@ -183,6 +183,14 @@ nsresult nsGenericHTMLElement::CopyInnerTo(Element* aDst) {
 static const nsAttrValue::EnumTable kDirTable[] = {
     {"ltr", eDir_LTR}, {"rtl", eDir_RTL}, {"auto", eDir_Auto}, {nullptr, 0}};
 
+static const nsAttrValue::EnumTable kPopoverTable[] = {
+    {"auto", PopoverState::Auto},
+    {"", PopoverState::Auto},
+    {"manual", PopoverState::Manual},
+    {nullptr, 0}};
+
+static const nsAttrValue::EnumTable* kPopoverTableDefault = &kPopoverTable[2];
+
 void nsGenericHTMLElement::AddToNameTable(nsAtom* aName) {
   MOZ_ASSERT(HasName(), "Node doesn't have name?");
   Document* doc = GetUncomposedDoc();
@@ -650,6 +658,31 @@ nsresult nsGenericHTMLElement::AfterSetAttr(
       SetEventHandler(GetEventNameForAttr(aName), aValue->GetStringValue());
     } else if (aNotify && aName == nsGkAtoms::spellcheck) {
       SyncEditorsOnSubtree(this);
+    } else if (aName == nsGkAtoms::popover &&
+               StaticPrefs::dom_element_popover_enabled()) {
+      
+      PopoverState newState;
+      if (aValue) {
+        if (aValue->Type() == nsAttrValue::eEnum) {
+          newState = static_cast<dom::PopoverState>(aValue->GetEnumValue());
+        } else {
+          
+          newState = PopoverState::Manual;
+        }
+      } else {
+        
+        newState = PopoverState::None;
+      }
+      if (newState != GetPopoverState()) {
+        if (PopoverOpen()) {
+          HidePopover(IgnoreErrors());
+        }
+        if (newState == PopoverState::None) {
+          ClearPopoverData();
+        } else {
+          EnsurePopoverData().SetPopoverState(newState);
+        }
+      }
     } else if (aName == nsGkAtoms::dir) {
       Directionality dir = eDir_LTR;
       
@@ -899,6 +932,12 @@ bool nsGenericHTMLElement::ParseAttribute(int32_t aNamespaceID,
   if (aNamespaceID == kNameSpaceID_None) {
     if (aAttribute == nsGkAtoms::dir) {
       return aResult.ParseEnumValue(aValue, kDirTable, false);
+    }
+
+    if (aAttribute == nsGkAtoms::popover &&
+        StaticPrefs::dom_element_popover_enabled()) {
+      return aResult.ParseEnumValue(aValue, kPopoverTable, false,
+                                    kPopoverTableDefault);
     }
 
     if (aAttribute == nsGkAtoms::tabindex) {
@@ -3043,6 +3082,109 @@ void nsGenericHTMLElement::SetOuterText(const nsAString& aValue,
   }
   if (auto* text = Text::FromNodeOrNull(previous)) {
     MergeWithNextTextNode(*text, aRv);
+  }
+}
+
+
+bool nsGenericHTMLElement::PopoverOpen() const {
+  if (PopoverData* popoverData = GetPopoverData()) {
+    return popoverData->GetPopoverVisibilityState() ==
+           PopoverVisibilityState::Showing;
+  }
+  return false;
+}
+
+
+bool nsGenericHTMLElement::CheckPopoverValidity(
+    PopoverVisibilityState aExpectedState, ErrorResult& aRv) {
+  if (!HasAttr(nsGkAtoms::popover)) {
+    aRv.ThrowNotSupportedError("Element does not have the popover attribute");
+    return false;
+  }
+
+  if (!IsInComposedDoc()) {
+    aRv.ThrowInvalidStateError("Element is not connected");
+    return false;
+  }
+
+  PopoverData* data = GetPopoverData();
+  if (!data) {
+    return false;
+  }
+  if (data->GetPopoverVisibilityState() != aExpectedState) {
+    aRv.ThrowInvalidStateError("Element has unexpected visibility state");
+    return false;
+  }
+
+  if (IsHTMLElement(nsGkAtoms::dialog) && HasAttr(nsGkAtoms::open)) {
+    aRv.ThrowInvalidStateError("Element is an open <dialog> element");
+    return false;
+  }
+
+  if (State().HasState(ElementState::FULLSCREEN)) {
+    aRv.ThrowInvalidStateError("Element is fullscreen");
+    return false;
+  }
+
+  return true;
+}
+
+PopoverState nsGenericHTMLElement::GetPopoverState() const {
+  return GetPopoverData() ? GetPopoverData()->GetPopoverState()
+                          : PopoverState::None;
+}
+
+void nsGenericHTMLElement::PopoverPseudoStateUpdate(bool aOpen, bool aNotify) {
+  ElementState popoverStates;
+  if (aOpen) {
+    popoverStates |= ElementState::OPEN;
+    popoverStates &= ~ElementState::CLOSED;
+  } else {
+    popoverStates |= ElementState::CLOSED;
+    popoverStates &= ~ElementState::OPEN;
+  }
+  ElementState oldPopoverStates = State() & ElementState::POPOVER_STATES;
+  ElementState changedStates = popoverStates ^ oldPopoverStates;
+  ToggleStates(changedStates, aNotify);
+}
+
+
+void nsGenericHTMLElement::ShowPopover(ErrorResult& aRv) {
+  if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, aRv)) {
+    return;
+  }
+  
+  
+  
+  GetPopoverData()->SetPopoverVisibilityState(PopoverVisibilityState::Showing);
+
+  PopoverPseudoStateUpdate(true, true);
+
+  
+}
+
+
+void nsGenericHTMLElement::HidePopover(ErrorResult& aRv) {
+  if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, aRv)) {
+    return;
+  }
+
+  
+  
+  
+
+  PopoverPseudoStateUpdate(false, true);
+  GetPopoverData()->SetPopoverVisibilityState(PopoverVisibilityState::Hidden);
+
+  
+}
+
+
+void nsGenericHTMLElement::TogglePopover(bool force, ErrorResult& aRv) {
+  if (!force && PopoverOpen()) {
+    HidePopover(aRv);
+  } else if (force && !PopoverOpen()) {
+    ShowPopover(aRv);
   }
 }
 

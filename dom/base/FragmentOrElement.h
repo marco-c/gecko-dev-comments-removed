@@ -40,6 +40,7 @@ class ElementAnimationData;
 namespace dom {
 struct CustomElementData;
 class Element;
+class PopoverData;
 }  
 }  
 
@@ -200,6 +201,11 @@ class FragmentOrElement : public nsIContent {
 
 
     UniquePtr<ElementAnimationData> mAnimations;
+
+    
+
+
+    UniquePtr<PopoverData> mPopoverData;
 
     
 
