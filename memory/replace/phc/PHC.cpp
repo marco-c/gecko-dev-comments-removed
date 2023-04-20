@@ -1411,8 +1411,10 @@ void replace_jemalloc_stats(jemalloc_stats_t* aStats,
   aStats->allocated += allocated;
 
   
-  size_t waste = mapped - allocated;
-  aStats->waste += waste;
+  
+  
+  
+  
 
   
   
