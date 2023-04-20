@@ -6,16 +6,15 @@
 
 loader.lazyRequireGetter(
   this,
-  "makeSideeffectFreeDebugger",
-  "resource://devtools/server/actors/webconsole/eval-with-debugger.js",
+  "createValueGripForTarget",
+  "resource://devtools/server/actors/object/utils.js",
   true
 );
 
 loader.lazyRequireGetter(
   this,
-  "createValueGripForTarget",
-  "resource://devtools/server/actors/object/utils.js",
-  true
+  "ObjectUtils",
+  "resource://devtools/server/actors/object/utils.js"
 );
 
 const _invalidCustomFormatterHooks = new WeakSet();
@@ -72,65 +71,49 @@ function customFormatterHeader(objectActor) {
     return null;
   }
 
-  
-  
-  const dbg = makeSideeffectFreeDebugger();
+  const targetActor = objectActor.thread._parent;
 
-  try {
-    const targetActor = objectActor.thread._parent;
-    const {
-      customFormatterConfig,
-      customFormatterObjectTagDepth,
-    } = objectActor.hooks;
+  const {
+    customFormatterConfigDbgObj: configDbgObj,
+    customFormatterObjectTagDepth,
+  } = objectActor.hooks;
 
-    const dbgGlobal = dbg.makeGlobalObjectReference(global);
-    const valueDbgObj = dbgGlobal.makeDebuggeeValue(rawValue);
-    const configDbgObj = dbgGlobal.makeDebuggeeValue(customFormatterConfig);
+  const valueDbgObj = objectActor.obj;
 
-    for (const [
-      customFormatterIndex,
-      formatter,
-    ] of global.devtoolsFormatters.entries()) {
-      
-      
-      if (_invalidCustomFormatterHooks.has(formatter)) {
-        continue;
-      }
-
-      
-      try {
-        const rv = processFormatterForHeader({
-          customFormatterObjectTagDepth,
-          valueDbgObj,
-          configDbgObj,
-          formatter,
-          dbgGlobal,
-          globalWrapper,
-          global,
-          targetActor,
-        });
-        
-        if (rv) {
-          dbg.removeAllDebuggees();
-          return rv;
-        }
-      } catch (e) {
-        logCustomFormatterError(
-          globalWrapper,
-          e instanceof FormatterError
-            ? `devtoolsFormatters[${customFormatterIndex}].${e.message}`
-            : `devtoolsFormatters[${customFormatterIndex}] couldn't be run: ${e.message}`,
-          
-          e.script
-        );
-        addInvalidCustomFormatterHooks(formatter);
-      }
+  for (const [
+    customFormatterIndex,
+    formatter,
+  ] of global.devtoolsFormatters.entries()) {
+    
+    
+    if (_invalidCustomFormatterHooks.has(formatter)) {
+      continue;
     }
-  } finally {
+
     
-    
-    
-    dbg.removeAllDebuggees();
+    try {
+      const rv = processFormatterForHeader({
+        configDbgObj,
+        customFormatterObjectTagDepth,
+        formatter,
+        targetActor,
+        valueDbgObj,
+      });
+      
+      if (rv) {
+        return rv;
+      }
+    } catch (e) {
+      logCustomFormatterError(
+        globalWrapper,
+        e instanceof FormatterError
+          ? `devtoolsFormatters[${customFormatterIndex}].${e.message}`
+          : `devtoolsFormatters[${customFormatterIndex}] couldn't be run: ${e.message}`,
+        
+        e.script
+      );
+      addInvalidCustomFormatterHooks(formatter);
+    }
   }
 
   return null;
@@ -155,17 +138,12 @@ exports.customFormatterHeader = customFormatterHeader;
 
 
 
-
-
-
-
 function processFormatterForHeader({
+  configDbgObj,
   customFormatterObjectTagDepth,
   formatter,
-  valueDbgObj,
-  configDbgObj,
-  dbgGlobal,
   targetActor,
+  valueDbgObj,
 }) {
   const headerType = typeof formatter?.header;
   if (headerType !== "function") {
@@ -173,9 +151,12 @@ function processFormatterForHeader({
   }
 
   
-  const formatterHeaderDbgValue = dbgGlobal.makeDebuggeeValue(formatter.header);
+  const formatterHeaderDbgValue = ObjectUtils.makeDebuggeeValueIfNeeded(
+    valueDbgObj,
+    formatter.header
+  );
   const header = formatterHeaderDbgValue.call(
-    dbgGlobal,
+    formatterHeaderDbgValue.boundThis,
     valueDbgObj,
     configDbgObj
   );
@@ -220,11 +201,12 @@ function processFormatterForHeader({
   let hasBody = false;
   const hasBodyType = typeof formatter?.hasBody;
   if (hasBodyType === "function") {
-    const formatterHasBodyDbgValue = dbgGlobal.makeDebuggeeValue(
+    const formatterHasBodyDbgValue = ObjectUtils.makeDebuggeeValueIfNeeded(
+      valueDbgObj,
       formatter.hasBody
     );
     hasBody = formatterHasBodyDbgValue.call(
-      dbgGlobal,
+      formatterHasBodyDbgValue.boundThis,
       valueDbgObj,
       configDbgObj
     );
@@ -271,24 +253,20 @@ async function customFormatterBody(objectActor, formatter) {
 
   const customFormatterIndex = global.devtoolsFormatters.indexOf(formatter);
 
-  
-  
-  const dbg = makeSideeffectFreeDebugger();
+  const targetActor = objectActor.thread._parent;
   try {
-    const targetActor = objectActor.thread._parent;
     const {
-      customFormatterConfig,
+      customFormatterConfigDbgObj,
       customFormatterObjectTagDepth,
     } = objectActor.hooks;
 
-    const dbgGlobal = dbg.makeGlobalObjectReference(global);
     if (_invalidCustomFormatterHooks.has(formatter)) {
       return {
         customFormatterBody: null,
       };
     }
 
-    const bodyType = typeof formatter?.body;
+    const bodyType = typeof formatter.body;
     if (bodyType !== "function") {
       logCustomFormatterError(
         globalWrapper,
@@ -300,12 +278,14 @@ async function customFormatterBody(objectActor, formatter) {
       };
     }
 
-    const formatterBodyDbgValue =
-      formatter && dbgGlobal.makeDebuggeeValue(formatter.body);
+    const formatterBodyDbgValue = ObjectUtils.makeDebuggeeValueIfNeeded(
+      objectActor.obj,
+      formatter.body
+    );
     const body = formatterBodyDbgValue.call(
-      dbgGlobal,
-      dbgGlobal.makeDebuggeeValue(rawValue),
-      dbgGlobal.makeDebuggeeValue(customFormatterConfig)
+      formatterBodyDbgValue.boundThis,
+      objectActor.obj,
+      customFormatterConfigDbgObj
     );
     if (body?.return?.class === "Array") {
       const rawBody = body.return.unsafeDereference();
@@ -358,11 +338,6 @@ async function customFormatterBody(objectActor, formatter) {
       globalWrapper,
       `Custom formatter with index ${customFormatterIndex} couldn't be run: ${e.message}`
     );
-  } finally {
-    
-    
-    
-    dbg.removeAllDebuggees();
   }
 
   return {};
@@ -517,9 +492,7 @@ function processObjectTag(
   const configRv = attributesDbgObj.getProperty("config");
   const grip = createValueGripForTarget(targetActor, objectDbgObj, 0, {
     
-    
-    
-    customFormatterConfig: configRv?.return?.unsafeDereference(),
+    customFormatterConfigDbgObj: configRv?.return,
     customFormatterObjectTagDepth: (customFormatterObjectTagDepth || 0) + 1,
   });
 
