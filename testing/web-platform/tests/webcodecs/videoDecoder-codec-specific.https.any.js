@@ -146,6 +146,7 @@ promise_setup(async () => {
   }[location.search];
 
   
+  assert_equals("function", typeof VideoDecoder.isConfigSupported);
   let supported = false;
   try {
     

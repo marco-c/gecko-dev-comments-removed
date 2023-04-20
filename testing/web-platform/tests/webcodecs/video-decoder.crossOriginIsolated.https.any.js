@@ -22,6 +22,7 @@ function testSharedArrayBufferDescription(t, useView) {
   const data = testData;
 
   
+  assert_equals("function", typeof VideoDecoder.isConfigSupported);
   let supported = false;
   return VideoDecoder.isConfigSupported({codec: data.config.codec})
       .catch(_ => {

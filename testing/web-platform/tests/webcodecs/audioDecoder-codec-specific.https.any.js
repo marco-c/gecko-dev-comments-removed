@@ -155,6 +155,7 @@ promise_setup(async () => {
   }[location.search];
 
   
+  assert_equals("function", typeof AudioDecoder.isConfigSupported);
   let supported = false;
   try {
     const support = await AudioDecoder.isConfigSupported({
