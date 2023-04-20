@@ -952,6 +952,16 @@ static bool ShellInterruptCallback(JSContext* cx) {
   return result;
 }
 
+static void GCSliceCallback(JSContext* cx, JS::GCProgress progress,
+                            const JS::GCDescription& desc) {
+  if (progress == JS::GC_CYCLE_END) {
+#if defined(MOZ_MEMORY)
+    
+    jemalloc_free_dirty_pages();
+#endif
+  }
+}
+
 
 
 
@@ -11032,6 +11042,10 @@ int main(int argc, char** argv) {
   SetOutputFile("JS_STDOUT", &rcStdout, &gOutFile);
   SetOutputFile("JS_STDERR", &rcStderr, &gErrFile);
 
+  
+  
+  moz_set_max_dirty_page_modifier(3);
+
   OptionParser op("Usage: {progname} [options] [[script] scriptArgs*]");
   if (!InitOptionParser(op)) {
     return EXIT_FAILURE;
@@ -11140,6 +11154,8 @@ int main(int argc, char** argv) {
   js::SetWindowProxyClass(cx, &ShellWindowProxyClass);
 
   JS_AddInterruptCallback(cx, ShellInterruptCallback);
+
+  JS::SetGCSliceCallback(cx, GCSliceCallback);
 
   bufferStreamState = js_new<ExclusiveWaitableData<BufferStreamState>>(
       mutexid::BufferStreamState);

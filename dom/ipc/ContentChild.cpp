@@ -2820,6 +2820,7 @@ mozilla::ipc::IPCResult ContentChild::RecvNotifyProcessPriorityChanged(
   if (StaticPrefs::
           dom_memory_foreground_content_processes_have_larger_page_cache()) {
     if (mProcessPriority >= hal::PROCESS_PRIORITY_FOREGROUND) {
+      
       moz_set_max_dirty_page_modifier(3);
     } else if (mProcessPriority == hal::PROCESS_PRIORITY_BACKGROUND) {
       moz_set_max_dirty_page_modifier(-1);
