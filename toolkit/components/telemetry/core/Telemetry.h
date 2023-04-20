@@ -9,6 +9,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/TelemetryEventEnums.h"
 #include "mozilla/TelemetryHistogramEnums.h"
+#include "mozilla/TelemetryOriginEnums.h"
 #include "mozilla/TelemetryScalarEnums.h"
 #include "mozilla/TimeStamp.h"
 #include "nsString.h"
@@ -570,6 +571,18 @@ void RecordEvent(mozilla::Telemetry::EventID aId,
 
 
 void SetEventRecordingEnabled(const nsACString& aCategory, bool aEnabled);
+
+
+
+
+
+
+
+
+
+
+void RecordOrigin(mozilla::Telemetry::OriginMetricID aId,
+                  const nsACString& aOrigin);
 
 }  
 }  
