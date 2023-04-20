@@ -438,7 +438,13 @@ bool DrawTargetWebgl::SharedContext::Initialize() {
 
   mWebgl = new ClientWebGLContext(true);
   mWebgl->SetContextOptions(options);
-  if (mWebgl->SetDimensions(1, 1) != NS_OK || mWebgl->IsContextLost()) {
+  if (mWebgl->SetDimensions(1, 1) != NS_OK) {
+    
+    sContextInitError = true;
+    mWebgl = nullptr;
+    return false;
+  }
+  if (mWebgl->IsContextLost()) {
     mWebgl = nullptr;
     return false;
   }
