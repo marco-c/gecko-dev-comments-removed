@@ -559,9 +559,7 @@ TEST_F(TestFileSystemQuotaClient, RemovingFileShouldDecreaseUsage) {
                                     quota::PERSISTENCE_TYPE_DEFAULT,
                                     testOriginMeta, isCanceled));
 
-#if 0
       ASSERT_NO_FATAL_FAILURE(CheckUsageEqualTo(usageNow, testFileDbUsage));
-#endif
     };
 
     RefPtr<mozilla::dom::quota::Client> quotaClient = fs::CreateQuotaClient();
