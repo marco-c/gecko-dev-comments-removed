@@ -65,6 +65,7 @@ class SessionHistoryInfo {
   nsIURI* GetURI() const { return mURI; }
   void SetURI(nsIURI* aURI) { mURI = aURI; }
 
+  nsIURI* GetOriginalURI() const { return mOriginalURI; }
   void SetOriginalURI(nsIURI* aOriginalURI) { mOriginalURI = aOriginalURI; }
 
   nsIURI* GetUnstrippedURI() const { return mUnstrippedURI; }
@@ -72,6 +73,7 @@ class SessionHistoryInfo {
     mUnstrippedURI = aUnstrippedURI;
   }
 
+  nsIURI* GetResultPrincipalURI() const { return mResultPrincipalURI; }
   void SetResultPrincipalURI(nsIURI* aResultPrincipalURI) {
     mResultPrincipalURI = aResultPrincipalURI;
   }
@@ -409,6 +411,8 @@ class SessionHistoryEntry : public nsISHEntry {
   
   
   static SessionHistoryEntry* GetByLoadId(uint64_t aLoadId);
+  static const SessionHistoryInfo* GetInfoSnapshotForValidationByLoadId(
+      uint64_t aLoadId);
   static void SetByLoadId(uint64_t aLoadId, SessionHistoryEntry* aEntry);
   static void RemoveLoadId(uint64_t aLoadId);
 
@@ -428,7 +432,16 @@ class SessionHistoryEntry : public nsISHEntry {
 
   HistoryEntryCounterForBrowsingContext mBCHistoryLength;
 
-  static nsTHashMap<nsUint64HashKey, SessionHistoryEntry*>* sLoadIdToEntry;
+  struct LoadingEntry {
+    
+    
+    SessionHistoryEntry* mEntry;
+    
+    
+    UniquePtr<SessionHistoryInfo> mInfoSnapshotForValidation;
+  };
+
+  static nsTHashMap<nsUint64HashKey, LoadingEntry>* sLoadIdToEntry;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(SessionHistoryEntry, NS_SESSIONHISTORYENTRY_IID)
