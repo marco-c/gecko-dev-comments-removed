@@ -37,10 +37,5 @@ mod codegen {
 }
 
 fn main() {
-    if std::mem::size_of::<Option<bool>>() == 1 {
-        
-        println!("cargo:rustc-cfg=rustc_has_pr45225")
-    }
-
     codegen::main();
 }

@@ -17,7 +17,7 @@ template <>
 bool StyleColor::MaybeTransparent() const {
   
   
-  return !IsNumeric() || AsNumeric().alpha != 255;
+  return !IsNumeric() || AsNumeric().alpha != 1.0f;
 }
 
 template <>
