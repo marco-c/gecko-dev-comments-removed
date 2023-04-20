@@ -124,6 +124,8 @@ function getBrowser(panel) {
   };
 
   browser.addEventListener("DidChangeBrowserRemoteness", initBrowser);
+  
+  browser.browsingContext.isAppTab = true;
   return readyPromise.then(initBrowser);
 }
 

@@ -403,6 +403,8 @@ class BasePopup {
     };
 
     browser.addEventListener("DidChangeBrowserRemoteness", initBrowser); 
+    
+    browser.browsingContext.isAppTab = true;
 
     if (!popupURL) {
       

@@ -512,6 +512,10 @@ GlobalManager = {
     data.viewType = browser.getAttribute("webextension-view-type");
     if (data.viewType) {
       GlobalManager.frameData.set(browser, data);
+      
+      browser.browsingContext.isAppTab = ["popup", "sidebar"].includes(
+        data.viewType
+      );
     }
   },
 

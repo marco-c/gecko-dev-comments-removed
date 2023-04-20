@@ -1921,6 +1921,8 @@ class InlineOptionsBrowser extends HTMLElement {
         browserOptions.stylesheets = extensionStylesheets;
       }
 
+      
+      browser.browsingContext.isAppTab = true;
       mm.sendAsyncMessage("Extension:InitBrowser", browserOptions);
 
       if (browser.isConnectedAndReady) {
