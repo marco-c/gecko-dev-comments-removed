@@ -11675,7 +11675,7 @@ CompositorHitTestInfo nsIFrame::GetCompositorHitTestInfo(
     if (touchAction == StyleTouchAction::AUTO) {
       
     } else if (touchAction & StyleTouchAction::MANIPULATION) {
-      result += CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled;
+      result += CompositorHitTestFlags::eTouchActionAnimatingZoomDisabled;
     } else {
       
       
@@ -11683,7 +11683,7 @@ CompositorHitTestInfo nsIFrame::GetCompositorHitTestInfo(
         result += CompositorHitTestFlags::eTouchActionPinchZoomDisabled;
       }
 
-      result += CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled;
+      result += CompositorHitTestFlags::eTouchActionAnimatingZoomDisabled;
 
       if (!(touchAction & StyleTouchAction::PAN_X)) {
         result += CompositorHitTestFlags::eTouchActionPanXDisabled;

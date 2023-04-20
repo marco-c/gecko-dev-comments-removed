@@ -41,7 +41,7 @@ enum class CompositorHitTestFlags : uint8_t {
   eTouchActionPanXDisabled,           
   eTouchActionPanYDisabled,           
   eTouchActionPinchZoomDisabled,      
-  eTouchActionDoubleTapZoomDisabled,  
+  eTouchActionAnimatingZoomDisabled,  
 
   
   
@@ -76,7 +76,7 @@ constexpr CompositorHitTestInfo CompositorHitTestTouchActionMask(
     CompositorHitTestFlags::eTouchActionPanXDisabled,
     CompositorHitTestFlags::eTouchActionPanYDisabled,
     CompositorHitTestFlags::eTouchActionPinchZoomDisabled,
-    CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled);
+    CompositorHitTestFlags::eTouchActionAnimatingZoomDisabled);
 
 
 
