@@ -317,7 +317,7 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  MOZ_CAN_RUN_SCRIPT Maybe<uint64_t> SetFocusInner(
+  MOZ_CAN_RUN_SCRIPT mozilla::Maybe<uint64_t> SetFocusInner(
       mozilla::dom::Element* aNewContent, int32_t aFlags, bool aFocusChanged,
       bool aAdjustWidget);
 

@@ -341,16 +341,15 @@ already_AddRefed<URLExtraData> nsIContent::GetURLDataForStyleAttr(
       return do_AddRef(data);
     }
   }
+  auto* doc = OwnerDoc();
   if (aSubjectPrincipal && aSubjectPrincipal != NodePrincipal()) {
-    
     nsCOMPtr<nsIReferrerInfo> referrerInfo =
-        ReferrerInfo::CreateForInternalCSSAndSVGResources(OwnerDoc());
-    return MakeAndAddRef<URLExtraData>(OwnerDoc()->GetDocBaseURI(),
-                                       referrerInfo, aSubjectPrincipal);
+        doc->ReferrerInfoForInternalCSSAndSVGResources();
+    
+    return MakeAndAddRef<URLExtraData>(doc->GetDocBaseURI(), referrerInfo,
+                                       aSubjectPrincipal);
   }
-  
-  
-  return do_AddRef(OwnerDoc()->DefaultStyleAttrURLData());
+  return do_AddRef(doc->DefaultStyleAttrURLData());
 }
 
 void nsIContent::ConstructUbiNode(void* storage) {

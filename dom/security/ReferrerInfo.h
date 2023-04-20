@@ -40,8 +40,6 @@ class nsHttpChannel;
 }  
 }  
 
-using mozilla::Maybe;
-
 namespace mozilla::dom {
 
 
