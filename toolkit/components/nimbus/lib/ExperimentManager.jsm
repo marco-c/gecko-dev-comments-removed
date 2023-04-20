@@ -452,13 +452,12 @@ class _ExperimentManager {
       { force: true }
     );
 
-    Services.obs.notifyObservers(null, "nimbus:enrollments-updated", slug);
+    Services.obs.notifyObservers(null, "nimbus:force-enroll", slug);
 
     return enrollment;
   }
 
   
-
 
 
 
@@ -481,7 +480,6 @@ class _ExperimentManager {
     if (!branch) {
       
       this.unenroll(recipe.slug, "branch-removed");
-      return false;
     }
 
     return true;
