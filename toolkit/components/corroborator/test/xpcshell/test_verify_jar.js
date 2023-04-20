@@ -2,8 +2,8 @@
 
 "use strict";
 
-const { Corroborate } = ChromeUtils.import(
-  "resource://gre/modules/Corroborate.jsm"
+const { Corroborate } = ChromeUtils.importESModule(
+  "resource://gre/modules/Corroborate.sys.mjs"
 );
 
 add_task(async function test_various_jars() {
