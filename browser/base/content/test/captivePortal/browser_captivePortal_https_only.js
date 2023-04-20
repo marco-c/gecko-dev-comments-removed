@@ -2,8 +2,8 @@
 
 
 "use strict";
-const { PermissionTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PermissionTestUtils.jsm"
+const { PermissionTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PermissionTestUtils.sys.mjs"
 );
 const testPath = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
