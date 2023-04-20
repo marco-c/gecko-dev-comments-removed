@@ -232,8 +232,7 @@ void Link::SetHostname(const nsAString& aHostname) {
 
 void Link::SetPathname(const nsAString& aPathname) {
   nsCOMPtr<nsIURI> uri(GetURI());
-  nsCOMPtr<nsIURL> url(do_QueryInterface(uri));
-  if (!url) {
+  if (!uri) {
     
     return;
   }
@@ -249,8 +248,7 @@ void Link::SetPathname(const nsAString& aPathname) {
 
 void Link::SetSearch(const nsAString& aSearch) {
   nsCOMPtr<nsIURI> uri(GetURI());
-  nsCOMPtr<nsIURL> url(do_QueryInterface(uri));
-  if (!url) {
+  if (!uri) {
     
     return;
   }
@@ -389,15 +387,13 @@ void Link::GetPathname(nsAString& _pathname) {
   _pathname.Truncate();
 
   nsCOMPtr<nsIURI> uri(GetURI());
-  nsCOMPtr<nsIURL> url(do_QueryInterface(uri));
-  if (!url) {
-    
+  if (!uri) {
     
     return;
   }
 
   nsAutoCString file;
-  nsresult rv = url->GetFilePath(file);
+  nsresult rv = uri->GetFilePath(file);
   if (NS_SUCCEEDED(rv)) {
     CopyUTF8toUTF16(file, _pathname);
   }
@@ -407,15 +403,14 @@ void Link::GetSearch(nsAString& _search) {
   _search.Truncate();
 
   nsCOMPtr<nsIURI> uri(GetURI());
-  nsCOMPtr<nsIURL> url(do_QueryInterface(uri));
-  if (!url) {
+  if (!uri) {
     
     
     return;
   }
 
   nsAutoCString search;
-  nsresult rv = url->GetQuery(search);
+  nsresult rv = uri->GetQuery(search);
   if (NS_SUCCEEDED(rv) && !search.IsEmpty()) {
     _search.Assign(u'?');
     AppendUTF8toUTF16(search, _search);
