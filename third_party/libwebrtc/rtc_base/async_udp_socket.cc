@@ -19,10 +19,15 @@
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/time_utils.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace rtc {
 
-static const int BUF_SIZE = 64 * 1024;
+
+
+static bool IsScmTimeStampExperimentEnabled() {
+  return webrtc::field_trial::IsEnabled("WebRTC-SCM-Timestamp");
+}
 
 AsyncUDPSocket* AsyncUDPSocket::Create(Socket* socket,
                                        const SocketAddress& bind_address) {
@@ -43,16 +48,10 @@ AsyncUDPSocket* AsyncUDPSocket::Create(SocketFactory* factory,
 }
 
 AsyncUDPSocket::AsyncUDPSocket(Socket* socket) : socket_(socket) {
-  size_ = BUF_SIZE;
-  buf_ = new char[size_];
-
+  sequence_checker_.Detach();
   
   socket_->SignalReadEvent.connect(this, &AsyncUDPSocket::OnReadEvent);
   socket_->SignalWriteEvent.connect(this, &AsyncUDPSocket::OnWriteEvent);
-}
-
-AsyncUDPSocket::~AsyncUDPSocket() {
-  delete[] buf_;
 }
 
 SocketAddress AsyncUDPSocket::GetLocalAddress() const {
@@ -112,10 +111,12 @@ void AsyncUDPSocket::SetError(int error) {
 
 void AsyncUDPSocket::OnReadEvent(Socket* socket) {
   RTC_DCHECK(socket_.get() == socket);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   SocketAddress remote_addr;
-  int64_t timestamp;
-  int len = socket_->RecvFrom(buf_, size_, &remote_addr, &timestamp);
+  int64_t timestamp = -1;
+  int len = socket_->RecvFrom(buf_, BUF_SIZE, &remote_addr, &timestamp);
+
   if (len < 0) {
     
     
@@ -126,11 +127,21 @@ void AsyncUDPSocket::OnReadEvent(Socket* socket) {
                      << "] receive failed with error " << socket_->GetError();
     return;
   }
+  if (timestamp == -1) {
+    
+    timestamp = TimeMicros();
+  } else {
+    if (!socket_time_offset_) {
+      socket_time_offset_ =
+          IsScmTimeStampExperimentEnabled() ? TimeMicros() - timestamp : 0;
+    }
+    timestamp += *socket_time_offset_;
+  }
 
   
   
   SignalReadPacket(this, buf_, static_cast<size_t>(len), remote_addr,
-                   (timestamp > -1 ? timestamp : TimeMicros()));
+                   timestamp);
 }
 
 void AsyncUDPSocket::OnWriteEvent(Socket* socket) {

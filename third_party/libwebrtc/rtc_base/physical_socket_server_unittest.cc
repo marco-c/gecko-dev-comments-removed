@@ -486,6 +486,7 @@ TEST_F(PhysicalSocketTest, TestSocketRecvTimestampIPv6ScmExperiment) {
 }
 
 
+
 TEST_F(PhysicalSocketTest,
        BindFailsIfNetworkBinderFailsForNonLoopbackInterface) {
   MAYBE_SKIP_IPV4;
@@ -522,5 +523,16 @@ TEST_F(PhysicalSocketTest,
 }
 
 #endif
+
+TEST_F(PhysicalSocketTest, UdpSocketRecvTimestampUseRtcEpochIPv4ScmExperiment) {
+  MAYBE_SKIP_IPV4;
+  webrtc::test::ScopedFieldTrials trial("WebRTC-SCM-Timestamp/Enabled/");
+  SocketTest::TestUdpSocketRecvTimestampUseRtcEpochIPv4();
+}
+
+TEST_F(PhysicalSocketTest, UdpSocketRecvTimestampUseRtcEpochIPv6ScmExperiment) {
+  webrtc::test::ScopedFieldTrials trial("WebRTC-SCM-Timestamp/Enabled/");
+  SocketTest::TestUdpSocketRecvTimestampUseRtcEpochIPv6();
+}
 
 }  
