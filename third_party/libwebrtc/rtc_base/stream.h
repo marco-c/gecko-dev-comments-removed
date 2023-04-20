@@ -69,24 +69,48 @@ class RTC_EXPORT StreamInterface {
   
   
   
-  virtual StreamResult Read(void* buffer,
-                            size_t buffer_len,
-                            size_t* read,
-                            int* error) = 0;
+
+  
+  
+  
+  
+  [[deprecated("Use ArrayView version")]] virtual StreamResult
+  Read(void* buffer, size_t buffer_len, size_t* read, int* error) {
+    RTC_CHECK_NOTREACHED();
+  }
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  
+  
+  
+  
+  
   virtual StreamResult Read(rtc::ArrayView<uint8_t> buffer,
                             size_t& read,
                             int& error) {
     return Read(buffer.data(), buffer.size(), &read, &error);
   }
-  virtual StreamResult Write(const void* data,
-                             size_t data_len,
-                             size_t* written,
-                             int* error) = 0;
+#pragma clang diagnostic pop
+
+  
+  
+  
+  
+  [[deprecated("Use ArrayView version")]] virtual StreamResult
+  Write(const void* data, size_t data_len, size_t* written, int* error) {
+    RTC_CHECK_NOTREACHED();
+  }
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
   virtual StreamResult Write(rtc::ArrayView<const uint8_t> data,
                              size_t& written,
                              int& error) {
     return Write(data.data(), data.size(), &written, &error);
   }
+#pragma clang diagnostic pop
+
   
   
   virtual void Close() = 0;
@@ -115,14 +139,19 @@ class RTC_EXPORT StreamInterface {
   
   
   
-  StreamResult WriteAll(const void* data,
-                        size_t data_len,
-                        size_t* written,
-                        int* error);
+  [[deprecated("Use version with ArrayView")]] StreamResult
+  WriteAll(const void* data, size_t data_len, size_t* written, int* error);
 
-  StreamResult WriteAll(ArrayView<uint8_t> data, size_t& written, int& error) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  
+  
+  StreamResult WriteAll(ArrayView<const uint8_t> data,
+                        size_t& written,
+                        int& error) {
     return WriteAll(data.data(), data.size(), &written, &error);
   }
+#pragma clang diagnostic pop
 
  protected:
   StreamInterface();
