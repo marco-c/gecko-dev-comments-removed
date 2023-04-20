@@ -51,11 +51,9 @@ static void QueryXExtensions(Display* aDisplay) {
 
 extern "C" {
 int X11Error(Display* display, XErrorEvent* event) {
-#ifdef DEBUG
   
   
   unsigned long age = NextRequest(display) - event->serial;
-#endif
 
   
   nsAutoCString message;
@@ -98,7 +96,6 @@ int X11Error(Display* display, XErrorEvent* event) {
   XGetErrorText(display, event->error_code, buffer, sizeof(buffer));
   notes.Append(buffer);
 
-#ifdef DEBUG
   
   
   
@@ -121,6 +118,7 @@ int X11Error(Display* display, XErrorEvent* event) {
     }
   }
 
+#ifdef DEBUG
   
   
   notes.AppendLiteral("; id=0x");
