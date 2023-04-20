@@ -397,6 +397,11 @@ def show_taskgraph(options):
             if mod != __name__ and mod.split(".", 1)[0].endswith("taskgraph"):
                 del sys.modules[mod]
 
+        
+        
+        
+        import gecko_taskgraph  
+
         if options["diff"] == "default":
             base_ref = repo.base_ref
         else:
