@@ -9394,8 +9394,8 @@ void nsWindow::FrameState::EnsureSizeMode(nsSizeMode aMode) {
 
   if (aMode == nsSizeMode_Fullscreen) {
     EnsureFullscreenMode(true);
-  } else if ((mSizeMode == nsSizeMode_Fullscreen) &&
-             (aMode == nsSizeMode_Normal)) {
+    MOZ_ASSERT(mSizeMode == nsSizeMode_Fullscreen);
+  } else if (mSizeMode == nsSizeMode_Fullscreen && aMode == nsSizeMode_Normal) {
     
     
     
@@ -9408,19 +9408,22 @@ void nsWindow::FrameState::EnsureSizeMode(nsSizeMode aMode) {
 
 void nsWindow::FrameState::EnsureFullscreenMode(bool aFullScreen) {
   if (mFullscreenMode == aFullScreen) {
+    if (aFullScreen) {
+      
+      
+      
+      
+      SetSizeModeInternal(nsSizeMode_Fullscreen);
+    }
     return;
   }
 
   mWindow->OnFullscreenWillChange(aFullScreen);
-
   mFullscreenMode = aFullScreen;
   if (aFullScreen) {
     mOldSizeMode = mSizeMode;
-    SetSizeModeInternal(nsSizeMode_Fullscreen);
-  } else {
-    SetSizeModeInternal(mOldSizeMode);
   }
-
+  SetSizeModeInternal(aFullScreen ? nsSizeMode_Fullscreen : mOldSizeMode);
   mWindow->OnFullscreenChanged(aFullScreen);
 }
 
