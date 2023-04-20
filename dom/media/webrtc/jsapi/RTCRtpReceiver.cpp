@@ -132,12 +132,6 @@ RTCRtpReceiver::RTCRtpReceiver(
         GetMainThreadSerialEventTarget(), this, &RTCRtpReceiver::OnRtcpTimeout);
   }
 
-  
-  
-  
-  
-  mUnmuteListener = mPipeline->UnmuteEvent().Connect(
-      GetMainThreadSerialEventTarget(), this, &RTCRtpReceiver::OnUnmute);
   mWatchManager.Watch(mReceiveTrackMute,
                       &RTCRtpReceiver::UpdateReceiveTrackMute);
 }
@@ -766,10 +760,21 @@ bool RTCRtpReceiver::HasTrack(const dom::MediaStreamTrack* aTrack) const {
 }
 
 void RTCRtpReceiver::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
+  if (!mPipeline) {
+    return;
+  }
+
   
   
   
+  bool wasReceptive = mReceptive;
   mReceptive = aJsepTransceiver.mRecvTrack.GetReceptive();
+  if (!wasReceptive && mReceptive) {
+    mUnmuteListener = mPipeline->mConduit->RtpPacketEvent().Connect(
+        GetMainThreadSerialEventTarget(), this, &RTCRtpReceiver::OnRtpPacket);
+  } else if (wasReceptive && !mReceptive) {
+    mUnmuteListener.DisconnectIfExists();
+  }
 }
 
 void RTCRtpReceiver::SyncToJsep(JsepTransceiver& aJsepTransceiver) const {}
@@ -852,9 +857,10 @@ void RTCRtpReceiver::SetTrackMuteFromRemoteSdp() {
   MOZ_ASSERT(mTrack->Muted(), "Muted state was indeed set synchronously");
 }
 
-void RTCRtpReceiver::OnUnmute() {
+void RTCRtpReceiver::OnRtpPacket() {
+  MOZ_ASSERT(mReceptive, "We should not be registered unless this is set!");
   
-  
+  mUnmuteListener.Disconnect();
   if (mReceptive) {
     mReceiveTrackMute = false;
   }
