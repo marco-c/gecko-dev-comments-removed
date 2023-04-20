@@ -2,20 +2,22 @@
 
 
 
+import { createLocation } from "../../../utils/location";
+
 export function mockPendingBreakpoint(overrides = {}) {
   const { sourceUrl, line, column, condition, disabled, hidden } = overrides;
   return {
-    location: {
+    location: createLocation({
       sourceId: "",
       sourceUrl: sourceUrl || "http://localhost:8000/examples/bar.js",
       line: line || 5,
       column: column || 1,
-    },
-    generatedLocation: {
+    }),
+    generatedLocation: createLocation({
       sourceUrl: sourceUrl || "http://localhost:8000/examples/bar.js",
       line: line || 5,
       column: column || 1,
-    },
+    }),
     astLocation: {
       name: undefined,
       offset: {
@@ -36,18 +38,18 @@ export function generateBreakpoint(filename, line = 5, column = 0) {
     id: "breakpoint",
     originalText: "",
     text: "",
-    location: {
+    location: createLocation({
       sourceUrl: `http://localhost:8000/examples/${filename}`,
       sourceId: `${filename}`,
       line,
       column,
-    },
-    generatedLocation: {
+    }),
+    generatedLocation: createLocation({
       sourceUrl: `http://localhost:8000/examples/${filename}`,
       sourceId: filename,
       line,
       column,
-    },
+    }),
     astLocation: undefined,
     options: {
       condition: "",

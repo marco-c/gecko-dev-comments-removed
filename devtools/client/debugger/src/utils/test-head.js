@@ -19,6 +19,7 @@ import {
 import configureStore from "../actions/utils/create-store";
 import sourceQueue from "../utils/source-queue";
 import { setupCreate } from "../client/firefox/create";
+import { createLocation } from "./location";
 
 
 
@@ -85,7 +86,7 @@ function makeFrame({ id, sourceId, thread }, opts = {}) {
   return {
     id,
     scope: { bindings: { variables: {}, arguments: [] } },
-    location: { sourceId, line: 4 },
+    location: createLocation({ sourceId, line: 4 }),
     thread: thread || "FakeThread",
     ...opts,
   };
