@@ -4,7 +4,7 @@
 
 use super::{CollectionRequest, IncomingChangeset, OutgoingChangeset};
 use crate::client_types::ClientData;
-use crate::{telemetry, Guid, ServerTimestamp};
+use crate::{telemetry, CollectionName, Guid, ServerTimestamp};
 use anyhow::Result;
 use std::fmt;
 
@@ -104,7 +104,7 @@ impl TryFrom<&str> for SyncEngineId {
 
 
 pub trait SyncEngine {
-    fn collection_name(&self) -> std::borrow::Cow<'static, str>;
+    fn collection_name(&self) -> CollectionName;
 
     
     

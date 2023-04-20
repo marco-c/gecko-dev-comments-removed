@@ -3,40 +3,50 @@
 
 
 use crate::bso::{IncomingBso, OutgoingBso};
-use crate::ServerTimestamp;
+use crate::{CollectionName, ServerTimestamp};
 
-#[derive(Debug, Clone)]
-pub struct RecordChangeset<T> {
-    pub changes: Vec<T>,
-    
-    
+
+
+#[derive(Debug)]
+pub struct IncomingChangeset {
+    pub changes: Vec<IncomingBso>,
     
     pub timestamp: ServerTimestamp,
-    pub collection: std::borrow::Cow<'static, str>,
+    pub collection: CollectionName,
 }
 
-pub type IncomingChangeset = RecordChangeset<IncomingBso>;
-pub type OutgoingChangeset = RecordChangeset<OutgoingBso>;
-
-impl<T> RecordChangeset<T> {
+impl IncomingChangeset {
     #[inline]
-    pub fn new(
-        collection: impl Into<std::borrow::Cow<'static, str>>,
-        timestamp: ServerTimestamp,
-    ) -> RecordChangeset<T> {
+    pub fn new(collection: CollectionName, timestamp: ServerTimestamp) -> Self {
         Self::new_with_changes(collection, timestamp, Vec::new())
     }
 
     #[inline]
     pub fn new_with_changes(
-        collection: impl Into<std::borrow::Cow<'static, str>>,
+        collection: CollectionName,
         timestamp: ServerTimestamp,
-        changes: Vec<T>,
-    ) -> RecordChangeset<T> {
-        RecordChangeset {
+        changes: Vec<IncomingBso>,
+    ) -> Self {
+        Self {
             changes,
             timestamp,
-            collection: collection.into(),
+            collection,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct OutgoingChangeset {
+    pub changes: Vec<OutgoingBso>,
+    pub collection: CollectionName,
+}
+
+impl OutgoingChangeset {
+    #[inline]
+    pub fn new(collection: CollectionName, changes: Vec<OutgoingBso>) -> Self {
+        Self {
+            collection,
+            changes,
         }
     }
 }
