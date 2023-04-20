@@ -102,6 +102,25 @@ function update(state = initialPauseState(), action) {
       };
     }
 
+    case "INSERT_THREAD": {
+      
+      
+      
+      
+      
+      if (action.newThread.isTopLevel) {
+        return {
+          ...state,
+          threadcx: {
+            ...state.threadcx,
+            thread: action.newThread.actor,
+            pauseCounter: state.threadcx.pauseCounter + 1,
+          },
+        };
+      }
+      break;
+    }
+
     case "REMOVE_THREAD": {
       if (
         action.threadActorID in state.threads ||
