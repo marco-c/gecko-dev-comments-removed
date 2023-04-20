@@ -10,41 +10,48 @@ loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 
 
 
-addAccessibleTask(`hello<br>world`, async (browser, accDoc) => {
-  let doc = accDoc.nativeInterface.QueryInterface(Ci.nsIAccessibleMacInterface);
-  let docChildren = doc.getAttributeValue("AXChildren");
-  is(docChildren.length, 1, "The document contains a root group");
+addAccessibleTask(
+  `hello<br>world`,
+  async (browser, accDoc) => {
+    let doc = accDoc.nativeInterface.QueryInterface(
+      Ci.nsIAccessibleMacInterface
+    );
+    let docChildren = doc.getAttributeValue("AXChildren");
+    is(docChildren.length, 1, "The document contains a root group");
 
-  let rootGroup = docChildren[0];
-  let children = rootGroup.getAttributeValue("AXChildren");
-  is(docChildren.length, 1, "The root group contains 2 children");
+    let rootGroup = docChildren[0];
+    let children = rootGroup.getAttributeValue("AXChildren");
+    is(docChildren.length, 1, "The root group contains 2 children");
 
-  
-  is(
-    children[0].getAttributeValue("AXRole"),
-    "AXStaticText",
-    "First child is a text node"
-  );
-  is(
-    children[0].getAttributeValue("AXValue"),
-    "hello",
-    "First child is hello text"
-  );
+    
+    is(
+      children[0].getAttributeValue("AXRole"),
+      "AXStaticText",
+      "First child is a text node"
+    );
+    is(
+      children[0].getAttributeValue("AXValue"),
+      "hello",
+      "First child is hello text"
+    );
 
-  
-  is(
-    children[1].getAttributeValue("AXRole"),
-    "AXStaticText",
-    "Second child is a text node"
-  );
+    
+    is(
+      children[1].getAttributeValue("AXRole"),
+      "AXStaticText",
+      "Second child is a text node"
+    );
 
-  is(
-    children[1].getAttributeValue("AXValue"),
-    "world ",
-    "Second child is world text"
-  );
-  
-});
+    is(
+      children[1].getAttributeValue("AXValue"),
+      gIsIframe && !gIsRemoteIframe ? "world" : "world ",
+      "Second child is world text"
+    );
+    
+    
+  },
+  { chrome: true, iframe: true, remoteIframe: true }
+);
 
 addAccessibleTask(
   `<p id="p">hello, this is a test</p>`,
@@ -71,5 +78,6 @@ addAccessibleTask(
     );
 
     ok(smallBounds.size[0] < largeBounds.size[0], "longer range is wider");
-  }
+  },
+  { chrome: true, iframe: true, remoteIframe: true }
 );
