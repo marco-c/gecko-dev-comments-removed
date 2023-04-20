@@ -1376,7 +1376,7 @@ IPCResult WindowGlobalParent::RecvDiscoverIdentityCredentialFromExternalSource(
 void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
   if (GetBrowsingContext()->IsTopContent()) {
     Telemetry::Accumulate(Telemetry::ORB_DID_EVER_BLOCK_RESPONSE,
-                          mHasBlockedOpaqueResponse);
+                          mShouldReportHasBlockedOpaqueResponse);
   }
 
   if (mPageUseCountersWindow) {
@@ -1562,6 +1562,21 @@ void WindowGlobalParent::ExitTopChromeDocumentFullscreen() {
       
       
       Document::AsyncExitFullscreen(chromeDoc);
+    }
+  }
+}
+
+void WindowGlobalParent::SetShouldReportHasBlockedOpaqueResponse(
+    nsContentPolicyType aContentPolicy) {
+  
+  
+  
+  
+  if (aContentPolicy != nsIContentPolicy::TYPE_BEACON &&
+      aContentPolicy != nsIContentPolicy::TYPE_PING &&
+      aContentPolicy != nsIContentPolicy::TYPE_CSP_REPORT) {
+    if (IsTop()) {
+      mShouldReportHasBlockedOpaqueResponse = true;
     }
   }
 }
