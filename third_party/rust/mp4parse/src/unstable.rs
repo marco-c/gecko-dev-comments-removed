@@ -106,7 +106,7 @@ impl<T: std::cmp::PartialEq> PartialEq<T> for CheckedInteger<T> {
 
 
 #[repr(C)]
-#[derive(Default, Debug, PartialEq, Eq)]
+#[derive(Default, Debug, PartialEq)]
 pub struct Indice {
     
     pub start_offset: CheckedInteger<u64>,
@@ -489,7 +489,7 @@ where
     })
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub struct Microseconds<T>(pub T);
 
 
