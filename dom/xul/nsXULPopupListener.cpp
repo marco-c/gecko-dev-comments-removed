@@ -170,9 +170,7 @@ void nsXULPopupListener::ClosePopup() {
     
     
     nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    if (pm)
-      pm->HidePopup(mPopupContent,
-                    {HidePopupOption::DeselectMenu, HidePopupOption::Async});
+    if (pm) pm->HidePopup(mPopupContent, false, true, true, false);
     mPopupContent = nullptr;  
   }
 }  

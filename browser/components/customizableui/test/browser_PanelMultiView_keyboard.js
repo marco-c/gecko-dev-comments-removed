@@ -290,12 +290,14 @@ add_task(async function testTabOpenMenulist() {
   await shown;
   ok(gMainMenulist.open, "menulist open");
   let menuHidden = BrowserTestUtils.waitForEvent(popup, "popuphidden");
+  let panelHidden = BrowserTestUtils.waitForEvent(gPanel, "popuphidden");
   EventUtils.synthesizeKey("KEY_Tab");
   await menuHidden;
   ok(!gMainMenulist.open, "menulist closed after Tab");
-
-  is(gPanel.state, "open", "Panel should be open");
-  await hidePopup();
+  
+  
+  
+  await panelHidden;
 });
 
 if (AppConstants.platform == "macosx") {

@@ -161,21 +161,6 @@ enum nsIgnoreKeys {
   eIgnoreKeys_Shortcuts,
 };
 
-enum class HidePopupOption : uint8_t {
-  
-  HideChain,
-  
-  
-  DeselectMenu,
-  
-  
-  Async,
-  
-  IsRollup,
-};
-
-using HidePopupOptions = mozilla::EnumSet<HidePopupOption>;
-
 #define NS_DIRECTION_IS_INLINE(dir) \
   (dir == eNavigationDirection_Start || dir == eNavigationDirection_End)
 #define NS_DIRECTION_IS_BLOCK(dir) \
@@ -292,13 +277,14 @@ class nsXULPopupHidingEvent : public mozilla::Runnable {
  public:
   nsXULPopupHidingEvent(nsIContent* aPopup, nsIContent* aNextPopup,
                         nsIContent* aLastPopup, nsPopupType aPopupType,
-                        HidePopupOptions aOptions)
+                        bool aDeselectMenu, bool aIsCancel)
       : mozilla::Runnable("nsXULPopupHidingEvent"),
         mPopup(aPopup),
         mNextPopup(aNextPopup),
         mLastPopup(aLastPopup),
         mPopupType(aPopupType),
-        mOptions(aOptions) {
+        mDeselectMenu(aDeselectMenu),
+        mIsRollup(aIsCancel) {
     NS_ASSERTION(aPopup,
                  "null popup supplied to nsXULPopupHidingEvent constructor");
     
@@ -311,7 +297,8 @@ class nsXULPopupHidingEvent : public mozilla::Runnable {
   nsCOMPtr<nsIContent> mNextPopup;
   nsCOMPtr<nsIContent> mLastPopup;
   nsPopupType mPopupType;
-  HidePopupOptions mOptions;
+  bool mDeselectMenu;
+  bool mIsRollup;
 };
 
 
@@ -383,8 +370,9 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  bool Rollup(const RollupOptions&,
-              nsIContent** aLastRolledUp = nullptr) override;
+  bool Rollup(uint32_t aCount, bool aFlush,
+              const mozilla::LayoutDeviceIntPoint* aPos,
+              nsIContent** aLastRolledUp) override;
   bool ShouldRollupOnMouseWheelEvent() override;
   bool ShouldConsumeOnMouseWheelEvent() override;
   bool ShouldRollupOnMouseActivate() override;
@@ -396,7 +384,8 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
   enum class RollupKind { Tooltip, Menu };
   MOZ_CAN_RUN_SCRIPT
-  bool RollupInternal(RollupKind, const RollupOptions&,
+  bool RollupInternal(RollupKind, uint32_t aCount, bool aFlush,
+                      const mozilla::LayoutDeviceIntPoint* pos,
                       nsIContent** aLastRolledUp);
 
   
@@ -516,7 +505,18 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  void HidePopup(nsIContent* aPopup, HidePopupOptions,
+
+
+
+
+
+
+
+
+
+
+  void HidePopup(nsIContent* aPopup, bool aHideChain, bool aDeselectMenu,
+                 bool aAsynchronous, bool aIsCancel,
                  nsIContent* aLastPopup = nullptr);
 
   
@@ -747,7 +747,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
                                             bool aSelectFirstItem);
   MOZ_CAN_RUN_SCRIPT void HidePopupCallback(
       nsIContent* aPopup, nsMenuPopupFrame* aPopupFrame, nsIContent* aNextPopup,
-      nsIContent* aLastPopup, nsPopupType aPopupType, HidePopupOptions);
+      nsIContent* aLastPopup, nsPopupType aPopupType, bool aDeselectMenu);
 
   
 
@@ -785,7 +785,8 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void FirePopupHidingEvent(nsIContent* aPopup, nsIContent* aNextPopup,
                             nsIContent* aLastPopup, nsPresContext* aPresContext,
-                            nsPopupType aPopupType, HidePopupOptions aOptions);
+                            nsPopupType aPopupType, bool aDeselectMenu,
+                            bool aIsCancel);
 
   
 
