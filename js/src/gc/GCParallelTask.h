@@ -32,8 +32,20 @@ enum class PhaseKind : uint8_t;
 }
 
 namespace gc {
+
 class GCRuntime;
+
+static inline mozilla::TimeDuration TimeSince(mozilla::TimeStamp prev) {
+  mozilla::TimeStamp now = mozilla::TimeStamp::Now();
+  
+  MOZ_ASSERT(now >= prev);
+  if (now < prev) {
+    now = prev;
+  }
+  return now - prev;
 }
+
+}  
 
 class AutoLockHelperThreadState;
 class GCParallelTask;
@@ -118,14 +130,12 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
         phaseKind(phaseKind),
         use(use),
         state_(State::Idle),
-        duration_(nullptr),
         cancel_(false) {}
   GCParallelTask(GCParallelTask&& other)
       : gc(other.gc),
         phaseKind(other.phaseKind),
         use(other.use),
         state_(other.state_),
-        duration_(nullptr),
         cancel_(false) {}
 
   
@@ -184,6 +194,8 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
  protected:
   
   virtual void run(AutoLockHelperThreadState& lock) = 0;
+
+  virtual void recordDuration();
 
   bool isCancelled() const { return cancel_; }
 
