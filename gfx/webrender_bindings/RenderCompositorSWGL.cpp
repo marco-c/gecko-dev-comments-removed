@@ -57,6 +57,13 @@ bool RenderCompositorSWGL::MakeCurrent() {
 }
 
 bool RenderCompositorSWGL::BeginFrame() {
+  mRenderWidgetSize = Some(mWidget->GetClientSize());
+#ifdef MOZ_WAYLAND
+  if (mLastRenderWidgetSize != mRenderWidgetSize.value()) {
+    mLastRenderWidgetSize = mRenderWidgetSize.value();
+    mRequestFullRender = true;
+  }
+#endif
   
   
   ClearMappedBuffer();
@@ -241,7 +248,10 @@ void RenderCompositorSWGL::CommitMappedBuffer(bool aDirty) {
   ClearMappedBuffer();
 }
 
-void RenderCompositorSWGL::CancelFrame() { CommitMappedBuffer(false); }
+void RenderCompositorSWGL::CancelFrame() {
+  CommitMappedBuffer(false);
+  mRenderWidgetSize = Nothing();
+}
 
 RenderedFrameId RenderCompositorSWGL::EndFrame(
     const nsTArray<DeviceIntRect>& aDirtyRects) {
@@ -250,6 +260,7 @@ RenderedFrameId RenderCompositorSWGL::EndFrame(
   
   RenderedFrameId frameId = GetNextRenderFrameId();
   CommitMappedBuffer();
+  mRenderWidgetSize = Nothing();
   return frameId;
 }
 
@@ -278,7 +289,11 @@ bool RenderCompositorSWGL::Resume() {
 }
 
 LayoutDeviceIntSize RenderCompositorSWGL::GetBufferSize() {
-  return mWidget->GetClientSize();
+  
+  
+  
+  return mRenderWidgetSize ? mRenderWidgetSize.value()
+                           : mWidget->GetClientSize();
 }
 
 void RenderCompositorSWGL::GetCompositorCapabilities(
