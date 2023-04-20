@@ -1127,10 +1127,10 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   }
 
   void DidUseFrameRateMultiplier() {
-    if (!mNextFrameRateMultiplier) {
-      mNextFrameRateMultiplier = 1;
-    } else if (mNextFrameRateMultiplier < 8) {
-      mNextFrameRateMultiplier = mNextFrameRateMultiplier * 2;
+    
+    
+    if (mNextFrameRateMultiplier < 8) {
+      ++mNextFrameRateMultiplier;
     }
   }
 
