@@ -1,0 +1,13 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation(
+  ['reduceMax', 'reduceMean', 'reduceMin', 'reduceProduct', 'reduceSum'],
+  buildOperationWithSingleInput
+);

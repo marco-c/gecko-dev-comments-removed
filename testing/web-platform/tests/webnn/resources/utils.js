@@ -72,7 +72,8 @@ const getExpectedDataAndType = (resources, outputName) => {
 
 
 
-const getConv2dPrecisionTolerance = (resources) => {
+
+const getConv2dPrecisionTolerance = (resources, operationName) => {
   
   const inputNameArray = Object.keys(resources.inputs);
   const inputShape = resources.inputs[inputNameArray[0]].shape;
@@ -123,7 +124,8 @@ const getConv2dPrecisionTolerance = (resources) => {
 
 
 
-const getGemmPrecisionTolerance = (resources) => {
+
+const getGemmPrecisionTolerance = (resources, operationName) => {
   
   
   
@@ -152,7 +154,8 @@ const getGemmPrecisionTolerance = (resources) => {
 
 
 
-const getMatmulPrecisionTolerance = (resources) => {
+
+const getMatmulPrecisionTolerance = (resources, operationName) => {
   
   
   
@@ -166,7 +169,8 @@ const getMatmulPrecisionTolerance = (resources) => {
 
 
 
-const getAveragePool2dPrecisionTolerance = (resources) => {
+
+const getAveragePool2dPrecisionTolerance = (resources, operationName) => {
   const inputShape = resources.inputs[Object.keys(resources.inputs)[0]].shape;
   let height;
   let width;
@@ -195,10 +199,38 @@ const getAveragePool2dPrecisionTolerance = (resources) => {
 
 
 
-const getSoftmaxPrecisionTolerance = (resources) => {
+
+const getSoftmaxPrecisionTolerance = (resources, operationName) => {
   
   const inputShape = resources.inputs[Object.keys(resources.inputs)[0]].shape;
   const tolerance = inputShape[1] * 3 + 3;
+  return tolerance;
+};
+
+
+
+
+
+
+
+const getReductionPrecisionTolerance = (resources, operationName) => {
+  const inputShape = resources.inputs[Object.keys(resources.inputs)[0]].shape;
+  const rank = inputShape.length;
+  const options = {...resources.options};
+  let sizes;
+  if (options && options.axes) {
+    sizes = options.axes.map(
+                (axis) => axis < 0 ? inputShape[axis + rank] : inputShape[axis]
+    );
+  } else {
+    sizes = inputShape;
+  }
+  let tolerance = sizes.reduce(
+                      (accumulator, currentValue) => accumulator * currentValue
+  );
+  if (operationName === 'reduceMean') {
+    tolerance += 2;
+  }
   return tolerance;
 };
 
@@ -235,6 +267,13 @@ const PrecisionMetrics = {
   averagePool2d: {ULP: {float32: getAveragePool2dPrecisionTolerance, float16: getAveragePool2dPrecisionTolerance}},
   maxPool2d: {ULP: {float32: 0, float16: 0}},
   
+  
+  reduceMax: {ULP: {float32: 0, float16: 0}},
+  reduceMean: {ULP: {float32: getReductionPrecisionTolerance, float16: getReductionPrecisionTolerance}},
+  reduceMin: {ULP: {float32: 0, float16: 0}},
+  reduceProduct: {ULP: {float32: getReductionPrecisionTolerance, float16: getReductionPrecisionTolerance}},
+  reduceSum: {ULP: {float32: getReductionPrecisionTolerance, float16: getReductionPrecisionTolerance}},
+  
   relu: {ULP: {float32: 0, float16: 0}},
   reshape: {ULP: {float32: 0, float16: 0}},
   sigmoid: {ULP: {float32: 32+2, float16: 3}}, 
@@ -259,7 +298,7 @@ const getPrecisonTolerance = (operationName, metricType, resources) => {
   let tolerance = PrecisionMetrics[operationName][metricType][precisionType];
   
   if (tolerance instanceof Function) {
-    tolerance = tolerance(resources);
+    tolerance = tolerance(resources, operationName);
   }
   return tolerance;
 };
