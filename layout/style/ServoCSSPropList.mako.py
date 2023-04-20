@@ -59,9 +59,6 @@ LONGHANDS_NOT_SERIALIZED_WITH_SERVO = [
     "border-spacing",
 
     
-    "column-rule-width",
-
-    
     "max-height",
     "max-width",
     "min-height",
