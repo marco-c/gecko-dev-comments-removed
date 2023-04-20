@@ -1,0 +1,60 @@
+
+
+
+
+#ifndef nsCursorManager_h_
+#define nsCursorManager_h_
+
+#import <Foundation/Foundation.h>
+#include "nsIWidget.h"
+#include "nsMacCursor.h"
+
+
+
+
+
+
+
+
+
+@interface nsCursorManager : NSObject {
+ @private
+  NSMutableDictionary* mCursors;
+  nsMacCursor* mCurrentMacCursor;
+}
+
+
+
+
+
+
+
+
+- (nsresult)setNonCustomCursor:(const nsIWidget::Cursor&)aCursor;
+
+
+
+- (nsresult)setCustomCursor:(const nsIWidget::Cursor&)aCursor
+          widgetScaleFactor:(CGFloat)aWidgetScaleFactor;
+
+
+
+
+
+
++ (nsCursorManager*)sharedInstance;
+
+
+
+
+
++ (void)dispose;
+@end
+
+@interface NSCursor (Undocumented)
+
+
++ (NSCursor*)busyButClickableCursor;
+@end
+
+#endif  
