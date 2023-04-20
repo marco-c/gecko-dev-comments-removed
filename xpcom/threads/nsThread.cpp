@@ -1108,6 +1108,8 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
     mScriptObserver->BeforeProcessTask(reallyWait);
   }
 
+  DrainDirectTasks();
+
 #ifdef EARLY_BETA_OR_EARLIER
   
   
@@ -1122,6 +1124,8 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
 
   NOTIFY_EVENT_OBSERVERS(EventQueue()->EventObservers(), OnProcessNextEvent,
                          (this, reallyWait));
+
+  DrainDirectTasks();
 
 #ifdef MOZ_CANARY
   Canary canary;
