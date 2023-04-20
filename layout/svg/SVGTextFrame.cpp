@@ -4605,12 +4605,18 @@ gfxFloat SVGTextFrame::GetStartOffset(nsIFrame* aTextPathFrame) {
       &tp->mLengthAttributes[SVGTextPathElement::STARTOFFSET];
 
   if (length->IsPercentage()) {
+    if (!IsFinite(GetOffsetScale(aTextPathFrame))) {
+      
+      return 0.0;
+    }
     RefPtr<Path> data = GetTextPath(aTextPathFrame);
     return data ? length->GetAnimValInSpecifiedUnits() * data->ComputeLength() /
                       100.0
                 : 0.0;
   }
-  return length->GetAnimValue(tp) * GetOffsetScale(aTextPathFrame);
+  float lengthValue = length->GetAnimValue(tp);
+  
+  return lengthValue == 0 ? 0.0 : lengthValue * GetOffsetScale(aTextPathFrame);
 }
 
 void SVGTextFrame::DoTextPathLayout() {
