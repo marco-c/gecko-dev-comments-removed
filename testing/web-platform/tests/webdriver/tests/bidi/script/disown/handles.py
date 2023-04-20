@@ -27,7 +27,7 @@ async def test_basic_handle(bidi_session, top_context, call_function):
         handles=[remote_value["handle"]], target=ContextTarget(top_context["context"])
     )
 
-    with pytest.raises(error.InvalidArgumentException):
+    with pytest.raises(error.NoSuchHandleException):
         await call_function("arg => arg.a", [remote_value])
 
 
@@ -67,10 +67,10 @@ async def test_multiple_handles_for_different_objects(
     )
 
     
-    with pytest.raises(error.InvalidArgumentException):
+    with pytest.raises(error.NoSuchHandleException):
         await call_function("arg => arg.a", [remote_value_a])
 
-    with pytest.raises(error.InvalidArgumentException):
+    with pytest.raises(error.NoSuchHandleException):
         await call_function("arg => arg.b", [remote_value_b])
 
     
@@ -84,7 +84,7 @@ async def test_multiple_handles_for_different_objects(
     )
 
     
-    with pytest.raises(error.InvalidArgumentException):
+    with pytest.raises(error.NoSuchHandleException):
         await call_function("arg => arg.c", [remote_value_c])
 
 
@@ -126,7 +126,7 @@ async def test_multiple_handles_for_same_object(
     )
 
     
-    with pytest.raises(error.InvalidArgumentException):
+    with pytest.raises(error.NoSuchHandleException):
         await call_function("arg => arg.a", [remote_value1])
 
     
@@ -139,7 +139,7 @@ async def test_multiple_handles_for_same_object(
     )
 
     
-    with pytest.raises(error.InvalidArgumentException):
+    with pytest.raises(error.NoSuchHandleException):
         await call_function("arg => arg.a", [remote_value2])
 
 
@@ -169,5 +169,5 @@ async def test_unknown_handle(bidi_session, top_context, call_function):
         target=ContextTarget(top_context["context"]),
     )
 
-    with pytest.raises(error.InvalidArgumentException):
+    with pytest.raises(error.NoSuchHandleException):
         await call_function("arg => arg.a", [remote_value])
