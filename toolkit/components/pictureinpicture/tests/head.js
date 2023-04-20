@@ -22,6 +22,8 @@ const TEST_PAGE_WITH_SOUND = TEST_ROOT + "test-page-with-sound.html";
 const TEST_PAGE_WITH_NAN_VIDEO_DURATION =
   TEST_ROOT + "test-page-with-nan-video-duration.html";
 const TEST_PAGE_WITH_WEBVTT = TEST_ROOT + "test-page-with-webvtt.html";
+const TEST_PAGE_MULTIPLE_CONTEXTS =
+  TEST_ROOT + "test-page-multiple-contexts.html";
 const WINDOW_TYPE = "Toolkit:PictureInPicture";
 const TOGGLE_POSITION_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.position";
@@ -193,9 +195,9 @@ async function assertShowingMessage(browser, videoID, expected) {
 
 
 
-function assertVideoIsBeingCloned(browser, videoId) {
-  return SpecialPowers.spawn(browser, [videoId], async videoID => {
-    let video = content.document.getElementById(videoID);
+function assertVideoIsBeingCloned(browser, selector) {
+  return SpecialPowers.spawn(browser, [selector], async slctr => {
+    let video = content.document.querySelector(slctr);
     await ContentTaskUtils.waitForCondition(() => {
       return video.isCloningElementVisually;
     }, "Video is being cloned visually.");
@@ -219,6 +221,7 @@ async function ensureVideosReady(browser) {
   await SpecialPowers.spawn(browser, [], async () => {
     let videos = this.content.document.querySelectorAll("video");
     for (let video of videos) {
+      video.currentTime = 0;
       if (video.readyState < content.HTMLMediaElement.HAVE_ENOUGH_DATA) {
         info(`Waiting for 'canplaythrough' for '${video.id}'`);
         await ContentTaskUtils.waitForEvent(video, "canplaythrough");
@@ -772,7 +775,7 @@ async function testToggleHelper(
     let win = await domWindowOpened;
     ok(win, "A Picture-in-Picture window opened.");
 
-    await assertVideoIsBeingCloned(browser, videoID);
+    await assertVideoIsBeingCloned(browser, "#" + videoID);
 
     await BrowserTestUtils.closeWindow(win);
 
