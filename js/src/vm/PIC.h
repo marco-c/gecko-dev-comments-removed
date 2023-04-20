@@ -105,7 +105,7 @@ struct ForOfPIC {
   class Stub : public BaseStub {
    private:
     
-    Shape* shape_;
+    const HeapPtr<Shape*> shape_;
 
    public:
     explicit Stub(Shape* shape) : BaseStub(), shape_(shape) {
@@ -113,6 +113,8 @@ struct ForOfPIC {
     }
 
     Shape* shape() { return shape_; }
+
+    void trace(JSTracer* trc);
   };
 
   
@@ -198,6 +200,8 @@ struct ForOfPIC {
     void trace(JSTracer* trc);
     void finalize(JS::GCContext* gcx, JSObject* obj);
 
+    void freeAllStubs(JS::GCContext* gcx);
+
    private:
     
     
@@ -218,8 +222,6 @@ struct ForOfPIC {
 
     
     void eraseChain(JSContext* cx);
-
-    void freeAllStubs(JS::GCContext* gcx);
   };
 
   static NativeObject* createForOfPICObject(JSContext* cx,
