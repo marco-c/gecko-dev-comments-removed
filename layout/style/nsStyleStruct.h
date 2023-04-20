@@ -1287,20 +1287,17 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
       const nsStyleDisplay& aNewData) const;
 
   mozilla::StyleDisplay mDisplay;
-  
-  
-  mozilla::StyleDisplay mOriginalDisplay;
-  
-  
+  mozilla::StyleDisplay mOriginalDisplay;  
+                                           
+                                           
+                                           
+                                           
+  mozilla::StyleContain mContain;
   mozilla::StyleContentVisibility mContentVisibility;
   mozilla::StyleContainerType mContainerType;
 
  private:
   mozilla::StyleAppearance mAppearance;
-  mozilla::StyleContain mContain;
-  
-  
-  mozilla::StyleContain mEffectiveContainment;
 
  public:
   mozilla::StyleAppearance mDefaultAppearance;
@@ -1569,17 +1566,19 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   }
 
   bool IsContainPaint() const {
+    const auto contain = EffectiveContainment();
     
-    if (!mEffectiveContainment) {
+    if (!contain) {
       return false;
     }
-    return (mEffectiveContainment & StyleContain::PAINT) &&
-           !IsInternalRubyDisplayType() && !IsInternalTableStyleExceptCell();
+    return (contain & StyleContain::PAINT) && !IsInternalRubyDisplayType() &&
+           !IsInternalTableStyleExceptCell();
   }
 
   bool IsContainLayout() const {
+    const auto contain = EffectiveContainment();
     
-    if (!mEffectiveContainment) {
+    if (!contain) {
       return false;
     }
     
@@ -1589,15 +1588,15 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
     
     
     
-    return (mEffectiveContainment & StyleContain::LAYOUT) &&
-           !IsInternalRubyDisplayType() && !IsInternalTableStyleExceptCell();
+    return (contain & StyleContain::LAYOUT) && !IsInternalRubyDisplayType() &&
+           !IsInternalTableStyleExceptCell();
   }
 
   bool IsContainStyle() const {
-    return !!(mEffectiveContainment & StyleContain::STYLE);
+    return !!(EffectiveContainment() && StyleContain::STYLE);
   }
 
-  bool IsContainAny() const { return !!mEffectiveContainment; }
+  bool IsContainAny() const { return !!EffectiveContainment(); }
 
   bool PrecludesSizeContainment() const {
     return IsInternalRubyDisplayType() ||
@@ -1728,7 +1727,53 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() const;
   inline bool IsFixedPosContainingBlockForTransformSupportingFrames() const;
 
-  mozilla::ContainSizeAxes GetContainSizeAxes(const nsIFrame& aFrame) const;
+  StyleContain EffectiveContainment() const {
+    auto contain = mContain;
+    
+    
+    if (MOZ_LIKELY(mContainerType == mozilla::StyleContainerType::Normal) &&
+        MOZ_LIKELY(mContentVisibility == StyleContentVisibility::Visible)) {
+      return contain;
+    }
+
+    switch (mContentVisibility) {
+      case StyleContentVisibility::Visible:
+        break;
+      case StyleContentVisibility::Auto:
+        
+        
+        
+        contain |=
+            StyleContain::LAYOUT | StyleContain::PAINT | StyleContain::STYLE;
+        break;
+      case StyleContentVisibility::Hidden:
+        contain |= StyleContain::LAYOUT | StyleContain::PAINT |
+                   StyleContain::SIZE | StyleContain::STYLE;
+        break;
+    }
+
+    switch (mContainerType) {
+      case mozilla::StyleContainerType::Normal:
+        break;
+      case mozilla::StyleContainerType::InlineSize:
+        
+        
+        
+        contain |= mozilla::StyleContain::LAYOUT |
+                   mozilla::StyleContain::STYLE |
+                   mozilla::StyleContain::INLINE_SIZE;
+        break;
+      case mozilla::StyleContainerType::Size:
+        
+        
+        
+        contain |= mozilla::StyleContain::LAYOUT |
+                   mozilla::StyleContain::STYLE | mozilla::StyleContain::SIZE;
+        break;
+    }
+
+    return contain;
+  }
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTable {
