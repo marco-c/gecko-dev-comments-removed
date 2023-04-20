@@ -78,42 +78,6 @@ var BrowserUIUtils = {
 
 
 
-  async setToolbarButtonHeightProperty(element) {
-    let window = element.ownerGlobal;
-    let dwu = window.windowUtils;
-    let toolbarItem = element;
-    let urlBarContainer = element.closest("#urlbar-container");
-    if (urlBarContainer) {
-      
-      
-      toolbarItem = urlBarContainer;
-    }
-    if (!toolbarItem) {
-      return;
-    }
-    let bounds = dwu.getBoundsWithoutFlushing(toolbarItem);
-    if (!bounds.height) {
-      await window.promiseDocumentFlushed(() => {
-        bounds = dwu.getBoundsWithoutFlushing(toolbarItem);
-      });
-    }
-    if (bounds.height) {
-      toolbarItem.style.setProperty(
-        "--toolbarbutton-height",
-        bounds.height + "px"
-      );
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
 
 
 
