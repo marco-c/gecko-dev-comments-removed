@@ -1235,6 +1235,10 @@ class Code : public HeapObject {
 };
 
 
+
+class InstructionStream {};
+
+
 class Label {
  public:
   Label() : inner_(js::jit::Label()) {}
