@@ -529,7 +529,7 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
     loadContext->mLoadResult = rv;
   }
 
-  RefPtr<ScriptLoadRequest> request;
+  RefPtr<ScriptLoadRequest> request = nullptr;
   if (mWorkerRef->Private()->WorkerType() == WorkerType::Classic) {
     RefPtr<ScriptFetchOptions> fetchOptions =
         new ScriptFetchOptions(CORSMode::CORS_NONE, referrerPolicy, nullptr);
@@ -543,8 +543,15 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
     
 
     
+    
+    
+    CORSMode cors = mWorkerRef->Private()->WorkerCredentials() ==
+                            RequestCredentials::Include
+                        ? CORSMode::CORS_USE_CREDENTIALS
+                        : CORSMode::CORS_ANONYMOUS;
+
     RefPtr<ScriptFetchOptions> fetchOptions =
-        new ScriptFetchOptions(CORSMode::CORS_NONE, referrerPolicy, nullptr);
+        new ScriptFetchOptions(cors, referrerPolicy, nullptr);
 
     RefPtr<WorkerModuleLoader::ModuleLoaderBase> moduleLoader =
         GetGlobal()->GetModuleLoader(nullptr);
