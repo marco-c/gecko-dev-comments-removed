@@ -90,6 +90,7 @@ using mozilla::Abs;
 using mozilla::AsVariant;
 using mozilla::CeilingLog2;
 using mozilla::HashGeneric;
+using mozilla::IsNaN;
 using mozilla::IsNegativeZero;
 using mozilla::IsPositiveZero;
 using mozilla::IsPowerOfTwo;
@@ -2334,7 +2335,7 @@ static NumLit ExtractNumericLiteral(ModuleValidatorShared& m, ParseNode* pn) {
 
   
   MOZ_ASSERT(!IsNegativeZero(d));
-  MOZ_ASSERT(!std::isnan(d));
+  MOZ_ASSERT(!IsNaN(d));
 
   
   
@@ -6766,8 +6767,8 @@ static bool ValidateConstant(JSContext* cx, const AsmJSGlobal& global,
   }
 
   
-  if (std::isnan(global.constantValue())) {
-    if (!std::isnan(v.toNumber())) {
+  if (IsNaN(global.constantValue())) {
+    if (!IsNaN(v.toNumber())) {
       return LinkFail(cx, "global constant value needs to be NaN");
     }
   } else {

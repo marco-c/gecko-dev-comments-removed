@@ -463,7 +463,7 @@ static float ParsePrefFloat(const nsCString& aString, nsresult* aError) {
   
   
   
-  if (std::isnan(result)) {
+  if (mozilla::IsNaN(result)) {
     MOZ_ASSERT_UNREACHABLE("PR_strtod shouldn't return NaN");
     *aError = NS_ERROR_ILLEGAL_VALUE;
     return 0.f;

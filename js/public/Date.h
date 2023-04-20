@@ -90,7 +90,7 @@ class ClippedTime {
 
   double toDouble() const { return t; }
 
-  bool isValid() const { return !std::isnan(t); }
+  bool isValid() const { return !mozilla::IsNaN(t); }
 };
 
 
@@ -100,7 +100,7 @@ class ClippedTime {
 inline ClippedTime TimeClip(double time) {
   
   const double MaxTimeMagnitude = 8.64e15;
-  if (!std::isfinite(time) || mozilla::Abs(time) > MaxTimeMagnitude) {
+  if (!mozilla::IsFinite(time) || mozilla::Abs(time) > MaxTimeMagnitude) {
     return ClippedTime(mozilla::UnspecifiedNaN<double>());
   }
 

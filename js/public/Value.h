@@ -466,7 +466,7 @@ static MOZ_ALWAYS_INLINE double GenericNaN() {
 
 
 static MOZ_ALWAYS_INLINE double CanonicalizeNaN(double d) {
-  if (MOZ_UNLIKELY(std::isnan(d))) {
+  if (MOZ_UNLIKELY(mozilla::IsNaN(d))) {
     return GenericNaN();
   }
   return d;

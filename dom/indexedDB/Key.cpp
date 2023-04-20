@@ -387,7 +387,7 @@ IDBResult<Ok, IDBSpecialValue::Invalid> Key::EncodeJSValInternal(
     const auto number = aVal.toNumber();
 
     
-    if (std::isnan(number)) {
+    if (mozilla::IsNaN(number)) {
       return Err(IDBError(SpecialValues::Invalid));
     }
 
@@ -425,7 +425,7 @@ IDBResult<Ok, IDBSpecialValue::Invalid> Key::EncodeJSValInternal(
       }
 
       
-      if (std::isnan(ms)) {
+      if (mozilla::IsNaN(ms)) {
         return Err(IDBError(SpecialValues::Invalid));
       }
 

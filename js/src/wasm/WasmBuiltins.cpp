@@ -54,6 +54,7 @@ using namespace jit;
 using namespace wasm;
 
 using mozilla::HashGeneric;
+using mozilla::IsNaN;
 using mozilla::MakeEnumeratedRange;
 
 static const unsigned BUILTIN_THUNK_LIFO_SIZE = 64 * 1024;
@@ -933,8 +934,7 @@ static int64_t UModI64(uint32_t x_hi, uint32_t x_lo, uint32_t y_hi,
 static int64_t TruncateDoubleToInt64(double input) {
   
   
-  if (input >= double(INT64_MAX) || input < double(INT64_MIN) ||
-      std::isnan(input)) {
+  if (input >= double(INT64_MAX) || input < double(INT64_MIN) || IsNaN(input)) {
     return int64_t(0x8000000000000000);
   }
   return int64_t(input);
@@ -943,7 +943,7 @@ static int64_t TruncateDoubleToInt64(double input) {
 static uint64_t TruncateDoubleToUint64(double input) {
   
   
-  if (input >= double(UINT64_MAX) || input <= -1.0 || std::isnan(input)) {
+  if (input >= double(UINT64_MAX) || input <= -1.0 || IsNaN(input)) {
     return int64_t(0x8000000000000000);
   }
   return uint64_t(input);
@@ -955,7 +955,7 @@ static int64_t SaturatingTruncateDoubleToInt64(double input) {
     return int64_t(input);
   }
   
-  if (std::isnan(input)) {
+  if (IsNaN(input)) {
     return 0;
   }
   

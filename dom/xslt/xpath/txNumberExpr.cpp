@@ -38,11 +38,11 @@ nsresult txNumberExpr::evaluate(txIEvalContext* aContext,
       if (rightDbl == 0) {
 #if defined(XP_WIN)
         
-        if (std::isnan(rightDbl))
+        if (mozilla::IsNaN(rightDbl))
           result = mozilla::UnspecifiedNaN<double>();
         else
 #endif
-            if (leftDbl == 0 || std::isnan(leftDbl))
+            if (leftDbl == 0 || mozilla::IsNaN(leftDbl))
           result = mozilla::UnspecifiedNaN<double>();
         else if (mozilla::IsNegative(leftDbl) != mozilla::IsNegative(rightDbl))
           result = mozilla::NegativeInfinity<double>();
@@ -58,7 +58,7 @@ nsresult txNumberExpr::evaluate(txIEvalContext* aContext,
       } else {
 #if defined(XP_WIN)
         
-        if (!std::isinf(leftDbl) && std::isinf(rightDbl))
+        if (!mozilla::IsInfinite(leftDbl) && mozilla::IsInfinite(rightDbl))
           result = leftDbl;
         else
 #endif

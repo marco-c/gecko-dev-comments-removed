@@ -3062,7 +3062,7 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
           weightSum += curWeight;
           flexFactorSum += curFlexFactor;
 
-          if (std::isfinite(weightSum)) {
+          if (IsFinite(weightSum)) {
             if (curWeight == 0.0) {
               item.SetShareOfWeightSoFar(0.0);
             } else {
@@ -3136,7 +3136,7 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
             
             
             AuCoord64 sizeDelta = 0;
-            if (std::isfinite(weightSum)) {
+            if (IsFinite(weightSum)) {
               double myShareOfRemainingSpace = item.ShareOfWeightSoFar();
 
               MOZ_ASSERT(myShareOfRemainingSpace >= 0.0 &&

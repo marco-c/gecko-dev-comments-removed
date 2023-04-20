@@ -83,7 +83,7 @@ nsresult txFormatNumberFunctionCall::evaluate(txIEvalContext* aContext,
   }
 
   
-  if (std::isnan(value)) {
+  if (mozilla::IsNaN(value)) {
     return aContext->recycler()->getStringResult(format->mNaN, aResult);
   }
 

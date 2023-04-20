@@ -121,7 +121,7 @@ struct BasePoint3D {
     
     
     T length = Length();
-    if (std::isinf(length)) {
+    if (mozilla::IsInfinite(length)) {
       *this /= std::numeric_limits<T>::max();
       length = Length();
     }

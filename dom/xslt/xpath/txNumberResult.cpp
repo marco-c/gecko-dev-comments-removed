@@ -41,7 +41,7 @@ bool NumberResult::booleanValue() {
   
   
   
-  return (bool)(value != 0.0 && !std::isnan(value));
+  return (bool)(value != 0.0 && !mozilla::IsNaN(value));
   
 }  
 

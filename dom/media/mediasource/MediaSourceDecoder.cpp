@@ -88,9 +88,9 @@ media::TimeIntervals MediaSourceDecoder::GetSeekable() {
 
   media::TimeIntervals seekable;
   double duration = mMediaSource->Duration();
-  if (std::isnan(duration)) {
+  if (IsNaN(duration)) {
     
-  } else if (duration > 0 && std::isinf(duration)) {
+  } else if (duration > 0 && mozilla::IsInfinite(duration)) {
     media::TimeIntervals buffered = GetBuffered();
 
     
@@ -207,7 +207,7 @@ void MediaSourceDecoder::SetInitialDuration(int64_t aDuration) {
   MOZ_ASSERT(NS_IsMainThread());
   
   
-  if (!mMediaSource || !std::isnan(ExplicitDuration())) {
+  if (!mMediaSource || !IsNaN(ExplicitDuration())) {
     return;
   }
   double duration = aDuration;
@@ -288,7 +288,7 @@ bool MediaSourceDecoder::CanPlayThroughImpl() {
     return false;
   }
 
-  if (std::isnan(mMediaSource->Duration())) {
+  if (IsNaN(mMediaSource->Duration())) {
     
     return false;
   }

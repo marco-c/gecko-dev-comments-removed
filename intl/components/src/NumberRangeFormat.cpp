@@ -73,10 +73,10 @@ bool NumberRangeFormat::formatInternal(double start, double end) const {
   
   
   
-  if (MOZ_UNLIKELY(std::isnan(start))) {
+  if (MOZ_UNLIKELY(IsNaN(start))) {
     start = SpecificNaN<double>(0, 1);
   }
-  if (MOZ_UNLIKELY(std::isnan(end))) {
+  if (MOZ_UNLIKELY(IsNaN(end))) {
     end = SpecificNaN<double>(0, 1);
   }
 

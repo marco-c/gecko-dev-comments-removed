@@ -14,7 +14,7 @@ namespace mozilla {
 
 bool IsFloat32Representable(double aValue) {
   
-  if (!std::isfinite(aValue)) {
+  if (!IsFinite(aValue)) {
     return true;
   }
 

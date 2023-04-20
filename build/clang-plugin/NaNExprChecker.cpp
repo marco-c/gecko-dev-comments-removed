@@ -20,6 +20,8 @@ void NaNExprChecker::registerMatchers(MatchFinder *AstMatcher) {
 
 void NaNExprChecker::check(const MatchFinder::MatchResult &Result) {
   if (!Result.Context->getLangOpts().CPlusPlus) {
+    
+    
     return;
   }
 
@@ -48,7 +50,7 @@ void NaNExprChecker::check(const MatchFinder::MatchResult &Result) {
          "comparing a floating point value to itself for "
          "NaN checking can lead to incorrect results",
          DiagnosticIDs::Error);
-    diag(Expression->getBeginLoc(), "consider using std::isnan instead",
+    diag(Expression->getBeginLoc(), "consider using mozilla::IsNaN instead",
          DiagnosticIDs::Note);
   }
 }
