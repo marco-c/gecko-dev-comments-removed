@@ -3024,36 +3024,6 @@ void nsLineLayout::ExpandInlineRubyBoxes(PerSpanData* aSpan) {
   }
 }
 
-nscoord nsLineLayout::GetHangFrom(const PerSpanData* aSpan, bool aLineIsRTL) {
-  const PerFrameData* pfd = aSpan->mLastFrame;
-  nscoord result = 0;
-  while (pfd) {
-    if (const PerSpanData* childSpan = pfd->mSpan) {
-      return GetHangFrom(childSpan, aLineIsRTL);
-    }
-    if (pfd->mIsTextFrame) {
-      const auto* lastText = static_cast<const nsTextFrame*>(pfd->mFrame);
-      result = lastText->GetHangableISize();
-      
-      
-      
-      if (lastText->GetTextRun(nsTextFrame::eInflated)->IsRightToLeft() !=
-          aLineIsRTL) {
-        result = -result;
-      }
-      return result;
-    }
-    if (!pfd->mSkipWhenTrimmingWhitespace) {
-      
-      
-      return result;
-    }
-    
-    pfd = pfd->mPrev;
-  }
-  return result;
-}
-
 
 
 void nsLineLayout::TextAlignLine(nsLineBox* aLine, bool aIsLastLine) {
@@ -3079,14 +3049,8 @@ void nsLineLayout::TextAlignLine(nsLineBox* aLine, bool aIsLastLine) {
   StyleTextAlign textAlign =
       aIsLastLine ? mStyleText->TextAlignForLastLine() : mStyleText->mTextAlign;
 
-  
-  nscoord hang = 0;
-  if (aLine->IsLineWrapped()) {
-    hang = GetHangFrom(mRootSpan, lineWM.IsBidiRTL());
-  }
-
   bool isSVG = LineContainerFrame()->IsInSVGTextSubtree();
-  bool doTextAlign = remainingISize > 0 || hang != 0;
+  bool doTextAlign = remainingISize > 0;
 
   int32_t additionalGaps = 0;
   if (!isSVG &&
@@ -3145,38 +3109,29 @@ void nsLineLayout::TextAlignLine(nsLineBox* aLine, bool aIsLastLine) {
       case StyleTextAlign::Char:
         
         
-        
-        
-        if (hang < 0) {
-          dx = hang;
-        }
         break;
 
       case StyleTextAlign::Left:
       case StyleTextAlign::MozLeft:
         if (lineWM.IsBidiRTL()) {
-          dx = remainingISize + (hang > 0 ? hang : 0);
-        } else if (hang < 0) {
-          dx = hang;
+          dx = remainingISize;
         }
         break;
 
       case StyleTextAlign::Right:
       case StyleTextAlign::MozRight:
         if (lineWM.IsBidiLTR()) {
-          dx = remainingISize + (hang > 0 ? hang : 0);
-        } else if (hang < 0) {
-          dx = hang;
+          dx = remainingISize;
         }
         break;
 
       case StyleTextAlign::End:
-        dx = remainingISize + (hang > 0 ? hang : 0);
+        dx = remainingISize;
         break;
 
       case StyleTextAlign::Center:
       case StyleTextAlign::MozCenter:
-        dx = (remainingISize + hang) / 2;
+        dx = remainingISize / 2;
         break;
     }
   }

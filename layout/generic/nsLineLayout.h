@@ -524,10 +524,6 @@ class nsLineLayout {
                      .GetPhysicalSize(mRootSpan->mWritingMode);
   }
 
-  
-  
-  nscoord GetHangFrom(const PerSpanData* aSpan, bool aLineIsRTL);
-
   gfxBreakPriority mLastOptionalBreakPriority;
   int32_t mLastOptionalBreakFrameOffset;
   int32_t mForceBreakFrameOffset;
