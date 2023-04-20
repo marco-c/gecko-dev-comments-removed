@@ -1580,9 +1580,15 @@ LayoutDeviceIntSize Theme::GetMinimumWidgetSize(nsPresContext* aPresContext,
 
 nsITheme::Transparency Theme::GetWidgetTransparency(
     nsIFrame* aFrame, StyleAppearance aAppearance) {
-  return GetScrollbarDrawing()
-      .GetScrollbarPartTransparency(aFrame, aAppearance)
-      .valueOr(eUnknownTransparency);
+  if (auto scrollbar = GetScrollbarDrawing().GetScrollbarPartTransparency(
+          aFrame, aAppearance)) {
+    return *scrollbar;
+  }
+  if (aAppearance == StyleAppearance::Tooltip) {
+    
+    return eTransparent;
+  }
+  return eUnknownTransparency;
 }
 
 NS_IMETHODIMP
