@@ -58,6 +58,7 @@ static ShCompileOptions ChooseValidatorCompileOptions(
 
       if (gl->Vendor() == gl::GLVendor::Intel) {
         
+        
         options.addAndTrueToLoopCondition = true;
 
         options.rewriteTexelFetchOffsetToTexelFetch = true;
