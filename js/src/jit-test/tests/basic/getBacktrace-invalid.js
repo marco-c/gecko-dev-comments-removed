@@ -1,0 +1,10 @@
+
+
+
+
+
+const backtrace = evaluate(`
+this.getBacktrace(this);
+`, { fileName: "\u86D9" });
+
+assertEq(backtrace.includes(`["\uFFFD":2:5]`), true);
