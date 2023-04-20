@@ -29,8 +29,6 @@ pub(crate) const VALUE: &str = "$__toml_private_value";
 
 
 
-
-
 #[derive(Clone, Debug)]
 pub struct Spanned<T> {
     
@@ -75,7 +73,7 @@ impl<T> Spanned<T> {
 
 impl Borrow<str> for Spanned<String> {
     fn borrow(&self) -> &str {
-        &self.get_ref()
+        self.get_ref()
     }
 }
 

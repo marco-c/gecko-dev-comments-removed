@@ -26,8 +26,6 @@ use crate::value::{Array, Table, Value};
 
 
 
-
-
 #[macro_export]
 macro_rules! toml {
     ($($toml:tt)+) => {{
@@ -432,16 +430,15 @@ fn traverse<'a>(root: &'a mut Value, path: &[&str]) -> &'a mut Value {
     for &key in path {
         
         let cur1 = cur;
-        let cur2;
 
         
         
         
         
-        if cur1.is_array() {
-            cur2 = cur1.as_array_mut().unwrap().last_mut().unwrap();
+        let cur2 = if cur1.is_array() {
+            cur1.as_array_mut().unwrap().last_mut().unwrap()
         } else {
-            cur2 = cur1;
+            cur1
         };
 
         

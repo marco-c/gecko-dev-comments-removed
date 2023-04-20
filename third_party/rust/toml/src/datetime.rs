@@ -76,7 +76,7 @@ use serde::{de, ser};
 
 
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub struct Datetime {
     
     
@@ -120,7 +120,7 @@ pub const NAME: &str = "$__toml_private_Datetime";
 
 
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub struct Date {
     
     pub year: u16,
@@ -150,7 +150,7 @@ pub struct Date {
 
 
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub struct Time {
     
     pub hour: u8,
@@ -164,7 +164,7 @@ pub struct Time {
 
 
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub enum Offset {
     
     
@@ -419,7 +419,7 @@ impl FromStr for Datetime {
 
 fn digit(chars: &mut str::Chars<'_>) -> Result<u8, DatetimeParseError> {
     match chars.next() {
-        Some(c) if '0' <= c && c <= '9' => Ok(c as u8 - b'0'),
+        Some(c) if ('0'..='9').contains(&c) => Ok(c as u8 - b'0'),
         _ => Err(DatetimeParseError { _private: () }),
     }
 }
