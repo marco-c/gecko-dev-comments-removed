@@ -4,6 +4,7 @@
 
 use std::collections::HashMap;
 
+use crate::common_metric_data::CommonMetricDataInternal;
 use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
 use crate::event_database::RecordedEvent;
 use crate::metrics::MetricType;
@@ -20,12 +21,12 @@ const MAX_LENGTH_EXTRA_KEY_VALUE: usize = 500;
 
 #[derive(Clone, Debug)]
 pub struct EventMetric {
-    meta: CommonMetricData,
+    meta: CommonMetricDataInternal,
     allowed_extra_keys: Vec<String>,
 }
 
 impl MetricType for EventMetric {
-    fn meta(&self) -> &CommonMetricData {
+    fn meta(&self) -> &CommonMetricDataInternal {
         &self.meta
     }
 }
@@ -38,7 +39,7 @@ impl EventMetric {
     
     pub fn new(meta: CommonMetricData, allowed_extra_keys: Vec<String>) -> Self {
         Self {
-            meta,
+            meta: meta.into(),
             allowed_extra_keys,
         }
     }
@@ -130,7 +131,7 @@ impl EventMetric {
     ) -> Option<Vec<RecordedEvent>> {
         let queried_ping_name = ping_name
             .into()
-            .unwrap_or_else(|| &self.meta().send_in_pings[0]);
+            .unwrap_or_else(|| &self.meta().inner.send_in_pings[0]);
 
         glean
             .event_storage()

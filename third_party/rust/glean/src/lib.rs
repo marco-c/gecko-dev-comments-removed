@@ -36,7 +36,9 @@
 
 
 
+
 use std::collections::HashMap;
+use std::path::Path;
 
 pub use configuration::Configuration;
 use configuration::DEFAULT_GLEAN_ENDPOINT;
@@ -119,6 +121,7 @@ fn initialize_internal(cfg: Configuration, client_info: ClientInfoMetrics) -> Op
         delay_ping_lifetime_io: cfg.delay_ping_lifetime_io,
         app_build: client_info.app_build.clone(),
         use_core_mps: cfg.use_core_mps,
+        trim_data_to_registered_pings: cfg.trim_data_to_registered_pings,
     };
 
     glean_core::glean_initialize(core_cfg, client_info.into(), callbacks);
@@ -172,6 +175,13 @@ pub fn set_experiment_inactive(experiment_id: String) {
 
 
 
+pub fn glean_set_metrics_disabled_config(json: String) {
+    glean_core::glean_set_metrics_disabled_config(json)
+}
+
+
+
+
 
 
 
@@ -203,14 +213,15 @@ pub fn test_get_experiment_data(experiment_id: String) -> Option<RecordedExperim
 }
 
 
-pub(crate) fn destroy_glean(clear_stores: bool) {
-    glean_core::glean_test_destroy_glean(clear_stores)
+pub(crate) fn destroy_glean(clear_stores: bool, data_path: &Path) {
+    let data_path = data_path.display().to_string();
+    glean_core::glean_test_destroy_glean(clear_stores, Some(data_path))
 }
 
 
 
 pub fn test_reset_glean(cfg: Configuration, client_info: ClientInfoMetrics, clear_stores: bool) {
-    destroy_glean(clear_stores);
+    destroy_glean(clear_stores, &cfg.data_path);
     initialize_internal(cfg, client_info);
     glean_core::join_init();
 }

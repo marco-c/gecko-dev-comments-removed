@@ -2,7 +2,9 @@
 
 
 
+use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::fs;
 use std::fs::{create_dir_all, File, OpenOptions};
 use std::io::BufRead;
@@ -11,16 +13,24 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 
+use chrono::{DateTime, FixedOffset};
+
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value as JsonValue};
 
+use crate::common_metric_data::CommonMetricDataInternal;
 use crate::coverage::record_coverage;
-use crate::CommonMetricData;
+use crate::error_recording::{record_error, ErrorType};
+use crate::metrics::{DatetimeMetric, TimeUnit};
+use crate::storage::INTERNAL_STORAGE;
+use crate::util::get_iso_time_string;
 use crate::Glean;
 use crate::Result;
+use crate::{CommonMetricData, CounterMetric, Lifetime};
 
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[cfg_attr(test, derive(Default))]
 pub struct RecordedEvent {
     
     
@@ -44,17 +54,29 @@ pub struct RecordedEvent {
     pub extra: Option<HashMap<String, String>>,
 }
 
-impl RecordedEvent {
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+struct StoredEvent {
+    #[serde(flatten)]
+    event: RecordedEvent,
+
     
-    fn serialize_relative(&self, timestamp_offset: u64) -> JsonValue {
-        json!(&RecordedEvent {
-            timestamp: self.timestamp - timestamp_offset,
-            category: self.category.clone(),
-            name: self.name.clone(),
-            extra: self.extra.clone(),
-        })
-    }
+    
+    
+    
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub execution_counter: Option<i32>,
 }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -73,7 +95,7 @@ pub struct EventDatabase {
     
     pub path: PathBuf,
     
-    event_stores: RwLock<HashMap<String, Vec<RecordedEvent>>>,
+    event_stores: RwLock<HashMap<String, Vec<StoredEvent>>>,
     
     file_lock: RwLock<()>,
 }
@@ -117,9 +139,65 @@ impl EventDatabase {
     
     
     
-    pub fn flush_pending_events_on_startup(&self, glean: &Glean) -> bool {
-        match self.load_events_from_disk() {
-            Ok(_) => self.send_all_events(glean),
+    
+    
+    
+    
+    pub fn flush_pending_events_on_startup(
+        &self,
+        glean: &Glean,
+        trim_data_to_registered_pings: bool,
+    ) -> bool {
+        match self.load_events_from_disk(glean, trim_data_to_registered_pings) {
+            Ok(_) => {
+                let stores_with_events: Vec<String> = {
+                    self.event_stores
+                        .read()
+                        .unwrap()
+                        .keys()
+                        .map(|x| x.to_owned())
+                        .collect() 
+                };
+                
+                
+                let has_events_events = stores_with_events.contains(&"events".to_owned());
+                let glean_restarted_stores = if has_events_events {
+                    stores_with_events
+                        .into_iter()
+                        .filter(|store| store != "events")
+                        .collect()
+                } else {
+                    stores_with_events
+                };
+                if !glean_restarted_stores.is_empty() {
+                    for store_name in glean_restarted_stores.iter() {
+                        CounterMetric::new(CommonMetricData {
+                            name: "execution_counter".into(),
+                            category: store_name.into(),
+                            send_in_pings: vec![INTERNAL_STORAGE.into()],
+                            lifetime: Lifetime::Ping,
+                            ..Default::default()
+                        })
+                        .add_sync(glean, 1);
+                    }
+                    let glean_restarted = CommonMetricData {
+                        name: "restarted".into(),
+                        category: "glean".into(),
+                        send_in_pings: glean_restarted_stores,
+                        lifetime: Lifetime::Ping,
+                        ..Default::default()
+                    };
+                    let startup = get_iso_time_string(glean.start_time(), TimeUnit::Minute);
+                    let extra = [("glean.startup.date".into(), startup)].into();
+                    self.record(
+                        glean,
+                        &glean_restarted.into(),
+                        crate::get_timestamp_ms(),
+                        Some(extra),
+                    );
+                }
+                has_events_events && glean.submit_ping_by_name("events", Some("startup"))
+            }
             Err(err) => {
                 log::warn!("Error loading events from disk: {}", err);
                 false
@@ -127,43 +205,46 @@ impl EventDatabase {
         }
     }
 
-    fn load_events_from_disk(&self) -> Result<()> {
+    fn load_events_from_disk(
+        &self,
+        glean: &Glean,
+        trim_data_to_registered_pings: bool,
+    ) -> Result<()> {
         
         
         
         
         let mut db = self.event_stores.write().unwrap(); 
-        let _lock = self.file_lock.read().unwrap(); 
+        let _lock = self.file_lock.write().unwrap(); 
 
         for entry in fs::read_dir(&self.path)? {
             let entry = entry?;
             if entry.file_type()?.is_file() {
                 let store_name = entry.file_name().into_string()?;
+                log::info!("Loading events for {}", store_name);
+                if trim_data_to_registered_pings && glean.get_ping_by_name(&store_name).is_none() {
+                    log::warn!("Trimming {}'s events", store_name);
+                    if let Err(err) = fs::remove_file(entry.path()) {
+                        match err.kind() {
+                            std::io::ErrorKind::NotFound => {
+                                
+                            }
+                            _ => log::warn!("Error trimming events file '{}': {}", store_name, err),
+                        }
+                    }
+                    continue;
+                }
                 let file = BufReader::new(File::open(entry.path())?);
                 db.insert(
                     store_name,
                     file.lines()
                         .filter_map(|line| line.ok())
-                        .filter_map(|line| serde_json::from_str::<RecordedEvent>(&line).ok())
+                        .filter_map(|line| serde_json::from_str::<StoredEvent>(&line).ok())
                         .collect(),
                 );
             }
         }
         Ok(())
-    }
-
-    fn send_all_events(&self, glean: &Glean) -> bool {
-        let store_names = {
-            let db = self.event_stores.read().unwrap(); 
-            db.keys().cloned().collect::<Vec<String>>()
-        };
-
-        let mut ping_sent = false;
-        for store_name in store_names {
-            ping_sent |= glean.submit_ping_by_name(&store_name, Some("startup"));
-        }
-
-        ping_sent
     }
 
     
@@ -180,7 +261,7 @@ impl EventDatabase {
     pub fn record(
         &self,
         glean: &Glean,
-        meta: &CommonMetricData,
+        meta: &CommonMetricDataInternal,
         timestamp: u64,
         extra: Option<HashMap<String, String>>,
     ) {
@@ -189,34 +270,39 @@ impl EventDatabase {
             return;
         }
 
-        
-        
-        let event = RecordedEvent {
-            timestamp,
-            category: meta.category.to_string(),
-            name: meta.name.to_string(),
-            extra,
-        };
-        let event_json = serde_json::to_string(&event).unwrap(); 
-
-        
-        let mut stores_to_submit: Vec<&str> = Vec::new();
+        let mut submit_max_capacity_event_ping = false;
         {
             let mut db = self.event_stores.write().unwrap(); 
-            for store_name in meta.send_in_pings.iter() {
+            for store_name in meta.inner.send_in_pings.iter() {
                 let store = db.entry(store_name.to_string()).or_insert_with(Vec::new);
-                store.push(event.clone());
+                let execution_counter = CounterMetric::new(CommonMetricData {
+                    name: "execution_counter".into(),
+                    category: store_name.into(),
+                    send_in_pings: vec![INTERNAL_STORAGE.into()],
+                    lifetime: Lifetime::Ping,
+                    ..Default::default()
+                })
+                .get_value(glean, INTERNAL_STORAGE);
+                
+                let event = StoredEvent {
+                    event: RecordedEvent {
+                        timestamp,
+                        category: meta.inner.category.to_string(),
+                        name: meta.inner.name.to_string(),
+                        extra: extra.clone(),
+                    },
+                    execution_counter,
+                };
+                let event_json = serde_json::to_string(&event).unwrap(); 
+                store.push(event);
                 self.write_event_to_disk(store_name, &event_json);
-                if store.len() == glean.get_max_events() {
-                    stores_to_submit.push(store_name);
+                if store_name == "events" && store.len() == glean.get_max_events() {
+                    submit_max_capacity_event_ping = true;
                 }
             }
         }
-
-        
-        
-        for store_name in stores_to_submit {
-            glean.submit_ping_by_name(store_name, Some("max_capacity"));
+        if submit_max_capacity_event_ping {
+            glean.submit_ping_by_name("events", Some("max_capacity"));
         }
     }
 
@@ -248,24 +334,219 @@ impl EventDatabase {
     
     
     
-    pub fn snapshot_as_json(&self, store_name: &str, clear_store: bool) -> Option<JsonValue> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn normalize_store(
+        &self,
+        glean: &Glean,
+        store_name: &str,
+        store: &mut Vec<StoredEvent>,
+        glean_start_time: DateTime<FixedOffset>,
+    ) {
+        let is_glean_restarted =
+            |event: &RecordedEvent| event.category == "glean" && event.name == "restarted";
+        let glean_restarted_meta = |store_name: &str| CommonMetricData {
+            name: "restarted".into(),
+            category: "glean".into(),
+            send_in_pings: vec![store_name.into()],
+            lifetime: Lifetime::Ping,
+            ..Default::default()
+        };
+        
+        store.sort_by(|a, b| {
+            a.execution_counter
+                .cmp(&b.execution_counter)
+                .then_with(|| a.event.timestamp.cmp(&b.event.timestamp))
+                .then_with(|| {
+                    if is_glean_restarted(&a.event) {
+                        Ordering::Less
+                    } else {
+                        Ordering::Greater
+                    }
+                })
+        });
+        
+        
+        
+        let final_event = match store
+            .iter()
+            .rposition(|event| !is_glean_restarted(&event.event))
+        {
+            Some(idx) => idx + 1,
+            _ => 0,
+        };
+        store.drain(final_event..);
+        let first_event = store
+            .iter()
+            .position(|event| !is_glean_restarted(&event.event))
+            .unwrap_or(store.len());
+        store.drain(..first_event);
+        if store.is_empty() {
+            
+            return;
+        }
+        
+        
+        
+        
+        
+        let mut cur_ec = 0;
+        
+        let mut intra_group_offset = store[0].event.timestamp;
+        
+        let mut inter_group_offset = 0;
+        let mut highest_ts = 0;
+        for event in store.iter_mut() {
+            let execution_counter = event.execution_counter.take().unwrap_or(0);
+            if is_glean_restarted(&event.event) {
+                
+                
+                cur_ec = execution_counter;
+                let glean_startup_date = event
+                    .event
+                    .extra
+                    .as_mut()
+                    .and_then(|extra| {
+                        extra.remove("glean.startup.date").and_then(|date_str| {
+                            DateTime::parse_from_str(&date_str, TimeUnit::Minute.format_pattern())
+                                .map_err(|_| {
+                                    record_error(
+                                        glean,
+                                        &glean_restarted_meta(store_name).into(),
+                                        ErrorType::InvalidState,
+                                        format!("Unparseable glean.startup.date '{}'", date_str),
+                                        None,
+                                    );
+                                })
+                                .ok()
+                        })
+                    })
+                    .unwrap_or(glean_start_time);
+                if event
+                    .event
+                    .extra
+                    .as_ref()
+                    .map_or(false, |extra| extra.is_empty())
+                {
+                    
+                    event.event.extra = None;
+                }
+                let ping_start = DatetimeMetric::new(
+                    CommonMetricData {
+                        name: format!("{}#start", store_name),
+                        category: "".into(),
+                        send_in_pings: vec![INTERNAL_STORAGE.into()],
+                        lifetime: Lifetime::User,
+                        ..Default::default()
+                    },
+                    TimeUnit::Minute,
+                );
+                let ping_start = ping_start
+                    .get_value(glean, INTERNAL_STORAGE)
+                    .unwrap_or(glean_start_time);
+                let time_from_ping_start_to_glean_restarted =
+                    (glean_startup_date - ping_start).num_milliseconds();
+                intra_group_offset = event.event.timestamp;
+                inter_group_offset =
+                    u64::try_from(time_from_ping_start_to_glean_restarted).unwrap_or(0);
+                if inter_group_offset < highest_ts {
+                    record_error(
+                        glean,
+                        &glean_restarted_meta(store_name).into(),
+                        ErrorType::InvalidValue,
+                        format!("Time between restart and ping start {} indicates client clock weirdness.", time_from_ping_start_to_glean_restarted),
+                        None,
+                    );
+                    
+                    
+                    
+                    
+                    inter_group_offset = highest_ts + 1;
+                }
+            }
+            event.event.timestamp = event.event.timestamp - intra_group_offset + inter_group_offset;
+            if execution_counter != cur_ec {
+                record_error(
+                    glean,
+                    &glean_restarted_meta(store_name).into(),
+                    ErrorType::InvalidState,
+                    format!(
+                        "Inconsistent execution counter {} (expected {})",
+                        execution_counter, cur_ec
+                    ),
+                    None,
+                );
+                
+                cur_ec = execution_counter;
+            }
+            if highest_ts > event.event.timestamp {
+                
+                
+                record_error(
+                    glean,
+                    &glean_restarted_meta(store_name).into(),
+                    ErrorType::InvalidState,
+                    format!(
+                        "Inconsistent previous highest timestamp {} (expected <= {})",
+                        highest_ts, event.event.timestamp
+                    ),
+                    None,
+                );
+                
+            }
+            highest_ts = event.event.timestamp
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn snapshot_as_json(
+        &self,
+        glean: &Glean,
+        store_name: &str,
+        clear_store: bool,
+    ) -> Option<JsonValue> {
         let result = {
             let mut db = self.event_stores.write().unwrap(); 
             db.get_mut(&store_name.to_string()).and_then(|store| {
                 if !store.is_empty() {
                     
                     
+                    let mut clone;
+                    let store = if clear_store {
+                        store
+                    } else {
+                        clone = store.clone();
+                        &mut clone
+                    };
                     
-                    
-                    
-                    
-                    store.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
-                    let first_timestamp = store[0].timestamp;
-                    let snapshot = store
-                        .iter()
-                        .map(|e| e.serialize_relative(first_timestamp))
-                        .collect();
-                    Some(snapshot)
+                    self.normalize_store(glean, store_name, store, glean.start_time());
+                    Some(json!(store))
                 } else {
                     log::warn!("Unexpectly got empty event store for '{}'", store_name);
                     None
@@ -314,7 +595,7 @@ impl EventDatabase {
     
     pub fn test_get_value<'a>(
         &'a self,
-        meta: &'a CommonMetricData,
+        meta: &'a CommonMetricDataInternal,
         store_name: &str,
     ) -> Option<Vec<RecordedEvent>> {
         record_coverage(&meta.base_identifier());
@@ -326,8 +607,8 @@ impl EventDatabase {
             .get(&store_name.to_string())
             .into_iter()
             .flatten()
-            .filter(|event| event.name == meta.name && event.category == meta.category)
-            .cloned()
+            .map(|stored_event| stored_event.event.clone())
+            .filter(|event| event.name == meta.inner.name && event.category == meta.inner.category)
             .collect();
         if !value.is_empty() {
             Some(value)
@@ -341,11 +622,12 @@ impl EventDatabase {
 mod test {
     use super::*;
     use crate::tests::new_glean;
-    use crate::CommonMetricData;
+    use crate::{test_get_num_recorded_errors, CommonMetricData};
+    use chrono::{TimeZone, Timelike};
 
     #[test]
     fn handle_truncated_events_on_disk() {
-        let t = tempfile::tempdir().unwrap();
+        let (glean, t) = new_glean(None);
 
         {
             let db = EventDatabase::new(t.path()).unwrap();
@@ -359,7 +641,7 @@ mod test {
 
         {
             let db = EventDatabase::new(t.path()).unwrap();
-            db.load_events_from_disk().unwrap();
+            db.load_events_from_disk(&glean, false).unwrap();
             let events = &db.event_stores.read().unwrap()["events"];
             assert_eq!(1, events.len());
         }
@@ -387,10 +669,19 @@ mod test {
         let event_data_json = ::serde_json::to_string_pretty(&event_data).unwrap();
 
         assert_eq!(
-            event_empty,
+            StoredEvent {
+                event: event_empty,
+                execution_counter: None
+            },
             serde_json::from_str(&event_empty_json).unwrap()
         );
-        assert_eq!(event_data, serde_json::from_str(&event_data_json).unwrap());
+        assert_eq!(
+            StoredEvent {
+                event: event_data,
+                execution_counter: None
+            },
+            serde_json::from_str(&event_data_json).unwrap()
+        );
     }
 
     #[test]
@@ -430,8 +721,20 @@ mod test {
             extra: Some(data),
         };
 
-        assert_eq!(event_empty, serde_json::from_str(event_empty_json).unwrap());
-        assert_eq!(event_data, serde_json::from_str(event_data_json).unwrap());
+        assert_eq!(
+            StoredEvent {
+                event: event_empty,
+                execution_counter: None
+            },
+            serde_json::from_str(event_empty_json).unwrap()
+        );
+        assert_eq!(
+            StoredEvent {
+                event: event_data,
+                execution_counter: None
+            },
+            serde_json::from_str(event_data_json).unwrap()
+        );
     }
 
     #[test]
@@ -443,7 +746,7 @@ mod test {
         let test_category = "category";
         let test_name = "name";
         let test_timestamp = 2;
-        let test_meta = CommonMetricData::new(test_category, test_name, test_storage);
+        let test_meta = CommonMetricDataInternal::new(test_category, test_name, test_storage);
         let event_data = RecordedEvent {
             timestamp: test_timestamp,
             category: test_category.to_string(),
@@ -456,7 +759,13 @@ mod test {
         db.record(&glean, &test_meta, 2, None);
         {
             let event_stores = db.event_stores.read().unwrap();
-            assert_eq!(&event_data, &event_stores.get(test_storage).unwrap()[0]);
+            assert_eq!(
+                &StoredEvent {
+                    event: event_data,
+                    execution_counter: None
+                },
+                &event_stores.get(test_storage).unwrap()[0]
+            );
             assert_eq!(event_stores.get(test_storage).unwrap().len(), 1);
         }
 
@@ -468,5 +777,426 @@ mod test {
             let event_stores = db.event_stores.read().unwrap();
             assert_eq!(event_stores.get(test_storage).unwrap().len(), 1);
         }
+    }
+
+    #[test]
+    fn normalize_store_of_glean_restarted() {
+        
+        let (glean, _dir) = new_glean(None);
+
+        let store_name = "store-name";
+        let glean_restarted = StoredEvent {
+            event: RecordedEvent {
+                timestamp: 2,
+                category: "glean".into(),
+                name: "restarted".into(),
+                extra: None,
+            },
+            execution_counter: None,
+        };
+        let mut store = vec![glean_restarted.clone()];
+        let glean_start_time = glean.start_time();
+
+        glean
+            .event_storage()
+            .normalize_store(&glean, store_name, &mut store, glean_start_time);
+        assert!(store.is_empty());
+
+        let mut store = vec![glean_restarted.clone(), glean_restarted.clone()];
+        glean
+            .event_storage()
+            .normalize_store(&glean, store_name, &mut store, glean_start_time);
+        assert!(store.is_empty());
+
+        let mut store = vec![
+            glean_restarted.clone(),
+            glean_restarted.clone(),
+            glean_restarted,
+        ];
+        glean
+            .event_storage()
+            .normalize_store(&glean, store_name, &mut store, glean_start_time);
+        assert!(store.is_empty());
+    }
+
+    #[test]
+    fn normalize_store_of_glean_restarted_on_both_ends() {
+        
+        let (glean, _dir) = new_glean(None);
+
+        let store_name = "store-name";
+        let glean_restarted = StoredEvent {
+            event: RecordedEvent {
+                timestamp: 2,
+                category: "glean".into(),
+                name: "restarted".into(),
+                extra: None,
+            },
+            execution_counter: None,
+        };
+        let not_glean_restarted = StoredEvent {
+            event: RecordedEvent {
+                timestamp: 20,
+                category: "category".into(),
+                name: "name".into(),
+                extra: None,
+            },
+            execution_counter: None,
+        };
+        let mut store = vec![
+            glean_restarted.clone(),
+            not_glean_restarted.clone(),
+            glean_restarted,
+        ];
+        let glean_start_time = glean.start_time();
+
+        glean
+            .event_storage()
+            .normalize_store(&glean, store_name, &mut store, glean_start_time);
+        assert_eq!(1, store.len());
+        assert_eq!(
+            StoredEvent {
+                event: RecordedEvent {
+                    timestamp: 0,
+                    ..not_glean_restarted.event
+                },
+                execution_counter: None
+            },
+            store[0]
+        );
+    }
+
+    #[test]
+    fn normalize_store_single_run_timestamp_math() {
+        
+        
+        
+        let (glean, _dir) = new_glean(None);
+
+        let store_name = "store-name";
+        let glean_restarted = StoredEvent {
+            event: RecordedEvent {
+                timestamp: 2,
+                category: "glean".into(),
+                name: "restarted".into(),
+                extra: None,
+            },
+            execution_counter: None,
+        };
+        let timestamps = vec![20, 40, 200];
+        let not_glean_restarted = StoredEvent {
+            event: RecordedEvent {
+                timestamp: timestamps[0],
+                category: "category".into(),
+                name: "name".into(),
+                extra: None,
+            },
+            execution_counter: None,
+        };
+        let mut store = vec![
+            glean_restarted.clone(),
+            not_glean_restarted.clone(),
+            StoredEvent {
+                event: RecordedEvent {
+                    timestamp: timestamps[1],
+                    ..not_glean_restarted.event.clone()
+                },
+                execution_counter: None,
+            },
+            StoredEvent {
+                event: RecordedEvent {
+                    timestamp: timestamps[2],
+                    ..not_glean_restarted.event.clone()
+                },
+                execution_counter: None,
+            },
+            glean_restarted,
+        ];
+
+        glean
+            .event_storage()
+            .normalize_store(&glean, store_name, &mut store, glean.start_time());
+        assert_eq!(3, store.len());
+        for (timestamp, event) in timestamps.iter().zip(store.iter()) {
+            assert_eq!(
+                &StoredEvent {
+                    event: RecordedEvent {
+                        timestamp: timestamp - timestamps[0],
+                        ..not_glean_restarted.clone().event
+                    },
+                    execution_counter: None
+                },
+                event
+            );
+        }
+    }
+
+    #[test]
+    fn normalize_store_multi_run_timestamp_math() {
+        
+        
+        
+        
+        let (glean, _dir) = new_glean(None);
+
+        let store_name = "store-name";
+        let glean_restarted = StoredEvent {
+            event: RecordedEvent {
+                category: "glean".into(),
+                name: "restarted".into(),
+                ..Default::default()
+            },
+            execution_counter: None,
+        };
+        let not_glean_restarted = StoredEvent {
+            event: RecordedEvent {
+                category: "category".into(),
+                name: "name".into(),
+                ..Default::default()
+            },
+            execution_counter: None,
+        };
+
+        
+        
+        let timestamps = vec![20, 40, 200, 12];
+        let ecs = vec![0, 1];
+        let some_hour = 16;
+        let startup_date = FixedOffset::east(0)
+            .ymd(2022, 11, 24)
+            .and_hms(some_hour, 29, 0); 
+        let glean_start_time = startup_date.with_hour(some_hour - 1);
+        let restarted_ts = 2;
+        let mut store = vec![
+            StoredEvent {
+                event: RecordedEvent {
+                    timestamp: timestamps[0],
+                    ..not_glean_restarted.event.clone()
+                },
+                execution_counter: Some(ecs[0]),
+            },
+            StoredEvent {
+                event: RecordedEvent {
+                    timestamp: timestamps[1],
+                    ..not_glean_restarted.event.clone()
+                },
+                execution_counter: Some(ecs[0]),
+            },
+            StoredEvent {
+                event: RecordedEvent {
+                    timestamp: timestamps[2],
+                    ..not_glean_restarted.event.clone()
+                },
+                execution_counter: Some(ecs[0]),
+            },
+            StoredEvent {
+                event: RecordedEvent {
+                    extra: Some(
+                        [(
+                            "glean.startup.date".into(),
+                            get_iso_time_string(startup_date, TimeUnit::Minute),
+                        )]
+                        .into(),
+                    ),
+                    timestamp: restarted_ts,
+                    ..glean_restarted.event.clone()
+                },
+                execution_counter: Some(ecs[1]),
+            },
+            StoredEvent {
+                event: RecordedEvent {
+                    timestamp: timestamps[3],
+                    ..not_glean_restarted.event.clone()
+                },
+                execution_counter: Some(ecs[1]),
+            },
+        ];
+
+        glean.event_storage().normalize_store(
+            &glean,
+            store_name,
+            &mut store,
+            glean_start_time.unwrap(),
+        );
+        assert_eq!(5, store.len()); 
+
+        
+        for (timestamp, event) in timestamps[..timestamps.len() - 1].iter().zip(store.clone()) {
+            assert_eq!(
+                StoredEvent {
+                    event: RecordedEvent {
+                        timestamp: timestamp - timestamps[0],
+                        ..not_glean_restarted.event.clone()
+                    },
+                    execution_counter: None,
+                },
+                event
+            );
+        }
+        
+        let hour_in_millis = 3600000;
+        assert_eq!(
+            store[3],
+            StoredEvent {
+                event: RecordedEvent {
+                    timestamp: hour_in_millis,
+                    ..glean_restarted.event
+                },
+                execution_counter: None,
+            }
+        );
+        
+        assert_eq!(
+            store[4],
+            StoredEvent {
+                event: RecordedEvent {
+                    timestamp: hour_in_millis + timestamps[3] - restarted_ts,
+                    ..not_glean_restarted.event
+                },
+                execution_counter: None,
+            }
+        );
+    }
+
+    #[test]
+    fn normalize_store_multi_run_client_clocks() {
+        
+        
+        let (glean, _dir) = new_glean(None);
+
+        let store_name = "store-name";
+        let glean_restarted = StoredEvent {
+            event: RecordedEvent {
+                category: "glean".into(),
+                name: "restarted".into(),
+                ..Default::default()
+            },
+            execution_counter: None,
+        };
+        let not_glean_restarted = StoredEvent {
+            event: RecordedEvent {
+                category: "category".into(),
+                name: "name".into(),
+                ..Default::default()
+            },
+            execution_counter: None,
+        };
+
+        
+        
+        let timestamps = vec![20, 40, 12, 200];
+        let ecs = vec![0, 1];
+        let some_hour = 10;
+        let startup_date = FixedOffset::east(0)
+            .ymd(2022, 11, 25)
+            .and_hms(some_hour, 37, 0); 
+        let glean_start_time = startup_date.with_hour(some_hour + 1);
+        let restarted_ts = 2;
+        let mut store = vec![
+            StoredEvent {
+                event: RecordedEvent {
+                    timestamp: timestamps[0],
+                    ..not_glean_restarted.event.clone()
+                },
+                execution_counter: Some(ecs[0]),
+            },
+            StoredEvent {
+                event: RecordedEvent {
+                    timestamp: timestamps[1],
+                    ..not_glean_restarted.event.clone()
+                },
+                execution_counter: Some(ecs[0]),
+            },
+            StoredEvent {
+                event: RecordedEvent {
+                    extra: Some(
+                        [(
+                            "glean.startup.date".into(),
+                            get_iso_time_string(startup_date, TimeUnit::Minute),
+                        )]
+                        .into(),
+                    ),
+                    timestamp: restarted_ts,
+                    ..glean_restarted.event.clone()
+                },
+                execution_counter: Some(ecs[1]),
+            },
+            StoredEvent {
+                event: RecordedEvent {
+                    timestamp: timestamps[2],
+                    ..not_glean_restarted.event.clone()
+                },
+                execution_counter: Some(ecs[1]),
+            },
+            StoredEvent {
+                event: RecordedEvent {
+                    timestamp: timestamps[3],
+                    ..not_glean_restarted.event.clone()
+                },
+                execution_counter: Some(ecs[1]),
+            },
+        ];
+
+        glean.event_storage().normalize_store(
+            &glean,
+            store_name,
+            &mut store,
+            glean_start_time.unwrap(),
+        );
+        assert_eq!(5, store.len()); 
+
+        
+        for (timestamp, event) in timestamps[..timestamps.len() - 2].iter().zip(store.clone()) {
+            assert_eq!(
+                StoredEvent {
+                    event: RecordedEvent {
+                        timestamp: timestamp - timestamps[0],
+                        ..not_glean_restarted.event.clone()
+                    },
+                    execution_counter: None,
+                },
+                event
+            );
+        }
+        
+        
+        
+        assert_eq!(
+            store[2],
+            StoredEvent {
+                event: RecordedEvent {
+                    timestamp: store[1].event.timestamp + 1,
+                    ..glean_restarted.event
+                },
+                execution_counter: None,
+            }
+        );
+        
+        assert_eq!(
+            store[3],
+            StoredEvent {
+                event: RecordedEvent {
+                    timestamp: timestamps[2] - restarted_ts + store[2].event.timestamp,
+                    ..not_glean_restarted.event
+                },
+                execution_counter: None,
+            }
+        );
+        
+        assert_eq!(
+            Ok(1),
+            test_get_num_recorded_errors(
+                &glean,
+                &CommonMetricData {
+                    name: "restarted".into(),
+                    category: "glean".into(),
+                    send_in_pings: vec![store_name.into()],
+                    lifetime: Lifetime::Ping,
+                    ..Default::default()
+                }
+                .into(),
+                ErrorType::InvalidValue
+            )
+        );
     }
 }

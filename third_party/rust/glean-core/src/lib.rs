@@ -14,11 +14,14 @@
 
 
 
+use std::borrow::Cow;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::fmt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
+use metrics::MetricsDisabledConfig;
 use once_cell::sync::{Lazy, OnceCell};
 use uuid::Uuid;
 
@@ -115,6 +118,8 @@ pub struct InternalConfiguration {
     pub app_build: String,
     
     pub use_core_mps: bool,
+    
+    pub trim_data_to_registered_pings: bool,
 }
 
 
@@ -282,6 +287,7 @@ fn initialize_inner(
         .name("glean.init".into())
         .spawn(move || {
             let upload_enabled = cfg.upload_enabled;
+            let trim_data_to_registered_pings = cfg.trim_data_to_registered_pings;
 
             let glean = match Glean::new(cfg) {
                 Ok(glean) => glean,
@@ -359,7 +365,7 @@ fn initialize_inner(
                 }
 
                 
-                pings_submitted = glean.on_ready_to_submit_pings();
+                pings_submitted = glean.on_ready_to_submit_pings(trim_data_to_registered_pings);
             });
 
             {
@@ -697,6 +703,20 @@ pub fn glean_test_get_experiment_data(experiment_id: String) -> Option<RecordedE
 
 
 
+pub fn glean_set_metrics_disabled_config(json: String) {
+    match MetricsDisabledConfig::try_from(json) {
+        Ok(cfg) => launch_with_glean(|glean| {
+            glean.set_metrics_disabled_config(cfg);
+        }),
+        Err(e) => {
+            log::error!("Error setting metrics feature config: {:?}", e);
+        }
+    }
+}
+
+
+
+
 
 
 
@@ -861,7 +881,7 @@ pub fn glean_set_test_mode(enabled: bool) {
 
 
 
-pub fn glean_test_destroy_glean(clear_stores: bool) {
+pub fn glean_test_destroy_glean(clear_stores: bool, data_path: Option<String>) {
     if was_initialize_called() {
         
         join_init();
@@ -879,6 +899,12 @@ pub fn glean_test_destroy_glean(clear_stores: bool) {
 
         
         INITIALIZE_CALLED.store(false, Ordering::SeqCst);
+    } else if clear_stores {
+        if let Some(data_path) = data_path {
+            let _ = remove_dir_all::remove_dir_all(data_path).ok();
+        } else {
+            log::warn!("Asked to clear stores before initialization, but no data path given.");
+        }
     }
 }
 
@@ -940,6 +966,20 @@ pub fn glean_enable_logging_to_fd(_fd: u64) {
 mod ffi {
     use super::*;
     uniffi_macros::include_scaffolding!("glean");
+
+    type CowString = Cow<'static, str>;
+
+    impl UniffiCustomTypeConverter for CowString {
+        type Builtin = String;
+
+        fn into_custom(val: Self::Builtin) -> uniffi::Result<Self> {
+            Ok(Cow::from(val))
+        }
+
+        fn from_custom(obj: Self) -> Self::Builtin {
+            obj.into_owned()
+        }
+    }
 }
 pub use ffi::*;
 
