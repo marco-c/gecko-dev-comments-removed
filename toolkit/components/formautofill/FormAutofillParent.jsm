@@ -48,6 +48,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
+  AddressComparison: "resource://autofill/AddressComponent.jsm",
+  AddressComponent: "resource://autofill/AddressComponent.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   FormAutofillPreferences: "resource://autofill/FormAutofillPreferences.jsm",
   FormAutofillPrompter: "resource://autofill/FormAutofillPrompter.jsm",
@@ -478,18 +480,48 @@ class FormAutofillParent extends JSWindowActorParent {
 
   async _onAddressSubmit(address, browser) {
     const storage = lazy.gFormAutofillStorage.addresses;
+
     
     storage._normalizeRecord(address.record);
 
+    const newAddress = new lazy.AddressComponent(address.record);
+
+    let mergeableRecord = null;
+    let mergeableFields = [];
+
     
-    const matchRecord = (await storage.getMatchRecords(address.record).next())
-      .value;
-    if (matchRecord) {
-      storage.notifyUsed(matchRecord.guid);
-      return false;
+    for (const record of await storage.getAll()) {
+      const oldAddress = new lazy.AddressComponent(record);
+      const result = new lazy.AddressComparison(newAddress, oldAddress);
+
+      
+      if (result.isDuplicate()) {
+        lazy.log.debug(
+          "A duplicated address record is found, do not show the prompt"
+        );
+        storage.notifyUsed(record.guid);
+        return false;
+      } else if (result.isMergeable()) {
+        lazy.log.debug(
+          "A mergeable address record is found, show the update prompt"
+        );
+        
+        
+        
+        if (
+          !mergeableFields.length ||
+          mergeableFields.length > result.getMergeableFields().length
+        ) {
+          mergeableRecord = record;
+          mergeableFields = result.getMergeableFields();
+        }
+      }
     }
 
-    if (!FormAutofill.isAutofillAddressesCaptureEnabled) {
+    if (
+      !FormAutofill.isAutofillAddressesCaptureEnabled &&
+      !FormAutofill.isAutofillAddressesCaptureV2Enabled
+    ) {
       return false;
     }
 
@@ -498,7 +530,8 @@ class FormAutofillParent extends JSWindowActorParent {
         browser,
         storage,
         address.record,
-        address.flowId
+        address.flowId,
+        { mergeableRecord, mergeableFields }
       );
     };
   }

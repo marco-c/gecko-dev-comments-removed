@@ -424,17 +424,33 @@ let FormAutofillPrompter = {
     }
   },
 
-  async promptToSaveAddress(browser, storage, record, flowId) {
+  
+
+
+
+
+
+
+
+
+
+
+  async promptToSaveAddress(
+    browser,
+    storage,
+    newRecord,
+    flowId,
+    { mergeableRecord, mergeableFields }
+  ) {
     
     let doorhangerType;
-    const duplicateRecord = (await storage.getDuplicateRecords(record).next())
-      .value;
-    if (duplicateRecord) {
+    if (mergeableRecord) {
       doorhangerType = "updateAddress";
+    } else if (FormAutofill.isAutofillAddressesCaptureV2Enabled) {
+      doorhangerType = "addAddress";
     } else {
       doorhangerType = "addFirstTimeUse";
-
-      this._updateStorageAfterInteractWithPrompt("save", storage, record);
+      this._updateStorageAfterInteractWithPrompt("save", storage, newRecord);
 
       
       if (FormAutofill.isAutofillAddressesFirstTimeUse) {
@@ -447,9 +463,9 @@ let FormAutofillPrompter = {
       }
     }
 
-    const description = FormAutofillUtils.getAddressLabel(record);
-    const additionalDescription = duplicateRecord
-      ? FormAutofillUtils.getAddressLabel(duplicateRecord)
+    const description = FormAutofillUtils.getAddressLabel(newRecord);
+    const additionalDescription = mergeableRecord
+      ? FormAutofillUtils.getAddressLabel(mergeableRecord)
       : null;
 
     const state = await FormAutofillPrompter._showCCorAddressCaptureDoorhanger(
@@ -470,8 +486,8 @@ let FormAutofillPrompter = {
     this._updateStorageAfterInteractWithPrompt(
       state,
       storage,
-      record,
-      duplicateRecord?.guid
+      newRecord,
+      mergeableRecord?.guid
     );
   },
 
@@ -644,7 +660,6 @@ let FormAutofillPrompter = {
           DESCRIPTION_ID,
           description
         );
-
         if (additionalDescription) {
           this._updateDescription(
             notificationContent,
