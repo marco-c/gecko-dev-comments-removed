@@ -72,7 +72,7 @@ directory_test(async (t, root_dir) => {
   const id_before = await handle.getUniqueId();
 
   
-  const writable = await cleanup_writable(t, await handle.createWritable());
+  const writable = await handle.createWritable();
   await writable.write("blah");
   await writable.close();
 
