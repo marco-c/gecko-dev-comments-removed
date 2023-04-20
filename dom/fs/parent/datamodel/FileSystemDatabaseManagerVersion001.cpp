@@ -716,6 +716,13 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RemoveDirectory(
     const FileSystemChildMetadata& aHandle, bool aRecursive) {
   MOZ_ASSERT(!aHandle.parentId().IsEmpty());
 
+  auto isAnyDescendantLocked = [this](const nsTArray<EntryId>& aDescendants) {
+    return std::any_of(aDescendants.cbegin(), aDescendants.cend(),
+                       [this](const auto& descendant) {
+                         return mDataManager->IsLocked(descendant);
+                       });
+  };
+
   if (aHandle.childName().IsEmpty()) {
     return false;
   }
@@ -735,6 +742,14 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RemoveDirectory(
   QM_TRY_UNWRAP(bool isEmpty, IsDirectoryEmpty(mConnection, entryId));
 
   if (!aRecursive && !isEmpty) {
+    QM_TRY_INSPECT(const nsTArray<EntryId>& descendants,
+                   FindDescendants(mConnection, entryId));
+
+    
+    
+    QM_TRY(OkIf(!isAnyDescendantLocked(descendants)),
+           Err(QMResult(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR)));
+
     return Err(QMResult(NS_ERROR_DOM_INVALID_MODIFICATION_ERR));
   }
   
@@ -750,10 +765,9 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RemoveDirectory(
 
   QM_TRY_INSPECT(const nsTArray<EntryId>& descendants,
                  FindDescendants(mConnection, entryId));
-  for (const auto& child : descendants) {
-    QM_TRY(OkIf(!mDataManager->IsLocked(child)),
-           Err(QMResult(NS_ERROR_DOM_INVALID_MODIFICATION_ERR)));
-  }
+
+  QM_TRY(OkIf(!isAnyDescendantLocked(descendants)),
+         Err(QMResult(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR)));
 
   {
     QM_TRY_UNWRAP(ResultStatement stmt,
@@ -808,7 +822,7 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RemoveFile(
   
   if (mDataManager->IsLocked(entryId)) {
     LOG(("Trying to remove in-use file"));
-    return Err(QMResult(NS_ERROR_DOM_INVALID_MODIFICATION_ERR));
+    return Err(QMResult(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR));
   }
 
   const nsLiteralCString deleteEntryQuery =
@@ -885,7 +899,11 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RenameEntry(
   } else {
     QM_TRY_UNWRAP(exists, DoesDirectoryExist(mConnection, destination));
     if (exists) {
-      return Err(QMResult(NS_ERROR_DOM_INVALID_MODIFICATION_ERR));
+      
+      QM_TRY_UNWRAP(DebugOnly<bool> isRemoved,
+                    MOZ_TO_RESULT(RemoveDirectory(destination,
+                                                   true)));
+      MOZ_ASSERT(isRemoved);
     }
   }
 
@@ -947,7 +965,11 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::MoveEntry(
   } else {
     QM_TRY_UNWRAP(exists, DoesDirectoryExist(mConnection, aNewDesignation));
     if (exists) {
-      return Err(QMResult(NS_ERROR_DOM_INVALID_MODIFICATION_ERR));
+      
+      QM_TRY_UNWRAP(DebugOnly<bool> isRemoved,
+                    MOZ_TO_RESULT(RemoveDirectory(aNewDesignation,
+                                                   true)));
+      MOZ_ASSERT(isRemoved);
     }
   }
 

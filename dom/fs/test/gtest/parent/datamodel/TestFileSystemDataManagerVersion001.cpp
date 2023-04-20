@@ -4,6 +4,8 @@
 
 
 
+#include <algorithm>
+
 #include "ErrorList.h"
 #include "FileSystemDataManager.h"
 #include "FileSystemDatabaseManagerVersion001.h"
@@ -227,7 +229,7 @@ TEST_F(TestFileSystemDatabaseManagerVersion001, smokeTestCreateRemoveFiles) {
     
     TEST_TRY_UNWRAP(EntryId firstChildClone,
                     dm->GetOrCreateFile(firstChildMeta,  true));
-    ASSERT_STREQ(firstChild.get(), firstChildClone.get());
+    ASSERT_EQ(firstChild, firstChildClone);
 
     
     PageNumber page = 0;
@@ -239,7 +241,7 @@ TEST_F(TestFileSystemDatabaseManagerVersion001, smokeTestCreateRemoveFiles) {
     auto& firstItemRef = entries.files()[0];
     ASSERT_TRUE(u"First"_ns == firstItemRef.entryName())
     << firstItemRef.entryName();
-    ASSERT_STREQ(firstChild.get(), firstItemRef.entryId().get());
+    ASSERT_EQ(firstChild, firstItemRef.entryId());
 
     nsString type;
     TimeStamp lastModifiedMilliSeconds;
@@ -510,15 +512,6 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
 
     {
       
-      FileSystemEntryMetadata src{testFile, testFileMeta.childName(),
-                                   false};
-      const FileSystemChildMetadata& dest = firstChildDescendantMeta;
-      TEST_TRY_UNWRAP_ERR(nsresult rv, dm->MoveEntry(src, dest));
-      ASSERT_NSEQ(NS_ERROR_DOM_INVALID_MODIFICATION_ERR, rv);
-    }
-
-    {
-      
       FileSystemEntryMetadata src{firstChildDescendant,
                                   firstChildDescendantMeta.childName(),
                                    true};
@@ -526,6 +519,30 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
                                    firstChildDescendantMeta.childName()};
       TEST_TRY_UNWRAP_ERR(nsresult rv, dm->MoveEntry(src, dest));
       ASSERT_NSEQ(NS_ERROR_STORAGE_CONSTRAINT, rv);
+    }
+
+    {
+      
+      FileSystemEntryMetadata src{testFile, testFileMeta.childName(),
+                                   false};
+      const FileSystemChildMetadata& dest = firstChildDescendantMeta;
+      TEST_TRY_UNWRAP(bool isMoved, dm->MoveEntry(src, dest));
+      ASSERT_TRUE(isMoved);
+    }
+
+    {
+      
+      FileSystemEntryMetadata src{testFile,
+                                  firstChildDescendantMeta.childName(),
+                                   false};
+
+      TEST_TRY_UNWRAP(bool isMoved, dm->MoveEntry(src, testFileMeta));
+      ASSERT_TRUE(isMoved);
+
+      TEST_TRY_UNWRAP(EntryId firstChildDescendantCheck,
+                      dm->GetOrCreateDirectory(firstChildDescendantMeta,
+                                                true));
+      ASSERT_EQ(firstChildDescendant, firstChildDescendantCheck);
     }
 
     {
@@ -552,7 +569,7 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
 
       TEST_TRY_UNWRAP(EntryId testFileCheck,
                       dm->GetOrCreateFile(testFileMeta,  true));
-      ASSERT_STREQ(testFile, testFileCheck);
+      ASSERT_EQ(testFile, testFileCheck);
     }
 
     {
@@ -603,10 +620,34 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
                                    false};
       FileSystemChildMetadata dest{firstChildDir,
                                    firstChildDescendantMeta.childName()};
-      TEST_TRY_UNWRAP_ERR(nsresult rv, dm->MoveEntry(src, dest));
-      ASSERT_NSEQ(NS_ERROR_DOM_INVALID_MODIFICATION_ERR, rv);
+      TEST_TRY_UNWRAP(bool isMoved, dm->MoveEntry(src, dest));
+      ASSERT_TRUE(isMoved);
     }
 
+    {
+      
+      
+      FileSystemEntryMetadata src{testFile,
+                                  firstChildDescendantMeta.childName(),
+                                   false};
+      FileSystemChildMetadata dest{rootId, testFileMeta.childName()};
+      TEST_TRY_UNWRAP(bool isMoved, dm->MoveEntry(src, dest));
+      ASSERT_TRUE(isMoved);
+
+      FileSystemChildMetadata oldLocation{firstChildDir,
+                                          firstChildDescendantMeta.childName()};
+
+      
+      TEST_TRY_UNWRAP_ERR(nsresult rv,
+                          dm->GetOrCreateFile(oldLocation,  false));
+      ASSERT_NSEQ(NS_ERROR_DOM_NOT_FOUND_ERR, rv);
+
+      TEST_TRY_UNWRAP(EntryId firstChildDescendantCheck,
+                      dm->GetOrCreateDirectory(oldLocation,  true));
+      ASSERT_EQ(firstChildDescendant, firstChildDescendantCheck);
+    }
+
+    
     
     {
       
@@ -625,8 +666,31 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
                                    false};
       FileSystemChildMetadata dest{firstChildDir,
                                    firstChildDescendantMeta.childName()};
-      TEST_TRY_UNWRAP_ERR(nsresult rv, dm->MoveEntry(src, dest));
-      ASSERT_NSEQ(NS_ERROR_DOM_INVALID_MODIFICATION_ERR, rv);
+      TEST_TRY_UNWRAP(bool isMoved, dm->MoveEntry(src, dest));
+      ASSERT_TRUE(isMoved);
+    }
+
+    {
+      
+      FileSystemEntryMetadata src{testFile,
+                                  firstChildDescendantMeta.childName(),
+                                   false};
+      FileSystemChildMetadata dest{rootId,
+                                   firstChildDescendantMeta.childName()};
+      TEST_TRY_UNWRAP(bool isMoved, dm->MoveEntry(src, dest));
+      ASSERT_TRUE(isMoved);
+
+      FileSystemChildMetadata oldLocation{firstChildDir,
+                                          firstChildDescendantMeta.childName()};
+
+      
+      TEST_TRY_UNWRAP_ERR(nsresult rv,
+                          dm->GetOrCreateFile(oldLocation,  false));
+      ASSERT_NSEQ(NS_ERROR_DOM_NOT_FOUND_ERR, rv);
+
+      TEST_TRY_UNWRAP(EntryId firstChildDescendantCheck,
+                      dm->GetOrCreateDirectory(oldLocation,  true));
+      ASSERT_EQ(firstChildDescendant, firstChildDescendantCheck);
     }
 
     {
@@ -650,10 +714,16 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
       TEST_TRY_UNWRAP(bool isMoved, dm->MoveEntry(src, dest));
       ASSERT_TRUE(isMoved);
 
-      TEST_TRY_UNWRAP(
-          EntryId testFileCheck,
-          dm->GetOrCreateFile({rootId, firstChildDescendantMeta.childName()},
-                               true));
+      FileSystemChildMetadata oldLocation{rootId,
+                                          firstChildDescendantMeta.childName()};
+
+      
+      TEST_TRY_UNWRAP_ERR(nsresult rv, dm->GetOrCreateDirectory(
+                                           oldLocation,  false));
+      ASSERT_NSEQ(NS_ERROR_DOM_NOT_FOUND_ERR, rv);
+
+      TEST_TRY_UNWRAP(EntryId testFileCheck,
+                      dm->GetOrCreateFile(oldLocation,  true));
       ASSERT_NE(testFile, testFileCheck);
       testFile = testFileCheck;
     }
@@ -692,12 +762,12 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
       
       TEST_TRY_UNWRAP(EntryId handle, dm->GetOrCreateFile(newFileMeta,
                                                            false));
-      ASSERT_STREQ(handle, newFile);
+      ASSERT_EQ(handle, newFile);
 
       TEST_TRY_UNWRAP(
           handle, dm->GetOrCreateDirectory({rootId, testFileMeta.childName()},
                                             false));
-      ASSERT_STREQ(handle, firstChildDescendant);
+      ASSERT_EQ(handle, firstChildDescendant);
     }
 
     {
@@ -706,16 +776,6 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
       ASSERT_EQ(2u, entryPath.Length());
       ASSERT_STREQ(testFileMeta.childName(), entryPath[0]);
       ASSERT_STREQ(testFileMeta.childName(), entryPath[1]);
-    }
-
-    {
-      
-      FileSystemEntryMetadata src{firstChildDescendant,
-                                  firstChildDescendantMeta.childName(),
-                                   true};
-      FileSystemChildMetadata dest{rootId, firstChildMeta.childName()};
-      TEST_TRY_UNWRAP_ERR(nsresult rv, dm->MoveEntry(src, dest));
-      ASSERT_NSEQ(NS_ERROR_DOM_INVALID_MODIFICATION_ERR, rv);
     }
 
     
