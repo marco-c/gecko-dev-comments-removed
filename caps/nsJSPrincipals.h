@@ -38,6 +38,9 @@ class nsJSPrincipals : public nsIPrincipal, public JSPrincipals {
   
   static bool WritePrincipalInfo(JSStructuredCloneWriter* aWriter,
                                  const mozilla::ipc::PrincipalInfo& aInfo);
+  static bool ReadPrincipalInfo(JSStructuredCloneReader* aReader,
+                                mozilla::ipc::PrincipalInfo& aInfo);
+
   
   
   

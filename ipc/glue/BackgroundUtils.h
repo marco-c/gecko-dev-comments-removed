@@ -85,6 +85,12 @@ nsresult PrincipalToPrincipalInfo(nsIPrincipal* aPrincipal,
 
 
 
+bool NonExpandedPrincipalInfoEquals(const PrincipalInfo& aLeft,
+                                    const PrincipalInfo& aRight);
+
+
+
+
 
 
 
