@@ -232,6 +232,40 @@
 
 
 
+        get_computed_label: async function(element) {
+            let label = await window.test_driver_internal.get_computed_label(element);
+            return label;
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+        get_computed_role: async function(element) {
+            let role = await window.test_driver_internal.get_computed_role(element);
+            return role;
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
 
 
 
