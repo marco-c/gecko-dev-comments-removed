@@ -197,6 +197,10 @@ class PeerConnectionImpl final
 
   void NotifyDataChannelClosed(DataChannel*) override;
 
+  void NotifySctpConnected() override;
+
+  void NotifySctpClosed() override;
+
   const RefPtr<MediaTransportHandler> GetTransportHandler() const;
 
   
@@ -392,6 +396,8 @@ class PeerConnectionImpl final
                                const RTCConfiguration& aConfiguration) {
     rv = SetConfiguration(aConfiguration);
   }
+
+  dom::RTCSctpTransport* GetSctp() const;
 
   void RestartIce();
   void RestartIceNoRenegotiationNeeded();
@@ -825,6 +831,7 @@ class PeerConnectionImpl final
   nsTArray<RefPtr<dom::RTCRtpTransceiver>> mTransceivers;
   std::map<std::string, RefPtr<dom::RTCDtlsTransport>>
       mTransportIdToRTCDtlsTransport;
+  RefPtr<dom::RTCSctpTransport> mSctpTransport;
 
   
   

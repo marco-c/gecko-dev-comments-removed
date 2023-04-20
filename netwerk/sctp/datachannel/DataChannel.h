@@ -141,6 +141,12 @@ class DataChannelConnection final : public net::NeckoTargetHolder
     
     
     virtual void NotifyDataChannelClosed(DataChannel* aChannel) = 0;
+
+    
+    virtual void NotifySctpConnected() = 0;
+
+    
+    virtual void NotifySctpClosed() = 0;
   };
 
   
@@ -666,6 +672,9 @@ class DataChannelOnMessageAvailable : public Runnable {
       case ON_DISCONNECTED:
         
         
+        if (mConnection->mListener) {
+          mConnection->mListener->NotifySctpClosed();
+        }
         mConnection->CloseAll();
         break;
       case ON_CHANNEL_CREATED:
@@ -679,7 +688,9 @@ class DataChannelOnMessageAvailable : public Runnable {
         mConnection->mListener->NotifyDataChannel(mChannel.forget());
         break;
       case ON_CONNECTION:
-        
+        if (mConnection->mListener) {
+          mConnection->mListener->NotifySctpConnected();
+        }
         break;
     }
     return NS_OK;
