@@ -471,12 +471,15 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
     return NS_OK;
   }
 
-  mPullPromise->MaybeResolveWithUndefined();
-  mPullPromise = nullptr;
-
   
   
   
+  
+  MOZ_ASSERT_IF(!mPullPromise, IsClosed());
+  if (mPullPromise) {
+    mPullPromise->MaybeResolveWithUndefined();
+    mPullPromise = nullptr;
+  }
 
   return NS_OK;
 }
