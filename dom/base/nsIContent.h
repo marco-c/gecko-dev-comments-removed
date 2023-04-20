@@ -17,6 +17,7 @@ class nsIFrame;
 
 namespace mozilla {
 class EventChainPreVisitor;
+class HTMLEditor;
 struct URLExtraData;
 namespace dom {
 struct BindContext;
@@ -623,6 +624,12 @@ class nsIContent : public nsINode {
     rc -= GetChildCount();
     return rc == 0;
   }
+
+  
+
+
+
+  bool InclusiveDescendantMayNeedSpellchecking(mozilla::HTMLEditor* aEditor);
 
  protected:
   

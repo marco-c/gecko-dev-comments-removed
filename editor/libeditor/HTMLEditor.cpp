@@ -4423,12 +4423,26 @@ void HTMLEditor::DoContentInserted(nsIContent* aChild,
 
     
     if (mInlineSpellChecker) {
-      RefPtr<nsRange> range = nsRange::Create(aChild);
       nsIContent* endContent = aChild;
       if (aInsertedOrAppended == eAppended) {
+        nsIContent* child = nullptr;
+        for (child = aChild; child; child = child->GetNextSibling()) {
+          if (child->InclusiveDescendantMayNeedSpellchecking(this)) {
+            break;
+          }
+        }
+        if (!child) {
+          
+          return;
+        }
+
         
         endContent = container->GetLastChild();
+      } else if (!aChild->InclusiveDescendantMayNeedSpellchecking(this)) {
+        return;
       }
+
+      RefPtr<nsRange> range = nsRange::Create(aChild);
       range->SelectNodesInContainer(container, aChild, endContent);
       DebugOnly<nsresult> rvIgnored =
           mInlineSpellChecker->SpellCheckRange(range);
