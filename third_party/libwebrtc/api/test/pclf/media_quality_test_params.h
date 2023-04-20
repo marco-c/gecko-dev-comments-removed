@@ -22,7 +22,7 @@
 #include "api/field_trials_view.h"
 #include "api/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "api/task_queue/task_queue_factory.h"
-#include "api/test/peerconnection_quality_test_fixture.h"
+#include "api/test/pclf/media_configuration.h"
 #include "api/transport/network_control.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
@@ -118,7 +118,7 @@ struct Params {
   
   absl::optional<std::string> name;
   
-  absl::optional<PeerConnectionE2EQualityTestFixture::AudioConfig> audio_config;
+  absl::optional<AudioConfig> audio_config;
   
   
   uint32_t port_allocator_extra_flags = cricket::kDefaultPortAllocatorFlags;
@@ -142,18 +142,38 @@ struct Params {
   PeerConnectionInterface::RTCConfiguration rtc_configuration;
   PeerConnectionInterface::RTCOfferAnswerOptions rtc_offer_answer_options;
   BitrateSettings bitrate_settings;
-  std::vector<PeerConnectionE2EQualityTestFixture::VideoCodecConfig>
-      video_codecs;
+  std::vector<VideoCodecConfig> video_codecs;
 };
 
 
 struct ConfigurableParams {
   
-  std::vector<PeerConnectionE2EQualityTestFixture::VideoConfig> video_configs;
+  std::vector<VideoConfig> video_configs;
 
-  PeerConnectionE2EQualityTestFixture::VideoSubscription video_subscription =
-      PeerConnectionE2EQualityTestFixture::VideoSubscription()
-          .SubscribeToAllPeers();
+  VideoSubscription video_subscription =
+      VideoSubscription().SubscribeToAllPeers();
+};
+
+
+
+struct RunParams {
+  explicit RunParams(TimeDelta run_duration) : run_duration(run_duration) {}
+
+  
+  
+  
+  TimeDelta run_duration;
+
+  
+  
+  bool enable_flex_fec_support = false;
+  
+  
+  bool use_conference_mode = false;
+  
+  
+  
+  absl::optional<EchoEmulationConfig> echo_emulation_config;
 };
 
 }  

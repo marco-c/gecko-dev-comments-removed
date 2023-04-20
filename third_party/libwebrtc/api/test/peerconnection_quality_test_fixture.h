@@ -10,6 +10,10 @@
 #ifndef API_TEST_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_
 #define API_TEST_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -32,6 +36,8 @@
 #include "api/task_queue/task_queue_factory.h"
 #include "api/test/audio_quality_analyzer_interface.h"
 #include "api/test/frame_generator_interface.h"
+#include "api/test/pclf/media_configuration.h"
+#include "api/test/pclf/media_quality_test_params.h"
 #include "api/test/peer_network_dependencies.h"
 #include "api/test/simulated_network.h"
 #include "api/test/stats_observer_interface.h"
@@ -45,6 +51,7 @@
 #include "api/video_codecs/video_encoder_factory.h"
 #include "media/base/media_constants.h"
 #include "modules/audio_processing/include/audio_processing.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/network.h"
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/ssl_certificate.h"
@@ -59,471 +66,19 @@ constexpr size_t kDefaultSlidesHeight = 1110;
 
 class PeerConnectionE2EQualityTestFixture {
  public:
-  
-  
-  
-  
-  enum class CapturingDeviceIndex : size_t {};
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  struct ScrollingParams {
-    ScrollingParams(TimeDelta duration,
-                    size_t source_width,
-                    size_t source_height)
-        : duration(duration),
-          source_width(source_width),
-          source_height(source_height) {
-      RTC_CHECK_GT(duration.ms(), 0);
-    }
-
-    
-    TimeDelta duration;
-    
-    size_t source_width;
-    
-    size_t source_height;
-  };
-
-  
-  struct ScreenShareConfig {
-    explicit ScreenShareConfig(TimeDelta slide_change_interval)
-        : slide_change_interval(slide_change_interval) {
-      RTC_CHECK_GT(slide_change_interval.ms(), 0);
-    }
-
-    
-    
-    TimeDelta slide_change_interval;
-    
-    
-    bool generate_slides = false;
-    
-    
-    absl::optional<ScrollingParams> scrolling_params;
-    
-    
-    
-    
-    
-    
-    
-    
-    std::vector<std::string> slides_yuv_file_names;
-  };
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  struct VideoSimulcastConfig {
-    explicit VideoSimulcastConfig(int simulcast_streams_count)
-        : simulcast_streams_count(simulcast_streams_count) {
-      RTC_CHECK_GT(simulcast_streams_count, 1);
-    }
-
-    
-    
-    int simulcast_streams_count;
-  };
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  struct EmulatedSFUConfig {
-    EmulatedSFUConfig() {}
-    explicit EmulatedSFUConfig(int target_layer_index)
-        : target_layer_index(target_layer_index) {
-      RTC_CHECK_GE(target_layer_index, 0);
-    }
-
-    EmulatedSFUConfig(absl::optional<int> target_layer_index,
-                      absl::optional<int> target_temporal_index)
-        : target_layer_index(target_layer_index),
-          target_temporal_index(target_temporal_index) {
-      RTC_CHECK_GE(target_temporal_index.value_or(0), 0);
-      if (target_temporal_index)
-        RTC_CHECK_GE(*target_temporal_index, 0);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    absl::optional<int> target_layer_index;
-    
-    
-    
-    
-    absl::optional<int> target_temporal_index;
-  };
-
-  class VideoResolution {
-   public:
-    
-    
-    enum class Spec {
-      
-      
-      kNone,
-      
-      
-      kMaxFromSender
-    };
-
-    VideoResolution(size_t width, size_t height, int32_t fps);
-    explicit VideoResolution(Spec spec = Spec::kNone);
-
-    bool operator==(const VideoResolution& other) const;
-    bool operator!=(const VideoResolution& other) const {
-      return !(*this == other);
-    }
-
-    size_t width() const { return width_; }
-    void set_width(size_t width) { width_ = width; }
-    size_t height() const { return height_; }
-    void set_height(size_t height) { height_ = height; }
-    int32_t fps() const { return fps_; }
-    void set_fps(int32_t fps) { fps_ = fps; }
-
-    
-    
-    bool IsRegular() const { return spec_ == Spec::kNone; }
-
-    std::string ToString() const;
-
-   private:
-    size_t width_ = 0;
-    size_t height_ = 0;
-    int32_t fps_ = 0;
-    Spec spec_ = Spec::kNone;
-  };
-
-  class VideoDumpOptions {
-   public:
-    static constexpr int kDefaultSamplingModulo = 1;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    explicit VideoDumpOptions(
-        absl::string_view output_directory,
-        int sampling_modulo = kDefaultSamplingModulo,
-        bool export_frame_ids = false,
-        std::function<std::unique_ptr<test::VideoFrameWriter>(
-            absl::string_view file_name_prefix,
-            const VideoResolution& resolution)> video_frame_writer_factory =
-            Y4mVideoFrameWriterFactory);
-    VideoDumpOptions(absl::string_view output_directory, bool export_frame_ids);
-
-    VideoDumpOptions(const VideoDumpOptions&) = default;
-    VideoDumpOptions& operator=(const VideoDumpOptions&) = default;
-    VideoDumpOptions(VideoDumpOptions&&) = default;
-    VideoDumpOptions& operator=(VideoDumpOptions&&) = default;
-
-    std::string output_directory() const { return output_directory_; }
-    int sampling_modulo() const { return sampling_modulo_; }
-    bool export_frame_ids() const { return export_frame_ids_; }
-
-    std::unique_ptr<test::VideoFrameWriter> CreateInputDumpVideoFrameWriter(
-        absl::string_view stream_label,
-        const VideoResolution& resolution) const;
-
-    std::unique_ptr<test::VideoFrameWriter> CreateOutputDumpVideoFrameWriter(
-        absl::string_view stream_label,
-        absl::string_view receiver,
-        const VideoResolution& resolution) const;
-
-    std::string ToString() const;
-
-   private:
-    static std::unique_ptr<test::VideoFrameWriter> Y4mVideoFrameWriterFactory(
-        absl::string_view file_name_prefix,
-        const VideoResolution& resolution);
-    std::string GetInputDumpFileName(absl::string_view stream_label,
-                                     const VideoResolution& resolution) const;
-    
-    
-    absl::optional<std::string> GetInputFrameIdsDumpFileName(
-        absl::string_view stream_label,
-        const VideoResolution& resolution) const;
-    std::string GetOutputDumpFileName(absl::string_view stream_label,
-                                      absl::string_view receiver,
-                                      const VideoResolution& resolution) const;
-    
-    
-    absl::optional<std::string> GetOutputFrameIdsDumpFileName(
-        absl::string_view stream_label,
-        absl::string_view receiver,
-        const VideoResolution& resolution) const;
-
-    std::string output_directory_;
-    int sampling_modulo_ = 1;
-    bool export_frame_ids_ = false;
-    std::function<std::unique_ptr<test::VideoFrameWriter>(
-        absl::string_view file_name_prefix,
-        const VideoResolution& resolution)>
-        video_frame_writer_factory_;
-  };
-
-  
-  struct VideoConfig {
-    explicit VideoConfig(const VideoResolution& resolution);
-    VideoConfig(size_t width, size_t height, int32_t fps)
-        : width(width), height(height), fps(fps) {}
-    VideoConfig(std::string stream_label,
-                size_t width,
-                size_t height,
-                int32_t fps)
-        : width(width),
-          height(height),
-          fps(fps),
-          stream_label(std::move(stream_label)) {}
-
-    
-    size_t width;
-    
-    size_t height;
-    int32_t fps;
-    VideoResolution GetResolution() const {
-      return VideoResolution(width, height, fps);
-    }
-
-    
-    
-    absl::optional<std::string> stream_label;
-    
-    
-    absl::optional<VideoTrackInterface::ContentHint> content_hint;
-    
-    
-    
-    
-    
-    
-    
-    
-    absl::optional<VideoSimulcastConfig> simulcast_config;
-    
-    absl::optional<EmulatedSFUConfig> emulated_sfu_config;
-    
-    
-    
-    
-    
-    
-    
-    std::vector<RtpEncodingParameters> encoding_params;
-    
-    
-    
-    absl::optional<int> temporal_layers_count;
-    
-    
-    
-    
-    absl::optional<VideoDumpOptions> input_dump_options;
-    
-    
-    
-    absl::optional<VideoDumpOptions> output_dump_options;
-    
-    
-    bool output_dump_use_fixed_framerate = false;
-    
-    bool show_on_screen = false;
-    
-    
-    
-    absl::optional<std::string> sync_group;
-    
-    
-    
-    absl::optional<DegradationPreference> degradation_preference;
-  };
-
-  
-  struct AudioConfig {
-    enum Mode {
-      kGenerated,
-      kFile,
-    };
-
-    AudioConfig() = default;
-    explicit AudioConfig(std::string stream_label)
-        : stream_label(std::move(stream_label)) {}
-
-    
-    
-    absl::optional<std::string> stream_label;
-    Mode mode = kGenerated;
-    
-    absl::optional<std::string> input_file_name;
-    
-    absl::optional<std::string> input_dump_file_name;
-    
-    absl::optional<std::string> output_dump_file_name;
-
-    
-    cricket::AudioOptions audio_options;
-    
-    int sampling_frequency_in_hz = 48000;
-    
-    
-    
-    absl::optional<std::string> sync_group;
-  };
-
-  struct VideoCodecConfig {
-    explicit VideoCodecConfig(std::string name)
-        : name(std::move(name)), required_params() {}
-    VideoCodecConfig(std::string name,
-                     std::map<std::string, std::string> required_params)
-        : name(std::move(name)), required_params(std::move(required_params)) {}
-    
-    
-    
-    
-    
-    std::string name = cricket::kVp8CodecName;
-    
-    
-    
-    
-    
-    
-    std::map<std::string, std::string> required_params;
-  };
-
-  
-  
-  class VideoSubscription {
-   public:
-    
-    
-    static absl::optional<VideoResolution> GetMaxResolution(
-        rtc::ArrayView<const VideoConfig> video_configs);
-    static absl::optional<VideoResolution> GetMaxResolution(
-        rtc::ArrayView<const VideoResolution> resolutions);
-
-    bool operator==(const VideoSubscription& other) const;
-    bool operator!=(const VideoSubscription& other) const {
-      return !(*this == other);
-    }
-
-    
-    
-    
-    VideoSubscription& SubscribeToPeer(
-        absl::string_view peer_name,
-        VideoResolution resolution =
-            VideoResolution(VideoResolution::Spec::kMaxFromSender)) {
-      peers_resolution_[std::string(peer_name)] = resolution;
-      return *this;
-    }
-
-    
-    
-    
-    
-    VideoSubscription& SubscribeToAllPeers(
-        VideoResolution resolution =
-            VideoResolution(VideoResolution::Spec::kMaxFromSender)) {
-      default_resolution_ = resolution;
-      return *this;
-    }
-
-    
-    
-    
-    
-    absl::optional<VideoResolution> GetResolutionForPeer(
-        absl::string_view peer_name) const {
-      auto it = peers_resolution_.find(std::string(peer_name));
-      if (it == peers_resolution_.end()) {
-        return default_resolution_;
-      }
-      return it->second;
-    }
-
-    
-    
-    std::vector<std::string> GetSubscribedPeers() const {
-      std::vector<std::string> subscribed_streams;
-      subscribed_streams.reserve(peers_resolution_.size());
-      for (const auto& entry : peers_resolution_) {
-        subscribed_streams.push_back(entry.first);
-      }
-      return subscribed_streams;
-    }
-
-    std::string ToString() const;
-
-   private:
-    absl::optional<VideoResolution> default_resolution_ = absl::nullopt;
-    std::map<std::string, VideoResolution> peers_resolution_;
-  };
+  using CapturingDeviceIndex = ::webrtc::webrtc_pc_e2e::CapturingDeviceIndex;
+  using ScrollingParams = ::webrtc::webrtc_pc_e2e::ScrollingParams;
+  using ScreenShareConfig = ::webrtc::webrtc_pc_e2e::ScreenShareConfig;
+  using VideoSimulcastConfig = ::webrtc::webrtc_pc_e2e::VideoSimulcastConfig;
+  using EmulatedSFUConfig = ::webrtc::webrtc_pc_e2e::EmulatedSFUConfig;
+  using VideoResolution = ::webrtc::webrtc_pc_e2e::VideoResolution;
+  using VideoDumpOptions = ::webrtc::webrtc_pc_e2e::VideoDumpOptions;
+  using VideoConfig = ::webrtc::webrtc_pc_e2e::VideoConfig;
+  using AudioConfig = ::webrtc::webrtc_pc_e2e::AudioConfig;
+  using VideoCodecConfig = ::webrtc::webrtc_pc_e2e::VideoCodecConfig;
+  using VideoSubscription = ::webrtc::webrtc_pc_e2e::VideoSubscription;
+  using EchoEmulationConfig = ::webrtc::webrtc_pc_e2e::EchoEmulationConfig;
+  using RunParams = ::webrtc::webrtc_pc_e2e::RunParams;
 
   
   class PeerConfigurer {
@@ -644,35 +199,6 @@ class PeerConnectionE2EQualityTestFixture {
     
     virtual PeerConfigurer* SetBitrateSettings(
         BitrateSettings bitrate_settings) = 0;
-  };
-
-  
-  struct EchoEmulationConfig {
-    
-    
-    TimeDelta echo_delay = TimeDelta::Millis(50);
-  };
-
-  
-  
-  struct RunParams {
-    explicit RunParams(TimeDelta run_duration) : run_duration(run_duration) {}
-
-    
-    
-    
-    TimeDelta run_duration;
-
-    
-    
-    bool enable_flex_fec_support = false;
-    
-    
-    bool use_conference_mode = false;
-    
-    
-    
-    absl::optional<EchoEmulationConfig> echo_emulation_config;
   };
 
   
