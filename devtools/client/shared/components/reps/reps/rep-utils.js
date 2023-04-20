@@ -484,14 +484,10 @@ define(function(require, exports, module) {
         "(?:min-|max-)?width|(?:min-|max-)?height)"
     );
 
-    
-    const forbiddenValuesRegexs = [
-      
-      /\b((?:-moz-)?element)[\s('"]+/gi,
+    const mozElementRegex = /\b((?:-moz-)?element)[\s('"]+/gi;
 
-      
-      /['"(]*(?:chrome|resource|about|app|https?|ftp|file):+\/*/gi,
-    ];
+    
+    const cssUrlRegex = /url\([\'\"]?([^\)]*)/g;
 
     
     const dummy = createElement("div");
@@ -502,10 +498,20 @@ define(function(require, exports, module) {
     
     return Array.from(dummy.style)
       .filter(name => {
-        return (
-          allowedStylesRegex.test(name) &&
-          !forbiddenValuesRegexs.some(regex => regex.test(dummy.style[name]))
-        );
+        if (!allowedStylesRegex.test(name)) {
+          return false;
+        }
+
+        if (mozElementRegex.test(name)) {
+          return false;
+        }
+
+        
+        
+        
+        return Array.from(dummy.style[name].matchAll(cssUrlRegex))
+          .map(match => match[1])
+          .every(potentialUrl => potentialUrl.startsWith("data:"));
       })
       .reduce((object, name) => {
         
