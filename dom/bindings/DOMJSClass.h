@@ -451,6 +451,7 @@ enum DOMObjectType : uint8_t {
   eInterface,
   eInterfacePrototype,
   eGlobalInterfacePrototype,
+  eNamespace,
   eNamedPropertiesObject
 };
 
