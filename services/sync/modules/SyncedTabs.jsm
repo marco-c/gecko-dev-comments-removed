@@ -88,6 +88,31 @@ let SyncedTabsInternal = {
     return reFilter.test(tab.url) || reFilter.test(tab.title);
   },
 
+  _createRecentTabsList(clients, maxCount) {
+    let tabs = [];
+
+    for (let client of clients) {
+      for (let tab of client.tabs) {
+        tab.device = client.name;
+        tab.deviceType = client.clientType;
+      }
+      tabs = [...tabs, ...client.tabs.reverse()];
+    }
+    tabs = this._filterRecentTabsDupes(tabs);
+    tabs = tabs.sort((a, b) => b.lastUsed - a.lastUsed).slice(0, maxCount);
+    return tabs;
+  },
+
+  _filterRecentTabsDupes(tabs) {
+    
+    
+    return tabs.filter(tab => {
+      return !tabs.some(t => {
+        return t.url === tab.url && tab.lastUsed < t.lastUsed;
+      });
+    });
+  },
+
   async getTabClients(filter) {
     lazy.log.info("Generating tab list with filter", filter);
     let result = [];
@@ -308,18 +333,11 @@ var SyncedTabs = {
     );
   },
 
+  
+  
+  
   async getRecentTabs(maxCount) {
-    let tabs = [];
     let clients = await this.getTabClients();
-
-    for (let client of clients) {
-      for (let tab of client.tabs) {
-        tab.device = client.name;
-        tab.deviceType = client.clientType;
-      }
-      tabs = [...tabs, ...client.tabs.reverse()];
-    }
-    tabs = tabs.sort((a, b) => b.lastUsed - a.lastUsed).slice(0, maxCount);
-    return tabs;
+    return this._internal._createRecentTabsList(clients, maxCount);
   },
 };
