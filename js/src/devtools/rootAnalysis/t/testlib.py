@@ -54,7 +54,7 @@ class Test(object):
     def compile(self, source, options=""):
         env = os.environ
         env["CCACHE_DISABLE"] = "1"
-        cmd = "{CXX} -c {source} -O3 -std=c++11 -fplugin={sixgill} -fplugin-arg-xgill-mangle=1 {options}".format(  
+        cmd = "{CXX} -c {source} -O3 -std=c++17 -fplugin={sixgill} -fplugin-arg-xgill-mangle=1 {options}".format(  
             source=self.infile(source),
             CXX=self.cfg.cxx,
             sixgill=self.cfg.sixgill_plugin,

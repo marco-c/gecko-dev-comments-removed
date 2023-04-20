@@ -53,6 +53,12 @@ class AutoSuppressGC {
   AutoSuppressGC() {}
 };
 
+class AutoCheckCannotGC {
+ public:
+  AutoCheckCannotGC() {}
+  ~AutoCheckCannotGC() { asm(""); }
+} ANNOTATE("Invalidated by GC");
+
 extern void GC() ANNOTATE("GC Call");
 extern void invisible();
 
@@ -462,4 +468,24 @@ Cell* refptr_test5() {
   static Cell cell;
   RefPtr<int> r;
   return nullptr;  
+}
+
+std::pair<bool, AutoCheckCannotGC> pair_returning_function() {
+  return std::make_pair(true, AutoCheckCannotGC());
+}
+
+void aggr_init_unsafe() {
+  
+  auto [ok, nogc] = pair_returning_function();
+  GC();
+}
+
+void aggr_init_safe() {
+  
+  
+  
+  
+  
+  GC();
+  auto [ok, nogc] = pair_returning_function();
 }

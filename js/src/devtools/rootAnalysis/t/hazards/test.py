@@ -25,11 +25,7 @@ assert "cell6" not in hazmap
 assert "<returnvalue>" in hazmap
 assert "this" in hazmap
 
-
 assert hazmap["cell2"].function == "Cell* f()"
-haz_functions = set(haz.function for haz in hazards)
-print(haz_functions)
-assert len(haz_functions) == 7
 
 
 
@@ -100,3 +96,10 @@ for haz in hazards:
 methhaz = byfunc["int32 Subcell::method()"]
 assert "this" in methhaz
 assert methhaz["this"].type == "Subcell*"
+
+haz_functions = set(haz.function for haz in hazards)
+
+
+
+assert "void aggr_init_safe()" not in haz_functions
+assert "void aggr_init_unsafe()" in haz_functions
