@@ -8,7 +8,7 @@
 
 
 
-#include "api/stats_types.h"
+#include "api/legacy_stats_types.h"
 
 #include <string.h>
 
