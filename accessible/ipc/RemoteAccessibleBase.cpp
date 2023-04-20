@@ -935,15 +935,23 @@ nsTArray<bool> RemoteAccessibleBase<Derived>::PreProcessRelations(
               mCachedFields->GetAttribute<nsTArray<uint64_t>>(relAtom)) {
         for (uint64_t id : *maybeOldIDs) {
           
-          nsTHashMap<nsUint64HashKey, nsTArray<uint64_t>>& reverseRels =
-              Document()->mReverseRelations.LookupOrInsert(id);
-          
-          nsTArray<uint64_t>& reverseRelIDs = reverseRels.LookupOrInsert(
-              static_cast<uint64_t>(*data.mReverseType));
           
           
-          DebugOnly<bool> removed = reverseRelIDs.RemoveElement(ID());
-          MOZ_ASSERT(removed, "Can't find old reverse relation");
+          
+          
+          if (auto reverseRels = Document()->mReverseRelations.Lookup(id)) {
+            
+            
+            
+            
+            
+            nsTArray<uint64_t>& reverseRelIDs = reverseRels->LookupOrInsert(
+                static_cast<uint64_t>(*data.mReverseType));
+            
+            
+            DebugOnly<bool> removed = reverseRelIDs.RemoveElement(ID());
+            MOZ_ASSERT(removed, "Can't find old reverse relation");
+          }
         }
       }
     }
