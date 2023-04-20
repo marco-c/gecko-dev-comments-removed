@@ -1647,12 +1647,7 @@ class PrintUIForm extends PrintUIControlMixin(HTMLFormElement) {
     this.addEventListener("revalidate", this);
 
     this._printerDestination = this.querySelector("#destination");
-
     this.printButton = this.querySelector("#print-button");
-    if (AppConstants.platform != "win") {
-      
-      this.printButton.parentElement.append(this.printButton);
-    }
   }
 
   removeNonPdfSettings() {
