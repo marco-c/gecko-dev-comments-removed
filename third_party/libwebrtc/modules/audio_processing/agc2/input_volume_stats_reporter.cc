@@ -12,36 +12,91 @@
 
 #include <cmath>
 
+#include "absl/strings/string_view.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_minmax.h"
+#include "rtc_base/strings/string_builder.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 namespace {
+
+using InputVolumeType = InputVolumeStatsReporter::InputVolumeType;
 
 constexpr int kFramesIn60Seconds = 6000;
 constexpr int kMinInputVolume = 0;
 constexpr int kMaxInputVolume = 255;
 constexpr int kMaxUpdate = kMaxInputVolume - kMinInputVolume;
 
-float ComputeAverageUpdate(int sum_updates, int num_updates) {
+int ComputeAverageUpdate(int sum_updates, int num_updates) {
   RTC_DCHECK_GE(sum_updates, 0);
   RTC_DCHECK_LE(sum_updates, kMaxUpdate * kFramesIn60Seconds);
   RTC_DCHECK_GE(num_updates, 0);
   RTC_DCHECK_LE(num_updates, kFramesIn60Seconds);
   if (num_updates == 0) {
-    return 0.0f;
+    return 0;
   }
   return std::round(static_cast<float>(sum_updates) /
                     static_cast<float>(num_updates));
 }
+
+constexpr absl::string_view MetricNamePrefix(
+    InputVolumeType input_volume_type) {
+  switch (input_volume_type) {
+    case InputVolumeType::kApplied:
+      return "WebRTC.Audio.Apm.AppliedInputVolume.";
+    case InputVolumeType::kRecommended:
+      return "WebRTC.Audio.Apm.RecommendedInputVolume.";
+  }
+}
+
+metrics::Histogram* CreateRateHistogram(InputVolumeType input_volume_type,
+                                        absl::string_view name) {
+  char buffer[64];
+  rtc::SimpleStringBuilder builder(buffer);
+  builder << MetricNamePrefix(input_volume_type) << name;
+  return metrics::HistogramFactoryGetCountsLinear(builder.str(),
+                                                  1,
+                                                  kFramesIn60Seconds,
+                                                  50);
+}
+
+metrics::Histogram* CreateAverageHistogram(InputVolumeType input_volume_type,
+                                           absl::string_view name) {
+  char buffer[64];
+  rtc::SimpleStringBuilder builder(buffer);
+  builder << MetricNamePrefix(input_volume_type) << name;
+  return metrics::HistogramFactoryGetCountsLinear(builder.str(),
+                                                  1,
+                                                  kMaxUpdate,
+                                                  50);
+}
+
 }  
 
-InputVolumeStatsReporter::InputVolumeStatsReporter() = default;
+InputVolumeStatsReporter::InputVolumeStatsReporter(InputVolumeType type)
+    : histograms_(
+          {.decrease_rate = CreateRateHistogram(type, "DecreaseRate"),
+           .decrease_average = CreateAverageHistogram(type, "DecreaseAverage"),
+           .increase_rate = CreateRateHistogram(type, "IncreaseRate"),
+           .increase_average = CreateAverageHistogram(type, "IncreaseAverage"),
+           .update_rate = CreateRateHistogram(type, "UpdateRate"),
+           .update_average = CreateAverageHistogram(type, "UpdateAverage")}),
+      cannot_log_stats_(!histograms_.AllPointersSet()) {
+  if (cannot_log_stats_) {
+    RTC_LOG(LS_WARNING) << "Will not log any `" << MetricNamePrefix(type)
+                        << "*` histogram stats.";
+  }
+}
 
 InputVolumeStatsReporter::~InputVolumeStatsReporter() = default;
 
 void InputVolumeStatsReporter::UpdateStatistics(int input_volume) {
+  if (cannot_log_stats_) {
+    
+    return;
+  }
+
   RTC_DCHECK_GE(input_volume, kMinInputVolume);
   RTC_DCHECK_LE(input_volume, kMaxInputVolume);
   if (previous_input_volume_.has_value() &&
@@ -65,56 +120,31 @@ void InputVolumeStatsReporter::UpdateStatistics(int input_volume) {
 }
 
 void InputVolumeStatsReporter::LogVolumeUpdateStats() const {
-  const float average_decrease = ComputeAverageUpdate(
-      volume_update_stats_.sum_decreases, volume_update_stats_.num_decreases);
-  const float average_increase = ComputeAverageUpdate(
-      volume_update_stats_.sum_increases, volume_update_stats_.num_increases);
-  const int num_updates =
-      volume_update_stats_.num_decreases + volume_update_stats_.num_increases;
-  const float average_update = ComputeAverageUpdate(
-      volume_update_stats_.sum_decreases + volume_update_stats_.sum_increases,
-      num_updates);
-  RTC_HISTOGRAM_COUNTS_LINEAR(
-      "WebRTC.Audio.ApmAnalogGainDecreaseRate",
-      volume_update_stats_.num_decreases,
-      1,
-      kFramesIn60Seconds,
-      50);
+  
+  metrics::HistogramAdd(histograms_.decrease_rate,
+                        volume_update_stats_.num_decreases);
   if (volume_update_stats_.num_decreases > 0) {
-    RTC_HISTOGRAM_COUNTS_LINEAR(
-        "WebRTC.Audio.ApmAnalogGainDecreaseAverage",
-        average_decrease,
-        1,
-        kMaxUpdate,
-        50);
+    int average_decrease = ComputeAverageUpdate(
+        volume_update_stats_.sum_decreases, volume_update_stats_.num_decreases);
+    metrics::HistogramAdd(histograms_.decrease_average, average_decrease);
   }
-  RTC_HISTOGRAM_COUNTS_LINEAR(
-      "WebRTC.Audio.ApmAnalogGainIncreaseRate",
-      volume_update_stats_.num_increases,
-      1,
-      kFramesIn60Seconds,
-      50);
+  
+  metrics::HistogramAdd(histograms_.increase_rate,
+                        volume_update_stats_.num_increases);
   if (volume_update_stats_.num_increases > 0) {
-    RTC_HISTOGRAM_COUNTS_LINEAR(
-        "WebRTC.Audio.ApmAnalogGainIncreaseAverage",
-        average_increase,
-        1,
-        kMaxUpdate,
-        50);
+    int average_increase = ComputeAverageUpdate(
+        volume_update_stats_.sum_increases, volume_update_stats_.num_increases);
+    metrics::HistogramAdd(histograms_.increase_average, average_increase);
   }
-  RTC_HISTOGRAM_COUNTS_LINEAR(
-      "WebRTC.Audio.ApmAnalogGainUpdateRate",
-      num_updates,
-      1,
-      kFramesIn60Seconds,
-      50);
+  
+  int num_updates =
+      volume_update_stats_.num_decreases + volume_update_stats_.num_increases;
+  metrics::HistogramAdd(histograms_.update_rate, num_updates);
   if (num_updates > 0) {
-    RTC_HISTOGRAM_COUNTS_LINEAR(
-        "WebRTC.Audio.ApmAnalogGainUpdateAverage",
-        average_update,
-        1,
-        kMaxUpdate,
-        50);
+    int average_update = ComputeAverageUpdate(
+        volume_update_stats_.sum_decreases + volume_update_stats_.sum_increases,
+        num_updates);
+    metrics::HistogramAdd(histograms_.update_average, average_update);
   }
 }
 
