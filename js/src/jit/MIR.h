@@ -10005,23 +10005,31 @@ class MWasmStoreStackResult : public MBinaryInstruction,
 
 
 
+
+
+
+
+
 class MWasmDerivedPointer : public MUnaryInstruction,
                             public NoTypePolicy::Data {
   MWasmDerivedPointer(MDefinition* base, size_t offset)
-      : MUnaryInstruction(classOpcode, base), offset_(offset) {
+      : MUnaryInstruction(classOpcode, base), offset_(uint32_t(offset)) {
     MOZ_ASSERT(offset <= INT32_MAX);
+    
+    MOZ_ASSERT(base->type() == MIRType::Pointer ||
+               base->type() == TargetWordMIRType());
     setResultType(MIRType::Pointer);
     setMovable();
   }
 
-  size_t offset_;
+  uint32_t offset_;
 
  public:
   INSTRUCTION_HEADER(WasmDerivedPointer)
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, base))
 
-  size_t offset() const { return offset_; }
+  uint32_t offset() const { return offset_; }
 
   AliasSet getAliasSet() const override { return AliasSet::None(); }
 
@@ -10041,10 +10049,14 @@ class MWasmDerivedPointer : public MUnaryInstruction,
   ALLOW_CLONE(MWasmDerivedPointer)
 };
 
+
+
 class MWasmDerivedIndexPointer : public MBinaryInstruction,
                                  public NoTypePolicy::Data {
   MWasmDerivedIndexPointer(MDefinition* base, MDefinition* index, Scale scale)
       : MBinaryInstruction(classOpcode, base, index), scale_(scale) {
+    
+    MOZ_ASSERT(base->type() == MIRType::Pointer);
     setResultType(MIRType::Pointer);
     setMovable();
   }
@@ -10073,25 +10085,40 @@ class MWasmDerivedIndexPointer : public MBinaryInstruction,
 
 
 
+
 class MWasmStoreRef : public MAryInstruction<3>, public NoTypePolicy::Data {
+  uint32_t offset_;
   AliasSet::Flag aliasSet_;
 
-  MWasmStoreRef(MDefinition* instance, MDefinition* valueAddr,
-                MDefinition* value, AliasSet::Flag aliasSet)
-      : MAryInstruction<3>(classOpcode), aliasSet_(aliasSet) {
-    MOZ_ASSERT(valueAddr->type() == MIRType::Pointer);
+  MWasmStoreRef(MDefinition* instance, MDefinition* valueBase,
+                size_t valueOffset, MDefinition* value, AliasSet::Flag aliasSet)
+      : MAryInstruction<3>(classOpcode),
+        offset_(uint32_t(valueOffset)),
+        aliasSet_(aliasSet) {
+    MOZ_ASSERT(valueOffset <= INT32_MAX);
+    MOZ_ASSERT(valueBase->type() == MIRType::Pointer ||
+               valueBase->type() == MIRType::StackResults);
     MOZ_ASSERT(value->type() == MIRType::RefOrNull);
     initOperand(0, instance);
-    initOperand(1, valueAddr);
+    initOperand(1, valueBase);
     initOperand(2, value);
   }
 
  public:
   INSTRUCTION_HEADER(WasmStoreRef)
   TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, instance), (1, valueAddr), (2, value))
+  NAMED_OPERANDS((0, instance), (1, valueBase), (2, value))
 
+  uint32_t offset() const { return offset_; }
   AliasSet getAliasSet() const override { return AliasSet::Store(aliasSet_); }
+
+#ifdef JS_JITSPEW
+  void getExtras(ExtrasCollector* extras) override {
+    char buf[64];
+    SprintfLiteral(buf, "(offs=%lld)", (long long int)offset_);
+    extras->add(buf);
+  }
+#endif
 };
 
 class MWasmParameter : public MNullaryInstruction {
@@ -10960,9 +10987,45 @@ class MIonToWasmCall final : public MVariadicInstruction,
 
 enum class MWideningOp : uint8_t { None, FromU16, FromS16, FromU8, FromS8 };
 
+#ifdef JS_JITSPEW
+static inline const char* StringFromMWideningOp(MWideningOp op) {
+  switch (op) {
+    case MWideningOp::None:
+      return "None";
+    case MWideningOp::FromU16:
+      return "FromU16";
+    case MWideningOp::FromS16:
+      return "FromS16";
+    case MWideningOp::FromU8:
+      return "FromU8";
+    case MWideningOp::FromS8:
+      return "FromS8";
+    default:
+      break;
+  }
+  MOZ_CRASH("Unknown MWideningOp");
+}
+#endif
+
 
 
 enum class MNarrowingOp : uint8_t { None, To16, To8 };
+
+#ifdef JS_JITSPEW
+static inline const char* StringFromMNarrowingOp(MNarrowingOp op) {
+  switch (op) {
+    case MNarrowingOp::None:
+      return "None";
+    case MNarrowingOp::To16:
+      return "To16";
+    case MNarrowingOp::To8:
+      return "To8";
+    default:
+      break;
+  }
+  MOZ_CRASH("Unknown MNarrowingOp");
+}
+#endif
 
 
 
@@ -10986,10 +11049,11 @@ class MWasmLoadField : public MUnaryInstruction, public NoTypePolicy::Data {
                  MWideningOp wideningOp, AliasSet aliases,
                  MaybeTrapSiteInfo maybeTrap = mozilla::Nothing())
       : MUnaryInstruction(classOpcode, obj),
-        offset_(offset),
+        offset_(uint32_t(offset)),
         wideningOp_(wideningOp),
         aliases_(aliases),
         maybeTrap_(maybeTrap) {
+    MOZ_ASSERT(offset <= INT32_MAX);
     
     
     MOZ_ASSERT_IF(wideningOp != MWideningOp::None, type == MIRType::Int32);
@@ -11014,8 +11078,9 @@ class MWasmLoadField : public MUnaryInstruction, public NoTypePolicy::Data {
 
   uint32_t offset() const { return offset_; }
   MWideningOp wideningOp() const { return wideningOp_; }
-  MaybeTrapSiteInfo maybeTrap() const { return maybeTrap_; }
   AliasSet getAliasSet() const override { return aliases_; }
+  MaybeTrapSiteInfo maybeTrap() const { return maybeTrap_; }
+
   bool congruentTo(const MDefinition* ins) const override {
     
     
@@ -11032,7 +11097,17 @@ class MWasmLoadField : public MUnaryInstruction, public NoTypePolicy::Data {
            getAliasSet().flags() ==
                AliasSet::Load(AliasSet::WasmStructOutlineDataPointer).flags();
   }
+
+#ifdef JS_JITSPEW
+  void getExtras(ExtrasCollector* extras) override {
+    char buf[96];
+    SprintfLiteral(buf, "(offs=%lld, wideningOp=%s)", (long long int)offset_,
+                   StringFromMWideningOp(wideningOp_));
+    extras->add(buf);
+  }
+#endif
 };
+
 
 
 
@@ -11050,14 +11125,15 @@ class MWasmLoadFieldKA : public MBinaryInstruction, public NoTypePolicy::Data {
   AliasSet aliases_;
   MaybeTrapSiteInfo maybeTrap_;
 
-  MWasmLoadFieldKA(MDefinition* ka, MDefinition* obj, uint32_t offset,
+  MWasmLoadFieldKA(MDefinition* ka, MDefinition* obj, size_t offset,
                    MIRType type, MWideningOp wideningOp, AliasSet aliases,
                    MaybeTrapSiteInfo maybeTrap = mozilla::Nothing())
       : MBinaryInstruction(classOpcode, ka, obj),
-        offset_(offset),
+        offset_(uint32_t(offset)),
         wideningOp_(wideningOp),
         aliases_(aliases),
         maybeTrap_(maybeTrap) {
+    MOZ_ASSERT(offset <= INT32_MAX);
     MOZ_ASSERT_IF(wideningOp != MWideningOp::None, type == MIRType::Int32);
     MOZ_ASSERT(
         aliases.flags() ==
@@ -11080,10 +11156,20 @@ class MWasmLoadFieldKA : public MBinaryInstruction, public NoTypePolicy::Data {
 
   uint32_t offset() const { return offset_; }
   MWideningOp wideningOp() const { return wideningOp_; }
+  AliasSet getAliasSet() const override { return aliases_; }
   MaybeTrapSiteInfo maybeTrap() const { return maybeTrap_; }
 
-  AliasSet getAliasSet() const override { return aliases_; }
+#ifdef JS_JITSPEW
+  void getExtras(ExtrasCollector* extras) override {
+    char buf[96];
+    SprintfLiteral(buf, "(offs=%lld, wideningOp=%s)", (long long int)offset_,
+                   StringFromMWideningOp(wideningOp_));
+    extras->add(buf);
+  }
+#endif
 };
+
+
 
 
 
@@ -11098,15 +11184,16 @@ class MWasmStoreFieldKA : public MTernaryInstruction,
   AliasSet aliases_;
   MaybeTrapSiteInfo maybeTrap_;
 
-  MWasmStoreFieldKA(MDefinition* ka, MDefinition* obj, uint32_t offset,
+  MWasmStoreFieldKA(MDefinition* ka, MDefinition* obj, size_t offset,
                     MDefinition* value, MNarrowingOp narrowingOp,
                     AliasSet aliases,
                     MaybeTrapSiteInfo maybeTrap = mozilla::Nothing())
       : MTernaryInstruction(classOpcode, ka, obj, value),
-        offset_(offset),
+        offset_(uint32_t(offset)),
         narrowingOp_(narrowingOp),
         aliases_(aliases),
         maybeTrap_(maybeTrap) {
+    MOZ_ASSERT(offset <= INT32_MAX);
     MOZ_ASSERT(value->type() != MIRType::RefOrNull);
     
     
@@ -11132,10 +11219,19 @@ class MWasmStoreFieldKA : public MTernaryInstruction,
 
   uint32_t offset() const { return offset_; }
   MNarrowingOp narrowingOp() const { return narrowingOp_; }
+  AliasSet getAliasSet() const override { return aliases_; }
   MaybeTrapSiteInfo maybeTrap() const { return maybeTrap_; }
 
-  AliasSet getAliasSet() const override { return aliases_; }
+#ifdef JS_JITSPEW
+  void getExtras(ExtrasCollector* extras) override {
+    char buf[96];
+    SprintfLiteral(buf, "(offs=%lld, narrowingOp=%s)", (long long int)offset_,
+                   StringFromMNarrowingOp(narrowingOp_));
+    extras->add(buf);
+  }
+#endif
 };
+
 
 
 
@@ -11145,14 +11241,18 @@ class MWasmStoreFieldKA : public MTernaryInstruction,
 
 class MWasmStoreFieldRefKA : public MAryInstruction<4>,
                              public NoTypePolicy::Data {
+  uint32_t offset_;
   AliasSet aliases_;
 
-  MWasmStoreFieldRefKA(MDefinition* instance, MDefinition* ka,
-                       MDefinition* valueAddr, MDefinition* value,
-                       AliasSet aliases)
-      : MAryInstruction<4>(classOpcode), aliases_(aliases) {
-    MOZ_ASSERT(valueAddr->type() == MIRType::Pointer ||
-               valueAddr->type() == TargetWordMIRType());
+  MWasmStoreFieldRefKA(MDefinition* instance, MDefinition* ka, MDefinition* obj,
+                       size_t offset, MDefinition* value, AliasSet aliases)
+      : MAryInstruction<4>(classOpcode),
+        offset_(uint32_t(offset)),
+        aliases_(aliases) {
+    MOZ_ASSERT(obj->type() == TargetWordMIRType() ||
+               obj->type() == MIRType::Pointer ||
+               obj->type() == MIRType::RefOrNull);
+    MOZ_ASSERT(offset <= INT32_MAX);
     MOZ_ASSERT(value->type() == MIRType::RefOrNull);
     MOZ_ASSERT(
         aliases.flags() ==
@@ -11164,16 +11264,25 @@ class MWasmStoreFieldRefKA : public MAryInstruction<4>,
         aliases.flags() == AliasSet::Store(AliasSet::Any).flags());
     initOperand(0, instance);
     initOperand(1, ka);
-    initOperand(2, valueAddr);
+    initOperand(2, obj);
     initOperand(3, value);
   }
 
  public:
   INSTRUCTION_HEADER(WasmStoreFieldRefKA)
   TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, instance), (1, ka), (2, valueAddr), (3, value))
+  NAMED_OPERANDS((0, instance), (1, ka), (2, obj), (3, value))
 
+  uint32_t offset() const { return offset_; }
   AliasSet getAliasSet() const override { return aliases_; }
+
+#ifdef JS_JITSPEW
+  void getExtras(ExtrasCollector* extras) override {
+    char buf[64];
+    SprintfLiteral(buf, "(offs=%lld)", (long long int)offset_);
+    extras->add(buf);
+  }
+#endif
 };
 
 

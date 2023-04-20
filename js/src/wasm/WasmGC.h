@@ -449,7 +449,7 @@ wasm::StackMap* ConvertStackMapBoolVectorToStackMap(
 
 void EmitWasmPreBarrierGuard(jit::MacroAssembler& masm, Register instance,
                              Register scratch, Register valueAddr,
-                             Label* skipBarrier);
+                             size_t valueOffset, Label* skipBarrier);
 
 
 
@@ -460,7 +460,8 @@ void EmitWasmPreBarrierGuard(jit::MacroAssembler& masm, Register instance,
 
 
 void EmitWasmPreBarrierCall(jit::MacroAssembler& masm, Register instance,
-                            Register scratch, Register valueAddr);
+                            Register scratch, Register valueAddr,
+                            size_t valueOffset);
 
 
 

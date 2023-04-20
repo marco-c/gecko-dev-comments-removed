@@ -1695,8 +1695,9 @@ class FunctionCompiler {
         curBlock_->add(prevValue);
 
         
-        auto* store = MWasmStoreRef::New(alloc(), instancePointer_, valueAddr,
-                                         v, AliasSet::WasmGlobalCell);
+        auto* store =
+            MWasmStoreRef::New(alloc(), instancePointer_, valueAddr,
+                               0, v, AliasSet::WasmGlobalCell);
         curBlock_->add(store);
 
         
@@ -1723,8 +1724,9 @@ class FunctionCompiler {
       curBlock_->add(prevValue);
 
       
-      auto* store = MWasmStoreRef::New(alloc(), instancePointer_, valueAddr, v,
-                                       AliasSet::WasmGlobalVar);
+      auto* store =
+          MWasmStoreRef::New(alloc(), instancePointer_, valueAddr,
+                             0, v, AliasSet::WasmGlobalVar);
       curBlock_->add(store);
 
       
@@ -1802,8 +1804,9 @@ class FunctionCompiler {
     curBlock_->add(loc);
 
     
-    auto* store = MWasmStoreRef::New(alloc(), instancePointer_, loc, value,
-                                     AliasSet::WasmTableElement);
+    auto* store =
+        MWasmStoreRef::New(alloc(), instancePointer_, loc, 0,
+                           value, AliasSet::WasmTableElement);
     curBlock_->add(store);
 
     
@@ -1823,6 +1826,18 @@ class FunctionCompiler {
                                         MDefinition* value) {
     return emitInstanceCall2(lineOrBytecode, SASigPostBarrierPrecise, valueAddr,
                              value);
+  }
+
+  [[nodiscard]] bool postBarrierPreciseWithOffset(uint32_t lineOrBytecode,
+                                                  MDefinition* valueBase,
+                                                  uint32_t valueOffset,
+                                                  MDefinition* value) {
+    MDefinition* valueOffsetDef = constantI32(int32_t(valueOffset));
+    if (!valueOffsetDef) {
+      return false;
+    }
+    return emitInstanceCall3(lineOrBytecode, SASigPostBarrierPreciseWithOffset,
+                             valueBase, valueOffsetDef, value);
   }
 
   
@@ -2286,12 +2301,9 @@ class FunctionCompiler {
         if (result.onStack()) {
           MOZ_ASSERT(iter.remaining() > 1);
           if (result.type().isRefRepr()) {
-            auto* loc = MWasmDerivedPointer::New(alloc(), stackResultPointer_,
-                                                 result.stackOffset());
-            curBlock_->add(loc);
-            auto* store =
-                MWasmStoreRef::New(alloc(), instancePointer_, loc, values[i],
-                                   AliasSet::WasmStackResult);
+            auto* store = MWasmStoreRef::New(
+                alloc(), instancePointer_, stackResultPointer_,
+                result.stackOffset(), values[i], AliasSet::WasmStackResult);
             curBlock_->add(store);
           } else {
             auto* store = MWasmStoreStackResult::New(
@@ -2819,9 +2831,9 @@ class FunctionCompiler {
     auto* exceptionAddr = MWasmDerivedPointer::New(
         alloc(), instancePointer_, Instance::offsetOfPendingException());
     curBlock_->add(exceptionAddr);
-    auto* setException =
-        MWasmStoreRef::New(alloc(), instancePointer_, exceptionAddr, exception,
-                           AliasSet::WasmPendingException);
+    auto* setException = MWasmStoreRef::New(
+        alloc(), instancePointer_, exceptionAddr, 0, exception,
+        AliasSet::WasmPendingException);
     curBlock_->add(setException);
     if (!postBarrierPrecise(0, exceptionAddr, exception)) {
       return false;
@@ -2831,9 +2843,9 @@ class FunctionCompiler {
     auto* exceptionTagAddr = MWasmDerivedPointer::New(
         alloc(), instancePointer_, Instance::offsetOfPendingExceptionTag());
     curBlock_->add(exceptionTagAddr);
-    auto* setExceptionTag =
-        MWasmStoreRef::New(alloc(), instancePointer_, exceptionTagAddr, tag,
-                           AliasSet::WasmPendingException);
+    auto* setExceptionTag = MWasmStoreRef::New(
+        alloc(), instancePointer_, exceptionTagAddr, 0, tag,
+        AliasSet::WasmPendingException);
     curBlock_->add(setExceptionTag);
     return postBarrierPrecise(0, exceptionTagAddr, tag);
   }
@@ -3266,13 +3278,6 @@ class FunctionCompiler {
       }
 
       
-      auto* fieldAddr = MWasmDerivedPointer::New(alloc(), data, offset);
-      if (!fieldAddr) {
-        return false;
-      }
-      curBlock_->add(fieldAddr);
-
-      
       auto* prevValue = MWasmLoadFieldKA::New(
           alloc(), exception, data, offset, type.toMIRType(), MWideningOp::None,
           AliasSet::Load(AliasSet::Any));
@@ -3283,7 +3288,7 @@ class FunctionCompiler {
 
       
       auto* store = MWasmStoreFieldRefKA::New(
-          alloc(), instancePointer_, exception, fieldAddr, argValues[i],
+          alloc(), instancePointer_, exception, data, offset, argValues[i],
           AliasSet::Store(AliasSet::Any));
       if (!store) {
         return false;
@@ -3291,7 +3296,8 @@ class FunctionCompiler {
       curBlock_->add(store);
 
       
-      if (!postBarrierPrecise(bytecodeOffset, fieldAddr, prevValue)) {
+      if (!postBarrierPreciseWithOffset(bytecodeOffset, data, offset,
+                                        prevValue)) {
         return false;
       }
     }
@@ -3537,64 +3543,6 @@ class FunctionCompiler {
   
   
   
-  [[nodiscard]] bool writeGcValueAtAddress(
-      uint32_t lineOrBytecode, FieldType fieldType, MDefinition* keepAlive,
-      AliasSet::Flag aliasBitset, MDefinition* value, MDefinition* address,
-      bool needsTrapInfo) {
-    MOZ_ASSERT(aliasBitset != 0);
-    MOZ_ASSERT(keepAlive->type() == MIRType::RefOrNull);
-    MOZ_ASSERT(fieldType.widenToValType().toMIRType() == value->type());
-    MNarrowingOp narrowingOp = fieldStoreInfoToMIR(fieldType);
-
-    if (!fieldType.isRefRepr()) {
-      MaybeTrapSiteInfo maybeTrap;
-      if (needsTrapInfo) {
-        maybeTrap.emplace(getTrapSiteInfo());
-      }
-      auto* store =
-          MWasmStoreFieldKA::New(alloc(), keepAlive, address,
-                                 0, value, narrowingOp,
-                                 AliasSet::Store(aliasBitset), maybeTrap);
-      if (!store) {
-        return false;
-      }
-      curBlock_->add(store);
-      return true;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    auto* prevValue = MWasmLoadFieldKA::New(
-        alloc(), keepAlive, address, 0,
-        fieldType.valType().toMIRType(), MWideningOp::None,
-        AliasSet::Load(aliasBitset), mozilla::Some(getTrapSiteInfo()));
-    if (!prevValue) {
-      return false;
-    }
-    curBlock_->add(prevValue);
-
-    
-    auto* store =
-        MWasmStoreFieldRefKA::New(alloc(), instancePointer_, keepAlive, address,
-                                  value, AliasSet::Store(aliasBitset));
-    if (!store) {
-      return false;
-    }
-    curBlock_->add(store);
-
-    
-    return postBarrierPrecise(lineOrBytecode, address, prevValue);
-  }
-
-  
-  
-  
-  
   
   [[nodiscard]] bool writeGcValueAtBasePlusOffset(
       uint32_t lineOrBytecode, FieldType fieldType, MDefinition* keepAlive,
@@ -3623,19 +3571,34 @@ class FunctionCompiler {
     
     
     
+    
+    
+    
+    
     MOZ_ASSERT(narrowingOp == MNarrowingOp::None);
     MOZ_ASSERT(fieldType.widenToValType() == fieldType.valType());
-    if (offset != 0) {
-      auto* derived = MWasmDerivedPointer::New(alloc(), base, offset);
-      if (!derived) {
-        return false;
-      }
-      curBlock_->add(derived);
-      base = derived;
-    }
 
-    return writeGcValueAtAddress(lineOrBytecode, fieldType, keepAlive,
-                                 aliasBitset, value, base, needsTrapInfo);
+    auto* prevValue = MWasmLoadFieldKA::New(
+        alloc(), keepAlive, base, offset, fieldType.valType().toMIRType(),
+        MWideningOp::None, AliasSet::Load(aliasBitset),
+        mozilla::Some(getTrapSiteInfo()));
+    if (!prevValue) {
+      return false;
+    }
+    curBlock_->add(prevValue);
+
+    
+    auto* store =
+        MWasmStoreFieldRefKA::New(alloc(), instancePointer_, keepAlive, base,
+                                  offset, value, AliasSet::Store(aliasBitset));
+    if (!store) {
+      return false;
+    }
+    curBlock_->add(store);
+
+    
+    return postBarrierPreciseWithOffset(lineOrBytecode, base, offset,
+                                        prevValue);
   }
 
   
@@ -3665,8 +3628,10 @@ class FunctionCompiler {
       return false;
     }
 
-    return writeGcValueAtAddress(lineOrBytecode, fieldType, keepAlive,
-                                 aliasBitset, value, finalAddr, false);
+    return writeGcValueAtBasePlusOffset(lineOrBytecode, fieldType, keepAlive,
+                                        aliasBitset, value, finalAddr,
+                                        0,
+                                        false);
   }
 
   
@@ -4150,9 +4115,11 @@ class FunctionCompiler {
 
     
     
-    if (!writeGcValueAtAddress(lineOrBytecode, fillValueFieldType, arrayObject,
-                               AliasSet::WasmArrayDataArea, fillValue, ptrPhi,
-                               false)) {
+    
+    if (!writeGcValueAtBasePlusOffset(lineOrBytecode, fillValueFieldType,
+                                      arrayObject, AliasSet::WasmArrayDataArea,
+                                      fillValue, ptrPhi, 0,
+                                      false)) {
       return nullptr;
     }
 
