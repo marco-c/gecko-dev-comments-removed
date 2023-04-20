@@ -61,12 +61,25 @@ const getExpectedData = (resources, outputName) => {
 };
 
 
+
+
+
+
+const getSoftmaxPrecisionTolerance = (resources) => {
+  
+  const inputShape = resources.inputs[Object.keys(resources.inputs)[0]].shape;
+  const tolerance = inputShape[1] * 3 + 3;
+  return tolerance;
+};
+
+
 const PrecisionMetrics = {
   clamp: {ULP: {float32: 0, float16: 0}},
   concat: {ULP: {float32: 0, float16: 0}},
   relu: {ULP: {float32: 0, float16: 0}},
   reshape: {ULP: {float32: 0, float16: 0}},
   slice: {ULP: {float32: 0, float16: 0}},
+  softmax: {ULP: {float32: getSoftmaxPrecisionTolerance, float16: getSoftmaxPrecisionTolerance}},
 };
 
 
@@ -82,7 +95,7 @@ const getPrecisonTolerance = (operationName, metricType, resources) => {
   let tolerance = PrecisionMetrics[operationName][metricType][precisionType];
   
   if (tolerance instanceof Function) {
-    tolerance = tolerance(resources, operationName);
+    tolerance = tolerance(resources);
   }
   return tolerance;
 };

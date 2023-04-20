@@ -1,0 +1,10 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation('softmax', '/webnn/resources/test_data/softmax.json', buildOperationWithSingleInput);
