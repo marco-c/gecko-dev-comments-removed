@@ -1787,7 +1787,8 @@ void MaybeLogBlockShutdownDiagnostics(ContentParent* aSelf, const char* aMsg,
 #endif
 }
 
-void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
+bool ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
+  bool result = false;
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
           ("ShutDownProcess: %p", this));
   
@@ -1818,6 +1819,7 @@ void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
             SignalImpendingShutdownToContentJS();
             StartForceKillTimer();
           }
+          result = true;
         } else {
           MaybeLogBlockShutdownDiagnostics(
               this, "ShutDownProcess: !!! Send shutdown message failed! !!!",
@@ -1831,10 +1833,12 @@ void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
       MaybeLogBlockShutdownDiagnostics(
           this, "ShutDownProcess: Shutdown already pending.", __FILE__,
           __LINE__);
+
+      result = true;
     }
     
     
-    return;
+    return result;
   }
 
   using mozilla::dom::quota::QuotaManagerService;
@@ -1855,6 +1859,7 @@ void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
       mCalledClose = true;
       Close();
     }
+    result = true;
   }
 
   
@@ -1862,6 +1867,7 @@ void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
   
   
   ShutDownMessageManager();
+  return result;
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvNotifyShutdownSuccess() {
@@ -3733,8 +3739,10 @@ ContentParent::BlockShutdown(nsIAsyncShutdownClient* aClient) {
     
     
     
-    
-    ShutDownProcess(SEND_SHUTDOWN_MESSAGE);
+    if (!ShutDownProcess(SEND_SHUTDOWN_MESSAGE)) {
+      RemoveShutdownBlockers();
+      return NS_OK;
+    }
   } else if (IsLaunching()) {
     MaybeLogBlockShutdownDiagnostics(
         this, "BlockShutdown: !CanSend && IsLaunching.", __FILE__, __LINE__);

@@ -860,7 +860,7 @@ class ContentParent final : public PContentParent,
 
 
 
-  void ShutDownProcess(ShutDownMethod aMethod);
+  bool ShutDownProcess(ShutDownMethod aMethod);
 
   
   
