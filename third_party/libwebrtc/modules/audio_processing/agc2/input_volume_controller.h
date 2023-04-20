@@ -82,7 +82,11 @@ class InputVolumeController final {
   void Initialize();
 
   
-  void SetAppliedInputVolume(int level);
+  
+  
+  
+  void AnalyzeInputAudio(int applied_input_volume,
+                         const AudioBuffer& audio_buffer);
 
   
   
@@ -90,22 +94,11 @@ class InputVolumeController final {
   
   
   
-  void AnalyzePreProcess(const AudioBuffer& audio_buffer);
-
   
   
-  
-  
-  
-  
-  void Process(float speech_probability,
-               absl::optional<float> speech_level_dbfs);
-
-  
-  
-  
-  
-  int recommended_input_volume() const { return recommended_input_volume_; }
+  absl::optional<int> RecommendInputVolume(
+      float speech_probability,
+      absl::optional<float> speech_level_dbfs);
 
   
   
@@ -122,6 +115,14 @@ class InputVolumeController final {
     return use_clipping_predictor_step_;
   }
 
+  
+  
+  
+  int recommended_input_volume() const { return recommended_input_volume_; }
+
+  
+  bool capture_output_used() const { return capture_output_used_; }
+
  private:
   friend class InputVolumeControllerTestHelper;
 
@@ -134,6 +135,9 @@ class InputVolumeController final {
   FRIEND_TEST_ALL_PREFIXES(InputVolumeControllerTest, MinInputVolumeEnabled50);
   FRIEND_TEST_ALL_PREFIXES(InputVolumeControllerParametrizedTest,
                            ClippingParametersVerified);
+
+  
+  void SetAppliedInputVolume(int level);
 
   void AggregateChannelLevels();
 
@@ -152,7 +156,7 @@ class InputVolumeController final {
   int recommended_input_volume_ = 0;
   
   
-  int applied_input_volume_ = 0;
+  absl::optional<int> applied_input_volume_;
 
   bool capture_output_used_;
 

@@ -76,9 +76,9 @@ class GainController2 {
 
   AvailableCpuFeatures GetCpuFeatures() const { return cpu_features_; }
 
-  
-  
-  absl::optional<int> GetRecommendedInputVolume() const;
+  absl::optional<int> recommended_input_volume() const {
+    return recommended_input_volume_;
+  }
 
  private:
   static std::atomic<int> instance_count_;
@@ -96,6 +96,13 @@ class GainController2 {
   Limiter limiter_;
 
   int calls_since_last_limiter_log_;
+
+  
+  
+  
+  
+  
+  absl::optional<int> recommended_input_volume_;
 };
 
 }  
