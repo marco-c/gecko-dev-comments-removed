@@ -191,7 +191,8 @@
     clippy::match_like_matches_macro,
     clippy::if_same_then_else,
     clippy::collapsible_if,
-    clippy::derive_partial_eq_without_eq
+    clippy::derive_partial_eq_without_eq,
+    clippy::needless_borrowed_reference
 )]
 #![warn(
     trivial_casts,
@@ -231,7 +232,11 @@ pub type FastHashMap<K, T> = rustc_hash::FxHashMap<K, T>;
 pub type FastHashSet<K> = rustc_hash::FxHashSet<K>;
 
 
-pub(crate) type NamedExpressions = FastHashMap<Handle<Expression>, String>;
+pub(crate) type NamedExpressions = indexmap::IndexMap<
+    Handle<Expression>,
+    String,
+    std::hash::BuildHasherDefault<rustc_hash::FxHasher>,
+>;
 
 
 
@@ -1061,6 +1066,7 @@ pub enum MathFunction {
     Transpose,
     Determinant,
     
+    CountLeadingZeros,
     CountOneBits,
     ReverseBits,
     ExtractBits,

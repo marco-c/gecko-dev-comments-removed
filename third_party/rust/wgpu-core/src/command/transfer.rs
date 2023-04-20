@@ -191,7 +191,8 @@ pub(crate) fn extract_texture_selector<A: hal::Api>(
     }
 
     let (layers, origin_z) = match texture.desc.dimension {
-        wgt::TextureDimension::D1 | wgt::TextureDimension::D2 => (
+        wgt::TextureDimension::D1 => (0..1, 0),
+        wgt::TextureDimension::D2 => (
             copy_texture.origin.z..copy_texture.origin.z + copy_size.depth_or_array_layers,
             0,
         ),
@@ -417,9 +418,8 @@ pub(crate) fn validate_texture_copy_range(
     }
 
     let (depth, array_layer_count) = match desc.dimension {
-        wgt::TextureDimension::D1 | wgt::TextureDimension::D2 => {
-            (1, copy_size.depth_or_array_layers)
-        }
+        wgt::TextureDimension::D1 => (1, 1),
+        wgt::TextureDimension::D2 => (1, copy_size.depth_or_array_layers),
         wgt::TextureDimension::D3 => (copy_size.depth_or_array_layers, 1),
     };
 

@@ -162,7 +162,7 @@ impl Default for ShaderMetadata {
 
 
 #[derive(Debug, Default)]
-pub struct Parser {
+pub struct Frontend {
     meta: ShaderMetadata,
 
     lookup_function: FastHashMap<String, FunctionDeclaration>,
@@ -179,7 +179,7 @@ pub struct Parser {
     module: Module,
 }
 
-impl Parser {
+impl Frontend {
     fn reset(&mut self, stage: ShaderStage) {
         self.meta.reset(stage);
 
