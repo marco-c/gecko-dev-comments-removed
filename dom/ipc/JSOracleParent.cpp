@@ -28,16 +28,7 @@ void JSOracleParent::WithJSOracle(
       });
 }
 
-void JSOracleParent::ActorDestroy(ActorDestroyReason aReason) {
-  
-  
-  
-  
-  
-  if (aReason == ActorDestroyReason::AbnormalShutdown) {
-    sOracleSingleton = new JSOracleParent();
-  }
-}
+void JSOracleParent::ActorDestroy(ActorDestroyReason aReason) {}
 
 
 JSOracleParent* JSOracleParent::GetSingleton() {
