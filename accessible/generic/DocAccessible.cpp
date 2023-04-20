@@ -652,24 +652,32 @@ void DocAccessible::ScrollTimerCallback(nsITimer* aTimer, void* aClosure) {
 }
 
 void DocAccessible::HandleScroll(nsINode* aTarget) {
+  nsINode* target = aTarget;
+  LocalAccessible* targetAcc = GetAccessible(target);
+  if (!targetAcc && target->IsInNativeAnonymousSubtree()) {
+    
+    
+    target = target->GetClosestNativeAnonymousSubtreeRootParent();
+    targetAcc = GetAccessible(target);
+  }
   
   
   
-  if (LocalAccessible* scrollTarget = GetAccessible(aTarget)) {
-    QueueCacheUpdate(scrollTarget, CacheDomain::ScrollPosition);
+  if (targetAcc) {
+    QueueCacheUpdate(targetAcc, CacheDomain::ScrollPosition);
   }
 
   const uint32_t kScrollEventInterval = 100;
   
   
-  mLastScrollingDispatch.WithEntryHandle(aTarget, [&](auto&& lastDispatch) {
+  mLastScrollingDispatch.WithEntryHandle(target, [&](auto&& lastDispatch) {
     const TimeStamp now = TimeStamp::Now();
 
     if (!lastDispatch ||
         (now - lastDispatch.Data()).ToMilliseconds() >= kScrollEventInterval) {
       
       if (HasLoadState(eTreeConstructed)) {
-        DispatchScrollingEvent(aTarget, nsIAccessibleEvent::EVENT_SCROLLING);
+        DispatchScrollingEvent(target, nsIAccessibleEvent::EVENT_SCROLLING);
       }
       lastDispatch.InsertOrUpdate(now);
     }
