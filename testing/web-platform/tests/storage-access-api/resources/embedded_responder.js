@@ -40,6 +40,11 @@ window.addEventListener("message", async (event) => {
     case "reload":
       window.location.reload();
       break;
+    case "httpCookies":
+      
+      
+      reply(httpCookies);
+      break;
     default:
   }
 });
