@@ -48,7 +48,13 @@ ALL_PROCESSES += [
 
     
     
-    DllBlocklistEntry("googledesktopnetwork3.dll", UNVERSIONED),
+    
+    
+    
+    
+    
+    
+    DllBlocklistEntry("googledesktopnetwork3.dll", ALL_VERSIONS),
 
     
     DllBlocklistEntry("rdolib.dll", (6,0,88,4)),
