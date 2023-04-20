@@ -2804,7 +2804,7 @@ static void StreamMetaJSCustomObject(
     const PreRecordedMetaInformation& aPreRecordedMetaInformation) {
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
-  aWriter.IntProperty("version", 25);
+  aWriter.IntProperty("version", 26);
 
   
   
@@ -3055,7 +3055,8 @@ struct JavaMarkerWithDetails {
     schema.SetTooltipLabel("{marker.name}");
     schema.SetChartLabel("{marker.data.name}");
     schema.SetTableLabel("{marker.name} - {marker.data.name}");
-    schema.AddKeyLabelFormat("name", "Details", MS::Format::String);
+    schema.AddKeyLabelFormatSearchable("name", "Details", MS::Format::String,
+                                       MS::Searchable::Searchable);
     return schema;
   }
 };
