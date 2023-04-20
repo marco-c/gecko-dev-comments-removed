@@ -241,6 +241,8 @@ async function withWindowOverflowed(
     info("Running beforeOverflowed task");
     await beforeOverflowed(extensionIDs);
   } finally {
+    const originalWindowWidth = win.outerWidth;
+
     
     
     const browserActionIDs = extensionIDs.map(id =>
@@ -290,7 +292,8 @@ async function withWindowOverflowed(
       info("Running whenOverflowed task");
       await whenOverflowed(defaultList, unifiedExtensionList, extensionIDs);
     } finally {
-      await ensureMaximizedWindow(win);
+      win.resizeTo(originalWindowWidth, win.outerHeight);
+      await BrowserTestUtils.waitForEvent(win, "resize");
 
       
       
