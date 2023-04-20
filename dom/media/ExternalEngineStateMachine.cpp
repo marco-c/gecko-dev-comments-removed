@@ -6,10 +6,16 @@
 
 #include "PerformanceRecorder.h"
 #ifdef MOZ_WMF_MEDIA_ENGINE
-#  include "mozilla/MFMediaEngineChild.h"
 #  include "MFMediaEngineDecoderModule.h"
+#  include "mozilla/MFMediaEngineChild.h"
+#  include "mozilla/StaticPrefs_media.h"
 #endif
+#include "mozilla/Atomics.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ProfilerLabels.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/StaticMutex.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 
@@ -54,6 +60,79 @@ const char* ExternalEngineEventToStr(ExternalEngineEvent aEvent) {
   }
 #undef EVENT_TO_STR
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ProcessCrashMonitor final {
+ public:
+  static void NotifyCrash() {
+    StaticMutexAutoLock lock(sMutex);
+    auto* monitor = ProcessCrashMonitor::EnsureInstance();
+    if (!monitor) {
+      return;
+    }
+    monitor->mCrashNums++;
+  }
+  static bool ShouldRecoverProcess() {
+    StaticMutexAutoLock lock(sMutex);
+    auto* monitor = ProcessCrashMonitor::EnsureInstance();
+    if (!monitor) {
+      return false;
+    }
+    return monitor->mCrashNums <= monitor->mMaxCrashes;
+  }
+
+ private:
+  ProcessCrashMonitor() : mCrashNums(0) {
+#ifdef MOZ_WMF_MEDIA_ENGINE
+    mMaxCrashes = StaticPrefs::media_wmf_media_engine_max_crashes();
+#else
+    mMaxCrashes = 0;
+#endif
+  };
+  ProcessCrashMonitor(const ProcessCrashMonitor&) = delete;
+  ProcessCrashMonitor& operator=(const ProcessCrashMonitor&) = delete;
+
+  static ProcessCrashMonitor* EnsureInstance() {
+    if (sIsShutdown) {
+      return nullptr;
+    }
+    if (!sCrashMonitor) {
+      sCrashMonitor.reset(new ProcessCrashMonitor());
+      GetMainThreadSerialEventTarget()->Dispatch(
+          NS_NewRunnableFunction("ProcessCrashMonitor::EnsureInstance", [&] {
+            RunOnShutdown(
+                [&] {
+                  StaticMutexAutoLock lock(sMutex);
+                  sCrashMonitor.reset();
+                  sIsShutdown = true;
+                },
+                ShutdownPhase::XPCOMShutdown);
+          }));
+    }
+    return sCrashMonitor.get();
+  }
+
+  static inline StaticMutex sMutex;
+  static inline UniquePtr<ProcessCrashMonitor> sCrashMonitor;
+  static inline Atomic<bool> sIsShutdown{false};
+
+  uint32_t mCrashNums;
+  uint32_t mMaxCrashes;
+};
 
 
 const char* ExternalEngineStateMachine::StateToStr(State aNextState) {
@@ -1000,6 +1079,14 @@ void ExternalEngineStateMachine::RecoverFromCDMProcessCrashIfNeeded() {
   if (mState.IsRecoverEngine()) {
     return;
   }
+  ProcessCrashMonitor::NotifyCrash();
+  if (!ProcessCrashMonitor::ShouldRecoverProcess()) {
+    LOG("CDM process has crashed too many times, abort recovery");
+    DecodeError(
+        MediaResult(NS_ERROR_DOM_MEDIA_EXTERNAL_ENGINE_NOT_SUPPORTED_ERR));
+    return;
+  }
+
   LOG("CDM process crashed, recover the engine again (last time=%" PRId64 ")",
       mCurrentPosition.Ref().ToMicroseconds());
   ChangeStateTo(State::RecoverEngine);
