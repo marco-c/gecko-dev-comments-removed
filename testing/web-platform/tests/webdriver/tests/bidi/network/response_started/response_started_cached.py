@@ -8,9 +8,6 @@ from .. import assert_response_event
 PAGE_EMPTY_TEXT = "/webdriver/tests/bidi/network/support/empty.txt"
 
 
-
-
-
 @pytest.mark.asyncio
 async def test_cached(
     bidi_session,

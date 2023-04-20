@@ -16,9 +16,6 @@ PAGE_REDIRECT_HTTP_EQUIV = (
 PAGE_REDIRECTED_HTML = "/webdriver/tests/bidi/network/support/redirected.html"
 
 
-
-
-
 @pytest.mark.asyncio
 async def test_subscribe_status(bidi_session, top_context, wait_for_event, url, fetch):
     await bidi_session.session.subscribe(events=["network.beforeRequestSent"])
