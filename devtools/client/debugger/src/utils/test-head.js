@@ -23,7 +23,7 @@ import { setupCreate } from "../client/firefox/create";
 
 
 
-import sourceMaps from "devtools/client/shared/source-map-loader/source-map";
+import sourceMapLoader from "devtools/client/shared/source-map-loader/source-map";
 
 
 
@@ -34,14 +34,17 @@ import sourceMaps from "devtools/client/shared/source-map-loader/source-map";
 
 
 
-function createStore(client, initialState = {}, sourceMapsMock) {
+function createStore(client, initialState = {}, sourceMapLoaderMock) {
   const store = configureStore({
     log: false,
     makeThunkArgs: args => {
       return {
         ...args,
         client,
-        sourceMaps: sourceMapsMock !== undefined ? sourceMapsMock : sourceMaps,
+        sourceMapLoader:
+          sourceMapLoaderMock !== undefined
+            ? sourceMapLoaderMock
+            : sourceMapLoader,
         parserWorker,
         prettyPrintWorker,
         searchWorker,
@@ -58,7 +61,7 @@ function createStore(client, initialState = {}, sourceMapsMock) {
     dispatch: store.dispatch,
     getState: store.getState,
     client,
-    sourceMaps,
+    sourceMapLoader,
     panel: {},
   });
 

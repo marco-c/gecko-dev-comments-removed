@@ -12,7 +12,7 @@ import assert from "../../utils/assert";
 
 
 export function selectFrame(cx, frame) {
-  return async ({ dispatch, client, getState, sourceMaps }) => {
+  return async ({ dispatch, getState }) => {
     assert(cx.thread == frame.thread, "Thread mismatch");
 
     

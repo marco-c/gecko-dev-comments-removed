@@ -9,10 +9,10 @@ import { mappingContains } from "./mappingContains";
 export async function originalRangeStartsInside(
   source,
   { start, end },
-  sourceMaps
+  sourceMapLoader
 ) {
-  const endPosition = await sourceMaps.getGeneratedLocation(end);
-  const startPosition = await sourceMaps.getGeneratedLocation(start);
+  const endPosition = await sourceMapLoader.getGeneratedLocation(end);
+  const startPosition = await sourceMapLoader.getGeneratedLocation(start);
 
   
   
@@ -27,9 +27,9 @@ export async function getApplicableBindingsForOriginalPosition(
   { start, end },
   bindingType,
   locationType,
-  sourceMaps
+  sourceMapLoader
 ) {
-  const ranges = await sourceMaps.getGeneratedRanges(start);
+  const ranges = await sourceMapLoader.getGeneratedRanges(start);
 
   const resultRanges = ranges.map(mapRange => ({
     start: {
@@ -52,8 +52,8 @@ export async function getApplicableBindingsForOriginalPosition(
   
   
   if (bindingType === "import" && locationType !== "ref") {
-    const endPosition = await sourceMaps.getGeneratedLocation(end);
-    const startPosition = await sourceMaps.getGeneratedLocation(start);
+    const endPosition = await sourceMapLoader.getGeneratedLocation(end);
+    const startPosition = await sourceMapLoader.getGeneratedLocation(start);
 
     for (const range of resultRanges) {
       if (
