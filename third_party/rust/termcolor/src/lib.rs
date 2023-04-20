@@ -109,15 +109,7 @@
 
 
 
-
-
-
-
-
-
-
-
-#![deny(missing_docs)]
+#![deny(missing_debug_implementations, missing_docs)]
 
 
 
@@ -203,6 +195,13 @@ impl<T: ?Sized + WriteColor> WriteColor for Box<T> {
 }
 
 
+
+
+
+
+
+
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ColorChoice {
     
@@ -217,6 +216,29 @@ pub enum ColorChoice {
     Auto,
     
     Never,
+}
+
+
+impl Default for ColorChoice {
+    fn default() -> ColorChoice {
+        ColorChoice::Auto
+    }
+}
+
+impl FromStr for ColorChoice {
+    type Err = ColorChoiceParseError;
+
+    fn from_str(s: &str) -> Result<ColorChoice, ColorChoiceParseError> {
+        match s.to_lowercase().as_str() {
+            "always" => Ok(ColorChoice::Always),
+            "always-ansi" => Ok(ColorChoice::AlwaysAnsi),
+            "never" => Ok(ColorChoice::Never),
+            "auto" => Ok(ColorChoice::Auto),
+            unknown => Err(ColorChoiceParseError {
+                unknown_choice: unknown.to_string(),
+            }),
+        }
+    }
 }
 
 impl ColorChoice {
@@ -292,6 +314,25 @@ impl ColorChoice {
 }
 
 
+#[derive(Clone, Debug)]
+pub struct ColorChoiceParseError {
+    unknown_choice: String,
+}
+
+impl std::error::Error for ColorChoiceParseError {}
+
+impl fmt::Display for ColorChoiceParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "unrecognized color choice '{}': valid choices are: \
+             always, always-ansi, never, auto",
+            self.unknown_choice,
+        )
+    }
+}
+
+
 
 
 
@@ -302,6 +343,7 @@ enum StandardStreamType {
     StderrBuffered,
 }
 
+#[derive(Debug)]
 enum IoStandardStream {
     Stdout(io::Stdout),
     Stderr(io::Stderr),
@@ -371,6 +413,7 @@ impl io::Write for IoStandardStream {
 
 
 
+#[derive(Debug)]
 enum IoStandardStreamLock<'a> {
     StdoutLock(io::StdoutLock<'a>),
     StderrLock(io::StderrLock<'a>),
@@ -396,6 +439,7 @@ impl<'a> io::Write for IoStandardStreamLock<'a> {
 
 
 
+#[derive(Debug)]
 pub struct StandardStream {
     wtr: LossyStandardStream<WriterInner<IoStandardStream>>,
 }
@@ -407,17 +451,20 @@ pub struct StandardStream {
 
 
 
+#[derive(Debug)]
 pub struct StandardStreamLock<'a> {
     wtr: LossyStandardStream<WriterInnerLock<'a, IoStandardStreamLock<'a>>>,
 }
 
 
+#[derive(Debug)]
 pub struct BufferedStandardStream {
     wtr: LossyStandardStream<WriterInner<IoStandardStream>>,
 }
 
 
 
+#[derive(Debug)]
 enum WriterInner<W> {
     NoColor(NoColor<W>),
     Ansi(Ansi<W>),
@@ -430,6 +477,7 @@ enum WriterInner<W> {
 
 
 
+#[derive(Debug)]
 enum WriterInnerLock<'a, W> {
     NoColor(NoColor<W>),
     Ansi(Ansi<W>),
@@ -855,6 +903,7 @@ impl<'a, W: io::Write> WriteColor for WriterInnerLock<'a, W> {
 
 
 
+#[derive(Debug)]
 pub struct BufferWriter {
     stream: LossyStandardStream<IoStandardStream>,
     printed: AtomicBool,
@@ -908,7 +957,7 @@ impl BufferWriter {
         }
         let stream = LossyStandardStream::new(IoStandardStream::new(sty));
         BufferWriter {
-            stream: stream,
+            stream,
             printed: AtomicBool::new(false),
             separator: None,
             color_choice: choice,
@@ -1013,9 +1062,11 @@ impl BufferWriter {
 
 
 
+#[derive(Debug)]
 pub struct Buffer(BufferInner);
 
 
+#[derive(Debug)]
 enum BufferInner {
     
     
@@ -1195,6 +1246,7 @@ impl WriteColor for Buffer {
 }
 
 
+#[derive(Debug)]
 pub struct NoColor<W>(W);
 
 impl<W: Write> NoColor<W> {
@@ -1255,6 +1307,7 @@ impl<W: io::Write> WriteColor for NoColor<W> {
 }
 
 
+#[derive(Debug)]
 pub struct Ansi<W>(W);
 
 impl<W: Write> Ansi<W> {
@@ -1286,6 +1339,17 @@ impl<W: io::Write> io::Write for Ansi<W> {
         self.0.write(buf)
     }
 
+    
+    
+    
+    
+    
+    
+    #[inline]
+    fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
+        self.0.write_all(buf)
+    }
+
     #[inline]
     fn flush(&mut self) -> io::Result<()> {
         self.0.flush()
@@ -1314,6 +1378,9 @@ impl<W: io::Write> WriteColor for Ansi<W> {
         }
         if spec.underline {
             self.write_str("\x1B[4m")?;
+        }
+        if spec.strikethrough {
+            self.write_str("\x1B[9m")?;
         }
         if let Some(ref c) = spec.fg_color {
             self.write_color(true, c, spec.intense)?;
@@ -1586,6 +1653,7 @@ pub struct ColorSpec {
     dimmed: bool,
     italic: bool,
     reset: bool,
+    strikethrough: bool,
 }
 
 impl Default for ColorSpec {
@@ -1599,6 +1667,7 @@ impl Default for ColorSpec {
             dimmed: false,
             italic: false,
             reset: true,
+            strikethrough: false,
         }
     }
 }
@@ -1694,6 +1763,21 @@ impl ColorSpec {
     
     
     
+    pub fn strikethrough(&self) -> bool {
+        self.strikethrough
+    }
+
+    
+    
+    
+    pub fn set_strikethrough(&mut self, yes: bool) -> &mut ColorSpec {
+        self.strikethrough = yes;
+        self
+    }
+
+    
+    
+    
     
     
     
@@ -1752,6 +1836,7 @@ impl ColorSpec {
             && !self.dimmed
             && !self.italic
             && !self.intense
+            && !self.strikethrough
     }
 
     
@@ -1763,6 +1848,7 @@ impl ColorSpec {
         self.intense = false;
         self.dimmed = false;
         self.italic = false;
+        self.strikethrough = false;
     }
 
     
@@ -1999,6 +2085,7 @@ impl FromStr for Color {
     }
 }
 
+#[derive(Debug)]
 struct LossyStandardStream<W> {
     wtr: W,
     #[cfg(windows)]
@@ -2008,14 +2095,14 @@ struct LossyStandardStream<W> {
 impl<W: io::Write> LossyStandardStream<W> {
     #[cfg(not(windows))]
     fn new(wtr: W) -> LossyStandardStream<W> {
-        LossyStandardStream { wtr: wtr }
+        LossyStandardStream { wtr }
     }
 
     #[cfg(windows)]
     fn new(wtr: W) -> LossyStandardStream<W> {
         let is_console = wincon::Console::stdout().is_ok()
             || wincon::Console::stderr().is_ok();
-        LossyStandardStream { wtr: wtr, is_console: is_console }
+        LossyStandardStream { wtr, is_console }
     }
 
     #[cfg(not(windows))]
@@ -2025,7 +2112,7 @@ impl<W: io::Write> LossyStandardStream<W> {
 
     #[cfg(windows)]
     fn wrap<Q: io::Write>(&self, wtr: Q) -> LossyStandardStream<Q> {
-        LossyStandardStream { wtr: wtr, is_console: self.is_console }
+        LossyStandardStream { wtr, is_console: self.is_console }
     }
 
     fn get_ref(&self) -> &W {
@@ -2216,16 +2303,19 @@ mod tests {
                     for underline in vec![false, true] {
                         for intense in vec![false, true] {
                             for italic in vec![false, true] {
-                                for dimmed in vec![false, true] {
-                                    let mut color = ColorSpec::new();
-                                    color.set_fg(fg);
-                                    color.set_bg(bg);
-                                    color.set_bold(bold);
-                                    color.set_underline(underline);
-                                    color.set_intense(intense);
-                                    color.set_dimmed(dimmed);
-                                    color.set_italic(italic);
-                                    result.push(color);
+                                for strikethrough in vec![false, true] {
+                                    for dimmed in vec![false, true] {
+                                        let mut color = ColorSpec::new();
+                                        color.set_fg(fg);
+                                        color.set_bg(bg);
+                                        color.set_bold(bold);
+                                        color.set_underline(underline);
+                                        color.set_intense(intense);
+                                        color.set_italic(italic);
+                                        color.set_dimmed(dimmed);
+                                        color.set_strikethrough(strikethrough);
+                                        result.push(color);
+                                    }
                                 }
                             }
                         }
