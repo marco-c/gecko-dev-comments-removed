@@ -15,6 +15,7 @@
 #include <string>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/video_codecs/scalability_mode.h"
 #include "rtc_base/system/rtc_export.h"
@@ -60,6 +61,14 @@ struct RTC_EXPORT SdpVideoFormat {
   Parameters parameters;
   absl::InlinedVector<ScalabilityMode, kScalabilityModeCount> scalability_modes;
 };
+
+
+
+
+
+absl::optional<SdpVideoFormat> FuzzyMatchSdpVideoFormat(
+    rtc::ArrayView<const SdpVideoFormat> supported_formats,
+    const SdpVideoFormat& format);
 
 }  
 
