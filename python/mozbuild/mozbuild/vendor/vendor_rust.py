@@ -102,20 +102,11 @@ PACKAGES_WE_ALWAYS_WANT_AN_OVERRIDE_OF = [
 
 
 TOLERATED_DUPES = {
-    "bytes": 2,
-    "crossbeam-deque": 2,
-    "crossbeam-epoch": 2,
-    
-    "crossbeam-queue": 2,
-    "crossbeam-utils": 3,
-    "futures": 2,
-    "memoffset": 2,
     "mio": 2,
     
     
     
     "time": 2,
-    "tokio": 2,
 }
 
 
