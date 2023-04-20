@@ -464,6 +464,11 @@ using RootedValVector = Rooted<ValVector>;
 using HandleValVector = Handle<ValVector>;
 using MutableHandleValVector = MutableHandle<ValVector>;
 
+template <int N>
+using ValVectorN = GCVector<Val, N, SystemAllocPolicy>;
+template <int N>
+using RootedValVectorN = Rooted<ValVectorN<N>>;
+
 
 
 
