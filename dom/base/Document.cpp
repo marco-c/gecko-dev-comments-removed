@@ -223,6 +223,7 @@
 #include "mozilla/dom/StyleSheetApplicableStateChangeEventBinding.h"
 #include "mozilla/dom/StyleSheetList.h"
 #include "mozilla/dom/TimeoutManager.h"
+#include "mozilla/dom/ToggleEvent.h"
 #include "mozilla/dom/Touch.h"
 #include "mozilla/dom/TouchEvent.h"
 #include "mozilla/dom/TreeOrderedArrayInlines.h"
@@ -14883,24 +14884,37 @@ void Document::HideAllPopoversUntil(nsINode& aEndpoint,
   }
 }
 
+
 void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
                            bool aFireEvents, ErrorResult& aRv) {
-  auto* popoverHTMLEl = nsGenericHTMLElement::FromNode(aPopover);
+  RefPtr<nsGenericHTMLElement> popoverHTMLEl =
+      nsGenericHTMLElement::FromNode(aPopover);
   NS_ASSERTION(popoverHTMLEl, "Not a HTML element");
 
-  if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Hidden,
+  if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
                                            aRv)) {
     return;
   }
 
   
   
+  if (aFireEvents) {
+    
+    
+    popoverHTMLEl->FireBeforeToggle(true);
+    if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
+                                             aRv)) {
+      return;
+    }
+  }
+
   
 
   popoverHTMLEl->PopoverPseudoStateUpdate(false, true);
   popoverHTMLEl->GetPopoverData()->SetPopoverVisibilityState(
       PopoverVisibilityState::Hidden);
 
+  
   
 }
 
