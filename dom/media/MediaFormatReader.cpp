@@ -1755,6 +1755,9 @@ void MediaFormatReader::NotifyNewOutput(
       decoder.mNumSamplesOutput++;
       decoder.mNumOfConsecutiveDecodingError = 0;
       decoder.mNumOfConsecutiveRDDOrGPUCrashes = 0;
+      if (aTrack == TrackInfo::kAudioTrack) {
+        decoder.mNumOfConsecutiveUtilityCrashes = 0;
+      }
     }
   LOG("Done processing new %s samples", TrackTypeToStr(aTrack));
 
@@ -2446,13 +2449,14 @@ void MediaFormatReader::Update(TrackType aTrack) {
         decoder.mError.ref() == NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER ||
         firstFrameDecodingFailedWithHardware;
     
-    
     if ((decoder.mError.ref() ==
              NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_RDD_OR_GPU_ERR &&
          decoder.mNumOfConsecutiveRDDOrGPUCrashes++ <
              decoder.mMaxConsecutiveRDDOrGPUCrashes) ||
         (decoder.mError.ref() ==
-         NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_UTILITY_ERR)) {
+             NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_UTILITY_ERR &&
+         decoder.mNumOfConsecutiveUtilityCrashes++ <
+             decoder.mMaxConsecutiveUtilityCrashes)) {
       needsNewDecoder = true;
     }
     
