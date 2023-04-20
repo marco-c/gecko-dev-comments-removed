@@ -583,6 +583,8 @@ bool Gecko_IsFontFormatSupported(
     mozilla::StyleFontFaceSourceFormatKeyword aFormat);
 bool Gecko_IsFontTechSupported(mozilla::StyleFontFaceSourceTechFlags aFlag);
 
+bool Gecko_IsKnownIconFontFamily(const nsAtom* aFamilyName);
+
 
 bool Gecko_IsInServoTraversal();
 

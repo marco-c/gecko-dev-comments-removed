@@ -430,6 +430,13 @@ pub struct FamilyName {
     pub syntax: FontFamilyNameSyntax,
 }
 
+impl FamilyName {
+    fn is_known_icon_font_family(&self) -> bool {
+        use crate::gecko_bindings::bindings;
+        unsafe { bindings::Gecko_IsKnownIconFontFamily(self.name.as_ptr()) }
+    }
+}
+
 impl ToCss for FamilyName {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
@@ -667,23 +674,53 @@ impl FontFamilyList {
     
     
     
+    
+    
+    
     pub(crate) fn prioritize_first_generic_or_prepend(&mut self, generic: GenericFontFamily) {
-        let index_of_first_generic = self.iter().position(|f| match *f {
-            SingleFontFamily::Generic(f) => f.valid_for_user_font_prioritization(),
-            _ => false,
-        });
+        let mut index_of_first_generic = None;
+        let mut target_index = None;
 
-        if let Some(0) = index_of_first_generic {
-            return; 
+        for (i, f) in self.iter().enumerate() {
+            match &*f {
+                SingleFontFamily::Generic(f) => {
+                    if index_of_first_generic.is_none() && f.valid_for_user_font_prioritization() {
+                        
+                        
+                        
+                        if target_index.is_none() {
+                            return;
+                        }
+                        index_of_first_generic = Some(i);
+                        break;
+                    }
+                    
+                    
+                    if target_index.is_none() {
+                        target_index = Some(i);
+                    }
+                },
+                SingleFontFamily::FamilyName(fam) => {
+                    
+                    
+                    if target_index.is_none() && !fam.is_known_icon_font_family() {
+                        target_index = Some(i);
+                    }
+                },
+            }
         }
 
         let mut new_list = self.list.iter().cloned().collect::<Vec<_>>();
-        let element_to_prepend = match index_of_first_generic {
+        let first_generic = match index_of_first_generic {
             Some(i) => new_list.remove(i),
             None => SingleFontFamily::Generic(generic),
         };
 
-        new_list.insert(0, element_to_prepend);
+        if let Some(i) = target_index {
+            new_list.insert(i, first_generic);
+        } else {
+            new_list.push(first_generic);
+        }
         self.list = crate::ArcSlice::from_iter(new_list.into_iter());
     }
 
