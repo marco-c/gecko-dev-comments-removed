@@ -24,6 +24,7 @@ class AsyncPanZoomController;
 class InputBlockState;
 struct ScrollableLayerGuid;
 struct TargetConfirmationFlags;
+struct PointerEventsConsumableFlags;
 
 enum class APZHandledPlace : uint8_t {
   Unhandled = 0,         
@@ -106,11 +107,10 @@ struct APZEventResult {
   void SetStatusAsConsumeDoDefault(const InputBlockState& aBlock);
   
   
-  
-  
-  void SetStatusAsConsumeDoDefaultWithTargetConfirmationFlags(
-      const InputBlockState& aBlock, TargetConfirmationFlags aFlags,
-      const AsyncPanZoomController& aTarget);
+  void SetStatusForTouchEvent(const InputBlockState& aBlock,
+                              TargetConfirmationFlags aFlags,
+                              PointerEventsConsumableFlags aConsumableFlags,
+                              const AsyncPanZoomController& aTarget);
 
   
   

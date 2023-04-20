@@ -7,6 +7,7 @@
 #include "APZCTreeManagerTester.h"
 #include "APZTestCommon.h"
 #include "InputUtils.h"
+#include "mozilla/EventForwards.h"
 #include "mozilla/layers/LayersTypes.h"
 #include <tuple>
 
@@ -462,4 +463,14 @@ TEST_F(APZEventResultTesterMock, HandledByRootApzcFlag) {
   EXPECT_EQ(delayedAnswer,
             (APZHandledResult{APZHandledPlace::Unhandled, SideBits::eNone,
                               ScrollDirections()}));
+
+  
+  
+  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
+  result = TouchDown(manager, ScreenIntPoint(50, 75), mcc->Time());
+  TouchUp(manager, ScreenIntPoint(50, 75), mcc->Time());
+  EXPECT_EQ(result.GetStatus(), nsEventStatus_eIgnore);
+  EXPECT_EQ(result.GetHandledResult(),
+            Some(APZHandledResult{APZHandledPlace::Unhandled, SideBits::eNone,
+                                  EitherScrollDirection}));
 }
