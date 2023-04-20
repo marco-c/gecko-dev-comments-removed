@@ -44,6 +44,7 @@
 #include "nsTransitionManager.h"
 #include "nsDisplayList.h"
 #include "nsIDOMXULSelectCntrlEl.h"
+#include "mozilla/widget/ScreenManager.h"
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/EventDispatcher.h"
@@ -1435,7 +1436,7 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
   const nsMargin margin = GetMargin();
 
   
-  nsRect rootScreenRect = rootFrame->GetScreenRectInAppUnits();
+  const nsRect rootScreenRect = rootFrame->GetScreenRectInAppUnits();
 
   const bool isNoAutoHide = IsNoAutoHide();
   const PopupLevel popupLevel = GetPopupLevel(isNoAutoHide);
@@ -1544,8 +1545,23 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
   
   
   
-  if (IS_WAYLAND_DISPLAY()) {
-    if (widget) {
+  if (mInContentShell || mFlip != FlipType_None) {
+    const Maybe<nsRect> constraintRect =
+        GetConstraintRect(result.mAnchorRect, rootScreenRect, popupLevel);
+
+    if (constraintRect) {
+      
+      result.mAnchorRect = result.mAnchorRect.Intersect(*constraintRect);
+      
+      if (result.mUsedRect.width > constraintRect->width) {
+        result.mUsedRect.width = constraintRect->width;
+      }
+      if (result.mUsedRect.height > constraintRect->height) {
+        result.mUsedRect.height = constraintRect->height;
+      }
+    }
+
+    if (IS_WAYLAND_DISPLAY() && widget) {
       
       
       
@@ -1563,92 +1579,68 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
         result.mUsedRect.height = waylandSize.height;
       }
     }
-  } else if (mInContentShell || mFlip != FlipType_None) {
-    const nsRect screenRect = [&] {
-      auto anchorRectDevPix =
-          LayoutDeviceIntRect::FromAppUnitsToNearest(result.mAnchorRect, a2d);
-      auto rootScreenRectDevPix =
-          LayoutDeviceIntRect::FromAppUnitsToNearest(rootScreenRect, a2d);
-      auto screenRectDevPix =
-          GetConstraintRect(anchorRectDevPix, rootScreenRectDevPix, popupLevel);
 
-      nsRect sr = LayoutDeviceIntRect::ToAppUnits(screenRectDevPix, a2d);
+    
+    
+    
+    if (constraintRect) {
+      
+      
+      
+      bool slideHorizontal = false, slideVertical = false;
+      if (mFlip == FlipType_Slide) {
+        int8_t position = GetAlignmentPosition();
+        slideHorizontal = position >= POPUPPOSITION_BEFORESTART &&
+                          position <= POPUPPOSITION_AFTEREND;
+        slideVertical = position >= POPUPPOSITION_STARTBEFORE &&
+                        position <= POPUPPOSITION_ENDAFTER;
+      }
 
       
       
-      const nscoord inputMargin =
-          StyleUIReset()->mMozWindowInputRegionMargin.ToAppUnits();
-      sr.Inflate(inputMargin);
-      return sr;
-    }();
-
-    
-    result.mAnchorRect = result.mAnchorRect.Intersect(screenRect);
-
-    
-    if (result.mUsedRect.width > screenRect.width) {
-      result.mUsedRect.width = screenRect.width;
-    }
-    if (result.mUsedRect.height > screenRect.height) {
-      result.mUsedRect.height = screenRect.height;
-    }
-
-    
-    
-    
-
-    
-    
-    
-    bool slideHorizontal = false, slideVertical = false;
-    if (mFlip == FlipType_Slide) {
-      int8_t position = GetAlignmentPosition();
-      slideHorizontal = position >= POPUPPOSITION_BEFORESTART &&
-                        position <= POPUPPOSITION_AFTEREND;
-      slideVertical = position >= POPUPPOSITION_STARTBEFORE &&
-                      position <= POPUPPOSITION_ENDAFTER;
-    }
-
-    
-    
-    
-    if (slideHorizontal) {
-      result.mUsedRect.width = SlideOrResize(
-          result.mUsedRect.x, result.mUsedRect.width, screenRect.x,
-          screenRect.XMost(), &result.mAlignmentOffset);
-    } else {
-      const bool endAligned =
-          IsDirectionRTL() ? mPopupAlignment == POPUPALIGNMENT_TOPLEFT ||
-                                 mPopupAlignment == POPUPALIGNMENT_BOTTOMLEFT
-                           : mPopupAlignment == POPUPALIGNMENT_TOPRIGHT ||
-                                 mPopupAlignment == POPUPALIGNMENT_BOTTOMRIGHT;
-      result.mUsedRect.width = FlipOrResize(
-          result.mUsedRect.x, result.mUsedRect.width, screenRect.x,
-          screenRect.XMost(), result.mAnchorRect.x, result.mAnchorRect.XMost(),
-          margin.left, margin.right, hFlip, endAligned, &result.mHFlip);
-    }
-    if (slideVertical) {
-      result.mUsedRect.height = SlideOrResize(
-          result.mUsedRect.y, result.mUsedRect.height, screenRect.y,
-          screenRect.YMost(), &result.mAlignmentOffset);
-    } else {
-      bool endAligned = mPopupAlignment == POPUPALIGNMENT_BOTTOMLEFT ||
-                        mPopupAlignment == POPUPALIGNMENT_BOTTOMRIGHT;
-      result.mUsedRect.height = FlipOrResize(
-          result.mUsedRect.y, result.mUsedRect.height, screenRect.y,
-          screenRect.YMost(), result.mAnchorRect.y, result.mAnchorRect.YMost(),
-          margin.top, margin.bottom, vFlip, endAligned, &result.mVFlip);
-    }
+      
+      if (slideHorizontal) {
+        result.mUsedRect.width = SlideOrResize(
+            result.mUsedRect.x, result.mUsedRect.width, constraintRect->x,
+            constraintRect->XMost(), &result.mAlignmentOffset);
+      } else {
+        const bool endAligned =
+            IsDirectionRTL()
+                ? mPopupAlignment == POPUPALIGNMENT_TOPLEFT ||
+                      mPopupAlignment == POPUPALIGNMENT_BOTTOMLEFT
+                : mPopupAlignment == POPUPALIGNMENT_TOPRIGHT ||
+                      mPopupAlignment == POPUPALIGNMENT_BOTTOMRIGHT;
+        result.mUsedRect.width = FlipOrResize(
+            result.mUsedRect.x, result.mUsedRect.width, constraintRect->x,
+            constraintRect->XMost(), result.mAnchorRect.x,
+            result.mAnchorRect.XMost(), margin.left, margin.right, hFlip,
+            endAligned, &result.mHFlip);
+      }
+      if (slideVertical) {
+        result.mUsedRect.height = SlideOrResize(
+            result.mUsedRect.y, result.mUsedRect.height, constraintRect->y,
+            constraintRect->YMost(), &result.mAlignmentOffset);
+      } else {
+        bool endAligned = mPopupAlignment == POPUPALIGNMENT_BOTTOMLEFT ||
+                          mPopupAlignment == POPUPALIGNMENT_BOTTOMRIGHT;
+        result.mUsedRect.height = FlipOrResize(
+            result.mUsedRect.y, result.mUsedRect.height, constraintRect->y,
+            constraintRect->YMost(), result.mAnchorRect.y,
+            result.mAnchorRect.YMost(), margin.top, margin.bottom, vFlip,
+            endAligned, &result.mVFlip);
+      }
 
 #ifdef DEBUG
-    NS_ASSERTION(screenRect.Contains(result.mUsedRect), "Popup is offscreen");
-    if (!screenRect.Contains(result.mUsedRect)) {
-      NS_WARNING(nsPrintfCString("Popup is offscreen (%s vs. %s)",
-                                 ToString(screenRect).c_str(),
-                                 ToString(result.mUsedRect).c_str())
-                     .get());
-    }
+      NS_ASSERTION(constraintRect->Contains(result.mUsedRect),
+                   "Popup is offscreen");
+      if (!constraintRect->Contains(result.mUsedRect)) {
+        NS_WARNING(nsPrintfCString("Popup is offscreen (%s vs. %s)",
+                                   ToString(constraintRect).c_str(),
+                                   ToString(result.mUsedRect).c_str())
+                       .get());
+      }
 #endif
+    }
   }
   
   
@@ -1786,61 +1778,76 @@ void nsMenuPopupFrame::WidgetPositionOrSizeDidChange() {
   }
 }
 
-LayoutDeviceIntRect nsMenuPopupFrame::GetConstraintRect(
-    const LayoutDeviceIntRect& aAnchorRect,
-    const LayoutDeviceIntRect& aRootScreenRect, PopupLevel aPopupLevel) const {
-  
-  
-  MOZ_ASSERT(!IS_WAYLAND_DISPLAY(),
-             "GetConstraintRect does not work on Wayland");
+Maybe<nsRect> nsMenuPopupFrame::GetConstraintRect(
+    const nsRect& aAnchorRect, const nsRect& aRootScreenRect,
+    PopupLevel aPopupLevel) const {
+  const nsPresContext* pc = PresContext();
+  const int32_t a2d = PresContext()->AppUnitsPerDevPixel();
+  Maybe<nsRect> result;
+
+  auto AddConstraint = [&result](const nsRect& aConstraint) {
+    if (result) {
+      *result = result->Intersect(aConstraint);
+    } else {
+      result.emplace(aConstraint);
+    }
+  };
 
   
   
   
-  LayoutDeviceIntRect screenRectPixels;
-  nsCOMPtr<nsIScreenManager> sm(
-      do_GetService("@mozilla.org/gfx/screenmanager;1"));
-  if (sm) {
+  
+  
+  if (!IS_WAYLAND_DISPLAY()) {
+    const DesktopToLayoutDeviceScale scale =
+        pc->DeviceContext()->GetDesktopToDeviceScale();
     
     
     
     
-    DesktopToLayoutDeviceScale scale =
-        PresContext()->DeviceContext()->GetDesktopToDeviceScale();
-    DesktopRect rect =
-        (mInContentShell ? aRootScreenRect : aAnchorRect) / scale;
-    int32_t width = std::max(1, NSToIntRound(rect.width));
-    int32_t height = std::max(1, NSToIntRound(rect.height));
-    nsCOMPtr<nsIScreen> screen;
-    sm->ScreenForRect(rect.x, rect.y, width, height, getter_AddRefs(screen));
-    if (screen) {
-      
-      
-      const bool canOverlapOSBar =
-          aPopupLevel == PopupLevel::Top &&
-          LookAndFeel::GetInt(LookAndFeel::IntID::MenusCanOverlapOSBar) &&
-          !mInContentShell;
-      
-      screenRectPixels =
-          canOverlapOSBar ? screen->GetRect() : screen->GetAvailRect();
-    }
+    const nsRect& rect = mInContentShell ? aRootScreenRect : aAnchorRect;
+    auto desktopRect = DesktopIntRect::RoundOut(
+        LayoutDeviceRect::FromAppUnits(rect, a2d) / scale);
+    desktopRect.width = std::max(1, desktopRect.width);
+    desktopRect.height = std::max(1, desktopRect.height);
+
+    RefPtr<nsIScreen> screen =
+        widget::ScreenManager::GetSingleton().ScreenForRect(desktopRect);
+    MOZ_ASSERT(screen, "We always fall back to the primary screen");
+    
+    
+    const bool canOverlapOSBar =
+        aPopupLevel == PopupLevel::Top &&
+        LookAndFeel::GetInt(LookAndFeel::IntID::MenusCanOverlapOSBar) &&
+        !mInContentShell;
+    
+    const auto screenRect =
+        canOverlapOSBar ? screen->GetRect() : screen->GetAvailRect();
+    AddConstraint(LayoutDeviceRect::ToAppUnits(screenRect, a2d));
   }
 
   if (mInContentShell) {
     
-    screenRectPixels.IntersectRect(screenRectPixels, aRootScreenRect);
+    AddConstraint(aRootScreenRect);
   } else if (!mOverrideConstraintRect.IsEmpty()) {
-    auto overrideConstrainRect = LayoutDeviceIntRect::FromAppUnitsToNearest(
-        mOverrideConstraintRect, PresContext()->AppUnitsPerDevPixel());
+    AddConstraint(mOverrideConstraintRect);
     
     
     
-    screenRectPixels.IntersectRect(screenRectPixels, overrideConstrainRect);
-    screenRectPixels.x = overrideConstrainRect.x;
-    screenRectPixels.width = overrideConstrainRect.width;
+    
+    
+    result->x = mOverrideConstraintRect.x;
+    result->width = mOverrideConstraintRect.width;
   }
 
-  return screenRectPixels;
+  
+  
+  if (result) {
+    const nscoord inputMargin =
+        StyleUIReset()->mMozWindowInputRegionMargin.ToAppUnits();
+    result->Inflate(inputMargin);
+  }
+  return result;
 }
 
 ConsumeOutsideClicksResult nsMenuPopupFrame::ConsumeOutsideClicks() {

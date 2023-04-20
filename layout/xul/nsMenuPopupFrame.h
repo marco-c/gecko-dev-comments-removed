@@ -374,10 +374,9 @@ class nsMenuPopupFrame final : public nsBlockFrame {
   
   
   Rects GetRects(const nsSize& aPrefSize) const;
-  mozilla::LayoutDeviceIntRect GetConstraintRect(
-      const mozilla::LayoutDeviceIntRect& aAnchorRect,
-      const mozilla::LayoutDeviceIntRect& aRootScreenRect,
-      PopupLevel aPopupLevel) const;
+  Maybe<nsRect> GetConstraintRect(const nsRect& aAnchorRect,
+                                  const nsRect& aRootScreenRect,
+                                  PopupLevel) const;
   void PerformMove(const Rects&);
 
   
