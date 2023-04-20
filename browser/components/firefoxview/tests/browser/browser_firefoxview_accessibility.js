@@ -9,6 +9,15 @@
 
 
 
+add_setup(async function setup() {
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.firefox-view.view-count", 0]],
+  });
+});
+
 add_task(async function test_keyboard_focus_after_tab_pickup_opened() {
   
   
