@@ -12,6 +12,7 @@ pub mod server;
 
 pub use wgc::device::trace::Command as CommandEncoderAction;
 
+use std::marker::PhantomData;
 use std::{borrow::Cow, mem, slice};
 
 use nsstring::nsACString;
@@ -32,6 +33,33 @@ fn cow_label<'a, 'b>(raw: &'a RawString) -> Option<Cow<'b, str>> {
 
 pub fn wgpu_string(gecko_string: Option<&nsACString>) -> Option<Cow<str>> {
     gecko_string.map(|s| s.to_utf8())
+}
+
+
+#[repr(C)]
+pub struct FfiSlice<'a, T> {
+    
+    pub data: *const T,
+    pub length: usize,
+    pub _marker: PhantomData<&'a T>,
+}
+
+impl<'a, T> FfiSlice<'a, T> {
+    pub unsafe fn as_slice(&self) -> &'a [T] {
+        if self.data.is_null() {
+            
+            return &[];
+        }
+
+        std::slice::from_raw_parts(self.data, self.length)
+    }
+}
+
+impl<'a, T> Copy for FfiSlice<'a, T> {}
+impl<'a, T> Clone for FfiSlice<'a, T> {
+    fn clone(&self) -> Self {
+        *self
+    }
 }
 
 #[repr(C)]

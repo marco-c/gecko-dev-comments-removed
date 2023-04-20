@@ -365,10 +365,15 @@ RawId WebGPUChild::DeviceCreateBuffer(RawId aSelfId,
 
 RawId WebGPUChild::DeviceCreateTexture(RawId aSelfId,
                                        const dom::GPUTextureDescriptor& aDesc) {
-  ffi::WGPUTextureDescriptor desc = {};
+  
+  
+  ffi::WGPUTextureDescriptor______nsACString__FfiSlice_TextureFormat desc = {};
 
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
+
+  
+  desc.view_formats = {nullptr, 0};
 
   if (aDesc.mSize.IsRangeEnforcedUnsignedLongSequence()) {
     const auto& seq = aDesc.mSize.GetAsRangeEnforcedUnsignedLongSequence();
