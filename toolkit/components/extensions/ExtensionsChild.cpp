@@ -18,7 +18,7 @@ using namespace mozilla::dom;
 namespace mozilla {
 namespace extensions {
 
-NS_IMPL_ISUPPORTS0(ExtensionsChild)
+NS_IMPL_ISUPPORTS(ExtensionsChild, nsIObserver)
 
 
 ExtensionsChild& ExtensionsChild::Get() {
@@ -56,6 +56,18 @@ void ExtensionsChild::Init() {
 }
 
 void ExtensionsChild::ActorDestroy(ActorDestroyReason aWhy) {}
+
+
+
+NS_IMETHODIMP ExtensionsChild::Observe(nsISupports*, const char* aTopic,
+                                       const char16_t*) {
+  
+  
+  
+  MOZ_ASSERT(strcmp(aTopic, "app-startup") == 0);
+
+  return NS_OK;
+}
 
 }  
 }  
