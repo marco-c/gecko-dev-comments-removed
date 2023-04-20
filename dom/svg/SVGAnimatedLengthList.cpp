@@ -146,7 +146,6 @@ nsresult SVGAnimatedLengthList::SMILAnimatedLengthList::ValueFromString(
     
     
 
-    aPreventCachingOfSandwich = false;
     for (uint32_t i = 0; i < llai->Length(); ++i) {
       uint8_t unit = (*llai)[i].GetUnit();
       if (unit == SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE ||
