@@ -78,13 +78,13 @@ TEST_LIST = { { "srtp_calc_aead_iv_srtcp_all_zero_input_yield_zero_output()",
                 srtp_calc_aead_iv_srtcp_seq_num_over_0x7FFFFFFF_bad_param },
               { "srtp_calc_aead_iv_srtcp_distinct_iv_per_sequence_number()",
                 srtp_calc_aead_iv_srtcp_distinct_iv_per_sequence_number },
-              { NULL }  };
+              { 0 }  };
 
 
 
 
 
-void srtp_calc_aead_iv_srtcp_all_zero_input_yield_zero_output()
+void srtp_calc_aead_iv_srtcp_all_zero_input_yield_zero_output(void)
 {
     
     srtp_session_keys_t session_keys;
@@ -94,8 +94,7 @@ void srtp_calc_aead_iv_srtcp_all_zero_input_yield_zero_output()
 
     
     srtp_err_status_t status;
-    const v128_t zero_vector;
-    memset((v128_t *)&zero_vector, 0, sizeof(v128_t));
+    const v128_t zero_vector = { 0 };
 
     
     memset(&session_keys, 0, sizeof(srtp_session_keys_t));
@@ -112,7 +111,7 @@ void srtp_calc_aead_iv_srtcp_all_zero_input_yield_zero_output()
     TEST_CHECK(memcmp(&zero_vector, &init_vector, sizeof(v128_t)) == 0);
 }
 
-void srtp_calc_aead_iv_srtcp_seq_num_over_0x7FFFFFFF_bad_param()
+void srtp_calc_aead_iv_srtcp_seq_num_over_0x7FFFFFFF_bad_param(void)
 {
     
     srtp_session_keys_t session_keys;
@@ -144,7 +143,7 @@ void srtp_calc_aead_iv_srtcp_seq_num_over_0x7FFFFFFF_bad_param()
 
 
 
-void srtp_calc_aead_iv_srtcp_distinct_iv_per_sequence_number()
+void srtp_calc_aead_iv_srtcp_distinct_iv_per_sequence_number(void)
 {
 #define SAMPLE_COUNT (3)
     
