@@ -93,51 +93,53 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
   const CSSRect visualViewportRect = mApzc->GetCurrentAsyncVisualViewport(
       AsyncPanZoomController::eForCompositing);
   const CSSCoord visualViewportLength = aAxis.GetRectLength(visualViewportRect);
-  
-  
-  
-  
-  
-  const CSSCoord pageIncrementMin =
-      static_cast<int>(visualViewportLength * 0.8);
-  CSSCoord pageIncrement;
-
-  CSSToLayoutDeviceScale deviceScale = mMetrics.GetDevPixelsPerCSSPixel();
-  if (*mScrollbarData.mDirection == ScrollDirection::eVertical) {
-    const CSSCoord lineScrollAmount =
-        (mApzc->GetScrollMetadata().GetLineScrollAmount() / deviceScale).height;
-    const double kScrollMultiplier =
-        StaticPrefs::toolkit_scrollbox_verticalScrollDistance();
-    CSSCoord increment = lineScrollAmount * kScrollMultiplier;
-
-    pageIncrement =
-        std::max(visualViewportLength - increment, pageIncrementMin);
-  } else {
-    pageIncrement = pageIncrementMin;
-  }
 
   const CSSCoord maxMinPosDifference =
       CSSCoord(aAxis.GetRectLength(mMetrics.GetScrollableRect()).Truncated()) -
       visualViewportLength;
 
-  float ratio = pageIncrement / (maxMinPosDifference + pageIncrement);
-
-  CSSCoord desiredThumbLength{
-      std::max(mScrollbarData.mThumbMinLength,
-               mScrollbarData.mScrollTrackLength * ratio)};
-
-  
-  
-  desiredThumbLength =
-      LayoutDeviceCoord((desiredThumbLength * deviceScale).Rounded()) /
-      deviceScale;
-
-  const float scale = desiredThumbLength / mScrollbarData.mThumbLength;
-
   CSSCoord effectiveThumbLength = mScrollbarData.mThumbLength;
 
   if (haveAsyncZoom) {
+    
+    
+    
+    
+    
+    const CSSCoord pageIncrementMin =
+        static_cast<int>(visualViewportLength * 0.8);
+    CSSCoord pageIncrement;
+
+    CSSToLayoutDeviceScale deviceScale = mMetrics.GetDevPixelsPerCSSPixel();
+    if (*mScrollbarData.mDirection == ScrollDirection::eVertical) {
+      const CSSCoord lineScrollAmount =
+          (mApzc->GetScrollMetadata().GetLineScrollAmount() / deviceScale)
+              .height;
+      const double kScrollMultiplier =
+          StaticPrefs::toolkit_scrollbox_verticalScrollDistance();
+      CSSCoord increment = lineScrollAmount * kScrollMultiplier;
+
+      pageIncrement =
+          std::max(visualViewportLength - increment, pageIncrementMin);
+    } else {
+      pageIncrement = pageIncrementMin;
+    }
+
+    float ratio = pageIncrement / (maxMinPosDifference + pageIncrement);
+
+    CSSCoord desiredThumbLength{
+        std::max(mScrollbarData.mThumbMinLength,
+                 mScrollbarData.mScrollTrackLength * ratio)};
+
+    
+    
+    desiredThumbLength =
+        LayoutDeviceCoord((desiredThumbLength * deviceScale).Rounded()) /
+        deviceScale;
+
     effectiveThumbLength = desiredThumbLength;
+
+    const float scale = desiredThumbLength / mScrollbarData.mThumbLength;
 
     
     
