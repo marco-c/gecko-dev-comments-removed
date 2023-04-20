@@ -2728,14 +2728,6 @@ void MLimitedTruncate::truncate(TruncateKind kind) {
 }
 
 bool MCompare::needTruncation() const {
-  
-  
-  
-  
-  if (block()->info().compilingWasm()) {
-    return false;
-  }
-
   if (!isDoubleComparison()) {
     return false;
   }
