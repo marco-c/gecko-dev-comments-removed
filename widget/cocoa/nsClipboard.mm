@@ -174,6 +174,20 @@ nsresult nsClipboard::TransferableFromPasteboard(nsITransferable* aTransferable,
       aTransferable->SetTransferData(flavorStr.get(), genericDataWrapper);
       free(clipboardDataPtr);
       break;
+    } else if (flavorStr.EqualsLiteral(kFileMime)) {
+      NSArray* items = [cocoaPasteboard pasteboardItems];
+      if (!items || [items count] <= 0) {
+        continue;
+      }
+
+      
+      
+      NSPasteboardItem* item = [items objectAtIndex:0];
+      if (!item) {
+        continue;
+      }
+
+      nsCocoaUtils::SetTransferDataForTypeFromPasteboardItem(aTransferable, flavorStr, item);
     } else if (flavorStr.EqualsLiteral(kCustomTypesMime)) {
       NSString* type = [cocoaPasteboard
           availableTypeFromArray:
@@ -409,6 +423,23 @@ nsClipboard::HasDataMatchingFlavors(const nsTArray<nsCString>& aFlavorList, int3
         CLIPBOARD_LOG("    has %s\n", mimeType.get());
         *outResult = true;
         break;
+      }
+    } else if (mimeType.EqualsLiteral(kFileMime)) {
+      NSArray* items = [generalPBoard pasteboardItems];
+      if (items && [items count] > 0) {
+        
+        
+        if (NSPasteboardItem* item = [items objectAtIndex:0]) {
+          if (NSString *availableType = [item
+                  availableTypeFromArray:
+                      [NSArray arrayWithObjects:[UTIHelper
+                                                    stringFromPboardType:(NSString*)kUTTypeFileURL],
+                                                nil]]) {
+            CLIPBOARD_LOG("    has %s\n", mimeType.get());
+            *outResult = true;
+            break;
+          }
+        }
       }
     }
   }
