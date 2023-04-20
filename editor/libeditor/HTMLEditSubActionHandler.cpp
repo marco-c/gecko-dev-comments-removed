@@ -3535,386 +3535,531 @@ HTMLEditor::AutoListElementCreator::WrapContentNodesIntoNewListElements(
 
   
   
-
-  uint32_t countOfCollectedContents = aArrayOfContents.Length();
-  RefPtr<Element> curList, prevListItem, listItemOrListToPutCaret;
-
-  for (uint32_t i = 0; i < countOfCollectedContents; i++) {
+  AutoHandlingState handlingState;
+  for (const OwningNonNull<nsIContent>& content : aArrayOfContents) {
     
-    const OwningNonNull<nsIContent> content = aArrayOfContents[i];
-
-    
-    
-    if (curList &&
-        HTMLEditUtils::GetInclusiveAncestorAnyTableElement(*curList) !=
-            HTMLEditUtils::GetInclusiveAncestorAnyTableElement(content)) {
-      curList = nullptr;
+    nsresult rv = HandleChildContent(aHTMLEditor, MOZ_KnownLive(content),
+                                     handlingState, aEditingHost);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("AutoListElementCreator::HandleChildContent() failed");
+      return Err(rv);
     }
-
-    
-    
-    
-    if (EditorUtils::IsEditableContent(content, EditorType::HTML) &&
-        (content->IsHTMLElement(nsGkAtoms::br) ||
-         HTMLEditUtils::IsEmptyInlineContainer(
-             content, {EmptyCheckOption::TreatSingleBRElementAsVisible}))) {
-      nsresult rv = aHTMLEditor.DeleteNodeWithTransaction(*content);
-      if (NS_FAILED(rv)) {
-        NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
-        return Err(rv);
-      }
-      if (content->IsHTMLElement(nsGkAtoms::br)) {
-        prevListItem = nullptr;
-      }
-      continue;
-    }
-
-    if (HTMLEditUtils::IsAnyListElement(content)) {
-      
-      
-      
-      if (curList && !EditorUtils::IsDescendantOf(*content, *curList)) {
-        Result<MoveNodeResult, nsresult> moveNodeResult =
-            aHTMLEditor.MoveNodeToEndWithTransaction(*content, *curList);
-        if (MOZ_UNLIKELY(moveNodeResult.isErr())) {
-          NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
-          return moveNodeResult.propagateErr();
-        }
-        MOZ_ASSERT(aRanges.HasSavedRanges());
-        moveNodeResult.inspect().IgnoreCaretPointSuggestion();
-
-        Result<CreateElementResult, nsresult> convertListTypeResult =
-            aHTMLEditor.ChangeListElementType(
-                MOZ_KnownLive(*content->AsElement()), mListTagName,
-                mListItemTagName);
-        if (MOZ_UNLIKELY(convertListTypeResult.isErr())) {
-          NS_WARNING("HTMLEditor::ChangeListElementType() failed");
-          return convertListTypeResult.propagateErr();
-        }
-        MOZ_ASSERT(aRanges.HasSavedRanges());
-        convertListTypeResult.inspect().IgnoreCaretPointSuggestion();
-
-        Result<EditorDOMPoint, nsresult> unwrapNewListElementResult =
-            aHTMLEditor.RemoveBlockContainerWithTransaction(
-                MOZ_KnownLive(*convertListTypeResult.inspect().GetNewNode()));
-        if (MOZ_UNLIKELY(unwrapNewListElementResult.isErr())) {
-          NS_WARNING(
-              "HTMLEditor::RemoveBlockContainerWithTransaction() failed");
-          return unwrapNewListElementResult.propagateErr();
-        }
-        MOZ_ASSERT(aRanges.HasSavedRanges());  
-
-        prevListItem = nullptr;
-        continue;
-      }
-
-      
-      
-      Result<CreateElementResult, nsresult> convertListTypeResult =
-          aHTMLEditor.ChangeListElementType(
-              MOZ_KnownLive(*content->AsElement()), mListTagName,
-              mListItemTagName);
-      if (MOZ_UNLIKELY(convertListTypeResult.isErr())) {
-        NS_WARNING("HTMLEditor::ChangeListElementType() failed");
-        return convertListTypeResult.propagateErr();
-      }
-      CreateElementResult unwrappedConvertListTypeResult =
-          convertListTypeResult.unwrap();
-      MOZ_ASSERT(aRanges.HasSavedRanges());
-      unwrappedConvertListTypeResult.IgnoreCaretPointSuggestion();
-      MOZ_ASSERT(unwrappedConvertListTypeResult.GetNewNode());
-      curList = unwrappedConvertListTypeResult.UnwrapNewNode();
-      prevListItem = nullptr;
-      continue;
-    }
-
-    EditorDOMPoint atContent(content);
-    if (NS_WARN_IF(!atContent.IsSet())) {
-      return Err(NS_ERROR_FAILURE);
-    }
-    MOZ_ASSERT(atContent.IsSetAndValid());
-    if (HTMLEditUtils::IsListItem(content)) {
-      
-      
-      if (!atContent.IsContainerHTMLElement(&mListTagName)) {
-        
-        
-        
-        if (!curList || EditorUtils::IsDescendantOf(*content, *curList)) {
-          if (NS_WARN_IF(!atContent.IsInContentNode())) {
-            return Err(NS_ERROR_FAILURE);
-          }
-          Result<SplitNodeResult, nsresult> splitListItemParentResult =
-              aHTMLEditor.SplitNodeWithTransaction(atContent);
-          if (MOZ_UNLIKELY(splitListItemParentResult.isErr())) {
-            NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
-            return splitListItemParentResult.propagateErr();
-          }
-          SplitNodeResult unwrappedSplitListItemParentResult =
-              splitListItemParentResult.unwrap();
-          MOZ_ASSERT(unwrappedSplitListItemParentResult.DidSplit());
-          MOZ_ASSERT(aRanges.HasSavedRanges());
-          unwrappedSplitListItemParentResult.IgnoreCaretPointSuggestion();
-
-          Result<CreateElementResult, nsresult> createNewListElementResult =
-              aHTMLEditor.CreateAndInsertElement(
-                  WithTransaction::Yes, mListTagName,
-                  unwrappedSplitListItemParentResult
-                      .AtNextContent<EditorDOMPoint>());
-          if (MOZ_UNLIKELY(createNewListElementResult.isErr())) {
-            NS_WARNING(
-                "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) "
-                "failed");
-            return createNewListElementResult.propagateErr();
-          }
-          CreateElementResult unwrapCreateNewListElementResult =
-              createNewListElementResult.unwrap();
-          MOZ_ASSERT(aRanges.HasSavedRanges());
-          unwrapCreateNewListElementResult.IgnoreCaretPointSuggestion();
-          MOZ_ASSERT(unwrapCreateNewListElementResult.GetNewNode());
-          curList = unwrapCreateNewListElementResult.UnwrapNewNode();
-        }
-        
-        Result<MoveNodeResult, nsresult> moveNodeResult =
-            aHTMLEditor.MoveNodeToEndWithTransaction(*content, *curList);
-        if (MOZ_UNLIKELY(moveNodeResult.isErr())) {
-          NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
-          return moveNodeResult.propagateErr();
-        }
-        MOZ_ASSERT(aRanges.HasSavedRanges());
-        moveNodeResult.inspect().IgnoreCaretPointSuggestion();
-
-        
-        if (!content->IsHTMLElement(&mListItemTagName)) {
-          Result<CreateElementResult, nsresult> newListItemElementOrError =
-              aHTMLEditor.ReplaceContainerWithTransaction(
-                  MOZ_KnownLive(*content->AsElement()), mListItemTagName);
-          if (MOZ_UNLIKELY(newListItemElementOrError.isErr())) {
-            NS_WARNING("HTMLEditor::ReplaceContainerWithTransaction() failed");
-            return newListItemElementOrError.propagateErr();
-          }
-          MOZ_ASSERT(aRanges.HasSavedRanges());
-          newListItemElementOrError.inspect().IgnoreCaretPointSuggestion();
-        }
-      } else {
-        
-        
-        if (!curList) {
-          curList = atContent.GetContainerAs<Element>();
-          NS_WARNING_ASSERTION(
-              HTMLEditUtils::IsAnyListElement(curList),
-              "Current list item parent is not a list element");
-        }
-        
-        
-        else if (atContent.GetContainer() != curList) {
-          Result<MoveNodeResult, nsresult> moveNodeResult =
-              aHTMLEditor.MoveNodeToEndWithTransaction(*content, *curList);
-          if (MOZ_UNLIKELY(moveNodeResult.isErr())) {
-            NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
-            return moveNodeResult.propagateErr();
-          }
-          MOZ_ASSERT(aRanges.HasSavedRanges());
-          moveNodeResult.inspect().IgnoreCaretPointSuggestion();
-        }
-        
-        
-        if (!content->IsHTMLElement(&mListItemTagName)) {
-          Result<CreateElementResult, nsresult> newListItemElementOrError =
-              aHTMLEditor.ReplaceContainerWithTransaction(
-                  MOZ_KnownLive(*content->AsElement()), mListItemTagName);
-          if (MOZ_UNLIKELY(newListItemElementOrError.isErr())) {
-            NS_WARNING("HTMLEditor::ReplaceContainerWithTransaction() failed");
-            return newListItemElementOrError.propagateErr();
-          }
-          MOZ_ASSERT(aRanges.HasSavedRanges());
-          newListItemElementOrError.inspect().IgnoreCaretPointSuggestion();
-        }
-      }
-      Element* element = Element::FromNode(content);
-      if (NS_WARN_IF(!element)) {
-        return Err(NS_ERROR_FAILURE);
-      }
-      
-      
-      
-      if (!mBulletType.IsEmpty()) {
-        nsresult rv = aHTMLEditor.SetAttributeWithTransaction(
-            MOZ_KnownLive(*element), *nsGkAtoms::type, mBulletType);
-        if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
-          return Err(NS_ERROR_EDITOR_DESTROYED);
-        }
-        if (NS_FAILED(rv)) {
-          NS_WARNING(
-              "EditorBase::SetAttributeWithTransaction(nsGkAtoms::type) "
-              "failed");
-          return Err(rv);
-        }
-        continue;
-      }
-
-      
-      if (!element->HasAttr(nsGkAtoms::type)) {
-        continue;
-      }
-      nsresult rv = aHTMLEditor.RemoveAttributeWithTransaction(
-          MOZ_KnownLive(*element), *nsGkAtoms::type);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "EditorBase::RemoveAttributeWithTransaction(nsGkAtoms::type) "
-            "failed");
-        return Err(rv);
-      }
-      continue;
-    }
-
-    MOZ_ASSERT(!HTMLEditUtils::IsAnyListElement(content) &&
-               !HTMLEditUtils::IsListItem(content));
-
-    
-    
-    
-    
-    if (content->IsHTMLElement(nsGkAtoms::div)) {
-      prevListItem = nullptr;
-      HTMLEditUtils::CollectChildren(
-          *content, aArrayOfContents, i + 1,
-          {CollectChildrenOption::CollectListChildren,
-           CollectChildrenOption::CollectTableChildren});
-      Result<EditorDOMPoint, nsresult> unwrapDivElementResult =
-          aHTMLEditor.RemoveContainerWithTransaction(
-              MOZ_KnownLive(*content->AsElement()));
-      if (MOZ_UNLIKELY(unwrapDivElementResult.isErr())) {
-        NS_WARNING("HTMLEditor::RemoveContainerWithTransaction() failed");
-        return unwrapDivElementResult.propagateErr();
-      }
-      MOZ_ASSERT(aRanges.HasSavedRanges());  
-
-      
-      countOfCollectedContents = aArrayOfContents.Length();
-      continue;
-    }
-
-    
-    
-    if (!curList) {
-      prevListItem = nullptr;
-      Result<CreateElementResult, nsresult> createNewListElementResult =
-          aHTMLEditor.InsertElementWithSplittingAncestorsWithTransaction(
-              mListTagName, atContent, BRElementNextToSplitPoint::Keep,
-              aEditingHost);
-      if (MOZ_UNLIKELY(createNewListElementResult.isErr())) {
-        NS_WARNING(
-            nsPrintfCString(
-                "HTMLEditor::"
-                "InsertElementWithSplittingAncestorsWithTransaction(%s) failed",
-                nsAtomCString(&mListTagName).get())
-                .get());
-        return createNewListElementResult.propagateErr();
-      }
-      CreateElementResult unwrappedCreateNewListElementResult =
-          createNewListElementResult.unwrap();
-      MOZ_ASSERT(aRanges.HasSavedRanges());
-      unwrappedCreateNewListElementResult.IgnoreCaretPointSuggestion();
-
-      MOZ_ASSERT(unwrappedCreateNewListElementResult.GetNewNode());
-      listItemOrListToPutCaret =
-          unwrappedCreateNewListElementResult.GetNewNode();
-      curList = unwrappedCreateNewListElementResult.UnwrapNewNode();
-
-      
-      
-      atContent.Clear();
-    }
-
-    
-    
-    if (HTMLEditUtils::IsInlineElement(content) && prevListItem) {
-      Result<MoveNodeResult, nsresult> moveInlineElementResult =
-          aHTMLEditor.MoveNodeToEndWithTransaction(*content, *prevListItem);
-      if (MOZ_UNLIKELY(moveInlineElementResult.isErr())) {
-        NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
-        return moveInlineElementResult.propagateErr();
-      }
-      MOZ_ASSERT(aRanges.HasSavedRanges());
-      moveInlineElementResult.inspect().IgnoreCaretPointSuggestion();
-      continue;
-    }
-
-    
-    
-    
-    
-    
-    if (content->IsHTMLElement(nsGkAtoms::p)) {
-      Result<CreateElementResult, nsresult> newListItemElementOrError =
-          aHTMLEditor.ReplaceContainerWithTransaction(
-              MOZ_KnownLive(*content->AsElement()), mListItemTagName);
-      if (MOZ_UNLIKELY(newListItemElementOrError.isErr())) {
-        NS_WARNING("HTMLEditor::ReplaceContainerWithTransaction() failed");
-        return newListItemElementOrError.propagateErr();
-      }
-      MOZ_ASSERT(aRanges.HasSavedRanges());
-      newListItemElementOrError.inspect().IgnoreCaretPointSuggestion();
-      MOZ_ASSERT(newListItemElementOrError.inspect().GetNewNode());
-
-      Result<MoveNodeResult, nsresult> moveListItemElementResult =
-          aHTMLEditor.MoveNodeToEndWithTransaction(
-              MOZ_KnownLive(*newListItemElementOrError.inspect().GetNewNode()),
-              *curList);
-      if (MOZ_UNLIKELY(moveListItemElementResult.isErr())) {
-        NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
-        return moveListItemElementResult.propagateErr();
-      }
-      MOZ_ASSERT(aRanges.HasSavedRanges());
-      moveListItemElementResult.inspect().IgnoreCaretPointSuggestion();
-
-      prevListItem = nullptr;
-      
-      continue;
-    }
-
-    
-    
-    Result<CreateElementResult, nsresult> wrapContentInListItemElementResult =
-        aHTMLEditor.InsertContainerWithTransaction(*content, mListItemTagName);
-    if (MOZ_UNLIKELY(wrapContentInListItemElementResult.isErr())) {
-      NS_WARNING("HTMLEditor::InsertContainerWithTransaction() failed");
-      return wrapContentInListItemElementResult.propagateErr();
-    }
-    CreateElementResult unwrappedWrapContentInListItemElementResult =
-        wrapContentInListItemElementResult.unwrap();
-    MOZ_ASSERT(aRanges.HasSavedRanges());
-    unwrappedWrapContentInListItemElementResult.IgnoreCaretPointSuggestion();
-    MOZ_ASSERT(unwrappedWrapContentInListItemElementResult.GetNewNode());
-
-    
-    
-    Result<MoveNodeResult, nsresult> moveListItemElementResult =
-        aHTMLEditor.MoveNodeToEndWithTransaction(
-            MOZ_KnownLive(
-                *unwrappedWrapContentInListItemElementResult.GetNewNode()),
-            *curList);
-    if (MOZ_UNLIKELY(moveListItemElementResult.isErr())) {
-      NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
-      return moveListItemElementResult.propagateErr();
-    }
-    MOZ_ASSERT(aRanges.HasSavedRanges());
-    moveListItemElementResult.inspect().IgnoreCaretPointSuggestion();
-
-    
-    
-    if (HTMLEditUtils::IsInlineElement(content)) {
-      prevListItem =
-          unwrappedWrapContentInListItemElementResult.UnwrapNewNode();
-    } else {
-      prevListItem = nullptr;
-    }
-
-    
   }
 
-  return listItemOrListToPutCaret;
+  return std::move(handlingState.mListOrListItemElementToPutCaret);
+}
+
+nsresult HTMLEditor::AutoListElementCreator::HandleChildContent(
+    HTMLEditor& aHTMLEditor, nsIContent& aHandlingContent,
+    AutoHandlingState& aState, const Element& aEditingHost) const {
+  
+  
+  if (aState.mCurrentListElement &&
+      HTMLEditUtils::GetInclusiveAncestorAnyTableElement(
+          *aState.mCurrentListElement) !=
+          HTMLEditUtils::GetInclusiveAncestorAnyTableElement(
+              aHandlingContent)) {
+    aState.mCurrentListElement = nullptr;
+  }
+
+  
+  
+  
+  if (EditorUtils::IsEditableContent(aHandlingContent, EditorType::HTML) &&
+      (aHandlingContent.IsHTMLElement(nsGkAtoms::br) ||
+       HTMLEditUtils::IsEmptyInlineContainer(
+           aHandlingContent,
+           {EmptyCheckOption::TreatSingleBRElementAsVisible}))) {
+    nsresult rv = aHTMLEditor.DeleteNodeWithTransaction(aHandlingContent);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+      return rv;
+    }
+    if (aHandlingContent.IsHTMLElement(nsGkAtoms::br)) {
+      aState.mPreviousListItemElement = nullptr;
+    }
+    return NS_OK;
+  }
+
+  
+  if (HTMLEditUtils::IsAnyListElement(&aHandlingContent)) {
+    nsresult rv = HandleChildListElement(
+        aHTMLEditor, MOZ_KnownLive(*aHandlingContent.AsElement()), aState);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "AutoListElementCreator::HandleChildListElement() failed");
+    return rv;
+  }
+
+  
+  if (NS_WARN_IF(!aHandlingContent.GetParentElement())) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  if (HTMLEditUtils::IsListItem(&aHandlingContent)) {
+    nsresult rv = HandleChildListItemElement(
+        aHTMLEditor, MOZ_KnownLive(*aHandlingContent.AsElement()), aState);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "AutoListElementCreator::HandleChildListItemElement() failed");
+    return rv;
+  }
+
+  
+  
+  if (aHandlingContent.IsHTMLElement(nsGkAtoms::div)) {
+    nsresult rv = HandleChildDivElement(
+        aHTMLEditor, MOZ_KnownLive(*aHandlingContent.AsElement()), aState,
+        aEditingHost);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "AutoListElementCreator::HandleChildDivElement() failed");
+    return rv;
+  }
+
+  
+  
+  if (!aState.mCurrentListElement) {
+    nsresult rv = CreateAndUpdateCurrentListElement(
+        aHTMLEditor, EditorDOMPoint(&aHandlingContent), aState, aEditingHost);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("AutoListElementCreator::HandleChildInlineElement() failed");
+      return rv;
+    }
+  }
+
+  
+  
+  
+  
+  if (HTMLEditUtils::IsInlineElement(aHandlingContent)) {
+    nsresult rv =
+        HandleChildInlineContent(aHTMLEditor, aHandlingContent, aState);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "AutoListElementCreator::HandleChildInlineElement() failed");
+    return rv;
+  }
+
+  
+  if (aHandlingContent.IsHTMLElement(nsGkAtoms::p)) {
+    nsresult rv = HandleChildParagraphElement(
+        aHTMLEditor, MOZ_KnownLive(*aHandlingContent.AsElement()), aState);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "AutoListElementCreator::HandleChildParagraphElement() failed");
+    return rv;
+  }
+
+  
+  nsresult rv =
+      WrapContentIntoNewListItemElement(aHTMLEditor, aHandlingContent, aState);
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "AutoListElementCreator::WrapContentIntoNewListItemElement() failed");
+  return rv;
+}
+
+nsresult HTMLEditor::AutoListElementCreator::HandleChildListElement(
+    HTMLEditor& aHTMLEditor, Element& aHandlingListElement,
+    AutoHandlingState& aState) const {
+  MOZ_ASSERT(HTMLEditUtils::IsAnyListElement(&aHandlingListElement));
+
+  
+  
+  
+  if (aState.mCurrentListElement &&
+      !EditorUtils::IsDescendantOf(aHandlingListElement,
+                                   *aState.mCurrentListElement)) {
+    Result<MoveNodeResult, nsresult> moveNodeResult =
+        aHTMLEditor.MoveNodeToEndWithTransaction(
+            aHandlingListElement, MOZ_KnownLive(*aState.mCurrentListElement));
+    if (MOZ_UNLIKELY(moveNodeResult.isErr())) {
+      NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
+      return moveNodeResult.propagateErr();
+    }
+    moveNodeResult.inspect().IgnoreCaretPointSuggestion();
+
+    Result<CreateElementResult, nsresult> convertListTypeResult =
+        aHTMLEditor.ChangeListElementType(aHandlingListElement, mListTagName,
+                                          mListItemTagName);
+    if (MOZ_UNLIKELY(convertListTypeResult.isErr())) {
+      NS_WARNING("HTMLEditor::ChangeListElementType() failed");
+      return convertListTypeResult.propagateErr();
+    }
+    convertListTypeResult.inspect().IgnoreCaretPointSuggestion();
+
+    Result<EditorDOMPoint, nsresult> unwrapNewListElementResult =
+        aHTMLEditor.RemoveBlockContainerWithTransaction(
+            MOZ_KnownLive(*convertListTypeResult.inspect().GetNewNode()));
+    if (MOZ_UNLIKELY(unwrapNewListElementResult.isErr())) {
+      NS_WARNING("HTMLEditor::RemoveBlockContainerWithTransaction() failed");
+      return unwrapNewListElementResult.propagateErr();
+    }
+    aState.mPreviousListItemElement = nullptr;
+    return NS_OK;
+  }
+
+  
+  
+  Result<CreateElementResult, nsresult> convertListTypeResult =
+      aHTMLEditor.ChangeListElementType(aHandlingListElement, mListTagName,
+                                        mListItemTagName);
+  if (MOZ_UNLIKELY(convertListTypeResult.isErr())) {
+    NS_WARNING("HTMLEditor::ChangeListElementType() failed");
+    return convertListTypeResult.propagateErr();
+  }
+  CreateElementResult unwrappedConvertListTypeResult =
+      convertListTypeResult.unwrap();
+  unwrappedConvertListTypeResult.IgnoreCaretPointSuggestion();
+  MOZ_ASSERT(unwrappedConvertListTypeResult.GetNewNode());
+  aState.mCurrentListElement = unwrappedConvertListTypeResult.UnwrapNewNode();
+  aState.mPreviousListItemElement = nullptr;
+  return NS_OK;
+}
+
+nsresult
+HTMLEditor::AutoListElementCreator::HandleChildListItemInDifferentTypeList(
+    HTMLEditor& aHTMLEditor, Element& aHandlingListItemElement,
+    AutoHandlingState& aState) const {
+  MOZ_ASSERT(HTMLEditUtils::IsListItem(&aHandlingListItemElement));
+  MOZ_ASSERT(
+      !aHandlingListItemElement.GetParent()->IsHTMLElement(&mListTagName));
+
+  
+  
+  
+  if (!aState.mCurrentListElement ||
+      aHandlingListItemElement.IsInclusiveDescendantOf(
+          aState.mCurrentListElement)) {
+    EditorDOMPoint atListItem(&aHandlingListItemElement);
+    MOZ_ASSERT(atListItem.IsInContentNode());
+
+    Result<SplitNodeResult, nsresult> splitListItemParentResult =
+        aHTMLEditor.SplitNodeWithTransaction(atListItem);
+    if (MOZ_UNLIKELY(splitListItemParentResult.isErr())) {
+      NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
+      return splitListItemParentResult.propagateErr();
+    }
+    SplitNodeResult unwrappedSplitListItemParentResult =
+        splitListItemParentResult.unwrap();
+    MOZ_ASSERT(unwrappedSplitListItemParentResult.DidSplit());
+    unwrappedSplitListItemParentResult.IgnoreCaretPointSuggestion();
+
+    Result<CreateElementResult, nsresult> createNewListElementResult =
+        aHTMLEditor.CreateAndInsertElement(
+            WithTransaction::Yes, mListTagName,
+            unwrappedSplitListItemParentResult.AtNextContent<EditorDOMPoint>());
+    if (MOZ_UNLIKELY(createNewListElementResult.isErr())) {
+      NS_WARNING(
+          "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) "
+          "failed");
+      return createNewListElementResult.propagateErr();
+    }
+    CreateElementResult unwrapCreateNewListElementResult =
+        createNewListElementResult.unwrap();
+    unwrapCreateNewListElementResult.IgnoreCaretPointSuggestion();
+    MOZ_ASSERT(unwrapCreateNewListElementResult.GetNewNode());
+    aState.mCurrentListElement =
+        unwrapCreateNewListElementResult.UnwrapNewNode();
+  }
+
+  
+  Result<MoveNodeResult, nsresult> moveNodeResult =
+      aHTMLEditor.MoveNodeToEndWithTransaction(
+          aHandlingListItemElement, MOZ_KnownLive(*aState.mCurrentListElement));
+  if (MOZ_UNLIKELY(moveNodeResult.isErr())) {
+    NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
+    return moveNodeResult.propagateErr();
+  }
+  moveNodeResult.inspect().IgnoreCaretPointSuggestion();
+
+  
+  if (aHandlingListItemElement.IsHTMLElement(&mListItemTagName)) {
+    return NS_OK;
+  }
+  Result<CreateElementResult, nsresult> newListItemElementOrError =
+      aHTMLEditor.ReplaceContainerWithTransaction(aHandlingListItemElement,
+                                                  mListItemTagName);
+  if (MOZ_UNLIKELY(newListItemElementOrError.isErr())) {
+    NS_WARNING("HTMLEditor::ReplaceContainerWithTransaction() failed");
+    return newListItemElementOrError.propagateErr();
+  }
+  newListItemElementOrError.inspect().IgnoreCaretPointSuggestion();
+  return NS_OK;
+}
+
+nsresult HTMLEditor::AutoListElementCreator::HandleChildListItemElement(
+    HTMLEditor& aHTMLEditor, Element& aHandlingListItemElement,
+    AutoHandlingState& aState) const {
+  MOZ_ASSERT(aHandlingListItemElement.GetParentNode());
+  MOZ_ASSERT(HTMLEditUtils::IsListItem(&aHandlingListItemElement));
+
+  
+  
+  
+  if (!aHandlingListItemElement.GetParentNode()->IsHTMLElement(&mListTagName)) {
+    nsresult rv = HandleChildListItemInDifferentTypeList(
+        aHTMLEditor, aHandlingListItemElement, aState);
+    if (NS_FAILED(rv)) {
+      NS_WARNING(
+          "AutoListElementCreator::HandleChildListItemInDifferentTypeList() "
+          "failed");
+      return rv;
+    }
+  } else {
+    nsresult rv = HandleChildListItemInSameTypeList(
+        aHTMLEditor, aHandlingListItemElement, aState);
+    if (NS_FAILED(rv)) {
+      NS_WARNING(
+          "AutoListElementCreator::HandleChildListItemInSameTypeList() failed");
+      return rv;
+    }
+  }
+
+  
+  
+  
+  if (!mBulletType.IsEmpty()) {
+    nsresult rv = aHTMLEditor.SetAttributeWithTransaction(
+        aHandlingListItemElement, *nsGkAtoms::type, mBulletType);
+    if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "EditorBase::SetAttributeWithTransaction(nsGkAtoms::type) failed");
+    return rv;
+  }
+
+  
+  if (!aHandlingListItemElement.HasAttr(nsGkAtoms::type)) {
+    return NS_OK;
+  }
+  nsresult rv = aHTMLEditor.RemoveAttributeWithTransaction(
+      aHandlingListItemElement, *nsGkAtoms::type);
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "EditorBase::RemoveAttributeWithTransaction(nsGkAtoms::type) failed");
+  return rv;
+}
+
+nsresult HTMLEditor::AutoListElementCreator::HandleChildListItemInSameTypeList(
+    HTMLEditor& aHTMLEditor, Element& aHandlingListItemElement,
+    AutoHandlingState& aState) const {
+  MOZ_ASSERT(HTMLEditUtils::IsListItem(&aHandlingListItemElement));
+  MOZ_ASSERT(
+      aHandlingListItemElement.GetParent()->IsHTMLElement(&mListTagName));
+
+  EditorDOMPoint atListItem(&aHandlingListItemElement);
+  MOZ_ASSERT(atListItem.IsInContentNode());
+
+  
+  
+  if (!aState.mCurrentListElement) {
+    aState.mCurrentListElement = atListItem.GetContainerAs<Element>();
+    NS_WARNING_ASSERTION(
+        HTMLEditUtils::IsAnyListElement(aState.mCurrentListElement),
+        "Current list item parent is not a list element");
+  }
+  
+  
+  else if (atListItem.GetContainer() != aState.mCurrentListElement) {
+    Result<MoveNodeResult, nsresult> moveNodeResult =
+        aHTMLEditor.MoveNodeToEndWithTransaction(
+            aHandlingListItemElement,
+            MOZ_KnownLive(*aState.mCurrentListElement));
+    if (MOZ_UNLIKELY(moveNodeResult.isErr())) {
+      NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
+      return moveNodeResult.propagateErr();
+    }
+    moveNodeResult.inspect().IgnoreCaretPointSuggestion();
+  }
+
+  
+  
+  if (aHandlingListItemElement.IsHTMLElement(&mListItemTagName)) {
+    return NS_OK;
+  }
+  Result<CreateElementResult, nsresult> newListItemElementOrError =
+      aHTMLEditor.ReplaceContainerWithTransaction(aHandlingListItemElement,
+                                                  mListItemTagName);
+  if (MOZ_UNLIKELY(newListItemElementOrError.isErr())) {
+    NS_WARNING("HTMLEditor::ReplaceContainerWithTransaction() failed");
+    return newListItemElementOrError.propagateErr();
+  }
+  newListItemElementOrError.inspect().IgnoreCaretPointSuggestion();
+  return NS_OK;
+}
+
+nsresult HTMLEditor::AutoListElementCreator::HandleChildDivElement(
+    HTMLEditor& aHTMLEditor, Element& aHandlingDivElement,
+    AutoHandlingState& aState, const Element& aEditingHost) const {
+  MOZ_ASSERT(aHandlingDivElement.IsHTMLElement(nsGkAtoms::div));
+
+  
+  
+  AutoContentNodeArray arrayOfContentsInDiv;
+  HTMLEditUtils::CollectChildren(aHandlingDivElement, arrayOfContentsInDiv, 0,
+                                 {CollectChildrenOption::CollectListChildren,
+                                  CollectChildrenOption::CollectTableChildren});
+
+  Result<EditorDOMPoint, nsresult> unwrapDivElementResult =
+      aHTMLEditor.RemoveContainerWithTransaction(aHandlingDivElement);
+  if (MOZ_UNLIKELY(unwrapDivElementResult.isErr())) {
+    NS_WARNING("HTMLEditor::RemoveContainerWithTransaction() failed");
+    return unwrapDivElementResult.unwrapErr();
+  }
+
+  for (const OwningNonNull<nsIContent>& content : arrayOfContentsInDiv) {
+    
+    nsresult rv = HandleChildContent(aHTMLEditor, MOZ_KnownLive(content),
+                                     aState, aEditingHost);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("AutoListElementCreator::HandleChildContent() failed");
+      return rv;
+    }
+  }
+  return NS_OK;
+}
+
+nsresult HTMLEditor::AutoListElementCreator::CreateAndUpdateCurrentListElement(
+    HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPointToInsert,
+    AutoHandlingState& aState, const Element& aEditingHost) const {
+  MOZ_ASSERT(aPointToInsert.IsSetAndValid());
+
+  aState.mPreviousListItemElement = nullptr;
+  Result<CreateElementResult, nsresult> createNewListElementResult =
+      aHTMLEditor.InsertElementWithSplittingAncestorsWithTransaction(
+          mListTagName, aPointToInsert, BRElementNextToSplitPoint::Keep,
+          aEditingHost);
+  if (MOZ_UNLIKELY(createNewListElementResult.isErr())) {
+    NS_WARNING(
+        nsPrintfCString(
+            "HTMLEditor::"
+            "InsertElementWithSplittingAncestorsWithTransaction(%s) failed",
+            nsAtomCString(&mListTagName).get())
+            .get());
+    return createNewListElementResult.propagateErr();
+  }
+  CreateElementResult unwrappedCreateNewListElementResult =
+      createNewListElementResult.unwrap();
+  unwrappedCreateNewListElementResult.IgnoreCaretPointSuggestion();
+
+  MOZ_ASSERT(unwrappedCreateNewListElementResult.GetNewNode());
+  aState.mListOrListItemElementToPutCaret =
+      unwrappedCreateNewListElementResult.GetNewNode();
+  aState.mCurrentListElement =
+      unwrappedCreateNewListElementResult.UnwrapNewNode();
+  return NS_OK;
+}
+
+nsresult HTMLEditor::AutoListElementCreator::HandleChildInlineContent(
+    HTMLEditor& aHTMLEditor, nsIContent& aHandlingInlineContent,
+    AutoHandlingState& aState) const {
+  MOZ_ASSERT(HTMLEditUtils::IsInlineElement(aHandlingInlineContent));
+
+  
+  
+  if (!aState.mPreviousListItemElement) {
+    nsresult rv = WrapContentIntoNewListItemElement(
+        aHTMLEditor, aHandlingInlineContent, aState);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "AutoListElementCreator::WrapContentIntoNewListItemElement() failed");
+    return rv;
+  }
+
+  Result<MoveNodeResult, nsresult> moveInlineElementResult =
+      aHTMLEditor.MoveNodeToEndWithTransaction(
+          aHandlingInlineContent,
+          MOZ_KnownLive(*aState.mPreviousListItemElement));
+  if (MOZ_UNLIKELY(moveInlineElementResult.isErr())) {
+    NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
+    return moveInlineElementResult.propagateErr();
+  }
+  moveInlineElementResult.inspect().IgnoreCaretPointSuggestion();
+  return NS_OK;
+}
+
+nsresult HTMLEditor::AutoListElementCreator::HandleChildParagraphElement(
+    HTMLEditor& aHTMLEditor, Element& aHandlingParagraphElement,
+    AutoHandlingState& aState) const {
+  MOZ_ASSERT(aHandlingParagraphElement.IsHTMLElement(nsGkAtoms::p));
+
+  
+  
+  
+  
+  
+  Result<CreateElementResult, nsresult> newListItemElementOrError =
+      aHTMLEditor.ReplaceContainerWithTransaction(aHandlingParagraphElement,
+                                                  mListItemTagName);
+  if (MOZ_UNLIKELY(newListItemElementOrError.isErr())) {
+    NS_WARNING("HTMLEditor::ReplaceContainerWithTransaction() failed");
+    return newListItemElementOrError.unwrapErr();
+  }
+  newListItemElementOrError.inspect().IgnoreCaretPointSuggestion();
+  MOZ_ASSERT(newListItemElementOrError.inspect().GetNewNode());
+
+  Result<MoveNodeResult, nsresult> moveListItemElementResult =
+      aHTMLEditor.MoveNodeToEndWithTransaction(
+          MOZ_KnownLive(*newListItemElementOrError.inspect().GetNewNode()),
+          MOZ_KnownLive(*aState.mCurrentListElement));
+  if (MOZ_UNLIKELY(moveListItemElementResult.isErr())) {
+    NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
+    return moveListItemElementResult.propagateErr();
+  }
+  moveListItemElementResult.inspect().IgnoreCaretPointSuggestion();
+
+  aState.mPreviousListItemElement = nullptr;
+  
+  return NS_OK;
+}
+
+nsresult HTMLEditor::AutoListElementCreator::WrapContentIntoNewListItemElement(
+    HTMLEditor& aHTMLEditor, nsIContent& aHandlingContent,
+    AutoHandlingState& aState) const {
+  
+  
+  Result<CreateElementResult, nsresult> wrapContentInListItemElementResult =
+      aHTMLEditor.InsertContainerWithTransaction(aHandlingContent,
+                                                 mListItemTagName);
+  if (MOZ_UNLIKELY(wrapContentInListItemElementResult.isErr())) {
+    NS_WARNING("HTMLEditor::InsertContainerWithTransaction() failed");
+    return wrapContentInListItemElementResult.unwrapErr();
+  }
+  CreateElementResult unwrappedWrapContentInListItemElementResult =
+      wrapContentInListItemElementResult.unwrap();
+  unwrappedWrapContentInListItemElementResult.IgnoreCaretPointSuggestion();
+  MOZ_ASSERT(unwrappedWrapContentInListItemElementResult.GetNewNode());
+
+  
+  
+  Result<MoveNodeResult, nsresult> moveListItemElementResult =
+      aHTMLEditor.MoveNodeToEndWithTransaction(
+          MOZ_KnownLive(
+              *unwrappedWrapContentInListItemElementResult.GetNewNode()),
+          MOZ_KnownLive(*aState.mCurrentListElement));
+  if (MOZ_UNLIKELY(moveListItemElementResult.isErr())) {
+    NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
+    return moveListItemElementResult.unwrapErr();
+  }
+  moveListItemElementResult.inspect().IgnoreCaretPointSuggestion();
+
+  
+  
+  if (HTMLEditUtils::IsInlineElement(aHandlingContent)) {
+    aState.mPreviousListItemElement =
+        unwrappedWrapContentInListItemElementResult.UnwrapNewNode();
+  } else {
+    aState.mPreviousListItemElement = nullptr;
+  }
+
+  
+  return NS_OK;
 }
 
 nsresult HTMLEditor::AutoListElementCreator::

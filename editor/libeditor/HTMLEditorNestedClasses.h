@@ -446,6 +446,53 @@ class MOZ_STACK_CLASS HTMLEditor::AutoListElementCreator final {
                                       AutoContentNodeArray& aArrayOfContents,
                                       const Element& aEditingHost) const;
 
+  struct MOZ_STACK_CLASS AutoHandlingState final {
+    
+    
+    RefPtr<Element> mCurrentListElement;
+    
+    RefPtr<Element> mPreviousListItemElement;
+    
+    
+    RefPtr<Element> mListOrListItemElementToPutCaret;
+  };
+
+  
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleChildContent(
+      HTMLEditor& aHTMLEditor, nsIContent& aHandlingContent,
+      AutoHandlingState& aState, const Element& aEditingHost) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  HandleChildListElement(HTMLEditor& aHTMLEditor, Element& aHandlingListElement,
+                         AutoHandlingState& aState) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleChildListItemElement(
+      HTMLEditor& aHTMLEditor, Element& aHandlingListItemElement,
+      AutoHandlingState& aState) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  HandleChildListItemInDifferentTypeList(HTMLEditor& aHTMLEditor,
+                                         Element& aHandlingListItemElement,
+                                         AutoHandlingState& aState) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleChildListItemInSameTypeList(
+      HTMLEditor& aHTMLEditor, Element& aHandlingListItemElement,
+      AutoHandlingState& aState) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleChildDivElement(
+      HTMLEditor& aHTMLEditor, Element& aHandlingDivElement,
+      AutoHandlingState& aState, const Element& aEditingHost) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult CreateAndUpdateCurrentListElement(
+      HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPointToInsert,
+      AutoHandlingState& aState, const Element& aEditingHost) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleChildInlineContent(
+      HTMLEditor& aHTMLEditor, nsIContent& aHandlingInlineContent,
+      AutoHandlingState& aState) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleChildParagraphElement(
+      HTMLEditor& aHTMLEditor, Element& aHandlingParagraphElement,
+      AutoHandlingState& aState) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult WrapContentIntoNewListItemElement(
+      HTMLEditor& aHTMLEditor, nsIContent& aHandlingContent,
+      AutoHandlingState& aState) const;
+
   
 
 
