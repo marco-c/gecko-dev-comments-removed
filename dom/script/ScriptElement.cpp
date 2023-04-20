@@ -99,14 +99,12 @@ bool ScriptElement::MaybeProcessScript() {
     return false;
   }
 
+  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+      "ScriptElement::MaybeProcessScript", []() { nsAutoMicroTask mt; }));
   if (!HasScriptContent()) {
     
     
     
-    if (mKind == JS::loader::ScriptKind::eClassic && !mExternal) {
-      nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-          "ScriptElement::MaybeProcessScript", []() { nsAutoMicroTask mt; }));
-    }
     return false;
   }
 
