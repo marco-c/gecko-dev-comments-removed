@@ -103,6 +103,7 @@ export class ClickHandlerParent extends JSWindowActorParent {
       openerBrowser: browser,
       
       hasValidUserGestureActivation: true,
+      triggeringRemoteType: this.manager.domProcess?.remoteType,
     };
 
     if (data.globalHistoryOptions) {

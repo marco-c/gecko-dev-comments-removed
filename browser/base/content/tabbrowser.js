@@ -1691,6 +1691,7 @@
       var aCsp;
       var aSkipLoad;
       var aGlobalHistoryOptions;
+      var aTriggeringRemoteType;
       if (
         arguments.length == 2 &&
         typeof arguments[1] == "object" &&
@@ -1721,6 +1722,7 @@
         aCsp = params.csp;
         aSkipLoad = params.skipLoad;
         aGlobalHistoryOptions = params.globalHistoryOptions;
+        aTriggeringRemoteType = params.triggeringRemoteType;
       }
 
       
@@ -1761,6 +1763,7 @@
         csp: aCsp,
         skipLoad: aSkipLoad,
         globalHistoryOptions: aGlobalHistoryOptions,
+        triggeringRemoteType: aTriggeringRemoteType,
       });
       if (!bgLoad) {
         this.selectedTab = tab;
@@ -2611,6 +2614,7 @@
         skipLoad,
         batchInsertingTabs,
         globalHistoryOptions,
+        triggeringRemoteType,
       } = {}
     ) {
       
@@ -2943,6 +2947,7 @@
               postData,
               csp,
               globalHistoryOptions,
+              triggeringRemoteType,
             });
           } catch (ex) {
             Cu.reportError(ex);
