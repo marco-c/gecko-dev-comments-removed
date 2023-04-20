@@ -96,7 +96,8 @@ void RemoteTextureHostWrapper::CreateRenderTexture(
   MOZ_ASSERT(mRemoteTextureForDisplayList);
   MOZ_ASSERT(mRemoteTextureForDisplayList->mExternalImageId.isSome());
 
-  if (gfx::gfxVars::WebglOopAsyncPresentForceSync()) {
+  if (mIsSyncMode) {
+    
     
     auto wrappedId = mRemoteTextureForDisplayList->mExternalImageId.ref();
     RefPtr<wr::RenderTextureHost> texture =
@@ -104,6 +105,9 @@ void RemoteTextureHostWrapper::CreateRenderTexture(
     wr::RenderThread::Get()->RegisterExternalImage(mExternalImageId.ref(),
                                                    texture.forget());
   } else {
+    
+    
+    
     
     RefPtr<wr::RenderTextureHost> texture =
         new wr::RenderTextureHostWrapper(mTextureId, mOwnerId, mForPid);
@@ -203,9 +207,17 @@ TextureHost* RemoteTextureHostWrapper::GetRemoteTextureHostForDisplayList(
 }
 
 void RemoteTextureHostWrapper::SetRemoteTextureHostForDisplayList(
-    const MonitorAutoLock& aProofOfLock, TextureHost* aTextureHost) {
+    const MonitorAutoLock& aProofOfLock, TextureHost* aTextureHost,
+    bool aIsSyncMode) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   mRemoteTextureForDisplayList = aTextureHost;
+  mIsSyncMode = aIsSyncMode;
+}
+
+void RemoteTextureHostWrapper::ClearRemoteTextureHostForDisplayList(
+    const MonitorAutoLock& aProofOfLoc) {
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  mRemoteTextureForDisplayList = nullptr;
 }
 
 bool RemoteTextureHostWrapper::IsWrappingSurfaceTextureHost() {

@@ -11,10 +11,10 @@
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/gfx/CanvasManagerChild.h"
 #include "mozilla/layers/CanvasRenderer.h"
-#include "mozilla/layers/CompositableInProcessManager.h"
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/layers/RenderRootStateManager.h"
+#include "mozilla/layers/WebRenderCanvasRenderer.h"
 #include "ipc/WebGPUChild.h"
 
 namespace mozilla::webgpu {
@@ -65,9 +65,9 @@ void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aDesc) {
   }
 
   gfx::IntSize actualSize(mWidth, mHeight);
-  mHandle = layers::CompositableInProcessManager::GetNextHandle();
-  mTexture =
-      aDesc.mDevice->InitSwapChain(aDesc, mHandle, mGfxFormat, &actualSize);
+  mRemoteTextureOwnerId = Some(layers::RemoteTextureOwnerId::GetNext());
+  mTexture = aDesc.mDevice->InitSwapChain(aDesc, *mRemoteTextureOwnerId,
+                                          mGfxFormat, &actualSize);
   if (!mTexture) {
     Unconfigure();
     return;
@@ -77,25 +77,14 @@ void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aDesc) {
   mBridge = aDesc.mDevice->GetBridge();
   mGfxSize = actualSize;
 
-  
-  
-  
-  if (mCanvasElement) {
-    mCanvasElement->InvalidateCanvas();
-  } else if (mOffscreenCanvas) {
-    dom::OffscreenCanvasDisplayData data;
-    data.mSize = {mWidth, mHeight};
-    data.mIsOpaque = false;
-    data.mHandle = mHandle;
-    mOffscreenCanvas->UpdateDisplayData(data);
-  }
+  ForceNewFrame();
 }
 
 void CanvasContext::Unconfigure() {
-  if (mBridge && mBridge->IsOpen() && mHandle) {
-    mBridge->SendSwapChainDestroy(mHandle);
+  if (mBridge && mBridge->IsOpen() && mRemoteTextureOwnerId.isSome()) {
+    mBridge->SendSwapChainDestroy(*mRemoteTextureOwnerId);
   }
-  mHandle = layers::CompositableHandle();
+  mRemoteTextureOwnerId = Nothing();
   mBridge = nullptr;
   mTexture = nullptr;
   mGfxFormat = gfx::SurfaceFormat::UNKNOWN;
@@ -126,16 +115,37 @@ void CanvasContext::MaybeQueueSwapChainPresent() {
 
 void CanvasContext::SwapChainPresent() {
   mPendingSwapChainPresent = false;
-  if (mBridge && mBridge->IsOpen() && mHandle && mTexture) {
-    mBridge->SwapChainPresent(mHandle, mTexture->mId);
+  if (!mBridge || !mBridge->IsOpen() || mRemoteTextureOwnerId.isNothing() ||
+      !mTexture) {
+    return;
   }
+  mLastRemoteTextureId = Some(layers::RemoteTextureId::GetNext());
+  mBridge->SwapChainPresent(mTexture->mId, *mLastRemoteTextureId,
+                            *mRemoteTextureOwnerId);
+}
+
+bool CanvasContext::UpdateWebRenderCanvasData(
+    mozilla::nsDisplayListBuilder* aBuilder, WebRenderCanvasData* aCanvasData) {
+  auto* renderer = aCanvasData->GetCanvasRenderer();
+
+  if (renderer && mRemoteTextureOwnerId.isSome() &&
+      renderer->GetRemoteTextureOwnerIdOfPushCallback() ==
+          mRemoteTextureOwnerId) {
+    return true;
+  }
+
+  renderer = aCanvasData->CreateCanvasRenderer();
+  if (!InitializeCanvasRenderer(aBuilder, renderer)) {
+    
+    aCanvasData->ClearCanvasRenderer();
+    return false;
+  }
+  return true;
 }
 
 bool CanvasContext::InitializeCanvasRenderer(
     nsDisplayListBuilder* aBuilder, layers::CanvasRenderer* aRenderer) {
-  
-  
-  if (!mHandle) {
+  if (mRemoteTextureOwnerId.isNothing()) {
     return false;
   }
 
@@ -143,6 +153,7 @@ bool CanvasContext::InitializeCanvasRenderer(
   data.mContext = this;
   data.mSize = mGfxSize;
   data.mIsOpaque = false;
+  data.mRemoteTextureOwnerIdOfPushCallback = mRemoteTextureOwnerId;
 
   aRenderer->Initialize(data);
   aRenderer->SetDirty();
@@ -187,12 +198,33 @@ already_AddRefed<mozilla::gfx::SourceSurface> CanvasContext::GetSurfaceSnapshot(
     return nullptr;
   }
 
-  if (!mBridge || !mBridge->IsOpen() || !mHandle) {
+  if (!mBridge || !mBridge->IsOpen() || mRemoteTextureOwnerId.isNothing()) {
     return nullptr;
   }
 
-  return cm->GetSnapshot(cm->Id(), mBridge->Id(), mHandle, mGfxFormat,
-                          false,  false);
+  MOZ_ASSERT(mRemoteTextureOwnerId.isSome());
+  return cm->GetSnapshot(cm->Id(), mBridge->Id(), mRemoteTextureOwnerId,
+                         mGfxFormat,  false,
+                          false);
+}
+
+void CanvasContext::ForceNewFrame() {
+  if (!mCanvasElement && !mOffscreenCanvas) {
+    return;
+  }
+
+  
+  
+  
+  if (mCanvasElement) {
+    mCanvasElement->InvalidateCanvas();
+  } else if (mOffscreenCanvas) {
+    dom::OffscreenCanvasDisplayData data;
+    data.mSize = {mWidth, mHeight};
+    data.mIsOpaque = false;
+    data.mOwnerId = mRemoteTextureOwnerId;
+    mOffscreenCanvas->UpdateDisplayData(data);
+  }
 }
 
 }  

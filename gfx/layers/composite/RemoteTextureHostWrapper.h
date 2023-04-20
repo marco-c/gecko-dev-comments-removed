@@ -97,7 +97,10 @@ class RemoteTextureHostWrapper : public TextureHost {
       const MonitorAutoLock& aProofOfLock);
   
   void SetRemoteTextureHostForDisplayList(const MonitorAutoLock& aProofOfLock,
-                                          TextureHost* aTextureHost);
+                                          TextureHost* aTextureHost,
+                                          bool aIsSyncMode);
+  void ClearRemoteTextureHostForDisplayList(
+      const MonitorAutoLock& aProofOfLock);
 
   
   
@@ -106,6 +109,8 @@ class RemoteTextureHostWrapper : public TextureHost {
   
   
   CompositableTextureHostRef mRemoteTextureForDisplayList;
+
+  bool mIsSyncMode = true;
 
   friend class RemoteTextureMap;
 };

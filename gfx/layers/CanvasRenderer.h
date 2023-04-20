@@ -17,9 +17,10 @@
 #include "mozilla/Preferences.h"  
 #include "mozilla/RefPtr.h"       
 #include "mozilla/gfx/2D.h"       
-#include "mozilla/mozalloc.h"     
-#include "mozilla/WeakPtr.h"      
-#include "nsISupportsImpl.h"      
+#include "mozilla/Maybe.h"
+#include "mozilla/mozalloc.h"  
+#include "mozilla/WeakPtr.h"   
+#include "nsISupportsImpl.h"   
 #include "nsICanvasRenderingContextInternal.h"
 
 namespace mozilla {
@@ -45,6 +46,9 @@ struct CanvasRendererData final {
   bool mIsAlphaPremult = true;
 
   gl::OriginPos mOriginPos = gl::OriginPos::TopLeft;
+
+  
+  Maybe<RemoteTextureOwnerId> mRemoteTextureOwnerIdOfPushCallback = Nothing();
 
   nsICanvasRenderingContextInternal* GetContext() const {
     return mContext.get();
@@ -122,6 +126,9 @@ class CanvasRenderer : public RefCounted<CanvasRenderer> {
   const gfx::IntSize& GetSize() const { return mData.mSize; }
   bool IsOpaque() const { return mData.mIsOpaque; }
   bool YIsDown() const { return mData.mOriginPos == gl::OriginPos::TopLeft; }
+  Maybe<RemoteTextureOwnerId> GetRemoteTextureOwnerIdOfPushCallback() {
+    return mData.mRemoteTextureOwnerIdOfPushCallback;
+  }
 
   void SetDirty() { mDirty = true; }
   void ResetDirty() { mDirty = false; }

@@ -130,6 +130,16 @@ void ShareableCanvasRenderer::UpdateCompositableClient() {
   }
 
   
+  
+  if (mData.mRemoteTextureOwnerIdOfPushCallback) {
+    GetForwarder()->EnableRemoteTexturePushCallback(
+        mCanvasClient, *mData.mRemoteTextureOwnerIdOfPushCallback, mData.mSize,
+        flags);
+    EnsurePipeline();
+    return;
+  }
+
+  
 
   const auto fnGetExistingTc =
       [&](const Maybe<SurfaceDescriptor>& aDesc) -> RefPtr<TextureClient> {
