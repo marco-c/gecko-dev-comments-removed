@@ -101,7 +101,15 @@ static bool IsBlockNode(const nsIContent* aContent) {
   }
 
   nsIFrame* frame = aContent->GetPrimaryFrame();
-  return frame && frame->StyleDisplay()->IsBlockOutsideStyle();
+  if (!frame) {
+    return false;
+  }
+
+  const auto& disp = *frame->StyleDisplay();
+  
+  
+  
+  return disp.IsBlockOutsideStyle() || disp.IsInternalTableStyleExceptCell();
 }
 
 static bool IsDisplayedNode(const nsINode* aNode) {
