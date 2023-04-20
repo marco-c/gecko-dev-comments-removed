@@ -11,8 +11,8 @@
 
 (() => {
   function sendMessageToBrowser(msgName, data) {
-    let { AutoCompleteParent } = ChromeUtils.import(
-      "resource://gre/actors/AutoCompleteParent.jsm"
+    let { AutoCompleteParent } = ChromeUtils.importESModule(
+      "resource://gre/actors/AutoCompleteParent.sys.mjs"
     );
 
     let actor = AutoCompleteParent.getCurrentActor();

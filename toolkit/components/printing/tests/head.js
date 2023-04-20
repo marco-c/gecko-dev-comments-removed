@@ -114,8 +114,8 @@ class PrintHelper {
   
   
   static waitForOldPrintPreview(expectedBrowser) {
-    const { PrintingParent } = ChromeUtils.import(
-      "resource://gre/actors/PrintingParent.jsm"
+    const { PrintingParent } = ChromeUtils.importESModule(
+      "resource://gre/actors/PrintingParent.sys.mjs"
     );
 
     return new Promise(resolve => {
