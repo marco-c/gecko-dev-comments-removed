@@ -5,14 +5,17 @@
 
 
 
+use crate::DeviceType;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ClientData {
     pub local_client_id: String,
+    
+    
     pub recent_clients: HashMap<String, RemoteClient>,
 }
 
@@ -21,81 +24,106 @@ pub struct ClientData {
 pub struct RemoteClient {
     pub fxa_device_id: Option<String>,
     pub device_name: String,
-    pub device_type: Option<DeviceType>,
-}
-
-
-
-
-
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum DeviceType {
-    #[serde(rename = "desktop")]
-    Desktop,
-    #[serde(rename = "mobile")]
-    Mobile,
-    #[serde(rename = "tablet")]
-    Tablet,
-    #[serde(rename = "vr")]
-    VR,
-    #[serde(rename = "tv")]
-    TV,
-    
-    
-    #[serde(other)]
-    #[serde(skip_serializing)] 
-    Unknown,
+    #[serde(default)]
+    pub device_type: DeviceType,
 }
 
 #[cfg(test)]
-mod device_type_tests {
+mod client_types_tests {
     use super::*;
 
     #[test]
-    fn test_serde_ser() {
+    fn test_remote_client() {
+        
+        let dt = serde_json::from_str::<RemoteClient>("{\"device_name\": \"foo\"}").unwrap();
+        assert_eq!(dt.device_type, DeviceType::Unknown);
+        
         assert_eq!(
-            serde_json::to_string(&DeviceType::Desktop).unwrap(),
-            "\"desktop\""
+            serde_json::to_string(&dt).unwrap(),
+            "{\"fxa_device_id\":null,\"device_name\":\"foo\",\"device_type\":null}"
         );
+
+        
         assert_eq!(
-            serde_json::to_string(&DeviceType::Mobile).unwrap(),
-            "\"mobile\""
+            serde_json::from_str::<RemoteClient>(
+                "{\"device_name\": \"foo\", \"device_type\": null}",
+            )
+            .unwrap()
+            .device_type,
+            DeviceType::Unknown
         );
+
+        
+        let dt = serde_json::from_str::<RemoteClient>(
+            "{\"device_name\": \"foo\", \"device_type\": \"foo\"}",
+        )
+        .unwrap();
+        assert_eq!(dt.device_type, DeviceType::Unknown);
+        
         assert_eq!(
-            serde_json::to_string(&DeviceType::Tablet).unwrap(),
-            "\"tablet\""
+            serde_json::to_string(&dt).unwrap(),
+            "{\"fxa_device_id\":null,\"device_name\":\"foo\",\"device_type\":null}"
         );
-        assert_eq!(serde_json::to_string(&DeviceType::VR).unwrap(), "\"vr\"");
-        assert_eq!(serde_json::to_string(&DeviceType::TV).unwrap(), "\"tv\"");
-        assert!(serde_json::to_string(&DeviceType::Unknown).is_err());
+
+        
+        let dt = RemoteClient {
+            device_name: "bar".to_string(),
+            fxa_device_id: None,
+            device_type: DeviceType::Unknown,
+        };
+        assert_eq!(
+            serde_json::to_string(&dt).unwrap(),
+            "{\"fxa_device_id\":null,\"device_name\":\"bar\",\"device_type\":null}"
+        );
+
+        
+        let dt = RemoteClient {
+            device_name: "bar".to_string(),
+            fxa_device_id: Some("fxa".to_string()),
+            device_type: DeviceType::Desktop,
+        };
+        assert_eq!(
+            serde_json::to_string(&dt).unwrap(),
+            "{\"fxa_device_id\":\"fxa\",\"device_name\":\"bar\",\"device_type\":\"desktop\"}"
+        );
     }
 
     #[test]
-    fn test_serde_de() {
-        assert!(matches!(
-            serde_json::from_str::<DeviceType>("\"desktop\"").unwrap(),
-            DeviceType::Desktop
-        ));
-        assert!(matches!(
-            serde_json::from_str::<DeviceType>("\"mobile\"").unwrap(),
-            DeviceType::Mobile
-        ));
-        assert!(matches!(
-            serde_json::from_str::<DeviceType>("\"tablet\"").unwrap(),
-            DeviceType::Tablet
-        ));
-        assert!(matches!(
-            serde_json::from_str::<DeviceType>("\"vr\"").unwrap(),
-            DeviceType::VR
-        ));
-        assert!(matches!(
-            serde_json::from_str::<DeviceType>("\"tv\"").unwrap(),
-            DeviceType::TV
-        ));
-        assert!(matches!(
-            serde_json::from_str::<DeviceType>("\"something-else\"").unwrap(),
-            DeviceType::Unknown,
-        ));
+    fn test_client_data() {
+        let client_data = ClientData {
+            local_client_id: "my-device".to_string(),
+            recent_clients: HashMap::from([
+                (
+                    "my-device".to_string(),
+                    RemoteClient {
+                        fxa_device_id: None,
+                        device_name: "my device".to_string(),
+                        device_type: DeviceType::Unknown,
+                    },
+                ),
+                (
+                    "device-no-tabs".to_string(),
+                    RemoteClient {
+                        fxa_device_id: None,
+                        device_name: "device with no tabs".to_string(),
+                        device_type: DeviceType::Unknown,
+                    },
+                ),
+                (
+                    "device-with-a-tab".to_string(),
+                    RemoteClient {
+                        fxa_device_id: None,
+                        device_name: "device with a tab".to_string(),
+                        device_type: DeviceType::Desktop,
+                    },
+                ),
+            ]),
+        };
+        
+        let client_data_ser = serde_json::to_string(&client_data).unwrap();
+        println!("SER: {}", client_data_ser);
+        
+        let client_data_des: ClientData = serde_json::from_str(&client_data_ser).unwrap();
+        assert_eq!(client_data_des, client_data);
     }
 }

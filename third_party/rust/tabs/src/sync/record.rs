@@ -15,6 +15,7 @@ pub struct TabsRecordTab {
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+
 pub struct TabsRecord {
     
     

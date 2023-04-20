@@ -8,16 +8,25 @@ const URI_LENGTH_MAX: usize = 65536;
 const TAB_ENTRIES_LIMIT: usize = 5;
 
 use crate::error::*;
+use crate::schema;
+use crate::sync::record::TabsRecord;
 use crate::DeviceType;
-use rusqlite::{Connection, OpenFlags};
+use rusqlite::{
+    types::{FromSql, ToSql},
+    Connection, OpenFlags,
+};
 use serde_derive::{Deserialize, Serialize};
 use sql_support::open_database::{self, open_database_with_flags};
 use sql_support::ConnExt;
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-
+use sync15::{RemoteClient, ServerTimestamp};
 pub type TabsDeviceType = crate::DeviceType;
 pub type RemoteTabRecord = RemoteTab;
+
+pub(crate) const TABS_CLIENT_TTL: u32 = 15_552_000; 
+const FAR_FUTURE: i64 = 4_102_405_200_000; 
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RemoteTab {
@@ -29,7 +38,10 @@ pub struct RemoteTab {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ClientRemoteTabs {
-    pub client_id: String, 
+    
+    
+    
+    pub client_id: String,
     pub client_name: String,
     #[serde(
         default = "devicetype_default_deser",
@@ -97,7 +109,7 @@ impl TabsStorage {
         match open_database_with_flags(
             self.db_path.clone(),
             flags,
-            &crate::schema::TabsMigrationLogin,
+            &crate::schema::TabsMigrationLogic,
         ) {
             Ok(conn) => {
                 self.db_connection = Some(conn);
@@ -124,7 +136,7 @@ impl TabsStorage {
         let conn = open_database_with_flags(
             self.db_path.clone(),
             flags,
-            &crate::schema::TabsMigrationLogin,
+            &crate::schema::TabsMigrationLogic,
         )?;
         self.db_connection = Some(conn);
         Ok(self.db_connection.as_ref().unwrap())
@@ -163,52 +175,142 @@ impl TabsStorage {
     }
 
     pub fn get_remote_tabs(&mut self) -> Option<Vec<ClientRemoteTabs>> {
-        match self.open_if_exists() {
+        let conn = match self.open_if_exists() {
             Err(e) => {
                 error_support::report_error!(
                     "tabs-read-remote",
                     "Failed to read remote tabs: {}",
                     e
                 );
-                None
+                return None;
             }
-            Ok(None) => None,
-            Ok(Some(c)) => {
-                match c.query_rows_and_then_cached(
-                    "SELECT payload FROM tabs",
-                    [],
-                    |row| -> Result<_> { Ok(serde_json::from_str(&row.get::<_, String>(0)?)?) },
-                ) {
-                    Ok(crts) => Some(crts),
-                    Err(e) => {
-                        error_support::report_error!(
-                            "tabs-read-remote",
-                            "Failed to read database: {}",
-                            e
-                        );
-                        None
-                    }
+            Ok(None) => return None,
+            Ok(Some(conn)) => conn,
+        };
+
+        let records: Vec<(TabsRecord, ServerTimestamp)> = match conn.query_rows_and_then_cached(
+            "SELECT record, last_modified FROM tabs",
+            [],
+            |row| -> Result<_> {
+                Ok((
+                    serde_json::from_str(&row.get::<_, String>(0)?)?,
+                    ServerTimestamp(row.get::<_, i64>(1)?),
+                ))
+            },
+        ) {
+            Ok(records) => records,
+            Err(e) => {
+                error_support::report_error!("tabs-read-remote", "Failed to read database: {}", e);
+                return None;
+            }
+        };
+        let mut crts: Vec<ClientRemoteTabs> = Vec::new();
+        let remote_clients: HashMap<String, RemoteClient> =
+            match self.get_meta::<String>(schema::REMOTE_CLIENTS_KEY) {
+                Err(e) => {
+                    error_support::report_error!(
+                        "tabs-read-remote",
+                        "Failed to get remote clients: {}",
+                        e
+                    );
+                    return None;
+                }
+                
+                
+                Ok(None) => HashMap::default(),
+                Ok(Some(json)) => serde_json::from_str(&json).unwrap(),
+            };
+        for (record, last_modified) in records {
+            let id = record.id.clone();
+            let crt = if let Some(remote_client) = remote_clients.get(&id) {
+                ClientRemoteTabs::from_record_with_remote_client(
+                    remote_client
+                        .fxa_device_id
+                        .as_ref()
+                        .unwrap_or(&id)
+                        .to_owned(),
+                    last_modified,
+                    remote_client,
+                    record,
+                )
+            } else {
+                
+                
+                
+                
+                
+                log::info!(
+                    "Storing tabs from a client that doesn't appear in the devices list: {}",
+                    id,
+                );
+                ClientRemoteTabs::from_record(id, last_modified, record)
+            };
+            crts.push(crt);
+        }
+        Some(crts)
+    }
+
+    
+    
+    
+    
+    pub fn remove_stale_clients(&mut self) -> Result<()> {
+        let last_sync = self.get_meta::<i64>(schema::LAST_SYNC_META_KEY)?;
+        if let Some(conn) = self.open_if_exists()? {
+            if let Some(last_sync) = last_sync {
+                let client_ttl_ms = (TABS_CLIENT_TTL as i64) * 1000;
+                
+                
+                
+                
+                if last_sync - client_ttl_ms >= 0 && last_sync != (FAR_FUTURE * 1000) {
+                    let tx = conn.unchecked_transaction()?;
+                    let num_removed = tx.execute_cached(
+                        "DELETE FROM tabs WHERE last_modified <= :last_sync - :ttl",
+                        rusqlite::named_params! {
+                            ":last_sync": last_sync,
+                            ":ttl": client_ttl_ms,
+                        },
+                    )?;
+                    log::info!(
+                        "removed {} stale clients (threshold was {})",
+                        num_removed,
+                        last_sync - client_ttl_ms
+                    );
+                    tx.commit()?;
                 }
             }
         }
+        Ok(())
     }
 }
 
 impl TabsStorage {
     pub(crate) fn replace_remote_tabs(
         &mut self,
-        new_remote_tabs: Vec<ClientRemoteTabs>,
+        
+        
+        new_remote_tabs: Vec<(TabsRecord, ServerTimestamp)>,
     ) -> Result<()> {
         let connection = self.open_or_create()?;
         let tx = connection.unchecked_transaction()?;
-        
-        tx.execute_batch("DELETE FROM tabs")?;
 
-        for crt in new_remote_tabs {
+        
+        
+        for remote_tab in new_remote_tabs {
+            let record = remote_tab.0;
+            let last_modified = remote_tab.1;
+            log::info!(
+                "inserting tab for device {}, last modified at {}",
+                record.id,
+                last_modified.as_millis()
+            );
             tx.execute_cached(
-                "INSERT INTO tabs (payload) VALUES (:payload);",
+                "INSERT OR REPLACE INTO tabs (guid, record, last_modified) VALUES (:guid, :record, :last_modified);",
                 rusqlite::named_params! {
-                    ":payload": serde_json::to_string(&crt).expect("tabs don't fail to serialize"),
+                    ":guid": &record.id,
+                    ":record": serde_json::to_string(&record).expect("tabs don't fail to serialize"),
+                    ":last_modified": last_modified.as_millis()
                 },
             )?;
         }
@@ -226,7 +328,40 @@ impl TabsStorage {
     pub(crate) fn wipe_local_tabs(&self) {
         self.local_tabs.replace(None);
     }
+
+    pub(crate) fn put_meta(&mut self, key: &str, value: &dyn ToSql) -> Result<()> {
+        if let Some(db) = self.open_if_exists()? {
+            db.execute_cached(
+                "REPLACE INTO moz_meta (key, value) VALUES (:key, :value)",
+                &[(":key", &key as &dyn ToSql), (":value", value)],
+            )?;
+        }
+        Ok(())
+    }
+
+    pub(crate) fn get_meta<T: FromSql>(&mut self, key: &str) -> Result<Option<T>> {
+        match self.open_if_exists() {
+            Ok(Some(db)) => {
+                let res = db.try_query_one(
+                    "SELECT value FROM moz_meta WHERE key = :key",
+                    &[(":key", &key)],
+                    true,
+                )?;
+                Ok(res)
+            }
+            Err(e) => Err(e),
+            Ok(None) => Ok(None),
+        }
+    }
+
+    pub(crate) fn delete_meta(&mut self, key: &str) -> Result<()> {
+        if let Some(db) = self.open_if_exists()? {
+            db.execute_cached("DELETE FROM moz_meta WHERE key = :key", &[(":key", &key)])?;
+        }
+        Ok(())
+    }
 }
+
 
 fn is_url_syncable(url: &str) -> bool {
     url.len() <= URI_LENGTH_MAX
@@ -236,12 +371,14 @@ fn is_url_syncable(url: &str) -> bool {
             || url.starts_with("wyciwyg:")
             || url.starts_with("blob:")
             || url.starts_with("file:")
-            || url.starts_with("moz-extension:"))
+            || url.starts_with("moz-extension:")
+            || url.starts_with("data:"))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::sync::record::TabsRecordTab;
 
     #[test]
     fn test_is_url_syncable() {
@@ -264,6 +401,37 @@ mod tests {
         let mut storage = TabsStorage::new(db_name);
         
         assert!(storage.open_if_exists().unwrap().is_some());
+    }
+
+    #[test]
+    fn test_tabs_meta() {
+        let mut db = TabsStorage::new_with_mem_path("test");
+        let test_key = "TEST KEY A";
+        let test_value = "TEST VALUE A";
+        let test_key2 = "TEST KEY B";
+        let test_value2 = "TEST VALUE B";
+
+        db.put_meta(test_key, &test_value).unwrap();
+        db.put_meta(test_key2, &test_value2).unwrap();
+
+        let retrieved_value: String = db.get_meta(test_key).unwrap().expect("test value");
+        let retrieved_value2: String = db.get_meta(test_key2).unwrap().expect("test value 2");
+
+        assert_eq!(retrieved_value, test_value);
+        assert_eq!(retrieved_value2, test_value2);
+
+        
+        let test_value3 = "TEST VALUE C";
+        db.put_meta(test_key, &test_value3).unwrap();
+
+        let retrieved_value3: String = db.get_meta(test_key).unwrap().expect("test value 3");
+
+        assert_eq!(retrieved_value3, test_value3);
+
+        
+        db.delete_meta(test_key).unwrap();
+        let retrieved_value4: Option<String> = db.get_meta(test_key).unwrap();
+        assert!(retrieved_value4.is_none());
     }
 
     #[test]
@@ -337,49 +505,72 @@ mod tests {
             ])
         );
     }
-
+    
+    struct TabsSQLRecord {
+        guid: String,
+        record: TabsRecord,
+        last_modified: i64,
+    }
     #[test]
-    fn test_old_client_remote_tabs_version() {
-        env_logger::try_init().ok();
-        
-        let old = serde_json::json!({
-            "client_id": "id",
-            "client_name": "name",
-            "remote_tabs": [
-                serde_json::json!({
-                    "title": "tab title",
-                    "url_history": ["url"],
-                    "last_used": 1234,
-                }),
-            ]
-        });
-
+    fn test_remove_stale_clients() {
         let dir = tempfile::tempdir().unwrap();
-        let db_name = dir.path().join("test_old_client_remote_tabs_version.db");
+        let db_name = dir.path().join("test_remove_stale_clients.db");
         let mut storage = TabsStorage::new(db_name);
+        storage.open_or_create().unwrap();
+        assert!(storage.open_if_exists().unwrap().is_some());
 
-        let connection = storage.open_or_create().expect("should create");
-        connection
-            .execute_cached(
-                "INSERT INTO tabs (payload) VALUES (:payload);",
-                rusqlite::named_params! {
-                    ":payload": serde_json::to_string(&old).expect("tabs don't fail to serialize"),
+        let records = vec![
+            TabsSQLRecord {
+                guid: "device-1".to_string(),
+                record: TabsRecord {
+                    id: "device-1".to_string(),
+                    client_name: "Device #1".to_string(),
+                    tabs: vec![TabsRecordTab {
+                        title: "the title".to_string(),
+                        url_history: vec!["https://mozilla.org/".to_string()],
+                        icon: Some("https://mozilla.org/icon".to_string()),
+                        last_used: 1643764207000,
+                    }],
                 },
-            )
-            .expect("should insert");
-
+                last_modified: 1643764207000,
+            },
+            TabsSQLRecord {
+                guid: "device-outdated".to_string(),
+                record: TabsRecord {
+                    id: "device-outdated".to_string(),
+                    client_name: "Device outdated".to_string(),
+                    tabs: vec![TabsRecordTab {
+                        title: "the title".to_string(),
+                        url_history: vec!["https://mozilla.org/".to_string()],
+                        icon: Some("https://mozilla.org/icon".to_string()),
+                        last_used: 1643764207000,
+                    }],
+                },
+                last_modified: 1443764207000, // old
+            },
+        ];
+        let db = storage.open_if_exists().unwrap().unwrap();
+        for record in records {
+            db.execute(
+                "INSERT INTO tabs (guid, record, last_modified) VALUES (:guid, :record, :last_modified);",
+                rusqlite::named_params! {
+                    ":guid": &record.guid,
+                    ":record": serde_json::to_string(&record.record).unwrap(),
+                    ":last_modified": &record.last_modified,
+                },
+            ).unwrap();
+        }
         
-        let clients = storage.get_remote_tabs().expect("should work");
-        assert_eq!(clients.len(), 1, "must be 1 tab");
-        let client = &clients[0];
-        assert_eq!(client.client_id, "id");
-        assert_eq!(client.client_name, "name");
-        assert_eq!(client.remote_tabs.len(), 1);
-        assert_eq!(client.remote_tabs[0].title, "tab title");
-        assert_eq!(client.remote_tabs[0].url_history, vec!["url".to_string()]);
-        assert_eq!(client.remote_tabs[0].last_used, 1234);
+        let last_synced = 1643764207000_i64;
+        storage
+            .put_meta(schema::LAST_SYNC_META_KEY, &last_synced)
+            .unwrap();
+        storage.remove_stale_clients().unwrap();
 
+        let remote_tabs = storage.get_remote_tabs().unwrap();
         
-        assert_eq!(client.last_modified, 0);
+        assert_eq!(remote_tabs.len(), 1);
+        
+        assert_eq!(remote_tabs[0].client_id, "device-1");
     }
 }
