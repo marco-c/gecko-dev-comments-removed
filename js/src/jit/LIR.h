@@ -61,7 +61,7 @@ static const uint32_t INT64_PIECES = sizeof(int64_t) / sizeof(uintptr_t);
 
 
 
-class LAllocation : public TempObject {
+class LAllocation {
   uintptr_t bits_;
 
   
