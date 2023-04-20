@@ -1488,6 +1488,7 @@ class _GenerateProtocolCode(ipdl.ast.Visitor):
         for su in tu.structsAndUnions:
             typedeps = _ComputeTypeDeps(su.decl.type, typesToIncludes)
             if isinstance(su, ipdl.ast.StructDecl):
+                aggregateTypeIncludes.add("mozilla/ipc/IPDLStructMember.h")
                 for f in su.fields:
                     f.ipdltype.accept(typedeps)
             elif isinstance(su, ipdl.ast.UnionDecl):
@@ -2532,61 +2533,40 @@ def _generateCxxStruct(sd):
     
     
     
+    
+    
+    
+    
+    struct.addcode(
+        """
+        #ifdef __clang__
+        #  pragma clang diagnostic push
+        #  if __has_warning("-Wdefaulted-function-deleted")
+        #    pragma clang diagnostic ignored "-Wdefaulted-function-deleted"
+        #  endif
+        #endif
+        ${name}() = default;
+        #ifdef __clang__
+        #  pragma clang diagnostic pop
+        #endif
+
+        """,
+        name=sd.name,
+    )
+
+    
+    
     if len(sd.fields):
         assert len(sd.fields) == len(sd.packed_field_order)
 
         
-        defctor = ConstructorDefn(ConstructorDecl(sd.name, force_inline=True))
-
-        
-        
-        
-        
-        
-        defctor.memberinits = [
-            ExprMemberInit(f.memberVar()) for f in sd.fields_member_order()
-        ]
-        struct.addstmts([defctor, Whitespace.NL])
-
-    
-    valctor = ConstructorDefn(
-        ConstructorDecl(
-            sd.name,
-            params=[
-                Decl(
-                    f.forceMoveType()
-                    if _cxxTypeNeedsMoveForData(f.ipdltype)
-                    else f.constRefType(),
-                    f.argVar().name,
-                )
-                for f in sd.fields_ipdl_order()
-            ],
-            force_inline=True,
-        )
-    )
-    valctor.memberinits = []
-    for f in sd.fields_member_order():
-        arg = f.argVar()
-        if _cxxTypeNeedsMoveForData(f.ipdltype):
-            arg = ExprMove(arg)
-        valctor.memberinits.append(ExprMemberInit(f.memberVar(), args=[arg]))
-
-    struct.addstmts([valctor, Whitespace.NL])
-
-    
-    
-    if not all(
-        _cxxTypeNeedsMoveForData(f.ipdltype) or not _cxxTypeCanMove(f.ipdltype)
-        for f in sd.fields_ipdl_order()
-    ):
-        
-        valmovector = ConstructorDefn(
+        valctor = ConstructorDefn(
             ConstructorDecl(
                 sd.name,
                 params=[
                     Decl(
                         f.forceMoveType()
-                        if _cxxTypeCanMove(f.ipdltype)
+                        if _cxxTypeNeedsMoveForData(f.ipdltype)
                         else f.constRefType(),
                         f.argVar().name,
                     )
@@ -2595,15 +2575,48 @@ def _generateCxxStruct(sd):
                 force_inline=True,
             )
         )
-
-        valmovector.memberinits = []
+        valctor.memberinits = []
         for f in sd.fields_member_order():
             arg = f.argVar()
-            if _cxxTypeCanMove(f.ipdltype):
+            if _cxxTypeNeedsMoveForData(f.ipdltype):
                 arg = ExprMove(arg)
-            valmovector.memberinits.append(ExprMemberInit(f.memberVar(), args=[arg]))
+            valctor.memberinits.append(ExprMemberInit(f.memberVar(), args=[arg]))
 
-        struct.addstmts([valmovector, Whitespace.NL])
+        struct.addstmts([valctor, Whitespace.NL])
+
+        
+        
+        if not all(
+            _cxxTypeNeedsMoveForData(f.ipdltype) or not _cxxTypeCanMove(f.ipdltype)
+            for f in sd.fields_ipdl_order()
+        ):
+            
+            valmovector = ConstructorDefn(
+                ConstructorDecl(
+                    sd.name,
+                    params=[
+                        Decl(
+                            f.forceMoveType()
+                            if _cxxTypeCanMove(f.ipdltype)
+                            else f.constRefType(),
+                            f.argVar().name,
+                        )
+                        for f in sd.fields_ipdl_order()
+                    ],
+                    force_inline=True,
+                )
+            )
+
+            valmovector.memberinits = []
+            for f in sd.fields_member_order():
+                arg = f.argVar()
+                if _cxxTypeCanMove(f.ipdltype):
+                    arg = ExprMove(arg)
+                valmovector.memberinits.append(
+                    ExprMemberInit(f.memberVar(), args=[arg])
+                )
+
+            struct.addstmts([valmovector, Whitespace.NL])
 
     
     
@@ -2697,7 +2710,7 @@ def _effectiveMemberType(f):
     
     if effective_type.name == "nsTArray":
         effective_type.name = "CopyableTArray"
-    return effective_type
+    return Type("::mozilla::ipc::IPDLStructMember", T=[effective_type])
 
 
 
