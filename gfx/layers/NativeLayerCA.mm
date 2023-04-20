@@ -807,6 +807,11 @@ NativeLayerCA::~NativeLayerCA() {
 void NativeLayerCA::AttachExternalImage(wr::RenderTextureHost* aExternalImage) {
   MutexAutoLock lock(mMutex);
 
+#ifdef NIGHTLY_BUILD
+  mHasEverAttachExternalImage = true;
+  MOZ_RELEASE_ASSERT(!mHasEverNotifySurfaceReady, "Shouldn't change layer type to external.");
+#endif
+
   wr::RenderMacIOSurfaceTextureHost* texture = aExternalImage->AsRenderMacIOSurfaceTextureHost();
   MOZ_ASSERT(texture || aExternalImage->IsWrappingAsyncRemoteTexture());
   mTextureHost = texture;
@@ -1190,10 +1195,46 @@ void NativeLayerCA::HandlePartialUpdate(const MutexAutoLock& aProofOfLock,
 
   MOZ_RELEASE_ASSERT(!mInProgressUpdateRegion);
   MOZ_RELEASE_ASSERT(!mInProgressDisplayRect);
+
+#ifdef NIGHTLY_BUILD
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (!mDisplayRect.IsEqualInterior(aDisplayRect)) {
+    gfx::IntRegion exposedRegion(aDisplayRect);
+
+    if (mFrontSurface) {
+      
+      
+      
+      exposedRegion.AndWith(mFrontSurface->mInvalidRegion);
+    }
+
+    if (!aUpdateRegion.Contains(exposedRegion)) {
+      
+      std::ostringstream reason;
+      reason << "The update region " << aUpdateRegion << " must cover the invalid region "
+             << exposedRegion << ".";
+      gfxCriticalError() << reason.str();
+      MOZ_CRASH();
+    }
+  }
+#endif
+
   mInProgressUpdateRegion = Some(aUpdateRegion);
   mInProgressDisplayRect = Some(aDisplayRect);
-
-  InvalidateRegionThroughoutSwapchain(aProofOfLock, aUpdateRegion);
 
   if (mFrontSurface) {
     
@@ -1207,6 +1248,8 @@ void NativeLayerCA::HandlePartialUpdate(const MutexAutoLock& aProofOfLock,
       mInProgressSurface->mInvalidRegion.SubOut(copyRegion);
     }
   }
+
+  InvalidateRegionThroughoutSwapchain(aProofOfLock, aUpdateRegion);
 }
 
 RefPtr<gfx::DrawTarget> NativeLayerCA::NextSurfaceAsDrawTarget(const IntRect& aDisplayRect,
@@ -1275,6 +1318,11 @@ Maybe<GLuint> NativeLayerCA::NextSurfaceAsFramebuffer(const IntRect& aDisplayRec
 
 void NativeLayerCA::NotifySurfaceReady() {
   MutexAutoLock lock(mMutex);
+
+#ifdef NIGHTLY_BUILD
+  mHasEverNotifySurfaceReady = true;
+  MOZ_RELEASE_ASSERT(!mHasEverAttachExternalImage, "Shouldn't change layer type to drawn.");
+#endif
 
   MOZ_RELEASE_ASSERT(mInProgressSurface,
                      "NotifySurfaceReady called without preceding call to NextSurface");

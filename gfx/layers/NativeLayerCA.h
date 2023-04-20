@@ -466,6 +466,14 @@ class NativeLayerCA : public NativeLayer {
   bool mSpecializeVideo = false;
   bool mHasExtent = false;
   bool mIsDRM = false;
+
+#ifdef NIGHTLY_BUILD
+  
+  
+  
+  bool mHasEverAttachExternalImage = false;
+  bool mHasEverNotifySurfaceReady = false;
+#endif
 };
 
 }  
