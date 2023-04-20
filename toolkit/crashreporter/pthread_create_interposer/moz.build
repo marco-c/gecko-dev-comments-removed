@@ -1,0 +1,12 @@
+
+
+
+
+
+Library("pthread_create_interposer")
+
+NoVisibilityFlags()
+
+UNIFIED_SOURCES += [
+    "pthread_create_interposer.cpp",
+]
