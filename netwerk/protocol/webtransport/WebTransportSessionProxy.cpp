@@ -15,6 +15,7 @@
 #include "nsProxyRelease.h"
 #include "nsSocketTransportService2.h"
 #include "mozilla/Logging.h"
+#include "mozilla/StaticPrefs_network.h"
 
 namespace mozilla::net {
 
@@ -534,6 +535,17 @@ NS_IMETHODIMP
 WebTransportSessionProxy::AsyncOnChannelRedirect(
     nsIChannel* aOldChannel, nsIChannel* aNewChannel, uint32_t aFlags,
     nsIAsyncVerifyRedirectCallback* callback) {
+  
+  
+  
+  
+  
+  
+  if (!StaticPrefs::network_webtransport_redirect_enabled()) {
+    LOG(("Channel Redirects are disabled for WebTransport sessions"));
+    return NS_ERROR_ABORT;
+  }
+
   nsCOMPtr<nsIURI> newURI;
   nsresult rv = NS_GetFinalChannelURI(aNewChannel, getter_AddRefs(newURI));
   NS_ENSURE_SUCCESS(rv, rv);
