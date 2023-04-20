@@ -233,6 +233,8 @@ const Types = (exports.__TypesForTests = [
       "extensionStorage",
       "indexedDB",
       "sessionStorage",
+      
+      
       "storage",
     ],
     spec: "devtools/shared/specs/storage",

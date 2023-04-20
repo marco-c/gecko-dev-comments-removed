@@ -363,16 +363,6 @@ class StorageUI {
     this._l10nStrings = new Map(ids.map((id, i) => [id, results[i]]));
   }
 
-  async _onTargetAvailable({ targetFront }) {
-    
-    
-    if (!targetFront.isTopLevel) {
-      return;
-    }
-
-    this.front = await targetFront.getFront("storage");
-  }
-
   async _onResourceListAvailable(resources) {
     for (const resource of resources) {
       if (resource.isDestroyed()) {
@@ -411,6 +401,10 @@ class StorageUI {
       console.error(e);
     }
   }
+
+  
+  
+  async _onTargetAvailable({ targetFront }) {}
 
   _onTargetDestroyed({ targetFront }) {
     

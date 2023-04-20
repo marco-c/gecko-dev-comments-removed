@@ -57,6 +57,8 @@ for (const childSpec of Object.values(childSpecs)) {
   registerFront(ChildStorageFront);
 }
 
+
+
 class StorageFront extends FrontClassWithSpec(storageSpec) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);

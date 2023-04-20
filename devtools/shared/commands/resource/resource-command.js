@@ -1286,6 +1286,9 @@ loader.lazyRequireGetter(
   ResourceCommand.TYPES.WEBSOCKET,
   "resource://devtools/shared/commands/resource/legacy-listeners/websocket.js"
 );
+
+
+
 loader.lazyRequireGetter(
   LegacyListeners,
   ResourceCommand.TYPES.COOKIE,
@@ -1316,6 +1319,8 @@ loader.lazyRequireGetter(
   ResourceCommand.TYPES.INDEXED_DB,
   "resource://devtools/shared/commands/resource/legacy-listeners/indexed-db.js"
 );
+
+
 loader.lazyRequireGetter(
   LegacyListeners,
   ResourceCommand.TYPES.SOURCE,

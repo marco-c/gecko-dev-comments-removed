@@ -6,6 +6,9 @@
 
 
 
+
+
+
 function getFilteredStorageEvents(updates, storageType) {
   const filteredUpdate = Object.create(null);
 
