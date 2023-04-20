@@ -38,7 +38,7 @@ function CreateViewTimelineOpacityAnimation(test, target, options) {
 
 
 
-async function runTimelineRangeTest(t, options, message) {
+async function runTimelineBoundsTest(t, options, message) {
   container.scrollLeft = 0;
   await waitForNextFrame();
 
@@ -52,19 +52,19 @@ async function runTimelineRangeTest(t, options, message) {
   await anim.ready;
 
   
-  container.scrollLeft = options.rangeStart;
+  container.scrollLeft = options.startOffset;
   await waitForNextFrame();
   assert_equals(getComputedStyle(target).opacity, '0.3',
                 `Effect at the start of the active phase: ${message}`);
 
   
-  container.scrollLeft = (options.rangeStart + options.rangeEnd) / 2;
+  container.scrollLeft = (options.startOffset + options.endOffset) / 2;
   await waitForNextFrame();
   assert_equals(getComputedStyle(target).opacity,'0.5',
                 `Effect at the midpoint of the active range: ${message}`);
 
   
-  container.scrollLeft = options.rangeEnd;
+  container.scrollLeft = options.endOffset;
   await waitForNextFrame();
   assert_equals(getComputedStyle(target).opacity, '0.7',
                 `Effect is in the active phase at effect end time: ${message}`);
@@ -83,31 +83,31 @@ async function runTimelineRangeTest(t, options, message) {
 
 
 
-async function runTimelineDelayTest(t, options) {
-  const delayToString = delay => {
+async function runTimelineRangeTest(t, options) {
+  const rangeToString = range => {
     const parts = [];
-    if (delay.phase)
-      parts.push(delay.phase);
-    if (delay.percent)
-      parts.push(`${delay.percent.value}%`);
+    if (range.rangeName)
+      parts.push(range.rangeName);
+    if (range.offset)
+      parts.push(`${range.offset.value}%`);
     return parts.join(' ');
   };
   const range =
-     `${delayToString(options.delay)} to ` +
-     `${delayToString(options.endDelay)}`;
+     `${rangeToString(options.rangeStart)} to ` +
+     `${rangeToString(options.rangeEnd)}`;
 
   options.timeline = {
     axis: 'inline'
   };
   options.timing = {
-    delay: options.delay,
-    endDelay: options.endDelay,
+    rangeStart: options.rangeStart,
+    rangeEnd: options.rangeEnd,
     
     
     fill: 'both'
   };
 
-  return runTimelineRangeTest(t, options, range);
+  return runTimelineBoundsTest(t, options, range);
 }
 
 
@@ -133,5 +133,5 @@ async function runTimelineInsetTest(t, options) {
   const range =
       (options.inset instanceof Array) ? options.inset.join(' ')
                                        : options.inset;
-  return runTimelineRangeTest(t, options, range);
+  return runTimelineBoundsTest(t, options, range);
 }
