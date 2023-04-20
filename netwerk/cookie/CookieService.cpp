@@ -6,6 +6,7 @@
 
 #include "CookieCommons.h"
 #include "CookieLogging.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/RefPtr.h"
@@ -215,6 +216,8 @@ already_AddRefed<CookieService> CookieService::GetSingleton() {
   
   
   
+  
+  
   gCookieService = new CookieService();
   if (gCookieService) {
     if (NS_SUCCEEDED(gCookieService->Init())) {
@@ -270,7 +273,9 @@ void CookieService::InitCookieStorages() {
   NS_ASSERTION(!mPrivateStorage, "already have a private CookieStorage");
 
   
-  if (MOZ_UNLIKELY(StaticPrefs::network_cookie_noPersistentStorage())) {
+  
+  if (MOZ_UNLIKELY(StaticPrefs::network_cookie_noPersistentStorage() ||
+                   AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdown))) {
     mPersistentStorage = CookiePrivateStorage::Create();
   } else {
     mPersistentStorage = CookiePersistentStorage::Create();
