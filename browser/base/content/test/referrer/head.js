@@ -25,12 +25,16 @@ var _referrerTests = [
   
   
   {
+    
     fromScheme: "http://",
+    
     toScheme: "http://",
+    
     result: "http://test1.example.com/browser", 
   },
   {
     fromScheme: "https://",
+    
     toScheme: "http://",
     result: "", 
   },
@@ -38,12 +42,14 @@ var _referrerTests = [
   
   {
     fromScheme: "https://",
+    
     toScheme: "http://",
     policy: "origin",
     result: "https://test1.example.com/", 
   },
   {
     fromScheme: "https://",
+    
     toScheme: "http://",
     policy: "origin",
     rel: "noreferrer",
@@ -60,6 +66,7 @@ var _referrerTests = [
     result: "", 
   },
   {
+    
     fromScheme: "http://",
     toScheme: "https://",
     policy: "no-referrer",

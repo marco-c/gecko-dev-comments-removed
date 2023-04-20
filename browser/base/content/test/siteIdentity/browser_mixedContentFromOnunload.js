@@ -10,6 +10,7 @@
 
 const HTTP_TEST_ROOT_1 = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
+  
   "http://example.com"
 );
 const HTTPS_TEST_ROOT_1 = getRootDirectory(gTestPath).replace(
@@ -18,6 +19,7 @@ const HTTPS_TEST_ROOT_1 = getRootDirectory(gTestPath).replace(
 );
 const HTTP_TEST_ROOT_2 = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
+  
   "http://example.net"
 );
 const HTTPS_TEST_ROOT_2 = getRootDirectory(gTestPath).replace(

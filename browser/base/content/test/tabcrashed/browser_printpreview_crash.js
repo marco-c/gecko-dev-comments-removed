@@ -4,6 +4,7 @@
 "use strict";
 
 const TEST_URL =
+  
   "http://example.com/browser/browser/base/content/test/tabcrashed/file_contains_emptyiframe.html";
 const DOMAIN = "example.com";
 
@@ -31,6 +32,7 @@ add_task(async function test() {
       );
     });
     iframe.src =
+      
       "http://test1.example.com/browser/browser/base/content/test/tabcrashed/file_iframe.html";
     await loaded;
   });
