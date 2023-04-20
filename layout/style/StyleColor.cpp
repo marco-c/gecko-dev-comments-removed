@@ -57,11 +57,13 @@ nscolor StyleColor::CalcColor(const nsIFrame* aFrame) const {
   return ResolveColor(aFrame->StyleText()->mColor).ToColor();
 }
 
+StyleAbsoluteColor StyleAbsoluteColor::ToColorSpace(
+    StyleColorSpace aColorSpace) const {
+  return Servo_ConvertColorSpace(this, aColorSpace);
+}
+
 nscolor StyleAbsoluteColor::ToColor() const {
-  auto srgb = *this;
-  if (color_space != StyleColorSpace::Srgb) {
-    srgb = Servo_ConvertColorSpace(this, StyleColorSpace::Srgb);
-  }
+  auto srgb = ToColorSpace(StyleColorSpace::Srgb);
 
   
   
