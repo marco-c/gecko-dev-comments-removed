@@ -1,6 +1,6 @@
 "use strict";
 
-var { MigrationUtils } = ChromeUtils.importESModule(
+var { MigrationUtils, MigratorPrototype } = ChromeUtils.importESModule(
   "resource:///modules/MigrationUtils.sys.mjs"
 );
 var { LoginHelper } = ChromeUtils.import(
@@ -42,21 +42,6 @@ updateAppInfo();
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 async function promiseMigration(
   migrator,
   resourceType,
@@ -86,15 +71,6 @@ async function promiseMigration(
 
   return Promise.all(promises);
 }
-
-
-
-
-
-
-
-
-
 
 
 
