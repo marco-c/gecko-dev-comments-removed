@@ -989,14 +989,8 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
     
     
     
-    
-    nsIFrame* ancestor = GetFirstNonAAncestorFrame(aFrame);
-    if (ancestor && SVGUtils::IsInSVGTextSubtree(ancestor)) {
-      while (!ancestor->IsSVGTextFrame()) {
-        ancestor = ancestor->GetParent();
-      }
-    }
-    aFrame = ancestor;
+    aFrame =
+        nsLayoutUtils::GetClosestFrameOfType(aFrame, LayoutFrameType::SVGText);
   }
 
   ISVGDisplayableFrame* svg = do_QueryFrame(aFrame);
@@ -1028,8 +1022,8 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
 
   
   
-  aFlags &= ~eIncludeOnlyCurrentFrameForNonSVGElement;
-  aFlags &= ~eUseFrameBoundsForOuterSVG;
+  aFlags &=
+      ~(eIncludeOnlyCurrentFrameForNonSVGElement | eUseFrameBoundsForOuterSVG);
   if (!aFrame->IsSVGUseFrame()) {
     aFlags &= ~eUseUserSpaceOfUseElement;
   }
@@ -1063,12 +1057,10 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
       svg->GetBBoxContribution(ToMatrix(matrix), aFlags).ToThebesRect();
   
   if (aFlags & SVGUtils::eBBoxIncludeClipped) {
-    gfxRect clipRect(0, 0, 0, 0);
+    gfxRect clipRect;
     float x, y, width, height;
-    gfxMatrix tm;
     gfxRect fillBBox =
-        svg->GetBBoxContribution(ToMatrix(tm), SVGUtils::eBBoxIncludeFill)
-            .ToThebesRect();
+        svg->GetBBoxContribution({}, SVGUtils::eBBoxIncludeFill).ToThebesRect();
     x = fillBBox.x;
     y = fillBBox.y;
     width = fillBBox.width;
