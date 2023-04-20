@@ -387,12 +387,9 @@ ia2Accessible::get_locale(IA2Locale* aLocale) {
   
   
 
-  if (!Acc()) {
-    return CO_E_OBJNOTCONNECTED;
-  }
-  AccessibleWrap* acc = LocalAcc();
+  Accessible* acc = Acc();
   if (!acc) {
-    return E_NOTIMPL;  
+    return CO_E_OBJNOTCONNECTED;
   }
 
   nsAutoString lang;
