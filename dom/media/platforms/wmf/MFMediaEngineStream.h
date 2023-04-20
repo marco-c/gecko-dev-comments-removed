@@ -118,7 +118,7 @@ class MFMediaEngineStream
 
   void NotifyEndOfStreamInternal();
 
-  bool IsEnded() const;
+  virtual bool IsEnded() const;
 
   
   

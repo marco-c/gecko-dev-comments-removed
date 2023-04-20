@@ -237,6 +237,7 @@ RefPtr<MediaDataDecoder::DecodePromise> MFMediaEngineVideoStream::Drain() {
   AssertOnTaskQueue();
   MediaDataDecoder::DecodedData outputs;
   if (!IsDCompImageReady()) {
+    LOGV("Waiting for dcomp image for draining");
     return mPendingDrainPromise.Ensure(__func__);
   }
   return MFMediaEngineStream::Drain();
@@ -307,6 +308,18 @@ void MFMediaEngineVideoStream::UpdateConfig(const VideoInfo& aInfo) {
 void MFMediaEngineVideoStream::ShutdownCleanUpOnTaskQueue() {
   AssertOnTaskQueue();
   mPendingDrainPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
+}
+
+bool MFMediaEngineVideoStream::IsEnded() const {
+  AssertOnTaskQueue();
+  
+  
+  
+  
+  
+  
+  return (mReceivedEOS || !mPendingDrainPromise.IsEmpty()) &&
+         mRawDataQueueForFeedingEngine.GetSize() == 0;
 }
 
 #undef LOGV
