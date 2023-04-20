@@ -11,9 +11,6 @@ module.exports = {
     },
     sourceType: "module",
   },
-  env: {
-    node: true,
-  },
   plugins: [
     "import", 
     "react", 
@@ -58,13 +55,23 @@ module.exports = {
       },
     },
     {
+      files: [
+        "bin/**",
+        "content-src/**",
+        "./*.js",
+        "loaders/**",
+        "tools/**",
+        "test/unit/**",
+      ],
+      env: {
+        node: true,
+      },
+    },
+    {
       
       files: "**/*.jsm",
       parserOptions: {
         sourceType: "script",
-      },
-      env: {
-        node: false,
       },
       rules: {
         "no-implicit-globals": "off",
