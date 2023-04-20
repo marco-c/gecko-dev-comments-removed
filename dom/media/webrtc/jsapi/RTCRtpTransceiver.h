@@ -15,6 +15,7 @@
 #include "jsep/JsepSession.h"
 #include "transport/transportlayer.h"  
 #include "mozilla/dom/RTCRtpTransceiverBinding.h"
+#include "RTCStatsReport.h"
 
 class nsIPrincipal;
 
