@@ -199,7 +199,13 @@ void JsepTrack::SendTrackSetRemote(SsrcGenerator& aSsrcGenerator,
   if (mRids.empty()) {
     
     for (const auto& ridAttr : rids) {
-      mRids.push_back(ridAttr.id);
+      
+      
+      
+      std::string dummy;
+      if (SdpRidAttributeList::CheckRidValidity(ridAttr.id, &dummy)) {
+        mRids.push_back(ridAttr.id);
+      }
     }
     if (mRids.size() > mMaxEncodings) {
       mRids.resize(mMaxEncodings);
