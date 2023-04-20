@@ -279,7 +279,10 @@ IPCResult FileSystemManagerParent::RecvGetFile(
     }
   }
 
-  RefPtr<BlobImpl> blob = MakeRefPtr<FileBlobImpl>(fileObject);
+  
+  
+  RefPtr<BlobImpl> blob =
+      MakeRefPtr<FileBlobImpl>(fileObject, path.LastElement(), type);
 
   IPCBlob ipcBlob;
   QM_TRY(MOZ_TO_RESULT(IPCBlobUtils::Serialize(blob, ipcBlob)), IPC_OK(),
