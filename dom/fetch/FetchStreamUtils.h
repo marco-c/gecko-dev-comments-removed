@@ -40,7 +40,8 @@ ParentToParentStream ToParentToParentStream(
 
 ParentToChildStream ToParentToChildStream(
     const NotNull<nsCOMPtr<nsIInputStream>>& aStream, int64_t aStreamSize,
-    NotNull<mozilla::ipc::PBackgroundParent*> aBackgroundParent);
+    NotNull<mozilla::ipc::PBackgroundParent*> aBackgroundParent,
+    bool aSerializeAsLazy = true);
 
 
 
