@@ -34,5 +34,12 @@ def main(request, response):
         (b"Content-Type", b"application/json"),
         (b"Set-Cookie", cookie)
     ]
+
+    
+    origin = request.headers.get(b"Origin")
+    if origin is not None and origin != b"null":
+        headers.append((b"Access-Control-Allow-Origin", origin))
+        headers.append((b"Access-Control-Allow-Credentials", 'true'))
+
     body = b"var dummy='value';"
     return headers, body
