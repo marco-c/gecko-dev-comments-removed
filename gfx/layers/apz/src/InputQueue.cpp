@@ -455,7 +455,7 @@ APZEventResult InputQueue::ReceivePanGestureInput(
 
     if (aFlags.mTargetConfirmed && event.mOverscrollBehaviorAllowsSwipe &&
         event
-            .mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection &&
+            .RequiresContentResponseIfCannotScrollHorizontallyInStartDirection() &&
         !CanScrollTargetHorizontally(event, block)) {
       
       
