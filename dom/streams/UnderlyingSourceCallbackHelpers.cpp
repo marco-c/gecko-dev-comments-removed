@@ -4,6 +4,7 @@
 
 
 
+#include "StreamUtils.h"
 #include "mozilla/dom/ReadableStreamDefaultController.h"
 #include "mozilla/dom/UnderlyingSourceCallbackHelpers.h"
 #include "mozilla/dom/UnderlyingSourceBinding.h"
@@ -104,6 +105,43 @@ already_AddRefed<Promise> UnderlyingSourceAlgorithms::CancelCallback(
                             CallbackFunction::eRethrowExceptions);
 
   return promise.forget();
+}
+
+
+
+
+
+void UnderlyingSourceAlgorithmsWrapper::StartCallback(
+    JSContext*, ReadableStreamController&, JS::MutableHandle<JS::Value> aRetVal,
+    ErrorResult&) {
+  aRetVal.setUndefined();
+}
+
+
+
+
+
+already_AddRefed<Promise> UnderlyingSourceAlgorithmsWrapper::PullCallback(
+    JSContext* aCx, ReadableStreamController& aController, ErrorResult& aRv) {
+  nsCOMPtr<nsIGlobalObject> global = aController.GetParentObject();
+  return PromisifyAlgorithm(
+      global,
+      [&](ErrorResult& aRv) { return PullCallbackImpl(aCx, aController, aRv); },
+      aRv);
+}
+
+
+
+
+
+already_AddRefed<Promise> UnderlyingSourceAlgorithmsWrapper::CancelCallback(
+    JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
+    ErrorResult& aRv) {
+  nsCOMPtr<nsIGlobalObject> global = xpc::CurrentNativeGlobal(aCx);
+  return PromisifyAlgorithm(
+      global,
+      [&](ErrorResult& aRv) { return CancelCallbackImpl(aCx, aReason, aRv); },
+      aRv);
 }
 
 }  

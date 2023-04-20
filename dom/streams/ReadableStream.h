@@ -104,14 +104,22 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
       JS::MutableHandle<JSObject*> aReturnObject);
 
   
+  
+
+  
+  MOZ_CAN_RUN_SCRIPT static already_AddRefed<ReadableStream> CreateByteNative(
+      JSContext* aCx, nsIGlobalObject* aGlobal,
+      UnderlyingSourceAlgorithmsWrapper& aAlgorithms,
+      mozilla::Maybe<double> aHighWaterMark, ErrorResult& aRv);
 
   
   
   
-  
 
+  
   MOZ_CAN_RUN_SCRIPT void CloseNative(JSContext* aCx, ErrorResult& aRv);
 
+  
   MOZ_CAN_RUN_SCRIPT void EnqueueNative(JSContext* aCx,
                                         JS::Handle<JS::Value> aChunk,
                                         ErrorResult& aRv);

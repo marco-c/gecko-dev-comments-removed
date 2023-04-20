@@ -250,7 +250,7 @@ already_AddRefed<ReadableStream> CreateReadableStream(
     mozilla::Maybe<double> aHighWaterMark, QueuingStrategySize* aSizeAlgorithm,
     ErrorResult& aRv) {
   
-  double highWaterMark = aHighWaterMark.isSome() ? *aHighWaterMark : 1.0;
+  double highWaterMark = aHighWaterMark.valueOr(1.0);
 
   
   
@@ -1002,6 +1002,38 @@ already_AddRefed<ReadableStream> CreateReadableByteStream(
   }
 
   
+  return stream.forget();
+}
+
+
+
+
+already_AddRefed<ReadableStream> ReadableStream::CreateByteNative(
+    JSContext* aCx, nsIGlobalObject* aGlobal,
+    UnderlyingSourceAlgorithmsWrapper& aAlgorithms,
+    mozilla::Maybe<double> aHighWaterMark, ErrorResult& aRv) {
+  
+  double highWaterMark = aHighWaterMark.valueOr(0);
+
+  
+  
+  
+  
+
+  
+  auto stream = MakeRefPtr<ReadableStream>(aGlobal);
+
+  
+  auto controller = MakeRefPtr<ReadableByteStreamController>(aGlobal);
+
+  
+  
+  
+  SetUpReadableByteStreamController(aCx, stream, controller, &aAlgorithms,
+                                    highWaterMark, Nothing(), aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
   return stream.forget();
 }
 
