@@ -1946,33 +1946,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-  enum class MoveToEndOfContainer { Yes, No };
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<MoveNodeResult, nsresult>
-  MoveOneHardLineContentsWithTransaction(
-      const EditorDOMPoint& aPointInHardLine,
-      const EditorDOMPoint& aPointToInsert, const Element& aEditingHost,
-      MoveToEndOfContainer aMoveToEndOfContainer = MoveToEndOfContainer::No);
-
-  
-
-
-
-
-
-
-
   Result<bool, nsresult> CanMoveOrDeleteSomethingInHardLine(
       const EditorDOMPoint& aPointInHardLine,
       const Element& aEditingHost) const;
@@ -2195,6 +2168,7 @@ class HTMLEditor final : public EditorBase,
                         nsIEditor::EStripWrappers aStripWrappers) final;
 
   class AutoDeleteRangesHandler;
+  class AutoMoveOneLineHandler;
 
   
 
@@ -4528,7 +4502,6 @@ class HTMLEditor final : public EditorBase,
                                     
   friend class
       WhiteSpaceVisibilityKeeper;  
-                                   
                                    
                                    
                                    
