@@ -300,6 +300,11 @@ VideoSendStreamImpl::VideoSendStreamImpl(
 VideoSendStreamImpl::~VideoSendStreamImpl() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_LOG(LS_INFO) << "~VideoSendStreamImpl: " << config_->ToString();
+  
+  
+  if (rtp_transport_queue_->IsCurrent()) {
+    transport_queue_safety_->SetNotAlive();
+  }
 }
 
 void VideoSendStreamImpl::DeliverRtcp(const uint8_t* packet, size_t length) {
@@ -334,7 +339,6 @@ void VideoSendStreamImpl::Start() {
 
 void VideoSendStreamImpl::StartupVideoSendStream() {
   RTC_DCHECK_RUN_ON(rtp_transport_queue_);
-
   transport_queue_safety_->SetAlive();
 
   bitrate_allocator_->AddObserver(this, GetAllocationConfig());
