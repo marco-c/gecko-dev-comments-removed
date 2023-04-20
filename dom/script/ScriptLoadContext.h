@@ -153,9 +153,6 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
 
   void MaybeCancelOffThreadScript();
 
-  TimeStamp mOffThreadParseStartTime;
-  TimeStamp mOffThreadParseStopTime;
-
   ScriptMode mScriptMode;  
   bool mScriptFromHead;    
                            
@@ -172,11 +169,13 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   bool mWasCompiledOMT;   
                           
 
-  JS::OffThreadToken* mOffThreadToken;  
+  
+  
+  JS::OffThreadToken* mOffThreadToken;
 
-  Atomic<Runnable*> mRunnable;  
-                                
-                                
+  
+  
+  RefPtr<Runnable> mRunnable;
 
   int32_t mLineNo;
 
