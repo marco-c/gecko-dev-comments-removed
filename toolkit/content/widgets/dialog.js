@@ -148,6 +148,17 @@
         }
       });
 
+      if (this._l10nButtons.length) {
+        document.blockUnblockOnload(true);
+        this._translationReady = document.l10n.ready.then(async () => {
+          try {
+            await document.l10n.translateElements(this._l10nButtons);
+          } finally {
+            document.blockUnblockOnload(false);
+          }
+        });
+      }
+
       
       if (document.readyState == "complete") {
         this._postLoadInit();
@@ -336,11 +347,20 @@
 
     async _postLoadInit() {
       this._setInitialFocusIfNeeded();
-      if (this._l10nButtons.length) {
-        await document.l10n.translateElements(this._l10nButtons);
+      if (this._translationReady) {
+        await this._translationReady;
       }
-      this._sizeToPreferredSize();
-      await this._snapCursorToDefaultButtonIfNeeded();
+
+      
+      
+      
+      
+      
+      
+      Services.tm.dispatchDirectTaskToCurrentThread(() => {
+        this._sizeToPreferredSize();
+        this._snapCursorToDefaultButtonIfNeeded();
+      });
     }
 
     

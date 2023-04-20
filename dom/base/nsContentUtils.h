@@ -2533,7 +2533,7 @@ class nsContentUtils {
 
 
 
-  static bool IsPDFJS(JSContext*, JSObject*);
+  static bool IsSystemOrPDFJS(JSContext*, JSObject*);
 
   
 

@@ -132,6 +132,12 @@ interface nsIThreadManager : nsISupports
 
 
 
+  void dispatchDirectTaskToCurrentThread(in nsIRunnable event);
+
+  
+
+
+
 
 
 
