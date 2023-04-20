@@ -1246,11 +1246,6 @@ class Registers {
  public:
   Registers() : mPC{nullptr}, mSP{nullptr}, mFP{nullptr}, mLR{nullptr} {}
 
-#if defined(HAVE_NATIVE_UNWIND)
-  
-  void SyncPopulate();
-#endif
-
   void Clear() { memset(this, 0, sizeof(*this)); }
 
   
@@ -3667,7 +3662,7 @@ bool profiler_capture_backtrace_into(ProfileChunkedBuffer& aChunkedBuffer,
 
   Registers regs;
 #if defined(HAVE_NATIVE_UNWIND)
-  regs.SyncPopulate();
+  REGISTERS_SYNC_POPULATE(regs);
 #else
   regs.Clear();
 #endif
@@ -3801,7 +3796,7 @@ void profiler_suspend_and_sample_thread(BaseProfilerThreadId aThreadId,
         
         Registers regs;
 #if defined(HAVE_NATIVE_UNWIND)
-        regs.SyncPopulate();
+        REGISTERS_SYNC_POPULATE(regs);
 #else
         regs.Clear();
 #endif

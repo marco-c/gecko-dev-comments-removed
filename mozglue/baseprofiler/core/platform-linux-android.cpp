@@ -499,17 +499,8 @@ static void PlatformInit(PSLockRef aLock) {}
 
 #if defined(HAVE_NATIVE_UNWIND)
 
-
-
-
-
-void Registers::SyncPopulate() {
-  
-  MOZ_CRASH("profiler_get_backtrace() unsupported");
-  
-  
-  
-}
+#  define REGISTERS_SYNC_POPULATE(regs) \
+    MOZ_CRASH("profiler_get_backtrace() unsupported");
 #endif
 
 }  

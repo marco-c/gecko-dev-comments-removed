@@ -198,22 +198,23 @@ void SamplerThread::Stop(PSLockRef aLock) { mSampler.Disable(aLock); }
 
 static void PlatformInit(PSLockRef aLock) {}
 
+
 #if defined(HAVE_NATIVE_UNWIND)
-void Registers::SyncPopulate() {
-  
-  
-  
-  
-  mSP = reinterpret_cast<Address>(__builtin_frame_address(0)) + 0x10;
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wframe-address"
-  mFP = reinterpret_cast<Address>(__builtin_frame_address(1));
-#  pragma GCC diagnostic pop
-  mPC = reinterpret_cast<Address>(
-      __builtin_extract_return_addr(__builtin_return_address(0)));
-  mLR = 0;
-}
+
+
+
+
+#  define REGISTERS_SYNC_POPULATE(regs)                                       \
+    regs.mSP = reinterpret_cast<Address>(__builtin_frame_address(0)) + 0x10;  \
+    _Pragma("GCC diagnostic push")                                            \
+    _Pragma("GCC diagnostic ignored \"-Wframe-address\"")                     \
+    regs.mFP = reinterpret_cast<Address>(__builtin_frame_address(1));         \
+    _Pragma("GCC diagnostic pop")                                             \
+    regs.mPC = reinterpret_cast<Address>(                                     \
+        __builtin_extract_return_addr(__builtin_return_address(0)));          \
+    regs.mLR = 0;
 #endif
+
 
 }  
 }  
