@@ -19,11 +19,9 @@
 class nsIScrollableFrame;
 
 namespace mozilla {
-
+class ElementAnimationData;
 struct NonOwningAnimationTarget;
-
 namespace dom {
-
 class Element;
 
 
@@ -80,6 +78,7 @@ class ScrollTimeline final : public AnimationTimeline {
     };
     Type mType = Type::Root;
     RefPtr<Element> mElement;
+    PseudoStyleType mPseudoType;
 
     
     
@@ -89,18 +88,22 @@ class ScrollTimeline final : public AnimationTimeline {
       
       
       
-      return {Type::Root, aOwnerDoc->GetDocumentElement()};
+      return {Type::Root, aOwnerDoc->GetDocumentElement(),
+              PseudoStyleType::NotPseudo};
     }
 
-    static Scroller Nearest(Element* aElement) {
-      return {Type::Nearest, aElement};
+    static Scroller Nearest(Element* aElement, PseudoStyleType aPseudoType) {
+      return {Type::Nearest, aElement, aPseudoType};
     }
 
-    static Scroller Named(Element* aElement) { return {Type::Name, aElement}; }
+    static Scroller Named(Element* aElement, PseudoStyleType aPseudoType) {
+      return {Type::Name, aElement, aPseudoType};
+    }
 
     explicit operator bool() const { return mElement; }
     bool operator==(const Scroller& aOther) const {
-      return mType == aOther.mType && mElement == aOther.mElement;
+      return mType == aOther.mType && mElement == aOther.mElement &&
+             mPseudoType == aOther.mPseudoType;
     }
   };
 
@@ -110,7 +113,7 @@ class ScrollTimeline final : public AnimationTimeline {
 
   static already_AddRefed<ScrollTimeline> MakeNamed(
       Document* aDocument, Element* aReferenceElement,
-      const StyleScrollTimeline& aStyleTimeline);
+      PseudoStyleType aPseudoType, const StyleScrollTimeline& aStyleTimeline);
 
   bool operator==(const ScrollTimeline& aOther) const {
     return mDocument == aOther.mDocument && mSource == aOther.mSource &&
@@ -183,6 +186,7 @@ class ScrollTimeline final : public AnimationTimeline {
   bool ScrollingDirectionIsAvailable() const;
 
   void ReplacePropertiesWith(const Element* aReferenceElement,
+                             PseudoStyleType aPseudoType,
                              const StyleScrollTimeline& aNew);
 
  protected:
@@ -222,42 +226,37 @@ class ScrollTimeline final : public AnimationTimeline {
 
 
 
-
-
-
-
-class ScrollTimelineSet {
+class ProgressTimelineScheduler {
  public:
-  using NonOwningScrollTimelineSet = HashSet<ScrollTimeline*>;
+  ProgressTimelineScheduler() { MOZ_COUNT_CTOR(ProgressTimelineScheduler); }
+  ~ProgressTimelineScheduler() { MOZ_COUNT_DTOR(ProgressTimelineScheduler); }
 
-  ~ScrollTimelineSet() = default;
+  static ProgressTimelineScheduler* Get(const Element* aElement,
+                                        PseudoStyleType aPseudoType);
+  static ProgressTimelineScheduler& Ensure(Element* aElement,
+                                           PseudoStyleType aPseudoType);
+  static void Destroy(const Element* aElement, PseudoStyleType aPseudoType);
 
-  static ScrollTimelineSet* GetScrollTimelineSet(Element* aElement);
-  static ScrollTimelineSet* GetOrCreateScrollTimelineSet(Element* aElement);
-  static void DestroyScrollTimelineSet(Element* aElement);
-
-  void AddScrollTimeline(ScrollTimeline* aScrollTimeline) {
-    Unused << mScrollTimelines.put(aScrollTimeline);
+  void AddTimeline(ScrollTimeline* aScrollTimeline) {
+    Unused << mTimelines.put(aScrollTimeline);
   }
-  void RemoveScrollTimeline(ScrollTimeline* aScrollTimeline) {
-    mScrollTimelines.remove(aScrollTimeline);
+  void RemoveTimeline(ScrollTimeline* aScrollTimeline) {
+    mTimelines.remove(aScrollTimeline);
   }
 
-  bool IsEmpty() const { return mScrollTimelines.empty(); }
+  bool IsEmpty() const { return mTimelines.empty(); }
 
   void ScheduleAnimations() const {
-    for (auto iter = mScrollTimelines.iter(); !iter.done(); iter.next()) {
+    for (auto iter = mTimelines.iter(); !iter.done(); iter.next()) {
       iter.get()->ScheduleAnimations();
     }
   }
 
  private:
-  ScrollTimelineSet() = default;
-
   
   
   
-  NonOwningScrollTimelineSet mScrollTimelines;
+  HashSet<ScrollTimeline*> mTimelines;
 };
 
 }  

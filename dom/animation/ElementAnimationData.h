@@ -23,6 +23,7 @@ namespace dom {
 class Element;
 class CSSAnimation;
 class CSSTransition;
+class ProgressTimelineScheduler;
 class ScrollTimeline;
 }  
 using CSSAnimationCollection = AnimationCollection<dom::CSSAnimation>;
@@ -47,6 +48,28 @@ class ElementAnimationData {
     UniquePtr<ScrollTimelineCollection> mScrollTimelines;
     
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    UniquePtr<dom::ProgressTimelineScheduler> mProgressTimelineScheduler;
+
     PerElementOrPseudoData();
     ~PerElementOrPseudoData();
 
@@ -56,10 +79,13 @@ class ElementAnimationData {
     CSSAnimationCollection& DoEnsureAnimations(dom::Element&, PseudoStyleType);
     ScrollTimelineCollection& DoEnsureScrollTimelines(dom::Element&,
                                                       PseudoStyleType);
+    dom::ProgressTimelineScheduler& DoEnsureProgressTimelineScheduler(
+        dom::Element&, PseudoStyleType);
     void DoClearEffectSet();
     void DoClearTransitions();
     void DoClearAnimations();
     void DoClearScrollTimelines();
+    void DoClearProgressTimelineScheduler();
 
     void Traverse(nsCycleCollectionTraversalCallback&);
   };
@@ -179,6 +205,27 @@ class ElementAnimationData {
       return *collection;
     }
     return data.DoEnsureScrollTimelines(aOwner, aType);
+  }
+
+  dom::ProgressTimelineScheduler* GetProgressTimelineScheduler(
+      PseudoStyleType aType) {
+    return DataFor(aType).mProgressTimelineScheduler.get();
+  }
+
+  void ClearProgressTimelineScheduler(PseudoStyleType aType) {
+    auto& data = DataFor(aType);
+    if (data.mProgressTimelineScheduler) {
+      data.DoClearProgressTimelineScheduler();
+    }
+  }
+
+  dom::ProgressTimelineScheduler& EnsureProgressTimelineScheduler(
+      dom::Element& aOwner, PseudoStyleType aType) {
+    auto& data = DataFor(aType);
+    if (auto* collection = data.mProgressTimelineScheduler.get()) {
+      return *collection;
+    }
+    return data.DoEnsureProgressTimelineScheduler(aOwner, aType);
   }
 
   ElementAnimationData() = default;
