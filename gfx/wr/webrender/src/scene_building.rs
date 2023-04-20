@@ -2119,14 +2119,6 @@ impl<'a> SceneBuilder<'a> {
 
         
         
-        
-        
-        if !prim_flags.contains(PrimitiveFlags::IS_BACKFACE_VISIBLE) {
-            blit_reason |= BlitReason::ISOLATE;
-        }
-
-        
-        
         if let Some(clip_chain_id) = clip_chain_id {
             if self.clip_tree_builder.clip_chain_has_complex_clips(clip_chain_id, &self.interners) {
                 blit_reason |= BlitReason::CLIP;
@@ -2140,6 +2132,7 @@ impl<'a> SceneBuilder<'a> {
             &composite_ops,
             blit_reason,
             self.sc_stack.last(),
+            prim_flags,
         );
 
         
@@ -3883,6 +3876,7 @@ impl FlattenedStackingContext {
         composite_ops: &CompositeOps,
         blit_reason: BlitReason,
         parent: Option<&FlattenedStackingContext>,
+        prim_flags: PrimitiveFlags,
     ) -> bool {
         
         if let Picture3DContext::In { .. } = context_3d {
@@ -3915,6 +3909,11 @@ impl FlattenedStackingContext {
 
         
         if !blit_reason.is_empty() {
+            return false;
+        }
+
+        
+        if !prim_flags.contains(PrimitiveFlags::IS_BACKFACE_VISIBLE) {
             return false;
         }
 
