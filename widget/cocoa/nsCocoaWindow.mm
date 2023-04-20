@@ -666,7 +666,6 @@ void* nsCocoaWindow::GetNativeData(uint32_t aDataType) {
     
     
     case NS_NATIVE_WIDGET:
-    case NS_NATIVE_DISPLAY:
       retVal = [mWindow contentView];
       break;
 

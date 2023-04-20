@@ -2579,9 +2579,6 @@ void nsWindow::UpdateOverscrollOffset(const float aX, const float aY) {
 void* nsWindow::GetNativeData(uint32_t aDataType) {
   switch (aDataType) {
     
-    case NS_NATIVE_DISPLAY:
-      return nullptr;
-
     case NS_NATIVE_WIDGET:
       return (void*)this;
 
