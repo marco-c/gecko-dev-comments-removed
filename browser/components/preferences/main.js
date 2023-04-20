@@ -1783,9 +1783,22 @@ var gMainPane = {
     }
     migrationWizardDialog.firstElementChild.requestState();
 
-    if (closeTabWhenDone) {
-      migrationWizardDialog.addEventListener("close", () => window.close());
-    }
+    migrationWizardDialog.addEventListener(
+      "close",
+      () => {
+        
+        
+        
+        Services.obs.notifyObservers(
+          migrationWizardDialog,
+          "MigrationWizard:Closed"
+        );
+        if (closeTabWhenDone) {
+          window.close();
+        }
+      },
+      { once: true }
+    );
 
     migrationWizardDialog.showModal();
   },
