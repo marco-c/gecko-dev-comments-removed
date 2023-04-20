@@ -83,6 +83,10 @@ static constexpr RelationData kRelationTypeAtoms[] = {
      RelationType::FLOWS_FROM},
 };
 
+
+
+constexpr int32_t kNumbersInRect = 4;
+
 }  
 }  
 
