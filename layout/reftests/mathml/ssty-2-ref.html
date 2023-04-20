@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <head>
-  
+  <!-- See ssty-1-ref.html for an explanation of this font -->
   <style type="text/css" media="screen, print">
     @font-face {
       font-family: "sstyfont";
@@ -9,9 +9,9 @@
   </style>
 </head>
 <body>
-  
-
-
+  <!-- Test whether the ssty font feature setting is used appropriately for
+       mroot, mfrac, munderover et al.
+       Assumes kMathMLDefaultScriptSizeMultiplier is 0.71-->
   <math>
     <mstyle style="font-family: 'sstyfont';">
       <mroot>
@@ -77,8 +77,8 @@
   </math>
 
   <p>
-  
-
+  <!-- ssty font feature not set on mfrac et al when displaystyle is
+       set (still allowed on mroot, mover et al.)-->
   <math>
     <mstyle style="font-family: 'sstyfont';" displaystyle="true">
       <mroot>
@@ -93,8 +93,8 @@
 
       <mfrac>
         <mfrac>
-          
-
+          <!-- ssty gets set as script level incremented because displaystyle
+               is now false -->
           <mo>B</mo>
           <mo>B</mo>
         </mfrac>
@@ -147,9 +147,9 @@
       <p>
 
   <math>
-    
-
-
+    <!-- scriptlevel is not incremented when accent for overframes and
+         accentunder for underframes are true, so there shouldn't be a
+         change in the ssty value -->
     <mstyle style="font-family: 'sstyfont';">
       <mover accent="true">
         <mo>D</mo>

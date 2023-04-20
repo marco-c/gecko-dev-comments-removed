@@ -459,7 +459,7 @@ void MathMLTextRunFactory::RebuildTextRun(
         uint8_t sstyLevel = 0;
         float scriptScaling =
             pow(styles[0]->mScriptSizeMultiplier, mSSTYScriptLevel);
-        static_assert(NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER < 1,
+        static_assert(kMathMLDefaultScriptSizeMultiplier < 1,
                       "Shouldn't it make things smaller?");
         
 
@@ -478,14 +478,14 @@ void MathMLTextRunFactory::RebuildTextRun(
 
 
 
-        if (scriptScaling <= (NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER +
-                              (NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER *
-                               NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER)) /
+        if (scriptScaling <= (kMathMLDefaultScriptSizeMultiplier +
+                              (kMathMLDefaultScriptSizeMultiplier *
+                               kMathMLDefaultScriptSizeMultiplier)) /
                                  2) {
           
           
           sstyLevel = 2;
-        } else if (scriptScaling <= NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER) {
+        } else if (scriptScaling <= kMathMLDefaultScriptSizeMultiplier) {
           sstyLevel = 1;
         }
         if (sstyLevel) {

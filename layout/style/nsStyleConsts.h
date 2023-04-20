@@ -341,23 +341,14 @@ enum class StyleFlexWrap : uint8_t {
 };
 
 
-
-
-#define NS_STYLE_ORDER_INITIAL 0
-
-
-#define NS_STYLE_GRID_TEMPLATE_SUBGRID 0
-
-
-
 enum class StyleGridTrackBreadth : uint8_t {
   MaxContent = 1,
   MinContent = 2,
 };
 
 
-#define NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER 0.71f
-#define NS_MATHML_DEFAULT_SCRIPT_MIN_SIZE_PT 8
+static constexpr float kMathMLDefaultScriptSizeMultiplier{0.71f};
+static constexpr float kMathMLDefaultScriptMinSizePt{8.f};
 
 
 enum class StyleMathVariant : uint8_t {
@@ -489,9 +480,6 @@ enum class StyleVisibility : uint8_t {
   Visible,
   Collapse,
 };
-
-
-#define NS_STYLE_TABSIZE_INITIAL 8
 
 
 enum class StyleWhiteSpace : uint8_t {
