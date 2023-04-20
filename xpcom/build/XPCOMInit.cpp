@@ -629,8 +629,6 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     mozilla::dom::JSExecutionManager::Shutdown();
   }
 
-  AbstractThread::ShutdownMainThread();
-
   
   
   
@@ -644,6 +642,10 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   if (nsComponentManagerImpl::gComponentManager) {
     nsComponentManagerImpl::gComponentManager->FreeServices();
   }
+
+  
+  nsThreadManager::get().ReleaseMainThread();
+  AbstractThread::ShutdownMainThread();
 
   
   nsDirectoryService::gService = nullptr;
