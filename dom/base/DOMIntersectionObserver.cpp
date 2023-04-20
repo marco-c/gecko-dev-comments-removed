@@ -709,15 +709,15 @@ IntersectionOutput DOMIntersectionObserver::Intersect(
 
 
 
-void DOMIntersectionObserver::Update(Document* aDocument,
+void DOMIntersectionObserver::Update(Document& aDocument,
                                      DOMHighResTimeStamp time) {
-  auto input = ComputeInput(*aDocument, mRoot, &mRootMargin);
+  auto input = ComputeInput(aDocument, mRoot, &mRootMargin);
 
   
   
   
   IgnoreContentVisibility ignoreContentVisibility =
-      aDocument->GetContentVisibilityObserver() == this
+      aDocument.GetContentVisibilityObserver() == this
           ? IgnoreContentVisibility::Yes
           : IgnoreContentVisibility::No;
 

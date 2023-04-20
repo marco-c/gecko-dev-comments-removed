@@ -95,9 +95,6 @@ struct IntersectionInput {
   nsMargin mRootMargin;
   
   Maybe<nsRect> mRemoteDocumentVisibleRect;
-  
-  
-  bool mIsForContentVisibility = false;
 };
 
 struct IntersectionOutput {
@@ -162,7 +159,7 @@ class DOMIntersectionObserver final : public nsISupports,
   
   static IntersectionOutput Intersect(const IntersectionInput&, const nsRect&);
 
-  void Update(Document* aDocument, DOMHighResTimeStamp time);
+  void Update(Document& aDocument, DOMHighResTimeStamp time);
   MOZ_CAN_RUN_SCRIPT void Notify();
 
   static already_AddRefed<DOMIntersectionObserver> CreateLazyLoadObserver(
