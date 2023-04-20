@@ -660,8 +660,7 @@ nsCSPBaseSrc* nsCSPParser::sourceExpression() {
     
     
     
-    cspScheme->toString(parsedScheme);
-    parsedScheme.Trim(":", false, true);
+    cspScheme->getScheme(parsedScheme);
     delete cspScheme;
 
     
@@ -681,6 +680,7 @@ nsCSPBaseSrc* nsCSPParser::sourceExpression() {
 
   
   
+  bool generatedScheme = false;
   if (parsedScheme.IsEmpty()) {
     
     
@@ -688,6 +688,7 @@ nsCSPBaseSrc* nsCSPParser::sourceExpression() {
     nsAutoCString selfScheme;
     mSelfURI->GetScheme(selfScheme);
     parsedScheme.AssignASCII(selfScheme.get());
+    generatedScheme = true;
   }
 
   
@@ -695,6 +696,7 @@ nsCSPBaseSrc* nsCSPParser::sourceExpression() {
   if (nsCSPHostSrc* cspHost = hostSource()) {
     
     cspHost->setScheme(parsedScheme);
+    cspHost->setGeneratedScheme(generatedScheme);
     cspHost->setWithinFrameAncestorsDir(mParsingFrameAncestorsDir);
     return cspHost;
   }
