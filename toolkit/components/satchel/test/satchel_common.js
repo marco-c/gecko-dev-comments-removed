@@ -226,6 +226,20 @@ function promiseACShown() {
   });
 }
 
+async function popupAfterArrowDown() {
+  const promise = promiseACShown();
+  synthesizeKey("KEY_Escape"); 
+  synthesizeKey("KEY_ArrowDown");
+  await promise;
+}
+
+async function noPopupAfterArrowDown() {
+  const promise = promiseNoUnexpectedPopupShown();
+  synthesizeKey("KEY_Escape"); 
+  synthesizeKey("KEY_ArrowDown");
+  await promise;
+}
+
 
 
 
@@ -277,6 +291,60 @@ function satchelCommonSetup() {
     await gChromeScript.sendQuery("cleanup");
     gChromeScript.destroy();
   });
+}
+
+function add_named_task(name, fn) {
+  add_task(
+    {
+      [name]() {
+        return fn();
+      },
+    }[name]
+  );
+}
+
+function preventSubmitOnForms() {
+  for (const form of document.querySelectorAll("form")) {
+    form.onsubmit = e => e.preventDefault();
+  }
+}
+
+
+
+
+
+
+
+
+function assertValueAfterKeys(input, keys, expectedValue) {
+  if (!Array.isArray(keys)) {
+    keys = [keys];
+  }
+  for (const key of keys) {
+    synthesizeKey(key);
+  }
+
+  is(input.value, expectedValue, "input value");
+}
+
+function assertAutocompleteItems(...expectedValues) {
+  const actualValues = getMenuEntries();
+  isDeeply(actualValues, expectedValues, "expected autocomplete list");
+}
+
+function deleteSelectedAutocompleteItem() {
+  synthesizeKey("KEY_Delete", { shiftKey: true });
+}
+
+async function openPopupOn(
+  inputSelector,
+  { inputValue = "", expectPopup = true } = {}
+) {
+  const input = document.querySelector(inputSelector);
+  input.value = inputValue;
+  input.focus();
+  await (expectPopup ? popupAfterArrowDown() : noPopupAfterArrowDown());
+  return input;
 }
 
 satchelCommonSetup();
