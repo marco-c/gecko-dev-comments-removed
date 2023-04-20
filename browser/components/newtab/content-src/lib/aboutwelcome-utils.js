@@ -5,9 +5,10 @@
 
 
 
-const page = document.querySelector("#root.onboardingContainer[data-page]")
-  ? document.querySelector("#root[data-page]").dataset.page
-  : document.location.href;
+const page =
+  document.querySelector(
+    "#multi-stage-message-root.onboardingContainer[data-page]"
+  )?.dataset.page || document.location.href;
 
 export const AboutWelcomeUtils = {
   handleUserAction(action) {

@@ -28,13 +28,15 @@ __webpack_require__.r(__webpack_exports__);
    "AboutWelcomeUtils": () => ( AboutWelcomeUtils),
    "DEFAULT_RTAMO_CONTENT": () => ( DEFAULT_RTAMO_CONTENT)
  });
+var _document$querySelect;
 
 
 
 
 
 
-const page = document.querySelector("#root.onboardingContainer[data-page]") ? document.querySelector("#root[data-page]").dataset.page : document.location.href;
+
+const page = ((_document$querySelect = document.querySelector("#multi-stage-message-root.onboardingContainer[data-page]")) === null || _document$querySelect === void 0 ? void 0 : _document$querySelect.dataset.page) || document.location.href;
 const AboutWelcomeUtils = {
   handleUserAction(action) {
     window.AWSendToParent("SPECIAL_ACTION", action);
@@ -2200,7 +2202,7 @@ async function mount() {
   react_dom__WEBPACK_IMPORTED_MODULE_1___default().render( react__WEBPACK_IMPORTED_MODULE_0___default().createElement(AboutWelcome, _extends({
     messageId: messageId,
     UTMTerm: UTMTerm
-  }, aboutWelcomeProps)), document.getElementById("root"));
+  }, aboutWelcomeProps)), document.getElementById("multi-stage-message-root"));
 }
 
 performance.mark("mount");
