@@ -10517,7 +10517,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
 
 
 ScriptedThisResult CallIRGenerator::getThisShapeForScripted(
-    HandleFunction calleeFunc, MutableHandle<Shape*> result) {
+    HandleFunction calleeFunc, Handle<JSObject*> newTarget,
+    MutableHandle<Shape*> result) {
   
   if (calleeFunc->constructorNeedsUninitializedThis()) {
     return ScriptedThisResult::UninitializedThis;
@@ -10525,7 +10526,6 @@ ScriptedThisResult CallIRGenerator::getThisShapeForScripted(
 
   
   
-  RootedObject newTarget(cx_, &newTarget_.toObject());
   if (!newTarget->is<JSFunction>() ||
       !newTarget->as<JSFunction>().hasNonConfigurablePrototypeDataProperty()) {
     return ScriptedThisResult::NoAction;
@@ -10543,65 +10543,32 @@ ScriptedThisResult CallIRGenerator::getThisShapeForScripted(
   return ScriptedThisResult::PlainObjectShape;
 }
 
-AttachDecision CallIRGenerator::tryAttachCallScripted(
-    HandleFunction calleeFunc) {
-  MOZ_ASSERT(calleeFunc->hasJitEntry());
-
-  if (calleeFunc->isWasmWithJitEntry()) {
-    TRY_ATTACH(tryAttachWasmCall(calleeFunc));
-  }
-
-  bool isSpecialized = mode_ == ICState::Mode::Specialized;
-
-  bool isConstructing = IsConstructPC(pc_);
-  bool isSpread = IsSpreadPC(pc_);
-  bool isSameRealm = isSpecialized && cx_->realm() == calleeFunc->realm();
-  CallFlags flags(isConstructing, isSpread, isSameRealm);
-
-  
-  if (isConstructing && !calleeFunc->isConstructor()) {
-    return AttachDecision::NoAction;
+static bool CanOptimizeScriptedCall(JSFunction* callee, bool isConstructing) {
+  if (!callee->hasJitEntry()) {
+    return false;
   }
 
   
-  if (!isConstructing && calleeFunc->isClassConstructor()) {
-    return AttachDecision::NoAction;
-  }
-
-  if (isConstructing && !calleeFunc->hasJitScript()) {
-    
-    
-    
-    return AttachDecision::TemporarilyUnoptimizable;
+  if (isConstructing && !callee->isConstructor()) {
+    return false;
   }
 
   
-  if (isSpread && args_.length() > JIT_ARGS_LENGTH_MAX) {
-    return AttachDecision::NoAction;
+  if (!isConstructing && callee->isClassConstructor()) {
+    return false;
   }
 
-  Rooted<Shape*> thisShape(cx_);
-  if (isConstructing && isSpecialized) {
-    switch (getThisShapeForScripted(calleeFunc, &thisShape)) {
-      case ScriptedThisResult::PlainObjectShape:
-        break;
-      case ScriptedThisResult::UninitializedThis:
-        flags.setNeedsUninitializedThis();
-        break;
-      case ScriptedThisResult::NoAction:
-        return AttachDecision::NoAction;
-    }
-  }
+  return true;
+}
 
-  
-  Int32OperandId argcId(writer.setInputOperandId(0));
+void CallIRGenerator::emitCallScriptedGuards(ObjOperandId calleeObjId,
+                                             JSFunction* calleeFunc,
+                                             Int32OperandId argcId,
+                                             CallFlags flags,
+                                             Shape* thisShape) {
+  bool isConstructing = flags.isConstructing();
 
-  
-  ValOperandId calleeValId =
-      writer.loadArgumentDynamicSlot(ArgumentKind::Callee, argcId, flags);
-  ObjOperandId calleeObjId = writer.guardToObject(calleeValId);
-
-  if (isSpecialized) {
+  if (mode_ == ICState::Mode::Specialized) {
     MOZ_ASSERT_IF(isConstructing, thisShape || flags.needsUninitializedThis());
 
     
@@ -10610,16 +10577,18 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
       
       
       
+
       JSFunction* newTarget = &newTarget_.toObject().as<JSFunction>();
+      ValOperandId newTargetValId = writer.loadArgumentDynamicSlot(
+          ArgumentKind::NewTarget, argcId, flags);
+      ObjOperandId newTargetObjId = writer.guardToObject(newTargetValId);
+
       Maybe<PropertyInfo> prop = newTarget->lookupPure(cx_->names().prototype);
       MOZ_ASSERT(prop.isSome());
       uint32_t slot = prop->slot();
       MOZ_ASSERT(slot >= newTarget->numFixedSlots(),
                  "Stub code relies on this");
 
-      ValOperandId newTargetValId = writer.loadArgumentDynamicSlot(
-          ArgumentKind::NewTarget, argcId, flags);
-      ObjOperandId newTargetObjId = writer.guardToObject(newTargetValId);
       writer.guardShape(newTargetObjId, newTarget->shape());
 
       const Value& value = newTarget->getSlot(slot);
@@ -10651,6 +10620,62 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
       writer.guardNotClassConstructor(calleeObjId);
     }
   }
+}
+
+AttachDecision CallIRGenerator::tryAttachCallScripted(
+    HandleFunction calleeFunc) {
+  MOZ_ASSERT(calleeFunc->hasJitEntry());
+
+  if (calleeFunc->isWasmWithJitEntry()) {
+    TRY_ATTACH(tryAttachWasmCall(calleeFunc));
+  }
+
+  bool isSpecialized = mode_ == ICState::Mode::Specialized;
+
+  bool isConstructing = IsConstructPC(pc_);
+  bool isSpread = IsSpreadPC(pc_);
+  bool isSameRealm = isSpecialized && cx_->realm() == calleeFunc->realm();
+  CallFlags flags(isConstructing, isSpread, isSameRealm);
+
+  if (!CanOptimizeScriptedCall(calleeFunc, isConstructing)) {
+    return AttachDecision::NoAction;
+  }
+
+  if (isConstructing && !calleeFunc->hasJitScript()) {
+    
+    
+    
+    return AttachDecision::TemporarilyUnoptimizable;
+  }
+
+  
+  if (isSpread && args_.length() > JIT_ARGS_LENGTH_MAX) {
+    return AttachDecision::NoAction;
+  }
+
+  Rooted<Shape*> thisShape(cx_);
+  if (isConstructing && isSpecialized) {
+    Rooted<JSObject*> newTarget(cx_, &newTarget_.toObject());
+    switch (getThisShapeForScripted(calleeFunc, newTarget, &thisShape)) {
+      case ScriptedThisResult::PlainObjectShape:
+        break;
+      case ScriptedThisResult::UninitializedThis:
+        flags.setNeedsUninitializedThis();
+        break;
+      case ScriptedThisResult::NoAction:
+        return AttachDecision::NoAction;
+    }
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  ValOperandId calleeValId =
+      writer.loadArgumentDynamicSlot(ArgumentKind::Callee, argcId, flags);
+  ObjOperandId calleeObjId = writer.guardToObject(calleeValId);
+
+  emitCallScriptedGuards(calleeObjId, calleeFunc, argcId, flags, thisShape);
 
   writer.callScriptedFunction(calleeObjId, argcId, flags,
                               ClampFixedArgc(argc_));
@@ -10805,20 +10830,24 @@ AttachDecision CallIRGenerator::tryAttachBoundFunction(
   if (!calleeObj->getTarget()->is<JSFunction>()) {
     return AttachDecision::NoAction;
   }
-  JSFunction* target = &calleeObj->getTarget()->as<JSFunction>();
-  if (!target->hasJitEntry()) {
+
+  bool isSpread = IsSpreadPC(pc_);
+  bool isConstructing = IsConstructPC(pc_);
+
+  
+  if (isConstructing || isSpread) {
     return AttachDecision::NoAction;
   }
 
-  
-  if (IsConstructPC(pc_) || IsSpreadPC(pc_)) {
+  JSFunction* target = &calleeObj->getTarget()->as<JSFunction>();
+  if (!CanOptimizeScriptedCall(target, isConstructing)) {
     return AttachDecision::NoAction;
   }
 
   
   
   static constexpr size_t MaxBoundArgs = 10;
-  uint32_t numBoundArgs = calleeObj->numBoundArgs();
+  size_t numBoundArgs = calleeObj->numBoundArgs();
   if (numBoundArgs > MaxBoundArgs) {
     return AttachDecision::NoAction;
   }
@@ -10828,7 +10857,8 @@ AttachDecision CallIRGenerator::tryAttachBoundFunction(
     return AttachDecision::NoAction;
   }
 
-  CallFlags flags(CallFlags::Standard);
+  CallFlags flags(isConstructing, isSpread);
+
   if (mode_ == ICState::Mode::Specialized) {
     if (cx_->realm() == target->realm()) {
       flags.setIsSameRealm();
@@ -10840,7 +10870,7 @@ AttachDecision CallIRGenerator::tryAttachBoundFunction(
 
   
   ValOperandId calleeValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_);
+      writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_, flags);
   ObjOperandId calleeObjId = writer.guardToObject(calleeValId);
   writer.guardClass(calleeObjId, GuardClassKind::BoundFunction);
 
@@ -10850,23 +10880,11 @@ AttachDecision CallIRGenerator::tryAttachBoundFunction(
 
   ObjOperandId targetId = writer.loadBoundFunctionTarget(calleeObjId);
 
-  if (mode_ == ICState::Mode::Specialized) {
-    
-    emitCalleeGuard(targetId, target);
-    writer.callBoundScriptedFunction(calleeObjId, targetId, argcId, flags,
-                                     numBoundArgs);
-  } else {
-    
-    writer.guardClass(targetId, GuardClassKind::JSFunction);
+  emitCallScriptedGuards(targetId, target, argcId, flags,
+                          nullptr);
 
-    
-    writer.guardNotClassConstructor(targetId);
-
-    
-    writer.guardFunctionHasJitEntry(targetId, false);
-    writer.callBoundScriptedFunction(calleeObjId, targetId, argcId, flags,
-                                     numBoundArgs);
-  }
+  writer.callBoundScriptedFunction(calleeObjId, targetId, argcId, flags,
+                                   numBoundArgs);
   writer.returnFromIC();
 
   trackAttached("Call bound scripted");
