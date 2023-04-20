@@ -105,9 +105,6 @@ const WebRTCIndicator = {
     
     
     document.documentElement.setAttribute("visible", isVisible);
-    
-    
-    document.documentElement.setAttribute("inwindowmenu", isVisible);
   },
 
   
