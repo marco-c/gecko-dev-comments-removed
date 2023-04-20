@@ -523,7 +523,7 @@ Accessible* Pivot::PrevText(Accessible* aAnchor, int32_t* aStartOffset,
     Accessible* childAtOffset = nullptr;
     for (int32_t i = tempEnd - 1; i >= tempStart; i--) {
       childAtOffset = text->GetChildAtOffset(i);
-      if (childAtOffset && !childAtOffset->IsText()) {
+      if (childAtOffset && childAtOffset->IsHyperText()) {
         tempStart = childAtOffset->EndOffset();
         break;
       }
@@ -531,7 +531,7 @@ Accessible* Pivot::PrevText(Accessible* aAnchor, int32_t* aStartOffset,
     
     
     
-    if (childAtOffset && !childAtOffset->IsText() &&
+    if (childAtOffset && childAtOffset->IsHyperText() &&
         tempEnd == static_cast<int32_t>(childAtOffset->EndOffset())) {
       tempPosition = childAtOffset;
       tempStart = tempEnd = static_cast<int32_t>(
