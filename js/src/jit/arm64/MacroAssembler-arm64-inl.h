@@ -1399,7 +1399,21 @@ void MacroAssembler::branchTruncateDoubleMaybeModUint32(FloatRegister src,
 
 void MacroAssembler::branchTruncateDoubleToInt32(FloatRegister src,
                                                  Register dest, Label* fail) {
-  convertDoubleToInt32(src, dest, fail, false);
+  ARMFPRegister src64(src, 64);
+  ARMRegister dest64(dest, 64);
+  ARMRegister dest32(dest, 32);
+
+  
+  
+  
+  Fcvtzs(dest64, src64);
+
+  
+  Cmp(dest64, Operand(dest32, vixl::SXTW));
+  B(fail, Assembler::NotEqual);
+
+  
+  Mov(dest32, dest32);
 }
 
 template <typename T>
