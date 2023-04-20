@@ -426,6 +426,18 @@ class PanGestureInput : public InputData {
   void SetIsNoLineOrPageDelta(bool aIsNoLineOrPageDelta) {
     mIsNoLineOrPageDelta = aIsNoLineOrPageDelta;
   }
+
+  
+  
+  
+  bool AllowsSwipe() const {
+    MOZ_ASSERT(mHandledByAPZ);
+    return mMayTriggerSwipe && mOverscrollBehaviorAllowsSwipe;
+  }
+
+  
+  
+  
   bool MayTriggerSwipe() const { return mMayTriggerSwipe; }
   bool RequiresContentResponseIfCannotScrollHorizontallyInStartDirection();
 
