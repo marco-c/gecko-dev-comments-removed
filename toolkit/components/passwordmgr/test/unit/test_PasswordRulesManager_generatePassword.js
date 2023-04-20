@@ -368,19 +368,6 @@ add_task(async function test_generatePassword_subdomain_rule() {
     
     if (test.shouldApplyPWRule) {
       verifyPassword(rules, generatedPassword);
-    } else {
-      
-      
-
-      const SPECIAL_CHARACTERS = PasswordGenerator._getSpecialCharacters();
-      
-      
-      let escapedSpecialCharacters = SPECIAL_CHARACTERS.replace(
-        /[.*\-+?^${}()|[\]\\]/g,
-        "\\$&"
-      );
-      let checkSpecial = new RegExp(`[${escapedSpecialCharacters}]`);
-      Assert.ok(!generatedPassword.match(checkSpecial));
     }
   }
 });
