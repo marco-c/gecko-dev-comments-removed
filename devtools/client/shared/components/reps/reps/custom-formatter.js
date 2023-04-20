@@ -15,6 +15,8 @@ define(function(require, exports, module) {
   } = require("devtools/client/shared/vendor/react");
   const {
     cleanupStyle,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+  const {
     wrapRender,
   } = require("devtools/client/shared/components/reps/reps/rep-utils");
 
@@ -124,55 +126,8 @@ define(function(require, exports, module) {
         
         
         if (Array.isArray(child)) {
-          childElement = renderJsonMl(
-            child,
-            { ...props, object: null },
-            childIndex
-          );
-        } else if (typeof child === "object" && child !== null) {
-          
-          
-          
-          const gripOrPrimitive =
-            (child.typeName == "obj" || child.typeName == "string") &&
-            typeof child?.getGrip == "function"
-              ? child.getGrip()
-              : child;
-
-          
-          
-          if (supportsObject(gripOrPrimitive)) {
-            childElement = createElement(CustomFormatter, {
-              ...props,
-              object: gripOrPrimitive,
-              front: child,
-            });
-          } else {
-            
-            
-            const {
-              objectInspector,
-              MODE,
-            } = require("devtools/client/shared/components/reps/index");
-            childElement = createElement(objectInspector.ObjectInspector, {
-              ...props,
-              mode: props.mode == MODE.LONG ? MODE.SHORT : MODE.TINY,
-              roots: [
-                {
-                  path: `${gripOrPrimitive?.actorID ??
-                    gripOrPrimitive?.actor ??
-                    null}`,
-                  contents: {
-                    value: gripOrPrimitive,
-                    front: child,
-                  },
-                },
-              ],
-            });
-          }
-        } else {
-          
-          
+          childElement = renderJsonMl(child, props, childIndex);
+        } else if (typeof child !== "object") {
           childElement = child;
         }
         childElements.push(childElement);

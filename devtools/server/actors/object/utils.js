@@ -4,9 +4,7 @@
 
 "use strict";
 
-const {
-  DevToolsServer,
-} = require("resource://devtools/server/devtools-server.js");
+const { DevToolsServer } = require("resource://devtools/server/devtools-server.js");
 const DevToolsUtils = require("resource://devtools/shared/DevToolsUtils.js");
 const { assert } = DevToolsUtils;
 
@@ -472,24 +470,12 @@ function createStringGrip(targetActor, string) {
 
 
 
-
-
-
-function createValueGripForTarget(
-  targetActor,
-  value,
-  depth = 0,
-  objectActorAttributes = {}
-) {
-  const makeObjectGrip = (objectActorValue, pool) =>
-    createObjectGrip(
-      targetActor,
-      depth,
-      objectActorValue,
-      pool,
-      objectActorAttributes
-    );
-  return createValueGrip(value, targetActor, makeObjectGrip);
+function createValueGripForTarget(targetActor, value, depth = 0) {
+  return createValueGrip(
+    value,
+    targetActor,
+    createObjectGrip.bind(null, targetActor, depth)
+  );
 }
 
 
@@ -536,20 +522,11 @@ function createEnvironmentActor(environment, targetActor) {
 
 
 
-
-
-function createObjectGrip(
-  targetActor,
-  depth,
-  object,
-  pool,
-  objectActorAttributes = {}
-) {
+function createObjectGrip(targetActor, depth, object, pool) {
   let gripDepth = depth;
   const actor = new ObjectActor(
     object,
     {
-      ...objectActorAttributes,
       thread: targetActor.threadActor,
       getGripDepth: () => gripDepth,
       incrementGripDepth: () => gripDepth++,
@@ -560,7 +537,6 @@ function createObjectGrip(
     targetActor.conn
   );
   pool.manage(actor);
-
   return actor.form();
 }
 

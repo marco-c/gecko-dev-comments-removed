@@ -17,10 +17,6 @@ define("ServicesMock", () => ({ appinfo: {} }));
 
 
 
-define("CustomFormatterMock", () => ({}));
-
-
-
 
 
 
@@ -36,8 +32,6 @@ require.config({
   map: {
     "*": {
       Services: "ServicesMock",
-      "devtools/client/shared/components/reps/reps/custom-formatter":
-        "CustomFormatterMock",
     },
   },
 });

@@ -36,7 +36,13 @@ loader.lazyRequireGetter(
 
 loader.lazyRequireGetter(
   this,
-  ["customFormatterHeader", "customFormatterBody"],
+  "customFormatterHeader",
+  "resource://devtools/server/actors/utils/custom-formatters.js",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "customFormatterBody",
   "resource://devtools/server/actors/utils/custom-formatters.js",
   true
 );
@@ -98,8 +104,6 @@ const proto = {
       getGripDepth,
       incrementGripDepth,
       decrementGripDepth,
-      customFormatterObjectTagDepth,
-      customFormatterConfig,
     },
     conn
   ) {
@@ -118,8 +122,6 @@ const proto = {
       getGripDepth,
       incrementGripDepth,
       decrementGripDepth,
-      customFormatterObjectTagDepth,
-      customFormatterConfig,
     };
   },
 
@@ -168,7 +170,7 @@ const proto = {
 
     
     if (this.thread?._parent?.customFormatters) {
-      const header = customFormatterHeader(this);
+      const header = customFormatterHeader(this.rawValue());
       if (header) {
         return {
           ...g,
@@ -218,7 +220,7 @@ const proto = {
   },
 
   customFormatterBody(customFormatterIndex) {
-    return customFormatterBody(this, customFormatterIndex);
+    return customFormatterBody(this.rawValue(), customFormatterIndex);
   },
 
   _getOwnPropertyLength() {
@@ -790,9 +792,7 @@ const proto = {
 
 
 
-  release() {
-    this.hooks = null;
-  },
+  release() {},
 };
 
 exports.ObjectActor = protocol.ActorClassWithSpec(objectSpec, proto);
