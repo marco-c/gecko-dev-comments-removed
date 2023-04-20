@@ -753,12 +753,17 @@ Relation RemoteAccessibleBase<Derived>::RelationByType(
       while (ancestor && ancestor->Role() != roles::FORM && ancestor != mDoc) {
         ancestor = ancestor->RemoteParent();
       }
-      Pivot p = Pivot(ancestor);
-      PivotRadioNameRule rule(name);
-      Accessible* match = p.Next(ancestor, rule);
-      while (match) {
-        rel.AppendTarget(match->AsRemote());
-        match = p.Next(match, rule);
+      if (ancestor) {
+        
+        
+        
+        Pivot p = Pivot(ancestor);
+        PivotRadioNameRule rule(name);
+        Accessible* match = p.Next(ancestor, rule);
+        while (match) {
+          rel.AppendTarget(match->AsRemote());
+          match = p.Next(match, rule);
+        }
       }
       return rel;
     }
