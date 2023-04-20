@@ -66,6 +66,148 @@ let expectedResults = {};
 
 
 
+function addAllTests(extraData_, extraPrefs_) {
+  add_task(
+    partial(
+      defaultsTest,
+      uri,
+      iframe_domain,
+      cross_origin_domain,
+      testTimePrecision,
+      expectedResults,
+      extraData_,
+      extraPrefs_
+    )
+  );
+
+  add_task(
+    partial(
+      simpleRFPTest,
+      uri,
+      iframe_domain,
+      cross_origin_domain,
+      testTimePrecision,
+      expectedResults,
+      extraData_,
+      extraPrefs_
+    )
+  );
+
+  
+  add_task(
+    partial(
+      testA,
+      uri,
+      iframe_domain,
+      cross_origin_domain,
+      testTimePrecision,
+      expectedResults,
+      extraData_,
+      extraPrefs_
+    )
+  );
+
+  
+  add_task(
+    partial(
+      testB,
+      uri,
+      iframe_domain,
+      cross_origin_domain,
+      testTimePrecision,
+      expectedResults,
+      extraData_,
+      extraPrefs_
+    )
+  );
+
+  
+  add_task(
+    partial(
+      testC,
+      uri,
+      iframe_domain,
+      cross_origin_domain,
+      testTimePrecision,
+      expectedResults,
+      extraData_,
+      extraPrefs_
+    )
+  );
+
+  
+  add_task(
+    partial(
+      testD,
+      uri,
+      iframe_domain,
+      cross_origin_domain,
+      testTimePrecision,
+      expectedResults,
+      extraData_,
+      extraPrefs_
+    )
+  );
+
+  
+  add_task(
+    partial(
+      testE,
+      uri,
+      iframe_domain,
+      cross_origin_domain,
+      testTimePrecision,
+      expectedResults,
+      extraData_,
+      extraPrefs_
+    )
+  );
+
+  
+  add_task(
+    partial(
+      testF,
+      uri,
+      iframe_domain,
+      cross_origin_domain,
+      testTimePrecision,
+      expectedResults,
+      extraData_,
+      extraPrefs_
+    )
+  );
+
+  
+  add_task(
+    partial(
+      testG,
+      uri,
+      iframe_domain,
+      cross_origin_domain,
+      testTimePrecision,
+      expectedResults,
+      extraData_,
+      extraPrefs_
+    )
+  );
+
+  
+  add_task(
+    partial(
+      testH,
+      uri,
+      iframe_domain,
+      cross_origin_domain,
+      testTimePrecision,
+      expectedResults,
+      extraData_,
+      extraPrefs_
+    )
+  );
+}
+
+
+
 
 
 precision = 100;
@@ -78,143 +220,7 @@ extraPrefs = [
     precision * 1000,
   ],
 ];
-add_task(
-  partial(
-    defaultsTest,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-add_task(
-  partial(
-    simpleRFPTest,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-
-add_task(
-  partial(
-    testA,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-
-add_task(
-  partial(
-    testB,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-
-add_task(
-  partial(
-    testC,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-
-add_task(
-  partial(
-    testD,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-
-add_task(
-  partial(
-    testE,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-
-add_task(
-  partial(
-    testF,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-
-add_task(
-  partial(
-    testG,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-
-add_task(
-  partial(
-    testH,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
+addAllTests(precision, extraData, extraPrefs);
 
 precision = 133;
 extraData = {
@@ -226,140 +232,4 @@ extraPrefs = [
     precision * 1000,
   ],
 ];
-add_task(
-  partial(
-    defaultsTest,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-add_task(
-  partial(
-    simpleRFPTest,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-
-add_task(
-  partial(
-    testA,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-
-add_task(
-  partial(
-    testB,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-
-add_task(
-  partial(
-    testC,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-
-add_task(
-  partial(
-    testD,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-
-add_task(
-  partial(
-    testE,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-
-add_task(
-  partial(
-    testF,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-
-add_task(
-  partial(
-    testG,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
-
-
-add_task(
-  partial(
-    testH,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testTimePrecision,
-    expectedResults,
-    extraData,
-    extraPrefs
-  )
-);
+addAllTests(precision, extraData, extraPrefs);
