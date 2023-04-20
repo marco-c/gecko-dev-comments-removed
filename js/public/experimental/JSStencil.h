@@ -34,9 +34,11 @@ class JS_PUBLIC_API JSTracer;
 
 namespace js {
 struct ParseTask;
+class FrontendContext;
 namespace frontend {
 struct CompilationStencil;
 struct CompilationGCOutput;
+struct CompilationInput;
 }  
 }  
 
@@ -47,6 +49,7 @@ struct CompilationGCOutput;
 namespace JS {
 
 using Stencil = js::frontend::CompilationStencil;
+using FrontendContext = js::FrontendContext;
 
 
 
@@ -67,6 +70,10 @@ struct InstantiationStorage {
   friend JS_PUBLIC_API JSObject* InstantiateModuleStencil(
       JSContext* cx, const InstantiateOptions& options, Stencil* stencil,
       InstantiationStorage* storage);
+
+  friend JS_PUBLIC_API JS_PUBLIC_API bool PrepareForInstantiate(
+      JS::FrontendContext* fc, js::frontend::CompilationInput& input,
+      JS::Stencil& stencil, JS::InstantiationStorage& storage);
 
   friend struct js::ParseTask;
 
