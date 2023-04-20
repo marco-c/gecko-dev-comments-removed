@@ -506,7 +506,7 @@ function internalPersist(persistArgs) {
       kWrapColumn
     );
   } else {
-    persist.savePrivacyAwareURI(
+    persist.saveURI(
       persistArgs.sourceURI,
       persistArgs.sourcePrincipal,
       persistArgs.sourceCacheKey,

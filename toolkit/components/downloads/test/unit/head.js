@@ -385,7 +385,7 @@ function promiseStartLegacyDownload(aSourceUrl, aOptions) {
         persist.progressListener = transfer;
 
         
-        persist.savePrivacyAwareURI(
+        persist.saveURI(
           sourceURI,
           Services.scriptSecurityManager.getSystemPrincipal(),
           0,
