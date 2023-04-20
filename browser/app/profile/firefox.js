@@ -74,6 +74,9 @@ pref("xpinstall.signatures.devInfoURL", "https://wiki.mozilla.org/Addons/Extensi
 pref("devtools.storage.extensionStorage.enabled", true);
 
 
+pref("extensions.unifiedExtensions.enabled", true);
+
+
 pref("browser.dictionaries.download.url", "https://addons.mozilla.org/%LOCALE%/firefox/language-tools/");
 
 

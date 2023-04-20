@@ -1955,11 +1955,8 @@ pref("extensions.manifestV2.actionsPopupURLRestricted", false);
 
 pref("extensions.manifestV3.enabled", true);
 
-#ifdef NIGHTLY_BUILD
-  pref("extensions.unifiedExtensions.enabled", true);
-#else
-  pref("extensions.unifiedExtensions.enabled", false);
-#endif
+
+pref("extensions.unifiedExtensions.enabled", false);
 
 #ifdef NIGHTLY_BUILD
   pref("extensions.openPopupWithoutUserGesture.enabled", true);
