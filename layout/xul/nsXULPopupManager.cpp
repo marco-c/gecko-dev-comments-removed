@@ -277,6 +277,17 @@ nsXULPopupManager* nsXULPopupManager::GetInstance() {
   return sInstance;
 }
 
+bool nsXULPopupManager::RollupTooltips() {
+  return RollupInternal(RollupKind::Tooltip, UINT32_MAX, false, nullptr,
+                        nullptr);
+}
+
+bool nsXULPopupManager::Rollup(uint32_t aCount, bool aFlush,
+                               const LayoutDeviceIntPoint* aPos,
+                               nsIContent** aLastRolledUp) {
+  return RollupInternal(RollupKind::Menu, aCount, aFlush, aPos, aLastRolledUp);
+}
+
 bool nsXULPopupManager::RollupNativeMenu() {
   if (mNativeMenu) {
     RefPtr<NativeMenu> menu = mNativeMenu;
@@ -285,9 +296,10 @@ bool nsXULPopupManager::RollupNativeMenu() {
   return false;
 }
 
-bool nsXULPopupManager::Rollup(uint32_t aCount, bool aFlush,
-                               const LayoutDeviceIntPoint* pos,
-                               nsIContent** aLastRolledUp) {
+bool nsXULPopupManager::RollupInternal(RollupKind aKind, uint32_t aCount,
+                                       bool aFlush,
+                                       const LayoutDeviceIntPoint* pos,
+                                       nsIContent** aLastRolledUp) {
   if (aLastRolledUp) {
     *aLastRolledUp = nullptr;
   }
@@ -301,131 +313,131 @@ bool nsXULPopupManager::Rollup(uint32_t aCount, bool aFlush,
     return false;
   }
 
-  bool consume = false;
-
-  if (nsMenuChainItem* item = GetTopVisibleMenu()) {
-    if (aLastRolledUp) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      nsMenuChainItem* first = item;
-      while (first->GetParent()) {
-        nsMenuChainItem* parent = first->GetParent();
-        if (first->Frame()->PopupType() != parent->Frame()->PopupType() ||
-            first->IsContextMenu() != parent->IsContextMenu()) {
-          break;
-        }
-        first = parent;
+  nsMenuChainItem* item = GetRollupItem(aKind);
+  if (!item) {
+    return false;
+  }
+  if (aLastRolledUp) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsMenuChainItem* first = item;
+    while (first->GetParent()) {
+      nsMenuChainItem* parent = first->GetParent();
+      if (first->Frame()->PopupType() != parent->Frame()->PopupType() ||
+          first->IsContextMenu() != parent->IsContextMenu()) {
+        break;
       }
-
-      *aLastRolledUp = first->Content();
+      first = parent;
     }
 
-    ConsumeOutsideClicksResult consumeResult =
-        item->Frame()->ConsumeOutsideClicks();
-    consume = consumeResult == ConsumeOutsideClicks_True;
+    *aLastRolledUp = first->Content();
+  }
 
-    bool rollup = true;
+  ConsumeOutsideClicksResult consumeResult =
+      item->Frame()->ConsumeOutsideClicks();
+  bool consume = consumeResult == ConsumeOutsideClicks_True;
+  bool rollup = true;
 
-    
-    
-    
-    bool noRollupOnAnchor =
-        (!consume && pos &&
-         item->Frame()->GetContent()->AsElement()->AttrValueIs(
-             kNameSpaceID_None, nsGkAtoms::norolluponanchor, nsGkAtoms::_true,
-             eCaseMatters));
+  
+  
+  
+  bool noRollupOnAnchor =
+      (!consume && pos &&
+       item->Frame()->GetContent()->AsElement()->AttrValueIs(
+           kNameSpaceID_None, nsGkAtoms::norolluponanchor, nsGkAtoms::_true,
+           eCaseMatters));
 
-    
-    
-    
-    if ((consumeResult == ConsumeOutsideClicks_ParentOnly ||
-         noRollupOnAnchor) &&
-        pos) {
-      nsMenuPopupFrame* popupFrame = item->Frame();
-      CSSIntRect anchorRect = [&] {
-        if (popupFrame->IsAnchored()) {
-          
-          
-          auto r = popupFrame->GetScreenAnchorRect();
-          if (r.x != -1 && r.y != -1) {
-            return r;
-          }
-        }
-        auto* anchor = Element::FromNodeOrNull(popupFrame->GetAnchor());
-        if (!anchor) {
-          return CSSIntRect();
-        }
-
+  
+  
+  
+  if ((consumeResult == ConsumeOutsideClicks_ParentOnly || noRollupOnAnchor) &&
+      pos) {
+    nsMenuPopupFrame* popupFrame = item->Frame();
+    CSSIntRect anchorRect = [&] {
+      if (popupFrame->IsAnchored()) {
         
         
-        
-        
-        nsAutoString consumeAnchor;
-        anchor->GetAttr(nsGkAtoms::consumeanchor, consumeAnchor);
-        if (!consumeAnchor.IsEmpty()) {
-          if (Element* newAnchor =
-                  anchor->OwnerDoc()->GetElementById(consumeAnchor)) {
-            anchor = newAnchor;
-          }
+        auto r = popupFrame->GetScreenAnchorRect();
+        if (r.x != -1 && r.y != -1) {
+          return r;
         }
-
-        nsIFrame* f = anchor->GetPrimaryFrame();
-        if (!f) {
-          return CSSIntRect();
-        }
-        return f->GetScreenRect();
-      }();
+      }
+      auto* anchor = Element::FromNodeOrNull(popupFrame->GetAnchor());
+      if (!anchor) {
+        return CSSIntRect();
+      }
 
       
       
       
       
-      nsPresContext* presContext = item->Frame()->PresContext();
-      CSSIntPoint posCSSPixels = presContext->DevPixelsToIntCSSPixels(*pos);
-      if (anchorRect.Contains(posCSSPixels)) {
-        if (consumeResult == ConsumeOutsideClicks_ParentOnly) {
-          consume = true;
+      nsAutoString consumeAnchor;
+      anchor->GetAttr(nsGkAtoms::consumeanchor, consumeAnchor);
+      if (!consumeAnchor.IsEmpty()) {
+        if (Element* newAnchor =
+                anchor->OwnerDoc()->GetElementById(consumeAnchor)) {
+          anchor = newAnchor;
         }
+      }
 
-        if (noRollupOnAnchor) {
-          rollup = false;
-        }
+      nsIFrame* f = anchor->GetPrimaryFrame();
+      if (!f) {
+        return CSSIntRect();
+      }
+      return f->GetScreenRect();
+    }();
+
+    
+    
+    
+    
+    nsPresContext* presContext = item->Frame()->PresContext();
+    CSSIntPoint posCSSPixels = presContext->DevPixelsToIntCSSPixels(*pos);
+    if (anchorRect.Contains(posCSSPixels)) {
+      if (consumeResult == ConsumeOutsideClicks_ParentOnly) {
+        consume = true;
+      }
+
+      if (noRollupOnAnchor) {
+        rollup = false;
       }
     }
+  }
 
-    if (rollup) {
-      
-      
-      nsIContent* lastPopup = nullptr;
-      if (aCount != UINT32_MAX) {
-        nsMenuChainItem* last = item;
-        while (--aCount && last->GetParent()) {
-          last = last->GetParent();
-        }
-        if (last) {
-          lastPopup = last->Content();
-        }
-      }
+  if (!rollup) {
+    return false;
+  }
 
-      nsPresContext* presContext = item->Frame()->PresContext();
-      RefPtr<nsViewManager> viewManager =
-          presContext->PresShell()->GetViewManager();
-
-      HidePopup(item->Content(), true, true, false, true, lastPopup);
-
-      if (aFlush) {
-        
-        
-        viewManager->UpdateWidgetGeometry();
-      }
+  
+  
+  nsIContent* lastPopup = nullptr;
+  if (aCount != UINT32_MAX) {
+    nsMenuChainItem* last = item;
+    while (--aCount && last->GetParent()) {
+      last = last->GetParent();
     }
+    if (last) {
+      lastPopup = last->Content();
+    }
+  }
+
+  nsPresContext* presContext = item->Frame()->PresContext();
+  RefPtr<nsViewManager> viewManager =
+      presContext->PresShell()->GetViewManager();
+
+  HidePopup(item->Content(), true, true, false, true, lastPopup);
+
+  if (aFlush) {
+    
+    
+    viewManager->UpdateWidgetGeometry();
   }
 
   return consume;
@@ -667,10 +679,17 @@ nsMenuPopupFrame* nsXULPopupManager::GetPopupFrameForContent(
   return do_QueryFrame(aContent->GetPrimaryFrame());
 }
 
-nsMenuChainItem* nsXULPopupManager::GetTopVisibleMenu() {
+nsMenuChainItem* nsXULPopupManager::GetRollupItem(RollupKind aKind) {
   for (nsMenuChainItem* item = mPopups.get(); item; item = item->GetParent()) {
-    if (!item->IsNoAutoHide() &&
-        item->Frame()->PopupState() != ePopupInvisible) {
+    if (item->Frame()->PopupState() == ePopupInvisible) {
+      continue;
+    }
+    MOZ_ASSERT_IF(item->Frame()->PopupType() == ePopupTypeTooltip,
+                  item->IsNoAutoHide());
+    const bool valid = aKind == RollupKind::Tooltip
+                           ? item->Frame()->PopupType() == ePopupTypeTooltip
+                           : !item->IsNoAutoHide();
+    if (valid) {
       return item;
     }
   }

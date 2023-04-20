@@ -370,16 +370,23 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual bool Rollup(uint32_t aCount, bool aFlush,
+  bool Rollup(uint32_t aCount, bool aFlush,
+              const mozilla::LayoutDeviceIntPoint* aPos,
+              nsIContent** aLastRolledUp) override;
+  bool ShouldRollupOnMouseWheelEvent() override;
+  bool ShouldConsumeOnMouseWheelEvent() override;
+  bool ShouldRollupOnMouseActivate() override;
+  uint32_t GetSubmenuWidgetChain(nsTArray<nsIWidget*>* aWidgetChain) override;
+  nsIWidget* GetRollupWidget() override;
+  bool RollupNativeMenu() override;
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool RollupTooltips();
+
+  enum class RollupKind { Tooltip, Menu };
+  MOZ_CAN_RUN_SCRIPT
+  bool RollupInternal(RollupKind, uint32_t aCount, bool aFlush,
                       const mozilla::LayoutDeviceIntPoint* pos,
-                      nsIContent** aLastRolledUp) override;
-  virtual bool ShouldRollupOnMouseWheelEvent() override;
-  virtual bool ShouldConsumeOnMouseWheelEvent() override;
-  virtual bool ShouldRollupOnMouseActivate() override;
-  virtual uint32_t GetSubmenuWidgetChain(
-      nsTArray<nsIWidget*>* aWidgetChain) override;
-  virtual nsIWidget* GetRollupWidget() override;
-  virtual bool RollupNativeMenu() override;
+                      nsIContent** aLastRolledUp);
 
   
   void OnNativeMenuOpened() override;
@@ -713,7 +720,12 @@ class nsXULPopupManager final : public nsIDOMEventListener,
                                             bool aShouldFlush);
 
   
-  nsMenuChainItem* GetTopVisibleMenu();
+  nsMenuChainItem* GetRollupItem(RollupKind);
+
+  
+  nsMenuChainItem* GetTopVisibleMenu() {
+    return GetRollupItem(RollupKind::Menu);
+  }
 
   
   void RemoveMenuChainItem(nsMenuChainItem*);

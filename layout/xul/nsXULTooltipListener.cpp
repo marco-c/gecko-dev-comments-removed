@@ -394,8 +394,7 @@ nsresult nsXULTooltipListener::ShowTooltip() {
 
       
       
-      Document* doc = sourceNode->GetComposedDoc();
-      if (doc) {
+      if (Document* doc = sourceNode->GetComposedDoc()) {
         
         
         
@@ -620,8 +619,7 @@ nsresult nsXULTooltipListener::DestroyTooltip() {
     mCurrentTooltip = nullptr;
 
     
-    nsCOMPtr<Document> doc = currentTooltip->GetComposedDoc();
-    if (doc) {
+    if (nsCOMPtr<Document> doc = currentTooltip->GetComposedDoc()) {
       
       doc->RemoveSystemEventListener(u"wheel"_ns, this, true);
       doc->RemoveSystemEventListener(u"mousedown"_ns, this, true);
