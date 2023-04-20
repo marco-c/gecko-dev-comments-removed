@@ -172,10 +172,6 @@ class RTC_EXPORT VideoFrame {
   
   uint32_t timestamp() const { return timestamp_rtp_; }
 
-  [[deprecated("Use timestamp()")]] uint32_t transport_frame_id() const {
-    return timestamp();
-  }
-
   
   void set_ntp_time_ms(int64_t ntp_time_ms) { ntp_time_ms_ = ntp_time_ms; }
 
