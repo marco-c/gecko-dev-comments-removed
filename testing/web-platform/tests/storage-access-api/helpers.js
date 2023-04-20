@@ -197,6 +197,12 @@ function FrameInitiatedNavigation(frame, url) {
 }
 
 
+function FetchFromFrame(frame, host) {
+  return PostMessageAndAwaitReply(
+    { command: "subresource cookies", host }, frame.contentWindow);
+}
+
+
 
 
 
