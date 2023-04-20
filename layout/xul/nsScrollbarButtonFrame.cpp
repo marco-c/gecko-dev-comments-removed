@@ -39,6 +39,7 @@ nsIFrame* NS_NewScrollbarButtonFrame(PresShell* aPresShell,
   return new (aPresShell)
       nsScrollbarButtonFrame(aStyle, aPresShell->GetPresContext());
 }
+
 NS_IMPL_FRAMEARENA_HELPERS(nsScrollbarButtonFrame)
 
 nsresult nsScrollbarButtonFrame::HandleEvent(nsPresContext* aPresContext,
@@ -78,7 +79,7 @@ nsresult nsScrollbarButtonFrame::HandleEvent(nsPresContext* aPresContext,
       break;
   }
 
-  return SimpleXULLeafFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
+  return nsBoxFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
 }
 
 bool nsScrollbarButtonFrame::HandleButtonPress(nsPresContext* aPresContext,
@@ -269,5 +270,5 @@ void nsScrollbarButtonFrame::DestroyFrom(nsIFrame* aDestructRoot,
   
   
   StopRepeat();
-  SimpleXULLeafFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
+  nsBoxFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }

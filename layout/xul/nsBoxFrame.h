@@ -154,6 +154,14 @@ class nsBoxFrame : public nsContainerFrame {
 
   nsCOMPtr<nsBoxLayout> mLayoutManager;
 
+  
+  
+  bool GetEventPoint(mozilla::WidgetGUIEvent* aEvent, nsPoint& aPoint);
+  
+  
+  bool GetEventPoint(mozilla::WidgetGUIEvent* aEvent,
+                     mozilla::LayoutDeviceIntPoint& aPoint);
+
  private:
   void CacheAttributes();
 
