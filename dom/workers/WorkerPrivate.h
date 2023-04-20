@@ -548,6 +548,13 @@ class WorkerPrivate final
   }
 #endif
 
+  void AssertIsNotPotentiallyLastGCCCRunning() {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    auto data = mWorkerThreadAccessible.Access();
+    MOZ_DIAGNOSTIC_ASSERT(!data->mIsPotentiallyLastGCCCRunning);
+#endif
+  }
+
   void SetWorkerScriptExecutedSuccessfully() {
     AssertIsOnWorkerThread();
     
@@ -1478,6 +1485,9 @@ class WorkerPrivate final
     bool mJSThreadExecutionGranted;
     bool mCCCollectedAnything;
     FlippedOnce<false> mDeletionScheduled;
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    bool mIsPotentiallyLastGCCCRunning = false;
+#endif
   };
   ThreadBound<WorkerThreadAccessible> mWorkerThreadAccessible;
 

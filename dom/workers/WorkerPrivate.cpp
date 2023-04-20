@@ -3150,23 +3150,76 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
 
   InitializeGCTimers();
 
+  bool checkFinalGCCC =
+      StaticPrefs::dom_workers_GCCC_on_potentially_last_event();
+
+  bool debuggerRunnablesPending = false;
+  bool normalRunnablesPending = false;
+  auto noRunnablesPendingAndKeepAlive =
+      [&debuggerRunnablesPending, &normalRunnablesPending, &thread, this]()
+          MOZ_REQUIRES(mMutex) {
+            
+            debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
+            normalRunnablesPending = NS_HasPendingEvents(thread);
+
+            bool anyRunnablesPending = !mControlQueue.IsEmpty() ||
+                                       debuggerRunnablesPending ||
+                                       normalRunnablesPending;
+            bool keepWorkerAlive = mStatus == Running || HasActiveWorkerRefs();
+
+            return (!anyRunnablesPending && keepWorkerAlive);
+          };
+
   for (;;) {
     WorkerStatus currentStatus;
-    bool debuggerRunnablesPending = false;
-    bool normalRunnablesPending = false;
+
+    if (checkFinalGCCC) {
+      
+      
+      
+      
+      
+      
+      
+      bool mayNeedFinalGCCC = false;
+      {
+        MutexAutoLock lock(mMutex);
+
+        currentStatus = mStatus;
+        mayNeedFinalGCCC =
+            (mStatus >= Canceling && HasActiveWorkerRefs() &&
+             !debuggerRunnablesPending && !normalRunnablesPending);
+      }
+      if (mayNeedFinalGCCC) {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+        
+        
+        data->mIsPotentiallyLastGCCCRunning = true;
+#endif
+        
+        GarbageCollectInternal(aCx, true ,
+                               true );
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+        data->mIsPotentiallyLastGCCCRunning = false;
+#endif
+      }
+    }
 
     {
       MutexAutoLock lock(mMutex);
 
+      if (checkFinalGCCC && currentStatus != mStatus) {
+        
+        
+        continue;
+      }
+
       
       
       
       
       
-      while (mControlQueue.IsEmpty() &&
-             !(debuggerRunnablesPending = !mDebuggerQueue.IsEmpty()) &&
-             !(normalRunnablesPending = NS_HasPendingEvents(thread)) &&
-             !(mStatus != Running && !HasActiveWorkerRefs())) {
+      while (noRunnablesPendingAndKeepAlive()) {
         
         
         
