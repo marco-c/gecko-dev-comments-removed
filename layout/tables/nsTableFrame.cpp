@@ -7285,6 +7285,22 @@ void BCPaintBorderIterator::AccumulateOrDoActionBlockDirSegment(
         }
       }
       blockDirSeg.AdvanceOffsetB();
+      
+      
+      
+      
+      if (mRow->PrincipalChildList().IsEmpty()) {
+        const auto rowSize = mRow->BSize(mTableWM);
+        if (blockDirSeg.mBEndOffset > 0 && blockDirSeg.mBEndOffset > rowSize) {
+          blockDirSeg.mOffsetB -= blockDirSeg.mBEndOffset - rowSize;
+        } else if (blockDirSeg.mBEndOffset < 0 &&
+                   -blockDirSeg.mBEndOffset > rowSize) {
+          
+          
+          
+          blockDirSeg.mOffsetB += blockDirSeg.mBEndOffset + rowSize;
+        }
+      }
     }
     blockDirSeg.Start(*this, borderOwner, blockSegISize, inlineSegBSize);
   }
