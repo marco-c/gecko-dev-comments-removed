@@ -2,7 +2,9 @@
 
 
 
-use crate::tree::OpaqueElement;
+use std::hash::Hash;
+
+use crate::{parser::Selector, tree::OpaqueElement, SelectorImpl};
 use fxhash::FxHashMap;
 
 
@@ -13,20 +15,68 @@ use fxhash::FxHashMap;
 #[derive(Default)]
 pub struct NthIndexCache {
     nth: NthIndexCacheInner,
+    nth_of_selectors: NthIndexOfSelectorsCaches,
     nth_last: NthIndexCacheInner,
+    nth_last_of_selectors: NthIndexOfSelectorsCaches,
     nth_of_type: NthIndexCacheInner,
     nth_last_of_type: NthIndexCacheInner,
 }
 
 impl NthIndexCache {
     
-    pub fn get(&mut self, is_of_type: bool, is_from_end: bool) -> &mut NthIndexCacheInner {
-        match (is_of_type, is_from_end) {
-            (false, false) => &mut self.nth,
-            (false, true) => &mut self.nth_last,
-            (true, false) => &mut self.nth_of_type,
-            (true, true) => &mut self.nth_last_of_type,
+    pub fn get<Impl: SelectorImpl>(
+        &mut self,
+        is_of_type: bool,
+        is_from_end: bool,
+        selectors: &[Selector<Impl>],
+    ) -> &mut NthIndexCacheInner {
+        if is_of_type {
+            return if is_from_end {
+                &mut self.nth_last_of_type
+            } else {
+                &mut self.nth_of_type
+            };
         }
+        if !selectors.is_empty() {
+            return if is_from_end {
+                self.nth_last_of_selectors.lookup(selectors)
+            } else {
+                self.nth_of_selectors.lookup(selectors)
+            };
+        }
+        if is_from_end {
+            &mut self.nth_last
+        } else {
+            &mut self.nth
+        }
+    }
+}
+
+#[derive(Hash, Eq, PartialEq)]
+struct SelectorListCacheKey(usize);
+
+
+impl SelectorListCacheKey {
+    
+    fn new<Impl: SelectorImpl>(selectors: &[Selector<Impl>]) -> Self {
+        Self(selectors.as_ptr() as usize)
+    }
+}
+
+
+#[derive(Default)]
+pub struct NthIndexOfSelectorsCaches(FxHashMap<SelectorListCacheKey, NthIndexCacheInner>);
+
+
+
+impl NthIndexOfSelectorsCaches {
+    pub fn lookup<Impl: SelectorImpl>(
+        &mut self,
+        selectors: &[Selector<Impl>],
+    ) -> &mut NthIndexCacheInner {
+        self.0
+            .entry(SelectorListCacheKey::new(selectors))
+            .or_default()
     }
 }
 
