@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -65,18 +65,6 @@ const TESTS = [
     trackingUrl:
       "https://www.google.co.uk/search?source=hp&ei=EI_VALUE&q=test&oq=test&gs_l=GS_L_VALUE",
     expectedSearchCountEntry: "google:organic:none",
-  },
-  {
-    title: "Yahoo organic",
-    trackingUrl:
-      "https://search.yahoo.com/search?p=test&fr=yfp-t&fp=1&toggle=1&cop=mss&ei=UTF-8",
-    expectedSearchCountEntry: "yahoo:organic:none",
-  },
-  {
-    title: "Yahoo organic UK",
-    trackingUrl:
-      "https://uk.search.yahoo.com/search?p=test&fr=yfp-t&fp=1&toggle=1&cop=mss&ei=UTF-8",
-    expectedSearchCountEntry: "yahoo:organic:none",
   },
   {
     title: "Bing search access point",
@@ -212,21 +200,37 @@ const TESTS = [
       "https://www.baidu.com/s?ie=utf-8&f=8&rsv_bp=1&rsv_idx=1&ch=&bar=&wd=test&rn=&oq&rsv_pq=RSV_PQ_VALUE&rsv_t=RSV_T_VALUE&rqlang=cn",
     expectedSearchCountEntry: "baidu:organic:none",
   },
+  {
+    title: "Ecosia search access point",
+    trackingUrl: "https://www.ecosia.org/search?tt=mzl&q=foo",
+    expectedSearchCountEntry: "ecosia:tagged:mzl",
+    expectedAdKey: "ecosia:tagged",
+    adUrls: ["https://www.bing.com/aclick?ld=foo"],
+    nonAdUrls: [],
+  },
+  {
+    title: "Ecosia organic",
+    trackingUrl: "https://www.ecosia.org/search?method=index&q=foo",
+    expectedSearchCountEntry: "ecosia:organic:none",
+    expectedAdKey: "ecosia:organic",
+    adUrls: ["https://www.bing.com/aclick?ld=foo"],
+    nonAdUrls: [],
+  },
 ];
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This function is primarily for testing the Ad URL regexps that are triggered
+ * when a URL is clicked on. These regexps are also used for the `with_ads`
+ * probe. However, we test the ad_clicks route as that is easier to hit.
+ *
+ * @param {string} serpUrl
+ *   The url to simulate where the page the click came from.
+ * @param {string} adUrl
+ *   The ad url to simulate being clicked.
+ * @param {string} [expectedAdKey]
+ *   The expected key to be logged for the scalar. Omit if no scalar should be
+ *   logged.
+ */
 async function testAdUrlClicked(serpUrl, adUrl, expectedAdKey) {
   info(`Testing Ad URL: ${adUrl}`);
   let channel = NetUtil.newChannel({
@@ -242,8 +246,8 @@ async function testAdUrlClicked(serpUrl, adUrl, expectedAdKey) {
     Ci.nsIHttpActivityObserver.ACTIVITY_TYPE_HTTP_TRANSACTION,
     Ci.nsIHttpActivityObserver.ACTIVITY_SUBTYPE_TRANSACTION_CLOSE
   );
-  
-  
+  // Since the content handler takes a moment to allow the channel information
+  // to settle down, wait the same amount of time here.
   await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
 
   const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
