@@ -20,24 +20,16 @@
 #include "api/call/audio_sink.h"
 #include "api/media_stream_interface.h"
 #include "api/notifier.h"
+#include "api/task_queue/task_queue_base.h"
 #include "media/base/media_channel.h"
-#include "rtc_base/message_handler.h"
 #include "rtc_base/synchronization/mutex.h"
-#include "rtc_base/thread.h"
-#include "rtc_base/thread_message.h"
-
-namespace rtc {
-struct Message;
-class Thread;
-}  
 
 namespace webrtc {
 
 
 
 
-class RemoteAudioSource : public Notifier<AudioSourceInterface>,
-                          rtc::MessageHandler {
+class RemoteAudioSource : public Notifier<AudioSourceInterface> {
  public:
   
   
@@ -52,7 +44,7 @@ class RemoteAudioSource : public Notifier<AudioSourceInterface>,
   };
 
   explicit RemoteAudioSource(
-      rtc::Thread* worker_thread,
+      TaskQueueBase* worker_thread,
       OnAudioChannelGoneAction on_audio_channel_gone_action);
 
   
@@ -85,10 +77,8 @@ class RemoteAudioSource : public Notifier<AudioSourceInterface>,
   void OnData(const AudioSinkInterface::Data& audio);
   void OnAudioChannelGone();
 
-  void OnMessage(rtc::Message* msg) override;
-
-  rtc::Thread* const main_thread_;
-  rtc::Thread* const worker_thread_;
+  TaskQueueBase* const main_thread_;
+  TaskQueueBase* const worker_thread_;
   const OnAudioChannelGoneAction on_audio_channel_gone_action_;
   std::list<AudioObserver*> audio_observers_;
   Mutex sink_lock_;
