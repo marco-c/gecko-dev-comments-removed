@@ -2,19 +2,13 @@
 
 
 
-use std::{
-    fs::remove_file,
-    mem,
-    path::PathBuf,
-    sync::{Arc, Mutex, MutexGuard},
-};
+use std::{fs::remove_file, path::PathBuf, sync::Arc};
 
-use golden_gate::{ApplyResults, BridgedEngine, Guid, IncomingBso};
 use interrupt_support::SqlInterruptHandle;
 use once_cell::sync::OnceCell;
 use webext_storage::store::Store;
 
-use crate::error::{Error, Result};
+use crate::error::{self, Error};
 
 
 pub struct LazyStoreConfig {
@@ -37,19 +31,15 @@ pub struct LazyStore {
 
 
 
-
-
-
-
 struct InterruptStore {
-    inner: Mutex<Store>,
+    inner: Store,
     handle: Arc<SqlInterruptHandle>,
 }
 
 impl LazyStore {
     
     
-    pub fn configure(&self, config: LazyStoreConfig) -> Result<()> {
+    pub fn configure(&self, config: LazyStoreConfig) -> error::Result<()> {
         self.config
             .set(config)
             .map_err(|_| Error::AlreadyConfigured)
@@ -69,43 +59,29 @@ impl LazyStore {
     
     
     
-    pub fn get(&self) -> Result<MutexGuard<'_, Store>> {
-        Ok(self
+    pub fn get(&self) -> error::Result<&Store> {
+        Ok(&self
             .store
             .get_or_try_init(|| match self.config.get() {
                 Some(config) => {
                     let store = init_store(config)?;
                     let handle = store.interrupt_handle();
                     Ok(InterruptStore {
-                        inner: Mutex::new(store),
+                        inner: store,
                         handle,
                     })
                 }
                 None => Err(Error::NotConfigured),
             })?
-            .inner
-            .lock()
-            .unwrap())
+            .inner)
     }
 
     
     
     
-    pub fn teardown(self) -> Result<()> {
-        if let Some(store) = self
-            .store
-            .into_inner()
-            .map(|outer| outer.inner.into_inner().unwrap())
-        {
-            if let Err((store, error)) = store.close() {
-                
-                
-                
-                
-                
-                mem::forget(store);
-                return Err(error.into());
-            }
+    pub fn teardown(self) -> error::Result<()> {
+        if let Some(store) = self.store.into_inner() {
+            store.inner.close()?;
         }
         Ok(())
     }
@@ -122,92 +98,7 @@ impl LazyStore {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-impl BridgedEngine for LazyStore {
-    type Error = Error;
-
-    fn last_sync(&self) -> Result<i64> {
-        Ok(self.get()?.bridged_engine().last_sync()?)
-    }
-
-    fn set_last_sync(&self, last_sync_millis: i64) -> Result<()> {
-        Ok(self
-            .get()?
-            .bridged_engine()
-            .set_last_sync(last_sync_millis)?)
-    }
-
-    fn sync_id(&self) -> Result<Option<String>> {
-        Ok(self.get()?.bridged_engine().sync_id()?)
-    }
-
-    fn reset_sync_id(&self) -> Result<String> {
-        Ok(self.get()?.bridged_engine().reset_sync_id()?)
-    }
-
-    fn ensure_current_sync_id(&self, new_sync_id: &str) -> Result<String> {
-        Ok(self
-            .get()?
-            .bridged_engine()
-            .ensure_current_sync_id(new_sync_id)?)
-    }
-
-    fn sync_started(&self) -> Result<()> {
-        Ok(self.get()?.bridged_engine().sync_started()?)
-    }
-
-    fn store_incoming(&self, envelopes: Vec<IncomingBso>) -> Result<()> {
-        Ok(self.get()?.bridged_engine().store_incoming(envelopes)?)
-    }
-
-    fn apply(&self) -> Result<ApplyResults> {
-        Ok(self.get()?.bridged_engine().apply()?)
-    }
-
-    fn set_uploaded(&self, server_modified_millis: i64, ids: &[Guid]) -> Result<()> {
-        Ok(self
-            .get()?
-            .bridged_engine()
-            .set_uploaded(server_modified_millis, ids)?)
-    }
-
-    fn sync_finished(&self) -> Result<()> {
-        Ok(self.get()?.bridged_engine().sync_finished()?)
-    }
-
-    fn reset(&self) -> Result<()> {
-        Ok(self.get()?.bridged_engine().reset()?)
-    }
-
-    fn wipe(&self) -> Result<()> {
-        Ok(self.get()?.bridged_engine().wipe()?)
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-fn init_store(config: &LazyStoreConfig) -> Result<Store> {
+fn init_store(config: &LazyStoreConfig) -> error::Result<Store> {
     let should_migrate = config.kinto_path.exists() && !config.path.exists();
     let store = Store::new(&config.path)?;
     if should_migrate {
@@ -222,23 +113,19 @@ fn init_store(config: &LazyStoreConfig) -> Result<Store> {
                 Ok(store)
             }
             Err(e) => {
-                println!("extension-storage: migration failure: {}", e);
-                if let Err((store, e)) = store.close() {
+                println!("extension-storage: migration failure: {e}");
+                if let Err(e) = store.close() {
                     
                     println!(
-                        "extension-storage: failed to close the store after migration failure: {}",
-                        e
+                        "extension-storage: failed to close the store after migration failure: {e}"
                     );
-                    
-                    
-                    mem::drop(store);
                 }
                 if let Err(e) = remove_file(&config.path) {
                     
                     
                     
                     
-                    println!("Failed to remove file after failed migration: {}", e);
+                    println!("Failed to remove file after failed migration: {e}");
                 }
                 Err(Error::MigrationFailed(e))
             }

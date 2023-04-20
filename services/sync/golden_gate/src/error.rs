@@ -36,7 +36,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Error::Nsresult(result) => write!(f, "Operation failed with {}", result.error_name()),
-            Error::DidNotRun(what) => write!(f, "Failed to run `{}` on background thread", what),
+            Error::DidNotRun(what) => write!(f, "Failed to run `{what}` on background thread"),
             Error::MalformedString(error) => error.fmt(f),
         }
     }
@@ -69,18 +69,3 @@ impl From<Error> for nsresult {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-pub trait BridgedError: From<Error> + Into<nsresult> + fmt::Display + Send + Sync {}
-
-impl<T> BridgedError for T where T: From<Error> + Into<nsresult> + fmt::Display + Send + Sync {}

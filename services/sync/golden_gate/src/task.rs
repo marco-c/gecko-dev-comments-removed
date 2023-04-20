@@ -2,15 +2,11 @@
 
 
 
-use std::{
-    fmt::Write,
-    mem, result,
-    sync::{Arc, Weak},
-};
+use std::{fmt::Write, mem, result};
 
 use atomic_refcell::AtomicRefCell;
 use moz_task::{DispatchOptions, Task, TaskRunnable, ThreadPtrHandle, ThreadPtrHolder};
-use nserror::nsresult;
+use nserror::{nsresult, NS_ERROR_FAILURE};
 use nsstring::{nsACString, nsCString};
 use sync15::engine::{ApplyResults, BridgedEngine};
 use sync15::Guid;
@@ -22,55 +18,57 @@ use xpcom::{
     RefPtr,
 };
 
-use crate::error::{BridgedError, Error, Result};
+use crate::error::{Error, Result};
 use crate::ferry::{Ferry, FerryResult};
 
 
 
 
-pub struct FerryTask<N: ?Sized + BridgedEngine> {
+pub struct FerryTask {
     
     
     
     
     
     
-    engine: Weak<N>,
+    
+    
+    
+    
+    
+    
+    engine: Box<dyn BridgedEngine>,
     ferry: Ferry,
     callback: ThreadPtrHandle<mozIBridgedSyncEngineCallback>,
-    result: AtomicRefCell<result::Result<FerryResult, N::Error>>,
+    result: AtomicRefCell<anyhow::Result<FerryResult>>,
 }
 
-impl<N> FerryTask<N>
-where
-    N: ?Sized + BridgedEngine + Send + Sync + 'static,
-    N::Error: BridgedError,
-{
+impl FerryTask {
     
     #[inline]
     pub fn for_last_sync(
-        engine: &Arc<N>,
+        engine: Box<dyn BridgedEngine>,
         callback: &mozIBridgedSyncEngineCallback,
-    ) -> Result<FerryTask<N>> {
+    ) -> Result<FerryTask> {
         Self::with_ferry(engine, Ferry::LastSync, callback)
     }
 
     
     #[inline]
     pub fn for_set_last_sync(
-        engine: &Arc<N>,
+        engine: Box<dyn BridgedEngine>,
         last_sync_millis: i64,
         callback: &mozIBridgedSyncEngineCallback,
-    ) -> Result<FerryTask<N>> {
+    ) -> Result<FerryTask> {
         Self::with_ferry(engine, Ferry::SetLastSync(last_sync_millis), callback)
     }
 
     
     #[inline]
     pub fn for_sync_id(
-        engine: &Arc<N>,
+        engine: Box<dyn BridgedEngine>,
         callback: &mozIBridgedSyncEngineCallback,
-    ) -> Result<FerryTask<N>> {
+    ) -> Result<FerryTask> {
         Self::with_ferry(engine, Ferry::SyncId, callback)
     }
 
@@ -78,9 +76,9 @@ where
     
     #[inline]
     pub fn for_reset_sync_id(
-        engine: &Arc<N>,
+        engine: Box<dyn BridgedEngine>,
         callback: &mozIBridgedSyncEngineCallback,
-    ) -> Result<FerryTask<N>> {
+    ) -> Result<FerryTask> {
         Self::with_ferry(engine, Ferry::ResetSyncId, callback)
     }
 
@@ -89,10 +87,10 @@ where
     
     #[inline]
     pub fn for_ensure_current_sync_id(
-        engine: &Arc<N>,
+        engine: Box<dyn BridgedEngine>,
         new_sync_id: &nsACString,
         callback: &mozIBridgedSyncEngineCallback,
-    ) -> Result<FerryTask<N>> {
+    ) -> Result<FerryTask> {
         Self::with_ferry(
             engine,
             Ferry::EnsureCurrentSyncId(std::str::from_utf8(new_sync_id)?.into()),
@@ -103,18 +101,18 @@ where
     
     #[inline]
     pub fn for_sync_started(
-        engine: &Arc<N>,
+        engine: Box<dyn BridgedEngine>,
         callback: &mozIBridgedSyncEngineCallback,
-    ) -> Result<FerryTask<N>> {
+    ) -> Result<FerryTask> {
         Self::with_ferry(engine, Ferry::SyncStarted, callback)
     }
 
     
     pub fn for_store_incoming(
-        engine: &Arc<N>,
+        engine: Box<dyn BridgedEngine>,
         incoming_envelopes_json: &[nsCString],
         callback: &mozIBridgedSyncEngineCallback,
-    ) -> Result<FerryTask<N>> {
+    ) -> Result<FerryTask> {
         Self::with_ferry(
             engine,
             Ferry::StoreIncoming(incoming_envelopes_json.to_vec()),
@@ -126,14 +124,14 @@ where
     
     
     pub fn for_set_uploaded(
-        engine: &Arc<N>,
+        engine: Box<dyn BridgedEngine>,
         server_modified_millis: i64,
         uploaded_ids: &[nsCString],
         callback: &mozIBridgedSyncEngineCallback,
-    ) -> Result<FerryTask<N>> {
+    ) -> Result<FerryTask> {
         let uploaded_ids = uploaded_ids
             .iter()
-            .map(|id| Guid::from_slice(&*id))
+            .map(|id| Guid::from_slice(id))
             .collect();
         Self::with_ferry(
             engine,
@@ -147,9 +145,9 @@ where
     
     #[inline]
     pub fn for_sync_finished(
-        engine: &Arc<N>,
+        engine: Box<dyn BridgedEngine>,
         callback: &mozIBridgedSyncEngineCallback,
-    ) -> Result<FerryTask<N>> {
+    ) -> Result<FerryTask> {
         Self::with_ferry(engine, Ferry::SyncFinished, callback)
     }
 
@@ -157,18 +155,18 @@ where
     
     #[inline]
     pub fn for_reset(
-        engine: &Arc<N>,
+        engine: Box<dyn BridgedEngine>,
         callback: &mozIBridgedSyncEngineCallback,
-    ) -> Result<FerryTask<N>> {
+    ) -> Result<FerryTask> {
         Self::with_ferry(engine, Ferry::Reset, callback)
     }
 
     
     #[inline]
     pub fn for_wipe(
-        engine: &Arc<N>,
+        engine: Box<dyn BridgedEngine>,
         callback: &mozIBridgedSyncEngineCallback,
-    ) -> Result<FerryTask<N>> {
+    ) -> Result<FerryTask> {
         Self::with_ferry(engine, Ferry::Wipe, callback)
     }
 
@@ -176,13 +174,13 @@ where
     
     
     fn with_ferry(
-        engine: &Arc<N>,
+        engine: Box<dyn BridgedEngine>,
         ferry: Ferry,
         callback: &mozIBridgedSyncEngineCallback,
-    ) -> Result<FerryTask<N>> {
+    ) -> Result<FerryTask> {
         let name = ferry.name();
         Ok(FerryTask {
-            engine: Arc::downgrade(engine),
+            engine,
             ferry,
             callback: ThreadPtrHolder::new(
                 cstr!("mozIBridgedSyncEngineCallback"),
@@ -204,20 +202,11 @@ where
         )?;
         Ok(())
     }
-}
 
-impl<N> FerryTask<N>
-where
-    N: ?Sized + BridgedEngine,
-    N::Error: BridgedError,
-{
     
     
-    fn inner_run(&self) -> result::Result<FerryResult, N::Error> {
-        let engine = match self.engine.upgrade() {
-            Some(outer) => outer,
-            None => return Err(Error::DidNotRun(self.ferry.name()).into()),
-        };
+    fn inner_run(&self) -> anyhow::Result<FerryResult> {
+        let engine = &self.engine;
         Ok(match &self.ferry {
             Ferry::LastSync => FerryResult::LastSync(engine.last_sync()?),
             Ferry::SetLastSync(last_sync_millis) => {
@@ -227,7 +216,7 @@ where
             Ferry::SyncId => FerryResult::SyncId(engine.sync_id()?),
             Ferry::ResetSyncId => FerryResult::AssignedSyncId(engine.reset_sync_id()?),
             Ferry::EnsureCurrentSyncId(new_sync_id) => {
-                FerryResult::AssignedSyncId(engine.ensure_current_sync_id(&*new_sync_id)?)
+                FerryResult::AssignedSyncId(engine.ensure_current_sync_id(new_sync_id)?)
             }
             Ferry::SyncStarted => {
                 engine.sync_started()?;
@@ -236,7 +225,7 @@ where
             Ferry::StoreIncoming(incoming_envelopes_json) => {
                 let incoming_envelopes = incoming_envelopes_json
                     .iter()
-                    .map(|envelope| Ok(serde_json::from_slice(&*envelope)?))
+                    .map(|envelope| Ok(serde_json::from_slice(envelope)?))
                     .collect::<Result<_>>()?;
 
                 engine.store_incoming(incoming_envelopes)?;
@@ -262,11 +251,7 @@ where
     }
 }
 
-impl<N> Task for FerryTask<N>
-where
-    N: ?Sized + BridgedEngine,
-    N::Error: BridgedError,
-{
+impl Task for FerryTask {
     fn run(&self) {
         *self.result.borrow_mut() = self.inner_run();
     }
@@ -280,8 +265,8 @@ where
             Ok(result) => unsafe { callback.HandleSuccess(result.into_variant().coerce()) },
             Err(err) => {
                 let mut message = nsCString::new();
-                write!(message, "{}", err).unwrap();
-                unsafe { callback.HandleError(err.into(), &*message) }
+                write!(message, "{err}").unwrap();
+                unsafe { callback.HandleError(NS_ERROR_FAILURE, &*message) }
             }
         }
         .to_result()
@@ -291,53 +276,39 @@ where
 
 
 
-pub struct ApplyTask<N: ?Sized + BridgedEngine> {
-    engine: Weak<N>,
+pub struct ApplyTask {
+    engine: Box<dyn BridgedEngine>,
     callback: ThreadPtrHandle<mozIBridgedSyncEngineApplyCallback>,
-    result: AtomicRefCell<result::Result<Vec<String>, N::Error>>,
+    result: AtomicRefCell<anyhow::Result<Vec<String>>>,
 }
 
-impl<N> ApplyTask<N>
-where
-    N: ?Sized + BridgedEngine,
-    N::Error: BridgedError,
-{
+impl ApplyTask {
     
     pub fn name() -> &'static str {
         concat!(module_path!(), "apply")
     }
 
     
-    fn inner_run(&self) -> result::Result<Vec<String>, N::Error> {
-        let engine = match self.engine.upgrade() {
-            Some(outer) => outer,
-            None => return Err(Error::DidNotRun(Self::name()).into()),
-        };
+    fn inner_run(&self) -> anyhow::Result<Vec<String>> {
         let ApplyResults {
             records: outgoing_records,
             ..
-        } = engine.apply()?;
+        } = self.engine.apply()?;
         let outgoing_records_json = outgoing_records
             .iter()
             .map(|record| Ok(serde_json::to_string(record)?))
             .collect::<Result<_>>()?;
         Ok(outgoing_records_json)
     }
-}
 
-impl<N> ApplyTask<N>
-where
-    N: ?Sized + BridgedEngine + Send + Sync + 'static,
-    N::Error: BridgedError,
-{
     
     
     pub fn new(
-        engine: &Arc<N>,
+        engine: Box<dyn BridgedEngine>,
         callback: &mozIBridgedSyncEngineApplyCallback,
-    ) -> Result<ApplyTask<N>> {
+    ) -> Result<ApplyTask> {
         Ok(ApplyTask {
-            engine: Arc::downgrade(engine),
+            engine,
             callback: ThreadPtrHolder::new(
                 cstr!("mozIBridgedSyncEngineApplyCallback"),
                 RefPtr::new(callback),
@@ -358,11 +329,7 @@ where
     }
 }
 
-impl<N> Task for ApplyTask<N>
-where
-    N: ?Sized + BridgedEngine,
-    N::Error: BridgedError,
-{
+impl Task for ApplyTask {
     fn run(&self) {
         *self.result.borrow_mut() = self.inner_run();
     }
@@ -382,8 +349,8 @@ where
             }
             Err(err) => {
                 let mut message = nsCString::new();
-                write!(message, "{}", err).unwrap();
-                unsafe { callback.HandleError(err.into(), &*message) }
+                write!(message, "{err}").unwrap();
+                unsafe { callback.HandleError(NS_ERROR_FAILURE, &*message) }
             }
         }
         .to_result()
