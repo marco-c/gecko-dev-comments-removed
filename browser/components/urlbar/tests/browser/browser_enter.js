@@ -93,12 +93,6 @@ add_task(async function altGrReturnKeypress() {
 
 add_task(async function searchOnEnterNoPick() {
   info("Search on Enter without picking a urlbar result");
-  await SpecialPowers.pushPrefEnv({
-    
-    
-    
-    set: [["browser.urlbar.showSearchTerms.featureGate", false]],
-  });
 
   
   let promiseTabOpened = BrowserTestUtils.waitForEvent(
@@ -132,7 +126,6 @@ add_task(async function searchOnEnterNoPick() {
 
   
   BrowserTestUtils.removeTab(tab);
-  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function searchOnEnterSoon() {
