@@ -254,18 +254,6 @@ class PendingStyles final {
 
 
 
-
-  UniquePtr<PendingStyle> TakePreservedStyle() {
-    if (mPreservingStyles.IsEmpty()) {
-      return nullptr;
-    }
-    return mPreservingStyles.PopLastElement();
-  }
-
-  
-
-
-
   void TakeAllPreservedStyles(
       nsTArray<EditorInlineStyleAndValue>& aOutStylesAndValues);
 

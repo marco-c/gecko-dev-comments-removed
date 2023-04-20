@@ -1685,7 +1685,10 @@ EditorRawDOMPoint HTMLEditor::AutoInlineStyleSetter::
   MOZ_ASSERT(aStartPoint.IsSetAndValid());
 
   EditorRawDOMPoint startPoint = aStartPoint;
-  if (!startPoint.IsStartOfContainer()) {
+  
+  
+  if (!startPoint.IsStartOfContainer() ||
+      startPoint.GetContainer()->GetPreviousSibling()) {
     return startPoint;
   }
 
@@ -1727,7 +1730,10 @@ EditorRawDOMPoint HTMLEditor::AutoInlineStyleSetter::
   MOZ_ASSERT(aEndPoint.IsSetAndValid());
 
   EditorRawDOMPoint endPoint = aEndPoint;
-  if (!endPoint.IsEndOfContainer()) {
+  
+  
+  if (!endPoint.IsEndOfContainer() ||
+      endPoint.GetContainer()->GetNextSibling()) {
     return endPoint;
   }
 
