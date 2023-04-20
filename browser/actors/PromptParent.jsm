@@ -314,18 +314,39 @@ class PromptParent extends JSWindowActorParent {
         if (dialogBox._allowTabFocusByPromptPrincipal) {
           this.addTabSwitchCheckboxToArgs(dialogBox, args);
         }
-
+        if (args.isTopLevelCrossDomainAuth) {
+          
+          
+          
+          
+          
+          browser.currentAuthPromptURI = args.channel.URI;
+          if (browser == win.gBrowser.selectedBrowser) {
+            win.gURLBar.setURI();
+          }
+        }
         bag = lazy.PromptUtils.objectToPropBag(args);
-        await dialogBox.open(
-          uri,
-          {
-            features: "resizable=no",
-            modalType: args.modalType,
-            allowFocusCheckbox: args.allowFocusCheckbox,
-            hideContent: args.isTopLevelCrossDomainAuth,
-          },
-          bag
-        ).closedPromise;
+        try {
+          await dialogBox.open(
+            uri,
+            {
+              features: "resizable=no",
+              modalType: args.modalType,
+              allowFocusCheckbox: args.allowFocusCheckbox,
+              hideContent: args.isTopLevelCrossDomainAuth,
+            },
+            bag
+          ).closedPromise;
+        } finally {
+          if (args.isTopLevelCrossDomainAuth) {
+            browser.currentAuthPromptURI = null;
+            
+            
+            if (browser == win.gBrowser.selectedBrowser) {
+              win.gURLBar.setURI();
+            }
+          }
+        }
       } else {
         
         

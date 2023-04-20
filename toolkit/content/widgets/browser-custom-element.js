@@ -105,7 +105,11 @@
 
       this._originalURI = null;
       this._showingSearchTerms = false;
-
+      
+      
+      
+      
+      this._currentAuthPromptURI = null;
       
 
 
@@ -234,6 +238,8 @@
 
       this._originalURI = null;
 
+      this._currentAuthPromptURI = null;
+
       this._showingSearchTerms = false;
 
       this._documentContentType = null;
@@ -343,7 +349,14 @@
       return this.webNavigation.canGoForward;
     }
 
+    
+    
+    
+    
     get currentURI() {
+      if (this.currentAuthPromptURI) {
+        return this.currentAuthPromptURI;
+      }
       if (this.webNavigation) {
         return this.webNavigation.currentURI;
       }
@@ -739,6 +752,13 @@
       return this._showingSearchTerms;
     }
 
+    set currentAuthPromptURI(aURI) {
+      this._currentAuthPromptURI = aURI;
+    }
+
+    get currentAuthPromptURI() {
+      return this._currentAuthPromptURI;
+    }
     _wrapURIChangeCall(fn) {
       if (!this.isRemoteBrowser) {
         this.isNavigating = true;
