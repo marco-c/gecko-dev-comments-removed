@@ -251,31 +251,20 @@ class CrashInfo(object):
             stackwalk_binary = os.environ.get("MINIDUMP_STACKWALK", None)
         if stackwalk_binary is None:
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            possible_names = ["minidump-stackwalk", "minidump_stackwalk"]
+            executable_name = "minidump-stackwalk"
             state_dir = os.environ.get(
                 "MOZBUILD_STATE_PATH",
                 os.path.expanduser(os.path.join("~", ".mozbuild")),
             )
-            for possible_name in possible_names:
-                stackwalk_binary = os.path.join(state_dir, possible_name, possible_name)
-                if mozinfo.isWin and not stackwalk_binary.endswith(".exe"):
-                    stackwalk_binary += ".exe"
-                if os.path.exists(stackwalk_binary):
-                    
-                    
-                    
-                    
-                    self.brief_output = True
-                    break
+            stackwalk_binary = os.path.join(state_dir, executable_name, executable_name)
+            if mozinfo.isWin and not stackwalk_binary.endswith(".exe"):
+                stackwalk_binary += ".exe"
+            if os.path.exists(stackwalk_binary):
+                
+                
+                
+                
+                self.brief_output = True
 
         self.stackwalk_binary = stackwalk_binary
 
@@ -358,7 +347,6 @@ class CrashInfo(object):
 
         errors = []
         signature = None
-        include_stderr = False
         out = None
         err = None
         retcode = None
@@ -370,44 +358,6 @@ class CrashInfo(object):
             and os.access(self.stackwalk_binary, os.X_OK)
         ):
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            stackwalk_version_check = subprocess.Popen(
-                [self.stackwalk_binary, "-V"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            stackwalk_version_check.wait()
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            rust_minidump = stackwalk_version_check.returncode == 0
-
-            
             command = [self.stackwalk_binary]
 
             
@@ -416,10 +366,9 @@ class CrashInfo(object):
                 command.append("--symbols-url=https://symbols.mozilla.org/")
 
             
-            if rust_minidump:
-                command.append("--human")
-                if self.brief_output:
-                    command.append("--brief")
+            command.append("--human")
+            if self.brief_output:
+                command.append("--brief")
 
             
             
@@ -470,8 +419,6 @@ class CrashInfo(object):
                                 ):
                                     break
                         break
-            else:
-                include_stderr = True
 
         else:
             if not self.stackwalk_binary:
@@ -506,7 +453,7 @@ class CrashInfo(object):
             path,
             signature,
             out,
-            err if include_stderr else None,
+            err,
             retcode,
             errors,
             extra,
