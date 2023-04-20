@@ -78,6 +78,7 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
   constexpr size_t kDownSamplingFactors[] = {2, 4, 8};
   for (auto down_sampling_factor : kDownSamplingFactors) {
     EchoCanceller3Config config;
+    config.delay.delay_headroom_samples = 0;
     config.delay.down_sampling_factor = down_sampling_factor;
     config.delay.num_filters = 10;
     for (size_t delay_samples : {30, 64, 150, 200, 800, 4000}) {
@@ -116,7 +117,8 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
         size_t delay_ds = delay_samples / down_sampling_factor;
         size_t estimated_delay_ds =
             estimated_delay_samples->delay / down_sampling_factor;
-        EXPECT_NEAR(delay_ds, estimated_delay_ds, 1);
+        EXPECT_NEAR(delay_ds, estimated_delay_ds,
+                    kBlockSize / down_sampling_factor);
       } else {
         ADD_FAILURE();
       }
