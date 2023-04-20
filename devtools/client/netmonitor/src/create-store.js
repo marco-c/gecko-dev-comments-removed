@@ -59,7 +59,7 @@ const {
 
 
 
-function configureStore(connector, telemetry) {
+function configureStore(connector, commands, telemetry) {
   
   const initialState = {
     filters: new Filters({
@@ -81,7 +81,7 @@ function configureStore(connector, telemetry) {
   
   const middleware = applyMiddleware(
     requestBlocking(connector),
-    thunk({ connector }),
+    thunk({ connector, commands }),
     prefs,
     batching,
     throttling(connector),
