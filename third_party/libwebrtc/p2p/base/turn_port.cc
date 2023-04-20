@@ -146,6 +146,7 @@ class TurnEntry : public sigslot::has_slots<> {
  public:
   enum BindState { STATE_UNBOUND, STATE_BINDING, STATE_BOUND };
   TurnEntry(TurnPort* port, Connection* conn, int channel_id);
+  ~TurnEntry();
 
   TurnPort* port() { return port_; }
 
@@ -271,7 +272,7 @@ TurnPort::TurnPort(TaskQueueBase* thread,
       tls_elliptic_curves_(tls_elliptic_curves),
       tls_cert_verifier_(tls_cert_verifier),
       credentials_(credentials),
-      socket_(NULL),
+      socket_(nullptr),
       error_(0),
       stun_dscp_value_(rtc::DSCP_NO_CHANGE),
       request_manager_(
@@ -294,9 +295,7 @@ TurnPort::~TurnPort() {
     Release();
   }
 
-  while (!entries_.empty()) {
-    DestroyEntry(entries_.front());
-  }
+  entries_.clear();
 
   if (socket_)
     socket_->UnsubscribeClose(this);
@@ -547,7 +546,7 @@ void TurnPort::OnAllocateMismatch() {
   } else {
     delete socket_;
   }
-  socket_ = NULL;
+  socket_ = nullptr;
 
   ResetNonce();
   PrepareAddress();
@@ -641,16 +640,7 @@ int TurnPort::SendTo(const void* data,
                      bool payload) {
   
   TurnEntry* entry = FindEntry(addr);
-  if (!entry) {
-    RTC_LOG(LS_ERROR) << "Did not find the TurnEntry for address "
-                      << addr.ToSensitiveString();
-    
-    
-    
-    
-    error_ = EADDRNOTAVAIL;
-    return SOCKET_ERROR;
-  }
+  RTC_DCHECK(entry);
 
   if (!ready()) {
     error_ = ENOTCONN;
@@ -1176,35 +1166,29 @@ void TurnPort::ResetNonce() {
 }
 
 bool TurnPort::HasPermission(const rtc::IPAddress& ipaddr) const {
-  return absl::c_any_of(entries_, [&ipaddr](const TurnEntry* e) {
+  return absl::c_any_of(entries_, [&ipaddr](const auto& e) {
     return e->address().ipaddr() == ipaddr;
   });
 }
 
 TurnEntry* TurnPort::FindEntry(const rtc::SocketAddress& addr) const {
   auto it = absl::c_find_if(
-      entries_, [&addr](const TurnEntry* e) { return e->address() == addr; });
-  return (it != entries_.end()) ? *it : NULL;
+      entries_, [&addr](const auto& e) { return e->address() == addr; });
+  return (it != entries_.end()) ? it->get() : nullptr;
 }
 
 TurnEntry* TurnPort::FindEntry(int channel_id) const {
-  auto it = absl::c_find_if(entries_, [&channel_id](const TurnEntry* e) {
+  auto it = absl::c_find_if(entries_, [&channel_id](const auto& e) {
     return e->channel_id() == channel_id;
   });
-  return (it != entries_.end()) ? *it : NULL;
-}
-
-bool TurnPort::EntryExists(TurnEntry* e) {
-  return absl::c_linear_search(entries_, e);
+  return (it != entries_.end()) ? it->get() : nullptr;
 }
 
 bool TurnPort::CreateOrRefreshEntry(Connection* conn, int channel_number) {
   const Candidate& remote_candidate = conn->remote_candidate();
   TurnEntry* entry = FindEntry(remote_candidate.address());
-
   if (entry == nullptr) {
-    entry = new TurnEntry(this, conn, channel_number);
-    entries_.push_back(entry);
+    entries_.push_back(std::make_unique<TurnEntry>(this, conn, channel_number));
     return true;
   }
 
@@ -1215,26 +1199,12 @@ bool TurnPort::CreateOrRefreshEntry(Connection* conn, int channel_number) {
   return false;
 }
 
-void TurnPort::DestroyEntry(TurnEntry* entry) {
-  entry->destroyed_callback_list_.Send(entry);
-  entries_.remove(entry);
-  delete entry;
-}
-
 void TurnPort::HandleConnectionDestroyed(Connection* conn) {
   
   
   const rtc::SocketAddress& remote_address = conn->remote_candidate().address();
+  
   TurnEntry* entry = FindEntry(remote_address);
-  if (!entry) {
-    
-    
-    
-    
-    RTC_DLOG_F(LS_WARNING) << "Entry has been removed.";
-    return;
-  }
-
   rtc::scoped_refptr<webrtc::PendingTaskSafetyFlag> flag =
       entry->UntrackConnection(conn);
   if (flag) {
@@ -1243,9 +1213,14 @@ void TurnPort::HandleConnectionDestroyed(Connection* conn) {
     
     
     
-    thread()->PostDelayedTask(
-        SafeTask(flag, [this, entry] { DestroyEntry(entry); }),
-        kTurnPermissionTimeout);
+    thread()->PostDelayedTask(SafeTask(flag,
+                                       [this, entry] {
+                                         entries_.erase(absl::c_find_if(
+                                             entries_, [entry](const auto& e) {
+                                               return e.get() == entry;
+                                             }));
+                                       }),
+                              kTurnPermissionTimeout);
   }
 }
 
@@ -1750,6 +1725,10 @@ TurnEntry::TurnEntry(TurnPort* port, Connection* conn, int channel_id)
       connections_({conn}) {
   
   SendCreatePermissionRequest(0);
+}
+
+TurnEntry::~TurnEntry() {
+  destroyed_callback_list_.Send(this);
 }
 
 void TurnEntry::TrackConnection(Connection* conn) {

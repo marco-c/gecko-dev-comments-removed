@@ -13,7 +13,6 @@
 
 #include <stdio.h>
 
-#include <list>
 #include <map>
 #include <memory>
 #include <set>
@@ -239,7 +238,6 @@ class TurnPort : public Port {
   void Close();
 
  private:
-  typedef std::list<TurnEntry*> EntryList;
   typedef std::map<rtc::Socket::Option, int> SocketOptionsMap;
   typedef std::set<rtc::SocketAddress> AttemptedServerSet;
 
@@ -296,8 +294,6 @@ class TurnPort : public Port {
   bool HasPermission(const rtc::IPAddress& ipaddr) const;
   TurnEntry* FindEntry(const rtc::SocketAddress& address) const;
   TurnEntry* FindEntry(int channel_id) const;
-  bool EntryExists(TurnEntry* e);
-  void DestroyEntry(TurnEntry* entry);
 
   
   
@@ -333,7 +329,7 @@ class TurnPort : public Port {
   std::string hash_;   
 
   int next_channel_number_;
-  EntryList entries_;
+  std::vector<std::unique_ptr<TurnEntry>> entries_;
 
   PortState state_;
   
