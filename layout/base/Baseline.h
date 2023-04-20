@@ -24,19 +24,54 @@ class Baseline {
   
 
 
-  static nscoord SynthesizeBOffsetFromMarginBox(const nsIFrame*, WritingMode,
+
+
+
+
+
+
+
+
+
+
+
+  static nscoord SynthesizeBOffsetFromMarginBox(const nsIFrame* aFrame,
+                                                WritingMode aWM,
                                                 BaselineSharingGroup);
 
   
 
 
-  static nscoord SynthesizeBOffsetFromBorderBox(const nsIFrame*, WritingMode,
+
+
+
+
+
+
+
+
+
+
+  static nscoord SynthesizeBOffsetFromBorderBox(const nsIFrame* aFrame,
+                                                WritingMode aWM,
                                                 BaselineSharingGroup);
 
   
 
 
-  static nscoord SynthesizeBOffsetFromContentBox(const nsIFrame*, WritingMode,
+
+
+
+
+
+
+
+
+
+
+
+  static nscoord SynthesizeBOffsetFromContentBox(const nsIFrame* aFrame,
+                                                 WritingMode aWM,
                                                  BaselineSharingGroup);
 };
 
