@@ -32,6 +32,7 @@
 #include "mozilla/Unused.h"
 #include "nsAppRunner.h"  
 #include "stdint.h"
+#include "nsExceptionHandler.h"
 
 #ifdef __SUNPRO_CC
 #  include <stdio.h>
@@ -1286,6 +1287,12 @@ bool fire_glxtest_process() {
     close(pfd[0]);
     write_end_of_the_pipe = pfd[1];
     close_logging();
+    
+    
+    
+    if (CrashReporter::GetEnabled()) {
+      CrashReporter::UnsetExceptionHandler();
+    }
 #if defined(MOZ_ASAN) || defined(FUZZING)
     
     
