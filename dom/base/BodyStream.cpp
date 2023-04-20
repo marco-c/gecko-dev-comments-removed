@@ -68,29 +68,6 @@ void BodyStreamHolder::StoreBodyStream(BodyStream* aBodyStream) {
 
 
 
-class BodyStream::WorkerShutdown final : public WorkerControlRunnable {
- public:
-  WorkerShutdown(WorkerPrivate* aWorkerPrivate, RefPtr<BodyStream> aStream)
-      : WorkerControlRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount),
-        mStream(std::move(aStream)) {}
-
-  bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override {
-    mStream->ReleaseObjects();
-    return true;
-  }
-
-  
-  
-
-  bool PreDispatch(WorkerPrivate* aWorkerPrivate) override { return true; }
-
-  void PostDispatch(WorkerPrivate* aWorkerPrivate,
-                    bool aDispatchResult) override {}
-
- private:
-  RefPtr<BodyStream> mStream;
-};
-
 NS_IMPL_ISUPPORTS(BodyStream, nsIInputStreamCallback, nsIObserver,
                   nsISupportsWeakReference)
 
@@ -581,32 +558,10 @@ void BodyStream::CloseAndReleaseObjects(JSContext* aCx,
 }
 
 void BodyStream::ReleaseObjects() {
-  
-  
-  
-  
-
   MOZ_DIAGNOSTIC_ASSERT(mOwningEventTarget->IsOnCurrentThread());
 
   if (mState == eClosed) {
     
-    return;
-  }
-
-  if (!NS_IsMainThread() && !IsCurrentThreadRunningWorker()) {
-    
-    if (mWorkerRef) {
-      RefPtr<WorkerShutdown> r =
-          new WorkerShutdown(mWorkerRef->Private(), this);
-      Unused << NS_WARN_IF(!r->Dispatch());
-      return;
-    }
-
-    
-    RefPtr<BodyStream> self = this;
-    RefPtr<Runnable> r = NS_NewRunnableFunction(
-        "BodyStream::ReleaseObjects", [self]() { self->ReleaseObjects(); });
-    mOwningEventTarget->Dispatch(r.forget());
     return;
   }
 
@@ -622,19 +577,7 @@ void BodyStream::ReleaseObjects() {
   mWorkerRef = nullptr;
   mGlobal = nullptr;
 
-  
-  
-  
-  
-  GetCurrentSerialEventTarget()->Dispatch(NS_NewCancelableRunnableFunction(
-      "BodyStream::ReleaseObjects",
-      [streamHolder = RefPtr{mStreamHolder->TakeBodyStream()}] {
-        
-        
-        
-        
-        
-      }));
+  RefPtr<BodyStream> self = mStreamHolder->TakeBodyStream();
   mStreamHolder->NullifyStream();
   mStreamHolder = nullptr;
 }
