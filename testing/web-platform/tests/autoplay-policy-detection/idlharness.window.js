@@ -1,0 +1,12 @@
+
+
+
+
+
+'use strict';
+
+idl_test(
+  ['autoplay-detection'],
+  ['html'],
+  idl_array => {}
+);
