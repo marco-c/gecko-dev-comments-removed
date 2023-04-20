@@ -188,7 +188,7 @@ const AbuseReportTestUtils = {
 
   
   getReportDialog() {
-    return Services.ww.getWindowByName("addons-abuse-report-dialog", null);
+    return Services.ww.getWindowByName("addons-abuse-report-dialog");
   },
 
   

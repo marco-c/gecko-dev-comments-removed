@@ -123,6 +123,23 @@ class WindowGlobalChild final : public WindowGlobalActor,
 
   bool SameOriginWithTop();
 
+  
+  
+  
+  
+  
+  
+  bool CanNavigate(dom::BrowsingContext* aTarget, bool aConsiderOpener = true);
+
+  
+  
+  
+  
+  
+  
+  dom::BrowsingContext* FindBrowsingContextWithName(
+      const nsAString& aName, bool aUseEntryGlobalForAccessCheck = true);
+
   nsISupports* GetParentObject();
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
