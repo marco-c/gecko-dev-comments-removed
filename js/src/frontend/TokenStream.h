@@ -1587,7 +1587,7 @@ class TokenStreamCharsShared {
       : cx(cx), fc(fc), charBuffer(fc), parserAtoms(parserAtoms) {}
 
   [[nodiscard]] bool copyCharBufferTo(
-      JSContext* cx, UniquePtr<char16_t[], JS::FreePolicy>* destination);
+      UniquePtr<char16_t[], JS::FreePolicy>* destination);
 
   
 
