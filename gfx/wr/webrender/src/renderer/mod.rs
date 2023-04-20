@@ -42,6 +42,7 @@ use api::{ExternalImageSource, ExternalImageType, ImageFormat, PremultipliedColo
 use api::{PipelineId, ImageRendering, Checkpoint, NotificationRequest, ImageBufferKind};
 #[cfg(feature = "replay")]
 use api::ExternalImage;
+use api::FramePublishId;
 use api::units::*;
 use api::channel::{Sender, Receiver};
 pub use api::DebugFlags;
@@ -874,6 +875,13 @@ pub struct Renderer {
     
     
     consecutive_oom_frames: u32,
+
+    
+    
+    target_frame_publish_id: Option<FramePublishId>,
+
+    
+    pending_result_msg: Option<ResultMsg>,
 }
 
 #[derive(Debug)]
@@ -943,6 +951,25 @@ impl Renderer {
         self.pipeline_info.epochs.get(&(pipeline_id, document_id)).cloned()
     }
 
+    fn get_next_result_msg(&mut self) -> Option<ResultMsg> {
+        if self.pending_result_msg.is_none() {
+            if let Ok(msg) = self.result_rx.try_recv() {
+                self.pending_result_msg = Some(msg);
+            }
+        }
+
+        match (&self.pending_result_msg, &self.target_frame_publish_id) {
+          (Some(ResultMsg::PublishDocument(frame_publish_id, _, _, _)), Some(target_id)) => {
+            if frame_publish_id > target_id {
+              return None;
+            }
+          }
+          _ => {}
+        }
+
+        self.pending_result_msg.take()
+    }
+
     
     
     
@@ -950,7 +977,7 @@ impl Renderer {
         profile_scope!("update");
 
         
-        while let Ok(msg) = self.result_rx.try_recv() {
+        while let Some(msg) = self.get_next_result_msg() {
             match msg {
                 ResultMsg::PublishPipelineInfo(mut pipeline_info) => {
                     for ((pipeline_id, document_id), epoch) in pipeline_info.epochs {
@@ -959,6 +986,7 @@ impl Renderer {
                     self.pipeline_info.removed_pipelines.extend(pipeline_info.removed_pipelines.drain(..));
                 }
                 ResultMsg::PublishDocument(
+                    _,
                     document_id,
                     mut doc,
                     resource_update_list,
@@ -1122,6 +1150,12 @@ impl Renderer {
                 }
             }
         }
+    }
+
+    
+    
+    pub fn set_target_frame_publish_id(&mut self, publish_id: FramePublishId) {
+        self.target_frame_publish_id = Some(publish_id);
     }
 
     fn handle_debug_command(&mut self, command: DebugCommand) {

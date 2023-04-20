@@ -163,6 +163,35 @@ impl PipelineId {
     pub const INVALID: Self = PipelineId(!0, !0);
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+pub struct FramePublishId(pub u64);
+
+impl FramePublishId {
+    
+    
+    
+    
+    
+    pub fn first() -> Self {
+        FramePublishId(0)
+    }
+
+    
+    pub fn advance(&mut self) {
+        self.0 += 1;
+    }
+
+    
+    
+    pub const INVALID: Self = FramePublishId(0);
+}
+
+impl Default for FramePublishId {
+    fn default() -> Self {
+        FramePublishId::INVALID
+    }
+}
 
 
 #[repr(C)]
@@ -220,7 +249,7 @@ pub trait RenderNotifier: Send {
         composite_needed: bool,
     );
     
-    fn new_frame_ready(&self, _: DocumentId, scrolled: bool, composite_needed: bool);
+    fn new_frame_ready(&self, _: DocumentId, scrolled: bool, composite_needed: bool, frame_publish_id: FramePublishId);
     
     
     
