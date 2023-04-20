@@ -62,7 +62,13 @@ void RemoteAccessibleBase<Derived>::Shutdown() {
     
     
     
-    PruneRelationsOnShutdown();
+    
+    
+    
+    
+    
+    
+    Unused << mDoc->mReverseRelations.Remove(ID());
   }
 
   
@@ -872,7 +878,8 @@ Relation RemoteAccessibleBase<Derived>::RelationByType(
   }
 
   if (auto accRelMapEntry = mDoc->mReverseRelations.Lookup(ID())) {
-    if (auto reverseIdsEntry = accRelMapEntry.Data().Lookup(aType)) {
+    if (auto reverseIdsEntry =
+            accRelMapEntry.Data().Lookup(static_cast<uint64_t>(aType))) {
       rel.AppendIter(new RemoteAccIterator(reverseIdsEntry.Data(), Document()));
     }
   }
@@ -966,8 +973,8 @@ nsTArray<bool> RemoteAccessibleBase<Derived>::PreProcessRelations(
             
             
             
-            nsTArray<uint64_t>& reverseRelIDs =
-                reverseRels->LookupOrInsert(data.mReverseType);
+            nsTArray<uint64_t>& reverseRelIDs = reverseRels->LookupOrInsert(
+                static_cast<uint64_t>(data.mReverseType));
             
             
             DebugOnly<bool> removed = reverseRelIDs.RemoveElement(ID());
@@ -999,50 +1006,14 @@ void RemoteAccessibleBase<Derived>::PostProcessRelations(
       const nsTArray<uint64_t>& newIDs =
           *mCachedFields->GetAttribute<nsTArray<uint64_t>>(data.mAtom);
       for (uint64_t id : newIDs) {
-        nsTHashMap<RelationType, nsTArray<uint64_t>>& relations =
+        nsTHashMap<nsUint64HashKey, nsTArray<uint64_t>>& relations =
             Document()->mReverseRelations.LookupOrInsert(id);
-        nsTArray<uint64_t>& ids = relations.LookupOrInsert(data.mReverseType);
+        nsTArray<uint64_t>& ids =
+            relations.LookupOrInsert(static_cast<uint64_t>(data.mReverseType));
         ids.AppendElement(ID());
       }
     }
   }
-}
-
-template <class Derived>
-void RemoteAccessibleBase<Derived>::PruneRelationsOnShutdown() {
-  auto reverseRels = mDoc->mReverseRelations.Lookup(ID());
-  if (!reverseRels) {
-    return;
-  }
-  for (auto const& data : kRelationTypeAtoms) {
-    
-    auto reverseTargetList = reverseRels->Lookup(data.mReverseType);
-    if (!reverseTargetList) {
-      continue;
-    }
-    for (uint64_t id : *reverseTargetList) {
-      
-      
-      RemoteAccessible* affectedAcc = mDoc->GetAccessible(id);
-      if (!affectedAcc) {
-        
-        
-        continue;
-      }
-      if (auto forwardTargetList =
-              affectedAcc->mCachedFields
-                  ->GetMutableAttribute<nsTArray<uint64_t>>(data.mAtom)) {
-        forwardTargetList->RemoveElement(ID());
-        if (!forwardTargetList->Length()) {
-          
-          
-          affectedAcc->mCachedFields->Remove(data.mAtom);
-        }
-      }
-    }
-  }
-  
-  reverseRels.Remove();
 }
 
 template <class Derived>

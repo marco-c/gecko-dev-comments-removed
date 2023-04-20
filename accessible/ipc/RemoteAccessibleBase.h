@@ -348,15 +348,6 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
 
   void PostProcessRelations(const nsTArray<bool>& aToUpdate);
 
-  
-
-
-
-
-
-
-  void PruneRelationsOnShutdown();
-
   uint32_t GetCachedTextLength();
   Maybe<const nsTArray<int32_t>&> GetCachedTextLines();
   Maybe<nsTArray<nsRect>> GetCachedCharData();

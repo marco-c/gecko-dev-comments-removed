@@ -130,14 +130,6 @@ class DocAccessible : public HyperTextAccessibleWrap,
   
 
 
-
-
-
-  void QueueCacheUpdateForDependentRelations(LocalAccessible* aAcc);
-
-  
-
-
   nsIAccessiblePivot* VirtualCursor();
 
   
