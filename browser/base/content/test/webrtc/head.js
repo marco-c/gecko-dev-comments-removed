@@ -388,9 +388,6 @@ function promiseMessage(
 function promisePopupNotificationShown(aName, aAction, aWindow = window) {
   let startTime = performance.now();
   return new Promise(resolve => {
-    
-    aWindow.focus();
-
     aWindow.PopupNotifications.panel.addEventListener(
       "popupshown",
       function() {
