@@ -246,7 +246,7 @@ ClientEngine.prototype = {
     }
     
     
-    let fxaDevice = this.fxAccounts.device.recentDeviceList.find(
+    let fxaDevice = this.fxAccounts.device.recentDeviceList?.find(
       device => device.id === client.fxaDeviceId
     );
 
