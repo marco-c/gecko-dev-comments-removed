@@ -1778,7 +1778,8 @@ void nsHtml5StreamParser::PostLoadFlusher() {
   
   
   nsCOMPtr<nsIRunnable> runnable(mLoadFlusher);
-  if (NS_FAILED(DispatchToMain(runnable.forget()))) {
+  if (NS_FAILED(
+          DispatchToMain(CreateRenderBlockingRunnable(runnable.forget())))) {
     NS_WARNING("failed to dispatch load flush event");
   }
 
