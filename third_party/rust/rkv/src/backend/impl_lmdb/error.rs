@@ -8,16 +8,9 @@
 
 
 
-use std::{
-    fmt,
-    io,
-    path::PathBuf,
-};
+use std::{fmt, io, path::PathBuf};
 
-use crate::{
-    backend::traits::BackendError,
-    error::StoreError,
-};
+use crate::{backend::traits::BackendError, error::StoreError};
 
 #[derive(Debug)]
 pub enum ErrorImpl {
@@ -49,7 +42,9 @@ impl Into<StoreError> for ErrorImpl {
             ErrorImpl::LmdbError(lmdb::Error::DbsFull) => StoreError::DbsFull,
             ErrorImpl::LmdbError(lmdb::Error::ReadersFull) => StoreError::ReadersFull,
             ErrorImpl::LmdbError(error) => StoreError::LmdbError(error),
-            ErrorImpl::UnsuitableEnvironmentPath(path) => StoreError::UnsuitableEnvironmentPath(path),
+            ErrorImpl::UnsuitableEnvironmentPath(path) => {
+                StoreError::UnsuitableEnvironmentPath(path)
+            }
             ErrorImpl::IoError(error) => StoreError::IoError(error),
         }
     }
