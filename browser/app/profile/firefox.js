@@ -2076,6 +2076,10 @@ pref("extensions.experiments.enabled", false);
   pref("dom.ipc.processPriorityManager.enabled", true);
 #endif
 
+#if defined(XP_WIN)
+  pref("dom.ipc.processPriorityManager.backgroundUsesEcoQoS", true);
+#endif
+
 
 pref("reader.parse-node-limit", 0);
 
