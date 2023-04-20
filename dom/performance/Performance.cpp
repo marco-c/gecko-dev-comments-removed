@@ -118,14 +118,12 @@ Performance::~Performance() = default;
 DOMHighResTimeStamp Performance::TimeStampToDOMHighResForRendering(
     TimeStamp aTimeStamp) const {
   DOMHighResTimeStamp stamp = GetDOMTiming()->TimeStampToDOMHighRes(aTimeStamp);
-  if (!IsSystemPrincipal()) {
-    
-    
-    
-    
-    return nsRFPService::ReduceTimePrecisionAsMSecsRFPOnly(stamp, 0);
-  }
-  return stamp;
+  
+  
+  
+  
+  return nsRFPService::ReduceTimePrecisionAsMSecsRFPOnly(stamp, 0,
+                                                         mRTPCallerType);
 }
 
 DOMHighResTimeStamp Performance::Now() {
@@ -138,8 +136,7 @@ DOMHighResTimeStamp Performance::Now() {
   }
 
   return nsRFPService::ReduceTimePrecisionAsMSecs(
-      rawTime, GetRandomTimelineSeed(), mSystemPrincipal,
-      CrossOriginIsolated());
+      rawTime, GetRandomTimelineSeed(), mRTPCallerType);
 }
 
 DOMHighResTimeStamp Performance::NowUnclamped() const {
@@ -156,8 +153,8 @@ DOMHighResTimeStamp Performance::TimeOrigin() {
   DOMHighResTimeStamp rawTimeOrigin =
       mPerformanceService->TimeOrigin(CreationTimeStamp());
   
-  return nsRFPService::ReduceTimePrecisionAsMSecs(
-      rawTimeOrigin, 0, mSystemPrincipal, CrossOriginIsolated());
+  return nsRFPService::ReduceTimePrecisionAsMSecs(rawTimeOrigin, 0,
+                                                  mRTPCallerType);
 }
 
 JSObject* Performance::WrapObject(JSContext* aCx,
