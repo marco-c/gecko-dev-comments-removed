@@ -205,10 +205,9 @@ void JsepTrack::SendTrackSetRemote(SsrcGenerator& aSsrcGenerator,
     
     for (const auto& ridAttr : rids) {
       
-      
-      
       std::string dummy;
-      if (SdpRidAttributeList::CheckRidValidity(ridAttr.id, &dummy)) {
+      if (SdpRidAttributeList::CheckRidValidity(ridAttr.id, &dummy) &&
+          ridAttr.id.size() <= SdpRidAttributeList::kMaxRidLength) {
         mRids.push_back(ridAttr.id);
       }
     }

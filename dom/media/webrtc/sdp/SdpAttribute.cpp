@@ -979,13 +979,11 @@ bool SdpRidAttributeList::CheckRidValidity(const std::string& aRid,
     return false;
   }
 
-  if (aRid.size() > kMaxRidLength) {
-    std::ostringstream ss;
-    ss << "Rid can be at most " << kMaxRidLength
-       << " characters long (due to internal limitations)";
-    *aError = ss.str();
-    return false;
-  }
+  
+  
+  
+  
+  
 
   static const std::bitset<256> allowed = GetAllowedRidCharacters();
   for (unsigned char c : aRid) {
