@@ -32,10 +32,6 @@ SVGElement::StringInfo SVGAElement::sStringInfo[3] = {
     {nsGkAtoms::target, kNameSpaceID_None, true}};
 
 
-const DOMTokenListSupportedToken SVGAElement::sSupportedRelValues[] = {
-    "noreferrer", "noopener", nullptr};
-
-
 
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(SVGAElement)

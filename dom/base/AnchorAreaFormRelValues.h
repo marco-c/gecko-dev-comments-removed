@@ -1,0 +1,21 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_AnchorAreaFormRelValues_h__
+#define mozilla_dom_AnchorAreaFormRelValues_h__
+
+#include "mozilla/dom/DOMTokenListSupportedTokens.h"
+
+namespace mozilla::dom {
+
+class AnchorAreaFormRelValues {
+ protected:
+  static const DOMTokenListSupportedToken sSupportedRelValues[];
+};
+
+}  
+
+#endif  
