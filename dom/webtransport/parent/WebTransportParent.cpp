@@ -5,29 +5,25 @@
 
 
 #include "WebTransportParent.h"
-#include "Http3WebTransportSession.h"
+
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/dom/WebTransportBinding.h"
 #include "mozilla/dom/WebTransportLog.h"
 #include "mozilla/ipc/BackgroundParent.h"
-#include "nsIEventTarget.h"
-#include "nsIOService.h"
-#include "nsIPrincipal.h"
-#include "nsIWebTransport.h"
 
 namespace mozilla::dom {
-
-NS_IMPL_ISUPPORTS(WebTransportParent, WebTransportSessionEventListener);
 
 using IPCResult = mozilla::ipc::IPCResult;
 using CreateWebTransportPromise =
     MozPromise<WebTransportReliabilityMode, nsresult, true>;
+using ResolveType = Tuple<const nsresult&, const uint8_t&>;
 WebTransportParent::~WebTransportParent() {
   LOG(("Destroying WebTransportParent %p", this));
 }
 
+
 void WebTransportParent::Create(
-    const nsAString& aURL, nsIPrincipal* aPrincipal, const bool& aDedicated,
+    const nsAString& aURL, const bool& aDedicated,
     const bool& aRequireUnreliable, const uint32_t& aCongestionControl,
     
     Endpoint<PWebTransportParent>&& aParentEndpoint,
@@ -58,69 +54,39 @@ void WebTransportParent::Create(
     return;
   }
 
-  RefPtr<WebTransportParent> parent = new WebTransportParent();
-  MOZ_ASSERT(parent);
-
-  MOZ_DIAGNOSTIC_ASSERT(mozilla::net::gIOService);
-  nsresult rv = mozilla::net::gIOService->NewWebTransport(
-      getter_AddRefs(parent->mWebTransport));
-  if (NS_FAILED(rv)) {
-    aResolver(ResolveType(
-        rv, static_cast<uint8_t>(WebTransportReliabilityMode::Pending)));
-    return;
-  }
-
-  parent->mOwningEventTarget = GetCurrentEventTarget();
-
-  MOZ_ASSERT(aPrincipal);
-  nsCOMPtr<nsIURI> uri;
-  rv = NS_NewURI(getter_AddRefs(uri), aURL);
-  if (NS_FAILED(rv)) {
-    aResolver(ResolveType(
-        NS_ERROR_INVALID_ARG,
-        static_cast<uint8_t>(WebTransportReliabilityMode::Pending)));
-    return;
-  }
-
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-      "WebTransport AsyncConnect",
-      [self = RefPtr{parent}, uri = std::move(uri),
-       principal = RefPtr{aPrincipal},
-       flags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL] {
-        self->mWebTransport->AsyncConnect(uri, principal, flags, self);
-      });
-
   
   
   
+  nsresult rv;
   nsCOMPtr<nsISerialEventTarget> sts =
       do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &rv);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   InvokeAsync(sts, __func__,
-              [parentEndpoint = std::move(aParentEndpoint), runnable = r,
-               resolver = std::move(aResolver), p = RefPtr{parent}]() mutable {
-                p->mResolver = resolver;
+              [parentEndpoint = std::move(aParentEndpoint)]() mutable {
+                RefPtr<WebTransportParent> parent = new WebTransportParent();
 
                 LOG(("Binding parent endpoint"));
-                if (!parentEndpoint.Bind(p)) {
+                if (!parentEndpoint.Bind(parent)) {
                   return CreateWebTransportPromise::CreateAndReject(
                       NS_ERROR_FAILURE, __func__);
                 }
                 
                 
-                NS_DispatchToMainThread(runnable, NS_DISPATCH_NORMAL);
                 return CreateWebTransportPromise::CreateAndResolve(
                     WebTransportReliabilityMode::Supports_unreliable, __func__);
               })
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [p = RefPtr{parent}](
+          [aResolver](
               const CreateWebTransportPromise::ResolveOrRejectValue& aValue) {
             if (aValue.IsReject()) {
-              p->mResolver(ResolveType(
+              aResolver(ResolveType(
                   aValue.RejectValue(),
                   static_cast<uint8_t>(WebTransportReliabilityMode::Pending)));
+            } else {
+              aResolver(ResolveType(
+                  NS_OK, static_cast<uint8_t>(aValue.ResolveValue())));
             }
           });
 }
@@ -135,132 +101,9 @@ mozilla::ipc::IPCResult WebTransportParent::RecvClose(
     const uint32_t& aCode, const nsACString& aReason) {
   LOG(("Close received, code = %u, reason = %s", aCode,
        PromiseFlatCString(aReason).get()));
-  MOZ_ASSERT(!mClosed);
-  mClosed.Flip();
-  nsAutoCString reason(aReason);
-  NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "WebTransport Close", [self = RefPtr{this}, aCode, reason] {
-        if (self->mWebTransport) {
-          self->mWebTransport->CloseSession(aCode, reason);
-        }
-      }));
+  
   Close();
   return IPC_OK();
 }
 
-
-
-
-NS_IMETHODIMP
-WebTransportParent::OnSessionReady(uint64_t aSessionId) {
-  MOZ_ASSERT(mOwningEventTarget);
-  MOZ_ASSERT(!mOwningEventTarget->IsOnCurrentThread());
-
-  LOG(("Created web transport session, sessionID = %" PRIu64 "", aSessionId));
-
-  mOwningEventTarget->Dispatch(NS_NewRunnableFunction(
-      "WebTransportParent::OnSessionReady", [self = RefPtr{this}] {
-        if (!self->IsClosed() && self->mResolver) {
-          self->mResolver(ResolveType(
-              NS_OK, static_cast<uint8_t>(
-                         WebTransportReliabilityMode::Supports_unreliable)));
-          self->mResolver = nullptr;
-        }
-      }));
-
-  return NS_OK;
-}
-
-
-
-
-NS_IMETHODIMP
-WebTransportParent::OnSessionClosed(const uint32_t aErrorCode,
-                                    const nsACString& aReason) {
-  LOG(("Creating web transport session failed code= %u, reason= %s", aErrorCode,
-       PromiseFlatCString(aReason).get()));
-  nsresult rv = NS_OK;
-
-  if (aErrorCode != 0) {
-    
-    
-    
-    
-    rv = NS_ERROR_FAILURE;
-  }
-  MOZ_ASSERT(mOwningEventTarget);
-  MOZ_ASSERT(!mOwningEventTarget->IsOnCurrentThread());
-
-  mOwningEventTarget->Dispatch(NS_NewRunnableFunction(
-      "WebTransportParent::OnSessionClosed",
-      [self = RefPtr{this}, result = rv] {
-        if (!self->IsClosed() && self->mResolver) {
-          self->mResolver(ResolveType(
-              result, static_cast<uint8_t>(
-                          WebTransportReliabilityMode::Supports_unreliable)));
-          self->mResolver = nullptr;
-        }
-      }));
-
-  return NS_OK;
-}
-
-
-
-
-
-NS_IMETHODIMP
-WebTransportParent::OnSessionReadyInternal(
-    mozilla::net::Http3WebTransportSession* aSession) {
-  Unused << aSession;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-WebTransportParent::OnIncomingStreamAvailableInternal(
-    mozilla::net::Http3WebTransportStream* aStream) {
-  
-  Unused << aStream;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-WebTransportParent::OnIncomingUnidirectionalStreamAvailable(
-    nsIWebTransportReceiveStream* aStream) {
-  
-  Unused << aStream;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-WebTransportParent::OnIncomingBidirectionalStreamAvailable(
-    nsIWebTransportBidirectionalStream* aStream) {
-  
-  Unused << aStream;
-  return NS_OK;
-}
-
-NS_IMETHODIMP WebTransportParent::OnDatagramReceived(
-    const nsTArray<uint8_t>& aData) {
-  
-  return NS_OK;
-}
-
-NS_IMETHODIMP WebTransportParent::OnDatagramReceivedInternal(
-    nsTArray<uint8_t>&& aData) {
-  
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-WebTransportParent::OnOutgoingDatagramOutCome(
-    uint64_t aId, WebTransportSessionEventListener::DatagramOutcome aOutCome) {
-  
-  return NS_OK;
-}
-
-NS_IMETHODIMP WebTransportParent::OnMaxDatagramSize(uint64_t aSize) {
-  
-  return NS_OK;
-}
 }  
