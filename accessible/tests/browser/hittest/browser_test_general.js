@@ -204,20 +204,19 @@ addAccessibleTask(
     const a = findAccessibleChildByID(accDoc, "a");
     const aa = findAccessibleChildByID(accDoc, "aa");
     const dpr = await getContentDPR(browser);
-    
-    const [_, y, w] = Layout.getBounds(a, dpr);
+    const [, , w, h] = Layout.getBounds(a, dpr);
     
     await testChildAtPoint(dpr, 1, 1, a, aa, aa);
     
     await testChildAtPoint(dpr, w - 1, 1, a, a, a);
     
-    await testChildAtPoint(dpr, 1, y - 1, a, null, null);
-    if (isCacheEnabled) {
-      
-      await testChildAtPoint(dpr, 1, Math.round(y / 2), a, null, null);
-    }
+    await testChildAtPoint(dpr, 1, -1, a, null, null);
+    
+    await testChildAtPoint(dpr, 1, Math.round(h / 2), a, a, a);
   },
   {
+    chrome: true,
+    topLevel: true,
     iframe: false,
     remoteIframe: false,
     

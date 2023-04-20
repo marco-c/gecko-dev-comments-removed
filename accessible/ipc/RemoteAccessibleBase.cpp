@@ -399,30 +399,43 @@ Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
         }
 
         if (acc->Bounds().Contains(aX, aY)) {
-          if (aWhichChild == EWhichChildAtPoint::DeepestChild) {
-            
-            
-            
-            lastMatch = acc;
-            break;
-          }
-
+          
           
           
           lastMatch = acc;
+          break;
         }
       }
     }
   }
 
-  if (!lastMatch && Bounds().Contains(aX, aY)) {
-    return this;
+  if (aWhichChild == EWhichChildAtPoint::DirectChild && lastMatch) {
+    
+    RemoteAccessible* parent = lastMatch->RemoteParent();
+    for (;;) {
+      if (parent == this) {
+        break;
+      }
+      if (!parent || parent->IsDoc()) {
+        
+        lastMatch = nullptr;
+        break;
+      }
+      lastMatch = parent;
+      parent = parent->RemoteParent();
+    }
+  } else if (aWhichChild == EWhichChildAtPoint::DeepestChild && lastMatch &&
+             !IsDoc() && !IsAncestorOf(lastMatch)) {
+    
+    
+    
+    lastMatch = nullptr;
   }
-  
-  
-  
-  if (lastMatch && !IsDoc() && !IsAncestorOf(lastMatch)) {
-    return nullptr;
+
+  if (!lastMatch && Bounds().Contains(aX, aY)) {
+    
+    
+    return this;
   }
 
   return lastMatch;
