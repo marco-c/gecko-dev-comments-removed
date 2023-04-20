@@ -512,7 +512,11 @@ pref("browser.urlbar.sponsoredTopSites", false);
 
 
 
+#ifdef NIGHTLY_BUILD
+pref("browser.urlbar.showSearchTerms.featureGate", true);
+#else
 pref("browser.urlbar.showSearchTerms.featureGate", false);
+#endif
 
 
 
