@@ -133,7 +133,9 @@ enum CachedBool { eCachedBoolMiss, eCachedTrue, eCachedFalse };
 }
 
 - (void)handleAccessibleEvent:(uint32_t)eventType {
-  if (![self isKindOfClass:[mozTableAccessible class]]) {
+  if (![self isKindOfClass:[mozTableAccessible class]] &&
+      !StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+    
     
     
     
@@ -180,11 +182,16 @@ enum CachedBool { eCachedBoolMiss, eCachedTrue, eCachedFalse };
 @implementation mozTableAccessible
 
 - (void)invalidateLayoutTableCache {
+  MOZ_ASSERT(!StaticPrefs::accessibility_cache_enabled_AtStartup(),
+             "If the core cache is enabled we shouldn't be maintaining the "
+             "platform table cache!");
   mIsLayoutTable = eCachedBoolMiss;
 }
 
 - (BOOL)isLayoutTablePart {
-  if (mIsLayoutTable != eCachedBoolMiss) {
+  if (mIsLayoutTable != eCachedBoolMiss &&
+      !StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+    
     return mIsLayoutTable == eCachedTrue;
   }
 
@@ -217,7 +224,9 @@ enum CachedBool { eCachedBoolMiss, eCachedTrue, eCachedFalse };
   if (eventType == nsIAccessibleEvent::EVENT_REORDER ||
       eventType == nsIAccessibleEvent::EVENT_OBJECT_ATTRIBUTE_CHANGED ||
       eventType == nsIAccessibleEvent::EVENT_TABLE_STYLING_CHANGED) {
-    [self invalidateLayoutTableCache];
+    if (!StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+      [self invalidateLayoutTableCache];
+    }
     [self invalidateColumns];
   }
 

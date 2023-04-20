@@ -1377,11 +1377,15 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
     
     
     
+    
+    
     if (acc->IsTable() || acc->IsTableRow() || acc->IsTableCell()) {
       LocalAccessible* table = nsAccUtils::TableFor(acc);
       if (table && table->IsTable()) {
-        FireDelayedEvent(nsIAccessibleEvent::EVENT_TABLE_STYLING_CHANGED,
-                         table);
+        if (!StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+          FireDelayedEvent(nsIAccessibleEvent::EVENT_TABLE_STYLING_CHANGED,
+                           table);
+        }
         QueueCacheUpdate(table, CacheDomain::Table);
       }
     }

@@ -283,8 +283,20 @@ addAccessibleTask(
     await invokeContentTask(browser, [], () => {
       content.document.getElementById("cell").style.border = "1px solid black";
     });
-    await styleChanged;
-    testAbsentAttrs(layout, { "layout-guess": "true" });
+    if (!isCacheEnabled) {
+      
+      await styleChanged;
+    }
+    await untilCacheOk(() => {
+      
+      
+      for (let prop of layout.attributes.enumerate()) {
+        if (prop.key == "layout-guess") {
+          return false;
+        }
+      }
+      return true;
+    }, "Table is a data table");
   },
   {
     chrome: true,
