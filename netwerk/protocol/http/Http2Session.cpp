@@ -359,11 +359,29 @@ uint32_t Http2Session::ReadTimeoutTick(PRIntervalTime now) {
   }
 
   if (mPingSentEpoch) {
-    LOG3(("Http2Session::ReadTimeoutTick %p handle outstanding ping\n", this));
-    if ((now - mPingSentEpoch) >= gHttpHandler->SpdyPingTimeout()) {
+    bool isTrr = (mTrrStreams > 0);
+    uint32_t pingTimeout = isTrr ? StaticPrefs::network_trr_ping_timeout()
+                                 : gHttpHandler->SpdyPingTimeout();
+    LOG3(
+        ("Http2Session::ReadTimeoutTick %p handle outstanding ping, "
+         "timeout=%d\n",
+         this, pingTimeout));
+    if ((now - mPingSentEpoch) >= pingTimeout) {
       LOG3(("Http2Session::ReadTimeoutTick %p Ping Timer Exhaustion\n", this));
       mPingSentEpoch = 0;
-      Close(NS_ERROR_NET_TIMEOUT);
+      if (isTrr) {
+        
+        
+        mGoAwayID = 0;
+        mCleanShutdown = true;
+        
+        
+        
+        
+        Close(NS_ERROR_NET_RESET);
+      } else {
+        Close(NS_ERROR_NET_TIMEOUT);
+      }
       return UINT32_MAX;
     }
     return 1;  
@@ -4323,6 +4341,9 @@ void Http2Session::SendPing() {
     mPreviousPingThreshold = mPingThreshold;
     mPreviousUsed = true;
     mPingThreshold = gHttpHandler->NetworkChangedTimeout();
+    
+    
+    mLastReadEpoch = 0;
   }
   GeneratePing(false);
   Unused << ResumeRecv();
