@@ -601,39 +601,26 @@ LocalAccessible* LocalAccessible::LocalChildAtPoint(
 
 nsIFrame* LocalAccessible::FindNearestAccessibleAncestorFrame() {
   nsIFrame* frame = GetFrame();
-  nsIFrame* boundingFrame = nullptr;
-
   if (IsDoc() &&
       nsCoreUtils::IsTopLevelContentDocInProcess(AsDoc()->DocumentNode())) {
     
     
-    boundingFrame = nsLayoutUtils::GetContainingBlockForClientRect(frame);
+    
+    MOZ_ASSERT(frame, "DocAccessibles should always have a frame");
+    return frame;
   }
 
   
   LocalAccessible* ancestor = mParent;
-  while (ancestor && !boundingFrame) {
-    if (ancestor->IsDoc()) {
-      
-      
-      boundingFrame = nsLayoutUtils::GetContainingBlockForClientRect(frame);
-      break;
+  while (ancestor) {
+    if (nsIFrame* boundingFrame = ancestor->GetFrame()) {
+      return boundingFrame;
     }
-
-    if ((boundingFrame = ancestor->GetFrame())) {
-      
-      break;
-    }
-
     ancestor = ancestor->LocalParent();
   }
 
-  if (!boundingFrame) {
-    MOZ_ASSERT_UNREACHABLE("No ancestor with frame?");
-    boundingFrame = nsLayoutUtils::GetContainingBlockForClientRect(frame);
-  }
-
-  return boundingFrame;
+  MOZ_ASSERT_UNREACHABLE("No ancestor with frame?");
+  return nsLayoutUtils::GetContainingBlockForClientRect(frame);
 }
 
 nsRect LocalAccessible::ParentRelativeBounds() {
