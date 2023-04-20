@@ -47,7 +47,7 @@ noopMove(UCharIterator * , int32_t , UCharIteratorOrigin ) {
 
 static UBool U_CALLCONV
 noopHasNext(UCharIterator * ) {
-    return false;
+    return FALSE;
 }
 
 static UChar32 U_CALLCONV
@@ -678,24 +678,24 @@ utf8IteratorMove(UCharIterator *iter, int32_t delta, UCharIteratorOrigin origin)
     case UITER_ZERO:
     case UITER_START:
         pos=delta;
-        havePos=true;
+        havePos=TRUE;
         
         break;
     case UITER_CURRENT:
         if(iter->index>=0) {
             pos=iter->index+delta;
-            havePos=true;
+            havePos=TRUE;
         } else {
             
             pos=0;
-            havePos=false;
+            havePos=FALSE;
         }
         break;
     case UITER_LIMIT:
     case UITER_LENGTH:
         if(iter->length>=0) {
             pos=iter->length+delta;
-            havePos=true;
+            havePos=TRUE;
         } else {
             
             iter->index=-1;
@@ -706,7 +706,7 @@ utf8IteratorMove(UCharIterator *iter, int32_t delta, UCharIteratorOrigin origin)
             } else {
                 
                 pos=0;
-                havePos=false;
+                havePos=FALSE;
             }
         }
         break;

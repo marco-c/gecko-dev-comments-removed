@@ -158,8 +158,8 @@ private:
     UnicodeSet *gRuleSet_name_char;
     UnicodeSet *gRuleSet_name_start_char;
 
-    RBBIRuleScanner(const RBBIRuleScanner &other) = delete; 
-    RBBIRuleScanner &operator=(const RBBIRuleScanner &other) = delete; 
+    RBBIRuleScanner(const RBBIRuleScanner &other); 
+    RBBIRuleScanner &operator=(const RBBIRuleScanner &other); 
 };
 
 U_NAMESPACE_END

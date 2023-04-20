@@ -6,7 +6,6 @@
 #if !UCONFIG_NO_FORMATTING
 
 #include "formatted_string_builder.h"
-#include "putilimp.h"
 #include "unicode/ustring.h"
 #include "unicode/utf16.h"
 #include "unicode/unum.h" 
@@ -198,9 +197,6 @@ FormattedStringBuilder::splice(int32_t startThis, int32_t endThis,  const Unicod
     int32_t thisLength = endThis - startThis;
     int32_t otherLength = endOther - startOther;
     int32_t count = otherLength - thisLength;
-    if (U_FAILURE(status)) {
-        return count;
-    }
     int32_t position;
     if (count > 0) {
         
@@ -225,9 +221,6 @@ int32_t FormattedStringBuilder::append(const FormattedStringBuilder &other, UErr
 
 int32_t
 FormattedStringBuilder::insert(int32_t index, const FormattedStringBuilder &other, UErrorCode &status) {
-    if (U_FAILURE(status)) {
-        return 0;
-    }
     if (this == &other) {
         status = U_ILLEGAL_ARGUMENT_ERROR;
         return 0;
@@ -262,18 +255,12 @@ int32_t FormattedStringBuilder::prepareForInsert(int32_t index, int32_t count, U
     U_ASSERT(index >= 0);
     U_ASSERT(index <= fLength);
     U_ASSERT(count >= 0);
-    U_ASSERT(fZero >= 0);
-    U_ASSERT(fLength >= 0);
-    U_ASSERT(getCapacity() - fZero >= fLength);
-    if (U_FAILURE(status)) {
-        return count;
-    }
     if (index == 0 && fZero - count >= 0) {
         
         fZero -= count;
         fLength += count;
         return fZero;
-    } else if (index == fLength && count <= getCapacity() - fZero - fLength) {
+    } else if (index == fLength && fZero + fLength + count < getCapacity()) {
         
         fLength += count;
         return fZero + fLength - count;
@@ -288,26 +275,18 @@ int32_t FormattedStringBuilder::prepareForInsertHelper(int32_t index, int32_t co
     int32_t oldZero = fZero;
     char16_t *oldChars = getCharPtr();
     Field *oldFields = getFieldPtr();
-    int32_t newLength;
-    if (uprv_add32_overflow(fLength, count, &newLength)) {
-        status = U_INPUT_TOO_LONG_ERROR;
-        return -1;
-    }
-    int32_t newZero;
-    if (newLength > oldCapacity) {
-        if (newLength > INT32_MAX / 2) {
-            
+    if (fLength + count > oldCapacity) {
+        if ((fLength + count) > INT32_MAX / 2) {
             
             status = U_INPUT_TOO_LONG_ERROR;
             return -1;
         }
-        
-        int32_t newCapacity = newLength * 2;
-        newZero = (newCapacity - newLength) / 2;
+        int32_t newCapacity = (fLength + count) * 2;
+        int32_t newZero = newCapacity / 2 - (fLength + count) / 2;
 
         
-        auto newChars = static_cast<char16_t *> (uprv_malloc(sizeof(char16_t) * static_cast<size_t>(newCapacity)));
-        auto newFields = static_cast<Field *>(uprv_malloc(sizeof(Field) * static_cast<size_t>(newCapacity)));
+        auto newChars = static_cast<char16_t *> (uprv_malloc(sizeof(char16_t) * newCapacity));
+        auto newFields = static_cast<Field *>(uprv_malloc(sizeof(Field) * newCapacity));
         if (newChars == nullptr || newFields == nullptr) {
             uprv_free(newChars);
             uprv_free(newFields);
@@ -336,8 +315,10 @@ int32_t FormattedStringBuilder::prepareForInsertHelper(int32_t index, int32_t co
         fChars.heap.capacity = newCapacity;
         fFields.heap.ptr = newFields;
         fFields.heap.capacity = newCapacity;
+        fZero = newZero;
+        fLength += count;
     } else {
-        newZero = (oldCapacity - newLength) / 2;
+        int32_t newZero = oldCapacity / 2 - (fLength + count) / 2;
 
         
         
@@ -350,20 +331,18 @@ int32_t FormattedStringBuilder::prepareForInsertHelper(int32_t index, int32_t co
         uprv_memmove2(oldFields + newZero + index + count,
                 oldFields + newZero + index,
                 sizeof(Field) * (fLength - index));
+
+        fZero = newZero;
+        fLength += count;
     }
-    fZero = newZero;
-    fLength = newLength;
+    U_ASSERT((fZero + index) >= 0);
     return fZero + index;
 }
 
 int32_t FormattedStringBuilder::remove(int32_t index, int32_t count) {
-     U_ASSERT(0 <= index);
-     U_ASSERT(index <= fLength);
-     U_ASSERT(count <= (fLength - index));
-     U_ASSERT(index <= getCapacity() - fZero);
-
-    int32_t position = index + fZero;
     
+    int32_t position = index + fZero;
+    U_ASSERT(position >= 0);
     uprv_memmove2(getCharPtr() + position,
             getCharPtr() + position + count,
             sizeof(char16_t) * (fLength - index - count));
@@ -380,7 +359,7 @@ UnicodeString FormattedStringBuilder::toUnicodeString() const {
 
 const UnicodeString FormattedStringBuilder::toTempUnicodeString() const {
     
-    return UnicodeString(false, getCharPtr() + fZero, fLength);
+    return UnicodeString(FALSE, getCharPtr() + fZero, fLength);
 }
 
 UnicodeString FormattedStringBuilder::toDebugString() const {

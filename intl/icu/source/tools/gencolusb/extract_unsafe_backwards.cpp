@@ -65,7 +65,7 @@ int main(int argc, const char *argv[]) {
     UnicodeString pattern;
     UnicodeSet set(*unsafeBackwardSet);
     set.compact();
-    set.toPattern(pattern, false);
+    set.toPattern(pattern, FALSE);
 
     if(U_SUCCESS(errorCode)) {
       
@@ -87,7 +87,7 @@ int main(int argc, const char *argv[]) {
       fprintf(stderr,"===\n%s\n===\n", buf2);
     }
 
-    const UnicodeString unsafeBackwardPattern(false, buf, needed);
+    const UnicodeString unsafeBackwardPattern(FALSE, buf, needed);
   if(U_SUCCESS(errorCode)) {
     
     

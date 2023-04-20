@@ -411,6 +411,19 @@ public:
 
     int32_t getActualMinimum(UCalendarDateFields field, UErrorCode &status) const override;
 
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+
+
+
+
+
+    int32_t getActualMaximum(EDateFields field) const;
+#endif  
+
     
 
 
@@ -474,7 +487,7 @@ public:
     virtual const char * getType() const override;
 
  private:
-    GregorianCalendar() = delete; 
+    GregorianCalendar(); 
 
  protected:
     
@@ -701,6 +714,12 @@ public:
 
 
     int32_t fGregorianCutoverYear;
+
+    
+
+
+
+    int32_t fGregorianCutoverJulianDay;
 
     
 

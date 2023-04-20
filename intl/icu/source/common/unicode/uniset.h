@@ -794,11 +794,13 @@ public:
 
     virtual UBool isEmpty(void) const;
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
 
     UBool hasStrings() const;
+#endif  
 
     
 
@@ -1676,6 +1678,8 @@ private:
                               UnicodeString& rebuiltPat,
                               UErrorCode& ec);
 
+    static const UnicodeSet* getInclusions(int32_t src, UErrorCode &status);
+
     
 
 
@@ -1695,6 +1699,11 @@ private:
                      void* context,
                      const UnicodeSet* inclusions,
                      UErrorCode &status);
+
+    
+    void applyIntPropertyValue(const UCPMap *map,
+                               UCPMapValueFilter *filter, const void *context,
+                               UErrorCode &errorCode);
 
     
 

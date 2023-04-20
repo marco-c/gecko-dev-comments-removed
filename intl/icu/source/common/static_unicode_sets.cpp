@@ -31,7 +31,7 @@ alignas(UnicodeSet)
 char gEmptyUnicodeSet[sizeof(UnicodeSet)];
 
 
-UBool gEmptyUnicodeSetInitialized = false;
+UBool gEmptyUnicodeSetInitialized = FALSE;
 
 inline UnicodeSet* getImpl(Key key) {
     UnicodeSet* candidate = gUnicodeSets[key];
@@ -118,7 +118,7 @@ class ParseDataSink : public ResourceSink {
                         } else {
                             
                             
-                            U_ASSERT(false);
+                            U_ASSERT(FALSE);
                         }
                         if (U_FAILURE(status)) { return; }
                     }
@@ -129,19 +129,19 @@ class ParseDataSink : public ResourceSink {
 };
 
 
-icu::UInitOnce gNumberParseUniSetsInitOnce {};
+icu::UInitOnce gNumberParseUniSetsInitOnce = U_INITONCE_INITIALIZER;
 
 UBool U_CALLCONV cleanupNumberParseUniSets() {
     if (gEmptyUnicodeSetInitialized) {
         reinterpret_cast<UnicodeSet*>(gEmptyUnicodeSet)->~UnicodeSet();
-        gEmptyUnicodeSetInitialized = false;
+        gEmptyUnicodeSetInitialized = FALSE;
     }
     for (int32_t i = 0; i < UNISETS_KEY_COUNT; i++) {
         delete gUnicodeSets[i];
         gUnicodeSets[i] = nullptr;
     }
     gNumberParseUniSetsInitOnce.reset();
-    return true;
+    return TRUE;
 }
 
 void U_CALLCONV initNumberParseUniSets(UErrorCode& status) {
@@ -150,7 +150,7 @@ void U_CALLCONV initNumberParseUniSets(UErrorCode& status) {
     
     new(gEmptyUnicodeSet) UnicodeSet();
     reinterpret_cast<UnicodeSet*>(gEmptyUnicodeSet)->freeze();
-    gEmptyUnicodeSetInitialized = true;
+    gEmptyUnicodeSetInitialized = TRUE;
 
     
     

@@ -32,7 +32,7 @@ UnicodeString FormattedValueFieldPositionIteratorImpl::toTempString(
         UErrorCode&) const {
     
     
-    return UnicodeString(true, fString.getBuffer(), fString.length());
+    return UnicodeString(TRUE, fString.getBuffer(), fString.length());
 }
 
 Appendable& FormattedValueFieldPositionIteratorImpl::appendTo(

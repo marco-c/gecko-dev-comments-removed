@@ -87,7 +87,7 @@ void TitlecaseTransliterator::handleTransliterate(
 
     
     
-    UBool doTitle = true;
+    UBool doTitle = TRUE;
     
     
     
@@ -99,7 +99,7 @@ void TitlecaseTransliterator::handleTransliterate(
         c = text.char32At(start);
         type=ucase_getTypeOrIgnorable(c);
         if(type>0) { 
-            doTitle=false;
+            doTitle=FALSE;
             break;
         } else if(type==0) { 
             break;
@@ -146,7 +146,7 @@ void TitlecaseTransliterator::handleTransliterate(
                 
                 if(result<=UCASE_MAX_STRING_LENGTH) {
                     
-                    tmp.setTo(false, s, result);
+                    tmp.setTo(FALSE, s, result);
                     delta=result-U16_LENGTH(c);
                 } else {
                     

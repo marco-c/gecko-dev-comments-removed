@@ -434,11 +434,11 @@ int32_t PluralFormat::findSubMessage(const MessagePattern& pattern, int32_t part
     
     
     UnicodeString keyword;
-    UnicodeString other(false, OTHER_STRING, 5);
+    UnicodeString other(FALSE, OTHER_STRING, 5);
     
     
     
-    UBool haveKeywordMatch=false;
+    UBool haveKeywordMatch=FALSE;
     
     
     
@@ -477,7 +477,7 @@ int32_t PluralFormat::findSubMessage(const MessagePattern& pattern, int32_t part
                         
                         
                         
-                        haveKeywordMatch=true;
+                        haveKeywordMatch=TRUE;
                     }
                 }
             } else {
@@ -486,7 +486,7 @@ int32_t PluralFormat::findSubMessage(const MessagePattern& pattern, int32_t part
                     if(msgStart!=0 && (0 == keyword.compare(other))) {
                         
                         
-                        haveKeywordMatch=true;
+                        haveKeywordMatch=TRUE;
                         
                     }
                 }
@@ -494,7 +494,7 @@ int32_t PluralFormat::findSubMessage(const MessagePattern& pattern, int32_t part
                     
                     msgStart=partIndex;
                     
-                    haveKeywordMatch=true;
+                    haveKeywordMatch=TRUE;
                 }
             }
         }

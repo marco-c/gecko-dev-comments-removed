@@ -101,8 +101,6 @@ class U_I18N_API AffixTokenMatcherWarehouse : public UMemory {
 
     NumberParseMatcher* nextCodePointMatcher(UChar32 cp, UErrorCode& status);
 
-    bool hasEmptyCurrencySymbol() const;
-
   private:
     
     const AffixTokenMatcherSetupData* fSetupData;
@@ -207,11 +205,9 @@ class AffixMatcherWarehouse {
 
   private:
     
+    AffixMatcher fAffixMatchers[9];
     
-    AffixMatcher fAffixMatchers[18];
-    
-    
-    AffixPatternMatcher fAffixPatternMatchers[12];
+    AffixPatternMatcher fAffixPatternMatchers[6];
     
     AffixTokenMatcherWarehouse* fTokenWarehouse;
 

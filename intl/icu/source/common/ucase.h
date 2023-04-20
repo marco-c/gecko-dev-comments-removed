@@ -139,8 +139,8 @@ public:
 
     UChar32 next(UnicodeString &full);
 private:
-    FullCaseFoldingIterator(const FullCaseFoldingIterator &) = delete;  
-    FullCaseFoldingIterator &operator=(const FullCaseFoldingIterator &) = delete;  
+    FullCaseFoldingIterator(const FullCaseFoldingIterator &);  
+    FullCaseFoldingIterator &operator=(const FullCaseFoldingIterator &);  
 
     const UChar *unfold;
     int32_t unfoldRows;

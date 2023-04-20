@@ -920,7 +920,7 @@ private:
     char validLocale[ULOC_FULLNAME_CAPACITY];
     char actualLocale[ULOC_FULLNAME_CAPACITY];
 
-    DateFormatSymbols() = delete; 
+    DateFormatSymbols(); 
 
     
 

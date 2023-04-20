@@ -187,10 +187,10 @@ private:
     void _init(int32_t initialCapacity, UErrorCode &status);
 
     
-    UVector32(const UVector32&) = delete;
+    UVector32(const UVector32&);
 
     
-    UVector32& operator=(const UVector32&) = delete;
+    UVector32& operator=(const UVector32&);
 
 
     

@@ -46,6 +46,7 @@ U_CDECL_BEGIN
 
 
 
+
 typedef struct UMutableCPTrie UMutableCPTrie;
 
 

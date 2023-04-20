@@ -157,7 +157,7 @@ appendResult(int32_t cpLength, int32_t result, const UChar *s,
             ByteSinkUtil::appendCodePoint(cpLength, result, sink, edits);
         }
     }
-    return true;
+    return TRUE;
 }
 
 
@@ -525,14 +525,14 @@ ucasemap_internalUTF8ToTitle(
     csc.p=(void *)src;
     csc.limit=srcLength;
     int32_t prev=0;
-    UBool isFirstIndex=true;
+    UBool isFirstIndex=TRUE;
 
     
     while(prev<srcLength) {
         
         int32_t index;
         if(isFirstIndex) {
-            isFirstIndex=false;
+            isFirstIndex=FALSE;
             index=iter->first();
         } else {
             index=iter->next();
@@ -643,12 +643,12 @@ UBool isFollowedByCasedLetter(const uint8_t *s, int32_t i, int32_t length) {
         if ((type & UCASE_IGNORABLE) != 0) {
             
         } else if (type != UCASE_NONE) {
-            return true;  
+            return TRUE;  
         } else {
-            return false;  
+            return FALSE;  
         }
     }
-    return false;  
+    return FALSE;  
 }
 
 
@@ -707,7 +707,7 @@ void toUpper(uint32_t options,
                 nextState |= AFTER_VOWEL_WITH_ACCENT;
             }
             
-            UBool addTonos = false;
+            UBool addTonos = FALSE;
             if (upper == 0x397 &&
                     (data & HAS_ACCENT) != 0 &&
                     numYpogegrammeni == 0 &&
@@ -718,7 +718,7 @@ void toUpper(uint32_t options,
                 if (i == nextIndex) {
                     upper = 0x389;  
                 } else {
-                    addTonos = true;
+                    addTonos = TRUE;
                 }
             } else if ((data & HAS_DIALYTIKA) != 0) {
                 
@@ -733,7 +733,7 @@ void toUpper(uint32_t options,
 
             UBool change;
             if (edits == nullptr && (options & U_OMIT_UNCHANGED_TEXT) == 0) {
-                change = true;  
+                change = TRUE;  
             } else {
                 
                 U_ASSERT(0x370 <= upper && upper <= 0x3ff);  

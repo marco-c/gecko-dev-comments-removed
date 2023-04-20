@@ -150,20 +150,20 @@ public:
 private:
     
     
-    CanonicalIterator() = delete;
+    CanonicalIterator();
 
 
     
 
 
 
-    CanonicalIterator(const CanonicalIterator& other) = delete;
+    CanonicalIterator(const CanonicalIterator& other);
 
     
 
 
 
-    CanonicalIterator& operator=(const CanonicalIterator& other) = delete;
+    CanonicalIterator& operator=(const CanonicalIterator& other);
 
     
     UnicodeString source;

@@ -143,7 +143,7 @@ MaybeStackVector<Measure> ComplexUnitsConverter::convert(double quantity,
     
     MaybeStackVector<Measure> result;
     int sign = 1;
-    if (quantity < 0 && unitsConverters_.length() > 1) {
+    if (quantity < 0) {
         quantity *= -1;
         sign = -1;
     }

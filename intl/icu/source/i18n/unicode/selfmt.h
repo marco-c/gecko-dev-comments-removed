@@ -348,7 +348,7 @@ public:
 private:
     friend class MessageFormat;
 
-    SelectFormat() = delete;   
+    SelectFormat();   
 
     
 

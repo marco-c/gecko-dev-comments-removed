@@ -740,8 +740,8 @@ private:
   
   
 
-  Normalizer() = delete; 
-  Normalizer &operator=(const Normalizer &that) = delete; 
+  Normalizer(); 
+  Normalizer &operator=(const Normalizer &that); 
 
   
   

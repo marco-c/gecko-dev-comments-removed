@@ -14,7 +14,6 @@
 #include "unicode/bytestream.h"
 #include "unicode/currunit.h"
 #include "unicode/dcfmtsym.h"
-#include "unicode/displayoptions.h"
 #include "unicode/fieldpos.h"
 #include "unicode/formattedvalue.h"
 #include "unicode/fpositer.h"
@@ -23,7 +22,7 @@
 #include "unicode/parseerr.h"
 #include "unicode/plurrule.h"
 #include "unicode/ucurr.h"
-#include "unicode/udisplayoptions.h"
+#include "unicode/unounclass.h"
 #include "unicode/unum.h"
 #include "unicode/unumberformatter.h"
 #include "unicode/uobject.h"
@@ -2255,32 +2254,8 @@ class U_I18N_API NumberFormatterSettings {
     Derived usage(StringPiece usage) &&;
 
 #ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-
-
-    Derived displayOptions(const DisplayOptions &displayOptions) const &;
-
-    
-
-
-
-
-
-
-    Derived displayOptions(const DisplayOptions &displayOptions) &&;
-#endif 
-
 #ifndef U_HIDE_INTERNAL_API
     
-
-
-
-
 
 
 
@@ -2293,11 +2268,8 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-
-
-
-
     Derived unitDisplayCase(StringPiece unitDisplayCase) &&;
+#endif 
 #endif 
 
 #ifndef U_HIDE_INTERNAL_API
@@ -2805,7 +2777,7 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
 
 
 
-    UDisplayOptionsNounClass getNounClass(UErrorCode &status) const;
+    NounClass getNounClass(UErrorCode &status) const;
 
 #endif 
 
@@ -2824,6 +2796,18 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
     void getAllFieldPositionsImpl(FieldPositionIteratorHandler& fpih, UErrorCode& status) const;
 
 #endif  
+
+#ifndef U_HIDE_DEPRECATED_API
+
+    
+
+
+
+
+
+    const char *getGender(UErrorCode &status) const;
+
+#endif 
 
   private:
     

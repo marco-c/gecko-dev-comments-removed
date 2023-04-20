@@ -117,7 +117,7 @@ static const UChar * const gLastResortNumberPatterns[UNUM_FORMAT_STYLE_COUNT] = 
     NULL,  
     NULL,  
     NULL,  
-    gLastResortDecimalPat,  
+    NULL,  
     NULL,  
     gLastResortIsoCurrencyPat,  
     gLastResortPluralCurrencyPat,  
@@ -156,11 +156,11 @@ static const icu::number::impl::CldrPatternStyle gFormatCldrStyles[UNUM_FORMAT_S
 
 
 static UHashtable * NumberingSystem_cache = NULL;
-static icu::UInitOnce gNSCacheInitOnce {};
+static icu::UInitOnce gNSCacheInitOnce = U_INITONCE_INITIALIZER;
 
 #if !UCONFIG_NO_SERVICE
 static icu::ICULocaleService* gService = NULL;
-static icu::UInitOnce gServiceInitOnce {};
+static icu::UInitOnce gServiceInitOnce = U_INITONCE_INITIALIZER;
 #endif
 
 
@@ -186,7 +186,7 @@ static UBool U_CALLCONV numfmt_cleanup(void) {
         uhash_close(NumberingSystem_cache);
         NumberingSystem_cache = NULL;
     }
-    return true;
+    return TRUE;
 }
 U_CDECL_END
 
@@ -229,13 +229,13 @@ SimpleNumberFormatFactory::getSupportedIDs(int32_t &count, UErrorCode& status) c
 
 
 NumberFormat::NumberFormat()
-:   fGroupingUsed(true),
+:   fGroupingUsed(TRUE),
     fMaxIntegerDigits(gDefaultMaxIntegerDigits),
     fMinIntegerDigits(1),
     fMaxFractionDigits(3), 
     fMinFractionDigits(0),
-    fParseIntegerOnly(false),
-    fLenient(false),
+    fParseIntegerOnly(FALSE),
+    fLenient(FALSE),
     fCapitalizationContext(UDISPCTX_CAPITALIZATION_NONE)
 {
     fCurrency[0] = 0;
@@ -294,39 +294,39 @@ NumberFormat::operator==(const Format& that) const
 #ifdef FMT_DEBUG
     
     
-    UBool first = true;
+    UBool first = TRUE;
     if (!Format::operator==(that)) {
-        if (first) { printf("[ "); first = false; } else { printf(", "); }
+        if (first) { printf("[ "); first = FALSE; } else { printf(", "); }
         debug("Format::!=");
     }
     if (!(fMaxIntegerDigits == other->fMaxIntegerDigits &&
           fMinIntegerDigits == other->fMinIntegerDigits)) {
-        if (first) { printf("[ "); first = false; } else { printf(", "); }
+        if (first) { printf("[ "); first = FALSE; } else { printf(", "); }
         debug("Integer digits !=");
     }
     if (!(fMaxFractionDigits == other->fMaxFractionDigits &&
           fMinFractionDigits == other->fMinFractionDigits)) {
-        if (first) { printf("[ "); first = false; } else { printf(", "); }
+        if (first) { printf("[ "); first = FALSE; } else { printf(", "); }
         debug("Fraction digits !=");
     }
     if (!(fGroupingUsed == other->fGroupingUsed)) {
-        if (first) { printf("[ "); first = false; } else { printf(", "); }
+        if (first) { printf("[ "); first = FALSE; } else { printf(", "); }
         debug("fGroupingUsed != ");
     }
     if (!(fParseIntegerOnly == other->fParseIntegerOnly)) {
-        if (first) { printf("[ "); first = false; } else { printf(", "); }
+        if (first) { printf("[ "); first = FALSE; } else { printf(", "); }
         debug("fParseIntegerOnly != ");
     }
     if (!(u_strcmp(fCurrency, other->fCurrency) == 0)) {
-        if (first) { printf("[ "); first = false; } else { printf(", "); }
+        if (first) { printf("[ "); first = FALSE; } else { printf(", "); }
         debug("fCurrency !=");
     }
     if (!(fLenient == other->fLenient)) {
-        if (first) { printf("[ "); first = false; } else { printf(", "); }
+        if (first) { printf("[ "); first = FALSE; } else { printf(", "); }
         debug("fLenient != ");
     }
     if (!(fCapitalizationContext == other->fCapitalizationContext)) {
-        if (first) { printf("[ "); first = false; } else { printf(", "); }
+        if (first) { printf("[ "); first = FALSE; } else { printf(", "); }
         debug("fCapitalizationContext != ");
     }
     if (!first) { printf(" ]"); }
@@ -502,7 +502,7 @@ ArgExtractor::iso(void) const {
 }
 
 ArgExtractor::ArgExtractor(const NumberFormat& , const Formattable& obj, UErrorCode& )
-  : num(&obj), fWasCurrency(false) {
+  : num(&obj), fWasCurrency(FALSE) {
 
     const UObject* o = obj.getObject(); 
     const CurrencyAmount* amt;
@@ -512,7 +512,7 @@ ArgExtractor::ArgExtractor(const NumberFormat& , const Formattable& obj, UErrorC
         
         u_strcpy(save, amt->getISOCurrency());
         num = &amt->getNumber();
-        fWasCurrency=true;
+        fWasCurrency=TRUE;
     } else {
       save[0]=0;
     }
@@ -1007,13 +1007,13 @@ UBool U_EXPORT2
 NumberFormat::unregister(URegistryKey key, UErrorCode& status)
 {
     if (U_FAILURE(status)) {
-        return false;
+        return FALSE;
     }
     if (haveService()) {
         return gService->unregister(key, status);
     } else {
         status = U_ILLEGAL_ARGUMENT_ERROR;
-        return false;
+        return FALSE;
     }
 }
 
@@ -1310,14 +1310,6 @@ NumberFormat::makeInstance(const Locale& desiredLocale,
         status = U_ILLEGAL_ARGUMENT_ERROR;
         return NULL;
     }
-    
-    
-    
-    
-    
-    if (style == UNUM_NUMBERING_SYSTEM) {
-        style = UNUM_DECIMAL;
-    }
 
     
     
@@ -1337,11 +1329,11 @@ NumberFormat::makeInstance(const Locale& desiredLocale,
 
         
         if (U_SUCCESS(status) && count > 0 && uprv_strcmp(buffer, "host") == 0) {
-            UBool curr = true;
+            UBool curr = TRUE;
 
             switch (style) {
             case UNUM_DECIMAL:
-                curr = false;
+                curr = FALSE;
                 
                 U_FALLTHROUGH;
 
@@ -1415,7 +1407,7 @@ NumberFormat::makeInstance(const Locale& desiredLocale,
                 ns->getName(),
                 gFormatCldrStyles[style],
                 status);
-        pattern = UnicodeString(true, patternPtr, -1);
+        pattern = UnicodeString(TRUE, patternPtr, -1);
     }
     if (U_FAILURE(status)) {
         return NULL;
@@ -1468,8 +1460,8 @@ NumberFormat::makeInstance(const Locale& desiredLocale,
         
         
         if (style == UNUM_CURRENCY_ISO) {
-            pattern.findAndReplace(UnicodeString(true, gSingleCurrencySign, 1),
-                                   UnicodeString(true, gDoubleCurrencySign, 2));
+            pattern.findAndReplace(UnicodeString(TRUE, gSingleCurrencySign, 1),
+                                   UnicodeString(TRUE, gDoubleCurrencySign, 2));
         }
 
         

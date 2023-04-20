@@ -478,7 +478,7 @@ const uint8_t unicode::index2[] = {
       0,   0,   2,   5,   2,   2,   2,   2,   2,   2,   2,   0,   2,   2,   2,   0,   2,   2,
       2,   2,   0,   0,   0,   0,   0,   0,   0,   2,   2,   0,   0,   0,   0,   0,   0,   5,
       5,   0,   5,   5,   2,   2,   0,   0,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2,
-      0,   5,   5,   2,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   2,   2,
+      0,   5,   5,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   2,   2,
       2,   2,   5,   5,   5,   5,   5,   5,   5,   5,   5,   0,   5,   5,   5,   0,   5,   5,
       5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,
       5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,
@@ -504,7 +504,7 @@ const uint8_t unicode::index2[] = {
       5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,
       5,   5,   5,   5,   0,   5,   0,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   2,
       5,   5,   2,   2,   2,   2,   2,   2,   2,   2,   2,   5,   0,   0,   5,   5,   5,   5,
-      5,   0,   5,   0,   2,   2,   2,   2,   2,   2,   2,   0,   2,   2,   2,   2,   2,   2,
+      5,   0,   5,   0,   2,   2,   2,   2,   2,   2,   0,   0,   2,   2,   2,   2,   2,   2,
       2,   2,   2,   2,   0,   0,   5,   5,   5,   5,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   5,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -1529,9 +1529,6 @@ js::unicode::IsIdentifierStartNonBMP(char32_t codePoint)
     if (codePoint >= 0x11213 && codePoint <= 0x1122B) { 
         return true;
     }
-    if (codePoint >= 0x1123F && codePoint <= 0x11240) { 
-        return true;
-    }
     if (codePoint >= 0x11280 && codePoint <= 0x11286) { 
         return true;
     }
@@ -1718,15 +1715,6 @@ js::unicode::IsIdentifierStartNonBMP(char32_t codePoint)
     if (codePoint >= 0x11EE0 && codePoint <= 0x11EF2) { 
         return true;
     }
-    if (codePoint >= 0x11F02 && codePoint <= 0x11F02) { 
-        return true;
-    }
-    if (codePoint >= 0x11F04 && codePoint <= 0x11F10) { 
-        return true;
-    }
-    if (codePoint >= 0x11F12 && codePoint <= 0x11F33) { 
-        return true;
-    }
     if (codePoint >= 0x11FB0 && codePoint <= 0x11FB0) { 
         return true;
     }
@@ -1742,10 +1730,7 @@ js::unicode::IsIdentifierStartNonBMP(char32_t codePoint)
     if (codePoint >= 0x12F90 && codePoint <= 0x12FF0) { 
         return true;
     }
-    if (codePoint >= 0x13000 && codePoint <= 0x1342F) { 
-        return true;
-    }
-    if (codePoint >= 0x13441 && codePoint <= 0x13446) { 
+    if (codePoint >= 0x13000 && codePoint <= 0x1342E) { 
         return true;
     }
     if (codePoint >= 0x14400 && codePoint <= 0x14646) { 
@@ -1814,13 +1799,7 @@ js::unicode::IsIdentifierStartNonBMP(char32_t codePoint)
     if (codePoint >= 0x1B000 && codePoint <= 0x1B122) { 
         return true;
     }
-    if (codePoint >= 0x1B132 && codePoint <= 0x1B132) { 
-        return true;
-    }
     if (codePoint >= 0x1B150 && codePoint <= 0x1B152) { 
-        return true;
-    }
-    if (codePoint >= 0x1B155 && codePoint <= 0x1B155) { 
         return true;
     }
     if (codePoint >= 0x1B164 && codePoint <= 0x1B167) { 
@@ -1934,12 +1913,6 @@ js::unicode::IsIdentifierStartNonBMP(char32_t codePoint)
     if (codePoint >= 0x1DF00 && codePoint <= 0x1DF1E) { 
         return true;
     }
-    if (codePoint >= 0x1DF25 && codePoint <= 0x1DF2A) { 
-        return true;
-    }
-    if (codePoint >= 0x1E030 && codePoint <= 0x1E06D) { 
-        return true;
-    }
     if (codePoint >= 0x1E100 && codePoint <= 0x1E12C) { 
         return true;
     }
@@ -1953,9 +1926,6 @@ js::unicode::IsIdentifierStartNonBMP(char32_t codePoint)
         return true;
     }
     if (codePoint >= 0x1E2C0 && codePoint <= 0x1E2EB) { 
-        return true;
-    }
-    if (codePoint >= 0x1E4D0 && codePoint <= 0x1E4EB) { 
         return true;
     }
     if (codePoint >= 0x1E7E0 && codePoint <= 0x1E7E6) { 
@@ -2081,7 +2051,7 @@ js::unicode::IsIdentifierStartNonBMP(char32_t codePoint)
     if (codePoint >= 0x20000 && codePoint <= 0x2A6DF) { 
         return true;
     }
-    if (codePoint >= 0x2A700 && codePoint <= 0x2B739) { 
+    if (codePoint >= 0x2A700 && codePoint <= 0x2B738) { 
         return true;
     }
     if (codePoint >= 0x2B740 && codePoint <= 0x2B81D) { 
@@ -2097,9 +2067,6 @@ js::unicode::IsIdentifierStartNonBMP(char32_t codePoint)
         return true;
     }
     if (codePoint >= 0x30000 && codePoint <= 0x3134A) { 
-        return true;
-    }
-    if (codePoint >= 0x31350 && codePoint <= 0x323AF) { 
         return true;
     }
     return false;
@@ -2336,7 +2303,7 @@ js::unicode::IsIdentifierPartNonBMP(char32_t codePoint)
     if (codePoint >= 0x10EB0 && codePoint <= 0x10EB1) { 
         return true;
     }
-    if (codePoint >= 0x10EFD && codePoint <= 0x10F1C) { 
+    if (codePoint >= 0x10F00 && codePoint <= 0x10F1C) { 
         return true;
     }
     if (codePoint >= 0x10F27 && codePoint <= 0x10F27) { 
@@ -2405,7 +2372,7 @@ js::unicode::IsIdentifierPartNonBMP(char32_t codePoint)
     if (codePoint >= 0x11213 && codePoint <= 0x11237) { 
         return true;
     }
-    if (codePoint >= 0x1123E && codePoint <= 0x11241) { 
+    if (codePoint >= 0x1123E && codePoint <= 0x1123E) { 
         return true;
     }
     if (codePoint >= 0x11280 && codePoint <= 0x11286) { 
@@ -2648,18 +2615,6 @@ js::unicode::IsIdentifierPartNonBMP(char32_t codePoint)
     if (codePoint >= 0x11EE0 && codePoint <= 0x11EF6) { 
         return true;
     }
-    if (codePoint >= 0x11F00 && codePoint <= 0x11F10) { 
-        return true;
-    }
-    if (codePoint >= 0x11F12 && codePoint <= 0x11F3A) { 
-        return true;
-    }
-    if (codePoint >= 0x11F3E && codePoint <= 0x11F42) { 
-        return true;
-    }
-    if (codePoint >= 0x11F50 && codePoint <= 0x11F59) { 
-        return true;
-    }
     if (codePoint >= 0x11FB0 && codePoint <= 0x11FB0) { 
         return true;
     }
@@ -2675,10 +2630,7 @@ js::unicode::IsIdentifierPartNonBMP(char32_t codePoint)
     if (codePoint >= 0x12F90 && codePoint <= 0x12FF0) { 
         return true;
     }
-    if (codePoint >= 0x13000 && codePoint <= 0x1342F) { 
-        return true;
-    }
-    if (codePoint >= 0x13440 && codePoint <= 0x13455) { 
+    if (codePoint >= 0x13000 && codePoint <= 0x1342E) { 
         return true;
     }
     if (codePoint >= 0x14400 && codePoint <= 0x14646) { 
@@ -2762,13 +2714,7 @@ js::unicode::IsIdentifierPartNonBMP(char32_t codePoint)
     if (codePoint >= 0x1B000 && codePoint <= 0x1B122) { 
         return true;
     }
-    if (codePoint >= 0x1B132 && codePoint <= 0x1B132) { 
-        return true;
-    }
     if (codePoint >= 0x1B150 && codePoint <= 0x1B152) { 
-        return true;
-    }
-    if (codePoint >= 0x1B155 && codePoint <= 0x1B155) { 
         return true;
     }
     if (codePoint >= 0x1B164 && codePoint <= 0x1B167) { 
@@ -2930,9 +2876,6 @@ js::unicode::IsIdentifierPartNonBMP(char32_t codePoint)
     if (codePoint >= 0x1DF00 && codePoint <= 0x1DF1E) { 
         return true;
     }
-    if (codePoint >= 0x1DF25 && codePoint <= 0x1DF2A) { 
-        return true;
-    }
     if (codePoint >= 0x1E000 && codePoint <= 0x1E006) { 
         return true;
     }
@@ -2946,12 +2889,6 @@ js::unicode::IsIdentifierPartNonBMP(char32_t codePoint)
         return true;
     }
     if (codePoint >= 0x1E026 && codePoint <= 0x1E02A) { 
-        return true;
-    }
-    if (codePoint >= 0x1E030 && codePoint <= 0x1E06D) { 
-        return true;
-    }
-    if (codePoint >= 0x1E08F && codePoint <= 0x1E08F) { 
         return true;
     }
     if (codePoint >= 0x1E100 && codePoint <= 0x1E12C) { 
@@ -2970,9 +2907,6 @@ js::unicode::IsIdentifierPartNonBMP(char32_t codePoint)
         return true;
     }
     if (codePoint >= 0x1E2C0 && codePoint <= 0x1E2F9) { 
-        return true;
-    }
-    if (codePoint >= 0x1E4D0 && codePoint <= 0x1E4F9) { 
         return true;
     }
     if (codePoint >= 0x1E7E0 && codePoint <= 0x1E7E6) { 
@@ -3104,7 +3038,7 @@ js::unicode::IsIdentifierPartNonBMP(char32_t codePoint)
     if (codePoint >= 0x20000 && codePoint <= 0x2A6DF) { 
         return true;
     }
-    if (codePoint >= 0x2A700 && codePoint <= 0x2B739) { 
+    if (codePoint >= 0x2A700 && codePoint <= 0x2B738) { 
         return true;
     }
     if (codePoint >= 0x2B740 && codePoint <= 0x2B81D) { 
@@ -3120,9 +3054,6 @@ js::unicode::IsIdentifierPartNonBMP(char32_t codePoint)
         return true;
     }
     if (codePoint >= 0x30000 && codePoint <= 0x3134A) { 
-        return true;
-    }
-    if (codePoint >= 0x31350 && codePoint <= 0x323AF) { 
         return true;
     }
     if (codePoint >= 0xE0100 && codePoint <= 0xE01EF) { 

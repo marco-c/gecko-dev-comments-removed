@@ -34,7 +34,7 @@ U_CDECL_BEGIN
 static UBool U_CALLCONV
 enumTailoredRange(const void *context, UChar32 start, UChar32 end, uint32_t ce32) {
     if(ce32 == Collation::FALLBACK_CE32) {
-        return true;  
+        return TRUE;  
     }
     TailoredSet *ts = (TailoredSet *)context;
     return ts->handleCE32(start, end, ce32);
@@ -365,14 +365,14 @@ enumCnERange(const void *context, UChar32 start, UChar32 end, uint32_t ce32) {
     } else if(cne->checkTailored < 0) {
         
         if(ce32 == Collation::FALLBACK_CE32) {
-            return true;  
+            return TRUE;  
         } else {
             cne->tailored.add(start, end);
         }
         
     } else if(start == end) {
         if(cne->tailored.contains(start)) {
-            return true;
+            return TRUE;
         }
     } else if(cne->tailored.containsSome(start, end)) {
         cne->ranges.set(start, end).removeAll(cne->tailored);
@@ -509,7 +509,7 @@ ContractionsAndExpansions::handleCE32(UChar32 start, UChar32 end, uint32_t ce32)
             if(sink != NULL) {
                 
                 
-                UTF16CollationIterator iter(data, false, NULL, NULL, NULL);
+                UTF16CollationIterator iter(data, FALSE, NULL, NULL, NULL);
                 UChar hangul[1] = { 0 };
                 for(UChar32 c = start; c <= end; ++c) {
                     hangul[0] = (UChar)c;

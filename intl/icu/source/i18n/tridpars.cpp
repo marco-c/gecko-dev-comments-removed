@@ -45,7 +45,7 @@ static const int32_t FORWARD = UTRANS_FORWARD;
 static const int32_t REVERSE = UTRANS_REVERSE;
 
 static Hashtable* SPECIAL_INVERSES = NULL;
-static UInitOnce gSpecialInversesInitOnce {};
+static UInitOnce gSpecialInversesInitOnce = U_INITONCE_INITIALIZER;
 
 
 
@@ -77,7 +77,7 @@ TransliteratorIDParser::SingleID::SingleID(const UnicodeString& c, const Unicode
 Transliterator* TransliteratorIDParser::SingleID::createInstance() {
     Transliterator* t;
     if (basicID.length() == 0) {
-        t = createBasicInstance(UnicodeString(true, ANY_NULL, 8), &canonID);
+        t = createBasicInstance(UnicodeString(TRUE, ANY_NULL, 8), &canonID);
     } else {
         t = createBasicInstance(basicID, &canonID);
     }
@@ -118,22 +118,22 @@ TransliteratorIDParser::parseSingleID(const UnicodeString& id, int32_t& pos,
     
     Specs* specsA = NULL;
     Specs* specsB = NULL;
-    UBool sawParen = false;
+    UBool sawParen = FALSE;
 
     
     
     for (int32_t pass=1; pass<=2; ++pass) {
         if (pass == 2) {
-            specsA = parseFilterID(id, pos, true);
+            specsA = parseFilterID(id, pos, TRUE);
             if (specsA == NULL) {
                 pos = start;
                 return NULL;
             }
         }
         if (ICU_Utility::parseChar(id, pos, OPEN_REV)) {
-            sawParen = true;
+            sawParen = TRUE;
             if (!ICU_Utility::parseChar(id, pos, CLOSE_REV)) {
-                specsB = parseFilterID(id, pos, true);
+                specsB = parseFilterID(id, pos, TRUE);
                 
                 if (specsB == NULL || !ICU_Utility::parseChar(id, pos, CLOSE_REV)) {
                     delete specsA;
@@ -219,7 +219,7 @@ TransliteratorIDParser::parseFilterID(const UnicodeString& id, int32_t& pos) {
 
     int32_t start = pos;
 
-    Specs* specs = parseFilterID(id, pos, true);
+    Specs* specs = parseFilterID(id, pos, TRUE);
     if (specs == NULL) {
         pos = start;
         return NULL;
@@ -272,7 +272,7 @@ UnicodeSet* TransliteratorIDParser::parseGlobalFilter(const UnicodeString& id, i
         }
     }
 
-    ICU_Utility::skipWhitespace(id, pos, true);
+    ICU_Utility::skipWhitespace(id, pos, TRUE);
 
     if (UnicodeSet::resemblesPattern(id, pos)) {
         ParsePosition ppos(pos);
@@ -387,7 +387,7 @@ UBool TransliteratorIDParser::parseCompoundID(const UnicodeString& id, int32_t d
         filter = NULL;
     }
 
-    UBool sawDelimiter = true;
+    UBool sawDelimiter = TRUE;
     for (;;) {
         SingleID* single = parseSingleID(id, pos, dir, ec);
         if (single == NULL) {
@@ -402,7 +402,7 @@ UBool TransliteratorIDParser::parseCompoundID(const UnicodeString& id, int32_t d
             goto FAIL;
         }
         if (!ICU_Utility::parseChar(id, pos, ID_DELIM)) {
-            sawDelimiter = false;
+            sawDelimiter = FALSE;
             break;
         }
     }
@@ -439,20 +439,20 @@ UBool TransliteratorIDParser::parseCompoundID(const UnicodeString& id, int32_t d
     }
 
     
-    ICU_Utility::skipWhitespace(id, pos, true);
+    ICU_Utility::skipWhitespace(id, pos, TRUE);
     if (pos != id.length()) {
         goto FAIL;
     }
 
     list.setDeleter(save);
-    return true;
+    return TRUE;
 
  FAIL:
     list.removeAllElements();
     list.setDeleter(save);
     delete globalFilter;
     globalFilter = NULL;
-    return false;
+    return FALSE;
 }
 
 
@@ -505,7 +505,7 @@ void TransliteratorIDParser::instantiateList(UVector& list,
 
     
     if (tlist.size() == 0) {
-        t = createBasicInstance(UnicodeString(true, ANY_NULL, 8), NULL);
+        t = createBasicInstance(UnicodeString(TRUE, ANY_NULL, 8), NULL);
         if (t == NULL) {
             
             ec = U_INTERNAL_TRANSLITERATOR_ERROR;
@@ -559,7 +559,7 @@ void TransliteratorIDParser::IDtoSTV(const UnicodeString& id,
     if (var < 0) {
         var = id.length();
     }
-    isSourcePresent = false;
+    isSourcePresent = FALSE;
 
     if (sep < 0) {
         
@@ -569,7 +569,7 @@ void TransliteratorIDParser::IDtoSTV(const UnicodeString& id,
         
         if (sep > 0) {
             id.extractBetween(0, sep, source);
-            isSourcePresent = true;
+            isSourcePresent = TRUE;
         }
         id.extractBetween(++sep, var, target);
         id.extractBetween(var, id.length(), variant);
@@ -577,7 +577,7 @@ void TransliteratorIDParser::IDtoSTV(const UnicodeString& id,
         
         if (var > 0) {
             id.extractBetween(0, var, source);
-            isSourcePresent = true;
+            isSourcePresent = TRUE;
         }
         id.extractBetween(var, sep++, variant);
         id.extractBetween(sep, id.length(), target);
@@ -654,7 +654,7 @@ void TransliteratorIDParser::registerSpecialInverse(const UnicodeString& target,
 
     
     if (bidirectional && 0==target.caseCompare(inverseTarget, U_FOLD_CASE_DEFAULT)) {
-        bidirectional = false;
+        bidirectional = FALSE;
     }
 
     Mutex lock(&LOCK);
@@ -714,7 +714,7 @@ TransliteratorIDParser::parseFilterID(const UnicodeString& id, int32_t& pos,
     
     
     for (;;) {
-        ICU_Utility::skipWhitespace(id, pos, true);
+        ICU_Utility::skipWhitespace(id, pos, TRUE);
         if (pos == id.length()) {
             break;
         }
@@ -792,10 +792,10 @@ TransliteratorIDParser::parseFilterID(const UnicodeString& id, int32_t& pos,
     }
 
     
-    UBool sawSource = true;
+    UBool sawSource = TRUE;
     if (source.length() == 0) {
         source.setTo(ANY, 3);
-        sawSource = false;
+        sawSource = FALSE;
     }
     if (target.length() == 0) {
         target.setTo(ANY, 3);
@@ -878,7 +878,7 @@ TransliteratorIDParser::specsToSpecialInverse(const Specs& specs, UErrorCode &st
         }
         buf.append(*inverseTarget);
 
-        UnicodeString basicID(true, ANY, 3);
+        UnicodeString basicID(TRUE, ANY, 3);
         basicID.append(TARGET_SEP).append(*inverseTarget);
 
         if (specs.variant.length() != 0) {
@@ -906,7 +906,7 @@ void U_CALLCONV TransliteratorIDParser::init(UErrorCode &status) {
     U_ASSERT(SPECIAL_INVERSES == NULL);
     ucln_i18n_registerCleanup(UCLN_I18N_TRANSLITERATOR, utrans_transliterator_cleanup);
 
-    SPECIAL_INVERSES = new Hashtable(true, status);
+    SPECIAL_INVERSES = new Hashtable(TRUE, status);
     if (SPECIAL_INVERSES == NULL) {
     	status = U_MEMORY_ALLOCATION_ERROR;
     	return;

@@ -66,28 +66,28 @@ public:
     
 
 
-    static constexpr int32_t DONE = -1;
+    enum { DONE = -1 };
 
     
 
 
 
 
-    static constexpr int32_t PARSE_VARIABLES = 1;
+    enum { PARSE_VARIABLES = 1 };
 
     
 
 
 
 
-    static constexpr int32_t PARSE_ESCAPES   = 2;
+    enum { PARSE_ESCAPES   = 2 };
 
     
 
 
 
 
-    static constexpr int32_t SKIP_WHITESPACE = 4;
+    enum { SKIP_WHITESPACE = 4 };
 
     
 

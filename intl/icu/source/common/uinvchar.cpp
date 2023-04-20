@@ -207,7 +207,7 @@ u_UCharsToChars(const UChar *us, char *cs, int32_t length) {
     while(length>0) {
         u=*us++;
         if(!UCHAR_IS_INVARIANT(u)) {
-            U_ASSERT(false); 
+            U_ASSERT(FALSE); 
             u=0;
         }
         *cs++=(char)UCHAR_TO_CHAR(u);
@@ -245,18 +245,18 @@ uprv_isInvariantString(const char *s, int32_t length) {
 
 #if U_CHARSET_FAMILY==U_ASCII_FAMILY
         if(!UCHAR_IS_INVARIANT(c)) {
-            return false; 
+            return FALSE; 
         }
 #elif U_CHARSET_FAMILY==U_EBCDIC_FAMILY
         c=CHAR_TO_UCHAR(c);
         if(c==0 || !UCHAR_IS_INVARIANT(c)) {
-            return false; 
+            return FALSE; 
         }
 #else
 #   error U_CHARSET_FAMILY is not valid
 #endif
     }
-    return true;
+    return TRUE;
 }
 
 U_CAPI UBool U_EXPORT2
@@ -284,10 +284,10 @@ uprv_isInvariantUString(const UChar *s, int32_t length) {
 
 
         if(!UCHAR_IS_INVARIANT(c)) {
-            return false; 
+            return FALSE; 
         }
     }
-    return true;
+    return TRUE;
 }
 
 

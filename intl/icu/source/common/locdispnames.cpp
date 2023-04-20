@@ -514,11 +514,11 @@ uloc_getDisplayName(const char *locale,
     UChar formatCloseParen        = 0x0029; 
     UChar formatReplaceCloseParen = 0x005D; 
 
-    UBool haveLang = true; 
+    UBool haveLang = TRUE; 
 
-    UBool haveRest = true; 
+    UBool haveRest = TRUE; 
 
-    UBool retry = false; 
+    UBool retry = FALSE; 
 
     int32_t langi = 0; 
 
@@ -625,7 +625,7 @@ uloc_getDisplayName(const char *locale,
         }
 
         for(int32_t subi=0,resti=0;subi<2;) { 
-            UBool subdone = false; 
+            UBool subdone = FALSE; 
 
             
 
@@ -643,10 +643,10 @@ uloc_getDisplayName(const char *locale,
                     length+=langLen;
                     haveLang=langLen>0;
                 }
-                subdone=true;
+                subdone=TRUE;
             } else { 
                 if(!haveRest) {
-                    subdone=true;
+                    subdone=TRUE;
                 } else {
                     int32_t len; 
                     switch(resti++) {
@@ -667,7 +667,7 @@ uloc_getDisplayName(const char *locale,
                             const char* kw=uenum_next(kenum.getAlias(), &len, pErrorCode);
                             if (kw == NULL) {
                                 len=0; 
-                                subdone=true;
+                                subdone=TRUE;
                             } else {
                                 
 
@@ -772,7 +772,7 @@ uloc_getDisplayName(const char *locale,
                             
                             sub0Pos=0; 
 
-                            retry=true;
+                            retry=TRUE;
                         }
                     }
                 }

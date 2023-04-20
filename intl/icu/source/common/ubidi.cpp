@@ -160,7 +160,7 @@ ubidi_openSized(int32_t maxLength, int32_t maxRunCount, UErrorCode *pErrorCode) 
             *pErrorCode=U_MEMORY_ALLOCATION_ERROR;
         }
     } else {
-        pBiDi->mayAllocateText=true;
+        pBiDi->mayAllocateText=TRUE;
     }
 
     if(maxRunCount>0) {
@@ -171,7 +171,7 @@ ubidi_openSized(int32_t maxLength, int32_t maxRunCount, UErrorCode *pErrorCode) 
             *pErrorCode=U_MEMORY_ALLOCATION_ERROR;
         }
     } else {
-        pBiDi->mayAllocateRuns=true;
+        pBiDi->mayAllocateRuns=TRUE;
     }
 
     if(U_SUCCESS(*pErrorCode)) {
@@ -203,18 +203,18 @@ ubidi_getMemory(BidiMemoryForAllocation *bidiMem, int32_t *pSize, UBool mayAlloc
         
         if(mayAllocate && (*pMemory=uprv_malloc(sizeNeeded))!=NULL) {
             *pSize=sizeNeeded;
-            return true;
+            return TRUE;
         } else {
-            return false;
+            return FALSE;
         }
     } else {
         if(sizeNeeded<=*pSize) {
             
-            return true;
+            return TRUE;
         }
         else if(!mayAllocate) {
             
-            return false;
+            return FALSE;
         } else {
             
             void *memory;
@@ -225,10 +225,10 @@ ubidi_getMemory(BidiMemoryForAllocation *bidiMem, int32_t *pSize, UBool mayAlloc
             if((memory=uprv_realloc(*pMemory, sizeNeeded))!=NULL) {
                 *pMemory=memory;
                 *pSize=sizeNeeded;
-                return true;
+                return TRUE;
             } else {
                 
-                return false;
+                return FALSE;
             }
         }
     }
@@ -280,7 +280,7 @@ ubidi_isInverse(UBiDi *pBiDi) {
     if(pBiDi!=NULL) {
         return pBiDi->isInverse;
     } else {
-        return false;
+        return FALSE;
     }
 }
 
@@ -403,17 +403,17 @@ checkParaCount(UBiDi *pBiDi) {
     int32_t count=pBiDi->paraCount;
     if(pBiDi->paras==pBiDi->simpleParas) {
         if(count<=SIMPLE_PARAS_COUNT)
-            return true;
+            return TRUE;
         if(!getInitialParasMemory(pBiDi, SIMPLE_PARAS_COUNT * 2))
-            return false;
+            return FALSE;
         pBiDi->paras=pBiDi->parasMemory;
         uprv_memcpy(pBiDi->parasMemory, pBiDi->simpleParas, SIMPLE_PARAS_COUNT * sizeof(Para));
-        return true;
+        return TRUE;
     }
     if(!getInitialParasMemory(pBiDi, count * 2))
-        return false;
+        return FALSE;
     pBiDi->paras=pBiDi->parasMemory;
-    return true;
+    return TRUE;
 }
 
 
@@ -579,8 +579,8 @@ getDirProps(UBiDi *pBiDi) {
             }
             if(i<originalLength) {              
                 pBiDi->paraCount++;
-                if(checkParaCount(pBiDi)==false)    
-                    return false;
+                if(checkParaCount(pBiDi)==FALSE)    
+                    return FALSE;
                 if(isDefaultLevel) {
                     pBiDi->paras[pBiDi->paraCount-1].level=defaultParaLevel;
                     state=SEEKING_STRONG_FOR_PARA;
@@ -636,7 +636,7 @@ getDirProps(UBiDi *pBiDi) {
     }
     pBiDi->flags=flags;
     pBiDi->lastArabicPos=lastArabicPos;
-    return true;
+    return TRUE;
 }
 
 
@@ -750,7 +750,7 @@ bracketAddOpening(BracketData *bd, UChar match, int32_t position) {
     if(pLastIsoRun->limit>=bd->openingsCount) {  
         UBiDi *pBiDi=bd->pBiDi;
         if(!getInitialOpeningsMemory(pBiDi, pLastIsoRun->limit * 2))
-            return false;
+            return FALSE;
         if(bd->openings==bd->simpleOpenings)
             uprv_memcpy(pBiDi->openingsMemory, bd->simpleOpenings,
                         SIMPLE_OPENINGS_COUNT * sizeof(Opening));
@@ -764,7 +764,7 @@ bracketAddOpening(BracketData *bd, UChar match, int32_t position) {
     pOpening->contextPos=pLastIsoRun->contextPos;
     pOpening->flags=0;
     pLastIsoRun->limit++;
-    return true;
+    return TRUE;
 }
 
 
@@ -804,7 +804,7 @@ bracketProcessClosing(BracketData *bd, int32_t openIdx, int32_t position) {
     DirProp newProp;
     pOpening=&bd->openings[openIdx];
     direction=(UBiDiDirection)(pLastIsoRun->level&1);
-    stable=true;            
+    stable=TRUE;            
 
     
 
@@ -912,7 +912,7 @@ bracketProcessChar(BracketData *bd, int32_t position) {
             }
             
             bd->pBiDi->levels[bd->openings[idx].position]&=~UBIDI_LEVEL_OVERRIDE;
-            return true;
+            return TRUE;
         }
         
 
@@ -927,14 +927,14 @@ bracketProcessChar(BracketData *bd, int32_t position) {
 
             if(match==0x232A) {     
                 if(!bracketAddOpening(bd, 0x3009, position))
-                    return false;
+                    return FALSE;
             }
             else if(match==0x3009) {         
                 if(!bracketAddOpening(bd, 0x232A, position))
-                    return false;
+                    return FALSE;
             }
             if(!bracketAddOpening(bd, match, position))
-                return false;
+                return FALSE;
         }
     }
     level=bd->pBiDi->levels[position];
@@ -998,7 +998,7 @@ bracketProcessChar(BracketData *bd, int32_t position) {
             if(position>bd->openings[i].position)
                 bd->openings[i].flags|=flag;
     }
-    return true;
+    return TRUE;
 }
 
 
@@ -2436,7 +2436,7 @@ setParaRunsOnly(UBiDi *pBiDi, const UChar *text, int32_t length,
 
 
     saveMayAllocateText=pBiDi->mayAllocateText;
-    pBiDi->mayAllocateText=false;
+    pBiDi->mayAllocateText=FALSE;
     ubidi_setPara(pBiDi, visualText, visualLength, paraLevel, NULL, pErrorCode);
     pBiDi->mayAllocateText=saveMayAllocateText;
     ubidi_getRuns(pBiDi, pErrorCode);
@@ -2866,7 +2866,7 @@ ubidi_isOrderParagraphsLTR(UBiDi *pBiDi) {
     if(pBiDi!=NULL) {
         return pBiDi->orderParagraphsLTR;
     } else {
-        return false;
+        return FALSE;
     }
 }
 

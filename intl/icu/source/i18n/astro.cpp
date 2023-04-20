@@ -69,7 +69,7 @@ static icu::UMutex ccLock;
 
 U_CDECL_BEGIN
 static UBool calendar_astro_cleanup(void) {
-  return true;
+  return TRUE;
 }
 U_CDECL_END
 
@@ -242,7 +242,7 @@ inline static  double normPI(double angle)  {
 
 
 CalendarAstronomer::CalendarAstronomer():
-  fTime(Calendar::getNow()), fLongitude(0.0), fLatitude(0.0), fGmtOffset(0.0), moonPosition(0,0), moonPositionSet(false) {
+  fTime(Calendar::getNow()), fLongitude(0.0), fLatitude(0.0), fGmtOffset(0.0), moonPosition(0,0), moonPositionSet(FALSE) {
   clearCache();
 }
 
@@ -252,7 +252,7 @@ CalendarAstronomer::CalendarAstronomer():
 
 
 
-CalendarAstronomer::CalendarAstronomer(UDate d): fTime(d), fLongitude(0.0), fLatitude(0.0), fGmtOffset(0.0), moonPosition(0,0), moonPositionSet(false) {
+CalendarAstronomer::CalendarAstronomer(UDate d): fTime(d), fLongitude(0.0), fLatitude(0.0), fGmtOffset(0.0), moonPosition(0,0), moonPositionSet(FALSE) {
   clearCache();
 }
 
@@ -272,7 +272,7 @@ CalendarAstronomer::CalendarAstronomer(UDate d): fTime(d), fLongitude(0.0), fLat
 
 
 CalendarAstronomer::CalendarAstronomer(double longitude, double latitude) :
-  fTime(Calendar::getNow()), moonPosition(0,0), moonPositionSet(false) {
+  fTime(Calendar::getNow()), moonPosition(0,0), moonPositionSet(FALSE) {
   fLongitude = normPI(longitude * (double)DEG_RAD);
   fLatitude  = normPI(latitude  * (double)DEG_RAD);
   fGmtOffset = (double)(fLongitude * 24. * (double)HOUR_MS / (double)CalendarAstronomer_PI2);
@@ -1069,7 +1069,7 @@ const CalendarAstronomer::Equatorial& CalendarAstronomer::getMoonPosition()
     
     
     
-    if (moonPositionSet == false) {
+    if (moonPositionSet == FALSE) {
         
         
         getSunLongitude();
@@ -1138,7 +1138,7 @@ const CalendarAstronomer::Equatorial& CalendarAstronomer::getMoonPosition()
         double moonEclipLat = ::asin(y * ::sin(moonI));
 
         eclipticToEquatorial(moonPosition, moonEclipLong, moonEclipLat);
-        moonPositionSet = true;
+        moonPositionSet = TRUE;
     }
     return moonPosition;
 }
@@ -1446,7 +1446,7 @@ void CalendarAstronomer::clearCache() {
     eclipObliquity  = INVALID;
     siderealTime    = INVALID;
     siderealT0      = INVALID;
-    moonPositionSet = false;
+    moonPositionSet = FALSE;
 }
 
 

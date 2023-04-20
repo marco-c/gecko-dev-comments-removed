@@ -4,9 +4,6 @@
 
 
 
-#ifndef BYTESINKUTIL_H
-#define BYTESINKUTIL_H
-
 #include "unicode/utypes.h"
 #include "unicode/bytestream.h"
 #include "unicode/edits.h"
@@ -84,5 +81,3 @@ private:
 };
 
 U_NAMESPACE_END
-
-#endif 

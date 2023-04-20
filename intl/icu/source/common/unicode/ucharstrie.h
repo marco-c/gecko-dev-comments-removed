@@ -409,7 +409,7 @@ private:
               pos_(uchars_), remainingMatchLength_(-1) {}
 
     
-    UCharsTrie &operator=(const UCharsTrie &other) = delete;
+    UCharsTrie &operator=(const UCharsTrie &other);
 
     inline void stop() {
         pos_=NULL;

@@ -24,7 +24,7 @@
 
 
 static icu::TimeZone *gDangiCalendarZoneAstroCalc = NULL;
-static icu::UInitOnce gDangiCalendarInitOnce {};
+static icu::UInitOnce gDangiCalendarInitOnce = U_INITONCE_INITIALIZER;
 
 
 
@@ -39,7 +39,7 @@ static UBool calendar_dangi_cleanup(void) {
         gDangiCalendarZoneAstroCalc = NULL;
     }
     gDangiCalendarInitOnce.reset();
-    return true;
+    return TRUE;
 }
 U_CDECL_END
 

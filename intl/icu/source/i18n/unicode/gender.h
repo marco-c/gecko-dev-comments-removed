@@ -91,12 +91,12 @@ private:
 
 
 
-    GenderInfo(const GenderInfo& other) = delete;
+    GenderInfo(const GenderInfo& other);
 
     
 
 
-    GenderInfo& operator=(const GenderInfo&) = delete;
+    GenderInfo& operator=(const GenderInfo&);
 
     GenderInfo();
 

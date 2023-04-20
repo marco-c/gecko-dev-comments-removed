@@ -227,7 +227,7 @@ CollationWeights::getWeightRanges(uint32_t lowerLimit, uint32_t upperLimit) {
 #ifdef UCOL_DEBUG
         printf("error: no space between lower & upper limits\n");
 #endif
-        return false;
+        return FALSE;
     }
 
     
@@ -236,7 +236,7 @@ CollationWeights::getWeightRanges(uint32_t lowerLimit, uint32_t upperLimit) {
 #ifdef UCOL_DEBUG
             printf("error: lower limit 0x%08lx is a prefix of upper limit 0x%08lx\n", lowerLimit, upperLimit);
 #endif
-            return false;
+            return FALSE;
         }
     }
     
@@ -307,7 +307,7 @@ CollationWeights::getWeightRanges(uint32_t lowerLimit, uint32_t upperLimit) {
                 
                 const uint32_t lowerEnd=lower[length].end;
                 const uint32_t upperStart=upper[length].start;
-                UBool merged=false;
+                UBool merged=FALSE;
 
                 if(lowerEnd>upperStart) {
                     
@@ -326,7 +326,7 @@ CollationWeights::getWeightRanges(uint32_t lowerLimit, uint32_t upperLimit) {
                             (int32_t)getWeightTrail(lower[length].start, length)+1;
                     
                     
-                    merged=true;
+                    merged=TRUE;
                 } else if(lowerEnd==upperStart) {
                     
                     U_ASSERT(minBytes[length]<maxBytes[length]);
@@ -335,7 +335,7 @@ CollationWeights::getWeightRanges(uint32_t lowerLimit, uint32_t upperLimit) {
                         
                         lower[length].end=upper[length].end;
                         lower[length].count+=upper[length].count;  
-                        merged=true;
+                        merged=TRUE;
                     }
                 }
                 if(merged) {
@@ -409,14 +409,14 @@ CollationWeights::allocWeightsInShortRanges(int32_t n, int32_t minLength) {
                 
                 UErrorCode errorCode=U_ZERO_ERROR;
                 uprv_sortArray(ranges, rangeCount, sizeof(WeightRange),
-                               compareRanges, NULL, false, &errorCode);
+                               compareRanges, NULL, FALSE, &errorCode);
                 
             }
-            return true;
+            return TRUE;
         }
         n -= ranges[i].count;  
     }
-    return false;
+    return FALSE;
 }
 
 UBool
@@ -433,7 +433,7 @@ CollationWeights::allocWeightsInMinLengthRanges(int32_t n, int32_t minLength) {
     }
 
     int32_t nextCountBytes = countBytes(minLength + 1);
-    if(n > count * nextCountBytes) { return false; }
+    if(n > count * nextCountBytes) { return FALSE; }
 
     
     uint32_t start = ranges[0].start;
@@ -485,7 +485,7 @@ CollationWeights::allocWeightsInMinLengthRanges(int32_t n, int32_t minLength) {
         lengthenRange(ranges[1]);
         rangeCount = 2;
     }
-    return true;
+    return TRUE;
 }
 
 
@@ -503,7 +503,7 @@ CollationWeights::allocWeights(uint32_t lowerLimit, uint32_t upperLimit, int32_t
 #ifdef UCOL_DEBUG
         printf("error: unable to get Weight ranges\n");
 #endif
-        return false;
+        return FALSE;
     }
 
     
@@ -518,7 +518,7 @@ CollationWeights::allocWeights(uint32_t lowerLimit, uint32_t upperLimit, int32_t
             printf("error: the maximum number of %ld weights is insufficient for n=%ld\n",
                    minLengthCount, n);
 #endif
-            return false;
+            return FALSE;
         }
 
         if(allocWeightsInMinLengthRanges(n, minLength)) { break; }
@@ -541,7 +541,7 @@ CollationWeights::allocWeights(uint32_t lowerLimit, uint32_t upperLimit, int32_t
 #endif
 
     rangeIndex = 0;
-    return true;
+    return TRUE;
 }
 
 uint32_t

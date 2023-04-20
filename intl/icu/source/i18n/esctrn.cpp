@@ -36,28 +36,28 @@ UOBJECT_DEFINE_RTTI_IMPLEMENTATION(EscapeTransliterator)
 
 static Transliterator* _createEscUnicode(const UnicodeString& ID, Transliterator::Token ) {
     
-    return new EscapeTransliterator(ID, UnicodeString(true, UNIPRE, 2), UnicodeString(), 16, 4, true, NULL);
+    return new EscapeTransliterator(ID, UnicodeString(TRUE, UNIPRE, 2), UnicodeString(), 16, 4, TRUE, NULL);
 }
 static Transliterator* _createEscJava(const UnicodeString& ID, Transliterator::Token ) {
     
-    return new EscapeTransliterator(ID, UnicodeString(true, BS_u, 2), UnicodeString(), 16, 4, false, NULL);
+    return new EscapeTransliterator(ID, UnicodeString(TRUE, BS_u, 2), UnicodeString(), 16, 4, FALSE, NULL);
 }
 static Transliterator* _createEscC(const UnicodeString& ID, Transliterator::Token ) {
     
-    return new EscapeTransliterator(ID, UnicodeString(true, BS_u, 2), UnicodeString(), 16, 4, true,
-             new EscapeTransliterator(UnicodeString(), UnicodeString(true, BS_U, 2), UnicodeString(), 16, 8, true, NULL));
+    return new EscapeTransliterator(ID, UnicodeString(TRUE, BS_u, 2), UnicodeString(), 16, 4, TRUE,
+             new EscapeTransliterator(UnicodeString(), UnicodeString(TRUE, BS_U, 2), UnicodeString(), 16, 8, TRUE, NULL));
 }
 static Transliterator* _createEscXML(const UnicodeString& ID, Transliterator::Token ) {
     
-    return new EscapeTransliterator(ID, UnicodeString(true, XMLPRE, 3), UnicodeString(SEMI[0]), 16, 1, true, NULL);
+    return new EscapeTransliterator(ID, UnicodeString(TRUE, XMLPRE, 3), UnicodeString(SEMI[0]), 16, 1, TRUE, NULL);
 }
 static Transliterator* _createEscXML10(const UnicodeString& ID, Transliterator::Token ) {
     
-    return new EscapeTransliterator(ID, UnicodeString(true, XML10PRE, 2), UnicodeString(SEMI[0]), 10, 1, true, NULL);
+    return new EscapeTransliterator(ID, UnicodeString(TRUE, XML10PRE, 2), UnicodeString(SEMI[0]), 10, 1, TRUE, NULL);
 }
 static Transliterator* _createEscPerl(const UnicodeString& ID, Transliterator::Token ) {
     
-    return new EscapeTransliterator(ID, UnicodeString(true, PERLPRE, 3), UnicodeString(RBRACE[0]), 16, 1, true, NULL);
+    return new EscapeTransliterator(ID, UnicodeString(TRUE, PERLPRE, 3), UnicodeString(RBRACE[0]), 16, 1, TRUE, NULL);
 }
 
 
@@ -139,7 +139,7 @@ void EscapeTransliterator::handleTransliterate(Replaceable& text,
 
     UnicodeString buf(prefix);
     int32_t prefixLen = prefix.length();
-    UBool redoPrefix = false;
+    UBool redoPrefix = FALSE;
 
     while (start < limit) {
         int32_t c = grokSupplementals ? text.char32At(start) : text.charAt(start);
@@ -151,12 +151,12 @@ void EscapeTransliterator::handleTransliterate(Replaceable& text,
             ICU_Utility::appendNumber(buf, c, supplementalHandler->radix,
                                   supplementalHandler->minDigits);
             buf.append(supplementalHandler->suffix);
-            redoPrefix = true;
+            redoPrefix = TRUE;
         } else {
             if (redoPrefix) {
                 buf.truncate(0);
                 buf.append(prefix);
-                redoPrefix = false;
+                redoPrefix = FALSE;
             } else {
                 buf.truncate(prefixLen);
             }

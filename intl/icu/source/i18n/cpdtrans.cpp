@@ -73,7 +73,7 @@ CompoundTransliterator::CompoundTransliterator(const UnicodeString& id,
     trans(0), numAnonymousRBTs(0) {
     
     
-    init(id, direction, true, status);
+    init(id, direction, TRUE, status);
 }
 
 CompoundTransliterator::CompoundTransliterator(const UnicodeString& id,
@@ -83,7 +83,7 @@ CompoundTransliterator::CompoundTransliterator(const UnicodeString& id,
     trans(0), numAnonymousRBTs(0) {
     
     
-    init(id, UTRANS_FORWARD, true, status);
+    init(id, UTRANS_FORWARD, TRUE, status);
 }
 
 
@@ -99,7 +99,7 @@ CompoundTransliterator::CompoundTransliterator(const UnicodeString& newID,
     Transliterator(newID, adoptedFilter),
     trans(0), numAnonymousRBTs(anonymousRBTs)
 {
-    init(list, UTRANS_FORWARD, false, status);
+    init(list, UTRANS_FORWARD, FALSE, status);
 }
 
 
@@ -115,7 +115,7 @@ CompoundTransliterator::CompoundTransliterator(UVector& list,
 {
     
     
-    init(list, UTRANS_FORWARD, false, status);
+    init(list, UTRANS_FORWARD, FALSE, status);
     
 }
 
@@ -126,7 +126,7 @@ CompoundTransliterator::CompoundTransliterator(UVector& list,
     Transliterator(UnicodeString(), NULL),
     trans(0), numAnonymousRBTs(anonymousRBTs)
 {
-    init(list, UTRANS_FORWARD, false, status);
+    init(list, UTRANS_FORWARD, FALSE, status);
 }
 
 
@@ -285,7 +285,7 @@ CompoundTransliterator& CompoundTransliterator::operator=(
     if (this == &t) { return *this; }  
     Transliterator::operator=(t);
     int32_t i = 0;
-    UBool failed = false;
+    UBool failed = FALSE;
     if (trans != NULL) {
         for (i=0; i<count; ++i) {
             delete trans[i];
@@ -303,7 +303,7 @@ CompoundTransliterator& CompoundTransliterator::operator=(
         for (i=0; i<count; ++i) {
             trans[i] = t.trans[i]->clone();
             if (trans[i] == NULL) {
-                failed = true;
+                failed = TRUE;
                 break;
             }
         }
@@ -352,11 +352,11 @@ void CompoundTransliterator::setTransliterators(Transliterator* const transliter
         return;
     }
     int32_t i = 0;
-    UBool failed = false;
+    UBool failed = FALSE;
     for (i=0; i<transCount; ++i) {
         a[i] = transliterators[i]->clone();
         if (a[i] == NULL) {
-            failed = true;
+            failed = TRUE;
             break;
         }
     }

@@ -78,9 +78,9 @@ UBool
 UTF16CollationIterator::foundNULTerminator() {
     if(limit == NULL) {
         limit = --pos;
-        return true;
+        return TRUE;
     } else {
-        return false;
+        return FALSE;
     }
 }
 
@@ -241,9 +241,9 @@ UBool
 FCDUTF16CollationIterator::foundNULTerminator() {
     if(limit == NULL) {
         limit = rawLimit = --pos;
-        return true;
+        return TRUE;
     } else {
-        return false;
+        return FALSE;
     }
 }
 
@@ -372,7 +372,7 @@ FCDUTF16CollationIterator::switchToForward() {
 
 UBool
 FCDUTF16CollationIterator::nextSegment(UErrorCode &errorCode) {
-    if(U_FAILURE(errorCode)) { return false; }
+    if(U_FAILURE(errorCode)) { return FALSE; }
     U_ASSERT(checkDir > 0 && pos != limit);
     
     const UChar *p = pos;
@@ -392,7 +392,7 @@ FCDUTF16CollationIterator::nextSegment(UErrorCode &errorCode) {
             do {
                 q = p;
             } while(p != rawLimit && nfcImpl.nextFCD16(p, rawLimit) > 0xff);
-            if(!normalize(pos, q, errorCode)) { return false; }
+            if(!normalize(pos, q, errorCode)) { return FALSE; }
             pos = start;
             break;
         }
@@ -405,7 +405,7 @@ FCDUTF16CollationIterator::nextSegment(UErrorCode &errorCode) {
     }
     U_ASSERT(pos != limit);
     checkDir = 0;
-    return true;
+    return TRUE;
 }
 
 void
@@ -436,7 +436,7 @@ FCDUTF16CollationIterator::switchToBackward() {
 
 UBool
 FCDUTF16CollationIterator::previousSegment(UErrorCode &errorCode) {
-    if(U_FAILURE(errorCode)) { return false; }
+    if(U_FAILURE(errorCode)) { return FALSE; }
     U_ASSERT(checkDir < 0 && pos != start);
     
     const UChar *p = pos;
@@ -458,7 +458,7 @@ FCDUTF16CollationIterator::previousSegment(UErrorCode &errorCode) {
                 q = p;
             } while(fcd16 > 0xff && p != rawStart &&
                     (fcd16 = nfcImpl.previousFCD16(rawStart, p)) != 0);
-            if(!normalize(q, pos, errorCode)) { return false; }
+            if(!normalize(q, pos, errorCode)) { return FALSE; }
             pos = limit;
             break;
         }
@@ -471,7 +471,7 @@ FCDUTF16CollationIterator::previousSegment(UErrorCode &errorCode) {
     }
     U_ASSERT(pos != start);
     checkDir = 0;
-    return true;
+    return TRUE;
 }
 
 UBool
@@ -479,14 +479,14 @@ FCDUTF16CollationIterator::normalize(const UChar *from, const UChar *to, UErrorC
     
     U_ASSERT(U_SUCCESS(errorCode));
     nfcImpl.decompose(from, to, normalized, (int32_t)(to - from), errorCode);
-    if(U_FAILURE(errorCode)) { return false; }
+    if(U_FAILURE(errorCode)) { return FALSE; }
     
     
     segmentStart = from;
     segmentLimit = to;
     start = normalized.getBuffer();
     limit = start + normalized.length();
-    return true;
+    return TRUE;
 }
 
 U_NAMESPACE_END

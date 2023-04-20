@@ -205,7 +205,7 @@ CollationData::getEquivalentScripts(int32_t script,
 void
 CollationData::makeReorderRanges(const int32_t *reorder, int32_t length,
                                  UVector32 &ranges, UErrorCode &errorCode) const {
-    makeReorderRanges(reorder, length, false, ranges, errorCode);
+    makeReorderRanges(reorder, length, FALSE, ranges, errorCode);
 }
 
 void
@@ -277,12 +277,12 @@ CollationData::makeReorderRanges(const int32_t *reorder, int32_t length,
 
     
     int32_t originalLength = length;  
-    UBool hasReorderToEnd = false;
+    UBool hasReorderToEnd = FALSE;
     for(int32_t i = 0; i < length;) {
         int32_t script = reorder[i++];
         if(script == USCRIPT_UNKNOWN) {
             
-            hasReorderToEnd = true;
+            hasReorderToEnd = TRUE;
             while(i < length) {
                 script = reorder[--length];
                 if(script == USCRIPT_UNKNOWN ||  
@@ -329,7 +329,7 @@ CollationData::makeReorderRanges(const int32_t *reorder, int32_t length,
     if(lowStart > highLimit) {
         if((lowStart - (skippedReserved & 0xff00)) <= highLimit) {
             
-            makeReorderRanges(reorder, originalLength, true, ranges, errorCode);
+            makeReorderRanges(reorder, originalLength, TRUE, ranges, errorCode);
             return;
         }
         

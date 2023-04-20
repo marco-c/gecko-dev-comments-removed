@@ -266,6 +266,20 @@ public:
 
 
 
+
+
+
+
+    UBool getStartInYear(int32_t year, int32_t prevRawOffset, int32_t prevDSTSavings, UDate& result) const;
+
+    
+
+
+
+
+
+
+
     virtual UBool isEquivalentTo(const TimeZoneRule& that) const override;
 
     

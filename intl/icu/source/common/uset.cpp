@@ -384,11 +384,11 @@ uset_getSerializedSet(USerializedSet* fillSet, const uint16_t* src, int32_t srcL
     int32_t length;
 
     if(fillSet==NULL) {
-        return false;
+        return FALSE;
     }
     if(src==NULL || srcLength<=0) {
         fillSet->length=fillSet->bmpLength=0;
-        return false;
+        return FALSE;
     }
 
     length=*src++;
@@ -397,20 +397,20 @@ uset_getSerializedSet(USerializedSet* fillSet, const uint16_t* src, int32_t srcL
         length&=0x7fff;
         if(srcLength<(2+length)) {
             fillSet->length=fillSet->bmpLength=0;
-            return false;
+            return FALSE;
         }
         fillSet->bmpLength=*src++;
     } else {
         
         if(srcLength<(1+length)) {
             fillSet->length=fillSet->bmpLength=0;
-            return false;
+            return FALSE;
         }
         fillSet->bmpLength=length;
     }
     fillSet->array=src;
     fillSet->length=length;
-    return true;
+    return TRUE;
 }
 
 U_CAPI void U_EXPORT2
@@ -451,7 +451,7 @@ uset_serializedContains(const USerializedSet* set, UChar32 c) {
     const uint16_t* array;
 
     if(set==NULL || (uint32_t)c>0x10ffff) {
-        return false;
+        return FALSE;
     }
 
     array=set->array;
@@ -520,7 +520,7 @@ uset_getSerializedRange(const USerializedSet* set, int32_t rangeIndex,
     int32_t bmpLength, length;
 
     if(set==NULL || rangeIndex<0 || pStart==NULL || pEnd==NULL) {
-        return false;
+        return FALSE;
     }
 
     array=set->array;
@@ -537,7 +537,7 @@ uset_getSerializedRange(const USerializedSet* set, int32_t rangeIndex,
         } else {
             *pEnd=0x10ffff;
         }
-        return true;
+        return TRUE;
     } else {
         rangeIndex-=bmpLength;
         rangeIndex*=2; 
@@ -551,9 +551,9 @@ uset_getSerializedRange(const USerializedSet* set, int32_t rangeIndex,
             } else {
                 *pEnd=0x10ffff;
             }
-            return true;
+            return TRUE;
         } else {
-            return false;
+            return FALSE;
         }
     }
 }

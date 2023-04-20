@@ -258,7 +258,7 @@ class U_COMMON_API ICU_Utility  {
 
 private:
     
-    ICU_Utility() = delete;
+    ICU_Utility();
 };
 
 U_NAMESPACE_END

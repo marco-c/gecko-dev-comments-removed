@@ -55,7 +55,7 @@ public:
                                                             UnicodeString &result);
 
 private:
-    MessageImpl() = delete;  
+    MessageImpl();  
 };
 
 U_NAMESPACE_END

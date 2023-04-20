@@ -51,8 +51,8 @@ class U_COMMON_API CStr : public UMemory {
 
   private:
     CharString s;
-    CStr(const CStr &other) = delete;               
-    CStr &operator =(const CStr &other) = delete;   
+    CStr(const CStr &other);               
+    CStr &operator =(const CStr &other);   
 };
 
 U_NAMESPACE_END

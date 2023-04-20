@@ -60,7 +60,7 @@ U_CDECL_BEGIN
 
 
 
-#define U_UNICODE_VERSION "15.0"
+#define U_UNICODE_VERSION "14.0"
 
 
 
@@ -483,6 +483,7 @@ typedef enum UProperty {
 
 
     UCHAR_EXTENDED_PICTOGRAPHIC=64,
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -532,6 +533,7 @@ typedef enum UProperty {
 
 
     UCHAR_RGI_EMOJI=71,
+#endif  
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -1883,23 +1885,6 @@ enum UBlockCode {
     
     UBLOCK_ZNAMENNY_MUSICAL_NOTATION = 320, 
 
-    
-
-    
-    UBLOCK_ARABIC_EXTENDED_C = 321, 
-    
-    UBLOCK_CJK_UNIFIED_IDEOGRAPHS_EXTENSION_H = 322, 
-    
-    UBLOCK_CYRILLIC_EXTENDED_D = 323, 
-    
-    UBLOCK_DEVANAGARI_EXTENDED_A = 324, 
-    
-    UBLOCK_KAKTOVIK_NUMERALS = 325, 
-    
-    UBLOCK_KAWI = 326, 
-    
-    UBLOCK_NAG_MUNDARI = 327, 
-
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -1907,7 +1892,7 @@ enum UBlockCode {
 
 
 
-    UBLOCK_COUNT = 328,
+    UBLOCK_COUNT = 321,
 #endif  
 
     
@@ -2695,6 +2680,8 @@ typedef enum UVerticalOrientation {
 U_CAPI UBool U_EXPORT2
 u_hasBinaryProperty(UChar32 c, UProperty which);
 
+#ifndef U_HIDE_DRAFT_API
+
 
 
 
@@ -2721,6 +2708,8 @@ u_hasBinaryProperty(UChar32 c, UProperty which);
 
 U_CAPI UBool U_EXPORT2
 u_stringHasBinaryProperty(const UChar *s, int32_t length, UProperty which);
+
+#endif  
 
 
 

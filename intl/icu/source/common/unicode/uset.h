@@ -850,6 +850,7 @@ uset_removeAllStrings(USet* set);
 U_CAPI UBool U_EXPORT2
 uset_isEmpty(const USet* set);
 
+#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -857,6 +858,7 @@ uset_isEmpty(const USet* set);
 
 U_CAPI UBool U_EXPORT2
 uset_hasStrings(const USet *set);
+#endif  
 
 
 
@@ -939,6 +941,7 @@ uset_charAt(const USet* set, int32_t charIndex);
 U_CAPI int32_t U_EXPORT2
 uset_size(const USet* set);
 
+#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -949,6 +952,7 @@ uset_size(const USet* set);
 
 U_CAPI int32_t U_EXPORT2
 uset_getRangeCount(const USet *set);
+#endif  
 
 
 

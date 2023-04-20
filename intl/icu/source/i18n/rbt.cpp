@@ -34,7 +34,7 @@ void RuleBasedTransliterator::_construct(const UnicodeString& rules,
                                          UParseError& parseError,
                                          UErrorCode& status) {
     fData = 0;
-    isDataOwned = true;
+    isDataOwned = TRUE;
     if (U_FAILURE(status)) {
         return;
     }
@@ -143,7 +143,7 @@ RuleBasedTransliterator::RuleBasedTransliterator(const UnicodeString& id,
                                  UnicodeFilter* adoptedFilter) :
     Transliterator(id, adoptedFilter),
     fData((TransliterationRuleData*)theData), 
-    isDataOwned(false) {
+    isDataOwned(FALSE) {
     setMaximumContextLength(fData->ruleSet.getMaximumContextLength());
 }
 
@@ -241,7 +241,7 @@ RuleBasedTransliterator::handleTransliterate(Replaceable& text, UTransPosition& 
     
     
 
-    UBool    lockedMutexAtThisLevel = false;
+    UBool    lockedMutexAtThisLevel = FALSE;
 
     
     
@@ -263,7 +263,7 @@ RuleBasedTransliterator::handleTransliterate(Replaceable& text, UTransPosition& 
         umtx_lock(&transliteratorDataMutex);  
         Mutex m;
         gLockedText = &text;
-        lockedMutexAtThisLevel = true;
+        lockedMutexAtThisLevel = TRUE;
     }
     
     
@@ -292,14 +292,14 @@ UnicodeString& RuleBasedTransliterator::toRules(UnicodeString& rulesSource,
 
 
 void RuleBasedTransliterator::handleGetSourceSet(UnicodeSet& result) const {
-    fData->ruleSet.getSourceTargetSet(result, false);
+    fData->ruleSet.getSourceTargetSet(result, FALSE);
 }
 
 
 
 
 UnicodeSet& RuleBasedTransliterator::getTargetSet(UnicodeSet& result) const {
-    return fData->ruleSet.getSourceTargetSet(result, true);
+    return fData->ruleSet.getSourceTargetSet(result, TRUE);
 }
 
 U_NAMESPACE_END

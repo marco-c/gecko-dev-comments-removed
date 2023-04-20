@@ -358,7 +358,7 @@ struct TimeUnitFormatReadSink : public ResourceSink {
     TimeUnitFormatReadSink(TimeUnitFormat *timeUnitFormatObj,
             const UVector &pluralCounts, UTimeUnitFormatStyle style) :
             timeUnitFormatObj(timeUnitFormatObj), pluralCounts(pluralCounts),
-            style(style), beenHere(false){}
+            style(style), beenHere(FALSE){}
 
     virtual ~TimeUnitFormatReadSink();
 
@@ -367,7 +367,7 @@ struct TimeUnitFormatReadSink : public ResourceSink {
         if (beenHere) {
             return;
         } else {
-            beenHere = true;
+            beenHere = TRUE;
         }
 
         ResourceTable units = value.getTable(errorCode);
@@ -573,7 +573,7 @@ TimeUnitFormat::searchInLocaleChain(UTimeUnitFormatStyle style, const char* key,
         if (U_SUCCESS(status)) {
             
             LocalPointer<MessageFormat> messageFormat(
-                new MessageFormat(UnicodeString(true, pattern, ptLength), getLocale(err), err), err);
+                new MessageFormat(UnicodeString(TRUE, pattern, ptLength), getLocale(err), err), err);
             if (U_FAILURE(err)) {
                 return;
             }
@@ -643,7 +643,7 @@ TimeUnitFormat::searchInLocaleChain(UTimeUnitFormatStyle style, const char* key,
         }
         if (pattern != NULL) {
             messageFormat.adoptInsteadAndCheckErrorCode(
-                     new MessageFormat(UnicodeString(true, pattern, -1), getLocale(err), err), err);
+                     new MessageFormat(UnicodeString(TRUE, pattern, -1), getLocale(err), err), err);
         }
         if (U_FAILURE(err)) {
             return;
@@ -761,7 +761,7 @@ TimeUnitFormat::initHash(UErrorCode& status) {
         return NULL;
     }
     Hashtable* hTable;
-    if ( (hTable = new Hashtable(true, status)) == NULL ) {
+    if ( (hTable = new Hashtable(TRUE, status)) == NULL ) {
         status = U_MEMORY_ALLOCATION_ERROR;
         return NULL;
     }

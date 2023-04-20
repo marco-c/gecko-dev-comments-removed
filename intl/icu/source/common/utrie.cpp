@@ -72,14 +72,14 @@ utrie_open(UNewTrie *fillIn,
 
     if(aliasData!=NULL) {
         trie->data=aliasData;
-        trie->isDataAllocated=false;
+        trie->isDataAllocated=FALSE;
     } else {
         trie->data=(uint32_t *)uprv_malloc(maxDataLength*4);
         if(trie->data==NULL) {
             uprv_free(trie);
             return NULL;
         }
-        trie->isDataAllocated=true;
+        trie->isDataAllocated=TRUE;
     }
 
     
@@ -108,7 +108,7 @@ utrie_open(UNewTrie *fillIn,
     trie->indexLength=UTRIE_MAX_INDEX_LENGTH;
     trie->dataCapacity=maxDataLength;
     trie->isLatin1Linear=latin1Linear;
-    trie->isCompacted=false;
+    trie->isCompacted=FALSE;
     return trie;
 }
 
@@ -124,14 +124,14 @@ utrie_clone(UNewTrie *fillIn, const UNewTrie *other, uint32_t *aliasData, int32_
 
     
     if(aliasData!=NULL && aliasDataCapacity>=other->dataCapacity) {
-        isDataAllocated=false;
+        isDataAllocated=FALSE;
     } else {
         aliasDataCapacity=other->dataCapacity;
         aliasData=(uint32_t *)uprv_malloc(other->dataCapacity*4);
         if(aliasData==NULL) {
             return NULL;
         }
-        isDataAllocated=true;
+        isDataAllocated=TRUE;
     }
 
     trie=utrie_open(fillIn, aliasData, aliasDataCapacity,
@@ -224,16 +224,16 @@ utrie_set32(UNewTrie *trie, UChar32 c, uint32_t value) {
 
     
     if(trie==NULL || trie->isCompacted || (uint32_t)c>0x10ffff) {
-        return false;
+        return FALSE;
     }
 
     block=utrie_getDataBlock(trie, c);
     if(block<0) {
-        return false;
+        return FALSE;
     }
 
     trie->data[block+(c&UTRIE_MASK)]=value;
-    return true;
+    return TRUE;
 }
 
 U_CAPI uint32_t U_EXPORT2
@@ -243,7 +243,7 @@ utrie_get32(UNewTrie *trie, UChar32 c, UBool *pInBlockZero) {
     
     if(trie==NULL || trie->isCompacted || (uint32_t)c>0x10ffff) {
         if(pInBlockZero!=NULL) {
-            *pInBlockZero=true;
+            *pInBlockZero=TRUE;
         }
         return 0;
     }
@@ -294,10 +294,10 @@ utrie_setRange32(UNewTrie *trie, UChar32 start, UChar32 limit, uint32_t value, U
     if( trie==NULL || trie->isCompacted ||
         (uint32_t)start>0x10ffff || (uint32_t)limit>0x110000 || start>limit
     ) {
-        return false;
+        return FALSE;
     }
     if(start==limit) {
-        return true; 
+        return TRUE; 
     }
 
     initialValue=trie->data[0];
@@ -307,7 +307,7 @@ utrie_setRange32(UNewTrie *trie, UChar32 start, UChar32 limit, uint32_t value, U
         
         block=utrie_getDataBlock(trie, start);
         if(block<0) {
-            return false;
+            return FALSE;
         }
 
         nextStart=(start+UTRIE_DATA_BLOCK_LENGTH)&~UTRIE_MASK;
@@ -318,7 +318,7 @@ utrie_setRange32(UNewTrie *trie, UChar32 start, UChar32 limit, uint32_t value, U
         } else {
             utrie_fillBlock(trie->data+block, start&UTRIE_MASK, limit&UTRIE_MASK,
                             value, initialValue, overwrite);
-            return true;
+            return TRUE;
         }
     }
 
@@ -348,12 +348,12 @@ utrie_setRange32(UNewTrie *trie, UChar32 start, UChar32 limit, uint32_t value, U
                 
                 repeatBlock=utrie_getDataBlock(trie, start);
                 if(repeatBlock<0) {
-                    return false;
+                    return FALSE;
                 }
 
                 
                 trie->index[start>>UTRIE_SHIFT]=-repeatBlock;
-                utrie_fillBlock(trie->data+repeatBlock, 0, UTRIE_DATA_BLOCK_LENGTH, value, initialValue, true);
+                utrie_fillBlock(trie->data+repeatBlock, 0, UTRIE_DATA_BLOCK_LENGTH, value, initialValue, TRUE);
             }
         }
 
@@ -364,13 +364,13 @@ utrie_setRange32(UNewTrie *trie, UChar32 start, UChar32 limit, uint32_t value, U
         
         block=utrie_getDataBlock(trie, start);
         if(block<0) {
-            return false;
+            return FALSE;
         }
 
         utrie_fillBlock(trie->data+block, 0, rest, value, initialValue, overwrite);
     }
 
-    return true;
+    return TRUE;
 }
 
 static int32_t
@@ -437,7 +437,7 @@ utrie_fold(UNewTrie *trie, UNewTrieGetFoldedValue *getFoldedValue, UErrorCode *p
             *pErrorCode=U_MEMORY_ALLOCATION_ERROR;
             return;
         }
-        utrie_fillBlock(trie->data+block, 0, UTRIE_DATA_BLOCK_LENGTH, trie->leadUnitValue, trie->data[0], true);
+        utrie_fillBlock(trie->data+block, 0, UTRIE_DATA_BLOCK_LENGTH, trie->leadUnitValue, trie->data[0], TRUE);
         block=-block; 
     }
     for(c=(0xd800>>UTRIE_SHIFT); c<(0xdc00>>UTRIE_SHIFT); ++c) {
@@ -766,15 +766,15 @@ utrie_serialize(UNewTrie *trie, void *dt, int32_t capacity,
     
     if(!trie->isCompacted) {
         
-        utrie_compact(trie, false, pErrorCode);
+        utrie_compact(trie, FALSE, pErrorCode);
 
         
         utrie_fold(trie, getFoldedValue, pErrorCode);
 
         
-        utrie_compact(trie, true, pErrorCode);
+        utrie_compact(trie, TRUE, pErrorCode);
 
-        trie->isCompacted=true;
+        trie->isCompacted=TRUE;
         if(U_FAILURE(*pErrorCode)) {
             return 0;
         }
@@ -966,7 +966,7 @@ utrie_unserializeDummy(UTrie *trie,
         return actualLength;
     }
 
-    trie->isLatin1Linear=true;
+    trie->isLatin1Linear=TRUE;
     trie->initialValue=initialValue;
 
     

@@ -429,7 +429,7 @@ udat_getBooleanAttribute(const UDateFormat* fmt,
                          UDateFormatBooleanAttribute attr, 
                          UErrorCode* status)
 {
-    if(U_FAILURE(*status)) return false;
+    if(U_FAILURE(*status)) return FALSE;
     return ((DateFormat*)fmt)->getBooleanAttribute(attr, *status);
     
 }

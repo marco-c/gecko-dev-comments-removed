@@ -24,12 +24,14 @@
 #include "unicode/uobject.h"
 #include "ztrans.h"
 
+#ifndef UCNV_H
 struct VZone;
 
 
 
 
 typedef struct VZone VZone;
+#endif
 
 
 

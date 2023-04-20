@@ -175,13 +175,13 @@ void UnescapeTransliterator::handleTransliterate(Replaceable& text, UTransPositi
                                                  UBool isIncremental) const {
     int32_t start = pos.start;
     int32_t limit = pos.limit;
-    int32_t i, ipat;
+    int32_t i, j, ipat;
 
     while (start < limit) {
         
         
         
-        for (ipat=0; spec[ipat] != END;) {
+        for (j=0, ipat=0; spec[ipat] != END; ++j) {
 
             
             int32_t prefixLen = spec[ipat++];
@@ -193,7 +193,7 @@ void UnescapeTransliterator::handleTransliterate(Replaceable& text, UTransPositi
             
             
             int32_t s = start;
-            UBool match = true;
+            UBool match = TRUE;
 
             for (i=0; i<prefixLen; ++i) {
                 if (s >= limit) {
@@ -205,13 +205,13 @@ void UnescapeTransliterator::handleTransliterate(Replaceable& text, UTransPositi
                         if (isIncremental) {
                             goto exit;
                         }
-                        match = false;
+                        match = FALSE;
                         break;
                     }
                 }
                 UChar c = text.charAt(s++);
                 if (c != spec[ipat + i]) {
-                    match = false;
+                    match = FALSE;
                     break;
                 }
             }
@@ -248,12 +248,12 @@ void UnescapeTransliterator::handleTransliterate(Replaceable& text, UTransPositi
                             if (s > start && isIncremental) {
                                 goto exit;
                             }
-                            match = false;
+                            match = FALSE;
                             break;
                         }
                         UChar c = text.charAt(s++);
                         if (c != spec[ipat + prefixLen + i]) {
-                            match = false;
+                            match = FALSE;
                             break;
                         }
                     }

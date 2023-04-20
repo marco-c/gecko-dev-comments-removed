@@ -246,10 +246,8 @@ enum class Script : int16_t {
   TANGSA = 195,
   TOTO = 196,
   VITHKUQI = 197,
-  KAWI = 198,
-  NAG_MUNDARI = 199,
 
-  NUM_SCRIPT_CODES = 200,
+  NUM_SCRIPT_CODES = 198,
 
   INVALID = -1
 };

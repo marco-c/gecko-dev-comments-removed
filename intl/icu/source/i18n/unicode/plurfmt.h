@@ -561,7 +561,7 @@ private:
     double offset;
     PluralSelectorAdapter pluralRulesWrapper;
 
-    PluralFormat() = delete;   
+    PluralFormat();   
     void init(const PluralRules* rules, UPluralType type, UErrorCode& status);
     
 

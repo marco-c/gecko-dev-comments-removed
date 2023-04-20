@@ -221,7 +221,7 @@ UXMLParser::parseFile(const char *filename, UErrorCode &errorCode) {
             cnv,
             &pu, buffer+src.getCapacity(),
             &pb, bytes+bytesLength,
-            NULL, true, &errorCode);
+            NULL, TRUE, &errorCode);
         src.releaseBuffer(U_SUCCESS(errorCode) ? (int32_t)(pu-buffer) : 0);
         ucnv_close(cnv);
         cnv=NULL;
@@ -272,7 +272,7 @@ UXMLParser::parseFile(const char *filename, UErrorCode &errorCode) {
     capacity=fileLength;        
     src.getBuffer(capacity);
     src.releaseBuffer(0);       
-    flush=false;
+    flush=FALSE;
     for(;;) {
         
         pb=bytes;
@@ -289,7 +289,7 @@ UXMLParser::parseFile(const char *filename, UErrorCode &errorCode) {
             ucnv_toUnicode(
                 cnv, &pu, buffer+src.getCapacity(),
                 &pb, bytes+bytesLength,
-                NULL, false, &errorCode);
+                NULL, FALSE, &errorCode);
             src.releaseBuffer(U_SUCCESS(errorCode) ? (int32_t)(pu-buffer) : 0);
             if(errorCode==U_BUFFER_OVERFLOW_ERROR) {
                 errorCode=U_ZERO_ERROR;
@@ -311,7 +311,7 @@ UXMLParser::parseFile(const char *filename, UErrorCode &errorCode) {
         bytesLength=T_FileStream_read(f, bytes, (int32_t)sizeof(bytes));
         if(bytesLength==0) {
             
-            flush=true;
+            flush=TRUE;
         }
     }
 
@@ -373,7 +373,7 @@ UXMLParser::parse(const UnicodeString &src, UErrorCode &status) {
         root = createElement(mXMLElemEmpty, status);
         fPos = mXMLElemEmpty.end(status);
     } else {
-        if (mXMLElemStart.lookingAt(fPos, status) == false) {
+        if (mXMLElemStart.lookingAt(fPos, status) == FALSE) {
             error("Root Element expected", status);
             goto errorExit;
         }
@@ -403,7 +403,7 @@ UXMLParser::parse(const UnicodeString &src, UErrorCode &status) {
             UnicodeString s = scanContent(status);
             if (s.length() > 0) {
                 mXMLSP.reset(s);
-                if (mXMLSP.matches(status) == false) {
+                if (mXMLSP.matches(status) == FALSE) {
                     
                     
                     replaceCharRefs(s, status);

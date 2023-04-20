@@ -164,6 +164,7 @@ class U_COMMON_API UnicodeSetIterator U_FINAL : public UObject {
 
     const UnicodeString& getString();
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -180,6 +181,7 @@ class U_COMMON_API UnicodeSetIterator U_FINAL : public UObject {
         nextElement = 0;
         return *this;
     }
+#endif  
 
     
 
