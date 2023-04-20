@@ -8,10 +8,9 @@
 
 
 
-function initModule(discardOffset, discardLen, discardViaJS, shared, memType = 'i32') {
-    const memProps = shared ? '4 4 shared' : '4'; 
+function initModule(discardOffset, discardLen, discardViaJS, memType = 'i32') {
     const text = `(module
-        (memory (export "memory") ${memType} ${memProps})
+        (memory (export "memory") ${memType} 4) ;; 4 pages
         (data "abcdefghijklmnopqrstuvwxyz")
         (func (export "init")
             ;; splat alphabet halfway across the 3/4 page boundary.
@@ -42,21 +41,17 @@ function checkSecondHalf(exp, expectLetters) { return checkRegion(exp, 13, 26, e
 function checkWholeAlphabet(exp, expectLetters) { return checkRegion(exp, 0, 26, expectLetters) }
 
 function testAll(func) {
-    func(false, false, 'i32');
-    func(false, true, 'i32');
-    func(true, false, 'i32');
-    func(true, true, 'i32');
+    func(false, 'i32');
+    func(true, 'i32');
     if (wasmMemory64Enabled()) {
-        func(false, false, 'i64');
-        func(false, true, 'i64');
-        func(true, false, 'i64');
-        func(true, true, 'i64');
+        func(false, 'i64');
+        func(true, 'i64');
     }
 }
 
-testAll(function testHappyPath(discardViaJS, shared, memType) {
+testAll(function testHappyPath(discardViaJS, memType) {
     
-    const [exp, discard] = initModule(65536 * 2, 65536, discardViaJS, shared, memType);
+    const [exp, discard] = initModule(65536 * 2, 65536, discardViaJS, memType);
 
     
     checkWholeAlphabet(exp, false);
@@ -80,9 +75,9 @@ testAll(function testHappyPath(discardViaJS, shared, memType) {
     checkSecondHalf(exp, true);
 });
 
-testAll(function testZeroLen(discardViaJS, shared) {
+testAll(function testZeroLen(discardViaJS) {
     
-    const [exp, discard] = initModule(PageSizeInBytes * 2, 0, discardViaJS, shared);
+    const [exp, discard] = initModule(PageSizeInBytes * 2, 0, discardViaJS);
 
     
     exp.init();
@@ -95,14 +90,10 @@ testAll(function testZeroLen(discardViaJS, shared) {
     checkWholeAlphabet(exp, true);
 });
 
-testAll(function testWithGrow(discardViaJS, shared, memType) {
-    if (shared) {
-        return; 
-    }
-
+testAll(function testWithGrow(discardViaJS, memType) {
     
     
-    const [exp, discard] = initModule(65536 * 2, 65536, discardViaJS, false, memType);
+    const [exp, discard] = initModule(65536 * 2, 65536, discardViaJS, memType);
 
     
     exp.init();
@@ -128,11 +119,11 @@ testAll(function testWithGrow(discardViaJS, shared, memType) {
     discard();
     checkFirstHalf(exp, false);
     checkSecondHalf(exp, true);
-});
+})
 
-testAll(function testOOB(discardViaJS, shared) {
+testAll(function testOOB(discardViaJS) {
     
-    const [exp, discard] = initModule(PageSizeInBytes * 3, PageSizeInBytes * 2, discardViaJS, shared);
+    const [exp, discard] = initModule(PageSizeInBytes * 3, PageSizeInBytes * 2, discardViaJS);
 
     exp.init();
     checkWholeAlphabet(exp, true);
@@ -142,10 +133,10 @@ testAll(function testOOB(discardViaJS, shared) {
     checkWholeAlphabet(exp, true);
 });
 
-testAll(function testOOB2(discardViaJS, shared) {
+testAll(function testOOB2(discardViaJS) {
     
     
-    const [exp, discard] = initModule(2 ** 32 - PageSizeInBytes, PageSizeInBytes * 2, discardViaJS, shared);
+    const [exp, discard] = initModule(2 ** 32 - PageSizeInBytes, PageSizeInBytes * 2, discardViaJS);
 
     exp.init();
     checkWholeAlphabet(exp, true);
@@ -155,9 +146,9 @@ testAll(function testOOB2(discardViaJS, shared) {
     checkWholeAlphabet(exp, true);
 });
 
-testAll(function testOOB3(discardViaJS, shared) {
+testAll(function testOOB3(discardViaJS) {
     
-    const [exp, discard] = initModule(0, 2 ** 32 - PageSizeInBytes, discardViaJS, shared);
+    const [exp, discard] = initModule(0, 2 ** 32 - PageSizeInBytes, discardViaJS);
 
     exp.init();
     checkWholeAlphabet(exp, true);
@@ -188,7 +179,7 @@ if (wasmMemory64Enabled()) {
         
 
         
-        const [exp, discard] = initModule(65536 * 3, `18_446_744_073_709_420_544`, false, false, 'i64');
+        const [exp, discard] = initModule(65536 * 3, `18_446_744_073_709_420_544`, false, 'i64');
 
         
         exp.init();
@@ -202,9 +193,9 @@ if (wasmMemory64Enabled()) {
     })();
 }
 
-testAll(function testMisalignedStart(discardViaJS, shared) {
+testAll(function testMisalignedStart(discardViaJS) {
     
-    const [exp, discard] = initModule(PageSizeInBytes * 3 - 13, 13, discardViaJS, shared);
+    const [exp, discard] = initModule(PageSizeInBytes * 3 - 13, 13, discardViaJS);
 
     exp.init();
     checkWholeAlphabet(exp, true);
@@ -214,9 +205,9 @@ testAll(function testMisalignedStart(discardViaJS, shared) {
     checkWholeAlphabet(exp, true);
 });
 
-testAll(function testMisalignedEnd(discardViaJS, shared) {
+testAll(function testMisalignedEnd(discardViaJS) {
     
-    const [exp, discard] = initModule(PageSizeInBytes * 3, 13, discardViaJS, shared);
+    const [exp, discard] = initModule(PageSizeInBytes * 3, 13, discardViaJS);
 
     exp.init();
     checkWholeAlphabet(exp, true);

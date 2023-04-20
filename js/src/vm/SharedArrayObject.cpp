@@ -8,18 +8,14 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/TaggedAnonymousMemory.h"
 
 #include "gc/GCContext.h"
-#include "gc/Memory.h"
 #include "jit/AtomicOperations.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
 #include "js/SharedArrayBuffer.h"
 #include "util/Memory.h"
-#include "util/WindowsWrapper.h"
 #include "vm/SharedMem.h"
-#include "wasm/WasmConstants.h"
 #include "wasm/WasmMemory.h"
 
 #include "vm/ArrayBufferObject-inl.h"
@@ -33,7 +29,6 @@ using mozilla::Nothing;
 using mozilla::Some;
 
 using namespace js;
-using namespace js::jit;
 
 static size_t WasmSharedArrayAccessibleSize(size_t length) {
   return AlignBytes(length, gc::SystemPageSize());
@@ -172,67 +167,6 @@ bool WasmSharedArrayRawBuffer::wasmGrowToPagesInPlace(const Lock&,
   length_ = newLength;
 
   return true;
-}
-
-void WasmSharedArrayRawBuffer::discard(size_t byteOffset, size_t byteLen) {
-  SharedMem<uint8_t*> memBase = dataPointerShared();
-
-  
-  
-  MOZ_ASSERT(byteOffset % wasm::PageSize == 0);
-  MOZ_ASSERT(byteLen % wasm::PageSize == 0);
-  MOZ_ASSERT(wasm::MemoryBoundsCheck(uint64_t(byteOffset), uint64_t(byteLen),
-                                     volatileByteLength()));
-
-  
-  if (byteLen == 0) {
-    return;
-  }
-
-  SharedMem<uint8_t*> addr = memBase + uintptr_t(byteOffset);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-#ifdef XP_WIN
-  
-  
-  
-  
-  
-  size_t numPages = byteLen / wasm::PageSize;
-  for (size_t i = 0; i < numPages; i++) {
-    AtomicOperations::memsetSafeWhenRacy(addr + (i * wasm::PageSize), 0,
-                                         wasm::PageSize);
-    bool result =
-        VirtualUnlock(addr.unwrap() + (i * wasm::PageSize), wasm::PageSize);
-    MOZ_ASSERT(!result);  
-                          
-  }
-#elif defined(__wasi__)
-  AtomicOperations::memsetSafeWhenRacy(addr, 0, byteLen);
-#else  
-  void* data = MozTaggedAnonymousMmap(
-      addr.unwrap(), byteLen, PROT_READ | PROT_WRITE,
-      MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0, "wasm-reserved");
-  if (data == MAP_FAILED) {
-    MOZ_CRASH("failed to discard wasm memory; memory mappings may be broken");
-  }
-#endif
 }
 
 bool SharedArrayRawBuffer::addReference() {
@@ -481,14 +415,6 @@ SharedArrayBufferObject* SharedArrayBufferObject::createFromNewRawBuffer(
   }
 
   return obj;
-}
-
-
-void SharedArrayBufferObject::wasmDiscard(HandleSharedArrayBufferObject buf,
-                                          uint64_t byteOffset,
-                                          uint64_t byteLen) {
-  MOZ_ASSERT(buf->isWasm());
-  buf->rawWasmBufferObject()->discard(byteOffset, byteLen);
 }
 
 static const JSClassOps SharedArrayBufferObjectClassOps = {

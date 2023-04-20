@@ -54,7 +54,6 @@
 #include "vm/JSFunction.h"
 #include "vm/PlainObject.h"    
 #include "vm/PromiseObject.h"  
-#include "vm/SharedArrayObject.h"
 #include "vm/StringType.h"
 #include "vm/Warnings.h"       
 #include "vm/WellKnownAtom.h"  
@@ -2725,7 +2724,9 @@ bool WasmMemoryObject::discardImpl(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
-  discard(memory, byteOffset, byteLen, cx);
+  if (!discard(memory, byteOffset, byteLen, cx)) {
+    return false;
+  }
 
   args.rval().setUndefined();
   return true;
@@ -2962,17 +2963,21 @@ uint64_t WasmMemoryObject::grow(Handle<WasmMemoryObject*> memory,
 }
 
 
-void WasmMemoryObject::discard(Handle<WasmMemoryObject*> memory,
+bool WasmMemoryObject::discard(Handle<WasmMemoryObject*> memory,
                                uint64_t byteOffset, uint64_t byteLen,
                                JSContext* cx) {
+  
+  
+  
   if (memory->isShared()) {
-    RootedSharedArrayBufferObject buf(
-        cx, &memory->buffer().as<SharedArrayBufferObject>());
-    SharedArrayBufferObject::wasmDiscard(buf, byteOffset, byteLen);
-  } else {
-    RootedArrayBufferObject buf(cx, &memory->buffer().as<ArrayBufferObject>());
-    ArrayBufferObject::wasmDiscard(buf, byteOffset, byteLen);
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_NOT_IMPLEMENTED);
+    return false;
   }
+
+  RootedArrayBufferObject buf(cx, &memory->buffer().as<ArrayBufferObject>());
+  ArrayBufferObject::wasmDiscard(buf, byteOffset, byteLen);
+  return true;
 }
 
 bool js::wasm::IsSharedWasmMemoryObject(JSObject* obj) {
