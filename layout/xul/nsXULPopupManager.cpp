@@ -486,16 +486,18 @@ uint32_t nsXULPopupManager::GetSubmenuWidgetChain(
     if (!item->IsNoAutoHide()) {
       nsCOMPtr<nsIWidget> widget = item->Frame()->GetWidget();
       NS_ASSERTION(widget, "open popup has no widget");
-      aWidgetChain->AppendElement(widget.get());
-      
-      
-      
-      if (!sameTypeCount) {
-        count++;
-        if (!parent ||
-            item->Frame()->PopupType() != parent->Frame()->PopupType() ||
-            item->IsContextMenu() != parent->IsContextMenu()) {
-          sameTypeCount = count;
+      if (widget) {
+        aWidgetChain->AppendElement(widget.get());
+        
+        
+        
+        if (!sameTypeCount) {
+          count++;
+          if (!parent ||
+              item->Frame()->PopupType() != parent->Frame()->PopupType() ||
+              item->IsContextMenu() != parent->IsContextMenu()) {
+            sameTypeCount = count;
+          }
         }
       }
     }
