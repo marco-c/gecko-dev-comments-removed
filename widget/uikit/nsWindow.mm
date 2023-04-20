@@ -317,7 +317,7 @@ class nsAutoRetainUIKitObject {
   
   RefPtr<gfxQuartzSurface> targetSurface;
 
-  RefPtr<gfxContext> targetContext;
+  UniquePtrPtr<gfxContext> targetContext;
   if (gfxPlatform::GetPlatform()->SupportsAzureContentForType(gfx::BackendType::CAIRO)) {
     
     

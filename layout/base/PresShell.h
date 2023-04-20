@@ -590,7 +590,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  already_AddRefed<gfxContext> CreateReferenceRenderingContext();
+  mozilla::UniquePtr<gfxContext> CreateReferenceRenderingContext();
 
   
 

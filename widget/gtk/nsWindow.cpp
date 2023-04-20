@@ -3852,7 +3852,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   if (!dt || !dt->IsValid()) {
     return FALSE;
   }
-  RefPtr<gfxContext> ctx;
+  UniquePtr<gfxContext> ctx;
   IntRect boundsRect = region.GetBounds().ToUnknownRect();
   IntPoint offset(0, 0);
   if (dt->GetSize() == boundsRect.Size()) {
@@ -3908,7 +3908,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
         
         dt->ClearRect(Rect(boundsRect));
       }
-      AutoLayerManagerSetup setupLayerManager(this, ctx, layerBuffering);
+      AutoLayerManagerSetup setupLayerManager(this, ctx.get(), layerBuffering);
       painted = listener->PaintWindow(this, region);
 
       

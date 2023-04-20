@@ -823,7 +823,7 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   
   
   
-  RefPtr<gfxContext> rc =
+  UniquePtr<gfxContext> rc =
       aFrame->PresShell()->CreateReferenceRenderingContext();
 
   
@@ -834,7 +834,7 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   LogicalSize parentSize = parentFrame->GetLogicalSize();
 
   nsFrameState savedState = parentFrame->GetStateBits();
-  ReflowInput parentReflowInput(aFrame->PresContext(), parentFrame, rc,
+  ReflowInput parentReflowInput(aFrame->PresContext(), parentFrame, rc.get(),
                                 parentSize);
   parentFrame->RemoveStateBits(~nsFrameState(0));
   parentFrame->AddStateBits(savedState);
@@ -849,7 +849,7 @@ static bool RecomputePosition(nsIFrame* aFrame) {
                   parentFrame->IsTableFrame())) {
     const auto cbWM = cbFrame->GetWritingMode();
     LogicalSize cbSize = cbFrame->GetLogicalSize();
-    cbReflowInput.emplace(cbFrame->PresContext(), cbFrame, rc, cbSize);
+    cbReflowInput.emplace(cbFrame->PresContext(), cbFrame, rc.get(), cbSize);
     cbReflowInput->SetComputedLogicalMargin(
         cbWM, cbFrame->GetLogicalUsedMargin(cbWM));
     cbReflowInput->SetComputedLogicalPadding(

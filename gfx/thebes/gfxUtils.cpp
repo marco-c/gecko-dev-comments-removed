@@ -321,13 +321,13 @@ static already_AddRefed<gfxDrawable> CreateSamplingRestrictedDrawable(
     return nullptr;
   }
 
-  RefPtr<gfxContext> tmpCtx = gfxContext::CreateOrNull(target);
+  UniquePtr<gfxContext> tmpCtx = gfxContext::CreateOrNull(target);
   MOZ_ASSERT(tmpCtx);  
 
   if (aUseOptimalFillOp) {
     tmpCtx->SetOp(OptimalFillOp());
   }
-  aDrawable->Draw(tmpCtx, needed - needed.TopLeft(), ExtendMode::REPEAT,
+  aDrawable->Draw(tmpCtx.get(), needed - needed.TopLeft(), ExtendMode::REPEAT,
                   SamplingFilter::LINEAR, 1.0,
                   gfxMatrix::Translation(needed.TopLeft()));
   RefPtr<SourceSurface> surface = target->Snapshot();
@@ -474,7 +474,7 @@ static bool PrescaleAndTileDrawable(gfxDrawable* aDrawable,
     return false;
   }
 
-  RefPtr<gfxContext> tmpCtx = gfxContext::CreateOrNull(scaledDT);
+  UniquePtr<gfxContext> tmpCtx = gfxContext::CreateOrNull(scaledDT);
   MOZ_ASSERT(tmpCtx);  
 
   scaledDT->SetTransform(scaleMatrix);
@@ -482,8 +482,8 @@ static bool PrescaleAndTileDrawable(gfxDrawable* aDrawable,
                        aImageRect.height);
 
   
-  aDrawable->Draw(tmpCtx, gfxImageRect, ExtendMode::CLAMP, aSamplingFilter, 1.0,
-                  gfxMatrix());
+  aDrawable->Draw(tmpCtx.get(), gfxImageRect, ExtendMode::CLAMP,
+                  aSamplingFilter, 1.0, gfxMatrix());
 
   RefPtr<SourceSurface> scaledImage = scaledDT->Snapshot();
 

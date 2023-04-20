@@ -254,7 +254,7 @@ class WebRenderLayerManager final : public WindowRenderer {
   
   
   
-  RefPtr<gfxContext> mTarget;
+  gfxContext* mTarget;
 
   
   uint32_t mPaintSequenceNumber;

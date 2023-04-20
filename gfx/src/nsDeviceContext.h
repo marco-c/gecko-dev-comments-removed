@@ -73,7 +73,7 @@ class nsDeviceContext final {
 
 
 
-  already_AddRefed<gfxContext> CreateRenderingContext();
+  mozilla::UniquePtr<gfxContext> CreateRenderingContext();
 
   
 
@@ -81,7 +81,7 @@ class nsDeviceContext final {
 
 
 
-  already_AddRefed<gfxContext> CreateReferenceRenderingContext();
+  mozilla::UniquePtr<gfxContext> CreateReferenceRenderingContext();
 
   
 
@@ -270,7 +270,7 @@ class nsDeviceContext final {
 
 
 
-  already_AddRefed<gfxContext> CreateRenderingContextCommon(
+  mozilla::UniquePtr<gfxContext> CreateRenderingContextCommon(
       bool aWantReferenceContext);
 
   void SetDPI();

@@ -636,17 +636,18 @@ void FilterInstance::BuildSourcePaint(SourceInfo* aSource,
     return;
   }
 
-  RefPtr<gfxContext> ctx = gfxContext::CreateOrNull(offscreenDT);
+  UniquePtr<gfxContext> ctx = gfxContext::CreateOrNull(offscreenDT);
   MOZ_ASSERT(ctx);  
-  gfxContextAutoSaveRestore saver(ctx);
+  gfxContextAutoSaveRestore saver(ctx.get());
 
   ctx->SetMatrixDouble(mPaintTransform *
                        gfxMatrix::Translation(-neededRect.TopLeft()));
   GeneralPattern pattern;
   if (aSource == &mFillPaint) {
-    SVGUtils::MakeFillPatternFor(mTargetFrame, ctx, &pattern, aImgParams);
+    SVGUtils::MakeFillPatternFor(mTargetFrame, ctx.get(), &pattern, aImgParams);
   } else if (aSource == &mStrokePaint) {
-    SVGUtils::MakeStrokePatternFor(mTargetFrame, ctx, &pattern, aImgParams);
+    SVGUtils::MakeStrokePatternFor(mTargetFrame, ctx.get(), &pattern,
+                                   aImgParams);
   }
 
   if (pattern.GetPattern()) {
@@ -707,7 +708,7 @@ void FilterInstance::BuildSourceImage(DrawTarget* aDest,
   
   
   
-  RefPtr<gfxContext> ctx = gfxContext::CreateOrNull(offscreenDT);
+  UniquePtr<gfxContext> ctx = gfxContext::CreateOrNull(offscreenDT);
   MOZ_ASSERT(ctx);  
   gfxMatrix devPxToCssPxTM = SVGUtils::GetCSSPxToDevPxMatrix(mTargetFrame);
   DebugOnly<bool> invertible = devPxToCssPxTM.Invert();

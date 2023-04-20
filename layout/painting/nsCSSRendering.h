@@ -942,7 +942,8 @@ class nsContextBoxBlur {
                                      bool aConstrainSpreadRadius = true);
 
   gfxAlphaBoxBlur mAlphaBoxBlur;
-  RefPtr<gfxContext> mContext;
+  mozilla::UniquePtr<gfxContext> mOwnedContext;
+  gfxContext* mContext;  
   gfxContext* mDestinationCtx;
 
   

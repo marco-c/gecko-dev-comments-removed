@@ -57,8 +57,6 @@ class gfxContext final {
   typedef mozilla::gfx::RectCornerRadii RectCornerRadii;
   typedef mozilla::gfx::Size Size;
 
-  NS_INLINE_DECL_REFCOUNTING(gfxContext)
-
  public:
   
 
@@ -67,7 +65,20 @@ class gfxContext final {
 
 
 
-  static already_AddRefed<gfxContext> CreateOrNull(
+  explicit gfxContext(
+      mozilla::gfx::DrawTarget* aTarget,
+      const mozilla::gfx::Point& aDeviceOffset = mozilla::gfx::Point());
+
+  ~gfxContext();
+
+  
+
+
+
+
+
+
+  static mozilla::UniquePtr<gfxContext> CreateOrNull(
       mozilla::gfx::DrawTarget* aTarget,
       const mozilla::gfx::Point& aDeviceOffset = mozilla::gfx::Point());
 
@@ -78,7 +89,7 @@ class gfxContext final {
 
 
 
-  static already_AddRefed<gfxContext> CreatePreservingTransformOrNull(
+  static mozilla::UniquePtr<gfxContext> CreatePreservingTransformOrNull(
       mozilla::gfx::DrawTarget* aTarget);
 
   mozilla::gfx::DrawTarget* GetDrawTarget() { return mDT; }
@@ -438,18 +449,6 @@ class gfxContext final {
 #endif
 
  private:
-  
-
-
-
-
-
-
-  explicit gfxContext(
-      mozilla::gfx::DrawTarget* aTarget,
-      const mozilla::gfx::Point& aDeviceOffset = mozilla::gfx::Point());
-  ~gfxContext();
-
   friend class PatternFromState;
   friend class GlyphBufferAzure;
 
@@ -543,7 +542,7 @@ class gfxContextAutoSaveRestore {
   ~gfxContextAutoSaveRestore() { Restore(); }
 
   void SetContext(gfxContext* aContext) {
-    NS_ASSERTION(!mContext, "Not going to call Restore() on some context!!!");
+    MOZ_ASSERT(!mContext, "no context?");
     mContext = aContext;
     mContext->Save();
   }
