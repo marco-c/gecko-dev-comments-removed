@@ -21,10 +21,6 @@ const endsWithNullRx = /\0$/;
 const whitespaceRx = /\s+/g;
 const startsWithZeroRx = /^0/;
 
-loader.lazyGetter(this, "standardSessionString", () => {
-  const l10n = new Localization(["devtools/client/storage.ftl"], true);
-  return l10n.formatValueSync("storage-expires-session");
-});
 
 
 
@@ -42,10 +38,7 @@ loader.lazyGetter(this, "standardSessionString", () => {
 
 
 
-
-function naturalSort(a = "", b = "", insensitive = false) {
-  let sessionString = standardSessionString;
-
+function naturalSort(a = "", b = "", sessionString, insensitive = false) {
   
   a = (a + "").trim();
   b = (b + "").trim();
@@ -53,7 +46,7 @@ function naturalSort(a = "", b = "", insensitive = false) {
   if (insensitive) {
     a = a.toLowerCase();
     b = b.toLowerCase();
-    sessionString = standardSessionString.toLowerCase();
+    sessionString = sessionString.toLowerCase();
   }
 
   
@@ -137,10 +130,18 @@ const normalizeChunk = function(str, length) {
   );
 };
 
-exports.naturalSortCaseSensitive = function naturalSortCaseSensitive(a, b) {
-  return naturalSort(a, b, false);
+exports.naturalSortCaseSensitive = function naturalSortCaseSensitive(
+  a,
+  b,
+  sessionString
+) {
+  return naturalSort(a, b, sessionString, false);
 };
 
-exports.naturalSortCaseInsensitive = function naturalSortCaseInsensitive(a, b) {
-  return naturalSort(a, b, true);
+exports.naturalSortCaseInsensitive = function naturalSortCaseInsensitive(
+  a,
+  b,
+  sessionString
+) {
+  return naturalSort(a, b, sessionString, true);
 };

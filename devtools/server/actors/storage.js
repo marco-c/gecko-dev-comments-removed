@@ -397,6 +397,10 @@ StorageActors.defaults = function(typeName, observationTopics) {
 
 
 
+
+
+
+
     async getStoreObjects(host, names, options = {}) {
       const offset = options.offset || 0;
       let size = options.size || MAX_STORE_OBJECT_COUNT;
@@ -477,7 +481,11 @@ StorageActors.defaults = function(typeName, observationTopics) {
       } else {
         
         const sorted = toReturn.data.sort((a, b) => {
-          return naturalSortCaseInsensitive(a[sortOn], b[sortOn]);
+          return naturalSortCaseInsensitive(
+            a[sortOn],
+            b[sortOn],
+            options.sessionString
+          );
         });
         let sliced;
         if (this.typeName === "indexedDB") {
