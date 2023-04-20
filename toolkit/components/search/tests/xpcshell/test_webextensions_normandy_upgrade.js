@@ -35,9 +35,6 @@ async function getEngineNames() {
 }
 
 add_task(async function setup() {
-  
-  consoleAllowList.push("Unexpected content-type");
-
   await SearchTestUtils.useTestEngines("test-extensions", null, CONFIG_DEFAULT);
   await AddonTestUtils.promiseStartupManager();
   registerCleanupFunction(AddonTestUtils.promiseShutdownManager);
