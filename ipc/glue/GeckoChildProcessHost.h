@@ -23,6 +23,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/RWLock.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
@@ -66,7 +67,8 @@ class GeckoChildProcessHost : public ChildProcessHost,
   typedef std::vector<std::string> StringVector;
 
  public:
-  typedef base::ProcessHandle ProcessHandle;
+  using ProcessId = base::ProcessId;
+  using ProcessHandle = base::ProcessHandle;
 
   explicit GeckoChildProcessHost(GeckoProcessType aProcessType,
                                  bool aIsFileContent = false);
@@ -136,17 +138,30 @@ class GeckoChildProcessHost : public ChildProcessHost,
   UntypedEndpoint TakeInitialEndpoint() {
     return UntypedEndpoint{PrivateIPDLInterface{}, std::move(mInitialPort),
                            mInitialChannelId, base::GetCurrentProcId(),
-                           base::GetProcId(mChildProcessHandle)};
+                           GetChildProcessId()};
   }
 
   
   
-  ProcessHandle GetChildProcessHandle() { return mChildProcessHandle; }
+  
+  
+  
+  
+  
+  ProcessHandle GetChildProcessHandle();
+
+  
+  
+  
+  
+  
+  
+  ProcessId GetChildProcessId();
 
   GeckoProcessType GetProcessType() { return mProcessType; }
 
 #ifdef XP_MACOSX
-  task_t GetChildTask() { return mChildTask; }
+  task_t GetChildTask();
 #endif
 
 #ifdef XP_WIN
@@ -256,9 +271,10 @@ class GeckoChildProcessHost : public ChildProcessHost,
   SandboxingKind mSandbox;
 #endif
 
-  ProcessHandle mChildProcessHandle;
+  mozilla::RWLock mHandleLock;
+  ProcessHandle mChildProcessHandle MOZ_GUARDED_BY(mHandleLock);
 #if defined(OS_MACOSX)
-  task_t mChildTask;
+  task_t mChildTask MOZ_GUARDED_BY(mHandleLock);
 #endif
   RefPtr<ProcessHandlePromise> mHandlePromise;
 
@@ -266,7 +282,7 @@ class GeckoChildProcessHost : public ChildProcessHost,
   bool mDisableOSActivityMode;
 #endif
 
-  bool OpenPrivilegedHandle(base::ProcessId aPid);
+  bool OpenPrivilegedHandle(base::ProcessId aPid) MOZ_REQUIRES(mHandleLock);
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   
