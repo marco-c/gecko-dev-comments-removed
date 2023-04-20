@@ -23,6 +23,7 @@ class ErrorResult;
 }
 namespace mozilla::dom {
 
+class AbstractRange;
 class Document;
 class Highlight;
 
@@ -64,8 +65,31 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
   
 
 
-  MOZ_CAN_RUN_SCRIPT void HighlightPropertiesChanged(Highlight& aHighlight,
-                                                     ErrorResult& aRv);
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT void MaybeAddRangeToHighlightSelection(
+      AbstractRange& aRange, Highlight& aHighlight, ErrorResult& aRv);
+
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT void MaybeRemoveRangeFromHighlightSelection(
+      AbstractRange& aRange, Highlight& aHighlight);
+
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT void RemoveHighlightSelection(Highlight& aHighlight);
 
   
 
@@ -92,7 +116,7 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
 
 
 
-  void Clear(ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void Clear(ErrorResult& aRv);
 
   
 
@@ -100,7 +124,9 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
 
 
 
-  void Delete(const nsAString& aKey, ErrorResult& aRv);
+
+
+  MOZ_CAN_RUN_SCRIPT bool Delete(const nsAString& aKey, ErrorResult& aRv);
 
  private:
   

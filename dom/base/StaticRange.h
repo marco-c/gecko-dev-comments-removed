@@ -60,6 +60,15 @@ class StaticRange final : public AbstractRange {
       const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
       const RangeBoundaryBase<EPT, ERT>& aEndBoundary, ErrorResult& aRv);
 
+  
+
+
+
+
+  bool IsValid() const {
+    return mStart.IsSetAndValid() && mEnd.IsSetAndValid();
+  }
+
  protected:
   explicit StaticRange(nsINode* aNode)
       : AbstractRange(aNode,  false) {}

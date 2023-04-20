@@ -38,7 +38,7 @@ class ContentIteratorBase {
 
   virtual nsresult Init(nsINode* aRoot);
 
-  virtual nsresult Init(nsRange* aRange);
+  virtual nsresult Init(dom::AbstractRange* aRange);
   virtual nsresult Init(nsINode* aStartContainer, uint32_t aStartOffset,
                         nsINode* aEndContainer, uint32_t aEndOffset);
   virtual nsresult Init(const RawRangeBoundary& aStart,
@@ -175,7 +175,7 @@ class ContentSubtreeIterator final : public ContentIteratorBase {
 
   virtual nsresult Init(nsINode* aRoot) override;
 
-  virtual nsresult Init(nsRange* aRange) override;
+  virtual nsresult Init(dom::AbstractRange* aRange) override;
   virtual nsresult Init(nsINode* aStartContainer, uint32_t aStartOffset,
                         nsINode* aEndContainer, uint32_t aEndOffset) override;
   virtual nsresult Init(const RawRangeBoundary& aStartBoundary,
@@ -233,7 +233,7 @@ class ContentSubtreeIterator final : public ContentIteratorBase {
   
   nsIContent* GetTopAncestorInRange(nsINode* aNode) const;
 
-  RefPtr<nsRange> mRange;
+  RefPtr<dom::AbstractRange> mRange;
 
   
   AutoTArray<nsIContent*, 8> mInclusiveAncestorsOfEndContainer;

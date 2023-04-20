@@ -150,11 +150,11 @@ class Highlight final : public nsISupports, public nsWrapperCache {
 
 
 
-  MOZ_CAN_RUN_SCRIPT void Delete(AbstractRange& aRange, ErrorResult& aRv);
+
+
+  MOZ_CAN_RUN_SCRIPT bool Delete(AbstractRange& aRange, ErrorResult& aRv);
 
  private:
-  MOZ_CAN_RUN_SCRIPT void NotifyChangesToRegistries(ErrorResult& aRv);
-
   RefPtr<nsPIDOMWindowInner> mWindow;
 
   

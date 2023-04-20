@@ -431,8 +431,24 @@ class nsFrameSelection final {
   
 
 
-  void RemoveHighlightSelection(const nsAtom* aHighlightName);
+  MOZ_CAN_RUN_SCRIPT void RemoveHighlightSelection(
+      const nsAtom* aHighlightName);
 
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT void AddHighlightSelectionRange(
+      const nsAtom* aHighlightName, const mozilla::dom::Highlight& aHighlight,
+      mozilla::dom::AbstractRange& aRange, mozilla::ErrorResult& aRv);
+
+  
+
+
+  MOZ_CAN_RUN_SCRIPT void RemoveHighlightSelectionRange(
+      const nsAtom* aHighlightName, mozilla::dom::AbstractRange& aRange);
   
 
 

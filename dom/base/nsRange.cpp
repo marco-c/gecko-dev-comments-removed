@@ -893,15 +893,15 @@ void nsRange::NotifySelectionListenersAfterRangeSet() {
     
     
     
-    if (mSelections.getFirst() != mSelections.getLast()) {
+    if (IsPartOfOneSelectionOnly()) {
+      RefPtr<Selection> selection = mSelections.getFirst()->Get();
+      selection->NotifySelectionListeners(calledByJSRestorer.SavedValue());
+    } else {
       SelectionListLocalCopy copiedSelections{mSelections};
       for (const auto* selectionWrapper : copiedSelections.Get()) {
         RefPtr<Selection> selection = selectionWrapper->Get();
         selection->NotifySelectionListeners(calledByJSRestorer.SavedValue());
       }
-    } else {
-      RefPtr<Selection> selection = mSelections.getFirst()->Get();
-      selection->NotifySelectionListeners(calledByJSRestorer.SavedValue());
     }
   }
 }

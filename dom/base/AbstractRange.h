@@ -71,6 +71,10 @@ class AbstractRange : public nsISupports, public nsWrapperCache {
   nsINode* GetStartContainer() const { return mStart.Container(); }
   nsINode* GetEndContainer() const { return mEnd.Container(); }
 
+  Document* GetComposedDocOfContainers() const {
+    return mStart.Container() ? mStart.Container()->GetComposedDoc() : nullptr;
+  }
+
   
   uint32_t StartOffset() const {
     return static_cast<uint32_t>(
