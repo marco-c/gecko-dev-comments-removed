@@ -42,11 +42,6 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   Resource: "resource://services-sync/resource.js",
 });
 
-XPCOMUtils.defineLazyGetter(lazy, "ANNOS_TO_TRACK", () => [
-  lazy.PlacesUtils.LMANNO_FEEDURI,
-  lazy.PlacesUtils.LMANNO_SITEURI,
-]);
-
 const PLACES_MAINTENANCE_INTERVAL_SECONDS = 4 * 60 * 60; 
 
 const FOLDER_SORTINDEX = 1000000;
@@ -804,7 +799,6 @@ function BookmarksTracker(name, engine) {
 }
 BookmarksTracker.prototype = {
   onStart() {
-    lazy.PlacesUtils.bookmarks.addObserver(this, true);
     this._placesListener = new PlacesWeakCallbackWrapper(
       this.handlePlacesEvents.bind(this)
     );
@@ -813,6 +807,7 @@ BookmarksTracker.prototype = {
         "bookmark-added",
         "bookmark-removed",
         "bookmark-moved",
+        "bookmark-keyword-changed",
         "bookmark-tags-changed",
         "bookmark-time-changed",
         "bookmark-title-changed",
@@ -826,12 +821,12 @@ BookmarksTracker.prototype = {
   },
 
   onStop() {
-    lazy.PlacesUtils.bookmarks.removeObserver(this);
     lazy.PlacesUtils.observers.removeListener(
       [
         "bookmark-added",
         "bookmark-removed",
         "bookmark-moved",
+        "bookmark-keyword-changed",
         "bookmark-tags-changed",
         "bookmark-time-changed",
         "bookmark-title-changed",
@@ -875,10 +870,7 @@ BookmarksTracker.prototype = {
     }
   },
 
-  QueryInterface: ChromeUtils.generateQI([
-    "nsINavBookmarkObserver",
-    "nsISupportsWeakReference",
-  ]),
+  QueryInterface: ChromeUtils.generateQI(["nsISupportsWeakReference"]),
 
   
   _upScore: function BMT__upScore() {
@@ -892,6 +884,7 @@ BookmarksTracker.prototype = {
         case "bookmark-removed":
         case "bookmark-moved":
         case "bookmark-guid-changed":
+        case "bookmark-keyword-changed":
         case "bookmark-tags-changed":
         case "bookmark-time-changed":
         case "bookmark-title-changed":
@@ -909,40 +902,6 @@ BookmarksTracker.prototype = {
           break;
       }
     }
-  },
-
-  
-  
-  
-  onItemChanged: function BMT_onItemChanged(
-    itemId,
-    property,
-    isAnno,
-    value,
-    lastModified,
-    itemType,
-    parentId,
-    guid,
-    parentGuid,
-    oldValue,
-    source
-  ) {
-    if (lazy.IGNORED_SOURCES.includes(source)) {
-      return;
-    }
-
-    if (isAnno && !lazy.ANNOS_TO_TRACK.includes(property)) {
-      
-      return;
-    }
-
-    this._log.trace(
-      "onItemChanged: " +
-        itemId +
-        (", " + property + (isAnno ? " (anno)" : "")) +
-        (value ? ' = "' + value + '"' : "")
-    );
-    this._upScore();
   },
 };
 
