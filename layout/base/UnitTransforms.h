@@ -181,6 +181,13 @@ Maybe<TargetMatrix> ViewAs(
   }
   return Nothing();
 }
+template <class TargetScale, class SourceScaleSourceUnits,
+          class SourceScaleTargetUnits>
+TargetScale ViewAs(const gfx::ScaleFactor<SourceScaleSourceUnits,
+                                          SourceScaleTargetUnits>& aScale,
+                   PixelCastJustification) {
+  return TargetScale{aScale.scale};
+}
 
 
 
