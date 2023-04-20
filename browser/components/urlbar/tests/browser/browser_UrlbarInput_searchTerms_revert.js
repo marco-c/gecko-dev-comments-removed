@@ -61,29 +61,6 @@ async function searchWithTab(
   return { tab, expectedSearchUrl };
 }
 
-function assertSearchStringIsInUrlbar(searchString) {
-  Assert.equal(
-    gURLBar.value,
-    searchString,
-    `Search string ${searchString} should be in the url bar`
-  );
-  Assert.equal(
-    gBrowser.userTypedValue,
-    searchString,
-    `${searchString} should be the userTypedValue`
-  );
-  Assert.equal(
-    gURLBar.getAttribute("pageproxystate"),
-    "invalid",
-    "Pageproxystate should be invalid"
-  );
-  Assert.equal(
-    gBrowser.selectedBrowser.showingSearchTerms,
-    true,
-    "showingSearchTerms should be true"
-  );
-}
-
 function synthesizeRevert() {
   gURLBar.focus();
   EventUtils.synthesizeKey("KEY_Escape", { repeat: 2 });
@@ -144,7 +121,9 @@ add_task(async function revert_and_change_tab() {
 
   
   await BrowserTestUtils.switchTab(gBrowser, tab);
-  assertSearchStringIsInUrlbar(SEARCH_STRING);
+
+  
+  assertSearchStringIsInUrlbar(SEARCH_STRING, { pageProxyState: "invalid" });
 
   BrowserTestUtils.removeTab(tab);
   BrowserTestUtils.removeTab(tab2);

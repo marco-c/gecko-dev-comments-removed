@@ -63,19 +63,6 @@ async function searchWithTab(
   return { tab, expectedSearchUrl };
 }
 
-function assertSearchStringIsInUrlbar(searchString) {
-  Assert.equal(
-    gURLBar.value,
-    searchString,
-    `Search string ${searchString} should be in the url bar`
-  );
-  Assert.equal(
-    gURLBar.getAttribute("pageproxystate"),
-    "invalid",
-    "Pageproxystate should be invalid"
-  );
-}
-
 
 
 add_task(async function list_of_search_strings() {
@@ -147,6 +134,57 @@ add_task(async function load_url() {
   BrowserTestUtils.loadURIString(tab.linkedBrowser, expectedSearchUrl);
   await browserLoadedPromise;
   assertSearchStringIsInUrlbar(SEARCH_STRING);
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+
+
+add_task(async function focus_and_unfocus() {
+  let { tab } = await searchWithTab(SEARCH_STRING);
+
+  gURLBar.focus();
+  Assert.equal(
+    gURLBar.getAttribute("pageproxystate"),
+    "invalid",
+    "Should have matching pageproxystate."
+  );
+
+  gURLBar.blur();
+  Assert.equal(
+    gURLBar.getAttribute("pageproxystate"),
+    "valid",
+    "Should have matching pageproxystate."
+  );
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+
+
+add_task(async function focus_and_unfocus_modified() {
+  let { tab } = await searchWithTab(SEARCH_STRING);
+
+  gURLBar.focus();
+  Assert.equal(
+    gURLBar.getAttribute("pageproxystate"),
+    "invalid",
+    "Should have matching pageproxystate."
+  );
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    waitForFocus,
+    value: "another search term",
+    fireInputEvent: true,
+  });
+
+  gURLBar.blur();
+  Assert.equal(
+    gURLBar.getAttribute("pageproxystate"),
+    "invalid",
+    "Should have matching pageproxystate."
+  );
 
   BrowserTestUtils.removeTab(tab);
 });
