@@ -432,15 +432,6 @@ class DcSctpSocketInterface {
 
   
   
-  virtual void SetStreamPriority(StreamID stream_id,
-                                 StreamPriority priority) = 0;
-
-  
-  
-  virtual StreamPriority GetStreamPriority(StreamID stream_id) const = 0;
-
-  
-  
   
   
   
