@@ -732,18 +732,6 @@ async function unBlackBox(sourceFront, range = null) {
 
 
 
-function getSourceContent(sourceFront) {
-  dumpn("Getting source content for " + sourceFront.actor);
-  return sourceFront.source();
-}
-
-
-
-
-
-
-
-
 async function getSource(threadFront, url) {
   const source = await getSourceForm(threadFront, url);
   if (source) {
