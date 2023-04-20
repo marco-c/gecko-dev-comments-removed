@@ -114,14 +114,7 @@ class StunRequest : public rtc::MessageHandler {
  protected:
   friend class StunRequestManager;
 
-  
-  
-  
-  void Construct();
-
-  
-  
-  virtual void Prepare(StunMessage* message) {}
+  StunMessage* mutable_msg() { return msg_.get(); }
 
   
   virtual void OnResponse(StunMessage* response) {}
