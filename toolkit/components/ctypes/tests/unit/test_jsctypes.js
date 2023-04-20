@@ -428,7 +428,10 @@ function run_abstract_class_tests() {
     new ctypes.CData();
   }, TypeError);
 
-  Assert.ok(ctypes.CData.__proto__ === ctypes.CType.prototype);
+  Assert.strictEqual(
+    Object.getPrototypeOf(ctypes.CData),
+    ctypes.CType.prototype
+  );
   Assert.ok(ctypes.CData instanceof ctypes.CType);
 
   Assert.ok(ctypes.CData.hasOwnProperty("prototype"));
@@ -489,7 +492,7 @@ function run_Int64_tests() {
   }, TypeError);
 
   let int64 = ctypes.Int64(0);
-  Assert.ok(int64.__proto__ === ctypes.Int64.prototype);
+  Assert.strictEqual(Object.getPrototypeOf(int64), ctypes.Int64.prototype);
   Assert.ok(int64 instanceof ctypes.Int64);
 
   
@@ -772,7 +775,7 @@ function run_UInt64_tests() {
   }, TypeError);
 
   let uint64 = ctypes.UInt64(0);
-  Assert.ok(uint64.__proto__ === ctypes.UInt64.prototype);
+  Assert.strictEqual(Object.getPrototypeOf(uint64), ctypes.UInt64.prototype);
   Assert.ok(uint64 instanceof ctypes.UInt64);
 
   
@@ -1218,10 +1221,13 @@ function offsetof(struct, member) {
 
 
 function run_basic_class_tests(t) {
-  Assert.ok(t.__proto__ === ctypes.CType.prototype);
+  Assert.strictEqual(Object.getPrototypeOf(t), ctypes.CType.prototype);
   Assert.ok(t instanceof ctypes.CType);
 
-  Assert.ok(t.prototype.__proto__ === ctypes.CData.prototype);
+  Assert.strictEqual(
+    Object.getPrototypeOf(t.prototype),
+    ctypes.CData.prototype
+  );
   Assert.ok(t.prototype instanceof ctypes.CData);
   Assert.ok(t.prototype.constructor === t);
 
@@ -1246,7 +1252,7 @@ function run_basic_class_tests(t) {
 
   
   let d = t();
-  Assert.ok(d.__proto__ === t.prototype);
+  Assert.strictEqual(Object.getPrototypeOf(d), t.prototype);
   Assert.ok(d instanceof t);
   Assert.ok(d.constructor === t);
 }
@@ -2067,7 +2073,10 @@ function run_type_ctor_class_tests(
   instanceFns = [],
   specialProps = []
 ) {
-  Assert.ok(c.prototype.__proto__ === ctypes.CType.prototype);
+  Assert.strictEqual(
+    Object.getPrototypeOf(c.prototype),
+    ctypes.CType.prototype
+  );
   Assert.ok(c.prototype instanceof ctypes.CType);
   Assert.ok(c.prototype.constructor === c);
 
@@ -2091,20 +2100,27 @@ function run_type_ctor_class_tests(
     }, TypeError);
   }
 
-  Assert.ok(t.__proto__ === c.prototype);
+  Assert.strictEqual(Object.getPrototypeOf(t), c.prototype);
   Assert.ok(t instanceof c);
 
   
   
   
   
-  Assert.ok(t.prototype.__proto__ === t2.prototype.__proto__);
+  Assert.strictEqual(
+    Object.getPrototypeOf(t.prototype),
+    Object.getPrototypeOf(t2.prototype)
+  );
   if (t instanceof ctypes.FunctionType) {
-    Assert.ok(
-      t.prototype.__proto__.__proto__ === ctypes.PointerType.prototype.prototype
+    Assert.strictEqual(
+      Object.getPrototypeOf(Object.getPrototypeOf(t.prototype)),
+      ctypes.PointerType.prototype.prototype
     );
   } else {
-    Assert.ok(t.prototype.__proto__.__proto__ === ctypes.CData.prototype);
+    Assert.strictEqual(
+      Object.getPrototypeOf(Object.getPrototypeOf(t.prototype)),
+      ctypes.CData.prototype
+    );
   }
   Assert.ok(t.prototype instanceof ctypes.CData);
   Assert.ok(t.prototype.constructor === t);
@@ -2112,17 +2128,17 @@ function run_type_ctor_class_tests(
   
   
   for (let p of instanceProps) {
-    Assert.ok(t.prototype.__proto__.hasOwnProperty(p));
+    Assert.ok(Object.getPrototypeOf(t.prototype).hasOwnProperty(p));
   }
   for (let f of instanceFns) {
-    Assert.ok(t.prototype.__proto__.hasOwnProperty(f));
+    Assert.ok(Object.getPrototypeOf(t.prototype).hasOwnProperty(f));
   }
 
   
   
   for (let p of instanceProps) {
     do_check_throws(function() {
-      t.prototype.__proto__[p];
+      Object.getPrototypeOf(t.prototype)[p];
     }, TypeError);
     do_check_throws(function() {
       t.prototype[p];
@@ -2130,7 +2146,7 @@ function run_type_ctor_class_tests(
   }
   for (let f of instanceFns) {
     do_check_throws(function() {
-      t.prototype.__proto__[f]();
+      Object.getPrototypeOf(t.prototype)[f]();
     }, TypeError);
     do_check_throws(function() {
       t.prototype[f]();
@@ -2151,26 +2167,26 @@ function run_type_ctor_class_tests(
 
   
   if (t instanceof ctypes.FunctionType) {
-    Assert.ok(
-      Object.getPrototypeOf(c.prototype.prototype) ===
-        ctypes.PointerType.prototype.prototype
+    Assert.strictEqual(
+      Object.getPrototypeOf(c.prototype.prototype),
+      ctypes.PointerType.prototype.prototype
     );
   } else {
-    Assert.ok(
-      Object.getPrototypeOf(c.prototype.prototype) ===
-        ctypes.CType.prototype.prototype
+    Assert.strictEqual(
+      Object.getPrototypeOf(c.prototype.prototype),
+      ctypes.CType.prototype.prototype
     );
   }
 
   
-  if (t.__proto__ != ctypes.FunctionType.prototype) {
+  if (Object.getPrototypeOf(t) != ctypes.FunctionType.prototype) {
     let d = t();
-    Assert.ok(d.__proto__ === t.prototype);
+    Assert.strictEqual(Object.getPrototypeOf(d), t.prototype);
     Assert.ok(d instanceof t);
     Assert.ok(d.constructor === t);
     
     Assert.equal({} instanceof t, false);
-    Assert.equal(t.__proto__ instanceof t, false);
+    Assert.equal(Object.getPrototypeOf(t) instanceof t, false);
     Assert.equal(t.prototype instanceof t, false);
   }
 }
@@ -3735,9 +3751,9 @@ function run_function_tests(library) {
 
   
   
-  Assert.ok(
-    test_ansi_len.constructor.targetType.__proto__ ===
-      ctypes.FunctionType.prototype
+  Assert.strictEqual(
+    Object.getPrototypeOf(test_ansi_len.constructor.targetType),
+    ctypes.FunctionType.prototype
   );
   Assert.equal(
     test_ansi_len.constructor.toSource(),
