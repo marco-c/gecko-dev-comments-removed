@@ -776,6 +776,11 @@ class HostWebGLContext final : public SupportsWeakPtr {
   }
 
   
+  void ProvokingVertex(const webgl::ProvokingVertex mode) const {
+    mContext->ProvokingVertex(mode);
+  }
+
+  
   
   
  public:
