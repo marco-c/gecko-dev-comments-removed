@@ -65,6 +65,7 @@ metrics_yamls = (
 
 
 gecko_pings = [
+    "dom/pings.yaml",
     "toolkit/components/glean/pings.yaml",
 ]
 
