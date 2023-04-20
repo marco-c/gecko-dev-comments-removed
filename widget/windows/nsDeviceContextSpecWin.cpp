@@ -179,7 +179,7 @@ NS_IMETHODIMP nsDeviceContextSpecWin::Init(nsIPrintSettings* aPrintSettings,
 
     
     
-    if ((XRE_IsContentProcess() && StaticPrefs::print_print_via_parent()) ||
+    if (XRE_IsContentProcess() ||
         mOutputFormat == nsIPrintSettings::kOutputFormatPDF) {
       return NS_OK;
     }

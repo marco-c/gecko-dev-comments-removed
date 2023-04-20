@@ -818,7 +818,7 @@ nsPrintSettingsService::InitPrintSettingsFromPrinter(
     const nsAString& aPrinterName, nsIPrintSettings* aPrintSettings) {
   
   
-  if (XRE_IsContentProcess() && StaticPrefs::print_print_via_parent()) {
+  if (XRE_IsContentProcess()) {
     return NS_OK;
   }
 
