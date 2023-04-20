@@ -6,6 +6,10 @@
 
 "use strict";
 
+const { ASRouterTargeting } = ChromeUtils.import(
+  "resource://activity-stream/lib/ASRouterTargeting.jsm"
+);
+
 const { BackgroundUpdate } = ChromeUtils.import(
   "resource://gre/modules/BackgroundUpdate.jsm"
 );
@@ -21,12 +25,14 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIApplicationUpdateService"
 );
 
-add_task(function test_setup() {
+add_setup(function test_setup() {
   
   do_get_profile();
 
   
   Services.fog.initializeFOG();
+
+  setupProfileService();
 });
 
 add_task(async function test_record_update_environment() {
@@ -87,4 +93,130 @@ add_task(async function test_record_update_environment() {
   await maybeSubmitBackgroundUpdatePing();
 
   ok(pingSubmitted, "'background-update' ping was submitted");
+});
+
+async function do_readTargeting(content, beforeNextSubmitCallback) {
+  let profileService = Cc["@mozilla.org/toolkit/profile-service;1"].getService(
+    Ci.nsIToolkitProfileService
+  );
+
+  let file = do_get_profile();
+  file.append("profile_cannot_be_locked");
+
+  let profile = profileService.createUniqueProfile(
+    file,
+    "test_default_profile"
+  );
+
+  let targetingSnapshot = profile.rootDir.clone();
+  targetingSnapshot.append("targeting.snapshot.json");
+
+  if (content) {
+    await IOUtils.writeUTF8(targetingSnapshot.path, content);
+  }
+
+  let lock = profile.lock({});
+
+  Services.fog.testResetFOG();
+  try {
+    await BackgroundUpdate.readFirefoxMessagingSystemTargetingSnapshot(lock);
+  } finally {
+    lock.unlock();
+  }
+
+  let pingSubmitted = false;
+  GleanPings.backgroundUpdate.testBeforeNextSubmit(reason => {
+    pingSubmitted = true;
+    return beforeNextSubmitCallback(reason);
+  });
+
+  
+  await maybeSubmitBackgroundUpdatePing();
+
+  ok(pingSubmitted, "'background-update' ping was submitted");
+}
+
+
+add_task(async function test_targeting_missing() {
+  await do_readTargeting(null, reason => {
+    Assert.equal(false, Glean.backgroundUpdate.targetingExists.testGetValue());
+
+    Assert.equal(
+      false,
+      Glean.backgroundUpdate.targetingException.testGetValue()
+    );
+  });
+});
+
+
+add_task(async function test_targeting_exception() {
+  await do_readTargeting("{", reason => {
+    Assert.equal(false, Glean.backgroundUpdate.targetingExists.testGetValue());
+
+    Assert.equal(
+      true,
+      Glean.backgroundUpdate.targetingException.testGetValue()
+    );
+  });
+});
+
+
+add_task(async function test_targeting_exists() {
+  
+  
+  let target = {
+    currentDate: ASRouterTargeting.Environment.currentDate,
+    profileAgeCreated: ASRouterTargeting.Environment.profileAgeCreated,
+    firefoxVersion: ASRouterTargeting.Environment.firefoxVersion,
+  };
+  let targetSnapshot = await ASRouterTargeting.getEnvironmentSnapshot(target);
+
+  await do_readTargeting(JSON.stringify(targetSnapshot), reason => {
+    Assert.equal(true, Glean.backgroundUpdate.targetingExists.testGetValue());
+
+    Assert.equal(
+      false,
+      Glean.backgroundUpdate.targetingException.testGetValue()
+    );
+
+    
+    Assert.ok(
+      Glean.backgroundUpdate.targetingEnvFirefoxVersion.testGetValue() > 0
+    );
+
+    Assert.equal(
+      targetSnapshot.environment.firefoxVersion,
+      Glean.backgroundUpdate.targetingEnvFirefoxVersion.testGetValue()
+    );
+
+    let profileAge = Glean.backgroundUpdate.targetingEnvProfileAge.testGetValue();
+
+    Assert.ok(profileAge instanceof Date);
+    Assert.ok(0 < profileAge.getTime());
+    Assert.ok(profileAge.getTime() < Date.now());
+
+    
+    
+    let targetProfileAge = new Date(
+      targetSnapshot.environment.profileAgeCreated
+    );
+    
+    
+    targetProfileAge.setHours(0, 0, 0, 0);
+
+    Assert.equal(targetProfileAge.toISOString(), profileAge.toISOString());
+
+    let currentDate = Glean.backgroundUpdate.targetingEnvCurrentDate.testGetValue();
+
+    Assert.ok(0 < currentDate.getTime());
+    Assert.ok(currentDate.getTime() < Date.now());
+
+    
+    let targetCurrentDate = new Date(targetSnapshot.environment.currentDate);
+    
+    
+    targetCurrentDate.setHours(0, 0, 0, 0);
+
+    Assert.equal(targetCurrentDate.toISOString(), currentDate.toISOString());
+  });
 });
