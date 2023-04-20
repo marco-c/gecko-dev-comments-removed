@@ -1184,6 +1184,17 @@ Maybe<nsTArray<uint8_t>> nsRFPService::GenerateKey(nsIURI* aTopLevelURI,
     return Nothing();
   }
 
+  
+  
+  
+  
+  if (!nsContentUtils::ShouldResistFingerprinting("Coarse Efficiency Check") ||
+      (!aIsPrivate &&
+       StaticPrefs::privacy_resistFingerprinting_testGranularityMask() &
+           0x02 )) {
+    return Nothing();
+  }
+
   const nsID& sessionKey = aIsPrivate
                                ? service->mPrivateBrowsingSessionKey.ref()
                                : service->mBrowsingSessionKey.ref();
