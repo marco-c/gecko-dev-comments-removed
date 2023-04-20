@@ -20,8 +20,6 @@
 #include "vm/Scope.h"       
 #include "vm/StringType.h"  
 
-struct JS_PUBLIC_API JSContext;
-
 namespace js {
 namespace frontend {
 

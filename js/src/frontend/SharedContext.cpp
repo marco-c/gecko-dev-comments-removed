@@ -21,7 +21,6 @@
 #include "js/Vector.h"
 #include "vm/FunctionFlags.h"          
 #include "vm/GeneratorAndAsyncKind.h"  
-#include "vm/JSContext.h"
 #include "vm/JSScript.h"  
 #include "vm/StencilEnums.h"  
 
