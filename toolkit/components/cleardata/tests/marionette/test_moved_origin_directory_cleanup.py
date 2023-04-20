@@ -43,6 +43,15 @@ class MovedOriginDirectoryCleanupTestCase(MarionetteTestCase):
         )
 
         
+        
+        Wait(self.marionette).until(
+            lambda _: (
+                "offlineApps" in self.marionette.get_pref("privacy.sanitize.pending"),
+            ),
+            message="privacy.sanitize.pending must include offlineApps",
+        )
+
+        
         self.marionette.restart(in_app=False)
 
         Wait(self.marionette).until(
