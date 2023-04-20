@@ -24,7 +24,7 @@ function test() {
 
       
       window_B.minimize();
-      waitForFocus(function() {
+      waitForFocus(async function() {
         state = JSON.parse(ss.getBrowserState());
         selectedWindow = state.windows[state.selectedWindow - 1];
         ok(
@@ -33,7 +33,12 @@ function test() {
         );
 
         
+        let promiseSizeModeChange = BrowserTestUtils.waitForEvent(
+          window,
+          "sizemodechange"
+        );
         window.minimize();
+        await promiseSizeModeChange;
         state = JSON.parse(ss.getBrowserState());
         is(
           state.selectedWindow,
