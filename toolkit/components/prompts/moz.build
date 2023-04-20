@@ -4,9 +4,8 @@
 
 
 
-
 with Files("**"):
-    BUG_COMPONENT = ("Toolkit", "General")
+    BUG_COMPONENT = ("Toolkit", "Notifications and Alerts")
 
 DIRS += ["src"]
 
