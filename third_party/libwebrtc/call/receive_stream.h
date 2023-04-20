@@ -94,10 +94,6 @@ class MediaReceiveStreamInterface : public ReceiveStreamInterface {
   virtual std::vector<RtpSource> GetSources() const = 0;
 };
 
-
-
-using ReceiveStream [[deprecated]] = ReceiveStreamInterface;
-
 }  
 
 #endif  
