@@ -365,7 +365,8 @@ add_task(async function testRequestMIDIAccess() {
   info("Perm-deny site permission addon install");
   addonInstallPanel = await onAddonInstallBlockedNotification;
   
-  notification.menupopup.querySelector("menuitem").click();
+  
+  notification.menupopup.querySelectorAll("menuitem")[1].click();
 
   rejectionMessage = await SpecialPowers.spawn(
     gBrowser.selectedBrowser,
@@ -413,7 +414,21 @@ add_task(async function testRequestMIDIAccess() {
       1000} seconds)`
   );
 
-  assertSitePermissionInstallTelemetryEvents(["site_warning", "cancelled"]);
+  
+  
+  let events = AddonTestUtils.getAMTelemetryEvents();
+  Assert.deepEqual(
+    events.filter(evt => evt.method == "reportSuspiciousSite")[0],
+    {
+      method: "reportSuspiciousSite",
+      object: "suspiciousSite",
+      value: "example.com",
+    }
+  );
+  assertSitePermissionInstallTelemetryEvents(
+    ["site_warning", "cancelled"],
+    events
+  );
 });
 
 add_task(async function testIframeRequestMIDIAccess() {
@@ -684,8 +699,11 @@ add_task(function teardown_telemetry_events() {
 
 
 
-function assertSitePermissionInstallTelemetryEvents(expectedSteps) {
-  let amInstallEvents = AddonTestUtils.getAMTelemetryEvents()
+function assertSitePermissionInstallTelemetryEvents(
+  expectedSteps,
+  events = null
+) {
+  let amInstallEvents = (events ?? AddonTestUtils.getAMTelemetryEvents())
     .filter(evt => evt.method === "install" && evt.object === "sitepermission")
     .map(evt => evt.extra.step);
 
