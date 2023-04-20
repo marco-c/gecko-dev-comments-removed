@@ -251,6 +251,8 @@
 
     _featureCallout: null,
 
+    _featureCalloutPanelId: null,
+
     get tabContainer() {
       delete this.tabContainer;
       return (this.tabContainer = document.getElementById("tabbrowser-tabs"));
@@ -336,8 +338,12 @@
       return this._instantiateFeatureCalloutTour;
     },
 
-    _instantiateFeatureCalloutTour(location) {
-      
+    get featureCalloutPanelId() {
+      return this._featureCalloutPanelId;
+    },
+
+    _instantiateFeatureCalloutTour(location, panelId) {
+      this._featureCalloutPanelId = panelId;
       const { FeatureCallout } = ChromeUtils.importESModule(
         "chrome://browser/content/featureCallout.mjs"
       );
@@ -1087,13 +1093,25 @@
 
       let newTab = this.getTabForBrowser(newBrowser);
 
-      if (this._featureCallout) {
+      if (
+        this._featureCallout &&
+        this._featureCalloutPanelId !== newTab.linkedPanel
+      ) {
         this._featureCallout._endTour(true);
         this._featureCallout = null;
       }
 
-      if (newBrowser.currentURI.spec.endsWith(".pdf")) {
-        this._instantiateFeatureCalloutTour(newBrowser.currentURI);
+      
+      
+      
+      if (
+        !this._featureCallout &&
+        newBrowser.currentURI.spec.endsWith(".pdf")
+      ) {
+        this._instantiateFeatureCalloutTour(
+          newBrowser.currentURI,
+          newTab.linkedPanel
+        );
         window.gBrowser.featureCallout.showFeatureCallout();
       }
 
@@ -6836,17 +6854,27 @@
             gBrowser._tabLayerCache.splice(tabCacheIndex, 1);
             gBrowser._getSwitcher().cleanUpTabAfterEviction(this.mTab);
           }
-        } else if (aLocation.spec.endsWith(".pdf")) {
-          
-          
-          
-          if (window.gBrowser.featureCallout) {
-            window.gBrowser.featureCallout._endTour(true);
-            window.gBrowser.featureCallout = null;
+        } else {
+          if (
+            gBrowser.featureCallout &&
+            (gBrowser.featureCalloutPanelId !==
+              gBrowser.selectedTab.linkedPanel ||
+              gBrowser.featureCallout.source !== aLocation.spec)
+          ) {
+            gBrowser.featureCallout._endTour(true);
+            gBrowser.featureCallout = null;
           }
 
-          window.gBrowser.instantiateFeatureCalloutTour(aLocation);
-          window.gBrowser.featureCallout.showFeatureCallout();
+          
+          
+          
+          if (!gBrowser.featureCallout && aLocation.spec.endsWith(".pdf")) {
+            gBrowser.instantiateFeatureCalloutTour(
+              aLocation,
+              gBrowser.selectedTab.linkedPanel
+            );
+            gBrowser.featureCallout.showFeatureCallout();
+          }
         }
       }
 
