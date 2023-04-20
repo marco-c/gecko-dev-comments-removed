@@ -11,14 +11,17 @@ interface WebTransportSessionEventListener;
 interface nsIWebTransportStreamCallback;
 interface nsIWebTransportBidirectionalStream;
 interface nsIWebTransportSendStream;
+interface nsIWebTransportReceiveStream;
 
 %{C++
 namespace mozilla::net {
 class Http3WebTransportSession;
+class Http3WebTransportStream;
 }
 %}
 
 [ptr] native Http3WebTransportSessionPtr(mozilla::net::Http3WebTransportSession);
+[ptr] native Http3WebTransportStreamPtr(mozilla::net::Http3WebTransportStream);
 
 [builtinclass, scriptable, uuid(c20d6e77-8cb1-4838-a88d-fff826080aa3)]
 interface nsIWebTransport : nsISupports {
@@ -40,7 +43,6 @@ interface nsIWebTransport : nsISupports {
                     in ACString aReason);
 
   
-  
   void createOutgoingBidirectionalStream(in nsIWebTransportStreamCallback aListener);
   void createOutgoingUnidirectionalStream(in nsIWebTransportStreamCallback aListener);
 
@@ -60,12 +62,12 @@ interface WebTransportSessionEventListener : nsISupports {
                        in ACString aReason);
 
   
-  
-  
+  void onIncomingBidirectionalStreamAvailable(in nsIWebTransportBidirectionalStream aStream);
+  void onIncomingUnidirectionalStreamAvailable(in nsIWebTransportReceiveStream aStream);
 
   
   
-  
+  void onIncomingStreamAvailableInternal(in Http3WebTransportStreamPtr aStream);
 
   
   
