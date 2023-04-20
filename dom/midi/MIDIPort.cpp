@@ -58,8 +58,6 @@ MIDIPort::~MIDIPort() {
     
     
     Port()->SendShutdown();
-    
-    Port()->Teardown();
   }
 }
 
@@ -86,9 +84,6 @@ bool MIDIPort::Initialize(const MIDIPortInfo& aPortInfo, bool aSysexEnabled) {
   LOG("MIDIPort::Initialize (%s, %s)",
       NS_ConvertUTF16toUTF8(Port()->Name()).get(),
       MIDIPortTypeValues::strings[uint32_t(Port()->Type())].value);
-  
-  
-  Port()->SetActorAlive();
   return true;
 }
 

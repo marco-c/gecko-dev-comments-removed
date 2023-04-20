@@ -480,26 +480,6 @@ bool BackgroundChildImpl::DeallocPQuotaChild(PQuotaChild* aActor) {
   return true;
 }
 
-
-
-
-
-PMIDIPortChild* BackgroundChildImpl::AllocPMIDIPortChild(
-    const MIDIPortInfo& aPortInfo, const bool& aSysexEnabled) {
-  MOZ_CRASH("Should be created manually");
-  return nullptr;
-}
-
-bool BackgroundChildImpl::DeallocPMIDIPortChild(PMIDIPortChild* aActor) {
-  MOZ_ASSERT(aActor);
-  
-  
-  RefPtr<dom::MIDIPortChild> child =
-      dont_AddRef(static_cast<dom::MIDIPortChild*>(aActor));
-  child->Teardown();
-  return true;
-}
-
 mozilla::dom::PClientManagerChild*
 BackgroundChildImpl::AllocPClientManagerChild() {
   return mozilla::dom::AllocClientManagerChild();
