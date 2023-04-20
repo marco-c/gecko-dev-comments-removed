@@ -692,7 +692,7 @@ var gScreenshots = {
   shouldScreenshotsButtonBeDisabled() {
     
     
-    let uri = gBrowser.currentURI;
+    let uri = gBrowser.selectedBrowser.currentURI;
     let shouldBeDisabled =
       gScreenshotsDisabled ||
       (!gScreenshotsComponentEnabled &&
