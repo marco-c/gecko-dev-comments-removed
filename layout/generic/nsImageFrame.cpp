@@ -31,6 +31,7 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/SVGImageContext.h"
@@ -184,8 +185,40 @@ bool nsDisplayGradient::CreateWebRenderCommands(
 
 #define ALIGN_UNSET uint8_t(-1)
 
+class IconLoad final : public imgINotificationObserver {
+  
+  
+ public:
+  IconLoad() = default;
 
-StaticRefPtr<nsImageFrame::IconLoad> nsImageFrame::gIconLoad;
+  void Shutdown();
+
+  NS_DECL_ISUPPORTS
+  NS_DECL_IMGINOTIFICATIONOBSERVER
+
+  void AddIconObserver(nsImageFrame* frame) {
+    MOZ_ASSERT(!mIconObservers.Contains(frame),
+               "Observer shouldn't aleady be in array");
+    mIconObservers.AppendElement(frame);
+  }
+
+  void RemoveIconObserver(nsImageFrame* frame) {
+    mozilla::DebugOnly<bool> didRemove = mIconObservers.RemoveElement(frame);
+    MOZ_ASSERT(didRemove, "Observer not in array");
+  }
+
+ private:
+  ~IconLoad() = default;
+
+  nsTObserverArray<nsImageFrame*> mIconObservers;
+
+ public:
+  RefPtr<imgRequestProxy> mLoadingImage;
+  RefPtr<imgRequestProxy> mBrokenImage;
+};
+
+
+StaticRefPtr<IconLoad> gIconLoad;
 
 
 
@@ -886,7 +919,7 @@ auto nsImageFrame::ImageFrameTypeFor(const Element& aElement,
   }
 
   
-  if (gIconLoad && gIconLoad->mPrefForceInlineAltText) {
+  if (StaticPrefs::browser_display_force_inline_alttext()) {
     return ImageFrameType::None;
   }
 
@@ -1701,7 +1734,8 @@ ImgDrawResult nsImageFrame::DisplayAltFeedback(gfxContext& aRenderingContext,
   }
 
   
-  if (!isLoading || gIconLoad->mPrefShowLoadingPlaceholder) {
+  if (!isLoading ||
+      StaticPrefs::browser_display_show_loading_image_placeholder()) {
     nsRecessedBorder recessedBorder(borderEdgeWidth, PresContext());
 
     
@@ -1733,14 +1767,15 @@ ImgDrawResult nsImageFrame::DisplayAltFeedback(gfxContext& aRenderingContext,
   ImgDrawResult result = ImgDrawResult::NOT_READY;
 
   
-  if (!ShouldShowBrokenImageIcon() || !gIconLoad->mPrefShowPlaceholders ||
-      (isLoading && !gIconLoad->mPrefShowLoadingPlaceholder)) {
+  if (!ShouldShowBrokenImageIcon() ||
+      !StaticPrefs::browser_display_show_image_placeholders() ||
+      (isLoading && StaticPrefs::browser_display_show_loading_image_placeholder())) {
     result = ImgDrawResult::SUCCESS;
   } else {
     nscoord size = nsPresContext::CSSPixelsToAppUnits(ICON_SIZE);
 
-    imgIRequest* request = isLoading ? nsImageFrame::gIconLoad->mLoadingImage
-                                     : nsImageFrame::gIconLoad->mBrokenImage;
+    imgIRequest* request = isLoading ? gIconLoad->mLoadingImage
+                                     : gIconLoad->mBrokenImage;
 
     
     
@@ -1884,7 +1919,8 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
   AutoSaveRestore autoSaveRestore(aBuilder, textDrawResult);
 
   
-  if (!isLoading || gIconLoad->mPrefShowLoadingPlaceholder) {
+  if (!isLoading ||
+      StaticPrefs::browser_display_show_loading_image_placeholder()) {
     nsRecessedBorder recessedBorder(borderEdgeWidth, PresContext());
     
     
@@ -1912,12 +1948,14 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
   auto wrBounds = wr::ToLayoutRect(bounds);
 
   
-  if (ShouldShowBrokenImageIcon() && gIconLoad->mPrefShowPlaceholders &&
-      (!isLoading || gIconLoad->mPrefShowLoadingPlaceholder)) {
+  if (ShouldShowBrokenImageIcon() &&
+      StaticPrefs::browser_display_show_image_placeholders() &&
+      (!isLoading ||
+       StaticPrefs::browser_display_show_loading_image_placeholder())) {
     ImgDrawResult result = ImgDrawResult::NOT_READY;
     nscoord size = nsPresContext::CSSPixelsToAppUnits(ICON_SIZE);
-    imgIRequest* request = isLoading ? nsImageFrame::gIconLoad->mLoadingImage
-                                     : nsImageFrame::gIconLoad->mBrokenImage;
+    imgIRequest* request =
+        isLoading ? gIconLoad->mLoadingImage : gIconLoad->mBrokenImage;
 
     
     
@@ -2768,22 +2806,9 @@ nsresult nsImageFrame::LoadIcons(nsPresContext* aPresContext) {
   return rv;
 }
 
-NS_IMPL_ISUPPORTS(nsImageFrame::IconLoad, nsIObserver, imgINotificationObserver)
+NS_IMPL_ISUPPORTS(IconLoad, imgINotificationObserver)
 
-static const char* kIconLoadPrefs[] = {
-    "browser.display.force_inline_alttext",
-    "browser.display.show_image_placeholders",
-    "browser.display.show_loading_image_placeholder", nullptr};
-
-nsImageFrame::IconLoad::IconLoad() {
-  
-  Preferences::AddStrongObservers(this, kIconLoadPrefs);
-  GetPrefs();
-}
-
-void nsImageFrame::IconLoad::Shutdown() {
-  Preferences::RemoveObservers(this, kIconLoadPrefs);
-  
+void IconLoad::Shutdown() {
   if (mLoadingImage) {
     mLoadingImage->CancelAndForgetObserver(NS_ERROR_FAILURE);
     mLoadingImage = nullptr;
@@ -2794,38 +2819,8 @@ void nsImageFrame::IconLoad::Shutdown() {
   }
 }
 
-NS_IMETHODIMP
-nsImageFrame::IconLoad::Observe(nsISupports* aSubject, const char* aTopic,
-                                const char16_t* aData) {
-  NS_ASSERTION(!nsCRT::strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID),
-               "wrong topic");
-#ifdef DEBUG
-  
-  uint32_t i = 0;
-  for (; i < ArrayLength(kIconLoadPrefs); ++i) {
-    if (NS_ConvertASCIItoUTF16(kIconLoadPrefs[i]) == nsDependentString(aData))
-      break;
-  }
-  MOZ_ASSERT(i < ArrayLength(kIconLoadPrefs));
-#endif
-
-  GetPrefs();
-  return NS_OK;
-}
-
-void nsImageFrame::IconLoad::GetPrefs() {
-  mPrefForceInlineAltText =
-      Preferences::GetBool("browser.display.force_inline_alttext");
-
-  mPrefShowPlaceholders =
-      Preferences::GetBool("browser.display.show_image_placeholders", true);
-
-  mPrefShowLoadingPlaceholder = Preferences::GetBool(
-      "browser.display.show_loading_image_placeholder", true);
-}
-
-void nsImageFrame::IconLoad::Notify(imgIRequest* aRequest, int32_t aType,
-                                    const nsIntRect* aData) {
+void IconLoad::Notify(imgIRequest* aRequest, int32_t aType,
+                      const nsIntRect* aData) {
   MOZ_ASSERT(aRequest);
 
   if (aType != imgINotificationObserver::LOAD_COMPLETE &&
@@ -2891,4 +2886,11 @@ void nsImageFrame::AddInlineMinISize(gfxContext* aRenderingContext,
       aRenderingContext, this, IntrinsicISizeType::MinISize);
   bool canBreak = !IsInAutoWidthTableCellForQuirk(this);
   aData->DefaultAddInlineMinISize(this, isize, canBreak);
+}
+
+void nsImageFrame::ReleaseGlobals() {
+  if (gIconLoad) {
+    gIconLoad->Shutdown();
+    gIconLoad = nullptr;
+  }
 }

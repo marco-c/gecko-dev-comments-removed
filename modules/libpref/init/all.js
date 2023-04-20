@@ -184,11 +184,6 @@ pref("dom.text-recognition.enabled", true);
 
 pref("browser.sessionhistory.max_total_viewers", -1);
 
-pref("browser.display.force_inline_alttext", false); 
-
-pref("browser.display.show_image_placeholders", true);
-
-pref("browser.display.show_loading_image_placeholder", false);
 
 pref("browser.display.auto_quality_min_font_size", 20);
 
