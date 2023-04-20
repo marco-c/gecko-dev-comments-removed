@@ -252,6 +252,10 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   FunctionHasNewTargetBinding = 1 << 29,
+
+  
+  
+  UsesArgumentsIntrinsics = 1 << 30,
 };
 
 enum class MutableScriptFlagsEnum : uint32_t {

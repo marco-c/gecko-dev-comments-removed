@@ -70,6 +70,8 @@ bool CurrentThreadIsIonCompiling();
 
 namespace jit {
 
+class CallInfo;
+
 #ifdef JS_JITSPEW
 
 
@@ -3192,6 +3194,8 @@ class MGetInlinedArgument
   INSTRUCTION_HEADER(GetInlinedArgument)
   static MGetInlinedArgument* New(TempAllocator& alloc, MDefinition* index,
                                   MCreateInlinedArgumentsObject* args);
+  static MGetInlinedArgument* New(TempAllocator& alloc, MDefinition* index,
+                                  const CallInfo& callInfo);
   NAMED_OPERANDS((0, index))
 
   MDefinition* getArg(uint32_t idx) const {
