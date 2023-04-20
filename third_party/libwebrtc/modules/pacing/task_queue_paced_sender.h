@@ -131,6 +131,15 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   Stats GetStats() const;
 
   Clock* const clock_;
+  struct BurstyPacerFlags {
+    
+    
+    explicit BurstyPacerFlags(const FieldTrialsView& field_trials);
+    
+    
+    FieldTrialOptional<TimeDelta> burst;
+  };
+  const BurstyPacerFlags bursty_pacer_flags_;
   struct SlackedPacerFlags {
     
     
