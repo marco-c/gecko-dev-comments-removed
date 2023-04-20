@@ -1697,25 +1697,27 @@ void nsMenuPopupFrame::PerformMove(const Rects& aRects) {
   
   
   
-  const bool fixPosition = [&] {
-    if (IsNoAutoHide() && (GetPopupLevel() != PopupLevel::Parent ||
-                           mAnchorType == MenuPopupAnchorType_Rect)) {
-      return true;
-    }
-    
-    if (IsAnchored() && !ShouldFollowAnchor() && !mUsedScreenRect.IsEmpty()) {
-      return true;
-    }
-    return false;
-  }();
-
-  if (fixPosition) {
+  
+  
+  
+  const bool fixPositionToPoint =
+      IsNoAutoHide() && (GetPopupLevel() != PopupLevel::Parent ||
+                         mAnchorType == MenuPopupAnchorType_Rect);
+  if (fixPositionToPoint) {
     
     
     const auto& margin = GetMargin();
     mAnchorType = MenuPopupAnchorType_Point;
     mScreenRect.x = aRects.mUsedRect.x - margin.left;
     mScreenRect.y = aRects.mUsedRect.y - margin.top;
+  }
+
+  
+  
+  if (IsAnchored() && !ShouldFollowAnchor() && !mUsedScreenRect.IsEmpty() &&
+      mAnchorType != MenuPopupAnchorType_Rect) {
+    mAnchorType = MenuPopupAnchorType_Rect;
+    mScreenRect = aRects.mUntransformedAnchorRect;
   }
 
   
@@ -2164,6 +2166,10 @@ void nsMenuPopupFrame::MoveTo(const CSSPoint& aPos, bool aUpdateAttrs,
     
     
     mScreenRect.height = 0;
+    
+    
+    mPopupAlignment = POPUPALIGNMENT_TOPLEFT;
+    mPopupAnchor = POPUPALIGNMENT_BOTTOMLEFT;
   } else {
     mAnchorType = MenuPopupAnchorType_Point;
   }
