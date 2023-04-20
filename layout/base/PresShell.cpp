@@ -1947,6 +1947,13 @@ void PresShell::RefreshZoomConstraintsForScreenSizeChange() {
   }
 }
 
+void PresShell::ForceResizeReflowWithCurrentDimensions() {
+  nscoord currentWidth = 0;
+  nscoord currentHeight = 0;
+  mViewManager->GetWindowDimensions(&currentWidth, &currentHeight);
+  ResizeReflow(currentWidth, currentHeight);
+}
+
 void PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight,
                              ResizeReflowOptions aOptions) {
   if (mZoomConstraintsClient) {
@@ -11072,14 +11079,7 @@ void PresShell::MaybeRecreateMobileViewportManager(bool aAfterInitialization) {
 
     if (aAfterInitialization) {
       
-      
-      
-      
-      nsDocShell* docShell =
-          static_cast<nsDocShell*>(GetPresContext()->GetDocShell());
-      int32_t width, height;
-      docShell->GetSize(&width, &height);
-      docShell->SetSize(width, height, false);
+      ForceResizeReflowWithCurrentDimensions();
     }
   }
 
