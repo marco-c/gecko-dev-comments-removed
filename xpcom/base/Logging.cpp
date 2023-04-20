@@ -40,6 +40,7 @@
 
 
 
+
 const uint32_t kInitialModuleCount = 256;
 
 
@@ -307,6 +308,9 @@ class LogModuleManager {
   LogModuleManager()
       : mModulesLock("logmodules"),
         mModules(kInitialModuleCount),
+#ifdef DEBUG
+        mLoggingModuleRegistered(0),
+#endif
         mPrintEntryCount(0),
         mOutFile(nullptr),
         mToReleaseFile(nullptr),
@@ -319,7 +323,8 @@ class LogModuleManager {
         mIsRaw(false),
         mIsSync(false),
         mRotate(0),
-        mInitialized(false) {}
+        mInitialized(false) {
+  }
 
   ~LogModuleManager() {
     detail::LogFile* logFile = mOutFile.exchange(nullptr);
@@ -559,11 +564,19 @@ class LogModuleManager {
   LogModule* CreateOrGetModule(const char* aName) {
     OffTheBooksMutexAutoLock guard(mModulesLock);
     return mModules
-        .LookupOrInsertWith(aName,
-                            [&] {
-                              return UniquePtr<LogModule>(
-                                  new LogModule{aName, LogLevel::Disabled});
-                            })
+        .LookupOrInsertWith(
+            aName,
+            [&] {
+#ifdef DEBUG
+              if (++mLoggingModuleRegistered > kInitialModuleCount) {
+                NS_WARNING(
+                    "kInitialModuleCount too low, consider increasing its "
+                    "value");
+              }
+#endif
+              return UniquePtr<LogModule>(
+                  new LogModule{aName, LogLevel::Disabled});
+            })
         .get();
   }
 
@@ -761,6 +774,9 @@ class LogModuleManager {
   OffTheBooksMutex mModulesLock;
   nsClassHashtable<nsCharPtrHashKey, LogModule> mModules;
 
+#ifdef DEBUG
+  Atomic<uint32_t, ReleaseAcquire> mLoggingModuleRegistered;
+#endif
   
   
   
