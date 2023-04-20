@@ -53,10 +53,12 @@ interface nsIFilePicker : nsISupports
                                                 
                                                 
 
-  const short captureNone     = 0;              
-  const short captureDefault  = 1;              
-  const short captureUser     = 2;              
-  const short captureEnv      = 3;              
+  cenum CaptureTarget: 8 {
+    captureNone     = 0,                        
+    captureDefault  = 1,                        
+    captureUser     = 2,                        
+    captureEnv      = 3,                        
+  };
 
  
 
@@ -206,7 +208,12 @@ interface nsIFilePicker : nsISupports
 
   attribute AString okButtonLabel;
 
-  attribute short capture;
+  
+
+
+
+
+  attribute nsIFilePicker_CaptureTarget capture;
 };
 
 [scriptable, function, uuid(0d79adad-b244-49A5-9997-2a8cad93fc44)]
