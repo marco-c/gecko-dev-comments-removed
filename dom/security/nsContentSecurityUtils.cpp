@@ -1146,6 +1146,13 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   
 
   
+  
+  
+  if (aDocument->IsLoadedAsData()) {
+    return;
+  }
+
+  
   if (StaticPrefs::dom_security_skip_about_page_has_csp_assert()) {
     return;
   }
