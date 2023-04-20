@@ -353,18 +353,6 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
   MOZ_CAN_RUN_SCRIPT void NotifySelectionListenersAfterRangeSet();
 
-  
-
-
-
-
-
-
-
-
-
-  nsINode* GetRegisteredClosestCommonInclusiveAncestor();
-
  protected:
   
 
@@ -397,6 +385,18 @@ class nsRange final : public mozilla::dom::AbstractRange,
       const mozilla::RangeBoundaryBase<SPT, SRT>& aStartBoundary,
       const mozilla::RangeBoundaryBase<EPT, ERT>& aEndBoundary,
       nsINode* aRootNode, bool aNotInsertedYet = false);
+
+  
+
+
+
+
+
+
+
+
+
+  nsINode* GetRegisteredClosestCommonInclusiveAncestor();
 
   
   

@@ -3768,10 +3768,6 @@ class Document : public nsINode,
   }
   DOMIntersectionObserver& EnsureLazyLoadImageObserver();
 
-  DOMIntersectionObserver& EnsureContentVisibilityObserver();
-  void ObserveForContentVisibility(Element&);
-  void UnobserveForContentVisibility(Element&);
-
   ResizeObserver* GetLastRememberedSizeObserver() {
     return mLastRememberedSizeObserver;
   }
@@ -5139,10 +5135,6 @@ class Document : public nsINode,
   RefPtr<DOMIntersectionObserver> mLazyLoadImageObserver;
   
   RefPtr<DOMIntersectionObserver> mLazyLoadImageObserverViewport;
-
-  
-  
-  RefPtr<DOMIntersectionObserver> mContentVisibilityObserver;
 
   
   

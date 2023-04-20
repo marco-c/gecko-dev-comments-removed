@@ -14,7 +14,6 @@
 #define FragmentOrElement_h___
 
 #include "mozilla/Attributes.h"
-#include "mozilla/EnumSet.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCycleCollectionParticipant.h"  
@@ -34,8 +33,6 @@ class nsIURI;
 
 namespace mozilla {
 class DeclarationBlock;
-enum class ContentRelevancyReason;
-using ContentRelevancy = EnumSet<ContentRelevancyReason, uint8_t>;
 namespace dom {
 struct CustomElementData;
 class Element;
@@ -201,18 +198,6 @@ class FragmentOrElement : public nsIContent {
 
     Maybe<float> mLastRememberedBSize;
     Maybe<float> mLastRememberedISize;
-
-    
-
-
-
-    Maybe<ContentRelevancy> mContentRelevancy;
-
-    
-
-
-
-    Maybe<bool> mVisibleForContentVisibility;
   };
 
   class nsDOMSlots : public nsIContent::nsContentSlots {

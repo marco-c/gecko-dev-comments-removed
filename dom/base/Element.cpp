@@ -724,8 +724,7 @@ bool Element::CheckVisibility(const CheckVisibilityOptions& aOptions) {
     return false;
   }
 
-  if (f->IsHiddenByContentVisibilityOnAnyAncestor(
-          nsIFrame::IncludeContentVisibility::Hidden)) {
+  if (f->IsHiddenByContentVisibilityOnAnyAncestor()) {
     
     
     return false;

@@ -1612,10 +1612,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
     return mContentVisibility == StyleContentVisibility::Hidden;
   }
 
-  bool IsContentVisibilityAuto() const {
-    return mContentVisibility == StyleContentVisibility::Auto;
-  }
-
   
 
   bool HasTransformStyle() const {
