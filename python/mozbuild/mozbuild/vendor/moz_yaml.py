@@ -56,7 +56,7 @@ VALID_LICENSES = [
     "Unicode",  
 ]
 
-VALID_SOURCE_HOSTS = ["gitlab", "googlesource", "github", "angle"]
+VALID_SOURCE_HOSTS = ["gitlab", "googlesource", "github", "angle", "codeberg"]
 
 """
 ---
