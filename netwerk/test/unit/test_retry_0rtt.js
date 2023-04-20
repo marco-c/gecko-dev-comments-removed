@@ -18,27 +18,36 @@ function handlerCount(path) {
   return handlerCallbacks[path] || 0;
 }
 
-add_setup(async () => {
-  httpServer = new HttpServer();
-  httpServer.registerPrefixHandler("/callback/", listenHandler);
-  httpServer.start(-1);
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
-  registerCleanupFunction(async () => {
-    await httpServer.stop();
-  });
 
-  Services.env.set(
-    "FAULTY_SERVER_CALLBACK_PORT",
-    httpServer.identity.primaryPort
-  );
-  Services.env.set("MOZ_TLS_SERVER_0RTT", "1");
-  await asyncStartTLSTestServer(
-    "FaultyServer",
-    "../../../security/manager/ssl/tests/unit/test_faulty_server"
-  );
-  let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
-  await nssComponent.asyncClearSSLExternalAndInternalSessionCache();
-});
+
+add_setup(
+  {
+    skip_if: () => AppConstants.MOZ_SYSTEM_NSS,
+  },
+  async () => {
+    httpServer = new HttpServer();
+    httpServer.registerPrefixHandler("/callback/", listenHandler);
+    httpServer.start(-1);
+
+    registerCleanupFunction(async () => {
+      await httpServer.stop();
+    });
+
+    Services.env.set(
+      "FAULTY_SERVER_CALLBACK_PORT",
+      httpServer.identity.primaryPort
+    );
+    Services.env.set("MOZ_TLS_SERVER_0RTT", "1");
+    await asyncStartTLSTestServer(
+      "FaultyServer",
+      "../../../security/manager/ssl/tests/unit/test_faulty_server"
+    );
+    let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
+    await nssComponent.asyncClearSSLExternalAndInternalSessionCache();
+  }
+);
 
 async function sleep(time) {
   return new Promise(resolve => {
@@ -64,44 +73,49 @@ function channelOpenPromise(chan, flags) {
   });
 }
 
-add_task(async function testRetry0Rtt() {
-  var retryDomains = [
-    "0rtt-alert-bad-mac.example.com",
-    "0rtt-alert-protocol-version.example.com",
-    
-  ];
+add_task(
+  {
+    skip_if: () => AppConstants.MOZ_SYSTEM_NSS,
+  },
+  async function testRetry0Rtt() {
+    var retryDomains = [
+      "0rtt-alert-bad-mac.example.com",
+      "0rtt-alert-protocol-version.example.com",
+      
+    ];
 
-  Services.prefs.setCharPref("network.dns.localDomains", retryDomains);
+    Services.prefs.setCharPref("network.dns.localDomains", retryDomains);
 
-  Services.prefs.setBoolPref("network.ssl_tokens_cache_enabled", true);
+    Services.prefs.setBoolPref("network.ssl_tokens_cache_enabled", true);
 
-  for (var i = 0; i < retryDomains.length; i++) {
-    {
-      let countOfEarlyData = handlerCount("/callback/1");
-      let chan = makeChan(`https://${retryDomains[i]}:8443`);
-      let [, buf] = await channelOpenPromise(chan, CL_ALLOW_UNKNOWN_CL);
-      ok(buf);
-      equal(
-        handlerCount("/callback/1"),
-        countOfEarlyData,
-        "no early data sent"
-      );
-    }
+    for (var i = 0; i < retryDomains.length; i++) {
+      {
+        let countOfEarlyData = handlerCount("/callback/1");
+        let chan = makeChan(`https://${retryDomains[i]}:8443`);
+        let [, buf] = await channelOpenPromise(chan, CL_ALLOW_UNKNOWN_CL);
+        ok(buf);
+        equal(
+          handlerCount("/callback/1"),
+          countOfEarlyData,
+          "no early data sent"
+        );
+      }
 
-    
-    
-    await sleep(1);
+      
+      
+      await sleep(1);
 
-    {
-      let countOfEarlyData = handlerCount("/callback/1");
-      let chan = makeChan(`https://${retryDomains[i]}:8443`);
-      let [, buf] = await channelOpenPromise(chan, CL_ALLOW_UNKNOWN_CL);
-      ok(buf);
-      equal(
-        handlerCount("/callback/1"),
-        countOfEarlyData + 1,
-        "got early data"
-      );
+      {
+        let countOfEarlyData = handlerCount("/callback/1");
+        let chan = makeChan(`https://${retryDomains[i]}:8443`);
+        let [, buf] = await channelOpenPromise(chan, CL_ALLOW_UNKNOWN_CL);
+        ok(buf);
+        equal(
+          handlerCount("/callback/1"),
+          countOfEarlyData + 1,
+          "got early data"
+        );
+      }
     }
   }
-});
+);
