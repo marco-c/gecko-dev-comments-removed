@@ -75,6 +75,10 @@ class nsContentSecurityManager : public nsIContentSecurityManager,
                                   nsIPrincipal* aResourceOrigin,
                                   nsACString& aResult, nsILoadInfo* aLoadInfo);
 
+  
+  static bool IsCompatibleWithCrossOriginIsolation(
+      nsILoadInfo::CrossOriginEmbedderPolicy aPolicy);
+
  private:
   static nsresult CheckChannel(nsIChannel* aChannel);
   static nsresult CheckFTPSubresourceLoad(nsIChannel* aChannel);

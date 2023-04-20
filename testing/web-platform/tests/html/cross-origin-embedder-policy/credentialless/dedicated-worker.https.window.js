@@ -41,8 +41,7 @@ promise_test(async test => {
   const dedicatedWorkerTest = function(
     description, origin, coep_for_worker,
     expected_cookies_control,
-    expected_cookies_credentialless)
-  {
+    expected_cookies_credentialless) {
     promise_test_parallel(async t => {
       
       const worker_token_1 = token();
@@ -50,7 +49,7 @@ promise_test(async test => {
 
       
       const worker_error_1 = token();
-      const worker_error_2  = token();
+      const worker_error_2 = token();
 
       const w_worker_src_1 = same_origin + executor_worker_path +
         coep_for_worker + `&uuid=${worker_token_1}`;
@@ -106,6 +105,11 @@ promise_test(async test => {
     cookie_same_origin,
     cookie_same_origin);
 
+  dedicatedWorkerTest("same-origin + require_corp worker",
+    same_origin, coep_require_corp,
+    cookie_same_origin,
+    cookie_same_origin);
+
   dedicatedWorkerTest("same-origin",
     same_origin, coep_none,
     cookie_same_origin,
@@ -114,10 +118,20 @@ promise_test(async test => {
   dedicatedWorkerTest("cross-origin",
     cross_origin, coep_none,
     cookie_cross_origin,
-    "Worker blocked");
+    "Worker blocked" 
+                     
+  );
 
   dedicatedWorkerTest("cross-origin + credentialless worker",
     cross_origin, coep_credentialless,
-    undefined,
-    undefined);
+    undefined, 
+    undefined 
+  );
+
+  dedicatedWorkerTest("cross-origin + require_corp worker",
+    cross_origin, coep_require_corp,
+    cookie_cross_origin,
+    cookie_cross_origin 
+                        
+  );
 })

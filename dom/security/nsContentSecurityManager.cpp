@@ -1835,6 +1835,13 @@ void nsContentSecurityManager::GetSerializedOrigin(
 }
 
 
+bool nsContentSecurityManager::IsCompatibleWithCrossOriginIsolation(
+    nsILoadInfo::CrossOriginEmbedderPolicy aPolicy) {
+  return aPolicy == nsILoadInfo::EMBEDDER_POLICY_CREDENTIALLESS ||
+         aPolicy == nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP;
+}
+
+
 
 NS_IMETHODIMP
 nsContentSecurityManager::PerformSecurityCheck(
