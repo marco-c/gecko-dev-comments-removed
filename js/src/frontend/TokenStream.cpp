@@ -1587,13 +1587,17 @@ bool TokenStreamAnyChars::fillExceptingContext(ErrorMetadata* err,
 
   
   
-  if (!filename_ && !cx->isHelperThreadContext()) {
-    NonBuiltinFrameIter iter(cx, FrameIter::FOLLOW_DEBUGGER_EVAL_PREV_LINK,
-                             cx->realm()->principals());
-    if (!iter.done() && iter.filename()) {
-      err->filename = iter.filename();
-      err->lineNumber = iter.computeLine(&err->columnNumber);
-      return false;
+  if (!filename_) {
+    JSContext* maybeCx = context()->maybeCurrentJSContext();
+    if (maybeCx && !maybeCx->isHelperThreadContext()) {
+      NonBuiltinFrameIter iter(maybeCx,
+                               FrameIter::FOLLOW_DEBUGGER_EVAL_PREV_LINK,
+                               maybeCx->realm()->principals());
+      if (!iter.done() && iter.filename()) {
+        err->filename = iter.filename();
+        err->lineNumber = iter.computeLine(&err->columnNumber);
+        return false;
+      }
     }
   }
 

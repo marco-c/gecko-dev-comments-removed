@@ -94,6 +94,13 @@ class FrontendContext {
 
   void setCurrentJSContext(JSContext* cx);
 
+  
+  
+  
+  
+  
+  JSContext* maybeCurrentJSContext() { return maybeCx_; }
+
   enum class Warning { Suppress, Report };
 
   void convertToRuntimeError(JSContext* cx, Warning warning = Warning::Report);
