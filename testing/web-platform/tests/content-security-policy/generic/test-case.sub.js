@@ -51,7 +51,14 @@ function TestCase(scenarios, sanityChecker) {
         
         
         
-        await new Promise(resolve => setTimeout(resolve, 0));
+        let timeout = 0;
+        if (scenario.subresource.startsWith('worklet-') &&
+            navigator.userAgent.includes("Firefox/")) {
+          
+          
+          timeout = 10;
+        }
+        await new Promise(resolve => setTimeout(resolve, timeout));
 
         
         
