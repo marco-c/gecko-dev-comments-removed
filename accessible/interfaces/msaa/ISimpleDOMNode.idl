@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 cpp_quote("///////////////////////////////////////////////////////////////////////////////////////////////////////")
 cpp_quote("//")
@@ -116,11 +116,11 @@ interface ISimpleDOMNode : IUnknown
   const unsigned short NODETYPE_NOTATION = 12;
 
   [propget] HRESULT nodeInfo(
-    [out] BSTR *nodeName,   // for performance returns NULL for text nodes (true nodeName would be "#text")
+    [out] BSTR *nodeName,   
     [out] short *nameSpaceID,
     [out] BSTR *nodeValue,
     [out] unsigned int *numChildren,
-    [out] unsigned int *uniqueID, // In Win32 accessible events we generate, the target's childID matches to this
+    [out] unsigned int *uniqueID, 
     [out, retval] unsigned short *nodeType
   );
 
@@ -141,7 +141,7 @@ interface ISimpleDOMNode : IUnknown
 
   [propget] HRESULT computedStyle(
     [in] unsigned short maxStyleProperties,
-    [in] boolean useAlternateView,  // If TRUE, returns properites for media as set in Document's set_alternateViewMediaTypes
+    [in] boolean useAlternateView,  
     [out, size_is(maxStyleProperties), length_is(*numStyleProperties)] BSTR *styleProperties,
     [out, size_is(maxStyleProperties), length_is(*numStyleProperties)] BSTR *styleValues,
     [out, retval] unsigned short *numStyleProperties
@@ -149,7 +149,7 @@ interface ISimpleDOMNode : IUnknown
 
   [propget] HRESULT computedStyleForProperties(
     [in] unsigned short numStyleProperties,
-    [in] boolean useAlternateView,  // If TRUE, returns properites for media as set in Document's set_alternateViewMediaTypes
+    [in] boolean useAlternateView,  
     [in, size_is(numStyleProperties), length_is(numStyleProperties)] BSTR *styleProperties,
     [out, retval, size_is(numStyleProperties), length_is(numStyleProperties)] BSTR *styleValues
   );
@@ -173,4 +173,3 @@ interface ISimpleDOMNode : IUnknown
 
   [propget] HRESULT language([out, retval] BSTR *language);
 }
-

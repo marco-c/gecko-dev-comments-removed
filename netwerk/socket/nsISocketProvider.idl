@@ -128,8 +128,8 @@ interface nsISocketProvider : nsISupports
 
     
 
- 
-    const unsigned long IS_RETRY = (1 << 11); 
+
+    const unsigned long IS_RETRY = (1 << 11);
 
     
 
