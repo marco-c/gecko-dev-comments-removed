@@ -222,7 +222,6 @@ class alignas(16) Instance {
             const WasmTagObjectVector& tagObjs,
             const DataSegmentVector& dataSegments,
             const ElemSegmentVector& elemSegments);
-  void trace(JSTracer* trc);
 
   
   
