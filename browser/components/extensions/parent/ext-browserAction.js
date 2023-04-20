@@ -219,11 +219,7 @@ this.browserAction = class extends ExtensionAPIPersistent {
         
         
         button.setAttribute("data-extensionid", extension.id);
-        button.classList.add(
-          "toolbarbutton-1",
-          "unified-extensions-item-action-button",
-          "subviewbutton"
-        );
+        button.classList.add("unified-extensions-item-action-button");
 
         let contents = document.createXULElement("vbox");
         contents.classList.add("unified-extensions-item-contents");
