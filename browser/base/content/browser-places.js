@@ -1599,7 +1599,10 @@ var BookmarkingUI = {
     
     
     
-    if (!this.toolbar.hasAttribute("initialized")) {
+    
+    
+    
+    if (!this._isCustomizing && !this.toolbar.hasAttribute("initialized")) {
       emptyMsg.hidden = false;
       emptyMsg.setAttribute("nowidth", "");
       return;
