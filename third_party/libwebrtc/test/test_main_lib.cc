@@ -48,11 +48,19 @@
 ABSL_FLAG(std::string,
           NSTreatUnknownArgumentsAsOpen,
           "",
-          "Intentionally ignored flag intended for iOS simulator.");
+          "Intentionally ignored flag intended for iOS test runner.");
 ABSL_FLAG(std::string,
           ApplePersistenceIgnoreState,
           "",
-          "Intentionally ignored flag intended for iOS simulator.");
+          "Intentionally ignored flag intended for iOS test runner.");
+ABSL_FLAG(bool,
+          enable_run_ios_unittests_with_xctest,
+          false,
+          "Intentionally ignored flag intended for iOS test runner.");
+ABSL_FLAG(bool,
+          write_compiled_tests_json_to_writable_path,
+          false,
+          "Intentionally ignored flag intended for iOS test runner.");
 
 
 
@@ -64,6 +72,12 @@ ABSL_FLAG(
     "described by histogram.proto in "
     "https://chromium.googlesource.com/catapult/.");
 
+#elif defined(WEBRTC_FUCHSIA)
+ABSL_FLAG(std::string, use_vulkan, "", "Intentionally ignored flag.");
+#else
+
+ABSL_FLAG(bool, no_sandbox, false, "Intentionally ignored flag.");
+ABSL_FLAG(bool, test_launcher_bot_mode, false, "Intentionally ignored flag.");
 #endif
 
 ABSL_FLAG(std::string,

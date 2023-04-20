@@ -9,6 +9,9 @@
 
 
 #include <memory>
+#include <regex>
+#include <string>
+#include <vector>
 
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/debugging/symbolize.h"
@@ -16,11 +19,44 @@
 #include "test/gmock.h"
 #include "test/test_main_lib.h"
 
+namespace {
+
+std::vector<std::string> ReplaceDashesWithUnderscores(int argc, char* argv[]) {
+  std::vector<std::string> args(argv, argv + argc);
+  for (std::string& arg : args) {
+    
+    if (!arg.empty() && arg[0] == '-') {
+      
+      auto begin = arg.begin() + 2;
+      
+      auto end = std::find(arg.begin(), arg.end(), '=');
+      std::replace(begin, end, '-', '_');
+    }
+  }
+  return args;
+}
+
+std::vector<char*> VectorOfStringsToVectorOfPointers(
+    std::vector<std::string>& input) {
+  std::vector<char*> output(input.size());
+  for (size_t i = 0; i < input.size(); ++i) {
+    output[i] = &(input[i][0]);
+  }
+  return output;
+}
+
+}  
+
 int main(int argc, char* argv[]) {
   
   absl::InitializeSymbolizer(argv[0]);
   testing::InitGoogleMock(&argc, argv);
-  absl::ParseCommandLine(argc, argv);
+  
+  
+  
+  std::vector<std::string> new_argv = ReplaceDashesWithUnderscores(argc, argv);
+  std::vector<char*> raw_new_argv = VectorOfStringsToVectorOfPointers(new_argv);
+  absl::ParseCommandLine(argc, &raw_new_argv[0]);
 
 
 #if !defined(WEBRTC_FUCHSIA)
