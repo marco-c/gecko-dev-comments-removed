@@ -25,6 +25,7 @@ class I420ABufferInterface;
 class I422BufferInterface;
 class I444BufferInterface;
 class I010BufferInterface;
+class I210BufferInterface;
 class NV12BufferInterface;
 
 
@@ -56,6 +57,7 @@ class RTC_EXPORT VideoFrameBuffer : public rtc::RefCountInterface {
     kI422,
     kI444,
     kI010,
+    kI210,
     kNV12,
   };
 
@@ -109,6 +111,7 @@ class RTC_EXPORT VideoFrameBuffer : public rtc::RefCountInterface {
   const I422BufferInterface* GetI422() const;
   const I444BufferInterface* GetI444() const;
   const I010BufferInterface* GetI010() const;
+  const I210BufferInterface* GetI210() const;
   const NV12BufferInterface* GetNV12() const;
 
   
@@ -219,6 +222,7 @@ class I444BufferInterface : public PlanarYuv8Buffer {
 };
 
 
+
 class PlanarYuv16BBuffer : public PlanarYuvBuffer {
  public:
   
@@ -242,6 +246,19 @@ class I010BufferInterface : public PlanarYuv16BBuffer {
 
  protected:
   ~I010BufferInterface() override {}
+};
+
+
+
+class I210BufferInterface : public PlanarYuv16BBuffer {
+ public:
+  Type type() const override;
+
+  int ChromaWidth() const final;
+  int ChromaHeight() const final;
+
+ protected:
+  ~I210BufferInterface() override {}
 };
 
 class BiplanarYuvBuffer : public VideoFrameBuffer {

@@ -36,6 +36,14 @@ bool HasOneRef(const rtc::scoped_refptr<VideoFrameBuffer>& buffer) {
       return static_cast<rtc::RefCountedObject<I422Buffer>*>(buffer.get())
           ->HasOneRef();
     }
+    case VideoFrameBuffer::Type::kI010: {
+      return static_cast<rtc::RefCountedObject<I010Buffer>*>(buffer.get())
+          ->HasOneRef();
+    }
+    case VideoFrameBuffer::Type::kI210: {
+      return static_cast<rtc::RefCountedObject<I210Buffer>*>(buffer.get())
+          ->HasOneRef();
+    }
     case VideoFrameBuffer::Type::kNV12: {
       return static_cast<rtc::RefCountedObject<NV12Buffer>*>(buffer.get())
           ->HasOneRef();
@@ -214,6 +222,60 @@ rtc::scoped_refptr<NV12Buffer> VideoFrameBufferPool::CreateNV12Buffer(
 
   if (zero_initialize_)
     buffer->InitializeData();
+
+  buffers_.push_back(buffer);
+  return buffer;
+}
+
+rtc::scoped_refptr<I010Buffer> VideoFrameBufferPool::CreateI010Buffer(
+    int width,
+    int height) {
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
+
+  rtc::scoped_refptr<VideoFrameBuffer> existing_buffer =
+      GetExistingBuffer(width, height, VideoFrameBuffer::Type::kI010);
+  if (existing_buffer) {
+    
+    
+    
+    rtc::RefCountedObject<I010Buffer>* raw_buffer =
+        static_cast<rtc::RefCountedObject<I010Buffer>*>(existing_buffer.get());
+    
+    
+    return rtc::scoped_refptr<I010Buffer>(raw_buffer);
+  }
+
+  if (buffers_.size() >= max_number_of_buffers_)
+    return nullptr;
+  
+  rtc::scoped_refptr<I010Buffer> buffer = I010Buffer::Create(width, height);
+
+  buffers_.push_back(buffer);
+  return buffer;
+}
+
+rtc::scoped_refptr<I210Buffer> VideoFrameBufferPool::CreateI210Buffer(
+    int width,
+    int height) {
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
+
+  rtc::scoped_refptr<VideoFrameBuffer> existing_buffer =
+      GetExistingBuffer(width, height, VideoFrameBuffer::Type::kI210);
+  if (existing_buffer) {
+    
+    
+    
+    rtc::RefCountedObject<I210Buffer>* raw_buffer =
+        static_cast<rtc::RefCountedObject<I210Buffer>*>(existing_buffer.get());
+    
+    
+    return rtc::scoped_refptr<I210Buffer>(raw_buffer);
+  }
+
+  if (buffers_.size() >= max_number_of_buffers_)
+    return nullptr;
+  
+  rtc::scoped_refptr<I210Buffer> buffer = I210Buffer::Create(width, height);
 
   buffers_.push_back(buffer);
   return buffer;
