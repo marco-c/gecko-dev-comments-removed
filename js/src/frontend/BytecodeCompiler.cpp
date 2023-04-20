@@ -312,8 +312,7 @@ template <typename Unit>
     return false;
   }
 
-  
-  if (input.options.populateDelazificationCache() &&
+  if (input.options.populateDelazificationCache() && maybeCx &&
       !maybeCx->isHelperThreadContext()) {
     BorrowingCompilationStencil borrowingStencil(compiler.stencil());
     StartOffThreadDelazification(maybeCx, input.options, borrowingStencil);
