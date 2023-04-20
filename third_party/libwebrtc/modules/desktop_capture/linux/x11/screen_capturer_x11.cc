@@ -185,6 +185,10 @@ void ScreenCapturerX11::InitXrandr() {
 
 RTC_NO_SANITIZE("cfi-icall")
 void ScreenCapturerX11::UpdateMonitors() {
+  
+  
+  queue_.Reset();
+
   if (monitors_) {
     free_monitors_(monitors_);
     monitors_ = nullptr;
