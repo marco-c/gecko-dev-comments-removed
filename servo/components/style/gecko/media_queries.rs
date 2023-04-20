@@ -541,8 +541,11 @@ impl Device {
     }
 
     
+    
+    
+    
     #[inline]
     pub fn is_chrome_document(&self) -> bool {
-        self.pref_sheet_prefs().mIsChrome
+        self.document().mDocURISchemeIsChrome()
     }
 }
