@@ -14,6 +14,7 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "rtc_base/containers/flat_set.h"
 
 
 
@@ -96,6 +97,13 @@ bool FieldTrialsStringIsValid(absl::string_view trials_string);
 
 std::string MergeFieldTrialsStrings(absl::string_view first,
                                     absl::string_view second);
+
+
+class ScopedGlobalFieldTrialsForTesting {
+ public:
+  explicit ScopedGlobalFieldTrialsForTesting(flat_set<std::string> keys);
+  ~ScopedGlobalFieldTrialsForTesting();
+};
 
 }  
 }  
