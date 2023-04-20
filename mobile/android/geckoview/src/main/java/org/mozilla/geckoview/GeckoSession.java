@@ -2333,6 +2333,17 @@ public class GeckoSession {
 
 
 
+  @AnyThread
+  public @NonNull GeckoResult<Boolean> hasCookieBannerRuleForBrowsingContextTree() {
+    return mEventDispatcher.queryBoolean("GeckoView:HasCookieBannerRuleForBrowsingContextTree");
+  }
+
+  
+
+
+
+
+
 
 
 
