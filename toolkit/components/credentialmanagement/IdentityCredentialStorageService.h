@@ -11,7 +11,9 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/dom/FlippedOnce.h"
 #include "mozilla/Monitor.h"
+#include "mozilla/OriginAttributes.h"
 #include "mozIStorageConnection.h"
+#include "mozIStorageFunction.h"
 #include "nsIAsyncShutdown.h"
 #include "nsIIdentityCredentialStorageService.h"
 #include "nsIObserver.h"
@@ -90,6 +92,42 @@ class IdentityCredentialStorageService final
 
   
   
+  
+  
+  
+  
+  
+
+  
+  static nsresult UpsertData(mozIStorageConnection* aDatabaseConnection,
+                             nsIPrincipal* aRPPrincipal,
+                             nsIPrincipal* aIDPPrincipal,
+                             nsACString const& aCredentialID, bool aRegistered,
+                             bool aAllowLogout);
+
+  static nsresult DeleteData(mozIStorageConnection* aDatabaseConnection,
+                             nsIPrincipal* aRPPrincipal,
+                             nsIPrincipal* aIDPPrincipal,
+                             nsACString const& aCredentialID);
+
+  static nsresult ClearData(mozIStorageConnection* aDatabaseConnection);
+
+  static nsresult DeleteDataFromOriginAttributesPattern(
+      mozIStorageConnection* aDatabaseConnection,
+      OriginAttributesPattern const& aOriginAttributesPattern);
+
+  static nsresult DeleteDataFromTimeRange(
+      mozIStorageConnection* aDatabaseConnection, int64_t aStart, int64_t aEnd);
+
+  static nsresult DeleteDataFromPrincipal(
+      mozIStorageConnection* aDatabaseConnection, nsIPrincipal* aPrincipal);
+
+  static nsresult DeleteDataFromBaseDomain(
+      mozIStorageConnection* aDatabaseConnection,
+      nsACString const& aBaseDomain);
+
+  
+  
   RefPtr<mozIStorageConnection> mDiskDatabaseConnection;  
   RefPtr<mozIStorageConnection>
       mMemoryDatabaseConnection;  
@@ -111,8 +149,35 @@ class IdentityCredentialStorageService final
   Monitor mMonitor;
   FlippedOnce<false> mInitialized MOZ_GUARDED_BY(mMonitor);
   FlippedOnce<false> mErrored MOZ_GUARDED_BY(mMonitor);
+  FlippedOnce<false> mShuttingDown MOZ_GUARDED_BY(mMonitor);
   FlippedOnce<false> mFinalized MOZ_GUARDED_BY(mMonitor);
   uint32_t mPendingWrites MOZ_GUARDED_BY(mMonitor);
+};
+
+class OriginAttrsPatternMatchOriginSQLFunction final
+    : public mozIStorageFunction {
+  NS_DECL_ISUPPORTS
+  NS_DECL_MOZISTORAGEFUNCTION
+
+  explicit OriginAttrsPatternMatchOriginSQLFunction(
+      OriginAttributesPattern const& aPattern)
+      : mPattern(aPattern) {}
+  OriginAttrsPatternMatchOriginSQLFunction() = delete;
+
+ private:
+  ~OriginAttrsPatternMatchOriginSQLFunction() = default;
+
+  OriginAttributesPattern mPattern;
+};
+
+class PrivateBrowsingOriginSQLFunction final : public mozIStorageFunction {
+  NS_DECL_ISUPPORTS
+  NS_DECL_MOZISTORAGEFUNCTION
+
+  PrivateBrowsingOriginSQLFunction() = default;
+
+ private:
+  ~PrivateBrowsingOriginSQLFunction() = default;
 };
 
 }  
