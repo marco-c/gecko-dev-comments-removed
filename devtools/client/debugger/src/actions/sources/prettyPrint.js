@@ -59,13 +59,18 @@ export async function prettyPrintSource(
     text: contentValue.value,
     url,
   });
-  await sourceMapLoader.applySourceMap(generatedSource.id, sourceMap);
 
   
   
-  for (const { actor } of actors) {
-    await sourceMapLoader.applySourceMap(actor, sourceMap);
-  }
+  const generatedSourceIds = [
+    generatedSource.id,
+    ...actors.map(item => item.actor),
+  ];
+  await sourceMapLoader.setSourceMapForGeneratedSources(
+    generatedSourceIds,
+    sourceMap
+  );
+
   return {
     text: code,
     contentType: "text/javascript",

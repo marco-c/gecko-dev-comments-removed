@@ -489,9 +489,11 @@ async function getFileGeneratedRange(originalSourceId) {
 
 
 
-function applySourceMap(generatedId, map) {
+function setSourceMapForGeneratedSources(generatedSourceIds, map) {
   const sourceMapConsumer = new SourceMapConsumer(map);
-  setSourceMap(generatedId, Promise.resolve(sourceMapConsumer));
+  for (const generatedId of generatedSourceIds) {
+    setSourceMap(generatedId, Promise.resolve(sourceMapConsumer));
+  }
 }
 
 function clearSourceMaps() {
@@ -511,6 +513,6 @@ module.exports = {
   getOriginalSourceText,
   getGeneratedRangesForOriginal,
   getFileGeneratedRange,
-  applySourceMap,
+  setSourceMapForGeneratedSources,
   clearSourceMaps,
 };

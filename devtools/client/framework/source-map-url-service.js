@@ -41,7 +41,7 @@ class SourceMapURLService {
     
     
     this._sourceMapLoader.on(
-      "source-map-applied",
+      "source-map-created",
       this.newSourceMapCreated.bind(this)
     );
   }
@@ -191,21 +191,23 @@ class SourceMapURLService {
 
 
 
-  async newSourceMapCreated(id) {
+  async newSourceMapCreated(ids) {
     await this._ensureAllSourcesPopulated();
 
-    const map = this._mapsById.get(id);
-    if (!map) {
-      
-      return;
-    }
+    for (const id of ids) {
+      const map = this._mapsById.get(id);
+      if (!map) {
+        
+        continue;
+      }
 
-    map.loaded = Promise.resolve();
-    for (const query of map.queries.values()) {
-      query.action = null;
-      query.result = null;
-      if (this._prefValue) {
-        this._dispatchQuery(query);
+      map.loaded = Promise.resolve();
+      for (const query of map.queries.values()) {
+        query.action = null;
+        query.result = null;
+        if (this._prefValue) {
+          this._dispatchQuery(query);
+        }
       }
     }
   }
