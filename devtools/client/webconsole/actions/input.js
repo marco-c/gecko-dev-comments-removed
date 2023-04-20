@@ -190,7 +190,6 @@ function handleHelperResult(response) {
   return async ({ dispatch, hud, toolbox, webConsoleUI, getState }) => {
     const { result, helperResult } = response;
     const helperHasRawOutput = !!helperResult?.rawOutput;
-    const networkFront = await hud.resourceCommand.watcherFront.getNetworkParentActor();
 
     if (helperResult?.type) {
       switch (helperResult.type) {
@@ -292,7 +291,7 @@ function handleHelperResult(response) {
           
           
           
-          await networkFront.blockRequest({ url: blockURL });
+          await hud.commands.networkCommand.blockRequestForUrl(blockURL);
           toolbox
             .getPanel("netmonitor")
             ?.panelWin.store.dispatch(
@@ -313,7 +312,7 @@ function handleHelperResult(response) {
           break;
         case "unblockURL":
           const unblockURL = helperResult.args.url;
-          await networkFront.unblockRequest({ url: unblockURL });
+          await hud.commands.networkCommand.unblockRequestForUrl(unblockURL);
           toolbox
             .getPanel("netmonitor")
             ?.panelWin.store.dispatch(

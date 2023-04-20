@@ -34,7 +34,7 @@ const BLOCKING_EVENTS = [
 
 
 
-function requestBlockingMiddleware(connector) {
+function requestBlockingMiddleware(commands) {
   return store => next => async action => {
     const res = next(action);
 
@@ -48,7 +48,7 @@ function requestBlockingMiddleware(connector) {
             return arr;
           }, [])
         : [];
-      await connector.setBlockedUrls(urls);
+      await commands.networkCommand.setBlockedUrls(urls);
       store.dispatch({ type: REQUEST_BLOCKING_UPDATE_COMPLETE });
     }
     return res;
