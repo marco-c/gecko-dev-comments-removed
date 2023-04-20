@@ -43,9 +43,14 @@ function navigateTo(origin, url) {
 
 
 
+function cookieStringHasCookie(name, value, cookieString) {
+  return new RegExp(`(?:^|; )${name}=${value}(?:$|;)`).test(cookieString);
+}
+
+
+
 function assert_dom_cookie(name, value, present) {
-  var re = new RegExp("(?:^|; )" + name + "=" + value + "(?:$|;)");
-  assert_equals(re.test(document.cookie), present, "`" + name + "=" + value + "` in `document.cookie`");
+  assert_equals(cookieStringHasCookie(name, value, document.cookie), present, "`" + name + "=" + value + "` in `document.cookie`");
 }
 
 function assert_cookie(origin, obj, name, value, present) {
