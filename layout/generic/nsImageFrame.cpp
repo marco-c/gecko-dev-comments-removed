@@ -475,10 +475,17 @@ void nsImageFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
   
   
   
-  if (mKind == Kind::XULImage &&
-      !mContent->AsElement()->HasAttr(nsGkAtoms::src) && aOldStyle &&
-      aOldStyle->StyleList()->mListStyleImage != StyleList()->mListStyleImage) {
-    UpdateXULImage();
+  if (mKind == Kind::XULImage) {
+    if (!mContent->AsElement()->HasAttr(nsGkAtoms::src) && aOldStyle &&
+        aOldStyle->StyleList()->mListStyleImage !=
+            StyleList()->mListStyleImage) {
+      UpdateXULImage();
+    }
+    if (!mOwnedRequest && aOldStyle &&
+        aOldStyle->StyleDisplay()->EffectiveAppearance() !=
+            StyleDisplay()->EffectiveAppearance()) {
+      UpdateIntrinsicSize();
+    }
   }
 
   
@@ -776,6 +783,17 @@ static IntrinsicSize ComputeIntrinsicSize(imgIContainer* aImage,
     nscoord defaultLength = ListImageDefaultLength(aFrame);
     return containAxes.ContainIntrinsicSize(
         IntrinsicSize(defaultLength, defaultLength), aFrame);
+  }
+
+  if (aKind == nsImageFrame::Kind::XULImage && aFrame.IsThemed()) {
+    nsPresContext* pc = aFrame.PresContext();
+    
+    const auto widgetSize = pc->Theme()->GetMinimumWidgetSize(
+        pc, const_cast<nsImageFrame*>(&aFrame),
+        aFrame.StyleDisplay()->EffectiveAppearance());
+    const IntrinsicSize intrinsicSize(
+        LayoutDeviceIntSize::ToAppUnits(widgetSize, pc->AppUnitsPerDevPixel()));
+    return containAxes.ContainIntrinsicSize(intrinsicSize, aFrame);
   }
 
   if (aFrame.ShouldShowBrokenImageIcon()) {
