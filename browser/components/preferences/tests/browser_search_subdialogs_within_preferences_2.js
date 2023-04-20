@@ -28,6 +28,9 @@ add_task(async function() {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });
-  await evaluateSearchResults("turned off protections", "trackingGroup");
+  await evaluateSearchResults(
+    "Enhanced Tracking Protection turned off",
+    "trackingGroup"
+  );
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

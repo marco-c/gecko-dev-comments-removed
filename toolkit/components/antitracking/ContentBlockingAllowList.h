@@ -8,6 +8,7 @@
 #define mozilla_contentblockingallowlist_h
 
 #include "mozilla/dom/BrowsingContext.h"
+#include "nsIContentBlockingAllowList.h"
 
 class nsICookieJarSettings;
 class nsIHttpChannel;
@@ -20,8 +21,10 @@ namespace mozilla {
 class OriginAttributes;
 struct ContentBlockingAllowListCache;
 
-class ContentBlockingAllowList final {
+class ContentBlockingAllowList final : public nsIContentBlockingAllowList {
  public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSICONTENTBLOCKINGALLOWLIST
   
   
   
@@ -44,6 +47,9 @@ class ContentBlockingAllowList final {
   static void RecomputePrincipal(nsIURI* aURIBeingLoaded,
                                  const OriginAttributes& aAttrs,
                                  nsIPrincipal** aPrincipal);
+
+ private:
+  ~ContentBlockingAllowList() = default;
 };
 
 }  
