@@ -366,6 +366,7 @@ class Span {
  public:
   
   using element_type = ElementType;
+  using value_type = std::remove_cv_t<element_type>;
   using index_type = size_t;
   using pointer = element_type*;
   using reference = element_type&;
@@ -419,6 +420,16 @@ class Span {
       span_details::span_iterator<Span<OtherElementType, OtherExtent>, IsConst>
           aEnd)
       : storage_(aBegin == aEnd ? nullptr : &*aBegin, aEnd - aBegin) {}
+
+  
+
+
+  template <typename OtherElementType, size_t OtherExtent, bool IsConst>
+  constexpr Span(
+      span_details::span_iterator<Span<OtherElementType, OtherExtent>, IsConst>
+          aBegin,
+      index_type aLength)
+      : storage_(!aLength ? nullptr : &*aBegin, aLength) {}
 
   
 
@@ -663,6 +674,16 @@ class Span {
   constexpr Span<element_type, dynamic_extent> To(index_type aEnd) const {
     return Subspan(0, aEnd);
   }
+
+  
+  constexpr auto subspan(index_type aStart,
+                         index_type aLength = dynamic_extent) const {
+    return Subspan(aStart, aLength);
+  }
+  
+  constexpr auto from(index_type aStart) const { return From(aStart); }
+  
+  constexpr auto to(index_type aEnd) const { return To(aEnd); }
 
   
 
