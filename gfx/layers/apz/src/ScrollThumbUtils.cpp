@@ -84,7 +84,8 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
   const ParentLayerCoord overscroll =
       aAxis.GetPointOffset(mApzc->GetOverscrollAmount());
 
-  if (FuzzyEqualsAdditive(asyncZoom, 1.f) && mApzc->IsZero(asyncScroll) &&
+  bool haveAsyncZoom = !FuzzyEqualsAdditive(asyncZoom, 1.f);
+  if (!haveAsyncZoom && mApzc->IsZero(asyncScroll) &&
       mApzc->IsZero(overscroll)) {
     return;
   }
@@ -146,10 +147,12 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
 
   const CSSCoord desiredThumbPos = curPos * thumbPosRatio;
 
-  
-  
-  
-  ScaleThumbBy(aAxis, scale, ScrollThumbExtent::Start);
+  if (haveAsyncZoom) {
+    
+    
+    
+    ScaleThumbBy(aAxis, scale, ScrollThumbExtent::Start);
+  }
 
   
   
