@@ -26,6 +26,8 @@ class nsWindow;
 namespace mozilla {
 namespace widget {
 
+class GtkCompositorWidget;
+
 
 
 
@@ -44,6 +46,7 @@ class WindowSurfaceProvider final {
 
 #ifdef MOZ_WAYLAND
   void Initialize(RefPtr<nsWindow> aWidget);
+  void Initialize(GtkCompositorWidget* aCompositorWidget);
 #endif
 #ifdef MOZ_X11
   void Initialize(Window aWindow, Visual* aVisual, int aDepth, bool aIsShaped);
@@ -80,6 +83,9 @@ class WindowSurfaceProvider final {
   mozilla::Atomic<bool> mWindowSurfaceValid;
 #ifdef MOZ_WAYLAND
   RefPtr<nsWindow> mWidget;
+  
+  
+  GtkCompositorWidget* mCompositorWidget = nullptr;
 #endif
 #ifdef MOZ_X11
   bool mIsShaped;
