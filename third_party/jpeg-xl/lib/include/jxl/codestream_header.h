@@ -72,15 +72,6 @@ typedef struct {
 } JxlPreviewHeader;
 
 
-typedef struct {
-  
-  uint32_t xsize;
-
-  
-  uint32_t ysize;
-} JxlIntrinsicSizeHeader;
-
-
 
 
 

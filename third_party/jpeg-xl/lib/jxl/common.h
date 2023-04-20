@@ -28,6 +28,11 @@
 #define JPEGXL_ENABLE_TRANSCODE_JPEG 1
 #endif  
 
+
+#ifndef JPEGXL_ENABLE_BOXES
+#define JPEGXL_ENABLE_BOXES 1
+#endif  
+
 namespace jxl {
 
 

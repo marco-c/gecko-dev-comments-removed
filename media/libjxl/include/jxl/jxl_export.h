@@ -9,8 +9,6 @@
 
 #define JXL_EXPORT
 
-
-
-#define JXL_DEPRECATED __attribute__((__deprecated__))
+#define JXL_DEPRECATED [[deprecated]]
 
 #endif 

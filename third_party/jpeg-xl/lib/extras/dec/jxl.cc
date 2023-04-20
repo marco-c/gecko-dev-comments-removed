@@ -283,6 +283,10 @@ bool DecodeImageJXL(const uint8_t* bytes, size_t bytes_size,
         
         ppf->info.num_color_channels = num_color_channels;
       }
+      if (dparams.output_bitdepth.type == JXL_BIT_DEPTH_CUSTOM) {
+        
+        ppf->info.bits_per_sample = dparams.output_bitdepth.bits_per_sample;
+      }
       
       if (!jxl::extras::SelectFormat(accepted_formats, ppf->info, &format)) {
         fprintf(stderr, "SelectFormat failed\n");
