@@ -490,16 +490,6 @@ bool BackgroundChildImpl::DeallocPClientManagerChild(
   return mozilla::dom::DeallocClientManagerChild(aActor);
 }
 
-#ifdef EARLY_BETA_OR_EARLIER
-void BackgroundChildImpl::OnChannelReceivedMessage(const Message& aMsg) {
-  if (aMsg.type() == dom::PVsync::MessageType::Msg_Notify__ID) {
-    
-    
-    SchedulerGroup::MarkVsyncReceived();
-  }
-}
-#endif
-
 dom::PWebAuthnTransactionChild*
 BackgroundChildImpl::AllocPWebAuthnTransactionChild() {
   MOZ_CRASH("PWebAuthnTransaction actor should be manually constructed!");

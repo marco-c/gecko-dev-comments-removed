@@ -20,12 +20,6 @@
 
 using namespace mozilla;
 
-namespace {
-
-static Atomic<uint64_t> gEarliestUnprocessedVsync(0);
-
-}  
-
 
 nsresult SchedulerGroup::UnlabeledDispatch(
     TaskCategory aCategory, already_AddRefed<nsIRunnable>&& aRunnable) {
@@ -35,24 +29,6 @@ nsresult SchedulerGroup::UnlabeledDispatch(
     return NS_DispatchToMainThread(std::move(aRunnable));
   }
 }
-
-
-void SchedulerGroup::MarkVsyncReceived() {
-  
-  
-  
-  TimeStamp creation = TimeStamp::ProcessCreation();
-
-  
-  
-  
-  uint64_t unprocessedVsync =
-      uint64_t((TimeStamp::Now() - creation).ToMicroseconds());
-  gEarliestUnprocessedVsync.compareExchange(0, unprocessedVsync);
-}
-
-
-void SchedulerGroup::MarkVsyncRan() { gEarliestUnprocessedVsync = 0; }
 
 SchedulerGroup::SchedulerGroup() : mIsRunning(false) {}
 
