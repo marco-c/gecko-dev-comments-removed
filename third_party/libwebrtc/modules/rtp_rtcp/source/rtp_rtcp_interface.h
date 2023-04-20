@@ -35,7 +35,6 @@ namespace webrtc {
 
 class FrameEncryptorInterface;
 class RateLimiter;
-class RemoteBitrateEstimator;
 class RtcEventLog;
 class RTPSender;
 class Transport;
@@ -89,10 +88,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     
     RtcpCnameCallback* rtcp_cname_callback = nullptr;
     ReportBlockDataObserver* report_block_data_observer = nullptr;
-
-    
-    
-    RemoteBitrateEstimator* remote_bitrate_estimator = nullptr;
 
     
     RtpPacketSender* paced_sender = nullptr;
