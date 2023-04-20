@@ -436,10 +436,10 @@ class JS::Compartment {
  private:
   
   
-  js::NativeIterator enumerators_;
+  js::NativeIteratorListHead enumerators_;
 
  public:
-  js::NativeIterator* enumeratorsAddr() { return &enumerators_; }
+  js::NativeIteratorListHead* enumeratorsAddr() { return &enumerators_; }
   MOZ_ALWAYS_INLINE bool objectMaybeInIteration(JSObject* obj);
 
   void traceWeakNativeIterators(JSTracer* trc);

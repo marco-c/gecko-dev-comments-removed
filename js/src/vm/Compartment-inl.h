@@ -423,14 +423,16 @@ template <class T>
 MOZ_ALWAYS_INLINE bool JS::Compartment::objectMaybeInIteration(JSObject* obj) {
   MOZ_ASSERT(obj->compartment() == this);
 
+  js::NativeIteratorListIter iter(&enumerators_);
+
   
-  js::NativeIterator* next = enumerators_.next();
-  if (next == &enumerators_) {
+  if (iter.done()) {
     return false;
   }
 
   
-  if (next->next() == &enumerators_) {
+  js::NativeIterator* next = iter.next();
+  if (iter.done()) {
     return next->objectBeingIterated() == obj;
   }
 

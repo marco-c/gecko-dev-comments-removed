@@ -54,6 +54,7 @@ extern uint32_t MIRTypeToABIResultSize(jit::MIRType);
 }  
 
 class GenericPrinter;
+class NativeIteratorListHead;
 class StringObject;
 
 enum class UnaryMathFunction : uint8_t;

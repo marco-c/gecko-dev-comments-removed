@@ -774,24 +774,6 @@ static PropertyIteratorObject* CreatePropertyIterator(
   return propIter;
 }
 
-
-
-
-
-
-NativeIterator::NativeIterator() {
-  
-  
-  AlwaysPoison(static_cast<void*>(this), JS_NEW_NATIVE_ITERATOR_PATTERN,
-               sizeof(*this), MemCheckKind::MakeUndefined);
-
-  
-  
-  
-  
-  prev_ = next_ = this;
-}
-
 static HashNumber HashIteratorShape(Shape* shape) {
   return DefaultHasher<Shape*>::hash(shape);
 }
@@ -1620,14 +1602,12 @@ static bool SuppressDeletedProperty(JSContext* cx, NativeIterator* ni,
 
 static bool SuppressDeletedPropertyHelper(JSContext* cx, HandleObject obj,
                                           Handle<JSLinearString*> str) {
-  NativeIterator* enumeratorList = cx->compartment()->enumeratorsAddr();
-  NativeIterator* ni = enumeratorList->next();
-
-  while (ni != enumeratorList) {
+  NativeIteratorListIter iter(cx->compartment()->enumeratorsAddr());
+  while (!iter.done()) {
+    NativeIterator* ni = iter.next();
     if (!SuppressDeletedProperty(cx, ni, obj, str)) {
       return false;
     }
-    ni = ni->next();
   }
 
   return true;
@@ -1681,10 +1661,9 @@ void js::AssertDenseElementsNotIterated(NativeObject* obj) {
   static constexpr uint32_t MaxPropsToCheck = 10;
   uint32_t propsChecked = 0;
 
-  NativeIterator* enumeratorList = obj->compartment()->enumeratorsAddr();
-  NativeIterator* ni = enumeratorList->next();
-
-  while (ni != enumeratorList) {
+  NativeIteratorListIter iter(obj->compartment()->enumeratorsAddr());
+  while (!iter.done()) {
+    NativeIterator* ni = iter.next();
     if (ni->objectBeingIterated() == obj &&
         !ni->maybeHasIndexedPropertiesFromProto()) {
       for (GCPtr<JSLinearString*>* idp = ni->nextProperty();
@@ -1698,7 +1677,6 @@ void js::AssertDenseElementsNotIterated(NativeObject* obj) {
         }
       }
     }
-    ni = ni->next();
   }
 }
 #endif

@@ -24,7 +24,64 @@ class ArrayObject;
 class PlainObject;
 class PropertyIteratorObject;
 
-struct NativeIterator {
+struct NativeIterator;
+
+class NativeIteratorListNode {
+ protected:
+  
+  NativeIteratorListNode* prev_ = nullptr;
+  NativeIteratorListNode* next_ = nullptr;
+
+ public:
+  NativeIteratorListNode* prev() { return prev_; }
+  NativeIteratorListNode* next() { return next_; }
+
+  void setPrev(NativeIteratorListNode* prev) { prev_ = prev; }
+  void setNext(NativeIteratorListNode* next) { next_ = next; }
+
+  static constexpr size_t offsetOfNext() {
+    return offsetof(NativeIteratorListNode, next_);
+  }
+
+  static constexpr size_t offsetOfPrev() {
+    return offsetof(NativeIteratorListNode, prev_);
+  }
+
+ private:
+  NativeIterator* asNativeIterator() {
+    return reinterpret_cast<NativeIterator*>(this);
+  }
+
+  friend class NativeIteratorListIter;
+};
+
+class NativeIteratorListHead : public NativeIteratorListNode {
+ private:
+  
+  NativeIteratorListHead() { prev_ = next_ = this; }
+  friend class JS::Compartment;
+};
+
+class NativeIteratorListIter {
+ private:
+  NativeIteratorListHead* head_;
+  NativeIteratorListNode* curr_;
+
+ public:
+  explicit NativeIteratorListIter(NativeIteratorListHead* head)
+      : head_(head), curr_(head->next()) {}
+
+  bool done() const { return curr_ == head_; }
+
+  NativeIterator* next() {
+    MOZ_ASSERT(!done());
+    NativeIterator* result = curr_->asNativeIterator();
+    curr_ = curr_->next();
+    return result;
+  }
+};
+
+struct NativeIterator : public NativeIteratorListNode {
  private:
   
   
@@ -101,10 +158,6 @@ struct NativeIterator {
 
  private:
   
-  NativeIterator* next_ = nullptr;
-  NativeIterator* prev_ = nullptr;
-
-  
   
   uint32_t flagsAndCount_ = 0;
 
@@ -133,9 +186,6 @@ struct NativeIterator {
   NativeIterator(JSContext* cx, Handle<PropertyIteratorObject*> propIter,
                  Handle<JSObject*> objBeingIterated, HandleIdVector props,
                  uint32_t numShapes, HashNumber shapesHash, bool* hadError);
-
-  
-  NativeIterator();
 
   JSObject* objectBeingIterated() const { return objectBeingIterated_; }
 
@@ -243,8 +293,6 @@ struct NativeIterator {
     return propertyCursor_;
   }
 
-  NativeIterator* next() { return next_; }
-
   void incCursor() {
     MOZ_ASSERT(isInitialized());
     propertyCursor_++;
@@ -347,10 +395,7 @@ struct NativeIterator {
     flagsAndCount_ |= Flags::HasUnvisitedPropertyDeletion;
   }
 
-  void link(NativeIterator* other) {
-    
-    
-    
+  void link(NativeIteratorListNode* other) {
     MOZ_ASSERT(isInitialized());
 
     
@@ -360,19 +405,20 @@ struct NativeIterator {
     
     MOZ_ASSERT(isUnlinked());
 
-    this->next_ = other;
-    this->prev_ = other->prev_;
-    other->prev_->next_ = this;
-    other->prev_ = this;
+    setNext(other);
+    setPrev(other->prev());
+
+    other->prev()->setNext(this);
+    other->setPrev(this);
   }
   void unlink() {
     MOZ_ASSERT(isInitialized());
     MOZ_ASSERT(!isEmptyIteratorSingleton());
 
-    next_->prev_ = prev_;
-    prev_->next_ = next_;
-    next_ = nullptr;
-    prev_ = nullptr;
+    next()->setPrev(prev());
+    prev()->setNext(next());
+    setNext(nullptr);
+    setPrev(nullptr);
   }
 
   void trace(JSTracer* trc);
@@ -395,14 +441,6 @@ struct NativeIterator {
 
   static constexpr size_t offsetOfFlagsAndCount() {
     return offsetof(NativeIterator, flagsAndCount_);
-  }
-
-  static constexpr size_t offsetOfNext() {
-    return offsetof(NativeIterator, next_);
-  }
-
-  static constexpr size_t offsetOfPrev() {
-    return offsetof(NativeIterator, prev_);
   }
 
   static constexpr size_t offsetOfFirstShape() {
