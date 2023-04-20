@@ -267,6 +267,18 @@ function DatePicker(context) {
           switch (event.key) {
             case "Enter":
             case " ": {
+              if (
+                this.state.isMonthPickerVisible &&
+                this.context.monthYearView.contains(event.target)
+              ) {
+                
+                
+                event.stopPropagation();
+                event.preventDefault();
+                this.state.toggleMonthPicker();
+                this.components.calendar.focus();
+                break;
+              }
               if (event.target == this.context.buttonPrev) {
                 event.target.classList.add("active");
                 this.state.dateKeeper.setMonthByOffset(-1);
