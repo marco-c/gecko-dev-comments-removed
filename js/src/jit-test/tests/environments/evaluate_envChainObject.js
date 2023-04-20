@@ -1,3 +1,5 @@
+load(libdir + "asserts.js");
+
 
 {
     let global = newGlobal();
@@ -12,3 +14,19 @@
     assertEq(envChainObject.a, "test2");
     assertEq(evaluate("a", { global, envChainObject }), "test2");
 }
+
+
+
+if (!isProxy(evalcx(""))) {
+  
+  
+  assertThrowsInstanceOf(() => {
+    evaluate("10", { envChainObject: evalcx("") });
+  }, Error);
+}
+
+
+
+assertThrowsInstanceOf(() => {
+  evaluate("10", { envChainObject: evalReturningScope("1") });
+}, Error);
