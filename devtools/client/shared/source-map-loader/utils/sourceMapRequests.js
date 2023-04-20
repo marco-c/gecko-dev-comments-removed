@@ -28,9 +28,29 @@ function clearSourceMaps() {
   sourceMapRequests.clear();
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 function getSourceMapWithMetadata(generatedSourceId) {
   return sourceMapRequests.get(generatedSourceId);
 }
+
+
+
+
+
+
+
+
 
 function getSourceMap(generatedSourceId) {
   const request = getSourceMapWithMetadata(generatedSourceId);
@@ -38,8 +58,16 @@ function getSourceMap(generatedSourceId) {
     return null;
   }
 
-  return request.then(result => (result ? result.map : null));
+  return request.then(result => result?.map);
 }
+
+
+
+
+
+
+
+
 
 function setSourceMap(generatedId, request) {
   sourceMapRequests.set(
