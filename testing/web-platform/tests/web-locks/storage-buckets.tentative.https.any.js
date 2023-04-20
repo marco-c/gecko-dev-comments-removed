@@ -2,6 +2,7 @@
 
 
 
+
 'use strict';
 
 
@@ -26,6 +27,8 @@ async function locksAreShared(t, bucket1, bucket2) {
 }
 
 promise_test(async t => {
+  await prepareForBucketTest(t);
+
   const inboxBucket = await navigator.storageBuckets.open('inbox');
   const draftsBucket = await navigator.storageBuckets.open('drafts');
 

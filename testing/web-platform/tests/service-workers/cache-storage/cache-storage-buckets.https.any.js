@@ -4,18 +4,15 @@
 
 
 
+
 var test_url = 'https://example.com/foo';
 var test_body = 'Hello world!';
 const { REMOTE_HOST } = get_host_info();
 
 promise_test(async function(test) {
+  await prepareForBucketTest(test);
   var inboxBucket = await navigator.storageBuckets.open('inbox');
   var draftsBucket = await navigator.storageBuckets.open('drafts');
-
-  test.add_cleanup(async function() {
-    await navigator.storageBuckets.delete('inbox');
-    await navigator.storageBuckets.delete('drafts');
-  });
 
   const cacheName = 'attachments';
   const cacheKey = 'receipt1.txt';
@@ -43,13 +40,9 @@ promise_test(async function(test) {
 }, 'caches from different buckets have different contents');
 
 promise_test(async function(test) {
+  await prepareForBucketTest(test);
   var inboxBucket = await navigator.storageBuckets.open('inbox');
   var draftBucket = await navigator.storageBuckets.open('drafts');
-
-  test.add_cleanup(async function() {
-    await navigator.storageBuckets.delete('inbox');
-    await navigator.storageBuckets.delete('drafts');
-  });
 
   var caches = inboxBucket.caches;
   var attachments = await caches.open('attachments');
