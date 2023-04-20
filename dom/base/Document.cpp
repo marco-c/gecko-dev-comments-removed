@@ -3185,6 +3185,10 @@ void Document::FillStyleSetUserAndUASheets() {
   mStyleSet->AppendStyleSheet(*cache->CounterStylesSheet());
 
   
+  
+  mStyleSet->AppendStyleSheet(*cache->MinimalXULSheet());
+
+  
   if (LoadsFullXULStyleSheetUpFront()) {
     mStyleSet->AppendStyleSheet(*cache->XULSheet());
   }

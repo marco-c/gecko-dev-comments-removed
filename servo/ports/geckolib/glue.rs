@@ -4378,11 +4378,14 @@ pub extern "C" fn Servo_ComputedValues_EqualForCachedAnonymousContentStyle(
 
     
     
+    
     differing_properties.remove(LonghandId::XLang);
     
     
     differing_properties.remove(LonghandId::FontFamily);
 
+    
+    
     
     
     
