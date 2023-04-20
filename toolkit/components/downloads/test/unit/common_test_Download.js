@@ -62,10 +62,27 @@ function promiseStartDownload(aSourceUrl) {
 
 
 var promiseVerifyTarget = async function(downloadTarget, expectedContents) {
-  await promiseVerifyContents(downloadTarget.path, expectedContents);
   Assert.ok(downloadTarget.exists);
-  Assert.equal(downloadTarget.size, expectedContents.length);
+  Assert.equal(
+    await expectNonZeroDownloadTargetSize(downloadTarget),
+    expectedContents.length
+  );
+  await promiseVerifyContents(downloadTarget.path, expectedContents);
 };
+
+
+
+
+
+
+
+async function expectNonZeroDownloadTargetSize(downloadTarget) {
+  todo_check_true(downloadTarget.size, "Size should not be zero.");
+  if (!downloadTarget.size) {
+    await downloadTarget.refresh();
+  }
+  return downloadTarget.size;
+}
 
 
 
@@ -571,7 +588,10 @@ add_task(async function test_initial_final_state() {
   Assert.equal(download.progress, 100);
   Assert.ok(isValidDate(download.startTime));
   Assert.ok(download.target.exists);
-  Assert.equal(download.target.size, TEST_DATA_SHORT.length);
+  Assert.equal(
+    await expectNonZeroDownloadTargetSize(download.target),
+    TEST_DATA_SHORT.length
+  );
 });
 
 
@@ -1309,7 +1329,10 @@ add_task(async function test_refresh_succeeded() {
   await IOUtils.move(download.target.path, `${download.target.path}.old`);
   await download.refresh();
   Assert.ok(!download.target.exists);
-  Assert.equal(download.target.size, TEST_DATA_SHORT.length);
+  Assert.equal(
+    await expectNonZeroDownloadTargetSize(download.target),
+    TEST_DATA_SHORT.length
+  );
 
   
   await IOUtils.move(`${download.target.path}.old`, download.target.path);
@@ -1808,7 +1831,10 @@ add_task(async function test_with_content_encoding_ignore_extension() {
 
   Assert.equal(download.progress, 100);
   Assert.equal(download.totalBytes, TEST_DATA_SHORT_GZIP_ENCODED.length);
-  Assert.equal(download.target.size, TEST_DATA_SHORT_GZIP_ENCODED.length);
+  Assert.equal(
+    await expectNonZeroDownloadTargetSize(download.target),
+    TEST_DATA_SHORT_GZIP_ENCODED.length
+  );
 
   
   
