@@ -2142,10 +2142,21 @@ TEST_F(WebRtcIceGatherTest, TestGatherDNSStunServerIpAddress) {
     return;
   }
 
-  NrIceCtx::GlobalConfig config;
-  config.mTcpEnabled = false;
-  NrIceCtx::InitializeGlobals(config);
-  EnsurePeer();
+  {
+    NrIceCtx::GlobalConfig config;
+    config.mTcpEnabled = false;
+    NrIceCtx::InitializeGlobals(config);
+  }
+
+  
+  
+  
+  
+  
+  NrIceCtx::Config config;
+  config.mPolicy = NrIceCtx::ICE_POLICY_NO_HOST;
+  peer_ = MakeUnique<IceTestPeer>("P1", test_utils_, true, config);
+
   peer_->SetStunServer(stun_server_address_, kDefaultStunServerPort);
   peer_->SetDNSResolver();
   peer_->AddStream(1);
@@ -2181,10 +2192,21 @@ TEST_F(WebRtcIceGatherTest, TestGatherDNSStunServerHostname) {
     return;
   }
 
-  NrIceCtx::GlobalConfig config;
-  config.mTcpEnabled = false;
-  NrIceCtx::InitializeGlobals(config);
-  EnsurePeer();
+  {
+    NrIceCtx::GlobalConfig config;
+    config.mTcpEnabled = false;
+    NrIceCtx::InitializeGlobals(config);
+  }
+
+  
+  
+  
+  
+  
+  NrIceCtx::Config config;
+  config.mPolicy = NrIceCtx::ICE_POLICY_NO_HOST;
+  peer_ = MakeUnique<IceTestPeer>("P1", test_utils_, true, config);
+
   peer_->SetStunServer(stun_server_hostname_, kDefaultStunServerPort);
   peer_->SetDNSResolver();
   peer_->AddStream(1);
