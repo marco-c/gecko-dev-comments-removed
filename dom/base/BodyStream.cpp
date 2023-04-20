@@ -191,26 +191,16 @@ already_AddRefed<Promise> BodyStream::PullCallback(
 
   MOZ_DIAGNOSTIC_ASSERT(mOwningEventTarget->IsOnCurrentThread());
 
-  MOZ_DIAGNOSTIC_ASSERT(mState == eInitializing || mState == eWaiting ||
-                        mState == eReading);
-
-  RefPtr<Promise> resolvedWithUndefinedPromise =
-      Promise::CreateResolvedWithUndefined(aController.GetParentObject(), aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  if (mState == eReading) {
-    
-    return resolvedWithUndefinedPromise.forget();
-  }
+  MOZ_DIAGNOSTIC_ASSERT(mState == eInitializing || mState == eInitialized);
+  MOZ_ASSERT(!mPullPromise);
+  mPullPromise = Promise::CreateInfallible(aController.GetParentObject());
 
   if (mState == eInitializing) {
     
     mStreamHolder->MarkAsRead();
   }
 
-  mState = eReading;
+  mState = eInitialized;
 
   if (!mInputStream) {
     
@@ -240,7 +230,7 @@ already_AddRefed<Promise> BodyStream::PullCallback(
   mAsyncWaitWorkerRef = mWorkerRef;
 
   
-  return resolvedWithUndefinedPromise.forget();
+  return do_AddRef(mPullPromise);
 }
 
 void BodyStream::WriteIntoReadRequestBuffer(JSContext* aCx,
@@ -254,7 +244,9 @@ void BodyStream::WriteIntoReadRequestBuffer(JSContext* aCx,
   MOZ_DIAGNOSTIC_ASSERT(mOwningEventTarget->IsOnCurrentThread());
 
   MOZ_DIAGNOSTIC_ASSERT(mInputStream);
-  MOZ_DIAGNOSTIC_ASSERT(mState == eWriting);
+  MOZ_DIAGNOSTIC_ASSERT(mState == eInitialized);
+  MOZ_DIAGNOSTIC_ASSERT(mPullPromise->State() ==
+                        Promise::PromiseState::Pending);
 
   uint32_t written;
   nsresult rv;
@@ -437,7 +429,9 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
   AutoEntryScript aes(mGlobal, "fetch body data available");
 
   MOZ_DIAGNOSTIC_ASSERT(mInputStream);
-  MOZ_DIAGNOSTIC_ASSERT(mState == eReading);
+  MOZ_DIAGNOSTIC_ASSERT(mState == eInitialized);
+  MOZ_DIAGNOSTIC_ASSERT(mPullPromise->State() ==
+                        Promise::PromiseState::Pending);
 
   JSContext* cx = aes.cx();
   ReadableStream* stream = mStreamHolder->GetReadableStreamBody();
@@ -455,8 +449,6 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
     return NS_OK;
   }
 
-  mState = eWriting;
-
   ErrorResult errorResult;
   EnqueueChunkWithSizeIntoStream(cx, stream, size, errorResult);
   errorResult.WouldReportJSException();
@@ -465,7 +457,8 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
     return NS_OK;
   }
 
-  mState = eWaiting;
+  mPullPromise->MaybeResolveWithUndefined();
+  mPullPromise = nullptr;
 
   
   
@@ -551,6 +544,10 @@ void BodyStream::ReleaseObjects() {
 
   mWorkerRef = nullptr;
   mGlobal = nullptr;
+  
+  
+  
+  mPullPromise = nullptr;
 
   RefPtr<BodyStream> self = mStreamHolder->TakeBodyStream();
   mStreamHolder->NullifyStream();
