@@ -3194,10 +3194,8 @@ toolbar#nav-bar {
                 
                 
                 "serviceworker_e10s": True,
-                "sessionHistoryInParent": self.extraPrefs.get(
-                    "fission.sessionHistoryInParent", False
-                )
-                or self.extraPrefs.get("fission.autostart", True),
+                "sessionHistoryInParent": not options.disable_fission
+                or self.extraPrefs.get("fission.sessionHistoryInParent", False),
                 "socketprocess_e10s": self.extraPrefs.get(
                     "network.process.enabled", False
                 ),

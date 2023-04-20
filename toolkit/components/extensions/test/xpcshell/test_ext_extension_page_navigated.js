@@ -169,7 +169,7 @@ add_task(async function test_extension_page_sameprocess_navigation() {
   });
 
   if (
-    Services.appinfo.fissionAutostart &&
+    Services.appinfo.sessionHistoryInParent &&
     WebExtensionPolicy.isExtensionProcess
   ) {
     
@@ -294,7 +294,7 @@ add_task(async function test_extension_page_context_navigated_to_web_page() {
     
     
     equal(active, undefined, "extension page context should not exist anymore");
-  } else if (Services.appinfo.fissionAutostart) {
+  } else if (Services.appinfo.sessionHistoryInParent) {
     
     
     
