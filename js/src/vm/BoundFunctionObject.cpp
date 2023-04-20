@@ -264,26 +264,17 @@ static MOZ_ALWAYS_INLINE JSAtom* ComputeNameValue(
 
 
 
-
-
-
-
-
-
-
 bool BoundFunctionObject::functionBind(JSContext* cx, unsigned argc,
                                        Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  
-  if (MOZ_UNLIKELY(!IsCallable(args.thisv()))) {
+  if (!IsCallable(args.thisv())) {
     ReportIncompatibleMethod(cx, args, &FunctionClass);
     return false;
   }
 
-  size_t numBoundArgs = args.length() > 0 ? args.length() - 1 : 0;
-  if (MOZ_UNLIKELY(numBoundArgs > ARGS_LENGTH_MAX)) {
+  if (MOZ_UNLIKELY(args.length() > ARGS_LENGTH_MAX)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_TOO_MANY_ARGUMENTS);
     return false;
@@ -291,12 +282,38 @@ bool BoundFunctionObject::functionBind(JSContext* cx, unsigned argc,
 
   Rooted<JSObject*> target(cx, &args.thisv().toObject());
 
-  
-  
-  Rooted<JSObject*> proto(cx);
-  if (!GetPrototype(cx, target, &proto)) {
+  BoundFunctionObject* bound =
+      functionBindImpl(cx, target, args.array(), args.length(), nullptr);
+  if (!bound) {
     return false;
   }
+
+  
+  args.rval().setObject(*bound);
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+BoundFunctionObject* BoundFunctionObject::functionBindImpl(
+    JSContext* cx, Handle<JSObject*> target, Value* args, uint32_t argc,
+    Handle<BoundFunctionObject*> maybeBound) {
+  MOZ_ASSERT(target->isCallable());
+
+  
+  
+  RootedExternalValueArray argsRoot(cx, argc, args);
+
+  size_t numBoundArgs = argc > 0 ? argc - 1 : 0;
+  MOZ_ASSERT(numBoundArgs <= ARGS_LENGTH_MAX, "ensured by callers");
 
   
   
@@ -304,24 +321,46 @@ bool BoundFunctionObject::functionBind(JSContext* cx, unsigned argc,
   static_assert(gc::GetGCKindSlots(allocKind) == SlotCount);
 
   
+  
   Rooted<BoundFunctionObject*> bound(cx);
-  if (proto == &cx->global()->getFunctionPrototype() &&
-      cx->global()->maybeBoundFunctionShapeWithDefaultProto()) {
-    Rooted<SharedShape*> shape(
-        cx, cx->global()->maybeBoundFunctionShapeWithDefaultProto());
-    JSObject* obj = NativeObject::create(cx, allocKind, gc::DefaultHeap, shape);
-    if (!obj) {
-      return false;
+  if (maybeBound) {
+    
+    
+    
+    bound = maybeBound;
+    if (MOZ_UNLIKELY(bound->staticPrototype() != target->staticPrototype())) {
+      Rooted<JSObject*> proto(cx, target->staticPrototype());
+      if (!SetPrototype(cx, bound, proto)) {
+        return nullptr;
+      }
     }
-    bound = &obj->as<BoundFunctionObject>();
   } else {
-    bound = NewObjectWithGivenProto<BoundFunctionObject>(cx, proto);
-    if (!bound) {
-      return false;
+    
+    Rooted<JSObject*> proto(cx);
+    if (!GetPrototype(cx, target, &proto)) {
+      return nullptr;
     }
-    if (!SharedShape::ensureInitialCustomShape<BoundFunctionObject>(cx,
-                                                                    bound)) {
-      return false;
+
+    
+    if (proto == &cx->global()->getFunctionPrototype() &&
+        cx->global()->maybeBoundFunctionShapeWithDefaultProto()) {
+      Rooted<SharedShape*> shape(
+          cx, cx->global()->maybeBoundFunctionShapeWithDefaultProto());
+      JSObject* obj =
+          NativeObject::create(cx, allocKind, gc::DefaultHeap, shape);
+      if (!obj) {
+        return nullptr;
+      }
+      bound = &obj->as<BoundFunctionObject>();
+    } else {
+      bound = NewObjectWithGivenProto<BoundFunctionObject>(cx, proto);
+      if (!bound) {
+        return nullptr;
+      }
+      if (!SharedShape::ensureInitialCustomShape<BoundFunctionObject>(cx,
+                                                                      bound)) {
+        return nullptr;
+      }
     }
   }
 
@@ -335,16 +374,18 @@ bool BoundFunctionObject::functionBind(JSContext* cx, unsigned argc,
   bound->initReservedSlot(TargetSlot, ObjectValue(*target));
 
   
-  bound->initReservedSlot(BoundThisSlot, args.get(0));
+  if (argc > 0) {
+    bound->initReservedSlot(BoundThisSlot, args[0]);
+  }
 
   if (numBoundArgs <= MaxInlineBoundArgs) {
     for (size_t i = 0; i < numBoundArgs; i++) {
       bound->initReservedSlot(BoundArg0Slot + i, args[i + 1]);
     }
   } else {
-    ArrayObject* arr = NewDenseCopiedArray(cx, numBoundArgs, args.array() + 1);
+    ArrayObject* arr = NewDenseCopiedArray(cx, numBoundArgs, args + 1);
     if (!arr) {
-      return false;
+      return nullptr;
     }
     bound->initReservedSlot(BoundArg0Slot, ObjectValue(*arr));
   }
@@ -355,7 +396,7 @@ bool BoundFunctionObject::functionBind(JSContext* cx, unsigned argc,
 
   
   if (!ComputeLengthValue(cx, bound, target, numBoundArgs, &length)) {
-    return false;
+    return nullptr;
   }
 
   
@@ -364,15 +405,28 @@ bool BoundFunctionObject::functionBind(JSContext* cx, unsigned argc,
   
   JSAtom* name = ComputeNameValue(cx, bound, target);
   if (!name) {
-    return false;
+    return nullptr;
   }
 
   
   bound->initName(name);
 
   
-  args.rval().setObject(*bound);
-  return true;
+  return bound;
+}
+
+
+BoundFunctionObject* BoundFunctionObject::createTemplateObject(JSContext* cx) {
+  Rooted<JSObject*> proto(cx, &cx->global()->getFunctionPrototype());
+  Rooted<BoundFunctionObject*> bound(
+      cx, NewTenuredObjectWithGivenProto<BoundFunctionObject>(cx, proto));
+  if (!bound) {
+    return nullptr;
+  }
+  if (!SharedShape::ensureInitialCustomShape<BoundFunctionObject>(cx, bound)) {
+    return nullptr;
+  }
+  return bound;
 }
 
 static const JSClassOps classOps = {
