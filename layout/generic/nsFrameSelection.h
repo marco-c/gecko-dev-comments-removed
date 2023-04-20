@@ -42,6 +42,7 @@ struct SelectionDetails {
   int32_t mStart;
   int32_t mEnd;
   mozilla::SelectionType mSelectionType;
+  RefPtr<const nsAtom> mHighlightName;
   mozilla::TextRangeStyle mTextRangeStyle;
   mozilla::UniquePtr<SelectionDetails> mNext;
 };
@@ -189,6 +190,7 @@ struct nsPrevNextBidiLevels {
 namespace mozilla {
 class SelectionChangeEventDispatcher;
 namespace dom {
+class Highlight;
 class Selection;
 }  
 
@@ -419,6 +421,17 @@ class nsFrameSelection final {
 
   mozilla::dom::Selection* GetSelection(
       mozilla::SelectionType aSelectionType) const;
+
+  
+
+
+  MOZ_CAN_RUN_SCRIPT void AddHighlightSelection(
+      const nsAtom* aHighlightName, const mozilla::dom::Highlight& aHighlight,
+      mozilla::ErrorResult& aRv);
+  
+
+
+  void RemoveHighlightSelection(const nsAtom* aHighlightName);
 
   
 
@@ -947,6 +960,9 @@ class nsFrameSelection final {
   RefPtr<mozilla::dom::Selection>
       mDomSelections[sizeof(mozilla::kPresentSelectionTypes) /
                      sizeof(mozilla::SelectionType)];
+
+  nsTHashMap<RefPtr<const nsAtom>, RefPtr<mozilla::dom::Selection>>
+      mHighlightSelections;
 
   struct TableSelection {
     

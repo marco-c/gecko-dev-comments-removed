@@ -437,6 +437,10 @@ class nsTextPaintStyle {
 
   bool GetSelectionColors(nscolor* aForeColor, nscolor* aBackColor);
   void GetHighlightColors(nscolor* aForeColor, nscolor* aBackColor);
+  
+  
+  bool GetCustomHighlightColors(const nsAtom* aHighlightName,
+                                nscolor* aForeColor, nscolor* aBackColor);
   void GetURLSecondaryColor(nscolor* aForeColor);
   void GetIMESelectionColors(int32_t aIndex, nscolor* aForeColor,
                              nscolor* aBackColor);
@@ -498,6 +502,8 @@ class nsTextPaintStyle {
   nscolor mSelectionTextColor;
   nscolor mSelectionBGColor;
   RefPtr<ComputedStyle> mSelectionPseudoStyle;
+  nsTHashMap<RefPtr<const nsAtom>, RefPtr<ComputedStyle>>
+      mCustomHighlightPseudoStyles;
 
   
 
@@ -4145,6 +4151,33 @@ void nsTextPaintStyle::GetHighlightColors(nscolor* aForeColor,
   *aBackColor = NS_TRANSPARENT;
 }
 
+bool nsTextPaintStyle::GetCustomHighlightColors(const nsAtom* aHighlightName,
+                                                nscolor* aForeColor,
+                                                nscolor* aBackColor) {
+  NS_ASSERTION(aForeColor, "aForeColor is null");
+  NS_ASSERTION(aBackColor, "aBackColor is null");
+
+  
+  
+  
+  RefPtr<ComputedStyle> highlightStyle =
+      mCustomHighlightPseudoStyles.LookupOrInsertWith(
+          aHighlightName, [this, &aHighlightName] {
+            return mFrame->ComputeHighlightSelectionStyle(aHighlightName);
+          });
+  if (!highlightStyle) {
+    
+    return false;
+  }
+  
+  
+  *aBackColor = highlightStyle->GetVisitedDependentColor(
+      &nsStyleBackground::mBackgroundColor);
+  *aForeColor = highlightStyle->GetVisitedDependentColor(
+      &nsStyleText::mWebkitTextFillColor);
+  return true;
+}
+
 void nsTextPaintStyle::GetURLSecondaryColor(nscolor* aForeColor) {
   NS_ASSERTION(aForeColor, "aForeColor is null");
 
@@ -6016,7 +6049,8 @@ void nsTextFrame::DrawSelectionDecorations(
     case SelectionType::eIMESelectedRawClause:
     case SelectionType::eIMEConvertedClause:
     case SelectionType::eIMESelectedClause:
-    case SelectionType::eSpellCheck: {
+    case SelectionType::eSpellCheck:
+    case SelectionType::eHighlight: {
       int32_t index = nsTextPaintStyle::GetUnderlineStyleIndexForSelectionType(
           aSelectionType);
       bool weDefineSelectionUnderline =
@@ -6035,7 +6069,8 @@ void nsTextFrame::DrawSelectionDecorations(
           styleText->mTextUnderlineOffset, aFontMetrics, appUnitsPerDevPixel,
           this, wm.IsCentralBaseline(), swapUnderline);
 
-      bool isIMEType = aSelectionType != SelectionType::eSpellCheck;
+      bool isIMEType = aSelectionType != SelectionType::eSpellCheck &&
+                       aSelectionType != SelectionType::eHighlight;
 
       if (isIMEType) {
         
@@ -6080,8 +6115,8 @@ void nsTextFrame::DrawSelectionDecorations(
         else if (aRangeStyle.IsForegroundColorDefined() ||
                  aRangeStyle.IsBackgroundColorDefined()) {
           nscolor bg;
-          GetSelectionTextColors(aSelectionType, aTextPaintStyle, aRangeStyle,
-                                 &params.color, &bg);
+          GetSelectionTextColors(aSelectionType, nullptr, aTextPaintStyle,
+                                 aRangeStyle, &params.color, &bg);
         }
         
         else {
@@ -6127,6 +6162,7 @@ void nsTextFrame::DrawSelectionDecorations(
 
 
 bool nsTextFrame::GetSelectionTextColors(SelectionType aSelectionType,
+                                         const nsAtom* aHighlightName,
                                          nsTextPaintStyle& aTextPaintStyle,
                                          const TextRangeStyle& aRangeStyle,
                                          nscolor* aForeground,
@@ -6137,6 +6173,9 @@ bool nsTextFrame::GetSelectionTextColors(SelectionType aSelectionType,
     case SelectionType::eFind:
       aTextPaintStyle.GetHighlightColors(aForeground, aBackground);
       return true;
+    case SelectionType::eHighlight:
+      return aTextPaintStyle.GetCustomHighlightColors(aHighlightName,
+                                                      aForeground, aBackground);
     case SelectionType::eURLSecondary:
       aTextPaintStyle.GetURLSecondaryColor(aForeground);
       *aBackground = NS_RGBA(0, 0, 0, 0);
@@ -6232,8 +6271,11 @@ class SelectionIterator {
 
 
 
+
+
   bool GetNextSegment(gfxFloat* aXOffset, gfxTextRun::Range* aRange,
                       gfxFloat* aHyphenWidth, SelectionType* aSelectionType,
+                      RefPtr<const nsAtom>* aHighlightName,
                       TextRangeStyle* aStyle);
   void UpdateWithAdvance(gfxFloat aAdvance) {
     mXOffset += aAdvance * mTextRun->GetDirection();
@@ -6265,6 +6307,7 @@ bool SelectionIterator::GetNextSegment(gfxFloat* aXOffset,
                                        gfxTextRun::Range* aRange,
                                        gfxFloat* aHyphenWidth,
                                        SelectionType* aSelectionType,
+                                       RefPtr<const nsAtom>* aHighlightName,
                                        TextRangeStyle* aStyle) {
   if (mIterator.GetOriginalOffset() >= int32_t(mOriginalRange.end))
     return false;
@@ -6305,6 +6348,7 @@ bool SelectionIterator::GetNextSegment(gfxFloat* aXOffset,
     *aHyphenWidth = mProvider.GetHyphenWidth();
   }
   *aSelectionType = selectionType;
+  *aHighlightName = sdptr ? sdptr->mHighlightName : nullptr;
   *aStyle = style;
   return true;
 }
@@ -6456,9 +6500,9 @@ bool nsTextFrame::PaintTextWithSelectionColors(
       allSelectionTypeMask |= ToSelectionTypeMask(selectionType);
       
       nscolor foreground, background;
-      if (GetSelectionTextColors(selectionType, *aParams.textPaintStyle,
-                                 sdptr->mTextRangeStyle, &foreground,
-                                 &background)) {
+      if (GetSelectionTextColors(
+              selectionType, sdptr->mHighlightName, *aParams.textPaintStyle,
+              sdptr->mTextRangeStyle, &foreground, &background)) {
         if (NS_GET_A(background) > 0) {
           anyBackgrounds = true;
         }
@@ -6466,6 +6510,7 @@ bool nsTextFrame::PaintTextWithSelectionColors(
           
           if (!prevailingSelections[i] ||
               selectionType < prevailingSelections[i]->mSelectionType) {
+            
             prevailingSelections[i] = sdptr;
           }
         }
@@ -6496,11 +6541,14 @@ bool nsTextFrame::PaintTextWithSelectionColors(
     SelectionIterator iterator(prevailingSelections, contentRange,
                                *aParams.provider, mTextRun, startIOffset);
     SelectionType selectionType;
+    RefPtr<const nsAtom> highlightName;
     while (iterator.GetNextSegment(&iOffset, &range, &hyphenWidth,
-                                   &selectionType, &rangeStyle)) {
+                                   &selectionType, &highlightName,
+                                   &rangeStyle)) {
       nscolor foreground, background;
-      GetSelectionTextColors(selectionType, *aParams.textPaintStyle, rangeStyle,
-                             &foreground, &background);
+      GetSelectionTextColors(selectionType, highlightName,
+                             *aParams.textPaintStyle, rangeStyle, &foreground,
+                             &background);
       
       gfxFloat advance =
           hyphenWidth + mTextRun->GetAdvanceWidth(range, aParams.provider);
@@ -6553,14 +6601,16 @@ bool nsTextFrame::PaintTextWithSelectionColors(
   SelectionIterator iterator(prevailingSelections, contentRange,
                              *aParams.provider, mTextRun, startIOffset);
   SelectionType selectionType;
+  RefPtr<const nsAtom> highlightName;
   while (iterator.GetNextSegment(&iOffset, &range, &hyphenWidth, &selectionType,
-                                 &rangeStyle)) {
+                                 &highlightName, &rangeStyle)) {
     nscolor foreground, background;
     if (aParams.IsGenerateTextMask()) {
       foreground = NS_RGBA(0, 0, 0, 255);
     } else {
-      GetSelectionTextColors(selectionType, *aParams.textPaintStyle, rangeStyle,
-                             &foreground, &background);
+      GetSelectionTextColors(selectionType, highlightName,
+                             *aParams.textPaintStyle, rangeStyle, &foreground,
+                             &background);
     }
 
     gfx::Point textBaselinePt =
@@ -6662,10 +6712,12 @@ void nsTextFrame::PaintTextSelectionDecorations(
     pt.y = (aParams.textBaselinePt.y - mAscent) / app;
   }
   SelectionType nextSelectionType;
+  RefPtr<const nsAtom> highlightName;
   TextRangeStyle selectedStyle;
 
   while (iterator.GetNextSegment(&iOffset, &range, &hyphenWidth,
-                                 &nextSelectionType, &selectedStyle)) {
+                                 &nextSelectionType, &highlightName,
+                                 &selectedStyle)) {
     gfxFloat advance =
         hyphenWidth + mTextRun->GetAdvanceWidth(range, aParams.provider);
     if (nextSelectionType == aSelectionType) {
@@ -6820,9 +6872,9 @@ nscolor nsTextFrame::GetCaretColorAt(int32_t aOffset) {
         (selectionType == SelectionType::eNone ||
          sdptr->mSelectionType < selectionType)) {
       nscolor foreground, background;
-      if (GetSelectionTextColors(sdptr->mSelectionType, textPaintStyle,
-                                 sdptr->mTextRangeStyle, &foreground,
-                                 &background)) {
+      if (GetSelectionTextColors(sdptr->mSelectionType, sdptr->mHighlightName,
+                                 textPaintStyle, sdptr->mTextRangeStyle,
+                                 &foreground, &background)) {
         if (!isSolidTextColor && NS_IS_SELECTION_SPECIAL_COLOR(foreground)) {
           result = NS_RGBA(0, 0, 0, 255);
         } else {
