@@ -257,6 +257,10 @@ add_task(async function test_dynamic_rules_count_limits() {
         "Expect the number of dynamic rules to be still allowed, despite the session rule added"
       );
 
+      
+      
+      
+      
       browser.test.assertDeepEq(
         updateSessionResult,
         { status: "fulfilled", value: undefined },
