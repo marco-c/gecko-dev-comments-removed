@@ -203,7 +203,7 @@ class SVGUtils final {
 
 
 
-  static bool NeedsReflowSVG(nsIFrame* aFrame);
+  static bool NeedsReflowSVG(const nsIFrame* aFrame);
 
   
 
@@ -310,7 +310,7 @@ class SVGUtils final {
 
 
 
-  static gfxRect GetClipRectForFrame(nsIFrame* aFrame, float aX, float aY,
+  static gfxRect GetClipRectForFrame(const nsIFrame* aFrame, float aX, float aY,
                                      float aWidth, float aHeight);
 
   static void SetClipRect(gfxContext* aContext, const gfxMatrix& aCTM,
@@ -321,7 +321,7 @@ class SVGUtils final {
 
 
 
-  static bool CanOptimizeOpacity(nsIFrame* aFrame);
+  static bool CanOptimizeOpacity(const nsIFrame* aFrame);
 
   
 
@@ -334,7 +334,7 @@ class SVGUtils final {
 
 
   static gfxMatrix AdjustMatrixForUnits(const gfxMatrix& aMatrix,
-                                        SVGAnimatedEnumeration* aUnits,
+                                        const SVGAnimatedEnumeration* aUnits,
                                         nsIFrame* aFrame, uint32_t aFlags);
 
   enum BBoxFlags {
@@ -398,7 +398,7 @@ class SVGUtils final {
 
 
 
-  static gfxPoint FrameSpaceInCSSPxToUserSpaceOffset(nsIFrame* aFrame);
+  static gfxPoint FrameSpaceInCSSPxToUserSpaceOffset(const nsIFrame* aFrame);
 
   
 
@@ -440,7 +440,7 @@ class SVGUtils final {
 
 
 
-  static bool GetNonScalingStrokeTransform(nsIFrame* aFrame,
+  static bool GetNonScalingStrokeTransform(const nsIFrame* aFrame,
                                            gfxMatrix* aUserToOuterSVG);
 
   
@@ -457,10 +457,10 @@ class SVGUtils final {
 
 
   static gfxRect PathExtentsToMaxStrokeExtents(const gfxRect& aPathExtents,
-                                               nsTextFrame* aFrame,
+                                               const nsTextFrame* aFrame,
                                                const gfxMatrix& aMatrix);
   static gfxRect PathExtentsToMaxStrokeExtents(const gfxRect& aPathExtents,
-                                               SVGGeometryFrame* aFrame,
+                                               const SVGGeometryFrame* aFrame,
                                                const gfxMatrix& aMatrix);
 
   
@@ -495,16 +495,16 @@ class SVGUtils final {
                                    imgDrawingParams& aImgParams,
                                    SVGContextPaint* aContextPaint = nullptr);
 
-  static float GetOpacity(const StyleSVGOpacity&, SVGContextPaint*);
+  static float GetOpacity(const StyleSVGOpacity&, const SVGContextPaint*);
 
   
 
 
-  static bool HasStroke(nsIFrame* aFrame,
-                        SVGContextPaint* aContextPaint = nullptr);
+  static bool HasStroke(const nsIFrame* aFrame,
+                        const SVGContextPaint* aContextPaint = nullptr);
 
-  static float GetStrokeWidth(nsIFrame* aFrame,
-                              SVGContextPaint* aContextPaint = nullptr);
+  static float GetStrokeWidth(const nsIFrame* aFrame,
+                              const SVGContextPaint* aContextPaint = nullptr);
 
   
 
@@ -518,7 +518,7 @@ class SVGUtils final {
 
 
 
-  static uint16_t GetGeometryHitTestFlags(nsIFrame* aFrame);
+  static uint16_t GetGeometryHitTestFlags(const nsIFrame* aFrame);
 
   static FillRule ToFillRule(StyleFillRule aFillRule) {
     return aFillRule == StyleFillRule::Evenodd ? FillRule::FILL_EVEN_ODD
@@ -547,7 +547,7 @@ class SVGUtils final {
 
 
 
-  static bool GetSVGGlyphExtents(Element* aElement,
+  static bool GetSVGGlyphExtents(const Element* aElement,
                                  const gfxMatrix& aSVGToAppSpace,
                                  gfxRect* aResult);
 
@@ -581,10 +581,10 @@ class SVGUtils final {
     }
   };
 
-  static void DetermineMaskUsage(nsIFrame* aFrame, bool aHandleOpacity,
+  static void DetermineMaskUsage(const nsIFrame* aFrame, bool aHandleOpacity,
                                  MaskUsage& aUsage);
 
-  static float ComputeOpacity(nsIFrame* aFrame, bool aHandleOpacity);
+  static float ComputeOpacity(const nsIFrame* aFrame, bool aHandleOpacity);
 
   
 
@@ -592,7 +592,7 @@ class SVGUtils final {
 
 
 
-  static gfxMatrix GetCSSPxToDevPxMatrix(nsIFrame* aNonSVGFrame);
+  static gfxMatrix GetCSSPxToDevPxMatrix(const nsIFrame* aNonSVGFrame);
 
   static bool IsInSVGTextSubtree(const nsIFrame* aFrame) {
     

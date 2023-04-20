@@ -4130,12 +4130,12 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  bool IsVisibleForPainting();
+  bool IsVisibleForPainting() const;
   
 
 
 
-  bool IsVisibleOrCollapsedForPainting();
+  bool IsVisibleOrCollapsedForPainting() const;
 
   
 

@@ -142,7 +142,7 @@ class SVGContentUtils {
   static void GetStrokeOptions(AutoStrokeOptions* aStrokeOptions,
                                dom::SVGElement* aElement,
                                const ComputedStyle* aComputedStyle,
-                               mozilla::SVGContextPaint* aContextPaint,
+                               const SVGContextPaint* aContextPaint,
                                StrokeOptionFlags aFlags = eAllStrokeOptions);
 
   
@@ -154,9 +154,9 @@ class SVGContentUtils {
 
 
 
-  static Float GetStrokeWidth(dom::SVGElement* aElement,
+  static Float GetStrokeWidth(const dom::SVGElement* aElement,
                               const ComputedStyle* aComputedStyle,
-                              mozilla::SVGContextPaint* aContextPaint);
+                              const SVGContextPaint* aContextPaint);
 
   
 
@@ -165,8 +165,8 @@ class SVGContentUtils {
 
 
 
-  static float GetFontSize(mozilla::dom::Element* aElement);
-  static float GetFontSize(nsIFrame* aFrame);
+  static float GetFontSize(const mozilla::dom::Element* aElement);
+  static float GetFontSize(const nsIFrame* aFrame);
   static float GetFontSize(const ComputedStyle*, nsPresContext*);
   
 
@@ -175,14 +175,15 @@ class SVGContentUtils {
 
 
 
-  static float GetFontXHeight(mozilla::dom::Element* aElement);
-  static float GetFontXHeight(nsIFrame* aFrame);
+  static float GetFontXHeight(const mozilla::dom::Element* aElement);
+  static float GetFontXHeight(const nsIFrame* aFrame);
   static float GetFontXHeight(const ComputedStyle*, nsPresContext*);
 
   
 
 
-  static nsresult ReportToConsole(dom::Document* doc, const char* aWarning,
+  static nsresult ReportToConsole(const dom::Document* doc,
+                                  const char* aWarning,
                                   const nsTArray<nsString>& aParams);
 
   static Matrix GetCTM(dom::SVGElement* aElement, bool aScreenCTM);
@@ -205,7 +206,7 @@ class SVGContentUtils {
 
 
 
-  static bool EstablishesViewport(nsIContent* aContent);
+  static bool EstablishesViewport(const nsIContent* aContent);
 
   static mozilla::dom::SVGViewportElement* GetNearestViewportElement(
       const nsIContent* aContent);
@@ -317,7 +318,7 @@ class SVGContentUtils {
 
 
 
-  static float CoordToFloat(dom::SVGElement* aContent,
+  static float CoordToFloat(const dom::SVGElement* aContent,
                             const StyleLengthPercentageUnion&,
                             uint8_t aCtxType = SVGContentUtils::XY);
   
