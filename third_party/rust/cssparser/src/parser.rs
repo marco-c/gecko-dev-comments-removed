@@ -646,10 +646,42 @@ impl<'i: 't, 't> Parser<'i, 't> {
     
     
     
+    
     #[inline]
     pub fn parse_comma_separated<F, T, E>(
         &mut self,
+        parse_one: F,
+    ) -> Result<Vec<T>, ParseError<'i, E>>
+    where
+        F: for<'tt> FnMut(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>>,
+    {
+        self.parse_comma_separated_internal(parse_one,  false)
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn parse_comma_separated_ignoring_errors<F, T, E: 'i>(
+        &mut self,
+        parse_one: F,
+    ) -> Vec<T>
+    where
+        F: for<'tt> FnMut(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>>,
+    {
+        match self.parse_comma_separated_internal(parse_one,  true) {
+            Ok(values) => values,
+            Err(..) => unreachable!(),
+        }
+    }
+
+    #[inline]
+    fn parse_comma_separated_internal<F, T, E>(
+        &mut self,
         mut parse_one: F,
+        ignore_errors: bool,
     ) -> Result<Vec<T>, ParseError<'i, E>>
     where
         F: for<'tt> FnMut(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>>,
@@ -661,7 +693,11 @@ impl<'i: 't, 't> Parser<'i, 't> {
         let mut values = Vec::with_capacity(1);
         loop {
             self.skip_whitespace(); 
-            values.push(self.parse_until_before(Delimiter::Comma, &mut parse_one)?);
+            match self.parse_until_before(Delimiter::Comma, &mut parse_one) {
+                Ok(v) => values.push(v),
+                Err(e) if !ignore_errors => return Err(e),
+                Err(_) => {},
+            }
             match self.next() {
                 Err(_) => return Ok(values),
                 Ok(&Token::Comma) => continue,

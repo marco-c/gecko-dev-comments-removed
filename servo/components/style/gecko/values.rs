@@ -18,20 +18,18 @@ use std::cmp::max;
 
 
 pub fn convert_rgba_to_nscolor(rgba: &RGBA) -> u32 {
-    ((rgba.alpha as u32) << 24) |
-        ((rgba.blue as u32) << 16) |
-        ((rgba.green as u32) << 8) |
-        (rgba.red as u32)
+    u32::from_le_bytes([
+        rgba.red,
+        rgba.green,
+        rgba.blue,
+        (rgba.alpha * 255.0).round() as u8,
+    ])
 }
 
 
 pub fn convert_nscolor_to_rgba(color: u32) -> RGBA {
-    RGBA::new(
-        (color & 0xff) as u8,
-        (color >> 8 & 0xff) as u8,
-        (color >> 16 & 0xff) as u8,
-        (color >> 24 & 0xff) as u8,
-    )
+    let [r, g, b, a] = color.to_le_bytes();
+    RGBA::new(r, g, b, a as f32 / 255.0)
 }
 
 
