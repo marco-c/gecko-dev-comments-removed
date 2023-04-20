@@ -397,38 +397,58 @@ static nsresult GetUnixXDGUserDirectory(SystemDirectories aSystemDirectory,
 
   nsresult rv;
   nsCOMPtr<nsIFile> file;
+  bool exists;
   if (dir) {
     rv = NS_NewNativeLocalFile(nsDependentCString(dir), true,
                                getter_AddRefs(file));
     free(dir);
+
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    rv = file->Exists(&exists);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    if (!exists) {
+      rv = file->Create(nsIFile::DIRECTORY_TYPE, 0755);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+    }
   } else if (Unix_XDG_Desktop == aSystemDirectory) {
     
     
-    rv = GetUnixHomeDir(getter_AddRefs(file));
+    nsCOMPtr<nsIFile> home;
+    rv = GetUnixHomeDir(getter_AddRefs(home));
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    rv = home->Clone(getter_AddRefs(file));
     if (NS_FAILED(rv)) {
       return rv;
     }
 
     rv = file->AppendNative("Desktop"_ns);
-  } else {
-    
-    rv = NS_ERROR_FAILURE;
-  }
-
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  bool exists;
-  rv = file->Exists(&exists);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  if (!exists) {
-    rv = file->Create(nsIFile::DIRECTORY_TYPE, 0755);
     if (NS_FAILED(rv)) {
       return rv;
     }
+
+    rv = file->Exists(&exists);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    
+    if (!exists) {
+      file = home;
+    }
+  } else {
+    
+    return NS_ERROR_FAILURE;
   }
 
   *aFile = nullptr;
