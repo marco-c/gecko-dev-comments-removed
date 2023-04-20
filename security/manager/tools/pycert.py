@@ -794,15 +794,6 @@ class Certificate(object):
 
 
 
-
-
-
-
-
-
-
-
-
 def main(output, inputPath):
     with open(inputPath) as configStream:
         output.write(Certificate(configStream).toPEM() + "\n")
