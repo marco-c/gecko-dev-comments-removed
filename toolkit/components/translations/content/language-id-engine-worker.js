@@ -56,6 +56,8 @@ addEventListener("message", handleInitializationMessage);
 
 
 
+
+
 async function handleInitializationMessage({ data }) {
   if (data.type !== "initialize") {
     throw new Error(
@@ -69,7 +71,15 @@ async function handleInitializationMessage({ data }) {
       
       _isLoggingEnabled = true;
     }
-    const languageIdEngine = await initializeLanguageIdEngine(data);
+
+    
+    let languageIdEngine;
+    if (isMockedDataPayload(data)) {
+      languageIdEngine = initializeMockedLanguageIdEngine(data);
+    } else {
+      languageIdEngine = await initializeLanguageIdEngine(data);
+    }
+
     handleMessages(languageIdEngine);
     postMessage({ type: "initialization-success" });
   } catch (error) {
@@ -78,6 +88,19 @@ async function handleInitializationMessage({ data }) {
   }
 
   removeEventListener("message", handleInitializationMessage);
+}
+
+
+
+
+
+
+
+
+
+function isMockedDataPayload(data) {
+  let { languageLabel, confidence } = data;
+  return languageLabel && confidence;
 }
 
 
@@ -124,6 +147,25 @@ async function initializeLanguageIdEngine(data) {
   }
   const model = await initializeFastTextModel(modelBuffer, wasmBuffer);
   return new LanguageIdEngine(model);
+}
+
+
+
+
+
+
+
+
+
+function initializeMockedLanguageIdEngine(data) {
+  const { languageLabel, confidence } = data;
+  if (!languageLabel) {
+    throw new Error('MockedLanguageIdEngine missing "languageLabel"');
+  }
+  if (!confidence) {
+    throw new Error('MockedLanguageIdEngine missing "confidence"');
+  }
+  return new MockedLanguageIdEngine(languageLabel, confidence);
 }
 
 
@@ -239,5 +281,34 @@ class LanguageIdEngine {
 
     const [confidence, languageLabel] = mostLikelyLanguageData;
     return [confidence, this.#formatLanguageLabel(languageLabel)];
+  }
+}
+
+
+
+
+
+
+class MockedLanguageIdEngine {
+  
+  #languageLabel;
+  
+  #confidence;
+
+  
+
+
+
+  constructor(languageLabel, confidence) {
+    this.#languageLabel = languageLabel;
+    this.#confidence = confidence;
+  }
+
+  
+
+
+
+  identifyLanguage(_message) {
+    return [this.#confidence, this.#languageLabel];
   }
 }
