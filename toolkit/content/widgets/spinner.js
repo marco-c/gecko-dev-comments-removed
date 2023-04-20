@@ -84,6 +84,11 @@ function Spinner(props, context) {
       
       this.elements.spinner.setAttribute("role", "spinbutton");
       this.elements.spinner.setAttribute("tabindex", "0");
+      
+      
+      
+      this.elements.up.setAttribute("tabindex", "-1");
+      this.elements.down.setAttribute("tabindex", "-1");
 
       if (id) {
         this.elements.container.id = id;
@@ -312,8 +317,10 @@ function Spinner(props, context) {
 
       spinner.addEventListener("scroll", this, { passive: true });
       spinner.addEventListener("scrollend", this, { passive: true });
+      spinner.addEventListener("keydown", this);
       container.addEventListener("mouseup", this, { passive: true });
       container.addEventListener("mousedown", this, { passive: true });
+      container.addEventListener("keydown", this);
     },
 
     
@@ -406,6 +413,62 @@ function Spinner(props, context) {
           
           spinner.scrollTop -= event.movementY;
           break;
+        }
+        case "keydown": {
+          
+          
+          if (event.target === spinner) {
+            switch (event.key) {
+              case "ArrowUp": {
+                
+                this._setValueForSpinner(event, index - 1);
+                break;
+              }
+              case "ArrowDown": {
+                
+                this._setValueForSpinner(event, index + 1);
+                break;
+              }
+              case "PageUp": {
+                
+                this._setValueForSpinner(event, index - 5);
+                break;
+              }
+              case "PageDown": {
+                
+                this._setValueForSpinner(event, index + 5);
+                break;
+              }
+              case "Home": {
+                
+                let targetValue;
+                for (let i = 0; i < this.state.items.length - 1; i++) {
+                  if (this.state.items[i].enabled) {
+                    targetValue = this.state.items[i].value;
+                    break;
+                  }
+                }
+                this._smoothScrollTo(targetValue);
+                event.stopPropagation();
+                event.preventDefault();
+                break;
+              }
+              case "End": {
+                
+                let targetValue;
+                for (let i = this.state.items.length - 1; i >= 0; i--) {
+                  if (this.state.items[i].enabled) {
+                    targetValue = this.state.items[i].value;
+                    break;
+                  }
+                }
+                this._smoothScrollTo(targetValue);
+                event.stopPropagation();
+                event.preventDefault();
+                break;
+              }
+            }
+          }
         }
       }
     },
@@ -562,6 +625,20 @@ function Spinner(props, context) {
         }
       }
       return false;
+    },
+
+    
+
+
+
+
+
+
+
+    _setValueForSpinner(event, index) {
+      this._smoothScrollToIndex(index);
+      event.stopPropagation();
+      event.preventDefault();
     },
   };
 }
