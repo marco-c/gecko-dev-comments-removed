@@ -145,7 +145,7 @@ class PacingController {
 
   
   void SetPacingRates(DataRate pacing_rate, DataRate padding_rate);
-  DataRate pacing_rate() const { return media_rate_; }
+  DataRate pacing_rate() const { return adjusted_media_rate_; }
 
   
   
@@ -217,6 +217,7 @@ class PacingController {
   void OnPacketSent(RtpPacketMediaType packet_type,
                     DataSize packet_size,
                     Timestamp send_time);
+  void MaybeUpdateMediaRateDueToLongQueue(Timestamp now);
 
   Timestamp CurrentTime() const;
 
@@ -241,9 +242,17 @@ class PacingController {
   mutable Timestamp last_timestamp_;
   bool paused_;
 
+  
   DataSize media_debt_;
   DataSize padding_debt_;
-  DataRate media_rate_;
+
+  
+  DataRate pacing_rate_;
+  
+  
+  DataRate adjusted_media_rate_;
+  
+  
   DataRate padding_rate_;
 
   BitrateProber prober_;
