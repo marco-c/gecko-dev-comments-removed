@@ -349,9 +349,6 @@ class NetworkEventWatcher {
         
         resourceUpdates.mimeType = updateResource.mimeType;
         resourceUpdates.waitingTime = updateResource.waitingTime;
-
-        resourceUpdates.responseHeadersAvailable = true;
-        resourceUpdates.responseCookiesAvailable = true;
         break;
       case "responseContent":
         resourceUpdates.contentSize = updateResource.contentSize;

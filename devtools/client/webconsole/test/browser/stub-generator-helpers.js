@@ -188,9 +188,7 @@ function getCleanedPacket(key, packet) {
     res.securityState = existingPacket.securityState;
   }
 
-  
-  
-  if (!isNaN(res.waitingTime) && existingPacket.waitingTime) {
+  if (res.waitingTime && existingPacket.waitingTime) {
     res.waitingTime = existingPacket.waitingTime;
   }
 
