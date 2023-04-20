@@ -51,9 +51,7 @@ class RTCRtpSender;
 
 
 
-class RTCRtpTransceiver : public nsISupports,
-                          public nsWrapperCache,
-                          public sigslot::has_slots<> {
+class RTCRtpTransceiver : public nsISupports, public nsWrapperCache {
  public:
   
 
@@ -112,8 +110,6 @@ class RTCRtpTransceiver : public nsISupports,
   void SetJsepSession(JsepSession* aJsepSession);
   std::string GetMidAscii() const;
 
-  void UpdateDtlsTransportState(const std::string& aTransportId,
-                                TransportLayer::State aState);
   void SetDtlsTransport(RTCDtlsTransport* aDtlsTransport, bool aStable);
   void RollbackToStableDtlsTransport();
 
