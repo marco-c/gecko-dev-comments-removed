@@ -2830,8 +2830,9 @@ void BaselineCacheIRCompiler::pushFunApplyArgsObj(Register argcReg,
 
 void BaselineCacheIRCompiler::pushBoundFunctionArguments(
     Register argcReg, Register calleeReg, Register scratch, Register scratch2,
-    uint32_t numBoundArgs, bool isJitCall) {
-  constexpr uint32_t additionalArgc = 1;  
+    CallFlags flags, uint32_t numBoundArgs, bool isJitCall) {
+  bool isConstructing = flags.isConstructing();
+  uint32_t additionalArgc = 1 + isConstructing;  
 
   
   Register countReg = scratch;
@@ -2844,9 +2845,19 @@ void BaselineCacheIRCompiler::pushBoundFunctionArguments(
     masm.alignJitStackBasedOnNArgs(countReg,  true);
   }
 
+  if (isConstructing) {
+    
+    Address boundTarget(calleeReg, BoundFunctionObject::offsetOfTargetSlot());
+    masm.pushValue(boundTarget);
+  }
+
   
   Register argPtr = scratch2;
   Address argAddress(FramePointer, BaselineStubFrameLayout::Size());
+  if (isConstructing) {
+    
+    argAddress.offset += sizeof(Value);
+  }
   masm.computeEffectiveAddress(argAddress, argPtr);
 
   
@@ -2881,9 +2892,18 @@ void BaselineCacheIRCompiler::pushBoundFunctionArguments(
     }
   }
 
-  
-  Address boundThis(calleeReg, BoundFunctionObject::offsetOfBoundThisSlot());
-  masm.pushValue(boundThis);
+  if (isConstructing) {
+    
+    
+    
+    BaseValueIndex thisAddress(FramePointer, argcReg,
+                               BaselineStubFrameLayout::Size() + sizeof(Value));
+    masm.pushValue(thisAddress, scratch);
+  } else {
+    
+    Address boundThis(calleeReg, BoundFunctionObject::offsetOfBoundThisSlot());
+    masm.pushValue(boundThis);
+  }
 }
 
 bool BaselineCacheIRCompiler::emitCallNativeShared(
@@ -3109,7 +3129,8 @@ void BaselineCacheIRCompiler::storeThis(const T& newThis, Register argcReg,
 
 
 void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
-                                         Register scratch, CallFlags flags) {
+                                         Register scratch, CallFlags flags,
+                                         bool isBoundFunction) {
   MOZ_ASSERT(flags.isConstructing());
 
   if (flags.needsUninitializedThis()) {
@@ -3125,13 +3146,21 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
 
   
 
-  
-  loadStackObject(ArgumentKind::NewTarget, flags, argcReg, scratch);
-  masm.push(scratch);
+  if (isBoundFunction) {
+    
+    Address boundTarget(calleeReg, BoundFunctionObject::offsetOfTargetSlot());
+    masm.unboxObject(boundTarget, scratch);
+    masm.push(scratch);
+    masm.push(scratch);
+  } else {
+    
+    loadStackObject(ArgumentKind::NewTarget, flags, argcReg, scratch);
+    masm.push(scratch);
 
-  
-  loadStackObject(ArgumentKind::Callee, flags, argcReg, scratch);
-  masm.push(scratch);
+    
+    loadStackObject(ArgumentKind::Callee, flags, argcReg, scratch);
+    masm.push(scratch);
+  }
 
   
   using Fn =
@@ -3219,7 +3248,8 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction(ObjOperandId calleeId,
   }
 
   if (isConstructing) {
-    createThis(argcReg, calleeReg, scratch, flags);
+    createThis(argcReg, calleeReg, scratch, flags,
+                false);
   }
 
   pushArguments(argcReg, calleeReg, scratch, scratch2, flags, argcFixed,
@@ -3310,7 +3340,8 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
 
   Label baselineScriptDiscarded;
   if (isConstructing) {
-    createThis(argcReg, calleeReg, scratch, flags);
+    createThis(argcReg, calleeReg, scratch, flags,
+                false);
 
     
     
@@ -3381,7 +3412,7 @@ bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
   Register calleeReg = allocator.useRegister(masm, calleeId);
   Register argcReg = allocator.useRegister(masm, argcId);
 
-  MOZ_ASSERT(!flags.isConstructing(), "constructor calls not supported yet");
+  bool isConstructing = flags.isConstructing();
   bool isSameRealm = flags.isSameRealm();
 
   allocator.discardStack(masm);
@@ -3391,8 +3422,13 @@ bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, scratch);
 
+  if (isConstructing) {
+    createThis(argcReg, calleeReg, scratch, flags,
+                true);
+  }
+
   
-  pushBoundFunctionArguments(argcReg, calleeReg, scratch, scratch2,
+  pushBoundFunctionArguments(argcReg, calleeReg, scratch, scratch2, flags,
                              numBoundArgs,  true);
 
   
@@ -3412,7 +3448,7 @@ bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
 
   
   
-  masm.PushCalleeToken(calleeReg,  false);
+  masm.PushCalleeToken(calleeReg, isConstructing);
   masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub, argcReg, scratch);
 
   
@@ -3429,7 +3465,9 @@ bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
   masm.bind(&noUnderflow);
   masm.callJit(code);
 
-  MOZ_ASSERT(!flags.isConstructing(), "don't have to check return value");
+  if (isConstructing) {
+    updateReturnValue();
+  }
 
   stubFrame.leave(masm);
 
