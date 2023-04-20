@@ -11,14 +11,21 @@
 #ifndef API_VIDEO_CODECS_SIMULCAST_STREAM_H_
 #define API_VIDEO_CODECS_SIMULCAST_STREAM_H_
 
-#include "api/video_codecs/spatial_layer.h"
-
 namespace webrtc {
 
 
 
-
-using SimulcastStream = SpatialLayer;
+struct SimulcastStream {
+  int width;
+  int height;
+  float maxFramerate;  
+  unsigned char numberOfTemporalLayers;
+  unsigned int maxBitrate;     
+  unsigned int targetBitrate;  
+  unsigned int minBitrate;     
+  unsigned int qpMax;          
+  bool active;                 
+};
 
 }  
 #endif  
