@@ -5,6 +5,9 @@
 #ifndef mozilla_Viaduct_h
 #define mozilla_Viaduct_h
 
+#include "mozIViaduct.h"
+#include "mozilla/Atomics.h"
+
 
 
 
@@ -39,9 +42,31 @@
 
 namespace mozilla {
 
+namespace {
 
-void InitializeViaduct();
+
+typedef struct ViaductByteBuffer {
+  int64_t len;
+  uint8_t* data;
+} ViaductByteBuffer;
 
 }  
+
+class Viaduct final : public mozIViaduct {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_MOZIVIADUCT
+
+  Viaduct() : mInitialized(false) {}
+  static already_AddRefed<Viaduct> GetSingleton();
+
+ private:
+  static ViaductByteBuffer ViaductCallback(ViaductByteBuffer buffer);
+  Atomic<bool> mInitialized;
+
+  ~Viaduct() = default;
+};
+
+};  
 
 #endif  

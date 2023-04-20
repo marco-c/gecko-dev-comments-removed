@@ -11,6 +11,8 @@ use std::path::PathBuf;
 use nserror::NS_ERROR_NOT_IMPLEMENTED;
 use nserror::{nsresult, NS_ERROR_FAILURE};
 use nsstring::{nsACString, nsCString, nsString};
+#[cfg(not(target_os = "android"))]
+use xpcom::interfaces::mozIViaduct;
 use xpcom::interfaces::{nsIFile, nsIPrefService, nsIProperties, nsIXULAppInfo, nsIXULRuntime};
 use xpcom::{RefPtr, XpCom};
 
@@ -96,6 +98,8 @@ fn fog_init_internal(
 
     conf.upload_enabled = upload_enabled;
     conf.uploader = uploader;
+
+    setup_viaduct();
 
     
     
@@ -195,6 +199,36 @@ fn setup_observers() -> Result<(), nsresult> {
 fn setup_observers() -> Result<(), nsresult> {
     
     Ok(())
+}
+
+
+
+
+
+#[cfg(not(target_os = "android"))]
+fn setup_viaduct() {
+    
+    
+    
+    
+    
+    unsafe {
+        if let Some(viaduct) =
+            xpcom::create_instance::<mozIViaduct>(cstr!("@mozilla.org/toolkit/viaduct;1"))
+        {
+            let result = viaduct.EnsureInitialized();
+            if result.failed() {
+                log::error!("Failed to ensure viaduct was initialized due to {}. Ping upload may not be available.", result.error_name());
+            }
+        } else {
+            log::error!("Failed to create Viaduct via XPCOM. Ping upload may not be available.");
+        }
+    }
+}
+
+#[cfg(target_os = "android")]
+fn setup_viaduct() {
+    
 }
 
 
