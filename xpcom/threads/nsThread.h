@@ -44,6 +44,7 @@ class Array;
 using mozilla::NotNull;
 
 class nsIRunnable;
+class nsLocalExecutionRecord;
 class nsThreadEnumerator;
 class nsThreadShutdownContext;
 
@@ -248,6 +249,21 @@ class nsThread : public nsIThreadInternal,
 
   static nsThreadEnumerator Enumerate();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsLocalExecutionRecord EnterLocalExecution();
+
   void SetUseHangMonitor(bool aValue) {
     MOZ_ASSERT(IsOnCurrentThread());
     mUseHangMonitor = aValue;
@@ -334,6 +350,8 @@ class nsThread : public nsIThreadInternal,
 
   mozilla::PerformanceCounterState mPerformanceCounterState;
 
+  bool mIsInLocalExecutionMode = false;
+
   mozilla::SimpleTaskQueue mDirectTasks;
 };
 
@@ -373,6 +391,48 @@ class nsThreadShutdownContext final : public nsIThreadShutdown {
   mozilla::Mutex mJoiningThreadMutex;
   RefPtr<nsThread> mJoiningThread MOZ_GUARDED_BY(mJoiningThreadMutex);
   bool mThreadLeaked MOZ_GUARDED_BY(mJoiningThreadMutex) = false;
+};
+
+
+
+
+
+class MOZ_RAII nsLocalExecutionGuard final {
+ public:
+  MOZ_IMPLICIT nsLocalExecutionGuard(
+      nsLocalExecutionRecord&& aLocalExecutionRecord);
+  nsLocalExecutionGuard(const nsLocalExecutionGuard&) = delete;
+  nsLocalExecutionGuard(nsLocalExecutionGuard&&) = delete;
+  ~nsLocalExecutionGuard();
+
+  nsCOMPtr<nsISerialEventTarget> GetEventTarget() const {
+    return mLocalEventTarget;
+  }
+
+ private:
+  mozilla::SynchronizedEventQueue& mEventQueueStack;
+  nsCOMPtr<nsISerialEventTarget> mLocalEventTarget;
+  bool& mLocalExecutionFlag;
+};
+
+class MOZ_TEMPORARY_CLASS nsLocalExecutionRecord final {
+ private:
+  friend class nsThread;
+  friend class nsLocalExecutionGuard;
+
+  nsLocalExecutionRecord(mozilla::SynchronizedEventQueue& aEventQueueStack,
+                         bool& aLocalExecutionFlag)
+      : mEventQueueStack(aEventQueueStack),
+        mLocalExecutionFlag(aLocalExecutionFlag) {}
+
+  nsLocalExecutionRecord(nsLocalExecutionRecord&&) = default;
+
+ public:
+  nsLocalExecutionRecord(const nsLocalExecutionRecord&) = delete;
+
+ private:
+  mozilla::SynchronizedEventQueue& mEventQueueStack;
+  bool& mLocalExecutionFlag;
 };
 
 class MOZ_STACK_CLASS nsThreadEnumerator final {
