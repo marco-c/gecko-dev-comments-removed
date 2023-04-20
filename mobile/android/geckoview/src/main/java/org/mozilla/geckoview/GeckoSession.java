@@ -31,6 +31,7 @@ import android.view.PointerIcon;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewStructure;
+import android.view.WindowManager;
 import android.view.inputmethod.CursorAnchorInfo;
 import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
@@ -5585,6 +5586,30 @@ public class GeckoSession {
     ThreadUtils.assertOnUiThread();
 
     matrix.postTranslate(mLeft, mTop);
+  }
+
+  
+
+
+
+
+
+
+  @UiThread
+   void getScreenToWindowManagerOffsetMatrix(@NonNull final Matrix matrix) {
+    ThreadUtils.assertOnUiThread();
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      final WindowManager wm =
+          (WindowManager)
+              GeckoAppShell.getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+      final Rect currentWindowRect = wm.getCurrentWindowMetrics().getBounds();
+      matrix.postTranslate(-currentWindowRect.left, -currentWindowRect.top);
+      return;
+    }
+
+    
+    
   }
 
   
