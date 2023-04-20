@@ -3138,7 +3138,8 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
   
   
   
-  RefPtr<Element> target = nsContentUtils::GetTargetElement(mDocument, aAnchorName);
+  RefPtr<Element> target =
+      nsContentUtils::GetTargetElement(mDocument, aAnchorName);
 
   
   
