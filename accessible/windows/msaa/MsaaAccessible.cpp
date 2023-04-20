@@ -53,8 +53,8 @@ MsaaAccessible* MsaaAccessible::Create(Accessible* aAcc) {
   
   
   
-  LocalAccessible* localAcc = aAcc->AsLocal();
-  if (localAcc && aAcc->IsRoot()) {
+  if (aAcc->IsRoot()) {
+    MOZ_ASSERT(aAcc->IsLocal());
     return new MsaaRootAccessible(aAcc);
   }
   if (aAcc->IsDoc()) {
@@ -66,14 +66,14 @@ MsaaAccessible* MsaaAccessible::Create(Accessible* aAcc) {
   if (aAcc->IsTableCell()) {
     return new ia2AccessibleTableCell(aAcc);
   }
-  if (localAcc) {
-    
-    if (aAcc->IsApplication()) {
-      return new ia2AccessibleApplication(aAcc);
-    }
-    if (aAcc->IsImage()) {
-      return new ia2AccessibleImage(aAcc);
-    }
+  if (aAcc->IsApplication()) {
+    MOZ_ASSERT(aAcc->IsLocal());
+    return new ia2AccessibleApplication(aAcc);
+  }
+  if (aAcc->IsImage()) {
+    return new ia2AccessibleImage(aAcc);
+  }
+  if (LocalAccessible* localAcc = aAcc->AsLocal()) {
     if (localAcc->GetContent() &&
         localAcc->GetContent()->IsXULElement(nsGkAtoms::menuitem)) {
       return new MsaaXULMenuitemAccessible(aAcc);
