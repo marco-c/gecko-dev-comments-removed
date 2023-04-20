@@ -206,7 +206,9 @@ const MR_ABOUT_WELCOME_DEFAULT = {
     },
     {
       id: "AW_MOBILE_DOWNLOAD",
-      targeting: "isFxASignedIn && sync.mobileDevices > 0",
+      
+      
+      targeting: "!isFxASignedIn || sync.mobileDevices == 0",
       content: {
         position: "split",
         split_narrow_bkg_position: "-160px",
@@ -385,13 +387,13 @@ function evaluateWelcomeScreenButtonLabel(removeDefault) {
     : "mr2022-onboarding-set-default-primary-button-label";
 }
 
-function prepareMobileDownload(screens) {
-  let mobileContent = screens?.find(
+function prepareMobileDownload(content) {
+  let mobileContent = content?.screens?.find(
     screen => screen.id === "AW_MOBILE_DOWNLOAD"
   )?.content;
 
   if (!mobileContent) {
-    return;
+    return content;
   }
   if (!lazy.BrowserUtils.sendToDeviceEmailsSupported()) {
     
@@ -408,14 +410,12 @@ function prepareMobileDownload(screens) {
       mobileContent.hero_image.url.indexOf(".svg")
     )}-cn.svg`;
   }
+
+  return content;
 }
 
 async function prepareContentForReact(content) {
   const { screens } = content;
-
-  
-  
-  await lazy.AWScreenUtils.evaluateTargetingAndRemoveScreens(screens);
 
   if (content?.template === "return_to_amo") {
     return content;
@@ -537,8 +537,7 @@ async function prepareContentForReact(content) {
     );
   }
 
-  prepareMobileDownload(content.screens);
-  return content;
+  return prepareMobileDownload(content);
 }
 
 const AboutWelcomeDefaults = {
