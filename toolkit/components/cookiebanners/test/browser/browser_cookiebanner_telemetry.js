@@ -597,10 +597,15 @@ add_task(async function test_reload_telemetry_mode_disabled() {
         "cookiebanners.service.mode",
         Ci.nsICookieBannerService.MODE_REJECT_OR_ACCEPT,
       ],
+      [
+        "cookiebanners.service.mode.privateBrowsing",
+        Ci.nsICookieBannerService.MODE_REJECT_OR_ACCEPT,
+      ],
     ],
   });
   insertTestClickRules();
 
+  
   
   await SpecialPowers.pushPrefEnv({
     set: [
