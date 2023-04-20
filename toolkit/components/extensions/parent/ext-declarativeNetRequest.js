@@ -137,6 +137,14 @@ this.declarativeNetRequest = class extends ExtensionAPI {
           req.requestURI = Services.io.newURI(url);
           if (initiator) {
             req.initiatorURI = Services.io.newURI(initiator);
+            if (req.initiatorURI.schemeIs("data")) {
+              
+              
+              
+              
+              
+              req.initiatorURI = null;
+            }
           }
           const matchedRules = ExtensionDNR.getMatchedRulesForRequest(
             req,
