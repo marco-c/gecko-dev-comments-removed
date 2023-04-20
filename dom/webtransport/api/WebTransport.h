@@ -8,7 +8,7 @@
 #define DOM_WEBTRANSPORT_API_WEBTRANSPORT__H_
 
 #include "nsCOMPtr.h"
-#include "nsDeque.h"
+#include "nsTArray.h"
 #include "nsISupports.h"
 #include "nsWrapperCache.h"
 #include "mozilla/dom/Promise.h"
@@ -26,6 +26,9 @@ class WebTransportDatagramDuplexStream;
 class WebTransportIncomingStreamsAlgorithms;
 class ReadableStream;
 class WritableStream;
+
+using BidirectionalPair = std::pair<RefPtr<mozilla::ipc::DataPipeReceiver>,
+                                    RefPtr<mozilla::ipc::DataPipeSender>>;
 
 class WebTransport final : public nsISupports, public nsWrapperCache {
   friend class WebTransportIncomingStreamsAlgorithms;
@@ -128,10 +131,10 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
       mIncomingUnidirectionalAlgorithm;
   WebTransportReliabilityMode mReliability;
   
-  nsRefPtrDeque<mozilla::ipc::DataPipeReceiver> mUnidirectionalStreams;
-  nsDeque<Tuple<RefPtr<mozilla::ipc::DataPipeReceiver>,
-                RefPtr<mozilla::ipc::DataPipeSender>>>
-      mBidirectionalStreams;
+  
+  
+  nsTArray<RefPtr<mozilla::ipc::DataPipeReceiver>> mUnidirectionalStreams;
+  nsTArray<UniquePtr<BidirectionalPair>> mBidirectionalStreams;
 
   
   RefPtr<ReadableStream> mIncomingUnidirectionalStreams;

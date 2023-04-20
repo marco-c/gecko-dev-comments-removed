@@ -17,7 +17,6 @@
 using namespace mozilla::ipc;
 
 namespace mozilla::dom {
-
 NS_IMPL_CYCLE_COLLECTION_INHERITED(WebTransportIncomingStreamsAlgorithms,
                                    UnderlyingSourceAlgorithmsWrapper,
                                    mTransport, mCallback)
@@ -44,7 +43,6 @@ WebTransportIncomingStreamsAlgorithms::PullCallbackImpl(
   
   
   
-
   
   
   
@@ -55,7 +53,7 @@ WebTransportIncomingStreamsAlgorithms::PullCallbackImpl(
   RefPtr<WebTransportIncomingStreamsAlgorithms> self(this);
   
   
-  if (mTransport->mUnidirectionalStreams.GetSize() == 0) {
+  if (mTransport->mUnidirectionalStreams.Length() == 0) {
     
     
     
@@ -87,6 +85,7 @@ WebTransportIncomingStreamsAlgorithms::PullCallbackImpl(
   return promise.forget();
 }
 
+
 void WebTransportIncomingStreamsAlgorithms::BuildStream(JSContext* aCx,
                                                         ErrorResult& aRv) {
   
@@ -96,7 +95,9 @@ void WebTransportIncomingStreamsAlgorithms::BuildStream(JSContext* aCx,
   if (mUnidirectional == StreamType::Unidirectional) {
     
     
-    RefPtr<DataPipeReceiver> pipe = mTransport->mUnidirectionalStreams.Pop();
+    MOZ_ASSERT(mTransport->mUnidirectionalStreams.Length() > 0);
+    RefPtr<DataPipeReceiver> pipe = mTransport->mUnidirectionalStreams[0];
+    mTransport->mUnidirectionalStreams.RemoveElementAt(0);
 
     
     
@@ -124,15 +125,49 @@ void WebTransportIncomingStreamsAlgorithms::BuildStream(JSContext* aCx,
   } else {
     
     
-    UniquePtr<Tuple<RefPtr<DataPipeReceiver>, RefPtr<DataPipeSender>>> pipes(
-        mTransport->mBidirectionalStreams.Pop());
+    MOZ_ASSERT(mTransport->mBidirectionalStreams.Length() > 0);
+    UniquePtr<BidirectionalPair> pipes =
+        std::move(mTransport->mBidirectionalStreams.ElementAt(0));
+    mTransport->mBidirectionalStreams.RemoveElementAt(0);
+    RefPtr<DataPipeReceiver> input = pipes->first.forget();
+    RefPtr<DataPipeSender> output = pipes->second.forget();
 
     
     
+    RefPtr<WebTransportReceiveStream> readableStream =
+        WebTransportReceiveStream::Create(mTransport, mTransport->mGlobal,
+                                          input, aRv);
+    if (!readableStream) {
+      return;
+    }
+    RefPtr<WebTransportSendStream> writableStream =
+        WebTransportSendStream::Create(mTransport, mTransport->mGlobal, output,
+                                       aRv);
+    if (!writableStream) {
+      return;
+    }
+
+    auto stream = MakeRefPtr<WebTransportBidirectionalStream>(
+        mTransport->mGlobal, readableStream, writableStream);
 
     
+    JS::Rooted<JS::Value> jsStream(aCx);
+    if (MOZ_UNLIKELY(!ToJSValue(aCx, stream, &jsStream))) {
+      return;
+    }
+    LOG(("Enqueuing bidirectional stream\n"));
+    
+    RefPtr<ReadableStream> incomingStream =
+        mTransport->mIncomingBidirectionalStreams;
+    incomingStream->EnqueueNative(aCx, jsStream, aRv);
+    if (MOZ_UNLIKELY(aRv.Failed())) {
+      return;
+    }
     
     
+    mTransport->mSendStreams.AppendElement(writableStream);
+    
+    mTransport->mReceiveStreams.AppendElement(readableStream);
   }
   
 }
@@ -140,8 +175,9 @@ void WebTransportIncomingStreamsAlgorithms::BuildStream(JSContext* aCx,
 void WebTransportIncomingStreamsAlgorithms::NotifyIncomingStream() {
   if (mUnidirectional == StreamType::Unidirectional) {
     LOG(("NotifyIncomingStream: %zu Unidirectional ",
-         mTransport->mUnidirectionalStreams.GetSize()));
-    auto number = mTransport->mUnidirectionalStreams.GetSize();
+         mTransport->mUnidirectionalStreams.Length()));
+#ifdef DEBUG
+    auto number = mTransport->mUnidirectionalStreams.Length();
     MOZ_ASSERT(number > 0);
 #endif
     RefPtr<Promise> promise = mCallback.forget();
@@ -150,8 +186,9 @@ void WebTransportIncomingStreamsAlgorithms::NotifyIncomingStream() {
     }
   } else {
     LOG(("NotifyIncomingStream: %zu Bidirectional ",
-         mTransport->mBidirectionalStreams.GetSize()));
-    auto number = mTransport->mBidirectionalStreams.GetSize();
+         mTransport->mBidirectionalStreams.Length()));
+#ifdef DEBUG
+    auto number = mTransport->mBidirectionalStreams.Length();
     MOZ_ASSERT(number > 0);
 #endif
     RefPtr<Promise> promise = mCallback.forget();

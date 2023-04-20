@@ -261,7 +261,10 @@ WebTransportParent::OnIncomingUnidirectionalStreamAvailable(
   
   
   LOG(("%p IncomingUnidirectonalStream available", this));
+
   
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+
   RefPtr<DataPipeSender> sender;
   RefPtr<DataPipeReceiver> receiver;
   nsresult rv = NewDataPipe(mozilla::ipc::kDefaultDataPipeCapacity,
@@ -270,10 +273,12 @@ WebTransportParent::OnIncomingUnidirectionalStreamAvailable(
     return rv;
   }
 
-  nsCOMPtr<nsIEventTarget> target = GetCurrentSerialEventTarget();
-  nsCOMPtr<nsIAsyncInputStream> stream = do_QueryInterface(aStream);
-  rv = NS_AsyncCopy(stream, sender, target, NS_ASYNCCOPY_VIA_READSEGMENTS,
-                    mozilla::ipc::kDefaultDataPipeCapacity, nullptr, nullptr);
+  nsCOMPtr<nsIAsyncInputStream> inputStream;
+  aStream->GetInputStream(getter_AddRefs(inputStream));
+  MOZ_ASSERT(inputStream);
+  rv = NS_AsyncCopy(inputStream, sender, mSocketThread,
+                    NS_ASYNCCOPY_VIA_WRITESEGMENTS,
+                    mozilla::ipc::kDefaultDataPipeCapacity);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -289,8 +294,53 @@ NS_IMETHODIMP
 WebTransportParent::OnIncomingBidirectionalStreamAvailable(
     nsIWebTransportBidirectionalStream* aStream) {
   
+  
+  LOG(("%p IncomingBidirectonalStream available", this));
+
+  
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+
+  RefPtr<DataPipeSender> inputSender;
+  RefPtr<DataPipeReceiver> inputReceiver;
+  nsresult rv =
+      NewDataPipe(mozilla::ipc::kDefaultDataPipeCapacity,
+                  getter_AddRefs(inputSender), getter_AddRefs(inputReceiver));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsCOMPtr<nsIAsyncInputStream> inputStream;
+  aStream->GetInputStream(getter_AddRefs(inputStream));
+  MOZ_ASSERT(inputStream);
+  rv = NS_AsyncCopy(inputStream, inputSender, mSocketThread,
+                    NS_ASYNCCOPY_VIA_WRITESEGMENTS,
+                    mozilla::ipc::kDefaultDataPipeCapacity);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  RefPtr<DataPipeSender> outputSender;
+  RefPtr<DataPipeReceiver> outputReceiver;
+  rv =
+      NewDataPipe(mozilla::ipc::kDefaultDataPipeCapacity,
+                  getter_AddRefs(outputSender), getter_AddRefs(outputReceiver));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsCOMPtr<nsIAsyncOutputStream> outputStream;
+  aStream->GetOutputStream(getter_AddRefs(outputStream));
+  MOZ_ASSERT(outputStream);
+  rv = NS_AsyncCopy(outputReceiver, outputStream, mSocketThread,
+                    NS_ASYNCCOPY_VIA_READSEGMENTS,
+                    mozilla::ipc::kDefaultDataPipeCapacity);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
   LOG(("%p Sending BidirectionalStream pipe to content", this));
-  Unused << aStream;
+  
+  Unused << SendIncomingBidirectionalStream(inputReceiver, outputSender);
   return NS_OK;
 }
 
