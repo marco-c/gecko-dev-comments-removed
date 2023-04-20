@@ -22,6 +22,7 @@
 
 
 
+
 function Calendar(options, context) {
   this.context = context;
   this.context.DAYS_IN_A_WEEK = 7;
@@ -29,9 +30,10 @@ function Calendar(options, context) {
     days: [],
     weekHeaders: [],
     setSelection: options.setSelection,
-    setMonthByOffset: options.setMonthByOffset,
+    setCalendarMonth: options.setCalendarMonth,
     getDayString: options.getDayString,
     getWeekHeaderString: options.getWeekHeaderString,
+    focusedDate: null,
   };
   this.elements = {
     weekHeaders: this._generateNodes(
@@ -98,6 +100,7 @@ Calendar.prototype = {
       
       this.state.days = days;
       this.state.weekHeaders = weekHeaders;
+      this.focusDay();
     }
   },
 
@@ -111,9 +114,10 @@ Calendar.prototype = {
 
 
   _render({ elements, items, prevState }) {
-    let selectedEl;
-    let todayEl;
-    let firstDayEl;
+    let selected = {};
+    let today = {};
+    let sameDay = {};
+    let firstDay = {};
 
     for (let i = 0, l = items.length; i < l; i++) {
       let el = elements[i];
@@ -136,16 +140,32 @@ Calendar.prototype = {
         el.removeAttribute("aria-current");
 
         
+        if (
+          this.state.focusedDate &&
+          this._isSameDayOfMonth(items[i].dateObj, this.state.focusedDate) &&
+          !el.classList.contains("outside")
+        ) {
+          
+          
+          sameDay.el = el;
+          sameDay.dateObj = items[i].dateObj;
+        }
         if (el.classList.contains("today")) {
           
           el.setAttribute("aria-current", "date");
-          todayEl = el;
+          if (!el.classList.contains("outside")) {
+            today.el = el;
+            today.dateObj = items[i].dateObj;
+          }
         }
         if (el.classList.contains("selection")) {
           
+          
           el.setAttribute("aria-selected", "true");
+
           if (!el.classList.contains("outside")) {
-            selectedEl = el;
+            selected.el = el;
+            selected.dateObj = items[i].dateObj;
           }
         } else if (el.classList.contains("out-of-range")) {
           
@@ -155,13 +175,15 @@ Calendar.prototype = {
           
           el.setAttribute("aria-selected", "false");
         }
-        
-        
-        if (el.textContent === "1" && !firstDayEl) {
-          let firstDay = new Date(items[i].dateObj);
-          firstDay.setUTCDate("1");
-          if (this._isSameDay(items[i].dateObj, firstDay)) {
-            firstDayEl = el;
+        if (el.textContent === "1" && !firstDay.el) {
+          
+          
+          firstDay.dateObj = items[i].dateObj;
+          firstDay.dateObj.setUTCDate("1");
+
+          if (this._isSameDay(items[i].dateObj, firstDay.dateObj)) {
+            firstDay.el = el;
+            firstDay.dateObj = items[i].dateObj;
           }
         }
       }
@@ -169,12 +191,20 @@ Calendar.prototype = {
 
     
     
-    if (selectedEl) {
-      selectedEl.setAttribute("tabindex", "0");
-    } else if (todayEl) {
-      todayEl.setAttribute("tabindex", "0");
-    } else if (firstDayEl) {
-      firstDayEl.setAttribute("tabindex", "0");
+    
+    
+    if (sameDay.el) {
+      sameDay.el.setAttribute("tabindex", "0");
+      this.state.focusedDate = new Date(sameDay.dateObj);
+    } else if (selected.el) {
+      selected.el.setAttribute("tabindex", "0");
+      this.state.focusedDate = new Date(selected.dateObj);
+    } else if (today.el) {
+      today.el.setAttribute("tabindex", "0");
+      this.state.focusedDate = new Date(today.dateObj);
+    } else if (firstDay.el) {
+      firstDay.el.setAttribute("tabindex", "0");
+      this.state.focusedDate = new Date(firstDay.dateObj);
     }
   },
 
@@ -257,76 +287,58 @@ Calendar.prototype = {
             case "ArrowRight": {
               
               
-              this._handleKeydownEvent(event.target, 1 * direction);
+              this._handleKeydownEvent(1 * direction);
               break;
             }
             case "ArrowLeft": {
               
               
-              this._handleKeydownEvent(event.target, -1 * direction);
+              this._handleKeydownEvent(-1 * direction);
               break;
             }
             case "ArrowUp": {
               
               
-              this._handleKeydownEvent(
-                event.target,
-                -1,
-                this.context.DAYS_IN_A_WEEK
-              );
+              this._handleKeydownEvent(-1 * this.context.DAYS_IN_A_WEEK);
               break;
             }
             case "ArrowDown": {
               
               
-              this._handleKeydownEvent(
-                event.target,
-                1,
-                this.context.DAYS_IN_A_WEEK
-              );
+              this._handleKeydownEvent(1 * this.context.DAYS_IN_A_WEEK);
               break;
             }
             case "Home": {
               
-              let nextId;
               if (event.ctrlKey) {
                 
-                for (let i = 0; i < this.state.days.length; i++) {
-                  if (this.state.days[i].dateObj.getUTCDate() == 1) {
-                    nextId = i;
-                    break;
-                  }
-                }
+                this.state.focusedDate.setUTCDate(1);
+                this._updateKeyboardFocus();
               } else {
-                nextId =
-                  Number(event.target.dataset.id) -
-                  (Number(event.target.dataset.id) %
-                    this.context.DAYS_IN_A_WEEK);
-                nextId = this._updateViewIfOutside(nextId, -1);
+                this._handleKeydownEvent(
+                  this.state.focusedDate.getUTCDay() * -1
+                );
               }
-              this._updateKeyboardFocus(event.target, nextId);
               break;
             }
             case "End": {
               
-              let nextId;
               if (event.ctrlKey) {
                 
-                for (let i = this.state.days.length - 1; i >= 0; i--) {
-                  if (this.state.days[i].dateObj.getUTCDate() == 1) {
-                    nextId = i - 1;
-                    break;
-                  }
-                }
+                let lastDateOfMonth = new Date(
+                  this.state.focusedDate.getUTCFullYear(),
+                  this.state.focusedDate.getUTCMonth() + 1,
+                  0
+                );
+                this.state.focusedDate = lastDateOfMonth;
+                this._updateKeyboardFocus();
               } else {
-                nextId =
-                  Number(event.target.dataset.id) +
-                  (this.context.DAYS_IN_A_WEEK - 1) -
-                  (Number(event.target.dataset.id) %
-                    this.context.DAYS_IN_A_WEEK);
-                nextId = this._updateViewIfOutside(nextId, 1);
+                this._handleKeydownEvent(
+                  this.context.DAYS_IN_A_WEEK -
+                    1 -
+                    this.state.focusedDate.getUTCDay()
+                );
               }
-              this._updateKeyboardFocus(event.target, nextId);
               break;
             }
             case "PageUp": {
@@ -334,23 +346,20 @@ Calendar.prototype = {
               
               
               
-              let targetId = event.target.dataset.id;
-              let nextDate = this.state.days[targetId].dateObj;
               if (event.shiftKey) {
                 
-                this.state.setMonthByOffset(-12);
-                nextDate.setYear(nextDate.getFullYear() - 1);
+                let prevYear = this.state.focusedDate.getUTCFullYear() - 1;
+                this.state.focusedDate.setUTCFullYear(prevYear);
               } else {
                 
-                this.state.setMonthByOffset(-1);
-                nextDate.setMonth(nextDate.getMonth() - 1);
+                let prevMonth = this.state.focusedDate.getUTCMonth() - 1;
+                this.state.focusedDate.setUTCMonth(prevMonth);
               }
-              let nextId = this._calculateNextId(nextDate);
-              
-              
-              
-              nextId = this._updateViewIfOutside(nextId, 1);
-              this._updateKeyboardFocus(event.target, nextId);
+              this.state.setCalendarMonth(
+                this.state.focusedDate.getUTCFullYear(),
+                this.state.focusedDate.getUTCMonth()
+              );
+              this._updateKeyboardFocus();
               break;
             }
             case "PageDown": {
@@ -358,20 +367,20 @@ Calendar.prototype = {
               
               
               
-              let targetId = event.target.dataset.id;
-              let nextDate = this.state.days[targetId].dateObj;
               if (event.shiftKey) {
                 
-                this.state.setMonthByOffset(12);
-                nextDate.setYear(nextDate.getFullYear() + 1);
+                let nextYear = this.state.focusedDate.getUTCFullYear() + 1;
+                this.state.focusedDate.setUTCFullYear(nextYear);
               } else {
                 
-                this.state.setMonthByOffset(1);
-                nextDate.setMonth(nextDate.getMonth() + 1);
+                let nextMonth = this.state.focusedDate.getUTCMonth() + 1;
+                this.state.focusedDate.setUTCMonth(nextMonth);
               }
-              let nextId = this._calculateNextId(nextDate);
-              nextId = this._updateViewIfOutside(nextId, 1);
-              this._updateKeyboardFocus(event.target, nextId);
+              this.state.setCalendarMonth(
+                this.state.focusedDate.getUTCFullYear(),
+                this.state.focusedDate.getUTCMonth()
+              );
+              this._updateKeyboardFocus();
               break;
             }
           }
@@ -423,14 +432,43 @@ Calendar.prototype = {
 
 
 
-  _handleKeydownEvent(eTarget, offsetDir, offsetSize = 1) {
-    let offset = offsetDir * offsetSize;
-    let nextId = Number(eTarget.dataset.id) + offset;
-    if (!this.state.days[nextId]) {
-      nextId = this._updateViewIfUndefined(nextId, offset, eTarget.dataset.id);
+  _isSameDayOfMonth(dateObj1, dateObj2) {
+    return dateObj1.getUTCDate() == dateObj2.getUTCDate();
+  },
+
+  
+
+
+
+
+
+  _handleKeydownEvent(offsetDays) {
+    let newFocusedDay = this.state.focusedDate.getUTCDate() + offsetDays;
+    let newFocusedDate = new Date(this.state.focusedDate);
+    newFocusedDate.setUTCDate(newFocusedDay);
+
+    
+    if (newFocusedDate.getUTCMonth() !== this.state.focusedDate.getUTCMonth()) {
+      this.state.setCalendarMonth(
+        newFocusedDate.getUTCFullYear(),
+        newFocusedDate.getUTCMonth()
+      );
     }
-    nextId = this._updateViewIfOutside(nextId, offsetDir);
-    this._updateKeyboardFocus(eTarget, nextId);
+    this.state.focusedDate.setUTCDate(newFocusedDate.getUTCDate());
+    this._updateKeyboardFocus();
+  },
+
+  
+
+
+
+  _updateKeyboardFocus() {
+    this._render({
+      elements: this.elements.daysView,
+      items: this.state.days,
+      prevState: this.state.days,
+    });
+    this.focusDay();
   },
 
   
@@ -438,61 +476,10 @@ Calendar.prototype = {
 
 
 
-  _updateKeyboardFocus(targetEl, nextId) {
-    const nextEl = this.elements.daysView[nextId];
-
-    targetEl.removeAttribute("tabindex");
-    nextEl.setAttribute("tabindex", "0");
-
-    nextEl.focus();
-  },
-
-  
-
-
-
-
-
-
-  _updateViewIfOutside(nextId, offset) {
-    if (this.elements.daysView[nextId].classList.contains("outside")) {
-      let nextDate = this.state.days[nextId].dateObj;
-      this.state.setMonthByOffset(offset);
-      nextId = this._calculateNextId(nextDate);
-    }
-    return nextId;
-  },
-
-  
-
-
-
-
-
-
-
-
-  _updateViewIfUndefined(nextId, offset, targetId) {
-    let targetDate = this.state.days[targetId].dateObj;
-    let nextDate = targetDate;
-    
-    nextDate.setDate(targetDate.getDate() + offset);
-    
-    this.state.setMonthByOffset(Math.sign(offset));
-    
-    nextId = this._calculateNextId(nextDate);
-    return nextId;
-  },
-
-  
-
-
-
-
-  focus() {
-    const focus = this.context.daysView.querySelector('[tabindex="0"]');
-    if (focus) {
-      focus.focus();
+  focusDay() {
+    const focusable = this.context.daysView.querySelector('[tabindex="0"]');
+    if (focusable) {
+      focusable.focus();
     }
   },
 };

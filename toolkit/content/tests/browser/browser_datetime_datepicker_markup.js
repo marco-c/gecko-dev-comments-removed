@@ -310,6 +310,7 @@ add_task(async function test_datepicker_markup_refresh() {
     );
 
     
+    
     helper.click(helper.getElement(BTN_NEXT_MONTH));
 
     const secondRowJan = helper.getChildren(DAYS_VIEW)[1].children;
@@ -337,10 +338,16 @@ add_task(async function test_datepicker_markup_refresh() {
       !secondRowJan[0].hasAttribute("aria-disabled"),
       "Day with the same as less than min date is not programmatically disabled"
     );
+    
+    
     Assert.equal(
-      secondRowJan[0].getAttribute("tabindex"),
+      secondRowJan[4].getAttribute("tabindex"),
       "0",
-      "The first day of the month is made focusable"
+      "The same day of the month is made focusable"
+    );
+    Assert.ok(
+      !secondRowJan[0].hasAttribute("tabindex"),
+      "The first day of the month is not focusable"
     );
     Assert.ok(
       !secondRowJan[1].hasAttribute("tabindex"),
