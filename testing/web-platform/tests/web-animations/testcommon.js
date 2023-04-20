@@ -311,3 +311,13 @@ function assert_phase_at_time(animation, phase, currentTime) {
   
   animation.effect.updateTiming({ fill: fillMode });
 }
+
+
+
+
+
+async function waitForCompositorReady(target) {
+  const animation =
+      document.body.animate({ opacity: [ 1, 1 ] }, {duration: 1 });
+  return animation.finished;
+}
