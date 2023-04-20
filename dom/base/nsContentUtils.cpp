@@ -2163,7 +2163,7 @@ bool nsContentUtils::ShouldResistFingerprinting(
     nsIGlobalObject* aGlobalObject,
     RFPTarget aTarget ) {
   if (!aGlobalObject) {
-    return ShouldResistFingerprinting(aTarget);
+    return ShouldResistFingerprinting("Null Object", aTarget);
   }
   return aGlobalObject->ShouldResistFingerprinting(aTarget);
 }
@@ -2229,7 +2229,7 @@ bool nsContentUtils::ShouldResistFingerprinting(
     MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
             ("Called nsContentUtils::ShouldResistFingerprinting(nsIDocShell*) "
              "with NULL docshell"));
-    return ShouldResistFingerprinting(aTarget);
+    return ShouldResistFingerprinting("Null Object", aTarget);
   }
   Document* doc = aDocShell->GetDocument();
   if (!doc) {
@@ -2244,15 +2244,11 @@ bool nsContentUtils::ShouldResistFingerprinting(
 
 bool nsContentUtils::ShouldResistFingerprinting(
     nsIChannel* aChannel, RFPTarget aTarget ) {
-  if (!ShouldResistFingerprinting("Legacy quick-check", aTarget)) {
-    return false;
-  }
-
   if (!aChannel) {
     MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
             ("Called nsContentUtils::ShouldResistFingerprinting(nsIChannel* "
              "aChannel) with NULL channel"));
-    return true;
+    return ShouldResistFingerprinting("Null Object", aTarget);
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
@@ -2260,7 +2256,13 @@ bool nsContentUtils::ShouldResistFingerprinting(
     MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
             ("Called nsContentUtils::ShouldResistFingerprinting(nsIChannel* "
              "aChannel) but the channel's loadinfo was NULL"));
-    return true;
+    return ShouldResistFingerprinting("Null Object", aTarget);
+  }
+
+  
+  
+  if (!ShouldResistFingerprinting("Positive return check", aTarget)) {
+    return false;
   }
 
   
@@ -2324,7 +2326,9 @@ bool nsContentUtils::ShouldResistFingerprinting(
 bool nsContentUtils::ShouldResistFingerprinting_dangerous(
     nsIURI* aURI, const mozilla::OriginAttributes& aOriginAttributes,
     const char* aJustification, RFPTarget aTarget ) {
-  if (!ShouldResistFingerprinting("Legacy quick-check", aTarget)) {
+  
+  
+  if (!ShouldResistFingerprinting("Positive return check", aTarget)) {
     return false;
   }
 
@@ -2338,7 +2342,6 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
     }
   }
 
-  bool isExemptDomain = false;
   
   if (aURI->SchemeIs("about") || aURI->SchemeIs("chrome") ||
       aURI->SchemeIs("resource") || aURI->SchemeIs("view-source") ||
@@ -2346,6 +2349,7 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
     return false;
   }
 
+  bool isExemptDomain = false;
   nsAutoCString list;
   Preferences::GetCString(kExemptedDomainsPrefName, list);
   ToLowerCase(list);
@@ -2369,7 +2373,9 @@ bool nsContentUtils::ShouldResistFingerprinting(
              aLoadInfo->GetExternalContentPolicyType() !=
                  ExtContentPolicy::TYPE_SUBDOCUMENT);
 
-  if (!ShouldResistFingerprinting("Legacy quick-check", aTarget)) {
+  
+  
+  if (!ShouldResistFingerprinting("Positive return check", aTarget)) {
     return false;
   }
 
@@ -2392,15 +2398,17 @@ bool nsContentUtils::ShouldResistFingerprinting(
 bool nsContentUtils::ShouldResistFingerprinting_dangerous(
     nsIPrincipal* aPrincipal, const char* aJustification,
     RFPTarget aTarget ) {
-  if (!ShouldResistFingerprinting("Legacy quick-check", aTarget)) {
-    return false;
-  }
-
   if (!aPrincipal) {
     MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
             ("Called nsContentUtils::ShouldResistFingerprinting(nsILoadInfo* "
              "aChannel) but the loadinfo's loadingprincipal was NULL"));
-    return true;
+    return ShouldResistFingerprinting("Null object", aTarget);
+  }
+
+  
+  
+  if (!ShouldResistFingerprinting("Positive return check", aTarget)) {
+    return false;
   }
 
   if (aPrincipal->IsSystemPrincipal()) {
