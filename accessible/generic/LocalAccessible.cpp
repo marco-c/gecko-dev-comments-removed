@@ -601,8 +601,7 @@ LocalAccessible* LocalAccessible::LocalChildAtPoint(
 
 nsIFrame* LocalAccessible::FindNearestAccessibleAncestorFrame() {
   nsIFrame* frame = GetFrame();
-  if (IsDoc() &&
-      nsCoreUtils::IsTopLevelContentDocInProcess(AsDoc()->DocumentNode())) {
+  if (IsDoc()) {
     
     
     
@@ -3287,14 +3286,17 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     if (OuterDocAccessible* doc = AsOuterDoc()) {
       if (nsIFrame* docFrame = doc->GetFrame()) {
         const nsMargin& newOffset = docFrame->GetUsedBorderAndPadding();
-        Maybe<nsMargin> currOffset = doc->GetCrossProcOffset();
+        Maybe<nsMargin> currOffset = doc->GetCrossDocOffset();
         if (!currOffset || *currOffset != newOffset) {
           
           
           
           
           
-          doc->SetCrossProcOffset(newOffset);
+          
+          
+          
+          doc->SetCrossDocOffset(newOffset);
           nsTArray<int32_t> offsetArray(2);
           offsetArray.AppendElement(newOffset.Side(eSideLeft));  
           offsetArray.AppendElement(newOffset.Side(eSideTop));   

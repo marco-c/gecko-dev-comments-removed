@@ -449,14 +449,13 @@ Maybe<nsRect> RemoteAccessibleBase<Derived>::RetrieveCachedBounds() const {
 }
 
 template <class Derived>
-void RemoteAccessibleBase<Derived>::ApplyCrossProcOffset(
-    nsRect& aBounds) const {
+void RemoteAccessibleBase<Derived>::ApplyCrossDocOffset(nsRect& aBounds) const {
   Accessible* parentAcc = Parent();
   if (!parentAcc || !parentAcc->IsRemote() || !parentAcc->IsOuterDoc()) {
     return;
   }
 
-  if (!IsDoc() || !AsDoc()->IsOOPIframeDoc()) {
+  if (!IsDoc()) {
     
     
     return;
@@ -580,7 +579,7 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
       bounds.SetRectY(bounds.y + internalRect.y, internalRect.height);
     }
 
-    ApplyCrossProcOffset(bounds);
+    ApplyCrossDocOffset(bounds);
 
     Unused << ApplyTransform(bounds);
 
@@ -615,7 +614,7 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
         
         
         
-        remoteAcc->ApplyCrossProcOffset(remoteBounds);
+        remoteAcc->ApplyCrossDocOffset(remoteBounds);
 
         
         
