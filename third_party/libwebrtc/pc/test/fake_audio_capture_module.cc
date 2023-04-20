@@ -13,10 +13,12 @@
 #include <string.h>
 
 #include "api/make_ref_counted.h"
+#include "api/units/time_delta.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/location.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
+
+using ::webrtc::TimeDelta;
 
 
 
@@ -32,11 +34,6 @@ static const int kSamplesPerSecond = 44000;
 static const int kTotalDelayMs = 0;
 static const int kClockDriftMs = 0;
 static const uint32_t kMaxVolume = 14392;
-
-enum {
-  MSG_START_PROCESS,
-  MSG_RUN_PROCESS,
-};
 
 FakeAudioCaptureModule::FakeAudioCaptureModule()
     : audio_callback_(nullptr),
@@ -386,21 +383,6 @@ int32_t FakeAudioCaptureModule::PlayoutDelay(uint16_t* delay_ms) const {
   return 0;
 }
 
-void FakeAudioCaptureModule::OnMessage(rtc::Message* msg) {
-  switch (msg->message_id) {
-    case MSG_START_PROCESS:
-      StartProcessP();
-      break;
-    case MSG_RUN_PROCESS:
-      ProcessFrameP();
-      break;
-    default:
-      
-      
-      RTC_DCHECK_NOTREACHED();
-  }
-}
-
 bool FakeAudioCaptureModule::Initialize() {
   
   
@@ -444,7 +426,7 @@ void FakeAudioCaptureModule::UpdateProcessing(bool start) {
       process_thread_ = rtc::Thread::Create();
       process_thread_->Start();
     }
-    process_thread_->Post(RTC_FROM_HERE, this, MSG_START_PROCESS);
+    process_thread_->PostTask([this] { StartProcessP(); });
   } else {
     if (process_thread_) {
       process_thread_->Stop();
@@ -490,7 +472,8 @@ void FakeAudioCaptureModule::ProcessFrameP() {
   const int64_t current_time = rtc::TimeMillis();
   const int64_t wait_time =
       (next_frame_time_ > current_time) ? next_frame_time_ - current_time : 0;
-  process_thread_->PostDelayed(RTC_FROM_HERE, wait_time, this, MSG_RUN_PROCESS);
+  process_thread_->PostDelayedTask([this] { ProcessFrameP(); },
+                                   TimeDelta::Millis(wait_time));
 }
 
 void FakeAudioCaptureModule::ReceiveFrameP() {

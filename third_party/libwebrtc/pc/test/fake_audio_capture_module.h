@@ -29,18 +29,14 @@
 #include "api/sequence_checker.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_device/include/audio_device_defines.h"
-#include "rtc_base/message_handler.h"
 #include "rtc_base/synchronization/mutex.h"
-#include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
-#include "rtc_base/thread_message.h"
 
 namespace rtc {
 class Thread;
 }  
 
-class FakeAudioCaptureModule : public webrtc::AudioDeviceModule,
-                               public rtc::MessageHandlerAutoCleanup {
+class FakeAudioCaptureModule : public webrtc::AudioDeviceModule {
  public:
   typedef uint16_t Sample;
 
@@ -151,9 +147,6 @@ class FakeAudioCaptureModule : public webrtc::AudioDeviceModule,
 #endif  
 
   
-
-  
-  void OnMessage(rtc::Message* msg) override;
 
  protected:
   
