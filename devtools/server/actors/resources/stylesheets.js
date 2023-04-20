@@ -37,7 +37,7 @@ class StyleSheetWatcher {
     this._onAvailable = onAvailable;
     this._onUpdated = onUpdated;
 
-    this._styleSheetsManager = targetActor.getStyleSheetManager();
+    this._styleSheetsManager = targetActor.getStyleSheetsManager();
 
     
     this._styleSheetsManager.on(

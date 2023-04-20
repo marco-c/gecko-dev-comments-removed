@@ -2665,7 +2665,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
   getStyleSheetOwnerNode(resourceId) {
-    const manager = this.targetActor.getStyleSheetManager();
+    const manager = this.targetActor.getStyleSheetsManager();
     const ownerNode = manager.getOwnerNode(resourceId);
     return this.attachElement(ownerNode);
   },
