@@ -8,6 +8,7 @@
 #include "InternalResponse.h"
 #include "mozilla/ConsoleReportCollector.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/StaticAnalysisFunctions.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseBinding.h"
@@ -98,10 +99,7 @@ nsresult FetchStreamReader::Create(JSContext* aCx, nsIGlobalObject* aGlobal,
 
 FetchStreamReader::FetchStreamReader(nsIGlobalObject* aGlobal)
     : mGlobal(aGlobal),
-      mOwningEventTarget(mGlobal->EventTargetFor(TaskCategory::Other)),
-      mBufferRemaining(0),
-      mBufferOffset(0),
-      mStreamClosed(false) {
+      mOwningEventTarget(mGlobal->EventTargetFor(TaskCategory::Other)) {
   MOZ_ASSERT(aGlobal);
 
   mozilla::HoldJSObjects(this);
@@ -190,11 +188,12 @@ void FetchStreamReader::StartConsuming(JSContext* aCx, ReadableStream* aStream,
   mReader = reader;
   reader.forget(aReader);
 
+  mAsyncWaitWorkerRef = mWorkerRef;
   aRv = mPipeOut->AsyncWait(this, 0, 0, mOwningEventTarget);
   if (NS_WARN_IF(aRv.Failed())) {
-    return;
+    mAsyncWaitWorkerRef = nullptr;
+    CloseAndRelease(aCx, NS_ERROR_DOM_INVALID_STATE_ERR);
   }
-  mAsyncWaitWorkerRef = mWorkerRef;
 }
 
 struct FetchReadRequest : public ReadRequest {
@@ -205,15 +204,18 @@ struct FetchReadRequest : public ReadRequest {
   explicit FetchReadRequest(FetchStreamReader* aReader)
       : mFetchStreamReader(aReader) {}
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void ChunkSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
                   ErrorResult& aRv) override {
     mFetchStreamReader->ChunkSteps(aCx, aChunk, aRv);
   }
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void CloseSteps(JSContext* aCx, ErrorResult& aRv) override {
-    mFetchStreamReader->CloseAndRelease(aCx, NS_BASE_STREAM_CLOSED);
+    mFetchStreamReader->CloseSteps(aCx, aRv);
   }
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void ErrorSteps(JSContext* aCx, JS::Handle<JS::Value> aError,
                   ErrorResult& aRv) override {
     mFetchStreamReader->ErrorSteps(aCx, aError, aRv);
@@ -222,7 +224,7 @@ struct FetchReadRequest : public ReadRequest {
  protected:
   virtual ~FetchReadRequest() = default;
 
-  RefPtr<FetchStreamReader> mFetchStreamReader;
+  MOZ_KNOWN_LIVE RefPtr<FetchStreamReader> mFetchStreamReader;
 };
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(FetchReadRequest, ReadRequest,
@@ -237,47 +239,79 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY
 NS_IMETHODIMP
 FetchStreamReader::OnOutputStreamReady(nsIAsyncOutputStream* aStream) {
   NS_ASSERT_OWNINGTHREAD(FetchStreamReader);
-  mAsyncWaitWorkerRef = nullptr;
   if (mStreamClosed) {
+    mAsyncWaitWorkerRef = nullptr;
     return NS_OK;
   }
 
-  
-  MOZ_ASSERT(aStream == mPipeOut);
+  AutoEntryScript aes(mGlobal, "ReadableStreamReader.read", !mWorkerRef);
+  if (!Process(aes.cx())) {
+    
+    
+    mAsyncWaitWorkerRef = nullptr;
+  }
+  return NS_OK;
+}
+
+bool FetchStreamReader::Process(JSContext* aCx) {
+  NS_ASSERT_OWNINGTHREAD(FetchStreamReader);
   MOZ_ASSERT(mReader);
 
   if (!mBuffer.IsEmpty()) {
-    return WriteBuffer();
+    nsresult rv = WriteBuffer();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      CloseAndRelease(aCx, NS_ERROR_DOM_ABORT_ERR);
+      return false;
+    }
+    return true;
   }
 
   
   
   
-  AutoEntryScript aes(mGlobal, "ReadableStreamReader.read", !mWorkerRef);
+  if (NS_WARN_IF(NS_FAILED(mPipeOut->StreamStatus()))) {
+    CloseAndRelease(aCx, NS_ERROR_DOM_ABORT_ERR);
+    return false;
+  }
 
-  IgnoredErrorResult rv;
+  
+  
+  nsresult rv = mPipeOut->AsyncWait(
+      this, nsIAsyncOutputStream::WAIT_CLOSURE_ONLY, 0, mOwningEventTarget);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    CloseAndRelease(aCx, NS_ERROR_DOM_INVALID_STATE_ERR);
+    return false;
+  }
 
   
   
-  
-  
-  RefPtr<ReadRequest> readRequest = new FetchReadRequest(this);
-  RefPtr<ReadableStreamDefaultReader> reader = mReader;
-  reader->ReadChunk(aes.cx(), *readRequest, rv);
-
-  if (NS_WARN_IF(rv.Failed())) {
+  if (!mHasOutstandingReadRequest) {
     
-    CloseAndRelease(aes.cx(), NS_ERROR_DOM_INVALID_STATE_ERR);
-    return NS_ERROR_FAILURE;
-  }
+    
+    
+    
+    RefPtr<ReadRequest> readRequest = new FetchReadRequest(this);
+    RefPtr<ReadableStreamDefaultReader> reader = mReader;
+    mHasOutstandingReadRequest = true;
 
-  return NS_OK;
+    IgnoredErrorResult err;
+    reader->ReadChunk(aCx, *readRequest, err);
+    if (NS_WARN_IF(err.Failed())) {
+      
+      mHasOutstandingReadRequest = false;
+      CloseAndRelease(aCx, NS_ERROR_DOM_INVALID_STATE_ERR);
+      
+    }
+  }
+  return true;
 }
 
 void FetchStreamReader::ChunkSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
                                    ErrorResult& aRv) {
   
   
+
+  mHasOutstandingReadRequest = false;
 
   
   
@@ -288,33 +322,31 @@ void FetchStreamReader::ChunkSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
   }
   chunk.ComputeState();
 
-  uint32_t len = chunk.Length();
-  if (len == 0) {
-    
-    OnOutputStreamReady(mPipeOut);
-    return;
-  }
-
   MOZ_DIAGNOSTIC_ASSERT(mBuffer.IsEmpty());
 
   
-  if (!mBuffer.AppendElements(chunk.Data(), len, fallible)) {
+  
+  
+  
+  if (!mBuffer.AppendElements(chunk.Data(), chunk.Length(), fallible)) {
     CloseAndRelease(aCx, NS_ERROR_OUT_OF_MEMORY);
     return;
   }
 
   mBufferOffset = 0;
-  mBufferRemaining = len;
+  mBufferRemaining = chunk.Length();
 
-  nsresult rv = WriteBuffer();
-  if (NS_FAILED(rv)) {
-    
-    CloseAndRelease(aCx, NS_ERROR_DOM_ABORT_ERR);
-  }
+  Process(aCx);
+}
+
+void FetchStreamReader::CloseSteps(JSContext* aCx, ErrorResult& aRv) {
+  mHasOutstandingReadRequest = false;
+  CloseAndRelease(aCx, NS_BASE_STREAM_CLOSED);
 }
 
 void FetchStreamReader::ErrorSteps(JSContext* aCx, JS::Handle<JS::Value> aError,
                                    ErrorResult& aRv) {
+  mHasOutstandingReadRequest = false;
   ReportErrorToConsole(aCx, aError);
   CloseAndRelease(aCx, NS_ERROR_FAILURE);
 }
