@@ -1099,18 +1099,13 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   }
 
   if (submodules_.capture_levels_adjuster) {
-    
-    
     if (config_.capture_level_adjustment.analog_mic_gain_emulation.enabled) {
-      int level = submodules_.capture_levels_adjuster->GetAnalogMicGainLevel();
-      if (submodules_.agc_manager) {
-        submodules_.agc_manager->set_stream_analog_level(level);
-      } else if (submodules_.gain_control) {
-        int error = submodules_.gain_control->set_stream_analog_level(level);
-        RTC_DCHECK_EQ(kNoError, error);
-      }
+      
+      
+      
+      set_stream_analog_level_locked(
+          submodules_.capture_levels_adjuster->GetAnalogMicGainLevel());
     }
-
     submodules_.capture_levels_adjuster->ApplyPreLevelAdjustment(
         *capture_buffer);
   }
@@ -1369,16 +1364,12 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     submodules_.capture_levels_adjuster->ApplyPostLevelAdjustment(
         *capture_buffer);
 
-    
-    
     if (config_.capture_level_adjustment.analog_mic_gain_emulation.enabled) {
-      if (submodules_.agc_manager) {
-        submodules_.capture_levels_adjuster->SetAnalogMicGainLevel(
-            submodules_.agc_manager->recommended_analog_level());
-      } else if (submodules_.gain_control) {
-        submodules_.capture_levels_adjuster->SetAnalogMicGainLevel(
-            submodules_.gain_control->stream_analog_level());
-      }
+      
+      
+      
+      submodules_.capture_levels_adjuster->SetAnalogMicGainLevel(
+          recommended_stream_analog_level_locked());
     }
   }
 
@@ -1603,14 +1594,20 @@ void AudioProcessingImpl::set_stream_key_pressed(bool key_pressed) {
 }
 
 void AudioProcessingImpl::set_stream_analog_level(int level) {
-  MutexLock lock_capture(&mutex_capture_);
+  
+  
+  RTC_DCHECK(
+      !submodules_.capture_levels_adjuster ||
+      !config_.capture_level_adjustment.analog_mic_gain_emulation.enabled);
 
-  if (config_.capture_level_adjustment.analog_mic_gain_emulation.enabled) {
-    
-    
-    capture_.cached_stream_analog_level_ = level;
-    return;
-  }
+  MutexLock lock_capture(&mutex_capture_);
+  set_stream_analog_level_locked(level);
+}
+
+void AudioProcessingImpl::set_stream_analog_level_locked(int level) {
+  
+  
+  capture_.cached_stream_analog_level_ = level;
 
   if (submodules_.agc_manager) {
     submodules_.agc_manager->set_stream_analog_level(level);
@@ -1624,10 +1621,6 @@ void AudioProcessingImpl::set_stream_analog_level(int level) {
     RTC_DCHECK_EQ(kNoError, error);
     return;
   }
-
-  
-  
-  capture_.cached_stream_analog_level_ = level;
 }
 
 int AudioProcessingImpl::recommended_stream_analog_level() const {
@@ -1636,10 +1629,6 @@ int AudioProcessingImpl::recommended_stream_analog_level() const {
 }
 
 int AudioProcessingImpl::recommended_stream_analog_level_locked() const {
-  if (config_.capture_level_adjustment.analog_mic_gain_emulation.enabled) {
-    return capture_.cached_stream_analog_level_;
-  }
-
   if (submodules_.agc_manager) {
     return submodules_.agc_manager->recommended_analog_level();
   }

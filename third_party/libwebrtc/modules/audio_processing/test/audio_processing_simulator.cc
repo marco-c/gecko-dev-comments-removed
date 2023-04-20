@@ -210,6 +210,7 @@ AudioProcessingSimulator::~AudioProcessingSimulator() {
 void AudioProcessingSimulator::ProcessStream(bool fixed_interface) {
   
   if (settings_.simulate_mic_gain) {
+    RTC_DCHECK(!settings_.use_analog_mic_gain_emulation);
     if (settings_.aec_dump_input_filename) {
       
       
@@ -225,7 +226,7 @@ void AudioProcessingSimulator::ProcessStream(bool fixed_interface) {
 
     
     ap_->set_stream_analog_level(fake_recording_device_.MicLevel());
-  } else {
+  } else if (!settings_.use_analog_mic_gain_emulation) {
     
     ap_->set_stream_analog_level(settings_.aec_dump_input_filename
                                      ? aec_dump_mic_level_
