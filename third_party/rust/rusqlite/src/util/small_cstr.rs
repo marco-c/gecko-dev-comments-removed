@@ -5,7 +5,7 @@ use std::ffi::{CStr, CString, NulError};
 
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct SmallCString(smallvec::SmallVec<[u8; 16]>);
+pub(crate) struct SmallCString(SmallVec<[u8; 16]>);
 
 impl SmallCString {
     #[inline]

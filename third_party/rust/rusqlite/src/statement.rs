@@ -3,7 +3,7 @@ use std::os::raw::{c_int, c_void};
 #[cfg(feature = "array")]
 use std::rc::Rc;
 use std::slice::from_raw_parts;
-use std::{convert, fmt, mem, ptr, str};
+use std::{fmt, mem, ptr, str};
 
 use super::ffi;
 use super::{len_as_c_int, str_for_sqlite};
@@ -21,6 +21,34 @@ pub struct Statement<'conn> {
 }
 
 impl Statement<'_> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -104,6 +132,7 @@ impl Statement<'_> {
     
     
     
+    #[doc(hidden)]
     #[deprecated = "You can use `execute` with named params now."]
     #[inline]
     pub fn execute_named(&mut self, params: &[(&str, &dyn ToSql)]) -> Result<usize> {
@@ -239,6 +268,7 @@ impl Statement<'_> {
     
     
     
+    #[doc(hidden)]
     #[deprecated = "You can use `query` with named params now."]
     pub fn query_named(&mut self, params: &[(&str, &dyn ToSql)]) -> Result<Rows<'_>> {
         self.query(params)
@@ -316,6 +346,7 @@ impl Statement<'_> {
     
     
     
+    #[doc(hidden)]
     #[deprecated = "You can use `query_map` with named params now."]
     pub fn query_map_named<T, F>(
         &mut self,
@@ -386,7 +417,7 @@ impl Statement<'_> {
     pub fn query_and_then<T, E, P, F>(&mut self, params: P, f: F) -> Result<AndThenRows<'_, F>>
     where
         P: Params,
-        E: convert::From<Error>,
+        E: From<Error>,
         F: FnMut(&Row<'_>) -> Result<T, E>,
     {
         self.query(params).map(|rows| rows.and_then(f))
@@ -408,6 +439,7 @@ impl Statement<'_> {
     
     
     
+    #[doc(hidden)]
     #[deprecated = "You can use `query_and_then` with named params now."]
     pub fn query_and_then_named<T, E, F>(
         &mut self,
@@ -415,7 +447,7 @@ impl Statement<'_> {
         f: F,
     ) -> Result<AndThenRows<'_, F>>
     where
-        E: convert::From<Error>,
+        E: From<Error>,
         F: FnMut(&Row<'_>) -> Result<T, E>,
     {
         self.query_and_then(params, f)
@@ -475,6 +507,7 @@ impl Statement<'_> {
     
     
     
+    #[doc(hidden)]
     #[deprecated = "You can use `query_row` with named params now."]
     pub fn query_row_named<T, F>(&mut self, params: &[(&str, &dyn ToSql)], f: F) -> Result<T>
     where
@@ -567,6 +600,16 @@ impl Statement<'_> {
     }
 
     #[inline]
+    pub(crate) fn ensure_parameter_count(&self, n: usize) -> Result<()> {
+        let count = self.parameter_count();
+        if count != n {
+            Err(Error::InvalidParameterCount(n, count))
+        } else {
+            Ok(())
+        }
+    }
+
+    #[inline]
     pub(crate) fn bind_parameters_named<T: ?Sized + ToSql>(
         &mut self,
         params: &[(&str, &T)],
@@ -588,6 +631,11 @@ impl Statement<'_> {
         self.stmt.bind_parameter_count()
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -684,6 +732,7 @@ impl Statement<'_> {
 
             #[cfg(feature = "blob")]
             ToSqlOutput::ZeroBlob(len) => {
+                
                 return self
                     .conn
                     .decode_result(unsafe { ffi::sqlite3_bind_zeroblob(ptr, col as c_int, len) });
@@ -707,6 +756,7 @@ impl Statement<'_> {
             ValueRef::Real(r) => unsafe { ffi::sqlite3_bind_double(ptr, col as c_int, r) },
             ValueRef::Text(s) => unsafe {
                 let (c_str, len, destructor) = str_for_sqlite(s)?;
+                
                 ffi::sqlite3_bind_text(ptr, col as c_int, c_str, len, destructor)
             },
             ValueRef::Blob(b) => unsafe {
@@ -714,6 +764,7 @@ impl Statement<'_> {
                 if length == 0 {
                     ffi::sqlite3_bind_zeroblob(ptr, col as c_int, 0)
                 } else {
+                    
                     ffi::sqlite3_bind_blob(
                         ptr,
                         col as c_int,
@@ -732,7 +783,7 @@ impl Statement<'_> {
         let r = self.stmt.step();
         self.stmt.reset();
         match r {
-            ffi::SQLITE_DONE => Ok(self.conn.changes()),
+            ffi::SQLITE_DONE => Ok(self.conn.changes() as usize),
             ffi::SQLITE_ROW => Err(Error::ExecuteReturnedResults),
             _ => Err(self.conn.decode_result(r).unwrap_err()),
         }
@@ -793,6 +844,16 @@ impl Statement<'_> {
     
     pub fn reset_status(&self, status: StatementStatus) -> i32 {
         self.stmt.get_status(status, true)
+    }
+
+    
+    
+    
+    #[inline]
+    #[cfg(feature = "modern_sqlite")] 
+    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
+    pub fn is_explain(&self) -> i32 {
+        self.stmt.is_explain()
     }
 
     #[cfg(feature = "extra_check")]
@@ -1266,6 +1327,41 @@ mod test {
         assert!(!stmt.exists([0i32])?);
         Ok(())
     }
+    #[test]
+    fn test_tuple_params() -> Result<()> {
+        let db = Connection::open_in_memory()?;
+        let s = db.query_row("SELECT printf('[%s]', ?)", ("abc",), |r| {
+            r.get::<_, String>(0)
+        })?;
+        assert_eq!(s, "[abc]");
+        let s = db.query_row(
+            "SELECT printf('%d %s %d', ?, ?, ?)",
+            (1i32, "abc", 2i32),
+            |r| r.get::<_, String>(0),
+        )?;
+        assert_eq!(s, "1 abc 2");
+        let s = db.query_row(
+            "SELECT printf('%d %s %d %d', ?, ?, ?, ?)",
+            (1, "abc", 2i32, 4i64),
+            |r| r.get::<_, String>(0),
+        )?;
+        assert_eq!(s, "1 abc 2 4");
+        #[rustfmt::skip]
+        let bigtup = (
+            0, "a", 1, "b", 2, "c", 3, "d",
+            4, "e", 5, "f", 6, "g", 7, "h",
+        );
+        let query = "SELECT printf(
+            '%d %s | %d %s | %d %s | %d %s || %d %s | %d %s | %d %s | %d %s',
+            ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?, ?
+        )";
+        let s = db.query_row(query, bigtup, |r| r.get::<_, String>(0))?;
+        assert_eq!(s, "0 a | 1 b | 2 c | 3 d || 4 e | 5 f | 6 g | 7 h");
+        Ok(())
+    }
 
     #[test]
     fn test_query_row() -> Result<()> {
@@ -1428,6 +1524,32 @@ mod test {
         let expected = "a\x00b";
         let actual: String = db.query_row("SELECT ?", [expected], |row| row.get(0))?;
         assert_eq!(expected, actual);
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "modern_sqlite")]
+    fn is_explain() -> Result<()> {
+        let db = Connection::open_in_memory()?;
+        let stmt = db.prepare("SELECT 1;")?;
+        assert_eq!(0, stmt.is_explain());
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(all(feature = "modern_sqlite", not(feature = "bundled-sqlcipher")))] 
+    fn test_error_offset() -> Result<()> {
+        use crate::ffi::ErrorCode;
+        let db = Connection::open_in_memory()?;
+        let r = db.execute_batch("SELECT CURRENT_TIMESTANP;");
+        assert!(r.is_err());
+        match r.unwrap_err() {
+            Error::SqlInputError { error, offset, .. } => {
+                assert_eq!(error.code, ErrorCode::Unknown);
+                assert_eq!(offset, 7);
+            }
+            err => panic!("Unexpected error {}", err),
+        }
         Ok(())
     }
 }

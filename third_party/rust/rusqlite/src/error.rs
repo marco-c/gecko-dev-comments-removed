@@ -34,7 +34,7 @@ pub enum Error {
 
     
     
-    NulError(::std::ffi::NulError),
+    NulError(std::ffi::NulError),
 
     
     
@@ -128,6 +128,19 @@ pub enum Error {
     #[cfg(feature = "blob")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blob")))]
     BlobSizeError,
+    
+    #[cfg(feature = "modern_sqlite")] 
+    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
+    SqlInputError {
+        
+        error: ffi::Error,
+        
+        msg: String,
+        
+        sql: String,
+        
+        offset: c_int,
+    },
 }
 
 impl PartialEq for Error {
@@ -172,6 +185,21 @@ impl PartialEq for Error {
             }
             #[cfg(feature = "blob")]
             (Error::BlobSizeError, Error::BlobSizeError) => true,
+            #[cfg(feature = "modern_sqlite")]
+            (
+                Error::SqlInputError {
+                    error: e1,
+                    msg: m1,
+                    sql: s1,
+                    offset: o1,
+                },
+                Error::SqlInputError {
+                    error: e2,
+                    msg: m2,
+                    sql: s2,
+                    offset: o2,
+                },
+            ) => e1 == e2 && m1 == m2 && s1 == s2 && o1 == o2,
             (..) => false,
         }
     }
@@ -184,14 +212,14 @@ impl From<str::Utf8Error> for Error {
     }
 }
 
-impl From<::std::ffi::NulError> for Error {
+impl From<std::ffi::NulError> for Error {
     #[cold]
-    fn from(err: ::std::ffi::NulError) -> Error {
+    fn from(err: std::ffi::NulError) -> Error {
         Error::NulError(err)
     }
 }
 
-const UNKNOWN_COLUMN: usize = std::usize::MAX;
+const UNKNOWN_COLUMN: usize = usize::MAX;
 
 
 
@@ -281,9 +309,15 @@ impl fmt::Display for Error {
             #[cfg(feature = "functions")]
             Error::GetAuxWrongType => write!(f, "get_aux called with wrong type"),
             Error::MultipleStatement => write!(f, "Multiple statements provided"),
-
             #[cfg(feature = "blob")]
             Error::BlobSizeError => "Blob size is insufficient".fmt(f),
+            #[cfg(feature = "modern_sqlite")]
+            Error::SqlInputError {
+                ref msg,
+                offset,
+                ref sql,
+                ..
+            } => write!(f, "{} in {} at offset {}", msg, sql, offset),
         }
     }
 }
@@ -331,7 +365,27 @@ impl error::Error for Error {
 
             #[cfg(feature = "blob")]
             Error::BlobSizeError => None,
+            #[cfg(feature = "modern_sqlite")]
+            Error::SqlInputError { ref error, .. } => Some(error),
         }
+    }
+}
+
+impl Error {
+    
+    #[inline]
+    pub fn sqlite_error(&self) -> Option<&ffi::Error> {
+        match self {
+            Self::SqliteFailure(error, _) => Some(error),
+            _ => None,
+        }
+    }
+
+    
+    
+    #[inline]
+    pub fn sqlite_error_code(&self) -> Option<ffi::ErrorCode> {
+        self.sqlite_error().map(|error| error.code)
     }
 }
 
@@ -339,6 +393,7 @@ impl error::Error for Error {
 
 #[cold]
 pub fn error_from_sqlite_code(code: c_int, message: Option<String>) -> Error {
+    
     Error::SqliteFailure(ffi::Error::new(code), message)
 }
 
@@ -352,9 +407,38 @@ pub unsafe fn error_from_handle(db: *mut ffi::sqlite3, code: c_int) -> Error {
     error_from_sqlite_code(code, message)
 }
 
+#[cold]
+#[cfg(not(all(feature = "modern_sqlite", not(feature = "bundled-sqlcipher"))))] 
+pub unsafe fn error_with_offset(db: *mut ffi::sqlite3, code: c_int, _sql: &str) -> Error {
+    error_from_handle(db, code)
+}
+
+#[cold]
+#[cfg(all(feature = "modern_sqlite", not(feature = "bundled-sqlcipher")))] 
+pub unsafe fn error_with_offset(db: *mut ffi::sqlite3, code: c_int, sql: &str) -> Error {
+    if db.is_null() {
+        error_from_sqlite_code(code, None)
+    } else {
+        let error = ffi::Error::new(code);
+        let msg = errmsg_to_string(ffi::sqlite3_errmsg(db));
+        if ffi::ErrorCode::Unknown == error.code {
+            let offset = ffi::sqlite3_error_offset(db);
+            if offset >= 0 {
+                return Error::SqlInputError {
+                    error,
+                    msg,
+                    sql: sql.to_owned(),
+                    offset,
+                };
+            }
+        }
+        Error::SqliteFailure(error, Some(msg))
+    }
+}
+
 pub fn check(code: c_int) -> Result<()> {
     if code != crate::ffi::SQLITE_OK {
-        Err(crate::error::error_from_sqlite_code(code, None))
+        Err(error_from_sqlite_code(code, None))
     } else {
         Ok(())
     }

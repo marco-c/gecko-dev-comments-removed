@@ -202,11 +202,20 @@ where
         other.is_subset(self)
     }
 
+    
+    
+    
+    
+    
     #[inline]
     pub fn insert(&mut self, value: T) -> bool {
         self.map.insert(value, ()).is_none()
     }
 
+    
+    
+    
+    
     #[inline]
     pub fn replace(&mut self, value: T) -> Option<T> {
         match self.map.entry(value) {
@@ -287,6 +296,14 @@ where
             }
             linked_hash_map::RawEntryMut::Vacant(_) => false,
         }
+    }
+
+    #[inline]
+    pub fn retain_with_order<F>(&mut self, mut f: F)
+    where
+        F: FnMut(&T) -> bool,
+    {
+        self.map.retain_with_order(|k, _| f(k));
     }
 }
 

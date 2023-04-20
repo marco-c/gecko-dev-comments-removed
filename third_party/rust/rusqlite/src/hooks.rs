@@ -10,7 +10,7 @@ use crate::ffi;
 use crate::{Connection, InnerConnection};
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(i32)]
 #[non_exhaustive]
 #[allow(clippy::upper_case_acronyms)]
@@ -40,7 +40,7 @@ impl From<i32> for Action {
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct AuthContext<'c> {
     
     pub action: AuthAction<'c>,
@@ -57,7 +57,7 @@ pub struct AuthContext<'c> {
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 #[allow(missing_docs)]
 pub enum AuthAction<'c> {
@@ -285,7 +285,7 @@ impl<'c> AuthAction<'c> {
                 operation: TransactionOperation::from_str(operation_str),
                 savepoint_name,
             },
-            #[cfg(feature = "modern_sqlite")]
+            #[cfg(feature = "modern_sqlite")] 
             (ffi::SQLITE_RECURSIVE, ..) => Self::Recursive,
             (code, arg1, arg2) => Self::Unknown { code, arg1, arg2 },
         }
@@ -296,7 +296,7 @@ pub(crate) type BoxedAuthorizer =
     Box<dyn for<'c> FnMut(AuthContext<'c>) -> Authorization + Send + 'static>;
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 #[allow(missing_docs)]
 pub enum TransactionOperation {
@@ -318,7 +318,7 @@ impl TransactionOperation {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum Authorization {
     

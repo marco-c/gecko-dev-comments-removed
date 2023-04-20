@@ -146,9 +146,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.38.2"
-#define SQLITE_VERSION_NUMBER 3038002
-#define SQLITE_SOURCE_ID      "2022-03-26 13:51:10 d33c709cc0af66bc5b6dc6216eba9f1f0b40960b9ae83694c986fbf4c1d6f08f"
+#define SQLITE_VERSION        "3.39.2"
+#define SQLITE_VERSION_NUMBER 3039002
+#define SQLITE_SOURCE_ID      "2022-07-21 15:24:47 698edb77537b67c41adc68f9b892db56bcf9a55e00371a61420f3ddd668e6603"
 
 
 
@@ -5599,6 +5599,7 @@ SQLITE_API unsigned int sqlite3_value_subtype(sqlite3_value*);
 
 
 
+
 SQLITE_API sqlite3_value *sqlite3_value_dup(const sqlite3_value*);
 SQLITE_API void sqlite3_value_free(sqlite3_value*);
 
@@ -6274,6 +6275,28 @@ SQLITE_API int sqlite3_get_autocommit(sqlite3*);
 
 
 SQLITE_API sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SQLITE_API const char *sqlite3_db_name(sqlite3 *db, int N);
 
 
 
@@ -9545,6 +9568,13 @@ SQLITE_API int sqlite3_vtab_nochange(sqlite3_context*);
 
 
 SQLITE_API SQLITE_EXPERIMENTAL const char *sqlite3_vtab_collation(sqlite3_index_info*,int);
+
+
+
+
+
+
+
 
 
 

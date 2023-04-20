@@ -257,4 +257,7 @@ impl<'a> ValueRef<'a> {
             _ => unreachable!("sqlite3_value_type returned invalid value"),
         }
     }
+
+    
+    
 }

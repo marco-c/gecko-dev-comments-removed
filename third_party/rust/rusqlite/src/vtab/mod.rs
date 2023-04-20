@@ -58,6 +58,23 @@ use crate::{str_to_cstring, Connection, Error, InnerConnection, Result};
 
 
 
+pub enum VTabKind {
+    
+    Default,
+    
+    
+    
+    Eponymous,
+    
+    
+    
+    
+    
+    
+    EponymousOnly,
+}
+
+
 
 
 #[repr(transparent)]
@@ -84,31 +101,26 @@ const ZERO_MODULE: ffi::sqlite3_module = unsafe {
     .module
 };
 
-
-
-
-#[must_use]
-pub fn read_only_module<'vtab, T: CreateVTab<'vtab>>() -> &'static Module<'vtab, T> {
-    
-    
+macro_rules! module {
+    ($lt:lifetime, $vt:ty, $ct:ty, $xc:expr, $xd:expr, $xu:expr) => {
     #[allow(clippy::needless_update)]
     &Module {
         base: ffi::sqlite3_module {
-            
-            iVersion: 2, 
-            xCreate: Some(rust_create::<T>),
-            xConnect: Some(rust_connect::<T>),
-            xBestIndex: Some(rust_best_index::<T>),
-            xDisconnect: Some(rust_disconnect::<T>),
-            xDestroy: Some(rust_destroy::<T>),
-            xOpen: Some(rust_open::<T>),
-            xClose: Some(rust_close::<T::Cursor>),
-            xFilter: Some(rust_filter::<T::Cursor>),
-            xNext: Some(rust_next::<T::Cursor>),
-            xEof: Some(rust_eof::<T::Cursor>),
-            xColumn: Some(rust_column::<T::Cursor>),
-            xRowid: Some(rust_rowid::<T::Cursor>),
-            xUpdate: None,
+            // We don't use V3
+            iVersion: 2,
+            xCreate: $xc,
+            xConnect: Some(rust_connect::<$vt>),
+            xBestIndex: Some(rust_best_index::<$vt>),
+            xDisconnect: Some(rust_disconnect::<$vt>),
+            xDestroy: $xd,
+            xOpen: Some(rust_open::<$vt>),
+            xClose: Some(rust_close::<$ct>),
+            xFilter: Some(rust_filter::<$ct>),
+            xNext: Some(rust_next::<$ct>),
+            xEof: Some(rust_eof::<$ct>),
+            xColumn: Some(rust_column::<$ct>),
+            xRowid: Some(rust_rowid::<$ct>), // FIXME optional
+            xUpdate: $xu,
             xBegin: None,
             xSync: None,
             xCommit: None,
@@ -120,7 +132,46 @@ pub fn read_only_module<'vtab, T: CreateVTab<'vtab>>() -> &'static Module<'vtab,
             xRollbackTo: None,
             ..ZERO_MODULE
         },
-        phantom: PhantomData::<&'vtab T>,
+        phantom: PhantomData::<&$lt $vt>,
+    }
+    };
+}
+
+
+
+
+#[must_use]
+pub fn update_module<'vtab, T: UpdateVTab<'vtab>>() -> &'static Module<'vtab, T> {
+    match T::KIND {
+        VTabKind::EponymousOnly => {
+            module!('vtab, T, T::Cursor, None, None, Some(rust_update::<T>))
+        }
+        VTabKind::Eponymous => {
+            module!('vtab, T, T::Cursor, Some(rust_connect::<T>), Some(rust_disconnect::<T>), Some(rust_update::<T>))
+        }
+        _ => {
+            module!('vtab, T, T::Cursor, Some(rust_create::<T>), Some(rust_destroy::<T>), Some(rust_update::<T>))
+        }
+    }
+}
+
+
+
+
+#[must_use]
+pub fn read_only_module<'vtab, T: CreateVTab<'vtab>>() -> &'static Module<'vtab, T> {
+    match T::KIND {
+        VTabKind::EponymousOnly => eponymous_only_module(),
+        VTabKind::Eponymous => {
+            
+            
+            module!('vtab, T, T::Cursor, Some(rust_connect::<T>), Some(rust_disconnect::<T>), None)
+        }
+        _ => {
+            
+            
+            module!('vtab, T, T::Cursor, Some(rust_create::<T>), Some(rust_destroy::<T>), None)
+        }
     }
 }
 
@@ -130,39 +181,21 @@ pub fn read_only_module<'vtab, T: CreateVTab<'vtab>>() -> &'static Module<'vtab,
 #[must_use]
 pub fn eponymous_only_module<'vtab, T: VTab<'vtab>>() -> &'static Module<'vtab, T> {
     
+    module!('vtab, T, T::Cursor, None, None, None)
+}
+
+
+#[repr(i32)]
+#[non_exhaustive]
+#[cfg(feature = "modern_sqlite")] 
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum VTabConfig {
     
+    ConstraintSupport = 1,
     
-    #[allow(clippy::needless_update)]
-    &Module {
-        base: ffi::sqlite3_module {
-            
-            iVersion: 2,
-            xCreate: None,
-            xConnect: Some(rust_connect::<T>),
-            xBestIndex: Some(rust_best_index::<T>),
-            xDisconnect: Some(rust_disconnect::<T>),
-            xDestroy: None,
-            xOpen: Some(rust_open::<T>),
-            xClose: Some(rust_close::<T::Cursor>),
-            xFilter: Some(rust_filter::<T::Cursor>),
-            xNext: Some(rust_next::<T::Cursor>),
-            xEof: Some(rust_eof::<T::Cursor>),
-            xColumn: Some(rust_column::<T::Cursor>),
-            xRowid: Some(rust_rowid::<T::Cursor>),
-            xUpdate: None,
-            xBegin: None,
-            xSync: None,
-            xCommit: None,
-            xRollback: None,
-            xFindFunction: None,
-            xRename: None,
-            xSavepoint: None,
-            xRelease: None,
-            xRollbackTo: None,
-            ..ZERO_MODULE
-        },
-        phantom: PhantomData::<&'vtab T>,
-    }
+    Innocuous = 2,
+    
+    DirectOnly = 3,
 }
 
 
@@ -170,6 +203,11 @@ pub struct VTabConnection(*mut ffi::sqlite3);
 
 impl VTabConnection {
     
+    #[cfg(feature = "modern_sqlite")] 
+    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
+    pub fn config(&mut self, config: VTabConfig) -> Result<()> {
+        crate::error::check(unsafe { ffi::sqlite3_vtab_config(self.0, config as c_int) })
+    }
 
     
 
@@ -229,13 +267,17 @@ pub unsafe trait VTab<'vtab>: Sized {
 
     
     
-    fn open(&'vtab self) -> Result<Self::Cursor>;
+    fn open(&'vtab mut self) -> Result<Self::Cursor>;
 }
 
 
 
 
 pub trait CreateVTab<'vtab>: VTab<'vtab> {
+    
+    
+    
+    const KIND: VTabKind;
     
     
     
@@ -263,7 +305,24 @@ pub trait CreateVTab<'vtab>: VTab<'vtab> {
 
 
 
-#[derive(Debug, PartialEq)]
+
+pub trait UpdateVTab<'vtab>: CreateVTab<'vtab> {
+    
+    fn delete(&mut self, arg: ValueRef<'_>) -> Result<()>;
+    
+    
+    
+    
+    
+    fn insert(&mut self, args: &Values<'_>) -> Result<i64>;
+    
+    
+    fn update(&mut self, args: &Values<'_>) -> Result<()>;
+}
+
+
+
+#[derive(Debug, Eq, PartialEq)]
 #[allow(non_snake_case, non_camel_case_types, missing_docs)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum IndexConstraintOp {
@@ -310,10 +369,24 @@ impl From<u8> for IndexConstraintOp {
     }
 }
 
+#[cfg(feature = "modern_sqlite")] 
+bitflags::bitflags! {
+    /// Virtual table scan flags
+    /// See [Function Flags](https://sqlite.org/c3ref/c_index_scan_unique.html) for details.
+    #[repr(C)]
+    pub struct IndexFlags: ::std::os::raw::c_int {
+        /// Default
+        const NONE     = 0;
+        /// Scan visits at most 1 row.
+        const SQLITE_INDEX_SCAN_UNIQUE  = ffi::SQLITE_INDEX_SCAN_UNIQUE;
+    }
+}
 
 
 
 
+
+#[derive(Debug)]
 pub struct IndexInfo(*mut ffi::sqlite3_index_info);
 
 impl IndexInfo {
@@ -377,6 +450,14 @@ impl IndexInfo {
     }
 
     
+    pub fn set_idx_str(&mut self, idx_str: &str) {
+        unsafe {
+            (*self.0).idxStr = alloc(idx_str);
+            (*self.0).needToFreeIdxStr = 1;
+        }
+    }
+
+    
     #[inline]
     pub fn set_order_by_consumed(&mut self, order_by_consumed: bool) {
         unsafe {
@@ -403,9 +484,59 @@ impl IndexInfo {
     }
 
     
-    
+    #[cfg(feature = "modern_sqlite")] 
+    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
+    #[inline]
+    pub fn set_idx_flags(&mut self, flags: IndexFlags) {
+        unsafe { (*self.0).idxFlags = flags.bits() };
+    }
 
     
+    #[cfg(feature = "modern_sqlite")] 
+    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
+    #[inline]
+    pub fn col_used(&self) -> u64 {
+        unsafe { (*self.0).colUsed }
+    }
+
+    
+    #[cfg(feature = "modern_sqlite")] 
+    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
+    pub fn collation(&self, constraint_idx: usize) -> Result<&str> {
+        use std::ffi::CStr;
+        let idx = constraint_idx as c_int;
+        let collation = unsafe { ffi::sqlite3_vtab_collation(self.0, idx) };
+        if collation.is_null() {
+            return Err(Error::SqliteFailure(
+                ffi::Error::new(ffi::SQLITE_MISUSE),
+                Some(format!("{} is out of range", constraint_idx)),
+            ));
+        }
+        Ok(unsafe { CStr::from_ptr(collation) }.to_str()?)
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 
@@ -651,6 +782,7 @@ impl Values<'_> {
             iter: self.args.iter(),
         }
     }
+    
 }
 
 impl<'a> IntoIterator for &'a Values<'a> {
@@ -707,6 +839,13 @@ impl InnerConnection {
         module: &'static Module<'vtab, T>,
         aux: Option<T::Aux>,
     ) -> Result<()> {
+        use crate::version;
+        if version::version_number() < 3_009_000 && module.base.xCreate.is_none() {
+            return Err(Error::ModuleError(format!(
+                "Eponymous-only virtual table not supported by SQLite version {}",
+                version::version()
+            )));
+        }
         let c_name = str_to_cstring(module_name)?;
         let r = match aux {
             Some(aux) => {
@@ -754,7 +893,7 @@ pub fn dequote(s: &str) -> &str {
     }
     match s.bytes().next() {
         Some(b) if b == b'"' || b == b'\'' => match s.bytes().rev().next() {
-            Some(e) if e == b => &s[1..s.len() - 1],
+            Some(e) if e == b => &s[1..s.len() - 1], 
             _ => s,
         },
         _ => s,
@@ -785,6 +924,20 @@ pub fn parse_boolean(s: &str) -> Option<bool> {
 }
 
 
+pub fn parameter(c_slice: &[u8]) -> Result<(&str, &str)> {
+    let arg = std::str::from_utf8(c_slice)?.trim();
+    let mut split = arg.split('=');
+    if let Some(key) = split.next() {
+        if let Some(value) = split.next() {
+            let param = key.trim();
+            let value = dequote(value);
+            return Ok((param, value));
+        }
+    }
+    Err(Error::ModuleError(format!("illegal argument: '{}'", arg)))
+}
+
+
 unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
     drop(Box::from_raw(p.cast::<T>()));
 }
@@ -810,7 +963,7 @@ where
         .map(|&cs| CStr::from_ptr(cs).to_bytes()) 
         .collect::<Vec<_>>();
     match T::create(&mut conn, aux.as_ref(), &vec[..]) {
-        Ok((sql, vtab)) => match ::std::ffi::CString::new(sql) {
+        Ok((sql, vtab)) => match std::ffi::CString::new(sql) {
             Ok(c_sql) => {
                 let rc = ffi::sqlite3_declare_vtab(db, c_sql.as_ptr());
                 if rc == ffi::SQLITE_OK {
@@ -862,7 +1015,7 @@ where
         .map(|&cs| CStr::from_ptr(cs).to_bytes()) 
         .collect::<Vec<_>>();
     match T::connect(&mut conn, aux.as_ref(), &vec[..]) {
-        Ok((sql, vtab)) => match ::std::ffi::CString::new(sql) {
+        Ok((sql, vtab)) => match std::ffi::CString::new(sql) {
             Ok(c_sql) => {
                 let rc = ffi::sqlite3_declare_vtab(db, c_sql.as_ptr());
                 if rc == ffi::SQLITE_OK {
@@ -1061,6 +1214,49 @@ where
     }
 }
 
+unsafe extern "C" fn rust_update<'vtab, T: 'vtab>(
+    vtab: *mut ffi::sqlite3_vtab,
+    argc: c_int,
+    argv: *mut *mut ffi::sqlite3_value,
+    p_rowid: *mut ffi::sqlite3_int64,
+) -> c_int
+where
+    T: UpdateVTab<'vtab>,
+{
+    assert!(argc >= 1);
+    let args = slice::from_raw_parts_mut(argv, argc as usize);
+    let vt = vtab.cast::<T>();
+    let r = if args.len() == 1 {
+        (*vt).delete(ValueRef::from_value(args[0]))
+    } else if ffi::sqlite3_value_type(args[0]) == ffi::SQLITE_NULL {
+        
+        let values = Values { args };
+        match (*vt).insert(&values) {
+            Ok(rowid) => {
+                *p_rowid = rowid;
+                Ok(())
+            }
+            Err(e) => Err(e),
+        }
+    } else {
+        let values = Values { args };
+        (*vt).update(&values)
+    };
+    match r {
+        Ok(_) => ffi::SQLITE_OK,
+        Err(Error::SqliteFailure(err, s)) => {
+            if let Some(err_msg) = s {
+                set_err_msg(vtab, &err_msg);
+            }
+            err.extended_code
+        }
+        Err(err) => {
+            set_err_msg(vtab, &err.to_string());
+            ffi::SQLITE_ERROR
+        }
+    }
+}
+
 
 
 #[cold]
@@ -1138,6 +1334,8 @@ pub mod csvtab;
 #[cfg(feature = "series")]
 #[cfg_attr(docsrs, doc(cfg(feature = "series")))]
 pub mod series; 
+#[cfg(test)]
+mod vtablog;
 
 #[cfg(test)]
 mod test {

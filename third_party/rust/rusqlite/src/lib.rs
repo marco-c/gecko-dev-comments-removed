@@ -47,13 +47,16 @@
 
 
 
+
+
+
+
 #![warn(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 pub use libsqlite3_sys as ffi;
 
 use std::cell::RefCell;
-use std::convert;
 use std::default::Default;
 use std::ffi::{CStr, CString};
 use std::fmt;
@@ -144,7 +147,6 @@ const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
 
 #[deprecated = "Use an empty array instead; `stmt.execute(NO_PARAMS)` => `stmt.execute([])`"]
 pub const NO_PARAMS: &[&dyn ToSql] = &[];
-
 
 
 
@@ -269,7 +271,7 @@ fn str_for_sqlite(s: &[u8]) -> Result<(*const c_char, c_int, ffi::sqlite3_destru
 
 
 fn len_as_c_int(len: usize) -> Result<c_int> {
-    if len >= (c_int::max_value() as usize) {
+    if len >= (c_int::MAX as usize) {
         Err(Error::SqliteFailure(
             ffi::Error::new(ffi::SQLITE_TOOBIG),
             None,
@@ -320,7 +322,7 @@ pub const TEMP_DB: DatabaseName<'static> = DatabaseName::Temp;
 ))]
 impl DatabaseName<'_> {
     #[inline]
-    fn as_cstring(&self) -> Result<util::SmallCString> {
+    fn as_cstring(&self) -> Result<SmallCString> {
         use self::DatabaseName::{Attached, Main, Temp};
         match *self {
             Main => str_to_cstring("main"),
@@ -347,6 +349,37 @@ impl Drop for Connection {
 }
 
 impl Connection {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -565,6 +598,16 @@ impl Connection {
     
     
     
+    #[inline]
+    #[cfg(feature = "release_memory")]
+    pub fn release_memory(&self) -> Result<()> {
+        self.db.borrow_mut().release_memory()
+    }
+
+    
+    
+    
+    
     
     
     
@@ -680,7 +723,7 @@ impl Connection {
     where
         P: Params,
         F: FnOnce(&Row<'_>) -> Result<T, E>,
-        E: convert::From<Error>,
+        E: From<Error>,
     {
         let mut stmt = self.prepare(sql)?;
         stmt.check_no_tail()?;
@@ -902,8 +945,10 @@ impl Connection {
     
     
     
+    
+    
     #[inline]
-    fn changes(&self) -> usize {
+    pub fn changes(&self) -> u64 {
         self.db.borrow().changes()
     }
 
@@ -927,6 +972,13 @@ impl Connection {
     #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
     pub fn cache_flush(&self) -> Result<()> {
         self.db.borrow_mut().cache_flush()
+    }
+
+    
+    #[cfg(feature = "modern_sqlite")] 
+    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
+    pub fn is_readonly(&self, db_name: DatabaseName<'_>) -> Result<bool> {
+        self.db.borrow().db_readonly(db_name)
     }
 }
 
@@ -1000,40 +1052,81 @@ impl<'conn> Iterator for Batch<'conn, '_> {
 }
 
 bitflags::bitflags! {
-    /// Flags for opening SQLite database connections.
-    /// See [sqlite3_open_v2](http://www.sqlite.org/c3ref/open.html) for details.
+    /// Flags for opening SQLite database connections. See
+    /// [sqlite3_open_v2](http://www.sqlite.org/c3ref/open.html) for details.
+    ///
+    /// The default open flags are `SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE
+    /// | SQLITE_OPEN_URI | SQLITE_OPEN_NO_MUTEX`. See [`Connection::open`] for
+    /// some discussion about these flags.
     #[repr(C)]
     pub struct OpenFlags: ::std::os::raw::c_int {
         /// The database is opened in read-only mode.
         /// If the database does not already exist, an error is returned.
-        const SQLITE_OPEN_READ_ONLY     = ffi::SQLITE_OPEN_READONLY;
+        const SQLITE_OPEN_READ_ONLY = ffi::SQLITE_OPEN_READONLY;
         /// The database is opened for reading and writing if possible,
         /// or reading only if the file is write protected by the operating system.
         /// In either case the database must already exist, otherwise an error is returned.
-        const SQLITE_OPEN_READ_WRITE    = ffi::SQLITE_OPEN_READWRITE;
+        const SQLITE_OPEN_READ_WRITE = ffi::SQLITE_OPEN_READWRITE;
         /// The database is created if it does not already exist
-        const SQLITE_OPEN_CREATE        = ffi::SQLITE_OPEN_CREATE;
+        const SQLITE_OPEN_CREATE = ffi::SQLITE_OPEN_CREATE;
         /// The filename can be interpreted as a URI if this flag is set.
-        const SQLITE_OPEN_URI           = 0x0000_0040;
+        const SQLITE_OPEN_URI = 0x0000_0040;
         /// The database will be opened as an in-memory database.
-        const SQLITE_OPEN_MEMORY        = 0x0000_0080;
-        /// The new database connection will use the "multi-thread" threading mode.
-        const SQLITE_OPEN_NO_MUTEX      = ffi::SQLITE_OPEN_NOMUTEX;
-        /// The new database connection will use the "serialized" threading mode.
-        const SQLITE_OPEN_FULL_MUTEX    = ffi::SQLITE_OPEN_FULLMUTEX;
-        /// The database is opened shared cache enabled.
-        const SQLITE_OPEN_SHARED_CACHE  = 0x0002_0000;
+        const SQLITE_OPEN_MEMORY = 0x0000_0080;
+        /// The new database connection will not use a per-connection mutex (the
+        /// connection will use the "multi-thread" threading mode, in SQLite
+        /// parlance).
+        ///
+        /// This is used by default, as proper `Send`/`Sync` usage (in
+        /// particular, the fact that [`Connection`] does not implement `Sync`)
+        /// ensures thread-safety without the need to perform locking around all
+        /// calls.
+        const SQLITE_OPEN_NO_MUTEX = ffi::SQLITE_OPEN_NOMUTEX;
+        /// The new database connection will use a per-connection mutex -- the
+        /// "serialized" threading mode, in SQLite parlance.
+        ///
+        /// # Caveats
+        ///
+        /// This flag should probably never be used with `rusqlite`, as we
+        /// ensure thread-safety statically (we implement [`Send`] and not
+        /// [`Sync`]). That said
+        ///
+        /// Critically, even if this flag is used, the [`Connection`] is not
+        /// safe to use across multiple threads simultaneously. To access a
+        /// database from multiple threads, you should either create multiple
+        /// connections, one for each thread (if you have very many threads,
+        /// wrapping the `rusqlite::Connection` in a mutex is also reasonable).
+        ///
+        /// This is both because of the additional per-connection state stored
+        /// by `rusqlite` (for example, the prepared statement cache), and
+        /// because not all of SQLites functions are fully thread safe, even in
+        /// serialized/`SQLITE_OPEN_FULLMUTEX` mode.
+        ///
+        /// All that said, it's fairly harmless to enable this flag with
+        /// `rusqlite`, it will just slow things down while providing no
+        /// benefit.
+        const SQLITE_OPEN_FULL_MUTEX = ffi::SQLITE_OPEN_FULLMUTEX;
+        /// The database is opened with shared cache enabled.
+        ///
+        /// This is frequently useful for in-memory connections, but note that
+        /// broadly speaking it's discouraged by SQLite itself, which states
+        /// "Any use of shared cache is discouraged" in the official
+        /// [documentation](https://www.sqlite.org/c3ref/enable_shared_cache.html).
+        const SQLITE_OPEN_SHARED_CACHE = 0x0002_0000;
         /// The database is opened shared cache disabled.
         const SQLITE_OPEN_PRIVATE_CACHE = 0x0004_0000;
-        /// The database filename is not allowed to be a symbolic link.
+        /// The database filename is not allowed to be a symbolic link. (3.31.0)
         const SQLITE_OPEN_NOFOLLOW = 0x0100_0000;
-        /// Extended result codes.
+        /// Extended result codes. (3.37.0)
         const SQLITE_OPEN_EXRESCODE = 0x0200_0000;
     }
 }
 
 impl Default for OpenFlags {
+    #[inline]
     fn default() -> OpenFlags {
+        
+        
         OpenFlags::SQLITE_OPEN_READ_WRITE
             | OpenFlags::SQLITE_OPEN_CREATE
             | OpenFlags::SQLITE_OPEN_NO_MUTEX
@@ -1204,7 +1297,7 @@ mod test {
         let filename = "no_such_file.db";
         let result = Connection::open_with_flags(filename, OpenFlags::SQLITE_OPEN_READ_ONLY);
         assert!(result.is_err());
-        let err = result.err().unwrap();
+        let err = result.unwrap_err();
         if let Error::SqliteFailure(e, Some(msg)) = err {
             assert_eq!(ErrorCode::CannotOpen, e.code);
             assert_eq!(ffi::SQLITE_CANTOPEN, e.extended_code);
@@ -1340,8 +1433,9 @@ mod test {
     fn test_execute_select() {
         let db = checked_memory_handle();
         let err = db.execute("SELECT 1 WHERE 1 < ?", [1i32]).unwrap_err();
-        assert!(
-            err == Error::ExecuteReturnedResults,
+        assert_eq!(
+            err,
+            Error::ExecuteReturnedResults,
             "Unexpected error: {}",
             err
         );
@@ -1509,15 +1603,28 @@ mod test {
     #[test]
     fn test_pragma_query_row() -> Result<()> {
         let db = Connection::open_in_memory()?;
-
         assert_eq!(
             "memory",
             db.query_row::<String, _, _>("PRAGMA journal_mode", [], |r| r.get(0))?
         );
-        assert_eq!(
-            "off",
-            db.query_row::<String, _, _>("PRAGMA journal_mode=off", [], |r| r.get(0))?
-        );
+        let mode = db.query_row::<String, _, _>("PRAGMA journal_mode=off", [], |r| r.get(0))?;
+        if cfg!(features = "bundled") {
+            assert_eq!(mode, "off");
+        } else {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            assert!(mode == "memory" || mode == "off", "Got mode {:?}", mode);
+        }
+
         Ok(())
     }
 
@@ -1632,7 +1739,7 @@ mod test {
         db.create_scalar_function(
             "interrupt",
             0,
-            crate::functions::FunctionFlags::default(),
+            functions::FunctionFlags::default(),
             move |_| {
                 interrupt_handle.interrupt();
                 Ok(0)
@@ -1644,14 +1751,10 @@ mod test {
 
         let result: Result<Vec<i32>> = stmt.query([])?.map(|r| r.get(0)).collect();
 
-        match result.unwrap_err() {
-            Error::SqliteFailure(err, _) => {
-                assert_eq!(err.code, ErrorCode::OperationInterrupted);
-            }
-            err => {
-                panic!("Unexpected error {}", err);
-            }
-        }
+        assert_eq!(
+            result.unwrap_err().sqlite_error_code(),
+            Some(ErrorCode::OperationInterrupted)
+        );
         Ok(())
     }
 
@@ -1995,7 +2098,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "bundled", not(feature = "bundled-sqlcipher")))] 
+    #[cfg(feature = "modern_sqlite")]
     fn test_returning() -> Result<()> {
         let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER PRIMARY KEY)")?;
@@ -2012,5 +2115,13 @@ mod test {
     fn test_cache_flush() -> Result<()> {
         let db = Connection::open_in_memory()?;
         db.cache_flush()
+    }
+
+    #[test]
+    #[cfg(feature = "modern_sqlite")]
+    pub fn db_readonly() -> Result<()> {
+        let db = Connection::open_in_memory()?;
+        assert!(!db.is_readonly(MAIN_DB)?);
+        Ok(())
     }
 }
