@@ -1,0 +1,4 @@
+
+
+abortSignalAnySignalOnlyTests(AbortSignal);
+abortSignalAnyTests(AbortSignal, AbortController);
