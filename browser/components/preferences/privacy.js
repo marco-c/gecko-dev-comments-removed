@@ -1963,8 +1963,6 @@ var gPrivacyPane = {
 
 
   initCookieBannerHandling() {
-    this._initCookieBannerHandlingLearnMore();
-
     setSyncFromPrefListener("handleCookieBanners", () =>
       this.readCookieBannerMode()
     );
@@ -1976,14 +1974,6 @@ var gPrivacyPane = {
     preference.on("change", () => this.updateCookieBannerHandlingVisibility());
 
     this.updateCookieBannerHandlingVisibility();
-  },
-
-  _initCookieBannerHandlingLearnMore() {
-    let url =
-      Services.urlFormatter.formatURLPref("app.support.baseURL") +
-      "cookie-banner-reduction";
-    let learnMore = document.getElementById("cookieBannerHandlingLearnMore");
-    learnMore.setAttribute("href", url);
   },
 
   
