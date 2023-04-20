@@ -1,7 +1,7 @@
 
-import sys
 import pathlib
 import re
+import sys
 
 assert len(sys.argv) == 2
 MOCHI_PATH = pathlib.Path(sys.argv[1])

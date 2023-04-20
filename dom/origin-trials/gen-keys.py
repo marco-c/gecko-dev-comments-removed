@@ -2,10 +2,11 @@
 
 
 
-from pyasn1.codec.der import decoder
-from pyasn1_modules import pem
-from pyasn1.type import univ
 import sys
+
+from pyasn1.codec.der import decoder
+from pyasn1.type import univ
+from pyasn1_modules import pem
 
 
 def public_key_to_string(file, name):

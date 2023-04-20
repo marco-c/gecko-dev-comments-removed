@@ -3,11 +3,11 @@
 
 
 
-import sys
 import getopt
+import sys
+
 import telemetry
 import utils
-
 
 """
 The analysis is based on the following query:

@@ -3,11 +3,12 @@
 
 
 
-import sys
 import getopt
-import utils
-import stackanalysis
+import sys
+
 import fn_anchors
+import stackanalysis
+import utils
 
 """
 The analysis is based on stack frames of the following form:

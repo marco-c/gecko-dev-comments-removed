@@ -4,12 +4,12 @@
 import argparse
 import datetime
 import os
-import requests
 import shutil
 import subprocess
 import sys
 import tarfile
 
+import requests
 
 
 

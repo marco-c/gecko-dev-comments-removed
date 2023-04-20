@@ -2,8 +2,9 @@
 
 
 
-import requests
 import time
+
+import requests
 
 
 def query(key, query, p_params):

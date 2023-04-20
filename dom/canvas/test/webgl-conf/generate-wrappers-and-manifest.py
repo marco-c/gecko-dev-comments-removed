@@ -7,9 +7,9 @@
 
 
 import os
-from pathlib import Path
 import re
 import shutil
+from pathlib import Path
 
 
 WRAPPER_TEMPLATE_FILE = "mochi-wrapper.html.template"
