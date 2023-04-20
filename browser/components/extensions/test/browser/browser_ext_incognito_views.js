@@ -20,7 +20,10 @@ add_task(async function testIncognitoViews() {
     incognitoOverride: "spanning",
     manifest: {
       permissions: ["tabs"],
-      description: Services.env.get("MOZ_HEADLESS") ? "headless" : "",
+      description: JSON.stringify({
+        headless: Services.env.get("MOZ_HEADLESS"),
+        debug: AppConstants.DEBUG,
+      }),
       browser_action: {
         default_popup: "popup.html",
         default_area: "navbar",
@@ -29,7 +32,9 @@ add_task(async function testIncognitoViews() {
 
     background: async function() {
       window.isBackgroundPage = true;
-      const headless = browser.runtime.getManifest().description === "headless";
+      const { headless, debug } = JSON.parse(
+        browser.runtime.getManifest().description
+      );
 
       class ConnectedPopup {
         #msgPromise;
@@ -158,7 +163,9 @@ add_task(async function testIncognitoViews() {
           
           
           
-          await privatePopup.closePopup("Work-around for bug 1809000");
+          if (debug) {
+            await privatePopup.closePopup("Work-around for bug 1809000");
+          }
 
           await browser.windows.remove(window.id);
           

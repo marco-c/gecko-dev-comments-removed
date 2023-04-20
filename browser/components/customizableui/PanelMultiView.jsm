@@ -631,7 +631,8 @@ var PanelMultiView = class extends AssociatedToNode {
 
 
   _moveOutKids() {
-    let viewCacheId = this.node.getAttribute("viewCacheId");
+    
+    let viewCacheId = this.node?.getAttribute("viewCacheId");
     if (!viewCacheId) {
       return;
     }
