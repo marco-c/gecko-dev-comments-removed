@@ -44,8 +44,6 @@ class InputVolumeController final {
     
     int clipped_level_min = 70;
     
-    bool digital_adaptive_follows = true;
-    
     
     int clipped_level_step = 15;
     
@@ -57,9 +55,7 @@ class InputVolumeController final {
     
     bool enable_clipping_predictor = false;
     
-    
     int max_digital_gain_db = 30;
-    int min_digital_gain_db = 0;
   };
 
   
@@ -158,9 +154,6 @@ class InputVolumeController final {
   const bool use_min_channel_level_;
   const int num_capture_channels_;
 
-  
-  const bool disable_digital_adaptive_;
-
   int frames_since_clipped_;
 
   
@@ -194,10 +187,8 @@ class MonoInputVolumeController {
  public:
   MonoInputVolumeController(int startup_min_level,
                             int clipped_level_min,
-                            bool disable_digital_adaptive,
                             int min_mic_level,
-                            int max_digital_gain_db,
-                            int min_digital_gain_db);
+                            int max_digital_gain_db);
   ~MonoInputVolumeController();
   MonoInputVolumeController(const MonoInputVolumeController&) = delete;
   MonoInputVolumeController& operator=(const MonoInputVolumeController&) =
@@ -241,10 +232,7 @@ class MonoInputVolumeController {
 
   const int min_mic_level_;
 
-  
-  const bool disable_digital_adaptive_;
   const int max_digital_gain_db_;
-  const int min_digital_gain_db_;
 
   int level_ = 0;
   int max_level_;
