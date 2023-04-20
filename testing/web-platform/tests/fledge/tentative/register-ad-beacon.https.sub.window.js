@@ -3,6 +3,8 @@
 
 
 
+"use strict;"
+
 promise_test(async test => {
   const uuid = generateUuid(test);
   await runReportTest(
