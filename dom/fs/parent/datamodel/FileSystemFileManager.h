@@ -18,23 +18,120 @@ class nsCOMPtr;
 
 class nsIFileURL;
 
-namespace mozilla::dom::fs::data {
+namespace mozilla::dom {
 
-Result<nsCOMPtr<nsIFile>, QMResult> GetDatabasePath(const Origin& aOrigin,
-                                                    bool& aExists);
+namespace quota {
+
+struct OriginMetadata;
+
+}  
+
+namespace fs::data {
+
+
+
+
+
+
+
+
+Result<nsCOMPtr<nsIFile>, QMResult> GetFileSystemDirectory(
+    const Origin& aOrigin);
+
+
+
+
+
+
+
+nsresult EnsureFileSystemDirectory(
+    const quota::OriginMetadata& aOriginMetadata);
+
+
+
+
+
+
+
+
+
+
+Result<nsCOMPtr<nsIFile>, QMResult> GetDatabaseFile(const Origin& aOrigin);
+
+
+
+
+
+
+
+
+
 
 Result<nsCOMPtr<nsIFileURL>, QMResult> GetDatabaseFileURL(
-    const nsCOMPtr<nsIFile>& aDatabaseFile, const int64_t aDirectoryLockId);
+    const Origin& aOrigin, const int64_t aDirectoryLockId);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class FileSystemFileManager {
  public:
+  
+
+
+
+
+
   static Result<FileSystemFileManager, QMResult> CreateFileSystemFileManager(
       const Origin& aOrigin);
+
+  
+
+
+
+
+
+
 
   static Result<FileSystemFileManager, QMResult> CreateFileSystemFileManager(
       nsCOMPtr<nsIFile>&& topDirectory);
 
+  
+
+
+
+
+
+
+  Result<nsCOMPtr<nsIFile>, QMResult> GetFile(const EntryId& aEntryId) const;
+
+  
+
+
+
+
+
   Result<nsCOMPtr<nsIFile>, QMResult> GetOrCreateFile(const EntryId& aEntryId);
+
+  
+
+
+
+
 
   nsresult RemoveFile(const EntryId& aEntryId);
 
@@ -44,6 +141,7 @@ class FileSystemFileManager {
   nsCOMPtr<nsIFile> mTopDirectory;
 };
 
+}  
 }  
 
 #endif  
