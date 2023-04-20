@@ -3196,7 +3196,8 @@ void SVGTextFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
       ctxSR.EnsureSaved(&aContext);
       
       
-      SVGUtils::SetupStrokeGeometry(frame, &aContext, outerContextPaint);
+      SVGUtils::SetupStrokeGeometry(frame->GetParent(), &aContext,
+                                    outerContextPaint);
     }
 
     nscoord startEdge, endEdge;
