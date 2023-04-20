@@ -11,6 +11,18 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 const MigrationDialog = {
   _wiz: null,
 
@@ -21,6 +33,23 @@ const MigrationDialog = {
   onLoad() {
     this._wiz = document.getElementById("wizard");
     this._wiz.addEventListener("MigrationWizard:Close", this);
+
+    let args = window.arguments[0];
+    
+    
+    
+    
+    if (args instanceof Ci.nsISupports) {
+      args = args.wrappedJSObject;
+    }
+
+    
+    
+    
+    let observer = new ResizeObserver(() => {
+      args.onResize();
+    });
+    observer.observe(this._wiz);
   },
 
   handleEvent(event) {
