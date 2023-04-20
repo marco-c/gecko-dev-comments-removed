@@ -411,6 +411,12 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
 
   
   
+  RefPtr<nsAtom> mPrevLanguage;
+  nsCString mSampleLang;
+  bool mUseCustomLookups = false;
+
+  
+  
   
   
   

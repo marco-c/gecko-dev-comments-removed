@@ -2145,9 +2145,6 @@ bool gfxFcPlatformFontList::FindAndAddFamiliesLocked(
 
   
   
-  nsAutoCString lang;
-  GetSampleLangForGroup(aLanguage, lang);
-  ToLowerCase(lang);
   nsAutoCString cacheKey;
 
   
@@ -2157,13 +2154,21 @@ bool gfxFcPlatformFontList::FindAndAddFamiliesLocked(
   
   
   
-  Locale locale;
-  if (LocaleParser::TryParse(lang, locale).isOk() &&
-      locale.AddLikelySubtags().isOk()) {
-    if (UseCustomFontconfigLookupsForLocale(locale)) {
-      cacheKey = lang;
-      cacheKey.Append(':');
-    }
+  
+  
+  
+  if (aLanguage != mPrevLanguage) {
+    GetSampleLangForGroup(aLanguage, mSampleLang);
+    ToLowerCase(mSampleLang);
+    Locale locale;
+    mUseCustomLookups = LocaleParser::TryParse(mSampleLang, locale).isOk() &&
+                        locale.AddLikelySubtags().isOk() &&
+                        UseCustomFontconfigLookupsForLocale(locale);
+    mPrevLanguage = aLanguage;
+  }
+  if (mUseCustomLookups) {
+    cacheKey = mSampleLang;
+    cacheKey.Append(':');
   }
 
   cacheKey.Append(familyName);
@@ -2180,8 +2185,8 @@ bool gfxFcPlatformFontList::FindAndAddFamiliesLocked(
   const FcChar8* terminator = nullptr;
   RefPtr<FcPattern> sentinelSubst = dont_AddRef(FcPatternCreate());
   FcPatternAddString(sentinelSubst, FC_FAMILY, kSentinelName);
-  if (!lang.IsEmpty()) {
-    FcPatternAddString(sentinelSubst, FC_LANG, ToFcChar8Ptr(lang.get()));
+  if (!mSampleLang.IsEmpty()) {
+    FcPatternAddString(sentinelSubst, FC_LANG, ToFcChar8Ptr(mSampleLang.get()));
   }
   FcConfigSubstitute(nullptr, sentinelSubst, FcMatchPattern);
 
@@ -2209,8 +2214,8 @@ bool gfxFcPlatformFontList::FindAndAddFamiliesLocked(
   FcPatternAddString(fontWithSentinel, FC_FAMILY,
                      ToFcChar8Ptr(familyName.get()));
   FcPatternAddString(fontWithSentinel, FC_FAMILY, kSentinelName);
-  if (!lang.IsEmpty()) {
-    FcPatternAddString(sentinelSubst, FC_LANG, ToFcChar8Ptr(lang.get()));
+  if (!mSampleLang.IsEmpty()) {
+    FcPatternAddString(sentinelSubst, FC_LANG, ToFcChar8Ptr(mSampleLang.get()));
   }
   FcConfigSubstitute(nullptr, fontWithSentinel, FcMatchPattern);
 
