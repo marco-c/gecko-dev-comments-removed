@@ -2236,6 +2236,7 @@ nsStyleDisplay::nsStyleDisplay(const Document& aDocument)
       mOffsetDistance(LengthPercentage::Zero()),
       mOffsetRotate{true, StyleAngle{0.0}},
       mOffsetAnchor(StylePositionOrAuto::Auto()),
+      mOffsetPosition(StylePositionOrAuto::Auto()),
       mTransformOrigin{LengthPercentage::FromPercentage(0.5),
                        LengthPercentage::FromPercentage(0.5),
                        {0.}},
@@ -2293,6 +2294,7 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
       mOffsetDistance(aSource.mOffsetDistance),
       mOffsetRotate(aSource.mOffsetRotate),
       mOffsetAnchor(aSource.mOffsetAnchor),
+      mOffsetPosition(aSource.mOffsetPosition),
       mTransformOrigin(aSource.mTransformOrigin),
       mChildPerspective(aSource.mChildPerspective),
       mPerspectiveOrigin(aSource.mPerspectiveOrigin),
@@ -2342,14 +2344,23 @@ static inline nsChangeHint CompareTransformValues(
 
 static inline nsChangeHint CompareMotionValues(
     const nsStyleDisplay& aDisplay, const nsStyleDisplay& aNewDisplay) {
-  if (aDisplay.mOffsetPath == aNewDisplay.mOffsetPath) {
+  if (aDisplay.mOffsetPath == aNewDisplay.mOffsetPath &&
+      aDisplay.mOffsetPosition == aNewDisplay.mOffsetPosition) {
     if (aDisplay.mOffsetDistance == aNewDisplay.mOffsetDistance &&
         aDisplay.mOffsetRotate == aNewDisplay.mOffsetRotate &&
         aDisplay.mOffsetAnchor == aNewDisplay.mOffsetAnchor) {
       return nsChangeHint(0);
     }
 
-    if (aDisplay.mOffsetPath.IsNone()) {
+    
+    if (!aDisplay.IsStackingContext()) {
+      return nsChangeHint_NeutralChange;
+    }
+
+    
+    if (aDisplay.mOffsetPath.IsNone() &&
+        aDisplay.mOffsetAnchor == aNewDisplay.mOffsetAnchor) {
+      
       return nsChangeHint_NeutralChange;
     }
   }
@@ -2359,7 +2370,7 @@ static inline nsChangeHint CompareMotionValues(
   
   
   nsChangeHint result = nsChangeHint_UpdateTransformLayer;
-  if (!aDisplay.mOffsetPath.IsNone() && !aNewDisplay.mOffsetPath.IsNone()) {
+  if (aDisplay.IsStackingContext() && aNewDisplay.IsStackingContext()) {
     result |= nsChangeHint_UpdatePostTransformOverflow;
   } else {
     result |= nsChangeHint_UpdateOverflow;
