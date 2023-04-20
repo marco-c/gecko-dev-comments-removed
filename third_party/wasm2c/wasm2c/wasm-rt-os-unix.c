@@ -4,8 +4,8 @@
 #if !defined(_WIN32) && (defined(__unix__) || defined(__unix) || \
                          (defined(__APPLE__) && defined(__MACH__)))
 
-#include "wasm-rt.h"
 #include "wasm-rt-os.h"
+#include "wasm-rt.h"
 
 #include <errno.h>
 #include <inttypes.h>
@@ -14,15 +14,17 @@
 #include <string.h>
 
 #if defined(__APPLE__) && defined(__MACH__)
-  
-  #include <sys/time.h>
-  #include <mach/mach_time.h>
+
+
+#include <mach/mach_time.h>
+#include <sys/time.h>
 #endif
 #include <sys/mman.h>
 #include <unistd.h>
 
 #ifdef VERBOSE_LOGGING
-#define VERBOSE_LOG(...) { printf(__VA_ARGS__); }
+#define VERBOSE_LOG(...) \
+  { printf(__VA_ARGS__); }
 #else
 #define VERBOSE_LOG(...)
 #endif
@@ -116,19 +118,19 @@ void* os_mmap_aligned(void* addr,
   size_t padded_length = requested_length + alignment + alignment_offset;
   uintptr_t unaligned = (uintptr_t)os_mmap(addr, padded_length, prot, flags);
 
-  VERBOSE_LOG("os_mmap_aligned: alignment:%llu, alignment_offset:%llu, requested_length:%llu, padded_length: %llu, initial mapping: %p\n",
-    (unsigned long long) alignment,
-    (unsigned long long) alignment_offset,
-    (unsigned long long) requested_length,
-    (unsigned long long) padded_length,
-    (void*) unaligned);
+  VERBOSE_LOG(
+      "os_mmap_aligned: alignment:%llu, alignment_offset:%llu, "
+      "requested_length:%llu, padded_length: %llu, initial mapping: %p\n",
+      (unsigned long long)alignment, (unsigned long long)alignment_offset,
+      (unsigned long long)requested_length, (unsigned long long)padded_length,
+      (void*)unaligned);
 
   if (!unaligned) {
     return (void*)unaligned;
   }
 
   
-  const size_t alignment_corrected = alignment == 0? 1 : alignment;
+  const size_t alignment_corrected = alignment == 0 ? 1 : alignment;
   uintptr_t aligned_nonoffset =
       (unaligned + (alignment_corrected - 1)) & ~(alignment_corrected - 1);
 
@@ -145,7 +147,8 @@ void* os_mmap_aligned(void* addr,
   if (aligned < unaligned ||
       (aligned + (requested_length - 1)) > (unaligned + (padded_length - 1)) ||
       (aligned + alignment_offset) % alignment_corrected != 0) {
-    VERBOSE_LOG("os_mmap_aligned: sanity check fail. aligned: %p\n", (void*) aligned);
+    VERBOSE_LOG("os_mmap_aligned: sanity check fail. aligned: %p\n",
+                (void*)aligned);
     os_munmap((void*)unaligned, padded_length);
     return NULL;
   }
@@ -165,108 +168,117 @@ void* os_mmap_aligned(void* addr,
     }
   }
 
-  VERBOSE_LOG("os_mmap_aligned: final mapping: %p\n", (void*) aligned);
+  VERBOSE_LOG("os_mmap_aligned: final mapping: %p\n", (void*)aligned);
   return (void*)aligned;
 }
 
-int os_mmap_commit(void* curr_heap_end_pointer, size_t expanded_size, int prot) {
+int os_mmap_commit(void* curr_heap_end_pointer,
+                   size_t expanded_size,
+                   int prot) {
   return os_mprotect(curr_heap_end_pointer, expanded_size, prot);
 }
 
 #if defined(__APPLE__) && defined(__MACH__)
-  typedef struct {
-    mach_timebase_info_data_t timebase; 
-    struct timespec           inittime; 
-    uint64_t                  initclock; 
-  } wasi_mac_clock_info_t;
+typedef struct {
+  mach_timebase_info_data_t timebase; 
+  struct timespec inittime; 
+  uint64_t initclock;       
+} wasi_mac_clock_info_t;
 
-  static wasi_mac_clock_info_t g_wasi_mac_clock_info;
-  static int g_os_data_initialized = 0;
+static wasi_mac_clock_info_t g_wasi_mac_clock_info;
+static int g_os_data_initialized = 0;
 #endif
 
-
 void os_init() {
-  #if defined(__APPLE__) && defined(__MACH__)
-    
-    if (mach_timebase_info(&g_wasi_mac_clock_info.timebase) != 0) {
-      wasm_rt_trap(WASM_RT_TRAP_WASI);
-    }
+#if defined(__APPLE__) && defined(__MACH__)
+  
+  
+  if (mach_timebase_info(&g_wasi_mac_clock_info.timebase) != 0) {
+    wasm_rt_trap(WASM_RT_TRAP_WASI);
+  }
 
-    
-    struct timeval micro;
-    if (gettimeofday(&micro, NULL) != 0) {
-      wasm_rt_trap(WASM_RT_TRAP_WASI);
-    }
+  
+  struct timeval micro;
+  if (gettimeofday(&micro, NULL) != 0) {
+    wasm_rt_trap(WASM_RT_TRAP_WASI);
+  }
 
-    g_wasi_mac_clock_info.initclock = mach_absolute_time();
+  g_wasi_mac_clock_info.initclock = mach_absolute_time();
 
-    g_wasi_mac_clock_info.inittime.tv_sec = micro.tv_sec;
-    g_wasi_mac_clock_info.inittime.tv_nsec = micro.tv_usec * 1000;
+  g_wasi_mac_clock_info.inittime.tv_sec = micro.tv_sec;
+  g_wasi_mac_clock_info.inittime.tv_nsec = micro.tv_usec * 1000;
 
-    g_os_data_initialized = 1;
-  #endif
+  g_os_data_initialized = 1;
+#endif
 }
 
 void os_clock_init(void** clock_data_pointer) {
-  #if defined(__APPLE__) && defined(__MACH__)
-    if (!g_os_data_initialized) {
-      os_init();
-    }
+#if defined(__APPLE__) && defined(__MACH__)
+  if (!g_os_data_initialized) {
+    os_init();
+  }
 
-    wasi_mac_clock_info_t* alloc = (wasi_mac_clock_info_t*) malloc(sizeof(wasi_mac_clock_info_t));
-    if (!alloc) {
-      wasm_rt_trap(WASM_RT_TRAP_WASI);
-    }
-    memcpy(alloc, &g_wasi_mac_clock_info, sizeof(wasi_mac_clock_info_t));
-    *clock_data_pointer = alloc;
-  #endif
+  wasi_mac_clock_info_t* alloc =
+      (wasi_mac_clock_info_t*)malloc(sizeof(wasi_mac_clock_info_t));
+  if (!alloc) {
+    wasm_rt_trap(WASM_RT_TRAP_WASI);
+  }
+  memcpy(alloc, &g_wasi_mac_clock_info, sizeof(wasi_mac_clock_info_t));
+  *clock_data_pointer = alloc;
+#endif
 }
 
 void os_clock_cleanup(void** clock_data_pointer) {
-  #if defined(__APPLE__) && defined(__MACH__)
-    if (*clock_data_pointer == 0) {
-      free(*clock_data_pointer);
-      *clock_data_pointer = 0;
-    }
-  #endif
+#if defined(__APPLE__) && defined(__MACH__)
+  if (*clock_data_pointer == 0) {
+    free(*clock_data_pointer);
+    *clock_data_pointer = 0;
+  }
+#endif
 }
 
-int os_clock_gettime(void* clock_data, int clock_id, struct timespec* out_struct) {
+int os_clock_gettime(void* clock_data,
+                     int clock_id,
+                     struct timespec* out_struct) {
   int ret = 0;
-  #if defined(__APPLE__) && defined(__MACH__)
-    wasi_mac_clock_info_t* alloc = (wasi_mac_clock_info_t*) clock_data;
+#if defined(__APPLE__) && defined(__MACH__)
+  wasi_mac_clock_info_t* alloc = (wasi_mac_clock_info_t*)clock_data;
 
-    
+  
+  
 
-    (void)clock_id;
-    
-    uint64_t clock = mach_absolute_time() - alloc->initclock;
-    
-    uint64_t nano = clock * (uint64_t)(alloc->timebase.numer) / (uint64_t)(alloc->timebase.denom);
-    *out_struct = alloc->inittime;
+  (void)clock_id;
+  
+  uint64_t clock = mach_absolute_time() - alloc->initclock;
+  
+  uint64_t nano = clock * (uint64_t)(alloc->timebase.numer) /
+                  (uint64_t)(alloc->timebase.denom);
+  *out_struct = alloc->inittime;
 
-    #define BILLION 1000000000L
-    out_struct->tv_sec += nano / BILLION;
-    out_struct->tv_nsec += nano % BILLION;
-    
-    out_struct->tv_sec += out_struct->tv_nsec / BILLION;
-    out_struct->tv_nsec = out_struct->tv_nsec % BILLION;
-    #undef BILLION
-  #else
-    ret = clock_gettime(clock_id, out_struct);
-  #endif
+#define BILLION 1000000000L
+  out_struct->tv_sec += nano / BILLION;
+  out_struct->tv_nsec += nano % BILLION;
+  
+  out_struct->tv_sec += out_struct->tv_nsec / BILLION;
+  out_struct->tv_nsec = out_struct->tv_nsec % BILLION;
+#undef BILLION
+#else
+  ret = clock_gettime(clock_id, out_struct);
+#endif
   return ret;
 }
 
-int os_clock_getres(void* clock_data, int clock_id, struct timespec* out_struct) {
+int os_clock_getres(void* clock_data,
+                    int clock_id,
+                    struct timespec* out_struct) {
   int ret = 0;
-  #if defined(__APPLE__) && defined(__MACH__)
-    (void)clock_id;
-    out_struct->tv_sec = 0;
-    out_struct->tv_nsec = 1;
-  #else
-    ret = clock_getres(clock_id, out_struct);
-  #endif
+#if defined(__APPLE__) && defined(__MACH__)
+  (void)clock_id;
+  out_struct->tv_sec = 0;
+  out_struct->tv_nsec = 1;
+#else
+  ret = clock_getres(clock_id, out_struct);
+#endif
   return ret;
 }
 
@@ -277,6 +289,6 @@ void os_print_last_error(const char* msg) {
 #undef VERBOSE_LOG
 
 #else
-  
-  typedef int make_iso_compilers_happy;
+
+typedef int make_iso_compilers_happy;
 #endif
