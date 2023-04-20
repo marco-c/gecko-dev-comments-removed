@@ -77,14 +77,10 @@ static const unsigned int NEGATIVE_RECORD_LIFETIME = 60;
 
 
 
-#define HighThreadThreshold MAX_RESOLVER_THREADS_FOR_ANY_PRIORITY
-#define LongIdleTimeoutSeconds 300  // for threads 1 -> HighThreadThreshold
-#define ShortIdleTimeoutSeconds \
-  60  // for threads HighThreadThreshold+1 -> MAX_RESOLVER_THREADS
 
-static_assert(
-    HighThreadThreshold <= MAX_RESOLVER_THREADS,
-    "High Thread Threshold should be less equal Maximum allowed thread");
+#define LongIdleTimeoutSeconds 300
+
+#define ShortIdleTimeoutSeconds 60
 
 
 
@@ -228,8 +224,8 @@ nsresult nsHostResolver::Init() MOZ_NO_THREAD_SAFETY_ANALYSIS {
   }
 
   nsCOMPtr<nsIThreadPool> threadPool = new nsThreadPool();
-  MOZ_ALWAYS_SUCCEEDS(threadPool->SetThreadLimit(MAX_RESOLVER_THREADS));
-  MOZ_ALWAYS_SUCCEEDS(threadPool->SetIdleThreadLimit(MAX_RESOLVER_THREADS));
+  MOZ_ALWAYS_SUCCEEDS(threadPool->SetThreadLimit(MaxResolverThreads()));
+  MOZ_ALWAYS_SUCCEEDS(threadPool->SetIdleThreadLimit(MaxResolverThreads()));
   MOZ_ALWAYS_SUCCEEDS(threadPool->SetIdleThreadTimeout(poolTimeoutMs));
   MOZ_ALWAYS_SUCCEEDS(
       threadPool->SetThreadStackSize(nsIThreadManager::kThreadPoolStackSize));
@@ -810,9 +806,9 @@ nsresult nsHostResolver::ConditionallyCreateThread(nsHostRecord* rec) {
   if (mNumIdleTasks) {
     
     mIdleTaskCV.Notify();
-  } else if ((mActiveTaskCount < HighThreadThreshold) ||
+  } else if ((mActiveTaskCount < MaxResolverThreadsAnyPriority()) ||
              (IsHighPriority(rec->flags) &&
-              mActiveTaskCount < MAX_RESOLVER_THREADS)) {
+              mActiveTaskCount < MaxResolverThreads())) {
     nsCOMPtr<nsIRunnable> event = mozilla::NewRunnableMethod(
         "nsHostResolver::ThreadFunc", this, &nsHostResolver::ThreadFunc);
     mActiveTaskCount++;
@@ -1213,8 +1209,9 @@ bool nsHostResolver::GetHostToLookup(AddrHostRecord** result) {
 
   MutexAutoLock lock(mLock);
 
-  timeout = (mNumIdleTasks >= HighThreadThreshold) ? mShortIdleTimeout
-                                                   : mLongIdleTimeout;
+  timeout = (mNumIdleTasks >= MaxResolverThreadsAnyPriority())
+                ? mShortIdleTimeout
+                : mLongIdleTimeout;
   epoch = TimeStamp::Now();
 
   while (!mShutdown) {
@@ -1230,7 +1227,7 @@ bool nsHostResolver::GetHostToLookup(AddrHostRecord** result) {
       return true;
     }
 
-    if (mActiveAnyThreadCount < HighThreadThreshold) {
+    if (mActiveAnyThreadCount < MaxResolverThreadsAnyPriority()) {
       addrRec = mQueue.Dequeue(false, lock);
       if (addrRec) {
         MOZ_ASSERT(IsMediumPriority(addrRec->flags) ||
