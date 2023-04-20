@@ -153,6 +153,11 @@ struct ImmPtr {
 
   struct NoCheckToken {};
 
+  explicit constexpr ImmPtr(std::nullptr_t) : value(nullptr) {
+    
+    
+  }
+
   explicit ImmPtr(void* value, NoCheckToken) : value(value) {
     
     
