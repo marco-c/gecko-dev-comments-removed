@@ -11,7 +11,9 @@ add_setup(clickTestSetup);
 
 
 
-async function runTest({ mode, openPageOptions = {} }) {
+
+
+async function runTest({ mode, detectOnly = false, openPageOptions = {} }) {
   let initFn = () => {
     
     if (Services.cookieBanners.isEnabled) {
@@ -19,7 +21,8 @@ async function runTest({ mode, openPageOptions = {} }) {
     }
   };
 
-  let shouldHandleBanner = mode == Ci.nsICookieBannerService.MODE_REJECT;
+  let shouldHandleBanner =
+    mode == Ci.nsICookieBannerService.MODE_REJECT && !detectOnly;
   let testURL = openPageOptions.testURL || TEST_PAGE_A;
   let triggerFn = async () => {
     await openPageAndVerify({
@@ -33,7 +36,7 @@ async function runTest({ mode, openPageOptions = {} }) {
     });
   };
 
-  await runEventTest({ mode, initFn, triggerFn, testURL });
+  await runEventTest({ mode, detectOnly, initFn, triggerFn, testURL });
 
   
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -50,7 +53,14 @@ add_task(async function test_events_mode_reject() {
 
 
 add_task(async function test_events_mode_detect_only() {
-  await runTest({ mode: Ci.nsICookieBannerService.MODE_DETECT_ONLY });
+  await runTest({
+    mode: Ci.nsICookieBannerService.MODE_REJECT,
+    detectOnly: true,
+  });
+  await runTest({
+    mode: Ci.nsICookieBannerService.MODE_REJECT_OR_ACCEPT,
+    detectOnly: true,
+  });
 });
 
 
@@ -59,7 +69,8 @@ add_task(async function test_events_mode_detect_only() {
 
 add_task(async function test_events_mode_detect_only_opt_in_rule() {
   await runTest({
-    mode: Ci.nsICookieBannerService.MODE_DETECT_ONLY,
+    mode: Ci.nsICookieBannerService.MODE_REJECT_OR_ACCEPT,
+    detectOnly: true,
     openPageOptions: {
       
       

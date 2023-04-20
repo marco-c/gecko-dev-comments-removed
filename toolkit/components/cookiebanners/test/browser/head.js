@@ -442,17 +442,23 @@ async function testClickResultTelemetry(expected, resetFOG = true) {
 
 
 
-async function runEventTest({ mode, initFn, triggerFn, testURL }) {
+
+
+async function runEventTest({ mode, detectOnly, initFn, triggerFn, testURL }) {
   await SpecialPowers.pushPrefEnv({
-    set: [["cookiebanners.service.mode", mode]],
+    set: [
+      ["cookiebanners.service.mode", mode],
+      ["cookiebanners.service.detectOnly", detectOnly],
+    ],
   });
 
   await initFn();
 
   let expectEventDetected = mode != Ci.nsICookieBannerService.MODE_DISABLED;
   let expectEventHandled =
-    mode == Ci.nsICookieBannerService.MODE_REJECT ||
-    mode == Ci.nsICookieBannerService.MODE_REJECT_OR_ACCEPT;
+    !detectOnly &&
+    (mode == Ci.nsICookieBannerService.MODE_REJECT ||
+      mode == Ci.nsICookieBannerService.MODE_REJECT_OR_ACCEPT);
 
   let eventObservedDetected = false;
   let eventObservedHandled = false;
