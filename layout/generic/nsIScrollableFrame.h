@@ -133,14 +133,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-  virtual nsMargin GetDesiredScrollbarSizes(nsBoxLayoutState* aState) = 0;
-  
-
-
-
-
-  virtual nsMargin GetDesiredScrollbarSizes(nsPresContext* aPresContext,
-                                            gfxContext* aRC) = 0;
+  virtual nsMargin GetDesiredScrollbarSizes() const = 0;
   
 
 

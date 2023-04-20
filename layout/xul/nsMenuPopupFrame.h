@@ -19,10 +19,9 @@
 #include "nsGkAtoms.h"
 #include "nsCOMPtr.h"
 #include "nsIDOMEventListener.h"
-#include "nsIReflowCallback.h"
 #include "nsXULPopupManager.h"
 
-#include "nsBoxFrame.h"
+#include "nsBlockFrame.h"
 
 #include "Units.h"
 
@@ -130,7 +129,7 @@ class nsXULPopupShownEvent final : public mozilla::Runnable,
   const RefPtr<nsPresContext> mPresContext;
 };
 
-class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
+class nsMenuPopupFrame final : public nsBlockFrame {
   using PopupLevel = mozilla::widget::PopupLevel;
   using PopupType = mozilla::widget::PopupType;
 
@@ -143,7 +142,7 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
 
   
   
-  nsPopupState PopupState() { return mPopupState; }
+  nsPopupState PopupState() const { return mPopupState; }
   void SetPopupState(nsPopupState);
 
   
@@ -166,6 +165,8 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
 
   mozilla::dom::XULPopupElement& PopupElement() const;
 
+  nscoord GetPrefISize(gfxContext*) final;
+  nscoord GetMinISize(gfxContext*) final;
   void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
               const ReflowInput& aReflowInput,
               nsReflowStatus& aStatus) override;
@@ -173,11 +174,11 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
   nsIWidget* GetWidget() const;
 
   
-  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
-                    nsIFrame* aPrevInFlow) override;
+  void Init(nsIContent* aContent, nsContainerFrame* aParent,
+            nsIFrame* aPrevInFlow) override;
 
-  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                    int32_t aModType) override;
+  nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                            int32_t aModType) override;
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void DestroyFrom(
@@ -211,13 +212,14 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void LayoutPopup(nsBoxLayoutState& aState);
+  void LayoutPopup(nsPresContext*, ReflowOutput&, const ReflowInput&,
+                   nsReflowStatus&);
 
   
   
   
   
-  nsresult SetPopupPosition(bool aIsMove);
+  void SetPopupPosition(bool aIsMove);
 
   
   
@@ -266,7 +268,7 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
 
   
   
-  bool IsInContentShell() { return mInContentShell; }
+  bool IsInContentShell() const { return mInContentShell; }
 
   
   
@@ -323,12 +325,32 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
   void MoveToAnchor(nsIContent* aAnchorContent, const nsAString& aPosition,
                     int32_t aXPos, int32_t aYPos, bool aAttributesOverride);
 
-  nsIScrollableFrame* GetScrollFrame(nsIFrame* aStart);
+  nsIScrollableFrame* GetScrollFrame() const;
 
-  void SetOverrideConstraintRect(mozilla::LayoutDeviceIntRect aRect) {
-    mOverrideConstraintRect = ToAppUnits(aRect, mozilla::AppUnitsPerCSSPixel());
+  void SetOverrideConstraintRect(const mozilla::CSSIntRect& aRect) {
+    mOverrideConstraintRect = mozilla::CSSIntRect::ToAppUnits(aRect);
   }
 
+  struct Rects {
+    
+    
+    nsRect mAnchorRect;
+    
+    
+    
+    nsRect mUntransformedAnchorRect;
+    
+    nsRect mUsedRect;
+    
+    
+    nscoord mAlignmentOffset = 0;
+    bool mHFlip = false;
+    bool mVFlip = false;
+    
+    mozilla::LayoutDeviceIntPoint mClientOffset;
+    nsPoint mViewPoint;
+  };
+
   
   
   
@@ -337,24 +359,12 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
   
   
   
-  
+  Rects GetRects(const nsSize& aPrefSize) const;
   mozilla::LayoutDeviceIntRect GetConstraintRect(
       const mozilla::LayoutDeviceIntRect& aAnchorRect,
       const mozilla::LayoutDeviceIntRect& aRootScreenRect,
-      PopupLevel aPopupLevel);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void CanAdjustEdges(mozilla::Side aHorizontalSide,
-                      mozilla::Side aVerticalSide,
-                      mozilla::LayoutDeviceIntPoint& aChange);
+      PopupLevel aPopupLevel) const;
+  void PerformMove(const Rects&);
 
   
   bool IsAnchored() const { return mAnchorType != MenuPopupAnchorType_Point; }
@@ -401,18 +411,10 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
 
   void WillDispatchPopupPositioned() { mPendingPositionedEvent = false; }
 
-  
-  virtual bool ReflowFinished() override;
-  virtual void ReflowCallbackCanceled() override;
-
  protected:
   
   PopupLevel GetPopupLevel(bool aIsNoAutoHide) const;
-
-  void ConstrainSizeForWayland(nsSize&) const;
-
-  
-  ReflowChildFlags GetXULLayoutFlags() override;
+  void TweakMinPrefISize(nscoord&);
 
   void InitPositionFromAnchorAlign(const nsAString& aAnchor,
                                    const nsAString& aAlign);
@@ -420,12 +422,14 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
   
   
   
-  nsPoint AdjustPositionForAnchorAlign(nsRect& anchorRect, FlipStyle& aHFlip,
-                                       FlipStyle& aVFlip);
+  nsPoint AdjustPositionForAnchorAlign(nsRect& aAnchorRect,
+                                       const nsSize& aPrefSize,
+                                       FlipStyle& aHFlip,
+                                       FlipStyle& aVFlip) const;
 
   
   
-  nsIFrame* GetSelectedItemForAlignment();
+  nsIFrame* GetSelectedItemForAlignment() const;
 
   
   
@@ -445,7 +449,7 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
                        nscoord aScreenBegin, nscoord aScreenEnd,
                        nscoord aAnchorBegin, nscoord aAnchorEnd,
                        nscoord aMarginBegin, nscoord aMarginEnd,
-                       FlipStyle aFlip, bool aIsOnEnd, bool* aFlipSide);
+                       FlipStyle aFlip, bool aIsOnEnd, bool* aFlipSide) const;
 
   
   
@@ -463,12 +467,12 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
   
   nscoord SlideOrResize(nscoord& aScreenPoint, nscoord aSize,
                         nscoord aScreenBegin, nscoord aScreenEnd,
-                        nscoord* aOffset);
+                        nscoord* aOffset) const;
 
   
   
   nsRect ComputeAnchorRect(nsPresContext* aRootPresContext,
-                           nsIFrame* aAnchorFrame);
+                           nsIFrame* aAnchorFrame) const;
 
   
   
@@ -487,7 +491,7 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
   
   
   
-  bool ShouldFollowAnchor();
+  bool ShouldFollowAnchor() const;
 
   nsIFrame* GetAnchorFrame() const;
 
@@ -533,24 +537,24 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
   
   nsCOMPtr<nsIContent> mTriggerContent;
 
-  nsView* mView;
+  nsView* mView = nullptr;
 
   RefPtr<nsXULPopupShownEvent> mPopupShownDispatcher;
 
   
-  nsIntRect mUsedScreenRect;
+  nsRect mUsedScreenRect;
 
   
   
   
   
-  nsSize mPrefSize;
+  nsSize mPrefSize{-1, -1};
 
   
   
   
-  int32_t mXPos;
-  int32_t mYPos;
+  int32_t mXPos = 0;
+  int32_t mYPos = 0;
   nsRect mScreenRect;
   
   
@@ -560,58 +564,39 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
 
   
   
-  bool mPositionedByMoveToRect = false;
-
   
-  
-  
-  nscoord mAlignmentOffset;
+  nscoord mAlignmentOffset = 0;
 
   
   
   
   mozilla::LayoutDeviceIntPoint mLastClientOffset;
 
-  PopupType mPopupType;      
-  nsPopupState mPopupState;  
+  PopupType mPopupType = PopupType::Panel;  
+  nsPopupState mPopupState = ePopupClosed;  
 
   
-  int8_t mPopupAlignment;
-  int8_t mPopupAnchor;
-  int8_t mPosition;
+  int8_t mPopupAlignment = POPUPALIGNMENT_NONE;
+  int8_t mPopupAnchor = POPUPALIGNMENT_NONE;
+  int8_t mPosition = POPUPPOSITION_UNKNOWN;
 
-  FlipType mFlip;  
-
-  struct ReflowCallbackData {
-    ReflowCallbackData() = default;
-    void MarkPosted(bool aIsOpenChanged) {
-      mPosted = true;
-      mIsOpenChanged = aIsOpenChanged;
-    }
-    void Clear() {
-      mPosted = false;
-      mIsOpenChanged = false;
-    }
-    bool mPosted = false;
-    bool mIsOpenChanged = false;
-  };
-  ReflowCallbackData mReflowCallbackData;
-
-  bool mIsOpenChanged;  
-  bool mIsContextMenu = false;  
-  bool mIsTopLevelContextMenu = false;  
-
-  bool mMenuCanOverlapOSBar;  
-  bool mInContentShell;       
+  FlipType mFlip = FlipType_Default;  
 
   
   
+  bool mPositionedByMoveToRect = false;
   
-  bool mIsOffset;
+  bool mIsOpenChanged = false;
+  
+  bool mIsContextMenu = false;
+  
+  bool mIsTopLevelContextMenu = false;
+  
+  bool mInContentShell = true;
 
   
-  bool mHFlip;
-  bool mVFlip;
+  bool mHFlip = false;
+  bool mVFlip = false;
 
   
   
@@ -628,10 +613,11 @@ class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
   
   
   
-  nscoord mPositionedOffset;
+  
+  mutable nscoord mPositionedOffset = 0;
 
   
-  MenuPopupAnchorType mAnchorType;
+  MenuPopupAnchorType mAnchorType = MenuPopupAnchorType_Node;
 
   nsRect mOverrideConstraintRect;
 
