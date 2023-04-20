@@ -683,19 +683,8 @@ class JS_PUBLIC_API JSAutoStructuredCloneBuffer {
   
 
 
-  void steal(JSStructuredCloneData* data, uint32_t* versionp = nullptr,
-             const JSStructuredCloneCallbacks** callbacks = nullptr,
-             void** closure = nullptr);
 
-  
-
-
-
-
-
-  void abandon() {
-    data_.ownTransferables_ = OwnTransferablePolicy::IgnoreTransferablesIfAny;
-  }
+  void giveTo(JSStructuredCloneData* data);
 
   bool read(JSContext* cx, JS::MutableHandleValue vp,
             const JS::CloneDataPolicy& cloneDataPolicy = JS::CloneDataPolicy(),
