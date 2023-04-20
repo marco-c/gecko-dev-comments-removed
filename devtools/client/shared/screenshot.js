@@ -329,6 +329,30 @@ function saveToClipboard(base64URI) {
   }
 }
 
+let _outputDirectory = null;
+
+
+
+
+
+
+
+
+async function getOutputDirectory() {
+  if (_outputDirectory) {
+    return _outputDirectory;
+  }
+
+  try {
+    
+    _outputDirectory = Services.dirsvc.get("Scrnshts", Ci.nsIFile).path;
+  } catch (e) {
+    _outputDirectory = await lazy.Downloads.getPreferredDownloadsDirectory();
+  }
+
+  return _outputDirectory;
+}
+
 
 
 
@@ -355,14 +379,14 @@ async function saveToFile(window, image) {
     filename += ".png";
   }
 
-  const downloadsDir = await lazy.Downloads.getPreferredDownloadsDirectory();
-  const downloadsDirExists = await IOUtils.exists(downloadsDir);
-  if (downloadsDirExists) {
+  const dir = await getOutputDirectory();
+  const dirExists = await IOUtils.exists(dir);
+  if (dirExists) {
     
     
     filename = PathUtils.isAbsolute(filename)
       ? filename
-      : PathUtils.joinRelative(downloadsDir, filename);
+      : PathUtils.joinRelative(dir, filename);
   }
 
   const targetFile = new lazy.FileUtils.File(filename);
