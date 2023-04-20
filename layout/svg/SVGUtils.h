@@ -421,12 +421,6 @@ class SVGUtils final {
                                  const gfxRect& aBBox,
                                  const dom::UserSpaceMetrics& aMetrics);
 
-  
-
-
-
-  static nsIFrame* GetFirstNonAAncestorFrame(nsIFrame* aStartFrame);
-
   static bool OuterSVGIsCallingReflowSVG(nsIFrame* aFrame);
   static bool AnyOuterSVGIsCallingReflowSVG(nsIFrame* aFrame);
 
