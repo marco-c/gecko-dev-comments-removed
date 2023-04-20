@@ -536,6 +536,9 @@ class RTC_EXPORT RTCInboundRTPStreamStats final
   RTCStatsMember<uint32_t> frames_dropped;
   RTCStatsMember<double> total_decode_time;
   RTCStatsMember<double> total_processing_delay;
+  
+  RTCNonStandardStatsMember<double> total_assembly_time;
+  RTCNonStandardStatsMember<uint32_t> frames_assembled_from_multiple_packets;
   RTCStatsMember<double> total_inter_frame_delay;
   RTCStatsMember<double> total_squared_inter_frame_delay;
   
