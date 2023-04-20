@@ -42,6 +42,20 @@ loader.lazyRequireGetter(
 );
 
 
+
+
+
+
+
+
+
+loader.lazyRequireGetter(
+  this,
+  "unsafeGettersNames",
+  "resource://devtools/server/actors/webconsole/webidl-unsafe-getters-names.js"
+);
+
+
 const lazy = {};
 if (!isWorker) {
   loader.lazyGetter(
@@ -548,7 +562,10 @@ class ObjectActor extends Actor {
         continue;
       }
 
-      if (DevToolsUtils.hasSafeGetter(desc)) {
+      if (
+        DevToolsUtils.hasSafeGetter(desc) &&
+        !unsafeGettersNames.includes(name)
+      ) {
         getters.add(name);
       }
     }
