@@ -738,6 +738,8 @@ function makeRemoteTabResult(
 
 
 
+
+
 function makeSearchResult(
   queryContext,
   {
@@ -755,6 +757,7 @@ function makeSearchResult(
     inPrivateWindow,
     isPrivateEngine,
     heuristic = false,
+    trending = false,
     type = UrlbarUtils.RESULT_TYPE.SEARCH,
     source = UrlbarUtils.RESULT_SOURCE.SEARCH,
     satisfiesAutofillThreshold = false,
@@ -814,6 +817,7 @@ function makeSearchResult(
 
   if (typeof suggestion == "string") {
     result.payload.lowerCaseSuggestion = result.payload.suggestion.toLocaleLowerCase();
+    result.payload.trending = trending;
   }
 
   if (providerName) {
