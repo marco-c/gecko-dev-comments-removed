@@ -78,6 +78,17 @@ add_task(async function test_cached_contentscript_on_document_start() {
     },
   });
 
+  
+  let expectedMessages = [
+    "Error: Object exception",
+    "uncaught exception: String exception",
+    "ReferenceError: undefinedSymbol is not defined",
+    "SyntaxError: expected expression, got ')'",
+    "uncaught exception: rejected promise",
+    "Error: async function exception",
+    "ReferenceError: asyncUndefinedSymbol is not defined",
+  ];
+
   await extension.startup();
 
   
@@ -85,41 +96,53 @@ add_task(async function test_cached_contentscript_on_document_start() {
   let contentPage = await ExtensionTestUtils.loadContentPage(TEST_URL_1);
 
   
-  ContentTask.spawn(contentPage.browser, {}, () => {
-    this.collectedErrors = [];
+  let errorsPromise = ContentTask.spawn(contentPage.browser, {}, async () => {
+    return new Promise(resolve => {
+      function listener(error0) {
+        let error = error0.QueryInterface(Ci.nsIScriptError);
 
-    this.consoleErrorListener = error => {
-      error.QueryInterface(Ci.nsIScriptError);
-      
-      if (error.innerWindowID) {
+        
+        if (!error.innerWindowID) {
+          return;
+        }
+
         this.collectedErrors.push({
           innerWindowID: error.innerWindowID,
           message: error.errorMessage,
         });
+        if (this.collectedErrors.length == 7) {
+          Services.console.unregisterListener(this);
+          resolve(this.collectedErrors);
+        }
       }
-    };
-
-    Services.console.registerListener(this.consoleErrorListener);
+      listener.collectedErrors = [];
+      Services.console.registerListener(listener);
+    });
   });
 
   
   
   await contentPage.loadURL(TEST_URL_2);
 
+  let errors = await errorsPromise;
+
   await extension.awaitMessage("content-script-loaded");
 
-  const errors = await ContentTask.spawn(contentPage.browser, {}, () => {
-    Services.console.unregisterListener(this.consoleErrorListener);
-    return this.collectedErrors;
-  });
   equal(errors.length, 7);
+  let messages = [];
   for (const { innerWindowID, message } of errors) {
     equal(
       innerWindowID,
       contentPage.browser.innerWindowID,
       `Message ${message} has the innerWindowID set`
     );
+
+    messages.push(message);
   }
+
+  messages.sort();
+  expectedMessages.sort();
+  Assert.deepEqual(messages, expectedMessages, "Got the expected errors");
 
   await extension.unload();
 
