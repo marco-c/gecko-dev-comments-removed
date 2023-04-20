@@ -1,6 +1,6 @@
 "use strict";
 
-var { MigrationUtils, MigratorPrototype } = ChromeUtils.importESModule(
+var { MigrationUtils } = ChromeUtils.importESModule(
   "resource:///modules/MigrationUtils.sys.mjs"
 );
 var { LoginHelper } = ChromeUtils.import(
