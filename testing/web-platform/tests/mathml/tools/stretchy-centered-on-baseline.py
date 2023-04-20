@@ -4,7 +4,7 @@ from utils import mathfont
 import fontforge
 
 
-font = mathfont.create("stretchy", "Copyright (c) 2021 Igalia S.L.")
+font = mathfont.create("stretchy-centered-on-baseline", "Copyright (c) 2023 Igalia S.L.")
 
 
 font.math.MinConnectorOverlap = mathfont.em // 2
@@ -28,7 +28,7 @@ font.math.OverbarExtraAscender = 0
 horizontalArrow = 0x295A 
 verticalArrow = 0x295C 
 
-mathfont.createSizeVariants(font, aUsePUA = True, aCenterOnBaseline = False)
+mathfont.createSizeVariants(font, aUsePUA = True, aCenterOnBaseline = True)
 
 
 mathfont.createSquareGlyph(font, horizontalArrow)
