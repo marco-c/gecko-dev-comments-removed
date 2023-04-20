@@ -268,8 +268,9 @@ nsresult nsCookieBannerService::GetRuleForDomain(const nsACString& aDomain,
   return NS_OK;
 }
 
-nsresult nsCookieBannerService::GetRuleForURI(nsIURI* aURI,
-                                              nsICookieBannerRule** aRule) {
+nsresult nsCookieBannerService::GetRuleForURI(nsIURI* aURI, bool aIsTopLevel,
+                                              nsICookieBannerRule** aRule,
+                                              bool aReportTelemetry) {
   NS_ENSURE_ARG_POINTER(aURI);
   NS_ENSURE_ARG_POINTER(aRule);
   *aRule = nullptr;
@@ -288,7 +289,7 @@ nsresult nsCookieBannerService::GetRuleForURI(nsIURI* aURI,
   rv = eTLDService->GetBaseDomain(aURI, 0, baseDomain);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  return GetRuleForDomain(baseDomain, true, aRule);
+  return GetRuleForDomain(baseDomain, aIsTopLevel, aRule, aReportTelemetry);
 }
 
 NS_IMETHODIMP
@@ -355,7 +356,7 @@ nsCookieBannerService::GetCookiesForURI(
   }
 
   nsCOMPtr<nsICookieBannerRule> rule;
-  nsresult rv = GetRuleForURI(aURI, getter_AddRefs(rule));
+  nsresult rv = GetRuleForURI(aURI, true, getter_AddRefs(rule));
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!rule) {
@@ -397,8 +398,14 @@ nsCookieBannerService::GetClickRulesForDomain(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
+  
+  
+  
+  
+  
   nsCOMPtr<nsICookieBannerRule> ruleForDomain;
-  nsresult rv = GetRuleForDomain(aDomain, true, getter_AddRefs(ruleForDomain));
+  nsresult rv = GetRuleForDomain(aDomain, aIsTopLevel,
+                                 getter_AddRefs(ruleForDomain), true);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
