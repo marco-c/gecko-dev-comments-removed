@@ -199,6 +199,11 @@ class NetworkEmulationManager {
 
   
   
+  EmulatedNetworkNode* CreateUnconstrainedEmulatedNode() {
+    return CreateEmulatedNode(BuiltInNetworkBehaviorConfig());
+  }
+  
+  
   
   
   virtual EmulatedNetworkNode* CreateEmulatedNode(
