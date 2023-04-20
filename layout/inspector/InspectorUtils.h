@@ -125,7 +125,7 @@ class InspectorUtils {
 
   
   static void RgbToColorName(GlobalObject& aGlobal, uint8_t aR, uint8_t aG,
-                             uint8_t aB, nsAString& aResult);
+                             uint8_t aB, nsAString& aResult, ErrorResult& aRv);
 
   
   

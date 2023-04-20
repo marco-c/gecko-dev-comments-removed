@@ -361,7 +361,7 @@ function getClosestBackgroundColor(node) {
     const computedStyle = CssLogic.getComputedStyle(current);
     if (computedStyle) {
       const currentStyle = computedStyle.getPropertyValue("background-color");
-      if (InspectorUtils.isValidCSSColor(currentStyle)) {
+      if (colorUtils.isValidCSSColor(currentStyle)) {
         const currentCssColor = new colorUtils.CssColor(currentStyle);
         if (!currentCssColor.isTransparent()) {
           return currentCssColor.rgba;
@@ -467,7 +467,11 @@ async function getBackgroundColor({ rawNode: node, walker }) {
     !node.firstChild
   ) {
     return {
-      value: getClosestBackgroundColorInRGBA(node),
+      value: colorUtils.colorToRGBA(
+        getClosestBackgroundColor(node),
+        true,
+        true
+      ),
     };
   }
 
@@ -477,7 +481,11 @@ async function getBackgroundColor({ rawNode: node, walker }) {
   
   if (quads.length === 0 || !quads[0].bounds) {
     return {
-      value: getClosestBackgroundColorInRGBA(node),
+      value: colorUtils.colorToRGBA(
+        getClosestBackgroundColor(node),
+        true,
+        true
+      ),
     };
   }
 
@@ -495,7 +503,11 @@ async function getBackgroundColor({ rawNode: node, walker }) {
     firstChild.nodeType !== Node.TEXT_NODE
   ) {
     return {
-      value: getClosestBackgroundColorInRGBA(node),
+      value: colorUtils.colorToRGBA(
+        getClosestBackgroundColor(node),
+        true,
+        true
+      ),
     };
   }
 
@@ -508,7 +520,11 @@ async function getBackgroundColor({ rawNode: node, walker }) {
   
   if (!props) {
     return {
-      value: getClosestBackgroundColorInRGBA(node),
+      value: colorUtils.colorToRGBA(
+        getClosestBackgroundColor(node),
+        true,
+        true
+      ),
     };
   }
 
@@ -523,22 +539,15 @@ async function getBackgroundColor({ rawNode: node, walker }) {
 
   return (
     bgColor || {
-      value: getClosestBackgroundColorInRGBA(node),
+      value: colorUtils.colorToRGBA(
+        getClosestBackgroundColor(node),
+        true,
+        true
+      ),
     }
   );
 }
 
-
-
-
-
-
-function getClosestBackgroundColorInRGBA(node) {
-  const { r, g, b, a } = InspectorUtils.colorToRGBA(
-    getClosestBackgroundColor(node)
-  );
-  return [r, g, b, a];
-}
 
 
 

@@ -5,13 +5,68 @@
 
 "use strict";
 
+const { colorUtils } = require("resource://devtools/shared/css/color.js");
 const { cssColors } = require("resource://devtools/shared/css/color-db.js");
 
-add_task(() => {
-  for (const name in cssColors) {
-    ok(
-      InspectorUtils.isValidCSSColor(name),
-      name + " is valid in InspectorUtils"
+function isValid(colorName) {
+  ok(
+    colorUtils.isValidCSSColor(colorName),
+    colorName + " is valid in database"
+  );
+  ok(
+    InspectorUtils.isValidCSSColor(colorName),
+    colorName + " is valid in InspectorUtils"
+  );
+}
+
+function checkOne(colorName, checkName) {
+  const ours = colorUtils.colorToRGBA(colorName);
+  const fromDom = InspectorUtils.colorToRGBA(colorName);
+  deepEqual(ours, fromDom, colorName + " agrees with InspectorUtils");
+
+  isValid(colorName);
+
+  if (checkName) {
+    const { r, g, b } = ours;
+
+    
+    
+    
+    const ourName = colorUtils.rgbToColorName(r, g, b);
+    const domName = InspectorUtils.rgbToColorName(r, g, b);
+
+    equal(
+      ourName,
+      domName,
+      colorName + " canonical name agrees with InspectorUtils"
     );
   }
-});
+}
+
+function run_test() {
+  for (const name in cssColors) {
+    checkOne(name, true);
+  }
+  checkOne("transparent", false);
+
+  
+  
+  
+  
+  if (false) {
+    const names = InspectorUtils.getCSSValuesForProperty("background-color");
+    for (const name of names) {
+      if (
+        name !== "hsl" &&
+        name !== "hsla" &&
+        name !== "rgb" &&
+        name !== "rgba" &&
+        name !== "inherit" &&
+        name !== "initial" &&
+        name !== "unset"
+      ) {
+        checkOne(name, true);
+      }
+    }
+  }
+}
