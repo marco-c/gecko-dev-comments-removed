@@ -247,28 +247,17 @@ ContentAreaDropListener.prototype = {
       return true;
     }
 
-    let sourceNode = dataTransfer.mozSourceNode;
-    if (!sourceNode) {
+    
+    let sourceWC = dataTransfer.sourceWindowContext;
+    if (!sourceWC) {
       return true;
     }
 
     
-    let sourceDocument = sourceNode.ownerDocument;
-    let eventDocument = aEvent.originalTarget.ownerDocument;
-    if (sourceDocument == eventDocument) {
+    let eventWC =
+      aEvent.originalTarget.ownerGlobal.browsingContext.currentWindowContext;
+    if (eventWC && sourceWC.topWindowContext == eventWC.topWindowContext) {
       return false;
-    }
-
-    
-    
-    if (sourceDocument && eventDocument) {
-      if (sourceDocument.defaultView == null) {
-        return true;
-      }
-      let sourceRoot = sourceDocument.defaultView.top;
-      if (sourceRoot && sourceRoot == eventDocument.defaultView.top) {
-        return false;
-      }
     }
 
     return true;
