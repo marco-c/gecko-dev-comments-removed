@@ -254,22 +254,14 @@ class AboutWelcomeChild extends JSWindowActorChild {
 
     
     
-    const useMROnboarding = lazy.NimbusFeatures.majorRelease2022.getVariable(
-      "onboarding"
-    );
-    const useTemplateMR = useMROnboarding ?? featureConfig.templateMR;
-
     
-    
-    
-    let defaults = lazy.AboutWelcomeDefaults.getDefaults(useTemplateMR);
+    let defaults = lazy.AboutWelcomeDefaults.getDefaults();
 
     const content = await lazy.AboutWelcomeDefaults.prepareContentForReact({
       ...attributionData,
       ...experimentMetadata,
       ...defaults,
       ...featureConfig,
-      templateMR: useTemplateMR,
       screens: featureConfig.screens ?? defaults.screens,
       backdrop: featureConfig.backdrop ?? defaults.backdrop,
     });

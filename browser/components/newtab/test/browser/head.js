@@ -26,8 +26,6 @@ const ABOUT_WELCOME_OVERRIDE_CONTENT_PREF = "browser.aboutwelcome.screens";
 
 const win7Content = AppConstants.isPlatformAndVersionAtMost("win", "6.1");
 
-const MR_TEMPLATE_PREF = "browser.aboutwelcome.templateMR";
-
 function popPrefs() {
   return SpecialPowers.popPrefEnv();
 }
@@ -188,7 +186,6 @@ async function setAboutWelcomePref(value) {
 
 
 async function openMRAboutWelcome() {
-  await pushPrefs([MR_TEMPLATE_PREF, true]);
   await setAboutWelcomePref(true); 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -200,7 +197,6 @@ async function openMRAboutWelcome() {
     browser: tab.linkedBrowser,
     cleanup: async () => {
       BrowserTestUtils.removeTab(tab);
-      await popPrefs(); 
       await popPrefs(); 
     },
   };
