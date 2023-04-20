@@ -124,7 +124,7 @@ void SetLastMousePressEvent(GdkEvent* aEvent) {
   sLastMousePressEvent = event.release();
 }
 
-bool IsRunningUnderSnap() { return !!GetSnapInstanceName(); }
+bool IsRunningUnderSnap() { return g_getenv("SNAP_INSTANCE_NAME") != nullptr; }
 
 bool IsRunningUnderFlatpak() {
   
@@ -136,13 +136,6 @@ bool IsRunningUnderFlatpak() {
 
 const char* GetSnapInstanceName() {
   static const char* sInstanceName = []() -> const char* {
-    const char* snapName = g_getenv("SNAP_NAME");
-    if (!snapName) {
-      return nullptr;
-    }
-    if (g_strcmp0(snapName, MOZ_APP_NAME)) {
-      return nullptr;
-    }
     
     
     if (const char* instanceName = g_getenv("SNAP_INSTANCE_NAME")) {
