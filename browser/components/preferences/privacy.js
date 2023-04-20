@@ -44,9 +44,6 @@ const { BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN } = Ci.nsICookieService;
 const PASSWORD_MANAGER_PREF_ID = "services.passwordSavingEnabled";
 const PREF_PASSWORD_MANAGER_ENABLED = "signon.rememberSignons";
 
-const PREF_DFPI_ENABLED_BY_DEFAULT =
-  "privacy.restrict3rdpartystorage.rollout.enabledByDefault";
-
 XPCOMUtils.defineLazyGetter(this, "AlertsServiceDND", function() {
   try {
     let alertsService = Cc["@mozilla.org/alerts-service;1"]
@@ -87,17 +84,6 @@ Preferences.addAll([
 
   
   { id: "urlclassifier.trackingTable", type: "string" },
-
-  
-  {
-    id: "privacy.restrict3rdpartystorage.rollout.enabledByDefault",
-    type: "bool",
-  },
-  {
-    id:
-      "privacy.restrict3rdpartystorage.rollout.preferences.TCPToggleInStandard",
-    type: "bool",
-  },
 
   
   { id: "pref.privacy.disable_button.cookie_exceptions", type: "bool" },
@@ -307,55 +293,13 @@ function initTCPStandardSection() {
   let cookieBehaviorPref = Preferences.get("network.cookie.cookieBehavior");
   let updateTCPSectionVisibilityState = () => {
     document.getElementById("etpStandardTCPBox").hidden =
-      
-      !document.getElementById("etpStandardTCPRolloutBox").hidden ||
       cookieBehaviorPref.value !=
-        Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN;
+      Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN;
   };
 
   cookieBehaviorPref.on("change", updateTCPSectionVisibilityState);
 
   updateTCPSectionVisibilityState();
-}
-
-function initTCPRolloutSection() {
-  document
-    .getElementById("tcp-rollout-learn-more-link")
-    .setAttribute(
-      "href",
-      Services.urlFormatter.formatURLPref("app.support.baseURL") +
-        Services.prefs.getStringPref(
-          "privacy.restrict3rdpartystorage.rollout.preferences.learnMoreURLSuffix"
-        )
-    );
-
-  let dfpiPref = Preferences.get(PREF_DFPI_ENABLED_BY_DEFAULT);
-  let updateTCPRolloutSectionVisibilityState = () => {
-    
-    
-    if (NimbusFeatures.tcpByDefault.getVariable("enabled")) {
-      document.getElementById("etpStandardTCPRolloutBox").hidden = true;
-      return;
-    }
-
-    let onboardingEnabled =
-      NimbusFeatures.tcpPreferences.getVariable("enabled") ||
-      (dfpiPref.value && dfpiPref.hasUserValue);
-    document.getElementById(
-      "etpStandardTCPRolloutBox"
-    ).hidden = !onboardingEnabled;
-  };
-
-  NimbusFeatures.tcpPreferences.onUpdate(
-    updateTCPRolloutSectionVisibilityState
-  );
-  NimbusFeatures.tcpByDefault.onUpdate(updateTCPRolloutSectionVisibilityState);
-  window.addEventListener("unload", () => {
-    NimbusFeatures.tcpPreferences.off(updateTCPRolloutSectionVisibilityState);
-    NimbusFeatures.tcpByDefault.off(updateTCPRolloutSectionVisibilityState);
-  });
-
-  updateTCPRolloutSectionVisibilityState();
 }
 
 var gPrivacyPane = {
@@ -999,7 +943,6 @@ var gPrivacyPane = {
 
     setUpContentBlockingWarnings();
 
-    initTCPRolloutSection();
     initTCPStandardSection();
   },
 
@@ -1043,22 +986,6 @@ var gPrivacyPane = {
             rulesArray.push("cookieBehavior4");
             break;
           case BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN:
-            
-            
-            
-            
-            
-            
-            
-            if (
-              Services.prefs.getBoolPref(
-                "privacy.restrict3rdpartystorage.rollout.enabledByDefault",
-                false
-              )
-            ) {
-              rulesArray.push("cookieBehavior4");
-              break;
-            }
             rulesArray.push(
               gIsFirstPartyIsolated ? "cookieBehavior4" : "cookieBehavior5"
             );
