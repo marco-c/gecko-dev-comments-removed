@@ -3730,9 +3730,14 @@ void nsWindow::CreateCompositorVsyncDispatcher() {
 
 gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   
+  NotifyOcclusionState(OcclusionState::VISIBLE);
+  if (mIsDestroyed) {
+    return FALSE;
+  }
+
+  
   
   MaybeDispatchResized();
-
   if (mIsDestroyed) {
     return FALSE;
   }
