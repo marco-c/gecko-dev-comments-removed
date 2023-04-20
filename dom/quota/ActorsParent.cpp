@@ -2859,6 +2859,9 @@ void QuotaManager::ShutdownInstance() {
     gInstance->Shutdown();
 
     gInstance = nullptr;
+  } else {
+    
+    gShutdown = true;
   }
 
   RefPtr<Runnable> runnable =
