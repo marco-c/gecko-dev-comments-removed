@@ -48,9 +48,9 @@ const global = globalThis;
 
 
 const WASM_MODULE_URL =
-  "https://storage.googleapis.com/firefox-profiler-get-symbols/b933282e82f871ea76b5373f9fc81800e8550b7b.wasm";
+  "https://storage.googleapis.com/firefox-profiler-get-symbols/0373708893e45e8299e58ca692764be448e3457d.wasm";
 const WASM_MODULE_INTEGRITY =
-  "sha384-WeRBd3mn0rbs+/DX4NzsNc77ZhZOPuRTPZR9y10xrvQdUY6Dm0o205EDz3GyYSPv";
+  "sha384-rUGgHTg1eAKP2MB4JcX/HGROSBlRUmvpm6FFIihH0gGQ74zfJE2p7P8cxR86faQ7";
 
 const EXPIRY_TIME_IN_MS = 5 * 60 * 1000; 
 

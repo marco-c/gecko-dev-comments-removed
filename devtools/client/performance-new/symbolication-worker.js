@@ -57,8 +57,8 @@ class FileAndPathHelper {
 
 
 
-
-  getCandidatePathsForBinaryOrPdb(debugName, breakpadId) {
+  getCandidatePathsForDebugFile(libraryInfo) {
+    const { debugName, breakpadId } = libraryInfo;
     const key = `${debugName}:${breakpadId}`;
     const lib = this._libInfoMap.get(key);
     if (!lib) {
@@ -116,6 +116,65 @@ class FileAndPathHelper {
     
     
     candidatePaths.push(path);
+
+    
+    
+    
+    if (arch && (path.startsWith("/usr/") || path.startsWith("/System/"))) {
+      
+      candidatePaths.push(
+        `dyldcache:/System/Library/dyld/dyld_shared_cache_${arch}:${path}`
+      );
+    }
+
+    return candidatePaths;
+  }
+
+  
+
+
+
+
+
+
+
+  getCandidatePathsForBinary(libraryInfo) {
+    const { debugName, breakpadId } = libraryInfo;
+    const key = `${debugName}:${breakpadId}`;
+    const lib = this._libInfoMap.get(key);
+    if (!lib) {
+      throw new Error(
+        `Could not find the library for "${debugName}", "${breakpadId}".`
+      );
+    }
+
+    const { name, path, arch } = lib;
+    const candidatePaths = [];
+
+    
+    
+    
+    candidatePaths.push(path);
+
+    
+    
+    
+    
+    for (const objdirPath of this._objdirs) {
+      try {
+        
+        candidatePaths.push(PathUtils.join(objdirPath, "dist", "bin", name));
+
+        
+        
+        
+        
+        candidatePaths.push(PathUtils.join(objdirPath, name));
+      } catch (e) {
+        
+        
+      }
+    }
 
     
     
