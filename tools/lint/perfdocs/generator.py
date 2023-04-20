@@ -109,14 +109,23 @@ class Generator(object):
 
             
             for static_file in framework["static"]:
-                frameworks_info[yaml_content["name"]]["static"].append(
-                    {
-                        "file": static_file,
-                        "content": read_file(
-                            pathlib.Path(framework["path"], static_file), stringify=True
-                        ),
-                    }
-                )
+                if static_file.endswith("rst"):
+                    frameworks_info[yaml_content["name"]]["static"].append(
+                        {
+                            "file": static_file,
+                            "content": read_file(
+                                pathlib.Path(framework["path"], static_file),
+                                stringify=True,
+                            ),
+                        }
+                    )
+                else:
+                    frameworks_info[yaml_content["name"]]["static"].append(
+                        {
+                            "file": static_file,
+                            "content": pathlib.Path(framework["path"], static_file),
+                        }
+                    )
 
         return frameworks_info
 
@@ -159,10 +168,19 @@ class Generator(object):
             )
 
             for static_name in framework_docs[framework_name]["static"]:
-                save_file(
-                    static_name["content"],
-                    pathlib.Path(perfdocs_tmpdir, static_name["file"].split(".")[0]),
-                )
+                if static_name["file"].endswith(".rst"):
+                    
+                    save_file(
+                        static_name["content"],
+                        pathlib.Path(
+                            perfdocs_tmpdir, static_name["file"].split(".")[0]
+                        ),
+                    )
+                else:
+                    shutil.copy(
+                        static_name["content"],
+                        pathlib.Path(perfdocs_tmpdir, static_name["file"]),
+                    )
 
         
         mainpage = read_file(

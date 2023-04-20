@@ -27,6 +27,9 @@ frameworks = {
 }
 
 
+ALLOWED_STATIC_FILETYPES = ("rst", "png")
+
+
 class Gatherer(object):
     """
     Gatherer produces the tree of the perfdoc's entries found
@@ -94,7 +97,7 @@ class Gatherer(object):
                     matched["yml"] = file
                 elif file == "index.rst":
                     matched["rst"] = file
-                elif file.endswith(".rst"):
+                elif file.split(".")[-1] in ALLOWED_STATIC_FILETYPES:
                     matched["static"].append(file)
 
             
