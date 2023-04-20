@@ -1340,6 +1340,16 @@ var gEditItemOverlay = {
         break;
     }
   },
+
+  
+
+
+
+
+
+  get delayedApplyEnabled() {
+    return false;
+  },
 };
 
 XPCOMUtils.defineLazyGetter(gEditItemOverlay, "_folderTree", () => {
