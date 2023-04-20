@@ -4006,15 +4006,21 @@ void EventStateManager::NotifyDestroyPresContext(nsPresContext* aPresContext) {
   if (presContext) {
     IMEStateManager::OnDestroyPresContext(*presContext);
   }
-  if (mHoverContent) {
-    
-    
-    
-    
-    SetContentState(nullptr, ElementState::HOVER);
-  }
+
+  
+  
+  
+  
+  ResetHoverState();
+
   mPointersEnterLeaveHelper.Clear();
   PointerEventHandler::NotifyDestroyPresContext(presContext);
+}
+
+void EventStateManager::ResetHoverState() {
+  if (mHoverContent) {
+    SetContentState(nullptr, ElementState::HOVER);
+  }
 }
 
 void EventStateManager::SetPresContext(nsPresContext* aPresContext) {
