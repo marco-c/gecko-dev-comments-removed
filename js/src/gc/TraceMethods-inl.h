@@ -153,7 +153,7 @@ void js::GCMarker::eagerlyMarkChildren(JSRope* rope) {
         
         
         if (next && !stack.pushTempRope(next)) {
-          delayMarkingChildren(next);
+          delayMarkingChildrenOnOOM(next);
         }
         next = &left->asRope();
       }
