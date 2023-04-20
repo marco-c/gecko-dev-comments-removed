@@ -86,8 +86,6 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
 
   void UpdateStatisticsData();
 
-  void SetMediaSourceOnEngine();
-
   
   
   static inline uint64_t sMediaEngineIdx = 0;

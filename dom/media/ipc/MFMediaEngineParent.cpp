@@ -375,7 +375,7 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvNotifyMediaInfo(
 
   auto errorExit = MakeScopeExit([&] {
     MediaResult error(NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                      "Failed to create media source");
+                      "Failed to setup media source");
     DestroyEngineIfExists(Some(error));
   });
 
@@ -384,59 +384,28 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvNotifyMediaInfo(
       SUCCEEDED(MakeAndInitialize<MFMediaSource>(
           &mMediaSource, aInfo.audioInfo(), aInfo.videoInfo(), mManagerThread)),
       IPC_OK());
-
-  const bool isEncryted = mMediaSource->IsEncrypted();
-  ENGINE_MARKER("MFMediaEngineParent,CreatedMediaSource");
-  nsPrintfCString message(
-      "Created the media source, audio=%s, video=%s, encrypted-audio=%s, "
-      "encrypted-video=%s, isEncrypted=%d",
-      aInfo.audioInfo() ? aInfo.audioInfo()->mMimeType.BeginReading() : "none",
-      aInfo.videoInfo() ? aInfo.videoInfo()->mMimeType.BeginReading() : "none",
-      aInfo.audioInfo() && aInfo.audioInfo()->mCrypto.IsEncrypted() ? "yes"
-                                                                    : "no",
-      aInfo.videoInfo() && aInfo.videoInfo()->mCrypto.IsEncrypted() ? "yes"
-                                                                    : "no",
-      isEncryted);
-  LOG("%s", message.get());
-
-  mRequestSampleListener = mMediaSource->RequestSampleEvent().Connect(
-      mManagerThread, this, &MFMediaEngineParent::HandleRequestSample);
-  errorExit.release();
-
-  if (isEncryted && !mContentProtectionManager) {
-    
-    return IPC_OK();
-  }
-
-  if (isEncryted && mContentProtectionManager) {
-    auto* proxy = mContentProtectionManager->GetCDMProxy();
-    MOZ_ASSERT(proxy);
-    mMediaSource->SetCDMProxy(proxy);
-  }
-  SetMediaSourceOnEngine();
-  return IPC_OK();
-}
-
-void MFMediaEngineParent::SetMediaSourceOnEngine() {
-  AssertOnManagerThread();
-  MOZ_ASSERT(mMediaSource);
-
-  auto errorExit = MakeScopeExit([&] {
-    MediaResult error(NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                      "Failed to set media source");
-    DestroyEngineIfExists(Some(error));
-  });
-
   mMediaEngineExtension->SetMediaSource(mMediaSource.Get());
 
   
   
-  RETURN_VOID_IF_FAILED(
-      mMediaEngine->SetSource(SysAllocString(L"MFRendererSrc")));
+  NS_ENSURE_TRUE(
+      SUCCEEDED(mMediaEngine->SetSource(SysAllocString(L"MFRendererSrc"))),
+      IPC_OK());
 
   LOG("Finished setup our custom media source to the media engine");
-  ENGINE_MARKER("MFMediaEngineParent,FinishedSetupMediaSource");
+  ENGINE_MARKER_TEXT(
+      "MFMediaEngineParent,FinishedSetupMediaSource",
+      nsPrintfCString(
+          "audio=%s, video=%s",
+          aInfo.audioInfo() ? aInfo.audioInfo()->mMimeType.BeginReading()
+                            : "none",
+          aInfo.videoInfo() ? aInfo.videoInfo()->mMimeType.BeginReading()
+                            : "none"));
+  mRequestSampleListener = mMediaSource->RequestSampleEvent().Connect(
+      mManagerThread, this, &MFMediaEngineParent::HandleRequestSample);
+
   errorExit.release();
+  return IPC_OK();
 }
 
 mozilla::ipc::IPCResult MFMediaEngineParent::RecvPlay() {
@@ -521,7 +490,6 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvSetCDMProxyId(
   
   if (mMediaSource) {
     mMediaSource->SetCDMProxy(proxy);
-    SetMediaSourceOnEngine();
   }
   LOG("Set CDM Proxy successfully on the media engine!");
 #endif
