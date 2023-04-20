@@ -51,6 +51,9 @@ module.exports = {
     
     
     "mozilla/no-define-cc-etc": "off",
+    
+    
+    "mozilla/no-redeclare-with-import-autofix": "off",
     "no-shadow": "error",
   },
 };
