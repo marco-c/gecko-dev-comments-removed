@@ -531,23 +531,29 @@ class VirtualenvMixin(object):
                                     sys.executable, str(expected_python_debug_exe)
                                 )
 
+            venv_creation_flags = ["-m", "venv", venv_path]
+
+            if self._is_windows():
+                
+                
+                
+                
+                venv_creation_flags = venv_creation_flags + ["--without-pip"]
+
             self.mkdir_p(dirs["abs_work_dir"])
             self.run_command(
-                [sys.executable, "-m", "venv", "--without-pip", venv_path],
+                [sys.executable] + venv_creation_flags,
                 cwd=dirs["abs_work_dir"],
                 error_list=VirtualenvErrorList,
                 halt_on_failure=True,
             )
 
-            
-            
-            
-            
-            self.run_command(
-                [str(venv_python_bin), "-m", "ensurepip", "--default-pip"],
-                cwd=dirs["abs_work_dir"],
-                halt_on_failure=True,
-            )
+            if self._is_windows():
+                self.run_command(
+                    [str(venv_python_bin), "-m", "ensurepip", "--default-pip"],
+                    cwd=dirs["abs_work_dir"],
+                    halt_on_failure=True,
+                )
 
             self._ensure_python_exe(venv_python_bin.parent)
 
