@@ -61,20 +61,15 @@ const closeExtensionsPanel = async win => {
 };
 
 const getUnifiedExtensionsItem = (win, extensionId) => {
-  const view = getListView(win);
-
-  
-  
-  return (
-    view.querySelector(`toolbaritem[data-extensionid="${extensionId}"]`) ||
-    view.querySelector(`unified-extensions-item[extension-id="${extensionId}"]`)
+  return getListView(win).querySelector(
+    `unified-extensions-item[extension-id="${extensionId}"]`
   );
 };
 
 const openUnifiedExtensionsContextMenu = async (win, extensionId) => {
-  const item = getUnifiedExtensionsItem(win, extensionId);
-  ok(item, `expected item for extensionId=${extensionId}`);
-  const button = item.querySelector(".unified-extensions-item-open-menu");
+  const button = getUnifiedExtensionsItem(win, extensionId).querySelector(
+    ".unified-extensions-item-open-menu"
+  );
   ok(button, "expected 'open menu' button");
   
   
