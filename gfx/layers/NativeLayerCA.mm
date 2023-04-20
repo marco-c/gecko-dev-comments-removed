@@ -1341,6 +1341,22 @@ void NativeLayerCA::NotifySurfaceReady() {
   IOSurfaceDecrementUseCount(mInProgressSurface->mSurface.get());
   mFrontSurface = std::move(mInProgressSurface);
   mFrontSurface->mInvalidRegion.SubOut(mInProgressUpdateRegion.extract());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  IntRect frontSurfaceInvalidBounds = mFrontSurface->mInvalidRegion.GetBounds();
+  if (frontSurfaceInvalidBounds.width <= 1 || frontSurfaceInvalidBounds.height <= 1) {
+    mFrontSurface->mInvalidRegion.SetEmpty();
+  }
+
   ForAllRepresentations([&](Representation& r) { r.mMutatedFrontSurface = true; });
 
   MOZ_RELEASE_ASSERT(mInProgressDisplayRect);
