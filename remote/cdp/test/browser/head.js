@@ -200,22 +200,20 @@ function getTargets(CDP) {
 }
 
 
+async function getDiscoveredTargets(Target, options = {}) {
+  const { discover = true, filter } = options;
 
-async function getDiscoveredTargets(Target) {
-  return new Promise(resolve => {
-    const targets = [];
-
-    const unsubscribe = Target.targetCreated(target => {
-      targets.push(target);
-
-      if (targets.length >= gBrowser.tabs.length + 1) {
-        unsubscribe();
-        resolve(targets);
-      }
-    });
-
-    Target.setDiscoverTargets({ discover: true });
+  const targets = [];
+  const unsubscribe = Target.targetCreated(target => {
+    targets.push(target.targetInfo);
   });
+
+  await Target.setDiscoverTargets({
+    discover,
+    filter,
+  }).finally(() => unsubscribe());
+
+  return targets;
 }
 
 async function openTab(Target, options = {}) {
