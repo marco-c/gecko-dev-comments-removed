@@ -26,8 +26,8 @@ struct WOFF2Params {
 
 
 size_t MaxWOFF2CompressedSize(const uint8_t* data, size_t length);
-size_t MaxWOFF2CompressedSize(const uint8_t* data, size_t length,
-                              const std::string& extended_metadata);
+size_t MaxWOFF2CompressedSize(const uint8_t *data, size_t length,
+                              const std::string &extended_metadata);
 
 
 

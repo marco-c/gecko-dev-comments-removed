@@ -28,12 +28,8 @@
 
 namespace woff2 {
 
+
 namespace {
-
-
-using std::string;
-using std::vector;
-
 
 const size_t kWoff2HeaderSize = 48;
 const size_t kWoff2EntrySize = 20;
@@ -183,7 +179,7 @@ size_t MaxWOFF2CompressedSize(const uint8_t* data, size_t length) {
 }
 
 size_t MaxWOFF2CompressedSize(const uint8_t* data, size_t length,
-    const string& extended_metadata) {
+                              const std::string& extended_metadata) {
   
   
   

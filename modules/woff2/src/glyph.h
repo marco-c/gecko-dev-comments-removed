@@ -10,8 +10,10 @@
 #ifndef WOFF2_GLYPH_H_
 #define WOFF2_GLYPH_H_
 
-#include <stddef.h>
 #include <inttypes.h>
+#include <stddef.h>
+
+#include <cstdint>
 #include <vector>
 
 namespace woff2 {
@@ -22,7 +24,10 @@ namespace woff2 {
 
 class Glyph {
  public:
-  Glyph() : instructions_size(0), composite_data_size(0) {}
+  Glyph()
+      : instructions_size(0),
+        overlap_simple_flag_set(false),
+        composite_data_size(0) {}
 
   
   int16_t x_min;
@@ -33,6 +38,9 @@ class Glyph {
   
   uint16_t instructions_size;
   const uint8_t* instructions_data;
+
+  
+  bool overlap_simple_flag_set;
 
   
   struct Point {
