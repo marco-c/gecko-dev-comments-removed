@@ -58,22 +58,19 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     
     
     const { resourceCommand } = this.targetFront.commands;
-    if (
-      resourceCommand?.hasResourceCommandSupport(
-        resourceCommand.TYPES.STYLESHEET
-      )
-    ) {
+
+    
+    
+    this.resourceCommand = resourceCommand;
+
+    await resourceCommand.watchResources([resourceCommand.TYPES.STYLESHEET], {
       
-      
-      this.resourceCommand = resourceCommand;
-      await resourceCommand.watchResources([resourceCommand.TYPES.STYLESHEET], {
-        
-        onAvailable: this.noopStylesheetListener,
-      });
-      
-      if (this.isDestroyed()) {
-        return null;
-      }
+      onAvailable: this.noopStylesheetListener,
+    });
+
+    
+    if (this.isDestroyed()) {
+      return null;
     }
 
     this.initialized = await Promise.all([
@@ -120,15 +117,12 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     }
     this._compatibility = null;
 
-    
-    
-    if (this.resourceCommand) {
-      const { resourceCommand } = this;
-      resourceCommand.unwatchResources([resourceCommand.TYPES.STYLESHEET], {
-        onAvailable: this.noopStylesheetListener,
-      });
-      this.resourceCommand = null;
-    }
+    const { resourceCommand } = this;
+    resourceCommand.unwatchResources([resourceCommand.TYPES.STYLESHEET], {
+      onAvailable: this.noopStylesheetListener,
+    });
+    this.resourceCommand = null;
+
     this.walker = null;
 
     
