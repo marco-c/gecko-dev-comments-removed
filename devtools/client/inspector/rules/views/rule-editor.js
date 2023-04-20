@@ -226,7 +226,11 @@ RuleEditor.prototype = {
           if (ancestorData.type == "supports") {
             return `@supports ${ancestorData.conditionText}`;
           }
-          
+
+          if (ancestorData.type == "import") {
+            return `@import ${ancestorData.value}`;
+          }
+
           
           
           console.warn("Unknown ancestor data type:", ancestorData.type);

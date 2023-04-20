@@ -312,16 +312,25 @@ class StyleRuleActor extends Actor {
         this._parentSheet
       );
 
-      
-      
-      if (
-        this._parentSheet.ownerRule &&
-        this._parentSheet.ownerRule.layerName !== null
-      ) {
-        form.ancestorData.unshift({
-          type: "layer",
-          value: this._parentSheet.ownerRule.layerName,
-        });
+      if (this._parentSheet.ownerRule) {
+        
+        
+        if (this._parentSheet.ownerRule.layerName !== null) {
+          form.ancestorData.unshift({
+            type: "layer",
+            value: this._parentSheet.ownerRule.layerName,
+          });
+        }
+
+        
+        
+        
+        if (this._parentSheet.ownerRule.media?.mediaText) {
+          form.ancestorData.unshift({
+            type: "import",
+            value: this._parentSheet.ownerRule.media.mediaText,
+          });
+        }
       }
     }
 
