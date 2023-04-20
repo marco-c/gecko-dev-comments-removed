@@ -42,6 +42,11 @@ async function testTimePrecision(results, expectedResults, extraData) {
   }
 
   for (let result of results) {
+    if ("error" in result) {
+      ok(false, result.error);
+      continue;
+    }
+
     let isRounded = isTimeValueRounded(result.value, precision);
 
     ok(
@@ -212,3 +217,47 @@ function addAllTests(extraData_, extraPrefs_) {
     )
   );
 }
+
+
+
+
+
+extraData = {
+  RFP_Precision: 100,
+  Unconditional_Precision: 0.02,
+};
+
+extraPrefs = [
+  [
+    "privacy.resistFingerprinting.reduceTimerPrecision.microseconds",
+    extraData.RFP_Precision * 1000,
+  ],
+  ["dom.animations-api.timelines.enabled", true],
+];
+
+addAllTests(extraData, extraPrefs);
+
+extraData = {
+  RFP_Precision: 133,
+  Unconditional_Precision: 0.02,
+};
+
+extraPrefs = [
+  [
+    "privacy.resistFingerprinting.reduceTimerPrecision.microseconds",
+    extraData.RFP_Precision * 1000,
+  ],
+  ["dom.animations-api.timelines.enabled", true],
+];
+
+addAllTests(extraData, extraPrefs);
+
+
+
+
+extraData = {
+  RFP_Precision: RFP_TIME_ATOM_MS,
+  Unconditional_Precision: 0.02,
+};
+extraPrefs = [["dom.animations-api.timelines.enabled", true]];
+addAllTests(extraData, extraPrefs);
