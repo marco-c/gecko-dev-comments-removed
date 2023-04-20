@@ -2849,6 +2849,17 @@
 
 
 
+ \
+    MACRO(GetFrameArg, get_frame_arg, NULL, 3, 0, 1, JOF_QARG|JOF_NAME) \
+    
+
+
+
+
+
+
+
+
 
  \
     MACRO(GetLocal, get_local, NULL, 4, 0, 1, JOF_LOCAL|JOF_NAME) \
@@ -3552,14 +3563,13 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  IF_RECORD_TUPLE(, MACRO(229))     \
   IF_RECORD_TUPLE(, MACRO(230))     \
   IF_RECORD_TUPLE(, MACRO(231))     \
   IF_RECORD_TUPLE(, MACRO(232))     \
   IF_RECORD_TUPLE(, MACRO(233))     \
   IF_RECORD_TUPLE(, MACRO(234))     \
   IF_RECORD_TUPLE(, MACRO(235))     \
-  MACRO(236)                                   \
+  IF_RECORD_TUPLE(, MACRO(236))     \
   MACRO(237)                                   \
   MACRO(238)                                   \
   MACRO(239)                                   \
