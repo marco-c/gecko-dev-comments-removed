@@ -4,6 +4,9 @@
 
 "use strict";
 
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
 const { PromiseUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/PromiseUtils.sys.mjs"
 );
@@ -757,7 +760,12 @@ CrashManager.prototype = Object.freeze({
     
     reportMeta = this._filterAnnotations(reportMeta);
 
-    this._submitGleanCrashPing(reason, type, date, reportMeta);
+    
+    
+    
+    if (AppConstants.platform !== "android") {
+      this._submitGleanCrashPing(reason, type, date, reportMeta);
+    }
 
     if (onlyGlean) {
       return;
