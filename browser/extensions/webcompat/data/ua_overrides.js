@@ -712,11 +712,10 @@ const AVAILABLE_UA_OVERRIDES = [
     config: {
       matches: [
         "*://*.commerzbank.de/*", 
-        "*://fpt.dfp.microsoft.com/*", 
         "*://ubank.com.au/*", 
         "*://wifi.sncf/*", 
         "*://www.metrobyt-mobile.com/*", 
-        "*://www.screwfix.com/*", 
+        "*://*.mms.telekom.de/*", 
       ],
       uaTransformer: originalUA => {
         return UAHelpers.capVersionTo99(originalUA);
@@ -910,6 +909,43 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://wolf777.com/*"],
       uaTransformer: originalUA => {
         return originalUA.replace("Android", "Linux; Android");
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1800936",
+    platform: "all",
+    domain: "cov19ent.kdca.go.kr",
+    bug: "1800936",
+    config: {
+      matches: ["*://cov19ent.kdca.go.kr/*"],
+      uaTransformer: originalUA => {
+        return originalUA + " Chrome";
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1803131",
+    platform: "android",
+    domain: "argaam.com",
+    bug: "1803131",
+    config: {
+      matches: ["*://*.argaam.com/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },
