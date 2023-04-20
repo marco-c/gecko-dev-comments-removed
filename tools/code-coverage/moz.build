@@ -4,7 +4,7 @@
 
 
 
-TESTING_JS_MODULES += ["PerTestCoverageUtils.jsm"]
+TESTING_JS_MODULES += ["PerTestCoverageUtils.sys.mjs"]
 
 if CONFIG["MOZ_CODE_COVERAGE"]:
     XPIDL_MODULE = "code-coverage"

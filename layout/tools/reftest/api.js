@@ -129,8 +129,8 @@ this.reftest = class extends ExtensionAPI {
       
       win.close();
 
-      const { PerTestCoverageUtils } = ChromeUtils.import(
-        "resource://reftest/PerTestCoverageUtils.jsm"
+      const { PerTestCoverageUtils } = ChromeUtils.importESModule(
+        "resource://reftest/PerTestCoverageUtils.sys.mjs"
       );
       if (PerTestCoverageUtils.enabled) {
         
