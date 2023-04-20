@@ -121,6 +121,9 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(disableRedundantShapeGuards, false);
 
   
+  SET_DEFAULT(disableRedundantGCBarriers, false);
+
+  
   SET_DEFAULT(disableBailoutLoopCheck, false);
 
   

@@ -1407,6 +1407,17 @@ bool OptimizeMIR(MIRGenerator* mir) {
     AssertGraphCoherency(graph);
   }
 
+  
+  
+  
+  if (mir->optimizationInfo().eliminateRedundantGCBarriersEnabled()) {
+    if (!EliminateRedundantGCBarriers(graph)) {
+      return false;
+    }
+    gs.spewPass("GC Barrier Elimination");
+    AssertGraphCoherency(graph);
+  }
+
   if (!mir->compilingWasm() && !mir->outerInfo().hadUnboxFoldingBailout()) {
     if (!FoldLoadsWithUnbox(mir, graph)) {
       return false;
