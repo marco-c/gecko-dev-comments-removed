@@ -388,11 +388,6 @@ JS_PUBLIC_API JSFunction* NewFunctionByIdWithReserved(JSContext* cx,
                                                       unsigned nargs,
                                                       unsigned flags, jsid id);
 
-
-
-
-
-
 JS_PUBLIC_API const JS::Value& GetFunctionNativeReserved(JSObject* fun,
                                                          size_t which);
 
