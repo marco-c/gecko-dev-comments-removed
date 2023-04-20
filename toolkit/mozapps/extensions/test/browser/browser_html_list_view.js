@@ -113,7 +113,7 @@ add_task(async function testExtensionList() {
 
   
   let disableToggle = card.querySelector('[action="toggle-disabled"]');
-  ok(disableToggle.checked, "The disable toggle is checked");
+  ok(disableToggle.pressed, "The disable toggle is pressed");
   is(
     doc.l10n.getAttributes(disableToggle).id,
     "extension-enable-addon-button-label",
@@ -132,7 +132,7 @@ add_task(async function testExtensionList() {
   );
 
   
-  ok(!disableToggle.checked, "The disable toggle is unchecked");
+  ok(!disableToggle.pressed, "The disable toggle is not pressed");
   is(
     doc.l10n.getAttributes(disableToggle).id,
     "extension-enable-addon-button-label",
