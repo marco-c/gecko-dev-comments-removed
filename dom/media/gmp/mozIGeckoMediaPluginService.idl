@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsISupports.idl"
 #include "nsIThread.idl"
@@ -48,6 +48,7 @@ public:
 %}
 
 [ptr] native TagArray(nsTArray<nsCString>);
+[ref] native ConstTagArrayRef(const nsTArray<nsCString>);
 native GetGMPDecryptorCallback(mozilla::UniquePtr<GetGMPDecryptorCallback>&&);
 native GetGMPVideoDecoderCallback(mozilla::UniquePtr<GetGMPVideoDecoderCallback>&&);
 native GetGMPVideoEncoderCallback(mozilla::UniquePtr<GetGMPVideoEncoderCallback>&&);
@@ -58,61 +59,61 @@ native GMPCrashHelperPtr(mozilla::GMPCrashHelper*);
 interface mozIGeckoMediaPluginService : nsISupports
 {
 
-  /**
-   * The GMP thread. Callable from any thread.
-   */
+  
+
+
   readonly attribute nsIThread thread;
 
-  /**
-   * Run through windows registered registered for pluginId, sending
-   * 'PluginCrashed' chrome-only event
-   */
+  
+
+
+
   void RunPluginCrashCallbacks(in unsigned long pluginId, in ACString pluginName);
 
-  /**
-   * Get a plugin that supports the specified tags.
-   * Callable on any thread
-   */
-  [noscript]
-  boolean hasPluginForAPI(in ACString api, in TagArray tags);
+  
 
-  /**
-   * Get a video decoder that supports the specified tags.
-   * The array of tags should at least contain a codec tag, and optionally
-   * other tags such as for EME keysystem.
-   * Callable only on GMP thread.
-   * This is an asynchronous operation, the Done method of the callback object
-   * will be called on the GMP thread with the result (which might be null in
-   * the case of failure). This method always takes ownership of the callback
-   * object, but if this method returns an error then the Done method of the
-   * callback object will not be called at all.
-   */
+
+
+  [noscript]
+  boolean hasPluginForAPI(in ACString api, in ConstTagArrayRef tags);
+
+  
+
+
+
+
+
+
+
+
+
+
   [noscript]
   void getGMPVideoDecoder(in GMPCrashHelperPtr helper,
                           in TagArray tags,
                           [optional] in ACString nodeId,
                           in GetGMPVideoDecoderCallback callback);
 
-  /**
-   * Get a video encoder that supports the specified tags.
-   * The array of tags should at least contain a codec tag, and optionally
-   * other tags.
-   * Callable only on GMP thread.
-   * This is an asynchronous operation, the Done method of the callback object
-   * will be called on the GMP thread with the result (which might be null in
-   * the case of failure). This method always takes ownership of the callback
-   * object, but if this method returns an error then the Done method of the
-   * callback object will not be called at all.
-   */
+  
+
+
+
+
+
+
+
+
+
+
   [noscript]
   void getGMPVideoEncoder(in GMPCrashHelperPtr helper,
                           in TagArray tags,
                           [optional] in ACString nodeId,
                           in GetGMPVideoEncoderCallback callback);
 
-  /**
-   * Gets the NodeId for a (origin, urlbarOrigin) pair.
-   */
+  
+
+
   [noscript]
   void getNodeId(in AString origin,
                  in AString topLevelOrigin,
