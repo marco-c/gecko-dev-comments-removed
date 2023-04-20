@@ -885,12 +885,21 @@ struct CStringHasher {
 
 
 
+
+
+
 template <typename HashPolicy>
 struct FallibleHashMethods {
   
   
+  
+  
+  
+  
+  
   template <typename Lookup>
-  static bool hasHash(Lookup&& aLookup) {
+  static bool maybeGetHash(Lookup&& aLookup, HashNumber* aHashOut) {
+    *aHashOut = HashPolicy::hash(aLookup);
     return true;
   }
 
@@ -903,9 +912,9 @@ struct FallibleHashMethods {
 };
 
 template <typename HashPolicy, typename Lookup>
-static bool HasHash(Lookup&& aLookup) {
-  return FallibleHashMethods<typename HashPolicy::Base>::hasHash(
-      std::forward<Lookup>(aLookup));
+static bool MaybeGetHash(Lookup&& aLookup, HashNumber* aHashOut) {
+  return FallibleHashMethods<typename HashPolicy::Base>::maybeGetHash(
+      std::forward<Lookup>(aLookup), aHashOut);
 }
 
 template <typename HashPolicy, typename Lookup>
@@ -1634,8 +1643,8 @@ class HashTable : private AllocPolicy {
 
   static bool isLiveHash(HashNumber aHash) { return Entry::isLiveHash(aHash); }
 
-  static HashNumber prepareHash(const Lookup& aLookup) {
-    HashNumber keyHash = ScrambleHashCode(HashPolicy::hash(aLookup));
+  static HashNumber prepareHash(HashNumber aInputHash) {
+    HashNumber keyHash = ScrambleHashCode(aInputHash);
 
     
     if (!isLiveHash(keyHash)) {
@@ -1980,7 +1989,7 @@ class HashTable : private AllocPolicy {
   void putNewInfallibleInternal(const Lookup& aLookup, Args&&... aArgs) {
     MOZ_ASSERT(mTable);
 
-    HashNumber keyHash = prepareHash(aLookup);
+    HashNumber keyHash = prepareHash(HashPolicy::hash(aLookup));
     Slot slot = findNonLiveSlot(keyHash);
 
     if (slot.isRemoved()) {
@@ -2076,10 +2085,16 @@ class HashTable : private AllocPolicy {
   }
 
   MOZ_ALWAYS_INLINE Ptr readonlyThreadsafeLookup(const Lookup& aLookup) const {
-    if (empty() || !HasHash<HashPolicy>(aLookup)) {
+    if (empty()) {
       return Ptr();
     }
-    HashNumber keyHash = prepareHash(aLookup);
+
+    HashNumber inputHash;
+    if (!MaybeGetHash<HashPolicy>(aLookup, &inputHash)) {
+      return Ptr();
+    }
+
+    HashNumber keyHash = prepareHash(inputHash);
     return Ptr(lookup<ForNonAdd>(aLookup, keyHash), *this);
   }
 
@@ -2094,7 +2109,7 @@ class HashTable : private AllocPolicy {
       return AddPtr();
     }
 
-    HashNumber keyHash = prepareHash(aLookup);
+    HashNumber keyHash = prepareHash(HashPolicy::hash(aLookup));
 
     if (!mTable) {
       return AddPtr(*this, keyHash);
@@ -2209,7 +2224,7 @@ class HashTable : private AllocPolicy {
     if (mTable) {
       ReentrancyGuard g(*this);
       
-      MOZ_ASSERT(prepareHash(aLookup) == aPtr.mKeyHash);
+      MOZ_ASSERT(prepareHash(HashPolicy::hash(aLookup)) == aPtr.mKeyHash);
       aPtr.mSlot = lookup<ForAdd>(aLookup, aPtr.mKeyHash);
       if (aPtr.found()) {
         return true;

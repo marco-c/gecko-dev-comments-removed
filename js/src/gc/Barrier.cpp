@@ -68,12 +68,14 @@ bool CurrentThreadIsIonCompiling() {
 #endif  
 
 template <typename T>
- bool MovableCellHasher<T>::hasHash(const Lookup& l) {
+ bool MovableCellHasher<T>::maybeGetHash(const Lookup& l,
+                                                     HashNumber* hashOut) {
   if (!l) {
+    *hashOut = 0;
     return true;
   }
 
-  return l->zoneFromAnyThread()->hasUniqueId(l);
+  return l->zoneFromAnyThread()->maybeGetHashCode(l, hashOut);
 }
 
 template <typename T>

@@ -273,8 +273,14 @@ class MutableWrappedPtrOperations<SavedFrame::Lookup, Wrapper>
 };
 
 
-bool SavedFrame::HashPolicy::hasHash(const Lookup& l) {
-  return SavedFramePtrHasher::hasHash(l.parent);
+bool SavedFrame::HashPolicy::maybeGetHash(const Lookup& l,
+                                          HashNumber* hashOut) {
+  HashNumber parentHash;
+  if (!SavedFramePtrHasher::maybeGetHash(l.parent, &parentHash)) {
+    return false;
+  }
+  *hashOut = calculateHash(l, parentHash);
+  return true;
 }
 
 
@@ -284,13 +290,19 @@ bool SavedFrame::HashPolicy::ensureHash(const Lookup& l) {
 
 
 HashNumber SavedFrame::HashPolicy::hash(const Lookup& lookup) {
+  return calculateHash(lookup, SavedFramePtrHasher::hash(lookup.parent));
+}
+
+
+HashNumber SavedFrame::HashPolicy::calculateHash(const Lookup& lookup,
+                                                 HashNumber parentHash) {
   JS::AutoCheckCannotGC nogc;
   
   
   
   return AddToHash(lookup.line, lookup.column, lookup.source,
                    lookup.functionDisplayName, lookup.asyncCause,
-                   lookup.mutedErrors, SavedFramePtrHasher::hash(lookup.parent),
+                   lookup.mutedErrors, parentHash,
                    JSPrincipalsPtrHasher::hash(lookup.principals));
 }
 
