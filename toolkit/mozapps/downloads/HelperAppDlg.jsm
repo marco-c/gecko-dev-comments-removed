@@ -8,10 +8,6 @@ const { AppConstants } = ChromeUtils.importESModule(
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
-const { BrowserUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/BrowserUtils.sys.mjs"
-);
-
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   EnableDelayHelper: "resource://gre/modules/PromptUtils.sys.mjs",
@@ -22,12 +18,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "gReputationService",
   "@mozilla.org/reputationservice/application-reputation-service;1",
   Ci.nsIApplicationReputationService
-);
-XPCOMUtils.defineLazyServiceGetter(
-  lazy,
-  "gMIMEService",
-  "@mozilla.org/mime;1",
-  Ci.nsIMIMEService
 );
 
 const { Integration } = ChromeUtils.importESModule(
@@ -479,39 +469,41 @@ nsUnknownContentTypeDialog.prototype = {
     this.mDialog.document.addEventListener("dialogaccept", this);
     this.mDialog.document.addEventListener("dialogcancel", this);
 
-    let url = this.mLauncher.source;
-
+    var url = this.mLauncher.source;
     if (url instanceof Ci.nsINestedURI) {
       url = url.innermostURI;
     }
-
-    let iconPath = "goat";
-    let fname = "";
-    if (suggestedFileName) {
-      fname = iconPath = suggestedFileName;
-    } else if (url instanceof Ci.nsIURL) {
+    if (url.scheme == "blob") {
+      let origin = new URL(url.spec).origin;
       
-      fname = iconPath = url.fileName;
-    } else if (["data", "blob"].includes(url.scheme)) {
-      
-      let { MIMEType } = this.mLauncher.MIMEInfo;
-      fname = lazy.gMIMEService.getValidFileName(null, MIMEType, url, 0);
-    } else {
-      fname = url.pathQueryRef;
+      if (origin != "null") {
+        
+        
+        
+        try {
+          url = Services.io.newURI(origin);
+        } catch (ex) {
+          console.error(ex);
+        }
+      }
     }
 
+    var fname = "";
+    var iconPath = "goat";
     this.mSourcePath = url.prePath;
     
     if (url instanceof Ci.nsIURL) {
+      
+      fname = iconPath = url.fileName;
       this.mSourcePath += url.directory;
     } else {
       
-      
-      
-      this.mSourcePath +=
-        url.pathQueryRef.length > 500
-          ? url.pathQueryRef.substring(0, 500) + "\u2026"
-          : url.pathQueryRef;
+      fname = url.pathQueryRef;
+      this.mSourcePath += url.pathQueryRef;
+    }
+
+    if (suggestedFileName) {
+      fname = iconPath = suggestedFileName;
     }
 
     var displayName = fname.replace(/ +/g, " ");
@@ -522,7 +514,7 @@ nsUnknownContentTypeDialog.prototype = {
     this.mDialog.document.title = this.mTitle;
 
     
-    this.initIntro(url, displayName);
+    this.initIntro(url, fname, displayName);
 
     var iconString =
       "moz-icon://" +
@@ -644,13 +636,14 @@ nsUnknownContentTypeDialog.prototype = {
     this.dialogElement("mode").focus();
   },
 
-  initIntro(url, displayName) {
-    this.dialogElement("location").value = displayName;
-    this.dialogElement("location").setAttribute("tooltiptext", displayName);
+  initIntro(url, filename, displayname) {
+    this.dialogElement("location").value = displayname;
+    this.dialogElement("location").setAttribute("realname", filename);
+    this.dialogElement("location").setAttribute("tooltiptext", displayname);
 
     
     
-    let pathString;
+    var pathString;
     if (url instanceof Ci.nsIFileURL) {
       try {
         
@@ -659,9 +652,15 @@ nsUnknownContentTypeDialog.prototype = {
     }
 
     if (!pathString) {
-      pathString = BrowserUtils.formatURIForDisplay(url, {
-        showInsecureHTTP: true,
-      });
+      
+      var tmpurl = url; 
+      try {
+        tmpurl = tmpurl
+          .mutate()
+          .setUserPass("")
+          .finalize();
+      } catch (ex) {}
+      pathString = tmpurl.prePath;
     }
 
     
