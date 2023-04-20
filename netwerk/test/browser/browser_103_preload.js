@@ -261,8 +261,8 @@ add_task(async function test_103_anchor() {
 
   
   await lax_request_count_checking("test_103_anchor", gotRequestCount, {
-    hinted: 1,
-    normal: 0,
+    hinted: 0,
+    normal: 1,
   });
   
 

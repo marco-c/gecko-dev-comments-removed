@@ -1412,6 +1412,12 @@ class nsContentUtils {
 
 
 
+  static bool LinkContextIsURI(const nsAString& aAnchor, nsIURI* aDocURI);
+
+  
+
+
+
 
 
   static bool IsPreloadType(nsContentPolicyType aType);
