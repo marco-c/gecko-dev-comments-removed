@@ -1408,7 +1408,8 @@ class MediaDecoderStateMachine::LoopingDecodingState
     
     return mAudioDataRequest.Exists() || mAudioSeekRequest.Exists() ||
            ShouldDiscardLoopedData(MediaData::Type::AUDIO_DATA) ||
-           IsDataWaitingForTimestampAdjustment(MediaData::Type::AUDIO_DATA);
+           IsDataWaitingForTimestampAdjustment(MediaData::Type::AUDIO_DATA) ||
+           mIsReachingAudioEOS;
   }
 
   bool HasDecodedLastVideoFrame() const {
@@ -1416,7 +1417,8 @@ class MediaDecoderStateMachine::LoopingDecodingState
     
     return mVideoDataRequest.Exists() || mVideoSeekRequest.Exists() ||
            ShouldDiscardLoopedData(MediaData::Type::VIDEO_DATA) ||
-           IsDataWaitingForTimestampAdjustment(MediaData::Type::VIDEO_DATA);
+           IsDataWaitingForTimestampAdjustment(MediaData::Type::VIDEO_DATA) ||
+           mIsReachingVideoEOS;
   }
 
   bool ShouldStopPrerolling() const override {
