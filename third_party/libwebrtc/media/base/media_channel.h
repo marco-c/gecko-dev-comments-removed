@@ -452,6 +452,11 @@ struct MediaReceiverInfo {
   double jitter_buffer_delay_seconds = 0.0;
   
   
+  
+  
+  absl::optional<double> jitter_buffer_target_delay_seconds;
+  
+  
   uint64_t jitter_buffer_emitted_count = 0;
   
   
@@ -495,7 +500,6 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   uint64_t concealed_samples = 0;
   uint64_t silent_concealed_samples = 0;
   uint64_t concealment_events = 0;
-  double jitter_buffer_target_delay_seconds = 0.0;
   uint64_t inserted_samples_for_deceleration = 0;
   uint64_t removed_samples_for_acceleration = 0;
   uint64_t fec_packets_received = 0;
