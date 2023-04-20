@@ -1,18 +1,10 @@
+/* -*- js-indent-level: 2; indent-tabs-mode: nil -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["MacOSImpl"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -32,8 +24,8 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
     "resource://gre/modules/Console.sys.mjs"
   );
   let consoleOptions = {
-    
-    
+    // tip: set maxLogLevel to "debug" and use log.debug() to create detailed
+    // messages during development. See LOG_LEVELS in Console.sys.mjs for details.
     maxLogLevel: "error",
     maxLogLevelPref: "toolkit.components.taskscheduler.loglevel",
     prefix: "TaskScheduler",
@@ -41,14 +33,14 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   return new ConsoleAPI(consoleOptions);
 });
 
-
-
-
-
-
-
-
-var MacOSImpl = {
+/**
+ * Task generation and management for macOS, using `launchd` via `launchctl`.
+ *
+ * Implements the API exposed in TaskScheduler.jsm
+ * Not intended for external use, this is in a separate module to ship the code only
+ * on macOS, and to expose for testing.
+ */
+export var MacOSImpl = {
   async registerTask(id, command, intervalSeconds, options) {
     lazy.log.info(
       `registerTask(${id}, ${command}, ${intervalSeconds}, ${JSON.stringify(
@@ -61,18 +53,18 @@ var MacOSImpl = {
 
     let label = this._formatLabelForThisApp(id);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // We ignore `options.disabled`, which is test only.
+    //
+    // The `Disabled` key prevents `launchd` from registering the task, with
+    // exit code 133 and error message "Service is disabled".  If we really want
+    // this flow in the future, there is `launchctl disable ...`, but it's
+    // fraught with peril: the disabled status is stored outside of any plist,
+    // and it persists even after the task is deleted.  Monkeying with the
+    // disabled status will likely prevent users from disabling these tasks
+    // forcibly, should it come to that.  All told, fraught.
+    //
+    // For the future: there is the `RunAtLoad` key, should we want to run the
+    // task once immediately.
     let plist = {};
     plist.Label = label;
     plist.ProgramArguments = [command];
@@ -126,7 +118,7 @@ var MacOSImpl = {
         );
       }
     } catch (e) {
-      
+      // Try to clean up.
       await IOUtils.remove(path, { ignoreAbsent: true });
       throw e;
     }
@@ -165,7 +157,7 @@ var MacOSImpl = {
     return !exitCode;
   },
 
-  
+  // For internal and testing use only.
   async _listAllLabelsForThisApp() {
     let proc = await lazy.Subprocess.call({
       command: "/bin/launchctl",
@@ -185,7 +177,7 @@ var MacOSImpl = {
 
     let lines = stdout.split(/\r\n|\n|\r/);
     let labels = lines
-      .map(line => line.split("\t").pop()) 
+      .map(line => line.split("\t").pop()) // Lines are like "-\t0\tlabel".
       .filter(this._labelMatchesThisApp);
 
     lazy.log.debug(`_listAllLabelsForThisApp`, labels);
@@ -221,15 +213,15 @@ var MacOSImpl = {
     return IOUtils.exists(path);
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Turn an object into a macOS plist.
+   *
+   * Properties of type array-of-string, dict-of-string, string,
+   * number, and boolean are supported.
+   *
+   * @param   options object to turn into macOS plist.
+   * @returns plist as an XML DOM object.
+   */
   _toLaunchdPlist(options) {
     const doc = new DOMParser().parseFromString("<plist></plist>", "text/xml");
     const root = doc.documentElement;
@@ -284,15 +276,15 @@ var MacOSImpl = {
     return doc;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Turn an object into a macOS plist encoded as a string.
+   *
+   * Properties of type array-of-string, dict-of-string, string,
+   * number, and boolean are supported.
+   *
+   * @param   options object to turn into macOS plist.
+   * @returns plist as a string.
+   */
   _formatLaunchdPlist(options) {
     let doc = this._toLaunchdPlist(options);
 
@@ -328,8 +320,8 @@ var MacOSImpl = {
       return this._cachedUid;
     }
 
-    
-    
+    // There are standard APIs for determining our current UID, but this
+    // is easy and parallel to the general tactics used by this module.
     let proc = await lazy.Subprocess.call({
       command: "/usr/bin/id",
       arguments: ["-u"],

@@ -1,19 +1,10 @@
+/* -*- js-indent-level: 2; indent-tabs-mode: nil -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["WinImpl"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -28,16 +19,16 @@ XPCOMUtils.defineLazyServiceGetters(lazy, {
   ],
 });
 
-
-
-
-
-
-
-
-var WinImpl = {
+/**
+ * Task generation and management for Windows, using Task Scheduler 2.0 (taskschd).
+ *
+ * Implements the API exposed in TaskScheduler.jsm
+ * Not intended for external use, this is in a separate module to ship the code only
+ * on Windows, and to expose for testing.
+ */
+export var WinImpl = {
   registerTask(id, command, intervalSeconds, options) {
-    
+    // The folder might not yet exist.
     this._createFolderIfNonexistent();
 
     const xml = this._formatTaskDefinitionXML(
@@ -62,14 +53,14 @@ var WinImpl = {
     );
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Delete all tasks created by this installation.
+   *
+   * The Windows Default Browser Agent task is special: it's
+   * registered by the installer and might run as a different user and
+   * require permissions to delete.  We ignore it and leave it for the
+   * uninstaller to remove.
+   */
   deleteAllTasks() {
     const taskFolderName = this._taskFolderName();
 
@@ -78,7 +69,7 @@ var WinImpl = {
       allTasks = lazy.WinTaskSvc.getFolderTasks(taskFolderName);
     } catch (ex) {
       if (ex.result == Cr.NS_ERROR_FILE_NOT_FOUND) {
-        
+        // Folder doesn't exist, nothing to delete.
         return;
       }
       throw ex;
@@ -88,14 +79,14 @@ var WinImpl = {
 
     let numberDeleted = 0;
     let lastFailedTaskName;
-    
+    // We need `MOZ_APP_DISPLAYNAME` since that's what the WDBA (written in C++) uses.
     const defaultBrowserAgentTaskName =
       AppConstants.MOZ_APP_DISPLAYNAME_DO_NOT_USE +
       " Default Browser Agent " +
       lazy.XreDirProvider.getInstallHash();
     for (const taskName of tasksToDelete) {
       if (taskName == defaultBrowserAgentTaskName) {
-        
+        // Skip the Windows Default Browser Agent task.
         continue;
       }
 
@@ -108,15 +99,15 @@ var WinImpl = {
     }
 
     if (lastFailedTaskName) {
-      
-      
-      
-      
+      // There's no standard way to chain exceptions, so instead try again,
+      // which should fail and throw again.  It's possible this isn't idempotent
+      // but we're expecting failures to be due to permission errors, which are
+      // likely to be static.
       lazy.WinTaskSvc.deleteTask(taskFolderName, lastFailedTaskName);
     }
 
     if (allTasks.length == numberDeleted) {
-      
+      // Deleted every task, remove the folder.
       this._deleteFolderIfEmpty();
     }
   },
@@ -129,7 +120,7 @@ var WinImpl = {
       allTasks = lazy.WinTaskSvc.getFolderTasks(taskFolderName);
     } catch (ex) {
       if (ex.result == Cr.NS_ERROR_FILE_NOT_FOUND) {
-        
+        // Folder doesn't exist, so neither do tasks within it.
         return false;
       }
       throw ex;
@@ -142,7 +133,7 @@ var WinImpl = {
     const startTime = new Date(Date.now() + intervalSeconds * 1000);
     const xmlns = "http://schemas.microsoft.com/windows/2004/02/mit/task";
 
-    
+    // Fill in the constant parts of the task, and those that don't require escaping.
     const docBase = `<Task xmlns="${xmlns}">
   <Triggers>
     <TimeTrigger>
@@ -197,9 +188,9 @@ var WinImpl = {
       settings.appendChild(timeout);
     }
 
-    
-    
-    
+    // Other settings to consider for the future:
+    // Idle
+    // Battery
 
     doc.querySelector("RegistrationInfo Author").textContent =
       Services.appinfo.vendor;
@@ -233,26 +224,26 @@ var WinImpl = {
     try {
       lazy.WinTaskSvc.deleteFolder(parentName, subName);
     } catch (e) {
-      
+      // Missed one somehow, possibly a subfolder?
       if (e.result != Cr.NS_ERROR_FILE_DIR_NOT_EMPTY) {
         throw e;
       }
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Quotes a string for use as a single command argument, using Windows quoting
+   * conventions.
+   *
+   * copied from quoteString() in toolkit/modules/subproces/subprocess_worker_win.js
+   *
+   *
+   * @see https://msdn.microsoft.com/en-us/library/17w5ykft(v=vs.85).aspx
+   *
+   * @param {string} str
+   *        The argument string to quote.
+   * @returns {string}
+   */
   _quoteString(str) {
     if (!/[\s"]/.test(str)) {
       return str;
