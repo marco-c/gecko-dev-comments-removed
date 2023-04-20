@@ -1730,7 +1730,14 @@ bool MarkStack::hasEntries(MarkColor color) const {
 
 bool MarkStack::hasStealableWork() const {
   
-  return wordCountForCurrentColor() > ValueRangeWords;
+  
+  
+  constexpr size_t MinStealableWordCount = 12;
+
+  static_assert(MinStealableWordCount >= ValueRangeWords,
+                "We must always leave at least one stack entry.");
+
+  return wordCountForCurrentColor() > MinStealableWordCount;
 }
 
 MOZ_ALWAYS_INLINE bool MarkStack::indexIsEntryBase(size_t index) const {
