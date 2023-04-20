@@ -6,76 +6,27 @@
 var EXPORTED_SYMBOLS = ["PageStyleParent"];
 
 class PageStyleParent extends JSWindowActorParent {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  #styleSheetInfo = null;
-
   receiveMessage(msg) {
     
     let browser = this.browsingContext.top.embedderElement;
-    if (!browser || browser.ownerGlobal.closed) {
+    if (!browser) {
       return;
     }
 
-    
-    let actor = this.browsingContext.top.currentWindowGlobal.getActor(
-      "PageStyle"
-    );
+    let permanentKey = browser.permanentKey;
+    let window = browser.ownerGlobal;
+    let styleMenu = window.gPageStyleMenu;
+    if (window.closed || !styleMenu) {
+      return;
+    }
+
     switch (msg.name) {
       case "PageStyle:Add":
-        actor.addSheetInfo(msg.data);
+        styleMenu.addBrowserStyleSheets(msg.data, permanentKey);
         break;
       case "PageStyle:Clear":
-        if (actor == this) {
-          this.#styleSheetInfo = null;
-        }
+        styleMenu.clearBrowserStyleSheets(permanentKey);
         break;
     }
-  }
-
-  
-
-
-
-
-
-  addSheetInfo(newSheetData) {
-    let info = this.getSheetInfo();
-    info.filteredStyleSheets.push(...newSheetData.filteredStyleSheets);
-    info.preferredStyleSheetSet ||= newSheetData.preferredStyleSheetSet;
-  }
-
-  getSheetInfo() {
-    if (!this.#styleSheetInfo) {
-      this.#styleSheetInfo = {
-        filteredStyleSheets: [],
-        authorStyleDisabled: false,
-        preferredStyleSheetSet: true,
-      };
-    }
-    return this.#styleSheetInfo;
   }
 }
