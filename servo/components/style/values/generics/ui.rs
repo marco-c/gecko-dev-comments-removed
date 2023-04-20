@@ -4,6 +4,7 @@
 
 
 
+use crate::values::generics::length::GenericLengthPercentageOrAuto;
 use crate::values::specified::ui::CursorKind;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
@@ -125,5 +126,46 @@ impl<Color> Default for ScrollbarColor<Color> {
     #[inline]
     fn default() -> Self {
         ScrollbarColor::Auto
+    }
+}
+
+
+
+
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C)]
+pub struct GenericViewTimelineInset<LengthPercent> {
+    
+    pub start: GenericLengthPercentageOrAuto<LengthPercent>,
+    
+    pub end: GenericLengthPercentageOrAuto<LengthPercent>,
+}
+
+pub use self::GenericViewTimelineInset as ViewTimelineInset;
+
+impl<LengthPercent> ToCss for ViewTimelineInset<LengthPercent>
+where
+    LengthPercent: ToCss + PartialEq,
+{
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        self.start.to_css(dest)?;
+        if self.end != self.start {
+            dest.write_char(' ')?;
+            self.end.to_css(dest)?;
+        }
+        Ok(())
     }
 }
