@@ -14,7 +14,6 @@ const { FileUtils } = ChromeUtils.importESModule(
 const { makeFakeAppDir } = ChromeUtils.importESModule(
   "resource://testing-common/AppData.sys.mjs"
 );
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 const DAY = 24 * 60 * 60 * 1000; 
 const SERVER_URL =
@@ -88,22 +87,20 @@ function createPendingCrashReports(howMany, accessDate) {
 
 
 
-  let createFile = (fileName, extension, lastAccessedDate, contents) => {
+  let createFile = async (fileName, extension, lastAccessedDate, contents) => {
     let file = dir.clone();
     file.append(fileName + "." + extension);
     file.create(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
-    let promises = [OS.File.setDates(file.path, lastAccessedDate)];
 
     if (contents) {
-      let encoder = new TextEncoder();
-      let array = encoder.encode(contents);
-      promises.push(
-        OS.File.writeAtomic(file.path, array, {
-          tmpPath: file.path + ".tmp",
-        })
-      );
+      await IOUtils.writeUTF8(file.path, contents, {
+        tmpPath: file.path + ".tmp",
+      });
     }
-    return Promise.all(promises);
+
+    if (lastAccessedDate) {
+      await IOUtils.setAccessTime(file.path, lastAccessedDate.valueOf());
+    }
   };
 
   let uuidGenerator = Services.uuid;
