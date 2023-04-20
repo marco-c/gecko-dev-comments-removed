@@ -164,9 +164,6 @@ interface nsIDocumentEncoder : nsISupports
 
 
 
-
-
-
   const unsigned long OutputPersistNBSP = (1 << 17);
 
   
