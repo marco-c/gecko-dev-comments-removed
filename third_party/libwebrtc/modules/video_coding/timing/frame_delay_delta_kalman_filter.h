@@ -87,11 +87,11 @@ class FrameDelayDeltaKalmanFilter {
       double frame_size_variation_bytes) const;
 
  private:
-  double theta_[2];         
-                            
-                            
-  double theta_cov_[2][2];  
-  double q_cov_[2][2];      
+  
+  double estimate_[2];
+  double estimate_cov_[2][2];  
+
+  double process_noise_cov_[2][2];  
 };
 
 }  
