@@ -31,7 +31,7 @@ namespace js {
 
   
   
-  MOZ_ASSERT(shape->slotSpan() == slotSpan);
+  MOZ_ASSERT(shape->asShared().slotSpan() == slotSpan);
 
   
   

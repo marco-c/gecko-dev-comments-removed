@@ -949,14 +949,14 @@ static bool InitializePropertiesFromCompatibleNativeObject(
     return true;
   }
 
-  Rooted<Shape*> shape(cx);
+  Rooted<SharedShape*> shape(cx);
   if (src->staticPrototype() == dst->staticPrototype()) {
-    shape = src->shape();
+    shape = src->sharedShape();
   } else {
     
     
     
-    Shape* srcShape = src->shape();
+    SharedShape* srcShape = src->sharedShape();
     ObjectFlags objFlags;
     objFlags = CopyPropMapObjectFlags(objFlags, srcShape->objectFlags());
     Rooted<SharedPropMap*> map(cx, srcShape->sharedPropMap());
@@ -969,7 +969,7 @@ static bool InitializePropertiesFromCompatibleNativeObject(
     }
   }
 
-  uint32_t oldSpan = dst->shape()->slotSpan();
+  uint32_t oldSpan = dst->sharedShape()->slotSpan();
   uint32_t newSpan = shape->slotSpan();
   if (!dst->setShapeAndAddNewSlots(cx, shape, oldSpan, newSpan)) {
     return false;
