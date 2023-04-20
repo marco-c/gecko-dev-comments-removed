@@ -97,7 +97,9 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   class Entry final {
    public:
     explicit Entry(nsTimerImpl& aTimerImpl)
-        : mTimeout(aTimerImpl.mTimeout), mTimerImpl(&aTimerImpl) {
+        : mTimeout(aTimerImpl.mTimeout),
+          mDelay(aTimerImpl.mDelay),
+          mTimerImpl(&aTimerImpl) {
       aTimerImpl.SetIsInTimerThread(true);
     }
 
@@ -141,9 +143,15 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
     }
 
     const TimeStamp& Timeout() const { return mTimeout; }
+    const TimeDuration& Delay() const { return mDelay; }
 
    private:
+    
+    
+    
     TimeStamp mTimeout;
+    TimeDuration mDelay;
+
     RefPtr<nsTimerImpl> mTimerImpl;
   };
 
@@ -165,8 +173,10 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   
   
   
-  constexpr TimeDuration ComputeAcceptableFiringDelay(
-      TimeDuration minDelay, TimeDuration maxDelay) const;
+  
+  TimeDuration ComputeAcceptableFiringDelay(TimeDuration timerDuration,
+                                            TimeDuration minDelay,
+                                            TimeDuration maxDelay) const;
 
 #ifdef DEBUG
   
