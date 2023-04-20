@@ -1655,7 +1655,11 @@ struct BaseCompiler final {
     static void emitTrapSite(BaseCompiler* bc);
   };
 
+  
+  RegPtr loadTypeDefInstanceData(uint32_t typeIndex);
+  
   RegPtr loadTypeDef(uint32_t typeIndex);
+
   
   
   void branchGcObjectType(RegRef object, uint32_t typeIndex, Label* label,
