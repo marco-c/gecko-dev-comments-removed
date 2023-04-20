@@ -7755,17 +7755,17 @@ void nsDisplayEffectsBase::ComputeInvalidationRegion(
 }
 
 bool nsDisplayEffectsBase::ValidateSVGFrame() {
-  const nsIContent* content = mFrame->GetContent();
-  bool hasSVGLayout = mFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT);
-  if (hasSVGLayout) {
+  if (mFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
     ISVGDisplayableFrame* svgFrame = do_QueryFrame(mFrame);
-    if (!svgFrame || !mFrame->GetContent()->IsSVGElement()) {
-      NS_ASSERTION(false, "why?");
+    if (!svgFrame) {
       return false;
     }
-    if (!static_cast<const SVGElement*>(content)->HasValidDimensions()) {
-      return false;  
+    if (auto* svgElement = SVGElement::FromNode(mFrame->GetContent())) {
+      
+      
+      return svgElement->HasValidDimensions();
     }
+    return false;
   }
 
   return true;

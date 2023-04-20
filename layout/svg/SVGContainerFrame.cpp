@@ -135,9 +135,10 @@ void SVGDisplayContainerFrame::Init(nsIContent* aContent,
 void SVGDisplayContainerFrame::BuildDisplayList(
     nsDisplayListBuilder* aBuilder, const nsDisplayListSet& aLists) {
   
-  if (mContent->IsSVGElement() &&
-      !static_cast<const SVGElement*>(GetContent())->HasValidDimensions()) {
-    return;
+  if (auto* svg = SVGElement::FromNode(GetContent())) {
+    if (!svg->HasValidDimensions()) {
+      return;
+    }
   }
   DisplayOutline(aBuilder, aLists);
   return BuildDisplayListForNonBlockChildren(aBuilder, aLists);
@@ -211,8 +212,7 @@ bool SVGDisplayContainerFrame::IsSVGTransformed(
   }
 
   
-  if (mContent->IsSVGElement()) {
-    SVGElement* content = static_cast<SVGElement*>(GetContent());
+  if (auto* content = SVGElement::FromNode(GetContent())) {
     SVGAnimatedTransformList* transformList =
         content->GetAnimatedTransformList();
     if ((transformList && transformList->HasTransform()) ||
@@ -245,9 +245,8 @@ void SVGDisplayContainerFrame::PaintSVG(gfxContext& aContext,
   }
 
   gfxMatrix matrix = aTransform;
-  if (GetContent()->IsSVGElement()) {  
-    matrix = static_cast<const SVGElement*>(GetContent())
-                 ->PrependLocalTransformsTo(matrix, eChildToUserSpace);
+  if (auto* svg = SVGElement::FromNode(GetContent())) {
+    matrix = svg->PrependLocalTransformsTo(matrix, eChildToUserSpace);
     if (matrix.IsSingular()) {
       return;
     }
@@ -258,8 +257,7 @@ void SVGDisplayContainerFrame::PaintSVG(gfxContext& aContext,
     
     
     const nsIContent* content = kid->GetContent();
-    if (content->IsSVGElement()) {  
-      const SVGElement* element = static_cast<const SVGElement*>(content);
+    if (const SVGElement* element = SVGElement::FromNode(content)) {
       if (!element->HasValidDimensions()) {
         continue;  
       }
@@ -384,26 +382,25 @@ SVGBBox SVGDisplayContainerFrame::GetBBoxContribution(
     const Matrix& aToBBoxUserspace, uint32_t aFlags) {
   SVGBBox bboxUnion;
 
-  nsIFrame* kid = mFrames.FirstChild();
-  while (kid) {
-    nsIContent* content = kid->GetContent();
+  for (nsIFrame* kid : mFrames) {
     ISVGDisplayableFrame* svgKid = do_QueryFrame(kid);
-    
-    if (svgKid &&
-        (!content->IsSVGElement() ||
-         static_cast<const SVGElement*>(content)->HasValidDimensions())) {
-      gfxMatrix transform = gfx::ThebesMatrix(aToBBoxUserspace);
-      if (content->IsSVGElement()) {
-        transform = static_cast<SVGElement*>(content)->PrependLocalTransformsTo(
-                        {}, eChildToUserSpace) *
-                    SVGUtils::GetTransformMatrixInUserSpace(kid) * transform;
-      }
-      
-      
-      bboxUnion.UnionEdges(
-          svgKid->GetBBoxContribution(gfx::ToMatrix(transform), aFlags));
+    if (!svgKid) {
+      continue;
     }
-    kid = kid->GetNextSibling();
+    
+    auto* svg = SVGElement::FromNode(kid->GetContent());
+    if (svg && !svg->HasValidDimensions()) {
+      continue;
+    }
+    gfxMatrix transform = gfx::ThebesMatrix(aToBBoxUserspace);
+    if (svg) {
+      transform = svg->PrependLocalTransformsTo({}, eChildToUserSpace) *
+                  SVGUtils::GetTransformMatrixInUserSpace(kid) * transform;
+    }
+    
+    
+    bboxUnion.UnionEdges(
+        svgKid->GetBBoxContribution(gfx::ToMatrix(transform), aFlags));
   }
 
   return bboxUnion;
