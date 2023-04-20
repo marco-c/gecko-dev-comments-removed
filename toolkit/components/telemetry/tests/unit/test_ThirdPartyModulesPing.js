@@ -98,6 +98,15 @@ add_task(async function test_send_ping() {
   Assert.equal(found.payload.structVersion, 1, "Version is correct");
   Assert.ok(found.payload.modules, "'modules' object exists");
   Assert.ok(Array.isArray(found.payload.modules), "'modules' is an array");
+  Assert.ok(found.payload.blockedModules, "'blockedModules' object exists");
+  Assert.ok(
+    Array.isArray(found.payload.blockedModules),
+    "'blockedModules' is an array"
+  );
+  
+  
+  
+  
   Assert.ok(found.payload.processes, "'processes' object exists");
   Assert.ok(
     gCurrentPidStr in found.payload.processes,

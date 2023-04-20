@@ -26,11 +26,13 @@ class MOZ_RAII UntrustedModulesDataSerializer final {
   JSContext* mCx;
   JS::Rooted<JSObject*> mMainObj;
   JS::Rooted<JSObject*> mModulesArray;
+  JS::Rooted<JSObject*> mBlockedModulesArray;
   JS::Rooted<JSObject*> mPerProcObjContainer;
 
   IndexMap mIndexMap;
   const uint32_t mMaxModulesArrayLen;
   uint32_t mCurModulesArrayIdx;
+  uint32_t mCurBlockedModulesArrayIdx;
 
   
   
@@ -71,6 +73,9 @@ class MOZ_RAII UntrustedModulesDataSerializer final {
 
 
   nsresult Add(const UntrustedModulesBackupData& aData);
+
+  nsresult AddBlockedModules(
+      const nsTArray<nsDependentSubstring>& blockedModules);
 };
 
 }  
