@@ -411,17 +411,6 @@ NS_IMETHODIMP nsWebBrowserPersist::SetProgressListener(
   return NS_OK;
 }
 
-NS_IMETHODIMP nsWebBrowserPersist::SaveURI(
-    nsIURI* aURI, nsIPrincipal* aPrincipal, uint32_t aCacheKey,
-    nsIReferrerInfo* aReferrerInfo, nsICookieJarSettings* aCookieJarSettings,
-    nsIInputStream* aPostData, const char* aExtraHeaders, nsISupports* aFile,
-    nsContentPolicyType aContentPolicyType, nsILoadContext* aPrivacyContext) {
-  bool isPrivate = aPrivacyContext && aPrivacyContext->UsePrivateBrowsing();
-  return SavePrivacyAwareURI(aURI, aPrincipal, aCacheKey, aReferrerInfo,
-                             aCookieJarSettings, aPostData, aExtraHeaders,
-                             aFile, aContentPolicyType, isPrivate);
-}
-
 NS_IMETHODIMP nsWebBrowserPersist::SavePrivacyAwareURI(
     nsIURI* aURI, nsIPrincipal* aPrincipal, uint32_t aCacheKey,
     nsIReferrerInfo* aReferrerInfo, nsICookieJarSettings* aCookieJarSettings,
