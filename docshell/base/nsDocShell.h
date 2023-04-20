@@ -1062,6 +1062,9 @@ class nsDocShell final : public nsDocLoader,
 
   
   
+  
+  
+  
   bool IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
                                 SameDocumentNavigationState& aState);
 
@@ -1293,6 +1296,8 @@ class nsDocShell final : public nsDocLoader,
   uint32_t mRequestForBlockingFromBFCacheCount = 0;
 
   uint64_t mChannelToDisconnectOnPageHide;
+
+  uint32_t mPendingReloadCount = 0;
 
   
   

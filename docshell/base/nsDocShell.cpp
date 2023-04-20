@@ -4061,6 +4061,7 @@ nsDocShell::Reload(uint32_t aReloadFlags) {
     MOZ_LOG(gSHLog, LogLevel::Debug, ("nsDocShell %p Reload", this));
     bool forceReload = IsForceReloadType(loadType);
     if (!XRE_IsParentProcess()) {
+      ++mPendingReloadCount;
       RefPtr<nsDocShell> docShell(this);
       nsCOMPtr<nsIContentViewer> cv(mContentViewer);
       NS_ENSURE_STATE(cv);
@@ -4095,6 +4096,12 @@ nsDocShell::Reload(uint32_t aReloadFlags) {
                 loadGroup->RemoveRequest(stopDetector, nullptr, NS_OK);
               }
             });
+
+            
+            if (--(docShell->mPendingReloadCount) > 0) {
+              return;
+            }
+
             if (stopDetector->Canceled()) {
               return;
             }
@@ -8713,14 +8720,35 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
       
       
       if (!aState.mSameExceptHashes) {
-        nsCOMPtr<nsIChannel> docChannel = GetCurrentDocChannel();
-        if (docChannel) {
+        if (nsCOMPtr<nsIChannel> docChannel = GetCurrentDocChannel()) {
           nsCOMPtr<nsILoadInfo> docLoadInfo = docChannel->LoadInfo();
-          if (!docLoadInfo->GetLoadErrorPage()) {
-            if (nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(
-                    currentExposableURI, aLoadState->URI(), docLoadInfo)) {
-              aState.mSameExceptHashes = true;
+          if (!docLoadInfo->GetLoadErrorPage() &&
+              nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(
+                  currentExposableURI, aLoadState->URI(), docLoadInfo)) {
+            uint32_t status = docLoadInfo->GetHttpsOnlyStatus();
+            if (status & (nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_REGISTERED |
+                          nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST)) {
+              
+              
+              
+              
+              
+              
+              
+              nsCOMPtr<nsIURI> upgradedURI;
+              NS_GetSecureUpgradedURI(aLoadState->URI(),
+                                      getter_AddRefs(upgradedURI));
+              aLoadState->SetURI(upgradedURI);
+
+#ifdef DEBUG
+              bool sameExceptHashes = false;
+              currentExposableURI->EqualsExceptRef(aLoadState->URI(),
+                                                   &sameExceptHashes);
+              MOZ_ASSERT(sameExceptHashes);
+#endif
             }
+
+            aState.mSameExceptHashes = true;
           }
         }
       }
