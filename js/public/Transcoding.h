@@ -124,6 +124,10 @@ extern JS_PUBLIC_API bool FinishIncrementalEncoding(JSContext* cx,
                                                     TranscodeBuffer& buffer);
 
 
+extern JS_PUBLIC_API void AbortIncrementalEncoding(Handle<JSScript*> script);
+extern JS_PUBLIC_API void AbortIncrementalEncoding(Handle<JSObject*> module);
+
+
 
 
 
