@@ -10815,6 +10815,9 @@ bool BytecodeEmitter::emitInitializeFunctionSpecialNames() {
 
   
   if (funbox->needsArgsObj()) {
+    
+    
+    MOZ_ASSERT(emitterMode != BytecodeEmitter::SelfHosting);
     if (!emitInitializeFunctionSpecialName(
             this, TaggedParserAtomIndex::WellKnown::arguments(),
             JSOp::Arguments)) {

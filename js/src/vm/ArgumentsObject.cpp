@@ -317,6 +317,10 @@ template <typename CopyArgs>
 
 ArgumentsObject* ArgumentsObject::create(JSContext* cx, HandleFunction callee,
                                          unsigned numActuals, CopyArgs& copy) {
+  
+  
+  MOZ_ASSERT(!callee->isSelfHostedBuiltin());
+
   bool mapped = callee->baseScript()->hasMappedArgsObj();
   ArgumentsObject* templateObj =
       GlobalObject::getOrCreateArgumentsTemplateObject(cx, mapped);
