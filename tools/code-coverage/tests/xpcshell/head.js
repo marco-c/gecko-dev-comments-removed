@@ -7,11 +7,8 @@ var { AppConstants } = ChromeUtils.importESModule(
 );
 
 function getFiles() {
-  const env = Cc["@mozilla.org/process/environment;1"].getService(
-    Ci.nsIEnvironment
-  );
   
-  const jsCoveragePath = env.get("JS_CODE_COVERAGE_OUTPUT_DIR");
+  const jsCoveragePath = Services.env.get("JS_CODE_COVERAGE_OUTPUT_DIR");
 
   const jsCoverageDir = Cc["@mozilla.org/file/local;1"].createInstance(
     Ci.nsIFile
