@@ -152,6 +152,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "Crypto", insecureContext: true },
   
+  { name: "CryptoKey" },
+  
   { name: "CustomEvent", insecureContext: true },
   
   { name: "DedicatedWorkerGlobalScope", insecureContext: true },
