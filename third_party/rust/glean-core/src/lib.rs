@@ -3,6 +3,7 @@
 
 
 #![allow(clippy::significant_drop_in_scrutinee)]
+#![allow(clippy::uninlined_format_args)]
 #![deny(rustdoc::broken_intra_doc_links)]
 #![deny(missing_docs)]
 
@@ -340,7 +341,6 @@ fn initialize_inner(
                 
                 
                 
-                
                 dirty_flag = glean.is_dirty_flag_set();
                 glean.set_dirty_flag(false);
 
@@ -535,6 +535,9 @@ fn initialize_core_metrics(glean: &Glean, client_info: &ClientInfoMetrics) {
     if let Some(android_sdk_version) = client_info.android_sdk_version.as_ref() {
         core_metrics::internal_metrics::android_sdk_version.set_sync(glean, android_sdk_version);
     }
+    if let Some(windows_build_number) = client_info.windows_build_number.as_ref() {
+        core_metrics::internal_metrics::windows_build_number.set_sync(glean, *windows_build_number);
+    }
     if let Some(device_manufacturer) = client_info.device_manufacturer.as_ref() {
         core_metrics::internal_metrics::device_manufacturer.set_sync(glean, device_manufacturer);
     }
@@ -605,7 +608,11 @@ pub extern "C" fn glean_enable_logging() {
     
     
     
-    #[cfg(all(not(target_os = "android"), not(target_os = "ios")))]
+    #[cfg(all(
+        not(target_os = "android"),
+        not(target_os = "ios"),
+        feature = "enable_env_logger"
+    ))]
     {
         match env_logger::try_init() {
             Ok(_) => log::trace!("stdout logging should be hooked up!"),
@@ -938,8 +945,14 @@ static FD_LOGGER: OnceCell<fd_logger::FdLogger> = OnceCell::new();
 
 
 
+
+
 #[cfg(all(not(target_os = "android"), not(target_os = "ios")))]
 pub fn glean_enable_logging_to_fd(fd: u64) {
+    
+    
+    
+    
     
     unsafe {
         
@@ -965,7 +978,7 @@ pub fn glean_enable_logging_to_fd(_fd: u64) {
 #[allow(missing_docs)]
 mod ffi {
     use super::*;
-    uniffi_macros::include_scaffolding!("glean");
+    uniffi::include_scaffolding!("glean");
 
     type CowString = Cow<'static, str>;
 

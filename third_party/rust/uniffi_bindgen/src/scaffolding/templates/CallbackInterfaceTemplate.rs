@@ -55,7 +55,6 @@ impl r#{{ trait_name }} for {{ trait_impl }} {
     {% else -%}
     {%- endmatch -%} {
     {#- Method body #}
-        uniffi::deps::log::debug!("{{ cbi.name() }}.{{ meth.name() }}");
 
     {#- Packing args into a RustBuffer #}
         {% if meth.arguments().len() == 0 -%}
@@ -113,7 +112,7 @@ impl r#{{ trait_name }} for {{ trait_impl }} {
                 }
                 
                 0 => {
-                    eprintln!("UniFFI: Callback interface returned 0.  Please update the bindings code to return 1 for all successfull calls");
+                    uniffi::deps::log::error!("UniFFI: Callback interface returned 0. Please update the bindings code to return 1 for all successful calls");
                     {% match (meth.return_type(), meth.throws()) %}
                     {% when (Some(_), _) %}
                     panic!("Callback returned 0 when we were expecting a return value");
@@ -130,7 +129,7 @@ impl r#{{ trait_name }} for {{ trait_impl }} {
                         match {{ Type::String.borrow()|ffi_converter }}::try_lift(ret_rbuf) {
                             Ok(s) => s,
                             Err(e) => {
-                                println!("{{ trait_name }} Error reading ret_buf: {e}");
+                                uniffi::deps::log::error!("{{ trait_name }} Error reading ret_buf: {e}");
                                 String::from("[Error reading reason]")
                             }
                         }
@@ -142,7 +141,19 @@ impl r#{{ trait_name }} for {{ trait_impl }} {
                     Err(e)
                 }
                 {%- else %}
-                -1 => panic!("Callback failed"),
+                -1 => {
+                    if !ret_rbuf.is_empty() {
+                        let reason = match {{ Type::String.borrow()|ffi_converter }}::try_lift(ret_rbuf) {
+                            Ok(s) => s,
+                            Err(_) => {
+                                String::from("[Error reading reason]")
+                            }
+                        };
+                        panic!("callback failed. Reason: {}", reason);
+                    } else {
+                        panic!("Callback failed")
+                    }
+                },
                 {%- endmatch %}
                 
                 _ => panic!("Callback failed with unexpected return code"),

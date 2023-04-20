@@ -84,12 +84,14 @@ use derive_builder::Builder;
 use std::collections::HashMap;
 use std::env;
 use std::fmt;
+use std::hash::Hash;
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::str::from_utf8;
 
 pub use camino;
-pub use semver::{Version, VersionReq};
+pub use semver;
+use semver::{Version, VersionReq};
 
 pub use dependency::{Dependency, DependencyKind};
 use diagnostic::Diagnostic;
@@ -126,10 +128,7 @@ impl std::fmt::Display for PackageId {
 
 
 fn is_null(value: &serde_json::Value) -> bool {
-    match value {
-        serde_json::Value::Null => true,
-        _ => false,
-    }
+    matches!(value, serde_json::Value::Null)
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -158,8 +157,28 @@ pub struct Metadata {
 impl Metadata {
     
     pub fn root_package(&self) -> Option<&Package> {
-        let root = self.resolve.as_ref()?.root.as_ref()?;
-        self.packages.iter().find(|pkg| &pkg.id == root)
+        match &self.resolve {
+            Some(resolve) => {
+                
+                let root = resolve.root.as_ref()?;
+                self.packages.iter().find(|pkg| &pkg.id == root)
+            }
+            None => {
+                
+                let root_manifest_path = self.workspace_root.join("Cargo.toml");
+                self.packages
+                    .iter()
+                    .find(|pkg| pkg.manifest_path == root_manifest_path)
+            }
+        }
+    }
+
+    
+    pub fn workspace_packages(&self) -> Vec<&Package> {
+        self.packages
+            .iter()
+            .filter(|&p| self.workspace_members.contains(&p.id))
+            .collect()
     }
 }
 
@@ -310,8 +329,8 @@ pub struct Package {
     
     
     
-    #[serde(default = "edition_default")]
-    pub edition: String,
+    #[serde(default)]
+    pub edition: Edition,
     
     
     
@@ -368,9 +387,12 @@ impl Package {
 
     
     pub fn readme(&self) -> Option<Utf8PathBuf> {
-        self.readme
-            .as_ref()
-            .map(|file| self.manifest_path.join(file))
+        self.readme.as_ref().map(|file| {
+            self.manifest_path
+                .parent()
+                .unwrap_or(&self.manifest_path)
+                .join(file)
+        })
     }
 }
 
@@ -420,9 +442,9 @@ pub struct Target {
     
     pub src_path: Utf8PathBuf,
     
-    #[serde(default = "edition_default")]
-    #[cfg_attr(feature = "builder", builder(default = "edition_default()"))]
-    pub edition: String,
+    #[serde(default)]
+    #[cfg_attr(feature = "builder", builder(default))]
+    pub edition: Edition,
     
     
     
@@ -444,12 +466,97 @@ pub struct Target {
     pub doc: bool,
 }
 
-fn default_true() -> bool {
-    true
+impl Target {
+    fn is_kind(&self, name: &str) -> bool {
+        self.kind.iter().any(|kind| kind == name)
+    }
+
+    
+    pub fn is_lib(&self) -> bool {
+        self.is_kind("lib")
+    }
+
+    
+    pub fn is_bin(&self) -> bool {
+        self.is_kind("bin")
+    }
+
+    
+    pub fn is_example(&self) -> bool {
+        self.is_kind("example")
+    }
+
+    
+    pub fn is_test(&self) -> bool {
+        self.is_kind("test")
+    }
+
+    
+    pub fn is_bench(&self) -> bool {
+        self.is_kind("bench")
+    }
+
+    
+    pub fn is_custom_build(&self) -> bool {
+        self.is_kind("custom-build")
+    }
 }
 
-fn edition_default() -> String {
-    "2015".to_string()
+
+
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[non_exhaustive]
+pub enum Edition {
+    
+    #[serde(rename = "2015")]
+    E2015,
+    
+    #[serde(rename = "2018")]
+    E2018,
+    
+    #[serde(rename = "2021")]
+    E2021,
+    #[doc(hidden)]
+    #[serde(rename = "2024")]
+    _E2024,
+    #[doc(hidden)]
+    #[serde(rename = "2027")]
+    _E2027,
+    #[doc(hidden)]
+    #[serde(rename = "2030")]
+    _E2030,
+}
+
+impl Edition {
+    
+    pub fn as_str(&self) -> &'static str {
+        use Edition::*;
+        match self {
+            E2015 => "2015",
+            E2018 => "2018",
+            E2021 => "2021",
+            _E2024 => "2024",
+            _E2027 => "2027",
+            _E2030 => "2030",
+        }
+    }
+}
+
+impl fmt::Display for Edition {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl Default for Edition {
+    fn default() -> Self {
+        Self::E2015
+    }
+}
+
+fn default_true() -> bool {
+    true
 }
 
 
@@ -485,6 +592,8 @@ pub struct MetadataCommand {
     
     
     other_options: Vec<String>,
+    
+    verbose: bool,
 }
 
 impl MetadataCommand {
@@ -581,6 +690,12 @@ impl MetadataCommand {
     }
 
     
+    pub fn verbose(&mut self, verbose: bool) -> &mut MetadataCommand {
+        self.verbose = verbose;
+        self
+    }
+
+    
     
     pub fn cargo_command(&self) -> Command {
         let cargo = self
@@ -626,7 +741,11 @@ impl MetadataCommand {
 
     
     pub fn exec(&self) -> Result<Metadata> {
-        let output = self.cargo_command().output()?;
+        let mut command = self.cargo_command();
+        if self.verbose {
+            command.stderr(Stdio::inherit());
+        }
+        let output = command.output()?;
         if !output.status.success() {
             return Err(Error::CargoMetadata {
                 stderr: String::from_utf8(output.stderr)?,
@@ -635,7 +754,7 @@ impl MetadataCommand {
         let stdout = from_utf8(&output.stdout)?
             .lines()
             .find(|line| line.starts_with('{'))
-            .ok_or_else(|| Error::NoJson)?;
+            .ok_or(Error::NoJson)?;
         Self::parse(stdout)
     }
 }

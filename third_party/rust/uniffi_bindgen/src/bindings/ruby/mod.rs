@@ -2,14 +2,16 @@
 
 
 
-use std::{env, io::Write, process::Command};
+use std::{io::Write, process::Command};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
+use camino::Utf8Path;
 use fs_err::File;
 
 pub mod gen_ruby;
-use camino::Utf8Path;
+mod test;
 pub use gen_ruby::{Config, RubyWrapper};
+pub use test::run_test;
 
 use super::super::interface::ComponentInterface;
 
@@ -45,27 +47,4 @@ pub fn generate_ruby_bindings(config: &Config, ci: &ComponentInterface) -> Resul
     RubyWrapper::new(config.clone(), ci)
         .render()
         .context("failed to render ruby bindings")
-}
-
-
-
-pub fn run_script(out_dir: &Utf8Path, script_file: &Utf8Path) -> Result<()> {
-    let mut cmd = Command::new("ruby");
-    
-    let rubypath = env::var_os("RUBYLIB").unwrap_or_default();
-    let rubypath =
-        env::join_paths(env::split_paths(&rubypath).chain(vec![out_dir.as_std_path().to_owned()]))?;
-
-    cmd.env("RUBYLIB", rubypath);
-    
-    cmd.arg(script_file);
-    let status = cmd
-        .spawn()
-        .context("Failed to spawn `ruby` when running script")?
-        .wait()
-        .context("Failed to wait for `ruby` when running script")?;
-    if !status.success() {
-        bail!("running `ruby` failed")
-    }
-    Ok(())
 }

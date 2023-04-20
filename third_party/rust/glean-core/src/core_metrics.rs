@@ -2,7 +2,9 @@
 
 
 
-use crate::metrics::{Datetime, DatetimeMetric, StringMetric, TimeUnit, TimespanMetric};
+use crate::metrics::{
+    Datetime, DatetimeMetric, QuantityMetric, StringMetric, TimeUnit, TimespanMetric,
+};
 use crate::{CommonMetricData, Lifetime};
 
 use once_cell::sync::Lazy;
@@ -27,6 +29,8 @@ pub struct ClientInfoMetrics {
     
     pub android_sdk_version: Option<String>,
     
+    pub windows_build_number: Option<i64>,
+    
     
     pub device_manufacturer: Option<String>,
     
@@ -50,6 +54,7 @@ impl ClientInfoMetrics {
             os_version: "Unknown".to_string(),
             channel: Some("Unknown".to_string()),
             android_sdk_version: None,
+            windows_build_number: None,
             device_manufacturer: None,
             device_model: None,
             locale: None,
@@ -133,6 +138,17 @@ pub mod internal_metrics {
     pub static android_sdk_version: Lazy<StringMetric> = Lazy::new(|| {
         StringMetric::new(CommonMetricData {
             name: "android_sdk_version".into(),
+            category: "".into(),
+            send_in_pings: vec!["glean_client_info".into()],
+            lifetime: Lifetime::Application,
+            disabled: false,
+            ..Default::default()
+        })
+    });
+
+    pub static windows_build_number: Lazy<QuantityMetric> = Lazy::new(|| {
+        QuantityMetric::new(CommonMetricData {
+            name: "windows_build_number".into(),
             category: "".into(),
             send_in_pings: vec!["glean_client_info".into()],
             lifetime: Lifetime::Application,

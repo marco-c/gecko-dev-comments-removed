@@ -2,15 +2,17 @@
 
 
 
-use anyhow::{bail, Context, Result};
+use anyhow::Result;
 use camino::{Utf8Path, Utf8PathBuf};
 use fs_err::{self as fs, File};
-use std::{env, ffi::OsString, io::Write, process::Command};
+use std::{io::Write, process::Command};
 
 pub mod gen_kotlin;
 pub use gen_kotlin::{generate_bindings, Config};
+mod test;
 
 use super::super::interface::ComponentInterface;
+pub use test::run_test;
 
 pub fn write_bindings(
     config: &Config,
@@ -38,80 +40,4 @@ pub fn write_bindings(
 fn full_bindings_path(config: &Config, out_dir: &Utf8Path) -> Utf8PathBuf {
     let package_path: Utf8PathBuf = config.package_name().split('.').collect();
     Utf8PathBuf::from(out_dir).join(package_path)
-}
-
-
-
-pub fn compile_bindings(
-    config: &Config,
-    ci: &ComponentInterface,
-    out_dir: &Utf8Path,
-) -> Result<()> {
-    let mut kt_file = full_bindings_path(config, out_dir);
-    kt_file.push(format!("{}.kt", ci.namespace()));
-    let jar_file = out_dir.join(format!("{}.jar", ci.namespace()));
-    let status = Command::new("kotlinc")
-        
-        .arg("-Werror")
-        .arg("-classpath")
-        .arg(classpath_for_testing(out_dir)?)
-        .arg(&kt_file)
-        .arg("-d")
-        .arg(jar_file)
-        .spawn()
-        .context("Failed to spawn `kotlinc` to compile the bindings")?
-        .wait()
-        .context("Failed to wait for `kotlinc` when compiling the bindings")?;
-    if !status.success() {
-        bail!("running `kotlinc` failed")
-    }
-    Ok(())
-}
-
-
-
-pub fn run_script(out_dir: &Utf8Path, script_file: &Utf8Path) -> Result<()> {
-    let mut cmd = Command::new("kotlinc");
-    
-    cmd.arg("-classpath").arg(classpath_for_testing(out_dir)?);
-    
-    cmd.arg("-J-ea");
-    
-    cmd.arg("-Werror");
-    cmd.arg("-script").arg(script_file);
-    let status = cmd
-        .spawn()
-        .context("Failed to spawn `kotlinc` to run Kotlin script")?
-        .wait()
-        .context("Failed to wait for `kotlinc` when running Kotlin script")?;
-    if !status.success() {
-        bail!("running `kotlinc` failed")
-    }
-    Ok(())
-}
-
-
-pub fn classpath_for_testing(out_dir: &Utf8Path) -> Result<OsString> {
-    let mut classpath = env::var_os("CLASSPATH").unwrap_or_default();
-    
-    classpath.push(":");
-    classpath.push(out_dir);
-    
-    
-    
-    
-    
-    for entry in out_dir
-        .read_dir()
-        .context("Failed to list target directory when running Kotlin script")?
-    {
-        let entry = entry.context("Directory listing failed while running Kotlin script")?;
-        if let Some(ext) = entry.path().extension() {
-            if ext == "jar" {
-                classpath.push(":");
-                classpath.push(entry.path());
-            }
-        }
-    }
-    Ok(classpath)
 }

@@ -73,6 +73,22 @@ pub fn get_os_version() -> String {
     parse_linux_os_string(whatsys::kernel_version().unwrap_or_else(|| "Unknown".to_owned()))
 }
 
+#[cfg(target_os = "windows")]
+
+pub fn get_windows_build_number() -> Option<i64> {
+    match whatsys::windows_build_number() {
+        
+        Some(i) => Some(i as i64),
+        _ => None,
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+
+pub fn get_windows_build_number() -> Option<i64> {
+    None
+}
+
 #[cfg(target_os = "linux")]
 fn parse_linux_os_string(os_str: String) -> String {
     os_str.split('.').take(2).collect::<Vec<&str>>().join(".")

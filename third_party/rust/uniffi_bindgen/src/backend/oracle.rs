@@ -3,7 +3,7 @@
 
 
 use super::{CodeType, TypeIdentifier};
-use crate::interface::FFIType;
+use crate::interface::FfiType;
 
 
 
@@ -31,5 +31,5 @@ pub trait CodeOracle {
     
     fn error_name(&self, nm: &str) -> String;
 
-    fn ffi_type_label(&self, ffi_type: &FFIType) -> String;
+    fn ffi_type_label(&self, ffi_type: &FfiType) -> String;
 }

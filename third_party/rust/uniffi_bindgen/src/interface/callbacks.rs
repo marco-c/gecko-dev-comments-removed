@@ -36,7 +36,7 @@
 use anyhow::{bail, Result};
 use uniffi_meta::Checksum;
 
-use super::ffi::{FFIArgument, FFIFunction, FFIType};
+use super::ffi::{FfiArgument, FfiFunction, FfiType};
 use super::object::Method;
 use super::types::{Type, TypeIterator};
 use super::{APIConverter, ComponentInterface};
@@ -52,7 +52,7 @@ pub struct CallbackInterface {
     
     
     #[checksum_ignore]
-    pub(super) ffi_init_callback: FFIFunction,
+    pub(super) ffi_init_callback: FfiFunction,
 }
 
 impl CallbackInterface {
@@ -76,15 +76,15 @@ impl CallbackInterface {
         self.methods.iter().collect()
     }
 
-    pub fn ffi_init_callback(&self) -> &FFIFunction {
+    pub fn ffi_init_callback(&self) -> &FfiFunction {
         &self.ffi_init_callback
     }
 
     pub(super) fn derive_ffi_funcs(&mut self, ci_prefix: &str) {
         self.ffi_init_callback.name = format!("ffi_{ci_prefix}_{}_init_callback", self.name);
-        self.ffi_init_callback.arguments = vec![FFIArgument {
+        self.ffi_init_callback.arguments = vec![FfiArgument {
             name: "callback_stub".to_string(),
-            type_: FFIType::ForeignCallback,
+            type_: FfiType::ForeignCallback,
         }];
         self.ffi_init_callback.return_type = None;
     }
@@ -100,7 +100,7 @@ impl APIConverter<CallbackInterface> for weedle::CallbackInterfaceDefinition<'_>
             bail!("callback interface attributes are not supported yet");
         }
         if self.inheritance.is_some() {
-            bail!("callback interface inheritence is not supported");
+            bail!("callback interface inheritance is not supported");
         }
         let mut object = CallbackInterface::new(self.identifier.0.to_string());
         for member in &self.members.body {

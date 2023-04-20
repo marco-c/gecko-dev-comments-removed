@@ -16,11 +16,6 @@ use std::env;
 
 
 
-
-
-
-
-
 pub fn generate_scaffolding(udl_file: impl AsRef<Utf8Path>) -> Result<()> {
     let udl_file = udl_file.as_ref();
 
@@ -32,31 +27,5 @@ pub fn generate_scaffolding(udl_file: impl AsRef<Utf8Path>) -> Result<()> {
     
     
     let out_dir = env::var("OUT_DIR").context("$OUT_DIR missing?!")?;
-    run_uniffi_bindgen_scaffolding(out_dir.as_ref(), udl_file)
-}
-
-#[cfg(not(feature = "builtin-bindgen"))]
-fn run_uniffi_bindgen_scaffolding(out_dir: &Utf8Path, udl_file: &Utf8Path) -> Result<()> {
-    use anyhow::bail;
-    use std::process::Command;
-
-    let status = Command::new("uniffi-bindgen")
-        .arg("scaffolding")
-        .arg("--out-dir")
-        .arg(out_dir)
-        .arg(udl_file)
-        .status()
-        .context(
-            "failed to run `uniffi-bindgen` - \
-             have you installed it via `cargo install uniffi_bindgen`?",
-        )?;
-    if !status.success() {
-        bail!("Error while generating scaffolding code");
-    }
-    Ok(())
-}
-
-#[cfg(feature = "builtin-bindgen")]
-fn run_uniffi_bindgen_scaffolding(out_dir: &Utf8Path, udl_file: &Utf8Path) -> Result<()> {
-    uniffi_bindgen::generate_component_scaffolding(udl_file, None, Some(out_dir), false)
+    uniffi_bindgen::generate_component_scaffolding(udl_file, None, Some(out_dir.as_ref()), false)
 }

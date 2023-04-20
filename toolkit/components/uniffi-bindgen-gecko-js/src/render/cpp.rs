@@ -9,7 +9,7 @@ use heck::{ToShoutySnakeCase, ToUpperCamelCase};
 use std::collections::HashSet;
 use std::iter;
 use uniffi_bindgen::interface::{
-    CallbackInterface, ComponentInterface, FFIArgument, FFIFunction, FFIType, Object,
+    CallbackInterface, ComponentInterface, FfiArgument, FfiFunction, FfiType, Object,
 };
 
 #[derive(Template)]
@@ -61,7 +61,7 @@ pub impl ComponentInterface {
     
     
     
-    fn exposed_functions(&self) -> Vec<&FFIFunction> {
+    fn exposed_functions(&self) -> Vec<&FfiFunction> {
         let excluded: HashSet<_> = self
             .object_definitions()
             .iter()
@@ -80,9 +80,9 @@ pub impl ComponentInterface {
     
     
     
-    fn scaffolding_converter(&self, ffi_type: &FFIType) -> String {
+    fn scaffolding_converter(&self, ffi_type: &FfiType) -> String {
         match ffi_type {
-            FFIType::RustArcPtr(name) => {
+            FfiType::RustArcPtr(name) => {
                 format!("ScaffoldingObjectConverter<&{}>", self._pointer_type(name),)
             }
             _ => format!("ScaffoldingConverter<{}>", ffi_type.rust_type()),
@@ -90,7 +90,7 @@ pub impl ComponentInterface {
     }
 
     
-    fn scaffolding_call_handler(&self, func: &FFIFunction) -> String {
+    fn scaffolding_call_handler(&self, func: &FfiFunction) -> String {
         let return_param = match func.return_type() {
             Some(return_type) => self.scaffolding_converter(return_type),
             None => "ScaffoldingConverter<void>".to_string(),
@@ -108,7 +108,7 @@ pub impl ComponentInterface {
 }
 
 #[ext(name=FFIFunctionCppExt)]
-pub impl FFIFunction {
+pub impl FfiFunction {
     fn nm(&self) -> String {
         self.name().to_upper_camel_case()
     }
@@ -132,31 +132,31 @@ pub impl FFIFunction {
 }
 
 #[ext(name=FFITypeCppExt)]
-pub impl FFIType {
+pub impl FfiType {
     
     fn rust_type(&self) -> String {
         match self {
-            FFIType::UInt8 => "uint8_t",
-            FFIType::Int8 => "int8_t",
-            FFIType::UInt16 => "uint16_t",
-            FFIType::Int16 => "int16_t",
-            FFIType::UInt32 => "uint32_t",
-            FFIType::Int32 => "int32_t",
-            FFIType::UInt64 => "uint64_t",
-            FFIType::Int64 => "int64_t",
-            FFIType::Float32 => "float",
-            FFIType::Float64 => "double",
-            FFIType::RustBuffer => "RustBuffer",
-            FFIType::RustArcPtr(_) => "void *",
-            FFIType::ForeignCallback => "ForeignCallback",
-            FFIType::ForeignBytes => unimplemented!("ForeignBytes not supported"),
+            FfiType::UInt8 => "uint8_t",
+            FfiType::Int8 => "int8_t",
+            FfiType::UInt16 => "uint16_t",
+            FfiType::Int16 => "int16_t",
+            FfiType::UInt32 => "uint32_t",
+            FfiType::Int32 => "int32_t",
+            FfiType::UInt64 => "uint64_t",
+            FfiType::Int64 => "int64_t",
+            FfiType::Float32 => "float",
+            FfiType::Float64 => "double",
+            FfiType::RustBuffer(_) => "RustBuffer",
+            FfiType::RustArcPtr(_) => "void *",
+            FfiType::ForeignCallback => "ForeignCallback",
+            FfiType::ForeignBytes => unimplemented!("ForeignBytes not supported"),
         }
         .to_owned()
     }
 }
 
 #[ext(name=FFIArgumentCppExt)]
-pub impl FFIArgument {
+pub impl FfiArgument {
     fn rust_type(&self) -> String {
         self.type_().rust_type()
     }

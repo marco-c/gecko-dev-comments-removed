@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <windows.h>
@@ -10,7 +10,6 @@
 
 
 
-#define LEN 20
 
 
 
@@ -29,24 +28,59 @@
 
 
 
-const char *get_os_release(void) {
+
+
+
+
+
+
+int get_os_release(char *outbuf, size_t outlen) {
+  assert(outlen > 1);
+
   OSVERSIONINFO osvi;
-  char *s = malloc(LEN);
+
+  ZeroMemory(&osvi, sizeof(osvi));
+  osvi.dwOSVersionInfoSize = sizeof(osvi);
+
+  int written = 0;
+  if (GetVersionEx(&osvi)) {
+    written = snprintf(outbuf, outlen, "%ld.%ld", osvi.dwMajorVersion,
+                       osvi.dwMinorVersion);
+  } else {
+    int res = strncpy_s(outbuf, outlen, "unknown", strlen("unknown"));
+    if (res != 0) {
+      return 0;
+    }
+    written = strlen("unknown");
+  }
+
+  
+  
+  return min(written, (int)outlen - 1);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+int get_build_number() {
+  OSVERSIONINFO osvi;
 
   ZeroMemory(&osvi, sizeof(osvi));
   osvi.dwOSVersionInfoSize = sizeof(osvi);
 
   if (GetVersionEx(&osvi)) {
-    snprintf(s, LEN, "%ld.%ld",
-        osvi.dwMajorVersion, osvi.dwMinorVersion);
-  } else {
-    strncpy(s, "unknown", LEN);
-  }
-  s[LEN - 1] = '\0';
+    return osvi.dwBuildNumber;
+  }    
 
-  return s;
+  return 0;
 }
 
-void str_free(char *ptr) {
-  free(ptr);
-}

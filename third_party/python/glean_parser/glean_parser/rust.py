@@ -103,16 +103,18 @@ def type_name(obj):
         return "LabeledMetric<{}>".format(class_name(obj.type))
     generate_enums = getattr(obj, "_generate_enums", [])  
     if len(generate_enums):
+        generic = None
         for name, suffix in generate_enums:
-            if not len(getattr(obj, name)) and suffix == "Keys":
-                return class_name(obj.type) + "<NoExtraKeys>"
+            if len(getattr(obj, name)):
+                generic = util.Camelize(obj.name) + suffix
             else:
-                
-                
-                suffix = "Extra"
-                return "{}<{}>".format(
-                    class_name(obj.type), util.Camelize(obj.name) + suffix
-                )
+                if isinstance(obj, metrics.Event):
+                    generic = "NoExtra"
+                else:
+                    generic = "No" + suffix
+
+        return "{}<{}>".format(class_name(obj.type), generic)
+
     return class_name(obj.type)
 
 

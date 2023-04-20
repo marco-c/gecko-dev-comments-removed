@@ -14,7 +14,7 @@ use super::types::Type;
 
 
 
-#[derive(Debug, Clone, Checksum)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Checksum)]
 pub enum Literal {
     Boolean(bool),
     String(String),
@@ -36,7 +36,7 @@ pub enum Literal {
 
 
 
-#[derive(Debug, Clone, Copy, Checksum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Checksum)]
 pub enum Radix {
     Decimal = 10,
     Octal = 8,

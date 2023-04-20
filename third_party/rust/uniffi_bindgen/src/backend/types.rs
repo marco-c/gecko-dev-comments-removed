@@ -70,40 +70,23 @@ pub trait CodeType {
     }
 
     
-    
-    
-    fn lower(&self, oracle: &dyn CodeOracle, _nm: &str) -> String {
-        unimplemented!("Unimplemented for {}", self.type_label(oracle))
+    fn lower(&self, oracle: &dyn CodeOracle) -> String {
+        format!("{}.lower", self.ffi_converter_name(oracle))
     }
 
     
-    
-    
-    fn write(&self, oracle: &dyn CodeOracle, _nm: &str, _target: &str) -> String {
-        unimplemented!("Unimplemented for {}", self.type_label(oracle))
+    fn write(&self, oracle: &dyn CodeOracle) -> String {
+        format!("{}.write", self.ffi_converter_name(oracle))
     }
 
     
-    
-    
-    fn lift(&self, oracle: &dyn CodeOracle, _nm: &str) -> String {
-        unimplemented!("Unimplemented for {}", self.type_label(oracle))
+    fn lift(&self, oracle: &dyn CodeOracle) -> String {
+        format!("{}.lift", self.ffi_converter_name(oracle))
     }
 
     
-    
-    
-    fn read(&self, oracle: &dyn CodeOracle, _nm: &str) -> String {
-        unimplemented!("Unimplemented for {}", self.type_label(oracle))
-    }
-
-    
-    
-    
-    
-    
-    fn helper_code(&self, _oracle: &dyn CodeOracle) -> Option<String> {
-        None
+    fn read(&self, oracle: &dyn CodeOracle) -> String {
+        format!("{}.read", self.ffi_converter_name(oracle))
     }
 
     
@@ -205,24 +188,20 @@ impl<T: CodeTypeDispatch> CodeType for T {
         self.code_type_impl(oracle).literal(oracle, literal)
     }
 
-    fn lower(&self, oracle: &dyn CodeOracle, nm: &str) -> String {
-        self.code_type_impl(oracle).lower(oracle, nm)
+    fn lower(&self, oracle: &dyn CodeOracle) -> String {
+        self.code_type_impl(oracle).lower(oracle)
     }
 
-    fn write(&self, oracle: &dyn CodeOracle, nm: &str, target: &str) -> String {
-        self.code_type_impl(oracle).write(oracle, nm, target)
+    fn write(&self, oracle: &dyn CodeOracle) -> String {
+        self.code_type_impl(oracle).write(oracle)
     }
 
-    fn lift(&self, oracle: &dyn CodeOracle, nm: &str) -> String {
-        self.code_type_impl(oracle).lift(oracle, nm)
+    fn lift(&self, oracle: &dyn CodeOracle) -> String {
+        self.code_type_impl(oracle).lift(oracle)
     }
 
-    fn read(&self, oracle: &dyn CodeOracle, nm: &str) -> String {
-        self.code_type_impl(oracle).read(oracle, nm)
-    }
-
-    fn helper_code(&self, oracle: &dyn CodeOracle) -> Option<String> {
-        self.code_type_impl(oracle).helper_code(oracle)
+    fn read(&self, oracle: &dyn CodeOracle) -> String {
+        self.code_type_impl(oracle).read(oracle)
     }
 
     fn imports(&self, oracle: &dyn CodeOracle) -> Option<Vec<String>> {

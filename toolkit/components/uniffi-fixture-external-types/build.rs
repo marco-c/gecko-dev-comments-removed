@@ -3,5 +3,5 @@
 
 
 fn main() {
-    uniffi_build::generate_scaffolding("./src/external-types.udl").unwrap();
+    uniffi::generate_scaffolding("./src/external-types.udl").unwrap();
 }

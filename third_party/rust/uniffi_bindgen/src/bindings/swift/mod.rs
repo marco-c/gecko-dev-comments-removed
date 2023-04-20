@@ -29,16 +29,18 @@
 
 
 
-use std::{ffi::OsString, io::Write, process::Command};
+use std::{io::Write, process::Command};
 
-use anyhow::{bail, Context, Result};
+use anyhow::Result;
 use camino::Utf8Path;
 use fs_err::File;
 
 pub mod gen_swift;
 pub use gen_swift::{generate_bindings, Config};
+mod test;
 
 use super::super::interface::ComponentInterface;
+pub use test::run_test;
 
 
 
@@ -70,14 +72,14 @@ pub fn write_bindings(
 
     let source_file = out_dir.join(format!("{}.swift", config.module_name()));
     let mut l = File::create(&source_file)?;
-    write!(l, "{}", library)?;
+    write!(l, "{library}")?;
 
     let mut h = File::create(out_dir.join(config.header_filename()))?;
-    write!(h, "{}", header)?;
+    write!(h, "{header}")?;
 
     if let Some(modulemap) = modulemap {
         let mut m = File::create(out_dir.join(config.modulemap_filename()))?;
-        write!(m, "{}", modulemap)?;
+        write!(m, "{modulemap}")?;
     }
 
     if try_format_code {
@@ -93,106 +95,5 @@ pub fn write_bindings(
         }
     }
 
-    Ok(())
-}
-
-
-
-
-
-
-
-
-
-pub fn compile_bindings(
-    config: &Config,
-    ci: &ComponentInterface,
-    out_dir: &Utf8Path,
-) -> Result<()> {
-    if !config.generate_module_map() {
-        bail!("Cannot compile Swift bindings when `generate_module_map` is `false`")
-    }
-
-    let module_map_file = out_dir.join(config.modulemap_filename());
-    let mut module_map_file_option = OsString::from("-fmodule-map-file=");
-    module_map_file_option.push(module_map_file.as_os_str());
-
-    let source_file = out_dir.join(format!("{}.swift", config.module_name()));
-    let dylib_file = out_dir.join(format!("lib{}.dylib", config.module_name()));
-
-    
-    
-    
-    
-
-    let status = Command::new("swiftc")
-        .arg("-module-name")
-        .arg(ci.namespace())
-        .arg("-emit-library")
-        .arg("-o")
-        .arg(dylib_file)
-        .arg("-emit-module")
-        .arg("-emit-module-path")
-        .arg(out_dir)
-        .arg("-parse-as-library")
-        .arg("-L")
-        .arg(out_dir)
-        .arg(format!("-l{}", config.cdylib_name()))
-        .arg("-Xcc")
-        .arg(module_map_file_option)
-        .arg(source_file)
-        .spawn()
-        .context("Failed to spawn `swiftc` when compiling bindings")?
-        .wait()
-        .context("Failed to wait for `swiftc` when compiling bindings")?;
-    if !status.success() {
-        bail!("running `swiftc` failed")
-    }
-    Ok(())
-}
-
-
-
-
-
-
-
-pub fn run_script(out_dir: &Utf8Path, script_file: &Utf8Path) -> Result<()> {
-    let mut cmd = Command::new("swift");
-
-    
-    
-    
-    
-
-    cmd.arg("-I").arg(out_dir);
-    for entry in out_dir
-        .read_dir()
-        .context("Failed to list target directory when running script")?
-    {
-        let entry = entry.context("Failed to list target directory when running script")?;
-        if let Some(ext) = entry.path().extension() {
-            if ext == "modulemap" {
-                let mut option = OsString::from("-fmodule-map-file=");
-                option.push(entry.path());
-                cmd.arg("-Xcc");
-                cmd.arg(option);
-            } else if ext == "dylib" || ext == "so" {
-                let mut option = OsString::from("-l");
-                option.push(entry.path());
-                cmd.arg(option);
-            }
-        }
-    }
-    cmd.arg(script_file);
-
-    let status = cmd
-        .spawn()
-        .context("Failed to spawn `swift` when running script")?
-        .wait()
-        .context("Failed to wait for `swift` when running script")?;
-    if !status.success() {
-        bail!("running `swift` failed")
-    }
     Ok(())
 }
