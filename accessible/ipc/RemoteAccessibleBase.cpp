@@ -464,19 +464,19 @@ Maybe<nsRect> RemoteAccessibleBase<Derived>::RetrieveCachedBounds() const {
 
 template <class Derived>
 void RemoteAccessibleBase<Derived>::ApplyCrossDocOffset(nsRect& aBounds) const {
-  Accessible* parentAcc = Parent();
-  if (!parentAcc || !parentAcc->IsRemote() || !parentAcc->IsOuterDoc()) {
-    return;
-  }
-
   if (!IsDoc()) {
     
     
     return;
   }
 
+  RemoteAccessible* parentAcc = RemoteParent();
+  if (!parentAcc || !parentAcc->IsOuterDoc()) {
+    return;
+  }
+
   Maybe<const nsTArray<int32_t>&> maybeOffset =
-      parentAcc->AsRemote()->mCachedFields->GetAttribute<nsTArray<int32_t>>(
+      parentAcc->mCachedFields->GetAttribute<nsTArray<int32_t>>(
           nsGkAtoms::crossorigin);
   if (!maybeOffset) {
     return;
