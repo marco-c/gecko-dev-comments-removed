@@ -25,45 +25,14 @@ namespace cricket {
 struct IceFieldTrials;  
 
 struct IceRecheckEvent {
-  
-  enum Type {
-    REMOTE_CANDIDATE_GENERATION_CHANGE,
-    NETWORK_PREFERENCE_CHANGE,
-    NEW_CONNECTION_FROM_LOCAL_CANDIDATE,
-    NEW_CONNECTION_FROM_REMOTE_CANDIDATE,
-    NEW_CONNECTION_FROM_UNKNOWN_REMOTE_ADDRESS,
-    NOMINATION_ON_CONTROLLED_SIDE,
-    DATA_RECEIVED,
-    CONNECT_STATE_CHANGE,
-    SELECTED_CONNECTION_DESTROYED,
-    
-    
-    
-    ICE_CONTROLLER_RECHECK,
-  };
-
-  [[deprecated("bugs.webrtc.org/14125")]] IceRecheckEvent(
-      const Type& _type)  
-      : type(_type), reason(FromType(_type)) {}
-
   IceRecheckEvent(IceSwitchReason _reason, int _recheck_delay_ms)
-      : type(FromIceSwitchReason(_reason)),
-        reason(_reason),
-        recheck_delay_ms(_recheck_delay_ms) {}
-
-  static Type FromIceSwitchReason(IceSwitchReason reason);
-  static IceSwitchReason FromType(Type type);
+      : reason(_reason), recheck_delay_ms(_recheck_delay_ms) {}
 
   std::string ToString() const;
 
-  
-  Type type;
   IceSwitchReason reason;
-  int recheck_delay_ms = 0;
+  int recheck_delay_ms;
 };
-
-
-using IceControllerEvent = IceRecheckEvent;
 
 
 
@@ -154,19 +123,10 @@ class IceControllerInterface {
   
   
   
-  [[deprecated("bugs.webrtc.org/14125")]] virtual SwitchResult
-  ShouldSwitchConnection(IceRecheckEvent reason, const Connection* connection) {
-    return ShouldSwitchConnection(IceRecheckEvent::FromType(reason.type),
-                                  connection);
-  }
   virtual SwitchResult ShouldSwitchConnection(IceSwitchReason reason,
                                               const Connection* connection) = 0;
 
   
-  [[deprecated("bugs.webrtc.org/14125")]] virtual SwitchResult
-  SortAndSwitchConnection(IceRecheckEvent reason) {
-    return SortAndSwitchConnection(IceRecheckEvent::FromType(reason.type));
-  }
   virtual SwitchResult SortAndSwitchConnection(IceSwitchReason reason) = 0;
 
   
