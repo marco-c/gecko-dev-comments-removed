@@ -1378,7 +1378,7 @@
           return;
         }
 
-        function selectURL() {
+        let selectURL = () => {
           if (this._asyncTabSwitching) {
             
             
@@ -1404,7 +1404,7 @@
           } else {
             gURLBar.select();
           }
-        }
+        };
 
         if (!window.fullScreen) {
           selectURL();
