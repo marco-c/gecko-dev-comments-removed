@@ -3,10 +3,12 @@
 
 
 
+#include "StartupCache.h"
 #include "StartupCacheInfo.h"
 
 #include "mozilla/Components.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/StaticPtr.h"
 
 using namespace mozilla;
 using namespace mozilla::scache;
