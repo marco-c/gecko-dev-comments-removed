@@ -8,6 +8,7 @@
 
 
 
+
 static const char* const kTestFileExtensions[] = {
     ".accda",   
     ".accdb",   
@@ -111,7 +112,9 @@ static const char* const kTestFileExtensions[] = {
     ".iso",                
     ".isp",                
     ".jar",                
+#ifndef MOZ_ESR
     ".jnlp",               
+#endif
     ".js",                 
     ".jse",                
     ".ksh",                
@@ -298,6 +301,7 @@ static const char* const kTestFileExtensions[] = {
 #endif
     ".zipx",  
 };
+
 
 #define CheckListSorted(_list)                                   \
   {                                                              \

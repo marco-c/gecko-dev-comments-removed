@@ -26,6 +26,8 @@
 
 
 
+
+
 const char* const sExecutableExts[] = {
     
   ".accda",       
@@ -61,7 +63,9 @@ const char* const sExecutableExts[] = {
   ".ins",
   ".isp",
   ".jar",         
+#ifndef MOZ_ESR
   ".jnlp",
+#endif
   ".js",
   ".jse",
   ".lnk",

@@ -275,10 +275,12 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".internetconnect",  
     
     ".iso",  
-    
-    
-    
-    
+             
+             
+             
+#ifndef MOZ_ESR
+
+#endif
     
     
     
