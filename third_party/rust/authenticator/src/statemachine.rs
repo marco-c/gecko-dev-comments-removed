@@ -3,15 +3,24 @@
 
 
 use crate::consts::PARAMETER_SIZE;
-use crate::errors;
-use crate::platform::device::Device;
-use crate::platform::transaction::Transaction;
+use crate::ctap2::commands::client_pin::{ChangeExistingPin, Pin, PinError, SetNewPin};
+use crate::ctap2::commands::get_assertion::{GetAssertion, GetAssertionResult};
+use crate::ctap2::commands::make_credentials::{MakeCredentials, MakeCredentialsResult};
+use crate::ctap2::commands::reset::Reset;
+use crate::ctap2::commands::{
+    repackage_pin_errors, CommandError, PinAuthCommand, Request, StatusCode,
+};
+use crate::errors::{self, AuthenticatorError, UnsupportedOption};
 use crate::statecallback::StateCallback;
+use crate::transport::device_selector::{
+    BlinkResult, Device, DeviceBuildParameters, DeviceCommand, DeviceSelectorEvent,
+};
+use crate::transport::platform::transaction::Transaction;
+use crate::transport::{errors::HIDError, hid::HIDDevice, FidoDevice, Nonce};
 use crate::u2fprotocol::{u2f_init_device, u2f_is_keyhandle_valid, u2f_register, u2f_sign};
 use crate::u2ftypes::U2FDevice;
-
-use std::sync::mpsc::Sender;
-use std::sync::Mutex;
+use crate::{send_status, RegisterResult, SignResult, StatusUpdate};
+use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use std::time::Duration;
 
@@ -44,18 +53,6 @@ where
     (&app_ids[0], vec![])
 }
 
-fn send_status(status_mutex: &Mutex<Sender<crate::StatusUpdate>>, msg: crate::StatusUpdate) {
-    match status_mutex.lock() {
-        Ok(s) => match s.send(msg) {
-            Ok(_) => {}
-            Err(e) => error!("Couldn't send status: {:?}", e),
-        },
-        Err(e) => {
-            error!("Couldn't obtain status mutex: {:?}", e);
-        }
-    };
-}
-
 #[derive(Default)]
 pub struct StateMachine {
     transaction: Option<Transaction>,
@@ -80,79 +77,88 @@ impl StateMachine {
         self.cancel();
 
         let cbc = callback.clone();
-        let status_mutex = Mutex::new(status);
 
-        let transaction = Transaction::new(timeout, cbc.clone(), move |info, alive| {
-            
-            let dev = &mut match Device::new(info) {
-                Ok(dev) => dev,
-                _ => return,
-            };
+        let transaction = Transaction::new(
+            timeout,
+            cbc.clone(),
+            status,
+            move |info, _, status, alive| {
+                
+                let dev = &mut match Device::new(info) {
+                    Ok(dev) => dev,
+                    _ => return,
+                };
 
-            
-            if !dev.is_u2f() || !u2f_init_device(dev) {
-                return;
-            }
-
-            
-            
-            
-            
-            
-            
-            
-            if !flags.is_empty() {
-                return;
-            }
-
-            send_status(
-                &status_mutex,
-                crate::StatusUpdate::DeviceAvailable {
-                    dev_info: dev.get_device_info(),
-                },
-            );
-
-            
-            
-            
-            let excluded = key_handles.iter().any(|key_handle| {
-                is_valid_transport(key_handle.transports)
-                    && u2f_is_keyhandle_valid(dev, &challenge, &application, &key_handle.credential)
-                        .unwrap_or(false) 
-            });
-
-            while alive() {
-                if excluded {
-                    let blank = vec![0u8; PARAMETER_SIZE];
-                    if u2f_register(dev, &blank, &blank).is_ok() {
-                        callback.call(Err(errors::AuthenticatorError::U2FToken(
-                            errors::U2FTokenError::InvalidState,
-                        )));
-                        break;
-                    }
-                } else if let Ok(bytes) = u2f_register(dev, &challenge, &application) {
-                    let dev_info = dev.get_device_info();
-                    send_status(
-                        &status_mutex,
-                        crate::StatusUpdate::Success {
-                            dev_info: dev.get_device_info(),
-                        },
-                    );
-                    callback.call(Ok((bytes, dev_info)));
-                    break;
+                
+                if !dev.is_u2f() || !u2f_init_device(dev) {
+                    return;
                 }
 
                 
-                thread::sleep(Duration::from_millis(100));
-            }
+                
+                
+                
+                
+                
+                
+                if !flags.is_empty() {
+                    return;
+                }
 
-            send_status(
-                &status_mutex,
-                crate::StatusUpdate::DeviceUnavailable {
-                    dev_info: dev.get_device_info(),
-                },
-            );
-        });
+                send_status(
+                    &status,
+                    crate::StatusUpdate::DeviceAvailable {
+                        dev_info: dev.get_device_info(),
+                    },
+                );
+
+                
+                
+                
+                let excluded = key_handles.iter().any(|key_handle| {
+                    is_valid_transport(key_handle.transports)
+                        && u2f_is_keyhandle_valid(
+                            dev,
+                            &challenge,
+                            &application,
+                            &key_handle.credential,
+                        )
+                        .unwrap_or(false) 
+                });
+
+                while alive() {
+                    if excluded {
+                        let blank = vec![0u8; PARAMETER_SIZE];
+                        if u2f_register(dev, &blank, &blank).is_ok() {
+                            callback.call(Err(errors::AuthenticatorError::U2FToken(
+                                errors::U2FTokenError::InvalidState,
+                            )));
+                            break;
+                        }
+                    } else if let Ok(bytes) = u2f_register(dev, &challenge, &application) {
+                        let dev_info = dev.get_device_info();
+                        send_status(
+                            &status,
+                            crate::StatusUpdate::Success {
+                                dev_info: dev.get_device_info(),
+                            },
+                        );
+                        callback.call(Ok(RegisterResult::CTAP1(bytes, dev_info)));
+                        break;
+                    }
+
+                    
+                    thread::sleep(Duration::from_millis(100));
+                }
+
+                send_status(
+                    &status,
+                    crate::StatusUpdate::DeviceUnavailable {
+                        dev_info: dev.get_device_info(),
+                    },
+                );
+            },
+        );
 
         self.transaction = Some(try_or!(transaction, |e| cbc.call(Err(e))));
     }
@@ -172,104 +178,108 @@ impl StateMachine {
 
         let cbc = callback.clone();
 
-        let status_mutex = Mutex::new(status);
-
-        let transaction = Transaction::new(timeout, cbc.clone(), move |info, alive| {
-            
-            let dev = &mut match Device::new(info) {
-                Ok(dev) => dev,
-                _ => return,
-            };
-
-            
-            if !dev.is_u2f() || !u2f_init_device(dev) {
-                return;
-            }
-
-            
-            
-            
-            
-            
-            
-            
-            if !flags.is_empty() {
-                return;
-            }
-
-            
-            
-            let (app_id, valid_handles) =
-                find_valid_key_handles(&app_ids, &key_handles, |app_id, key_handle| {
-                    u2f_is_keyhandle_valid(dev, &challenge, app_id, &key_handle.credential)
-                        .unwrap_or(false) 
-                });
-
-            
-            let transports = key_handles
-                .iter()
-                .fold(crate::AuthenticatorTransports::empty(), |t, k| {
-                    t | k.transports
-                });
-
-            
-            
-            if !is_valid_transport(transports) {
-                return;
-            }
-
-            send_status(
-                &status_mutex,
-                crate::StatusUpdate::DeviceAvailable {
-                    dev_info: dev.get_device_info(),
-                },
-            );
-
-            'outer: while alive() {
+        let transaction = Transaction::new(
+            timeout,
+            cbc.clone(),
+            status,
+            move |info, _, status, alive| {
                 
+                let dev = &mut match Device::new(info) {
+                    Ok(dev) => dev,
+                    _ => return,
+                };
+
                 
-                if valid_handles.is_empty() {
-                    let blank = vec![0u8; PARAMETER_SIZE];
-                    if u2f_register(dev, &blank, &blank).is_ok() {
-                        callback.call(Err(errors::AuthenticatorError::U2FToken(
-                            errors::U2FTokenError::InvalidState,
-                        )));
-                        break;
-                    }
-                } else {
-                    
-                    for key_handle in &valid_handles {
-                        if let Ok(bytes) = u2f_sign(dev, &challenge, app_id, &key_handle.credential)
-                        {
-                            let dev_info = dev.get_device_info();
-                            send_status(
-                                &status_mutex,
-                                crate::StatusUpdate::Success {
-                                    dev_info: dev.get_device_info(),
-                                },
-                            );
-                            callback.call(Ok((
-                                app_id.clone(),
-                                key_handle.credential.clone(),
-                                bytes,
-                                dev_info,
-                            )));
-                            break 'outer;
-                        }
-                    }
+                if !dev.is_u2f() || !u2f_init_device(dev) {
+                    return;
                 }
 
                 
-                thread::sleep(Duration::from_millis(100));
-            }
+                
+                
+                
+                
+                
+                
+                if !flags.is_empty() {
+                    return;
+                }
 
-            send_status(
-                &status_mutex,
-                crate::StatusUpdate::DeviceUnavailable {
-                    dev_info: dev.get_device_info(),
-                },
-            );
-        });
+                
+                
+                let (app_id, valid_handles) =
+                    find_valid_key_handles(&app_ids, &key_handles, |app_id, key_handle| {
+                        u2f_is_keyhandle_valid(dev, &challenge, app_id, &key_handle.credential)
+                            .unwrap_or(false) 
+                    });
+
+                
+                let transports = key_handles
+                    .iter()
+                    .fold(crate::AuthenticatorTransports::empty(), |t, k| {
+                        t | k.transports
+                    });
+
+                
+                
+                if !is_valid_transport(transports) {
+                    return;
+                }
+
+                send_status(
+                    &status,
+                    crate::StatusUpdate::DeviceAvailable {
+                        dev_info: dev.get_device_info(),
+                    },
+                );
+
+                'outer: while alive() {
+                    
+                    
+                    if valid_handles.is_empty() {
+                        let blank = vec![0u8; PARAMETER_SIZE];
+                        if u2f_register(dev, &blank, &blank).is_ok() {
+                            callback.call(Err(errors::AuthenticatorError::U2FToken(
+                                errors::U2FTokenError::InvalidState,
+                            )));
+                            break;
+                        }
+                    } else {
+                        
+                        for key_handle in &valid_handles {
+                            if let Ok(bytes) =
+                                u2f_sign(dev, &challenge, app_id, &key_handle.credential)
+                            {
+                                let dev_info = dev.get_device_info();
+                                send_status(
+                                    &status,
+                                    crate::StatusUpdate::Success {
+                                        dev_info: dev.get_device_info(),
+                                    },
+                                );
+                                callback.call(Ok(SignResult::CTAP1(
+                                    app_id.clone(),
+                                    key_handle.credential.clone(),
+                                    bytes,
+                                    dev_info,
+                                )));
+                                break 'outer;
+                            }
+                        }
+                    }
+
+                    
+                    thread::sleep(Duration::from_millis(100));
+                }
+
+                send_status(
+                    &status,
+                    crate::StatusUpdate::DeviceUnavailable {
+                        dev_info: dev.get_device_info(),
+                    },
+                );
+            },
+        );
 
         self.transaction = Some(try_or!(transaction, |e| cbc.call(Err(e))));
     }
@@ -279,5 +289,541 @@ impl StateMachine {
         if let Some(mut transaction) = self.transaction.take() {
             transaction.cancel();
         }
+    }
+}
+
+#[derive(Default)]
+
+pub struct StateMachineCtap2 {
+    transaction: Option<Transaction>,
+}
+
+impl StateMachineCtap2 {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    fn init_and_select(
+        info: DeviceBuildParameters,
+        selector: &Sender<DeviceSelectorEvent>,
+        ctap2_only: bool,
+    ) -> Option<Device> {
+        
+        let mut dev = match Device::new(info) {
+            Ok(dev) => dev,
+            Err((e, id)) => {
+                info!("error happened with device: {}", e);
+                selector.send(DeviceSelectorEvent::NotAToken(id)).ok()?;
+                return None;
+            }
+        };
+
+        
+        if let Err(e) = dev.init(Nonce::CreateRandom) {
+            warn!("error while initializing device: {}", e);
+            selector.send(DeviceSelectorEvent::NotAToken(dev.id())).ok();
+            return None;
+        }
+
+        if ctap2_only && dev.get_authenticator_info().is_none() {
+            info!("Device does not support CTAP2");
+            selector.send(DeviceSelectorEvent::NotAToken(dev.id())).ok();
+            return None;
+        }
+
+        let write_only_clone = match dev.clone_device_as_write_only() {
+            Ok(x) => x,
+            Err(_) => {
+                
+                
+                warn!("error while cloning device: {:?}", dev.id());
+                selector
+                    .send(DeviceSelectorEvent::NotAToken(dev.id()))
+                    .ok()?;
+                return None;
+            }
+        };
+        let (tx, rx) = channel();
+        selector
+            .send(DeviceSelectorEvent::ImAToken((write_only_clone, tx)))
+            .ok()?;
+
+        
+        loop {
+            match rx.recv() {
+                Ok(DeviceCommand::Blink) => match dev.block_and_blink() {
+                    BlinkResult::DeviceSelected => {
+                        
+                        
+                        selector
+                            .send(DeviceSelectorEvent::SelectedToken(dev.id()))
+                            .ok()?;
+                        break;
+                    }
+                    BlinkResult::Cancelled => {
+                        info!("Device {:?} was not selected", dev.id());
+                        return None;
+                    }
+                },
+                Ok(DeviceCommand::Removed) => {
+                    info!("Device {:?} was removed", dev.id());
+                    return None;
+                }
+                Ok(DeviceCommand::Continue) => {
+                    break;
+                }
+                Err(_) => {
+                    warn!("Error when trying to receive messages from DeviceSelector! Exiting.");
+                    return None;
+                }
+            }
+        }
+        Some(dev)
+    }
+
+    fn ask_user_for_pin<U>(
+        error: PinError,
+        status: &Sender<StatusUpdate>,
+        callback: &StateCallback<crate::Result<U>>,
+    ) -> Result<Pin, ()> {
+        info!("PIN Error that requires user interaction detected. Sending it back and waiting for a reply");
+        let (tx, rx) = channel();
+        send_status(status, crate::StatusUpdate::PinError(error.clone(), tx));
+        match rx.recv() {
+            Ok(pin) => Ok(pin),
+            Err(_) => {
+                
+                
+                
+                error!("Callback dropped the channel, so we forward the error to the results-callback: {:?}", error);
+                callback.call(Err(AuthenticatorError::PinError(error)));
+                return Err(());
+            }
+        }
+    }
+
+    fn determine_pin_auth<T: PinAuthCommand, U>(
+        cmd: &mut T,
+        dev: &mut Device,
+        status: &Sender<StatusUpdate>,
+        callback: &StateCallback<crate::Result<U>>,
+    ) -> Result<(), ()> {
+        loop {
+            match cmd.determine_pin_auth(dev) {
+                Ok(_) => {
+                    break;
+                }
+                Err(AuthenticatorError::PinError(e)) => {
+                    let pin = Self::ask_user_for_pin(e, status, callback)?;
+                    cmd.set_pin(Some(pin));
+                    continue;
+                }
+                Err(e) => {
+                    error!("Error when determining pinAuth: {:?}", e);
+                    callback.call(Err(e));
+                    return Err(());
+                }
+            };
+        }
+
+        
+        
+        
+        if cmd.pin_auth().is_some() {
+            cmd.unset_uv_option();
+        }
+
+        Ok(())
+    }
+
+    pub fn register(
+        &mut self,
+        timeout: u64,
+        params: MakeCredentials,
+        status: Sender<crate::StatusUpdate>,
+        callback: StateCallback<crate::Result<crate::RegisterResult>>,
+    ) {
+        
+        self.cancel();
+        let cbc = callback.clone();
+        let transaction = Transaction::new(
+            timeout,
+            cbc.clone(),
+            status,
+            move |info, selector, status, _alive| {
+                let mut dev = match Self::init_and_select(info, &selector, false) {
+                    None => {
+                        return;
+                    }
+                    Some(dev) => dev,
+                };
+
+                info!("Device {:?} continues with the register process", dev.id());
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
+
+                
+                
+                let mut makecred = params.clone();
+                if params.is_ctap2_request() {
+                    
+                    if let Some(true) = params.extensions.hmac_secret {
+                        if let Some(auth) = dev.get_authenticator_info() {
+                            if !auth.supports_hmac_secret() {
+                                callback.call(Err(AuthenticatorError::UnsupportedOption(
+                                    UnsupportedOption::HmacSecret,
+                                )));
+                                return;
+                            }
+                        }
+                    }
+
+                    
+                    if Self::determine_pin_auth(&mut makecred, &mut dev, &status, &callback)
+                        .is_err()
+                    {
+                        return;
+                    }
+                }
+                debug!("------------------------------------------------------------------");
+                debug!("{:?}", makecred);
+                debug!("------------------------------------------------------------------");
+                let resp = dev.send_msg(&makecred);
+                if resp.is_ok() {
+                    send_status(
+                        &status,
+                        crate::StatusUpdate::Success {
+                            dev_info: dev.get_device_info(),
+                        },
+                    );
+                    
+                    
+                    
+                    
+                    let _ = selector.send(DeviceSelectorEvent::SelectedToken(dev.id()));
+                }
+                match resp {
+                    Ok(MakeCredentialsResult::CTAP2(attestation, client_data)) => {
+                        callback.call(Ok(RegisterResult::CTAP2(attestation, client_data)))
+                    }
+                    Ok(MakeCredentialsResult::CTAP1(data)) => {
+                        callback.call(Ok(RegisterResult::CTAP1(data, dev.get_device_info())))
+                    }
+
+                    Err(HIDError::DeviceNotSupported) | Err(HIDError::UnsupportedCommand) => {}
+                    Err(HIDError::Command(CommandError::StatusCode(
+                        StatusCode::ChannelBusy,
+                        _,
+                    ))) => {}
+                    Err(e) => {
+                        warn!("error happened: {}", e);
+                        callback.call(Err(AuthenticatorError::HIDError(e)));
+                    }
+                }
+            },
+        );
+
+        self.transaction = Some(try_or!(transaction, |e| cbc.call(Err(e))));
+    }
+
+    pub fn sign(
+        &mut self,
+        timeout: u64,
+        params: GetAssertion,
+        status: Sender<crate::StatusUpdate>,
+        callback: StateCallback<crate::Result<crate::SignResult>>,
+    ) {
+        
+        self.cancel();
+        let cbc = callback.clone();
+
+        let transaction = Transaction::new(
+            timeout,
+            callback.clone(),
+            status,
+            move |info, selector, status, _alive| {
+                let mut dev = match Self::init_and_select(info, &selector, false) {
+                    None => {
+                        return;
+                    }
+                    Some(dev) => dev,
+                };
+
+                info!("Device {:?} continues with the signing process", dev.id());
+                
+                
+                let mut getassertion = params.clone();
+                if params.is_ctap2_request() {
+                    
+                    if params.extensions.hmac_secret.is_some() {
+                        if let Some(auth) = dev.get_authenticator_info() {
+                            if !auth.supports_hmac_secret() {
+                                callback.call(Err(AuthenticatorError::UnsupportedOption(
+                                    UnsupportedOption::HmacSecret,
+                                )));
+                                return;
+                            }
+                        }
+                    }
+
+                    
+                    if Self::determine_pin_auth(&mut getassertion, &mut dev, &status, &callback)
+                        .is_err()
+                    {
+                        return;
+                    }
+
+                    
+                    if let Some(extension) = getassertion.extensions.hmac_secret.as_mut() {
+                        if let Some(secret) = dev.get_shared_secret() {
+                            match extension.calculate(secret) {
+                                Ok(x) => x,
+                                Err(e) => {
+                                    callback.call(Err(e));
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                debug!("------------------------------------------------------------------");
+                debug!("{:?}", getassertion);
+                debug!("------------------------------------------------------------------");
+
+                let resp = dev.send_msg(&getassertion);
+                if resp.is_ok() {
+                    send_status(
+                        &status,
+                        crate::StatusUpdate::Success {
+                            dev_info: dev.get_device_info(),
+                        },
+                    );
+                    
+                    
+                    
+                    
+                    let _ = selector.send(DeviceSelectorEvent::SelectedToken(dev.id()));
+                }
+                match resp {
+                    Ok(GetAssertionResult::CTAP1(resp)) => {
+                        let app_id = getassertion.rp.hash().as_ref().to_vec();
+                        let key_handle = getassertion.allow_list[0].id.clone();
+
+                        callback.call(Ok(SignResult::CTAP1(
+                            app_id,
+                            key_handle,
+                            resp,
+                            dev.get_device_info(),
+                        )))
+                    }
+                    Ok(GetAssertionResult::CTAP2(assertion, client_data)) => {
+                        callback.call(Ok(SignResult::CTAP2(assertion, client_data)))
+                    }
+                    
+                    
+                    
+                    
+                    Err(HIDError::DeviceNotSupported) | Err(HIDError::UnsupportedCommand) => {}
+                    Err(HIDError::Command(CommandError::StatusCode(
+                        StatusCode::ChannelBusy,
+                        _,
+                    ))) => {}
+                    Err(e) => {
+                        warn!("error happened: {}", e);
+                        callback.call(Err(AuthenticatorError::HIDError(e)));
+                    }
+                }
+            },
+        );
+
+        self.transaction = Some(try_or!(transaction, move |e| cbc.call(Err(e))));
+    }
+
+    
+    pub fn cancel(&mut self) {
+        if let Some(mut transaction) = self.transaction.take() {
+            info!("Statemachine was cancelled. Cancelling transaction now.");
+            transaction.cancel();
+        }
+    }
+
+    pub fn reset(
+        &mut self,
+        timeout: u64,
+        status: Sender<crate::StatusUpdate>,
+        callback: StateCallback<crate::Result<crate::ResetResult>>,
+    ) {
+        
+        self.cancel();
+        let cbc = callback.clone();
+
+        let transaction = Transaction::new(
+            timeout,
+            callback.clone(),
+            status,
+            move |info, selector, status, _alive| {
+                let reset = Reset {};
+                let mut dev = match Self::init_and_select(info, &selector, true) {
+                    None => {
+                        return;
+                    }
+                    Some(dev) => dev,
+                };
+
+                info!("Device {:?} continues with the reset process", dev.id());
+                debug!("------------------------------------------------------------------");
+                debug!("{:?}", reset);
+                debug!("------------------------------------------------------------------");
+
+                let resp = dev.send_cbor(&reset);
+                if resp.is_ok() {
+                    send_status(
+                        &status,
+                        crate::StatusUpdate::Success {
+                            dev_info: dev.get_device_info(),
+                        },
+                    );
+                    
+                    
+                    
+                    
+                    let _ = selector.send(DeviceSelectorEvent::SelectedToken(dev.id()));
+                }
+
+                match resp {
+                    Ok(()) => callback.call(Ok(())),
+                    Err(HIDError::DeviceNotSupported) | Err(HIDError::UnsupportedCommand) => {}
+                    Err(HIDError::Command(CommandError::StatusCode(
+                        StatusCode::ChannelBusy,
+                        _,
+                    ))) => {}
+                    Err(e) => {
+                        warn!("error happened: {}", e);
+                        callback.call(Err(AuthenticatorError::HIDError(e)));
+                    }
+                }
+            },
+        );
+
+        self.transaction = Some(try_or!(transaction, move |e| cbc.call(Err(e))));
+    }
+
+    pub fn set_pin(
+        &mut self,
+        timeout: u64,
+        new_pin: Pin,
+        status: Sender<crate::StatusUpdate>,
+        callback: StateCallback<crate::Result<crate::ResetResult>>,
+    ) {
+        
+        self.cancel();
+
+        let cbc = callback.clone();
+
+        let transaction = Transaction::new(
+            timeout,
+            callback.clone(),
+            status,
+            move |info, selector, status, _alive| {
+                let mut dev = match Self::init_and_select(info, &selector, true) {
+                    None => {
+                        return;
+                    }
+                    Some(dev) => dev,
+                };
+
+                let (mut shared_secret, authinfo) = match dev.establish_shared_secret() {
+                    Ok(s) => s,
+                    Err(e) => {
+                        callback.call(Err(AuthenticatorError::HIDError(e)));
+                        return;
+                    }
+                };
+
+                
+                if new_pin.as_bytes().len() < 4 {
+                    callback.call(Err(AuthenticatorError::PinError(PinError::PinIsTooShort)));
+                    return;
+                }
+
+                if new_pin.as_bytes().len() > 64 {
+                    callback.call(Err(AuthenticatorError::PinError(PinError::PinIsTooLong(
+                        new_pin.as_bytes().len(),
+                    ))));
+                    return;
+                }
+
+                
+                let res = if authinfo.options.client_pin.unwrap_or_default() {
+                    let mut res;
+                    let mut error = PinError::PinRequired;
+                    loop {
+                        let current_pin = match Self::ask_user_for_pin(error, &status, &callback) {
+                            Ok(pin) => pin,
+                            _ => {
+                                return;
+                            }
+                        };
+
+                        res = ChangeExistingPin::new(
+                            &authinfo,
+                            &shared_secret,
+                            &current_pin,
+                            &new_pin,
+                        )
+                        .map_err(HIDError::Command)
+                        .and_then(|msg| dev.send_cbor(&msg))
+                        .map_err(AuthenticatorError::HIDError)
+                        .map_err(|e| repackage_pin_errors(&mut dev, e));
+
+                        if let Err(AuthenticatorError::PinError(e)) = res {
+                            error = e;
+                            
+                            match dev.establish_shared_secret() {
+                                Ok((s, _)) => {
+                                    shared_secret = s;
+                                }
+                                Err(e) => {
+                                    callback.call(Err(AuthenticatorError::HIDError(e)));
+                                    return;
+                                }
+                            };
+
+                            continue;
+                        } else {
+                            break;
+                        }
+                    }
+                    res
+                } else {
+                    SetNewPin::new(&authinfo, &shared_secret, &new_pin)
+                        .map_err(HIDError::Command)
+                        .and_then(|msg| dev.send_cbor(&msg))
+                        .map_err(AuthenticatorError::HIDError)
+                };
+                callback.call(res);
+            },
+        );
+        self.transaction = Some(try_or!(transaction, move |e| cbc.call(Err(e))));
     }
 }
