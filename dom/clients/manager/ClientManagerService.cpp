@@ -432,12 +432,15 @@ RefPtr<ClientOpPromise> ClientManagerService::Navigate(
   PClientManagerParent* manager = source->Manager();
   MOZ_DIAGNOSTIC_ASSERT(manager);
 
+  ClientNavigateOpConstructorArgs args;
+  args.url() = aArgs.url();
+  args.baseURL() = aArgs.baseURL();
+
   
   
   
   
-  ClientNavigateOpConstructorArgs args(WrapNotNull(source), aArgs.url(),
-                                       aArgs.baseURL());
+  args.targetParent() = source;
 
   RefPtr<ClientOpPromise::Private> promise =
       new ClientOpPromise::Private(__func__);

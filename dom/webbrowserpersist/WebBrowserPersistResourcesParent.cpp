@@ -56,11 +56,10 @@ mozilla::ipc::IPCResult WebBrowserPersistResourcesParent::RecvVisitResource(
 }
 
 mozilla::ipc::IPCResult WebBrowserPersistResourcesParent::RecvVisitDocument(
-    NotNull<PWebBrowserPersistDocumentParent*> aSubDocument) {
+    PWebBrowserPersistDocumentParent* aSubDocument) {
   
   
-  static_cast<WebBrowserPersistDocumentParent*>(aSubDocument.get())
-      ->SetOnReady(this);
+  static_cast<WebBrowserPersistDocumentParent*>(aSubDocument)->SetOnReady(this);
   return IPC_OK();
 }
 

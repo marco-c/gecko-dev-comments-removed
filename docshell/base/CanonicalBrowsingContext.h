@@ -157,10 +157,9 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   
-  void NotifyOnHistoryReload(
-      bool aForceReload, bool& aCanReload,
-      Maybe<NotNull<RefPtr<nsDocShellLoadState>>>& aLoadState,
-      Maybe<bool>& aReloadActiveEntry);
+  void NotifyOnHistoryReload(bool aForceReload, bool& aCanReload,
+                             Maybe<RefPtr<nsDocShellLoadState>>& aLoadState,
+                             Maybe<bool>& aReloadActiveEntry);
 
   
   void SetActiveSessionHistoryEntry(const Maybe<nsPoint>& aPreviousScrollPos,

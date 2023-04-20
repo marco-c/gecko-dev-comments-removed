@@ -21,8 +21,8 @@ namespace mozilla {
 
 union DecodedOutputIPDL
 {
-  nullable ArrayOfRemoteAudioData;
-  nullable ArrayOfRemoteVideoData;
+  ArrayOfRemoteAudioData;
+  ArrayOfRemoteVideoData;
 };
 
 struct InitCompletionIPDL
@@ -65,7 +65,7 @@ parent:
   
   
   
-  async Decode(nullable ArrayOfRemoteMediaRawData data) returns (DecodeResultIPDL result);
+  async Decode(ArrayOfRemoteMediaRawData data) returns (DecodeResultIPDL result);
   async Flush() returns (MediaResult error);
   async Drain() returns (DecodeResultIPDL result);
   async Shutdown() returns (bool unused);

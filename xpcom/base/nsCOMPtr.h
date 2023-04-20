@@ -654,22 +654,6 @@ class MOZ_IS_REFPTR nsCOMPtr final
   }
 
   
-  template <typename I,
-            typename = std::enable_if_t<!std::is_same_v<I, nsCOMPtr<T>> &&
-                                        std::is_convertible_v<I, nsCOMPtr<T>>>>
-  MOZ_IMPLICIT nsCOMPtr(const mozilla::NotNull<I>& aSmartPtr)
-      : NSCAP_CTOR_BASE(nsCOMPtr<T>(aSmartPtr.get()).forget().take()) {}
-
-  
-  template <typename I,
-            typename = std::enable_if_t<!std::is_same_v<I, nsCOMPtr<T>> &&
-                                        std::is_convertible_v<I, nsCOMPtr<T>>>>
-  MOZ_IMPLICIT nsCOMPtr(mozilla::MovingNotNull<I>&& aSmartPtr)
-      : NSCAP_CTOR_BASE(
-            nsCOMPtr<T>(std::move(aSmartPtr).unwrapBasePtr()).forget().take()) {
-  }
-
-  
   template <class U>
   MOZ_IMPLICIT nsCOMPtr(const mozilla::OwningNonNull<U>& aOther);
 
@@ -802,23 +786,6 @@ class MOZ_IS_REFPTR nsCOMPtr final
   nsCOMPtr<T>& operator=(const nsCOMPtr_helper& aRhs) {
     assign_from_helper(aRhs, NS_GET_TEMPLATE_IID(T));
     NSCAP_ASSERT_NO_QUERY_NEEDED();
-    return *this;
-  }
-
-  
-  template <typename I,
-            typename = std::enable_if_t<std::is_convertible_v<I, nsCOMPtr<T>>>>
-  nsCOMPtr<T>& operator=(const mozilla::NotNull<I>& aSmartPtr) {
-    assign_assuming_AddRef(nsCOMPtr<T>(aSmartPtr.get()).forget().take());
-    return *this;
-  }
-
-  
-  template <typename I,
-            typename = std::enable_if_t<std::is_convertible_v<I, nsCOMPtr<T>>>>
-  nsCOMPtr<T>& operator=(mozilla::MovingNotNull<I>&& aSmartPtr) {
-    assign_assuming_AddRef(
-        nsCOMPtr<T>(std::move(aSmartPtr).unwrapBasePtr()).forget().take());
     return *this;
   }
 
