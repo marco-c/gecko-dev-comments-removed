@@ -2,11 +2,12 @@
 
 
 import pathlib
-from datetime import date, datetime
+from datetime import datetime
 
 import requests
 from mozperftest.system.android_startup import (
     BASE_URL_DICT,
+    DATETIME_FORMAT,
     KEY_ARCHITECTURE,
     KEY_COMMIT,
     KEY_DATETIME,
@@ -18,13 +19,21 @@ from mozperftest.system.android_startup import (
 
 def before_iterations(kw):
     product = kw["AndroidStartUp_product"]
-    download_date = date.today()
-    architecture = "armeabi-v7a"
+    download_date = datetime.today()
+    architecture = "arm64-v8a"
 
-    if product == PROD_FOCUS and download_date >= datetime(2021, 11, 5):
-        product += "-v2"
+    if product == PROD_FOCUS:
+        if download_date >= datetime(2022, 12, 15):
+            product += "-v3"
+        elif download_date >= datetime(2021, 11, 5):
+            product += "-v2"
+    
+    
+    
 
-    nightly_url = BASE_URL_DICT[product + "-latest"].format(architecture=architecture)
+    nightly_url = BASE_URL_DICT[product + "-latest"].format(
+        date=download_date.strftime(DATETIME_FORMAT), architecture=architecture
+    )
     filename = f"{product}_nightly_{architecture}.apk"
     print("Fetching {}...".format(filename), end="", flush=True)
     download_apk_as_date(nightly_url, download_date, filename)
