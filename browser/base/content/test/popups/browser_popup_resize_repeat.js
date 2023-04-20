@@ -1,0 +1,6 @@
+
+
+
+"use strict";
+
+createGenericResizeTests(10, 10,  false, "Resize repeat");
