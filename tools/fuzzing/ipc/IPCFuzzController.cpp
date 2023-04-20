@@ -621,7 +621,7 @@ NS_IMETHODIMP IPCFuzzController::IPCFuzzLoop::Run() {
   IPCFuzzController::instance().runnableDone = false;
 
   SyncRunnable::DispatchToThread(
-      GetMainThreadEventTarget(),
+      GetMainThreadSerialEventTarget(),
       NS_NewRunnableFunction("IPCFuzzController::StartFuzzing", [&]() -> void {
         MOZ_FUZZING_NYX_PRINT("INFO: Main thread runnable start.\n");
         NS_ProcessPendingEvents(NS_GetCurrentThread());

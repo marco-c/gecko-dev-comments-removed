@@ -54,7 +54,7 @@ nsresult DNSUtils::CreateChannelHelper(nsIURI* aUri, nsIChannel** aResult) {
 
   
   if (!gHttpHandler) {
-    nsCOMPtr<nsIEventTarget> main = GetMainThreadEventTarget();
+    nsCOMPtr<nsIEventTarget> main = GetMainThreadSerialEventTarget();
     if (main) {
       
       SyncRunnable::DispatchToThread(

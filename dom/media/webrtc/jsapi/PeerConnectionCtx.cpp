@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "PeerConnectionCtx.h"
 
@@ -10,8 +10,8 @@
 #include "call/audio_state.h"
 #include "common/browser_logging/CSFLog.h"
 #include "common/browser_logging/WebRtcLog.h"
-#include "gmp-video-decode.h"  
-#include "gmp-video-encode.h"  
+#include "gmp-video-decode.h"  // GMP_API_VIDEO_DECODER
+#include "gmp-video-encode.h"  // GMP_API_VIDEO_ENCODER
 #include "libwebrtcglue/CallWorkerThread.h"
 #include "modules/audio_device/include/fake_audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
@@ -26,8 +26,8 @@
 #include "nsIIOService.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
-#include "nsNetCID.h"               
-#include "nsServiceManagerUtils.h"  
+#include "nsNetCID.h"               // NS_SOCKETTRANSPORTSERVICE_CONTRACTID
+#include "nsServiceManagerUtils.h"  // do_GetService
 #include "PeerConnectionImpl.h"
 #include "prcvar.h"
 #include "transport/runnable_utils.h"
@@ -152,7 +152,7 @@ class DummyAudioProcessing : public AudioProcessing {
     return Config();
   }
 };
-}  
+}  // namespace
 
 namespace mozilla {
 
@@ -209,7 +209,7 @@ class PeerConnectionCtxObserver : public nsIObserver {
                                            NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID);
       MOZ_ALWAYS_SUCCEEDS(rv);
 
-      
+      // Make sure we're not deleted while still inside ::Observe()
       RefPtr<PeerConnectionCtxObserver> kungFuDeathGrip(this);
       PeerConnectionCtx::gPeerConnectionCtxObserver = nullptr;
     }
@@ -282,8 +282,8 @@ void PeerConnectionCtx::Destroy() {
   CSFLogDebug(LOGTAG, "%s", __FUNCTION__);
 
   if (gInstance) {
-    
-    
+    // Null out gInstance first, so PeerConnectionImpl doesn't try to use it
+    // in Cleanup.
     auto* instance = gInstance;
     gInstance = nullptr;
     instance->Cleanup();
@@ -321,18 +321,18 @@ static void RecordCommonRtpTelemetry(const T& list, const T& lastList,
   }
 }
 
-
-
-
-
-
-
+// Telemetry reporting every second after start of first call.
+// The threading model around the media pipelines is weird:
+// - The pipelines are containers,
+// - containers that are only safe on main thread, with members only safe on
+//   STS,
+// - hence the there and back again approach.
 
 void PeerConnectionCtx::DeliverStats(
     UniquePtr<dom::RTCStatsReportInternal>&& aReport) {
   using namespace Telemetry;
 
-  
+  // First, get reports from a second ago, if any, for calculations below
   UniquePtr<dom::RTCStatsReportInternal> lastReport;
   {
     auto i = mLastReports.find(aReport->mPcid);
@@ -342,18 +342,18 @@ void PeerConnectionCtx::DeliverStats(
       lastReport = MakeUnique<dom::RTCStatsReportInternal>();
     }
   }
-  
+  // Record Telemetery
   RecordCommonRtpTelemetry(aReport->mInboundRtpStreamStats,
                            lastReport->mInboundRtpStreamStats, false);
-  
+  // Record bandwidth telemetry
   for (const auto& s : aReport->mInboundRtpStreamStats) {
     if (s.mBytesReceived.WasPassed()) {
       const bool isAudio = s.mKind.Value().Find(u"audio") != -1;
       for (const auto& lastS : lastReport->mInboundRtpStreamStats) {
         if (lastS.mId == s.mId) {
           int32_t deltaMs = s.mTimestamp.Value() - lastS.mTimestamp.Value();
-          
-          
+          // In theory we're called every second, so delta *should* be in that
+          // range. Small deltas could cause errors due to division
           if (deltaMs < 500 || deltaMs > 60000 ||
               !lastS.mBytesReceived.WasPassed()) {
             break;
@@ -361,8 +361,8 @@ void PeerConnectionCtx::DeliverStats(
           HistogramID id = isAudio
                                ? WEBRTC_AUDIO_QUALITY_INBOUND_BANDWIDTH_KBITS
                                : WEBRTC_VIDEO_QUALITY_INBOUND_BANDWIDTH_KBITS;
-          
-          
+          // We could accumulate values until enough time has passed
+          // and then Accumulate() but this isn't that important
           Accumulate(
               id,
               ((s.mBytesReceived.Value() - lastS.mBytesReceived.Value()) * 8) /
@@ -455,11 +455,11 @@ void PeerConnectionCtx::AddPeerConnection(const std::string& aKey,
 
     SharedThreadPoolWebRtcTaskQueueFactory taskQueueFactory;
     constexpr bool supportTailDispatch = true;
-    
-    
-    
-    
-    
+    // Note the NonBlocking DeletionPolicy!
+    // This task queue is passed into libwebrtc as a raw pointer.
+    // WebrtcCallWrapper guarantees that it outlives its webrtc::Call instance.
+    // Outside of libwebrtc we must use ref-counting to either the
+    // WebrtcCallWrapper or to the CallWorkerThread to keep it alive.
     auto callWorkerThread =
         WrapUnique(taskQueueFactory
                        .CreateTaskQueueWrapper<DeletionPolicy::NonBlocking>(
@@ -502,7 +502,7 @@ void PeerConnectionCtx::ClearClosedStats() {
   for (auto& [id, pc] : mPeerConnections) {
     Unused << id;
     if (pc->IsClosed()) {
-      
+      // Rare case
       pc->DisableLongTermStats();
     }
   }
@@ -532,8 +532,8 @@ static void GMPReady_m() {
 };
 
 static void GMPReady() {
-  GetMainThreadEventTarget()->Dispatch(WrapRunnableNM(&GMPReady_m),
-                                       NS_DISPATCH_NORMAL);
+  GetMainThreadSerialEventTarget()->Dispatch(WrapRunnableNM(&GMPReady_m),
+                                             NS_DISPATCH_NORMAL);
 };
 
 void PeerConnectionCtx::initGMP() {
@@ -556,7 +556,7 @@ void PeerConnectionCtx::initGMP() {
     return;
   }
 
-  
+  // presumes that all GMP dir scans have been queued for the GMPThread
   thread->Dispatch(WrapRunnableNM(&GMPReady), NS_DISPATCH_NORMAL);
 }
 
@@ -577,7 +577,7 @@ nsresult PeerConnectionCtx::Cleanup() {
 }
 
 PeerConnectionCtx::~PeerConnectionCtx() {
-  
+  // ensure mTelemetryTimer ends on main thread
   MOZ_ASSERT(NS_IsMainThread());
   if (mTelemetryTimer) {
     mTelemetryTimer->Cancel();
@@ -601,7 +601,7 @@ bool PeerConnectionCtx::gmpHasH264() {
     return false;
   }
 
-  
+  // XXX I'd prefer if this was all known ahead of time...
 
   nsTArray<nsCString> tags;
   tags.AppendElement("h264"_ns);
@@ -623,4 +623,4 @@ bool PeerConnectionCtx::gmpHasH264() {
   return true;
 }
 
-}  
+}  // namespace mozilla

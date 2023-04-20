@@ -2189,7 +2189,7 @@ void CacheFile::QueueChunkListener(uint32_t aIndex,
     LOG(
         ("CacheFile::QueueChunkListener() - Cannot get Cache I/O thread! Using "
          "main thread for callback."));
-    item->mTarget = GetMainThreadEventTarget();
+    item->mTarget = GetMainThreadSerialEventTarget();
   }
   item->mCallback = aCallback;
 

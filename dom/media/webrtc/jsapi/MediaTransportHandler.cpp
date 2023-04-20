@@ -695,7 +695,7 @@ void MediaTransportHandlerSTS::Destroy() {
   CSFLogDebug(LOGTAG, "%s %p", __func__, this);
   
   if (!NS_IsMainThread()) {
-    GetMainThreadEventTarget()->Dispatch(NewNonOwningRunnableMethod(
+    GetMainThreadSerialEventTarget()->Dispatch(NewNonOwningRunnableMethod(
         __func__, this, &MediaTransportHandlerSTS::Destroy));
     return;
   }
