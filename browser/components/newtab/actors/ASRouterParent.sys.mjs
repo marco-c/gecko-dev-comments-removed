@@ -1,17 +1,10 @@
+/* vim: set ts=2 sw=2 sts=2 et tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { MESSAGE_TYPE_HASH } from "resource://activity-stream/common/ActorConstants.sys.mjs";
 
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["ASRouterParent", "ASRouterTabs"];
-
-const {
-  MESSAGE_TYPE_HASH: { BLOCK_MESSAGE_BY_ID },
-} = ChromeUtils.importESModule(
-  "resource://activity-stream/common/ActorConstants.sys.mjs"
-);
 const { ASRouterNewTabHook } = ChromeUtils.import(
   "resource://activity-stream/lib/ASRouterNewTabHook.jsm"
 );
@@ -19,7 +12,7 @@ const { ASRouterDefaultConfig } = ChromeUtils.import(
   "resource://activity-stream/lib/ASRouterDefaultConfig.jsm"
 );
 
-class ASRouterTabs {
+export class ASRouterTabs {
   constructor({ asRouterNewTabHook }) {
     this.actors = new Set();
     this.destroy = () => {};
@@ -61,7 +54,7 @@ class ASRouterTabs {
 const defaultTabsFactory = () =>
   new ASRouterTabs({ asRouterNewTabHook: ASRouterNewTabHook });
 
-class ASRouterParent extends JSWindowActorParent {
+export class ASRouterParent extends JSWindowActorParent {
   static tabs = null;
 
   static nextTabId = 0;
@@ -95,13 +88,13 @@ class ASRouterParent extends JSWindowActorParent {
 
   receiveMessage({ name, data }) {
     return ASRouterParent.tabs.loadingMessageHandler.then(handler => {
-      if (name === BLOCK_MESSAGE_BY_ID) {
+      if (name === MESSAGE_TYPE_HASH.BLOCK_MESSAGE_BY_ID) {
         return Promise.all([
           handler.handleMessage(name, data, this.getTab()),
-          
-          
-          
-          
+          // All tabs should clear messages not just preloaded, for example
+          // two different windows can display the same snippet.
+          // ASRouter blocks snippets by campaign not by id so we just tell
+          // other tabs that this specific campaign was blocked.
           ASRouterParent.tabs.messageAll("ClearMessages", [data.campaign]),
         ]).then(([handleMessageResult]) => handleMessageResult);
       }

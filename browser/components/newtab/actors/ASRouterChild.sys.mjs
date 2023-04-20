@@ -1,20 +1,16 @@
+/* vim: set ts=2 sw=2 sts=2 et tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["ASRouterChild"];
-
-const {
+import {
   MESSAGE_TYPE_LIST,
-  MESSAGE_TYPE_HASH: msg,
-} = ChromeUtils.importESModule(
-  "resource://activity-stream/common/ActorConstants.sys.mjs"
-);
+  MESSAGE_TYPE_HASH as msg,
+} from "resource://activity-stream/common/ActorConstants.sys.mjs";
+
 const VALID_TYPES = new Set(MESSAGE_TYPE_LIST);
 
-class ASRouterChild extends JSWindowActorChild {
+export class ASRouterChild extends JSWindowActorChild {
   constructor() {
     super();
     this.observers = new Set();
@@ -38,7 +34,7 @@ class ASRouterChild extends JSWindowActorChild {
   }
 
   handleEvent(event) {
-    
+    // DOMDocElementCreated is only used to create the actor.
   }
 
   addParentListener(listener) {
@@ -102,7 +98,7 @@ class ASRouterChild extends JSWindowActorChild {
           return this.sendAsyncMessage(type, data);
         }
         default: {
-          
+          // these messages need a response
           return this.sendQuery(type, data);
         }
       }

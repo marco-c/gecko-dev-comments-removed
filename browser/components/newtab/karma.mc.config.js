@@ -4,6 +4,7 @@
 
 const path = require("path");
 const webpack = require("webpack");
+const { ResourceUriPlugin } = require("./tools/resourceUriPlugin");
 
 const PATHS = {
   
@@ -237,6 +238,12 @@ module.exports = function(config) {
         },
       },
       plugins: [
+        
+        
+        
+        new ResourceUriPlugin({
+          resourcePathRegEx: PATHS.resourcePathRegEx,
+        }),
         new webpack.DefinePlugin({
           "process.env.NODE_ENV": JSON.stringify("development"),
         }),
