@@ -2745,7 +2745,7 @@ nsIFrame* EventStateManager::ComputeScrollTargetAndMayAdjustWheelEvent(
     
     
     
-    nsIFrame* lastScrollFrame = WheelTransaction::GetScrollTargetFrame();
+    nsIFrame* lastScrollFrame = WheelTransaction::GetTargetFrame();
     if (lastScrollFrame) {
       nsIScrollableFrame* scrollableFrame =
           lastScrollFrame->GetScrollTargetFrame();
@@ -2927,9 +2927,7 @@ void EventStateManager::DoScrollText(nsIScrollableFrame* aScrollableFrame,
   MOZ_ASSERT(scrollFrame);
 
   AutoWeakFrame scrollFrameWeak(scrollFrame);
-  AutoWeakFrame eventFrameWeak(mCurrentTarget);
-  if (!WheelTransaction::WillHandleDefaultAction(aEvent, scrollFrameWeak,
-                                                 eventFrameWeak)) {
+  if (!WheelTransaction::WillHandleDefaultAction(aEvent, scrollFrameWeak)) {
     return;
   }
 
@@ -3729,14 +3727,6 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         case WheelPrefs::ACTION_NONE:
         default:
           bool allDeltaOverflown = false;
-          if (wheelEvent->mDeltaX != 0.0 || wheelEvent->mDeltaY != 0.0) {
-            if (frameToScroll) {
-              WheelTransaction::WillHandleDefaultAction(
-                  wheelEvent, frameToScroll, mCurrentTarget);
-            } else {
-              WheelTransaction::EndTransaction();
-            }
-          }
           if (wheelEvent->mFlags.mHandledByAPZ) {
             if (wheelEvent->mCanTriggerSwipe) {
               
@@ -5878,7 +5868,6 @@ void EventStateManager::ContentRemoved(Document* aDocument,
       IMEStateManager::OnRemoveContent(*presContext,
                                        MOZ_KnownLive(*aContent->AsElement()));
     }
-    WheelTransaction::OnRemoveElement(aContent);
   }
 
   

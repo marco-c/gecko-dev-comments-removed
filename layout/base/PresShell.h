@@ -2209,16 +2209,6 @@ class PresShell final : public nsStubDocumentObserver,
 
       void UpdateTouchEventTarget(WidgetGUIEvent* aGUIEvent);
 
-      
-
-
-
-
-
-
-
-      void UpdateWheelEventTarget(WidgetGUIEvent* aGUIEvent);
-
       RefPtr<PresShell> mPresShell;
       nsIFrame* mFrame = nullptr;
       nsCOMPtr<nsIContent> mContent;

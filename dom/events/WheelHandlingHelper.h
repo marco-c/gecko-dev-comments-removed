@@ -118,19 +118,7 @@ class ScrollbarsForWheel {
 
 class WheelTransaction {
  public:
-  
-
-
-
-
-  static nsIFrame* GetScrollTargetFrame() { return sScrollTargetFrame; }
-  
-
-
-
-
-
-  static nsIFrame* GetEventTargetFrame() { return sEventTargetFrame; }
+  static nsIFrame* GetTargetFrame() { return sTargetFrame; }
   static void EndTransaction();
   
 
@@ -140,18 +128,13 @@ class WheelTransaction {
 
 
   static bool WillHandleDefaultAction(WidgetWheelEvent* aWheelEvent,
-                                      AutoWeakFrame& aScrollTargetWeakFrame,
-                                      AutoWeakFrame& aEventTargetWeakFrame);
+                                      AutoWeakFrame& aTargetWeakFrame);
   static bool WillHandleDefaultAction(WidgetWheelEvent* aWheelEvent,
-                                      nsIFrame* aScrollTargetFrame,
-                                      nsIFrame* aEventTargetFrame) {
-    AutoWeakFrame scrollTargetWeakFrame(aScrollTargetFrame);
-    AutoWeakFrame eventTargetWeakFrame(aEventTargetFrame);
-    return WillHandleDefaultAction(aWheelEvent, scrollTargetWeakFrame,
-                                   eventTargetWeakFrame);
+                                      nsIFrame* aTargetFrame) {
+    AutoWeakFrame targetWeakFrame(aTargetFrame);
+    return WillHandleDefaultAction(aWheelEvent, targetWeakFrame);
   }
   static void OnEvent(WidgetEvent* aEvent);
-  static void OnRemoveElement(nsIContent* aContent);
   static void Shutdown();
 
   static void OwnScrollbars(bool aOwn);
@@ -159,8 +142,7 @@ class WheelTransaction {
   static DeltaValues AccelerateWheelDelta(WidgetWheelEvent* aEvent);
 
  protected:
-  static void BeginTransaction(nsIFrame* aScrollTargetFrame,
-                               nsIFrame* aEventTargetFrame,
+  static void BeginTransaction(nsIFrame* aTargetFrame,
                                const WidgetWheelEvent* aEvent);
   
   
@@ -175,23 +157,7 @@ class WheelTransaction {
   static double ComputeAcceleratedWheelDelta(double aDelta, int32_t aFactor);
   static bool OutOfTime(uint32_t aBaseTime, uint32_t aThreshold);
 
-  
-
-
-  static AutoWeakFrame sScrollTargetFrame;
-  
-
-
-
-
-
-
-
-
-
-
-
-  static AutoWeakFrame sEventTargetFrame;
+  static AutoWeakFrame sTargetFrame;
   static uint32_t sTime;        
   static uint32_t sMouseMoved;  
   static nsITimer* sTimer;

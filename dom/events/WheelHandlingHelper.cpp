@@ -111,8 +111,7 @@ WheelHandlingUtils::GetDisregardedWheelScrollDirection(const nsIFrame* aFrame) {
 
 
 
-AutoWeakFrame WheelTransaction::sScrollTargetFrame(nullptr);
-AutoWeakFrame WheelTransaction::sEventTargetFrame(nullptr);
+AutoWeakFrame WheelTransaction::sTargetFrame(nullptr);
 uint32_t WheelTransaction::sTime = 0;
 uint32_t WheelTransaction::sMouseMoved = 0;
 nsITimer* WheelTransaction::sTimer = nullptr;
@@ -129,28 +128,13 @@ bool WheelTransaction::OutOfTime(uint32_t aBaseTime, uint32_t aThreshold) {
 void WheelTransaction::OwnScrollbars(bool aOwn) { sOwnScrollbars = aOwn; }
 
 
-void WheelTransaction::BeginTransaction(nsIFrame* aScrollTargetFrame,
-                                        nsIFrame* aEventTargetFrame,
+void WheelTransaction::BeginTransaction(nsIFrame* aTargetFrame,
                                         const WidgetWheelEvent* aEvent) {
-  NS_ASSERTION(!sScrollTargetFrame && !sEventTargetFrame,
-               "previous transaction is not finished!");
+  NS_ASSERTION(!sTargetFrame, "previous transaction is not finished!");
   MOZ_ASSERT(aEvent->mMessage == eWheel,
              "Transaction must be started with a wheel event");
-
   ScrollbarsForWheel::OwnWheelTransaction(false);
-  sScrollTargetFrame = aScrollTargetFrame;
-
-  
-  if (StaticPrefs::dom_event_wheel_event_groups_enabled()) {
-    
-    
-    
-    
-    
-    
-    sEventTargetFrame = aEventTargetFrame;
-  }
-
+  sTargetFrame = aTargetFrame;
   sScrollSeriesCounter = 0;
   if (!UpdateTransaction(aEvent)) {
     NS_ERROR("BeginTransaction is called even cannot scroll the frame");
@@ -160,7 +144,7 @@ void WheelTransaction::BeginTransaction(nsIFrame* aScrollTargetFrame,
 
 
 bool WheelTransaction::UpdateTransaction(const WidgetWheelEvent* aEvent) {
-  nsIFrame* scrollToFrame = GetScrollTargetFrame();
+  nsIFrame* scrollToFrame = GetTargetFrame();
   nsIScrollableFrame* scrollableFrame = scrollToFrame->GetScrollTargetFrame();
   if (scrollableFrame) {
     scrollToFrame = do_QueryFrame(scrollableFrame);
@@ -204,8 +188,7 @@ void WheelTransaction::EndTransaction() {
   if (sTimer) {
     sTimer->Cancel();
   }
-  sScrollTargetFrame = nullptr;
-  sEventTargetFrame = nullptr;
+  sTargetFrame = nullptr;
   sScrollSeriesCounter = 0;
   if (sOwnScrollbars) {
     sOwnScrollbars = false;
@@ -216,16 +199,13 @@ void WheelTransaction::EndTransaction() {
 
 
 bool WheelTransaction::WillHandleDefaultAction(
-    WidgetWheelEvent* aWheelEvent, AutoWeakFrame& aScrollTargetWeakFrame,
-    AutoWeakFrame& aEventTargetWeakFrame) {
-  nsIFrame* lastTargetFrame = GetScrollTargetFrame();
+    WidgetWheelEvent* aWheelEvent, AutoWeakFrame& aTargetWeakFrame) {
+  nsIFrame* lastTargetFrame = GetTargetFrame();
   if (!lastTargetFrame) {
-    BeginTransaction(aScrollTargetWeakFrame.GetFrame(),
-                     aEventTargetWeakFrame.GetFrame(), aWheelEvent);
-  } else if (lastTargetFrame != aScrollTargetWeakFrame.GetFrame()) {
+    BeginTransaction(aTargetWeakFrame.GetFrame(), aWheelEvent);
+  } else if (lastTargetFrame != aTargetWeakFrame.GetFrame()) {
     EndTransaction();
-    BeginTransaction(aScrollTargetWeakFrame.GetFrame(),
-                     aEventTargetWeakFrame.GetFrame(), aWheelEvent);
+    BeginTransaction(aTargetWeakFrame.GetFrame(), aWheelEvent);
   } else {
     UpdateTransaction(aWheelEvent);
   }
@@ -234,7 +214,7 @@ bool WheelTransaction::WillHandleDefaultAction(
   
   
   
-  if (!aScrollTargetWeakFrame.IsAlive()) {
+  if (!aTargetWeakFrame.IsAlive()) {
     EndTransaction();
     return false;
   }
@@ -244,7 +224,7 @@ bool WheelTransaction::WillHandleDefaultAction(
 
 
 void WheelTransaction::OnEvent(WidgetEvent* aEvent) {
-  if (!sScrollTargetFrame) {
+  if (!sTargetFrame) {
     return;
   }
 
@@ -275,16 +255,12 @@ void WheelTransaction::OnEvent(WidgetEvent* aEvent) {
         
         LayoutDeviceIntPoint pt = GetScreenPoint(mouseEvent);
         auto r = LayoutDeviceIntRect::FromAppUnitsToNearest(
-            sScrollTargetFrame->GetScreenRectInAppUnits(),
-            sScrollTargetFrame->PresContext()->AppUnitsPerDevPixel());
+            sTargetFrame->GetScreenRectInAppUnits(),
+            sTargetFrame->PresContext()->AppUnitsPerDevPixel());
         if (!r.Contains(pt)) {
           EndTransaction();
           return;
         }
-
-        
-        
-        sEventTargetFrame = nullptr;
 
         
         
@@ -316,54 +292,34 @@ void WheelTransaction::OnEvent(WidgetEvent* aEvent) {
 }
 
 
-void WheelTransaction::OnRemoveElement(nsIContent* aContent) {
-  
-  
-  if (!sEventTargetFrame) {
-    return;
-  }
-
-  if (sEventTargetFrame->GetContent() == aContent) {
-    
-    
-    
-    
-    
-    
-    sEventTargetFrame = nullptr;
-  }
-}
-
-
 void WheelTransaction::Shutdown() { NS_IF_RELEASE(sTimer); }
 
 
 void WheelTransaction::OnFailToScrollTarget() {
-  MOZ_ASSERT(sScrollTargetFrame, "We don't have mouse scrolling transaction");
+  MOZ_ASSERT(sTargetFrame, "We don't have mouse scrolling transaction");
 
   if (StaticPrefs::test_mousescroll()) {
     
     nsContentUtils::DispatchEventOnlyToChrome(
-        sScrollTargetFrame->GetContent()->OwnerDoc(),
-        sScrollTargetFrame->GetContent(), u"MozMouseScrollFailed"_ns,
-        CanBubble::eYes, Cancelable::eYes);
+        sTargetFrame->GetContent()->OwnerDoc(), sTargetFrame->GetContent(),
+        u"MozMouseScrollFailed"_ns, CanBubble::eYes, Cancelable::eYes);
   }
   
   
-  if (!sScrollTargetFrame) {
+  if (!sTargetFrame) {
     EndTransaction();
   }
 }
 
 
 void WheelTransaction::OnTimeout(nsITimer* aTimer, void* aClosure) {
-  if (!sScrollTargetFrame) {
+  if (!sTargetFrame) {
     
     EndTransaction();
     return;
   }
   
-  nsIFrame* frame = sScrollTargetFrame;
+  nsIFrame* frame = sTargetFrame;
   
   
   MayEndTransaction();
@@ -432,7 +388,7 @@ double WheelTransaction::ComputeAcceleratedWheelDelta(double aDelta,
 
 DeltaValues WheelTransaction::OverrideSystemScrollSpeed(
     WidgetWheelEvent* aEvent) {
-  MOZ_ASSERT(sScrollTargetFrame, "We don't have mouse scrolling transaction");
+  MOZ_ASSERT(sTargetFrame, "We don't have mouse scrolling transaction");
 
   
   
@@ -490,7 +446,7 @@ void ScrollbarsForWheel::SetActiveScrollTarget(
 
 
 void ScrollbarsForWheel::MayInactivate() {
-  if (!sOwnWheelTransaction && WheelTransaction::GetScrollTargetFrame()) {
+  if (!sOwnWheelTransaction && WheelTransaction::GetTargetFrame()) {
     WheelTransaction::OwnScrollbars(true);
   } else {
     Inactivate();
