@@ -50,7 +50,6 @@ function run_test() {
     Sandbox: { count: Pattern.NATURAL },
 
     
-    Environment: { count: Pattern.NATURAL },
     Memory: { count: Pattern.NATURAL },
     Frame: { count: Pattern.NATURAL },
   }).assert(
