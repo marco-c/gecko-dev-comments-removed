@@ -44,12 +44,7 @@
 
 
 
-use std::{
-    collections::HashSet,
-    convert::TryFrom,
-    hash::{Hash, Hasher},
-    iter,
-};
+use std::{collections::HashSet, convert::TryFrom, iter};
 
 use anyhow::{bail, Result};
 
@@ -77,22 +72,26 @@ pub use record::{Field, Record};
 
 pub mod ffi;
 pub use ffi::{FFIArgument, FFIFunction, FFIType};
-use uniffi_meta::{MethodMetadata, ObjectMetadata};
+use uniffi_meta::{Checksum, MethodMetadata, ObjectMetadata};
 
 
 
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Checksum)]
 pub struct ComponentInterface {
     
     
     
     uniffi_version: String,
     
+    
+    
+    #[checksum_ignore]
     pub(super) types: TypeUniverse,
     
     namespace: String,
     
+    #[checksum_ignore]
     ffi_namespace: String,
     
     enums: Vec<Enum>,
@@ -309,14 +308,6 @@ impl ComponentInterface {
             .any(|t| matches!(t, Type::Map(_, _)))
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -669,23 +660,6 @@ impl ComponentInterface {
             callback.derive_ffi_funcs(&ci_prefix);
         }
         Ok(())
-    }
-}
-
-
-
-impl Hash for ComponentInterface {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        
-        
-        self.uniffi_version.hash(state);
-        self.namespace.hash(state);
-        self.enums.hash(state);
-        self.records.hash(state);
-        self.functions.hash(state);
-        self.objects.hash(state);
-        self.callback_interfaces.hash(state);
-        self.errors.hash(state);
     }
 }
 

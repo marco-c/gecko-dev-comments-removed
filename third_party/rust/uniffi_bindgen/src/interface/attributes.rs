@@ -15,13 +15,14 @@
 
 
 use anyhow::{bail, Result};
+use uniffi_meta::Checksum;
 
 
 
 
 
 
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone, Checksum)]
 pub(super) enum Attribute {
     ByRef,
     Enum,
@@ -119,7 +120,7 @@ where
 
 
 
-#[derive(Debug, Clone, Hash, Default)]
+#[derive(Debug, Clone, Checksum, Default)]
 pub(super) struct EnumAttributes(Vec<Attribute>);
 
 impl EnumAttributes {
@@ -155,7 +156,7 @@ impl<T: TryInto<EnumAttributes, Error = anyhow::Error>> TryFrom<Option<T>> for E
 
 
 
-#[derive(Debug, Clone, Hash, Default)]
+#[derive(Debug, Clone, Checksum, Default)]
 pub(super) struct FunctionAttributes(Vec<Attribute>);
 
 impl FunctionAttributes {
@@ -198,7 +199,7 @@ impl<T: TryInto<FunctionAttributes, Error = anyhow::Error>> TryFrom<Option<T>>
 
 
 
-#[derive(Debug, Clone, Hash, Default)]
+#[derive(Debug, Clone, Checksum, Default)]
 pub(super) struct ArgumentAttributes(Vec<Attribute>);
 
 impl ArgumentAttributes {
@@ -233,7 +234,7 @@ impl<T: TryInto<ArgumentAttributes, Error = anyhow::Error>> TryFrom<Option<T>>
 }
 
 
-#[derive(Debug, Clone, Hash, Default)]
+#[derive(Debug, Clone, Checksum, Default)]
 pub(super) struct InterfaceAttributes(Vec<Attribute>);
 
 impl InterfaceAttributes {
@@ -287,7 +288,7 @@ impl<T: TryInto<InterfaceAttributes, Error = anyhow::Error>> TryFrom<Option<T>>
 
 
 
-#[derive(Debug, Clone, Hash, Default)]
+#[derive(Debug, Clone, Checksum, Default)]
 pub(super) struct ConstructorAttributes(Vec<Attribute>);
 
 impl ConstructorAttributes {
@@ -326,7 +327,7 @@ impl TryFrom<&weedle::attribute::ExtendedAttributeList<'_>> for ConstructorAttri
 
 
 
-#[derive(Debug, Clone, Hash, Default)]
+#[derive(Debug, Clone, Checksum, Default)]
 pub(super) struct MethodAttributes(Vec<Attribute>);
 
 impl MethodAttributes {
@@ -375,7 +376,7 @@ impl<T: TryInto<MethodAttributes, Error = anyhow::Error>> TryFrom<Option<T>> for
 
 
 
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone, Checksum)]
 pub(super) enum SelfType {
     ByArc, 
 }
@@ -398,7 +399,7 @@ impl TryFrom<&weedle::attribute::IdentifierOrString<'_>> for SelfType {
 
 
 
-#[derive(Debug, Clone, Hash, Default)]
+#[derive(Debug, Clone, Checksum, Default)]
 pub(super) struct TypedefAttributes(Vec<Attribute>);
 
 impl TypedefAttributes {
