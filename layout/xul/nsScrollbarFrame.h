@@ -13,8 +13,8 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ScrollTypes.h"
+#include "nsContainerFrame.h"
 #include "nsIAnonymousContentCreator.h"
-#include "nsBoxFrame.h"
 
 class nsIScrollbarMediator;
 
@@ -28,13 +28,13 @@ class Element;
 nsIFrame* NS_NewScrollbarFrame(mozilla::PresShell* aPresShell,
                                mozilla::ComputedStyle* aStyle);
 
-class nsScrollbarFrame final : public nsBoxFrame,
+class nsScrollbarFrame final : public nsContainerFrame,
                                public nsIAnonymousContentCreator {
   using Element = mozilla::dom::Element;
 
  public:
   explicit nsScrollbarFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
-      : nsBoxFrame(aStyle, aPresContext, kClassID),
+      : nsContainerFrame(aStyle, aPresContext, kClassID),
         mSmoothScroll(false),
         mScrollUnit(mozilla::ScrollUnit::DEVICE_PIXELS),
         mDirection(0),
@@ -51,14 +51,14 @@ class nsScrollbarFrame final : public nsBoxFrame,
   NS_DECL_FRAMEARENA_HELPERS(nsScrollbarFrame)
 
 #ifdef DEBUG_FRAME_DUMP
-  virtual nsresult GetFrameName(nsAString& aResult) const override {
+  nsresult GetFrameName(nsAString& aResult) const override {
     return MakeFrameName(u"ScrollbarFrame"_ns, aResult);
   }
 #endif
 
   
-  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                    int32_t aModType) override;
+  nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                            int32_t aModType) override;
 
   NS_IMETHOD HandlePress(nsPresContext* aPresContext,
                          mozilla::WidgetGUIEvent* aEvent,
@@ -78,31 +78,23 @@ class nsScrollbarFrame final : public nsBoxFrame,
                            mozilla::WidgetGUIEvent* aEvent,
                            nsEventStatus* aEventStatus) override;
 
-  virtual void DestroyFrom(nsIFrame* aDestructRoot,
-                           PostDestroyData& aPostDestroyData) override;
+  mozilla::StyleScrollbarWidth ScrollbarWidth() const;
+  nscoord ScrollbarTrackSize() const;
+  nsSize ScrollbarMinSize() const;
+  bool IsHorizontal() const;
 
-  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
-                    nsIFrame* aPrevInFlow) override;
+  void DestroyFrom(nsIFrame* aDestructRoot,
+                   PostDestroyData& aPostDestroyData) override;
 
-  virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
-                      const ReflowInput& aReflowInput,
-                      nsReflowStatus& aStatus) override;
+  void Init(nsIContent* aContent, nsContainerFrame* aParent,
+            nsIFrame* aPrevInFlow) override;
+
+  void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
+              const ReflowInput& aReflowInput,
+              nsReflowStatus& aStatus) override;
 
   void SetScrollbarMediatorContent(nsIContent* aMediator);
   nsIScrollbarMediator* GetScrollbarMediator();
-
-  
-
-  
-
-
-
-
-
-
-  virtual bool DoesClipChildrenInBothAxes() override { return true; }
-
-  virtual nsresult GetXULMargin(nsMargin& aMargin) override;
 
   
 
@@ -111,6 +103,7 @@ class nsScrollbarFrame final : public nsBoxFrame,
   void SetIncrementToLine(int32_t aDirection);
   void SetIncrementToPage(int32_t aDirection);
   void SetIncrementToWhole(int32_t aDirection);
+
   
 
 
@@ -127,10 +120,9 @@ class nsScrollbarFrame final : public nsBoxFrame,
   int32_t GetIncrement() { return mIncrement; }
 
   
-  virtual nsresult CreateAnonymousContent(
-      nsTArray<ContentInfo>& aElements) override;
-  virtual void AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
-                                        uint32_t aFilter) override;
+  nsresult CreateAnonymousContent(nsTArray<ContentInfo>& aElements) override;
+  void AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
+                                uint32_t aFilter) override;
 
   void UpdateChildrenAttributeValue(nsAtom* aAttribute, bool aNotify);
 

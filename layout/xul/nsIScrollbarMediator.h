@@ -81,7 +81,7 @@ class nsIScrollbarMediator : public nsQueryFrame {
 
 
 
-  virtual nsIFrame* GetScrollbarBox(bool aVertical) = 0;
+  virtual nsScrollbarFrame* GetScrollbarBox(bool aVertical) = 0;
   
 
 
