@@ -85,7 +85,13 @@ void ImageLoader::Init() {
 
 void ImageLoader::Shutdown() {
   for (const auto& entry : *sImages) {
-    entry.GetKey()->CancelAndForgetObserver(NS_BINDING_ABORTED);
+    imgIRequest* imgRequest = entry.GetKey();
+    
+    
+    
+    auto* req = static_cast<imgRequestProxy*>(imgRequest);
+    req->SetCancelable(true);
+    req->CancelAndForgetObserver(NS_BINDING_ABORTED);
   }
 
   sImages = nullptr;
@@ -444,6 +450,10 @@ already_AddRefed<imgRequestProxy> ImageLoader::LoadImage(
   if (NS_FAILED(rv) || !request) {
     return nullptr;
   }
+
+  
+  
+  request->SetCancelable(false);
   sImages->GetOrInsertNew(request);
   return request.forget();
 }
@@ -467,6 +477,8 @@ void ImageLoader::UnloadImage(imgRequestProxy* aImage) {
     return;
   }
 
+  
+  aImage->SetCancelable(true);
   aImage->CancelAndForgetObserver(NS_BINDING_ABORTED);
   MOZ_DIAGNOSTIC_ASSERT(lookup.Data()->mImageLoaders.IsEmpty(),
                         "Shouldn't be keeping references to any loader "

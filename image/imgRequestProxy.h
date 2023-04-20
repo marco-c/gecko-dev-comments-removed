@@ -111,6 +111,10 @@ class imgRequestProxy : public mozilla::PreloaderBase,
   void MarkValidating();
   void ClearValidating();
 
+  
+  
+  void SetCancelable(bool);
+
   already_AddRefed<nsIEventTarget> GetEventTarget() const override;
 
   
@@ -215,6 +219,7 @@ class imgRequestProxy : public mozilla::PreloaderBase,
   nsLoadFlags mLoadFlags;
   uint32_t mLockCount;
   uint32_t mAnimationConsumers;
+  bool mCancelable : 1;
   bool mCanceled : 1;
   bool mIsInLoadGroup : 1;
   bool mForceDispatchLoadGroup : 1;
