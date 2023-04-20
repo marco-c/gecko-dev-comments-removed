@@ -247,15 +247,3 @@ function flushComputedStyle(elem) {
   var cs = getComputedStyle(elem);
   cs.marginLeft;
 }
-
-async function waitForAnimationReadyToRestyle(aAnimation) {
-  await aAnimation.ready;
-  
-  
-  
-  
-  
-  if (animationStartsRightNow(aAnimation)) {
-    await waitForNextFrame();
-  }
-}

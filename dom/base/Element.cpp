@@ -1865,30 +1865,6 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aParent.IsInUncomposedDoc() && MayHaveAnimations()) {
-    PseudoStyleType pseudoType = GetPseudoElementType();
-    if ((pseudoType == PseudoStyleType::NotPseudo ||
-         AnimationUtils::IsSupportedPseudoForAnimations(pseudoType)) &&
-        EffectSet::Get(this, pseudoType)) {
-      if (nsPresContext* presContext = aContext.OwnerDoc().GetPresContext()) {
-        presContext->EffectCompositor()->RequestRestyle(
-            this, pseudoType, EffectCompositor::RestyleType::Standard,
-            EffectCompositor::CascadeLevel::Animations);
-      }
-    }
-  }
-
-  
-  
-  
   MOZ_ASSERT(OwnerDoc() == aParent.OwnerDoc(), "Bound to wrong document");
   MOZ_ASSERT(IsInComposedDoc() == aContext.InComposedDoc());
   MOZ_ASSERT(IsInUncomposedDoc() == aContext.InUncomposedDoc());
@@ -1973,14 +1949,6 @@ void Element::UnbindFromTree(bool aNullParent) {
   
   if (auto* data = GetAnimationData()) {
     data->ClearAllAnimationCollections();
-    if (document) {
-      if (nsPresContext* presContext = document->GetPresContext()) {
-        
-        
-        
-        presContext->EffectCompositor()->ClearRestyleRequestsFor(this);
-      }
-    }
   }
 
   if (aNullParent) {

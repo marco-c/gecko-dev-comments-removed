@@ -895,6 +895,11 @@ bool EffectCompositor::PreTraverseInSubtree(ServoTraversalFlags aFlags,
         continue;
       }
 
+      if (target.mElement->GetComposedDoc() != mPresContext->Document()) {
+        iter.Remove();
+        continue;
+      }
+
       
       
       
