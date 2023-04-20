@@ -320,14 +320,6 @@ void ReflowInput::SetComputedISize(nscoord aComputedISize,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-
   NS_WARNING_ASSERTION(aComputedISize >= 0, "Invalid computed inline-size!");
   if (ComputedISize() != aComputedISize) {
     mComputedSize.ISize(mWritingMode) = std::max(0, aComputedISize);
@@ -341,17 +333,6 @@ void ReflowInput::SetComputedBSize(nscoord aComputedBSize,
                                    ResetResizeFlags aFlags) {
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
   NS_WARNING_ASSERTION(aComputedBSize >= 0, "Invalid computed block-size!");
   if (ComputedBSize() != aComputedBSize) {
     mComputedSize.BSize(mWritingMode) = std::max(0, aComputedBSize);

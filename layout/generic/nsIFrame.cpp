@@ -4248,7 +4248,6 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
 
   const nsStyleDisplay* ourDisp = StyleDisplay();
   
-  
   if (IsThemed(ourDisp) && !PresContext()->Theme()->WidgetIsContainer(
                                ourDisp->EffectiveAppearance())) {
     return;
