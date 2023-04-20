@@ -46,35 +46,14 @@ bool WebRenderCanvasRendererAsync::CreateCompositable() {
   return true;
 }
 
-void WebRenderCanvasRendererAsync::EnsurePipeline(bool aIsAsync) {
+void WebRenderCanvasRendererAsync::EnsurePipeline() {
   MOZ_ASSERT(mCanvasClient);
   if (!mCanvasClient) {
     return;
   }
 
-  if (StaticPrefs::webgl_out_of_process_async_present_force_sync()) {
-    
-    
-    aIsAsync = false;
-  } else {
-    
-    
-    
-    MOZ_ASSERT_UNREACHABLE("unexpected to be called");
-  }
-
-  if (mPipelineId && mIsAsync != aIsAsync) {
-    mManager->RemovePipelineIdForCompositable(mPipelineId.ref());
-    mPipelineId.reset();
-  }
-
   if (mPipelineId) {
     return;
-  }
-
-  if (mIsAsync != aIsAsync) {
-    GetForwarder()->EnableAsyncCompositable(mCanvasClient, aIsAsync);
-    mIsAsync = aIsAsync;
   }
 
   
