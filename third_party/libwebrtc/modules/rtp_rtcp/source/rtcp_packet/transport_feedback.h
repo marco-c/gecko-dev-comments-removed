@@ -11,6 +11,7 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_TRANSPORT_FEEDBACK_H_
 #define MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_TRANSPORT_FEEDBACK_H_
 
+#include <array>
 #include <memory>
 #include <vector>
 
@@ -110,6 +111,7 @@ class TransportFeedback : public Rtpfb {
   class LastChunk {
    public:
     using DeltaSize = TransportFeedback::DeltaSize;
+    static constexpr size_t kMaxRunLengthCapacity = 0x1fff;
 
     LastChunk();
 
@@ -120,6 +122,8 @@ class TransportFeedback : public Rtpfb {
     bool CanAdd(DeltaSize delta_size) const;
     
     void Add(DeltaSize delta_size);
+    
+    void AddMissingPackets(size_t num_missing);
 
     
     
@@ -133,7 +137,6 @@ class TransportFeedback : public Rtpfb {
     void AppendTo(std::vector<DeltaSize>* deltas) const;
 
    private:
-    static constexpr size_t kMaxRunLengthCapacity = 0x1fff;
     static constexpr size_t kMaxOneBitCapacity = 14;
     static constexpr size_t kMaxTwoBitCapacity = 7;
     static constexpr size_t kMaxVectorCapacity = kMaxOneBitCapacity;
@@ -148,7 +151,7 @@ class TransportFeedback : public Rtpfb {
     uint16_t EncodeRunLength() const;
     void DecodeRunLength(uint16_t chunk, size_t max_size);
 
-    DeltaSize delta_sizes_[kMaxVectorCapacity];
+    std::array<DeltaSize, kMaxVectorCapacity> delta_sizes_;
     size_t size_;
     bool all_same_;
     bool has_large_delta_;
@@ -158,6 +161,8 @@ class TransportFeedback : public Rtpfb {
   void Clear();
 
   bool AddDeltaSize(DeltaSize delta_size);
+  
+  bool AddMissingPackets(size_t num_missing_packets);
 
   const bool include_lost_;
   uint16_t base_seq_no_;
