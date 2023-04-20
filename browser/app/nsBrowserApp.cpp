@@ -411,7 +411,6 @@ int main(int argc, char* argv[], char* envp[]) {
   
   
   mozilla::freestanding::gSharedSection.ConvertToReadOnly();
-  ::RtlRunOnceInitialize(&mozilla::freestanding::gK32ExportsResolveOnce);
 
   mozilla::CreateAndStorePreXULSkeletonUI(GetModuleHandle(nullptr), argc, argv);
 #endif

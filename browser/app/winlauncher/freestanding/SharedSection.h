@@ -24,36 +24,16 @@
 
 namespace mozilla {
 namespace freestanding {
+class SharedSectionTestHelper;
 
 
 
 
 
-class MOZ_TRIVIAL_CTOR_DTOR Kernel32ExportsSolver final
-    : public interceptor::MMPolicyInProcessEarlyStage::Kernel32Exports {
-  enum class State {
-    Uninitialized,
-    Initialized,
-    Resolved,
-  } mState;
-
-  static ULONG NTAPI ResolveOnce(PRTL_RUN_ONCE aRunOnce, PVOID aParameter,
-                                 PVOID*);
-  void ResolveInternal();
-
- public:
-  Kernel32ExportsSolver() = default;
-
-  Kernel32ExportsSolver(const Kernel32ExportsSolver&) = delete;
-  Kernel32ExportsSolver(Kernel32ExportsSolver&&) = delete;
-  Kernel32ExportsSolver& operator=(const Kernel32ExportsSolver&) = delete;
-  Kernel32ExportsSolver& operator=(Kernel32ExportsSolver&&) = delete;
-
-  bool IsInitialized() const;
-  bool IsResolved() const;
-
+struct MOZ_TRIVIAL_CTOR_DTOR Kernel32ExportsSolver final
+    : interceptor::MMPolicyInProcessEarlyStage::Kernel32Exports {
   void Init();
-  void Resolve(RTL_RUN_ONCE& aRunOnce);
+  bool Resolve();
 };
 
 
@@ -81,6 +61,12 @@ class MOZ_TRIVIAL_CTOR_DTOR Kernel32ExportsSolver final
 
 class MOZ_TRIVIAL_CTOR_DTOR SharedSection final {
   struct Layout final {
+    enum class State {
+      kUninitialized,
+      kInitialized,
+      kResolved,
+    } mState;
+
     Kernel32ExportsSolver mK32Exports;
     wchar_t mModulePathArray[1];
 
@@ -92,6 +78,7 @@ class MOZ_TRIVIAL_CTOR_DTOR SharedSection final {
               sizeof(wchar_t));
     }
     Layout() = delete;  
+    bool Resolve();
   };
 
   
@@ -101,11 +88,16 @@ class MOZ_TRIVIAL_CTOR_DTOR SharedSection final {
   
   
   static HANDLE sSectionHandle;
-  static void* sWriteCopyView;
+  static Layout* sWriteCopyView;
+  static RTL_RUN_ONCE sEnsureOnce;
+
+  static ULONG NTAPI EnsureWriteCopyViewOnce(PRTL_RUN_ONCE, PVOID, PVOID*);
+  static Layout* EnsureWriteCopyView();
 
   static constexpr size_t kSharedViewSize = 0x1000;
 
-  static LauncherVoidResult EnsureWriteCopyView();
+  
+  friend class SharedSectionTestHelper;
 
  public:
   
@@ -133,7 +125,6 @@ class MOZ_TRIVIAL_CTOR_DTOR SharedSection final {
 };
 
 extern SharedSection gSharedSection;
-extern RTL_RUN_ONCE gK32ExportsResolveOnce;
 
 }  
 }  
