@@ -231,6 +231,7 @@ var CustomizableUIInternal = {
     this.loadSavedState();
     this._updateForNewVersion();
     this._updateForNewProtonVersion();
+    this._updateForUnifiedExtensions();
     this._markObsoleteBuiltinButtonsSeen();
 
     this.registerArea(
@@ -692,6 +693,61 @@ var CustomizableUIInternal = {
     }
 
     Services.prefs.setIntPref(kPrefProtonToolbarVersion, VERSION);
+  },
+
+  _updateForUnifiedExtensions() {
+    if (!gSavedState?.placements) {
+      return;
+    }
+
+    let overflowPlacements =
+      gSavedState.placements[CustomizableUI.AREA_FIXED_OVERFLOW_PANEL] || [];
+    
+    
+    let addonsPlacements =
+      gSavedState.placements[CustomizableUI.AREA_ADDONS] || [];
+
+    if (lazy.gUnifiedExtensionsEnabled) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      let extWidgets = [];
+      let builtInWidgets = [];
+      for (let widgetId of overflowPlacements) {
+        if (CustomizableUI.isWebExtensionWidget(widgetId)) {
+          extWidgets.push(widgetId);
+        } else {
+          builtInWidgets.push(widgetId);
+        }
+      }
+      gSavedState.placements[
+        CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
+      ] = builtInWidgets;
+      gSavedState.placements[CustomizableUI.AREA_ADDONS] = [
+        ...extWidgets,
+        ...addonsPlacements,
+      ];
+    } else {
+      
+      
+      
+      
+      
+      gSavedState.placements[CustomizableUI.AREA_FIXED_OVERFLOW_PANEL] = [
+        ...overflowPlacements,
+        ...addonsPlacements,
+      ];
+      delete gSavedState.placements[CustomizableUI.AREA_ADDONS];
+    }
   },
 
   
@@ -4504,10 +4560,7 @@ var CustomizableUI = {
 
   isWebExtensionWidget(aWidgetId) {
     let widget = this.getWidget(aWidgetId);
-    if (widget) {
-      return widget.webExtension;
-    }
-    return aWidgetId.endsWith("-browser-action");
+    return widget?.webExtension || aWidgetId.endsWith("-browser-action");
   },
   
 
