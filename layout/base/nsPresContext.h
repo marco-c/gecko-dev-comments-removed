@@ -12,6 +12,7 @@
 #include "mozilla/intl/Bidi.h"
 #include "mozilla/AppUnits.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/DepthOrderedFrameList.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/MediaEmulationData.h"
 #include "mozilla/MemoryReporting.h"
@@ -1288,7 +1289,8 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   nsTHashSet<nsCString> mBlockedFonts;
 
   
-  nsTHashSet<nsIFrame*> mContainerQueryFrames;
+  
+  mozilla::DepthOrderedFrameList mContainerQueryFrames;
   
   
   

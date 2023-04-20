@@ -584,63 +584,6 @@ class MOZ_STACK_CLASS AutoPointerEventTargetUpdater final {
   nsIContent** mTargetContent;
 };
 
-void PresShell::DirtyRootsList::Add(nsIFrame* aFrame) {
-  
-  
-  
-  if (mList.Contains(aFrame)) {
-    
-    MOZ_ASSERT(aFrame->GetDepthInFrameTree() ==
-               mList[mList.IndexOf(aFrame)].mDepth);
-    return;
-  }
-
-  mList.InsertElementSorted(
-      FrameAndDepth{aFrame, aFrame->GetDepthInFrameTree()},
-      FrameAndDepth::CompareByReverseDepth{});
-}
-
-void PresShell::DirtyRootsList::Remove(nsIFrame* aFrame) {
-  mList.RemoveElement(aFrame);
-}
-
-nsIFrame* PresShell::DirtyRootsList::PopShallowestRoot() {
-  
-  
-  const FrameAndDepth& lastFAD = mList.PopLastElement();
-  nsIFrame* frame = lastFAD.mFrame;
-  
-  MOZ_ASSERT(frame->GetDepthInFrameTree() == lastFAD.mDepth);
-  return frame;
-}
-
-void PresShell::DirtyRootsList::Clear() { mList.Clear(); }
-
-bool PresShell::DirtyRootsList::Contains(nsIFrame* aFrame) const {
-  return mList.Contains(aFrame);
-}
-
-bool PresShell::DirtyRootsList::IsEmpty() const { return mList.IsEmpty(); }
-
-bool PresShell::DirtyRootsList::FrameIsAncestorOfDirtyRoot(
-    nsIFrame* aFrame) const {
-  MOZ_ASSERT(aFrame);
-
-  
-  
-  
-  for (nsIFrame* dirtyFrame : mList) {
-    do {
-      if (dirtyFrame == aFrame) {
-        return true;
-      }
-      dirtyFrame = dirtyFrame->GetParent();
-    } while (dirtyFrame);
-  }
-
-  return false;
-}
-
 bool PresShell::sDisableNonTestMouseEvents = false;
 
 LazyLogModule PresShell::gLog("PresShell");
@@ -4687,7 +4630,7 @@ void PresShell::NotifyCounterStylesAreDirty() {
 }
 
 bool PresShell::FrameIsAncestorOfDirtyRoot(nsIFrame* aFrame) const {
-  return mDirtyRoots.FrameIsAncestorOfDirtyRoot(aFrame);
+  return mDirtyRoots.FrameIsAncestorOfAnyElement(aFrame);
 }
 
 void PresShell::ReconstructFrames() {
