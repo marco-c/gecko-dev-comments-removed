@@ -110,12 +110,6 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::FromAnonymousScroll(
   
   
   
-  
-  
-  
-  
-  
-  
   Element* result = nullptr;
   StyleScrollAxis axis = StyleScrollAxis::Block;
   for (Element* curr = aTarget.mElement; curr;
@@ -132,10 +126,19 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::FromAnonymousScroll(
         continue;
       }
 
-      const nsStyleUIReset* styleUIReset = style->StyleUIReset();
-      if (styleUIReset->mScrollTimelineName._0.AsAtom() == aName) {
-        result = e;
-        axis = styleUIReset->mScrollTimelineAxis;
+      const nsStyleUIReset* ui = style->StyleUIReset();
+      
+      
+      for (uint32_t i = 0; i < ui->mScrollTimelineNameCount; ++i) {
+        const auto& timeline = ui->mScrollTimelines[i];
+        if (timeline.GetName() == aName) {
+          result = e;
+          axis = timeline.GetAxis();
+          break;
+        }
+      }
+
+      if (result) {
         break;
       }
     }
