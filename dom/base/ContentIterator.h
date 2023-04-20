@@ -31,8 +31,6 @@ class ContentIteratorBase {
   ContentIteratorBase& operator=(const ContentIteratorBase&) = delete;
   virtual ~ContentIteratorBase();
 
-  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ContentIteratorBase)
-
   
 
 
