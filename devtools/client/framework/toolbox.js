@@ -224,17 +224,7 @@ const DEVTOOLS_F12_DISABLED_PREF = "devtools.experiment.f12.shortcut_disabled";
 
 
 
-
-
-
-function Toolbox(
-  commands,
-  selectedTool,
-  hostType,
-  contentWindow,
-  frameId,
-  msSinceProcessStart
-) {
+function Toolbox(commands, selectedTool, hostType, contentWindow, frameId) {
   this._win = contentWindow;
   this.frameId = frameId;
   this.selection = new Selection();
