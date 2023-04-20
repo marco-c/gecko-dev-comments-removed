@@ -6,7 +6,10 @@
 
 var EXPORTED_SYMBOLS = ["makeFakeAppDir"];
 
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+
+Cc["@mozilla.org/net/osfileconstantsservice;1"]
+  .getService(Ci.nsIOSFileConstantsService)
+  .init();
 
 
 var gFakeAppDirectoryProvider;

@@ -16,7 +16,6 @@ const { DownloadPaths } = ChromeUtils.importESModule(
 const { FileUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/FileUtils.sys.mjs"
 );
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
@@ -72,31 +71,18 @@ var FileTestUtils = {
 
 
 
-
-
-
-  async tolerantRemove(path, isDir) {
+  async tolerantRemove(path) {
     try {
-      if (isDir === undefined) {
-        isDir = (await OS.File.stat(path)).isDir;
-      }
-      if (isDir) {
-        
-        
-        
-        await OS.File.removeDir(path);
-      } else {
-        
-        await OS.File.remove(path);
-      }
+      await IOUtils.remove(path, { recursive: true });
     } catch (ex) {
       
       
       
       
       if (
-        !(ex instanceof OS.File.Error) ||
-        !(ex.becauseNoSuchFile || ex.becauseAccessDenied)
+        !DOMException.isInstance(ex) ||
+        ex.name !== "NotFoundError" ||
+        ex.name !== "NotAllowedError"
       ) {
         throw ex;
       }
@@ -125,27 +111,23 @@ XPCOMUtils.defineLazyGetter(
     
     
     
-    OS.File.shutdown.addBlocker("Removing test files", async () => {
+
+    IOUtils.sendTelemetry.addBlocker("Removing test files", async () => {
       
       for (let path of gPathsToRemove) {
         await this.tolerantRemove(path);
       }
 
-      if (!(await OS.File.exists(dir.path))) {
+      if (!(await IOUtils.exists(dir.path))) {
         return;
       }
 
       
-      let iterator = new OS.File.DirectoryIterator(dir.path);
-      try {
-        await iterator.forEach(entry =>
-          this.tolerantRemove(entry.path, entry.isDir)
-        );
-      } finally {
-        iterator.close();
+      for (const child of await IOUtils.getChildren(dir.path)) {
+        await this.tolerantRemove(child);
       }
       
-      await OS.File.removeEmptyDir(dir.path);
+      await IOUtils.remove(dir.path, { recursive: false });
     });
     return dir;
   }
