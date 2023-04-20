@@ -1162,10 +1162,26 @@ Result<bool, nsresult> CSSEditUtils::IsCSSEquivalentTo(
 }
 
 
-Result<bool, nsresult> CSSEditUtils::HaveCSSEquivalentStylesInternal(
-    const HTMLEditor& aHTMLEditor, nsIContent& aContent, nsAtom* aHTMLProperty,
-    nsAtom* aAttribute, StyleType aStyleType) {
-  MOZ_ASSERT(aHTMLProperty || aAttribute);
+Result<bool, nsresult> CSSEditUtils::HaveComputedCSSEquivalentStyles(
+    const HTMLEditor& aHTMLEditor, nsIContent& aContent,
+    const EditorInlineStyle& aStyle) {
+  return HaveCSSEquivalentStyles(aHTMLEditor, aContent, aStyle,
+                                 StyleType::Computed);
+}
+
+
+Result<bool, nsresult> CSSEditUtils::HaveSpecifiedCSSEquivalentStyles(
+    const HTMLEditor& aHTMLEditor, nsIContent& aContent,
+    const EditorInlineStyle& aStyle) {
+  return HaveCSSEquivalentStyles(aHTMLEditor, aContent, aStyle,
+                                 StyleType::Specified);
+}
+
+
+Result<bool, nsresult> CSSEditUtils::HaveCSSEquivalentStyles(
+    const HTMLEditor& aHTMLEditor, nsIContent& aContent,
+    const EditorInlineStyle& aStyle, StyleType aStyleType) {
+  MOZ_ASSERT(!aStyle.IsStyleToClearAllInlineStyles());
 
   
   
@@ -1176,7 +1192,8 @@ Result<bool, nsresult> CSSEditUtils::HaveCSSEquivalentStylesInternal(
     nsCOMPtr<nsINode> parentNode = content->GetParentNode();
     
     nsresult rv = GetCSSEquivalentToHTMLInlineStyleSetInternal(
-        *content, aHTMLProperty, aAttribute, valueString, aStyleType);
+        *content, aStyle.mHTMLProperty, aStyle.mAttribute, valueString,
+        aStyleType);
     if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
       return Err(NS_ERROR_EDITOR_DESTROYED);
     }
@@ -1194,7 +1211,8 @@ Result<bool, nsresult> CSSEditUtils::HaveCSSEquivalentStylesInternal(
       return true;
     }
 
-    if (nsGkAtoms::u != aHTMLProperty && nsGkAtoms::strike != aHTMLProperty) {
+    if (!aStyle.IsStyleOfTextDecoration(
+            EditorInlineStyle::IgnoreSElement::Yes)) {
       return false;
     }
 

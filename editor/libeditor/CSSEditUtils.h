@@ -222,24 +222,14 @@ class CSSEditUtils final {
 
 
 
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<bool, nsresult>
   HaveComputedCSSEquivalentStyles(const HTMLEditor& aHTMLEditor,
-                                  nsIContent& aContent, nsAtom* aHTMLProperty,
-                                  nsAtom* aAttribute) {
-    MOZ_ASSERT(aHTMLProperty || aAttribute);
-    return HaveCSSEquivalentStylesInternal(aHTMLEditor, aContent, aHTMLProperty,
-                                           aAttribute, StyleType::Computed);
-  }
+                                  nsIContent& aContent,
+                                  const EditorInlineStyle& aStyle);
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT_BOUNDARY static Result<bool, nsresult>
   HaveSpecifiedCSSEquivalentStyles(const HTMLEditor& aHTMLEditor,
-                                   nsIContent& aContent, nsAtom* aHTMLProperty,
-                                   nsAtom* aAttribute) {
-    MOZ_ASSERT(aHTMLProperty || aAttribute);
-    return HaveCSSEquivalentStylesInternal(aHTMLEditor, aContent, aHTMLProperty,
-                                           aAttribute, StyleType::Specified);
-  }
+                                   nsIContent& aContent,
+                                   const EditorInlineStyle& aStyle);
 
   
 
@@ -413,9 +403,9 @@ class CSSEditUtils final {
                     const EditorInlineStyle& aStyle, nsAString& aInOutValue,
                     StyleType aStyleType);
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<bool, nsresult>
-  HaveCSSEquivalentStylesInternal(const HTMLEditor& aHTMLEditor,
-                                  nsIContent& aContent, nsAtom* aHTMLProperty,
-                                  nsAtom* aAttribute, StyleType aStyleType);
+  HaveCSSEquivalentStyles(const HTMLEditor& aHTMLEditor, nsIContent& aContent,
+                          const EditorInlineStyle& aStyle,
+                          StyleType aStyleType);
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult RemoveCSSPropertyInternal(
       HTMLEditor& aHTMLEditor, nsStyledElement& aStyledElement,
