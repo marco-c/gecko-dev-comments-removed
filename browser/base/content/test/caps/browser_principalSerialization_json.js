@@ -87,26 +87,32 @@ add_task(async function test_contentPrincipal() {
 
   let tests = [
     {
+      
       input: { uri: "http://example.com/", OA: {} },
       expected: `{"${contentId}":{"${content}":"http://example.com/"}}`,
     },
     {
+      
       input: { uri: "http://mozilla1.com/", OA: {} },
       expected: `{"${contentId}":{"${content}":"http://mozilla1.com/"}}`,
     },
     {
+      
       input: { uri: "http://mozilla2.com/", OA: { userContextId: 0 } },
       expected: `{"${contentId}":{"${content}":"http://mozilla2.com/"}}`,
     },
     {
+      
       input: { uri: "http://mozilla3.com/", OA: { userContextId: 2 } },
       expected: `{"${contentId}":{"${content}":"http://mozilla3.com/","${suffix}":"^userContextId=2"}}`,
     },
     {
+      
       input: { uri: "http://mozilla4.com/", OA: { privateBrowsingId: 1 } },
       expected: `{"${contentId}":{"${content}":"http://mozilla4.com/","${suffix}":"^privateBrowsingId=1"}}`,
     },
     {
+      
       input: { uri: "http://mozilla5.com/", OA: { privateBrowsingId: 0 } },
       expected: `{"${contentId}":{"${content}":"http://mozilla5.com/"}}`,
     },

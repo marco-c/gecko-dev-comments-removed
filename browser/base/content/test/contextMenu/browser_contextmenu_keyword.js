@@ -6,6 +6,7 @@
 let contextMenu;
 
 const example_base =
+  
   "http://example.com/browser/browser/base/content/test/contextMenu/";
 const MAIN_URL = example_base + "subtst_contextmenu_keyword.html";
 

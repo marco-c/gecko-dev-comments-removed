@@ -31,6 +31,7 @@ add_task(async function test_save_link_blocked_by_extension() {
       
       browser.webRequest.onBeforeRequest.addListener(
         details => {
+          
           return { cancel: details.url === "http://example.com/" };
         },
         { urls: ["*://*/*"] },

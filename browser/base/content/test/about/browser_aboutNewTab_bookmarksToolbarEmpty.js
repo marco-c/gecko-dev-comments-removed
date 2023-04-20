@@ -6,14 +6,17 @@
 const bookmarksInfo = [
   {
     title: "firefox",
+    
     url: "http://example.com",
   },
   {
     title: "rules",
+    
     url: "http://example.com/2",
   },
   {
     title: "yo",
+    
     url: "http://example.com/2",
   },
 ];
