@@ -1,0 +1,10 @@
+
+
+
+
+
+#include "AudioNodeEngineGeneric.h"
+
+namespace mozilla {
+template struct Engine<xsimd::fma3<xsimd::sse4_2>>;
+}  
