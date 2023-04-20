@@ -1,8 +1,8 @@
 
 
 
-const { FormValidator } = ChromeUtils.import(
-  "resource://services-sync/engines/forms.js"
+const { FormValidator } = ChromeUtils.importESModule(
+  "resource://services-sync/engines/forms.sys.mjs"
 );
 
 function getDummyServerAndClient() {

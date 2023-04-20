@@ -1,7 +1,9 @@
 
 
 
-const { Status } = ChromeUtils.import("resource://services-sync/status.js");
+const { Status } = ChromeUtils.importESModule(
+  "resource://services-sync/status.sys.mjs"
+);
 
 add_task(async function test_status_checkSetup() {
   try {

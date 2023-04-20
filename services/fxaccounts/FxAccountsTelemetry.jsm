@@ -43,7 +43,7 @@ class FxAccountsTelemetry {
   
   recordEvent(object, method, value, extra = undefined) {
     
-    ChromeUtils.import("resource://services-sync/telemetry.js");
+    ChromeUtils.importESModule("resource://services-sync/telemetry.sys.mjs");
     
     lazy.Observers.notify("fxa:telemetry:event", {
       object,

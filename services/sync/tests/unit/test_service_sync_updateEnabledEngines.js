@@ -1,10 +1,12 @@
 
 
 
-const { Service } = ChromeUtils.import("resource://services-sync/service.js");
+const { Service } = ChromeUtils.importESModule(
+  "resource://services-sync/service.sys.mjs"
+);
 
-const { EngineSynchronizer } = ChromeUtils.import(
-  "resource://services-sync/stages/enginesync.js"
+const { EngineSynchronizer } = ChromeUtils.importESModule(
+  "resource://services-sync/stages/enginesync.sys.mjs"
 );
 
 function QuietStore() {

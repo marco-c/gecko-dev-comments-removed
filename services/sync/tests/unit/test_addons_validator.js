@@ -1,8 +1,8 @@
 
 
 
-const { AddonValidator } = ChromeUtils.import(
-  "resource://services-sync/engines/addons.js"
+const { AddonValidator } = ChromeUtils.importESModule(
+  "resource://services-sync/engines/addons.sys.mjs"
 );
 
 function getDummyServerAndClient() {

@@ -1,10 +1,12 @@
 
 
 
-const { CollectionKeyManager, CryptoWrapper } = ChromeUtils.import(
-  "resource://services-sync/record.js"
+const { CollectionKeyManager, CryptoWrapper } = ChromeUtils.importESModule(
+  "resource://services-sync/record.sys.mjs"
 );
-const { Service } = ChromeUtils.import("resource://services-sync/service.js");
+const { Service } = ChromeUtils.importESModule(
+  "resource://services-sync/service.sys.mjs"
+);
 
 var cryptoWrap;
 

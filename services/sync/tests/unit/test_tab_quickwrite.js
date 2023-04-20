@@ -1,11 +1,13 @@
 
 
 
-ChromeUtils.import("resource://services-sync/engines/tabs.js");
-const { Service } = ChromeUtils.import("resource://services-sync/service.js");
+ChromeUtils.importESModule("resource://services-sync/engines/tabs.sys.mjs");
+const { Service } = ChromeUtils.importESModule(
+  "resource://services-sync/service.sys.mjs"
+);
 
-const { TabProvider } = ChromeUtils.import(
-  "resource://services-sync/engines/tabs.js"
+const { TabProvider } = ChromeUtils.importESModule(
+  "resource://services-sync/engines/tabs.sys.mjs"
 );
 
 const FAR_FUTURE = 4102405200000; 

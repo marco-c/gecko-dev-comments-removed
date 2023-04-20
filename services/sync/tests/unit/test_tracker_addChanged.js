@@ -1,7 +1,9 @@
 
 
 
-const { Service } = ChromeUtils.import("resource://services-sync/service.js");
+const { Service } = ChromeUtils.importESModule(
+  "resource://services-sync/service.sys.mjs"
+);
 
 add_task(async function test_tracker_basics() {
   let tracker = new LegacyTracker("Tracker", Service);

@@ -1,8 +1,8 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetters(globalThis, {
-  SyncedTabs: "resource://services-sync/SyncedTabs.jsm",
+ChromeUtils.defineESModuleGetters(globalThis, {
+  SyncedTabs: "resource://services-sync/SyncedTabs.sys.mjs",
 });
 
 async function tearDown(sandbox) {

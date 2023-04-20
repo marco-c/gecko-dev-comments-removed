@@ -1,9 +1,11 @@
 
 
 
-const { Weave } = ChromeUtils.import("resource://services-sync/main.js");
-const { CollectionKeyManager, CryptoWrapper } = ChromeUtils.import(
-  "resource://services-sync/record.js"
+const { Weave } = ChromeUtils.importESModule(
+  "resource://services-sync/main.sys.mjs"
+);
+const { CollectionKeyManager, CryptoWrapper } = ChromeUtils.importESModule(
+  "resource://services-sync/record.sys.mjs"
 );
 
 var collectionKeys = new CollectionKeyManager();

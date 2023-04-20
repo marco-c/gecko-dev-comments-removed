@@ -1,8 +1,8 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetters(globalThis, {
-  SyncedTabs: "resource://services-sync/SyncedTabs.jsm",
+ChromeUtils.defineESModuleGetters(globalThis, {
+  SyncedTabs: "resource://services-sync/SyncedTabs.sys.mjs",
 });
 
 const SYNCED_URI = syncedTabsData1[0].tabs[1].url;

@@ -1,8 +1,8 @@
 
 
 
-const { TabProvider } = ChromeUtils.import(
-  "resource://services-sync/engines/tabs.js"
+const { TabProvider } = ChromeUtils.importESModule(
+  "resource://services-sync/engines/tabs.sys.mjs"
 );
 
 add_task(async function test_getAllTabs() {

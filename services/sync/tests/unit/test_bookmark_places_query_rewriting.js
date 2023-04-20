@@ -2,12 +2,14 @@
 
 
 _("Rewrite place: URIs.");
-const { BookmarkQuery, BookmarkFolder } = ChromeUtils.import(
-  "resource://services-sync/engines/bookmarks.js"
+const { BookmarkQuery, BookmarkFolder } = ChromeUtils.importESModule(
+  "resource://services-sync/engines/bookmarks.sys.mjs"
 );
 
 
-const { Service } = ChromeUtils.import("resource://services-sync/service.js");
+const { Service } = ChromeUtils.importESModule(
+  "resource://services-sync/service.sys.mjs"
+);
 
 function makeTagRecord(id, uri) {
   let tagRecord = new BookmarkQuery("bookmarks", id);
