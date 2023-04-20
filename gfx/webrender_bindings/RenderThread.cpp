@@ -101,48 +101,26 @@ void RenderThread::Start(uint32_t aNamespace) {
   sRenderThreadEverStarted = true;
 #endif
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  uint32_t stackSize = nsIThreadManager::DEFAULT_STACK_SIZE;
-  if (stackSize && !gfxVars::SupportsThreadsafeGL()) {
-    stackSize = std::max(stackSize, 4096U << 10);
-  }
-
   RefPtr<nsIThread> thread;
   nsresult rv = NS_NewNamedThread(
       "Renderer", getter_AddRefs(thread),
-      NS_NewRunnableFunction(
-          "Renderer::BackgroundHanSetup",
-          []() {
-            sBackgroundHangMonitor = new mozilla::BackgroundHangMonitor(
-                "Render",
-                
+      NS_NewRunnableFunction("Renderer::BackgroundHanSetup", []() {
+        sBackgroundHangMonitor = new mozilla::BackgroundHangMonitor(
+            "Render",
+            
 
 
 
-                128,
-                
+            128,
+            
 
 
-                2048);
-            nsCOMPtr<nsIThread> thread = NS_GetCurrentThread();
-            nsThread* nsthread = static_cast<nsThread*>(thread.get());
-            nsthread->SetUseHangMonitor(true);
-            nsthread->SetPriority(nsISupportsPriority::PRIORITY_HIGH);
-          }),
-      {.stackSize = stackSize});
+            2048);
+        nsCOMPtr<nsIThread> thread = NS_GetCurrentThread();
+        nsThread* nsthread = static_cast<nsThread*>(thread.get());
+        nsthread->SetUseHangMonitor(true);
+        nsthread->SetPriority(nsISupportsPriority::PRIORITY_HIGH);
+      }));
 
   if (NS_FAILED(rv)) {
     return;

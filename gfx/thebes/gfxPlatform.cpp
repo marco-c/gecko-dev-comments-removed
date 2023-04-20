@@ -2930,15 +2930,6 @@ void gfxPlatform::InitWebGLConfig() {
   }
 
   bool threadsafeGL = IsFeatureOk(nsIGfxInfo::FEATURE_THREADSAFE_GL);
-#ifdef MOZ_WIDGET_GTK
-  
-  
-  
-  
-  if (!gfxVars::UseEGL()) {
-    threadsafeGL = false;
-  }
-#endif
   threadsafeGL |= StaticPrefs::webgl_threadsafe_gl_force_enabled_AtStartup();
   threadsafeGL &= !StaticPrefs::webgl_threadsafe_gl_force_disabled_AtStartup();
   gfxVars::SetSupportsThreadsafeGL(threadsafeGL);

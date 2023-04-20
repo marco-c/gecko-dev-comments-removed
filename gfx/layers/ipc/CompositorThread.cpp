@@ -11,7 +11,6 @@
 #include "VRManagerParent.h"
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/SpinEventLoopUntil.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CanvasTranslator.h"
 #include "mozilla/layers/CompositorManagerParent.h"
 #include "mozilla/layers/ImageBridgeParent.h"
@@ -60,20 +59,8 @@ CompositorThreadHolder::CreateCompositorThread() {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  uint32_t stackSize = nsIThreadManager::DEFAULT_STACK_SIZE;
-  if (stackSize) {
-    stackSize = std::max(stackSize, gfxVars::SupportsThreadsafeGL() &&
-                                            !gfxVars::UseCanvasRenderThread()
-                                        ? 4096U << 10
-                                        : 512U << 10);
-  }
+  const uint32_t stackSize =
+      nsIThreadManager::DEFAULT_STACK_SIZE ? 512 << 10 : 0;
 
   nsCOMPtr<nsIThread> compositorThread;
   nsresult rv = NS_NewNamedThread(
