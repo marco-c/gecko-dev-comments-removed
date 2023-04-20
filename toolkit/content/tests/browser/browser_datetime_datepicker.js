@@ -6,8 +6,9 @@
 
 const MONTH_YEAR = ".month-year",
   DAYS_VIEW = ".days-view",
-  BTN_PREV_MONTH = ".prev",
-  BTN_NEXT_MONTH = ".next";
+  BTN_NEXT_MONTH = ".next",
+  DAY_TODAY = ".today",
+  DAY_SELECTED = ".selection";
 const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   month: "long",
@@ -73,13 +74,23 @@ const calendarClasslist_201612 = [
 ];
 
 function getCalendarText() {
-  return helper.getChildren(DAYS_VIEW).map(child => child.textContent);
+  let calendarCells = [];
+  for (const tr of helper.getChildren(DAYS_VIEW)) {
+    for (const td of tr.children) {
+      calendarCells.push(td.textContent);
+    }
+  }
+  return calendarCells;
 }
 
 function getCalendarClassList() {
-  return helper
-    .getChildren(DAYS_VIEW)
-    .map(child => Array.from(child.classList));
+  let calendarCellsClasses = [];
+  for (const tr of helper.getChildren(DAYS_VIEW)) {
+    for (const td of tr.children) {
+      calendarCellsClasses.push(td.classList);
+    }
+  }
+  return calendarCellsClasses;
 }
 
 function mergeArrays(a, b) {
@@ -133,6 +144,8 @@ registerCleanupFunction(() => {
 
 
 add_task(async function test_datepicker_today() {
+  info("Test that date picker opens to today's date when input field is blank");
+
   const date = new Date();
 
   await helper.openPicker("data:text/html, <input type='date'>");
@@ -140,7 +153,18 @@ add_task(async function test_datepicker_today() {
   if (date.getMonth() === new Date().getMonth()) {
     Assert.equal(
       helper.getElement(MONTH_YEAR).textContent,
-      DATE_FORMAT_LOCAL(date)
+      DATE_FORMAT_LOCAL(date),
+      "Today's date is opened"
+    );
+    Assert.equal(
+      helper.getElement(DAY_TODAY).getAttribute("aria-current"),
+      "date",
+      "Today's date is programmatically current"
+    );
+    Assert.equal(
+      helper.getElement(DAY_TODAY).getAttribute("tabindex"),
+      "0",
+      "Today's date is included in the focus order, when nothing is selected"
     );
   } else {
     Assert.ok(
@@ -157,6 +181,8 @@ add_task(async function test_datepicker_today() {
 
 
 add_task(async function test_datepicker_open() {
+  info("Test the date picker markup with a set input date value");
+
   const inputValue = "2016-12-15";
 
   await helper.openPicker(
@@ -165,8 +191,10 @@ add_task(async function test_datepicker_open() {
 
   Assert.equal(
     helper.getElement(MONTH_YEAR).textContent,
-    DATE_FORMAT(new Date(inputValue))
+    DATE_FORMAT(new Date(inputValue)),
+    "2016-12-15 date is opened"
   );
+
   Assert.deepEqual(
     getCalendarText(),
     [
@@ -213,252 +241,23 @@ add_task(async function test_datepicker_open() {
       "6",
       "7",
     ],
-    "2016-12"
+    "Calendar text for 2016-12 is correct"
   );
   Assert.deepEqual(
     getCalendarClassList(),
     calendarClasslist_201612,
-    "2016-12 classNames"
+    "2016-12 classNames of the picker are correct"
   );
-
-  await helper.tearDown();
-});
-
-
-
-
-add_task(async function test_datepicker_focus_change() {
-  await helper.openPicker(
-    `data:text/html,<input id=date type=date><input id=other>`
-  );
-  let browser = helper.tab.linkedBrowser;
-  await verifyPickerPosition(browser, "date");
-
-  isnot(helper.panel.state, "closed", "Panel should be visible");
-
-  let closed = helper.promisePickerClosed();
-
-  await SpecialPowers.spawn(browser, [], () => {
-    content.document.querySelector("#other").focus();
-  });
-
-  await closed;
-
-  ok(true, "Panel should be closed now");
-
-  await helper.tearDown();
-});
-
-
-
-
-add_task(async function test_datepicker_keyboard_open() {
-  const inputValue = "2016-12-15";
-  const prevMonth = "2016-11-01";
-  await helper.openPicker(
-    `data:text/html,<input id=date type=date value=${inputValue}>`
-  );
-  let browser = helper.tab.linkedBrowser;
-  await verifyPickerPosition(browser, "date");
-
-  let closed = helper.promisePickerClosed();
-
-  BrowserTestUtils.synthesizeKey(" ", {}, browser);
-
-  await closed;
-
-  let ready = helper.waitForPickerReady();
-
-  BrowserTestUtils.synthesizeKey(" ", {}, browser);
-
-  await ready;
-
-  
-  
-  
-  
-  
-  BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
-
-  
-  
-  await BrowserTestUtils.waitForCondition(() => {
-    return (
-      helper.getElement(MONTH_YEAR).textContent ==
-      DATE_FORMAT(new Date(prevMonth))
-    );
-  }, "Should update date when updating months");
-
-  await helper.tearDown();
-});
-
-
-
-
-
-add_task(async function test_datepicker_prev_month_btn() {
-  const inputValue = "2016-12-15";
-  const prevMonth = "2016-11-01";
-
-  await helper.openPicker(
-    `data:text/html, <input type="date" value="${inputValue}">`
-  );
-  helper.click(helper.getElement(BTN_PREV_MONTH));
-
   Assert.equal(
-    helper.getElement(MONTH_YEAR).textContent,
-    DATE_FORMAT(new Date(prevMonth))
+    helper.getElement(DAY_SELECTED).getAttribute("aria-selected"),
+    "true",
+    "Chosen date is programmatically selected"
   );
-  Assert.deepEqual(
-    getCalendarText(),
-    [
-      "30",
-      "31",
-      "1",
-      "2",
-      "3",
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9",
-      "10",
-      "11",
-      "12",
-      "13",
-      "14",
-      "15",
-      "16",
-      "17",
-      "18",
-      "19",
-      "20",
-      "21",
-      "22",
-      "23",
-      "24",
-      "25",
-      "26",
-      "27",
-      "28",
-      "29",
-      "30",
-      "1",
-      "2",
-      "3",
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9",
-      "10",
-    ],
-    "2016-11"
-  );
-
-  await helper.tearDown();
-});
-
-
-
-
-
-add_task(async function test_datepicker_next_month_btn() {
-  const inputValue = "2016-12-15";
-  const nextMonth = "2017-01-01";
-
-  await helper.openPicker(
-    `data:text/html, <input type="date" value="${inputValue}">`
-  );
-  helper.click(helper.getElement(BTN_NEXT_MONTH));
-
   Assert.equal(
-    helper.getElement(MONTH_YEAR).textContent,
-    DATE_FORMAT(new Date(nextMonth))
+    helper.getElement(DAY_SELECTED).getAttribute("tabindex"),
+    "0",
+    "Selected date is included in the focus order"
   );
-  Assert.deepEqual(
-    getCalendarText(),
-    [
-      "25",
-      "26",
-      "27",
-      "28",
-      "29",
-      "30",
-      "31",
-      "1",
-      "2",
-      "3",
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9",
-      "10",
-      "11",
-      "12",
-      "13",
-      "14",
-      "15",
-      "16",
-      "17",
-      "18",
-      "19",
-      "20",
-      "21",
-      "22",
-      "23",
-      "24",
-      "25",
-      "26",
-      "27",
-      "28",
-      "29",
-      "30",
-      "31",
-      "1",
-      "2",
-      "3",
-      "4",
-    ],
-    "2017-01"
-  );
-
-  await helper.tearDown();
-});
-
-
-
-
-
-add_task(async function test_datepicker_clicked() {
-  const inputValue = "2016-12-15";
-  const firstDayOnCalendar = "2016-11-27";
-
-  await helper.openPicker(
-    `data:text/html, <input id="date" type="date" value="${inputValue}">`
-  );
-
-  let browser = helper.tab.linkedBrowser;
-  await verifyPickerPosition(browser, "date");
-
-  
-  let promise = BrowserTestUtils.waitForContentEvent(
-    helper.tab.linkedBrowser,
-    "input"
-  );
-  helper.click(helper.getElement(DAYS_VIEW).children[0]);
-  await promise;
-
-  let value = await SpecialPowers.spawn(
-    browser,
-    [],
-    () => content.document.querySelector("input").value
-  );
-  Assert.equal(value, firstDayOnCalendar);
 
   await helper.tearDown();
 });
@@ -496,17 +295,23 @@ add_task(async function test_datepicker_reopen_state() {
   await helper.openPicker(
     `data:text/html, <input type="date" value="${inputValue}">`
   );
+
   
   Assert.equal(
     helper.getElement(MONTH_YEAR).textContent,
     DATE_FORMAT(new Date(inputValue))
   );
+
   helper.click(helper.getElement(BTN_NEXT_MONTH));
+
   Assert.equal(
     helper.getElement(MONTH_YEAR).textContent,
     DATE_FORMAT(new Date(nextMonth))
   );
+
   EventUtils.synthesizeKey("VK_ESCAPE", {}, window);
+
+  Assert.equal(helper.panel.state, "closed", "Panel should be closed");
 
   
   await BrowserTestUtils.synthesizeMouseAtCenter(
@@ -515,6 +320,7 @@ add_task(async function test_datepicker_reopen_state() {
     gBrowser.selectedBrowser
   );
   await helper.waitForPickerReady();
+
   Assert.equal(
     helper.getElement(MONTH_YEAR).textContent,
     DATE_FORMAT(new Date(inputValue))
@@ -584,6 +390,18 @@ add_task(async function test_datepicker_min_max() {
       [R],
     ]),
     "2016-12 with min & max"
+  );
+
+  Assert.ok(
+    helper
+      .getElement(DAYS_VIEW)
+      .firstChild.firstChild.getAttribute("aria-disabled"),
+    "An out-of-range date is programmatically disabled"
+  );
+
+  Assert.ok(
+    !helper.getElement(DAY_SELECTED).hasAttribute("aria-disabled"),
+    "An in-range date is not programmatically disabled"
   );
 
   await helper.tearDown();
@@ -786,13 +604,20 @@ add_task(async function test_datepicker_abs_max() {
 
 
 add_task(async function test_datetime_focus_to_input() {
+  info("Ensure datetime-local picker closes when focus moves to a time input");
+
   await helper.openPicker(
     `data:text/html,<input id=datetime type=datetime-local>`
   );
   let browser = helper.tab.linkedBrowser;
   await verifyPickerPosition(browser, "datetime");
 
-  isnot(helper.panel.state, "closed", "Panel should be visible");
+  Assert.equal(helper.panel.state, "open", "Panel should be visible");
+
+  
+  await SpecialPowers.spawn(browser, [], () => {
+    content.document.querySelector("#datetime").focus();
+  });
 
   let closed = helper.promisePickerClosed();
 
@@ -803,7 +628,7 @@ add_task(async function test_datetime_focus_to_input() {
 
   await closed;
 
-  ok(true, "Panel should be closed now");
+  Assert.equal(helper.panel.state, "closed", "Panel should be closed now");
 
   
   let isFocused = await SpecialPowers.spawn(browser, [], () => {
@@ -892,7 +717,7 @@ add_task(async function test_datetime_local_min_select_invalid() {
 
   
   
-  helper.click(helper.getElement(DAYS_VIEW).children[8]);
+  helper.click(helper.getElement(DAYS_VIEW).children[1].children[1]);
 
   await changePromise;
 
@@ -905,7 +730,7 @@ add_task(async function test_datetime_local_min_select_invalid() {
     }
   );
 
-  is(value, "2016-12-05T05:00", "Value should've changed");
+  Assert.equal(value, "2016-12-05T05:00", "Value should've changed");
   ok(invalid, "input should be now invalid");
 
   await helper.tearDown();
