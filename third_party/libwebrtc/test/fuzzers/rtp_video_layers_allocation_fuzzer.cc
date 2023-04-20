@@ -10,6 +10,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 
 #include "api/array_view.h"
 #include "api/video/video_layers_allocation.h"
@@ -19,6 +20,14 @@
 namespace webrtc {
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
+  
+  
+  
+  
+  constexpr int kMaxSize = std::numeric_limits<uint8_t>::max();
+  if (size > kMaxSize) {
+    return;
+  }
   auto raw = rtc::MakeArrayView(data, size);
 
   VideoLayersAllocation allocation1;
@@ -32,10 +41,8 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   
   
   RTC_CHECK_LE(value_size, raw.size());
-  uint8_t some_memory[256];
-  
-  
-  RTC_CHECK_LT(value_size, 256);
+  uint8_t some_memory[kMaxSize];
+  RTC_CHECK_LE(value_size, kMaxSize);
   rtc::ArrayView<uint8_t> write_buffer(some_memory, value_size);
   RTC_CHECK(
       RtpVideoLayersAllocationExtension::Write(write_buffer, allocation1));
