@@ -2708,12 +2708,28 @@ bool nsGlobalWindowInner::CrossOriginIsolated() const {
   return bc->CrossOriginIsolated();
 }
 
+WindowContext* TopWindowContext(nsPIDOMWindowInner& aWindow) {
+  WindowContext* wc = aWindow.GetWindowContext();
+  if (!wc) {
+    return nullptr;
+  }
+
+  return wc->TopWindowContext();
+}
+
 void nsPIDOMWindowInner::AddPeerConnection() {
   MOZ_ASSERT(NS_IsMainThread());
   ++mActivePeerConnections;
   if (mActivePeerConnections == 1 && mWindowGlobalChild) {
     mWindowGlobalChild->SendUpdateActivePeerConnectionStatus(
          true);
+
+    
+    
+    
+    if (WindowContext* top = TopWindowContext(*this)) {
+      top->TransientSetHasActivePeerConnections();
+    }
   }
 }
 
@@ -2729,12 +2745,8 @@ void nsPIDOMWindowInner::RemovePeerConnection() {
 
 bool nsPIDOMWindowInner::HasActivePeerConnections() {
   MOZ_ASSERT(NS_IsMainThread());
-  WindowContext* wc = GetWindowContext();
-  if (!wc) {
-    return false;
-  }
 
-  WindowContext* topWindowContext = wc->TopWindowContext();
+  WindowContext* topWindowContext = TopWindowContext(*this);
   return topWindowContext && topWindowContext->GetHasActivePeerConnections();
 }
 
