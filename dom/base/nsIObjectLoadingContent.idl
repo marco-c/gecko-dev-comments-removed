@@ -69,11 +69,6 @@ interface nsIObjectLoadingContent : nsISupports
 
   void reload(in boolean aClearActivation);
 
-  [noscript] void stopPluginInstance();
-
-  [noscript] void syncStartPluginInstance();
-  [noscript] void asyncStartPluginInstance();
-
   
 
 

@@ -24,9 +24,7 @@
 #include "nsIRunnable.h"
 #include "nsFrameLoaderOwner.h"
 
-class nsAsyncInstantiateEvent;
 class nsStopPluginRunnable;
-class AutoSetInstantiatingToFalse;
 class nsIPrincipal;
 class nsFrameLoader;
 
@@ -47,11 +45,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
                                public nsFrameLoaderOwner,
                                public nsIObjectLoadingContent,
                                public nsIChannelEventSink {
-  friend class AutoSetInstantiatingToFalse;
   friend class AutoSetLoadingToFalse;
-  friend class CheckPluginStopEvent;
-  friend class nsStopPluginRunnable;
-  friend class nsAsyncInstantiateEvent;
 
  public:
   
@@ -110,15 +104,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   
   void GetPluginParameters(
       nsTArray<mozilla::dom::MozPluginParameter>& aParameters);
-
-  
-
-
-
-
-
-
-  nsresult InstantiatePluginInstance(bool aIsLoading = false);
 
   
 
@@ -368,11 +353,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
   ParameterUpdateFlags UpdateObjectParameters();
 
-  
-
-
-  void QueueCheckPluginStopEvent();
-
  public:
   bool IsAboutBlankLoadOntoInitialAboutBlank(nsIURI* aURI,
                                              bool aInheritPrincipal,
@@ -503,12 +483,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   nsCOMPtr<nsIStreamListener> mFinalListener;
 
   
-  nsCOMPtr<nsIRunnable> mPendingInstantiateEvent;
-
-  
-  nsCOMPtr<nsIRunnable> mPendingCheckPluginStopEvent;
-
-  
   
   
   
@@ -545,10 +519,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   
   
   bool mChannelLoaded : 1;
-
-  
-  
-  bool mInstantiating : 1;
 
   
   
