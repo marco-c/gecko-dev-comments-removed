@@ -243,7 +243,8 @@ void JitterEstimator::UpdateEstimate(TimeDelta frame_delay,
   
   
   
-  double num_stddev_delay_outlier = GetNumStddevDelayOutlier();
+  double num_stddev_delay_outlier =
+      config_.num_stddev_delay_outlier.value_or(kNumStdDevDelayOutlier);
   
   bool abs_delay_is_not_outlier =
       fabs(delay_deviation_ms) <
@@ -253,10 +254,12 @@ void JitterEstimator::UpdateEstimate(TimeDelta frame_delay,
   
   
   
+  double num_stddev_size_outlier =
+      config_.num_stddev_size_outlier.value_or(kNumStdDevSizeOutlier);
   bool size_is_positive_outlier =
       frame_size.bytes() >
       avg_frame_size_bytes_ +
-          GetNumStddevSizeOutlier() * sqrt(var_frame_size_bytes2_);
+          num_stddev_size_outlier * sqrt(var_frame_size_bytes2_);
 
   
   
@@ -269,13 +272,16 @@ void JitterEstimator::UpdateEstimate(TimeDelta frame_delay,
     
     
     
+    double congestion_rejection_factor =
+        config_.congestion_rejection_factor.value_or(
+            kCongestionRejectionFactor);
     double filtered_max_frame_size_bytes =
         config_.MaxFrameSizePercentileEnabled()
             ? max_frame_size_bytes_percentile_.GetFilteredValue()
             : max_frame_size_bytes_;
     bool is_not_congested =
         delta_frame_bytes >
-        GetCongestionRejectionFactor() * filtered_max_frame_size_bytes;
+        congestion_rejection_factor * filtered_max_frame_size_bytes;
 
     if (is_not_congested || config_.estimate_noise_when_congested) {
       
@@ -318,19 +324,6 @@ void JitterEstimator::UpdateRtt(TimeDelta rtt) {
 
 JitterEstimator::Config JitterEstimator::GetConfigForTest() const {
   return config_;
-}
-
-double JitterEstimator::GetNumStddevDelayOutlier() const {
-  return config_.num_stddev_delay_outlier.value_or(kNumStdDevDelayOutlier);
-}
-
-double JitterEstimator::GetNumStddevSizeOutlier() const {
-  return config_.num_stddev_size_outlier.value_or(kNumStdDevSizeOutlier);
-}
-
-double JitterEstimator::GetCongestionRejectionFactor() const {
-  return config_.congestion_rejection_factor.value_or(
-      kCongestionRejectionFactor);
 }
 
 

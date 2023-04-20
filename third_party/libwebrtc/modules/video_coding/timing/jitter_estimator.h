@@ -144,11 +144,6 @@ class JitterEstimator {
 
  private:
   
-  double GetNumStddevDelayOutlier() const;
-  double GetNumStddevSizeOutlier() const;
-  double GetCongestionRejectionFactor() const;
-
-  
   
   
   
