@@ -69,7 +69,7 @@ test_metrics = [
 
 
 
-metrics_yamls = (
+metrics_yamls = set(
     gecko_metrics
     + firefox_desktop_metrics
     + background_update_metrics
@@ -126,7 +126,7 @@ pings_by_app_id = {
 
 
 
-pings_yamls = (
+pings_yamls = set(
     gecko_pings
     + firefox_desktop_pings
     + background_update_pings
