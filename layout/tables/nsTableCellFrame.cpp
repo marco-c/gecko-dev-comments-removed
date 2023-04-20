@@ -184,8 +184,9 @@ nsresult nsTableCellFrame::AttributeChanged(int32_t aNameSpaceID,
 void nsTableCellFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   nsContainerFrame::DidSetComputedStyle(aOldComputedStyle);
 
-  if (!aOldComputedStyle)  
-    return;
+  if (!aOldComputedStyle) {
+    return;  
+  }
 
 #ifdef ACCESSIBILITY
   if (nsAccessibilityService* accService = GetAccService()) {

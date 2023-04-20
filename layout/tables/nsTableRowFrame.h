@@ -36,20 +36,19 @@ class nsTableRowFrame : public nsContainerFrame {
 
   virtual ~nsTableRowFrame();
 
-  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
-                    nsIFrame* aPrevInFlow) override;
+  void Init(nsIContent* aContent, nsContainerFrame* aParent,
+            nsIFrame* aPrevInFlow) override;
 
-  virtual void DestroyFrom(nsIFrame* aDestructRoot,
-                           PostDestroyData& aPostDestroyData) override;
+  void DestroyFrom(nsIFrame* aDestructRoot,
+                   PostDestroyData& aPostDestroyData) override;
 
-  
-  virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
+  void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
 
   void AppendFrames(ChildListID aListID, nsFrameList&& aFrameList) override;
   void InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
                     const nsLineList::iterator* aPrevFrameLine,
                     nsFrameList&& aFrameList) override;
-  virtual void RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) override;
+  void RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) override;
 
   
 
@@ -294,26 +293,26 @@ class nsTableRowFrame : public nsContainerFrame {
   } mBits;
 
   
-  nscoord mContentBSize;
+  nscoord mContentBSize = 0;
   
   
-  nscoord mStylePctBSize;
+  nscoord mStylePctBSize = 0;
   
   
-  nscoord mStyleFixedBSize;
+  nscoord mStyleFixedBSize = 0;
 
   
   
-  nscoord mMaxCellAscent;   
-  nscoord mMaxCellDescent;  
+  nscoord mMaxCellAscent = 0;   
+  nscoord mMaxCellDescent = 0;  
 
   
   
-  BCPixelSize mBStartBorderWidth;
-  BCPixelSize mBEndBorderWidth;
-  BCPixelSize mIEndContBorderWidth;
-  BCPixelSize mBStartContBorderWidth;
-  BCPixelSize mIStartContBorderWidth;
+  BCPixelSize mBStartBorderWidth = 0;
+  BCPixelSize mBEndBorderWidth = 0;
+  BCPixelSize mIEndContBorderWidth = 0;
+  BCPixelSize mBStartContBorderWidth = 0;
+  BCPixelSize mIStartContBorderWidth = 0;
 
   
 
