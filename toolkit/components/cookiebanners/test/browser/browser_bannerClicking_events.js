@@ -10,7 +10,8 @@ add_setup(clickTestSetup);
 
 
 
-async function runEventTest({ mode }) {
+
+async function runEventTest({ mode, openPageOptions = {} }) {
   await SpecialPowers.pushPrefEnv({
     set: [["cookiebanners.service.mode", mode]],
   });
@@ -59,14 +60,16 @@ async function runEventTest({ mode }) {
   }
 
   let shouldHandleBanner = mode == Ci.nsICookieBannerService.MODE_REJECT;
+  let testURL = openPageOptions.testURL || TEST_PAGE_A;
 
   await openPageAndVerify({
     win: window,
     domain: TEST_DOMAIN_A,
-    testURL: TEST_PAGE_A,
+    testURL,
     visible: !shouldHandleBanner,
     expected: shouldHandleBanner ? "OptOut" : "NoClick",
     keepTabOpen: true,
+    ...openPageOptions, 
   });
 
   
@@ -130,7 +133,7 @@ async function runEventTest({ mode }) {
     );
     is(
       browser.currentURI.spec,
-      TEST_PAGE_A,
+      testURL,
       "The browser's URI spec should match the cookie banner test page."
     );
   }
@@ -195,6 +198,24 @@ add_task(async function test_events_mode_reject() {
 
 add_task(async function test_events_mode_detect_only() {
   await runEventTest({ mode: Ci.nsICookieBannerService.MODE_DETECT_ONLY });
+});
+
+
+
+
+
+add_task(async function test_events_mode_detect_only_opt_in_rule() {
+  await runEventTest({
+    mode: Ci.nsICookieBannerService.MODE_DETECT_ONLY,
+    openPageOptions: {
+      
+      
+      domain: TEST_DOMAIN_B,
+      testURL: TEST_PAGE_B,
+      shouldHandleBanner: true,
+      expected: "NoClick",
+    },
+  });
 });
 
 
