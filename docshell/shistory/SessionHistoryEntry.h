@@ -368,6 +368,16 @@ class SessionHistoryEntry : public nsISHEntry {
   NS_DECL_NSISHENTRY
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_SESSIONHISTORYENTRY_IID)
 
+  bool IsInSessionHistory() {
+    SessionHistoryEntry* entry = this;
+    while (SessionHistoryEntry* parent =
+               static_cast<SessionHistoryEntry*>(entry->mParent)) {
+      entry = parent;
+    }
+    return entry->SharedInfo()->mSHistory &&
+           entry->SharedInfo()->mSHistory->IsAlive();
+  }
+
   void ReplaceWith(const SessionHistoryEntry& aSource);
 
   const SessionHistoryInfo& Info() const { return *mInfo; }
@@ -408,11 +418,18 @@ class SessionHistoryEntry : public nsISHEntry {
 
   void SetWireframe(const Maybe<Wireframe>& aWireframe);
 
+  struct LoadingEntry {
+    
+    
+    SessionHistoryEntry* mEntry;
+    
+    
+    UniquePtr<SessionHistoryInfo> mInfoSnapshotForValidation;
+  };
+
   
   
-  static SessionHistoryEntry* GetByLoadId(uint64_t aLoadId);
-  static const SessionHistoryInfo* GetInfoSnapshotForValidationByLoadId(
-      uint64_t aLoadId);
+  static LoadingEntry* GetByLoadId(uint64_t aLoadId);
   static void SetByLoadId(uint64_t aLoadId, SessionHistoryEntry* aEntry);
   static void RemoveLoadId(uint64_t aLoadId);
 
@@ -431,15 +448,6 @@ class SessionHistoryEntry : public nsISHEntry {
   bool mForInitialLoad = false;
 
   HistoryEntryCounterForBrowsingContext mBCHistoryLength;
-
-  struct LoadingEntry {
-    
-    
-    SessionHistoryEntry* mEntry;
-    
-    
-    UniquePtr<SessionHistoryInfo> mInfoSnapshotForValidation;
-  };
 
   static nsTHashMap<nsUint64HashKey, LoadingEntry>* sLoadIdToEntry;
 };
