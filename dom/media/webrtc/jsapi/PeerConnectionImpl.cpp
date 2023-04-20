@@ -1959,14 +1959,17 @@ PeerConnectionImpl::SetPeerIdentity(const nsAString& aPeerIdentity) {
 
 nsresult PeerConnectionImpl::OnAlpnNegotiated(bool aPrivacyRequested) {
   PC_AUTO_ENTER_API_CALL(false);
-  if (mRequestedPrivacy.isSome()) {
-    MOZ_DIAGNOSTIC_ASSERT((*mRequestedPrivacy == PrincipalPrivacy::Private) ==
-                          aPrivacyRequested);
-    return NS_OK;
-  }
+  MOZ_DIAGNOSTIC_ASSERT(!mRequestedPrivacy ||
+                        (*mRequestedPrivacy == PrincipalPrivacy::Private) ==
+                            aPrivacyRequested);
 
   mRequestedPrivacy = Some(aPrivacyRequested ? PrincipalPrivacy::Private
                                              : PrincipalPrivacy::NonPrivate);
+  
+  
+  
+  
+  UpdateMediaPipelines();
   return NS_OK;
 }
 
@@ -3708,6 +3711,10 @@ nsresult PeerConnectionImpl::UpdateMediaPipelines() {
         return rv;
       }
     }
+
+    transceiver->UpdatePrincipalPrivacy(PrivacyRequested()
+                                            ? PrincipalPrivacy::Private
+                                            : PrincipalPrivacy::NonPrivate);
 
     nsresult rv = transceiver->UpdateConduit();
     if (NS_FAILED(rv)) {

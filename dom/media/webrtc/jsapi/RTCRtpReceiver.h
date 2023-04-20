@@ -103,6 +103,10 @@ class RTCRtpReceiver : public nsISupports, public nsWrapperCache {
   
   void UpdateStreams(StreamAssociationChanges* aChanges);
 
+  
+  
+  void UpdatePrincipalPrivacy(PrincipalPrivacy aPrivacy);
+
   void OnRtcpBye();
   void OnRtcpTimeout();
 

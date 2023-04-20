@@ -401,6 +401,15 @@ nsresult RTCRtpTransceiver::UpdateConduit() {
   return NS_OK;
 }
 
+void RTCRtpTransceiver::UpdatePrincipalPrivacy(PrincipalPrivacy aPrivacy) {
+  if (mPrincipalPrivacy == aPrivacy) {
+    return;
+  }
+
+  mPrincipalPrivacy = aPrivacy;
+  mReceiver->UpdatePrincipalPrivacy(mPrincipalPrivacy);
+}
+
 void RTCRtpTransceiver::ResetSync() { mSyncGroup = std::string(); }
 
 
