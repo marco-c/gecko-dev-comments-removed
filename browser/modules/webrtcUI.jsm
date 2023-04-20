@@ -1003,12 +1003,7 @@ function getGlobalIndicator() {
   if (!webrtcUI.useLegacyGlobalIndicator) {
     const INDICATOR_CHROME_URI =
       "chrome://browser/content/webrtcIndicator.xhtml";
-    let features = "chrome,titlebar=no,alwaysontop,minimizable=yes";
-
-    
-    if (!AppConstants.MOZ_WIDGET_GTK) {
-      features += ",dialog=yes";
-    }
+    let features = "chrome,titlebar=no,alwaysontop,minimizable,dialog";
 
     return Services.ww.openWindow(
       null,
