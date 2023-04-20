@@ -640,6 +640,28 @@ void js::TraceGCCellPtrRoot(JSTracer* trc, JS::GCCellPtr* thingp,
   }
 }
 
+void js::TraceManuallyBarrieredGCCellPtr(JSTracer* trc, JS::GCCellPtr* thingp,
+                                         const char* name) {
+  Cell* thing = thingp->asCell();
+  if (!thing) {
+    return;
+  }
+
+  Cell* traced = MapGCThingTyped(thing, thing->getTraceKind(),
+                                 [trc, name](auto t) -> Cell* {
+                                   TraceManuallyBarrieredEdge(trc, &t, name);
+                                   return t;
+                                 });
+
+  if (!traced) {
+    
+    
+    *thingp = JS::GCCellPtr();
+  } else if (traced != thingp->asCell()) {
+    *thingp = JS::GCCellPtr(traced, thingp->kind());
+  }
+}
+
 template <typename T>
 inline bool TraceTaggedPtrEdge(JSTracer* trc, T* thingp, const char* name) {
   
