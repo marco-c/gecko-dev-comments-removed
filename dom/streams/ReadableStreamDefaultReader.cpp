@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/ReadableStreamDefaultReader.h"
+
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/RootedDictionary.h"
@@ -20,6 +21,8 @@
 #include "nsWrapperCache.h"
 
 namespace mozilla::dom {
+
+using namespace streams_abstract;
 
 NS_IMPL_CYCLE_COLLECTION(ReadableStreamGenericReader, mClosedPromise, mStream,
                          mGlobal)
@@ -57,6 +60,7 @@ JSObject* ReadableStreamDefaultReader::WrapObject(
   return ReadableStreamDefaultReader_Binding::Wrap(aCx, this, aGivenProto);
 }
 
+namespace streams_abstract {
 
 bool ReadableStreamReaderGenericInitialize(ReadableStreamGenericReader* aReader,
                                            ReadableStream* aStream) {
@@ -98,6 +102,7 @@ bool ReadableStreamReaderGenericInitialize(ReadableStreamGenericReader* aReader,
       return false;
   }
 }
+}  
 
 
 
@@ -198,6 +203,7 @@ NS_INTERFACE_MAP_END
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(Read_ReadRequest)
 NS_INTERFACE_MAP_END_INHERITING(ReadRequest)
 
+namespace streams_abstract {
 
 void ReadableStreamDefaultReaderRead(JSContext* aCx,
                                      ReadableStreamGenericReader* aReader,
@@ -232,6 +238,7 @@ void ReadableStreamDefaultReaderRead(JSContext* aCx,
     }
   }
 }
+}  
 
 
 
@@ -261,6 +268,8 @@ already_AddRefed<Promise> ReadableStreamDefaultReader::Read(ErrorResult& aRv) {
   
   return promise.forget();
 }
+
+namespace streams_abstract {
 
 
 void ReadableStreamReaderGenericRelease(ReadableStreamGenericReader* aReader,
@@ -342,6 +351,8 @@ void ReadableStreamDefaultReaderRelease(JSContext* aCx,
   ReadableStreamDefaultReaderErrorReadRequests(aCx, aReader, error, aRv);
 }
 
+}  
+
 
 void ReadableStreamDefaultReader::ReleaseLock(ErrorResult& aRv) {
   
@@ -394,6 +405,7 @@ already_AddRefed<Promise> ReadableStreamGenericReader::Cancel(
   return ReadableStreamGenericReaderCancel(aCx, this, aReason, aRv);
 }
 
+namespace streams_abstract {
 
 void SetUpReadableStreamDefaultReader(ReadableStreamDefaultReader* aReader,
                                       ReadableStream* aStream,
@@ -413,6 +425,7 @@ void SetUpReadableStreamDefaultReader(ReadableStreamDefaultReader* aReader,
   
   aReader->ReadRequests().clear();
 }
+}  
 
 
 
