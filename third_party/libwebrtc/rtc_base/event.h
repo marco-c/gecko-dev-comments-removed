@@ -12,6 +12,7 @@
 #define RTC_BASE_EVENT_H_
 
 #include "api/units/time_delta.h"
+
 #if defined(WEBRTC_WIN)
 #include <windows.h>
 #elif defined(WEBRTC_POSIX)
@@ -20,7 +21,37 @@
 #error "Must define either WEBRTC_WIN or WEBRTC_POSIX."
 #endif
 
+#include "rtc_base/synchronization/yield_policy.h"
+
 namespace rtc {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if RTC_DCHECK_IS_ON
+#define RTC_DISALLOW_WAIT() ScopedDisallowWait disallow_wait_##__LINE__
+#else
+#define RTC_DISALLOW_WAIT()
+#endif
 
 class Event {
  public:
@@ -86,6 +117,20 @@ class ScopedAllowBaseSyncPrimitivesForTesting {
   ScopedAllowBaseSyncPrimitivesForTesting() {}
   ~ScopedAllowBaseSyncPrimitivesForTesting() {}
 };
+
+#if RTC_DCHECK_IS_ON
+class ScopedDisallowWait {
+ public:
+  ScopedDisallowWait() = default;
+
+ private:
+  class DisallowYieldHandler : public YieldInterface {
+   public:
+    void YieldExecution() override { RTC_DCHECK_NOTREACHED(); }
+  } handler_;
+  rtc::ScopedYieldPolicy policy{&handler_};
+};
+#endif
 
 }  
 
