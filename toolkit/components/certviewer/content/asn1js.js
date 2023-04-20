@@ -1,0 +1,9 @@
+
+
+
+
+const asn1js = require("asn1js"); 
+
+module.exports = {
+  asn1js,
+};
