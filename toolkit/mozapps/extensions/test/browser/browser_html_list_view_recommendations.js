@@ -120,8 +120,6 @@ async function installAddon({ card, recommendedList, manifestExtra = {} }) {
 }
 
 async function testListRecommendations({ type, manifestExtra = {} }) {
-  Services.telemetry.clearEvents();
-
   let win = await loadInitialView(type);
   let doc = win.document;
 
@@ -190,19 +188,6 @@ async function testListRecommendations({ type, manifestExtra = {} }) {
   is_element_visible(hiddenCard, "The card is now shown");
 
   await closeView(win);
-
-  assertAboutAddonsTelemetryEvents(
-    [
-      [
-        "addonsManager",
-        "action",
-        "aboutAddons",
-        null,
-        { action: "installFromRecommendation", view: "list", addonId, type },
-      ],
-    ],
-    { methods: ["action"] }
-  );
 }
 
 add_task(async function testExtensionList() {

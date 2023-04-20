@@ -544,24 +544,12 @@ var ExtensionsUI = {
           origins: [],
         };
 
-        let value;
         
         
         if (checkbox.checked) {
           await lazy.ExtensionPermissions.add(addon.id, incognitoPermission);
-          value = "on";
         } else if (hasIncognito) {
           await lazy.ExtensionPermissions.remove(addon.id, incognitoPermission);
-          value = "off";
-        }
-        if (value !== undefined) {
-          lazy.AMTelemetry.recordActionEvent({
-            addon,
-            object: "doorhanger",
-            action: "privateBrowsingAllowed",
-            view: "postInstall",
-            value,
-          });
         }
         
         

@@ -8,57 +8,6 @@
 
 
 
-const { AddonManager } = ChromeUtils.import(
-  "resource://gre/modules/AddonManager.jsm"
-);
-
-ChromeUtils.defineModuleGetter(
-  this,
-  "AMTelemetry",
-  "resource://gre/modules/AddonManager.jsm"
-);
-
-async function recordViewTelemetry(param) {
-  let type;
-  let addon;
-
-  if (
-    AddonManager.hasAddonType(param) ||
-    ["recent", "available"].includes(param)
-  ) {
-    type = param;
-  } else if (param) {
-    let id = param.replace("/preferences", "");
-    addon = await AddonManager.getAddonByID(id);
-  }
-
-  let { currentViewId } = gViewController;
-  let viewType = gViewController.parseViewId(currentViewId)?.type;
-  let details = {
-    view: viewType || "other",
-    addon,
-    type,
-  };
-
-  
-  
-  if (
-    viewType === "discover" ||
-    (viewType === "list" && type === "extension")
-  ) {
-    
-    
-    
-    
-    
-    
-    const { DiscoveryAPI } = window;
-    details.taarEnabled = !!DiscoveryAPI.clientIdDiscoveryEnabled;
-  }
-
-  AMTelemetry.recordViewEvent(details);
-}
-
 
 function loadView(viewId) {
   if (!gViewController.readyForLoadView) {
@@ -207,7 +156,6 @@ var gViewController = {
     this.isLoading = true;
 
     
-    recordViewTelemetry(param);
     document.dispatchEvent(
       new CustomEvent("view-selected", {
         detail: { id: state.view, param, type },

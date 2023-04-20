@@ -355,8 +355,6 @@ add_task(async function install_from_discopane() {
   await promiseDiscopaneUpdate(win);
   await waitForAllImagesLoaded(win);
 
-  Services.telemetry.clearEvents();
-
   
   let installExtensionPromise = promiseAddonInstall(amoServer, {
     manifest: {
@@ -401,33 +399,6 @@ add_task(async function install_from_discopane() {
     "The Install buttons should be replaced with Manage buttons"
   );
 
-  assertAboutAddonsTelemetryEvents([
-    [
-      "addonsManager",
-      "action",
-      "aboutAddons",
-      null,
-      {
-        action: "installFromRecommendation",
-        view: "discover",
-        addonId: FIRST_EXTENSION_ID,
-        type: "extension",
-      },
-    ],
-    [
-      "addonsManager",
-      "action",
-      "aboutAddons",
-      null,
-      {
-        action: "installFromRecommendation",
-        view: "discover",
-        addonId: FIRST_THEME_ID,
-        type: "theme",
-      },
-    ],
-  ]);
-
   
 
   
@@ -445,24 +416,6 @@ add_task(async function install_from_discopane() {
     ok(addonCard.expanded, "The card should have been expanded");
     
   }
-
-  assertAboutAddonsTelemetryEvents(
-    [
-      [
-        "addonsManager",
-        "action",
-        "aboutAddons",
-        null,
-        {
-          action: "manage",
-          view: "discover",
-          addonId: FIRST_EXTENSION_ID,
-          type: "extension",
-        },
-      ],
-    ],
-    { methods: ["action"] }
-  );
 
   
   
@@ -627,80 +580,6 @@ add_task(async function discopane_no_cookies() {
   let request = await requestPromise;
   ok(!request.hasHeader("Cookie"), "discovery API should not receive cookies");
   await closeView(win);
-});
-
-
-
-
-
-
-
-add_task(async function discopane_interaction_telemetry() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.getAddons.link.url", `http://${AMO_TEST_HOST}/dummy`]],
-  });
-  
-  const DUMMY_EXTENSION_ID = "dummy@extensionid";
-  const apiResponse = {
-    results: [
-      {
-        addon: {
-          guid: DUMMY_EXTENSION_ID,
-          type: "extension",
-          authors: [
-            {
-              name: "Some author",
-            },
-          ],
-          url: `http://${AMO_TEST_HOST}/dummy`,
-          icon_url: `http://${AMO_TEST_HOST}/png`,
-        },
-      },
-    ],
-  };
-  let apiHandler = new DiscoveryAPIHandler(JSON.stringify(apiResponse));
-
-  let expectedAmoUrlFor = where => {
-    
-    return `http://${AMO_TEST_HOST}/dummy?utm_source=firefox-browser&utm_medium=firefox-browser&utm_content=${where}`;
-  };
-
-  let testClickInDiscoCard = async (selector, utmContentParam) => {
-    let tabbrowser = win.windowRoot.ownerGlobal.gBrowser;
-    let tabPromise = BrowserTestUtils.waitForNewTab(tabbrowser);
-    getDiscoveryElement(win)
-      .querySelector(selector)
-      .click();
-    let tab = await tabPromise;
-    is(
-      tab.linkedBrowser.currentURI.spec,
-      expectedAmoUrlFor(utmContentParam),
-      "Expected URL of new tab"
-    );
-    BrowserTestUtils.removeTab(tab);
-  };
-
-  let win = await loadInitialView("discover");
-  await promiseDiscopaneUpdate(win);
-  is(await waitForAllImagesLoaded(win), 1, "One recommendation in results");
-
-  Services.telemetry.clearEvents();
-
-  
-  await testClickInDiscoCard("[action='open-amo']", "find-more-link-bottom");
-
-  
-  await testClickInDiscoCard(".disco-addon-author a", "discopane-entry-link");
-
-  assertAboutAddonsTelemetryEvents([
-    ["addonsManager", "link", "aboutAddons", "discomore", { view: "discover" }],
-    ["addonsManager", "link", "aboutAddons", "discohome", { view: "discover" }],
-  ]);
-
-  is(apiHandler.requestCount, 1, "Discovery API should be fetched once");
-
-  await closeView(win);
-  await SpecialPowers.popPrefEnv();
 });
 
 

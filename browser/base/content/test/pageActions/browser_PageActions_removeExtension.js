@@ -1,10 +1,5 @@
 "use strict";
 
-const TELEMETRY_EVENTS_FILTERS = {
-  category: "addonsManager",
-  method: "action",
-};
-
 
 add_setup(async function() {
   
@@ -26,8 +21,6 @@ add_setup(async function() {
 });
 
 add_task(async function contextMenu_removeExtension_panel() {
-  Services.telemetry.clearEvents();
-
   
   
   let extension = ExtensionTestUtils.loadExtension({
@@ -94,24 +87,11 @@ add_task(async function contextMenu_removeExtension_panel() {
   
   await extension.unload();
 
-  TelemetryTestUtils.assertEvents(
-    [
-      {
-        object: "pageAction",
-        value: "accepted",
-        extra: { addonId: extension.id, action: "uninstall" },
-      },
-    ],
-    TELEMETRY_EVENTS_FILTERS
-  );
-
   await promiseStableResize(originalOuterWidth, win);
   await BrowserTestUtils.closeWindow(win);
 });
 
 add_task(async function contextMenu_removeExtension_urlbar() {
-  Services.telemetry.clearEvents();
-
   
   
   let extension = ExtensionTestUtils.loadExtension({
@@ -164,17 +144,6 @@ add_task(async function contextMenu_removeExtension_urlbar() {
 
   
   await extension.unload();
-
-  TelemetryTestUtils.assertEvents(
-    [
-      {
-        object: "pageAction",
-        value: "cancelled",
-        extra: { addonId: extension.id, action: "uninstall" },
-      },
-    ],
-    TELEMETRY_EVENTS_FILTERS
-  );
 
   
   

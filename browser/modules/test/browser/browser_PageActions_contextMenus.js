@@ -25,8 +25,6 @@ add_setup(async function() {
 
 
 add_task(async function contextMenu() {
-  Services.telemetry.clearEvents();
-
   
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -134,30 +132,8 @@ add_task(async function contextMenu() {
   cxmenu.activateItem(menuItems[removeItemIndex]);
   await contextMenuPromise;
   await promiseUninstalled;
-  let addonId = extension.id;
   await extension.unload();
   Services.prompt = prompt;
-
-  
-  let snapshot = Services.telemetry.snapshotEvents(
-    Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-    true
-  );
-  ok(
-    snapshot.parent && !!snapshot.parent.length,
-    "Got parent telemetry events in the snapshot"
-  );
-  let relatedEvents = snapshot.parent
-    .filter(
-      ([timestamp, category, method]) =>
-        category == "addonsManager" && method == "action"
-    )
-    .map(relatedEvent => relatedEvent.slice(3, 6));
-  Assert.deepEqual(relatedEvents, [
-    ["pageAction", null, { addonId, action: "manage" }],
-    ["pageAction", null, { addonId, action: "manage" }],
-    ["pageAction", "accepted", { addonId, action: "uninstall" }],
-  ]);
 
   
   

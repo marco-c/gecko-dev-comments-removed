@@ -24,9 +24,6 @@ async function installFile(filename) {
 
 add_task(async function test_install_extension_from_local_file() {
   
-  Services.telemetry.clearEvents();
-
-  
   let firstInstallId = null;
   AddonManager.addInstallListener({
     onNewInstall(install) {
@@ -42,44 +39,5 @@ add_task(async function test_install_extension_from_local_file() {
   ok(
     firstInstallId != null && !isNaN(firstInstallId),
     "There was an installId found"
-  );
-
-  
-  let snapshot = Services.telemetry.snapshotEvents(
-    Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-    true
-  );
-
-  
-  ok(
-    snapshot.parent && !!snapshot.parent.length,
-    "Got parent telemetry events in the snapshot"
-  );
-
-  
-  let relatedEvents = snapshot.parent
-    .filter(
-      ([timestamp, category, method, object]) =>
-        category == "addonsManager" &&
-        method == "action" &&
-        object == "aboutAddons"
-    )
-    .map(relatedEvent => relatedEvent.slice(4, 6));
-
-  
-  Assert.deepEqual(
-    relatedEvents,
-    [
-      [firstInstallId.toString(), { action: "installFromFile", view: "list" }],
-      [
-        (++firstInstallId).toString(),
-        { action: "installFromFile", view: "list" },
-      ],
-      [
-        (++firstInstallId).toString(),
-        { action: "installFromFile", view: "list" },
-      ],
-    ],
-    "The telemetry is recorded correctly"
   );
 });
