@@ -30,7 +30,6 @@ promise_test(async t => {
   );
   
   await useWebSocket(rc1_child);
-
   const rc1_child_url = await rc1_child.executeScript(() => {
     return location.href;
   });
@@ -52,9 +51,9 @@ promise_test(async t => {
       [],
       [{
         'blocked': true,
-        'url': '',
-        'src': '',
-        'id': '',
+        'url': null,
+        'src': rc1_child_url,
+        'id': 'test-id',
         'name': '',
         'reasons': [],
         'children': []
