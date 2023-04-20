@@ -11,7 +11,6 @@
 #include "nsCycleCollectionParticipant.h"
 #include "mozilla/AnimationPerformanceWarning.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/BasePrincipal.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/EffectCompositor.h"  
 #include "mozilla/LinkedList.h"
@@ -675,9 +674,6 @@ class Animation : public DOMEventTargetHelper,
   nsString mId;
 
   bool mResetCurrentTimeOnResume = false;
-
-  
-  RTPCallerType mRTPCallerType;
 
  private:
   

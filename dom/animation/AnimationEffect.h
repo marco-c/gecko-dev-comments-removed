@@ -106,9 +106,6 @@ class AnimationEffect : public nsISupports, public nsWrapperCache {
   RefPtr<Animation> mAnimation;
   TimingParams mTiming;
   Maybe<TimingParams> mNormalizedTiming;
-
-  
-  enum RTPCallerType mRTPCallerType;
 };
 
 }  

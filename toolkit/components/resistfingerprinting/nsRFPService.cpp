@@ -171,10 +171,10 @@ constexpr double RFP_TIME_ATOM_MS = 16.667;
 
 
 
-double nsRFPService::TimerResolution(RTPCallerType aRTPCallerType) {
+double nsRFPService::TimerResolution() {
   double prefValue = StaticPrefs::
       privacy_resistFingerprinting_reduceTimerPrecision_microseconds();
-  if (aRTPCallerType == RTPCallerType::ResistFingerprinting) {
+  if (StaticPrefs::privacy_resistFingerprinting()) {
     return std::max(RFP_TIME_ATOM_MS * 1000.0, prefValue);
   }
   return prefValue;
@@ -447,69 +447,66 @@ double nsRFPService::ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale,
 
 double nsRFPService::ReduceTimePrecisionAsUSecs(double aTime,
                                                 int64_t aContextMixin,
-                                                RTPCallerType aRTPCallerType) {
-  const auto type = GetTimerPrecisionType(aRTPCallerType);
-  return nsRFPService::ReduceTimePrecisionImpl(aTime, MicroSeconds,
-                                               TimerResolution(aRTPCallerType),
-                                               aContextMixin, type);
+                                                bool aIsSystemPrincipal,
+                                                bool aCrossOriginIsolated) {
+  const auto type =
+      GetTimerPrecisionType(aIsSystemPrincipal, aCrossOriginIsolated);
+  return nsRFPService::ReduceTimePrecisionImpl(
+      aTime, MicroSeconds, TimerResolution(), aContextMixin, type);
 }
 
 
 double nsRFPService::ReduceTimePrecisionAsMSecs(double aTime,
                                                 int64_t aContextMixin,
-                                                RTPCallerType aRTPCallerType) {
-  const auto type = GetTimerPrecisionType(aRTPCallerType);
-  return nsRFPService::ReduceTimePrecisionImpl(aTime, MilliSeconds,
-                                               TimerResolution(aRTPCallerType),
-                                               aContextMixin, type);
+                                                bool aIsSystemPrincipal,
+                                                bool aCrossOriginIsolated) {
+  const auto type =
+      GetTimerPrecisionType(aIsSystemPrincipal, aCrossOriginIsolated);
+  return nsRFPService::ReduceTimePrecisionImpl(
+      aTime, MilliSeconds, TimerResolution(), aContextMixin, type);
 }
 
 
-double nsRFPService::ReduceTimePrecisionAsMSecsRFPOnly(
-    double aTime, int64_t aContextMixin, RTPCallerType aRTPCallerType) {
-  return nsRFPService::ReduceTimePrecisionImpl(
-      aTime, MilliSeconds, TimerResolution(aRTPCallerType), aContextMixin,
-      GetTimerPrecisionTypeRFPOnly(aRTPCallerType));
+double nsRFPService::ReduceTimePrecisionAsMSecsRFPOnly(double aTime,
+                                                       int64_t aContextMixin) {
+  return nsRFPService::ReduceTimePrecisionImpl(aTime, MilliSeconds,
+                                               TimerResolution(), aContextMixin,
+                                               GetTimerPrecisionTypeRFPOnly());
 }
 
 
 double nsRFPService::ReduceTimePrecisionAsSecs(double aTime,
                                                int64_t aContextMixin,
-                                               RTPCallerType aRTPCallerType) {
-  const auto type = GetTimerPrecisionType(aRTPCallerType);
+                                               bool aIsSystemPrincipal,
+                                               bool aCrossOriginIsolated) {
+  const auto type =
+      GetTimerPrecisionType(aIsSystemPrincipal, aCrossOriginIsolated);
   return nsRFPService::ReduceTimePrecisionImpl(
-      aTime, Seconds, TimerResolution(aRTPCallerType), aContextMixin, type);
+      aTime, Seconds, TimerResolution(), aContextMixin, type);
 }
 
 
-double nsRFPService::ReduceTimePrecisionAsSecsRFPOnly(
-    double aTime, int64_t aContextMixin, RTPCallerType aRTPCallerType) {
-  return nsRFPService::ReduceTimePrecisionImpl(
-      aTime, Seconds, TimerResolution(aRTPCallerType), aContextMixin,
-      GetTimerPrecisionTypeRFPOnly(aRTPCallerType));
+double nsRFPService::ReduceTimePrecisionAsSecsRFPOnly(double aTime,
+                                                      int64_t aContextMixin) {
+  return nsRFPService::ReduceTimePrecisionImpl(aTime, Seconds,
+                                               TimerResolution(), aContextMixin,
+                                               GetTimerPrecisionTypeRFPOnly());
 }
 
 
-double nsRFPService::ReduceTimePrecisionAsUSecsWrapper(
-    double aTime, bool aShouldResistFingerprinting, JSContext* aCx) {
+double nsRFPService::ReduceTimePrecisionAsUSecsWrapper(double aTime,
+                                                       JSContext* aCx) {
   MOZ_ASSERT(aCx);
 
   nsCOMPtr<nsIGlobalObject> global = xpc::CurrentNativeGlobal(aCx);
   MOZ_ASSERT(global);
-
-  RTPCallerType callerType;
-  if (aShouldResistFingerprinting) {
-    callerType = RTPCallerType::ResistFingerprinting;
-  } else if (global->CrossOriginIsolated()) {
-    callerType = RTPCallerType::CrossOriginIsolated;
-  } else {
-    callerType = RTPCallerType::Normal;
-  }
+  const auto type = GetTimerPrecisionType( false,
+                                          global->CrossOriginIsolated());
   return nsRFPService::ReduceTimePrecisionImpl(
-      aTime, MicroSeconds, TimerResolution(callerType),
+      aTime, MicroSeconds, TimerResolution(),
       0, 
 
-      GetTimerPrecisionType(callerType));
+      type);
 }
 
 
@@ -519,8 +516,7 @@ uint32_t nsRFPService::CalculateTargetVideoResolution(uint32_t aVideoQuality) {
 
 
 uint32_t nsRFPService::GetSpoofedTotalFrames(double aTime) {
-  double precision =
-      TimerResolution(RTPCallerType::ResistFingerprinting) / 1000 / 1000;
+  double precision = TimerResolution() / 1000 / 1000;
   double time = floor(aTime / precision) * precision;
 
   return NSToIntFloor(time * kVideoFramesPerSec);
@@ -538,8 +534,7 @@ uint32_t nsRFPService::GetSpoofedDroppedFrames(double aTime, uint32_t aWidth,
     return 0;
   }
 
-  double precision =
-      TimerResolution(RTPCallerType::ResistFingerprinting) / 1000 / 1000;
+  double precision = TimerResolution() / 1000 / 1000;
   double time = floor(aTime / precision) * precision;
   
   uint32_t boundedDroppedRatio = std::min(kVideoDroppedRatio, 100U);
@@ -560,8 +555,7 @@ uint32_t nsRFPService::GetSpoofedPresentedFrames(double aTime, uint32_t aWidth,
     return GetSpoofedTotalFrames(aTime);
   }
 
-  double precision =
-      TimerResolution(RTPCallerType::ResistFingerprinting) / 1000 / 1000;
+  double precision = TimerResolution() / 1000 / 1000;
   double time = floor(aTime / precision) * precision;
   
   uint32_t boundedDroppedRatio = std::min(kVideoDroppedRatio, 100U);
@@ -664,15 +658,35 @@ nsresult nsRFPService::Init() {
 }
 
 
+void nsRFPService::UpdateTimers() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (StaticPrefs::privacy_resistFingerprinting() ||
+      StaticPrefs::privacy_reduceTimerPrecision()) {
+    JS::SetTimeResolutionUsec(
+        TimerResolution(),
+        StaticPrefs::
+            privacy_resistFingerprinting_reduceTimerPrecision_jitter());
+    JS::SetReduceMicrosecondTimePrecisionCallback(
+        nsRFPService::ReduceTimePrecisionAsUSecsWrapper);
+  } else if (StaticPrefs::privacy_reduceTimerPrecision_unconditional()) {
+    JS::SetTimeResolutionUsec(RFP_TIMER_UNCONDITIONAL_VALUE, false);
+    JS::SetReduceMicrosecondTimePrecisionCallback(
+        nsRFPService::ReduceTimePrecisionAsUSecsWrapper);
+  } else if (sInitialized) {
+    JS::SetTimeResolutionUsec(0, false);
+  }
+}
+
+
 
 void nsRFPService::UpdateRFPPref() {
   MOZ_ASSERT(NS_IsMainThread());
 
+  UpdateTimers();
+
   bool privacyResistFingerprinting =
       StaticPrefs::privacy_resistFingerprinting();
-
-  JS::SetReduceMicrosecondTimePrecisionCallback(
-      nsRFPService::ReduceTimePrecisionAsUSecsWrapper);
 
   
   JS::SetUseFdlibmForSinCosTan(
@@ -951,17 +965,16 @@ bool nsRFPService::GetSpoofedKeyCode(const dom::Document* aDoc,
 
 
 TimerPrecisionType nsRFPService::GetTimerPrecisionType(
-    RTPCallerType aRTPCallerType) {
-  if (aRTPCallerType == RTPCallerType::SystemPrincipal) {
+    bool aIsSystemPrincipal, bool aCrossOriginIsolated) {
+  if (aIsSystemPrincipal) {
     return DangerouslyNone;
   }
 
-  if (aRTPCallerType == RTPCallerType::ResistFingerprinting) {
+  if (StaticPrefs::privacy_resistFingerprinting()) {
     return RFP;
   }
 
-  if (StaticPrefs::privacy_reduceTimerPrecision() &&
-      aRTPCallerType == RTPCallerType::CrossOriginIsolated) {
+  if (StaticPrefs::privacy_reduceTimerPrecision() && aCrossOriginIsolated) {
     return UnconditionalAKAHighRes;
   }
 
@@ -977,14 +990,12 @@ TimerPrecisionType nsRFPService::GetTimerPrecisionType(
 }
 
 
-TimerPrecisionType nsRFPService::GetTimerPrecisionTypeRFPOnly(
-    RTPCallerType aRTPCallerType) {
-  if (aRTPCallerType == RTPCallerType::ResistFingerprinting) {
+TimerPrecisionType nsRFPService::GetTimerPrecisionTypeRFPOnly() {
+  if (StaticPrefs::privacy_resistFingerprinting()) {
     return RFP;
   }
 
-  if (StaticPrefs::privacy_reduceTimerPrecision_unconditional() &&
-      aRTPCallerType != RTPCallerType::SystemPrincipal) {
+  if (StaticPrefs::privacy_reduceTimerPrecision_unconditional()) {
     return UnconditionalAKAHighRes;
   }
 
@@ -1021,7 +1032,12 @@ void nsRFPService::PrefChanged(const char* aPref, void* aSelf) {
 void nsRFPService::PrefChanged(const char* aPref) {
   nsDependentCString pref(aPref);
 
-  if (pref.EqualsLiteral(RESIST_FINGERPRINTING_PREF)) {
+  if (pref.EqualsLiteral(RFP_TIMER_PREF) ||
+      pref.EqualsLiteral(RFP_TIMER_UNCONDITIONAL_PREF) ||
+      pref.EqualsLiteral(RFP_TIMER_VALUE_PREF) ||
+      pref.EqualsLiteral(RFP_JITTER_VALUE_PREF)) {
+    UpdateTimers();
+  } else if (pref.EqualsLiteral(RESIST_FINGERPRINTING_PREF)) {
     UpdateRFPPref();
 
 #if defined(XP_WIN)

@@ -49,9 +49,6 @@ bool AudioWorkletGlobalScope::WrapGlobalObject(
 
   JS::RealmOptions options;
 
-  options.behaviors().setShouldResistFingerprinting(
-      ShouldResistFingerprinting());
-
   
   
   
