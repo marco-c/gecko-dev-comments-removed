@@ -132,8 +132,9 @@ TabEngine.prototype = {
 
     
     
-    
-    await this._bridge.setLastSync(0);
+    if ((await this.getLastSync()) === FAR_FUTURE) {
+      await this._bridge.setLastSync(0);
+    }
     await this._bridge.prepareForSync(JSON.stringify(clientData));
   },
 
@@ -155,9 +156,6 @@ TabEngine.prototype = {
     this._bridge.allowSkippedRecord = true;
 
     this._log.info("Got a bridged engine!");
-
-    
-    await this._resetClient();
     this._tracker.modified = true;
   },
 

@@ -8,6 +8,8 @@ const { TabProvider } = ChromeUtils.import(
   "resource://services-sync/engines/tabs.js"
 );
 
+const FAR_FUTURE = 4102405200000; 
+
 add_task(async function setup() {
   
   TabProvider.shouldSkipWindow = mockShouldSkipWindow;
@@ -52,6 +54,9 @@ add_task(async function test_tab_quickwrite_works() {
   let { server, collection, engine } = await prepareServer();
   Assert.equal(collection.count(), 0, "starting with 0 tab records");
   Assert.ok(await engine.quickWrite());
+  
+  let lastSync = await engine.getLastSync();
+  Assert.ok(lastSync < FAR_FUTURE);
   Assert.equal(collection.count(), 1, "tab record was written");
 
   await promiseStopServer(server);
@@ -73,6 +78,9 @@ add_task(async function test_tab_bad_status() {
 
   Services.prefs.clearUserPref("services.sync.username");
   await quickWrite();
+  
+  let lastSync = await engine.getLastSync();
+  Assert.ok(lastSync < FAR_FUTURE);
   Service.status.resetSync();
   engine.lock = lock;
   await promiseStopServer(server);
