@@ -137,6 +137,12 @@ class SmartMockCubebStream;
 
 
 class MockCubebStream {
+  
+  
+  
+  cubeb* context;
+  void* mUserPtr;
+
  public:
   MockCubebStream(cubeb* aContext, cubeb_devid aInputDevice,
                   cubeb_stream_params* aInputStreamParams,
@@ -194,9 +200,6 @@ class MockCubebStream {
 
   void Process10Ms();
 
- private:
-  cubeb* context = nullptr;
-
  public:
   const bool mHasInput;
   const bool mHasOutput;
@@ -229,8 +232,6 @@ class MockCubebStream {
   cubeb_state_callback mStateCallback = nullptr;
   
   cubeb_device_changed_callback mDeviceChangedCallback = nullptr;
-  
-  void* mUserPtr = nullptr;
   
   cubeb_stream_params mOutputParams = {};
   cubeb_stream_params mInputParams = {};
