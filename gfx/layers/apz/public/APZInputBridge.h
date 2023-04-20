@@ -110,7 +110,7 @@ struct APZEventResult {
   void SetStatusForTouchEvent(const InputBlockState& aBlock,
                               TargetConfirmationFlags aFlags,
                               PointerEventsConsumableFlags aConsumableFlags,
-                              const AsyncPanZoomController& aTarget);
+                              const AsyncPanZoomController* aTarget);
 
   
   
