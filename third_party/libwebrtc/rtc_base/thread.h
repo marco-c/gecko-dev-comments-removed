@@ -20,6 +20,7 @@
 #include <set>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "absl/strings/string_view.h"
@@ -328,35 +329,28 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   
   virtual void Run();
 
-  virtual void Send(const Location& posted_from,
-                    MessageHandler* phandler,
-                    uint32_t id = 0,
-                    MessageData* pdata = nullptr);
+  
+  
+  
+  
+  
+  
+  
+  virtual void BlockingCall(FunctionView<void()> functor);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  template <
-      class ReturnT,
-      typename = typename std::enable_if<!std::is_void<ReturnT>::value>::type>
-  ReturnT Invoke(const Location& posted_from, FunctionView<ReturnT()> functor) {
+  template <typename Functor,
+            typename ReturnT = std::invoke_result_t<Functor>,
+            typename = typename std::enable_if_t<!std::is_void_v<ReturnT>>>
+  ReturnT BlockingCall(Functor&& functor) {
     ReturnT result;
-    InvokeInternal(posted_from, [functor, &result] { result = functor(); });
+    BlockingCall([&] { result = std::forward<Functor>(functor)(); });
     return result;
   }
 
-  template <
-      class ReturnT,
-      typename = typename std::enable_if<std::is_void<ReturnT>::value>::type>
-  void Invoke(const Location& posted_from, FunctionView<void()> functor) {
-    InvokeInternal(posted_from, functor);
+  
+  template <typename ReturnT>
+  ReturnT Invoke(const Location& posted_from, FunctionView<ReturnT()> functor) {
+    return BlockingCall(functor);
   }
 
   
@@ -505,10 +499,11 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
 
   
   
-  virtual bool Peek(Message* pmsg, int cms_wait) {
-    RTC_DCHECK_NOTREACHED();
-    return false;
-  }
+  virtual void Send(const Location& posted_from,
+                    MessageHandler* phandler,
+                    uint32_t id,
+                    MessageData* pdata);
+
   
   
   
@@ -538,9 +533,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
 
   
   bool IsRunning();
-
-  void InvokeInternal(const Location& posted_from,
-                      rtc::FunctionView<void()> functor);
 
   
   void EnsureIsCurrentTaskQueue();
