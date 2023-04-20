@@ -83,6 +83,7 @@ use camino::Utf8PathBuf;
 use derive_builder::Builder;
 use std::collections::HashMap;
 use std::env;
+use std::ffi::OsString;
 use std::fmt;
 use std::hash::Hash;
 use std::path::PathBuf;
@@ -593,6 +594,9 @@ pub struct MetadataCommand {
     
     other_options: Vec<String>,
     
+    
+    env: HashMap<OsString, OsString>,
+    
     verbose: bool,
 }
 
@@ -690,6 +694,32 @@ impl MetadataCommand {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn env<K: Into<OsString>, V: Into<OsString>>(
+        &mut self,
+        key: K,
+        val: V,
+    ) -> &mut MetadataCommand {
+        self.env.insert(key.into(), val.into());
+        self
+    }
+
+    
     pub fn verbose(&mut self, verbose: bool) -> &mut MetadataCommand {
         self.verbose = verbose;
         self
@@ -728,6 +758,8 @@ impl MetadataCommand {
             cmd.arg("--manifest-path").arg(manifest_path.as_os_str());
         }
         cmd.args(&self.other_options);
+
+        cmd.envs(&self.env);
 
         cmd
     }
