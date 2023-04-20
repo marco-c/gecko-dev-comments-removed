@@ -91,12 +91,6 @@ class nsImageBoxFrame final : public nsLeafBoxFrame {
 
   void UpdateImage();
 
-  
-
-
-
-  void UpdateLoadFlags();
-
   virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override;
 
@@ -140,8 +134,6 @@ class nsImageBoxFrame final : public nsLeafBoxFrame {
 
   RefPtr<imgRequestProxy> mImageRequest;
   nsCOMPtr<imgINotificationObserver> mListener;
-
-  int32_t mLoadFlags;
 
   
   
