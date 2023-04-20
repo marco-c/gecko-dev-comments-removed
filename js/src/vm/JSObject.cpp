@@ -3440,10 +3440,6 @@ void JSObject::traceChildren(JSTracer* trc) {
   if (clasp->hasTrace()) {
     clasp->doTrace(trc, this);
   }
-
-  if (trc->isMarkingTracer()) {
-    GCMarker::fromTracer(trc)->markImplicitEdges(this);
-  }
 }
 
 
