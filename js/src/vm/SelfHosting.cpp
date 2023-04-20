@@ -2309,12 +2309,12 @@ void js::FillSelfHostingCompileOptions(CompileOptions& options) {
 
 
 class MOZ_STACK_CLASS AutoPrintSelfHostingFrontendContext
-    : public OffThreadErrorContext {
+    : public FrontendContext {
   JSContext* cx_;
 
  public:
   explicit AutoPrintSelfHostingFrontendContext(JSContext* cx)
-      : OffThreadErrorContext(), cx_(cx) {
+      : FrontendContext(), cx_(cx) {
     setCurrentJSContext(cx_);
   }
   ~AutoPrintSelfHostingFrontendContext() {

@@ -529,7 +529,7 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
   UniquePtr<frontend::CompilationGCOutput> gcOutput_;
 
   
-  OffThreadErrorContext ec_;
+  FrontendContext ec_;
 
   ParseTask(ParseTaskKind kind, JSContext* cx,
             JS::OffThreadCompileCallback callback, void* callbackData);
@@ -665,7 +665,7 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
   frontend::CompilationStencilMerger merger;
 
   
-  OffThreadErrorContext ec_;
+  FrontendContext ec_;
 
   
   
