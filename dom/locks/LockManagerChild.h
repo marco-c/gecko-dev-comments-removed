@@ -9,6 +9,7 @@
 
 #include "mozilla/dom/locks/PLockManagerChild.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/WorkerRef.h"
 #include "nsIUUIDGenerator.h"
 
 namespace mozilla::dom::locks {
@@ -23,7 +24,7 @@ class LockManagerChild final : public PLockManagerChild {
   static void NotifyBFCacheOnMainThread(nsPIDOMWindowInner* aInner,
                                         bool aCreated);
 
-  explicit LockManagerChild(nsIGlobalObject* aOwner) : mOwner(aOwner){};
+  explicit LockManagerChild(nsIGlobalObject* aOwner);
 
   nsIGlobalObject* GetParentObject() const { return mOwner; };
 
@@ -37,6 +38,26 @@ class LockManagerChild final : public PLockManagerChild {
   ~LockManagerChild() = default;
 
   nsCOMPtr<nsIGlobalObject> mOwner;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<IPCWorkerRef> mWorkerRef;
 };
 
 }  

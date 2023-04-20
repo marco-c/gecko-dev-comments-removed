@@ -61,6 +61,8 @@ class LockManager final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsIGlobalObject> mOwner;
   RefPtr<locks::LockManagerChild> mActor;
 
+  
+  
   RefPtr<WeakWorkerRef> mWorkerRef;
 };
 
