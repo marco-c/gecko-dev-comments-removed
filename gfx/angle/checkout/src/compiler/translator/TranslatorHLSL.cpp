@@ -12,6 +12,8 @@
 #include "compiler/translator/tree_ops/SimplifyLoopConditions.h"
 #include "compiler/translator/tree_ops/SplitSequenceOperator.h"
 #include "compiler/translator/tree_ops/d3d/AddDefaultReturnStatements.h"
+#include "compiler/translator/tree_ops/d3d/AggregateAssignArraysInSSBOs.h"
+#include "compiler/translator/tree_ops/d3d/AggregateAssignStructsInSSBOs.h"
 #include "compiler/translator/tree_ops/d3d/ArrayReturnValueToOutParameter.h"
 #include "compiler/translator/tree_ops/d3d/BreakVariableAliasingInInnerLoops.h"
 #include "compiler/translator/tree_ops/d3d/ExpandIntegerPowExpressions.h"
@@ -35,9 +37,25 @@ TranslatorHLSL::TranslatorHLSL(sh::GLenum type, ShShaderSpec spec, ShShaderOutpu
 {}
 
 bool TranslatorHLSL::translate(TIntermBlock *root,
-                               ShCompileOptions compileOptions,
+                               const ShCompileOptions &compileOptions,
                                PerformanceDiagnostics *perfDiagnostics)
 {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mValidateASTOptions.validatePrecision = false;
+
     const ShBuiltInResources &resources = getResources();
     int numRenderTargets                = resources.EXT_draw_buffers ? resources.MaxDrawBuffers : 1;
     int maxDualSourceDrawBuffers =
@@ -80,6 +98,24 @@ bool TranslatorHLSL::translate(TIntermBlock *root,
     if (!SeparateArrayConstructorStatements(this, root))
     {
         return false;
+    }
+
+    if (getShaderVersion() >= 310)
+    {
+        
+        
+        
+        if (!sh::AggregateAssignArraysInSSBOs(this, root, &getSymbolTable()))
+        {
+            return false;
+        }
+        
+        
+        
+        if (!sh::AggregateAssignStructsInSSBOs(this, root, &getSymbolTable()))
+        {
+            return false;
+        }
     }
 
     if (!SeparateExpressionsReturningArrays(this, root, &getSymbolTable()))
@@ -138,11 +174,7 @@ bool TranslatorHLSL::translate(TIntermBlock *root,
         return false;
     }
 
-    bool precisionEmulation = false;
-    if (!emulatePrecisionIfNeeded(root, getInfoSink().obj, &precisionEmulation, getOutputType()))
-        return false;
-
-    if ((compileOptions & SH_EXPAND_SELECT_HLSL_INTEGER_POW_EXPRESSIONS) != 0)
+    if (compileOptions.expandSelectHLSLIntegerPowExpressions)
     {
         if (!sh::ExpandIntegerPowExpressions(this, root, &getSymbolTable()))
         {
@@ -150,7 +182,7 @@ bool TranslatorHLSL::translate(TIntermBlock *root,
         }
     }
 
-    if ((compileOptions & SH_REWRITE_TEXELFETCHOFFSET_TO_TEXELFETCH) != 0)
+    if (compileOptions.rewriteTexelFetchOffsetToTexelFetch)
     {
         if (!sh::RewriteTexelFetchOffset(this, root, getSymbolTable(), getShaderVersion()))
         {
@@ -158,8 +190,7 @@ bool TranslatorHLSL::translate(TIntermBlock *root,
         }
     }
 
-    if (((compileOptions & SH_REWRITE_INTEGER_UNARY_MINUS_OPERATOR) != 0) &&
-        getShaderType() == GL_VERTEX_SHADER)
+    if (compileOptions.rewriteIntegerUnaryMinusOperator && getShaderType() == GL_VERTEX_SHADER)
     {
         if (!sh::RewriteUnaryMinusOperatorInt(this, root))
         {
@@ -187,8 +218,7 @@ bool TranslatorHLSL::translate(TIntermBlock *root,
     
     
     
-    if (getShaderVersion() == 300 &&
-        (compileOptions & SH_ALLOW_TRANSLATE_UNIFORM_BLOCK_TO_STRUCTUREDBUFFER) != 0)
+    if (getShaderVersion() == 300 && compileOptions.allowTranslateUniformBlockToStructuredBuffer)
     {
         if (!sh::RecordUniformBlocksWithLargeArrayMember(root, mUniformBlockOptimizedMap,
                                                          mSlowCompilingUniformBlockSet))
@@ -197,11 +227,11 @@ bool TranslatorHLSL::translate(TIntermBlock *root,
         }
     }
 
-    sh::OutputHLSL outputHLSL(getShaderType(), getShaderSpec(), getShaderVersion(),
-                              getExtensionBehavior(), getSourcePath(), getOutputType(),
-                              numRenderTargets, maxDualSourceDrawBuffers, getUniforms(),
-                              compileOptions, getComputeShaderLocalSize(), &getSymbolTable(),
-                              perfDiagnostics, mUniformBlockOptimizedMap, mShaderStorageBlocks);
+    sh::OutputHLSL outputHLSL(
+        getShaderType(), getShaderSpec(), getShaderVersion(), getExtensionBehavior(),
+        getSourcePath(), getOutputType(), numRenderTargets, maxDualSourceDrawBuffers, getUniforms(),
+        compileOptions, getComputeShaderLocalSize(), &getSymbolTable(), perfDiagnostics,
+        mUniformBlockOptimizedMap, mShaderStorageBlocks, isEarlyFragmentTestsSpecified());
 
     outputHLSL.output(root, getInfoSink().obj);
 

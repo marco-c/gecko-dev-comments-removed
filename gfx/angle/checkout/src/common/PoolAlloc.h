@@ -7,7 +7,6 @@
 
 
 
-
 #ifndef COMMON_POOLALLOC_H_
 #define COMMON_POOLALLOC_H_
 
@@ -32,79 +31,13 @@
 
 
 
-#include <stddef.h>
-#include <string.h>
-#include <memory>
-#include <vector>
-
 #include "angleutils.h"
 #include "common/debug.h"
 
 namespace angle
 {
-
-
-
-
-
-class Allocation
-{
-  public:
-    Allocation(size_t size, unsigned char *mem, Allocation *prev = 0)
-        : mSize(size), mMem(mem), mPrevAlloc(prev)
-    {
-
-
-
-
-
-#if defined(ANGLE_POOL_ALLOC_GUARD_BLOCKS)
-        memset(preGuard(), kGuardBlockBeginVal, kGuardBlockSize);
-        memset(data(), kUserDataFill, mSize);
-        memset(postGuard(), kGuardBlockEndVal, kGuardBlockSize);
-#endif
-    }
-
-    void check() const
-    {
-        checkGuardBlock(preGuard(), kGuardBlockBeginVal, "before");
-        checkGuardBlock(postGuard(), kGuardBlockEndVal, "after");
-    }
-
-    void checkAllocList() const;
-
-    
-    
-    static size_t AllocationSize(size_t size) { return size + 2 * kGuardBlockSize + HeaderSize(); }
-
-    
-    static unsigned char *OffsetAllocation(unsigned char *m)
-    {
-        return m + kGuardBlockSize + HeaderSize();
-    }
-
-  private:
-    void checkGuardBlock(unsigned char *blockMem, unsigned char val, const char *locText) const;
-
-    
-    unsigned char *preGuard() const { return mMem + HeaderSize(); }
-    unsigned char *data() const { return preGuard() + kGuardBlockSize; }
-    unsigned char *postGuard() const { return data() + mSize; }
-    size_t mSize;            
-    unsigned char *mMem;     
-    Allocation *mPrevAlloc;  
-
-    static constexpr unsigned char kGuardBlockBeginVal = 0xfb;
-    static constexpr unsigned char kGuardBlockEndVal   = 0xfe;
-    static constexpr unsigned char kUserDataFill       = 0xcd;
-#if defined(ANGLE_POOL_ALLOC_GUARD_BLOCKS)
-    static constexpr size_t kGuardBlockSize = 16;
-    static constexpr size_t HeaderSize() { return sizeof(Allocation); }
-#else
-    static constexpr size_t kGuardBlockSize = 0;
-    static constexpr size_t HeaderSize() { return 0; }
-#endif
-};
+class Allocation;
+class PageHeader;
 
 
 
@@ -123,7 +56,7 @@ class Allocation
 class PoolAllocator : angle::NonCopyable
 {
   public:
-    static const int kDefaultAlignment = 16;
+    static const int kDefaultAlignment = sizeof(void *);
     
     
     
@@ -173,7 +106,7 @@ class PoolAllocator : angle::NonCopyable
 #else
         ASSERT(mAlignment == 1);
         
-        ASSERT(numBytes <= (mPageSize - mHeaderSkip));
+        ASSERT(numBytes <= (mPageSize - mPageHeaderSkip));
         
         
         
@@ -186,13 +119,10 @@ class PoolAllocator : angle::NonCopyable
             mCurrentPageOffset += numBytes;
             return memory;
         }
-        return reinterpret_cast<uint8_t *>(allocateNewPage(numBytes, numBytes));
+        return allocateNewPage(numBytes);
 #endif
     }
 
-    
-    
-    
     
     
     
@@ -205,71 +135,41 @@ class PoolAllocator : angle::NonCopyable
   private:
     size_t mAlignment;  
                         
-    size_t mAlignmentMask;
 #if !defined(ANGLE_DISABLE_POOL_ALLOC)
-    friend struct Header;
-
-    struct Header
-    {
-        Header(Header *nextPage, size_t pageCount)
-            : nextPage(nextPage),
-              pageCount(pageCount)
-#    if defined(ANGLE_POOL_ALLOC_GUARD_BLOCKS)
-              ,
-              lastAllocation(0)
-#    endif
-        {}
-
-        ~Header()
-        {
-#    if defined(ANGLE_POOL_ALLOC_GUARD_BLOCKS)
-            if (lastAllocation)
-                lastAllocation->checkAllocList();
-#    endif
-        }
-
-        Header *nextPage;
-        size_t pageCount;
-#    if defined(ANGLE_POOL_ALLOC_GUARD_BLOCKS)
-        Allocation *lastAllocation;
-#    endif
-    };
-
     struct AllocState
     {
         size_t offset;
-        Header *page;
+        PageHeader *page;
     };
     using AllocStack = std::vector<AllocState>;
 
     
-    void *allocateNewPage(size_t numBytes, size_t allocationSize);
+    uint8_t *allocateNewPage(size_t numBytes);
     
-    void *initializeAllocation(Header *block, unsigned char *memory, size_t numBytes)
-    {
-#    if defined(ANGLE_POOL_ALLOC_GUARD_BLOCKS)
-        new (memory) Allocation(numBytes + mAlignment, memory, block->lastAllocation);
-        block->lastAllocation = reinterpret_cast<Allocation *>(memory);
-#    endif
-        
-        void *unalignedPtr  = Allocation::OffsetAllocation(memory);
-        size_t alignedBytes = numBytes + mAlignment;
-        return std::align(mAlignment, numBytes, unalignedPtr, alignedBytes);
-    }
+    void *initializeAllocation(uint8_t *memory, size_t numBytes);
 
-    size_t mPageSize;           
-    size_t mHeaderSkip;         
-                                
-                                
-    size_t mCurrentPageOffset;  
-    Header *mFreeList;          
-    Header *mInUseList;         
-    AllocStack mStack;          
+    
+    size_t mPageSize;
+    
+    
+    size_t mPageHeaderSkip;
+    
+    
+    
+    
+    size_t mCurrentPageOffset;
+    
+    PageHeader *mFreeList;
+    
+    
+    PageHeader *mInUseList;
+    
+    AllocStack mStack;
 
     int mNumCalls;       
     size_t mTotalBytes;  
 
-#else
+#else  
     std::vector<std::vector<void *>> mStack;
 #endif
 

@@ -126,7 +126,7 @@ bool RewriteAtomicFunctionExpressionsTraverser::IsAtomicFunctionInsideExpression
     ASSERT(node);
     
     
-    if (!IsAtomicFunction(node->getOp()) || parentNode->getAsBlock())
+    if (!BuiltInGroup::IsAtomicMemory(node->getOp()) || parentNode->getAsBlock())
     {
         return false;
     }
@@ -140,7 +140,7 @@ bool RewriteAtomicFunctionExpressionsTraverser::visitAggregate(Visit visit, TInt
 {
     ASSERT(visit == PostVisit);
     
-    if (IsAtomicFunction(node->getOp()) &&
+    if (BuiltInGroup::IsAtomicMemory(node->getOp()) &&
         IsInShaderStorageBlock((*node->getSequence())[0]->getAsTyped()))
     {
         return false;

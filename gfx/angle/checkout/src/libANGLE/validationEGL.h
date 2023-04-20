@@ -23,6 +23,8 @@ class Context;
 
 namespace egl
 {
+constexpr EGLint kEglMajorVersion = 1;
+constexpr EGLint kEglMinorVersion = 5;
 
 class AttributeMap;
 struct ClientExtensions;
@@ -44,6 +46,7 @@ struct ValidationContext
 
     
     void setError(EGLint error) const;
+    ANGLE_FORMAT_PRINTF(3, 4)
     void setError(EGLint error, const char *message...) const;
 
     Thread *eglThread;
@@ -107,35 +110,39 @@ typename std::enable_if<std::is_enum<PackedT>::value, PackedT>::type PackParam(F
 }
 
 
-template <typename PackedT, typename FromT>
-typename std::enable_if<!std::is_enum<PackedT>::value,
-                        typename std::remove_reference<PackedT>::type>::type
-PackParam(FromT from);
 
-template <>
-inline const AttributeMap PackParam<const AttributeMap &, const EGLint *>(const EGLint *attribs)
+
+
+
+template <typename PackedT,
+          typename FromT,
+          typename std::enable_if<!std::is_enum<PackedT>::value>::type *              = nullptr,
+          typename std::enable_if<std::is_same<FromT, const EGLint *>::value>::type * = nullptr>
+typename std::remove_reference<PackedT>::type PackParam(FromT attribs)
 {
     return AttributeMap::CreateFromIntArray(attribs);
 }
 
-
-
-#if defined(ANGLE_IS_64_BIT_CPU)
-template <>
-inline const AttributeMap PackParam<const AttributeMap &, const EGLAttrib *>(
-    const EGLAttrib *attribs)
+template <typename PackedT,
+          typename FromT,
+          typename std::enable_if<!std::is_enum<PackedT>::value>::type *                 = nullptr,
+          typename std::enable_if<!std::is_same<FromT, const EGLint *>::value>::type *   = nullptr,
+          typename std::enable_if<std::is_same<FromT, const EGLAttrib *>::value>::type * = nullptr>
+typename std::remove_reference<PackedT>::type PackParam(FromT attribs)
 {
     return AttributeMap::CreateFromAttribArray(attribs);
 }
-#endif  
 
-template <typename PackedT, typename FromT>
-inline typename std::enable_if<!std::is_enum<PackedT>::value,
-                               typename std::remove_reference<PackedT>::type>::type
-PackParam(FromT from)
+template <typename PackedT,
+          typename FromT,
+          typename std::enable_if<!std::is_enum<PackedT>::value>::type *                  = nullptr,
+          typename std::enable_if<!std::is_same<FromT, const EGLint *>::value>::type *    = nullptr,
+          typename std::enable_if<!std::is_same<FromT, const EGLAttrib *>::value>::type * = nullptr>
+typename std::remove_reference<PackedT>::type PackParam(FromT attribs)
 {
-    return static_cast<PackedT>(from);
+    return static_cast<PackedT>(attribs);
 }
+
 }  
 
 #define ANGLE_EGL_VALIDATE(THREAD, EP, OBJ, RETURN_TYPE, ...)                              \
@@ -179,6 +186,16 @@ PackParam(FromT from)
             THREAD->setError(ANGLE_LOCAL_VAR, FUNCNAME, LABELOBJECT);     \
             return RETVAL;                                                \
         }                                                                 \
+    } while (0)
+
+#define ANGLE_EGLBOOLEAN_TRY(EXPR)           \
+    do                                       \
+    {                                        \
+        EGLBoolean ANGLE_LOCAL_VAR = (EXPR); \
+        if (ANGLE_LOCAL_VAR != EGL_TRUE)     \
+        {                                    \
+            return ANGLE_LOCAL_VAR;          \
+        }                                    \
     } while (0)
 
 #endif  

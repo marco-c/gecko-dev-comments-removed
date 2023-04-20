@@ -22,16 +22,21 @@ const size_t kDefaultMaxProgramCacheMemoryBytes = 0;
 enum
 {
     
-    MAX_SAMPLE_MASK_WORDS = 2,
+
+    
+    IMPLEMENTATION_MAX_SAMPLE_MASK_WORDS = 1,
+    IMPLEMENTATION_MAX_SAMPLES           = 32,
 
     MAX_VERTEX_ATTRIBS         = 16,
     MAX_VERTEX_ATTRIB_BINDINGS = 16,
 
-    
     IMPLEMENTATION_MAX_VARYING_VECTORS = 32,
     IMPLEMENTATION_MAX_DRAW_BUFFERS    = 8,
     IMPLEMENTATION_MAX_FRAMEBUFFER_ATTACHMENTS =
         IMPLEMENTATION_MAX_DRAW_BUFFERS + 2,  
+
+    
+    IMPLEMENTATION_MAX_DUAL_SOURCE_DRAW_BUFFERS = 1,
 
     IMPLEMENTATION_MAX_VERTEX_SHADER_UNIFORM_BUFFERS   = 16,
     IMPLEMENTATION_MAX_GEOMETRY_SHADER_UNIFORM_BUFFERS = 16,
@@ -82,10 +87,14 @@ enum
     IMPLEMENTATION_MAX_SHADER_STORAGE_BUFFER_BINDINGS = 64,
 
     
-    IMPLEMENTATION_MAX_CLIP_DISTANCES = 32,
+    IMPLEMENTATION_MAX_CLIP_DISTANCES = 8,
 
     
     IMPLEMENTATION_MAX_FRAMEBUFFER_LAYERS = 256,
+
+    
+    
+    IMPLEMENTATION_MAX_PIXEL_LOCAL_STORAGE_PLANES = 8,
 };
 
 namespace limits
@@ -104,6 +113,11 @@ constexpr uint32_t kMinimumComputeStorageBuffers = 4;
 constexpr uint32_t kMinimumShaderUniformBlocks = 12;
 
 constexpr uint32_t kMinimumVertexOutputComponents = 64;
+
+
+
+constexpr uint32_t kMinTextureBufferOffsetAlignment = 256;
+
 }  
 
 }  

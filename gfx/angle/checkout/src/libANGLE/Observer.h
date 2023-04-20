@@ -51,9 +51,15 @@ enum class SubjectMessage
     
     SubjectMapped,
     SubjectUnmapped,
+    
+    
+    InternalMemoryAllocationChanged,
 
     
     SurfaceChanged,
+    
+    
+    SwapchainImageChanged,
 
     
     ProgramTextureOrImageBindingChanged,
@@ -61,9 +67,14 @@ enum class SubjectMessage
     ProgramRelinked,
     
     SamplerUniformsUpdated,
+    
+    ProgramUniformUpdated,
 
     
     StorageReleased,
+
+    
+    InitializationComplete,
 };
 
 
@@ -82,6 +93,9 @@ class ObserverBindingBase
     {}
     virtual ~ObserverBindingBase() {}
 
+    ObserverBindingBase(const ObserverBindingBase &other)            = default;
+    ObserverBindingBase &operator=(const ObserverBindingBase &other) = default;
+
     ObserverInterface *getObserver() const { return mObserver; }
     SubjectIndex getSubjectIndex() const { return mIndex; }
 
@@ -91,6 +105,8 @@ class ObserverBindingBase
     ObserverInterface *mObserver;
     SubjectIndex mIndex;
 };
+
+constexpr size_t kMaxFixedObservers = 8;
 
 
 class Subject : NonCopyable
@@ -102,13 +118,13 @@ class Subject : NonCopyable
     void onStateChange(SubjectMessage message) const;
     bool hasObservers() const;
     void resetObservers();
+    ANGLE_INLINE size_t getObserversCount() const { return mObservers.size(); }
 
     ANGLE_INLINE void addObserver(ObserverBindingBase *observer)
     {
         ASSERT(!IsInContainer(mObservers, observer));
         mObservers.push_back(observer);
     }
-
     ANGLE_INLINE void removeObserver(ObserverBindingBase *observer)
     {
         ASSERT(IsInContainer(mObservers, observer));
@@ -118,7 +134,6 @@ class Subject : NonCopyable
   private:
     
     
-    static constexpr size_t kMaxFixedObservers = 8;
     angle::FastVector<ObserverBindingBase *, kMaxFixedObservers> mObservers;
 };
 
@@ -126,6 +141,7 @@ class Subject : NonCopyable
 class ObserverBinding final : public ObserverBindingBase
 {
   public:
+    ObserverBinding();
     ObserverBinding(ObserverInterface *observer, SubjectIndex index);
     ~ObserverBinding() override;
     ObserverBinding(const ObserverBinding &other);

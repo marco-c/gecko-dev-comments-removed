@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+#include "libANGLE/renderer/RenderbufferImpl.h"
+
+namespace rx
+{
+
+angle::Result RenderbufferImpl::onLabelUpdate(const gl::Context *context)
+{
+    return angle::Result::Continue;
+}
+
+}  

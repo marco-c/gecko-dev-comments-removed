@@ -19,10 +19,14 @@ class TCompiler;
 class TIntermNode;
 class TSymbolTable;
 
-ANGLE_NO_DISCARD bool SimplifyLoopConditions(TCompiler *compiler,
-                                             TIntermNode *root,
-                                             unsigned int conditionsToSimplify,
-                                             TSymbolTable *symbolTable);
+[[nodiscard]] bool SimplifyLoopConditions(TCompiler *compiler,
+                                          TIntermNode *root,
+                                          TSymbolTable *symbolTable);
+
+[[nodiscard]] bool SimplifyLoopConditions(TCompiler *compiler,
+                                          TIntermNode *root,
+                                          unsigned int conditionsToSimplify,
+                                          TSymbolTable *symbolTable);
 }  
 
 #endif  

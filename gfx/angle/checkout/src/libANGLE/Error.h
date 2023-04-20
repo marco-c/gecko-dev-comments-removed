@@ -51,7 +51,7 @@ class Error;
 namespace egl
 {
 
-class ANGLE_NO_DISCARD Error final
+class [[nodiscard]] Error final
 {
   public:
     explicit inline Error(EGLint errorCode);
@@ -163,8 +163,7 @@ namespace angle
 
 
 
-enum class ANGLE_NO_DISCARD Result
-{
+enum class [[nodiscard]] Result{
     Continue,
     Stop,
     Incomplete,
@@ -204,4 +203,4 @@ inline bool IsError(bool value)
 
 #include "Error.inc"
 
-#endif  
+#endif

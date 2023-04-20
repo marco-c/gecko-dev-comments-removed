@@ -5,8 +5,8 @@
 
 
 
-#ifndef COMMON_VERSION_H_
-#define COMMON_VERSION_H_
+#ifndef COMMON_ANGLE_VERSION_H_
+#define COMMON_ANGLE_VERSION_H_
 
 #include "angle_commit.h"
 

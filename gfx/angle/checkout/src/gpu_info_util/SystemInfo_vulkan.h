@@ -9,14 +9,15 @@
 #ifndef GPU_INFO_UTIL_SYSTEM_INFO_VULKAN_H_
 #define GPU_INFO_UTIL_SYSTEM_INFO_VULKAN_H_
 
+#include "common/vulkan/vulkan_icd.h"
+
 namespace angle
 {
-
 struct SystemInfo;
 
 
 bool GetSystemInfoVulkan(SystemInfo *info);
-
+bool GetSystemInfoVulkanWithICD(SystemInfo *info, vk::ICD preferredICD);
 }  
 
 #endif  

@@ -26,7 +26,6 @@
 #include "compiler/translator/Pragma.h"
 #include "compiler/translator/SymbolTable.h"
 #include "compiler/translator/ValidateAST.h"
-#include "third_party/compiler/ArrayBoundsClamper.h"
 
 namespace sh
 {
@@ -35,6 +34,9 @@ class TCompiler;
 class TParseContext;
 #ifdef ANGLE_ENABLE_HLSL
 class TranslatorHLSL;
+#endif  
+#ifdef ANGLE_ENABLE_METAL
+class TranslatorMetalDirect;
 #endif  
 
 using SpecConstUsageBits = angle::PackedEnumBitSet<vk::SpecConstUsage, uint32_t>;
@@ -52,7 +54,7 @@ bool IsGLSL410OrOlder(ShShaderOutput output);
 bool RemoveInvariant(sh::GLenum shaderType,
                      int shaderVersion,
                      ShShaderOutput outputType,
-                     ShCompileOptions compileOptions);
+                     const ShCompileOptions &compileOptions);
 
 
 
@@ -66,11 +68,19 @@ class TShHandleBase
 #ifdef ANGLE_ENABLE_HLSL
     virtual TranslatorHLSL *getAsTranslatorHLSL() { return 0; }
 #endif  
+#ifdef ANGLE_ENABLE_METAL
+    virtual TranslatorMetalDirect *getAsTranslatorMetalDirect() { return nullptr; }
+#endif  
 
   protected:
     
     
     angle::PoolAllocator allocator;
+};
+
+struct TFunctionMetadata
+{
+    bool used = false;
 };
 
 
@@ -91,18 +101,20 @@ class TCompiler : public TShHandleBase
     
     TIntermBlock *compileTreeForTesting(const char *const shaderStrings[],
                                         size_t numStrings,
-                                        ShCompileOptions compileOptions);
+                                        const ShCompileOptions &compileOptions);
 
     bool compile(const char *const shaderStrings[],
                  size_t numStrings,
-                 ShCompileOptions compileOptions);
+                 const ShCompileOptions &compileOptions);
 
     
     int getShaderVersion() const { return mShaderVersion; }
     TInfoSink &getInfoSink() { return mInfoSink; }
 
+    bool specifyEarlyFragmentTests() { return mEarlyFragmentTestsSpecified = true; }
     bool isEarlyFragmentTestsSpecified() const { return mEarlyFragmentTestsSpecified; }
-    bool isEarlyFragmentTestsOptimized() const { return mEarlyFragmentTestsOptimized; }
+    bool hasDiscard() const { return mHasDiscard; }
+    bool enablesPerSampleShading() const { return mEnablesPerSampleShading; }
     SpecConstUsageBits getSpecConstUsageBits() const { return mSpecConstUsageBits; }
 
     bool isComputeShaderLocalSizeDeclared() const { return mComputeShaderLocalSizeDeclared; }
@@ -129,12 +141,18 @@ class TCompiler : public TShHandleBase
     TSymbolTable &getSymbolTable() { return mSymbolTable; }
     ShShaderSpec getShaderSpec() const { return mShaderSpec; }
     ShShaderOutput getOutputType() const { return mOutputType; }
+    ShBuiltInResources getBuiltInResources() const { return mResources; }
     const std::string &getBuiltInResourcesString() const { return mBuiltInResourcesString; }
 
-    bool shouldRunLoopAndIndexingValidation(ShCompileOptions compileOptions) const;
+    bool isHighPrecisionSupported() const;
+
+    bool shouldRunLoopAndIndexingValidation(const ShCompileOptions &compileOptions) const;
+    bool shouldLimitTypeSizes() const;
 
     
     const ShBuiltInResources &getResources() const;
+
+    const TPragma &getPragma() const { return mPragma; }
 
     int getGeometryShaderMaxVertices() const { return mGeometryShaderMaxVertices; }
     int getGeometryShaderInvocations() const { return mGeometryShaderInvocations; }
@@ -167,41 +185,47 @@ class TCompiler : public TShHandleBase
         return mTessEvaluationShaderInputPointType;
     }
 
+    bool hasAnyPreciseType() const { return mHasAnyPreciseType; }
+
+    AdvancedBlendEquations getAdvancedBlendEquations() const { return mAdvancedBlendEquations; }
+
+    bool hasPixelLocalStorageUniforms() const { return mHasPixelLocalStorageUniforms; }
+
     unsigned int getSharedMemorySize() const;
 
     sh::GLenum getShaderType() const { return mShaderType; }
 
+    
     bool validateAST(TIntermNode *root);
+    
+    
+    bool disableValidateFunctionCall();
+    void restoreValidateFunctionCall(bool enable);
+    bool disableValidateVariableReferences();
+    void restoreValidateVariableReferences(bool enable);
+    
+    
+    void enableValidateNoMoreTransformations();
 
   protected:
     
     virtual void initBuiltInFunctionEmulator(BuiltInFunctionEmulator *emu,
-                                             ShCompileOptions compileOptions)
+                                             const ShCompileOptions &compileOptions)
     {}
     
-    ANGLE_NO_DISCARD virtual bool translate(TIntermBlock *root,
-                                            ShCompileOptions compileOptions,
-                                            PerformanceDiagnostics *perfDiagnostics) = 0;
+    [[nodiscard]] virtual bool translate(TIntermBlock *root,
+                                         const ShCompileOptions &compileOptions,
+                                         PerformanceDiagnostics *perfDiagnostics) = 0;
     
     const TExtensionBehavior &getExtensionBehavior() const;
     const char *getSourcePath() const;
-    const TPragma &getPragma() const { return mPragma; }
-    void writePragma(ShCompileOptions compileOptions);
     
     bool isVaryingDefined(const char *varyingName);
 
-    const ArrayBoundsClamper &getArrayBoundsClamper() const;
-    ShArrayIndexClampingStrategy getArrayIndexClampingStrategy() const;
     const BuiltInFunctionEmulator &getBuiltInFunctionEmulator() const;
 
     virtual bool shouldFlattenPragmaStdglInvariantAll() = 0;
-    virtual bool shouldCollectVariables(ShCompileOptions compileOptions);
-    
-    
-    bool emulatePrecisionIfNeeded(TIntermBlock *root,
-                                  TInfoSinkBase &sink,
-                                  bool *isNeeded,
-                                  const ShShaderOutput outputLanguage);
+    virtual bool shouldCollectVariables(const ShCompileOptions &compileOptions);
 
     bool wereVariablesCollected() const;
     std::vector<sh::ShaderVariable> mAttributes;
@@ -230,15 +254,15 @@ class TCompiler : public TShHandleBase
     
     
     
-    ANGLE_NO_DISCARD bool useAllMembersInUnusedStandardAndSharedBlocks(TIntermBlock *root);
+    [[nodiscard]] bool useAllMembersInUnusedStandardAndSharedBlocks(TIntermBlock *root);
     
     
-    ANGLE_NO_DISCARD bool initializeOutputVariables(TIntermBlock *root);
+    [[nodiscard]] bool initializeOutputVariables(TIntermBlock *root);
     
     
     
     
-    ANGLE_NO_DISCARD bool initializeGLPosition(TIntermBlock *root);
+    [[nodiscard]] bool initializeGLPosition(TIntermBlock *root);
     
     bool limitExpressionComplexity(TIntermBlock *root);
     
@@ -254,12 +278,11 @@ class TCompiler : public TShHandleBase
     bool mGLPositionInitialized;
 
     
-    class UnusedPredicate;
-    void pruneUnusedFunctions(TIntermBlock *root);
+    bool pruneUnusedFunctions(TIntermBlock *root);
 
     TIntermBlock *compileTreeImpl(const char *const shaderStrings[],
                                   size_t numStrings,
-                                  const ShCompileOptions compileOptions);
+                                  const ShCompileOptions &compileOptions);
 
     
     
@@ -271,20 +294,16 @@ class TCompiler : public TShHandleBase
     
     bool checkAndSimplifyAST(TIntermBlock *root,
                              const TParseContext &parseContext,
-                             ShCompileOptions compileOptions);
+                             const ShCompileOptions &compileOptions);
+
+    bool postParseChecks(const TParseContext &parseContext);
 
     sh::GLenum mShaderType;
     ShShaderSpec mShaderSpec;
     ShShaderOutput mOutputType;
 
-    struct FunctionMetadata
-    {
-        FunctionMetadata() : used(false) {}
-        bool used;
-    };
-
     CallDAG mCallDag;
-    std::vector<FunctionMetadata> mFunctionMetadata;
+    std::vector<TFunctionMetadata> mFunctionMetadata;
 
     ShBuiltInResources mResources;
     std::string mBuiltInResourcesString;
@@ -295,7 +314,6 @@ class TCompiler : public TShHandleBase
     
     TExtensionBehavior mExtensionBehavior;
 
-    ArrayBoundsClamper mArrayBoundsClamper;
     BuiltInFunctionEmulator mBuiltInFunctionEmulator;
 
     
@@ -306,7 +324,13 @@ class TCompiler : public TShHandleBase
 
     
     bool mEarlyFragmentTestsSpecified;
-    bool mEarlyFragmentTestsOptimized;
+
+    
+    bool mHasDiscard;
+
+    
+    
+    bool mEnablesPerSampleShading;
 
     
     bool mComputeShaderLocalSizeDeclared;
@@ -328,6 +352,14 @@ class TCompiler : public TShHandleBase
     TLayoutTessEvaluationType mTessEvaluationShaderInputOrderingType;
     TLayoutTessEvaluationType mTessEvaluationShaderInputPointType;
 
+    bool mHasAnyPreciseType;
+
+    
+    AdvancedBlendEquations mAdvancedBlendEquations;
+
+    
+    bool mHasPixelLocalStorageUniforms;
+
     
     NameMap mNameMap;
 
@@ -348,13 +380,17 @@ class TCompiler : public TShHandleBase
 TCompiler *ConstructCompiler(sh::GLenum type, ShShaderSpec spec, ShShaderOutput output);
 void DeleteCompiler(TCompiler *);
 
-void EmitEarlyFragmentTestsGLSL(const TCompiler &, TInfoSinkBase &sink);
-void EmitWorkGroupSizeGLSL(const TCompiler &, TInfoSinkBase &sink);
-void EmitMultiviewGLSL(const TCompiler &,
-                       const ShCompileOptions &,
-                       const TExtension,
-                       const TBehavior,
-                       TInfoSinkBase &sink);
+struct ShaderDumpHeader
+{
+    uint32_t type;
+    uint32_t spec;
+    uint32_t output;
+    uint8_t basicCompileOptions[32];
+    uint8_t metalCompileOptions[32];
+    uint8_t plsCompileOptions[32];
+    uint8_t padding[20];
+};
+static_assert(sizeof(ShaderDumpHeader) == 128);
 
 }  
 

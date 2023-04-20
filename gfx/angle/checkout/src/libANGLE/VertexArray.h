@@ -32,6 +32,8 @@ namespace gl
 {
 class Buffer;
 
+constexpr uint32_t kElementArrayBufferIndex = MAX_VERTEX_ATTRIBS;
+
 class VertexArrayState final : angle::NonCopyable
 {
   public:
@@ -90,6 +92,7 @@ class VertexArrayState final : angle::NonCopyable
     std::vector<VertexBinding> mVertexBindings;
     AttributesMask mEnabledAttributesMask;
     ComponentTypeMask mVertexAttributesTypeMask;
+    AttributesMask mLastSyncedEnabledAttributesMask;
 
     
     friend class State;
@@ -105,6 +108,17 @@ class VertexArrayState final : angle::NonCopyable
     AttributesMask mCachedMappedArrayBuffers;
     AttributesMask mCachedMutableOrImpersistentArrayBuffers;
     AttributesMask mCachedInvalidMappedArrayBuffer;
+};
+
+class VertexArrayBufferContentsObservers final : angle::NonCopyable
+{
+  public:
+    VertexArrayBufferContentsObservers(VertexArray *vertexArray);
+    void enableForBuffer(Buffer *buffer, uint32_t bufferIndex);
+    void disableForBuffer(Buffer *buffer, uint32_t bufferIndex);
+
+  private:
+    VertexArray *mVertexArray;
 };
 
 class VertexArray final : public angle::ObserverInterface,
@@ -128,23 +142,30 @@ class VertexArray final : public angle::ObserverInterface,
         DIRTY_BIT_ELEMENT_ARRAY_BUFFER_DATA,
 
         
-        DIRTY_BIT_ATTRIB_0,
-        DIRTY_BIT_ATTRIB_MAX = DIRTY_BIT_ATTRIB_0 + gl::MAX_VERTEX_ATTRIBS,
-
-        
-        DIRTY_BIT_BINDING_0   = DIRTY_BIT_ATTRIB_MAX,
+        DIRTY_BIT_BINDING_0,
         DIRTY_BIT_BINDING_MAX = DIRTY_BIT_BINDING_0 + gl::MAX_VERTEX_ATTRIB_BINDINGS,
 
         
         DIRTY_BIT_BUFFER_DATA_0   = DIRTY_BIT_BINDING_MAX,
         DIRTY_BIT_BUFFER_DATA_MAX = DIRTY_BIT_BUFFER_DATA_0 + gl::MAX_VERTEX_ATTRIB_BINDINGS,
 
-        DIRTY_BIT_UNKNOWN = DIRTY_BIT_BUFFER_DATA_MAX,
+        
+        DIRTY_BIT_ATTRIB_0   = DIRTY_BIT_BUFFER_DATA_MAX,
+        DIRTY_BIT_ATTRIB_MAX = DIRTY_BIT_ATTRIB_0 + gl::MAX_VERTEX_ATTRIBS,
+
+        DIRTY_BIT_UNKNOWN = DIRTY_BIT_ATTRIB_MAX,
         DIRTY_BIT_MAX     = DIRTY_BIT_UNKNOWN,
     };
 
     
     static_assert(DIRTY_BIT_MAX <= 64, "Too many vertex array dirty bits.");
+    
+    
+    
+    static_assert(DIRTY_BIT_BINDING_0 < DIRTY_BIT_BUFFER_DATA_0,
+                  "BINDING dity bits should come before DATA.");
+    static_assert(DIRTY_BIT_BUFFER_DATA_0 < DIRTY_BIT_ATTRIB_0,
+                  "DATA dity bits should come before ATTRIB.");
 
     enum DirtyAttribBitType
     {
@@ -165,11 +186,12 @@ class VertexArray final : public angle::ObserverInterface,
         DIRTY_BINDING_MAX = DIRTY_BINDING_UNKNOWN,
     };
 
-    using DirtyBits             = angle::BitSet<DIRTY_BIT_MAX>;
-    using DirtyAttribBits       = angle::BitSet<DIRTY_ATTRIB_MAX>;
-    using DirtyBindingBits      = angle::BitSet<DIRTY_BINDING_MAX>;
-    using DirtyAttribBitsArray  = std::array<DirtyAttribBits, gl::MAX_VERTEX_ATTRIBS>;
-    using DirtyBindingBitsArray = std::array<DirtyBindingBits, gl::MAX_VERTEX_ATTRIB_BINDINGS>;
+    using DirtyBits                = angle::BitSet<DIRTY_BIT_MAX>;
+    using DirtyAttribBits          = angle::BitSet<DIRTY_ATTRIB_MAX>;
+    using DirtyBindingBits         = angle::BitSet<DIRTY_BINDING_MAX>;
+    using DirtyAttribBitsArray     = std::array<DirtyAttribBits, gl::MAX_VERTEX_ATTRIBS>;
+    using DirtyBindingBitsArray    = std::array<DirtyBindingBits, gl::MAX_VERTEX_ATTRIB_BINDINGS>;
+    using DirtyObserverBindingBits = angle::BitSet<gl::MAX_VERTEX_ATTRIB_BINDINGS>;
 
     VertexArray(rx::GLImplFactory *factory,
                 VertexArrayID id,
@@ -180,7 +202,7 @@ class VertexArray final : public angle::ObserverInterface,
 
     VertexArrayID id() const { return mId; }
 
-    void setLabel(const Context *context, const std::string &label) override;
+    angle::Result setLabel(const Context *context, const std::string &label) override;
     const std::string &getLabel() const override;
 
     const VertexBinding &getVertexBinding(size_t bindingIndex) const;
@@ -225,7 +247,7 @@ class VertexArray final : public angle::ObserverInterface,
                           GLintptr offset,
                           GLsizei stride);
     void setVertexAttribBinding(const Context *context, size_t attribIndex, GLuint bindingIndex);
-    void setVertexBindingDivisor(size_t bindingIndex, GLuint divisor);
+    void setVertexBindingDivisor(const Context *context, size_t bindingIndex, GLuint divisor);
 
     Buffer *getElementArrayBuffer() const { return mState.getElementArrayBuffer(); }
     size_t getMaxAttribs() const { return mState.getMaxAttribs(); }
@@ -265,6 +287,7 @@ class VertexArray final : public angle::ObserverInterface,
 
     
     void onSubjectStateChange(angle::SubjectIndex index, angle::SubjectMessage message) override;
+    void onBufferContentsChange(uint32_t bufferIndex);
 
     static size_t GetVertexIndexFromDirtyBit(size_t dirtyBit);
 
@@ -305,6 +328,7 @@ class VertexArray final : public angle::ObserverInterface,
 
     void setDirtyAttribBit(size_t attribIndex, DirtyAttribBitType dirtyAttribBit);
     void setDirtyBindingBit(size_t bindingIndex, DirtyBindingBitType dirtyBindingBit);
+    void clearDirtyAttribBit(size_t attribIndex, DirtyAttribBitType dirtyAttribBit);
 
     DirtyBitType getDirtyBitFromIndex(bool contentsChanged, angle::SubjectIndex index) const;
     void setDependentDirtyBit(bool contentsChanged, angle::SubjectIndex index);
@@ -348,6 +372,9 @@ class VertexArray final : public angle::ObserverInterface,
                               GLintptr offset,
                               GLsizei stride);
 
+    void onBind(const Context *context);
+    void onUnbind(const Context *context);
+
     VertexArrayID mId;
 
     VertexArrayState mState;
@@ -359,6 +386,9 @@ class VertexArray final : public angle::ObserverInterface,
     rx::VertexArrayImpl *mVertexArray;
 
     std::vector<angle::ObserverBinding> mArrayBufferObserverBindings;
+    
+    
+    DirtyObserverBindingBits mDirtyObserverBindingBits;
 
     AttributesMask mCachedTransformFeedbackConflictedBindingsMask;
 
@@ -398,6 +428,7 @@ class VertexArray final : public angle::ObserverInterface,
 
     mutable IndexRangeCache mIndexRangeCache;
     bool mBufferAccessValidationEnabled;
+    VertexArrayBufferContentsObservers mContentsObservers;
 };
 
 }  

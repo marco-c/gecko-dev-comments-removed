@@ -1,11 +1,11 @@
-//
-// Copyright 2013 The ANGLE Project Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-//
-// ValidateOutputs validates fragment shader outputs. It checks for conflicting locations,
-// out-of-range locations, that locations are specified when using multiple outputs, and YUV output
-// validity.
+
+
+
+
+
+
+
+
 
 #include "compiler/translator/ValidateOutputs.h"
 
@@ -44,7 +44,7 @@ class ValidateOutputsTraverser : public TIntermTraverser
     OutputVector mOutputs;
     OutputVector mUnspecifiedLocationOutputs;
     OutputVector mYuvOutputs;
-    std::set<int> mVisitedSymbols;  // Visited symbol ids.
+    std::set<int> mVisitedSymbols;  
 };
 
 ValidateOutputsTraverser::ValidateOutputsTraverser(const TExtensionBehavior &extBehavior,
@@ -82,7 +82,7 @@ void ValidateOutputsTraverser::visitSymbol(TIntermSymbol *symbol)
             mUnspecifiedLocationOutputs.push_back(symbol);
         }
     }
-    else if (qualifier == EvqFragDepth || qualifier == EvqFragDepthEXT)
+    else if (qualifier == EvqFragDepth)
     {
         mUsesFragDepth = true;
     }
@@ -97,7 +97,7 @@ void ValidateOutputsTraverser::validate(TDiagnostics *diagnostics) const
     for (const auto &symbol : mOutputs)
     {
         const TType &type = symbol->getType();
-        ASSERT(!type.isArrayOfArrays());  // Disallowed in GLSL ES 3.10 section 4.3.6.
+        ASSERT(!type.isArrayOfArrays());  
         const size_t elementCount =
             static_cast<size_t>(type.isArray() ? type.getOutermostArraySize() : 1u);
         const size_t location = static_cast<size_t>(type.getLayoutQualifier().location);
@@ -105,8 +105,8 @@ void ValidateOutputsTraverser::validate(TDiagnostics *diagnostics) const
         ASSERT(type.getLayoutQualifier().location != -1);
 
         OutputVector *validOutputsToUse = &validOutputs;
-        // The default index is 0, so we only assign the output to secondary outputs in case the
-        // index is explicitly set to 1.
+        
+        
         if (type.getLayoutQualifier().index == 1)
         {
             validOutputsToUse = &validSecondaryOutputs;
@@ -167,7 +167,7 @@ void ValidateOutputsTraverser::validate(TDiagnostics *diagnostics) const
     }
 }
 
-}  // anonymous namespace
+}  
 
 bool ValidateOutputs(TIntermBlock *root,
                      const TExtensionBehavior &extBehavior,
@@ -181,4 +181,4 @@ bool ValidateOutputs(TIntermBlock *root,
     return (diagnostics->numErrors() == numErrorsBefore);
 }
 
-}  // namespace sh
+}  

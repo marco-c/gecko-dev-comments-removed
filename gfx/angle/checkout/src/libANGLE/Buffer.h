@@ -69,6 +69,18 @@ class BufferState final : angle::NonCopyable
     GLboolean mExternal;
 };
 
+
+struct ContentsObserver
+{
+    VertexArray *vertexArray = nullptr;
+    uint32_t bufferIndex     = 0;
+};
+
+ANGLE_INLINE bool operator==(const ContentsObserver &lhs, const ContentsObserver &rhs)
+{
+    return lhs.vertexArray == rhs.vertexArray && lhs.bufferIndex == rhs.bufferIndex;
+}
+
 class Buffer final : public RefCountObject<BufferID>,
                      public LabeledObject,
                      public angle::ObserverInterface,
@@ -79,7 +91,7 @@ class Buffer final : public RefCountObject<BufferID>,
     ~Buffer() override;
     void onDestroy(const Context *context) override;
 
-    void setLabel(const Context *context, const std::string &label) override;
+    angle::Result setLabel(const Context *context, const std::string &label) override;
     const std::string &getLabel() const override;
 
     angle::Result bufferStorageExternal(Context *context,
@@ -128,6 +140,10 @@ class Buffer final : public RefCountObject<BufferID>,
     GLbitfield getAccessFlags() const { return mState.mAccessFlags; }
     GLenum getAccess() const { return mState.mAccess; }
     GLboolean isMapped() const { return mState.mMapped; }
+    bool isPersistentlyMapped() const
+    {
+        return (mState.mStorageExtUsageFlags & GL_MAP_PERSISTENT_BIT_EXT) != 0;
+    }
     void *getMapPointer() const { return mState.mMapPointer; }
     GLint64 getMapOffset() const { return mState.mMapOffset; }
     GLint64 getMapLength() const { return mState.mMapLength; }
@@ -141,10 +157,15 @@ class Buffer final : public RefCountObject<BufferID>,
 
     rx::BufferImpl *getImplementation() const { return mImpl; }
 
-    ANGLE_INLINE bool isBound() const { return mState.mBindingCount > 0; }
-
-    ANGLE_INLINE bool isBoundForTransformFeedbackAndOtherUse() const
+    
+    
+    ANGLE_INLINE bool hasWebGLXFBBindingConflict(bool isWebGL) const
     {
+        if (!isWebGL)
+        {
+            return false;
+        }
+
         
         
         
@@ -165,6 +186,9 @@ class Buffer final : public RefCountObject<BufferID>,
     
     void onSubjectStateChange(angle::SubjectIndex index, angle::SubjectMessage message) override;
 
+    void addContentsObserver(VertexArray *vertexArray, uint32_t bufferIndex);
+    void removeContentsObserver(VertexArray *vertexArray, uint32_t bufferIndex);
+
   private:
     angle::Result bufferDataImpl(Context *context,
                                  BufferBinding target,
@@ -178,10 +202,14 @@ class Buffer final : public RefCountObject<BufferID>,
                                          GLsizeiptr size,
                                          GLbitfield flags);
 
+    void onContentsChange();
+    size_t getContentsObserverIndex(VertexArray *vertexArray, uint32_t bufferIndex) const;
+
     BufferState mState;
     rx::BufferImpl *mImpl;
     angle::ObserverBinding mImplObserver;
 
+    angle::FastVector<ContentsObserver, angle::kMaxFixedObservers> mContentsObservers;
     mutable IndexRangeCache mIndexRangeCache;
 };
 

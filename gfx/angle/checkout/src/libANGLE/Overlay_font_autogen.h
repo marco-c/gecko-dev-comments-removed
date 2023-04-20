@@ -14,16 +14,14 @@ namespace gl
 {
 namespace overlay
 {
-constexpr int kFontCount                    = 3;
-constexpr int kFontGlyphWidths[kFontCount]  = {22, 14, 8};
-constexpr int kFontGlyphHeights[kFontCount] = {43, 28, 17};
-constexpr int kFontCharactersPerRow         = 32;
-constexpr int kFontCharactersPerCol         = 3;
-constexpr int kFontCharacters               = kFontCharactersPerRow * kFontCharactersPerCol;
-constexpr int kFontImageWidth               = 22 * kFontCharactersPerRow;
-constexpr int kFontImageHeight              = 43 * kFontCharactersPerCol;
-constexpr int kFontLayerLarge               = 0;
-constexpr int kFontLayerMedium              = 1;
-constexpr int kFontLayerSmall               = 2;
+constexpr uint32_t kFontMipCount                     = 2;
+constexpr uint32_t kFontCharacters                   = 95;
+constexpr uint32_t kFontGlyphWidth                   = 17;
+constexpr uint32_t kFontGlyphHeight                  = 34;
+constexpr uint32_t kFontMipDataSize[kFontMipCount]   = {54910, 12920};
+constexpr uint32_t kFontMipDataOffset[kFontMipCount] = {0, 54910};
+constexpr uint32_t kFontTotalDataSize                = 67830;
+constexpr uint32_t kFontMipLarge                     = 0;
+constexpr uint32_t kFontMipSmall                     = 1;
 }  
 }  

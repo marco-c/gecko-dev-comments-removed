@@ -23,7 +23,7 @@ void InitExtensionBehavior(const ShBuiltInResources &resources,
 
 void ResetExtensionBehavior(const ShBuiltInResources &resources,
                             TExtensionBehavior &extensionBehavior,
-                            const ShCompileOptions compileOptions);
+                            const ShCompileOptions &compileOptions);
 
 }  
 

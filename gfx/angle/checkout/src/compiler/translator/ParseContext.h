@@ -37,7 +37,7 @@ class TParseContext : angle::NonCopyable
                   TExtensionBehavior &ext,
                   sh::GLenum type,
                   ShShaderSpec spec,
-                  ShCompileOptions options,
+                  const ShCompileOptions &options,
                   bool checksPrecErrors,
                   TDiagnostics *diagnostics,
                   const ShBuiltInResources &resources,
@@ -76,6 +76,8 @@ class TParseContext : angle::NonCopyable
     }
 
     bool isEarlyFragmentTestsSpecified() const { return mEarlyFragmentTestsSpecified; }
+    bool hasDiscard() const { return mHasDiscard; }
+    bool isSampleQualifierSpecified() const { return mSampleQualifierSpecified; }
 
     void setLoopNestingLevel(int loopNestintLevel) { mLoopNestingLevel = loopNestintLevel; }
 
@@ -89,6 +91,11 @@ class TParseContext : angle::NonCopyable
     sh::WorkGroupSize getComputeShaderLocalSize() const;
 
     int getNumViews() const { return mNumViews; }
+
+    const std::map<int, TLayoutImageInternalFormat> &pixelLocalStorageBindings() const
+    {
+        return mPLSBindings;
+    }
 
     void enterFunctionDeclaration() { mDeclaringFunction = true; }
 
@@ -192,6 +199,12 @@ class TParseContext : angle::NonCopyable
                                         const TSourceLoc &qualifierLocation);
     void checkLocalVariableConstStorageQualifier(const TQualifierWrapperBase &qualifier);
     void checkTCSOutVarIndexIsValid(TIntermBinary *binaryExpression, const TSourceLoc &location);
+
+    void checkAdvancedBlendEquationsNotSpecified(
+        const TSourceLoc &location,
+        const AdvancedBlendEquations &advancedBlendEquations,
+        const TQualifier &qualifier);
+
     const TPragma &pragma() const { return mDirectiveHandler.pragma(); }
     const TExtensionBehavior &extensionBehavior() const
     {
@@ -204,6 +217,10 @@ class TParseContext : angle::NonCopyable
                                const char *name,
                                const char *value,
                                bool stdgl);
+
+    
+    
+    void adjustRedeclaredBuiltInType(const ImmutableString &identifier, TType *type);
 
     
     
@@ -489,6 +506,15 @@ class TParseContext : angle::NonCopyable
         return mTessEvaluationShaderInputPointType;
     }
 
+    const TVector<TType *> &getDeferredArrayTypesToSize() const
+    {
+        return mDeferredArrayTypesToSize;
+    }
+
+    void markShaderHasPrecise() { mHasAnyPreciseType = true; }
+    bool hasAnyPreciseType() const { return mHasAnyPreciseType; }
+    AdvancedBlendEquations getAdvancedBlendEquations() const { return mAdvancedBlendEquations; }
+
     ShShaderOutput getOutputType() const { return mOutputType; }
 
     
@@ -565,6 +591,7 @@ class TParseContext : angle::NonCopyable
                                   int binding,
                                   int arraySize);
     void checkAtomicCounterBindingIsValid(const TSourceLoc &location, int binding);
+    void checkPixelLocalStorageBindingIsValid(const TSourceLoc &, const TType &);
 
     void checkUniformLocationInRange(const TSourceLoc &location,
                                      int objectLocationCount,
@@ -652,6 +679,40 @@ class TParseContext : angle::NonCopyable
     bool parseTessEvaluationShaderInputLayoutQualifier(const TTypeQualifier &typeQualifier);
 
     
+    enum class PLSIllegalOperations
+    {
+        
+        
+        
+        
+        
+        
+        Discard,
+
+        
+        
+        
+        
+        
+        ReturnFromMain,
+
+        
+        
+        
+        
+        
+        AssignFragDepth,
+        AssignSampleMask
+    };
+
+    
+    
+    
+    
+    
+    void errorIfPLSDeclared(const TSourceLoc &, PLSIllegalOperations);
+
+    
     
     
     bool mDeferredNonEmptyDeclarationErrorCheck;
@@ -672,6 +733,8 @@ class TParseContext : angle::NonCopyable
     bool mFragmentPrecisionHighOnESSL1;  
                                          
     bool mEarlyFragmentTestsSpecified;   
+    bool mHasDiscard;                    
+    bool mSampleQualifierSpecified;      
     TLayoutMatrixPacking mDefaultUniformMatrixPacking;
     TLayoutBlockStorage mDefaultUniformBlockStorage;
     TLayoutMatrixPacking mDefaultBufferMatrixPacking;
@@ -705,7 +768,16 @@ class TParseContext : angle::NonCopyable
     bool mDeclaringFunction;
 
     
+    bool mDeclaringMain;
+
+    
     std::map<int, AtomicCounterBindingState> mAtomicCounterBindingStates;
+
+    
+    std::map<int, TLayoutImageInternalFormat> mPLSBindings;
+
+    
+    std::vector<std::tuple<const TSourceLoc, PLSIllegalOperations>> mPLSPotentialErrors;
 
     
     TLayoutPrimitiveType mGeometryShaderInputPrimitiveType;
@@ -722,6 +794,13 @@ class TParseContext : angle::NonCopyable
     TLayoutTessEvaluationType mTessEvaluationShaderInputVertexSpacingType;
     TLayoutTessEvaluationType mTessEvaluationShaderInputOrderingType;
     TLayoutTessEvaluationType mTessEvaluationShaderInputPointType;
+    
+    
+    TVector<TType *> mDeferredArrayTypesToSize;
+    
+    bool mHasAnyPreciseType;
+
+    AdvancedBlendEquations mAdvancedBlendEquations;
 
     
     bool mFunctionBodyNewScope;
