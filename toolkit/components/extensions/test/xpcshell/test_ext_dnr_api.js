@@ -11,14 +11,27 @@ const PREF_DNR_FEEDBACK_DEFAULT_VALUE = Services.prefs.getBoolPref(
   false
 );
 
+
+const kTestMatchOutcomeNotAllowed = "kTestMatchOutcomeNotAllowed";
+
 async function testAvailability({
   allowDNRFeedback = false,
   testExpectations,
   ...extensionData
 }) {
-  function background(testExpectations) {
+  async function background(testExpectations) {
     let {
+      
+      
+      
       declarativeNetRequest_available = false,
+      
+      
+      
+      
+      
+      
+      
       testMatchOutcome_available = false,
     } = testExpectations;
     browser.test.assertEq(
@@ -26,11 +39,29 @@ async function testAvailability({
       !!browser.declarativeNetRequest,
       "declarativeNetRequest API namespace availability"
     );
-    browser.test.assertEq(
-      testMatchOutcome_available,
-      !!browser.declarativeNetRequest?.testMatchOutcome,
-      "declarativeNetRequest.testMatchOutcome availability"
-    );
+
+    
+    const dummyRequest = { url: "https://example.com/", type: "other" };
+
+    if (!testMatchOutcome_available) {
+      browser.test.assertEq(
+        undefined,
+        browser.declarativeNetRequest?.testMatchOutcome,
+        "declarativeNetRequest.testMatchOutcome availability"
+      );
+    } else if (testMatchOutcome_available === "kTestMatchOutcomeNotAllowed") {
+      await browser.test.assertRejects(
+        browser.declarativeNetRequest.testMatchOutcome(dummyRequest),
+        `declarativeNetRequest.testMatchOutcome is only available when the "extensions.dnr.feedback" preference is set to true.`,
+        "declarativeNetRequest.testMatchOutcome is unavailable"
+      );
+    } else {
+      browser.test.assertDeepEq(
+        { matchedRules: [] },
+        await browser.declarativeNetRequest.testMatchOutcome(dummyRequest),
+        "declarativeNetRequest.testMatchOutcome is available"
+      );
+    }
     browser.test.sendMessage("done");
   }
   let extension = ExtensionTestUtils.loadExtension({
@@ -106,6 +137,7 @@ add_task(async function dnr_feedback_apis_disabled_by_default() {
       allowDNRFeedback: PREF_DNR_FEEDBACK_DEFAULT_VALUE,
       testExpectations: {
         declarativeNetRequest_available: true,
+        testMatchOutcome_available: kTestMatchOutcomeNotAllowed,
       },
       manifest: {
         permissions: [
@@ -118,14 +150,12 @@ add_task(async function dnr_feedback_apis_disabled_by_default() {
   });
 
   AddonTestUtils.checkMessages(messages, {
-    expected: [
-      {
-        message: /Reading manifest: Invalid extension permission: declarativeNetRequestFeedback/,
-      },
-    ],
     forbidden: [
       {
         message: /Reading manifest: Invalid extension permission: declarativeNetRequest$/,
+      },
+      {
+        message: /Reading manifest: Invalid extension permission: declarativeNetRequestFeedback/,
       },
       {
         message: /Reading manifest: Invalid extension permission: declarativeNetRequestWithHostAccess/,
@@ -251,7 +281,7 @@ add_task(async function declarativeNetRequestFeedback_without_feature() {
     testExpectations: {
       declarativeNetRequest_available: true,
       
-      testMatchOutcome_available: false,
+      testMatchOutcome_available: kTestMatchOutcomeNotAllowed,
     },
     manifest: {
       permissions: ["declarativeNetRequest", "declarativeNetRequestFeedback"],

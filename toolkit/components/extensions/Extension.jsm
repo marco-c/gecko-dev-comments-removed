@@ -219,7 +219,6 @@ if (
 }
 
 const PREF_DNR_ENABLED = "extensions.dnr.enabled";
-const PREF_DNR_FEEDBACK = "extensions.dnr.feedback";
 
 
 
@@ -283,14 +282,6 @@ function isDNRPermissionAllowed(perm) {
     return false;
   }
 
-  
-  
-  if (
-    perm === "declarativeNetRequestFeedback" &&
-    !Services.prefs.getBoolPref(PREF_DNR_FEEDBACK, false)
-  ) {
-    return false;
-  }
   return true;
 }
 
