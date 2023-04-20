@@ -9,6 +9,7 @@
 #include "nsISupportsImpl.h"
 #include "Units.h"
 
+class nsIFrame;
 class nsPresContext;
 
 namespace mozilla {
@@ -29,7 +30,7 @@ class NativeMenu {
   
   
   
-  virtual void ShowAsContextMenu(nsPresContext* aPc,
+  virtual void ShowAsContextMenu(nsIFrame* aClickedFrame,
                                  const CSSIntPoint& aPosition) = 0;
 
   
