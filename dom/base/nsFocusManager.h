@@ -214,8 +214,7 @@ class nsFocusManager final : public nsIFocusManager,
 
 
   MOZ_CAN_RUN_SCRIPT nsresult SetFocusedWindowWithCallerType(
-      mozIDOMWindowProxy* aWindowToFocus, mozilla::dom::CallerType aCallerType,
-      uint64_t aActionId);
+      mozIDOMWindowProxy* aWindowToFocus, mozilla::dom::CallerType aCallerType);
 
   
 
@@ -315,9 +314,12 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  MOZ_CAN_RUN_SCRIPT void SetFocusInner(mozilla::dom::Element* aNewContent,
-                                        int32_t aFlags, bool aFocusChanged,
-                                        bool aAdjustWidget, uint64_t aActionId);
+
+
+
+  MOZ_CAN_RUN_SCRIPT Maybe<uint64_t> SetFocusInner(
+      mozilla::dom::Element* aNewContent, int32_t aFlags, bool aFocusChanged,
+      bool aAdjustWidget);
 
   
 
