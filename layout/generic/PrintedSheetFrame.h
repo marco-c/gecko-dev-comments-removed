@@ -27,6 +27,14 @@ class PrintedSheetFrame final : public nsContainerFrame {
   void SetSharedPageData(nsSharedPageData* aPD) { mPD = aPD; }
 
   
+  
+  
+  
+  
+  
+  void ClaimPageFrameFromPrevInFlow();
+
+  
   void Reflow(nsPresContext* aPresContext, ReflowOutput& aReflowOutput,
               const ReflowInput& aReflowInput,
               nsReflowStatus& aStatus) override;

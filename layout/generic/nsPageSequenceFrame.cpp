@@ -348,6 +348,10 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
     sheet->SetSharedPageData(mPageData.get());
 
     
+    
+    sheet->ClaimPageFrameFromPrevInFlow();
+
+    
     ReflowInput kidReflowInput(
         aPresContext, aReflowInput, kidFrame,
         LogicalSize(kidFrame->GetWritingMode(), sheetSize));
