@@ -12,6 +12,12 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(/Component not initialized/);
 PromiseTestUtils.allowMatchingRejectionsGlobally(/Connection closed/);
 
 
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/debugger/test/mochitest/shared-head.js",
+  this
+);
+
+
 
 
 add_task(async function() {
@@ -66,17 +72,10 @@ async function checkClickOnNode(toolbox, frameLinkNode) {
   ok(line, `source line found ("${line}")`);
 
   
-  const onJsDebuggerSelected = toolbox.once("jsdebugger-selected");
-  
   frameLinkNode.querySelector(".frame-link-source").click();
-  
-  await onJsDebuggerSelected;
 
-  const dbg = await toolbox.getPanelWhenReady("jsdebugger");
-  await waitUntil(() => dbg._selectors.getSelectedSource(dbg._getState()));
-  is(
-    dbg._selectors.getSelectedSource(dbg._getState()).url,
-    url,
-    "expected source url"
-  );
+  
+  await toolbox.getPanelWhenReady("jsdebugger");
+  const dbg = createDebuggerContext(toolbox);
+  await waitForSelectedSource(dbg, url);
 }

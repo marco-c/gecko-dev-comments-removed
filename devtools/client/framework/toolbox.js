@@ -4140,9 +4140,6 @@ Toolbox.prototype = {
             this._store = null;
 
             
-            this.emit("toolbox-unload");
-
-            
             
             
             

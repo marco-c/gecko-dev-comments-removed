@@ -8,6 +8,12 @@
 
 const TEST_URL = URL_ROOT + "doc_markup_links.html";
 
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/debugger/test/mochitest/shared-head.js",
+  this
+);
+
 add_task(async function() {
   const { toolbox, inspector } = await openInspectorForURL(TEST_URL);
 
@@ -42,9 +48,12 @@ add_task(async function() {
   });
 
   info("Follow the link and wait for the debugger to open");
-  const onDebuggerReady = toolbox.once("jsdebugger-ready");
   inspector.markup.contextMenu._onFollowLink();
-  await onDebuggerReady;
+
+  
+  await toolbox.getPanelWhenReady("jsdebugger");
+  const dbg = createDebuggerContext(toolbox);
+  await waitForSelectedSource(dbg, URL_ROOT + "lib_jquery_1.0.js");
 
   
   

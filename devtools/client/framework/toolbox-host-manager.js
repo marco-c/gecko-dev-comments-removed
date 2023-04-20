@@ -81,7 +81,6 @@ function ToolboxHostManager(commands, hostType, hostOptions) {
   this.host = this.createHost(hostType, hostOptions);
   this.hostType = hostType;
   this.setMinWidthWithZoom = this.setMinWidthWithZoom.bind(this);
-  this._onToolboxUnload = this._onToolboxUnload.bind(this);
   this._onMessage = this._onMessage.bind(this);
   Services.prefs.addObserver(ZOOM_VALUE_PREF, this.setMinWidthWithZoom);
 }
@@ -107,7 +106,7 @@ ToolboxHostManager.prototype = {
       this.host.frame.contentWindow,
       this.frameId
     );
-    toolbox.once("toolbox-unload", this._onToolboxUnload);
+    toolbox.once("destroyed", this._onToolboxDestroyed.bind(this));
 
     
     
@@ -143,7 +142,7 @@ ToolboxHostManager.prototype = {
     }
   },
 
-  _onToolboxUnload() {
+  _onToolboxDestroyed() {
     
     
     
