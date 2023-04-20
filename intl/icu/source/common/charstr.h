@@ -177,8 +177,8 @@ private:
 
     UBool ensureCapacity(int32_t capacity, int32_t desiredCapacityHint, UErrorCode &errorCode);
 
-    CharString(const CharString &other) = delete; 
-    CharString &operator=(const CharString &other) = delete; 
+    CharString(const CharString &other); 
+    CharString &operator=(const CharString &other); 
 
     
 

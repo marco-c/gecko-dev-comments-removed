@@ -60,7 +60,7 @@ public:
         virtual int64_t modifyCE(int64_t ce) const = 0;
     };
 
-    CollationDataBuilder(UBool icu4xMode, UErrorCode &errorCode);
+    CollationDataBuilder(UErrorCode &errorCode);
 
     virtual ~CollationDataBuilder();
 
@@ -244,18 +244,8 @@ protected:
     UnicodeSet contextChars;
     
     UnicodeString contexts;
-private:
-    
-
-
-
-
-
-    int32_t contextsEra = 0;
-protected:
     UnicodeSet unsafeBackwardSet;
     UBool modified;
-    UBool icu4xMode;
 
     UBool fastLatinEnabled;
     CollationFastLatinBuilder *fastLatinBuilder;

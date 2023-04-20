@@ -214,14 +214,14 @@ int32_t ICU_Utility::skipWhitespace(const UnicodeString& str, int32_t& pos,
 
 UBool ICU_Utility::parseChar(const UnicodeString& id, int32_t& pos, UChar ch) {
     int32_t start = pos;
-    skipWhitespace(id, pos, true);
+    skipWhitespace(id, pos, TRUE);
     if (pos == id.length() ||
         id.charAt(pos) != ch) {
         pos = start;
-        return false;
+        return FALSE;
     }
     ++pos;
-    return true;
+    return TRUE;
 }
 
 
@@ -428,7 +428,7 @@ void ICU_Utility::appendToRule(UnicodeString& rule,
     if (matcher != NULL) {
         UnicodeString pat;
         appendToRule(rule, matcher->toPattern(pat, escapeUnprintable),
-                     true, escapeUnprintable, quoteBuf);
+                     TRUE, escapeUnprintable, quoteBuf);
     }
 }
 

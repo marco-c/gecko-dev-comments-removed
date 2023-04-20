@@ -226,7 +226,6 @@ public:
 
 
 
-
         CONTRACTION_TAG = 9,
         
 
@@ -299,8 +298,6 @@ public:
     static const uint32_t CONTRACT_NEXT_CCC = 0x200;
     
     static const uint32_t CONTRACT_TRAILING_CCC = 0x400;
-    
-    static const uint32_t CONTRACT_HAS_STARTER = 0x800;
 
     
     static const uint32_t HANGUL_NO_SPECIAL_JAMO = 0x100;
@@ -494,7 +491,7 @@ public:
     }
 
 private:
-    Collation() = delete;  
+    Collation();  
 };
 
 U_NAMESPACE_END

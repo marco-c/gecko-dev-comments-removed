@@ -242,8 +242,6 @@ const int32_t SCRIPT_PROPS[] = {
     0x16ABC | EXCLUSION,  
     0x1E290 | EXCLUSION,  
     0x10582 | EXCLUSION | CASED,  
-    0x11F1B | EXCLUSION | LB_LETTERS,  
-    0x1E4E6 | EXCLUSION,  
     
 };
 

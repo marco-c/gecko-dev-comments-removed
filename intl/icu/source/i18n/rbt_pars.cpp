@@ -233,7 +233,7 @@ UBool ParseData::isMatcher(UChar32 ch) {
         UnicodeFunctor *f = (UnicodeFunctor*) variablesVector->elementAt(i);
         return f != NULL && f->toMatcher() != NULL;
     }
-    return true;
+    return TRUE;
 }
 
 
@@ -248,7 +248,7 @@ UBool ParseData::isReplacer(UChar32 ch) {
         UnicodeFunctor *f = (UnicodeFunctor*) variablesVector->elementAt(i);
         return f != NULL && f->toReplacer() != NULL;
     }
-    return true;
+    return TRUE;
 }
 
 
@@ -348,7 +348,7 @@ RuleHalf::RuleHalf(TransliteratorParser& p) :
     post = -1;
     cursorOffset = 0;
     cursorOffsetPos = 0;
-    anchorStart = anchorEnd = false;
+    anchorStart = anchorEnd = FALSE;
     nextSegmentNumber = 1;
 }
 
@@ -364,7 +364,7 @@ RuleHalf::~RuleHalf() {
 int32_t RuleHalf::parse(const UnicodeString& rule, int32_t pos, int32_t limit, UErrorCode& status) {
     int32_t start = pos;
     text.truncate(0);
-    pos = parseSection(rule, pos, limit, text, UnicodeString(true, ILLEGAL_TOP, -1), false, status);
+    pos = parseSection(rule, pos, limit, text, UnicodeString(TRUE, ILLEGAL_TOP, -1), FALSE, status);
 
     if (cursorOffset > 0 && cursor != cursorOffsetPos) {
         return syntaxError(U_MISPLACED_CURSOR_OFFSET, rule, start, status);
@@ -403,7 +403,7 @@ int32_t RuleHalf::parseSection(const UnicodeString& rule, int32_t pos, int32_t l
     int32_t start = pos;
     ParsePosition pp;
     UnicodeString scratch;
-    UBool done = false;
+    UBool done = FALSE;
     int32_t quoteStart = -1; 
     int32_t quoteLimit = -1;
     int32_t varStart = -1; 
@@ -511,7 +511,7 @@ int32_t RuleHalf::parseSection(const UnicodeString& rule, int32_t pos, int32_t l
         
         case ANCHOR_START:
             if (buf.length() == 0 && !anchorStart) {
-                anchorStart = true;
+                anchorStart = TRUE;
             } else {
               return syntaxError(U_MISPLACED_ANCHOR_START,
                                  rule, start, status);
@@ -529,7 +529,7 @@ int32_t RuleHalf::parseSection(const UnicodeString& rule, int32_t pos, int32_t l
                 int32_t segmentNumber = nextSegmentNumber++; 
                 
                 
-                pos = parseSection(rule, pos, limit, buf, UnicodeString(true, ILLEGAL_SEG, -1), true, status);
+                pos = parseSection(rule, pos, limit, buf, UnicodeString(TRUE, ILLEGAL_SEG, -1), TRUE, status);
                 
                 
                 
@@ -571,7 +571,7 @@ int32_t RuleHalf::parseSection(const UnicodeString& rule, int32_t pos, int32_t l
                 int32_t bufSegStart = buf.length();
                 
                 
-                pos = parseSection(rule, iref, limit, buf, UnicodeString(true, ILLEGAL_FUNC, -1), true, status);
+                pos = parseSection(rule, iref, limit, buf, UnicodeString(TRUE, ILLEGAL_FUNC, -1), TRUE, status);
                 
                 
                 
@@ -598,7 +598,7 @@ int32_t RuleHalf::parseSection(const UnicodeString& rule, int32_t pos, int32_t l
                 if (pos == limit) {
                     
                     
-                    anchorEnd = true;
+                    anchorEnd = TRUE;
                     break;
                 }
                 
@@ -621,7 +621,7 @@ int32_t RuleHalf::parseSection(const UnicodeString& rule, int32_t pos, int32_t l
                         
                         
                         
-                        anchorEnd = true;
+                        anchorEnd = TRUE;
                         break;
                     }
                     pos = pp.getIndex();
@@ -704,7 +704,7 @@ int32_t RuleHalf::parseSection(const UnicodeString& rule, int32_t pos, int32_t l
         case SEGMENT_CLOSE:
             
             
-            done = true;
+            done = TRUE;
             break;
 
         
@@ -786,7 +786,7 @@ void RuleHalf::removeContext() {
         text.removeBetween(0, ante);
     }
     ante = post = -1;
-    anchorStart = anchorEnd = false;
+    anchorStart = anchorEnd = FALSE;
 }
 
 
@@ -798,10 +798,10 @@ UBool RuleHalf::isValidOutput(TransliteratorParser& transParser) {
         UChar32 c = text.char32At(i);
         i += U16_LENGTH(c);
         if (!transParser.parseData->isReplacer(c)) {
-            return false;
+            return FALSE;
         }
     }
-    return true;
+    return TRUE;
 }
 
 
@@ -813,10 +813,10 @@ UBool RuleHalf::isValidInput(TransliteratorParser& transParser) {
         UChar32 c = text.char32At(i);
         i += U16_LENGTH(c);
         if (!transParser.parseData->isMatcher(c)) {
-            return false;
+            return FALSE;
         }
     }
-    return true;
+    return TRUE;
 }
 
 
@@ -891,7 +891,7 @@ void TransliteratorParser::parseRules(const UnicodeString& rule,
     uprv_memset(&parseError, 0, sizeof(parseError));
     parseError.line = parseError.offset = -1;
 
-    UBool parsingIDs = true;
+    UBool parsingIDs = TRUE;
     int32_t ruleCount = 0;
     
     while (!dataVector.isEmpty()) {
@@ -985,7 +985,7 @@ void TransliteratorParser::parseRules(const UnicodeString& rule,
                     }
                     curData = NULL;
                 }
-                parsingIDs = true;
+                parsingIDs = TRUE;
             }
 
             TransliteratorIDParser::SingleID* id =
@@ -1044,7 +1044,7 @@ void TransliteratorParser::parseRules(const UnicodeString& rule,
                     return;
                 }
                 idBlockResult.remove();
-                parsingIDs = false;
+                parsingIDs = FALSE;
                 curData = new TransliterationRuleData(status);
                 
                 if (curData == NULL) {
@@ -1218,7 +1218,7 @@ static const UChar PRAGMA_NFC_RULES[] = {0x7E,0x6E,0x66,0x63,0x20,0x72,0x75,0x6C
 
 UBool TransliteratorParser::resemblesPragma(const UnicodeString& rule, int32_t pos, int32_t limit) {
     
-    return ICU_Utility::parsePattern(rule, pos, limit, UnicodeString(true, PRAGMA_USE, 4), NULL) >= 0;
+    return ICU_Utility::parsePattern(rule, pos, limit, UnicodeString(TRUE, PRAGMA_USE, 4), NULL) >= 0;
 }
 
 
@@ -1243,25 +1243,25 @@ int32_t TransliteratorParser::parsePragma(const UnicodeString& rule, int32_t pos
     
     
     
-    int p = ICU_Utility::parsePattern(rule, pos, limit, UnicodeString(true, PRAGMA_VARIABLE_RANGE, -1), array);
+    int p = ICU_Utility::parsePattern(rule, pos, limit, UnicodeString(TRUE, PRAGMA_VARIABLE_RANGE, -1), array);
     if (p >= 0) {
         setVariableRange(array[0], array[1], status);
         return p;
     }
     
-    p = ICU_Utility::parsePattern(rule, pos, limit, UnicodeString(true, PRAGMA_MAXIMUM_BACKUP, -1), array);
+    p = ICU_Utility::parsePattern(rule, pos, limit, UnicodeString(TRUE, PRAGMA_MAXIMUM_BACKUP, -1), array);
     if (p >= 0) {
         pragmaMaximumBackup(array[0]);
         return p;
     }
     
-    p = ICU_Utility::parsePattern(rule, pos, limit, UnicodeString(true, PRAGMA_NFD_RULES, -1), NULL);
+    p = ICU_Utility::parsePattern(rule, pos, limit, UnicodeString(TRUE, PRAGMA_NFD_RULES, -1), NULL);
     if (p >= 0) {
         pragmaNormalizeRules(UNORM_NFD);
         return p;
     }
     
-    p = ICU_Utility::parsePattern(rule, pos, limit, UnicodeString(true, PRAGMA_NFC_RULES, -1), NULL);
+    p = ICU_Utility::parsePattern(rule, pos, limit, UnicodeString(TRUE, PRAGMA_NFC_RULES, -1), NULL);
     if (p >= 0) {
         pragmaNormalizeRules(UNORM_NFC);
         return p;
@@ -1620,7 +1620,7 @@ void TransliteratorParser::setSegmentObject(int32_t seg, StringMatcher* adopted,
 
 UChar TransliteratorParser::getDotStandIn(UErrorCode& status) {
     if (dotStandIn == (UChar) -1) {
-        UnicodeSet* tempus = new UnicodeSet(UnicodeString(true, DOT_SET, -1), status);
+        UnicodeSet* tempus = new UnicodeSet(UnicodeString(TRUE, DOT_SET, -1), status);
         
         if (tempus == NULL) {
             status = U_MEMORY_ALLOCATION_ERROR;
@@ -1681,7 +1681,7 @@ utrans_stripRules(const UChar *source, int32_t sourceLen, UChar *target, UErrorC
     const UChar *sourceLimit = source+sourceLen;
     UChar *targetLimit = target+sourceLen;
     UChar32 c = 0;
-    UBool quoted = false;
+    UBool quoted = FALSE;
     int32_t index;
 
     uprv_memset(target, 0, sourceLen*U_SIZEOF_UCHAR);
@@ -1748,7 +1748,7 @@ utrans_stripRules(const UChar *source, int32_t sourceLen, UChar *target, UErrorC
             
 
 
-            quoted = false;
+            quoted = FALSE;
             while (source < sourceLimit) {
                 c = *(source);
                 if (c != CR && c != LF && c != 0x0020) {

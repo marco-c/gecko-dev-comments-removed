@@ -293,10 +293,10 @@ typedef int32_t UTextOffset;
 #ifdef U_UTF8_IMPL
 
 #elif defined(U_STATIC_IMPLEMENTATION) || defined(U_COMMON_IMPLEMENTATION)
-U_CAPI const uint8_t utf8_countTrailBytes[];
+U_CFUNC const uint8_t utf8_countTrailBytes[];
 #else
-U_CFUNC U_IMPORT const uint8_t utf8_countTrailBytes[];
-#endif 
+U_CFUNC U_IMPORT const uint8_t utf8_countTrailBytes[];     
+#endif
 
 
 

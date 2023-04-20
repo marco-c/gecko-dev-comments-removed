@@ -33,33 +33,28 @@ int64_t ClockMath::floorDivide(int64_t numerator, int64_t denominator) {
 }
 
 int32_t ClockMath::floorDivide(double numerator, int32_t denominator,
-                          int32_t* remainder) {
-    
-    
-    double quotient = uprv_floor(numerator / denominator);
-    
-    
-    
-    
-    *remainder = (int32_t) (uprv_floor(numerator) - (quotient * denominator));
+                          int32_t& remainder) {
+    double quotient;
+    quotient = uprv_floor(numerator / denominator);
+    remainder = (int32_t) (numerator - (quotient * denominator));
     return (int32_t) quotient;
 }
 
 double ClockMath::floorDivide(double dividend, double divisor,
-                         double* remainder) {
+                         double& remainder) {
     
     U_ASSERT(divisor > 0);
     double quotient = floorDivide(dividend, divisor);
-    *remainder = dividend - (quotient * divisor);
+    remainder = dividend - (quotient * divisor);
     
     
     
-    if (*remainder < 0 || *remainder >= divisor) {
+    if (remainder < 0 || remainder >= divisor) {
         
         
         
         double q = quotient;
-        quotient += (*remainder < 0) ? -1 : +1;
+        quotient += (remainder < 0) ? -1 : +1;
         if (q == quotient) {
             
             
@@ -70,12 +65,12 @@ double ClockMath::floorDivide(double dividend, double divisor,
             
             
             
-            *remainder = 0;
+            remainder = 0;
         } else {
-            *remainder = dividend - (quotient * divisor);
+            remainder = dividend - (quotient * divisor);
         }
     }
-    U_ASSERT(0 <= *remainder && *remainder < divisor);
+    U_ASSERT(0 <= remainder && remainder < divisor);
     return quotient;
 }
 
@@ -111,10 +106,10 @@ void Grego::dayToFields(double day, int32_t& year, int32_t& month,
     
     
     
-    int32_t n400 = ClockMath::floorDivide(day, 146097, &doy); 
-    int32_t n100 = ClockMath::floorDivide(doy, 36524, &doy); 
-    int32_t n4   = ClockMath::floorDivide(doy, 1461, &doy); 
-    int32_t n1   = ClockMath::floorDivide(doy, 365, &doy);
+    int32_t n400 = ClockMath::floorDivide(day, 146097, doy); 
+    int32_t n100 = ClockMath::floorDivide(doy, 36524, doy); 
+    int32_t n4   = ClockMath::floorDivide(doy, 1461, doy); 
+    int32_t n1   = ClockMath::floorDivide(doy, 365, doy);
     year = 400*n400 + 100*n100 + 4*n4 + n1;
     if (n100 == 4 || n1 == 4) {
         doy = 365; 
@@ -142,14 +137,14 @@ void Grego::dayToFields(double day, int32_t& year, int32_t& month,
 void Grego::timeToFields(UDate time, int32_t& year, int32_t& month,
                         int32_t& dom, int32_t& dow, int32_t& doy, int32_t& mid) {
     double millisInDay;
-    double day = ClockMath::floorDivide((double)time, (double)U_MILLIS_PER_DAY, &millisInDay);
+    double day = ClockMath::floorDivide((double)time, (double)U_MILLIS_PER_DAY, millisInDay);
     mid = (int32_t)millisInDay;
     dayToFields(day, year, month, dom, dow, doy);
 }
 
 int32_t Grego::dayOfWeek(double day) {
     int32_t dow;
-    ClockMath::floorDivide(day + int{UCAL_THURSDAY}, 7, &dow);
+    ClockMath::floorDivide(day + UCAL_THURSDAY, 7, dow);
     return (dow == 0) ? UCAL_SATURDAY : dow;
 }
 

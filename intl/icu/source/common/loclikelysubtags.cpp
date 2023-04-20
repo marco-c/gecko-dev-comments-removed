@@ -245,13 +245,13 @@ private:
 namespace {
 
 XLikelySubtags *gLikelySubtags = nullptr;
-UInitOnce gInitOnce {};
+UInitOnce gInitOnce = U_INITONCE_INITIALIZER;
 
 UBool U_CALLCONV cleanup() {
     delete gLikelySubtags;
     gLikelySubtags = nullptr;
     gInitOnce.reset();
-    return true;
+    return TRUE;
 }
 
 }  

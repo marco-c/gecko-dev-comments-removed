@@ -126,7 +126,7 @@ u_isxdigit(UChar32 c) {
         (c<=0x66 && c>=0x41 && (c<=0x46 || c>=0x61)) ||
         (c>=0xff21 && c<=0xff46 && (c<=0xff26 || c>=0xff41))
     ) {
-        return true;
+        return TRUE;
     }
 
     GET_PROPS(c, props);
@@ -591,7 +591,7 @@ uscript_hasScript(UChar32 c, UScriptCode sc) {
     uint32_t sc32=sc;
     if(sc32>0x7fff) {
         
-        return false;
+        return FALSE;
     }
     while(sc32>*scx) {
         ++scx;
@@ -654,7 +654,7 @@ _enumPropertyStartsRange(const void *context, UChar32 start, UChar32 end, uint32
     sa->add(sa->set, start);
     (void)end;
     (void)value;
-    return true;
+    return TRUE;
 }
 
 #define USET_ADD_CP_AND_NEXT(sa, cp) sa->add(sa->set, cp); sa->add(sa->set, cp+1)

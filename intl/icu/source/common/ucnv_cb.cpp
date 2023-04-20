@@ -86,7 +86,7 @@ ucnv_cbFromUWriteUChars(UConverterFromUnicodeArgs *args,
         source,
         sourceLimit,
         NULL, 
-        false, 
+        FALSE, 
         err);
 
     if(args->offsets)
@@ -141,7 +141,7 @@ ucnv_cbFromUWriteUChars(UConverterFromUnicodeArgs *args,
                          source,
                          sourceLimit,
                          NULL,
-                         false,
+                         FALSE,
                          &err2);
 
         

@@ -377,7 +377,7 @@ class U_I18N_API IslamicCalendar : public Calendar {
   virtual const char * getType() const override;
 
  private:
-  IslamicCalendar() = delete; 
+  IslamicCalendar(); 
 
   
  protected:

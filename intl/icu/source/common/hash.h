@@ -115,8 +115,8 @@ public:
 
     inline UBool equals(const Hashtable& that) const;
 private:
-    Hashtable(const Hashtable &other) = delete; 
-    Hashtable &operator=(const Hashtable &other) = delete; 
+    Hashtable(const Hashtable &other); 
+    Hashtable &operator=(const Hashtable &other); 
 };
 
 

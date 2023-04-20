@@ -39,7 +39,7 @@
 #include "uvectr32.h"
 
 #ifdef RBBI_DEBUG
-static UBool gTrace = false;
+static UBool gTrace = FALSE;
 #endif
 
 U_NAMESPACE_BEGIN
@@ -267,7 +267,7 @@ RuleBasedBreakIterator::operator=(const RuleBasedBreakIterator& that) {
     }
     
     UErrorCode status = U_ZERO_ERROR;
-    utext_clone(&fText, &that.fText, false, true, &status);
+    utext_clone(&fText, &that.fText, FALSE, TRUE, &status);
 
     if (fCharIter != &fSCharIter) {
         delete fCharIter;
@@ -354,13 +354,13 @@ void RuleBasedBreakIterator::init(UErrorCode &status) {
     }
 
 #ifdef RBBI_DEBUG
-    static UBool debugInitDone = false;
-    if (debugInitDone == false) {
+    static UBool debugInitDone = FALSE;
+    if (debugInitDone == FALSE) {
         char *debugEnv = getenv("U_RBBIDEBUG");
         if (debugEnv && uprv_strstr(debugEnv, "trace")) {
-            gTrace = true;
+            gTrace = TRUE;
         }
-        debugInitDone = true;
+        debugInitDone = TRUE;
     }
 #endif
 }
@@ -439,7 +439,7 @@ void RuleBasedBreakIterator::setText(UText *ut, UErrorCode &status) {
     }
     fBreakCache->reset();
     fDictionaryCache->reset();
-    utext_clone(&fText, ut, false, true, &status);
+    utext_clone(&fText, ut, FALSE, TRUE, &status);
 
     
     
@@ -460,7 +460,7 @@ void RuleBasedBreakIterator::setText(UText *ut, UErrorCode &status) {
 
 
 UText *RuleBasedBreakIterator::getUText(UText *fillIn, UErrorCode &status) const {
-    UText *result = utext_clone(fillIn, &fText, false, true, &status);
+    UText *result = utext_clone(fillIn, &fText, FALSE, TRUE, &status);
     return result;
 }
 
@@ -548,7 +548,7 @@ RuleBasedBreakIterator &RuleBasedBreakIterator::refreshInputText(UText *input, U
     }
     int64_t pos = utext_getNativeIndex(&fText);
     
-    utext_clone(&fText, input, false, true, &status);
+    utext_clone(&fText, input, FALSE, TRUE, &status);
     if (U_FAILURE(status)) {
         return *this;
     }
@@ -696,7 +696,7 @@ UBool RuleBasedBreakIterator::isBoundary(int32_t offset) {
     
     if (offset < 0) {
         first();       
-        return false;
+        return FALSE;
     }
 
     
@@ -715,7 +715,7 @@ UBool RuleBasedBreakIterator::isBoundary(int32_t offset) {
     if (result && adjustedOffset < offset && utext_char32At(&fText, offset) == U_SENTINEL) {
         
         
-        return false;
+        return FALSE;
     }
     if (!result) {
         
@@ -838,7 +838,7 @@ int32_t RuleBasedBreakIterator::handleNext() {
     result          = initialPosition;
     c               = UTEXT_NEXT32(&fText);
     if (c==U_SENTINEL) {
-        fDone = true;
+        fDone = TRUE;
         return UBRK_DONE;
     }
 
@@ -1153,8 +1153,8 @@ U_NAMESPACE_END
 
 static icu::UStack *gLanguageBreakFactories = nullptr;
 static const icu::UnicodeString *gEmptyString = nullptr;
-static icu::UInitOnce gLanguageBreakFactoriesInitOnce {};
-static icu::UInitOnce gRBBIInitOnce {};
+static icu::UInitOnce gLanguageBreakFactoriesInitOnce = U_INITONCE_INITIALIZER;
+static icu::UInitOnce gRBBIInitOnce = U_INITONCE_INITIALIZER;
 
 
 
@@ -1167,7 +1167,7 @@ UBool U_CALLCONV rbbi_cleanup(void) {
     gEmptyString = nullptr;
     gLanguageBreakFactoriesInitOnce.reset();
     gRBBIInitOnce.reset();
-    return true;
+    return TRUE;
 }
 U_CDECL_END
 

@@ -649,7 +649,7 @@ private:
 
 
 
-     AlphabeticIndex(const AlphabeticIndex &other) = delete;
+     AlphabeticIndex(const AlphabeticIndex &other);
 
      
 

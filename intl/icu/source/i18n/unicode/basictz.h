@@ -189,12 +189,10 @@ protected:
 
 
 
-    static constexpr int32_t kStdDstMask = kDaylight;
-    
-
-
-
-    static constexpr int32_t kFormerLatterMask = kLatter;
+    enum {
+        kStdDstMask = kDaylight,
+        kFormerLatterMask = kLatter
+    };
 #endif  
 
     

@@ -163,7 +163,7 @@ _SCSUReset(UConverter *cnv, UConverterResetChoice choice) {
         
         uprv_memcpy(scsu->toUDynamicOffsets, initialDynamicOffsets, 32);
 
-        scsu->toUIsSingleByteMode=true;
+        scsu->toUIsSingleByteMode=TRUE;
         scsu->toUState=readCommand;
         scsu->toUQuoteWindow=scsu->toUDynamicWindow=0;
         scsu->toUByteOne=0;
@@ -174,7 +174,7 @@ _SCSUReset(UConverter *cnv, UConverterResetChoice choice) {
         
         uprv_memcpy(scsu->fromUDynamicOffsets, initialDynamicOffsets, 32);
 
-        scsu->fromUIsSingleByteMode=true;
+        scsu->fromUIsSingleByteMode=TRUE;
         scsu->fromUDynamicWindow=0;
 
         scsu->nextWindowUseIndex=0;
@@ -371,7 +371,7 @@ singleByteMode:
                     state=quotePairOne;
                 } else if(b==SCU) {
                     sourceIndex=nextSourceIndex;
-                    isSingleByteMode=false;
+                    isSingleByteMode=FALSE;
                     goto fastUnicode;
                 } else  {
                     
@@ -508,17 +508,17 @@ fastUnicode:
                 } else if( b<=UC7) {
                     dynamicWindow=(int8_t)(b-UC0);
                     sourceIndex=nextSourceIndex;
-                    isSingleByteMode=true;
+                    isSingleByteMode=TRUE;
                     goto fastSingle;
                 } else if( b<=UD7) {
                     dynamicWindow=(int8_t)(b-UD0);
-                    isSingleByteMode=true;
+                    isSingleByteMode=TRUE;
                     cnv->toUBytes[0]=b;
                     cnv->toULength=1;
                     state=defineOne;
                     goto singleByteMode;
                 } else if(b==UDX) {
-                    isSingleByteMode=true;
+                    isSingleByteMode=TRUE;
                     cnv->toUBytes[0]=b;
                     cnv->toULength=1;
                     state=definePairOne;
@@ -695,7 +695,7 @@ singleByteMode:
                 } else if(b==SQU) {
                     state=quotePairOne;
                 } else if(b==SCU) {
-                    isSingleByteMode=false;
+                    isSingleByteMode=FALSE;
                     goto fastUnicode;
                 } else  {
                     
@@ -805,17 +805,17 @@ fastUnicode:
                     state=quotePairTwo;
                 } else if( b<=UC7) {
                     dynamicWindow=(int8_t)(b-UC0);
-                    isSingleByteMode=true;
+                    isSingleByteMode=TRUE;
                     goto fastSingle;
                 } else if( b<=UD7) {
                     dynamicWindow=(int8_t)(b-UD0);
-                    isSingleByteMode=true;
+                    isSingleByteMode=TRUE;
                     cnv->toUBytes[0]=b;
                     cnv->toULength=1;
                     state=defineOne;
                     goto singleByteMode;
                 } else if(b==UDX) {
-                    isSingleByteMode=true;
+                    isSingleByteMode=TRUE;
                     cnv->toUBytes[0]=b;
                     cnv->toULength=1;
                     state=definePairOne;
@@ -1159,7 +1159,7 @@ getTrailSingle:
                     goto outputBytes;
                 } else {
                     
-                    isSingleByteMode=false;
+                    isSingleByteMode=FALSE;
                     *target++=(uint8_t)SCU;
                     if(offsets!=NULL) {
                         *offsets++=sourceIndex;
@@ -1218,7 +1218,7 @@ getTrailSingle:
 
 
 
-                    isSingleByteMode=false;
+                    isSingleByteMode=FALSE;
                     c|=SCU<<16;
                     length=3;
                     goto outputBytes;
@@ -1269,13 +1269,13 @@ getTrailSingle:
                 if(!(source<sourceLimit && (uint32_t)(*source-0x3400)<(0xd800-0x3400))) {
                     if(((uint32_t)(c-0x30)<10 || (uint32_t)(c-0x61)<26 || (uint32_t)(c-0x41)<26)) {
                         
-                        isSingleByteMode=true;
+                        isSingleByteMode=TRUE;
                         c|=((uint32_t)(UC0+dynamicWindow)<<8)|c;
                         length=2;
                         goto outputBytes;
                     } else if((window=getWindow(scsu->fromUDynamicOffsets, c))>=0) {
                         
-                        isSingleByteMode=true;
+                        isSingleByteMode=TRUE;
                         dynamicWindow=window;
                         currentOffset=scsu->fromUDynamicOffsets[dynamicWindow];
                         useDynamicWindow(scsu, dynamicWindow);
@@ -1284,7 +1284,7 @@ getTrailSingle:
                         goto outputBytes;
                     } else if((code=getDynamicOffset(c, &offset))>=0) {
                         
-                        isSingleByteMode=true;
+                        isSingleByteMode=TRUE;
                         dynamicWindow=getNextDynamicWindow(scsu);
                         currentOffset=scsu->fromUDynamicOffsets[dynamicWindow]=offset;
                         useDynamicWindow(scsu, dynamicWindow);
@@ -1337,7 +1337,7 @@ getTrailUnicode:
 
 
 
-                    isSingleByteMode=true;
+                    isSingleByteMode=TRUE;
                     dynamicWindow=window;
                     currentOffset=scsu->fromUDynamicOffsets[dynamicWindow];
                     useDynamicWindow(scsu, dynamicWindow);
@@ -1348,7 +1348,7 @@ getTrailUnicode:
                           (code=getDynamicOffset(c, &offset))>=0
                 ) {
                     
-                    isSingleByteMode=true;
+                    isSingleByteMode=TRUE;
                     code-=0x200;
                     dynamicWindow=getNextDynamicWindow(scsu);
                     currentOffset=scsu->fromUDynamicOffsets[dynamicWindow]=offset;
@@ -1645,7 +1645,7 @@ getTrailSingle:
                     goto outputBytes;
                 } else {
                     
-                    isSingleByteMode=false;
+                    isSingleByteMode=FALSE;
                     *target++=(uint8_t)SCU;
                     --targetCapacity;
                     c=((uint32_t)lead<<16)|trail;
@@ -1701,7 +1701,7 @@ getTrailSingle:
 
 
 
-                    isSingleByteMode=false;
+                    isSingleByteMode=FALSE;
                     c|=SCU<<16;
                     length=3;
                     goto outputBytes;
@@ -1746,13 +1746,13 @@ getTrailSingle:
                 if(!(source<sourceLimit && (uint32_t)(*source-0x3400)<(0xd800-0x3400))) {
                     if(((uint32_t)(c-0x30)<10 || (uint32_t)(c-0x61)<26 || (uint32_t)(c-0x41)<26)) {
                         
-                        isSingleByteMode=true;
+                        isSingleByteMode=TRUE;
                         c|=((uint32_t)(UC0+dynamicWindow)<<8)|c;
                         length=2;
                         goto outputBytes;
                     } else if((window=getWindow(scsu->fromUDynamicOffsets, c))>=0) {
                         
-                        isSingleByteMode=true;
+                        isSingleByteMode=TRUE;
                         dynamicWindow=window;
                         currentOffset=scsu->fromUDynamicOffsets[dynamicWindow];
                         useDynamicWindow(scsu, dynamicWindow);
@@ -1761,7 +1761,7 @@ getTrailSingle:
                         goto outputBytes;
                     } else if((code=getDynamicOffset(c, &offset))>=0) {
                         
-                        isSingleByteMode=true;
+                        isSingleByteMode=TRUE;
                         dynamicWindow=getNextDynamicWindow(scsu);
                         currentOffset=scsu->fromUDynamicOffsets[dynamicWindow]=offset;
                         useDynamicWindow(scsu, dynamicWindow);
@@ -1813,7 +1813,7 @@ getTrailUnicode:
 
 
 
-                    isSingleByteMode=true;
+                    isSingleByteMode=TRUE;
                     dynamicWindow=window;
                     currentOffset=scsu->fromUDynamicOffsets[dynamicWindow];
                     useDynamicWindow(scsu, dynamicWindow);
@@ -1824,7 +1824,7 @@ getTrailUnicode:
                           (code=getDynamicOffset(c, &offset))>=0
                 ) {
                     
-                    isSingleByteMode=true;
+                    isSingleByteMode=TRUE;
                     code-=0x200;
                     dynamicWindow=getNextDynamicWindow(scsu);
                     currentOffset=scsu->fromUDynamicOffsets[dynamicWindow]=offset;
@@ -1991,7 +1991,7 @@ _SCSUSafeClone(const UConverter *cnv,
 
     uprv_memcpy(&localClone->mydata, cnv->extraInfo, sizeof(SCSUData));
     localClone->cnv.extraInfo = &localClone->mydata;
-    localClone->cnv.isExtraLocal = true;
+    localClone->cnv.isExtraLocal = TRUE;
 
     return &localClone->cnv;
 }
@@ -2033,7 +2033,7 @@ static const UConverterStaticData _SCSUStaticData={
 
 
     { 0x0e, 0xff, 0xfd, 0 }, 3,
-    false, false,
+    FALSE, FALSE,
     0,
     0,
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } 

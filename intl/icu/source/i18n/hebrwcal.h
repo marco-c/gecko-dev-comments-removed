@@ -88,7 +88,7 @@ public:
 
 
 
-  enum Month {
+  enum EEras {
     
 
 
@@ -179,6 +179,13 @@ public:
 
 
     HebrewCalendar(const HebrewCalendar& source);
+
+    
+
+
+
+
+    HebrewCalendar& operator=(const HebrewCalendar& right);
 
     
 

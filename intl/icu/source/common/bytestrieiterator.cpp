@@ -101,12 +101,12 @@ BytesTrie::Iterator::hasNext() const { return pos_!=NULL || !stack_->isEmpty(); 
 UBool
 BytesTrie::Iterator::next(UErrorCode &errorCode) {
     if(U_FAILURE(errorCode)) {
-        return false;
+        return FALSE;
     }
     const uint8_t *pos=pos_;
     if(pos==NULL) {
         if(stack_->isEmpty()) {
-            return false;
+            return FALSE;
         }
         
         
@@ -119,7 +119,7 @@ BytesTrie::Iterator::next(UErrorCode &errorCode) {
         if(length>1) {
             pos=branchNext(pos, length, errorCode);
             if(pos==NULL) {
-                return true;  
+                return TRUE;  
             }
         } else {
             str_->append((char)*pos++, errorCode);
@@ -141,7 +141,7 @@ BytesTrie::Iterator::next(UErrorCode &errorCode) {
             } else {
                 pos_=skipValue(pos, node);
             }
-            return true;
+            return TRUE;
         }
         if(maxLength_>0 && str_->length()==maxLength_) {
             return truncateAndStop();
@@ -152,7 +152,7 @@ BytesTrie::Iterator::next(UErrorCode &errorCode) {
             }
             pos=branchNext(pos, node+1, errorCode);
             if(pos==NULL) {
-                return true;  
+                return TRUE;  
             }
         } else {
             
@@ -177,7 +177,7 @@ UBool
 BytesTrie::Iterator::truncateAndStop() {
     pos_=NULL;
     value_=-1;  
-    return true;
+    return TRUE;
 }
 
 

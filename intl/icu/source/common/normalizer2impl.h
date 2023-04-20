@@ -131,7 +131,7 @@ public:
         }
     }
 private:
-    Hangul() = delete;  
+    Hangul();  
 };
 
 class Normalizer2Impl;
@@ -730,7 +730,7 @@ private:
     const uint16_t *extraData;  
     const uint8_t *smallFCD;  
 
-    UInitOnce       fCanonIterDataInitOnce {};
+    UInitOnce       fCanonIterDataInitOnce = U_INITONCE_INITIALIZER;
     CanonIterData  *fCanonIterData;
 };
 
@@ -759,7 +759,7 @@ public:
     
     static const Normalizer2Impl *getImpl(const Normalizer2 *norm2);
 private:
-    Normalizer2Factory() = delete;  
+    Normalizer2Factory();  
 };
 
 U_NAMESPACE_END

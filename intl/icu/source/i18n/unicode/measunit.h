@@ -950,6 +950,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getSquareYard();
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -965,6 +966,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getItem();
+#endif 
 
     
 
@@ -1526,24 +1528,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getNanosecond();
 
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-
-    static MeasureUnit *createQuarter(UErrorCode &status);
-
-    
-
-
-
-
-    static MeasureUnit getQuarter();
-#endif 
-
     
 
 
@@ -1832,6 +1816,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getThermUs();
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1847,6 +1832,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getKilowattHourPer100Kilometer();
+#endif 
 
     
 
@@ -2591,17 +2577,9 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-
-
-
-
     static MeasureUnit *createMetricTon(UErrorCode &status);
 
     
-
-
-
-
 
 
 
@@ -2735,24 +2713,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getTon();
-
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-
-    static MeasureUnit *createTonne(UErrorCode &status);
-
-    
-
-
-
-
-    static MeasureUnit getTonne();
-#endif 
 
     
 

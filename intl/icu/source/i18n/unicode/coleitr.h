@@ -351,7 +351,7 @@ private:
     const CollationElementIterator&
         operator=(const CollationElementIterator& other);
 
-    CollationElementIterator() = delete; 
+    CollationElementIterator(); 
 
     
     inline int8_t normalizeDir() const { return dir_ == 1 ? 0 : dir_; }

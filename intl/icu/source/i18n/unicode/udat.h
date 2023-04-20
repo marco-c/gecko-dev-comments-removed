@@ -1532,6 +1532,7 @@ typedef enum UDateFormatSymbolType {
 
     UDAT_ZODIAC_NAMES_NARROW,
     
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1543,6 +1544,7 @@ typedef enum UDateFormatSymbolType {
 
 
     UDAT_STANDALONE_NARROW_QUARTERS
+#endif 
 } UDateFormatSymbolType;
 
 struct UDateFormatSymbols;

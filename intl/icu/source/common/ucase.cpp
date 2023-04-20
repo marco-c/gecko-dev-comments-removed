@@ -40,7 +40,7 @@ _enumPropertyStartsRange(const void *context, UChar32 start, UChar32 , uint32_t 
     
     const USetAdder *sa=(const USetAdder *)context;
     sa->add(sa->set, start);
-    return true;
+    return TRUE;
 }
 
 U_CFUNC void U_EXPORT2
@@ -354,7 +354,7 @@ ucase_addStringCaseClosure(const UChar *s, int32_t length, const USetAdder *sa) 
     int32_t i, start, limit, result, unfoldRows, unfoldRowWidth, unfoldStringWidth;
 
     if(ucase_props_singleton.unfold==NULL || s==NULL) {
-        return false; 
+        return FALSE; 
     }
     if(length<=1) {
         
@@ -364,7 +364,7 @@ ucase_addStringCaseClosure(const UChar *s, int32_t length, const USetAdder *sa) 
 
 
 
-        return false;
+        return FALSE;
     }
 
     const uint16_t *unfold=ucase_props_singleton.unfold;
@@ -375,7 +375,7 @@ ucase_addStringCaseClosure(const UChar *s, int32_t length, const USetAdder *sa) 
 
     if(length>unfoldStringWidth) {
         
-        return false;
+        return FALSE;
     }
 
     
@@ -395,7 +395,7 @@ ucase_addStringCaseClosure(const UChar *s, int32_t length, const USetAdder *sa) 
                 sa->add(sa->set, c);
                 ucase_addCaseClosure(c, sa);
             }
-            return true;
+            return TRUE;
         } else if(result<0) {
             limit=i;
         } else  {
@@ -403,7 +403,7 @@ ucase_addStringCaseClosure(const UChar *s, int32_t length, const USetAdder *sa) 
         }
     }
 
-    return false; 
+    return FALSE; 
 }
 
 U_NAMESPACE_BEGIN
@@ -431,7 +431,7 @@ FullCaseFoldingIterator::next(UnicodeString &full) {
     
     int32_t length=unfoldStringWidth;
     while(length>0 && p[length-1]==0) { --length; }
-    full.setTo(false, p, length);
+    full.setTo(FALSE, p, length);
     
     UChar32 c;
     U16_NEXT_UNSAFE(p, rowCpIndex, c);
@@ -905,7 +905,7 @@ isFollowedByCasedLetter(UCaseContextIterator *iter, void *context, int8_t dir) {
     UChar32 c;
 
     if(iter==NULL) {
-        return false;
+        return FALSE;
     }
 
     for(; (c=iter(context, dir))>=0; dir=0) {
@@ -913,13 +913,13 @@ isFollowedByCasedLetter(UCaseContextIterator *iter, void *context, int8_t dir) {
         if(type&4) {
             
         } else if(type!=UCASE_NONE) {
-            return true; 
+            return TRUE; 
         } else {
-            return false; 
+            return FALSE; 
         }
     }
 
-    return false; 
+    return FALSE; 
 }
 
 
@@ -930,19 +930,19 @@ isPrecededBySoftDotted(UCaseContextIterator *iter, void *context) {
     int8_t dir;
 
     if(iter==NULL) {
-        return false;
+        return FALSE;
     }
 
     for(dir=-1; (c=iter(context, dir))>=0; dir=0) {
         dotType=getDotType(c);
         if(dotType==UCASE_SOFT_DOTTED) {
-            return true; 
+            return TRUE; 
         } else if(dotType!=UCASE_OTHER_ACCENT) {
-            return false; 
+            return FALSE; 
         }
     }
 
-    return false; 
+    return FALSE; 
 }
 
 
@@ -987,20 +987,20 @@ isPrecededBy_I(UCaseContextIterator *iter, void *context) {
     int8_t dir;
 
     if(iter==NULL) {
-        return false;
+        return FALSE;
     }
 
     for(dir=-1; (c=iter(context, dir))>=0; dir=0) {
         if(c==0x49) {
-            return true; 
+            return TRUE; 
         }
         dotType=getDotType(c);
         if(dotType!=UCASE_OTHER_ACCENT) {
-            return false; 
+            return FALSE; 
         }
     }
 
-    return false; 
+    return FALSE; 
 }
 
 
@@ -1011,19 +1011,19 @@ isFollowedByMoreAbove(UCaseContextIterator *iter, void *context) {
     int8_t dir;
 
     if(iter==NULL) {
-        return false;
+        return FALSE;
     }
 
     for(dir=1; (c=iter(context, dir))>=0; dir=0) {
         dotType=getDotType(c);
         if(dotType==UCASE_ABOVE) {
-            return true; 
+            return TRUE; 
         } else if(dotType!=UCASE_OTHER_ACCENT) {
-            return false; 
+            return FALSE; 
         }
     }
 
-    return false; 
+    return FALSE; 
 }
 
 
@@ -1034,20 +1034,20 @@ isFollowedByDotAbove(UCaseContextIterator *iter, void *context) {
     int8_t dir;
 
     if(iter==NULL) {
-        return false;
+        return FALSE;
     }
 
     for(dir=1; (c=iter(context, dir))>=0; dir=0) {
         if(c==0x307) {
-            return true;
+            return TRUE;
         }
         dotType=getDotType(c);
         if(dotType!=UCASE_OTHER_ACCENT) {
-            return false; 
+            return FALSE; 
         }
     }
 
-    return false; 
+    return FALSE; 
 }
 
 U_CAPI int32_t U_EXPORT2
@@ -1317,7 +1317,7 @@ ucase_toFullUpper(UChar32 c,
                   UCaseContextIterator *iter, void *context,
                   const UChar **pString,
                   int32_t caseLocale) {
-    return toUpperOrTitle(c, iter, context, pString, caseLocale, true);
+    return toUpperOrTitle(c, iter, context, pString, caseLocale, TRUE);
 }
 
 U_CAPI int32_t U_EXPORT2
@@ -1325,7 +1325,7 @@ ucase_toFullTitle(UChar32 c,
                   UCaseContextIterator *iter, void *context,
                   const UChar **pString,
                   int32_t caseLocale) {
-    return toUpperOrTitle(c, iter, context, pString, caseLocale, false);
+    return toUpperOrTitle(c, iter, context, pString, caseLocale, FALSE);
 }
 
 
@@ -1601,6 +1601,6 @@ ucase_hasBinaryProperty(UChar32 c, UProperty which) {
             ucase_toFullUpper(c, NULL, NULL, &resultString, UCASE_LOC_ROOT)>=0 ||
             ucase_toFullTitle(c, NULL, NULL, &resultString, UCASE_LOC_ROOT)>=0);
     default:
-        return false;
+        return FALSE;
     }
 }

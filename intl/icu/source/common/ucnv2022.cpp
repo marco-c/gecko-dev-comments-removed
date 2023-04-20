@@ -491,7 +491,7 @@ _ISO2022Open(UConverter *cnv, UConverterLoadArgs *pArgs, UErrorCode *errorCode){
 
         uprv_memset(myConverterData, 0, sizeof(UConverterDataISO2022));
         myConverterData->currentType = ASCII1;
-        cnv->fromUnicodeStatus =false;
+        cnv->fromUnicodeStatus =FALSE;
         if(pArgs->locale){
             uprv_strncpy(myLocale, pArgs->locale, sizeof(myLocale)-1);
         }
@@ -623,7 +623,7 @@ _ISO2022Open(UConverter *cnv, UConverterLoadArgs *pArgs, UErrorCode *errorCode){
 #endif  
         else{
 #ifdef U_ENABLE_GENERIC_ISO_2022
-            myConverterData->isFirstBuffer = true;
+            myConverterData->isFirstBuffer = TRUE;
 
             
             cnv->charErrorBufferLength = 3;
@@ -682,7 +682,7 @@ _ISO2022Reset(UConverter *converter, UConverterResetChoice choice) {
     if(choice<=UCNV_RESET_TO_UNICODE) {
         uprv_memset(&myConverterData->toU2022State, 0, sizeof(ISO2022State));
         myConverterData->key = 0;
-        myConverterData->isEmptySegment = false;
+        myConverterData->isEmptySegment = FALSE;
     }
     if(choice!=UCNV_RESET_TO_UNICODE) {
         uprv_memset(&myConverterData->fromU2022State, 0, sizeof(ISO2022State));
@@ -690,7 +690,7 @@ _ISO2022Reset(UConverter *converter, UConverterResetChoice choice) {
 #ifdef U_ENABLE_GENERIC_ISO_2022
     if(myConverterData->locale[0] == 0){
         if(choice<=UCNV_RESET_TO_UNICODE) {
-            myConverterData->isFirstBuffer = true;
+            myConverterData->isFirstBuffer = TRUE;
             myConverterData->key = 0;
             if (converter->mode == UCNV_SO){
                 ucnv_close (myConverterData->currentConverter);
@@ -1285,7 +1285,7 @@ T_UConverter_toUnicode_ISO_2022_OFFSETS_LOGIC(UConverterToUnicodeArgs* args,
                 }
 
                 
-                myData->isFirstBuffer=false;
+                myData->isFirstBuffer=FALSE;
                 sourceStart = args->source;
                 myTargetStart = args->target;
                 args->converter = myData->currentConverter;
@@ -1848,7 +1848,7 @@ getTrail:
                         len = 1;
                         cs = cs0;
                         g = 0;
-                        useFallback = false;
+                        useFallback = FALSE;
                     }
                     break;
                 case JISX208:
@@ -1864,7 +1864,7 @@ getTrail:
                             len = len2;
                             cs = cs0;
                             g = 0;
-                            useFallback = false;
+                            useFallback = FALSE;
                         }
                     } else if(len == 0 && useFallback &&
                               (uint32_t)(sourceChar - HWKANA_START) <= (HWKANA_END - HWKANA_START)) {
@@ -1872,7 +1872,7 @@ getTrail:
                         len = -2;
                         cs = cs0;
                         g = 0;
-                        useFallback = false;
+                        useFallback = FALSE;
                     }
                     break;
                 case ISO8859_7:
@@ -1886,7 +1886,7 @@ getTrail:
                         len = len2;
                         cs = cs0;
                         g = 2;
-                        useFallback = false;
+                        useFallback = FALSE;
                     }
                     break;
                 default:
@@ -1911,7 +1911,7 @@ getTrail:
                         len = len2;
                         cs = cs0;
                         g = 0;
-                        useFallback = false;
+                        useFallback = FALSE;
                     }
                     break;
                 }
@@ -2121,7 +2121,7 @@ UConverter_toUnicode_ISO_2022_JP_OFFSETS_LOGIC(UConverterToUnicodeArgs *args,
                     continue;
                 } else {
                     
-                    myData->isEmptySegment = false;	
+                    myData->isEmptySegment = FALSE;	
                     break;
                 }
 
@@ -2133,7 +2133,7 @@ UConverter_toUnicode_ISO_2022_JP_OFFSETS_LOGIC(UConverterToUnicodeArgs *args,
                     continue;
                 } else {
                     
-                    myData->isEmptySegment = false;	
+                    myData->isEmptySegment = FALSE;	
                     break;
                 }
 
@@ -2159,12 +2159,12 @@ escape:
                 if(U_FAILURE(*err)){
                     args->target = myTarget;
                     args->source = mySource;
-                    myData->isEmptySegment = false;	
+                    myData->isEmptySegment = FALSE;	
                     return;
                 }
                 
                 if(myData->key==0) {
-                    myData->isEmptySegment = true;
+                    myData->isEmptySegment = TRUE;
                 }
                 continue;
 
@@ -2181,7 +2181,7 @@ escape:
                 U_FALLTHROUGH;
             default:
                 
-                myData->isEmptySegment = false;
+                myData->isEmptySegment = FALSE;
                 cs = (StateEnum)pToU2022State->cs[pToU2022State->g];
                 if( (uint8_t)(mySourceChar - 0xa1) <= (0xdf - 0xa1) && myData->version==4 &&
                     !IS_JP_DBCS(cs)
@@ -2262,7 +2262,7 @@ getTrailByte:
                                 tempBuf[0] = (char)(tmpSourceChar >> 8);
                                 tempBuf[1] = (char)(tmpSourceChar);
                             }
-                            targetUniChar = ucnv_MBCSSimpleGetNextUChar(myData->myConverterArray[cs], tempBuf, 2, false);
+                            targetUniChar = ucnv_MBCSSimpleGetNextUChar(myData->myConverterArray[cs], tempBuf, 2, FALSE);
                         } else if (!(trailIsOk || IS_2022_CONTROL(trailByte))) {
                             
                             ++mySource;
@@ -2534,7 +2534,7 @@ getTrail:
         int32_t sourceIndex;
 
         
-        isTargetByteDBCS=false;
+        isTargetByteDBCS=FALSE;
 
         
         
@@ -2712,7 +2712,7 @@ UConverter_toUnicode_ISO_2022_KR_OFFSETS_LOGIC(UConverterToUnicodeArgs *args,
             if(mySourceChar==UCNV_SI){
                 myData->toU2022State.g = 0;
                 if (myData->isEmptySegment) {
-                    myData->isEmptySegment = false;	
+                    myData->isEmptySegment = FALSE;	
                     *err = U_ILLEGAL_ESCAPE_SEQUENCE;
                     args->converter->toUCallbackReason = UCNV_IRREGULAR;
                     args->converter->toUBytes[0] = (uint8_t)mySourceChar;
@@ -2725,13 +2725,13 @@ UConverter_toUnicode_ISO_2022_KR_OFFSETS_LOGIC(UConverterToUnicodeArgs *args,
                 continue;
             }else if(mySourceChar==UCNV_SO){
                 myData->toU2022State.g = 1;
-                myData->isEmptySegment = true;	
+                myData->isEmptySegment = TRUE;	
                 
                 continue;
             }else if(mySourceChar==ESC_2022){
                 mySource--;
 escape:
-                myData->isEmptySegment = false;	
+                myData->isEmptySegment = FALSE;	
                 changeState_2022(args->converter,&(mySource),
                                 mySourceLimit, ISO_2022_KR, err);
                 if(U_FAILURE(*err)){
@@ -2742,7 +2742,7 @@ escape:
                 continue;
             }
 
-            myData->isEmptySegment = false;	
+            myData->isEmptySegment = FALSE;	
             if(myData->toU2022State.g == 1) {
                 if(mySource < mySourceLimit) {
                     int leadIsOk, trailIsOk;
@@ -3092,7 +3092,7 @@ getTrail:
                                     len = 2;
                                 } else {
                                     len = -2;
-                                    useFallback = false;
+                                    useFallback = FALSE;
                                 }
                                 if(cs == CNS_11643_1) {
                                     g = 1;
@@ -3119,7 +3119,7 @@ getTrail:
                                 len = len2;
                                 cs = cs0;
                                 g = 1;
-                                useFallback = false;
+                                useFallback = FALSE;
                             }
                         }
                     }
@@ -3301,7 +3301,7 @@ UConverter_toUnicode_ISO_2022_CN_OFFSETS_LOGIC(UConverterToUnicodeArgs *args,
             case UCNV_SI:
                 pToU2022State->g=0;
                 if (myData->isEmptySegment) {
-                    myData->isEmptySegment = false;	
+                    myData->isEmptySegment = FALSE;	
                     *err = U_ILLEGAL_ESCAPE_SEQUENCE;
                     args->converter->toUCallbackReason = UCNV_IRREGULAR;
                     args->converter->toUBytes[0] = static_cast<uint8_t>(mySourceChar);
@@ -3315,11 +3315,11 @@ UConverter_toUnicode_ISO_2022_CN_OFFSETS_LOGIC(UConverterToUnicodeArgs *args,
             case UCNV_SO:
                 if(pToU2022State->cs[1] != 0) {
                     pToU2022State->g=1;
-                    myData->isEmptySegment = true;	
+                    myData->isEmptySegment = TRUE;	
                     continue;
                 } else {
                     
-                    myData->isEmptySegment = false;	
+                    myData->isEmptySegment = FALSE;	
                     break;
                 }
 
@@ -3345,7 +3345,7 @@ escape:
                 if(U_FAILURE(*err)){
                     args->target = myTarget;
                     args->source = mySource;
-                    myData->isEmptySegment = false;	
+                    myData->isEmptySegment = FALSE;	
                     return;
                 }
                 continue;
@@ -3358,7 +3358,7 @@ escape:
                 U_FALLTHROUGH;
             default:
                 
-                myData->isEmptySegment = false;
+                myData->isEmptySegment = FALSE;
                 if(pToU2022State->g != 0) {
                     if(mySource < mySourceLimit) {
                         UConverterSharedData *cnv;
@@ -3397,7 +3397,7 @@ getTrailByte:
                                 tempBuf[1] = (char) trailByte;
                                 tempBufLen = 2;
                             }
-                            targetUniChar = ucnv_MBCSSimpleGetNextUChar(cnv, tempBuf, tempBufLen, false);
+                            targetUniChar = ucnv_MBCSSimpleGetNextUChar(cnv, tempBuf, tempBufLen, FALSE);
                             mySourceChar = (mySourceChar << 8) | trailByte;
                         } else if (!(trailIsOk || IS_2022_CONTROL(trailByte))) {
                             
@@ -3609,7 +3609,7 @@ _ISO_2022_SafeClone(
 
     uprv_memcpy(&localClone->mydata, cnvData, sizeof(UConverterDataISO2022));
     localClone->cnv.extraInfo = &localClone->mydata; 
-    localClone->cnv.isExtraLocal = true;
+    localClone->cnv.isExtraLocal = TRUE;
 
     
 
@@ -3808,8 +3808,8 @@ static const UConverterStaticData _ISO2022StaticData={
     3, 
     { 0x1a, 0, 0, 0 },
     1,
-    false,
-    false,
+    FALSE,
+    FALSE,
     0,
     0,
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } 
@@ -3853,8 +3853,8 @@ static const UConverterStaticData _ISO2022JPStaticData={
     6, 
     { 0x1a, 0, 0, 0 },
     1,
-    false,
-    false,
+    FALSE,
+    FALSE,
     0,
     0,
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } 
@@ -3904,8 +3904,8 @@ static const UConverterStaticData _ISO2022KRStaticData={
     8, 
     { 0x1a, 0, 0, 0 },
     1,
-    false,
-    false,
+    FALSE,
+    FALSE,
     0,
     0,
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } 
@@ -3955,8 +3955,8 @@ static const UConverterStaticData _ISO2022CNStaticData={
     8, 
     { 0x1a, 0, 0, 0 },
     1,
-    false,
-    false,
+    FALSE,
+    FALSE,
     0,
     0,
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } 

@@ -74,7 +74,7 @@ UnicodeSet& UnicodeSet::applyPattern(const UnicodeString& pattern,
 
     if (options & USET_IGNORE_SPACE) {
         
-        ICU_Utility::skipWhitespace(pattern, i, true);
+        ICU_Utility::skipWhitespace(pattern, i, TRUE);
     }
 
     if (i != pattern.length()) {
@@ -141,7 +141,7 @@ addCaseMapping(UnicodeSet &set, int32_t result, const UChar *full, UnicodeString
             set.add(result);
         } else {
             
-            str.setTo((UBool)false, full, result);
+            str.setTo((UBool)FALSE, full, result);
             set.add(str);
         }
     }

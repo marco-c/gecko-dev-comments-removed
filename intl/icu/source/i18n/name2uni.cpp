@@ -127,7 +127,7 @@ void NameUnicodeTransliterator::handleTransliterate(Replaceable& text, UTransPos
         return;
     }
 
-    UnicodeString openPat(true, OPEN, -1);
+    UnicodeString openPat(TRUE, OPEN, -1);
     UnicodeString str, name;
 
     int32_t cursor = offsets.start;

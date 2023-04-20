@@ -37,6 +37,7 @@ U_NAMESPACE_BEGIN
 
 
 
+struct  RegexTableEl;
 class   RegexPattern;
 
 
@@ -63,6 +64,9 @@ public:
     virtual    ~RegexCompile();
 
     void        nextChar(RegexPatternChar &c);      
+
+    static void cleanup();                       
+
 
 
     
@@ -150,6 +154,12 @@ private:
     RegexPatternChar              fC;                
                                                      
 
+    
+    
+    
+    RegexTableEl                  **fStateTable;     
+                                                     
+
     uint16_t                      fStack[kStackSize];  
     int32_t                       fStackPtr;           
                                                        
@@ -198,6 +208,10 @@ private:
     int32_t                       fIntervalUpper;    
                                                      
                                                      
+                                                     
+                                                     
+
+    int64_t                       fNameStartPos;     
                                                      
                                                      
 

@@ -116,7 +116,7 @@ public:
 private:
     friend struct CollationDataReader;
 
-    CollationKeys() = delete;  
+    CollationKeys();  
 
     
     static const uint32_t SEC_COMMON_LOW = Collation::COMMON_BYTE;

@@ -79,110 +79,110 @@ struct RBBIRuleTableEl {
 };
 
 static const struct RBBIRuleTableEl gRuleParseStateTable[] = {
-    {doNOP, 0, 0, 0, true}
-    , {doExprStart, 254, 29, 9, false}     
-    , {doNOP, 132, 1,0,  true}     
-    , {doNoChain, 94 , 12, 9, true}     
-    , {doExprStart, 36 , 88, 98, false}     
-    , {doNOP, 33 , 19,0,  true}     
-    , {doNOP, 59 , 1,0,  true}     
-    , {doNOP, 252, 0,0,  false}     
-    , {doExprStart, 255, 29, 9, false}     
-    , {doEndOfRule, 59 , 1,0,  true}     
-    , {doNOP, 132, 9,0,  true}     
-    , {doRuleError, 255, 103,0,  false}     
-    , {doExprStart, 254, 29,0,  false}     
-    , {doNOP, 132, 12,0,  true}     
-    , {doRuleError, 94 , 103,0,  false}     
-    , {doExprStart, 36 , 88, 37, false}     
-    , {doRuleError, 59 , 103,0,  false}     
-    , {doRuleError, 252, 103,0,  false}     
-    , {doExprStart, 255, 29,0,  false}     
-    , {doNOP, 33 , 21,0,  true}     
-    , {doReverseDir, 255, 28, 9, false}     
-    , {doOptionStart, 130, 23,0,  true}     
-    , {doRuleError, 255, 103,0,  false}     
-    , {doNOP, 129, 23,0,  true}     
-    , {doOptionEnd, 255, 25,0,  false}     
-    , {doNOP, 59 , 1,0,  true}     
-    , {doNOP, 132, 25,0,  true}     
-    , {doRuleError, 255, 103,0,  false}     
-    , {doExprStart, 255, 29, 9, false}     
-    , {doRuleChar, 254, 38,0,  true}     
-    , {doNOP, 132, 29,0,  true}     
-    , {doRuleChar, 131, 38,0,  true}     
-    , {doNOP, 91 , 94, 38, false}     
-    , {doLParen, 40 , 29, 38, true}     
-    , {doNOP, 36 , 88, 37, false}     
-    , {doDotAny, 46 , 38,0,  true}     
-    , {doRuleError, 255, 103,0,  false}     
-    , {doCheckVarDef, 255, 38,0,  false}     
-    , {doNOP, 132, 38,0,  true}     
-    , {doUnaryOpStar, 42 , 43,0,  true}     
-    , {doUnaryOpPlus, 43 , 43,0,  true}     
-    , {doUnaryOpQuestion, 63 , 43,0,  true}     
-    , {doNOP, 255, 43,0,  false}     
-    , {doExprCatOperator, 254, 29,0,  false}     
-    , {doNOP, 132, 43,0,  true}     
-    , {doExprCatOperator, 131, 29,0,  false}     
-    , {doExprCatOperator, 91 , 29,0,  false}     
-    , {doExprCatOperator, 40 , 29,0,  false}     
-    , {doExprCatOperator, 36 , 29,0,  false}     
-    , {doExprCatOperator, 46 , 29,0,  false}     
-    , {doExprCatOperator, 47 , 55,0,  false}     
-    , {doExprCatOperator, 123 , 67,0,  true}     
-    , {doExprOrOperator, 124 , 29,0,  true}     
-    , {doExprRParen, 41 , 255,0,  true}     
-    , {doExprFinished, 255, 255,0,  false}     
-    , {doSlash, 47 , 57,0,  true}     
-    , {doNOP, 255, 103,0,  false}     
-    , {doExprCatOperator, 254, 29,0,  false}     
-    , {doNOP, 132, 43,0,  true}     
-    , {doExprCatOperator, 131, 29,0,  false}     
-    , {doExprCatOperator, 91 , 29,0,  false}     
-    , {doExprCatOperator, 40 , 29,0,  false}     
-    , {doExprCatOperator, 36 , 29,0,  false}     
-    , {doExprCatOperator, 46 , 29,0,  false}     
-    , {doExprOrOperator, 124 , 29,0,  true}     
-    , {doExprRParen, 41 , 255,0,  true}     
-    , {doExprFinished, 255, 255,0,  false}     
-    , {doNOP, 132, 67,0,  true}     
-    , {doStartTagValue, 128, 70,0,  false}     
-    , {doTagExpectedError, 255, 103,0,  false}     
-    , {doNOP, 132, 74,0,  true}     
-    , {doNOP, 125 , 74,0,  false}     
-    , {doTagDigit, 128, 70,0,  true}     
-    , {doTagExpectedError, 255, 103,0,  false}     
-    , {doNOP, 132, 74,0,  true}     
-    , {doTagValue, 125 , 77,0,  true}     
-    , {doTagExpectedError, 255, 103,0,  false}     
-    , {doExprCatOperator, 254, 29,0,  false}     
-    , {doNOP, 132, 77,0,  true}     
-    , {doExprCatOperator, 131, 29,0,  false}     
-    , {doExprCatOperator, 91 , 29,0,  false}     
-    , {doExprCatOperator, 40 , 29,0,  false}     
-    , {doExprCatOperator, 36 , 29,0,  false}     
-    , {doExprCatOperator, 46 , 29,0,  false}     
-    , {doExprCatOperator, 47 , 55,0,  false}     
-    , {doExprOrOperator, 124 , 29,0,  true}     
-    , {doExprRParen, 41 , 255,0,  true}     
-    , {doExprFinished, 255, 255,0,  false}     
-    , {doStartVariableName, 36 , 90,0,  true}     
-    , {doNOP, 255, 103,0,  false}     
-    , {doNOP, 130, 92,0,  true}     
-    , {doVariableNameExpectedErr, 255, 103,0,  false}     
-    , {doNOP, 129, 92,0,  true}     
-    , {doEndVariableName, 255, 255,0,  false}     
-    , {doScanUnicodeSet, 91 , 255,0,  true}     
-    , {doScanUnicodeSet, 112 , 255,0,  true}     
-    , {doScanUnicodeSet, 80 , 255,0,  true}     
-    , {doNOP, 255, 103,0,  false}     
-    , {doNOP, 132, 98,0,  true}     
-    , {doStartAssign, 61 , 29, 101, true}     
-    , {doNOP, 255, 37, 9, false}     
-    , {doEndAssign, 59 , 1,0,  true}     
-    , {doRuleErrorAssignExpr, 255, 103,0,  false}     
-    , {doExit, 255, 103,0,  true}     
+    {doNOP, 0, 0, 0, TRUE}
+    , {doExprStart, 254, 29, 9, FALSE}     
+    , {doNOP, 132, 1,0,  TRUE}     
+    , {doNoChain, 94 , 12, 9, TRUE}     
+    , {doExprStart, 36 , 88, 98, FALSE}     
+    , {doNOP, 33 , 19,0,  TRUE}     
+    , {doNOP, 59 , 1,0,  TRUE}     
+    , {doNOP, 252, 0,0,  FALSE}     
+    , {doExprStart, 255, 29, 9, FALSE}     
+    , {doEndOfRule, 59 , 1,0,  TRUE}     
+    , {doNOP, 132, 9,0,  TRUE}     
+    , {doRuleError, 255, 103,0,  FALSE}     
+    , {doExprStart, 254, 29,0,  FALSE}     
+    , {doNOP, 132, 12,0,  TRUE}     
+    , {doRuleError, 94 , 103,0,  FALSE}     
+    , {doExprStart, 36 , 88, 37, FALSE}     
+    , {doRuleError, 59 , 103,0,  FALSE}     
+    , {doRuleError, 252, 103,0,  FALSE}     
+    , {doExprStart, 255, 29,0,  FALSE}     
+    , {doNOP, 33 , 21,0,  TRUE}     
+    , {doReverseDir, 255, 28, 9, FALSE}     
+    , {doOptionStart, 130, 23,0,  TRUE}     
+    , {doRuleError, 255, 103,0,  FALSE}     
+    , {doNOP, 129, 23,0,  TRUE}     
+    , {doOptionEnd, 255, 25,0,  FALSE}     
+    , {doNOP, 59 , 1,0,  TRUE}     
+    , {doNOP, 132, 25,0,  TRUE}     
+    , {doRuleError, 255, 103,0,  FALSE}     
+    , {doExprStart, 255, 29, 9, FALSE}     
+    , {doRuleChar, 254, 38,0,  TRUE}     
+    , {doNOP, 132, 29,0,  TRUE}     
+    , {doRuleChar, 131, 38,0,  TRUE}     
+    , {doNOP, 91 , 94, 38, FALSE}     
+    , {doLParen, 40 , 29, 38, TRUE}     
+    , {doNOP, 36 , 88, 37, FALSE}     
+    , {doDotAny, 46 , 38,0,  TRUE}     
+    , {doRuleError, 255, 103,0,  FALSE}     
+    , {doCheckVarDef, 255, 38,0,  FALSE}     
+    , {doNOP, 132, 38,0,  TRUE}     
+    , {doUnaryOpStar, 42 , 43,0,  TRUE}     
+    , {doUnaryOpPlus, 43 , 43,0,  TRUE}     
+    , {doUnaryOpQuestion, 63 , 43,0,  TRUE}     
+    , {doNOP, 255, 43,0,  FALSE}     
+    , {doExprCatOperator, 254, 29,0,  FALSE}     
+    , {doNOP, 132, 43,0,  TRUE}     
+    , {doExprCatOperator, 131, 29,0,  FALSE}     
+    , {doExprCatOperator, 91 , 29,0,  FALSE}     
+    , {doExprCatOperator, 40 , 29,0,  FALSE}     
+    , {doExprCatOperator, 36 , 29,0,  FALSE}     
+    , {doExprCatOperator, 46 , 29,0,  FALSE}     
+    , {doExprCatOperator, 47 , 55,0,  FALSE}     
+    , {doExprCatOperator, 123 , 67,0,  TRUE}     
+    , {doExprOrOperator, 124 , 29,0,  TRUE}     
+    , {doExprRParen, 41 , 255,0,  TRUE}     
+    , {doExprFinished, 255, 255,0,  FALSE}     
+    , {doSlash, 47 , 57,0,  TRUE}     
+    , {doNOP, 255, 103,0,  FALSE}     
+    , {doExprCatOperator, 254, 29,0,  FALSE}     
+    , {doNOP, 132, 43,0,  TRUE}     
+    , {doExprCatOperator, 131, 29,0,  FALSE}     
+    , {doExprCatOperator, 91 , 29,0,  FALSE}     
+    , {doExprCatOperator, 40 , 29,0,  FALSE}     
+    , {doExprCatOperator, 36 , 29,0,  FALSE}     
+    , {doExprCatOperator, 46 , 29,0,  FALSE}     
+    , {doExprOrOperator, 124 , 29,0,  TRUE}     
+    , {doExprRParen, 41 , 255,0,  TRUE}     
+    , {doExprFinished, 255, 255,0,  FALSE}     
+    , {doNOP, 132, 67,0,  TRUE}     
+    , {doStartTagValue, 128, 70,0,  FALSE}     
+    , {doTagExpectedError, 255, 103,0,  FALSE}     
+    , {doNOP, 132, 74,0,  TRUE}     
+    , {doNOP, 125 , 74,0,  FALSE}     
+    , {doTagDigit, 128, 70,0,  TRUE}     
+    , {doTagExpectedError, 255, 103,0,  FALSE}     
+    , {doNOP, 132, 74,0,  TRUE}     
+    , {doTagValue, 125 , 77,0,  TRUE}     
+    , {doTagExpectedError, 255, 103,0,  FALSE}     
+    , {doExprCatOperator, 254, 29,0,  FALSE}     
+    , {doNOP, 132, 77,0,  TRUE}     
+    , {doExprCatOperator, 131, 29,0,  FALSE}     
+    , {doExprCatOperator, 91 , 29,0,  FALSE}     
+    , {doExprCatOperator, 40 , 29,0,  FALSE}     
+    , {doExprCatOperator, 36 , 29,0,  FALSE}     
+    , {doExprCatOperator, 46 , 29,0,  FALSE}     
+    , {doExprCatOperator, 47 , 55,0,  FALSE}     
+    , {doExprOrOperator, 124 , 29,0,  TRUE}     
+    , {doExprRParen, 41 , 255,0,  TRUE}     
+    , {doExprFinished, 255, 255,0,  FALSE}     
+    , {doStartVariableName, 36 , 90,0,  TRUE}     
+    , {doNOP, 255, 103,0,  FALSE}     
+    , {doNOP, 130, 92,0,  TRUE}     
+    , {doVariableNameExpectedErr, 255, 103,0,  FALSE}     
+    , {doNOP, 129, 92,0,  TRUE}     
+    , {doEndVariableName, 255, 255,0,  FALSE}     
+    , {doScanUnicodeSet, 91 , 255,0,  TRUE}     
+    , {doScanUnicodeSet, 112 , 255,0,  TRUE}     
+    , {doScanUnicodeSet, 80 , 255,0,  TRUE}     
+    , {doNOP, 255, 103,0,  FALSE}     
+    , {doNOP, 132, 98,0,  TRUE}     
+    , {doStartAssign, 61 , 29, 101, TRUE}     
+    , {doNOP, 255, 37, 9, FALSE}     
+    , {doEndAssign, 59 , 1,0,  TRUE}     
+    , {doRuleErrorAssignExpr, 255, 103,0,  FALSE}     
+    , {doExit, 255, 103,0,  TRUE}     
  };
 #ifdef RBBI_DEBUG
 static const char * const RBBIRuleStateNames[] = {    0,

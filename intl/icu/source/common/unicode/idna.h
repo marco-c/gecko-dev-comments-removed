@@ -305,8 +305,8 @@ public:
 private:
     friend class UTS46;
 
-    IDNAInfo(const IDNAInfo &other) = delete;  
-    IDNAInfo &operator=(const IDNAInfo &other) = delete;  
+    IDNAInfo(const IDNAInfo &other);  
+    IDNAInfo &operator=(const IDNAInfo &other);  
 
     void reset() {
         errors=labelErrors=0;

@@ -494,7 +494,7 @@ static const UConverterStaticData _UTF32BEStaticData = {
     "UTF-32BE",
     1232,
     UCNV_IBM, UCNV_UTF32_BigEndian, 4, 4,
-    { 0, 0, 0xff, 0xfd }, 4, false, false,
+    { 0, 0, 0xff, 0xfd }, 4, FALSE, FALSE,
     0,
     0,
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } 
@@ -989,7 +989,7 @@ static const UConverterStaticData _UTF32LEStaticData = {
     "UTF-32LE",
     1234,
     UCNV_IBM, UCNV_UTF32_LittleEndian, 4, 4,
-    { 0xfd, 0xff, 0, 0 }, 4, false, false,
+    { 0xfd, 0xff, 0, 0 }, 4, FALSE, FALSE,
     0,
     0,
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } 
@@ -1110,7 +1110,7 @@ _UTF32ToUnicodeWithOffsets(UConverterToUnicodeArgs *pArgs,
                     
                     pArgs->source=utf32BOM+(state&4); 
                     pArgs->sourceLimit=pArgs->source+((state&3)-count); 
-                    pArgs->flush=false; 
+                    pArgs->flush=FALSE; 
 
                     
                     T_UConverter_toUnicode_UTF32_BE(pArgs, pErrorCode);
@@ -1241,7 +1241,7 @@ static const UConverterStaticData _UTF32StaticData = {
 #else
     { 0xfd, 0xff, 0, 0 }, 4,
 #endif
-    false, false,
+    FALSE, FALSE,
     0,
     0,
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } 

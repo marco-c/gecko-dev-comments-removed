@@ -256,6 +256,8 @@ MacroProps NumberPropertyMapper::oldToNew(const DecimalFormatProperties& propert
         } else {
             macros.notation = Notation::compactShort();
         }
+        
+        macros.affixProvider = nullptr;
     }
 
     

@@ -378,7 +378,6 @@ LocalizedNumberRangeFormatter::getFormatter(UErrorCode& status) const {
     
     auto* temp = new NumberRangeFormatterImpl(fMacros, status);
     if (U_FAILURE(status)) {
-        delete temp;
         return nullptr;
     }
     if (temp == nullptr) {

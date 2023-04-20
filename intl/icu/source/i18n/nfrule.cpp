@@ -621,9 +621,9 @@ util_equalSubstitutions(const NFSubstitution* sub1, const NFSubstitution* sub2)
             return *sub1 == *sub2;
         }
     } else if (!sub2) {
-        return true;
+        return TRUE;
     }
-    return false;
+    return FALSE;
 }
 
 
@@ -856,7 +856,7 @@ NFRule::shouldRollBack(int64_t number) const
         int64_t re = util64_pow(radix, exponent);
         return (number % re) == 0 && (baseValue % re) != 0;
     }
-    return false;
+    return FALSE;
 }
 
 
@@ -943,19 +943,19 @@ NFRule::doParse(const UnicodeString& text,
         
         parsePosition.setErrorIndex(pp.getErrorIndex());
         resVal.setLong(0);
-        return true;
+        return TRUE;
     }
     if (baseValue == kInfinityRule) {
         
         parsePosition.setIndex(pp.getIndex());
         resVal.setDouble(uprv_getInfinity());
-        return true;
+        return TRUE;
     }
     if (baseValue == kNaNRule) {
         
         parsePosition.setIndex(pp.getIndex());
         resVal.setDouble(uprv_getNaN());
-        return true;
+        return TRUE;
     }
 
     
@@ -1083,7 +1083,7 @@ NFRule::doParse(const UnicodeString& text,
     }
 
     resVal.setDouble(result);
-    return true; 
+    return TRUE; 
 }
 
 
@@ -1191,7 +1191,7 @@ NFRule::matchToDelimiter(const UnicodeString& text,
             if (subText.length() > 0) {
                 UBool success = sub->doParse(subText, tempPP, _baseValue, upperBound,
 #if UCONFIG_NO_COLLATION
-                    false,
+                    FALSE,
 #else
                     formatter->isLenient(),
 #endif
@@ -1245,7 +1245,7 @@ NFRule::matchToDelimiter(const UnicodeString& text,
         
         UBool success = sub->doParse(text, tempPP, _baseValue, upperBound,
 #if UCONFIG_NO_COLLATION
-            false,
+            FALSE,
 #else
             formatter->isLenient(),
 #endif
@@ -1579,7 +1579,7 @@ NFRule::allIgnorable(const UnicodeString& str, UErrorCode& status) const
 {
     
     if (str.length() == 0) {
-        return true;
+        return TRUE;
     }
 
 #if !UCONFIG_NO_COLLATION
@@ -1590,14 +1590,14 @@ NFRule::allIgnorable(const UnicodeString& str, UErrorCode& status) const
         const RuleBasedCollator* collator = formatter->getCollator();
         if (collator == NULL) {
             status = U_MEMORY_ALLOCATION_ERROR;
-            return false;
+            return FALSE;
         }
         LocalPointer<CollationElementIterator> iter(collator->createCollationElementIterator(str));
 
         
         if (iter.isNull()) {
             status = U_MEMORY_ALLOCATION_ERROR;
-            return false;
+            return FALSE;
         }
 
         UErrorCode err = U_ZERO_ERROR;
@@ -1613,7 +1613,7 @@ NFRule::allIgnorable(const UnicodeString& str, UErrorCode& status) const
 
     
     
-    return false;
+    return FALSE;
 }
 
 void

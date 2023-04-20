@@ -36,8 +36,8 @@ CollationIterator::CEBuffer::~CEBuffer() {}
 UBool
 CollationIterator::CEBuffer::ensureAppendCapacity(int32_t appCap, UErrorCode &errorCode) {
     int32_t capacity = buffer.getCapacity();
-    if((length + appCap) <= capacity) { return true; }
-    if(U_FAILURE(errorCode)) { return false; }
+    if((length + appCap) <= capacity) { return TRUE; }
+    if(U_FAILURE(errorCode)) { return FALSE; }
     do {
         if(capacity < 1000) {
             capacity *= 4;
@@ -48,9 +48,9 @@ CollationIterator::CEBuffer::ensureAppendCapacity(int32_t appCap, UErrorCode &er
     int64_t *p = buffer.resize(capacity, length);
     if(p == NULL) {
         errorCode = U_MEMORY_ALLOCATION_ERROR;
-        return false;
+        return FALSE;
     }
-    return true;
+    return TRUE;
 }
 
 
@@ -216,12 +216,12 @@ CollationIterator::handleGetTrailSurrogate() {
 
 UBool
 CollationIterator::foundNULTerminator() {
-    return false;
+    return FALSE;
 }
 
 UBool
 CollationIterator::forbidSurrogateCodePoints() const {
-    return false;
+    return FALSE;
 }
 
 uint32_t
@@ -239,7 +239,7 @@ int64_t
 CollationIterator::nextCEFromCE32(const CollationData *d, UChar32 c, uint32_t ce32,
                                   UErrorCode &errorCode) {
     --ceBuffer.length;  
-    appendCEsFromCE32(d, c, ce32, true, errorCode);
+    appendCEsFromCE32(d, c, ce32, TRUE, errorCode);
     if(U_SUCCESS(errorCode)) {
         return ceBuffer.get(cesIndex++);
     } else {
@@ -661,7 +661,7 @@ CollationIterator::nextCE32FromDiscontiguousContraction(
         
         c = U_SENTINEL;
         for(;;) {
-            appendCEsFromCE32(d, c, ce32, true, errorCode);
+            appendCEsFromCE32(d, c, ce32, TRUE, errorCode);
             
             
             if(!skipped->hasNext()) { break; }
@@ -864,7 +864,7 @@ CollationIterator::previousCE(UVector32 &offsets, UErrorCode &errorCode) {
     if(Collation::isSimpleOrLongCE32(ce32)) {
         return Collation::ceFromCE32(ce32);
     }
-    appendCEsFromCE32(d, c, ce32, false, errorCode);
+    appendCEsFromCE32(d, c, ce32, FALSE, errorCode);
     if(U_SUCCESS(errorCode)) {
         if(ceBuffer.length > 1) {
             offsets.addElement(getOffset(), errorCode);

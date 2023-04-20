@@ -154,7 +154,7 @@ ucnv_extMatchToU(const int32_t *cx, int8_t sisoState,
                 srcLength=1;
             }
         }
-        flush=true;
+        flush=TRUE;
     }
 
     
@@ -302,7 +302,7 @@ ucnv_extInitialMatchToU(UConverter *cnv, const int32_t *cx,
                          target, targetLimit,
                          offsets, srcIndex,
                          pErrorCode);
-        return true;
+        return TRUE;
     } else if(match<0) {
         
         const char *s;
@@ -323,9 +323,9 @@ ucnv_extInitialMatchToU(UConverter *cnv, const int32_t *cx,
         }
         *src=s; 
         cnv->preToULength=(int8_t)match;
-        return true;
+        return TRUE;
     } else  {
-        return false;
+        return FALSE;
     }
 }
 
@@ -345,7 +345,7 @@ ucnv_extSimpleMatchToU(const int32_t *cx,
                            source, length,
                            NULL, 0,
                            &value,
-                           useFallback, true);
+                           useFallback, TRUE);
     if(match==length) {
         
         if(UCNV_EXT_TO_U_IS_CODE_POINT(value)) {
@@ -778,7 +778,7 @@ ucnv_extInitialMatchFromU(UConverter *cnv, const int32_t *cx,
                            target, targetLimit,
                            offsets, srcIndex,
                            pErrorCode);
-        return true;
+        return TRUE;
     } else if(match<0) {
         
         const UChar *s;
@@ -795,13 +795,13 @@ ucnv_extInitialMatchFromU(UConverter *cnv, const int32_t *cx,
         }
         *src=s; 
         cnv->preFromULength=(int8_t)match;
-        return true;
+        return TRUE;
     } else if(match==1) {
         
-        cnv->useSubChar1=true;
-        return false;
+        cnv->useSubChar1=TRUE;
+        return FALSE;
     } else  {
-        return false;
+        return FALSE;
     }
 }
 
@@ -822,7 +822,7 @@ ucnv_extSimpleMatchFromU(const int32_t *cx,
                              NULL, 0,
                              NULL, 0,
                              &value,
-                             useFallback, true);
+                             useFallback, TRUE);
     if(match>=2) {
         
         int32_t length;
@@ -934,7 +934,7 @@ ucnv_extContinueMatchFromU(UConverter *cnv,
 
         if(match==1) {
             
-            cnv->useSubChar1=true;
+            cnv->useSubChar1=TRUE;
         }
 
         
@@ -961,12 +961,12 @@ extSetUseMapping(UConverterUnicodeSet which, int32_t minLength, uint32_t value) 
         
         if(((value&(UCNV_EXT_FROM_U_ROUNDTRIP_FLAG|UCNV_EXT_FROM_U_RESERVED_MASK))!=
                 UCNV_EXT_FROM_U_ROUNDTRIP_FLAG)) {
-            return false;
+            return FALSE;
         }
     } else  {
         
         if((value&UCNV_EXT_FROM_U_RESERVED_MASK)!=0) {
-            return false;
+            return FALSE;
         }
     }
     

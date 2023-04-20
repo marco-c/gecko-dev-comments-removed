@@ -54,8 +54,8 @@ public:
     ~RBBISymbolTableEntry();
 
 private:
-    RBBISymbolTableEntry(const RBBISymbolTableEntry &other) = delete; 
-    RBBISymbolTableEntry &operator=(const RBBISymbolTableEntry &other) = delete; 
+    RBBISymbolTableEntry(const RBBISymbolTableEntry &other); 
+    RBBISymbolTableEntry &operator=(const RBBISymbolTableEntry &other); 
 };
 
 
@@ -177,8 +177,8 @@ public:
     RBBIDataHeader                *flattenData();    
                                                      
 private:
-    RBBIRuleBuilder(const RBBIRuleBuilder &other) = delete; 
-    RBBIRuleBuilder &operator=(const RBBIRuleBuilder &other) = delete; 
+    RBBIRuleBuilder(const RBBIRuleBuilder &other); 
+    RBBIRuleBuilder &operator=(const RBBIRuleBuilder &other); 
 };
 
 

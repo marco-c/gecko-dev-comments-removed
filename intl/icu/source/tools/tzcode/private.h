@@ -309,6 +309,14 @@ const char *	scheck(const char * string, const char * format);
 
 
 
+#ifndef TRUE
+#define TRUE	1
+#endif 
+
+#ifndef FALSE
+#define FALSE	0
+#endif 
+
 #ifndef TYPE_BIT
 #define TYPE_BIT(type)	(sizeof (type) * CHAR_BIT)
 #endif 

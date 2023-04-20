@@ -149,213 +149,213 @@ struct RegexTableEl {
 };
 
 static const struct RegexTableEl gRuleParseStateTable[] = {
-    {doNOP, 0, 0, 0, true}
-    , {doPatStart, 255, 2,0,  false}     
-    , {doLiteralChar, 254, 14,0,  true}     
-    , {doLiteralChar, 130, 14,0,  true}     
-    , {doSetBegin, 91 , 123, 205, true}     
-    , {doNOP, 40 , 27,0,  true}     
-    , {doDotAny, 46 , 14,0,  true}     
-    , {doCaret, 94 , 14,0,  true}     
-    , {doDollar, 36 , 14,0,  true}     
-    , {doNOP, 92 , 89,0,  true}     
-    , {doOrOperator, 124 , 2,0,  true}     
-    , {doCloseParen, 41 , 255,0,  true}     
-    , {doPatFinish, 253, 2,0,  false}     
-    , {doRuleError, 255, 206,0,  false}     
-    , {doNOP, 42 , 68,0,  true}     
-    , {doNOP, 43 , 71,0,  true}     
-    , {doNOP, 63 , 74,0,  true}     
-    , {doIntervalInit, 123 , 77,0,  true}     
-    , {doNOP, 40 , 23,0,  true}     
-    , {doNOP, 255, 20,0,  false}     
-    , {doOrOperator, 124 , 2,0,  true}     
-    , {doCloseParen, 41 , 255,0,  true}     
-    , {doNOP, 255, 2,0,  false}     
-    , {doSuppressComments, 63 , 25,0,  true}     
-    , {doNOP, 255, 27,0,  false}     
-    , {doNOP, 35 , 50, 14, true}     
-    , {doNOP, 255, 29,0,  false}     
-    , {doSuppressComments, 63 , 29,0,  true}     
-    , {doOpenCaptureParen, 255, 2, 14, false}     
-    , {doOpenNonCaptureParen, 58 , 2, 14, true}     
-    , {doOpenAtomicParen, 62 , 2, 14, true}     
-    , {doOpenLookAhead, 61 , 2, 20, true}     
-    , {doOpenLookAheadNeg, 33 , 2, 20, true}     
-    , {doNOP, 60 , 46,0,  true}     
-    , {doNOP, 35 , 50, 2, true}     
-    , {doBeginMatchMode, 105 , 53,0,  false}     
-    , {doBeginMatchMode, 100 , 53,0,  false}     
-    , {doBeginMatchMode, 109 , 53,0,  false}     
-    , {doBeginMatchMode, 115 , 53,0,  false}     
-    , {doBeginMatchMode, 117 , 53,0,  false}     
-    , {doBeginMatchMode, 119 , 53,0,  false}     
-    , {doBeginMatchMode, 120 , 53,0,  false}     
-    , {doBeginMatchMode, 45 , 53,0,  false}     
-    , {doConditionalExpr, 40 , 206,0,  true}     
-    , {doPerlInline, 123 , 206,0,  true}     
-    , {doBadOpenParenType, 255, 206,0,  false}     
-    , {doOpenLookBehind, 61 , 2, 20, true}     
-    , {doOpenLookBehindNeg, 33 , 2, 20, true}     
-    , {doBeginNamedCapture, 129, 64,0,  false}     
-    , {doBadOpenParenType, 255, 206,0,  false}     
-    , {doNOP, 41 , 255,0,  true}     
-    , {doMismatchedParenErr, 253, 206,0,  false}     
-    , {doNOP, 255, 50,0,  true}     
-    , {doMatchMode, 105 , 53,0,  true}     
-    , {doMatchMode, 100 , 53,0,  true}     
-    , {doMatchMode, 109 , 53,0,  true}     
-    , {doMatchMode, 115 , 53,0,  true}     
-    , {doMatchMode, 117 , 53,0,  true}     
-    , {doMatchMode, 119 , 53,0,  true}     
-    , {doMatchMode, 120 , 53,0,  true}     
-    , {doMatchMode, 45 , 53,0,  true}     
-    , {doSetMatchMode, 41 , 2,0,  true}     
-    , {doMatchModeParen, 58 , 2, 14, true}     
-    , {doBadModeFlag, 255, 206,0,  false}     
-    , {doContinueNamedCapture, 129, 64,0,  true}     
-    , {doContinueNamedCapture, 128, 64,0,  true}     
-    , {doOpenCaptureParen, 62 , 2, 14, true}     
-    , {doBadNamedCapture, 255, 206,0,  false}     
-    , {doNGStar, 63 , 20,0,  true}     
-    , {doPossessiveStar, 43 , 20,0,  true}     
-    , {doStar, 255, 20,0,  false}     
-    , {doNGPlus, 63 , 20,0,  true}     
-    , {doPossessivePlus, 43 , 20,0,  true}     
-    , {doPlus, 255, 20,0,  false}     
-    , {doNGOpt, 63 , 20,0,  true}     
-    , {doPossessiveOpt, 43 , 20,0,  true}     
-    , {doOpt, 255, 20,0,  false}     
-    , {doNOP, 128, 79,0,  false}     
-    , {doIntervalError, 255, 206,0,  false}     
-    , {doIntevalLowerDigit, 128, 79,0,  true}     
-    , {doNOP, 44 , 83,0,  true}     
-    , {doIntervalSame, 125 , 86,0,  true}     
-    , {doIntervalError, 255, 206,0,  false}     
-    , {doIntervalUpperDigit, 128, 83,0,  true}     
-    , {doNOP, 125 , 86,0,  true}     
-    , {doIntervalError, 255, 206,0,  false}     
-    , {doNGInterval, 63 , 20,0,  true}     
-    , {doPossessiveInterval, 43 , 20,0,  true}     
-    , {doInterval, 255, 20,0,  false}     
-    , {doBackslashA, 65 , 2,0,  true}     
-    , {doBackslashB, 66 , 2,0,  true}     
-    , {doBackslashb, 98 , 2,0,  true}     
-    , {doBackslashd, 100 , 14,0,  true}     
-    , {doBackslashD, 68 , 14,0,  true}     
-    , {doBackslashG, 71 , 2,0,  true}     
-    , {doBackslashh, 104 , 14,0,  true}     
-    , {doBackslashH, 72 , 14,0,  true}     
-    , {doNOP, 107 , 115,0,  true}     
-    , {doNamedChar, 78 , 14,0,  false}     
-    , {doProperty, 112 , 14,0,  false}     
-    , {doProperty, 80 , 14,0,  false}     
-    , {doBackslashR, 82 , 14,0,  true}     
-    , {doEnterQuoteMode, 81 , 2,0,  true}     
-    , {doBackslashS, 83 , 14,0,  true}     
-    , {doBackslashs, 115 , 14,0,  true}     
-    , {doBackslashv, 118 , 14,0,  true}     
-    , {doBackslashV, 86 , 14,0,  true}     
-    , {doBackslashW, 87 , 14,0,  true}     
-    , {doBackslashw, 119 , 14,0,  true}     
-    , {doBackslashX, 88 , 14,0,  true}     
-    , {doBackslashZ, 90 , 2,0,  true}     
-    , {doBackslashz, 122 , 2,0,  true}     
-    , {doBackRef, 128, 14,0,  true}     
-    , {doEscapeError, 253, 206,0,  false}     
-    , {doEscapedLiteralChar, 255, 14,0,  true}     
-    , {doBeginNamedBackRef, 60 , 117,0,  true}     
-    , {doBadNamedCapture, 255, 206,0,  false}     
-    , {doContinueNamedBackRef, 129, 119,0,  true}     
-    , {doBadNamedCapture, 255, 206,0,  false}     
-    , {doContinueNamedBackRef, 129, 119,0,  true}     
-    , {doContinueNamedBackRef, 128, 119,0,  true}     
-    , {doCompleteNamedBackRef, 62 , 14,0,  true}     
-    , {doBadNamedCapture, 255, 206,0,  false}     
-    , {doSetNegate, 94 , 126,0,  true}     
-    , {doSetPosixProp, 58 , 128,0,  false}     
-    , {doNOP, 255, 126,0,  false}     
-    , {doSetLiteral, 93 , 141,0,  true}     
-    , {doNOP, 255, 131,0,  false}     
-    , {doSetEnd, 93 , 255,0,  true}     
-    , {doNOP, 58 , 131,0,  false}     
-    , {doRuleError, 255, 206,0,  false}     
-    , {doSetEnd, 93 , 255,0,  true}     
-    , {doSetBeginUnion, 91 , 123, 148, true}     
-    , {doNOP, 92 , 191,0,  true}     
-    , {doNOP, 45 , 137,0,  true}     
-    , {doNOP, 38 , 139,0,  true}     
-    , {doSetLiteral, 255, 141,0,  true}     
-    , {doRuleError, 45 , 206,0,  false}     
-    , {doSetAddDash, 255, 141,0,  false}     
-    , {doRuleError, 38 , 206,0,  false}     
-    , {doSetAddAmp, 255, 141,0,  false}     
-    , {doSetEnd, 93 , 255,0,  true}     
-    , {doSetBeginUnion, 91 , 123, 148, true}     
-    , {doNOP, 45 , 178,0,  true}     
-    , {doNOP, 38 , 169,0,  true}     
-    , {doNOP, 92 , 191,0,  true}     
-    , {doSetNoCloseError, 253, 206,0,  false}     
-    , {doSetLiteral, 255, 141,0,  true}     
-    , {doSetEnd, 93 , 255,0,  true}     
-    , {doSetBeginUnion, 91 , 123, 148, true}     
-    , {doNOP, 45 , 171,0,  true}     
-    , {doNOP, 38 , 166,0,  true}     
-    , {doNOP, 92 , 191,0,  true}     
-    , {doSetNoCloseError, 253, 206,0,  false}     
-    , {doSetLiteral, 255, 141,0,  true}     
-    , {doSetEnd, 93 , 255,0,  true}     
-    , {doSetBeginUnion, 91 , 123, 148, true}     
-    , {doNOP, 45 , 174,0,  true}     
-    , {doNOP, 38 , 176,0,  true}     
-    , {doNOP, 92 , 191,0,  true}     
-    , {doSetNoCloseError, 253, 206,0,  false}     
-    , {doSetLiteral, 255, 141,0,  true}     
-    , {doSetBeginUnion, 91 , 123, 148, true}     
-    , {doSetOpError, 93 , 206,0,  false}     
-    , {doNOP, 92 , 191,0,  true}     
-    , {doSetLiteral, 255, 141,0,  true}     
-    , {doSetBeginIntersection1, 91 , 123, 148, true}     
-    , {doSetIntersection2, 38 , 162,0,  true}     
-    , {doSetAddAmp, 255, 141,0,  false}     
-    , {doSetIntersection2, 38 , 162,0,  true}     
-    , {doSetAddAmp, 255, 141,0,  false}     
-    , {doSetBeginDifference1, 91 , 123, 148, true}     
-    , {doSetDifference2, 45 , 162,0,  true}     
-    , {doSetAddDash, 255, 141,0,  false}     
-    , {doSetDifference2, 45 , 162,0,  true}     
-    , {doSetAddDash, 255, 141,0,  false}     
-    , {doSetIntersection2, 38 , 162,0,  true}     
-    , {doSetAddAmp, 255, 141,0,  false}     
-    , {doSetDifference2, 45 , 162,0,  true}     
-    , {doSetAddDash, 91 , 141,0,  false}     
-    , {doSetAddDash, 93 , 141,0,  false}     
-    , {doNOP, 92 , 183,0,  true}     
-    , {doSetRange, 255, 155,0,  true}     
-    , {doSetOpError, 115 , 206,0,  false}     
-    , {doSetOpError, 83 , 206,0,  false}     
-    , {doSetOpError, 119 , 206,0,  false}     
-    , {doSetOpError, 87 , 206,0,  false}     
-    , {doSetOpError, 100 , 206,0,  false}     
-    , {doSetOpError, 68 , 206,0,  false}     
-    , {doSetNamedRange, 78 , 155,0,  false}     
-    , {doSetRange, 255, 155,0,  true}     
-    , {doSetProp, 112 , 148,0,  false}     
-    , {doSetProp, 80 , 148,0,  false}     
-    , {doSetNamedChar, 78 , 141,0,  false}     
-    , {doSetBackslash_s, 115 , 155,0,  true}     
-    , {doSetBackslash_S, 83 , 155,0,  true}     
-    , {doSetBackslash_w, 119 , 155,0,  true}     
-    , {doSetBackslash_W, 87 , 155,0,  true}     
-    , {doSetBackslash_d, 100 , 155,0,  true}     
-    , {doSetBackslash_D, 68 , 155,0,  true}     
-    , {doSetBackslash_h, 104 , 155,0,  true}     
-    , {doSetBackslash_H, 72 , 155,0,  true}     
-    , {doSetBackslash_v, 118 , 155,0,  true}     
-    , {doSetBackslash_V, 86 , 155,0,  true}     
-    , {doSetLiteralEscaped, 255, 141,0,  true}     
-    , {doSetFinish, 255, 14,0,  false}     
-    , {doExit, 255, 206,0,  true}     
+    {doNOP, 0, 0, 0, TRUE}
+    , {doPatStart, 255, 2,0,  FALSE}     
+    , {doLiteralChar, 254, 14,0,  TRUE}     
+    , {doLiteralChar, 130, 14,0,  TRUE}     
+    , {doSetBegin, 91 , 123, 205, TRUE}     
+    , {doNOP, 40 , 27,0,  TRUE}     
+    , {doDotAny, 46 , 14,0,  TRUE}     
+    , {doCaret, 94 , 14,0,  TRUE}     
+    , {doDollar, 36 , 14,0,  TRUE}     
+    , {doNOP, 92 , 89,0,  TRUE}     
+    , {doOrOperator, 124 , 2,0,  TRUE}     
+    , {doCloseParen, 41 , 255,0,  TRUE}     
+    , {doPatFinish, 253, 2,0,  FALSE}     
+    , {doRuleError, 255, 206,0,  FALSE}     
+    , {doNOP, 42 , 68,0,  TRUE}     
+    , {doNOP, 43 , 71,0,  TRUE}     
+    , {doNOP, 63 , 74,0,  TRUE}     
+    , {doIntervalInit, 123 , 77,0,  TRUE}     
+    , {doNOP, 40 , 23,0,  TRUE}     
+    , {doNOP, 255, 20,0,  FALSE}     
+    , {doOrOperator, 124 , 2,0,  TRUE}     
+    , {doCloseParen, 41 , 255,0,  TRUE}     
+    , {doNOP, 255, 2,0,  FALSE}     
+    , {doSuppressComments, 63 , 25,0,  TRUE}     
+    , {doNOP, 255, 27,0,  FALSE}     
+    , {doNOP, 35 , 50, 14, TRUE}     
+    , {doNOP, 255, 29,0,  FALSE}     
+    , {doSuppressComments, 63 , 29,0,  TRUE}     
+    , {doOpenCaptureParen, 255, 2, 14, FALSE}     
+    , {doOpenNonCaptureParen, 58 , 2, 14, TRUE}     
+    , {doOpenAtomicParen, 62 , 2, 14, TRUE}     
+    , {doOpenLookAhead, 61 , 2, 20, TRUE}     
+    , {doOpenLookAheadNeg, 33 , 2, 20, TRUE}     
+    , {doNOP, 60 , 46,0,  TRUE}     
+    , {doNOP, 35 , 50, 2, TRUE}     
+    , {doBeginMatchMode, 105 , 53,0,  FALSE}     
+    , {doBeginMatchMode, 100 , 53,0,  FALSE}     
+    , {doBeginMatchMode, 109 , 53,0,  FALSE}     
+    , {doBeginMatchMode, 115 , 53,0,  FALSE}     
+    , {doBeginMatchMode, 117 , 53,0,  FALSE}     
+    , {doBeginMatchMode, 119 , 53,0,  FALSE}     
+    , {doBeginMatchMode, 120 , 53,0,  FALSE}     
+    , {doBeginMatchMode, 45 , 53,0,  FALSE}     
+    , {doConditionalExpr, 40 , 206,0,  TRUE}     
+    , {doPerlInline, 123 , 206,0,  TRUE}     
+    , {doBadOpenParenType, 255, 206,0,  FALSE}     
+    , {doOpenLookBehind, 61 , 2, 20, TRUE}     
+    , {doOpenLookBehindNeg, 33 , 2, 20, TRUE}     
+    , {doBeginNamedCapture, 129, 64,0,  FALSE}     
+    , {doBadOpenParenType, 255, 206,0,  FALSE}     
+    , {doNOP, 41 , 255,0,  TRUE}     
+    , {doMismatchedParenErr, 253, 206,0,  FALSE}     
+    , {doNOP, 255, 50,0,  TRUE}     
+    , {doMatchMode, 105 , 53,0,  TRUE}     
+    , {doMatchMode, 100 , 53,0,  TRUE}     
+    , {doMatchMode, 109 , 53,0,  TRUE}     
+    , {doMatchMode, 115 , 53,0,  TRUE}     
+    , {doMatchMode, 117 , 53,0,  TRUE}     
+    , {doMatchMode, 119 , 53,0,  TRUE}     
+    , {doMatchMode, 120 , 53,0,  TRUE}     
+    , {doMatchMode, 45 , 53,0,  TRUE}     
+    , {doSetMatchMode, 41 , 2,0,  TRUE}     
+    , {doMatchModeParen, 58 , 2, 14, TRUE}     
+    , {doBadModeFlag, 255, 206,0,  FALSE}     
+    , {doContinueNamedCapture, 129, 64,0,  TRUE}     
+    , {doContinueNamedCapture, 128, 64,0,  TRUE}     
+    , {doOpenCaptureParen, 62 , 2, 14, TRUE}     
+    , {doBadNamedCapture, 255, 206,0,  FALSE}     
+    , {doNGStar, 63 , 20,0,  TRUE}     
+    , {doPossessiveStar, 43 , 20,0,  TRUE}     
+    , {doStar, 255, 20,0,  FALSE}     
+    , {doNGPlus, 63 , 20,0,  TRUE}     
+    , {doPossessivePlus, 43 , 20,0,  TRUE}     
+    , {doPlus, 255, 20,0,  FALSE}     
+    , {doNGOpt, 63 , 20,0,  TRUE}     
+    , {doPossessiveOpt, 43 , 20,0,  TRUE}     
+    , {doOpt, 255, 20,0,  FALSE}     
+    , {doNOP, 128, 79,0,  FALSE}     
+    , {doIntervalError, 255, 206,0,  FALSE}     
+    , {doIntevalLowerDigit, 128, 79,0,  TRUE}     
+    , {doNOP, 44 , 83,0,  TRUE}     
+    , {doIntervalSame, 125 , 86,0,  TRUE}     
+    , {doIntervalError, 255, 206,0,  FALSE}     
+    , {doIntervalUpperDigit, 128, 83,0,  TRUE}     
+    , {doNOP, 125 , 86,0,  TRUE}     
+    , {doIntervalError, 255, 206,0,  FALSE}     
+    , {doNGInterval, 63 , 20,0,  TRUE}     
+    , {doPossessiveInterval, 43 , 20,0,  TRUE}     
+    , {doInterval, 255, 20,0,  FALSE}     
+    , {doBackslashA, 65 , 2,0,  TRUE}     
+    , {doBackslashB, 66 , 2,0,  TRUE}     
+    , {doBackslashb, 98 , 2,0,  TRUE}     
+    , {doBackslashd, 100 , 14,0,  TRUE}     
+    , {doBackslashD, 68 , 14,0,  TRUE}     
+    , {doBackslashG, 71 , 2,0,  TRUE}     
+    , {doBackslashh, 104 , 14,0,  TRUE}     
+    , {doBackslashH, 72 , 14,0,  TRUE}     
+    , {doNOP, 107 , 115,0,  TRUE}     
+    , {doNamedChar, 78 , 14,0,  FALSE}     
+    , {doProperty, 112 , 14,0,  FALSE}     
+    , {doProperty, 80 , 14,0,  FALSE}     
+    , {doBackslashR, 82 , 14,0,  TRUE}     
+    , {doEnterQuoteMode, 81 , 2,0,  TRUE}     
+    , {doBackslashS, 83 , 14,0,  TRUE}     
+    , {doBackslashs, 115 , 14,0,  TRUE}     
+    , {doBackslashv, 118 , 14,0,  TRUE}     
+    , {doBackslashV, 86 , 14,0,  TRUE}     
+    , {doBackslashW, 87 , 14,0,  TRUE}     
+    , {doBackslashw, 119 , 14,0,  TRUE}     
+    , {doBackslashX, 88 , 14,0,  TRUE}     
+    , {doBackslashZ, 90 , 2,0,  TRUE}     
+    , {doBackslashz, 122 , 2,0,  TRUE}     
+    , {doBackRef, 128, 14,0,  TRUE}     
+    , {doEscapeError, 253, 206,0,  FALSE}     
+    , {doEscapedLiteralChar, 255, 14,0,  TRUE}     
+    , {doBeginNamedBackRef, 60 , 117,0,  TRUE}     
+    , {doBadNamedCapture, 255, 206,0,  FALSE}     
+    , {doContinueNamedBackRef, 129, 119,0,  TRUE}     
+    , {doBadNamedCapture, 255, 206,0,  FALSE}     
+    , {doContinueNamedBackRef, 129, 119,0,  TRUE}     
+    , {doContinueNamedBackRef, 128, 119,0,  TRUE}     
+    , {doCompleteNamedBackRef, 62 , 14,0,  TRUE}     
+    , {doBadNamedCapture, 255, 206,0,  FALSE}     
+    , {doSetNegate, 94 , 126,0,  TRUE}     
+    , {doSetPosixProp, 58 , 128,0,  FALSE}     
+    , {doNOP, 255, 126,0,  FALSE}     
+    , {doSetLiteral, 93 , 141,0,  TRUE}     
+    , {doNOP, 255, 131,0,  FALSE}     
+    , {doSetEnd, 93 , 255,0,  TRUE}     
+    , {doNOP, 58 , 131,0,  FALSE}     
+    , {doRuleError, 255, 206,0,  FALSE}     
+    , {doSetEnd, 93 , 255,0,  TRUE}     
+    , {doSetBeginUnion, 91 , 123, 148, TRUE}     
+    , {doNOP, 92 , 191,0,  TRUE}     
+    , {doNOP, 45 , 137,0,  TRUE}     
+    , {doNOP, 38 , 139,0,  TRUE}     
+    , {doSetLiteral, 255, 141,0,  TRUE}     
+    , {doRuleError, 45 , 206,0,  FALSE}     
+    , {doSetAddDash, 255, 141,0,  FALSE}     
+    , {doRuleError, 38 , 206,0,  FALSE}     
+    , {doSetAddAmp, 255, 141,0,  FALSE}     
+    , {doSetEnd, 93 , 255,0,  TRUE}     
+    , {doSetBeginUnion, 91 , 123, 148, TRUE}     
+    , {doNOP, 45 , 178,0,  TRUE}     
+    , {doNOP, 38 , 169,0,  TRUE}     
+    , {doNOP, 92 , 191,0,  TRUE}     
+    , {doSetNoCloseError, 253, 206,0,  FALSE}     
+    , {doSetLiteral, 255, 141,0,  TRUE}     
+    , {doSetEnd, 93 , 255,0,  TRUE}     
+    , {doSetBeginUnion, 91 , 123, 148, TRUE}     
+    , {doNOP, 45 , 171,0,  TRUE}     
+    , {doNOP, 38 , 166,0,  TRUE}     
+    , {doNOP, 92 , 191,0,  TRUE}     
+    , {doSetNoCloseError, 253, 206,0,  FALSE}     
+    , {doSetLiteral, 255, 141,0,  TRUE}     
+    , {doSetEnd, 93 , 255,0,  TRUE}     
+    , {doSetBeginUnion, 91 , 123, 148, TRUE}     
+    , {doNOP, 45 , 174,0,  TRUE}     
+    , {doNOP, 38 , 176,0,  TRUE}     
+    , {doNOP, 92 , 191,0,  TRUE}     
+    , {doSetNoCloseError, 253, 206,0,  FALSE}     
+    , {doSetLiteral, 255, 141,0,  TRUE}     
+    , {doSetBeginUnion, 91 , 123, 148, TRUE}     
+    , {doSetOpError, 93 , 206,0,  FALSE}     
+    , {doNOP, 92 , 191,0,  TRUE}     
+    , {doSetLiteral, 255, 141,0,  TRUE}     
+    , {doSetBeginIntersection1, 91 , 123, 148, TRUE}     
+    , {doSetIntersection2, 38 , 162,0,  TRUE}     
+    , {doSetAddAmp, 255, 141,0,  FALSE}     
+    , {doSetIntersection2, 38 , 162,0,  TRUE}     
+    , {doSetAddAmp, 255, 141,0,  FALSE}     
+    , {doSetBeginDifference1, 91 , 123, 148, TRUE}     
+    , {doSetDifference2, 45 , 162,0,  TRUE}     
+    , {doSetAddDash, 255, 141,0,  FALSE}     
+    , {doSetDifference2, 45 , 162,0,  TRUE}     
+    , {doSetAddDash, 255, 141,0,  FALSE}     
+    , {doSetIntersection2, 38 , 162,0,  TRUE}     
+    , {doSetAddAmp, 255, 141,0,  FALSE}     
+    , {doSetDifference2, 45 , 162,0,  TRUE}     
+    , {doSetAddDash, 91 , 141,0,  FALSE}     
+    , {doSetAddDash, 93 , 141,0,  FALSE}     
+    , {doNOP, 92 , 183,0,  TRUE}     
+    , {doSetRange, 255, 155,0,  TRUE}     
+    , {doSetOpError, 115 , 206,0,  FALSE}     
+    , {doSetOpError, 83 , 206,0,  FALSE}     
+    , {doSetOpError, 119 , 206,0,  FALSE}     
+    , {doSetOpError, 87 , 206,0,  FALSE}     
+    , {doSetOpError, 100 , 206,0,  FALSE}     
+    , {doSetOpError, 68 , 206,0,  FALSE}     
+    , {doSetNamedRange, 78 , 155,0,  FALSE}     
+    , {doSetRange, 255, 155,0,  TRUE}     
+    , {doSetProp, 112 , 148,0,  FALSE}     
+    , {doSetProp, 80 , 148,0,  FALSE}     
+    , {doSetNamedChar, 78 , 141,0,  FALSE}     
+    , {doSetBackslash_s, 115 , 155,0,  TRUE}     
+    , {doSetBackslash_S, 83 , 155,0,  TRUE}     
+    , {doSetBackslash_w, 119 , 155,0,  TRUE}     
+    , {doSetBackslash_W, 87 , 155,0,  TRUE}     
+    , {doSetBackslash_d, 100 , 155,0,  TRUE}     
+    , {doSetBackslash_D, 68 , 155,0,  TRUE}     
+    , {doSetBackslash_h, 104 , 155,0,  TRUE}     
+    , {doSetBackslash_H, 72 , 155,0,  TRUE}     
+    , {doSetBackslash_v, 118 , 155,0,  TRUE}     
+    , {doSetBackslash_V, 86 , 155,0,  TRUE}     
+    , {doSetLiteralEscaped, 255, 141,0,  TRUE}     
+    , {doSetFinish, 255, 14,0,  FALSE}     
+    , {doExit, 255, 206,0,  TRUE}     
  };
 static const char * const RegexStateNames[] = {    0,
      "start",

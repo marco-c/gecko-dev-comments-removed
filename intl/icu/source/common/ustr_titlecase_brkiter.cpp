@@ -110,7 +110,7 @@ int32_t WholeStringBreakIterator::next() { return length; }
 int32_t WholeStringBreakIterator::current() const { return 0; }
 int32_t WholeStringBreakIterator::following(int32_t ) { return length; }
 int32_t WholeStringBreakIterator::preceding(int32_t ) { return 0; }
-UBool WholeStringBreakIterator::isBoundary(int32_t ) { return false; }
+UBool WholeStringBreakIterator::isBoundary(int32_t ) { return FALSE; }
 int32_t WholeStringBreakIterator::next(int32_t ) { return length; }
 
 WholeStringBreakIterator *WholeStringBreakIterator::createBufferClone(
