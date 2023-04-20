@@ -281,10 +281,14 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
          config = std::move(config)]() mutable -> RefPtr<CapabilitiesPromise> {
           
           
+          static Atomic<uint32_t> sTrackingIdCounter(0);
+          TrackingId trackingId(TrackingId::Source::MediaCapabilities,
+                                sTrackingIdCounter++,
+                                TrackingId::TrackAcrossProcesses::Yes);
           CreateDecoderParams params{
               *config, compositor,
               CreateDecoderParams::VideoFrameRate(frameRate),
-              TrackInfo::kVideoTrack};
+              TrackInfo::kVideoTrack, Some(std::move(trackingId))};
           
           
           

@@ -5,6 +5,7 @@
 
 #include "MediaSourceDecoder.h"
 
+#include "base/process_util.h"
 #include "mozilla/Logging.h"
 #include "ExternalEngineStateMachine.h"
 #include "MediaDecoderStateMachine.h"
@@ -50,6 +51,9 @@ MediaDecoderStateMachineBase* MediaSourceDecoder::CreateStateMachine(
   init.mCrashHelper = GetOwner()->CreateGMPCrashHelper();
   init.mFrameStats = mFrameStats;
   init.mMediaDecoderOwnerID = mOwner;
+  static Atomic<uint32_t> sTrackingIdCounter(0);
+  init.mTrackingId.emplace(TrackingId::Source::MSEDecoder, sTrackingIdCounter++,
+                           TrackingId::TrackAcrossProcesses::Yes);
   mReader = new MediaFormatReader(init, mDemuxer);
 #ifdef MOZ_WMF_MEDIA_ENGINE
   
