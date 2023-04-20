@@ -215,14 +215,7 @@ addAccessibleTask(
 
     await testCachedRelation(link, RELATION_LINKS_TO, item2);
   },
-  {
-    chrome: true,
-    
-    
-    topLevel: !isWinNoCache,
-    iframe: !isWinNoCache,
-    remoteIframe: !isWinNoCache,
-  }
+  { chrome: true, iframe: true, remoteIframe: true }
 );
 
 
