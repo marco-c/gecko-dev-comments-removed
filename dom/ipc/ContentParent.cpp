@@ -857,10 +857,14 @@ already_AddRefed<ContentParent> ContentParent::MinTabSelect(
     ContentParent* p = aContentParents[i];
     MOZ_DIAGNOSTIC_ASSERT(!p->IsDead());
 
-    uint32_t tabCount = cpm->GetBrowserParentCountByProcessId(p->ChildID());
-    if (tabCount < min) {
-      candidate = p;
-      min = tabCount;
+    
+    
+    if (!p->IsSignaledImpendingShutdown()) {
+      uint32_t tabCount = cpm->GetBrowserParentCountByProcessId(p->ChildID());
+      if (tabCount < min) {
+        candidate = p;
+        min = tabCount;
+      }
     }
   }
 
@@ -925,18 +929,22 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
     
     if (0 <= index && static_cast<uint32_t>(index) <= aMaxContentParents) {
       RefPtr<ContentParent> retval = aContentParents[index];
-      if (profiler_thread_is_being_profiled_for_markers()) {
-        nsPrintfCString marker("Reused process %u",
-                               (unsigned int)retval->ChildID());
-        PROFILER_MARKER_TEXT("Process", DOM, {}, marker);
+      
+      
+      if (!retval->IsSignaledImpendingShutdown()) {
+        if (profiler_thread_is_being_profiled_for_markers()) {
+          nsPrintfCString marker("Reused process %u",
+                                 (unsigned int)retval->ChildID());
+          PROFILER_MARKER_TEXT("Process", DOM, {}, marker);
+        }
+        MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+                ("GetUsedProcess: Reused process %p (%u) for %s", retval.get(),
+                 (unsigned int)retval->ChildID(),
+                 PromiseFlatCString(aRemoteType).get()));
+        retval->AssertAlive();
+        retval->StopRecycling();
+        return retval.forget();
       }
-      MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-              ("GetUsedProcess: Reused process %p (%u) for %s", retval.get(),
-               (unsigned int)retval->ChildID(),
-               PromiseFlatCString(aRemoteType).get()));
-      retval->AssertAlive();
-      retval->StopRecycling();
-      return retval.forget();
     }
   } else {
     
@@ -2002,7 +2010,9 @@ void ContentParent::MarkAsDead() {
   MOZ_DIAGNOSTIC_ASSERT(!sInProcessSelector);
   RemoveFromList();
 
+  
   PreallocatedProcessManager::Erase(this);
+  StopRecycling(false);
 
 #ifdef MOZ_WIDGET_ANDROID
   if (IsAlive()) {
@@ -3753,6 +3763,12 @@ ContentParent::BlockShutdown(nsIAsyncShutdownClient* aClient) {
     
     
     SignalImpendingShutdownToContentJS();
+    
+    
+    
+    PreallocatedProcessManager::Erase(this);
+    StopRecycling(false);
+
     if (sQuitApplicationGrantedClient) {
       Unused << sQuitApplicationGrantedClient->RemoveBlocker(this);
     }
