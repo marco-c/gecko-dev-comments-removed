@@ -3389,6 +3389,12 @@ class nsContentUtils {
     return sMayHaveFormRadioStateChangeListeners;
   }
 
+  
+
+
+
+  static nsIContent* GetClosestLinkInFlatTree(nsIContent* aContent);
+
  private:
   static bool InitializeEventTable();
 

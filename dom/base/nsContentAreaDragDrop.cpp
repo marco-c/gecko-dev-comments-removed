@@ -332,16 +332,6 @@ static nsIContent* FindDragTarget(nsIContent* aContent) {
   return nullptr;
 }
 
-static nsIContent* FindParentLinkNode(nsIContent* aContent) {
-  for (nsIContent* content = aContent; content;
-       content = content->GetFlattenedTreeParent()) {
-    if (nsContentUtils::IsDraggableLink(content)) {
-      return content;
-    }
-  }
-  return nullptr;
-}
-
 
 
 
@@ -548,7 +538,7 @@ nsresult DragDataProducer::Produce(DataTransfer* aDataTransfer, bool* aCanDrag,
       
       
       
-      parentLink = FindParentLinkNode(draggedNode);
+      parentLink = nsContentUtils::GetClosestLinkInFlatTree(draggedNode);
       if (parentLink && mIsAltKeyPressed) {
         *aCanDrag = false;
         return NS_OK;
