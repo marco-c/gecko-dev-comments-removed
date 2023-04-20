@@ -81,11 +81,6 @@ class RTC_EXPORT SharedScreenCastStream
 
  private:
   friend class SharedScreenCastStreamPrivate;
-  
-  friend class PipeWireStreamTest;
-
-  
-  explicit SharedScreenCastStream(Observer* notifier);
 
   SharedScreenCastStream(const SharedScreenCastStream&) = delete;
   SharedScreenCastStream& operator=(const SharedScreenCastStream&) = delete;
