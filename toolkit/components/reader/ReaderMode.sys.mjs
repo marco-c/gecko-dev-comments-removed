@@ -1,12 +1,9 @@
+// -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["ReaderMode"];
-
-
+// Constants for telemetry.
 const DOWNLOAD_SUCCESS = 0;
 const DOWNLOAD_ERROR_XHR = 1;
 const DOWNLOAD_ERROR_NO_DOC = 2;
@@ -16,8 +13,8 @@ const PARSE_ERROR_TOO_MANY_ELEMENTS = 1;
 const PARSE_ERROR_WORKER = 2;
 const PARSE_ERROR_NO_ARTICLE = 3;
 
-
-
+// Class names to preserve in the readerized output. We preserve these class
+// names so that rules in aboutReader.css can match them.
 const CLASSES_TO_PRESERVE = [
   "caption",
   "emoji",
@@ -31,9 +28,7 @@ const CLASSES_TO_PRESERVE = [
   "wp-smiley",
 ];
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -57,17 +52,17 @@ const gIsFirefoxDesktop =
 
 Services.telemetry.setEventRecordingEnabled("readermode", true);
 
-var ReaderMode = {
+export var ReaderMode = {
   DEBUG: 0,
 
-  
+  // For time spent telemetry
   enterTime: undefined,
   leaveTime: undefined,
 
-  
-
-
-
+  /**
+   * Enter the reader mode by going forward one step in history if applicable,
+   * if not, append the about:reader page in the history instead.
+   */
   enterReaderMode(docShell, win) {
     this.enterTime = Date.now();
 
@@ -91,23 +86,23 @@ var ReaderMode = {
       }
     }
 
-    
+    // This could possibly move to the parent. See bug 1664982.
     win.document.location = readerURL;
   },
 
-  
-
-
-
+  /**
+   * Exit the reader mode by going back one step in history if applicable,
+   * if not, append the original page in the history instead.
+   */
   leaveReaderMode(docShell, win) {
     this.leaveTime = Date.now();
 
-    
+    // Measured in seconds (whole number)
     let timeSpentInReaderMode = Math.floor(
       (this.leaveTime - this.enterTime) / 1000
     );
 
-    
+    // Measured as percentage (whole number)
     let scrollPosition = Math.floor(
       ((win.scrollY + win.innerHeight) / win.document.body.clientHeight) * 100
     );
@@ -160,17 +155,17 @@ var ReaderMode = {
         referrerURI
       ),
     };
-    
+    // This could possibly move to the parent. See bug 1664982.
     webNav.fixupAndLoadURIString(originalURL, loadURIOptions);
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Returns original URL from an about:reader URL.
+   *
+   * @param url An about:reader URL.
+   * @return The original URL for the article, or null if we did not find
+   *         a properly formatted about:reader URL.
+   */
   getOriginalUrl(url) {
     if (!url.startsWith("about:reader?")) {
       return null;
@@ -182,7 +177,7 @@ var ReaderMode = {
       url = uriObj.specIgnoringRef;
       outerHash = uriObj.ref;
     } catch (ex) {
-      
+      /* ignore, use the raw string */
     }
 
     let searchParams = new URLSearchParams(
@@ -220,14 +215,14 @@ var ReaderMode = {
     return null;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Gets an article from a loaded browser's document. This method will not attempt
+   * to parse certain URIs (e.g. about: URIs).
+   *
+   * @param doc A document to parse.
+   * @return {Promise}
+   * @resolves JS object representing the article, or null if no article is found.
+   */
   parseDocument(doc) {
     if (
       !lazy.Readerable.shouldCheckUri(doc.documentURIObject) ||
@@ -240,13 +235,13 @@ var ReaderMode = {
     return this._readerParse(doc);
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Downloads and parses a document from a URL.
+   *
+   * @param url URL to download and parse.
+   * @return {Promise}
+   * @resolves JS object representing the article, or null if no article is found.
+   */
   async downloadAndParseDocument(url, docContentType = "document") {
     let result = await this._downloadDocument(url, docContentType);
     if (!result?.doc) {
@@ -262,12 +257,12 @@ var ReaderMode = {
     }
 
     let article = await this._readerParse(doc);
-    
-    
+    // If we have to redirect, reject to the caller with the parsed article,
+    // so we can update the URL before displaying it.
     if (newURL) {
       return Promise.reject({ newURL, article });
     }
-    
+    // Otherwise, we can just continue with the article.
     return article;
   },
 
@@ -307,17 +302,17 @@ var ReaderMode = {
 
         let responseURL = xhr.responseURL;
         let givenURL = url;
-        
-        
+        // Convert these to real URIs to make sure the escaping (or lack
+        // thereof) is identical:
         try {
           responseURL = Services.io.newURI(responseURL).specIgnoringRef;
         } catch (ex) {
-          
+          /* Ignore errors - we'll use what we had before */
         }
         try {
           givenURL = Services.io.newURI(givenURL).specIgnoringRef;
         } catch (ex) {
-          
+          /* Ignore errors - we'll use what we had before */
         }
 
         if (xhr.responseType != "document") {
@@ -327,7 +322,7 @@ var ReaderMode = {
           doc.querySelector("pre").textContent = initialText;
         }
 
-        
+        // We treat redirects as download successes here:
         histogram.add(DOWNLOAD_SUCCESS);
 
         let result = { doc };
@@ -347,14 +342,14 @@ var ReaderMode = {
     }
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Attempts to parse a document into an article. Heavy lifting happens
+   * in readerWorker.js.
+   *
+   * @param doc The document to parse.
+   * @return {Promise}
+   * @resolves JS object representing the article, or null if no article is found.
+   */
   async _readerParse(doc) {
     let histogram = Services.telemetry.getHistogramById(
       "READER_MODE_PARSE_RESULT"
@@ -374,8 +369,8 @@ var ReaderMode = {
       }
     }
 
-    
-    
+    // Fetch this here before we send `doc` off to the worker thread, as later on the
+    // document might be nuked but we will still want the URI.
     let { documentURI } = doc;
 
     let uriParam;
@@ -384,29 +379,29 @@ var ReaderMode = {
       prePath: doc.baseURIObject.prePath,
       scheme: doc.baseURIObject.scheme,
 
-      
+      // Fallback
       host: documentURI,
       pathBase: documentURI,
     };
 
-    
+    // nsIURI.host throws an exception if a host doesn't exist.
     try {
       uriParam.host = doc.baseURIObject.host;
       uriParam.pathBase = Services.io.newURI(".", null, doc.baseURIObject).spec;
     } catch (ex) {
-      
+      // Fall back to the initial values we assigned.
       console.warn("Error accessing host name: ", ex);
     }
 
-    
+    // convert text/plain document, if any, to XHTML format
     if (this._isDocumentPlainText(doc)) {
       doc = this._convertPlainTextDocument(doc);
     }
 
     let serializer = new XMLSerializer();
     let serializedDoc = serializer.serializeToString(doc);
-    
-    
+    // Explicitly null out doc to make it clear it might not be available from this
+    // point on.
     doc = null;
 
     let options = {
@@ -431,9 +426,9 @@ var ReaderMode = {
       return null;
     }
 
-    
-    
-    
+    // Readability returns a URI object based on the baseURI, but we only care
+    // about the original document's URL from now on. This also avoids spoofing
+    // attempts where the baseURI doesn't match the domain of the documentURI
     article.url = documentURI;
     delete article.uri;
 
@@ -454,12 +449,12 @@ var ReaderMode = {
     return article;
   },
 
-  
-
-
-
-
-
+  /**
+   * Sets a global language string value if the result is confident
+   *
+   * @return Promise
+   * @resolves when the language is detected
+   */
   _assignLanguage(article) {
     return lazy.LanguageDetector.detectLanguage(article.textContent).then(
       result => {
@@ -469,7 +464,7 @@ var ReaderMode = {
   },
 
   _maybeAssignTextDirection(article) {
-    
+    // TODO: Remove the hardcoded language codes below once bug 1320265 is resolved.
     if (
       !article.dir &&
       ["ar", "fa", "he", "ug", "ur"].includes(article.language)
@@ -478,11 +473,11 @@ var ReaderMode = {
     }
   },
 
-  
-
-
-
-
+  /**
+   * Assigns the estimated reading time range of the article to the article object.
+   *
+   * @param article the article object to assign the reading time estimate to.
+   */
   _assignReadTime(article) {
     let lang = article.language || "en";
     const readingSpeed = this._getReadingSpeedForLanguage(lang);
@@ -494,15 +489,15 @@ var ReaderMode = {
     article.readingTimeMinsFast = Math.ceil(length / charactersPerMinuteHigh);
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Returns the reading speed of a selection of languages with likely variance.
+   *
+   * Reading speed estimated from a study done on reading speeds in various languages.
+   * study can be found here: http://iovs.arvojournals.org/article.aspx?articleid=2166061
+   *
+   * @return object with characters per minute and variance. Defaults to English
+   *         if no suitable language is found in the collection.
+   */
   _getReadingSpeedForLanguage(lang) {
     const readingSpeed = new Map([
       ["en", { cpm: 987, variance: 118 }],
@@ -526,23 +521,23 @@ var ReaderMode = {
 
     return readingSpeed.get(lang) || readingSpeed.get("en");
   },
-  
-
-
-
-
-
-
+  /**
+   *
+   * Check if the document to be parsed is text document.
+   * @param doc the doc object to be parsed.
+   * @return boolean
+   *
+   */
   _isDocumentPlainText(doc) {
     return doc.contentType == "text/plain";
   },
-  
-
-
-
-
-
-
+  /**
+   *
+   * The document to be parsed is text document and is converted to HTML format.
+   * @param doc the doc object to be parsed.
+   * @return doc
+   *
+   */
   _convertPlainTextDocument(doc) {
     let preTag = doc.querySelector("pre");
     let docFrag = doc.createDocumentFragment();
@@ -558,8 +553,8 @@ var ReaderMode = {
       }
       docFrag.append(pElem);
     }
-    
-    
+    // Clone the document to avoid the original document being affected
+    // (which shows up when exiting reader mode again).
     let clone = doc.documentElement.cloneNode(true);
     clone.querySelector("pre").replaceWith(docFrag);
     return clone;

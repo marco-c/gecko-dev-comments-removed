@@ -1,21 +1,12 @@
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["AboutReader"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { ReaderMode } = ChromeUtils.import(
   "resource://gre/modules/ReaderMode.jsm"
 );
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -59,7 +50,7 @@ const zoomOnMeta =
   Services.prefs.getIntPref("mousewheel.with_meta.action", 1) == 3;
 const isAppLocaleRTL = Services.locale.isAppLocaleRTL;
 
-var AboutReader = function(
+export var AboutReader = function(
   actor,
   articlePromise,
   docContentType = "document",
@@ -171,7 +162,7 @@ var AboutReader = function(
 
   this._setupButton("close-button", this._onReaderClose.bind(this));
 
-  
+  // we're ready for any external setup, send a signal for that.
   this._actor.sendAsyncMessage("Reader:OnSetup");
 
   let colorSchemeValues = JSON.parse(
@@ -366,12 +357,12 @@ AboutReader.prototype = {
     let target = aEvent.target;
     switch (aEvent.type) {
       case "touchstart":
-      
+      /* fall through */
       case "mousedown":
         if (
           !target.closest(".dropdown-popup") &&
-          
-          
+          // Skip handling the toggle button here becase
+          // the dropdown will get toggled with the 'click' event.
           !target.classList.contains("dropdown-toggle")
         ) {
           this._closeDropdowns();
@@ -403,8 +394,8 @@ AboutReader.prototype = {
         this._lastHeight = windowUtils.getBoundsWithoutFlushing(
           this._doc.body
         ).height;
-        
-        
+        // Only close dropdowns if the scroll events are not a result of line
+        // height / font-size changes that caused a page height change.
         if (lastHeight == this._lastHeight) {
           this._closeDropdowns(true);
         }
@@ -423,15 +414,15 @@ AboutReader.prototype = {
         }
         aEvent.preventDefault();
 
-        
+        // Throttle events to once per 150ms. This avoids excessively fast zooming.
         if (aEvent.timeStamp <= this._zoomBackoffTime) {
           return;
         }
         this._zoomBackoffTime = aEvent.timeStamp + 150;
 
-        
-        
-        
+        // Determine the direction of the delta (we don't care about its size);
+        // This code is adapted from normalizeWheelEventDelta in
+        // toolkt/components/pdfjs/content/web/viewer.js
         let delta = Math.abs(aEvent.deltaX) + Math.abs(aEvent.deltaY);
         let angle = Math.atan2(aEvent.deltaY, aEvent.deltaX);
         if (-0.25 * Math.PI < angle && angle < 0.75 * Math.PI) {
@@ -451,7 +442,7 @@ AboutReader.prototype = {
         this._actor.readerModeHidden();
         this.clearActor();
 
-        
+        // Disconnect and delete IntersectionObservers to prevent memory leaks:
 
         this._intersectionObs.unobserve(this._doc.querySelector(".top-anchor"));
         this._ctaIntersectionObserver.disconnect();
@@ -467,8 +458,8 @@ AboutReader.prototype = {
           colorScheme = "hcm";
         } else {
           colorScheme = Services.prefs.getCharPref("reader.color_scheme");
-          
-          
+          // We should be changing the color scheme in relation to a preference change
+          // if the user has the color scheme preference set to "Auto".
           if (colorScheme == "auto") {
             colorScheme = this.colorSchemeMediaList.matches ? "dark" : "light";
           }
@@ -502,8 +493,8 @@ AboutReader.prototype = {
     );
     let size;
     if (this._fontSize > this.FONT_SIZE_LEGACY_MAX) {
-      
-      
+      // -1 because we're indexing into a 0-indexed array, so the first value
+      // over the legacy max should be 0, the next 1, etc.
       let index = this._fontSize - this.FONT_SIZE_LEGACY_MAX - 1;
       size = this.FONT_SIZE_EXTENDED_VALUES[index];
     } else {
@@ -743,7 +734,7 @@ AboutReader.prototype = {
   },
 
   _setColorScheme(newColorScheme) {
-    
+    // There's nothing to change if the new color scheme is the same as our current scheme.
     if (this._colorScheme === newColorScheme) {
       return;
     }
@@ -769,7 +760,7 @@ AboutReader.prototype = {
     bodyClasses.add(this._colorScheme);
   },
 
-  
+  // Pref values include "dark", "light", "sepia", and "auto"
   _setColorSchemePref(colorSchemePref) {
     this._setColorScheme(colorSchemePref);
 
@@ -826,9 +817,9 @@ AboutReader.prototype = {
       return;
     }
 
-    
-    
-    
+    // Replace the loading message with an error message if there's a failure.
+    // Users are supposed to navigate away by themselves (because we cannot
+    // remove ourselves from session history.)
     if (!article) {
       this._showError();
       return;
@@ -904,14 +895,14 @@ AboutReader.prototype = {
     let setImageMargins = function(img) {
       img.classList.add("moz-reader-block-img");
 
-      
+      // If the image is at least as wide as the window, make it fill edge-to-edge on mobile.
       if (img.naturalWidth >= windowWidth) {
         img.setAttribute("moz-reader-full-width", true);
       } else {
         img.removeAttribute("moz-reader-full-width");
       }
 
-      
+      // If the image is at least half as wide as the body, center it on desktop.
       if (img.naturalWidth >= bodyWidth / 2) {
         img.setAttribute("moz-reader-center", true);
       } else {
@@ -936,8 +927,8 @@ AboutReader.prototype = {
   _updateWideTables() {
     let windowWidth = this._win.innerWidth;
 
-    
-    
+    // Avoid horizontal overflow in the document by making tables that are wider than half browser window's size
+    // by making it scrollable.
     let tables = this._doc.querySelectorAll(this._TABLES_SELECTOR);
     for (let i = tables.length; --i >= 0; ) {
       let table = tables[i];
@@ -951,16 +942,16 @@ AboutReader.prototype = {
   },
 
   _maybeSetTextDirection: function Read_maybeSetTextDirection(article) {
-    
-    
-    
-    
+    // Set the article's "dir" on the contents.
+    // If no direction is specified, the contents should automatically be LTR
+    // regardless of the UI direction to avoid inheriting the parent's direction
+    // if the UI is RTL.
     this._containerElement.dir = article.dir || "ltr";
 
-    
+    // The native locale could be set differently than the article's text direction.
     this._readTimeElement.dir = isAppLocaleRTL ? "rtl" : "ltr";
 
-    
+    // This is used to mirror the line height buttons in the toolbar, when relevant.
     this._toolbarElement.setAttribute("articledir", article.dir || "ltr");
   },
 
@@ -990,7 +981,7 @@ AboutReader.prototype = {
     );
   },
 
-  
+  // This function is the JS version of Java's StringUtils.stripCommonSubdomains.
   _stripHost(host) {
     if (!host) {
       return host;
@@ -1031,8 +1022,8 @@ AboutReader.prototype = {
 
     this._titleElement.textContent = article.title;
 
-    
-    
+    // TODO: Once formatRange() and selectRange() are available outside Nightly,
+    // use them here. https://bugzilla.mozilla.org/show_bug.cgi?id=1795317
     const slow = article.readingTimeMinsSlow;
     const fast = article.readingTimeMinsFast;
     const fastStr = lazy.numberFormat.format(fast);
@@ -1046,8 +1037,8 @@ AboutReader.prototype = {
       }
     );
 
-    
-    
+    // If a document title was not provided in the constructor, we'll fall back
+    // to using the article title.
     if (!this._doc.title) {
       this._doc.title = article.title;
     }
@@ -1090,7 +1081,7 @@ AboutReader.prototype = {
       })
     );
 
-    
+    // Show Pocket CTA block after article has loaded to prevent it flashing in prematurely
     this._setupPocketCTA();
   },
 
@@ -1101,9 +1092,9 @@ AboutReader.prototype = {
 
   _showProgressDelayed() {
     this._win.setTimeout(() => {
-      
-      
-      
+      // No need to show progress if the article has been loaded,
+      // if the window has been unloaded, or if there was an error
+      // trying to load the article.
       if (this._article || !this._actor || this._error) {
         return;
       }
@@ -1119,9 +1110,9 @@ AboutReader.prototype = {
     }, 300);
   },
 
-  
-
-
+  /**
+   * Returns the original article URL for this about:reader view.
+   */
   _getOriginalUrl(win) {
     let url = win ? win.location.href : this._win.location.href;
     return ReaderMode.getOriginalUrl(url) || url;
@@ -1204,9 +1195,9 @@ AboutReader.prototype = {
     }
   },
 
-  
-
-
+  /*
+   * If the ReaderView banner font-dropdown is closed, open it.
+   */
   _openDropdown(dropdown, window) {
     if (dropdown.classList.contains("open")) {
       return;
@@ -1214,7 +1205,7 @@ AboutReader.prototype = {
 
     this._closeDropdowns();
 
-    
+    // Get the height of the doc and start handling scrolling:
     let { windowUtils } = this._win;
     this._lastHeight = windowUtils.getBoundsWithoutFlushing(
       this._doc.body
@@ -1228,11 +1219,11 @@ AboutReader.prototype = {
     this._toggleToolbarFixedPosition(true);
   },
 
-  
-
-
-
-
+  /*
+   * If the ReaderView has open dropdowns, close them. If we are closing the
+   * dropdowns because the page is scrolling, allow popups to stay open with
+   * the keep-open class.
+   */
   _closeDropdowns(scrolling) {
     let selector = ".dropdown.open";
     if (scrolling) {
@@ -1251,7 +1242,7 @@ AboutReader.prototype = {
       this._toggleToolbarFixedPosition(false);
     }
 
-    
+    // Stop handling scrolling:
     this._doc.removeEventListener("scroll", this);
   },
 
@@ -1295,7 +1286,7 @@ AboutReader.prototype = {
 
   _toolbarOverlapHandler() {
     delete this._enqueuedToolbarOverlapHandler;
-    
+    // Ensure the dropdown is still open to avoid racing with that changing.
     if (this._toolbarContainerElement.classList.contains("dropdown-open")) {
       let { windowUtils } = this._win;
       let toolbarBounds = windowUtils.getBoundsWithoutFlushing(
@@ -1318,16 +1309,16 @@ AboutReader.prototype = {
     if (!entries.length) {
       return;
     }
-    
-    
+    // If we don't intersect the item at the top of the document, we're
+    // scrolled down:
     let scrolled = !entries[entries.length - 1].isIntersecting;
     let tbc = this._toolbarContainerElement;
     tbc.classList.toggle("scrolled", scrolled);
   },
 
-  
-
-
+  /*
+   * Scroll reader view to a reference
+   */
   _goToReference(ref) {
     if (ref) {
       if (this._doc.readyState == "complete") {
@@ -1368,7 +1359,7 @@ AboutReader.prototype = {
     let toggleRecsVisibility = () => {
       let isClosed = elPocketRecs.classList.contains(`closed`);
 
-      isClosed = !isClosed; 
+      isClosed = !isClosed; // Toggle
 
       if (isClosed) {
         elPocketRecs.classList.add(`closed`);
@@ -1480,10 +1471,10 @@ AboutReader.prototype = {
     let articleRecs = await this._requestPocketArticleRecs(itemID);
 
     articleRecs.recommendations.forEach(rec => {
-      
+      // Parse a domain from the article URL in case the Publisher name isn't available
       let parsedDomain = new URL(rec.item?.normal_url)?.hostname;
 
-      
+      // Calculate read time from word count in case it's not available
       let calculatedReadTime = Math.ceil(rec.item?.word_count / 220);
 
       let elRec = this._buildPocketRec(
@@ -1520,13 +1511,13 @@ AboutReader.prototype = {
     this._isLoggedInPocketUser = await this._requestPocketLoginStatus();
     let elPocketCTAWrapper = this._doc.querySelector("#pocket-cta-container");
 
-    
+    // Show the Pocket CTA container if the pref is set and valid
     if (ctaVersion === `cta-and-recs` || ctaVersion === `cta-only`) {
       if (ctaVersion === `cta-and-recs` && this._isLoggedInPocketUser) {
         this._getAndBuildPocketRecs();
         this._enableRecShowHide();
       } else if (ctaVersion === `cta-and-recs` && !this._isLoggedInPocketUser) {
-        
+        // Fall back to cta only for logged out users:
         ctaVersion = `cta-only`;
       }
 
@@ -1542,7 +1533,7 @@ AboutReader.prototype = {
         }`
       );
 
-      
+      // Set up tracking for sign up buttons
       this._doc
         .querySelectorAll(`.pocket-sign-up, .pocket-discover-more`)
         .forEach(el => {
@@ -1557,7 +1548,7 @@ AboutReader.prototype = {
           });
         });
 
-      
+      // Set up tracking for user seeing CTA
       this._ctaIntersectionObserver.observe(
         this._doc.querySelector(`#pocket-cta-container`)
       );

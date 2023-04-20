@@ -14,10 +14,6 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
 
-function isNodeVisible(node) {
-  return node.clientHeight > 0 && node.clientWidth > 0;
-}
-
 var Readerable = {
   get isEnabledForParseOnLoad() {
     return this.isEnabled;
@@ -43,7 +39,11 @@ var Readerable = {
       return false;
     }
 
-    return isProbablyReaderable(doc, isNodeVisible);
+    return isProbablyReaderable(doc, this._isNodeVisible);
+  },
+
+  _isNodeVisible(node) {
+    return node.clientHeight > 0 && node.clientWidth > 0;
   },
 
   _blockedHosts: [
