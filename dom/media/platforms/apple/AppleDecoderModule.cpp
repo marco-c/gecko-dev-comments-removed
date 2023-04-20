@@ -190,11 +190,17 @@ bool AppleDecoderModule::CanCreateHWDecoder(media::MediaCodec aCodec) {
     RefPtr<AppleVTDecoder> decoder =
         new AppleVTDecoder(info, nullptr, {}, nullptr, Nothing());
     MediaResult rv = decoder->InitializeSession();
-    
-    
-    
+    if (!NS_SUCCEEDED(rv)) {
+      return false;
+    }
+    nsAutoCString failureReason;
+    bool hwSupport = decoder->IsHardwareAccelerated(failureReason);
     decoder->Shutdown();
-    return NS_SUCCEEDED(rv);
+    if (!hwSupport) {
+      MOZ_LOG(sPDMLog, LogLevel::Debug,
+              ("Apple HW decode failure: '%s'", failureReason.BeginReading()));
+    }
+    return hwSupport;
   }
   return false;
 }
