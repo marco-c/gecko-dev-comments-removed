@@ -6,10 +6,6 @@
 
 Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-adb.js", this);
 
-const { AddonManager } = ChromeUtils.import(
-  "resource://gre/modules/AddonManager.jsm"
-);
-
 
 
 

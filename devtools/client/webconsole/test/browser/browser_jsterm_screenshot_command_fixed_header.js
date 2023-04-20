@@ -8,10 +8,6 @@
 const TEST_URI =
   "http://example.com/browser/devtools/client/webconsole/test/browser/test_jsterm_screenshot_command.html";
 
-const { FileUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/FileUtils.sys.mjs"
-);
-
 
 
 const dpr = "--dpr 1";
