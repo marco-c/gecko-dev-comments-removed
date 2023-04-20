@@ -280,11 +280,9 @@ nsIntRect RemoteAccessible::BoundsInCSSPixels() const {
   return rect;
 }
 
-void RemoteAccessible::Language(nsString& aLocale) {
+void RemoteAccessible::Language(nsAString& aLocale) {
   if (StaticPrefs::accessibility_cache_enabled_AtStartup()) {
-    
-    aLocale.Truncate();
-    return;
+    return RemoteAccessibleBase<RemoteAccessible>::Language(aLocale);
   }
   aLocale.Truncate();
 

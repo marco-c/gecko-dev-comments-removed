@@ -348,6 +348,11 @@ class Accessible {
 
   
 
+
+  virtual void Language(nsAString& aLocale) = 0;
+
+  
+
   virtual void TakeFocus() const = 0;
 
   
