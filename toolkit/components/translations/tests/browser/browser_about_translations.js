@@ -202,6 +202,11 @@ add_task(async function test_about_translations_translations() {
 
       
       await assertTranslationResult("TEXT TO TRANSLATE. [en to fr]");
+      is(
+        translationResult.getAttribute("lang"),
+        "fr",
+        "The result is listed as in French."
+      );
 
       
       toSelect.value = "";
@@ -216,6 +221,11 @@ add_task(async function test_about_translations_translations() {
 
       await assertTranslationResult(
         "THIS IS THE SECOND TRANSLATION. [is to en]"
+      );
+      is(
+        translationResult.getAttribute("lang"),
+        "en",
+        "The result is listed as in English."
       );
     },
   });
