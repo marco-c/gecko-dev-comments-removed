@@ -1866,7 +1866,8 @@ class AddonInstall {
         
         if (
           this.existingAddon?.isBuiltinColorwayTheme &&
-          !this.addon.isBuiltin
+          !this.addon.isBuiltin &&
+          lazy.BuiltInThemesHelpers.isColorwayMigrationEnabled
         ) {
           lazy.BuiltInThemesHelpers.unretainMigratedColorwayTheme(
             this.addon.id
@@ -2703,7 +2704,10 @@ function createUpdate(aCallback, aAddon, aUpdate, isUserRequested) {
       await install.init();
     } else {
       let loc = aAddon.location;
-      if (aAddon.isBuiltinColorwayTheme) {
+      if (
+        aAddon.isBuiltinColorwayTheme &&
+        lazy.BuiltInThemesHelpers.isColorwayMigrationEnabled
+      ) {
         
         
         
@@ -4731,7 +4735,13 @@ var XPIInstall = {
         AddonManagerPrivate.callAddonListeners("onUninstalled", wrapper);
 
         
-        if (existing && !existing.isBuiltinColorwayTheme) {
+        if (
+          existing &&
+          !(
+            existing.isBuiltinColorwayTheme &&
+            lazy.BuiltInThemesHelpers.isColorwayMigrationEnabled
+          )
+        ) {
           lazy.XPIDatabase.makeAddonVisible(existing);
           AddonManagerPrivate.callAddonListeners(
             "onInstalling",
@@ -4746,7 +4756,13 @@ var XPIInstall = {
       };
 
       
-      if (existing && !existing.isBuiltinColorwayTheme) {
+      if (
+        existing &&
+        !(
+          existing.isBuiltinColorwayTheme &&
+          lazy.BuiltInThemesHelpers.isColorwayMigrationEnabled
+        )
+      ) {
         await bootstrap.update(existing, !existing.disabled, uninstall);
 
         AddonManagerPrivate.callAddonListeners("onInstalled", existing.wrapper);

@@ -354,6 +354,13 @@ pref("browser.theme.colorway-closet", true);
 
 
 
+
+pref("browser.theme.colorway-migration", false);
+
+
+
+
+
 pref("browser.urlbar.ctrlCanonizesURLs", true);
 
 
