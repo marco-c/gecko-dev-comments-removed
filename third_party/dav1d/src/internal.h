@@ -275,7 +275,7 @@ struct Dav1dFrameContext {
 
     struct {
         int next_tile_row[2 ];
-        int entropy_progress;
+        atomic_int entropy_progress;
         atomic_int deblock_progress; 
         atomic_uint *frame_progress, *copy_lpf_progress;
         
@@ -324,22 +324,28 @@ struct Dav1dFrameContext {
     } lf;
 
     struct {
+        pthread_mutex_t lock;
         pthread_cond_t cond;
         struct TaskThreadData *ttd;
         struct Dav1dTask *tasks, *tile_tasks[2], init_task;
         int num_tasks, num_tile_tasks;
-        int init_done;
-        int done[2];
+        atomic_int init_done;
+        atomic_int done[2];
         int retval;
         int update_set; 
         atomic_int error;
-        int task_counter;
+        atomic_int task_counter;
         struct Dav1dTask *task_head, *task_tail;
         
         
         
         
         struct Dav1dTask *task_cur_prev;
+        struct { 
+            atomic_int merge;
+            pthread_mutex_t lock;
+            Dav1dTask *head, *tail;
+        } pending_tasks;
     } task_thread;
 
     

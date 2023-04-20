@@ -151,6 +151,8 @@ DAV1D_API int dav1d_parse_sequence_header(Dav1dSequenceHeader *out,
 
 
 
+
+
 DAV1D_API int dav1d_send_data(Dav1dContext *c, Dav1dData *in);
 
 

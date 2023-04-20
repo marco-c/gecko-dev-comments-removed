@@ -191,36 +191,55 @@ void checkasm_checked_call(void *func, ...);
 
 
 
-
-
-
-
-void checkasm_stack_clobber(uint64_t clobber, ...);
-
-
-
-
-
-
 void checkasm_simd_warmup(void);
-#define declare_new(ret, ...)\
-    ret (*checked_call)(void *, int, int, int, int, int, __VA_ARGS__,\
-                        int, int, int, int, int, int, int, int,\
-                        int, int, int, int, int, int, int) =\
-    (void *)checkasm_checked_call;
-#define CLOB (UINT64_C(0xdeadbeefdeadbeef))
+
+
+
+
+
+
+
 #ifdef _WIN32
-#define STACKARGS 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0
+
+#define IGNORED_FP_ARGS 0
 #else
-#define STACKARGS 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0
+
+
+#define IGNORED_FP_ARGS 8
 #endif
+#ifdef HAVE_C11_GENERIC
+#define clobber_type(arg) _Generic((void (*)(void*, arg))NULL,\
+     void (*)(void*, int32_t ): clobber_mask |= 1 << mpos++,\
+     void (*)(void*, uint32_t): clobber_mask |= 1 << mpos++,\
+     void (*)(void*, float   ): mpos += (fp_args++ >= IGNORED_FP_ARGS),\
+     void (*)(void*, double  ): mpos += (fp_args++ >= IGNORED_FP_ARGS),\
+     default:                   mpos++)
+#define init_clobber_mask(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, ...)\
+    unsigned clobber_mask = 0;\
+    {\
+        int mpos = 0, fp_args = 0;\
+        clobber_type(a); clobber_type(b); clobber_type(c); clobber_type(d);\
+        clobber_type(e); clobber_type(f); clobber_type(g); clobber_type(h);\
+        clobber_type(i); clobber_type(j); clobber_type(k); clobber_type(l);\
+        clobber_type(m); clobber_type(n); clobber_type(o); clobber_type(p);\
+    }
+#else
+
+#define init_clobber_mask(...) unsigned clobber_mask = 0
+#endif
+#define declare_new(ret, ...)\
+    ret (*checked_call)(__VA_ARGS__, int, int, int, int, int, int, int,\
+                        int, int, int, int, int, int, int, int, int,\
+                        void*, unsigned) =\
+        (void*)checkasm_checked_call;\
+    init_clobber_mask(__VA_ARGS__, void*, void*, void*, void*,\
+                      void*, void*, void*, void*, void*, void*,\
+                      void*, void*, void*, void*, void*);
 #define call_new(...)\
     (checkasm_set_signal_handler_state(1),\
      checkasm_simd_warmup(),\
-     checkasm_stack_clobber(CLOB, CLOB, CLOB, CLOB, CLOB, CLOB, CLOB,\
-                            CLOB, CLOB, CLOB, CLOB, CLOB, CLOB, CLOB,\
-                            CLOB, CLOB, CLOB, CLOB, CLOB, CLOB, CLOB),\
-     checked_call(func_new, 0, 0, 0, 0, 0, __VA_ARGS__, STACKARGS));\
+     checked_call(__VA_ARGS__, 16, 15, 14, 13, 12, 11, 10, 9, 8,\
+                  7, 6, 5, 4, 3, 2, 1, func_new, clobber_mask));\
     checkasm_set_signal_handler_state(0)
 #elif ARCH_X86_32
 #define declare_new(ret, ...)\
