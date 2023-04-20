@@ -20,7 +20,7 @@ namespace mozilla {
 
 class RemoteSandboxBroker : public AbstractSandboxBroker {
  public:
-  RemoteSandboxBroker();
+  explicit RemoteSandboxBroker(uint32_t aLaunchArch);
 
   void Shutdown() override;
 
@@ -62,6 +62,8 @@ class RemoteSandboxBroker : public AbstractSandboxBroker {
 
   
   bool mShutdown = false;
+
+  uint32_t mLaunchArch;
 };
 
 }  

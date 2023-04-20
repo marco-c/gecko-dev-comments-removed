@@ -27,7 +27,8 @@ class RemoteSandboxBrokerParent
   
   
   
-  RefPtr<GenericPromise> Launch(const nsTArray<uint64_t>& aHandlesToShare,
+  RefPtr<GenericPromise> Launch(uint32_t aLaunchArch,
+                                const nsTArray<uint64_t>& aHandlesToShare,
                                 nsISerialEventTarget* aThread);
 
  private:

@@ -1699,22 +1699,4 @@ SandboxBroker::~SandboxBroker() {
   }
 }
 
-#ifdef _ARM64_
-
-
-
-extern AbstractSandboxBroker* CreateRemoteSandboxBroker();
-#endif
-
-
-AbstractSandboxBroker* AbstractSandboxBroker::Create(
-    GeckoProcessType aProcessType) {
-#ifdef _ARM64_
-  if (aProcessType == GeckoProcessType_GMPlugin) {
-    return CreateRemoteSandboxBroker();
-  }
-#endif
-  return new SandboxBroker();
-}
-
 }  

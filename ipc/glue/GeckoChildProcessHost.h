@@ -44,6 +44,11 @@
 #  include "mozilla/ipc/UtilityProcessSandboxing.h"
 #endif
 
+#if (defined(XP_WIN) && defined(_ARM64_)) || \
+    (defined(XP_MACOSX) && defined(__aarch64__))
+#  define ALLOW_GECKO_CHILD_PROCESS_ARCH
+#endif
+
 struct _MacSandboxInfo;
 typedef _MacSandboxInfo MacSandboxInfo;
 
@@ -155,6 +160,10 @@ class GeckoChildProcessHost : public ChildProcessHost,
   }
 #endif
 
+#ifdef ALLOW_GECKO_CHILD_PROCESS_ARCH
+  void SetLaunchArchitecture(uint32_t aArch) { mLaunchArch = aArch; }
+#endif
+
   
   void SetAlreadyDead();
 
@@ -197,6 +206,11 @@ class GeckoChildProcessHost : public ChildProcessHost,
   bool mIsFileContent;
   Monitor mMonitor;
   FilePath mProcessPath;
+#ifdef ALLOW_GECKO_CHILD_PROCESS_ARCH
+  
+  
+  uint32_t mLaunchArch = base::PROCESS_ARCH_INVALID;
+#endif
   
   
   
