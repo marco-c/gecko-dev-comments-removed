@@ -508,6 +508,11 @@ class nsINode : public mozilla::dom::EventTarget {
 
   mozilla::dom::Element* GetNearestInclusiveOpenPopover();
 
+  
+
+
+  mozilla::dom::Element* GetNearestInclusiveTargetPopoverForInvoker();
+
   bool IsNode() const final { return true; }
 
   NS_IMPL_FROMEVENTTARGET_HELPER(nsINode, IsNode())
@@ -518,6 +523,9 @@ class nsINode : public mozilla::dom::EventTarget {
   bool IsElement() const { return GetBoolFlag(NodeIsElement); }
 
   virtual bool IsTextControlElement() const { return false; }
+  virtual bool IsGenericHTMLFormControlElementWithState() const {
+    return false;
+  }
 
   
   virtual const mozilla::dom::LinkStyle* AsLinkStyle() const { return nullptr; }
