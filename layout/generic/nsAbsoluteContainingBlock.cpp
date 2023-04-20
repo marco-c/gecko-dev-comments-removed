@@ -673,13 +673,13 @@ void nsAbsoluteContainingBlock::ResolveAutoMarginsAfterLayout(
 
   
   
-  nscoord availMarginSpace = aLogicalCBSize->BSize(wm) - kidSizeInWM.BSize(wm) -
-                             offsetsInWM.BStartEnd(wm) -
-                             marginInWM.BStartEnd(wm);
-
-  if (availMarginSpace < 0) {
-    availMarginSpace = 0;
-  }
+  
+  const bool autoOffset = offsetsInWM.BEnd(wm) == NS_AUTOOFFSET ||
+                          offsetsInWM.BStart(wm) == NS_AUTOOFFSET;
+  nscoord availMarginSpace =
+      autoOffset ? 0
+                 : aLogicalCBSize->BSize(wm) - kidSizeInWM.BSize(wm) -
+                       offsetsInWM.BStartEnd(wm) - marginInWM.BStartEnd(wm);
 
   const auto& styleMargin = aKidReflowInput.mStyleMargin;
   if (wm.IsOrthogonalTo(outerWM)) {
