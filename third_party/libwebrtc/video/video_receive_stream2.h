@@ -102,7 +102,8 @@ class VideoReceiveStream2
                       Clock* clock,
                       std::unique_ptr<VCMTiming> timing,
                       NackPeriodicProcessor* nack_periodic_processor,
-                      DecodeSynchronizer* decode_sync);
+                      DecodeSynchronizer* decode_sync,
+                      RtcEventLog* event_log);
   
   
   
