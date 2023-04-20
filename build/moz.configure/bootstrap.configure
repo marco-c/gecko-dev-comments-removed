@@ -92,13 +92,21 @@ def bootstrap_toolchain_tasks(host):
         log.warning(str(e))
         log.debug(message)
         return None
-    
-    
-    tasks = {
-        k: {
+
+    def task_data(t):
+        result = {
             "index": t.optimization["index-search"],
             "artifact": t.attributes["toolchain-artifact"],
         }
+        command = t.attributes.get("toolchain-command")
+        if command:
+            result["command"] = command
+        return result
+
+    
+    
+    tasks = {
+        k: task_data(t)
         for k, t in tasks.items()
         if t.attributes.get("local-toolchain") and "index-search" in t.optimization
     }
@@ -155,9 +163,13 @@ def bootstrap_path(path, **kwargs):
             artifact = task["artifact"]
             
             
+            
+            command = None
             if not artifact.startswith("public/"):
-                log.debug("Cannot bootstrap %s: not a public artifact", label)
-                return False
+                command = task.get("command")
+                if not command:
+                    log.debug("Cannot bootstrap %s: not a public artifact", label)
+                    return False
             index_file = os.path.join(toolchains_base_dir, "indices", path_parts[0])
             try:
                 with open(index_file) as fh:
@@ -173,22 +185,45 @@ def bootstrap_path(path, **kwargs):
             
             
             
-            try:
-                IndexSearch = import_module(
-                    "gecko_taskgraph.optimize.strategies"
-                ).IndexSearch
-            except Exception:
-                log.debug("Cannot bootstrap %s: missing taskgraph module", label)
-                return False
-            task_id = IndexSearch().should_replace_task(task, {}, None, task["index"])
+            task_id = None
+            if not command:
+                try:
+                    IndexSearch = import_module(
+                        "gecko_taskgraph.optimize.strategies"
+                    ).IndexSearch
+                except Exception:
+                    log.debug("Cannot bootstrap %s: missing taskgraph module", label)
+                    return False
+                task_id = IndexSearch().should_replace_task(
+                    task, {}, None, task["index"]
+                )
             if task_id:
                 
                 
-                flags = ["--from-task", f"{task_id}:{artifact}"]
+                command = [
+                    "artifact",
+                    "toolchain",
+                    "--from-task",
+                    f"{task_id}:{artifact}",
+                ]
+            elif command:
+                
+                command = (
+                    [
+                        "python",
+                        os.path.join(
+                            build_env.topsrcdir,
+                            "taskcluster/scripts/misc",
+                            command["script"],
+                        ),
+                    ]
+                    + command["arguments"]
+                    + [path_parts[0]]
+                )
             else:
                 
                 
-                flags = ["--from-build", label]
+                command = ["artifact", "toolchain", "--from-build", label]
 
             log.info(
                 "%s bootstrapped toolchain in %s",
@@ -201,10 +236,8 @@ def bootstrap_path(path, **kwargs):
                     sys.executable,
                     os.path.join(build_env.topsrcdir, "mach"),
                     "--log-no-times",
-                    "artifact",
-                    "toolchain",
                 ]
-                + flags,
+                + command,
                 cwd=toolchains_base_dir,
                 check=True,
             )
