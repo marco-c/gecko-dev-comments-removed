@@ -201,6 +201,15 @@ async function initInteractionTest() {
   await setup();
 }
 
+async function initNCharsAndNWordsTest() {
+  
+  Services.scriptloader.loadSubScript(
+    "chrome://mochitests/content/browser/browser/components/urlbar/tests/engagementTelemetry/browser/head-n_chars_n_words.js",
+    this
+  );
+  await setup();
+}
+
 function loadOmniboxAddon({ keyword }) {
   return ExtensionTestUtils.loadExtension({
     manifest: {
