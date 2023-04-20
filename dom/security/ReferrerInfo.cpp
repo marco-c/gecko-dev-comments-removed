@@ -43,7 +43,7 @@ using namespace mozilla::net;
 namespace mozilla::dom {
 
 
-NS_IMPL_CLASSINFO(ReferrerInfo, nullptr, nsIClassInfo::MAIN_THREAD_ONLY,
+NS_IMPL_CLASSINFO(ReferrerInfo, nullptr, nsIClassInfo::THREADSAFE,
                   REFERRERINFO_CID)
 
 NS_IMPL_ISUPPORTS_CI(ReferrerInfo, nsIReferrerInfo, nsISerializable)
