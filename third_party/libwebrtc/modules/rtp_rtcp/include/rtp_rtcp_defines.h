@@ -319,12 +319,14 @@ struct RtpPacketCounter {
       : header_bytes(0), payload_bytes(0), padding_bytes(0), packets(0) {}
 
   explicit RtpPacketCounter(const RtpPacket& packet);
+  explicit RtpPacketCounter(const RtpPacketToSend& packet_to_send);
 
   void Add(const RtpPacketCounter& other) {
     header_bytes += other.header_bytes;
     payload_bytes += other.payload_bytes;
     padding_bytes += other.padding_bytes;
     packets += other.packets;
+    total_packet_delay += other.total_packet_delay;
   }
 
   void Subtract(const RtpPacketCounter& other) {
@@ -336,16 +338,20 @@ struct RtpPacketCounter {
     padding_bytes -= other.padding_bytes;
     RTC_DCHECK_GE(packets, other.packets);
     packets -= other.packets;
+    RTC_DCHECK_GE(total_packet_delay, other.total_packet_delay);
+    total_packet_delay -= other.total_packet_delay;
   }
 
   bool operator==(const RtpPacketCounter& other) const {
     return header_bytes == other.header_bytes &&
            payload_bytes == other.payload_bytes &&
-           padding_bytes == other.padding_bytes && packets == other.packets;
+           padding_bytes == other.padding_bytes && packets == other.packets &&
+           total_packet_delay == other.total_packet_delay;
   }
 
   
   void AddPacket(const RtpPacket& packet);
+  void AddPacket(const RtpPacketToSend& packet_to_send);
 
   size_t TotalBytes() const {
     return header_bytes + payload_bytes + padding_bytes;
@@ -355,6 +361,9 @@ struct RtpPacketCounter {
   size_t payload_bytes;  
   size_t padding_bytes;  
   uint32_t packets;      
+  
+  
+  webrtc::TimeDelta total_packet_delay = webrtc::TimeDelta::Zero();
 };
 
 
@@ -474,7 +483,6 @@ class SendSideDelayObserver {
   virtual ~SendSideDelayObserver() {}
   virtual void SendSideDelayUpdated(int avg_delay_ms,
                                     int max_delay_ms,
-                                    uint64_t total_delay_ms,
                                     uint32_t ssrc) = 0;
 };
 

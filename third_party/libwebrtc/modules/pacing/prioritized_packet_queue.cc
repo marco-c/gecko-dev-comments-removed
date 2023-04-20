@@ -180,6 +180,13 @@ std::unique_ptr<RtpPacketToSend> PrioritizedPacketQueue::Pop() {
       last_update_time_ - packet.enqueue_time - pause_time_sum_;
   queue_time_sum_ -= time_in_non_paused_state;
 
+  
+  
+  
+  
+  
+  packet.packet->set_time_in_send_queue(time_in_non_paused_state);
+
   RTC_DCHECK(size_packets_ > 0 || queue_time_sum_ == TimeDelta::Zero());
 
   RTC_CHECK(packet.enqueue_time_iterator != enqueue_times_.end());

@@ -77,9 +77,10 @@ class VideoSendStream {
     
     int total_bitrate_bps = 0;
     int retransmit_bitrate_bps = 0;
+    
+    
     int avg_delay_ms = 0;
     int max_delay_ms = 0;
-    uint64_t total_packet_send_delay_ms = 0;
     StreamDataCounters rtp_stats;
     RtcpPacketTypeCounter rtcp_packet_type_counts;
     

@@ -133,7 +133,6 @@ class DEPRECATED_RtpSenderEgress {
   SendDelayMap::const_iterator max_delay_it_ RTC_GUARDED_BY(lock_);
   
   int64_t sum_delays_ms_ RTC_GUARDED_BY(lock_);
-  uint64_t total_packet_send_delay_ms_ RTC_GUARDED_BY(lock_);
   StreamDataCounters rtp_stats_ RTC_GUARDED_BY(lock_);
   StreamDataCounters rtx_rtp_stats_ RTC_GUARDED_BY(lock_);
   
