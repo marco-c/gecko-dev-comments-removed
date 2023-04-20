@@ -386,10 +386,6 @@ class SnapshotIterator {
 
     
     RM_AlwaysDefault = 1 << 1,
-
-    
-    
-    RM_NormalOrDefault = RM_Normal | RM_AlwaysDefault,
   };
 
  private:
