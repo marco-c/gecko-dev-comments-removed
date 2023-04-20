@@ -190,6 +190,12 @@ template <typename T>
 
   
   
+  
+  MOZ_ASSERT_IF(!cx->zone()->suppressAllocationMetadataBuilder,
+                cx->realm()->hasObjectImmediateMetadata());
+
+  
+  
   if (MOZ_UNLIKELY(cx->realm()->hasAllocationMetadataBuilder()) &&
       !cx->zone()->suppressAllocationMetadataBuilder) {
     
