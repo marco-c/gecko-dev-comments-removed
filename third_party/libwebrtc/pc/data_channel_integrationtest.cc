@@ -58,10 +58,24 @@ namespace {
 
 class DataChannelIntegrationTest
     : public PeerConnectionIntegrationBaseTest,
-      public ::testing::WithParamInterface<SdpSemantics> {
+      public ::testing::WithParamInterface<std::tuple<SdpSemantics, bool>> {
  protected:
   DataChannelIntegrationTest()
-      : PeerConnectionIntegrationBaseTest(GetParam()) {}
+      : PeerConnectionIntegrationBaseTest(std::get<0>(GetParam())),
+        allow_media_(std::get<1>(GetParam())) {}
+  bool allow_media() { return allow_media_; }
+
+  bool CreatePeerConnectionWrappers() {
+    if (allow_media_) {
+      return PeerConnectionIntegrationBaseTest::CreatePeerConnectionWrappers();
+    }
+    return PeerConnectionIntegrationBaseTest::
+        CreatePeerConnectionWrappersWithoutMediaEngine();
+  }
+
+ private:
+  
+  const bool allow_media_;
 };
 
 
@@ -173,14 +187,18 @@ TEST_P(DataChannelIntegrationTest, EndToEndCallWithSctpDataChannel) {
   
   
   caller()->CreateDataChannel();
-  caller()->AddAudioVideoTracks();
-  callee()->AddAudioVideoTracks();
+  if (allow_media()) {
+    caller()->AddAudioVideoTracks();
+    callee()->AddAudioVideoTracks();
+  }
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-  
-  MediaExpectations media_expectations;
-  media_expectations.ExpectBidirectionalAudioAndVideo();
-  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+  if (allow_media()) {
+    
+    MediaExpectations media_expectations;
+    media_expectations.ExpectBidirectionalAudioAndVideo();
+    ASSERT_TRUE(ExpectNewFrames(media_expectations));
+  }
   
   
   ASSERT_NE(nullptr, caller()->data_channel());
@@ -202,7 +220,7 @@ TEST_P(DataChannelIntegrationTest, EndToEndCallWithSctpDataChannel) {
 
 TEST_P(DataChannelIntegrationTest,
        EndToEndCallWithSctpDataChannelVariousSizes) {
-  ASSERT_TRUE(CreatePeerConnectionWrappersWithoutMediaEngine());
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   
   
@@ -241,7 +259,7 @@ TEST_P(DataChannelIntegrationTest,
 
 TEST_P(DataChannelIntegrationTest,
        EndToEndCallWithSctpDataChannelEmptyMessages) {
-  ASSERT_TRUE(CreatePeerConnectionWrappersWithoutMediaEngine());
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   
   
@@ -291,7 +309,7 @@ TEST_P(DataChannelIntegrationTest,
   
   const size_t kLowestSafePayloadSizeLimit = 1225;
 
-  ASSERT_TRUE(CreatePeerConnectionWrappersWithoutMediaEngine());
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   
   
@@ -328,7 +346,7 @@ TEST_P(DataChannelIntegrationTest, EndToEndCallWithSctpDataChannelHarmfulMtu) {
   
   const size_t kMessageSizeThatIsNotDelivered = 1157;
 
-  ASSERT_TRUE(CreatePeerConnectionWrappersWithoutMediaEngine());
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   caller()->CreateDataChannel();
   caller()->CreateAndSetAndSignalOffer();
@@ -369,8 +387,10 @@ TEST_P(DataChannelIntegrationTest, CalleeClosesSctpDataChannel) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   caller()->CreateDataChannel();
-  caller()->AddAudioVideoTracks();
-  callee()->AddAudioVideoTracks();
+  if (allow_media()) {
+    caller()->AddAudioVideoTracks();
+    callee()->AddAudioVideoTracks();
+  }
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   ASSERT_NE(nullptr, caller()->data_channel());
@@ -406,8 +426,10 @@ TEST_P(DataChannelIntegrationTest, SctpDataChannelConfigSentToOtherSide) {
   init.id = 53;
   init.maxRetransmits = 52;
   caller()->CreateDataChannel("data-channel", &init);
-  caller()->AddAudioVideoTracks();
-  callee()->AddAudioVideoTracks();
+  if (allow_media()) {
+    caller()->AddAudioVideoTracks();
+    callee()->AddAudioVideoTracks();
+  }
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
@@ -429,7 +451,7 @@ TEST_P(DataChannelIntegrationTest, StressTestUnorderedSctpDataChannel) {
   virtual_socket_server()->set_delay_stddev(5);
   virtual_socket_server()->UpdateDelayDistribution();
   
-  ASSERT_TRUE(CreatePeerConnectionWrappersWithoutMediaEngine());
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   webrtc::DataChannelInit init;
   init.ordered = false;
@@ -633,6 +655,10 @@ TEST_P(DataChannelIntegrationTest, StressTestOpenCloseChannelWithDelay) {
 
 
 TEST_P(DataChannelIntegrationTest, AddSctpDataChannelInSubsequentOffer) {
+  
+  if (!allow_media()) {
+    return;
+  }
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   
@@ -665,6 +691,10 @@ TEST_P(DataChannelIntegrationTest, AddSctpDataChannelInSubsequentOffer) {
 
 
 TEST_P(DataChannelIntegrationTest, SctpDataChannelToAudioVideoUpgrade) {
+  
+  if (!allow_media()) {
+    return;
+  }
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   
@@ -724,6 +754,10 @@ TEST_P(DataChannelIntegrationTest,
 
 
 TEST_P(DataChannelIntegrationTest, ClosingConnectionStopsPacketFlow) {
+  
+  if (!allow_media()) {
+    return;
+  }
   
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
@@ -1055,8 +1089,9 @@ TEST_P(DataChannelIntegrationTest,
 
 INSTANTIATE_TEST_SUITE_P(DataChannelIntegrationTest,
                          DataChannelIntegrationTest,
-                         Values(SdpSemantics::kPlanB_DEPRECATED,
-                                SdpSemantics::kUnifiedPlan));
+                         Combine(Values(SdpSemantics::kPlanB_DEPRECATED,
+                                        SdpSemantics::kUnifiedPlan),
+                                 testing::Bool()));
 
 TEST_F(DataChannelIntegrationTestUnifiedPlan,
        EndToEndCallWithBundledSctpDataChannel) {

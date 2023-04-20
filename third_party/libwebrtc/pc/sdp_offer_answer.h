@@ -596,6 +596,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   
   const cricket::AudioOptions& audio_options() { return audio_options_; }
   const cricket::VideoOptions& video_options() { return video_options_; }
+  bool ConfiguredForMedia() const;
 
   PeerConnectionSdpMethods* const pc_;
   ConnectionContext* const context_;
