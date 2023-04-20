@@ -67,6 +67,7 @@ const links = {
     "America/Montserrat": "America/Montserrat",
     "America/Nassau": "America/Nassau",
     "America/Nipigon": "America/Nipigon",
+    "America/Pangnirtung": "America/Pangnirtung",
     "America/Port_of_Spain": "America/Port_of_Spain",
     "America/Rainy_River": "America/Rainy_River",
     "America/Rosario": "America/Rosario",
