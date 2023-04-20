@@ -803,18 +803,19 @@ impl crate::Instance<super::Api> for Instance {
             }
             #[cfg(not(feature = "emscripten"))]
             (Rwh::Wayland(_), raw_window_handle::RawDisplayHandle::Wayland(display_handle)) => {
-                
-
-
-
-
-
-                log::warn!("Re-initializing Gles context due to Wayland window");
                 if inner
                     .wl_display
                     .map(|ptr| ptr != display_handle.display)
                     .unwrap_or(true)
                 {
+                    
+
+
+
+
+
+                    log::warn!("Re-initializing Gles context due to Wayland window");
+
                     use std::ops::DerefMut;
                     let display_attributes = [egl::ATTRIB_NONE];
 
