@@ -1952,16 +1952,11 @@ class nsLayoutUtils {
 
 
 
-
-
-
-
   static ImgDrawResult DrawSingleImage(
       gfxContext& aContext, nsPresContext* aPresContext, imgIContainer* aImage,
       SamplingFilter aSamplingFilter, const nsRect& aDest, const nsRect& aDirty,
       const mozilla::SVGImageContext& aSVGContext, uint32_t aImageFlags,
-      const nsPoint* aAnchorPoint = nullptr,
-      const nsRect* aSourceArea = nullptr);
+      const nsPoint* aAnchorPoint = nullptr);
 
   
 

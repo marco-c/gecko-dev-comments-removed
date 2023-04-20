@@ -307,8 +307,7 @@ class nsTreeBodyFrame final : public nsLeafBoxFrame,
 
   
   nsresult GetImage(int32_t aRowIndex, nsTreeColumn* aCol, bool aUseContext,
-                    ComputedStyle* aComputedStyle, bool& aAllowImageRegions,
-                    imgIContainer** aResult);
+                    ComputedStyle* aComputedStyle, imgIContainer** aResult);
 
   
   
@@ -317,12 +316,10 @@ class nsTreeBodyFrame final : public nsLeafBoxFrame,
 
   
   
-  nsSize GetImageDestSize(ComputedStyle* aComputedStyle, bool useImageRegion,
-                          imgIContainer* image);
+  nsSize GetImageDestSize(ComputedStyle*, imgIContainer*);
 
   
-  nsRect GetImageSourceRect(ComputedStyle* aComputedStyle, bool useImageRegion,
-                            imgIContainer* image);
+  nsRect GetImageSourceRect(ComputedStyle*, imgIContainer*);
 
   
   int32_t GetRowHeight();

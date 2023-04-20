@@ -1797,18 +1797,14 @@ nsITheme* nsTreeBodyFrame::GetTwistyRect(int32_t aRowIndex,
 nsresult nsTreeBodyFrame::GetImage(int32_t aRowIndex, nsTreeColumn* aCol,
                                    bool aUseContext,
                                    ComputedStyle* aComputedStyle,
-                                   bool& aAllowImageRegions,
                                    imgIContainer** aResult) {
   *aResult = nullptr;
 
   nsAutoString imageSrc;
   mView->GetImageSrc(aRowIndex, aCol, imageSrc);
   RefPtr<imgRequestProxy> styleRequest;
-  if (!aUseContext && !imageSrc.IsEmpty()) {
-    aAllowImageRegions = false;
-  } else {
+  if (aUseContext || imageSrc.IsEmpty()) {
     
-    aAllowImageRegions = true;
     styleRequest =
         aComputedStyle->StyleList()->mListStyleImage.GetImageRequest();
     if (!styleRequest) return NS_OK;
@@ -1927,24 +1923,13 @@ nsRect nsTreeBodyFrame::GetImageSize(int32_t aRowIndex, nsTreeColumn* aCol,
 
   
   
-  bool useImageRegion = true;
   nsCOMPtr<imgIContainer> image;
-  GetImage(aRowIndex, aCol, aUseContext, aComputedStyle, useImageRegion,
-           getter_AddRefs(image));
+  GetImage(aRowIndex, aCol, aUseContext, aComputedStyle, getter_AddRefs(image));
 
   const nsStylePosition* myPosition = aComputedStyle->StylePosition();
-  const nsStyleList* myList = aComputedStyle->StyleList();
-  nsRect imageRegion = myList->GetImageRegion();
-  if (useImageRegion) {
-    r.x += imageRegion.x;
-    r.y += imageRegion.y;
-  }
-
   if (myPosition->mWidth.ConvertsToLength()) {
     int32_t val = myPosition->mWidth.ToLength();
     r.width += val;
-  } else if (useImageRegion && imageRegion.width > 0) {
-    r.width += imageRegion.width;
   } else {
     needWidth = true;
   }
@@ -1952,10 +1937,9 @@ nsRect nsTreeBodyFrame::GetImageSize(int32_t aRowIndex, nsTreeColumn* aCol,
   if (myPosition->mHeight.ConvertsToLength()) {
     int32_t val = myPosition->mHeight.ToLength();
     r.height += val;
-  } else if (useImageRegion && imageRegion.height > 0)
-    r.height += imageRegion.height;
-  else
+  } else {
     needHeight = true;
+  }
 
   if (image) {
     if (needWidth || needHeight) {
@@ -1991,7 +1975,6 @@ nsRect nsTreeBodyFrame::GetImageSize(int32_t aRowIndex, nsTreeColumn* aCol,
 
 
 nsSize nsTreeBodyFrame::GetImageDestSize(ComputedStyle* aComputedStyle,
-                                         bool useImageRegion,
                                          imgIContainer* image) {
   nsSize size(0, 0);
 
@@ -2022,24 +2005,10 @@ nsSize nsTreeBodyFrame::GetImageDestSize(ComputedStyle* aComputedStyle,
   if (needWidth || needHeight) {
     
     nsSize imageSize(0, 0);
-
-    const nsStyleList* myList = aComputedStyle->StyleList();
-    nsRect imageRegion = myList->GetImageRegion();
-    if (useImageRegion && imageRegion.width > 0) {
-      
-      
-      imageSize.width = imageRegion.width;
-    } else if (image) {
+    if (image) {
       nscoord width;
       image->GetWidth(&width);
       imageSize.width = nsPresContext::CSSPixelsToAppUnits(width);
-    }
-
-    if (useImageRegion && imageRegion.height > 0) {
-      
-      
-      imageSize.height = imageRegion.height;
-    } else if (image) {
       nscoord height;
       image->GetHeight(&height);
       imageSize.height = nsPresContext::CSSPixelsToAppUnits(height);
@@ -2079,14 +2048,7 @@ nsSize nsTreeBodyFrame::GetImageDestSize(ComputedStyle* aComputedStyle,
 
 
 nsRect nsTreeBodyFrame::GetImageSourceRect(ComputedStyle* aComputedStyle,
-                                           bool useImageRegion,
                                            imgIContainer* image) {
-  const nsStyleList* myList = aComputedStyle->StyleList();
-  
-  if (useImageRegion && myList->mImageRegion.IsRect()) {
-    return myList->GetImageRegion();
-  }
-
   if (!image) {
     return nsRect();
   }
@@ -3158,9 +3120,7 @@ ImgDrawResult nsTreeBodyFrame::PaintTwisty(
 
       
       nsCOMPtr<imgIContainer> image;
-      bool useImageRegion = true;
-      GetImage(aRowIndex, aColumn, true, twistyContext, useImageRegion,
-               getter_AddRefs(image));
+      GetImage(aRowIndex, aColumn, true, twistyContext, getter_AddRefs(image));
       if (image) {
         nsPoint anchorPoint = twistyRect.TopLeft();
 
@@ -3210,13 +3170,11 @@ ImgDrawResult nsTreeBodyFrame::PaintImage(
   imageRect.Deflate(imageMargin);
 
   
-  bool useImageRegion = true;
   nsCOMPtr<imgIContainer> image;
-  GetImage(aRowIndex, aColumn, false, imageContext, useImageRegion,
-           getter_AddRefs(image));
+  GetImage(aRowIndex, aColumn, false, imageContext, getter_AddRefs(image));
 
   
-  nsSize imageDestSize = GetImageDestSize(imageContext, useImageRegion, image);
+  nsSize imageDestSize = GetImageDestSize(imageContext, image);
   if (!imageDestSize.width || !imageDestSize.height) {
     return ImgDrawResult::SUCCESS;
   }
@@ -3300,8 +3258,7 @@ ImgDrawResult nsTreeBodyFrame::PaintImage(
       
       
       
-      nsRect sourceRect =
-          GetImageSourceRect(imageContext, useImageRegion, image);
+      nsRect sourceRect = GetImageSourceRect(imageContext, image);
 
       
       
@@ -3530,9 +3487,7 @@ ImgDrawResult nsTreeBodyFrame::PaintCheckbox(int32_t aRowIndex,
 
   
   nsCOMPtr<imgIContainer> image;
-  bool useImageRegion = true;
-  GetImage(aRowIndex, aColumn, true, checkboxContext, useImageRegion,
-           getter_AddRefs(image));
+  GetImage(aRowIndex, aColumn, true, checkboxContext, getter_AddRefs(image));
   if (image) {
     nsPoint pt = checkboxRect.TopLeft();
 

@@ -127,8 +127,6 @@ class nsImageBoxFrame final : public nsLeafBoxFrame {
   void OnImageIsAnimated(imgIRequest* aRequest);
   void OnFrameUpdate(imgIRequest* aRequest);
 
-  nsRect mSubRect;  
-                    
   nsSize mIntrinsicSize;
   nsSize mImageSize;
 
