@@ -76,6 +76,26 @@ class ScalabilityStructureS2T1 : public ScalabilityStructureSimulcast {
   FrameDependencyStructure DependencyStructure() const override;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+class ScalabilityStructureS2T3 : public ScalabilityStructureSimulcast {
+ public:
+  ScalabilityStructureS2T3() : ScalabilityStructureSimulcast(2, 3) {}
+  ~ScalabilityStructureS2T3() override = default;
+
+  FrameDependencyStructure DependencyStructure() const override;
+};
+
 class ScalabilityStructureS3T3 : public ScalabilityStructureSimulcast {
  public:
   ScalabilityStructureS3T3() : ScalabilityStructureSimulcast(3, 3) {}
