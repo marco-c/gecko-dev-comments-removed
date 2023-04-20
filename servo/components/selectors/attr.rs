@@ -148,25 +148,6 @@ pub enum ParsedCaseSensitivity {
     AsciiCaseInsensitiveIfInHtmlElementInHtmlDocument,
 }
 
-impl ParsedCaseSensitivity {
-    pub fn to_unconditional(self, is_html_element_in_html_document: bool) -> CaseSensitivity {
-        match self {
-            ParsedCaseSensitivity::AsciiCaseInsensitiveIfInHtmlElementInHtmlDocument
-                if is_html_element_in_html_document =>
-            {
-                CaseSensitivity::AsciiCaseInsensitive
-            },
-            ParsedCaseSensitivity::AsciiCaseInsensitiveIfInHtmlElementInHtmlDocument => {
-                CaseSensitivity::CaseSensitive
-            },
-            ParsedCaseSensitivity::CaseSensitive | ParsedCaseSensitivity::ExplicitCaseSensitive => {
-                CaseSensitivity::CaseSensitive
-            },
-            ParsedCaseSensitivity::AsciiCaseInsensitive => CaseSensitivity::AsciiCaseInsensitive,
-        }
-    }
-}
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CaseSensitivity {
     CaseSensitive,
