@@ -15,6 +15,16 @@ SourceSurfaceWebgl::SourceSurfaceWebgl(DrawTargetWebgl* aDT)
       mDT(aDT),
       mSharedContext(aDT->mSharedContext) {}
 
+SourceSurfaceWebgl::SourceSurfaceWebgl(
+    const RefPtr<TextureHandle>& aHandle,
+    const RefPtr<DrawTargetWebgl::SharedContext>& aSharedContext)
+    : mFormat(aHandle->GetFormat()),
+      mSize(aHandle->GetSize()),
+      mSharedContext(aSharedContext),
+      mHandle(aHandle) {
+  mHandle->SetSurface(this);
+}
+
 SourceSurfaceWebgl::~SourceSurfaceWebgl() {
   if (mHandle) {
     
@@ -122,6 +132,41 @@ void SourceSurfaceWebgl::OnUnlinkTexture(
     mData = aContext->ReadSnapshot(mHandle);
   }
   mHandle = nullptr;
+}
+
+already_AddRefed<SourceSurface> SourceSurfaceWebgl::ExtractSubrect(
+    const IntRect& aRect) {
+  
+  if (!(mDT || (mHandle && mSharedContext)) || aRect.IsEmpty() ||
+      !GetRect().Contains(aRect)) {
+    return nullptr;
+  }
+  RefPtr<TextureHandle> subHandle;
+  RefPtr<DrawTargetWebgl::SharedContext> sharedContext;
+  if (mDT) {
+    
+    
+    subHandle = mDT->CopySnapshot(aRect);
+    if (!subHandle) {
+      return nullptr;
+    }
+    sharedContext = mDT->mSharedContext;
+  } else {
+    
+    
+    sharedContext = mSharedContext;
+    if (!sharedContext) {
+      return nullptr;
+    }
+    
+    subHandle = sharedContext->CopySnapshot(aRect, mHandle);
+    if (!subHandle) {
+      return nullptr;
+    }
+  }
+  RefPtr<SourceSurface> surface =
+      new SourceSurfaceWebgl(subHandle, sharedContext);
+  return surface.forget();
 }
 
 }  

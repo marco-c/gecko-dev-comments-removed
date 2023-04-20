@@ -826,7 +826,12 @@ void DrawTargetWebgl::SharedContext::InitTexParameters(WebGLTextureJS* aTex,
 }
 
 
-already_AddRefed<TextureHandle> DrawTargetWebgl::SharedContext::CopySnapshot() {
+already_AddRefed<TextureHandle> DrawTargetWebgl::SharedContext::CopySnapshot(
+    const IntRect& aRect, TextureHandle* aHandle) {
+  if (!mWebgl || mWebgl->IsContextLost()) {
+    return nullptr;
+  }
+
   
   
   RefPtr<WebGLTextureJS> tex = mWebgl->CreateTexture();
@@ -834,19 +839,39 @@ already_AddRefed<TextureHandle> DrawTargetWebgl::SharedContext::CopySnapshot() {
     return nullptr;
   }
 
-  SurfaceFormat format = mCurrentTarget->GetFormat();
-  IntSize size = mCurrentTarget->GetSize();
+  
+  
+  if (aHandle) {
+    if (!mScratchFramebuffer) {
+      mScratchFramebuffer = mWebgl->CreateFramebuffer();
+    }
+    mWebgl->BindFramebuffer(LOCAL_GL_FRAMEBUFFER, mScratchFramebuffer);
+    mWebgl->FramebufferTexture2D(
+        LOCAL_GL_FRAMEBUFFER, LOCAL_GL_COLOR_ATTACHMENT0, LOCAL_GL_TEXTURE_2D,
+        aHandle->GetWebGLTexture(), 0);
+  }
+
   
   mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, tex);
-  mWebgl->TexStorage2D(LOCAL_GL_TEXTURE_2D, 1, LOCAL_GL_RGBA8, size.width,
-                       size.height);
+  mWebgl->TexStorage2D(LOCAL_GL_TEXTURE_2D, 1, LOCAL_GL_RGBA8, aRect.width,
+                       aRect.height);
   InitTexParameters(tex);
   
-  mWebgl->CopyTexSubImage2D(LOCAL_GL_TEXTURE_2D, 0, 0, 0, 0, 0, size.width,
-                            size.height);
+  mWebgl->CopyTexSubImage2D(LOCAL_GL_TEXTURE_2D, 0, 0, 0, aRect.x, aRect.y,
+                            aRect.width, aRect.height);
   ClearLastTexture();
 
-  return WrapSnapshot(size, format, tex.forget());
+  SurfaceFormat format =
+      aHandle ? aHandle->GetFormat() : mCurrentTarget->GetFormat();
+  already_AddRefed<TextureHandle> result =
+      WrapSnapshot(aRect.Size(), format, tex.forget());
+
+  
+  if (aHandle && mCurrentTarget) {
+    mWebgl->BindFramebuffer(LOCAL_GL_FRAMEBUFFER, mCurrentTarget->mFramebuffer);
+  }
+
+  return result;
 }
 
 inline DrawTargetWebgl::AutoRestoreContext::AutoRestoreContext(
@@ -864,12 +889,13 @@ inline DrawTargetWebgl::AutoRestoreContext::~AutoRestoreContext() {
 }
 
 
-already_AddRefed<TextureHandle> DrawTargetWebgl::CopySnapshot() {
+already_AddRefed<TextureHandle> DrawTargetWebgl::CopySnapshot(
+    const IntRect& aRect) {
   AutoRestoreContext restore(this);
   if (!PrepareContext(false)) {
     return nullptr;
   }
-  return mSharedContext->CopySnapshot();
+  return mSharedContext->CopySnapshot(aRect);
 }
 
 
