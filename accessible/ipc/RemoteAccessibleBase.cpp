@@ -1261,6 +1261,18 @@ already_AddRefed<AccAttributes> RemoteAccessibleBase<Derived>::Attributes() {
     attributes->SetAttribute(nsGkAtoms::explicit_name, true);
   }
 
+  
+  
+  
+  
+  
+  
+  if (HasNumericValue()) {
+    nsString valuetext;
+    Value(valuetext);
+    attributes->SetAttribute(nsGkAtoms::aria_valuetext, std::move(valuetext));
+  }
+
   return attributes.forget();
 }
 
