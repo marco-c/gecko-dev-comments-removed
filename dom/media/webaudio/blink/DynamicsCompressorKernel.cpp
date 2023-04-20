@@ -36,7 +36,6 @@
 #include "WebAudioUtils.h"
 
 using namespace mozilla::dom;  
-using mozilla::IsInfinite;
 using mozilla::MakeUnique;
 using mozilla::PositiveInfinity;
 
@@ -293,7 +292,7 @@ void DynamicsCompressorKernel::process(
 
     
     if (std::isnan(m_detectorAverage)) m_detectorAverage = 1;
-    if (IsInfinite(m_detectorAverage)) m_detectorAverage = 1;
+    if (std::isinf(m_detectorAverage)) m_detectorAverage = 1;
 
     float desiredGain = m_detectorAverage;
 
@@ -327,7 +326,7 @@ void DynamicsCompressorKernel::process(
 
       
       if (std::isnan(compressionDiffDb)) compressionDiffDb = -1;
-      if (IsInfinite(compressionDiffDb)) compressionDiffDb = -1;
+      if (std::isinf(compressionDiffDb)) compressionDiffDb = -1;
 
       
       
@@ -355,7 +354,7 @@ void DynamicsCompressorKernel::process(
 
       
       if (std::isnan(compressionDiffDb)) compressionDiffDb = 1;
-      if (IsInfinite(compressionDiffDb)) compressionDiffDb = 1;
+      if (std::isinf(compressionDiffDb)) compressionDiffDb = 1;
 
       
       
@@ -427,7 +426,7 @@ void DynamicsCompressorKernel::process(
 
         
         if (std::isnan(detectorAverage)) detectorAverage = 1;
-        if (IsInfinite(detectorAverage)) detectorAverage = 1;
+        if (std::isinf(detectorAverage)) detectorAverage = 1;
 
         
         if (envelopeRate < 1) {
