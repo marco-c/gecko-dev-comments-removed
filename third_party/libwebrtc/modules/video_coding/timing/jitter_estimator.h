@@ -12,6 +12,7 @@
 #define MODULES_VIDEO_CODING_TIMING_JITTER_ESTIMATOR_H_
 
 #include <memory>
+#include <queue>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -23,6 +24,7 @@
 #include "modules/video_coding/timing/frame_delay_variation_kalman_filter.h"
 #include "modules/video_coding/timing/rtt_filter.h"
 #include "rtc_base/experiments/struct_parameters_parser.h"
+#include "rtc_base/numerics/percentile_filter.h"
 #include "rtc_base/rolling_accumulator.h"
 
 namespace webrtc {
@@ -44,10 +46,23 @@ class JitterEstimator {
 
     std::unique_ptr<StructParametersParser> Parser() {
       return StructParametersParser::Create(
+          "max_frame_size_percentile", &max_frame_size_percentile,
+          "max_frame_size_window", &max_frame_size_window,
           "num_stddev_delay_outlier", &num_stddev_delay_outlier,
           "num_stddev_size_outlier", &num_stddev_size_outlier,
           "congestion_rejection_factor", &congestion_rejection_factor);
     }
+
+    bool MaxFrameSizePercentileEnabled() const {
+      return max_frame_size_percentile.has_value();
+    }
+
+    
+    
+    absl::optional<double> max_frame_size_percentile;
+
+    
+    absl::optional<int> max_frame_size_window;
 
     
     
@@ -110,6 +125,7 @@ class JitterEstimator {
 
  private:
   
+  double GetMaxFrameSizeEstimateBytes() const;
   double GetNumStddevDelayOutlier() const;
   double GetNumStddevSizeOutlier() const;
   double GetCongestionRejectionFactor() const;
@@ -148,7 +164,11 @@ class JitterEstimator {
   
   
   
+  
   double max_frame_size_bytes_;
+  
+  PercentileFilter<int64_t> max_frame_size_bytes_percentile_;
+  std::queue<int64_t> frame_sizes_in_percentile_filter_;
   
   
   double startup_frame_size_sum_bytes_;
