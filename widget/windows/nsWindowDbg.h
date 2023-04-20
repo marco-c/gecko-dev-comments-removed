@@ -31,11 +31,11 @@ struct EventMsgInfo {
   const char* mStr;
   UINT mId;
   std::function<nsAutoCString(WPARAM, LPARAM, bool)> mParamInfoFn;
-  std::function<void(nsAutoCString&, WPARAM, const char*, bool)> mWParamInfoFn;
+  std::function<void(nsCString&, WPARAM, const char*, bool)> mWParamInfoFn;
   const char* mWParamName;
-  std::function<void(nsAutoCString&, LPARAM, const char*, bool)> mLParamInfoFn;
+  std::function<void(nsCString&, LPARAM, const char*, bool)> mLParamInfoFn;
   const char* mLParamName;
-  void LogParameters(nsAutoCString& str, WPARAM wParam, LPARAM lParam,
+  void LogParameters(nsCString& str, WPARAM wParam, LPARAM lParam,
                      bool isPreCall);
 };
 extern std::unordered_map<UINT, EventMsgInfo> gAllEvents;
@@ -75,10 +75,27 @@ struct EnumValueAndName {
 
 
 
-bool AppendFlagsInfo(nsAutoCString& str, uint64_t flags,
+bool AppendFlagsInfo(nsCString& str, uint64_t flags,
                      const nsTArray<EnumValueAndName>& flagsAndNames,
                      const char* name);
 
+nsAutoCString WmSizeParamInfo(uint64_t wParam, uint64_t lParam, bool isPreCall);
+void XLowWordYHighWordParamInfo(nsCString& str, uint64_t value,
+                                const char* name, bool isPreCall);
+void WindowPosParamInfo(nsCString& str, uint64_t value, const char* name,
+                        bool isPreCall);
+void WindowEdgeParamInfo(nsCString& str, uint64_t value, const char* name,
+                         bool isPreCall);
+void RectParamInfo(nsCString& str, uint64_t value, const char* name,
+                   bool isPreCall);
+void UiActionParamInfo(nsCString& str, uint64_t value, const char* name,
+                       bool isPreCall);
+void WideStringParamInfo(nsCString& result, uint64_t value, const char* name,
+                         bool isPreCall);
+void MinMaxInfoParamInfo(nsCString& result, uint64_t value, const char* name,
+                         bool isPreCall);
+nsAutoCString WmNcCalcSizeParamInfo(uint64_t wParam, uint64_t lParam,
+                                    bool isPreCall);
 }  
 
 #if defined(POPUP_ROLLUP_DEBUG_OUTPUT)
