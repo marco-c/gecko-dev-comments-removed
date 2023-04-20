@@ -455,6 +455,12 @@ class MOZ_STACK_CLASS HTMLEditor::AutoListElementCreator final {
     
     
     RefPtr<Element> mListOrListItemElementToPutCaret;
+    
+    
+    RefPtr<Element> mReplacingBlockElement;
+    
+    
+    bool mMaybeCopiedReplacingBlockElementId = false;
   };
 
   
@@ -485,6 +491,13 @@ class MOZ_STACK_CLASS HTMLEditor::AutoListElementCreator final {
       HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPointToInsert,
       EmptyListItem aEmptyListItem, AutoHandlingState& aState,
       const Element& aEditingHost) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  AppendListItemElement(HTMLEditor& aHTMLEditor, const Element& aListElement,
+                        AutoHandlingState& aState) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
+  MaybeCloneAttributesToNewListItem(HTMLEditor& aHTMLEditor,
+                                    Element& aListItemElement,
+                                    AutoHandlingState& aState);
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleChildInlineContent(
       HTMLEditor& aHTMLEditor, nsIContent& aHandlingInlineContent,
       AutoHandlingState& aState) const;

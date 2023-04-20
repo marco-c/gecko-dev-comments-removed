@@ -30,6 +30,8 @@
 #include "nsPoint.h"
 #include "nsStubMutationObserver.h"
 
+#include <functional>
+
 class nsDocumentFragment;
 class nsFrameSelection;
 class nsHTMLDocument;
@@ -1299,6 +1301,40 @@ class HTMLEditor final : public EditorBase,
 
 
 
+  using AttributeFilter = std::function<bool(
+      HTMLEditor& aHTMLEditor, Element& aSrcElement, Element& aDestElement,
+      const dom::Attr& aAttr, nsString& aValue)>;
+  static AttributeFilter CopyAllAttributes;
+  static AttributeFilter CopyAllAttributesExceptId;
+  static AttributeFilter CopyAllAttributesExceptDir;
+  static AttributeFilter CopyAllAttributesExceptIdAndDir;
+
+  
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult CopyAttributes(
+      WithTransaction aWithTransaction, Element& aDestElement,
+      Element& aSrcElement, const AttributeFilter& = CopyAllAttributes);
+
+  
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1753,32 +1789,12 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] inline MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
-  InsertContainerWithTransaction(nsIContent& aContentToBeWrapped,
-                                 const nsAtom& aWrapperTagName);
-
-  
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] inline MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
-  InsertContainerWithTransaction(nsIContent& aContentToBeWrapped,
-                                 const nsAtom& aWrapperTagName,
-                                 const nsAtom& aAttribute,
-                                 const nsAString& aAttributeValue);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  InsertContainerWithTransaction(
+      nsIContent& aContentToBeWrapped, const nsAtom& aWrapperTagName,
+      const InitializeInsertingElement& aInitializer = DoNothingForNewElement);
 
   
 
@@ -3122,30 +3138,6 @@ class HTMLEditor final : public EditorBase,
                                           const nsAtom& aAttribute,
                                           const nsAString& aAttributeValue,
                                           bool aCloneAllAttributes);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
-  InsertContainerWithTransactionInternal(nsIContent& aContentToBeWrapped,
-                                         const nsAtom& aWrapperTagName,
-                                         const nsAtom& aAttribute,
-                                         const nsAString& aAttributeValue);
 
   
 

@@ -4,7 +4,6 @@
 
 
 
-#include "ErrorList.h"
 #include "HTMLEditor.h"
 #include "HTMLEditorInlines.h"
 #include "HTMLEditorNestedClasses.h"
@@ -22,8 +21,10 @@
 #include "PendingStyles.h"  
 #include "WSRunObject.h"
 
+#include "ErrorList.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/AutoRestore.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ContentIterator.h"
 #include "mozilla/IntegerRange.h"
@@ -3462,17 +3463,16 @@ HTMLEditor::AutoListElementCreator::ReplaceContentNodesWithEmptyNewList(
           
           [&](HTMLEditor& aHTMLEditor, Element& aListElement,
               const EditorDOMPoint&) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-            Result<CreateElementResult, nsresult>
-                createNewListItemElementResult =
-                    HTMLEditor::AppendNewElementToInsertingElement(
-                        aHTMLEditor, mListItemTagName, aListElement);
-            if (MOZ_UNLIKELY(createNewListItemElementResult.isErr())) {
+            AutoHandlingState dummyState;
+            Result<CreateElementResult, nsresult> createListItemElementResult =
+                AppendListItemElement(aHTMLEditor, aListElement, dummyState);
+            if (MOZ_UNLIKELY(createListItemElementResult.isErr())) {
               NS_WARNING(
-                  "HTMLEditor::AppendNewElementToInsertingElement() failed");
-              return createNewListItemElementResult.unwrapErr();
+                  "AutoListElementCreator::AppendListItemElement() failed");
+              return createListItemElementResult.unwrapErr();
             }
             CreateElementResult unwrappedResult =
-                createNewListItemElementResult.unwrap();
+                createListItemElementResult.unwrap();
             
             
             
@@ -3763,8 +3763,8 @@ HTMLEditor::AutoListElementCreator::HandleChildListItemInDifferentTypeList(
     return NS_OK;
   }
   Result<CreateElementResult, nsresult> newListItemElementOrError =
-      aHTMLEditor.ReplaceContainerWithTransaction(aHandlingListItemElement,
-                                                  mListItemTagName);
+      aHTMLEditor.ReplaceContainerAndCloneAttributesWithTransaction(
+          aHandlingListItemElement, mListItemTagName);
   if (MOZ_UNLIKELY(newListItemElementOrError.isErr())) {
     NS_WARNING("HTMLEditor::ReplaceContainerWithTransaction() failed");
     return newListItemElementOrError.propagateErr();
@@ -3865,11 +3865,14 @@ nsresult HTMLEditor::AutoListElementCreator::HandleChildListItemInSameTypeList(
   if (aHandlingListItemElement.IsHTMLElement(&mListItemTagName)) {
     return NS_OK;
   }
+  
   Result<CreateElementResult, nsresult> newListItemElementOrError =
-      aHTMLEditor.ReplaceContainerWithTransaction(aHandlingListItemElement,
-                                                  mListItemTagName);
+      aHTMLEditor.ReplaceContainerAndCloneAttributesWithTransaction(
+          aHandlingListItemElement, mListItemTagName);
   if (MOZ_UNLIKELY(newListItemElementOrError.isErr())) {
-    NS_WARNING("HTMLEditor::ReplaceContainerWithTransaction() failed");
+    NS_WARNING(
+        "HTMLEditor::ReplaceContainerAndCloneAttributesWithTransaction() "
+        "failed");
     return newListItemElementOrError.propagateErr();
   }
   newListItemElementOrError.inspect().IgnoreCaretPointSuggestion();
@@ -3881,6 +3884,13 @@ nsresult HTMLEditor::AutoListElementCreator::HandleChildDivOrParagraphElement(
     AutoHandlingState& aState, const Element& aEditingHost) const {
   MOZ_ASSERT(aHandlingDivOrParagraphElement.IsAnyOfHTMLElements(nsGkAtoms::div,
                                                                 nsGkAtoms::p));
+
+  AutoRestore<RefPtr<Element>> previouslyReplacingBlockElement(
+      aState.mReplacingBlockElement);
+  aState.mReplacingBlockElement = &aHandlingDivOrParagraphElement;
+  AutoRestore<bool> previouslyReplacingBlockElementIdCopied(
+      aState.mMaybeCopiedReplacingBlockElementId);
+  aState.mMaybeCopiedReplacingBlockElementId = false;
 
   
   
@@ -3900,13 +3910,10 @@ nsresult HTMLEditor::AutoListElementCreator::HandleChildDivOrParagraphElement(
       }
     } else {
       Result<CreateElementResult, nsresult> createListItemElementResult =
-          aHTMLEditor.CreateAndInsertElement(
-              WithTransaction::Yes, mListItemTagName,
-              EditorDOMPoint::AtEndOf(*aState.mCurrentListElement),
-              HTMLEditor::InsertNewBRElement);
+          AppendListItemElement(
+              aHTMLEditor, MOZ_KnownLive(*aState.mCurrentListElement), aState);
       if (MOZ_UNLIKELY(createListItemElementResult.isErr())) {
-        NS_WARNING(
-            "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) failed");
+        NS_WARNING("AutoListElementCreator::AppendListItemElement() failed");
         return createListItemElementResult.unwrapErr();
       }
       CreateElementResult unwrappedResult =
@@ -3972,14 +3979,29 @@ nsresult HTMLEditor::AutoListElementCreator::CreateAndUpdateCurrentListElement(
   aState.mPreviousListItemElement = nullptr;
   RefPtr<Element> newListItemElement;
   auto initializer =
-      aEmptyListItem == EmptyListItem::NotCreate
-          ? DoNothingForNewElement
-          
-          : [&](HTMLEditor& aHTMLEditor, Element& aListElement,
-                const EditorDOMPoint&) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+      
+      [&](HTMLEditor&, Element& aListElement, const EditorDOMPoint&)
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+            
+            
+            if (aState.mReplacingBlockElement) {
+              nsString dirValue;
+              if (aState.mReplacingBlockElement->GetAttr(nsGkAtoms::dir,
+                                                         dirValue) &&
+                  !dirValue.IsEmpty()) {
+                
+                
+                
+                IgnoredErrorResult ignoredError;
+                aListElement.SetAttr(nsGkAtoms::dir, dirValue, ignoredError);
+                NS_WARNING_ASSERTION(
+                    !ignoredError.Failed(),
+                    "Element::SetAttr(nsGkAtoms::dir) failed, but ignored");
+              }
+            }
+            if (aEmptyListItem == EmptyListItem::Create) {
               Result<CreateElementResult, nsresult> createNewListItemResult =
-                  HTMLEditor::AppendNewElementToInsertingElement(
-                      aHTMLEditor, mListItemTagName, aListElement);
+                  AppendListItemElement(aHTMLEditor, aListElement, aState);
               if (MOZ_UNLIKELY(createNewListItemResult.isErr())) {
                 NS_WARNING(
                     "HTMLEditor::AppendNewElementToInsertingElement()"
@@ -3990,8 +4012,9 @@ nsresult HTMLEditor::AutoListElementCreator::CreateAndUpdateCurrentListElement(
                   createNewListItemResult.unwrap();
               unwrappedResult.IgnoreCaretPointSuggestion();
               newListItemElement = unwrappedResult.UnwrapNewNode();
-              return NS_OK;
-            };
+            }
+            return NS_OK;
+          };
   Result<CreateElementResult, nsresult> createNewListElementResult =
       aHTMLEditor.InsertElementWithSplittingAncestorsWithTransaction(
           mListTagName, aPointToInsert, BRElementNextToSplitPoint::Keep,
@@ -4017,6 +4040,66 @@ nsresult HTMLEditor::AutoListElementCreator::CreateAndUpdateCurrentListElement(
       unwrappedCreateNewListElementResult.UnwrapNewNode();
   aState.mPreviousListItemElement = std::move(newListItemElement);
   return NS_OK;
+}
+
+
+nsresult HTMLEditor::AutoListElementCreator::MaybeCloneAttributesToNewListItem(
+    HTMLEditor& aHTMLEditor, Element& aListItemElement,
+    AutoHandlingState& aState) {
+  if (!aState.mReplacingBlockElement) {
+    return NS_OK;
+  }
+  
+  
+  
+  
+  
+  
+  
+  nsresult rv = aHTMLEditor.CopyAttributes(
+      WithTransaction::No, aListItemElement,
+      MOZ_KnownLive(*aState.mReplacingBlockElement),
+      aState.mMaybeCopiedReplacingBlockElementId
+          ? HTMLEditor::CopyAllAttributesExceptIdAndDir
+          : HTMLEditor::CopyAllAttributesExceptDir);
+  aState.mMaybeCopiedReplacingBlockElementId = true;
+  if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "HTMLEditor::CopyAttributes(WithTransaction::No) failed");
+  return rv;
+}
+
+Result<CreateElementResult, nsresult>
+HTMLEditor::AutoListElementCreator::AppendListItemElement(
+    HTMLEditor& aHTMLEditor, const Element& aListElement,
+    AutoHandlingState& aState) const {
+  const WithTransaction withTransaction = aListElement.IsInComposedDoc()
+                                              ? WithTransaction::Yes
+                                              : WithTransaction::No;
+  Result<CreateElementResult, nsresult> createNewListItemResult =
+      aHTMLEditor.CreateAndInsertElement(
+          withTransaction, mListItemTagName,
+          EditorDOMPoint::AtEndOf(aListElement),
+          !aState.mReplacingBlockElement
+              ? HTMLEditor::DoNothingForNewElement
+              
+              : [&aState](HTMLEditor& aHTMLEditor, Element& aListItemElement,
+                          const EditorDOMPoint&) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+                  nsresult rv =
+                      AutoListElementCreator::MaybeCloneAttributesToNewListItem(
+                          aHTMLEditor, aListItemElement, aState);
+                  NS_WARNING_ASSERTION(
+                      NS_SUCCEEDED(rv),
+                      "AutoListElementCreator::"
+                      "MaybeCloneAttributesToNewListItem() failed");
+                  return rv;
+                });
+  NS_WARNING_ASSERTION(createNewListItemResult.isOk(),
+                       "HTMLEditor::CreateAndInsertElement() failed");
+  return createNewListItemResult;
 }
 
 nsresult HTMLEditor::AutoListElementCreator::HandleChildInlineContent(
@@ -4053,8 +4136,22 @@ nsresult HTMLEditor::AutoListElementCreator::WrapContentIntoNewListItemElement(
   
   
   Result<CreateElementResult, nsresult> wrapContentInListItemElementResult =
-      aHTMLEditor.InsertContainerWithTransaction(aHandlingContent,
-                                                 mListItemTagName);
+      aHTMLEditor.InsertContainerWithTransaction(
+          aHandlingContent, mListItemTagName,
+          !aState.mReplacingBlockElement
+              ? HTMLEditor::DoNothingForNewElement
+              
+              : [&aState](HTMLEditor& aHTMLEditor, Element& aListItemElement,
+                          const EditorDOMPoint&) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+                  nsresult rv =
+                      AutoListElementCreator::MaybeCloneAttributesToNewListItem(
+                          aHTMLEditor, aListItemElement, aState);
+                  NS_WARNING_ASSERTION(
+                      NS_SUCCEEDED(rv),
+                      "AutoListElementCreator::"
+                      "MaybeCloneAttributesToNewListItem() failed");
+                  return rv;
+                });
   if (MOZ_UNLIKELY(wrapContentInListItemElementResult.isErr())) {
     NS_WARNING("HTMLEditor::InsertContainerWithTransaction() failed");
     return wrapContentInListItemElementResult.unwrapErr();
@@ -6268,10 +6365,13 @@ Result<CreateElementResult, nsresult> HTMLEditor::ChangeListElementType(
       
       
       Result<CreateElementResult, nsresult>
-          replaceWithNewListItemElementResult = ReplaceContainerWithTransaction(
-              MOZ_KnownLive(*childElement), aNewListItemTag);
+          replaceWithNewListItemElementResult =
+              ReplaceContainerAndCloneAttributesWithTransaction(
+                  MOZ_KnownLive(*childElement), aNewListItemTag);
       if (MOZ_UNLIKELY(replaceWithNewListItemElementResult.isErr())) {
-        NS_WARNING("HTMLEditor::ReplaceContainerWithTransaction() failed");
+        NS_WARNING(
+            "HTMLEditor::ReplaceContainerAndCloneAttributesWithTransaction() "
+            "failed");
         return replaceWithNewListItemElementResult;
       }
       CreateElementResult unwrappedReplaceWithNewListItemElementResult =
