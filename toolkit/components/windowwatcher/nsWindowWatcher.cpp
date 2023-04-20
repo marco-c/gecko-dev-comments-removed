@@ -71,7 +71,6 @@
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/BrowserHost.h"
 #include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/SessionStorageManager.h"
 #include "nsIAppWindow.h"
 #include "nsIXULBrowserWindow.h"
@@ -698,34 +697,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   }
 
   
-  bool hasChromeParent = !XRE_IsContentProcess();
-  if (aParent) {
-    
-    hasChromeParent = parentDoc && nsContentUtils::IsChromeDoc(parentDoc);
-  }
-
-  bool isCallerChrome = nsContentUtils::LegacyIsCallerChromeOrNativeCode();
-
-  
-  if (!name.IsEmpty() &&
-      (!aForceNoOpener || nsContentUtils::IsSpecialName(name))) {
-    if (parentInnerWin && parentInnerWin->GetWindowGlobalChild()) {
-      
-      
-      targetBC =
-          parentInnerWin->GetWindowGlobalChild()->FindBrowsingContextWithName(
-              name);
-    } else if (hasChromeParent && isCallerChrome &&
-               !nsContentUtils::IsSpecialName(name)) {
-      
-      
-      nsCOMPtr<mozIDOMWindowProxy> chromeWindow;
-      MOZ_ALWAYS_SUCCEEDS(GetWindowByName(name, getter_AddRefs(chromeWindow)));
-      if (chromeWindow) {
-        targetBC = nsPIDOMWindowOuter::From(chromeWindow)->GetBrowsingContext();
-      }
-    }
-  }
+  targetBC = GetBrowsingContextByName(name, aForceNoOpener, parentBC);
 
   
   
@@ -741,6 +713,15 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   }
 
   
+
+  
+  bool hasChromeParent = !XRE_IsContentProcess();
+  if (aParent) {
+    
+    hasChromeParent = parentDoc && nsContentUtils::IsChromeDoc(parentDoc);
+  }
+
+  bool isCallerChrome = nsContentUtils::LegacyIsCallerChromeOrNativeCode();
 
   CSSToDesktopScale cssToDesktopScale(1.0);
   if (nsCOMPtr<nsIBaseWindow> win = do_QueryInterface(parentDocShell)) {
@@ -1713,6 +1694,7 @@ nsWindowWatcher::GetChromeForWindow(mozIDOMWindowProxy* aWindow,
 
 NS_IMETHODIMP
 nsWindowWatcher::GetWindowByName(const nsAString& aTargetName,
+                                 mozIDOMWindowProxy* aCurrentWindow,
                                  mozIDOMWindowProxy** aResult) {
   if (!aResult) {
     return NS_ERROR_INVALID_ARG;
@@ -1720,22 +1702,17 @@ nsWindowWatcher::GetWindowByName(const nsAString& aTargetName,
 
   *aResult = nullptr;
 
-  
-  if (aTargetName.IsEmpty() || nsContentUtils::IsSpecialName(aTargetName)) {
-    return NS_OK;
-  }
+  BrowsingContext* currentContext =
+      aCurrentWindow
+          ? nsPIDOMWindowOuter::From(aCurrentWindow)->GetBrowsingContext()
+          : nullptr;
 
-  
-  
-  for (const RefPtr<BrowsingContext>& toplevel :
-       BrowsingContextGroup::GetChromeGroup()->Toplevels()) {
-    BrowsingContext* context =
-        toplevel->FindWithNameInSubtree(aTargetName, nullptr);
-    if (context) {
-      *aResult = do_AddRef(context->GetDOMWindow()).take();
-      MOZ_ASSERT(*aResult);
-      return NS_OK;
-    }
+  RefPtr<BrowsingContext> context =
+      GetBrowsingContextByName(aTargetName, false, currentContext);
+
+  if (context) {
+    *aResult = do_AddRef(context->GetDOMWindow()).take();
+    MOZ_ASSERT(*aResult);
   }
 
   return NS_OK;
@@ -2050,6 +2027,36 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForSystem(
 
 
   return chromeFlags;
+}
+
+already_AddRefed<BrowsingContext> nsWindowWatcher::GetBrowsingContextByName(
+    const nsAString& aName, bool aForceNoOpener,
+    BrowsingContext* aCurrentContext) {
+  if (aName.IsEmpty()) {
+    return nullptr;
+  }
+
+  if (aForceNoOpener && !nsContentUtils::IsSpecialName(aName)) {
+    
+    return nullptr;
+  }
+
+  RefPtr<BrowsingContext> foundContext;
+  if (aCurrentContext) {
+    foundContext = aCurrentContext->FindWithName(aName);
+  } else if (!nsContentUtils::IsSpecialName(aName)) {
+    
+    
+    for (RefPtr<BrowsingContext> toplevel :
+         BrowsingContextGroup::GetChromeGroup()->Toplevels()) {
+      foundContext = toplevel->FindWithNameInSubtree(aName, *toplevel);
+      if (foundContext) {
+        break;
+      }
+    }
+  }
+
+  return foundContext.forget();
 }
 
 

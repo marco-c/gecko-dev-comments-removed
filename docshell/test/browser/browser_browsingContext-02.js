@@ -111,10 +111,8 @@ add_task(async function() {
           
           
           function findWithName(bc, name) {
-            return content.SpecialPowers.spawn(bc, [name], name => {
-              return content.windowGlobalChild.findBrowsingContextWithName(
-                name
-              );
+            return content.SpecialPowers.spawn(bc, [bc, name], (bc, name) => {
+              return bc.findWithName(name);
             });
           }
 

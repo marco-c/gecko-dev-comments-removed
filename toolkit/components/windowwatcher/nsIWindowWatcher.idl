@@ -147,7 +147,8 @@ interface nsIWindowWatcher : nsISupports {
 
 
 
-  mozIDOMWindowProxy getWindowByName(in AString aTargetName);
+  mozIDOMWindowProxy getWindowByName(in AString aTargetName,
+                                     in mozIDOMWindowProxy aCurrentWindow);
 
   
 

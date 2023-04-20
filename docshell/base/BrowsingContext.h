@@ -75,7 +75,6 @@ class SessionHistoryInfo;
 class SessionStorageManager;
 class StructuredCloneHolder;
 class WindowContext;
-class WindowGlobalChild;
 struct WindowPostMessageOptions;
 class WindowProxyHolder;
 
@@ -664,22 +663,28 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   
   
-  BrowsingContext* FindChildWithName(const nsAString& aName,
-                                     WindowGlobalChild& aRequestingWindow);
+  
+  
+  
+  
+  
+  
+  BrowsingContext* FindWithName(const nsAString& aName,
+                                bool aUseEntryGlobalForAccessCheck = true);
 
   
   
+  
+  
+  BrowsingContext* FindChildWithName(const nsAString& aName,
+                                     BrowsingContext& aRequestingContext);
+
   
   
   
   
   BrowsingContext* FindWithNameInSubtree(const nsAString& aName,
-                                         WindowGlobalChild* aRequestingWindow);
-
-  
-  
-  BrowsingContext* FindWithSpecialName(const nsAString& aName,
-                                       WindowGlobalChild& aRequestingWindow);
+                                         BrowsingContext& aRequestingContext);
 
   nsISupports* GetParentObject() const;
   JSObject* WrapObject(JSContext* aCx,
@@ -785,6 +790,9 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   static void CreateFromIPC(IPCInitializer&& aInitializer,
                             BrowsingContextGroup* aGroup,
                             ContentParent* aOriginProcess);
+
+  
+  bool CanAccess(BrowsingContext* aTarget, bool aConsiderOpener = true);
 
   bool IsSandboxedFrom(BrowsingContext* aTarget);
 
@@ -955,6 +963,11 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   
   void RecomputeCanExecuteScripts();
+
+  
+  
+  BrowsingContext* FindWithSpecialName(const nsAString& aName,
+                                       BrowsingContext& aRequestingContext);
 
   
   
