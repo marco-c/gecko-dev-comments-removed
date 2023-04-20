@@ -87,7 +87,9 @@ if (typeof Components != "undefined") {
   
   
   
-  var { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
+  var { ctypes } = ChromeUtils.importESModule(
+    "resource://gre/modules/ctypes.sys.mjs"
+  );
   Cc["@mozilla.org/net/osfileconstantsservice;1"]
     .getService(Ci.nsIOSFileConstantsService)
     .init();

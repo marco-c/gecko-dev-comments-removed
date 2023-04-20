@@ -8,8 +8,8 @@ add_task(async function run_test() {
 
   await do_crash(
     function() {
-      const { ctypes } = ChromeUtils.import(
-        "resource://gre/modules/ctypes.jsm"
+      const { ctypes } = ChromeUtils.importESModule(
+        "resource://gre/modules/ctypes.sys.mjs"
       );
       
       let lib = ctypes.open("wininet");

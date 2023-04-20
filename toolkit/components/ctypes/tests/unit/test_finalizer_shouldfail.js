@@ -1,7 +1,9 @@
 try {
   
   
-  var { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
+  var { ctypes } = ChromeUtils.importESModule(
+    "resource://gre/modules/ctypes.sys.mjs"
+  );
 } catch (e) {}
 
 var acquire, dispose, null_dispose, compare, dispose_64;

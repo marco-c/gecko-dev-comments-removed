@@ -3,7 +3,9 @@
 try {
   
   
-  var { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
+  var { ctypes } = ChromeUtils.importESModule(
+    "resource://gre/modules/ctypes.sys.mjs"
+  );
 } catch (e) {}
 
 function open_ctypes_test_lib() {

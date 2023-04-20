@@ -84,8 +84,8 @@ add_task(async function test_crash_in_previous_frameloader() {
       
       
       await SpecialPowers.spawn(browser, [], function() {
-        const { ctypes } = ChromeUtils.import(
-          "resource://gre/modules/ctypes.jsm"
+        const { ctypes } = ChromeUtils.importESModule(
+          "resource://gre/modules/ctypes.sys.mjs"
         );
 
         let dies = function() {

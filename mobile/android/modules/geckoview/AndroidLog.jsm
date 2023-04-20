@@ -37,7 +37,9 @@
 
 
 const EXPORTED_SYMBOLS = ["AndroidLog"];
-const { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
+const { ctypes } = ChromeUtils.importESModule(
+  "resource://gre/modules/ctypes.sys.mjs"
+);
 
 
 const ANDROID_LOG_VERBOSE = 2;

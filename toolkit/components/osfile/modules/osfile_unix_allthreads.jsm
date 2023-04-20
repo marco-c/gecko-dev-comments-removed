@@ -24,7 +24,9 @@
 var SharedAll;
 if (typeof Components != "undefined") {
   
-  const { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
+  const { ctypes } = ChromeUtils.importESModule(
+    "resource://gre/modules/ctypes.sys.mjs"
+  );
   
   this.ctypes = ctypes;
 
