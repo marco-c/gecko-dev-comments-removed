@@ -58,12 +58,6 @@ Agc1ClippingPredictorConfig CreateClippingPredictorConfig(bool enabled) {
 
 
 
-bool UseMaxAnalogChannelLevel() {
-  return field_trial::IsEnabled("WebRTC-UseMaxAnalogAgcChannelLevel");
-}
-
-
-
 
 
 
@@ -347,7 +341,6 @@ InputVolumeController::InputVolumeController(int num_capture_channels,
     : analog_controller_enabled_(config.enabled),
       num_capture_channels_(num_capture_channels),
       min_mic_level_override_(GetMinMicLevelOverride()),
-      use_min_channel_level_(!UseMaxAnalogChannelLevel()),
       capture_output_used_(true),
       clipped_level_step_(config.clipped_level_step),
       clipped_ratio_threshold_(config.clipped_ratio_threshold),
@@ -525,21 +518,11 @@ void InputVolumeController::AggregateChannelLevels() {
   int new_recommended_input_volume =
       channel_controllers_[0]->recommended_analog_level();
   channel_controlling_gain_ = 0;
-  if (use_min_channel_level_) {
-    for (size_t ch = 1; ch < channel_controllers_.size(); ++ch) {
-      int level = channel_controllers_[ch]->recommended_analog_level();
-      if (level < new_recommended_input_volume) {
-        new_recommended_input_volume = level;
-        channel_controlling_gain_ = static_cast<int>(ch);
-      }
-    }
-  } else {
-    for (size_t ch = 1; ch < channel_controllers_.size(); ++ch) {
-      int level = channel_controllers_[ch]->recommended_analog_level();
-      if (level > new_recommended_input_volume) {
-        new_recommended_input_volume = level;
-        channel_controlling_gain_ = static_cast<int>(ch);
-      }
+  for (size_t ch = 1; ch < channel_controllers_.size(); ++ch) {
+    int level = channel_controllers_[ch]->recommended_analog_level();
+    if (level < new_recommended_input_volume) {
+      new_recommended_input_volume = level;
+      channel_controlling_gain_ = static_cast<int>(ch);
     }
   }
 
