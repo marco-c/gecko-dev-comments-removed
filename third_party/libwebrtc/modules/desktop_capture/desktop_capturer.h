@@ -87,6 +87,10 @@ class RTC_EXPORT DesktopCapturer {
     
     WindowId in_process_id = kNullWindowId;
 #endif
+
+    
+    
+    int64_t display_id = kInvalidDisplayId;
   };
 
   typedef std::vector<Source> SourceList;

@@ -32,6 +32,8 @@ typedef intptr_t WindowId;
 
 const WindowId kNullWindowId = 0;
 
+const int64_t kInvalidDisplayId = -1;
+
 
 
 
@@ -40,9 +42,9 @@ const WindowId kNullWindowId = 0;
 
 
 #if defined(CHROMEOS)
-  typedef int64_t ScreenId;
+typedef int64_t ScreenId;
 #else
-  typedef intptr_t ScreenId;
+typedef intptr_t ScreenId;
 #endif
 
 
