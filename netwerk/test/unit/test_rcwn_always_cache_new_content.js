@@ -97,9 +97,9 @@ function* testSteps() {
   channel
     .QueryInterface(Ci.nsIRaceCacheWithNetwork)
     .test_delayCacheEntryOpeningBy(100000);
-  channel.asyncOpen(new ChannelListener(checkContent, null));
   
   channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_triggerNetwork(50);
+  channel.asyncOpen(new ChannelListener(checkContent, null));
   yield undefined;
   equal(gRequestCounter, 2);
 
