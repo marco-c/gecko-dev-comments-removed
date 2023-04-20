@@ -28,12 +28,12 @@ import { features } from "../utils/prefs";
 
 
 export function addExpression(cx, input) {
-  return async ({ dispatch, getState, evaluationsParser }) => {
+  return async ({ dispatch, getState, parserWorker }) => {
     if (!input) {
       return null;
     }
 
-    const expressionError = await evaluationsParser.hasSyntaxError(input);
+    const expressionError = await parserWorker.hasSyntaxError(input);
 
     const expression = getExpression(getState(), input);
     if (expression) {
@@ -171,7 +171,7 @@ export function getMappedExpression(expression) {
     getState,
     client,
     sourceMaps,
-    evaluationsParser,
+    parserWorker,
   }) {
     const thread = getCurrentThread(getState());
     const mappings = getSelectedScopeMappings(getState(), thread);
@@ -189,7 +189,7 @@ export function getMappedExpression(expression) {
       return null;
     }
 
-    return evaluationsParser.mapExpression(
+    return parserWorker.mapExpression(
       expression,
       mappings,
       bindings || [],

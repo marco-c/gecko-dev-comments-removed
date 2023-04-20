@@ -1393,17 +1393,19 @@ Toolbox.prototype = {
   
 
 
-  get parserService() {
-    if (this._parserService) {
-      return this._parserService;
+
+
+  get parserWorker() {
+    if (this._parserWorker) {
+      return this._parserWorker;
     }
 
     const {
       ParserDispatcher,
     } = require("resource://devtools/client/debugger/src/workers/parser/index.js");
 
-    this._parserService = new ParserDispatcher();
-    return this._parserService;
+    this._parserWorker = new ParserDispatcher();
+    return this._parserWorker;
   },
 
   
@@ -4033,9 +4035,9 @@ Toolbox.prototype = {
       this._sourceMapLoader = null;
     }
 
-    if (this._parserService) {
-      this._parserService.stop();
-      this._parserService = null;
+    if (this._parserWorker) {
+      this._parserWorker.stop();
+      this._parserWorker = null;
     }
 
     if (this.webconsolePanel) {
