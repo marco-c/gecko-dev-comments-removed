@@ -13,6 +13,7 @@
 
 
 
+
 const promiseEnableUnifiedExtensions = async (options = {}) => {
   await SpecialPowers.pushPrefEnv({
     set: [["extensions.unifiedExtensions.enabled", true]],
@@ -138,4 +139,25 @@ const createExtensions = (
       incognitoOverride,
     })
   );
+};
+
+
+
+
+
+const ensureMaximizedWindow = async win => {
+  let resizeDone = Promise.resolve();
+
+  win.moveTo(0, 0);
+
+  const widthDiff = win.screen.availWidth - win.outerWidth;
+  const heightDiff = win.screen.availHeight - win.outerHeight;
+
+  if (widthDiff || heightDiff) {
+    resizeDone = BrowserTestUtils.waitForEvent(win, "resize", false);
+    win.windowUtils.ensureDirtyRootFrame();
+    win.resizeBy(widthDiff, heightDiff);
+  }
+
+  return resizeDone;
 };

@@ -50,6 +50,11 @@ let win;
 add_setup(async function() {
   win = await promiseEnableUnifiedExtensions();
 
+  
+  
+  
+  await ensureMaximizedWindow(win);
+
   registerCleanupFunction(async () => {
     await BrowserTestUtils.closeWindow(win);
   });
