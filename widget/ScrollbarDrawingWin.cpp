@@ -33,11 +33,6 @@ LayoutDeviceIntSize ScrollbarDrawingWin::GetMinimumWidgetSize(
     case StyleAppearance::ScrollbarHorizontal:
     case StyleAppearance::ScrollbarthumbVertical:
     case StyleAppearance::ScrollbarthumbHorizontal: {
-      if ((aAppearance == StyleAppearance::ScrollbarHorizontal ||
-           aAppearance == StyleAppearance::ScrollbarVertical) &&
-          !aPresContext->UseOverlayScrollbars()) {
-        return LayoutDeviceIntSize{};
-      }
       
       
       auto sizes = GetScrollbarSizes(aPresContext, aFrame);
@@ -46,8 +41,22 @@ LayoutDeviceIntSize ScrollbarDrawingWin::GetMinimumWidgetSize(
           aAppearance == StyleAppearance::ScrollbarthumbHorizontal ||
           aAppearance == StyleAppearance::ScrollbarbuttonLeft ||
           aAppearance == StyleAppearance::ScrollbarbuttonRight;
-      const auto size = isHorizontal ? sizes.mHorizontal : sizes.mVertical;
-      return LayoutDeviceIntSize{size, size};
+      const auto relevantSize =
+          isHorizontal ? sizes.mHorizontal : sizes.mVertical;
+      auto size = LayoutDeviceIntSize{relevantSize, relevantSize};
+      if (aAppearance == StyleAppearance::ScrollbarHorizontal ||
+          aAppearance == StyleAppearance::ScrollbarVertical) {
+        
+        
+        
+        
+        if (isHorizontal) {
+          size.width *= 3;
+        } else {
+          size.height *= 3;
+        }
+      }
+      return size;
     }
     default:
       return LayoutDeviceIntSize{};
