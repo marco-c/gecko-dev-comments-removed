@@ -26,7 +26,9 @@ def get_browser_args(product, channel):
             args.extend(["--install-browser", "--install-webdriver"])
         return args
     if product == "webkitgtk_minibrowser":
-        return ["--install-browser"]
+        
+        
+        return ["--install-browser", "--processes=4"]
     return []
 
 
