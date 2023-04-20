@@ -283,6 +283,14 @@ size_t InterceptorFunction::sNumInstances = 0;
 
 constexpr uint8_t InterceptorFunction::sInterceptorTemplate[];
 
+class RedirectionResolver : public interceptor::WindowsDllPatcherBase<
+                                interceptor::VMSharingPolicyShared> {
+ public:
+  uintptr_t ResolveRedirectedAddressForTest(FARPROC aFunc) {
+    return ResolveRedirectedAddress(aFunc).GetAddress();
+  }
+};
+
 
 template <typename OrigFuncT, size_t N, typename PredicateT, typename... Args>
 bool TestHook(const char (&dll)[N], const char* func, PredicateT&& aPred,
@@ -291,6 +299,28 @@ bool TestHook(const char (&dll)[N], const char* func, PredicateT&& aPred,
       mozilla::MakeUnique<WindowsDllInterceptor::FuncHookType<OrigFuncT>>());
   wchar_t dllW[N];
   std::copy(std::begin(dll), std::end(dll), std::begin(dllW));
+
+  HMODULE module = ::LoadLibraryW(dllW);
+  FARPROC funcAddr = ::GetProcAddress(module, func);
+  if (!funcAddr) {
+    printf(
+        "TEST-UNEXPECTED-FAIL | WindowsDllInterceptor | Failed to find %s from "
+        "%s\n",
+        func, dll);
+    fflush(stdout);
+    return false;
+  }
+
+#ifdef _M_X64
+
+  
+  
+  
+  
+  RedirectionResolver resolver;
+  auto detouredCodeAddr = resolver.ResolveRedirectedAddressForTest(funcAddr);
+
+#endif  
 
   bool successful = false;
   WindowsDllInterceptor TestIntercept;
@@ -308,37 +338,13 @@ bool TestHook(const char (&dll)[N], const char* func, PredicateT&& aPred,
            dll);
     fflush(stdout);
 
-    
-    HMODULE module = ::LoadLibraryW(dllW);
-    FARPROC funcAddr = ::GetProcAddress(module, func);
-    if (!funcAddr) {
-      return false;
-    }
-
-
-
 #ifdef _M_X64
 
-    auto funcBytes = reinterpret_cast<uint8_t*>(funcAddr);
-
     
     
-    auto realFuncAddr = reinterpret_cast<uintptr_t>(funcAddr);
-    
-    if (funcBytes[0] == 0xff && funcBytes[1] == 0x25) {
-      realFuncAddr = *reinterpret_cast<uintptr_t*>(
-          realFuncAddr + 6 + *reinterpret_cast<int32_t*>(realFuncAddr + 2));
-    }
-    
-    else if (funcBytes[0] == 0x48 && funcBytes[1] == 0xff &&
-             funcBytes[2] == 0x25) {
-      realFuncAddr = *reinterpret_cast<uintptr_t*>(
-          realFuncAddr + 7 + *reinterpret_cast<int32_t*>(realFuncAddr + 3));
-    }
-
     uintptr_t funcImageBase = 0;
     auto funcEntry =
-        RtlLookupFunctionEntry(realFuncAddr, &funcImageBase, nullptr);
+        RtlLookupFunctionEntry(detouredCodeAddr, &funcImageBase, nullptr);
     bool funcHasUnwindInfo = bool(funcEntry);
 
     uintptr_t stubImageBase = 0;
@@ -391,6 +397,7 @@ bool TestHook(const char (&dll)[N], const char* func, PredicateT&& aPred,
       return true;
     }
 
+    
     return CheckHook(reinterpret_cast<OrigFuncT&>(funcAddr), dll, func,
                      std::forward<PredicateT>(aPred),
                      std::forward<Args>(aArgs)...);
