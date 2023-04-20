@@ -3,8 +3,6 @@
 
 "use strict";
 
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-
 const { getCrashManagerNoCreate } = ChromeUtils.import(
   "resource://gre/modules/CrashManager.jsm"
 );
@@ -46,21 +44,21 @@ var gExtraFile;
 
 
 async function setup(crashId) {
-  let cwd = await OS.File.getCurrentDirectory();
-  let minidump = OS.Path.join(cwd, "crash.dmp");
-  let extra = OS.Path.join(cwd, "crash.extra");
+  const cwd = Services.dirsvc.get("CurWorkD", Ci.nsIFile).path;
+  const minidump = PathUtils.join(cwd, "crash.dmp");
+  const extra = PathUtils.join(cwd, "crash.extra");
 
   
-  gDumpFile = OS.Path.join(gMinidumpDir.path, crashId + ".dmp");
-  await OS.File.copy(minidump, gDumpFile);
-  gExtraFile = OS.Path.join(gMinidumpDir.path, crashId + ".extra");
-  await OS.File.copy(extra, gExtraFile);
+  gDumpFile = PathUtils.join(gMinidumpDir.path, `${crashId}.dmp`);
+  await IOUtils.copy(minidump, gDumpFile);
+  gExtraFile = PathUtils.join(gMinidumpDir.path, `${crashId}.extra`);
+  await IOUtils.copy(extra, gExtraFile);
 }
 
 
 async function teardown() {
-  await OS.File.remove(gDumpFile);
-  await OS.File.remove(gExtraFile);
+  await IOUtils.remove(gDumpFile);
+  await IOUtils.remove(gExtraFile);
 }
 
 async function addCrash(id, type = Ci.nsICrashService.CRASH_TYPE_CRASH) {
