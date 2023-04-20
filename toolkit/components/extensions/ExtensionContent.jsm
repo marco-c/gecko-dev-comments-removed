@@ -37,6 +37,12 @@ const Timer = Components.Constructor(
   "initWithCallback"
 );
 
+const ScriptError = Components.Constructor(
+  "@mozilla.org/scripterror;1",
+  "nsIScriptError",
+  "initWithWindowID"
+);
+
 const { ExtensionChild, ExtensionActivityLogChild } = ChromeUtils.import(
   "resource://gre/modules/ExtensionChild.jsm"
 );
@@ -623,6 +629,28 @@ class Script {
     
     if (!scripts.every(script => script)) {
       let promise = Promise.all(scriptPromises);
+
+      
+      
+      
+      
+      
+      for (const p of scriptPromises) {
+        p.catch(error => {
+          Services.console.logMessage(
+            new ScriptError(
+              `${error.name}: ${error.message}`,
+              error.fileName,
+              null,
+              error.lineNumber,
+              error.columnNumber,
+              Ci.nsIScriptError.errorFlag,
+              "content javascript",
+              context.innerWindowID
+            )
+          );
+        });
+      }
 
       
       
