@@ -3219,6 +3219,16 @@ INSTANTIATE_TEST_SUITE_P(
 
             
             ApmFormatHandlingTestParams{
+                StreamConfig(16000, 3), StreamConfig(16000, 2),
+                ApmFormatHandlingTestParams::ExpectedOutput::
+                    kErrorAndCopyOfFirstChannel},
+            ApmFormatHandlingTestParams{
+                StreamConfig(16000, 3), StreamConfig(16000, 4),
+                ApmFormatHandlingTestParams::ExpectedOutput::
+                    kErrorAndCopyOfFirstChannel},
+
+            
+            ApmFormatHandlingTestParams{
                 StreamConfig(7900, 1), StreamConfig(16000, 1),
                 ApmFormatHandlingTestParams::ExpectedOutput::kErrorAndSilence},
             ApmFormatHandlingTestParams{
