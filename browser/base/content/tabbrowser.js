@@ -2745,21 +2745,26 @@
             );
             b.registeredOpenURI = lazyBrowserURI;
           }
-          SessionStore.setTabState(t, {
-            entries: [
-              {
-                url: lazyBrowserURI?.spec || "about:blank",
-                title: lazyTabTitle,
-                triggeringPrincipal_base64: E10SUtils.serializePrincipal(
-                  triggeringPrincipal
-                ),
-              },
-            ],
-            
-            
-            
-            userContextId,
-          });
+          
+          
+          
+          if (!batchInsertingTabs) {
+            SessionStore.setTabState(t, {
+              entries: [
+                {
+                  url: lazyBrowserURI?.spec || "about:blank",
+                  title: lazyTabTitle,
+                  triggeringPrincipal_base64: E10SUtils.serializePrincipal(
+                    triggeringPrincipal
+                  ),
+                },
+              ],
+              
+              
+              
+              userContextId,
+            });
+          }
         } else {
           this._insertBrowser(t, true);
           
