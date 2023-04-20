@@ -201,7 +201,6 @@ bool GPUParent::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
   apz::InitializeGlobalState();
   LayerTreeOwnerTracker::Initialize();
   CompositorBridgeParent::InitializeStatics();
-  gfxGradientCache::Init();
   mozilla::ipc::SetThisProcessName("GPU Process");
 
   return true;
@@ -285,6 +284,10 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
   
   
   SkGraphics::Init();
+
+  if (gfxVars::RemoteCanvasEnabled()) {
+    gfxGradientCache::Init();
+  }
 
 #if defined(XP_WIN)
   if (gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
