@@ -10766,13 +10766,13 @@ AttachDecision CallIRGenerator::tryAttachCallHook(HandleObject calleeObj) {
   }
 
   
-  if (isSpread) {
+  
+  if (isConstructing && !calleeObj->isConstructor()) {
     return AttachDecision::NoAction;
   }
 
   
-  
-  if (isConstructing && calleeObj->is<BoundFunctionObject>()) {
+  if (isSpread) {
     return AttachDecision::NoAction;
   }
 
@@ -10786,6 +10786,10 @@ AttachDecision CallIRGenerator::tryAttachCallHook(HandleObject calleeObj) {
 
   
   writer.guardAnyClass(calleeObjId, calleeObj->getClass());
+
+  if (isConstructing && calleeObj->is<BoundFunctionObject>()) {
+    writer.guardBoundFunctionIsConstructor(calleeObjId);
+  }
 
   writer.callClassHook(calleeObjId, argcId, hook, flags, ClampFixedArgc(argc_));
   writer.returnFromIC();
