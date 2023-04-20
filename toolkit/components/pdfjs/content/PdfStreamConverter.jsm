@@ -263,13 +263,6 @@ class ChromeActions {
   constructor(domWindow, contentDispositionFilename) {
     this.domWindow = domWindow;
     this.contentDispositionFilename = contentDispositionFilename;
-    this.telemetryState = {
-      documentInfo: false,
-      firstPageInfo: false,
-      streamTypesUsed: {},
-      fontTypesUsed: {},
-      fallbackErrorsReported: {},
-    };
     this.sandbox = null;
     this.unloadListener = null;
   }
@@ -402,70 +395,8 @@ class ChromeActions {
   reportTelemetry(data) {
     var probeInfo = JSON.parse(data);
     switch (probeInfo.type) {
-      case "documentInfo":
-        if (!this.telemetryState.documentInfo) {
-          lazy.PdfJsTelemetry.onDocumentVersion(probeInfo.version);
-          lazy.PdfJsTelemetry.onDocumentGenerator(probeInfo.generator);
-          if (probeInfo.formType) {
-            lazy.PdfJsTelemetry.onForm(probeInfo.formType);
-          }
-          this.telemetryState.documentInfo = true;
-        }
-        break;
       case "pageInfo":
-        if (!this.telemetryState.firstPageInfo) {
-          lazy.PdfJsTelemetry.onTimeToView(probeInfo.timestamp);
-          this.telemetryState.firstPageInfo = true;
-        }
-        break;
-      case "documentStats":
-        
-        
-        
-        var documentStats = probeInfo.stats;
-        if (!documentStats || typeof documentStats !== "object") {
-          break;
-        }
-        var i,
-          streamTypes = documentStats.streamTypes,
-          key;
-        var STREAM_TYPE_ID_LIMIT = 20;
-        i = 0;
-        for (key in streamTypes) {
-          if (++i > STREAM_TYPE_ID_LIMIT) {
-            break;
-          }
-          if (!this.telemetryState.streamTypesUsed[key]) {
-            lazy.PdfJsTelemetry.onStreamType(key);
-            this.telemetryState.streamTypesUsed[key] = true;
-          }
-        }
-        var fontTypes = documentStats.fontTypes;
-        var FONT_TYPE_ID_LIMIT = 20;
-        i = 0;
-        for (key in fontTypes) {
-          if (++i > FONT_TYPE_ID_LIMIT) {
-            break;
-          }
-          if (!this.telemetryState.fontTypesUsed[key]) {
-            lazy.PdfJsTelemetry.onFontType(key);
-            this.telemetryState.fontTypesUsed[key] = true;
-          }
-        }
-        break;
-      case "print":
-        lazy.PdfJsTelemetry.onPrint();
-        break;
-      case "unsupportedFeature":
-        if (!this.telemetryState.fallbackErrorsReported[probeInfo.featureId]) {
-          lazy.PdfJsTelemetry.onFallbackError(probeInfo.featureId);
-          this.telemetryState.fallbackErrorsReported[
-            probeInfo.featureId
-          ] = true;
-        }
-        break;
-      case "tagged":
-        lazy.PdfJsTelemetry.onTagged(probeInfo.tagged);
+        lazy.PdfJsTelemetry.onTimeToView(probeInfo.timestamp);
         break;
       case "editing":
         lazy.PdfJsTelemetry.onEditing(probeInfo.data.type);
@@ -1186,7 +1117,6 @@ PdfStreamConverter.prototype = {
     }
 
     lazy.PdfJsTelemetry.onViewerIsUsed();
-    lazy.PdfJsTelemetry.onDocumentSize(aRequest.contentLength);
 
     
     
@@ -1261,15 +1191,6 @@ PdfStreamConverter.prototype = {
         actor?.init(actions.supportsIntegratedFind());
 
         listener.onStopRequest(aRequest, statusCode);
-
-        if (domWindow.windowGlobalChild.browsingContext.parent) {
-          
-          var isObjectEmbed = domWindow.frameElement
-            ? domWindow.frameElement.tagName == "OBJECT" ||
-              domWindow.frameElement.tagName == "EMBED"
-            : false;
-          lazy.PdfJsTelemetry.onEmbed(isObjectEmbed);
-        }
       },
     };
 
