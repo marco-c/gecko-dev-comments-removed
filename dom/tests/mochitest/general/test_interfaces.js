@@ -417,11 +417,19 @@ let interfaceNamesInGlobalScope = [
   
   { name: "FileSystemDirectoryEntry", insecureContext: true },
   
+  { name: "FileSystemDirectoryHandle", nightly: true },
+  
   { name: "FileSystemDirectoryReader", insecureContext: true },
   
   { name: "FileSystemEntry", insecureContext: true },
   
   { name: "FileSystemFileEntry", insecureContext: true },
+  
+  { name: "FileSystemFileHandle", nightly: true },
+  
+  { name: "FileSystemHandle", nightly: true },
+  
+  { name: "FileSystemWritableFileStream", nightly: true },
   
   { name: "FocusEvent", insecureContext: true },
   
