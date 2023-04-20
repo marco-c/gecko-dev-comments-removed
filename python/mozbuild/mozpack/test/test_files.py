@@ -2,6 +2,7 @@
 
 
 
+from mozbuild.util import ensure_bytes, ensureParentDir
 from mozpack.errors import ErrorMessage, errors
 from mozpack.files import (
     AbsoluteSymlinkFile,
@@ -24,8 +25,6 @@ from mozpack.files import (
     TarFinder,
 )
 
-from mozbuild.util import ensure_bytes, ensureParentDir
-
 
 try:
     import hglib
@@ -42,9 +41,10 @@ from io import BytesIO
 from tempfile import mkdtemp
 
 import mozfile
-import mozpack.path as mozpath
 import mozunit
 import six
+
+import mozpack.path as mozpath
 from mozpack.chrome.manifest import (
     ManifestContent,
     ManifestLocale,
