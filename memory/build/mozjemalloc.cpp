@@ -492,7 +492,7 @@ static size_t gPageSize;
 #  define END_GLOBALS
 #  define DEFINE_GLOBAL(type) static const type
 #  define GLOBAL_LOG2 LOG2
-#  define GLOBAL_ASSERT_HELPER1(x) static_assert(x, #x)
+#  define GLOBAL_ASSERT_HELPER1(x) static_assert(x, #  x)
 #  define GLOBAL_ASSERT_HELPER2(x, y) static_assert(x, y)
 #  define GLOBAL_ASSERT(...)                                               \
     MACRO_CALL(                                                            \
@@ -785,75 +785,6 @@ class SizeClass {
 
 
 
-
-
-
-
-
-template <typename T>
-class FastDivisor {
- private:
-  
-  
-  
-  
-  
-  
-  
-  static const unsigned divide_inv_shift = 17;
-
-  
-  T inv;
-
- public:
-  
-  FastDivisor() : inv(0) {}
-
-  FastDivisor(unsigned div, unsigned max) {
-    MOZ_ASSERT(div <= max);
-
-    
-    MOZ_ASSERT((1U << divide_inv_shift) >= div);
-
-    unsigned inv_ = ((1U << divide_inv_shift) / div) + 1;
-
-    
-    MOZ_DIAGNOSTIC_ASSERT(max < UINT_MAX / inv_);
-
-    MOZ_ASSERT(inv_ <= std::numeric_limits<T>::max());
-    inv = static_cast<T>(inv_);
-
-    
-    MOZ_ASSERT(inv);
-  }
-
-  
-  
-  inline unsigned divide(unsigned num) const {
-    
-    MOZ_ASSERT(inv);
-    return (num * inv) >> divide_inv_shift;
-  }
-};
-
-template <typename T>
-unsigned inline operator/(unsigned num, FastDivisor<T> divisor) {
-  return divisor.divide(num);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template <size_t Bits>
 class AddressRadixTree {
 
@@ -994,6 +925,9 @@ struct arena_bin_t {
   size_t mSizeClass;
 
   
+  size_t mRunSize;
+
+  
   uint32_t mRunNumRegions;
 
   
@@ -1003,14 +937,7 @@ struct arena_bin_t {
   uint32_t mRunFirstRegionOffset;
 
   
-  uint32_t mNumRuns;
-
-  
-  
-  FastDivisor<uint16_t> mSizeDivisor;
-
-  
-  uint8_t mRunSizePages;
+  unsigned long mNumRuns;
 
   
   static constexpr double kRunOverhead = 1.6_percent;
@@ -1034,17 +961,6 @@ struct arena_bin_t {
   
   inline void Init(SizeClass aSizeClass);
 };
-
-
-
-
-#if defined(__x86_64__) || defined(__aarch64__)
-
-
-static_assert(sizeof(arena_bin_t) == 48);
-#elif defined(__x86__) || defined(__arm__)
-static_assert(sizeof(arena_bin_t) == 32);
-#endif
 
 struct arena_t {
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
@@ -2432,6 +2348,68 @@ inline void* arena_t::ArenaRunRegAlloc(arena_run_t* aRun, arena_bin_t* aBin) {
   return nullptr;
 }
 
+
+
+
+
+
+
+
+
+
+
+template <unsigned Q, unsigned Max>
+struct FastDivide {
+  static_assert(IsPowerOfTwo(Q), "q must be a power-of-two");
+
+  
+  
+
+  
+  static const unsigned min_divisor = Q * 3;
+  static const unsigned max_divisor =
+      mozilla::IsPowerOfTwo(Max) ? Max - Q : Max;
+  
+  static const unsigned num_divisors = (max_divisor - min_divisor) / Q + 1;
+
+  static const unsigned inv_shift = 21;
+
+  static constexpr unsigned inv(unsigned s) {
+    return ((1U << inv_shift) / (s * Q)) + 1;
+  }
+
+  static unsigned divide(size_t num, unsigned div) {
+    
+    static const unsigned size_invs[] = {
+      inv(3),
+      inv(4),  inv(5),  inv(6),  inv(7),
+      inv(8),  inv(9),  inv(10), inv(11),
+      inv(12), inv(13), inv(14), inv(15),
+      inv(16), inv(17), inv(18), inv(19),
+      inv(20), inv(21), inv(22), inv(23),
+      inv(24), inv(25), inv(26), inv(27),
+      inv(28), inv(29), inv(30), inv(31)
+    };
+    
+
+    
+    
+    static_assert(!(min_divisor < max_divisor) ||
+                      num_divisors <= sizeof(size_invs) / sizeof(unsigned),
+                  "num_divisors does not match array size");
+
+    MOZ_ASSERT(div >= min_divisor);
+    MOZ_ASSERT(div <= max_divisor);
+    MOZ_ASSERT(div % Q == 0);
+
+    
+    
+    const unsigned idx = div / Q - 3;
+    MOZ_ASSERT(idx < sizeof(size_invs) / sizeof(unsigned));
+    return (num * size_invs[idx]) >> inv_shift;
+  }
+};
+
 static inline void arena_run_reg_dalloc(arena_run_t* run, arena_bin_t* bin,
                                         void* ptr, size_t size) {
   unsigned diff, regind, elm, bit;
@@ -2442,11 +2420,22 @@ static inline void arena_run_reg_dalloc(arena_run_t* run, arena_bin_t* bin,
   
   diff =
       (unsigned)((uintptr_t)ptr - (uintptr_t)run - bin->mRunFirstRegionOffset);
-
-  MOZ_ASSERT(diff <=
-             (static_cast<unsigned>(bin->mRunSizePages) << gPageSize2Pow));
-  regind = diff / bin->mSizeDivisor;
-
+  if (mozilla::IsPowerOfTwo(size)) {
+    regind = diff >> FloorLog2(size);
+  } else {
+    SizeClass sc(size);
+    switch (sc.Type()) {
+      case SizeClass::Quantum:
+        regind = FastDivide<kQuantum, kMaxQuantumClass>::divide(diff, size);
+        break;
+      case SizeClass::QuantumWide:
+        regind =
+            FastDivide<kQuantumWide, kMaxQuantumWideClass>::divide(diff, size);
+        break;
+      default:
+        regind = diff / size;
+    }
+  }
   MOZ_DIAGNOSTIC_ASSERT(diff == regind * size);
   MOZ_DIAGNOSTIC_ASSERT(regind < bin->mRunNumRegions);
 
@@ -2804,11 +2793,10 @@ void arena_t::DallocRun(arena_run_t* aRun, bool aDirty) {
   MOZ_RELEASE_ASSERT(run_ind < gChunkNumPages - 1);
   if ((chunk->map[run_ind].bits & CHUNK_MAP_LARGE) != 0) {
     size = chunk->map[run_ind].bits & ~gPageSizeMask;
-    run_pages = (size >> gPageSize2Pow);
   } else {
-    run_pages = aRun->mBin->mRunSizePages;
-    size = run_pages << gPageSize2Pow;
+    size = aRun->mBin->mRunSize;
   }
+  run_pages = (size >> gPageSize2Pow);
 
   
   if (aDirty) {
@@ -2942,8 +2930,7 @@ arena_run_t* arena_t::GetNonFullBinRun(arena_bin_t* aBin) {
   
 
   
-  run = AllocRun(static_cast<size_t>(aBin->mRunSizePages) << gPageSize2Pow,
-                 false, false);
+  run = AllocRun(aBin->mRunSize, false, false);
   if (!run) {
     return nullptr;
   }
@@ -3055,12 +3042,10 @@ void arena_bin_t::Init(SizeClass aSizeClass) {
   MOZ_ASSERT((try_mask_nelms << (LOG2(sizeof(int)) + 3)) >= try_nregs);
 
   
-  MOZ_ASSERT((try_run_size >> gPageSize2Pow) <= UINT8_MAX);
-  mRunSizePages = static_cast<uint8_t>(try_run_size >> gPageSize2Pow);
+  mRunSize = try_run_size;
   mRunNumRegions = try_nregs;
   mRunNumRegionsMask = try_mask_nelms;
   mRunFirstRegionOffset = try_reg0_offset;
-  mSizeDivisor = FastDivisor<uint16_t>(aSizeClass.Size(), try_run_size);
 }
 
 void* arena_t::MallocSmall(size_t aSize, bool aZero) {
@@ -4597,11 +4582,9 @@ inline void MozJemalloc::jemalloc_stats_internal(
           aBinStats[j].num_non_full_runs += num_non_full_runs;
           aBinStats[j].num_runs += bin->mNumRuns;
           aBinStats[j].bytes_unused += bin_unused;
-          size_t bytes_per_run = static_cast<size_t>(bin->mRunSizePages)
-                                 << gPageSize2Pow;
           aBinStats[j].bytes_total +=
-              bin->mNumRuns * (bytes_per_run - bin->mRunFirstRegionOffset);
-          aBinStats[j].bytes_per_run = bytes_per_run;
+              bin->mNumRuns * (bin->mRunSize - bin->mRunFirstRegionOffset);
+          aBinStats[j].bytes_per_run = bin->mRunSize;
         }
       }
     }
