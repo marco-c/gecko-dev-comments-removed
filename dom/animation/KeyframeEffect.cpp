@@ -2084,7 +2084,7 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
   
   
   if (!aFrame->IsVisibleOrMayHaveVisibleDescendants() ||
-      IsDefinitivelyInvisibleDueToOpacity(*aFrame) ||
+      CanOptimizeAwayDueToOpacity(*this, *aFrame) ||
       aFrame->IsScrolledOutOfView()) {
     return KeyframeEffect::MatchForCompositor::NoAndBlockThisProperty;
   }
