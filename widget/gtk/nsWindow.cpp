@@ -184,9 +184,6 @@ static GdkCursor* get_gtk_cursor(nsCursor aCursor);
 static GdkWindow* get_inner_gdk_window(GdkWindow* aWindow, gint x, gint y,
                                        gint* retx, gint* rety);
 
-static int is_parent_ungrab_enter(GdkEventCrossing* aEvent);
-static int is_parent_grab_leave(GdkEventCrossing* aEvent);
-
 
 static gboolean expose_event_cb(GtkWidget* widget, cairo_t* cr);
 static gboolean configure_event_cb(GtkWidget* widget, GdkEventConfigure* event);
@@ -263,7 +260,6 @@ static void drag_data_received_event_cb(GtkWidget* aWidget,
 static nsresult initialize_prefs(void);
 
 static guint32 sLastUserInputTime = GDK_CURRENT_TIME;
-static guint32 sRetryGrabTime;
 
 static SystemTimeConverter<guint32>& TimeConverter() {
   static SystemTimeConverter<guint32> sTimeConverterSingleton;
@@ -3675,9 +3671,7 @@ void nsWindow::CaptureMouse(bool aCapture) {
 
   if (aCapture) {
     gtk_grab_add(GTK_WIDGET(mContainer));
-    GrabPointer(GetLastUserInputTime());
   } else {
-    ReleaseGrabs();
     gtk_grab_remove(GTK_WIDGET(mContainer));
   }
 }
@@ -3697,12 +3691,8 @@ void nsWindow::CaptureRollupEvents(nsIRollupListener* aListener,
     if (!GdkIsWaylandDisplay() && !mIsDragPopup &&
         !nsWindow::DragInProgress()) {
       gtk_grab_add(GTK_WIDGET(mContainer));
-      GrabPointer(GetLastUserInputTime());
     }
   } else {
-    if (!nsWindow::DragInProgress()) {
-      ReleaseGrabs();
-    }
     
     
     
@@ -4266,6 +4256,9 @@ void nsWindow::OnDeleteEvent() {
 }
 
 void nsWindow::OnEnterNotifyEvent(GdkEventCrossing* aEvent) {
+  LOG("enter notify (win=%p, sub=%p): %f, %f mode %d, detail %d\n",
+      aEvent->window, aEvent->subwindow, aEvent->x, aEvent->y, aEvent->mode,
+      aEvent->detail);
   
   
   
@@ -4279,10 +4272,6 @@ void nsWindow::OnEnterNotifyEvent(GdkEventCrossing* aEvent) {
   
   DispatchMissedButtonReleases(aEvent);
 
-  if (is_parent_ungrab_enter(aEvent)) {
-    return;
-  }
-
   WidgetMouseEvent event(true, eMouseEnterIntoWidget, this,
                          WidgetMouseEvent::eReal);
 
@@ -4294,20 +4283,11 @@ void nsWindow::OnEnterNotifyEvent(GdkEventCrossing* aEvent) {
   DispatchInputEvent(&event);
 }
 
-
-static bool is_top_level_mouse_exit(GdkWindow* aWindow,
-                                    GdkEventCrossing* aEvent) {
-  auto x = gint(aEvent->x_root);
-  auto y = gint(aEvent->y_root);
-  GdkDevice* pointer = GdkGetPointer();
-  GdkWindow* winAtPt = gdk_device_get_window_at_position(pointer, &x, &y);
-  if (!winAtPt) return true;
-  GdkWindow* topLevelAtPt = gdk_window_get_toplevel(winAtPt);
-  GdkWindow* topLevelWidget = gdk_window_get_toplevel(aWindow);
-  return topLevelAtPt != topLevelWidget;
-}
-
 void nsWindow::OnLeaveNotifyEvent(GdkEventCrossing* aEvent) {
+  LOG("leave notify (win=%p, sub=%p): %f, %f mode %d, detail %d\n",
+      aEvent->window, aEvent->subwindow, aEvent->x, aEvent->y, aEvent->mode,
+      aEvent->detail);
+
   
   
   
@@ -4316,7 +4296,7 @@ void nsWindow::OnLeaveNotifyEvent(GdkEventCrossing* aEvent) {
   
   
   
-  if (!mGdkWindow || aEvent->subwindow != nullptr) {
+  if (aEvent->subwindow) {
     return;
   }
 
@@ -4326,9 +4306,12 @@ void nsWindow::OnLeaveNotifyEvent(GdkEventCrossing* aEvent) {
   event.mRefPoint = GdkEventCoordsToDevicePixels(aEvent->x, aEvent->y);
   event.AssignEventTime(GetWidgetEventTime(aEvent->time));
 
-  event.mExitFrom = Some(is_top_level_mouse_exit(mGdkWindow, aEvent)
-                             ? WidgetMouseEvent::ePlatformTopLevel
-                             : WidgetMouseEvent::ePlatformChild);
+  
+  
+  const bool leavingTopLevel =
+      mWindowType == eWindowType_toplevel || mWindowType == eWindowType_dialog;
+  event.mExitFrom = Some(leavingTopLevel ? WidgetMouseEvent::ePlatformTopLevel
+                                         : WidgetMouseEvent::ePlatformChild);
 
   LOG("OnLeaveNotify");
 
@@ -5772,10 +5755,6 @@ void nsWindow::ConfigureGdkWindow() {
     ConfigureCompositor();
   }
 
-  if (mHasMappedToplevel) {
-    EnsureGrabs();
-  }
-
   LOG("  finished, new GdkWindow %p XID 0x%lx\n", mGdkWindow, GetX11Window());
 }
 
@@ -6117,7 +6096,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
   GtkStyleContext* style = gtk_widget_get_style_context(mShell);
   mDrawToContainer = GdkIsWaylandDisplay() ||
-                     (mGtkWindowDecoration == GTK_DECORATION_CLIENT) ||
+                     mGtkWindowDecoration == GTK_DECORATION_CLIENT ||
                      gtk_style_context_has_class(style, "csd");
   eventWidget = mDrawToContainer ? container : mShell;
 
@@ -6690,30 +6669,10 @@ void nsWindow::NativeShow(bool aAction) {
 
 void nsWindow::SetHasMappedToplevel(bool aState) {
   LOG("nsWindow::SetHasMappedToplevel() state %d", aState);
-
   
   
   
-  bool oldState = mHasMappedToplevel;
   mHasMappedToplevel = aState;
-
-  
-  
-  
-  
-  
-  
-  
-  if (!mIsShown || !mGdkWindow) {
-    LOG("  hidden, quit.\n");
-    return;
-  }
-
-  if (aState && !oldState) {
-    
-    
-    EnsureGrabs();
-  }
 }
 
 LayoutDeviceIntSize nsWindow::GetSafeWindowSize(LayoutDeviceIntSize aSize) {
@@ -6736,12 +6695,6 @@ LayoutDeviceIntSize nsWindow::GetSafeWindowSize(LayoutDeviceIntSize aSize) {
     result.height = maxSize;
   }
   return result;
-}
-
-void nsWindow::EnsureGrabs(void) {
-  if (mRetryPointerGrab) {
-    GrabPointer(sRetryGrabTime);
-  }
 }
 
 void nsWindow::SetTransparencyMode(nsTransparencyMode aMode) {
@@ -7154,75 +7107,6 @@ void nsWindow::UpdateTitlebarTransparencyBitmap() {
 
     XFreePixmap(xDisplay, maskPixmap);
   }
-#endif
-}
-
-void nsWindow::GrabPointer(guint32 aTime) {
-  LOG("GrabPointer time=0x%08x retry=%d\n", (unsigned int)aTime,
-      mRetryPointerGrab);
-
-  
-  
-  if (mIsDestroyed || GdkIsWaylandDisplay()) {
-    return;
-  }
-
-  mRetryPointerGrab = false;
-  sRetryGrabTime = aTime;
-
-  
-  
-  
-  if (!mHasMappedToplevel || !mGdkWindow) {
-    LOG("  quit, window not visible, mHasMappedToplevel = %d, mGdkWindow = %p",
-        mHasMappedToplevel, mGdkWindow);
-    mRetryPointerGrab = true;
-    return;
-  }
-
-#ifdef MOZ_X11
-  gint retval;
-  
-  
-  
-  retval = gdk_pointer_grab(
-      mGdkWindow, TRUE,
-      (GdkEventMask)(GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
-                     GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK |
-                     GDK_POINTER_MOTION_MASK | GDK_TOUCH_MASK),
-      (GdkWindow*)nullptr, nullptr, aTime);
-
-  if (retval == GDK_GRAB_NOT_VIEWABLE) {
-    LOG("  failed: window not viewable; will retry\n");
-    mRetryPointerGrab = true;
-  } else if (retval != GDK_GRAB_SUCCESS) {
-    LOG("  pointer grab failed: %i\n", retval);
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIRunnable> event =
-        NewRunnableMethod("nsWindow::CheckForRollupDuringGrab", this,
-                          &nsWindow::CheckForRollupDuringGrab);
-    NS_DispatchToCurrentThread(event.forget());
-  }
-#endif
-}
-
-void nsWindow::ReleaseGrabs(void) {
-  LOG("ReleaseGrabs\n");
-
-  mRetryPointerGrab = false;
-
-  if (GdkIsWaylandDisplay()) {
-    
-    
-    return;
-  }
-
-#ifdef MOZ_X11
-  gdk_pointer_ungrab(GDK_CURRENT_TIME);
 #endif
 }
 
@@ -8059,22 +7943,10 @@ static gboolean enter_notify_event_cb(GtkWidget* widget,
 
 static gboolean leave_notify_event_cb(GtkWidget* widget,
                                       GdkEventCrossing* event) {
-  if (is_parent_grab_leave(event)) {
-    return TRUE;
-  }
-
-  
-  
-  auto x = gint(event->x_root);
-  auto y = gint(event->y_root);
-  GdkDevice* pointer = GdkGetPointer();
-  GdkWindow* winAtPt = gdk_device_get_window_at_position(pointer, &x, &y);
-  if (winAtPt == event->window) {
-    return TRUE;
-  }
-
   RefPtr<nsWindow> window = get_window_for_gdk_window(event->window);
-  if (!window) return TRUE;
+  if (!window) {
+    return TRUE;
+  }
 
   if (window->ApplyEnterLeaveMutterWorkaround()) {
     
@@ -8599,18 +8471,6 @@ static GdkWindow* get_inner_gdk_window(GdkWindow* aWindow, gint x, gint y,
   *retx = x;
   *rety = y;
   return aWindow;
-}
-
-static int is_parent_ungrab_enter(GdkEventCrossing* aEvent) {
-  return (GDK_CROSSING_UNGRAB == aEvent->mode) &&
-         ((GDK_NOTIFY_ANCESTOR == aEvent->detail) ||
-          (GDK_NOTIFY_VIRTUAL == aEvent->detail));
-}
-
-static int is_parent_grab_leave(GdkEventCrossing* aEvent) {
-  return (GDK_CROSSING_GRAB == aEvent->mode) &&
-         ((GDK_NOTIFY_ANCESTOR == aEvent->detail) ||
-          (GDK_NOTIFY_VIRTUAL == aEvent->detail));
 }
 
 #ifdef ACCESSIBILITY
