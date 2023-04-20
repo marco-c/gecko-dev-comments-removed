@@ -29,21 +29,6 @@ namespace webrtc {
 static const AudioProcessing::Error kNoErr = AudioProcessing::kNoError;
 #define EXPECT_NOERR(expr) EXPECT_EQ(kNoErr, (expr))
 
-class RawFile final {
- public:
-  explicit RawFile(const std::string& filename);
-  ~RawFile();
-
-  RawFile(const RawFile&) = delete;
-  RawFile& operator=(const RawFile&) = delete;
-
-  void WriteSamples(const int16_t* samples, size_t num_samples);
-  void WriteSamples(const float* samples, size_t num_samples);
-
- private:
-  FILE* file_handle_;
-};
-
 
 struct Int16FrameData {
   
@@ -125,17 +110,6 @@ class ChannelBufferVectorWriter final {
   std::vector<float> interleaved_buffer_;
   std::vector<float>* output_;
 };
-
-void WriteIntData(const int16_t* data,
-                  size_t length,
-                  WavWriter* wav_file,
-                  RawFile* raw_file);
-
-void WriteFloatData(const float* const* data,
-                    size_t samples_per_channel,
-                    size_t num_channels,
-                    WavWriter* wav_file,
-                    RawFile* raw_file);
 
 
 FILE* OpenFile(const std::string& filename, const char* mode);
