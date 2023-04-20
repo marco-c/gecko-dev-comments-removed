@@ -4680,13 +4680,18 @@ public class GeckoSession {
       
       public final @Nullable String defaultValue;
 
+      
+      public final @Nullable String[] predefinedValues;
+
       protected ColorPrompt(
           @NonNull final String id,
           @Nullable final String title,
           @Nullable final String defaultValue,
+          @Nullable final String[] predefinedValues,
           @NonNull final Observer observer) {
         super(id, title, observer);
         this.defaultValue = defaultValue;
+        this.predefinedValues = predefinedValues;
       }
 
       

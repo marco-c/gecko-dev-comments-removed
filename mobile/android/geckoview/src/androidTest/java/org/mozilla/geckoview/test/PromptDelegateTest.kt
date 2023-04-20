@@ -1,8 +1,12 @@
+
+
+
+
 package org.mozilla.geckoview.test
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import org.hamcrest.Matchers.* // ktlint-disable no-wildcard-imports
+import org.hamcrest.Matchers.* 
 import org.junit.Assert
 import org.junit.Ignore
 import org.junit.Test
@@ -25,7 +29,7 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
 @MediumTest
 class PromptDelegateTest : BaseSessionTest() {
     @Test fun popupTestAllow() {
-        // Ensure popup blocking is enabled for this test.
+        
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to true))
 
         sessionRule.delegateDuringNextWait(object : PromptDelegate, NavigationDelegate {
@@ -61,7 +65,7 @@ class PromptDelegateTest : BaseSessionTest() {
     }
 
     @Test fun popupTestBlock() {
-        // Ensure popup blocking is enabled for this test.
+        
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to true))
 
         sessionRule.delegateUntilTestEnd(object : PromptDelegate, NavigationDelegate {
@@ -95,7 +99,7 @@ class PromptDelegateTest : BaseSessionTest() {
         mainSession.waitForRoundTrip()
     }
 
-    @Ignore // TODO: Reenable when 1501574 is fixed.
+    @Ignore 
     @Test
     fun alertTest() {
         mainSession.evaluateJS("alert('Alert!');")
@@ -109,7 +113,7 @@ class PromptDelegateTest : BaseSessionTest() {
         })
     }
 
-    // This test checks that saved logins are returned to the app when calling onAuthPrompt
+    
     @Test fun loginStorageHttpAuthWithPassword() {
         mainSession.loadTestPath("/basic-auth/foo/bar")
         sessionRule.delegateDuringNextWait(object : Autocomplete.StorageDelegate {
@@ -148,9 +152,9 @@ class PromptDelegateTest : BaseSessionTest() {
         })
     }
 
-    // This test checks that we store login information submitted through HTTP basic auth
-    // This also tests that the login save prompt gets automatically dismissed if
-    // the login information is incorrect.
+    
+    
+    
     @Test fun loginStorageHttpAuth() {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
@@ -195,8 +199,8 @@ class PromptDelegateTest : BaseSessionTest() {
 
         mainSession.loadTestPath("/basic-auth/foo/bar")
 
-        // The server we try to hit will always reject the login so we should
-        // get a request to reauth which should dismiss the prompt
+        
+        
         val actualPrompt = sessionRule.waitForResult(result)
 
         assertThat("Prompt object should match", actualPrompt, equalTo(promptInstanceDelegate.prompt))
@@ -206,7 +210,7 @@ class PromptDelegateTest : BaseSessionTest() {
         sessionRule.delegateUntilTestEnd(object : PromptDelegate {
             @AssertCalled(count = 2)
             override fun onAuthPrompt(session: GeckoSession, prompt: PromptDelegate.AuthPrompt): GeckoResult<PromptDelegate.PromptResponse>? {
-                // TODO: Figure out some better testing here.
+                
                 return null
             }
         })
@@ -261,7 +265,7 @@ class PromptDelegateTest : BaseSessionTest() {
                 "document.querySelector('#submit').click();"
         )
 
-        // Submitting the form causes a navigation
+        
         sessionRule.waitForPageStop()
 
         val result = GeckoResult<Void>()
@@ -278,13 +282,13 @@ class PromptDelegateTest : BaseSessionTest() {
         sessionRule.delegateUntilTestEnd(object : PromptDelegate {
             @AssertCalled(count = 2)
             override fun onRepostConfirmPrompt(session: GeckoSession, prompt: PromptDelegate.RepostConfirmPrompt): GeckoResult<PromptDelegate.PromptResponse>? {
-                // We have to return something here because otherwise the delegate will be invoked
-                // before we have a chance to override it in the waitUntilCalled call below
+                
+                
                 return forEachCall(promptResult, promptResult2)
             }
         })
 
-        // This should trigger a confirm resubmit prompt
+        
         mainSession.reload()
 
         sessionRule.waitUntilCalled(object : PromptDelegate {
@@ -297,7 +301,7 @@ class PromptDelegateTest : BaseSessionTest() {
 
         sessionRule.waitForResult(promptResult)
 
-        // Trigger it again, this time the load should go through
+        
         mainSession.reload()
         sessionRule.waitUntilCalled(object : PromptDelegate {
             @AssertCalled(count = 1)
@@ -333,7 +337,7 @@ class PromptDelegateTest : BaseSessionTest() {
         val promise = mainSession.evaluatePromiseJS(
             """new Promise(function(resolve) {
             let events = [];
-            // Record the events for testing purposes.
+            
             for (const t of ["change", "input"]) {
                 document.querySelector("select").addEventListener(t, function(e) {
                     events.push(e.type + "(composed=" + e.composed + ")");
@@ -509,14 +513,14 @@ class PromptDelegateTest : BaseSessionTest() {
         sessionRule.delegateUntilTestEnd(object : PromptDelegate {
             @AssertCalled(count = 2)
             override fun onBeforeUnloadPrompt(session: GeckoSession, prompt: PromptDelegate.BeforeUnloadPrompt): GeckoResult<PromptDelegate.PromptResponse>? {
-                // We have to return something here because otherwise the delegate will be invoked
-                // before we have a chance to override it in the waitUntilCalled call below
+                
+                
                 return forEachCall(promptResult, promptResult2)
             }
         })
 
-        // This will try to load "hello.html" but will be denied, if the request
-        // goes through anyway the onLoadRequest delegate above will throw an exception
+        
+        
         mainSession.evaluateJS("document.querySelector('#navigateAway').click()")
         sessionRule.waitUntilCalled(object : PromptDelegate {
             @AssertCalled(count = 1)
@@ -528,13 +532,13 @@ class PromptDelegateTest : BaseSessionTest() {
 
         sessionRule.waitForResult(promptResult)
 
-        // Although onBeforeUnloadPrompt is done, nsDocumentViewer might not clear
-        // mInPermitUnloadPrompt flag at this time yet. We need a wait to finish
-        // "nsDocumentViewer::PermitUnload" loop.
+        
+        
+        
         mainSession.waitForJS("new Promise(resolve => window.setTimeout(resolve, 100))")
 
-        // This request will go through and end the test. Doing the negative case first will
-        // ensure that if either of this tests fail the test will fail.
+        
+        
         mainSession.evaluateJS("document.querySelector('#navigateAway2').click()")
         sessionRule.waitUntilCalled(object : PromptDelegate {
             @AssertCalled(count = 1)
@@ -578,6 +582,7 @@ class PromptDelegateTest : BaseSessionTest() {
             @AssertCalled(count = 1)
             override fun onColorPrompt(session: GeckoSession, prompt: PromptDelegate.ColorPrompt): GeckoResult<PromptDelegate.PromptResponse> {
                 assertThat("Value should match", "#ffffff", equalTo(prompt.defaultValue))
+                assertThat("Predefined values size", 0, equalTo(prompt.predefinedValues!!.size))
                 return GeckoResult.fromValue(prompt.confirm("#123456"))
             }
         })
@@ -609,6 +614,49 @@ class PromptDelegateTest : BaseSessionTest() {
         )
     }
 
+    @Test fun colorTestWithDatalist() {
+        sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
+
+        mainSession.loadTestPath(PROMPT_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        sessionRule.delegateDuringNextWait(object : PromptDelegate {
+            @AssertCalled(count = 1)
+            override fun onColorPrompt(session: GeckoSession, prompt: PromptDelegate.ColorPrompt): GeckoResult<PromptDelegate.PromptResponse> {
+                assertThat("Value should match", "#ffffff", equalTo(prompt.defaultValue))
+                assertThat("Predefined values size", 2, equalTo(prompt.predefinedValues!!.size))
+                assertThat("First predefined value", "#000000", equalTo(prompt.predefinedValues?.get(0)))
+                assertThat("Second predefined value", "#808080", equalTo(prompt.predefinedValues?.get(1)))
+                return GeckoResult.fromValue(prompt.confirm("#123456"))
+            }
+        })
+
+        mainSession.evaluateJS(
+            """
+            this.c = document.getElementById('colorexample');
+            this.c.setAttribute('list', 'colorlist');
+            """.trimIndent()
+        )
+
+        val promise = mainSession.evaluatePromiseJS(
+            """
+            new Promise((resolve, reject) => {
+                this.c.addEventListener(
+                    'change',
+                    event => resolve(event.target.value),
+                );
+            })
+            """.trimIndent()
+        )
+        mainSession.evaluateJS("this.c.click();")
+
+        assertThat(
+            "Value should match",
+            promise.value as String,
+            equalTo("#123456")
+        )
+    }
+
     @WithDisplay(width = 100, height = 100)
     @Test
     fun dateTest() {
@@ -623,7 +671,7 @@ class PromptDelegateTest : BaseSessionTest() {
             """.trimIndent()
         )
 
-        mainSession.synthesizeTap(1, 1) // Provides user activation.
+        mainSession.synthesizeTap(1, 1) 
         sessionRule.waitUntilCalled(object : PromptDelegate {
             @AssertCalled(count = 1)
             override fun onDateTimePrompt(session: GeckoSession, prompt: PromptDelegate.DateTimePrompt): GeckoResult<PromptDelegate.PromptResponse> {
@@ -640,9 +688,9 @@ class PromptDelegateTest : BaseSessionTest() {
         mainSession.loadTestPath(PROMPT_HTML_PATH)
         mainSession.waitForPageStop()
 
-        // By removing first element in PROMPT_HTML_PATH, dateexample becomes first element.
-        //
-        // TODO: What better calculation of element bounds for synthesizeTap?
+        
+        
+        
         mainSession.evaluateJS(
             """
             document.getElementById('selectexample').remove();
@@ -663,13 +711,13 @@ class PromptDelegateTest : BaseSessionTest() {
     @WithDisplay(width = 100, height = 100)
     @Test
     fun monthTestByTap() {
-        // Gecko doesn't have the widget for <input type=month>. But GeckoView can show the picker.
+        
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
 
         mainSession.loadTestPath(PROMPT_HTML_PATH)
         mainSession.waitForPageStop()
 
-        // TODO: What better calculation of element bounds for synthesizeTap?
+        
         mainSession.evaluateJS(
             """
             document.getElementById('selectexample').remove();
@@ -986,7 +1034,7 @@ class PromptDelegateTest : BaseSessionTest() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitForPageStop()
 
-        // Invalid port should cause URL parser to fail.
+        
         val shareUrl = "http://www.example.com:123456"
 
         sessionRule.delegateDuringNextWait(object : PromptDelegate {
