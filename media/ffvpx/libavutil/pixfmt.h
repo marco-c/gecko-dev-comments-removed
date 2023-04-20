@@ -209,6 +209,34 @@ enum AVPixelFormat {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     AV_PIX_FMT_QSV,
     
 

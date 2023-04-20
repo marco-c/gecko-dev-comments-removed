@@ -157,15 +157,6 @@ static inline size_t av_strnlen(const char *s, size_t len)
 
 char *av_asprintf(const char *fmt, ...) av_printf_format(1, 2);
 
-#if FF_API_D2STR
-
-
-
-
-attribute_deprecated
-char *av_d2str(double d);
-#endif
-
 
 
 

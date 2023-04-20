@@ -52,7 +52,6 @@ typedef struct MotionEstContext {
     uint8_t *scratchpad;            
 
     uint8_t *temp;
-    int best_bits;
     uint32_t *map;                  
     uint32_t *score_map;            
     unsigned map_generation;

@@ -88,7 +88,6 @@ typedef struct AVCodecInternal {
 
 
     AVPacket *last_pkt_props;
-    struct AVFifo *pkt_props;
 
     
 

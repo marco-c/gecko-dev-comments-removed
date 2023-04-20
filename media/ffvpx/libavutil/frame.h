@@ -209,6 +209,11 @@ enum AVFrameSideDataType {
 
 
     AV_FRAME_DATA_DYNAMIC_HDR_VIVID,
+
+    
+
+
+    AV_FRAME_DATA_AMBIENT_VIEWING_ENVIRONMENT,
 };
 
 enum AVActiveFormatDescription {
@@ -446,14 +451,18 @@ typedef struct AVFrame {
 
     AVRational time_base;
 
+#if FF_API_FRAME_PICTURE_NUMBER
     
 
 
+    attribute_deprecated
     int coded_picture_number;
     
 
 
+    attribute_deprecated
     int display_picture_number;
+#endif
 
     
 
@@ -486,6 +495,7 @@ typedef struct AVFrame {
 
     int palette_has_changed;
 
+#if FF_API_REORDERED_OPAQUE
     
 
 
@@ -494,7 +504,11 @@ typedef struct AVFrame {
 
 
 
+
+
+    attribute_deprecated
     int64_t reordered_opaque;
+#endif
 
     
 
@@ -715,15 +729,6 @@ typedef struct AVFrame {
 } AVFrame;
 
 
-#if FF_API_COLORSPACE_NAME
-
-
-
-
-
-attribute_deprecated
-const char *av_get_colorspace_name(enum AVColorSpace val);
-#endif
 
 
 

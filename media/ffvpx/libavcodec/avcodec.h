@@ -244,6 +244,48 @@ typedef struct RcOverride{
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define AV_CODEC_FLAG_COPY_OPAQUE     (1 <<  7)
+
+
+
+
+
+
+#define AV_CODEC_FLAG_FRAME_DURATION  (1 <<  8)
+
+
+
 #define AV_CODEC_FLAG_PASS1           (1 <<  9)
 
 
@@ -261,15 +303,6 @@ typedef struct RcOverride{
 
 
 #define AV_CODEC_FLAG_PSNR            (1 << 15)
-#if FF_API_FLAG_TRUNCATED
-
-
-
-
-
-
-#define AV_CODEC_FLAG_TRUNCATED       (1 << 16)
-#endif
 
 
 
@@ -309,11 +342,6 @@ typedef struct RcOverride{
 
 
 #define AV_CODEC_FLAG2_LOCAL_HEADER   (1 <<  3)
-
-
-
-
-#define AV_CODEC_FLAG2_DROP_FRAME_TIMECODE (1 << 13)
 
 
 
@@ -500,7 +528,6 @@ typedef struct AVCodecContext {
     int extradata_size;
 
     
-
 
 
 
@@ -1034,6 +1061,7 @@ typedef struct AVCodecContext {
 
     int frame_size;
 
+#if FF_API_AVCTX_FRAME_NUMBER
     
 
 
@@ -1043,7 +1071,10 @@ typedef struct AVCodecContext {
 
 
 
+
+    attribute_deprecated
     int frame_number;
+#endif
 
     
 
@@ -1350,6 +1381,7 @@ typedef struct AVCodecContext {
 
     int err_recognition;
 
+#if FF_API_REORDERED_OPAQUE
     
 
 
@@ -1359,7 +1391,11 @@ typedef struct AVCodecContext {
 
 
 
+
+
+    attribute_deprecated
     int64_t reordered_opaque;
+#endif
 
     
 
@@ -1483,27 +1519,6 @@ typedef struct AVCodecContext {
 
 
     int active_thread_type;
-
-#if FF_API_THREAD_SAFE_CALLBACKS
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    attribute_deprecated
-    int thread_safe_callbacks;
-#endif
 
     
 
@@ -1639,6 +1654,7 @@ typedef struct AVCodecContext {
 #define FF_PROFILE_HEVC_MAIN_10                     2
 #define FF_PROFILE_HEVC_MAIN_STILL_PICTURE          3
 #define FF_PROFILE_HEVC_REXT                        4
+#define FF_PROFILE_HEVC_SCC                         9
 
 #define FF_PROFILE_VVC_MAIN_10                      1
 #define FF_PROFILE_VVC_MAIN_10_444                 33
@@ -1805,17 +1821,6 @@ typedef struct AVCodecContext {
 
     int seek_preroll;
 
-#if FF_API_DEBUG_MV
-    
-
-
-    attribute_deprecated
-    int debug_mv;
-#define FF_DEBUG_VIS_MV_P_FOR  0x00000001 //visualize forward predicted MVs of P frames
-#define FF_DEBUG_VIS_MV_B_FOR  0x00000002 //visualize forward predicted MVs of B frames
-#define FF_DEBUG_VIS_MV_B_BACK 0x00000004 //visualize backward predicted MVs of B frames
-#endif
-
     
 
 
@@ -1881,15 +1886,6 @@ typedef struct AVCodecContext {
 
 
     AVBufferRef *hw_frames_ctx;
-
-#if FF_API_SUB_TEXT_FORMAT
-    
-
-
-    attribute_deprecated
-    int sub_text_format;
-#define FF_SUB_TEXT_FMT_ASS              0
-#endif
 
     
 
@@ -2057,6 +2053,17 @@ typedef struct AVCodecContext {
 
 
     AVChannelLayout ch_layout;
+
+    
+
+
+
+
+
+
+
+
+    int64_t frame_num;
 } AVCodecContext;
 
 
@@ -2257,6 +2264,22 @@ typedef struct AVHWAccel {
 
 
 
+
+
+
+
+
+
+
+
+
+
+#define AV_HWACCEL_FLAG_UNSAFE_OUTPUT (1 << 3)
+
+
+
+
+
 enum AVSubtitleType {
     SUBTITLE_NONE,
 
@@ -2357,14 +2380,6 @@ void avcodec_free_context(AVCodecContext **avctx);
 
 
 const AVClass *avcodec_get_class(void);
-
-#if FF_API_GET_FRAME_CLASS
-
-
-
-attribute_deprecated
-const AVClass *avcodec_get_frame_class(void);
-#endif
 
 
 
@@ -2552,8 +2567,7 @@ enum AVChromaLocation avcodec_chroma_pos_to_enum(int xpos, int ypos);
 
 
 int avcodec_decode_subtitle2(AVCodecContext *avctx, AVSubtitle *sub,
-                            int *got_sub_ptr,
-                            AVPacket *avpkt);
+                             int *got_sub_ptr, const AVPacket *avpkt);
 
 
 
@@ -2602,7 +2616,6 @@ int avcodec_decode_subtitle2(AVCodecContext *avctx, AVSubtitle *sub,
 
 
 int avcodec_send_packet(AVCodecContext *avctx, const AVPacket *avpkt);
-
 
 
 

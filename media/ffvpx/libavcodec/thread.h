@@ -62,19 +62,7 @@ int ff_thread_decode_frame(AVCodecContext *avctx, AVFrame *picture,
 
 void ff_thread_finish_setup(AVCodecContext *avctx);
 
-#if FF_API_THREAD_SAFE_CALLBACKS
-
-
-
-
-
-
-
-
-enum AVPixelFormat ff_thread_get_format(AVCodecContext *avctx, const enum AVPixelFormat *fmt);
-#else
 #define ff_thread_get_format ff_get_format
-#endif
 
 
 

@@ -44,9 +44,6 @@
 #include "pixblockdsp.h"
 #include "put_bits.h"
 #include "ratecontrol.h"
-#if FF_API_FLAG_TRUNCATED
-#include "parser.h"
-#endif
 #include "mpegutils.h"
 #include "qpeldsp.h"
 #include "videodsp.h"
@@ -117,6 +114,7 @@ typedef struct MpegEncContext {
     int input_picture_number;  
     int coded_picture_number;  
     int picture_number;       
+    int extradata_parsed;
     int picture_in_gop_number; 
     int mb_width, mb_height;   
     int mb_stride;             
@@ -174,6 +172,7 @@ typedef struct MpegEncContext {
     Picture *last_picture_ptr;     
     Picture *next_picture_ptr;     
     Picture *current_picture_ptr;  
+    int skipped_last_frame;
     int last_dc[3];                
     int16_t *dc_val_base;
     int16_t *dc_val[3];            
@@ -350,10 +349,6 @@ typedef struct MpegEncContext {
     int resync_mb_y;                 
     GetBitContext last_resync_gb;    
     int mb_num_left;                 
-
-#if FF_API_FLAG_TRUNCATED
-    ParseContext parse_context;
-#endif
 
     
     int gob_index;

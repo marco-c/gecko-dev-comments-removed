@@ -64,6 +64,13 @@
 
 
 
+
+
+
+
+
+
+
 #define AV_DICT_MATCH_CASE      1   /**< Only get an entry with exact-case key match. Only relevant in av_dict_get(). */
 #define AV_DICT_IGNORE_SUFFIX   2   /**< Return first entry in a dictionary whose first part corresponds to the search key,
                                          ignoring the suffix of the found key string. Only relevant in av_dict_get(). */
@@ -76,13 +83,15 @@
 
 #define AV_DICT_MULTIKEY       64   
 
+
+
+
 typedef struct AVDictionaryEntry {
     char *key;
     char *value;
 } AVDictionaryEntry;
 
 typedef struct AVDictionary AVDictionary;
-
 
 
 
@@ -107,7 +116,35 @@ AVDictionaryEntry *av_dict_get(const AVDictionary *m, const char *key,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const AVDictionaryEntry *av_dict_iterate(const AVDictionary *m,
+                                         const AVDictionaryEntry *prev);
+
+
+
+
+
+
+
 int av_dict_count(const AVDictionary *m);
+
 
 
 
@@ -151,9 +188,13 @@ int av_dict_set_int(AVDictionary **pm, const char *key, int64_t value, int flags
 
 
 
+
 int av_dict_parse_string(AVDictionary **pm, const char *str,
                          const char *key_val_sep, const char *pairs_sep,
                          int flags);
+
+
+
 
 
 
@@ -172,6 +213,8 @@ int av_dict_copy(AVDictionary **dst, const AVDictionary *src, int flags);
 
 
 void av_dict_free(AVDictionary **m);
+
+
 
 
 

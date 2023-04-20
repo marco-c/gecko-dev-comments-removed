@@ -50,12 +50,6 @@
 
 
 #define AV_CODEC_CAP_DR1                 (1 <<  1)
-#if FF_API_FLAG_TRUNCATED
-
-
-
-#define AV_CODEC_CAP_TRUNCATED           (1 <<  3)
-#endif
 
 
 
@@ -125,9 +119,6 @@
 
 
 #define AV_CODEC_CAP_OTHER_THREADS       (1 << 15)
-#if FF_API_AUTO_THREADS
-#define AV_CODEC_CAP_AUTO_THREADS        AV_CODEC_CAP_OTHER_THREADS
-#endif
 
 
 
@@ -142,17 +133,6 @@
 
 
 #define AV_CODEC_CAP_AVOID_PROBING       (1 << 17)
-
-#if FF_API_UNUSED_CODEC_CAPS
-
-
-
-#define AV_CODEC_CAP_INTRA_ONLY       0x40000000
-
-
-
-#define AV_CODEC_CAP_LOSSLESS         0x80000000
-#endif
 
 
 

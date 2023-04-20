@@ -30,7 +30,6 @@
 #include "mem.h"
 #include "version.h"
 
-#if !FF_API_DECLARE_ALIGNED
 
 
 
@@ -96,7 +95,6 @@
     #define DECLARE_ALIGNED(n,t,v)      t v
     #define DECLARE_ASM_ALIGNED(n,t,v)  t v
     #define DECLARE_ASM_CONST(n,t,v)    static const t v
-#endif
 #endif
 
 

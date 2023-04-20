@@ -72,6 +72,12 @@ int ff_alloc_packet(AVCodecContext *avctx, AVPacket *avpkt, int64_t size);
 
 
 
+int ff_encode_reordered_opaque(AVCodecContext *avctx,
+                               AVPacket *pkt, const AVFrame *frame);
+
+
+
+
 
 int ff_encode_preinit(AVCodecContext *avctx);
 
