@@ -300,9 +300,7 @@ void nsHTMLButtonControlFrame::ReflowButtonContents(
   
   if (!aButtonReflowInput.mStyleDisplay->IsContainLayout()) {
     if (aButtonDesiredSize.GetWritingMode().IsOrthogonalTo(wm)) {
-      aButtonDesiredSize.SetBlockStartAscent(
-          wm.IsAlphabeticalBaseline() ? contentsDesiredSize.ISize(wm)
-                                      : contentsDesiredSize.ISize(wm) / 2);
+      aButtonDesiredSize.SetBlockStartAscent(contentsDesiredSize.ISize(wm));
     } else {
       aButtonDesiredSize.SetBlockStartAscent(
           contentsDesiredSize.BlockStartAscent() + childPos.B(wm));

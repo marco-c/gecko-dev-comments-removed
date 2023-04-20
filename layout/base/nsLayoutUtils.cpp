@@ -8591,10 +8591,8 @@ void nsLayoutUtils::SetBSizeFromFontMetrics(const nsIFrame* aFrame,
     
     
     
-    aMetrics.SetBlockStartAscent(
-        aLineWM.IsAlphabeticalBaseline()
-            ? aLineWM.IsLineInverted() ? fm->MaxDescent() : fm->MaxAscent()
-            : fm->MaxHeight() / 2);
+    aMetrics.SetBlockStartAscent(aLineWM.IsLineInverted() ? fm->MaxDescent()
+                                                          : fm->MaxAscent());
     aMetrics.BSize(aLineWM) = fm->MaxHeight();
   } else {
     NS_WARNING("Cannot get font metrics - defaulting sizes to 0");
