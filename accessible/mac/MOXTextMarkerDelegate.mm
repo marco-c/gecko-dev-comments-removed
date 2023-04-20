@@ -90,6 +90,20 @@ static nsTHashMap<nsPtrHashKey<mozilla::a11y::Accessible>,
   CFRetain(mCaret);
 }
 
+mozAccessible* GetEditableNativeFromGeckoAccessible(Accessible* aAcc) {
+  
+  
+  
+  
+  for (Accessible* acc = aAcc; acc; acc = acc->Parent()) {
+    if (mozAccessible* mozAcc = GetNativeFromGeckoAccessible(acc)) {
+      return [mozAcc moxEditableAncestor];
+    }
+  }
+
+  return nil;
+}
+
 
 
 
@@ -123,7 +137,7 @@ static nsTHashMap<nsPtrHashKey<mozilla::a11y::Accessible>,
   }
 
   mozAccessible* caretEditable =
-      [GetNativeFromGeckoAccessible(caretMarker.Acc()) moxEditableAncestor];
+      GetEditableNativeFromGeckoAccessible(caretMarker.Acc());
 
   if (!caretEditable && stateChangeType == AXTextStateChangeTypeSelectionMove) {
     
@@ -137,7 +151,7 @@ static nsTHashMap<nsPtrHashKey<mozilla::a11y::Accessible>,
   }
 
   mozAccessible* prevCaretEditable =
-      [GetNativeFromGeckoAccessible(prevCaretMarker.Acc()) moxEditableAncestor];
+      GetEditableNativeFromGeckoAccessible(prevCaretMarker.Acc());
 
   if (prevCaretEditable != caretEditable) {
     
