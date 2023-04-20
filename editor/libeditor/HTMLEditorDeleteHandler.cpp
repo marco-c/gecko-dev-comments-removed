@@ -272,7 +272,6 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
 
 
 
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
   HandleDeleteAtomicContent(HTMLEditor& aHTMLEditor, nsIContent& aAtomicContent,
                             const EditorDOMPoint& aCaretPoint,
@@ -298,35 +297,6 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
       nsIEditor::EDirection aDirectionAndAmount,
       const WSRunScanner& aWSRunScannerAtCaret,
       const WSScanResult& aScanFromCaretPointResult) MOZ_NONNULL_RETURN;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
-  HandleDeleteHRElement(HTMLEditor& aHTMLEditor,
-                        nsIEditor::EDirection aDirectionAndAmount,
-                        Element& aHRElement, const EditorDOMPoint& aCaretPoint,
-                        const WSRunScanner& aWSRunScannerAtCaret,
-                        const Element& aEditingHost);
-  nsresult ComputeRangesToDeleteHRElement(
-      const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-      Element& aHRElement, const EditorDOMPoint& aCaretPoint,
-      const WSRunScanner& aWSRunScannerAtCaret,
-      AutoRangeArray& aRangesToDelete) const;
 
   
 
@@ -375,14 +345,6 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
   MOZ_NEVER_INLINE_DEBUG static EditorRawDOMRange
   GetRangeToAvoidDeletingAllListItemsIfSelectingAllOverListElements(
       const EditorRawDOMRange& aRangeToDelete);
-
-  
-
-
-
-  Result<bool, nsresult> ShouldDeleteHRElement(
-      const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-      Element& aHRElement, const EditorDOMPoint& aCaretPoint) const;
 
   
 
@@ -1772,6 +1734,7 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
 
   if (aScanFromCaretPointResult.ReachedSpecialContent() ||
       aScanFromCaretPointResult.ReachedBRElement() ||
+      aScanFromCaretPointResult.ReachedHRElement() ||
       aScanFromCaretPointResult.ReachedNonEditableOtherBlockElement()) {
     if (aScanFromCaretPointResult.GetContent() ==
         aWSRunScannerAtCaret.GetEditingHost()) {
@@ -1790,22 +1753,6 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rv),
         "AutoDeleteRangesHandler::ComputeRangesToDeleteAtomicContent() failed");
-    return rv;
-  }
-
-  if (aScanFromCaretPointResult.ReachedHRElement()) {
-    if (aScanFromCaretPointResult.GetContent() ==
-        aWSRunScannerAtCaret.GetEditingHost()) {
-      return NS_OK;
-    }
-    nsresult rv =
-        ComputeRangesToDeleteHRElement(aHTMLEditor, aDirectionAndAmount,
-                                       *aScanFromCaretPointResult.ElementPtr(),
-                                       aWSRunScannerAtCaret.ScanStartRef(),
-                                       aWSRunScannerAtCaret, aRangesToDelete);
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "AutoDeleteRangesHandler::ComputeRangesToDeleteHRElement() failed");
     return rv;
   }
 
@@ -1953,9 +1900,9 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
 
   if (aScanFromCaretPointResult.ReachedSpecialContent() ||
       aScanFromCaretPointResult.ReachedBRElement() ||
+      aScanFromCaretPointResult.ReachedHRElement() ||
       aScanFromCaretPointResult.ReachedNonEditableOtherBlockElement()) {
-    if (aScanFromCaretPointResult.GetContent() ==
-        aWSRunScannerAtCaret.GetEditingHost()) {
+    if (aScanFromCaretPointResult.GetContent() == &aEditingHost) {
       return EditActionResult::HandledResult();
     }
     nsCOMPtr<nsIContent> atomicContent = GetAtomicContentToDelete(
@@ -1971,31 +1918,6 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
         aWSRunScannerAtCaret, aEditingHost);
     if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
       NS_WARNING("AutoDeleteRangesHandler::HandleDeleteAtomicContent() failed");
-      return caretPointOrError.propagateErr();
-    }
-    nsresult rv = caretPointOrError.unwrap().SuggestCaretPointTo(
-        aHTMLEditor, {SuggestCaret::OnlyIfHasSuggestion});
-    if (NS_FAILED(rv)) {
-      NS_WARNING("CaretPoint::SuggestCaretPointTo() failed");
-      return Err(rv);
-    }
-    NS_WARNING_ASSERTION(
-        rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-        "CaretPoint::SuggestCaretPointTo() failed, but ignored");
-    return EditActionResult::HandledResult();
-  }
-
-  if (aScanFromCaretPointResult.ReachedHRElement()) {
-    if (aScanFromCaretPointResult.GetContent() == &aEditingHost) {
-      return EditActionResult::HandledResult();
-    }
-    Result<CaretPoint, nsresult> caretPointOrError = HandleDeleteHRElement(
-        aHTMLEditor, aDirectionAndAmount,
-        MOZ_KnownLive(*aScanFromCaretPointResult.ElementPtr()),
-        aWSRunScannerAtCaret.ScanStartRef(), aWSRunScannerAtCaret,
-        aEditingHost);
-    if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-      NS_WARNING("AutoDeleteRangesHandler::HandleDeleteHRElement() failed");
       return caretPointOrError.propagateErr();
     }
     nsresult rv = caretPointOrError.unwrap().SuggestCaretPointTo(
@@ -2346,164 +2268,6 @@ Result<CaretPoint, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   
   
   aHTMLEditor.TopLevelEditSubActionDataRef().mDidDeleteNonCollapsedRange = true;
-  return CaretPoint(std::move(pointToPutCaret));
-}
-
-Result<bool, nsresult>
-HTMLEditor::AutoDeleteRangesHandler::ShouldDeleteHRElement(
-    const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-    Element& aHRElement, const EditorDOMPoint& aCaretPoint) const {
-  MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
-
-  if (StaticPrefs::editor_hr_element_allow_to_delete_from_following_line()) {
-    return true;
-  }
-
-  if (aDirectionAndAmount != nsIEditor::ePrevious) {
-    return true;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  EditorRawDOMPoint atHRElement(&aHRElement);
-
-  const InterlinePosition interlinePosition =
-      aHTMLEditor.SelectionRef().GetInterlinePosition();
-  if (MOZ_UNLIKELY(interlinePosition == InterlinePosition::Undefined)) {
-    NS_WARNING("Selection::GetInterlinePosition() failed");
-    return Err(NS_ERROR_FAILURE);
-  }
-
-  return interlinePosition == InterlinePosition::EndOfLine &&
-         aCaretPoint.GetContainer() == atHRElement.GetContainer() &&
-         aCaretPoint.Offset() - 1 == atHRElement.Offset();
-}
-
-nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteHRElement(
-    const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-    Element& aHRElement, const EditorDOMPoint& aCaretPoint,
-    const WSRunScanner& aWSRunScannerAtCaret,
-    AutoRangeArray& aRangesToDelete) const {
-  MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
-  MOZ_ASSERT(aHRElement.IsHTMLElement(nsGkAtoms::hr));
-  MOZ_ASSERT(&aHRElement != aWSRunScannerAtCaret.GetEditingHost());
-
-  Result<bool, nsresult> canDeleteHRElement = ShouldDeleteHRElement(
-      aHTMLEditor, aDirectionAndAmount, aHRElement, aCaretPoint);
-  if (canDeleteHRElement.isErr()) {
-    NS_WARNING("AutoDeleteRangesHandler::ShouldDeleteHRElement() failed");
-    return canDeleteHRElement.unwrapErr();
-  }
-  if (canDeleteHRElement.inspect()) {
-    nsresult rv = ComputeRangesToDeleteAtomicContent(
-        aWSRunScannerAtCaret.GetEditingHost(), aHRElement, aRangesToDelete);
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "AutoDeleteRangesHandler::ComputeRangesToDeleteAtomicContent() failed");
-    return rv;
-  }
-
-  WSScanResult forwardScanFromCaretResult =
-      aWSRunScannerAtCaret.ScanNextVisibleNodeOrBlockBoundaryFrom(aCaretPoint);
-  if (forwardScanFromCaretResult.Failed()) {
-    NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom() failed");
-    return NS_ERROR_FAILURE;
-  }
-  if (!forwardScanFromCaretResult.ReachedBRElement()) {
-    
-    nsresult rv = aRangesToDelete.Collapse(aCaretPoint);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AutoRangeArray::Collapse() failed");
-    return rv;
-  }
-
-  
-  
-  nsresult rv = ComputeRangesToDeleteAtomicContent(
-      aWSRunScannerAtCaret.GetEditingHost(),
-      *forwardScanFromCaretResult.ElementPtr(), aRangesToDelete);
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rv),
-      "AutoDeleteRangesHandler::ComputeRangesToDeleteAtomicContent() failed");
-  return rv;
-}
-
-Result<CaretPoint, nsresult>
-HTMLEditor::AutoDeleteRangesHandler::HandleDeleteHRElement(
-    HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-    Element& aHRElement, const EditorDOMPoint& aCaretPoint,
-    const WSRunScanner& aWSRunScannerAtCaret, const Element& aEditingHost) {
-  MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
-  MOZ_ASSERT(aHRElement.IsHTMLElement(nsGkAtoms::hr));
-  MOZ_ASSERT(&aHRElement != aWSRunScannerAtCaret.GetEditingHost());
-
-  Result<bool, nsresult> canDeleteHRElement = ShouldDeleteHRElement(
-      aHTMLEditor, aDirectionAndAmount, aHRElement, aCaretPoint);
-  if (MOZ_UNLIKELY(canDeleteHRElement.isErr())) {
-    NS_WARNING("AutoDeleteRangesHandler::ShouldDeleteHRElement() failed");
-    return canDeleteHRElement.propagateErr();
-  }
-  if (canDeleteHRElement.inspect()) {
-    Result<CaretPoint, nsresult> caretPointOrError =
-        HandleDeleteAtomicContent(aHTMLEditor, aHRElement, aCaretPoint,
-                                  aWSRunScannerAtCaret, aEditingHost);
-    NS_WARNING_ASSERTION(
-        caretPointOrError.isOk(),
-        "AutoDeleteRangesHandler::HandleDeleteAtomicContent() failed");
-    return caretPointOrError;
-  }
-
-  
-  
-  
-  
-  WSScanResult forwardScanFromCaretResult =
-      aWSRunScannerAtCaret.ScanNextVisibleNodeOrBlockBoundaryFrom(aCaretPoint);
-  if (MOZ_UNLIKELY(forwardScanFromCaretResult.Failed())) {
-    NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom() failed");
-    return Err(NS_ERROR_FAILURE);
-  }
-
-  EditorDOMPoint pointToPutCaret(EditorDOMPoint::After(aHRElement));
-  pointToPutCaret.SetInterlinePosition(InterlinePosition::EndOfLine);
-  aHTMLEditor.TopLevelEditSubActionDataRef().mDidExplicitlySetInterLine = true;
-  if (!forwardScanFromCaretResult.ReachedBRElement()) {
-    return CaretPoint(std::move(pointToPutCaret));
-  }
-
-  
-  AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
-                                         &pointToPutCaret);
-  Result<CaretPoint, nsresult> caretPointOrError =
-      WhiteSpaceVisibilityKeeper::DeleteContentNodeAndJoinTextNodesAroundIt(
-          aHTMLEditor,
-          MOZ_KnownLive(*forwardScanFromCaretResult.BRElementPtr()),
-          aCaretPoint, aEditingHost);
-  if (MOZ_UNLIKELY(caretPointOrError.isErr())) {
-    NS_WARNING(
-        "WhiteSpaceVisibilityKeeper::DeleteContentNodeAndJoinTextNodesAroundIt("
-        ") failed");
-    return caretPointOrError.propagateErr();
-  }
-  trackPointToPutCaret.FlushAndStopTracking();
-  caretPointOrError.unwrap().MoveCaretPointTo(
-      pointToPutCaret, aHTMLEditor,
-      {SuggestCaret::OnlyIfHasSuggestion,
-       SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
   return CaretPoint(std::move(pointToPutCaret));
 }
 
