@@ -10965,18 +10965,30 @@ enum class MNarrowingOp : uint8_t { None, To16, To8 };
 
 
 
+struct TrapSiteInfo {
+  wasm::BytecodeOffset offset;
+  explicit TrapSiteInfo(wasm::BytecodeOffset offset_) : offset(offset_) {}
+};
+
+typedef mozilla::Maybe<TrapSiteInfo> MaybeTrapSiteInfo;
+
+
+
 
 class MWasmLoadField : public MUnaryInstruction, public NoTypePolicy::Data {
   uint32_t offset_;
   MWideningOp wideningOp_;
   AliasSet aliases_;
+  MaybeTrapSiteInfo maybeTrap_;
 
   MWasmLoadField(MDefinition* obj, uint32_t offset, MIRType type,
-                 MWideningOp wideningOp, AliasSet aliases)
+                 MWideningOp wideningOp, AliasSet aliases,
+                 MaybeTrapSiteInfo maybeTrap = mozilla::Nothing())
       : MUnaryInstruction(classOpcode, obj),
         offset_(offset),
         wideningOp_(wideningOp),
-        aliases_(aliases) {
+        aliases_(aliases),
+        maybeTrap_(maybeTrap) {
     
     
     MOZ_ASSERT_IF(wideningOp != MWideningOp::None, type == MIRType::Int32);
@@ -10989,6 +11001,9 @@ class MWasmLoadField : public MUnaryInstruction, public NoTypePolicy::Data {
             AliasSet::Load(AliasSet::WasmArrayDataPointer).flags() ||
         aliases.flags() == AliasSet::Load(AliasSet::Any).flags());
     setResultType(type);
+    if (maybeTrap_) {
+      setGuard();
+    }
   }
 
  public:
@@ -10998,6 +11013,7 @@ class MWasmLoadField : public MUnaryInstruction, public NoTypePolicy::Data {
 
   uint32_t offset() const { return offset_; }
   MWideningOp wideningOp() const { return wideningOp_; }
+  MaybeTrapSiteInfo maybeTrap() const { return maybeTrap_; }
   AliasSet getAliasSet() const override { return aliases_; }
   bool congruentTo(const MDefinition* ins) const override {
     
@@ -11031,13 +11047,16 @@ class MWasmLoadFieldKA : public MBinaryInstruction, public NoTypePolicy::Data {
   uint32_t offset_;
   MWideningOp wideningOp_;
   AliasSet aliases_;
+  MaybeTrapSiteInfo maybeTrap_;
 
   MWasmLoadFieldKA(MDefinition* ka, MDefinition* obj, uint32_t offset,
-                   MIRType type, MWideningOp wideningOp, AliasSet aliases)
+                   MIRType type, MWideningOp wideningOp, AliasSet aliases,
+                   MaybeTrapSiteInfo maybeTrap = mozilla::Nothing())
       : MBinaryInstruction(classOpcode, ka, obj),
         offset_(offset),
         wideningOp_(wideningOp),
-        aliases_(aliases) {
+        aliases_(aliases),
+        maybeTrap_(maybeTrap) {
     MOZ_ASSERT_IF(wideningOp != MWideningOp::None, type == MIRType::Int32);
     MOZ_ASSERT(
         aliases.flags() ==
@@ -11048,6 +11067,9 @@ class MWasmLoadFieldKA : public MBinaryInstruction, public NoTypePolicy::Data {
             AliasSet::Load(AliasSet::WasmArrayDataArea).flags() ||
         aliases.flags() == AliasSet::Load(AliasSet::Any).flags());
     setResultType(type);
+    if (maybeTrap_) {
+      setGuard();
+    }
   }
 
  public:
@@ -11057,6 +11079,7 @@ class MWasmLoadFieldKA : public MBinaryInstruction, public NoTypePolicy::Data {
 
   uint32_t offset() const { return offset_; }
   MWideningOp wideningOp() const { return wideningOp_; }
+  MaybeTrapSiteInfo maybeTrap() const { return maybeTrap_; }
 
   AliasSet getAliasSet() const override { return aliases_; }
 };
@@ -11072,14 +11095,17 @@ class MWasmStoreFieldKA : public MTernaryInstruction,
   uint32_t offset_;
   MNarrowingOp narrowingOp_;
   AliasSet aliases_;
+  MaybeTrapSiteInfo maybeTrap_;
 
   MWasmStoreFieldKA(MDefinition* ka, MDefinition* obj, uint32_t offset,
                     MDefinition* value, MNarrowingOp narrowingOp,
-                    AliasSet aliases)
+                    AliasSet aliases,
+                    MaybeTrapSiteInfo maybeTrap = mozilla::Nothing())
       : MTernaryInstruction(classOpcode, ka, obj, value),
         offset_(offset),
         narrowingOp_(narrowingOp),
-        aliases_(aliases) {
+        aliases_(aliases),
+        maybeTrap_(maybeTrap) {
     MOZ_ASSERT(value->type() != MIRType::RefOrNull);
     
     
@@ -11093,6 +11119,9 @@ class MWasmStoreFieldKA : public MTernaryInstruction,
         aliases.flags() ==
             AliasSet::Store(AliasSet::WasmArrayDataArea).flags() ||
         aliases.flags() == AliasSet::Store(AliasSet::Any).flags());
+    if (maybeTrap_) {
+      setGuard();
+    }
   }
 
  public:
@@ -11102,6 +11131,7 @@ class MWasmStoreFieldKA : public MTernaryInstruction,
 
   uint32_t offset() const { return offset_; }
   MNarrowingOp narrowingOp() const { return narrowingOp_; }
+  MaybeTrapSiteInfo maybeTrap() const { return maybeTrap_; }
 
   AliasSet getAliasSet() const override { return aliases_; }
 };
