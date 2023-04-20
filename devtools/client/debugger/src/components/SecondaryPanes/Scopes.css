@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 .secondary-panes .map-scopes-header {
   padding-inline-end: 3px;
@@ -9,7 +9,7 @@
 .secondary-panes .header-buttons .img.shortcuts {
   width: 14px;
   height: 14px;
-  
+  /* Better vertical centering of the icon */
   margin-top: -2px;
 }
 
@@ -78,7 +78,7 @@ html[dir="rtl"] .object-node {
 }
 
 .scopes-list .scope-type-toggle button {
-  
+  /* Override color so that the link doesn't turn purple */
   color: var(--theme-body-color);
   font-size: inherit;
   text-decoration: underline;
@@ -91,6 +91,7 @@ html[dir="rtl"] .object-node {
 
 .scopes-list .tree.object-inspector .node.object-node {
   display: flex;
+  align-items: center;
 }
 
 .scopes-list .tree.object-inspector .tree-node button.arrow,
