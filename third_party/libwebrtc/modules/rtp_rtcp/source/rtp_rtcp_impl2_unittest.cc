@@ -511,18 +511,15 @@ TEST_P(RtpRtcpImpl2Test, NoSrBeforeMedia) {
   
   
   AdvanceTime(kDefaultReportInterval / 2);
-  int64_t current_time = time_controller_.GetClock()->TimeInMilliseconds();
-  EXPECT_EQ(-1, sender_.RtcpSent().first_packet_time_ms);
-  EXPECT_EQ(receiver_.RtcpSent().first_packet_time_ms, current_time);
+  EXPECT_EQ(sender_.transport_.NumRtcpSent(), 0u);
+  EXPECT_EQ(receiver_.transport_.NumRtcpSent(), 1u);
 
   
   EXPECT_TRUE(SendFrame(&sender_, sender_video_.get(), kBaseLayerTid));
-  EXPECT_EQ(sender_.RtcpSent().first_packet_time_ms, current_time);
+  EXPECT_EQ(sender_.transport_.NumRtcpSent(), 1u);
 }
 
 TEST_P(RtpRtcpImpl2Test, RtcpPacketTypeCounter_Nack) {
-  EXPECT_EQ(-1, receiver_.RtcpSent().first_packet_time_ms);
-  EXPECT_EQ(-1, sender_.RtcpReceived().first_packet_time_ms);
   EXPECT_EQ(0U, sender_.RtcpReceived().nack_packets);
   EXPECT_EQ(0U, receiver_.RtcpSent().nack_packets);
 
@@ -532,11 +529,9 @@ TEST_P(RtpRtcpImpl2Test, RtcpPacketTypeCounter_Nack) {
   EXPECT_EQ(0, receiver_.impl_->SendNACK(nack_list, kNackLength));
   AdvanceTime(kOneWayNetworkDelay);
   EXPECT_EQ(1U, receiver_.RtcpSent().nack_packets);
-  EXPECT_GT(receiver_.RtcpSent().first_packet_time_ms, -1);
 
   
   EXPECT_EQ(1U, sender_.RtcpReceived().nack_packets);
-  EXPECT_GT(sender_.RtcpReceived().first_packet_time_ms, -1);
 }
 
 TEST_P(RtpRtcpImpl2Test, AddStreamDataCounters) {
@@ -693,17 +688,14 @@ TEST_P(RtpRtcpImpl2Test, ConfigurableRtcpReportInterval) {
   EXPECT_TRUE(SendFrame(&sender_, sender_video_.get(), kBaseLayerTid));
 
   
-  EXPECT_EQ(sender_.RtcpSent().first_packet_time_ms, -1);
   EXPECT_EQ(0u, sender_.transport_.NumRtcpSent());
 
   
   AdvanceTime(kVideoReportInterval / 2 - TimeDelta::Millis(1));
-  EXPECT_EQ(sender_.RtcpSent().first_packet_time_ms, -1);
   EXPECT_EQ(sender_.transport_.NumRtcpSent(), 0u);
 
   
   AdvanceTime(TimeDelta::Millis(1));
-  EXPECT_GT(sender_.RtcpSent().first_packet_time_ms, -1);
   EXPECT_EQ(sender_.transport_.NumRtcpSent(), 1u);
 
   EXPECT_TRUE(SendFrame(&sender_, sender_video_.get(), kBaseLayerTid));
