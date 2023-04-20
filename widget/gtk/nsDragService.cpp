@@ -1401,7 +1401,7 @@ GtkTargetList* nsDragService::GetSourceList(void) {
           TargetArrayAddTarget(targetArray, gTextUriListType);
         }
         
-        else if (widget::GdkIsX11Display() &&
+        else if (widget::GdkIsX11Display() && !widget::IsXWaylandProtocol() &&
                  flavorStr.EqualsLiteral(kFilePromiseMime)) {
           TargetArrayAddTarget(targetArray, gXdndDirectSaveType);
         }
