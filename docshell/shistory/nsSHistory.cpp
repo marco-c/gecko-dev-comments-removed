@@ -227,12 +227,22 @@ void nsSHistory::EvictContentViewerForEntry(nsISHEntry* aEntry) {
     viewer->Destroy();
   } else if (nsCOMPtr<SessionHistoryEntry> she = do_QueryInterface(aEntry)) {
     if (RefPtr<nsFrameLoader> frameLoader = she->GetFrameLoader()) {
-      MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
-              ("nsSHistory::EvictContentViewerForEntry "
-               "destroying an nsFrameLoader."));
-      NotifyListenersContentViewerEvicted(1);
-      she->SetFrameLoader(nullptr);
-      frameLoader->Destroy();
+      nsCOMPtr<nsFrameLoaderOwner> owner =
+          do_QueryInterface(frameLoader->GetOwnerContent());
+      RefPtr<nsFrameLoader> currentFrameLoader;
+      if (owner) {
+        currentFrameLoader = owner->GetFrameLoader();
+      }
+
+      
+      if (currentFrameLoader != frameLoader) {
+        MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
+                ("nsSHistory::EvictContentViewerForEntry "
+                 "destroying an nsFrameLoader."));
+        NotifyListenersContentViewerEvicted(1);
+        she->SetFrameLoader(nullptr);
+        frameLoader->Destroy();
+      }
     }
   }
 
@@ -1296,6 +1306,11 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
     
 
     frameLoaderOwner->RestoreFrameLoaderFromBFCache(aFrameLoader);
+    
+    
+    
+    
+    shistory->EvictOutOfRangeContentViewers(indexOfHistoryLoad);
 
     
     
