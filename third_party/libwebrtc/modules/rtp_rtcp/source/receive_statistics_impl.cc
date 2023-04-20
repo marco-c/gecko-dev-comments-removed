@@ -142,7 +142,6 @@ void StreamStatisticianImpl::UpdateCounters(const RtpPacketReceived& packet) {
   }
   last_received_timestamp_ = packet.Timestamp();
   last_receive_time_ms_ = now_ms;
-  last_payload_type_frequency_ = packet.payload_type_frequency();
 }
 
 void StreamStatisticianImpl::UpdateJitter(const RtpPacketReceived& packet,
@@ -156,6 +155,8 @@ void StreamStatisticianImpl::UpdateJitter(const RtpPacketReceived& packet,
 
   time_diff_samples = std::abs(time_diff_samples);
 
+  ReviseFrequencyAndJitter(packet.payload_type_frequency());
+
   
   
   
@@ -163,6 +164,38 @@ void StreamStatisticianImpl::UpdateJitter(const RtpPacketReceived& packet,
     
     int32_t jitter_diff_q4 = (time_diff_samples << 4) - jitter_q4_;
     jitter_q4_ += ((jitter_diff_q4 + 8) >> 4);
+  }
+}
+
+void StreamStatisticianImpl::ReviseFrequencyAndJitter(
+    int payload_type_frequency) {
+  if (payload_type_frequency == last_payload_type_frequency_) {
+    return;
+  }
+
+  if (payload_type_frequency != 0) {
+    if (last_payload_type_frequency_ != 0) {
+      
+      
+      
+      
+
+      
+      
+      
+      
+
+      
+      
+      jitter_q4_ = static_cast<int>(static_cast<uint64_t>(jitter_q4_) *
+                                    payload_type_frequency /
+                                    last_payload_type_frequency_);
+    }
+    
+    
+
+    
+    last_payload_type_frequency_ = payload_type_frequency;
   }
 }
 
