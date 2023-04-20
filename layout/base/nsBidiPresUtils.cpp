@@ -2145,13 +2145,30 @@ nsresult nsBidiPresUtils::ProcessText(const char16_t* aText, size_t aLength,
                                       nsBidiPositionResolve* aPosResolve,
                                       int32_t aPosResolveCount, nscoord* aWidth,
                                       BidiEngine* aBidiEngine) {
-  NS_ASSERTION((aPosResolve == nullptr) != (aPosResolveCount > 0),
-               "Incorrect aPosResolve / aPosResolveCount arguments");
+  MOZ_ASSERT((aPosResolve == nullptr) != (aPosResolveCount > 0),
+             "Incorrect aPosResolve / aPosResolveCount arguments");
 
   
   
   MOZ_ASSERT(nsDependentString(aText, aLength).FindCharInSet(kSeparators) ==
              kNotFound);
+
+  for (int nPosResolve = 0; nPosResolve < aPosResolveCount; ++nPosResolve) {
+    aPosResolve[nPosResolve].visualIndex = kNotFound;
+    aPosResolve[nPosResolve].visualLeftTwips = kNotFound;
+    aPosResolve[nPosResolve].visualWidth = kNotFound;
+  }
+
+  
+  
+  if (aLength == 1 ||
+      (aLength == 2 && NS_IS_SURROGATE_PAIR(aText[0], aText[1])) ||
+      (aBaseLevel.Direction() == BidiDirection::LTR &&
+       !encoding_mem_is_utf16_bidi(aText, aLength))) {
+    ProcessSimpleRun(aText, aLength, aBaseLevel, aPresContext, aprocessor,
+                     aMode, aPosResolve, aPosResolveCount, aWidth);
+    return NS_OK;
+  }
 
   if (aBidiEngine->SetParagraph(Span(aText, aLength), aBaseLevel).isErr()) {
     return NS_ERROR_FAILURE;
@@ -2162,22 +2179,6 @@ nsresult nsBidiPresUtils::ProcessText(const char16_t* aText, size_t aLength,
     return NS_ERROR_FAILURE;
   }
   int32_t runCount = result.unwrap();
-
-  for (int nPosResolve = 0; nPosResolve < aPosResolveCount; ++nPosResolve) {
-    aPosResolve[nPosResolve].visualIndex = kNotFound;
-    aPosResolve[nPosResolve].visualLeftTwips = kNotFound;
-    aPosResolve[nPosResolve].visualWidth = kNotFound;
-  }
-
-  
-  
-  if (runCount == 1 &&
-      (aLength == 1 ||
-       (aLength == 2 && NS_IS_SURROGATE_PAIR(aText[0], aText[1])))) {
-    ProcessOneChar(aText, aLength, aBaseLevel, aPresContext, aprocessor, aMode,
-                   aPosResolve, aPosResolveCount, aWidth, aBidiEngine);
-    return NS_OK;
-  }
 
   nscoord xOffset = 0;
   nscoord width, xEndRun = 0;
@@ -2355,50 +2356,52 @@ nsresult nsBidiPresUtils::ProcessText(const char16_t* aText, size_t aLength,
   return NS_OK;
 }
 
-void nsBidiPresUtils::ProcessOneChar(const char16_t* aText, size_t aLength,
-                                     BidiEmbeddingLevel aBaseLevel,
-                                     nsPresContext* aPresContext,
-                                     BidiProcessor& aprocessor, Mode aMode,
-                                     nsBidiPositionResolve* aPosResolve,
-                                     int32_t aPosResolveCount, nscoord* aWidth,
-                                     BidiEngine* aBidiEngine) {
-  nscoord width;
-  int32_t start = 0, limit;
-  BidiClass bidiClass;
-  BidiClass prevClass = BidiClass::LeftToRight;
 
-  BidiEmbeddingLevel level;
-  aBidiEngine->GetLogicalRun(0, &limit, &level);
-  MOZ_ASSERT(limit == int32_t(aLength), "cannot have multiple bidi runs");
 
-  int32_t subRunLength = aLength;
-  int32_t subRunCount = 1;
-  CalculateBidiClass(aText, start, aLength, limit, subRunLength, subRunCount,
-                     bidiClass, prevClass);
-  MOZ_ASSERT(subRunCount == 1, "cannot split single-character run");
+void nsBidiPresUtils::ProcessSimpleRun(const char16_t* aText, size_t aLength,
+                                       BidiEmbeddingLevel aBaseLevel,
+                                       nsPresContext* aPresContext,
+                                       BidiProcessor& aprocessor, Mode aMode,
+                                       nsBidiPositionResolve* aPosResolve,
+                                       int32_t aPosResolveCount,
+                                       nscoord* aWidth) {
+  
+  uint32_t ch = aText[0];
+  if (aLength > 1 && NS_IS_HIGH_SURROGATE(ch) &&
+      NS_IS_LOW_SURROGATE(aText[1])) {
+    ch = SURROGATE_TO_UCS4(aText[0], aText[1]);
+  }
+  BidiClass bidiClass = intl::UnicodeProperties::GetBidiClass(ch);
 
-  nsAutoString runVisualText;
-  runVisualText.Assign(aText, aLength);
+  nsAutoString runVisualText(aText, aLength);
+  int32_t length = aLength;
   if (aPresContext) {
-    FormatUnicodeText(aPresContext, runVisualText.BeginWriting(), subRunLength,
+    FormatUnicodeText(aPresContext, runVisualText.BeginWriting(), length,
                       bidiClass);
   }
 
-  BidiDirection dir = level.Direction();
-  aprocessor.SetText(runVisualText.get(), aLength, dir);
-  width = aprocessor.GetWidth();
+  BidiDirection dir = bidiClass == BidiClass::RightToLeft ||
+                              bidiClass == BidiClass::RightToLeftArabic
+                          ? BidiDirection::RTL
+                          : BidiDirection::LTR;
+  aprocessor.SetText(runVisualText.get(), length, dir);
 
   if (aMode == MODE_DRAW) {
     aprocessor.DrawText(0);
   }
+
+  if (!aWidth && !aPosResolve) {
+    return;
+  }
+
+  nscoord width = aprocessor.GetWidth();
 
   for (int nPosResolve = 0; nPosResolve < aPosResolveCount; ++nPosResolve) {
     nsBidiPositionResolve* posResolve = &aPosResolve[nPosResolve];
     if (posResolve->visualLeftTwips != kNotFound) {
       continue;
     }
-    if (0 <= posResolve->logicalIndex &&
-        subRunLength > posResolve->logicalIndex) {
+    if (0 <= posResolve->logicalIndex && length > posResolve->logicalIndex) {
       posResolve->visualIndex = 0;
       posResolve->visualLeftTwips = 0;
       posResolve->visualWidth = width;
