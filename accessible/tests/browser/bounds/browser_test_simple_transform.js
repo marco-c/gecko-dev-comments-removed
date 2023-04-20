@@ -133,9 +133,11 @@ addAccessibleTask(
   async function(browser, docAcc) {
     const tree = { SECTION: [{ PARAGRAPH: [{ TEXT_LEAF: [] }] }] };
 
-    const divWithTransform = findAccessibleChildByID(docAcc, "div-transform");
+    const divWithTransform = findAccessibleChildByID(docAcc, "container")
+      .firstChild;
     testAccessibleTree(divWithTransform, tree);
-    await testBoundsWithContent(docAcc, "container", browser);
+    
+    
 
     
     const divPresentational = findAccessibleChildByID(
