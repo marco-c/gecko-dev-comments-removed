@@ -300,7 +300,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde_json/1.0.91")]
+#![doc(html_root_url = "https://docs.rs/serde_json/1.0.93")]
 
 #![allow(
     clippy::collapsible_else_if,
