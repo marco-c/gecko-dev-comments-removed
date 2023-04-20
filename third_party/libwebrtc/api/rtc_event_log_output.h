@@ -13,6 +13,8 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
+
 namespace webrtc {
 
 
@@ -32,6 +34,11 @@ class RtcEventLogOutput {
   
   
   virtual bool Write(const std::string& output) = 0;
+  
+  
+  virtual bool Write(absl::string_view output) {
+    return Write(std::string(output));
+  }
 
   
   virtual void Flush() {}
