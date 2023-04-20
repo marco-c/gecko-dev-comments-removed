@@ -150,6 +150,14 @@ struct FunctionCall {
   size_t stackArgAreaSize;
 };
 
+enum class PreBarrierKind {
+  
+  None,
+  
+  
+  Normal,
+};
+
 enum class PostBarrierKind {
   
   
@@ -1306,7 +1314,8 @@ struct BaseCompiler final {
   
   [[nodiscard]] bool emitBarrieredStore(const Maybe<RegRef>& object,
                                         RegPtr valueAddr, RegRef value,
-                                        PostBarrierKind kind);
+                                        PreBarrierKind preBarrierKind,
+                                        PostBarrierKind postBarrierKind);
 
   
   
@@ -1683,10 +1692,12 @@ struct BaseCompiler final {
   template <typename NullCheckPolicy>
   [[nodiscard]] bool emitGcStructSet(RegRef object, RegPtr areaBase,
                                      uint32_t areaOffset, FieldType fieldType,
-                                     AnyReg value);
+                                     AnyReg value,
+                                     PreBarrierKind preBarrierKind);
 
   [[nodiscard]] bool emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
-                                    const ArrayType& array, AnyReg value);
+                                    const ArrayType& array, AnyReg value,
+                                    PreBarrierKind preBarrierKind);
 #endif  
 
 #ifdef ENABLE_WASM_SIMD

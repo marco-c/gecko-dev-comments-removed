@@ -4465,6 +4465,7 @@ bool BaseCompiler::emitThrow() {
         pushPtr(data);
         
         if (!emitBarrieredStore(Some(exn), valueAddr, rv,
+                                PreBarrierKind::Normal,
                                 PostBarrierKind::Imprecise)) {
           return false;
         }
@@ -5380,7 +5381,7 @@ bool BaseCompiler::emitSetGlobal() {
       }
       RegRef rv = popRef();
       
-      if (!emitBarrieredStore(Nothing(), valueAddr, rv,
+      if (!emitBarrieredStore(Nothing(), valueAddr, rv, PreBarrierKind::Normal,
                               PostBarrierKind::Imprecise)) {
         return false;
       }
@@ -6194,7 +6195,7 @@ bool BaseCompiler::emitTableSetAnyRef(uint32_t tableIndex) {
   value = popRef();
 #endif
 
-  if (!emitBarrieredStore(Nothing(), valueAddr, value,
+  if (!emitBarrieredStore(Nothing(), valueAddr, value, PreBarrierKind::Normal,
                           PostBarrierKind::Precise)) {
     return false;
   }
@@ -6310,18 +6311,21 @@ bool BaseCompiler::emitPostBarrierPrecise(const Maybe<RegRef>& object,
 
 bool BaseCompiler::emitBarrieredStore(const Maybe<RegRef>& object,
                                       RegPtr valueAddr, RegRef value,
-                                      PostBarrierKind kind) {
+                                      PreBarrierKind preBarrierKind,
+                                      PostBarrierKind postBarrierKind) {
   
   
   ASSERT_ANYREF_IS_JSOBJECT;
 
   
-  emitPreBarrier(valueAddr);
+  if (preBarrierKind == PreBarrierKind::Normal) {
+    emitPreBarrier(valueAddr);
+  }
 
   
   
   RegRef prevValue;
-  if (kind == PostBarrierKind::Precise) {
+  if (postBarrierKind == PostBarrierKind::Precise) {
     prevValue = needRef();
     masm.loadPtr(Address(valueAddr, 0), prevValue);
   }
@@ -6330,7 +6334,7 @@ bool BaseCompiler::emitBarrieredStore(const Maybe<RegRef>& object,
   masm.storePtr(value, Address(valueAddr, 0));
 
   
-  if (kind == PostBarrierKind::Precise) {
+  if (postBarrierKind == PostBarrierKind::Precise) {
     return emitPostBarrierPrecise(object, valueAddr, prevValue, value);
   }
   return emitPostBarrierImprecise(object, valueAddr, value);
@@ -6580,7 +6584,8 @@ void BaseCompiler::emitGcSetScalar(const T& dst, FieldType type, AnyReg value) {
 template <typename NullCheckPolicy>
 bool BaseCompiler::emitGcStructSet(RegRef object, RegPtr areaBase,
                                    uint32_t areaOffset, FieldType fieldType,
-                                   AnyReg value) {
+                                   AnyReg value,
+                                   PreBarrierKind preBarrierKind) {
   
   if (!fieldType.isRefRepr()) {
     emitGcSetScalar<Address, NullCheckPolicy>(Address(areaBase, areaOffset),
@@ -6598,7 +6603,7 @@ bool BaseCompiler::emitGcStructSet(RegRef object, RegPtr areaBase,
   NullCheckPolicy::emitNullCheck(this, object);
 
   
-  if (!emitBarrieredStore(Some(object), valueAddr, value.ref(),
+  if (!emitBarrieredStore(Some(object), valueAddr, value.ref(), preBarrierKind,
                           PostBarrierKind::Imprecise)) {
     return false;
   }
@@ -6608,7 +6613,8 @@ bool BaseCompiler::emitGcStructSet(RegRef object, RegPtr areaBase,
 }
 
 bool BaseCompiler::emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
-                                  const ArrayType& arrayType, AnyReg value) {
+                                  const ArrayType& arrayType, AnyReg value,
+                                  PreBarrierKind preBarrierKind) {
   
   
   
@@ -6647,7 +6653,7 @@ bool BaseCompiler::emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
   pushI32(index);
 
   
-  if (!emitBarrieredStore(Some(object), valueAddr, value.ref(),
+  if (!emitBarrieredStore(Some(object), valueAddr, value.ref(), preBarrierKind,
                           PostBarrierKind::Imprecise)) {
     return false;
   }
@@ -6736,7 +6742,8 @@ bool BaseCompiler::emitStructNew() {
 
       
       if (!emitGcStructSet<NoNullCheck>(object, outlineBase, areaOffset,
-                                        fieldType, value)) {
+                                        fieldType, value,
+                                        PreBarrierKind::None)) {
         return false;
       }
     } else {
@@ -6744,7 +6751,7 @@ bool BaseCompiler::emitStructNew() {
       if (!emitGcStructSet<NoNullCheck>(
               object, RegPtr(object),
               WasmStructObject::offsetOfInlineData() + areaOffset, fieldType,
-              value)) {
+              value, PreBarrierKind::None)) {
         return false;
       }
     }
@@ -6862,7 +6869,8 @@ bool BaseCompiler::emitStructSet() {
     masm.loadPtr(Address(object, WasmStructObject::offsetOfOutlineData()),
                  outlineBase);
     if (!emitGcStructSet<NoNullCheck>(object, outlineBase, areaOffset,
-                                      fieldType, value)) {
+                                      fieldType, value,
+                                      PreBarrierKind::Normal)) {
       return false;
     }
   } else {
@@ -6870,7 +6878,7 @@ bool BaseCompiler::emitStructSet() {
     if (!emitGcStructSet<SignalNullCheck>(
             object, RegPtr(object),
             WasmStructObject::offsetOfInlineData() + areaOffset, fieldType,
-            value)) {
+            value, PreBarrierKind::Normal)) {
       return false;
     }
   }
@@ -6935,7 +6943,8 @@ bool BaseCompiler::emitArrayNew() {
   masm.sub32(Imm32(1), numElements);
 
   
-  if (!emitGcArraySet(rp, rdata, numElements, arrayType, value)) {
+  if (!emitGcArraySet(rp, rdata, numElements, arrayType, value,
+                      PreBarrierKind::None)) {
     return false;
   }
 
@@ -7013,7 +7022,8 @@ bool BaseCompiler::emitArrayNewFixed() {
     if (avoidPreBarrierReg) {
       freePtr(RegPtr(PreBarrierReg));
     }
-    if (!emitGcArraySet(rp, rdata, index, arrayType, value)) {
+    if (!emitGcArraySet(rp, rdata, index, arrayType, value,
+                        PreBarrierKind::None)) {
       return false;
     }
     freeI32(index);
@@ -7169,7 +7179,8 @@ bool BaseCompiler::emitArraySet() {
   
   
   
-  if (!emitGcArraySet(rp, rdata, index, arrayType, value)) {
+  if (!emitGcArraySet(rp, rdata, index, arrayType, value,
+                      PreBarrierKind::Normal)) {
     return false;
   }
 
