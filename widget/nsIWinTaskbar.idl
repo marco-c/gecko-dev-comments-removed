@@ -167,18 +167,6 @@ interface nsIWinTaskbar : nsISupports
 
 
 
-  void prepareFullScreen(in mozIDOMWindow aWindow, in boolean aFullScreen);
 
-  
-
-
-
-
-
-
-
-
-
-
-  [noscript] void prepareFullScreenHWND(in voidPtr aWindow, in boolean aFullScreen);
+  [noscript] void prepareFullScreen(in voidPtr aHWND, in boolean aFullScreen);
 };
