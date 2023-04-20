@@ -1717,7 +1717,13 @@ LayoutDeviceIntRect TextLeafPoint::CharBounds() {
 
     if (mOffset >= 0 &&
         static_cast<uint32_t>(mOffset) >= nsAccUtils::TextLength(local)) {
-      NS_ERROR("Wrong in offset");
+      
+      
+      
+      
+      NS_ASSERTION(
+          static_cast<uint32_t>(mOffset) <= nsAccUtils::TextLength(local),
+          "Wrong in offset");
       return LayoutDeviceIntRect();
     }
 
