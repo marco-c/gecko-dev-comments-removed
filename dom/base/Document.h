@@ -3697,10 +3697,6 @@ class Document : public nsINode,
 
   
   
-  DocumentAutoplayPolicy AutoplayPolicy() const;
-
-  
-  
   
   
   
