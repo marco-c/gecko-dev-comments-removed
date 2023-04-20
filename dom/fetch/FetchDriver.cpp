@@ -1170,14 +1170,6 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest) {
 
   response->InitChannelInfo(channel);
 
-  nsCOMPtr<nsIURI> channelURI;
-  rv = channel->GetURI(getter_AddRefs(channelURI));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    FailWithNetworkError(rv);
-    
-    return rv;
-  }
-
   nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
   
   
@@ -1494,7 +1486,7 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   
   
   nsCOMPtr<nsIURI> uri;
-  MOZ_ALWAYS_SUCCEEDS(aNewChannel->GetURI(getter_AddRefs(uri)));
+  MOZ_ALWAYS_SUCCEEDS(NS_GetFinalChannelURI(aNewChannel, getter_AddRefs(uri)));
 
   nsCOMPtr<nsIURI> uriClone;
   nsresult rv = NS_GetURIWithoutRef(uri, getter_AddRefs(uriClone));

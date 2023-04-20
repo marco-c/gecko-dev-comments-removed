@@ -186,18 +186,16 @@ add_task(async function test_redirect_transform_scheme() {
         scheme: "moz-extension",
         host: location.hostname,
       });
-      
-      
-      
-      
-      
-      if (!navigator.userAgent.includes("Android")) {
-        await testFetch(
-          "http://from/war.txt",
-          browser.runtime.getURL("war.txt"),
-          "Scheme change to moz-extension:-URL"
-        );
-      }
+      await testFetch(
+        "http://from/war.txt",
+        browser.runtime.getURL("war.txt"),
+        "Scheme change to moz-extension:-URL"
+      );
+      await testNavigate(
+        "http://from/war.txt",
+        browser.runtime.getURL("war.txt"),
+        "Scheme change to moz-extension:-URL (navigation)"
+      );
       
       
       

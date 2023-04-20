@@ -632,20 +632,7 @@ add_task(async function redirect_request_with_dnr_to_extensionPath() {
     {
       let req = await fetch("http://redir/never_reached", { method: "post" });
       browser.test.assertEq(200, req.status, "redirected to extensionPath");
-      if (navigator.userAgent.includes("Android")) {
-        
-        
-        
-        
-        
-        browser.test.assertTrue(req.url.endsWith("/war.txt?1"), req.url);
-        browser.test.assertFalse(
-          req.url.startsWith(location.origin),
-          "Work-around for bug 1802385 only needed if URL is not moz-extension:"
-        );
-      } else {
-        browser.test.assertEq(`${location.origin}/war.txt?1`, req.url);
-      }
+      browser.test.assertEq(`${location.origin}/war.txt?1`, req.url);
       browser.test.assertEq("war_ext_res", await req.text());
     }
     
