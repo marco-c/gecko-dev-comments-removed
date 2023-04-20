@@ -135,7 +135,7 @@ void AndroidVoipClient::Init(
   
   
   
-  voip_thread_->Invoke<void>(RTC_FROM_HERE, [this, &config] {
+  voip_thread_->BlockingCall([this, &config] {
     RTC_DCHECK_RUN_ON(voip_thread_.get());
 
     supported_codecs_ = config.encoder_factory->GetSupportedEncoders();
@@ -145,7 +145,7 @@ void AndroidVoipClient::Init(
 }
 
 AndroidVoipClient::~AndroidVoipClient() {
-  voip_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
+  voip_thread_->BlockingCall([this] {
     RTC_DCHECK_RUN_ON(voip_thread_.get());
 
     JavaVM* jvm = nullptr;

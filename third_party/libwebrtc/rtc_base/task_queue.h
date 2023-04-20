@@ -90,7 +90,6 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
   
   webrtc::TaskQueueBase* Get() { return impl_; }
 
-  
   void PostTask(absl::AnyInvocable<void() &&> task) {
     impl_->PostTask(std::move(task));
   }

@@ -28,7 +28,6 @@
 #include "pc/rtp_media_utils.h"
 #include "pc/session_description.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
 
@@ -185,57 +184,42 @@ RTCError RtpTransceiver::CreateChannel(
     
     
     
-    new_channel =
-        context()
-            ->worker_thread()
-            ->Invoke<std::unique_ptr<cricket::VoiceChannel>>(
-                RTC_FROM_HERE, [&]() -> std::unique_ptr<cricket::VoiceChannel> {
-                  RTC_DCHECK_RUN_ON(context()->worker_thread());
+    context()->worker_thread()->BlockingCall([&] {
+      RTC_DCHECK_RUN_ON(context()->worker_thread());
 
-                  cricket::VoiceMediaChannel* media_channel =
-                      media_engine()->voice().CreateMediaChannel(
-                          call_ptr, media_config, audio_options,
-                          crypto_options);
-                  if (!media_channel) {
-                    return nullptr;
-                  }
+      cricket::VoiceMediaChannel* media_channel =
+          media_engine()->voice().CreateMediaChannel(
+              call_ptr, media_config, audio_options, crypto_options);
+      if (!media_channel) {
+        return;
+      }
 
-                  auto voice_channel = std::make_unique<cricket::VoiceChannel>(
-                      context()->worker_thread(), context()->network_thread(),
-                      context()->signaling_thread(),
-                      absl::WrapUnique(media_channel), mid, srtp_required,
-                      crypto_options, context()->ssrc_generator());
-
-                  return voice_channel;
-                });
+      new_channel = std::make_unique<cricket::VoiceChannel>(
+          context()->worker_thread(), context()->network_thread(),
+          context()->signaling_thread(), absl::WrapUnique(media_channel), mid,
+          srtp_required, crypto_options, context()->ssrc_generator());
+    });
   } else {
     RTC_DCHECK_EQ(cricket::MEDIA_TYPE_VIDEO, media_type());
 
     
     
     
-    new_channel =
-        context()
-            ->worker_thread()
-            ->Invoke<std::unique_ptr<cricket::VideoChannel>>(
-                RTC_FROM_HERE, [&]() -> std::unique_ptr<cricket::VideoChannel> {
-                  RTC_DCHECK_RUN_ON(context()->worker_thread());
-                  cricket::VideoMediaChannel* media_channel =
-                      media_engine()->video().CreateMediaChannel(
-                          call_ptr, media_config, video_options, crypto_options,
-                          video_bitrate_allocator_factory);
-                  if (!media_channel) {
-                    return nullptr;
-                  }
+    context()->worker_thread()->BlockingCall([&] {
+      RTC_DCHECK_RUN_ON(context()->worker_thread());
+      cricket::VideoMediaChannel* media_channel =
+          media_engine()->video().CreateMediaChannel(
+              call_ptr, media_config, video_options, crypto_options,
+              video_bitrate_allocator_factory);
+      if (!media_channel) {
+        return;
+      }
 
-                  auto video_channel = std::make_unique<cricket::VideoChannel>(
-                      context()->worker_thread(), context()->network_thread(),
-                      context()->signaling_thread(),
-                      absl::WrapUnique(media_channel), mid, srtp_required,
-                      crypto_options, context()->ssrc_generator());
-
-                  return video_channel;
-                });
+      new_channel = std::make_unique<cricket::VideoChannel>(
+          context()->worker_thread(), context()->network_thread(),
+          context()->signaling_thread(), absl::WrapUnique(media_channel), mid,
+          srtp_required, crypto_options, context()->ssrc_generator());
+    });
   }
   if (!new_channel) {
     
@@ -274,7 +258,7 @@ void RtpTransceiver::SetChannel(
   
   
   
-  context()->network_thread()->Invoke<void>(RTC_FROM_HERE, [&]() {
+  context()->network_thread()->BlockingCall([&]() {
     if (channel_) {
       channel_->SetFirstPacketReceivedCallback(nullptr);
       channel_->SetRtpTransport(nullptr);
@@ -310,7 +294,7 @@ void RtpTransceiver::ClearChannel() {
   }
   std::unique_ptr<cricket::ChannelInterface> channel_to_delete;
 
-  context()->network_thread()->Invoke<void>(RTC_FROM_HERE, [&]() {
+  context()->network_thread()->BlockingCall([&]() {
     if (channel_) {
       channel_->SetFirstPacketReceivedCallback(nullptr);
       channel_->SetRtpTransport(nullptr);
@@ -331,7 +315,7 @@ void RtpTransceiver::PushNewMediaChannelAndDeleteChannel(
   if (!channel_to_delete && senders_.empty() && receivers_.empty()) {
     return;
   }
-  context()->worker_thread()->Invoke<void>(RTC_FROM_HERE, [&]() {
+  context()->worker_thread()->BlockingCall([&]() {
     
     auto* media_channel = channel_ ? channel_->media_channel() : nullptr;
     for (const auto& sender : senders_) {
@@ -399,7 +383,7 @@ bool RtpTransceiver::RemoveReceiver(RtpReceiverInterface* receiver) {
   }
 
   (*it)->internal()->Stop();
-  context()->worker_thread()->Invoke<void>(RTC_FROM_HERE, [&]() {
+  context()->worker_thread()->BlockingCall([&]() {
     
     (*it)->internal()->SetMediaChannel(nullptr);
   });
@@ -533,7 +517,7 @@ void RtpTransceiver::StopSendingAndReceiving() {
   for (const auto& receiver : receivers_)
     receiver->internal()->Stop();
 
-  context()->worker_thread()->Invoke<void>(RTC_FROM_HERE, [&]() {
+  context()->worker_thread()->BlockingCall([&]() {
     
     for (const auto& receiver : receivers_)
       receiver->internal()->SetMediaChannel(nullptr);

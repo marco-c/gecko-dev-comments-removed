@@ -349,7 +349,8 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
 
   
   template <typename ReturnT>
-  ReturnT Invoke(const Location& posted_from, FunctionView<ReturnT()> functor) {
+  [[deprecated]] ReturnT Invoke(const Location& ,
+                                FunctionView<ReturnT()> functor) {
     return BlockingCall(functor);
   }
 

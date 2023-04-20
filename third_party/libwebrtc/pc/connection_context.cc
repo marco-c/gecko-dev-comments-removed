@@ -167,13 +167,13 @@ ConnectionContext::ConnectionContext(
   if (media_engine_) {
     
     
-    worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] { media_engine_->Init(); });
+    worker_thread_->BlockingCall([&] { media_engine_->Init(); });
   }
 }
 
 ConnectionContext::~ConnectionContext() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
-  worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+  worker_thread_->BlockingCall([&] {
     RTC_DCHECK_RUN_ON(worker_thread());
     
     

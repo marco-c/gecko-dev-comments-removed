@@ -392,26 +392,22 @@ void PeerConnectionDelegateAdapter::OnRemoveTrack(
 
 - (RTC_OBJC_TYPE(RTCSessionDescription) *)localDescription {
   
-  return _peerConnection->signaling_thread()->Invoke<RTC_OBJC_TYPE(RTCSessionDescription) *>(
-      RTC_FROM_HERE, [self] {
-        const webrtc::SessionDescriptionInterface *description =
-            _peerConnection->local_description();
-        return description ?
-            [[RTC_OBJC_TYPE(RTCSessionDescription) alloc] initWithNativeDescription:description] :
-            nil;
-      });
+  return _peerConnection->signaling_thread()->BlockingCall([self] {
+    const webrtc::SessionDescriptionInterface *description = _peerConnection->local_description();
+    return description ?
+        [[RTC_OBJC_TYPE(RTCSessionDescription) alloc] initWithNativeDescription:description] :
+        nil;
+  });
 }
 
 - (RTC_OBJC_TYPE(RTCSessionDescription) *)remoteDescription {
   
-  return _peerConnection->signaling_thread()->Invoke<RTC_OBJC_TYPE(RTCSessionDescription) *>(
-      RTC_FROM_HERE, [self] {
-        const webrtc::SessionDescriptionInterface *description =
-            _peerConnection->remote_description();
-        return description ?
-            [[RTC_OBJC_TYPE(RTCSessionDescription) alloc] initWithNativeDescription:description] :
-            nil;
-      });
+  return _peerConnection->signaling_thread()->BlockingCall([self] {
+    const webrtc::SessionDescriptionInterface *description = _peerConnection->remote_description();
+    return description ?
+        [[RTC_OBJC_TYPE(RTCSessionDescription) alloc] initWithNativeDescription:description] :
+        nil;
+  });
 }
 
 - (RTCSignalingState)signalingState {
