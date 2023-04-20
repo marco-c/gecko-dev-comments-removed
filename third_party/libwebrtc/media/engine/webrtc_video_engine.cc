@@ -416,6 +416,28 @@ MergeInfoAboutOutboundRtpSubstreams(
   return rtp_substreams;
 }
 
+bool IsActiveFromEncodings(
+    absl::optional<uint32_t> ssrc,
+    const std::vector<webrtc::RtpEncodingParameters>& encodings) {
+  if (ssrc.has_value()) {
+    
+    
+    auto encoding_it = std::find_if(
+        encodings.begin(), encodings.end(),
+        [ssrc = ssrc.value()](const webrtc::RtpEncodingParameters& encoding) {
+          return encoding.ssrc.has_value() && encoding.ssrc.value() == ssrc;
+        });
+    return encoding_it != encodings.end() ? encoding_it->active : false;
+  }
+  
+  for (const auto& encoding : encodings) {
+    if (encoding.active) {
+      return true;
+    }
+  }
+  return false;
+}
+
 }  
 
 
@@ -2629,18 +2651,14 @@ WebRtcVideoChannel::WebRtcVideoSendStream::GetPerLayerVideoSenderInfos(
 
     
     
+    
+    
     if (stats.substreams.empty()) {
       for (uint32_t ssrc : parameters_.config.rtp.ssrcs) {
         common_info.add_ssrc(ssrc);
-        auto encoding_it = std::find_if(
-            rtp_parameters_.encodings.begin(), rtp_parameters_.encodings.end(),
-            [&ssrc](const webrtc::RtpEncodingParameters& parameters) {
-              return parameters.ssrc && parameters.ssrc == ssrc;
-            });
-        if (encoding_it != rtp_parameters_.encodings.end()) {
-          common_info.active = encoding_it->active;
-        }
       }
+      common_info.active =
+          IsActiveFromEncodings(absl::nullopt, rtp_parameters_.encodings);
       common_info.framerate_sent = stats.encode_frame_rate;
       common_info.frames_encoded = stats.frames_encoded;
       common_info.total_encode_time_ms = stats.total_encode_time_ms;
@@ -2651,21 +2669,24 @@ WebRtcVideoChannel::WebRtcVideoSendStream::GetPerLayerVideoSenderInfos(
       return infos;
     }
   }
+  
+  
+  
   auto outbound_rtp_substreams =
       MergeInfoAboutOutboundRtpSubstreams(stats.substreams);
+  
+  
+  
+  bool is_svc = (parameters_.encoder_config.number_of_streams == 1 &&
+                 rtp_parameters_.encodings.size() > 1);
   for (const auto& pair : outbound_rtp_substreams) {
     auto info = common_info;
-    info.add_ssrc(pair.first);
-    info.rid = parameters_.config.rtp.GetRidForSsrc(pair.first);
-    
-    auto encoding_it = std::find_if(
-        rtp_parameters_.encodings.begin(), rtp_parameters_.encodings.end(),
-        [&pair](const webrtc::RtpEncodingParameters& parameters) {
-          return parameters.ssrc && pair.first == *parameters.ssrc;
-        });
-    if (encoding_it != rtp_parameters_.encodings.end()) {
-      info.active = encoding_it->active;
-    }
+    uint32_t ssrc = pair.first;
+    info.add_ssrc(ssrc);
+    info.rid = parameters_.config.rtp.GetRidForSsrc(ssrc);
+    info.active = IsActiveFromEncodings(
+        !is_svc ? absl::optional<uint32_t>(ssrc) : absl::nullopt,
+        rtp_parameters_.encodings);
     auto stream_stats = pair.second;
     RTC_DCHECK_EQ(stream_stats.type,
                   webrtc::VideoSendStream::StreamStats::StreamType::kMedia);
