@@ -3962,7 +3962,6 @@ void Element::InsertAdjacentHTML(const nsAString& aPosition,
   
   nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
 
-  nsAutoMutationBatch mb(destination, true, false);
   switch (position) {
     case eBeforeBegin:
       destination->InsertBefore(*fragment, this, aError);
