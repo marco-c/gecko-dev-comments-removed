@@ -10,6 +10,7 @@
 template <class T>
 class nsCOMPtr;
 
+class nsIInterfaceRequestor;
 class nsIRandomAccessStream;
 
 namespace mozilla {
@@ -29,10 +30,11 @@ class RandomAccessStreamParams;
 
 
 RandomAccessStreamParams SerializeRandomAccessStream(
-    MovingNotNull<nsCOMPtr<nsIRandomAccessStream>> aStream);
+    MovingNotNull<nsCOMPtr<nsIRandomAccessStream>> aStream,
+    nsIInterfaceRequestor* aCallbacks);
 
 Maybe<RandomAccessStreamParams> SerializeRandomAccessStream(
-    nsCOMPtr<nsIRandomAccessStream> aStream);
+    nsCOMPtr<nsIRandomAccessStream> aStream, nsIInterfaceRequestor* aCallbacks);
 
 
 

@@ -24,7 +24,7 @@ class RemoteQuotaObject final : public QuotaObject {
 
   void Close();
 
-  const nsAString& Path() const override { return EmptyString(); }
+  const nsAString& Path() const override;
 
   
   

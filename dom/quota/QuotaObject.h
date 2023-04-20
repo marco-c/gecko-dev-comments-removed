@@ -7,8 +7,9 @@
 #ifndef DOM_QUOTA_QUOTAOBJECT_H_
 #define DOM_QUOTA_QUOTAOBJECT_H_
 
-#include "chrome/common/ipc_message_utils.h"
 #include "nsISupportsImpl.h"
+
+class nsIInterfaceRequestor;
 
 namespace mozilla::dom::quota {
 
@@ -39,7 +40,7 @@ class QuotaObject {
   
   
   
-  IPCQuotaObject Serialize();
+  IPCQuotaObject Serialize(nsIInterfaceRequestor* aCallbacks);
 
   
   
@@ -65,13 +66,5 @@ class QuotaObject {
 };
 
 }  
-
-template <>
-struct IPC::ParamTraits<mozilla::dom::quota::QuotaObject*> {
-  static void Write(IPC::MessageWriter* aWriter,
-                    mozilla::dom::quota::QuotaObject* aParam);
-  static bool Read(IPC::MessageReader* aReader,
-                   RefPtr<mozilla::dom::quota::QuotaObject>* aResult);
-};
 
 #endif  

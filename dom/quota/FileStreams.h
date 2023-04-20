@@ -141,7 +141,8 @@ class FileRandomAccessStream
   
   
   
-  mozilla::ipc::RandomAccessStreamParams Serialize() override;
+  mozilla::ipc::RandomAccessStreamParams Serialize(
+      nsIInterfaceRequestor* aCallbacks) override;
 
   
   
