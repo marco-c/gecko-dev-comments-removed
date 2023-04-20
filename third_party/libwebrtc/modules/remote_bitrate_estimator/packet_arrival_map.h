@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <deque>
 
+#include "api/units/timestamp.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -43,15 +44,15 @@ class PacketArrivalTimeMap {
   
   
   int64_t end_sequence_number() const {
-    return begin_sequence_number_ + arrival_times.size();
+    return begin_sequence_number_ + arrival_times_.size();
   }
 
   
   
-  int64_t get(int64_t sequence_number) {
+  Timestamp get(int64_t sequence_number) {
     int64_t pos = sequence_number - begin_sequence_number_;
-    RTC_DCHECK(pos >= 0 && pos < static_cast<int64_t>(arrival_times.size()));
-    return arrival_times[pos];
+    RTC_DCHECK(pos >= 0 && pos < static_cast<int64_t>(arrival_times_.size()));
+    return arrival_times_[pos];
   }
 
   
@@ -63,16 +64,16 @@ class PacketArrivalTimeMap {
 
   
   
-  void AddPacket(int64_t sequence_number, int64_t arrival_time_ms);
+  void AddPacket(int64_t sequence_number, Timestamp arrival_time);
 
   
   
-  void RemoveOldPackets(int64_t sequence_number, int64_t arrival_time_limit);
+  void RemoveOldPackets(int64_t sequence_number, Timestamp arrival_time_limit);
 
  private:
   
   
-  std::deque<int64_t> arrival_times;
+  std::deque<Timestamp> arrival_times_;
 
   
   
