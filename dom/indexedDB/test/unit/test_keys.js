@@ -292,11 +292,19 @@ function* testSteps() {
     "[1, [null]]",
     "[1, [/x/]]",
     "[1, [{}]]",
+    
+    
+    
+    
+    
+    
     "new Uint8Array(2147483647)",
   ];
 
   function checkInvalidKeyException(ex, i, callText) {
     let suffix = ` during ${callText} with invalid key ${i}: ${invalidKeys[i]}`;
+    
+    
     ok(ex instanceof DOMException, "Threw DOMException" + suffix);
     is(ex.name, "DataError", "Threw right DOMException" + suffix);
     is(ex.code, 0, "Threw with right code" + suffix);
