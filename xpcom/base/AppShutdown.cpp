@@ -349,18 +349,29 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
   }
 
   nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
-  if (sCurrentShutdownPhase >= ShutdownPhase::AppShutdownConfirmed) {
-    
-    
-    
-    
-    
-    
-    
-    
-    if (thread) {
-      NS_ProcessPendingEvents(thread);
-    }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mayProcessPending = (aPhase > ShutdownPhase::AppShutdownConfirmed);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mayProcessPending && thread) {
+    NS_ProcessPendingEvents(thread);
   }
 
   
@@ -381,7 +392,7 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
   mozilla::KillClearOnShutdown(aPhase);
 
   
-  if (thread) {
+  if (mayProcessPending && thread) {
     NS_ProcessPendingEvents(thread);
   }
 
@@ -398,7 +409,7 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
         obsService->NotifyObservers(aNotificationSubject, aTopic,
                                     aNotificationData);
         
-        if (thread) {
+        if (mayProcessPending && thread) {
           NS_ProcessPendingEvents(thread);
         }
       }
