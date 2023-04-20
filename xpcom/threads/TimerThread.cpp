@@ -624,6 +624,15 @@ size_t TimerThread::ComputeTimerInsertionIndex(const TimeStamp& timeout) const {
   return firstGtIndex;
 }
 
+TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
+  mMonitor.AssertCurrentThreadOwns();
+
+  MOZ_RELEASE_ASSERT(!mTimers.IsEmpty());
+  MOZ_RELEASE_ASSERT(mTimers[0].Value());
+
+  return mTimers[0].Timeout();
+}
+
 NS_IMETHODIMP
 TimerThread::Run() {
   MonitorAutoLock lock(mMonitor);
@@ -730,14 +739,14 @@ TimerThread::Run() {
         
         double microseconds = (timeout - now).ToMicroseconds();
 
+        
+        
+        
+        static constexpr double sChaosFractions[] = {0.0, 0.25, 0.5, 0.75,
+                                                     1.0, 1.75, 2.75};
         if (ChaosMode::isActive(ChaosFeature::TimerScheduling)) {
-          
-          
-          
-          static const float sFractions[] = {0.0f, 0.25f, 0.5f, 0.75f,
-                                             1.0f, 1.75f, 2.75f};
-          microseconds *= sFractions[ChaosMode::randomUint32LessThan(
-              ArrayLength(sFractions))];
+          microseconds *= sChaosFractions[ChaosMode::randomUint32LessThan(
+              ArrayLength(sChaosFractions))];
           forceRunNextTimer = true;
         }
 
@@ -745,11 +754,38 @@ TimerThread::Run() {
           forceRunNextTimer = false;
           goto next;  
         }
-        waitFor = TimeDuration::FromMicroseconds(microseconds);
-        if (waitFor.IsZero()) {
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        const TimeStamp wakeupTime = ComputeWakeupTimeFromTimers();
+        waitFor = wakeupTime - now;
+
+        
+        
+        MOZ_ASSERT(!waitFor.IsZero());
+
+        if (ChaosMode::isActive(ChaosFeature::TimerScheduling)) {
           
-          waitFor = TimeDuration::FromMicroseconds(1);
+          
+          
+          const double waitInMs = waitFor.ToMilliseconds();
+          const double chaosWaitInMs =
+              waitInMs * sChaosFractions[ChaosMode::randomUint32LessThan(
+                             ArrayLength(sChaosFractions))];
+          waitFor = TimeDuration::FromMilliseconds(chaosWaitInMs);
+          MOZ_ASSERT(!waitFor.IsZero());
         }
+
+        mIntendedWakeupTime = wakeupTime;
+      } else {
+        mIntendedWakeupTime = TimeStamp{};
       }
 
       if (MOZ_LOG_TEST(GetTimerLog(), LogLevel::Debug)) {

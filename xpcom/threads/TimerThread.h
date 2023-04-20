@@ -152,6 +152,12 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   size_t ComputeTimerInsertionIndex(const TimeStamp& timeout) const
       MOZ_REQUIRES(mMonitor);
 
+  
+  
+  
+  
+  TimeStamp ComputeWakeupTimeFromTimers() const MOZ_REQUIRES(mMonitor);
+
 #ifdef DEBUG
   
   
@@ -164,9 +170,15 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   
   
   nsTArray<Entry> mTimers MOZ_GUARDED_BY(mMonitor);
+
   
   uint32_t mAllowedEarlyFiringMicroseconds MOZ_GUARDED_BY(mMonitor);
+
   ProfilerThreadId mProfilerThreadId MOZ_GUARDED_BY(mMonitor);
+
+  
+  
+  TimeStamp mIntendedWakeupTime;
 
 #if TIMER_THREAD_STATISTICS
   static constexpr size_t sTimersFiredPerWakeupBucketCount = 16;
