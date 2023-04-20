@@ -5,9 +5,13 @@
 
 
 #include "nsMenuBarListener.h"
+#include "XULButtonElement.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/dom/XULButtonElement.h"
 #include "nsMenuBarFrame.h"
 #include "nsMenuPopupFrame.h"
 #include "nsPIWindowRoot.h"
+#include "nsISound.h"
 
 
 #include "nsWidgetsCID.h"
@@ -24,6 +28,8 @@
 #include "mozilla/dom/EventBinding.h"
 #include "mozilla/dom/KeyboardEvent.h"
 #include "mozilla/dom/KeyboardEventBinding.h"
+#include "mozilla/dom/XULMenuParentElement.h"
+#include "nsXULPopupManager.h"
 
 using namespace mozilla;
 using mozilla::dom::Event;
@@ -43,12 +49,13 @@ Modifiers nsMenuBarListener::mAccessKeyMask = 0;
 nsMenuBarListener::nsMenuBarListener(nsMenuBarFrame* aMenuBarFrame,
                                      nsIContent* aMenuBarContent)
     : mMenuBarFrame(aMenuBarFrame),
-      mEventTarget(aMenuBarContent ? aMenuBarContent->GetComposedDoc()
-                                   : nullptr),
+      mContent(dom::XULMenuParentElement::FromNode(aMenuBarContent)),
+      mEventTarget(aMenuBarContent->GetComposedDoc()),
       mTopWindowEventTarget(nullptr),
       mAccessKeyDown(false),
       mAccessKeyDownCanceled(false) {
   MOZ_ASSERT(mEventTarget);
+  MOZ_ASSERT(mContent);
 
   
   
@@ -152,12 +159,12 @@ void nsMenuBarListener::InitAccessKey() {
 }
 
 void nsMenuBarListener::ToggleMenuActiveState() {
-  nsMenuFrame* closemenu = mMenuBarFrame->ToggleMenuActiveState();
-  nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-  if (pm && closemenu) {
-    nsMenuPopupFrame* popupFrame = closemenu->GetPopup();
-    if (popupFrame)
-      pm->HidePopup(popupFrame->GetContent(), false, false, true, false);
+  if (mMenuBarFrame->IsActive()) {
+    mMenuBarFrame->SetActive(false);
+  } else {
+    RefPtr content = mContent;
+    mMenuBarFrame->SetActive(true);
+    content->SelectFirstItem();
   }
 }
 
@@ -199,8 +206,7 @@ nsresult nsMenuBarListener::KeyUp(Event* aKeyEvent) {
       
       
       
-      nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-      if (pm) {
+      if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
         pm->Rollup(0, false, nullptr, nullptr);
       }
       
@@ -260,7 +266,7 @@ nsresult nsMenuBarListener::KeyPress(Event* aKeyEvent) {
 #ifndef XP_MACOSX
     
     if (nativeKeyEvent->mMessage == eKeyPress && keyCode == NS_VK_F10) {
-      if ((GetModifiersForAccessKey(keyEvent) & ~MODIFIER_CONTROL) == 0) {
+      if ((GetModifiersForAccessKey(*keyEvent) & ~MODIFIER_CONTROL) == 0) {
         
         
         
@@ -279,8 +285,9 @@ nsresult nsMenuBarListener::KeyPress(Event* aKeyEvent) {
 
         if (mMenuBarFrame->IsActive()) {
 #  ifdef MOZ_WIDGET_GTK
+          RefPtr child = mContent->GetActiveMenuChild();
           
-          mMenuBarFrame->GetCurrentMenuItem()->OpenMenu(false);
+          child->OpenMenuPopup(false);
 #  endif
           aKeyEvent->StopPropagation();
           aKeyEvent->PreventDefault();
@@ -291,8 +298,20 @@ nsresult nsMenuBarListener::KeyPress(Event* aKeyEvent) {
     }
 #endif  
 
-    nsMenuFrame* menuFrameForKey = GetMenuForKeyEvent(keyEvent, false);
-    if (!menuFrameForKey) {
+    RefPtr menuForKey = GetMenuForKeyEvent(*keyEvent);
+    if (!menuForKey) {
+#ifdef XP_WIN
+      
+      
+      
+      
+      if (mMenuBarFrame->IsActive()) {
+        if (nsCOMPtr<nsISound> sound = do_GetService("@mozilla.org/sound;1")) {
+          sound->Beep();
+        }
+        mMenuBarFrame->SetActive(false);
+      }
+#endif
       return NS_OK;
     }
 
@@ -310,7 +329,7 @@ nsresult nsMenuBarListener::KeyPress(Event* aKeyEvent) {
 
     mMenuBarFrame->SetActiveByKeyboard();
     mMenuBarFrame->SetActive(true);
-    menuFrameForKey->OpenMenu(true);
+    menuForKey->OpenMenuPopup(true);
 
     
     
@@ -323,7 +342,7 @@ nsresult nsMenuBarListener::KeyPress(Event* aKeyEvent) {
   return NS_OK;
 }
 
-bool nsMenuBarListener::IsAccessKeyPressed(KeyboardEvent* aKeyEvent) {
+bool nsMenuBarListener::IsAccessKeyPressed(KeyboardEvent& aKeyEvent) {
   InitAccessKey();
   
   uint32_t modifiers = GetModifiersForAccessKey(aKeyEvent);
@@ -333,41 +352,39 @@ bool nsMenuBarListener::IsAccessKeyPressed(KeyboardEvent* aKeyEvent) {
 }
 
 Modifiers nsMenuBarListener::GetModifiersForAccessKey(
-    KeyboardEvent* aKeyEvent) {
-  WidgetInputEvent* inputEvent = aKeyEvent->WidgetEventPtr()->AsInputEvent();
+    KeyboardEvent& aKeyEvent) {
+  WidgetInputEvent* inputEvent = aKeyEvent.WidgetEventPtr()->AsInputEvent();
   MOZ_ASSERT(inputEvent);
 
   static const Modifiers kPossibleModifiersForAccessKey =
       (MODIFIER_SHIFT | MODIFIER_CONTROL | MODIFIER_ALT | MODIFIER_META |
        MODIFIER_OS);
-  return (inputEvent->mModifiers & kPossibleModifiersForAccessKey);
+  return inputEvent->mModifiers & kPossibleModifiersForAccessKey;
 }
 
-nsMenuFrame* nsMenuBarListener::GetMenuForKeyEvent(KeyboardEvent* aKeyEvent,
-                                                   bool aPeek) {
+dom::XULButtonElement* nsMenuBarListener::GetMenuForKeyEvent(
+    KeyboardEvent& aKeyEvent) {
   if (!IsAccessKeyPressed(aKeyEvent)) {
     return nullptr;
   }
 
-  uint32_t charCode = aKeyEvent->CharCode();
+  uint32_t charCode = aKeyEvent.CharCode();
   bool hasAccessKeyCandidates = charCode != 0;
   if (!hasAccessKeyCandidates) {
     WidgetKeyboardEvent* nativeKeyEvent =
-        aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
-
+        aKeyEvent.WidgetEventPtr()->AsKeyboardEvent();
     AutoTArray<uint32_t, 10> keys;
     nativeKeyEvent->GetAccessKeyCandidates(keys);
     hasAccessKeyCandidates = !keys.IsEmpty();
   }
 
-  if (hasAccessKeyCandidates) {
-    
-    
-    
-    return mMenuBarFrame->FindMenuWithShortcut(aKeyEvent, aPeek);
+  if (!hasAccessKeyCandidates) {
+    return nullptr;
   }
-
-  return nullptr;
+  
+  
+  
+  return mMenuBarFrame->MenubarElement().FindMenuWithShortcut(aKeyEvent);
 }
 
 void nsMenuBarListener::ReserveKeyIfNeeded(Event* aKeyEvent) {
@@ -399,7 +416,7 @@ nsresult nsMenuBarListener::KeyDown(Event* aKeyEvent) {
 
 #ifndef XP_MACOSX
   if (capturing && !mAccessKeyDown && theChar == NS_VK_F10 &&
-      (GetModifiersForAccessKey(keyEvent) & ~MODIFIER_CONTROL) == 0) {
+      (GetModifiersForAccessKey(*keyEvent) & ~MODIFIER_CONTROL) == 0) {
     ReserveKeyIfNeeded(aKeyEvent);
   }
 #endif
@@ -412,7 +429,7 @@ nsresult nsMenuBarListener::KeyDown(Event* aKeyEvent) {
     
     bool isAccessKeyDownEvent =
         ((theChar == (uint32_t)mAccessKey) &&
-         (GetModifiersForAccessKey(keyEvent) & ~mAccessKeyMask) == 0);
+         (GetModifiersForAccessKey(*keyEvent) & ~mAccessKeyMask) == 0);
 
     if (!capturing && !mAccessKeyDown) {
       
@@ -440,8 +457,7 @@ nsresult nsMenuBarListener::KeyDown(Event* aKeyEvent) {
   }
 
   if (capturing && mAccessKey) {
-    nsMenuFrame* menuFrameForKey = GetMenuForKeyEvent(keyEvent, true);
-    if (menuFrameForKey) {
+    if (GetMenuForKeyEvent(*keyEvent)) {
       ReserveKeyIfNeeded(aKeyEvent);
     }
   }
@@ -452,7 +468,7 @@ nsresult nsMenuBarListener::KeyDown(Event* aKeyEvent) {
 
 
 nsresult nsMenuBarListener::Blur(Event* aEvent) {
-  if (!mMenuBarFrame->IsMenuOpen() && mMenuBarFrame->IsActive()) {
+  if (!IsMenuOpen() && mMenuBarFrame->IsActive()) {
     ToggleMenuActiveState();
     mAccessKeyDown = false;
     mAccessKeyDownCanceled = false;
@@ -468,6 +484,11 @@ nsresult nsMenuBarListener::OnWindowDeactivated(Event* aEvent) {
   mAccessKeyDown = false;
   mAccessKeyDownCanceled = false;
   return NS_OK;  
+}
+
+bool nsMenuBarListener::IsMenuOpen() const {
+  auto* activeChild = mContent->GetActiveMenuChild();
+  return activeChild && activeChild->IsMenuPopupOpen();
 }
 
 
@@ -486,8 +507,9 @@ nsresult nsMenuBarListener::MouseDown(Event* aMouseEvent) {
     return NS_OK;
   }
 
-  if (!mMenuBarFrame->IsMenuOpen() && mMenuBarFrame->IsActive())
+  if (!IsMenuOpen() && mMenuBarFrame->IsActive()) {
     ToggleMenuActiveState();
+  }
 
   return NS_OK;  
 }
@@ -502,7 +524,8 @@ nsresult nsMenuBarListener::Fullscreen(Event* aEvent) {
 }
 
 
-nsresult nsMenuBarListener::HandleEvent(Event* aEvent) {
+MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+nsMenuBarListener::HandleEvent(Event* aEvent) {
   
   if (!mMenuBarFrame->StyleVisibility()->IsVisible()) {
     return NS_OK;

@@ -3128,20 +3128,12 @@ void EventStateManager::DecideGestureEvent(WidgetGestureNotifyEvent* aEvent,
       break;
     }
 
-    nsIScrollableFrame* scrollableFrame = do_QueryFrame(current);
-    if (scrollableFrame) {
+    if (nsIScrollableFrame* scrollableFrame = do_QueryFrame(current)) {
       if (current->IsFrameOfType(nsIFrame::eXULBox)) {
         displayPanFeedback = true;
 
         nsRect scrollRange = scrollableFrame->GetScrollRange();
         bool canScrollHorizontally = scrollRange.width > 0;
-
-        if (targetFrame->IsMenuFrame()) {
-          
-          
-          canScrollHorizontally = false;
-          displayPanFeedback = false;
-        }
 
         
         

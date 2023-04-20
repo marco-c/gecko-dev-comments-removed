@@ -7,6 +7,7 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/PresShell.h"  
+#include "nsXULPopupManager.h"
 
 #define CreateEvent CreateEventA
 
@@ -390,6 +391,31 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
       nsEventShell::FireEvent(nsIAccessibleEvent::EVENT_MENUPOPUP_END,
                               accessible);
     }
+    if (auto* focus = FocusMgr()->FocusedLocalAccessible()) {
+      
+      
+      if (focus->GetContent() &&
+          focus->GetContent()->IsShadowIncludingInclusiveDescendantOf(
+              aTarget)) {
+        
+        
+        
+        LocalAccessible* newActiveAccessible = nullptr;
+        if (auto* pm = nsXULPopupManager::GetInstance()) {
+          if (auto* content = pm->GetTopActiveMenuItemContent()) {
+            newActiveAccessible =
+                accessible->Document()->GetAccessible(content);
+          }
+        }
+        FocusMgr()->ActiveItemChanged(newActiveAccessible);
+#ifdef A11Y_LOG
+        if (logging::IsEnabled(logging::eFocus)) {
+          logging::ActiveItemChangeCausedBy("DOMMenuInactive",
+                                            newActiveAccessible);
+        }
+#endif
+      }
+    }
   } else if (eventType.EqualsLiteral("DOMMenuItemActive")) {
     RefPtr<AccEvent> event =
         new AccStateChangeEvent(accessible, states::ACTIVE, true);
@@ -546,7 +572,9 @@ void RootAccessible::HandlePopupShownEvent(LocalAccessible* aAccessible) {
 
 void RootAccessible::HandlePopupHidingEvent(nsINode* aPopupNode) {
   DocAccessible* document = nsAccUtils::GetDocAccessibleFor(aPopupNode);
-  if (!document) return;
+  if (!document) {
+    return;
+  }
 
   if (aPopupNode->IsAnyOfXULElements(nsGkAtoms::tooltip, nsGkAtoms::panel)) {
     document->ContentRemoved(aPopupNode->AsContent());
@@ -560,7 +588,9 @@ void RootAccessible::HandlePopupHidingEvent(nsINode* aPopupNode) {
   if (!popup) {
     LocalAccessible* popupContainer =
         document->GetContainerAccessible(aPopupNode);
-    if (!popupContainer) return;
+    if (!popupContainer) {
+      return;
+    }
 
     uint32_t childCount = popupContainer->ChildCount();
     for (uint32_t idx = 0; idx < childCount; idx++) {
@@ -573,19 +603,14 @@ void RootAccessible::HandlePopupHidingEvent(nsINode* aPopupNode) {
 
     
     
-    if (!popup) return;
+    if (!popup) {
+      return;
+    }
   }
 
   
   
   
-  
-  
-  
-
-  static const uint32_t kNotifyOfFocus = 1;
-  static const uint32_t kNotifyOfState = 2;
-  uint32_t notifyOf = 0;
 
   
   
@@ -596,41 +621,15 @@ void RootAccessible::HandlePopupHidingEvent(nsINode* aPopupNode) {
   } else {
     widget = popup->ContainerWidget();
     if (!widget) {
-      if (!popup->IsMenuPopup()) return;
-
+      if (!popup->IsMenuPopup()) {
+        return;
+      }
       widget = popup;
     }
   }
 
+  
   if (widget->IsCombobox()) {
-    
-    
-    if (widget->IsActiveWidget()) notifyOf = kNotifyOfFocus;
-    notifyOf |= kNotifyOfState;
-  } else if (widget->IsMenuButton()) {
-    
-    notifyOf |= kNotifyOfFocus;
-  } else if (widget == popup) {
-    
-    
-    
-    
-    
-    notifyOf = kNotifyOfFocus;
-  }
-
-  
-  if (notifyOf & kNotifyOfFocus) {
-    FocusMgr()->ActiveItemChanged(nullptr);
-#ifdef A11Y_LOG
-    if (logging::IsEnabled(logging::eFocus)) {
-      logging::ActiveItemChangeCausedBy("popuphiding", popup);
-    }
-#endif
-  }
-
-  
-  if (notifyOf & kNotifyOfState) {
     RefPtr<AccEvent> event =
         new AccStateChangeEvent(widget, states::EXPANDED, false);
     document->FireDelayedEvent(event);

@@ -2081,7 +2081,8 @@ class nsContentUtils {
 
 
 
-  static void HidePopupsInDocument(Document* aDocument);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void HidePopupsInDocument(
+      Document* aDocument);
 
   
 
