@@ -58,23 +58,11 @@ add_task(async function() {
 });
 
 function checkTable(node, expectedRows) {
-  const columns = Array.from(node.querySelectorAll("[role=columnheader]"));
-  const columnsNumber = columns.length;
-  const cells = Array.from(node.querySelectorAll("[role=gridcell]"));
-
-  
-  
-  
-  is(
-    cells.length / columnsNumber,
-    expectedRows.length,
-    "table has the expected number of rows"
-  );
+  const rows = Array.from(node.querySelectorAll("tbody tr"));
+  is(rows.length, expectedRows.length, "table has the expected number of rows");
 
   expectedRows.forEach((expectedRow, rowIndex) => {
-    const startIndex = rowIndex * columnsNumber;
-    
-    const rowCells = cells.slice(startIndex, startIndex + columnsNumber);
+    const rowCells = Array.from(rows[rowIndex].querySelectorAll("td"));
     is(rowCells.map(x => x.textContent).join(" | "), expectedRow.join(" | "));
   });
 }
