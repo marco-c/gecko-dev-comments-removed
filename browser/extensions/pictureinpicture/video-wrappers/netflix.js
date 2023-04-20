@@ -17,11 +17,23 @@ class PictureInPictureVideoWrapper {
     }
     this.player = netflixPlayerAPI.getVideoPlayerBySessionId(sessionId);
   }
+  
+
+
+
+
+
   getCurrentTime(video) {
-    return this.player.getCurrentTime();
+    return this.player.getCurrentTime() / 1000;
   }
+  
+
+
+
+
+
   getDuration(video) {
-    return this.player.getDuration();
+    return this.player.getDuration() / 1000;
   }
   play() {
     this.player.play();
@@ -53,29 +65,13 @@ class PictureInPictureVideoWrapper {
     }
   }
 
-  setCurrentTime(video, position) {
-    let oldTime = this.player.getCurrentTime();
-    let duration = this.player.getDuration();
-    let isHome = position == 0;
-    let isEnd = position >= duration;
-    
-    
-    let seekDirection = position - oldTime;
-    
-    
-    
-    
-    let seekTimeMS = 10000;
-    let newTime = 0;
+  
 
-    if (isHome || isEnd) {
-      newTime = position;
-    } else if (seekDirection < 0) {
-      newTime = Math.max(oldTime - seekTimeMS, 0);
-    } else if (seekDirection > 0) {
-      newTime = Math.min(oldTime + seekTimeMS, duration);
-    }
-    this.player.seek(newTime);
+
+
+
+  setCurrentTime(video, position) {
+    this.player.seek(position * 1000);
   }
 }
 
