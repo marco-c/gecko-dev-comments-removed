@@ -8831,7 +8831,11 @@ bool nsWindow::OnPointerEvents(UINT msg, WPARAM aWParam, LPARAM aLParam) {
                         : MouseButtonsFlag::eNoButtons;
   WinPointerInfo pointerInfo(pointerId, penInfo.tiltX, penInfo.tiltY, pressure,
                              buttons);
-  pointerInfo.twist = penInfo.rotation;
+  
+  
+  
+  MOZ_ASSERT(penInfo.rotation <= 359);
+  pointerInfo.twist = (int32_t)penInfo.rotation;
 
   
   if (button != MouseButton::eSecondary &&
