@@ -985,6 +985,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "RTCRtpTransceiver", insecureContext: true },
   
+  { name: "RTCSctpTransport", insecureContext: true },
+  
   { name: "RTCSessionDescription", insecureContext: true },
   
   { name: "RTCStatsReport", insecureContext: true },
