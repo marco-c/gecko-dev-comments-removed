@@ -315,6 +315,7 @@ bool AppShutdown::IsRestarting() {
 
 #ifdef DEBUG
 static bool sNotifyingShutdownObservers = false;
+static bool sAdvancingShutdownPhase = false;
 
 bool AppShutdown::IsNoOrLegalShutdownTopic(const char* aTopic) {
   if (!XRE_IsParentProcess()) {
@@ -332,6 +333,12 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
     ShutdownPhase aPhase, bool doNotify, const char16_t* aNotificationData,
     const nsCOMPtr<nsISupports>& aNotificationSubject) {
   AssertIsOnMainThread();
+#ifdef DEBUG
+  
+  MOZ_ASSERT(!sAdvancingShutdownPhase);
+  sAdvancingShutdownPhase = true;
+  auto exit = MakeScopeExit([] { sAdvancingShutdownPhase = false; });
+#endif
 
   
   
