@@ -279,16 +279,6 @@ function TargetMixin(parentClass) {
     
     
     
-    
-    get chrome() {
-      return (
-        this.isWebExtension || this.isContentProcess || this.isParentProcess
-      );
-    }
-
-    
-    
-    
     get isBrowsingContext() {
       return this.typeName === "windowGlobalTarget";
     }
