@@ -104,6 +104,7 @@ const SecurityInfo = {
 
 
     let securityInfo = channel.securityInfo;
+
     if (!securityInfo) {
       return info;
     }
@@ -149,6 +150,9 @@ const SecurityInfo = {
 
     
     info.cipherSuite = securityInfo.cipherName;
+
+    
+    info.secretKeyLength = securityInfo.secretKeyLength;
 
     
     if (securityInfo.keaGroupName !== "none") {
