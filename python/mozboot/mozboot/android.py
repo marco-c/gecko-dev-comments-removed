@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 from mozboot.bootstrap import MOZCONFIG_SUGGESTION_TEMPLATE
 
-NDK_VERSION = "r23c"
+NDK_VERSION = "r21d"
 CMDLINE_TOOLS_VERSION_STRING = "9.0"
 CMDLINE_TOOLS_VERSION = "9477386"
 
@@ -683,7 +683,12 @@ def android_ndk_url(os_name, ver=NDK_VERSION):
         
         os_name = "darwin"
 
-    return "%s-%s-%s.zip" % (base_url, ver, os_name)
+    if sys.maxsize > 2 ** 32:
+        arch = "x86_64"
+    else:
+        arch = "x86"
+
+    return "%s-%s-%s-%s.zip" % (base_url, ver, os_name, arch)
 
 
 def main(argv):
