@@ -324,13 +324,22 @@ nsTArray<uint8_t> nsPrinterWin::CopyDefaultDevmodeW() const {
     
     
     
-    devmodeStorageWLock->SetLength(bytesNeeded * 2);
+    if (!devmodeStorageWLock->SetLength(bytesNeeded * 2, fallible)) {
+      return devmodeStorageW;
+    }
+
+    memset(devmodeStorageWLock->Elements(), 0, devmodeStorageWLock->Length());
     auto* devmode =
         reinterpret_cast<DEVMODEW*>(devmodeStorageWLock->Elements());
     LONG ret = ::DocumentPropertiesW(nullptr, autoPrinter.get(), mName.get(),
                                      devmode, nullptr, DM_OUT_BUFFER);
     MOZ_ASSERT(ret == IDOK, "DocumentPropertiesW failed");
-    if (ret != IDOK) {
+    
+    if (ret != IDOK || devmode->dmSize != sizeof(DEVMODEW) ||
+        devmode->dmSize + devmode->dmDriverExtra >
+            devmodeStorageWLock->Length()) {
+      
+      devmodeStorageWLock->Clear();
       return devmodeStorageW;
     }
   }
