@@ -500,13 +500,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
 
   
   
-  virtual void Send(const Location& posted_from,
-                    MessageHandler* phandler,
-                    uint32_t id,
-                    MessageData* pdata);
-
-  
-  
   
   
   virtual bool Get(Message* pmsg,
