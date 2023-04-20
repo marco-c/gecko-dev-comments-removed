@@ -27,7 +27,8 @@ constexpr int kInitialHeight = 720;
 constexpr int kLowStartBps = 100000;
 constexpr int kHighStartBps = 1000000;
 constexpr int kDefaultVgaMinStartBps = 500000;  
-constexpr int kTimeoutMs = 10000;  
+constexpr TimeDelta kTimeout =
+    TimeDelta::Seconds(10);  
 
 void SetEncoderSpecific(VideoEncoderConfig* encoder_config,
                         VideoCodecType type,
@@ -82,7 +83,7 @@ class ScalingObserver : public test::SendTest {
                   int start_bps,
                   bool automatic_resize,
                   bool expect_scaling)
-      : SendTest(expect_scaling ? kTimeoutMs * 4 : kTimeoutMs),
+      : SendTest(expect_scaling ? kTimeout * 4 : kTimeout),
         encoder_factory_(
             [](const SdpVideoFormat& format) -> std::unique_ptr<VideoEncoder> {
               if (format.name == "VP8")

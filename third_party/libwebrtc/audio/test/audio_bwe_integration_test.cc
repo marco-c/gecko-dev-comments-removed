@@ -35,7 +35,7 @@ enum : int {
 constexpr int kExtraProcessTimeMs = 1000;
 }  
 
-AudioBweTest::AudioBweTest() : EndToEndTest(CallTest::kDefaultTimeoutMs) {}
+AudioBweTest::AudioBweTest() : EndToEndTest(CallTest::kDefaultTimeout) {}
 
 size_t AudioBweTest::GetNumVideoStreams() const {
   return 0;

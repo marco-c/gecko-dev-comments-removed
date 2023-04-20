@@ -31,7 +31,7 @@ enum : int {
 
 class AudioSendTest : public SendTest {
  public:
-  AudioSendTest() : SendTest(CallTest::kDefaultTimeoutMs) {}
+  AudioSendTest() : SendTest(CallTest::kDefaultTimeout) {}
 
   size_t GetNumVideoStreams() const override { return 0; }
   size_t GetNumAudioStreams() const override { return 1; }
