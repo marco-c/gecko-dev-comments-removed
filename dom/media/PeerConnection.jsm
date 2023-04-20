@@ -1443,15 +1443,7 @@ class RTCPeerConnection {
       kind = sendTrack.kind;
     }
 
-    try {
-      return this._pc.addTransceiver(init, kind, sendTrack);
-    } catch (e) {
-      
-      
-      
-      const holder = new StructuredCloneHolder(new ClonedErrorHolder(e));
-      throw holder.deserialize(this._win);
-    }
+    return this._pc.addTransceiver(init, kind, sendTrack);
   }
 
   addTransceiver(sendTrackOrKind, init) {

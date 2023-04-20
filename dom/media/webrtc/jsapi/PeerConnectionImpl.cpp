@@ -478,11 +478,6 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
   mForceProxy = ShouldForceProxy();
 
   
-  
-  mAllowOldSetParameters = Preferences::GetBool(
-      "media.peerconnection.allow_old_setParameters", false);
-
-  
   InitLocalAddrs();
 
   mSignalHandler = MakeUnique<SignalHandler>(this, mTransportHandler.get());
@@ -931,7 +926,18 @@ nsresult PeerConnectionImpl::AddRtpTransceiverToJsepSession(
     return res;
   }
 
-  mJsepSession->AddTransceiver(transceiver);
+  res = mJsepSession->AddTransceiver(transceiver);
+
+  if (NS_FAILED(res)) {
+    std::string errorString = mJsepSession->GetLastError();
+    CSFLogError(LOGTAG, "%s (%s) : pc = %s, error = %s", __FUNCTION__,
+                transceiver->GetMediaType() == SdpMediaSection::kAudio
+                    ? "audio"
+                    : "video",
+                mHandle.c_str(), errorString.c_str());
+    return NS_ERROR_FAILURE;
+  }
+
   return NS_OK;
 }
 
@@ -948,9 +954,6 @@ static Maybe<SdpMediaSection::MediaType> ToSdpMediaType(
 already_AddRefed<RTCRtpTransceiver> PeerConnectionImpl::AddTransceiver(
     const dom::RTCRtpTransceiverInit& aInit, const nsAString& aKind,
     dom::MediaStreamTrack* aSendTrack, ErrorResult& aRv) {
-  
-  RTCRtpTransceiverInit init(aInit);
-
   Maybe<SdpMediaSection::MediaType> type = ToSdpMediaType(aKind);
   if (NS_WARN_IF(!type.isSome())) {
     MOZ_ASSERT(false, "Invalid media kind");
@@ -971,93 +974,9 @@ already_AddRefed<RTCRtpTransceiver> PeerConnectionImpl::AddTransceiver(
     return nullptr;
   }
 
-  auto& sendEncodings = init.mSendEncodings;
-
-  
-  
-  
-  
-
-  
-
-  
-  
-
-  
-  
-
-  
-  
-
-  
-  
-  
-  RTCRtpSender::CheckAndRectifyEncodings(sendEncodings,
-                                         *type == SdpMediaSection::kVideo, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  
-  
-  
-  
-  
-
-  
-  
-  
-  for (const auto& constEncoding : sendEncodings) {
-    if (constEncoding.mScaleResolutionDownBy.WasPassed()) {
-      for (auto& encoding : sendEncodings) {
-        if (!encoding.mScaleResolutionDownBy.WasPassed()) {
-          encoding.mScaleResolutionDownBy.Construct(1.0f);
-        }
-      }
-      break;
-    }
-  }
-
-  
-  
-  
-  size_t maxN =
-      (*type == SdpMediaSection::kVideo) ? webrtc::kMaxSimulcastStreams : 1;
-
-  
-  
-  
-  
-  if (sendEncodings.Length() > maxN) {
-    sendEncodings.TruncateLength(maxN);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (sendEncodings.Length() && *type == SdpMediaSection::kVideo &&
-      !sendEncodings[0].mScaleResolutionDownBy.WasPassed()) {
-    double scale = 1.0f;
-    for (auto it = sendEncodings.rbegin(); it != sendEncodings.rend(); ++it) {
-      it->mScaleResolutionDownBy.Construct(scale);
-      scale *= 2;
-    }
-  }
-
-  
-  
-  if (sendEncodings.Length() == 1) {
-    sendEncodings[0].mRid.Reset();
-  }
-
   RefPtr<RTCRtpTransceiver> transceiver = CreateTransceiver(
       jsepTransceiver->GetUuid(),
-      jsepTransceiver->GetMediaType() == SdpMediaSection::kVideo, init,
+      jsepTransceiver->GetMediaType() == SdpMediaSection::kVideo, aInit,
       aSendTrack, aRv);
 
   if (aRv.Failed()) {
@@ -1612,22 +1531,6 @@ dom::RTCSdpType ToDomSdpType(JsepSdpType aType) {
   MOZ_CRASH("Nonexistent JsepSdpType");
 }
 
-JsepSdpType ToJsepSdpType(dom::RTCSdpType aType) {
-  switch (aType) {
-    case dom::RTCSdpType::Offer:
-      return kJsepSdpOffer;
-    case dom::RTCSdpType::Pranswer:
-      return kJsepSdpPranswer;
-    case dom::RTCSdpType::Answer:
-      return kJsepSdpAnswer;
-    case dom::RTCSdpType::Rollback:
-      return kJsepSdpRollback;
-    case dom::RTCSdpType::EndGuard_:;
-  }
-
-  MOZ_CRASH("Nonexistent dom::RTCSdpType");
-}
-
 NS_IMETHODIMP
 PeerConnectionImpl::SetLocalDescription(int32_t aAction, const char* aSDP) {
   PC_AUTO_ENTER_API_CALL(true);
@@ -2084,12 +1987,6 @@ void PeerConnectionImpl::StampTimecard(const char* aEvent) {
   STAMP_TIMECARD(mTimeCard, aEvent);
 }
 
-void PeerConnectionImpl::SendWarningToConsole(const nsCString& aWarning) {
-  nsAutoString msg = NS_ConvertASCIItoUTF16(aWarning);
-  nsContentUtils::ReportToConsoleByWindowID(msg, nsIScriptError::warningFlag,
-                                            "WebRTC"_ns, mWindow->WindowID());
-}
-
 nsresult PeerConnectionImpl::CalculateFingerprint(
     const std::string& algorithm, std::vector<uint8_t>* fingerprint) const {
   DtlsDigest digest(algorithm);
@@ -2325,21 +2222,6 @@ void PeerConnectionImpl::BreakCycles() {
   mTransceivers.Clear();
 }
 
-bool PeerConnectionImpl::HasPendingSetParameters() const {
-  for (const auto& transceiver : mTransceivers) {
-    if (transceiver->Sender()->HasPendingSetParameters()) {
-      return true;
-    }
-  }
-  return false;
-}
-
-void PeerConnectionImpl::InvalidateLastReturnedParameters() {
-  for (const auto& transceiver : mTransceivers) {
-    transceiver->Sender()->InvalidateLastReturnedParameters();
-  }
-}
-
 nsresult PeerConnectionImpl::SetConfiguration(
     const RTCConfiguration& aConfiguration) {
   nsresult rv = mTransportHandler->SetIceConfig(
@@ -2383,7 +2265,6 @@ nsresult PeerConnectionImpl::SetConfiguration(
 
   
   StoreConfigurationForAboutWebrtc(aConfiguration);
-
   return NS_OK;
 }
 
@@ -2545,51 +2426,30 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
         MOZ_ASSERT(mUncommittedJsepSession);
 
         
-        bool needsRedo = HasPendingSetParameters();
-        if (!needsRedo && aRemote && (aSdpType == dom::RTCSdpType::Offer)) {
-          for (auto& transceiver : mTransceivers) {
-            if (!mUncommittedJsepSession->GetTransceiver(
-                    transceiver->GetJsepTransceiverId())) {
-              needsRedo = true;
-              break;
-            }
-          }
-        }
-
-        if (needsRedo) {
-          
-          
-          
-          
-          
-          mUncommittedJsepSession.reset(mJsepSession->Clone());
-          JsepSession::Result result;
-          if (aRemote) {
-            mUncommittedJsepSession->SetRemoteDescription(
-                ToJsepSdpType(aSdpType), mRemoteRequestedSDP);
-          } else {
-            mUncommittedJsepSession->SetLocalDescription(
-                ToJsepSdpType(aSdpType), mLocalRequestedSDP);
-          }
-          if (result.mError.isSome()) {
-            
-            nsCString error(
-                "When redoing sRD/sLD because it raced against "
-                "addTrack or setParameters, we encountered a failure that "
-                "did not happen "
-                "the first time. This should never happen. The error was: ");
-            error += mUncommittedJsepSession->GetLastError().c_str();
-            aP->MaybeRejectWithOperationError(error);
-            MOZ_ASSERT(false);
-          } else {
-            DoSetDescriptionSuccessPostProcessing(aSdpType, aRemote, aP);
-          }
-          return;
-        }
-
+        
         for (auto& transceiver : mTransceivers) {
           if (!mUncommittedJsepSession->GetTransceiver(
                   transceiver->GetJsepTransceiverId())) {
+            if (aSdpType == dom::RTCSdpType::Offer && aRemote) {
+              
+              mUncommittedJsepSession.reset(mJsepSession->Clone());
+              JsepSession::Result result =
+                  mUncommittedJsepSession->SetRemoteDescription(
+                      kJsepSdpOffer, mRemoteRequestedSDP);
+              MOZ_ASSERT(!!mUncommittedJsepSession->GetTransceiver(
+                  transceiver->GetJsepTransceiverId()));
+              if (result.mError.isSome()) {
+                
+                aP->MaybeRejectWithOperationError(
+                    "When redoing sRD(offer) because it raced against "
+                    "addTrack, we encountered a failure that did not happen "
+                    "the first time. This should never happen.");
+                MOZ_ASSERT(false);
+              } else {
+                DoSetDescriptionSuccessPostProcessing(aSdpType, aRemote, aP);
+              }
+              return;
+            }
             
             
             mUncommittedJsepSession->AddTransceiver(
@@ -2604,11 +2464,6 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
 
         auto newSignalingState = GetSignalingState();
         SyncFromJsep();
-        if (aRemote || aSdpType == dom::RTCSdpType::Pranswer ||
-            aSdpType == dom::RTCSdpType::Answer) {
-          InvalidateLastReturnedParameters();
-        }
-
         
         if (aSdpType == dom::RTCSdpType::Rollback) {
           

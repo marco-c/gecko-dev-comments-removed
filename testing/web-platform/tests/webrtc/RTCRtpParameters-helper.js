@@ -203,6 +203,16 @@ function validateCodecParameters(codec) {
 }
 
 
+
+function getFirstEncoding(param) {
+  const {
+    encodings
+  } = param;
+  assert_equals(encodings.length, 1);
+  return encodings[0];
+}
+
+
 function test_modified_encoding(kind, field, value1, value2, desc) {
   promise_test(async t => {
     const pc = new RTCPeerConnection();
@@ -218,7 +228,7 @@ function test_modified_encoding(kind, field, value1, value2, desc) {
 
     const param1 = sender.getParameters();
     validateSenderRtpParameters(param1);
-    const encoding1 = param1.encodings[0];
+    const encoding1 = getFirstEncoding(param1);
 
     assert_equals(encoding1[field], value1);
     encoding1[field] = value2;
@@ -226,7 +236,7 @@ function test_modified_encoding(kind, field, value1, value2, desc) {
     await sender.setParameters(param1);
     const param2 = sender.getParameters();
     validateSenderRtpParameters(param2);
-    const encoding2 = param2.encodings[0];
+    const encoding2 = getFirstEncoding(param2);
     assert_equals(encoding2[field], value2);
   }, desc + ' with RTCRtpTransceiverInit');
 
@@ -245,7 +255,7 @@ function test_modified_encoding(kind, field, value1, value2, desc) {
 
     const param1 = sender.getParameters();
     validateSenderRtpParameters(param1);
-    const encoding1 = param1.encodings[0];
+    const encoding1 = getFirstEncoding(param1);
 
     assert_equals(encoding1[field], value1);
     encoding1[field] = value2;
@@ -253,7 +263,7 @@ function test_modified_encoding(kind, field, value1, value2, desc) {
     await sender.setParameters(param1);
     const param2 = sender.getParameters();
     validateSenderRtpParameters(param2);
-    const encoding2 = param2.encodings[0];
+    const encoding2 = getFirstEncoding(param2);
     assert_equals(encoding2[field], value2);
   }, desc + ' without RTCRtpTransceiverInit');
 }

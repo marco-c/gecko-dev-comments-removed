@@ -78,12 +78,12 @@ void JsepTrack::AddToOffer(SsrcGenerator& ssrcGenerator,
   AddToMsection(mPrototypeCodecs, offer);
 
   if (mDirection == sdp::kSend) {
-    std::vector<std::string> rids;
+    std::vector<JsConstraints> constraints;
     if (offer->IsSending()) {
-      rids = mRids;
+      constraints = mJsEncodeConstraints;
     }
 
-    AddToMsection(rids, sdp::kSend, ssrcGenerator,
+    AddToMsection(constraints, sdp::kSend, ssrcGenerator,
                   IsRtxEnabled(mPrototypeCodecs), offer);
   }
 }
@@ -102,139 +102,40 @@ void JsepTrack::AddToAnswer(const SdpMediaSection& offer,
   AddToMsection(codecs, answer);
 
   if (mDirection == sdp::kSend) {
-    AddToMsection(mRids, sdp::kSend, ssrcGenerator, IsRtxEnabled(codecs),
+    std::vector<JsConstraints> constraints;
+    if (answer->IsSending()) {
+      constraints = mJsEncodeConstraints;
+      std::vector<std::pair<SdpRidAttributeList::Rid, bool>> rids;
+      GetRids(offer, sdp::kRecv, &rids);
+      NegotiateRids(rids, &constraints);
+    }
+
+    AddToMsection(constraints, sdp::kSend, ssrcGenerator, IsRtxEnabled(codecs),
                   answer);
   }
 }
 
-void JsepTrack::SetRids(const std::vector<std::string>& aRids) {
-  MOZ_ASSERT(!aRids.empty());
-  if (!mRids.empty()) {
-    return;
-  }
-  mRids = aRids;
-}
-
-void JsepTrack::SetMaxEncodings(size_t aMax) {
-  mMaxEncodings = aMax;
-  if (mRids.size() > mMaxEncodings) {
-    mRids.resize(mMaxEncodings);
-  }
-}
-
-void JsepTrack::RecvTrackSetRemote(const Sdp& aSdp,
-                                   const SdpMediaSection& aMsection) {
-  mInHaveRemote = true;
-  MOZ_ASSERT(mDirection == sdp::kRecv);
-  MOZ_ASSERT(aMsection.GetMediaType() !=
-             SdpMediaSection::MediaType::kApplication);
-  std::string error;
-  SdpHelper helper(&error);
-
-  mRemoteSetSendBit = aMsection.IsSending();
-
-  if (aMsection.IsSending()) {
-    (void)helper.GetIdsFromMsid(aSdp, aMsection, &mStreamIds);
-  } else {
-    mStreamIds.clear();
-  }
-
-  
-  SetCNAME(helper.GetCNAME(aMsection));
-  mSsrcs.clear();
-  if (aMsection.GetAttributeList().HasAttribute(SdpAttribute::kSsrcAttribute)) {
-    for (const auto& ssrcAttr : aMsection.GetAttributeList().GetSsrc().mSsrcs) {
-      mSsrcs.push_back(ssrcAttr.ssrc);
-    }
-  }
+bool JsepTrack::SetJsConstraints(
+    const std::vector<JsConstraints>& constraintsList) {
+  bool constraintsChanged = mJsEncodeConstraints != constraintsList;
+  mJsEncodeConstraints = constraintsList;
 
   
   
-  
-  mSsrcToRtxSsrc.clear();
-  if (aMsection.GetAttributeList().HasAttribute(
-          SdpAttribute::kSsrcGroupAttribute)) {
-    for (const auto& group :
-         aMsection.GetAttributeList().GetSsrcGroup().mSsrcGroups) {
-      if (group.semantics == SdpSsrcGroupAttributeList::kFid &&
-          group.ssrcs.size() == 2) {
-        
-        if (std::find(mSsrcs.begin(), mSsrcs.end(), group.ssrcs[0]) !=
-            mSsrcs.end()) {
-          mSsrcToRtxSsrc[group.ssrcs[0]] = group.ssrcs[1];
 
-          
-          auto res = std::remove_if(
-              mSsrcs.begin(), mSsrcs.end(),
-              [group](uint32_t ssrc) { return ssrc == group.ssrcs[1]; });
-          mSsrcs.erase(res, mSsrcs.end());
-        }
+  if (!mNegotiatedDetails) {
+    return constraintsChanged;
+  }
+
+  for (auto& encoding : mNegotiatedDetails->mEncodings) {
+    for (const JsConstraints& jsConstraints : mJsEncodeConstraints) {
+      if (jsConstraints.rid == encoding->mRid) {
+        encoding->mConstraints = jsConstraints.constraints;
       }
     }
   }
-}
 
-void JsepTrack::SendTrackSetRemote(SsrcGenerator& aSsrcGenerator,
-                                   const SdpMediaSection& aRemoteMsection) {
-  mInHaveRemote = true;
-  if (mType == SdpMediaSection::kApplication) {
-    return;
-  }
-
-  std::vector<SdpRidAttributeList::Rid> rids;
-
-  
-  
-  if ((mType == SdpMediaSection::kVideo) &&
-      aRemoteMsection.GetAttributeList().HasAttribute(
-          SdpAttribute::kSimulcastAttribute)) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    GetRids(aRemoteMsection, sdp::kRecv, &rids);
-  }
-
-  if (mRids.empty()) {
-    
-    for (const auto& ridAttr : rids) {
-      
-      
-      
-      std::string dummy;
-      if (SdpRidAttributeList::CheckRidValidity(ridAttr.id, &dummy)) {
-        mRids.push_back(ridAttr.id);
-      }
-    }
-    if (mRids.size() > mMaxEncodings) {
-      mRids.resize(mMaxEncodings);
-    }
-  } else {
-    
-    
-    std::vector<std::string> newRids;
-    for (const auto& ridAttr : rids) {
-      for (const auto& oldRid : mRids) {
-        if (oldRid == ridAttr.id) {
-          newRids.push_back(oldRid);
-          break;
-        }
-      }
-    }
-    mRids = std::move(newRids);
-  }
-
-  if (mRids.empty()) {
-    mRids.push_back("");
-  }
-
-  UpdateSsrcs(aSsrcGenerator, mRids.size());
+  return constraintsChanged;
 }
 
 void JsepTrack::AddToMsection(
@@ -259,16 +160,33 @@ void JsepTrack::AddToMsection(
   }
 }
 
+
+
+void JsepTrack::NegotiateRids(
+    const std::vector<std::pair<SdpRidAttributeList::Rid, bool>>& rids,
+    std::vector<JsConstraints>* constraintsList) const {
+  for (const auto& ridAndPaused : rids) {
+    if (!FindConstraints(ridAndPaused.first.id, *constraintsList)) {
+      
+      JsConstraints* constraints = FindConstraints("", *constraintsList);
+      if (constraints) {
+        constraints->rid = ridAndPaused.first.id;
+        constraints->paused = ridAndPaused.second;
+      }
+    }
+  }
+}
+
 void JsepTrack::UpdateSsrcs(SsrcGenerator& ssrcGenerator, size_t encodings) {
   MOZ_ASSERT(mDirection == sdp::kSend);
   MOZ_ASSERT(mType != SdpMediaSection::kApplication);
   size_t numSsrcs = std::max<size_t>(encodings, 1U);
 
+  
+  
+  
   EnsureSsrcs(ssrcGenerator, numSsrcs);
   PruneSsrcs(numSsrcs);
-  if (mNegotiatedDetails && mNegotiatedDetails->GetEncodingCount() > numSsrcs) {
-    mNegotiatedDetails->TruncateEncodings(numSsrcs);
-  }
 
   MOZ_ASSERT(!mSsrcs.empty());
 }
@@ -301,36 +219,39 @@ bool JsepTrack::IsRtxEnabled(
   return false;
 }
 
-void JsepTrack::AddToMsection(const std::vector<std::string>& aRids,
+void JsepTrack::AddToMsection(const std::vector<JsConstraints>& constraintsList,
                               sdp::Direction direction,
                               SsrcGenerator& ssrcGenerator, bool rtxEnabled,
                               SdpMediaSection* msection) {
-  if (aRids.size() > 1) {
-    UniquePtr<SdpSimulcastAttribute> simulcast(new SdpSimulcastAttribute);
-    UniquePtr<SdpRidAttributeList> ridAttrs(new SdpRidAttributeList);
-    for (const std::string& rid : aRids) {
-      SdpRidAttributeList::Rid ridAttr;
-      ridAttr.id = rid;
-      ridAttr.direction = direction;
-      ridAttrs->mRids.push_back(ridAttr);
+  UniquePtr<SdpSimulcastAttribute> simulcast(new SdpSimulcastAttribute);
+  UniquePtr<SdpRidAttributeList> rids(new SdpRidAttributeList);
+  for (const JsConstraints& constraints : constraintsList) {
+    if (!constraints.rid.empty()) {
+      SdpRidAttributeList::Rid rid;
+      rid.id = constraints.rid;
+      rid.direction = direction;
+      rids->mRids.push_back(rid);
 
       SdpSimulcastAttribute::Version version;
-      version.choices.push_back(SdpSimulcastAttribute::Encoding(rid, false));
+      version.choices.push_back(
+          SdpSimulcastAttribute::Encoding(constraints.rid, false));
       if (direction == sdp::kSend) {
         simulcast->sendVersions.push_back(version);
       } else {
         simulcast->recvVersions.push_back(version);
       }
     }
+  }
 
+  if (rids->mRids.size() > 1) {
     msection->GetAttributeList().SetAttribute(simulcast.release());
-    msection->GetAttributeList().SetAttribute(ridAttrs.release());
+    msection->GetAttributeList().SetAttribute(rids.release());
   }
 
   bool requireRtxSsrcs = rtxEnabled && msection->IsSending();
 
   if (mType != SdpMediaSection::kApplication && mDirection == sdp::kSend) {
-    UpdateSsrcs(ssrcGenerator, aRids.size());
+    UpdateSsrcs(ssrcGenerator, constraintsList.size());
 
     if (requireRtxSsrcs) {
       MOZ_ASSERT(mSsrcs.size() == mSsrcToRtxSsrc.size());
@@ -350,9 +271,9 @@ void JsepTrack::AddToMsection(const std::vector<std::string>& aRids,
   }
 }
 
-void JsepTrack::GetRids(const SdpMediaSection& msection,
-                        sdp::Direction direction,
-                        std::vector<SdpRidAttributeList::Rid>* rids) const {
+void JsepTrack::GetRids(
+    const SdpMediaSection& msection, sdp::Direction direction,
+    std::vector<std::pair<SdpRidAttributeList::Rid, bool>>* rids) const {
   rids->clear();
   if (!msection.GetAttributeList().HasAttribute(
           SdpAttribute::kSimulcastAttribute)) {
@@ -376,17 +297,23 @@ void JsepTrack::GetRids(const SdpMediaSection& msection,
     return;
   }
 
-  
-  
-  
-  std::set<std::string> uniqueRids;
   for (const SdpSimulcastAttribute::Version& version : *versions) {
-    if (!version.choices.empty() && !uniqueRids.count(version.choices[0].rid)) {
+    if (!version.choices.empty()) {
       
-      rids->push_back(*msection.FindRid(version.choices[0].rid));
-      uniqueRids.insert(version.choices[0].rid);
+      rids->push_back(std::make_pair(*msection.FindRid(version.choices[0].rid),
+                                     version.choices[0].paused));
     }
   }
+}
+
+JsepTrack::JsConstraints* JsepTrack::FindConstraints(
+    const std::string& id, std::vector<JsConstraints>& constraintsList) const {
+  for (JsConstraints& constraints : constraintsList) {
+    if (constraints.rid == id) {
+      return &constraints;
+    }
+  }
+  return nullptr;
 }
 
 void JsepTrack::CreateEncodings(
@@ -406,28 +333,51 @@ void JsepTrack::CreateEncodings(
 
   
 
-  if (mRids.empty()) {
-    mRids.push_back("");
+  std::vector<std::pair<SdpRidAttributeList::Rid, bool>> rids;
+  GetRids(remote, sdp::kRecv, &rids);  
+  NegotiateRids(rids, &mJsEncodeConstraints);
+  if (rids.empty()) {
+    
+    
+    rids.push_back(std::make_pair(SdpRidAttributeList::Rid(), false));
   }
 
-  size_t numEncodings = mRids.size();
+  size_t max_streams = 1;
 
+  if (!mJsEncodeConstraints.empty()) {
+    max_streams = std::min(rids.size(), mJsEncodeConstraints.size());
+  }
   
-  if (mSsrcs.size() > numEncodings) {
-    PruneSsrcs(numEncodings);
+  
+  if (mSsrcs.size() > max_streams) {
+    PruneSsrcs(max_streams);
   }
 
   
   
-  for (size_t i = 0; i < numEncodings; ++i) {
-    UniquePtr<JsepTrackEncoding> encoding(new JsepTrackEncoding);
-    if (mRids.size() > i) {
-      encoding->mRid = mRids[i];
+  for (size_t i = 0; i < max_streams; ++i) {
+    if (i == negotiatedDetails->mEncodings.size()) {
+      negotiatedDetails->mEncodings.emplace_back(new JsepTrackEncoding);
     }
+
+    auto& encoding = negotiatedDetails->mEncodings[i];
+
     for (const auto& codec : negotiatedCodecs) {
-      encoding->AddCodec(*codec);
+      if (rids[i].first.HasFormat(codec->mDefaultPt)) {
+        encoding->AddCodec(*codec);
+      }
     }
-    negotiatedDetails->mEncodings.push_back(std::move(encoding));
+
+    encoding->mRid = rids[i].first.id;
+    encoding->mPaused = rids[i].second;
+    
+
+    
+    for (const JsConstraints& jsConstraints : mJsEncodeConstraints) {
+      if (jsConstraints.rid == rids[i].first.id) {
+        encoding->mConstraints = jsConstraints.constraints;
+      }
+    }
   }
 }
 
@@ -602,7 +552,6 @@ void JsepTrack::Negotiate(const SdpMediaSection& answer,
     }
   }
 
-  mInHaveRemote = false;
   mNegotiatedDetails = std::move(negotiatedDetails);
 }
 

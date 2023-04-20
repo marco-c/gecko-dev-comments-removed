@@ -6,7 +6,6 @@
 #include "transport/logging.h"
 #include "mozilla/dom/MediaStreamTrack.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/glean/GleanMetrics.h"
 #include "transportbridge/MediaPipeline.h"
 #include "nsPIDOMWindow.h"
 #include "nsString.h"
@@ -19,7 +18,6 @@
 #include "PeerConnectionImpl.h"
 #include "libwebrtcglue/AudioConduit.h"
 #include <vector>
-#include "call/call.h"
 
 namespace mozilla::dom {
 
@@ -51,7 +49,6 @@ RTCRtpSender::RTCRtpSender(nsPIDOMWindowInner* aWindow, PeerConnectionImpl* aPc,
                            nsISerialEventTarget* aStsThread,
                            MediaSessionConduit* aConduit,
                            dom::MediaStreamTrack* aTrack,
-                           const Sequence<RTCRtpEncodingParameters>& aEncodings,
                            RTCRtpTransceiver* aTransceiver)
     : mWindow(aWindow),
       mPc(aPc),
@@ -72,37 +69,8 @@ RTCRtpSender::RTCRtpSender(nsPIDOMWindowInner* aWindow, PeerConnectionImpl* aPc,
 
   if (aConduit->type() == MediaSessionConduit::AUDIO) {
     mDtmf = new RTCDTMFSender(aWindow, mTransceiver);
-    GetJsepTransceiver().mSendTrack.SetMaxEncodings(1);
-  } else {
-    GetJsepTransceiver().mSendTrack.SetMaxEncodings(
-        webrtc::kMaxSimulcastStreams);
   }
   mPipeline->SetTrack(mSenderTrack);
-
-  mozilla::glean::rtcrtpsender::count.Add(1);
-
-  if (mPc->ShouldAllowOldSetParameters()) {
-    mAllowOldSetParameters = true;
-    mozilla::glean::rtcrtpsender::count_setparameters_compat.Add(1);
-  }
-
-  if (aEncodings.Length()) {
-    
-    mParameters.mEncodings = aEncodings;
-    SetJsepRids(mParameters);
-    mozilla::glean::rtcrtpsender::used_sendencodings.AddToNumerator(1);
-  } else {
-    
-    
-    RTCRtpEncodingParameters defaultEncoding;
-    defaultEncoding.mActive = true;
-    if (aConduit->type() == MediaSessionConduit::VIDEO) {
-      defaultEncoding.mScaleResolutionDownBy.Construct(1.0f);
-    }
-    Unused << mParameters.mEncodings.AppendElement(defaultEncoding, fallible);
-    UpdateRestorableEncodings(mParameters.mEncodings);
-    MaybeGetJsepRids();
-  }
 }
 
 #undef INIT_CANONICAL
@@ -428,550 +396,108 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal() {
   return promises;
 }
 
-void RTCRtpSender::WarnAboutBadSetParameters(const nsCString& aError) {
-  nsCString warning(
-      "WARNING! Invalid setParameters call detected! The good news? Firefox "
-      "supports sendEncodings in addTransceiver now, so we ask that you switch "
-      "over to using the parameters code you use for other browsers. Thank you "
-      "for your patience and support. The specific error was: ");
-  warning += aError;
-  mPc->SendWarningToConsole(warning);
-}
-
 already_AddRefed<Promise> RTCRtpSender::SetParameters(
-    const dom::RTCRtpSendParameters& aParameters, ErrorResult& aError) {
-  dom::RTCRtpSendParameters paramsCopy(aParameters);
+    const dom::RTCRtpParameters& aParameters, ErrorResult& aError) {
   
-  
-  
-  
-  
-  
-
   RefPtr<dom::Promise> p = MakePromise(aError);
   if (aError.Failed()) {
     return nullptr;
   }
-
   if (mPc->IsClosed()) {
     p->MaybeRejectWithInvalidStateError("Peer connection is closed");
     return p.forget();
   }
 
-  
-  
   if (mTransceiver->Stopped()) {
     p->MaybeRejectWithInvalidStateError("This sender's transceiver is stopped");
     return p.forget();
   }
 
-  
-  
-  if (!mLastReturnedParameters.isSome()) {
-    nsCString error(
-        "Cannot call setParameters without first calling getParameters");
-    if (mAllowOldSetParameters) {
-      if (!mHaveWarnedBecauseNoGetParameters) {
-        mHaveWarnedBecauseNoGetParameters = true;
-        mozilla::glean::rtcrtpsender_setparameters::warn_no_getparameters
-            .AddToNumerator(1);
-      }
-      WarnAboutBadSetParameters(error);
-    } else {
-      if (!mHaveFailedBecauseNoGetParameters) {
-        mHaveFailedBecauseNoGetParameters = true;
-        mozilla::glean::rtcrtpsender_setparameters::fail_no_getparameters
-            .AddToNumerator(1);
-      }
-      p->MaybeRejectWithInvalidStateError(error);
-      return p.forget();
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  Maybe<RTCRtpSendParameters> oldParams;
-  if (mAllowOldSetParameters) {
-    if (mPendingParameters.isSome()) {
-      oldParams = mPendingParameters;
-    } else {
-      oldParams = Some(mParameters);
-    }
-    MOZ_ASSERT(oldParams.isSome());
-  } else {
-    oldParams = mLastReturnedParameters;
-  }
-  MOZ_ASSERT(oldParams.isSome());
-
-  
-  
-  
-  
-  
-  
-  
-
-  
-  if (paramsCopy.mEncodings.Length() != oldParams->mEncodings.Length()) {
-    nsCString error("Cannot change the number of encodings with setParameters");
-    if (!mAllowOldSetParameters) {
-      if (!mHaveFailedBecauseEncodingCountChange) {
-        mHaveFailedBecauseEncodingCountChange = true;
-        mozilla::glean::rtcrtpsender_setparameters::fail_length_changed
-            .AddToNumerator(1);
-      }
-      p->MaybeRejectWithInvalidModificationError(error);
-      return p.forget();
-    }
-    if (!mHaveWarnedBecauseEncodingCountChange) {
-      mHaveWarnedBecauseEncodingCountChange = true;
-      mozilla::glean::rtcrtpsender_setparameters::warn_length_changed
-          .AddToNumerator(1);
-    }
-    WarnAboutBadSetParameters(error);
-  } else {
-    
-    for (size_t i = 0; i < paramsCopy.mEncodings.Length(); ++i) {
-      const auto& oldEncoding = oldParams->mEncodings[i];
-      const auto& newEncoding = paramsCopy.mEncodings[i];
-      if (oldEncoding.mRid != newEncoding.mRid) {
-        nsCString error("Cannot change rid, or reorder encodings");
-        if (!mAllowOldSetParameters) {
-          if (!mHaveFailedBecauseRidChange) {
-            mHaveFailedBecauseRidChange = true;
-            mozilla::glean::rtcrtpsender_setparameters::fail_rid_changed
-                .AddToNumerator(1);
-          }
-          p->MaybeRejectWithInvalidModificationError(error);
-          return p.forget();
-        }
-        if (!mHaveWarnedBecauseRidChange) {
-          mHaveWarnedBecauseRidChange = true;
-          mozilla::glean::rtcrtpsender_setparameters::warn_rid_changed
-              .AddToNumerator(1);
-        }
-        WarnAboutBadSetParameters(error);
-      }
-    }
-  }
-
-  
-  
-  if (!paramsCopy.mTransactionId.WasPassed()) {
-    nsCString error("transactionId is not set!");
-    if (!mAllowOldSetParameters) {
-      if (!mHaveFailedBecauseNoTransactionId) {
-        mHaveFailedBecauseNoTransactionId = true;
-        mozilla::glean::rtcrtpsender_setparameters::fail_no_transactionid
-            .AddToNumerator(1);
-      }
-      p->MaybeRejectWithTypeError(error);
-      return p.forget();
-    }
-    if (!mHaveWarnedBecauseNoTransactionId) {
-      mHaveWarnedBecauseNoTransactionId = true;
-      mozilla::glean::rtcrtpsender_setparameters::warn_no_transactionid
-          .AddToNumerator(1);
-    }
-    WarnAboutBadSetParameters(error);
-  } else if (oldParams->mTransactionId != paramsCopy.mTransactionId) {
-    
-    
-    
-    
-    nsCString error(
-        "Cannot change transaction id: call getParameters, modify the result, "
-        "and then call setParameters");
-    if (!mAllowOldSetParameters) {
-      if (!mHaveFailedBecauseStaleTransactionId) {
-        mHaveFailedBecauseStaleTransactionId = true;
-        mozilla::glean::rtcrtpsender_setparameters::fail_stale_transactionid
-            .AddToNumerator(1);
-      }
-      p->MaybeRejectWithInvalidModificationError(error);
-      return p.forget();
-    }
-    if (!mHaveWarnedBecauseStaleTransactionId) {
-      mHaveWarnedBecauseStaleTransactionId = true;
-      mozilla::glean::rtcrtpsender_setparameters::warn_stale_transactionid
-          .AddToNumerator(1);
-    }
-    WarnAboutBadSetParameters(error);
-  }
-
-  
-  
-  if (!paramsCopy.mEncodings.Length()) {
-    if (!mHaveFailedBecauseNoEncodings) {
-      mHaveFailedBecauseNoEncodings = true;
-      mozilla::glean::rtcrtpsender_setparameters::fail_no_encodings
-          .AddToNumerator(1);
-    }
-
-    p->MaybeRejectWithInvalidModificationError(
-        "Cannot set an empty encodings array");
+  if (!Preferences::GetBool("media.peerconnection.simulcast", false)) {
+    p->MaybeResolveWithUndefined();
     return p.forget();
   }
 
-  
-  
-  
-  
+  dom::RTCRtpParameters parameters(aParameters);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ErrorResult rv;
-  CheckAndRectifyEncodings(paramsCopy.mEncodings, mTransceiver->IsVideo(), rv);
-  if (rv.Failed()) {
-    if (!mHaveFailedBecauseOtherError) {
-      mHaveFailedBecauseOtherError = true;
-      mozilla::glean::rtcrtpsender_setparameters::fail_other.AddToNumerator(1);
+  if (!parameters.mEncodings.WasPassed()) {
+    parameters.mEncodings.Construct();
+  }
+
+  std::set<nsString> uniqueRids;
+  for (const auto& encoding : parameters.mEncodings.Value()) {
+    if (encoding.mScaleResolutionDownBy < 1.0f) {
+      p->MaybeRejectWithRangeError("scaleResolutionDownBy must be >= 1.0");
+      return p.forget();
     }
-    p->MaybeReject(std::move(rv));
-    return p.forget();
-  }
-
-  
-  
-  
-  if (mTransceiver->IsVideo()) {
-    for (auto& encoding : paramsCopy.mEncodings) {
-      if (!encoding.mScaleResolutionDownBy.WasPassed()) {
-        encoding.mScaleResolutionDownBy.Construct(1.0);
-      }
+    if (parameters.mEncodings.Value().Length() > 1 &&
+        !encoding.mRid.WasPassed()) {
+      p->MaybeRejectWithTypeError("Missing rid");
+      return p.forget();
     }
-  }
-
-  
-
-  
-  
-  
-
-  
-  
-  
-  
-  mPendingParameters = Some(paramsCopy);
-  uint32_t serialNumber = ++mNumSetParametersCalls;
-  MaybeUpdateConduit();
-
-  if (mAllowOldSetParameters) {
-    SetJsepRids(paramsCopy);
-  }
-
-  
-  
-  GetMainThreadEventTarget()->Dispatch(NS_NewRunnableFunction(
-      __func__,
-      [this, self = RefPtr<RTCRtpSender>(this), p, paramsCopy, serialNumber] {
-        
-        mLastReturnedParameters = Nothing();
-        
-        mParameters = paramsCopy;
-        UpdateRestorableEncodings(mParameters.mEncodings);
-        
-        
-        
-        if (serialNumber == mNumSetParametersCalls) {
-          mPendingParameters = Nothing();
-        }
-        MOZ_ASSERT(mParameters.mEncodings.Length());
-        
-        p->MaybeResolveWithUndefined();
-      }));
-
-  
-  return p.forget();
-}
-
-
-void RTCRtpSender::CheckAndRectifyEncodings(
-    Sequence<RTCRtpEncodingParameters>& aEncodings, bool aVideo,
-    ErrorResult& aRv) {
-  
-  
-  
-  for (const auto& encoding : aEncodings) {
     if (encoding.mRid.WasPassed()) {
-      std::string utf8Rid = NS_ConvertUTF16toUTF8(encoding.mRid.Value()).get();
-      std::string error;
-      if (!SdpRidAttributeList::CheckRidValidity(utf8Rid, &error)) {
-        aRv.ThrowTypeError(nsCString(error));
-        return;
-      }
-    }
-  }
-
-  if (aEncodings.Length() > 1) {
-    
-    
-    
-    
-    for (const auto& encoding : aEncodings) {
-      if (!encoding.mRid.WasPassed()) {
-        aRv.ThrowTypeError("Missing rid");
-        return;
-      }
-    }
-
-    
-    
-    
-    
-    std::set<nsString> uniqueRids;
-    for (const auto& encoding : aEncodings) {
       if (uniqueRids.count(encoding.mRid.Value())) {
-        aRv.ThrowTypeError("Duplicate rid");
-        return;
+        p->MaybeRejectWithTypeError("Duplicate rid");
+        return p.forget();
       }
       uniqueRids.insert(encoding.mRid.Value());
     }
-  }
-  
 
-  
-  
-  if (!aVideo) {
-    for (auto& encoding : aEncodings) {
-      if (encoding.mScaleResolutionDownBy.WasPassed()) {
-        encoding.mScaleResolutionDownBy.Reset();
-      }
-      if (encoding.mMaxFramerate.WasPassed()) {
-        encoding.mMaxFramerate.Reset();
-      }
-    }
-  }
-
-  
-  
-  for (const auto& encoding : aEncodings) {
-    if (encoding.mScaleResolutionDownBy.WasPassed()) {
-      if (encoding.mScaleResolutionDownBy.Value() < 1.0f) {
-        aRv.ThrowRangeError("scaleResolutionDownBy must be >= 1.0");
-        return;
-      }
-    }
-  }
-
-  
-  
-  
-  for (const auto& encoding : aEncodings) {
     if (encoding.mMaxFramerate.WasPassed()) {
       if (encoding.mMaxFramerate.Value() < 0.0f) {
-        aRv.ThrowRangeError("maxFramerate must be non-negative");
-        return;
+        p->MaybeRejectWithRangeError("maxFramerate must be non-negative");
+        return p.forget();
       }
     }
   }
-}
-
-void RTCRtpSender::SetJsepRids(const RTCRtpSendParameters& aParameters) {
-  MOZ_ASSERT(aParameters.mEncodings.Length());
-
-  std::vector<std::string> rids;
-  for (const auto& encoding : aParameters.mEncodings) {
-    if (encoding.mRid.WasPassed()) {
-      rids.push_back(NS_ConvertUTF16toUTF8(encoding.mRid.Value()).get());
-    } else {
-      rids.push_back("");
-    }
-  }
-
-  GetJsepTransceiver().mSendTrack.SetRids(rids);
-  mSimulcastEnvelopeSet = true;
-}
-
-void RTCRtpSender::GetParameters(RTCRtpSendParameters& aParameters) {
-  MOZ_ASSERT(mParameters.mEncodings.Length());
-  
-  
-  if (mLastReturnedParameters.isSome()) {
-    aParameters = *mLastReturnedParameters;
-    return;
-  }
 
   
 
-  
-  aParameters.mTransactionId.Construct(mPc->GenerateUUID());
-
-  
-  aParameters.mEncodings = mParameters.mEncodings;
-
-  
-  
-  
-  
-
-  
-  
-
-  
-  
-  
-  
-  aParameters.mRtcp.Construct();
-  aParameters.mRtcp.Value().mCname.Construct();
-  aParameters.mRtcp.Value().mReducedSize.Construct(false);
-  aParameters.mHeaderExtensions.Construct();
-  aParameters.mCodecs.Construct();
-
-  
-  mLastReturnedParameters = Some(aParameters);
-
-  
   GetMainThreadEventTarget()->Dispatch(NS_NewRunnableFunction(
-      __func__, [this, self = RefPtr<RTCRtpSender>(this)] {
-        mLastReturnedParameters = Nothing();
-      }));
-}
-
-bool operator==(const RTCRtpEncodingParameters& a1,
-                const RTCRtpEncodingParameters& a2) {
-  
-  return a1.mActive == a2.mActive && a1.mFec == a2.mFec &&
-         a1.mMaxBitrate == a2.mMaxBitrate &&
-         a1.mMaxFramerate == a2.mMaxFramerate && a1.mPriority == a2.mPriority &&
-         a1.mRid == a2.mRid && a1.mRtx == a2.mRtx &&
-         a1.mScaleResolutionDownBy == a2.mScaleResolutionDownBy &&
-         a1.mSsrc == a2.mSsrc;
-}
-
-
-void RTCRtpSender::ApplyJsEncodingToConduitEncoding(
-    const RTCRtpEncodingParameters& aJsEncoding,
-    VideoCodecConfig::Encoding* aConduitEncoding) {
-  aConduitEncoding->active = aJsEncoding.mActive;
-  if (aJsEncoding.mMaxBitrate.WasPassed()) {
-    aConduitEncoding->constraints.maxBr = aJsEncoding.mMaxBitrate.Value();
-  }
-  if (aJsEncoding.mMaxFramerate.WasPassed()) {
-    aConduitEncoding->constraints.maxFps =
-        Some(aJsEncoding.mMaxFramerate.Value());
-  }
-  if (aJsEncoding.mScaleResolutionDownBy.WasPassed()) {
-    
-    
-    aConduitEncoding->constraints.scaleDownBy =
-        aJsEncoding.mScaleResolutionDownBy.Value();
-  } else {
-    aConduitEncoding->constraints.scaleDownBy = 1.0f;
-  }
-}
-
-void RTCRtpSender::UpdateRestorableEncodings(
-    const Sequence<RTCRtpEncodingParameters>& aEncodings) {
-  MOZ_ASSERT(aEncodings.Length());
-
-  if (GetJsepTransceiver().mSendTrack.GetNegotiatedDetails()) {
-    
-    
-    mUnicastEncoding.reset();
-  } else if (mParameters.mEncodings.Length() == 1 &&
-             !mParameters.mEncodings[0].mRid.WasPassed()) {
-    
-    
-    
-    mUnicastEncoding = Some(mParameters.mEncodings[0]);
-  }
-}
-
-Sequence<RTCRtpEncodingParameters> RTCRtpSender::ToSendEncodings(
-    const std::vector<std::string>& aRids) const {
-  MOZ_ASSERT(!aRids.empty());
-
-  Sequence<RTCRtpEncodingParameters> result;
-  
-  
-  for (const auto& rid : aRids) {
-    MOZ_ASSERT(!rid.empty());
-    RTCRtpEncodingParameters encoding;
-    encoding.mActive = true;
-    encoding.mRid.Construct(NS_ConvertUTF8toUTF16(rid.c_str()));
-    Unused << result.AppendElement(encoding, fallible);
-  }
-
-  
-  
-  if (mTransceiver->IsVideo()) {
-    double scale = 1.0f;
-    for (auto it = result.rbegin(); it != result.rend(); ++it) {
-      it->mScaleResolutionDownBy.Construct(scale);
-      scale *= 2;
-    }
-  }
-
-  return result;
-}
-
-void RTCRtpSender::MaybeGetJsepRids() {
-  MOZ_ASSERT(!mSimulcastEnvelopeSet);
-  MOZ_ASSERT(mParameters.mEncodings.Length());
-
-  auto jsepRids = GetJsepTransceiver().mSendTrack.GetRids();
-  if (!jsepRids.empty()) {
-    UpdateRestorableEncodings(mParameters.mEncodings);
-    if (jsepRids.size() != 1 || !jsepRids[0].empty()) {
-      
-      mParameters.mEncodings = ToSendEncodings(jsepRids);
-    }
-    mSimulcastEnvelopeSet = true;
-  }
-}
-
-Sequence<RTCRtpEncodingParameters> RTCRtpSender::GetMatchingEncodings(
-    const std::vector<std::string>& aRids) const {
-  Sequence<RTCRtpEncodingParameters> result;
-
-  if (!aRids.empty() && !aRids[0].empty()) {
-    
-    for (const auto& encoding : mParameters.mEncodings) {
-      for (const auto& rid : aRids) {
-        auto utf16Rid = NS_ConvertUTF8toUTF16(rid.c_str());
-        if (!encoding.mRid.WasPassed() || (utf16Rid == encoding.mRid.Value())) {
-          auto encodingCopy(encoding);
-          if (!encodingCopy.mRid.WasPassed()) {
-            encodingCopy.mRid.Construct(NS_ConvertUTF8toUTF16(rid.c_str()));
-          }
-          Unused << result.AppendElement(encodingCopy, fallible);
-          break;
+      __func__, [this, self = RefPtr<RTCRtpSender>(this), p, parameters] {
+        
+        if (!mPc->IsClosed()) {
+          ApplyParameters(parameters);
+          p->MaybeResolveWithUndefined();
         }
+      }));
+
+  return p.forget();
+}
+
+void RTCRtpSender::GetParameters(RTCRtpParameters& aParameters) const {
+  
+  aParameters = mParameters;
+}
+
+void RTCRtpSender::ApplyParameters(const RTCRtpParameters& aParameters) {
+  mParameters = aParameters;
+  std::vector<JsepTrack::JsConstraints> constraints;
+
+  if (aParameters.mEncodings.WasPassed()) {
+    for (const auto& encoding : aParameters.mEncodings.Value()) {
+      JsepTrack::JsConstraints constraint;
+      if (encoding.mRid.WasPassed()) {
+        
+        
+        constraint.rid = NS_ConvertUTF16toUTF8(encoding.mRid.Value()).get();
       }
+      if (encoding.mMaxBitrate.WasPassed()) {
+        constraint.constraints.maxBr = encoding.mMaxBitrate.Value();
+      }
+      if (encoding.mMaxFramerate.WasPassed()) {
+        constraint.constraints.maxFps = Some(encoding.mMaxFramerate.Value());
+      }
+      constraint.constraints.scaleDownBy = encoding.mScaleResolutionDownBy;
+      constraints.push_back(constraint);
     }
   }
 
-  
-  
-  
-  if (!result.Length()) {
-    
-    
-    if (mUnicastEncoding.isSome()) {
-      Unused << result.AppendElement(*mUnicastEncoding, fallible);
-    } else {
-      Unused << result.AppendElement(mParameters.mEncodings[0], fallible);
+  if (GetJsepTransceiver().mSendTrack.SetJsConstraints(constraints)) {
+    if (mPipeline->Transmitting()) {
+      UpdateConduit();
     }
   }
-
-  return result;
 }
 
 void RTCRtpSender::SetStreams(
@@ -1127,7 +653,31 @@ bool RTCRtpSender::SeamlessTrackSwitch(
 
   mPipeline->SetTrack(aWithTrack);
 
-  MaybeUpdateConduit();
+  if (sending && aWithTrack) {
+    
+    
+    
+    
+
+    if (mTransceiver->IsVideo()) {
+      
+      
+      
+      Maybe<MediaSourceEnum> oldType;
+      Maybe<MediaSourceEnum> newType;
+      if (mSenderTrack) {
+        oldType = Some(mSenderTrack->GetSource().GetMediaSource());
+      }
+      if (aWithTrack) {
+        newType = Some(aWithTrack->GetSource().GetMediaSource());
+      }
+      if (oldType != newType) {
+        UpdateConduit();
+      }
+    } else if (!mSenderTrack != !aWithTrack) {
+      UpdateConduit();
+    }
+  }
 
   
   return true;
@@ -1175,7 +725,7 @@ void RTCRtpSender::UpdateTransport() {
                                nullptr);
 }
 
-void RTCRtpSender::MaybeUpdateConduit() {
+void RTCRtpSender::UpdateConduit() {
   
   
   if (NS_WARN_IF(GetJsepTransceiver().mSendTrack.GetSsrcs().empty())) {
@@ -1186,39 +736,24 @@ void RTCRtpSender::MaybeUpdateConduit() {
     return;
   }
 
-  if (!mPipeline) {
-    return;
-  }
+  mTransmitting = false;
+  Stop();
+
+  mSsrcs = GetJsepTransceiver().mSendTrack.GetSsrcs();
+  mVideoRtxSsrcs = GetJsepTransceiver().mSendTrack.GetRtxSsrcs();
+  mCname = GetJsepTransceiver().mSendTrack.GetCNAME();
 
   if (mPipeline->mConduit->type() == MediaSessionConduit::VIDEO) {
-    Maybe<VideoConfig> newConfig = GetNewVideoConfig();
-    if (newConfig.isSome()) {
-      ApplyVideoConfig(*newConfig);
-    }
+    UpdateVideoConduit();
   } else {
-    Maybe<AudioConfig> newConfig = GetNewAudioConfig();
-    if (newConfig.isSome()) {
-      ApplyAudioConfig(*newConfig);
-    }
+    UpdateAudioConduit();
+  }
+  if ((mTransmitting = GetJsepTransceiver().mSendTrack.GetActive())) {
+    Start();
   }
 }
 
-void RTCRtpSender::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
-  if (!mSimulcastEnvelopeSet) {
-    
-    
-    MaybeGetJsepRids();
-  } else if (!aJsepTransceiver.mSendTrack.GetNegotiatedDetails() ||
-             !aJsepTransceiver.mSendTrack.IsInHaveRemote()) {
-    
-    
-    std::vector<std::string> rids = aJsepTransceiver.mSendTrack.GetRids();
-    mParameters.mEncodings = GetMatchingEncodings(rids);
-    MOZ_ASSERT(mParameters.mEncodings.Length());
-  }
-
-  MaybeUpdateConduit();
-}
+void RTCRtpSender::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {}
 
 void RTCRtpSender::SyncToJsep(JsepTransceiver& aJsepTransceiver) const {
   std::vector<std::string> streamIds;
@@ -1233,134 +768,84 @@ void RTCRtpSender::SyncToJsep(JsepTransceiver& aJsepTransceiver) const {
   aJsepTransceiver.mSendTrack.UpdateStreamIds(streamIds);
 }
 
-Maybe<RTCRtpSender::VideoConfig> RTCRtpSender::GetNewVideoConfig() {
-  
-  
-  
-  if (!GetJsepTransceiver().mSendTrack.GetNegotiatedDetails()) {
-    return Nothing();
-  }
-
-  VideoConfig oldConfig;
-  oldConfig.mSsrcs = mSsrcs;
-  oldConfig.mLocalRtpExtensions = mLocalRtpExtensions;
-  oldConfig.mCname = mCname;
-  oldConfig.mTransmitting = mTransmitting;
-  oldConfig.mVideoRtxSsrcs = mVideoRtxSsrcs;
-  oldConfig.mVideoCodec = mVideoCodec;
-  oldConfig.mVideoRtpRtcpConfig = mVideoRtpRtcpConfig;
-  oldConfig.mVideoCodecMode = mVideoCodecMode;
-
-  VideoConfig newConfig(oldConfig);
-
-  UpdateBaseConfig(&newConfig);
-
-  newConfig.mVideoRtxSsrcs = GetJsepTransceiver().mSendTrack.GetRtxSsrcs();
-
-  const JsepTrackNegotiatedDetails details(
-      *GetJsepTransceiver().mSendTrack.GetNegotiatedDetails());
-
-  if (mSenderTrack) {
-    RefPtr<mozilla::dom::VideoStreamTrack> videotrack =
-        mSenderTrack->AsVideoStreamTrack();
-
-    if (!videotrack) {
-      MOZ_CRASH(
-          "In ConfigureVideoCodecMode, mSenderTrack is not video! This should "
-          "never happen!");
-    }
-
-    dom::MediaSourceEnum source = videotrack->GetSource().GetMediaSource();
-    switch (source) {
-      case dom::MediaSourceEnum::Browser:
-      case dom::MediaSourceEnum::Screen:
-      case dom::MediaSourceEnum::Window:
-      case dom::MediaSourceEnum::Application:
-        newConfig.mVideoCodecMode = webrtc::VideoCodecMode::kScreensharing;
-        break;
-
-      case dom::MediaSourceEnum::Camera:
-      case dom::MediaSourceEnum::Other:
-        
-        
-        
-        newConfig.mVideoCodecMode = webrtc::VideoCodecMode::kRealtimeVideo;
-        break;
-
-      case dom::MediaSourceEnum::Microphone:
-      case dom::MediaSourceEnum::AudioCapture:
-      case dom::MediaSourceEnum::EndGuard_:
-        MOZ_ASSERT(false);
-        break;
-    }
-  }
-
-  std::vector<VideoCodecConfig> configs;
-  RTCRtpTransceiver::NegotiatedDetailsToVideoCodecConfigs(details, &configs);
-
-  if (configs.empty()) {
+void RTCRtpSender::ConfigureVideoCodecMode() {
+  if (!mSenderTrack) {
     
-    
-    
-    
-    MOZ_LOG(gSenderLog, LogLevel::Error,
-            ("%s[%s]: %s  No video codecs were negotiated (send).",
-             mPc->GetHandle().c_str(), GetMid().c_str(), __FUNCTION__));
-    return Nothing();
+    return;
   }
 
-  newConfig.mVideoCodec = Some(configs[0]);
-  
-  
-  const RTCRtpSendParameters& parameters =
-      mPendingParameters.isSome() ? *mPendingParameters : mParameters;
-  for (VideoCodecConfig::Encoding& conduitEncoding :
-       newConfig.mVideoCodec->mEncodings) {
-    for (const RTCRtpEncodingParameters& jsEncoding : parameters.mEncodings) {
-      std::string rid;
-      if (jsEncoding.mRid.WasPassed()) {
-        rid = NS_ConvertUTF16toUTF8(jsEncoding.mRid.Value()).get();
-      }
-      if (conduitEncoding.rid == rid) {
-        ApplyJsEncodingToConduitEncoding(jsEncoding, &conduitEncoding);
-        break;
-      }
-    }
+  RefPtr<mozilla::dom::VideoStreamTrack> videotrack =
+      mSenderTrack->AsVideoStreamTrack();
+
+  if (!videotrack) {
+    MOZ_CRASH(
+        "In ConfigureVideoCodecMode, mSenderTrack is not video! This should "
+        "never happen!");
   }
 
-  newConfig.mVideoRtpRtcpConfig = Some(details.GetRtpRtcpConfig());
+  dom::MediaSourceEnum source = videotrack->GetSource().GetMediaSource();
+  webrtc::VideoCodecMode mode = webrtc::VideoCodecMode::kRealtimeVideo;
+  switch (source) {
+    case dom::MediaSourceEnum::Browser:
+    case dom::MediaSourceEnum::Screen:
+    case dom::MediaSourceEnum::Window:
+      mode = webrtc::VideoCodecMode::kScreensharing;
+      break;
 
-  if (newConfig == oldConfig) {
-    MOZ_LOG(gSenderLog, LogLevel::Debug,
-            ("%s[%s]: %s  No change in video config", mPc->GetHandle().c_str(),
-             GetMid().c_str(), __FUNCTION__));
-    return Nothing();
+    case dom::MediaSourceEnum::Camera:
+    default:
+      mode = webrtc::VideoCodecMode::kRealtimeVideo;
+      break;
   }
 
-  if (newConfig.mVideoCodec.isSome()) {
-    MOZ_ASSERT(newConfig.mSsrcs.size() ==
-               newConfig.mVideoCodec->mEncodings.size());
-  }
-  return Some(newConfig);
+  mVideoCodecMode = mode;
 }
 
-Maybe<RTCRtpSender::AudioConfig> RTCRtpSender::GetNewAudioConfig() {
-  AudioConfig oldConfig;
-  oldConfig.mSsrcs = mSsrcs;
-  oldConfig.mLocalRtpExtensions = mLocalRtpExtensions;
-  oldConfig.mCname = mCname;
-  oldConfig.mTransmitting = mTransmitting;
-  oldConfig.mAudioCodec = mAudioCodec;
-
-  AudioConfig newConfig(oldConfig);
-
-  UpdateBaseConfig(&newConfig);
-
+void RTCRtpSender::UpdateVideoConduit() {
+  
+  
+  
   if (GetJsepTransceiver().mSendTrack.GetNegotiatedDetails() &&
       GetJsepTransceiver().mSendTrack.GetActive()) {
     const auto& details(
         *GetJsepTransceiver().mSendTrack.GetNegotiatedDetails());
 
+    {
+      std::vector<webrtc::RtpExtension> extmaps;
+      
+      details.ForEachRTPHeaderExtension(
+          [&extmaps](const SdpExtmapAttributeList::Extmap& extmap) {
+            extmaps.emplace_back(extmap.extensionname, extmap.entry);
+          });
+      mLocalRtpExtensions = extmaps;
+    }
+
+    ConfigureVideoCodecMode();
+
+    std::vector<VideoCodecConfig> configs;
+    RTCRtpTransceiver::NegotiatedDetailsToVideoCodecConfigs(details, &configs);
+
+    if (configs.empty()) {
+      
+      
+      
+      
+      MOZ_LOG(gSenderLog, LogLevel::Error,
+              ("%s[%s]: %s  No video codecs were negotiated (send).",
+               mPc->GetHandle().c_str(), GetMid().c_str(), __FUNCTION__));
+      return;
+    }
+
+    mVideoCodec = Some(configs[0]);
+    mVideoRtpRtcpConfig = Some(details.GetRtpRtcpConfig());
+  }
+}
+
+void RTCRtpSender::UpdateAudioConduit() {
+  if (GetJsepTransceiver().mSendTrack.GetNegotiatedDetails() &&
+      GetJsepTransceiver().mSendTrack.GetActive()) {
+    const auto& details(
+        *GetJsepTransceiver().mSendTrack.GetNegotiatedDetails());
     std::vector<AudioCodecConfig> configs;
     RTCRtpTransceiver::NegotiatedDetailsToAudioCodecConfigs(details, &configs);
     if (configs.empty()) {
@@ -1371,7 +856,7 @@ Maybe<RTCRtpSender::AudioConfig> RTCRtpSender::GetNewAudioConfig() {
       MOZ_LOG(gSenderLog, LogLevel::Error,
               ("%s[%s]: %s No audio codecs were negotiated (send)",
                mPc->GetHandle().c_str(), GetMid().c_str(), __FUNCTION__));
-      return Nothing();
+      return;
     }
 
     std::vector<AudioCodecConfig> dtmfConfigs;
@@ -1396,31 +881,10 @@ Maybe<RTCRtpSender::AudioConfig> RTCRtpSender::GetNewAudioConfig() {
             [](const auto& a, const auto& b) { return a.mFreq < b.mFreq; });
       }
       MOZ_ASSERT(dtmfIterator != dtmfConfigs.end());
-      newConfig.mDtmfPt = dtmfIterator->mType;
-      newConfig.mDtmfFreq = dtmfIterator->mFreq;
+      mDtmf->SetPayloadType(dtmfIterator->mType, dtmfIterator->mFreq);
     }
 
-    newConfig.mAudioCodec = Some(sendCodec);
-  }
-
-  if (newConfig == oldConfig) {
-    MOZ_LOG(gSenderLog, LogLevel::Debug,
-            ("%s[%s]: %s  No change in audio config", mPc->GetHandle().c_str(),
-             GetMid().c_str(), __FUNCTION__));
-    return Nothing();
-  }
-
-  return Some(newConfig);
-}
-
-void RTCRtpSender::UpdateBaseConfig(BaseConfig* aConfig) {
-  aConfig->mSsrcs = GetJsepTransceiver().mSendTrack.GetSsrcs();
-  aConfig->mCname = GetJsepTransceiver().mSendTrack.GetCNAME();
-
-  if (GetJsepTransceiver().mSendTrack.GetNegotiatedDetails() &&
-      GetJsepTransceiver().mSendTrack.GetActive()) {
-    const auto& details(
-        *GetJsepTransceiver().mSendTrack.GetNegotiatedDetails());
+    mAudioCodec = Some(sendCodec);
     {
       std::vector<webrtc::RtpExtension> extmaps;
       
@@ -1428,49 +892,8 @@ void RTCRtpSender::UpdateBaseConfig(BaseConfig* aConfig) {
           [&extmaps](const SdpExtmapAttributeList::Extmap& extmap) {
             extmaps.emplace_back(extmap.extensionname, extmap.entry);
           });
-      aConfig->mLocalRtpExtensions = extmaps;
+      mLocalRtpExtensions = extmaps;
     }
-  }
-  aConfig->mTransmitting = GetJsepTransceiver().mSendTrack.GetActive();
-}
-
-void RTCRtpSender::ApplyVideoConfig(const VideoConfig& aConfig) {
-  if (aConfig.mVideoCodec.isSome()) {
-    MOZ_ASSERT(aConfig.mSsrcs.size() == aConfig.mVideoCodec->mEncodings.size());
-  }
-  mTransmitting = false;
-  Stop();
-
-  mSsrcs = aConfig.mSsrcs;
-  mCname = aConfig.mCname;
-  mLocalRtpExtensions = aConfig.mLocalRtpExtensions;
-
-  mVideoRtxSsrcs = aConfig.mVideoRtxSsrcs;
-  mVideoCodec = aConfig.mVideoCodec;
-  mVideoRtpRtcpConfig = aConfig.mVideoRtpRtcpConfig;
-  mVideoCodecMode = aConfig.mVideoCodecMode;
-
-  if ((mTransmitting = aConfig.mTransmitting)) {
-    Start();
-  }
-}
-
-void RTCRtpSender::ApplyAudioConfig(const AudioConfig& aConfig) {
-  mTransmitting = false;
-  Stop();
-
-  mSsrcs = aConfig.mSsrcs;
-  mCname = aConfig.mCname;
-  mLocalRtpExtensions = aConfig.mLocalRtpExtensions;
-
-  mAudioCodec = aConfig.mAudioCodec;
-
-  if (aConfig.mDtmfPt >= 0) {
-    mDtmf->SetPayloadType(aConfig.mDtmfPt, aConfig.mDtmfFreq);
-  }
-
-  if ((mTransmitting = aConfig.mTransmitting)) {
-    Start();
   }
 }
 

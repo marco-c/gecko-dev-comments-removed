@@ -993,38 +993,6 @@ const getTurnHostname = turnUrl => {
 
 
 
-const GleanTest = new Proxy(
-  {},
-  {
-    get(target, categoryName, receiver) {
-      return new Proxy(
-        {},
-        {
-          get(target, metricName, receiver) {
-            return {
-              
-              async testGetValue() {
-                return SpecialPowers.spawnChrome(
-                  [categoryName, metricName],
-                  async (categoryName, metricName) => {
-                    await Services.fog.testFlushAllChildren();
-                    const window = this.browsingContext.topChromeWindow;
-                    return window.Glean[categoryName][
-                      metricName
-                    ].testGetValue();
-                  }
-                );
-              },
-            };
-          },
-        }
-      );
-    },
-  }
-);
-
-
-
 
 
 

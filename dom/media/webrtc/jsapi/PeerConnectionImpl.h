@@ -511,18 +511,6 @@ class PeerConnectionImpl final
     return mPacketDumper;
   }
 
-  nsString GenerateUUID() const {
-    std::string result;
-    if (!mUuidGen->Generate(&result)) {
-      MOZ_CRASH();
-    }
-    return NS_ConvertUTF8toUTF16(result.c_str());
-  }
-
-  bool ShouldAllowOldSetParameters() const { return mAllowOldSetParameters; }
-
-  void SendWarningToConsole(const nsCString& aWarning);
-
  private:
   virtual ~PeerConnectionImpl();
   PeerConnectionImpl(const PeerConnectionImpl& rhs);
@@ -772,9 +760,6 @@ class PeerConnectionImpl final
 
   void BreakCycles();
 
-  bool HasPendingSetParameters() const;
-  void InvalidateLastReturnedParameters();
-
   RefPtr<WebrtcCallWrapper> mCall;
 
   
@@ -824,9 +809,6 @@ class PeerConnectionImpl final
 
   
   std::set<std::string> mRegisteredMDNSHostnames;
-
-  
-  bool mAllowOldSetParameters = false;
 
   
   struct PendingIceCandidate {
