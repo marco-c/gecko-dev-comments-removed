@@ -1988,11 +1988,10 @@ nsresult nsPrintJob::FinishPrintPreview() {
 
   
   
+  
+  
   RefPtr<nsPrintData> printData = mPrt;
   if (NS_FAILED(rv)) {
-    
-
-
     printData->OnEndPrinting();
 
     return rv;

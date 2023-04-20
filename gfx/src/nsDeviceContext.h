@@ -21,6 +21,7 @@
 #include "mozilla/AppUnits.h"         
 #include "nsFontMetrics.h"            
 #include "mozilla/gfx/PrintTarget.h"  
+#include "mozilla/gfx/PrintPromise.h"
 
 class gfxContext;
 class gfxTextPerfMetrics;
@@ -181,7 +182,7 @@ class nsDeviceContext final {
 
 
 
-  nsresult EndDocument();
+  RefPtr<mozilla::gfx::PrintEndDocumentPromise> EndDocument();
 
   
 

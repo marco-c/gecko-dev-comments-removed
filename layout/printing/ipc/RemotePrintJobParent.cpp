@@ -207,11 +207,48 @@ static void NotifyStateChange(
   }
 }
 
+static void Cleanup(const nsCOMArray<nsIWebProgressListener>& aListeners,
+                    RefPtr<nsDeviceContext>& aAbortContext,
+                    const bool aPrintingInterrupted, const nsresult aResult) {
+  auto result = aResult;
+  if (MOZ_UNLIKELY(aPrintingInterrupted && NS_SUCCEEDED(result))) {
+    result = NS_ERROR_UNEXPECTED;
+  }
+  if (NS_FAILED(result)) {
+    NotifyStatusChange(aListeners, result);
+  }
+  if (aPrintingInterrupted && aAbortContext) {
+    
+    Unused << aAbortContext->AbortDocument();
+  }
+  
+  NotifyStateChange(aListeners,
+                    nsIWebProgressListener::STATE_STOP |
+                        nsIWebProgressListener::STATE_IS_DOCUMENT,
+                    result);
+}
+
 mozilla::ipc::IPCResult RemotePrintJobParent::RecvFinalizePrint() {
   
   
   if (mPrintDeviceContext) {
-    mStatus = mPrintDeviceContext->EndDocument();
+    mPrintDeviceContext->EndDocument()->Then(
+        GetMainThreadSerialEventTarget(), __func__,
+        [listeners = std::move(mPrintProgressListeners)](
+            const mozilla::gfx::PrintEndDocumentPromise::ResolveOrRejectValue&
+                aResult) {
+          
+          
+          RefPtr<nsDeviceContext> empty;
+          if (aResult.IsResolve()) {
+            Cleanup(listeners, empty,  false,
+                    NS_OK);
+          } else {
+            Cleanup(listeners, empty,  false,
+                    aResult.RejectValue());
+          }
+        });
+    mStatus = NS_OK;
   }
 
   mIsDoingPrinting = false;
@@ -270,19 +307,8 @@ void RemotePrintJobParent::ActorDestroy(ActorDestroyReason aWhy) {
   if (MOZ_UNLIKELY(mIsDoingPrinting && NS_SUCCEEDED(mStatus))) {
     mStatus = NS_ERROR_UNEXPECTED;
   }
-  if (NS_FAILED(mStatus)) {
-    NotifyStatusChange(mPrintProgressListeners, mStatus);
-  }
-  if (mIsDoingPrinting && mPrintDeviceContext) {
-    
-    Unused << mPrintDeviceContext->AbortDocument();
-  }
-  
-  NotifyStateChange(mPrintProgressListeners,
-                    nsIWebProgressListener::STATE_STOP |
-                        nsIWebProgressListener::STATE_IS_DOCUMENT,
-                    mStatus);
-
+  Cleanup(mPrintProgressListeners, mPrintDeviceContext, mIsDoingPrinting,
+          mStatus);
   
   mIsDoingPrinting = false;
 }
