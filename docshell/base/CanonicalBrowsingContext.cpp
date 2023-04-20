@@ -2046,7 +2046,7 @@ CanonicalBrowsingContext::ChangeRemoteness(
   
   
   RefPtr<ContentParent> existingProcess = GetContentParent();
-  if (existingProcess && existingProcess->IsAlive() &&
+  if (existingProcess && !existingProcess->IsShuttingDown() &&
       aOptions.mReplaceBrowsingContext &&
       aOptions.mRemoteType == existingProcess->GetRemoteType()) {
     change->mContentParent = existingProcess;
