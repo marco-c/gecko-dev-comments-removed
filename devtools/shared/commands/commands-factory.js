@@ -180,26 +180,6 @@ exports.CommandsFactory = {
 
 
 
-  async forProcess(osPid, { client } = {}) {
-    if (!client) {
-      client = await createLocalClient();
-    }
-
-    const descriptor = await client.mainRoot.getProcess(osPid);
-    const commands = await createCommandsDictionary(descriptor);
-    return commands;
-  },
-
-  
-
-
-
-
-
-
-
-
-
 
   async spawnClientToDebugSystemPrincipal() {
     

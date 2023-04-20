@@ -57,11 +57,9 @@ add_task(async () => {
     ok(targetForm.threadActor, "Got the thread actor");
 
     
-    const commands = await CommandsFactory.forProcess(osPid);
-    await commands.targetCommand.startListening();
-    const { result } = await commands.scriptCommand.execute("var a = 42; a");
-
-    is(result, 42, "console.eval worked");
+    
+    const { workers } = await front.listWorkers();
+    is(workers.length, 0, "listWorkers worked and reported no workers");
 
     return [front, content.id];
   }
