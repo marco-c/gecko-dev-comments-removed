@@ -150,12 +150,8 @@ async function plInit() {
 
     
     
-    var env = Cc["@mozilla.org/process/environment;1"].getService(
-      Ci.nsIEnvironment
-    );
-
-    if (env.exists("TPPROFILINGINFO")) {
-      profilingInfo = env.get("TPPROFILINGINFO");
+    if (Services.env.exists("TPPROFILINGINFO")) {
+      profilingInfo = Services.env.get("TPPROFILINGINFO");
       if (profilingInfo !== null) {
         TalosParentProfiler.initFromObject(JSON.parse(profilingInfo));
       }

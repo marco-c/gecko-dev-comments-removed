@@ -262,12 +262,8 @@ function Tester(aTests, structuredLogger, aCallback) {
     ),
   });
 
-  let env = Cc["@mozilla.org/process/environment;1"].getService(
-    Ci.nsIEnvironment
-  );
-
   
-  if (env.exists("MOZ_AUTOMATION")) {
+  if (Services.env.exists("MOZ_AUTOMATION")) {
     this.EventUtils.synthesizeNativeMouseEvent({
       type: "mousemove",
       screenX: 1000,
@@ -578,10 +574,7 @@ Tester.prototype = {
   async ensureVsyncDisabled() {
     
     
-    let env = Cc["@mozilla.org/process/environment;1"].getService(
-      Ci.nsIEnvironment
-    );
-    if (env.get("MOZ_HEADLESS")) {
+    if (Services.env.get("MOZ_HEADLESS")) {
       return;
     }
 
@@ -857,18 +850,15 @@ Tester.prototype = {
 
       
       if (this.currentTest.failCount) {
-        let env = Cc["@mozilla.org/process/environment;1"].getService(
-          Ci.nsIEnvironment
-        );
         
         
         if (
-          env.exists("MOZ_UPLOAD_DIR") &&
-          !env.exists("MOZ_PROFILER_SHUTDOWN") &&
+          Services.env.exists("MOZ_UPLOAD_DIR") &&
+          !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
           Services.profiler.IsActive()
         ) {
           let filename = `profile_${name}.json`;
-          let path = env.get("MOZ_UPLOAD_DIR");
+          let path = Services.env.get("MOZ_UPLOAD_DIR");
           let profilePath = PathUtils.join(path, filename);
           try {
             let profileData = await Services.profiler.getProfileDataAsGzippedArrayBuffer();
