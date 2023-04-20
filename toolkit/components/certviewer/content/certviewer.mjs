@@ -1,29 +1,14 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* eslint-env mozilla/remote-page */
 
-
-
-
-
-"use strict";
-
-import { normalizeToKebabCase } from "./components/utils.js";
-
-import "chrome://global/content/certviewer/pvutils_bundle.jsm";
-import "chrome://global/content/certviewer/asn1js_bundle.jsm";
-import "chrome://global/content/certviewer/pkijs_bundle.jsm";
-import "chrome://global/content/certviewer/certDecoder.jsm";
-
-const { Integer, fromBER } = globalThis.asn1js.asn1js;
-const { Certificate } = globalThis.pkijs.pkijs;
-const { fromBase64, stringToArrayBuffer } = globalThis.pvutils.pvutils;
-const { parse, pemToDER } = globalThis.certDecoderInitializer(
-  Integer,
-  fromBER,
-  Certificate,
-  fromBase64,
-  stringToArrayBuffer,
-  crypto
-);
+import { normalizeToKebabCase } from "./components/utils.mjs";
+import {
+  parse,
+  pemToDER,
+} from "chrome://global/content/certviewer/certDecoder.mjs";
 
 document.addEventListener("DOMContentLoaded", async e => {
   let url = new URL(document.URL);
@@ -95,7 +80,7 @@ export const adjustCertInformation = cert => {
   let certItems = [];
   let tabName = cert?.subject?.cn || "";
   if (cert && !tabName) {
-    
+    // No common name, use the value of the last item in the cert's entries.
     tabName = cert.subject?.entries?.slice(-1)[0]?.[1] || "";
   }
 
@@ -378,15 +363,18 @@ export const adjustCertInformation = cert => {
           items.push(createEntryItem("value", entry.value));
           if (entry.qualifiers) {
             entry.qualifiers.forEach(qualifier => {
-              if (qualifier.name && qualifier.id) {
+              if (qualifier.qualifierName && qualifier.qualifierId) {
                 items.push(
                   createEntryItem(
                     "qualifier",
-                    qualifier.name + " ( " + qualifier.id + " )"
+                    qualifier.qualifierName +
+                      " ( " +
+                      qualifier.qualifierId +
+                      " )"
                   )
                 );
               }
-              items.push(createEntryItem("value", qualifier.value));
+              items.push(createEntryItem("value", qualifier.qualifierValue));
             });
           }
         });
@@ -433,8 +421,8 @@ export const adjustCertInformation = cert => {
   };
 };
 
-
-
+// isAboutCertificate means to the standalone page about:certificate, which
+// uses a different customElement than opening a certain certificate
 const render = async (certs, error, isAboutCertificate = false) => {
   if (isAboutCertificate) {
     await customElements.whenDefined("about-certificate-section");

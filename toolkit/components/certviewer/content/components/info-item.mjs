@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-import { b64ToPEM, normalizeToKebabCase } from "./utils.js";
+import { b64ToPEM, normalizeToKebabCase } from "./utils.mjs";
 
 export class InfoItem extends HTMLElement {
   constructor(item) {
@@ -33,20 +33,20 @@ export class InfoItem extends HTMLElement {
   addLongHexOverflow(info) {
     info.classList.add("hex");
 
-    
-    
-    
-    
-    
-    
+    // For visual appeal, we want to collapse large hex values into single
+    // line items that can be clicked to expand.
+    // This function measures the size of the info item relative to its
+    // container and adds the "long-hex" class if it's overflowing. Since the
+    // container size changes on window resize this function is hooked up to
+    // a resize event listener.
     function resize() {
       if (info.classList.contains("hex-open")) {
         info.classList.toggle("long-hex", true);
         return;
       }
 
-      
-      
+      // If the item is not currently drawn and we can't measure its dimensions
+      // then attach an observer that will measure it once it appears.
       if (info.clientWidth <= 0) {
         let observer = new IntersectionObserver(function([
           { intersectionRatio },
@@ -69,8 +69,8 @@ export class InfoItem extends HTMLElement {
     window.requestAnimationFrame(resize);
 
     this.addEventListener("mouseup", () => {
-      
-      
+      // If a range of text is selected, don't toggle the class that
+      // hides/shows additional text.
       if (
         info.classList.contains("long-hex") &&
         window.getSelection().type !== "Range"
@@ -84,8 +84,8 @@ export class InfoItem extends HTMLElement {
     let label = this.shadowRoot.querySelector("label");
     let labelId = this.item.labelId;
 
-    
-    
+    // Map specific elements to a different message ID, to allow updates to
+    // existing labels and avoid duplicates.
     let stringMapping = {
       signaturealgorithm: "signature-algorithm",
       "rfc-822-name": "email-address",

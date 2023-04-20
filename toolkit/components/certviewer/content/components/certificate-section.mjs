@@ -1,10 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-import { ErrorSection } from "./error-section.js";
-import { InfoGroupContainer } from "./info-group-container.js";
-import { CertificateTabsSection } from "./certificate-tabs-section.js";
+import { ErrorSection } from "./error-section.mjs";
+import { InfoGroupContainer } from "./info-group-container.mjs";
+import { CertificateTabsSection } from "./certificate-tabs-section.mjs";
 
 class CertificateSection extends HTMLElement {
   constructor(certs, error) {
@@ -61,9 +61,9 @@ class CertificateSection extends HTMLElement {
     this.addClassForPadding();
   }
 
-  
-  
-  
+  // Adds class selector for items that need padding,
+  // as nth-child/parent-based selectors aren't supported
+  // due to the encapsulation of custom-element CSS.
   addClassForPadding() {
     let embeddedScts = this.shadowRoot.querySelector(".embedded-scts");
     if (!embeddedScts) {
