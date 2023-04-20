@@ -329,19 +329,19 @@ class Scope : public gc::TenuredCellWithNonGCPointer<BaseScopeData> {
 
   
   
-  const HeapPtr<Shape*> environmentShape_;
+  const HeapPtr<SharedShape*> environmentShape_;
 
   
   HeapPtr<Scope*> enclosingScope_;
 
-  Scope(ScopeKind kind, Scope* enclosing, Shape* environmentShape)
+  Scope(ScopeKind kind, Scope* enclosing, SharedShape* environmentShape)
       : TenuredCellWithNonGCPointer(nullptr),
         kind_(kind),
         environmentShape_(environmentShape),
         enclosingScope_(enclosing) {}
 
   static Scope* create(JSContext* cx, ScopeKind kind, Handle<Scope*> enclosing,
-                       Handle<Shape*> envShape);
+                       Handle<SharedShape*> envShape);
 
   template <typename ConcreteScope>
   void initData(
@@ -357,7 +357,7 @@ class Scope : public gc::TenuredCellWithNonGCPointer<BaseScopeData> {
   template <typename ConcreteScope>
   static ConcreteScope* create(
       JSContext* cx, ScopeKind kind, Handle<Scope*> enclosing,
-      Handle<Shape*> envShape,
+      Handle<SharedShape*> envShape,
       MutableHandle<UniquePtr<typename ConcreteScope::RuntimeData>> data);
 
   static const JS::TraceKind TraceKind = JS::TraceKind::Scope;
@@ -386,7 +386,7 @@ class Scope : public gc::TenuredCellWithNonGCPointer<BaseScopeData> {
            kind() == ScopeKind::StrictNamedLambda;
   }
 
-  Shape* environmentShape() const { return environmentShape_; }
+  SharedShape* environmentShape() const { return environmentShape_; }
 
   Scope* enclosing() const { return enclosingScope_; }
 
@@ -549,7 +549,7 @@ class LexicalScope : public Scope {
 
   
   
-  static Shape* getEmptyExtensibleEnvironmentShape(JSContext* cx);
+  static SharedShape* getEmptyExtensibleEnvironmentShape(JSContext* cx);
 };
 
 template <>
@@ -624,7 +624,7 @@ class ClassBodyScope : public Scope {
 
   
   
-  static Shape* getEmptyExtensibleEnvironmentShape(JSContext* cx);
+  static SharedShape* getEmptyExtensibleEnvironmentShape(JSContext* cx);
 };
 
 
@@ -1566,11 +1566,11 @@ class AbstractBindingIter<frontend::TaggedParserAtomIndex>
 void DumpBindings(JSContext* cx, Scope* scope);
 JSAtom* FrameSlotName(JSScript* script, jsbytecode* pc);
 
-Shape* EmptyEnvironmentShape(JSContext* cx, const JSClass* cls,
-                             uint32_t numSlots, ObjectFlags objectFlags);
+SharedShape* EmptyEnvironmentShape(JSContext* cx, const JSClass* cls,
+                                   uint32_t numSlots, ObjectFlags objectFlags);
 
 template <class T>
-Shape* EmptyEnvironmentShape(JSContext* cx) {
+SharedShape* EmptyEnvironmentShape(JSContext* cx) {
   return EmptyEnvironmentShape(cx, &T::class_, T::RESERVED_SLOTS,
                                T::OBJECT_FLAGS);
 }
@@ -1640,7 +1640,7 @@ class MOZ_STACK_CLASS ScopeIter {
 
   
   
-  Shape* environmentShape() const { return scope()->environmentShape(); }
+  SharedShape* environmentShape() const { return scope()->environmentShape(); }
 
   
   
@@ -1704,7 +1704,7 @@ class WrappedPtrOperations<ScopeIter, Wrapper> {
   explicit operator bool() const { return !done(); }
   Scope* scope() const { return iter().scope(); }
   ScopeKind kind() const { return iter().kind(); }
-  Shape* environmentShape() const { return iter().environmentShape(); }
+  SharedShape* environmentShape() const { return iter().environmentShape(); }
   bool hasSyntacticEnvironment() const {
     return iter().hasSyntacticEnvironment();
   }
@@ -1719,12 +1719,12 @@ class MutableWrappedPtrOperations<ScopeIter, Wrapper>
   void operator++(int) { iter().operator++(1); }
 };
 
-Shape* CreateEnvironmentShape(JSContext* cx, BindingIter& bi,
-                              const JSClass* cls, uint32_t numSlots,
-                              ObjectFlags objectFlags);
+SharedShape* CreateEnvironmentShape(JSContext* cx, BindingIter& bi,
+                                    const JSClass* cls, uint32_t numSlots,
+                                    ObjectFlags objectFlags);
 
-Shape* EmptyEnvironmentShape(JSContext* cx, const JSClass* cls,
-                             uint32_t numSlots, ObjectFlags objectFlags);
+SharedShape* EmptyEnvironmentShape(JSContext* cx, const JSClass* cls,
+                                   uint32_t numSlots, ObjectFlags objectFlags);
 
 static inline size_t GetOffsetOfParserScopeDataTrailingNames(ScopeKind kind) {
   switch (kind) {

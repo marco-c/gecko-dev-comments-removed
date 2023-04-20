@@ -192,9 +192,8 @@ class GlobalObjectData {
 
   
   
-  using PlainObjectShapeArray =
-      mozilla::EnumeratedArray<PlainObjectSlotsKind,
-                               PlainObjectSlotsKind::Limit, HeapPtr<Shape*>>;
+  using PlainObjectShapeArray = mozilla::EnumeratedArray<
+      PlainObjectSlotsKind, PlainObjectSlotsKind::Limit, HeapPtr<SharedShape*>>;
   PlainObjectShapeArray plainObjectShapesWithDefaultProto;
 
   
@@ -1024,18 +1023,18 @@ class GlobalObject : public NativeObject {
   }
   static SharedShape* createArrayShapeWithDefaultProto(JSContext* cx);
 
-  static Shape* getPlainObjectShapeWithDefaultProto(JSContext* cx,
-                                                    gc::AllocKind kind) {
+  static SharedShape* getPlainObjectShapeWithDefaultProto(JSContext* cx,
+                                                          gc::AllocKind kind) {
     PlainObjectSlotsKind slotsKind = PlainObjectSlotsKindFromAllocKind(kind);
-    Shape* shape =
+    SharedShape* shape =
         cx->global()->data().plainObjectShapesWithDefaultProto[slotsKind];
     if (MOZ_LIKELY(shape)) {
       return shape;
     }
     return createPlainObjectShapeWithDefaultProto(cx, kind);
   }
-  static Shape* createPlainObjectShapeWithDefaultProto(JSContext* cx,
-                                                       gc::AllocKind kind);
+  static SharedShape* createPlainObjectShapeWithDefaultProto(
+      JSContext* cx, gc::AllocKind kind);
 
   static SharedShape* getFunctionShapeWithDefaultProto(JSContext* cx,
                                                        bool extended) {
