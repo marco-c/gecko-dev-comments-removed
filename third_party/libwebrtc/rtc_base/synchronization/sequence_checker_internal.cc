@@ -104,13 +104,5 @@ std::string SequenceCheckerImpl::ExpectationToString() const {
 }
 #endif  
 
-std::string ExpectationToString(const SequenceCheckerImpl* checker) {
-#if RTC_DCHECK_IS_ON
-  return checker->ExpectationToString();
-#else
-  return std::string();
-#endif
-}
-
 }  
 }  
