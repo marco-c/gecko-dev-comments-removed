@@ -1293,6 +1293,12 @@ const gCSSProperties2 = {
       { type: 'discrete', options: [ [ 'circle', 'open dot' ] ] }
     ]
   },
+  'text-group-align': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'none', 'center' ] ] }
+    ]
+  },
   'text-indent': {
     
     types: [
