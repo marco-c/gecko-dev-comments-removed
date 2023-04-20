@@ -1850,7 +1850,9 @@ nsresult PresShell::Initialize() {
     NS_ENSURE_STATE(!mHaveShutDown);
   }
 
-  mDocument->TriggerAutoFocus();
+  if (mDocument->HasAutoFocusCandidates()) {
+    mDocument->ScheduleFlushAutoFocusCandidates();
+  }
 
   NS_ASSERTION(rootFrame, "How did that happen?");
 
@@ -3136,52 +3138,7 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
   
   
   
-  RefPtr<Element> target = [&]() -> Element* {
-    
-    
-    if (Element* el = mDocument->GetElementById(aAnchorName)) {
-      return el;
-    }
-
-    
-    
-    
-    
-    
-    if (mDocument->IsHTMLDocument()) {
-      nsCOMPtr<nsINodeList> list = mDocument->GetElementsByName(aAnchorName);
-      
-      uint32_t length = list->Length();
-      for (uint32_t i = 0; i < length; i++) {
-        nsIContent* node = list->Item(i);
-        if (node->IsHTMLElement(nsGkAtoms::a)) {
-          return node->AsElement();
-        }
-      }
-    } else {
-      constexpr auto nameSpace = u"http://www.w3.org/1999/xhtml"_ns;
-      
-      nsCOMPtr<nsINodeList> list =
-          mDocument->GetElementsByTagNameNS(nameSpace, u"a"_ns);
-      
-      for (uint32_t i = 0; true; i++) {
-        nsIContent* node = list->Item(i);
-        if (!node) {  
-          break;
-        }
-
-        
-        if (node->IsElement() &&
-            node->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::name,
-                                           aAnchorName, eCaseMatters)) {
-          return node->AsElement();
-        }
-      }
-    }
-
-    
-    return nullptr;
-  }();
+  RefPtr<Element> target = nsContentUtils::GetTargetElement(mDocument, aAnchorName);
 
   
   

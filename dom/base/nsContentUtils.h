@@ -527,6 +527,10 @@ class nsContentUtils {
       mozilla::dom::BrowserParent* aBrowserParent2);
 
   
+  
+  static Element* GetTargetElement(Document* aDocument,
+                                   const nsAString& aAnchorName);
+  
 
 
 
