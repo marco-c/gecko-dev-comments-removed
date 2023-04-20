@@ -2938,14 +2938,15 @@ void MacroAssembler::ceilDoubleToInt32(FloatRegister src, Register dest,
 
 void MacroAssembler::truncFloat32ToInt32(FloatRegister src, Register dest,
                                          Label* fail) {
-  const ARMFPRegister src32(src, 32);
+  ARMFPRegister src32(src, 32);
+  ARMRegister dest32(dest, 32);
 
   Label done, zeroCase;
 
   
   
   
-  Fcvtzs(ARMRegister(dest, 32), src32);
+  Fcvtzs(dest32, src32);
 
   
   branch32(Assembler::Equal, dest, Imm32(0), &zeroCase);
@@ -2966,13 +2967,21 @@ void MacroAssembler::truncFloat32ToInt32(FloatRegister src, Register dest,
     
     
     
-    Fcmp(src32, 0.0f);
-    B(fail, vixl::lt);
-
     
-    Fmov(ARMRegister(dest, 32), src32);
-    branchTest32(Assembler::Signed, dest, dest, fail);
-    move32(Imm32(0), dest);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    Fmov(dest32, src32);
+    Lsr(dest32, dest32, 30);
+    Cbnz(dest32, fail);
   }
 
   bind(&done);
@@ -2980,14 +2989,16 @@ void MacroAssembler::truncFloat32ToInt32(FloatRegister src, Register dest,
 
 void MacroAssembler::truncDoubleToInt32(FloatRegister src, Register dest,
                                         Label* fail) {
-  const ARMFPRegister src64(src, 64);
+  ARMFPRegister src64(src, 64);
+  ARMRegister dest64(dest, 64);
+  ARMRegister dest32(dest, 32);
 
   Label done, zeroCase;
 
   
   
   
-  Fcvtzs(ARMRegister(dest, 32), src64);
+  Fcvtzs(dest32, src64);
 
   
   branch32(Assembler::Equal, dest, Imm32(0), &zeroCase);
@@ -3008,13 +3019,21 @@ void MacroAssembler::truncDoubleToInt32(FloatRegister src, Register dest,
     
     
     
-    Fcmp(src64, 0.0);
-    B(fail, vixl::lt);
-
     
-    Fmov(ARMRegister(dest, 64), src64);
-    branchTestPtr(Assembler::Signed, dest, dest, fail);
-    movePtr(ImmWord(0), dest);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    Fmov(dest64, src64);
+    Lsr(dest64, dest64, 62);
+    Cbnz(dest64, fail);
   }
 
   bind(&done);
@@ -3022,7 +3041,8 @@ void MacroAssembler::truncDoubleToInt32(FloatRegister src, Register dest,
 
 void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
                                          FloatRegister temp, Label* fail) {
-  const ARMFPRegister src32(src, 32);
+  ARMFPRegister src32(src, 32);
+  ARMRegister dest32(dest, 32);
   ScratchFloat32Scope scratch(*this);
 
   Label negative, done;
@@ -3041,7 +3061,7 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
     
     
     
-    Fcvtas(ARMRegister(dest, 32), src32);
+    Fcvtas(dest32, src32);
     
     branch32(Assembler::Equal, dest, Imm32(INT_MAX), fail);
 
@@ -3050,15 +3070,10 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
     branch32(Assembler::NotEqual, dest, Imm32(0), &done);
     {
       
-      Fcmp(src32, 0.0f);
-      B(fail, Assembler::Overflow);
-
       
-      vixl::UseScratchRegisterScope temps(this);
-      const ARMRegister scratchGPR32 = temps.AcquireW();
-      Fmov(scratchGPR32, src32);
-      Cmp(scratchGPR32, vixl::Operand(uint32_t(0x80000000)));
-      B(fail, Assembler::Equal);
+      Fmov(dest32, src32);
+      Lsr(dest32, dest32, 30);
+      Cbnz(dest32, fail);
     }
 
     jump(&done);
@@ -3084,7 +3099,7 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
     
     
     
-    Fcvtms(ARMRegister(dest, 32), temp);
+    Fcvtms(dest32, temp);
     
     branch32(Assembler::Equal, dest, Imm32(INT_MIN), fail);
 
@@ -3097,7 +3112,9 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
 
 void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
                                         FloatRegister temp, Label* fail) {
-  const ARMFPRegister src64(src, 64);
+  ARMFPRegister src64(src, 64);
+  ARMRegister dest64(dest, 64);
+  ARMRegister dest32(dest, 32);
   ScratchDoubleScope scratch(*this);
 
   Label negative, done;
@@ -3116,7 +3133,7 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
     
     
     
-    Fcvtas(ARMRegister(dest, 32), src64);
+    Fcvtas(dest32, src64);
     
     branch32(Assembler::Equal, dest, Imm32(INT_MAX), fail);
 
@@ -3125,15 +3142,10 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
     branch32(Assembler::NotEqual, dest, Imm32(0), &done);
     {
       
-      Fcmp(src64, 0.0);
-      B(fail, Assembler::Overflow);
-
       
-      vixl::UseScratchRegisterScope temps(this);
-      const ARMRegister scratchGPR64 = temps.AcquireX();
-      Fmov(scratchGPR64, src64);
-      Cmp(scratchGPR64, vixl::Operand(uint64_t(0x8000000000000000)));
-      B(fail, Assembler::Equal);
+      Fmov(dest64, src64);
+      Lsr(dest64, dest64, 62);
+      Cbnz(dest64, fail);
     }
 
     jump(&done);
@@ -3159,7 +3171,7 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
     
     
     
-    Fcvtms(ARMRegister(dest, 32), temp);
+    Fcvtms(dest32, temp);
     
     branch32(Assembler::Equal, dest, Imm32(INT_MIN), fail);
 
