@@ -23,7 +23,6 @@
 #include "pc/proxy.h"
 #include "rtc_base/location.h"
 #include "rtc_base/ref_count.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread_annotations.h"
 
 
@@ -43,18 +42,17 @@ class DtmfProviderInterface {
   
   
   virtual bool InsertDtmf(int code, int duration) = 0;
-  
-  
-  virtual sigslot::signal0<>* GetOnDestroyedSignal() = 0;
 
  protected:
   virtual ~DtmfProviderInterface() {}
 };
 
-class DtmfSender : public DtmfSenderInterface, public sigslot::has_slots<> {
+class DtmfSender : public DtmfSenderInterface {
  public:
   static rtc::scoped_refptr<DtmfSender> Create(TaskQueueBase* signaling_thread,
                                                DtmfProviderInterface* provider);
+
+  void OnDtmfProviderDestroyed();
 
   
   void RegisterObserver(DtmfSenderObserverInterface* observer) override;
@@ -84,8 +82,6 @@ class DtmfSender : public DtmfSenderInterface, public sigslot::has_slots<> {
 
   
   void DoInsertDtmf() RTC_RUN_ON(signaling_thread_);
-
-  void OnProviderDestroyed();
 
   void StopSending() RTC_RUN_ON(signaling_thread_);
 
