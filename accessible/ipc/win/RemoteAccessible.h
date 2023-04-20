@@ -19,6 +19,10 @@
 namespace mozilla {
 namespace a11y {
 
+
+
+
+
 class RemoteAccessible : public RemoteAccessibleBase<RemoteAccessible> {
  public:
   RemoteAccessible(uint64_t aID, RemoteAccessible* aParent,

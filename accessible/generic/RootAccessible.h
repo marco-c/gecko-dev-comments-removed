@@ -17,6 +17,13 @@ class PresShell;
 
 namespace a11y {
 
+
+
+
+
+
+
+
 class RootAccessible : public DocAccessibleWrap, public nsIDOMEventListener {
   NS_DECL_ISUPPORTS_INHERITED
 

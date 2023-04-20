@@ -29,6 +29,10 @@
 namespace mozilla {
 namespace a11y {
 
+
+
+
+
 class AccessibleWrap : public LocalAccessible {
  public:  
   AccessibleWrap(nsIContent* aContent, DocAccessible* aDoc);

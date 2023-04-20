@@ -41,6 +41,11 @@ class RelatedAccIterator;
 template <class Class, class... Args>
 class TNotification;
 
+
+
+
+
+
 class DocAccessible : public HyperTextAccessibleWrap,
                       public nsIDocumentObserver,
                       public nsSupportsWeakReference,

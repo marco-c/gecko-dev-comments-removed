@@ -26,6 +26,10 @@ class DocAccessibleParent;
 class RemoteAccessible;
 enum class RelationType;
 
+
+
+
+
 template <class Derived>
 class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
  public:
