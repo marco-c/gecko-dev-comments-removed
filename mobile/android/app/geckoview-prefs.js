@@ -99,9 +99,6 @@ pref("extensions.formautofill.loglevel", "Warn");
 pref("pdfjs.handleOctetStream", true);
 pref("browser.download.open_pdf_attachments_inline", true);
 pref("pdfjs.annotationEditorMode", -1);
-
-
-pref("fission.webContentIsolationStrategy", 0);
 #else
 pref("pdfjs.disabled", true);
 #endif
