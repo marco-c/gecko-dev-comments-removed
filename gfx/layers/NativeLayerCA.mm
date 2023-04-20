@@ -1217,49 +1217,6 @@ void NativeLayerCA::HandlePartialUpdate(const MutexAutoLock& aProofOfLock,
   MOZ_RELEASE_ASSERT(!mInProgressUpdateRegion);
   MOZ_RELEASE_ASSERT(!mInProgressDisplayRect);
 
-#ifdef NIGHTLY_BUILD
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  if (!mDisplayRect.IsEqualInterior(aDisplayRect)) {
-    gfx::IntRegion exposedRegion(aDisplayRect);
-
-    if (mFrontSurface) {
-      
-      
-      
-      exposedRegion.AndWith(mFrontSurface->mInvalidRegion);
-    }
-
-    gfx::IntRegion invalidRegion(exposedRegion);
-    invalidRegion.SubOut(aUpdateRegion);
-    IntRect invalidBounds = invalidRegion.GetBounds();
-    if (invalidBounds.width > 1 && invalidBounds.height > 1) {
-      
-      std::ostringstream reason;
-      reason << "The update region " << aUpdateRegion << " must cover the invalid region "
-             << exposedRegion << ".";
-      gfxCriticalError() << reason.str();
-      MOZ_CRASH();
-    }
-  }
-#endif
-
   mInProgressUpdateRegion = Some(aUpdateRegion);
   mInProgressDisplayRect = Some(aDisplayRect);
 
@@ -1369,21 +1326,6 @@ void NativeLayerCA::NotifySurfaceReady() {
   mFrontSurface = std::move(mInProgressSurface);
   mFrontSurface->mInvalidRegion.SubOut(mInProgressUpdateRegion.extract());
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  IntRect frontSurfaceInvalidBounds = mFrontSurface->mInvalidRegion.GetBounds();
-  if (frontSurfaceInvalidBounds.width <= 1 || frontSurfaceInvalidBounds.height <= 1) {
-    mFrontSurface->mInvalidRegion.SetEmpty();
-  }
-
   ForAllRepresentations([&](Representation& r) { r.mMutatedFrontSurface = true; });
 
   MOZ_RELEASE_ASSERT(mInProgressDisplayRect);
@@ -1392,21 +1334,6 @@ void NativeLayerCA::NotifySurfaceReady() {
     ForAllRepresentations([&](Representation& r) { r.mMutatedDisplayRect = true; });
   }
   mInProgressDisplayRect = Nothing();
-
-  if (!mFrontSurface->mInvalidRegion.Intersect(mDisplayRect).IsEmpty()) {
-    
-    
-    
-    std::ostringstream reason;
-    reason << "The front surface invalid region " << mFrontSurface->mInvalidRegion
-           << " must not intersect the display rect " << mDisplayRect << ".";
-    if (mClipRect) {
-      reason << " And clip rect is " << *mClipRect << ".";
-    }
-    gfxCriticalError() << reason.str();
-  }
-  MOZ_RELEASE_ASSERT(mFrontSurface->mInvalidRegion.Intersect(mDisplayRect).IsEmpty(),
-                     "Parts of the display rect are invalid! This shouldn't happen.");
 }
 
 void NativeLayerCA::DiscardBackbuffers() {
