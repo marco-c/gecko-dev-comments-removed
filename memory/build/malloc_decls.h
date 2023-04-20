@@ -121,6 +121,12 @@ MALLOC_DECL(moz_create_arena_with_params, arena_id_t, arena_params_t*)
 
 
 MALLOC_DECL(moz_dispose_arena, void, arena_id_t)
+
+
+
+
+MALLOC_DECL(moz_set_max_dirty_page_modifier, void, int32_t)
+
 #  endif
 
 #  if MALLOC_FUNCS & MALLOC_FUNCS_ARENA_ALLOC
