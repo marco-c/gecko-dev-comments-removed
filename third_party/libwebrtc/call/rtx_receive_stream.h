@@ -14,7 +14,9 @@
 #include <cstdint>
 #include <map>
 
+#include "api/sequence_checker.h"
 #include "call/rtp_packet_sink_interface.h"
+#include "rtc_base/system/no_unique_address.h"
 
 namespace webrtc {
 
@@ -33,13 +35,19 @@ class RtxReceiveStream : public RtpPacketSinkInterface {
                    
                    ReceiveStatistics* rtp_receive_statistics = nullptr);
   ~RtxReceiveStream() override;
+
+  
+  
+  void SetAssociatedPayloadTypes(std::map<int, int> associated_payload_types);
+
   
   void OnRtpPacket(const RtpPacketReceived& packet) override;
 
  private:
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker packet_checker_;
   RtpPacketSinkInterface* const media_sink_;
   
-  const std::map<int, int> associated_payload_types_;
+  std::map<int, int> associated_payload_types_ RTC_GUARDED_BY(&packet_checker_);
   
   
   const uint32_t media_ssrc_;
