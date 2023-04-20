@@ -499,8 +499,8 @@ TestRunner.runTests = function() {
 
   
   if (TestRunner.jscovDirPrefix != "") {
-    var { CoverageCollector } = SpecialPowers.ChromeUtils.import(
-      "resource://testing-common/CoverageUtils.jsm"
+    var { CoverageCollector } = SpecialPowers.ChromeUtils.importESModule(
+      "resource://testing-common/CoverageUtils.sys.mjs"
     );
     coverageCollector = new CoverageCollector(TestRunner.jscovDirPrefix);
   }

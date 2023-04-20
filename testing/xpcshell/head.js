@@ -63,8 +63,8 @@ let { XPCOMUtils: _XPCOMUtils } = ChromeUtils.importESModule(
 let { OS: _OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 
-var { Assert: AssertCls } = ChromeUtils.import(
-  "resource://testing-common/Assert.jsm"
+var { Assert: AssertCls } = ChromeUtils.importESModule(
+  "resource://testing-common/Assert.sys.mjs"
 );
 
 
@@ -555,8 +555,8 @@ function _execute_test() {
 
   let coverageCollector = null;
   if (typeof _JSCOV_DIR === "string") {
-    let _CoverageCollector = ChromeUtils.import(
-      "resource://testing-common/CoverageUtils.jsm"
+    let _CoverageCollector = ChromeUtils.importESModule(
+      "resource://testing-common/CoverageUtils.sys.mjs"
     ).CoverageCollector;
     coverageCollector = new _CoverageCollector(_JSCOV_DIR);
   }

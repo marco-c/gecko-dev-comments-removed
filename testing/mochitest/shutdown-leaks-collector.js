@@ -6,4 +6,6 @@
 
 
 
-ChromeUtils.import("chrome://mochikit/content/ShutdownLeaksCollector.jsm");
+ChromeUtils.importESModule(
+  "chrome://mochikit/content/ShutdownLeaksCollector.sys.mjs"
+);

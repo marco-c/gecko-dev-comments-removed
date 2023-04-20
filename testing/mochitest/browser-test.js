@@ -136,7 +136,9 @@ function testInit() {
     );
   } else {
     
-    ChromeUtils.import("chrome://mochikit/content/ShutdownLeaksCollector.jsm");
+    ChromeUtils.importESModule(
+      "chrome://mochikit/content/ShutdownLeaksCollector.sys.mjs"
+    );
   }
 }
 
@@ -203,20 +205,20 @@ function Tester(aTests, structuredLogger, aCallback) {
   this.SimpleTest.harnessParameters = gConfig;
 
   this.MemoryStats = simpleTestScope.MemoryStats;
-  this.ContentTask = ChromeUtils.import(
-    "resource://testing-common/ContentTask.jsm"
+  this.ContentTask = ChromeUtils.importESModule(
+    "resource://testing-common/ContentTask.sys.mjs"
   ).ContentTask;
-  this.BrowserTestUtils = ChromeUtils.import(
-    "resource://testing-common/BrowserTestUtils.jsm"
+  this.BrowserTestUtils = ChromeUtils.importESModule(
+    "resource://testing-common/BrowserTestUtils.sys.mjs"
   ).BrowserTestUtils;
-  this.TestUtils = ChromeUtils.import(
-    "resource://testing-common/TestUtils.jsm"
+  this.TestUtils = ChromeUtils.importESModule(
+    "resource://testing-common/TestUtils.sys.mjs"
   ).TestUtils;
   this.PromiseTestUtils = ChromeUtils.importESModule(
     "resource://testing-common/PromiseTestUtils.sys.mjs"
   ).PromiseTestUtils;
-  this.Assert = ChromeUtils.import(
-    "resource://testing-common/Assert.jsm"
+  this.Assert = ChromeUtils.importESModule(
+    "resource://testing-common/Assert.sys.mjs"
   ).Assert;
   this.PerTestCoverageUtils = ChromeUtils.import(
     "resource://testing-common/PerTestCoverageUtils.jsm"
@@ -320,8 +322,8 @@ Tester.prototype = {
 
     if (gConfig.jscovDirPrefix) {
       let coveragePath = gConfig.jscovDirPrefix;
-      let { CoverageCollector } = ChromeUtils.import(
-        "resource://testing-common/CoverageUtils.jsm"
+      let { CoverageCollector } = ChromeUtils.importESModule(
+        "resource://testing-common/CoverageUtils.sys.mjs"
       );
       this._coverageCollector = new CoverageCollector(coveragePath);
     }
