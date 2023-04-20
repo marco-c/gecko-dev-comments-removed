@@ -47,7 +47,6 @@ struct VideoCodecVP8 {
   unsigned char numberOfTemporalLayers;
   bool denoisingOn;
   bool automaticResizeOn;
-  bool frameDroppingOn;
   int keyFrameInterval;
 };
 
@@ -65,7 +64,6 @@ struct VideoCodecVP9 {
   }
   unsigned char numberOfTemporalLayers;
   bool denoisingOn;
-  bool frameDroppingOn;
   int keyFrameInterval;
   bool adaptiveQpMode;
   bool automaticResizeOn;
@@ -80,7 +78,6 @@ struct VideoCodecH264 {
   bool operator!=(const VideoCodecH264& other) const {
     return !(*this == other);
   }
-  bool frameDroppingOn;
   int keyFrameInterval;
   double scaleDownBy;
   uint8_t numberOfTemporalLayers;
@@ -183,9 +180,7 @@ class RTC_EXPORT VideoCodec {
   
   
   VideoCodecComplexity complexity_;
-  
-  
-  absl::optional<bool> frame_drop_enabled_;
+  bool frame_drop_enabled_ = false;
 };
 
 }  
