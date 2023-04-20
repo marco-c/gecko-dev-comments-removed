@@ -60,12 +60,6 @@
 
 
 
-
-
-
-
-
-
 #![doc(html_root_url = "https://docs.rs/pkg-config/0.3")]
 
 use std::collections::HashMap;
@@ -93,14 +87,26 @@ pub struct Config {
 
 #[derive(Clone, Debug)]
 pub struct Library {
+    
     pub libs: Vec<String>,
+    
     pub link_paths: Vec<PathBuf>,
+    
+    pub link_files: Vec<PathBuf>,
+    
     pub frameworks: Vec<String>,
+    
     pub framework_paths: Vec<PathBuf>,
+    
     pub include_paths: Vec<PathBuf>,
+    
     pub ld_args: Vec<Vec<String>>,
+    
     pub defines: HashMap<String, Option<String>>,
+    
     pub version: String,
+    
+    
     _priv: (),
 }
 
@@ -175,7 +181,8 @@ impl fmt::Display for Error {
                             "Try `brew install pkg-config` if you have Homebrew.\n"
                         } else if cfg!(unix) {
                             "Try `apt install pkg-config`, or `yum install pkg-config`,\n\
-                            or `pkg install pkg-config` depending on your distribution.\n"
+                            or `pkg install pkg-config`, or `apk add pkgconfig` \
+                            depending on your distribution.\n"
                         } else {
                             "" 
                         };
@@ -557,6 +564,7 @@ impl Library {
         Library {
             libs: Vec::new(),
             link_paths: Vec::new(),
+            link_files: Vec::new(),
             include_paths: Vec::new(),
             ld_args: Vec::new(),
             frameworks: Vec::new(),
@@ -567,9 +575,67 @@ impl Library {
         }
     }
 
+    
+    
+    fn extract_lib_from_filename<'a>(target: &str, filename: &'a str) -> Option<&'a str> {
+        fn test_suffixes<'b>(filename: &'b str, suffixes: &[&str]) -> Option<&'b str> {
+            for suffix in suffixes {
+                if filename.ends_with(suffix) {
+                    return Some(&filename[..filename.len() - suffix.len()]);
+                }
+            }
+            None
+        }
+
+        let prefix = "lib";
+        if target.contains("msvc") {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            return test_suffixes(filename, &[".lib"]);
+        } else if target.contains("windows") && target.contains("gnu") {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if filename.starts_with(prefix) {
+                let filename = &filename[prefix.len()..];
+                return test_suffixes(filename, &[".dll.a", ".dll", ".lib", ".a"]);
+            } else {
+                return test_suffixes(filename, &[".dll.a", ".dll", ".lib"]);
+            }
+        } else if target.contains("apple") {
+            if filename.starts_with(prefix) {
+                let filename = &filename[prefix.len()..];
+                return test_suffixes(filename, &[".a", ".so", ".dylib"]);
+            }
+            return None;
+        } else {
+            if filename.starts_with(prefix) {
+                let filename = &filename[prefix.len()..];
+                return test_suffixes(filename, &[".a", ".so"]);
+            }
+            return None;
+        }
+    }
+
     fn parse_libs_cflags(&mut self, name: &str, output: &[u8], config: &Config) {
         let mut is_msvc = false;
-        if let Ok(target) = env::var("TARGET") {
+        let target = env::var("TARGET");
+        if let Ok(target) = &target {
             if target.contains("msvc") {
                 is_msvc = true;
             }
@@ -669,7 +735,36 @@ impl Library {
                         self.include_paths.push(PathBuf::from(inc));
                     }
                 }
-                _ => (),
+                _ => {
+                    let path = std::path::Path::new(part);
+                    if path.is_file() {
+                        
+                        
+                        
+                        
+                        if let (Some(dir), Some(file_name), Ok(target)) =
+                            (path.parent(), path.file_name(), &target)
+                        {
+                            match Self::extract_lib_from_filename(
+                                target,
+                                &file_name.to_string_lossy(),
+                            ) {
+                                Some(lib_basename) => {
+                                    let link_search =
+                                        format!("rustc-link-search={}", dir.display());
+                                    config.print_metadata(&link_search);
+
+                                    let link_lib = format!("rustc-link-lib={}", lib_basename);
+                                    config.print_metadata(&link_lib);
+                                    self.link_files.push(PathBuf::from(path));
+                                }
+                                None => {
+                                    println!("cargo:warning=File path {} found in pkg-config file for {}, but could not extract library base name to pass to linker command line", path.display(), name);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -775,60 +870,103 @@ fn split_flags(output: &[u8]) -> Vec<String> {
     words
 }
 
-#[test]
-#[cfg(target_os = "macos")]
-fn system_library_mac_test() {
-    use std::path::Path;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    let system_roots = vec![PathBuf::from("/Library"), PathBuf::from("/System")];
+    #[test]
+    #[cfg(target_os = "macos")]
+    fn system_library_mac_test() {
+        use std::path::Path;
 
-    assert!(!is_static_available(
-        "PluginManager",
-        &system_roots,
-        &[PathBuf::from("/Library/Frameworks")]
-    ));
-    assert!(!is_static_available(
-        "python2.7",
-        &system_roots,
-        &[PathBuf::from(
-            "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config"
-        )]
-    ));
-    assert!(!is_static_available(
-        "ffi_convenience",
-        &system_roots,
-        &[PathBuf::from(
-            "/Library/Ruby/Gems/2.0.0/gems/ffi-1.9.10/ext/ffi_c/libffi-x86_64/.libs"
-        )]
-    ));
+        let system_roots = vec![PathBuf::from("/Library"), PathBuf::from("/System")];
 
-    
-    if Path::new("/usr/local/lib/libpng16.a").exists() {
-        assert!(is_static_available(
-            "png16",
+        assert!(!is_static_available(
+            "PluginManager",
             &system_roots,
-            &[PathBuf::from("/usr/local/lib")]
+            &[PathBuf::from("/Library/Frameworks")]
+        ));
+        assert!(!is_static_available(
+            "python2.7",
+            &system_roots,
+            &[PathBuf::from(
+                "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config"
+            )]
+        ));
+        assert!(!is_static_available(
+            "ffi_convenience",
+            &system_roots,
+            &[PathBuf::from(
+                "/Library/Ruby/Gems/2.0.0/gems/ffi-1.9.10/ext/ffi_c/libffi-x86_64/.libs"
+            )]
         ));
 
-        let libpng = Config::new()
-            .range_version("1".."99")
-            .probe("libpng16")
-            .unwrap();
-        assert!(libpng.version.find('\n').is_none());
-    }
-}
+        
+        if Path::new("/usr/local/lib/libpng16.a").exists() {
+            assert!(is_static_available(
+                "png16",
+                &system_roots,
+                &[PathBuf::from("/usr/local/lib")]
+            ));
 
-#[test]
-#[cfg(target_os = "linux")]
-fn system_library_linux_test() {
-    assert!(!is_static_available(
-        "util",
-        &[PathBuf::from("/usr")],
-        &[PathBuf::from("/usr/lib/x86_64-linux-gnu")]
-    ));
-    assert!(!is_static_available(
-        "dialog",
-        &[PathBuf::from("/usr")],
-        &[PathBuf::from("/usr/lib")]
-    ));
+            let libpng = Config::new()
+                .range_version("1".."99")
+                .probe("libpng16")
+                .unwrap();
+            assert!(libpng.version.find('\n').is_none());
+        }
+    }
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn system_library_linux_test() {
+        assert!(!is_static_available(
+            "util",
+            &[PathBuf::from("/usr")],
+            &[PathBuf::from("/usr/lib/x86_64-linux-gnu")]
+        ));
+        assert!(!is_static_available(
+            "dialog",
+            &[PathBuf::from("/usr")],
+            &[PathBuf::from("/usr/lib")]
+        ));
+    }
+
+    fn test_library_filename(target: &str, filename: &str) {
+        assert_eq!(
+            Library::extract_lib_from_filename(target, filename),
+            Some("foo")
+        );
+    }
+
+    #[test]
+    fn link_filename_linux() {
+        let target = "x86_64-unknown-linux-gnu";
+        test_library_filename(target, "libfoo.a");
+        test_library_filename(target, "libfoo.so");
+    }
+
+    #[test]
+    fn link_filename_apple() {
+        let target = "x86_64-apple-darwin";
+        test_library_filename(target, "libfoo.a");
+        test_library_filename(target, "libfoo.so");
+        test_library_filename(target, "libfoo.dylib");
+    }
+
+    #[test]
+    fn link_filename_msvc() {
+        let target = "x86_64-pc-windows-msvc";
+        
+        test_library_filename(target, "foo.lib");
+    }
+
+    #[test]
+    fn link_filename_mingw() {
+        let target = "x86_64-pc-windows-gnu";
+        test_library_filename(target, "foo.lib");
+        test_library_filename(target, "libfoo.a");
+        test_library_filename(target, "foo.dll");
+        test_library_filename(target, "foo.dll.a");
+    }
 }
