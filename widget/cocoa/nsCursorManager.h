@@ -9,14 +9,6 @@
 
 #include "nsIWidget.h"
 
-
-
-
-
-
-
-
-
 @interface nsCursorManager : NSObject {
  @private
   NSMutableDictionary* mCursors;
@@ -27,28 +19,13 @@
 
 
 
-
-
-
-
-- (nsresult)setNonCustomCursor:(const nsIWidget::Cursor&)aCursor;
-
-
-
 - (nsresult)setCustomCursor:(const nsIWidget::Cursor&)aCursor
           widgetScaleFactor:(CGFloat)aWidgetScaleFactor;
 
 
-
-
-
+- (void)setNonCustomCursor:(const nsIWidget::Cursor&)aCursor;
 
 + (nsCursorManager*)sharedInstance;
-
-
-
-
-
 + (void)dispose;
 @end
 
