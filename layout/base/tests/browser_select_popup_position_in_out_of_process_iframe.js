@@ -111,9 +111,16 @@ add_task(async function() {
     iframeBorderTop -
     newWin.mozInnerScreenY +
     parseFloat(getComputedStyle(selectPopup).marginTop);
+
   
   
-  if (!navigator.platform.includes("Mac")) {
+  
+  if (navigator.platform.includes("Mac")) {
+    const offsetToSelectedItem =
+      selectPopup.querySelector("menuitem[selected]").getBoundingClientRect()
+        .top - popupRect.top;
+    expectedYPosition -= offsetToSelectedItem;
+  } else {
     expectedYPosition += selectRect.height;
   }
 
