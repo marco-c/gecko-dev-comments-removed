@@ -16,8 +16,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.jsm",
 });
 
-const { DATA_COLLECTION_OFFLINE } = QuickSuggestTestUtils;
-
 
 
 const POLICY_PREF = "suggest.quicksuggest.nonsponsored";
@@ -181,7 +179,7 @@ add_task(async function test_scenario_offline() {
       
       "quicksuggest.scenario": "offline",
       "quicksuggest.enabled": true,
-      "quicksuggest.dataCollection.enabled": DATA_COLLECTION_OFFLINE,
+      "quicksuggest.dataCollection.enabled": false,
       "quicksuggest.shouldShowOnboardingDialog": false,
       "suggest.quicksuggest.nonsponsored": true,
       "suggest.quicksuggest.sponsored": true,
@@ -198,7 +196,7 @@ add_task(async function test_scenario_offline() {
       },
       {
         name: "browser.urlbar.quicksuggest.dataCollection.enabled",
-        value: DATA_COLLECTION_OFFLINE,
+        value: false,
       },
       {
         name: "browser.urlbar.quicksuggest.shouldShowOnboardingDialog",
@@ -214,58 +212,6 @@ add_task(async function test_scenario_offline() {
       },
     ],
   });
-});
-
-add_task(async function test_scenario_offline_forceBeta() {
-  for (let isBeta of [false, true]) {
-    info("Forcing beta: " + isBeta);
-
-    UrlbarPrefs._test_isBeta = isBeta;
-    await doBasicScenarioTest(
-      "offline",
-      {
-        urlbarPrefs: {
-          
-          "quicksuggest.scenario": "offline",
-          "quicksuggest.enabled": true,
-          "quicksuggest.dataCollection.enabled": isBeta,
-          "quicksuggest.shouldShowOnboardingDialog": false,
-          "suggest.quicksuggest.nonsponsored": true,
-          "suggest.quicksuggest.sponsored": true,
-
-          
-          quickSuggestScenario: "offline",
-          quickSuggestEnabled: true,
-          quickSuggestShouldShowOnboardingDialog: false,
-        },
-        defaults: [
-          {
-            name: "browser.urlbar.quicksuggest.enabled",
-            value: true,
-          },
-          {
-            name: "browser.urlbar.quicksuggest.dataCollection.enabled",
-            value: isBeta,
-          },
-          {
-            name: "browser.urlbar.quicksuggest.shouldShowOnboardingDialog",
-            value: false,
-          },
-          {
-            name: "browser.urlbar.suggest.quicksuggest.nonsponsored",
-            value: true,
-          },
-          {
-            name: "browser.urlbar.suggest.quicksuggest.sponsored",
-            value: true,
-          },
-        ],
-      },
-      isBeta
-    );
-  }
-
-  delete UrlbarPrefs._test_isBeta;
 });
 
 add_task(async function test_scenario_history() {
@@ -288,11 +234,7 @@ add_task(async function test_scenario_history() {
   });
 });
 
-async function doBasicScenarioTest(
-  scenario,
-  expectedPrefs,
-  dataCollectionOffline = DATA_COLLECTION_OFFLINE
-) {
+async function doBasicScenarioTest(scenario, expectedPrefs) {
   await QuickSuggestTestUtils.withExperiment({
     valueOverrides: {
       quickSuggestScenario: scenario,
@@ -315,7 +257,7 @@ async function doBasicScenarioTest(
     "updatingFirefoxSuggestPrefs is false"
   );
 
-  assertDefaultScenarioPrefs(dataCollectionOffline);
+  assertDefaultScenarioPrefs();
 }
 
 function assertScenarioPrefs({ urlbarPrefs, defaults }) {
@@ -333,12 +275,12 @@ function assertScenarioPrefs({ urlbarPrefs, defaults }) {
   }
 }
 
-function assertDefaultScenarioPrefs(dataCollectionOffline) {
+function assertDefaultScenarioPrefs() {
   assertScenarioPrefs({
     urlbarPrefs: {
       "quicksuggest.scenario": "offline",
       "quicksuggest.enabled": true,
-      "quicksuggest.dataCollection.enabled": dataCollectionOffline,
+      "quicksuggest.dataCollection.enabled": false,
       "quicksuggest.shouldShowOnboardingDialog": false,
       "suggest.quicksuggest.nonsponsored": true,
       "suggest.quicksuggest.sponsored": true,
@@ -353,7 +295,7 @@ function assertDefaultScenarioPrefs(dataCollectionOffline) {
       },
       {
         name: "browser.urlbar.quicksuggest.dataCollection.enabled",
-        value: dataCollectionOffline,
+        value: false,
       },
       {
         name: "browser.urlbar.quicksuggest.shouldShowOnboardingDialog",
@@ -625,39 +567,6 @@ add_task(async function() {
     initialPrefsToSet: {
       defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
       userBranch: {
-        "quicksuggest.dataCollection.enabled": false,
-      },
-    },
-    valueOverrides: {
-      quickSuggestScenario: "offline",
-    },
-    expectedPrefs: {
-      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
-      userBranch: {
-        "quicksuggest.dataCollection.enabled": false,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-add_task(async function() {
-  await checkEnrollments({
-    initialPrefsToSet: {
-      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
-      userBranch: {
         "suggest.quicksuggest.nonsponsored": false,
         "suggest.quicksuggest.sponsored": false,
         "quicksuggest.dataCollection.enabled": true,
@@ -688,43 +597,6 @@ add_task(async function() {
 
 
 
-
-
-add_task(async function() {
-  await checkEnrollments({
-    initialPrefsToSet: {
-      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
-      userBranch: {
-        "suggest.quicksuggest.nonsponsored": false,
-        "suggest.quicksuggest.sponsored": false,
-        "quicksuggest.dataCollection.enabled": false,
-      },
-    },
-    valueOverrides: {
-      quickSuggestScenario: "offline",
-    },
-    expectedPrefs: {
-      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
-      userBranch: {
-        "suggest.quicksuggest.nonsponsored": false,
-        "suggest.quicksuggest.sponsored": false,
-        "quicksuggest.dataCollection.enabled": false,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-
 add_task(async function() {
   await checkEnrollments({
     initialPrefsToSet: {
@@ -891,39 +763,6 @@ add_task(async function() {
     initialPrefsToSet: {
       defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
       userBranch: {
-        "quicksuggest.dataCollection.enabled": false,
-      },
-    },
-    valueOverrides: {
-      quickSuggestScenario: "online",
-    },
-    expectedPrefs: {
-      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
-      userBranch: {
-        "quicksuggest.dataCollection.enabled": false,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-add_task(async function() {
-  await checkEnrollments({
-    initialPrefsToSet: {
-      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
-      userBranch: {
         "suggest.quicksuggest.sponsored": false,
         "quicksuggest.dataCollection.enabled": true,
       },
@@ -936,41 +775,6 @@ add_task(async function() {
       userBranch: {
         "suggest.quicksuggest.sponsored": false,
         "quicksuggest.dataCollection.enabled": true,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-add_task(async function() {
-  await checkEnrollments({
-    initialPrefsToSet: {
-      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
-      userBranch: {
-        "suggest.quicksuggest.sponsored": false,
-        "quicksuggest.dataCollection.enabled": false,
-      },
-    },
-    valueOverrides: {
-      quickSuggestScenario: "online",
-    },
-    expectedPrefs: {
-      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
-      userBranch: {
-        "suggest.quicksuggest.sponsored": false,
-        "quicksuggest.dataCollection.enabled": false,
       },
     },
   });
@@ -1030,7 +834,8 @@ add_task(async function() {
       defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
       userBranch: {
         "suggest.quicksuggest.nonsponsored": false,
-        "quicksuggest.dataCollection.enabled": false,
+        "suggest.quicksuggest.sponsored": false,
+        "quicksuggest.dataCollection.enabled": true,
       },
     },
     valueOverrides: {
@@ -1040,7 +845,8 @@ add_task(async function() {
       defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
       userBranch: {
         "suggest.quicksuggest.nonsponsored": false,
-        "quicksuggest.dataCollection.enabled": false,
+        "suggest.quicksuggest.sponsored": false,
+        "quicksuggest.dataCollection.enabled": true,
       },
     },
   });
@@ -1415,33 +1221,6 @@ add_task(async function() {
 
 
 
-add_task(async function() {
-  await checkEnrollments({
-    initialPrefsToSet: {
-      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
-    },
-    valueOverrides: {
-      quickSuggestScenario: "offline",
-      quickSuggestDataCollectionEnabled: false,
-    },
-    expectedPrefs: {
-      defaultBranch: {
-        ...UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
-        "quicksuggest.dataCollection.enabled": false,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
 
 add_task(async function() {
   await checkEnrollments({
@@ -1462,108 +1241,6 @@ add_task(async function() {
       },
       userBranch: {
         "quicksuggest.dataCollection.enabled": false,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-add_task(async function() {
-  await checkEnrollments({
-    initialPrefsToSet: {
-      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
-      userBranch: {
-        "quicksuggest.dataCollection.enabled": false,
-      },
-    },
-    valueOverrides: {
-      quickSuggestScenario: "offline",
-      quickSuggestDataCollectionEnabled: false,
-    },
-    expectedPrefs: {
-      defaultBranch: {
-        ...UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
-        "quicksuggest.dataCollection.enabled": false,
-      },
-      userBranch: {
-        "quicksuggest.dataCollection.enabled": false,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-add_task(async function() {
-  await checkEnrollments({
-    initialPrefsToSet: {
-      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
-      userBranch: {
-        "quicksuggest.dataCollection.enabled": true,
-      },
-    },
-    valueOverrides: {
-      quickSuggestScenario: "offline",
-      quickSuggestDataCollectionEnabled: true,
-    },
-    expectedPrefs: {
-      defaultBranch: {
-        ...UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
-        "quicksuggest.dataCollection.enabled": true,
-      },
-      userBranch: {
-        "quicksuggest.dataCollection.enabled": true,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-add_task(async function() {
-  await checkEnrollments({
-    initialPrefsToSet: {
-      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
-      userBranch: {
-        "quicksuggest.dataCollection.enabled": true,
-      },
-    },
-    valueOverrides: {
-      quickSuggestScenario: "offline",
-      quickSuggestDataCollectionEnabled: false,
-    },
-    expectedPrefs: {
-      defaultBranch: {
-        ...UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
-        "quicksuggest.dataCollection.enabled": false,
-      },
-      userBranch: {
-        "quicksuggest.dataCollection.enabled": true,
       },
     },
   });

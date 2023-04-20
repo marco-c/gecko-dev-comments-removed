@@ -158,8 +158,7 @@ add_suggestions_task(async function impression_bestMatch(suggestion) {
   UrlbarPrefs.set("bestMatch.enabled", true);
   await doImpressionTest({
     suggestion,
-    improve_suggest_experience_checked:
-      QuickSuggestTestUtils.DATA_COLLECTION_OFFLINE,
+    improve_suggest_experience_checked: false,
     isBestMatch: true,
   });
   UrlbarPrefs.clear("bestMatch.enabled");
@@ -433,8 +432,7 @@ add_suggestions_task(async function click_keyboard_bestMatch(suggestion) {
   UrlbarPrefs.set("bestMatch.enabled", true);
   await doClickTest({
     suggestion,
-    improve_suggest_experience_checked:
-      QuickSuggestTestUtils.DATA_COLLECTION_OFFLINE,
+    improve_suggest_experience_checked: false,
     useKeyboard: true,
     isBestMatch: true,
   });
@@ -448,8 +446,7 @@ add_suggestions_task(async function click_mouse_bestMatch(suggestion) {
   UrlbarPrefs.set("bestMatch.enabled", true);
   await doClickTest({
     suggestion,
-    improve_suggest_experience_checked:
-      QuickSuggestTestUtils.DATA_COLLECTION_OFFLINE,
+    improve_suggest_experience_checked: false,
     isBestMatch: true,
   });
   UrlbarPrefs.clear("bestMatch.enabled");
@@ -1375,8 +1372,7 @@ add_task(async function impression_previousResultStillVisible() {
       {
         type: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
         payload: {
-          improve_suggest_experience_checked:
-            QuickSuggestTestUtils.DATA_COLLECTION_OFFLINE,
+          improve_suggest_experience_checked: false,
           block_id: firstSuggestion.id,
           is_clicked: false,
           match_type: "firefox-suggest",
