@@ -1,22 +1,17 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewPrompter"];
-
-const { GeckoViewUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewUtils.sys.mjs"
-);
+import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
 
 const { debug, warn } = GeckoViewUtils.initLogging("GeckoViewPrompter");
 
-class GeckoViewPrompter {
+export class GeckoViewPrompter {
   constructor(aParent) {
     this.id = Services.uuid
       .generateUUID()
       .toString()
-      .slice(1, -1); 
+      .slice(1, -1); // Discard surrounding braces
 
     if (aParent) {
       if (Window.isInstance(aParent)) {
@@ -47,10 +42,10 @@ class GeckoViewPrompter {
 
   _changeModalState(aEntering) {
     if (!this._domWin) {
-      
+      // Allow not having a DOM window.
       return true;
     }
-    
+    // Accessing the document object can throw if this window no longer exists. See bug 789888.
     try {
       const winUtils = this._domWin.windowUtils;
       if (!aEntering) {
@@ -97,14 +92,14 @@ class GeckoViewPrompter {
           break;
       }
       this.callback(acceptMsg);
-      
+      // Notify the UI that this prompt should be hidden.
       this._dismissUi();
     }
   }
 
   dismiss() {
     this.callback(null);
-    
+    // Notify the UI that this prompt should be hidden.
     this._dismissUi();
   }
 
@@ -133,34 +128,34 @@ class GeckoViewPrompter {
     this.inputText = aInput;
   }
 
-  
-
-
-
+  /**
+   * Shows a native prompt, and then spins the event loop for this thread while we wait
+   * for a response
+   */
   showPrompt(aMsg) {
     let result = undefined;
-    if (!this._domWin || !this._changeModalState( true)) {
+    if (!this._domWin || !this._changeModalState(/* aEntering */ true)) {
       return result;
     }
     try {
       this.asyncShowPrompt(aMsg, res => (result = res));
 
-      
+      // Spin this thread while we wait for a result
       Services.tm.spinEventLoopUntil(
         "GeckoViewPrompter.jsm:showPrompt",
         () => this._domWin.closed || result !== undefined
       );
     } finally {
-      this._changeModalState( false);
+      this._changeModalState(/* aEntering */ false);
     }
     return result;
   }
 
   checkInnerWindow() {
-    
-    
-    
-    
+    // Checks that the innerWindow where this prompt was created still matches
+    // the current innerWindow.
+    // This checks will fail if the page navigates away, making this prompt
+    // obsolete.
     return (
       this._innerWindowId ===
       this._domWin.browsingContext.currentWindowContext.innerWindowId
@@ -186,21 +181,21 @@ class GeckoViewPrompter {
         response = await this.prompterActor.prompt(this, aMsg);
       }
     } catch (error) {
-      
+      // Nothing we can do really, we will treat this as a dismiss.
       warn`Error while prompting: ${error}`;
     }
 
     if (!this.checkInnerWindow()) {
-      
+      // Page has navigated away, let's dismiss the prompt
       aCallback(null);
     } else {
       aCallback(response);
     }
-    
-    
-    
-    
-    
+    // This callback object is tied to the Java garbage collector because
+    // it is invoked from Java. Manually release the target callback
+    // here; otherwise we may hold onto resources for too long, because
+    // we would be relying on both the Java and the JS garbage collectors
+    // to run.
     aMsg = undefined;
     aCallback = undefined;
   }
