@@ -28,7 +28,7 @@
 namespace webrtc {
 
 class DataChannelController;
-class StatsCollector;
+class LegacyStatsCollector;
 
 
 
@@ -75,7 +75,7 @@ class PeerConnectionSdpMethods {
   virtual JsepTransportController* transport_controller_n() = 0;
   virtual DataChannelController* data_channel_controller() = 0;
   virtual cricket::PortAllocator* port_allocator() = 0;
-  virtual StatsCollector* stats() = 0;
+  virtual LegacyStatsCollector* legacy_stats() = 0;
   
   virtual PeerConnectionObserver* Observer() const = 0;
   virtual bool GetSctpSslRole(rtc::SSLRole* role) = 0;

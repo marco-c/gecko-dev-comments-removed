@@ -12,8 +12,8 @@
 
 
 
-#ifndef PC_STATS_COLLECTOR_INTERFACE_H_
-#define PC_STATS_COLLECTOR_INTERFACE_H_
+#ifndef PC_LEGACY_STATS_COLLECTOR_INTERFACE_H_
+#define PC_LEGACY_STATS_COLLECTOR_INTERFACE_H_
 
 #include <stdint.h>
 
@@ -22,9 +22,9 @@
 
 namespace webrtc {
 
-class StatsCollectorInterface {
+class LegacyStatsCollectorInterface {
  public:
-  virtual ~StatsCollectorInterface() {}
+  virtual ~LegacyStatsCollectorInterface() {}
 
   
   virtual void AddLocalAudioTrack(AudioTrackInterface* audio_track,

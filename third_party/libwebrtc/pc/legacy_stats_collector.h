@@ -11,8 +11,8 @@
 
 
 
-#ifndef PC_STATS_COLLECTOR_H_
-#define PC_STATS_COLLECTOR_H_
+#ifndef PC_LEGACY_STATS_COLLECTOR_H_
+#define PC_LEGACY_STATS_COLLECTOR_H_
 
 #include <stdint.h>
 
@@ -33,9 +33,9 @@
 #include "api/stats_types.h"
 #include "p2p/base/connection_info.h"
 #include "p2p/base/port.h"
+#include "pc/legacy_stats_collector_interface.h"
 #include "pc/peer_connection_internal.h"
 #include "pc/rtp_transceiver.h"
-#include "pc/stats_collector_interface.h"
 #include "pc/transport_stats.h"
 #include "rtc_base/network_constants.h"
 #include "rtc_base/ssl_certificate.h"
@@ -55,12 +55,12 @@ const char* AdapterTypeToStatsType(rtc::AdapterType type);
 
 typedef std::map<std::string, StatsReport*> TrackIdMap;
 
-class StatsCollector : public StatsCollectorInterface {
+class LegacyStatsCollector : public LegacyStatsCollectorInterface {
  public:
   
   
-  explicit StatsCollector(PeerConnectionInternal* pc);
-  virtual ~StatsCollector();
+  explicit LegacyStatsCollector(PeerConnectionInternal* pc);
+  virtual ~LegacyStatsCollector();
 
   
   
@@ -112,7 +112,7 @@ class StatsCollector : public StatsCollectorInterface {
   bool UseStandardBytesStats() const { return use_standard_bytes_stats_; }
 
  private:
-  friend class StatsCollectorTest;
+  friend class LegacyStatsCollectorTest;
 
   
   
@@ -206,7 +206,7 @@ class StatsCollector : public StatsCollectorInterface {
 
   
   
-  typedef std::vector<std::pair<AudioTrackInterface*, uint32_t> >
+  typedef std::vector<std::pair<AudioTrackInterface*, uint32_t>>
       LocalAudioTrackVector;
   LocalAudioTrackVector local_audio_tracks_;
 };
