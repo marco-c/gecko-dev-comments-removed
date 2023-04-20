@@ -771,6 +771,7 @@ webrtc::VideoCodec SimulcastEncoderAdapter::MakeStreamCodec(
   codec_params.maxFramerate = stream_params.maxFramerate;
   codec_params.qpMax = stream_params.qpMax;
   codec_params.active = stream_params.active;
+  codec_params.SetScalabilityMode(stream_params.GetScalabilityMode());
   
   if (is_lowest_quality_stream) {
     
