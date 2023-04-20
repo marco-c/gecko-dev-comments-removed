@@ -1119,7 +1119,7 @@ struct nsFlexContainerFrame::PerFragmentFlexData final {
   
   
   
-  nscoord mSumOfChildrenBSize = 0;
+  nscoord mCumulativeContentBoxBSize = 0;
 
   
   
@@ -4541,7 +4541,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     
     
     
-    fragmentData.mSumOfChildrenBSize +=
+    fragmentData.mCumulativeContentBoxBSize +=
         std::max(maxBlockEndEdgeOfChildren - borderPadding.BStart(wm),
                  availableSizeForItems.BSize(wm));
 
@@ -5282,7 +5282,7 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
         
         
         
-        framePos.B(flexWM) -= aFragmentData.mSumOfChildrenBSize;
+        framePos.B(flexWM) -= aFragmentData.mCumulativeContentBoxBSize;
         framePos.B(flexWM) += aFragmentData.mCumulativeBEndEdgeShift;
 
         
