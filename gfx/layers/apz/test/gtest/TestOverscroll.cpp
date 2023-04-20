@@ -1784,8 +1784,15 @@ TEST_F(APZCOverscrollTesterMock,
   
   
   QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
-  PanGesture(PanGestureInput::PANGESTURE_START, manager, panPoint,
-             ScreenPoint(-2, 0), mcc->Time());
+  APZEventResult result = PanGesture(PanGestureInput::PANGESTURE_START, manager,
+                                     panPoint, ScreenPoint(-2, 0), mcc->Time());
+  
+  
+  
+  
+  
+  
+  manager->ContentReceivedInputBlock(result.mInputBlockId, false);
   mcc->AdvanceByMillis(10);
   QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
   PanGesture(PanGestureInput::PANGESTURE_PAN, manager, panPoint,

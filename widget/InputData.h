@@ -323,6 +323,8 @@ class MouseInput : public InputData {
 
 
 class PanGestureInput : public InputData {
+  friend struct IPC::ParamTraits<PanGestureInput>;
+
  protected:
   friend mozilla::layers::APZInputBridgeChild;
   friend mozilla::layers::PAPZInputBridgeParent;
@@ -398,6 +400,12 @@ class PanGestureInput : public InputData {
                   const ScreenPoint& aPanStartPoint,
                   const ScreenPoint& aPanDisplacement, Modifiers aModifiers);
 
+  enum class IsEligibleForSwipe : bool { No, Yes };
+  PanGestureInput(PanGestureType aType, uint32_t aTime, TimeStamp aTimeStamp,
+                  const ScreenPoint& aPanStartPoint,
+                  const ScreenPoint& aPanDisplacement, Modifiers aModifiers,
+                  IsEligibleForSwipe aIsEligibleForSwipe);
+
   void SetLineOrPageDeltas(int32_t aLineOrPageDeltaX,
                            int32_t aLineOrPageDeltaY);
 
@@ -409,6 +417,19 @@ class PanGestureInput : public InputData {
 
   ScreenPoint UserMultipliedPanDisplacement() const;
   ParentLayerPoint UserMultipliedLocalPanDisplacement() const;
+
+  void SetHandledByAPZ(bool aHandled) { mHandledByAPZ = aHandled; }
+  void SetOverscrollBehaviorAllowsSwipe(bool aAllows) {
+    mOverscrollBehaviorAllowsSwipe = aAllows;
+  }
+  void SetSimulateMomentum(bool aSimulate) { mSimulateMomentum = aSimulate; }
+  void SetIsNoLineOrPageDelta(bool aIsNoLineOrPageDelta) {
+    mIsNoLineOrPageDelta = aIsNoLineOrPageDelta;
+  }
+  bool RequiresContentResponseIfCannotScrollHorizontallyInStartDirection()
+      const {
+    return mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection;
+  }
 
   static gfx::IntPoint GetIntegerDeltaForEvent(bool aIsStart, float x, float y);
 
@@ -441,14 +462,6 @@ class PanGestureInput : public InputData {
   
   
   
-  
-  
-  bool mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection : 1;
-
-  
-  
-  
-  
   bool mOverscrollBehaviorAllowsSwipe : 1;
 
   
@@ -463,18 +476,18 @@ class PanGestureInput : public InputData {
   
   bool mIsNoLineOrPageDelta : 1;
 
-  void SetHandledByAPZ(bool aHandled) { mHandledByAPZ = aHandled; }
+ private:
+  
+  
+  
+  
+  
+  
+  bool mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection : 1;
   void SetRequiresContentResponseIfCannotScrollHorizontallyInStartDirection(
       bool aRequires) {
     mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection =
         aRequires;
-  }
-  void SetOverscrollBehaviorAllowsSwipe(bool aAllows) {
-    mOverscrollBehaviorAllowsSwipe = aAllows;
-  }
-  void SetSimulateMomentum(bool aSimulate) { mSimulateMomentum = aSimulate; }
-  void SetIsNoLineOrPageDelta(bool aIsNoLineOrPageDelta) {
-    mIsNoLineOrPageDelta = aIsNoLineOrPageDelta;
   }
 };
 
