@@ -350,7 +350,7 @@ already_AddRefed<SourceSurface> SVGPatternFrame::PaintPattern(
   
   
 
-  if (aSource->IsSVGGeometryFrameOrSubclass()) {
+  if (aSource->IsSVGGeometryFrame()) {
     
     patternWithChildren->mSource = static_cast<SVGGeometryFrame*>(aSource);
   }

@@ -3428,12 +3428,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  inline bool IsSVGGeometryFrameOrSubclass() const;
-
-  
-
-
-
 
 
 
