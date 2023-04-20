@@ -21,6 +21,7 @@
 #include "p2p/client/relay_port_factory_interface.h"
 #include "p2p/client/turn_port_factory.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/memory/always_valid_pointer.h"
 #include "rtc_base/network.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/task_utils/pending_task_safety_flag.h"
@@ -34,16 +35,17 @@ class RTC_EXPORT BasicPortAllocator : public PortAllocator {
   
   
   
-  
-  
-  
   BasicPortAllocator(rtc::NetworkManager* network_manager,
                      rtc::PacketSocketFactory* socket_factory,
                      webrtc::TurnCustomizer* customizer = nullptr,
                      RelayPortFactoryInterface* relay_port_factory = nullptr);
-  explicit BasicPortAllocator(rtc::NetworkManager* network_manager);
-  BasicPortAllocator(rtc::NetworkManager* network_manager,
-                     const ServerAddresses& stun_servers);
+  BasicPortAllocator(
+      rtc::NetworkManager* network_manager,
+      std::unique_ptr<rtc::PacketSocketFactory> owned_socket_factory);
+  BasicPortAllocator(
+      rtc::NetworkManager* network_manager,
+      std::unique_ptr<rtc::PacketSocketFactory> owned_socket_factory,
+      const ServerAddresses& stun_servers);
   BasicPortAllocator(rtc::NetworkManager* network_manager,
                      rtc::PacketSocketFactory* socket_factory,
                      const ServerAddresses& stun_servers);
@@ -62,7 +64,7 @@ class RTC_EXPORT BasicPortAllocator : public PortAllocator {
   
   rtc::PacketSocketFactory* socket_factory() {
     CheckRunOnValidThreadIfInitialized();
-    return socket_factory_;
+    return socket_factory_.get();
   }
 
   PortAllocatorSession* CreateSessionInternal(
@@ -97,7 +99,8 @@ class RTC_EXPORT BasicPortAllocator : public PortAllocator {
   const webrtc::FieldTrialsView* field_trials_;
   std::unique_ptr<webrtc::FieldTrialsView> owned_field_trials_;
   rtc::NetworkManager* network_manager_;
-  rtc::PacketSocketFactory* socket_factory_;
+  const webrtc::AlwaysValidPointerNoDefault<rtc::PacketSocketFactory>
+      socket_factory_;
   int network_ignore_mask_ = rtc::kDefaultNetworkIgnoreMask;
 
   
@@ -273,7 +276,6 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession {
 
   BasicPortAllocator* allocator_;
   rtc::Thread* network_thread_;
-  std::unique_ptr<rtc::PacketSocketFactory> owned_socket_factory_;
   rtc::PacketSocketFactory* socket_factory_;
   bool allocation_started_;
   bool network_manager_started_;
