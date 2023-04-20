@@ -2,23 +2,23 @@
 
 
 
-const fs = require("fs");
+"use strict";
+
+
+const topLevelPrettier = require("../../../.prettierrc.js");
 
 module.exports = {
-  ...JSON.parse(fs.readFileSync(__dirname + "/../../../.prettierrc")),
+  ...topLevelPrettier,
   overrides: [
     {
-      files: [
-        "src/**/*.js",
-        "packages/*/src/**/*.js",
-      ],
+      files: ["src/**/*.js", "packages/*/src/**/*.js"],
       options: {
         
         
         
         
         
-        "parser": "babel-flow"
+        parser: "babel-flow",
       },
     },
   ],
