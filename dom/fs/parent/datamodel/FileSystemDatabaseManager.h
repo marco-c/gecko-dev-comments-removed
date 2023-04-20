@@ -10,6 +10,7 @@
 #include "ResultConnection.h"
 #include "mozilla/dom/FileSystemTypes.h"
 #include "mozilla/dom/quota/ForwardDecls.h"
+#include "mozilla/dom/quota/UsageInfo.h"
 #include "nsStringFwd.h"
 
 template <class T>
@@ -31,8 +32,6 @@ class FileSystemEntryPair;
 
 namespace data {
 
-using FileSystemConnection = fs::ResultConnection;
-
 class FileSystemDatabaseManager {
  public:
   
@@ -40,7 +39,13 @@ class FileSystemDatabaseManager {
 
 
 
-  virtual Result<int64_t, QMResult> GetUsage() const = 0;
+
+
+
+
+
+  static Result<quota::UsageInfo, QMResult> GetUsage(
+      const ResultConnection& aConnection, const Origin& aOrigin);
 
   
 
