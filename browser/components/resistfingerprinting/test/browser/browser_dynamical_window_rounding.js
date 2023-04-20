@@ -10,6 +10,10 @@
 
 
 
+const { RFPHelper } = ChromeUtils.import(
+  "resource://gre/modules/RFPHelper.jsm"
+);
+
 
 const TEST_CASES = [
   { width: 1250, height: 1000 },
