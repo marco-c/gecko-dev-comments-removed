@@ -16,7 +16,6 @@
 #include "api/video_codecs/video_codec.h"
 #include "media/base/codec.h"
 #include "media/base/media_constants.h"
-#include "modules/video_coding/codecs/av1/libaom_av1_decoder.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
@@ -50,10 +49,6 @@ std::vector<SdpVideoFormat> InternalDecoderFactory::GetSupportedFormats()
     formats.push_back(format);
   for (const SdpVideoFormat& h264_format : SupportedH264DecoderCodecs())
     formats.push_back(h264_format);
-
-
-
-
 
 
 
@@ -102,11 +97,6 @@ std::unique_ptr<VideoDecoder> InternalDecoderFactory::CreateVideoDecoder(
       kDav1dIsIncluded && !field_trial::IsDisabled(kDav1dFieldTrial)) {
     return CreateDav1dDecoder();
   }
-
-  
-  
-  
-  
 
   RTC_DCHECK_NOTREACHED();
   return nullptr;
