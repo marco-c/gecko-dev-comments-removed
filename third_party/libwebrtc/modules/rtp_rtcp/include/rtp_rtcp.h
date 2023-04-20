@@ -14,13 +14,12 @@
 #include <memory>
 
 #include "absl/base/attributes.h"
-#include "modules/include/module.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
 
 namespace webrtc {
 
 
-class RtpRtcp : public Module, public RtpRtcpInterface {
+class RtpRtcp : public RtpRtcpInterface {
  public:
   
   static std::unique_ptr<RtpRtcp> ABSL_DEPRECATED("")
@@ -36,6 +35,9 @@ class RtpRtcp : public Module, public RtpRtcpInterface {
   void SendPictureLossIndication() { SendRTCP(kRtcpPli); }
   
   void SendFullIntraRequest() { SendRTCP(kRtcpFir); }
+
+  
+  virtual void Process() = 0;
 };
 
 }  
