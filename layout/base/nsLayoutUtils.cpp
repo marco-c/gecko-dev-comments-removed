@@ -5852,6 +5852,17 @@ bool nsLayoutUtils::GetFirstLinePosition(WritingMode aWM,
         aResult->mBEnd = aFrame->BSize(aWM);
         return true;
       }
+      if (fType == LayoutFrameType::TableWrapper &&
+          aFrame->GetWritingMode().IsOrthogonalTo(aWM)) {
+        
+        
+        
+        
+        
+        
+        
+        return false;
+      }
       aResult->mBStart = 0;
       aResult->mBaseline = aFrame->GetLogicalBaseline(aWM);
       

@@ -25,19 +25,31 @@
 using namespace mozilla;
 using namespace mozilla::layout;
 
+nscoord nsTableWrapperFrame::GetFallbackLogicalBaseline(
+    mozilla::WritingMode aWritingMode) const {
+  
+  
+  return BSize(aWritingMode) +
+         GetLogicalUsedMargin(aWritingMode).BEnd(aWritingMode);
+}
+
 
 nscoord nsTableWrapperFrame::GetLogicalBaseline(
     WritingMode aWritingMode) const {
-  if (StyleDisplay()->IsContainLayout()) {
-    
-    
-    return nsContainerFrame::GetLogicalBaseline(aWritingMode);
+  
+  
+  
+  
+  
+  if (StyleDisplay()->IsContainLayout() ||
+      GetWritingMode().IsOrthogonalTo(aWritingMode)) {
+    return GetFallbackLogicalBaseline(aWritingMode);
   }
 
   nsIFrame* kid = mFrames.FirstChild();
   if (!kid) {
     MOZ_ASSERT_UNREACHABLE("no inner table");
-    return nsContainerFrame::GetLogicalBaseline(aWritingMode);
+    return GetFallbackLogicalBaseline(aWritingMode);
   }
 
   return kid->GetLogicalBaseline(aWritingMode) +
