@@ -787,7 +787,8 @@ ToastNotification::CloseAlert(const nsAString& aAlertName,
     return NS_OK;
   }
 
-  if (!aContextClosed) {
+  if (!aContextClosed || handler->IsPrivate()) {
+    
     
     handler->HideAlert();
   }
