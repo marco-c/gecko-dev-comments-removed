@@ -1672,127 +1672,126 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
 
   
   
-  auto ShouldRemoveHTMLStyle = [&]() {
-    if (!aStyleToRemove.IsStyleToClearAllInlineStyles()) {
-      return aStyleToRemove.IsRepresentedBy(aElement);
-    }
-    
-    return HTMLEditUtils::IsRemovableInlineStyleElement(aElement);
-  };
-
-  if (ShouldRemoveHTMLStyle()) {
-    
-    
-    if (!aStyleToRemove.mAttribute) {
-      
-      
-      
-      if (!aStyleToRemove.IsStyleToClearAllInlineStyles() &&
-          aSpecifiedStyle != SpecifiedStyle::Discard &&
-          (aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::style) ||
-           aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::_class))) {
-        
-        
-        Result<CreateElementResult, nsresult> replaceWithSpanResult =
-            ReplaceContainerWithTransaction(aElement, *nsGkAtoms::span);
-        if (MOZ_UNLIKELY(replaceWithSpanResult.isErr())) {
-          NS_WARNING(
-              "HTMLEditor::ReplaceContainerWithTransaction(nsGkAtoms::span) "
-              "failed");
-          return replaceWithSpanResult.propagateErr();
-        }
-        CreateElementResult unwrappedReplaceWithSpanResult =
-            replaceWithSpanResult.unwrap();
-        MOZ_ASSERT(unwrappedReplaceWithSpanResult.GetNewNode());
-        unwrappedReplaceWithSpanResult.MoveCaretPointTo(
-            pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-        const RefPtr<Element> spanElement =
-            unwrappedReplaceWithSpanResult.UnwrapNewNode();
-        nsresult rv = CloneAttributeWithTransaction(*nsGkAtoms::style,
-                                                    *spanElement, aElement);
-        if (NS_WARN_IF(Destroyed())) {
-          return Err(NS_ERROR_EDITOR_DESTROYED);
-        }
-        if (NS_FAILED(rv)) {
-          NS_WARNING(
-              "EditorBase::CloneAttributeWithTransaction(nsGkAtoms::style) "
-              "failed");
-          return Err(rv);
-        }
-        rv = CloneAttributeWithTransaction(*nsGkAtoms::_class, *spanElement,
-                                           aElement);
-        if (NS_WARN_IF(Destroyed())) {
-          return Err(NS_ERROR_EDITOR_DESTROYED);
-        }
-        if (NS_FAILED(rv)) {
-          NS_WARNING(
-              "EditorBase::CloneAttributeWithTransaction(nsGkAtoms::_class) "
-              "failed");
-          return Err(rv);
-        }
-      } else {
-        Result<EditorDOMPoint, nsresult> unwrapElementResult =
-            RemoveContainerWithTransaction(aElement);
-        if (MOZ_UNLIKELY(unwrapElementResult.isErr())) {
-          NS_WARNING("HTMLEditor::RemoveContainerWithTransaction() failed");
-          return unwrapElementResult.propagateErr();
-        }
-        if (AllowsTransactionsToChangeSelection() &&
-            unwrapElementResult.inspect().IsSet()) {
-          pointToPutCaret = unwrapElementResult.unwrap();
-        }
-      }
-    }
-    
-    
-    else if (aElement.HasAttr(kNameSpaceID_None, aStyleToRemove.mAttribute)) {
-      if (!HTMLEditUtils::ElementHasAttributeExcept(
-              aElement, *aStyleToRemove.mAttribute)) {
-        Result<EditorDOMPoint, nsresult> unwrapElementResult =
-            RemoveContainerWithTransaction(aElement);
-        if (MOZ_UNLIKELY(unwrapElementResult.isErr())) {
-          NS_WARNING("HTMLEditor::RemoveContainerWithTransaction() failed");
-          return unwrapElementResult.propagateErr();
-        }
-        if (unwrapElementResult.inspect().IsSet()) {
-          pointToPutCaret = unwrapElementResult.unwrap();
-        }
-      } else {
-        nsresult rv = RemoveAttributeWithTransaction(
-            aElement, *aStyleToRemove.mAttribute);
-        if (NS_FAILED(rv)) {
-          NS_WARNING("EditorBase::RemoveAttributeWithTransaction() failed");
-          return Err(rv);
-        }
-      }
-    }
-  }
-
-  
-  
-  if (styleSpecified &&
-      aElement.IsAnyOfHTMLElements(nsGkAtoms::span, nsGkAtoms::font) &&
-      !HTMLEditUtils::ElementHasAttribute(aElement)) {
-    Result<EditorDOMPoint, nsresult> unwrapSpanElement =
-        RemoveContainerWithTransaction(aElement);
-    NS_WARNING_ASSERTION(unwrapSpanElement.isOk(),
-                         "HTMLEditor::RemoveContainerWithTransaction() failed");
-    return unwrapSpanElement;
-  }
-
-  if (aStyleToRemove.mHTMLProperty != nsGkAtoms::font ||
-      aStyleToRemove.mAttribute != nsGkAtoms::size ||
-      !aElement.IsAnyOfHTMLElements(nsGkAtoms::big, nsGkAtoms::small)) {
+  if (aStyleToRemove.IsStyleToClearAllInlineStyles() &&
+      !HTMLEditUtils::IsRemovableInlineStyleElement(aElement)) {
     return pointToPutCaret;
   }
 
+  const bool isStyleRepresentedByElement =
+      !aStyleToRemove.IsStyleToClearAllInlineStyles() &&
+      aStyleToRemove.IsRepresentedBy(aElement);
+
   
   
-  Result<EditorDOMPoint, nsresult> unwrapBigOrSmallElementResult =
-      RemoveContainerWithTransaction(aElement);
-  NS_WARNING_ASSERTION(unwrapBigOrSmallElementResult.isOk(),
-                       "HTMLEditor::RemoveContainerWithTransaction() failed");
-  return unwrapBigOrSmallElementResult;
+  auto ReplaceWithNewSpan = [&]() {
+    if (aStyleToRemove.IsStyleToClearAllInlineStyles()) {
+      return false;  
+    }
+    
+    
+    
+    if (isStyleRepresentedByElement && !aStyleToRemove.mAttribute &&
+        aSpecifiedStyle == SpecifiedStyle::Preserve &&
+        (aElement.HasNonEmptyAttr(nsGkAtoms::style) ||
+         aElement.HasNonEmptyAttr(nsGkAtoms::_class))) {
+      return true;  
+    }
+    return false;
+  };
+
+  if (ReplaceWithNewSpan()) {
+    
+    
+    Result<CreateElementResult, nsresult> replaceWithSpanResult =
+        ReplaceContainerWithTransaction(aElement, *nsGkAtoms::span);
+    if (MOZ_UNLIKELY(replaceWithSpanResult.isErr())) {
+      NS_WARNING(
+          "HTMLEditor::ReplaceContainerWithTransaction(nsGkAtoms::span) "
+          "failed");
+      return replaceWithSpanResult.propagateErr();
+    }
+    CreateElementResult unwrappedReplaceWithSpanResult =
+        replaceWithSpanResult.unwrap();
+    MOZ_ASSERT(unwrappedReplaceWithSpanResult.GetNewNode());
+    unwrappedReplaceWithSpanResult.MoveCaretPointTo(
+        pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
+    const RefPtr<Element> spanElement =
+        unwrappedReplaceWithSpanResult.UnwrapNewNode();
+    nsresult rv = CloneAttributeWithTransaction(*nsGkAtoms::style, *spanElement,
+                                                aElement);
+    if (NS_WARN_IF(Destroyed())) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (NS_FAILED(rv)) {
+      NS_WARNING(
+          "EditorBase::CloneAttributeWithTransaction(nsGkAtoms::style) failed");
+      return Err(rv);
+    }
+    rv = CloneAttributeWithTransaction(*nsGkAtoms::_class, *spanElement,
+                                       aElement);
+    if (NS_WARN_IF(Destroyed())) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (NS_FAILED(rv)) {
+      NS_WARNING(
+          "EditorBase::CloneAttributeWithTransaction(nsGkAtoms::_class) "
+          "failed");
+      return Err(rv);
+    }
+    return pointToPutCaret;
+  }
+
+  auto RemoveElement = [&]() {
+    if (aStyleToRemove.IsStyleToClearAllInlineStyles()) {
+      MOZ_ASSERT(HTMLEditUtils::IsRemovableInlineStyleElement(aElement));
+      return true;
+    }
+    
+    
+    if (isStyleRepresentedByElement && !aStyleToRemove.mAttribute) {
+      return true;
+    }
+    
+    
+    if (isStyleRepresentedByElement &&
+        aElement.HasAttr(kNameSpaceID_None, aStyleToRemove.mAttribute) &&
+        !HTMLEditUtils::ElementHasAttributeExcept(aElement,
+                                                  *aStyleToRemove.mAttribute)) {
+      return true;
+    }
+    
+    
+    if (styleSpecified &&
+        aElement.IsAnyOfHTMLElements(nsGkAtoms::span, nsGkAtoms::font) &&
+        !HTMLEditUtils::ElementHasAttribute(aElement)) {
+      return true;
+    }
+    return false;
+  };
+
+  if (RemoveElement()) {
+    Result<EditorDOMPoint, nsresult> unwrapElementResult =
+        RemoveContainerWithTransaction(aElement);
+    if (MOZ_UNLIKELY(unwrapElementResult.isErr())) {
+      NS_WARNING("HTMLEditor::RemoveContainerWithTransaction() failed");
+      return unwrapElementResult.propagateErr();
+    }
+    if (AllowsTransactionsToChangeSelection() &&
+        unwrapElementResult.inspect().IsSet()) {
+      pointToPutCaret = unwrapElementResult.unwrap();
+    }
+    return pointToPutCaret;
+  }
+
+  if (isStyleRepresentedByElement && aStyleToRemove.mAttribute) {
+    nsresult rv =
+        RemoveAttributeWithTransaction(aElement, *aStyleToRemove.mAttribute);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::RemoveAttributeWithTransaction() failed");
+      return Err(rv);
+    }
+  }
+  return pointToPutCaret;
 }
 
 nsresult HTMLEditor::PromoteRangeIfStartsOrEndsInNamedAnchor(nsRange& aRange) {
