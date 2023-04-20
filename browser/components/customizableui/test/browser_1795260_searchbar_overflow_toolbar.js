@@ -17,7 +17,9 @@ add_task(async function test_syncPreferenceWithWidget() {
   let container = document.getElementById(WIDGET_ID);
   
   
-  container.style.width = window.innerWidth * 2 + "px";
+  let width = window.innerWidth * 2;
+  container.setAttribute("width", width);
+  container.style.width = `${width}px`;
 
   
   ok(
