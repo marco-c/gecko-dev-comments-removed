@@ -23,7 +23,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 const MAIN_MESSAGE_TYPE = "ActivityStream:Main";
 const CONTENT_MESSAGE_TYPE = "ActivityStream:Content";
 const PRELOAD_MESSAGE_TYPE = "ActivityStream:PreloadedBrowser";
@@ -1588,7 +1587,6 @@ __webpack_require__.d(builtins_namespaceObject, {
 
 var Actions_sys = __webpack_require__(1);
 ;
-
 
 
 
