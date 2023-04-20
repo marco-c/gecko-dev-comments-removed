@@ -571,7 +571,14 @@ add_task(async function test_save_and_load_dynamic_rules() {
   info("Verify dynamic rules loaded back as expected on AOM restart");
   dnrStore._data.delete(extUUID);
   dnrStore._dataPromises.delete(extUUID);
+
+  
+  
+  
+  
+  
   await promiseRestartManager();
+
   await extension.awaitStartup();
   await extension.awaitMessage("bgpage:ready");
 

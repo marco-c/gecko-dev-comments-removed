@@ -130,12 +130,40 @@ const assertDNRStoreData = async (
     
     
     
-    const assertRuleAtIdx = ruleIdx =>
+    const assertRuleAtIdx = ruleIdx => {
+      const actualRule = actualData.rules[ruleIdx];
+      const expectedRule = expectedRulesetRules[ruleIdx];
       Assert.deepEqual(
-        actualData.rules[ruleIdx],
-        expectedRulesetRules[ruleIdx],
+        actualRule,
+        expectedRule,
         `Got the expected rule at index ${ruleIdx} for ruleset id "${rulesetId}"`
       );
+      Assert.equal(
+        actualRule.constructor.name,
+        "Rule",
+        `Expect rule at index ${ruleIdx} to be an instance of the Rule class`
+      );
+      if (expectedRule.condition.regexFilter) {
+        const compiledRegexFilter = actualData.rules[
+          ruleIdx
+        ].condition.getCompiledRegexFilter();
+        Assert.equal(
+          compiledRegexFilter?.constructor.name,
+          "RegExp",
+          `Expect rule ${ruleIdx} condition.getCompiledRegexFilter() to return a compiled regexp filter`
+        );
+        Assert.equal(
+          compiledRegexFilter?.source,
+          new RegExp(expectedRule.condition.regexFilter).source,
+          `Expect rule ${ruleIdx} condition's compiled RegExp source to match the regexFilter string`
+        );
+        Assert.equal(
+          compiledRegexFilter?.ignoreCase,
+          !expectedRule.condition.isUrlFilterCaseSensitive,
+          `Expect rule ${ruleIdx} conditions's compiled RegExp ignoreCase to be set based on condition.isUrlFilterCaseSensitive`
+        );
+      }
+    };
 
     
     
@@ -148,7 +176,7 @@ const assertDNRStoreData = async (
       for (let ruleIdx = 0; ruleIdx < expectedRulesetRules.length; ruleIdx++) {
         assertRuleAtIdx(ruleIdx);
       }
-    } else {
+    } else if (expectedRulesetRules.length) {
       
       
       
