@@ -78,10 +78,6 @@ class NetworkEventWatcher {
     this.pool.destroy();
   }
 
-  get conn() {
-    return this.watcherActor.conn;
-  }
-
   
 
 

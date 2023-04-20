@@ -62,10 +62,6 @@ function defaults(typeName, observationTopics) {
   return {
     typeName,
 
-    get conn() {
-      return this.storageActor.conn;
-    },
-
     
 
 
