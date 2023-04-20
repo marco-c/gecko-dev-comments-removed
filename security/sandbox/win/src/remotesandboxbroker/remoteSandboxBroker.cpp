@@ -6,13 +6,14 @@
 
 #include "remoteSandboxBroker.h"
 
+#include "RemoteSandboxBrokerParent.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "nsIThread.h"
 
 namespace mozilla {
 
 RemoteSandboxBroker::RemoteSandboxBroker(uint32_t aLaunchArch)
-    : mLaunchArch(aLaunchArch) {}
+    : mLaunchArch(aLaunchArch), mParent(new RemoteSandboxBrokerParent) {}
 
 RemoteSandboxBroker::~RemoteSandboxBroker() {
   MOZ_ASSERT(
@@ -33,7 +34,7 @@ void RemoteSandboxBroker::Shutdown() {
   mIPCLaunchThread->Dispatch(
       NS_NewRunnableFunction("Remote Sandbox Launch", [self, this]() {
         
-        mParent.Shutdown();
+        mParent->Shutdown();
         mIPCLaunchThread = nullptr;
       }));
 }
@@ -87,7 +88,7 @@ bool RemoteSandboxBroker::LaunchApp(
   
   
   nsCOMPtr<nsISerialEventTarget> target = NS_GetCurrentThread();
-  mParent.Launch(mLaunchArch, mParameters.shareHandles(), target)
+  mParent->Launch(mLaunchArch, mParameters.shareHandles(), target)
       ->Then(target, __func__, std::move(resolve), std::move(reject));
 
   
@@ -100,19 +101,19 @@ bool RemoteSandboxBroker::LaunchApp(
 
   uint64_t handle = 0;
   bool ok = false;
-  bool rv = mParent.SendLaunchApp(std::move(mParameters), &ok, &handle) && ok;
+  bool rv = mParent->SendLaunchApp(std::move(mParameters), &ok, &handle) && ok;
   mParameters.shareHandles().Clear();
   if (!rv) {
-    mParent.Shutdown();
+    mParent->Shutdown();
     return false;
   }
 
   
   
   HANDLE ourChildHandle = 0;
-  bool dh = mParent.DuplicateFromLauncher((HANDLE)handle, &ourChildHandle);
+  bool dh = mParent->DuplicateFromLauncher((HANDLE)handle, &ourChildHandle);
   if (!dh) {
-    mParent.Shutdown();
+    mParent->Shutdown();
     return false;
   }
 
