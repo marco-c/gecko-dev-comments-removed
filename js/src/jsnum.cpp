@@ -603,13 +603,13 @@ static bool num_parseInt(JSContext* cx, unsigned argc, Value* vp) {
 
     if (args[0].isDouble()) {
       double d = args[0].toDouble();
-      if (DOUBLE_DECIMAL_IN_SHORTEST_LOW < d &&
+      if (DOUBLE_DECIMAL_IN_SHORTEST_LOW <= d &&
           d < DOUBLE_DECIMAL_IN_SHORTEST_HIGH) {
         args.rval().setNumber(floor(d));
         return true;
       }
       if (-DOUBLE_DECIMAL_IN_SHORTEST_HIGH < d &&
-          d < -DOUBLE_DECIMAL_IN_SHORTEST_LOW) {
+          d <= -DOUBLE_DECIMAL_IN_SHORTEST_LOW) {
         args.rval().setNumber(-floor(-d));
         return true;
       }
