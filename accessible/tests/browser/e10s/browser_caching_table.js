@@ -478,3 +478,20 @@ addAccessibleTask(
     remoteIframe: isCacheEnabled,
   }
 );
+
+
+
+
+
+addAccessibleTask(
+  `<table><tr id="tr"></tr></table>`,
+  async function(browser, docAcc) {
+    let reordered = waitForEvent(EVENT_REORDER, "tr");
+    await invokeContentTask(browser, [], () => {
+      const iframe = content.document.createElement("iframe");
+      content.document.getElementById("tr").append(iframe);
+    });
+    await reordered;
+  },
+  { topLevel: true }
+);
