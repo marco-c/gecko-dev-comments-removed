@@ -38,6 +38,10 @@ RUST_TESTS = [
 
 if not CONFIG["MOZ_CODE_COVERAGE"]:
     RUST_TESTS += ["stylo_tests"]
+    
+    
+    if CONFIG["OS_TARGET"] != "WINNT":
+        RUST_TESTS += ["style"]
 
 if CONFIG["CPU_ARCH"] != "x86":
     
