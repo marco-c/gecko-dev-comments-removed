@@ -84,7 +84,7 @@ static inline AllocKind GetGCObjectKindForBytes(size_t nbytes) {
 }
 
 
-static inline size_t GetGCKindSlots(AllocKind thingKind) {
+static constexpr inline size_t GetGCKindSlots(AllocKind thingKind) {
   
   
   switch (thingKind) {

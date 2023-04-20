@@ -202,6 +202,9 @@ class GlobalObjectData {
   HeapPtr<SharedShape*> extendedFunctionShapeWithDefaultProto;
 
   
+  HeapPtr<SharedShape*> boundFunctionShapeWithDefaultProto;
+
+  
   UniquePtr<RegExpStatics> regExpStatics;
 
   HeapPtr<ArgumentsObject*> mappedArgumentsTemplate;
@@ -1054,6 +1057,13 @@ class GlobalObject : public NativeObject {
   }
   static SharedShape* createFunctionShapeWithDefaultProto(JSContext* cx,
                                                           bool extended);
+
+  SharedShape* maybeBoundFunctionShapeWithDefaultProto() const {
+    return data().boundFunctionShapeWithDefaultProto;
+  }
+  void setBoundFunctionShapeWithDefaultProto(SharedShape* shape) {
+    data().boundFunctionShapeWithDefaultProto = shape;
+  }
 
   PropertyIteratorObject* maybeEmptyIterator() const {
     return data().emptyIterator;
