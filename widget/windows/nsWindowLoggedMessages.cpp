@@ -3,8 +3,10 @@
 
 
 
+#include <windef.h>
 #include <winuser.h>
 #include "mozilla/StaticPrefs_storage.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "nsWindowLoggedMessages.h"
 #include "nsWindow.h"
 #include "WinUtils.h"
