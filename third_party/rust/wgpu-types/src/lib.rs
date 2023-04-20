@@ -674,6 +674,13 @@ bitflags::bitflags! {
         /// - DX12
         /// - Metal (Intel and AMD GPUs)
         const WRITE_TIMESTAMP_INSIDE_PASSES = 1 << 41;
+        /// Allows shaders to use i16. Not currently supported in naga, only available through `spirv-passthrough`.
+        ///
+        /// Supported platforms:
+        /// - Vulkan
+        ///
+        /// This is a native-only feature.
+        const SHADER_INT16 = 1 << 42;
     }
 }
 
@@ -742,7 +749,6 @@ pub struct Limits {
     
     #[cfg_attr(feature = "serde", serde(rename = "maxTextureDimension3D"))]
     pub max_texture_dimension_3d: u32,
-    
     
     
     pub max_texture_array_layers: u32,
@@ -3289,8 +3295,19 @@ impl StencilState {
             && (self.read_mask != 0 || self.write_mask != 0)
     }
     
-    pub fn is_read_only(&self) -> bool {
-        self.write_mask == 0
+    pub fn is_read_only(&self, cull_mode: Option<Face>) -> bool {
+        
+        
+        
+
+        if self.write_mask == 0 {
+            return true;
+        }
+
+        let front_ro = cull_mode == Some(Face::Front) || self.front.is_read_only();
+        let back_ro = cull_mode == Some(Face::Back) || self.back.is_read_only();
+
+        front_ro && back_ro
     }
     
     pub fn needs_ref_value(&self) -> bool {
@@ -3380,13 +3397,13 @@ impl DepthStencilState {
     }
 
     
-    pub fn is_stencil_read_only(&self) -> bool {
-        self.stencil.is_read_only()
+    pub fn is_stencil_read_only(&self, cull_mode: Option<Face>) -> bool {
+        self.stencil.is_read_only(cull_mode)
     }
 
     
-    pub fn is_read_only(&self) -> bool {
-        self.is_depth_read_only() && self.is_stencil_read_only()
+    pub fn is_read_only(&self, cull_mode: Option<Face>) -> bool {
+        self.is_depth_read_only() && self.is_stencil_read_only(cull_mode)
     }
 }
 
@@ -3475,6 +3492,13 @@ impl StencilFaceState {
             || self.fail_op == StencilOperation::Replace
             || self.depth_fail_op == StencilOperation::Replace
             || self.pass_op == StencilOperation::Replace
+    }
+
+    
+    pub fn is_read_only(&self) -> bool {
+        self.pass_op == StencilOperation::Keep
+            && self.depth_fail_op == StencilOperation::Keep
+            && self.fail_op == StencilOperation::Keep
     }
 }
 
@@ -4338,8 +4362,9 @@ impl Extent3d {
                 _ => u32::max(1, self.height >> level),
             },
             depth_or_array_layers: match dim {
+                TextureDimension::D1 => 1,
+                TextureDimension::D2 => self.depth_or_array_layers,
                 TextureDimension::D3 => u32::max(1, self.depth_or_array_layers >> level),
-                _ => self.depth_or_array_layers,
             },
         }
     }
@@ -4479,9 +4504,12 @@ pub struct TextureDescriptor<L, V> {
     pub view_formats: V,
 }
 
-impl<L, V: Clone> TextureDescriptor<L, V> {
+impl<L, V> TextureDescriptor<L, V> {
     
-    pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> TextureDescriptor<K, V> {
+    pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> TextureDescriptor<K, V>
+    where
+        V: Clone,
+    {
         TextureDescriptor {
             label: fun(&self.label),
             size: self.size,
@@ -4499,7 +4527,10 @@ impl<L, V: Clone> TextureDescriptor<L, V> {
         &self,
         l_fun: impl FnOnce(&L) -> K,
         v_fun: impl FnOnce(V) -> M,
-    ) -> TextureDescriptor<K, M> {
+    ) -> TextureDescriptor<K, M>
+    where
+        V: Clone,
+    {
         TextureDescriptor {
             label: l_fun(&self.label),
             size: self.size,
@@ -5347,13 +5378,13 @@ pub struct ImageSubresourceRange {
     
     
     
-    pub mip_level_count: Option<NonZeroU32>,
+    pub mip_level_count: Option<u32>,
     
     pub base_array_layer: u32,
     
     
     
-    pub array_layer_count: Option<NonZeroU32>,
+    pub array_layer_count: Option<u32>,
 }
 
 impl ImageSubresourceRange {
@@ -5391,11 +5422,10 @@ impl ImageSubresourceRange {
     
     
     
-    
     pub fn is_full_resource(&self, mip_levels: u32, array_layers: u32) -> bool {
         
-        let mip_level_count = self.mip_level_count.map_or(mip_levels, NonZeroU32::get);
-        let array_layer_count = self.array_layer_count.map_or(array_layers, NonZeroU32::get);
+        let mip_level_count = self.mip_level_count.unwrap_or(mip_levels);
+        let array_layer_count = self.array_layer_count.unwrap_or(array_layers);
 
         let aspect_eq = self.aspect == TextureAspect::All;
 
@@ -5413,24 +5443,18 @@ impl ImageSubresourceRange {
     }
 
     
-    pub fn mip_range<L, V>(&self, texture_desc: &TextureDescriptor<L, V>) -> Range<u32> {
+    pub fn mip_range(&self, mip_level_count: u32) -> Range<u32> {
         self.base_mip_level..match self.mip_level_count {
-            Some(mip_level_count) => self.base_mip_level + mip_level_count.get(),
-            None => texture_desc.mip_level_count,
+            Some(mip_level_count) => self.base_mip_level + mip_level_count,
+            None => mip_level_count,
         }
     }
 
     
-    pub fn layer_range<L, V>(&self, texture_desc: &TextureDescriptor<L, V>) -> Range<u32> {
+    pub fn layer_range(&self, array_layer_count: u32) -> Range<u32> {
         self.base_array_layer..match self.array_layer_count {
-            Some(array_layer_count) => self.base_array_layer + array_layer_count.get(),
-            None => {
-                if texture_desc.dimension == TextureDimension::D3 {
-                    self.base_array_layer + 1
-                } else {
-                    texture_desc.size.depth_or_array_layers
-                }
-            }
+            Some(array_layer_count) => self.base_array_layer + array_layer_count,
+            None => array_layer_count,
         }
     }
 }

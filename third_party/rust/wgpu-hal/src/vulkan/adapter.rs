@@ -176,7 +176,7 @@ impl PhysicalDeviceFeatures {
                 
                 .shader_float64(requested_features.contains(wgt::Features::SHADER_FLOAT64))
                 
-                
+                .shader_int16(requested_features.contains(wgt::Features::SHADER_INT16))
                 
                 .geometry_shader(requested_features.contains(wgt::Features::SHADER_PRIMITIVE_INDEX))
                 .build(),
@@ -420,7 +420,7 @@ impl PhysicalDeviceFeatures {
         
         features.set(F::SHADER_FLOAT64, self.core.shader_float64 != 0);
         
-        
+        features.set(F::SHADER_INT16, self.core.shader_int16 != 0);
 
         
         

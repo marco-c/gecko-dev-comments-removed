@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
-use super::{NumberError, Token};
+use crate::front::wgsl::error::NumberError;
+use crate::front::wgsl::parse::lexer::Token;
 
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -42,7 +43,7 @@ impl Number {
 
 
 
-pub(super) fn consume_number(input: &str) -> (Token<'_>, &str) {
+pub(in crate::front::wgsl) fn consume_number(input: &str) -> (Token<'_>, &str) {
     let (result, rest) = parse(input);
     (
         Token::Number(result.and_then(Number::abstract_to_concrete)),
@@ -317,7 +318,7 @@ fn parse_hex_float_missing_period(
     exponent: &str,
     kind: Option<FloatKind>,
 ) -> Result<Number, NumberError> {
-    let hexf_input = format!("{}.{}", significand, exponent);
+    let hexf_input = format!("{significand}.{exponent}");
     parse_hex_float(&hexf_input, kind)
 }
 
@@ -328,7 +329,7 @@ fn parse_hex_int(
     kind: Option<IntKind>,
 ) -> Result<Number, NumberError> {
     let digits_with_sign = if is_negative {
-        Cow::Owned(format!("-{}", digits))
+        Cow::Owned(format!("-{digits}"))
     } else {
         Cow::Borrowed(digits)
     };
