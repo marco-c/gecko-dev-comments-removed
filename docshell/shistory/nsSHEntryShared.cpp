@@ -73,7 +73,12 @@ SHEntrySharedParentState::~SHEntrySharedParentState() {
   RefPtr<nsFrameLoader> loader = mFrameLoader;
   SetFrameLoader(nullptr);
   if (loader) {
-    loader->AsyncDestroy();
+    if (NS_FAILED(NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+            "SHEntrySharedParentState::~SHEntrySharedParentState",
+            [loader]() -> void { loader->AsyncDestroy(); })))) {
+      
+      loader->AsyncDestroy();
+    }
   }
 
   sIdToSharedState->Remove(mId);
