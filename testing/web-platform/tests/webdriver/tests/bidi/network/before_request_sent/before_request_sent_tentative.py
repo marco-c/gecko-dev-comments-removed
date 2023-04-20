@@ -17,6 +17,7 @@ PAGE_REDIRECTED_HTML = "/webdriver/tests/bidi/network/support/redirected.html"
 
 
 
+
 @pytest.fixture
 def fetch(bidi_session, top_context):
     """Perform a fetch from the page of the top level context."""
@@ -59,6 +60,7 @@ async def setup_network_test(bidi_session, subscribe_events, top_context, url):
         )
         events = []
         await subscribe_events(["network.beforeRequestSent"])
+
         async def on_event(method, data):
             events.append(data)
 
