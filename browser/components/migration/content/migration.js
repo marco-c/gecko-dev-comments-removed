@@ -189,19 +189,6 @@ var MigrationWizard = {
 
   
   onImportSourcePageShow() {
-    
-    let toggleCloseBrowserWarning = () => {
-      let visibility = "hidden";
-      if (group.selectedItem.id != "nothing") {
-        let migrator = this.spinResolve(
-          MigrationUtils.getMigrator(group.selectedItem.id)
-        );
-        visibility = migrator.sourceLocked ? "visible" : "hidden";
-      }
-      document.getElementById(
-        "closeSourceBrowser"
-      ).style.visibility = visibility;
-    };
     this._wiz.canRewind = false;
 
     var selectedMigrator = null;
@@ -241,11 +228,8 @@ var MigrationWizard = {
         .add(defaultBrowser);
     }
 
-    group.addEventListener("command", toggleCloseBrowserWarning);
-
     if (selectedMigrator) {
       group.selectedItem = selectedMigrator;
-      toggleCloseBrowserWarning();
     } else {
       
       document.getElementById("noSources").hidden = false;

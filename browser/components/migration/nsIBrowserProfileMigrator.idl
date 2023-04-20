@@ -64,13 +64,6 @@ interface nsIBrowserProfileMigrator : nsISupports
 
   jsval getSourceProfiles();
 
-
-  
-
-
-
-  readonly attribute boolean          sourceLocked;
-
   
 
 
