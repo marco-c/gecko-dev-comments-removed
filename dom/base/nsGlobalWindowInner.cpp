@@ -1678,6 +1678,10 @@ nsGlobalWindowInner::GetStorageKey() {
   return std::move(principalInfo);
 }
 
+mozilla::dom::StorageManager* nsGlobalWindowInner::GetStorageManager() {
+  return Navigator()->Storage();
+}
+
 nsresult nsGlobalWindowInner::EnsureScriptEnvironment() {
   
   

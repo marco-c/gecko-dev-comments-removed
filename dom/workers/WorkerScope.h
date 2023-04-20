@@ -234,6 +234,8 @@ class WorkerGlobalScope : public WorkerGlobalScopeBase {
   Maybe<EventCallbackDebuggerNotificationType> GetDebuggerNotificationType()
       const final;
 
+  mozilla::dom::StorageManager* GetStorageManager() final;
+
   
   WorkerGlobalScope* Self() { return this; }
 
