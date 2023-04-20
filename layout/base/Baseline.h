@@ -2,8 +2,8 @@
 
 
 
-#ifndef BaselineUtils_h___
-#define BaselineUtils_h___
+#ifndef LAYOUT_BASE_BASELINE_H_
+#define LAYOUT_BASE_BASELINE_H_
 
 #include "nsCoord.h"
 #include "mozilla/WritingModes.h"
@@ -41,4 +41,5 @@ class Baseline {
 };
 
 }  
+
 #endif  
