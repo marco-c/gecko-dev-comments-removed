@@ -5,7 +5,7 @@
 
 
 with Files("**"):
-    BUG_COMPONENT = ("Core", "DOM: Content Processes")
+    BUG_COMPONENT = ("Toolkit", "Performance Monitoring")
 
 XPIDL_MODULE = "toolkit_processtools"
 
