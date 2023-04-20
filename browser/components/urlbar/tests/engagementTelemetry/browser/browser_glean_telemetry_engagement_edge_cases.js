@@ -81,7 +81,8 @@ const anotherHeuristicProvider = new AnotherHeuristicProvider({
 
 add_task(async function engagement_before_showing_results() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.searchTips.test.ignoreShowLimits", true]],
+    
+    set: [["browser.urlbar.tipShownCount.searchTip_onboard", 999]],
   });
 
   
@@ -104,7 +105,7 @@ add_task(async function engagement_before_showing_results() {
 
   await doTest(async browser => {
     
-    const onPopupOpened = openPopup("exam");
+    await UrlbarTestUtils.inputIntoURLBar(window, "exam");
 
     
     const context = await anotherHeuristicProvider.onQueryStarted();
@@ -134,8 +135,6 @@ add_task(async function engagement_before_showing_results() {
 
     
     noResponseProvider.done();
-    
-    await onPopupOpened;
   });
 
   await SpecialPowers.popPrefEnv();
