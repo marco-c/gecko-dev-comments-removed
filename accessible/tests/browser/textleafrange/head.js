@@ -32,6 +32,8 @@ const BOUNDARY_FLAG_INCLUDE_ORIGIN =
   Ci.nsIAccessibleTextLeafPoint.BOUNDARY_FLAG_INCLUDE_ORIGIN;
 const BOUNDARY_FLAG_STOP_IN_EDITABLE =
   Ci.nsIAccessibleTextLeafPoint.BOUNDARY_FLAG_STOP_IN_EDITABLE;
+const BOUNDARY_FLAG_SKIP_LIST_ITEM_MARKER =
+  Ci.nsIAccessibleTextLeafPoint.BOUNDARY_FLAG_SKIP_LIST_ITEM_MARKER;
 
 function createTextLeafPoint(acc, offset) {
   let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
