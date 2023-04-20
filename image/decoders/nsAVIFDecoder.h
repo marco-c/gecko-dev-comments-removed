@@ -259,7 +259,7 @@ class AVIFDecoderInterface {
   virtual ~AVIFDecoderInterface() = default;
 
   
-  virtual DecodeResult Decode(bool aIsMetadataDecode,
+  virtual DecodeResult Decode(bool aShouldSendTelemetry,
                               const Mp4parseAvifInfo& aAVIFInfo,
                               const AVIFImage& aSamples) = 0;
   
