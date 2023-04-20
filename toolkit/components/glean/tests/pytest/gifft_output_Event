@@ -22,10 +22,10 @@ using Telemetry::EventID;
 
 static inline Maybe<EventID> EventIdForMetric(uint32_t aId) {
   switch(aId) {
-    case 17: { 
+    case 16: { 
       return Some(EventID::EventMetric_EnumNames_AreStrange);
     }
-    case 18: { 
+    case 17: { 
       return Some(EventID::EventMetric_EnumName_WithExtra);
     }
     default: {

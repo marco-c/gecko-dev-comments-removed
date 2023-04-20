@@ -32,9 +32,7 @@ constexpr glean::impl::Ping NotBaseline(1);
 
 
 
-
-
-constexpr glean::impl::Ping NotMetrics(2);
+constexpr glean::impl::Ping NotDeletionRequest(2);
 
 
 
@@ -54,7 +52,9 @@ constexpr glean::impl::Ping NotEvents(3);
 
 
 
-constexpr glean::impl::Ping NotDeletionRequest(4);
+
+
+constexpr glean::impl::Ping NotMetrics(4);
 
 
 }  

@@ -29,14 +29,12 @@ pub static not_baseline: Lazy<Ping> = Lazy::new(|| {
 
 
 
-
-
-pub static not_metrics: Lazy<Ping> = Lazy::new(|| {
+pub static not_deletion_request: Lazy<Ping> = Lazy::new(|| {
     Ping::new(
-        "not-metrics",
+        "not-deletion-request",
         true,
-        false,
-        vec!["overdue".into(), "reschedule".into(), "today".into(), "tomorrow".into(), "upgrade".into()],
+        true,
+        vec![],
     )
 });
 
@@ -59,12 +57,14 @@ pub static not_events: Lazy<Ping> = Lazy::new(|| {
 
 
 
-pub static not_deletion_request: Lazy<Ping> = Lazy::new(|| {
+
+
+pub static not_metrics: Lazy<Ping> = Lazy::new(|| {
     Ping::new(
-        "not-deletion-request",
+        "not-metrics",
         true,
-        true,
-        vec![],
+        false,
+        vec!["overdue".into(), "reschedule".into(), "today".into(), "tomorrow".into(), "upgrade".into()],
     )
 });
 
@@ -80,9 +80,9 @@ pub fn register_pings(application_id: Option<&str>) {
     match application_id {
         _ => {
             let _ = &*not_baseline;
-            let _ = &*not_metrics;
-            let _ = &*not_events;
             let _ = &*not_deletion_request;
+            let _ = &*not_events;
+            let _ = &*not_metrics;
         }
     }
 }
@@ -103,9 +103,9 @@ pub(crate) fn submit_ping_by_id(id: u32, reason: Option<&str>) {
     }
     match id {
         1 => not_baseline.submit(reason),
-        2 => not_metrics.submit(reason),
+        2 => not_deletion_request.submit(reason),
         3 => not_events.submit(reason),
-        4 => not_deletion_request.submit(reason),
+        4 => not_metrics.submit(reason),
         _ => {
             
             log::error!("Cannot submit unknown ping {} by id.", id);
