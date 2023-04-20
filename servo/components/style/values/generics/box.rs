@@ -173,6 +173,27 @@ impl<I: crate::Zero + ToCss> ToCss for LineClamp<I> {
 
 
 #[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+pub enum GenericAnimationIterationCount<Number> {
+    
+    Number(Number),
+    
+    Infinite,
+}
+
+pub use self::GenericAnimationIterationCount as AnimationIterationCount;
+
+
+#[derive(
     Animate,
     Clone,
     ComputeSquaredDistance,

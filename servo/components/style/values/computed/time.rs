@@ -11,7 +11,6 @@ use style_traits::{CssWriter, ToCss};
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, ToResolvedValue)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[repr(C)]
 pub struct Time {
     seconds: CSSFloat,
 }
@@ -19,7 +18,7 @@ pub struct Time {
 impl Time {
     
     pub fn from_seconds(seconds: CSSFloat) -> Self {
-        Time { seconds }
+        Time { seconds: seconds }
     }
 
     
