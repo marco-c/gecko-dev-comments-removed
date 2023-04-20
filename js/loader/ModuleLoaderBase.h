@@ -246,6 +246,10 @@ class ModuleLoaderBase : public nsISupports {
   
   virtual void OnModuleLoadComplete(ModuleLoadRequest* aRequest) = 0;
 
+  virtual bool IsModuleEvaluationAborted(ModuleLoadRequest* aRequest) {
+    return false;
+  }
+
   
   
   

@@ -1227,16 +1227,11 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
   
   MOZ_ASSERT_IF(ok, !JS_IsExceptionPending(aCx));
 
-  
-  
-  if (request->IsCanceled() || !mLoader) {
-    return NS_ERROR_ABORT;
-  }
-
-  if (!ok) {
+  if (!ok || IsModuleEvaluationAborted(request)) {
     LOG(("ScriptLoadRequest (%p):   evaluation failed", aRequest));
     
     
+    rv = NS_ERROR_ABORT;
   }
 
   
@@ -1248,7 +1243,11 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
   }
 
   if (request->IsDynamicImport()) {
-    FinishDynamicImport(aCx, request, NS_OK, evaluationPromise);
+    if (NS_FAILED(rv)) {
+      FinishDynamicImportAndReject(request, rv);
+    } else {
+      FinishDynamicImport(aCx, request, NS_OK, evaluationPromise);
+    }
   } else {
     
     
