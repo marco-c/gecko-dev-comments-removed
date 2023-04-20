@@ -1,7 +1,5 @@
 
 
-#![feature(backtrace)]
-
 use std::backtrace::Backtrace;
 use thiserror::Error;
 
