@@ -2,10 +2,11 @@
 
 
 
-from mozbuild.util import memoize
-import mozpack.path as mozpath
-from mozversioncontrol import get_repository_object
 import hashlib
+
+import mozpack.path as mozpath
+from mozbuild.util import memoize
+from mozversioncontrol import get_repository_object
 
 
 @memoize

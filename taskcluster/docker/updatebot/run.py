@@ -10,13 +10,15 @@ import sys
 sys.path.append("/builds/worker/checkouts/gecko/third_party/python")
 sys.path.append(".")
 
-import os
-import stat
 import base64
-import signal
+import os
 import platform
-import requests
+import signal
+import stat
 import subprocess
+
+import requests
+
 import taskcluster
 
 

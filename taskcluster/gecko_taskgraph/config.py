@@ -3,8 +3,7 @@
 
 
 from taskgraph.util.schema import Schema, optionally_keyed_by
-from voluptuous import Required, Optional, Any
-
+from voluptuous import Any, Optional, Required
 
 graph_config_schema = Schema(
     {

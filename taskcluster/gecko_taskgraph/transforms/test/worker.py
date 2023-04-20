@@ -5,7 +5,6 @@
 from taskgraph.transforms.base import TransformSequence
 
 
-
 LINUX_WORKER_TYPES = {
     "large": "t-linux-large",
     "xlarge": "t-linux-xlarge",

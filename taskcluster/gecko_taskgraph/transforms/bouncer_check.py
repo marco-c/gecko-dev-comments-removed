@@ -3,6 +3,7 @@
 
 
 import json
+import logging
 from pipes import quote as shell_quote
 
 from taskgraph.transforms.base import TransformSequence
@@ -10,8 +11,6 @@ from taskgraph.util.schema import resolve_keyed_by
 
 from gecko_taskgraph.util.attributes import release_level
 from gecko_taskgraph.util.scriptworker import get_release_config
-
-import logging
 
 logger = logging.getLogger(__name__)
 

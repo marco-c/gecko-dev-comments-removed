@@ -3,26 +3,24 @@
 
 
 
+import json
 import logging
 import os
 import re
-import json
 
 import mozpack.path as mozpath
 import taskgraph
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import Schema
+from voluptuous import Optional, Required
 
-from .. import GECKO
 from gecko_taskgraph.util.docker import (
     create_context_tar,
     generate_context_hash,
     image_path,
 )
-from voluptuous import (
-    Optional,
-    Required,
-)
+
+from .. import GECKO
 from .task import task_description_schema
 
 logger = logging.getLogger(__name__)
