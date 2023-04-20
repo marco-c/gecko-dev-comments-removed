@@ -15,7 +15,7 @@ namespace mozilla::dom {
 
 class PermissionObserver;
 
-class PermissionStatus : public DOMEventTargetHelper {
+class PermissionStatus final : public DOMEventTargetHelper {
   friend class PermissionObserver;
 
  public:
@@ -34,26 +34,13 @@ class PermissionStatus : public DOMEventTargetHelper {
 
   PermissionName Name() const { return mName; }
 
-  nsresult Init();
-
- protected:
+ private:
   ~PermissionStatus();
 
   PermissionStatus(nsPIDOMWindowInner* aWindow, PermissionName aName);
 
-  
+  nsresult Init();
 
-
-
-
-
-
-
-
-
-  virtual nsLiteralCString GetPermissionType();
-
- private:
   nsresult UpdateState();
 
   already_AddRefed<nsIPrincipal> GetPrincipal() const;
