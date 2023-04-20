@@ -744,7 +744,7 @@ function TagPicker(props) {
   }, react.createElement("button", {
     className: "stp_tag_picker_tag_remove",
     onClick: () => addTag(tag)
-  }, "+"), tag)))), tagInputStatus === "waiting" && react.createElement("h3", {
+  }, "+ ", tag))))), tagInputStatus === "waiting" && react.createElement("h3", {
     className: "header_large",
     "data-l10n-id": "pocket-panel-saved-processing-tags"
   }), tagInputStatus === "success" && react.createElement("h3", {
