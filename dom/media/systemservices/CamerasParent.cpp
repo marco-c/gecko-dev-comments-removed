@@ -52,7 +52,6 @@ mozilla::LazyLogModule gCamerasParentLog("CamerasParent");
 #define LOG_ENABLED() MOZ_LOG_TEST(gCamerasParentLog, mozilla::LogLevel::Debug)
 
 namespace mozilla {
-using media::NewRunnableFrom;
 using media::ShutdownBlockingTicket;
 namespace camera {
 
@@ -200,39 +199,6 @@ class DeliverFrameRunnable : public mozilla::Runnable {
   int mResult;
 };
 
-void CamerasParent::StopVideoCapture() {
-  LOG_FUNCTION();
-  
-  MOZ_ASSERT(mPBackgroundEventTarget->IsOnCurrentThread());
-  
-  RefPtr<CamerasParent> self(this);
-  DebugOnly<nsresult> rv =
-      mVideoCaptureThread->Dispatch(NewRunnableFrom([self]() {
-        MonitorAutoLock lock(*(self->sThreadMonitor));
-        self->CloseEngines();
-        
-        
-        nsCOMPtr<nsIThread> thread = nullptr;
-        if (sNumOfOpenCamerasParentEngines == 0) {
-          thread = std::move(self->sVideoCaptureThread);
-        }
-        nsresult rv = NS_DispatchToMainThread(NewRunnableFrom([self, thread]() {
-          if (thread) {
-            thread->AsyncShutdown();
-          }
-          return NS_OK;
-        }));
-        MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv),
-                              "dispatch for video thread shutdown");
-        return rv;
-      }));
-#ifdef DEBUG
-  
-  
-  MOZ_ASSERT(NS_SUCCEEDED(rv) || !mWebRTCAlive);
-#endif
-}
-
 int CamerasParent::DeliverFrameOverIPC(CaptureEngine aCapEngine,
                                        uint32_t aStreamId,
                                        const TrackingId& aTrackingId,
@@ -376,12 +342,11 @@ bool CamerasParent::SetupEngine(CaptureEngine aCapEngine) {
 }
 
 void CamerasParent::CloseEngines() {
-  sThreadMonitor->AssertCurrentThreadOwns();
+  MOZ_ASSERT(mVideoCaptureThread->IsOnCurrentThread());
   LOG_FUNCTION();
   if (!mWebRTCAlive) {
     return;
   }
-  MOZ_ASSERT(mVideoCaptureThread->IsOnCurrentThread());
 
   
   while (!mCallbacks.IsEmpty()) {
@@ -398,17 +363,6 @@ void CamerasParent::CloseEngines() {
     MOZ_ASSERT(device_info);
     if (device_info) {
       device_info->DeRegisterVideoInputFeedBack(this);
-    }
-  }
-
-  
-  sNumOfOpenCamerasParentEngines--;
-  if (sNumOfOpenCamerasParentEngines == 0) {
-    for (StaticRefPtr<VideoEngine>& engine : sEngines) {
-      if (engine) {
-        VideoEngine::Delete(engine);
-        engine = nullptr;
-      }
     }
   }
 
@@ -1103,28 +1057,44 @@ ipc::IPCResult CamerasParent::RecvStopCapture(const CaptureEngine& aCapEngine,
   return IPC_OK();
 }
 
-void CamerasParent::StopIPC() {
-  MOZ_ASSERT(!mDestroyed);
+void CamerasParent::ActorDestroy(ActorDestroyReason aWhy) {
+  MOZ_ASSERT(mPBackgroundEventTarget->IsOnCurrentThread());
+  LOG_FUNCTION();
+
   
   mShmemPool.Cleanup(this);
   
   
   mChildIsAlive = false;
   mDestroyed = true;
-}
-
-void CamerasParent::ActorDestroy(ActorDestroyReason aWhy) {
-  MOZ_ASSERT(mPBackgroundEventTarget->IsOnCurrentThread());
-  
-  LOG_FUNCTION();
-  StopIPC();
-  
-  
-  StopVideoCapture();
   
   
   
   mShutdownRequest.DisconnectIfExists();
+  if (mVideoCaptureThread) {
+    
+    MOZ_ALWAYS_SUCCEEDS(mVideoCaptureThread->Dispatch(
+        NewRunnableMethod(__func__, this, &CamerasParent::CloseEngines)));
+
+    
+    MonitorAutoLock lock(*sThreadMonitor);
+    if (--sNumOfOpenCamerasParentEngines == 0) {
+      LOG("Shutting down VideoEngines and the VideoCapture thread");
+      MOZ_ALWAYS_SUCCEEDS(
+          sVideoCaptureThread->Dispatch(NS_NewRunnableFunction(__func__, [] {
+            for (StaticRefPtr<VideoEngine>& engine : sEngines) {
+              if (engine) {
+                VideoEngine::Delete(engine);
+                engine = nullptr;
+              }
+            }
+          })));
+      MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(NS_NewRunnableFunction(
+          __func__, [thread = RefPtr(sVideoCaptureThread.forget())] {
+            MOZ_ALWAYS_SUCCEEDS(thread->AsyncShutdown());
+          })));
+    }
+  }
 }
 
 void CamerasParent::OnShutdown() {
