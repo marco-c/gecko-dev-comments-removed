@@ -5,7 +5,7 @@
 
 
 
-using NetAddr from "mozilla/net/DNS.h";
+using mozilla::net::NetAddr from "mozilla/net/DNS.h";
 using mozilla::net::IPCTypeRecord from "mozilla/net/DNSByTypeRecord.h";
 using nsIRequest::TRRMode from "nsIRequest.h";
 
