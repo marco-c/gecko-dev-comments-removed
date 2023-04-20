@@ -205,11 +205,6 @@ class VideoReceiveStream2
   void CreateAndRegisterExternalDecoder(const Decoder& decoder);
 
   struct DecodeFrameResult {
-    DecodeFrameResult(const DecodeFrameResult&) = delete;
-    DecodeFrameResult& operator=(const DecodeFrameResult&) = delete;
-    DecodeFrameResult(DecodeFrameResult&&) = default;
-    DecodeFrameResult& operator=(DecodeFrameResult&&) = default;
-
     
     
     
