@@ -41,16 +41,6 @@ class ScreenCastPortal : public xdg_portal::ScreenCapturePortalInterface {
   
   
   
-  
-  enum class CaptureSourceType : uint32_t {
-    kScreen = 0b01,
-    kWindow = 0b10,
-    kAnyScreenContent = kScreen | kWindow
-  };
-
-  
-  
-  
   enum class CursorMode : uint32_t {
     
     kHidden = 0b01,
@@ -96,14 +86,6 @@ class ScreenCastPortal : public xdg_portal::ScreenCapturePortalInterface {
                        sources_request_response_signal_handler,
                    gpointer user_data);
 
-  
-  
-  ScreenCastPortal(CaptureSourceType source_type,
-                   PortalNotifier* notifier,
-                   ProxyRequestResponseHandler proxy_request_response_handler,
-                   SourcesRequestResponseSignalHandler
-                       sources_request_response_signal_handler,
-                   gpointer user_data);
   ~ScreenCastPortal();
 
   
@@ -136,6 +118,16 @@ class ScreenCastPortal : public xdg_portal::ScreenCapturePortalInterface {
   std::string RestoreToken() const;
 
  private:
+  
+  
+  
+  enum class CaptureSourceType : uint32_t {
+    kScreen = 0b01,
+    kWindow = 0b10,
+    kAnyScreenContent = kScreen | kWindow
+  };
+  static CaptureSourceType ToCaptureSourceType(CaptureType type);
+
   PortalNotifier* notifier_;
 
   
