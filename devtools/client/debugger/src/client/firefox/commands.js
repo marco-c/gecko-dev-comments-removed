@@ -107,12 +107,6 @@ function forEachThread(iteratee) {
 
 
 async function startTracing(logMethod) {
-  
-  
-  
-  if (!commands.client.mainRoot.traits.supportsJavascriptTracing) {
-    return;
-  }
   const targets = commands.targetCommand.getAllTargets(
     commands.targetCommand.ALL_TYPES
   );
@@ -128,12 +122,6 @@ async function startTracing(logMethod) {
 
 
 async function stopTracing() {
-  
-  
-  
-  if (!commands.client.mainRoot.traits.supportsJavascriptTracing) {
-    return;
-  }
   const targets = commands.targetCommand.getAllTargets(
     commands.targetCommand.ALL_TYPES
   );

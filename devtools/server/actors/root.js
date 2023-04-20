@@ -138,9 +138,6 @@ class RootActor extends Actor {
         : true,
       
       
-      supportsJavascriptTracing: true,
-      
-      
       supportsAddonsUninstall: true,
     };
   }
