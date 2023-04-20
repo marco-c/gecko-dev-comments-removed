@@ -1,18 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-var EXPORTED_SYMBOLS = ["Utils"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { ServiceRequest } = ChromeUtils.importESModule(
-  "resource://gre/modules/ServiceRequest.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { ServiceRequest } from "resource://gre/modules/ServiceRequest.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -33,9 +25,9 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsINetworkLinkService"
 );
 
-
-
-
+// Create a new instance of the ConsoleAPI so we can control the maxLogLevel with a pref.
+// See LOG_LEVELS in Console.sys.mjs. Common examples: "all", "debug", "info",
+// "warn", "error".
 const log = (() => {
   const { ConsoleAPI } = ChromeUtils.importESModule(
     "resource://gre/modules/Console.sys.mjs"
@@ -49,18 +41,18 @@ const log = (() => {
 
 XPCOMUtils.defineLazyGetter(lazy, "isRunningTests", () => {
   if (Services.env.get("MOZ_DISABLE_NONLOCAL_CONNECTIONS") === "1") {
-    
-    
+    // Allow to override the server URL if non-local connections are disabled,
+    // usually true when running tests.
     return true;
   }
   return false;
 });
 
-
-
+// Overriding the server URL is normally disabled on Beta and Release channels,
+// except under some conditions.
 XPCOMUtils.defineLazyGetter(lazy, "allowServerURLOverride", () => {
   if (!AppConstants.RELEASE_OR_BETA) {
-    
+    // Always allow to override the server URL on Nightly/DevEdition.
     return true;
   }
 
@@ -69,7 +61,7 @@ XPCOMUtils.defineLazyGetter(lazy, "allowServerURLOverride", () => {
   }
 
   if (Services.env.get("MOZ_REMOTE_SETTINGS_DEVTOOLS") === "1") {
-    
+    // Allow to override the server URL when using remote settings devtools.
     return true;
   }
 
@@ -101,7 +93,7 @@ function _isUndefined(value) {
   return typeof value === "undefined";
 }
 
-var Utils = {
+export var Utils = {
   get SERVER_URL() {
     return lazy.allowServerURLOverride
       ? lazy.gServerURL
@@ -110,9 +102,9 @@ var Utils = {
 
   CHANGES_PATH: "/buckets/monitor/collections/changes/changeset",
 
-  
-
-
+  /**
+   * Logger instance.
+   */
   log,
 
   get CERT_CHAIN_ROOT_IDENTIFIER() {
@@ -132,7 +124,7 @@ var Utils = {
   },
 
   get LOAD_DUMPS() {
-    
+    // Load dumps only if pulling data from the production server, or in tests.
     return (
       this.SERVER_URL == AppConstants.REMOTE_SETTINGS_SERVER_URL ||
       lazy.isRunningTests
@@ -140,21 +132,21 @@ var Utils = {
   },
 
   get PREVIEW_MODE() {
-    
-    
+    // We want to offer the ability to set preview mode via a preference
+    // for consumers who want to pull from the preview bucket on startup.
     if (_isUndefined(this._previewModeEnabled) && lazy.allowServerURLOverride) {
       return lazy.gPreviewEnabled;
     }
     return !!this._previewModeEnabled;
   },
 
-  
-
-
-
+  /**
+   * Internal method to enable pulling data from preview buckets.
+   * @param enabled
+   */
   enablePreviewMode(enabled) {
     const bool2str = v =>
-      
+      // eslint-disable-next-line no-nested-ternary
       _isUndefined(v) ? "unset" : v ? "enabled" : "disabled";
     this.log.debug(
       `Preview mode: ${bool2str(this._previewModeEnabled)} -> ${bool2str(
@@ -164,16 +156,16 @@ var Utils = {
     this._previewModeEnabled = enabled;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns the actual bucket name to be used. When preview mode is enabled,
+   * this adds the *preview* suffix.
+   *
+   * See also `SharedUtils.loadJSONDump()` which strips the preview suffix to identify
+   * the packaged JSON file.
+   *
+   * @param bucketName the client bucket
+   * @returns the final client bucket depending whether preview mode is enabled.
+   */
   actualBucketName(bucketName) {
     let actual = bucketName.replace("-preview", "");
     if (this.PREVIEW_MODE) {
@@ -182,14 +174,14 @@ var Utils = {
     return actual;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Check if network is down.
+   *
+   * Note that if this returns false, it does not guarantee
+   * that network is up.
+   *
+   * @return {bool} Whether network is down or not.
+   */
   get isOffline() {
     try {
       return (
@@ -204,22 +196,22 @@ var Utils = {
     return false;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * A wrapper around `ServiceRequest` that behaves like `fetch()`.
+   *
+   * Use this in order to leverage the `beConservative` flag, for
+   * example to avoid using HTTP3 to fetch critical data.
+   *
+   * @param input a resource
+   * @param init request options
+   * @returns a Response object
+   */
   async fetch(input, init = {}) {
     return new Promise(function(resolve, reject) {
       const request = new ServiceRequest();
       function fallbackOrReject(err) {
         if (
-          
+          // At most one recursive Utils.fetch call (bypassProxy=false to true).
           bypassProxy ||
           Services.startup.shuttingDown ||
           Utils.isOffline ||
@@ -240,7 +232,7 @@ var Utils = {
       request.onabort = () =>
         fallbackOrReject(new DOMException("Aborted", "AbortError"));
       request.onload = () => {
-        
+        // Parse raw response headers into `Headers` object.
         const headers = new Headers();
         const rawHeaders = request.getAllResponseHeaders();
         rawHeaders
@@ -265,9 +257,9 @@ var Utils = {
       const { method = "GET", headers = {}, bypassProxy = false } = init;
 
       request.open(method, input, { bypassProxy });
-      
-      
-      
+      // By default, XMLHttpRequest converts the response based on the
+      // Content-Type header, or UTF-8 otherwise. This may mangle binary
+      // responses. Avoid that by requesting the raw bytes.
       request.responseType = "arraybuffer";
 
       for (const [name, value] of Object.entries(headers)) {
@@ -278,24 +270,24 @@ var Utils = {
     });
   },
 
-  
-
-
-
-
-
+  /**
+   * Check if local data exist for the specified client.
+   *
+   * @param {RemoteSettingsClient} client
+   * @return {bool} Whether it exists or not.
+   */
   async hasLocalData(client) {
     const timestamp = await client.db.getLastModified();
     return timestamp !== null;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Check if we ship a JSON dump for the specified bucket and collection.
+   *
+   * @param {String} bucket
+   * @param {String} collection
+   * @return {bool} Whether it is present or not.
+   */
   async hasLocalDump(bucket, collection) {
     try {
       await fetch(
@@ -310,13 +302,13 @@ var Utils = {
     }
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Look up the last modification time of the JSON dump.
+   *
+   * @param {String} bucket
+   * @param {String} collection
+   * @return {int} The last modification time of the dump. -1 if non-existent.
+   */
   async getLocalDumpLastModified(bucket, collection) {
     if (!this._dumpStats) {
       if (!this._dumpStatsInitPromise) {
@@ -342,38 +334,38 @@ var Utils = {
         bucket,
         collection
       );
-      
+      // Client recognize -1 as missing dump.
       lastModified = dumpTimestamp ?? -1;
       this._dumpStats[identifier] = lastModified;
     }
     return lastModified;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Fetch the list of remote collections and their timestamp.
+   * ```
+   *   {
+   *     "timestamp": 1486545678,
+   *     "changes":[
+   *       {
+   *         "host":"kinto-ota.dev.mozaws.net",
+   *         "last_modified":1450717104423,
+   *         "bucket":"blocklists",
+   *         "collection":"certificates"
+   *       },
+   *       ...
+   *     ],
+   *     "metadata": {}
+   *   }
+   * ```
+   * @param {String} serverUrl         The server URL (eg. `https://server.org/v1`)
+   * @param {int}    expectedTimestamp The timestamp that the server is supposed to return.
+   *                                   We obtained it from the Megaphone notification payload,
+   *                                   and we use it only for cache busting (Bug 1497159).
+   * @param {String} lastEtag          (optional) The Etag of the latest poll to be matched
+   *                                   by the server (eg. `"123456789"`).
+   * @param {Object} filters
+   */
   async fetchLatestChanges(serverUrl, options = {}) {
     const { expectedTimestamp, lastEtag = "", filters = {} } = options;
 
@@ -415,9 +407,9 @@ var Utils = {
     }
 
     if (!payload.hasOwnProperty("changes")) {
-      
-      
-      
+      // If the server is failing, the JSON response might not contain the
+      // expected data. For example, real server errors (Bug 1259145)
+      // or dummy local server for tests (Bug 1481348)
       if (!is404FromCustomServer) {
         throw new Error(
           `Server error ${url} ${response.status} ${
@@ -430,16 +422,16 @@ var Utils = {
     const { changes = [], timestamp } = payload;
 
     let serverTimeMillis = Date.parse(response.headers.get("Date"));
-    
+    // Since the response is served via a CDN, the Date header value could have been cached.
     const cacheAgeSeconds = response.headers.has("Age")
       ? parseInt(response.headers.get("Age"), 10)
       : 0;
     serverTimeMillis += cacheAgeSeconds * 1000;
 
-    
+    // Age of data (time between publication and now).
     const ageSeconds = (serverTimeMillis - timestamp) / 1000;
 
-    
+    // Check if the server asked the clients to back off.
     let backoffSeconds;
     if (response.headers.has("Backoff")) {
       const value = parseInt(response.headers.get("Backoff"), 10);
@@ -457,13 +449,13 @@ var Utils = {
     };
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Test if a single object matches all given filters.
+   *
+   * @param  {Object} filters  The filters object.
+   * @param  {Object} entry    The object to filter.
+   * @return {Boolean}
+   */
   filterObject(filters, entry) {
     return Object.entries(filters).every(([filter, value]) => {
       if (Array.isArray(value)) {
@@ -478,13 +470,13 @@ var Utils = {
     });
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Sorts records in a list according to a given ordering.
+   *
+   * @param  {String} order The ordering, eg. `-last_modified`.
+   * @param  {Array}  list  The collection to order.
+   * @return {Array}
+   */
   sortObjects(order, list) {
     const hasDash = order[0] === "-";
     const field = hasDash ? order.slice(1) : order;
