@@ -6,7 +6,8 @@ import { clearDocuments } from "../utils/editor";
 import sourceQueue from "../utils/source-queue";
 
 import { clearWasmStates } from "../utils/wasm";
-import { getMainThread } from "../selectors";
+import { getMainThread, getThreadContext } from "../selectors";
+import { evaluateExpressions } from "../actions/expressions";
 
 
 
@@ -44,7 +45,17 @@ export function willNavigate(event) {
 
 
 export function navigated() {
-  return async function({ dispatch, panel }) {
+  return async function({ getState, dispatch, panel }) {
+    try {
+      
+      const threadcx = getThreadContext(getState());
+      await dispatch(evaluateExpressions(threadcx));
+    } catch (e) {
+      
+      
+      console.error("Failed to update expression on navigation", e);
+    }
+
     panel.emit("reloaded");
   };
 }
