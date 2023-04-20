@@ -157,6 +157,13 @@ let propNameWhitelist = [
 
   
   { propName: "--icon-url", isFromDevTools: false },
+
+  
+  {
+    propName: "--browser-stack-z-index-devtools-splitter",
+    isFromDevTools: false,
+  },
+  { propName: "--browser-stack-z-index-rdm-toolbar", isFromDevTools: false },
 ];
 
 
