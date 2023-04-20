@@ -1098,6 +1098,17 @@ nsresult nsHostResolver::NameLookup(nsHostRecord* rec,
   
   rec->Reset();
 
+  if (StaticPrefs::network_trr_display_fallback_warning()) {
+    TRRSkippedReason heuristicResult =
+        TRRService::Get()->GetHeuristicDetectionResult();
+    if (heuristicResult != TRRSkippedReason::TRR_UNSET &&
+        heuristicResult != TRRSkippedReason::TRR_OK) {
+      rec->RecordReason(heuristicResult);
+    }
+    LOG(("NameLookup: %s heuristicResult: %d ", rec->host.get(),
+         heuristicResult));
+  }
+
   ComputeEffectiveTRRMode(rec);
 
   if (!rec->mTrrServer.IsEmpty()) {
@@ -1143,6 +1154,33 @@ nsresult nsHostResolver::NameLookup(nsHostRecord* rec,
     RefPtr<AddrHostRecord> addrRec = do_QueryObject(rec);
     MOZ_ASSERT(addrRec && addrRec->mResolverType == DNSResolverType::Native);
 #endif
+
+    
+    
+    
+    if (StaticPrefs::network_trr_display_fallback_warning() &&
+        (rec->mTRRSkippedReason == TRRSkippedReason::TRR_NOT_CONFIRMED ||
+         (rec->mTRRSkippedReason >=
+              nsITRRSkipReason::TRR_HEURISTIC_TRIPPED_GOOGLE_SAFESEARCH &&
+          rec->mTRRSkippedReason <=
+              nsITRRSkipReason::TRR_HEURISTIC_TRIPPED_NRPT))) {
+      LOG(
+          ("NameLookup: ResolveHostComplete with status NS_ERROR_UNKNOWN_HOST "
+           "for: %s effectiveTRRmode: "
+           "%d SkippedReason: %d",
+           rec->host.get(),
+           static_cast<nsIRequest::TRRMode>(rec->mEffectiveTRRMode),
+           static_cast<int32_t>(rec->mTRRSkippedReason)));
+
+      mozilla::LinkedList<RefPtr<nsResolveHostCallback>> cbs =
+          std::move(rec->mCallbacks);
+      for (nsResolveHostCallback* c = cbs.getFirst(); c;
+           c = c->removeAndGetNext()) {
+        c->OnResolveHostComplete(this, rec, NS_ERROR_UNKNOWN_HOST);
+      }
+
+      return NS_OK;
+    }
 
     rv = NativeLookup(rec, aLock);
   }
