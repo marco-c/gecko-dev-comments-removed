@@ -72,6 +72,9 @@ async function _resolveAndFetch(generatedSource) {
 
   let fetched = await networkRequest(sourceMapURL, {
     loadFromCache: false,
+    
+    
+    allowRedirects: false,
     sourceMapBaseURL: generatedSource.sourceMapBaseURL,
   });
 
