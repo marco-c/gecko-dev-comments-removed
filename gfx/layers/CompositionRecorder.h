@@ -9,6 +9,7 @@
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/layers/PCompositorBridgeTypes.h"
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
 #include "nsString.h"
@@ -44,28 +45,6 @@ class RecordedFrame {
 
 
 
-struct CollectedFrame {
-  CollectedFrame(double aTimeOffset, nsCString&& aDataUri)
-      : mTimeOffset(aTimeOffset), mDataUri(std::move(aDataUri)) {}
-
-  double mTimeOffset;
-  nsCString mDataUri;
-};
-
-
-
-
-struct CollectedFrames {
-  CollectedFrames(double aRecordingStart, nsTArray<CollectedFrame>&& aFrames)
-      : mRecordingStart(aRecordingStart), mFrames(std::move(aFrames)) {}
-
-  double mRecordingStart;
-  nsTArray<CollectedFrame> mFrames;
-};
-
-
-
-
 
 
 
@@ -84,18 +63,12 @@ class CompositionRecorder {
   
 
 
-  void WriteCollectedFrames();
-
-  
 
 
-  CollectedFrames GetCollectedFrames();
-
- protected:
-  void ClearCollectedFrames();
+  Maybe<FrameRecording> GetRecording();
 
  private:
-  nsTArray<RefPtr<RecordedFrame>> mCollectedFrames;
+  nsTArray<RefPtr<RecordedFrame>> mRecordedFrames;
   TimeStamp mRecordingStart;
 };
 

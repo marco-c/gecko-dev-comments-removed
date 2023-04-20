@@ -203,11 +203,8 @@ parent:
   async BeginRecording(TimeStamp aRecordingStart)
     returns (bool success);
 
-  async EndRecordingToDisk()
-    returns (bool success);
-
-  async EndRecordingToMemory()
-    returns (CollectedFramesParams? frames);
+  async EndRecording()
+    returns (FrameRecording? recording);
 
   
   async RequestFxrOutput();

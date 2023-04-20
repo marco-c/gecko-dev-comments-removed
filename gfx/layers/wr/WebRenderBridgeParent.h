@@ -290,13 +290,6 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
 
   void BeginRecording(const TimeStamp& aRecordingStart);
 
-  
-
-
-
-
-  RefPtr<wr::WebRenderAPI::WriteCollectedFramesPromise> WriteCollectedFrames();
-
 #if defined(MOZ_WIDGET_ANDROID)
   
 
@@ -307,11 +300,7 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   
 
 
-
-
-
-
-  RefPtr<wr::WebRenderAPI::GetCollectedFramesPromise> GetCollectedFrames();
+  RefPtr<wr::WebRenderAPI::EndRecordingPromise> EndRecording();
 
   void DisableNativeCompositor();
   void AddPendingScrollPayload(CompositionPayload& aPayload,

@@ -297,25 +297,10 @@ class WebRenderAPI final {
   void BeginRecording(const TimeStamp& aRecordingStart,
                       wr::PipelineId aRootPipelineId);
 
-  typedef MozPromise<bool, nsresult, true> WriteCollectedFramesPromise;
-  typedef MozPromise<layers::CollectedFrames, nsresult, true>
-      GetCollectedFramesPromise;
+  typedef MozPromise<layers::FrameRecording, nsresult, true>
+      EndRecordingPromise;
 
-  
-
-
-
-
-  RefPtr<WriteCollectedFramesPromise> WriteCollectedFrames();
-
-  
-
-
-
-
-
-
-  RefPtr<GetCollectedFramesPromise> GetCollectedFrames();
+  RefPtr<EndRecordingPromise> EndRecording();
 
  protected:
   WebRenderAPI(wr::DocumentHandle* aHandle, wr::WindowId aId,
