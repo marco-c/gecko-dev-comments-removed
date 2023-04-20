@@ -5,7 +5,10 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [];
+
+var UnitTestObjs = {};
+
+var EXPORTED_SYMBOLS = ["UnitTestObjs"];
 
 {% include "Helpers.jsm" %}
 

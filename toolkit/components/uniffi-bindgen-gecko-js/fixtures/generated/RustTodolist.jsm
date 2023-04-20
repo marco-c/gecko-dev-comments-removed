@@ -5,7 +5,10 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [];
+
+var UnitTestObjs = {};
+
+var EXPORTED_SYMBOLS = ["UnitTestObjs"];
 
 
 class ArrayBufferDataStream {
@@ -103,7 +106,6 @@ class ArrayBufferDataStream {
         this.pos += 8;
     }
 
-
     readFloat32() {
         let rv = this.dataView.getFloat32(this.pos);
         this.pos += 4;
@@ -200,6 +202,10 @@ class UniFFIError {
     constructor(message) {
         this.message = message;
     }
+
+    toString() {
+        return `UniFFIError: ${this.message}`
+    }
 }
 
 class UniFFIInternalError extends UniFFIError {}
@@ -283,182 +289,204 @@ class TodoList {
 
 
     static init() {
-    const liftResult = (result) => FfiConverterTypeTodoList.lift(result);
-    const liftError = null;
-    const functionCall = () => {
-        return UniFFIScaffolding.callAsync(
-            92, 
-        )
-    }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }}
+        const liftResult = (result) => FfiConverterTypeTodoList.lift(result);
+        const liftError = null;
+        const functionCall = () => {
+            return UniFFIScaffolding.callAsync(
+                92, 
+            )
+        }
+        try {
+            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+        }  catch (error) {
+            return Promise.reject(error)
+        }}
+
     addItem(todo) {
-    const liftResult = (result) => undefined;
-    const liftError = (data) => FfiConverterTypeTodoError.lift(data);
-    const functionCall = () => {
-        FfiConverterString.checkType("todo", todo);
-        return UniFFIScaffolding.callAsync(
-            93, 
-            FfiConverterTypeTodoList.lower(this),
-            FfiConverterString.lower(todo),
-        )
+        const liftResult = (result) => undefined;
+        const liftError = (data) => FfiConverterTypeTodoError.lift(data);
+        const functionCall = () => {
+            FfiConverterString.checkType("todo", todo);
+            return UniFFIScaffolding.callAsync(
+                93, 
+                FfiConverterTypeTodoList.lower(this),
+                FfiConverterString.lower(todo),
+            )
+        }
+        try {
+            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+        }  catch (error) {
+            return Promise.reject(error)
+        }
     }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }}
+
     addEntry(entry) {
-    const liftResult = (result) => undefined;
-    const liftError = (data) => FfiConverterTypeTodoError.lift(data);
-    const functionCall = () => {
-        FfiConverterTypeTodoEntry.checkType("entry", entry);
-        return UniFFIScaffolding.callAsync(
-            94, 
-            FfiConverterTypeTodoList.lower(this),
-            FfiConverterTypeTodoEntry.lower(entry),
-        )
+        const liftResult = (result) => undefined;
+        const liftError = (data) => FfiConverterTypeTodoError.lift(data);
+        const functionCall = () => {
+            FfiConverterTypeTodoEntry.checkType("entry", entry);
+            return UniFFIScaffolding.callAsync(
+                94, 
+                FfiConverterTypeTodoList.lower(this),
+                FfiConverterTypeTodoEntry.lower(entry),
+            )
+        }
+        try {
+            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+        }  catch (error) {
+            return Promise.reject(error)
+        }
     }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }}
+
     getEntries() {
-    const liftResult = (result) => FfiConverterSequenceTypeTodoEntry.lift(result);
-    const liftError = null;
-    const functionCall = () => {
-        return UniFFIScaffolding.callAsync(
-            95, 
-            FfiConverterTypeTodoList.lower(this),
-        )
+        const liftResult = (result) => FfiConverterSequenceTypeTodoEntry.lift(result);
+        const liftError = null;
+        const functionCall = () => {
+            return UniFFIScaffolding.callAsync(
+                95, 
+                FfiConverterTypeTodoList.lower(this),
+            )
+        }
+        try {
+            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+        }  catch (error) {
+            return Promise.reject(error)
+        }
     }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }}
+
     getItems() {
-    const liftResult = (result) => FfiConverterSequencestring.lift(result);
-    const liftError = null;
-    const functionCall = () => {
-        return UniFFIScaffolding.callAsync(
-            96, 
-            FfiConverterTypeTodoList.lower(this),
-        )
+        const liftResult = (result) => FfiConverterSequencestring.lift(result);
+        const liftError = null;
+        const functionCall = () => {
+            return UniFFIScaffolding.callAsync(
+                96, 
+                FfiConverterTypeTodoList.lower(this),
+            )
+        }
+        try {
+            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+        }  catch (error) {
+            return Promise.reject(error)
+        }
     }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }}
+
     addEntries(entries) {
-    const liftResult = (result) => undefined;
-    const liftError = null;
-    const functionCall = () => {
-        FfiConverterSequenceTypeTodoEntry.checkType("entries", entries);
-        return UniFFIScaffolding.callAsync(
-            97, 
-            FfiConverterTypeTodoList.lower(this),
-            FfiConverterSequenceTypeTodoEntry.lower(entries),
-        )
+        const liftResult = (result) => undefined;
+        const liftError = null;
+        const functionCall = () => {
+            FfiConverterSequenceTypeTodoEntry.checkType("entries", entries);
+            return UniFFIScaffolding.callAsync(
+                97, 
+                FfiConverterTypeTodoList.lower(this),
+                FfiConverterSequenceTypeTodoEntry.lower(entries),
+            )
+        }
+        try {
+            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+        }  catch (error) {
+            return Promise.reject(error)
+        }
     }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }}
+
     addItems(items) {
-    const liftResult = (result) => undefined;
-    const liftError = null;
-    const functionCall = () => {
-        FfiConverterSequencestring.checkType("items", items);
-        return UniFFIScaffolding.callAsync(
-            98, 
-            FfiConverterTypeTodoList.lower(this),
-            FfiConverterSequencestring.lower(items),
-        )
+        const liftResult = (result) => undefined;
+        const liftError = null;
+        const functionCall = () => {
+            FfiConverterSequencestring.checkType("items", items);
+            return UniFFIScaffolding.callAsync(
+                98, 
+                FfiConverterTypeTodoList.lower(this),
+                FfiConverterSequencestring.lower(items),
+            )
+        }
+        try {
+            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+        }  catch (error) {
+            return Promise.reject(error)
+        }
     }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }}
+
     getLastEntry() {
-    const liftResult = (result) => FfiConverterTypeTodoEntry.lift(result);
-    const liftError = (data) => FfiConverterTypeTodoError.lift(data);
-    const functionCall = () => {
-        return UniFFIScaffolding.callAsync(
-            99, 
-            FfiConverterTypeTodoList.lower(this),
-        )
+        const liftResult = (result) => FfiConverterTypeTodoEntry.lift(result);
+        const liftError = (data) => FfiConverterTypeTodoError.lift(data);
+        const functionCall = () => {
+            return UniFFIScaffolding.callAsync(
+                99, 
+                FfiConverterTypeTodoList.lower(this),
+            )
+        }
+        try {
+            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+        }  catch (error) {
+            return Promise.reject(error)
+        }
     }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }}
+
     getLast() {
-    const liftResult = (result) => FfiConverterString.lift(result);
-    const liftError = (data) => FfiConverterTypeTodoError.lift(data);
-    const functionCall = () => {
-        return UniFFIScaffolding.callAsync(
-            100, 
-            FfiConverterTypeTodoList.lower(this),
-        )
+        const liftResult = (result) => FfiConverterString.lift(result);
+        const liftError = (data) => FfiConverterTypeTodoError.lift(data);
+        const functionCall = () => {
+            return UniFFIScaffolding.callAsync(
+                100, 
+                FfiConverterTypeTodoList.lower(this),
+            )
+        }
+        try {
+            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+        }  catch (error) {
+            return Promise.reject(error)
+        }
     }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }}
+
     getFirst() {
-    const liftResult = (result) => FfiConverterString.lift(result);
-    const liftError = (data) => FfiConverterTypeTodoError.lift(data);
-    const functionCall = () => {
-        return UniFFIScaffolding.callAsync(
-            101, 
-            FfiConverterTypeTodoList.lower(this),
-        )
+        const liftResult = (result) => FfiConverterString.lift(result);
+        const liftError = (data) => FfiConverterTypeTodoError.lift(data);
+        const functionCall = () => {
+            return UniFFIScaffolding.callAsync(
+                101, 
+                FfiConverterTypeTodoList.lower(this),
+            )
+        }
+        try {
+            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+        }  catch (error) {
+            return Promise.reject(error)
+        }
     }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }}
+
     clearItem(todo) {
-    const liftResult = (result) => undefined;
-    const liftError = (data) => FfiConverterTypeTodoError.lift(data);
-    const functionCall = () => {
-        FfiConverterString.checkType("todo", todo);
-        return UniFFIScaffolding.callAsync(
-            102, 
-            FfiConverterTypeTodoList.lower(this),
-            FfiConverterString.lower(todo),
-        )
+        const liftResult = (result) => undefined;
+        const liftError = (data) => FfiConverterTypeTodoError.lift(data);
+        const functionCall = () => {
+            FfiConverterString.checkType("todo", todo);
+            return UniFFIScaffolding.callAsync(
+                102, 
+                FfiConverterTypeTodoList.lower(this),
+                FfiConverterString.lower(todo),
+            )
+        }
+        try {
+            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+        }  catch (error) {
+            return Promise.reject(error)
+        }
     }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }}
+
     makeDefault() {
-    const liftResult = (result) => undefined;
-    const liftError = null;
-    const functionCall = () => {
-        return UniFFIScaffolding.callAsync(
-            103, 
-            FfiConverterTypeTodoList.lower(this),
-        )
+        const liftResult = (result) => undefined;
+        const liftError = null;
+        const functionCall = () => {
+            return UniFFIScaffolding.callAsync(
+                103, 
+                FfiConverterTypeTodoList.lower(this),
+            )
+        }
+        try {
+            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+        }  catch (error) {
+            return Promise.reject(error)
+        }
     }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }}
 
 }
 
@@ -546,6 +574,9 @@ class TodoDoesNotExist extends TodoError {
         super(...params);
         this.message = message;
     }
+    toString() {
+        return `TodoDoesNotExist: ${super.toString()}`
+    }
 }
 EXPORTED_SYMBOLS.push("TodoDoesNotExist");
 class EmptyTodoList extends TodoError {
@@ -553,6 +584,9 @@ class EmptyTodoList extends TodoError {
     constructor(message, ...params) {
         super(...params);
         this.message = message;
+    }
+    toString() {
+        return `EmptyTodoList: ${super.toString()}`
     }
 }
 EXPORTED_SYMBOLS.push("EmptyTodoList");
@@ -562,6 +596,9 @@ class DuplicateTodo extends TodoError {
         super(...params);
         this.message = message;
     }
+    toString() {
+        return `DuplicateTodo: ${super.toString()}`
+    }
 }
 EXPORTED_SYMBOLS.push("DuplicateTodo");
 class EmptyString extends TodoError {
@@ -570,6 +607,9 @@ class EmptyString extends TodoError {
         super(...params);
         this.message = message;
     }
+    toString() {
+        return `EmptyString: ${super.toString()}`
+    }
 }
 EXPORTED_SYMBOLS.push("EmptyString");
 class DeligatedError extends TodoError {
@@ -577,6 +617,9 @@ class DeligatedError extends TodoError {
     constructor(message, ...params) {
         super(...params);
         this.message = message;
+    }
+    toString() {
+        return `DeligatedError: ${super.toString()}`
     }
 }
 EXPORTED_SYMBOLS.push("DeligatedError");
@@ -595,9 +638,54 @@ class FfiConverterTypeTodoError extends FfiConverterArrayBuffer {
             case 5:
                 return new DeligatedError(FfiConverterString.read(dataStream));
             default:
-                return new Error("Unknown TodoError variant");
+                throw new Error("Unknown TodoError variant");
         }
     }
+    static computeSize(value) {
+        
+        let totalSize = 4;
+        if (value instanceof TodoDoesNotExist) {
+            return totalSize;
+        }
+        if (value instanceof EmptyTodoList) {
+            return totalSize;
+        }
+        if (value instanceof DuplicateTodo) {
+            return totalSize;
+        }
+        if (value instanceof EmptyString) {
+            return totalSize;
+        }
+        if (value instanceof DeligatedError) {
+            return totalSize;
+        }
+        throw new Error("Unknown TodoError variant");
+    }
+    static write(dataStream, value) {
+        if (value instanceof TodoDoesNotExist) {
+            dataStream.writeInt32(1);
+            return;
+        }
+        if (value instanceof EmptyTodoList) {
+            dataStream.writeInt32(2);
+            return;
+        }
+        if (value instanceof DuplicateTodo) {
+            dataStream.writeInt32(3);
+            return;
+        }
+        if (value instanceof EmptyString) {
+            dataStream.writeInt32(4);
+            return;
+        }
+        if (value instanceof DeligatedError) {
+            dataStream.writeInt32(5);
+            return;
+        }
+        throw new Error("Unknown TodoError variant");
+    }
+
+    static errorClass = TodoError;
 }
 
 
@@ -707,56 +795,56 @@ EXPORTED_SYMBOLS.push("FfiConverterSequenceTypeTodoEntry");
 
 function getDefaultList() {
     
-    const liftResult = (result) => FfiConverterOptionalTypeTodoList.lift(result);
-    const liftError = null;
-    const functionCall = () => {
-        return UniFFIScaffolding.callAsync(
-            104, 
-        )
-    }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }
+        const liftResult = (result) => FfiConverterOptionalTypeTodoList.lift(result);
+        const liftError = null;
+        const functionCall = () => {
+            return UniFFIScaffolding.callAsync(
+                104, 
+            )
+        }
+        try {
+            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+        }  catch (error) {
+            return Promise.reject(error)
+        }
 }
 
 EXPORTED_SYMBOLS.push("getDefaultList");
 function setDefaultList(list) {
     
-    const liftResult = (result) => undefined;
-    const liftError = null;
-    const functionCall = () => {
-        FfiConverterTypeTodoList.checkType("list", list);
-        return UniFFIScaffolding.callAsync(
-            105, 
-            FfiConverterTypeTodoList.lower(list),
-        )
-    }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }
+        const liftResult = (result) => undefined;
+        const liftError = null;
+        const functionCall = () => {
+            FfiConverterTypeTodoList.checkType("list", list);
+            return UniFFIScaffolding.callAsync(
+                105, 
+                FfiConverterTypeTodoList.lower(list),
+            )
+        }
+        try {
+            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+        }  catch (error) {
+            return Promise.reject(error)
+        }
 }
 
 EXPORTED_SYMBOLS.push("setDefaultList");
 function createEntryWith(todo) {
     
-    const liftResult = (result) => FfiConverterTypeTodoEntry.lift(result);
-    const liftError = (data) => FfiConverterTypeTodoError.lift(data);
-    const functionCall = () => {
-        FfiConverterString.checkType("todo", todo);
-        return UniFFIScaffolding.callAsync(
-            106, 
-            FfiConverterString.lower(todo),
-        )
-    }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }
+        const liftResult = (result) => FfiConverterTypeTodoEntry.lift(result);
+        const liftError = (data) => FfiConverterTypeTodoError.lift(data);
+        const functionCall = () => {
+            FfiConverterString.checkType("todo", todo);
+            return UniFFIScaffolding.callAsync(
+                106, 
+                FfiConverterString.lower(todo),
+            )
+        }
+        try {
+            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+        }  catch (error) {
+            return Promise.reject(error)
+        }
 }
 
 EXPORTED_SYMBOLS.push("createEntryWith");
