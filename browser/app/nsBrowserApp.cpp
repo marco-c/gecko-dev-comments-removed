@@ -18,6 +18,7 @@
 #elif defined(XP_UNIX)
 #  include <sys/resource.h>
 #  include <unistd.h>
+#  include <fcntl.h>
 #endif
 
 #include <stdio.h>
@@ -257,7 +258,25 @@ static nsresult InitXPCOMGlue(LibLoadingStrategy aLibLoadingStrategy) {
 uint32_t gBlocklistInitFlags = eDllBlocklistInitFlagDefault;
 #endif
 
+#if defined(XP_UNIX)
+static void ReserveDefaultFileDescriptors() {
+  
+  
+  
+  
+  
+  
+  int fd = open("/dev/null", O_RDONLY);
+  for (int i = 0; i < 2; i++) {
+    mozilla::Unused << dup(fd);
+  }
+}
+#endif
+
 int main(int argc, char* argv[], char* envp[]) {
+#if defined(XP_UNIX)
+  ReserveDefaultFileDescriptors();
+#endif
 #if defined(MOZ_ENABLE_FORKSERVER)
   if (strcmp(argv[argc - 1], "forkserver") == 0) {
     nsresult rv = InitXPCOMGlue(LibLoadingStrategy::NoReadAhead);
