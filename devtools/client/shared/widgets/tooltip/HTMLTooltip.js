@@ -917,6 +917,13 @@ HTMLTooltip.prototype = {
       return true;
     }
 
+    if (typeof node.closest == "function" && node.closest("menupopup")) {
+      
+      
+      
+      return true;
+    }
+
     const tooltipWindow = this.panel.ownerDocument.defaultView;
     let win = node.ownerDocument.defaultView;
 
