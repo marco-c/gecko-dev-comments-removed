@@ -47,6 +47,10 @@ class AutoLockGlobalScriptData {
 
 
 
+
+
+
+
 class SharedScriptDataTableHolder {
   bool needsLock_ = true;
   js::SharedImmutableScriptDataTable scriptDataTable_;

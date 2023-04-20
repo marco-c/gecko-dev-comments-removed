@@ -840,7 +840,6 @@ struct JSRuntime {
 
  public:
   
-  
   js::SharedScriptDataTableHolder& scriptDataTableHolder();
 
  private:

@@ -536,6 +536,8 @@ void JSRuntime::traceSharedIntlData(JSTracer* trc) {
 #endif
 
 SharedScriptDataTableHolder& JSRuntime::scriptDataTableHolder() {
+  
+  
   MOZ_ASSERT(CurrentThreadIsMainThread());
   return scriptDataTableHolder_;
 }
