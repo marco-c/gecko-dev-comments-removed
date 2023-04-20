@@ -10,13 +10,13 @@
 
 
 
-promise_test(t => workerBlobFetchTest(t, {
+promise_test(t => sharedWorkerBlobFetchTest(t, {
   source: { server: Server.HTTPS_LOCAL },
   target: { server: Server.HTTPS_LOCAL },
   expected: WorkerFetchTestResult.SUCCESS,
 }), "local to local: success.");
 
-promise_test(t => workerBlobFetchTest(t, {
+promise_test(t => sharedWorkerBlobFetchTest(t, {
   source: { server: Server.HTTPS_PRIVATE },
   target: {
     server: Server.HTTPS_LOCAL,
@@ -25,7 +25,7 @@ promise_test(t => workerBlobFetchTest(t, {
   expected: WorkerFetchTestResult.FAILURE,
 }), "private to local: failed preflight.");
 
-promise_test(t => workerBlobFetchTest(t, {
+promise_test(t => sharedWorkerBlobFetchTest(t, {
   source: { server: Server.HTTPS_PRIVATE },
   target: {
     server: Server.HTTPS_LOCAL,
@@ -37,13 +37,13 @@ promise_test(t => workerBlobFetchTest(t, {
   expected: WorkerFetchTestResult.SUCCESS,
 }), "private to local: success.");
 
-promise_test(t => workerBlobFetchTest(t, {
+promise_test(t => sharedWorkerBlobFetchTest(t, {
   source: { server: Server.HTTPS_PRIVATE },
   target: { server: Server.HTTPS_PRIVATE },
   expected: WorkerFetchTestResult.SUCCESS,
 }), "private to private: success.");
 
-promise_test(t => workerBlobFetchTest(t, {
+promise_test(t => sharedWorkerBlobFetchTest(t, {
   source: { server: Server.HTTPS_PUBLIC },
   target: {
     server: Server.HTTPS_LOCAL,
@@ -52,7 +52,7 @@ promise_test(t => workerBlobFetchTest(t, {
   expected: WorkerFetchTestResult.FAILURE,
 }), "public to local: failed preflight.");
 
-promise_test(t => workerBlobFetchTest(t, {
+promise_test(t => sharedWorkerBlobFetchTest(t, {
   source: { server: Server.HTTPS_PUBLIC },
   target: {
     server: Server.HTTPS_LOCAL,
@@ -64,7 +64,7 @@ promise_test(t => workerBlobFetchTest(t, {
   expected: WorkerFetchTestResult.SUCCESS,
 }), "public to local: success.");
 
-promise_test(t => workerBlobFetchTest(t, {
+promise_test(t => sharedWorkerBlobFetchTest(t, {
   source: { server: Server.HTTPS_PUBLIC },
   target: {
     server: Server.HTTPS_PRIVATE,
@@ -73,7 +73,7 @@ promise_test(t => workerBlobFetchTest(t, {
   expected: WorkerFetchTestResult.FAILURE,
 }), "public to private: failed preflight.");
 
-promise_test(t => workerBlobFetchTest(t, {
+promise_test(t => sharedWorkerBlobFetchTest(t, {
   source: { server: Server.HTTPS_PUBLIC },
   target: {
     server: Server.HTTPS_PRIVATE,
@@ -85,13 +85,13 @@ promise_test(t => workerBlobFetchTest(t, {
   expected: WorkerFetchTestResult.SUCCESS,
 }), "public to private: success.");
 
-promise_test(t => workerBlobFetchTest(t, {
+promise_test(t => sharedWorkerBlobFetchTest(t, {
   source: { server: Server.HTTPS_PUBLIC },
   target: { server: Server.HTTPS_PUBLIC },
   expected: WorkerFetchTestResult.SUCCESS,
 }), "public to public: success.");
 
-promise_test(t => workerBlobFetchTest(t, {
+promise_test(t => sharedWorkerBlobFetchTest(t, {
   source: {
     server: Server.HTTPS_LOCAL,
     treatAsPublic: true,
@@ -100,19 +100,19 @@ promise_test(t => workerBlobFetchTest(t, {
   expected: WorkerFetchTestResult.FAILURE,
 }), "treat-as-public to local: failed preflight.");
 
-promise_test(t => workerBlobFetchTest(t, {
+promise_test(t => sharedWorkerBlobFetchTest(t, {
   source: {
     server: Server.HTTPS_LOCAL,
     treatAsPublic: true,
   },
   target: {
     server: Server.HTTPS_LOCAL,
-    behavior: { preflight: PreflightBehavior.optionalSuccess(token()) },
+    behavior: { preflight: PreflightBehavior.success(token()) },
   },
   expected: WorkerFetchTestResult.SUCCESS,
 }), "treat-as-public to local: success.");
 
-promise_test(t => workerBlobFetchTest(t, {
+promise_test(t => sharedWorkerBlobFetchTest(t, {
   source: {
     server: Server.HTTPS_LOCAL,
     treatAsPublic: true,
@@ -124,7 +124,7 @@ promise_test(t => workerBlobFetchTest(t, {
   expected: WorkerFetchTestResult.FAILURE,
 }), "treat-as-public to private: failed preflight.");
 
-promise_test(t => workerBlobFetchTest(t, {
+promise_test(t => sharedWorkerBlobFetchTest(t, {
   source: {
     server: Server.HTTPS_LOCAL,
     treatAsPublic: true,
@@ -139,7 +139,7 @@ promise_test(t => workerBlobFetchTest(t, {
   expected: WorkerFetchTestResult.SUCCESS,
 }), "treat-as-public to private: success.");
 
-promise_test(t => workerBlobFetchTest(t, {
+promise_test(t => sharedWorkerBlobFetchTest(t, {
   source: {
     server: Server.HTTPS_LOCAL,
     treatAsPublic: true,
@@ -150,3 +150,4 @@ promise_test(t => workerBlobFetchTest(t, {
   },
   expected: WorkerFetchTestResult.SUCCESS,
 }), "treat-as-public to public: success.");
+
