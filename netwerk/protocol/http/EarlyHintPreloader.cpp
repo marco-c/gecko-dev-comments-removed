@@ -181,15 +181,16 @@ nsSecurityFlags EarlyHintPreloader::ComputeSecurityFlags(CORSMode aCORSMode,
 
 
 void EarlyHintPreloader::MaybeCreateAndInsertPreload(
-    OngoingEarlyHints* aOngoingEarlyHints, const LinkHeader& aHeader,
+    OngoingEarlyHints* aOngoingEarlyHints, const LinkHeader& aLinkHeader,
     nsIURI* aBaseURI, nsIPrincipal* aPrincipal,
-    nsICookieJarSettings* aCookieJarSettings) {
-  if (!aHeader.mRel.LowerCaseEqualsASCII("preload")) {
+    nsICookieJarSettings* aCookieJarSettings,
+    const nsACString& aResponseReferrerPolicy) {
+  if (!aLinkHeader.mRel.LowerCaseEqualsASCII("preload")) {
     return;
   }
 
   nsAttrValue as;
-  ParseAsValue(aHeader.mAs, as);
+  ParseAsValue(aLinkHeader.mAs, as);
 
   ASDestination destination = static_cast<ASDestination>(as.GetEnumValue());
   CollectResourcesTypeTelemetry(destination);
@@ -206,12 +207,12 @@ void EarlyHintPreloader::MaybeCreateAndInsertPreload(
 
   nsCOMPtr<nsIURI> uri;
   NS_ENSURE_SUCCESS_VOID(
-      NS_NewURI(getter_AddRefs(uri), aHeader.mHref, nullptr, aBaseURI));
+      NS_NewURI(getter_AddRefs(uri), aLinkHeader.mHref, nullptr, aBaseURI));
   
   
   
   
-  if (!nsContentUtils::LinkContextIsURI(aHeader.mAnchor, uri)) {
+  if (!nsContentUtils::LinkContextIsURI(aLinkHeader.mAnchor, uri)) {
     return;
   }
 
@@ -220,11 +221,11 @@ void EarlyHintPreloader::MaybeCreateAndInsertPreload(
     return;
   }
 
-  CORSMode corsMode = dom::Element::StringToCORSMode(aHeader.mCrossOrigin);
+  CORSMode corsMode = dom::Element::StringToCORSMode(aLinkHeader.mCrossOrigin);
 
   Maybe<PreloadHashKey> hashKey =
       GenerateHashKey(static_cast<ASDestination>(as.GetEnumValue()), uri,
-                      aPrincipal, corsMode, aHeader.mType);
+                      aPrincipal, corsMode, aLinkHeader.mType);
   if (!hashKey) {
     return;
   }
@@ -238,24 +239,42 @@ void EarlyHintPreloader::MaybeCreateAndInsertPreload(
     return;
   }
 
-  dom::ReferrerPolicy referrerPolicy =
+  dom::ReferrerPolicy linkReferrerPolicy =
       dom::ReferrerInfo::ReferrerPolicyAttributeFromString(
-          aHeader.mReferrerPolicy);
+          aLinkHeader.mReferrerPolicy);
 
+  dom::ReferrerPolicy responseReferrerPolicy =
+      dom::ReferrerInfo::ReferrerPolicyAttributeFromString(
+          NS_ConvertUTF8toUTF16(aResponseReferrerPolicy));
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  dom::ReferrerPolicy finalReferrerPolicy = responseReferrerPolicy;
+  if (linkReferrerPolicy != dom::ReferrerPolicy::_empty) {
+    finalReferrerPolicy = linkReferrerPolicy;
+  }
   nsCOMPtr<nsIReferrerInfo> referrerInfo =
-      new dom::ReferrerInfo(aBaseURI, referrerPolicy);
+      new dom::ReferrerInfo(aBaseURI, finalReferrerPolicy);
 
   RefPtr<EarlyHintPreloader> earlyHintPreloader = new EarlyHintPreloader();
 
   nsSecurityFlags securityFlags = EarlyHintPreloader::ComputeSecurityFlags(
       corsMode, static_cast<ASDestination>(as.GetEnumValue()),
-      aHeader.mType.LowerCaseEqualsASCII("module"));
+      aLinkHeader.mType.LowerCaseEqualsASCII("module"));
 
   NS_ENSURE_SUCCESS_VOID(earlyHintPreloader->OpenChannel(
       uri, aPrincipal, securityFlags, contentPolicyType, referrerInfo,
       aCookieJarSettings));
 
-  earlyHintPreloader->SetLinkHeader(aHeader);
+  earlyHintPreloader->SetLinkHeader(aLinkHeader);
 
   DebugOnly<bool> result =
       aOngoingEarlyHints->Add(*hashKey, earlyHintPreloader);
