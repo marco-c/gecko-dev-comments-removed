@@ -48,8 +48,8 @@ mozilla::LazyLogModule gCamerasParentLog("CamerasParent");
 #define LOG_ENABLED() MOZ_LOG_TEST(gCamerasParentLog, mozilla::LogLevel::Debug)
 
 namespace mozilla {
-using media::MustGetShutdownBarrier;
 using media::NewRunnableFrom;
+using media::ShutdownBlockingTicket;
 namespace camera {
 
 std::map<uint32_t, const char*> sDeviceUniqueIDs;
@@ -203,8 +203,6 @@ class DeliverFrameRunnable : public mozilla::Runnable {
   int mResult;
 };
 
-NS_IMPL_ISUPPORTS(CamerasParent, nsIAsyncShutdownBlocker)
-
 nsresult CamerasParent::DispatchToVideoCaptureThread(RefPtr<Runnable> event) {
   
   
@@ -242,8 +240,6 @@ void CamerasParent::StopVideoCapture() {
             thread->Stop();
             delete thread;
           }
-          
-          (void)MustGetShutdownBarrier()->RemoveBlocker(self);
           return NS_OK;
         }));
         MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv),
@@ -1085,28 +1081,23 @@ void CamerasParent::ActorDestroy(ActorDestroyReason aWhy) {
   
   
   StopVideoCapture();
+  
+  
+  
+  mShutdownRequest.DisconnectIfExists();
 }
 
-nsString CamerasParent::GetNewName() {
-  static std::atomic<uint64_t> counter{0};
-  nsString name(u"CamerasParent "_ns);
-  name.AppendInt(++counter);
-  return name;
-}
-
-NS_IMETHODIMP CamerasParent::BlockShutdown(nsIAsyncShutdownClient*) {
-  mPBackgroundEventTarget->Dispatch(
-      NS_NewRunnableFunction(__func__, [self = RefPtr(this)]() {
-        
-        
-        
-        (void)Send__delete__(self);
-      }));
-  return NS_OK;
+void CamerasParent::OnShutdown() {
+  ipc::AssertIsOnBackgroundThread();
+  LOG("CamerasParent(%p) ShutdownEvent", this);
+  mShutdownRequest.Complete();
+  (void)Send__delete__(this);
 }
 
 CamerasParent::CamerasParent()
-    : mName(GetNewName()),
+    : mShutdownBlocker(ShutdownBlockingTicket::Create(
+          u"CamerasParent"_ns, NS_LITERAL_STRING_FROM_CSTRING(__FILE__),
+          __LINE__)),
       mShmemPool(CaptureEngine::MaxEngine),
       mPBackgroundEventTarget(GetCurrentSerialEventTarget()),
       mChildIsAlive(true),
@@ -1120,6 +1111,10 @@ CamerasParent::CamerasParent()
   if (sNumOfCamerasParents++ == 0) {
     sThreadMonitor = new Monitor("CamerasParent::sThreadMonitor");
   }
+
+  
+  
+  
 }
 
 
@@ -1132,61 +1127,28 @@ ipc::IPCResult CamerasParent::RecvPCamerasConstructor() {
   
   
   
-  
-  
-  
-  NS_DispatchToMainThread(
-      NS_NewRunnableFunction(__func__, [self = RefPtr(this)]() {
-        nsresult rv = MustGetShutdownBarrier()->AddBlocker(
-            self, NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__, u""_ns);
-        LOG("AddBlocker returned 0x%x", static_cast<unsigned>(rv));
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(NS_SUCCEEDED(rv) || !self->mWebRTCAlive);
-      }));
 
-  
-  
-  
-  
-  
-  
-  
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdown)) {
-    
-    
-    NS_DispatchToMainThread(
-        NS_NewRunnableFunction(__func__, [self = RefPtr(this)]() {
-          
-          (void)MustGetShutdownBarrier()->RemoveBlocker(self);
-        }));
+  if (!mShutdownBlocker) {
+    LOG("CamerasParent(%p) Got no ShutdownBlockingTicket. We are already in "
+        "shutdown. Deleting.",
+        this);
     return Send__delete__(this) ? IPC_OK() : IPC_FAIL(this, "Failed to send");
   }
 
-  LOG("Spinning up WebRTC Cameras Thread");
+  mShutdownBlocker->ShutdownPromise()
+      ->Then(mPBackgroundEventTarget, "CamerasParent OnShutdown",
+             [this, self = RefPtr(this)](
+                 const ShutdownPromise::ResolveOrRejectValue& aValue) {
+               MOZ_ASSERT(aValue.IsResolve(),
+                          "ShutdownBlockingTicket must have been destroyed "
+                          "without us disconnecting the shutdown request");
+               OnShutdown();
+             })
+      ->Track(mShutdownRequest);
+
   MonitorAutoLock lock(*sThreadMonitor);
   if (sVideoCaptureThread == nullptr) {
+    LOG("Spinning up WebRTC Cameras Thread");
     MOZ_ASSERT(sNumOfOpenCamerasParentEngines == 0);
     sVideoCaptureThread = new base::Thread("VideoCapture");
     base::Thread::Options options;
