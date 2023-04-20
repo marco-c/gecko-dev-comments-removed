@@ -61,11 +61,6 @@ class JitterEstimator {
   
   void UpdateRtt(TimeDelta rtt);
 
-  
-  
-  
-  static constexpr TimeDelta OPERATING_SYSTEM_JITTER = TimeDelta::Millis(10);
-
  private:
   
   

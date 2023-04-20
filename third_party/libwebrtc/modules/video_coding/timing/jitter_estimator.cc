@@ -28,23 +28,54 @@
 
 namespace webrtc {
 namespace {
-static constexpr uint32_t kStartupDelaySamples = 30;
-static constexpr int64_t kFsAccuStartupSamples = 5;
-static constexpr Frequency kMaxFramerateEstimate = Frequency::Hertz(200);
-static constexpr TimeDelta kNackCountTimeout = TimeDelta::Seconds(60);
-static constexpr double kDefaultMaxTimestampDeviationInSigmas = 3.5;
-static constexpr double kDefaultAvgAndMaxFrameSize = 500;
+
+
+
+constexpr size_t kFrameProcessingStartupCount = 30;
+
+
+constexpr size_t kFramesUntilSizeFiltering = 5;
+
+
+constexpr double kInitialAvgAndMaxFrameSizeBytes = 500.0;
+
 
 constexpr double kPhi = 0.97;
+
 constexpr double kPsi = 0.9999;
-constexpr uint32_t kAlphaCountMax = 400;
-constexpr uint32_t kNackLimit = 3;
-constexpr int32_t kNumStdDevDelayOutlier = 15;
-constexpr int32_t kNumStdDevFrameSizeOutlier = 3;
+
+
+constexpr double kDefaultMaxTimestampDeviationInSigmas = 3.5;
+constexpr double kNumStdDevDelayOutlier = 15.0;
+constexpr double kNumStdDevSizeOutlier = 3.0;
+constexpr double kCongestionRejectionFactor = -0.25;
+
+
+constexpr size_t kAlphaCountMax = 400;
+
+
 
 constexpr double kNoiseStdDevs = 2.33;
 
 constexpr double kNoiseStdDevOffset = 30.0;
+
+
+constexpr TimeDelta kMinJitterEstimate = TimeDelta::Millis(1);
+constexpr TimeDelta kMaxJitterEstimate = TimeDelta::Seconds(10);
+
+
+
+
+constexpr TimeDelta OPERATING_SYSTEM_JITTER = TimeDelta::Millis(10);
+
+
+constexpr TimeDelta kNackCountTimeout = TimeDelta::Seconds(60);
+
+
+constexpr size_t kNackLimit = 3;
+
+
+constexpr Frequency kMaxFramerateEstimate = Frequency::Hertz(200);
 
 }  
 
@@ -60,8 +91,8 @@ JitterEstimator::~JitterEstimator() = default;
 
 
 void JitterEstimator::Reset() {
-  avg_frame_size_bytes_ = kDefaultAvgAndMaxFrameSize;
-  max_frame_size_bytes_ = kDefaultAvgAndMaxFrameSize;
+  avg_frame_size_bytes_ = kInitialAvgAndMaxFrameSizeBytes;
+  max_frame_size_bytes_ = kInitialAvgAndMaxFrameSizeBytes;
   var_frame_size_bytes2_ = 100;
   last_update_time_ = absl::nullopt;
   prev_estimate_ = absl::nullopt;
@@ -90,10 +121,10 @@ void JitterEstimator::UpdateEstimate(TimeDelta frame_delay,
   
   double delta_frame_bytes =
       frame_size.bytes() - prev_frame_size_.value_or(DataSize::Zero()).bytes();
-  if (startup_frame_size_count_ < kFsAccuStartupSamples) {
+  if (startup_frame_size_count_ < kFramesUntilSizeFiltering) {
     startup_frame_size_sum_bytes_ += frame_size.bytes();
     startup_frame_size_count_++;
-  } else if (startup_frame_size_count_ == kFsAccuStartupSamples) {
+  } else if (startup_frame_size_count_ == kFramesUntilSizeFiltering) {
     
     avg_frame_size_bytes_ = startup_frame_size_sum_bytes_ /
                             static_cast<double>(startup_frame_size_count_);
@@ -128,39 +159,45 @@ void JitterEstimator::UpdateEstimate(TimeDelta frame_delay,
       kDefaultMaxTimestampDeviationInSigmas * sqrt(var_noise_ms2_) + 0.5);
   frame_delay.Clamp(-max_time_deviation, max_time_deviation);
 
-  
-  
-  
-  
-  double deviation_ms =
+  double delay_deviation_ms =
       frame_delay.ms() -
       kalman_filter_.GetFrameDelayVariationEstimateTotal(delta_frame_bytes);
 
-  if (fabs(deviation_ms) < kNumStdDevDelayOutlier * sqrt(var_noise_ms2_) ||
+  
+  bool abs_delay_is_not_outlier =
+      fabs(delay_deviation_ms) < kNumStdDevDelayOutlier * sqrt(var_noise_ms2_);
+  bool size_is_positive_outlier =
       frame_size.bytes() >
-          avg_frame_size_bytes_ +
-              kNumStdDevFrameSizeOutlier * sqrt(var_frame_size_bytes2_)) {
+      avg_frame_size_bytes_ +
+          kNumStdDevSizeOutlier * sqrt(var_frame_size_bytes2_);
+
+  
+  
+  
+  
+  if (abs_delay_is_not_outlier || size_is_positive_outlier) {
     
     
-    EstimateRandomJitter(deviation_ms);
+    EstimateRandomJitter(delay_deviation_ms);
     
     
     
     
     
     
-    if (delta_frame_bytes > -0.25 * max_frame_size_bytes_) {
+    if (delta_frame_bytes >
+        kCongestionRejectionFactor * max_frame_size_bytes_) {
       
       kalman_filter_.PredictAndUpdate(frame_delay.ms(), delta_frame_bytes,
                                       max_frame_size_bytes_, var_noise_ms2_);
     }
   } else {
-    int nStdDev =
-        (deviation_ms >= 0) ? kNumStdDevDelayOutlier : -kNumStdDevDelayOutlier;
-    EstimateRandomJitter(nStdDev * sqrt(var_noise_ms2_));
+    double num_stddev = (delay_deviation_ms >= 0) ? kNumStdDevDelayOutlier
+                                                  : -kNumStdDevDelayOutlier;
+    EstimateRandomJitter(num_stddev * sqrt(var_noise_ms2_));
   }
   
-  if (startup_count_ >= kStartupDelaySamples) {
+  if (startup_count_ >= kFrameProcessingStartupCount) {
     PostProcessEstimate();
   } else {
     startup_count_++;
@@ -203,10 +240,10 @@ void JitterEstimator::EstimateRandomJitter(double d_dT) {
     
     
     
-    if (alpha_count_ < kStartupDelaySamples) {
-      rate_scale =
-          (alpha_count_ * rate_scale + (kStartupDelaySamples - alpha_count_)) /
-          kStartupDelaySamples;
+    if (alpha_count_ < kFrameProcessingStartupCount) {
+      rate_scale = (alpha_count_ * rate_scale +
+                    (kFrameProcessingStartupCount - alpha_count_)) /
+                   kFrameProcessingStartupCount;
     }
     alpha = pow(alpha, rate_scale);
   }
@@ -235,22 +272,19 @@ double JitterEstimator::NoiseThreshold() const {
 
 
 TimeDelta JitterEstimator::CalculateEstimate() {
-  double retMs = kalman_filter_.GetFrameDelayVariationEstimateSizeBased(
-                     max_frame_size_bytes_ - avg_frame_size_bytes_) +
-                 NoiseThreshold();
+  double ret_ms = kalman_filter_.GetFrameDelayVariationEstimateSizeBased(
+                      max_frame_size_bytes_ - avg_frame_size_bytes_) +
+                  NoiseThreshold();
+  TimeDelta ret = TimeDelta::Millis(ret_ms);
 
-  TimeDelta ret = TimeDelta::Millis(retMs);
-
-  constexpr TimeDelta kMinEstimate = TimeDelta::Millis(1);
-  constexpr TimeDelta kMaxEstimate = TimeDelta::Seconds(10);
   
-  if (ret < kMinEstimate) {
-    ret = prev_estimate_.value_or(kMinEstimate);
+  if (ret < kMinJitterEstimate) {
+    ret = prev_estimate_.value_or(kMinJitterEstimate);
     
     
-    RTC_DCHECK_GE(ret, kMinEstimate);
-  } else if (ret > kMaxEstimate) {  
-    ret = kMaxEstimate;
+    RTC_DCHECK_GE(ret, kMinJitterEstimate);
+  } else if (ret > kMaxJitterEstimate) {  
+    ret = kMaxJitterEstimate;
   }
   prev_estimate_ = ret;
   return ret;
