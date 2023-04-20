@@ -1694,7 +1694,11 @@ static bool CopyFromRematerializedFrame(JSContext* cx, JitActivation* act,
     *frame->valueSlot(i) = rematFrame->locals()[i];
   }
 
-  frame->setReturnValue(rematFrame->returnValue());
+  if (frame->script()->noScriptRval()) {
+    frame->setReturnValue(UndefinedValue());
+  } else {
+    frame->setReturnValue(rematFrame->returnValue());
+  }
 
   
   
