@@ -33,8 +33,22 @@ class PictureInPictureVideoWrapper {
     if (container) {
       updateCaptionsFunction("");
       const callback = function(mutationsList, observer) {
-        let text = container.innerText;
-        updateCaptionsFunction(text);
+        
+        
+        
+        
+        
+        let liveVideoText = Array.from(
+          container.querySelectorAll(
+            "#inband-closed-caption > div > div > div"
+          ),
+          x => x.textContent.trim()
+        )
+          .filter(String)
+          .join("\n");
+        let regularVideoText = container.querySelector(".CaptionBox").innerText;
+
+        updateCaptionsFunction(liveVideoText + regularVideoText);
       };
 
       
