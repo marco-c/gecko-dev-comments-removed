@@ -7784,6 +7784,11 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
           StoreCachedContentIsPartial(1);
 
           
+          
+          
+          mRaceCacheWithNetwork = false;
+
+          
           rv = ContinueConnect();
           if (NS_SUCCEEDED(rv)) {
             LOG(("  performing range request"));
