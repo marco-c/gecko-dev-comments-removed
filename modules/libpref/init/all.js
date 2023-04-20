@@ -3808,6 +3808,16 @@ pref("browser.sanitizer.loglevel", "Warn");
 
 
 
+pref("browser.translations.enable", false);
+
+pref("browser.translations.logLevel", "Error");
+
+
+
+
+
+
+
 pref("prompts.authentication_dialog_abuse_limit", 2);
 
 

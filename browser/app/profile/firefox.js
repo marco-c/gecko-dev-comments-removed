@@ -1820,8 +1820,15 @@ pref("media.videocontrols.picture-in-picture.video-toggle.enabled", true);
 pref("media.videocontrols.picture-in-picture.video-toggle.visibility-threshold", "1.0");
 pref("media.videocontrols.picture-in-picture.keyboard-controls.enabled", true);
 
+
+
+
+
+
+
 pref("browser.translation.detectLanguage", false);
 pref("browser.translation.neverForLanguages", "");
+
 
 pref("browser.translation.ui.show", false);
 
