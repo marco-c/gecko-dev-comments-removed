@@ -196,9 +196,7 @@ const SpecialMessageActions = {
     ];
 
     if (!allowedPrefs.includes(pref.name)) {
-      throw new Error(
-        `Special message action with type SET_PREF and pref of "${pref.name}" is unsupported.`
-      );
+      pref.name = `messaging-system-action.${pref.name}`;
     }
     
     switch (typeof pref.value) {
