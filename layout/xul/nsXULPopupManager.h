@@ -12,23 +12,19 @@
 #define nsXULPopupManager_h__
 
 #include "mozilla/Logging.h"
-#include "mozilla/widget/InitData.h"
 #include "nsHashtablesFwd.h"
 #include "nsIContent.h"
 #include "nsIRollupListener.h"
 #include "nsIDOMEventListener.h"
+#include "Units.h"
 #include "nsPoint.h"
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
 #include "nsIObserver.h"
-#include "nsITimer.h"
-#include "nsIReflowCallback.h"
 #include "nsThreadUtils.h"
-#include "nsPresContext.h"
-#include "nsStyleConsts.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/widget/InitData.h"
 #include "mozilla/widget/NativeMenu.h"
-#include "Units.h"
 
 
 #include "mozilla/dom/Element.h"
@@ -54,9 +50,9 @@
 
 
 class nsContainerFrame;
-class nsMenuPopupFrame;
-class nsMenuBarFrame;
+class nsITimer;
 class nsIDocShellTreeItem;
+class nsMenuPopupFrame;
 class nsPIDOMWindowOuter;
 class nsRefreshDriver;
 
@@ -67,6 +63,7 @@ class Event;
 class KeyboardEvent;
 class UIEvent;
 class XULButtonElement;
+class XULMenuBarElement;
 }  
 }  
 
@@ -177,17 +174,6 @@ enum class HidePopupOption : uint8_t {
 };
 
 using HidePopupOptions = mozilla::EnumSet<HidePopupOption>;
-
-#define NS_DIRECTION_IS_INLINE(dir) \
-  (dir == eNavigationDirection_Start || dir == eNavigationDirection_End)
-#define NS_DIRECTION_IS_BLOCK(dir) \
-  (dir == eNavigationDirection_Before || dir == eNavigationDirection_After)
-#define NS_DIRECTION_IS_BLOCK_TO_EDGE(dir) \
-  (dir == eNavigationDirection_First || dir == eNavigationDirection_Last)
-
-static_assert(static_cast<uint8_t>(mozilla::StyleDirection::Ltr) == 0 &&
-                  static_cast<uint8_t>(mozilla::StyleDirection::Rtl) == 1,
-              "Left to Right should be 0 and Right to Left should be 1");
 
 
 
@@ -437,7 +423,8 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
   
   
-  void SetActiveMenuBar(nsMenuBarFrame* aMenuBar, bool aActivate);
+  void SetActiveMenuBar(mozilla::dom::XULMenuBarElement* aMenuBar,
+                        bool aActivate);
 
   struct MayShowMenuResult {
     const bool mIsNative = false;
@@ -865,7 +852,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   nsCOMPtr<nsIWidget> mWidget;
 
   
-  nsMenuBarFrame* mActiveMenuBar;
+  mozilla::dom::XULMenuBarElement* mActiveMenuBar;
 
   
   

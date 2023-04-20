@@ -18,12 +18,12 @@
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/NameSpaceConstants.h"
 #include "mozilla/dom/AncestorIterator.h"
+#include "mozilla/dom/XULMenuBarElement.h"
 #include "nsGkAtoms.h"
 #include "nsITimer.h"
 #include "nsLayoutUtils.h"
 #include "nsCaseTreatment.h"
 #include "nsChangeHint.h"
-#include "nsMenuBarFrame.h"
 #include "nsMenuPopupFrame.h"
 #include "nsPlaceholderFrame.h"
 #include "nsPresContext.h"
@@ -444,7 +444,8 @@ void XULButtonElement::PostHandleEventForMenus(
             
             return false;
           }
-          if (!parent->IsMenuBar()) {
+          auto* menubar = XULMenuBarElement::FromNode(*parent);
+          if (!menubar) {
             
             
             
@@ -452,9 +453,7 @@ void XULButtonElement::PostHandleEventForMenus(
           }
           
           
-          nsMenuBarFrame* menubar = do_QueryFrame(parent->GetPrimaryFrame());
-          const bool openedByKey = menubar && menubar->IsActiveByKeyboard();
-          return !openedByKey;
+          return !menubar->IsActiveByKeyboard();
         }();
 
         if (shouldDeactivate) {
@@ -756,17 +755,11 @@ auto XULButtonElement::GetMenuType() const -> Maybe<MenuType> {
   }
 }
 
-nsMenuBarFrame* XULButtonElement::GetMenuBar(FlushType aFlushType) {
+XULMenuBarElement* XULButtonElement::GetMenuBar() const {
   if (!IsMenu()) {
     return nullptr;
   }
-  nsIFrame* frame = GetPrimaryFrame(aFlushType);
-  for (; frame; frame = frame->GetParent()) {
-    if (nsMenuBarFrame* menubar = do_QueryFrame(frame)) {
-      return menubar;
-    }
-  }
-  return nullptr;
+  return FirstAncestorOfType<XULMenuBarElement>();
 }
 
 XULMenuParentElement* XULButtonElement::GetMenuParent() const {
@@ -800,8 +793,8 @@ nsMenuPopupFrame* XULButtonElement::GetMenuPopup(FlushType aFlushType) {
   return do_QueryFrame(popup->GetPrimaryFrame(aFlushType));
 }
 
-bool XULButtonElement::OpenedWithKey() {
-  nsMenuBarFrame* menubar = GetMenuBar(FlushType::Frames);
+bool XULButtonElement::OpenedWithKey() const {
+  auto* menubar = GetMenuBar();
   return menubar && menubar->IsActiveByKeyboard();
 }
 
