@@ -1019,6 +1019,7 @@ var DownloadsView = {
   onDownloadContextMenu(aEvent) {
     let element = aEvent.originalTarget.closest("richlistitem");
     if (!element) {
+      aEvent.preventDefault();
       return;
     }
     
