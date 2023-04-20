@@ -280,7 +280,9 @@ Tools.performance = {
     
     
     
-    return toolbox.target.isLocalTab || toolbox.isBrowserToolbox;
+    return (
+      toolbox.commands.descriptorFront.isLocalTab || toolbox.isBrowserToolbox
+    );
   },
   build(frame, toolbox, commands) {
     return new NewPerformancePanel(frame, toolbox, commands);
@@ -490,7 +492,7 @@ exports.ToolboxButtons = [
       "toolbox.buttons.responsive",
       osString == "Darwin" ? "Cmd+Opt+M" : "Ctrl+Shift+M"
     ),
-    isToolSupported: toolbox => toolbox.target.isLocalTab,
+    isToolSupported: toolbox => toolbox.commands.descriptorFront.isLocalTab,
     onClick(event, toolbox) {
       const { localTab } = toolbox.commands.descriptorFront;
       const browserWindow = localTab.ownerDocument.defaultView;

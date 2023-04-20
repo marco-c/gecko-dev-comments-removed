@@ -358,7 +358,8 @@ OptionsPanel.prototype = {
           visibilityswitch: pref,
 
           
-          isToolSupported: toolbox => toolbox.target.isLocalTab,
+          isToolSupported: toolbox =>
+            toolbox.commands.descriptorFront.isLocalTab,
         })
       );
     }
