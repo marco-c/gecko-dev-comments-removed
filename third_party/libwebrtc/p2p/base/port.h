@@ -300,6 +300,19 @@ class Port : public PortInterface,
   
   
   
+  
+  void DestroyConnection(Connection* conn) {
+    DestroyConnectionInternal(conn, false);
+  }
+
+  void DestroyConnectionAsync(Connection* conn) {
+    DestroyConnectionInternal(conn, true);
+  }
+
+  
+  
+  
+  
   virtual bool HandleIncomingPacket(rtc::AsyncPacketSocket* socket,
                                     const char* data,
                                     size_t size,
@@ -454,8 +467,19 @@ class Port : public PortInterface,
 
  private:
   void Construct();
+
   
-  void OnConnectionDestroyed(Connection* conn);
+  
+  
+  
+  
+  
+  
+  bool OnConnectionDestroyed(Connection* conn);
+
+  
+  
+  void DestroyConnectionInternal(Connection* conn, bool async);
 
   void OnNetworkTypeChanged(const rtc::Network* network);
 

@@ -491,6 +491,8 @@ void TCPConnection::OnClose(rtc::AsyncPacketSocket* socket, int error) {
   RTC_DCHECK(socket == socket_.get());
   RTC_LOG(LS_INFO) << ToString() << ": Connection closed with error " << error;
 
+  RTC_DCHECK(port());
+
   
   
   if (connected()) {
@@ -520,7 +522,7 @@ void TCPConnection::OnClose(rtc::AsyncPacketSocket* socket, int error) {
     
     
     socket_->UnsubscribeClose(this);
-    Destroy();
+    port()->DestroyConnectionAsync(this);
   }
 }
 

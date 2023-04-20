@@ -201,11 +201,10 @@ class TurnPort : public Port {
   
   
   bool SetEntryChannelId(const rtc::SocketAddress& address, int channel_id);
-  
-  
-  void Close();
 
   void HandleConnectionDestroyed(Connection* conn) override;
+
+  void CloseForTest() { Close(); }
 
  protected:
   TurnPort(rtc::Thread* thread,
@@ -248,6 +247,9 @@ class TurnPort : public Port {
                             const std::string& remote_ufrag);
 
   rtc::DiffServCodePoint StunDscpValue() const override;
+
+  
+  void Close();
 
  private:
   enum {

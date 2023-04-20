@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 #include "p2p/base/connection.h"
@@ -185,22 +186,7 @@ void Port::Construct() {
 Port::~Port() {
   RTC_DCHECK_RUN_ON(thread_);
   CancelPendingTasks();
-
-  
-  
-
-  std::vector<Connection*> list;
-
-  AddressMap::iterator iter = connections_.begin();
-  while (iter != connections_.end()) {
-    list.push_back(iter->second);
-    ++iter;
-  }
-
-  for (uint32_t i = 0; i < list.size(); i++) {
-    list[i]->SignalDestroyed.disconnect(this);
-    delete list[i];
-  }
+  DestroyAllConnections();
 }
 
 const std::string& Port::Type() const {
@@ -360,11 +346,11 @@ void Port::AddOrReplaceConnection(Connection* conn) {
         << ": A new connection was created on an existing remote address. "
            "New remote candidate: "
         << conn->remote_candidate().ToSensitiveString();
-    ret.first->second->SignalDestroyed.disconnect(this);
-    ret.first->second->Destroy();
+    std::unique_ptr<Connection> old_conn = absl::WrapUnique(ret.first->second);
     ret.first->second = conn;
+    HandleConnectionDestroyed(old_conn.get());
+    old_conn->Shutdown();
   }
-  conn->SignalDestroyed.connect(this, &Port::OnConnectionDestroyed);
 }
 
 void Port::OnReadPacket(const char* data,
@@ -622,9 +608,9 @@ rtc::DiffServCodePoint Port::StunDscpValue() const {
 
 void Port::DestroyAllConnections() {
   RTC_DCHECK_RUN_ON(thread_);
-  for (auto kv : connections_) {
-    kv.second->SignalDestroyed.disconnect(this);
-    kv.second->Destroy();
+  for (auto& [unused, connection] : connections_) {
+    connection->Shutdown();
+    delete connection;
   }
   connections_.clear();
 }
@@ -904,11 +890,15 @@ void Port::EnablePortPackets() {
   enable_port_packets_ = true;
 }
 
-void Port::OnConnectionDestroyed(Connection* conn) {
-  AddressMap::iterator iter =
-      connections_.find(conn->remote_candidate().address());
-  RTC_DCHECK(iter != connections_.end());
-  connections_.erase(iter);
+bool Port::OnConnectionDestroyed(Connection* conn) {
+  if (connections_.erase(conn->remote_candidate().address()) == 0) {
+    
+    
+    
+    RTC_DCHECK_NOTREACHED() << "Calling Destroy recursively?";
+    return false;
+  }
+
   HandleConnectionDestroyed(conn);
 
   
@@ -920,6 +910,28 @@ void Port::OnConnectionDestroyed(Connection* conn) {
     last_time_all_connections_removed_ = rtc::TimeMillis();
     thread_->PostDelayed(RTC_FROM_HERE, timeout_delay_, this,
                          MSG_DESTROY_IF_DEAD);
+  }
+
+  return true;
+}
+
+void Port::DestroyConnectionInternal(Connection* conn, bool async) {
+  RTC_DCHECK_RUN_ON(thread_);
+  if (!OnConnectionDestroyed(conn))
+    return;
+
+  conn->Shutdown();
+  if (async) {
+    
+    
+    
+    
+    
+    
+    thread_->PostTask(
+        webrtc::ToQueuedTask([conn = absl::WrapUnique(conn)]() {}));
+  } else {
+    delete conn;
   }
 }
 

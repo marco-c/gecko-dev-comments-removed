@@ -18,7 +18,6 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "p2p/base/port_allocator.h"
 #include "rtc_base/checks.h"
@@ -243,6 +242,7 @@ Connection::Connection(rtc::WeakPtr<Port> port,
 
 Connection::~Connection() {
   RTC_DCHECK_RUN_ON(network_thread_);
+  RTC_DCHECK(!port_);
 }
 
 webrtc::TaskQueueBase* Connection::network_thread() const {
@@ -752,8 +752,15 @@ void Connection::Prune() {
 
 void Connection::Destroy() {
   RTC_DCHECK_RUN_ON(network_thread_);
+  RTC_DCHECK(port_) << "Calling Destroy() twice?";
+  if (port_)
+    port_->DestroyConnection(this);
+}
+
+bool Connection::Shutdown() {
+  RTC_DCHECK_RUN_ON(network_thread_);
   if (!port_)
-    return;
+    return false;  
 
   RTC_DLOG(LS_VERBOSE) << ToString() << ": Connection destroyed";
 
@@ -761,8 +768,9 @@ void Connection::Destroy() {
   
   
   
-  SignalDestroyed(this);
+  auto destroyed_signals = SignalDestroyed;
   SignalDestroyed.disconnect_all();
+  destroyed_signals(this);
 
   LogCandidatePairConfig(webrtc::IceCandidatePairConfigType::kDestroyed);
 
@@ -770,20 +778,7 @@ void Connection::Destroy() {
   
   port_.reset();
 
-  
-  
-  
-  
-  
-  
-  network_thread_->PostTask(
-      webrtc::ToQueuedTask([me = absl::WrapUnique(this)]() {}));
-}
-
-void Connection::FailAndDestroy() {
-  RTC_DCHECK_RUN_ON(network_thread_);
-  set_state(IceCandidatePairState::FAILED);
-  Destroy();
+  return true;
 }
 
 void Connection::FailAndPrune() {
@@ -833,6 +828,9 @@ void Connection::set_selected(bool selected) {
 
 void Connection::UpdateState(int64_t now) {
   RTC_DCHECK_RUN_ON(network_thread_);
+  if (!port_)
+    return;
+
   int rtt = ConservativeRTTEstimate(rtt_);
 
   if (RTC_LOG_CHECK_LEVEL(LS_VERBOSE)) {
@@ -885,7 +883,7 @@ void Connection::UpdateState(int64_t now) {
   
   UpdateReceiving(now);
   if (dead(now)) {
-    Destroy();
+    port_->DestroyConnectionAsync(this);
   }
 }
 
@@ -905,6 +903,9 @@ int64_t Connection::last_ping_sent() const {
 
 void Connection::Ping(int64_t now) {
   RTC_DCHECK_RUN_ON(network_thread_);
+  if (!port_)
+    return;
+
   last_ping_sent_ = now;
 
   
@@ -1364,6 +1365,9 @@ void Connection::OnConnectionRequestResponse(StunRequest* request,
 
 void Connection::OnConnectionRequestErrorResponse(ConnectionRequest* request,
                                                   StunMessage* response) {
+  if (!port_)
+    return;
+
   int error_code = response->GetErrorCodeValue();
   RTC_LOG(LS_WARNING) << ToString() << ": Received "
                       << StunMethodToString(response->type())
@@ -1377,7 +1381,7 @@ void Connection::OnConnectionRequestErrorResponse(ConnectionRequest* request,
       error_code == STUN_ERROR_UNAUTHORIZED) {
     
   } else if (error_code == STUN_ERROR_ROLE_CONFLICT) {
-    HandleRoleConflictFromPeer();
+    port_->SignalRoleConflict(port_.get());
   } else if (request->msg()->type() == GOOG_PING_REQUEST) {
     
   } else {
@@ -1385,7 +1389,8 @@ void Connection::OnConnectionRequestErrorResponse(ConnectionRequest* request,
     RTC_LOG(LS_ERROR) << ToString()
                       << ": Received STUN error response, code=" << error_code
                       << "; killing connection";
-    FailAndDestroy();
+    set_state(IceCandidatePairState::FAILED);
+    port_->DestroyConnectionAsync(this);
   }
 }
 
@@ -1412,10 +1417,6 @@ void Connection::OnConnectionRequestSent(ConnectionRequest* request) {
   if (stats_.recv_ping_responses == 0) {
     stats_.sent_ping_requests_before_first_response++;
   }
-}
-
-void Connection::HandleRoleConflictFromPeer() {
-  port_->SignalRoleConflict(port());
 }
 
 IceCandidatePairState Connection::state() const {
@@ -1496,17 +1497,22 @@ ConnectionInfo Connection::stats() {
   stats_.rtt = rtt_;
   stats_.key = this;
   stats_.state = state_;
-  stats_.priority = priority();
+  if (port_) {
+    stats_.priority = priority();
+    stats_.local_candidate = local_candidate();
+  }
   stats_.nominated = nominated();
   stats_.total_round_trip_time_ms = total_round_trip_time_ms_;
   stats_.current_round_trip_time_ms = current_round_trip_time_ms_;
-  stats_.local_candidate = local_candidate();
   stats_.remote_candidate = remote_candidate();
   return stats_;
 }
 
 void Connection::MaybeUpdateLocalCandidate(StunRequest* request,
                                            StunMessage* response) {
+  if (!port_)
+    return;
+
   
   
   
@@ -1648,6 +1654,9 @@ ProxyConnection::ProxyConnection(rtc::WeakPtr<Port> port,
 int ProxyConnection::Send(const void* data,
                           size_t size,
                           const rtc::PacketOptions& options) {
+  if (!port_)
+    return SOCKET_ERROR;
+
   stats_.sent_total_packets++;
   int sent =
       port_->SendTo(data, size, remote_candidate_.address(), options, true);

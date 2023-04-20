@@ -180,10 +180,16 @@ class Connection : public CandidatePairInterface {
   void set_receiving_timeout(absl::optional<int> receiving_timeout_ms);
 
   
+  
+  
   void Destroy();
 
   
-  void FailAndDestroy();
+  
+  
+  
+  
+  bool Shutdown();
 
   
   
@@ -248,9 +254,6 @@ class Connection : public CandidatePairInterface {
   
   
   sigslot::signal1<Connection*> SignalNominated;
-
-  
-  void HandleRoleConflictFromPeer();
 
   IceCandidatePairState state() const;
 
