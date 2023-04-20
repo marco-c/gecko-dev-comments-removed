@@ -19,10 +19,11 @@ class WebTransport;
 
 class WebTransportReceiveStream final : public ReadableStream {
  public:
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(WebTransportReceiveStream,
-                                       ReadableStream)
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(WebTransportReceiveStream,
+                                           ReadableStream)
 
-  explicit WebTransportReceiveStream(nsIGlobalObject* aGlobal);
+  WebTransportReceiveStream(nsIGlobalObject* aGlobal, WebTransport* aTransport);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static already_AddRefed<WebTransportReceiveStream>
   Create(WebTransport* aWebTransport, nsIGlobalObject* aGlobal,
@@ -36,7 +37,13 @@ class WebTransportReceiveStream final : public ReadableStream {
   already_AddRefed<Promise> GetStats();
 
  private:
-  ~WebTransportReceiveStream() override = default;
+  ~WebTransportReceiveStream() override { mozilla::DropJSObjects(this); }
+
+  
+  
+  
+  
+  RefPtr<WebTransport> mTransport;
 };
 }  
 
