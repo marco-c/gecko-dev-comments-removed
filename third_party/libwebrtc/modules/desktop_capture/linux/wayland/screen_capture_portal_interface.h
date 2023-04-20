@@ -42,6 +42,10 @@ class ScreenCapturePortalInterface {
   virtual xdg_portal::SessionDetails GetSessionDetails() { return {}; }
   
   virtual void Start() {}
+
+  
+  virtual void Stop() {}
+
   
   
   virtual void OnPortalDone(xdg_portal::RequestResponse result) {}

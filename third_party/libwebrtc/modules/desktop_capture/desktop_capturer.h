@@ -33,6 +33,31 @@ class DesktopCaptureOptions;
 class DesktopFrame;
 
 
+
+
+
+
+
+
+class RTC_EXPORT DelegatedSourceListController {
+ public:
+  
+  
+  
+  
+  
+  
+  virtual void EnsureVisible() = 0;
+
+  
+  
+  virtual void EnsureHidden() = 0;
+
+ protected:
+  virtual ~DelegatedSourceListController() {}
+};
+
+
 class RTC_EXPORT DesktopCapturer {
  public:
   enum class Result {
@@ -94,6 +119,18 @@ class RTC_EXPORT DesktopCapturer {
   
   
   
+  
+  
+  
+  
+  
+  virtual DelegatedSourceListController* GetDelegatedSourceListController();
+
+  
+  
+  
+  
+  
   virtual void SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory);
 
@@ -117,8 +154,17 @@ class RTC_EXPORT DesktopCapturer {
   
   
   
+  
+  
+  
+  
+  
   virtual bool GetSourceList(SourceList* sources);
 
+  
+  
+  
+  
   
   
   virtual bool SelectSource(SourceId id);

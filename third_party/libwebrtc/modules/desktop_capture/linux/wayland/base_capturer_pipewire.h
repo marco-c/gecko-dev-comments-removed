@@ -23,6 +23,7 @@
 namespace webrtc {
 
 class BaseCapturerPipeWire : public DesktopCapturer,
+                             public DelegatedSourceListController,
                              public ScreenCastPortal::PortalNotifier {
  public:
   explicit BaseCapturerPipeWire(const DesktopCaptureOptions& options);
@@ -39,6 +40,11 @@ class BaseCapturerPipeWire : public DesktopCapturer,
   void CaptureFrame() override;
   bool GetSourceList(SourceList* sources) override;
   bool SelectSource(SourceId id) override;
+  DelegatedSourceListController* GetDelegatedSourceListController() override;
+
+  
+  void EnsureVisible() override;
+  void EnsureHidden() override;
 
   
   void OnScreenCastRequestResult(xdg_portal::RequestResponse result,
@@ -56,6 +62,7 @@ class BaseCapturerPipeWire : public DesktopCapturer,
   Callback* callback_ = nullptr;
   bool capturer_failed_ = false;
   bool is_screencast_portal_ = false;
+  bool is_portal_open_ = false;
 
   
   

@@ -105,6 +105,7 @@ class ScreenCastPortal : public xdg_portal::ScreenCapturePortalInterface {
   
   
   void Start() override;
+  void Stop() override;
   xdg_portal::SessionDetails GetSessionDetails() override;
 
   
@@ -112,7 +113,6 @@ class ScreenCastPortal : public xdg_portal::ScreenCapturePortalInterface {
 
   
   void RequestSession(GDBusProxy* proxy) override;
-  void Cleanup();
 
   
   
