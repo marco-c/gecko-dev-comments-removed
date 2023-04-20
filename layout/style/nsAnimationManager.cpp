@@ -221,6 +221,9 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
     
     
     for (Element* e = curr; e; e = e->GetPreviousElementSibling()) {
+      
+      
+
       const ComputedStyle* style = Servo_Element_GetMaybeOutOfDateStyle(e);
       
       if (!style) {
