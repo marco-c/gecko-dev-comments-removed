@@ -2194,6 +2194,8 @@ class nsLayoutUtils {
 
 
     SFE_EXACT_SIZE_SURFACE = 1 << 6,
+    
+    SFE_ORIENTATION_FROM_IMAGE = 1 << 7
   };
 
   

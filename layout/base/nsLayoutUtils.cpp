@@ -7219,7 +7219,8 @@ SurfaceFromElementResult nsLayoutUtils::SurfaceFromElement(
   
   
   auto orientation =
-      content->GetPrimaryFrame()
+      content->GetPrimaryFrame() &&
+              !(aSurfaceFlags & SFE_ORIENTATION_FROM_IMAGE)
           ? content->GetPrimaryFrame()->StyleVisibility()->UsedImageOrientation(
                 imgRequest)
           : nsStyleVisibility::UsedImageOrientation(
