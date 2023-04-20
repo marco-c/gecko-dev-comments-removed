@@ -63,8 +63,8 @@ class PortInterface {
 
   
   
-  virtual bool SupportsProtocol(const std::string& protocol) const = 0;
-  virtual bool SupportsProtocol(absl::string_view protocol) const;
+  virtual bool SupportsProtocol(const std::string& protocol) const;
+  virtual bool SupportsProtocol(absl::string_view protocol) const = 0;
 
   
   
