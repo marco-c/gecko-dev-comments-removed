@@ -1,5 +1,3 @@
-
-
 AntiTracking.runTest(
   "localStorage with a tracker that is entitylisted via a pref",
   async _ => {

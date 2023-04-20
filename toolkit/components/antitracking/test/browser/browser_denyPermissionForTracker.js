@@ -1,8 +1,6 @@
 
 
 
-
-
 add_task(async _ => {
   PermissionTestUtils.add(
     "https://tracking.example.org",

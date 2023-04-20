@@ -1,5 +1,3 @@
-
-
 const APS_PREF =
   "privacy.partition.always_partition_third_party_non_cookie_storage";
 

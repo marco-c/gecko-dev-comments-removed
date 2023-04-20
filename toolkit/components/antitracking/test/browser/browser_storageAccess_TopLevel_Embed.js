@@ -3,7 +3,6 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-
 async function requestStorageAccessUnderSiteAndExpectSuccess() {
   SpecialPowers.wrap(document).notifyUserGestureActivation();
   var p = document.requestStorageAccessUnderSite("http://example.org");

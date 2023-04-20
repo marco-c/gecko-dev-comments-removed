@@ -1,5 +1,3 @@
-
-
 AntiTracking.runTest(
   "Storage Access is removed when topframe navigates",
   

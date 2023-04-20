@@ -7,7 +7,6 @@
 
 "use strict";
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/toolkit/components/antitracking/test/browser/dynamicfpi_head.js",
   this

@@ -10,8 +10,6 @@
 
 
 
-
-
 "use strict";
 add_task(async _ => {
   let uri = Services.io.newURI("https://example.net");

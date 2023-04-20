@@ -9,7 +9,6 @@ const TESTROOT = "http://example.com/browser/" + RELATIVE_DIR;
 var MockFilePicker = SpecialPowers.MockFilePicker;
 MockFilePicker.init(window);
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/toolkit/content/tests/browser/common/mockTransfer.js",
   this

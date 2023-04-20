@@ -8,7 +8,6 @@
 "use strict";
 
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/toolkit/components/pictureinpicture/tests/head.js",
   this

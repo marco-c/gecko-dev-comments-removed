@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const TEST_URI = TEST_DOMAIN + TEST_PATH + "file_stripping.html";

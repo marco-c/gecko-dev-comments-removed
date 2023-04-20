@@ -1,5 +1,3 @@
-
-
 AntiTracking.runTest(
   "ServiceWorkers",
   async _ => {

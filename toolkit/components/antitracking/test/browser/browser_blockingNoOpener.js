@@ -1,5 +1,3 @@
-
-
 gFeatures = "noopener";
 
 AntiTracking.runTestInNormalAndPrivateMode(

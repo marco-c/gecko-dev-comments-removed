@@ -1,5 +1,3 @@
-
-
 add_task(async function() {
   info("Starting subResources test");
 

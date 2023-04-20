@@ -1,6 +1,5 @@
 
 
-
 PartitionedStorageHelper.runTest(
   "ServiceWorkers - disable partitioning",
   async (win3rdParty, win1stParty, allowed) => {

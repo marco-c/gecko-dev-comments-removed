@@ -1,5 +1,3 @@
-
-
 function waitStoragePermission() {
   return new Promise(resolve => {
     let id = setInterval(async _ => {

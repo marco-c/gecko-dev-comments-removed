@@ -1,5 +1,3 @@
-
-
 AntiTracking.runTestInNormalAndPrivateMode(
   "IndexedDB in workers",
   async _ => {

@@ -3,8 +3,6 @@
 
 
 
-
-
 "use strict";
 
 const { RemoteSettings } = ChromeUtils.import(

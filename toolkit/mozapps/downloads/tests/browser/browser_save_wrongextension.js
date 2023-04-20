@@ -83,7 +83,6 @@ add_task(async () => {
   await new Promise(resolve => httpServer.stop(resolve));
 });
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/toolkit/content/tests/browser/common/mockTransfer.js",
   this

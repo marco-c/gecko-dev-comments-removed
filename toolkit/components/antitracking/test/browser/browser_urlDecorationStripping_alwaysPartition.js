@@ -3,8 +3,6 @@
 
 
 
-
-
 "use strict";
 
 const trackerBlocked = Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER;

@@ -1,5 +1,3 @@
-
-
 PartitionedStorageHelper.runTestInNormalAndPrivateMode(
   "SharedWorkers",
   async (win3rdParty, win1stParty, allowed) => {
