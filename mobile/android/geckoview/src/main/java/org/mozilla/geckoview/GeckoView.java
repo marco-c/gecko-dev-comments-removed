@@ -83,6 +83,7 @@ public class GeckoView extends FrameLayout {
 
   private GeckoSession.SelectionActionDelegate mSelectionActionDelegate;
   private Autofill.Delegate mAutofillDelegate;
+  private @Nullable ActivityContextDelegate mActivityDelegate;
 
   private class Display implements SurfaceViewWrapper.Listener {
     private final int[] mOrigin = new int[2];
@@ -1118,5 +1119,43 @@ public class GeckoView extends FrameLayout {
         Log.e(LOGTAG, "Failed to call AutofillManager.cancel: ", e);
       }
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+  @AnyThread
+  public interface ActivityContextDelegate {
+    
+
+
+
+
+    @Nullable
+    Context getActivityContext();
+  }
+
+  
+
+
+
+
+  public void setActivityContextDelegate(final @Nullable ActivityContextDelegate delegate) {
+    mActivityDelegate = delegate;
+  }
+
+  
+
+
+
+
+  public @Nullable ActivityContextDelegate getActivityContextDelegate() {
+    return mActivityDelegate;
   }
 }
