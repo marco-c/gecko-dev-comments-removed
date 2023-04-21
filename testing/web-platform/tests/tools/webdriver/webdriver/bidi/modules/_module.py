@@ -1,7 +1,6 @@
 import functools
 from typing import (
     Any,
-    Awaitable,
     Callable,
     Optional,
     Mapping,
@@ -79,10 +78,6 @@ class command:
 
         
         setattr(owner, name, inner)
-
-    def __call__(*args: Any, **kwargs: Any) -> Awaitable[Any]:
-        
-        pass
 
 
 class BidiModule:

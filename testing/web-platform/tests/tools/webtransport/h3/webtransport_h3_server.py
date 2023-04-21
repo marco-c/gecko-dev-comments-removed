@@ -23,7 +23,8 @@ from aioquic.quic.connection import stream_is_unidirectional
 from aioquic.quic.events import QuicEvent, ProtocolNegotiated, ConnectionTerminated, StreamReset  
 from aioquic.tls import SessionTicket  
 
-from tools.wptserve.wptserve import stash  
+from tools import localpaths  
+from wptserve import stash
 from .capsule import H3Capsule, H3CapsuleDecoder, CapsuleType
 
 """
@@ -309,8 +310,8 @@ class WebTransportSession:
     def stash(self) -> stash.Stash:
         """A Stash object for storing cross-session state."""
         if self._stash is None:
-            address, authkey = stash.load_env_config()
-            self._stash = stash.Stash(self._stash_path, address, authkey)
+            address, authkey = stash.load_env_config()  
+            self._stash = stash.Stash(self._stash_path, address, authkey)  
         return self._stash
 
     @property

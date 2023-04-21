@@ -62,7 +62,7 @@ class XMLParser:
         self._parser.EndElementHandler = self._end
         self._parser.CharacterDataHandler = self._data
         self._parser.ExternalEntityRefHandler = self._external
-        self._parser.SkippedEntityHandler = self._skipped  
+        self._parser.SkippedEntityHandler = self._skipped
         
         self._fed_data = []  
         self._read_encoding = None  
