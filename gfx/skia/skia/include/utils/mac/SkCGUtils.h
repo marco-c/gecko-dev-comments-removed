@@ -63,7 +63,7 @@ SK_API CGImageRef SkCreateCGImageRefWithColorspace(const SkBitmap& bm,
 
 
 static inline CGImageRef SkCreateCGImageRef(const SkBitmap& bm) {
-    return SkCreateCGImageRefWithColorspace(bm, nil);
+    return SkCreateCGImageRefWithColorspace(bm, NULL);
 }
 
 
@@ -73,6 +73,14 @@ static inline CGImageRef SkCreateCGImageRef(const SkBitmap& bm) {
 
 
 void SkCGDrawBitmap(CGContextRef, const SkBitmap&, float x, float y);
+
+
+
+
+
+CGDataProviderRef SkCreateDataProviderFromStream(std::unique_ptr<SkStreamRewindable>);
+
+CGDataProviderRef SkCreateDataProviderFromData(sk_sp<SkData>);
 
 #endif  
 #endif  

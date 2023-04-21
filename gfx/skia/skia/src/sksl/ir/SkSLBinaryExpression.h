@@ -8,105 +8,54 @@
 #ifndef SKSL_BINARYEXPRESSION
 #define SKSL_BINARYEXPRESSION
 
-#include "include/core/SkTypes.h"
-#include "include/private/SkSLIRNode.h"
-#include "include/sksl/SkSLOperator.h"
-#include "include/sksl/SkSLPosition.h"
+#include "src/sksl/SkSLCompiler.h"
+#include "src/sksl/SkSLIRGenerator.h"
+#include "src/sksl/SkSLLexer.h"
 #include "src/sksl/ir/SkSLExpression.h"
-
-#include <memory>
-#include <string>
-#include <utility>
+#include "src/sksl/ir/SkSLExpression.h"
 
 namespace SkSL {
 
-class Context;
-class Type;
-class VariableReference;
 
 
 
+struct BinaryExpression : public Expression {
+    BinaryExpression(int offset, std::unique_ptr<Expression> left, Token::Kind op,
+                     std::unique_ptr<Expression> right, const Type& type)
+    : INHERITED(offset, kBinary_Kind, type)
+    , fLeft(std::move(left))
+    , fOperator(op)
+    , fRight(std::move(right)) {}
 
-class BinaryExpression final : public Expression {
-public:
-    inline static constexpr Kind kIRNodeKind = Kind::kBinary;
-
-    BinaryExpression(Position pos, std::unique_ptr<Expression> left, Operator op,
-                     std::unique_ptr<Expression> right, const Type* type)
-        : INHERITED(pos, kIRNodeKind, type)
-        , fLeft(std::move(left))
-        , fOperator(op)
-        , fRight(std::move(right)) {
-        
-        SkASSERT(!op.isAssignment() || CheckRef(*this->left()));
+    std::unique_ptr<Expression> constantPropagate(const IRGenerator& irGenerator,
+                                                  const DefinitionMap& definitions) override {
+        return irGenerator.constantFold(*fLeft,
+                                        fOperator,
+                                        *fRight);
     }
 
-    
-    
-    static std::unique_ptr<Expression> Convert(const Context& context,
-                                               Position pos,
-                                               std::unique_ptr<Expression> left,
-                                               Operator op,
-                                               std::unique_ptr<Expression> right);
-
-    
-    
-    static std::unique_ptr<Expression> Make(const Context& context,
-                                            Position pos,
-                                            std::unique_ptr<Expression> left,
-                                            Operator op,
-                                            std::unique_ptr<Expression> right);
-
-    
-    
-    static std::unique_ptr<Expression> Make(const Context& context,
-                                            Position pos,
-                                            std::unique_ptr<Expression> left,
-                                            Operator op,
-                                            std::unique_ptr<Expression> right,
-                                            const Type* resultType);
-
-    std::unique_ptr<Expression>& left() {
-        return fLeft;
+    bool hasSideEffects() const override {
+        return Compiler::IsAssignment(fOperator) || fLeft->hasSideEffects() ||
+               fRight->hasSideEffects();
     }
 
-    const std::unique_ptr<Expression>& left() const {
-        return fLeft;
+    std::unique_ptr<Expression> clone() const override {
+        return std::unique_ptr<Expression>(new BinaryExpression(fOffset, fLeft->clone(), fOperator,
+                                                                fRight->clone(), fType));
     }
 
-    std::unique_ptr<Expression>& right() {
-        return fRight;
+    String description() const override {
+        return "(" + fLeft->description() + " " + Compiler::OperatorName(fOperator) + " " +
+               fRight->description() + ")";
     }
-
-    const std::unique_ptr<Expression>& right() const {
-        return fRight;
-    }
-
-    Operator getOperator() const {
-        return fOperator;
-    }
-
-    std::unique_ptr<Expression> clone(Position pos) const override;
-
-    std::string description(OperatorPrecedence parentPrecedence) const override;
-
-    
-
-
-
-
-    VariableReference* isAssignmentIntoVariable();
-
-private:
-    static bool CheckRef(const Expression& expr);
 
     std::unique_ptr<Expression> fLeft;
-    Operator fOperator;
+    const Token::Kind fOperator;
     std::unique_ptr<Expression> fRight;
 
-    using INHERITED = Expression;
+    typedef Expression INHERITED;
 };
 
-}  
+} 
 
 #endif

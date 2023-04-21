@@ -9,12 +9,11 @@
 #define SkJSON_DEFINED
 
 #include "include/core/SkTypes.h"
-#include "include/private/base/SkNoncopyable.h"
-#include "src/base/SkArenaAlloc.h"
+#include "include/private/SkNoncopyable.h"
+#include "include/private/SkTo.h"
+#include "src/core/SkArenaAlloc.h"
 
-#include <cstdint>
 #include <cstring>
-#include <string_view>
 
 class SkString;
 class SkWStream;
@@ -124,33 +123,25 @@ protected:
     enum class Tag : uint8_t {
         
         
+        
         kShortString                  = 0b00000000,  
-        kNull                         = 0b00000001,  
-        kBool                         = 0b00000010,  
-        kInt                          = 0b00000011,  
-        kFloat                        = 0b00000100,  
-        kString                       = 0b00000101,  
-        kArray                        = 0b00000110,  
-        kObject                       = 0b00000111,  
+        kNull                         = 0b00100000,  
+        kBool                         = 0b01000000,  
+        kInt                          = 0b01100000,  
+        kFloat                        = 0b10000000,  
+        kString                       = 0b10100000,  
+        kArray                        = 0b11000000,  
+        kObject                       = 0b11100000,  
     };
-    inline static constexpr uint8_t kTagMask = 0b00000111;
+    static constexpr uint8_t kTagMask = 0b11100000;
 
     void init_tagged(Tag);
     void init_tagged_pointer(Tag, void*);
 
     Tag getTag() const {
-        return static_cast<Tag>(fData8[0] & kTagMask);
+        return static_cast<Tag>(fData8[kTagOffset] & kTagMask);
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -177,10 +168,7 @@ protected:
     const T* cast() const {
         static_assert(sizeof (T) <=  sizeof(Value), "");
         static_assert(alignof(T) <= alignof(Value), "");
-
-        return (sizeof(T) > sizeof(*this) / 2)
-                ? reinterpret_cast<const T*>(this) + 0  
-                : reinterpret_cast<const T*>(this) + 1; 
+        return reinterpret_cast<const T*>(this);
     }
 
     template <typename T>
@@ -196,15 +184,20 @@ protected:
             
             ? *this->cast<const T*>()
             
-            : reinterpret_cast<T*>(*this->cast<uintptr_t>() & ~static_cast<uintptr_t>(kTagMask));
+            : reinterpret_cast<T*>(*this->cast<uintptr_t>() & kTagPointerMask);
     }
 
 private:
-    inline static constexpr size_t kValueSize = 8;
+    static constexpr size_t kValueSize = 8;
 
     uint8_t fData8[kValueSize];
 
-#if !defined(SK_CPU_LENDIAN)
+#if defined(SK_CPU_LENDIAN)
+    static constexpr size_t kTagOffset = kValueSize - 1;
+
+    static constexpr uintptr_t kTagPointerMask =
+            ~(static_cast<uintptr_t>(kTagMask) << ((sizeof(uintptr_t) - 1) * 8));
+#else
     
     static_assert(false, "Big-endian builds are not supported at this time.");
 #endif
@@ -212,14 +205,14 @@ private:
 
 class NullValue final : public Value {
 public:
-    inline static constexpr Type kType = Type::kNull;
+    static constexpr Type kType = Type::kNull;
 
     NullValue();
 };
 
 class BoolValue final : public Value {
 public:
-    inline static constexpr Type kType = Type::kBool;
+    static constexpr Type kType = Type::kBool;
 
     explicit BoolValue(bool);
 
@@ -231,7 +224,7 @@ public:
 
 class NumberValue final : public Value {
 public:
-    inline static constexpr Type kType = Type::kNumber;
+    static constexpr Type kType = Type::kNumber;
 
     explicit NumberValue(int32_t);
     explicit NumberValue(float);
@@ -250,7 +243,7 @@ template <typename T, Value::Type vtype>
 class VectorValue : public Value {
 public:
     using ValueT = T;
-    inline static constexpr Type kType = vtype;
+    static constexpr Type kType = vtype;
 
     size_t size() const {
         SkASSERT(this->getType() == kType);
@@ -284,7 +277,7 @@ public:
 
 class StringValue final : public Value {
 public:
-    inline static constexpr Type kType = Type::kString;
+    static constexpr Type kType = Type::kString;
 
     StringValue();
     StringValue(const char* src, size_t size, SkArenaAlloc& alloc);
@@ -315,10 +308,6 @@ public:
             ? strchr(this->cast<char>(), '\0')
             : this->cast<VectorValue<char, Value::Type::kString>>()->end();
     }
-
-    std::string_view str() const {
-        return std::string_view(this->begin(), this->size());
-    }
 };
 
 struct Member {
@@ -330,11 +319,11 @@ class ObjectValue final : public VectorValue<Member, Value::Type::kObject> {
 public:
     ObjectValue(const Member* src, size_t size, SkArenaAlloc& alloc);
 
-    const  Value& operator[](const char*) const;
+    const Value& operator[](const char*) const;
 
-    const Member& operator[](size_t i) const {
-        return this->VectorValue::operator[](i);
-    }
+private:
+    
+    const Member& operator[](size_t i) const = delete;
 };
 
 class DOM final : public SkNoncopyable {

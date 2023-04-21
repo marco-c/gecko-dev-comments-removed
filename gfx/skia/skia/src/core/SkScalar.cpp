@@ -5,6 +5,8 @@
 
 
 
+
+#include "include/core/SkMath.h"
 #include "include/core/SkScalar.h"
 
 SkScalar SkScalarInterpFunc(SkScalar searchKey, const SkScalar keys[],
@@ -13,25 +15,21 @@ SkScalar SkScalarInterpFunc(SkScalar searchKey, const SkScalar keys[],
     SkASSERT(keys != nullptr);
     SkASSERT(values != nullptr);
 #ifdef SK_DEBUG
-    for (int i = 1; i < length; i++) {
-        SkASSERT(keys[i-1] <= keys[i]);
-    }
+    for (int i = 1; i < length; i++)
+        SkASSERT(keys[i] >= keys[i-1]);
 #endif
     int right = 0;
-    while (right < length && keys[right] < searchKey) {
-        ++right;
-    }
+    while (right < length && searchKey > keys[right])
+        right++;
     
     
-    if (right == length) {
+    if (length == right)
         return values[length-1];
-    }
-    if (right == 0) {
+    if (0 == right)
         return values[0];
-    }
     
-    SkScalar leftKey = keys[right-1];
     SkScalar rightKey = keys[right];
+    SkScalar leftKey = keys[right-1];
     SkScalar fract = (searchKey - leftKey) / (rightKey - leftKey);
     return SkScalarInterp(values[right-1], values[right], fract);
 }

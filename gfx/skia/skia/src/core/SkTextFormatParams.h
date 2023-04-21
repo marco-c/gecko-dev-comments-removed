@@ -13,6 +13,13 @@
 #include "include/core/SkTypes.h"
 
 
+#define kStdStrikeThru_Offset       (-SK_Scalar1 * 6 / 21)
+
+#define kStdUnderline_Offset        (SK_Scalar1 / 9)
+
+#define kStdUnderline_Thickness     (SK_Scalar1 / 18)
+
+
 
 
 
@@ -24,8 +31,8 @@ static const SkScalar kStdFakeBoldInterpValues[] = {
     SK_Scalar1/24,
     SK_Scalar1/32,
 };
-static_assert(std::size(kStdFakeBoldInterpKeys) == std::size(kStdFakeBoldInterpValues),
+static_assert(SK_ARRAY_COUNT(kStdFakeBoldInterpKeys) == SK_ARRAY_COUNT(kStdFakeBoldInterpValues),
               "mismatched_array_size");
-static const int kStdFakeBoldInterpLength = std::size(kStdFakeBoldInterpKeys);
+static const int kStdFakeBoldInterpLength = SK_ARRAY_COUNT(kStdFakeBoldInterpKeys);
 
 #endif  

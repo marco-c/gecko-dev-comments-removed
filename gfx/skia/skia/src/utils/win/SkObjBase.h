@@ -8,7 +8,7 @@
 #ifndef SkObjBase_DEFINED
 #define SkObjBase_DEFINED
 
-#include "src/base/SkLeanWindows.h"
+#include "src/core/SkLeanWindows.h"
 #include <objbase.h>
 
 

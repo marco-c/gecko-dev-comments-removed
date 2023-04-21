@@ -14,7 +14,7 @@
 
 class SkGaussFilter {
 public:
-    inline static constexpr int kGaussArrayMax = 6;
+    static constexpr int kGaussArrayMax = 6;
 
     explicit SkGaussFilter(double sigma);
 

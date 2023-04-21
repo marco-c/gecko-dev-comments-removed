@@ -8,82 +8,55 @@
 #ifndef SKIASL_MEMORYLAYOUT
 #define SKIASL_MEMORYLAYOUT
 
-#include <algorithm>
-
 #include "src/sksl/ir/SkSLType.h"
 
 namespace SkSL {
 
 class MemoryLayout {
 public:
-    enum class Standard {
-        
-        k140,
-
-        
-        
-        k430,
-
-        
-        kMetal,
-
-        
-        kWGSLUniform,
-
-        
-        kWGSLStorage,
+    enum Standard {
+        k140_Standard,
+        k430_Standard,
+        kMetal_Standard
     };
 
     MemoryLayout(Standard std)
     : fStd(std) {}
 
-    bool isWGSL() const { return fStd == Standard::kWGSLUniform || fStd == Standard::kWGSLStorage; }
-
-    bool isMetal() const { return fStd == Standard::kMetal; }
-
-    
-
-
-
-
-
-
-    size_t roundUpIfNeeded(size_t raw, Type::TypeKind type) const {
-        if (fStd == Standard::k140) {
-            return roundUp16(raw);
-        }
-        
-        
-        if (fStd == Standard::kWGSLUniform && type != Type::TypeKind::kMatrix) {
-            return roundUp16(raw);
-        }
-        return raw;
+    static size_t vector_alignment(size_t componentSize, int columns) {
+        return componentSize * (columns + columns % 2);
     }
 
     
 
 
-    size_t roundUp16(size_t n) const { return (n + 15) & ~15; }
+
+
+    size_t roundUpIfNeeded(size_t raw) const {
+        switch (fStd) {
+            case k140_Standard: return (raw + 15) & ~15;
+            case k430_Standard: return raw;
+            case kMetal_Standard: return raw;
+        }
+        ABORT("unreachable");
+    }
 
     
 
 
     size_t alignment(const Type& type) const {
         
-        switch (type.typeKind()) {
-            case Type::TypeKind::kScalar:
-            case Type::TypeKind::kAtomic:
+        switch (type.kind()) {
+            case Type::kScalar_Kind:
                 return this->size(type);
-            case Type::TypeKind::kVector:
-                return GetVectorAlignment(this->size(type.componentType()), type.columns());
-            case Type::TypeKind::kMatrix:
-                return this->roundUpIfNeeded(
-                        GetVectorAlignment(this->size(type.componentType()), type.rows()),
-                        type.typeKind());
-            case Type::TypeKind::kArray:
-                return this->roundUpIfNeeded(this->alignment(type.componentType()),
-                                             type.typeKind());
-            case Type::TypeKind::kStruct: {
+            case Type::kVector_Kind:
+                return vector_alignment(this->size(type.componentType()), type.columns());
+            case Type::kMatrix_Kind:
+                return this->roundUpIfNeeded(vector_alignment(this->size(type.componentType()),
+                                                              type.rows()));
+            case Type::kArray_Kind:
+                return this->roundUpIfNeeded(this->alignment(type.componentType()));
+            case Type::kStruct_Kind: {
                 size_t result = 0;
                 for (const auto& f : type.fields()) {
                     size_t alignment = this->alignment(*f.fType);
@@ -91,10 +64,10 @@ public:
                         result = alignment;
                     }
                 }
-                return this->roundUpIfNeeded(result, type.typeKind());
+                return this->roundUpIfNeeded(result);
             }
             default:
-                SK_ABORT("cannot determine alignment of type %s", type.displayName().c_str());
+                ABORT("cannot determine size of type %s", type.name().c_str());
         }
     }
 
@@ -103,21 +76,19 @@ public:
 
 
     size_t stride(const Type& type) const {
-        switch (type.typeKind()) {
-            case Type::TypeKind::kMatrix:
-                return this->alignment(type);
-            case Type::TypeKind::kArray: {
-                int stride = this->size(type.componentType());
-                if (stride > 0) {
-                    int align = this->alignment(type.componentType());
-                    stride += align - 1;
-                    stride -= stride % align;
-                    stride = this->roundUpIfNeeded(stride, type.typeKind());
-                }
-                return stride;
+        switch (type.kind()) {
+            case Type::kMatrix_Kind: {
+                size_t base = vector_alignment(this->size(type.componentType()), type.rows());
+                return this->roundUpIfNeeded(base);
+            }
+            case Type::kArray_Kind: {
+                int align = this->alignment(type.componentType());
+                int stride = this->size(type.componentType()) + align - 1;
+                stride -= stride % align;
+                return this->roundUpIfNeeded(stride);
             }
             default:
-                SK_ABORT("type does not have a stride");
+                ABORT("type does not have a stride");
         }
     }
 
@@ -125,31 +96,23 @@ public:
 
 
     size_t size(const Type& type) const {
-        switch (type.typeKind()) {
-            case Type::TypeKind::kScalar:
-                if (type.isBoolean()) {
-                    if (this->isWGSL()) {
-                        return 0;
-                    }
+        switch (type.kind()) {
+            case Type::kScalar_Kind:
+                if (type.name() == "bool") {
                     return 1;
                 }
-                if ((this->isMetal() || this->isWGSL()) && !type.highPrecision() &&
-                    type.isNumber()) {
-                    return 2;
-                }
-                return 4;
-            case Type::TypeKind::kAtomic:
+                
                 
                 return 4;
-            case Type::TypeKind::kVector:
-                if (this->isMetal() && type.columns() == 3) {
+            case Type::kVector_Kind:
+                if (fStd == kMetal_Standard && type.columns() == 3) {
                     return 4 * this->size(type.componentType());
                 }
                 return type.columns() * this->size(type.componentType());
-            case Type::TypeKind::kMatrix: 
-            case Type::TypeKind::kArray:
-                return type.isUnsizedArray() ? 0 : (type.columns() * this->stride(type));
-            case Type::TypeKind::kStruct: {
+            case Type::kMatrix_Kind: 
+            case Type::kArray_Kind:
+                return type.columns() * this->stride(type);
+            case Type::kStruct_Kind: {
                 size_t total = 0;
                 for (const auto& f : type.fields()) {
                     size_t alignment = this->alignment(*f.fType);
@@ -165,47 +128,13 @@ public:
                 return (total + alignment - 1) & ~(alignment - 1);
             }
             default:
-                SK_ABORT("cannot determine size of type %s", type.displayName().c_str());
+                ABORT("cannot determine size of type %s", type.name().c_str());
         }
-    }
-
-    
-
-
-    size_t isSupported(const Type& type) const {
-        switch (type.typeKind()) {
-            case Type::TypeKind::kAtomic:
-                return true;
-
-            case Type::TypeKind::kScalar:
-                
-                return !this->isWGSL() ||
-                       (!type.isBoolean() && (type.isFloat() || type.highPrecision()));
-
-            case Type::TypeKind::kVector:
-            case Type::TypeKind::kMatrix:
-            case Type::TypeKind::kArray:
-                return this->isSupported(type.componentType());
-
-            case Type::TypeKind::kStruct:
-                return std::all_of(
-                        type.fields().begin(), type.fields().end(), [this](const Type::Field& f) {
-                            return this->isSupported(*f.fType);
-                        });
-
-            default:
-                return false;
-        }
-    }
-
-private:
-    static size_t GetVectorAlignment(size_t componentSize, int columns) {
-        return componentSize * (columns + columns % 2);
     }
 
     const Standard fStd;
 };
 
-}  
+} 
 
 #endif

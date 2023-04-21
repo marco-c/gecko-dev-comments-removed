@@ -13,24 +13,17 @@
 #ifdef SK_BUILD_FOR_IOS
 #import <CoreFoundation/CoreFoundation.h>
 
-#include "include/ports/SkCFObject.h"
-
 static bool ios_get_path_in_bundle(const char path[], SkString* result) {
     
     CFBundleRef mainBundle = CFBundleGetMainBundle();
 
     
-    
-    sk_cfp<CFURLRef> pathURL(CFURLCreateFromFileSystemRepresentation(nullptr,
-                                                                     (const UInt8*)path,
-                                                                     strlen(path),
-                                                                     false));
-    sk_cfp<CFStringRef> pathRef(CFURLCopyFileSystemPath(pathURL.get(), kCFURLPOSIXPathStyle));
+    CFStringRef pathRef = CFStringCreateWithCString(nullptr, path, kCFStringEncodingUTF8);
     
     
-    sk_cfp<CFURLRef> fileURL(CFBundleCopyResourceURL(mainBundle, pathRef.get(),
-                                                     nullptr, CFSTR("data")));
-    if (!fileURL) {
+    CFURLRef imageURL = CFBundleCopyResourceURL(mainBundle, pathRef, nullptr, CFSTR("data"));
+    CFRelease(pathRef);
+    if (!imageURL) {
         return false;
     }
     if (!result) {
@@ -38,13 +31,15 @@ static bool ios_get_path_in_bundle(const char path[], SkString* result) {
     }
 
     
-    sk_cfp<CFStringRef> filePath(CFURLCopyFileSystemPath(fileURL.get(), kCFURLPOSIXPathStyle));
+    CFStringRef imagePath = CFURLCopyFileSystemPath(imageURL, kCFURLPOSIXPathStyle);
+    CFRelease(imageURL);
 
     
     CFStringEncoding encodingMethod = CFStringGetSystemEncoding();
 
     
-    result->set(CFStringGetCStringPtr(filePath.get(), encodingMethod));
+    result->set(CFStringGetCStringPtr(imagePath, encodingMethod));
+    CFRelease(imagePath);
     return true;
 }
 #endif

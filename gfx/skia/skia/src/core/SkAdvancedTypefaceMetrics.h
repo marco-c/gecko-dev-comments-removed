@@ -48,10 +48,9 @@ struct SkAdvancedTypefaceMetrics {
     FontType fType = kOther_Font;
 
     enum FontFlags : uint8_t {
-        kVariable_FontFlag       = 1 << 0,  
-        kNotEmbeddable_FontFlag  = 1 << 1,  
-        kNotSubsettable_FontFlag = 1 << 2,  
-        kAltDataFormat_FontFlag  = 1 << 3,  
+        kMultiMaster_FontFlag    = 0x01,  
+        kNotEmbeddable_FontFlag  = 0x02,  
+        kNotSubsettable_FontFlag = 0x04,  
     };
     FontFlags fFlags = (FontFlags)0;  
 
@@ -66,9 +65,9 @@ struct SkAdvancedTypefaceMetrics {
     SkIRect fBBox = {0, 0, 0, 0};  
 };
 
-namespace sknonstd {
+namespace skstd {
 template <> struct is_bitmask_enum<SkAdvancedTypefaceMetrics::FontFlags> : std::true_type {};
 template <> struct is_bitmask_enum<SkAdvancedTypefaceMetrics::StyleFlags> : std::true_type {};
-}  
+}
 
 #endif

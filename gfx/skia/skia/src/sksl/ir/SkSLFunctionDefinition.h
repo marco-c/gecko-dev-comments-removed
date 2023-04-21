@@ -8,84 +8,37 @@
 #ifndef SKSL_FUNCTIONDEFINITION
 #define SKSL_FUNCTIONDEFINITION
 
-#include "include/private/SkSLIRNode.h"
-#include "include/private/SkSLProgramElement.h"
-#include "include/private/SkSLStatement.h"
-#include "include/sksl/SkSLPosition.h"
+#include "src/sksl/ir/SkSLBlock.h"
 #include "src/sksl/ir/SkSLFunctionDeclaration.h"
-
-#include <memory>
-#include <string>
-#include <utility>
+#include "src/sksl/ir/SkSLProgramElement.h"
 
 namespace SkSL {
 
-class Context;
 
 
 
-
-class FunctionDefinition final : public ProgramElement {
-public:
-    inline static constexpr Kind kIRNodeKind = Kind::kFunction;
-
-    FunctionDefinition(Position pos, const FunctionDeclaration* declaration, bool builtin,
+struct FunctionDefinition : public ProgramElement {
+    FunctionDefinition(int offset, const FunctionDeclaration& declaration,
                        std::unique_ptr<Statement> body)
-        : INHERITED(pos, kIRNodeKind)
-        , fDeclaration(declaration)
-        , fBuiltin(builtin)
-        , fBody(std::move(body)) {}
-
-    
-
-
-
-
-
-
-
-
-
-
-    static std::unique_ptr<FunctionDefinition> Convert(const Context& context,
-                                                       Position pos,
-                                                       const FunctionDeclaration& function,
-                                                       std::unique_ptr<Statement> body,
-                                                       bool builtin);
-
-    const FunctionDeclaration& declaration() const {
-        return *fDeclaration;
-    }
-
-    bool isBuiltin() const {
-        return fBuiltin;
-    }
-
-    std::unique_ptr<Statement>& body() {
-        return fBody;
-    }
-
-    const std::unique_ptr<Statement>& body() const {
-        return fBody;
-    }
+    : INHERITED(offset, kFunction_Kind)
+    , fDeclaration(declaration)
+    , fBody(std::move(body)) {}
 
     std::unique_ptr<ProgramElement> clone() const override {
-        return std::make_unique<FunctionDefinition>(fPosition, &this->declaration(),
-                                                    false, this->body()->clone());
+        return std::unique_ptr<ProgramElement>(new FunctionDefinition(fOffset, fDeclaration,
+                                                                      fBody->clone()));
     }
 
-    std::string description() const override {
-        return this->declaration().description() + " " + this->body()->description();
+    String description() const override {
+        return fDeclaration.description() + " " + fBody->description();
     }
 
-private:
-    const FunctionDeclaration* fDeclaration;
-    bool fBuiltin;
+    const FunctionDeclaration& fDeclaration;
     std::unique_ptr<Statement> fBody;
 
-    using INHERITED = ProgramElement;
+    typedef ProgramElement INHERITED;
 };
 
-}  
+} 
 
 #endif

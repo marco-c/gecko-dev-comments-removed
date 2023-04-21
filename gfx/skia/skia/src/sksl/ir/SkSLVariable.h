@@ -8,170 +8,75 @@
 #ifndef SKSL_VARIABLE
 #define SKSL_VARIABLE
 
-#include "include/core/SkTypes.h"
-#include "include/private/SkSLIRNode.h"
-#include "include/private/SkSLModifiers.h"
-#include "include/private/SkSLStatement.h"
-#include "include/private/SkSLSymbol.h"
-#include "include/sksl/SkSLPosition.h"
+#include "src/sksl/SkSLPosition.h"
+#include "src/sksl/ir/SkSLModifiers.h"
+#include "src/sksl/ir/SkSLSymbol.h"
 #include "src/sksl/ir/SkSLType.h"
-
-#include <cstdint>
-#include <memory>
-#include <string>
-#include <string_view>
 
 namespace SkSL {
 
-class Context;
-class Expression;
-class GlobalVarDeclaration;
-class InterfaceBlock;
-class Mangler;
-class SymbolTable;
-class VarDeclaration;
-
-enum class VariableStorage : int8_t {
-    kGlobal,
-    kInterfaceBlock,
-    kLocal,
-    kParameter,
-};
+struct Expression;
 
 
 
 
 
 
-class Variable : public Symbol {
-public:
-    using Storage = VariableStorage;
-
-    inline static constexpr Kind kIRNodeKind = Kind::kVariable;
-
-    Variable(Position pos, Position modifiersPosition, const Modifiers* modifiers,
-            std::string_view name, const Type* type, bool builtin, Storage storage)
-    : INHERITED(pos, kIRNodeKind, name, type)
-    , fModifiersPosition(modifiersPosition)
-    , fModifiers(modifiers)
-    , fStorage(storage)
-    , fBuiltin(builtin) {}
-
-    ~Variable() override;
-
-    static std::unique_ptr<Variable> Convert(const Context& context, Position pos,
-            Position modifiersPos, const Modifiers& modifiers, const Type* baseType,
-            Position namePos, std::string_view name, bool isArray,
-            std::unique_ptr<Expression> arraySize, Variable::Storage storage);
-
-    static std::unique_ptr<Variable> Make(const Context& context, Position pos,
-            Position modifiersPos, const Modifiers& modifiers, const Type* baseType,
-            std::string_view name, bool isArray, std::unique_ptr<Expression> arraySize,
-            Variable::Storage storage);
-
-    
-
-
-
-    struct ScratchVariable {
-        const Variable* fVarSymbol;
-        std::unique_ptr<Statement> fVarDecl;
+struct Variable : public Symbol {
+    enum Storage {
+        kGlobal_Storage,
+        kInterfaceBlock_Storage,
+        kLocal_Storage,
+        kParameter_Storage
     };
-    static ScratchVariable MakeScratchVariable(const Context& context,
-                                               Mangler& mangler,
-                                               std::string_view baseName,
-                                               const Type* type,
-                                               const Modifiers& modifiers,
-                                               SymbolTable* symbolTable,
-                                               std::unique_ptr<Expression> initialValue);
-    const Modifiers& modifiers() const {
-        return *fModifiers;
-    }
 
-    void setModifiers(const Modifiers* modifiers) {
-        fModifiers = modifiers;
-    }
+    Variable(int offset, Modifiers modifiers, StringFragment name, const Type& type,
+             Storage storage, Expression* initialValue = nullptr)
+    : INHERITED(offset, kVariable_Kind, name)
+    , fModifiers(modifiers)
+    , fType(type)
+    , fStorage(storage)
+    , fInitialValue(initialValue)
+    , fReadCount(0)
+    , fWriteCount(initialValue ? 1 : 0) {}
 
-    Position modifiersPosition() const {
-        return fModifiersPosition;
-    }
-
-    bool isBuiltin() const {
-        return fBuiltin;
-    }
-
-    Storage storage() const {
-        return fStorage;
-    }
-
-    const Expression* initialValue() const;
-
-    VarDeclaration* varDeclaration() const;
-
-    void setVarDeclaration(VarDeclaration* declaration);
-
-    GlobalVarDeclaration* globalVarDeclaration() const;
-
-    void setGlobalVarDeclaration(GlobalVarDeclaration* global);
-
-    void detachDeadVarDeclaration() {
+    ~Variable() override {
         
-        fDeclaringElement = nullptr;
+        if (fInitialValue) {
+            --fWriteCount;
+        }
+        SkASSERT(!fReadCount && !fWriteCount);
     }
+
+    virtual String description() const override {
+        return fModifiers.description() + fType.fName + " " + fName;
+    }
+
+    bool dead() const {
+        if ((fStorage != kLocal_Storage && fReadCount) ||
+            (fModifiers.fFlags & (Modifiers::kIn_Flag | Modifiers::kOut_Flag |
+                                 Modifiers::kUniform_Flag))) {
+            return false;
+        }
+        return !fWriteCount ||
+               (!fReadCount && !(fModifiers.fFlags & (Modifiers::kPLS_Flag |
+                                                      Modifiers::kPLSOut_Flag)));
+    }
+
+    mutable Modifiers fModifiers;
+    const Type& fType;
+    const Storage fStorage;
+
+    Expression* fInitialValue = nullptr;
 
     
     
+    mutable int fReadCount;
     
-    virtual InterfaceBlock* interfaceBlock() const { return nullptr; }
-
-    virtual void setInterfaceBlock(InterfaceBlock*) { SkUNREACHABLE; }
-
-    virtual void detachDeadInterfaceBlock() {}
-
-    std::string description() const override {
-        return this->modifiers().description() + this->type().displayName() + " " +
-               std::string(this->name());
-    }
-
-    std::string mangledName() const;
-
-private:
-    IRNode* fDeclaringElement = nullptr;
     
-    Position fModifiersPosition;
-    const Modifiers* fModifiers;
-    VariableStorage fStorage;
-    bool fBuiltin;
+    mutable int fWriteCount;
 
-    using INHERITED = Symbol;
-};
-
-
-
-
-
-class InterfaceBlockVariable final : public Variable {
-public:
-    using Variable::Variable;
-
-    ~InterfaceBlockVariable() override;
-
-    InterfaceBlock* interfaceBlock() const override { return fInterfaceBlockElement; }
-
-    void setInterfaceBlock(InterfaceBlock* elem) override {
-        SkASSERT(!fInterfaceBlockElement);
-        fInterfaceBlockElement = elem;
-    }
-
-    void detachDeadInterfaceBlock() override {
-        
-        fInterfaceBlockElement = nullptr;
-    }
-
-private:
-    InterfaceBlock* fInterfaceBlockElement = nullptr;
-
-    using INHERITED = Variable;
+    typedef Symbol INHERITED;
 };
 
 } 

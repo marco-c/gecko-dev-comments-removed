@@ -8,15 +8,15 @@
 #ifndef SkColorSpaceXformSteps_DEFINED
 #define SkColorSpaceXformSteps_DEFINED
 
-#include "include/core/SkAlphaType.h"
-#include "modules/skcms/skcms.h"
-#include "src/core/SkVM.h"
-#include <stdint.h>
+#include "include/core/SkColorSpace.h"
+#include "include/core/SkImageInfo.h"
 
-class SkColorSpace;
 class SkRasterPipeline;
 
 struct SkColorSpaceXformSteps {
+    
+    
+    static bool Required(SkColorSpace* src, SkColorSpace* dst);
 
     struct Flags {
         bool unpremul         = false;
@@ -25,7 +25,7 @@ struct SkColorSpaceXformSteps {
         bool encode           = false;
         bool premul           = false;
 
-        constexpr uint32_t mask() const {
+        uint32_t mask() const {
             return (unpremul        ?  1 : 0)
                  | (linearize       ?  2 : 0)
                  | (gamut_transform ?  4 : 0)
@@ -34,21 +34,26 @@ struct SkColorSpaceXformSteps {
         }
     };
 
-    SkColorSpaceXformSteps() {}
-    SkColorSpaceXformSteps(const SkColorSpace* src, SkAlphaType srcAT,
-                           const SkColorSpace* dst, SkAlphaType dstAT);
-
-    template <typename S, typename D>
-    SkColorSpaceXformSteps(const S& src, const D& dst)
-        : SkColorSpaceXformSteps(src.colorSpace(), src.alphaType(),
-                                 dst.colorSpace(), dst.alphaType()) {}
+    SkColorSpaceXformSteps(SkColorSpace* src, SkAlphaType srcAT,
+                           SkColorSpace* dst, SkAlphaType dstAT);
 
     void apply(float rgba[4]) const;
-    void apply(SkRasterPipeline*) const;
-    skvm::Color program(skvm::Builder*, skvm::Uniforms*, skvm::Color) const;
+    void apply(SkRasterPipeline*, bool src_is_normalized) const;
+
+    void apply(SkRasterPipeline* p, SkColorType srcCT) const {
+    #if 0
+        this->apply(p, srcCT < kRGBA_F16_SkColorType);
+    #else
+        
+        
+        this->apply(p, srcCT < kRGBA_F16Norm_SkColorType);
+    #endif
+    }
 
     Flags flags;
 
+    bool srcTF_is_sRGB,
+         dstTF_is_sRGB;
     skcms_TransferFunction srcTF,     
                            dstTFInv;  
     float src_to_dst_matrix[9];       

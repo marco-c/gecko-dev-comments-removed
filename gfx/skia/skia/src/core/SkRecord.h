@@ -8,9 +8,9 @@
 #ifndef SkRecord_DEFINED
 #define SkRecord_DEFINED
 
-#include "include/private/base/SkTLogic.h"
-#include "include/private/base/SkTemplates.h"
-#include "src/base/SkArenaAlloc.h"
+#include "include/private/SkTLogic.h"
+#include "include/private/SkTemplates.h"
+#include "src/core/SkArenaAlloc.h"
 #include "src/core/SkRecords.h"
 
 
@@ -28,7 +28,7 @@
 class SkRecord : public SkRefCnt {
 public:
     SkRecord() = default;
-    ~SkRecord() override;
+    ~SkRecord();
 
     
     int count() const { return fCount; }
@@ -87,6 +87,19 @@ public:
 
     
     
+    
+    template <typename T, typename Existing>
+    T* replace(int i, const SkRecords::Adopted<Existing>& proofOfAdoption) {
+        SkASSERT(i < this->count());
+
+        SkASSERT(Existing::kType == fRecords[i].type());
+        SkASSERT(proofOfAdoption == fRecords[i].ptr());
+
+        return fRecords[i].set(this->allocCommand<T>());
+    }
+
+    
+    
     size_t bytesUsed() const;
 
     
@@ -116,13 +129,13 @@ private:
     };
 
     template <typename T>
-    std::enable_if_t<std::is_empty<T>::value, T*> allocCommand() {
+    SK_WHEN(std::is_empty<T>::value, T*) allocCommand() {
         static T singleton = {};
         return &singleton;
     }
 
     template <typename T>
-    std::enable_if_t<!std::is_empty<T>::value, T*> allocCommand() { return this->alloc<T>(); }
+    SK_WHEN(!std::is_empty<T>::value, T*) allocCommand() { return this->alloc<T>(); }
 
     void grow();
 
@@ -170,7 +183,7 @@ private:
     
     int fCount{0},
         fReserved{0};
-    skia_private::AutoTMalloc<Record> fRecords;
+    SkAutoTMalloc<Record> fRecords;
 
     
     

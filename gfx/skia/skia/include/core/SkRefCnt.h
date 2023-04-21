@@ -9,14 +9,13 @@
 #define SkRefCnt_DEFINED
 
 #include "include/core/SkTypes.h"
-#include "include/private/base/SkDebug.h"
 
-#include <atomic>
-#include <cstddef>
-#include <cstdint>
-#include <iosfwd>
-#include <type_traits>
-#include <utility>
+#include <atomic>       
+#include <cstddef>      
+#include <iosfwd>       
+#include <memory>       
+#include <type_traits>  
+#include <utility>      
 
 
 
@@ -174,7 +173,7 @@ public:
 
     bool unique() const { return 1 == fRefCnt.load(std::memory_order_acquire); }
     void ref() const { (void)fRefCnt.fetch_add(+1, std::memory_order_relaxed); }
-    void unref() const {
+    void  unref() const {
         if (1 == fRefCnt.fetch_add(-1, std::memory_order_acq_rel)) {
             
             SkDEBUGCODE(fRefCnt.store(1, std::memory_order_relaxed));
@@ -182,18 +181,6 @@ public:
         }
     }
     void  deref() const { this->unref(); }
-
-    
-    
-    
-    
-    
-    bool refCntGreaterThan(int32_t threadIsolatedTestCnt) const {
-        int cnt = fRefCnt.load(std::memory_order_acquire);
-        
-        SkASSERT(cnt >= threadIsolatedTestCnt);
-        return cnt > threadIsolatedTestCnt;
-    }
 
 private:
     mutable std::atomic<int32_t> fRefCnt;
@@ -213,11 +200,7 @@ private:
 
 
 
-
-
-
-
-template <typename T> class SK_TRIVIAL_ABI sk_sp {
+template <typename T> class sk_sp {
 public:
     using element_type = T;
 
@@ -331,8 +314,6 @@ public:
         using std::swap;
         swap(fPtr, that.fPtr);
     }
-
-    using sk_is_trivially_relocatable = std::true_type;
 
 private:
     T*  fPtr;

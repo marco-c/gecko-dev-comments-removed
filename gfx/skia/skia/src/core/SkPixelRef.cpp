@@ -6,7 +6,7 @@
 
 
 #include "include/core/SkPixelRef.h"
-#include "include/private/base/SkMutex.h"
+#include "include/private/SkMutex.h"
 #include "src/core/SkBitmapCache.h"
 #include "src/core/SkNextID.h"
 #include "src/core/SkPixelRefPriv.h"
@@ -20,7 +20,7 @@ uint32_t SkNextID::ImageID() {
 
     uint32_t id;
     do {
-        id = nextID.fetch_add(2, std::memory_order_relaxed);
+        id = nextID.fetch_add(2);
     } while (id == 0);
     return id;
 }
@@ -73,28 +73,31 @@ uint32_t SkPixelRef::getGenerationID() const {
     return id & ~1u;  
 }
 
-void SkPixelRef::addGenIDChangeListener(sk_sp<SkIDChangeListener> listener) {
-    if (!listener || !this->genIDIsUnique()) {
+void SkPixelRef::addGenIDChangeListener(GenIDChangeListener* listener) {
+    if (nullptr == listener || !this->genIDIsUnique()) {
         
+        delete listener;
         return;
     }
-    SkASSERT(!listener->shouldDeregister());
-    fGenIDChangeListeners.add(std::move(listener));
+    SkAutoMutexExclusive lock(fGenIDChangeListenersMutex);
+    *fGenIDChangeListeners.append() = listener;
 }
 
 
 void SkPixelRef::callGenIDChangeListeners() {
+    SkAutoMutexExclusive lock(fGenIDChangeListenersMutex);
     
     if (this->genIDIsUnique()) {
-        fGenIDChangeListeners.changed();
+        for (int i = 0; i < fGenIDChangeListeners.count(); i++) {
+            fGenIDChangeListeners[i]->onChange();
+        }
+
         if (fAddedToCache.exchange(false)) {
             SkNotifyBitmapGenIDIsStale(this->getGenerationID());
         }
-    } else {
-        
-        
-        fGenIDChangeListeners.reset();
     }
+    
+    fGenIDChangeListeners.deleteAll();
 }
 
 void SkPixelRef::notifyPixelsChanged() {

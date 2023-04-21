@@ -51,20 +51,22 @@ struct SkImageFilterCacheKey {
 
 class SkImageFilterCache : public SkRefCnt {
 public:
+    SK_USE_FLUENT_IMAGE_FILTER_TYPES_IN_CLASS
+
     enum { kDefaultTransientSize = 32 * 1024 * 1024 };
 
-    ~SkImageFilterCache() override {}
+    virtual ~SkImageFilterCache() {}
     static SkImageFilterCache* Create(size_t maxBytes);
     static SkImageFilterCache* Get();
 
     
     
     virtual bool get(const SkImageFilterCacheKey& key,
-                     skif::FilterResult* result) const = 0;
+                     skif::FilterResult<For::kOutput>* result) const = 0;
     
     
     virtual void set(const SkImageFilterCacheKey& key, const SkImageFilter* filter,
-                     const skif::FilterResult& result) = 0;
+                     const skif::FilterResult<For::kOutput>& result) = 0;
     virtual void purge() = 0;
     virtual void purgeByImageFilter(const SkImageFilter*) = 0;
     SkDEBUGCODE(virtual int count() const = 0;)

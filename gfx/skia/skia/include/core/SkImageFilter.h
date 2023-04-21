@@ -8,6 +8,7 @@
 #ifndef SkImageFilter_DEFINED
 #define SkImageFilter_DEFINED
 
+#include "include/core/SkFilterQuality.h"
 #include "include/core/SkFlattenable.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkRect.h"
@@ -29,6 +30,39 @@ class SkColorFilter;
 
 class SK_API SkImageFilter : public SkFlattenable {
 public:
+    class CropRect {
+    public:
+        enum CropEdge {
+            kHasLeft_CropEdge   = 0x01,
+            kHasTop_CropEdge    = 0x02,
+            kHasWidth_CropEdge  = 0x04,
+            kHasHeight_CropEdge = 0x08,
+            kHasAll_CropEdge    = 0x0F,
+        };
+        CropRect() {}
+        explicit CropRect(const SkRect& rect, uint32_t flags = kHasAll_CropEdge)
+            : fRect(rect), fFlags(flags) {}
+        uint32_t flags() const { return fFlags; }
+        const SkRect& rect() const { return fRect; }
+
+        
+
+
+
+
+
+
+
+
+
+        void applyTo(const SkIRect& imageBounds, const SkMatrix& matrix, bool embiggen,
+                     SkIRect* cropped) const;
+
+    private:
+        SkRect fRect;
+        uint32_t fFlags;
+    };
+
     enum MapDirection {
         kForward_MapDirection,
         kReverse_MapDirection,
@@ -93,6 +127,22 @@ public:
 
     sk_sp<SkImageFilter> makeWithLocalMatrix(const SkMatrix& matrix) const;
 
+    
+
+
+
+    static sk_sp<SkImageFilter> MakeMatrixFilter(const SkMatrix& matrix,
+                                                 SkFilterQuality quality,
+                                                 sk_sp<SkImageFilter> input);
+
+    static SkFlattenable::Type GetFlattenableType() {
+        return kSkImageFilter_Type;
+    }
+
+    SkFlattenable::Type getFlattenableType() const override {
+        return kSkImageFilter_Type;
+    }
+
     static sk_sp<SkImageFilter> Deserialize(const void* data, size_t size,
                                           const SkDeserialProcs* procs = nullptr) {
         return sk_sp<SkImageFilter>(static_cast<SkImageFilter*>(
@@ -108,7 +158,7 @@ protected:
 private:
     friend class SkImageFilter_Base;
 
-    using INHERITED = SkFlattenable;
+    typedef SkFlattenable INHERITED;
 };
 
 #endif

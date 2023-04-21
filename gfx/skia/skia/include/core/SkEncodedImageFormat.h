@@ -5,5 +5,30 @@
 
 
 
+#ifndef SkEncodedImageFormat_DEFINED
+#define SkEncodedImageFormat_DEFINED
 
-#include "include/codec/SkEncodedImageFormat.h" 
+#include <stdint.h>
+
+
+
+
+enum class SkEncodedImageFormat {
+#ifdef SK_BUILD_FOR_GOOGLE3
+    kUnknown,
+#endif
+    kBMP,
+    kGIF,
+    kICO,
+    kJPEG,
+    kPNG,
+    kWBMP,
+    kWEBP,
+    kPKM,
+    kKTX,
+    kASTC,
+    kDNG,
+    kHEIF,
+};
+
+#endif  

@@ -16,15 +16,16 @@
 #include "include/core/SkPoint.h"
 #include <functional>  
 
-#ifndef SK_SUPPORT_LEGACY_DRAWLOOPER
-#error "SkDrawLooper is unsupported"
-#endif
-
 class  SkArenaAlloc;
 class  SkCanvas;
-class  SkMatrix;
 class  SkPaint;
 struct SkRect;
+class  SkString;
+
+
+
+
+
 
 
 
@@ -129,7 +130,7 @@ protected:
     SkDrawLooper() {}
 
 private:
-    using INHERITED = SkFlattenable;
+    typedef SkFlattenable INHERITED;
 };
 
 #endif

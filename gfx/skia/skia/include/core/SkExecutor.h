@@ -17,10 +17,8 @@ public:
     virtual ~SkExecutor();
 
     
-    static std::unique_ptr<SkExecutor> MakeFIFOThreadPool(int threads = 0,
-                                                          bool allowBorrowing = true);
-    static std::unique_ptr<SkExecutor> MakeLIFOThreadPool(int threads = 0,
-                                                          bool allowBorrowing = true);
+    static std::unique_ptr<SkExecutor> MakeFIFOThreadPool(int threads = 0);
+    static std::unique_ptr<SkExecutor> MakeLIFOThreadPool(int threads = 0);
 
     
     static SkExecutor& GetDefault();
@@ -31,11 +29,6 @@ public:
 
     
     virtual void borrow() {}
-
-protected:
-    SkExecutor() = default;
-    SkExecutor(const SkExecutor&) = delete;
-    SkExecutor& operator=(const SkExecutor&) = delete;
 };
 
 #endif

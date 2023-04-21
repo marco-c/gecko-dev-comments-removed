@@ -8,28 +8,11 @@
 #ifndef SKSL_VARIABLEREFERENCE
 #define SKSL_VARIABLEREFERENCE
 
-#include "include/core/SkTypes.h"
-#include "include/private/SkSLIRNode.h"
-#include "include/sksl/SkSLPosition.h"
 #include "src/sksl/ir/SkSLExpression.h"
-
-#include <cstdint>
-#include <memory>
-#include <string>
 
 namespace SkSL {
 
-class Variable;
-enum class OperatorPrecedence : uint8_t;
-
-enum class VariableRefKind : int8_t {
-    kRead,
-    kWrite,
-    kReadWrite,
-    
-    
-    kPointer
-};
+class IRGenerator;
 
 
 
@@ -38,50 +21,55 @@ enum class VariableRefKind : int8_t {
 
 
 
-class VariableReference final : public Expression {
-public:
-    using RefKind = VariableRefKind;
+struct VariableReference : public Expression {
+    enum RefKind {
+        kRead_RefKind,
+        kWrite_RefKind,
+        kReadWrite_RefKind,
+        
+        
+        kPointer_RefKind
+    };
 
-    inline static constexpr Kind kIRNodeKind = Kind::kVariableReference;
+    VariableReference(int offset, const Variable& variable, RefKind refKind = kRead_RefKind);
 
-    VariableReference(Position pos, const Variable* variable, RefKind refKind);
-
-    
-    
-    static std::unique_ptr<Expression> Make(Position pos,
-                                            const Variable* variable,
-                                            RefKind refKind = RefKind::kRead) {
-        SkASSERT(variable);
-        return std::make_unique<VariableReference>(pos, variable, refKind);
-    }
-
-    VariableReference(const VariableReference&) = delete;
-    VariableReference& operator=(const VariableReference&) = delete;
-
-    const Variable* variable() const {
-        return fVariable;
-    }
+    ~VariableReference() override;
 
     RefKind refKind() const {
         return fRefKind;
     }
 
     void setRefKind(RefKind refKind);
-    void setVariable(const Variable* variable);
 
-    std::unique_ptr<Expression> clone(Position pos) const override {
-        return std::make_unique<VariableReference>(pos, this->variable(), this->refKind());
+    bool hasSideEffects() const override {
+        return false;
     }
 
-    std::string description(OperatorPrecedence) const override;
+    bool isConstant() const override {
+        return 0 != (fVariable.fModifiers.fFlags & Modifiers::kConst_Flag);
+    }
+
+    std::unique_ptr<Expression> clone() const override {
+        return std::unique_ptr<Expression>(new VariableReference(fOffset, fVariable, fRefKind));
+    }
+
+    String description() const override {
+        return fVariable.fName;
+    }
+
+    static std::unique_ptr<Expression> copy_constant(const IRGenerator& irGenerator,
+                                                     const Expression* expr);
+
+    std::unique_ptr<Expression> constantPropagate(const IRGenerator& irGenerator,
+                                                  const DefinitionMap& definitions) override;
+
+    const Variable& fVariable;
+    RefKind fRefKind;
 
 private:
-    const Variable* fVariable;
-    VariableRefKind fRefKind;
-
-    using INHERITED = Expression;
+    typedef Expression INHERITED;
 };
 
-}  
+} 
 
 #endif

@@ -9,17 +9,9 @@
 #define SkJpegEncoder_DEFINED
 
 #include "include/encode/SkEncoder.h"
-#include "include/private/base/SkAPI.h"
 
-#include <memory>
-
-class SkColorSpace;
-class SkData;
 class SkJpegEncoderMgr;
-class SkPixmap;
 class SkWStream;
-class SkYUVAPixmaps;
-struct skcms_ICCProfile;
 
 class SK_API SkJpegEncoder : public SkEncoder {
 public:
@@ -58,7 +50,6 @@ public:
 
 
 
-
         Downsample fDownsample = Downsample::k420;
 
         
@@ -70,21 +61,6 @@ public:
 
 
         AlphaOption fAlphaOption = AlphaOption::kIgnore;
-
-        
-
-
-        const SkData* xmpMetadata = nullptr;
-
-        
-
-
-
-
-
-
-        const skcms_ICCProfile* fICCProfile = nullptr;
-        const char* fICCProfileDescription = nullptr;
     };
 
     
@@ -94,10 +70,6 @@ public:
 
 
     static bool Encode(SkWStream* dst, const SkPixmap& src, const Options& options);
-    static bool Encode(SkWStream* dst,
-                       const SkYUVAPixmaps& src,
-                       const SkColorSpace* srcColorSpace,
-                       const Options& options);
 
     
 
@@ -109,10 +81,6 @@ public:
 
     static std::unique_ptr<SkEncoder> Make(SkWStream* dst, const SkPixmap& src,
                                            const Options& options);
-    static std::unique_ptr<SkEncoder> Make(SkWStream* dst,
-                                           const SkYUVAPixmaps& src,
-                                           const SkColorSpace* srcColorSpace,
-                                           const Options& options);
 
     ~SkJpegEncoder() override;
 
@@ -121,17 +89,9 @@ protected:
 
 private:
     SkJpegEncoder(std::unique_ptr<SkJpegEncoderMgr>, const SkPixmap& src);
-    SkJpegEncoder(std::unique_ptr<SkJpegEncoderMgr>, const SkYUVAPixmaps* srcYUVA);
-
-    static std::unique_ptr<SkEncoder> Make(SkWStream* dst,
-                                           const SkPixmap* src,
-                                           const SkYUVAPixmaps* srcYUVA,
-                                           const SkColorSpace* srcYUVAColorSpace,
-                                           const Options& options);
 
     std::unique_ptr<SkJpegEncoderMgr> fEncoderMgr;
-    const SkYUVAPixmaps* fSrcYUVA = nullptr;
-    using INHERITED = SkEncoder;
+    typedef SkEncoder INHERITED;
 };
 
 #endif

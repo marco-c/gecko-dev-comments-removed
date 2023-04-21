@@ -5,27 +5,12 @@
 
 
 
+#include "include/core/SkPathMeasure.h"
+#include "include/core/SkStrokeRec.h"
+#include "src/core/SkPointPriv.h"
 #include "src/utils/SkDashPathPriv.h"
 
-#include "include/core/SkPaint.h"
-#include "include/core/SkPath.h"
-#include "include/core/SkPathEffect.h"
-#include "include/core/SkPathMeasure.h"
-#include "include/core/SkPoint.h"
-#include "include/core/SkRect.h"
-#include "include/core/SkScalar.h"
-#include "include/core/SkStrokeRec.h"
-#include "include/core/SkTypes.h"
-#include "include/private/base/SkAlign.h"
-#include "include/private/base/SkPathEnums.h"
-#include "include/private/base/SkTo.h"
-#include "src/core/SkPathPriv.h"
-#include "src/core/SkPointPriv.h"
-
-#include <algorithm>
-#include <cmath>
-#include <cstdint>
-#include <iterator>
+#include <utility>
 
 static inline int is_even(int x) {
     return !(x & 1);
@@ -107,7 +92,7 @@ static void outset_for_stroke(SkRect* rect, const SkStrokeRec& rec) {
 
 static void adjust_zero_length_line(SkPoint pts[2]) {
     SkASSERT(pts[0] == pts[1]);
-    pts[1].fX += std::max(1.001f, pts[1].fX) * SK_ScalarNearlyZero;
+    pts[1].fX += SkTMax(1.001f, pts[1].fX) * SK_ScalarNearlyZero;
 }
 
 static bool clip_line(SkPoint pts[2], const SkRect& bounds, SkScalar intervalLength,
@@ -205,13 +190,12 @@ static bool cull_path(const SkPath& srcPath, const SkStrokeRec& rec,
         SkPoint pts[4];  
         SkAssertResult(SkPath::kMove_Verb == iter.next(pts));
 
-        double accum = 0;  
-                           
+        SkScalar accum = 0;  
         while (iter.next(pts) == SkPath::kLine_Verb) {
             
             SkVector v = pts[1] - pts[0];
 
-            if (clip_line(pts, bounds, intervalLength, std::fmod(accum, intervalLength))) {
+            if (clip_line(pts, bounds, intervalLength, SkScalarMod(accum, intervalLength))) {
                 
                 
                 SkPoint last;
@@ -261,10 +245,7 @@ public:
         
 
         SkScalar ptCount = pathLength * intervalCount / (float)intervalLength;
-        ptCount = std::min(ptCount, SkDashPath::kMaxDashCount);
-        if (SkScalarIsNaN(ptCount)) {
-            return false;
-        }
+        ptCount = SkTMin(ptCount, SkDashPath::kMaxDashCount);
         int n = SkScalarCeilToInt(ptCount) << 2;
         dst->incReserve(n);
 
@@ -291,7 +272,7 @@ public:
         pts[2].set(x1 - fNormal.fX, y1 - fNormal.fY);   
         pts[3].set(x0 - fNormal.fX, y0 - fNormal.fY);   
 
-        path->addPoly(pts, std::size(pts), false);
+        path->addPoly(pts, SK_ARRAY_COUNT(pts), false);
     }
 
 private:
@@ -305,7 +286,7 @@ private:
 bool SkDashPath::InternalFilter(SkPath* dst, const SkPath& src, SkStrokeRec* rec,
                                 const SkRect* cullRect, const SkScalar aIntervals[],
                                 int32_t count, SkScalar initialDashLength, int32_t initialDashIndex,
-                                SkScalar intervalLength, SkScalar startPhase,
+                                SkScalar intervalLength,
                                 StrokeRecApplication strokeRecApplication) {
     
     SkASSERT(is_even(count));
@@ -327,11 +308,7 @@ bool SkDashPath::InternalFilter(SkPath* dst, const SkPath& src, SkStrokeRec* rec
         
         if (src.isRect(nullptr) && src.isLastContourClosed() && is_even(initialDashIndex)) {
             SkScalar pathLength = SkPathMeasure(src, false, rec->getResScale()).getLength();
-#if defined(SK_LEGACY_RECT_DASHING_BUG)
             SkScalar endPhase = SkScalarMod(pathLength + initialDashLength, intervalLength);
-#else
-            SkScalar endPhase = SkScalarMod(pathLength + startPhase, intervalLength);
-#endif
             int index = 0;
             while (endPhase > intervals[index]) {
                 endPhase -= intervals[index++];
@@ -447,9 +424,8 @@ bool SkDashPath::InternalFilter(SkPath* dst, const SkPath& src, SkStrokeRec* rec
         }
     } while (meas.nextContour());
 
-    
     if (segCount > 1) {
-        SkPathPriv::SetConvexity(*dst, SkPathConvexity::kConcave);
+        dst->setConvexity(SkPath::kConcave_Convexity);
     }
 
     return true;
@@ -466,7 +442,7 @@ bool SkDashPath::FilterDashPath(SkPath* dst, const SkPath& src, SkStrokeRec* rec
     CalcDashParameters(info.fPhase, info.fIntervals, info.fCount,
                        &initialDashLength, &initialDashIndex, &intervalLength);
     return InternalFilter(dst, src, rec, cullRect, info.fIntervals, info.fCount, initialDashLength,
-                          initialDashIndex, intervalLength, info.fPhase);
+                          initialDashIndex, intervalLength);
 }
 
 bool SkDashPath::ValidDashPath(SkScalar phase, const SkScalar intervals[], int32_t count) {

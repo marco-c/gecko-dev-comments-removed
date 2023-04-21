@@ -7,47 +7,20 @@
 
 #include "src/codec/SkJpegCodec.h"
 
-#include "include/core/SkTypes.h"
-
-#ifdef SK_CODEC_DECODES_JPEG
 #include "include/codec/SkCodec.h"
-#include "include/core/SkAlphaType.h"
-#include "include/core/SkColorType.h"
-#include "include/core/SkData.h"
-#include "include/core/SkImageInfo.h"
-#include "include/core/SkPixmap.h"
-#include "include/core/SkRefCnt.h"
 #include "include/core/SkStream.h"
-#include "include/core/SkYUVAInfo.h"
-#include "include/private/base/SkAlign.h"
-#include "include/private/base/SkMalloc.h"
-#include "include/private/base/SkTemplates.h"
-#include "include/private/base/SkTo.h"
-#include "modules/skcms/skcms.h"
+#include "include/core/SkTypes.h"
+#include "include/private/SkColorData.h"
+#include "include/private/SkTemplates.h"
+#include "include/private/SkTo.h"
 #include "src/codec/SkCodecPriv.h"
-#include "src/codec/SkJpegConstants.h"
 #include "src/codec/SkJpegDecoderMgr.h"
-#include "src/codec/SkJpegPriv.h"
 #include "src/codec/SkParseEncodedOrigin.h"
-#include "src/codec/SkSwizzler.h"
+#include "src/pdf/SkJpegInfo.h"
 
-#ifdef SK_CODEC_DECODES_JPEG_GAINMAPS
-#include "include/private/SkGainmapInfo.h"
-#include "src/codec/SkJpegMultiPicture.h"
-#include "src/codec/SkJpegSegmentScan.h"
-#include "src/codec/SkJpegXmp.h"
-#endif  
 
-#include <array>
-#include <csetjmp>
-#include <cstring>
-#include <utility>
-#include <vector>
-
-using namespace skia_private;
-
-class SkSampler;
-struct SkGainmapInfo;
+#include <stdio.h>
+#include "src/codec/SkJpegUtility.h"
 
 
 #if defined(__GNUC__) && !defined(__clang__)
@@ -55,20 +28,25 @@ struct SkGainmapInfo;
 #endif
 
 extern "C" {
+    #include "jerror.h"
     #include "jpeglib.h"
-    #include "jmorecfg.h"
 }
 
 bool SkJpegCodec::IsJpeg(const void* buffer, size_t bytesRead) {
-    return bytesRead >= sizeof(kJpegSig) && !memcmp(buffer, kJpegSig, sizeof(kJpegSig));
+    constexpr uint8_t jpegSig[] = { 0xFF, 0xD8, 0xFF };
+    return bytesRead >= 3 && !memcmp(buffer, jpegSig, sizeof(jpegSig));
 }
+
+const uint32_t kExifHeaderSize = 14;
+const uint32_t kExifMarker = JPEG_APP0 + 1;
 
 static bool is_orientation_marker(jpeg_marker_struct* marker, SkEncodedOrigin* orientation) {
     if (kExifMarker != marker->marker || marker->data_length < kExifHeaderSize) {
         return false;
     }
 
-    if (0 != memcmp(marker->data, kExifSig, sizeof(kExifSig))) {
+    constexpr uint8_t kExifSig[] { 'E', 'x', 'i', 'f', '\0' };
+    if (memcmp(marker->data, kExifSig, sizeof(kExifSig))) {
         return false;
     }
 
@@ -89,6 +67,13 @@ static SkEncodedOrigin get_exif_orientation(jpeg_decompress_struct* dinfo) {
     return kDefault_SkEncodedOrigin;
 }
 
+static bool is_icc_marker(jpeg_marker_struct* marker) {
+    if (kICCMarker != marker->marker || marker->data_length < kICCMarkerHeaderSize) {
+        return false;
+    }
+
+    return !memcmp(marker->data, kICCSig, sizeof(kICCSig));
+}
 
 
 
@@ -96,143 +81,67 @@ static SkEncodedOrigin get_exif_orientation(jpeg_decompress_struct* dinfo) {
 
 
 
-
-
-
-
-
-
-
-
-
-static sk_sp<SkData> read_metadata(jpeg_decompress_struct* dinfo,
-                                   const uint32_t targetMarker,
-                                   const uint8_t* signature,
-                                   size_t signatureSize,
-                                   size_t bytesInIndex = 0,
-                                   bool alwaysCopyData = false) {
+static std::unique_ptr<SkEncodedInfo::ICCProfile> read_color_profile(jpeg_decompress_struct* dinfo)
+{
     
-    
-    const size_t headerSize = signatureSize + 2 * bytesInIndex;
-
-    
-    std::vector<sk_sp<SkData>> parts;
-
-    
-    size_t partsTotalSize = 0;
-
-    
-    uint32_t foundPartCount = 0;
-
-    
-    uint32_t expectedPartCount = 0;
+    jpeg_marker_struct* markerSequence[256];
+    memset(markerSequence, 0, sizeof(markerSequence));
+    uint8_t numMarkers = 0;
+    size_t totalBytes = 0;
 
     
     for (jpeg_marker_struct* marker = dinfo->marker_list; marker; marker = marker->next) {
-        
-        if (targetMarker != marker->marker || marker->data_length <= headerSize ||
-            memcmp(marker->data, signature, signatureSize) != 0) {
-            continue;
-        }
-
-        
-        
-        uint32_t partIndex = 0;
-        uint32_t partCount = 0;
-        if (bytesInIndex == 0) {
-            partIndex = 1;
-            partCount = 1;
-        } else {
-            for (size_t i = 0; i < bytesInIndex; ++i) {
-                partIndex = (partIndex << 8) + marker->data[signatureSize + i];
-                partCount = (partCount << 8) + marker->data[signatureSize + bytesInIndex + i];
+        if (is_icc_marker(marker)) {
+            
+            if (0 == numMarkers) {
+                numMarkers = marker->data[13];
+                if (0 == numMarkers) {
+                    SkCodecPrintf("ICC Profile Error: numMarkers must be greater than zero.\n");
+                    return nullptr;
+                }
+            } else if (numMarkers != marker->data[13]) {
+                SkCodecPrintf("ICC Profile Error: numMarkers must be consistent.\n");
+                return nullptr;
             }
-        }
 
-        
-        if (!partCount) {
-            SkCodecPrintf("Invalid marker part count zero\n");
-            return nullptr;
-        }
-
-        
-        if (partIndex <= 0 || partIndex > partCount) {
-            SkCodecPrintf("Invalid marker index %u for count %u\n", partIndex, partCount);
-            return nullptr;
-        }
-
-        
-        if (expectedPartCount == 0) {
-            expectedPartCount = partCount;
-            parts.resize(expectedPartCount);
-        }
-
-        
-        if (partCount != expectedPartCount) {
-            SkCodecPrintf("Conflicting marker counts %u vs %u\n", partCount, expectedPartCount);
-            return nullptr;
-        }
-
-        
-        auto partData = SkData::MakeWithoutCopy(marker->data + headerSize,
-                                                marker->data_length - headerSize);
-
-        
-        if (parts[partIndex-1]) {
-            SkCodecPrintf("Duplicate parts for index %u of %u\n", partIndex, expectedPartCount);
-            return nullptr;
-        }
-
-        
-        partsTotalSize += partData->size();
-        parts[partIndex-1] = std::move(partData);
-        foundPartCount += 1;
-
-        
-        if (foundPartCount == expectedPartCount) {
-            break;
+            
+            
+            uint8_t markerIndex = marker->data[12];
+            if (markerIndex == 0 || markerIndex > numMarkers) {
+                SkCodecPrintf("ICC Profile Error: markerIndex is invalid.\n");
+                return nullptr;
+            }
+            if (markerSequence[markerIndex]) {
+                SkCodecPrintf("ICC Profile Error: Duplicate value of markerIndex.\n");
+                return nullptr;
+            }
+            markerSequence[markerIndex] = marker;
+            SkASSERT(marker->data_length >= kICCMarkerHeaderSize);
+            totalBytes += marker->data_length - kICCMarkerHeaderSize;
         }
     }
 
-    
-    if (expectedPartCount == 0) {
+    if (0 == totalBytes) {
+        
         return nullptr;
     }
 
     
-    if (foundPartCount != expectedPartCount) {
-        SkCodecPrintf("Incomplete set of markers (expected %u got %u)\n",
-                      expectedPartCount,
-                      foundPartCount);
-        return nullptr;
+    sk_sp<SkData> iccData = SkData::MakeUninitialized(totalBytes);
+    void* dst = iccData->writable_data();
+    for (uint32_t i = 1; i <= numMarkers; i++) {
+        jpeg_marker_struct* marker = markerSequence[i];
+        if (!marker) {
+            SkCodecPrintf("ICC Profile Error: Missing marker %d of %d.\n", i, numMarkers);
+            return nullptr;
+        }
+
+        void* src = SkTAddOffset<void>(marker->data, kICCMarkerHeaderSize);
+        size_t bytes = marker->data_length - kICCMarkerHeaderSize;
+        memcpy(dst, src, bytes);
+        dst = SkTAddOffset<void>(dst, bytes);
     }
 
-    
-    if (!alwaysCopyData && expectedPartCount == 1) {
-        return std::move(parts[0]);
-    }
-
-    
-    auto result = SkData::MakeUninitialized(partsTotalSize);
-    void* copyDest = result->writable_data();
-    for (const auto& part : parts) {
-        memcpy(copyDest, part->data(), part->size());
-        copyDest = SkTAddOffset<void>(copyDest, part->size());
-    }
-    return result;
-}
-
-static std::unique_ptr<SkEncodedInfo::ICCProfile> read_color_profile(
-        jpeg_decompress_struct* dinfo) {
-    auto iccData = read_metadata(dinfo,
-                                 kICCMarker,
-                                 kICCSig,
-                                 sizeof(kICCSig),
-                                 kICCMarkerIndexSize,
-                                 true);
-    if (!iccData) {
-        return nullptr;
-    }
     return SkEncodedInfo::ICCProfile::Make(std::move(iccData));
 }
 
@@ -259,8 +168,6 @@ SkCodec::Result SkJpegCodec::ReadHeader(SkStream* stream, SkCodec** codecOut,
     if (codecOut) {
         jpeg_save_markers(dinfo, kExifMarker, 0xFFFF);
         jpeg_save_markers(dinfo, kICCMarker, 0xFFFF);
-        jpeg_save_markers(dinfo, kMpfMarker, 0xFFFF);
-        jpeg_save_markers(dinfo, kGainmapMarker, 0xFFFF);
     }
 
     
@@ -313,10 +220,8 @@ SkCodec::Result SkJpegCodec::ReadHeader(SkStream* stream, SkCodec** codecOut,
                                                  color, SkEncodedInfo::kOpaque_Alpha, 8,
                                                  std::move(profile));
 
-        SkJpegCodec* codec = new SkJpegCodec(std::move(info),
-                                             std::unique_ptr<SkStream>(stream),
-                                             decoderMgr.release(),
-                                             orientation);
+        SkJpegCodec* codec = new SkJpegCodec(std::move(info), std::unique_ptr<SkStream>(stream),
+                                             decoderMgr.release(), orientation);
         *codecOut = codec;
     } else {
         SkASSERT(nullptr != decoderMgrOut);
@@ -343,14 +248,15 @@ std::unique_ptr<SkCodec> SkJpegCodec::MakeFromStream(std::unique_ptr<SkStream> s
     return nullptr;
 }
 
-SkJpegCodec::SkJpegCodec(SkEncodedInfo&& info,
-                         std::unique_ptr<SkStream> stream,
-                         JpegDecoderMgr* decoderMgr,
-                         SkEncodedOrigin origin)
-        : INHERITED(std::move(info), skcms_PixelFormat_RGBA_8888, std::move(stream), origin)
-        , fDecoderMgr(decoderMgr)
-        , fReadyState(decoderMgr->dinfo()->global_state) {}
-SkJpegCodec::~SkJpegCodec() = default;
+SkJpegCodec::SkJpegCodec(SkEncodedInfo&& info, std::unique_ptr<SkStream> stream,
+                         JpegDecoderMgr* decoderMgr, SkEncodedOrigin origin)
+    : INHERITED(std::move(info), skcms_PixelFormat_RGBA_8888, std::move(stream), origin)
+    , fDecoderMgr(decoderMgr)
+    , fReadyState(decoderMgr->dinfo()->global_state)
+    , fSwizzleSrcRow(nullptr)
+    , fColorXformSrcRow(nullptr)
+    , fSwizzlerSubset(SkIRect::MakeEmpty())
+{}
 
 
 
@@ -477,7 +383,6 @@ bool SkJpegCodec::conversionSupported(const SkImageInfo& dstInfo, bool srcIsOpaq
                 fDecoderMgr->dinfo()->out_color_space = JCS_GRAYSCALE;
             }
             break;
-        case kBGR_101010x_XR_SkColorType:
         case kRGBA_F16_SkColorType:
             SkASSERT(needsColorXform);
             fDecoderMgr->dinfo()->out_color_space = JCS_EXT_RGBA;
@@ -648,9 +553,7 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
         this->initializeSwizzler(dstInfo, options, true);
     }
 
-    if (!this->allocateStorage(dstInfo)) {
-        return kInternalError;
-    }
+    this->allocateStorage(dstInfo);
 
     int rows = this->readRows(dstInfo, dst, dstRowBytes, dstInfo.height(), options);
     if (rows < dstInfo.height()) {
@@ -661,7 +564,7 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
     return kSuccess;
 }
 
-bool SkJpegCodec::allocateStorage(const SkImageInfo& dstInfo) {
+void SkJpegCodec::allocateStorage(const SkImageInfo& dstInfo) {
     int dstWidth = dstInfo.width();
 
     size_t swizzleBytes = 0;
@@ -679,14 +582,11 @@ bool SkJpegCodec::allocateStorage(const SkImageInfo& dstInfo) {
 
     size_t totalBytes = swizzleBytes + xformBytes;
     if (totalBytes > 0) {
-        if (!fStorage.reset(totalBytes)) {
-            return false;
-        }
+        fStorage.reset(totalBytes);
         fSwizzleSrcRow = (swizzleBytes > 0) ? fStorage.get() : nullptr;
         fColorXformSrcRow = (xformBytes > 0) ?
                 SkTAddOffset<uint32_t>(fStorage.get(), swizzleBytes) : nullptr;
     }
-    return true;
 }
 
 void SkJpegCodec::initializeSwizzler(const SkImageInfo& dstInfo, const Options& options,
@@ -746,9 +646,7 @@ SkSampler* SkJpegCodec::getSampler(bool createIfNecessary) {
             fDecoderMgr->dinfo()->out_color_space, this->getEncodedInfo().profile(),
             this->colorXform());
     this->initializeSwizzler(this->dstInfo(), this->options(), needsCMYKToRGB);
-    if (!this->allocateStorage(this->dstInfo())) {
-        return nullptr;
-    }
+    this->allocateStorage(this->dstInfo());
     return fSwizzler.get();
 }
 
@@ -811,9 +709,7 @@ SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
         this->initializeSwizzler(dstInfo, options, true);
     }
 
-    if (!this->allocateStorage(dstInfo)) {
-        return kInternalError;
-    }
+    this->allocateStorage(dstInfo);
 
     return kSuccess;
 }
@@ -838,10 +734,7 @@ bool SkJpegCodec::onSkipScanlines(int count) {
     return (uint32_t) count == jpeg_skip_scanlines(fDecoderMgr->dinfo(), count);
 }
 
-static bool is_yuv_supported(const jpeg_decompress_struct* dinfo,
-                             const SkJpegCodec& codec,
-                             const SkYUVAPixmapInfo::SupportedDataTypes* supportedDataTypes,
-                             SkYUVAPixmapInfo* yuvaPixmapInfo) {
+static bool is_yuv_supported(jpeg_decompress_struct* dinfo) {
     
     SkASSERT(dinfo->scale_num == dinfo->scale_denom);
 
@@ -888,89 +781,78 @@ static bool is_yuv_supported(const jpeg_decompress_struct* dinfo,
     
     int hSampY = dinfo->comp_info[0].h_samp_factor;
     int vSampY = dinfo->comp_info[0].v_samp_factor;
-    SkASSERT(hSampY == dinfo->max_h_samp_factor);
-    SkASSERT(vSampY == dinfo->max_v_samp_factor);
+    return (1 == hSampY && 1 == vSampY) ||
+           (2 == hSampY && 1 == vSampY) ||
+           (2 == hSampY && 2 == vSampY) ||
+           (1 == hSampY && 2 == vSampY) ||
+           (4 == hSampY && 1 == vSampY) ||
+           (4 == hSampY && 2 == vSampY);
+}
 
-    SkYUVAInfo::Subsampling tempSubsampling;
-    if        (1 == hSampY && 1 == vSampY) {
-        tempSubsampling = SkYUVAInfo::Subsampling::k444;
-    } else if (2 == hSampY && 1 == vSampY) {
-        tempSubsampling = SkYUVAInfo::Subsampling::k422;
-    } else if (2 == hSampY && 2 == vSampY) {
-        tempSubsampling = SkYUVAInfo::Subsampling::k420;
-    } else if (1 == hSampY && 2 == vSampY) {
-        tempSubsampling = SkYUVAInfo::Subsampling::k440;
-    } else if (4 == hSampY && 1 == vSampY) {
-        tempSubsampling = SkYUVAInfo::Subsampling::k411;
-    } else if (4 == hSampY && 2 == vSampY) {
-        tempSubsampling = SkYUVAInfo::Subsampling::k410;
-    } else {
+bool SkJpegCodec::onQueryYUV8(SkYUVASizeInfo* sizeInfo, SkYUVColorSpace* colorSpace) const {
+    jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
+    if (!is_yuv_supported(dinfo)) {
         return false;
     }
-    if (supportedDataTypes &&
-        !supportedDataTypes->supported(SkYUVAInfo::PlaneConfig::kY_U_V,
-                                       SkYUVAPixmapInfo::DataType::kUnorm8)) {
-        return false;
+
+    jpeg_component_info * comp_info = dinfo->comp_info;
+    for (int i = 0; i < 3; ++i) {
+        sizeInfo->fSizes[i].set(comp_info[i].downsampled_width, comp_info[i].downsampled_height);
+        sizeInfo->fWidthBytes[i] = comp_info[i].width_in_blocks * DCTSIZE;
     }
-    if (yuvaPixmapInfo) {
-        SkColorType colorTypes[SkYUVAPixmapInfo::kMaxPlanes];
-        size_t rowBytes[SkYUVAPixmapInfo::kMaxPlanes];
-        for (int i = 0; i < 3; ++i) {
-            colorTypes[i] = kAlpha_8_SkColorType;
-            rowBytes[i] = dinfo->comp_info[i].width_in_blocks * DCTSIZE;
-        }
-        SkYUVAInfo yuvaInfo(codec.dimensions(),
-                            SkYUVAInfo::PlaneConfig::kY_U_V,
-                            tempSubsampling,
-                            kJPEG_Full_SkYUVColorSpace,
-                            codec.getOrigin(),
-                            SkYUVAInfo::Siting::kCentered,
-                            SkYUVAInfo::Siting::kCentered);
-        *yuvaPixmapInfo = SkYUVAPixmapInfo(yuvaInfo, colorTypes, rowBytes);
+
+    
+    sizeInfo->fSizes[3].fHeight = sizeInfo->fSizes[3].fWidth = sizeInfo->fWidthBytes[3] = 0;
+
+    sizeInfo->fOrigin = this->getOrigin();
+
+    if (colorSpace) {
+        *colorSpace = kJPEG_SkYUVColorSpace;
     }
+
     return true;
 }
 
-bool SkJpegCodec::onQueryYUVAInfo(const SkYUVAPixmapInfo::SupportedDataTypes& supportedDataTypes,
-                                  SkYUVAPixmapInfo* yuvaPixmapInfo) const {
-    jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
-    return is_yuv_supported(dinfo, *this, &supportedDataTypes, yuvaPixmapInfo);
-}
+SkCodec::Result SkJpegCodec::onGetYUV8Planes(const SkYUVASizeInfo& sizeInfo,
+                                             void* planes[SkYUVASizeInfo::kMaxCount]) {
+    SkYUVASizeInfo defaultInfo;
 
-SkCodec::Result SkJpegCodec::onGetYUVAPlanes(const SkYUVAPixmaps& yuvaPixmaps) {
     
-    jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
-    if (!is_yuv_supported(dinfo, *this, nullptr, nullptr)) {
-        return fDecoderMgr->returnFailure("onGetYUVAPlanes", kInvalidInput);
+    bool supportsYUV = this->onQueryYUV8(&defaultInfo, nullptr);
+    if (!supportsYUV ||
+            sizeInfo.fSizes[0] != defaultInfo.fSizes[0] ||
+            sizeInfo.fSizes[1] != defaultInfo.fSizes[1] ||
+            sizeInfo.fSizes[2] != defaultInfo.fSizes[2] ||
+            sizeInfo.fWidthBytes[0] < defaultInfo.fWidthBytes[0] ||
+            sizeInfo.fWidthBytes[1] < defaultInfo.fWidthBytes[1] ||
+            sizeInfo.fWidthBytes[2] < defaultInfo.fWidthBytes[2]) {
+        return fDecoderMgr->returnFailure("onGetYUV8Planes", kInvalidInput);
     }
+
     
     skjpeg_error_mgr::AutoPushJmpBuf jmp(fDecoderMgr->errorMgr());
     if (setjmp(jmp)) {
         return fDecoderMgr->returnFailure("setjmp", kInvalidInput);
     }
 
+    
+    jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
+
     dinfo->raw_data_out = TRUE;
     if (!jpeg_start_decompress(dinfo)) {
         return fDecoderMgr->returnFailure("startDecompress", kInvalidInput);
     }
 
-    const std::array<SkPixmap, SkYUVAPixmaps::kMaxPlanes>& planes = yuvaPixmaps.planes();
+    
+    
+    
+    SkASSERT(is_yuv_supported(dinfo));
 
-#ifdef SK_DEBUG
-    {
-        
-        
-        
-        
-        SkYUVAPixmapInfo info;
-        SkASSERT(is_yuv_supported(dinfo, *this, nullptr, &info));
-        SkASSERT(info.yuvaInfo() == yuvaPixmaps.yuvaInfo());
-        for (int i = 0; i < info.numPlanes(); ++i) {
-            SkASSERT(planes[i].colorType() == kAlpha_8_SkColorType);
-            SkASSERT(info.planeInfo(i) == planes[i].info());
-        }
-    }
-#endif
+    
+    
+    SkASSERT(sizeInfo.fSizes[1] == sizeInfo.fSizes[2]);
+    SkASSERT((uint32_t) sizeInfo.fSizes[0].width() == dinfo->output_width &&
+             (uint32_t) sizeInfo.fSizes[0].height() == dinfo->output_height);
 
     
     
@@ -980,27 +862,26 @@ SkCodec::Result SkJpegCodec::onGetYUVAPlanes(const SkYUVAPixmaps& yuvaPixmaps) {
 
     
     JSAMPROW rowptrs[2 * DCTSIZE + DCTSIZE + DCTSIZE];
-    yuv[0] = &rowptrs[0];            
-    yuv[1] = &rowptrs[2 * DCTSIZE];  
-    yuv[2] = &rowptrs[3 * DCTSIZE];  
+    yuv[0] = &rowptrs[0];           
+    yuv[1] = &rowptrs[2 * DCTSIZE]; 
+    yuv[2] = &rowptrs[3 * DCTSIZE]; 
 
     
     int numYRowsPerBlock = DCTSIZE * dinfo->comp_info[0].v_samp_factor;
-    static_assert(sizeof(JSAMPLE) == 1);
     for (int i = 0; i < numYRowsPerBlock; i++) {
-        rowptrs[i] = static_cast<JSAMPLE*>(planes[0].writable_addr()) + i* planes[0].rowBytes();
+        rowptrs[i] = SkTAddOffset<JSAMPLE>(planes[0], i * sizeInfo.fWidthBytes[0]);
     }
     for (int i = 0; i < DCTSIZE; i++) {
         rowptrs[i + 2 * DCTSIZE] =
-                static_cast<JSAMPLE*>(planes[1].writable_addr()) + i* planes[1].rowBytes();
+            SkTAddOffset<JSAMPLE>(planes[1], i * sizeInfo.fWidthBytes[1]);
         rowptrs[i + 3 * DCTSIZE] =
-                static_cast<JSAMPLE*>(planes[2].writable_addr()) + i* planes[2].rowBytes();
+            SkTAddOffset<JSAMPLE>(planes[2], i * sizeInfo.fWidthBytes[2]);
     }
 
     
-    size_t blockIncrementY = numYRowsPerBlock * planes[0].rowBytes();
-    size_t blockIncrementU = DCTSIZE * planes[1].rowBytes();
-    size_t blockIncrementV = DCTSIZE * planes[2].rowBytes();
+    size_t blockIncrementY = numYRowsPerBlock * sizeInfo.fWidthBytes[0];
+    size_t blockIncrementU = DCTSIZE * sizeInfo.fWidthBytes[1];
+    size_t blockIncrementV = DCTSIZE * sizeInfo.fWidthBytes[2];
 
     uint32_t numRowsPerBlock = numYRowsPerBlock;
 
@@ -1016,12 +897,12 @@ SkCodec::Result SkJpegCodec::onGetYUVAPlanes(const SkYUVAPixmaps& yuvaPixmaps) {
         }
 
         
-        for (int j = 0; j < numYRowsPerBlock; j++) {
-            rowptrs[j] += blockIncrementY;
+        for (int i = 0; i < numYRowsPerBlock; i++) {
+            rowptrs[i] += blockIncrementY;
         }
-        for (int j = 0; j < DCTSIZE; j++) {
-            rowptrs[j + 2 * DCTSIZE] += blockIncrementU;
-            rowptrs[j + 3 * DCTSIZE] += blockIncrementV;
+        for (int i = 0; i < DCTSIZE; i++) {
+            rowptrs[i + 2 * DCTSIZE] += blockIncrementU;
+            rowptrs[i + 3 * DCTSIZE] += blockIncrementV;
         }
     }
 
@@ -1033,14 +914,14 @@ SkCodec::Result SkJpegCodec::onGetYUVAPlanes(const SkYUVAPixmaps& yuvaPixmaps) {
         
         
         
-        AutoTMalloc<JSAMPLE> extraRow(planes[0].rowBytes());
+        SkAutoTMalloc<JSAMPLE> dummyRow(sizeInfo.fWidthBytes[0]);
         for (int i = remainingRows; i < numYRowsPerBlock; i++) {
-            rowptrs[i] = extraRow.get();
+            rowptrs[i] = dummyRow.get();
         }
         int remainingUVRows = dinfo->comp_info[1].downsampled_height - DCTSIZE * numIters;
         for (int i = remainingUVRows; i < DCTSIZE; i++) {
-            rowptrs[i + 2 * DCTSIZE] = extraRow.get();
-            rowptrs[i + 3 * DCTSIZE] = extraRow.get();
+            rowptrs[i + 2 * DCTSIZE] = dummyRow.get();
+            rowptrs[i + 3 * DCTSIZE] = dummyRow.get();
         }
 
         JDIMENSION linesRead = jpeg_read_raw_data(dinfo, yuv, numRowsPerBlock);
@@ -1073,8 +954,6 @@ bool SkGetJpegInfo(const void* data, size_t len,
     jpeg_decompress_struct* dinfo = decoderMgr.dinfo();
     jpeg_save_markers(dinfo, kExifMarker, 0xFFFF);
     jpeg_save_markers(dinfo, kICCMarker, 0xFFFF);
-    jpeg_save_markers(dinfo, kMpfMarker, 0xFFFF);
-    jpeg_save_markers(dinfo, kGainmapMarker, 0xFFFF);
     if (JPEG_HEADER_OK != jpeg_read_header(dinfo, true)) {
         return false;
     }
@@ -1093,201 +972,3 @@ bool SkGetJpegInfo(const void* data, size_t len,
     }
     return true;
 }
-
-#ifdef SK_CODEC_DECODES_JPEG_GAINMAPS
-
-static std::unique_ptr<SkJpegXmp> get_xmp_metadata(JpegDecoderMgr* decoderMgr) {
-    std::vector<sk_sp<SkData>> decoderApp1Params;
-    for (jpeg_marker_struct* marker = decoderMgr->dinfo()->marker_list; marker;
-         marker = marker->next) {
-        if (marker->marker != kXMPMarker) {
-            continue;
-        }
-        auto data = SkData::MakeWithoutCopy(marker->data, marker->data_length);
-        decoderApp1Params.push_back(std::move(data));
-    }
-    return SkJpegXmp::Make(decoderApp1Params);
-}
-
-
-
-static std::unique_ptr<SkJpegMultiPictureParameters> find_mp_params(
-        JpegDecoderMgr* decoderMgr, SkJpegSegment* outMpParamsSegment) {
-    std::unique_ptr<SkJpegMultiPictureParameters> mpParams;
-    size_t skippedSegmentCount = 0;
-
-    
-    
-    for (jpeg_marker_struct* marker = decoderMgr->dinfo()->marker_list; marker;
-         marker = marker->next) {
-        if (marker->marker != kMpfMarker) {
-            continue;
-        }
-        mpParams = SkJpegMultiPictureParameters::Make(
-                SkData::MakeWithoutCopy(marker->data, marker->data_length));
-        if (mpParams) {
-            break;
-        }
-        ++skippedSegmentCount;
-    }
-
-    
-    
-    
-    for (const auto& segment : decoderMgr->getSourceMgr()->getAllSegments()) {
-        if (segment.marker != kMpfMarker) {
-            continue;
-        }
-        if (skippedSegmentCount == 0) {
-            *outMpParamsSegment = segment;
-            return mpParams;
-        }
-        skippedSegmentCount--;
-    }
-    return nullptr;
-}
-
-
-
-
-static bool extract_gainmap(SkJpegSourceMgr* decoderSource,
-                            size_t offset,
-                            size_t size,
-                            SkGainmapInfo* outInfo,
-                            std::unique_ptr<SkStream>* outGainmapImageStream) {
-    
-    bool imageDataWasCopied = false;
-    auto imageData = decoderSource->getSubsetData(offset, size, &imageDataWasCopied);
-    if (!imageData) {
-        SkCodecPrintf("Failed to extract MP image.\n");
-        return false;
-    }
-
-    
-    SkJpegSegmentScanner scan(kJpegMarkerStartOfScan);
-    scan.onBytes(imageData->data(), imageData->size());
-    if (scan.hadError() || !scan.isDone()) {
-        SkCodecPrintf("Failed to scan header of MP image.\n");
-        return false;
-    }
-
-    
-    std::vector<sk_sp<SkData>> app1Params;
-    for (const auto& segment : scan.getSegments()) {
-        if (segment.marker != kXMPMarker) {
-            continue;
-        }
-        auto parameters = SkJpegSegmentScanner::GetParameters(imageData.get(), segment);
-        if (!parameters) {
-            continue;
-        }
-        app1Params.push_back(std::move(parameters));
-    }
-    auto xmp = SkJpegXmp::Make(app1Params);
-    if (!xmp) {
-        return false;
-    }
-
-    
-    SkGainmapInfo info;
-    if (!xmp->getGainmapInfoHDRGM(&info) && !xmp->getGainmapInfoHDRGainMap(&info)) {
-        return false;
-    }
-
-    
-    if (outGainmapImageStream) {
-        if (imageDataWasCopied) {
-            *outGainmapImageStream = SkMemoryStream::Make(imageData);
-        } else {
-            *outGainmapImageStream = SkMemoryStream::MakeCopy(imageData->data(), imageData->size());
-        }
-    }
-    *outInfo = info;
-    return true;
-}
-
-bool SkJpegCodec::onGetGainmapInfo(SkGainmapInfo* info,
-                                   std::unique_ptr<SkStream>* gainmapImageStream) {
-    
-    std::unique_ptr<SkJpegXmp> xmp = get_xmp_metadata(fDecoderMgr.get());
-
-    
-    size_t containerGainmapOffset = 0;
-    size_t containerGainmapSize = 0;
-    if (xmp && xmp->getContainerGainmapLocation(&containerGainmapOffset, &containerGainmapSize)) {
-        const auto& segments = fDecoderMgr->getSourceMgr()->getAllSegments();
-        if (!segments.empty()) {
-            const auto& lastSegment = segments.back();
-            if (lastSegment.marker == kJpegMarkerEndOfImage) {
-                containerGainmapOffset += lastSegment.offset + kJpegMarkerCodeSize;
-            }
-        }
-    }
-
-    
-    SkJpegSegment mpParamsSegment;
-    auto mpParams = find_mp_params(fDecoderMgr.get(), &mpParamsSegment);
-
-    
-    if (mpParams) {
-        for (size_t mpImageIndex = 1; mpImageIndex < mpParams->images.size(); ++mpImageIndex) {
-            size_t mpImageOffset = SkJpegMultiPictureParameters::GetAbsoluteOffset(
-                    mpParams->images[mpImageIndex].dataOffset, mpParamsSegment.offset);
-            size_t mpImageSize = mpParams->images[mpImageIndex].size;
-
-            if (extract_gainmap(fDecoderMgr->getSourceMgr(),
-                                mpImageOffset,
-                                mpImageSize,
-                                info,
-                                gainmapImageStream)) {
-                
-                
-                if (containerGainmapOffset) {
-                    SkASSERT(containerGainmapOffset == mpImageOffset);
-                    SkASSERT(containerGainmapSize == mpImageSize);
-                }
-                return true;
-            }
-        }
-    }
-
-    
-    if (containerGainmapOffset) {
-        if (extract_gainmap(fDecoderMgr->getSourceMgr(),
-                            containerGainmapOffset,
-                            containerGainmapSize,
-                            info,
-                            gainmapImageStream)) {
-            return true;
-        }
-        SkCodecPrintf("Failed to extract container-specified gainmap.\n");
-    }
-
-    
-    
-    if (xmp && xmp->getGainmapInfoHDRGM(info)) {
-        auto gainmapData = read_metadata(fDecoderMgr->dinfo(),
-                                         kGainmapMarker,
-                                         kGainmapSig,
-                                         sizeof(kGainmapSig),
-                                         kGainmapMarkerIndexSize,
-                                         true);
-        if (gainmapData) {
-            *gainmapImageStream = SkMemoryStream::Make(std::move(gainmapData));
-            if (*gainmapImageStream) {
-                return true;
-            }
-        } else {
-            SkCodecPrintf("Parsed HDRGM metadata but did not find image\n");
-        }
-    }
-    return false;
-}
-#else
-bool SkJpegCodec::onGetGainmapInfo(SkGainmapInfo* info,
-                                   std::unique_ptr<SkStream>* gainmapImageStream) {
-    return false;
-}
-#endif  
-
-#endif 

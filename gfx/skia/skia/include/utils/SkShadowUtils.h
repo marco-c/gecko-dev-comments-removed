@@ -9,17 +9,13 @@
 #define SkShadowUtils_DEFINED
 
 #include "include/core/SkColor.h"
+#include "include/core/SkPoint3.h"
 #include "include/core/SkScalar.h"
-#include "include/core/SkTypes.h"
 #include "include/private/SkShadowFlags.h"
 
-#include <cstdint>
-
 class SkCanvas;
-class SkMatrix;
 class SkPath;
-struct SkPoint3;
-struct SkRect;
+class SkResourceCache;
 
 class SK_API SkShadowUtils {
 public:
@@ -40,38 +36,10 @@ public:
 
 
 
-
-
-
-
     static void DrawShadow(SkCanvas* canvas, const SkPath& path, const SkPoint3& zPlaneParams,
                            const SkPoint3& lightPos, SkScalar lightRadius,
                            SkColor ambientColor, SkColor spotColor,
                            uint32_t flags = SkShadowFlags::kNone_ShadowFlag);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static bool GetLocalBounds(const SkMatrix& ctm, const SkPath& path,
-                               const SkPoint3& zPlaneParams, const SkPoint3& lightPos,
-                               SkScalar lightRadius, uint32_t flags, SkRect* bounds);
 
     
 

@@ -18,8 +18,6 @@
 
 #include "include/core/SkTypes.h"
 
-#include <cstdint>
-
 class SK_API SkEventTracer {
 public:
 
@@ -30,13 +28,7 @@ public:
 
 
 
-
-
-
-
-
-
-    static bool SetInstance(SkEventTracer*, bool leakTracer = false);
+    static bool SetInstance(SkEventTracer*);
 
     
 
@@ -44,7 +36,7 @@ public:
 
     static SkEventTracer* GetInstance();
 
-    virtual ~SkEventTracer() = default;
+    virtual ~SkEventTracer() { }
 
     
     
@@ -77,14 +69,6 @@ public:
         updateTraceEventDuration(const uint8_t* categoryEnabledFlag,
                                  const char* name,
                                  SkEventTracer::Handle handle) = 0;
-
-    
-    virtual void newTracingSection(const char*) {}
-
-protected:
-    SkEventTracer() = default;
-    SkEventTracer(const SkEventTracer&) = delete;
-    SkEventTracer& operator=(const SkEventTracer&) = delete;
 };
 
 #endif 

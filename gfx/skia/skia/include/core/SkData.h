@@ -8,12 +8,9 @@
 #ifndef SkData_DEFINED
 #define SkData_DEFINED
 
-#include "include/core/SkRefCnt.h"
-#include "include/private/base/SkAPI.h"
-#include "include/private/base/SkAssert.h"
+#include <stdio.h>
 
-#include <cstdint>
-#include <cstdio>
+#include "include/core/SkRefCnt.h"
 
 class SkStream;
 
@@ -54,7 +51,7 @@ public:
             
             SkASSERT(this->unique());
         }
-        return const_cast<void*>(fPtr);
+        return fPtr;
     }
 
     
@@ -93,12 +90,6 @@ public:
 
 
 
-    static sk_sp<SkData> MakeZeroInitialized(size_t length);
-
-    
-
-
-
 
 
     static sk_sp<SkData> MakeWithCString(const char cstr[]);
@@ -114,7 +105,7 @@ public:
 
 
     static sk_sp<SkData> MakeWithoutCopy(const void* data, size_t length) {
-        return MakeWithProc(data, length, NoopReleaseProc, nullptr);
+        return MakeWithProc(data, length, DummyReleaseProc, nullptr);
     }
 
     
@@ -170,7 +161,7 @@ private:
     friend class SkNVRefCnt<SkData>;
     ReleaseProc fReleaseProc;
     void*       fReleaseProcContext;
-    const void* fPtr;
+    void*       fPtr;
     size_t      fSize;
 
     SkData(const void* ptr, size_t size, ReleaseProc, void* context);
@@ -183,9 +174,9 @@ private:
     
     static sk_sp<SkData> PrivateNewWithCopy(const void* srcOrNull, size_t length);
 
-    static void NoopReleaseProc(const void*, void*); 
+    static void DummyReleaseProc(const void*, void*); 
 
-    using INHERITED = SkRefCnt;
+    typedef SkRefCnt INHERITED;
 };
 
 #endif

@@ -8,13 +8,9 @@
 #ifndef SkWebpEncoder_DEFINED
 #define SkWebpEncoder_DEFINED
 
-#include "include/core/SkSpan.h" 
 #include "include/encode/SkEncoder.h"
-#include "include/private/base/SkAPI.h"
 
-class SkPixmap;
 class SkWStream;
-struct skcms_ICCProfile;
 
 namespace SkWebpEncoder {
 
@@ -38,16 +34,6 @@ namespace SkWebpEncoder {
 
         Compression fCompression = Compression::kLossy;
         float fQuality = 100.0f;
-
-        
-
-
-
-
-
-
-        const skcms_ICCProfile* fICCProfile = nullptr;
-        const char* fICCProfileDescription = nullptr;
     };
 
     
@@ -57,22 +43,6 @@ namespace SkWebpEncoder {
 
 
     SK_API bool Encode(SkWStream* dst, const SkPixmap& src, const Options& options);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    SK_API bool EncodeAnimated(SkWStream* dst,
-                               SkSpan<const SkEncoder::Frame> src,
-                               const Options& options);
-} 
+}
 
 #endif

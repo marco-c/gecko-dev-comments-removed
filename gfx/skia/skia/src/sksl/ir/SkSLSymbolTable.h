@@ -8,207 +8,59 @@
 #ifndef SKSL_SYMBOLTABLE
 #define SKSL_SYMBOLTABLE
 
-#include "include/core/SkTypes.h"
-#include "include/private/SkOpts_spi.h"
-#include "include/private/SkSLSymbol.h"
-#include "src/core/SkTHash.h"
-
-#include <cstddef>
-#include <cstdint>
-#include <forward_list>
+#include <unordered_map>
 #include <memory>
-#include <string>
-#include <string_view>
-#include <type_traits>
-#include <utility>
 #include <vector>
+#include "src/sksl/SkSLErrorReporter.h"
+#include "src/sksl/ir/SkSLSymbol.h"
 
 namespace SkSL {
 
-class Type;
+struct FunctionDeclaration;
+
 
 
 
 
 class SymbolTable {
 public:
-    explicit SymbolTable(bool builtin)
-            : fBuiltin(builtin) {}
+    SymbolTable(ErrorReporter* errorReporter)
+    : fErrorReporter(*errorReporter) {}
 
-    explicit SymbolTable(std::shared_ptr<SymbolTable> parent, bool builtin)
-            : fParent(parent)
-            , fBuiltin(builtin) {}
+    SymbolTable(std::shared_ptr<SymbolTable> parent, ErrorReporter* errorReporter)
+    : fParent(parent)
+    , fErrorReporter(*errorReporter) {}
 
-    
-    static void Push(std::shared_ptr<SymbolTable>* table) {
-        Push(table, (*table)->isBuiltin());
-    }
-    static void Push(std::shared_ptr<SymbolTable>* table, bool isBuiltin) {
-        *table = std::make_shared<SymbolTable>(*table, isBuiltin);
-    }
+    const Symbol* operator[](StringFragment name);
 
-    
+    void add(StringFragment name, std::unique_ptr<Symbol> symbol);
 
+    void addWithoutOwnership(StringFragment name, const Symbol* symbol);
 
+    Symbol* takeOwnership(std::unique_ptr<Symbol> s);
 
-    static void Pop(std::shared_ptr<SymbolTable>* table) {
-        *table = (*table)->fParent;
-    }
+    IRNode* takeOwnership(std::unique_ptr<IRNode> n);
 
-    
+    void markAllFunctionsBuiltin();
 
+    std::unordered_map<StringFragment, const Symbol*>::iterator begin();
 
+    std::unordered_map<StringFragment, const Symbol*>::iterator end();
 
-
-    static std::shared_ptr<SymbolTable> WrapIfBuiltin(std::shared_ptr<SymbolTable> symbolTable) {
-        if (!symbolTable) {
-            return nullptr;
-        }
-        if (!symbolTable->isBuiltin()) {
-            return symbolTable;
-        }
-        return std::make_shared<SymbolTable>(std::move(symbolTable), false);
-    }
-
-    
-
-
-    const Symbol* find(std::string_view name) const {
-        return this->lookup(MakeSymbolKey(name));
-    }
-
-    
-
-
-    const Symbol* findBuiltinSymbol(std::string_view name) const;
-
-    
-
-
-
-    Symbol* findMutable(std::string_view name) const {
-        return this->lookup(MakeSymbolKey(name));
-    }
-
-    
-
-
-
-    void renameSymbol(Symbol* symbol, std::string_view newName);
-
-    
-
-
-    bool isType(std::string_view name) const;
-
-    
-
-
-    bool isBuiltinType(std::string_view name) const;
-
-    
-
-
-
-    void addWithoutOwnership(Symbol* symbol);
-
-    
-
-
-    template <typename T>
-    T* add(std::unique_ptr<T> symbol) {
-        T* ptr = symbol.get();
-        this->addWithoutOwnership(this->takeOwnershipOfSymbol(std::move(symbol)));
-        return ptr;
-    }
-
-    
-
-
-
-    void injectWithoutOwnership(Symbol* symbol);
-
-    
-
-
-
-    template <typename T>
-    T* inject(std::unique_ptr<T> symbol) {
-        T* ptr = symbol.get();
-        this->injectWithoutOwnership(this->takeOwnershipOfSymbol(std::move(symbol)));
-        return ptr;
-    }
-
-    
-
-
-    template <typename T>
-    T* takeOwnershipOfSymbol(std::unique_ptr<T> symbol) {
-        T* ptr = symbol.get();
-        fOwnedSymbols.push_back(std::move(symbol));
-        return ptr;
-    }
-
-    
-
-
-
-
-    const Type* addArrayDimension(const Type* type, int arraySize);
-
-    
-    template <typename Fn>
-    void foreach(Fn&& fn) const {
-        fSymbols.foreach(
-                [&fn](const SymbolKey& key, const Symbol* symbol) { fn(key.fName, symbol); });
-    }
-
-    size_t count() {
-        return fSymbols.count();
-    }
-
-    
-    bool isBuiltin() const {
-        return fBuiltin;
-    }
-
-    const std::string* takeOwnershipOfString(std::string n);
-
-    
-
-
-    void markModuleBoundary() {
-        fAtModuleBoundary = true;
-    }
-
-    std::shared_ptr<SymbolTable> fParent;
-
-    std::vector<std::unique_ptr<const Symbol>> fOwnedSymbols;
+    const std::shared_ptr<SymbolTable> fParent;
 
 private:
-    struct SymbolKey {
-        std::string_view fName;
-        uint32_t         fHash;
+    static std::vector<const FunctionDeclaration*> GetFunctions(const Symbol& s);
 
-        bool operator==(const SymbolKey& that) const { return fName == that.fName; }
-        bool operator!=(const SymbolKey& that) const { return fName != that.fName; }
-        struct Hash {
-            uint32_t operator()(const SymbolKey& key) const { return key.fHash; }
-        };
-    };
+    std::vector<std::unique_ptr<Symbol>> fOwnedSymbols;
 
-    static SymbolKey MakeSymbolKey(std::string_view name) {
-        return SymbolKey{name, SkOpts::hash_fn(name.data(), name.size(), 0)};
-    }
+    std::vector<std::unique_ptr<IRNode>> fOwnedNodes;
 
-    Symbol* lookup(const SymbolKey& key) const;
+    std::unordered_map<StringFragment, const Symbol*> fSymbols;
 
-    bool fBuiltin = false;
-    bool fAtModuleBoundary = false;
-    std::forward_list<std::string> fOwnedStrings;
-    SkTHashMap<SymbolKey, Symbol*, SymbolKey::Hash> fSymbols;
+    ErrorReporter& fErrorReporter;
 };
 
-}  
+} 
 
 #endif

@@ -7,28 +7,14 @@
 
 #include "src/utils/SkPolyUtils.h"
 
-#include "include/core/SkRect.h"
-#include "include/core/SkTypes.h"
-#include "include/private/base/SkDebug.h"
-#include "include/private/base/SkFloatingPoint.h"
-#include "include/private/base/SkMalloc.h"
-#include "include/private/base/SkTArray.h"
-#include "include/private/base/SkTDArray.h"
-#include "include/private/base/SkTemplates.h"
-#include "src/base/SkTDPQueue.h"
-#include "src/base/SkTInternalLList.h"
-#include "src/base/SkVx.h"
-#include "src/core/SkPointPriv.h"
-#include "src/core/SkRectPriv.h"
-
-#include <algorithm>
-#include <cstdint>
 #include <limits>
-#include <new>
 
-using namespace skia_private;
-
-#if !defined(SK_ENABLE_OPTIMIZE_SIZE)
+#include "include/private/SkNx.h"
+#include "include/private/SkTArray.h"
+#include "include/private/SkTemplates.h"
+#include "src/core/SkPointPriv.h"
+#include "src/core/SkTDPQueue.h"
+#include "src/core/SkTInternalLList.h"
 
 
 
@@ -94,13 +80,6 @@ static inline bool outside_interval(SkScalar numer, SkScalar denom, bool denomPo
 }
 
 
-static inline bool zero_length(const SkPoint& v, SkScalar vdotv) {
-    return !(SkScalarsAreFinite(v.fX, v.fY) && vdotv);
-}
-
-
-
-
 
 
 static bool compute_intersection(const OffsetSegment& s0, const OffsetSegment& s1,
@@ -119,11 +98,9 @@ static bool compute_intersection(const OffsetSegment& s0, const OffsetSegment& s
         }
 
         
-        SkScalar v0dotv0 = v0.dot(v0);
-        if (zero_length(v0, v0dotv0)) {
+        if (!SkPointPriv::CanNormalize(v0.fX, v0.fY)) {
             
-            SkScalar v1dotv1 = v1.dot(v1);
-            if (zero_length(v1, v1dotv1)) {
+            if (!SkPointPriv::CanNormalize(v1.fX, v1.fY)) {
                 
                 if (!SkPointPriv::CanNormalize(w.fX, w.fY)) {
                     *p = s0.fP0;
@@ -131,13 +108,12 @@ static bool compute_intersection(const OffsetSegment& s0, const OffsetSegment& s
                     *t = 0;
                     return true;
                 } else {
-                    
                     return false;
                 }
             }
             
             tNumer = v1.dot(-w);
-            denom = v1dotv1;
+            denom = v1.dot(v1);
             if (outside_interval(tNumer, denom, true)) {
                 return false;
             }
@@ -145,13 +121,12 @@ static bool compute_intersection(const OffsetSegment& s0, const OffsetSegment& s
         } else {
             
             sNumer = v0.dot(w);
-            denom = v0dotv0;
+            denom = v0.dot(v0);
             tNumer = 0;
             if (outside_interval(sNumer, denom, true)) {
                 
                 
-                SkScalar v1dotv1 = v1.dot(v1);
-                if (zero_length(v1, v1dotv1)) {
+                if (!SkPointPriv::CanNormalize(v1.fX, v1.fY)) {
                     return false;
                 }
 
@@ -168,7 +143,7 @@ static bool compute_intersection(const OffsetSegment& s0, const OffsetSegment& s
                     
                     sNumer = 0;
                     tNumer = v1.dot(-w);
-                    denom = v1dotv1;
+                    denom = v1.dot(v1);
                 }
             }
         }
@@ -198,17 +173,17 @@ bool SkIsConvexPolygon(const SkPoint* polygonVerts, int polygonSize) {
         return false;
     }
 
+    SkScalar lastArea = 0;
     SkScalar lastPerpDot = 0;
-    int xSignChangeCount = 0;
-    int ySignChangeCount = 0;
 
     int prevIndex = polygonSize - 1;
     int currIndex = 0;
     int nextIndex = 1;
+    SkPoint origin = polygonVerts[0];
     SkVector v0 = polygonVerts[currIndex] - polygonVerts[prevIndex];
-    SkScalar lastVx = v0.fX;
-    SkScalar lastVy = v0.fY;
     SkVector v1 = polygonVerts[nextIndex] - polygonVerts[currIndex];
+    SkVector w0 = polygonVerts[currIndex] - origin;
+    SkVector w1 = polygonVerts[nextIndex] - origin;
     for (int i = 0; i < polygonSize; ++i) {
         if (!polygonVerts[i].isFinite()) {
             return false;
@@ -224,26 +199,22 @@ bool SkIsConvexPolygon(const SkPoint* polygonVerts, int polygonSize) {
         }
 
         
-        if (lastVx*v1.fX < 0) {
-            xSignChangeCount++;
-        }
-        if (lastVy*v1.fY < 0) {
-            ySignChangeCount++;
-        }
-        if (xSignChangeCount > 2 || ySignChangeCount > 2) {
+        
+        SkScalar quadArea = w0.cross(w1);
+        if (quadArea*lastArea < 0) {
             return false;
         }
+        if (0 != quadArea) {
+            lastArea = quadArea;
+        }
+
         prevIndex = currIndex;
         currIndex = nextIndex;
         nextIndex = (currIndex + 1) % polygonSize;
-        if (v1.fX != 0) {
-            lastVx = v1.fX;
-        }
-        if (v1.fY != 0) {
-            lastVy = v1.fY;
-        }
         v0 = v1;
         v1 = polygonVerts[nextIndex] - polygonVerts[currIndex];
+        w0 = w1;
+        w1 = polygonVerts[nextIndex] - origin;
     }
 
     return true;
@@ -355,7 +326,7 @@ bool SkInsetConvexPolygon(const SkPoint* inputPolygonVerts, int inputPolygonSize
     
     if (inset <= SK_ScalarNearlyZero) {
         for (int i = 0; i < inputPolygonSize; ++i) {
-            *insetPolygon->append() = inputPolygonVerts[i];
+            *insetPolygon->push() = inputPolygonVerts[i];
         }
         return true;
     }
@@ -367,7 +338,7 @@ bool SkInsetConvexPolygon(const SkPoint* inputPolygonVerts, int inputPolygonSize
     }
 
     
-    AutoSTMalloc<64, OffsetEdge> edgeData(inputPolygonSize);
+    SkAutoSTMalloc<64, OffsetEdge> edgeData(inputPolygonSize);
     int prev = inputPolygonSize - 1;
     for (int curr = 0; curr < inputPolygonSize; prev = curr, ++curr) {
         int next = (curr + 1) % inputPolygonSize;
@@ -460,16 +431,16 @@ bool SkInsetConvexPolygon(const SkPoint* inputPolygonVerts, int inputPolygonSize
 
     static constexpr SkScalar kCleanupTolerance = 0.01f;
     if (insetVertexCount >= 0) {
-        insetPolygon->reserve(insetVertexCount);
+        insetPolygon->setReserve(insetVertexCount);
     }
     int currIndex = 0;
-    *insetPolygon->append() = head->fIntersection;
+    *insetPolygon->push() = head->fIntersection;
     currEdge = head->fNext;
     while (currEdge != head) {
         if (!SkPointPriv::EqualsWithinTolerance(currEdge->fIntersection,
                                                 (*insetPolygon)[currIndex],
                                                 kCleanupTolerance)) {
-            *insetPolygon->append() = currEdge->fIntersection;
+            *insetPolygon->push() = currEdge->fIntersection;
             currIndex++;
         }
         currEdge = currEdge->fNext;
@@ -478,10 +449,10 @@ bool SkInsetConvexPolygon(const SkPoint* inputPolygonVerts, int inputPolygonSize
     if (currIndex >= 1 &&
         SkPointPriv::EqualsWithinTolerance((*insetPolygon)[0], (*insetPolygon)[currIndex],
                                             kCleanupTolerance)) {
-        insetPolygon->pop_back();
+        insetPolygon->pop();
     }
 
-    return SkIsConvexPolygon(insetPolygon->begin(), insetPolygon->size());
+    return SkIsConvexPolygon(insetPolygon->begin(), insetPolygon->count());
 }
 
 
@@ -512,11 +483,6 @@ bool SkComputeRadialSteps(const SkVector& v1, const SkVector& v2, SkScalar offse
     SkScalar dTheta = steps > 0 ? theta / steps : 0;
     *rotSin = SkScalarSin(dTheta);
     *rotCos = SkScalarCos(dTheta);
-    
-    
-    if (steps > 0 && (*rotSin == 0 || *rotCos == 1)) {
-        return false;
-    }
     *n = steps;
     return true;
 }
@@ -750,17 +716,9 @@ public:
                 curr->fAbove = pred;
                 curr->fBelow = succ;
                 if (pred) {
-                    if (pred->fSegment.fP0 == curr->fSegment.fP0 &&
-                        pred->fSegment.fV == curr->fSegment.fV) {
-                        return false;
-                    }
                     pred->fBelow = curr;
                 }
                 if (succ) {
-                    if (succ->fSegment.fP0 == curr->fSegment.fP0 &&
-                        succ->fSegment.fV == curr->fSegment.fV) {
-                        return false;
-                    }
                     succ->fAbove = curr;
                 }
                 if (IsRed(parent)) {
@@ -927,7 +885,7 @@ public:
                 } else {
                     ActiveEdge *s = parent->fChild[!last];
 
-                    if (s != nullptr) {
+                    if (s != NULL) {
                         if (!IsRed(s->fChild[!last]) && !IsRed(s->fChild[last])) {
                             
                             parent->fRed = false;
@@ -1115,10 +1073,6 @@ bool SkIsSimplePolygon(const SkPoint* polygon, int polygonSize) {
         newVertex.fPrevIndex = (i - 1 + polygonSize) % polygonSize;
         newVertex.fNextIndex = (i + 1) % polygonSize;
         newVertex.fFlags = 0;
-        
-        if (polygon[newVertex.fPrevIndex] == polygon[newVertex.fNextIndex]) {
-            return false;
-        }
         if (left(polygon[newVertex.fPrevIndex], polygon[i])) {
             newVertex.fFlags |= kPrevLeft_VertexFlag;
         }
@@ -1209,17 +1163,17 @@ bool SkOffsetSimplePolygon(const SkPoint* inputPolygonVerts, int inputPolygonSiz
     }
 
     
-    if (offset > std::min(SkTAbs(SkRectPriv::HalfWidth(bounds)),
-                          SkTAbs(SkRectPriv::HalfHeight(bounds)))) {
+    if (offset > SkTMin(SkTAbs(SK_ScalarHalf*bounds.width()),
+                        SkTAbs(SK_ScalarHalf*bounds.height()))) {
         return false;
     }
 
     
     if (SkScalarNearlyZero(offset)) {
         for (int i = 0; i < inputPolygonSize; ++i) {
-            *offsetPolygon->append() = inputPolygonVerts[i];
+            *offsetPolygon->push() = inputPolygonVerts[i];
             if (polygonIndices) {
-                *polygonIndices->append() = i;
+                *polygonIndices->push() = i;
             }
         }
         return true;
@@ -1232,7 +1186,7 @@ bool SkOffsetSimplePolygon(const SkPoint* inputPolygonVerts, int inputPolygonSiz
     }
 
     
-    AutoSTMalloc<64, SkVector> normals(inputPolygonSize);
+    SkAutoSTMalloc<64, SkVector> normals(inputPolygonSize);
     unsigned int numEdges = 0;
     for (int currIndex = 0, prevIndex = inputPolygonSize - 1;
          currIndex < inputPolygonSize;
@@ -1255,7 +1209,7 @@ bool SkOffsetSimplePolygon(const SkPoint* inputPolygonVerts, int inputPolygonSiz
                                           &rotSin, &rotCos, &numSteps)) {
                     return false;
                 }
-                numEdges += std::max(numSteps, 1);
+                numEdges += SkTMax(numSteps, 1);
             }
         }
         numEdges++;
@@ -1268,7 +1222,7 @@ bool SkOffsetSimplePolygon(const SkPoint* inputPolygonVerts, int inputPolygonSiz
                                   &rotSin, &rotCos, &numSteps)) {
             return false;
         }
-        numEdges += std::max(numSteps, 1);
+        numEdges += SkTMax(numSteps, 1);
     }
 
     
@@ -1295,7 +1249,7 @@ bool SkOffsetSimplePolygon(const SkPoint* inputPolygonVerts, int inputPolygonSiz
                                       &rotSin, &rotCos, &numSteps)) {
                 return false;
             }
-            auto currEdge = edgeData.push_back_n(std::max(numSteps, 1));
+            auto currEdge = edgeData.push_back_n(SkTMax(numSteps, 1));
             for (int i = 0; i < numSteps - 1; ++i) {
                 SkVector currNormal = SkVector::Make(prevNormal.fX*rotCos - prevNormal.fY*rotSin,
                                                      prevNormal.fY*rotCos + prevNormal.fX*rotSin);
@@ -1340,7 +1294,7 @@ bool SkOffsetSimplePolygon(const SkPoint* inputPolygonVerts, int inputPolygonSiz
     edgeData[0].fPrev = prevEdge;
 
     
-    SkASSERT(edgeData.size() == (int)numEdges);
+    SkASSERT(edgeData.count() == (int)numEdges);
     auto head = &edgeData[0];
     auto currEdge = head;
     unsigned int offsetVertexCount = numEdges;
@@ -1431,20 +1385,20 @@ bool SkOffsetSimplePolygon(const SkPoint* inputPolygonVerts, int inputPolygonSiz
     }
 
     static constexpr SkScalar kCleanupTolerance = 0.01f;
-    offsetPolygon->reserve(offsetVertexCount);
+    offsetPolygon->setReserve(offsetVertexCount);
     int currIndex = 0;
-    *offsetPolygon->append() = head->fIntersection;
+    *offsetPolygon->push() = head->fIntersection;
     if (polygonIndices) {
-        *polygonIndices->append() = head->fIndex;
+        *polygonIndices->push() = head->fIndex;
     }
     currEdge = head->fNext;
     while (currEdge != head) {
         if (!SkPointPriv::EqualsWithinTolerance(currEdge->fIntersection,
                                                 (*offsetPolygon)[currIndex],
                                                 kCleanupTolerance)) {
-            *offsetPolygon->append() = currEdge->fIntersection;
+            *offsetPolygon->push() = currEdge->fIntersection;
             if (polygonIndices) {
-                *polygonIndices->append() = currEdge->fIndex;
+                *polygonIndices->push() = currEdge->fIndex;
             }
             currIndex++;
         }
@@ -1454,17 +1408,17 @@ bool SkOffsetSimplePolygon(const SkPoint* inputPolygonVerts, int inputPolygonSiz
     if (currIndex >= 1 &&
         SkPointPriv::EqualsWithinTolerance((*offsetPolygon)[0], (*offsetPolygon)[currIndex],
                                             kCleanupTolerance)) {
-        offsetPolygon->pop_back();
+        offsetPolygon->pop();
         if (polygonIndices) {
-            polygonIndices->pop_back();
+            polygonIndices->pop();
         }
     }
 
     
-    SkScalar offsetWinding = SkGetPolygonWinding(offsetPolygon->begin(), offsetPolygon->size());
+    SkScalar offsetWinding = SkGetPolygonWinding(offsetPolygon->begin(), offsetPolygon->count());
 
     return (winding*offsetWinding > 0 &&
-            SkIsSimplePolygon(offsetPolygon->begin(), offsetPolygon->size()));
+            SkIsSimplePolygon(offsetPolygon->begin(), offsetPolygon->count()));
 }
 
 
@@ -1483,13 +1437,13 @@ struct TriangulationVertex {
 
 static void compute_triangle_bounds(const SkPoint& p0, const SkPoint& p1, const SkPoint& p2,
                                     SkRect* bounds) {
-    skvx::float4 min, max;
-    min = max = skvx::float4(p0.fX, p0.fY, p0.fX, p0.fY);
-    skvx::float4 xy(p1.fX, p1.fY, p2.fX, p2.fY);
-    min = skvx::min(min, xy);
-    max = skvx::max(max, xy);
-    bounds->setLTRB(std::min(min[0], min[2]), std::min(min[1], min[3]),
-                    std::max(max[0], max[2]), std::max(max[1], max[3]));
+    Sk4s min, max;
+    min = max = Sk4s(p0.fX, p0.fY, p0.fX, p0.fY);
+    Sk4s xy(p1.fX, p1.fY, p2.fX, p2.fY);
+    min = Sk4s::Min(min, xy);
+    max = Sk4s::Max(max, xy);
+    bounds->setLTRB(SkTMin(min[0], min[2]), SkTMin(min[1], min[3]),
+                    SkTMax(max[0], max[2]), SkTMax(max[1], max[3]));
 }
 
 
@@ -1536,7 +1490,7 @@ public:
         if (!SkScalarIsFinite(hCount)) {
             return false;
         }
-        fHCount = std::max(std::min(SkScalarRoundToInt(hCount), vertexCount), 1);
+        fHCount = SkTMax(SkTMin(SkScalarRoundToInt(hCount), vertexCount), 1);
         fVCount = vertexCount/fHCount;
         fGridConversion.set(sk_ieee_float_divide(fHCount - 0.001f, width),
                             sk_ieee_float_divide(fVCount - 0.001f, height));
@@ -1544,8 +1498,8 @@ public:
             return false;
         }
 
-        fGrid.resize(fHCount*fVCount);
-        for (int i = 0; i < fGrid.size(); ++i) {
+        fGrid.setCount(fHCount*fVCount);
+        for (int i = 0; i < fGrid.count(); ++i) {
             fGrid[i].reset();
         }
 
@@ -1653,13 +1607,13 @@ bool SkTriangulateSimplePolygon(const SkPoint* polygonVerts, uint16_t* indexMap,
     }
 
     
-    AutoSTArray<64, TriangulationVertex> triangulationVertices(polygonSize);
+    SkAutoSTMalloc<64, TriangulationVertex> triangulationVertices(polygonSize);
     int prevIndex = polygonSize - 1;
     SkVector v0 = polygonVerts[0] - polygonVerts[prevIndex];
     for (int currIndex = 0; currIndex < polygonSize; ++currIndex) {
         int nextIndex = (currIndex + 1) % polygonSize;
 
-        triangulationVertices[currIndex] = TriangulationVertex{};
+        SkDEBUGCODE(memset(&triangulationVertices[currIndex], 0, sizeof(TriangulationVertex)));
         triangulationVertices[currIndex].fPosition = polygonVerts[currIndex];
         triangulationVertices[currIndex].fIndex = currIndex;
         triangulationVertices[currIndex].fPrevIndex = prevIndex;
@@ -1710,7 +1664,7 @@ bool SkTriangulateSimplePolygon(const SkPoint* polygonVerts, uint16_t* indexMap,
     
     
     
-    triangleIndices->reserve(triangleIndices->size() + 3 * (polygonSize - 2));
+    triangleIndices->setReserve(triangleIndices->count() + 3 * (polygonSize - 2));
     int vertexCount = polygonSize;
     while (vertexCount > 3) {
         bool success = false;
@@ -1764,11 +1718,121 @@ bool SkTriangulateSimplePolygon(const SkPoint* polygonVerts, uint16_t* indexMap,
     for (SkTInternalLList<TriangulationVertex>::Iter vertexIter = convexList.begin();
          vertexIter != convexList.end(); ++vertexIter) {
         TriangulationVertex* vertex = *vertexIter;
-        *triangleIndices->append() = indexMap[vertex->fIndex];
+        *triangleIndices->push() = indexMap[vertex->fIndex];
     }
 
     return true;
 }
 
-#endif 
+
+
+static double crs(SkVector a, SkVector b) {
+    return a.fX * b.fY - a.fY * b.fX;
+}
+
+static int sign(SkScalar v) {
+    return v < 0 ? -1 : (v > 0);
+}
+
+struct SignTracker {
+    int fSign;
+    int fSignChanges;
+
+    void reset() {
+        fSign = 0;
+        fSignChanges = 0;
+    }
+
+    void init(int s) {
+        SkASSERT(fSignChanges == 0);
+        SkASSERT(s == 1 || s == -1 || s == 0);
+        fSign = s;
+        fSignChanges = 1;
+    }
+
+    void update(int s) {
+        if (s) {
+            if (fSign != s) {
+                fSignChanges += 1;
+                fSign = s;
+            }
+        }
+    }
+};
+
+struct ConvexTracker {
+    SkVector    fFirst, fPrev;
+    SignTracker fDSign, fCSign;
+    int         fVecCounter;
+    bool        fIsConcave;
+
+    ConvexTracker() { this->reset(); }
+
+    void reset() {
+        fPrev = {0, 0};
+        fDSign.reset();
+        fCSign.reset();
+        fVecCounter = 0;
+        fIsConcave = false;
+    }
+
+    void addVec(SkPoint p1, SkPoint p0) {
+        this->addVec(p1 - p0);
+    }
+    void addVec(SkVector v) {
+        if (v.fX == 0 && v.fY == 0) {
+            return;
+        }
+
+        fVecCounter += 1;
+        if (fVecCounter == 1) {
+            fFirst = fPrev = v;
+            fDSign.update(sign(v.fX));
+            return;
+        }
+
+        SkScalar d = v.fX;
+        SkScalar c = crs(fPrev, v);
+        int sign_c;
+        if (c) {
+            sign_c = sign(c);
+        } else {
+            if (d >= 0) {
+                sign_c = fCSign.fSign;
+            } else {
+                sign_c = -fCSign.fSign;
+            }
+        }
+
+        fDSign.update(sign(d));
+        fCSign.update(sign_c);
+        fPrev = v;
+
+        if (fDSign.fSignChanges > 3 || fCSign.fSignChanges > 1) {
+            fIsConcave = true;
+        }
+    }
+
+    void finalCross() {
+        this->addVec(fFirst);
+    }
+};
+
+bool SkIsPolyConvex_experimental(const SkPoint pts[], int count) {
+    if (count <= 3) {
+        return true;
+    }
+
+    ConvexTracker tracker;
+
+    for (int i = 0; i < count - 1; ++i) {
+        tracker.addVec(pts[i + 1], pts[i]);
+        if (tracker.fIsConcave) {
+            return false;
+        }
+    }
+    tracker.addVec(pts[0], pts[count - 1]);
+    tracker.finalCross();
+    return !tracker.fIsConcave;
+}
 

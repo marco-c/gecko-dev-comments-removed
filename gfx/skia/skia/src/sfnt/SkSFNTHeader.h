@@ -8,7 +8,7 @@
 #ifndef SkSFNTHeader_DEFINED
 #define SkSFNTHeader_DEFINED
 
-#include "src/base/SkEndian.h"
+#include "src/core/SkEndian.h"
 #include "src/sfnt/SkOTTableTypes.h"
 
 

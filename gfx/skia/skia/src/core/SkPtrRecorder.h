@@ -11,7 +11,7 @@
 
 #include "include/core/SkFlattenable.h"
 #include "include/core/SkRefCnt.h"
-#include "include/private/base/SkTDArray.h"
+#include "include/private/SkTDArray.h"
 
 
 
@@ -40,7 +40,7 @@ public:
     
 
 
-    int count() const { return fList.size(); }
+    int count() const { return fList.count(); }
 
     
 
@@ -70,7 +70,7 @@ public:
 
 
         void* next() {
-            return fIndex < fSet.fList.size() ? fSet.fList[fIndex++].fPtr : nullptr;
+            return fIndex < fSet.fList.count() ? fSet.fList[fIndex++].fPtr : nullptr;
         }
 
     private:
@@ -96,7 +96,7 @@ private:
 
     static bool Less(const Pair& a, const Pair& b);
 
-    using INHERITED = SkRefCnt;
+    typedef SkRefCnt INHERITED;
 };
 
 
@@ -117,7 +117,7 @@ public:
     }
 
 private:
-    using INHERITED = SkPtrSet;
+    typedef SkPtrSet INHERITED;
 };
 
 
@@ -127,12 +127,12 @@ private:
 
 class SkRefCntSet : public SkTPtrSet<SkRefCnt*> {
 public:
-    ~SkRefCntSet() override;
+    virtual ~SkRefCntSet();
 
 protected:
     
-    void incPtr(void*) override;
-    void decPtr(void*) override;
+    virtual void incPtr(void*);
+    virtual void decPtr(void*);
 };
 
 class SkFactorySet : public SkTPtrSet<SkFlattenable::Factory> {};
@@ -165,7 +165,7 @@ private:
     SkFactorySet           fFactorySet;
     SkTDArray<const char*> fNames;
 
-    using INHERITED = SkRefCnt;
+    typedef SkRefCnt INHERITED;
 };
 
 #endif

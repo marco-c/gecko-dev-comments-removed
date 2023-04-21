@@ -8,32 +8,20 @@
 #ifndef SkBitmap_DEFINED
 #define SkBitmap_DEFINED
 
-#include "include/core/SkAlphaType.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkPixmap.h"
 #include "include/core/SkPoint.h"
-#include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
-#include "include/core/SkSamplingOptions.h"
-#include "include/core/SkSize.h"
-#include "include/core/SkTypes.h"
-#include "include/private/base/SkCPUTypes.h"
-#include "include/private/base/SkDebug.h"
+#include "include/core/SkTileMode.h"
 
-#include <cstddef>
-#include <cstdint>
-
-class SkColorSpace;
-class SkImage;
-class SkMatrix;
-class SkMipmap;
+struct SkMask;
+struct SkIRect;
+struct SkRect;
 class SkPaint;
 class SkPixelRef;
 class SkShader;
-enum SkColorType : int;
-enum class SkTileMode;
-struct SkMask;
+class SkString;
 
 
 
@@ -69,8 +57,6 @@ public:
 
 
 
-
-
     SkBitmap();
 
     
@@ -79,13 +65,9 @@ public:
 
 
 
-
-
     SkBitmap(const SkBitmap& src);
 
     
-
-
 
 
 
@@ -103,8 +85,6 @@ public:
 
 
 
-
-
     SkBitmap& operator=(const SkBitmap& src);
 
     
@@ -113,13 +93,9 @@ public:
 
 
 
-
-
     SkBitmap& operator=(SkBitmap&& src);
 
     
-
-
 
 
 
@@ -157,7 +133,21 @@ public:
 
     int height() const { return fPixmap.height(); }
 
+    
+
+
+
+
+
+
+
     SkColorType colorType() const { return fPixmap.colorType(); }
+
+    
+
+
+
+
 
     SkAlphaType alphaType() const { return fPixmap.alphaType(); }
 
@@ -167,7 +157,7 @@ public:
 
 
 
-    SkColorSpace* colorSpace() const;
+    SkColorSpace* colorSpace() const { return fPixmap.colorSpace(); }
 
     
 
@@ -177,7 +167,7 @@ public:
 
 
 
-    sk_sp<SkColorSpace> refColorSpace() const;
+    sk_sp<SkColorSpace> refColorSpace() const { return fPixmap.info().refColorSpace(); }
 
     
 
@@ -264,6 +254,7 @@ public:
 
 
 
+
     bool setAlphaType(SkAlphaType alphaType);
 
     
@@ -288,13 +279,9 @@ public:
 
 
 
-
-
     bool isImmutable() const;
 
     
-
-
 
 
 
@@ -318,6 +305,24 @@ public:
     
 
 
+
+
+
+
+    bool isVolatile() const;
+
+    
+
+
+
+
+
+
+
+
+    void setIsVolatile(bool isVolatile);
+
+    
 
 
 
@@ -353,13 +358,9 @@ public:
 
 
 
-
-
     void getBounds(SkRect* bounds) const;
 
     
-
-
 
 
 
@@ -387,8 +388,6 @@ public:
     }
 
     
-
-
 
 
 
@@ -458,8 +457,6 @@ public:
 
 
 
-
-
     void allocPixelsFlags(const SkImageInfo& info, uint32_t flags);
 
     
@@ -481,8 +478,6 @@ public:
     bool SK_WARN_UNUSED_RESULT tryAllocPixels(const SkImageInfo& info, size_t rowBytes);
 
     
-
-
 
 
 
@@ -532,8 +527,6 @@ public:
 
 
 
-
-
     void allocPixels(const SkImageInfo& info);
 
     
@@ -556,8 +549,6 @@ public:
     bool SK_WARN_UNUSED_RESULT tryAllocN32Pixels(int width, int height, bool isOpaque = false);
 
     
-
-
 
 
 
@@ -631,8 +622,6 @@ public:
 
 
 
-
-
     bool installPixels(const SkPixmap& pixmap);
 
     
@@ -640,8 +629,6 @@ public:
     bool installMaskPixels(const SkMask& mask);
 
     
-
-
 
 
 
@@ -672,8 +659,6 @@ public:
 
 
 
-
-
     void allocPixels();
 
     
@@ -688,8 +673,6 @@ public:
     bool SK_WARN_UNUSED_RESULT tryAllocPixels(Allocator* allocator);
 
     
-
-
 
 
 
@@ -720,13 +703,9 @@ public:
 
 
 
-
-
     SkIPoint pixelRefOrigin() const;
 
     
-
-
 
 
 
@@ -757,35 +736,14 @@ public:
 
 
 
-
-
     uint32_t getGenerationID() const;
 
     
 
 
-
-
     void notifyPixelsChanged() const;
 
     
-
-
-
-
-
-
-
-
-
-    void eraseColor(SkColor4f c, SkColorSpace* colorSpace = nullptr) const;
-
-    
-
-
-
-
-
 
 
 
@@ -810,27 +768,6 @@ public:
     }
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-    void erase(SkColor4f c, SkColorSpace* colorSpace, const SkIRect& area) const;
-    void erase(SkColor4f c, const SkIRect& area) const;
-
-    
-
-
-
-
-
 
 
 
@@ -876,30 +813,11 @@ public:
 
 
 
-
-
-
-
-
-
-
-    SkColor4f getColor4f(int x, int y) const { return this->pixmap().getColor4f(x, y); }
-
-    
-
-
-
-
-
-
-
     float getAlphaf(int x, int y) const {
         return this->pixmap().getAlphaf(x, y);
     }
 
     
-
-
 
 
 
@@ -957,7 +875,6 @@ public:
     inline uint8_t* getAddr8(int x, int y) const;
 
     
-
 
 
 
@@ -1034,8 +951,6 @@ public:
 
 
 
-
-
     bool readPixels(const SkPixmap& dst, int srcX, int srcY) const;
 
     
@@ -1063,8 +978,6 @@ public:
     }
 
     
-
-
 
 
 
@@ -1173,27 +1086,12 @@ public:
 
 
 
-
-
     bool peekPixels(SkPixmap* pixmap) const;
 
-    
-
-
-    sk_sp<SkShader> makeShader(SkTileMode tmx, SkTileMode tmy, const SkSamplingOptions&,
+    sk_sp<SkShader> makeShader(SkTileMode tmx, SkTileMode tmy,
                                const SkMatrix* localMatrix = nullptr) const;
-    sk_sp<SkShader> makeShader(SkTileMode tmx, SkTileMode tmy, const SkSamplingOptions& sampling,
-                               const SkMatrix& lm) const;
     
-    sk_sp<SkShader> makeShader(const SkSamplingOptions& sampling, const SkMatrix& lm) const;
-    sk_sp<SkShader> makeShader(const SkSamplingOptions& sampling,
-                               const SkMatrix* lm = nullptr) const;
-
-    
-
-
-
-    sk_sp<SkImage> asImage() const;
+    sk_sp<SkShader> makeShader(const SkMatrix* localMatrix = nullptr) const;
 
     
 
@@ -1215,7 +1113,7 @@ public:
 
         virtual bool allocPixelRef(SkBitmap* bitmap) = 0;
     private:
-        using INHERITED = SkRefCnt;
+        typedef SkRefCnt INHERITED;
     };
 
     
@@ -1233,19 +1131,19 @@ public:
 
 
 
-
-
         bool allocPixelRef(SkBitmap* bitmap) override;
     };
 
 private:
+    enum Flags {
+        kImageIsVolatile_Flag   = 0x02,
+    };
+
     sk_sp<SkPixelRef>   fPixelRef;
     SkPixmap            fPixmap;
-    sk_sp<SkMipmap>     fMips;
+    uint8_t             fFlags;
 
-    friend class SkImage_Raster;
     friend class SkReadBuffer;        
-    friend class GrProxyProvider;     
 };
 
 

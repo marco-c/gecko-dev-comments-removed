@@ -4,13 +4,6 @@
 #ifndef SkPixelRefPriv_DEFINED
 #define SkPixelRefPriv_DEFINED
 
-#include "include/core/SkRefCnt.h"
-
-#include <cstddef>
-
-class SkPixelRef;
-
-
 
 
 

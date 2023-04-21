@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+#ifndef SkCodecAnimationPriv_DEFINED
+#define SkCodecAnimationPriv_DEFINED
+
+namespace SkCodecAnimation {
+    
+
+
+    enum class Blend {
+        
+
+
+
+        kPriorFrame,
+
+        
+
+
+
+
+
+        kBG,
+    };
+
+}
+#endif 

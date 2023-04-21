@@ -28,10 +28,6 @@ public:
         return rr.isSimple() && SkScalarNearlyEqual(rr.fRadii[0].fX, rr.fRadii[0].fY);
     }
 
-    
-    
-    static bool IsNearlySimpleCircular(const SkRRect& rr, SkScalar tolerance = SK_ScalarNearlyZero);
-
     static bool EqualRadii(const SkRRect& rr) {
         return rr.isRect() || SkRRectPriv::IsCircle(rr)  || SkRRectPriv::IsSimpleCircular(rr);
     }
@@ -43,25 +39,7 @@ public:
     static bool ReadFromBuffer(SkRBuffer* buffer, SkRRect* rr);
 
     static void WriteToBuffer(const SkRRect& rr, SkWBuffer* buffer);
-
-    
-    static bool ContainsPoint(const SkRRect& rr, const SkPoint& p) {
-        return rr.getBounds().contains(p.fX, p.fY) && rr.checkCornerContainment(p.fX, p.fY);
-    }
-
-    
-    
-    
-    
-    static SkRect InnerBounds(const SkRRect& rr);
-
-    
-    
-    
-    
-    
-    
-    static SkRRect ConservativeIntersect(const SkRRect& a, const SkRRect& b);
 };
 
 #endif
+

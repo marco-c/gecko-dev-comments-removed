@@ -16,10 +16,11 @@
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPaint.h"
 #include "include/core/SkTypeface.h"
-#include "include/private/base/SkMacros.h"
+#include "include/private/SkMacros.h"
 #include "src/core/SkGlyph.h"
 #include "src/core/SkMask.h"
 #include "src/core/SkMaskGamma.h"
+#include "src/core/SkStrikeForGPU.h"
 #include "src/core/SkSurfacePriv.h"
 #include "src/core/SkWriteBuffer.h"
 
@@ -30,13 +31,18 @@ class SkPathEffect;
 class SkScalerContext;
 class SkScalerContext_DW;
 
-enum class SkScalerContextFlags : uint32_t {
+enum SkScalerContextFlags : uint32_t {
     kNone                      = 0,
     kFakeGamma                 = 1 << 0,
     kBoostContrast             = 1 << 1,
     kFakeGammaAndBoostContrast = kFakeGamma | kBoostContrast,
 };
-SK_MAKE_BITFIELD_OPS(SkScalerContextFlags)
+
+enum SkAxisAlignment : uint32_t {
+    kNone_SkAxisAlignment,
+    kX_SkAxisAlignment,
+    kY_SkAxisAlignment
+};
 
 
 
@@ -47,15 +53,10 @@ SK_MAKE_BITFIELD_OPS(SkScalerContextFlags)
 
 SK_BEGIN_REQUIRE_DENSE
 struct SkScalerContextRec {
-    SkTypefaceID fTypefaceID;
-    SkScalar     fTextSize, fPreScaleX, fPreSkewX;
-    SkScalar     fPost2x2[2][2];
-    SkScalar     fFrameWidth, fMiterLimit;
-
-    
-    
-    
-    uint32_t fForegroundColor{SK_ColorBLACK};
+    uint32_t    fFontID;
+    SkScalar    fTextSize, fPreScaleX, fPreSkewX;
+    SkScalar    fPost2x2[2][2];
+    SkScalar    fFrameWidth, fMiterLimit;
 
 private:
     
@@ -111,11 +112,10 @@ public:
         setContrast(0);
     }
 
-    SkMask::Format fMaskFormat;
-
+    uint8_t     fMaskFormat;
 private:
-    uint8_t        fStrokeJoin : 4;
-    uint8_t        fStrokeCap  : 4;
+    uint8_t     fStrokeJoin : 4;
+    uint8_t     fStrokeCap : 4;
 
 public:
     uint16_t    fFlags;
@@ -127,15 +127,14 @@ public:
 
     SkString dump() const {
         SkString msg;
-        msg.appendf("    Rec\n");
-        msg.appendf("      textsize %a prescale %a preskew %a post [%a %a %a %a]\n",
+        msg.appendf("Rec\n");
+        msg.appendf("  textsize %g prescale %g preskew %g post [%g %g %g %g]\n",
                    fTextSize, fPreScaleX, fPreSkewX, fPost2x2[0][0],
                    fPost2x2[0][1], fPost2x2[1][0], fPost2x2[1][1]);
-        msg.appendf("      frame %g miter %g format %d join %d cap %d flags %#hx\n",
+        msg.appendf("  frame %g miter %g format %d join %d cap %d flags %#hx\n",
                    fFrameWidth, fMiterLimit, fMaskFormat, fStrokeJoin, fStrokeCap, fFlags);
-        msg.appendf("      lum bits %x, device gamma %d, paint gamma %d contrast %d\n", fLumBits,
+        msg.appendf("  lum bits %x, device gamma %d, paint gamma %d contrast %d\n", fLumBits,
                     fDeviceGamma, fPaintGamma, fContrast);
-        msg.appendf("      foreground color %x\n", fForegroundColor);
         return msg;
     }
 
@@ -144,10 +143,10 @@ public:
     void    getSingleMatrix(SkMatrix*) const;
 
     
-    enum class PreMatrixScale {
-        kFull,  
-        kVertical,  
-        kVerticalInteger  
+    enum PreMatrixScale {
+        kFull_PreMatrixScale,  
+        kVertical_PreMatrixScale,  
+        kVerticalInteger_PreMatrixScale  
     };
     
 
@@ -194,7 +193,7 @@ public:
     inline void setHinting(SkFontHinting);
 
     SkMask::Format getFormat() const {
-        return fMaskFormat;
+        return static_cast<SkMask::Format>(fMaskFormat);
     }
 
     SkColor getLuminanceColor() const {
@@ -258,8 +257,6 @@ public:
         kLinearMetrics_Flag       = 0x1000,
         kBaselineSnap_Flag        = 0x2000,
 
-        kNeedsForegroundColor_Flag = 0x4000,
-
         kLightOnDark_Flag         = 0x8000, 
     };
 
@@ -274,7 +271,7 @@ public:
     SkTypeface* getTypeface() const { return fTypeface.get(); }
 
     SkMask::Format getMaskFormat() const {
-        return fRec.fMaskFormat;
+        return (SkMask::Format)fRec.fMaskFormat;
     }
 
     bool isSubpixel() const {
@@ -288,10 +285,11 @@ public:
     
     bool isVertical() const { return false; }
 
-    SkGlyph     makeGlyph(SkPackedGlyphID, SkArenaAlloc*);
+    unsigned    getGlyphCount() { return this->generateGlyphCount(); }
+    void        getAdvance(SkGlyph*);
+    void        getMetrics(SkGlyph*);
     void        getImage(const SkGlyph&);
-    void        getPath(SkGlyph&, SkArenaAlloc*);
-    sk_sp<SkDrawable> getDrawable(SkGlyph&);
+    bool SK_WARN_UNUSED_RESULT getPath(SkPackedGlyphID, SkPath*);
     void        getFontMetrics(SkFontMetrics*);
 
     
@@ -320,13 +318,12 @@ public:
                                           SkScalerContextEffects* effects) {
         SkPaint paint;
         return MakeRecAndEffects(
-                font, paint, SkSurfaceProps(),
+                font, paint, SkSurfaceProps(SkSurfaceProps::kLegacyFontHost_InitType),
                 SkScalerContextFlags::kNone, SkMatrix::I(), rec, effects);
     }
 
-    static std::unique_ptr<SkScalerContext> MakeEmpty(
-            sk_sp<SkTypeface> typeface, const SkScalerContextEffects& effects,
-            const SkDescriptor* desc);
+    static SkDescriptor*  MakeDescriptorForPaths(SkFontID fontID,
+                                                 SkAutoDescriptor* ad);
 
     static SkDescriptor* AutoDescriptorGivenRecAndEffects(
         const SkScalerContextRec& rec,
@@ -374,12 +371,11 @@ protected:
 
 
 
-    virtual void generateMetrics(SkGlyph* glyph, SkArenaAlloc*) = 0;
-    static bool GenerateMetricsFromPath(
-        SkGlyph* glyph, const SkPath& path, SkMask::Format format,
-        bool verticalLCD, bool a8FromLCD, bool hairline);
+
+    virtual void generateMetrics(SkGlyph* glyph) = 0;
 
     
+
 
 
 
@@ -388,41 +384,28 @@ protected:
 
 
     virtual void generateImage(const SkGlyph& glyph) = 0;
-    static void GenerateImageFromPath(
-        const SkMask& mask, const SkPath& path, const SkMaskGamma::PreBlend& maskPreBlend,
-        bool doBGR, bool verticalLCD, bool a8FromLCD, bool hairline);
 
     
 
 
 
-
-    virtual bool SK_WARN_UNUSED_RESULT generatePath(const SkGlyph&, SkPath*) = 0;
-
-    
-
-
-
-
-
-
-
-    virtual sk_sp<SkDrawable> generateDrawable(const SkGlyph&); 
+    virtual bool SK_WARN_UNUSED_RESULT generatePath(SkGlyphID glyphId, SkPath* path) = 0;
 
     
     virtual void generateFontMetrics(SkFontMetrics*) = 0;
+
+    
+    virtual unsigned generateGlyphCount() = 0;
 
     void forceGenerateImageFromPath() { fGenerateImageFromPath = true; }
     void forceOffGenerateImageFromPath() { fGenerateImageFromPath = false; }
 
 private:
-    friend class PathText;  
-    friend class PathTextBench;  
     friend class RandomScalerContext;  
 
-    static SkScalerContextRec PreprocessRec(const SkTypeface&,
-                                            const SkScalerContextEffects&,
-                                            const SkDescriptor&);
+    static SkScalerContextRec PreprocessRec(const SkTypeface& typeface,
+                                            const SkScalerContextEffects& effects,
+                                            const SkDescriptor& desc);
 
     
     sk_sp<SkTypeface> fTypeface;
@@ -435,11 +418,11 @@ private:
     
     bool fGenerateImageFromPath;
 
-    void internalGetPath(SkGlyph&, SkArenaAlloc*);
-    SkGlyph internalMakeGlyph(SkPackedGlyphID, SkMask::Format, SkArenaAlloc*);
-
-protected:
     
+    bool internalGetPath(SkPackedGlyphID id, SkPath* devPath);
+
+    
+protected:
     
     const SkMaskGamma::PreBlend fPreBlend;
 };

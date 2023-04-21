@@ -10,16 +10,6 @@
 #include "include/codec/SkCodec.h"
 #include "include/core/SkData.h"
 #include "include/core/SkImageGenerator.h"
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkSize.h"
-#include "include/core/SkYUVAPixmaps.h"
-
-#include <cstddef>
-#include <memory>
-#include <optional>
-
-enum SkAlphaType : int;
-struct SkImageInfo;
 
 class SkCodecImageGenerator : public SkImageGenerator {
 public:
@@ -27,102 +17,31 @@ public:
 
 
 
-    static std::unique_ptr<SkImageGenerator> MakeFromEncodedCodec(
-            sk_sp<SkData>, std::optional<SkAlphaType> = std::nullopt);
+    static std::unique_ptr<SkImageGenerator> MakeFromEncodedCodec(sk_sp<SkData>);
 
     static std::unique_ptr<SkImageGenerator> MakeFromCodec(std::unique_ptr<SkCodec>);
-
-    
-
-
-
-
-
-
-
-
-    SkISize getScaledDimensions(float desiredScale) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes, const SkCodec::Options* options = nullptr);
-
-    
-
-
-
-
-    int getFrameCount() { return fCodec->getFrameCount(); }
-
-    
-
-
-
-
-
-
-    bool getFrameInfo(int index, SkCodec::FrameInfo* info) const {
-        return fCodec->getFrameInfo(index, info);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    int getRepetitionCount() { return fCodec->getRepetitionCount(); }
 
 protected:
     sk_sp<SkData> onRefEncodedData() override;
 
-    bool onGetPixels(const SkImageInfo& info,
-                     void* pixels,
-                     size_t rowBytes,
-                     const Options& opts) override;
+    bool onGetPixels(
+        const SkImageInfo& info, void* pixels, size_t rowBytes, const Options& opts) override;
 
-    bool onQueryYUVAInfo(const SkYUVAPixmapInfo::SupportedDataTypes&,
-                         SkYUVAPixmapInfo*) const override;
+    bool onQueryYUVA8(
+        SkYUVASizeInfo*, SkYUVAIndex[SkYUVAIndex::kIndexCount], SkYUVColorSpace*) const override;
 
-    bool onGetYUVAPlanes(const SkYUVAPixmaps& yuvaPixmaps) override;
+    bool onGetYUVA8Planes(const SkYUVASizeInfo&, const SkYUVAIndex[SkYUVAIndex::kIndexCount],
+                          void* planes[]) override;
 
 private:
     
 
 
-    SkCodecImageGenerator(std::unique_ptr<SkCodec>, sk_sp<SkData>, std::optional<SkAlphaType>);
+    SkCodecImageGenerator(std::unique_ptr<SkCodec>, sk_sp<SkData>);
 
     std::unique_ptr<SkCodec> fCodec;
     sk_sp<SkData> fData;
 
-    using INHERITED = SkImageGenerator;
+    typedef SkImageGenerator INHERITED;
 };
 #endif  

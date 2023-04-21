@@ -11,12 +11,13 @@
 #include "include/core/SkBitmap.h"
 #include "include/core/SkPaint.h"
 #include "include/core/SkShader.h"
-#include "include/private/base/SkFixed.h"
-#include "include/private/base/SkFloatBits.h"
-#include "include/private/base/SkTemplates.h"
-#include "src/base/SkArenaAlloc.h"
+#include "include/private/SkFixed.h"
+#include "include/private/SkFloatBits.h"
+#include "include/private/SkTemplates.h"
+#include "src/core/SkArenaAlloc.h"
+#include "src/core/SkBitmapController.h"
 #include "src/core/SkMatrixPriv.h"
-#include "src/core/SkMipmapAccessor.h"
+#include "src/core/SkMipMap.h"
 
 typedef SkFixed3232    SkFractionalInt;
 #define SkScalarToFractionalInt(x)  SkScalarToFixed3232(x)
@@ -26,12 +27,38 @@ typedef SkFixed3232    SkFractionalInt;
 
 class SkPaint;
 
-struct SkBitmapProcState {
-    SkBitmapProcState(const SkImage_Base* image, SkTileMode tmx, SkTileMode tmy);
+struct SkBitmapProcInfo {
+    SkBitmapProcInfo(const SkImage_Base*, SkTileMode tmx, SkTileMode tmy);
+    ~SkBitmapProcInfo();
 
-    bool setup(const SkMatrix& inv, SkColor color, const SkSamplingOptions& sampling) {
-        return this->init(inv, color, sampling)
-            && this->chooseProcs();
+    const SkImage_Base*     fImage;
+
+    SkPixmap                fPixmap;
+    SkMatrix                fInvMatrix;         
+    
+    SkMatrix                fRealInvMatrix;     
+    SkColor                 fPaintColor;
+    SkTileMode              fTileModeX;
+    SkTileMode              fTileModeY;
+    SkFilterQuality         fFilterQuality;
+    SkMatrix::TypeMask      fInvType;
+
+    bool init(const SkMatrix& inverse, const SkPaint&);
+
+private:
+    enum {
+        kBMStateSize = 136  
+    };
+    SkSTArenaAlloc<kBMStateSize> fAlloc;
+    SkBitmapController::State* fBMState;
+};
+
+struct SkBitmapProcState : public SkBitmapProcInfo {
+    SkBitmapProcState(const SkImage_Base* image, SkTileMode tmx, SkTileMode tmy)
+        : SkBitmapProcInfo(image, tmx, tmy) {}
+
+    bool setup(const SkMatrix& inv, const SkPaint& paint) {
+        return this->init(inv, paint) && this->chooseProcs();
     }
 
     typedef void (*ShaderProc32)(const void* ctx, int x, int y, SkPMColor[], int count);
@@ -46,15 +73,6 @@ struct SkBitmapProcState {
                                  int count,
                                  SkPMColor colors[]);
 
-    const SkImage_Base*     fImage;
-
-    SkPixmap                fPixmap;
-    SkMatrix                fInvMatrix;         
-    SkAlpha                 fPaintAlpha;
-    SkTileMode              fTileModeX;
-    SkTileMode              fTileModeY;
-    bool                    fBilerp;
-
     SkMatrixPriv::MapXYProc fInvProc;           
     SkFractionalInt     fInvSxFractionalInt;
     SkFractionalInt     fInvKyFractionalInt;
@@ -62,6 +80,9 @@ struct SkBitmapProcState {
     SkFixed             fFilterOneX;
     SkFixed             fFilterOneY;
 
+    SkFixed             fInvSx;             
+    SkFixed             fInvKy;             
+    SkPMColor           fPaintPMColor;      
     uint16_t            fAlphaScale;        
 
     
@@ -87,19 +108,13 @@ struct SkBitmapProcState {
     SampleProc32 getSampleProc32() const { return fSampleProc32; }
 
 private:
-    enum {
-        kBMStateSize = 136  
-    };
-    SkSTArenaAlloc<kBMStateSize> fAlloc;
-
     ShaderProc32        fShaderProc32;      
     
     MatrixProc          fMatrixProc;        
     SampleProc32        fSampleProc32;      
 
-    bool init(const SkMatrix& inverse, SkAlpha, const SkSamplingOptions&);
-    bool chooseProcs();
     MatrixProc chooseMatrixProc(bool trivial_matrix);
+    bool chooseProcs(); 
     ShaderProc32 chooseShaderProc32();
 
     
@@ -160,17 +175,17 @@ public:
                    SkIntToScalar(x) + SK_ScalarHalf,
                    SkIntToScalar(y) + SK_ScalarHalf, &pt);
 
-        SkFixed biasX = 0, biasY = 0;
-        if (s.fBilerp) {
+        SkFixed biasX, biasY;
+        if (s.fFilterQuality == kNone_SkFilterQuality) {
+            
+            
+            
+            
+            biasX = (s.fInvMatrix.getScaleX() > 0);
+            biasY = (s.fInvMatrix.getScaleY() > 0);
+        } else {
             biasX = s.fFilterOneX >> 1;
             biasY = s.fFilterOneY >> 1;
-        } else {
-            
-            
-            
-            
-            biasX = 1;
-            biasY = 1;
         }
 
         
@@ -197,13 +212,5 @@ public:
 private:
     SkFractionalInt fX, fY;
 };
-
-namespace sktests {
-    
-    uint32_t pack_clamp(SkFixed f, unsigned max);
-    
-    uint32_t pack_repeat(SkFixed f, unsigned max, size_t width);
-    uint32_t pack_mirror(SkFixed f, unsigned max, size_t width);
-}
 
 #endif

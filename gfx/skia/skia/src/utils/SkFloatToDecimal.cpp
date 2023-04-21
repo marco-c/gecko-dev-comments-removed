@@ -7,14 +7,11 @@
 
 #include "src/utils/SkFloatToDecimal.h"
 
-#include "include/core/SkTypes.h"
-
 #include <cfloat>
+#include <climits>
 #include <cmath>
 
-#ifdef SK_DEBUG
-#include <limits.h>
-#endif
+#include "include/core/SkTypes.h"
 
 
 static double pow_by_squaring(double value, double base, int e) {

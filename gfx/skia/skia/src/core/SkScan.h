@@ -10,7 +10,7 @@
 #define SkScan_DEFINED
 
 #include "include/core/SkRect.h"
-#include "include/private/base/SkFixed.h"
+#include "include/private/SkFixed.h"
 #include <atomic>
 
 class SkRasterClip;
@@ -40,12 +40,6 @@ public:
     typedef void (*HairRCProc)(const SkPoint[], int count, const SkRasterClip&, SkBlitter*);
 
     static void FillPath(const SkPath&, const SkIRect&, SkBlitter*);
-
-    
-    
-    
-    
-    static bool PathRequiresTiling(const SkIRect& bounds);
 
     
     

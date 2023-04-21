@@ -9,6 +9,7 @@
 
 #include "include/core/SkCanvas.h"
 #include "include/utils/SkNWayCanvas.h"
+#include "src/core/SkMakeUnique.h"
 
 std::unique_ptr<SkCanvas> SkMakeNullCanvas() {
     

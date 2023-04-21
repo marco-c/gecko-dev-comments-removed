@@ -8,16 +8,14 @@
 #ifndef SkMaskFilter_DEFINED
 #define SkMaskFilter_DEFINED
 
+#include "include/core/SkBlurTypes.h"
+#include "include/core/SkCoverageMode.h"
 #include "include/core/SkFlattenable.h"
-#include "include/core/SkRefCnt.h"
 #include "include/core/SkScalar.h"
-#include "include/core/SkTypes.h"
 
-#include <cstddef>
-
-enum SkBlurStyle : int;
-struct SkDeserialProcs;
+class SkMatrix;
 struct SkRect;
+class SkString;
 
 
 
@@ -39,11 +37,37 @@ public:
 
 
 
+    static sk_sp<SkMaskFilter> MakeCompose(sk_sp<SkMaskFilter> outer, sk_sp<SkMaskFilter> inner);
 
-    SkRect approximateFilteredBounds(const SkRect& src) const;
+    
+
+
+    static sk_sp<SkMaskFilter> MakeCombine(sk_sp<SkMaskFilter> filterA, sk_sp<SkMaskFilter> filterB,
+                                           SkCoverageMode mode);
+
+    
+
+
+
+
+
+
+    sk_sp<SkMaskFilter> makeWithMatrix(const SkMatrix&) const;
+
+    static SkFlattenable::Type GetFlattenableType() {
+        return kSkMaskFilter_Type;
+    }
+
+    SkFlattenable::Type getFlattenableType() const override {
+        return kSkMaskFilter_Type;
+    }
 
     static sk_sp<SkMaskFilter> Deserialize(const void* data, size_t size,
-                                           const SkDeserialProcs* procs = nullptr);
+                                          const SkDeserialProcs* procs = nullptr) {
+        return sk_sp<SkMaskFilter>(static_cast<SkMaskFilter*>(
+                                  SkFlattenable::Deserialize(
+                                  kSkMaskFilter_Type, data, size, procs).release()));
+    }
 
 private:
     static void RegisterFlattenables();

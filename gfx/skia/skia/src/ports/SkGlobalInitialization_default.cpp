@@ -14,11 +14,13 @@
 
 #else
 
-    #include "include/core/SkMaskFilter.h"
-    #include "src/core/SkColorFilterBase.h"
-    #include "src/core/SkImageFilter_Base.h"
+    #include "include/core/SkColorFilter.h"
     #include "src/effects/SkDashImpl.h"
-    #include "src/shaders/gradients/SkGradientShaderBase.h"
+    #include "include/effects/SkGradientShader.h"
+    #include "include/core/SkMaskFilter.h"
+
+    #include "include/effects/SkBlurImageFilter.h"
+    #include "include/effects/SkComposeImageFilter.h"
 
     
 
@@ -29,16 +31,10 @@
 
     void SkFlattenable::PrivateInitializer::InitEffects() {
         
-        SkRegisterLinearGradientShaderFlattenable();
-        SkRegisterRadialGradientShaderFlattenable();
-        SkRegisterSweepGradientShaderFlattenable();
-        SkRegisterTwoPointConicalGradientShaderFlattenable();
+        SkGradientShader::RegisterFlattenables();
 
         
-        SkRegisterComposeColorFilterFlattenable();
-        SkRegisterModeColorFilterFlattenable();
-        SkRegisterColorSpaceXformColorFilterFlattenable();
-        SkRegisterWorkingFormatColorFilterFlattenable();
+        SkColorFilter::RegisterFlattenables();
 
         
         SkMaskFilter::RegisterFlattenables();
@@ -55,8 +51,8 @@
 
 
     void SkFlattenable::PrivateInitializer::InitImageFilters() {
-        SkRegisterBlurImageFilterFlattenable();
-        SkRegisterComposeImageFilterFlattenable();
+        SkBlurImageFilter::RegisterFlattenables();
+        SkComposeImageFilter::RegisterFlattenables();
     }
 
 #endif

@@ -18,7 +18,7 @@
 
 
 
-struct SK_API SkRSXform {
+struct SkRSXform {
     static SkRSXform Make(SkScalar scos, SkScalar ssin, SkScalar tx, SkScalar ty) {
         SkRSXform xform = { scos, ssin, tx, ty };
         return xform;

@@ -78,13 +78,17 @@ struct SK_API SkPoint3 {
 
 
     friend SkPoint3 operator-(const SkPoint3& a, const SkPoint3& b) {
-        return { a.fX - b.fX, a.fY - b.fY, a.fZ - b.fZ };
+        SkPoint3 v;
+        v.set(a.fX - b.fX, a.fY - b.fY, a.fZ - b.fZ);
+        return v;
     }
 
     
 
     friend SkPoint3 operator+(const SkPoint3& a, const SkPoint3& b) {
-        return { a.fX + b.fX, a.fY + b.fY, a.fZ + b.fZ };
+        SkPoint3 v;
+        v.set(a.fX + b.fX, a.fY + b.fY, a.fZ + b.fZ);
+        return v;
     }
 
     
@@ -101,10 +105,6 @@ struct SK_API SkPoint3 {
         fX -= v.fX;
         fY -= v.fY;
         fZ -= v.fZ;
-    }
-
-    friend SkPoint3 operator*(SkScalar t, SkPoint3 p) {
-        return { t * p.fX, t * p.fY, t * p.fZ };
     }
 
     

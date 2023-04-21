@@ -26,7 +26,12 @@
 
 
 
-SK_API extern sk_sp<SkTypeface> SkMakeTypefaceFromCTFont(CTFontRef);
+
+
+
+
+
+SK_API extern SkTypeface* SkCreateTypefaceFromCTFont(CTFontRef, CFTypeRef = NULL);
 
 
 
