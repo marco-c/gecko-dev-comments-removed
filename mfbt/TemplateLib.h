@@ -119,18 +119,6 @@ struct MulOverflowMask<1> {
   static const size_t value = 0;
 };
 
-
-
-
-
-
-
-
-
-
-template <bool... C>
-struct And : std::integral_constant<bool, (C && ...)> {};
-
 }  
 
 }  
