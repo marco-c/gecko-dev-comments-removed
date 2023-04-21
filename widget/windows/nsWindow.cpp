@@ -5140,34 +5140,29 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
   
   static const bool sSwitchKeyboardLayout =
       Preferences::GetBool("intl.keyboard.per_window_layout", false);
-  static Maybe<bool> sCanQuit;
   AppShutdownReason shutdownReason = AppShutdownReason::Unknown;
 
   
   switch (msg) {
     
     
-    case WM_QUERYENDSESSION:
-      if (sCanQuit.isNothing()) {
-        
-        
-        nsCOMPtr<nsIObserverService> obsServ =
-            mozilla::services::GetObserverService();
-        nsCOMPtr<nsISupportsPRBool> cancelQuitWrapper =
-            do_CreateInstance(NS_SUPPORTS_PRBOOL_CONTRACTID);
-        cancelQuitWrapper->SetData(false);
+    case WM_QUERYENDSESSION: {
+      
+      nsCOMPtr<nsIObserverService> obsServ =
+          mozilla::services::GetObserverService();
+      nsCOMPtr<nsISupportsPRBool> cancelQuitWrapper =
+          do_CreateInstance(NS_SUPPORTS_PRBOOL_CONTRACTID);
+      cancelQuitWrapper->SetData(false);
 
-        const char16_t* quitType = GetQuitType();
-        obsServ->NotifyObservers(cancelQuitWrapper,
-                                 "quit-application-requested", quitType);
+      const char16_t* quitType = GetQuitType();
+      obsServ->NotifyObservers(cancelQuitWrapper, "quit-application-requested",
+                               quitType);
 
-        bool shouldCancelQuit;
-        cancelQuitWrapper->GetData(&shouldCancelQuit);
-        sCanQuit.emplace(!shouldCancelQuit);
-      }
-      *aRetValue = *sCanQuit;
+      bool shouldCancelQuit;
+      cancelQuitWrapper->GetData(&shouldCancelQuit);
+      *aRetValue = !shouldCancelQuit;
       result = true;
-      break;
+    } break;
 
     case MOZ_WM_STARTA11Y:
 #if defined(ACCESSIBILITY)
@@ -5181,14 +5176,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
     case WM_ENDSESSION: {
       
       
-      
-      
-      
-      
-      
-      
-      if (!(wParam && sCanQuit.valueOr(false))) {
-        sCanQuit.reset();
+      if (!wParam) {
         result = true;
         break;
       }
@@ -5247,8 +5235,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
       AppShutdown::DoImmediateExit();
       MOZ_ASSERT_UNREACHABLE("Our process was supposed to exit.");
-      break;
-    }
+    } break;
 
     case WM_SYSCOLORCHANGE:
       
