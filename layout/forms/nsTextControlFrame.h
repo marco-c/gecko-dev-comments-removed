@@ -169,8 +169,6 @@ class nsTextControlFrame : public nsContainerFrame,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult AttributeChanged(
       int32_t aNameSpaceID, nsAtom* aAttribute, int32_t aModType) override;
 
-  void GetText(nsString& aText);
-
   
 
 
@@ -199,7 +197,7 @@ class nsTextControlFrame : public nsContainerFrame,
 
  public:
   static Maybe<nscoord> ComputeBaseline(const nsIFrame*, const ReflowInput&,
-                                        bool aForSingleLineControl);
+                                        bool aForTextArea);
 
   Element* GetRootNode() const { return mRootNode; }
 
@@ -215,7 +213,7 @@ class nsTextControlFrame : public nsContainerFrame,
 
 #define DEFINE_TEXTCTRL_CONST_FORWARDER(type, name)          \
   type name() const {                                        \
-    mozilla::TextControlElement* textControlElement =        \
+    auto* textControlElement =                               \
         mozilla::TextControlElement::FromNode(GetContent()); \
     return textControlElement->name();                       \
   }
