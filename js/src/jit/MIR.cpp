@@ -5178,14 +5178,12 @@ bool MAsmJSLoadHeap::congruentTo(const MDefinition* ins) const {
   return load->accessType() == accessType() && congruentIfOperandsEqual(load);
 }
 
-MDefinition::AliasType MWasmLoadInstanceDataField::mightAlias(
+MDefinition::AliasType MWasmLoadGlobalVar::mightAlias(
     const MDefinition* def) const {
-  if (def->isWasmStoreInstanceDataField()) {
-    const MWasmStoreInstanceDataField* store =
-        def->toWasmStoreInstanceDataField();
-    return store->instanceDataOffset() == instanceDataOffset_
-               ? AliasType::MayAlias
-               : AliasType::NoAlias;
+  if (def->isWasmStoreGlobalVar()) {
+    const MWasmStoreGlobalVar* store = def->toWasmStoreGlobalVar();
+    return store->globalDataOffset() == globalDataOffset_ ? AliasType::MayAlias
+                                                          : AliasType::NoAlias;
   }
 
   return AliasType::MayAlias;
@@ -5209,23 +5207,23 @@ MDefinition::AliasType MWasmLoadGlobalCell::mightAlias(
   return AliasType::MayAlias;
 }
 
-HashNumber MWasmLoadInstanceDataField::valueHash() const {
+HashNumber MWasmLoadGlobalVar::valueHash() const {
   
   HashNumber hash = MDefinition::valueHash();
-  hash = addU32ToHash(hash, instanceDataOffset_);
+  hash = addU32ToHash(hash, globalDataOffset_);
   return hash;
 }
 
-bool MWasmLoadInstanceDataField::congruentTo(const MDefinition* ins) const {
-  if (!ins->isWasmLoadInstanceDataField()) {
+bool MWasmLoadGlobalVar::congruentTo(const MDefinition* ins) const {
+  if (!ins->isWasmLoadGlobalVar()) {
     return false;
   }
 
-  const MWasmLoadInstanceDataField* other = ins->toWasmLoadInstanceDataField();
+  const MWasmLoadGlobalVar* other = ins->toWasmLoadGlobalVar();
 
   
   
-  bool sameOffsets = instanceDataOffset_ == other->instanceDataOffset_;
+  bool sameOffsets = globalDataOffset_ == other->globalDataOffset_;
   MOZ_ASSERT_IF(sameOffsets, isConstant_ == other->isConstant_);
 
   
@@ -5235,18 +5233,17 @@ bool MWasmLoadInstanceDataField::congruentTo(const MDefinition* ins) const {
   return sameOffsets ;
 }
 
-MDefinition* MWasmLoadInstanceDataField::foldsTo(TempAllocator& alloc) {
-  if (!dependency() || !dependency()->isWasmStoreInstanceDataField()) {
+MDefinition* MWasmLoadGlobalVar::foldsTo(TempAllocator& alloc) {
+  if (!dependency() || !dependency()->isWasmStoreGlobalVar()) {
     return this;
   }
 
-  MWasmStoreInstanceDataField* store =
-      dependency()->toWasmStoreInstanceDataField();
+  MWasmStoreGlobalVar* store = dependency()->toWasmStoreGlobalVar();
   if (!store->block()->dominates(block())) {
     return this;
   }
 
-  if (store->instanceDataOffset() != instanceDataOffset()) {
+  if (store->globalDataOffset() != globalDataOffset()) {
     return this;
   }
 

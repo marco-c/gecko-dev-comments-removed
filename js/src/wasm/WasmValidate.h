@@ -74,13 +74,7 @@ struct ModuleEnvironment {
   uint32_t funcImportsOffsetStart;
   
   
-  uint32_t typeDefsOffsetStart;
-  
-  
-  uint32_t tablesOffsetStart;
-  
-  
-  uint32_t tagsOffsetStart;
+  uint32_t typeIdsOffsetStart;
 
   
   DataSegmentEnvVector dataSegments;
@@ -95,10 +89,8 @@ struct ModuleEnvironment {
         features(features),
         memory(Nothing()),
         numFuncImports(0),
-        funcImportsOffsetStart(UINT32_MAX),
-        typeDefsOffsetStart(UINT32_MAX),
-        tablesOffsetStart(UINT32_MAX),
-        tagsOffsetStart(UINT32_MAX) {}
+        funcImportsOffsetStart(0),
+        typeIdsOffsetStart(0) {}
 
   [[nodiscard]] bool init() {
     types = js_new<TypeContext>(features);
@@ -158,7 +150,7 @@ struct ModuleEnvironment {
 
   uint32_t offsetOfTypeDefInstanceData(uint32_t typeIndex) const {
     MOZ_ASSERT(typeIndex < types->length());
-    return typeDefsOffsetStart + typeIndex * sizeof(TypeDefInstanceData);
+    return typeIdsOffsetStart + typeIndex * sizeof(TypeDefInstanceData);
   }
 
   uint32_t offsetOfTypeDef(uint32_t typeIndex) const {
@@ -168,16 +160,6 @@ struct ModuleEnvironment {
   uint32_t offsetOfSuperTypeVector(uint32_t typeIndex) const {
     return offsetOfTypeDefInstanceData(typeIndex) +
            offsetof(TypeDefInstanceData, superTypeVector);
-  }
-
-  uint32_t offsetOfTableInstanceData(uint32_t tableIndex) const {
-    MOZ_ASSERT(tableIndex < tables.length());
-    return tablesOffsetStart + tableIndex * sizeof(TableInstanceData);
-  }
-
-  uint32_t offsetOfTagInstanceData(uint32_t tagIndex) const {
-    MOZ_ASSERT(tagIndex < tags.length());
-    return tagsOffsetStart + tagIndex * sizeof(TagInstanceData);
   }
 };
 

@@ -55,7 +55,6 @@ class GlobalDesc;
 struct TableDesc;
 struct TableInstanceData;
 struct TagDesc;
-struct TagInstanceData;
 struct TypeDefInstanceData;
 class WasmFrameIter;
 
@@ -193,14 +192,14 @@ class alignas(16) Instance {
   
   
   
-  MOZ_ALIGNED_DECL(16, char data_);
+  MOZ_ALIGNED_DECL(16, char globalArea_);
 
   
   TypeDefInstanceData* typeDefInstanceData(uint32_t typeIndex) const;
   const void* addressOfGlobalCell(const GlobalDesc& globalDesc) const;
   FuncImportInstanceData& funcImportInstanceData(const FuncImport& fi);
-  TableInstanceData& tableInstanceData(uint32_t tableIndex) const;
-  TagInstanceData& tagInstanceData(uint32_t tagIndex) const;
+  TableInstanceData& tableInstanceData(const TableDesc& td) const;
+  GCPtr<WasmTagObject*>& tagInstanceData(const TagDesc& td) const;
 
   
   friend class js::WasmInstanceObject;
@@ -216,7 +215,7 @@ class alignas(16) Instance {
 
  public:
   static Instance* create(JSContext* cx, Handle<WasmInstanceObject*> object,
-                          const SharedCode& code, uint32_t instanceDataLength,
+                          const SharedCode& code, uint32_t globalDataLength,
                           Handle<WasmMemoryObject*> memory,
                           SharedTableVector&& tables,
                           UniqueDebugState maybeDebug);
@@ -291,9 +290,8 @@ class alignas(16) Instance {
   static constexpr size_t offsetOfDebugFilter() {
     return offsetof(Instance, debugFilter_);
   }
-  static constexpr size_t offsetOfData() { return offsetof(Instance, data_); }
-  static constexpr size_t offsetInData(size_t offset) {
-    return offsetOfData() + offset;
+  static constexpr size_t offsetOfGlobalArea() {
+    return offsetof(Instance, globalArea_);
   }
 
   JSContext* cx() const { return cx_; }
@@ -302,7 +300,7 @@ class alignas(16) Instance {
   JS::Realm* realm() const { return realm_; }
   bool debugEnabled() const { return !!maybeDebug_; }
   DebugState& debug() { return *maybeDebug_; }
-  uint8_t* data() const { return (uint8_t*)&data_; }
+  uint8_t* globalData() const { return (uint8_t*)&globalArea_; }
   const SharedTableVector& tables() const { return tables_; }
   SharedMem<uint8_t*> memoryBase() const;
   WasmMemoryObject* memory() const;
