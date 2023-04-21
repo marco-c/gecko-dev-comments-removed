@@ -113,7 +113,7 @@ module.exports = {
   },
 
   
-  plugins: ["html", "fetch-options", "prettier", "no-unsanitized"],
+  plugins: ["html", "fetch-options", "no-unsanitized"],
 
   
   
@@ -338,8 +338,6 @@ module.exports = {
 
     
     "prefer-arrow-callback": "off",
-
-    "prettier/prettier": "off",
 
     
     

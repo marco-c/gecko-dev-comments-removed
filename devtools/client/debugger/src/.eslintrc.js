@@ -3,7 +3,7 @@
 
 
 module.exports = {
-  plugins: ["react", "mozilla", "@babel", "prettier", "import", "file-header"],
+  plugins: ["react", "mozilla", "@babel", "import", "file-header"],
   globals: {
     atob: true,
     btoa: true,
@@ -47,8 +47,6 @@ module.exports = {
     jest: true,
   },
   rules: {
-    "prettier/prettier": "off",
-
     
     
 
