@@ -3,6 +3,7 @@
 
 #include "gtest/gtest.h"
 
+#include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsServiceManagerUtils.h"
 #include "nsICrashReporter.h"
@@ -62,6 +63,56 @@ namespace mozilla::gtest {
 #endif
 
 void DisableCrashReporter();
+
+
+
+
+enum class ExitMode {
+  
+  NoExit,
+  
+  ExitOnDtor,
+};
+
+
+
+
+enum class TestResultStatus : int {
+  Pass = 0,
+  NonFatalFailure = 1,
+  FatalFailure = 2,
+};
+
+inline int ExitCode(TestResultStatus aStatus) {
+  return static_cast<int>(aStatus);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ScopedTestResultReporter {
+ public:
+  virtual ~ScopedTestResultReporter() = default;
+
+  
+
+
+  virtual TestResultStatus Status() const = 0;
+
+  static UniquePtr<ScopedTestResultReporter> Create(ExitMode aExitMode);
+};
 
 }  
 
