@@ -80,7 +80,7 @@ module.exports = {
       for (; i < lines.length; i++) {
         
         
-        lines[i] = "// eslint-disable-line prettier/prettier -- " + lines[i];
+        lines[i] = "// prettier-ignore -- " + lines[i];
 
         
         

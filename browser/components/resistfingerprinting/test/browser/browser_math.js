@@ -21,8 +21,8 @@ async function test_math(rfp_pref, fdlibm_pref) {
   );
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
+    
     function test() {
-      
       
       
       
@@ -98,7 +98,6 @@ async function test_math(rfp_pref, fdlibm_pref) {
       is(Math.exp(1), 2.718281828459045, "Math.exp(1)");
       is(Math.expm1(1), 1.718281828459045, "Math.expm1(1)");
       is(Math.log1p(10), 2.3978952727983707, "Math.log1p(10)");
-      
     }
 
     
