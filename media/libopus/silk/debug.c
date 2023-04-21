@@ -29,6 +29,8 @@
 #include "config.h"
 #endif
 
+typedef int _prevent_empty_translation_unit_warning;
+
 #include "debug.h"
 
 #if SILK_DEBUG || SILK_TIC_TOC
