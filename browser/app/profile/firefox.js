@@ -1205,6 +1205,9 @@ pref("places.frecency.unvisitedBookmarkBonus", 140);
 pref("places.frecency.unvisitedTypedBonus", 200);
 
 
+pref("places.frecency.origins.alternative.featureGate", false);
+
+
 
 pref("places.forgetThisSite.clearByBaseDomain", true);
 
