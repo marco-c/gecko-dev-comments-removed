@@ -395,35 +395,9 @@ already_AddRefed<Promise> WebAuthnManager::MakeCredential(
   }
 
   
-  
-  
-  static_assert(MOZ_WEBAUTHN_ENUM_STRINGS_VERSION == 2);
-  bool useResidentKeyValue =
-      selection.mResidentKey.WasPassed() &&
-      (selection.mResidentKey.Value().EqualsLiteral(
-           MOZ_WEBAUTHN_RESIDENT_KEY_REQUIREMENT_REQUIRED) ||
-       selection.mResidentKey.Value().EqualsLiteral(
-           MOZ_WEBAUTHN_RESIDENT_KEY_REQUIREMENT_PREFERRED) ||
-       selection.mResidentKey.Value().EqualsLiteral(
-           MOZ_WEBAUTHN_RESIDENT_KEY_REQUIREMENT_DISCOURAGED));
-
-  nsString residentKey;
-  if (useResidentKeyValue) {
-    residentKey = selection.mResidentKey.Value();
-  } else {
-    
-    
-    if (selection.mRequireResidentKey) {
-      residentKey.AssignLiteral(MOZ_WEBAUTHN_RESIDENT_KEY_REQUIREMENT_REQUIRED);
-    } else {
-      residentKey.AssignLiteral(
-          MOZ_WEBAUTHN_RESIDENT_KEY_REQUIREMENT_DISCOURAGED);
-    }
-  }
-
-  
-  WebAuthnAuthenticatorSelection authSelection(
-      residentKey, selection.mUserVerification, authenticatorAttachment);
+  WebAuthnAuthenticatorSelection authSelection(selection.mRequireResidentKey,
+                                               selection.mUserVerification,
+                                               authenticatorAttachment);
 
   nsString rpIcon;
   if (aOptions.mRp.mIcon.WasPassed()) {
