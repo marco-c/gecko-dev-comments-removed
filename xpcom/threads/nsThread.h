@@ -51,6 +51,9 @@ class nsThreadShutdownContext;
 #define LONGTASK_BUSY_WINDOW_MS 50
 
 
+#define LONGTASK_TELEMETRY_MS 30
+
+
 namespace mozilla {
 class PerformanceCounterState {
  public:
@@ -96,7 +99,7 @@ class PerformanceCounterState {
   
   
   
-  void RunnableDidRun(Snapshot&& aSnapshot);
+  void RunnableDidRun(const nsCString& aName, Snapshot&& aSnapshot);
 
   const TimeStamp& LastLongTaskEnd() const { return mLastLongTaskEnd; }
   const TimeStamp& LastLongNonIdleTaskEnd() const {
@@ -106,7 +109,7 @@ class PerformanceCounterState {
  private:
   
   
-  void MaybeReportAccumulatedTime(TimeStamp aNow);
+  void MaybeReportAccumulatedTime(const nsCString& aName, TimeStamp aNow);
 
   
   
