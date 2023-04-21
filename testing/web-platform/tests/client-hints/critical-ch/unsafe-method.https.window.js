@@ -1,3 +1,5 @@
+
+
 async_test((t) => {
   
   
@@ -7,17 +9,17 @@ async_test((t) => {
   
   var form = document.createElement("form");
   form.setAttribute("method", "post");
-  form.setAttribute("action", "resources/echo-critical-hint.py");
+  form.setAttribute("action", ECHO_URL);
   form.setAttribute("target", "popup"); 
   document.body.appendChild(form);
 
-  var popup_window = window.open("/common/blank.html", "popup");
-  assert_not_equals(popup_window, null, "Popup windows not allowed?");
-
-  popup_window.addEventListener('message', (e) => {
+  window.addEventListener('message', (e) => {
     t.step(()=>{assert_equals(e.data, "FAIL")});
     t.done();
   });
+
+  var popup_window = window.open("/common/blank.html", "popup");
+  assert_not_equals(popup_window, null, "Popup windows not allowed?");
 
   form.submit();
 }, "Critical-CH unsafe method")
@@ -31,17 +33,17 @@ async_test((t) => {
   
   var form = document.createElement("form");
   form.setAttribute("method", "post");
-  form.setAttribute("action", "resources/echo-critical-hint.py?multiple=true");
+  form.setAttribute("action", ECHO_URL+"?multiple=true");
   form.setAttribute("target", "popup"); 
   document.body.appendChild(form);
 
-  var popup_window = window.open("/common/blank.html", "popup");
-  assert_not_equals(popup_window, null, "Popup windows not allowed?");
-
-  popup_window.addEventListener('message', (e) => {
+  window.addEventListener('message', (e) => {
     t.step(()=>{assert_equals(e.data, "FAIL")});
     t.done();
   });
+
+  var popup_window = window.open("/common/blank.html", "popup");
+  assert_not_equals(popup_window, null, "Popup windows not allowed?");
 
   form.submit();
 }, "Critical-CH w/ multiple headers and unsafe method")
