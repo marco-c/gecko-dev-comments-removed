@@ -136,42 +136,42 @@ ModuleGenerator::~ModuleGenerator() {
 
 
 
-static const uint32_t MaxGlobalDataOffset =
-    INT32_MAX - Instance::offsetOfGlobalArea();
+static const uint32_t MaxInstanceDataOffset =
+    INT32_MAX - Instance::offsetOfData();
 
-bool ModuleGenerator::allocateGlobalBytes(uint32_t bytes, uint32_t align,
-                                          uint32_t* globalDataOffset) {
-  CheckedInt<uint32_t> newGlobalDataLength(metadata_->globalDataLength);
+bool ModuleGenerator::allocateInstanceDataBytes(uint32_t bytes, uint32_t align,
+                                                uint32_t* instanceDataOffset) {
+  CheckedInt<uint32_t> newInstanceDataLength(metadata_->instanceDataLength);
 
   
-  newGlobalDataLength +=
-      ComputeByteAlignment(newGlobalDataLength.value(), align);
-  if (!newGlobalDataLength.isValid()) {
+  newInstanceDataLength +=
+      ComputeByteAlignment(newInstanceDataLength.value(), align);
+  if (!newInstanceDataLength.isValid()) {
     return false;
   }
 
   
-  *globalDataOffset = newGlobalDataLength.value();
+  *instanceDataOffset = newInstanceDataLength.value();
 
   
-  newGlobalDataLength += bytes;
-  if (!newGlobalDataLength.isValid()) {
+  newInstanceDataLength += bytes;
+  if (!newInstanceDataLength.isValid()) {
     return false;
   }
 
   
   
-  if (newGlobalDataLength.value() > MaxGlobalDataOffset + 1) {
+  if (newInstanceDataLength.value() > MaxInstanceDataOffset + 1) {
     return false;
   }
 
-  metadata_->globalDataLength = newGlobalDataLength.value();
+  metadata_->instanceDataLength = newInstanceDataLength.value();
   return true;
 }
 
-bool ModuleGenerator::allocateGlobalBytesN(uint32_t bytes, uint32_t align,
-                                           uint32_t count,
-                                           uint32_t* globalDataOffset) {
+bool ModuleGenerator::allocateInstanceDataBytesN(uint32_t bytes, uint32_t align,
+                                                 uint32_t count,
+                                                 uint32_t* instanceDataOffset) {
   
   
   MOZ_ASSERT(bytes % align == 0);
@@ -184,7 +184,8 @@ bool ModuleGenerator::allocateGlobalBytesN(uint32_t bytes, uint32_t align,
   }
 
   
-  return allocateGlobalBytes(totalBytes.value(), align, globalDataOffset);
+  return allocateInstanceDataBytes(totalBytes.value(), align,
+                                   instanceDataOffset);
 }
 
 bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
@@ -261,10 +262,10 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
       codeSectionSize / ByteCodesPerOOBTrap);
 
   
-  MOZ_ASSERT(metadata_->globalDataLength == 0);
+  MOZ_ASSERT(metadata_->instanceDataLength == 0);
 
   
-  if (!allocateGlobalBytesN(
+  if (!allocateInstanceDataBytesN(
           sizeof(TypeDefInstanceData), alignof(TypeDefInstanceData),
           moduleEnv_->types->length(), &moduleEnv_->typeIdsOffsetStart)) {
     return false;
@@ -272,7 +273,7 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
   metadata_->typeIdsOffsetStart = moduleEnv_->typeIdsOffsetStart;
 
   
-  if (!allocateGlobalBytesN(
+  if (!allocateInstanceDataBytesN(
           sizeof(FuncImportInstanceData), alignof(FuncImportInstanceData),
           moduleEnv_->numFuncImports, &moduleEnv_->funcImportsOffsetStart)) {
     return false;
@@ -280,8 +281,8 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
 
   
   for (TableDesc& table : moduleEnv_->tables) {
-    if (!allocateGlobalBytes(sizeof(TableInstanceData), sizeof(void*),
-                             &table.globalDataOffset)) {
+    if (!allocateInstanceDataBytes(sizeof(TableInstanceData), sizeof(void*),
+                                   &table.instanceDataOffset)) {
       return false;
     }
   }
@@ -294,18 +295,18 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
 
     uint32_t width = global.isIndirect() ? sizeof(void*) : global.type().size();
 
-    uint32_t globalDataOffset;
-    if (!allocateGlobalBytes(width, width, &globalDataOffset)) {
+    uint32_t instanceDataOffset;
+    if (!allocateInstanceDataBytes(width, width, &instanceDataOffset)) {
       return false;
     }
 
-    global.setOffset(globalDataOffset);
+    global.setOffset(instanceDataOffset);
   }
 
   
   for (TagDesc& tag : moduleEnv_->tags) {
-    if (!allocateGlobalBytes(sizeof(void*), sizeof(void*),
-                             &tag.globalDataOffset)) {
+    if (!allocateInstanceDataBytes(sizeof(void*), sizeof(void*),
+                                   &tag.instanceDataOffset)) {
       return false;
     }
   }

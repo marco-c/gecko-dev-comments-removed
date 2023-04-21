@@ -356,18 +356,18 @@ class AliasSet {
  public:
   enum Flag {
     None_ = 0,
-    ObjectFields = 1 << 0,    
-    Element = 1 << 1,         
-                              
-    UnboxedElement = 1 << 2,  
-                              
-    DynamicSlot = 1 << 3,     
-    FixedSlot = 1 << 4,       
-    DOMProperty = 1 << 5,     
-    WasmGlobalVar = 1 << 6,   
-    WasmHeap = 1 << 7,        
-    WasmHeapMeta = 1 << 8,    
-                              
+    ObjectFields = 1 << 0,      
+    Element = 1 << 1,           
+                                
+    UnboxedElement = 1 << 2,    
+                                
+    DynamicSlot = 1 << 3,       
+    FixedSlot = 1 << 4,         
+    DOMProperty = 1 << 5,       
+    WasmInstanceData = 1 << 6,  
+    WasmHeap = 1 << 7,          
+    WasmHeapMeta = 1 << 8,      
+                                
     ArrayBufferViewLengthOrOffset =
         1 << 9,                  
     WasmGlobalCell = 1 << 10,    
@@ -9918,11 +9918,12 @@ class MWasmAtomicBinopHeap : public MVariadicInstruction,
   }
 };
 
-class MWasmLoadGlobalVar : public MUnaryInstruction, public NoTypePolicy::Data {
-  MWasmLoadGlobalVar(MIRType type, unsigned globalDataOffset, bool isConstant,
-                     MDefinition* instance)
+class MWasmLoadInstanceDataField : public MUnaryInstruction,
+                                   public NoTypePolicy::Data {
+  MWasmLoadInstanceDataField(MIRType type, unsigned instanceDataOffset,
+                             bool isConstant, MDefinition* instance)
       : MUnaryInstruction(classOpcode, instance),
-        globalDataOffset_(globalDataOffset),
+        instanceDataOffset_(instanceDataOffset),
         isConstant_(isConstant) {
     MOZ_ASSERT(IsNumberType(type) || type == MIRType::Simd128 ||
                type == MIRType::Pointer || type == MIRType::RefOrNull);
@@ -9930,15 +9931,15 @@ class MWasmLoadGlobalVar : public MUnaryInstruction, public NoTypePolicy::Data {
     setMovable();
   }
 
-  unsigned globalDataOffset_;
+  unsigned instanceDataOffset_;
   bool isConstant_;
 
  public:
-  INSTRUCTION_HEADER(WasmLoadGlobalVar)
+  INSTRUCTION_HEADER(WasmLoadInstanceDataField)
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, instance))
 
-  unsigned globalDataOffset() const { return globalDataOffset_; }
+  unsigned instanceDataOffset() const { return instanceDataOffset_; }
 
   HashNumber valueHash() const override;
   bool congruentTo(const MDefinition* ins) const override;
@@ -9946,7 +9947,7 @@ class MWasmLoadGlobalVar : public MUnaryInstruction, public NoTypePolicy::Data {
 
   AliasSet getAliasSet() const override {
     return isConstant_ ? AliasSet::None()
-                       : AliasSet::Load(AliasSet::WasmGlobalVar);
+                       : AliasSet::Load(AliasSet::WasmInstanceData);
   }
 
   AliasType mightAlias(const MDefinition* def) const override;
@@ -9995,24 +9996,24 @@ class MWasmLoadTableElement : public MBinaryInstruction,
   }
 };
 
-class MWasmStoreGlobalVar : public MBinaryInstruction,
-                            public NoTypePolicy::Data {
-  MWasmStoreGlobalVar(unsigned globalDataOffset, MDefinition* value,
-                      MDefinition* instance)
+class MWasmStoreInstanceDataField : public MBinaryInstruction,
+                                    public NoTypePolicy::Data {
+  MWasmStoreInstanceDataField(unsigned instanceDataOffset, MDefinition* value,
+                              MDefinition* instance)
       : MBinaryInstruction(classOpcode, value, instance),
-        globalDataOffset_(globalDataOffset) {}
+        instanceDataOffset_(instanceDataOffset) {}
 
-  unsigned globalDataOffset_;
+  unsigned instanceDataOffset_;
 
  public:
-  INSTRUCTION_HEADER(WasmStoreGlobalVar)
+  INSTRUCTION_HEADER(WasmStoreInstanceDataField)
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, value), (1, instance))
 
-  unsigned globalDataOffset() const { return globalDataOffset_; }
+  unsigned instanceDataOffset() const { return instanceDataOffset_; }
 
   AliasSet getAliasSet() const override {
-    return AliasSet::Store(AliasSet::WasmGlobalVar);
+    return AliasSet::Store(AliasSet::WasmInstanceData);
   }
 };
 
