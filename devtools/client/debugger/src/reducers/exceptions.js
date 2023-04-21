@@ -35,6 +35,16 @@ function updateExceptions(state, action) {
   if (!exceptions) {
     exceptions = [];
     mutableExceptionsMap.set(sourceActorId, exceptions);
+  } else if (
+    exceptions.some(({ lineNumber, columnNumber }) => {
+      return (
+        lineNumber == exception.lineNumber &&
+        columnNumber == exception.columnNumber
+      );
+    })
+  ) {
+    
+    return state;
   }
 
   

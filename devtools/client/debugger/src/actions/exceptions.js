@@ -2,8 +2,6 @@
 
 
 
-import { hasException } from "../selectors";
-
 export function addExceptionFromResources(resources) {
   return async function({ dispatch }) {
     for (const resource of resources) {
@@ -23,16 +21,6 @@ export function addExceptionFromResources(resources) {
         threadActorId: resource.targetFront.targetForm.threadActor,
       };
 
-      dispatch(addException(exception));
-    }
-  };
-}
-
-export function addException(exception) {
-  return async function({ dispatch, getState }) {
-    const { columnNumber, lineNumber } = exception;
-
-    if (!hasException(getState(), lineNumber, columnNumber)) {
       dispatch({
         type: "ADD_EXCEPTION",
         exception,
