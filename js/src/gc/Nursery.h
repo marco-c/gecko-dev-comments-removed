@@ -175,8 +175,7 @@ class Nursery {
 
   
   
-  JSObject* allocateObject(gc::AllocSite* site, size_t size,
-                           const JSClass* clasp);
+  void* allocateObject(gc::AllocSite* site, size_t size, const JSClass* clasp);
 
   
   
