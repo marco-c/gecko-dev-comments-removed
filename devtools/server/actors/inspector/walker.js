@@ -215,6 +215,7 @@ class WalkerActor extends Actor {
     this._pendingMutations = [];
     this._activePseudoClassLocks = new Set();
     this._mutationBreakpoints = new WeakMap();
+    this._anonParents = new WeakMap();
     this.customElementWatcher = new CustomElementWatcher(
       targetActor.chromeEventHandler
     );
@@ -247,6 +248,8 @@ class WalkerActor extends Actor {
     this.onMutations = this.onMutations.bind(this);
     this.onSlotchange = this.onSlotchange.bind(this);
     this.onShadowrootattached = this.onShadowrootattached.bind(this);
+    this.onAnonymousrootcreated = this.onAnonymousrootcreated.bind(this);
+    this.onAnonymousrootremoved = this.onAnonymousrootremoved.bind(this);
     this.onFrameLoad = this.onFrameLoad.bind(this);
     this.onFrameUnload = this.onFrameUnload.bind(this);
     this.onCustomElementDefined = this.onCustomElementDefined.bind(this);
@@ -271,9 +274,17 @@ class WalkerActor extends Actor {
       "shadowrootattached",
       this.onShadowrootattached
     );
-
+    
+    this.chromeEventHandler.addEventListener(
+      "anonymousrootcreated",
+      this.onAnonymousrootcreated
+    );
+    this.chromeEventHandler.addEventListener(
+      "anonymousrootremoved",
+      this.onAnonymousrootremoved
+    );
     for (const { document } of this.targetActor.windows) {
-      document.shadowRootAttachedEventEnabled = true;
+      document.devToolsAnonymousAndShadowEventsEnabled = true;
     }
 
     
@@ -384,10 +395,18 @@ class WalkerActor extends Actor {
         "shadowrootattached",
         this.onShadowrootattached
       );
+      this.chromeEventHandler.removeEventListener(
+        "anonymousrootcreated",
+        this.onAnonymousrootcreated
+      );
+      this.chromeEventHandler.removeEventListener(
+        "anonymousrootremoved",
+        this.onAnonymousrootremoved
+      );
 
       
       for (const { document } of this.targetActor.windows) {
-        document.shadowRootAttachedEventEnabled = false;
+        document.devToolsAnonymousAndShadowEventsEnabled = false;
       }
 
       this.onFrameLoad = null;
@@ -2169,7 +2188,7 @@ class WalkerActor extends Actor {
       } else if (type === "characterData") {
         mutation.newValue = targetNode.nodeValue;
         this._maybeQueueInlineTextChildMutation(change, targetNode);
-      } else if (type === "childList" || type === "nativeAnonymousChildList") {
+      } else if (type === "childList") {
         
         
         const removedActors = [];
@@ -2260,6 +2279,52 @@ class WalkerActor extends Actor {
       type: "slotchange",
       target: targetActor.actorID,
     });
+  }
+
+  
+
+
+
+
+  onAnonymousrootcreated(event) {
+    const root = event.target;
+    const parent = this.rawParentNode(root);
+    if (!parent) {
+      
+      
+      return;
+    }
+    
+    
+    this._anonParents.set(root, parent);
+    this.onMutations([
+      {
+        type: "childList",
+        target: parent,
+        addedNodes: [root],
+        removedNodes: [],
+      },
+    ]);
+  }
+
+  
+
+
+  onAnonymousrootremoved(event) {
+    const root = event.target;
+    const parent = this._anonParents.get(root);
+    if (!parent) {
+      return;
+    }
+    this._anonParents.delete(root);
+    this.onMutations([
+      {
+        type: "childList",
+        target: parent,
+        addedNodes: [],
+        removedNodes: [root],
+      },
+    ]);
   }
 
   onShadowrootattached(event) {

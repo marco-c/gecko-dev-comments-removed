@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=641821
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 641821</title>
@@ -840,10 +840,10 @@ function testAttributeRecordMerging4() {
 }
 
 function testChromeOnly() {
-  // Content can't access nativeAnonymousChildList
+  // Content can't access chromeOnlyNodes
   try {
     var mo = new M(function(records, observer) { });
-    mo.observe(div, { nativeAnonymousChildList: true });
+    mo.observe(div, { chromeOnlyNodes: true });
     ok(false, "Should have thrown when trying to observe with chrome-only init");
   } catch (e) {
     ok(true, "Throws when trying to observe with chrome-only init");

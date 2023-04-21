@@ -3602,11 +3602,11 @@ class Document : public nsINode,
     return mStyleSheetChangeEventsEnabled;
   }
 
-  void SetShadowRootAttachedEventEnabled(bool aValue) {
-    mShadowRootAttachedEventEnabled = aValue;
+  void SetDevToolsAnonymousAndShadowEventsEnabled(bool aValue) {
+    mDevToolsAnonymousAndShadowEventsEnabled = aValue;
   }
-  bool ShadowRootAttachedEventEnabled() const {
-    return mShadowRootAttachedEventEnabled;
+  bool DevToolsAnonymousAndShadowEventsEnabled() const {
+    return mDevToolsAnonymousAndShadowEventsEnabled;
   }
 
   already_AddRefed<Promise> BlockParsing(Promise& aPromise,
@@ -4741,7 +4741,8 @@ class Document : public nsINode,
   bool mStyleSheetChangeEventsEnabled : 1;
 
   
-  bool mShadowRootAttachedEventEnabled : 1;
+  
+  bool mDevToolsAnonymousAndShadowEventsEnabled : 1;
 
   
   bool mIsSrcdocDocument : 1;

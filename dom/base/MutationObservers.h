@@ -94,15 +94,6 @@ class MutationObservers {
 
 
 
-  static void NotifyNativeAnonymousChildListChange(nsIContent* aContent,
-                                                   bool aIsRemove);
-
-  
-
-
-
-
-
   static void NotifyContentInserted(nsINode* aContainer, nsIContent* aChild);
   
 

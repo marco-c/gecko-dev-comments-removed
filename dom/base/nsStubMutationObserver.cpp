@@ -1,42 +1,42 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * nsStubMutationObserver is an implementation of the nsIMutationObserver
+ * interface (except for the methods on nsISupports) that is intended to be
+ * used as a base class within the content/layout library.  All methods do
+ * nothing.
+ */
 
 #include "nsStubMutationObserver.h"
 #include "mozilla/RefCountType.h"
 #include "nsISupports.h"
 #include "nsINode.h"
 
-
-
-
+/******************************************************************************
+ * nsStubMutationObserver
+ *****************************************************************************/
 
 NS_IMPL_NSIMUTATIONOBSERVER_CORE_STUB(nsStubMutationObserver)
 NS_IMPL_NSIMUTATIONOBSERVER_CONTENT(nsStubMutationObserver)
 
+/******************************************************************************
+ * MutationObserverWrapper
+ *****************************************************************************/
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * @brief Wrapper class for a mutation observer that observes multiple nodes.
+ *
+ * This wrapper implements all methods of the nsIMutationObserver interface
+ * and forwards all calls to its owner, which is an instance of
+ * nsMultiMutationObserver.
+ *
+ * This class holds a reference to the owner and AddRefs/Releases its owner
+ * as well to ensure lifetime.
+ */
 class MutationObserverWrapper final : public nsIMutationObserver {
  public:
   NS_DECL_ISUPPORTS
@@ -69,12 +69,6 @@ class MutationObserverWrapper final : public nsIMutationObserver {
     MOZ_ASSERT(mOwner);
     mOwner->AttributeChanged(aElement, aNameSpaceID, aAttribute, aModType,
                              aOldValue);
-  }
-
-  void NativeAnonymousChildListChange(nsIContent* aContent,
-                                      bool aIsRemove) override {
-    MOZ_ASSERT(mOwner);
-    mOwner->NativeAnonymousChildListChange(aContent, aIsRemove);
   }
 
   void AttributeSetToCurrentValue(mozilla::dom::Element* aElement,
@@ -166,9 +160,9 @@ MozExternalRefCountType MutationObserverWrapper::Release() {
   return ReleaseWrapper();
 }
 
-
-
-
+/******************************************************************************
+ * nsMultiMutationObserver
+ *****************************************************************************/
 
 void nsMultiMutationObserver::AddMutationObserverToNode(nsINode* aNode) {
   if (!aNode) {
@@ -199,9 +193,9 @@ bool nsMultiMutationObserver::ContainsNode(const nsINode* aNode) const {
   return mWrapperForNode.Contains(const_cast<nsINode*>(aNode));
 }
 
-
-
-
+/******************************************************************************
+ * nsStubMultiMutationObserver
+ *****************************************************************************/
 
 NS_IMPL_NSIMUTATIONOBSERVER_CORE_STUB(nsStubMultiMutationObserver)
 NS_IMPL_NSIMUTATIONOBSERVER_CONTENT(nsStubMultiMutationObserver)

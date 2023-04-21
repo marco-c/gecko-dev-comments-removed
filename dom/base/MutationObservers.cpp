@@ -163,19 +163,6 @@ void MutationObservers::NotifyContentAppended(nsIContent* aContainer,
   Notify(aContainer, notifyPresShell, notifyObserver);
 }
 
-void MutationObservers::NotifyNativeAnonymousChildListChange(
-    nsIContent* aContent, bool aIsRemove) {
-  DEFINE_NOTIFIERS(NativeAnonymousChildListChange, (aContent, aIsRemove));
-  if (aIsRemove) {
-    
-    
-    Notify<IsRemoval::Yes, ShouldAssert::No>(aContent, notifyPresShell,
-                                             notifyObserver);
-  } else {
-    Notify(aContent, notifyPresShell, notifyObserver);
-  }
-}
-
 void MutationObservers::NotifyContentInserted(nsINode* aContainer,
                                               nsIContent* aChild) {
   MOZ_ASSERT(aContainer->IsContent() || aContainer->IsDocument(),
