@@ -253,7 +253,6 @@ nsresult HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
         
         return rv;
       }
-      HandlePopoverTargetAction();
     }
   }
 
