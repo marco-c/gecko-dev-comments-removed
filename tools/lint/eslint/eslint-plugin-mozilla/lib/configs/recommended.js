@@ -4,12 +4,6 @@
 
 "use strict";
 
-let prettierRules = { "prettier/prettier": "error" };
-
-if (process.env.MOZ_SEPARATE_PRETTIER) {
-  prettierRules = { "prettier/prettier": "off" };
-}
-
 
 
 
@@ -124,8 +118,6 @@ module.exports = {
   
   
   rules: {
-    ...prettierRules,
-
     
     "arrow-body-style": "off",
 
@@ -346,6 +338,8 @@ module.exports = {
 
     
     "prefer-arrow-callback": "off",
+
+    "prettier/prettier": "off",
 
     
     

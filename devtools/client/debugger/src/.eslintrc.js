@@ -2,12 +2,6 @@
 
 
 
-let prettierRules = { "prettier/prettier": "error" };
-
-if (process.env.MOZ_SEPARATE_PRETTIER) {
-  prettierRules = { "prettier/prettier": "off" };
-}
-
 module.exports = {
   plugins: ["react", "mozilla", "@babel", "prettier", "import", "file-header"],
   globals: {
@@ -53,7 +47,7 @@ module.exports = {
     jest: true,
   },
   rules: {
-    ...prettierRules,
+    "prettier/prettier": "off",
 
     
     

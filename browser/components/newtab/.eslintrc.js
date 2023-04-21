@@ -2,12 +2,6 @@
 
 
 
-let prettierRules = { "prettier/prettier": "error" };
-
-if (process.env.MOZ_SEPARATE_PRETTIER) {
-  prettierRules = { "prettier/prettier": "off" };
-}
-
 module.exports = {
   
   parserOptions: {
@@ -118,7 +112,7 @@ module.exports = {
     },
   ],
   rules: {
-    ...prettierRules,
+    "prettier/prettier": "off",
 
     "fetch-options/no-fetch-credentials": "error",
 
