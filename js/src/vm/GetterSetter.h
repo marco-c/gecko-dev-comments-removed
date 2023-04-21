@@ -7,8 +7,8 @@
 #ifndef vm_GetterSetter_h
 #define vm_GetterSetter_h
 
-#include "gc/Barrier.h"    
-#include "gc/Cell.h"       
+#include "gc/Barrier.h"  
+#include "gc/Cell.h"     
 
 #include "js/TypeDecls.h"  
 #include "js/UbiNode.h"    
