@@ -4,6 +4,11 @@
 
 
 #include "MsaaXULMenuAccessible.h"
+#include "mozilla/dom/NameSpaceConstants.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/a11y/AccessibleWrap.h"
+#include "LocalAccessible-inl.h"
+#include "nsGkAtoms.h"
 
 using namespace mozilla::a11y;
 
