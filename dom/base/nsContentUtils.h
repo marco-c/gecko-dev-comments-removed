@@ -1128,11 +1128,8 @@ class nsContentUtils {
 
 
 
-
-
-
   static bool IsInSameAnonymousTree(const nsINode* aNode,
-                                    const nsIContent* aContent);
+                                    const nsINode* aOtherNode);
 
   
 
