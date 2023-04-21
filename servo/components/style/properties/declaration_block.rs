@@ -9,11 +9,12 @@
 use super::*;
 use crate::applicable_declarations::CascadePriority;
 use crate::context::QuirksMode;
-use crate::custom_properties::CustomPropertiesBuilder;
+use crate::custom_properties::{self, CustomPropertiesBuilder};
 use crate::error_reporting::{ContextualParseError, ParseErrorReporter};
 use crate::parser::ParserContext;
 use crate::properties::animated_properties::{AnimationValue, AnimationValueMap};
 use crate::rule_tree::CascadeLevel;
+use crate::selector_map::PrecomputedHashSet;
 use crate::selector_parser::SelectorImpl;
 use crate::shared_lock::Locked;
 use crate::str::{CssString, CssStringWriter};
@@ -29,6 +30,7 @@ use std::fmt::{self, Write};
 use std::iter::{DoubleEndedIterator, Zip};
 use std::slice::Iter;
 use style_traits::{CssWriter, ParseError, ParsingMode, StyleParseErrorKind, ToCss};
+use thin_vec::ThinVec;
 
 
 #[derive(Default)]
@@ -45,7 +47,6 @@ impl AnimationDeclarations {
         self.animations.is_none() && self.transitions.is_none()
     }
 }
-
 
 
 
@@ -93,6 +94,48 @@ impl Importance {
     }
 }
 
+#[derive(Clone, ToShmem, Default, MallocSizeOf)]
+struct PropertyDeclarationIdSet {
+    longhands: LonghandIdSet,
+    custom: PrecomputedHashSet<custom_properties::Name>,
+}
+
+impl PropertyDeclarationIdSet {
+    fn insert(&mut self, id: PropertyDeclarationId) -> bool {
+        match id {
+            PropertyDeclarationId::Longhand(id) => {
+                if self.longhands.contains(id) {
+                    return false;
+                }
+                self.longhands.insert(id);
+                return true;
+            },
+            PropertyDeclarationId::Custom(name) => self.custom.insert(name.clone()),
+        }
+    }
+
+    fn contains(&self, id: PropertyDeclarationId) -> bool {
+        match id {
+            PropertyDeclarationId::Longhand(id) => self.longhands.contains(id),
+            PropertyDeclarationId::Custom(name) => self.custom.contains(name),
+        }
+    }
+
+    fn remove(&mut self, id: PropertyDeclarationId) {
+        match id {
+            PropertyDeclarationId::Longhand(id) => self.longhands.remove(id),
+            PropertyDeclarationId::Custom(name) => {
+                self.custom.remove(name);
+            },
+        }
+    }
+
+    fn clear(&mut self) {
+        self.longhands.clear();
+        self.custom.clear();
+    }
+}
+
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, ToShmem)]
@@ -100,12 +143,13 @@ pub struct PropertyDeclarationBlock {
     
     
     
-    declarations: Vec<PropertyDeclaration>,
+    declarations: ThinVec<PropertyDeclaration>,
 
     
     declarations_importance: SmallBitVec,
 
-    longhands: LonghandIdSet,
+    
+    property_ids: PropertyDeclarationIdSet,
 }
 
 
@@ -236,22 +280,22 @@ impl PropertyDeclarationBlock {
     #[inline]
     pub fn new() -> Self {
         PropertyDeclarationBlock {
-            declarations: Vec::new(),
+            declarations: ThinVec::new(),
             declarations_importance: SmallBitVec::new(),
-            longhands: LonghandIdSet::new(),
+            property_ids: PropertyDeclarationIdSet::default(),
         }
     }
 
     
     pub fn with_one(declaration: PropertyDeclaration, importance: Importance) -> Self {
-        let mut longhands = LonghandIdSet::new();
-        if let PropertyDeclarationId::Longhand(id) = declaration.id() {
-            longhands.insert(id);
-        }
+        let mut property_ids = PropertyDeclarationIdSet::default();
+        property_ids.insert(declaration.id());
+        let mut declarations = ThinVec::with_capacity(1);
+        declarations.push(declaration);
         PropertyDeclarationBlock {
-            declarations: vec![declaration],
+            declarations,
             declarations_importance: SmallBitVec::from_elem(1, importance.important()),
-            longhands,
+            property_ids,
         }
     }
 
@@ -313,22 +357,22 @@ impl PropertyDeclarationBlock {
     }
 
     
+    
     #[inline]
-    pub fn contains(&self, id: LonghandId) -> bool {
-        self.longhands.contains(id)
+    pub fn longhands(&self) -> &LonghandIdSet {
+        &self.property_ids.longhands
+    }
+
+    
+    #[inline]
+    pub fn contains(&self, id: PropertyDeclarationId) -> bool {
+        self.property_ids.contains(id)
     }
 
     
     #[inline]
     pub fn contains_any_reset(&self) -> bool {
-        self.longhands.contains_any_reset()
-    }
-
-    
-    
-    #[inline]
-    pub fn longhands(&self) -> &LonghandIdSet {
-        &self.longhands
+        self.property_ids.longhands.contains_any_reset()
     }
 
     
@@ -340,12 +384,9 @@ impl PropertyDeclarationBlock {
         &self,
         property: PropertyDeclarationId,
     ) -> Option<(&PropertyDeclaration, Importance)> {
-        if let PropertyDeclarationId::Longhand(id) = property {
-            if !self.contains(id) {
-                return None;
-            }
+        if !self.contains(property) {
+            return None;
         }
-
         self.declaration_importance_iter()
             .find(|(declaration, _)| declaration.id() == property)
     }
@@ -447,16 +488,6 @@ impl PropertyDeclarationBlock {
     
     
     
-    #[inline]
-    fn is_definitely_new(&self, decl: &PropertyDeclaration) -> bool {
-        decl.id()
-            .as_longhand()
-            .map_or(false, |id| !self.longhands.contains(id))
-    }
-
-    
-    
-    
     
     pub fn extend(
         &mut self,
@@ -492,10 +523,11 @@ impl PropertyDeclarationBlock {
     
     
     pub fn push(&mut self, declaration: PropertyDeclaration, importance: Importance) -> bool {
-        if !self.is_definitely_new(&declaration) {
+        let id = declaration.id();
+        if !self.property_ids.insert(id) {
             let mut index_to_remove = None;
             for (i, slot) in self.declarations.iter_mut().enumerate() {
-                if slot.id() != declaration.id() {
+                if slot.id() != id {
                     continue;
                 }
 
@@ -520,9 +552,6 @@ impl PropertyDeclarationBlock {
             }
         }
 
-        if let PropertyDeclarationId::Longhand(id) = declaration.id() {
-            self.longhands.insert(id);
-        }
         self.declarations.push(declaration);
         self.declarations_importance.push(importance.important());
         true
@@ -545,7 +574,7 @@ impl PropertyDeclarationBlock {
                 .all_shorthand
                 .declarations()
                 .any(|decl| {
-                    self.is_definitely_new(&decl) ||
+                    !self.contains(decl.id()) ||
                         self.declarations
                             .iter()
                             .enumerate()
@@ -566,7 +595,7 @@ impl PropertyDeclarationBlock {
                 .declarations
                 .iter()
                 .map(|declaration| {
-                    if self.is_definitely_new(declaration) {
+                    if !self.contains(declaration.id()) {
                         return DeclarationUpdate::Append;
                     }
                     let longhand_id = declaration.id().as_longhand();
@@ -641,11 +670,10 @@ impl PropertyDeclarationBlock {
         if !matches!(drain.all_shorthand, AllShorthand::NotSet) {
             debug_assert!(updates.updates.is_empty());
             for decl in drain.all_shorthand.declarations() {
-                if self.is_definitely_new(&decl) {
-                    let longhand_id = decl.id().as_longhand().unwrap();
+                let id = decl.id();
+                if self.property_ids.insert(id) {
                     self.declarations.push(decl);
                     self.declarations_importance.push(important);
-                    self.longhands.insert(longhand_id);
                 } else {
                     let (idx, slot) = self
                         .declarations
@@ -712,9 +740,7 @@ impl PropertyDeclarationBlock {
             match *update {
                 DeclarationUpdate::None => {},
                 DeclarationUpdate::Append | DeclarationUpdate::AppendAndRemove { .. } => {
-                    if let Some(id) = decl.id().as_longhand() {
-                        self.longhands.insert(id);
-                    }
+                    self.property_ids.insert(decl.id());
                     self.declarations.push(decl);
                     self.declarations_importance.push(important);
                 },
@@ -731,8 +757,8 @@ impl PropertyDeclarationBlock {
     
     #[inline]
     pub fn first_declaration_to_remove(&self, property: &PropertyId) -> Option<usize> {
-        if let Some(id) = property.longhand_id() {
-            if !self.longhands.contains(id) {
+        if let Err(longhand_or_custom) = property.as_shorthand() {
+            if !self.contains(longhand_or_custom) {
                 return None;
             }
         }
@@ -745,13 +771,8 @@ impl PropertyDeclarationBlock {
     
     #[inline]
     fn remove_declaration_at(&mut self, i: usize) {
-        {
-            let id = self.declarations[i].id();
-            if let PropertyDeclarationId::Longhand(id) = id {
-                self.longhands.remove(id);
-            }
-            self.declarations_importance.remove(i);
-        }
+        self.property_ids.remove(self.declarations[i].id());
+        self.declarations_importance.remove(i);
         self.declarations.remove(i);
     }
 
@@ -760,7 +781,7 @@ impl PropertyDeclarationBlock {
     pub fn clear(&mut self) {
         self.declarations_importance.clear();
         self.declarations.clear();
-        self.longhands.clear();
+        self.property_ids.clear();
     }
 
     
@@ -848,7 +869,7 @@ impl PropertyDeclarationBlock {
                         custom_properties.as_ref(),
                         QuirksMode::NoQuirks,
                         device,
-                        &mut Default::default()
+                        &mut Default::default(),
                     )
                     .to_css(dest)
             },
@@ -859,17 +880,17 @@ impl PropertyDeclarationBlock {
     
     pub fn from_animation_value_map(animation_value_map: &AnimationValueMap) -> Self {
         let len = animation_value_map.len();
-        let mut declarations = Vec::with_capacity(len);
-        let mut longhands = LonghandIdSet::new();
+        let mut declarations = ThinVec::with_capacity(len);
+        let mut property_ids = PropertyDeclarationIdSet::default();
 
         for (property, animation_value) in animation_value_map.iter() {
-            longhands.insert(*property);
+            property_ids.longhands.insert(*property);
             declarations.push(animation_value.uncompute());
         }
 
         PropertyDeclarationBlock {
             declarations,
-            longhands,
+            property_ids,
             declarations_importance: SmallBitVec::from_elem(len, false),
         }
     }
@@ -877,8 +898,8 @@ impl PropertyDeclarationBlock {
     
     
     pub fn has_css_wide_keyword(&self, property: &PropertyId) -> bool {
-        if let Some(id) = property.longhand_id() {
-            if !self.longhands.contains(id) {
+        if let Err(longhand_or_custom) = property.as_shorthand() {
+            if !self.property_ids.contains(longhand_or_custom) {
                 return false;
             }
         }
@@ -997,7 +1018,7 @@ impl PropertyDeclarationBlock {
                 
                 
                 
-                if !self.longhands.contains_all(&longhands) {
+                if !self.property_ids.longhands.contains_all(&longhands) {
                     continue;
                 }
 
@@ -1392,15 +1413,11 @@ fn report_one_css_error<'i>(
     debug_assert!(context.error_reporting_enabled());
 
     fn all_properties_in_block(block: &PropertyDeclarationBlock, property: &PropertyId) -> bool {
-        match *property {
-            PropertyId::LonghandAlias(id, _) | PropertyId::Longhand(id) => block.contains(id),
-            PropertyId::ShorthandAlias(id, _) | PropertyId::Shorthand(id) => {
-                id.longhands().all(|longhand| block.contains(longhand))
-            },
-            
-            
-            
-            PropertyId::Custom(..) => false,
+        match property.as_shorthand() {
+            Ok(id) => id
+                .longhands()
+                .all(|longhand| block.contains(PropertyDeclarationId::Longhand(longhand))),
+            Err(longhand_or_custom) => block.contains(longhand_or_custom),
         }
     }
 
