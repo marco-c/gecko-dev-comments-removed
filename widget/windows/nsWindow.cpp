@@ -5141,6 +5141,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
   static const bool sSwitchKeyboardLayout =
       Preferences::GetBool("intl.keyboard.per_window_layout", false);
   static Maybe<bool> sCanQuit;
+  AppShutdownReason shutdownReason = AppShutdownReason::Unknown;
 
   
   switch (msg) {
@@ -5177,45 +5178,77 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
 #endif
       break;
 
-    case WM_ENDSESSION:
-    case MOZ_WM_APP_QUIT:
+    case WM_ENDSESSION: {
       
       
-      if (msg == MOZ_WM_APP_QUIT || (wParam && sCanQuit.valueOr(false))) {
-        
-        
-        
-        
-        nsCOMPtr<nsIObserverService> obsServ =
-            mozilla::services::GetObserverService();
-        const char16_t* syncShutdown = u"syncShutdown";
-        const char16_t* quitType = GetQuitType();
-
-        AppShutdown::Init(AppShutdownMode::Normal, 0);
-
-        obsServ->NotifyObservers(nullptr, "quit-application-granted",
-                                 syncShutdown);
-        obsServ->NotifyObservers(nullptr, "quit-application-forced", nullptr);
-
-        AppShutdown::OnShutdownConfirmed();
-
-        AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownConfirmed,
-                                          quitType);
-        AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownNetTeardown,
-                                          nullptr);
-        AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownTeardown,
-                                          nullptr);
-        AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdown, nullptr);
-        AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownQM,
-                                          nullptr);
-        AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownTelemetry,
-                                          nullptr);
-
-        AppShutdown::DoImmediateExit();
+      
+      
+      
+      
+      
+      
+      if (!(wParam && sCanQuit.valueOr(false))) {
+        sCanQuit.reset();
+        result = true;
+        break;
       }
-      sCanQuit.reset();
-      result = true;
+      
+      
+      
+      
+      
+      
+      if (lParam == 0) {
+        shutdownReason = AppShutdownReason::OSShutdown;
+      } else if (lParam & ENDSESSION_LOGOFF) {
+        shutdownReason = AppShutdownReason::OSSessionEnd;
+      } else if (lParam & (ENDSESSION_CLOSEAPP | ENDSESSION_CRITICAL)) {
+        shutdownReason = AppShutdownReason::OSForceClose;
+      } else {
+        MOZ_DIAGNOSTIC_ASSERT(false,
+                              "Received WM_ENDSESSION with unknown flags.");
+        shutdownReason = AppShutdownReason::OSForceClose;
+      }
+    }
+      [[fallthrough]];
+    case MOZ_WM_APP_QUIT: {
+      if (shutdownReason == AppShutdownReason::Unknown) {
+        
+        
+        shutdownReason = AppShutdownReason::WinUnexpectedMozQuit;
+      }
+      
+      
+      
+      
+      nsCOMPtr<nsIObserverService> obsServ =
+          mozilla::services::GetObserverService();
+      const char16_t* syncShutdown = u"syncShutdown";
+      const char16_t* quitType = GetQuitType();
+
+      AppShutdown::Init(AppShutdownMode::Normal, 0, shutdownReason);
+
+      obsServ->NotifyObservers(nullptr, "quit-application-granted",
+                               syncShutdown);
+      obsServ->NotifyObservers(nullptr, "quit-application-forced", nullptr);
+
+      AppShutdown::OnShutdownConfirmed();
+
+      AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownConfirmed,
+                                        quitType);
+      AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownNetTeardown,
+                                        nullptr);
+      AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownTeardown,
+                                        nullptr);
+      AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdown, nullptr);
+      AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownQM, nullptr);
+      AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownTelemetry,
+                                        nullptr);
+
+      AppShutdown::DoImmediateExit();
+      MOZ_ASSERT_UNREACHABLE("Our process was supposed to exit.");
       break;
+    }
 
     case WM_SYSCOLORCHANGE:
       

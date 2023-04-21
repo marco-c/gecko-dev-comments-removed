@@ -19,6 +19,23 @@ enum class AppShutdownMode {
   Restart,
 };
 
+enum class AppShutdownReason {
+  
+  Unknown,
+  
+  AppClose,
+  
+  AppRestart,
+  
+  OSForceClose,
+  
+  OSSessionEnd,
+  
+  OSShutdown,
+  
+  WinUnexpectedMozQuit,
+};
+
 class AppShutdown {
  public:
   static ShutdownPhase GetCurrentShutdownPhase();
@@ -38,7 +55,9 @@ class AppShutdown {
   
 
 
-  static void Init(AppShutdownMode aMode, int aExitCode);
+
+  static void Init(AppShutdownMode aMode, int aExitCode,
+                   AppShutdownReason aReason);
 
   
 
@@ -109,6 +128,11 @@ class AppShutdown {
 #endif
 
  private:
+  
+
+
+  static void AnnotateShutdownReason(AppShutdownReason aReason);
+
   
 
 

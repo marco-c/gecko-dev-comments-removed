@@ -401,7 +401,13 @@ nsAppStartup::Quit(uint32_t aMode, int aExitCode, bool* aUserAllowedQuit) {
     auto shutdownMode = ((aMode & eRestart) != 0)
                             ? mozilla::AppShutdownMode::Restart
                             : mozilla::AppShutdownMode::Normal;
-    mozilla::AppShutdown::Init(shutdownMode, aExitCode);
+    
+    
+    
+    auto shutdownReason = ((aMode & eRestart) != 0)
+                              ? mozilla::AppShutdownReason::AppRestart
+                              : mozilla::AppShutdownReason::AppClose;
+    mozilla::AppShutdown::Init(shutdownMode, aExitCode, shutdownReason);
 
     if (mozilla::AppShutdown::IsRestarting()) {
       
