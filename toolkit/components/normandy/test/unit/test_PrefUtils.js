@@ -3,8 +3,8 @@
 
 "use strict";
 
-const { PrefUtils } = ChromeUtils.import(
-  "resource://normandy/lib/PrefUtils.jsm"
+const { PrefUtils } = ChromeUtils.importESModule(
+  "resource://normandy/lib/PrefUtils.sys.mjs"
 );
 
 add_task(function getPrefGetsValues() {
