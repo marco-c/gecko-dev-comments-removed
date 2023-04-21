@@ -218,10 +218,6 @@ already_AddRefed<Promise> BodyStream::PullCallback(
   MOZ_DIAGNOSTIC_ASSERT(mInputStream);
   MOZ_DIAGNOSTIC_ASSERT(!mOriginalInputStream);
 
-  
-  
-  mInputStream->AsyncWait(nullptr, 0, 0, nullptr);
-  
   nsresult rv = mInputStream->AsyncWait(this, 0, 0, mOwningEventTarget);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     ErrorPropagation(aCx, stream, rv);
