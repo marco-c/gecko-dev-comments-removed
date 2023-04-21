@@ -14468,9 +14468,12 @@ class ExitFullscreenScriptRunnable : public Runnable {
         mLeaf, ToSupports(mLeaf), u"MozDOMFullscreen:Exited"_ns,
         CanBubble::eYes, Cancelable::eNo,  nullptr);
     
+    
     if (nsPIDOMWindowOuter* win = mRoot->GetWindow()) {
-      win->SetFullscreenInternal(FullscreenReason::ForForceExitFullscreen,
-                                 false);
+      if (!mRoot->HasPendingFullscreenRequests()) {
+        win->SetFullscreenInternal(FullscreenReason::ForForceExitFullscreen,
+                                   false);
+      }
     }
     return NS_OK;
   }
@@ -15262,6 +15265,15 @@ static bool ShouldApplyFullscreenDirectly(Document* aDoc,
   if (!iter.AtEnd()) {
     return false;
   }
+
+  
+  
+  PendingFullscreenChangeList::Iterator<FullscreenExit> iterExit(
+      aDoc, PendingFullscreenChangeList::eDocumentsWithSameRoot);
+  if (!iterExit.AtEnd()) {
+    return false;
+  }
+
   
   
   
@@ -15338,6 +15350,15 @@ void Document::RequestFullscreenInParentProcess(
 
   if (!CheckFullscreenAllowedElementType(aRequest->Element())) {
     aRequest->Reject("FullscreenDeniedNotHTMLSVGOrMathML");
+    return;
+  }
+
+  
+  PendingFullscreenChangeList::Iterator<FullscreenExit> iter(
+      this, PendingFullscreenChangeList::eDocumentsWithSameRoot);
+  if (!iter.AtEnd()) {
+    PendingFullscreenChangeList::Add(std::move(aRequest));
+    rootWin->SetFullscreenInternal(FullscreenReason::ForFullscreenAPI, true);
     return;
   }
 

@@ -1977,8 +1977,8 @@ nsresult AppWindow::SetPersistentValue(const nsAtom* aAttr,
 void AppWindow::MaybeSavePersistentPositionAndSize(
     PersistentAttributes aAttributes, Element& aRootElement,
     const nsAString& aPersistString, bool aShouldPersist) {
-  if ((aAttributes & PersistentAttributes{PersistentAttribute::Position,
-                                          PersistentAttribute::Size})
+  if ((aAttributes& PersistentAttributes{PersistentAttribute::Position,
+                                         PersistentAttribute::Size})
           .isEmpty()) {
     return;
   }
@@ -2915,23 +2915,6 @@ void AppWindow::SizeModeChanged(nsSizeMode aSizeMode) {
   nsCOMPtr<nsPIDOMWindowOuter> ourWindow =
       mDocShell ? mDocShell->GetWindow() : nullptr;
   if (ourWindow) {
-    
-    
-    if (aSizeMode != nsSizeMode_Fullscreen &&
-        aSizeMode != nsSizeMode_Minimized) {
-      if (ourWindow->GetFullScreen()) {
-        
-        
-        
-        
-        
-        
-        ourWindow->SetFullscreenInternal(
-            FullscreenReason::ForForceExitFullscreen, false);
-        ourWindow->SetFullScreen(false);
-      }
-    }
-
     
     ourWindow->DispatchCustomEvent(u"sizemodechange"_ns);
   }
