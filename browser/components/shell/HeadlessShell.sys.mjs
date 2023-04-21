@@ -1,23 +1,15 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { E10SUtils } from "resource://gre/modules/E10SUtils.sys.mjs";
+import { HiddenFrame } from "resource://gre/modules/HiddenFrame.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["HeadlessShell", "ScreenshotParent"];
-
-const { E10SUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/E10SUtils.sys.mjs"
-);
-const { HiddenFrame } = ChromeUtils.importESModule(
-  "resource://gre/modules/HiddenFrame.sys.mjs"
-);
-
-
-
+// Refrences to the progress listeners to keep them from being gc'ed
+// before they are called.
 const progressListeners = new Set();
 
-class ScreenshotParent extends JSWindowActorParent {
+export class ScreenshotParent extends JSWindowActorParent {
   getDimensions(params) {
     return this.sendQuery("GetDimensions", params);
   }
@@ -25,10 +17,10 @@ class ScreenshotParent extends JSWindowActorParent {
 
 ChromeUtils.registerWindowActor("Screenshot", {
   parent: {
-    moduleURI: "resource:///modules/HeadlessShell.jsm",
+    esModuleURI: "resource:///modules/HeadlessShell.sys.mjs",
   },
   child: {
-    moduleURI: "resource:///modules/ScreenshotChild.jsm",
+    esModuleURI: "resource:///modules/ScreenshotChild.sys.mjs",
   },
 });
 
@@ -63,15 +55,15 @@ function loadContentWindow(browser, url) {
 
     let progressListener = {
       onLocationChange(progress, request, location, flags) {
-        
+        // Ignore inner-frame events
         if (!progress.isTopLevel) {
           return;
         }
-        
+        // Ignore events that don't change the document
         if (flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT) {
           return;
         }
-        
+        // Ignore the initial about:blank, unless about:blank is requested
         if (location.spec == "about:blank" && uri.spec != "about:blank") {
           return;
         }
@@ -169,20 +161,20 @@ async function takeScreenshot(
   }
 }
 
-let HeadlessShell = {
+export let HeadlessShell = {
   async handleCmdLineArgs(cmdLine, URLlist) {
     try {
-      
+      // Don't quit even though we don't create a window
       Services.startup.enterLastWindowClosingSurvivalArea();
 
-      
+      // Default options
       let fullWidth = true;
       let fullHeight = true;
-      
+      // Most common screen resolution of Firefox users
       let contentWidth = 1366;
       let contentHeight = 768;
 
-      
+      // Parse `window-size`
       try {
         var dimensionsStr = cmdLine.handleFlagWithParam("window-size", true);
       } catch (e) {
@@ -219,18 +211,18 @@ let HeadlessShell = {
       try {
         urlOrFileToSave = cmdLine.handleFlagWithParam("screenshot", true);
       } catch (e) {
-        
-        cmdLine.handleFlag("screenshot", true); 
+        // We know that the flag exists so we only get here if there was no parameter.
+        cmdLine.handleFlag("screenshot", true); // Remove `screenshot`
       }
 
-      
-      
+      // Assume that the remaining arguments that do not start
+      // with a hyphen are URLs
       for (let i = 0; i < cmdLine.length; ++i) {
         const argument = cmdLine.getArgument(i);
         if (argument.startsWith("-")) {
           dump(`Warning: unrecognized command line flag ${argument}\n`);
-          
-          
+          // To emulate the pre-nsICommandLine behavior, we ignore
+          // the argument after an unrecognized flag.
           ++i;
         } else {
           URLlist.push(argument);
@@ -239,8 +231,8 @@ let HeadlessShell = {
 
       let path = null;
       if (urlOrFileToSave && !URLlist.length) {
-        
-        
+        // URL was specified next to "-screenshot"
+        // Example: -screenshot https://www.example.com -attach-console
         URLlist.push(urlOrFileToSave);
       } else {
         path = urlOrFileToSave;
