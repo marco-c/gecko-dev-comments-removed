@@ -13,9 +13,9 @@
 
 
 async function exchangeOfferAnswer(pc1, pc2) {
-  await pc1.setLocalDescription(await pc1.createOffer());
+  await pc1.setLocalDescription();
   await pc2.setRemoteDescription(pc1.localDescription);
-  await pc2.setLocalDescription(await pc2.createAnswer());
+  await pc2.setLocalDescription();
   await pc1.setRemoteDescription(pc2.localDescription);
 }
 
