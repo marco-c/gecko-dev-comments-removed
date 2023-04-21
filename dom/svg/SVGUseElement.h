@@ -113,8 +113,12 @@ class SVGUseElement final : public SVGUseElementBase,
     
     
     CyclicReference,
+    
+    TooDeep,
   };
   ScanResult ScanAncestors(const Element& aTarget) const;
+  ScanResult ScanAncestorsInternal(const Element& aTarget,
+                                   uint32_t& aCount) const;
 
   
 
