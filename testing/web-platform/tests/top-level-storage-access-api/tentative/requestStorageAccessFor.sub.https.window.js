@@ -15,6 +15,7 @@ if (!topLevelDocument) {
 }
 
 const requestedOrigin = 'https://foo.com';
+const altOrigin = 'https://{{hosts[alt][www]}}:{{ports[https][0]}}';
 
 
 test(
@@ -23,13 +24,6 @@ test(
     },
     '[' + testPrefix +
         '] document.requestStorageAccessFor() should be supported on the document interface');
-
-
-promise_setup(async () => {
-  await test_driver.set_permission(
-    { name: 'top-level-storage-access', requestedOrigin }, 'prompt');
-  await test_driver.set_permission({name: 'storage-access'}, 'prompt');
-});
 
 promise_test(
   t => {
@@ -40,9 +34,20 @@ promise_test(
   '[' + testPrefix +
       '] document.requestStorageAccessFor() should be rejected when called with no argument');
 
+
+
+
+
+async function CommonSetup() {
+  await test_driver.set_permission(
+    { name: 'top-level-storage-access', requestedOrigin }, 'prompt');
+  await test_driver.set_permission(
+    { name: 'top-level-storage-access', requestedOrigin: altOrigin }, 'prompt');
+}
+
 if (topLevelDocument) {
-  promise_test(
-      t => {
+  promise_test(async t => {
+        await CommonSetup();
         return promise_rejects_dom(t, 'NotAllowedError',
           document.requestStorageAccessFor(requestedOrigin),
          'document.requestStorageAccessFor() call without user gesture');
@@ -72,24 +77,19 @@ if (topLevelDocument) {
   }, '[non-fully-active] document.requestStorageAccessFor() should not resolve when run in a detached DOMParser document');
 
   promise_test(
-    async t => {
-      await test_driver.set_permission(
-        { name: 'top-level-storage-access', requestedOrigin }, 'granted');
+      async t => {
+        await CommonSetup();
+        await test_driver.set_permission(
+            {name: 'top-level-storage-access', requestedOrigin}, 'granted');
 
-      await document.requestStorageAccessFor(requestedOrigin);
-    },
-    '[' + testPrefix +
-    '] document.requestStorageAccessFor() should be resolved without a user gesture with an existing permission');
+        await document.requestStorageAccessFor(requestedOrigin);
+      },
+      '[' + testPrefix +
+          '] document.requestStorageAccessFor() should be resolved without a user gesture with an existing permission');
 
   promise_test(
       async t => {
-        const altOrigin = 'https://{{hosts[alt][www]}}:{{ports[https][0]}}';
-        t.add_cleanup(async () => {
-          await test_driver.set_permission(
-              {name: 'top-level-storage-access', requestedOrigin: altOrigin},
-              'prompt');
-          await test_driver.set_permission({name: 'storage-access'}, 'prompt');
-        });
+        await CommonSetup();
         await test_driver.set_permission(
             {name: 'top-level-storage-access', requestedOrigin: altOrigin},
             'granted');
@@ -140,18 +140,11 @@ if (topLevelDocument) {
 
   promise_test(
       async (t) => {
-        const altOrigin = 'https://{{hosts[alt][www]}}:{{ports[https][0]}}';
         const altEchoCookieHeaderUrl =
             `${altOrigin}/storage-access-api/resources/echo-cookie-header.py`;
 
         await MaybeSetStorageAccess('*', '*', 'blocked');
-        t.add_cleanup(async () => {
-          await test_driver.delete_all_cookies();
-          await test_driver.set_permission(
-              {name: 'top-level-storage-access', requestedOrigin: altOrigin},
-              'prompt');
-          await MaybeSetStorageAccess('*', '*', 'allowed');
-        });
+        await CommonSetup();
 
         await test_driver.set_permission(
             {name: 'top-level-storage-access', requestedOrigin: altOrigin},
@@ -194,16 +187,8 @@ if (topLevelDocument) {
 
   promise_test(
       async (t) => {
-        const altOrigin = 'https://{{hosts[alt][www]}}:{{ports[https][0]}}';
-
         await MaybeSetStorageAccess('*', '*', 'blocked');
-        t.add_cleanup(async () => {
-          await test_driver.delete_all_cookies();
-          await test_driver.set_permission(
-              {name: 'top-level-storage-access', requestedOrigin: altOrigin},
-              'prompt');
-          await MaybeSetStorageAccess('*', '*', 'allowed');
-        });
+        await CommonSetup();
 
         
         
