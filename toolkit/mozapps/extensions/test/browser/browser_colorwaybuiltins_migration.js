@@ -10,10 +10,6 @@ const { BuiltInThemes } = ChromeUtils.importESModule(
   "resource:///modules/BuiltInThemes.sys.mjs"
 );
 
-const { sinon } = ChromeUtils.importESModule(
-  "resource://testing-common/Sinon.sys.mjs"
-);
-
 AddonTestUtils.initMochitest(this);
 
 const server = AddonTestUtils.createHttpServer();
@@ -122,17 +118,6 @@ const assertDetailView = async (win, { addonId, expectThemeName }) => {
 };
 
 add_task(async function test_update_expired_colorways_builtins() {
-  const sandbox = sinon.createSandbox();
-  registerCleanupFunction(() => {
-    info("Restoring BuiltInThemes sandbox for cleanup");
-    sandbox.restore();
-  });
-
-  
-  
-  
-  sandbox.stub(BuiltInThemes, "findActiveColorwayCollection").returns(null);
-
   
   const retainedThemePrefName = "browser.theme.retainedExpiredThemes";
   await SpecialPowers.pushPrefEnv({

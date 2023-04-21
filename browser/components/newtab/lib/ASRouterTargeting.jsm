@@ -23,7 +23,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AttributionCode: "resource:///modules/AttributionCode.sys.mjs",
-  BuiltInThemes: "resource:///modules/BuiltInThemes.sys.mjs",
   ClientEnvironment: "resource://normandy/lib/ClientEnvironment.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
@@ -858,32 +857,7 @@ const TargetingGetters = {
     let window = Services.appShell.hiddenDOMWindow;
     return window?.matchMedia("(prefers-reduced-motion: reduce)")?.matches;
   },
-  
 
-
-
-  get colorwaysActive() {
-    return !!lazy.BuiltInThemes.findActiveColorwayCollection();
-  },
-  
-
-
-
-
-  get userEnabledActiveColorway() {
-    let bts = Cc["@mozilla.org/backgroundtasks;1"]?.getService(
-      Ci.nsIBackgroundTasks
-    );
-    if (bts?.isBackgroundTaskMode) {
-      return Promise.resolve(false);
-    }
-    return QueryCache.getters.currentThemes.get().then(themes => {
-      let themeId = themes.find(theme => theme.isActive)?.id;
-      return !!(
-        themeId && lazy.BuiltInThemes.isColorwayFromCurrentCollection(themeId)
-      );
-    });
-  },
   
 
 
@@ -892,6 +866,7 @@ const TargetingGetters = {
       lazy.NimbusFeatures.majorRelease2022.getVariable("onboarding") === false
     );
   },
+
   
 
 
