@@ -185,6 +185,12 @@ class nsIFormControl : public nsISupports {
 
 
 
+  inline bool IsButtonControl() const;
+
+  
+
+
+
   inline bool AllowDraggableChildren() const;
 
   
@@ -265,6 +271,10 @@ bool nsIFormControl::IsSubmittableControl() const {
 
 bool nsIFormControl::IsConceptButton() const {
   return IsSubmitControl() || IsButtonElement(ControlType());
+}
+
+bool nsIFormControl::IsButtonControl() const {
+  return IsConceptButton() && (!GetForm() || !IsSubmitControl());
 }
 
 bool nsIFormControl::AllowDraggableChildren() const {
