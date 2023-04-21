@@ -71,17 +71,16 @@ class CellAllocator {
   
   
   
-  template <typename StringT, AllowGC allowGC = CanGC, typename... Args>
-  static StringT* AllocateString(JSContext* cx, gc::InitialHeap heap,
-                                 Args&&... args) {
-    static_assert(std::is_base_of_v<JSString, StringT>);
-    gc::AllocKind kind = gc::MapTypeToAllocKind<StringT>::kind;
-    void* ptr = AllocateStringCell<allowGC>(cx, kind, sizeof(StringT), heap);
+  template <typename T, AllowGC allowGC = CanGC, typename... Args>
+  static T* AllocateString(JSContext* cx, gc::InitialHeap heap,
+                           Args&&... args) {
+    static_assert(std::is_base_of_v<JSString, T>);
+    gc::AllocKind kind = gc::MapTypeToAllocKind<T>::kind;
+    void* ptr = AllocateStringCell<allowGC>(cx, kind, sizeof(T), heap);
     if (!ptr) {
       return nullptr;
     }
-    return new (mozilla::KnownNotNull, ptr)
-        StringT(std::forward<Args>(args)...);
+    return new (mozilla::KnownNotNull, ptr) T(std::forward<Args>(args)...);
   }
 
   
