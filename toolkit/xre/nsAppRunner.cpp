@@ -416,41 +416,44 @@ static void UnexpectedExit() {
 
 #if defined(MOZ_WAYLAND)
 bool IsWaylandEnabled() {
-  const char* waylandDisplay = PR_GetEnv("WAYLAND_DISPLAY");
-  if (!waylandDisplay) {
-    return false;
-  }
-  if (!PR_GetEnv("DISPLAY")) {
-    
-    return true;
-  }
-  
-  if (const char* waylandPref = PR_GetEnv("MOZ_ENABLE_WAYLAND")) {
-    return *waylandPref == '1';
-  }
-  if (const char* backendPref = PR_GetEnv("GDK_BACKEND")) {
-    if (!strncmp(backendPref, "wayland", 7)) {
-      NS_WARNING(
-          "Wayland backend should be enabled by MOZ_ENABLE_WAYLAND=1."
-          "GDK_BACKEND is a Gtk3 debug variable and may cause issues.");
+  static bool isWaylandEnabled = []() {
+    const char* waylandDisplay = PR_GetEnv("WAYLAND_DISPLAY");
+    if (!waylandDisplay) {
+      return false;
+    }
+    if (!PR_GetEnv("DISPLAY")) {
+      
       return true;
     }
-  }
+    
+    if (const char* waylandPref = PR_GetEnv("MOZ_ENABLE_WAYLAND")) {
+      return *waylandPref == '1';
+    }
+    if (const char* backendPref = PR_GetEnv("GDK_BACKEND")) {
+      if (!strncmp(backendPref, "wayland", 7)) {
+        NS_WARNING(
+            "Wayland backend should be enabled by MOZ_ENABLE_WAYLAND=1."
+            "GDK_BACKEND is a Gtk3 debug variable and may cause issues.");
+        return true;
+      }
+    }
 #  ifdef EARLY_BETA_OR_EARLIER
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  return !gtk_check_version(3, 24, 30);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return !gtk_check_version(3, 24, 30);
 #  else
-  return false;
+    return false;
 #  endif
+  }();
+  return isWaylandEnabled;
 }
 #else
 bool IsWaylandEnabled() { return false; }
