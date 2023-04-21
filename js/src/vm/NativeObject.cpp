@@ -296,7 +296,10 @@ bool NativeObject::allocateInitialSlots(JSContext* cx, uint32_t capacity) {
   uint32_t count = ObjectSlots::allocCount(capacity);
   HeapSlot* allocation = AllocateObjectBuffer<HeapSlot>(cx, this, count);
   if (!allocation) {
-    initEmptyDynamicSlots();  
+    
+    
+    
+    initEmptyDynamicSlots();
     return false;
   }
 
