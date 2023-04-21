@@ -686,14 +686,6 @@ void mozilla::detail::VectorTesting::testAppend() {
 }
 
 
-struct Incomplete;
-
-
-
-static_assert(sizeof(Vector<Incomplete, 0>) > 0,
-              "Vector of an incomplete type will compile");
-
-
 
 
 #ifndef DEBUG
@@ -720,11 +712,6 @@ static_assert(sizeof(Vector<bool, 0>) == sizeof(NoInlineStorageLayout<bool>),
 static_assert(sizeof(Vector<S, 0>) == sizeof(NoInlineStorageLayout<S>),
               "Vector of S without inline storage shouldn't occupy dead "
               "space for that absence of storage");
-
-static_assert(sizeof(Vector<Incomplete, 0>) ==
-                  sizeof(NoInlineStorageLayout<Incomplete>),
-              "Vector of an incomplete class without inline storage shouldn't "
-              "occupy dead space for that absence of storage");
 
 #endif  
 

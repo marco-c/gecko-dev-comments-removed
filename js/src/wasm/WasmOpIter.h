@@ -3953,14 +3953,18 @@ inline bool OpIter<Policy>::readIntrinsic(const Intrinsic** intrinsic,
 }  
 }  
 
-namespace mozilla {
+static_assert(std::is_trivially_copyable<
+                  js::wasm::TypeAndValueT<mozilla::Nothing>>::value,
+              "Must be trivially copyable");
+static_assert(std::is_trivially_destructible<
+                  js::wasm::TypeAndValueT<mozilla::Nothing>>::value,
+              "Must be trivially destructible");
 
-
-template <>
-struct IsPod<js::wasm::TypeAndValueT<Nothing>> : std::true_type {};
-template <>
-struct IsPod<js::wasm::ControlStackEntry<Nothing>> : std::true_type {};
-
-}  
+static_assert(std::is_trivially_copyable<
+                  js::wasm::ControlStackEntry<mozilla::Nothing>>::value,
+              "Must be trivially copyable");
+static_assert(std::is_trivially_destructible<
+                  js::wasm::ControlStackEntry<mozilla::Nothing>>::value,
+              "Must be trivially destructible");
 
 #endif  

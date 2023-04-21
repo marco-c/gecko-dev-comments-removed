@@ -14,7 +14,6 @@
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/RWLock.h"
-#include "mozilla/TypeTraits.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/WeakPtr.h"
@@ -1123,7 +1122,8 @@ namespace detail {
 
 template <typename T>
 struct ProxyArg {
-  static_assert(mozilla::IsPod<T>::value, "T must be primitive type");
+  static_assert(std::is_trivial_v<T> && std::is_standard_layout_v<T>,
+                "T must be primitive type");
 
   
   typedef T Type;

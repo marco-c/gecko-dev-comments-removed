@@ -15,7 +15,6 @@
 #include "Types.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/MemoryReporting.h"  
-#include "mozilla/TypeTraits.h"
 
 namespace mozilla {
 namespace gfx {
@@ -95,7 +94,7 @@ struct AlignedArray final {
     
     
     
-    static_assert(mozilla::IsPod<T>::value,
+    static_assert(std::is_trivially_destructible<T>::value,
                   "Destructors must be invoked for this type");
 #if 0
     for (size_t i = 0; i < mCount; ++i) {
