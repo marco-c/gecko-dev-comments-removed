@@ -518,19 +518,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  inline bool IsLinkValid() {
-    MOZ_ASSERT(IsLink(), "IsLinkValid is called on not hyper link!");
-
-    
-    
-    
-    
-    return (0 == (State() & mozilla::a11y::states::INVALID));
-  }
-
-  
-
-
   virtual uint32_t AnchorCount();
 
   

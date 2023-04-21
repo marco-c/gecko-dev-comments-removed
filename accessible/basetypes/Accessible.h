@@ -562,6 +562,11 @@ class Accessible {
 
   
 
+
+  bool IsLinkValid();
+
+  
+
   virtual bool IsRemote() const = 0;
   RemoteAccessible* AsRemote();
 

@@ -363,6 +363,16 @@ void Accessible::GetPositionAndSetSize(int32_t* aPosInSet, int32_t* aSetSize) {
   }
 }
 
+bool Accessible::IsLinkValid() {
+  MOZ_ASSERT(IsLink(), "IsLinkValid is called on not hyper link!");
+
+  
+  
+  
+  
+  return (0 == (State() & mozilla::a11y::states::INVALID));
+}
+
 #ifdef A11Y_LOG
 void Accessible::DebugDescription(nsCString& aDesc) const {
   aDesc.Truncate();
