@@ -201,7 +201,6 @@ const MultiStageAboutWelcome = props => {
   let {
     defaultScreens
   } = props;
-  const didFilter = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(false);
   const [screens, setScreens] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(defaultScreens);
   const [index, setScreenIndex] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(props.startScreen);
   const [previousOrder, setPreviousOrder] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(props.startScreen - 1);
@@ -212,16 +211,11 @@ const MultiStageAboutWelcome = props => {
 
       if (filteredScreens) {
         setScreens(filteredScreens);
-        didFilter.current = true;
       }
     })();
   }, []); 
 
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    if (!didFilter.current) {
-      return;
-    }
-
     const screenInitials = screens.map(({
       id
     }) => {
@@ -234,11 +228,8 @@ const MultiStageAboutWelcome = props => {
       if (index === order) {
         _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendImpressionTelemetry(`${props.message_id}_${order}_${screen.id}_${screenInitials}`);
       }
-    });
-  }, [index, screens]); 
+    }); 
 
-  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    
     if (props.updateHistory && index > window.history.state) {
       window.history.pushState(index, "");
     } 
