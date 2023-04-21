@@ -583,14 +583,7 @@ var gPrivacyPane = {
         updateURIPref();
       } else {
         customInput.hidden = true;
-        if (
-          menu.value ==
-          Preferences.get("network.trr.default_provider_uri").value
-        ) {
-          Services.prefs.clearUserPref("network.trr.uri");
-        } else {
-          Services.prefs.setStringPref("network.trr.uri", menu.value);
-        }
+        Services.prefs.setStringPref("network.trr.uri", menu.value);
       }
 
       
@@ -783,14 +776,19 @@ var gPrivacyPane = {
       document.getElementById("dohWarningBox2").hidden = false;
     }
 
-    if (Services.prefs.prefIsLocked("network.trr.mode")) {
-      document.getElementById("dohCategoryRadioGroup").disabled = true;
-      
-      
+    let uriPref = Services.prefs.getStringPref("network.trr.uri");
+    
+    
+    if (uriPref && !this.dnsOverHttpsResolvers.some(e => e.uri == uriPref)) {
       Services.prefs.setStringPref(
         "network.trr.custom_uri",
         Services.prefs.getStringPref("network.trr.uri")
       );
+    }
+
+    if (Services.prefs.prefIsLocked("network.trr.mode")) {
+      document.getElementById("dohCategoryRadioGroup").disabled = true;
+      Services.prefs.setStringPref("network.trr.custom_uri", uriPref);
     }
   },
 
