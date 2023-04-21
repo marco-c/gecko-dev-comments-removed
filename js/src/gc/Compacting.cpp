@@ -214,7 +214,8 @@ static void RelocateCell(Zone* zone, TenuredCell* src, AllocKind thingKind,
 
   
   MOZ_ASSERT(zone == src->zone());
-  TenuredCell* dst = AllocateCellInGC(zone, thingKind);
+  TenuredCell* dst =
+      reinterpret_cast<TenuredCell*>(AllocateCellInGC(zone, thingKind));
 
   
   memcpy(dst, src, thingSize);

@@ -33,6 +33,7 @@ namespace js {
 enum AllowGC { NoGC = 0, CanGC = 1 };
 
 namespace gc {
+
 class AllocSite;
 struct Cell;
 class TenuredCell;
@@ -40,10 +41,24 @@ class TenuredCell;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class CellAllocator {
   template <AllowGC allowGC = CanGC>
-  static gc::Cell* AllocateStringCell(JSContext* cx, gc::AllocKind kind,
-                                      size_t size, gc::InitialHeap heap);
+  static void* AllocateStringCell(JSContext* cx, gc::AllocKind kind,
+                                  size_t size, gc::InitialHeap heap);
 
   
   
@@ -55,12 +70,11 @@ class CellAllocator {
                                  Args&&... args) {
     static_assert(std::is_base_of_v<JSString, StringT>);
     gc::AllocKind kind = gc::MapTypeToAllocKind<StringT>::kind;
-    gc::Cell* cell =
-        AllocateStringCell<allowGC>(cx, kind, sizeof(StringT), heap);
-    if (!cell) {
+    void* ptr = AllocateStringCell<allowGC>(cx, kind, sizeof(StringT), heap);
+    if (!ptr) {
       return nullptr;
     }
-    return new (mozilla::KnownNotNull, cell)
+    return new (mozilla::KnownNotNull, ptr)
         StringT(std::forward<Args>(args)...);
   }
 
@@ -79,32 +93,26 @@ class CellAllocator {
                                   const JSClass* clasp,
                                   gc::AllocSite* site = nullptr);
 
+  template <AllowGC allowGC = CanGC>
+  static void* AllocateTenuredCell(JSContext* cx, gc::AllocKind kind,
+                                   size_t size);
+
+  
+  template <typename T, AllowGC allowGC = CanGC, typename... Args>
+  static T* AllocateTenured(JSContext* cx, Args&&... args) {
+    gc::AllocKind kind = gc::MapTypeToAllocKind<T>::kind;
+    void* cell = AllocateTenuredCell<allowGC>(cx, kind, sizeof(T));
+    if (!cell) {
+      return nullptr;
+    }
+    return new (mozilla::KnownNotNull, cell) T(std::forward<Args>(args)...);
+  }
+
  public:
   template <typename T, js::AllowGC allowGC = CanGC, typename... Args>
   static T* NewCell(JSContext* cx, Args&&... args);
 };
 
-namespace detail {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <AllowGC allowGC = CanGC>
-gc::TenuredCell* AllocateTenuredCell(JSContext* cx, gc::AllocKind kind,
-                                     size_t size);
-
-}  
 }  
 
 
@@ -143,13 +151,7 @@ T* gc::CellAllocator::NewCell(JSContext* cx, Args&&... args) {
     
     
     
-    gc::AllocKind kind = gc::MapTypeToAllocKind<T>::kind;
-    gc::TenuredCell* cell =
-        gc::detail::AllocateTenuredCell<allowGC>(cx, kind, sizeof(T));
-    if (!cell) {
-      return nullptr;
-    }
-    return new (mozilla::KnownNotNull, cell) T(std::forward<Args>(args)...);
+    return AllocateTenured<T, allowGC>(cx, std::forward<Args>(args)...);
   }
 }
 
