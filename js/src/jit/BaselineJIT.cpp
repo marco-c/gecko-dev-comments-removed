@@ -29,6 +29,7 @@
 
 #include "debugger/DebugAPI-inl.h"
 #include "gc/GC-inl.h"
+#include "jit/JitHints-inl.h"
 #include "jit/JitScript-inl.h"
 #include "vm/GeckoProfiler-inl.h"
 #include "vm/JSScript-inl.h"
@@ -291,8 +292,22 @@ static MethodStatus CanEnterBaselineJIT(JSContext* cx, HandleScript script,
   }
 
   
-  if (script->getWarmUpCount() <= JitOptions.baselineJitWarmUpThreshold) {
-    return Method_Skipped;
+  bool mightHaveEagerBaselineHint = false;
+#ifdef NIGHTLY_BUILD
+  if (!JitOptions.disableJitHints && !script->noEagerBaselineHint()) {
+    JitHintsMap* jitHints = cx->runtime()->jitRuntime()->getJitHintsMap();
+    
+    
+    if (jitHints->mightHaveEagerBaselineHint(script)) {
+      mightHaveEagerBaselineHint = true;
+    }
+  }
+#endif
+  
+  if (!mightHaveEagerBaselineHint) {
+    if (script->getWarmUpCount() <= JitOptions.baselineJitWarmUpThreshold) {
+      return Method_Skipped;
+    }
   }
 
   
