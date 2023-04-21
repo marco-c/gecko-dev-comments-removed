@@ -156,16 +156,8 @@ async function run_test() {
     );
     if (OS == "Linux" && status != Ci.nsIGfxInfo.FEATURE_STATUS_OK) {
       
-      if (!AppConstants.EARLY_BETA_OR_EARLIER) {
-        Assert.equal(status, Ci.nsIGfxInfo.FEATURE_BLOCKED_DEVICE);
-        Assert.equal(
-          failureId.value,
-          "FEATURE_HARDWARE_VIDEO_DECODING_DISABLE"
-        );
-      } else {
-        Assert.equal(status, Ci.nsIGfxInfo.FEATURE_BLOCKED_DRIVER_VERSION);
-        Assert.equal(failureId.value, "FEATURE_HARDWARE_VIDEO_DECODING_MESA");
-      }
+      Assert.equal(status, Ci.nsIGfxInfo.FEATURE_BLOCKED_DRIVER_VERSION);
+      Assert.equal(failureId.value, "FEATURE_HARDWARE_VIDEO_DECODING_MESA");
     } else {
       Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
     }
