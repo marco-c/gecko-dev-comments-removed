@@ -51,7 +51,7 @@ OpaqueResponseBlockedReason GetOpaqueResponseBlockedReason(
     const nsACString& aContentType, uint16_t aStatus, bool aNoSniff);
 
 OpaqueResponseBlockedReason GetOpaqueResponseBlockedReason(
-    const nsHttpResponseHead& aResponseHead);
+    nsHttpResponseHead& aResponseHead);
 
 
 
