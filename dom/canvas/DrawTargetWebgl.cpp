@@ -1383,20 +1383,53 @@ inline ColorPattern DrawTargetWebgl::GetClearPattern() const {
       DeviceColor(0.0f, 0.0f, 0.0f, IsOpaque(mFormat) ? 1.0f : 0.0f));
 }
 
+
+inline bool DrawTargetWebgl::RectContainsViewport(const Rect& aRect) const {
+  return mTransform.PreservesAxisAlignedRectangles() &&
+         MatrixDouble(mTransform)
+             .TransformBounds(
+                 RectDouble(aRect.x, aRect.y, aRect.width, aRect.height))
+             .Contains(RectDouble(GetRect()));
+}
+
+
+
+
+
+static inline bool RectInsidePrecisionLimits(const Rect& aRect,
+                                             const Matrix& aTransform) {
+  return Rect(-(1 << 20), -(1 << 20), 2 << 20, 2 << 20)
+      .Contains(aTransform.TransformBounds(aRect));
+}
+
 void DrawTargetWebgl::ClearRect(const Rect& aRect) {
   if (mIsClear) {
     
     return;
   }
 
-  DrawRect(aRect, GetClearPattern(),
-           DrawOptions(1.0f, CompositionOp::OP_CLEAR));
+  bool containsViewport = RectContainsViewport(aRect);
+  if (containsViewport) {
+    
+    
+    DrawRect(Rect(GetRect()), GetClearPattern(),
+             DrawOptions(1.0f, CompositionOp::OP_CLEAR), Nothing(), nullptr,
+             false);
+  } else if (RectInsidePrecisionLimits(aRect, mTransform)) {
+    
+    DrawRect(aRect, GetClearPattern(),
+             DrawOptions(1.0f, CompositionOp::OP_CLEAR));
+  } else {
+    
+    
+    MarkSkiaChanged();
+    mSkia->ClearRect(aRect);
+  }
 
   
   
-  if (mTransform.PreservesAxisAlignedRectangles() &&
-      mTransform.TransformBounds(aRect).Contains(Rect(GetRect())) &&
-      mSharedContext->IsCurrentTarget(this) && !mSharedContext->HasClipMask() &&
+  if (containsViewport && mSharedContext->IsCurrentTarget(this) &&
+      !mSharedContext->HasClipMask() &&
       mSharedContext->mClipAARect.Contains(Rect(GetRect()))) {
     mIsClear = true;
   }
@@ -2456,22 +2489,23 @@ bool DrawTargetWebgl::SharedContext::PruneTextureMemory(size_t aMargin,
   return mNumTextureHandles < oldItems;
 }
 
-
-
-
-
-static inline bool RectInsidePrecisionLimits(const Rect& aRect,
-                                             const Matrix& aTransform) {
-  return Rect(-(1 << 20), -(1 << 20), 2 << 20, 2 << 20)
-      .Contains(aTransform.TransformBounds(aRect));
-}
-
 void DrawTargetWebgl::FillRect(const Rect& aRect, const Pattern& aPattern,
                                const DrawOptions& aOptions) {
-  if (SupportsPattern(aPattern) &&
-      RectInsidePrecisionLimits(aRect, GetTransform())) {
-    DrawRect(aRect, aPattern, aOptions);
-  } else if (!mWebglValid) {
+  if (SupportsPattern(aPattern)) {
+    if (RectInsidePrecisionLimits(aRect, mTransform)) {
+      DrawRect(aRect, aPattern, aOptions);
+      return;
+    }
+    if (aPattern.GetType() == PatternType::COLOR &&
+        RectContainsViewport(aRect)) {
+      
+      
+      
+      DrawRect(Rect(GetRect()), aPattern, aOptions, Nothing(), nullptr, false);
+      return;
+    }
+  }
+  if (!mWebglValid) {
     MarkSkiaChanged(aOptions);
     mSkia->FillRect(aRect, aPattern, aOptions);
   } else {
@@ -2621,8 +2655,16 @@ void DrawTargetWebgl::Fill(const Path* aPath, const Pattern& aPattern,
   
   if (skiaPath.isRect(&skiaRect) && SupportsPattern(aPattern)) {
     Rect rect = SkRectToRect(skiaRect);
-    if (RectInsidePrecisionLimits(rect, GetTransform())) {
+    if (RectInsidePrecisionLimits(rect, mTransform)) {
       DrawRect(rect, aPattern, aOptions);
+      return;
+    }
+    if (aPattern.GetType() == PatternType::COLOR &&
+        RectContainsViewport(rect)) {
+      
+      
+      
+      DrawRect(Rect(GetRect()), aPattern, aOptions, Nothing(), nullptr, false);
       return;
     }
   }
