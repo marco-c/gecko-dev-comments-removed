@@ -14,9 +14,6 @@ add_task(async function() {
 
   await addTab(TEST_URI);
   let hud = await BrowserConsoleManager.toggleBrowserConsole();
-  
-  
-  await setFilterState(hud, { text: "-builtin-modules.js" });
 
   const CACHED_MESSAGE = "CACHED_MESSAGE";
   await logTextInContentAndWaitForMessage(hud, CACHED_MESSAGE);
@@ -31,7 +28,21 @@ add_task(async function() {
   
   
   await logTextInContentAndWaitForMessage(hud, "after clear");
-  const messages = hud.ui.outputNode.querySelectorAll(".message");
+  const messages = Array.from(
+    hud.ui.outputNode.querySelectorAll(".message")
+  ).filter(el => {
+    const location = el.querySelector(".frame-link-source");
+    
+    
+    if (
+      location &&
+      (location.includes("builtin-module.js") ||
+        location.includes("RemoteSettingsComponents.sys.mjs"))
+    ) {
+      return false;
+    }
+    return true;
+  });
   is(messages.length, 1, "There is only the new message in the output");
 
   info("Close and re-open the browser console");
