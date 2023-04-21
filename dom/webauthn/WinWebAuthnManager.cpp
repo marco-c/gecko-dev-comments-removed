@@ -210,6 +210,7 @@ void WinWebAuthnManager::Register(
 
   
   BOOL winRequireResidentKey = FALSE;
+  BOOL winPreferResidentKey = FALSE;
 
   
   DWORD winAttestation = WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_ANY;
@@ -271,7 +272,26 @@ void WinWebAuthnManager::Register(
       }
     }
 
-    winRequireResidentKey = sel.requireResidentKey();
+    const nsString& residentKey = sel.residentKey();
+    
+    
+    static_assert(MOZ_WEBAUTHN_ENUM_STRINGS_VERSION == 2);
+    if (residentKey.EqualsLiteral(
+            MOZ_WEBAUTHN_RESIDENT_KEY_REQUIREMENT_REQUIRED)) {
+      winRequireResidentKey = TRUE;
+      winPreferResidentKey = TRUE;
+    } else if (residentKey.EqualsLiteral(
+                   MOZ_WEBAUTHN_RESIDENT_KEY_REQUIREMENT_PREFERRED)) {
+      winRequireResidentKey = FALSE;
+      winPreferResidentKey = TRUE;
+    } else {
+      
+      
+      
+      
+      winRequireResidentKey = sel.requireResidentKey();
+      winPreferResidentKey = sel.requireResidentKey();
+    }
 
     
     const nsString& attestation = extra.attestationConveyancePreference();
@@ -381,7 +401,7 @@ void WinWebAuthnManager::Register(
       pExcludeCredentialList,
       WEBAUTHN_ENTERPRISE_ATTESTATION_NONE,
       WEBAUTHN_LARGE_BLOB_SUPPORT_NONE,
-      FALSE,  
+      winPreferResidentKey,  
   };
 
   GUID cancellationId = {0};
