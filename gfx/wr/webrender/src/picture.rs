@@ -1568,10 +1568,9 @@ pub struct ExternalNativeSurfaceKey {
     
     pub image_keys: [ImageKey; 3],
     
-    pub size: DeviceIntSize,
     
     
-    pub is_external_surface: bool,
+    pub size: Option<DeviceIntSize>,
 }
 
 
@@ -2698,8 +2697,7 @@ impl TileCacheInstance {
 
                 let key = ExternalNativeSurfaceKey {
                     image_keys: *api_keys,
-                    size: native_surface_size,
-                    is_external_surface: external_image_id.is_some(),
+                    size: if external_image_id.is_some() { None } else { Some(native_surface_size) },
                 };
 
                 let native_surface = self.external_native_surface_cache
