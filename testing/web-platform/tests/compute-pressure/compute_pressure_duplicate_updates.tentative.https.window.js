@@ -14,13 +14,13 @@ pressure_test(async (t, mockPressureService) => {
     }, {sampleRate: 5.0});
     observer.observe('cpu');
     const updatesDelivered = mockPressureService.updatesDelivered();
-    mockPressureService.setPressureUpdate('critical');
+    mockPressureService.setPressureUpdate('cpu', 'critical');
     mockPressureService.startPlatformCollector( 5.0);
     
     await t.step_wait(
         () => mockPressureService.updatesDelivered() >= (updatesDelivered + 2),
         'Wait for more than one update to be delivered to the observer');
-    mockPressureService.setPressureUpdate('nominal');
+    mockPressureService.setPressureUpdate('cpu', 'nominal');
     
     
     
@@ -41,14 +41,14 @@ pressure_test(async (t, mockPressureService) => {
     }, {sampleRate: 5.0});
     observer.observe('cpu');
     const updatesDelivered = mockPressureService.updatesDelivered();
-    mockPressureService.setPressureUpdate('critical', ['thermal']);
+    mockPressureService.setPressureUpdate('cpu', 'critical', ['thermal']);
     mockPressureService.startPlatformCollector( 5.0);
 
     
     await t.step_wait(
         () => mockPressureService.updatesDelivered() >= (updatesDelivered + 2),
         'Wait for more than one update to be delivered to the observer');
-    mockPressureService.setPressureUpdate('critical', ['power-supply']);
+    mockPressureService.setPressureUpdate('cpu', 'critical', ['power-supply']);
     
     
     
