@@ -3,9 +3,13 @@
 
 
 import importlib
+from pathlib import Path
 
 from docutils import nodes
 from docutils.parsers.rst import Directive
+from mots.config import FileConfig
+from mots.directory import Directory
+from mots.export import export_to_format
 from sphinx.util.docstrings import prepare_docstring
 from sphinx.util.docutils import ReferenceRole
 
@@ -174,6 +178,30 @@ def format_module(m):
     return lines
 
 
+def export_mots(app):
+    """Load mots configuration and export it to file."""
+    
+    base_path = Path(app.srcdir).parent
+    config = FileConfig(base_path / "mots.yaml")
+    config.load()
+    directory = Directory(config)
+    directory.load()
+
+    
+    frmt = config.config["export"]["format"]
+    path = base_path / config.config["export"]["path"]
+
+    
+    output = export_to_format(directory, frmt)
+
+    
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    
+    with path.open("w", encoding="utf-8") as f:
+        f.write(output)
+
+
 class MozbuildSymbols(Directive):
     """Directive to insert mozbuild sandbox symbol information."""
 
@@ -248,5 +276,9 @@ def setup(app):
     
     
     
+
+    
+    export_mots(app)
+
     manager.generate_docs(app)
     app.srcdir = manager.staging_dir
