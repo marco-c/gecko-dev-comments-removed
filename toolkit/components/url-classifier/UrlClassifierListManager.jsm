@@ -20,10 +20,6 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 const minDelayMs = 5 * 60 * 1000;
 const maxDelayMs = 24 * 60 * 60 * 1000;
 const defaultUpdateIntervalMs = 30 * 60 * 1000;
-
-
-
-const browserIdleThresholdMs = 60 * 60 * 1000;
 const PREF_DEBUG_ENABLED = "browser.safebrowsing.debug";
 const PREF_TEST_NOTIFICATIONS =
   "browser.safebrowsing.test-notifications.enabled";
@@ -56,6 +52,7 @@ function PROT_ListManager() {
   loggingEnabled = Services.prefs.getBoolPref(PREF_DEBUG_ENABLED);
 
   log("Initializing list manager");
+  this.updateInterval = defaultUpdateIntervalMs;
 
   
   
@@ -77,10 +74,6 @@ function PROT_ListManager() {
 
   this.dbService_ = Cc["@mozilla.org/url-classifier/dbservice;1"].getService(
     Ci.nsIUrlClassifierDBService
-  );
-
-  this.idleService_ = Cc["@mozilla.org/widget/useridleservice;1"].getService(
-    Ci.nsIUserIdleService
   );
 
   Services.obs.addObserver(this, "quit-application");
@@ -268,32 +261,13 @@ PROT_ListManager.prototype.setUpdateCheckTimer = function(updateUrl, delay) {
   this.updateCheckers_[updateUrl] = Cc["@mozilla.org/timer;1"].createInstance(
     Ci.nsITimer
   );
-
-  
-  function update() {
-    if (!this.checkForUpdates(updateUrl)) {
-      
-      this.setUpdateCheckTimer(updateUrl, defaultUpdateIntervalMs);
-    }
-  }
-
   this.updateCheckers_[updateUrl].initWithCallback(
     () => {
       this.updateCheckers_[updateUrl] = null;
-      
-      
-      
-      if (this.idleService_.idleTime > browserIdleThresholdMs) {
-        let observer = function() {
-          Services.obs.removeObserver(observer, "user-interaction-active");
-          update();
-        };
-
-        Services.obs.addObserver(observer, "user-interaction-active");
-        return;
+      if (updateUrl && !this.checkForUpdates(updateUrl)) {
+        
+        this.setUpdateCheckTimer(updateUrl, this.updateInterval);
       }
-
-      update();
     },
     delay,
     Ci.nsITimer.TYPE_ONE_SHOT
@@ -698,10 +672,10 @@ PROT_ListManager.prototype.updateSuccess_ = function(
   } else if (delay < minDelayMs) {
     log(
       "Ignoring delay from server (too short), waiting " +
-        Math.round(defaultUpdateIntervalMs / 60000) +
+        Math.round(this.updateInterval / 60000) +
         "min"
     );
-    delay = defaultUpdateIntervalMs;
+    delay = this.updateInterval;
   } else {
     log("Waiting " + Math.round(delay / 60000) + "min");
   }
@@ -763,7 +737,7 @@ PROT_ListManager.prototype.updateError_ = function(table, updateUrl, result) {
   );
   
   
-  this.setUpdateCheckTimer(updateUrl, defaultUpdateIntervalMs);
+  this.setUpdateCheckTimer(updateUrl, this.updateInterval);
 
   Services.obs.notifyObservers(
     null,
@@ -785,7 +759,7 @@ PROT_ListManager.prototype.downloadError_ = function(table, updateUrl, status) {
   }
   status = parseInt(status, 10);
   this.requestBackoffs_[updateUrl].noteServerResponse(status);
-  let delay = defaultUpdateIntervalMs;
+  var delay = this.updateInterval;
   if (this.requestBackoffs_[updateUrl].isErrorStatus(status)) {
     
     delay = this.requestBackoffs_[updateUrl].nextRequestDelay();
