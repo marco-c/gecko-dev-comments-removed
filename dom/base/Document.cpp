@@ -15011,7 +15011,9 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
   if (aFireEvents) {
     
     
-    popoverHTMLEl->FireBeforeToggle(true);
+    popoverHTMLEl->FireToggleEvent(PopoverVisibilityState::Showing,
+                                   PopoverVisibilityState::Hidden,
+                                   u"beforetoggle"_ns);
     if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
                                              aRv)) {
       return;
@@ -15025,6 +15027,10 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
       PopoverVisibilityState::Hidden);
 
   
+  if (aFireEvents) {
+    popoverHTMLEl->QueuePopoverEventTask(PopoverVisibilityState::Showing);
+  }
+
   popoverHTMLEl->HandleFocusAfterHidingPopover(aFocusPreviousElement);
 }
 
