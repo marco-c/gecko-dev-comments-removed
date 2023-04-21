@@ -1898,20 +1898,36 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
 
       
       
+      FcPattern* clone = FcPatternDuplicate(pattern);
+
+      
+      
+      if (!FcConfigSubstitute(nullptr, clone, FcMatchFont)) {
+        
+        FcPatternDestroy(clone);
+        continue;
+      }
+      
+      
+      FcPatternDel(clone, FC_HINT_STYLE);
+      FcPatternDel(clone, FC_HINTING);
+
+      
+      
       
       
       FcChar8* fontFormat;
-      if (FcPatternGetString(pattern, FC_FONTFORMAT, 0, &fontFormat) ==
+      if (FcPatternGetString(clone, FC_FONTFORMAT, 0, &fontFormat) ==
               FcResultMatch &&
           (!FcStrCmp(fontFormat, (const FcChar8*)"TrueType") ||
            !FcStrCmp(fontFormat, (const FcChar8*)"CFF"))) {
-        FcPattern* clone = FcPatternDuplicate(pattern);
         FcPatternDel(clone, FC_CHARSET);
         addPattern(clone, lastFamilyName, familyName, aAppFonts);
-        FcPatternDestroy(clone);
       } else {
-        addPattern(pattern, lastFamilyName, familyName, aAppFonts);
+        addPattern(clone, lastFamilyName, familyName, aAppFonts);
       }
+
+      FcPatternDestroy(clone);
     }
   };
 
