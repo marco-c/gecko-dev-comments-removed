@@ -17,6 +17,7 @@ scripts = {
                              "conformance-checkers/tools/url.py"],
     "css-images": ["css/css-images/tools/generate_object_view_box_tests.py"],
     "css-ui": ["css/css-ui/tools/appearance-build-webkit-reftests.py"],
+    "css-writing-modes": ["css/css-writing-modes/tools/generators/generate.py"],
     
     
     
