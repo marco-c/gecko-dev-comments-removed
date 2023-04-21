@@ -27,7 +27,28 @@ export interface Attachment {
 
 
 
+export interface LanguageIdModelRecord {
+  
+  id: string;
+  
+  name: string;
+  
+  version: string;
+  
+  attachment: Attachment;
+  
+  last_modified: string;
+  
+  
+  filter_expression: string;
+}
+
+
+
+
 export interface TranslationModelRecord {
+  
+  id: string;
   
   name: string;
   
@@ -35,22 +56,26 @@ export interface TranslationModelRecord {
   
   toLang: string;
   
-  version: number;
+  version: string;
   
-  fileType: string; 
+  fileType: string;
+  
   attachment: Attachment;
-  
-  id: string;
   
   schema: number;
   
   last_modified: string;
+  
+  
+  filter_expression: string;
 }
 
 
 
 
 export interface WasmRecord {
+  
+  id: string;
   
   name: string;
   
@@ -59,6 +84,15 @@ export interface WasmRecord {
   revision: string;
   
   license: string;
+  
+  version: string;
+  
+  attachment: Attachment;
+  
+  last_modified: string;
+  
+  
+  filter_expression: string;
 }
 
 
