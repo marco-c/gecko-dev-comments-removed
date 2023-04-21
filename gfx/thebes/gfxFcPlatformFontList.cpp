@@ -1915,16 +1915,18 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
     }
   };
 
-  
-  FcFontSet* systemFonts = FcConfigGetFonts(nullptr, FcSetSystem);
-  addFontSetFamilies(systemFonts, policy.get(),  false);
-
 #ifdef MOZ_BUNDLED_FONTS
+  
+  
   if (StaticPrefs::gfx_bundled_fonts_activate_AtStartup() != 0) {
     FcFontSet* appFonts = FcConfigGetFonts(nullptr, FcSetApplication);
     addFontSetFamilies(appFonts, policy.get(),  true);
   }
 #endif
+
+  
+  FcFontSet* systemFonts = FcConfigGetFonts(nullptr, FcSetSystem);
+  addFontSetFamilies(systemFonts, policy.get(),  false);
 
   mozilla::fontlist::FontList* list = SharedFontList();
   list->SetFamilyNames(families);
