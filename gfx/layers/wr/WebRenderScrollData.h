@@ -49,6 +49,11 @@ class WebRenderLayerScrollData final {
 
   using ViewID = ScrollableLayerGuid::ViewID;
 
+  
+  bool ValidateSubtree(const WebRenderScrollData& aParent,
+                       std::vector<size_t>& aVisitCounts,
+                       size_t aCurrentIndex) const;
+
   void InitializeRoot(int32_t aDescendantCount);
   void Initialize(WebRenderScrollData& aOwner, nsDisplayItem* aItem,
                   int32_t aDescendantCount,
@@ -241,6 +246,11 @@ class WebRenderScrollData {
   WebRenderScrollData(WebRenderScrollData&& aOther) = default;
   WebRenderScrollData& operator=(WebRenderScrollData&& aOther) = default;
   virtual ~WebRenderScrollData() = default;
+
+  
+  
+  
+  bool Validate() const;
 
   WebRenderLayerManager* GetManager() const;
 

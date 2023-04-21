@@ -8,6 +8,7 @@
 
 #include <ostream>
 
+#include "Units.h"
 #include "mozilla/layers/LayersMessageUtils.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/ToString.h"
@@ -224,6 +225,24 @@ WebRenderScrollData::WebRenderScrollData(WebRenderLayerManager* aManager,
       mIsFirstPaint(false),
       mPaintSequenceNumber(0) {}
 
+bool WebRenderScrollData::Validate() const {
+  
+  
+  
+  std::vector<size_t> visitCounts(mLayerScrollData.Length(), 0);
+  if (mLayerScrollData.Length() > 0) {
+    if (!mLayerScrollData[0].ValidateSubtree(*this, visitCounts, 0)) {
+      return false;
+    }
+  }
+  for (size_t visitCount : visitCounts) {
+    if (visitCount != 1) {
+      return false;
+    }
+  }
+  return true;
+}
+
 WebRenderLayerManager* WebRenderScrollData::GetManager() const {
   return mManager;
 }
@@ -251,6 +270,53 @@ size_t WebRenderScrollData::AddLayerData(WebRenderLayerScrollData&& aData) {
 
 size_t WebRenderScrollData::GetLayerCount() const {
   return mLayerScrollData.Length();
+}
+
+bool WebRenderLayerScrollData::ValidateSubtree(
+    const WebRenderScrollData& aParent, std::vector<size_t>& aVisitCounts,
+    size_t aCurrentIndex) const {
+  ++aVisitCounts[aCurrentIndex];
+
+  
+  for (size_t scrollMetadataIndex : mScrollIds) {
+    if (scrollMetadataIndex >= aParent.mScrollMetadatas.Length()) {
+      return false;
+    }
+  }
+
+  
+  if (mDescendantCount < 0) {
+    return false;
+  }
+  size_t descendantCount = static_cast<size_t>(mDescendantCount);
+
+  
+  
+  if (aCurrentIndex + descendantCount >= aParent.mLayerScrollData.Length()) {
+    return false;
+  }
+
+  
+  
+  size_t childCount = 0;
+  size_t childDescendantCounts = 0;
+  size_t currentChildIndex = aCurrentIndex + 1;
+  while (currentChildIndex < (aCurrentIndex + descendantCount + 1)) {
+    ++childCount;
+
+    const WebRenderLayerScrollData* currentChild =
+        &aParent.mLayerScrollData[currentChildIndex];
+    childDescendantCounts += currentChild->mDescendantCount;
+    currentChild->ValidateSubtree(aParent, aVisitCounts, currentChildIndex);
+
+    
+    
+    currentChildIndex += (currentChild->mDescendantCount + 1);
+  }
+
+  
+  
+  return descendantCount == (childCount + childDescendantCounts);
 }
 
 const WebRenderLayerScrollData* WebRenderScrollData::GetLayerData(
