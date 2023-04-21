@@ -1528,8 +1528,20 @@ bool ScriptExecutorRunnable::PreRun(WorkerPrivate* aWorkerPrivate) {
       mScriptLoader->mSyncLoopTarget == mSyncLoopTarget,
       "Unexpected SyncLoopTarget. Check if the sync loop was closed early");
 
-  if (!mLoadedRequests[0]->GetContext()->IsTopLevel()) {
-    return true;
+  {
+    
+    
+    MutexAutoLock lock(mScriptLoader->CleanUpLock());
+    if (mScriptLoader->CleanedUp()) {
+      return true;
+    }
+
+    const auto& requestHandle = mLoadedRequests[0];
+    
+    if (requestHandle->IsEmpty() ||
+        !requestHandle->GetContext()->IsTopLevel()) {
+      return true;
+    }
   }
 
   return mScriptLoader->StoreCSP();
