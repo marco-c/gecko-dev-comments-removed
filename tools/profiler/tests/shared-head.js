@@ -9,6 +9,7 @@
 
 
 
+
 const INSTANT = 0;
 const INTERVAL = 1;
 const INTERVAL_START = 2;
@@ -27,11 +28,28 @@ const defaultSettings = {
 
 
 
-function startProfiler(callersSettings) {
+async function startProfiler(callersSettings) {
   if (Services.profiler.IsActive()) {
-    throw new Error(
-      "The profiler must not be active before starting it in a test."
+    Assert.ok(
+      Services.env.exists("MOZ_PROFILER_STARTUP"),
+      "The profiler is active at the begining of the test, " +
+        "the MOZ_PROFILER_STARTUP environment variable should be set."
     );
+    if (Services.env.exists("MOZ_PROFILER_STARTUP")) {
+      
+      
+      
+      info(
+        "This test starts and stops the profiler and is not compatible " +
+          "with the use of MOZ_PROFILER_STARTUP. " +
+          "Stopping the profiler before starting the test."
+      );
+      await Services.profiler.StopProfiler();
+    } else {
+      throw new Error(
+        "The profiler must not be active before starting it in a test."
+      );
+    }
   }
   const settings = Object.assign({}, defaultSettings, callersSettings);
   return Services.profiler.StartProfiler(
