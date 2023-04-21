@@ -248,10 +248,9 @@ void ObjectRealm::trace(JSTracer* trc) {
 
 void Realm::traceRoots(JSTracer* trc,
                        js::gc::GCRuntime::TraceOrMarkRuntime traceOrMark) {
-  if (objectMetadataState_.is<PendingMetadata>()) {
-    GCPolicy<NewObjectMetadataState>::trace(trc, &objectMetadataState_,
-                                            "on-stack object pending metadata");
-  }
+  
+  
+  MOZ_RELEASE_ASSERT(!objectPendingMetadata_);
 
   if (!JS::RuntimeHeapIsMinorCollecting()) {
     
@@ -588,32 +587,29 @@ mozilla::HashCodeScrambler Realm::randomHashCodeScrambler() {
 }
 
 void AutoSetNewObjectMetadata::setPendingMetadata() {
-  if (!cx_->isExceptionPending() && cx_->realm()->hasObjectPendingMetadata()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    gc::AutoSuppressGC autoSuppressGC(cx_);
-
-    JSObject* obj = cx_->realm()->objectMetadataState_.as<PendingMetadata>();
-
-    
-    
-    
-    
-    cx_->realm()->objectMetadataState_ =
-        NewObjectMetadataState(ImmediateMetadata());
-
-    (void)SetNewObjectMetadata(cx_, obj);
-  } else {
-    cx_->realm()->objectMetadataState_ =
-        NewObjectMetadataState(ImmediateMetadata());
+  JSObject* obj = cx_->realm()->getAndClearObjectPendingMetadata();
+  if (!obj) {
+    return;
   }
+
+  MOZ_ASSERT(obj->getClass()->shouldDelayMetadataBuilder());
+
+  if (cx_->isExceptionPending()) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  gc::AutoSuppressGC autoSuppressGC(cx_);
+
+  (void)SetNewObjectMetadata(cx_, obj);
 }
 
 JS_PUBLIC_API void gc::TraceRealm(JSTracer* trc, JS::Realm* realm,
