@@ -228,9 +228,16 @@ function FrameInitiatedNavigation(frame, url) {
 }
 
 
-function FetchFromFrame(frame, host) {
+
+function FetchSubresourceCookiesFromFrame(frame, host) {
+  return FetchFromFrame(frame, `${host}/storage-access-api/resources/echo-cookie-header.py`);
+}
+
+
+
+function FetchFromFrame(frame, url) {
   return PostMessageAndAwaitReply(
-    { command: "subresource cookies", host }, frame.contentWindow);
+    { command: "cors fetch", url }, frame.contentWindow);
 }
 
 
