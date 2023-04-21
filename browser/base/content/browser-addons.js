@@ -1210,6 +1210,7 @@ var gUnifiedExtensions = {
 
     gBrowser.addTabsProgressListener(this);
     window.addEventListener("TabSelect", () => this.updateAttention());
+    window.addEventListener("toolbarvisibilitychange", this);
 
     this.permListener = () => this.updateAttention();
     lazy.ExtensionPermissions.addListener(this.permListener);
@@ -1224,6 +1225,8 @@ var gUnifiedExtensions = {
     if (!this._initialized) {
       return;
     }
+
+    window.removeEventListener("toolbarvisibilitychange", this);
 
     lazy.ExtensionPermissions.removeListener(this.permListener);
     this.permListener = null;
@@ -1355,6 +1358,10 @@ var gUnifiedExtensions = {
       case "customizationstarting":
         this.panel.hidePopup();
         break;
+
+      case "toolbarvisibilitychange":
+        this.onToolbarVisibilityChange(event.target.id, event.detail.visible);
+        break;
     }
   },
 
@@ -1382,6 +1389,109 @@ var gUnifiedExtensions = {
     }
     
     requestAnimationFrame(() => this.updateAttention());
+  },
+
+  onToolbarVisibilityChange(toolbarId, isVisible) {
+    
+    let widgetIDs;
+
+    try {
+      widgetIDs = CustomizableUI.getWidgetIdsInArea(toolbarId).filter(
+        CustomizableUI.isWebExtensionWidget
+      );
+    } catch {
+      
+      return;
+    }
+
+    
+    const overflowedExtensionsList = this.panel.querySelector(
+      "#overflowed-extensions-list"
+    );
+
+    
+    
+    
+    
+    
+    
+    
+    for (const widgetID of widgetIDs) {
+      const widget = CustomizableUI.getWidget(widgetID);
+      if (!widget) {
+        continue;
+      }
+
+      if (isVisible) {
+        this._maybeMoveWidgetNodeBack(widget.id);
+      } else {
+        const { node } = widget.forWindow(window);
+        
+        
+        node.setAttribute("overflowedItem", true);
+        node.setAttribute("artificallyOverflowed", true);
+        
+        
+        node.setAttribute("cui-anchorid", "unified-extensions-button");
+        overflowedExtensionsList.appendChild(node);
+
+        this._updateWidgetClassName(widgetID,  true);
+      }
+    }
+  },
+
+  _maybeMoveWidgetNodeBack(widgetID) {
+    const widget = CustomizableUI.getWidget(widgetID);
+    if (!widget) {
+      return;
+    }
+
+    
+    
+    const { node } = widget.forWindow(window);
+    if (!node.hasAttribute("artificallyOverflowed")) {
+      return;
+    }
+
+    const { area, position } = CustomizableUI.getPlacementOfWidget(widgetID);
+
+    
+    
+    
+    const container = document.getElementById(area);
+
+    let moved = false;
+    let currentPosition = 0;
+
+    for (const child of container.childNodes) {
+      const isSkipToolbarset = child.getAttribute("skipintoolbarset") == "true";
+      if (isSkipToolbarset && child !== container.lastChild) {
+        continue;
+      }
+
+      if (currentPosition === position) {
+        child.before(node);
+        moved = true;
+        break;
+      }
+
+      if (child === container.lastChild) {
+        child.after(node);
+        moved = true;
+        break;
+      }
+
+      currentPosition++;
+    }
+
+    if (moved) {
+      
+      node.removeAttribute("overflowedItem");
+      node.removeAttribute("artificallyOverflowed");
+      node.removeAttribute("cui-anchorid");
+
+      this._updateWidgetClassName(widgetID,  false);
+    }
   },
 
   _panel: null,
@@ -1464,6 +1574,12 @@ var gUnifiedExtensions = {
         PanelMultiView.hidePopup(panel);
         this._button.open = false;
       } else {
+        
+        for (const toolbarId of CustomizableUI.getCollapsedToolbarIds(window)) {
+          
+          this.onToolbarVisibilityChange(toolbarId,  false);
+        }
+
         panel.hidden = false;
         PanelMultiView.openPopup(panel, this._button, {
           position: "bottomright topright",
@@ -1578,6 +1694,16 @@ var gUnifiedExtensions = {
     let widgetId = this._getWidgetId(menu);
     if (!widgetId) {
       return;
+    }
+
+    
+    
+    
+    
+    
+    
+    if (shouldPinToToolbar) {
+      this._maybeMoveWidgetNodeBack(widgetId);
     }
 
     this.pinToToolbar(widgetId, shouldPinToToolbar);
