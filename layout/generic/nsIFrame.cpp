@@ -3547,14 +3547,12 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
 
   if (aBuilder->ContainsBlendMode()) {
-    DisplayListClipState::AutoSaveRestore blendContainerClipState(aBuilder);
     resultList.AppendToTop(nsDisplayBlendContainer::CreateForMixBlendMode(
         aBuilder, this, &resultList, containerItemASR));
     createdContainer = true;
   }
 
   if (usingBackdropFilter) {
-    DisplayListClipState::AutoSaveRestore clipState(aBuilder);
     nsRect backdropRect =
         GetRectRelativeToSelf() + aBuilder->ToReferenceFrame(this);
     resultList.AppendNewToTop<nsDisplayBackdropFilters>(
@@ -3586,7 +3584,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
     }
 
     if (usingMask) {
-      DisplayListClipState::AutoSaveRestore maskClipState(aBuilder);
       
       
       
@@ -3619,13 +3616,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
 
   if (useOpacity) {
-    
-    
-    
-    DisplayListClipState::AutoSaveRestore opacityClipState(aBuilder);
     const bool needsActiveOpacityLayer =
         nsDisplayOpacity::NeedsActiveLayer(aBuilder, this);
-
     resultList.AppendNewToTop<nsDisplayOpacity>(
         aBuilder, this, &resultList, containerItemASR, opacityItemForEventsOnly,
         needsActiveOpacityLayer, usingBackdropFilter);

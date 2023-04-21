@@ -3367,7 +3367,6 @@ AppendedBackgroundType nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
     }
 
     if (bg->mImage.mLayers[i].mBlendMode != StyleBlend::Normal) {
-      DisplayListClipState::AutoSaveRestore blendClip(aBuilder);
       
       
       
@@ -3388,8 +3387,6 @@ AppendedBackgroundType nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
   }
 
   if (needBlendContainer) {
-    DisplayListClipState::AutoSaveRestore blendContainerClip(aBuilder);
-
     bgItemList.AppendToTop(
         nsDisplayBlendContainer::CreateForBackgroundBlendMode(
             aBuilder, aFrame, aSecondaryReferenceFrame, &bgItemList, asr));
