@@ -291,6 +291,9 @@ class SMILAnimationFunction {
   void UnsetKeySplines();
 
   
+  virtual bool IsDisallowedAttribute(const nsAtom* aAttribute) const {
+    return false;
+  }
   virtual nsresult InterpolateResult(const SMILValueArray& aValues,
                                      SMILValue& aResult, SMILValue& aBaseValue);
   nsresult AccumulateResult(const SMILValueArray& aValues, SMILValue& aResult);
@@ -313,10 +316,9 @@ class SMILAnimationFunction {
   double ScaleIntervalProgress(double aProgress, uint32_t aIntervalIndex);
 
   
-  
-  virtual bool HasAttr(nsAtom* aAttName) const;
-  virtual const nsAttrValue* GetAttr(nsAtom* aAttName) const;
-  virtual bool GetAttr(nsAtom* aAttName, nsAString& aResult) const;
+  bool HasAttr(nsAtom* aAttName) const;
+  const nsAttrValue* GetAttr(nsAtom* aAttName) const;
+  bool GetAttr(nsAtom* aAttName, nsAString& aResult) const;
 
   bool ParseAttr(nsAtom* aAttName, const SMILAttr& aSMILAttr,
                  SMILValue& aResult, bool& aPreventCachingOfSandwich) const;

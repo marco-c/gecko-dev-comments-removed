@@ -19,32 +19,9 @@ namespace mozilla {
 
 
 class SMILSetAnimationFunction : public SMILAnimationFunction {
- public:
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  bool SetAttr(nsAtom* aAttribute, const nsAString& aValue,
-               nsAttrValue& aResult, nsresult* aParseResult = nullptr) override;
-
-  
-
-
-
-
-
-  bool UnsetAttr(nsAtom* aAttribute) override;
-
  protected:
+  bool IsDisallowedAttribute(const nsAtom* aAttribute) const override;
+
   
   
   
@@ -53,12 +30,7 @@ class SMILSetAnimationFunction : public SMILAnimationFunction {
 
   
   bool IsValueFixedForSimpleDuration() const override { return true; }
-  bool HasAttr(nsAtom* aAttName) const override;
-  const nsAttrValue* GetAttr(nsAtom* aAttName) const override;
-  bool GetAttr(nsAtom* aAttName, nsAString& aResult) const override;
-  bool WillReplace() const override;
-
-  bool IsDisallowedAttribute(const nsAtom* aAttribute) const;
+  bool WillReplace() const override { return true; }
 };
 
 }  

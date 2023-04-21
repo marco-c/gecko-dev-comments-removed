@@ -38,8 +38,8 @@ class SVGAnimateMotionElement final : public SVGAnimationElement {
 
   
   SMILAnimationFunction& AnimationFunction() override;
-  virtual bool GetTargetAttributeName(int32_t* aNamespaceID,
-                                      nsAtom** aLocalName) const override;
+  bool GetTargetAttributeName(int32_t* aNamespaceID,
+                              nsAtom** aLocalName) const override;
 
   
   nsStaticAtom* GetPathDataAttrName() const override { return nsGkAtoms::path; }
