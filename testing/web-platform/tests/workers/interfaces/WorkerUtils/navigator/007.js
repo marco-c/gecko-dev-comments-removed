@@ -2,6 +2,8 @@ var log = [];
 var neverEncounteredValue = "This is not the value you are looking for.";
 for (x in navigator) {
   
+  if (typeof navigator[x] === 'function') continue;
+  
   navigator[x] = neverEncounteredValue;
   if (navigator[x] === neverEncounteredValue)
     log.push(x);
