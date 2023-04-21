@@ -665,48 +665,34 @@ StyleSheet* ServoStyleSet::SheetAt(Origin aOrigin, size_t aIndex) const {
       Servo_StyleSet_GetSheetAt(mRawSet.get(), aOrigin, aIndex));
 }
 
-Maybe<StylePageSizeOrientation> ServoStyleSet::GetDefaultPageSizeOrientation(
-    const nsAtom* aFirstPageName) {
+ServoStyleSet::FirstPageSizeAndOrientation
+ServoStyleSet::GetFirstPageSizeAndOrientation(const nsAtom* aFirstPageName) {
+  FirstPageSizeAndOrientation retval;
   const RefPtr<ComputedStyle> style = ResolvePageContentStyle(aFirstPageName);
   const StylePageSize& pageSize = style->StylePage()->mSize;
-  if (pageSize.IsOrientation()) {
-    return Some(pageSize.AsOrientation());
-  }
+
   if (pageSize.IsSize()) {
-    const CSSCoord w = pageSize.AsSize().width.ToCSSPixels();
-    const CSSCoord h = pageSize.AsSize().height.ToCSSPixels();
+    const nscoord w = pageSize.AsSize().width.ToAppUnits();
+    const nscoord h = pageSize.AsSize().height.ToAppUnits();
+    
+    
+    
     
     
     if (w > 0 && h > 0) {
+      retval.size.emplace(w, h);
       if (w > h) {
-        return Some(StylePageSizeOrientation::Landscape);
-      }
-      if (w < h) {
-        return Some(StylePageSizeOrientation::Portrait);
+        retval.orientation.emplace(StylePageSizeOrientation::Landscape);
+      } else if (w < h) {
+        retval.orientation.emplace(StylePageSizeOrientation::Portrait);
       }
     }
+  } else if (pageSize.IsOrientation()) {
+    retval.orientation.emplace(pageSize.AsOrientation());
   } else {
     MOZ_ASSERT(pageSize.IsAuto(), "Impossible page size");
   }
-  return Nothing();
-}
-
-Maybe<nsSize> ServoStyleSet::GetPageSizeForPageName(const nsAtom* aPageName) {
-  const RefPtr<ComputedStyle> style = ResolvePageContentStyle(aPageName);
-  const StylePageSize& pageSize = style->StylePage()->mSize;
-  if (pageSize.IsSize()) {
-    nscoord cssPageWidth = pageSize.AsSize().width.ToAppUnits();
-    nscoord cssPageHeight = pageSize.AsSize().height.ToAppUnits();
-    
-    
-    
-    
-    
-    if (cssPageWidth > 0 && cssPageHeight > 0) {
-      return Some(nsSize{cssPageWidth, cssPageHeight});
-    }
-  }
-  return Nothing();
+  return retval;
 }
 
 void ServoStyleSet::AppendAllNonDocumentAuthorSheets(
