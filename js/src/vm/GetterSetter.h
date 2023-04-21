@@ -7,7 +7,6 @@
 #ifndef vm_GetterSetter_h
 #define vm_GetterSetter_h
 
-#include "gc/Allocator.h"  
 #include "gc/Barrier.h"    
 #include "gc/Cell.h"       
 

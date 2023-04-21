@@ -48,6 +48,7 @@ extern void TraceManuallyBarrieredGenericPointerEdge(JSTracer* trc,
 namespace gc {
 
 enum class AllocKind : uint8_t;
+class CellAllocator;  
 class StoreBuffer;
 class TenuredCell;
 
