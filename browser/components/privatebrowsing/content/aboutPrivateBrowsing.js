@@ -9,10 +9,7 @@
 
 
 
-async function translateElements(container, items) {
-  
-  await document.l10n.ready;
-
+function translateElements(container, items) {
   items.forEach(([element, value]) => {
     
     if (!element || !value) {
@@ -26,11 +23,9 @@ async function translateElements(container, items) {
       element.removeAttribute("data-l10n-id");
     }
   });
-
-  document.l10n.translateFragment(container);
 }
 
-async function renderInfo({
+function renderInfo({
   infoEnabled = false,
   infoTitle,
   infoTitleEnabled,
@@ -57,7 +52,7 @@ async function renderInfo({
     titleEl.remove();
   }
 
-  await translateElements(container, [
+  translateElements(container, [
     [titleEl, infoTitle],
     [bodyEl, infoBody],
     [linkEl, infoLinkText],
@@ -180,7 +175,7 @@ async function renderPromo({
     promoHeaderEl.remove();
   }
 
-  await translateElements(container, [
+  translateElements(container, [
     [titleEl, promoTitle],
     [linkEl, promoLinkText],
     [promoHeaderEl, promoHeader],
@@ -223,7 +218,7 @@ function recordOnceVisible(message) {
 }
 
 
-async function handlePromoOnPreload(message) {
+function handlePromoOnPreload(message) {
   async function removePromoIfBlocked() {
     if (document.visibilityState === "visible") {
       let blocked = await RPMSendQuery("IsPromoBlocked", message);
@@ -256,11 +251,11 @@ async function setupMessageConfig(config = null) {
     } catch (e) {}
   }
 
-  await renderInfo(config);
-  let hasRendered = await renderPromo(config);
+  renderInfo(config);
+  let hasRendered = renderPromo(config);
   if (hasRendered && message) {
     recordOnceVisible(message);
-    await handlePromoOnPreload(message);
+    handlePromoOnPreload(message);
   }
   
   document.documentElement.setAttribute("PrivateBrowsingRenderComplete", true);
