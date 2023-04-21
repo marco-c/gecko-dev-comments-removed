@@ -2787,6 +2787,15 @@ nsRect nsCSSRendering::ComputeImageLayerPositioningArea(
           positionArea.Deflate(scrollbars);
         }
       }
+
+      
+      
+      
+      if (aPresContext->IsRootContentDocumentCrossProcess() &&
+          aPresContext->HasDynamicToolbar()) {
+        positionArea.SizeTo(nsLayoutUtils::ExpandHeightForDynamicToolbar(
+            aPresContext, positionArea.Size()));
+      }
     }
   }
   *aAttachedToFrame = attachedToFrame;
