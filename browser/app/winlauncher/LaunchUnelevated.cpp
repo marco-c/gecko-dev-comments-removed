@@ -4,8 +4,6 @@
 
 
 
-#define MOZ_USE_LAUNCHER_ERROR
-
 #include "LaunchUnelevated.h"
 
 #include "mozilla/Assertions.h"
@@ -18,6 +16,10 @@
 #include "nsWindowsHelpers.h"
 
 #include <windows.h>
+
+#if !defined(RRF_SUBKEY_WOW6464KEY)
+#  define RRF_SUBKEY_WOW6464KEY 0x00010000
+#endif  
 
 static mozilla::LauncherResult<bool> IsHighIntegrity(
     const nsAutoHandle& aToken) {
