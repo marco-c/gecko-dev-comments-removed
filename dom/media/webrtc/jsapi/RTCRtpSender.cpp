@@ -1514,7 +1514,12 @@ void RTCRtpSender::UpdateBaseConfig(BaseConfig* aConfig) {
       aConfig->mLocalRtpExtensions = extmaps;
     }
   }
-  aConfig->mTransmitting = GetJsepTransceiver().mSendTrack.GetActive();
+  
+  
+  
+  
+  
+  aConfig->mTransmitting = mTransceiver->IsSending();
 }
 
 void RTCRtpSender::ApplyVideoConfig(const VideoConfig& aConfig) {
