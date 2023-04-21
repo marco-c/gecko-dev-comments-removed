@@ -124,6 +124,10 @@ void SharedWorkerManager::AddActor(SharedWorkerParent* aParent) {
     Unused << aParent->SendNotifyLock(true);
   }
 
+  if (mWebTransportCount) {
+    Unused << aParent->SendNotifyWebTransport(true);
+  }
+
   
   
   
@@ -250,6 +254,22 @@ void SharedWorkerManager::LockNotified(bool aCreated) {
   if ((aCreated && mLockCount == 1) || !mLockCount) {
     for (SharedWorkerParent* actor : mActors) {
       Unused << actor->SendNotifyLock(aCreated);
+    }
+  }
+};
+
+void SharedWorkerManager::WebTransportNotified(bool aCreated) {
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
+  MOZ_ASSERT_IF(!aCreated, mWebTransportCount > 0);
+
+  mWebTransportCount += aCreated ? 1 : -1;
+
+  
+  
+  
+  if ((aCreated && mWebTransportCount == 1) || mWebTransportCount == 0) {
+    for (SharedWorkerParent* actor : mActors) {
+      Unused << actor->SendNotifyWebTransport(aCreated);
     }
   }
 };

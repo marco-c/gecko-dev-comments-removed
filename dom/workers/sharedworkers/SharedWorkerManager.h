@@ -98,6 +98,8 @@ class SharedWorkerManager final : public RemoteWorkerObserver {
 
   void LockNotified(bool aCreated) final;
 
+  void WebTransportNotified(bool aCreated) final;
+
   void Terminated() override;
 
   
@@ -144,6 +146,7 @@ class SharedWorkerManager final : public RemoteWorkerObserver {
   bool mSuspended;
   bool mFrozen;
   uint32_t mLockCount = 0;
+  uint32_t mWebTransportCount = 0;
 
   
   
