@@ -20,13 +20,7 @@ interface nsICtapRegisterArgs : nsISupports {
     
     readonly attribute AString origin;
 
-    
-    
-    
-    readonly attribute ACString clientDataJSON;
-    
-    
-    readonly attribute Array<octet> challenge;
+    readonly attribute Array<octet> clientDataHash;
 
     
     readonly attribute AString rpId;
@@ -83,13 +77,7 @@ interface nsICtapSignArgs : nsISupports {
     
     readonly attribute AString rpId;
 
-    
-    
-    
-    readonly attribute ACString clientDataJSON;
-    
-    
-    readonly attribute Array<octet> challenge;
+    readonly attribute Array<octet> clientDataHash;
 
     
     
@@ -119,8 +107,6 @@ interface nsICtapSignArgs : nsISupports {
 [uuid(0567c384-a728-11ed-85f7-030324a370f0)]
 interface nsICtapRegisterResult : nsISupports {
     readonly attribute nsresult status;
-
-    readonly attribute ACString clientDataJSON;
 
     
     
@@ -199,7 +185,7 @@ interface nsIWebAuthnController : nsIU2FTokenManager
     
     [noscript] void sendPromptNotificationPreformatted(in uint64_t aTransactionId, in ACString aJSON);
     [noscript] void finishRegister(in uint64_t aTransactionId, in nsICtapRegisterResult aResult);
-    [noscript] void finishSign(in uint64_t aTransactionId, in ACString aClientDataJson, in Array<nsICtapSignResult> aResult);
+    [noscript] void finishSign(in uint64_t aTransactionId, in Array<nsICtapSignResult> aResult);
 };
 
 
