@@ -1608,7 +1608,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.spocSiteId", "");
 pref("browser.newtabpage.activity-stream.discoverystream.sendToPocket.enabled", true);
 
 
-pref("browser.newtabpage.activity-stream.discoverystream.region-stories-block", "FR");
+pref("browser.newtabpage.activity-stream.discoverystream.region-stories-block", "");
 
 #ifdef NIGHTLY_BUILD
   pref("browser.newtabpage.activity-stream.discoverystream.locale-list-config", "en-US,en-CA,en-GB");
