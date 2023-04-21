@@ -268,18 +268,35 @@ static void SuspectUsingNurseryPurpleBuffer(
 
 
 
+
+
+
+
+
+
 struct nsCycleCollectorParams {
   bool mLogAll;
   bool mLogShutdown;
   bool mAllTracesAll;
   bool mAllTracesShutdown;
   bool mLogThisThread;
+  int32_t mLogShutdownSkip = 0;
 
   nsCycleCollectorParams()
       : mLogAll(PR_GetEnv("MOZ_CC_LOG_ALL") != nullptr),
         mLogShutdown(PR_GetEnv("MOZ_CC_LOG_SHUTDOWN") != nullptr),
         mAllTracesAll(false),
         mAllTracesShutdown(false) {
+    if (const char* lssEnv = PR_GetEnv("MOZ_CC_LOG_SHUTDOWN_SKIP")) {
+      mLogShutdown = true;
+      nsDependentCString lssString(lssEnv);
+      nsresult rv;
+      int32_t lss = lssString.ToInteger(&rv);
+      if (NS_SUCCEEDED(rv) && lss >= 0) {
+        mLogShutdownSkip = lss;
+      }
+    }
+
     const char* logThreadEnv = PR_GetEnv("MOZ_CC_LOG_THREAD");
     bool threadLogging = true;
     if (logThreadEnv && !!strcmp(logThreadEnv, "all")) {
@@ -317,8 +334,20 @@ struct nsCycleCollectorParams {
     }
   }
 
-  bool LogThisCC(bool aIsShutdown) {
-    return (mLogAll || (aIsShutdown && mLogShutdown)) && mLogThisThread;
+  
+  
+  
+  bool LogThisCC(int32_t aShutdownCount) {
+    if (mLogAll) {
+      return mLogThisThread;
+    }
+    if (aShutdownCount == 0 || !mLogShutdown) {
+      return false;
+    }
+    if (aShutdownCount <= mLogShutdownSkip) {
+      return false;
+    }
+    return mLogThisThread;
   }
 
   bool AllTracesThisCC(bool aIsShutdown) {
@@ -1102,6 +1131,7 @@ class nsCycleCollector : public nsIMemoryReporter {
   CycleCollectedJSRuntime* mCCJSRuntime;
 
   ccPhase mIncrementalPhase;
+  int32_t mShutdownCount = 0;
   CCGraph mGraph;
   UniquePtr<CCGraphBuilder> mBuilder;
   RefPtr<nsCycleCollectorLogger> mLogger;
@@ -3592,6 +3622,9 @@ void nsCycleCollector::BeginCollection(
   }
 
   bool isShutdown = (aReason == CCReason::SHUTDOWN);
+  if (isShutdown) {
+    mShutdownCount += 1;
+  }
 
   
   MOZ_ASSERT_IF(isShutdown, !aManualListener);
@@ -3602,7 +3635,7 @@ void nsCycleCollector::BeginCollection(
   }
 
   aManualListener = nullptr;
-  if (!mLogger && mParams.LogThisCC(isShutdown)) {
+  if (!mLogger && mParams.LogThisCC(mShutdownCount)) {
     mLogger = new nsCycleCollectorLogger();
     if (mParams.AllTracesThisCC(isShutdown)) {
       mLogger->SetAllTraces();
