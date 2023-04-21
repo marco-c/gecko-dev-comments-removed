@@ -70,10 +70,6 @@ class RemoteWorkerControllerParent final : public PRemoteWorkerControllerParent,
     
   }
 
-  void WebTransportNotified(bool aCreated) final {
-    
-  }
-
   void Terminated() override;
 
   RefPtr<RemoteWorkerController> mRemoteWorkerController;

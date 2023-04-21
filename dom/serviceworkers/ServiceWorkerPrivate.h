@@ -198,10 +198,6 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
     
   }
 
-  void WebTransportNotified(bool aCreated) final {
-    
-  }
-
   void Terminated() override;
 
   
