@@ -589,6 +589,13 @@ bool nsXMLContentSerializer::SerializeAttr(const nsAString& aPrefix,
                                            const nsAString& aValue,
                                            nsAString& aStr,
                                            bool aDoEscapeEntities) {
+  
+  
+  
+  if (mBodyOnly && !mInBody) {
+    return true;
+  }
+
   nsAutoString attrString_;
   
   
