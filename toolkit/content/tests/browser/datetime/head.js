@@ -9,8 +9,7 @@
 
 class DateTimeTestHelper {
   constructor() {
-    this.panel = gBrowser._getAndMaybeCreateDateTimePickerPanel();
-    this.panel.setAttribute("animate", false);
+    this.panel = null;
     this.tab = null;
     this.frame = null;
   }
@@ -40,6 +39,8 @@ class DateTimeTestHelper {
       await SpecialPowers.contentTransformsReceived(content);
     });
 
+    let shown = this.waitForPickerReady();
+
     if (openMethod === "click") {
       await SpecialPowers.spawn(bc, [], () => {
         const input = content.document.querySelector("input");
@@ -52,8 +53,8 @@ class DateTimeTestHelper {
         content.document.querySelector("input").showPicker();
       });
     }
+    this.panel = await shown;
     this.frame = this.panel.querySelector("#dateTimePopupFrame");
-    await this.waitForPickerReady();
   }
 
   promisePickerClosed() {
@@ -79,35 +80,8 @@ class DateTimeTestHelper {
     );
   }
 
-  async waitForPickerReady() {
-    let readyPromise;
-    let loadPromise = new Promise(resolve => {
-      let listener = () => {
-        if (
-          this.frame.browsingContext.currentURI.spec !=
-            "chrome://global/content/datepicker.xhtml" &&
-          this.frame.browsingContext.currentURI.spec !=
-            "chrome://global/content/timepicker.xhtml"
-        ) {
-          return;
-        }
-
-        this.frame.removeEventListener("load", listener, { capture: true });
-        
-        
-        readyPromise = BrowserTestUtils.waitForEvent(
-          this.frame.contentDocument,
-          "PickerReady"
-        );
-        resolve();
-      };
-
-      this.frame.addEventListener("load", listener, { capture: true });
-    });
-
-    await loadPromise;
-    
-    await readyPromise;
+  waitForPickerReady() {
+    return BrowserTestUtils.waitForDateTimePickerPanelShown(window);
   }
 
   
@@ -156,9 +130,8 @@ class DateTimeTestHelper {
 
 
   cleanup() {
-    this.frame.remove();
+    this.frame?.remove();
     this.frame = null;
-    this.panel.removeAttribute("animate");
     this.panel = null;
   }
 }
