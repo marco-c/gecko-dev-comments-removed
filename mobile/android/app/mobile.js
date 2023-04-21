@@ -240,6 +240,9 @@ pref("chrome.override_package.mozapps", "browser");
 pref("chrome.override_package.passwordmgr", "browser");
 
 
+pref("gfx.color_management.mode", 0);
+
+
 pref("dom.disable_window_move_resize", true);
 
 
