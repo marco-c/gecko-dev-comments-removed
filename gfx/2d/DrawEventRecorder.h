@@ -14,7 +14,9 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <functional>
+#include <vector>
 
+#include "mozilla/DataMutex.h"
 #include "nsTHashSet.h"
 
 namespace mozilla {
@@ -63,10 +65,22 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
   }
 
   virtual void RecordEvent(const RecordedEvent& aEvent) = 0;
-  void WritePath(const PathRecording* aPath);
 
   void AddStoredObject(const ReferencePtr aObject) {
+    PendingDeletionsVector pendingDeletions;
+    {
+      auto lockedPendingDeletions = mPendingDeleltions.Lock();
+      pendingDeletions.swap(*lockedPendingDeletions);
+    }
+    for (const auto& pendingDeletion : pendingDeletions) {
+      pendingDeletion();
+    }
     mStoredObjects.insert(aObject);
+  }
+
+  void AddPendingDeletion(std::function<void()>&& aPendingDeletion) {
+    auto lockedPendingDeletions = mPendingDeleltions.Lock();
+    lockedPendingDeletions->emplace_back(std::move(aPendingDeletion));
   }
 
   void RemoveStoredObject(const ReferencePtr aObject) {
@@ -132,12 +146,7 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
 
 
 
-
-
-
-
-
-  virtual void RecordSourceSurfaceDestruction(void* aSurface);
+  void RecordSourceSurfaceDestruction(void* aSurface);
 
   virtual void AddDependentSurface(uint64_t aDependencyId) {
     MOZ_CRASH("GFX: AddDependentSurface");
@@ -149,6 +158,10 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
   virtual void Flush() = 0;
 
   std::unordered_set<const void*> mStoredObjects;
+
+  using PendingDeletionsVector = std::vector<std::function<void()>>;
+  DataMutex<PendingDeletionsVector> mPendingDeleltions{
+      "DrawEventRecorderPrivate::mPendingDeleltions"};
 
   
   

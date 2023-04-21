@@ -35,10 +35,16 @@ static void RecordingSourceSurfaceUserDataFunc(void* aUserData) {
   RecordingSourceSurfaceUserData* userData =
       static_cast<RecordingSourceSurfaceUserData*>(aUserData);
 
-  userData->recorder->RecordSourceSurfaceDestruction(
-      static_cast<SourceSurface*>(userData->refPtr));
+  if (NS_IsMainThread()) {
+    userData->recorder->RecordSourceSurfaceDestruction(userData->refPtr);
+    delete userData;
+    return;
+  }
 
-  delete userData;
+  userData->recorder->AddPendingDeletion([userData]() -> void {
+    userData->recorder->RecordSourceSurfaceDestruction(userData->refPtr);
+    delete userData;
+  });
 }
 
 static void EnsureSurfaceStoredRecording(DrawEventRecorderPrivate* aRecorder,
@@ -48,8 +54,11 @@ static void EnsureSurfaceStoredRecording(DrawEventRecorderPrivate* aRecorder,
     return;
   }
 
-  aRecorder->StoreSourceSurfaceRecording(aSurface, reason);
+  
+  
+  
   aRecorder->AddStoredObject(aSurface);
+  aRecorder->StoreSourceSurfaceRecording(aSurface, reason);
   aRecorder->AddSourceSurface(aSurface);
 
   RecordingSourceSurfaceUserData* userData = new RecordingSourceSurfaceUserData;
@@ -696,8 +705,11 @@ already_AddRefed<PathRecording> DrawTargetRecording::EnsurePathStored(
     pathRecording = builderRecording->Finish().downcast<PathRecording>();
   }
 
-  mRecorder->RecordEvent(RecordedPathCreation(pathRecording.get()));
+  
+  
+  
   mRecorder->AddStoredObject(pathRecording);
+  mRecorder->RecordEvent(RecordedPathCreation(pathRecording.get()));
   pathRecording->mStoredRecorders.push_back(mRecorder);
 
   return pathRecording.forget();

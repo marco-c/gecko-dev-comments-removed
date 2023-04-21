@@ -514,18 +514,5 @@ void CanvasDrawEventRecorder::StoreSourceSurfaceRecording(
   StoreExternalSurfaceRecording(aSurface, wr::AsUint64(extId));
 }
 
-void CanvasDrawEventRecorder::RecordSourceSurfaceDestruction(void* aSurface) {
-  
-  
-  if (NS_IsMainThread()) {
-    DrawEventRecorderPrivate::RecordSourceSurfaceDestruction(aSurface);
-    return;
-  }
-
-  NS_DispatchToMainThread(NewRunnableMethod<void*>(
-      "DrawEventRecorderPrivate::RecordSourceSurfaceDestruction", this,
-      &DrawEventRecorderPrivate::RecordSourceSurfaceDestruction, aSurface));
-}
-
 }  
 }  
