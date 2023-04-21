@@ -167,11 +167,13 @@
     t.add_cleanup(() => {
       frame.remove();
     });
-    frame.src = "resources/text-plain-charset.py?label=" + label;
+    
+    
+    frame.src = "resources/text-html-meta-charset.py?label=" + label;
     frame.onload = t.step_func_done(() => {
       
-      assert_equals(frame.contentDocument.characterSet, "windows-1252");
-      assert_equals(frame.contentDocument.inputEncoding, "windows-1252");
+      assert_equals(frame.contentDocument.characterSet, "UTF-8");
+      assert_equals(frame.contentDocument.inputEncoding, "UTF-8");
     });
     document.body.append(frame);
   }, `${label} is not supported by the Encoding Standard`);
