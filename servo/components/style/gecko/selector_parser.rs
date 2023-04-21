@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-//! Gecko-specific bits for selector-parsing.
+
+
+
+
 
 use crate::computed_value_flags::ComputedValueFlags;
 use crate::gecko_bindings::structs::RawServoSelectorList;
@@ -38,7 +38,7 @@ bitflags! {
     }
 }
 
-/// The type used to store the language argument to the `:lang` pseudo-class.
+
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 #[css(comma)]
 pub struct Lang(#[css(iterable)] pub ThinVec<AtomIdent>);
@@ -96,9 +96,9 @@ impl ToCss for NonTSPseudoClass {
 }
 
 impl NonTSPseudoClass {
-    /// Parses the name and returns a non-ts-pseudo-class if succeeds.
-    /// None otherwise. It doesn't check whether the pseudo-class is enabled
-    /// in a particular state.
+    
+    
+    
     pub fn parse_non_functional(name: &str) -> Option<Self> {
         macro_rules! pseudo_class_parse {
             ([$(($css:expr, $name:ident, $state:tt, $flags:tt),)*]) => {
@@ -118,7 +118,7 @@ impl NonTSPseudoClass {
         apply_non_ts_list!(pseudo_class_parse)
     }
 
-    /// Returns true if this pseudo-class has any of the given flags set.
+    
     fn has_any_flag(&self, flags: NonTSPseudoClassFlag) -> bool {
         macro_rules! check_flag {
             (_) => {
@@ -141,16 +141,16 @@ impl NonTSPseudoClass {
         apply_non_ts_list!(pseudo_class_check_is_enabled_in)
     }
 
-    /// Returns whether the pseudo-class is enabled in content sheets.
+    
     #[inline]
     fn is_enabled_in_content(&self) -> bool {
-        if matches!(*self, Self::Open | Self::Closed) {
+        if matches!(*self, Self::PopoverOpen) {
             return static_prefs::pref!("dom.element.popover.enabled");
         }
         !self.has_any_flag(NonTSPseudoClassFlag::PSEUDO_CLASS_ENABLED_IN_UA_SHEETS_AND_CHROME)
     }
 
-    /// Get the state flag associated with a pseudo-class, if any.
+    
     pub fn state_flag(&self) -> ElementState {
         macro_rules! flag {
             (_) => {
@@ -173,7 +173,7 @@ impl NonTSPseudoClass {
         apply_non_ts_list!(pseudo_class_state)
     }
 
-    /// Get the document state flag associated with a pseudo-class, if any.
+    
     pub fn document_state_flag(&self) -> DocumentState {
         match *self {
             NonTSPseudoClass::MozLocaleDir(ref dir) => match dir.as_horizontal_direction() {
@@ -187,8 +187,8 @@ impl NonTSPseudoClass {
         }
     }
 
-    /// Returns true if the given pseudoclass should trigger style sharing cache
-    /// revalidation.
+    
+    
     pub fn needs_cache_revalidation(&self) -> bool {
         self.state_flag().is_empty() &&
             !matches!(
@@ -224,7 +224,7 @@ impl ::selectors::parser::NonTSPseudoClass for NonTSPseudoClass {
         matches!(*self, NonTSPseudoClass::Active | NonTSPseudoClass::Hover)
     }
 
-    /// We intentionally skip the link-related ones.
+    
     #[inline]
     fn is_user_action_state(&self) -> bool {
         matches!(
@@ -234,23 +234,23 @@ impl ::selectors::parser::NonTSPseudoClass for NonTSPseudoClass {
     }
 }
 
-/// The dummy struct we use to implement our selector parsing.
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SelectorImpl;
 
-/// A set of extra data to carry along with the matching context, either for
-/// selector-matching or invalidation.
+
+
 #[derive(Default)]
 pub struct ExtraMatchingData<'a> {
-    /// The invalidation data to invalidate doc-state pseudo-classes correctly.
+    
     pub invalidation_data: InvalidationMatchingData,
 
-    /// The invalidation bits from matching container queries. These are here
-    /// just for convenience mostly.
+    
+    
     pub cascade_input_flags: ComputedValueFlags,
 
-    /// The style of the originating element in order to evaluate @container
-    /// size queries affecting pseudo-elements.
+    
+    
     pub originating_element_style: Option<&'a ComputedValues>,
 }
 
@@ -432,8 +432,8 @@ impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
         parser: &mut Parser<'i, 't>,
     ) -> Result<PseudoElement, ParseError<'i>> {
         if starts_with_ignore_ascii_case(&name, "-moz-tree-") {
-            // Tree pseudo-elements can have zero or more arguments, separated
-            // by either comma or space.
+            
+            
             let mut args = ThinVec::new();
             loop {
                 let location = parser.current_source_location();
@@ -476,8 +476,8 @@ impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
 }
 
 impl SelectorImpl {
-    /// A helper to traverse each eagerly cascaded pseudo-element, executing
-    /// `fun` on it.
+    
+    
     #[inline]
     pub fn each_eagerly_cascaded_pseudo_element<F>(mut fun: F)
     where
@@ -495,7 +495,7 @@ unsafe impl HasFFI for SelectorList<SelectorImpl> {
 unsafe impl HasSimpleFFI for SelectorList<SelectorImpl> {}
 unsafe impl HasBoxFFI for SelectorList<SelectorImpl> {}
 
-// Selector and component sizes are important for matching performance.
+
 size_of_test!(selectors::parser::Selector<SelectorImpl>, 8);
 size_of_test!(selectors::parser::Component<SelectorImpl>, 24);
 size_of_test!(PseudoElement, 16);
