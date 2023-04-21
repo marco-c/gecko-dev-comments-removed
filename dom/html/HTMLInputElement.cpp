@@ -4416,6 +4416,12 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
     fm->NeedsFlushBeforeEventHandling(this);
   }
 
+  if (oldType == FormControlType::InputPassword &&
+      State().HasState(ElementState::REVEALED)) {
+    
+    RemoveStates(ElementState::REVEALED);
+  }
+
   if (aNewType == FormControlType::InputFile ||
       oldType == FormControlType::InputFile) {
     if (aNewType == FormControlType::InputFile) {
