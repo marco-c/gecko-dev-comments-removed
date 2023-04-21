@@ -63,6 +63,7 @@ struct GMPVideoi420FrameData {
   int32_t mWidth;
   int32_t mHeight;
   uint64_t mTimestamp;  
+  uint64_t? mUpdatedTimestamp;  
   uint64_t mDuration;   
 };
 

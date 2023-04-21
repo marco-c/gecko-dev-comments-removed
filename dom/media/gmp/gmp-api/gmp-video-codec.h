@@ -134,10 +134,24 @@ enum GMPVideoCodecMode {
   kGMPCodecModeInvalid  
 };
 
+enum GMPLogLevel {
+  kGMPLogDefault,
+  kGMPLogQuiet,
+  kGMPLogError,
+  kGMPLogWarning,
+  kGMPLogInfo,
+  kGMPLogDebug,
+  kGMPLogDetail,
+  kGMPLogInvalid  
+};
+
 enum GMPApiVersion {
   kGMPVersion32 =
       1,  
   kGMPVersion33 = 33,
+
+  
+  kGMPVersion34 = 34,
 };
 
 struct GMPVideoCodec {
@@ -163,6 +177,9 @@ struct GMPVideoCodec {
   GMPSimulcastStream mSimulcastStream[kGMPMaxSimulcastStreams];
 
   GMPVideoCodecMode mMode;
+
+  bool mUseThreadedDecode;
+  GMPLogLevel mLogLevel;
 };
 
 

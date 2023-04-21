@@ -129,6 +129,14 @@ class GMPVideoi420Frame : public GMPVideoFrame {
   
   
   virtual void ResetSize() = 0;
+
+  
+
+  
+  virtual void SetUpdatedTimestamp(uint64_t aTimestamp) = 0;
+
+  
+  virtual uint64_t UpdatedTimestamp() const = 0;
 };
 
 #endif  
