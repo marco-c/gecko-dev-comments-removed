@@ -3497,7 +3497,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
     
     
     
-    if ((aBuilder->ContainsBlendMode()) && aBuilder->IsRetainingDisplayList()) {
+    if (aBuilder->ContainsBlendMode() && aBuilder->IsRetainingDisplayList()) {
       if (aBuilder->IsPartialUpdate()) {
         aBuilder->SetPartialBuildFailed(true);
       } else {
@@ -3540,12 +3540,11 @@ void nsIFrame::BuildDisplayListForStackingContext(
   bool createdContainer = false;
 
   
-
-
-
-
-
-
+  
+  
+  
+  
+  
   if (aBuilder->ContainsBlendMode()) {
     resultList.AppendToTop(nsDisplayBlendContainer::CreateForMixBlendMode(
         aBuilder, this, &resultList, containerItemASR));
@@ -3561,10 +3560,9 @@ void nsIFrame::BuildDisplayListForStackingContext(
   }
 
   
-
-
-
-
+  
+  
+  
   if (usingSVGEffects) {
     MOZ_ASSERT(usingFilter || usingMask,
                "Beside filter & mask/clip-path, what else effect do we have?");
@@ -3613,8 +3611,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
   }
 
   
-
-
+  
   if (useOpacity) {
     const bool needsActiveOpacityLayer =
         nsDisplayOpacity::NeedsActiveLayer(aBuilder, this);
@@ -3625,17 +3622,16 @@ void nsIFrame::BuildDisplayListForStackingContext(
   }
 
   
-
-
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (isTransformed && extend3DContext) {
     
     
@@ -3746,7 +3742,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
   }
 
   
-
   if (useFixedPosition) {
     if (clipCapturedBy == ContainerItemType::FixedPosition) {
       clipState.Restore();
@@ -3810,10 +3805,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
   }
 
   
-
-
-
-
+  
+  
   if (useBlendMode) {
     DisplayListClipState::AutoSaveRestore blendModeClipState(aBuilder);
     resultList.AppendNewToTop<nsDisplayBlendMode>(aBuilder, this, &resultList,
