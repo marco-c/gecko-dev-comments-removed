@@ -188,8 +188,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   
   bool topLevelAwait = true;
 
-  bool useFdlibmForSinCosTan = false;
-
   bool importAssertions = false;
 
   
@@ -322,7 +320,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
     PrintFields_(allowHTMLComments);
     PrintFields_(nonSyntacticScope);
     PrintFields_(topLevelAwait);
-    PrintFields_(useFdlibmForSinCosTan);
     PrintFields_(importAssertions);
     PrintFields_(borrowBuffer);
     PrintFields_(usePinnedBytecode);
