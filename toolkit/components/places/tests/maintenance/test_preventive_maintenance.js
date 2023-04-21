@@ -291,10 +291,10 @@ tests.push({
     );
     Assert.equal(rows.length, 1);
     
-    rows = await db.executeCached(
-      "SELECT id FROM moz_annos WHERE anno_attribute_id = 1337"
-    );
-    Assert.equal(rows.length, 0);
+    let value = await PlacesTestUtils.getDatabaseValue("moz_annos", "id", {
+      anno_attribute_id: 1337,
+    });
+    Assert.deepEqual(value, undefined);
   },
 });
 
@@ -348,10 +348,10 @@ tests.push({
     );
     Assert.equal(rows.length, 1);
     
-    rows = await db.executeCached(
-      "SELECT id FROM moz_annos WHERE place_id = 1337"
-    );
-    Assert.equal(rows.length, 0);
+    let value = await PlacesTestUtils.getDatabaseValue("moz_annos", "id", {
+      place_id: 1337,
+    });
+    Assert.deepEqual(value, undefined);
   },
 });
 
@@ -400,42 +400,42 @@ tests.push({
       PlacesUtils.bookmarks.TYPE_FOLDER
     );
 
-    let db = await PlacesUtils.promiseDBConnection();
-    let rows = await db.executeCached(
-      `SELECT syncChangeCounter FROM moz_bookmarks WHERE guid = :guid`,
-      { guid: PlacesUtils.bookmarks.menuGuid }
+    let value = await PlacesTestUtils.getDatabaseValue(
+      "moz_bookmarks",
+      "syncChangeCounter",
+      {
+        guid: PlacesUtils.bookmarks.menuGuid,
+      }
     );
-    Assert.equal(rows.length, 1);
-    this._menuChangeCounter = rows[0].getResultByIndex(0);
+    Assert.equal(value, 0);
+    this._menuChangeCounter = value;
   },
 
   async check() {
-    let db = await PlacesUtils.promiseDBConnection();
     
-    let rows = await db.executeCached(
-      "SELECT id FROM moz_bookmarks WHERE id = :item_id",
-      { item_id: this._validItemId }
-    );
-    Assert.equal(rows.length, 1);
+    let value = await PlacesTestUtils.getDatabaseValue("moz_bookmarks", "id", {
+      id: this._validItemId,
+    });
+    Assert.notStrictEqual(value, undefined);
     
     for (let id of [
       this._invalidItemId,
       this._invalidSyncedItemId,
       this._invalidWrongTypeItemId,
     ]) {
-      rows = await db.executeCached(
-        "SELECT id FROM moz_bookmarks WHERE id = :item_id",
-        { item_id: id }
-      );
-      Assert.equal(rows.length, 0);
+      value = await PlacesTestUtils.getDatabaseValue("moz_bookmarks", "id", {
+        id,
+      });
+      Assert.deepEqual(value, undefined);
     }
 
-    rows = await db.executeCached(
-      `SELECT syncChangeCounter FROM moz_bookmarks WHERE guid = :guid`,
+    value = await PlacesTestUtils.getDatabaseValue(
+      "moz_bookmarks",
+      "syncChangeCounter",
       { guid: PlacesUtils.bookmarks.menuGuid }
     );
-    Assert.equal(rows.length, 1);
-    Assert.equal(rows[0].getResultByIndex(0), this._menuChangeCounter + 1);
+    Assert.equal(value, 1);
+    Assert.deepEqual(value, this._menuChangeCounter + 1);
 
     let tombstones = await PlacesTestUtils.fetchSyncTombstones();
     Assert.deepEqual(
@@ -488,24 +488,24 @@ tests.push({
   },
 
   async check() {
-    let db = await PlacesUtils.promiseDBConnection();
     
-    let rows = await db.executeCached(
-      `SELECT id FROM moz_bookmarks WHERE type = :type AND parent = :parent`,
-      { type: PlacesUtils.bookmarks.TYPE_BOOKMARK, parent: this._tagId }
-    );
-    Assert.equal(rows.length, 1);
+    let value = await PlacesTestUtils.getDatabaseValue("moz_bookmarks", "id", {
+      type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      parent: this._tagId,
+    });
+    Assert.notStrictEqual(value, undefined);
     
-    rows = await db.executeCached(
-      `SELECT id FROM moz_bookmarks WHERE type = :type AND parent = :parent`,
-      { type: PlacesUtils.bookmarks.TYPE_SEPARATOR, parent: this._tagId }
-    );
+    value = await PlacesTestUtils.getDatabaseValue("moz_bookmarks", "id", {
+      type: PlacesUtils.bookmarks.TYPE_SEPARATOR,
+      parent: this._tagId,
+    });
+    Assert.equal(value, undefined);
     
-    rows = await db.executeCached(
-      `SELECT id FROM moz_bookmarks WHERE type = :type AND parent = :parent`,
-      { type: PlacesUtils.bookmarks.TYPE_FOLDER, parent: this._tagId }
-    );
-    Assert.equal(rows.length, 0);
+    value = await PlacesTestUtils.getDatabaseValue("moz_bookmarks", "id", {
+      type: PlacesUtils.bookmarks.TYPE_FOLDER,
+      parent: this._tagId,
+    });
+    Assert.equal(value, undefined);
   },
 });
 
@@ -547,20 +547,16 @@ tests.push({
   async check() {
     let db = await PlacesUtils.promiseDBConnection();
     
+    let value = await PlacesTestUtils.getDatabaseValue("moz_bookmarks", "id", {
+      id: this._bookmarkId,
+      type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      parent: this._tagId,
+    });
+    Assert.notStrictEqual(value, undefined);
     let rows = await db.executeCached(
-      `SELECT id FROM moz_bookmarks
-       WHERE id = :id AND type = :type AND parent = :parent`,
-      {
-        id: this._bookmarkId,
-        type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
-        parent: this._tagId,
-      }
-    );
-    Assert.equal(rows.length, 1);
-    rows = await db.executeCached(
       `SELECT b.id FROM moz_bookmarks b
-       JOIN moz_bookmarks p ON p.id = b.parent
-       WHERE b.id = :id AND b.type = :type AND p.guid = :parent`,
+      JOIN moz_bookmarks p ON p.id = b.parent
+      WHERE b.id = :id AND b.type = :type AND p.guid = :parent`,
       {
         id: this._tagId,
         type: PlacesUtils.bookmarks.TYPE_FOLDER,
@@ -570,8 +566,8 @@ tests.push({
     Assert.equal(rows.length, 1);
     rows = await db.executeCached(
       `SELECT b.id FROM moz_bookmarks b
-       JOIN moz_bookmarks p ON p.id = b.parent
-       WHERE b.id = :id AND b.type = :type AND p.guid = :parent`,
+      JOIN moz_bookmarks p ON p.id = b.parent
+      WHERE b.id = :id AND b.type = :type AND p.guid = :parent`,
       {
         id: this._emptyTagId,
         type: PlacesUtils.bookmarks.TYPE_FOLDER,
@@ -1351,31 +1347,26 @@ tests.push({
   },
 
   async check() {
-    let db = await PlacesUtils.promiseDBConnection();
     
-    let rows = await db.executeCached(
-      "SELECT id FROM moz_icons WHERE id = :favicon_id",
-      { favicon_id: 1 }
-    );
-    Assert.equal(rows.length, 1);
+    let value = await PlacesTestUtils.getDatabaseValue("moz_icons", "id", {
+      id: 1,
+    });
+    Assert.notStrictEqual(value, undefined);
     
-    rows = await db.executeCached(
-      "SELECT id FROM moz_icons WHERE id = :favicon_id",
-      { favicon_id: 2 }
-    );
-    Assert.equal(rows.length, 0);
+    value = await PlacesTestUtils.getDatabaseValue("moz_icons", "id", {
+      id: 2,
+    });
+    Assert.deepEqual(value, undefined);
     
-    rows = await db.executeCached(
-      "SELECT id FROM moz_icons WHERE id = :favicon_id",
-      { favicon_id: 3 }
-    );
-    Assert.equal(rows.length, 0);
+    value = await PlacesTestUtils.getDatabaseValue("moz_icons", "id", {
+      id: 3,
+    });
+    Assert.deepEqual(value, undefined);
     
-    rows = await db.executeCached(
-      "SELECT id FROM moz_pages_w_icons WHERE id = :page_id",
-      { page_id: 99 }
-    );
-    Assert.equal(rows.length, 0);
+    value = await PlacesTestUtils.getDatabaseValue("moz_pages_w_icons", "id", {
+      id: 99,
+    });
+    Assert.deepEqual(value, undefined);
   },
 });
 
@@ -1403,18 +1394,19 @@ tests.push({
 
   async check() {
     
-    let db = await PlacesUtils.promiseDBConnection();
-    let rows = await db.executeCached(
-      "SELECT id FROM moz_historyvisits WHERE place_id = :place_id",
-      { place_id: this._placeId }
+    let value = await PlacesTestUtils.getDatabaseValue(
+      "moz_historyvisits",
+      "id",
+      {
+        place_id: this._placeId,
+      }
     );
-    Assert.equal(rows.length, 1);
+    Assert.notStrictEqual(value, undefined);
     
-    rows = await db.executeCached(
-      "SELECT id FROM moz_historyvisits WHERE place_id = :place_id",
-      { place_id: this._invalidPlaceId }
-    );
-    Assert.equal(rows.length, 0);
+    value = await PlacesTestUtils.getDatabaseValue("moz_historyvisits", "id", {
+      place_id: this._invalidPlaceId,
+    });
+    Assert.deepEqual(value, undefined);
   },
 });
 
@@ -1492,19 +1484,16 @@ tests.push({
   },
 
   async check() {
-    let db = await PlacesUtils.promiseDBConnection();
     
-    let rows = await db.executeCached(
-      "SELECT id FROM moz_keywords WHERE keyword = :keyword",
-      { keyword: "used" }
-    );
-    Assert.equal(rows.length, 1);
+    let value = await PlacesTestUtils.getDatabaseValue("moz_keywords", "id", {
+      keyword: "used",
+    });
+    Assert.notStrictEqual(value, undefined);
     
-    rows = await db.executeCached(
-      "SELECT id FROM moz_keywords WHERE keyword = :keyword",
-      { keyword: "unused" }
-    );
-    Assert.equal(rows.length, 0);
+    value = await PlacesTestUtils.getDatabaseValue("moz_keywords", "id", {
+      keyword: "unused",
+    });
+    Assert.deepEqual(value, undefined);
   },
 });
 
