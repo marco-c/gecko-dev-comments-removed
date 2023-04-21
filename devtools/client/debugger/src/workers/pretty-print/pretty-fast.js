@@ -166,13 +166,7 @@ class PrettyFast {
   #currentLine = 1;
   #currentColumn = 0;
   
-  #tokenQueue;
-  
-  #currentTokenIndex;
-  
   #lastToken;
-  
-  
   
   
   
@@ -223,12 +217,11 @@ class PrettyFast {
     
     
     
-    this.#tokenQueue = this.#getTokens(input);
+    const tokenQueue = this.#getTokens(input);
 
-    for (let i = 0, len = this.#tokenQueue.length; i < len; i++) {
-      this.#currentTokenIndex = i;
-      const token = this.#tokenQueue[i];
-      const nextToken = this.#tokenQueue[i + 1];
+    for (let i = 0, len = tokenQueue.length; i < len; i++) {
+      const token = tokenQueue[i];
+      const nextToken = tokenQueue[i + 1];
       this.#handleToken(token, nextToken);
 
       
@@ -436,14 +429,6 @@ class PrettyFast {
       } else if (isObjectLiteral(token, this.#lastToken)) {
         
         stackEntry = nextToken?.type?.label === "}" ? "{" : "{\n";
-      } else if (
-        isRoundBracketStartingLongParenthesis(
-          token,
-          this.#tokenQueue,
-          this.#currentTokenIndex
-        )
-      ) {
-        stackEntry = "(\n";
       } else if (ttl == "{") {
         
         stackEntry = "{\n";
@@ -501,8 +486,7 @@ class PrettyFast {
       (token.type.label == "{" && this.#stack.at(-1) === "{\n") ||
       
       (token.type.label == "[" && this.#stack.at(-1) === "[\n") ||
-      token.type.keyword == "switch" ||
-      (token.type.label == "(" && this.#stack.at(-1) === "(\n")
+      token.type.keyword == "switch"
     ) {
       this.#indentLevel++;
     }
@@ -511,11 +495,7 @@ class PrettyFast {
   #shouldDecrementIndent(token) {
     const top = this.#stack.at(-1);
     const ttl = token.type.label;
-    return (
-      (ttl == "}" && top == "{\n") ||
-      (ttl == "]" && top == "[\n") ||
-      (ttl == ")" && top == "(\n")
-    );
+    return (ttl == "}" && top == "{\n") || (ttl == "]" && top == "[\n");
   }
 
   #maybeDecrementIndent(token) {
@@ -712,75 +692,6 @@ function isObjectLiteral(token, lastToken) {
 
 
 
-
-
-
-
-
-
-
-
-
-function isRoundBracketStartingLongParenthesis(
-  token,
-  tokenQueue,
-  currentTokenIndex
-) {
-  if (token.type.label !== "(") {
-    return false;
-  }
-
-  
-  if (tokenQueue[currentTokenIndex + 1].type.label == "{") {
-    return false;
-  }
-
-  
-  
-  
-  const longParentContentLength = 60;
-
-  
-  let parenCount = 0;
-  let parenContentLength = 0;
-  for (let i = currentTokenIndex + 1, len = tokenQueue.length; i < len; i++) {
-    const currToken = tokenQueue[i];
-    const ttl = currToken.type.label;
-
-    if (ttl == "(") {
-      parenCount++;
-    } else if (ttl == ")") {
-      if (parenCount == 0) {
-        
-        
-        return false;
-      }
-      parenCount--;
-    }
-
-    
-    
-    const tokenLength = currToken.comment
-      ? currToken.text.length
-      : currToken.end - currToken.start;
-    parenContentLength += tokenLength;
-
-    
-    
-    
-    if (parenContentLength > longParentContentLength) {
-      return true;
-    }
-  }
-
-  
-  
-  
-  return false;
-}
-
-
-
 const PREVENT_ASI_AFTER_TOKENS = new Set([
   
   "*",
@@ -949,9 +860,8 @@ function isLineDelimiter(token, stack) {
     (ttl == "{" && top == "{\n") ||
     
     (ttl == "[" && top == "[\n") ||
-    ((ttl == "," || ttl == "||" || ttl == "&&") && top != "(") ||
-    (ttl == ":" && (top == "case" || top == "default")) ||
-    (ttl == "(" && top == "(\n")
+    (ttl == "," && top != "(") ||
+    (ttl == ":" && (top == "case" || top == "default"))
   );
 }
 
