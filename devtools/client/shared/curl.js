@@ -127,6 +127,11 @@ const Curl = {
     ignoredHeaders.add("host");
 
     
+    if (utils.isContentEncodedResponse(data)) {
+      addParam("--compressed");
+    }
+
+    
     
     
     if (data.method === "HEAD") {
@@ -220,6 +225,18 @@ const CurlUtils = {
     return (
       contentType && contentType.toLowerCase().includes("multipart/form-data;")
     );
+  },
+
+  
+
+
+
+
+
+
+
+  isContentEncodedResponse(data) {
+    return !!this.findHeader(data.responseHeaders, "content-encoding");
   },
 
   
