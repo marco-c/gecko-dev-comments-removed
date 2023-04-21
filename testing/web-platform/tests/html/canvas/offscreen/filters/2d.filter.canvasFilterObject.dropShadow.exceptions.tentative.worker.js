@@ -37,16 +37,6 @@ _assert(new CanvasFilter({filter: 'dropShadow', dy: []}), "new CanvasFilter({fil
 _assert(new CanvasFilter({filter: 'dropShadow', dy: [20]}), "new CanvasFilter({filter: 'dropShadow', dy: [\""+(20)+"\"]})");
 _assert(new CanvasFilter({filter: 'dropShadow', dy: '30'}), "new CanvasFilter({filter: 'dropShadow', dy: '30'})");
 
-_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: 10}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: 10})");
-_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: -1}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: -1})");
-_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: 0.5}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: 0.5})");
-_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: null}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: null})");
-_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: true}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: true})");
-_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: false}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: false})");
-_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: []}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: []})");
-_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: [20]}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: [\""+(20)+"\"]})");
-_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: '30'}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: '30'})");
-
 _assert(new CanvasFilter({filter: 'dropShadow', floodOpacity: 10}), "new CanvasFilter({filter: 'dropShadow', floodOpacity: 10})");
 _assert(new CanvasFilter({filter: 'dropShadow', floodOpacity: -1}), "new CanvasFilter({filter: 'dropShadow', floodOpacity: -1})");
 _assert(new CanvasFilter({filter: 'dropShadow', floodOpacity: 0.5}), "new CanvasFilter({filter: 'dropShadow', floodOpacity: 0.5})");
@@ -56,6 +46,21 @@ _assert(new CanvasFilter({filter: 'dropShadow', floodOpacity: false}), "new Canv
 _assert(new CanvasFilter({filter: 'dropShadow', floodOpacity: []}), "new CanvasFilter({filter: 'dropShadow', floodOpacity: []})");
 _assert(new CanvasFilter({filter: 'dropShadow', floodOpacity: [20]}), "new CanvasFilter({filter: 'dropShadow', floodOpacity: [\""+(20)+"\"]})");
 _assert(new CanvasFilter({filter: 'dropShadow', floodOpacity: '30'}), "new CanvasFilter({filter: 'dropShadow', floodOpacity: '30'})");
+
+_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: 10}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: 10})");
+_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: -1}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: -1})");
+_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: 0.5}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: 0.5})");
+_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: null}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: null})");
+_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: true}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: true})");
+_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: false}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: false})");
+_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: []}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: []})");
+_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: [20]}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: [\""+(20)+"\"]})");
+_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: '30'}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: '30'})");
+_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: [10, -1]}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: [10, -1]})");
+_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: [0.5, null]}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: [0.5, null]})");
+_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: [true, false]}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: [true, false]})");
+_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: [[], [20]]}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: [[], [\""+(20)+"\"]]})");
+_assert(new CanvasFilter({filter: 'dropShadow', stdDeviation: ['30', ['40']]}), "new CanvasFilter({filter: 'dropShadow', stdDeviation: ['30', ['40']]})");
 
 _assert(new CanvasFilter({filter: 'dropShadow', floodColor: 'red'}), "new CanvasFilter({filter: 'dropShadow', floodColor: 'red'})");
 _assert(new CanvasFilter({filter: 'dropShadow', floodColor: 'canvas'}), "new CanvasFilter({filter: 'dropShadow', floodColor: 'canvas'})");
@@ -80,14 +85,6 @@ assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow',
 assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', dy: {}}); });
 assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', dy: [1, 2]}); });
 
-assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: NaN}); });
-assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: Infinity}); });
-assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: -Infinity}); });
-assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: undefined}); });
-assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: 'test'}); });
-assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: {}}); });
-assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: [1, 2]}); });
-
 assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', floodOpacity: NaN}); });
 assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', floodOpacity: Infinity}); });
 assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', floodOpacity: -Infinity}); });
@@ -95,6 +92,21 @@ assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow',
 assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', floodOpacity: 'test'}); });
 assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', floodOpacity: {}}); });
 assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', floodOpacity: [1, 2]}); });
+
+assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: NaN}); });
+assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: Infinity}); });
+assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: -Infinity}); });
+assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: undefined}); });
+assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: 'test'}); });
+assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: {}}); });
+assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: [1, 2, 3]}); });
+assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: [1, NaN]}); });
+assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: [1, Infinity]}); });
+assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: [1, -Infinity]}); });
+assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: [1, undefined]}); });
+assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: [1, 'test']}); });
+assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: [1, {}]}); });
+assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', stdDeviation: [1, [2, 3]]}); });
 
 assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', floodColor: 'test'}); });
 assert_throws_js(TypeError, function() { new CanvasFilter({filter: 'dropShadow', floodColor: 'rgba(NaN, 3, 2, 1)'}); });
