@@ -1,11 +1,11 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-
-
-
-
-
-
+//! This module contains the render task graph.
+//!
+//! Code associated with creating specific render tasks is in the render_task
+//! module.
 
 use api::units::*;
 use api::ImageFormat;
@@ -28,16 +28,16 @@ use crate::render_target::{PictureCacheTarget, TextureCacheRenderTarget, AlphaRe
 use crate::util::Allocation;
 use std::{usize, f32};
 
-
-
-
+/// If we ever need a larger texture than the ideal, we better round it up to a
+/// reasonable number in order to have a bit of leeway in case the size of this
+/// this target is changing each frame.
 const TEXTURE_DIMENSION_MASK: i32 = 0xFF;
 
-
-
-
-
-
+/// Allows initializing a render task directly into the render task buffer.
+///
+/// See utils::VecHelpers. RenderTask is fairly large so avoiding the move when
+/// pushing into the vector can save a lot of expensive memcpys on pages with many
+/// render tasks.
 pub struct RenderTaskAllocation<'a> {
     pub alloc: Allocation<'a, RenderTask>,
 }
@@ -76,26 +76,26 @@ impl PassId {
     pub const INVALID: PassId = PassId(!0 - 2);
 }
 
-
-
-
+/// An internal representation of a dynamic surface that tasks can be
+/// allocated into. Maintains some extra metadata about each surface
+/// during the graph build.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct Surface {
-    
+    /// Whether this is a color or alpha render target
     kind: RenderTargetKind,
-    
+    /// Allocator for this surface texture
     allocator: GuillotineAllocator,
-    
+    /// We can only allocate into this for reuse if it's a shared surface
     is_shared: bool,
-    
-    
+    /// The pass that we can free this surface after (guaranteed
+    /// to be the same for all tasks assigned to this surface)
     free_after: PassId,
 }
 
 impl Surface {
-    
-    
+    /// Allocate a rect within a shared surfce. Returns None if the
+    /// format doesn't match, or allocation fails.
     fn alloc_rect(
         &mut self,
         size: DeviceIntSize,
@@ -113,102 +113,102 @@ impl Surface {
     }
 }
 
-
-
+/// A sub-pass can draw to either a dynamic (temporary render target) surface,
+/// or a persistent surface (texture or picture cache).
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Debug)]
 pub enum SubPassSurface {
-    
+    /// A temporary (intermediate) surface.
     Dynamic {
-        
+        /// The renderer texture id
         texture_id: CacheTextureId,
-        
+        /// Color / alpha render target
         target_kind: RenderTargetKind,
-        
-        
+        /// The rectangle occupied by tasks in this surface. Used as a clear
+        /// optimization on some GPUs.
         used_rect: DeviceIntRect,
     },
     Persistent {
-        
+        /// Reference to the texture or picture cache surface being drawn to.
         surface: StaticRenderTaskSurface,
     },
 }
 
-
+/// A subpass is a specific render target, and a list of tasks to draw to it.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct SubPass {
-    
+    /// The surface this subpass draws to
     pub surface: SubPassSurface,
-    
+    /// The tasks assigned to this subpass.
     pub task_ids: Vec<RenderTaskId>,
 }
 
-
-
+/// A pass expresses dependencies between tasks. Each pass consists of a number
+/// of subpasses.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct Pass {
-    
+    /// The tasks assigned to this render pass
     pub task_ids: Vec<RenderTaskId>,
-    
+    /// The subpasses that make up this dependency pass
     pub sub_passes: Vec<SubPass>,
-    
-    
+    /// A list of intermediate surfaces that can be invalidated after
+    /// this pass completes.
     pub textures_to_invalidate: Vec<CacheTextureId>,
 }
 
-
-
+/// The RenderTaskGraph is the immutable representation of the render task graph. It is
+/// built by the RenderTaskGraphBuilder, and is constructed once per frame.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct RenderTaskGraph {
-    
+    /// List of tasks added to the graph
     pub tasks: Vec<RenderTask>,
 
-    
+    /// The passes that were created, based on dependencies between tasks
     pub passes: Vec<Pass>,
 
-    
+    /// Current frame id, used for debug validation
     frame_id: FrameId,
 
-    
+    /// GPU specific data for each task that is made available to shaders
     pub task_data: Vec<RenderTaskData>,
 
-    
+    /// Total number of intermediate surfaces that will be drawn to, used for test validation.
     #[cfg(test)]
     surface_count: usize,
 
-    
+    /// Total number of real allocated textures that will be drawn to, used for test validation.
     #[cfg(test)]
     unique_surfaces: FastHashSet<CacheTextureId>,
 }
 
-
-
+/// The persistent interface that is used during frame building to construct the
+/// frame graph.
 pub struct RenderTaskGraphBuilder {
-    
+    /// List of tasks added to the builder
     tasks: Vec<RenderTask>,
 
-    
+    /// List of task roots
     roots: FastHashSet<RenderTaskId>,
 
-    
+    /// Current frame id, used for debug validation
     frame_id: FrameId,
 
-    
-    
+    /// A list of texture surfaces that can be freed at the end of a pass. Retained
+    /// here to reduce heap allocations.
     textures_to_free: FastHashSet<CacheTextureId>,
 
-    
-    
+    // Keep a map of `texture_id` to metadata about surfaces that are currently
+    // borrowed from the render target pool.
     active_surfaces: FastHashMap<CacheTextureId, Surface>,
 }
 
 impl RenderTaskGraphBuilder {
-    
-    
+    /// Construct a new graph builder. Typically constructed once and maintained
+    /// over many frames, to avoid extra heap allocations where possible.
     pub fn new() -> Self {
         RenderTaskGraphBuilder {
             tasks: Vec::new(),
@@ -223,15 +223,15 @@ impl RenderTaskGraphBuilder {
         self.frame_id
     }
 
-    
+    /// Begin a new frame
     pub fn begin_frame(&mut self, frame_id: FrameId) {
         self.frame_id = frame_id;
         self.roots.clear();
     }
 
-    
-    
-    
+    /// Get immutable access to a task
+    // TODO(gw): There's only a couple of places that existing code needs to access
+    //           a task during the building step. Perhaps we can remove this?
     pub fn get_task(
         &self,
         task_id: RenderTaskId,
@@ -239,9 +239,9 @@ impl RenderTaskGraphBuilder {
         &self.tasks[task_id.index as usize]
     }
 
-    
-    
-    
+    /// Get mutable access to a task
+    // TODO(gw): There's only a couple of places that existing code needs to access
+    //           a task during the building step. Perhaps we can remove this?
     pub fn get_task_mut(
         &mut self,
         task_id: RenderTaskId,
@@ -249,9 +249,9 @@ impl RenderTaskGraphBuilder {
         &mut self.tasks[task_id.index as usize]
     }
 
-    
+    /// Add a new task to the graph.
     pub fn add(&mut self) -> RenderTaskAllocation {
-        
+        // Assume every task is a root to start with
         self.roots.insert(
             RenderTaskId { index: self.tasks.len() as u32 }
         );
@@ -261,7 +261,7 @@ impl RenderTaskGraphBuilder {
         }
     }
 
-    
+    /// Express a dependency, such that `task_id` depends on `input` as a texture source.
     pub fn add_dependency(
         &mut self,
         task_id: RenderTaskId,
@@ -269,11 +269,11 @@ impl RenderTaskGraphBuilder {
     ) {
         self.tasks[task_id.index as usize].children.push(input);
 
-        
+        // Once a task is an input, it's no longer a root
         self.roots.remove(&input);
     }
 
-    
+    /// End the graph building phase and produce the immutable task graph for this frame
     pub fn end_frame(
         &mut self,
         resource_cache: &mut ResourceCache,
@@ -281,7 +281,7 @@ impl RenderTaskGraphBuilder {
         deferred_resolves: &mut Vec<DeferredResolve>,
         max_shared_surface_size: i32,
     ) -> RenderTaskGraph {
-        
+        // Copy the render tasks over to the immutable graph output
         let task_count = self.tasks.len();
         let tasks = mem::replace(
             &mut self.tasks,
@@ -299,19 +299,19 @@ impl RenderTaskGraphBuilder {
             unique_surfaces: FastHashSet::default(),
         };
 
-        
-        
-        
-        
-        
-        
-        
+        // First, use a topological sort of the dependency graph to split the task set in to
+        // a list of passes. This is necessary because when we have a complex graph (e.g. due
+        // to a large number of sibling backdrop-filter primitives) traversing it via a simple
+        // recursion can be too slow. The second pass determines when the last time a render task
+        // is used as an input, and assigns what pass the surface backing that render task can
+        // be freed (the surface is then returned to the render target pool and may be aliased
+        // or reused during subsequent passes).
 
         let mut pass_count = 0;
         let mut passes = Vec::new();
         let mut task_sorter = TopologicalSort::<RenderTaskId>::new();
 
-        
+        // Iterate the task list, and add all the dependencies to the topo sort
         for (parent_id, task) in graph.tasks.iter().enumerate() {
             let parent_id = RenderTaskId { index: parent_id as u32 };
 
@@ -323,36 +323,36 @@ impl RenderTaskGraphBuilder {
             }
         }
 
-        
+        // Pop the sorted passes off the topological sort
         loop {
-            
+            // Get the next set of tasks that can be drawn
             let tasks = task_sorter.pop_all();
 
-            
+            // If there are no tasks left, we're done
             if tasks.is_empty() {
-                
-                
+                // If the task sorter itself isn't empty but we couldn't pop off any
+                // tasks, that implies a circular dependency in the task graph
                 assert!(task_sorter.is_empty());
                 break;
             } else {
-                
+                // Assign the `render_on` field to the task
                 for task_id in &tasks {
                     graph.tasks[task_id.index as usize].render_on = PassId(pass_count);
                 }
 
-                
+                // Store the task list for this pass, used later for `assign_free_pass`.
                 passes.push(tasks);
                 pass_count += 1;
             }
         }
 
-        
+        // Always create at least one pass for root tasks
         pass_count = pass_count.max(1);
 
-        
-        
-        
-        
+        // Determine which pass each task can be freed on, which depends on which is
+        // the last task that has this as an input. This must be done in top-down
+        // pass order to ensure that RenderTaskLocation::Existing references are
+        // visited in the correct order
         for pass in passes {
             for task_id in pass {
                 assign_free_pass(
@@ -362,7 +362,7 @@ impl RenderTaskGraphBuilder {
             }
         }
 
-        
+        // Construct passes array for tasks to be assigned to below
         for _ in 0 .. pass_count {
             graph.passes.push(Pass {
                 task_ids: Vec::new(),
@@ -371,7 +371,7 @@ impl RenderTaskGraphBuilder {
             });
         }
 
-        
+        // Assign tasks to each pass based on their `render_on` attribute
         for (index, task) in graph.tasks.iter().enumerate() {
             if task.kind.is_a_rendering_operation() {
                 let id = RenderTaskId { index: index as u32 };
@@ -379,9 +379,9 @@ impl RenderTaskGraphBuilder {
             }
         }
 
-        
-        
-        
+        // At this point, tasks are assigned to each dependency pass. Now we
+        // can go through each pass and create sub-passes, assigning each task
+        // to a target and destination rect.
         assert!(self.active_surfaces.is_empty());
 
         for (pass_id, pass) in graph.passes.iter_mut().enumerate().rev() {
@@ -398,16 +398,16 @@ impl RenderTaskGraphBuilder {
                         let mut location = None;
                         let kind = task.kind.target_kind();
 
-                        
-                        
+                        // If a task is used as part of an existing-chain then we can't
+                        // safely share it (nor would we want to).
                         let can_use_shared_surface =
                             task.kind.can_use_shared_surface() &&
                             task.free_after != PassId::INVALID;
 
                         if can_use_shared_surface {
-                            
-                            
-                            
+                            // If we can use a shared surface, step through the existing shared
+                            // surfaces for this subpass, and see if we can allocate the task
+                            // to one of these targets.
                             for sub_pass in &mut pass.sub_passes {
                                 if let SubPassSurface::Dynamic { texture_id, ref mut used_rect, .. } = sub_pass.surface {
                                     let surface = self.active_surfaces.get_mut(&texture_id).unwrap();
@@ -422,11 +422,11 @@ impl RenderTaskGraphBuilder {
                         }
 
                         if location.is_none() {
-                            
-                            
+                            // If it wasn't possible to allocate the task to a shared surface, get a new
+                            // render target from the resource cache pool/
 
-                            
-                            
+                            // If this is a really large task, don't bother allocating it as a potential
+                            // shared surface for other tasks.
 
                             let can_use_shared_surface = can_use_shared_surface &&
                                 size.width <= max_shared_surface_size &&
@@ -438,7 +438,7 @@ impl RenderTaskGraphBuilder {
                                     max_shared_surface_size,
                                 )
                             } else {
-                                
+                                // Round up size here to avoid constant re-allocs during resizing
                                 DeviceIntSize::new(
                                     (size.width + TEXTURE_DIMENSION_MASK) & !TEXTURE_DIMENSION_MASK,
                                     (size.height + TEXTURE_DIMENSION_MASK) & !TEXTURE_DIMENSION_MASK,
@@ -450,13 +450,13 @@ impl RenderTaskGraphBuilder {
                                 RenderTargetKind::Alpha => ImageFormat::R8,
                             };
 
-                            
+                            // Get render target of appropriate size and format from resource cache
                             let texture_id = resource_cache.get_or_create_render_target_from_pool(
                                 surface_size,
                                 format,
                             );
 
-                            
+                            // Allocate metadata we need about this surface while it's active
                             let mut surface = Surface {
                                 kind,
                                 allocator: GuillotineAllocator::new(Some(surface_size)),
@@ -464,7 +464,7 @@ impl RenderTaskGraphBuilder {
                                 free_after: task.free_after,
                             };
 
-                            
+                            // Allocation of the task must fit in this new surface!
                             let p = surface.alloc_rect(
                                 size,
                                 kind,
@@ -474,19 +474,19 @@ impl RenderTaskGraphBuilder {
 
                             location = Some((texture_id, p));
 
-                            
-                            
+                            // Store the metadata about this newly active surface. We should never
+                            // get a target surface with the same texture_id as a currently active surface.
                             let _prev_surface = self.active_surfaces.insert(texture_id, surface);
                             assert!(_prev_surface.is_none());
 
-                            
+                            // Store some information about surface allocations if in test mode
                             #[cfg(test)]
                             {
                                 graph.surface_count += 1;
                                 graph.unique_surfaces.insert(texture_id);
                             }
 
-                            
+                            // Add the target as a new subpass for this render pass.
                             pass.sub_passes.push(SubPass {
                                 surface: SubPassSurface::Dynamic {
                                     texture_id,
@@ -497,7 +497,7 @@ impl RenderTaskGraphBuilder {
                             });
                         }
 
-                        
+                        // By now, we must have allocated a surface and rect for this task, so assign it!
                         assert!(location.is_some());
                         task.location = RenderTaskLocation::Dynamic {
                             texture_id: location.unwrap().0,
@@ -518,12 +518,12 @@ impl RenderTaskGraphBuilder {
 
                                 let kind = graph.tasks[parent_task_id.index as usize].kind.target_kind();
 
-                                
+                                // A sub-pass is always created in this case, as existing tasks by definition can't be shared.
                                 pass.sub_passes.push(SubPass {
                                     surface: SubPassSurface::Dynamic {
                                         texture_id,
                                         target_kind: kind,
-                                        used_rect: rect,        
+                                        used_rect: rect,        // clear will be skipped due to no-op check anyway
                                     },
                                     task_ids: vec![*task_id],
                                 });
@@ -537,8 +537,8 @@ impl RenderTaskGraphBuilder {
                         }
                     }
                     RenderTaskLocation::Static { ref surface, .. } => {
-                        
-                        
+                        // No need to allocate for this surface, since it's a persistent
+                        // target. Instead, just create a new sub-pass for it.
                         pass.sub_passes.push(SubPass {
                             surface: SubPassSurface::Persistent {
                                 surface: surface.clone(),
@@ -547,15 +547,15 @@ impl RenderTaskGraphBuilder {
                         });
                     }
                     RenderTaskLocation::CacheRequest { .. } => {
-                        
+                        // No need to allocate nor to create a sub-path for read-only locations.
                     }
                     RenderTaskLocation::Dynamic { .. } => {
-                        
+                        // Dynamic tasks shouldn't be allocated by this point
                         panic!("bug: encountered an already allocated task");
                     }
                 }
 
-                
+                // Return the shared surfaces from this pass
                 let task = &graph.tasks[task_id.index as usize];
                 for child_id in &task.children {
                     let child_task = &graph.tasks[child_id.index as usize];
@@ -563,8 +563,8 @@ impl RenderTaskGraphBuilder {
                         RenderTaskLocation::Unallocated { .. } |
                         RenderTaskLocation::Existing { .. } => panic!("bug: must be allocated"),
                         RenderTaskLocation::Dynamic { texture_id, .. } => {
-                            
-                            
+                            // If this task can be freed after this pass, include it in the
+                            // unique set of textures to be returned to the render target pool below.
                             if child_task.free_after == PassId(pass_id) {
                                 self.textures_to_free.insert(texture_id);
                             }
@@ -575,8 +575,8 @@ impl RenderTaskGraphBuilder {
                 }
             }
 
-            
-            
+            // Return no longer used textures to the pool, so that they can be reused / aliased
+            // by later passes.
             for texture_id in self.textures_to_free.drain() {
                 resource_cache.return_render_target_to_pool(texture_id);
                 self.active_surfaces.remove(&texture_id).unwrap();
@@ -584,18 +584,18 @@ impl RenderTaskGraphBuilder {
             }
         }
 
-        
-        
+        // By now, all surfaces that were borrowed from the render target pool must
+        // be returned to the resource cache, or we are leaking intermediate surfaces!
         assert!(self.active_surfaces.is_empty());
 
-        
-        
-        
+        // Each task is now allocated to a surface and target rect. Write that to the
+        // GPU blocks and task_data. After this point, the graph is returned and is
+        // considered to be immutable for the rest of the frame building process.
 
         for task in &mut graph.tasks {
-            
-            
-            
+            // First check whether the render task texture and uv rects are managed
+            // externally. This is the case for image tasks and cached tasks. In both
+            // cases it results in a finding the information in the texture cache.
             let cache_item = if let Some(ref cache_handle) = task.cache_handle {
                 Some(resolve_cached_render_task(
                     cache_handle,
@@ -609,15 +609,15 @@ impl RenderTaskGraphBuilder {
                     deferred_resolves,
                 ))
             } else {
-                
+                // General case (non-cached non-image tasks).
                 None
             };
 
             if let Some(cache_item) = cache_item {
-                
-                
-                
-                
+                // Update the render task even if the item is invalid.
+                // We'll handle it later and it's easier to not have to
+                // deal with unexpected location variants like
+                // RenderTaskLocation::CacheRequest when we do.
                 let source = cache_item.texture_id;
                 task.uv_rect_handle = cache_item.uv_rect_handle;
                 task.location = RenderTaskLocation::Static {
@@ -625,8 +625,8 @@ impl RenderTaskGraphBuilder {
                     rect: cache_item.uv_rect,
                 };
             }
-            
-            
+            // Give the render task an opportunity to add any
+            // information to the GPU cache, if appropriate.
             let target_rect = task.get_target_rect();
 
             task.write_gpu_blocks(
@@ -644,7 +644,7 @@ impl RenderTaskGraphBuilder {
 }
 
 impl RenderTaskGraph {
-    
+    /// Print the render task graph to console
     #[allow(dead_code)]
     pub fn print(
         &self,
@@ -674,6 +674,19 @@ impl RenderTaskGraph {
                     debug!("\t\tTask {:?}", task_id.index);
                 }
             }
+        }
+    }
+
+    pub fn resolve_texture(
+        &self,
+        task_id: impl Into<Option<RenderTaskId>>,
+    ) -> Option<TextureSource> {
+        let task_id = task_id.into()?;
+        let task = &self[task_id];
+
+        match task.get_texture_source() {
+            TextureSource::Invalid => None,
+            source => Some(source),
         }
     }
 
@@ -715,20 +728,20 @@ impl RenderTaskGraph {
         }
     }
 
-    
+    /// Return the surface and texture counts, used for testing
     #[cfg(test)]
     pub fn surface_counts(&self) -> (usize, usize) {
         (self.surface_count, self.unique_surfaces.len())
     }
 
-    
+    /// Return current frame id, used for validation
     #[cfg(debug_assertions)]
     pub fn frame_id(&self) -> FrameId {
         self.frame_id
     }
 }
 
-
+/// Batching uses index access to read information about tasks
 impl std::ops::Index<RenderTaskId> for RenderTaskGraph {
     type Output = RenderTask;
     fn index(&self, id: RenderTaskId) -> &RenderTask {
@@ -749,15 +762,15 @@ fn assign_free_pass(
     for child_id in child_task_ids {
         let child_location = graph.tasks[child_id.index as usize].location.clone();
 
-        
-        
-        
-        
+        // Each dynamic child task can free its backing surface after the last
+        // task that references it as an input. Using min here ensures the
+        // safe time to free this surface in the presence of multiple paths
+        // to this task from the root(s).
         match child_location {
             RenderTaskLocation::CacheRequest { .. } => {}
             RenderTaskLocation::Static { .. } => {
-                
-                
+                // never get freed anyway, so can leave untouched
+                // (could validate that they remain at PassId::MIN)
             }
             RenderTaskLocation::Dynamic { .. } => {
                 panic!("bug: should not be allocated yet");
@@ -783,15 +796,15 @@ fn assign_free_pass(
     }
 }
 
-
-
-
-
-
+/// A render pass represents a set of rendering operations that don't depend on one
+/// another.
+///
+/// A render pass can have several render targets if there wasn't enough space in one
+/// target to do all of the rendering for that pass. See `RenderTargetList`.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct RenderPass {
-    
+    /// The subpasses that describe targets being rendered to in this pass
     pub alpha: RenderTargetList<AlphaRenderTarget>,
     pub color: RenderTargetList<ColorRenderTarget>,
     pub texture_cache: FastHashMap<CacheTextureId, TextureCacheRenderTarget>,
@@ -800,7 +813,7 @@ pub struct RenderPass {
 }
 
 impl RenderPass {
-    
+    /// Creates an intermediate off-screen pass.
     pub fn new(src: &Pass) -> Self {
         RenderPass {
             color: RenderTargetList::new(
@@ -816,7 +829,7 @@ impl RenderPass {
     }
 }
 
-
+// Dump an SVG visualization of the render graph for debugging purposes
 #[cfg(feature = "capture")]
 pub fn dump_render_tasks_as_svg(
     render_tasks: &RenderTaskGraph,
@@ -895,7 +908,7 @@ pub fn dump_render_tasks_as_svg(
     let svg_h = max_y + margin;
     writeln!(output, "{}", BeginSvg { w: svg_w, h: svg_h })?;
 
-    
+    // Background.
     writeln!(output,
         "    {}",
         rectangle(0.0, 0.0, svg_w, svg_h)
@@ -903,7 +916,7 @@ pub fn dump_render_tasks_as_svg(
             .fill(rgb(50, 50, 50))
     )?;
 
-    
+    // Passes.
     for rect in pass_rects {
         writeln!(output,
             "    {}",
@@ -914,12 +927,12 @@ pub fn dump_render_tasks_as_svg(
         )?;
     }
 
-    
+    // Links.
     for (x1, y1, x2, y2) in links {
         dump_task_dependency_link(output, x1, y1, x2, y2);
     }
 
-    
+    // Tasks.
     for node in &nodes {
         if let Some(node) = node {
             writeln!(output,
@@ -970,9 +983,9 @@ fn dump_task_dependency_link(
 ) {
     use svg_fmt::*;
 
-    
-    
-    
+    // If the link is a straight horizontal line and spans over multiple passes, it
+    // is likely to go straight though unrelated nodes in a way that makes it look like
+    // they are connected, so we bend the line upward a bit to avoid that.
     let simple_path = (y1 - y2).abs() > 1.0 || (x2 - x1) < 45.0;
 
     let mid_x = (x1 + x2) / 2.0;
@@ -997,7 +1010,7 @@ fn dump_task_dependency_link(
     }
 }
 
-
+/// Construct a picture cache render task location for testing
 #[cfg(test)]
 fn pc_target(
     surface_id: u64,
@@ -1056,7 +1069,7 @@ impl RenderTaskGraphBuilder {
     }
 }
 
-
+/// Construct a testing render task with given location
 #[cfg(test)]
 fn task_location(location: RenderTaskLocation) -> RenderTask {
     RenderTask::new_test(
@@ -1065,7 +1078,7 @@ fn task_location(location: RenderTaskLocation) -> RenderTask {
     )
 }
 
-
+/// Construct a dynamic render task location for testing
 #[cfg(test)]
 fn task_dynamic(size: i32) -> RenderTask {
     RenderTask::new_test(
@@ -1076,8 +1089,8 @@ fn task_dynamic(size: i32) -> RenderTask {
 
 #[test]
 fn fg_test_1() {
-    
-    
+    // Test that a root target can be used as an input for readbacks
+    // This functionality isn't currently used, but will be in future.
 
     let mut gb = RenderTaskGraphBuilder::new();
 
@@ -1101,8 +1114,8 @@ fn fg_test_1() {
 
 #[test]
 fn fg_test_3() {
-    
-    
+    // Test that small targets are allocated in a shared surface, and that large
+    // tasks are allocated in a rounded up texture size.
 
     let mut gb = RenderTaskGraphBuilder::new();
 
@@ -1122,8 +1135,8 @@ fn fg_test_3() {
 
 #[test]
 fn fg_test_4() {
-    
-    
+    // Test that for a simple dependency chain of tasks, that render
+    // target surfaces are aliased and reused between passes where possible.
 
     let mut gb = RenderTaskGraphBuilder::new();
 
@@ -1145,9 +1158,9 @@ fn fg_test_4() {
 
 #[test]
 fn fg_test_5() {
-    
-    
-    
+    // Test that a task that is used as an input by direct parent and also
+    // distance ancestor are scheduled correctly, and allocates the correct
+    // number of passes, taking advantage of surface reuse / aliasing where feasible.
 
     let mut gb = RenderTaskGraphBuilder::new();
 
@@ -1173,8 +1186,8 @@ fn fg_test_5() {
 
 #[test]
 fn fg_test_6() {
-    
-    
+    // Test that a task that is used as an input dependency by two parent
+    // tasks is correctly allocated and freed.
 
     let mut gb = RenderTaskGraphBuilder::new();
 
@@ -1193,8 +1206,8 @@ fn fg_test_6() {
 
 #[test]
 fn fg_test_7() {
-    
-    
+    // Test that a standalone surface is not incorrectly used to
+    // allocate subsequent shared task rects.
 
     let mut gb = RenderTaskGraphBuilder::new();
 

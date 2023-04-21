@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use api::{AlphaType, PremultipliedColorF, YuvFormat, YuvRangedColorSpace};
 use api::units::*;
@@ -11,13 +11,14 @@ use crate::gpu_cache::{GpuCacheAddress, GpuDataRequest};
 use crate::internal_types::FastHashMap;
 use crate::prim_store::ClipData;
 use crate::render_task::RenderTaskAddress;
+use crate::render_task_graph::RenderTaskId;
 use crate::renderer::{ShaderColorMode, GpuBufferAddress};
 use std::i32;
 use crate::util::{TransformedRectKind, MatrixHelpers};
 use glyph_rasterizer::SubpixelDirection;
 use crate::util::{ScaleOffset, pack_as_float};
 
-
+// Contains type that must exactly match the same structures declared in GLSL.
 
 pub const VECS_PER_TRANSFORM: usize = 8;
 
@@ -213,9 +214,9 @@ pub struct ClipMaskInstanceBoxShadow {
     pub shadow_data: BoxShadowData,
 }
 
-
-
-
+/// A clipping primitive drawn into the clipping mask.
+/// Could be an image or a rectangle, which defines the
+/// way `address` is treated.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -233,7 +234,7 @@ pub struct ClipMaskInstance {
     pub device_pixel_scale: f32,
 }
 
-
+// 16 bytes per instance should be enough for anyone!
 #[repr(C)]
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -242,12 +243,12 @@ pub struct PrimitiveInstanceData {
     data: [i32; 4],
 }
 
-
+/// Specifies that an RGB CompositeInstance's UV coordinates are normalized.
 const UV_TYPE_NORMALIZED: u32 = 0;
-
+/// Specifies that an RGB CompositeInstance's UV coordinates are not normalized.
 const UV_TYPE_UNNORMALIZED: u32 = 1;
 
-
+/// A GPU-friendly representation of the `ScaleOffset` type
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct CompositorTransform {
@@ -279,30 +280,30 @@ impl From<ScaleOffset> for CompositorTransform {
     }
 }
 
-
-
-
+/// Vertex format for picture cache composite shader.
+/// When editing the members, update desc::COMPOSITE
+/// so its list of instance_attributes matches:
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct CompositeInstance {
-    
+    // Picture space destination rectangle of surface
     rect: PictureRect,
-    
+    // Device space destination clip rect for this surface
     clip_rect: DeviceRect,
-    
+    // Color for solid color tiles, white otherwise
     color: PremultipliedColorF,
 
-    
+    // Packed into a single vec4 (aParams)
     _padding: f32,
-    color_space_or_uv_type: f32, 
-                                 
-    yuv_format: f32,            
+    color_space_or_uv_type: f32, // YuvColorSpace for YUV;
+                                 // UV coordinate space for RGB
+    yuv_format: f32,            // YuvFormat
     yuv_channel_bit_depth: f32,
 
-    
+    // UV rectangles (pixel space) for color / yuv texture planes
     uv_rects: [TexelRect; 3],
 
-    
+    // A 2d scale + offset transform for the rect
     transform: CompositorTransform,
 }
 
@@ -369,13 +370,13 @@ impl CompositeInstance {
         }
     }
 
-    
-    
+    // Returns the CompositeFeatures that can be used to composite
+    // this RGB instance.
     pub fn get_rgb_features(&self) -> CompositeFeatures {
         let mut features = CompositeFeatures::empty();
 
-        
-        
+        // If the UV rect covers the entire texture then we can avoid UV clamping.
+        // We should try harder to determine this for unnormalized UVs too.
         if self.color_space_or_uv_type == pack_as_float(UV_TYPE_NORMALIZED)
             && self.uv_rects[0] == TexelRect::new(0.0, 0.0, 1.0, 1.0)
         {
@@ -390,7 +391,7 @@ impl CompositeInstance {
     }
 }
 
-
+/// Vertex format for issuing colored quads.
 #[derive(Debug, Clone)]
 #[repr(C)]
 pub struct ClearInstance {
@@ -408,9 +409,9 @@ pub struct PrimitiveHeaderIndex(pub i32);
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct PrimitiveHeaders {
-    
+    // The integer-type headers for a primitive.
     pub headers_int: Vec<PrimitiveHeaderI>,
-    
+    // The float-type headers for a primitive.
     pub headers_float: Vec<PrimitiveHeaderF>,
 }
 
@@ -422,7 +423,7 @@ impl PrimitiveHeaders {
         }
     }
 
-    
+    // Add a new primitive header.
     pub fn push(
         &mut self,
         prim_header: &PrimitiveHeader,
@@ -449,8 +450,8 @@ impl PrimitiveHeaders {
     }
 }
 
-
-
+// This is a convenience type used to make it easier to pass
+// the common parts around during batching.
 #[derive(Debug)]
 pub struct PrimitiveHeader {
     pub local_rect: LayoutRect,
@@ -459,7 +460,7 @@ pub struct PrimitiveHeader {
     pub transform_id: TransformPaletteId,
 }
 
-
+// f32 parts of a primitive header
 #[derive(Debug)]
 #[repr(C)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -469,8 +470,8 @@ pub struct PrimitiveHeaderF {
     pub local_clip_rect: LayoutRect,
 }
 
-
-
+// i32 parts of a primitive header
+// TODO(gw): Compress parts of these down to u16
 #[derive(Debug)]
 #[repr(C)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -479,7 +480,7 @@ pub struct PrimitiveHeaderI {
     pub z: ZBufferId,
     pub specific_prim_address: i32,
     pub transform_id: TransformPaletteId,
-    pub unused: i32,                    
+    pub unused: i32,                    // To ensure required 16 byte alignment of vertex textures
     pub user_data: [i32; 4],
 }
 
@@ -496,9 +497,9 @@ impl GlyphInstance {
         }
     }
 
-    
-    
-    
+    // TODO(gw): Some of these fields can be moved to the primitive
+    //           header since they are constant, and some can be
+    //           compressed to a smaller size.
     pub fn build(&self,
         render_task: RenderTaskAddress,
         clip_task: RenderTaskAddress,
@@ -542,6 +543,8 @@ impl From<SplitCompositeInstance> for PrimitiveInstanceData {
 }
 
 #[derive(Copy, Clone)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct QuadInstance {
     pub render_task_address: RenderTaskAddress,
     pub prim_address: GpuBufferAddress,
@@ -550,16 +553,17 @@ pub struct QuadInstance {
     pub quad_flags: u8,
     pub edge_flags: u8,
     pub part_index: u8,
+    pub segment_index: u8,
 }
 
 impl From<QuadInstance> for PrimitiveInstanceData {
     fn from(instance: QuadInstance) -> Self {
-        
-
-
-
-
-
+        /*
+            [32 bits prim address]
+            [8 bits quad flags] [8 bits edge flags] [16 bits render task address]
+            [8 bits segment flags] [24 bits z_id]
+            [8 bits segment index] [24 bits xf_id]
+         */
         PrimitiveInstanceData {
             data: [
                 instance.prim_address.as_int(),
@@ -567,11 +571,29 @@ impl From<QuadInstance> for PrimitiveInstanceData {
                 ((instance.edge_flags as i32) << 16) |
                 instance.render_task_address.0 as i32,
                 ((instance.part_index as i32) << 24) | instance.z_id.0,
-                instance.transform_id.0 as i32,
+                ((instance.segment_index as i32) << 24) | instance.transform_id.0 as i32,
             ],
         }
     }
 }
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct QuadSegment {
+    pub rect: LayoutRect,
+    pub task_id: RenderTaskId,
+}
+
+#[repr(C)]
+#[derive(Clone)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct MaskInstance {
+    pub prim: PrimitiveInstanceData,
+    pub clip_transform_id: TransformPaletteId,
+    pub clip_address: i32,
+    pub info: [i32; 2],
+}
+
 
 bitflags! {
     // Note: This can use up to 12 bits due to how it will
@@ -606,7 +628,7 @@ bitflags! {
     }
 }
 
-
+/// Convenience structure to encode into PrimitiveInstanceData.
 pub struct BrushInstance {
     pub prim_header_index: PrimitiveHeaderIndex,
     pub render_task_address: RenderTaskAddress,
@@ -633,7 +655,7 @@ impl From<BrushInstance> for PrimitiveInstanceData {
     }
 }
 
-
+/// Convenience structure to encode into the image brush's user data.
 #[derive(Copy, Clone, Debug)]
 pub struct ImageBrushData {
     pub color_mode: ShaderColorMode,
@@ -654,12 +676,12 @@ impl ImageBrushData {
     }
 }
 
-
-
-
-
-
-
+// Represents the information about a transform palette
+// entry that is passed to shaders. It includes an index
+// into the transform palette, and a set of flags. The
+// only flag currently used determines whether the
+// transform is axis-aligned (and this should have
+// pixel snapping applied).
 #[derive(Copy, Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -667,10 +689,10 @@ impl ImageBrushData {
 pub struct TransformPaletteId(pub u32);
 
 impl TransformPaletteId {
-    
+    /// Identity transform ID.
     pub const IDENTITY: Self = TransformPaletteId(0);
 
-    
+    /// Extract the transform kind from the id.
     pub fn transform_kind(&self) -> TransformedRectKind {
         if (self.0 >> 23) == 0 {
             TransformedRectKind::AxisAligned
@@ -679,16 +701,16 @@ impl TransformPaletteId {
         }
     }
 
-    
-    
-    
-    
+    /// Override the kind of transform stored in this id. This can be useful in
+    /// cases where we don't want shaders to consider certain transforms axis-
+    /// aligned (i.e. perspective warp) even though we may still want to for the
+    /// general case.
     pub fn override_transform_kind(&self, kind: TransformedRectKind) -> Self {
         TransformPaletteId((self.0 & 0x7FFFFFu32) | ((kind as u32) << 23))
     }
 }
 
-
+/// The GPU data payload for a transform palette entry.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -707,7 +729,7 @@ impl TransformData {
     }
 }
 
-
+// Extra data stored about each transform palette entry.
 #[derive(Clone)]
 pub struct TransformMetadata {
     transform_kind: TransformedRectKind,
@@ -727,13 +749,13 @@ struct RelativeTransformKey {
     to_index: SpatialNodeIndex,
 }
 
-
-
-
-
-
-
-
+// Stores a contiguous list of TransformData structs, that
+// are ready for upload to the GPU.
+// TODO(gw): For now, this only stores the complete local
+//           to world transform for each spatial node. In
+//           the future, the transform palette will support
+//           specifying a coordinate system that the transform
+//           should be relative to.
 pub struct TransformPalette {
     transforms: Vec<TransformData>,
     metadata: Vec<TransformMetadata>,
@@ -799,10 +821,10 @@ impl TransformPalette {
         }
     }
 
-    
-    
-    
-    
+    // Get a transform palette id for the given spatial node.
+    // TODO(gw): In the future, it will be possible to specify
+    //           a coordinate system id here, to allow retrieving
+    //           transforms in the local space of a given spatial node.
     pub fn get_id(
         &mut self,
         from_index: SpatialNodeIndex,
@@ -839,21 +861,21 @@ impl TransformPalette {
     }
 }
 
-
-
-
-
+// Texture cache resources can be either a simple rect, or define
+// a polygon within a rect by specifying a UV coordinate for each
+// corner. This is useful for rendering screen-space rasterized
+// off-screen surfaces.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum UvRectKind {
-    
-    
+    // The 2d bounds of the texture cache entry define the
+    // valid UV space for this texture cache entry.
     Rect,
-    
-    
-    
-    
+    // The four vertices below define a quad within
+    // the texture cache entry rect. The shader can
+    // use a bilerp() to correctly interpolate a
+    // UV coord in the vertex shader.
     Quad {
         top_left: DeviceHomogeneousVector,
         top_right: DeviceHomogeneousVector,
@@ -868,18 +890,18 @@ pub enum UvRectKind {
 pub struct ImageSource {
     pub p0: DevicePoint,
     pub p1: DevicePoint,
-    
-    
-    
-    
+    // TODO: It appears that only glyphs make use of user_data (to store glyph offset
+    // and scale).
+    // Perhaps we should separate the two so we don't have to push an empty unused vec4
+    // for all image sources.
     pub user_data: [f32; 4],
     pub uv_rect_kind: UvRectKind,
 }
 
 impl ImageSource {
     pub fn write_gpu_blocks(&self, request: &mut GpuDataRequest) {
-        
-        
+        // see fetch_image_resource in GLSL
+        // has to be VECS_PER_IMAGE_RESOURCE vectors
         request.push([
             self.p0.x,
             self.p0.y,
@@ -888,10 +910,10 @@ impl ImageSource {
         ]);
         request.push(self.user_data);
 
-        
+        // If this is a polygon uv kind, then upload the four vertices.
         if let UvRectKind::Quad { top_left, top_right, bottom_left, bottom_right } = self.uv_rect_kind {
-            
-            
+            // see fetch_image_resource_extra in GLSL
+            //Note: we really need only 3 components per point here: X, Y, and W
             request.push(top_left);
             request.push(top_right);
             request.push(bottom_left);
@@ -900,15 +922,15 @@ impl ImageSource {
     }
 }
 
-
-
+// Set the local -> world transform for a given spatial
+// node in the transform palette.
 fn register_transform(
     metadatas: &mut Vec<TransformMetadata>,
     transforms: &mut Vec<TransformData>,
     transform: LayoutToPictureTransform,
 ) -> usize {
-    
-    
+    // TODO: refactor the calling code to not even try
+    // registering a non-invertible transform.
     let inv_transform = transform
         .inverse()
         .unwrap_or_else(PictureToLayoutTransform::identity);

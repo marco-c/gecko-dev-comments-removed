@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use api::{ColorF, DebugFlags, FontRenderMode, PremultipliedColorF};
 use api::units::*;
@@ -13,12 +13,12 @@ use crate::composite::{CompositorKind, CompositeState, CompositeStatePreallocato
 use crate::debug_item::DebugItem;
 use crate::gpu_cache::{GpuCache, GpuCacheHandle};
 use crate::gpu_types::{PrimitiveHeaders, TransformPalette, ZBufferIdGenerator};
-use crate::gpu_types::TransformData;
+use crate::gpu_types::{QuadSegment, TransformData};
 use crate::internal_types::{FastHashMap, PlaneSplitter, FrameId, FrameStamp};
 use crate::picture::{DirtyRegion, SliceId, TileCacheInstance};
 use crate::picture::{SurfaceInfo, SurfaceIndex};
 use crate::picture::{SubpixelMode, RasterConfig, PictureCompositeMode};
-use crate::prepare::prepare_primitives;
+use crate::prepare::{prepare_primitives};
 use crate::prim_store::{PictureIndex};
 use crate::prim_store::{DeferredResolve, PrimitiveInstance};
 use crate::profiler::{self, TransactionProfile};
@@ -44,14 +44,14 @@ use crate::visibility::{update_prim_visibility, FrameVisibilityState, FrameVisib
 pub struct FrameBuilderConfig {
     pub default_font_render_mode: FontRenderMode,
     pub dual_source_blending_is_supported: bool,
-    
+    /// True if we're running tests (i.e. via wrench).
     pub testing: bool,
     pub gpu_supports_fast_clears: bool,
     pub gpu_supports_advanced_blend: bool,
     pub advanced_blend_is_coherent: bool,
     pub gpu_supports_render_target_partial_update: bool,
-    
-    
+    /// Whether ImageBufferKind::TextureExternal images must first be copied
+    /// to a regular texture before rendering.
     pub external_images_require_copy: bool,
     pub batch_lookback_count: usize,
     pub background_color: Option<ColorF>,
@@ -66,18 +66,18 @@ pub struct FrameBuilderConfig {
     pub max_shared_surface_size: i32,
 }
 
-
-
-
+/// A set of common / global resources that are retained between
+/// new display lists, such that any GPU cache handles can be
+/// persisted even when a new display list arrives.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct FrameGlobalResources {
-    
-    
+    /// The image shader block for the most common / default
+    /// set of image parameters (color white, stretch == rect.size).
     pub default_image_handle: GpuCacheHandle,
 
-    
-    
-    
+    /// A GPU cache config for drawing transparent rectangle primitives.
+    /// This is used to 'cut out' overlay tiles where a compositor
+    /// surface exists.
     pub default_transparent_rect_handle: GpuCacheHandle,
 }
 
@@ -97,7 +97,7 @@ impl FrameGlobalResources {
             request.push(PremultipliedColorF::WHITE);
             request.push(PremultipliedColorF::WHITE);
             request.push([
-                -1.0,       
+                -1.0,       // -ve means use prim rect for stretch size
                 0.0,
                 0.0,
                 0.0,
@@ -131,7 +131,7 @@ impl FrameScratchBuffer {
     }
 }
 
-
+/// Produces the frames that are sent to the renderer.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct FrameBuilder {
     pub globals: FrameGlobalResources,
@@ -173,22 +173,22 @@ pub struct FrameBuildingState<'a> {
 }
 
 impl<'a> FrameBuildingState<'a> {
-    
+    /// Retrieve the current dirty region during primitive traversal.
     pub fn current_dirty_region(&self) -> &DirtyRegion {
         self.dirty_region_stack.last().unwrap()
     }
 
-    
+    /// Push a new dirty region for child primitives to cull / clip against.
     pub fn push_dirty_region(&mut self, region: DirtyRegion) {
         self.dirty_region_stack.push(region);
     }
 
-    
+    /// Pop the top dirty region from the stack.
     pub fn pop_dirty_region(&mut self) {
         self.dirty_region_stack.pop().unwrap();
     }
 
-    
+    /// Push a primitive command to a set of command buffers
     pub fn push_prim(
         &mut self,
         cmd: &PrimitiveCommand,
@@ -200,22 +200,46 @@ impl<'a> FrameBuildingState<'a> {
             cmd_buffer.add_prim(cmd, spatial_node_index);
         }
     }
+
+    /// Push a command to a set of command buffers
+    pub fn push_cmd(
+        &mut self,
+        cmd: &PrimitiveCommand,
+        targets: &[CommandBufferIndex],
+    ) {
+        for cmd_buffer_index in targets {
+            let cmd_buffer = self.cmd_buffers.get_mut(*cmd_buffer_index);
+            cmd_buffer.add_cmd(cmd);
+        }
+    }
+
+    /// Set the active list of segments in a set of command buffers
+    pub fn set_segments(
+        &mut self,
+        segments: &[QuadSegment],
+        targets: &[CommandBufferIndex],
+    ) {
+        for cmd_buffer_index in targets {
+            let cmd_buffer = self.cmd_buffers.get_mut(*cmd_buffer_index);
+            cmd_buffer.set_segments(segments);
+        }
+    }
 }
 
-
+/// Immutable context of a picture when processing children.
 #[derive(Debug)]
 pub struct PictureContext {
     pub pic_index: PictureIndex,
     pub surface_spatial_node_index: SpatialNodeIndex,
     pub raster_spatial_node_index: SpatialNodeIndex,
-    
+    /// The surface that this picture will render on.
     pub surface_index: SurfaceIndex,
     pub dirty_region_count: usize,
     pub subpixel_mode: SubpixelMode,
 }
 
-
-
+/// Mutable state of a picture that gets modified when
+/// the children are processed.
 pub struct PictureState {
     pub map_local_to_pic: SpaceMapper<LayoutPixel, PicturePixel>,
     pub map_pic_to_world: SpaceMapper<PicturePixel, WorldPixel>,
@@ -231,8 +255,8 @@ impl FrameBuilder {
         }
     }
 
-    
-    
+    /// Compute the contribution (bounding rectangles, and resources) of layers and their
+    /// primitives in screen space.
     fn build_layer_screen_rects_and_cull_layers(
         &mut self,
         scene: &mut BuiltScene,
@@ -259,8 +283,8 @@ impl FrameBuilder {
 
         const MAX_CLIP_COORD: f32 = 1.0e9;
 
-        
-        
+        // Reset all plane splitters. These are retained from frame to frame to reduce
+        // per-frame allocations
         self.plane_splitters.resize_with(scene.num_plane_splitters, BspSplitter::new);
         for splitter in &mut self.plane_splitters {
             splitter.reset();
@@ -333,9 +357,9 @@ impl FrameBuilder {
                             clip_tree: &mut scene.clip_tree,
                         };
 
-                        
-                        
-                        
+                        // If we have a tile cache for this picture, see if any of the
+                        // relative transforms have changed, which means we need to
+                        // re-map the dependencies of any child primitives.
                         let surface = &scene.surfaces[surface_index.0];
                         let world_culling_rect = tile_cache.pre_update(
                             surface.unclipped_local_rect,
@@ -344,8 +368,8 @@ impl FrameBuilder {
                             &mut visibility_state,
                         );
 
-                        
-                        
+                        // Push a new surface, supplying the list of clips that should be
+                        // ignored, since they are handled by clipping when drawing this surface.
                         visibility_state.push_surface(
                             *pic_index,
                             surface_index,
@@ -365,7 +389,7 @@ impl FrameBuilder {
                             tile_cache,
                         );
 
-                        
+                        // Build the dirty region(s) for this tile cache.
                         tile_cache.post_update(
                             &visibility_context,
                             &mut visibility_state,
@@ -404,9 +428,9 @@ impl FrameBuilder {
             frame_gpu_data,
         };
 
-        
-        
-        
+        // Push a default dirty region which culls primitives
+        // against the screen world rect, in absence of any
+        // other dirty regions.
         let mut default_dirty_region = DirtyRegion::new(
             root_spatial_node_index,
         );
@@ -500,8 +524,8 @@ impl FrameBuilder {
         gpu_cache.begin_frame(stamp);
         resource_cache.begin_frame(stamp, gpu_cache, profile);
 
-        
-        
+        // TODO(gw): Follow up patches won't clear this, as they'll be assigned
+        //           statically during scene building.
         scene.surfaces.clear();
 
         self.globals.update(gpu_cache);
@@ -512,7 +536,7 @@ impl FrameBuilder {
 
         rg_builder.begin_frame(stamp.frame_id());
 
-        
+        // TODO(dp): Remove me completely!!
         let global_device_pixel_scale = DevicePixelScale::new(1.0);
 
         let output_size = scene.output_rect.size();
@@ -529,7 +553,7 @@ impl FrameBuilder {
 
         let mut cmd_buffers = CommandBufferList::new();
 
-        
+        // TODO(gw): Recycle backing vec buffers for gpu buffer builder between frames
         let mut gpu_buffer_builder = GpuBufferBuilder::new();
 
         self.build_layer_screen_rects_and_cull_layers(
@@ -556,7 +580,7 @@ impl FrameBuilder {
 
         let mut deferred_resolves = vec![];
 
-        
+        // Finish creating the frame graph and build it.
         let render_tasks = rg_builder.end_frame(
             resource_cache,
             gpu_cache,
@@ -573,7 +597,7 @@ impl FrameBuilder {
         {
             profile_marker!("Batching");
 
-            
+            // Used to generated a unique z-buffer value per primitive.
             let mut z_generator = ZBufferIdGenerator::new(scene.config.max_depth_ids);
             let use_dual_source_blending = scene.config.dual_source_blending_is_supported;
 
@@ -581,6 +605,7 @@ impl FrameBuilder {
                 let mut ctx = RenderTargetContext {
                     global_device_pixel_scale,
                     prim_store: &scene.prim_store,
+                    clip_store: &scene.clip_store,
                     resource_cache,
                     use_dual_source_blending,
                     use_advanced_blending: scene.config.gpu_supports_advanced_blend,
@@ -601,6 +626,7 @@ impl FrameBuilder {
                     output_size,
                     &mut ctx,
                     gpu_cache,
+                    &mut gpu_buffer_builder,
                     &render_tasks,
                     &scene.clip_store,
                     &mut transform_palette,
@@ -619,6 +645,7 @@ impl FrameBuilder {
 
             let mut ctx = RenderTargetContext {
                 global_device_pixel_scale,
+                clip_store: &scene.clip_store,
                 prim_store: &scene.prim_store,
                 resource_cache,
                 use_dual_source_blending,
@@ -691,9 +718,9 @@ impl FrameBuilder {
 
             match pic.raster_config {
                 Some(RasterConfig { composite_mode: PictureCompositeMode::TileCache { slice_id }, .. }) => {
-                    
-                    
-                    
+                    // Tile cache instances are added to the composite config, rather than
+                    // directly added to batches. This allows them to be drawn with various
+                    // present modes during render, such as partial present etc.
                     let tile_cache = &ctx.tile_caches[&slice_id];
                     let map_local_to_world = SpaceMapper::new_with_target(
                         ctx.root_spatial_node_index,
@@ -722,16 +749,17 @@ impl FrameBuilder {
     }
 }
 
-
-
-
-
-
+/// Processes this pass to prepare it for rendering.
+///
+/// Among other things, this allocates output regions for each of our tasks
+/// (added via `add_render_task`) in a RenderTarget and assigns it into that
+/// target.
 pub fn build_render_pass(
     src_pass: &Pass,
     screen_size: DeviceIntSize,
     ctx: &mut RenderTargetContext,
     gpu_cache: &mut GpuCache,
+    gpu_buffer_builder: &mut GpuBufferBuilder,
     render_tasks: &RenderTaskGraph,
     clip_store: &ClipStore,
     transforms: &mut TransformPalette,
@@ -743,10 +771,10 @@ pub fn build_render_pass(
 ) -> RenderPass {
     profile_scope!("build_render_pass");
 
-    
-    
-    
-    
+    // TODO(gw): In this initial frame graph work, we try to maintain the existing
+    //           build_render_pass code as closely as possible, to make the review
+    //           simpler and reduce chance of regressions. However, future work should
+    //           include refactoring this to more closely match the built frame graph.
     let mut pass = RenderPass::new(src_pass);
 
     for sub_pass in &src_pass.sub_passes {
@@ -766,6 +794,7 @@ pub fn build_render_pass(
                                 *task_id,
                                 ctx,
                                 gpu_cache,
+                                gpu_buffer_builder,
                                 render_tasks,
                                 clip_store,
                                 transforms,
@@ -787,6 +816,7 @@ pub fn build_render_pass(
                                 *task_id,
                                 ctx,
                                 gpu_cache,
+                                gpu_buffer_builder,
                                 render_tasks,
                                 clip_store,
                                 transforms,
@@ -820,7 +850,7 @@ pub fn build_render_pass(
 
                         let mut batch_builder = BatchBuilder::new(batcher);
 
-                        cmd_buffer.iter_prims(&mut |cmd, spatial_node_index| {
+                        cmd_buffer.iter_prims(&mut |cmd, spatial_node_index, segments| {
                             batch_builder.add_prim_to_batch(
                                 cmd,
                                 spatial_node_index,
@@ -834,6 +864,7 @@ pub fn build_render_pass(
                                 z_generator,
                                 prim_instances,
                                 &mut gpu_buffer_builder,
+                                segments,
                             );
                         });
 
@@ -921,12 +952,12 @@ pub fn build_render_pass(
     pass
 }
 
-
-
+/// A rendering-oriented representation of the frame built by the render backend
+/// and presented to the renderer.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct Frame {
-    
+    /// The rectangle to show the frame in, on screen.
     pub device_rect: DeviceIntRect,
     pub passes: Vec<RenderPass>,
 
@@ -934,50 +965,50 @@ pub struct Frame {
     pub render_tasks: RenderTaskGraph,
     pub prim_headers: PrimitiveHeaders,
 
-    
+    /// The GPU cache frame that the contents of Self depend on
     pub gpu_cache_frame_id: FrameId,
 
-    
-    
-    
-    
+    /// List of textures that we don't know about yet
+    /// from the backend thread. The render thread
+    /// will use a callback to resolve these and
+    /// patch the data structures.
     pub deferred_resolves: Vec<DeferredResolve>,
 
-    
-    
+    /// True if this frame contains any render tasks
+    /// that write to the texture cache.
     pub has_texture_cache_tasks: bool,
 
-    
-    
+    /// True if this frame has been drawn by the
+    /// renderer.
     pub has_been_rendered: bool,
 
-    
+    /// Debugging information to overlay for this frame.
     pub debug_items: Vec<DebugItem>,
 
-    
-    
-    
+    /// Contains picture cache tiles, and associated information.
+    /// Used by the renderer to composite tiles into the framebuffer,
+    /// or hand them off to an OS compositor.
     pub composite_state: CompositeState,
 
-    
-    
+    /// Main GPU data buffer constructed (primarily) during the prepare
+    /// pass for primitives that were visible and dirty.
     pub gpu_buffer: GpuBuffer,
 }
 
 impl Frame {
-    
-    
+    // This frame must be flushed if it writes to the
+    // texture cache, and hasn't been drawn yet.
     pub fn must_be_drawn(&self) -> bool {
         self.has_texture_cache_tasks && !self.has_been_rendered
     }
 
-    
+    // Returns true if this frame doesn't alter what is on screen currently.
     pub fn is_nop(&self) -> bool {
-        
-        
-        
-        
-        
+        // If there are no off-screen passes, that implies that there are no
+        // picture cache tiles, and no texture cache tasks being updates. If this
+        // is the case, we can consider the frame a nop (higher level checks
+        // test if a composite is needed due to picture cache surfaces moving
+        // or external surfaces being updated).
         self.passes.is_empty()
     }
 }

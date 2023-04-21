@@ -1,10 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+//! # Prepare pass
+//!
+//! TODO: document this!
 
 use api::{ColorF, PremultipliedColorF, PropertyBinding};
 use api::{BoxShadowClipMode, BorderStyle, ClipMode};
@@ -19,7 +19,7 @@ use crate::spatial_tree::{SpatialNodeIndex, SpatialTree};
 use crate::clip::{ClipDataStore, ClipNodeFlags, ClipChainInstance, ClipItemKind};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext, PictureState};
 use crate::gpu_cache::{GpuCacheHandle, GpuDataRequest};
-use crate::gpu_types::{BrushFlags};
+use crate::gpu_types::{BrushFlags, TransformPaletteId, QuadSegment};
 use crate::internal_types::{FastHashMap, PlaneSplitAnchor};
 use crate::picture::{PicturePrimitive, SliceId, ClusterFlags};
 use crate::picture::{PrimitiveList, PrimitiveCluster, SurfaceIndex, TileCacheInstance, SubpixelMode, Picture3DContext};
@@ -33,14 +33,13 @@ use crate::render_task_cache::{RenderTaskCacheKey, to_cache_size, RenderTaskPare
 use crate::render_task::{RenderTaskKind, RenderTask};
 use crate::renderer::{GpuBufferBuilder, GpuBufferAddress};
 use crate::segment::{EdgeAaSegmentMask, SegmentBuilder};
-use crate::util::{clamp_to_scale_factor, pack_as_float};
+use crate::util::{clamp_to_scale_factor, pack_as_float, MaxRect};
 use crate::visibility::{compute_conservative_visible_rect, PrimitiveVisibility, VisibilityState};
 
 
 const MAX_MASK_SIZE: f32 = 4096.0;
 
 const MIN_BRUSH_SPLIT_AREA: f32 = 128.0 * 128.0;
-
 
 pub fn prepare_primitives(
     store: &mut PrimitiveStore,
@@ -97,9 +96,9 @@ pub fn prepare_primitives(
                 continue;
             }
 
-            
-            
-            
+            // TODO(gw): Technically no need to clear visibility here, since from this point it
+            //           only matters if it got added to a command buffer. Kept here for now to
+            //           make debugging simpler, but perhaps we can remove / tidy this up.
             prim_instances[prim_instance_index].clear_visibility();
         }
     }
@@ -109,8 +108,8 @@ fn can_use_clip_chain_for_quad_path(
     clip_chain: &ClipChainInstance,
     prim_spatial_node_index: SpatialNodeIndex,
     raster_spatial_node_index: SpatialNodeIndex,
-    _clip_store: &ClipStore,
-    _data_stores: &DataStores,
+    clip_store: &ClipStore,
+    data_stores: &DataStores,
     spatial_tree: &SpatialTree,
 ) -> bool {
     let map_prim_to_surface = spatial_tree.get_relative_transform(
@@ -124,7 +123,123 @@ fn can_use_clip_chain_for_quad_path(
         return false;
     }
 
-    !clip_chain.needs_mask
+    if !clip_chain.needs_mask {
+        return true;
+    }
+
+    for i in 0 .. clip_chain.clips_range.count {
+        let clip_instance = clip_store.get_instance_from_range(&clip_chain.clips_range, i);
+        let clip_node = &data_stores.clip[clip_instance.handle];
+
+        // Temporary hack only for landing next stage...
+        if prim_spatial_node_index != clip_node.item.spatial_node_index {
+            return false;
+        }
+
+        match clip_node.item.kind {
+            ClipItemKind::RoundedRectangle { .. } => {
+            }
+            ClipItemKind::Rectangle { mode: ClipMode::ClipOut, .. } => {
+            }
+            ClipItemKind::Rectangle { mode: ClipMode::Clip, .. } => {
+                panic!("bug: xf rect found as mask, not in lcr?");
+            }
+            ClipItemKind::BoxShadow { .. } => {
+                // legacy path for box-shadows for now (move them to a separate primitive next)
+                return false;
+            }
+            ClipItemKind::Image { .. } => {
+                panic!("bug: image-masks not expected on rect/quads");
+            }
+        }
+    }
+
+    true
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum QuadRenderMode {
+    Direct,
+    Indirect,
+    NinePatch {
+        radius: f32,
+        clip_rect: LayoutRect,
+        clip_out: bool,
+    },
+}
+
+#[derive(Debug)]
+pub struct QuadRenderStrategy {
+    pub render_mode: QuadRenderMode,
+}
+
+fn get_prim_render_strategy(
+    clip_chain: &ClipChainInstance,
+    clip_store: &ClipStore,
+    data_stores: &DataStores,
+) -> QuadRenderStrategy {
+    let mut render_mode = QuadRenderMode::Direct;
+
+    if clip_chain.needs_mask {
+        for i in 0 .. clip_chain.clips_range.count {
+            let clip_instance = clip_store.get_instance_from_range(&clip_chain.clips_range, i);
+            let clip_node = &data_stores.clip[clip_instance.handle];
+
+            match clip_node.item.kind {
+                ClipItemKind::RoundedRectangle { ref radius, mode, rect, .. } => {
+                    match render_mode {
+                        QuadRenderMode::Direct => {
+                            let max_corner_width = radius.top_left.width
+                                                        .max(radius.bottom_left.width)
+                                                        .max(radius.top_right.width)
+                                                        .max(radius.bottom_right.width);
+                            let max_corner_height = radius.top_left.height
+                                                        .max(radius.bottom_left.height)
+                                                        .max(radius.top_right.height)
+                                                        .max(radius.bottom_right.height);
+
+                            if clip_chain.pic_coverage_rect.area() > MIN_BRUSH_SPLIT_AREA &&
+                               max_corner_width <= 0.5 * rect.size().width &&
+                               max_corner_height <= 0.5 * rect.size().height {
+
+                                let radius = max_corner_width.max(max_corner_height);
+
+                                render_mode = QuadRenderMode::NinePatch {
+                                    radius,
+                                    clip_rect: rect,
+                                    clip_out: mode == ClipMode::ClipOut,
+                                };
+                            } else {
+                                render_mode = QuadRenderMode::Indirect;
+                            }
+                        }
+                        QuadRenderMode::NinePatch { .. } => {
+                            render_mode = QuadRenderMode::Indirect;
+                        }
+                        QuadRenderMode::Indirect { .. } => {
+
+                        }
+                    }
+                }
+                ClipItemKind::Rectangle { mode: ClipMode::ClipOut, .. } => {
+                    render_mode = QuadRenderMode::Indirect;
+                }
+                ClipItemKind::Rectangle { mode: ClipMode::Clip, .. } => {
+                    panic!("bug: xf rects should not be on new clip path yet");
+                }
+                ClipItemKind::BoxShadow { .. } => {
+                    panic!("bug: box-shadow clips not expected on non-legacy rect/quads");
+                }
+                ClipItemKind::Image { .. } => {
+                    panic!("bug: image-masks not expected on rect/quads");
+                }
+            }
+        }
+    }
+
+    QuadRenderStrategy {
+        render_mode,
+    }
 }
 
 fn prepare_prim_for_render(
@@ -144,17 +259,17 @@ fn prepare_prim_for_render(
 ) {
     profile_scope!("prepare_prim_for_render");
 
-    
-    
-    
-    
-    
+    // If we have dependencies, we need to prepare them first, in order
+    // to know the actual rect of this primitive.
+    // For example, scrolling may affect the location of an item in
+    // local space, which may force us to render this item on a larger
+    // picture target, if being composited.
     let mut is_passthrough = false;
     if let PrimitiveInstanceKind::Picture { pic_index, .. } = prim_instances[prim_instance_index].kind {
         let pic = &mut store.pictures[pic_index.0];
 
-        
-        
+        // TODO(gw): Plan to remove pictures with no composite mode, so that we don't need
+        //           to special case for pass through pictures.
         is_passthrough = pic.composite_mode.is_none();
 
         match pic.take_context(
@@ -180,7 +295,7 @@ fn prepare_prim_for_render(
                     prim_instances,
                 );
 
-                
+                // Restore the dependencies (borrow check dance)
                 store.pictures[pic_context_for_children.pic_index.0]
                     .restore_context(
                         pic_context_for_children.pic_index,
@@ -201,11 +316,11 @@ fn prepare_prim_for_render(
 
     if !is_passthrough {
 
-        
-        
-        
-        
-        
+        // In this initial patch, we only support non-masked primitives through the new
+        // quad rendering path. Follow up patches will extend this to support masks, and
+        // then use by other primitives. In the new quad rendering path, we'll still want
+        // to skip the entry point to `update_clip_task` as that does old-style segmenting
+        // and mask generation.
         let should_update_clip_task = match prim_instance.kind {
             PrimitiveInstanceKind::Rectangle { ref mut use_legacy_path, .. } => {
                 *use_legacy_path = !can_use_clip_chain_for_quad_path(
@@ -254,6 +369,7 @@ fn prepare_prim_for_render(
         cluster,
         plane_split_anchor,
         pic_context,
+        pic_state,
         frame_context,
         frame_state,
         data_stores,
@@ -262,9 +378,9 @@ fn prepare_prim_for_render(
     )
 }
 
-
-
-
+/// Prepare an interned primitive for rendering, by requesting
+/// resources, render tasks etc. This is equivalent to the
+/// prepare_prim_for_render_inner call for old style primitives.
 fn prepare_interned_prim_for_render(
     store: &mut PrimitiveStore,
     prim_instance_index: PrimitiveInstanceIndex,
@@ -272,6 +388,7 @@ fn prepare_interned_prim_for_render(
     cluster: &mut PrimitiveCluster,
     plane_split_anchor: PlaneSplitAnchor,
     pic_context: &PictureContext,
+    pic_state: &mut PictureState,
     frame_context: &FrameBuildingContext,
     frame_state: &mut FrameBuildingState,
     data_stores: &mut DataStores,
@@ -288,33 +405,33 @@ fn prepare_interned_prim_for_render(
             let common_data = &mut prim_data.common;
             let line_dec_data = &mut prim_data.kind;
 
-            
-            
+            // Update the template this instane references, which may refresh the GPU
+            // cache with any shared template data.
             line_dec_data.update(common_data, frame_state);
 
-            
+            // Work out the device pixel size to be used to cache this line decoration.
 
-            
-            
+            // If we have a cache key, it's a wavy / dashed / dotted line. Otherwise, it's
+            // a simple solid line.
             if let Some(cache_key) = line_dec_data.cache_key.as_ref() {
-                
-                
+                // TODO(gw): These scale factors don't do a great job if the world transform
+                //           contains perspective
                 let scale = frame_context
                     .spatial_tree
                     .get_world_transform(prim_spatial_node_index)
                     .scale_factors();
 
-                
-                
-                
-                
-                
-                
-                
-                
+                // Scale factors are normalized to a power of 2 to reduce the number of
+                // resolution changes.
+                // For frames with a changing scale transform round scale factors up to
+                // nearest power-of-2 boundary so that we don't keep having to redraw
+                // the content as it scales up and down. Rounding up to nearest
+                // power-of-2 boundary ensures we never scale up, only down --- avoiding
+                // jaggies. It also ensures we never scale down by more than a factor of
+                // 2, avoiding bad downscaling quality.
                 let scale_width = clamp_to_scale_factor(scale.0, false);
                 let scale_height = clamp_to_scale_factor(scale.1, false);
-                
+                // Pick the maximum dimension as scale
                 let world_scale = LayoutToWorldScale::new(scale_width.max(scale_height));
 
                 let scale_factor = world_scale * Scale::new(1.0);
@@ -330,18 +447,18 @@ fn prepare_interned_prim_for_render(
                     task_size_f.to_i32()
                 };
 
-                
-                
-                
-                
+                // It's plausible, due to float accuracy issues that the line decoration may be considered
+                // visible even if the scale factors are ~0. However, the render task allocation below requires
+                // that the size of the task is > 0. To work around this, ensure that the task size is at least
+                // 1x1 pixels
                 task_size.width = task_size.width.max(1);
                 task_size.height = task_size.height.max(1);
 
-                
-                
-                
-                
-                
+                // Request a pre-rendered image task.
+                // TODO(gw): This match is a bit untidy, but it should disappear completely
+                //           once the prepare_prims and batching are unified. When that
+                //           happens, we can use the cache handle immediately, and not need
+                //           to temporarily store it in the primitive instance.
                 *render_task = Some(frame_state.resource_cache.request_render_task(
                     RenderTaskCacheKey {
                         size: task_size,
@@ -375,8 +492,8 @@ fn prepare_interned_prim_for_render(
 
             prim_data.common.may_need_repetition = false;
 
-            
-            
+            // The glyph transform has to match `glyph_transform` in "ps_text_run" shader.
+            // It's relative to the rasterizing space of a glyph.
             let transform = frame_context.spatial_tree
                 .get_relative_transform(
                     prim_spatial_node_index,
@@ -387,9 +504,9 @@ fn prepare_interned_prim_for_render(
 
             let surface = &frame_state.surfaces[pic_context.surface_index.0];
 
-            
-            
-            
+            // If subpixel AA is disabled due to the backing surface the glyphs
+            // are being drawn onto, disable it (unless we are using the
+            // specifial subpixel mode that estimates background color).
             let allow_subpixel = match prim_instance.vis.state {
                 VisibilityState::Culled |
                 VisibilityState::Unset |
@@ -397,15 +514,15 @@ fn prepare_interned_prim_for_render(
                     panic!("bug: invalid visibility state");
                 }
                 VisibilityState::Visible { sub_slice_index, .. } => {
-                    
-                    
+                    // For now, we only allow subpixel AA on primary sub-slices. In future we
+                    // may support other sub-slices if we find content that does this.
                     if sub_slice_index.is_primary() {
                         match pic_context.subpixel_mode {
                             SubpixelMode::Allow => true,
                             SubpixelMode::Deny => false,
                             SubpixelMode::Conditional { allowed_rect } => {
-                                
-                                
+                                // Conditional mode allows subpixel AA to be enabled for this
+                                // text run, so long as it's inside the allowed rect.
                                 allowed_rect.contains_box(&prim_instance.vis.clip_chain.pic_coverage_rect)
                             }
                         }
@@ -430,8 +547,8 @@ fn prepare_interned_prim_for_render(
                 scratch,
             );
 
-            
-            
+            // Update the template this instane references, which may refresh the GPU
+            // cache with any shared template data.
             prim_data.update(frame_state);
         }
         PrimitiveInstanceKind::Clear { data_handle, .. } => {
@@ -440,8 +557,8 @@ fn prepare_interned_prim_for_render(
 
             prim_data.common.may_need_repetition = false;
 
-            
-            
+            // Update the template this instane references, which may refresh the GPU
+            // cache with any shared template data.
             prim_data.update(frame_state, frame_context.scene_properties);
         }
         PrimitiveInstanceKind::NormalBorder { data_handle, ref mut render_task_ids, .. } => {
@@ -457,42 +574,42 @@ fn prepare_interned_prim_for_render(
                 matches!(border_data.border.left.style, BorderStyle::Dotted | BorderStyle::Dashed);
 
 
-            
-            
+            // Update the template this instance references, which may refresh the GPU
+            // cache with any shared template data.
             border_data.update(common_data, frame_state);
 
-            
-            
-            
-            
+            // TODO(gw): For now, the scale factors to rasterize borders at are
+            //           based on the true world transform of the primitive. When
+            //           raster roots with local scale are supported in future,
+            //           that will need to be accounted for here.
             let scale = frame_context
                 .spatial_tree
                 .get_world_transform(prim_spatial_node_index)
                 .scale_factors();
 
-            
-            
-            
-            
-            
-            
-            
-            
+            // Scale factors are normalized to a power of 2 to reduce the number of
+            // resolution changes.
+            // For frames with a changing scale transform round scale factors up to
+            // nearest power-of-2 boundary so that we don't keep having to redraw
+            // the content as it scales up and down. Rounding up to nearest
+            // power-of-2 boundary ensures we never scale up, only down --- avoiding
+            // jaggies. It also ensures we never scale down by more than a factor of
+            // 2, avoiding bad downscaling quality.
             let scale_width = clamp_to_scale_factor(scale.0, false);
             let scale_height = clamp_to_scale_factor(scale.1, false);
-            
+            // Pick the maximum dimension as scale
             let world_scale = LayoutToWorldScale::new(scale_width.max(scale_height));
             let mut scale = world_scale * device_pixel_scale;
             let max_scale = get_max_scale_for_border(border_data);
             scale.0 = scale.0.min(max_scale.0);
 
-            
-            
-            
+            // For each edge and corner, request the render task by content key
+            // from the render task cache. This ensures that the render task for
+            // this segment will be available for batching later in the frame.
             let mut handles: SmallVec<[RenderTaskId; 8]> = SmallVec::new();
 
             for segment in &border_data.border_segments {
-                
+                // Update the cache key device size based on requested scale.
                 let cache_size = to_cache_size(segment.local_task_size, &mut scale);
                 let cache_key = RenderTaskCacheKey {
                     kind: RenderTaskCacheKeyKind::BorderSegment(segment.cache_key.clone()),
@@ -505,7 +622,7 @@ fn prepare_interned_prim_for_render(
                     frame_state.frame_gpu_data,
                     frame_state.rg_builder,
                     None,
-                    false,          
+                    false,          // TODO(gw): We don't calculate opacity for borders yet!
                     RenderTaskParent::Surface(pic_context.surface_index),
                     &mut frame_state.surface_builder,
                     |rg_builder, _| {
@@ -532,11 +649,11 @@ fn prepare_interned_prim_for_render(
             profile_scope!("ImageBorder");
             let prim_data = &mut data_stores.image_border[*data_handle];
 
-            
-            
+            // TODO: get access to the ninepatch and to check whether we need support
+            // for repetitions in the shader.
 
-            
-            
+            // Update the template this instance references, which may refresh the GPU
+            // cache with any shared template data.
             prim_data.kind.update(
                 &mut prim_data.common,
                 frame_state
@@ -544,16 +661,17 @@ fn prepare_interned_prim_for_render(
         }
         PrimitiveInstanceKind::Rectangle { data_handle, segment_instance_index, color_binding_index, use_legacy_path, .. } => {
             profile_scope!("Rectangle");
-            let prim_data = &mut data_stores.prim[*data_handle];
-            prim_data.common.may_need_repetition = false;
 
             if *use_legacy_path {
-                
+                let prim_data = &mut data_stores.prim[*data_handle];
+                prim_data.common.may_need_repetition = false;
+
+                // TODO(gw): Legacy rect rendering path - remove once we support masks on quad prims
                 if *color_binding_index != ColorBindingIndex::INVALID {
                     match store.color_bindings[*color_binding_index] {
                         PropertyBinding::Binding(..) => {
-                            
-                            
+                            // We explicitly invalidate the gpu cache
+                            // if the color is animating.
                             let gpu_cache_handle =
                                 if *segment_instance_index == SegmentInstanceIndex::INVALID {
                                     None
@@ -570,8 +688,8 @@ fn prepare_interned_prim_for_render(
                     }
                 }
 
-                
-                
+                // Update the template this instane references, which may refresh the GPU
+                // cache with any shared template data.
                 prim_data.update(
                     frame_state,
                     frame_context.scene_properties,
@@ -590,9 +708,17 @@ fn prepare_interned_prim_for_render(
                     }
                 );
             } else {
+                let strategy = get_prim_render_strategy(
+                    &prim_instance.vis.clip_chain,
+                    frame_state.clip_store,
+                    data_stores,
+                );
+
+                let prim_data = &data_stores.prim[*data_handle];
+
                 let (color, is_opaque) = match prim_data.kind {
                     PrimitiveTemplateKind::Clear => {
-                        
+                        // Opaque black with operator dest out
                         (ColorF::BLACK, false)
                     }
                     PrimitiveTemplateKind::Rectangle { ref color, .. } => {
@@ -614,11 +740,12 @@ fn prepare_interned_prim_for_render(
                 if is_opaque {
                     quad_flags |= QuadFlags::IS_OPAQUE;
                 }
+                quad_flags |= QuadFlags::APPLY_DEVICE_CLIP;
 
-                
-                
-                
-                
+                // TODO(gw): For now, we don't select per-edge AA at all if the primitive
+                //           has a 2d transform, which matches existing behavior. However,
+                //           as a follow up, we can now easily check if we have a 2d-aligned
+                //           primitive on a subpixel boundary, and enable AA along those edge(s).
                 let aa_flags = if prim_is_2d_axis_aligned {
                     EdgeAaSegmentMask::empty()
                 } else {
@@ -631,27 +758,190 @@ fn prepare_interned_prim_for_render(
                     frame_context.spatial_tree,
                 );
 
-                
-                
-                
+                // TODO(gw): Perhaps rather than writing untyped data here (we at least do validate
+                //           the written block count) to gpu-buffer, we could add a trait for
+                //           writing typed data?
                 let main_prim_address = write_prim_blocks(
                     frame_state.frame_gpu_data,
                     prim_data.common.prim_rect,
                     prim_instance.vis.clip_chain.local_clip_rect,
                     premul_color,
+                    &[],
                 );
 
-                frame_state.push_prim(
-                    &PrimitiveCommand::quad(
-                        prim_instance_index,
-                        main_prim_address,
-                        transform_id,
-                        quad_flags,
-                        aa_flags,
-                    ),
-                    prim_spatial_node_index,
-                    targets,
-                );
+                match strategy.render_mode {
+                    QuadRenderMode::Direct => {
+                        frame_state.push_prim(
+                            &PrimitiveCommand::quad(
+                                prim_instance_index,
+                                main_prim_address,
+                                transform_id,
+                                quad_flags,
+                                aa_flags,
+                            ),
+                            prim_spatial_node_index,
+                            targets,
+                        );
+                    }
+                    QuadRenderMode::Indirect => {
+                        let surface = &frame_state.surfaces[pic_context.surface_index.0];
+                        let clipped_surface_rect = surface.get_surface_rect(
+                            &prim_instance.vis.clip_chain.pic_coverage_rect,
+                            frame_context.spatial_tree,
+                        ).expect("bug: what can cause this?");
+
+                        let p0 = clipped_surface_rect.min.floor();
+                        let p1 = clipped_surface_rect.max.ceil();
+
+                        let x0 = p0.x;
+                        let y0 = p0.y;
+                        let x1 = p1.x;
+                        let y1 = p1.y;
+
+                        let segment = add_segment(
+                            x0,
+                            y0,
+                            x1,
+                            y1,
+                            true,
+                            prim_instance,
+                            prim_spatial_node_index,
+                            main_prim_address,
+                            transform_id,
+                            aa_flags,
+                            quad_flags,
+                            device_pixel_scale,
+                            frame_state,
+                        );
+
+                        add_composite_prim(
+                            prim_instance_index,
+                            LayoutRect::new(LayoutPoint::new(x0, y0), LayoutPoint::new(x1, y1)),
+                            premul_color,
+                            quad_flags,
+                            frame_state,
+                            targets,
+                            &[segment],
+                        );
+                    }
+                    QuadRenderMode::NinePatch { clip_rect, radius, clip_out } => {
+                        let surface = &frame_state.surfaces[pic_context.surface_index.0];
+                        let clipped_surface_rect = surface.get_surface_rect(
+                            &prim_instance.vis.clip_chain.pic_coverage_rect,
+                            frame_context.spatial_tree,
+                        ).expect("bug: what can cause this?");
+
+                        let unclipped_surface_rect = surface.map_to_device_rect(
+                            &prim_instance.vis.clip_chain.pic_coverage_rect,
+                            frame_context.spatial_tree,
+                        );
+
+                        let local_corner_0 = LayoutRect::new(
+                            clip_rect.min,
+                            clip_rect.min + LayoutVector2D::new(radius, radius),
+                        );
+
+                        let local_corner_1 = LayoutRect::new(
+                            clip_rect.max - LayoutVector2D::new(radius, radius),
+                            clip_rect.max,
+                        );
+
+                        let pic_corner_0 = pic_state.map_local_to_pic.map(&local_corner_0).unwrap();
+                        let pic_corner_1 = pic_state.map_local_to_pic.map(&local_corner_1).unwrap();
+
+                        let surface_rect_0 = surface.map_to_device_rect(
+                            &pic_corner_0,
+                            frame_context.spatial_tree,
+                        );
+
+                        let surface_rect_1 = surface.map_to_device_rect(
+                            &pic_corner_1,
+                            frame_context.spatial_tree,
+                        );
+
+                        let p0 = surface_rect_0.min.floor();
+                        let p1 = surface_rect_0.max.ceil();
+                        let p2 = surface_rect_1.min.floor();
+                        let p3 = surface_rect_1.max.ceil();
+
+                        let mut x_coords = [p0.x, p1.x, p2.x, p3.x];
+                        let mut y_coords = [p0.y, p1.y, p2.y, p3.y];
+
+                        x_coords.sort_by(|a, b| a.partial_cmp(b).unwrap());
+                        y_coords.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+                        scratch.quad_segments.clear();
+
+                        for y in 0 .. y_coords.len()-1 {
+                            let y0 = y_coords[y];
+                            let y1 = y_coords[y+1];
+
+                            if y1 <= y0 {
+                                continue;
+                            }
+
+                            for x in 0 .. x_coords.len()-1 {
+                                let x0 = x_coords[x];
+                                let x1 = x_coords[x+1];
+
+                                if x1 <= x0 {
+                                    continue;
+                                }
+
+                                let create_task = if x == 1 || y == 1 {
+                                    if clip_out {
+                                        continue;
+                                    } else {
+                                        false
+                                    }
+                                } else {
+                                    true
+                                };
+
+                                let r = DeviceRect::new(DevicePoint::new(x0, y0), DevicePoint::new(x1, y1));
+
+                                let r = match r.intersection(&clipped_surface_rect) {
+                                    Some(r) => r,
+                                    None => {
+                                        continue;
+                                    }
+                                };
+
+                                let x0 = r.min.x;
+                                let y0 = r.min.y;
+                                let x1 = r.max.x;
+                                let y1 = r.max.y;
+
+                                let segment = add_segment(
+                                    x0,
+                                    y0,
+                                    x1,
+                                    y1,
+                                    create_task,
+                                    prim_instance,
+                                    prim_spatial_node_index,
+                                    main_prim_address,
+                                    transform_id,
+                                    aa_flags,
+                                    quad_flags,
+                                    device_pixel_scale,
+                                    frame_state,
+                                );
+                                scratch.quad_segments.push(segment);
+                            }
+                        }
+
+                        add_composite_prim(
+                            prim_instance_index,
+                            unclipped_surface_rect.cast_unit(),
+                            premul_color,
+                            quad_flags,
+                            frame_state,
+                            targets,
+                            &scratch.quad_segments,
+                        );
+                    }
+                }
 
                 return;
             }
@@ -664,8 +954,8 @@ fn prepare_interned_prim_for_render(
 
             common_data.may_need_repetition = false;
 
-            
-            
+            // Update the template this instane references, which may refresh the GPU
+            // cache with any shared template data.
             yuv_image_data.update(common_data, frame_state);
 
             write_segment(
@@ -686,8 +976,8 @@ fn prepare_interned_prim_for_render(
             let image_data = &mut prim_data.kind;
             let image_instance = &mut store.images[*image_instance_index];
 
-            
-            
+            // Update the template this instance references, which may refresh the GPU
+            // cache with any shared template data.
             image_data.update(
                 common_data,
                 image_instance,
@@ -712,8 +1002,8 @@ fn prepare_interned_prim_for_render(
             profile_scope!("LinearGradient");
             let prim_data = &mut data_stores.linear_grad[*data_handle];
 
-            
-            
+            // Update the template this instane references, which may refresh the GPU
+            // cache with any shared template data.
             prim_data.update(frame_state, pic_context.surface_index);
 
             if prim_data.stretch_size.width >= prim_data.common.prim_rect.width() &&
@@ -723,8 +1013,8 @@ fn prepare_interned_prim_for_render(
             }
 
             if prim_data.tile_spacing != LayoutSize::zero() {
-                
-                
+                // We are performing the decomposition on the CPU here, no need to
+                // have it in the shader.
                 prim_data.common.may_need_repetition = false;
 
                 *visible_tiles_range = decompose_repeated_gradient(
@@ -763,8 +1053,8 @@ fn prepare_interned_prim_for_render(
                 &prim_data.stops,
             );
 
-            
-            
+            // TODO(gw): Consider whether it's worth doing segment building
+            //           for gradient primitives.
             frame_state.push_prim(
                 &PrimitiveCommand::instance(prim_instance_index, stops_address),
                 prim_spatial_node_index,
@@ -778,8 +1068,8 @@ fn prepare_interned_prim_for_render(
             prim_data.common.may_need_repetition = prim_data.stretch_size.width < prim_data.common.prim_rect.width()
                 || prim_data.stretch_size.height < prim_data.common.prim_rect.height();
 
-            
-            
+            // Update the template this instance references, which may refresh the GPU
+            // cache with any shared template data.
             prim_data.update(frame_state, pic_context.surface_index);
 
             if prim_data.tile_spacing != LayoutSize::zero() {
@@ -809,8 +1099,8 @@ fn prepare_interned_prim_for_render(
             prim_data.common.may_need_repetition = prim_data.stretch_size.width < prim_data.common.prim_rect.width()
                 || prim_data.stretch_size.height < prim_data.common.prim_rect.height();
 
-            
-            
+            // Update the template this instane references, which may refresh the GPU
+            // cache with any shared template data.
             prim_data.update(frame_state, pic_context.surface_index);
 
             if prim_data.tile_spacing != LayoutSize::zero() {
@@ -833,8 +1123,8 @@ fn prepare_interned_prim_for_render(
                 }
             }
 
-            
-            
+            // TODO(gw): Consider whether it's worth doing segment building
+            //           for gradient primitives.
         }
         PrimitiveInstanceKind::ConicGradient { data_handle, ref mut visible_tiles_range, .. } => {
             profile_scope!("ConicGradient");
@@ -843,8 +1133,8 @@ fn prepare_interned_prim_for_render(
             prim_data.common.may_need_repetition = prim_data.stretch_size.width < prim_data.common.prim_rect.width()
                 || prim_data.stretch_size.height < prim_data.common.prim_rect.height();
 
-            
-            
+            // Update the template this instane references, which may refresh the GPU
+            // cache with any shared template data.
             prim_data.update(frame_state, pic_context.surface_index);
 
             if prim_data.tile_spacing != LayoutSize::zero() {
@@ -867,8 +1157,8 @@ fn prepare_interned_prim_for_render(
                 }
             }
 
-            
-            
+            // TODO(gw): Consider whether it's worth doing segment building
+            //           for gradient primitives.
         }
         PrimitiveInstanceKind::Picture { pic_index, segment_instance_index, .. } => {
             profile_scope!("Picture");
@@ -896,10 +1186,10 @@ fn prepare_interned_prim_for_render(
                     );
                 }
 
-                
-                
-                
-                
+                // If this picture uses segments, ensure the GPU cache is
+                // up to date with segment local rects.
+                // TODO(gw): This entire match statement above can now be
+                //           refactored into prepare_interned_prim_for_render.
                 if pic.can_use_segments() {
                     write_segment(
                         *segment_instance_index,
@@ -910,7 +1200,7 @@ fn prepare_interned_prim_for_render(
                             request.push(PremultipliedColorF::WHITE);
                             request.push(PremultipliedColorF::WHITE);
                             request.push([
-                                -1.0,       
+                                -1.0,       // -ve means use prim rect for stretch size
                                 0.0,
                                 0.0,
                                 0.0,
@@ -923,8 +1213,8 @@ fn prepare_interned_prim_for_render(
             }
         }
         PrimitiveInstanceKind::BackdropCapture { .. } => {
-            
-            
+            // Register the owner picture of this backdrop primitive as the
+            // target for resolve of the sub-graph
             frame_state.surface_builder.register_resolve_source();
         }
         PrimitiveInstanceKind::BackdropRender { pic_index, .. } => {
@@ -936,8 +1226,8 @@ fn prepare_interned_prim_for_render(
                     );
                 }
                 None => {
-                    
-                    
+                    // Backdrop capture was found not visible, didn't produce a sub-graph
+                    // so we can just skip drawing
                     prim_instance.clear_visibility();
                 }
             }
@@ -999,9 +1289,9 @@ fn decompose_repeated_gradient(
 ) -> GradientTileRange {
     let tile_range = gradient_tiles.open_range();
 
-    
-    
-    
+    // Tighten the clip rect because decomposing the repeated image can
+    // produce primitives that are partially covering the original image
+    // rect and we want to clip these extra parts out.
     if let Some(tight_clip_rect) = prim_vis
         .clip_chain
         .local_clip_rect
@@ -1038,8 +1328,8 @@ fn decompose_repeated_gradient(
         }
     }
 
-    
-    
+    // At this point if we don't have tiles to show it means we could probably
+    // have done a better a job at culling during an earlier stage.
     gradient_tiles.close_range(tile_range)
 }
 
@@ -1082,9 +1372,9 @@ fn update_clip_task_for_brush(
             &segments_store[segment_instance.segments_range]
         }
         PrimitiveInstanceKind::Picture { segment_instance_index, .. } => {
-            
-            
-            
+            // Pictures may not support segment rendering at all (INVALID)
+            // or support segment rendering but choose not to due to size
+            // or some other factor (UNUSED).
             if segment_instance_index == SegmentInstanceIndex::UNUSED ||
                segment_instance_index == SegmentInstanceIndex::INVALID {
                 return None;
@@ -1119,23 +1409,23 @@ fn update_clip_task_for_brush(
         PrimitiveInstanceKind::ImageBorder { data_handle, .. } => {
             let border_data = &data_stores.image_border[data_handle].kind;
 
-            
-            
+            // TODO: This is quite messy - once we remove legacy primitives we
+            //       can change this to be a tuple match on (instance, template)
             border_data.brush_segments.as_slice()
         }
         PrimitiveInstanceKind::NormalBorder { data_handle, .. } => {
             let border_data = &data_stores.normal_border[data_handle].kind;
 
-            
-            
+            // TODO: This is quite messy - once we remove legacy primitives we
+            //       can change this to be a tuple match on (instance, template)
             border_data.brush_segments.as_slice()
         }
         PrimitiveInstanceKind::LinearGradient { data_handle, .. }
         | PrimitiveInstanceKind::CachedLinearGradient { data_handle, .. } => {
             let prim_data = &data_stores.linear_grad[data_handle];
 
-            
-            
+            // TODO: This is quite messy - once we remove legacy primitives we
+            //       can change this to be a tuple match on (instance, template)
             if prim_data.brush_segments.is_empty() {
                 return None;
             }
@@ -1145,8 +1435,8 @@ fn update_clip_task_for_brush(
         PrimitiveInstanceKind::RadialGradient { data_handle, .. } => {
             let prim_data = &data_stores.radial_grad[data_handle];
 
-            
-            
+            // TODO: This is quite messy - once we remove legacy primitives we
+            //       can change this to be a tuple match on (instance, template)
             if prim_data.brush_segments.is_empty() {
                 return None;
             }
@@ -1156,8 +1446,8 @@ fn update_clip_task_for_brush(
         PrimitiveInstanceKind::ConicGradient { data_handle, .. } => {
             let prim_data = &data_stores.conic_grad[data_handle];
 
-            
-            
+            // TODO: This is quite messy - once we remove legacy primitives we
+            //       can change this to be a tuple match on (instance, template)
             if prim_data.brush_segments.is_empty() {
                 return None;
             }
@@ -1166,21 +1456,21 @@ fn update_clip_task_for_brush(
         }
     };
 
-    
-    
+    // If there are no segments, early out to avoid setting a valid
+    // clip task instance location below.
     if segments.is_empty() {
         return None;
     }
 
-    
-    
-    
+    // Set where in the clip mask instances array the clip mask info
+    // can be found for this primitive. Each segment will push the
+    // clip mask information for itself in update_clip_task below.
     let clip_task_index = ClipTaskIndex(clip_mask_instances.len() as _);
 
-    
-    
-    
-    
+    // If we only built 1 segment, there is no point in re-running
+    // the clip chain builder. Instead, just use the clip chain
+    // instance that was built for the main primitive. This is a
+    // significant optimization for the common case.
     if segments.len() == 1 {
         let clip_mask_kind = update_brush_segment_clip_task(
             &segments[0],
@@ -1197,9 +1487,9 @@ fn update_clip_task_for_brush(
         let dirty_world_rect = frame_state.current_dirty_region().combined;
 
         for segment in segments {
-            
-            
-            
+            // Build a clip chain for the smaller segment rect. This will
+            // often manage to eliminate most/all clips, and sometimes
+            // clip the segment completely.
             frame_state.clip_store.set_active_clips_from_clip_chain(
                 &instance.vis.clip_chain,
                 prim_spatial_node_index,
@@ -1263,7 +1553,7 @@ pub fn update_clip_task(
         &mut scratch.segment_instances,
     );
 
-    
+    // First try to  render this primitive's mask using optimized brush rendering.
     instance.vis.clip_task_index = if let Some(clip_task_index) = update_clip_task_for_brush(
         instance,
         prim_origin,
@@ -1282,9 +1572,9 @@ pub fn update_clip_task(
     ) {
         clip_task_index
     } else if instance.vis.clip_chain.needs_mask {
-        
-        
-        
+        // Get a minimal device space rect, clipped to the screen that we
+        // need to allocate for the clip mask, as well as interpolated
+        // snap offsets.
         let unadjusted_device_rect = match frame_state.surfaces[pic_context.surface_index.0].get_surface_rect(
             &instance.vis.clip_chain.pic_coverage_rect,
             frame_context.spatial_tree,
@@ -1311,7 +1601,7 @@ pub fn update_clip_task(
             frame_context.fb_config,
             &mut frame_state.surface_builder,
         );
-        
+        // Set the global clip mask instance for this primitive.
         let clip_task_index = ClipTaskIndex(scratch.clip_mask_instances.len() as _);
         scratch.clip_mask_instances.push(ClipMaskKind::Mask(clip_task_id));
         instance.vis.clip_task_index = clip_task_index;
@@ -1327,8 +1617,8 @@ pub fn update_clip_task(
     true
 }
 
-
-
+/// Write out to the clip mask instances array the correct clip mask
+/// config for this segment.
 pub fn update_brush_segment_clip_task(
     segment: &BrushSegment,
     clip_chain: Option<&ClipChainInstance>,
@@ -1389,36 +1679,36 @@ fn write_brush_segment_description(
     clip_store: &ClipStore,
     data_stores: &DataStores,
 ) -> bool {
-    
-    
+    // If the brush is small, we want to skip building segments
+    // and just draw it as a single primitive with clip mask.
     if prim_local_rect.area() < MIN_BRUSH_SPLIT_AREA {
         return false;
     }
 
-    
-    
-    
-    
-    
-    
-    
+    // NOTE: The local clip rect passed to the segment builder must be the unmodified
+    //       local clip rect from the clip leaf, not the local_clip_rect from the
+    //       clip-chain instance. The clip-chain instance may have been reduced by
+    //       clips that are in the same coordinate system, but not the same spatial
+    //       node as the primitive. This can result in the clip for the segment building
+    //       being affected by scrolling clips, which we can't handle (since the segments
+    //       are not invalidated during frame building after being built).
     segment_builder.initialize(
         prim_local_rect,
         None,
         prim_local_clip_rect,
     );
 
-    
+    // Segment the primitive on all the local-space clip sources that we can.
     for i in 0 .. clip_chain.clips_range.count {
         let clip_instance = clip_store
             .get_instance_from_range(&clip_chain.clips_range, i);
         let clip_node = &data_stores.clip[clip_instance.handle];
 
-        
-        
-        
-        
-        
+        // If this clip item is positioned by another positioning node, its relative position
+        // could change during scrolling. This means that we would need to resegment. Instead
+        // of doing that, only segment with clips that have the same positioning node.
+        // TODO(mrobinson, #2858): It may make sense to include these nodes, resegmenting only
+        // when necessary while scrolling.
         if !clip_instance.flags.contains(ClipNodeFlags::SAME_SPATIAL_NODE) {
             continue;
         }
@@ -1431,19 +1721,19 @@ fn write_brush_segment_description(
                 (rect, None, mode)
             }
             ClipItemKind::BoxShadow { ref source } => {
-                
-                
-                
-                
+                // For inset box shadows, we can clip out any
+                // pixels that are inside the shadow region
+                // and are beyond the inner rect, as they can't
+                // be affected by the blur radius.
                 let inner_clip_mode = match source.clip_mode {
                     BoxShadowClipMode::Outset => None,
                     BoxShadowClipMode::Inset => Some(ClipMode::ClipOut),
                 };
 
-                
-                
-                
-                
+                // Push a region into the segment builder where the
+                // box-shadow can have an effect on the result. This
+                // ensures clip-mask tasks get allocated for these
+                // pixel regions, even if no other clips affect them.
                 segment_builder.push_mask_region(
                     source.prim_shadow_rect,
                     source.prim_shadow_rect.inflate(
@@ -1456,12 +1746,12 @@ fn write_brush_segment_description(
                 continue;
             }
             ClipItemKind::Image { .. } => {
-                
-                
-                
-                
-                
-                
+                // If we encounter an image mask, bail out from segment building.
+                // It's not possible to know which parts of the primitive are affected
+                // by the mask (without inspecting the pixels). We could do something
+                // better here in the future if it ever shows up as a performance issue
+                // (for instance, at least segment based on the bounding rect of the
+                // image mask if it's non-repeating).
                 return false;
             }
         };
@@ -1482,8 +1772,8 @@ fn build_segments_if_needed(
 ) {
     let prim_clip_chain = &instance.vis.clip_chain;
 
-    
-    
+    // Usually, the primitive rect can be found from information
+    // in the instance and primitive template.
     let prim_local_rect = data_stores.get_local_prim_rect(
         instance,
         &prim_store.pictures,
@@ -1501,8 +1791,8 @@ fn build_segments_if_needed(
         PrimitiveInstanceKind::Image { data_handle, image_instance_index, .. } => {
             let image_data = &data_stores.image[data_handle].kind;
             let image_instance = &mut prim_store.images[image_instance_index];
-            
-            
+            //Note: tiled images don't support automatic segmentation,
+            // they strictly produce one segment per visible tile instead.
             if frame_state
                 .resource_cache
                 .get_image_properties(image_data.key)
@@ -1517,11 +1807,11 @@ fn build_segments_if_needed(
         PrimitiveInstanceKind::Picture { ref mut segment_instance_index, pic_index, .. } => {
             let pic = &mut prim_store.pictures[pic_index.0];
 
-            
+            // If this picture supports segment rendering
             if pic.can_use_segments() {
-                
-                
-                
+                // If the segments have been invalidated, ensure the current
+                // index of segments is invalid. This ensures that the segment
+                // building logic below will be run.
                 if !pic.segments_are_valid {
                     *segment_instance_index = SegmentInstanceIndex::INVALID;
                     pic.segments_are_valid = true;
@@ -1543,7 +1833,7 @@ fn build_segments_if_needed(
         PrimitiveInstanceKind::LineDecoration { .. } |
         PrimitiveInstanceKind::BackdropCapture { .. } |
         PrimitiveInstanceKind::BackdropRender { .. } => {
-            
+            // These primitives don't support / need segments.
             return;
         }
     };
@@ -1573,17 +1863,17 @@ fn build_segments_if_needed(
             });
         }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // If only a single segment is produced, there is no benefit to writing
+        // a segment instance array. Instead, just use the main primitive rect
+        // written into the GPU cache.
+        // TODO(gw): This is (sortof) a bandaid - due to a limitation in the current
+        //           brush encoding, we can only support a total of up to 2^16 segments.
+        //           This should be (more than) enough for any real world case, so for
+        //           now we can handle this by skipping cases where we were generating
+        //           segments where there is no benefit. The long term / robust fix
+        //           for this is to move the segment building to be done as a more
+        //           limited nine-patch system during scene building, removing arbitrary
+        //           segmentation during frame-building (see bug #1617491).
         if segments.len() <= 1 {
             *segment_instance_index = SegmentInstanceIndex::UNUSED;
         } else {
@@ -1599,11 +1889,11 @@ fn build_segments_if_needed(
     }
 }
 
-
+// Ensures that the size of mask render tasks are within MAX_MASK_SIZE.
 fn adjust_mask_scale_for_max_size(device_rect: DeviceRect, device_pixel_scale: DevicePixelScale) -> (DeviceRect, DevicePixelScale) {
     if device_rect.width() > MAX_MASK_SIZE || device_rect.height() > MAX_MASK_SIZE {
-        
-        
+        // round_out will grow by 1 integer pixel if origin is on a
+        // fractional position, so keep that margin for error with -1:
         let scale = (MAX_MASK_SIZE - 1.0) /
             f32::max(device_rect.width(), device_rect.height());
         let new_device_pixel_scale = device_pixel_scale * Scale::new(scale);
@@ -1620,12 +1910,119 @@ fn write_prim_blocks(
     prim_rect: LayoutRect,
     clip_rect: LayoutRect,
     color: PremultipliedColorF,
+    segments: &[QuadSegment],
 ) -> GpuBufferAddress {
-    let mut writer = builder.write_blocks(3);
+    let mut writer = builder.write_blocks(3 + segments.len() * 2);
 
     writer.push_one(prim_rect);
     writer.push_one(clip_rect);
     writer.push_one(color);
 
+    for segment in segments {
+        writer.push_one(segment.rect);
+        match segment.task_id {
+            RenderTaskId::INVALID => {
+                writer.push_one([0.0; 4]);
+            }
+            task_id => {
+                writer.push_render_task(task_id);
+            }
+        }
+    }
+
     writer.finish()
+}
+
+fn add_segment(
+    x0: f32,
+    y0: f32,
+    x1: f32,
+    y1: f32,
+    create_task: bool,
+    prim_instance: &PrimitiveInstance,
+    prim_spatial_node_index: SpatialNodeIndex,
+    main_prim_address: GpuBufferAddress,
+    transform_id: TransformPaletteId,
+    aa_flags: EdgeAaSegmentMask,
+    quad_flags: QuadFlags,
+    device_pixel_scale: DevicePixelScale,
+    frame_state: &mut FrameBuildingState,
+) -> QuadSegment {
+    let task_size = DeviceSize::new(x1 - x0, y1 - y0).round().to_i32();
+    let content_origin = DevicePoint::new(x0, y0);
+
+    let rect = LayoutRect::new(
+        LayoutPoint::new(x0, y0),
+        LayoutPoint::new(x1, y1),
+    );
+
+    let task_id = if create_task {
+        let task_id = frame_state.rg_builder.add().init(RenderTask::new_dynamic(
+            task_size,
+            RenderTaskKind::new_prim(
+                prim_spatial_node_index,
+                device_pixel_scale,
+                content_origin,
+                main_prim_address,
+                transform_id,
+                aa_flags,
+                quad_flags,
+                prim_instance.vis.clip_chain.clips_range,
+            ),
+        ));
+
+        frame_state.surface_builder.add_child_render_task(
+            task_id,
+            frame_state.rg_builder,
+        );
+
+        task_id
+    } else {
+        RenderTaskId::INVALID
+    };
+
+    QuadSegment {
+        rect,
+        task_id,
+    }
+}
+
+fn add_composite_prim(
+    prim_instance_index: PrimitiveInstanceIndex,
+    rect: LayoutRect,
+    color: PremultipliedColorF,
+    quad_flags: QuadFlags,
+    frame_state: &mut FrameBuildingState,
+    targets: &[CommandBufferIndex],
+    segments: &[QuadSegment],
+) {
+    let composite_prim_address = write_prim_blocks(
+        frame_state.frame_gpu_data,
+        rect,
+        LayoutRect::max_rect(),
+        color,
+        segments,
+    );
+
+    frame_state.set_segments(
+        segments,
+        targets,
+    );
+
+    let mut composite_quad_flags = QuadFlags::IGNORE_DEVICE_PIXEL_SCALE;
+    if quad_flags.contains(QuadFlags::IS_OPAQUE) {
+        composite_quad_flags |= QuadFlags::IS_OPAQUE;
+    }
+
+    frame_state.push_cmd(
+        &PrimitiveCommand::quad(
+            prim_instance_index,
+            composite_prim_address,
+            TransformPaletteId::IDENTITY,
+            composite_quad_flags,
+            // TODO(gw): No AA on composite, unless we use it to apply 2d clips
+            EdgeAaSegmentMask::empty(),
+        ),
+        targets,
+    );
 }

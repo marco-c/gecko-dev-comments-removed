@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use api::{BorderRadius, ClipMode, ColorF, ColorU, RasterSpace};
 use api::{ImageRendering, RepeatMode, PrimitiveFlags};
@@ -18,7 +18,7 @@ use crate::scene_building::{CreateShadow, IsVisible};
 use crate::frame_builder::FrameBuildingState;
 use glyph_rasterizer::GlyphKey;
 use crate::gpu_cache::{GpuCacheAddress, GpuCacheHandle, GpuDataRequest};
-use crate::gpu_types::{BrushFlags};
+use crate::gpu_types::{BrushFlags, QuadSegment};
 use crate::intern;
 use crate::picture::PicturePrimitive;
 use crate::render_task_graph::RenderTaskId;
@@ -73,16 +73,16 @@ impl PrimitiveOpacity {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
+/// For external images, it's not possible to know the
+/// UV coords of the image (or the image data itself)
+/// until the render thread receives the frame and issues
+/// callbacks to the client application. For external
+/// images that are visible, a DeferredResolve is created
+/// that is stored in the frame. This allows the render
+/// thread to iterate this list and update any changed
+/// texture data and update the UV rect. Any filtering
+/// is handled externally for NativeTexture external
+/// images.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct DeferredResolve {
@@ -189,10 +189,10 @@ impl From<WorldRect> for RectangleKey {
     }
 }
 
-
-
-
-
+/// To create a fixed-size representation of a polygon, we use a fixed
+/// number of points. Our initialization method restricts us to values
+/// <= 32. If our constant POLYGON_CLIP_VERTEX_MAX is > 32, the Rust
+/// compiler will complain.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Copy, Debug, Clone, Hash, MallocSizeOf, PartialEq)]
@@ -207,10 +207,10 @@ impl PolygonKey {
         points_layout: &Vec<LayoutPoint>,
         fill_rule: FillRule,
     ) -> Self {
-        
-        
-        
-        
+        // We have to fill fixed-size arrays with data from a Vec.
+        // We'll do this by initializing the arrays to known-good
+        // values then overwriting those values as long as our
+        // iterator provides values.
         let mut points: [PointKey; POLYGON_CLIP_VERTEX_MAX] = [PointKey { x: 0.0, y: 0.0}; POLYGON_CLIP_VERTEX_MAX];
 
         let mut point_count: u8 = 0;
@@ -229,7 +229,7 @@ impl PolygonKey {
 
 impl Eq for PolygonKey {}
 
-
+/// A hashable SideOffset2D that can be used in primitive keys.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Debug, Clone, MallocSizeOf, PartialEq)]
@@ -273,7 +273,7 @@ impl<U> From<SideOffsets2D<f32, U>> for SideOffsetsKey {
     }
 }
 
-
+/// A hashable size for using as a key during primitive interning.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Copy, Debug, Clone, MallocSizeOf, PartialEq)]
@@ -306,7 +306,7 @@ impl<U> From<Size2D<f32, U>> for SizeKey {
     }
 }
 
-
+/// A hashable vec for using as a key during primitive interning.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Copy, Debug, Clone, MallocSizeOf, PartialEq)]
@@ -354,7 +354,7 @@ impl From<WorldVector2D> for VectorKey {
     }
 }
 
-
+/// A hashable point for using as a key during primitive interning.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Debug, Copy, Clone, MallocSizeOf, PartialEq)]
@@ -405,7 +405,7 @@ impl From<WorldPoint> for PointKey {
     }
 }
 
-
+/// A hashable float for using as a key during primitive interning.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Debug, Copy, Clone, MallocSizeOf, PartialEq)]
@@ -467,8 +467,8 @@ impl PrimitiveKey {
 
 impl intern::InternDebug for PrimitiveKey {}
 
-
-
+/// The shared information for a given primitive. This is interned and retained
+/// both across frames and display lists, by comparing the matching PrimitiveKey.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(MallocSizeOf)]
@@ -480,7 +480,7 @@ pub enum PrimitiveTemplateKind {
 }
 
 impl PrimitiveTemplateKind {
-    
+    /// Write any GPU blocks for the primitive template to the given request object.
     pub fn write_prim_gpu_blocks(
         &self,
         request: &mut GpuDataRequest,
@@ -488,7 +488,7 @@ impl PrimitiveTemplateKind {
     ) {
         match *self {
             PrimitiveTemplateKind::Clear => {
-                
+                // Opaque black with operator dest out
                 request.push(PremultipliedColorF::BLACK);
             }
             PrimitiveTemplateKind::Rectangle { ref color, .. } => {
@@ -498,9 +498,9 @@ impl PrimitiveTemplateKind {
     }
 }
 
-
-
-
+/// Construct the primitive template data from a primitive key. This
+/// is invoked when a primitive key is created and the interner
+/// doesn't currently contain a primitive with this key.
 impl From<PrimitiveKeyKind> for PrimitiveTemplateKind {
     fn from(kind: PrimitiveKeyKind) -> Self {
         match kind {
@@ -525,16 +525,16 @@ pub struct PrimTemplateCommonData {
     pub may_need_repetition: bool,
     pub prim_rect: LayoutRect,
     pub opacity: PrimitiveOpacity,
-    
-    
-    
-    
+    /// The GPU cache handle for a primitive template. Since this structure
+    /// is retained across display lists by interning, this GPU cache handle
+    /// also remains valid, which reduces the number of updates to the GPU
+    /// cache when a new display list is processed.
     pub gpu_cache_handle: GpuCacheHandle,
-    
-    
-    
-    
-    
+    /// Specifies the edges that are *allowed* to have anti-aliasing.
+    /// In other words EdgeAaSegmentFlags::all() does not necessarily mean all edges will
+    /// be anti-aliased, only that they could be.
+    ///
+    /// Use this to force disable anti-alasing on edges of the primitives.
     pub edge_aa_mask: EdgeAaSegmentMask,
 }
 
@@ -590,10 +590,10 @@ impl From<PrimitiveKey> for PrimitiveTemplate {
 }
 
 impl PrimitiveTemplate {
-    
-    
-    
-    
+    /// Update the GPU cache for a given primitive template. This may be called multiple
+    /// times per frame, by each primitive reference that refers to this interned
+    /// template. The initial request call to the GPU cache ensures that work is only
+    /// done if the cache entry is invalid (due to first use or eviction).
     pub fn update(
         &mut self,
         frame_state: &mut FrameBuildingState,
@@ -677,8 +677,8 @@ pub struct VisibleGradientTile {
     pub local_clip_rect: LayoutRect,
 }
 
-
-
+/// Information about how to cache a border segment,
+/// along with the current render task cache entry.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Debug, MallocSizeOf)]
@@ -687,15 +687,15 @@ pub struct BorderSegmentInfo {
     pub cache_key: BorderSegmentCacheKey,
 }
 
-
+/// Represents the visibility state of a segment (wrt clip masks).
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[derive(Debug, Clone)]
 pub enum ClipMaskKind {
-    
+    /// The segment has a clip mask, specified by the render task.
     Mask(RenderTaskId),
-    
+    /// The segment has no clip mask.
     None,
-    
+    /// The segment is made invisible / clipped completely.
     Clipped,
 }
 
@@ -775,10 +775,10 @@ pub struct ClipData {
 
 impl ClipData {
     pub fn rounded_rect(size: LayoutSize, radii: &BorderRadius, mode: ClipMode) -> ClipData {
-        
-        
-        
-        
+        // TODO(gw): For simplicity, keep most of the clip GPU structs the
+        //           same as they were, even though the origin is now always
+        //           zero, since they are in the clip's local space. In future,
+        //           we could reduce the GPU cache size of ClipData.
         let rect = LayoutRect::from_size(size);
 
         ClipData {
@@ -839,10 +839,10 @@ impl ClipData {
     }
 
     pub fn uniform(size: LayoutSize, radius: f32, mode: ClipMode) -> ClipData {
-        
-        
-        
-        
+        // TODO(gw): For simplicity, keep most of the clip GPU structs the
+        //           same as they were, even though the origin is now always
+        //           zero, since they are in the clip's local space. In future,
+        //           we could reduce the GPU cache size of ClipData.
         let rect = LayoutRect::from_size(size);
 
         ClipData {
@@ -889,8 +889,8 @@ impl ClipData {
     }
 }
 
-
-
+/// A hashable descriptor for nine-patches, used by image and
+/// gradient borders.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, MallocSizeOf)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -905,13 +905,13 @@ pub struct NinePatchDescriptor {
 }
 
 impl IsVisible for PrimitiveKeyKind {
-    
-    
-    
-    
-    
-    
-    
+    // Return true if the primary primitive is visible.
+    // Used to trivially reject non-visible primitives.
+    // TODO(gw): Currently, primitives other than those
+    //           listed here are handled before the
+    //           add_primitive() call. In the future
+    //           we should move the logic for all other
+    //           primitive types to use this.
     fn is_visible(&self) -> bool {
         match *self {
             PrimitiveKeyKind::Clear => {
@@ -928,9 +928,9 @@ impl IsVisible for PrimitiveKeyKind {
 }
 
 impl CreateShadow for PrimitiveKeyKind {
-    
-    
-    
+    // Create a clone of this PrimitiveContainer, applying whatever
+    // changes are necessary to the primitive to support rendering
+    // it as part of the supplied shadow.
     fn create_shadow(
         &self,
         shadow: &Shadow,
@@ -953,93 +953,93 @@ impl CreateShadow for PrimitiveKeyKind {
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub enum PrimitiveInstanceKind {
-    
+    /// Direct reference to a Picture
     Picture {
-        
+        /// Handle to the common interned data for this primitive.
         data_handle: PictureDataHandle,
         pic_index: PictureIndex,
         segment_instance_index: SegmentInstanceIndex,
     },
-    
+    /// A run of glyphs, with associated font parameters.
     TextRun {
-        
+        /// Handle to the common interned data for this primitive.
         data_handle: TextRunDataHandle,
-        
+        /// Index to the per instance scratch data for this primitive.
         run_index: TextRunIndex,
     },
-    
-    
+    /// A line decoration. cache_handle refers to a cached render
+    /// task handle, if this line decoration is not a simple solid.
     LineDecoration {
-        
+        /// Handle to the common interned data for this primitive.
         data_handle: LineDecorationDataHandle,
-        
-        
-        
-        
-        
-        
-        
-        
+        // TODO(gw): For now, we need to store some information in
+        //           the primitive instance that is created during
+        //           prepare_prims and read during the batching pass.
+        //           Once we unify the prepare_prims and batching to
+        //           occur at the same time, we can remove most of
+        //           the things we store here in the instance, and
+        //           use them directly. This will remove cache_handle,
+        //           but also the opacity, clip_task_id etc below.
         render_task: Option<RenderTaskId>,
     },
     NormalBorder {
-        
+        /// Handle to the common interned data for this primitive.
         data_handle: NormalBorderDataHandle,
         render_task_ids: storage::Range<RenderTaskId>,
     },
     ImageBorder {
-        
+        /// Handle to the common interned data for this primitive.
         data_handle: ImageBorderDataHandle,
     },
     Rectangle {
-        
+        /// Handle to the common interned data for this primitive.
         data_handle: PrimitiveDataHandle,
         segment_instance_index: SegmentInstanceIndex,
         color_binding_index: ColorBindingIndex,
         use_legacy_path: bool,
     },
     YuvImage {
-        
+        /// Handle to the common interned data for this primitive.
         data_handle: YuvImageDataHandle,
         segment_instance_index: SegmentInstanceIndex,
         is_compositor_surface: bool,
     },
     Image {
-        
+        /// Handle to the common interned data for this primitive.
         data_handle: ImageDataHandle,
         image_instance_index: ImageInstanceIndex,
         is_compositor_surface: bool,
     },
-    
-    
+    /// Always rendered directly into the picture. This tends to be
+    /// faster with SWGL.
     LinearGradient {
-        
+        /// Handle to the common interned data for this primitive.
         data_handle: LinearGradientDataHandle,
         visible_tiles_range: GradientTileRange,
     },
-    
-    
+    /// Always rendered via a cached render task. Usually faster with
+    /// a GPU.
     CachedLinearGradient {
-        
+        /// Handle to the common interned data for this primitive.
         data_handle: LinearGradientDataHandle,
         visible_tiles_range: GradientTileRange,
     },
     RadialGradient {
-        
+        /// Handle to the common interned data for this primitive.
         data_handle: RadialGradientDataHandle,
         visible_tiles_range: GradientTileRange,
     },
     ConicGradient {
-        
+        /// Handle to the common interned data for this primitive.
         data_handle: ConicGradientDataHandle,
         visible_tiles_range: GradientTileRange,
     },
-    
+    /// Clear out a rect, used for special effects.
     Clear {
-        
+        /// Handle to the common interned data for this primitive.
         data_handle: PrimitiveDataHandle,
     },
-    
+    /// Render a portion of a specified backdrop.
     BackdropCapture {
         data_handle: BackdropCaptureDataHandle,
     },
@@ -1066,18 +1066,18 @@ pub struct PrimitiveInstanceIndex(pub u32);
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PrimitiveInstance {
-    
-    
-    
-    
+    /// Identifies the kind of primitive this
+    /// instance is, and references to where
+    /// the relevant information for the primitive
+    /// can be found.
     pub kind: PrimitiveInstanceKind,
 
-    
+    /// All information and state related to clip(s) for this primitive
     pub clip_leaf_id: ClipLeafId,
 
-    
-    
-    
+    /// Information related to the current visibility state of this
+    /// primitive.
+    // TODO(gw): Currently built each frame, but can be retained.
     pub vis: PrimitiveVisibility,
 }
 
@@ -1093,7 +1093,7 @@ impl PrimitiveInstance {
         }
     }
 
-    
+    // Reset any pre-frame state for this primitive.
     pub fn reset(&mut self) {
         self.vis.reset();
     }
@@ -1174,44 +1174,47 @@ pub type GradientTileStorage = storage::Storage<VisibleGradientTile>;
 pub type GradientTileRange = storage::Range<VisibleGradientTile>;
 pub type LinearGradientStorage = storage::Storage<LinearGradientPrimitive>;
 
-
-
-
-
+/// Contains various vecs of data that is used only during frame building,
+/// where we want to recycle the memory each new display list, to avoid constantly
+/// re-allocating and moving memory around. Written during primitive preparation,
+/// and read during batching.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PrimitiveScratchBuffer {
-    
-    
+    /// Contains a list of clip mask instance parameters
+    /// per segment generated.
     pub clip_mask_instances: Vec<ClipMaskKind>,
 
-    
-    
+    /// List of glyphs keys that are allocated by each
+    /// text run instance.
     pub glyph_keys: GlyphKeyStorage,
 
-    
-    
+    /// List of render task handles for border segment instances
+    /// that have been added this frame.
     pub border_cache_handles: BorderHandleStorage,
 
-    
+    /// A list of brush segments that have been built for this scene.
     pub segments: SegmentStorage,
 
-    
-    
-    
+    /// A list of segment ranges and GPU cache handles for prim instances
+    /// that have opted into segment building. In future, this should be
+    /// removed in favor of segment building during primitive interning.
     pub segment_instances: SegmentInstanceStorage,
 
-    
-    
+    /// A list of visible tiles that tiled gradients use to store
+    /// per-tile information.
     pub gradient_tiles: GradientTileStorage,
 
-    
+    /// List of debug display items for rendering.
     pub debug_items: Vec<DebugItem>,
 
-    
+    /// List of current debug messages to log on screen
     messages: Vec<DebugMessage>,
 
-    
+    /// Set of sub-graphs that are required, determined during visibility pass
     pub required_sub_graphs: FastHashSet<PictureIndex>,
+
+    /// Temporary buffer for building segments in to during prepare pass
+    pub quad_segments: Vec<QuadSegment>,
 }
 
 impl Default for PrimitiveScratchBuffer {
@@ -1226,6 +1229,7 @@ impl Default for PrimitiveScratchBuffer {
             debug_items: Vec::new(),
             messages: Vec::new(),
             required_sub_graphs: FastHashSet::default(),
+            quad_segments: Vec::new(),
         }
     }
 }
@@ -1239,21 +1243,23 @@ impl PrimitiveScratchBuffer {
         self.segment_instances.recycle(recycler);
         self.gradient_tiles.recycle(recycler);
         recycler.recycle_vec(&mut self.debug_items);
+        recycler.recycle_vec(&mut self.quad_segments);
     }
 
     pub fn begin_frame(&mut self) {
-        
-        
-        
+        // Clear the clip mask tasks for the beginning of the frame. Append
+        // a single kind representing no clip mask, at the ClipTaskIndex::INVALID
+        // location.
         self.clip_mask_instances.clear();
         self.clip_mask_instances.push(ClipMaskKind::None);
+        self.quad_segments.clear();
 
         self.border_cache_handles.clear();
 
-        
-        
-        
-        
+        // TODO(gw): As in the previous code, the gradient tiles store GPU cache
+        //           handles that are cleared (and thus invalidated + re-uploaded)
+        //           every frame. This maintains the existing behavior, but we
+        //           should fix this in the future to retain handles.
         self.gradient_tiles.clear();
 
         self.required_sub_graphs.clear();
@@ -1374,12 +1380,12 @@ pub struct PrimitiveStore {
     pub text_runs: TextRunStorage,
     pub linear_gradients: LinearGradientStorage,
 
-    
-    
-    
+    /// A list of image instances. These are stored separately as
+    /// storing them inline in the instance makes the structure bigger
+    /// for other types.
     pub images: ImageInstanceStorage,
 
-    
+    /// animated color bindings for this primitive.
     pub color_bindings: ColorBindingStorage,
 }
 
@@ -1412,10 +1418,10 @@ impl PrimitiveStore {
     }
 }
 
-
-
+/// Trait for primitives that are directly internable.
+/// see SceneBuilder::add_primitive<P>
 pub trait InternablePrimitive: intern::Internable<InternData = ()> + Sized {
-    
+    /// Build a new key from self with `info`.
     fn into_key(
         self,
         info: &LayoutPrimitiveInfo,
@@ -1434,12 +1440,12 @@ pub trait InternablePrimitive: intern::Internable<InternData = ()> + Sized {
 #[cfg(target_pointer_width = "64")]
 fn test_struct_sizes() {
     use std::mem;
-    
-    
-    
-    
-    
-    
+    // The sizes of these structures are critical for performance on a number of
+    // talos stress tests. If you get a failure here on CI, there's two possibilities:
+    // (a) You made a structure smaller than it currently is. Great work! Update the
+    //     test expectations and move on.
+    // (b) You made a structure larger. This is not necessarily a problem, but should only
+    //     be done with care, and after checking if talos performance regresses badly.
     assert_eq!(mem::size_of::<PrimitiveInstance>(), 88, "PrimitiveInstance size changed");
     assert_eq!(mem::size_of::<PrimitiveInstanceKind>(), 24, "PrimitiveInstanceKind size changed");
     assert_eq!(mem::size_of::<PrimitiveTemplate>(), 56, "PrimitiveTemplate size changed");
