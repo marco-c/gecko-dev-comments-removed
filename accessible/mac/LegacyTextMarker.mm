@@ -6,6 +6,7 @@
 
 
 #import "LegacyTextMarker.h"
+#import "MacUtils.h"
 
 #include "DocAccessible.h"
 #include "DocAccessibleParent.h"

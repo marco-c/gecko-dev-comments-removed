@@ -5,6 +5,9 @@
 
 
 
+#ifndef _MozAccessible_H_
+#define _MozAccessible_H_
+
 #include "AccessibleWrap.h"
 #include "RemoteAccessible.h"
 
@@ -282,3 +285,5 @@ enum CheckedState {
 - (BOOL)isExpired;
 
 @end
+
+#endif
