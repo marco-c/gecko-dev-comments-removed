@@ -604,7 +604,7 @@ void nsCaret::ResetBlinking() {
   }
 
   auto blinkRate =
-      uint32_t(LookAndFeel::GetInt(IntID::CaretBlinkTime, kDefaultBlinkRate));
+      LookAndFeel::GetInt(IntID::CaretBlinkTime, kDefaultBlinkRate);
 
   if (blinkRate > 0) {
     

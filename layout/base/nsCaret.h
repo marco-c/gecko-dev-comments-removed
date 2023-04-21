@@ -254,7 +254,7 @@ class nsCaret final : public nsISelectionListener {
 
 
 
-  uint32_t mBlinkRate;
+  int32_t mBlinkRate;
   
 
 
