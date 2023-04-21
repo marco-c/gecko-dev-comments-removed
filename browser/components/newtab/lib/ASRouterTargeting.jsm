@@ -947,42 +947,46 @@ const ASRouterTargeting = {
 
 
   async getEnvironmentSnapshot(target = ASRouterTargeting.Environment) {
-    async function resolveRecursive(object) {
-      
-      const promises = Object.keys(object).map(async key => {
+    async function resolve(object) {
+      if (typeof object === "object" && object !== null) {
+        if (Array.isArray(object)) {
+          return Promise.all(object.map(async item => resolve(await item)));
+        }
+
+        if (object instanceof Date) {
+          return object;
+        }
+
         
-        if (Services.startup.shuttingDown) {
-          throw new Error(
-            "shutting down, so not querying targeting environment"
-          );
+        const promises = Object.keys(object).map(async key => {
+          
+          if (Services.startup.shuttingDown) {
+            throw new Error(
+              "shutting down, so not querying targeting environment"
+            );
+          }
+
+          const value = await resolve(await object[key]);
+
+          return [key, value];
+        });
+
+        const resolved = {};
+        for (const result of await Promise.allSettled(promises)) {
+          
+          if (result.status === "fulfilled") {
+            const [key, value] = result.value;
+            resolved[key] = value;
+          }
         }
 
-        let value = await object[key];
-
-        if (
-          typeof value === "object" &&
-          value !== null &&
-          !(value instanceof Date)
-        ) {
-          value = await resolveRecursive(value);
-        }
-
-        return [key, value];
-      });
-
-      const resolved = {};
-      for (const result of await Promise.allSettled(promises)) {
-        
-        if (result.status === "fulfilled") {
-          const [key, value] = result.value;
-          resolved[key] = value;
-        }
+        return resolved;
       }
 
-      return resolved;
+      return object;
     }
 
-    const environment = await resolveRecursive(target);
+    const environment = await resolve(target);
 
     
     const snapshot = { environment, version: 1 };
