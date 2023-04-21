@@ -2469,7 +2469,15 @@ void gfxFont::Draw(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
 
   
   
-  fontParams.fontExtents = GetFontEntry()->GetFontExtents(mFUnitsConvFactor);
+  if (mFUnitsConvFactor > 0.0) {
+    fontParams.fontExtents = GetFontEntry()->GetFontExtents(mFUnitsConvFactor);
+  } else {
+    
+    
+    
+    auto size = GetAdjustedSize();
+    fontParams.fontExtents = Rect(-2 * size, -2 * size, 5 * size, 5 * size);
+  }
   if (fontParams.obliqueSkew != 0.0f) {
     gfx::Point p(fontParams.fontExtents.x, fontParams.fontExtents.y);
     gfx::Matrix skew(1, 0, fontParams.obliqueSkew, 1, 0, 0);
