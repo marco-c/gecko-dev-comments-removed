@@ -33,6 +33,7 @@ add_task(async function() {
     findElement,
     getSelector,
     findElementWithSelector,
+    createLocation,
   });
   
   
