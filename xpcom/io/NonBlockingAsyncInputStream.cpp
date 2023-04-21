@@ -286,14 +286,11 @@ NonBlockingAsyncInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
   {
     MutexAutoLock lock(mLock);
 
-    if (aCallback && (mWaitClosureOnly.isSome() || mAsyncWaitCallback)) {
-      return NS_ERROR_FAILURE;
-    }
+    mWaitClosureOnly.reset();
+    mAsyncWaitCallback = nullptr;
 
     if (!aCallback) {
       
-      mWaitClosureOnly.reset();
-      mAsyncWaitCallback = nullptr;
       return NS_OK;
     }
 
