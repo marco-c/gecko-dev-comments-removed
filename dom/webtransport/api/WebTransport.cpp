@@ -12,14 +12,19 @@
 #include "nsIURL.h"
 #include "nsIWebTransportStream.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PWebTransport.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/ReadableStreamDefaultController.h"
+#include "mozilla/dom/RemoteWorkerChild.h"
 #include "mozilla/dom/WebTransportDatagramDuplexStream.h"
 #include "mozilla/dom/WebTransportError.h"
 #include "mozilla/dom/WebTransportLog.h"
+#include "mozilla/dom/WindowGlobalChild.h"
+#include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WritableStream.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/Endpoint.h"
@@ -164,6 +169,9 @@ already_AddRefed<WebTransport> WebTransport::Constructor(
   if (aError.Failed()) {
     return nullptr;
   }
+
+  
+  result->NotifyToWindow(true);
 
   
   return result.forget();
@@ -770,6 +778,75 @@ void WebTransport::Cleanup(WebTransportError* aError,
   
   mIncomingBidirectionalAlgorithm = nullptr;
   mIncomingUnidirectionalAlgorithm = nullptr;
+
+  
+  NotifyToWindow(false);
 }
+
+void WebTransport::NotifyBFCacheOnMainThread(nsPIDOMWindowInner* aInner,
+                                             bool aCreated) {
+  AssertIsOnMainThread();
+  if (!aInner) {
+    return;
+  }
+  if (aCreated) {
+    aInner->RemoveFromBFCacheSync();
+  }
+
+  uint32_t count = aInner->UpdateWebTransportCount(aCreated);
+  
+  
+  if (WindowGlobalChild* child = aInner->GetWindowGlobalChild()) {
+    if (aCreated && count == 1) {
+      
+      child->BlockBFCacheFor(BFCacheStatus::ACTIVE_WEBTRANSPORT);
+    } else if (count == 0) {
+      child->UnblockBFCacheFor(BFCacheStatus::ACTIVE_WEBTRANSPORT);
+    }
+  }
+}
+
+class BFCacheNotifyWTRunnable final : public WorkerProxyToMainThreadRunnable {
+ public:
+  explicit BFCacheNotifyWTRunnable(bool aCreated) : mCreated(aCreated) {}
+
+  void RunOnMainThread(WorkerPrivate* aWorkerPrivate) override {
+    MOZ_ASSERT(aWorkerPrivate);
+    AssertIsOnMainThread();
+    if (aWorkerPrivate->IsDedicatedWorker()) {
+      WebTransport::NotifyBFCacheOnMainThread(
+          aWorkerPrivate->GetAncestorWindow(), mCreated);
+      return;
+    }
+    if (aWorkerPrivate->IsSharedWorker()) {
+      aWorkerPrivate->GetRemoteWorkerController()->NotifyWebTransport(mCreated);
+      return;
+    }
+    MOZ_ASSERT_UNREACHABLE("Unexpected worker type");
+  }
+
+  void RunBackOnWorkerThreadForCleanup(WorkerPrivate* aWorkerPrivate) override {
+    MOZ_ASSERT(aWorkerPrivate);
+    aWorkerPrivate->AssertIsOnWorkerThread();
+  }
+
+ private:
+  bool mCreated;
+};
+
+void WebTransport::NotifyToWindow(bool aCreated) const {
+  if (NS_IsMainThread()) {
+    NotifyBFCacheOnMainThread(GetParentObject()->AsInnerWindow(), aCreated);
+    return;
+  }
+
+  WorkerPrivate* wp = GetCurrentThreadWorkerPrivate();
+  if (wp->IsDedicatedWorker() || wp->IsSharedWorker()) {
+    RefPtr<BFCacheNotifyWTRunnable> runnable =
+        new BFCacheNotifyWTRunnable(aCreated);
+
+    runnable->Dispatch(wp);
+  }
+};
 
 }  
