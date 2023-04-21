@@ -3,11 +3,9 @@
 
 let enabledOnStartup = false;
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "pktApi",
-  "chrome://pocket/content/pktApi.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  pktApi: "chrome://pocket/content/pktApi.sys.mjs",
+});
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"

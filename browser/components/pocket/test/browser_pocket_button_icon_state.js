@@ -2,11 +2,9 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "SaveToPocket",
-  "chrome://pocket/content/SaveToPocket.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  SaveToPocket: "chrome://pocket/content/SaveToPocket.sys.mjs",
+});
 
 function test_runner(test) {
   let testTask = async () => {

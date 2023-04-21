@@ -1,10 +1,6 @@
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["Pocket"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
@@ -14,7 +10,7 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/CustomizableUI.jsm"
 );
 
-var Pocket = {
+export var Pocket = {
   get site() {
     return Services.prefs.getCharPref("extensions.pocket.site");
   },
@@ -27,8 +23,8 @@ var Pocket = {
     let titleToSave = Pocket._titleToSave;
     Pocket._urlToSave = null;
     Pocket._titleToSave = null;
-    
-    
+    // ViewShowing fires immediately before it creates the contents,
+    // in lieu of an AfterViewShowing event, just spin the event loop.
     window.setTimeout(function() {
       if (urlToSave) {
         window.pktUI.tryToSaveUrl(urlToSave, titleToSave);
@@ -41,8 +37,8 @@ var Pocket = {
   _urlToSave: null,
   _titleToSave: null,
   savePage(browser, url, title) {
-    
-    
+    // We want to target the top browser which has the Pocket panel UI,
+    // which might not be the browser saving the article.
     const ownerGlobal = browser?.ownerGlobal?.top;
     const ownerDocument = ownerGlobal?.document;
 
