@@ -572,6 +572,11 @@ class Accessible {
 
   
 
+
+  Accessible* AnchorAt(uint32_t aAnchorIndex);
+
+  
+
   virtual bool IsRemote() const = 0;
   RemoteAccessible* AsRemote();
 

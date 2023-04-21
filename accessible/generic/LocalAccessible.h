@@ -518,11 +518,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual LocalAccessible* AnchorAt(uint32_t aAnchorIndex);
-
-  
-
-
   virtual already_AddRefed<nsIURI> AnchorURIAt(uint32_t aAnchorIndex) const;
 
   
