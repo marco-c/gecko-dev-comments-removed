@@ -927,14 +927,6 @@ var gIdentityHandler = {
       });
     }
 
-    
-    let baseURL = Services.urlFormatter.formatURLPref("app.support.baseURL");
-
-    this._identityPopupCustomRootLearnMore.setAttribute(
-      "href",
-      baseURL + "enterprise-roots"
-    );
-
     let customRoot = false;
 
     
