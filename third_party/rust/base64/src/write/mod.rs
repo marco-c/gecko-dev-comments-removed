@@ -1,11 +1,8 @@
 
 mod encoder;
 mod encoder_string_writer;
-
-pub use self::{
-    encoder::EncoderWriter,
-    encoder_string_writer::{EncoderStringWriter, StrConsumer},
-};
+pub use self::encoder::EncoderWriter;
+pub use self::encoder_string_writer::EncoderStringWriter;
 
 #[cfg(test)]
 mod encoder_tests;

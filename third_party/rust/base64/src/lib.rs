@@ -57,68 +57,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![cfg_attr(feature = "cargo-clippy", allow(clippy::cast_lossless))]
 #![deny(
     missing_docs,
@@ -131,9 +69,6 @@
     warnings
 )]
 #![forbid(unsafe_code)]
-
-
-#![allow(clippy::single_component_path_imports)]
 #![cfg_attr(not(any(feature = "std", test)), no_std)]
 
 #[cfg(all(feature = "alloc", not(any(feature = "std", test))))]
@@ -141,39 +76,170 @@ extern crate alloc;
 #[cfg(any(feature = "std", test))]
 extern crate std as alloc;
 
-
-#[cfg(test)]
-use rstest_reuse;
-
 mod chunked_encoder;
 pub mod display;
 #[cfg(any(feature = "std", test))]
 pub mod read;
+mod tables;
 #[cfg(any(feature = "std", test))]
 pub mod write;
 
-pub mod engine;
-pub use engine::Engine;
-
-pub mod alphabet;
-
 mod encode;
-#[allow(deprecated)]
+pub use crate::encode::encode_config_slice;
 #[cfg(any(feature = "alloc", feature = "std", test))]
-pub use crate::encode::{encode, encode_engine, encode_engine_string};
-#[allow(deprecated)]
-pub use crate::encode::{encode_engine_slice, encoded_len, EncodeSliceError};
+pub use crate::encode::{encode, encode_config, encode_config_buf};
 
 mod decode;
-#[allow(deprecated)]
 #[cfg(any(feature = "alloc", feature = "std", test))]
-pub use crate::decode::{decode, decode_engine, decode_engine_vec};
-#[allow(deprecated)]
-pub use crate::decode::{decode_engine_slice, decoded_len_estimate, DecodeError, DecodeSliceError};
-
-pub mod prelude;
+pub use crate::decode::{decode, decode_config, decode_config_buf};
+pub use crate::decode::{decode_config_slice, DecodeError};
 
 #[cfg(test)]
 mod tests;
+
+
+#[derive(Clone, Copy, Debug)]
+pub enum CharacterSet {
+    
+    
+    
+    Standard,
+    
+    
+    
+    UrlSafe,
+    
+    
+    
+    Crypt,
+    
+    Bcrypt,
+    
+    
+    
+    ImapMutf7,
+    
+    
+    
+    BinHex,
+}
+
+impl CharacterSet {
+    fn encode_table(self) -> &'static [u8; 64] {
+        match self {
+            CharacterSet::Standard => tables::STANDARD_ENCODE,
+            CharacterSet::UrlSafe => tables::URL_SAFE_ENCODE,
+            CharacterSet::Crypt => tables::CRYPT_ENCODE,
+            CharacterSet::Bcrypt => tables::BCRYPT_ENCODE,
+            CharacterSet::ImapMutf7 => tables::IMAP_MUTF7_ENCODE,
+            CharacterSet::BinHex => tables::BINHEX_ENCODE,
+        }
+    }
+
+    fn decode_table(self) -> &'static [u8; 256] {
+        match self {
+            CharacterSet::Standard => tables::STANDARD_DECODE,
+            CharacterSet::UrlSafe => tables::URL_SAFE_DECODE,
+            CharacterSet::Crypt => tables::CRYPT_DECODE,
+            CharacterSet::Bcrypt => tables::BCRYPT_DECODE,
+            CharacterSet::ImapMutf7 => tables::IMAP_MUTF7_DECODE,
+            CharacterSet::BinHex => tables::BINHEX_DECODE,
+        }
+    }
+}
+
+
+#[derive(Clone, Copy, Debug)]
+pub struct Config {
+    
+    char_set: CharacterSet,
+    
+    pad: bool,
+    
+    decode_allow_trailing_bits: bool,
+}
+
+impl Config {
+    
+    pub const fn new(char_set: CharacterSet, pad: bool) -> Config {
+        Config {
+            char_set,
+            pad,
+            decode_allow_trailing_bits: false,
+        }
+    }
+
+    
+    pub const fn pad(self, pad: bool) -> Config {
+        Config { pad, ..self }
+    }
+
+    
+    
+    
+    
+    pub const fn decode_allow_trailing_bits(self, allow: bool) -> Config {
+        Config {
+            decode_allow_trailing_bits: allow,
+            ..self
+        }
+    }
+}
+
+
+pub const STANDARD: Config = Config {
+    char_set: CharacterSet::Standard,
+    pad: true,
+    decode_allow_trailing_bits: false,
+};
+
+
+pub const STANDARD_NO_PAD: Config = Config {
+    char_set: CharacterSet::Standard,
+    pad: false,
+    decode_allow_trailing_bits: false,
+};
+
+
+pub const URL_SAFE: Config = Config {
+    char_set: CharacterSet::UrlSafe,
+    pad: true,
+    decode_allow_trailing_bits: false,
+};
+
+
+pub const URL_SAFE_NO_PAD: Config = Config {
+    char_set: CharacterSet::UrlSafe,
+    pad: false,
+    decode_allow_trailing_bits: false,
+};
+
+
+pub const CRYPT: Config = Config {
+    char_set: CharacterSet::Crypt,
+    pad: false,
+    decode_allow_trailing_bits: false,
+};
+
+
+pub const BCRYPT: Config = Config {
+    char_set: CharacterSet::Bcrypt,
+    pad: false,
+    decode_allow_trailing_bits: false,
+};
+
+
+pub const IMAP_MUTF7: Config = Config {
+    char_set: CharacterSet::ImapMutf7,
+    pad: false,
+    decode_allow_trailing_bits: false,
+};
+
+
+pub const BINHEX: Config = Config {
+    char_set: CharacterSet::BinHex,
+    pad: false,
+    decode_allow_trailing_bits: false,
+};
 
 const PAD_BYTE: u8 = b'=';

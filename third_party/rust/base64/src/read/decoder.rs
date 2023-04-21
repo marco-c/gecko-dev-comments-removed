@@ -1,4 +1,5 @@
-use crate::{engine::Engine, DecodeError};
+use crate::{decode_config_slice, Config, DecodeError};
+use std::io::Read;
 use std::{cmp, fmt, io};
 
 
@@ -28,12 +29,10 @@ const DECODED_CHUNK_SIZE: usize = 3;
 
 
 
-
-
-pub struct DecoderReader<'e, E: Engine, R: io::Read> {
-    engine: &'e E,
+pub struct DecoderReader<'a, R: 'a + io::Read> {
+    config: Config,
     
-    inner: R,
+    r: &'a mut R,
 
     
     b64_buffer: [u8; BUF_SIZE],
@@ -55,9 +54,10 @@ pub struct DecoderReader<'e, E: Engine, R: io::Read> {
     total_b64_decoded: usize,
 }
 
-impl<'e, E: Engine, R: io::Read> fmt::Debug for DecoderReader<'e, E, R> {
+impl<'a, R: io::Read> fmt::Debug for DecoderReader<'a, R> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("DecoderReader")
+            .field("config", &self.config)
             .field("b64_offset", &self.b64_offset)
             .field("b64_len", &self.b64_len)
             .field("decoded_buffer", &self.decoded_buffer)
@@ -68,12 +68,12 @@ impl<'e, E: Engine, R: io::Read> fmt::Debug for DecoderReader<'e, E, R> {
     }
 }
 
-impl<'e, E: Engine, R: io::Read> DecoderReader<'e, E, R> {
+impl<'a, R: io::Read> DecoderReader<'a, R> {
     
-    pub fn new(reader: R, engine: &'e E) -> Self {
+    pub fn new(r: &'a mut R, config: Config) -> Self {
         DecoderReader {
-            engine,
-            inner: reader,
+            config,
+            r,
             b64_buffer: [0; BUF_SIZE],
             b64_offset: 0,
             b64_len: 0,
@@ -89,7 +89,7 @@ impl<'e, E: Engine, R: io::Read> DecoderReader<'e, E, R> {
     
     fn flush_decoded_buf(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         debug_assert!(self.decoded_len > 0);
-        debug_assert!(!buf.is_empty());
+        debug_assert!(buf.len() > 0);
 
         let copy_len = cmp::min(self.decoded_len, buf.len());
         debug_assert!(copy_len > 0);
@@ -114,13 +114,13 @@ impl<'e, E: Engine, R: io::Read> DecoderReader<'e, E, R> {
         debug_assert!(self.b64_offset + self.b64_len < BUF_SIZE);
 
         let read = self
-            .inner
+            .r
             .read(&mut self.b64_buffer[self.b64_offset + self.b64_len..])?;
         self.b64_len += read;
 
         debug_assert!(self.b64_offset + self.b64_len <= BUF_SIZE);
 
-        Ok(read)
+        return Ok(read);
     }
 
     
@@ -130,26 +130,23 @@ impl<'e, E: Engine, R: io::Read> DecoderReader<'e, E, R> {
     fn decode_to_buf(&mut self, num_bytes: usize, buf: &mut [u8]) -> io::Result<usize> {
         debug_assert!(self.b64_len >= num_bytes);
         debug_assert!(self.b64_offset + self.b64_len <= BUF_SIZE);
-        debug_assert!(!buf.is_empty());
+        debug_assert!(buf.len() > 0);
 
-        let decoded = self
-            .engine
-            .internal_decode(
-                &self.b64_buffer[self.b64_offset..self.b64_offset + num_bytes],
-                buf,
-                self.engine.internal_decoded_len_estimate(num_bytes),
-            )
-            .map_err(|e| match e {
-                DecodeError::InvalidByte(offset, byte) => {
-                    DecodeError::InvalidByte(self.total_b64_decoded + offset, byte)
-                }
-                DecodeError::InvalidLength => DecodeError::InvalidLength,
-                DecodeError::InvalidLastSymbol(offset, byte) => {
-                    DecodeError::InvalidLastSymbol(self.total_b64_decoded + offset, byte)
-                }
-                DecodeError::InvalidPadding => DecodeError::InvalidPadding,
-            })
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        let decoded = decode_config_slice(
+            &self.b64_buffer[self.b64_offset..self.b64_offset + num_bytes],
+            self.config,
+            &mut buf[..],
+        )
+        .map_err(|e| match e {
+            DecodeError::InvalidByte(offset, byte) => {
+                DecodeError::InvalidByte(self.total_b64_decoded + offset, byte)
+            }
+            DecodeError::InvalidLength => DecodeError::InvalidLength,
+            DecodeError::InvalidLastSymbol(offset, byte) => {
+                DecodeError::InvalidLastSymbol(self.total_b64_decoded + offset, byte)
+            }
+        })
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
 
         self.total_b64_decoded += num_bytes;
         self.b64_offset += num_bytes;
@@ -159,19 +156,9 @@ impl<'e, E: Engine, R: io::Read> DecoderReader<'e, E, R> {
 
         Ok(decoded)
     }
-
-    
-    
-    
-    
-    
-    
-    pub fn into_inner(self) -> R {
-        self.inner
-    }
 }
 
-impl<'e, E: Engine, R: io::Read> io::Read for DecoderReader<'e, E, R> {
+impl<'a, R: Read> Read for DecoderReader<'a, R> {
     
     
     
@@ -185,7 +172,7 @@ impl<'e, E: Engine, R: io::Read> io::Read for DecoderReader<'e, E, R> {
     
     
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        if buf.is_empty() {
+        if buf.len() == 0 {
             return Ok(0);
         }
 

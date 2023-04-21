@@ -1,6 +1,7 @@
 use super::encoder::EncoderWriter;
-use crate::engine::Engine;
+use crate::Config;
 use std::io;
+use std::io::Write;
 
 
 
@@ -48,20 +49,15 @@ use std::io;
 
 
 
-
-
-
-
-
-pub struct EncoderStringWriter<'e, E: Engine, S: StrConsumer> {
-    encoder: EncoderWriter<'e, E, Utf8SingleCodeUnitWriter<S>>,
+pub struct EncoderStringWriter<S: StrConsumer> {
+    encoder: EncoderWriter<Utf8SingleCodeUnitWriter<S>>,
 }
 
-impl<'e, E: Engine, S: StrConsumer> EncoderStringWriter<'e, E, S> {
+impl<S: StrConsumer> EncoderStringWriter<S> {
     
-    pub fn from_consumer(str_consumer: S, engine: &'e E) -> Self {
+    pub fn from(str_consumer: S, config: Config) -> Self {
         EncoderStringWriter {
-            encoder: EncoderWriter::new(Utf8SingleCodeUnitWriter { str_consumer }, engine),
+            encoder: EncoderWriter::new(Utf8SingleCodeUnitWriter { str_consumer }, config),
         }
     }
 
@@ -69,22 +65,24 @@ impl<'e, E: Engine, S: StrConsumer> EncoderStringWriter<'e, E, S> {
     
     
     
+    
+    
     pub fn into_inner(mut self) -> S {
         self.encoder
             .finish()
-            .expect("Writing to a consumer should never fail")
+            .expect("Writing to a Vec<u8> should never fail")
             .str_consumer
     }
 }
 
-impl<'e, E: Engine> EncoderStringWriter<'e, E, String> {
+impl EncoderStringWriter<String> {
     
-    pub fn new(engine: &'e E) -> Self {
-        EncoderStringWriter::from_consumer(String::new(), engine)
+    pub fn new(config: Config) -> Self {
+        EncoderStringWriter::from(String::new(), config)
     }
 }
 
-impl<'e, E: Engine, S: StrConsumer> io::Write for EncoderStringWriter<'e, E, S> {
+impl<S: StrConsumer> Write for EncoderStringWriter<S> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.encoder.write(buf)
     }
@@ -103,14 +101,14 @@ pub trait StrConsumer {
 
 impl<S: StrConsumer + ?Sized> StrConsumer for &mut S {
     fn consume(&mut self, buf: &str) {
-        (**self).consume(buf);
+        (**self).consume(buf)
     }
 }
 
 
 impl StrConsumer for String {
     fn consume(&mut self, buf: &str) {
-        self.push_str(buf);
+        self.push_str(buf)
     }
 }
 
@@ -140,9 +138,9 @@ impl<S: StrConsumer> io::Write for Utf8SingleCodeUnitWriter<S> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,
-    };
+    use crate::encode_config_buf;
+    use crate::tests::random_config;
+    use crate::write::encoder_string_writer::EncoderStringWriter;
     use rand::Rng;
     use std::io::Write;
 
@@ -162,10 +160,10 @@ mod tests {
                 orig_data.push(rng.gen());
             }
 
-            let engine = random_engine(&mut rng);
-            engine.encode_string(&orig_data, &mut normal_encoded);
+            let config = random_config(&mut rng);
+            encode_config_buf(&orig_data, config, &mut normal_encoded);
 
-            let mut stream_encoder = EncoderStringWriter::new(&engine);
+            let mut stream_encoder = EncoderStringWriter::new(config);
             
             stream_encoder.write_all(&orig_data[0..i]).unwrap();
             stream_encoder.write_all(&orig_data[i..]).unwrap();
