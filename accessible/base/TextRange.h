@@ -114,11 +114,6 @@ class TextRange final {
   
 
 
-  void ScrollIntoView(uint32_t aScrollType) const;
-
-  
-
-
 
 
 
