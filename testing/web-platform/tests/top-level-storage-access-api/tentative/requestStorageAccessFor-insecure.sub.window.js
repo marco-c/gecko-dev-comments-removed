@@ -15,8 +15,8 @@ if (!topLevelDocument) {
 }
 
 
-test(
-    () => {
+promise_test(
+    async () => {
       assert_not_equals(document.requestStorageAccessFor, undefined);
     },
     '[' + testPrefix +

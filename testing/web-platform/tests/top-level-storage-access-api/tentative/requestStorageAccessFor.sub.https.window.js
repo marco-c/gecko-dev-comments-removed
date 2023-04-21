@@ -18,8 +18,8 @@ const requestedOrigin = 'https://foo.com';
 const altOrigin = 'https://{{hosts[alt][www]}}:{{ports[https][0]}}';
 
 
-test(
-    () => {
+promise_test(
+    async () => {
       assert_not_equals(document.requestStorageAccessFor, undefined);
     },
     '[' + testPrefix +
