@@ -1138,6 +1138,15 @@ bool WebRenderBridgeParent::ProcessDisplayListData(
   wr::TransactionBuilder txn(mApi);
   Maybe<wr::AutoTransactionSender> sender;
 
+  if (aDisplayList.mScrollData && !aDisplayList.mScrollData->Validate()) {
+    
+    
+    MOZ_ASSERT(
+        false,
+        "Content sent malformed scroll data (or validation check has a bug)");
+    aValidTransaction = false;
+  }
+
   if (!aValidTransaction) {
     return true;
   }
