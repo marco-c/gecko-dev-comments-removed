@@ -94,6 +94,9 @@ class SVGImageFrame final : public SVGGeometryFrame, public nsIReflowCallback {
   
   void SetForceSyncDecoding(bool aForce) { mForceSyncDecoding = aForce; }
 
+  
+  bool IsInvisible() const override;
+
  private:
   uint16_t GetHitTestFlags();
 
