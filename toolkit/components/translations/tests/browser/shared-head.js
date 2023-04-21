@@ -266,6 +266,47 @@ async function reorderingTranslator(message) {
   return [translatedDoc.body.innerHTML];
 }
 
+
+
+
+async function setupActorTest({
+  languagePairs,
+  prefs,
+  detectedLanguageConfidence,
+  detectedLanguageLabel,
+}) {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      ["browser.translations.enable", true],
+      ["browser.translations.logLevel", "All"],
+      ...(prefs ?? []),
+    ],
+  });
+
+  if (languagePairs) {
+    TranslationsParent.mockLanguagePairs(languagePairs);
+  }
+
+  if (detectedLanguageLabel && detectedLanguageConfidence) {
+    TranslationsParent.mockLanguageIdentification(
+      detectedLanguageLabel,
+      detectedLanguageConfidence
+    );
+  }
+
+  return {
+    actor: gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
+      "Translations"
+    ),
+    cleanup() {
+      TranslationsParent.mockLanguagePairs(null);
+      TranslationsParent.mockLanguageIdentification(null, null);
+      return SpecialPowers.popPrefEnv();
+    },
+  };
+}
+
 async function loadTestPage({
   languagePairs,
   detectedLanguageConfidence,

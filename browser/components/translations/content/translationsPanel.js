@@ -155,22 +155,26 @@ var TranslationsPanel = new (class {
       default:
         this.console.error("Unknown langList phase", this.#langListsPhase);
     }
-
     try {
       
-      const languages = await this.#getTranslationsActor().getSupportedLanguages();
+      const {
+        languagePairs,
+        fromLanguages,
+        toLanguages,
+      } = await this.#getTranslationsActor().getSupportedLanguages();
 
       
-      if (languages.length === 0) {
+      if (languagePairs.length === 0) {
         throw new Error("No translation languages were retrieved.");
       }
 
-      for (const { langTag, displayName } of languages) {
+      for (const { langTag, displayName } of fromLanguages) {
         const fromMenuItem = document.createXULElement("menuitem");
         fromMenuItem.setAttribute("label", displayName);
         fromMenuItem.setAttribute("value", langTag);
         this.elements.fromMenuPopup.appendChild(fromMenuItem);
-
+      }
+      for (const { langTag, displayName } of toLanguages) {
         const toMenuItem = document.createXULElement("menuitem");
         toMenuItem.setAttribute("label", displayName);
         toMenuItem.setAttribute("value", langTag);
@@ -178,6 +182,7 @@ var TranslationsPanel = new (class {
       }
       this.#langListsPhase = "initialized";
     } catch (error) {
+      this.console.error(error);
       this.#langListsPhase = "error";
     }
   }
@@ -227,37 +232,20 @@ var TranslationsPanel = new (class {
 
 
 
-
-  #displayNames = {};
-
-  
-
-
-
-
   #setRestoreView({ fromLanguage, toLanguage }) {
     const { multiview, restoreLabel } = this.elements;
 
-    let fromDisplayName = this.#displayNames[fromLanguage];
-    let toDisplayName = this.#displayNames[toLanguage];
-
-    if (!fromDisplayName || !toDisplayName) {
-      
-      const displayNames = new Services.intl.DisplayNames(undefined, {
-        type: "language",
-      });
-      fromDisplayName = displayNames.of(fromLanguage);
-      toDisplayName = displayNames.of(toLanguage);
-      this.#displayNames[fromDisplayName] = fromLanguage;
-      this.#displayNames[toDisplayName] = toLanguage;
-    }
-
     multiview.setAttribute("mainViewId", "translations-panel-view-restore");
+
+    const displayNames = new Services.intl.DisplayNames(undefined, {
+      type: "language",
+    });
+
     restoreLabel.setAttribute(
       "data-l10n-args",
       JSON.stringify({
-        fromLanguage: fromDisplayName,
-        toLanguage: toDisplayName,
+        fromLanguage: displayNames.of(fromLanguage),
+        toLanguage: displayNames.of(toLanguage),
       })
     );
   }
@@ -277,7 +265,9 @@ var TranslationsPanel = new (class {
     if (requestedTranslationPair) {
       this.#setRestoreView(requestedTranslationPair);
     } else {
-      this.#setDualView(this.#ensureLangListsBuilt());
+      this.#setDualView(this.#ensureLangListsBuilt()).catch(error => {
+        this.console.error(error);
+      });
     }
 
     PanelMultiView.openPopup(panel, button, {

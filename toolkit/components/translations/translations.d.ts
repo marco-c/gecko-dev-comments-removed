@@ -292,3 +292,15 @@ export interface LangTags {
   appLangTag: string,
   docLangTag: string,
 }
+
+export interface LanguagePair { fromLang: string, toLang: string };
+
+
+
+
+
+export interface SupportedLanguages {
+  langPairs: LanguagePair[],
+  fromLanguages: Array<{ langTag: string, displayName: string }>,
+  toLanguages: Array<{ langTag: string, displayName: string }>,
+}
