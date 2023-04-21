@@ -1,0 +1,17 @@
+
+
+const script = document.createElement('script');
+script.src = "/common/rendering-utils.js";
+const waitForScript = new Promise((resolve) => {
+  script.addEventListener("load", resolve);
+});
+document.head.appendChild(script);
+
+async function delayScreenshot() {
+    await waitForScript;
+
+    let frames = 4;
+    for (let i = 0; i < frames; i++)
+      await waitForAtLeastOneFrame();
+    takeScreenshot();
+}
