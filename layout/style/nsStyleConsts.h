@@ -463,6 +463,14 @@ enum class StyleTextDecorationStyle : uint8_t {
 };
 
 
+enum class StyleTextSecurity : uint8_t {
+  None,
+  Circle,
+  Disc,
+  Square,
+};
+
+
 enum class StyleTopLayer : uint8_t {
   None,
   Top,

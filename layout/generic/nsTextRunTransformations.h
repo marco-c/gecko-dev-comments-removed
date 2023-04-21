@@ -73,6 +73,8 @@ class nsTransformingTextRunFactory {
 
 
 
+
+
 class nsCaseTransformTextRunFactory : public nsTransformingTextRunFactory {
  public:
   
@@ -82,13 +84,13 @@ class nsCaseTransformTextRunFactory : public nsTransformingTextRunFactory {
   
 
   
-  explicit nsCaseTransformTextRunFactory(
-      mozilla::UniquePtr<nsTransformingTextRunFactory>
-          aInnerTransformingTextRunFactory,
-      bool aAllUppercase = false)
+  nsCaseTransformTextRunFactory(mozilla::UniquePtr<nsTransformingTextRunFactory>
+                                    aInnerTransformingTextRunFactory,
+                                bool aAllUppercase, char16_t aMaskChar)
       : mInnerTransformingTextRunFactory(
             std::move(aInnerTransformingTextRunFactory)),
-        mAllUppercase(aAllUppercase) {}
+        mAllUppercase(aAllUppercase),
+        mMaskChar(aMaskChar) {}
 
   virtual void RebuildTextRun(nsTransformedTextRun* aTextRun,
                               mozilla::gfx::DrawTarget* aRefDrawTarget,
@@ -111,10 +113,18 @@ class nsCaseTransformTextRunFactory : public nsTransformingTextRunFactory {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
   static bool TransformString(
       const nsAString& aString, nsString& aConvertedString,
       const mozilla::Maybe<mozilla::StyleTextTransform>& aGlobalTransform,
-      bool aCaseTransformsOnly, const nsAtom* aLanguage,
+      char16_t aMaskChar, bool aCaseTransformsOnly, const nsAtom* aLanguage,
       nsTArray<bool>& aCharsToMergeArray, nsTArray<bool>& aDeletedCharsArray,
       const nsTransformedTextRun* aTextRun = nullptr,
       uint32_t aOffsetInTextRun = 0,
@@ -125,6 +135,7 @@ class nsCaseTransformTextRunFactory : public nsTransformingTextRunFactory {
   mozilla::UniquePtr<nsTransformingTextRunFactory>
       mInnerTransformingTextRunFactory;
   bool mAllUppercase;
+  char16_t mMaskChar;
 };
 
 

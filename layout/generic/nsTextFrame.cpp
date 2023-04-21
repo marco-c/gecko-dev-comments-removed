@@ -2217,6 +2217,7 @@ already_AddRefed<gfxTextRun> BuildTextRunsScanner::BuildTextRunForFrames(
     
     textStyle = f->StyleText();
     if (!textStyle->mTextTransform.IsNone() ||
+        textStyle->mWebkitTextSecurity != StyleTextSecurity::None ||
         
         
         lastComputedStyle->IsTextCombined()) {
@@ -2424,8 +2425,10 @@ already_AddRefed<gfxTextRun> BuildTextRunsScanner::BuildTextRunForFrames(
   bool needsToMaskPassword = NeedsToMaskPassword(firstFrame);
   UniquePtr<nsTransformingTextRunFactory> transformingFactory;
   if (anyTextTransformStyle || needsToMaskPassword) {
+    char16_t maskChar =
+        needsToMaskPassword ? 0 : textStyle->TextSecurityMaskChar();
     transformingFactory = MakeUnique<nsCaseTransformTextRunFactory>(
-        std::move(transformingFactory));
+        std::move(transformingFactory), false, maskChar);
   }
   if (anyMathMLStyling) {
     transformingFactory = MakeUnique<MathMLTextRunFactory>(
@@ -9655,7 +9658,9 @@ static void TransformChars(nsTextFrame* aFrame, const nsStyleText* aStyle,
                            int32_t aFragLen, nsAString& aOut) {
   nsAutoString fragString;
   char16_t* out;
-  if (aStyle->mTextTransform.IsNone() && !NeedsToMaskPassword(aFrame)) {
+  bool needsToMaskPassword = NeedsToMaskPassword(aFrame);
+  if (aStyle->mTextTransform.IsNone() && !needsToMaskPassword &&
+      aStyle->mWebkitTextSecurity == StyleTextSecurity::None) {
     
     aOut.SetLength(aOut.Length() + aFragLen);
     out = aOut.EndWriting() - aFragLen;
@@ -9676,10 +9681,13 @@ static void TransformChars(nsTextFrame* aFrame, const nsStyleText* aStyle,
     out[i] = ch;
   }
 
-  if (!aStyle->mTextTransform.IsNone() || NeedsToMaskPassword(aFrame)) {
+  if (!aStyle->mTextTransform.IsNone() || needsToMaskPassword ||
+      aStyle->mWebkitTextSecurity != StyleTextSecurity::None) {
     MOZ_ASSERT(aTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsTransformed);
     if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsTransformed) {
       
+      char16_t maskChar =
+          needsToMaskPassword ? 0 : aStyle->TextSecurityMaskChar();
       auto transformedTextRun =
           static_cast<const nsTransformedTextRun*>(aTextRun);
       nsAutoString convertedString;
@@ -9687,8 +9695,9 @@ static void TransformChars(nsTextFrame* aFrame, const nsStyleText* aStyle,
       AutoTArray<bool, 50> deletedCharsArray;
       nsCaseTransformTextRunFactory::TransformString(
           fragString, convertedString,  Nothing(),
-           true, nullptr, charsToMergeArray,
-          deletedCharsArray, transformedTextRun, aSkippedOffset);
+          maskChar,  true, nullptr,
+          charsToMergeArray, deletedCharsArray, transformedTextRun,
+          aSkippedOffset);
       aOut.Append(convertedString);
     } else {
       

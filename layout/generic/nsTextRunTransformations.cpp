@@ -270,10 +270,11 @@ static LanguageSpecificCasingBehavior GetCasingFor(const nsAtom* aLang) {
 
 bool nsCaseTransformTextRunFactory::TransformString(
     const nsAString& aString, nsString& aConvertedString,
-    const Maybe<StyleTextTransform>& aGlobalTransform, bool aCaseTransformsOnly,
-    const nsAtom* aLanguage, nsTArray<bool>& aCharsToMergeArray,
-    nsTArray<bool>& aDeletedCharsArray, const nsTransformedTextRun* aTextRun,
-    uint32_t aOffsetInTextRun, nsTArray<uint8_t>* aCanBreakBeforeArray,
+    const Maybe<StyleTextTransform>& aGlobalTransform, char16_t aMaskChar,
+    bool aCaseTransformsOnly, const nsAtom* aLanguage,
+    nsTArray<bool>& aCharsToMergeArray, nsTArray<bool>& aDeletedCharsArray,
+    const nsTransformedTextRun* aTextRun, uint32_t aOffsetInTextRun,
+    nsTArray<uint8_t>* aCanBreakBeforeArray,
     nsTArray<RefPtr<nsTransformedCharStyle>>* aStyleArray) {
   bool auxiliaryOutputArrays = aCanBreakBeforeArray && aStyleArray;
   MOZ_ASSERT(!auxiliaryOutputArrays || aTextRun,
@@ -281,7 +282,9 @@ bool nsCaseTransformTextRunFactory::TransformString(
 
   uint32_t length = aString.Length();
   const char16_t* str = aString.BeginReading();
-  const char16_t kPasswordMask = TextEditor::PasswordMask();
+  
+  
+  const char16_t mask = aMaskChar ? aMaskChar : TextEditor::PasswordMask();
 
   bool mergeNeeded = false;
 
@@ -333,7 +336,13 @@ bool nsCaseTransformTextRunFactory::TransformString(
       }
     }
 
-    bool maskPassword = charStyle && charStyle->mMaskPassword;
+    
+    
+    
+    
+    MOZ_ASSERT_IF(aMaskChar, !(charStyle && charStyle->mMaskPassword));
+
+    bool maskPassword = (charStyle && charStyle->mMaskPassword) || aMaskChar;
     int extraChars = 0;
     const mozilla::unicode::MultiCharMapping* mcm;
     bool inhibitBreakBefore = false;  
@@ -784,12 +793,12 @@ bool nsCaseTransformTextRunFactory::TransformString(
       }
 
       if (IS_IN_BMP(ch)) {
-        aConvertedString.Append(maskPassword ? kPasswordMask : ch);
+        aConvertedString.Append(maskPassword ? mask : ch);
       } else {
         if (maskPassword) {
-          aConvertedString.Append(kPasswordMask);
+          aConvertedString.Append(mask);
           
-          aConvertedString.Append(kPasswordMask);
+          aConvertedString.Append(mask);
         } else {
           aConvertedString.Append(H_SURROGATE(ch));
           aConvertedString.Append(L_SURROGATE(ch));
@@ -830,7 +839,7 @@ void nsCaseTransformTextRunFactory::RebuildTextRun(
           ? Some(StyleTextTransform{StyleTextTransformCase::Uppercase, {}})
           : Nothing();
   bool mergeNeeded = TransformString(
-      aTextRun->mString, convertedString, globalTransform,
+      aTextRun->mString, convertedString, globalTransform, mMaskChar,
        false, nullptr, charsToMergeArray,
       deletedCharsArray, aTextRun, 0, &canBreakBeforeArray, &styleArray);
 

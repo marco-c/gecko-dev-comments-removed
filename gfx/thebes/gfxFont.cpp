@@ -3749,8 +3749,10 @@ bool gfxFont::InitFakeSmallCapsRun(
 
           StyleTextTransform globalTransform{StyleTextTransformCase::Uppercase,
                                              {}};
+          
+          const char16_t maskChar = 0;
           bool mergeNeeded = nsCaseTransformTextRunFactory::TransformString(
-              origString, convertedString, Some(globalTransform),
+              origString, convertedString, Some(globalTransform), maskChar,
                false, aLanguage, charsToMergeArray,
               deletedCharsArray);
 
