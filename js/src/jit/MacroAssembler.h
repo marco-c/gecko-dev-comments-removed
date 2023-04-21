@@ -3788,8 +3788,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                     Label* rejoin)
       DEFINED_ON(arm, arm64, x86_shared, mips_shared, loong64, riscv64, wasm32);
 
-  void loadWasmGlobalPtr(uint32_t globalDataOffset, Register dest);
-
   
   
   
