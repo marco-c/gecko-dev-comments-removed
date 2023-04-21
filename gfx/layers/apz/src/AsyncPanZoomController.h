@@ -20,7 +20,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/StaticPrefs_apz.h"
-#include "mozilla/StaticPrefs_general.h"
 #include "mozilla/UniquePtr.h"
 #include "InputData.h"
 #include "Axis.h"  
@@ -1137,12 +1136,6 @@ class AsyncPanZoomController {
   friend class Axis;
 
  public:
-  
-
-
-
-  bool IsSmoothScrollingEnabled() const;
-
   Maybe<CompositionPayload> NotifyScrollSampling();
 
   

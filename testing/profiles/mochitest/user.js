@@ -13,6 +13,3 @@ user_pref("javascript.options.asyncstack_capture_debuggee_only", false);
 
 
 user_pref("nglayout.initialpaint.unsuppress_with_no_background", true);
-
-
-user_pref("ui.prefersReducedMotion", 0);

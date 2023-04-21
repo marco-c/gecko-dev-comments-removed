@@ -66,14 +66,13 @@ gfx::IntSize GetDisplayportAlignmentMultiplier(const ScreenSize& aBaseSize);
 
 
 ScrollAnimationBezierPhysicsSettings ComputeBezierAnimationSettingsForOrigin(
-    ScrollOrigin aOrigin, bool aSmoothScrollingEnabled);
+    ScrollOrigin aOrigin);
 
 
 
 
 
-ScrollMode GetScrollModeForOrigin(ScrollOrigin origin,
-                                  bool aSmoothScrollingEnabled);
+ScrollMode GetScrollModeForOrigin(ScrollOrigin origin);
 
 }  
 

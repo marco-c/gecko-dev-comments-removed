@@ -24,7 +24,7 @@ GenericScrollAnimation::GenericScrollAnimation(
   
   
   
-  if (aApzc.IsSmoothScrollingEnabled() &&
+  if (StaticPrefs::general_smoothScroll() &&
       StaticPrefs::general_smoothScroll_msdPhysics_enabled()) {
     mAnimationPhysics = MakeUnique<ScrollAnimationMSDPhysics>(aInitialPosition);
   } else {
