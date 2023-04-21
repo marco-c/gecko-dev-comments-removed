@@ -1,10 +1,14 @@
+
+
+
+
 'use strict';
 
-promise_test(async t => {
+pressure_test(async (t, mockPressureService) => {
   const observer1_changes = [];
   const observer1 = new PressureObserver(changes => {
     observer1_changes.push(changes);
-  }, {sampleRate: 1});
+  });
   t.add_cleanup(() => observer1.disconnect());
   
   const promise = observer1.observe('cpu');
@@ -17,9 +21,11 @@ promise_test(async t => {
     const observer2 = new PressureObserver(changes => {
       observer2_changes.push(changes);
       resolve();
-    }, {sampleRate: 1});
+    });
     t.add_cleanup(() => observer2.disconnect());
     observer2.observe('cpu').catch(reject);
+    mockPressureService.setPressureUpdate('cpu', 'critical');
+    mockPressureService.startPlatformCollector( 5.0);
   });
 
   assert_equals(
@@ -27,7 +33,5 @@ promise_test(async t => {
       'stopped observers should not receive callbacks');
 
   assert_equals(observer2_changes.length, 1);
-  assert_in_array(
-      observer2_changes[0][0].state, ['nominal', 'fair', 'serious', 'critical'],
-      'cpu pressure state');
+  assert_equals(observer2_changes[0][0].state, 'critical');
 }, 'Stopped PressureObserver do not receive changes');

@@ -2,6 +2,7 @@
 
 
 
+
 'use strict';
 
 pressure_test((t, mockPressureService) => {
@@ -17,9 +18,10 @@ pressure_test((t, mockPressureService) => {
 pressure_test(async (t, mockPressureService) => {
   const changes = await new Promise(resolve => {
     const observer = new PressureObserver(resolve);
+    t.add_cleanup(() => observer.disconnect());
     observer.observe('cpu');
     mockPressureService.setPressureUpdate('cpu', 'critical');
-    mockPressureService.startPlatformCollector( 1.0);
+    mockPressureService.startPlatformCollector( 5.0);
   });
   assert_true(changes.length === 1);
   assert_equals(changes[0].state, 'critical');
@@ -35,7 +37,7 @@ pressure_test((t, mockPressureService) => {
   const promise = observer.observe('cpu');
   observer.unobserve('cpu');
   mockPressureService.setPressureUpdate('cpu', 'critical');
-  mockPressureService.startPlatformCollector( 1.0);
+  mockPressureService.startPlatformCollector( 5.0);
 
   return promise_rejects_dom(t, 'NotSupportedError', promise);
 }, 'Removing observer before observe() resolves works');
@@ -47,6 +49,7 @@ pressure_test(async (t, mockPressureService) => {
   for (let i = 0; i < 2; i++) {
     callbackPromises.push(new Promise(resolve => {
       const observer = new PressureObserver(resolve);
+      t.add_cleanup(() => observer.disconnect());
       observePromises.push(observer.observe('cpu'));
     }));
   }
@@ -54,7 +57,7 @@ pressure_test(async (t, mockPressureService) => {
   await Promise.all(observePromises);
 
   mockPressureService.setPressureUpdate('cpu', 'critical');
-  mockPressureService.startPlatformCollector( 1.0);
+  mockPressureService.startPlatformCollector( 5.0);
 
   return Promise.all(callbackPromises);
 }, 'Calling observe() multiple times works');
@@ -69,7 +72,7 @@ pressure_test(async (t, mockPressureService) => {
     t.add_cleanup(() => observer1.disconnect());
     observer1.observe('cpu');
     mockPressureService.setPressureUpdate('cpu', 'critical');
-    mockPressureService.startPlatformCollector( 1.0);
+    mockPressureService.startPlatformCollector( 5.0);
   });
   assert_true(observer1_changes.length === 1);
   assert_equals(observer1_changes[0][0].source, 'cpu');

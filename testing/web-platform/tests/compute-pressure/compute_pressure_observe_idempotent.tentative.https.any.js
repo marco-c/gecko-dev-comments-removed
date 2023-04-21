@@ -1,16 +1,19 @@
+
+
+
+
 'use strict';
 
-promise_test(async t => {
+pressure_test(async (t, mockPressureService) => {
   const update = await new Promise((resolve, reject) => {
-    const observer = new PressureObserver(resolve, {sampleRate: 1.0});
+    const observer = new PressureObserver(resolve);
     t.add_cleanup(() => observer.disconnect());
     observer.observe('cpu').catch(reject);
     observer.observe('cpu').catch(reject);
     observer.observe('cpu').catch(reject);
+    mockPressureService.setPressureUpdate('cpu', 'critical');
+    mockPressureService.startPlatformCollector( 5.0);
   });
 
-  assert_equals(typeof update[0].state, 'string');
-  assert_in_array(
-      update[0].state, ['nominal', 'fair', 'serious', 'critical'],
-      'cpu pressure state');
+  assert_equals(update[0].state, 'critical');
 }, 'PressureObserver.observe() is idempotent');
