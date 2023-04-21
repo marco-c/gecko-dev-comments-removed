@@ -123,6 +123,11 @@ interface nsISocketProvider : nsISupports
     
 
 
+    const unsigned long IS_SPECULATIVE_CONNECTION = 1 << 5;
+
+    
+
+
 
     const unsigned long DONT_TRY_ECH = (1 << 10);
 
@@ -137,5 +142,4 @@ interface nsISocketProvider : nsISupports
 
 
     const unsigned long USED_PRIVATE_DNS = (1 << 12);
-
 };

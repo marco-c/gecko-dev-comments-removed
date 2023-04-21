@@ -2183,19 +2183,9 @@ nsHttpHandler::Observe(nsISupports* subject, const char* topic,
         }
       }
     }
-  } else if (!strcmp(topic, "psm:user-certificate-added")) {
-    
-    
-    mSpeculativeConnectEnabled = false;
-  } else if (!strcmp(topic, "psm:user-certificate-deleted")) {
-    
-    
-    MaybeEnableSpeculativeConnect();
   } else if (!strcmp(topic, "intl:app-locales-changed")) {
     
     mAcceptLanguagesIsDirty = true;
-  } else if (!strcmp(topic, "browser-delayed-startup-finished")) {
-    MaybeEnableSpeculativeConnect();
   } else if (!strcmp(topic, "network:captive-portal-connectivity")) {
     nsAutoCString data8 = NS_ConvertUTF16toUTF8(data);
     mThroughCaptivePortal = data8.EqualsLiteral("captive");
@@ -2212,48 +2202,6 @@ nsHttpHandler::Observe(nsISupports* subject, const char* topic,
 }
 
 
-
-static bool CanEnableSpeculativeConnect() {
-  nsCOMPtr<nsINSSComponent> component(do_GetService(PSM_COMPONENT_CONTRACTID));
-
-  MOZ_ASSERT(!NS_IsMainThread(), "Must run on the background thread");
-  
-  
-  bool activeSmartCards = false;
-  nsresult rv = component->HasActiveSmartCards(&activeSmartCards);
-  if (NS_FAILED(rv) || activeSmartCards) {
-    return false;
-  }
-
-  
-  
-  bool hasUserCerts = false;
-  rv = component->HasUserCertsInstalled(&hasUserCerts);
-  if (NS_FAILED(rv) || hasUserCerts) {
-    return false;
-  }
-
-  
-  
-  return true;
-}
-
-void nsHttpHandler::MaybeEnableSpeculativeConnect() {
-  MOZ_ASSERT(NS_IsMainThread(), "Main thread only");
-
-  
-  if (!XRE_IsParentProcess()) {
-    return;
-  }
-
-  net_EnsurePSMInit();
-
-  NS_DispatchBackgroundTask(
-      NS_NewRunnableFunction("CanEnableSpeculativeConnect", [] {
-        gHttpHandler->mSpeculativeConnectEnabled =
-            CanEnableSpeculativeConnect();
-      }));
-}
 
 nsresult nsHttpHandler::SpeculativeConnectInternal(
     nsIURI* aURI, nsIPrincipal* aPrincipal, nsIInterfaceRequestor* aCallbacks,
@@ -2328,20 +2276,6 @@ nsresult nsHttpHandler::SpeculativeConnectInternal(
   }
   
   else if (!scheme.EqualsLiteral("http")) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  nsCOMPtr<nsISpeculativeConnectionOverrider> overrider =
-      do_GetInterface(aCallbacks);
-  bool ignoreUserCertCheck =
-      overrider ? overrider->GetIgnoreUserCertCheck() : false;
-
-  
-  if (aURI->SchemeIs("https") && !mSpeculativeConnectEnabled &&
-      !ignoreUserCertCheck) {
-    glean::networking::speculative_connect_outcome
-        .Get("aborted_https_not_enabled"_ns)
-        .Add(1);
     return NS_ERROR_UNEXPECTED;
   }
 

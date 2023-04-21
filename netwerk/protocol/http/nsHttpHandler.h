@@ -530,10 +530,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   
   
-  void MaybeEnableSpeculativeConnect();
-
-  
-  
   friend class TRRServiceChannel;
   friend class DNSUtils;
   nsresult CreateTRRServiceChannel(nsIURI* uri, nsIProxyInfo* givenProxyInfo,
@@ -739,10 +735,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   
   float mFocusedWindowTransactionRatio{0.9f};
-
-  
-  
-  Atomic<bool, Relaxed> mSpeculativeConnectEnabled{false};
 
   
   bool mActiveTabPriority{true};
