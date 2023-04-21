@@ -14,7 +14,8 @@
 #include "mozilla/layers/LayersSurfaces.h"     
 #include "mozilla/layers/LayersTypes.h"        
 #include "mozilla/layers/TextureHost.h"        
-#include "mozilla/mozalloc.h"                  
+#include "mozilla/layers/WebRenderImageHost.h"
+#include "mozilla/mozalloc.h"  
 #include "mozilla/Unused.h"
 #include "nsDebug.h"   
 #include "nsRegion.h"  
@@ -85,9 +86,13 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
     }
     case CompositableOperationDetail::TOpUseRemoteTexture: {
       const OpUseRemoteTexture& op = aDetail.get_OpUseRemoteTexture();
-      aCompositable->UseRemoteTexture(op.textureId(), op.ownerId(),
-                                      GetChildProcessId(), op.size(),
-                                      op.textureFlags());
+      auto* host = aCompositable->AsWebRenderImageHost();
+      MOZ_ASSERT(host);
+
+      host->PushPendingRemoteTexture(op.textureId(), op.ownerId(),
+                                     GetChildProcessId(), op.size(),
+                                     op.textureFlags());
+      host->UseRemoteTexture();
       break;
     }
     case CompositableOperationDetail::TOpEnableRemoteTexturePushCallback: {
