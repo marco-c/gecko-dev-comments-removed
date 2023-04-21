@@ -25,8 +25,7 @@ const actorModuleURI =
 const subframeURI =
   getRootDirectory(gTestPath).replace(
     "chrome://mochitests/content",
-    
-    "http://example.com"
+    "https://example.com"
   ) + "file_empty.html";
 
 
