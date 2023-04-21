@@ -27,6 +27,10 @@ def is_notarization_kind(kind):
         return True
 
 
+def is_mac_signing_king(kind):
+    return kind and "mac-signing" in kind
+
+
 def generate_specifications_of_artifacts_to_sign(
     config, job, keep_locale_template=True, kind=None, dep_kind=None
 ):
@@ -51,19 +55,24 @@ def generate_specifications_of_artifacts_to_sign(
     
     
     elif "macosx" in build_platform:
-        if is_notarization_kind(dep_kind):
+        langpack_formats = []
+        if is_notarization_kind(dep_kind) or is_mac_signing_king(dep_kind):
             
             
+            
+            formats = []
+            if config.kind.endswith("-mac-notarization"):
+                
+                formats = ["apple_notarization"]
             artifacts_specifications = [
                 {
                     "artifacts": [
                         get_artifact_path(job, "{locale}/target.tar.gz"),
                         get_artifact_path(job, "{locale}/target.pkg"),
                     ],
-                    "formats": [],
+                    "formats": formats,
                 }
             ]
-            langpack_formats = []
         else:
             
             

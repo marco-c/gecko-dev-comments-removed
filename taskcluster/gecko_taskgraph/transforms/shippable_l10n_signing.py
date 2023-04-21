@@ -55,13 +55,13 @@ def define_upstream_artifacts(config, jobs):
 
         upstream_artifacts = []
         for spec in locale_specifications:
-            task_type = "l10n"
+            upstream_task_type = "l10n"
             if "notarization" in upstream_artifact_task.kind:
-                task_type = "scriptworker"
+                upstream_task_type = "scriptworker"
             upstream_artifacts.append(
                 {
                     "taskId": {"task-reference": f"<{upstream_artifact_task.kind}>"},
-                    "taskType": task_type,
+                    "taskType": upstream_task_type,
                     
                     
                     

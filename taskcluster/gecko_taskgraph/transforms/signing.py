@@ -208,7 +208,7 @@ def make_task_description(config, jobs):
             task["if-dependencies"] = [dep_job.kind]
 
         
-        if "macosx" in build_platform and config.kind == "build-mac-notarization":
+        if "macosx" in build_platform and config.kind.endswith("-mac-notarization"):
             task["worker"]["mac-behavior"] = "apple_notarization"
             task["scopes"] = [
                 add_scope_prefix(config, "signing:cert:release-apple-notarization")
@@ -252,8 +252,8 @@ def make_task_description(config, jobs):
                     task["worker"][attr] = job[attr]
 
             
-            if config.kind == "build-mac-signing":
-                task["worker"]["mac-behavior"] = "mac_sign"
+            if config.kind.endswith("-mac-signing"):
+                task["worker"]["mac-behavior"] = "mac_sign_and_pkg"
 
         task["worker-type"] = worker_type_alias
         if treeherder:
