@@ -9,9 +9,9 @@
 #define SkPDFTag_DEFINED
 
 #include "include/docs/SkPDFDocument.h"
-#include "include/private/SkTArray.h"
-#include "include/private/SkTHash.h"
-#include "src/core/SkArenaAlloc.h"
+#include "include/private/base/SkTArray.h"
+#include "src/base/SkArenaAlloc.h"
+#include "src/core/SkTHash.h"
 
 class SkPDFDocument;
 struct SkPDFIndirectReference;
@@ -21,16 +21,41 @@ class SkPDFTagTree {
 public:
     SkPDFTagTree();
     ~SkPDFTagTree();
-    void init(const SkPDF::StructureElementNode*);
-    void reset();
-    int getMarkIdForNodeId(int nodeId, unsigned pageIndex);
+    void init(SkPDF::StructureElementNode*);
+    
+    
+    
+    int createMarkIdForNodeId(int nodeId, unsigned pageIndex);
+    
+    
+    
+    int createStructParentKeyForNodeId(int nodeId, unsigned pageIndex);
+
+    void addNodeAnnotation(int nodeId, SkPDFIndirectReference annotationRef, unsigned pageIndex);
     SkPDFIndirectReference makeStructTreeRoot(SkPDFDocument* doc);
 
 private:
+    
+    
+    struct IDTreeEntry {
+        int nodeId;
+        SkPDFIndirectReference ref;
+    };
+
+    static void Copy(SkPDF::StructureElementNode& node,
+                     SkPDFTagNode* dst,
+                     SkArenaAlloc* arena,
+                     SkTHashMap<int, SkPDFTagNode*>* nodeMap);
+    SkPDFIndirectReference PrepareTagTreeToEmit(SkPDFIndirectReference parent,
+                                                SkPDFTagNode* node,
+                                                SkPDFDocument* doc);
+
     SkArenaAlloc fArena;
     SkTHashMap<int, SkPDFTagNode*> fNodeMap;
     SkPDFTagNode* fRoot = nullptr;
     SkTArray<SkTArray<SkPDFTagNode*>> fMarksPerPage;
+    std::vector<IDTreeEntry> fIdTreeEntries;
+    std::vector<int> fParentTreeAnnotationNodeIds;
 
     SkPDFTagTree(const SkPDFTagTree&) = delete;
     SkPDFTagTree& operator=(const SkPDFTagTree&) = delete;

@@ -14,6 +14,7 @@
 #include <stdio.h>
 
 #include "include/core/SkString.h"
+#include "include/private/base/SkTemplates.h"
 
 enum SkFILE_Flags {
     kRead_SkFILE_Flag   = 0x01,
@@ -79,20 +80,21 @@ class SkOSFile {
 public:
     class Iter {
     public:
-        Iter();
-        Iter(const char path[], const char suffix[] = nullptr);
-        ~Iter();
+        
+        SK_SPI Iter();
+        SK_SPI Iter(const char path[], const char suffix[] = nullptr);
+        SK_SPI ~Iter();
 
-        void reset(const char path[], const char suffix[] = nullptr);
+        SK_SPI void reset(const char path[], const char suffix[] = nullptr);
         
 
 
 
-        bool next(SkString* name, bool getDir = false);
+        SK_SPI bool next(SkString* name, bool getDir = false);
 
         static const size_t kStorageSize = 40;
     private:
-        SkAlignedSStorage<kStorageSize> fSelf;
+        alignas(void*) alignas(double) char fSelf[kStorageSize];
     };
 };
 

@@ -8,49 +8,13 @@
 #ifndef SkRasterClip_DEFINED
 #define SkRasterClip_DEFINED
 
+#include "include/core/SkClipOp.h"
 #include "include/core/SkRegion.h"
-#include "include/private/SkMacros.h"
+#include "include/core/SkShader.h"
+#include "include/private/base/SkMacros.h"
 #include "src/core/SkAAClip.h"
 
 class SkRRect;
-
-class SkConservativeClip {
-    SkIRect         fBounds;
-    const SkIRect*  fClipRestrictionRect;
-
-    inline void applyClipRestriction(SkRegion::Op op, SkIRect* bounds) {
-        if (op >= SkRegion::kUnion_Op && fClipRestrictionRect
-            && !fClipRestrictionRect->isEmpty()) {
-            if (!bounds->intersect(*fClipRestrictionRect)) {
-                bounds->setEmpty();
-            }
-        }
-    }
-
-public:
-    SkConservativeClip() : fBounds(SkIRect::MakeEmpty()), fClipRestrictionRect(nullptr) {}
-
-    bool isEmpty() const { return fBounds.isEmpty(); }
-    bool isRect() const { return true; }
-    const SkIRect& getBounds() const { return fBounds; }
-
-    void setEmpty() { fBounds.setEmpty(); }
-    void setRect(const SkIRect& r) { fBounds = r; }
-    void setDeviceClipRestriction(const SkIRect* rect) {
-        fClipRestrictionRect = rect;
-    }
-
-    void opRect(const SkRect&, const SkMatrix&, const SkIRect& limit, SkRegion::Op, bool isAA);
-    void opRRect(const SkRRect&, const SkMatrix&, const SkIRect& limit, SkRegion::Op, bool isAA);
-    void opPath(const SkPath&, const SkMatrix&, const SkIRect& limit, SkRegion::Op, bool isAA);
-    void opRegion(const SkRegion&, SkRegion::Op);
-    void opIRect(const SkIRect&, SkRegion::Op);
-};
-
-
-
-
-
 
 
 
@@ -59,17 +23,14 @@ public:
 class SkRasterClip {
 public:
     SkRasterClip();
-    SkRasterClip(const SkIRect&);
-    SkRasterClip(const SkRegion&);
-    SkRasterClip(const SkRasterClip&);
+    explicit SkRasterClip(const SkIRect&);
+    explicit SkRasterClip(const SkRegion&);
+    explicit SkRasterClip(const SkRasterClip&);
+    SkRasterClip(const SkPath& path, const SkIRect& bounds, bool doAA);
+
     ~SkRasterClip();
 
-    
-    
-    bool operator==(const SkRasterClip&) const;
-    bool operator!=(const SkRasterClip& other) const {
-        return !(*this == other);
-    }
+    SkRasterClip& operator=(const SkRasterClip&);
 
     bool isBW() const { return fIsBW; }
     bool isAA() const { return !fIsBW; }
@@ -86,26 +47,27 @@ public:
         return fIsRect;
     }
 
-    bool isComplex() const;
-    const SkIRect& getBounds() const;
+    bool isComplex() const {
+        return fIsBW ? fBW.isComplex() : !fAA.isEmpty();
+    }
+    const SkIRect& getBounds() const {
+        return fIsBW ? fBW.getBounds() : fAA.getBounds();
+    }
 
     bool setEmpty();
     bool setRect(const SkIRect&);
 
-    bool op(const SkIRect&, SkRegion::Op);
-    bool op(const SkRegion&, SkRegion::Op);
-    bool op(const SkRect&, const SkMatrix& matrix, const SkIRect&, SkRegion::Op, bool doAA);
-    bool op(const SkRRect&, const SkMatrix& matrix, const SkIRect&, SkRegion::Op, bool doAA);
-    bool op(const SkPath&, const SkMatrix& matrix, const SkIRect&, SkRegion::Op, bool doAA);
+    bool op(const SkIRect&, SkClipOp);
+    bool op(const SkRegion&, SkClipOp);
+    bool op(const SkRect&, const SkMatrix& matrix, SkClipOp, bool doAA);
+    bool op(const SkRRect&, const SkMatrix& matrix, SkClipOp, bool doAA);
+    bool op(const SkPath&, const SkMatrix& matrix, SkClipOp, bool doAA);
+    bool op(sk_sp<SkShader>);
 
     void translate(int dx, int dy, SkRasterClip* dst) const;
-    void translate(int dx, int dy) {
-        this->translate(dx, dy, this);
-    }
 
-    bool quickContains(const SkIRect& rect) const;
-    bool quickContains(int left, int top, int right, int bottom) const {
-        return quickContains(SkIRect::MakeLTRB(left, top, right, bottom));
+    bool quickContains(const SkIRect& rect) const {
+        return fIsBW ? fBW.quickContains(rect) : fAA.quickContains(rect);
     }
 
     
@@ -117,18 +79,13 @@ public:
         return !SkIRect::Intersects(this->getBounds(), rect);
     }
 
-    
-    const SkRegion& forceGetBW();
-
 #ifdef SK_DEBUG
     void validate() const;
 #else
     void validate() const {}
 #endif
 
-    void setDeviceClipRestriction(const SkIRect* rect) {
-        fClipRestrictionRect = rect;
-    }
+    sk_sp<SkShader> clipShader() const { return fShader; }
 
 private:
     SkRegion    fBW;
@@ -137,7 +94,8 @@ private:
     
     bool        fIsEmpty;
     bool        fIsRect;
-    const SkIRect*    fClipRestrictionRect = nullptr;
+    
+    sk_sp<SkShader> fShader;
 
     bool computeIsEmpty() const {
         return fIsBW ? fBW.isEmpty() : fAA.isEmpty();
@@ -163,28 +121,7 @@ private:
 
     void convertToAA();
 
-    bool setPath(const SkPath& path, const SkRegion& clip, bool doAA);
-    bool setPath(const SkPath& path, const SkIRect& clip, bool doAA);
-    bool op(const SkRasterClip&, SkRegion::Op);
-    bool setConservativeRect(const SkRect& r, const SkIRect& clipR, bool isInverse);
-
-    inline void applyClipRestriction(SkRegion::Op op, SkIRect* bounds) {
-        if (op >= SkRegion::kUnion_Op && fClipRestrictionRect
-            && !fClipRestrictionRect->isEmpty()) {
-            if (!bounds->intersect(*fClipRestrictionRect)) {
-                bounds->setEmpty();
-            }
-        }
-    }
-
-    inline void applyClipRestriction(SkRegion::Op op, SkRect* bounds) {
-        if (op >= SkRegion::kUnion_Op && fClipRestrictionRect
-            && !fClipRestrictionRect->isEmpty()) {
-            if (!bounds->intersect(SkRect::Make(*fClipRestrictionRect))) {
-                bounds->setEmpty();
-            }
-        }
-    }
+    bool op(const SkRasterClip&, SkClipOp);
 };
 
 class SkAutoRasterClipValidate : SkNoncopyable {
@@ -198,7 +135,6 @@ public:
 private:
     const SkRasterClip& fRC;
 };
-#define SkAutoRasterClipValidate(...) SK_REQUIRE_LOCAL_VAR(SkAutoRasterClipValidate)
 
 #ifdef SK_DEBUG
     #define AUTO_RASTERCLIP_VALIDATE(rc)    SkAutoRasterClipValidate arcv(rc)

@@ -8,13 +8,33 @@
 #ifndef SkMatrix_DEFINED
 #define SkMatrix_DEFINED
 
+#include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
-#include "include/private/SkMacros.h"
-#include "include/private/SkTo.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkMacros.h"
+#include "include/private/base/SkTo.h"
 
-struct SkRSXform;
+#include <cstdint>
+#include <cstring>
+
 struct SkPoint3;
-class SkString;
+struct SkRSXform;
+struct SkSize;
+
+
+#define SK_SUPPORT_LEGACY_MATRIX_RECTTORECT
+
+
+
+
+
+
+
+enum class SkApplyPerspectiveClip {
+    kNo,    
+    kYes,   
+};
 
 
 
@@ -51,7 +71,7 @@ public:
 
 
 
-    static SkMatrix SK_WARN_UNUSED_RESULT MakeScale(SkScalar sx, SkScalar sy) {
+    static SkMatrix SK_WARN_UNUSED_RESULT Scale(SkScalar sx, SkScalar sy) {
         SkMatrix m;
         m.setScale(sx, sy);
         return m;
@@ -66,11 +86,58 @@ public:
 
 
 
-    static SkMatrix SK_WARN_UNUSED_RESULT MakeScale(SkScalar scale) {
+
+    static SkMatrix SK_WARN_UNUSED_RESULT Translate(SkScalar dx, SkScalar dy) {
         SkMatrix m;
-        m.setScale(scale, scale);
+        m.setTranslate(dx, dy);
         return m;
     }
+    static SkMatrix SK_WARN_UNUSED_RESULT Translate(SkVector t) { return Translate(t.x(), t.y()); }
+    static SkMatrix SK_WARN_UNUSED_RESULT Translate(SkIVector t) { return Translate(t.x(), t.y()); }
+
+    
+
+
+
+
+    static SkMatrix SK_WARN_UNUSED_RESULT RotateDeg(SkScalar deg) {
+        SkMatrix m;
+        m.setRotate(deg);
+        return m;
+    }
+    static SkMatrix SK_WARN_UNUSED_RESULT RotateDeg(SkScalar deg, SkPoint pt) {
+        SkMatrix m;
+        m.setRotate(deg, pt.x(), pt.y());
+        return m;
+    }
+    static SkMatrix SK_WARN_UNUSED_RESULT RotateRad(SkScalar rad) {
+        return RotateDeg(SkRadiansToDegrees(rad));
+    }
+
+    
+
+
+
+
+
+    static SkMatrix SK_WARN_UNUSED_RESULT Skew(SkScalar kx, SkScalar ky) {
+        SkMatrix m;
+        m.setSkew(kx, ky);
+        return m;
+    }
+
+    
+
+
+
+
+
+    enum ScaleToFit {
+        kFill_ScaleToFit,   
+        kStart_ScaleToFit,  
+        kCenter_ScaleToFit, 
+        kEnd_ScaleToFit,    
+    };
 
     
 
@@ -82,10 +149,13 @@ public:
 
 
 
-    static SkMatrix SK_WARN_UNUSED_RESULT MakeTrans(SkScalar dx, SkScalar dy) {
-        SkMatrix m;
-        m.setTranslate(dx, dy);
-        return m;
+
+
+
+
+    static SkMatrix SK_WARN_UNUSED_RESULT RectToRect(const SkRect& src, const SkRect& dst,
+                                                     ScaleToFit mode = kFill_ScaleToFit) {
+        return MakeRectToRect(src, dst, mode);
     }
 
     
@@ -257,9 +327,13 @@ public:
 
 
 
+
+
     bool isSimilarity(SkScalar tol = SK_ScalarNearlyZero) const;
 
     
+
+
 
 
 
@@ -317,6 +391,19 @@ public:
     SkScalar get(int index) const {
         SkASSERT((unsigned)index < 9);
         return fMat[index];
+    }
+
+    
+
+
+
+
+
+
+    SkScalar rc(int r, int c) const {
+        SkASSERT(r >= 0 && r <= 2);
+        SkASSERT(c >= 0 && c <= 2);
+        return fMat[r*3 + c];
     }
 
     
@@ -472,8 +559,8 @@ public:
 
 
     SkMatrix& setAll(SkScalar scaleX, SkScalar skewX,  SkScalar transX,
-                SkScalar skewY,  SkScalar scaleY, SkScalar transY,
-                SkScalar persp0, SkScalar persp1, SkScalar persp2) {
+                     SkScalar skewY,  SkScalar scaleY, SkScalar transY,
+                     SkScalar persp0, SkScalar persp1, SkScalar persp2) {
         fMat[kMScaleX] = scaleX;
         fMat[kMSkewX]  = skewX;
         fMat[kMTransX] = transX;
@@ -610,6 +697,8 @@ public:
     SkMatrix& setSinCos(SkScalar sinValue, SkScalar cosValue);
 
     
+
+
 
 
 
@@ -946,34 +1035,6 @@ public:
 
 
 
-    bool postIDiv(int divx, int divy);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1074,19 +1135,9 @@ public:
 
     SkMatrix& postConcat(const SkMatrix& other);
 
-    
-
-
-
-
-
-    enum ScaleToFit {
-        kFill_ScaleToFit,   
-        kStart_ScaleToFit,  
-        kCenter_ScaleToFit, 
-        kEnd_ScaleToFit,    
-    };
-
+#ifndef SK_SUPPORT_LEGACY_MATRIX_RECTTORECT
+private:
+#endif
     
 
 
@@ -1117,15 +1168,18 @@ public:
 
 
 
-
-
     static SkMatrix MakeRectToRect(const SkRect& src, const SkRect& dst, ScaleToFit stf) {
         SkMatrix m;
         m.setRectToRect(src, dst, stf);
         return m;
     }
+#ifndef SK_SUPPORT_LEGACY_MATRIX_RECTTORECT
+public:
+#endif
 
     
+
+
 
 
 
@@ -1169,6 +1223,8 @@ public:
 
 
 
+
+
     static void SetAffineIdentity(SkScalar affine[6]);
 
     
@@ -1200,6 +1256,25 @@ public:
     SkMatrix& setAffine(const SkScalar affine[6]);
 
     
+
+
+
+
+
+
+
+
+
+
+    void normalizePerspective() {
+        if (fMat[8] != 1) {
+            this->doNormalizePerspective();
+        }
+    }
+
+    
+
+
 
 
 
@@ -1271,9 +1346,39 @@ public:
 
 
 
+
+
     void mapHomogeneousPoints(SkPoint3 dst[], const SkPoint3 src[], int count) const;
 
     
+
+
+    void mapHomogeneousPoints(SkPoint3 dst[], const SkPoint src[], int count) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPoint mapPoint(SkPoint pt) const {
+        SkPoint result;
+        this->mapXY(pt.x(), pt.y(), &result);
+        return result;
+    }
+
+    
+
+
 
 
 
@@ -1313,7 +1418,36 @@ public:
         return result;
     }
 
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkPoint mapOrigin() const {
+        SkScalar x = this->getTranslateX(),
+                 y = this->getTranslateY();
+        if (this->hasPerspective()) {
+            SkScalar w = fMat[kMPersp2];
+            if (w) { w = 1 / w; }
+            x *= w;
+            y *= w;
+        }
+        return {x, y};
+    }
+
+    
+
+
 
 
 
@@ -1423,7 +1557,11 @@ public:
 
 
 
-    bool mapRect(SkRect* dst, const SkRect& src) const;
+
+
+
+    bool mapRect(SkRect* dst, const SkRect& src,
+                 SkApplyPerspectiveClip pc = SkApplyPerspectiveClip::kYes) const;
 
     
 
@@ -1433,8 +1571,9 @@ public:
 
 
 
-    bool mapRect(SkRect* rect) const {
-        return this->mapRect(rect, *rect);
+
+    bool mapRect(SkRect* rect, SkApplyPerspectiveClip pc = SkApplyPerspectiveClip::kYes) const {
+        return this->mapRect(rect, *rect, pc);
     }
 
     
@@ -1442,13 +1581,17 @@ public:
 
 
 
-    SkRect mapRect(const SkRect& src) const {
+    SkRect mapRect(const SkRect& src,
+                   SkApplyPerspectiveClip pc = SkApplyPerspectiveClip::kYes) const {
         SkRect dst;
-        (void)this->mapRect(&dst, src);
+        (void)this->mapRect(&dst, src, pc);
         return dst;
     }
 
     
+
+
+
 
 
 
@@ -1486,6 +1629,8 @@ public:
 
 
 
+
+
     void mapRectScaleTranslate(SkRect* dst, const SkRect& src) const;
 
     
@@ -1496,43 +1641,9 @@ public:
 
 
 
+
+
     SkScalar mapRadius(SkScalar radius) const;
-
-    
-
-
-
-
-
-
-
-
-    bool isFixedStepInX() const;
-
-    
-
-
-
-
-
-    SkVector fixedStepInX(SkScalar y) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    bool cheapEqualTo(const SkMatrix& m) const {
-        return 0 == memcmp(fMat, m.fMat, sizeof(fMat));
-    }
 
     
 
@@ -1560,6 +1671,8 @@ public:
 
 
 
+
+
     void dump() const;
 
     
@@ -1568,9 +1681,13 @@ public:
 
 
 
+
+
     SkScalar getMinScale() const;
 
     
+
+
 
 
 
@@ -1607,6 +1724,8 @@ public:
 
 
 
+
+
     bool decomposeScale(SkSize* scale, SkMatrix* remaining = nullptr) const;
 
     
@@ -1617,9 +1736,13 @@ public:
 
 
 
+
+
     static const SkMatrix& I();
 
     
+
+
 
 
 
@@ -1654,6 +1777,10 @@ public:
         return result;
     }
 
+    friend SkMatrix operator*(const SkMatrix& a, const SkMatrix& b) {
+        return Concat(a, b);
+    }
+
     
 
 
@@ -1685,14 +1812,17 @@ public:
         fMat[kMPersp1] = 0;
         fMat[kMPersp2] = 1;
 
-        unsigned mask = 0;
+        int mask = 0;
         if (sx != 1 || sy != 1) {
             mask |= kScale_Mask;
         }
-        if (tx || ty) {
+        if (tx != 0.0f || ty != 0.0f) {
             mask |= kTranslate_Mask;
         }
-        this->setTypeMask(mask | kRectStaysRect_Mask);
+        if (sx != 0 && sy != 0) {
+            mask |= kRectStaysRect_Mask;
+        }
+        this->setTypeMask(mask);
     }
 
     
@@ -1729,12 +1859,12 @@ private:
                                      kPerspective_Mask |
                                      kRectStaysRect_Mask;
 
-    SkScalar         fMat[9];
-    mutable uint32_t fTypeMask;
+    SkScalar        fMat[9];
+    mutable int32_t fTypeMask;
 
     constexpr SkMatrix(SkScalar sx, SkScalar kx, SkScalar tx,
                        SkScalar ky, SkScalar sy, SkScalar ty,
-                       SkScalar p0, SkScalar p1, SkScalar p2, uint32_t typeMask)
+                       SkScalar p0, SkScalar p1, SkScalar p2, int typeMask)
         : fMat{sx, kx, tx,
                ky, sy, ty,
                p0, p1, p2}
@@ -1750,18 +1880,18 @@ private:
         SkASSERT(kUnknown_Mask == mask || (mask & kAllMasks) == mask ||
                  ((kUnknown_Mask | kOnlyPerspectiveValid_Mask) & mask)
                  == (kUnknown_Mask | kOnlyPerspectiveValid_Mask));
-        fTypeMask = SkToU8(mask);
+        fTypeMask = mask;
     }
 
     void orTypeMask(int mask) {
         SkASSERT((mask & kORableMasks) == mask);
-        fTypeMask = SkToU8(fTypeMask | mask);
+        fTypeMask |= mask;
     }
 
     void clearTypeMask(int mask) {
         
         SkASSERT((mask & kAllMasks) == mask);
-        fTypeMask = fTypeMask & ~mask;
+        fTypeMask &= ~mask;
     }
 
     TypeMask getPerspectiveTypeMaskOnly() const {
@@ -1853,9 +1983,12 @@ private:
 
     size_t readFromMemory(const void* buffer, size_t length);
 
+    
+    bool postIDiv(int divx, int divy);
+    void doNormalizePerspective();
+
     friend class SkPerspIter;
     friend class SkMatrixPriv;
-    friend class SkReader32;
     friend class SerializationTest;
 };
 SK_END_REQUIRE_DENSE

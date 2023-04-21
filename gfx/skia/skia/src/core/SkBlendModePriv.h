@@ -14,6 +14,13 @@
 
 class SkRasterPipeline;
 
+
+
+
+
+
+constexpr uint8_t kCustom_SkBlendMode = 0xFF;
+
 bool SkBlendMode_SupportsCoverageAsAlpha(SkBlendMode);
 
 static inline bool SkBlendMode_CaresAboutRBOrder(SkBlendMode mode) {
@@ -23,27 +30,10 @@ static inline bool SkBlendMode_CaresAboutRBOrder(SkBlendMode mode) {
 bool SkBlendMode_ShouldPreScaleCoverage(SkBlendMode, bool rgb_coverage);
 void SkBlendMode_AppendStages(SkBlendMode, SkRasterPipeline*);
 
-enum class SkBlendModeCoeff {
-    kZero, 
-    kOne,  
-    kSC,   
-    kISC,  
-    kDC,   
-    kIDC,  
-    kSA,   
-    kISA,  
-    kDA,   
-    kIDA,  
-
-    kCoeffCount
-};
-
-bool SkBlendMode_AsCoeff(SkBlendMode mode, SkBlendModeCoeff* src, SkBlendModeCoeff* dst);
-
 SkPMColor4f SkBlendMode_Apply(SkBlendMode, const SkPMColor4f& src, const SkPMColor4f& dst);
 
-#if SK_SUPPORT_GPU
-#include "src/gpu/GrXferProcessor.h"
+#if defined(SK_GANESH)
+#include "src/gpu/ganesh/GrXferProcessor.h"
 const GrXPFactory* SkBlendMode_AsXPFactory(SkBlendMode);
 #endif
 

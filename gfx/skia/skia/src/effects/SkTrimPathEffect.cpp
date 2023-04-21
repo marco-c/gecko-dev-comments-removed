@@ -5,56 +5,65 @@
 
 
 
-#include "include/core/SkPathMeasure.h"
 #include "include/effects/SkTrimPathEffect.h"
+
+#include "include/core/SkFlattenable.h"
+#include "include/core/SkPath.h"
+#include "include/core/SkPathEffect.h"
+#include "include/core/SkPathMeasure.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkTPin.h"
 #include "src/core/SkReadBuffer.h"
 #include "src/core/SkWriteBuffer.h"
 #include "src/effects/SkTrimPE.h"
 
+#include <cstddef>
+#include <cstdint>
+
+class SkMatrix;
+class SkStrokeRec;
+struct SkRect;
+
 namespace {
 
-class Segmentator : public SkNoncopyable {
-public:
-    Segmentator(const SkPath& src, SkPath* dst)
-        : fMeasure(src, false)
-        , fDst(dst) {}
 
-    void add(SkScalar start, SkScalar stop) {
-        SkASSERT(start < stop);
+static size_t add_segments(const SkPath& src, SkScalar start, SkScalar stop, SkPath* dst,
+                           bool requires_moveto = true) {
+    SkASSERT(start < stop);
 
-        
-        do {
-            const auto nextOffset = fCurrentSegmentOffset + fMeasure.getLength();
+    SkPathMeasure measure(src, false);
 
-            if (start < nextOffset) {
-                fMeasure.getSegment(start - fCurrentSegmentOffset,
-                                    stop  - fCurrentSegmentOffset,
-                                    fDst, true);
+    SkScalar current_segment_offset = 0;
+    size_t            contour_count = 1;
 
-                if (stop < nextOffset)
-                    break;
-            }
+    do {
+        const auto next_offset = current_segment_offset + measure.getLength();
 
-            fCurrentSegmentOffset = nextOffset;
-        } while (fMeasure.nextContour());
-    }
+        if (start < next_offset) {
+            measure.getSegment(start - current_segment_offset,
+                               stop  - current_segment_offset,
+                               dst, requires_moveto);
 
-private:
-    SkPathMeasure fMeasure;
-    SkPath*       fDst;
+            if (stop <= next_offset)
+                break;
+        }
 
-    SkScalar fCurrentSegmentOffset = 0;
+        contour_count++;
+        current_segment_offset = next_offset;
+    } while (measure.nextContour());
 
-    using INHERITED = SkNoncopyable;
-};
+    return contour_count;
+}
 
 } 
 
 SkTrimPE::SkTrimPE(SkScalar startT, SkScalar stopT, SkTrimPathEffect::Mode mode)
     : fStartT(startT), fStopT(stopT), fMode(mode) {}
 
-bool SkTrimPE::onFilterPath(SkPath* dst, const SkPath& src, SkStrokeRec* rec,
-                            const SkRect* cullRect) const {
+bool SkTrimPE::onFilterPath(SkPath* dst, const SkPath& src, SkStrokeRec*, const SkRect*,
+                            const SkMatrix&) const {
     if (fStartT >= fStopT) {
         SkASSERT(fMode == SkTrimPathEffect::Mode::kNormal);
         return true;
@@ -71,12 +80,33 @@ bool SkTrimPE::onFilterPath(SkPath* dst, const SkPath& src, SkStrokeRec* rec,
                arcStop  = len * fStopT;
 
     
-    Segmentator segmentator(src, dst);
     if (fMode == SkTrimPathEffect::Mode::kNormal) {
-        if (arcStart < arcStop) segmentator.add(arcStart, arcStop);
+        
+        if (arcStart < arcStop) {
+            add_segments(src, arcStart, arcStop, dst);
+        }
     } else {
-        if (0 <  arcStart) segmentator.add(0,  arcStart);
-        if (arcStop < len) segmentator.add(arcStop, len);
+        
+        
+        
+        
+        
+        
+
+        bool requires_moveto = true;
+        if (arcStop < len) {
+            
+            const auto contour_count = add_segments(src, arcStop, len, dst);
+
+            
+            
+            if (contour_count == 1 && src.isLastContourClosed()) {
+                requires_moveto = false;
+            }
+        }
+        if (0 <  arcStart) {
+            add_segments(src, 0, arcStart, dst, requires_moveto);
+        }
     }
 
     return true;

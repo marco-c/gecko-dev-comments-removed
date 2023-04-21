@@ -10,8 +10,12 @@
 
 #include "include/core/SkRefCnt.h"
 
+#include <memory>
+
 class SkData;
 class SkImageGenerator;
+class SkOpenTypeSVGDecoder;
+class SkPath;
 class SkTraceMemoryDump;
 
 class SK_API SkGraphics {
@@ -22,9 +26,6 @@ public:
 
 
     static void Init();
-
-    
-    static void Term() {}
 
     
 
@@ -71,37 +72,9 @@ public:
 
 
 
-
-
-
-
-
-    static int GetFontCachePointSizeLimit();
-
-    
-
-
-
-
-
-
-
-
-
-    static int SetFontCachePointSizeLimit(int maxPointSize);
-
-    
-
-
-
-
     static void PurgeFontCache();
 
     
-
-
-
-
 
 
     static size_t GetResourceCacheTotalBytesUsed();
@@ -145,16 +118,6 @@ public:
 
     static void PurgeAllCaches();
 
-    
-
-
-
-
-
-
-
-    static void SetFlags(const char* flags);
-
     typedef std::unique_ptr<SkImageGenerator>
                                             (*ImageGeneratorFromEncodedDataFactory)(sk_sp<SkData>);
 
@@ -167,6 +130,33 @@ public:
 
     static ImageGeneratorFromEncodedDataFactory
                     SetImageGeneratorFromEncodedDataFactory(ImageGeneratorFromEncodedDataFactory);
+
+    
+
+
+
+
+
+
+    using OpenTypeSVGDecoderFactory =
+            std::unique_ptr<SkOpenTypeSVGDecoder> (*)(const uint8_t* svg, size_t length);
+    static OpenTypeSVGDecoderFactory SetOpenTypeSVGDecoderFactory(OpenTypeSVGDecoderFactory);
+    static OpenTypeSVGDecoderFactory GetOpenTypeSVGDecoderFactory();
+
+    
+
+
+    static void AllowJIT();
+
+    
+
+
+
+
+
+
+    typedef bool (*PathAnalyticAADeciderProc)(const SkPath&);
+    static void SetPathAnalyticAADecider(PathAnalyticAADeciderProc);
 };
 
 class SkAutoGraphics {

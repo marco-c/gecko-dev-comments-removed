@@ -8,6 +8,7 @@
 #ifndef SkFontArguments_DEFINED
 #define SkFontArguments_DEFINED
 
+#include "include/core/SkColor.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkTypes.h"
 
@@ -21,13 +22,28 @@ struct SkFontArguments {
         const Coordinate* coordinates;
         int coordinateCount;
     };
+
     
-    struct Axis {
-       SkFourByteTag fTag;
-       float fStyleValue;
+
+
+
+
+
+
+    struct Palette {
+        struct Override {
+            int index;
+            SkColor color;
+        };
+        int index;
+        const Override* overrides;
+        int overrideCount;
     };
 
-    SkFontArguments() : fCollectionIndex(0), fVariationDesignPosition{nullptr, 0} {}
+    SkFontArguments()
+            : fCollectionIndex(0)
+            , fVariationDesignPosition{nullptr, 0}
+            , fPalette{0, nullptr, 0} {}
 
     
 
@@ -36,14 +52,6 @@ struct SkFontArguments {
 
     SkFontArguments& setCollectionIndex(int collectionIndex) {
         fCollectionIndex = collectionIndex;
-        return *this;
-    }
-
-    
-    SkFontArguments& setAxes(const Axis* axes, int axisCount) {
-        fVariationDesignPosition.coordinates =
-                reinterpret_cast<const VariationPosition::Coordinate*>(axes);
-        fVariationDesignPosition.coordinateCount = axisCount;
         return *this;
     }
 
@@ -63,17 +71,24 @@ struct SkFontArguments {
     int getCollectionIndex() const {
         return fCollectionIndex;
     }
-    
-    const Axis* getAxes(int* axisCount) const {
-        *axisCount = fVariationDesignPosition.coordinateCount;
-        return reinterpret_cast<const Axis*>(fVariationDesignPosition.coordinates);
-    }
+
     VariationPosition getVariationDesignPosition() const {
         return fVariationDesignPosition;
     }
+
+    SkFontArguments& setPalette(Palette palette) {
+        fPalette.index = palette.index;
+        fPalette.overrides = palette.overrides;
+        fPalette.overrideCount = palette.overrideCount;
+        return *this;
+    }
+
+    Palette getPalette() const { return fPalette; }
+
 private:
     int fCollectionIndex;
     VariationPosition fVariationDesignPosition;
+    Palette fPalette;
 };
 
 #endif

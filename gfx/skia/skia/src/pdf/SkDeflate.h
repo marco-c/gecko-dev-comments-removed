@@ -31,7 +31,7 @@ public:
 
 
     SkDeflateWStream(SkWStream*,
-                     int compressionLevel = -1,
+                     int compressionLevel,
                      bool gzip = false);
 
     

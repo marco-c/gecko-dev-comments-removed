@@ -8,54 +8,20 @@
 #ifndef GrTypes_DEFINED
 #define GrTypes_DEFINED
 
-#include "include/core/SkMath.h"
 #include "include/core/SkTypes.h"
-#include "include/gpu/GrConfig.h"
+#include "include/private/base/SkTo.h" 
 
+#include <cstddef>
+#include <cstdint>
 class GrBackendSemaphore;
-class SkImage;
-class SkSurface;
+
+namespace skgpu {
+enum class Mipmapped : bool;
+enum class Protected : bool;
+enum class Renderable : bool;
+}
 
 
-
-
-
-
-
-#define GR_MAKE_BITFIELD_OPS(X) \
-    inline X operator |(X a, X b) { \
-        return (X) (+a | +b); \
-    } \
-    inline X& operator |=(X& a, X b) { \
-        return (a = a | b); \
-    } \
-    inline X operator &(X a, X b) { \
-        return (X) (+a & +b); \
-    } \
-    inline X& operator &=(X& a, X b) { \
-        return (a = a & b); \
-    } \
-    template <typename T> \
-    inline X operator &(T a, X b) { \
-        return (X) (+a & +b); \
-    } \
-    template <typename T> \
-    inline X operator &(X a, T b) { \
-        return (X) (+a & +b); \
-    } \
-
-#define GR_DECL_BITFIELD_OPS_FRIENDS(X) \
-    friend X operator |(X a, X b); \
-    friend X& operator |=(X& a, X b); \
-    \
-    friend X operator &(X a, X b); \
-    friend X& operator &=(X& a, X b); \
-    \
-    template <typename T> \
-    friend X operator &(T a, X b); \
-    \
-    template <typename T> \
-    friend X operator &(X a, T b); \
 
 
 
@@ -71,109 +37,56 @@ private:
 };
 
 
-template<typename TFlags> constexpr GrTFlagsMask<TFlags> operator|(GrTFlagsMask<TFlags> a,
-                                                                   GrTFlagsMask<TFlags> b) {
-    return GrTFlagsMask<TFlags>(a.value() | b.value());
-}
-template<typename TFlags> constexpr GrTFlagsMask<TFlags> operator|(GrTFlagsMask<TFlags> a,
-                                                                   TFlags b) {
-    return GrTFlagsMask<TFlags>(a.value() | static_cast<int>(b));
-}
-template<typename TFlags> constexpr GrTFlagsMask<TFlags> operator|(TFlags a,
-                                                                   GrTFlagsMask<TFlags> b) {
-    return GrTFlagsMask<TFlags>(static_cast<int>(a) | b.value());
-}
-template<typename TFlags> inline GrTFlagsMask<TFlags>& operator|=(GrTFlagsMask<TFlags>& a,
-                                                                  GrTFlagsMask<TFlags> b) {
-    return (a = a | b);
-}
-
-
-template<typename TFlags> constexpr GrTFlagsMask<TFlags> operator&(GrTFlagsMask<TFlags> a,
-                                                                   GrTFlagsMask<TFlags> b) {
-    return GrTFlagsMask<TFlags>(a.value() & b.value());
-}
-template<typename TFlags> constexpr TFlags operator&(GrTFlagsMask<TFlags> a, TFlags b) {
-    return static_cast<TFlags>(a.value() & static_cast<int>(b));
-}
-template<typename TFlags> constexpr TFlags operator&(TFlags a, GrTFlagsMask<TFlags> b) {
-    return static_cast<TFlags>(static_cast<int>(a) & b.value());
-}
-template<typename TFlags> inline TFlags& operator&=(TFlags& a, GrTFlagsMask<TFlags> b) {
-    return (a = a & b);
-}
-
-
 
 
 
 #define GR_MAKE_BITFIELD_CLASS_OPS(X) \
-    constexpr GrTFlagsMask<X> operator~(X a) { \
+    [[maybe_unused]] constexpr GrTFlagsMask<X> operator~(X a) { \
         return GrTFlagsMask<X>(~static_cast<int>(a)); \
     } \
-    constexpr X operator|(X a, X b) { \
+    [[maybe_unused]] constexpr X operator|(X a, X b) { \
         return static_cast<X>(static_cast<int>(a) | static_cast<int>(b)); \
     } \
-    inline X& operator|=(X& a, X b) { \
+    [[maybe_unused]] inline X& operator|=(X& a, X b) { \
         return (a = a | b); \
     } \
-    constexpr bool operator&(X a, X b) { \
+    [[maybe_unused]] constexpr bool operator&(X a, X b) { \
         return SkToBool(static_cast<int>(a) & static_cast<int>(b)); \
+    } \
+    [[maybe_unused]] constexpr GrTFlagsMask<X> operator|(GrTFlagsMask<X> a, GrTFlagsMask<X> b) { \
+        return GrTFlagsMask<X>(a.value() | b.value()); \
+    } \
+    [[maybe_unused]] constexpr GrTFlagsMask<X> operator|(GrTFlagsMask<X> a, X b) { \
+        return GrTFlagsMask<X>(a.value() | static_cast<int>(b)); \
+    } \
+    [[maybe_unused]] constexpr GrTFlagsMask<X> operator|(X a, GrTFlagsMask<X> b) { \
+        return GrTFlagsMask<X>(static_cast<int>(a) | b.value()); \
+    } \
+    [[maybe_unused]] constexpr X operator&(GrTFlagsMask<X> a, GrTFlagsMask<X> b) { \
+        return static_cast<X>(a.value() & b.value()); \
+    } \
+    [[maybe_unused]] constexpr X operator&(GrTFlagsMask<X> a, X b) { \
+        return static_cast<X>(a.value() & static_cast<int>(b)); \
+    } \
+    [[maybe_unused]] constexpr X operator&(X a, GrTFlagsMask<X> b) { \
+        return static_cast<X>(static_cast<int>(a) & b.value()); \
+    } \
+    [[maybe_unused]] inline X& operator&=(X& a, GrTFlagsMask<X> b) { \
+        return (a = a & b); \
     } \
 
 #define GR_DECL_BITFIELD_CLASS_OPS_FRIENDS(X) \
     friend constexpr GrTFlagsMask<X> operator ~(X); \
     friend constexpr X operator |(X, X); \
     friend X& operator |=(X&, X); \
-    friend constexpr bool operator &(X, X)
-
-
-
-
-#define GR_CT_MAX(a, b) (((b) < (a)) ? (a) : (b))
-#define GR_CT_MIN(a, b) (((b) < (a)) ? (b) : (a))
-
-
-
-
-static inline constexpr int32_t GrIDivRoundUp(int x, int y) {
-    SkASSERT(y > 0);
-    return (x + (y-1)) / y;
-}
-static inline constexpr uint32_t GrUIDivRoundUp(uint32_t x, uint32_t y) {
-    return (x + (y-1)) / y;
-}
-static inline constexpr size_t GrSizeDivRoundUp(size_t x, size_t y) { return (x + (y - 1)) / y; }
-
-
-
-
-static inline constexpr uint32_t GrUIAlignUp(uint32_t x, uint32_t alignment) {
-    return GrUIDivRoundUp(x, alignment) * alignment;
-}
-static inline constexpr size_t GrSizeAlignUp(size_t x, size_t alignment) {
-    return GrSizeDivRoundUp(x, alignment) * alignment;
-}
-
-
-
-
-static inline constexpr uint32_t GrUIAlignUpPad(uint32_t x, uint32_t alignment) {
-    return (alignment - x % alignment) % alignment;
-}
-static inline constexpr size_t GrSizeAlignUpPad(size_t x, size_t alignment) {
-    return (alignment - x % alignment) % alignment;
-}
-
-
-
-
-static inline constexpr uint32_t GrUIAlignDown(uint32_t x, uint32_t alignment) {
-    return (x / alignment) * alignment;
-}
-static inline constexpr size_t GrSizeAlignDown(size_t x, uint32_t alignment) {
-    return (x / alignment) * alignment;
-}
+    friend constexpr bool operator &(X, X); \
+    friend constexpr GrTFlagsMask<X> operator|(GrTFlagsMask<X>, GrTFlagsMask<X>); \
+    friend constexpr GrTFlagsMask<X> operator|(GrTFlagsMask<X>, X); \
+    friend constexpr GrTFlagsMask<X> operator|(X, GrTFlagsMask<X>); \
+    friend constexpr X operator&(GrTFlagsMask<X>, GrTFlagsMask<X>); \
+    friend constexpr X operator&(GrTFlagsMask<X>, X); \
+    friend constexpr X operator&(X, GrTFlagsMask<X>); \
+    friend X& operator &=(X&, GrTFlagsMask<X>)
 
 
 
@@ -181,10 +94,11 @@ static inline constexpr size_t GrSizeAlignDown(size_t x, uint32_t alignment) {
 
 
 enum class GrBackendApi : unsigned {
-    kMetal,
-    kDawn,
     kOpenGL,
     kVulkan,
+    kMetal,
+    kDirect3D,
+    kDawn,
     
 
 
@@ -213,26 +127,20 @@ static constexpr GrBackendApi kMock_GrBackend = GrBackendApi::kMock;
 
 
 
-enum class GrMipMapped : bool {
-    kNo = false,
-    kYes = true
-};
+
+using GrMipmapped = skgpu::Mipmapped;
+
+using GrMipMapped = skgpu::Mipmapped;
 
 
 
 
-enum class GrRenderable : bool {
-    kNo = false,
-    kYes = true
-};
+using GrRenderable = skgpu::Renderable;
 
 
 
 
-enum class GrProtected : bool {
-    kNo = false,
-    kYes = true
-};
+using GrProtected = skgpu::Protected;
 
 
 
@@ -263,7 +171,6 @@ enum GrGLBackendState {
     kProgram_GrGLBackendState          = 1 << 8,
     kFixedFunction_GrGLBackendState    = 1 << 9,
     kMisc_GrGLBackendState             = 1 << 10,
-    kPathRendering_GrGLBackendState    = 1 << 11,
     kALL_GrGLBackendState              = 0xffff
 };
 
@@ -272,14 +179,31 @@ enum GrGLBackendState {
 
 static const uint32_t kAll_GrBackendState = 0xffffffff;
 
-enum GrFlushFlags {
-    kNone_GrFlushFlags = 0,
-    
-    kSyncCpu_GrFlushFlag = 0x1,
-};
-
 typedef void* GrGpuFinishedContext;
 typedef void (*GrGpuFinishedProc)(GrGpuFinishedContext finishedContext);
+
+typedef void* GrGpuSubmittedContext;
+typedef void (*GrGpuSubmittedProc)(GrGpuSubmittedContext submittedContext, bool success);
+
+typedef void* GrDirectContextDestroyedContext;
+typedef void (*GrDirectContextDestroyedProc)(GrDirectContextDestroyedContext destroyedContext);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -300,11 +224,12 @@ typedef void (*GrGpuFinishedProc)(GrGpuFinishedContext finishedContext);
 
 
 struct GrFlushInfo {
-    GrFlushFlags         fFlags = kNone_GrFlushFlags;
-    int                  fNumSemaphores = 0;
-    GrBackendSemaphore*  fSignalSemaphores = nullptr;
-    GrGpuFinishedProc    fFinishedProc = nullptr;
+    size_t fNumSemaphores = 0;
+    GrBackendSemaphore* fSignalSemaphores = nullptr;
+    GrGpuFinishedProc fFinishedProc = nullptr;
     GrGpuFinishedContext fFinishedContext = nullptr;
+    GrGpuSubmittedProc fSubmittedProc = nullptr;
+    GrGpuSubmittedContext fSubmittedContext = nullptr;
 };
 
 
@@ -314,36 +239,6 @@ struct GrFlushInfo {
 enum class GrSemaphoresSubmitted : bool {
     kNo = false,
     kYes = true
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct GrPrepareForExternalIORequests {
-    int fNumImages = 0;
-    SkImage** fImages = nullptr;
-    int fNumSurfaces = 0;
-    SkSurface** fSurfaces = nullptr;
-    bool* fPrepareSurfaceForPresent = nullptr;
-
-    bool hasRequests() const { return fNumImages || fNumSurfaces; }
 };
 
 #endif

@@ -9,7 +9,10 @@
 #define SkWeakRefCnt_DEFINED
 
 #include "include/core/SkRefCnt.h"
+#include "include/core/SkTypes.h"
+
 #include <atomic>
+#include <cstdint>
 
 
 
@@ -164,7 +167,7 @@ private:
     
     mutable std::atomic<int32_t> fWeakCnt;
 
-    typedef SkRefCnt INHERITED;
+    using INHERITED = SkRefCnt;
 };
 
 #endif

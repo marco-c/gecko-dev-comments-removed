@@ -5,16 +5,49 @@
 
 
 
+#include "include/core/SkRRect.h"
+
 #include "include/core/SkMatrix.h"
-#include "include/private/SkMalloc.h"
-#include "src/core/SkBuffer.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkString.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkFloatingPoint.h"
+#include "src/base/SkBuffer.h"
 #include "src/core/SkRRectPriv.h"
+#include "src/core/SkRectPriv.h"
 #include "src/core/SkScaleToSides.h"
+#include "src/core/SkStringUtils.h"
 
-#include <cmath>
-#include <utility>
+#include <algorithm>
+#include <cstring>
+#include <iterator>
 
 
+
+void SkRRect::setOval(const SkRect& oval) {
+    if (!this->initializeRect(oval)) {
+        return;
+    }
+
+    SkScalar xRad = SkRectPriv::HalfWidth(fRect);
+    SkScalar yRad = SkRectPriv::HalfHeight(fRect);
+
+    if (xRad == 0.0f || yRad == 0.0f) {
+        
+        memset(fRadii, 0, sizeof(fRadii));
+        fType = kRect_Type;
+    } else {
+        for (int i = 0; i < 4; ++i) {
+            fRadii[i].set(xRad, yRad);
+        }
+        fType = kOval_Type;
+    }
+
+    SkASSERT(this->isValid());
+}
 
 void SkRRect::setRectXY(const SkRect& rect, SkScalar xRad, SkScalar yRad) {
     if (!this->initializeRect(rect)) {
@@ -27,7 +60,7 @@ void SkRRect::setRectXY(const SkRect& rect, SkScalar xRad, SkScalar yRad) {
 
     if (fRect.width() < xRad+xRad || fRect.height() < yRad+yRad) {
         
-        SkScalar scale = SkMinScalar(sk_ieee_float_divide(fRect. width(), xRad + xRad),
+        SkScalar scale = std::min(sk_ieee_float_divide(fRect. width(), xRad + xRad),
                                      sk_ieee_float_divide(fRect.height(), yRad + yRad));
         SkASSERT(scale < SK_Scalar1);
         xRad *= scale;
@@ -64,17 +97,17 @@ void SkRRect::setNinePatch(const SkRect& rect, SkScalar leftRad, SkScalar topRad
         return;
     }
 
-    leftRad = SkMaxScalar(leftRad, 0);
-    topRad = SkMaxScalar(topRad, 0);
-    rightRad = SkMaxScalar(rightRad, 0);
-    bottomRad = SkMaxScalar(bottomRad, 0);
+    leftRad = std::max(leftRad, 0.0f);
+    topRad = std::max(topRad, 0.0f);
+    rightRad = std::max(rightRad, 0.0f);
+    bottomRad = std::max(bottomRad, 0.0f);
 
     SkScalar scale = SK_Scalar1;
     if (leftRad + rightRad > fRect.width()) {
         scale = fRect.width() / (leftRad + rightRad);
     }
     if (topRad + bottomRad > fRect.height()) {
-        scale = SkMinScalar(scale, fRect.height() / (topRad + bottomRad));
+        scale = std::min(scale, fRect.height() / (topRad + bottomRad));
     }
 
     if (scale < SK_Scalar1) {
@@ -115,7 +148,7 @@ void SkRRect::setNinePatch(const SkRect& rect, SkScalar leftRad, SkScalar topRad
 
 static double compute_min_scale(double rad1, double rad2, double limit, double curMin) {
     if ((rad1 + rad2) > limit) {
-        return SkTMin(curMin, limit / (rad1 + rad2));
+        return std::min(curMin, limit / (rad1 + rad2));
     }
     return curMin;
 }
@@ -157,7 +190,12 @@ void SkRRect::setRectRadii(const SkRect& rect, const SkVector radii[4]) {
         return;
     }
 
-    this->scaleRadii(rect);
+    this->scaleRadii();
+
+    if (!this->isValid()) {
+        this->setRect(rect);
+        return;
+    }
 }
 
 bool SkRRect::initializeRect(const SkRect& rect) {
@@ -188,7 +226,7 @@ static void flush_to_zero(SkScalar& a, SkScalar& b) {
     }
 }
 
-void SkRRect::scaleRadii(const SkRect& rect) {
+bool SkRRect::scaleRadii() {
     
     
     
@@ -222,15 +260,15 @@ void SkRRect::scaleRadii(const SkRect& rect) {
     }
 
     
-    if (clamp_to_zero(fRadii)) {
-        this->setRect(rect);
-        return;
-    }
+    clamp_to_zero(fRadii);
 
     
     this->computeType();
 
-    SkASSERT(this->isValid());
+    
+    
+
+    return scale < 1.0;
 }
 
 
@@ -288,6 +326,17 @@ bool SkRRect::checkCornerContainment(SkScalar x, SkScalar y) const {
     return dist <= SkScalarSquare(fRadii[index].fX * fRadii[index].fY);
 }
 
+bool SkRRectPriv::IsNearlySimpleCircular(const SkRRect& rr, SkScalar tolerance) {
+    SkScalar simpleRadius = rr.fRadii[0].fX;
+    return SkScalarNearlyEqual(simpleRadius, rr.fRadii[0].fY, tolerance) &&
+           SkScalarNearlyEqual(simpleRadius, rr.fRadii[1].fX, tolerance) &&
+           SkScalarNearlyEqual(simpleRadius, rr.fRadii[1].fY, tolerance) &&
+           SkScalarNearlyEqual(simpleRadius, rr.fRadii[2].fX, tolerance) &&
+           SkScalarNearlyEqual(simpleRadius, rr.fRadii[2].fY, tolerance) &&
+           SkScalarNearlyEqual(simpleRadius, rr.fRadii[3].fX, tolerance) &&
+           SkScalarNearlyEqual(simpleRadius, rr.fRadii[3].fY, tolerance);
+}
+
 bool SkRRectPriv::AllCornersCircular(const SkRRect& rr, SkScalar tolerance) {
     return SkScalarNearlyEqual(rr.fRadii[0].fX, rr.fRadii[0].fY, tolerance) &&
            SkScalarNearlyEqual(rr.fRadii[1].fX, rr.fRadii[1].fY, tolerance) &&
@@ -327,7 +376,7 @@ static bool radii_are_nine_patch(const SkVector radii[4]) {
 void SkRRect::computeType() {
     if (fRect.isEmpty()) {
         SkASSERT(fRect.isSorted());
-        for (size_t i = 0; i < SK_ARRAY_COUNT(fRadii); ++i) {
+        for (size_t i = 0; i < std::size(fRadii); ++i) {
             SkASSERT((fRadii[i] == SkVector{0, 0}));
         }
         fType = kEmpty_Type;
@@ -371,7 +420,11 @@ void SkRRect::computeType() {
     } else {
         fType = kComplex_Type;
     }
-    SkASSERT(this->isValid());
+
+    if (!this->isValid()) {
+        this->setRect(this->rect());
+        SkASSERT(this->isValid());
+    }
 }
 
 bool SkRRect::transform(const SkMatrix& matrix, SkRRect* dst) const {
@@ -492,8 +545,8 @@ bool SkRRect::transform(const SkMatrix& matrix, SkRRect* dst) const {
         return false;
     }
 
-    dst->scaleRadii(dst->fRect);
-    dst->isValid();
+    dst->scaleRadii();
+    dst->isValid();  
 
     return true;
 }
@@ -553,8 +606,10 @@ size_t SkRRect::readFromMemory(const void* buffer, size_t length) {
         return 0;
     }
 
+    
+
     SkRRect raw;
-    memcpy(&raw, buffer, kSizeInMemory);
+    memcpy((void*)&raw, buffer, kSizeInMemory);
     this->setRectRadii(raw.fRect, raw.fRadii);
     return kSizeInMemory;
 }
@@ -568,10 +623,7 @@ bool SkRRectPriv::ReadFromBuffer(SkRBuffer* buffer, SkRRect* rr) {
            (rr->readFromMemory(&storage, SkRRect::kSizeInMemory) == SkRRect::kSizeInMemory);
 }
 
-#include "include/core/SkString.h"
-#include "src/core/SkStringUtils.h"
-
-void SkRRect::dump(bool asHex) const {
+SkString SkRRect::dumpToString(bool asHex) const {
     SkScalarAsStringType asType = asHex ? kHex_SkScalarAsStringType : kDec_SkScalarAsStringType;
 
     fRect.dump(asHex);
@@ -587,8 +639,10 @@ void SkRRect::dump(bool asHex) const {
         line.append("\n");
     }
     line.append("};");
-    SkDebugf("%s\n", line.c_str());
+    return line;
 }
+
+void SkRRect::dump(bool asHex) const { SkDebugf("%s\n", this->dumpToString(asHex).c_str()); }
 
 
 
@@ -645,8 +699,8 @@ bool SkRRect::isValid() const {
             }
 
             for (int i = 0; i < 4; ++i) {
-                if (!SkScalarNearlyEqual(fRadii[i].fX, SkScalarHalf(fRect.width())) ||
-                    !SkScalarNearlyEqual(fRadii[i].fY, SkScalarHalf(fRect.height()))) {
+                if (!SkScalarNearlyEqual(fRadii[i].fX, SkRectPriv::HalfWidth(fRect)) ||
+                    !SkScalarNearlyEqual(fRadii[i].fY, SkRectPriv::HalfHeight(fRect))) {
                     return false;
                 }
             }
@@ -686,3 +740,178 @@ bool SkRRect::AreRectAndRadiiValid(const SkRect& rect, const SkVector radii[4]) 
     return true;
 }
 
+
+SkRect SkRRectPriv::InnerBounds(const SkRRect& rr) {
+    if (rr.isEmpty() || rr.isRect()) {
+        return rr.rect();
+    }
+
+    
+    
+    
+    
+    
+    SkRect innerBounds = rr.getBounds();
+    SkVector tl = rr.radii(SkRRect::kUpperLeft_Corner);
+    SkVector tr = rr.radii(SkRRect::kUpperRight_Corner);
+    SkVector bl = rr.radii(SkRRect::kLowerLeft_Corner);
+    SkVector br = rr.radii(SkRRect::kLowerRight_Corner);
+
+    
+    
+    
+    SkScalar leftShift   = std::max(tl.fX, bl.fX);
+    SkScalar topShift    = std::max(tl.fY, tr.fY);
+    SkScalar rightShift  = std::max(tr.fX, br.fX);
+    SkScalar bottomShift = std::max(bl.fY, br.fY);
+
+    SkScalar dw = leftShift + rightShift;
+    SkScalar dh = topShift + bottomShift;
+
+    
+    SkScalar horizArea = (innerBounds.width() - dw) * innerBounds.height();
+    
+    SkScalar vertArea = (innerBounds.height() - dh) * innerBounds.width();
+    
+    
+    
+    
+    
+    static constexpr SkScalar kScale = (1.f - SK_ScalarRoot2Over2) + 1e-5f;
+    SkScalar innerArea = (innerBounds.width() - kScale * dw) * (innerBounds.height() - kScale * dh);
+
+    if (horizArea > vertArea && horizArea > innerArea) {
+        
+        innerBounds.fLeft += leftShift;
+        innerBounds.fRight -= rightShift;
+    } else if (vertArea > innerArea) {
+        
+        innerBounds.fTop += topShift;
+        innerBounds.fBottom -= bottomShift;
+    } else if (innerArea > 0.f) {
+        
+        innerBounds.fLeft += kScale * leftShift;
+        innerBounds.fRight -= kScale * rightShift;
+        innerBounds.fTop += kScale * topShift;
+        innerBounds.fBottom -= kScale * bottomShift;
+    } else {
+        
+        return SkRect::MakeEmpty();
+    }
+
+    SkASSERT(innerBounds.isSorted() && !innerBounds.isEmpty());
+    return innerBounds;
+}
+
+SkRRect SkRRectPriv::ConservativeIntersect(const SkRRect& a, const SkRRect& b) {
+    
+    auto getCorner = [](const SkRect& r, SkRRect::Corner corner) -> SkPoint {
+        switch(corner) {
+            case SkRRect::kUpperLeft_Corner:  return {r.fLeft, r.fTop};
+            case SkRRect::kUpperRight_Corner: return {r.fRight, r.fTop};
+            case SkRRect::kLowerLeft_Corner:  return {r.fLeft, r.fBottom};
+            case SkRRect::kLowerRight_Corner: return {r.fRight, r.fBottom};
+            default: SkUNREACHABLE;
+        }
+    };
+    
+    
+    
+    auto insideCorner = [](SkRRect::Corner corner, const SkPoint& a, const SkPoint& b) {
+        switch(corner) {
+            case SkRRect::kUpperLeft_Corner:  return a.fX >= b.fX && a.fY >= b.fY;
+            case SkRRect::kUpperRight_Corner: return a.fX <= b.fX && a.fY >= b.fY;
+            case SkRRect::kLowerRight_Corner: return a.fX <= b.fX && a.fY <= b.fY;
+            case SkRRect::kLowerLeft_Corner:  return a.fX >= b.fX && a.fY <= b.fY;
+            default:  SkUNREACHABLE;
+        }
+    };
+
+    auto getIntersectionRadii = [&](const SkRect& r, SkRRect::Corner corner, SkVector* radii) {
+        SkPoint test = getCorner(r, corner);
+        SkPoint aCorner = getCorner(a.rect(), corner);
+        SkPoint bCorner = getCorner(b.rect(), corner);
+
+        if (test == aCorner && test == bCorner) {
+            
+            
+            
+            SkVector aRadii = a.radii(corner);
+            SkVector bRadii = b.radii(corner);
+            if (aRadii.fX >= bRadii.fX && aRadii.fY >= bRadii.fY) {
+                *radii = aRadii;
+                return true;
+            } else if (bRadii.fX >= aRadii.fX && bRadii.fY >= aRadii.fY) {
+                *radii = bRadii;
+                return true;
+            } else {
+                return false;
+            }
+        } else if (test == aCorner) {
+            
+            
+            
+            *radii = a.radii(corner);
+            if (*radii == b.radii(corner)) {
+                return insideCorner(corner, aCorner, bCorner); 
+            } else {
+                return b.checkCornerContainment(aCorner.fX, aCorner.fY);
+            }
+        } else if (test == bCorner) {
+            
+            *radii = b.radii(corner);
+            if (*radii == a.radii(corner)) {
+                return insideCorner(corner, bCorner, aCorner); 
+            } else {
+                return a.checkCornerContainment(bCorner.fX, bCorner.fY);
+            }
+        } else {
+            
+            
+            *radii = {0.f, 0.f};
+            return a.checkCornerContainment(test.fX, test.fY) &&
+                   b.checkCornerContainment(test.fX, test.fY);
+        }
+    };
+
+    
+    
+    SkRRect intersection;
+    if (!intersection.fRect.intersect(a.rect(), b.rect())) {
+        
+        return SkRRect::MakeEmpty();
+    }
+
+    const SkRRect::Corner corners[] = {
+        SkRRect::kUpperLeft_Corner,
+        SkRRect::kUpperRight_Corner,
+        SkRRect::kLowerRight_Corner,
+        SkRRect::kLowerLeft_Corner
+    };
+    
+    
+    
+    
+    
+    
+    for (auto c : corners) {
+        if (!getIntersectionRadii(intersection.fRect, c, &intersection.fRadii[c])) {
+            return SkRRect::MakeEmpty(); 
+        }
+    }
+
+    
+    
+    
+    
+    
+    if (!SkRRect::AreRectAndRadiiValid(intersection.fRect, intersection.fRadii) ||
+        intersection.scaleRadii()) {
+        return SkRRect::MakeEmpty();
+    }
+
+    
+    
+    intersection.computeType();
+    return intersection;
+}

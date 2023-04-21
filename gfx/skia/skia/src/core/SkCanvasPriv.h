@@ -9,10 +9,30 @@
 #define SkCanvasPriv_DEFINED
 
 #include "include/core/SkCanvas.h"
-#include "include/private/SkNoncopyable.h"
+#include "include/private/base/SkNoncopyable.h"
 
 class SkReadBuffer;
 class SkWriteBuffer;
+
+#if GR_TEST_UTILS && defined(SK_GANESH)
+namespace skgpu::ganesh {
+class SurfaceDrawContext;
+class SurfaceFillContext;
+}  
+#endif
+
+
+#if defined(SK_GANESH)
+class GrRenderTargetProxy;
+#else
+using GrRenderTargetProxy = SkRefCnt;
+#endif 
+
+#if GRAPHITE_TEST_UTILS
+namespace skgpu::graphite {
+    class TextureProxy;
+}
+#endif
 
 class SkAutoCanvasMatrixPaint : SkNoncopyable {
 public:
@@ -26,10 +46,6 @@ private:
 
 class SkCanvasPriv {
 public:
-    enum {
-        kDontClipToLayer_SaveLayerFlag = SkCanvas::kDontClipToLayer_PrivateSaveLayerFlag,
-    };
-
     
     static bool ReadLattice(SkReadBuffer&, SkCanvas::Lattice*);
 
@@ -39,8 +55,6 @@ public:
     
     static size_t WriteLattice(void* storage, const SkCanvas::Lattice&);
 
-    static SkCanvas::SaveLayerFlags LegacySaveFlagsToSaveLayerFlags(uint32_t legacySaveFlags);
-
     static int SaveBehind(SkCanvas* canvas, const SkRect* subset) {
         return canvas->only_axis_aligned_saveBehind(subset);
     }
@@ -49,10 +63,54 @@ public:
     }
 
     
+    static void ResetClip(SkCanvas* canvas) {
+        canvas->internal_private_resetClip();
+    }
+
+    static SkBaseDevice* TopDevice(SkCanvas* canvas) {
+        return canvas->topDevice();
+    }
+
+#if GR_TEST_UTILS && defined(SK_GANESH)
+    static skgpu::ganesh::SurfaceDrawContext* TopDeviceSurfaceDrawContext(SkCanvas*);
+    static skgpu::ganesh::SurfaceFillContext* TopDeviceSurfaceFillContext(SkCanvas*);
+#endif
+    static GrRenderTargetProxy* TopDeviceTargetProxy(SkCanvas*);
+
+#if GRAPHITE_TEST_UTILS
+    static skgpu::graphite::TextureProxy* TopDeviceGraphiteTargetProxy(SkCanvas*);
+#endif
+
+    
     
     
     static void GetDstClipAndMatrixCounts(const SkCanvas::ImageSetEntry set[], int count,
                                           int* totalDstClipCount, int* totalMatrixCount);
+
+    static SkCanvas::SaveLayerRec ScaledBackdropLayer(const SkRect* bounds,
+                                                      const SkPaint* paint,
+                                                      const SkImageFilter* backdrop,
+                                                      SkScalar backdropScale,
+                                                      SkCanvas::SaveLayerFlags saveLayerFlags) {
+        return SkCanvas::SaveLayerRec(bounds, paint, backdrop, backdropScale, saveLayerFlags);
+    }
+
+    static SkScalar GetBackdropScaleFactor(const SkCanvas::SaveLayerRec& rec) {
+        return rec.fExperimentalBackdropScale;
+    }
+
+    static void SetBackdropScaleFactor(SkCanvas::SaveLayerRec* rec, SkScalar scale) {
+        rec->fExperimentalBackdropScale = scale;
+    }
 };
+
+
+
+
+
+
+
+
+constexpr int kMaxPictureOpsToUnrollInsteadOfRef = 1;
 
 #endif

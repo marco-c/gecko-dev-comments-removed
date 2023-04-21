@@ -8,12 +8,15 @@
 #ifndef SkMessageBus_DEFINED
 #define SkMessageBus_DEFINED
 
+#include <type_traits>
+
+#include "include/core/SkRefCnt.h"
 #include "include/core/SkTypes.h"
-#include "include/private/SkMutex.h"
-#include "include/private/SkNoncopyable.h"
-#include "include/private/SkOnce.h"
-#include "include/private/SkTArray.h"
-#include "include/private/SkTDArray.h"
+#include "include/private/base/SkMutex.h"
+#include "include/private/base/SkNoncopyable.h"
+#include "include/private/base/SkOnce.h"
+#include "include/private/base/SkTArray.h"
+#include "include/private/base/SkTDArray.h"
 
 
 
@@ -23,30 +26,39 @@
 
 
 
-template <typename Message>
+template <typename Message, typename IDType, bool AllowCopyableMessage = true>
 class SkMessageBus : SkNoncopyable {
 public:
+    template <typename T> struct is_sk_sp : std::false_type {};
+    template <typename T> struct is_sk_sp<sk_sp<T>> : std::true_type {};
+
     
     
-    static void Post(const Message& m);
+    static_assert(AllowCopyableMessage || is_sk_sp<Message>::value ||
+                          !std::is_copy_constructible<Message>::value,
+                  "The message type must be sk_sp or non copyable.");
+
+    
+    
+    static void Post(Message m);
 
     class Inbox {
     public:
-        Inbox(uint32_t uniqueID = SK_InvalidUniqueID);
+        Inbox(IDType uniqueID);
         ~Inbox();
 
-        uint32_t uniqueID() const { return fUniqueID; }
+        IDType uniqueID() const { return fUniqueID; }
 
         
-        void poll(SkTArray<Message>* out);
+        void poll(skia_private::TArray<Message>* out);
 
     private:
-        SkTArray<Message>  fMessages;
-        SkMutex            fMessagesMutex;
-        uint32_t           fUniqueID;
+        skia_private::TArray<Message> fMessages;
+        SkMutex                       fMessagesMutex;
+        const IDType                  fUniqueID;
 
         friend class SkMessageBus;
-        void receive(const Message& m);  
+        void receive(Message m);  
     };
 
 private:
@@ -59,32 +71,34 @@ private:
 
 
 
-#define DECLARE_SKMESSAGEBUS_MESSAGE(Message)                      \
-    template <>                                                    \
-    SkMessageBus<Message>* SkMessageBus<Message>::Get() {          \
-        static SkOnce once;                                        \
-        static SkMessageBus<Message>* bus;                         \
-        once([] { bus = new SkMessageBus<Message>(); });           \
-        return bus;                                                \
+#define DECLARE_SKMESSAGEBUS_MESSAGE(Message, IDType, AllowCopyableMessage)            \
+    template <>                                                                        \
+    SkMessageBus<Message, IDType, AllowCopyableMessage>*                               \
+    SkMessageBus<Message, IDType, AllowCopyableMessage>::Get() {                       \
+        static SkOnce once;                                                            \
+        static SkMessageBus<Message, IDType, AllowCopyableMessage>* bus;               \
+        once([] { bus = new SkMessageBus<Message, IDType, AllowCopyableMessage>(); }); \
+        return bus;                                                                    \
     }
 
 
 
-template<typename Message>
-SkMessageBus<Message>::Inbox::Inbox(uint32_t uniqueID) : fUniqueID(uniqueID) {
+template <typename Message, typename IDType, bool AllowCopyableMessage>
+SkMessageBus<Message, IDType, AllowCopyableMessage>::Inbox::Inbox(IDType uniqueID)
+        : fUniqueID(uniqueID) {
     
-    SkMessageBus<Message>* bus = SkMessageBus<Message>::Get();
+    auto* bus = SkMessageBus<Message, IDType, AllowCopyableMessage>::Get();
     SkAutoMutexExclusive lock(bus->fInboxesMutex);
     bus->fInboxes.push_back(this);
 }
 
-template<typename Message>
-SkMessageBus<Message>::Inbox::~Inbox() {
+template <typename Message, typename IDType, bool AllowCopyableMessage>
+SkMessageBus<Message, IDType, AllowCopyableMessage>::Inbox::~Inbox() {
     
-    SkMessageBus<Message>* bus = SkMessageBus<Message>::Get();
+    auto* bus = SkMessageBus<Message, IDType, AllowCopyableMessage>::Get();
     SkAutoMutexExclusive lock(bus->fInboxesMutex);
     
-    for (int i = 0; i < bus->fInboxes.count(); i++) {
+    for (int i = 0; i < bus->fInboxes.size(); i++) {
         if (this == bus->fInboxes[i]) {
             bus->fInboxes.removeShuffle(i);
             break;
@@ -92,33 +106,47 @@ SkMessageBus<Message>::Inbox::~Inbox() {
     }
 }
 
-template<typename Message>
-void SkMessageBus<Message>::Inbox::receive(const Message& m) {
+template <typename Message, typename IDType, bool AllowCopyableMessage>
+void SkMessageBus<Message, IDType, AllowCopyableMessage>::Inbox::receive(Message m) {
     SkAutoMutexExclusive lock(fMessagesMutex);
-    fMessages.push_back(m);
+    fMessages.push_back(std::move(m));
 }
 
-template<typename Message>
-void SkMessageBus<Message>::Inbox::poll(SkTArray<Message>* messages) {
+template <typename Message, typename IDType, bool AllowCopyableMessage>
+void SkMessageBus<Message, IDType, AllowCopyableMessage>::Inbox::poll(
+        skia_private::TArray<Message>* messages) {
     SkASSERT(messages);
-    messages->reset();
+    messages->clear();
     SkAutoMutexExclusive lock(fMessagesMutex);
     fMessages.swap(*messages);
 }
 
 
 
-template <typename Message>
-SkMessageBus<Message>::SkMessageBus() {}
+template <typename Message, typename IDType, bool AllowCopyableMessage>
+SkMessageBus<Message, IDType, AllowCopyableMessage>::SkMessageBus() = default;
 
-template <typename Message>
- void SkMessageBus<Message>::Post(const Message& m) {
-    SkMessageBus<Message>* bus = SkMessageBus<Message>::Get();
+template <typename Message, typename IDType, bool AllowCopyableMessage>
+ void SkMessageBus<Message, IDType, AllowCopyableMessage>::Post(Message m) {
+    auto* bus = SkMessageBus<Message, IDType, AllowCopyableMessage>::Get();
     SkAutoMutexExclusive lock(bus->fInboxesMutex);
-    for (int i = 0; i < bus->fInboxes.count(); i++) {
+    for (int i = 0; i < bus->fInboxes.size(); i++) {
         if (SkShouldPostMessageToBus(m, bus->fInboxes[i]->fUniqueID)) {
-            bus->fInboxes[i]->receive(m);
+            if constexpr (AllowCopyableMessage) {
+                bus->fInboxes[i]->receive(m);
+            } else {
+                if constexpr (is_sk_sp<Message>::value) {
+                    SkASSERT(m->unique());
+                }
+                bus->fInboxes[i]->receive(std::move(m));
+                break;
+            }
         }
+    }
+
+    if constexpr (is_sk_sp<Message>::value && !AllowCopyableMessage) {
+        
+        SkASSERT(!m);  
     }
 }
 

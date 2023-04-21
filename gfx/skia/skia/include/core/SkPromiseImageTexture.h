@@ -8,14 +8,11 @@
 #ifndef SkPromiseImageTexture_DEFINED
 #define SkPromiseImageTexture_DEFINED
 
+#include "include/core/SkTypes.h"
+
+#if defined(SK_GANESH)
 #include "include/core/SkRefCnt.h"
 #include "include/gpu/GrBackendSurface.h"
-#include "include/private/GrResourceKey.h"
-
-#if SK_SUPPORT_GPU
-
-
-
 
 
 
@@ -37,23 +34,13 @@ public:
         return sk_sp<SkPromiseImageTexture>(new SkPromiseImageTexture(backendTexture));
     }
 
-    const GrBackendTexture& backendTexture() const { return fBackendTexture; }
-
-    void addKeyToInvalidate(uint32_t contextID, const GrUniqueKey& key);
-    uint32_t uniqueID() const { return fUniqueID; }
-
-#if GR_TEST_UTILS
-    SkTArray<GrUniqueKey> testingOnly_uniqueKeysToInvalidate() const;
-#endif
+    GrBackendTexture backendTexture() const { return fBackendTexture; }
 
 private:
     explicit SkPromiseImageTexture(const GrBackendTexture& backendTexture);
 
-    SkSTArray<1, GrUniqueKeyInvalidatedMessage> fMessages;
     GrBackendTexture fBackendTexture;
-    uint32_t fUniqueID = SK_InvalidUniqueID;
-    static std::atomic<uint32_t> gUniqueID;
 };
-#endif
+#endif 
 
-#endif
+#endif 

@@ -8,39 +8,69 @@
 #ifndef SKSL_POSTFIXEXPRESSION
 #define SKSL_POSTFIXEXPRESSION
 
-#include "src/sksl/SkSLCompiler.h"
-#include "src/sksl/SkSLLexer.h"
+#include "include/private/SkSLIRNode.h"
+#include "include/sksl/SkSLOperator.h"
+#include "include/sksl/SkSLPosition.h"
 #include "src/sksl/ir/SkSLExpression.h"
+
+#include <memory>
+#include <string>
+#include <utility>
 
 namespace SkSL {
 
+class Context;
 
 
 
-struct PostfixExpression : public Expression {
-    PostfixExpression(std::unique_ptr<Expression> operand, Token::Kind op)
-    : INHERITED(operand->fOffset, kPostfix_Kind, operand->fType)
-    , fOperand(std::move(operand))
-    , fOperator(op) {}
 
-    bool hasSideEffects() const override {
-        return true;
+class PostfixExpression final : public Expression {
+public:
+    inline static constexpr Kind kIRNodeKind = Kind::kPostfix;
+
+    PostfixExpression(Position pos, std::unique_ptr<Expression> operand, Operator op)
+        : INHERITED(pos, kIRNodeKind, &operand->type())
+        , fOperand(std::move(operand))
+        , fOperator(op) {}
+
+    
+    static std::unique_ptr<Expression> Convert(const Context& context,
+                                               Position pos,
+                                               std::unique_ptr<Expression> base,
+                                               Operator op);
+
+    
+    static std::unique_ptr<Expression> Make(const Context& context,
+                                            Position pos,
+                                            std::unique_ptr<Expression> base,
+                                            Operator op);
+
+    Operator getOperator() const {
+        return fOperator;
     }
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::unique_ptr<Expression>(new PostfixExpression(fOperand->clone(), fOperator));
+    std::unique_ptr<Expression>& operand() {
+        return fOperand;
     }
 
-    String description() const override {
-        return fOperand->description() + Compiler::OperatorName(fOperator);
+    const std::unique_ptr<Expression>& operand() const {
+        return fOperand;
     }
 
+    std::unique_ptr<Expression> clone(Position pos) const override {
+        return std::make_unique<PostfixExpression>(pos, this->operand()->clone(),
+                                                   this->getOperator());
+    }
+
+    std::string description(OperatorPrecedence parentPrecedence) const override;
+
+private:
     std::unique_ptr<Expression> fOperand;
-    const Token::Kind fOperator;
+    Operator fOperator;
 
-    typedef Expression INHERITED;
+    using INHERITED = Expression;
 };
 
-} 
+}  
 
 #endif

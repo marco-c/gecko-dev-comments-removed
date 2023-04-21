@@ -8,47 +8,48 @@
 #ifndef SkShaderBase_DEFINED
 #define SkShaderBase_DEFINED
 
-#include "include/core/SkFilterQuality.h"
+#include "include/core/SkColor.h"
 #include "include/core/SkMatrix.h"
+#include "include/core/SkPaint.h"
+#include "include/core/SkSamplingOptions.h"
 #include "include/core/SkShader.h"
-#include "include/private/SkNoncopyable.h"
+#include "include/core/SkSurfaceProps.h"
+#include "include/private/base/SkNoncopyable.h"
+#include "src/base/SkTLazy.h"
 #include "src/core/SkEffectPriv.h"
 #include "src/core/SkMask.h"
-#include "src/core/SkTLazy.h"
+#include "src/core/SkVM_fwd.h"
 
-#if SK_SUPPORT_GPU
-#include "src/gpu/GrFPArgs.h"
-#endif
+#include <tuple>
 
-class GrContext;
 class GrFragmentProcessor;
+struct GrFPArgs;
 class SkArenaAlloc;
 class SkColorSpace;
 class SkImage;
 struct SkImageInfo;
 class SkPaint;
 class SkRasterPipeline;
+class SkRuntimeEffect;
+class SkStageUpdater;
+class SkUpdatableShader;
 
+namespace skgpu::graphite {
+class KeyContext;
+class PaintParamsKeyBuilder;
+class PipelineDataGatherer;
+}
 
-
-
-
-
-
-
-
-
-
-class SkStageUpdater {
-public:
-    virtual ~SkStageUpdater() {}
-
-    virtual bool update(const SkMatrix& ctm, const SkMatrix* localM) = 0;
-};
+#if defined(SK_GANESH)
+using GrFPResult = std::tuple<bool , std::unique_ptr<GrFragmentProcessor>>;
+#endif
 
 class SkShaderBase : public SkShader {
 public:
     ~SkShaderBase() override;
+
+    sk_sp<SkShader> makeInvertAlpha() const;
+    sk_sp<SkShader> makeWithCTM(const SkMatrix&) const;  
 
     
 
@@ -56,7 +57,60 @@ public:
 
     virtual bool isConstant() const { return false; }
 
-    const SkMatrix& getLocalMatrix() const { return fLocalMatrix; }
+    enum class GradientType {
+        kNone,
+        kColor,
+        kLinear,
+        kRadial,
+        kSweep,
+        kConical
+    };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    struct GradientInfo {
+        int         fColorCount    = 0;        
+                                               
+                                               
+                                               
+        SkColor*    fColors        = nullptr;  
+        SkScalar*   fColorOffsets  = nullptr;  
+        SkPoint     fPoint[2];                 
+        SkScalar    fRadius[2];                
+        SkTileMode  fTileMode;
+        uint32_t    fGradientFlags = 0;        
+    };
+
+    virtual GradientType asGradient(GradientInfo* info    = nullptr,
+                                    SkMatrix* localMatrix = nullptr) const {
+        return GradientType::kNone;
+    }
 
     enum Flags {
         
@@ -78,19 +132,22 @@ public:
 
 
     struct ContextRec {
-        ContextRec(const SkPaint& paint, const SkMatrix& matrix, const SkMatrix* localM,
-                   SkColorType dstColorType, SkColorSpace* dstColorSpace)
-            : fPaint(&paint)
-            , fMatrix(&matrix)
+        ContextRec(const SkColor4f& paintColor, const SkMatrix& matrix, const SkMatrix* localM,
+                   SkColorType dstColorType, SkColorSpace* dstColorSpace, SkSurfaceProps props)
+            : fMatrix(&matrix)
             , fLocalMatrix(localM)
             , fDstColorType(dstColorType)
-            , fDstColorSpace(dstColorSpace) {}
+            , fDstColorSpace(dstColorSpace)
+            , fProps(props) {
+                fPaintAlpha = SkColorGetA(paintColor.toSkColor());
+            }
 
-        const SkPaint*  fPaint;            
         const SkMatrix* fMatrix;           
         const SkMatrix* fLocalMatrix;      
         SkColorType     fDstColorType;     
         SkColorSpace*   fDstColorSpace;    
+        SkSurfaceProps  fProps;            
+        SkAlpha         fPaintAlpha;
 
         bool isLegacyCompatible(SkColorSpace* shadersColorSpace) const;
     };
@@ -130,7 +187,141 @@ public:
         SkMatrix    fTotalInverse;
         uint8_t     fPaintAlpha;
 
-        typedef SkNoncopyable INHERITED;
+        using INHERITED = SkNoncopyable;
+    };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    class MatrixRec {
+    public:
+        MatrixRec() = default;
+
+        explicit MatrixRec(const SkMatrix& ctm);
+
+        
+
+
+
+        MatrixRec SK_WARN_UNUSED_RESULT concat(const SkMatrix& m) const;
+
+        
+
+
+
+
+
+        std::optional<MatrixRec> SK_WARN_UNUSED_RESULT apply(const SkStageRec& rec,
+                                                             const SkMatrix& postInv = {}) const;
+
+        
+
+
+
+
+        std::optional<MatrixRec> SK_WARN_UNUSED_RESULT apply(skvm::Builder*,
+                                                             skvm::Coord* local,  
+                                                             skvm::Uniforms*,
+                                                             const SkMatrix& postInv = {}) const;
+
+#if defined(SK_GANESH)
+        
+
+
+
+
+
+
+        GrFPResult SK_WARN_UNUSED_RESULT apply(std::unique_ptr<GrFragmentProcessor>,
+                                               const SkMatrix& postInv = {}) const;
+        
+
+
+
+
+
+
+
+
+
+
+
+        MatrixRec applied() const;
+#endif
+
+        
+        void markTotalMatrixInvalid() { fTotalMatrixIsValid = false; }
+
+        
+        void markCTMApplied() { fCTMApplied = true; }
+
+        
+
+
+
+        bool totalMatrixIsValid() const { return fTotalMatrixIsValid; }
+
+        
+
+
+
+
+        SkMatrix totalMatrix() const { return SkMatrix::Concat(fCTM, fTotalLocalMatrix); }
+
+        
+        bool SK_WARN_UNUSED_RESULT totalInverse(SkMatrix* out) const {
+            return this->totalMatrix().invert(out);
+        }
+
+        
+        bool hasPendingMatrix() const {
+            return (!fCTMApplied && !fCTM.isIdentity()) || !fPendingLocalMatrix.isIdentity();
+        }
+
+        
+        bool rasterPipelineCoordsAreSeeded() const { return fCTMApplied; }
+
+    private:
+        MatrixRec(const SkMatrix& ctm,
+                  const SkMatrix& totalLocalMatrix,
+                  const SkMatrix& pendingLocalMatrix,
+                  bool totalIsValid,
+                  bool ctmApplied)
+                : fCTM(ctm)
+                , fTotalLocalMatrix(totalLocalMatrix)
+                , fPendingLocalMatrix(pendingLocalMatrix)
+                , fTotalMatrixIsValid(totalIsValid)
+                , fCTMApplied(ctmApplied) {}
+
+        const SkMatrix fCTM;
+
+        
+        const SkMatrix fTotalLocalMatrix;
+
+        
+        
+        const SkMatrix fPendingLocalMatrix;
+
+        bool fTotalMatrixIsValid = true;
+
+        
+        
+        bool fCTMApplied = false;
     };
 
     
@@ -140,21 +331,22 @@ public:
 
     Context* makeContext(const ContextRec&, SkArenaAlloc*) const;
 
-#if SK_SUPPORT_GPU
+#if defined(SK_GANESH)
     
 
 
 
 
 
+    std::unique_ptr<GrFragmentProcessor> asRootFragmentProcessor(const GrFPArgs&,
+                                                                 const SkMatrix& ctm) const;
+    
 
 
 
 
-
-
-
-    virtual std::unique_ptr<GrFragmentProcessor> asFragmentProcessor(const GrFPArgs&) const;
+    virtual std::unique_ptr<GrFragmentProcessor> asFragmentProcessor(const GrFPArgs&,
+                                                                     const MatrixRec&) const;
 #endif
 
     
@@ -168,25 +360,31 @@ public:
     bool asLuminanceColor(SkColor*) const;
 
     
-    bool appendStages(const SkStageRec&) const;
+
+
+
+
+    SK_WARN_UNUSED_RESULT
+    bool appendRootStages(const SkStageRec& rec, const SkMatrix& ctm) const;
+
+    
+
+
+
+
+    virtual bool appendStages(const SkStageRec&, const MatrixRec&) const;
 
     bool SK_WARN_UNUSED_RESULT computeTotalInverse(const SkMatrix& ctm,
-                                                   const SkMatrix* outerLocalMatrix,
+                                                   const SkMatrix* localMatrix,
                                                    SkMatrix* totalInverse) const;
-
-    
-    
-    
-    
-    SkTCopyOnFirstWrite<SkMatrix> totalLocalMatrix(const SkMatrix* preLocalMatrix,
-                                                   const SkMatrix* postLocalMatrix = nullptr) const;
 
     virtual SkImage* onIsAImage(SkMatrix*, SkTileMode[2]) const {
         return nullptr;
     }
-    virtual SkPicture* isAPicture(SkMatrix*, SkTileMode[2], SkRect* tile) const { return nullptr; }
 
-    static Type GetFlattenableType() { return kSkShaderBase_Type; }
+    virtual SkRuntimeEffect* asRuntimeEffect() const { return nullptr; }
+
+    static Type GetFlattenableType() { return kSkShader_Type; }
     Type getFlattenableType() const override { return GetFlattenableType(); }
 
     static sk_sp<SkShaderBase> Deserialize(const void* data, size_t size,
@@ -202,12 +400,57 @@ public:
 
     virtual sk_sp<SkShader> makeAsALocalMatrixShader(SkMatrix* localMatrix) const;
 
-    SkStageUpdater* appendUpdatableStages(const SkStageRec& rec) const {
-        return this->onAppendUpdatableStages(rec);
+    
+
+
+
+
+    SK_WARN_UNUSED_RESULT
+    skvm::Color rootProgram(skvm::Builder*,
+                            skvm::Coord device,
+                            skvm::Color paint,
+                            const SkMatrix& ctm,
+                            const SkColorInfo& dst,
+                            skvm::Uniforms* uniforms,
+                            SkArenaAlloc* alloc) const;
+
+    
+
+
+
+
+    virtual skvm::Color program(skvm::Builder*,
+                                skvm::Coord device,
+                                skvm::Coord local,
+                                skvm::Color paint,
+                                const MatrixRec&,
+                                const SkColorInfo& dst,
+                                skvm::Uniforms*,
+                                SkArenaAlloc*) const = 0;
+
+#if defined(SK_GRAPHITE)
+    
+
+
+
+
+
+
+
+    virtual void addToKey(const skgpu::graphite::KeyContext& keyContext,
+                          skgpu::graphite::PaintParamsKeyBuilder* builder,
+                          skgpu::graphite::PipelineDataGatherer* gatherer) const;
+#endif
+
+    static SkMatrix ConcatLocalMatrices(const SkMatrix& parentLM, const SkMatrix& childLM) {
+#if defined(SK_BUILD_FOR_ANDROID_FRAMEWORK)  
+        return SkMatrix::Concat(childLM, parentLM);
+#endif
+        return SkMatrix::Concat(parentLM, childLM);
     }
 
 protected:
-    SkShaderBase(const SkMatrix* localMatrix = nullptr);
+    SkShaderBase();
 
     void flatten(SkWriteBuffer&) const override;
 
@@ -225,18 +468,11 @@ protected:
         return false;
     }
 
-    
-    virtual bool onAppendStages(const SkStageRec&) const;
+protected:
+    static skvm::Coord ApplyMatrix(skvm::Builder*, const SkMatrix&, skvm::Coord, skvm::Uniforms*);
 
-    virtual SkStageUpdater* onAppendUpdatableStages(const SkStageRec&) const { return nullptr; }
-
-private:
-    
-    SkMatrix fLocalMatrix;
-
-    typedef SkShader INHERITED;
+    using INHERITED = SkShader;
 };
-
 inline SkShaderBase* as_SB(SkShader* shader) {
     return static_cast<SkShaderBase*>(shader);
 }
@@ -248,5 +484,11 @@ inline const SkShaderBase* as_SB(const SkShader* shader) {
 inline const SkShaderBase* as_SB(const sk_sp<SkShader>& shader) {
     return static_cast<SkShaderBase*>(shader.get());
 }
+
+void SkRegisterColor4ShaderFlattenable();
+void SkRegisterColorShaderFlattenable();
+void SkRegisterComposeShaderFlattenable();
+void SkRegisterCoordClampShaderFlattenable();
+void SkRegisterEmptyShaderFlattenable();
 
 #endif 

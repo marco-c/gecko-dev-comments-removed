@@ -8,49 +8,97 @@
 #ifndef SKSL_FIELDACCESS
 #define SKSL_FIELDACCESS
 
-#include "src/sksl/SkSLUtil.h"
+#include "include/private/SkSLIRNode.h"
+#include "include/sksl/SkSLPosition.h"
 #include "src/sksl/ir/SkSLExpression.h"
+#include "src/sksl/ir/SkSLType.h"
+
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace SkSL {
 
+class Context;
+class SymbolTable;
+enum class OperatorPrecedence : uint8_t;
 
-
-
-struct FieldAccess : public Expression {
-    enum OwnerKind {
-        kDefault_OwnerKind,
-        
-        
-        kAnonymousInterfaceBlock_OwnerKind
-    };
-
-    FieldAccess(std::unique_ptr<Expression> base, int fieldIndex,
-                OwnerKind ownerKind = kDefault_OwnerKind)
-    : INHERITED(base->fOffset, kFieldAccess_Kind, *base->fType.fields()[fieldIndex].fType)
-    , fBase(std::move(base))
-    , fFieldIndex(fieldIndex)
-    , fOwnerKind(ownerKind) {}
-
-    bool hasSideEffects() const override {
-        return fBase->hasSideEffects();
-    }
-
-    std::unique_ptr<Expression> clone() const override {
-        return std::unique_ptr<Expression>(new FieldAccess(fBase->clone(), fFieldIndex,
-                                                           fOwnerKind));
-    }
-
-    String description() const override {
-        return fBase->description() + "." + fBase->fType.fields()[fFieldIndex].fName;
-    }
-
-    std::unique_ptr<Expression> fBase;
-    const int fFieldIndex;
-    const OwnerKind fOwnerKind;
-
-    typedef Expression INHERITED;
+enum class FieldAccessOwnerKind : int8_t {
+    kDefault,
+    
+    
+    kAnonymousInterfaceBlock
 };
 
-} 
+
+
+
+class FieldAccess final : public Expression {
+public:
+    using OwnerKind = FieldAccessOwnerKind;
+
+    inline static constexpr Kind kIRNodeKind = Kind::kFieldAccess;
+
+    FieldAccess(Position pos, std::unique_ptr<Expression> base, int fieldIndex,
+                OwnerKind ownerKind = OwnerKind::kDefault)
+    : INHERITED(pos, kIRNodeKind, base->type().fields()[fieldIndex].fType)
+    , fFieldIndex(fieldIndex)
+    , fOwnerKind(ownerKind)
+    , fBase(std::move(base)) {}
+
+    
+    static std::unique_ptr<Expression> Convert(const Context& context,
+                                               Position pos,
+                                               SymbolTable& symbolTable,
+                                               std::unique_ptr<Expression> base,
+                                               std::string_view field);
+
+    
+    static std::unique_ptr<Expression> Make(const Context& context,
+                                            Position pos,
+                                            std::unique_ptr<Expression> base,
+                                            int fieldIndex,
+                                            OwnerKind ownerKind = OwnerKind::kDefault);
+
+    std::unique_ptr<Expression>& base() {
+        return fBase;
+    }
+
+    const std::unique_ptr<Expression>& base() const {
+        return fBase;
+    }
+
+    int fieldIndex() const {
+        return fFieldIndex;
+    }
+
+    OwnerKind ownerKind() const {
+        return fOwnerKind;
+    }
+
+    std::unique_ptr<Expression> clone(Position pos) const override {
+        return std::make_unique<FieldAccess>(pos,
+                                             this->base()->clone(),
+                                             this->fieldIndex(),
+                                             this->ownerKind());
+    }
+
+    size_t initialSlot() const;
+
+    std::string description(OperatorPrecedence) const override;
+
+private:
+    int fFieldIndex;
+    FieldAccessOwnerKind fOwnerKind;
+    std::unique_ptr<Expression> fBase;
+
+    using INHERITED = Expression;
+};
+
+}  
 
 #endif

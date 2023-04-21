@@ -5,10 +5,33 @@
 
 
 
-
-
 #ifndef SkUserConfig_DEFINED
 #define SkUserConfig_DEFINED
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -106,11 +129,17 @@
 
 #define SK_RASTERIZE_EVEN_ROUNDING
 
-#define SK_SUPPORT_DEPRECATED_CLIPOPS
+#define I_ACKNOWLEDGE_SKIA_DOES_NOT_SUPPORT_BIG_ENDIAN
+
+#define SK_SUPPORT_GPU 0
+
+#define SK_DISABLE_SLOW_DEBUG_VALIDATION 1
+
+#define SK_DISABLE_TYPEFACE_CACHE
 
 #define SK_USE_FREETYPE_EMBOLDEN
 
-#define SK_SUPPORT_GPU 0
+#define SK_IGNORE_MAC_BLENDING_MATCH_FIX
 
 #ifndef MOZ_IMPLICIT
 #  ifdef MOZ_CLANG_PLUGIN
@@ -119,13 +148,5 @@
 #    define MOZ_IMPLICIT
 #  endif
 #endif
-
-#define SK_DISABLE_SLOW_DEBUG_VALIDATION 1
-
-#define SK_IGNORE_MAC_BLENDING_MATCH_FIX
-
-#define I_ACKNOWLEDGE_SKIA_DOES_NOT_SUPPORT_BIG_ENDIAN
-
-#define SK_DISABLE_TYPEFACE_CACHE
 
 #endif

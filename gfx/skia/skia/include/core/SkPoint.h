@@ -8,9 +8,11 @@
 #ifndef SkPoint_DEFINED
 #define SkPoint_DEFINED
 
-#include "include/core/SkMath.h"
 #include "include/core/SkScalar.h"
-#include "include/private/SkSafe32.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkSafe32.h"
+
+#include <cstdint>
 
 struct SkIPoint;
 
@@ -175,13 +177,13 @@ struct SK_API SkPoint {
 
 
 
-    SkScalar x() const { return fX; }
+    constexpr SkScalar x() const { return fX; }
 
     
 
 
 
-    SkScalar y() const { return fY; }
+    constexpr SkScalar y() const { return fY; }
 
     
 
@@ -294,6 +296,8 @@ struct SK_API SkPoint {
 
 
 
+
+
     bool normalize();
 
     
@@ -304,9 +308,13 @@ struct SK_API SkPoint {
 
 
 
+
+
     bool setNormalize(SkScalar x, SkScalar y);
 
     
+
+
 
 
 
@@ -324,9 +332,13 @@ struct SK_API SkPoint {
 
 
 
+
+
     bool setLength(SkScalar x, SkScalar y, SkScalar length);
 
     
+
+
 
 
 
@@ -476,9 +488,13 @@ struct SK_API SkPoint {
 
 
 
+
+
     static SkScalar Length(SkScalar x, SkScalar y);
 
     
+
+
 
 
 

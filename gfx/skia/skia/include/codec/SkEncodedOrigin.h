@@ -36,12 +36,19 @@ static inline SkMatrix SkEncodedOriginToMatrix(SkEncodedOrigin origin, int w, in
         case kBottomRight_SkEncodedOrigin: return SkMatrix::MakeAll(-1,  0, w,  0, -1, h, 0, 0, 1);
         case  kBottomLeft_SkEncodedOrigin: return SkMatrix::MakeAll( 1,  0, 0,  0, -1, h, 0, 0, 1);
         case     kLeftTop_SkEncodedOrigin: return SkMatrix::MakeAll( 0,  1, 0,  1,  0, 0, 0, 0, 1);
-        case    kRightTop_SkEncodedOrigin: return SkMatrix::MakeAll( 0, -1, h,  1,  0, 0, 0, 0, 1);
-        case kRightBottom_SkEncodedOrigin: return SkMatrix::MakeAll( 0, -1, h, -1,  0, w, 0, 0, 1);
-        case  kLeftBottom_SkEncodedOrigin: return SkMatrix::MakeAll( 0,  1, 0, -1,  0, w, 0, 0, 1);
+        case    kRightTop_SkEncodedOrigin: return SkMatrix::MakeAll( 0, -1, w,  1,  0, 0, 0, 0, 1);
+        case kRightBottom_SkEncodedOrigin: return SkMatrix::MakeAll( 0, -1, w, -1,  0, h, 0, 0, 1);
+        case  kLeftBottom_SkEncodedOrigin: return SkMatrix::MakeAll( 0,  1, 0, -1,  0, h, 0, 0, 1);
     }
     SK_ABORT("Unexpected origin");
 }
 
+
+
+
+
+static inline bool SkEncodedOriginSwapsWidthHeight(SkEncodedOrigin origin) {
+    return origin >= kLeftTop_SkEncodedOrigin;
+}
 
 #endif 

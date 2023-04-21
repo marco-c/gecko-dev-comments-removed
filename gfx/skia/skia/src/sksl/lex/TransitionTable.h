@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+#ifndef SKSL_TRANSITIONTABLE
+#define SKSL_TRANSITIONTABLE
+
+#include <stddef.h>
+#include <fstream>
+
+struct DFA;
+
+void WriteTransitionTable(std::ofstream& out, const DFA& dfa, size_t states);
+
+#endif 

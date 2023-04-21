@@ -11,6 +11,9 @@
 #include "include/core/SkFontTypes.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkTypeface.h"
+#include "include/private/base/SkTemplates.h"
+
+#include <vector>
 
 class SkMatrix;
 class SkPaint;
@@ -165,13 +168,9 @@ public:
 
     
 
-
-
     Edging getEdging() const { return (Edging)fEdging; }
 
     
-
-
 
 
     void setEdging(Edging edging);
@@ -179,15 +178,9 @@ public:
     
 
 
-
-
-
     void setHinting(SkFontHinting hintingLevel);
 
     
-
-
-
 
     SkFontHinting getHinting() const { return (SkFontHinting)fHinting; }
 
@@ -304,8 +297,6 @@ public:
 
 
 
-
-
     int textToGlyphs(const void* text, size_t byteLength, SkTextEncoding encoding,
                      SkGlyphID glyphs[], int maxGlyphCount) const;
 
@@ -330,15 +321,11 @@ public:
 
 
 
-
-
     int countText(const void* text, size_t byteLength, SkTextEncoding encoding) const {
         return this->textToGlyphs(text, byteLength, encoding, nullptr, 0);
     }
 
     
-
-
 
 
 
@@ -353,8 +340,6 @@ public:
     }
 
     
-
-
 
 
 
@@ -459,6 +444,20 @@ public:
 
 
 
+
+    std::vector<SkScalar> getIntercepts(const SkGlyphID glyphs[], int count, const SkPoint pos[],
+                                        SkScalar top, SkScalar bottom,
+                                        const SkPaint* = nullptr) const;
+
+    
+
+
+
+
+
+
+
+
     bool getPath(SkGlyphID glyphID, SkPath* path) const;
 
     
@@ -500,6 +499,8 @@ public:
 
     void dump() const;
 
+    using sk_is_trivially_relocatable = std::true_type;
+
 private:
     enum PrivFlags {
         kForceAutoHinting_PrivFlag      = 1 << 0,
@@ -525,14 +526,15 @@ private:
     uint8_t     fEdging;
     uint8_t     fHinting;
 
+    static_assert(::sk_is_trivially_relocatable<decltype(fTypeface)>::value);
+
     SkScalar setupForAsPaths(SkPaint*);
     bool hasSomeAntiAliasing() const;
 
-    friend class GrTextBlob;
     friend class SkFontPriv;
-    friend class SkGlyphRunListPainter;
-    friend class SkTextBlobCacheDiffCanvas;
+    friend class SkGlyphRunListPainterCPU;
     friend class SkStrikeSpec;
+    friend class SkRemoteGlyphCacheTest;
 };
 
 #endif

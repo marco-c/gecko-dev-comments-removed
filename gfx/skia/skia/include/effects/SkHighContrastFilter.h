@@ -8,8 +8,11 @@
 #ifndef SkHighContrastFilter_DEFINED
 #define SkHighContrastFilter_DEFINED
 
-#include "include/core/SkColorFilter.h"
-#include "include/core/SkPaint.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkTypes.h"
+
+class SkColorFilter;
 
 
 
@@ -73,12 +76,9 @@ struct SkHighContrastConfig {
 
 
 
-class SK_API SkHighContrastFilter {
-public:
+struct SK_API SkHighContrastFilter {
     
     static sk_sp<SkColorFilter> Make(const SkHighContrastConfig& config);
-
-    static void RegisterFlattenables();
 };
 
 #endif

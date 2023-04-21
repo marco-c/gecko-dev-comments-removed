@@ -5,66 +5,47 @@
 
 #include "include/core/SkDocument.h"
 
+#include <vector>
+
+#include "include/core/SkColor.h"
+#include "include/core/SkMilestone.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkString.h"
 #include "include/core/SkTime.h"
+#include "include/private/base/SkNoncopyable.h"
+
+#define SKPDF_STRING(X) SKPDF_STRING_IMPL(X)
+#define SKPDF_STRING_IMPL(X) #X
 
 class SkExecutor;
+class SkPDFArray;
+class SkPDFTagTree;
 
 namespace SkPDF {
 
 
+class SK_API AttributeList : SkNoncopyable {
+public:
+    AttributeList();
+    ~AttributeList();
 
-enum class DocumentStructureType {
-    kDocument,    
-    kPart,        
-    kArt,         
-    kSect,        
-    kDiv,         
-    kBlockQuote,  
-    kCaption,     
-    kTOC,         
-    kTOCI,        
-    kIndex,       
-    kNonStruct,   
-    kPrivate,     
-    kH,           
-    kH1,          
-    kH2,          
-    kH3,          
-    kH4,          
-    kH5,          
-    kH6,          
-    kP,           
-    kL,           
-    kLI,          
-    kLbl,         
-    kLBody,       
-    kTable,       
-    kTR,          
-    kTH,          
-    kTD,          
-    kTHead,       
-    kTBody,       
-    kTFoot,       
-    kSpan,        
-    kQuote,       
-    kNote,        
-    kReference,   
-    kBibEntry,    
-    kCode,        
-    kLink,        
-    kAnnot,       
-    kRuby,        
-    kRB,          
-    kRT,          
-    kRP,          
-    kWarichu,     
-    kWT,          
-    kWP,          
-    kFigure,      
-    kFormula,     
-    kForm,        
+    
+    
+    
+    void appendInt(const char* owner, const char* name, int value);
+    void appendFloat(const char* owner, const char* name, float value);
+    void appendName(const char* owner, const char* attrName, const char* value);
+    void appendFloatArray(const char* owner,
+                          const char* name,
+                          const std::vector<float>& value);
+    void appendNodeIdArray(const char* owner,
+                           const char* attrName,
+                           const std::vector<int>& nodeIds);
+
+private:
+    friend class ::SkPDFTagTree;
+
+    std::unique_ptr<SkPDFArray> fAttrs;
 };
 
 
@@ -73,10 +54,13 @@ enum class DocumentStructureType {
 
 
 struct StructureElementNode {
-    const StructureElementNode* fChildren = nullptr;
-    size_t fChildCount;
-    int fNodeId;
-    DocumentStructureType fType;
+    SkString fTypeString;
+    std::vector<std::unique_ptr<StructureElementNode>> fChildVector;
+    int fNodeId = 0;
+    std::vector<int> fAdditionalNodeIds;
+    AttributeList fAttributes;
+    SkString fAlt;
+    SkString fLang;
 };
 
 
@@ -107,8 +91,7 @@ struct Metadata {
 
     
 
-
-    SkString fProducer;
+    SkString fProducer = SkString("Skia/PDF m" SKPDF_STRING(SK_MILESTONE));
 
     
 
@@ -146,7 +129,7 @@ struct Metadata {
 
 
 
-    const StructureElementNode* fStructureElementTreeRoot = nullptr;
+    StructureElementNode* fStructureElementTreeRoot = nullptr;
 
     
 
@@ -161,6 +144,20 @@ struct Metadata {
     SkExecutor* fExecutor = nullptr;
 
     
+
+
+    enum class CompressionLevel : int {
+        Default = -1,
+        None = 0,
+        LowButFast = 1,
+        Average = 6,
+        HighButSlow = 9,
+    } fCompressionLevel = CompressionLevel::Default;
+
+    
+
+
+
 
 
     enum Subsetter {
@@ -199,4 +196,7 @@ static inline sk_sp<SkDocument> MakeDocument(SkWStream* stream) {
 }
 
 }  
+
+#undef SKPDF_STRING
+#undef SKPDF_STRING_IMPL
 #endif  

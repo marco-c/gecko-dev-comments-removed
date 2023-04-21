@@ -9,6 +9,7 @@
 #define SkRegion_DEFINED
 
 #include "include/core/SkRect.h"
+#include "include/private/base/SkTypeTraits.h"
 
 class SkPath;
 class SkRgnBuilder;
@@ -29,9 +30,13 @@ public:
 
 
 
+
+
     SkRegion();
 
     
+
+
 
 
 
@@ -50,9 +55,13 @@ public:
 
 
 
+
+
     explicit SkRegion(const SkIRect& rect);
 
     
+
+
 
     ~SkRegion();
 
@@ -68,9 +77,13 @@ public:
 
 
 
+
+
     SkRegion& operator=(const SkRegion& region);
 
     
+
+
 
 
 
@@ -105,6 +118,8 @@ public:
     }
 
     
+
+
 
 
 
@@ -152,9 +167,13 @@ public:
 
 
 
+
+
     int computeRegionComplexity() const;
 
     
+
+
 
 
 
@@ -168,9 +187,13 @@ public:
 
 
 
+
+
     bool setEmpty();
 
     
+
+
 
 
 
@@ -187,9 +210,13 @@ public:
 
 
 
+
+
     bool setRects(const SkIRect rects[], int count);
 
     
+
+
 
 
 
@@ -213,6 +240,8 @@ public:
 
 
 
+
+
     bool setPath(const SkPath& path, const SkRegion& clip);
 
     
@@ -221,9 +250,13 @@ public:
 
 
 
+
+
     bool intersects(const SkIRect& rect) const;
 
     
+
+
 
 
 
@@ -238,6 +271,8 @@ public:
 
 
 
+
+
     bool contains(int32_t x, int32_t y) const;
 
     
@@ -246,9 +281,13 @@ public:
 
 
 
+
+
     bool contains(const SkIRect& other) const;
 
     
+
+
 
 
 
@@ -311,6 +350,8 @@ public:
 
 
 
+
+
     void translate(int dx, int dy, SkRegion* dst) const;
 
     
@@ -334,9 +375,6 @@ public:
 
 
 
-
-
-
     bool op(const SkIRect& rect, Op op) {
         if (this->isRect() && kIntersect_Op == op) {
             if (!fBounds.intersect(rect)) {
@@ -353,13 +391,9 @@ public:
 
 
 
-
-
-
     bool op(const SkRegion& rgn, Op op) { return this->op(*this, rgn, op); }
 
     
-
 
 
 
@@ -379,11 +413,9 @@ public:
 
 
 
-
     bool op(const SkRegion& rgn, const SkIRect& rect, Op op);
 
     
-
 
 
 
@@ -422,6 +454,8 @@ public:
 
 
 
+
+
         Iterator(const SkRegion& region);
 
         
@@ -429,9 +463,13 @@ public:
 
 
 
+
+
         bool rewind();
 
         
+
+
 
 
 
@@ -444,6 +482,8 @@ public:
         bool done() const { return fDone; }
 
         
+
+
 
         void next();
 
@@ -480,6 +520,8 @@ public:
 
 
 
+
+
         Cliperator(const SkRegion& region, const SkIRect& clip);
 
         
@@ -489,6 +531,8 @@ public:
         bool done() { return fDone; }
 
         
+
+
 
         void  next();
 
@@ -521,9 +565,13 @@ public:
 
 
 
+
+
         Spanerator(const SkRegion& region, int y, int left, int right);
 
         
+
+
 
 
 
@@ -544,6 +592,8 @@ public:
 
 
 
+
+
     size_t writeToMemory(void* buffer) const;
 
     
@@ -553,7 +603,11 @@ public:
 
 
 
+
+
     size_t readFromMemory(const void* buffer, size_t length);
+
+    using sk_is_trivially_relocatable = std::true_type;
 
 private:
     static constexpr int kOpCount = kReplace_Op + 1;
@@ -577,6 +631,9 @@ private:
 
     SkIRect     fBounds;
     RunHead*    fRunHead;
+
+    static_assert(::sk_is_trivially_relocatable<decltype(fBounds)>::value);
+    static_assert(::sk_is_trivially_relocatable<decltype(fRunHead)>::value);
 
     void freeRuns();
 

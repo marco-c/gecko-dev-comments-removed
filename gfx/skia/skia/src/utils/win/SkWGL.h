@@ -10,7 +10,7 @@
 #ifndef SkWGL_DEFINED
 #define SkWGL_DEFINED
 
-#include "src/core/SkLeanWindows.h"
+#include "src/base/SkLeanWindows.h"
 
 
 
@@ -148,7 +148,7 @@ public:
     static sk_sp<SkWGLPbufferContext> Create(HDC parentDC, SkWGLContextRequest contextType,
                                              HGLRC shareContext);
 
-    virtual ~SkWGLPbufferContext();
+    ~SkWGLPbufferContext() override;
 
     HDC getDC() const { return fDC; }
     HGLRC getGLRC() const { return fGLRC; }

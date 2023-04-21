@@ -7,12 +7,16 @@
 #ifndef SkColorSpacePriv_DEFINED
 #define SkColorSpacePriv_DEFINED
 
-#include <math.h>
-
 #include "include/core/SkColorSpace.h"
-#include "include/private/SkFixed.h"
+#include "include/private/base/SkTemplates.h"
+#include "modules/skcms/skcms.h"
 
-#define SkColorSpacePrintf(...)
+namespace skvm {
+class Builder;
+struct Color;
+struct F32;
+struct Uniforms;
+}
 
 
 static constexpr skcms_Matrix3x3 gNarrow_toXYZD50 = {{
@@ -29,39 +33,6 @@ static inline bool color_space_almost_equal(float a, float b) {
 
 static inline bool transfer_fn_almost_equal(float a, float b) {
     return SkTAbs(a - b) < 0.001f;
-}
-
-
-
-
-
-
-enum TFKind { Bad_TF, sRGBish_TF, PQish_TF, HLGish_TF, HLGinvish_TF };
-
-static inline TFKind classify_transfer_fn(const skcms_TransferFunction& tf) {
-    if (tf.g < 0 && (int)tf.g == tf.g) {
-        
-        switch (-(int)tf.g) {
-            case PQish_TF:     return PQish_TF;
-            case HLGish_TF:    return HLGish_TF;
-            case HLGinvish_TF: return HLGinvish_TF;
-        }
-        return Bad_TF;
-    }
-
-    
-    if (sk_float_isfinite(tf.a + tf.b + tf.c + tf.d + tf.e + tf.f + tf.g)
-            
-            && tf.a >= 0
-            && tf.c >= 0
-            && tf.d >= 0
-            && tf.g >= 0
-            
-            && tf.a * tf.d + tf.b >= 0) {
-        return sRGBish_TF;
-    }
-
-    return Bad_TF;
 }
 
 static inline bool is_almost_srgb(const skcms_TransferFunction& coeffs) {
@@ -99,6 +70,13 @@ static inline bool is_almost_linear(const skcms_TransferFunction& coeffs) {
 
     return linearExp || linearFn;
 }
+
+skvm::F32 sk_program_transfer_fn(
+    skvm::F32 v, skcms_TFType,
+    skvm::F32 G, skvm::F32 A, skvm::F32 B, skvm::F32 C, skvm::F32 D, skvm::F32 E, skvm::F32 F);
+
+skvm::Color sk_program_transfer_fn(skvm::Builder*, skvm::Uniforms*,
+                                   const skcms_TransferFunction&, skvm::Color);
 
 
 

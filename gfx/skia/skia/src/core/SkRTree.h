@@ -8,9 +8,8 @@
 #ifndef SkRTree_DEFINED
 #define SkRTree_DEFINED
 
+#include "include/core/SkBBHFactory.h"
 #include "include/core/SkRect.h"
-#include "include/private/SkTDArray.h"
-#include "src/core/SkBBoxHierarchy.h"
 
 
 
@@ -31,10 +30,9 @@
 class SkRTree : public SkBBoxHierarchy {
 public:
     SkRTree();
-    ~SkRTree() override {}
 
     void insert(const SkRect[], int N) override;
-    void search(const SkRect& query, SkTDArray<int>* results) const override;
+    void search(const SkRect& query, std::vector<int>* results) const override;
     size_t bytesUsed() const override;
 
     
@@ -43,9 +41,6 @@ public:
     int getDepth() const { return fCount ? fRoot.fSubtree->fLevel + 1 : 0; }
     
     int getCount() const { return fCount; }
-
-    
-    SkRect getRootBound() const override;
 
     
     static const int kMinChildren = 6,
@@ -68,10 +63,10 @@ private:
         Branch fChildren[kMaxChildren];
     };
 
-    void search(Node* root, const SkRect& query, SkTDArray<int>* results) const;
+    void search(Node* root, const SkRect& query, std::vector<int>* results) const;
 
     
-    Branch bulkLoad(SkTDArray<Branch>* branches, int level = 0);
+    Branch bulkLoad(std::vector<Branch>* branches, int level = 0);
 
     
     static int CountNodes(int branches);
@@ -81,9 +76,7 @@ private:
     
     int fCount;
     Branch fRoot;
-    SkTDArray<Node> fNodes;
-
-    typedef SkBBoxHierarchy INHERITED;
+    std::vector<Node> fNodes;
 };
 
 #endif
