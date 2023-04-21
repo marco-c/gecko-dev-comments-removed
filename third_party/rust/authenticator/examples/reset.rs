@@ -3,7 +3,7 @@
 
 
 use authenticator::{
-    authenticatorservice::{AuthenticatorService, CtapVersion},
+    authenticatorservice::AuthenticatorService,
     ctap2::commands::StatusCode,
     errors::{AuthenticatorError, CommandError, HIDError},
     statecallback::StateCallback,
@@ -42,7 +42,7 @@ fn main() {
         return;
     }
 
-    let mut manager = AuthenticatorService::new(CtapVersion::CTAP2)
+    let mut manager = AuthenticatorService::new()
         .expect("The auth service should initialize safely");
 
     if !matches.opt_present("no-u2f-usb-hid") {
