@@ -619,24 +619,11 @@ this.DateTimeBoxWidget = class {
     this.setInputValueFromFields();
     
     
-    if (aEvent.relatedTarget == this.mInputElement) {
-      return;
-    }
-
-    
-    
-    
-    if (
-      !aEvent.relatedTarget &&
-      this.mInputElement.nodePrincipal.isSystemPrincipal &&
-      this.window == this.window.top
-    ) {
-      return;
-    }
-
-    this.mInputElement.setFocusState(false);
-    if (this.mIsPickerOpen) {
-      this.closeDateTimePicker();
+    if (aEvent.relatedTarget != this.mInputElement) {
+      this.mInputElement.setFocusState(false);
+      if (this.mIsPickerOpen) {
+        this.closeDateTimePicker();
+      }
     }
   }
 

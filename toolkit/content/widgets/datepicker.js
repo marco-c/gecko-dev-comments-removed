@@ -41,8 +41,6 @@ function DatePicker(context) {
       this._createComponents();
       this._update();
       this.components.calendar.focusDay();
-      
-      window.PICKER_READY = true;
       document.dispatchEvent(new CustomEvent("PickerReady"));
     },
 

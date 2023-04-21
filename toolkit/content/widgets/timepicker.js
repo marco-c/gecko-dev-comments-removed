@@ -35,8 +35,6 @@ function TimePicker(context) {
       this._setDefaultState();
       this._createComponents();
       this._setComponentStates();
-      
-      window.PICKER_READY = true;
       document.dispatchEvent(new CustomEvent("PickerReady"));
     },
 
