@@ -518,11 +518,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual uint32_t AnchorCount();
-
-  
-
-
   virtual LocalAccessible* AnchorAt(uint32_t aAnchorIndex);
 
   

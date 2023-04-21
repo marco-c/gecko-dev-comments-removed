@@ -567,6 +567,11 @@ class Accessible {
 
   
 
+
+  uint32_t AnchorCount();
+
+  
+
   virtual bool IsRemote() const = 0;
   RemoteAccessible* AsRemote();
 
