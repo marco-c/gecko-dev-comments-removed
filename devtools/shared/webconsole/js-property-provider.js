@@ -19,11 +19,9 @@ if (!isWorker) {
   );
 }
 const lazy = {};
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "Reflect",
-  "resource://gre/modules/reflect.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  Reflect: "resource://gre/modules/reflect.sys.mjs",
+});
 loader.lazyRequireGetter(
   this,
   [
