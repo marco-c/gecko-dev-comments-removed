@@ -9,6 +9,8 @@
 #include "zipstruct.h"  
 #include "nsZipArchive.h"
 #include "mozilla/MmapFaultHandler.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/UniquePtrExtensions.h"
 
 #include "nsEscape.h"
 #include "nsDebug.h"
@@ -81,7 +83,7 @@ nsresult nsJARInputStream::InitDirectory(nsJAR* aJar,
   
   mJar = aJar;
   mJar->mLock.AssertCurrentThreadIn();
-  UniquePtr<nsZipFind> find;
+  mozilla::UniquePtr<nsZipFind> find;
   nsresult rv;
   
   
@@ -309,7 +311,7 @@ nsresult nsJARInputStream::ReadDirectory(char* aBuffer, uint32_t aCount,
   uint32_t numRead = CopyDataToBuffer(aBuffer, aCount);
 
   if (aCount > 0) {
-    RecursiveMutexAutoLock lock(mJar->mLock);
+    mozilla::RecursiveMutexAutoLock lock(mJar->mLock);
     
     mBuffer.Truncate();
     mCurPos = 0;
