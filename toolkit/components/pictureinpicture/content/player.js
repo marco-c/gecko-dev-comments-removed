@@ -273,8 +273,7 @@ let Player = {
     }
 
     if (Services.prefs.getBoolPref(CAPTIONS_ENABLED_PREF, false)) {
-      const closedCaptionButton = document.getElementById("closed-caption");
-      closedCaptionButton.hidden = false;
+      this.closedCaptionButton.hidden = false;
     }
 
     if (Services.prefs.getBoolPref(IMPROVED_CONTROLS_ENABLED_PREF, false)) {
@@ -359,8 +358,19 @@ let Player = {
           this.controls.setAttribute("keying", true);
           this.showVideoControls();
         } else if (event.keyCode == KeyEvent.DOM_VK_ESCAPE) {
+          let isSettingsPanelInFocus = this.settingsPanel.contains(
+            document.activeElement
+          );
+
           event.preventDefault();
-          if (this.isFullscreen) {
+
+          if (!this.settingsPanel.classList.contains("hide")) {
+            
+            this.toggleSubtitlesSettingsPanel({ forceHide: true });
+            if (isSettingsPanelInFocus) {
+              document.getElementById("closed-caption").focus();
+            }
+          } else if (this.isFullscreen) {
             
             document.exitFullscreen();
           } else {
@@ -633,7 +643,11 @@ let Player = {
       }
 
       case "closed-caption": {
-        this.toggleSubtitlesSettingsPanel();
+        let options = {};
+        if (event.mozInputSource == MouseEvent.MOZ_SOURCE_KEYBOARD) {
+          options.isKeyboard = true;
+        }
+        this.toggleSubtitlesSettingsPanel(options);
         
         return;
       }
@@ -643,6 +657,21 @@ let Player = {
         this.recordEvent("fullscreen", {
           enter: (!this.isFullscreen).toString(),
         });
+        break;
+      }
+
+      case "font-size-selection-radio-small": {
+        document.getElementById("small").click();
+        break;
+      }
+
+      case "font-size-selection-radio-medium": {
+        document.getElementById("medium").click();
+        break;
+      }
+
+      case "font-size-selection-radio-large": {
+        document.getElementById("large").click();
         break;
       }
     }
@@ -658,10 +687,13 @@ let Player = {
 
 
 
+
+
   toggleSubtitlesSettingsPanel(options) {
     let settingsPanelVisible = !this.settingsPanel.classList.contains("hide");
     if (options?.forceHide || settingsPanelVisible) {
       this.settingsPanel.classList.add("hide");
+      this.closedCaptionButton.setAttribute("aria-expanded", false);
       this.controls.removeAttribute("donthide");
 
       if (
@@ -679,8 +711,13 @@ let Player = {
       });
     } else {
       this.settingsPanel.classList.remove("hide");
+      this.closedCaptionButton.setAttribute("aria-expanded", true);
       this.controls.setAttribute("donthide", true);
       this.showVideoControls();
+
+      if (options?.isKeyboard) {
+        document.querySelector("#subtitles-toggle").focus();
+      }
     }
   },
 
@@ -999,8 +1036,7 @@ let Player = {
   },
 
   enableSubtitlesButton() {
-    let closedCaptionButton = document.getElementById("closed-caption");
-    closedCaptionButton.disabled = false;
+    this.closedCaptionButton.disabled = false;
 
     this.alignEndControlsButtonTooltips();
     this.captionsToggleEnabled = true;
@@ -1013,8 +1049,7 @@ let Player = {
   },
 
   disableSubtitlesButton() {
-    let closedCaptionButton = document.getElementById("closed-caption");
-    closedCaptionButton.disabled = true;
+    this.closedCaptionButton.disabled = true;
 
     this.alignEndControlsButtonTooltips();
   },
@@ -1083,6 +1118,13 @@ let Player = {
   get seekForward() {
     delete this.seekForward;
     return (this.seekForward = document.getElementById("seekForward"));
+  },
+
+  get closedCaptionButton() {
+    delete this.closedCaptionButton;
+    return (this.closedCaptionButton = document.getElementById(
+      "closed-caption"
+    ));
   },
 
   get settingsPanel() {
