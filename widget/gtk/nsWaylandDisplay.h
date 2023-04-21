@@ -23,14 +23,6 @@
 namespace mozilla {
 namespace widget {
 
-struct GbmFormat {
-  bool mIsSupported;
-  bool mHasAlpha;
-  int mFormat;
-  uint64_t* mModifiers;
-  int mModifiersCount;
-};
-
 
 
 
@@ -86,10 +78,6 @@ class nsWaylandDisplay {
 
   bool IsExplicitSyncEnabled() { return mExplicitSync; }
 
-  static GbmFormat* GetGbmFormat(bool aHasAlpha);
-  static void AddFormatModifier(bool aHasAlpha, int aFormat,
-                                uint32_t aModifierHi, uint32_t aModifierLo);
-
  private:
   ~nsWaylandDisplay();
 
@@ -107,9 +95,6 @@ class nsWaylandDisplay {
   zwp_linux_dmabuf_v1* mDmabuf = nullptr;
   xdg_activation_v1* mXdgActivation = nullptr;
   bool mExplicitSync = false;
-
-  static GbmFormat sXRGBFormat;
-  static GbmFormat sARGBFormat;
 };
 
 void WaylandDispatchDisplays();
