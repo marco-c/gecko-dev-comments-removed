@@ -50,7 +50,7 @@ const uint32_t kDevicesChangedStableDelay = 200;
 
 
 
-const uint32_t kWindowsGamepadPollInterval = 50;
+const uint32_t kWindowsGamepadPollInterval = 4;
 
 const UINT kRawInputError = (UINT)-1;
 
