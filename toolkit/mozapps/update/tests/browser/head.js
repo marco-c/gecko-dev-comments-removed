@@ -1116,6 +1116,12 @@ function runAboutPrefsUpdateTest(params, steps) {
             if (selectedPanel.id == "downloadFailed") {
               selector = "a.text-link";
             }
+            
+            
+            
+            if (selectedPanel.id == "manualUpdate") {
+              selector = "a.manualLink";
+            }
             let link = selectedPanel.querySelector(selector);
             is(
               link.href,
