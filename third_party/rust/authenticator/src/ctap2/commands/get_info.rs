@@ -5,7 +5,7 @@ use crate::transport::errors::HIDError;
 use crate::u2ftypes::U2FDevice;
 use serde::{
     de::{Error as SError, IgnoredAny, MapAccess, Visitor},
-    Deserialize, Deserializer,
+    Deserialize, Deserializer, Serialize,
 };
 use serde_cbor::{de::from_slice, Value};
 use std::collections::BTreeMap;
@@ -108,6 +108,173 @@ pub(crate) struct AuthenticatorOptions {
     
     #[serde(rename = "uv")]
     pub(crate) user_verification: Option<bool>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[serde(rename = "pinUvAuthToken")]
+    pub(crate) pin_uv_auth_token: Option<bool>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[serde(rename = "noMcGaPermissionsWithClientPin")]
+    pub(crate) no_mc_ga_permissions_with_client_pin: Option<bool>,
+
+    
+    
+    
+    
+    
+    #[serde(rename = "largeBlobs")]
+    pub(crate) large_blobs: Option<bool>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[serde(rename = "ep")]
+    pub(crate) ep: Option<bool>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[serde(rename = "bioEnroll")]
+    pub(crate) bio_enroll: Option<bool>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[serde(rename = "userVerificationMgmtPreview")]
+    pub(crate) user_verification_mgmt_preview: Option<bool>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[serde(rename = "uvBioEnroll")]
+    pub(crate) uv_bio_enroll: Option<bool>,
+
+    
+    
+    
+    
+    
+    
+    #[serde(rename = "authnrCfg")]
+    pub(crate) authnr_cfg: Option<bool>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[serde(rename = "uvAcfg")]
+    pub(crate) uv_acfg: Option<bool>,
+
+    
+    
+    
+    
+    
+    
+    #[serde(rename = "credMgmt")]
+    pub(crate) cred_mgmt: Option<bool>,
+
+    
+    
+    
+    
+    
+    
+    #[serde(rename = "credentialMgmtPreview")]
+    pub(crate) credential_mgmt_preview: Option<bool>,
+
+    
+    
+    
+    
+    
+    
+    
+    #[serde(rename = "setMinPINLength")]
+    pub(crate) set_min_pin_length: Option<bool>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[serde(rename = "makeCredUvNotRqd")]
+    pub(crate) make_cred_uv_not_rqd: Option<bool>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[serde(rename = "alwaysUv")]
+    pub(crate) always_uv: Option<bool>,
 }
 
 impl Default for AuthenticatorOptions {
@@ -118,13 +285,36 @@ impl Default for AuthenticatorOptions {
             client_pin: None,
             user_presence: true,
             user_verification: None,
+            pin_uv_auth_token: None,
+            no_mc_ga_permissions_with_client_pin: None,
+            large_blobs: None,
+            ep: None,
+            bio_enroll: None,
+            user_verification_mgmt_preview: None,
+            uv_bio_enroll: None,
+            authnr_cfg: None,
+            uv_acfg: None,
+            cred_mgmt: None,
+            credential_mgmt_preview: None,
+            set_min_pin_length: None,
+            make_cred_uv_not_rqd: None,
+            always_uv: None,
         }
     }
 }
 
+#[allow(non_camel_case_types)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub enum AuthenticatorVersion {
+    U2F_V2,
+    FIDO_2_0,
+    FIDO_2_1_PRE,
+    FIDO_2_1,
+}
+
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct AuthenticatorInfo {
-    pub(crate) versions: Vec<String>,
+    pub(crate) versions: Vec<AuthenticatorVersion>,
     pub(crate) extensions: Vec<String>,
     pub(crate) aaguid: AAGuid,
     pub(crate) options: AuthenticatorOptions,
@@ -527,7 +717,7 @@ pub mod tests {
             from_slice(&AUTHENTICATOR_INFO_PAYLOAD).unwrap();
 
         let expected = AuthenticatorInfo {
-            versions: vec!["U2F_V2".to_string(), "FIDO_2_0".to_string()],
+            versions: vec![AuthenticatorVersion::U2F_V2, AuthenticatorVersion::FIDO_2_0],
             extensions: vec!["uvm".to_string(), "hmac-secret".to_string()],
             aaguid: AAGuid(AAGUID_RAW),
             options: AuthenticatorOptions {
@@ -536,6 +726,7 @@ pub mod tests {
                 client_pin: Some(false),
                 user_presence: true,
                 user_verification: None,
+                ..Default::default()
             },
             max_msg_size: Some(1200),
             pin_protocols: vec![1],
@@ -580,10 +771,10 @@ pub mod tests {
 
         let expected = AuthenticatorInfo {
             versions: vec![
-                "U2F_V2".to_string(),
-                "FIDO_2_0".to_string(),
-                "FIDO_2_1_PRE".to_string(),
-                "FIDO_2_1".to_string(),
+                AuthenticatorVersion::U2F_V2,
+                AuthenticatorVersion::FIDO_2_0,
+                AuthenticatorVersion::FIDO_2_1_PRE,
+                AuthenticatorVersion::FIDO_2_1,
             ],
             extensions: vec![
                 "credProtect".to_string(),
@@ -602,6 +793,20 @@ pub mod tests {
                 client_pin: Some(true),
                 user_presence: true,
                 user_verification: Some(true),
+                pin_uv_auth_token: Some(true),
+                no_mc_ga_permissions_with_client_pin: None,
+                large_blobs: Some(true),
+                ep: None,
+                bio_enroll: Some(true),
+                user_verification_mgmt_preview: Some(true),
+                uv_bio_enroll: None,
+                authnr_cfg: Some(true),
+                uv_acfg: None,
+                cred_mgmt: Some(true),
+                credential_mgmt_preview: Some(true),
+                set_min_pin_length: Some(true),
+                make_cred_uv_not_rqd: Some(false),
+                always_uv: Some(true),
             },
             max_msg_size: Some(1200),
             pin_protocols: vec![2, 1],
@@ -693,7 +898,7 @@ pub mod tests {
             .get_authenticator_info()
             .expect("Didn't get any authenticator_info");
         let expected = AuthenticatorInfo {
-            versions: vec!["U2F_V2".to_string(), "FIDO_2_0".to_string()],
+            versions: vec![AuthenticatorVersion::U2F_V2, AuthenticatorVersion::FIDO_2_0],
             extensions: vec!["uvm".to_string(), "hmac-secret".to_string()],
             aaguid: AAGuid(AAGUID_RAW),
             options: AuthenticatorOptions {
@@ -702,6 +907,7 @@ pub mod tests {
                 client_pin: Some(false),
                 user_presence: true,
                 user_verification: None,
+                ..Default::default()
             },
             max_msg_size: Some(1200),
             pin_protocols: vec![1],

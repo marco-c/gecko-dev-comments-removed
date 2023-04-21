@@ -1,6 +1,52 @@
-use super::{u2ftypes, Pin, PinError};
-use serde::ser::{Serialize, SerializeStruct};
+use super::{u2ftypes, Pin};
+use serde::{
+    ser::{Serialize, SerializeStruct},
+    Serialize as DeriveSer, Serializer,
+};
 use std::sync::mpsc::Sender;
+
+
+pub(crate) fn serialize_pin_required<S>(_: &Sender<Pin>, s: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    s.serialize_none()
+}
+
+
+pub(crate) fn serialize_pin_invalid<S>(
+    _: &Sender<Pin>,
+    retries: &Option<u8>,
+    s: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    if let Some(r) = retries {
+        s.serialize_u8(*r)
+    } else {
+        s.serialize_none()
+    }
+}
+
+#[derive(Debug, DeriveSer)]
+pub enum StatusPinUv {
+    #[serde(serialize_with = "serialize_pin_required")]
+    PinRequired(Sender<Pin>),
+    #[serde(serialize_with = "serialize_pin_invalid")]
+    InvalidPin(Sender<Pin>, Option<u8>),
+    PinIsTooShort,
+    PinIsTooLong(usize),
+    InvalidUv(Option<u8>),
+    
+    
+    
+    
+    PinAuthBlocked,
+    PinBlocked,
+    PinNotSet,
+    UvBlocked,
+}
 
 #[derive(Debug)]
 pub enum StatusUpdate {
@@ -12,7 +58,7 @@ pub enum StatusUpdate {
     Success { dev_info: u2ftypes::U2FDeviceInfo },
     
     
-    PinError(PinError, Sender<Pin>),
+    PinUvError(StatusPinUv),
     
     SelectDeviceNotice,
     
@@ -34,7 +80,7 @@ impl Serialize for StatusUpdate {
                 map.serialize_field("DeviceUnavailable", &dev_info)?
             }
             StatusUpdate::Success { dev_info } => map.serialize_field("Success", &dev_info)?,
-            StatusUpdate::PinError(e, _) => map.serialize_field("PinError", &e)?,
+            StatusUpdate::PinUvError(e) => map.serialize_field("PinUvError", &e)?,
             StatusUpdate::SelectDeviceNotice => map.serialize_field("SelectDeviceNotice", &())?,
             StatusUpdate::DeviceSelected(dev_info) => {
                 map.serialize_field("DeviceSelected", &dev_info)?
@@ -66,15 +112,19 @@ pub mod tests {
     }
 
     #[test]
-    fn serialize_invalid_pin() {
+    fn serialize_status_pin_uv() {
         let (tx, _rx) = channel();
-        let st = StatusUpdate::PinError(PinError::InvalidPin(Some(3)), tx.clone());
+        let st = StatusUpdate::PinUvError(StatusPinUv::InvalidPin(tx.clone(), Some(3)));
         let json = to_string(&st).expect("Failed to serialize");
-        assert_eq!(&json, r#"{"PinError":{"InvalidPin":3}}"#);
+        assert_eq!(&json, r#"{"PinUvError":{"InvalidPin":3}}"#);
 
-        let st = StatusUpdate::PinError(PinError::InvalidPin(None), tx);
+        let st = StatusUpdate::PinUvError(StatusPinUv::InvalidPin(tx, None));
         let json = to_string(&st).expect("Failed to serialize");
-        assert_eq!(&json, r#"{"PinError":{"InvalidPin":null}}"#);
+        assert_eq!(&json, r#"{"PinUvError":{"InvalidPin":null}}"#);
+
+        let st = StatusUpdate::PinUvError(StatusPinUv::PinBlocked);
+        let json = to_string(&st).expect("Failed to serialize");
+        assert_eq!(&json, r#"{"PinUvError":"PinBlocked"}"#);
     }
 
     #[test]

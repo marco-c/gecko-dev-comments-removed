@@ -109,7 +109,7 @@ fn main() {
                 println!("STATUS: Continuing with device: {dev_info}");
                 break;
             }
-            Ok(StatusUpdate::PinError(..)) => panic!("Reset should never ask for a PIN!"),
+            Ok(StatusUpdate::PinUvError(..)) => panic!("Reset should never ask for a PIN!"),
             Ok(_) => {  }
             Err(RecvError) => {
                 println!("RecvError");

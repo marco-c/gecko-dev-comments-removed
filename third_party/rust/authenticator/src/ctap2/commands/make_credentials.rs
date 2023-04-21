@@ -1,11 +1,11 @@
 use super::{
-    Command, CommandError, PinAuthCommand, Request, RequestCtap1, RequestCtap2, Retryable,
+    Command, CommandError, PinUvAuthCommand, Request, RequestCtap1, RequestCtap2, Retryable,
     StatusCode,
 };
 use crate::consts::{PARAMETER_SIZE, U2F_REGISTER, U2F_REQUEST_USER_PRESENCE};
 use crate::crypto::{
     parse_u2f_der_certificate, COSEAlgorithm, COSEEC2Key, COSEKey, COSEKeyType, Curve,
-    PinUvAuthParam,
+    PinUvAuthParam, PinUvAuthToken,
 };
 use crate::ctap2::attestation::{
     AAGuid, AttestationObject, AttestationStatement, AttestationStatementFidoU2F,
@@ -20,6 +20,7 @@ use crate::ctap2::server::{
     PublicKeyCredentialDescriptor, PublicKeyCredentialParameters, RelyingParty,
     RelyingPartyWrapper, User,
 };
+use crate::errors::AuthenticatorError;
 use crate::transport::{
     errors::{ApduErrorStatus, HIDError},
     FidoDevice,
@@ -110,7 +111,7 @@ pub struct MakeCredentials {
     pub(crate) extensions: MakeCredentialsExtensions,
     pub(crate) options: MakeCredentialsOptions,
     pub(crate) pin: Option<Pin>,
-    pub(crate) pin_auth: Option<PinUvAuthParam>,
+    pub(crate) pin_uv_auth_param: Option<PinUvAuthParam>,
     pub(crate) enterprise_attestation: Option<u64>,
 }
 
@@ -135,13 +136,13 @@ impl MakeCredentials {
             extensions,
             options,
             pin,
-            pin_auth: None,
+            pin_uv_auth_param: None,
             enterprise_attestation: None,
         })
     }
 }
 
-impl PinAuthCommand for MakeCredentials {
+impl PinUvAuthCommand for MakeCredentials {
     fn pin(&self) -> &Option<Pin> {
         &self.pin
     }
@@ -150,20 +151,51 @@ impl PinAuthCommand for MakeCredentials {
         self.pin = pin;
     }
 
-    fn pin_auth(&self) -> &Option<PinUvAuthParam> {
-        &self.pin_auth
-    }
-
-    fn set_pin_auth(&mut self, pin_auth: Option<PinUvAuthParam>) {
-        self.pin_auth = pin_auth;
+    fn set_pin_uv_auth_param(
+        &mut self,
+        pin_uv_auth_token: Option<PinUvAuthToken>,
+    ) -> Result<(), AuthenticatorError> {
+        let mut param = None;
+        if let Some(token) = pin_uv_auth_token {
+            param = Some(
+                token
+                    .derive(self.client_data_hash().as_ref())
+                    .map_err(CommandError::Crypto)?,
+            );
+        }
+        self.pin_uv_auth_param = param;
+        Ok(())
     }
 
     fn client_data_hash(&self) -> ClientDataHash {
         self.client_data_wrapper.hash()
     }
 
-    fn unset_uv_option(&mut self) {
-        self.options.user_verification = None;
+    fn set_uv_option(&mut self, uv: Option<bool>) {
+        self.options.user_verification = uv;
+    }
+
+    fn get_uv_option(&mut self) -> Option<bool> {
+        self.options.user_verification
+    }
+
+    fn get_rp_id(&self) -> Option<&String> {
+        match &self.rp {
+            
+            RelyingPartyWrapper::Hash(..) => None,
+            RelyingPartyWrapper::Data(r) => Some(&r.id),
+        }
+    }
+
+    fn set_discouraged_uv_option(&mut self) {
+        
+        
+        
+        
+        
+        
+        
+        self.set_uv_option(Some(false))
     }
 }
 
@@ -185,7 +217,7 @@ impl Serialize for MakeCredentials {
         if self.options.has_some() {
             map_len += 1;
         }
-        if self.pin_auth.is_some() {
+        if self.pin_uv_auth_param.is_some() {
             map_len += 2;
         }
         if self.enterprise_attestation.is_some() {
@@ -216,9 +248,9 @@ impl Serialize for MakeCredentials {
         if self.options.has_some() {
             map.serialize_entry(&0x07, &self.options)?;
         }
-        if let Some(pin_auth) = &self.pin_auth {
-            map.serialize_entry(&0x08, &pin_auth)?;
-            map.serialize_entry(&0x09, &pin_auth.pin_protocol.id())?;
+        if let Some(pin_uv_auth_param) = &self.pin_uv_auth_param {
+            map.serialize_entry(&0x08, &pin_uv_auth_param)?;
+            map.serialize_entry(&0x09, &pin_uv_auth_param.pin_protocol.id())?;
         }
         if let Some(enterprise_attestation) = self.enterprise_attestation {
             map.serialize_entry(&0x0a, &enterprise_attestation)?;
@@ -279,11 +311,7 @@ impl RequestCtap1 for MakeCredentials {
             )));
         }
 
-        let flags = if self.options.ask_user_verification() {
-            U2F_REQUEST_USER_PRESENCE
-        } else {
-            0
-        };
+        let flags = U2F_REQUEST_USER_PRESENCE;
 
         let mut register_data = Vec::with_capacity(2 * PARAMETER_SIZE);
         if self.is_ctap2_request() {
@@ -944,7 +972,7 @@ pub mod test {
         
         0x0, 
         0x1, 
-        0x0, 
+        0x3, 
         0x0, 
         0x0, 0x0, 0x40, 
         

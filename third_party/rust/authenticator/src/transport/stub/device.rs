@@ -2,9 +2,10 @@
 
 
 
+use crate::ctap2::commands::get_info::AuthenticatorInfo;
 use crate::transport::hid::HIDDevice;
 use crate::transport::FidoDevice;
-use crate::transport::{AuthenticatorInfo, HIDError, SharedSecret};
+use crate::transport::{HIDError, SharedSecret};
 use crate::u2ftypes::{U2FDevice, U2FDeviceInfo};
 use std::hash::Hash;
 use std::io;
