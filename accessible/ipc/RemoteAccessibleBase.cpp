@@ -699,11 +699,7 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
           
           
           
-          
-          
-          const bool hasScrollArea = [&]() {
-            return remoteAcc->ApplyScrollOffset(bounds);
-          }();
+          const bool hasScrollArea = remoteAcc->ApplyScrollOffset(bounds);
 
           
           

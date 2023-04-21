@@ -463,6 +463,11 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
 
   virtual nsTArray<int32_t>& GetCachedHyperTextOffsets() override;
 
+  
+  
+  template <class>
+  friend class RemoteAccessibleBase;
+
  private:
   uintptr_t mParent;
   static const uintptr_t kNoParent = UINTPTR_MAX;
