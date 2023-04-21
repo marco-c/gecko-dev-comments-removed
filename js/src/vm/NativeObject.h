@@ -819,11 +819,6 @@ class NativeObject : public JSObject {
   }
 
  public:
-  
-  void initSlots(HeapSlot* slots) {
-    MOZ_ASSERT(slots);
-    slots_ = slots;
-  }
   inline void initEmptyDynamicSlots();
 
   [[nodiscard]] static bool generateNewDictionaryShape(
@@ -913,6 +908,8 @@ class NativeObject : public JSObject {
   bool hadGetterSetterChange() const {
     return hasFlag(ObjectFlag::HadGetterSetterChange);
   }
+
+  bool allocateInitialSlots(JSContext* cx, uint32_t capacity);
 
   
 

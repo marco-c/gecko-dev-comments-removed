@@ -450,7 +450,6 @@ void js::Nursery::leaveZealMode() {
 #endif  
 
 JSObject* js::Nursery::allocateObject(gc::AllocSite* site, size_t size,
-                                      size_t nDynamicSlots,
                                       const JSClass* clasp) {
   
   
@@ -464,27 +463,6 @@ JSObject* js::Nursery::allocateObject(gc::AllocSite* site, size_t size,
       allocateCell(site, size, JS::TraceKind::Object));
   if (!obj) {
     return nullptr;
-  }
-
-  
-  ObjectSlots* slotsHeader = nullptr;
-  if (nDynamicSlots) {
-    MOZ_ASSERT(clasp->isNativeObject());
-    void* allocation =
-        allocateBuffer(site->zone(), ObjectSlots::allocSize(nDynamicSlots));
-    if (!allocation) {
-      
-      
-      return nullptr;
-    }
-    slotsHeader = new (allocation) ObjectSlots(nDynamicSlots, 0);
-  }
-
-  
-  
-  
-  if (nDynamicSlots) {
-    static_cast<NativeObject*>(obj)->initSlots(slotsHeader->slots());
   }
 
   gcprobes::NurseryAlloc(obj, size);
@@ -629,14 +607,15 @@ void* js::Nursery::allocateBuffer(Zone* zone, size_t nbytes) {
   return buffer;
 }
 
-void* js::Nursery::allocateBuffer(JSObject* obj, size_t nbytes) {
+void* js::Nursery::allocateBuffer(Zone* zone, JSObject* obj, size_t nbytes) {
   MOZ_ASSERT(obj);
   MOZ_ASSERT(nbytes > 0);
 
   if (!IsInsideNursery(obj)) {
-    return obj->zone()->pod_malloc<uint8_t>(nbytes);
+    return zone->pod_malloc<uint8_t>(nbytes);
   }
-  return allocateBuffer(obj->zone(), nbytes);
+
+  return allocateBuffer(zone, nbytes);
 }
 
 void* js::Nursery::allocateBufferSameLocation(JSObject* obj, size_t nbytes) {

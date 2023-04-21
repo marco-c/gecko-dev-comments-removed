@@ -176,7 +176,7 @@ class Nursery {
   
   
   JSObject* allocateObject(gc::AllocSite* site, size_t size,
-                           size_t numDynamicSlots, const JSClass* clasp);
+                           const JSClass* clasp);
 
   
   
@@ -196,7 +196,7 @@ class Nursery {
 
   
   
-  void* allocateBuffer(JSObject* obj, size_t nbytes);
+  void* allocateBuffer(JS::Zone* zone, JSObject* obj, size_t nbytes);
 
   
   
