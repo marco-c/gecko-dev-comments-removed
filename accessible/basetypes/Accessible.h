@@ -369,6 +369,11 @@ class Accessible {
   
 
 
+  virtual already_AddRefed<nsAtom> InputType() const = 0;
+
+  
+
+
   virtual nsAtom* LandmarkRole() const;
 
   
@@ -557,6 +562,8 @@ class Accessible {
   }
 
   bool IsDateTimeField() const { return mType == eHTMLDateTimeFieldType; }
+
+  virtual bool IsSearchbox() const;
 
   virtual bool HasNumericValue() const = 0;
 
