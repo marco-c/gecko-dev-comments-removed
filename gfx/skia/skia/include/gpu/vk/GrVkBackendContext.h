@@ -9,10 +9,10 @@
 #define GrVkBackendContext_DEFINED
 
 #include "include/core/SkRefCnt.h"
-#include "include/gpu/vk/GrVkMemoryAllocator.h"
 #include "include/gpu/vk/GrVkTypes.h"
+#include "include/gpu/vk/VulkanMemoryAllocator.h"
 
-class GrVkExtensions;
+namespace skgpu { class VulkanExtensions; }
 
 enum GrVkExtensionFlags {
     kEXT_debug_report_GrVkExtensionFlag    = 0x0001,
@@ -43,34 +43,36 @@ struct VkPhysicalDeviceFeatures2;
 
 
 struct SK_API GrVkBackendContext {
-    VkInstance                       fInstance;
-    VkPhysicalDevice                 fPhysicalDevice;
-    VkDevice                         fDevice;
-    VkQueue                          fQueue;
-    uint32_t                         fGraphicsQueueIndex;
-    uint32_t                         fMinAPIVersion; 
-    uint32_t                         fInstanceVersion = 0; 
+    VkInstance                          fInstance = VK_NULL_HANDLE;
+    VkPhysicalDevice                    fPhysicalDevice = VK_NULL_HANDLE;
+    VkDevice                            fDevice = VK_NULL_HANDLE;
+    VkQueue                             fQueue = VK_NULL_HANDLE;
+    uint32_t                            fGraphicsQueueIndex = 0;
+    uint32_t                            fMinAPIVersion = 0; 
+                                                            
+    uint32_t                            fInstanceVersion = 0; 
     
     
-    uint32_t                         fMaxAPIVersion = 0;
-    uint32_t                         fExtensions = 0; 
-    const GrVkExtensions*            fVkExtensions = nullptr;
-    uint32_t                         fFeatures; 
+    uint32_t                            fMaxAPIVersion = 0;
+    uint32_t                            fExtensions = 0; 
+    const skgpu::VulkanExtensions*      fVkExtensions = nullptr;
+    uint32_t                            fFeatures = 0; 
+                                                       
     
     
     
     
     
-    const VkPhysicalDeviceFeatures*  fDeviceFeatures = nullptr;
-    const VkPhysicalDeviceFeatures2* fDeviceFeatures2 = nullptr;
-    sk_sp<GrVkMemoryAllocator>       fMemoryAllocator;
-    GrVkGetProc                      fGetProc = nullptr;
+    const VkPhysicalDeviceFeatures*     fDeviceFeatures = nullptr;
+    const VkPhysicalDeviceFeatures2*    fDeviceFeatures2 = nullptr;
+    sk_sp<skgpu::VulkanMemoryAllocator> fMemoryAllocator;
+    skgpu::VulkanGetProc                fGetProc = nullptr;
     
     
-    bool                             fOwnsInstanceAndDevice = false;
+    bool                                fOwnsInstanceAndDevice = false;
     
     
-    GrProtected                      fProtectedContext = GrProtected::kNo;
+    skgpu::Protected                    fProtectedContext = skgpu::Protected::kNo;
 };
 
 #endif

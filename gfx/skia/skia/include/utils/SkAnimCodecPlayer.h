@@ -9,6 +9,13 @@
 #define SkAnimCodecPlayer_DEFINED
 
 #include "include/codec/SkCodec.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSize.h"
+
+#include <cstdint>
+#include <memory>
+#include <vector>
 
 class SkImage;
 
@@ -27,13 +34,13 @@ public:
     
 
 
-    SkISize dimensions();
+    SkISize dimensions() const;
 
     
 
 
 
-    uint32_t duration() { return fTotalDuration; }
+    uint32_t duration() const { return fTotalDuration; }
 
     
 

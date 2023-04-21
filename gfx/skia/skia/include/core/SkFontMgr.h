@@ -13,6 +13,8 @@
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkTypes.h"
 
+#include <memory>
+
 class SkData;
 class SkFontData;
 class SkStreamAsset;
@@ -32,7 +34,7 @@ protected:
     SkTypeface* matchStyleCSS3(const SkFontStyle& pattern);
 
 private:
-    typedef SkRefCnt INHERITED;
+    using INHERITED = SkRefCnt;
 };
 
 class SK_API SkFontMgr : public SkRefCnt {
@@ -87,8 +89,6 @@ public:
                                           const char* bcp47[], int bcp47Count,
                                           SkUnichar character) const;
 
-    SkTypeface* matchFaceStyle(const SkTypeface*, const SkFontStyle&) const;
-
     
 
 
@@ -111,13 +111,6 @@ public:
 
 
 
-    sk_sp<SkTypeface> makeFromFontData(std::unique_ptr<SkFontData>) const;
-
-    
-
-
-
-
 
     sk_sp<SkTypeface> makeFromFile(const char path[], int ttcIndex = 0) const;
 
@@ -125,6 +118,9 @@ public:
 
     
     static sk_sp<SkFontMgr> RefDefault();
+
+    
+    static sk_sp<SkFontMgr> RefEmpty();
 
 protected:
     virtual int onCountFamilies() const = 0;
@@ -139,25 +135,28 @@ protected:
     virtual SkTypeface* onMatchFamilyStyleCharacter(const char familyName[], const SkFontStyle&,
                                                     const char* bcp47[], int bcp47Count,
                                                     SkUnichar character) const = 0;
-    virtual SkTypeface* onMatchFaceStyle(const SkTypeface*,
-                                         const SkFontStyle&) const = 0;
 
     virtual sk_sp<SkTypeface> onMakeFromData(sk_sp<SkData>, int ttcIndex) const = 0;
     virtual sk_sp<SkTypeface> onMakeFromStreamIndex(std::unique_ptr<SkStreamAsset>,
                                                     int ttcIndex) const = 0;
     virtual sk_sp<SkTypeface> onMakeFromStreamArgs(std::unique_ptr<SkStreamAsset>,
-                                                   const SkFontArguments&) const;
-    virtual sk_sp<SkTypeface> onMakeFromFontData(std::unique_ptr<SkFontData>) const;
+                                                   const SkFontArguments&) const = 0;
     virtual sk_sp<SkTypeface> onMakeFromFile(const char path[], int ttcIndex) const = 0;
 
     virtual sk_sp<SkTypeface> onLegacyMakeTypeface(const char familyName[], SkFontStyle) const = 0;
+
+    
+    virtual SkTypeface* onMatchFaceStyle(const SkTypeface*,
+                                         const SkFontStyle&) const {
+        return nullptr;
+    }
 
 private:
 
     
     static sk_sp<SkFontMgr> Factory();
 
-    typedef SkRefCnt INHERITED;
+    using INHERITED = SkRefCnt;
 };
 
 #endif

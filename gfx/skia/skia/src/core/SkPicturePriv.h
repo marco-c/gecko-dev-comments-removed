@@ -12,6 +12,8 @@
 
 class SkReadBuffer;
 class SkWriteBuffer;
+class SkStream;
+struct SkPictInfo;
 
 class SkPicturePriv {
 public:
@@ -33,6 +35,15 @@ public:
     
     static const SkBigPicture* AsSkBigPicture(const sk_sp<const SkPicture> picture) {
         return picture->asSkBigPicture();
+    }
+
+    static uint64_t MakeSharedID(uint32_t pictureID) {
+        uint64_t sharedID = SkSetFourByteTag('p', 'i', 'c', 't');
+        return (sharedID << 32) | pictureID;
+    }
+
+    static void AddedToCache(const SkPicture* pic) {
+        pic->fAddedToCache.store(true);
     }
 
     
@@ -74,33 +85,72 @@ public:
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     enum Version {
-        kTileModeInBlurImageFilter_Version  = 56,
-        kTileInfoInSweepGradient_Version    = 57,
-        k2PtConicalNoFlip_Version           = 58,
-        kRemovePictureImageFilterLocalSpace = 59,
-        kRemoveHeaderFlags_Version          = 60,
-        kTwoColorDrawShadow_Version         = 61,
-        kDontNegateImageSize_Version        = 62,
-        kStoreImageBounds_Version           = 63,
-        kRemoveOccluderFromBlurMaskFilter   = 64,
-        kFloat4PaintColor_Version           = 65,
-        kSaveBehind_Version                 = 66,
-        kSerializeFonts_Version             = 67,
-        kPaintDoesntSerializeFonts_Version  = 68,
-        kCleanupImageFilterEnums_Version    = 69,
-        kHideImageFilterImpls_Version       = 70,
-        kUnifyErodeDilateImpls_Version      = 71,
-        kMatrixColorFilterDomain_Version    = 72,
-        kEdgeAAQuadColor4f_Version          = 73,
+        kPictureShaderFilterParam_Version   = 82,
+        kMatrixImageFilterSampling_Version  = 83,
+        kImageFilterImageSampling_Version   = 84,
+        kNoFilterQualityShaders_Version     = 85,
+        kVerticesRemoveCustomData_Version   = 86,
+        kSkBlenderInSkPaint                 = 87,
+        kBlenderInEffects                   = 88,
+        kNoExpandingClipOps                 = 89,
+        kBackdropScaleFactor                = 90,
+        kRawImageShaders                    = 91,
+        kAnisotropicFilter                  = 92,
+        kBlend4fColorFilter                 = 93,
+        kNoShaderLocalMatrix                = 94,
+        kShaderImageFilterSerializeShader   = 95,
 
         
-        kMin_Version     = kTileModeInBlurImageFilter_Version,
-        kCurrent_Version = kEdgeAAQuadColor4f_Version
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        kMin_Version     = kPictureShaderFilterParam_Version,
+        kCurrent_Version = kShaderImageFilterSerializeShader
     };
-
-    static_assert(kMin_Version <= 62, "Remove kFontAxes_bad from SkFontDescriptor.cpp");
 };
+
+bool SkPicture_StreamIsSKP(SkStream*, SkPictInfo*);
 
 #endif

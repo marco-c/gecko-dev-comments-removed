@@ -12,6 +12,8 @@
 #include "include/core/SkSurface.h"
 #include "include/core/SkTileMode.h"
 
+class SkPixelRef;
+
 enum SkCopyPixelsMode {
     kIfMutable_SkCopyPixelsMode,  
     kAlways_SkCopyPixelsMode,     
@@ -19,19 +21,17 @@ enum SkCopyPixelsMode {
 };
 
 
-enum {kSkBlitterContextSize = 3332};
-
-
 
 sk_sp<SkShader> SkMakeBitmapShader(const SkBitmap& src, SkTileMode, SkTileMode,
-                                   const SkMatrix* localMatrix, SkCopyPixelsMode);
+                                   const SkSamplingOptions&, const SkMatrix* localMatrix,
+                                   SkCopyPixelsMode);
 
 
 
 
 
 sk_sp<SkShader> SkMakeBitmapShaderForPaint(const SkPaint& paint, const SkBitmap& src,
-                                           SkTileMode, SkTileMode,
+                                           SkTileMode, SkTileMode, const SkSamplingOptions&,
                                            const SkMatrix* localMatrix, SkCopyPixelsMode);
 
 
@@ -52,43 +52,11 @@ sk_sp<SkShader> SkMakeBitmapShaderForPaint(const SkPaint& paint, const SkBitmap&
 
 
 
-extern SK_API sk_sp<SkImage> SkMakeImageFromRasterBitmap(const SkBitmap&, SkCopyPixelsMode);
+extern SK_SPI sk_sp<SkImage> SkMakeImageFromRasterBitmap(const SkBitmap&, SkCopyPixelsMode);
 
 
 
 
 extern const SkPixelRef* SkBitmapImageGetPixelRef(const SkImage* rasterImage);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool SkImage_pinAsTexture(const SkImage*, GrContext*);
-
-
-
-
-
-
-
-
-
-void SkImage_unpinAsTexture(const SkImage*, GrContext*);
-
-
-
-
-
-SkIRect SkImage_getSubset(const SkImage*);
 
 #endif

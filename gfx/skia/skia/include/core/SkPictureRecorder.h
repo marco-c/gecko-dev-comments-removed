@@ -12,16 +12,16 @@
 #include "include/core/SkPicture.h"
 #include "include/core/SkRefCnt.h"
 
+#include <memory>
+
 #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
 namespace android {
     class Picture;
 };
 #endif
 
-class GrContext;
 class SkCanvas;
 class SkDrawable;
-class SkMiniRecorder;
 class SkPictureRecord;
 class SkRecord;
 class SkRecorder;
@@ -30,12 +30,6 @@ class SK_API SkPictureRecorder {
 public:
     SkPictureRecorder();
     ~SkPictureRecorder();
-
-    enum RecordFlags {
-        
-        
-        kPlaybackDrawPicture_RecordFlag     = 1 << 0,
-    };
 
     enum FinishFlags {
     };
@@ -47,14 +41,13 @@ public:
 
 
 
-    SkCanvas* beginRecording(const SkRect& bounds,
-                             SkBBHFactory* bbhFactory = nullptr,
-                             uint32_t recordFlags = 0);
+    SkCanvas* beginRecording(const SkRect& bounds, sk_sp<SkBBoxHierarchy> bbh);
+
+    SkCanvas* beginRecording(const SkRect& bounds, SkBBHFactory* bbhFactory = nullptr);
 
     SkCanvas* beginRecording(SkScalar width, SkScalar height,
-                             SkBBHFactory* bbhFactory = nullptr,
-                             uint32_t recordFlags = 0) {
-        return this->beginRecording(SkRect::MakeWH(width, height), bbhFactory, recordFlags);
+                             SkBBHFactory* bbhFactory = nullptr) {
+        return this->beginRecording(SkRect::MakeWH(width, height), bbhFactory);
     }
 
     
@@ -72,7 +65,7 @@ public:
 
 
 
-    sk_sp<SkPicture> finishRecordingAsPicture(uint32_t endFlags = 0);
+    sk_sp<SkPicture> finishRecordingAsPicture();
 
     
 
@@ -83,8 +76,7 @@ public:
 
 
 
-    sk_sp<SkPicture> finishRecordingAsPictureWithCull(const SkRect& cullRect,
-                                                      uint32_t endFlags = 0);
+    sk_sp<SkPicture> finishRecordingAsPictureWithCull(const SkRect& cullRect);
 
     
 
@@ -96,7 +88,7 @@ public:
 
 
 
-    sk_sp<SkDrawable> finishRecordingAsDrawable(uint32_t endFlags = 0);
+    sk_sp<SkDrawable> finishRecordingAsDrawable();
 
 private:
     void reset();
@@ -111,12 +103,10 @@ private:
     void partialReplay(SkCanvas* canvas) const;
 
     bool                        fActivelyRecording;
-    uint32_t                    fFlags;
     SkRect                      fCullRect;
     sk_sp<SkBBoxHierarchy>      fBBH;
     std::unique_ptr<SkRecorder> fRecorder;
     sk_sp<SkRecord>             fRecord;
-    std::unique_ptr<SkMiniRecorder> fMiniRecorder;
 
     SkPictureRecorder(SkPictureRecorder&&) = delete;
     SkPictureRecorder& operator=(SkPictureRecorder&&) = delete;

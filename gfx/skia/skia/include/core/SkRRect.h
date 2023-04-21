@@ -10,9 +10,14 @@
 
 #include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkTypes.h"
 
-class SkPath;
+#include <cstdint>
+#include <cstring>
+
 class SkMatrix;
+class SkString;
 
 
 
@@ -68,22 +73,10 @@ public:
         kLastType       = kComplex_Type, 
     };
 
-    
-
-
-
-
-
     Type getType() const {
         SkASSERT(this->isValid());
         return static_cast<Type>(fType);
     }
-
-    
-
-
-
-
 
     Type type() const { return this->getType(); }
 
@@ -196,23 +189,11 @@ public:
 
 
 
-    void setOval(const SkRect& oval) {
-        if (!this->initializeRect(oval)) {
-            return;
-        }
-
-        SkScalar xRad = SkScalarHalf(fRect.width());
-        SkScalar yRad = SkScalarHalf(fRect.height());
-
-        for (int i = 0; i < 4; ++i) {
-            fRadii[i].set(xRad, yRad);
-        }
-        fType = kOval_Type;
-
-        SkASSERT(this->isValid());
-    }
+    void setOval(const SkRect& oval);
 
     
+
+
 
 
 
@@ -260,6 +241,8 @@ public:
 
 
 
+
+
     void setRectRadii(const SkRect& rect, const SkVector radii[4]);
 
     
@@ -281,8 +264,6 @@ public:
     const SkRect& rect() const { return fRect; }
 
     
-
-
 
 
 
@@ -324,6 +305,8 @@ public:
     }
 
     
+
+
 
 
 
@@ -421,9 +404,13 @@ public:
 
 
 
+
+
     bool contains(const SkRect& rect) const;
 
     
+
+
 
 
 
@@ -440,9 +427,13 @@ public:
 
 
 
+
+
     size_t writeToMemory(void* buffer) const;
 
     
+
+
 
 
 
@@ -462,6 +453,8 @@ public:
 
 
 
+
+
     bool transform(const SkMatrix& matrix, SkRRect* dst) const;
 
     
@@ -470,7 +463,10 @@ public:
 
 
 
+
+
     void dump(bool asHex) const;
+    SkString dumpToString(bool asHex) const;
 
     
 
@@ -502,7 +498,8 @@ private:
 
     void computeType();
     bool checkCornerContainment(SkScalar x, SkScalar y) const;
-    void scaleRadii(const SkRect& rect);
+    
+    bool scaleRadii();
 
     SkRect fRect = SkRect::MakeEmpty();
     

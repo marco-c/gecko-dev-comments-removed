@@ -7,7 +7,7 @@
 
 #include "src/core/SkRecordOpts.h"
 
-#include "include/private/SkTDArray.h"
+#include "include/private/base/SkTDArray.h"
 #include "src/core/SkCanvasPriv.h"
 #include "src/core/SkRecordPattern.h"
 #include "src/core/SkRecords.h"
@@ -176,7 +176,7 @@ static bool effectively_srcover(const SkPaint* paint) {
     }
     
     return !paint->getShader() && !paint->getColorFilter() && !paint->getImageFilter() &&
-           0xFF == paint->getAlpha() && paint->getBlendMode() == SkBlendMode::kSrc;
+           0xFF == paint->getAlpha() && paint->asBlendMode() == SkBlendMode::kSrc;
 }
 
 
@@ -185,13 +185,7 @@ struct SaveLayerDrawRestoreNooper {
     typedef Pattern<Is<SaveLayer>, IsDraw, Is<Restore>> Match;
 
     bool onMatch(SkRecord* record, Match* match, int begin, int end) {
-        if (match->first<SaveLayer>()->backdrop || match->first<SaveLayer>()->clipMask) {
-            
-            return false;
-        }
-
-        if (match->first<SaveLayer>()->saveLayerFlags &
-                SkCanvasPriv::kDontClipToLayer_SaveLayerFlag) {
+        if (match->first<SaveLayer>()->backdrop) {
             
             return false;
         }

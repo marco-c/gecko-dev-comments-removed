@@ -9,7 +9,10 @@
 #define SkRectPriv_DEFINED
 
 #include "include/core/SkRect.h"
-#include "src/core/SkMathPriv.h"
+#include "src/base/SkMathPriv.h"
+
+class SkM44;
+class SkMatrix;
 
 class SkRectPriv {
 public:
@@ -41,10 +44,10 @@ public:
     }
 
     static void GrowToInclude(SkRect* r, const SkPoint& pt) {
-        r->fLeft  =  SkMinScalar(pt.fX, r->fLeft);
-        r->fRight =  SkMaxScalar(pt.fX, r->fRight);
-        r->fTop    = SkMinScalar(pt.fY, r->fTop);
-        r->fBottom = SkMaxScalar(pt.fY, r->fBottom);
+        r->fLeft  =  std::min(pt.fX, r->fLeft);
+        r->fRight =  std::max(pt.fX, r->fRight);
+        r->fTop    = std::min(pt.fY, r->fTop);
+        r->fBottom = std::max(pt.fY, r->fBottom);
     }
 
     
@@ -58,6 +61,38 @@ public:
         return  SkTFitsIn<int16_t>(r.fLeft)  && SkTFitsIn<int16_t>(r.fTop) &&
                 SkTFitsIn<int16_t>(r.fRight) && SkTFitsIn<int16_t>(r.fBottom);
     }
+
+    
+    static SkScalar HalfWidth(const SkRect& r) {
+        return SkScalarHalf(r.fRight) - SkScalarHalf(r.fLeft);
+    }
+    
+    static SkScalar HalfHeight(const SkRect& r) {
+        return SkScalarHalf(r.fBottom) - SkScalarHalf(r.fTop);
+    }
+
+    
+    
+    
+    static bool Subtract(const SkRect& a, const SkRect& b, SkRect* out);
+    static bool Subtract(const SkIRect& a, const SkIRect& b, SkIRect* out);
+
+    
+    
+    static SkRect Subtract(const SkRect& a, const SkRect& b) {
+        SkRect diff;
+        Subtract(a, b, &diff);
+        return diff;
+    }
+    static SkIRect Subtract(const SkIRect& a, const SkIRect& b) {
+        SkIRect diff;
+        Subtract(a, b, &diff);
+        return diff;
+    }
+
+    
+    static bool QuadContainsRect(const SkMatrix& m, const SkIRect& a, const SkIRect& b);
+    static bool QuadContainsRect(const SkM44& m, const SkRect& a, const SkRect& b);
 };
 
 

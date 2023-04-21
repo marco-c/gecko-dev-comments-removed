@@ -10,7 +10,7 @@
 
 #include "include/core/SkPath.h"
 #include "include/core/SkRefCnt.h"
-#include "include/private/SkTDArray.h"
+#include "include/private/base/SkTDArray.h"
 
 struct SkConic;
 
@@ -96,6 +96,9 @@ public:
 
 
 
+
+
+
     SkContourMeasureIter(const SkPath& path, bool forceClosed, SkScalar resScale = 1);
     ~SkContourMeasureIter();
 
@@ -120,29 +123,9 @@ public:
     sk_sp<SkContourMeasure> next();
 
 private:
-    SkPath::RawIter fIter;
-    SkPath          fPath;
-    SkScalar        fTolerance;
-    bool            fForceClosed;
+    class Impl;
 
-    
-    SkTDArray<SkContourMeasure::Segment>  fSegments;
-    SkTDArray<SkPoint>  fPts; 
-
-    SkContourMeasure* buildSegments();
-
-    SkScalar compute_line_seg(SkPoint p0, SkPoint p1, SkScalar distance, unsigned ptIndex);
-    SkScalar compute_quad_segs(const SkPoint pts[3], SkScalar distance,
-                               int mint, int maxt, unsigned ptIndex);
-    SkScalar compute_conic_segs(const SkConic& conic, SkScalar distance,
-                                                         int mint, const SkPoint& minPt,
-                                                         int maxt, const SkPoint& maxPt,
-                                unsigned ptIndex);
-    SkScalar compute_cubic_segs(const SkPoint pts[4], SkScalar distance,
-                                int mint, int maxt, unsigned ptIndex);
-
-    SkContourMeasureIter(const SkContourMeasureIter&) = delete;
-    SkContourMeasureIter& operator=(const SkContourMeasureIter&) = delete;
+    std::unique_ptr<Impl> fImpl;
 };
 
 #endif

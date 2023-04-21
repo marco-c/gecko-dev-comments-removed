@@ -10,8 +10,8 @@
 #include "include/core/SkCanvas.h"
 #include "include/core/SkStream.h"
 #include "include/docs/SkPDFDocument.h"
-#include "include/private/SkMutex.h"
-#include "include/private/SkTHash.h"
+#include "include/private/base/SkMutex.h"
+#include "src/core/SkTHash.h"
 #include "src/pdf/SkPDFMetadata.h"
 #include "src/pdf/SkPDFTag.h"
 
@@ -31,7 +31,7 @@ struct SkPDFStrokeGraphicState;
 namespace SkPDFGradientShader {
 struct Key;
 struct KeyHash;
-}
+}  
 
 const char* SkPDFGetNodeIdKey();
 
@@ -53,6 +53,27 @@ struct SkPDFNamedDestination {
     SkPoint fPoint;
     SkPDFIndirectReference fPage;
 };
+
+
+struct SkPDFLink {
+    enum class Type {
+        kNone,
+        kUrl,
+        kNamedDestination,
+    };
+
+    SkPDFLink(Type type, SkData* data, const SkRect& rect, int nodeId)
+        : fType(type)
+        , fData(sk_ref_sp(data))
+        , fRect(rect)
+        , fNodeId(nodeId) {}
+    const Type fType;
+    
+    const sk_sp<SkData> fData;
+    const SkRect fRect;
+    const int fNodeId;
+};
+
 
 
 
@@ -96,9 +117,20 @@ public:
         return SkASSERT(!fPageRefs.empty()), fPageRefs.back();
     }
     
-    int getMarkIdForNodeId(int nodeId);
+    
+    
+    int createMarkIdForNodeId(int nodeId);
+    
+    
+    
+    int createStructParentKeyForNodeId(int nodeId);
+
+    std::unique_ptr<SkPDFArray> getAnnotations();
 
     SkPDFIndirectReference reserveRef() { return SkPDFIndirectReference{fNextObjectNumber++}; }
+
+    
+    SkString nextFontSubsetTag();
 
     SkExecutor* executor() const { return fExecutor; }
     void incrementJobCount();
@@ -123,9 +155,7 @@ public:
     SkTHashMap<SkPDFFillGraphicState, SkPDFIndirectReference> fFillGSMap;
     SkPDFIndirectReference fInvertFunction;
     SkPDFIndirectReference fNoSmaskGraphicState;
-
-    std::vector<std::pair<sk_sp<SkData>, SkRect>> fCurrentPageLinkToURLs;
-    std::vector<std::pair<sk_sp<SkData>, SkRect>> fCurrentPageLinkToDestinations;
+    std::vector<std::unique_ptr<SkPDFLink>> fCurrentPageLinks;
     std::vector<SkPDFNamedDestination> fNamedDestinations;
 
 private:
@@ -137,6 +167,7 @@ private:
     sk_sp<SkPDFDevice> fPageDevice;
     std::atomic<int> fNextObjectNumber = {1};
     std::atomic<int> fJobCount = {0};
+    uint32_t fNextFontSubsetTag = {0};
     SkUUID fUUID;
     SkPDFIndirectReference fInfoDict;
     SkPDFIndirectReference fXMP;

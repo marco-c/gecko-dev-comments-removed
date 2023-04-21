@@ -5,28 +5,69 @@
 
 
 
-#include "include/core/SkString.h"
-#include "include/private/SkNx.h"
-#include "src/core/SkArenaAlloc.h"
-#include "src/core/SkAutoBlitterChoose.h"
+#include "include/core/SkAlphaType.h"
+#include "include/core/SkBlendMode.h"
+#include "include/core/SkBlender.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkColorSpace.h"
+#include "include/core/SkColorType.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkPaint.h"
+#include "include/core/SkPixmap.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkPoint3.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkShader.h"
+#include "include/core/SkSurfaceProps.h"
+#include "include/core/SkTypes.h"
+#include "include/core/SkVertices.h"
+#include "include/private/SkColorData.h"
+#include "include/private/base/SkFloatingPoint.h"
+#include "include/private/base/SkTo.h"
+#include "src/base/SkArenaAlloc.h"
+#include "src/base/SkTLazy.h"
+#include "src/base/SkVx.h"
+#include "src/core/SkBlenderBase.h"
 #include "src/core/SkConvertPixels.h"
 #include "src/core/SkCoreBlitters.h"
 #include "src/core/SkDraw.h"
+#include "src/core/SkEffectPriv.h"
+#include "src/core/SkMatrixProvider.h"
 #include "src/core/SkRasterClip.h"
 #include "src/core/SkRasterPipeline.h"
+#include "src/core/SkRasterPipelineOpList.h"
 #include "src/core/SkScan.h"
+#include "src/core/SkSurfacePriv.h"
+#include "src/core/SkVM.h"
+#include "src/core/SkVMBlitter.h"
 #include "src/core/SkVertState.h"
-#include "src/shaders/SkComposeShader.h"
+#include "src/core/SkVerticesPriv.h"
 #include "src/shaders/SkShaderBase.h"
+#include "src/shaders/SkTransformShader.h"
+
+#include <cstddef>
+#include <cstdint>
+#include <optional>
+#include <utility>
+
+class SkBlitter;
 
 struct Matrix43 {
     float fMat[12];    
 
-    Sk4f map(float x, float y) const {
-        return Sk4f::Load(&fMat[0]) * x + Sk4f::Load(&fMat[4]) * y + Sk4f::Load(&fMat[8]);
+    skvx::float4 map(float x, float y) const {
+        return skvx::float4::Load(&fMat[0]) * x +
+               skvx::float4::Load(&fMat[4]) * y +
+               skvx::float4::Load(&fMat[8]);
     }
 
-    void setConcat(const Matrix43& a, const SkMatrix& b) {
+    
+    void setConcat(const Matrix43 a, const SkMatrix& b) {
+        SkASSERT(!b.hasPerspective());
+
         fMat[ 0] = a.dot(0, b.getScaleX(), b.getSkewY());
         fMat[ 1] = a.dot(1, b.getScaleX(), b.getSkewY());
         fMat[ 2] = a.dot(2, b.getScaleX(), b.getSkewY());
@@ -49,10 +90,6 @@ private:
     }
 };
 
-static SkScan::HairRCProc ChooseHairProc(bool doAntiAlias) {
-    return doAntiAlias ? SkScan::AntiHairLine : SkScan::HairLine;
-}
-
 static bool SK_WARN_UNUSED_RESULT
 texture_to_matrix(const VertState& state, const SkPoint verts[], const SkPoint texs[],
                   SkMatrix* matrix) {
@@ -69,22 +106,30 @@ texture_to_matrix(const VertState& state, const SkPoint verts[], const SkPoint t
 
 class SkTriColorShader : public SkShaderBase {
 public:
-    SkTriColorShader(bool isOpaque) : fIsOpaque(isOpaque) {}
+    SkTriColorShader(bool isOpaque, bool usePersp) : fIsOpaque(isOpaque), fUsePersp(usePersp) {}
 
+    
     bool update(const SkMatrix& ctmInv, const SkPoint pts[], const SkPMColor4f colors[],
                 int index0, int index1, int index2);
 
 protected:
-#ifdef SK_ENABLE_LEGACY_SHADERCONTEXT
-    Context* onMakeContext(const ContextRec& rec, SkArenaAlloc* alloc) const override {
-        return nullptr;
-    }
-#endif
-    bool onAppendStages(const SkStageRec& rec) const override {
-        rec.fPipeline->append(SkRasterPipeline::seed_shader);
-        rec.fPipeline->append(SkRasterPipeline::matrix_4x3, &fM43);
+    bool appendStages(const SkStageRec& rec, const MatrixRec&) const override {
+        rec.fPipeline->append(SkRasterPipelineOp::seed_shader);
+        if (fUsePersp) {
+            rec.fPipeline->append(SkRasterPipelineOp::matrix_perspective, &fM33);
+        }
+        rec.fPipeline->append(SkRasterPipelineOp::matrix_4x3, &fM43);
         return true;
     }
+
+    skvm::Color program(skvm::Builder*,
+                        skvm::Coord,
+                        skvm::Coord,
+                        skvm::Color,
+                        const MatrixRec&,
+                        const SkColorInfo&,
+                        skvm::Uniforms*,
+                        SkArenaAlloc*) const override;
 
 private:
     bool isOpaque() const override { return fIsOpaque; }
@@ -92,11 +137,59 @@ private:
     Factory getFactory() const override { return nullptr; }
     const char* getTypeName() const override { return nullptr; }
 
-    Matrix43 fM43;  
-    const bool fIsOpaque;
+    
+    
 
-    typedef SkShaderBase INHERITED;
+    Matrix43 fM43;
+    SkMatrix fM33;
+    const bool fIsOpaque;
+    const bool fUsePersp;   
+    mutable skvm::Uniform fColorMatrix;
+    mutable skvm::Uniform fCoordMatrix;
+
+    using INHERITED = SkShaderBase;
 };
+
+skvm::Color SkTriColorShader::program(skvm::Builder* b,
+                                      skvm::Coord device,
+                                      skvm::Coord local,
+                                      skvm::Color,
+                                      const MatrixRec&,
+                                      const SkColorInfo&,
+                                      skvm::Uniforms* uniforms,
+                                      SkArenaAlloc* alloc) const {
+    fColorMatrix = uniforms->pushPtr(&fM43);
+
+    skvm::F32 x = local.x,
+              y = local.y;
+
+    if (fUsePersp) {
+        fCoordMatrix = uniforms->pushPtr(&fM33);
+        auto dot = [&, x, y](int row) {
+            return b->mad(x, b->arrayF(fCoordMatrix, row),
+                             b->mad(y, b->arrayF(fCoordMatrix, row + 3),
+                                       b->arrayF(fCoordMatrix, row + 6)));
+        };
+
+        x = dot(0);
+        y = dot(1);
+        x = x * (1.0f / dot(2));
+        y = y * (1.0f / dot(2));
+    }
+
+    auto colorDot = [&, x, y](int row) {
+        return b->mad(x, b->arrayF(fColorMatrix, row),
+                         b->mad(y, b->arrayF(fColorMatrix, row + 4),
+                                   b->arrayF(fColorMatrix, row + 8)));
+    };
+
+    skvm::Color color;
+    color.r = colorDot(0);
+    color.g = colorDot(1);
+    color.b = colorDot(2);
+    color.a = colorDot(3);
+    return color;
+}
 
 bool SkTriColorShader::update(const SkMatrix& ctmInv, const SkPoint pts[],
                               const SkPMColor4f colors[], int index0, int index1, int index2) {
@@ -112,18 +205,19 @@ bool SkTriColorShader::update(const SkMatrix& ctmInv, const SkPoint pts[],
         return false;
     }
 
-    SkMatrix dstToUnit;
-    dstToUnit.setConcat(im, ctmInv);
+    fM33.setConcat(im, ctmInv);
 
-    Sk4f c0 = Sk4f::Load(colors[index0].vec()),
-         c1 = Sk4f::Load(colors[index1].vec()),
-         c2 = Sk4f::Load(colors[index2].vec());
+    auto c0 = skvx::float4::Load(colors[index0].vec()),
+         c1 = skvx::float4::Load(colors[index1].vec()),
+         c2 = skvx::float4::Load(colors[index2].vec());
 
-    Matrix43 colorm;
-    (c1 - c0).store(&colorm.fMat[0]);
-    (c2 - c0).store(&colorm.fMat[4]);
-    c0.store(&colorm.fMat[8]);
-    fM43.setConcat(colorm, dstToUnit);
+    (c1 - c0).store(&fM43.fMat[0]);
+    (c2 - c0).store(&fM43.fMat[4]);
+    c0.store(&fM43.fMat[8]);
+
+    if (!fUsePersp) {
+        fM43.setConcat(fM43, fM33);
+    }
     return true;
 }
 
@@ -136,14 +230,20 @@ bool SkTriColorShader::update(const SkMatrix& ctmInv, const SkPoint pts[],
 
 
 
-static SkPMColor4f* convert_colors(const SkColor src[], int count, SkColorSpace* deviceCS,
-                                   SkArenaAlloc* alloc) {
+static SkPMColor4f* convert_colors(const SkColor src[],
+                                   int count,
+                                   SkColorSpace* deviceCS,
+                                   SkArenaAlloc* alloc,
+                                   bool skipColorXform) {
     SkPMColor4f* dst = alloc->makeArray<SkPMColor4f>(count);
-    SkImageInfo srcInfo = SkImageInfo::Make(count, 1, kBGRA_8888_SkColorType,
-                                            kUnpremul_SkAlphaType, SkColorSpace::MakeSRGB());
-    SkImageInfo dstInfo = SkImageInfo::Make(count, 1, kRGBA_F32_SkColorType,
-                                            kPremul_SkAlphaType, sk_ref_sp(deviceCS));
-    SkConvertPixels(dstInfo, dst, 0, srcInfo, src, 0);
+
+    
+    auto dstCS = skipColorXform ? nullptr : sk_ref_sp(deviceCS);
+    SkImageInfo srcInfo = SkImageInfo::Make(
+            count, 1, kBGRA_8888_SkColorType, kUnpremul_SkAlphaType, SkColorSpace::MakeSRGB());
+    SkImageInfo dstInfo =
+            SkImageInfo::Make(count, 1, kRGBA_F32_SkColorType, kPremul_SkAlphaType, dstCS);
+    SkAssertResult(SkConvertPixels(dstInfo, dst, 0, srcInfo, src, 0));
     return dst;
 }
 
@@ -155,222 +255,297 @@ static bool compute_is_opaque(const SkColor colors[], int count) {
     return SkColorGetA(c) == 0xFF;
 }
 
-void SkDraw::drawVertices(SkVertices::VertexMode vmode, int vertexCount,
-                          const SkPoint vertices[], const SkPoint textures[],
-                          const SkColor colors[], const SkVertices::BoneIndices boneIndices[],
-                          const SkVertices::BoneWeights boneWeights[], SkBlendMode bmode,
-                          const uint16_t indices[], int indexCount,
-                          const SkPaint& paint, const SkVertices::Bone bones[],
-                          int boneCount) const {
-    SkASSERT(0 == vertexCount || vertices);
+static void fill_triangle_2(const VertState& state, SkBlitter* blitter, const SkRasterClip& rc,
+                            const SkPoint dev2[]) {
+    SkPoint tmp[] = {
+        dev2[state.f0], dev2[state.f1], dev2[state.f2]
+    };
+    SkScan::FillTriangle(tmp, rc, blitter);
+}
+
+static constexpr int kMaxClippedTrianglePointCount = 4;
+static void fill_triangle_3(const VertState& state, SkBlitter* blitter, const SkRasterClip& rc,
+                            const SkPoint3 dev3[]) {
+    
+    
+    auto computeT = [](float curr, float next) {
+        
+        SkASSERT((next <= 0 && 0 < curr) || (curr <= 0 && 0 < next));
+        float t = curr / (curr - next);
+        SkASSERT(0 <= t && t <= 1);
+        return t;
+    };
+
+    auto lerp = [](SkPoint3 curr, SkPoint3 next, float t) {
+        return curr + t * (next - curr);
+    };
+
+    constexpr float tol = 0.05f;
+    
+    
+    auto clip = [&](SkPoint3 curr, SkPoint3 next) {
+        
+        
+        
+        return lerp(curr, next, computeT(curr.fZ - tol, next.fZ - tol));
+    };
 
     
-    if (vertexCount < 3 || (indices && indexCount < 3) || fRC->isEmpty()) {
-        return;
+    
+    
+    auto clipTriangle = [&](SkPoint dst[], const int idx[3], const SkPoint3 pts[]) -> int {
+        SkPoint3 outPoints[kMaxClippedTrianglePointCount];
+        SkPoint3* outP = outPoints;
+
+        for (int i = 0; i < 3; ++i) {
+            int curr = idx[i];
+            int next = idx[(i + 1) % 3];
+            if (pts[curr].fZ > tol) {
+                *outP++ = pts[curr];
+                if (pts[next].fZ <= tol) { 
+                    *outP++ = clip(pts[curr], pts[next]);
+                }
+            } else {
+                if (pts[next].fZ > tol) { 
+                    *outP++ = clip(pts[curr], pts[next]);
+                }
+            }
+        }
+
+        const int count = SkTo<int>(outP - outPoints);
+        SkASSERT(count == 0 || count == 3 || count == 4);
+        for (int i = 0; i < count; ++i) {
+            float scale = sk_ieee_float_divide(1.0f, outPoints[i].fZ);
+            dst[i].set(outPoints[i].fX * scale, outPoints[i].fY * scale);
+        }
+        return count;
+    };
+
+    SkPoint tmp[kMaxClippedTrianglePointCount];
+    int idx[] = { state.f0, state.f1, state.f2 };
+    if (int n = clipTriangle(tmp, idx, dev3)) {
+        
+        SkASSERT(n == 3 || n == 4);
+        SkScan::FillTriangle(tmp, rc, blitter);
+        if (n == 4) {
+            tmp[1] = tmp[2];
+            tmp[2] = tmp[3];
+            SkScan::FillTriangle(tmp, rc, blitter);
+        }
     }
-    SkMatrix ctmInv;
-    if (!fMatrix->invert(&ctmInv)) {
-        return;
+}
+
+static void fill_triangle(const VertState& state, SkBlitter* blitter, const SkRasterClip& rc,
+                          const SkPoint dev2[], const SkPoint3 dev3[]) {
+    if (dev3) {
+        fill_triangle_3(state, blitter, rc, dev3);
+    } else {
+        fill_triangle_2(state, blitter, rc, dev2);
+    }
+}
+
+extern bool gUseSkVMBlitter;
+
+void SkDraw::drawFixedVertices(const SkVertices* vertices,
+                               sk_sp<SkBlender> blender,
+                               const SkPaint& paint,
+                               const SkMatrix& ctmInverse,
+                               const SkPoint* dev2,
+                               const SkPoint3* dev3,
+                               SkArenaAlloc* outerAlloc,
+                               bool skipColorXform) const {
+    SkVerticesPriv info(vertices->priv());
+
+    const int vertexCount = info.vertexCount();
+    const int indexCount = info.indexCount();
+    const SkPoint* positions = info.positions();
+    const SkPoint* texCoords = info.texCoords();
+    const uint16_t* indices = info.indices();
+    const SkColor* colors = info.colors();
+
+    SkShader* paintShader = paint.getShader();
+
+    if (paintShader) {
+        if (!texCoords) {
+            texCoords = positions;
+        }
+    } else {
+        texCoords = nullptr;
     }
 
-    
-    SkShader* shader = paint.getShader();
-    if (!(shader && textures)) {
-        shader = nullptr;
-        textures = nullptr;
-    }
-
+    bool blenderIsDst = false;
     
     
-    
-    if (colors && textures) {
-        switch (bmode) {
+    if (std::optional<SkBlendMode> bm = as_BB(blender)->asBlendMode(); bm.has_value() && colors) {
+        switch (*bm) {
             case SkBlendMode::kSrc:
                 colors = nullptr;
                 break;
             case SkBlendMode::kDst:
-                textures = nullptr;
+                blenderIsDst = true;
+                texCoords = nullptr;
+                paintShader = nullptr;
                 break;
             default: break;
         }
     }
 
     
-    if (!textures) {
-        shader = nullptr;
+    SkASSERT((texCoords != nullptr) == (paintShader != nullptr));
+
+    SkMatrix ctm = fMatrixProvider->localToDevice();
+    
+    const bool usePerspective = ctm.hasPerspective();
+
+    SkTriColorShader* triColorShader = nullptr;
+    SkPMColor4f* dstColors = nullptr;
+    if (colors) {
+        dstColors =
+                convert_colors(colors, vertexCount, fDst.colorSpace(), outerAlloc, skipColorXform);
+        triColorShader = outerAlloc->make<SkTriColorShader>(compute_is_opaque(colors, vertexCount),
+                                                            usePerspective);
+    }
+
+    
+    auto applyShaderColorBlend = [&](SkShader* shader) -> sk_sp<SkShader> {
+        if (!colors) {
+            return sk_ref_sp(shader);
+        }
+        if (blenderIsDst) {
+            return sk_ref_sp(triColorShader);
+        }
+        sk_sp<SkShader> shaderWithWhichToBlend;
+        if (!shader) {
+            
+            
+            shaderWithWhichToBlend = SkShaders::Color(paint.getColor4f().makeOpaque(), nullptr);
+        } else {
+            shaderWithWhichToBlend = sk_ref_sp(shader);
+        }
+        return SkShaders::Blend(blender,
+                                sk_ref_sp(triColorShader),
+                                std::move(shaderWithWhichToBlend));
+    };
+
+    
+    
+    
+    SkTransformShader* transformShader = nullptr;
+    const SkMatrixProvider* matrixProvider = fMatrixProvider;
+    SkTLazy<SkMatrixProvider> identityProvider;
+    if (texCoords && texCoords != positions) {
+        paintShader = transformShader = outerAlloc->make<SkTransformShader>(*as_SB(paintShader),
+                                                                            usePerspective);
+        matrixProvider = identityProvider.init(SkMatrix::I());
+    }
+    sk_sp<SkShader> blenderShader = applyShaderColorBlend(paintShader);
+
+    SkPaint finalPaint{paint};
+    finalPaint.setShader(std::move(blenderShader));
+
+    auto rpblit = [&]() {
+        VertState state(vertexCount, indices, indexCount);
+        VertState::Proc vertProc = state.chooseProc(info.mode());
+        SkSurfaceProps props = SkSurfacePropsCopyOrDefault(fProps);
+
+        auto blitter = SkCreateRasterPipelineBlitter(fDst,
+                                                     finalPaint,
+                                                     matrixProvider->localToDevice(),
+                                                     outerAlloc,
+                                                     fRC->clipShader(),
+                                                     props);
+        if (!blitter) {
+            return false;
+        }
+        while (vertProc(&state)) {
+            if (triColorShader && !triColorShader->update(ctmInverse, positions, dstColors,
+                                                          state.f0, state.f1, state.f2)) {
+                continue;
+            }
+
+            SkMatrix localM;
+            if (!transformShader || (texture_to_matrix(state, positions, texCoords, &localM) &&
+                                     transformShader->update(SkMatrix::Concat(ctm, localM)))) {
+                fill_triangle(state, blitter, *fRC, dev2, dev3);
+            }
+        }
+        return true;
+    };
+
+    if (gUseSkVMBlitter || !rpblit()) {
+        VertState state(vertexCount, indices, indexCount);
+        VertState::Proc vertProc = state.chooseProc(info.mode());
+
+        auto blitter = SkVMBlitter::Make(fDst,
+                                         finalPaint,
+                                         matrixProvider->localToDevice(),
+                                         outerAlloc,
+                                         this->fRC->clipShader());
+        if (!blitter) {
+            return;
+        }
+        while (vertProc(&state)) {
+            SkMatrix localM;
+            if (transformShader && !(texture_to_matrix(state, positions, texCoords, &localM) &&
+                                     transformShader->update(SkMatrix::Concat(ctm, localM)))) {
+                continue;
+            }
+
+            if (triColorShader && !triColorShader->update(ctmInverse, positions, dstColors,state.f0,
+                                                          state.f1, state.f2)) {
+                continue;
+            }
+
+            fill_triangle(state, blitter, *fRC, dev2, dev3);
+        }
+    }
+}
+
+void SkDraw::drawVertices(const SkVertices* vertices,
+                          sk_sp<SkBlender> blender,
+                          const SkPaint& paint,
+                          bool skipColorXform) const {
+    SkVerticesPriv info(vertices->priv());
+    const int vertexCount = info.vertexCount();
+    const int indexCount = info.indexCount();
+
+    
+    if (vertexCount < 3 || (indexCount > 0 && indexCount < 3) || fRC->isEmpty()) {
+        return;
+    }
+    SkMatrix ctm = fMatrixProvider->localToDevice();
+    SkMatrix ctmInv;
+    if (!ctm.invert(&ctmInv)) {
+        return;
     }
 
     constexpr size_t kDefVertexCount = 16;
     constexpr size_t kOuterSize = sizeof(SkTriColorShader) +
-                                 sizeof(SkShader_Blend) +
-                                 (2 * sizeof(SkPoint) + sizeof(SkColor4f)) * kDefVertexCount;
+                                  (2 * sizeof(SkPoint) + sizeof(SkColor4f)) * kDefVertexCount;
     SkSTArenaAlloc<kOuterSize> outerAlloc;
 
-    
-    if (bones && boneCount) {
+    SkPoint*  dev2 = nullptr;
+    SkPoint3* dev3 = nullptr;
+
+    if (ctm.hasPerspective()) {
+        dev3 = outerAlloc.makeArray<SkPoint3>(vertexCount);
+        ctm.mapHomogeneousPoints(dev3, info.positions(), vertexCount);
         
-        SkPoint* deformed = outerAlloc.makeArray<SkPoint>(vertexCount);
-
-        
-        if (boneIndices && boneWeights) {
-            for (int i = 0; i < vertexCount; i ++) {
-                const SkVertices::BoneIndices& indices = boneIndices[i];
-                const SkVertices::BoneWeights& weights = boneWeights[i];
-
-                
-                SkPoint worldPoint = bones[0].mapPoint(vertices[i]);
-
-                
-                deformed[i] = SkPoint::Make(0.0f, 0.0f);
-                for (uint32_t j = 0; j < 4; j ++) {
-                    
-                    uint32_t index = indices[j];
-                    float weight = weights[j];
-
-                    
-                    if (weight == 0.0f) {
-                        continue;
-                    }
-                    SkASSERT(index != 0);
-
-                    
-                    deformed[i] += bones[index].mapPoint(worldPoint) * weight;
-                }
-            }
-        } else {
-            
-            SkMatrix worldTransform = SkMatrix::I();
-            worldTransform.setAffine(bones[0].values);
-            worldTransform.mapPoints(deformed, vertices, vertexCount);
+        if (!SkScalarsAreFinite((const SkScalar*)dev3, vertexCount * 3)) {
+            return;
         }
+    } else {
+        dev2 = outerAlloc.makeArray<SkPoint>(vertexCount);
+        ctm.mapPoints(dev2, info.positions(), vertexCount);
 
-        
-        vertices = deformed;
-    }
-
-    SkPoint* devVerts = outerAlloc.makeArray<SkPoint>(vertexCount);
-    fMatrix->mapPoints(devVerts, vertices, vertexCount);
-
-    {
         SkRect bounds;
         
-        bounds.setBounds(devVerts, vertexCount);
+        bounds.setBounds(dev2, vertexCount);
         if (bounds.isEmpty()) {
             return;
         }
     }
 
-    VertState       state(vertexCount, indices, indexCount);
-    VertState::Proc vertProc = state.chooseProc(vmode);
-
-    if (!(colors || textures)) {
-        
-        SkPaint p;
-        p.setStyle(SkPaint::kStroke_Style);
-        SkAutoBlitterChoose blitter(*this, nullptr, p);
-        
-        if (blitter->isNullBlitter()) {
-            return;
-        }
-        SkScan::HairRCProc hairProc = ChooseHairProc(paint.isAntiAlias());
-        const SkRasterClip& clip = *fRC;
-        while (vertProc(&state)) {
-            SkPoint array[] = {
-                devVerts[state.f0], devVerts[state.f1], devVerts[state.f2], devVerts[state.f0]
-            };
-            hairProc(array, 4, clip, blitter.get());
-        }
-        return;
-    }
-
-    SkTriColorShader* triShader = nullptr;
-    SkPMColor4f*  dstColors = nullptr;
-
-    if (colors) {
-        dstColors = convert_colors(colors, vertexCount, fDst.colorSpace(), &outerAlloc);
-        triShader = outerAlloc.make<SkTriColorShader>(compute_is_opaque(colors, vertexCount));
-        if (shader) {
-            shader = outerAlloc.make<SkShader_Blend>(bmode,
-                                                     sk_ref_sp(triShader), sk_ref_sp(shader),
-                                                     nullptr);
-        } else {
-            shader = triShader;
-        }
-    }
-
-    SkPaint p(paint);
-    p.setShader(sk_ref_sp(shader));
-
-    if (!textures) {    
-        auto blitter = SkCreateRasterPipelineBlitter(fDst, p, *fMatrix, &outerAlloc);
-        while (vertProc(&state)) {
-            if (!triShader->update(ctmInv, vertices, dstColors, state.f0, state.f1, state.f2)) {
-                continue;
-            }
-
-            SkPoint tmp[] = {
-                devVerts[state.f0], devVerts[state.f1], devVerts[state.f2]
-            };
-            SkScan::FillTriangle(tmp, *fRC, blitter);
-        }
-        return;
-    }
-
-    SkRasterPipeline pipeline(&outerAlloc);
-    SkStageRec rec = {
-        &pipeline, &outerAlloc, fDst.colorType(), fDst.colorSpace(), p, nullptr, *fMatrix
-    };
-    if (auto updater = as_SB(shader)->appendUpdatableStages(rec)) {
-        bool isOpaque = shader->isOpaque();
-        if (triShader) {
-            isOpaque = false;   
-                                
-        }
-
-        auto blitter = SkCreateRasterPipelineBlitter(fDst, p, pipeline, isOpaque, &outerAlloc);
-        while (vertProc(&state)) {
-            if (triShader && !triShader->update(ctmInv, vertices, dstColors,
-                                                state.f0, state.f1, state.f2)) {
-                continue;
-            }
-
-            SkMatrix localM;
-            if (!texture_to_matrix(state, vertices, textures, &localM) ||
-                !updater->update(*fMatrix, &localM)) {
-                continue;
-            }
-
-            SkPoint tmp[] = {
-                devVerts[state.f0], devVerts[state.f1], devVerts[state.f2]
-            };
-            SkScan::FillTriangle(tmp, *fRC, blitter);
-        }
-    } else {
-        
-        while (vertProc(&state)) {
-            if (triShader && !triShader->update(ctmInv, vertices, dstColors,
-                                                state.f0, state.f1, state.f2)) {
-                continue;
-            }
-
-            SkSTArenaAlloc<2048> innerAlloc;
-
-            const SkMatrix* ctm = fMatrix;
-            SkMatrix tmpCtm;
-            if (textures) {
-                SkMatrix localM;
-                if (!texture_to_matrix(state, vertices, textures, &localM)) {
-                    continue;
-                }
-                tmpCtm = SkMatrix::Concat(*fMatrix, localM);
-                ctm = &tmpCtm;
-            }
-
-            SkPoint tmp[] = {
-                devVerts[state.f0], devVerts[state.f1], devVerts[state.f2]
-            };
-            auto blitter = SkCreateRasterPipelineBlitter(fDst, p, *ctm, &innerAlloc);
-            SkScan::FillTriangle(tmp, *fRC, blitter);
-        }
-    }
+    this->drawFixedVertices(
+            vertices, std::move(blender), paint, ctmInv, dev2, dev3, &outerAlloc, skipColorXform);
 }

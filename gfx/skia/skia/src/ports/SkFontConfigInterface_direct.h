@@ -15,7 +15,11 @@
 
 class SkFontConfigInterfaceDirect : public SkFontConfigInterface {
 public:
-    SkFontConfigInterfaceDirect();
+    
+
+
+
+    SkFontConfigInterfaceDirect(FcConfig* fc);
     ~SkFontConfigInterfaceDirect() override;
 
     bool matchFamilyName(const char familyName[],
@@ -30,10 +34,11 @@ protected:
     virtual bool isAccessible(const char* filename);
 
 private:
+    FcConfig * const fFC;
     bool isValidPattern(FcPattern* pattern);
     FcPattern* MatchFont(FcFontSet* font_set, const char* post_config_family,
                          const SkString& family);
-    typedef SkFontConfigInterface INHERITED;
+    using INHERITED = SkFontConfigInterface;
 };
 
 #endif

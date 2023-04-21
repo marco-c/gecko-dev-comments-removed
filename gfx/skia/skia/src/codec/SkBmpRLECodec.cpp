@@ -5,10 +5,26 @@
 
 
 
+#include "src/codec/SkBmpRLECodec.h"
+
+#include "include/core/SkAlphaType.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkColorPriv.h"
+#include "include/core/SkColorType.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkSize.h"
 #include "include/core/SkStream.h"
 #include "include/private/SkColorData.h"
-#include "src/codec/SkBmpRLECodec.h"
+#include "include/private/SkEncodedInfo.h"
+#include "include/private/base/SkAlign.h"
+#include "include/private/base/SkMalloc.h"
+#include "include/private/base/SkTemplates.h"
 #include "src/codec/SkCodecPriv.h"
+
+#include <algorithm>
+#include <cstring>
+#include <memory>
+#include <utility>
 
 
 
@@ -71,7 +87,7 @@ SkCodec::Result SkBmpRLECodec::onGetPixels(const SkImageInfo& dstInfo,
         uint32_t maxColors = 1 << this->bitsPerPixel();
         
         const uint32_t numColorsToRead =
-            fNumColors == 0 ? maxColors : SkTMin(fNumColors, maxColors);
+            fNumColors == 0 ? maxColors : std::min(fNumColors, maxColors);
 
         
         colorBytes = numColorsToRead * fBytesPerColor;
@@ -408,11 +424,8 @@ int SkBmpRLECodec::decodeRLE(const SkImageInfo& dstInfo, void* dst, size_t dstRo
                     uint8_t numPixels = task;
                     const size_t rowBytes = compute_row_bytes(numPixels,
                             this->bitsPerPixel());
-                    
-                    
                     if (x + numPixels > width) {
                         SkCodecPrintf("Warning: invalid RLE input.\n");
-                        return y;
                     }
 
                     
@@ -432,7 +445,7 @@ int SkBmpRLECodec::decodeRLE(const SkImageInfo& dstInfo, void* dst, size_t dstRo
                         }
                     }
                     
-                    while (numPixels > 0) {
+                    while ((numPixels > 0) && (x < width)) {
                         switch(this->bitsPerPixel()) {
                             case 4: {
                                 SkASSERT(fCurrRLEByte < fBytesBuffered);
@@ -479,7 +492,7 @@ int SkBmpRLECodec::decodeRLE(const SkImageInfo& dstInfo, void* dst, size_t dstRo
             
             
             const uint8_t numPixels = flag;
-            const int endX = SkTMin<int>(x + numPixels, width);
+            const int endX = std::min<int>(x + numPixels, width);
 
             if (24 == this->bitsPerPixel()) {
                 
@@ -552,7 +565,7 @@ private:
 
 SkSampler* SkBmpRLECodec::getSampler(bool createIfNecessary) {
     if (!fSampler && createIfNecessary) {
-        fSampler.reset(new SkBmpRLESampler(this));
+        fSampler = std::make_unique<SkBmpRLESampler>(this);
     }
 
     return fSampler.get();

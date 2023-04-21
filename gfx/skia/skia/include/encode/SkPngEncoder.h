@@ -9,10 +9,16 @@
 #define SkPngEncoder_DEFINED
 
 #include "include/core/SkDataTable.h"
+#include "include/core/SkRefCnt.h"
 #include "include/encode/SkEncoder.h"
+#include "include/private/base/SkAPI.h"
 
+#include <memory>
+
+class SkPixmap;
 class SkPngEncoderMgr;
 class SkWStream;
+struct skcms_ICCProfile;
 
 class SK_API SkPngEncoder : public SkEncoder {
 public:
@@ -59,6 +65,16 @@ public:
 
 
         sk_sp<SkDataTable> fComments;
+
+        
+
+
+
+
+
+
+        const skcms_ICCProfile* fICCProfile = nullptr;
+        const char* fICCProfileDescription = nullptr;
     };
 
     
@@ -88,7 +104,7 @@ protected:
     SkPngEncoder(std::unique_ptr<SkPngEncoderMgr>, const SkPixmap& src);
 
     std::unique_ptr<SkPngEncoderMgr> fEncoderMgr;
-    typedef SkEncoder INHERITED;
+    using INHERITED = SkEncoder;
 };
 
 static inline SkPngEncoder::FilterFlag operator|(SkPngEncoder::FilterFlag x,

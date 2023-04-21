@@ -8,7 +8,11 @@
 #ifndef SkCFObject_DEFINED
 #define SkCFObject_DEFINED
 
-#if defined(SK_BUILD_FOR_MAC) || defined(SK_BUILD_FOR_IOS)
+#ifdef __APPLE__
+
+#include "include/core/SkTypes.h"
+
+#include <cstddef>      
 
 #import <CoreFoundation/CoreFoundation.h>
 
@@ -30,47 +34,50 @@ template <typename T> static inline void SkCFSafeRelease(T obj) {
     }
 }
 
-template <typename T> class sk_cf_obj {
+template <typename T> class sk_cfp {
 public:
     using element_type = T;
 
-    constexpr sk_cf_obj() : fObject(nullptr) {}
+    constexpr sk_cfp() {}
+    constexpr sk_cfp(std::nullptr_t) {}
 
     
 
 
 
-    sk_cf_obj(const sk_cf_obj<T>& that) : fObject(SkCFSafeRetain(that.get())) {}
+    sk_cfp(const sk_cfp<T>& that) : fObject(SkCFSafeRetain(that.get())) {}
 
     
 
 
 
 
-    sk_cf_obj(sk_cf_obj<T>&& that) : fObject(that.release()) {}
+    sk_cfp(sk_cfp<T>&& that) : fObject(that.release()) {}
 
     
 
 
 
-    explicit sk_cf_obj(T obj) {
+    explicit sk_cfp(T obj) {
         fObject = obj;
     }
 
     
 
 
-    ~sk_cf_obj() {
+    ~sk_cfp() {
         SkCFSafeRelease(fObject);
-        SkDEBUGCODE(fObject = nullptr);
+        SkDEBUGCODE(fObject = nil);
     }
+
+    sk_cfp<T>& operator=(std::nullptr_t) { this->reset(); return *this; }
 
     
 
 
 
 
-    sk_cf_obj<T>& operator=(const sk_cf_obj<T>& that) {
+    sk_cfp<T>& operator=(const sk_cfp<T>& that) {
         if (this != &that) {
             this->reset(SkCFSafeRetain(that.get()));
         }
@@ -82,18 +89,27 @@ public:
 
 
 
-    sk_cf_obj<T>& operator=(sk_cf_obj<T>&& that) {
+    sk_cfp<T>& operator=(sk_cfp<T>&& that) {
         this->reset(that.release());
         return *this;
     }
 
+    explicit operator bool() const { return this->get() != nil; }
+
     T get() const { return fObject; }
+    T operator*() const {
+        SkASSERT(fObject);
+        return fObject;
+    }
 
     
 
 
 
-    void reset(T object = nullptr) {
+    void reset(T object = nil) {
+        
+        
+        
         T oldObject = fObject;
         fObject = object;
         SkCFSafeRelease(oldObject);
@@ -104,7 +120,7 @@ public:
 
 
     void retain(T object) {
-        if (this->fObject != object) {
+        if (fObject != object) {
             this->reset(SkCFSafeRetain(object));
         }
     }
@@ -116,22 +132,48 @@ public:
 
     T SK_WARN_UNUSED_RESULT release() {
         T obj = fObject;
-        fObject = nullptr;
+        fObject = nil;
         return obj;
     }
 
 private:
-    T fObject;
+    T fObject = nil;
 };
 
-template <typename T> inline bool operator==(const sk_cf_obj<T>& a,
-                                             const sk_cf_obj<T>& b) {
+template <typename T> inline bool operator==(const sk_cfp<T>& a,
+                                             const sk_cfp<T>& b) {
     return a.get() == b.get();
 }
+template <typename T> inline bool operator==(const sk_cfp<T>& a,
+                                             std::nullptr_t) {
+    return !a;
+}
+template <typename T> inline bool operator==(std::nullptr_t,
+                                             const sk_cfp<T>& b) {
+    return !b;
+}
 
-template <typename T> inline bool operator!=(const sk_cf_obj<T>& a,
-                                             const sk_cf_obj<T>& b) {
+template <typename T> inline bool operator!=(const sk_cfp<T>& a,
+                                             const sk_cfp<T>& b) {
     return a.get() != b.get();
+}
+template <typename T> inline bool operator!=(const sk_cfp<T>& a,
+                                             std::nullptr_t) {
+    return static_cast<bool>(a);
+}
+template <typename T> inline bool operator!=(std::nullptr_t,
+                                             const sk_cfp<T>& b) {
+    return static_cast<bool>(b);
+}
+
+
+
+
+
+
+
+template <typename T> sk_cfp<T> sk_ret_cfp(T obj) {
+    return sk_cfp<T>(SkCFSafeRetain(obj));
 }
 
 #endif  

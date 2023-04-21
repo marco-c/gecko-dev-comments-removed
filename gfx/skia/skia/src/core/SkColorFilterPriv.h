@@ -4,50 +4,31 @@
 
 
 
+
 #ifndef SkColorFilterPriv_DEFINED
 #define SkColorFilterPriv_DEFINED
 
-#ifdef SK_SUPPORT_GPU
-
 #include "include/core/SkColorFilter.h"
-#include "include/core/SkString.h"
 
-using SkRuntimeColorFilterFn = void(*)(float[4], const void*);
+class SkColorSpace;
+struct skcms_Matrix3x3;
+struct skcms_TransferFunction;
 
-class SK_API SkRuntimeColorFilterFactory {
+class SkColorFilterPriv {
 public:
-    
-
-
-
-
-
-
-
-    SkRuntimeColorFilterFactory(SkString sksl, SkRuntimeColorFilterFn cpuFunc = nullptr);
+    static sk_sp<SkColorFilter> MakeGaussian();
 
     
+    static sk_sp<SkColorFilter> MakeColorSpaceXform(sk_sp<SkColorSpace> src,
+                                                    sk_sp<SkColorSpace> dst);
 
-
-
-
-
-
-
-
-
-
-
-
-
-    sk_sp<SkColorFilter> make(sk_sp<SkData> inputs);
-
-private:
-    int fIndex;
-    SkString fSkSL;
-    SkRuntimeColorFilterFn fCpuFunc;
+    
+    
+    
+    static sk_sp<SkColorFilter> WithWorkingFormat(sk_sp<SkColorFilter> child,
+                                                  const skcms_TransferFunction* tf,
+                                                  const skcms_Matrix3x3* gamut,
+                                                  const SkAlphaType* at);
 };
 
-#endif 
-
-#endif  
+#endif

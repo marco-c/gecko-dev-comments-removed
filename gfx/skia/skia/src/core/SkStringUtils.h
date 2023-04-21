@@ -9,8 +9,8 @@
 #define SkStringUtils_DEFINED
 
 #include "include/core/SkScalar.h"
-
-class SkString;
+#include "include/core/SkString.h"
+#include "include/private/base/SkTArray.h"
 
 enum SkScalarAsStringType {
     kDec_SkScalarAsStringType,
@@ -31,5 +31,32 @@ static inline void SkAppendScalarHex(SkString* str, SkScalar value) {
 SkString SkTabString(const SkString& string, int tabCnt);
 
 SkString SkStringFromUTF16(const uint16_t* src, size_t count);
+
+#if defined(SK_BUILD_FOR_WIN)
+    #define SK_strcasecmp   _stricmp
+#else
+    #define SK_strcasecmp   strcasecmp
+#endif
+
+enum SkStrSplitMode {
+    
+    
+    kStrict_SkStrSplitMode,
+
+    
+    
+    
+    kCoalesce_SkStrSplitMode
+};
+
+
+void SkStrSplit(const char* str,
+                const char* delimiters,
+                SkStrSplitMode splitMode,
+                SkTArray<SkString>* out);
+
+inline void SkStrSplit(const char* str, const char* delimiters, SkTArray<SkString>* out) {
+    SkStrSplit(str, delimiters, kCoalesce_SkStrSplitMode, out);
+}
 
 #endif

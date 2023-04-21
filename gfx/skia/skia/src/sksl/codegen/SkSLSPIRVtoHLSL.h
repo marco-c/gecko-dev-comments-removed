@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+#ifndef SKSL_SPIRVTOHLSL
+#define SKSL_SPIRVTOHLSL
+
+#include <string>
+
+namespace SkSL {
+
+bool SPIRVtoHLSL(const std::string& spirv, std::string* hlsl);
+
+}  
+
+#endif

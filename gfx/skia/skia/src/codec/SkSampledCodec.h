@@ -9,6 +9,12 @@
 
 #include "include/codec/SkAndroidCodec.h"
 #include "include/codec/SkCodec.h"
+#include "include/core/SkSize.h"
+
+#include <cstddef>
+
+struct SkIRect;
+struct SkImageInfo;
 
 
 
@@ -16,7 +22,7 @@
 
 class SkSampledCodec : public SkAndroidCodec {
 public:
-    explicit SkSampledCodec(SkCodec*, ExifOrientationBehavior);
+    explicit SkSampledCodec(SkCodec*);
 
     ~SkSampledCodec() override {}
 
@@ -54,6 +60,6 @@ private:
     SkCodec::Result sampledDecode(const SkImageInfo& info, void* pixels, size_t rowBytes,
             const AndroidOptions& options);
 
-    typedef SkAndroidCodec INHERITED;
+    using INHERITED = SkAndroidCodec;
 };
 #endif 

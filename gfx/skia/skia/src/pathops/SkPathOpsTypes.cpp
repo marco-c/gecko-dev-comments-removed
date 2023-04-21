@@ -4,10 +4,15 @@
 
 
 
-#include "include/private/SkFloatBits.h"
-#include "src/core/SkArenaAlloc.h"
-#include "src/pathops/SkOpCoincidence.h"
 #include "src/pathops/SkPathOpsTypes.h"
+
+#include "include/private/base/SkFloatBits.h"
+#include "include/private/base/SkFloatingPoint.h"
+#include "include/private/base/SkMath.h"
+#include "include/private/base/SkTemplates.h"
+
+#include <algorithm>
+#include <cstdint>
 
 static bool arguments_denormalized(float a, float b, int epsilon) {
     float denormalizedCheck = FLT_EPSILON * epsilon / 2;
@@ -123,7 +128,10 @@ bool AlmostDequalUlps(double a, double b) {
     if (fabs(a) < SK_ScalarMax && fabs(b) < SK_ScalarMax) {
         return AlmostDequalUlps(SkDoubleToScalar(a), SkDoubleToScalar(b));
     }
-    return fabs(a - b) / SkTMax(fabs(a), fabs(b)) < FLT_EPSILON * 16;
+    
+    
+    
+    return sk_ieee_double_divide(fabs(a - b), std::max(fabs(a), fabs(b))) < FLT_EPSILON * 16;
 }
 
 bool AlmostEqualUlps(float a, float b) {
@@ -189,43 +197,6 @@ int UlpsDistance(float a, float b) {
     }
     
     return SkTAbs(floatIntA.fSignBitInt - floatIntB.fSignBitInt);
-}
-
-
-
-static double cbrt_5d(double d) {
-    const unsigned int B1 = 715094163;
-    double t = 0.0;
-    unsigned int* pt = (unsigned int*) &t;
-    unsigned int* px = (unsigned int*) &d;
-    pt[1] = px[1] / 3 + B1;
-    return t;
-}
-
-
-static double cbrta_halleyd(const double a, const double R) {
-    const double a3 = a * a * a;
-    const double b = a * (a3 + R + R) / (a3 + a3 + R);
-    return b;
-}
-
-
-static double halley_cbrt3d(double d) {
-    double a = cbrt_5d(d);
-    a = cbrta_halleyd(a, d);
-    a = cbrta_halleyd(a, d);
-    return cbrta_halleyd(a, d);
-}
-
-double SkDCubeRoot(double x) {
-    if (approximately_zero_cubed(x)) {
-        return 0;
-    }
-    double result = halley_cbrt3d(fabs(x));
-    if (x < 0) {
-        result = -result;
-    }
-    return result;
 }
 
 SkOpGlobalState::SkOpGlobalState(SkOpContourHead* head,

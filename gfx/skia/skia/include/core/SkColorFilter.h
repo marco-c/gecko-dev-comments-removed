@@ -11,16 +11,9 @@
 #include "include/core/SkBlendMode.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkFlattenable.h"
-#include "include/core/SkRefCnt.h"
 
-class GrColorInfo;
-class GrFragmentProcessor;
-class GrRecordingContext;
-class SkBitmap;
 class SkColorMatrix;
 class SkColorSpace;
-struct SkStageRec;
-class SkString;
 
 
 
@@ -34,37 +27,18 @@ class SK_API SkColorFilter : public SkFlattenable {
 public:
     
 
-    bool asColorMode(SkColor* color, SkBlendMode* mode) const {
-        return this->onAsAColorMode(color, mode);
-    }
+
+
+    bool asAColorMode(SkColor* color, SkBlendMode* mode) const;
 
     
 
 
 
-    bool asAColorMode(SkColor* color, SkBlendMode* mode) const {
-        return this->onAsAColorMode(color, mode);
-    }
+    bool asAColorMatrix(float matrix[20]) const;
 
     
-
-
-
-    bool asAColorMatrix(float matrix[20]) const {
-        return this->onAsAColorMatrix(matrix);
-    }
-
-    bool appendStages(const SkStageRec& rec, bool shaderIsOpaque) const;
-
-    enum Flags {
-        
-
-        kAlphaUnchanged_Flag = 1 << 0,
-    };
-
-    
-
-    virtual uint32_t getFlags() const { return 0; }
+    bool isAlphaUnchanged() const;
 
     SkColor filterColor(SkColor) const;
 
@@ -80,67 +54,16 @@ public:
 
 
 
-
-
-
     sk_sp<SkColorFilter> makeComposed(sk_sp<SkColorFilter> inner) const;
 
-#if SK_SUPPORT_GPU
-    
-
-
-
-
-
-
-
-
-    virtual std::unique_ptr<GrFragmentProcessor> asFragmentProcessor(
-            GrRecordingContext*, const GrColorInfo& dstColorInfo) const;
-#endif
-
-    bool affectsTransparentBlack() const {
-        return this->filterColor(SK_ColorTRANSPARENT) != SK_ColorTRANSPARENT;
-    }
-
-    static void RegisterFlattenables();
-
-    static SkFlattenable::Type GetFlattenableType() {
-        return kSkColorFilter_Type;
-    }
-
-    SkFlattenable::Type getFlattenableType() const override {
-        return kSkColorFilter_Type;
-    }
-
     static sk_sp<SkColorFilter> Deserialize(const void* data, size_t size,
-                                          const SkDeserialProcs* procs = nullptr) {
-        return sk_sp<SkColorFilter>(static_cast<SkColorFilter*>(
-                                  SkFlattenable::Deserialize(
-                                  kSkColorFilter_Type, data, size, procs).release()));
-    }
-
-protected:
-    SkColorFilter() {}
-
-    virtual bool onAsAColorMatrix(float[20]) const;
-    virtual bool onAsAColorMode(SkColor* color, SkBlendMode* bmode) const;
+                                            const SkDeserialProcs* procs = nullptr);
 
 private:
-    
+    SkColorFilter() = default;
+    friend class SkColorFilterBase;
 
-
-
-
-
-
-    virtual int privateComposedFilterCount() const { return 1; }
-
-    virtual bool onAppendStages(const SkStageRec& rec, bool shaderIsOpaque) const = 0;
-
-    friend class SkComposeColorFilter;
-
-    typedef SkFlattenable INHERITED;
+    using INHERITED = SkFlattenable;
 };
 
 class SK_API SkColorFilters {
@@ -148,17 +71,55 @@ public:
     static sk_sp<SkColorFilter> Compose(sk_sp<SkColorFilter> outer, sk_sp<SkColorFilter> inner) {
         return outer ? outer->makeComposed(inner) : inner;
     }
+
+    
+    
+    static sk_sp<SkColorFilter> Blend(const SkColor4f& c, sk_sp<SkColorSpace>, SkBlendMode mode);
     static sk_sp<SkColorFilter> Blend(SkColor c, SkBlendMode mode);
+
     static sk_sp<SkColorFilter> Matrix(const SkColorMatrix&);
     static sk_sp<SkColorFilter> Matrix(const float rowMajor[20]);
 
     
     
+    static sk_sp<SkColorFilter> HSLAMatrix(const SkColorMatrix&);
     static sk_sp<SkColorFilter> HSLAMatrix(const float rowMajor[20]);
 
     static sk_sp<SkColorFilter> LinearToSRGBGamma();
     static sk_sp<SkColorFilter> SRGBToLinearGamma();
     static sk_sp<SkColorFilter> Lerp(float t, sk_sp<SkColorFilter> dst, sk_sp<SkColorFilter> src);
+
+    
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkColorFilter> Table(const uint8_t table[256]);
+
+    
+
+
+
+
+
+    static sk_sp<SkColorFilter> TableARGB(const uint8_t tableA[256],
+                                          const uint8_t tableR[256],
+                                          const uint8_t tableG[256],
+                                          const uint8_t tableB[256]);
+
+    
+
+
+
+
+
+    static sk_sp<SkColorFilter> Lighting(SkColor mul, SkColor add);
 
 private:
     SkColorFilters() = delete;

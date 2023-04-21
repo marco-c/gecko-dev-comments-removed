@@ -4,10 +4,9 @@
 
 
 
-
-#include "include/core/SkTypes.h"
-#include "src/codec/SkCodecPriv.h"
 #include "src/codec/SkMasks.h"
+
+#include "src/codec/SkCodecPriv.h"
 
 
 
@@ -86,7 +85,7 @@ uint8_t SkMasks::getAlpha(uint32_t pixel) const {
 
 
 
-static const SkMasks::MaskInfo process_mask(uint32_t mask) {
+static SkMasks::MaskInfo process_mask(uint32_t mask) {
     
     uint32_t tempMask = mask;
     uint32_t shift = 0;
@@ -152,11 +151,3 @@ SkMasks* SkMasks::CreateMasks(InputMasks masks, int bytesPerPixel) {
                        process_mask(masks.alpha));
 }
 
-
-SkMasks::SkMasks(const MaskInfo& red, const MaskInfo& green,
-                 const MaskInfo& blue, const MaskInfo& alpha)
-    : fRed(red)
-    , fGreen(green)
-    , fBlue(blue)
-    , fAlpha(alpha)
-{}

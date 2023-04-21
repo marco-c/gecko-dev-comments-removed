@@ -8,15 +8,18 @@
 #ifndef SkBigPicture_DEFINED
 #define SkBigPicture_DEFINED
 
+#include "include/core/SkM44.h"
 #include "include/core/SkPicture.h"
 #include "include/core/SkRect.h"
-#include "include/private/SkNoncopyable.h"
-#include "include/private/SkOnce.h"
-#include "include/private/SkTemplates.h"
+#include "include/private/base/SkNoncopyable.h"
+#include "include/private/base/SkOnce.h"
+#include "include/private/base/SkTemplates.h"
 
 class SkBBoxHierarchy;
 class SkMatrix;
 class SkRecord;
+
+
 
 
 class SkBigPicture final : public SkPicture {
@@ -30,21 +33,21 @@ public:
         const SkPicture* const* begin() const { return fPics; }
         int count() const { return fCount; }
     private:
-        SkAutoTMalloc<const SkPicture*> fPics;
+        skia_private::AutoTMalloc<const SkPicture*> fPics;
         int fCount;
     };
 
     SkBigPicture(const SkRect& cull,
-                 SkRecord*,            
-                 SnapshotArray*,       
-                 SkBBoxHierarchy*,     
+                 sk_sp<SkRecord>,
+                 std::unique_ptr<SnapshotArray>,
+                 sk_sp<SkBBoxHierarchy>,
                  size_t approxBytesUsedBySubPictures);
 
 
 
     void playback(SkCanvas*, AbortCallback*) const override;
     SkRect cullRect() const override;
-    int approximateOpCount() const override;
+    int approximateOpCount(bool nested) const override;
     size_t approximateBytesUsed() const override;
     const SkBigPicture* asSkBigPicture() const override { return this; }
 
@@ -52,7 +55,7 @@ public:
     void partialPlayback(SkCanvas*,
                          int start,
                          int stop,
-                         const SkMatrix& initialCTM) const;
+                         const SkM44& initialCTM) const;
 
     const SkBBoxHierarchy* bbh() const { return fBBH.get(); }
     const SkRecord*     record() const { return fRecord.get(); }

@@ -12,7 +12,7 @@
 #include "include/core/SkSize.h"
 
 class SkMatrix;
-class SkPaint;
+struct SkSamplingOptions;
 
 
 
@@ -22,7 +22,8 @@ class SkPaint;
 
 
 
-bool SkTreatAsSprite(const SkMatrix&, const SkISize& size, const SkPaint& paint);
+bool SkTreatAsSprite(const SkMatrix&, const SkISize& size, const SkSamplingOptions&,
+                     bool isAntiAlias);
 
 
 
