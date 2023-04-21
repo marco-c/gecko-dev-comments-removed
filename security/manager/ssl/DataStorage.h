@@ -136,6 +136,7 @@ class DataStorage : public nsIObserver {
   
   bool IsReady();
 
+  void ArmTimer(const MutexAutoLock& aProofOfLock);
   void ShutdownTimer();
 
  private:
@@ -201,13 +202,15 @@ class DataStorage : public nsIObserver {
   nsCOMPtr<nsIFile> mBackingFile MOZ_GUARDED_BY(mMutex);
   bool mPendingWrite MOZ_GUARDED_BY(
       mMutex);  
+  bool mTimerArmed MOZ_GUARDED_BY(mMutex);
   bool mShuttingDown MOZ_GUARDED_BY(mMutex);
   RefPtr<TaskQueue> mBackgroundTaskQueue MOZ_GUARDED_BY(mMutex);
   
 
-  nsCOMPtr<nsITimer> mTimer;  
+  nsCOMPtr<nsITimer> mTimer;
 
   mozilla::Atomic<bool> mInitCalled;  
+  uint32_t mTimerDelayMS;
 
   Monitor mReadyMonitor;  
   bool mReady MOZ_GUARDED_BY(mReadyMonitor);  
