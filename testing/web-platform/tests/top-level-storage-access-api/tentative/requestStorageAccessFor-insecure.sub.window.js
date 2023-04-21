@@ -9,39 +9,9 @@
 
 
 
-
-
-let testPrefix = 'insecure-context';
-
-
-
-let topLevelDocument = true;
-
-
-
-const queryParams = window.location.search.substring(1).split('&');
-queryParams.forEach((param) => {
-  if (param.toLowerCase() == 'rootdocument=false') {
-    topLevelDocument = false;
-  } else if (param.split('=')[0].toLowerCase() == 'testcase') {
-    testPrefix = param.split('=')[1];
-  }
-});
-
-
-
-function RunRequestStorageAccessForInDetachedFrame(origin) {
-  const nestedFrame = document.createElement('iframe');
-  document.body.append(nestedFrame);
-  const inner_doc = nestedFrame.contentDocument;
-  nestedFrame.remove();
-  return inner_doc.requestStorageAccessFor(origin);
-}
-
-function RunRequestStorageAccessForViaDomParser(origin) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString('<html></html>', 'text/html');
-  return doc.requestStorageAccessFor(origin);
+const {testPrefix, topLevelDocument} = processQueryParams();
+if (!topLevelDocument) {
+  test_driver.set_test_context(window.top);
 }
 
 
@@ -66,7 +36,7 @@ if (topLevelDocument) {
     const description =
         'document.requestStorageAccessFor() call in a detached frame';
     
-    return RunRequestStorageAccessForInDetachedFrame('https://foo.com')
+    return CreateDetachedFrame().requestStorageAccessFor('https://foo.com')
         .then(t.unreached_func('Should have rejected: ' + description))
         .catch((e) => {
           assert_equals(e.name, 'InvalidStateError', description);
@@ -76,7 +46,7 @@ if (topLevelDocument) {
   promise_test(async t => {
     const description =
         'document.requestStorageAccessFor() in a detached DOMParser result';
-    return RunRequestStorageAccessForViaDomParser('https://foo.com')
+    return CreateDocumentViaDOMParser().requestStorageAccessFor('https://foo.com')
         .then(t.unreached_func('Should have rejected: ' + description))
         .catch((e) => {
           assert_equals(e.name, 'InvalidStateError', description);
@@ -86,8 +56,10 @@ if (topLevelDocument) {
   
   
   
-  RunTestsInIFrame(
-      './resources/requestStorageAccessFor-iframe.html?testCase=frame-on-insecure-page&rootdocument=false');
+  promise_test(() => {
+    return RunTestsInIFrame(
+      './resources/requestStorageAccessFor-iframe.html?testCase=frame-on-insecure-page');
+  });
 
   promise_test(
       async t => {
