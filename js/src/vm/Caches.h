@@ -264,17 +264,22 @@ class MegamorphicSetPropCacheEntry {
   TaggedSlotOffset slotOffset_;
 
   
+  uint16_t newCapacity_ = 0;
+
+  
   uint16_t generation_ = 0;
 
   friend class MegamorphicSetPropCache;
 
  public:
   void init(Shape* beforeShape, Shape* afterShape, PropertyKey key,
-            uint16_t generation, TaggedSlotOffset slotOffset) {
+            uint16_t generation, TaggedSlotOffset slotOffset,
+            uint16_t newCapacity) {
     beforeShape_ = beforeShape;
     afterShape_ = afterShape;
     key_ = key;
     slotOffset_ = slotOffset;
+    newCapacity_ = newCapacity;
     generation_ = generation;
   }
   TaggedSlotOffset slotOffset() const { return slotOffset_; }
@@ -289,6 +294,10 @@ class MegamorphicSetPropCacheEntry {
 
   static constexpr size_t offsetOfKey() {
     return offsetof(MegamorphicSetPropCacheEntry, key_);
+  }
+
+  static constexpr size_t offsetOfNewCapacity() {
+    return offsetof(MegamorphicSetPropCacheEntry, newCapacity_);
   }
 
   static constexpr size_t offsetOfGeneration() {
@@ -343,9 +352,13 @@ class MegamorphicSetPropCache {
     }
   }
   void set(Shape* beforeShape, Shape* afterShape, PropertyKey key,
-           TaggedSlotOffset slotOffset) {
+           TaggedSlotOffset slotOffset, uint32_t newCapacity) {
+    uint16_t newSlots = (uint16_t)newCapacity;
+    if (newSlots != newCapacity) {
+      return;
+    }
     Entry& entry = getEntry(beforeShape, key);
-    entry.init(beforeShape, afterShape, key, generation_, slotOffset);
+    entry.init(beforeShape, afterShape, key, generation_, slotOffset, newSlots);
   }
 
 #ifdef DEBUG
