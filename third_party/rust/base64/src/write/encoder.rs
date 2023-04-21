@@ -1,8 +1,7 @@
-use crate::encode::encode_to_slice;
-use crate::{encode_config_slice, Config};
+use crate::engine::Engine;
 use std::{
-    cmp, fmt,
-    io::{ErrorKind, Result, Write},
+    cmp, fmt, io,
+    io::{ErrorKind, Result},
 };
 
 pub(crate) const BUF_SIZE: usize = 1024;
@@ -53,8 +52,16 @@ const MIN_ENCODE_CHUNK_SIZE: usize = 3;
 
 
 
-pub struct EncoderWriter<W: Write> {
-    config: Config,
+
+
+
+
+
+
+
+
+pub struct EncoderWriter<'e, E: Engine, W: io::Write> {
+    engine: &'e E,
     
     
     
@@ -73,7 +80,7 @@ pub struct EncoderWriter<W: Write> {
     panicked: bool,
 }
 
-impl<W: Write> fmt::Debug for EncoderWriter<W> {
+impl<'e, E: Engine, W: io::Write> fmt::Debug for EncoderWriter<'e, E, W> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -86,12 +93,12 @@ impl<W: Write> fmt::Debug for EncoderWriter<W> {
     }
 }
 
-impl<W: Write> EncoderWriter<W> {
+impl<'e, E: Engine, W: io::Write> EncoderWriter<'e, E, W> {
     
-    pub fn new(w: W, config: Config) -> EncoderWriter<W> {
+    pub fn new(delegate: W, engine: &'e E) -> EncoderWriter<'e, E, W> {
         EncoderWriter {
-            config,
-            delegate: Some(w),
+            engine,
+            delegate: Some(delegate),
             extra_input: [0u8; MIN_ENCODE_CHUNK_SIZE],
             extra_input_occupied_len: 0,
             output: [0u8; BUF_SIZE],
@@ -120,7 +127,7 @@ impl<W: Write> EncoderWriter<W> {
         
         
         if self.delegate.is_none() {
-            panic!("Encoder has already had finish() called")
+            panic!("Encoder has already had finish() called");
         };
 
         self.write_final_leftovers()?;
@@ -141,11 +148,13 @@ impl<W: Write> EncoderWriter<W> {
         self.write_all_encoded_output()?;
 
         if self.extra_input_occupied_len > 0 {
-            let encoded_len = encode_config_slice(
-                &self.extra_input[..self.extra_input_occupied_len],
-                self.config,
-                &mut self.output[..],
-            );
+            let encoded_len = self
+                .engine
+                .encode_slice(
+                    &self.extra_input[..self.extra_input_occupied_len],
+                    &mut self.output[..],
+                )
+                .expect("buffer is large enough");
 
             self.output_occupied_len = encoded_len;
 
@@ -215,9 +224,28 @@ impl<W: Write> EncoderWriter<W> {
         debug_assert_eq!(0, self.output_occupied_len);
         Ok(())
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_inner(mut self) -> W {
+        self.delegate
+            .take()
+            .expect("Encoder has already had finish() called")
+    }
 }
 
-impl<W: Write> Write for EncoderWriter<W> {
+impl<'e, E: Engine, W: io::Write> io::Write for EncoderWriter<'e, E, W> {
     
     
     
@@ -286,10 +314,9 @@ impl<W: Write> Write for EncoderWriter<W> {
                 self.extra_input[self.extra_input_occupied_len..MIN_ENCODE_CHUNK_SIZE]
                     .copy_from_slice(&input[0..extra_input_read_len]);
 
-                let len = encode_to_slice(
+                let len = self.engine.internal_encode(
                     &self.extra_input[0..MIN_ENCODE_CHUNK_SIZE],
                     &mut self.output[..],
-                    self.config.char_set.encode_table(),
                 );
                 debug_assert_eq!(4, len);
 
@@ -335,10 +362,9 @@ impl<W: Write> Write for EncoderWriter<W> {
         debug_assert_eq!(0, max_input_len % MIN_ENCODE_CHUNK_SIZE);
         debug_assert_eq!(0, input_chunks_to_encode_len % MIN_ENCODE_CHUNK_SIZE);
 
-        encoded_size += encode_to_slice(
+        encoded_size += self.engine.internal_encode(
             &input[..(input_chunks_to_encode_len)],
             &mut self.output[encoded_size..],
-            self.config.char_set.encode_table(),
         );
 
         
@@ -371,7 +397,7 @@ impl<W: Write> Write for EncoderWriter<W> {
     }
 }
 
-impl<W: Write> Drop for EncoderWriter<W> {
+impl<'e, E: Engine, W: io::Write> Drop for EncoderWriter<'e, E, W> {
     fn drop(&mut self) {
         if !self.panicked {
             
