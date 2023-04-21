@@ -15,7 +15,6 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Preferences.h"
-#include "XPCMaps.h"
 #include "mozilla/Unused.h"
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  

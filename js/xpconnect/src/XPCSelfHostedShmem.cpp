@@ -5,7 +5,6 @@
 
 
 #include "XPCSelfHostedShmem.h"
-#include "xpcprivate.h"
 
 
 mozilla::StaticRefPtr<xpc::SelfHostedShmem>

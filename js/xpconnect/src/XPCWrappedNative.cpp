@@ -7,7 +7,6 @@
 
 
 #include "xpcprivate.h"
-#include "XPCMaps.h"
 #include "nsWrapperCacheInlines.h"
 #include "XPCLog.h"
 #include "js/Array.h"                   

@@ -89,7 +89,7 @@ static bool RestartApplication() {
 }
 
 
-gboolean CloseApp(gpointer data) {
+static gboolean CloseApp(gpointer data) {
   if (!gAutoSubmit) {
     gtk_main_quit();
   }

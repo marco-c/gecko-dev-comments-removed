@@ -9,7 +9,6 @@
 #include "xpcprivate.h"
 #include "js/Object.h"  
 #include "pratom.h"
-#include "XPCMaps.h"
 
 using namespace mozilla;
 
