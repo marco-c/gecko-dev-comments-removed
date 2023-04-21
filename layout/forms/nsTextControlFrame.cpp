@@ -115,17 +115,7 @@ class nsTextControlFrame::nsAnonDivObserver final
 nsTextControlFrame::nsTextControlFrame(ComputedStyle* aStyle,
                                        nsPresContext* aPresContext,
                                        nsIFrame::ClassID aClassID)
-    : nsContainerFrame(aStyle, aPresContext, aClassID),
-      mFirstBaseline(NS_INTRINSIC_ISIZE_UNKNOWN),
-      mEditorHasBeenInitialized(false),
-      mIsProcessing(false)
-#ifdef DEBUG
-      ,
-      mInEditorInitialization(false)
-#endif
-{
-  ClearCachedValue();
-}
+    : nsContainerFrame(aStyle, aPresContext, aClassID) {}
 
 nsTextControlFrame::~nsTextControlFrame() = default;
 
@@ -188,19 +178,14 @@ LogicalSize nsTextControlFrame::CalcIntrinsicSize(
     gfxContext* aRenderingContext, WritingMode aWM,
     float aFontSizeInflation) const {
   LogicalSize intrinsicSize(aWM);
-  
-  nscoord lineHeight = 0;
-  nscoord charWidth = 0;
-  nscoord charMaxAdvance = 0;
-
   RefPtr<nsFontMetrics> fontMet =
       nsLayoutUtils::GetFontMetricsForFrame(this, aFontSizeInflation);
-
-  lineHeight =
+  nscoord lineHeight =
       ReflowInput::CalcLineHeight(*Style(), PresContext(), GetContent(),
                                   NS_UNCONSTRAINEDSIZE, aFontSizeInflation);
-  charWidth = fontMet->AveCharWidth();
-  charMaxAdvance = fontMet->MaxAdvance();
+  
+  nscoord charWidth = fontMet->AveCharWidth();
+  nscoord charMaxAdvance = fontMet->MaxAdvance();
 
   
   int32_t cols = GetCols();

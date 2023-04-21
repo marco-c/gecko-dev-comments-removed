@@ -354,19 +354,19 @@ class nsTextControlFrame : public nsContainerFrame,
   
   
   
-  nsString mCachedValue;
+  nsString mCachedValue{VoidString()};
 
   
   
-  nscoord mFirstBaseline;
+  nscoord mFirstBaseline = NS_INTRINSIC_ISIZE_UNKNOWN;
 
   
   
-  bool mEditorHasBeenInitialized;
-  bool mIsProcessing;
+  bool mEditorHasBeenInitialized = false;
+  bool mIsProcessing = false;
 
 #ifdef DEBUG
-  bool mInEditorInitialization;
+  bool mInEditorInitialization = false;
   friend class EditorInitializerEntryTracker;
 #endif
 };
