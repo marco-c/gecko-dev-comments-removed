@@ -548,6 +548,21 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
   return NS_OK;
 }
 
+::mozilla::ipc::IPCResult WebTransportParent::RecvGetMaxDatagramSize(
+    GetMaxDatagramSizeResolver&& aResolver) {
+  LOG(("WebTransportParent RecvGetMaxDatagramSize"));
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+  MOZ_ASSERT(mWebTransport);
+  MOZ_ASSERT(!mMaxDatagramSizeResolver);
+
+  mMaxDatagramSizeResolver = std::move(aResolver);
+  
+  
+  
+  mWebTransport->GetMaxDatagramSize();
+  return IPC_OK();
+}
+
 
 
 
@@ -556,7 +571,6 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
     OutgoingDatagramResolver&& aResolver) {
   LOG(("WebTransportParent sending datagram"));
   MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
-  MOZ_ASSERT(!mOutgoingDatagramResolver);
   MOZ_ASSERT(mWebTransport);
 
   Unused << aExpirationTime;
@@ -624,8 +638,11 @@ WebTransportParent::OnOutgoingDatagramOutCome(
 }
 
 NS_IMETHODIMP WebTransportParent::OnMaxDatagramSize(uint64_t aSize) {
-  
-  
+  LOG(("Max datagram size is %" PRIu64, aSize));
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+  MOZ_ASSERT(mMaxDatagramSizeResolver);
+  mMaxDatagramSizeResolver(aSize);
+  mMaxDatagramSizeResolver = nullptr;
   return NS_OK;
 }
 }  
