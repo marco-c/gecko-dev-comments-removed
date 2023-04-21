@@ -45,6 +45,11 @@ class PopoverData {
     mPreviouslyFocusedElement = aPreviouslyFocusedElement;
   }
 
+  bool HasPopoverInvoker() const { return mHasPopoverInvoker; }
+  void SetHasPopoverInvoker(bool aHasPopoverInvoker) {
+    mHasPopoverInvoker = aHasPopoverInvoker;
+  }
+
  private:
   PopoverVisibilityState mVisibilityState = PopoverVisibilityState::Hidden;
   PopoverState mState = PopoverState::None;
@@ -52,6 +57,10 @@ class PopoverData {
   
   
   nsWeakPtr mPreviouslyFocusedElement = nullptr;
+
+  
+  
+  bool mHasPopoverInvoker = false;
 };
 }  
 

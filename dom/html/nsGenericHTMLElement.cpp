@@ -2830,7 +2830,7 @@ void nsGenericHTMLFormControlElementWithState::HandlePopoverTargetAction() {
   if (canHide && target->IsPopoverOpen()) {
     target->HidePopover(IgnoreErrors());
   } else if (canShow && !target->IsPopoverOpen()) {
-    
+    target->SetHasPopoverInvoker(true);
     target->ShowPopover(IgnoreErrors());
   }
 }

@@ -227,7 +227,9 @@ class FragmentOrElement : public nsIContent {
     Maybe<bool> mVisibleForContentVisibility;
 
     
-    
+
+
+
     nsTHashMap<nsRefPtrHashKey<nsAtom>, nsWeakPtr> mExplicitlySetAttrElements;
   };
 

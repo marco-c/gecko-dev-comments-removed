@@ -15002,6 +15002,9 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
   }
 
   
+
+  aPopover.SetHasPopoverInvoker(false);
+
   
   if (aFireEvents) {
     

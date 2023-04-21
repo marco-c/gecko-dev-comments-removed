@@ -71,6 +71,7 @@ class nsDOMCSSAttributeDeclaration;
 class nsDOMStringMap;
 class nsDOMTokenList;
 class nsFocusManager;
+class nsGenericHTMLFormControlElementWithState;
 class nsGlobalWindowInner;
 class nsGlobalWindowOuter;
 class nsIAutoCompletePopup;
@@ -579,6 +580,10 @@ class Element : public FragmentOrElement {
     }
     return CreatePopoverData();
   }
+
+  
+  bool HasPopoverInvoker() const;
+  void SetHasPopoverInvoker(bool);
 
   bool IsAutoPopover() const;
   bool IsPopoverOpen() const;
