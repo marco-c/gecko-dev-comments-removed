@@ -233,7 +233,9 @@ bool js::DecompressStringChunk(const unsigned char* inp, size_t chunk,
   MOZ_ASSERT(outlen);
   zs.avail_out = outlen;
 
-  int ret = inflateInit2(&zs, WindowBits);
+  
+  
+  volatile int ret = inflateInit2(&zs, WindowBits);
   if (ret != Z_OK) {
     MOZ_ASSERT(ret == Z_MEM_ERROR);
     return false;
