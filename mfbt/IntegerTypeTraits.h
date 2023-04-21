@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_IntegerTypeTraits_h
 #define mozilla_IntegerTypeTraits_h
 
