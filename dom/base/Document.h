@@ -5529,6 +5529,10 @@ class MOZ_RAII IgnoreOpensDuringUnload final {
   Document* mDoc;
 };
 
+bool IsInFocusedTab(Document* aDoc);
+
+
+
 bool IsInActiveTab(Document* aDoc);
 
 }  
