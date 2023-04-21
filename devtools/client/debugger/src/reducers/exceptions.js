@@ -9,7 +9,9 @@
 
 export function initialExceptionsState() {
   return {
-    exceptions: {},
+    
+    
+    mutableExceptionsMap: new Map(),
   };
 }
 
@@ -23,24 +25,21 @@ function update(state = initialExceptionsState(), action) {
 
 function updateExceptions(state, action) {
   const { exception } = action;
-  const sourceActorId = exception.sourceActorId;
+  const { sourceActorId } = exception;
 
-  if (state.exceptions[sourceActorId]) {
-    const sourceExceptions = state.exceptions[sourceActorId];
-    return {
-      ...state,
-      exceptions: {
-        ...state.exceptions,
-        [sourceActorId]: [...sourceExceptions, exception],
-      },
-    };
+  let exceptions = state.mutableExceptionsMap.get(sourceActorId);
+  if (!exceptions) {
+    exceptions = [];
+    state.mutableExceptionsMap.set(sourceActorId, exceptions);
   }
+
+  
+  
+  
+  exceptions.push(exception);
+
   return {
     ...state,
-    exceptions: {
-      ...state.exceptions,
-      [sourceActorId]: [exception],
-    },
   };
 }
 

@@ -6,23 +6,22 @@ import { createSelector } from "reselect";
 
 import { getSelectedSource, getSourceActorsForSource } from "./";
 
-function getExceptionsMap(state) {
-  return state.exceptions.exceptions;
-}
-
 export const getSelectedSourceExceptions = createSelector(
   getSelectedSourceActors,
-  getExceptionsMap,
-  (sourceActors, exceptions) => {
+  
+  
+  
+  state => state.exceptions,
+  (sourceActors, exceptionsState) => {
+    const { mutableExceptionsMap } = exceptionsState;
     const sourceExceptions = [];
 
-    sourceActors.forEach(sourceActor => {
-      const actorId = sourceActor.id;
-
-      if (exceptions[actorId]) {
-        sourceExceptions.push(...exceptions[actorId]);
+    for (const sourceActor of sourceActors) {
+      const exceptions = mutableExceptionsMap.get(sourceActor.id);
+      if (exceptions) {
+        sourceExceptions.push(...exceptions);
       }
-    });
+    }
 
     return sourceExceptions;
   }
