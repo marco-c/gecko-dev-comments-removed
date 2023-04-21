@@ -1,17 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["WebRTCChild"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
 const lazy = {};
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
@@ -22,20 +15,20 @@ XPCOMUtils.defineLazyServiceGetter(
 
 const kBrowserURL = AppConstants.BROWSER_CHROME_URL;
 
-
-
-
-
-
-
+/**
+ * GlobalMuteListener is a process-global object that listens for changes to
+ * the global mute state of the camera and microphone. When it notices a
+ * change in that state, it tells the underlying platform code to mute or
+ * unmute those devices.
+ */
 const GlobalMuteListener = {
   _initted: false,
 
-  
-
-
-
-
+  /**
+   * Initializes the listener if it hasn't been already. This will also
+   * ensure that the microphone and camera are initially in the right
+   * muting state.
+   */
   init() {
     if (!this._initted) {
       Services.cpmm.sharedData.addEventListener("change", this);
@@ -74,20 +67,20 @@ const GlobalMuteListener = {
   },
 };
 
-class WebRTCChild extends JSWindowActorChild {
+export class WebRTCChild extends JSWindowActorChild {
   actorCreated() {
-    
-    
-    
-    
-    
-    
-    
-    
+    // The user might request that DOM notifications be silenced
+    // when sharing the screen. There doesn't seem to be a great
+    // way of storing that state in any of the objects going into
+    // the WebRTC API or coming out via the observer notification
+    // service, so we store it here on the actor.
+    //
+    // If the user chooses to silence notifications during screen
+    // share, this will get set to true.
     this.suppressNotifications = false;
   }
 
-  
+  // Called only for 'unload' to remove pending gUM prompts in reloaded frames.
   static handleEvent(aEvent) {
     let contentWindow = aEvent.target.defaultView;
     let actor = getActorForWindow(contentWindow);
@@ -101,8 +94,8 @@ class WebRTCChild extends JSWindowActorChild {
     }
   }
 
-  
-  
+  // This observer is called from BrowserProcessChild to avoid
+  // loading this .jsm when WebRTC is not in use.
   static observe(aSubject, aTopic, aData) {
     switch (aTopic) {
       case "getUserMedia:request":
@@ -213,8 +206,8 @@ function getActorForWindow(window) {
       return windowGlobal.getActor("WebRTC");
     }
   } catch (ex) {
-    
-    
+    // There might not be an actor for a parent process chrome URL,
+    // and we may not even be allowed to access its windowGlobalChild.
   }
 
   return null;
@@ -258,11 +251,11 @@ function handleGUMStop(aSubject, aTopic, aData) {
 }
 
 function handleGUMRequest(aSubject, aTopic, aData) {
-  
-  
-  
-  
-  
+  // Now that a getUserMedia request has been created, we should check
+  // to see if we're supposed to have any devices muted. This needs
+  // to occur after the getUserMedia request is made, since the global
+  // mute state is associated with the GetUserMediaWindowListener, which
+  // is only created after a getUserMedia request.
   GlobalMuteListener.init();
 
   let constraints = aSubject.getConstraints();
@@ -297,7 +290,7 @@ function prompt(
   let audioOutputDevices = [];
   let devices = [];
 
-  
+  // MediaStreamConstraints defines video as 'boolean or MediaTrackConstraints'.
   let video = aConstraints.video || aConstraints.picture;
   let audio = aConstraints.audio;
   let sharingScreen =
@@ -307,7 +300,7 @@ function prompt(
 
   const hasInherentConstraints = ({ facingMode, groupId, deviceId }) => {
     const id = [deviceId].flat()[0];
-    return facingMode || groupId || (id && id != "default"); 
+    return facingMode || groupId || (id && id != "default"); // flock workaround
   };
   let hasInherentAudioConstraints =
     audio &&
@@ -321,7 +314,7 @@ function prompt(
   for (let device of aDevices) {
     device = device.QueryInterface(Ci.nsIMediaDevice);
     let deviceObject = {
-      name: device.rawName, 
+      name: device.rawName, // unfiltered device name to show to the user
       deviceIndex: devices.length,
       rawId: device.rawId,
       id: device.id,
@@ -330,17 +323,17 @@ function prompt(
     };
     switch (device.type) {
       case "audioinput":
-        
-        
-        
+        // Check that if we got a microphone, we have not requested an audio
+        // capture, and if we have requested an audio capture, we are not
+        // getting a microphone instead.
         if (audio && (device.mediaSource == "microphone") != sharingAudio) {
           audioInputDevices.push(deviceObject);
           devices.push(device);
         }
         break;
       case "videoinput":
-        
-        
+        // Verify that if we got a camera, we haven't requested a screen share,
+        // or that if we requested a screen share we aren't getting a camera.
         if (video && (device.mediaSource == "camera") != sharingScreen) {
           if (device.scary) {
             deviceObject.scary = true;
@@ -370,8 +363,8 @@ function prompt(
   }
 
   if (!requestTypes.length) {
-    
-    
+    // Device enumeration is done ahead of handleGUMRequest, so we're not
+    // responsible for handling the NotFoundError spec case.
     denyGUMRequest({ callID: aCallID });
     return;
   }
@@ -381,19 +374,19 @@ function prompt(
   }
   aContentWindow.pendingGetUserMediaRequests.set(aCallID, devices);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // WebRTC prompts have a bunch of special requirements, such as being able to
+  // grant two permissions (microphone and camera), selecting devices and showing
+  // a screen sharing preview. All this could have probably been baked into
+  // nsIContentPermissionRequest prompts, but the team that implemented this back
+  // then chose to just build their own prompting mechanism instead.
+  //
+  // So, what you are looking at here is not a real nsIContentPermissionRequest, but
+  // something that looks really similar and will be transmitted to webrtcUI.jsm
+  // for showing the prompt.
+  // Note that we basically do the permission delegate check in
+  // nsIContentPermissionRequest, but because webrtc uses their own prompting
+  // system, we should manually apply the delegate policy here. Permission
+  // should be delegated using Feature Policy and top principal
   const permDelegateHandler = aContentWindow.document.permDelegateHandler.QueryInterface(
     Ci.nsIPermissionDelegateHandler
   );
@@ -406,8 +399,8 @@ function prompt(
     shouldDelegatePermission &&
     permDelegateHandler.maybeUnsafePermissionDelegate(requestTypes)
   ) {
-    
-    
+    // We are going to prompt both first party and third party origin.
+    // SecondOrigin should be third party
     secondOrigin = aContentWindow.document.nodePrincipal.origin;
   }
 
@@ -490,7 +483,7 @@ function updateIndicators(aSubject, aTopic, aData) {
     aSubject instanceof Ci.nsIPropertyBag &&
     aSubject.getProperty("requestURL") == kBrowserURL
   ) {
-    
+    // Ignore notifications caused by the browser UI showing previews.
     return;
   }
 
@@ -501,9 +494,9 @@ function updateIndicators(aSubject, aTopic, aData) {
     let tabState = getTabStateForContentWindow(contentWindow, false);
     tabState.windowId = getInnerWindowIDForWindow(contentWindow);
 
-    
-    
-    
+    // If we were silencing DOM notifications before, but we've updated
+    // state such that we're no longer sharing one of our displays, then
+    // reset the silencing state.
     if (actor.suppressNotifications) {
       if (!tabState.screen && !tabState.window && !tabState.browser) {
         actor.suppressNotifications = false;
@@ -519,7 +512,7 @@ function updateIndicators(aSubject, aTopic, aData) {
 function removeBrowserSpecificIndicator(aSubject, aTopic, aData) {
   let contentWindow = Services.wm.getOuterWindowWithId(aData);
   if (contentWindow.document.documentURI == kBrowserURL) {
-    
+    // Ignore notifications caused by the browser UI showing previews.
     return;
   }
 
