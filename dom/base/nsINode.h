@@ -1410,9 +1410,15 @@ class nsINode : public mozilla::dom::EventTarget {
 
   nsIContent* GetClosestNativeAnonymousSubtreeRoot() const {
     if (!IsInNativeAnonymousSubtree()) {
+      MOZ_ASSERT(!HasBeenInUAWidget(), "UA widget implies anonymous");
       return nullptr;
     }
     MOZ_ASSERT(IsContent(), "How did non-content end up in NAC?");
+    if (HasBeenInUAWidget()) {
+      
+      
+      return reinterpret_cast<nsIContent*>(GetContainingShadow());
+    }
     for (const nsINode* node = this; node; node = node->GetParentNode()) {
       if (node->IsRootOfNativeAnonymousSubtree()) {
         return const_cast<nsINode*>(node)->AsContent();
